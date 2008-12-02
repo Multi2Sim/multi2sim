@@ -21,9 +21,8 @@
 
 /* Cache system variables */
 
-static int num_cores = 0;
-static int num_threads = 0;
-static int node_count = 0;  /* num_cores * num_threads */
+static int cores = 0;
+static int threads = 0;
 static int ccache_count = 0;
 static int net_count = 0;
 static uint64_t access_counter = 0;
@@ -389,11 +388,11 @@ static void cache_config_key(char *section, char *key)
 #define SECTION(V) strcpy(section, (V))
 #define KEY_INT(K, V) config_write_int(cache_config, section, (K), (V))
 #define KEY_STRING(K, V) config_write_string(cache_config, section, (K), (V))
-static void cache_config_default(int def_cores, int def_threads)
+
+static void cache_config_default(void)
 {
 	char section[100], buf[100];
-	int core, thread, i;
-	int def_nodes = def_cores * def_threads;
+	int core, thread;
 
 	/* Write cache topologies */
 	SECTION("CacheGeometry L1");
@@ -410,66 +409,69 @@ static void cache_config_default(int def_cores, int def_threads)
 
 	/* Main memory */
 	SECTION("MainMemory");
-	sprintf(buf, "net-%d", def_cores);
+	sprintf(buf, "net-%d", cores);
 	KEY_STRING("HiNet", buf);
 	KEY_INT("BlockSize", 64);
 	KEY_INT("Latency", 200);
 
 	/* Nodes */
-	for (core = 0; core < def_cores; core++) {
-		for (thread = 0; thread < def_threads; thread++) {
+	for (core = 0; core < cores; core++) {
+		for (thread = 0; thread < threads; thread++) {
 			sprintf(buf, "Node %d.%d", core, thread);
 			SECTION(buf);
 			KEY_INT("Core", core);
 			KEY_INT("Thread", thread);
-			sprintf(buf, "il1-%d", core * def_threads + thread);
+			sprintf(buf, "il1-%d", core * threads + thread);
 			KEY_STRING("ICache", buf);
-			sprintf(buf, "dl1-%d", core * def_threads + thread);
+			sprintf(buf, "dl1-%d", core * threads + thread);
 			KEY_STRING("DCache", buf);
 		}
 	}
 
 	/* Level 1 Caches */
-	for (i = 0; i < def_nodes; i++) {
-		sprintf(buf, "Cache dl1-%d", i);
-		SECTION(buf);
-		KEY_STRING("Geometry", "L1");
-		KEY_STRING("HiNet", "");
-		sprintf(buf, "net-%d", i / def_threads);
-		KEY_STRING("LoNet", buf);
+	for (core = 0; core < cores; core++) {
+		for (thread = 0; thread < threads; thread++) {
+			sprintf(buf, "Cache dl1-%d", core * threads + thread);
+			SECTION(buf);
+			KEY_STRING("Geometry", "L1");
+			KEY_STRING("HiNet", "");
+			sprintf(buf, "net-%d", core);
+			KEY_STRING("LoNet", buf);
 
-		sprintf(buf, "Cache il1-%d", i);
-		SECTION(buf);
-		KEY_STRING("Geometry", "L1");
-		KEY_STRING("HiNet", "");
-		sprintf(buf, "net-%d", i / def_threads);
-		KEY_STRING("LoNet", buf);
+			sprintf(buf, "Cache il1-%d", core * threads + thread);
+			SECTION(buf);
+			KEY_STRING("Geometry", "L1");
+			KEY_STRING("HiNet", "");
+			sprintf(buf, "net-%d", core);
+			KEY_STRING("LoNet", buf);
+		}
 	}
 
 	/* Level 2 Caches */
-	for (core = 0; core < def_cores; core++) {
+	for (core = 0; core < cores; core++) {
 		sprintf(buf, "Cache l2-%d", core);
 		SECTION(buf);
 		KEY_STRING("Geometry", "L2");
 		sprintf(buf, "net-%d", core);
 		KEY_STRING("HiNet", buf);
-		sprintf(buf, "net-%d", def_cores);
+		sprintf(buf, "net-%d", cores);
 		KEY_STRING("LoNet", buf);
 	}
 
 	/* Interconnects */
-	for (core = 0; core <= def_cores; core++) {
+	for (core = 0; core <= cores; core++) {
 		sprintf(buf, "Net net-%d", core);
 		SECTION(buf);
 		KEY_STRING("Topology", "P2P");
 	}
 }
+
 #undef KEY_INT
 #undef KEY_STRING
 #undef SECTION
 
 
-void cache_system_init(int def_cores, int def_threads)
+void cache_system_init(int _cores, int _threads)
 {
 	int i, j;
 	struct tlb_t *tlb;
@@ -484,6 +486,8 @@ void cache_system_init(int def_cores, int def_threads)
 	char *policy_str;
 
 	/* Initializations */
+	cores = _cores;
+	threads = _threads;
 	mmu_init();
 	moesi_init();
 
@@ -500,12 +504,11 @@ void cache_system_init(int def_cores, int def_threads)
 	/* Load cache configuration file */
 	cache_config = config_create(cache_config_file);
 	if (!*cache_config_file)
-		cache_config_default(def_cores, def_threads);
+		cache_config_default();
 	else if (!config_load(cache_config))
 		fatal("%s: cannot load cache configuration file", cache_config_file);
 	
-	/* Explore sections for first time to detect number of cores/threads,
-	 * number of ccache_array, and number of interconnects. */
+	/* Create array of ccaches and networks. */
 	for (section = config_section_first(cache_config); section;
 		section = config_section_next(cache_config))
 	{
@@ -513,21 +516,11 @@ void cache_system_init(int def_cores, int def_threads)
 			ccache_count++;
 		else if (!strncasecmp(section, "Net ", 4))
 			net_count++;
-		else if (!strncasecmp(section, "Node ", 5)) {
-			cache_config_key(section, "Core");
-			cache_config_key(section, "Thread");
-			core = config_read_int(cache_config, section, "Core", 0);
-			thread = config_read_int(cache_config, section, "Thread", 0);
-			num_cores = MAX(num_cores, core + 1);
-			num_threads = MAX(num_threads, thread + 1);
-		}
 	}
-	node_count = num_cores * num_threads;
-
-	/* Create arrays */
-	if (num_cores < 1 || num_threads < 1)
-		fatal("cache config file: wrong number of cores/threads");
-	node_array = calloc(node_count, sizeof(struct node_t));
+	if (ccache_count < 1)
+		fatal("%s: no cache", cache_config_file);
+	if (net_count < 1)
+		fatal("%s: no network", cache_config_file);
 	ccache_array = calloc(ccache_count, sizeof(void *));
 	net_array = calloc(net_count, sizeof(void *));
 
@@ -616,9 +609,10 @@ void cache_system_init(int def_cores, int def_threads)
 	ccache->bsize = config_read_int(cache_config, section, "BlockSize", 0);
 	ccache->hinet = config_read_ptr(cache_config, buf, "ptr", NULL);
 	if (cache_min_block_size < 1)
-		fatal("cache block size must >= 1");
+		fatal("cache block size must be >= 1");
 
 	/* Nodes */
+	node_array = calloc(cores * threads, sizeof(struct node_t));
 	for (section = config_section_first(cache_config); section;
 		section = config_section_next(cache_config))
 	{
@@ -629,7 +623,19 @@ void cache_system_init(int def_cores, int def_threads)
 		thread = config_read_int(cache_config, section, "Thread", -1);
 		if (core < 0 || thread < 0)
 			fatal("cache config: wrong section '%s'", section);
-		node = &node_array[core * num_threads + thread];
+		if (core >= cores) {
+			warning("%s: section '[ %s ]' ignored, since it refers to an unexisting core (core %d); "
+				"the number of cores in the current configuration is %d",
+				cache_config_file, section, core, cores);
+			continue;
+		}
+		if (thread >= threads) {
+			warning("%s: section '[ %s ]' ignored, since it refers to an unexisting thread (thread %d); "
+				"the number of threads in the current configuration is %d",
+				cache_config_file, section, core, cores);
+			continue;
+		}
+		node = &node_array[core * threads + thread];
 
 		/* Instruction cache for node */
 		sprintf(buf, "Cache %s", config_read_string(cache_config, section, "ICache", ""));
@@ -644,6 +650,25 @@ void cache_system_init(int def_cores, int def_threads)
 		cache_config_section(buf);
 		node->dcache = config_read_ptr(cache_config, buf, "ptr", NULL);
 		assert(node->dcache);
+	}
+
+	/* Check that all nodes have an entry points to the memory hierarchy */
+	for (core = 0; core < cores; core++) {
+		for (thread = 0; thread < threads; thread++) {
+			node = &node_array[core * threads + thread];
+			if (!node->icache)
+				fatal("core/thread %d/%d does not have an entry into the memory hierarchy "
+					"for fetching instructions (instruction cache); "
+					"please write a '[ Node <name> ]' section in the cache configuration file for it, "
+					"including an 'ICache = <cache>' entry.",
+					core, thread);
+			if (!node->dcache)
+				fatal("core/thread %d/%d does not have an entry into the memory hierarchy "
+					"to read or write data (data cache); "
+					"please write a '[ Node <name> ]' section in the cache configuration file for it, "
+					"including a 'DCache = <cache>' entry.",
+					core, thread);
+		}
 	}
 
 	/* Add lower node_array to networks. */
@@ -727,15 +752,17 @@ void cache_system_init(int def_cores, int def_threads)
 
 	/* Create tlbs */
 	section = "Tlb";
-	tlb_array = calloc(node_count, sizeof(void *));
-	for (i = 0; i < node_count; i++) {
-		tlb = tlb_array[i] = tlb_create();
-		sprintf(tlb->name, "tlb.%d.%d", i / num_threads, i % num_threads);
-		tlb->hitlat = config_read_int(cache_config, section, "HitLatency", 2);
-		tlb->misslat = config_read_int(cache_config, section, "MissLatency", 30);
-		nsets = config_read_int(cache_config, section, "Sets", 64);
-		assoc = config_read_int(cache_config, section, "Assoc", 4);
-		tlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
+	tlb_array = calloc(cores * threads, sizeof(void *));
+	for (core = 0; core < cores; core++) {
+		for (thread = 0; thread < threads; thread++) {
+			tlb = tlb_array[core * threads + thread] = tlb_create();
+			sprintf(tlb->name, "tlb.%d.%d", core, thread);
+			tlb->hitlat = config_read_int(cache_config, section, "HitLatency", 2);
+			tlb->misslat = config_read_int(cache_config, section, "MissLatency", 30);
+			nsets = config_read_int(cache_config, section, "Sets", 64);
+			assoc = config_read_int(cache_config, section, "Assoc", 4);
+			tlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
+		}
 	}
 }
 
@@ -750,7 +777,7 @@ void cache_system_done()
 	free(ccache_array);
 
 	/* Free tlbs */
-	for (i = 0; i < node_count; i++)
+	for (i = 0; i < cores * threads; i++)
 		tlb_free(tlb_array[i]);
 	free(tlb_array);
 
@@ -774,9 +801,8 @@ void cache_system_done()
 static struct ccache_t *cache_system_get_ccache(int core, int thread, enum cache_kind_enum cache_kind)
 {
 	int index;
-	if (core >= num_cores || thread >= num_threads)
-		panic("core.thread out of range");
-	index = core * num_threads + thread;
+	assert(core < cores && thread < threads);
+	index = core * threads + thread;
 	return cache_kind == cache_kind_data ? node_array[index].dcache : node_array[index].icache;
 }
 
@@ -784,9 +810,8 @@ static struct ccache_t *cache_system_get_ccache(int core, int thread, enum cache
 static struct tlb_t *cache_system_get_tlb(int core, int thread)
 {
 	int index;
-	if (core >= num_cores || thread >= num_threads)
-		panic("core.thread out of range");
-	index = core * num_threads + thread;
+	assert(core < cores && thread < threads);
+	index = core * threads + thread;
 	return tlb_array[index];
 }
 
@@ -809,8 +834,8 @@ static void cache_system_dump_route(int core, int thread, enum cache_kind_enum k
 void cache_system_dump(FILE *f)
 {
 	int core, thread;
-	for (core = 0; core < num_cores; core++) {
-		for (thread = 0; thread < num_threads; thread++) {
+	for (core = 0; core < cores; core++) {
+		for (thread = 0; thread < threads; thread++) {
 			fprintf(f, "core %d - thread %d\n  data route\n", core, thread);
 			cache_system_dump_route(core, thread, cache_kind_data, f);
 			fprintf(f, "  instruction route\n");

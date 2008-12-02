@@ -822,6 +822,14 @@ void op_not_rm32_impl() {
 }
 
 
+void op_pop_rm32_impl() {
+	uint32_t value;
+	mem_read(isa_mem, isa_regs->esp, 4, &value);
+	isa_regs->esp += 4;
+	isa_store_rm32(value);
+}
+
+
 void op_pop_ir32_impl() {
 	uint32_t value;
 	assert(isa_inst.opindex != reg_esp - reg_eax);
@@ -897,6 +905,11 @@ void op_ret_impl() {
 	mem_read(isa_mem, isa_regs->esp, 4, &isa_target);
 	isa_regs->esp += 4;
 	isa_regs->eip = isa_target;
+}
+
+
+void op_repz_ret_impl() {
+	op_ret_impl();
 }
 
 

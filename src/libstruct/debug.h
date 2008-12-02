@@ -48,6 +48,9 @@ int debug_status(int category);
 /* Return the file associated with a category. */
 FILE *debug_file(int category);
 
+/* Flush associated file */
+void debug_flush(int category);
+
 /* Dump a debugging message. */
 void debug(int category, char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 

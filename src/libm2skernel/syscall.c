@@ -1063,11 +1063,10 @@ void syscall_do()
 		ptms = isa_regs->ebx;
 		syscall_debug("  ptms=0x%x\n", ptms);
 
-		RETVAL(times(&tms));
-		if (!retval) {
-			syscall_copy_tms(&sim_tms, &tms);
+		retval = times(&tms);
+		syscall_copy_tms(&sim_tms, &tms);
+		if (ptms)
 			mem_write(isa_mem, ptms, sizeof(sim_tms), &sim_tms);
-		}
 		break;
 	}
 
@@ -2172,7 +2171,7 @@ void syscall_do()
 
 	
 		/* Command */
-		cmd = op & ~128;
+		cmd = op & ~(256|128);
 		mem_read(isa_mem, addr1, 4, &futex);
 		syscall_debug("  futex=%d, cmd=%d (%s)\n",
 			futex, cmd, map_value(&futex_cmd_map, cmd));
