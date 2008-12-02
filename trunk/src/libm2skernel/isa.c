@@ -525,6 +525,7 @@ void isa_dump(FILE *f)
 	fprintf(f, "  ");
 	x86_inst_dump(&isa_inst, f);
 	fprintf(f, "  (%d bytes)\n", isa_inst.size);
+	fprintf(f, "  rep=%d\n", isa_inst.rep);
 	fprintf(f, "isa_regs:\n");
 	regs_dump(isa_regs, f);
 }

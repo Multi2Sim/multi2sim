@@ -100,8 +100,6 @@ OP_REPNZ_IMPL(cmpsd)
 OP_REPNZ_IMPL(scasb)
 OP_REPNZ_IMPL(scasd)
 
-OP_REPZ_IMPL(ret)
-
 
 
 

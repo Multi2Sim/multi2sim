@@ -107,6 +107,8 @@ static void sim_signal_handler(int signum)
 
 int main(int argc, char **argv)
 {
+	uint64_t t;
+
 	/* Initial information */
 	fprintf(stderr, "\nMulti2Sim %s - Fast Functional Simulator (m2s-fast)\n",
 		VERSION);
@@ -183,15 +185,16 @@ int main(int argc, char **argv)
 	}
 
 	/* Stats */
+	t = ke_timer();
 	fprintf(stderr, "\n");
 	fprintf(stderr, "sim.cycles  %lld  # Simulation cycles\n",
 		(long long) sim_cycle);
 	fprintf(stderr, "sim.inst  %lld  # Number of instructions executed\n",
 		(long long) sim_inst);
-	fprintf(stderr, "sim.time  %.1f  # Simulation time\n",
-		(double) clock() / CLOCKS_PER_SEC);
+	fprintf(stderr, "sim.time  %.1f  # Simulation time in seconds\n",
+		(double) t / 1000000);
 	fprintf(stderr, "sim.cps  %.0f  # Cycles simulated per second\n",
-		clock() ? (double) sim_cycle / clock() * CLOCKS_PER_SEC : 0.0);
+		t ? (double) sim_cycle / t * 1e6 : 0.0);
 	fprintf(stderr, "sim.contexts  %d  # Maximum number of concurrent contexts\n",
 		ke->context_max);
 	fprintf(stderr, "sim.memory  %lu  # Physical memory used by benchmarks\n",
