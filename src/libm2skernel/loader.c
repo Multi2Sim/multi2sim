@@ -218,9 +218,10 @@ void ld_load_interp(struct ctx_t *ctx)
 	struct elf_file_t *elf;
 
 	/* Open dynamic loader */
-	warning("'%s': dynamic linking will provide different behaviours "
-		"depending on the host machine. It is encouraged to link your "
-		"object files with the '-static' flag.\n", ld->exe);
+	warning("'%s': "
+		"dynamic linking provides different behaviors depending on the host machine. "
+		"It is recommended to link your object files with the '-static' flag.",
+		ld->exe);
 	ld_debug("\nLoading program interpreter '%s'\n", ld->interp);
 	elf = elf_open(ld->interp);
 	if (!ld->elf)

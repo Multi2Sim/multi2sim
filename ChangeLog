@@ -481,3 +481,15 @@
 	* elf.c: function 'elf_merge_symtab' implemented, to merge symbol tables
 		from an executable and the program interpreter.
 
+2010-02-26
+	* syscall.c: bug fixed in system call 'times'. Return value was treated
+		as an error code, instead of the number of ticks since system
+		start.
+	* machine-ctrl.c: bug fixed in inst 'repz ret'. This instruction is
+		equivalent to 'ret', regardless of the value of ecx, or flags.
+	
+2010-03-02
+	* cachesystem.c: some bugs have been fixed when analyzing incorrect
+		cache configuration files. The error messages have been updated
+		to provide more information about the usage. There were some
+		situations of wrong configurations that made the simulator crash.

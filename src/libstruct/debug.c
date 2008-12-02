@@ -132,6 +132,17 @@ FILE *debug_file(int category)
 }
 
 
+void debug_flush(int category)
+{
+	struct category_t *c;
+	if (category < 0 || category >= category_count)
+		return;
+	c = &category_list[category];
+	if (c->status && c->f)
+		fflush(c->f);
+}
+
+
 void debug(int category, char *fmt, ...)
 {
 	struct category_t *c;
