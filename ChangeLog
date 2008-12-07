@@ -462,3 +462,22 @@
 	* network.c: new model for interconnection network, using a more accurate
 		switch model.
 	* cachesystem: updated for new interconnect model.
+
+2010-02-22
+	* memory.c, m2skernel.h: global memory 'mem_safe_mode'. Default value is
+		true. If false, memory is accessed unsafely without providing
+		segmentation faults.
+
+2010-02-23
+	* loader.c: the original argument list is not artificially modified
+		anymore. There was a problem when the program header table was
+		loaded for dynamic linking. The AT_ENTRY program header should
+		store the entry point for the main program, and not for the
+		program interpreter. Bug fixed. Still, dynamic loading does not
+		work for other machines.
+	* misc.c: function 'map_value_string' improved.
+	* syscall.c: system call mmap and mmap2 fixed. The system call mmap takes
+		its arguments from memory, instead of registers.
+	* elf.c: function 'elf_merge_symtab' implemented, to merge symbol tables
+		from an executable and the program interpreter.
+

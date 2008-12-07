@@ -221,26 +221,19 @@ void ld_load_interp(struct ctx_t *ctx)
 	warning("'%s': dynamic linking will provide different behaviours "
 		"depending on the host machine. It is encouraged to link your "
 		"object files with the '-static' flag.\n", ld->exe);
+	ld_debug("\nLoading program interpreter '%s'\n", ld->interp);
 	elf = elf_open(ld->interp);
 	if (!ld->elf)
 		fatal("%s: invalid program interpreter", ld->interp);
 	
 	/* Read sections */
 	ld_load_sections(ctx, elf);
+	elf_merge_symtab(ld->elf, elf);
 
 	/* Change program entry to the one specified by the interpreter */
-	ld->prog_entry = elf_get_entry(elf);
-	ld_debug("  program interpreter entry: 0x%x\n\n", ld->prog_entry);
+	ld->interp_prog_entry = elf_get_entry(elf);
+	ld_debug("  program interpreter entry: 0x%x\n\n", ld->interp_prog_entry);
 	elf_close(elf);
-
-	/* Add two arguments to the argument list */
-	lnlist_head(ld->args);  /* FIXME */
-	free(lnlist_get(ld->args));
-	lnlist_remove(ld->args);
-	lnlist_insert(ld->args, strdup(ld->exe));
-	lnlist_insert(ld->args, strdup(ld->exe));
-	/* FIXME: we do this cause we don't know how ld-linux.so.2
-	 * handles arguments. How do we tell him to load our executable? */
 }
 
 
@@ -292,7 +285,7 @@ static void ld_load_phdt(struct ctx_t *ctx)
 		mem_access(mem, phdt_base + i * phdr_size, phdr_size, phdr, mem_access_init);
 
 		/* Debug */
-		map_value_string(&phdr_type_map, phdr->p_type, buf, 200);
+		map_value_string(&phdr_type_map, phdr->p_type, buf, sizeof(buf));
 		ld_debug("  header loaded at 0x%x\n", phdt_base + i * phdr_size);
 		ld_debug("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
 			buf, phdr->p_offset, phdr->p_vaddr, phdr->p_paddr);
@@ -301,7 +294,7 @@ static void ld_load_phdt(struct ctx_t *ctx)
 
 		/* Program interpreter */
 		if (phdr->p_type == 3) {
-			mem_read_string(mem, phdr->p_vaddr, 200, buf);
+			mem_read_string(mem, phdr->p_vaddr, sizeof(buf), buf);
 			ld->interp = strdup(buf);
 		}
 	}
@@ -444,8 +437,7 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 		fatal("%s: error opening file, maybe not a valid ELF format",
 			exe_fullpath);
 
-	/* Read sections. The entry point will be given by the executable for now,
-	 * maybe it changes later if we notice the presence of an interpreter. */
+	/* Read sections and program entry */
 	ld_load_sections(ctx, ld->elf);
 	ld->prog_entry = elf_get_entry(ld->elf);
 	ld->brk = ROUND_UP(ld->brk, MEM_PAGESIZE);
@@ -461,7 +453,7 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 	ld_load_stack(ctx);
 
 	/* Register initialization */
-	ctx->regs->eip = ld->prog_entry;
+	ctx->regs->eip = ld->interp ? ld->interp_prog_entry : ld->prog_entry;
 	ctx->regs->esp = ld->environ_base;
 
 	ld_debug("Program entry is 0x%x\n", ctx->regs->eip);

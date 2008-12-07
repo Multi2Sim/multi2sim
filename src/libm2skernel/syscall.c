@@ -207,6 +207,13 @@ static void syscall_copy_stat64(struct sim_stat64 *sim, struct stat *real)
 	sim->mtime = real->st_mtime;
 	sim->ctime = real->st_ctime;
 	sim->ino = real->st_ino;
+	syscall_debug("  stat64 structure:\n");
+	syscall_debug("    dev=%lld, ino=%d, mode=%d, nlink=%d\n",
+		(long long) sim->dev, (int) sim->ino, (int) sim->mode, (int) sim->nlink);
+	syscall_debug("    uid=%d, gid=%d, rdev=%lld\n",
+		(int) sim->uid, (int) sim->gid, (long long) sim->rdev);
+	syscall_debug("    size=%lld, blksize=%d, blocks=%lld\n",
+		(long long) sim->size, (int) sim->blksize, (long long) sim->blocks);
 }
 
 
@@ -397,27 +404,105 @@ struct string_map_t waitpid_options_map = {
 };
 
 
-/* For 'mmap2' */
+/* For 'mmap' */
 
 #define MMAP_BASE_ADDRESS 0xb7fb0000
 
 struct string_map_t mmap_prot_map = {
-	4, {
+	6, {
 		{ "PROT_READ",       0x1 },
 		{ "PROT_WRITE",      0x2 },
 		{ "PROT_EXEC",       0x4 },
-		{ "PROT_SEM",        0x8 }
+		{ "PROT_SEM",        0x8 },
+		{ "PROT_GROWSDOWN",  0x01000000 },
+		{ "PROT_GROWSUP",    0x02000000 }
 	}
 };
 
 struct string_map_t mmap_flags_map = {
-	4, {
+	11, {
 		{ "MAP_SHARED",      0x01 },
 		{ "MAP_PRIVATE",     0x02 },
 		{ "MAP_FIXED",       0x10 },
-		{ "MAP_ANONYMOUS",   0x20 }
+		{ "MAP_ANONYMOUS",   0x20 },
+		{ "MAP_GROWSDOWN",   0x00100 },
+		{ "MAP_DENYWRITE",   0x00800 },
+		{ "MAP_EXECUTABLE",  0x01000 },
+		{ "MAP_LOCKED",      0x02000 },
+		{ "MAP_NORESERVE",   0x04000 },
+		{ "MAP_POPULATE",    0x08000 },
+		{ "MAP_NONBLOCK",    0x10000 }
 	}
 };
+
+static uint32_t do_mmap(uint32_t addr, uint32_t len, uint32_t prot,
+	uint32_t flags, uint32_t fd, uint32_t offset)
+{
+	uint32_t alen;  /* aligned len */
+	int perm, fixed;
+	int efd, count;
+	long efd_pos;
+	void *buf;
+
+	/* Permissions */
+	perm = mem_access_init;
+	perm |= prot & 0x01 ? mem_access_read : 0;
+	perm |= prot & 0x02 ? mem_access_write : 0;
+	perm |= prot & 0x04 ? mem_access_exec : 0;
+
+	/* Check enabled flags */
+	fixed = flags & 0x10;  /* MAP_FIXED */
+	if (flags & 0x20)  /* MAP_ANONYMOUS */
+		fd = -1;
+
+	/* Offset must be aligned. Round up 'len'. */
+	if (addr & ~MEM_PAGEMASK)
+		fatal("do_mmap: unaligned addr");
+	alen = ROUND_UP(len, MEM_PAGESIZE);
+
+	/* Find region for allocation if start is 0, or if there is no
+	 * free space in the specified start region. */
+	if (fixed && !addr)
+		fatal("do_mmap: no start specified for fixed mapping");
+	if (!fixed) {
+		if (!addr || mem_map_space_down(isa_mem, addr, alen) != addr)
+			addr = MMAP_BASE_ADDRESS;
+		addr = mem_map_space_down(isa_mem, addr, alen);
+		if (addr == (uint32_t) -1)
+			fatal("do_mmap: out of memory");
+	}
+
+	/* If the allocation is at a fixed location, we may have allocated pages in the
+	 * midst. Get rid of them first. */
+	if (fixed)
+		mem_unmap(isa_mem, addr, alen);
+		
+	/* Allocation of memory */
+	mem_map(isa_mem, addr, alen, perm);
+	if (fd == (uint32_t) -1)
+		return addr;
+
+	/* Mapping from file */
+	efd = ld_translate_fd(isa_ctx, fd);
+	syscall_debug("  efd=0x%x\n", efd);
+
+	/* Go to the position in the file specified by 'offset' */
+	efd_pos = lseek(efd, 0, SEEK_CUR);
+	if (lseek(efd, offset, SEEK_SET) != offset)
+		fatal("do_mmap: cannot set position in file");
+
+	/* Read file */
+	buf = calloc(1, len);
+	if (!buf)
+		fatal("do_mmap: out of memory mapping from file");
+	count = read(efd, buf, len);
+	lseek(efd, efd_pos, SEEK_SET);
+
+	/* Write into memory */
+	mem_access(isa_mem, addr, count, buf, mem_access_init);
+	free(buf);
+	return addr;
+}
 
 
 /* For 'futex' */
@@ -1165,6 +1250,39 @@ void syscall_do()
 		}
 		break;
 	}
+	
+
+	/* 90 */
+	case syscall_code_mmap:
+	{
+		uint32_t pargs;
+		uint32_t addr, len, prot;
+		uint32_t flags, fd, offset;
+		char sprot[STRSIZE], sflags[STRSIZE];
+
+		/* 'old_mmap' takes the arguments from memory, at the address
+		 * pointed by EBX. */
+		pargs = isa_regs->ebx;
+		mem_read(isa_mem, pargs, 4, &addr);
+		mem_read(isa_mem, pargs + 4, 4, &len);
+		mem_read(isa_mem, pargs + 8, 4, &prot);
+		mem_read(isa_mem, pargs + 12, 4, &flags);
+		mem_read(isa_mem, pargs + 16, 4, &fd);
+		mem_read(isa_mem, pargs + 20, 4, &offset);
+		
+		syscall_debug("  pargs=0x%x\n", pargs);
+		syscall_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
+			"fd=0x%x, offset=0x%x\n",
+			addr, len, prot, flags, fd, offset);
+		map_flags(&mmap_prot_map, prot, sprot, sizeof(sprot));
+		map_flags(&mmap_flags_map, flags, sflags, sizeof(sflags));
+		syscall_debug("  prot=%s, flags=%s\n", sprot, sflags);
+
+		/* Map */
+		retval = do_mmap(addr, len, prot, flags,
+			fd, offset);
+		break;
+	}
 
 
 	/* 91 */
@@ -1802,92 +1920,34 @@ void syscall_do()
 
 
 	/* System calls 'mmap' and 'mmap2' only differ in the interpretation of
-	 * the parameter 'pgoffset'. */
-	//case syscall_code_mmap:  /* 90 */
+	 * the parameter 'offset'. */
 	case syscall_code_mmap2:  /* 192 */
 	{
-		uint32_t start = isa_regs->ebx;
-		uint32_t length = isa_regs->ecx;
-		uint32_t prot = isa_regs->edx;
-		uint32_t flags = isa_regs->esi;
-		uint32_t fd = isa_regs->edi;
-		uint32_t pgoffset = isa_regs->ebp;
-		uint32_t start_align, length_align;
+		uint32_t addr, len, prot;
+		uint32_t flags, fd, offset;
 		char sprot[STRSIZE], sflags[STRSIZE];
-		int perm, fixed;
+
+		/* Read params */
+		addr = isa_regs->ebx;
+		len = isa_regs->ecx;
+		prot = isa_regs->edx;
+		flags = isa_regs->esi;
+		fd = isa_regs->edi;
+		offset = isa_regs->ebp;
 
 		/* Debug */
-		syscall_debug("  start=0x%x, length=0x%x, prot=0x%x, flags=0x%x, "
-			"fd=0x%x, pgoffset=0x%x\n",
-			start, length, prot, flags, fd, pgoffset);
+		syscall_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
+			"fd=0x%x, offset=0x%x\n",
+			addr, len, prot, flags, fd, offset);
 		map_flags(&mmap_prot_map, prot, sprot, STRSIZE);
 		map_flags(&mmap_flags_map, flags, sflags, STRSIZE);
 		syscall_debug("  prot=%s, flags=%s\n", sprot, sflags);
 
-		/* Permissions */
-		perm = mem_access_init;
-		perm |= prot & 0x01 ? mem_access_read : 0;
-		perm |= prot & 0x02 ? mem_access_write : 0;
-		perm |= prot & 0x04 ? mem_access_exec : 0;
-
-		/* Check enabled flags */
-		fixed = flags & 0x10;  /* MAP_FIXED */
-		if (flags & 0x20)  /* MAP_ANONYMOUS */
-			fd = -1;
-		
-		/* Find region for allocation if start is 0, or if there is no
-		 * free space in the specified start region. */
-		start_align = ROUND_DOWN(start, MEM_PAGESIZE);
-		length_align = ROUND_UP(start + length, MEM_PAGESIZE) - start_align;
-		if (fixed && !start_align)
-			fatal("mmap2: no start specified for fixed mapping");
-		if (!fixed) {
-			if (!start_align || mem_map_space_down(isa_mem, start_align, length_align) != start_align)
-				start_align = MMAP_BASE_ADDRESS;
-			start_align = mem_map_space_down(isa_mem, start_align, length_align);
-			if (start_align == (uint32_t) -1)
-				fatal("syscall mmap2: out of memory");
-		}
-
-		/* If the allocation is at a fixed location, we may have allocated pages in the
-		 * midst. Get rid of them first. */
-		if (fixed)
-			mem_unmap(isa_mem, start_align, length_align);
-		
-		/* Allocation of memory */
-		mem_map(isa_mem, start_align, length_align, perm);
-		retval = start_align;
-
-		/* Mapping from file */
-		if (fd != (uint32_t) -1) {
-			int efd, count;
-			long efd_pos, new_pos;
-			void *buf;
-			
-			/* Translate file descriptor */
-			efd = ld_translate_fd(isa_ctx, fd);
-			syscall_debug("  efd=0x%x\n", efd);
-
-			/* Go to the position in the file specified by
-			 * 'pgoffset'. This is specified in 4096 units for mmap2. */
-			efd_pos = lseek(efd, 0, SEEK_CUR);
-			//new_pos = syscode == syscall_code_mmap ? pgoffset : 4096 * pgoffset;
-			new_pos = pgoffset * 4096;
-			if (lseek(efd, new_pos, SEEK_SET) != new_pos)
-				fatal("mmap2: cannot set position");
-
-			/* Read file */
-			buf = calloc(1, length);
-			if (!buf)
-				fatal("mmap2: out of memory");
-			count = read(efd, buf, length);
-			lseek(efd, efd_pos, SEEK_SET);
-
-			/* Write into memory */
-			mem_access(isa_mem, start_align, count, buf, mem_access_init);
-			free(buf);
-		}
+		/* Map */
+		retval = do_mmap(addr, len, prot, flags,
+			fd, offset << MEM_PAGESHIFT);
 		break;
+
 	}
 
 
