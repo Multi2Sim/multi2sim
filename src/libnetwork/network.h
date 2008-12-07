@@ -45,9 +45,9 @@ struct net_msg_t {
 	 * from buffers to buffers (or end-nodes) */
 	struct net_buffer_t *src_buffer, *dst_buffer;
 	uint64_t busy;  /* In transit until cycle */
-	
-	/* Linked list for buffer */
-	struct net_msg_t *next;
+
+	/* Liked list for bucket chain in net->msg_table */
+	struct net_msg_t *bucket_next;
 };
 
 
@@ -117,6 +117,7 @@ struct routing_entry_t {
 
 
 /* Network */
+#define NET_MSG_TABLE_SIZE 32
 struct net_t {
 	
 	/* Properties */
@@ -131,6 +132,10 @@ struct net_t {
 
 	/* 2-dim routing table */
 	struct routing_entry_t *routing_table;
+
+	/* Hash table of in-flight messages. Each entry is a
+	 * bucket chain. */
+	struct net_msg_t *msg_table[NET_MSG_TABLE_SIZE];
 
 	/* Stats */
 	uint64_t transfers;  /* Transfers */
@@ -206,6 +211,7 @@ int net_can_send(struct net_t *net, int src_node_idx, int dst_node_idx);
 uint64_t net_send(struct net_t *net, int src_node_idx, int dst_node_idx, int size);
 uint64_t net_send_ev(struct net_t *net, int src_node_idx, int dst_node_idx, int size,
 	int retevent, void *retstack);
+int net_in_transit(struct net_t *net, uint64_t seq);
 
 
 

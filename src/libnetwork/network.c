@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <repos.h>
 #include <esim.h>
+#include <misc.h>
 #include <mhandle.h>
 
 
@@ -59,7 +60,7 @@ static int EV_NET_RECEIVE;
 static void net_error(char *fmt, ...) {
 	va_list va;
 	va_start(va, fmt);
-	fprintf(stderr, "libnetwork error: ");
+	fprintf(stderr, "fatal: libnetwork: ");
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 	abort();
@@ -170,9 +171,13 @@ static void net_buffer_extract(struct net_t *net, struct net_buffer_t *buffer, s
 static void net_buffer_notify(struct net_t *net, struct net_buffer_t *buffer, int event,
 	struct net_stack_t *stack)
 {
-	assert(buffer->size > 0 && buffer->count > 0);
-	assert(!stack->wakeup_event && !stack->wakeup_next);
+	/* No event */
+	if (event == ESIM_EV_NONE)
+		return;
 	
+	/* Schedule notification */
+	assert(buffer->size > 0 && buffer->count > 0);
+	assert(stack && !stack->wakeup_event && !stack->wakeup_next);
 	stack->wakeup_event = event;
 	if (!buffer->wakeup_tail)
 		buffer->wakeup_head = buffer->wakeup_tail = stack;
@@ -181,6 +186,56 @@ static void net_buffer_notify(struct net_t *net, struct net_buffer_t *buffer, in
 		buffer->wakeup_tail = stack;
 	}
 }
+
+
+/* Insert a message into the in-flight messages hash table. */
+static void net_msg_table_insert(struct net_t *net, struct net_msg_t *msg)
+{
+	int index;
+
+	index = msg->seq % NET_MSG_TABLE_SIZE;
+	assert(!msg->bucket_next);
+	msg->bucket_next = net->msg_table[index];
+	net->msg_table[index] = msg;
+}
+
+
+/* Return a message from the in-flight messages hash table */
+static struct net_msg_t *net_msg_table_get(struct net_t *net, uint64_t seq)
+{
+	int index;
+	struct net_msg_t *msg;
+
+	index = seq % NET_MSG_TABLE_SIZE;
+	msg = net->msg_table[index];
+	while (msg && msg->seq != seq)
+		msg = msg->bucket_next;
+	return msg;
+}
+
+
+/* Extract a message from the in-flight messages hash table */
+static struct net_msg_t *net_msg_table_extract(struct net_t *net, uint64_t seq)
+{
+	int index;
+	struct net_msg_t *prev, *msg;
+
+	index = seq % NET_MSG_TABLE_SIZE;
+	prev = NULL;
+	msg = net->msg_table[index];
+	while (msg && msg->seq != seq) {
+		prev = msg;
+		msg = msg->bucket_next;
+	}
+	if (!msg)
+		net_error("msg %lld not in hash table", (long long) seq);
+	if (prev)
+		prev->bucket_next = msg->bucket_next;
+	else
+		net->msg_table[index] = msg->bucket_next;
+	return msg;
+}
+
 
 
 
@@ -212,8 +267,6 @@ static void net_stack_return(struct net_stack_t *stack)
 	esim_schedule_event(retevent, retstack, 0);
 }
 
-#define MAX(x, y) ((x)>(y)?(x):(y))
-
 #define NET_CAN_TRANSFER  0
 #define NET_DO_TRANSFER   1
 
@@ -240,6 +293,10 @@ static int net_transfer(struct net_t *net, struct net_msg_t *msg, int how, int l
 	struct net_port_t *port;
 	struct net_link_t *link;
 	struct net_buffer_t *buffer;
+
+	/* Check that routes have been calculated */
+	if (!net->routing_table)
+		net_error("%s: no routing table", net->name);
 
 	/* Store current position */
 	node_idx = msg->node_idx;
@@ -466,8 +523,6 @@ static int net_transfer(struct net_t *net, struct net_msg_t *msg, int how, int l
 	}
 
 	/* Destination reached */
-	if (how == NET_CAN_TRANSFER)
-		return 1;
 	return lat;
 }
 
@@ -520,6 +575,7 @@ static void net_handler(int event, void *data)
 			net->lat_acc += lat;
 
 			/* Free message and stack */
+			net_msg_table_extract(net, msg->seq);
 			repos_free_object(net_msg_repos, msg);
 			net_stack_return(stack);
 		} else
@@ -873,7 +929,7 @@ int net_can_send(struct net_t *net, int src_node_idx, int dst_node_idx)
 	assert(!net->nodes[msg->node_idx].oports[msg->port_idx].buffer);
 
 	/* Try to send */
-	result = net_transfer(net, msg, NET_CAN_TRANSFER, 0, 0, NULL);
+	result = net_transfer(net, msg, NET_CAN_TRANSFER, 0, ESIM_EV_NONE, NULL);
 
 	/* Free msg and return result */
 	repos_free_object(net_msg_repos, msg);
@@ -911,6 +967,9 @@ uint64_t net_send_ev(struct net_t *net, int src_node_idx, int dst_node_idx, int 
 	msg->seq = ++net->msg_seq;
 	msg->send_cycle = esim_cycle;
 
+	/* Insert message into hash table of in-flight messages */
+	net_msg_table_insert(net, msg);
+
 	/* Initial message position */
 	msg->node_idx = src_node_idx;
 	msg->where = NET_WHERE_OBUFFER;
@@ -924,6 +983,12 @@ uint64_t net_send_ev(struct net_t *net, int src_node_idx, int dst_node_idx, int 
 	stack->retstack = retstack;
 	esim_execute_event(EV_NET_SEND, stack);
 	return msg->seq;
+}
+
+
+int net_in_transit(struct net_t *net, uint64_t seq)
+{
+	return net_msg_table_get(net, seq) != NULL;
 }
 
 

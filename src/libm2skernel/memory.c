@@ -23,6 +23,9 @@
 unsigned long mem_mapped_space = 0;
 unsigned long mem_max_mapped_space = 0;
 
+/* Safe mode */
+int mem_safe_mode = 1;
+
 
 /* Return mem page corresponding to an address. */
 struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr)
@@ -242,7 +245,7 @@ struct mem_t *mem_create()
 	struct mem_t *mem;
 	mem = calloc(1, sizeof(struct mem_t));
 	mem->sharing = 1;
-	mem->safe = 1;
+	mem->safe = mem_safe_mode;
 	return mem;
 }
 
@@ -455,7 +458,7 @@ void mem_dump(struct mem_t *mem, char *filename, uint32_t start, uint32_t end)
 	}
 
 	/* Restore safe mode */
-	mem->safe = 1;
+	mem->safe = mem_safe_mode;
 	fclose(f);
 }
 
@@ -481,7 +484,7 @@ void mem_load(struct mem_t *mem, char *filename, uint32_t start)
 	}
 
 	/* Restore safe mode */
-	mem->safe = 1;
+	mem->safe = mem_safe_mode;
 	fclose(f);
 }
 

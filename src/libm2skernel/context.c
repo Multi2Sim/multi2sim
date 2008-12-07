@@ -186,13 +186,15 @@ void ctx_execute_inst(struct ctx_t *ctx)
 	isa_inst_count++;
 
 	/* Read instruction from memory */
-	ctx->mem->safe = !ctx_get_status(ctx, ctx_specmode);
+	ctx->mem->safe = mem_safe_mode;
+	if (ctx_get_status(ctx, ctx_specmode))
+		ctx->mem->safe = 0;
 	buf = mem_get_buffer(ctx->mem, ctx->regs->eip, 20, mem_access_exec);
 	if (!buf) {
 		buf = &fixed;
 		mem_access(ctx->mem, ctx->regs->eip, 20, buf, mem_access_exec);
 	}
-	ctx->mem->safe = 1;
+	ctx->mem->safe = mem_safe_mode;
 
 	/* Disassemble */
 	x86_disasm(buf, isa_eip, &isa_inst);

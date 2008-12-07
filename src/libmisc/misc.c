@@ -161,12 +161,16 @@ char *map_value(struct string_map_t *map, int value)
 }
 
 
-void map_value_string(struct string_map_t *map, int value, char *out, int size)
+void map_value_string(struct string_map_t *map, int value, char *buf, int size)
 {
-	char *s = map_value(map, value);
-	strncpy(out, s, size - 1);
-	if (!strcmp(s, unknown))
-		sprintf(out, "%d", value);
+	int i;
+	for (i = 0; i < map->count; i++) {
+		if (map->map[i].value == value) {
+			snprintf(buf, size, "%s", map->map[i].string);
+			return;
+		}
+	}
+	snprintf(buf, size, "%d", value);
 }
 
 
