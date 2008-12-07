@@ -28,6 +28,7 @@ struct elf_symbol_t {
 
 struct elf_file_t {
 	FILE *f;
+	char path[300];
 	void *shstr;  /* Section header string table */
 	Elf32_Ehdr ehdr;  /* ELF header */
 	Elf32_Shdr *shdr;  /* Section headers (array of ehdr.shnum elements) */
@@ -118,15 +119,19 @@ static int elf_read_symtab(struct elf_file_t *f, int section)
 		f->symtab_size = f->symtab_count + count;
 		f->symtab = realloc(f->symtab, f->symtab_size * sizeof(struct elf_symbol_t));
 		if (!f->symtab)
-			return 1;
+			return 0;
 	}
 
 	/* Insert symbols */
 	for (i = 0; i < count; i++) {
-		symbol = &f->symtab[f->symtab_count++];
 		sym = (Elf32_Sym *) buf + i;
+		if (* (char *) (bufnames + sym->st_name) == '\0' || !sym->st_value)
+			continue;
+		symbol = &f->symtab[f->symtab_count++];
 		symbol->value = sym->st_value;
 		symbol->name = strdup(bufnames + sym->st_name);
+		if (!symbol->name)
+			return 0;
 	}
 
 	/* Success */
@@ -199,7 +204,7 @@ static int elf_read_shdr(struct elf_file_t *f)
 	/* Load symbol table and sort it by address */
 	elf_debug("Symbol table:\n");
 	for (i = 0; i < f->ehdr.e_shnum; i++)
-		if (f->shdr[i].sh_type == 2)
+		if (f->shdr[i].sh_type == 2 || f->shdr[i].sh_type == 11)
 			elf_read_symtab(f, i);
 	if (f->symtab)
 		qsort(f->symtab, f->symtab_count, sizeof(struct elf_symbol_t), elf_symbol_compare);
@@ -299,6 +304,7 @@ struct elf_file_t *elf_open(char *path)
 		elf_debug("%s: cannot open path\n", path);
 		return NULL;
 	}
+	strncpy(f->path, path, sizeof(f->path));
 	elf_debug("\n%s: reading ELF file\n", path);
 
 	/* Read header */
@@ -430,6 +436,8 @@ char *elf_get_symbol(struct elf_file_t *f, uint32_t addr, uint32_t *poffs)
 	/* Binary search */
 	if (!f->symtab_count)
 		return NULL;
+	if (addr < f->symtab[0].value)
+		return NULL;
 	min = 0;
 	max = f->symtab_count;
 	while (min + 1 < max) {
@@ -450,6 +458,37 @@ char *elf_get_symbol(struct elf_file_t *f, uint32_t addr, uint32_t *poffs)
 	if (poffs)
 		*poffs = addr - f->symtab[min].value;
 	return f->symtab[min].name;
+}
+
+
+/* Add to the destination elf file all symbols read in the source elf file.
+ * Return 0 if operation failed. */
+int elf_merge_symtab(struct elf_file_t *f, struct elf_file_t *src)
+{
+	int i;
+	struct elf_symbol_t *srcsym, *dstsym;
+
+	/* Resize table */
+	if (f->symtab_count + src->symtab_count > f->symtab_size) {
+		f->symtab_size = f->symtab_count + src->symtab_count;
+		f->symtab = realloc(f->symtab, f->symtab_size * sizeof(struct elf_symbol_t));
+		if (!f->symtab)
+			return 0;
+	}
+
+	/* Add symbols */
+	for (i = 0; i < src->symtab_count; i++) {
+		srcsym = &src->symtab[i];
+		dstsym = &f->symtab[f->symtab_count++];
+		dstsym->value = srcsym->value;
+		dstsym->name = strdup(srcsym->name);
+		if (!dstsym->name)
+			return 0;
+	}
+
+	/* Sort table */
+	qsort(f->symtab, f->symtab_count, sizeof(struct elf_symbol_t), elf_symbol_compare);
+	return 1;
 }
 
 

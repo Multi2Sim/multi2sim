@@ -46,9 +46,11 @@ struct ctx_t;
 
 /* Memory */
 
-#define MEM_LOGPAGESIZE		12
-#define MEM_PAGESIZE		(1<<MEM_LOGPAGESIZE)
-#define MEM_PAGE_COUNT		1024
+#define MEM_LOGPAGESIZE    12
+#define MEM_PAGESHIFT      MEM_LOGPAGESIZE
+#define MEM_PAGESIZE       (1<<MEM_LOGPAGESIZE)
+#define MEM_PAGEMASK       (~(MEM_PAGESIZE-1))
+#define MEM_PAGE_COUNT     1024
 
 enum mem_access_enum {
 	mem_access_read = 0x01,
@@ -56,6 +58,9 @@ enum mem_access_enum {
 	mem_access_exec = 0x04,
 	mem_access_init = 0x08
 };
+
+/* Safe mode */
+extern int mem_safe_mode;
 
 /* A 4KB page of memory */
 struct mem_page_t {
@@ -155,6 +160,7 @@ uint32_t elf_phdr_size(struct elf_file_t *f);
 
 char *elf_get_symbol(struct elf_file_t *f, uint32_t addr, uint32_t *poffs);
 uint32_t elf_get_entry(struct elf_file_t *f);
+int elf_merge_symtab(struct elf_file_t *f, struct elf_file_t *src);
 
 
 
@@ -177,7 +183,7 @@ struct loader_t {
 	uint32_t stack_base, stack_top, stack_size;
 	uint32_t text_size;
 	uint32_t environ_base, brk, bottom;
-	uint32_t prog_entry;
+	uint32_t prog_entry, interp_prog_entry;
 	uint32_t phdt_base, phdr_count;
 };
 

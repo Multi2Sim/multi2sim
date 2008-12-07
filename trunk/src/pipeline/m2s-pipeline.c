@@ -14,6 +14,7 @@
 
 #define MAX_CTX 10
 #define STATE_INTERVAL 100
+#define KBRD_BUF_SIZE 10
 
 
 
@@ -52,6 +53,7 @@ struct ctx_t *ctx_array[MAX_CTX];
 int ctx_count;
 int active_ctx = 0;
 int show_mops = 0;
+char kbrd_buf[KBRD_BUF_SIZE];
 
 
 
@@ -739,6 +741,11 @@ void ctx_update_display(struct ctx_t *ctx)
 	color = ctx == ctx_array[active_ctx] ? 5 : 8;
 	wattron(ctx->wnd, COLOR_PAIR(color));
 	sprintf(buf, "cycle=%ld, seq=%ld, lastcycle=%ld", ctx->leftcycle, ctx->topseq, ctx->lastcycle);
+	if (kbrd_buf[0]) {
+		strcat(buf, " - (");
+		strcat(buf, kbrd_buf);
+		strcat(buf, ")");
+	}
 	buf_fill(buf, ctx->maxx, ' ');
 	mvwprintw(ctx->wnd, ctx->maxy - 1, 0, buf);
 	wattroff(ctx->wnd, COLOR_PAIR(color));
@@ -898,12 +905,19 @@ int main(int argc, char **argv)
 
 		case KEY_HOME:
 		case 'g':
-			ctx->leftcycle = 0;
-			ctx->topseq = 0;
+			if (kbrd_buf[0]) {
+				ctx->leftcycle = atol(kbrd_buf);
+				ctx_update_topseq(ctx);
+				kbrd_buf[0] = 0;
+			} else {
+				ctx->leftcycle = 0;
+				ctx->topseq = 0;
+			}
 			break;
 
 		case KEY_END:
 		case 'G':
+			kbrd_buf[0] = 0;
 			ctx->leftcycle = ctx->lastcycle - ctx->cols + 1;
 			if (ctx->leftcycle < 0)
 				ctx->leftcycle = 0;
@@ -913,6 +927,16 @@ int main(int argc, char **argv)
 		case 'm':
 			show_mops = !show_mops;
 			break;
+		case KEY_BACKSPACE:
+			if (kbrd_buf[0])
+				kbrd_buf[strlen(kbrd_buf) - 1] = '\0';
+			break;
+		default:
+			if (ch >= '0' && ch <= '9' && strlen(kbrd_buf) < KBRD_BUF_SIZE - 1) {
+				kbrd_buf[strlen(kbrd_buf) + 1] = '\0';
+				kbrd_buf[strlen(kbrd_buf)] = ch;
+			}
+
 		}
 	} while (!done);
 
