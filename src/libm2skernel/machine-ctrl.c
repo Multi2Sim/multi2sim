@@ -50,10 +50,12 @@
 	else isa_store_rm8(0); }
 
 #define op_jcc_rel8(cc) void op_j##cc##_rel8_impl() { \
-	if (cc_##cc) isa_regs->eip += (int8_t) isa_inst.imm.b; }
+	isa_target = isa_regs->eip + (int8_t) isa_inst.imm.b; \
+	if (cc_##cc) isa_regs->eip = isa_target; }
 
 #define op_jcc_rel32(cc) void op_j##cc##_rel32_impl() { \
-	if (cc_##cc) isa_regs->eip += isa_inst.imm.d; }
+	isa_target = isa_regs->eip + isa_inst.imm.d; \
+	if (cc_##cc) isa_regs->eip = isa_target; }
 
 #define op_cmov_r16_rm16(cc) void op_cmov##cc##_r16_rm16_impl() { \
 	if (cc_##cc) isa_store_r16(isa_load_rm16()); }
@@ -87,12 +89,14 @@ op_cc_all(cmov_r32_rm32)
 
 
 void op_jecxz_rel8_impl() {
+	isa_target = isa_regs->eip + isa_inst.imm.b;
 	if (!isa_load_reg(reg_ecx))
-		isa_regs->eip += isa_inst.imm.b;
+		isa_regs->eip = isa_target;
 }
 
 void op_jcxz_rel8_impl() {
+	isa_target = isa_regs->eip + isa_inst.imm.b;
 	if (!isa_load_reg(reg_cx))
-		isa_regs->eip += isa_inst.imm.b;
+		isa_regs->eip = isa_target;
 }
 

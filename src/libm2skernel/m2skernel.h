@@ -206,6 +206,7 @@ extern struct ctx_t *isa_ctx;
 extern struct regs_t *isa_regs;
 extern struct mem_t *isa_mem;
 extern uint32_t isa_eip;
+extern uint32_t isa_target;
 extern x86_inst_t isa_inst;
 extern uint64_t isa_inst_count;
 extern int isa_function_level;

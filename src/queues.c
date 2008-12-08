@@ -29,7 +29,7 @@ uint32_t fetchq_size = 64;
 
 void fetchq_reg_options()
 {
-	opt_reg_uint32("-fetchq_size", "fetch queue size (in CISC inst)", &fetchq_size);
+	opt_reg_uint32("-fetchq_size", "fetch queue size in bytes", &fetchq_size);
 }
 
 
@@ -59,10 +59,26 @@ void fetchq_done()
 }
 
 
-int fetchq_can_insert(int core, int thread)
+struct uop_t *fetchq_remove(int core, int thread, int index)
 {
 	struct list_t *fetchq = THREAD.fetchq;
-	return list_count(fetchq) < fetchq_size;
+	struct uop_t *uop;
+	assert(index >= 0 && index < list_count(fetchq));
+	uop = list_remove_at(fetchq, index);
+	uop->in_fetchq = 0;
+	if (!uop->fetch_tcache && !uop->mop_index) {
+		THREAD.fetchq_occ -= uop->mop_size;
+		assert(THREAD.fetchq_occ >= 0);
+	}
+	if (uop->fetch_tcache) {
+		THREAD.tcacheq_occ--;
+		assert(THREAD.tcacheq_occ >= 0);
+	}
+	if (!list_count(fetchq)) {
+		assert(!THREAD.fetchq_occ);
+		assert(!THREAD.tcacheq_occ);
+	}
+	return uop;
 }
 
 
@@ -76,10 +92,65 @@ void fetchq_recover(int core, int thread)
 		assert(uop->thread == thread);
 		if (!uop->specmode)
 			break;
-		uop_pdg_recover(uop);
-		list_remove_at(fetchq, list_count(fetchq) - 1);
+		uop = fetchq_remove(core, thread, list_count(fetchq) - 1);
 		ptrace_end_uop(uop);
-		uop->in_fetchq = FALSE;
+		uop_free_if_not_queued(uop);
+	}
+}
+
+
+
+
+/* Uop Queue */
+
+uint32_t uopq_size = 32;
+
+
+void uopq_reg_options()
+{
+	opt_reg_uint32("-uopq_size", "uop queue size in microinstructions", &uopq_size);
+}
+
+
+void uopq_init()
+{
+	int core, thread;
+	FOREACH_CORE FOREACH_THREAD
+		THREAD.uopq = list_create(uopq_size);
+}
+
+
+void uopq_done()
+{
+	int core, thread;
+	struct list_t *uopq;
+	struct uop_t *uop;
+
+	FOREACH_CORE FOREACH_THREAD {
+		uopq = THREAD.uopq;
+		while (list_count(uopq)) {
+			uop = list_remove_at(uopq, 0);
+			uop->in_uopq = 0;
+			uop_free_if_not_queued(uop);
+		}
+		list_free(uopq);
+	}
+}
+
+
+void uopq_recover(int core, int thread)
+{
+	struct list_t *uopq = THREAD.uopq;
+	struct uop_t *uop;
+
+	while (list_count(uopq)) {
+		uop = list_get(uopq, list_count(uopq) - 1);
+		assert(uop->thread == thread);
+		if (!uop->specmode)
+			break;
+		list_remove_at(uopq, list_count(uopq) - 1);
+		ptrace_end_uop(uop);
+		uop->in_uopq = FALSE;
 		uop_free_if_not_queued(uop);
 	}
 }
@@ -136,12 +207,6 @@ int iq_can_insert(struct uop_t *uop)
 	int thread = uop->thread;
 	int count, size;
 
-	/* dcra */
-	if (p_fetch_policy == p_fetch_policy_dcra && iq_kind == iq_kind_shared) {
-		THREAD.dcra_active[dcra_resource_iq] = DCRA_ACTIVE_MAX;
-		return THREAD.iq_count < THREAD.dcra_limit[dcra_resource_iq];
-	}
-
 	size = iq_kind == iq_kind_private ? iq_size : iq_size * p_threads;
 	count = iq_kind == iq_kind_private ? THREAD.iq_count : CORE.iq_count;
 	return count < size;
@@ -194,7 +259,6 @@ void iq_recover(int core, int thread)
 	while (!lnlist_eol(iq)) {
 		uop = lnlist_get(iq);
 		if (uop->specmode) {
-			uop_pdg_recover(uop);
 			iq_remove(core, thread);
 			uop_free_if_not_queued(uop);
 			continue;
@@ -255,12 +319,6 @@ int lq_can_insert(struct uop_t *uop)
 	int thread = uop->thread;
 	int count, size;
 
-	/* dcra */
-	if (p_fetch_policy == p_fetch_policy_dcra && lq_kind == lq_kind_shared) {
-		THREAD.dcra_active[dcra_resource_lq] = DCRA_ACTIVE_MAX;
-		return THREAD.lq_count < THREAD.dcra_limit[dcra_resource_lq];
-	}
-
 	size = lq_kind == lq_kind_private ? lq_size : lq_size * p_threads;
 	count = lq_kind == lq_kind_private ? THREAD.lq_count : CORE.lq_count;
 	return count < size;
@@ -313,7 +371,6 @@ void lq_recover(int core, int thread)
 	while (!lnlist_eol(lq)) {
 		uop = lnlist_get(lq);
 		if (uop->specmode) {
-			uop_pdg_recover(uop);
 			lq_remove(core, thread);
 			uop_free_if_not_queued(uop);
 			continue;
@@ -404,12 +461,6 @@ int sq_can_insert(struct uop_t *uop)
 	int core = uop->core;
 	int thread = uop->thread;
 
-	/* dcra */
-	if (p_fetch_policy == p_fetch_policy_dcra && lq_kind == lq_kind_shared) {
-		THREAD.dcra_active[dcra_resource_sq] = DCRA_ACTIVE_MAX;
-		return THREAD.sq_count < THREAD.dcra_limit[dcra_resource_sq];
-	}
-
 	return THREAD.sq_count < sq_size;
 }
 
@@ -424,7 +475,6 @@ void sq_recover(int core, int thread)
 	while (!lnlist_eol(sq)) {
 		uop = lnlist_get(sq);
 		if (uop->specmode) {
-			uop_pdg_recover(uop);
 			sq_remove(core, thread);
 			uop_free_if_not_queued(uop);
 			continue;
@@ -512,7 +562,7 @@ void eventq_insert(struct lnlist_t *eventq, struct uop_t *uop)
 		lnlist_next(eventq);
 	}
 	lnlist_insert(eventq, uop);
-	uop->in_eventq = TRUE;
+	uop->in_eventq = 1;
 }
 
 
@@ -526,7 +576,7 @@ struct uop_t *eventq_extract(struct lnlist_t *eventq)
 	assert(uop_exists(uop));
 	assert(uop->in_eventq);
 	lnlist_remove(eventq);
-	uop->in_eventq = FALSE;
+	uop->in_eventq = 0;
 	return uop;
 }
 
@@ -540,7 +590,6 @@ void eventq_recover(int core, int thread)
 	while (!lnlist_eol(eventq)) {
 		uop = lnlist_get(eventq);
 		if (uop->thread == thread && uop->specmode) {
-			uop_pdg_recover(uop);
 			lnlist_remove(eventq);
 			uop->in_eventq = 0;
 			uop_free_if_not_queued(uop);

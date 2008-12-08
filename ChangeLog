@@ -342,3 +342,16 @@
 	* queues.c, phregs.c: default parameters did not make much sense. They
 		have been changed to: RF=80, ROB=64, IQ=40, LQ=20, SQ=20.
 
+2009-11-05
+	* bpred.c: branch prediction redesigned and a new implementation made.
+		The new design allows for multiple branch prediction. It has
+		been documented in the m2s-doc project.
+
+2009-11-06
+	* decode.c: new pipeline stage that decouples instruction decode from
+		instruction fetch.
+	* fetch.c: processor front-end redesigned and reimplemented with
+		a detailed documentation in the m2s-doc project.
+		Fetch policies made code at fetch too complex. They are
+		removed for the next version.
+

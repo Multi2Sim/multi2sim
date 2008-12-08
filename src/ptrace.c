@@ -63,9 +63,7 @@ void ptrace_new_uop(struct uop_t *uop)
 		return;
 	
 	/* uop status string */
-	sprintf(status, "%s%s",
-		uop->mispred ? "m" : "-",
-		uop->specmode ? "s" : "-");
+	sprintf(status, "%s", uop->specmode ? "s" : "-");
 	
 	fprintf(ptrace_outfd, "+ %llu %d 0x%x %s ",
 		(long long) uop->seq, uop->ctx->pid, uop->eip, status);

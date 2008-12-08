@@ -36,8 +36,8 @@ enum p_recover_kind_enum p_recover_kind = p_recover_kind_writeback;
 uint32_t p_recover_penalty = 0;
 
 enum p_fetch_kind_enum p_fetch_kind = p_fetch_kind_timeslice;
-enum p_fetch_policy_enum p_fetch_policy = p_fetch_policy_equal;
-uint32_t p_fetch_width = 4;
+
+uint32_t p_decode_width = 4;
 
 enum p_dispatch_kind_enum p_dispatch_kind = p_dispatch_kind_timeslice;
 uint32_t p_dispatch_width = 4;
@@ -56,8 +56,7 @@ uint32_t p_commit_width = 4;
 void p_reg_options()
 {
 	static char *p_recover_kind_map[] = { "writeback", "commit" };
-	static char *p_fetch_kind_map[] = { "timeslice", "switchonevent", "multiple" };
-	static char *p_fetch_policy_map[] = { "equal", "icount", "pdg", "dcra" };
+	static char *p_fetch_kind_map[] = { "shared", "timeslice", "switchonevent" };
 	static char *p_dispatch_kind_map[] = { "shared", "timeslice" };
 	static char *p_issue_kind_map[] = { "shared", "timeslice" };
 	static char *p_commit_kind_map[] = { "shared", "timeslice" };
@@ -79,11 +78,8 @@ void p_reg_options()
 		&p_quantum);
 	opt_reg_uint32("-switch_penalty", "in switchonevent, thread switch penalty",
 		&p_switch_penalty);
-	opt_reg_enum("-fetch_kind", "fetch policy {timeslice|switchonevent|multiple}",
+	opt_reg_enum("-fetch_kind", "fetch policy {shared|timeslice|switchonevent}",
 		(int *) &p_fetch_kind, p_fetch_kind_map, 3);
-	opt_reg_enum("-fetch_policy", "{equal|icount|pdg|dcra}",
-		(int *) &p_fetch_policy, p_fetch_policy_map, 4);
-	opt_reg_uint32("-fetch_width", "fetch width (in instr/cycle)", &p_fetch_width);
 	
 	opt_reg_enum("-dispatch_kind", "dispatch stage sharing {shared|timeslice}",
 		(int *) &p_dispatch_kind, p_dispatch_kind_map, 2);
@@ -100,6 +96,7 @@ void p_reg_options()
 
 	/* other options */
 	bpred_reg_options();
+	tcache_reg_options();
 	phregs_reg_options();
 	fetchq_reg_options();
 	rob_reg_options();
@@ -115,10 +112,6 @@ void p_thread_init(int core, int thread)
 	/* Save block size of corresponding instruction cache. */
 	THREAD.fetch_bsize = cache_system_block_size(core, thread,
 		cache_kind_inst);
-
-	/* For PDG */
-	if (p_fetch_policy == p_fetch_policy_pdg)
-		THREAD.lmpred = calloc(1, PDG_LMPRED_SIZE);
 }
 
 
@@ -142,18 +135,11 @@ void p_init()
 	FOREACH_CORE
 		p_core_init(core);
 
-	/* dcra */
-	if (p_fetch_policy == p_fetch_policy_dcra) {
-		p->dcra_resource_size[dcra_resource_fetchq] = fetchq_size * p_threads;
-		p->dcra_resource_size[dcra_resource_iq] = iq_size * p_threads;
-		p->dcra_resource_size[dcra_resource_lq] = lq_size * p_threads;
-		p->dcra_resource_size[dcra_resource_sq] = sq_size * p_threads;
-		p->dcra_resource_size[dcra_resource_phregs] = phregs_size * p_threads;
-	}
-	
 	phregs_init();
 	bpred_init();
+	tcache_init();
 	fetchq_init();
+	uopq_init();
 	rob_init();
 	iq_init();
 	lq_init();
@@ -167,7 +153,7 @@ void p_init()
 void p_done()
 {
 	uint64_t now = ke_timer();
-	int core, thread;
+	int core;
 
 	/* Global stats */
 	fprintf(stderr, "sim.cycles  %lld  # Simulation cycles\n",
@@ -195,8 +181,8 @@ void p_done()
 			(long long) p->di_stall[di_stall_used]);
 		fprintf(stderr, "di.stall[spec]  %lld  # Dispatched slots used in spec mode\n",
 			(long long) p->di_stall[di_stall_spec]);
-		fprintf(stderr, "di.stall[fetchq]  %lld  # Wasted dispatch slots due to empty fetch queue\n",
-			(long long) p->di_stall[di_stall_fetchq]);
+		fprintf(stderr, "di.stall[uopq]  %lld  # Wasted dispatch slots due to empty uop queue\n",
+			(long long) p->di_stall[di_stall_uopq]);
 		fprintf(stderr, "di.stall[rob]  %lld  # Wasted dispatch slots due to full rob\n",
 			(long long) p->di_stall[di_stall_rob]);
 		fprintf(stderr, "di.stall[iq]  %lld  # Wasted dispatch slots due to full iq\n",
@@ -243,23 +229,20 @@ void p_done()
 	
 	/* Finalize structures */
 	fetchq_done();
+	uopq_done();
 	rob_done();
 	iq_done();
 	lq_done();
 	sq_done();
 	eventq_done();
 	bpred_done();
+	tcache_done();
 	phregs_done();
 	fu_done();
 
 	/* Free processor */
-	FOREACH_CORE {
-		FOREACH_THREAD {
-			if (p_fetch_policy == p_fetch_policy_pdg)
-				free(THREAD.lmpred);
-		}
+	FOREACH_CORE
 		free(CORE.thread);
-	}
 	free(p->core);
 	free(p);
 }
@@ -385,6 +368,7 @@ void p_context_map_update(void)
 
 
 uint64_t stage_time_fetch;
+uint64_t stage_time_decode;
 uint64_t stage_time_dispatch;
 uint64_t stage_time_issue;
 uint64_t stage_time_writeback;
@@ -418,6 +402,7 @@ void p_stages()
 	STAGE(writeback);
 	STAGE(issue);
 	STAGE(dispatch);
+	STAGE(decode);
 	STAGE(fetch);
 }
 #undef STAGE
@@ -475,75 +460,6 @@ uint32_t p_tlb_address(int ctx, uint32_t vaddr)
 {
 	assert(ctx >= 0 && ctx < p_cores * p_threads);
 	return (vaddr >> MEM_LOGPAGESIZE) * p_cores * p_threads + ctx;
-}
-
-
-/* Assign thread attributes for dcra fetch policy */
-void p_update_dcra(int core)
-{
-	int thread, i;
-	double e_slow, e_fast, sharing_factor;
-	
-	/* Reset DCRA */
-	CORE.dcra_fast_count = 0;
-	CORE.dcra_slow_count = 0;
-	for (i = 0; i < dcra_resource_count; i++) {
-		CORE.dcra_active_count[i] = 0;
-		CORE.dcra_inactive_count[i] = 0;
-		CORE.dcra_fast_active_count[i] = 0;
-		CORE.dcra_slow_active_count[i] = 0;
-	}
-
-	/* Update DCRA indicators */
-	FOREACH_THREAD {
-
-		/* Is this thread FAST? */
-		THREAD.dcra_fast = !eventq_cachemiss(core, thread);
-		if (THREAD.dcra_fast)
-			CORE.dcra_fast_count++;
-		else
-			CORE.dcra_slow_count++;
-
-		/* Decrease ACTIVE counter for each resource */
-		for (i = 0; i < dcra_resource_count; i++) {
-			if (THREAD.dcra_active[i])
-				THREAD.dcra_active[i]--;
-
-			if (THREAD.dcra_active[i])
-				CORE.dcra_active_count[i]++;
-			else
-				CORE.dcra_inactive_count[i]++;
-
-			if (THREAD.dcra_active[i] && THREAD.dcra_fast)
-				CORE.dcra_fast_active_count[i]++;
-			if (THREAD.dcra_active[i] && !THREAD.dcra_fast)
-				CORE.dcra_slow_active_count[i]++;
-		}
-	}
-
-	/* Calculate resource limits */
-	for (i = 0; i < dcra_resource_count; i++) {
-		sharing_factor = 1.0 / CORE.dcra_active_count[i];
-		e_slow = (double) p->dcra_resource_size[i] / CORE.dcra_active_count[i] +
-			(1.0 + sharing_factor * CORE.dcra_fast_active_count[i]);
-		e_fast = (p->dcra_resource_size[i] - CORE.dcra_slow_active_count[i] * e_slow) /
-			CORE.dcra_fast_active_count[i];
-
-		/* Assign limits */
-		FOREACH_THREAD {
-			if (!THREAD.dcra_active[i]) {
-				THREAD.dcra_limit[i] = 0;
-				continue;
-			}
-			if (THREAD.dcra_fast) {
-				assert(e_fast >= 1.0);
-				THREAD.dcra_limit[i] = e_fast;
-			} else {
-				assert(e_slow >= 1.0);
-				THREAD.dcra_limit[i] = e_slow;
-			}
-		}
-	}
 }
 
 
