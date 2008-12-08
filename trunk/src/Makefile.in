@@ -44,10 +44,11 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_m2s_OBJECTS = bpred.$(OBJEXT) commit.$(OBJEXT) dispatch.$(OBJEXT) \
-	fetch.$(OBJEXT) fu.$(OBJEXT) issue.$(OBJEXT) m2s.$(OBJEXT) \
-	phregs.$(OBJEXT) processor.$(OBJEXT) ptrace.$(OBJEXT) \
-	queues.$(OBJEXT) recover.$(OBJEXT) rob.$(OBJEXT) uop.$(OBJEXT) \
+am_m2s_OBJECTS = bpred.$(OBJEXT) commit.$(OBJEXT) decode.$(OBJEXT) \
+	dispatch.$(OBJEXT) fetch.$(OBJEXT) fu.$(OBJEXT) \
+	issue.$(OBJEXT) m2s.$(OBJEXT) phregs.$(OBJEXT) \
+	processor.$(OBJEXT) ptrace.$(OBJEXT) queues.$(OBJEXT) \
+	recover.$(OBJEXT) rob.$(OBJEXT) tcache.$(OBJEXT) uop.$(OBJEXT) \
 	writeback.$(OBJEXT)
 m2s_OBJECTS = $(am_m2s_OBJECTS)
 m2s_LDADD = $(LDADD)
@@ -61,11 +62,11 @@ m2s_DEPENDENCIES = $(top_builddir)/src/libm2skernel/libm2skernel.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a
 am_m2s_bpred_OBJECTS = bpred.$(OBJEXT) commit.$(OBJEXT) \
-	dispatch.$(OBJEXT) fetch.$(OBJEXT) fu.$(OBJEXT) \
-	issue.$(OBJEXT) m2s-bpred.$(OBJEXT) phregs.$(OBJEXT) \
-	processor.$(OBJEXT) ptrace.$(OBJEXT) queues.$(OBJEXT) \
-	recover.$(OBJEXT) rob.$(OBJEXT) uop.$(OBJEXT) \
-	writeback.$(OBJEXT)
+	decode.$(OBJEXT) dispatch.$(OBJEXT) fetch.$(OBJEXT) \
+	fu.$(OBJEXT) issue.$(OBJEXT) m2s-bpred.$(OBJEXT) \
+	phregs.$(OBJEXT) processor.$(OBJEXT) ptrace.$(OBJEXT) \
+	queues.$(OBJEXT) recover.$(OBJEXT) rob.$(OBJEXT) \
+	tcache.$(OBJEXT) uop.$(OBJEXT) writeback.$(OBJEXT)
 m2s_bpred_OBJECTS = $(am_m2s_bpred_OBJECTS)
 m2s_bpred_LDADD = $(LDADD)
 m2s_bpred_DEPENDENCIES =  \
@@ -264,6 +265,7 @@ m2s_objdump_SOURCES = m2s-objdump.c
 m2s_bpred_SOURCES = \
 	bpred.c \
 	commit.c \
+	decode.c \
 	dispatch.c \
 	fetch.c \
 	fu.c \
@@ -276,6 +278,7 @@ m2s_bpred_SOURCES = \
 	queues.c \
 	recover.c \
 	rob.c \
+	tcache.c \
 	uop.c \
 	uop1.dat \
 	uop2.dat \
@@ -287,6 +290,7 @@ m2s_network_SOURCES = \
 m2s_SOURCES = \
 	bpred.c \
 	commit.c \
+	decode.c \
 	dispatch.c \
 	fetch.c \
 	fu.c \
@@ -299,6 +303,7 @@ m2s_SOURCES = \
 	queues.c \
 	recover.c \
 	rob.c \
+	tcache.c \
 	uop.c \
 	uop1.dat \
 	uop2.dat \
@@ -411,6 +416,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bpred.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commit.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/decode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dispatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fetch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fu.Po@am__quote@
@@ -427,6 +433,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queues.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recover.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rob.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeback.Po@am__quote@
 

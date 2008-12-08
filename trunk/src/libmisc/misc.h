@@ -134,6 +134,7 @@ int read_line(FILE *f, char *line, int size);
 void close_file(FILE *f);
 
 /* other */
+void dump_bin(int x, int digits, FILE *f);
 void dump_ptr(void *ptr, int size, FILE *stream);
 int log_base2(int x);
 

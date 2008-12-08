@@ -159,7 +159,7 @@ void uop_done()
 }
 
 
-static int uop_dep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
+static int uop_dep_parse(struct list_t *uop_list, int dep)
 {
 	/* Regular dependecy */
 	if (!dep || (dep >= DFIRST && dep <= DLAST))
@@ -168,19 +168,19 @@ static int uop_dep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
 	/* Instruction dependent */
 	switch (dep) {
 	case DRM8:
-		return inst->modrm_rm < 4 ? DEAX + inst->modrm_rm : DEAX + inst->modrm_rm - 4;
+		return isa_inst.modrm_rm < 4 ? DEAX + isa_inst.modrm_rm : DEAX + isa_inst.modrm_rm - 4;
 	case DRM16: case DRM32:
-		return DEAX + inst->modrm_rm;
+		return DEAX + isa_inst.modrm_rm;
 	case DR8:
-		return inst->reg < 4 ? DEAX + inst->reg : DEAX + inst->reg - 4;
+		return isa_inst.reg < 4 ? DEAX + isa_inst.reg : DEAX + isa_inst.reg - 4;
 	case DR16: case DR32:
-		return DEAX + inst->reg;
+		return DEAX + isa_inst.reg;
 	case DIR8:
-		return inst->opindex < 4 ? DEAX + inst->opindex : DEAX + inst->opindex - 4;
+		return isa_inst.opindex < 4 ? DEAX + isa_inst.opindex : DEAX + isa_inst.opindex - 4;
 	case DIR16: case DIR32:
-		return DEAX + inst->opindex;
+		return DEAX + isa_inst.opindex;
 	case DSREG:
-		return DES + inst->reg;
+		return DES + isa_inst.reg;
 	}
 
 	panic("uop_dep_parse: unknown dep: 0x%x\n", dep);
@@ -188,23 +188,23 @@ static int uop_dep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
 }
 
 
-static int uop_idep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
+static int uop_idep_parse(struct list_t *uop_list, int dep)
 {
 	struct uop_t *uop;
 
 	/* Load data from memory first if:
 	 *   Dependence is rm8/rm16/rm32 and it is a memory reference.
 	 *   Dependence is m8/m16/m32/m64 */
-	if (((dep == DRM8 || dep == DRM16 || dep == DRM32) && inst->modrm_mod != 3) ||
+	if (((dep == DRM8 || dep == DRM16 || dep == DRM32) && isa_inst.modrm_mod != 3) ||
 		dep == DMEM)
 	{
 		
 		/* Compute effective address */
 		uop = repos_create_object(uop_repos);
 		uop->uop = uop_effaddr;
-		uop->idep[0] = inst->segment ? inst->segment - reg_es + DES : DNONE;
-		uop->idep[1] = inst->ea_base ? inst->ea_base - reg_eax + DEAX : DNONE;
-		uop->idep[2] = inst->ea_index ? inst->ea_index - reg_eax + DEAX : DNONE;
+		uop->idep[0] = isa_inst.segment ? isa_inst.segment - reg_es + DES : DNONE;
+		uop->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - reg_eax + DEAX : DNONE;
+		uop->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - reg_eax + DEAX : DNONE;
 		uop->odep[0] = DEA;
 		uop->fu_class = uop_bank[uop->uop].fu_class;
 		uop->flags = uop_bank[uop->uop].flags;
@@ -225,23 +225,23 @@ static int uop_idep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
 
 	/* Effective address parts */
 	if (dep == DEASEG)
-		return inst->segment ? inst->segment - reg_es + DES : DNONE;
+		return isa_inst.segment ? isa_inst.segment - reg_es + DES : DNONE;
 	if (dep == DEABAS)
-		return inst->ea_base ? inst->ea_base - reg_eax + DEAX : DNONE;
+		return isa_inst.ea_base ? isa_inst.ea_base - reg_eax + DEAX : DNONE;
 	if (dep == DEAIDX)
-		return inst->ea_index ? inst->ea_index - reg_eax + DEAX : DNONE;
+		return isa_inst.ea_index ? isa_inst.ea_index - reg_eax + DEAX : DNONE;
 
 	/* Regular dependence */
-	return uop_dep_parse(inst, uop_list, dep);
+	return uop_dep_parse(uop_list, dep);
 }
 
 
-static int uop_odep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
+static int uop_odep_parse(struct list_t *uop_list, int dep)
 {
 	struct uop_t *uop;
 
 	/* Insert store uops */
-	if (((dep == DRM8 || dep == DRM16 || dep == DRM32) && inst->modrm_mod != 3) ||
+	if (((dep == DRM8 || dep == DRM16 || dep == DRM32) && isa_inst.modrm_mod != 3) ||
 		dep == DMEM)
 	{
 		/* Compute effective address.
@@ -250,9 +250,9 @@ static int uop_odep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
 		 * as source and destination dependence. */
 		uop = repos_create_object(uop_repos);
 		uop->uop = uop_effaddr;
-		uop->idep[0] = inst->segment ? inst->segment - reg_es + DES : DNONE;
-		uop->idep[1] = inst->ea_base ? inst->ea_base - reg_eax + DEAX : DNONE;
-		uop->idep[2] = inst->ea_index ? inst->ea_index - reg_eax + DEAX : DNONE;
+		uop->idep[0] = isa_inst.segment ? isa_inst.segment - reg_es + DES : DNONE;
+		uop->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - reg_eax + DEAX : DNONE;
+		uop->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - reg_eax + DEAX : DNONE;
 		uop->odep[0] = DEA;
 		uop->fu_class = uop_bank[uop->uop].fu_class;
 		uop->flags = uop_bank[uop->uop].flags;
@@ -272,13 +272,13 @@ static int uop_odep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
 	}
 	
 	/* Regular dependence */
-	return uop_dep_parse(inst, uop_list, dep);
+	return uop_dep_parse(uop_list, dep);
 }
 
 
 void uop_free_if_not_queued(struct uop_t *uop)
 {
-	if (uop->in_fetchq || uop->in_iq ||
+	if (uop->in_fetchq || uop->in_uopq || uop->in_iq ||
 		uop->in_lq || uop->in_sq ||
 		uop->in_rob || uop->in_eventq)
 		return;
@@ -345,46 +345,43 @@ void uop_lnlist_dump(struct lnlist_t *uop_list, FILE *f)
 }
 
 
-void uop_decode(x86_inst_t *inst, struct list_t *uop_list)
+/* Decode the macroinstruction currently stored in 'isa_inst', and insert
+ * uops into 'list'. If any decoded microinstruction is a control instruction,
+ * return it, otherwise return the first decoded uop. */
+struct uop_t *uop_decode(struct list_t *list)
 {
 	struct uop_table_entry_t *entry;
-	struct uop_t *uop;
-	int i, count = 0;
+	struct uop_t *uop, *ret = NULL;
+	int count, i;
 
-	for (entry = uop_table[inst->opcode]; entry; entry = entry->next) {
+	count = list_count(list);
+	for (entry = uop_table[isa_inst.opcode]; entry; entry = entry->next) {
 		
-		/* Create uop */
+		/* Create uop. No more uops allowed if a control uop was found. */
+		if (ret)
+			panic("uop_decode: no uop allowed after control uop");
 		uop = repos_create_object(uop_repos);
 
 		/* Input dependencies, maybe add 'load' uops to the list */
 		for (i = 0; i < IDEP_COUNT; i++)
-			uop->idep[i] = uop_idep_parse(inst, uop_list, entry->idep[i]);
+			uop->idep[i] = uop_idep_parse(list, entry->idep[i]);
 
 		/* Insert uop */
-		list_add(uop_list, uop);
+		list_add(list, uop);
 
 		/* Output dependencies, maybe add 'store' uops to the list */
 		for (i = 0; i < ODEP_COUNT; i++)
-			uop->odep[i] = uop_odep_parse(inst, uop_list, entry->odep[i]);
+			uop->odep[i] = uop_odep_parse(list, entry->odep[i]);
 
 		/* Rest */
 		uop->uop = entry->uop;
 		uop->fu_class = uop_bank[entry->uop].fu_class;
 		uop->flags = uop_bank[entry->uop].flags;
-		count++;
+		if (uop->flags & FCTRL)
+			ret = uop;
 	}
-}
 
-
-void uop_pdg_recover(struct uop_t *uop)
-{
-	int core = uop->core;
-	int thread = uop->thread;
-
-	if (uop->lmpred_miss) {
-		uop->lmpred_miss = 0;
-		THREAD.lmpred_misses--;
-		assert(THREAD.lmpred_misses >= 0);
-	}
+	/* Return last conditional uop, or first new uop of the list. */
+	return ret ? ret : list_get(list, count);
 }
 

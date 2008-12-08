@@ -26,78 +26,83 @@ static int can_fetch(int core, int thread)
 
 	/* Context must be running */
 	if (!THREAD.ctx || !ctx_get_status(THREAD.ctx, ctx_running))
-		return FALSE;
+		return 0;
 	
 	/* Fetch stage must not be stalled */
 	if (THREAD.fetch_stall)
-		return FALSE;
+		return 0;
 	
-	/* Fetch queue must have space */
-	if (!fetchq_can_insert(core, thread))
-		return FALSE;
+	/* Fetch queue must have not exceeded the limit of stored bytes
+	 * to be able to store new macroinstructions. */
+	if (THREAD.fetchq_occ >= fetchq_size)
+		return 0;
 	
-	/* Fetch policy - Predictive Data Gating */
-	if (p_fetch_policy == p_fetch_policy_pdg && THREAD.lmpred_misses > PDG_THRESHOLD)
-		return FALSE;
-
 	/* If the next fetch address belongs to a new block, cache system
 	 * must be accessible to read it. */
 	block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
 	if (block != THREAD.fetch_block) {
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
 		if (!cache_system_can_access(core, thread, cache_kind_inst, phaddr))
-			return FALSE;
+			return 0;
 	}
 	
 	/* We can fetch */
-	return TRUE;
+	return 1;
 }
 
 
-/* Take instruction 'isa_inst' and insert uops into the fetch queue. Their access
- * ID is 'fetch_access'. */
-static void fetch_inst(int core, int thread)
+/* Execute in the simulation kernel a macroinstruction.
+ * Decode instruction 'isa_inst' and insert uops into the fetch queue.
+ * As 'uop_decode' does, return the first uop from the fetched macroinst,
+ * or the last control uop if there was any. */
+static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 {
-	struct list_t *fetchq = THREAD.fetchq;
 	struct ctx_t *ctx = THREAD.ctx;
-	int count, i;
-	struct uop_t *uop;
+	struct list_t *fetchq = THREAD.fetchq;
+	int count, newcount, i;
+	struct uop_t *uop, *ret;
 
-	/* Split fetched instruction into uops */
+	/* Functional simulation */
+	THREAD.fetch_eip = THREAD.fetch_neip;
+	ctx_set_eip(ctx, THREAD.fetch_eip);
+	ctx_execute_inst(ctx);
+	THREAD.fetch_neip = THREAD.fetch_eip + isa_inst.size;
+	if (ke->context_count > p->context_map_count)
+		p_context_map_update();
+
+	/* Split macroinstruction into uops stored in list. */
 	count = list_count(fetchq);
-	uop_decode(&isa_inst, fetchq);
+	ret = uop_decode(fetchq);
+	newcount = list_count(fetchq);
 
 	/* Check that at least one instruction was inserted */
-	if (isa_inst.opcode && count == list_count(fetchq) && !ctx_get_status(ctx, ctx_specmode)) {
+	if (isa_inst.opcode && count == newcount && !ctx_get_status(ctx, ctx_specmode)) {
 		fprintf(stderr, "isa_inst: ");
 		x86_inst_dump(&isa_inst, stderr);
 		fprintf(stderr, "\n");
 		panic("no uop added to fetch queue");
 	}
 
-	/* Decode rest of instructions */
-	for (i = count; i < list_count(fetchq); i++) {
+	/* Update inserted uop fields */
+	for (i = count; i < newcount; i++) {
 		uop = list_get(fetchq, i);
+		assert(uop);
+		uop->seq = ++p->seq;
+		uop->mop_seq = p->seq + i - count;
+		uop->mop_size = isa_inst.size;
+		uop->mop_count = newcount - count;
+		uop->mop_index = i - count;
 		uop->ctx = ctx;
 		uop->core = core;
 		uop->thread = thread;
-		uop->size = isa_inst.size;
-		uop->seq = ++p->seq;
 		uop->eip = THREAD.fetch_eip;
-		uop->in_fetchq = TRUE;
+		uop->in_fetchq = 1;
+		uop->fetch_tcache = fetch_tcache;
 		uop->specmode = ctx_get_status(ctx, ctx_specmode);
 		uop->fetch_access = THREAD.fetch_access;
-
-		/* For control instructions */
-		if (uop->flags & FCTRL) {
-			uop->neip = ctx->regs->eip;
-			uop->pred_neip = bpred_lookup(THREAD.bpred, uop);
-			uop->mispred = uop->pred_neip != uop->neip && !uop->specmode;
-			THREAD.fetch_neip = uop->pred_neip;
-			p->branches++;
-			if (uop->mispred)
-				p->mispred++;
-		}
+		uop->neip = ctx->regs->eip;
+		uop->pred_neip = THREAD.fetch_neip;
+		uop->target_neip = isa_target;
 
 		/* Memory access uops */
 		if (uop->flags & FMEM) {
@@ -105,172 +110,161 @@ static void fetch_inst(int core, int thread)
 			uop->mem_phaddr = mmu_translate(THREAD.ctx->mid, ctx->mem->last_address);
 		}
 
-		/* Loads for pdg fetch policy */
-		if (p_fetch_policy == p_fetch_policy_pdg && (uop->flags & FLOAD)) {
-			uop->lmpred_idx = uop->eip % PDG_LMPRED_SIZE;
-			uop->lmpred_miss = THREAD.lmpred[uop->lmpred_idx] < 2;
-			if (uop->lmpred_miss)
-				THREAD.lmpred_misses++;
-		}
-
 		/* New uop */
 		ptrace_new_uop(uop);
 		ptrace_new_stage(uop, ptrace_fetch);
 		p->fetched++;
 		THREAD.fetched++;
+		if (fetch_tcache)
+			THREAD.tcacheq_occ++;
 	}
+
+	/* Increase fetch queue occupancy if instruction does not come from
+	 * trace cache, and return. */
+	if (ret && !fetch_tcache)
+		THREAD.fetchq_occ += ret->mop_size;
+	return ret;
 }
 
 
-static int fetch_thread(int core, int thread, int quant)
+/* Try to fetch instruction from trace cache.
+ * Return true if there was a hit and fetching succeeded. */
+static int fetch_thread_tcache(int core, int thread)
+{
+	struct uop_t *uop;
+	uint32_t eip_branch;  /* next branch address */
+	int mpred, hit, mop_count, i;
+	uint32_t *mop_array, neip;
+
+	/* No trace cache, no space in the trace cache queue. */
+	if (!tcache_present)
+		return 0;
+	if (THREAD.tcacheq_occ >= tcache_queue_size)
+		return 0;
+	
+	/* Access BTB, branch predictor, and trace cache */
+	eip_branch = bpred_btb_next_branch(THREAD.bpred,
+		THREAD.fetch_neip, THREAD.fetch_bsize);
+	mpred = eip_branch ? bpred_lookup_multiple(THREAD.bpred,
+		eip_branch, tcache_branch_max) : 0;
+	hit = tcache_lookup(THREAD.tcache, THREAD.fetch_neip, mpred,
+		&mop_count, &mop_array, &neip);
+	if (!hit)
+		return 0;
+	
+	/* Fetch instruction in trace cache line. */
+	for (i = 0; i < mop_count; i++) {
+		
+		/* If instruction caused context to suspend or finish */
+		if (!ctx_get_status(THREAD.ctx, ctx_running))
+			break;
+		
+		/* Insert decoded uops into the trace cache queue. In the simulation,
+		 * the uop is inserted into the fetch queue, but its occupancy is not
+		 * increased. */
+		THREAD.fetch_neip = mop_array[i];
+		uop = fetch_inst(core, thread, 1);
+		if (!uop)  /* no uop was produced by this macroinst */
+			continue;
+
+		/* If instruction is a branch, access branch predictor just in order
+		 * to have the necessary information to update it at commit. */
+		if (uop->flags & FCTRL) {
+			bpred_lookup(THREAD.bpred, uop);
+			uop->pred_neip = i == mop_count - 1 ? neip :
+				mop_array[i + 1];
+		}
+	}
+
+	/* Set next fetch address as returned by the trace cache, and exit. */
+	THREAD.fetch_neip = neip;
+	return 1;
+}
+
+
+static void fetch_thread(int core, int thread)
 {
 	struct ctx_t *ctx = THREAD.ctx;
-	uint32_t phaddr, block;
+	struct uop_t *uop;
+	uint32_t block, phaddr, target;
+	int taken;
 
-	while (quant) {
+	/* Try to fetch from trace cache first */
+	if (fetch_thread_tcache(core, thread))
+		return;
 
-		/* Check if we can fetch */
-		if (!can_fetch(core, thread))
-			break;
-
-		/* Fetch an assembler instruction. If it belongs to a new cache
-		 * block, access instruction cache. */
-		block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
-		if (block != THREAD.fetch_block) {
-			phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
-			THREAD.fetch_block = block;
-			THREAD.fetch_access = cache_system_read(core, thread,
-				cache_kind_inst, phaddr, NULL);
-		}
-
-		/* Functional simulation */
-		THREAD.fetch_eip = THREAD.fetch_neip;
-		ctx_set_eip(ctx, THREAD.fetch_eip);
-		ctx_execute_inst(ctx);
-		THREAD.fetch_neip = THREAD.fetch_eip + isa_inst.size;
-
-		/* New context spawned */
-		if (ke->context_count > p->context_map_count)
-			p_context_map_update();
-
-		/* Insert uops into fetch queue */
-		fetch_inst(core, thread);
-		quant--;
-
+	/* If new block to fetch is not the same as the previously fetched (and stored)
+	 * block, access the instruction cache. */
+	block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
+	if (block != THREAD.fetch_block) {
+		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
+		THREAD.fetch_block = block;
+		THREAD.fetch_access = cache_system_read(core, thread,
+			cache_kind_inst, phaddr, NULL);
 	}
 
-	/* Return the unused fetch slots */
-	return quant;
+	/* Fetch all instructions within the block up to the first predict-taken branch. */
+	while ((THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1)) == block) {
+		
+		/* If instruction caused context to suspend or finish */
+		if (!ctx_get_status(ctx, ctx_running))
+			break;
+		
+		/* Insert macroinstruction into the fetch queue. Since the macroinstruction
+		 * information is only available at this point, we use it to decode
+		 * instruction now and insert uops into the fetchq. However, the fetchq
+		 * occupancy is increased with as many bytes as macroinst size. */
+		uop = fetch_inst(core, thread, 0);
+		if (!isa_inst.size)  /* isa_inst invalid - no forward progress in loop */
+			break;
+		if (!uop)  /* no uop was produced by this macroinst */
+			continue;
+
+		/* Instruction detected as branches by the BTB are checked for branch
+		 * direction in the branch predictor. If they are predicted taken,
+		 * stop fetching from this block and set new fetch address. */
+		if (uop->flags & FCTRL) {
+			target = bpred_btb_lookup(THREAD.bpred, uop);
+			taken = target && bpred_lookup(THREAD.bpred, uop);
+			if (taken) {
+				THREAD.fetch_neip = target;
+				uop->pred_neip = target;
+				break;
+			}
+		}
+	}
 }
 
 
-void fetch_core(int core)
+
+
+static void fetch_core(int core)
 {
-	int thread, must_switch, new, count, i;
-	int canfetch[p_threads], quant[p_threads];
+	int thread, new;
+	int must_switch;
 
-	/* DCRA fetch policy */
-	if (p_fetch_policy == p_fetch_policy_dcra)
-		p_update_dcra(core);
-	
-	/* Structures occupancy if core is running */
-	if (p_occupancy_stats)
-		p_update_occupancy_stats(core);
-	
-	/* Calculate number of running threads in this core */
-	count = 0;
-	FOREACH_THREAD {
-	
-		/* Decrement fetch locks */
-		if (THREAD.fetch_stall)
-			THREAD.fetch_stall--;
-			
-		/* Can fetch from this context */
-		quant[thread] = 0;
-		canfetch[thread] = can_fetch(core, thread);
-		if (canfetch[thread])
-			count++;
-	}
-	
-	/* Cannot fetch from any thread */
-	if (!count)
-		return;
-	
-	/* Assign quantum to each thread */
 	switch (p_fetch_kind) {
-	
-	case p_fetch_kind_multiple:
-		
-		switch (p_fetch_policy) {
 
-		case p_fetch_policy_icount:
-		{
-			
-			/* set 3 levels of thread priority:
-			 *   level 0: threads with more than 3/4 RUU occupancy
-			 *   level 1: threads with 2/4 to 3/4 RUU occupancy
-			 *   level 2: threads with 0 to 2/4 RUU occupancy
-			 * Fetch 'level' inst from each thread until 'fetch_width'
-			 * completes */
-			 
-			int total = p_fetch_width;
-			int level[p_threads];
-			
-			/* assign priority level */
-			FOREACH_THREAD {
-				level[thread] = 0;
-				if (!canfetch[thread])
-					continue;
-				if (THREAD.rob_count > rob_size * 3 / 4) {
-					canfetch[thread] = 0;
-					count--;
-				} else if (THREAD.rob_count > rob_size * 2 / 4) {
-					level[thread] = 1;
-				} else
-					level[thread] = 2;
-			}
-			
-			/* we could have no thread to fetch now */
-			if (!count)
-				return;
-			
-			/* assign quantums */
-			while (total) {
-				CORE.fetch_current = thread = (CORE.fetch_current + 1) % p_threads;
-				if (!level[thread])
-					continue;
-				level[thread] = MIN(level[thread], total);
-				quant[thread] += level[thread];
-				total -= level[thread];
-			}
-			break;
-		}
-		
-		case p_fetch_policy_dcra:
-		case p_fetch_policy_equal:
-		case p_fetch_policy_pdg:
-		{
-		
-			int total = p_fetch_width;
-			while (total) {
-				CORE.fetch_current = (CORE.fetch_current + 1) % p_threads;
-				if (!canfetch[CORE.fetch_current])
-					continue;
-				quant[CORE.fetch_current]++;
-				total--;
-			}
-			break;
-		}
+	/* Fetch from all threads */
+	case p_fetch_kind_shared:
+		FOREACH_THREAD
+			if (can_fetch(core, thread))
+				fetch_thread(core, thread);
+		break;
 
-		default:
-			abort();
+	case p_fetch_kind_timeslice:
+		FOREACH_THREAD {
+			CORE.fetch_current = (CORE.fetch_current + 1) % p_threads;
+			if (can_fetch(core, CORE.fetch_current)) {
+				fetch_thread(core, CORE.fetch_current);
+				break;
+			}
 		}
-
 		break;
 	
 	case p_fetch_kind_switchonevent:
 		
-		/* Context switch */
+		/* Check for context switch */
 		thread = CORE.fetch_current;
 		must_switch = !ctx_get_status(THREAD.ctx, ctx_running);
 		if (sim_cycle - CORE.fetch_switch > p_quantum ||  /* Quantum expired */
@@ -282,7 +276,7 @@ void fetch_core(int core)
 				new = (new + 1) % p_threads)
 			{
 				/* Do not choose it if it is not fetchable */
-				if (!canfetch[new])
+				if (!can_fetch(core, new))
 					continue;
 					
 				/* Choose it if we need to switch */
@@ -305,27 +299,12 @@ void fetch_core(int core)
 				ITHREAD(new).fetch_stall = p_switch_penalty;
 			}
 		}
-			
-		/* assign quantum to selected thread */
-		quant[CORE.fetch_current] = p_fetch_width;
+
+		/* Fetch */
+		if (can_fetch(core, CORE.fetch_current))
+			fetch_thread(core, CORE.fetch_current);
 		break;
-		
-	case p_fetch_kind_timeslice:
-		
-		for (i = 0; i < p_threads; i++) {
-			CORE.fetch_current = (CORE.fetch_current + 1) % p_threads;
-			if (canfetch[CORE.fetch_current])
-				break;
-		}
-		assert(i < p_threads);
-		quant[CORE.fetch_current] = p_fetch_width;
-		break;
-	
 	}
-	
-	/* Fetch from each thread */
-	FOREACH_THREAD
-		fetch_thread(core, thread, quant[thread]);
 }
 
 
@@ -336,3 +315,4 @@ void p_fetch()
 	FOREACH_CORE
 		fetch_core(core);
 }
+

@@ -77,9 +77,15 @@ static void commit_thread(int core, int thread, int quant)
 		assert(!uop->specmode);
 		phregs_commit(uop);
 		
-		/* Branches update branch predictor */
-		if ((uop->flags & FCTRL))
+		/* Branches update branch predictor and btb */
+		if (uop->flags & FCTRL) {
 			bpred_update(THREAD.bpred, uop);
+			bpred_btb_update(THREAD.bpred, uop);
+		}
+
+		/* Trace cache */
+		if (tcache_present)
+			tcache_new_uop(THREAD.tcache, uop);
 			
 		/* Pipeline trace */
 		ptrace_new_stage(uop, ptrace_commit);
@@ -89,6 +95,11 @@ static void commit_thread(int core, int thread, int quant)
 		THREAD.last_commit_cycle = sim_cycle;
 		THREAD.committed++;
 		p->committed++;
+		if (uop->flags & FCTRL) {
+			p->branches++;
+			if (uop->neip != uop->pred_neip)
+				p->mispred++;
+		}
 		
 		/* Retire instruction */
 		rob_remove_head(core, thread);
