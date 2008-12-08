@@ -24,7 +24,7 @@
 void writeback_core(int core)
 {
 	struct uop_t *uop;
-	int thread;
+	int thread, recover = 0;
 
 	for (;;) {
 	
@@ -43,7 +43,7 @@ void writeback_core(int core)
 		
 		/* Ok, can extract element */
 		lnlist_remove(CORE.eventq);
-		uop->in_eventq = FALSE;
+		uop->in_eventq = 0;
 		thread = uop->thread;
 		
 		/* Loads and stores: even if they appear as completed in the event queue,
@@ -51,38 +51,25 @@ void writeback_core(int core)
 		if ((uop->flags & FMEM) && !uop->data_witness) {
 			uop->when = sim_cycle + 1;
 			eventq_insert(CORE.eventq, uop);
-			uop->in_eventq = TRUE;
 			continue;
 		}
 
-		/* Completed loads and pdg fetch policy */
-		/* Load finished memory access */
-		if (p_fetch_policy == p_fetch_policy_pdg) {
-			if ((uop->flags & FLOAD) && sim_cycle - uop->issue_when >= 5)
-				uop->lmpred_actual_miss = TRUE;
-			if (uop->lmpred_miss) {
-				THREAD.lmpred_misses--;
-				uop->lmpred_miss = FALSE;
-				assert(THREAD.lmpred_misses >= 0);
-			}
-			if (uop->lmpred_actual_miss)
-				THREAD.lmpred[uop->lmpred_idx] = 0;
-			else
-				THREAD.lmpred[uop->lmpred_idx] =
-					MIN(THREAD.lmpred[uop->lmpred_idx] + 1, 3);
-		}
-
-
-		/* If it is a misspredicted branch and user selected the
-		 * recovery process to be performed in writeback, do so */
-		if (uop->mispred && p_recover_kind == p_recover_kind_writeback)
-			p_recover(core, thread);
+		/* If a mispredicted branch is solved and recovery is configured to be
+		 * performed at writeback, schedule it for the end of the iteration. */
+		if (p_recover_kind == p_recover_kind_writeback &&
+			uop->neip != uop->pred_neip)
+			recover = 1;
 
 		/* Writeback */
-		uop->completed = TRUE;
+		uop->completed = 1;
 		phregs_write(uop);
 		ptrace_new_stage(uop, ptrace_writeback);
 		uop_free_if_not_queued(uop);
+
+		/* Recovery. This must be performed at last, because lots of uops might be
+		 * freed, which interferes with the temporary extraction from the eventq. */
+		if (recover)
+			p_recover(core, thread);
 	}
 }
 

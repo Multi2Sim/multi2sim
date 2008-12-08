@@ -26,6 +26,7 @@ struct regs_t *isa_regs;
 struct mem_t *isa_mem;
 uint32_t isa_eip;
 uint32_t isa_addr;  /* Address of last memory access */
+uint32_t isa_target;  /* Target address of branch/jmp/call/ret inst, even if it's not taken */
 x86_inst_t isa_inst;
 uint64_t isa_inst_count;
 int isa_function_level;
@@ -550,6 +551,7 @@ void isa_execute_inst(void *buf)
 	}
 
 	/* Execute */
+	isa_target = 0;
 	isa_regs->eip = isa_regs->eip + isa_inst.size;
 	inst_impl_table[isa_inst.opcode]();
 	inst_freq[isa_inst.opcode]++;

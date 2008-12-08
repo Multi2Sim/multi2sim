@@ -58,21 +58,15 @@ extern enum p_recover_kind_enum {
 } p_recover_kind;
 extern uint32_t p_recover_penalty;
 
-/* fetch_kind */
+/* Fetch stage */
 extern enum p_fetch_kind_enum {
-	p_fetch_kind_timeslice = 0,
-	p_fetch_kind_switchonevent,
-	p_fetch_kind_multiple
+	p_fetch_kind_shared = 0,
+	p_fetch_kind_timeslice,
+	p_fetch_kind_switchonevent
 } p_fetch_kind;
 
-/* Fetch stage */
-extern enum p_fetch_policy_enum {
-	p_fetch_policy_equal = 0,
-	p_fetch_policy_icount,
-	p_fetch_policy_pdg,
-	p_fetch_policy_dcra
-} p_fetch_policy;
-extern uint32_t p_fetch_width;
+/* Decode stage */
+extern uint32_t p_decode_width;
 
 /* Dispatch stage */
 extern enum p_dispatch_kind_enum {
@@ -212,15 +206,24 @@ enum uop_flags_enum {
 #define ODEP_COUNT 5
 
 struct uop_t {
-
-	enum uop_enum uop;
+	
+	/* Main uop fields */
+	enum uop_enum uop;  /* opcode */
 	struct ctx_t *ctx;
 	int core, thread;
-	int size;  /* Corresponding macroinstruction size */
+	uint64_t seq;  /* sequence number - unique uop identifier */
+	uint32_t eip;  /* address of macroinst */
+	uint32_t neip;  /* address of next non-speculative macroinst */
+	uint32_t pred_neip; /* address of next predicted macroinst (for branches) */
+	uint32_t target_neip;  /* address of target macroinst assuming branch taken (for branches) */
 	int specmode;
-	int mispred;  /* Mispredicted & non-speculative executed branch  */
-	uint32_t eip, neip, pred_neip;
 	uint64_t fetch_access;  /* Access identifier to the instruction cache */
+
+	/* Fields associated with macroinstruction */
+	int mop_index;  /* Index of uop within macroinstruction */
+	int mop_count;  /* Number of uops within macroinstruction */
+	int mop_size;  /* Corresponding macroinstruction size */
+	uint64_t mop_seq;  /* Sequence number of macroinstruction */
 
 	/* Logical dependencies */
 	int idep[IDEP_COUNT];
@@ -231,21 +234,21 @@ struct uop_t {
 	int ph_odep[ODEP_COUNT];
 	int ph_oodep[ODEP_COUNT];
 
+	/* Fetch */
+	int fetch_tcache;  /* True if uop comes from trace cache */
+
+	/* Execution */
 	int fu_class;
 	int flags;
 
-	/* PDG fetch policy */
-	int lmpred_idx;
-	int lmpred_miss;
-	int lmpred_actual_miss;
-
 	/* Queues where instruction is */
-	int in_fetchq;
-	int in_iq;
-	int in_lq;
-	int in_sq;
-	int in_eventq;
-	int in_rob;
+	int in_fetchq : 1;
+	int in_uopq : 1;
+	int in_iq : 1;
+	int in_lq : 1;
+	int in_sq : 1;
+	int in_eventq : 1;
+	int in_rob : 1;
 
 	/* Instruction status */
 	int ready;
@@ -258,14 +261,14 @@ struct uop_t {
 	int data_witness;  /* for cache system access */
 
 	/* Cycles */
-	uint64_t seq;
-	uint64_t when;
-	uint64_t issue_when;
+	uint64_t when;  /* cycle when ready */
+	uint64_t issue_when;  /* cycle when issued */
 
 	/* Branch prediction */
-	int bimod_taken, bimod_idx;
-	int gshare_taken, gshare_idx;
-	int choice_value, choice_idx;
+	int pred;  /* Global prediction (0=not taken, 1=taken) */
+	int bimod_index, bimod_pred;
+	int twolevel_bht_index, twolevel_pht_row, twolevel_pht_col, twolevel_pred;
+	int choice_index, choice_pred;
 };
 
 void uop_init(void);
@@ -273,12 +276,11 @@ void uop_done(void);
 
 void uop_list_dump(struct list_t *uop_list, FILE *f);
 void uop_lnlist_dump(struct lnlist_t *uop_list, FILE *f);
-void uop_decode(x86_inst_t *inst, struct list_t *uop_list);
+struct uop_t *uop_decode(struct list_t *list);
 
 void uop_free_if_not_queued(struct uop_t *uop);
 void uop_dump(struct uop_t *uop, FILE *f);
 int uop_exists(struct uop_t *uop);
-void uop_pdg_recover(struct uop_t *uop);
 
 
 
@@ -305,8 +307,21 @@ void fetchq_reg_options(void);
 void fetchq_init(void);
 void fetchq_done(void);
 
-int fetchq_can_insert(int core, int thread);
 void fetchq_recover(int core, int thread);
+struct uop_t *fetchq_remove(int core, int thread, int index);
+
+
+
+
+/* Uop Queue */
+
+extern uint32_t uopq_size;
+
+void uopq_reg_options(void);
+void uopq_init(void);
+void uopq_done(void);
+
+void uopq_recover(int core, int thread);
 
 
 
@@ -451,59 +466,43 @@ void phregs_check(int core, int thread);
 
 /* Branch Predictor */
 
-/* BTB Entry */
-struct btb_entry_t {
-	uint32_t source;  /* eip */
-	uint32_t dest;  /* neip */
-	int counter;  /* LRU counter */
-};
-
-
-/* Branch Predictor Structure */
-struct bpred_t {
-	
-	/* RAS */
-	uint32_t *ras;
-	int ras_idx;
-	
-	/* BTB - bidimensional array representing btb sets
-	 * Each set has 'bpred_btb_assoc' entries of type btb_entry_t. */
-	struct btb_entry_t **btb;
-	
-	/* choice - array of bimodal counters indexed by PC
-	 *   0,1 - Use bimodal predictor.
-	 *   2,3 - Use gshare predictor */
-	char *choice;
-	
-	/* bimod - array of bimodal counters indexed by PC
-	 *   0,1 - Branch not taken.
-	 *   2,3 - Branch taken. */
-	char *bimod;
-	
-	/* gshare - array of bimodal counters indexed by BHR^PC
-	 *   0,1 - Branch not taken.
-	 *   2,3 - Branch taken. */
-	char *gshare;
-	uint32_t gshare_bhr;
-
-	/* Stats */
-	char name[20];
-	uint64_t accesses;
-	uint64_t hits;
-};
-
-
+struct bpred_t;
 
 void bpred_reg_options(void);
 void bpred_init(void);
 void bpred_done(void);
-struct bpred_t *bpred_get(int core, int thread);
 
 struct bpred_t *bpred_create(void);
 void bpred_free(struct bpred_t *bpred);
-uint32_t bpred_lookup(struct bpred_t *bpred, struct uop_t *uop);
+int bpred_lookup(struct bpred_t *bpred, struct uop_t *uop);
+int bpred_lookup_multiple(struct bpred_t *bpred, uint32_t eip, int count);
 void bpred_update(struct bpred_t *bpred, struct uop_t *uop);
 
+uint32_t bpred_btb_lookup(struct bpred_t *bpred, struct uop_t *uop);
+void bpred_btb_update(struct bpred_t *bpred, struct uop_t *uop);
+uint32_t bpred_btb_next_branch(struct bpred_t *bpred, uint32_t eip, uint32_t bsize);
+
+
+
+
+/* Trace cache */
+
+extern int tcache_present;
+extern uint32_t tcache_uop_max;
+extern uint32_t tcache_branch_max;
+extern uint32_t tcache_queue_size;
+
+struct tcache_t;
+
+void tcache_reg_options(void);
+void tcache_init(void);
+void tcache_done(void);
+
+struct tcache_t *tcache_create(void);
+void tcache_free(struct tcache_t *tcache);
+void tcache_new_uop(struct tcache_t *tcache, struct uop_t *uop);
+int tcache_lookup(struct tcache_t *tcache, uint32_t eip, int pred,
+	int *ptr_mop_count, uint32_t **ptr_mop_array, uint32_t *ptr_neip);
 
 
 
@@ -555,7 +554,7 @@ extern uint64_t stage_time_rest;
 enum di_stall_enum {
 	di_stall_used = 0,  /* Dispatch slot was used with a finally committed inst. */
 	di_stall_spec,  /* Used with a speculative inst. */
-	di_stall_fetchq,  /* No instruction in the fetch queue */
+	di_stall_uopq,  /* No instruction in the uop queue */
 	di_stall_rob,  /* No space in the rob */
 	di_stall_iq,  /* No space in the iq */
 	di_stall_lq,  /* No space in the lq */
@@ -564,23 +563,6 @@ enum di_stall_enum {
 	di_stall_ctx,  /* No running ctx */
 	di_stall_max
 };
-
-
-/* DCRA resources */
-#define DCRA_ACTIVE_MAX 256
-enum dcra_resource_enum {
-	dcra_resource_fetchq = 0,
-	dcra_resource_iq,
-	dcra_resource_lq,
-	dcra_resource_sq,
-	dcra_resource_phregs,
-	dcra_resource_count
-};
-
-
-/* PDG */
-#define PDG_THRESHOLD 0
-#define PDG_LMPRED_SIZE 4096
 
 
 /* Thread */
@@ -602,28 +584,22 @@ struct processor_thread_t {
 
 	/* Private structures */
 	struct list_t *fetchq;
+	struct list_t *uopq;
 	struct lnlist_t *iq;
 	struct lnlist_t *lq;
 	struct lnlist_t *sq;
-	struct bpred_t *bpred;		/* branch predictor */
-	struct phregs_t *phregs;	/* physical register file */
+	struct bpred_t *bpred;  /* branch predictor */
+	struct tcache_t *tcache;  /* trace cache */
+	struct phregs_t *phregs;  /* physical register file */
 
-	/* Fetch */
+	/* Fetch */ /*FIXME*/
 	uint32_t fetch_eip, fetch_neip;  /* eip and next eip */
+	int fetchq_occ;  /* Number of bytes occupied in the fetch queue */
+	int tcacheq_occ;  /* Number of uops occupied in the trace cache queue */
 	int fetch_stall;
 	int fetch_bsize;  /* Block size of instruction cache for this thread */
 	uint32_t fetch_block;  /* Virtual address of last fetched block */
-	uint64_t fetch_access;  /* Access ID of last instruction cache access */
-
-	/* DCRA fetch policy */
-	int dcra_fast;
-  	int dcra_active[dcra_resource_count];
-	int dcra_limit[dcra_resource_count];	/* space of resource limited for this thread */
-	int dcra_count[dcra_resource_count];	/* number of resource entries occupied by this thread */
-
-	/* PDG fetch policy */
-	int lmpred_misses;
-	char *lmpred;
+	uint64_t fetch_access;  /* Cache access id of last instruction cache access */
 
 	/* Stats */
 	uint64_t fetched;
@@ -657,14 +633,6 @@ struct processor_core_t {
 	int rob_head;
 	int rob_tail;
 
-	/* DCRA fetch policy */
-	int dcra_fast_count;
-	int dcra_slow_count;
-	int dcra_fast_active_count[dcra_resource_count];
-	int dcra_slow_active_count[dcra_resource_count];
-	int dcra_active_count[dcra_resource_count];
-	int dcra_inactive_count[dcra_resource_count];
-
 	/* Stages */
 	int fetch_current;		/* for thread switch policy */
 	int64_t fetch_switch;		/* for switchonevent */
@@ -685,7 +653,6 @@ struct processor_t {
 	uint64_t seq;  /* seq num assigned to last instr (with pre-incr) */
 	char *stage;  /* Name of currently simulated stage */
 	int context_map_count;  /* Number of contexts mapped to threads */
-	int dcra_resource_size[dcra_resource_count];
 	
 	/* Structures */
 	struct mm_t *mm;		/* memory management unit */
@@ -727,7 +694,6 @@ void p_dump(FILE *f);
 uint32_t p_tlb_address(int ctx, uint32_t vaddr);
 void p_fast_forward(uint64_t cycles);
 
-void p_update_dcra(int core);
 void p_update_occupancy_stats(int core);
 
 void p_context_map(struct ctx_t *ctx, int *pcore, int *pthread);
@@ -735,10 +701,11 @@ void p_context_unmap(int core, int thread);
 void p_context_map_update(void);
 
 void p_stages(void);
-void p_fetch();
-void p_dispatch();
-void p_issue();
-void p_writeback();
-void p_commit();
+void p_fetch(void);
+void p_decode(void);
+void p_dispatch(void);
+void p_issue(void);
+void p_writeback(void);
+void p_commit(void);
 void p_recover(int core, int thread);
 

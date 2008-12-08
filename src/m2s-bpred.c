@@ -116,7 +116,6 @@ int main(int argc, char **argv)
 
 	uop_list = list_create(10);
 	bpred = bpred_create();
-	strcpy(bpred->name, "bpred");
 
 	/* Load programs from configuration file and command line. */
 	if (*ctxconfig)
@@ -143,7 +142,7 @@ int main(int argc, char **argv)
 			ctx_free(ke->finished_list);
 
 		/* Decode it and check branch predictor */
-		uop_decode(&isa_inst, uop_list);
+		uop_decode(uop_list);
 		while (list_count(uop_list)) {
 			uop = list_dequeue(uop_list);
 			if (uop->flags & FCTRL) {

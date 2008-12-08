@@ -24,16 +24,14 @@
  * return di_stall_used. */
 static enum di_stall_enum can_dispatch_thread(int core, int thread)
 {
-	struct list_t *fetchq = THREAD.fetchq;
+	struct list_t *uopq = THREAD.uopq;
 	struct uop_t *uop;
 
-	/* Fetch queue must have an instruction ready to be dequeued. */
-	uop = list_get(fetchq, 0);
+	/* Uop queue empty. */
+	uop = list_get(uopq, 0);
 	if (!uop)
 		return !THREAD.ctx || !ctx_get_status(THREAD.ctx, ctx_running) ?
-			di_stall_ctx : di_stall_fetchq;
-	if (cache_system_pending_access(uop->core, uop->thread, cache_kind_inst, uop->fetch_access))
-		return di_stall_fetchq;
+			di_stall_ctx : di_stall_uopq;
 
 	/* If iq/lq/sq/rob full, done */
 	if (!rob_can_enqueue(uop))
@@ -53,7 +51,6 @@ static enum di_stall_enum can_dispatch_thread(int core, int thread)
 
 static int dispatch_thread(int core, int thread, int quant)
 {
-	struct list_t *fetchq = THREAD.fetchq;
 	struct uop_t *uop;
 	enum di_stall_enum stall;
 
@@ -67,10 +64,9 @@ static int dispatch_thread(int core, int thread, int quant)
 		}
 	
 		/* Get entry from fetch queue */
-		uop = list_remove_at(fetchq, 0);
-		assert(!list_error(fetchq));
+		uop = list_remove_at(THREAD.uopq, 0);
 		assert(uop_exists(uop));
-		uop->in_fetchq = FALSE;
+		uop->in_uopq = 0;
 		
 		/* Rename */
 		phregs_rename(uop);

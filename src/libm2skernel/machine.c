@@ -134,15 +134,16 @@ void op_bts_rm32_imm8_impl() {
 void op_call_rel32_impl() {
 	isa_regs->esp -= 4;
 	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eip);
-	isa_regs->eip += isa_inst.imm.d;
+	isa_target = isa_regs->eip + isa_inst.imm.d;
+	isa_regs->eip = isa_target;
 }
 
 
 void op_call_rm32_impl() {
-	uint32_t dest = isa_load_rm32();
+	isa_target = isa_load_rm32();
 	isa_regs->esp -= 4;
 	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eip);
-	isa_regs->eip = dest;
+	isa_regs->eip = isa_target;
 }
 
 
@@ -516,17 +517,20 @@ void op_int_imm8_impl() {
 
 
 void op_jmp_rel8_impl() {
-	isa_regs->eip += (int8_t) isa_inst.imm.b;
+	isa_target = isa_regs->eip + (int8_t) isa_inst.imm.b;
+	isa_regs->eip = isa_target;
 }
 
 
 void op_jmp_rel32_impl() {
-	isa_regs->eip += isa_inst.imm.d;
+	isa_target = isa_regs->eip + isa_inst.imm.d;
+	isa_regs->eip = isa_target;
 }
 
 
 void op_jmp_rm32_impl() {
-	isa_regs->eip = isa_load_rm32();
+	isa_target = isa_load_rm32();
+	isa_regs->eip = isa_target;
 }
 
 
@@ -883,22 +887,20 @@ void op_rdtsc_impl() {
 
 
 void op_ret_impl() {
-	uint32_t retaddr;
 	assert(!isa_inst.segment);
-	mem_read(isa_mem, isa_regs->esp, 4, &retaddr);
+	mem_read(isa_mem, isa_regs->esp, 4, &isa_target);
 	isa_regs->esp += 4;
-	isa_regs->eip = retaddr;
+	isa_regs->eip = isa_target;
 }
 
 
 void op_ret_imm16_impl() {
-	uint32_t retaddr;
 	uint16_t pop;
 	assert(!isa_inst.segment);
-	mem_read(isa_mem, isa_regs->esp, 4, &retaddr);
+	mem_read(isa_mem, isa_regs->esp, 4, &isa_target);
 	pop = isa_inst.imm.w;
 	isa_regs->esp += 4 + pop;
-	isa_regs->eip = retaddr;
+	isa_regs->eip = isa_target;
 }
 
 

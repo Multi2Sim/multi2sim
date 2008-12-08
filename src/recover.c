@@ -25,8 +25,9 @@ void p_recover(int core, int thread)
 	struct ctx_t *ctx = THREAD.ctx;
 	struct uop_t *uop;
 
-	/* Remove instructions of this thread in fetchq, iq, sq, lq and eventq. */
+	/* Remove instructions of this thread in fetchq, uopq, iq, sq, lq and eventq. */
 	fetchq_recover(core, thread);
+	uopq_recover(core, thread);
 	iq_recover(core, thread);
 	lq_recover(core, thread);
 	sq_recover(core, thread);
@@ -55,7 +56,6 @@ void p_recover(int core, int thread)
 		
 		/* Undo map and remove entry in ROB */
 		phregs_undo(uop);
-		uop_pdg_recover(uop);
 		ptrace_end_uop(uop);
 		rob_remove_tail(core, thread);
 	}

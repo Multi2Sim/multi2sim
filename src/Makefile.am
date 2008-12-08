@@ -27,6 +27,7 @@ m2s_objdump_SOURCES = m2s-objdump.c
 m2s_bpred_SOURCES = \
 	bpred.c \
 	commit.c \
+	decode.c \
 	dispatch.c \
 	fetch.c \
 	fu.c \
@@ -39,6 +40,7 @@ m2s_bpred_SOURCES = \
 	queues.c \
 	recover.c \
 	rob.c \
+	tcache.c \
 	uop.c \
 	uop1.dat \
 	uop2.dat \
@@ -50,6 +52,7 @@ m2s_network_SOURCES = \
 m2s_SOURCES = \
 	bpred.c \
 	commit.c \
+	decode.c \
 	dispatch.c \
 	fetch.c \
 	fu.c \
@@ -62,6 +65,7 @@ m2s_SOURCES = \
 	queues.c \
 	recover.c \
 	rob.c \
+	tcache.c \
 	uop.c \
 	uop1.dat \
 	uop2.dat \

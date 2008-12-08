@@ -197,14 +197,6 @@ int phregs_can_rename(struct uop_t *uop)
 	int core = uop->core;
 	int thread = uop->thread;
 	
-	/* dcra */
-	if (p_fetch_policy == p_fetch_policy_dcra && phregs_kind == phregs_kind_shared) {
-		THREAD.dcra_active[dcra_resource_phregs] = DCRA_ACTIVE_MAX;
-		busy = THREAD.phregs->size - THREAD.phregs->free_phreg_count;
-		needs = phregs_needs(uop);
-		return busy + needs <= THREAD.dcra_limit[dcra_resource_phregs];
-	}
-
 	/* Calculate busy registers */
 	if (phregs_kind == phregs_kind_shared) {
 		FOREACH_THREAD
