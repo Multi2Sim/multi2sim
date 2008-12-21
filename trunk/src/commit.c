@@ -56,6 +56,7 @@ static int can_commit_thread(int core, int thread)
 static void commit_thread(int core, int thread, int quant)
 {
 	struct uop_t *uop;
+	int recover = 0;
 	
 	while (quant && can_commit_thread(core, thread)) {
 		
@@ -64,15 +65,13 @@ static void commit_thread(int core, int thread, int quant)
 		assert(uop_exists(uop));
 		assert(uop->core == core);
 		assert(uop->thread == thread);
+		assert(!recover);
 		
-		/* First instruction in specmode; recover.
-		 * When we do recover at commit, we can stop functional units. */
-		if (uop->specmode && p_recover_kind == p_recover_kind_commit) {
-			p_recover(core, thread);
-			fu_release(CORE.fu);
-			continue;
-		}
-		
+		/* Mispredicted branch */
+		if (p_recover_kind == p_recover_kind_commit &&
+			(uop->flags & FCTRL) && uop->neip != uop->pred_neip)
+			recover = 1;
+	
 		/* Free physical registers */
 		assert(!uop->specmode);
 		phregs_commit(uop);
@@ -108,6 +107,13 @@ static void commit_thread(int core, int thread, int quant)
 		/* Retire instruction */
 		rob_remove_head(core, thread);
 		quant--;
+
+		/* Recover. Functional units are cleared when processor
+		 * recovers at commit. */
+		if (recover) {
+			p_recover(core, thread);
+			fu_release(CORE.fu);
+		}
 	}
 }
 
