@@ -81,6 +81,9 @@ void p_reg_options()
 	opt_reg_enum("-fetch_kind", "fetch policy {shared|timeslice|switchonevent}",
 		(int *) &p_fetch_kind, p_fetch_kind_map, 3);
 	
+	opt_reg_uint32("-decode_width", "decode width",
+		&p_decode_width);
+	
 	opt_reg_enum("-dispatch_kind", "dispatch stage sharing {shared|timeslice}",
 		(int *) &p_dispatch_kind, p_dispatch_kind_map, 2);
 	opt_reg_uint32("-dispatch_width", "dispatch width (for shared/timeslice dispatch)",
@@ -293,6 +296,8 @@ void p_dump(FILE *f)
 			
 			fprintf(f, "fetch queue:\n");
 			uop_list_dump(THREAD.fetchq, f);
+			fprintf(f, "uop queue:\n");
+			uop_list_dump(THREAD.uopq, f);
 			fprintf(f, "iq:\n");
 			uop_lnlist_dump(THREAD.iq, f);
 			fprintf(f, "lq:\n");

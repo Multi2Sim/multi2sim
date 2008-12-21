@@ -493,3 +493,7 @@
 		cache configuration files. The error messages have been updated
 		to provide more information about the usage. There were some
 		situations of wrong configurations that made the simulator crash.
+
+2010-03-16
+	* processor.c: -decode_width option added.
+	* commit.c: bug fixed. Recover at commit didn't work properly.
