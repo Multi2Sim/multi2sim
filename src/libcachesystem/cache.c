@@ -19,6 +19,15 @@
 #include "cachesystem.h"
 
 
+struct string_map_t cache_policy_map = {
+	3, {
+		{ "LRU",        cache_policy_lru },
+		{ "FIFO",       cache_policy_fifo },
+		{ "Random",     cache_policy_random }
+	}
+};
+
+
 int cache_log2(uint32_t x) {
 	int result = 0;
 	if (!x)
@@ -80,7 +89,8 @@ static void cache_update_waylist(struct cache_set_t *set,
 }
 
 
-struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc)
+struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc,
+	enum cache_policy_enum policy)
 {
 	struct cache_t *cache;
 	struct cache_blk_t *blk;
@@ -91,6 +101,7 @@ struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc)
 	cache->nsets = nsets;
 	cache->bsize = bsize;
 	cache->assoc = assoc;
+	cache->policy = policy;
 
 	/* Derivated fields */
 	assert(!(nsets & (nsets - 1)));
@@ -166,13 +177,20 @@ int cache_find_block(struct cache_t *cache, uint32_t addr,
 }
 
 
-/* Set the tag and status of a block */
+/* Set the tag and status of a block.
+ * If replacement policy is FIFO, update linked list in case a new
+ * block is brought to cache, i.e., a new tag is set. */
 void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
 	uint32_t tag, int status)
 {
 	assert(set >= 0 && set < cache->nsets);
 	assert(way >= 0 && way < cache->assoc);
 	assert(set == (tag >> cache->logbsize) % cache->nsets || !status);
+	if (cache->policy == cache_policy_fifo
+		&& cache->sets[set].blks[way].tag != tag)
+		cache_update_waylist(&cache->sets[set],
+			&cache->sets[set].blks[way],
+			cache_waylist_head);
 	cache->sets[set].blks[way].tag = tag;
 	cache->sets[set].blks[way].status = status;
 }
@@ -188,12 +206,14 @@ void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
 }
 
 
-/* Update LRU counters after an access */
+/* Update LRU counters, i.e., rearrange linked list in case
+ * replacement policy is LRU. */
 void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way)
 {
 	assert(set >= 0 && set < cache->nsets);
 	assert(way >= 0 && way < cache->assoc);
-	if (cache->sets[set].blks[way].way_prev)
+	if (cache->policy == cache_policy_lru
+		&& cache->sets[set].blks[way].way_prev)
 		cache_update_waylist(&cache->sets[set],
 			&cache->sets[set].blks[way],
 			cache_waylist_head);
@@ -214,9 +234,16 @@ uint32_t cache_replace_block(struct cache_t *cache, uint32_t set)
 		if (!blk->status)
 			return way;
 	}
+
+	/* LRU and FIFO replacement: return block at the
+	 * head of the linked list */
+	if (cache->policy == cache_policy_lru ||
+		cache->policy == cache_policy_fifo)
+		return cache->sets[set].way_tail->way;
 	
-	/* Return locked LRU block */
-	return cache->sets[set].way_tail->way;
+	/* Random replacement */
+	assert(cache->policy == cache_policy_random);
+	return random() % cache->assoc;
 }
 
 

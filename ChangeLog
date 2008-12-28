@@ -358,3 +358,13 @@
 2009-11-23
 	Version 2.2 Released
 
+2009-11-24
+	* uop.c: 'dep_map' updated. Dependence DDF was not present.
+	* libstruct/debug.c: function 'dump_buf' implemented.
+
+2009-12-02
+	* libcachesystem/cache.c: new option to configure block replacement
+		policy in the cache config file.
+	* libmisc/misc.c: function 'map_string_case'
+	* stat 'evicts' added to caches
+

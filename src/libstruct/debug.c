@@ -177,4 +177,17 @@ void warning(char *fmt, ...) {
 }
 
 
+void dump_buf(char **pbuf, int *psize, char *fmt, ...) {
+	va_list va;
+	int len;
+	if (*psize <= 1)
+		return;
+	va_start(va, fmt);
+	len = vsnprintf(*pbuf, *psize, fmt, va);
+	if (len >= *psize)
+		len = *psize - 1;
+	*psize -= len;
+	*pbuf += len;
+}
+
 #endif

@@ -21,7 +21,7 @@
 
 
 struct string_map_t dep_map = {
-	22, {
+	23, {
 		{ "eax",        DEAX },
 		{ "ecx",        DECX },
 		{ "edx",        DEDX },
@@ -41,6 +41,7 @@ struct string_map_t dep_map = {
 		{ "ZF-PF-SF",   DZPS },
 		{ "OF",         DOF },
 		{ "CF",         DCF },
+		{ "DF",         DDF },
 
 		{ "aux",        DAUX },
 		{ "aux2",       DAUX2 },
