@@ -106,6 +106,14 @@ int mmu_valid_phaddr(uint32_t phaddr);
 
 /* Cache Memory */
 
+extern struct string_map_t cache_policy_map;
+enum cache_policy_enum {
+	cache_policy_invalid = 0,  /* for parsing */
+	cache_policy_lru,
+	cache_policy_fifo,
+	cache_policy_random
+};
+
 struct cache_blk_t {
 	struct cache_blk_t *way_next;
 	struct cache_blk_t *way_prev;
@@ -124,6 +132,7 @@ struct cache_t {
 	uint32_t nsets;
 	uint32_t bsize;
 	uint32_t assoc;
+	enum cache_policy_enum policy;
 
 	struct cache_set_t *sets;
 	uint32_t bmask;
@@ -131,7 +140,8 @@ struct cache_t {
 };
 
 
-struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc);
+struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc,
+	enum cache_policy_enum policy);
 void cache_free(struct cache_t *cache);
 
 int cache_log2(uint32_t x);
@@ -285,6 +295,7 @@ struct ccache_t {
 	uint64_t accesses;
 	uint64_t reads;
 	uint64_t hits;
+	uint64_t evicts;
 };
 
 struct ccache_t *ccache_create();

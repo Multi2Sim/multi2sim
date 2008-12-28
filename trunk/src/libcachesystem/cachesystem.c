@@ -63,6 +63,8 @@ void ccache_free(struct ccache_t *ccache)
 		fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
 			ccache->name, ccache->accesses ? (double) ccache->hits /
 			ccache->accesses : 0.0);
+		fprintf(stderr, "%s.evicts  %lld  # Number of evictions\n",
+			ccache->name, (long long) ccache->evicts);
 	}
 
 	/* Free cache */
@@ -479,6 +481,8 @@ void cache_system_init(int def_cores, int def_threads)
 	struct ccache_t *ccache;
 	struct node_t *node;
 	char buf[200];
+	enum cache_policy_enum policy;
+	char *policy_str;
 
 	/* Initializations */
 	mmu_init();
@@ -588,10 +592,14 @@ void cache_system_init(int def_cores, int def_threads)
 		nsets = config_read_int(cache_config, buf, "Sets", 0);
 		assoc = config_read_int(cache_config, buf, "Assoc", 0);
 		bsize = config_read_int(cache_config, buf, "BlockSize", 0);
+		policy_str = config_read_string(cache_config, buf, "Policy", "LRU");
+		policy = map_string_case(&cache_policy_map, policy_str);
+		if (policy == cache_policy_invalid)
+			fatal("%s: invalid block replacement policy", policy_str);
 		ccache->lat = config_read_int(cache_config, buf, "Latency", 0);
 		ccache->bsize = bsize;
 		ccache->logbsize = log_base2(bsize);
-		ccache->cache = cache_create(nsets, bsize, assoc);
+		ccache->cache = cache_create(nsets, bsize, assoc, policy);
 		cache_min_block_size = cache_min_block_size ? MIN(cache_min_block_size, bsize) : bsize;
 		if (bsize > mmu_page_size)
 			fatal("%s: cache block size greater than memory page size", ccache->name);
@@ -737,7 +745,7 @@ void cache_system_init(int def_cores, int def_threads)
 		tlb->misslat = config_read_int(cache_config, section, "MissLatency", 0);
 		nsets = config_read_int(cache_config, section, "Sets", 0);
 		assoc = config_read_int(cache_config, section, "Assoc", 0);
-		tlb->cache = cache_create(nsets, mmu_page_size, assoc);
+		tlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
 	}
 }
 
