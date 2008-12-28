@@ -275,6 +275,7 @@ void moesi_handler_find_and_lock(int event, void *data)
 
 		/* Eviction */
 		if (stack->eviction) {
+			ccache->evicts++;
 			cache_get_block(ccache->cache, stack->set, stack->way, NULL, &stack->status);
 			assert(!stack->status);
 		}

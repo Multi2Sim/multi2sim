@@ -139,6 +139,17 @@ int map_string(struct string_map_t *map, char *string)
 }
 
 
+/* Map string ignoring case */
+int map_string_case(struct string_map_t *map, char *s)
+{
+	int i;
+	for (i = 0; i < map->count; i++)
+		if (!strcasecmp(s, map->map[i].string))
+			return map->map[i].value;
+	return 0;
+}
+
+
 static char *unknown = "<unknown>";
 char *map_value(struct string_map_t *map, int value)
 {

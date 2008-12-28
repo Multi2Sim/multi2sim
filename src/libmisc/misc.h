@@ -118,6 +118,7 @@ struct string_map_t {
 };
 
 int map_string(struct string_map_t *map, char *string);
+int map_string_case(struct string_map_t *map, char *s);
 char *map_value(struct string_map_t *map, int value);
 void map_value_string(struct string_map_t *map, int value, char *out, int length);
 void map_flags(struct string_map_t *map, int flags, char *out, int length);
