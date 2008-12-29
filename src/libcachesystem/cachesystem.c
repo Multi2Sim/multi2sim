@@ -408,13 +408,6 @@ static void cache_config_default(int def_cores, int def_threads)
 	KEY_INT("BlockSize", 64);
 	KEY_INT("Latency", 200);
 
-	/* Tlb */
-	SECTION("Tlb");
-	KEY_INT("Sets", 64);
-	KEY_INT("Assoc", 4);
-	KEY_INT("HitLatency", 2);
-	KEY_INT("MissLatency", 2);
-
 	/* Nodes */
 	for (core = 0; core < def_cores; core++) {
 		for (thread = 0; thread < def_threads; thread++) {
@@ -732,19 +725,14 @@ void cache_system_init(int def_cores, int def_threads)
 
 	/* Create tlbs */
 	section = "Tlb";
-	cache_config_section(section);
-	cache_config_key(section, "HitLatency");
-	cache_config_key(section, "MissLatency");
-	cache_config_key(section, "Sets");
-	cache_config_key(section, "Assoc");
 	tlb_array = calloc(node_count, sizeof(void *));
 	for (i = 0; i < node_count; i++) {
 		tlb = tlb_array[i] = tlb_create();
 		sprintf(tlb->name, "tlb.%d.%d", i / num_threads, i % num_threads);
-		tlb->hitlat = config_read_int(cache_config, section, "HitLatency", 0);
-		tlb->misslat = config_read_int(cache_config, section, "MissLatency", 0);
-		nsets = config_read_int(cache_config, section, "Sets", 0);
-		assoc = config_read_int(cache_config, section, "Assoc", 0);
+		tlb->hitlat = config_read_int(cache_config, section, "HitLatency", 2);
+		tlb->misslat = config_read_int(cache_config, section, "MissLatency", 30);
+		nsets = config_read_int(cache_config, section, "Sets", 64);
+		assoc = config_read_int(cache_config, section, "Assoc", 4);
 		tlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
 	}
 }
