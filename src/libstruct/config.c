@@ -126,9 +126,9 @@ static void new_key(struct hashtable_t *keys, char *key, char *value)
 static char *trim(char *s)
 {
 	int len = strlen(s);
-	while (*s == 32)
+	while (*s == ' ' || *s == '\t')
 		s++, len--;
-	while (s[len - 1] == 32 || s[len - 1] == '\n')
+	while (s[len - 1] == ' ' || s[len - 1] == '\t' || s[len - 1] == '\n')
 		s[--len] = 0;
 	return s;
 }
