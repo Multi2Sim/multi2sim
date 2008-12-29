@@ -368,3 +368,6 @@
 	* libmisc/misc.c: function 'map_string_case'
 	* stat 'evicts' added to caches
 
+2009-12-03
+	* libstruct/config.c: bug fixed in function 'trim'. Tabs were not
+		deleted at the beginning and end of strings.
