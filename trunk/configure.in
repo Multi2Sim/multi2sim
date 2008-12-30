@@ -1,5 +1,5 @@
 AC_INIT
-AM_INIT_AUTOMAKE(multi2sim, 2.2)
+AM_INIT_AUTOMAKE(multi2sim, 2.3)
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
@@ -8,7 +8,7 @@ AC_PROG_RANLIB
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h sys/ioctl.h sys/time.h termios.h unistd.h])
+AC_CHECK_HEADERS([ncurses.h fcntl.h stdint.h stdlib.h string.h sys/ioctl.h sys/time.h termios.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
