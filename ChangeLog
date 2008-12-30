@@ -497,3 +497,8 @@
 2010-03-16
 	* processor.c: -decode_width option added.
 	* commit.c: bug fixed. Recover at commit didn't work properly.
+	* libm2skernel/syscall.c: system call 'uname': debug information added.
+
+2010-03-30
+	Version 2.3 Released
+

@@ -2300,7 +2300,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=multi2sim
- VERSION=2.2
+ VERSION=2.3
 
 
 cat >>confdefs.h <<_ACEOF
@@ -4847,7 +4847,8 @@ done
 
 
 
-for ac_header in fcntl.h stdint.h stdlib.h string.h sys/ioctl.h sys/time.h termios.h unistd.h
+
+for ac_header in ncurses.h fcntl.h stdint.h stdlib.h string.h sys/ioctl.h sys/time.h termios.h unistd.h
 do
 as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
