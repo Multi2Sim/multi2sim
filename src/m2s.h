@@ -612,7 +612,7 @@ struct processor_thread_t {
 	struct tcache_t *tcache;  /* trace cache */
 	struct phregs_t *phregs;  /* physical register file */
 
-	/* Fetch */ /*FIXME*/
+	/* Fetch */
 	uint32_t fetch_eip, fetch_neip;  /* eip and next eip */
 	int fetchq_occ;  /* Number of bytes occupied in the fetch queue */
 	int tcacheq_occ;  /* Number of uops occupied in the trace cache queue */
