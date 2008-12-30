@@ -1439,6 +1439,9 @@ void syscall_do()
 
 		putsname = isa_regs->ebx;
 		syscall_debug("  putsname=0x%x\n", putsname);
+		syscall_debug("  sysname='%s', nodename='%s'\n", sim_utsname.sysname, sim_utsname.nodename);
+		syscall_debug("  relaese='%s', version='%s'\n", sim_utsname.release, sim_utsname.version);
+		syscall_debug("  machine='%s', domainname='%s'\n", sim_utsname.machine, sim_utsname.domainname);
 		
 		mem_write(isa_mem, putsname, sizeof(sim_utsname), &sim_utsname);
 		break;
