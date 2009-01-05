@@ -297,7 +297,7 @@ struct elf_file_t *elf_open(char *path)
 	f->f = fopen(path, "rb");
 	if (!f->f) {
 		elf_debug("%s: cannot open path\n", path);
-		goto error;
+		return NULL;
 	}
 	elf_debug("\n%s: reading ELF file\n", path);
 

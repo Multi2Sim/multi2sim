@@ -373,3 +373,9 @@
 		deleted at the beginning and end of strings.
 	* libstruct/cachesystem.c: TLB section set as optional in cache
 		configuration file.
+
+2009-12-09
+	* libm2skernel/elf.c: bug fixed. There was a segmentation fault
+		when a non-existing executable file was tried to be
+		loaded.
+
