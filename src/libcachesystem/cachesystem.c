@@ -290,7 +290,7 @@ int EV_CACHE_SYSTEM_ACCESS_FINISH;
 
 char *cache_config_file = "";
 struct config_t *cache_config;
-uint32_t cache_block_size = 64;
+uint32_t cache_block_size;
 uint32_t cache_log_block_size;
 uint32_t mem_latency = 200;
 static uint32_t iports = 8;
