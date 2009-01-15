@@ -543,6 +543,9 @@ void cache_system_init(int def_cores, int def_threads)
 		/* Block size */
 		if (cache_block_size && cache_block_size != bsize)
 			fatal("block size of all caches must be the same");
+		if (bsize > MMU_PAGE_SIZE)
+			fatal("cache block size cannot be greater than the page size (%d bytes)",
+				MMU_PAGE_SIZE);
 		cache_block_size = bsize;
 	}
 
