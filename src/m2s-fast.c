@@ -53,11 +53,11 @@ static void sim_reg_options()
 	opt_reg_string("-config", "m2s-fast configuration file", &configfile);
 	opt_reg_string("-ctxconfig", "context configuration file", &ctxconfig);
 
-	opt_reg_string("-syscall_debug", "debug information for system calls", &syscall_debug_file);	
-	opt_reg_string("-elf_debug", "debug information from elf file analyzer", &elf_debug_file);	
-	opt_reg_string("-loader_debug", "debug information from program loader", &loader_debug_file);	
-	opt_reg_string("-call_debug", "debug information about procedure calls", &isa_call_debug_file);	
-	opt_reg_string("-inst_debug", "debug information about executed instructions", &isa_inst_debug_file);
+	opt_reg_string("-debug:syscall", "debug information for system calls", &syscall_debug_file);	
+	opt_reg_string("-debug:elf", "debug information from elf file analyzer", &elf_debug_file);	
+	opt_reg_string("-debug:loader", "debug information from program loader", &loader_debug_file);	
+	opt_reg_string("-debug:call", "debug information about procedure calls", &isa_call_debug_file);	
+	opt_reg_string("-debug:inst", "debug information about executed instructions", &isa_inst_debug_file);
 
 	opt_reg_string("-inst_stat", "file to dump instruction stats", &inst_stat_file);
 	opt_reg_string("-inst_stop", "stop when executing inst", &inst_stop);
