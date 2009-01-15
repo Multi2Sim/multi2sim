@@ -307,3 +307,7 @@
 		huge dumps after a 'fatal' or 'panic' occurs during
 		simulation. Instead, this dump is controlled by the
 		'-debug:error' parameter.
+
+2009-09-23
+	* cachesystem.c: bug fixed that prevented the cache block size
+		to be changed in the cache configuration file.
