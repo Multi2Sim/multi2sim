@@ -132,12 +132,9 @@ void cache_free(struct cache_t *cache)
 void cache_decode_address(struct cache_t *cache, uint32_t addr,
 	uint32_t *pset, uint32_t *ptag, uint32_t *poffset)
 {
-	if (pset)
-		*pset = (addr >> cache->logbsize) % cache->nsets;
-	if (ptag)
-		*ptag = addr & ~cache->bmask;
-	if (poffset)
-		*poffset = addr & cache->bmask;
+	PTR_ASSIGN(pset, (addr >> cache->logbsize) % cache->nsets);
+	PTR_ASSIGN(ptag, addr & ~cache->bmask);
+	PTR_ASSIGN(poffset, addr & cache->bmask);
 }
 
 
@@ -152,10 +149,8 @@ int cache_find_block(struct cache_t *cache, uint32_t addr,
 	/* Locate block */
 	tag = addr & ~cache->bmask;
 	set = (addr >> cache->logbsize) % cache->nsets;
-	if (pset)
-		*pset = set;
-	if (pstatus)
-		*pstatus = moesi_status_invalid;
+	PTR_ASSIGN(pset, set);
+	PTR_ASSIGN(pstatus, moesi_status_invalid);
 	for (way = 0; way < cache->assoc; way++)
 		if (cache->sets[set].blks[way].tag == tag && cache->sets[set].blks[way].status)
 			break;
@@ -165,10 +160,8 @@ int cache_find_block(struct cache_t *cache, uint32_t addr,
 		return 0;
 	
 	/* Block found */
-	if (pway)
-		*pway = way;
-	if (pstatus)
-		*pstatus = cache->sets[set].blks[way].status;
+	PTR_ASSIGN(pway, way);
+	PTR_ASSIGN(pstatus, cache->sets[set].blks[way].status);
 	return 1;
 }
 
@@ -190,10 +183,8 @@ void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
 {
 	assert(set >= 0 && set < cache->nsets);
 	assert(way >= 0 && way < cache->assoc);
-	if (ptag)
-		*ptag = cache->sets[set].blks[way].tag;
-	if (pstatus)
-		*pstatus = cache->sets[set].blks[way].status;
+	PTR_ASSIGN(ptag, cache->sets[set].blks[way].tag);
+	PTR_ASSIGN(pstatus, cache->sets[set].blks[way].status);
 }
 
 

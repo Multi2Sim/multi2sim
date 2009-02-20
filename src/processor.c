@@ -119,6 +119,11 @@ void p_reg_options()
 
 void p_thread_init(int core, int thread)
 {
+	/* Save block size of corresponding instruction cache. */
+	THREAD.fetch_bsize = cache_system_block_size(core, thread,
+		cache_kind_inst);
+
+	/* For PDG */
 	if (p_fetch_policy == p_fetch_policy_pdg)
 		THREAD.lmpred = calloc(1, PDG_LMPRED_SIZE);
 }

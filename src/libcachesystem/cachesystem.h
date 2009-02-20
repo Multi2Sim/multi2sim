@@ -30,63 +30,75 @@
 #include <network.h>
 
 
+/* Macro for safe pointer assignment */
+#define PTR_ASSIGN(PTR, VALUE) if (PTR) *(PTR) = (VALUE)
 
 
 /* Directory */
 
-struct dir_entry_t {
+struct dir_lock_t {
 	int lock;
 	struct moesi_stack_t *lock_queue;
+};
+
+struct dir_entry_t {
 	int owner;  /* node owning the block */
 	int sharers;  /* number of 1s in next field */
 	unsigned char sharer[0];  /* bitmap of sharers (must be last field) */
 };
 
 struct dir_t {
+
 	/* Number of possible sharers for a block. This determines
 	 * the size of the directory entry bitmap. */
 	int nodes;
 
-	/* Width and height of the directory. For caches, it is
-	 * useful to have a 2-dim directory. XSize is the number of
-	 * sets and YSize is the number of ways of the cache. */
-	int xsize, ysize;
+	/* Width, height and depth of the directory. For caches, it is
+	 * useful to have a 3-dim directory. XSize is the number of
+	 * sets, YSize is the number of ways of the cache, and ZSize
+	 * is the number of subblocks of size 'cache_min_block_size'
+	 * that fit within a block. */
+	int xsize, ysize, zsize;
 
-	/* Last field. This is an array of elements of type
+	/* Array of xsize*ysize locks. Each lock corresponds to a
+	 * block, i.e. a set of zsize directory entries */
+	struct dir_lock_t *dir_lock;
+
+	/* Last field. This is an array of xsize*ysize*zsize elements of type
 	 * dir_entry_t, which have likewise variable size. */
 	unsigned char data[0];
 };
 
-struct dir_t *dir_create(int xsize, int ysize, int nodes);
+struct dir_t *dir_create(int xsize, int ysize, int zsize, int nodes);
 void dir_free(struct dir_t *dir);
 
-struct dir_entry_t *dir_entry_get(struct dir_t *dir, int x, int y);
+struct dir_entry_t *dir_entry_get(struct dir_t *dir, int x, int y, int z);
 void dir_entry_set_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
 void dir_entry_clear_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
 void dir_entry_clear_all_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry);
 int dir_entry_is_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
 void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry);
+int dir_entry_group_shared_or_owned(struct dir_t *dir, int x, int y);
 
-int dir_entry_lock(struct dir_t *dir, struct dir_entry_t *dir_entry,
-	int event, struct moesi_stack_t *stack);
-void dir_entry_unlock(struct dir_t *dir, struct dir_entry_t *dir_entry);
+struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y);
+int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *stack);
+void dir_lock_unlock(struct dir_lock_t *dir_lock);
+void dir_unlock(struct dir_t *dir, int x, int y);
 
 
 
 
 /* Memory Management Unit */
 
-#define MMU_PAGE_HASH_SIZE	(1 << 10)
-#define MMU_PAGE_LIST_SIZE	(1 << 10)
-#define MMU_LOG_PAGE_SIZE	(12)
-#define MMU_PAGE_SIZE		(1 << MMU_LOG_PAGE_SIZE)
-#define MMU_PAGE_MASK		(MMU_PAGE_SIZE - 1)
+extern uint32_t mmu_page_size;
+extern uint32_t mmu_page_mask;
+extern uint32_t mmu_log_page_size;
 
+void mmu_reg_options(void);
 void mmu_init(void);
 void mmu_done(void);
 uint32_t mmu_translate(int mid, uint32_t vtladdr);
-void mmu_get_dir_entry(uint32_t phaddr, struct dir_t **pdir,
-	struct dir_entry_t **pdir_entry);
+struct dir_t *mmu_get_dir(uint32_t phaddr);
 int mmu_valid_phaddr(uint32_t phaddr);
 
 
@@ -213,10 +225,9 @@ enum {
 struct moesi_stack_t {
 	uint64_t id;
 	struct ccache_t *ccache, *target, *except;
-	uint32_t tag, set, way;
-	uint32_t ccache_set, ccache_way;
-	struct dir_t *dir, *ccache_dir;
-	struct dir_entry_t *dir_entry, *ccache_dir_entry;
+	uint32_t addr, set, way, tag;
+	uint32_t src_set, src_way, src_tag;
+	struct dir_lock_t *dir_lock;
 	int status, response, pending;
 	
 	/* Flags */
@@ -226,7 +237,7 @@ struct moesi_stack_t {
 	int writeback : 1;
 	int eviction : 1;
 
-	/* Cache block locks */
+	/* Cache block lock */
 	int lock_event;
 	struct moesi_stack_t *lock_next;
 
@@ -259,6 +270,8 @@ struct ccache_t {
 	int loid;  /* ID in the low interconnect */
 	struct net_t *hinet, *lonet;  /* High and low interconnects */
 	int lat;
+	uint32_t bsize;
+	int logbsize;
 	struct ccache_t *next;  /* Next cache in hierarchy */
 	struct cache_t *cache;  /* Cache holding data */
 	struct dir_t *dir;
@@ -277,12 +290,16 @@ struct ccache_t {
 struct ccache_t *ccache_create();
 void ccache_free(struct ccache_t *ccache);
 
-int ccache_find_block(struct ccache_t *ccache, uint32_t tag,
-	uint32_t *pset, uint32_t *pway, int *pstatus,
-	struct dir_t **pdir, struct dir_entry_t **pdir_entry);
+int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
+	uint32_t *pset, uint32_t *pway, uint32_t *ptag, int *pstatus);
 void ccache_get_block(struct ccache_t *ccache, uint32_t set, uint32_t way,
-	uint32_t *ptag, int *pstatus,
-	struct dir_t **pdir, struct dir_entry_t **pdir_entry);
+	uint32_t *ptag, int *pstatus);
+
+struct dir_t *ccache_get_dir(struct ccache_t *ccache, uint32_t phaddr);
+struct dir_entry_t *ccache_get_dir_entry(struct ccache_t *ccache,
+	uint32_t set, uint32_t way, uint32_t subblk);
+struct dir_lock_t *ccache_get_dir_lock(struct ccache_t *ccache,
+	uint32_t set, uint32_t way);
 
 
 
@@ -309,8 +326,7 @@ void tlb_free(struct tlb_t *tlb);
 
 /* Cache System */
 
-extern uint32_t cache_block_size;  /* option */
-extern uint32_t cache_log_block_size;  /* derived */
+extern int cache_min_block_size;
 extern struct ccache_t *main_memory;
 
 enum cache_kind_enum {
@@ -350,6 +366,11 @@ void cache_system_reg_options(void);
 void cache_system_init(int def_cores, int def_threads);
 void cache_system_done(void);
 void cache_system_dump(FILE *f);
+
+/* Return block size of the first cache when accessing the cache system
+ * by a given core-thread and cache kind. */
+int cache_system_block_size(int core, int thread,
+	enum cache_kind_enum cache_kind);
 
 /* Return true if cache system can be accesses. If not, it can be due to
  * a lack of ports or that an access to the same block is pending. The

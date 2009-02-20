@@ -140,7 +140,7 @@ int main(int argc, char **argv)
 
 		for (i = 0; i < 10000; i++) {
 			mmu_translate(0, addr);
-			addr += MMU_PAGE_SIZE;
+			addr += mmu_page_size;
 		}
 
 		list[0] = 0x84322;
