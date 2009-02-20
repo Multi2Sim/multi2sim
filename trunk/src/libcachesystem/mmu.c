@@ -21,6 +21,17 @@
 #include "cachesystem.h"
 
 
+/* Global variables */
+uint32_t mmu_page_size = 1 << 12;
+uint32_t mmu_log_page_size;
+uint32_t mmu_page_mask;
+
+
+/* Local constants */
+#define MMU_PAGE_HASH_SIZE	(1 << 10)
+#define MMU_PAGE_LIST_SIZE	(1 << 10)
+
+
 /* Physical memory page */
 struct mmu_page_t {
 	struct mmu_page_t *next;
@@ -45,8 +56,21 @@ struct mmu_t
 static struct mmu_t *mmu;
 
 
+void mmu_reg_options()
+{
+	opt_reg_uint32("-page_size", "Memory page size", &mmu_page_size);
+}
+
+
 void mmu_init()
 {
+	/* Check page size */
+	if ((mmu_page_size & (mmu_page_size - 1)))
+		fatal("memory page size must be power of 2");
+	mmu_log_page_size = log_base2(mmu_page_size);
+	mmu_page_mask = mmu_page_size - 1;
+
+	/* Create mmu */
 	mmu = calloc(1, sizeof(struct mmu_t));
 	mmu->page_list = calloc(MMU_PAGE_LIST_SIZE, sizeof(void *));
 	mmu->page_list_size = MMU_PAGE_LIST_SIZE;
@@ -60,7 +84,7 @@ void mmu_done()
 
 	/* Memory usage stat */
 	fprintf(stderr, "mmu.phys_mem  %u  # Physical memory allocated\n",
-		mmu->page_count * MMU_PAGE_SIZE);
+		mmu->page_count * mmu_page_size);
 
 	/* Free */
 	for (i = 0; i < mmu->page_count; i++) {
@@ -80,8 +104,8 @@ static struct mmu_page_t *mmu_get_page(int mid, uint32_t vtladdr)
 	int idx;
 
 	/* Look for page */
-	idx = ((vtladdr >> MMU_LOG_PAGE_SIZE) + mid * 23) % MMU_PAGE_HASH_SIZE;
-	tag = vtladdr & ~(MMU_PAGE_SIZE - 1);
+	idx = ((vtladdr >> mmu_log_page_size) + mid * 23) % MMU_PAGE_HASH_SIZE;
+	tag = vtladdr & ~mmu_page_mask;
 	prev = NULL;
 	page = mmu->page_hash[idx];
 	while (page) {
@@ -96,11 +120,11 @@ static struct mmu_page_t *mmu_get_page(int mid, uint32_t vtladdr)
 		
 		/* Create page */
 		page = calloc(1, sizeof(struct mmu_page_t));
-		page->dir = dir_create(MMU_PAGE_SIZE / cache_block_size, 1,
-			main_memory->hinet->num_nodes);
+		page->dir = dir_create(mmu_page_size / main_memory->bsize, 1,
+			main_memory->bsize / cache_min_block_size, main_memory->hinet->num_nodes);
 		page->vtladdr = tag;
 		page->mid = mid;
-		page->phaddr = mmu->page_count << MMU_LOG_PAGE_SIZE;
+		page->phaddr = mmu->page_count << mmu_log_page_size;
 
 		/* Insert in page list */
 		if (mmu->page_count == mmu->page_list_size) {
@@ -133,7 +157,7 @@ uint32_t mmu_translate(int mid, uint32_t vtladdr)
 	struct mmu_page_t *page;
 	uint32_t offs, phaddr;
 
-	offs = vtladdr & (MMU_PAGE_SIZE - 1);
+	offs = vtladdr & mmu_page_mask;
 	page = mmu_get_page(mid, vtladdr);
 	assert(page);
 	phaddr = page->phaddr | offs;
@@ -141,30 +165,24 @@ uint32_t mmu_translate(int mid, uint32_t vtladdr)
 }
 
 
-void mmu_get_dir_entry(uint32_t phaddr, struct dir_t **pdir,
-	struct dir_entry_t **pdir_entry)
+struct dir_t *mmu_get_dir(uint32_t phaddr)
 {
 	uint32_t idx;
 	struct mmu_page_t *page;
 
-	idx = phaddr >> MMU_LOG_PAGE_SIZE;
-	*pdir = NULL;
-	*pdir_entry = NULL;
+	/* Get memory page */
+	idx = phaddr >> mmu_log_page_size;
 	if (idx >= mmu->page_count)
-		return;
+		return NULL;
 	page = mmu->page_list[idx];
-
-	/* Return values */
-	*pdir = page->dir;
-	idx = (phaddr & MMU_PAGE_MASK) >> cache_log_block_size;
-	*pdir_entry = dir_entry_get(page->dir, idx, 0);
+	return page->dir;
 }
 
 
 int mmu_valid_phaddr(uint32_t phaddr)
 {
 	uint32_t idx;
-	idx = phaddr >> MMU_LOG_PAGE_SIZE;
+	idx = phaddr >> mmu_log_page_size;
 	return idx < mmu->page_count;
 }
 

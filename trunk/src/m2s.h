@@ -619,6 +619,7 @@ struct processor_thread_t {
 	/* Fetch */
 	uint32_t fetch_eip, fetch_neip;  /* eip and next eip */
 	int fetch_stall;
+	int fetch_bsize;  /* Block size of instruction cache for this thread */
 	uint32_t fetch_block;  /* Virtual address of last fetched block */
 	uint64_t fetch_access;  /* Access ID of last instruction cache access */
 
