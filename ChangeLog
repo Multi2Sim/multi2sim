@@ -313,3 +313,15 @@
 		to be changed in the cache configuration file. New check
 		added in the configuration file analysis, which does not
 		allow block sizes greater than page sizes.
+
+2009-10-26
+	Cache blocks of different sizes allowed for different caches.
+	This allows the key BlockSize to be specified in the cache config
+	files individually for each cache and main memory. The MOESI
+	protocol schemes have also been changed in the documentation
+	project.
+
+	* mmu.c: parameter '-page_size' to change the memory page size.
+		The constants MMU_PAGE_SIZE, MMU_LOG_PAGE_SIZE, and
+		MMU_PAGE_MASK have been converted into variables.
+

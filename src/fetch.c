@@ -42,7 +42,7 @@ static int can_fetch(int core, int thread)
 
 	/* If the next fetch address belongs to a new block, cache system
 	 * must be accessible to read it. */
-	block = THREAD.fetch_neip & ~(cache_block_size - 1);
+	block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
 	if (block != THREAD.fetch_block) {
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
 		if (!cache_system_can_access(core, thread, cache_kind_inst, phaddr))
@@ -135,7 +135,7 @@ static int fetch_thread(int core, int thread, int quant)
 
 		/* Fetch an assembler instruction. If it belongs to a new cache
 		 * block, access instruction cache. */
-		block = THREAD.fetch_neip & ~(cache_block_size - 1);
+		block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
 		if (block != THREAD.fetch_block) {
 			phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
 			THREAD.fetch_block = block;
