@@ -48,10 +48,6 @@ void p_recover(int core, int thread)
 		if (!uop->specmode)
 			break;
 		
-		/* Do we have to decrement pending_readers? */
-		if (!uop->issued)
-			phregs_read(uop);
-		
 		/* Do we have to mark destination physical registers as
 		 * completed? */
 		if (!uop->completed)

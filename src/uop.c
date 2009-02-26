@@ -103,6 +103,7 @@ void uop_init()
 {
 	x86_opcode_t opcode;
 	struct uop_table_entry_t *entry;
+	int i, j;
 
 	uop_repos = repos_create(sizeof(struct uop_t), "uop_repos");
 
@@ -122,6 +123,23 @@ void uop_init()
 #include "uop2.dat"
 #undef X86_INST
 #undef UOP
+	
+	/* Integrity: check that input and output dependences are not
+	 * duplicated. This may cause problems in other simulator modules. */
+	for (opcode = 0; opcode < x86_opcode_count; opcode++) {
+		for (entry = uop_table[opcode]; entry; entry = entry->next) {
+			for (i = 0; i < IDEP_COUNT; i++)
+				for (j = 0; j < i; j++)
+					if (entry->idep[i] && entry->idep[i] == entry->idep[j])
+						panic("uop2.dat: opcode=0x%x, repeated input dependence",
+							opcode);
+			for (i = 0; i < ODEP_COUNT; i++)
+				for (j = 0; j < i; j++)
+					if (entry->odep[i] && entry->odep[i] == entry->odep[j])
+						panic("uop2.dat: opcode=0x%x, repeated output dependence",
+							opcode);
+		}
+	}
 }
 
 

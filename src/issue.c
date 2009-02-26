@@ -52,9 +52,6 @@ static int issue_sq(int core, int thread, int quant)
 		eventq_insert(CORE.eventq, store);
 		store->in_eventq = TRUE;
 		
-		/* Consume and complete registers */
-		phregs_read(store);
-		
 		/* Remove it from SQ */
 		sq_remove(core, thread);
 
@@ -105,9 +102,6 @@ static int issue_lq(int core, int thread, int quant)
 		load->when = sim_cycle + 1;
 		eventq_insert(CORE.eventq, load);
 		load->in_eventq = TRUE;
-		
-		/* One less pending reader */
-		phregs_read(load);
 		
 		/* Instruction issued */
 		ptrace_new_stage(load, ptrace_memory);
@@ -163,9 +157,6 @@ static int issue_iq(int core, int thread, int quant)
 		uop->issue_when = sim_cycle;
 		uop->when = sim_cycle + lat;
 		eventq_insert(CORE.eventq, uop);
-		
-		/* One less pending reader */
-		phregs_read(uop);
 		
 		/* Instruction issued */
 		ptrace_new_stage(uop, ptrace_execution);
