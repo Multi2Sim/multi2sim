@@ -20,80 +20,57 @@
 #include <m2s.h>
 
 
-uint32_t phregs_size = 64;
+/* Global variables */
+
+uint32_t phregs_size = 80;  /* per-thread register file size */
 enum phregs_kind_enum phregs_kind = phregs_kind_private;
 
-/* Number of register devoted for a thread. If register file is shared,
- * this is equals to phregs_size * threads */
-static uint32_t phregs_local_size;
 
 
 
-/* Private functions */
+/* Private variables and functions */
+
+static uint32_t phregs_local_size;  /* maximum number of registers allowed per thread */
 
 
-/* Return true if a physical register is free. */
-static int phregs_is_free(struct phregs_t *phregs, int phreg)
-{
-	return !phregs->phreg[phreg].pending_readers &&
-		phregs->phreg[phreg].valid_remapping &&
-		phregs->phreg[phreg].completed;
-}
-
-
-/* This function must be called after modifying any field of the renaming
- * table in the entry 'phreg'. If suddently 'phreg' is free, it is added to
- * the free_phreg list. The physical register must not be free before. */
-static void phregs_check_if_free(struct phregs_t *phregs, int phreg)
-{
-	if (phregs_is_free(phregs, phreg)) {
-		assert(phregs->free_phreg_count < phregs->size);
-		assert(phregs->phreg[phreg].busy);
-		phregs->phreg[phreg].busy = 0;
-		phregs->free_phreg[phregs->free_phreg_count] = phreg;
-		phregs->free_phreg_count++;
-	}
-}
-
-
-/* Reclaim a free physical register;
- * the assigned register's status is changed */
+/* Return a free physical register, and remove it from the free list. */
 static int phregs_reclaim(int core, int thread)
 {
 	int phreg;
 	struct phregs_t *phregs = THREAD.phregs;
 
 	/* Obtain a register from the free_phreg list */
-	if (!phregs->free_phreg_count)
-		fatal("phregs_reclaim: no phyisical register free");
+	assert(phregs->free_phreg_count > 0);
 	phreg = phregs->free_phreg[phregs->free_phreg_count - 1];
 	phregs->free_phreg_count--;
-	assert(!phregs->phreg[phreg].pending_readers);
-	assert(phregs->phreg[phreg].valid_remapping);
-	assert(phregs->phreg[phreg].completed);
-	
-
-	/* Change renaming table entry to {0,0,0} */
-	phregs->phreg[phreg].pending_readers = 0;
-	phregs->phreg[phreg].valid_remapping = 0;
-	phregs->phreg[phreg].completed = 0;
-	phregs->phreg[phreg].thread = thread;
-	phregs->phreg[phreg].busy = 1;
-	
-	/* Return register */
+	assert(!phregs->phreg[phreg].busy);
+	assert(!phregs->phreg[phreg].pending);
 	return phreg;
 }
 
 
+/* Return the number of destination physical registers needed by an instruction.
+ * If there are only flags as destination dependences, only one register is
+ * needed. Otherwise, one register per destination operand is needed, and the
+ * output flags will be mapped to one of the destination physical registers
+ * used for operands. */
 static int phregs_needs(struct uop_t *uop)
 {
-	int odep, loreg, count = 0;
+	int odep, loreg, opcount = 0, fcount = 0;
 	for (odep = 0; odep < ODEP_COUNT; odep++) {
 		loreg = uop->odep[odep];
-		if (DVALID(loreg))
-			count++;
+		if (!DVALID(loreg))
+			continue;
+		if (DFLAG(loreg))
+			fcount++;
+		else
+			opcount++;
 	}
-	return count;
+	if (!fcount && !opcount)
+		return 0;
+	if (fcount && !opcount)
+		return 1;
+	return opcount;
 }
 
 
@@ -113,31 +90,33 @@ void phregs_reg_options(void)
 
 static void phregs_init_thread(int core, int thread)
 {
-	int dep, phreg;
+	int dep, phreg, fphreg;
 	struct phregs_t *phregs = THREAD.phregs;
 	
-	/* Initial mapping */
+	/* Initial mapping. Map each logical register to a new physical register,
+	 * and map all flags to the first allocated physical register. */
+	fphreg = -1;
 	for (dep = 0; dep < DCOUNT; dep++) {
-		
-		/* Get a free physical register and set T[phreg] to {0,0,1} */
-		phreg = phregs_reclaim(core, thread);
-		phregs->phreg[phreg].pending_readers = 0;
-		phregs->phreg[phreg].valid_remapping = 0;
-		phregs->phreg[phreg].completed = 1;
-		
-		/* Entries in rat */
+		if (DFLAG(dep + DFIRST)) {
+			assert(fphreg >= 0);
+			phreg = fphreg;
+		} else {
+			phreg = phregs_reclaim(core, thread);
+			fphreg = phreg;
+		}
+		phregs->phreg[phreg].busy++;
 		phregs->rat[dep] = phreg;
 	}
 }
 
 
+#define MINREGS  (DCOUNT + ODEP_COUNT)
 void phregs_init(void)
 {
 	int core, thread;
-	int minregs = DCOUNT + ODEP_COUNT;
 	
-	if (phregs_size < minregs)
-		fatal("phregs_size must be at least %d", minregs);
+	if (phregs_size < MINREGS)
+		fatal("phregs_size must be at least %d", MINREGS);
 	phregs_local_size = phregs_kind == phregs_kind_private ? phregs_size :
 		phregs_size * p_threads;
 	FOREACH_CORE FOREACH_THREAD {
@@ -164,15 +143,8 @@ struct phregs_t *phregs_create(int size)
 	phregs = calloc(1, sizeof(struct phregs_t));
 	phregs->size = size;
 	
-	/* Create renaming table, and set all registers as free {0,1,1} */
+	/* Register file and free list */
 	phregs->phreg = calloc(size, sizeof(struct phreg_t));
-	for (phreg = 0; phreg < size; phreg++) {
-		phregs->phreg[phreg].pending_readers = 0;
-		phregs->phreg[phreg].valid_remapping = 1;
-		phregs->phreg[phreg].completed = 1;
-	}
-
-	/* Create list of free registers; all are free */
 	phregs->free_phreg = calloc(size, sizeof(int));
 	phregs->free_phreg_count = size;
 	for (phreg = 0; phreg < size; phreg++)
@@ -194,18 +166,13 @@ void phregs_free(struct phregs_t *phregs)
 void phregs_dump(int core, int thread, FILE *f)
 {
 	int i;
-	int is_free;
 
 	fprintf(f, "Register file at core %d, thread %d\n", core, thread);
-	fprintf(f, "Format is [pending_readers, completed, valid_remapping], * = free\n");
+	fprintf(f, "Format is [busy, pending], * = free\n");
 	for (i = 0; i < phregs_local_size; i++) {
-		is_free = THREAD.phregs->phreg[i].pending_readers == 0 &&
-			THREAD.phregs->phreg[i].completed &&
-			THREAD.phregs->phreg[i].valid_remapping;
-		fprintf(f, "  %3d%c[%02d-%d-%d]", i, is_free ? '*' : ' ',
-			THREAD.phregs->phreg[i].pending_readers,
-			THREAD.phregs->phreg[i].completed,
-			THREAD.phregs->phreg[i].valid_remapping);
+		fprintf(f, "  %3d%c[%d-%d]", i, THREAD.phregs->phreg[i].busy ? ' ' : '*',
+			THREAD.phregs->phreg[i].busy,
+			THREAD.phregs->phreg[i].pending);
 		if (i % 5 == 4 && i != phregs_local_size - 1)
 			fprintf(f, "\n");
 	}
@@ -256,6 +223,7 @@ void phregs_rename(struct uop_t *uop)
 {
 	int idep, odep;
 	int loreg, phreg, ophreg;
+	int fcount, fphreg;
 	int core = uop->core;
 	int thread = uop->thread;
 	struct phregs_t *phregs = THREAD.phregs;
@@ -271,50 +239,60 @@ void phregs_rename(struct uop_t *uop)
 		/* Rename input register */
 		phreg = phregs->rat[loreg - DFIRST];
 		uop->ph_idep[idep] = phreg;
-		phregs->phreg[phreg].pending_readers++;
 	}
 	
-	/* Rename output registers */
+	/* Rename output registers. Store in 'fphreg' an
+	 * allocated output register, which will be used to
+	 * rename flags below. */
+	fphreg = -1;
+	fcount = 0;
 	for (odep = 0; odep < ODEP_COUNT; odep++) {
 		
 		loreg = uop->odep[odep];
+		if (DFLAG(loreg)) {
+			fcount++;
+			continue;
+		}
 		if (!DVALID(loreg)) {
 			uop->ph_oodep[odep] = -1;
 			uop->ph_odep[odep] = -1;
 			continue;
 		}
-		
+
 		/* Reclaim a free physical register */
 		phreg = phregs_reclaim(core, thread);
-		assert(phreg >= 0 && phreg < phregs->size);
+		phregs->phreg[phreg].busy++;
+		phregs->phreg[phreg].pending = 1;
 		ophreg = phregs->rat[loreg - DFIRST];
+		if (fphreg < 0)
+			fphreg = phreg;
 		
 		/* Allocate output registers */
 		uop->ph_oodep[odep] = ophreg;
 		uop->ph_odep[odep] = phreg;
 		phregs->rat[loreg - DFIRST] = phreg;
 	}
-}
 
-
-void phregs_read(struct uop_t *uop)
-{
-	int idep, phreg;
-	int core = uop->core;
-	int thread = uop->thread;
-	struct phregs_t *phregs = THREAD.phregs;
-	
-	/* Rename input registers */
-	for (idep = 0; idep < IDEP_COUNT; idep++) {
-		phreg = uop->ph_idep[idep];
-		if (phreg < 0)
+	/* Rename flags. If there is no flag, done.
+	 * If no destination register was renamed,
+	 * allocate a new register for the flags. */
+	if (!fcount)
+		return;
+	if (fphreg < 0)
+		fphreg = phregs_reclaim(core, thread);
+	for (odep = 0; odep < ODEP_COUNT; odep++) {
+		loreg = uop->odep[odep];
+		if (!DFLAG(loreg))
 			continue;
-		
-		/* Decrease number of pending readers */
-		assert(phregs->phreg[phreg].pending_readers > 0);
-		phregs->phreg[phreg].pending_readers--;
-		phregs_check_if_free(phregs, phreg);
+		phregs->phreg[fphreg].busy++;
+		phregs->phreg[fphreg].pending = 1;
+		ophreg = phregs->rat[loreg - DFIRST];
+		uop->ph_oodep[odep] = ophreg;
+		uop->ph_odep[odep] = fphreg;
+		phregs->rat[loreg - DFIRST] = fphreg;
 	}
+	assert(phregs->phreg[fphreg].busy);
+	assert(phregs->phreg[fphreg].pending);
 }
 
 
@@ -330,7 +308,7 @@ int phregs_ready(struct uop_t *uop)
 		phreg = uop->ph_idep[idep];
 		if (phreg < 0)
 			continue;
-		if (!phregs->phreg[phreg].completed)
+		if (phregs->phreg[phreg].pending)
 			return FALSE;
 	}
 	return TRUE;
@@ -348,11 +326,8 @@ void phregs_write(struct uop_t *uop)
 		phreg = uop->ph_odep[odep];
 		if (phreg < 0)
 			continue;
-		
 		assert(phreg < phregs->size);
-		assert(!phregs->phreg[phreg].completed);
-		phregs->phreg[phreg].completed = 1;
-		phregs_check_if_free(phregs, phreg);
+		phregs->phreg[phreg].pending = 0;
 	}
 }
 
@@ -378,16 +353,19 @@ void phregs_undo(struct uop_t *uop)
 			continue;
 		}
 
-		/* Undo renaming. Current triplet must be {0,0,1} and
-		 * the new physical register must not have been freed. */
-		assert(!phregs->phreg[phreg].pending_readers);
-		assert(!phregs->phreg[phreg].valid_remapping);
-		assert(phregs->phreg[phreg].completed);
-		assert(phregs->phreg[phreg].thread == uop->thread);
-		phregs->phreg[phreg].valid_remapping = 1;
-		phregs_check_if_free(phregs, phreg);
+		/* Decrease busy counter in current mapping, and free if 0. */
+		assert(phregs->phreg[phreg].busy > 0);
+		assert(!phregs->phreg[phreg].pending);
+		phregs->phreg[phreg].busy--;
+		if (!phregs->phreg[phreg].busy) {
+			assert(phregs->free_phreg_count < phregs->size);
+			phregs->free_phreg[phregs->free_phreg_count] = phreg;
+			phregs->free_phreg_count++;
+		}
+
+		/* Return to previous mapping. */
 		phregs->rat[loreg - DFIRST] = ophreg;
-		assert(!phregs_is_free(phregs, ophreg));
+		assert(phregs->phreg[ophreg].busy);
 	}
 }
 
@@ -409,10 +387,15 @@ void phregs_commit(struct uop_t *uop)
 			continue;
 		}
 		
-		/* Update 'valid_remapping' of previous mapping. */
-		assert(!phregs->phreg[ophreg].valid_remapping);
-		phregs->phreg[ophreg].valid_remapping = 1;
-		phregs_check_if_free(phregs, ophreg);
+		/* Decrease counter of previous mapping and free if 0. */
+		assert(phregs->phreg[ophreg].busy > 0);
+		phregs->phreg[ophreg].busy--;
+		if (!phregs->phreg[ophreg].busy) {
+			assert(!phregs->phreg[ophreg].pending);
+			assert(phregs->free_phreg_count < phregs->size);
+			phregs->free_phreg[phregs->free_phreg_count] = ophreg;
+			phregs->free_phreg_count++;
+		}
 	}
 }
 
@@ -423,10 +406,17 @@ void phregs_check(int core, int thread)
 	struct uop_t *uop;
 	int loreg, phreg, odep, i;
 
+	/* Check that all registers in the free queue are actually free. */
+	for (i = 0; i < phregs->free_phreg_count; i++) {
+		phreg = phregs->free_phreg[i];
+		assert(!phregs->phreg[phreg].busy);
+		assert(!phregs->phreg[phreg].pending);
+	}
+
 	/* Check that all mapped registers are busy */
 	for (loreg = DFIRST; loreg <= DLAST; loreg++) {
 		phreg = phregs->rat[loreg - DFIRST];
-		assert(!phregs_is_free(phregs, phreg));
+		assert(phregs->phreg[phreg].busy);
 	}
 
 	/* Check that all destination and previous destination
@@ -437,8 +427,8 @@ void phregs_check(int core, int thread)
 		for (odep = 0; odep < ODEP_COUNT; odep++) {
 			if (!DVALID(uop->odep[odep]))
 				continue;
-			assert(!phregs_is_free(phregs, uop->ph_odep[odep]));
-			assert(!phregs_is_free(phregs, uop->ph_oodep[odep]));
+			assert(phregs->phreg[uop->ph_odep[odep]].busy);
+			assert(phregs->phreg[uop->ph_oodep[odep]].busy);
 		}
 	}
 }
