@@ -89,7 +89,7 @@ void fetchq_recover(int core, int thread)
 
 /* Instruction Queue */
 
-uint32_t iq_size = 96;
+uint32_t iq_size = 40;
 enum iq_kind_enum iq_kind = iq_kind_private;
 
 
@@ -208,7 +208,7 @@ void iq_recover(int core, int thread)
 
 /* Load Queue */
 
-uint32_t lq_size = 96;
+uint32_t lq_size = 20;
 enum lq_kind_enum lq_kind = lq_kind_private;
 
 
@@ -327,7 +327,7 @@ void lq_recover(int core, int thread)
 
 /* Store Queue */
 
-uint32_t sq_size = 32;
+uint32_t sq_size = 20;
 
 
 void sq_reg_options()

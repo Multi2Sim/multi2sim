@@ -25,8 +25,6 @@ struct processor_t *p;
 
 
 /* processor parameters */
-enum p_arch_enum p_arch = p_arch_rob;
-int p_effaddr = 1;
 int p_stage_time_stats = 0;
 uint32_t p_cores = 1;
 uint32_t p_threads = 1;
@@ -57,7 +55,6 @@ uint32_t p_commit_width = 4;
 /* Options & stats */
 void p_reg_options()
 {
-	static char *p_arch_map[] = { "rob", "vb" };
 	static char *p_recover_kind_map[] = { "writeback", "commit" };
 	static char *p_fetch_kind_map[] = { "timeslice", "switchonevent", "multiple" };
 	static char *p_fetch_policy_map[] = { "equal", "icount", "pdg", "dcra" };
@@ -65,10 +62,6 @@ void p_reg_options()
 	static char *p_issue_kind_map[] = { "shared", "timeslice" };
 	static char *p_commit_kind_map[] = { "shared", "timeslice" };
 	
-	opt_reg_enum("-arch", "processor architecture {rob|vb}",
-		(int *) &p_arch, p_arch_map, 2);
-	opt_reg_bool("-effaddr", "consider effaddr as epoch initiator in VB arch {t|f}",
-		&p_effaddr);
 	opt_reg_uint32("-cores", "number of processor cores", &p_cores);
 	opt_reg_uint32("-threads", "number of threads per core", &p_threads);
 

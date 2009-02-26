@@ -20,27 +20,6 @@
 #include <m2s.h>
 
 
-static int can_commit_uop_rob(struct uop_t *uop)
-{
-	if (!(uop->flags & FMEM) || (uop->flags & FLOAD))
-		return uop->completed;
-	if (uop->flags & FSTORE)
-		return uop->ready;
-	panic("can_commit_uop_rob: shouln't get here");
-	return TRUE;
-}
-
-
-static int can_commit_uop_vb(struct uop_t *uop)
-{
-	if ((uop->flags & FCTRL))
-		return uop->completed;
-	if (uop->uop == uop_effaddr && p_effaddr)
-		return uop->completed;
-	return TRUE;
-}
-
-
 static int can_commit_thread(int core, int thread)
 {
 	struct uop_t *uop;
@@ -63,9 +42,14 @@ static int can_commit_thread(int core, int thread)
 	assert(uop_exists(uop));
 	assert(uop->core == core && uop->thread == thread);
 
-	/* Return */
-	return p_arch == p_arch_rob ? can_commit_uop_rob(uop) :
-		can_commit_uop_vb(uop);
+	/* Check if it can be committed */
+	if (!(uop->flags & FMEM) || (uop->flags & FLOAD))
+		return uop->completed;
+	if (uop->flags & FSTORE)
+		return uop->ready;
+	panic("can_commit_thread: shouln't get here");
+	return TRUE;
+
 }
 
 

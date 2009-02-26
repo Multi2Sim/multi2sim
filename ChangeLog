@@ -325,3 +325,20 @@
 		The constants MMU_PAGE_SIZE, MMU_LOG_PAGE_SIZE, and
 		MMU_PAGE_MASK have been converted into variables.
 
+2009-11-03
+	Validation Buffer architecture removed. Option '-arch' removed.
+
+2009-11-03
+	The register renaming mechanism with 'valid_remapping', 'pending_readers',
+	and 'completed' fields is simplified to work on a plain ROB-based
+	architecture.
+
+	* phregs.c: new register renaming scheme designed to efficiently
+		manage x86 flags ZF, PF, SF, OF, CF, DF. Each physical register
+		attaches these flags, instead of making them occupy full
+		additional registers.
+
+2009-11-04
+	* queues.c, phregs.c: default parameters did not make much sense. They
+		have been changed to: RF=80, ROB=64, IQ=40, LQ=20, SQ=20.
+

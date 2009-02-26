@@ -43,13 +43,8 @@ extern int error_debug_category;
 
 
 /* Processor parameters */
-extern enum p_arch_enum {
-	p_arch_rob = 0,
-	p_arch_vb
-} p_arch;
 
 extern int p_stage_time_stats;
-extern int p_effaddr;
 extern uint32_t p_cores;
 extern uint32_t p_threads;
 extern uint32_t p_quantum;
@@ -170,6 +165,7 @@ enum dep_enum {
 };
 
 #define DVALID(dep) ((dep) >= DFIRST && (dep) <= DLAST)
+#define DFLAG(dep) ((dep) >= DZPS && (dep) <= DDF)
 
 enum uop_enum {
 #define UOP(_uop, _fu, _flags) uop_##_uop,
@@ -420,11 +416,8 @@ extern enum phregs_kind_enum {
 } phregs_kind;
 
 struct phreg_t {
-	int thread;
-	int pending_readers;
-	int valid_remapping;
-	int completed;
-	int busy;
+	int pending;  /* not completed (bit) */
+	int busy;  /* number of mapped logical registers */
 };
 
 struct phregs_t {
@@ -447,12 +440,11 @@ void phregs_free(struct phregs_t *phregs);
 void phregs_dump(int core, int thread, FILE *f);
 int phregs_can_rename(struct uop_t *uop);
 void phregs_rename(struct uop_t *uop);
-void phregs_read(struct uop_t *uop);
 int phregs_ready(struct uop_t *uop);
 void phregs_write(struct uop_t *uop);
 void phregs_undo(struct uop_t *uop);
 void phregs_commit(struct uop_t *uop);
-void phregs_check(int core, int thread); /* FIXME */
+void phregs_check(int core, int thread);
 
 
 
