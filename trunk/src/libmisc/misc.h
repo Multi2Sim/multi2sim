@@ -1,0 +1,141 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2007  Rafael Ubal Tena (raurte@gap.upv.es)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#ifndef MISC_H
+#define MISC_H
+
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+
+/* boolean values */
+#define TRUE				1
+#define FALSE				0
+
+/* max string size */
+#define MAX_STRING_SIZE			200
+
+/* min max bool */
+#define MIN(X, Y) ((X)<(Y)?(X):(Y))
+#define MAX(X, Y) ((X)>(Y)?(X):(Y))
+#define BOOL(X) ((X) ? 't' : 'f')
+
+/* round */
+#define ROUND_UP(N,ALIGN)	(((N) + ((ALIGN)-1)) & ~((ALIGN)-1))
+#define ROUND_DOWN(N,ALIGN)	((N) & ~((ALIGN)-1))
+
+/* alignment */
+#define DWORD_ALIGN(N) ROUND_DOWN((N),8)
+#define WORD_ALIGN(N) ROUND_DOWN((N), 4)
+#define HALF_ALIGN(N) ROUND_DOWN((N), 2)
+
+/* modulo */
+#define MOD(X, Y)		(((X) + (Y)) % (Y))
+
+/* endian control */
+#define SWAPH(X)	(((((half)(X)) & 0xff) << 8) | \
+			((((half)(X)) & 0xff00) >> 8))
+#define SWAPW(X)	((((uint32_t)(X)) << 24) |			\
+			((((uint32_t)(X)) << 8)  & 0x00ff0000) |		\
+			((((uint32_t)(X)) >> 8)  & 0x0000ff00) |		\
+			((((uint32_t)(X)) >> 24) & 0x000000ff))
+#define SWAPDW(X)	((((uint64_t)(X)) << 56) |				\
+			((((uint64_t)(X)) << 40) & 0x00ff000000000000ULL) |	\
+			((((uint64_t)(X)) << 24) & 0x0000ff0000000000ULL) |	\
+			((((uint64_t)(X)) << 8)  & 0x000000ff00000000ULL) |	\
+			((((uint64_t)(X)) >> 8)  & 0x00000000ff000000ULL) |	\
+			((((uint64_t)(X)) >> 24) & 0x0000000000ff0000ULL) |	\
+			((((uint64_t)(X)) >> 40) & 0x000000000000ff00ULL) |	\
+			((((uint64_t)(X)) >> 56) & 0x00000000000000ffULL))
+
+
+/* sign extend */
+#define SEXT32(X, B)		(((uint32_t)(X))&(1U<<(B-1))?((uint32_t)(X))|~((1U<<B)-1):(X))
+#define SEXT64(X, B)		(((uint64_t)(X))&(1ULL<<(B-1))?((uint64_t)(X))|~((1ULL<<B)-1):(X))
+
+/* extract bits from HI to LO from X */
+#define BITS32(X, HI, LO)	((((uint32_t)(X))>>(LO))&((1U<<((HI)-(LO)+1))-1))
+#define BITS64(X, HI, LO)	((((uint64_t)(X))>>(LO))&((1ULL<<((HI)-(LO)+1ULL))-1ULL))
+
+/* bits */
+#define GETBIT32(X, B)		((uint32_t)(X)&(1U<<(B)))
+#define GETBIT64(X, B)		((uint64_t)(X)&(1ULL<<(B)))
+#define SETBIT32(X, B)		((uint32_t)(X)|(1U<<(B)))
+#define SETBIT64(X, B)		((uint64_t)(X)|(1ULL<<(B)))
+#define CLEARBIT32(X, B)	((uint32_t)(X)&(~(1U<<(B))))
+#define CLEARBIT64(X, B)	((uint64_t)(X)&(~(1ULL<<(B))))
+#define SETBITVALUE32(X, B, V)	((V) ? SETBIT32((X),(B)) : CLEARBIT32((X),(B)))
+#define SETBITVALUE64(X, B, V)	((V) ? SETBIT64((X),(B)) : CLEARBIT64((X),(B)))
+
+/* bitmaps */
+#define BITMAP_TYPE(NAME, SIZE) \
+	byte NAME[((SIZE)+7)>>3]
+#define BITMAP_INIT(NAME, SIZE) { \
+	int irg; \
+	for (irg = 0; irg < (((SIZE)+7)>>3); irg++) \
+	NAME[irg] = 0; }
+#define BITMAP_SET(NAME, BIT) \
+	(NAME[(BIT)>>3]|=1<<((BIT)&7))
+#define BITMAP_CLEAR(NAME, BIT) \
+	(NAME[(BIT)>>3]&=~(1<<((BIT)&7)))
+#define BITMAP_IS_SET(NAME, BIT) \
+	(NAME[(BIT)>>3]&(1<<((BIT)&7)))
+#define BITMAP_SET_RANGE(NAME, LO, HI) { \
+	int irg; \
+	for (irg = (LO); irg <= (HI); irg++) \
+	BITMAP_SET((NAME), irg); }
+#define BITMAP_CLEAR_RANGE(NAME, LO, HI) { \
+	int irg; \
+	for (irg = (LO); irg <= (HI); irg++) \
+	BITMAP_CLEAR((NAME), irg); }
+
+
+/* String Maps */
+struct string_map_t {
+	int count;
+	struct {
+		char *string;
+		int value;
+	} map[];
+};
+
+int map_string(struct string_map_t *map, char *string);
+char *map_value(struct string_map_t *map, int value);
+void map_value_string(struct string_map_t *map, int value, char *out, int length);
+void map_flags(struct string_map_t *map, int flags, char *out, int length);
+
+/* strings */
+void strccpy(char *dest, char *src, int size);
+void strccat(char *dest, char *src);
+void strdump(char *dest, char *src, int size);
+
+/* open/close file ("stdout", "stderr" or <name>) */
+FILE *open_read(char *fname);
+FILE *open_write(char *fname);
+int read_line(FILE *f, char *line, int size);
+void close_file(FILE *f);
+
+/* other */
+void dump_ptr(void *ptr, int size, FILE *stream);
+int log_base2(int x);
+
+#endif
+

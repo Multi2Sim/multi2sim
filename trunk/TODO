@@ -1,0 +1,1 @@
+-Remove '-decode_kind shared', because dispatch slots are not calculated properly with this option set to shared.
