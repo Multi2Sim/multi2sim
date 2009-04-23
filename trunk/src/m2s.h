@@ -212,9 +212,9 @@ enum uop_flags_enum {
 struct uop_t {
 
 	enum uop_enum uop;
-	x86_inst_t *inst;
 	struct ctx_t *ctx;
 	int core, thread;
+	int size;  /* Corresponding macroinstruction size */
 	int specmode;
 	int mispred;  /* Mispredicted & non-speculative executed branch  */
 	uint32_t eip, neip, pred_neip;
