@@ -81,6 +81,7 @@ static void fetch_inst(int core, int thread)
 		uop->ctx = ctx;
 		uop->core = core;
 		uop->thread = thread;
+		uop->size = isa_inst.size;
 		uop->seq = ++p->seq;
 		uop->eip = THREAD.fetch_eip;
 		uop->in_fetchq = TRUE;
