@@ -295,3 +295,9 @@
 2009-04-07
 	* All: SVN new hierarchy with trunk and branches, aimed at being
 		accessed by any user who wants to contribute developing.
+
+2009-04-23
+	* uop.c, m2s.h, fetch.c, bpred.c: bug fixed. There was a wrong use of
+		the uop->inst->size attribute, which was read in an
+		obsolete manner after the pointed isa_inst had changed.
+		Now it is copied in the uop->size local attribute.

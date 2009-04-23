@@ -183,7 +183,6 @@ static int uop_idep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
 		
 		/* Compute effective address */
 		uop = repos_create_object(uop_repos);
-		uop->inst = inst;
 		uop->uop = uop_effaddr;
 		uop->idep[0] = inst->segment ? inst->segment - reg_es + DES : DNONE;
 		uop->idep[1] = inst->ea_base ? inst->ea_base - reg_eax + DEAX : DNONE;
@@ -195,7 +194,6 @@ static int uop_idep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
 
 		/* Load */
 		uop = repos_create_object(uop_repos);
-		uop->inst = inst;
 		uop->uop = uop_load;
 		uop->idep[0] = DEA;
 		uop->odep[0] = DDATA;
@@ -233,7 +231,6 @@ static int uop_odep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
 		 * previous load with the same effective address (e.g. DRM32
 		 * as source and destination dependence. */
 		uop = repos_create_object(uop_repos);
-		uop->inst = inst;
 		uop->uop = uop_effaddr;
 		uop->idep[0] = inst->segment ? inst->segment - reg_es + DES : DNONE;
 		uop->idep[1] = inst->ea_base ? inst->ea_base - reg_eax + DEAX : DNONE;
@@ -245,7 +242,6 @@ static int uop_odep_parse(x86_inst_t *inst, struct list_t *uop_list, int dep)
 
 		/* Store */
 		uop = repos_create_object(uop_repos);
-		uop->inst = inst;
 		uop->uop = uop_store;
 		uop->idep[0] = DEA;
 		uop->idep[1] = DDATA;
@@ -341,7 +337,6 @@ void uop_decode(x86_inst_t *inst, struct list_t *uop_list)
 		
 		/* Create uop */
 		uop = repos_create_object(uop_repos);
-		uop->inst = inst;
 
 		/* Input dependencies, maybe add 'load' uops to the list */
 		for (i = 0; i < IDEP_COUNT; i++)

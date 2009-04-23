@@ -41,7 +41,7 @@ static uint32_t bpred_ras_size = 256;
 /* Push return address to the corresponding RAS */
 static void bpred_ras_push(struct bpred_t *bpred, struct uop_t *uop)
 {
-	bpred->ras[bpred->ras_idx] = uop->eip + uop->inst->size;
+	bpred->ras[bpred->ras_idx] = uop->eip + uop->size;
 	bpred->ras_idx = (bpred->ras_idx + 1) % bpred_ras_size;
 }
 
@@ -67,7 +67,7 @@ static uint32_t bpred_btb_lookup(struct bpred_t *bpred, struct uop_t *uop)
 			return bpred->btb[set][way].dest;
 	
 	/* If not found, return address of next instruction */
-	return uop->eip + uop->inst->size;
+	return uop->eip + uop->size;
 }
 
 
@@ -234,7 +234,7 @@ uint32_t bpred_lookup(struct bpred_t *bpred, struct uop_t *uop)
 	switch (bpred_kind) {
 	
 		case bpred_kind_nottaken:
-			return uop->eip + uop->inst->size;
+			return uop->eip + uop->size;
 	
 		case bpred_kind_taken:
 			return bpred_btb_lookup(bpred, uop);
@@ -259,7 +259,7 @@ uint32_t bpred_lookup(struct bpred_t *bpred, struct uop_t *uop)
 				uop->gshare_taken;
 			
 			return taken ? bpred_btb_lookup(bpred, uop)
-				: uop->eip + uop->inst->size;
+				: uop->eip + uop->size;
 		}
 		
 		default:
@@ -283,7 +283,7 @@ void bpred_update(struct bpred_t *bpred, struct uop_t *uop)
 		!(uop->flags & FRET))
 	{
 
-		int taken = uop->neip != uop->eip + uop->inst->size;
+		int taken = uop->neip != uop->eip + uop->size;
 
 		/* Update bimodal predictor */
 		bpred->bimod[uop->bimod_idx] = taken ?
