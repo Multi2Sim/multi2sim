@@ -39,6 +39,7 @@ m2s_bpred_SOURCES = \
 	queues.c \
 	recover.c \
 	rob.c \
+	tc.c \
 	uop.c \
 	uop1.dat \
 	uop2.dat \
@@ -62,6 +63,7 @@ m2s_SOURCES = \
 	queues.c \
 	recover.c \
 	rob.c \
+	tc.c \
 	uop.c \
 	uop1.dat \
 	uop2.dat \

@@ -492,6 +492,7 @@ struct bpred_t {
 
 
 
+void bpred_reg_options(void);
 void bpred_init(void);
 void bpred_done(void);
 
@@ -523,6 +524,47 @@ void ptrace_new_uop(struct uop_t *uop);
 void ptrace_end_uop(struct uop_t *uop);
 void ptrace_new_stage(struct uop_t *uop, enum ptrace_stage_enum stage);
 void ptrace_new_cycle(void);
+
+
+
+
+/* Trace cache */
+
+extern uint32_t tc_sets;
+extern uint32_t tc_assoc;
+extern uint32_t tc_width;
+extern uint32_t tc_branches;
+
+struct tc_block_t {
+	uint32_t tag;
+	int branches;
+	int uops;
+};
+
+struct tc_t {
+
+	/* Current trace cache filled line */
+	uint32_t curr_eip;
+	uint32_t curr_pattern;
+	int curr_branches;
+	int curr_uops;
+
+	/* Current trace cache uop */
+	uint32_t new_eip;
+	int new_uops;
+	int new_branch;
+	int new_taken;
+
+	/* Blocks - array of tc_sets * tc_assoc elements */
+	struct tc_block_t *blks;
+};
+
+void tc_reg_options(void);
+void tc_init(void);
+void tc_done(void);
+
+void tc_record_uop(struct uop_t *uop);
+int tc_find_trace(int core, int thread, uint32_t eip, uint32_t pattern);
 
 
 
@@ -603,9 +645,11 @@ struct processor_thread_t {
 	struct lnlist_t *sq;
 	struct bpred_t *bpred;		/* branch predictor */
 	struct phregs_t *phregs;	/* physical register file */
+	struct tc_t *tc;
 
 	/* Fetch */
 	uint32_t fetch_eip, fetch_neip;  /* eip and next eip */
+	int fetch_tc_uops;  /* uops fetched from trace cache */
 	int fetch_stall;
 	uint32_t fetch_block;  /* Virtual address of last fetched block */
 	uint64_t fetch_access;  /* Access ID of last instruction cache access */
@@ -687,6 +731,7 @@ struct processor_t {
 	
 	/* Statistics */
 	uint64_t fetched;
+	uint64_t tc_fetched;  /* fetched from trace cache */
 	uint64_t dispatched;
 	uint64_t issued;
 	uint64_t committed;

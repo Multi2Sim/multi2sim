@@ -27,6 +27,45 @@ uint32_t bpred_bhr_size = 8;
 uint32_t bpred_ras_size = 128;
 
 
+void bpred_reg_options()
+{
+	opt_reg_uint32("-bpred:btb_sets", "BTB sets", &bpred_btb_sets);
+	opt_reg_uint32("-bpred:btb_assoc", "BTB assoc", &bpred_btb_ways);
+	opt_reg_uint32("-bpred:bhr_size", "Branch history register size", &bpred_bhr_size);
+	opt_reg_uint32("-bpred:ras_size", "Return address stack size", &bpred_ras_size);
+}
+
+
+void bpred_init()
+{
+	int core, thread, i;
+	struct bpred_t *bpred;
+
+	FOREACH_CORE FOREACH_THREAD {
+		THREAD.bpred = bpred = calloc(1, sizeof(struct bpred_t));
+		bpred->btb = calloc(bpred_btb_sets * bpred_btb_ways, sizeof(struct btb_entry_t));
+		bpred->twolev_pht = calloc(1 << bpred_bhr_size, sizeof(char));
+		for (i = 0; i < (1 << bpred_bhr_size); i++)
+			bpred->twolev_pht[i] = 2;
+		bpred->ras = calloc(bpred_ras_size, sizeof(uint32_t));
+	}
+}
+
+
+void bpred_done()
+{
+	int core, thread;
+	struct bpred_t *bpred;
+
+	FOREACH_CORE FOREACH_THREAD {
+		bpred = THREAD.bpred;
+		free(bpred->btb);
+		free(bpred->twolev_pht);
+		free(bpred->ras);
+		free(bpred);
+	}
+}
+
 
 static uint32_t bpred_btb_index(uint32_t eip)
 {
@@ -129,33 +168,4 @@ void bpred_recover(struct uop_t *uop)
 }
 
 
-void bpred_init()
-{
-	int core, thread, i;
-	struct bpred_t *bpred;
-
-	FOREACH_CORE FOREACH_THREAD {
-		THREAD.bpred = bpred = calloc(1, sizeof(struct bpred_t));
-		bpred->btb = calloc(bpred_btb_sets * bpred_btb_ways, sizeof(struct btb_entry_t));
-		bpred->twolev_pht = calloc(1 << bpred_bhr_size, sizeof(char));
-		for (i = 0; i < (1 << bpred_bhr_size); i++)
-			bpred->twolev_pht[i] = 1;
-		bpred->ras = calloc(bpred_ras_size, sizeof(uint32_t));
-	}
-}
-
-
-void bpred_done()
-{
-	int core, thread;
-	struct bpred_t *bpred;
-
-	FOREACH_CORE FOREACH_THREAD {
-		bpred = THREAD.bpred;
-		free(bpred->btb);
-		free(bpred->twolev_pht);
-		free(bpred->ras);
-		free(bpred);
-	}
-}
 

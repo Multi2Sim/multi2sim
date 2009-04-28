@@ -55,15 +55,16 @@ static int can_fetch(int core, int thread)
 
 
 /* Take instruction 'isa_inst' and insert uops into the fetch queue. Their access
- * ID is 'fetch_access'. */
-static void fetch_inst(int core, int thread)
+ * ID is 'fetch_access'. Return the number of fetched uops. */
+static int fetch_inst(int core, int thread)
 {
 	struct list_t *fetchq = THREAD.fetchq;
 	struct ctx_t *ctx = THREAD.ctx;
-	int count, i;
+	int count, i, uop_count;
 	struct uop_t *uop;
 
 	/* Split fetched instruction into uops */
+	uop_count = 0;
 	count = list_count(fetchq);
 	uop_decode(&isa_inst, fetchq);
 
@@ -86,7 +87,16 @@ static void fetch_inst(int core, int thread)
 		uop->size = isa_inst.size;
 		uop->in_fetchq = TRUE;
 		uop->specmode = ctx_get_status(ctx, ctx_specmode);
-		uop->fetch_access = THREAD.fetch_access;
+
+		/* If uop comes from trace cache, it is ready. Otherwise, wait for
+		 * instruction cache to finish access. */
+		if (THREAD.fetch_tc_uops) {
+			uop->fetch_access = 0;
+			THREAD.fetch_tc_uops--;
+			p->tc_fetched++;
+		} else {
+			uop->fetch_access = THREAD.fetch_access;
+		}
 
 		/* For control instructions */
 		if (uop->flags & FCTRL) {
@@ -119,27 +129,42 @@ static void fetch_inst(int core, int thread)
 		}
 
 		/* New uop */
+		uop_count++;
 		ptrace_new_uop(uop);
 		ptrace_new_stage(uop, ptrace_fetch);
 		p->fetched++;
 		THREAD.fetched++;
 	}
+
+	return uop_count;
 }
 
 
 static int fetch_thread(int core, int thread, int quant)
 {
 	struct ctx_t *ctx = THREAD.ctx;
-	uint32_t phaddr, block;
+	uint32_t phaddr, block, pattern;
+	int tc_uops, uop_count;
 
-	while (quant) {
+	/* Fetch instructions from a thread's instruction cache until one of these
+	 * conditions is fulfilled:
+	 *   - 'quant' uops have been fetched.
+	 *   - there is a taken branch with a target outside the fetched block
+	 * If there is a hit in the trace cache, fetch the whole trace cache line. */
+
+	/* Look up trace cache */
+	pattern = bpred_get_trace(core, thread, THREAD.fetch_neip, tc_branches);
+	tc_uops = tc_find_trace(core, thread, THREAD.fetch_neip, pattern);
+	THREAD.fetch_tc_uops = MAX(THREAD.fetch_tc_uops, tc_uops);
+
+	/* Fetch instructions */
+	while (quant || THREAD.fetch_tc_uops) {
 
 		/* Check if we can fetch */
 		if (!can_fetch(core, thread))
 			break;
 
-		/* Fetch an assembler instruction. If it belongs to a new cache
-		 * block, access instruction cache. */
+		/* Access instruction cache */
 		block = THREAD.fetch_neip & ~(cache_block_size - 1);
 		if (block != THREAD.fetch_block) {
 			phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
@@ -159,8 +184,9 @@ static int fetch_thread(int core, int thread, int quant)
 			p_context_map_update();
 
 		/* Insert uops into fetch queue */
-		fetch_inst(core, thread);
-		quant--;
+		uop_count = fetch_inst(core, thread);
+		uop_count = MAX(uop_count, 1);
+		quant = MAX(0, quant - uop_count);
 
 	}
 

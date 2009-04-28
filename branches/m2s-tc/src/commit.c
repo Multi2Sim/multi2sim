@@ -88,6 +88,9 @@ static void commit_thread(int core, int thread, int quant)
 		
 		/* Free physical registers */
 		phregs_commit(uop);
+
+		/* Trace */
+		tc_record_uop(uop);
 		
 		/* Branches update branch predictor */
 		if ((uop->flags & FCTRL))

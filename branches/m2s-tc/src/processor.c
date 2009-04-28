@@ -106,7 +106,7 @@ void p_reg_options()
 	opt_reg_uint32("-commit_width", "commit depth (in instr/thread/cycle)", &p_commit_width);
 
 	/* other options */
-	//bpred_reg_options();
+	bpred_reg_options();
 	phregs_reg_options();
 	fetchq_reg_options();
 	rob_reg_options();
@@ -114,6 +114,7 @@ void p_reg_options()
 	lq_reg_options();
 	sq_reg_options();
 	fu_reg_options();
+	tc_reg_options();
 }
 
 
@@ -162,6 +163,7 @@ void p_init()
 	sq_init();
 	eventq_init();
 	fu_init();
+	tc_init();
 }
 
 
@@ -192,6 +194,12 @@ void p_done()
 		(long long) p->mispred);
 	fprintf(stderr, "sim.predacc  %.4f  # Branch prediction accuracy\n",
 		p->branches ? (double) (p->branches - p->mispred) / p->branches : 0.0);
+	fprintf(stderr, "sim.fetched  %lld  # Fetched instructions\n",
+		(long long) p->fetched);
+	fprintf(stderr, "sim.tc_fetched  %lld  # Instructions fetched from trace cache\n",
+		(long long) p->tc_fetched);
+	fprintf(stderr, "sim.tc_hitratio  %.4f  # Trace cache hit ratio\n",
+		p->fetched ? (double) p->tc_fetched / p->fetched : 0);
 	
 	/* Dispatch stats */
 	if (p_dispatch_kind == p_dispatch_kind_timeslice) {
@@ -246,6 +254,7 @@ void p_done()
 	}
 	
 	/* Finalize structures */
+	tc_done();
 	fetchq_done();
 	rob_done();
 	iq_done();
