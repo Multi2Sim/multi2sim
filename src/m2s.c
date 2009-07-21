@@ -41,10 +41,15 @@ static char *loader_debug_file = "";
 static char *isa_call_debug_file = "";
 static char *isa_inst_debug_file = "";
 static char *cache_debug_file = "";
+static char *error_debug_file = "";
 
 
 /* Simulation cycle */
 uint64_t sim_cycle;
+
+
+/* Error debug */
+int error_debug_category;
 
 
 
@@ -60,11 +65,12 @@ static void sim_reg_options()
 	opt_reg_uint64("-max_time", "max running time (in seconds)", &max_time);
 	opt_reg_uint64("-fastfwd", "cycles to run with fast simulation", &fastfwd);
 
-	opt_reg_string("-syscall_debug", "debug information for system calls", &syscall_debug_file);	
-	opt_reg_string("-loader_debug", "debug information from program loader", &loader_debug_file);	
-	opt_reg_string("-call_debug", "debug information about procedure calls", &isa_call_debug_file);	
-	opt_reg_string("-inst_debug", "debug information about executed instructions", &isa_inst_debug_file);
-	opt_reg_string("-cache_debug", "debug information for cache system", &cache_debug_file);
+	opt_reg_string("-debug:syscall", "debug information for system calls", &syscall_debug_file);	
+	opt_reg_string("-debug:loader", "debug information from program loader", &loader_debug_file);	
+	opt_reg_string("-debug:call", "debug information about procedure calls", &isa_call_debug_file);	
+	opt_reg_string("-debug:inst", "debug information about executed instructions", &isa_inst_debug_file);
+	opt_reg_string("-debug:cache", "debug information for cache system", &cache_debug_file);
+	opt_reg_string("-debug:error", "debug information after errors", &error_debug_file);
 }
 
 
@@ -109,7 +115,8 @@ static void sim_signal_handler(int signum)
 	
 	case SIGABRT:
 		signal(SIGABRT, SIG_DFL);
-		p_dump(stderr);
+		if (debug_status(error_debug_category))
+			p_dump(debug_file(error_debug_category));
 		exit(1);
 		break;
 	
@@ -147,11 +154,13 @@ int main(int argc, char **argv)
 
 	/* Debug */
 	debug_init();
+	error_debug_category = debug_new_category();
 	debug_assign_file(syscall_debug_category, syscall_debug_file);
 	debug_assign_file(ld_debug_category, loader_debug_file);
 	debug_assign_file(isa_call_debug_category, isa_call_debug_file);
 	debug_assign_file(isa_inst_debug_category, isa_inst_debug_file);
 	debug_assign_file(cache_debug_category, cache_debug_file);
+	debug_assign_file(error_debug_category, error_debug_file);
 
 	/* Load programs */
 	p_init();

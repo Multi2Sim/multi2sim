@@ -36,7 +36,13 @@ extern uint64_t sim_cycle;
 extern char **environ;
 
 
-/* processor parameters */
+/* Error debug */
+#define error_debug(...) debug(error_debug_category, __VA_ARGS__)
+extern int error_debug_category;
+
+
+
+/* Processor parameters */
 extern enum p_arch_enum {
 	p_arch_rob = 0,
 	p_arch_vb

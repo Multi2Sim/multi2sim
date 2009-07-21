@@ -301,3 +301,9 @@
 		the uop->inst->size attribute, which was read in an
 		obsolete manner after the pointed isa_inst had changed.
 		Now it is copied in the uop->size local attribute.
+
+2009-07-21
+	* m2s.c: debug information and options changed. There are no more
+		huge dumps after a 'fatal' or 'panic' occurs during
+		simulation. Instead, this dump is controlled by the
+		'-debug:error' parameter.
