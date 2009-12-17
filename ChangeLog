@@ -382,3 +382,7 @@
 2009-12-17
 	* tcache.c, processor.c: stats 'committed', 'squashed', 'accesses',
 		'hits', and 'hitratio' for trace cache.
+	* tcache.c: Change uop_max for trace_size.
+		Function tcache_commit_trace changed to tcache_flush_trace.
+		Stat 'tcache.trace_length' added, indicating the average trace
+		length (depends on max branches and uops alignment).

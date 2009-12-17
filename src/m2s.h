@@ -487,7 +487,7 @@ uint32_t bpred_btb_next_branch(struct bpred_t *bpred, uint32_t eip, uint32_t bsi
 
 /* Trace cache */
 
-#define TCACHE_ENTRY_SIZE  (sizeof(struct tcache_entry_t) + sizeof(uint32_t) * tcache_uop_max)
+#define TCACHE_ENTRY_SIZE  (sizeof(struct tcache_entry_t) + sizeof(uint32_t) * tcache_trace_size)
 #define TCACHE_ENTRY(SET, WAY)  ((struct tcache_entry_t *) (((unsigned char *) tcache->entry) + TCACHE_ENTRY_SIZE * ((SET) * tcache_assoc + (WAY))))
 
 struct tcache_entry_t {
@@ -498,7 +498,7 @@ struct tcache_entry_t {
 	uint32_t fall_through;
 	uint32_t target;
 
-	/* Last field. This is a list of 'tcache_uop_max' elements containing
+	/* Last field. This is a list of 'tcache_trace_size' elements containing
 	 * the addresses of the microinst located in the trace. Only in the case that
 	 * all macroinst are decoded into just one uop can this array be filled up. */
 	uint32_t mop_array[0];
@@ -516,11 +516,13 @@ struct tcache_t {
 	uint64_t hits;
 	uint64_t committed;
 	uint64_t squashed;
+	uint64_t trace_length_acc;
+	uint64_t trace_length_count;
 };
 
 
 extern int tcache_present;
-extern uint32_t tcache_uop_max;
+extern uint32_t tcache_trace_size;
 extern uint32_t tcache_branch_max;
 extern uint32_t tcache_queue_size;
 
