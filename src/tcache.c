@@ -20,38 +20,6 @@
 #include <m2s.h>
 
 
-/* Types */
-
-#define TCACHE_ENTRY_SIZE  (sizeof(struct tcache_entry_t) + sizeof(uint32_t) * tcache_uop_max)
-#define TCACHE_ENTRY(SET, WAY)  ((struct tcache_entry_t *) (((unsigned char *) tcache->entry) + TCACHE_ENTRY_SIZE * ((SET) * tcache_assoc + (WAY))))
-
-struct tcache_entry_t {
-	int counter;  /* lru counter */
-	uint32_t tag;
-	int uop_count, mop_count;
-	int branch_mask, branch_flags, branch_count;
-	uint32_t fall_through;
-	uint32_t target;
-
-	/* Last field. This is a list of 'tcache_uop_max' elements containing
-	 * the addresses of the microinst located in the trace. Only in the case that
-	 * all macroinst are decoded into just one uop can this array be filled up. */
-	uint32_t mop_array[0];
-};
-
-struct tcache_t {
-	
-	/* Entries (sets * assoc) */
-	struct tcache_entry_t *entry;
-	struct tcache_entry_t *temp;  /* temporary trace */
-
-	/* Stats */
-	char name[20];
-	uint64_t accesses;
-	uint64_t hits;
-};
-
-
 /* Parameters */
 
 int tcache_present = 0;
@@ -154,6 +122,10 @@ void tcache_free(struct tcache_t *tcache)
 		tcache->name, (long long) tcache->hits);
 	fprintf(stderr, "%s.hitratio  %.4f  # Trace cache hit ratio\n",
 		tcache->name, tcache->accesses ? (double) tcache->hits / tcache->accesses : 0.0);
+	fprintf(stderr, "%s.committed  %lld  # Committed uops coming from trace cache\n",
+		tcache->name, (long long) tcache->committed);
+	fprintf(stderr, "%s.squashed  %lld  # Squashed uops coming from trace cache\n",
+		tcache->name, (long long) tcache->squashed);
 
 	/* Free */
 	free(tcache->entry);
@@ -210,14 +182,6 @@ static void tcache_commit_trace(struct tcache_t *tcache)
 			}
 		}
 	}
-
-	/* Dump */
-	/*printf("0x%x ", trace->tag);
-	dump_bin(trace->branch_mask, trace->branch_count, stdout);
-	printf(" ");
-	dump_bin(trace->branch_flags, trace->branch_count, stdout);
-	printf(" set=%d found=%p", set, found);
-	printf("\n"); */
 
 	/* Commit temporary trace and reset it. When committing, all fields are
 	 * copied except for lru counter. */
@@ -290,8 +254,10 @@ int tcache_lookup(struct tcache_t *tcache, uint32_t eip, int pred,
 	}
 
 	/* If there was a miss, do nothing else */
+	tcache->accesses++;
 	if (!found)
 		return 0;
+	tcache->hits++;
 	
 	/* Trace cache hit. Return fields. The next address to fetch is 'target' if
 	 * the last instruction in the trace is a branch, and 'pred' tells us it is taken. */
@@ -300,18 +266,6 @@ int tcache_lookup(struct tcache_t *tcache, uint32_t eip, int pred,
 	PTR_ASSIGN(ptr_mop_count, entry->mop_count);
 	PTR_ASSIGN(ptr_mop_array, entry->mop_array);
 	PTR_ASSIGN(ptr_neip, neip);
-	/*printf("found in set=%d, way=%d:", set, way);
-	printf(" pred="); dump_bin(pred, tcache_branch_max, stdout);
-	printf(" mask="); dump_bin(entry->branch_mask, tcache_branch_max, stdout);
-	printf(" flags="); dump_bin(entry->branch_flags, entry->branch_count, stdout);
-	printf("\n");
-	{
-		int i;
-		printf("\n*** ");
-		for (i = 0; i < entry->mop_count; i++)
-			printf("0x%07x ", entry->mop_array[i]);
-		printf("***\n");
-	}*/
 	return 1;
 }
 

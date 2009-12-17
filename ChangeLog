@@ -379,3 +379,6 @@
 		when a non-existing executable file was tried to be
 		loaded.
 
+2009-12-17
+	* tcache.c, processor.c: stats 'committed', 'squashed', 'accesses',
+		'hits', and 'hitratio' for trace cache.

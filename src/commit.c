@@ -95,6 +95,8 @@ static void commit_thread(int core, int thread, int quant)
 		THREAD.last_commit_cycle = sim_cycle;
 		THREAD.committed++;
 		p->committed++;
+		if (uop->fetch_tcache)
+			THREAD.tcache->committed++;
 		if (uop->flags & FCTRL) {
 			p->branches++;
 			if (uop->neip != uop->pred_neip)

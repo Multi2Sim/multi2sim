@@ -162,6 +162,8 @@ void p_done()
 		(long long) p->committed);
 	fprintf(stderr, "sim.ipc  %.4f  # Global IPC\n",
 		sim_cycle ? (double) p->committed / sim_cycle : 0);
+	fprintf(stderr, "sim.squashed  %lld  # Number of uops squashed in the ROB\n",
+		(long long) p->squashed);
 	fprintf(stderr, "sim.time  %.1f  # Simulation time in seconds\n",
 		(double) now / 1000000);
 	fprintf(stderr, "sim.cps  %.0f  # Cycles simulated per second\n",
