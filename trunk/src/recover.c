@@ -49,12 +49,14 @@ void p_recover(int core, int thread)
 		if (!uop->specmode)
 			break;
 		
-		/* Do we have to mark destination physical registers as
-		 * completed? */
-		if (!uop->completed)
-			phregs_write(uop);
+		/* Stats */
+		if (uop->fetch_tcache)
+			THREAD.tcache->squashed++;
+		p->squashed++;
 		
 		/* Undo map and remove entry in ROB */
+		if (!uop->completed)
+			phregs_write(uop);
 		phregs_undo(uop);
 		ptrace_end_uop(uop);
 		rob_remove_tail(core, thread);

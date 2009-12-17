@@ -487,6 +487,38 @@ uint32_t bpred_btb_next_branch(struct bpred_t *bpred, uint32_t eip, uint32_t bsi
 
 /* Trace cache */
 
+#define TCACHE_ENTRY_SIZE  (sizeof(struct tcache_entry_t) + sizeof(uint32_t) * tcache_uop_max)
+#define TCACHE_ENTRY(SET, WAY)  ((struct tcache_entry_t *) (((unsigned char *) tcache->entry) + TCACHE_ENTRY_SIZE * ((SET) * tcache_assoc + (WAY))))
+
+struct tcache_entry_t {
+	int counter;  /* lru counter */
+	uint32_t tag;
+	int uop_count, mop_count;
+	int branch_mask, branch_flags, branch_count;
+	uint32_t fall_through;
+	uint32_t target;
+
+	/* Last field. This is a list of 'tcache_uop_max' elements containing
+	 * the addresses of the microinst located in the trace. Only in the case that
+	 * all macroinst are decoded into just one uop can this array be filled up. */
+	uint32_t mop_array[0];
+};
+
+struct tcache_t {
+	
+	/* Entries (sets * assoc) */
+	struct tcache_entry_t *entry;
+	struct tcache_entry_t *temp;  /* temporary trace */
+
+	/* Stats */
+	char name[20];
+	uint64_t accesses;
+	uint64_t hits;
+	uint64_t committed;
+	uint64_t squashed;
+};
+
+
 extern int tcache_present;
 extern uint32_t tcache_uop_max;
 extern uint32_t tcache_branch_max;
@@ -662,6 +694,7 @@ struct processor_t {
 	uint64_t dispatched;
 	uint64_t issued;
 	uint64_t committed;
+	uint64_t squashed;
 	uint64_t branches;
 	uint64_t mispred;
 	uint64_t di_stall[di_stall_max];
