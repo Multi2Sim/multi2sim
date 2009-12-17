@@ -23,7 +23,7 @@
 /* Parameters */
 
 int tcache_present = 0;
-uint32_t tcache_uop_max = 16;
+uint32_t tcache_trace_size = 16;
 uint32_t tcache_branch_max = 3;
 uint32_t tcache_queue_size = 32;
 static char *tcache_topo = "64:4";
@@ -36,9 +36,9 @@ void tcache_reg_options()
 	opt_reg_bool("-tcache", "Use trace cache {t|f}", &tcache_present);
 	opt_reg_string("-tcache:topo", "Trace cache topology (<sets>:<assoc>)",
 		&tcache_topo);
-	opt_reg_uint32("-tcache:uop_max", "Maximum number of microinst in trace line",
-		&tcache_uop_max);
-	opt_reg_uint32("-tcache:branch_max", "Maximum number of branches in trace line",
+	opt_reg_uint32("-tcache:trace_size", "Maximum number of uops in a trace",
+		&tcache_trace_size);
+	opt_reg_uint32("-tcache:branch_max", "Maximum number of branches in a trace",
 		&tcache_branch_max);
 	opt_reg_uint32("-tcache:queue_size", "Fetch queue for predecoded uops",
 		&tcache_queue_size);
@@ -62,10 +62,12 @@ void tcache_init()
 		fatal("trace cache sets must be power of 2 and > 0");
 	if ((tcache_assoc & (tcache_assoc - 1)) || !tcache_assoc)
 		fatal("trace cache associativity must be power of 2 and > 0");
-	if (!tcache_uop_max || !tcache_branch_max)
+	if (!tcache_trace_size || !tcache_branch_max)
 		fatal("trace cache: max number of branches and microinst must be > 0");
-	if (tcache_branch_max > tcache_uop_max)
-		fatal("trace cache: max number of branches cannot be greater than max number of microinst");
+	if (tcache_branch_max > tcache_trace_size)
+		fatal("tcache:branch_max cannot be greater than tcache:trace_size");
+	if (tcache_branch_max > 31)
+		fatal("tcache:branch_max cannot be greater than 31");
 	
 	/* Initialization */
 	FOREACH_CORE FOREACH_THREAD {
@@ -126,6 +128,9 @@ void tcache_free(struct tcache_t *tcache)
 		tcache->name, (long long) tcache->committed);
 	fprintf(stderr, "%s.squashed  %lld  # Squashed uops coming from trace cache\n",
 		tcache->name, (long long) tcache->squashed);
+	fprintf(stderr, "%s.trace_length  %.2f  # Average trace length\n",
+		tcache->name, tcache->trace_length_count ? (double) tcache->trace_length_acc /
+			tcache->trace_length_count : 0);
 
 	/* Free */
 	free(tcache->entry);
@@ -134,15 +139,16 @@ void tcache_free(struct tcache_t *tcache)
 }
 
 
-static void tcache_commit_trace(struct tcache_t *tcache)
+/* Flush temporary trace of committed instructions back into the trace cache */
+static void tcache_flush_trace(struct tcache_t *tcache)
 {
 	struct tcache_entry_t *entry, *found = NULL, *trace = tcache->temp;
 	int set, way;
-	//int i;
 
 	/* There must be something to commit */
+	if (!trace->uop_count)
+		return;
 	assert(trace->tag);
-	assert(trace->uop_count);
 
 	/* If last instruction was a branch, remove it from the mask and flags fields,
 	 * since this prediction does not affect the trace. Instead, the 'target'
@@ -171,7 +177,7 @@ static void tcache_commit_trace(struct tcache_t *tcache)
 		}
 	}
 
-	/* If no invalid entry found, look for lru. */
+	/* If no invalid entry found, look for LRU. */
 	if (!found) {
 		for (way = 0; way < tcache_assoc; way++) {
 			entry = TCACHE_ENTRY(set, way);
@@ -183,9 +189,11 @@ static void tcache_commit_trace(struct tcache_t *tcache)
 		}
 	}
 
-	/* Commit temporary trace and reset it. When committing, all fields are
-	 * copied except for lru counter. */
+	/* Flush temporary trace and reset it. When flushing, all fields are
+	 * copied except for LRU counter. */
 	assert(found);
+	tcache->trace_length_acc += trace->uop_count;
+	tcache->trace_length_count++;
 	trace->counter = found->counter;
 	memcpy(found, trace, TCACHE_ENTRY_SIZE);
 	memset(tcache->temp, 0, TCACHE_ENTRY_SIZE);
@@ -206,9 +214,9 @@ void tcache_new_uop(struct tcache_t *tcache, struct uop_t *uop)
 	assert(!uop->specmode);
 	assert(uop->eip);
 	assert(uop->seq == uop->mop_seq);
-	if (trace->uop_count + uop->mop_count > tcache_uop_max && trace->uop_count)
-		tcache_commit_trace(tcache);
-	if (uop->mop_count > tcache_uop_max)
+	if (trace->uop_count + uop->mop_count > tcache_trace_size)
+		tcache_flush_trace(tcache);
+	if (uop->mop_count > tcache_trace_size)
 		return;
 
 	/* First instruction. Store trace tag. */
@@ -231,7 +239,7 @@ void tcache_new_uop(struct tcache_t *tcache, struct uop_t *uop)
 		trace->branch_count++;
 		trace->target = uop->target_neip;
 		if (trace->branch_count == tcache_branch_max)
-			tcache_commit_trace(tcache);
+			tcache_flush_trace(tcache);
 	}
 }
 
@@ -239,7 +247,7 @@ void tcache_new_uop(struct tcache_t *tcache, struct uop_t *uop)
 int tcache_lookup(struct tcache_t *tcache, uint32_t eip, int pred,
 	int *ptr_mop_count, uint32_t **ptr_mop_array, uint32_t *ptr_neip)
 {
-	struct tcache_entry_t *entry, *found = NULL;
+	struct tcache_entry_t *entry = NULL, *found = NULL;
 	int set, way;
 	uint32_t neip;
 
