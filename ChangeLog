@@ -386,3 +386,10 @@
 		Function tcache_commit_trace changed to tcache_flush_trace.
 		Stat 'tcache.trace_length' added, indicating the average trace
 		length (depends on max branches and uops alignment).
+
+2009-12-18
+	* libmhandle/mhandle.c: list storing freed pointers removed. This
+		caused used memory to grown indefinitely when pointers
+		were constantly allocated and deallocated.
+	* processor.c, m2s.c: processor stats dumped into debug:error file
+		after SIGABRT received.

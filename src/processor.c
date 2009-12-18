@@ -107,6 +107,87 @@ void p_reg_options()
 }
 
 
+void p_print_stats(FILE *f)
+{
+	uint64_t now = ke_timer();
+
+	/* Global stats */
+	fprintf(f, "sim.cycles  %lld  # Simulation cycles\n",
+		(long long) sim_cycle);
+	fprintf(f, "sim.inst  %lld  # Total committed instructions\n",
+		(long long) p->committed);
+	fprintf(f, "sim.ipc  %.4f  # Global IPC\n",
+		sim_cycle ? (double) p->committed / sim_cycle : 0);
+	fprintf(f, "sim.squashed  %lld  # Number of uops squashed in the ROB\n",
+		(long long) p->squashed);
+	fprintf(f, "sim.time  %.1f  # Simulation time in seconds\n",
+		(double) now / 1000000);
+	fprintf(f, "sim.cps  %.0f  # Cycles simulated per second\n",
+		now ? (double) sim_cycle / now * 1000000 : 0.0);
+	fprintf(f, "sim.memory  %lu  # Memory used in bytes\n",
+		mhandle_used_memory());
+	fprintf(f, "sim.branches  %lld  # Committed branches\n",
+		(long long) p->branches);
+	fprintf(f, "sim.mispred  %lld  # Mispredicted branches in correct path\n",
+		(long long) p->mispred);
+	fprintf(f, "sim.predacc  %.4f  # Branch prediction accuracy\n",
+		p->branches ? (double) (p->branches - p->mispred) / p->branches : 0.0);
+	
+	/* Dispatch stats */
+	if (p_dispatch_kind == p_dispatch_kind_timeslice) {
+		fprintf(f, "di.stall[used]  %lld  # Dispatched slots used with committed inst\n",
+			(long long) p->di_stall[di_stall_used]);
+		fprintf(f, "di.stall[spec]  %lld  # Dispatched slots used in spec mode\n",
+			(long long) p->di_stall[di_stall_spec]);
+		fprintf(f, "di.stall[uopq]  %lld  # Wasted dispatch slots due to empty uop queue\n",
+			(long long) p->di_stall[di_stall_uopq]);
+		fprintf(f, "di.stall[rob]  %lld  # Wasted dispatch slots due to full rob\n",
+			(long long) p->di_stall[di_stall_rob]);
+		fprintf(f, "di.stall[iq]  %lld  # Wasted dispatch slots due to full iq\n",
+			(long long) p->di_stall[di_stall_iq]);
+		fprintf(f, "di.stall[lq]  %lld  # Wasted dispatch slots due to full lq\n",
+			(long long) p->di_stall[di_stall_lq]);
+		fprintf(f, "di.stall[sq]  %lld  # Full sq\n",
+			(long long) p->di_stall[di_stall_sq]);
+		fprintf(f, "di.stall[rename]  %lld  # No physical register free\n",
+			(long long) p->di_stall[di_stall_rename]);
+		fprintf(f, "di.stall[ctx]  %lld  # Dispatch stalled due to absence of running context\n",
+			(long long) p->di_stall[di_stall_ctx]);
+	}
+
+	/* Stage time stats */
+	if (p_stage_time_stats && sim_cycle) {
+		fprintf(f, "stage_time.fetch  %.3f  # Time for stage in us/cycle\n",
+			(double) stage_time_fetch / sim_cycle);
+		fprintf(f, "stage_time.dispatch  %.3f\n",
+			(double) stage_time_dispatch / sim_cycle);
+		fprintf(f, "stage_time.issue  %.3f\n",
+			(double) stage_time_issue / sim_cycle);
+		fprintf(f, "stage_time.writeback  %.3f\n",
+			(double) stage_time_writeback / sim_cycle);
+		fprintf(f, "stage_time.commit  %.3f\n",
+			(double) stage_time_commit / sim_cycle);
+		fprintf(f, "stage_time.rest  %.3f\n",
+			(double) stage_time_rest / sim_cycle);
+	}
+
+	/* Occupancy stats */
+	if (p_occupancy_stats) {
+		fprintf(f, "occupancy.iq  %.2f  # Instruction queue occupancy\n",
+			p->occupancy_count ? (double) p->occupancy_iq_acc / p->occupancy_count : 0);
+		fprintf(f, "occupancy.lq  %.2f  # Load queue occupancy\n",
+			p->occupancy_count ? (double) p->occupancy_lq_acc / p->occupancy_count : 0);
+		fprintf(f, "occupancy.sq  %.2f  # Store queue occupancy\n",
+			p->occupancy_count ? (double) p->occupancy_sq_acc / p->occupancy_count : 0);
+		fprintf(f, "occupancy.rf  %.2f  # Register file occupancy\n",
+			p->occupancy_count ? (double) p->occupancy_rf_acc / p->occupancy_count : 0);
+		fprintf(f, "occupancy.rob  %.2f  # ROB occupancy\n",
+			p->occupancy_count ? (double) p->occupancy_rob_acc / p->occupancy_count : 0);
+	}
+	
+}
+
+
 void p_thread_init(int core, int thread)
 {
 	/* Save block size of corresponding instruction cache. */
@@ -152,83 +233,11 @@ void p_init()
 /* Finalization */
 void p_done()
 {
-	uint64_t now = ke_timer();
 	int core;
 
-	/* Global stats */
-	fprintf(stderr, "sim.cycles  %lld  # Simulation cycles\n",
-		(long long) sim_cycle);
-	fprintf(stderr, "sim.inst  %lld  # Total committed instructions\n",
-		(long long) p->committed);
-	fprintf(stderr, "sim.ipc  %.4f  # Global IPC\n",
-		sim_cycle ? (double) p->committed / sim_cycle : 0);
-	fprintf(stderr, "sim.squashed  %lld  # Number of uops squashed in the ROB\n",
-		(long long) p->squashed);
-	fprintf(stderr, "sim.time  %.1f  # Simulation time in seconds\n",
-		(double) now / 1000000);
-	fprintf(stderr, "sim.cps  %.0f  # Cycles simulated per second\n",
-		now ? (double) sim_cycle / now * 1000000 : 0.0);
-	fprintf(stderr, "sim.memory  %lu  # Memory used in bytes\n",
-		mhandle_used_memory());
-	fprintf(stderr, "sim.branches  %lld  # Committed branches\n",
-		(long long) p->branches);
-	fprintf(stderr, "sim.mispred  %lld  # Mispredicted branches in correct path\n",
-		(long long) p->mispred);
-	fprintf(stderr, "sim.predacc  %.4f  # Branch prediction accuracy\n",
-		p->branches ? (double) (p->branches - p->mispred) / p->branches : 0.0);
-	
-	/* Dispatch stats */
-	if (p_dispatch_kind == p_dispatch_kind_timeslice) {
-		fprintf(stderr, "di.stall[used]  %lld  # Dispatched slots used with committed inst\n",
-			(long long) p->di_stall[di_stall_used]);
-		fprintf(stderr, "di.stall[spec]  %lld  # Dispatched slots used in spec mode\n",
-			(long long) p->di_stall[di_stall_spec]);
-		fprintf(stderr, "di.stall[uopq]  %lld  # Wasted dispatch slots due to empty uop queue\n",
-			(long long) p->di_stall[di_stall_uopq]);
-		fprintf(stderr, "di.stall[rob]  %lld  # Wasted dispatch slots due to full rob\n",
-			(long long) p->di_stall[di_stall_rob]);
-		fprintf(stderr, "di.stall[iq]  %lld  # Wasted dispatch slots due to full iq\n",
-			(long long) p->di_stall[di_stall_iq]);
-		fprintf(stderr, "di.stall[lq]  %lld  # Wasted dispatch slots due to full lq\n",
-			(long long) p->di_stall[di_stall_lq]);
-		fprintf(stderr, "di.stall[sq]  %lld  # Full sq\n",
-			(long long) p->di_stall[di_stall_sq]);
-		fprintf(stderr, "di.stall[rename]  %lld  # No physical register free\n",
-			(long long) p->di_stall[di_stall_rename]);
-		fprintf(stderr, "di.stall[ctx]  %lld  # Dispatch stalled due to absence of running context\n",
-			(long long) p->di_stall[di_stall_ctx]);
-	}
+	/* Stats */
+	p_print_stats(stderr);
 
-	/* Stage time stats */
-	if (p_stage_time_stats && sim_cycle) {
-		fprintf(stderr, "stage_time.fetch  %.3f  # Time for stage in us/cycle\n",
-			(double) stage_time_fetch / sim_cycle);
-		fprintf(stderr, "stage_time.dispatch  %.3f\n",
-			(double) stage_time_dispatch / sim_cycle);
-		fprintf(stderr, "stage_time.issue  %.3f\n",
-			(double) stage_time_issue / sim_cycle);
-		fprintf(stderr, "stage_time.writeback  %.3f\n",
-			(double) stage_time_writeback / sim_cycle);
-		fprintf(stderr, "stage_time.commit  %.3f\n",
-			(double) stage_time_commit / sim_cycle);
-		fprintf(stderr, "stage_time.rest  %.3f\n",
-			(double) stage_time_rest / sim_cycle);
-	}
-
-	/* Occupancy stats */
-	if (p_occupancy_stats) {
-		fprintf(stderr, "occupancy.iq  %.2f  # Instruction queue occupancy\n",
-			p->occupancy_count ? (double) p->occupancy_iq_acc / p->occupancy_count : 0);
-		fprintf(stderr, "occupancy.lq  %.2f  # Load queue occupancy\n",
-			p->occupancy_count ? (double) p->occupancy_lq_acc / p->occupancy_count : 0);
-		fprintf(stderr, "occupancy.sq  %.2f  # Store queue occupancy\n",
-			p->occupancy_count ? (double) p->occupancy_sq_acc / p->occupancy_count : 0);
-		fprintf(stderr, "occupancy.rf  %.2f  # Register file occupancy\n",
-			p->occupancy_count ? (double) p->occupancy_rf_acc / p->occupancy_count : 0);
-		fprintf(stderr, "occupancy.rob  %.2f  # ROB occupancy\n",
-			p->occupancy_count ? (double) p->occupancy_rob_acc / p->occupancy_count : 0);
-	}
-	
 	/* Finalize structures */
 	fetchq_done();
 	uopq_done();
@@ -270,12 +279,9 @@ void p_dump(FILE *f)
 	
 	/* General information */
 	fprintf(f, "\n");
-	fprintf(f, "sim.cycles  %lld  # Simulation cycle\n", (long long) sim_cycle);
-	fprintf(f, "sim.committed  %lld  # Number of committed instructions\n", (long long) p->committed);
 	fprintf(f, "sim.last_dump  %lld  # Cycle of last dump\n", (long long) p->last_dump);
 	fprintf(f, "sim.ipc_last_dump  %.4f  # IPC since last dump\n", sim_cycle - p->last_dump > 0 ?
 		(double) (p->committed - p->last_committed) / (sim_cycle - p->last_dump) : 0);
-	fprintf(f, "sim.memory  %lu  # Memory used in bytes\n", mhandle_used_memory());
 	fprintf(f, "\n");
 
 	/* Cores */

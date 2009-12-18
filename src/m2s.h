@@ -722,6 +722,7 @@ extern struct processor_t *p;
 
 /* Procedures and functions */
 void p_reg_options(void);
+void p_print_stats(FILE *f);
 void p_init(void);
 void p_done(void);
 void p_load_progs(int argc, char **argv, char *ctxfile);
