@@ -23,9 +23,8 @@
 #include <assert.h>
 
 #define HT_INITIAL_SIZE		1000
-#define FREED_INITIAL_SIZE	1000
 
-/* corruption detection extra bytes */
+/* Corruption detection extra bytes */
 #define END_MARK		0xa5
 #define START_MARK		0x5a
 #define CORRUPT_RANGE		2
@@ -52,10 +51,6 @@ static unsigned long mem_busy = 0;
 static struct item_t *ht;		/* linear hash table */
 static int ht_size = 0, ht_count = 0;	/* size & elements in the hash table */
 
-/* list of freed pointers */
-static struct item_t *freed;
-static int freed_count = 0, freed_size = 0;
-
 /* headers */
 static void ht_insert(void *ptr, unsigned long size, char *at);
 static void check_corruption(void *ptr, unsigned long size, char *at);
@@ -81,28 +76,6 @@ static void initialize()
 	ht_count = 0;
 	if (!ht)
 		outofmem("lib mhandle (initialize)");
-	
-	/* initialize freed list */
-	freed = (struct item_t *) calloc(FREED_INITIAL_SIZE, sizeof(struct item_t));
-	freed_size = FREED_INITIAL_SIZE;
-	freed_count = 0;
-	if (!freed)
-		outofmem("lib mhandle (initialize)");
-}
-
-
-static void free_error(void *ptr, char *at)
-{
-	int i, found;
-	
-	/* look for 'ptr' in freed list */
-	for (i = found = 0; i < freed_count && !found; i++)
-		found = freed[i].ptr == ptr;
-	if (found)
-		fprintf(stderr, "\n%s: pointer freed twice\n", at);
-	else
-		fprintf(stderr, "\n%s: pointer freed without previous allocation\n", at);
-	abort();
 }
 
 
@@ -162,23 +135,13 @@ static unsigned long ht_remove(void *ptr, char *at)
 	/* find position */
 	idx = (unsigned long) ptr % ht_size;
 	while (ht[idx].ptr != ptr || !ht[idx].active || ht[idx].removed) {
-		if (!ht[idx].active)
-			free_error(ptr, at);
+		if (!ht[idx].active) {
+			fprintf(stderr, "\n%s: free: invalid pointer %p\n",
+				at, ptr);
+			abort();
+		}
 		idx = (idx + 1) % ht_size;
 	}
-	
-	/* add freed pointer to freed list */
-	if (freed_count == freed_size) {
-		freed_size *= 2;
-		freed = (struct item_t *) realloc(freed,
-			freed_size * sizeof(struct item_t));
-		if (!freed)
-			outofmem("lib mhandle (resizing freed list)");
-	}
-	freed[freed_count].at = at;
-	freed[freed_count].ptr = ptr;
-	freed[freed_count].size = ht[idx].size;
-	freed_count++;
 	
 	/* check corruption */
 	check_corruption(ptr, ht[idx].size, at);
@@ -205,7 +168,7 @@ static void mark_corruption(void *ptr, unsigned long size)
 static void check_corruption(void *ptr, unsigned long size, char *at)
 {
 	unsigned long i;
-	int corrupt = 0, prev, next, fprev, fnext;
+	int corrupt = 0, prev, next;
 	
 	/* corruption before & after block */
 	for (i = 0; i < CORRUPT_RANGE; i++)
@@ -218,7 +181,7 @@ static void check_corruption(void *ptr, unsigned long size, char *at)
 		return;
 	
 	/* find contiguous blocks */
-	prev = next = fprev = fnext = -1;
+	prev = next = -1;
 	for (i = 0; i < ht_size; i++) {
 		if (ht[i].active && !ht[i].removed) {
 			if (ht[i].ptr < ptr && (prev == -1 || ht[i].ptr > ht[prev].ptr))
@@ -226,12 +189,6 @@ static void check_corruption(void *ptr, unsigned long size, char *at)
 			if (ht[i].ptr > ptr && (next == -1 || ht[i].ptr < ht[next].ptr))
 				next = i;
 		}
-	}
-	for (i = 0; i < freed_count; i++) {
-		if (freed[i].ptr < ptr && (fprev == -1 || freed[i].ptr > freed[fprev].ptr))
-			fprev = i;
-		if (freed[i].ptr > ptr && (fnext == -1 || freed[i].ptr < freed[fnext].ptr))
-			fnext = i;
 	}
 	
 	/* message */
@@ -241,10 +198,6 @@ static void check_corruption(void *ptr, unsigned long size, char *at)
 		fprintf(stderr, "\tprev block: %s (%p)\n", ht[prev].at, ht[prev].ptr);
 	if (next >= 0)
 		fprintf(stderr, "\tnext block: %s (%p)\n", ht[next].at, ht[next].ptr);
-	if (fprev >= 0)
-		fprintf(stderr, "\tfreed prev block: %s (%p)\n", freed[fprev].at, ht[fprev].ptr);
-	if (fnext >= 0)
-		fprintf(stderr, "\tfreed next block: %s (%p)\n", ht[fnext].at, ht[fnext].ptr);
 	abort();
 }
 
@@ -359,11 +312,9 @@ void __mhandle_done()
 	
 	/* free hash table & freed list */
 	free(ht);
-	free(freed);
 	initialized = 0;
 	mem_busy = 0;
 	ht_count = ht_size = 0;
-	freed_count = freed_size = 0;
 }
 
 

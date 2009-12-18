@@ -23,7 +23,7 @@
 /* Signals */
 static int sigint_received = FALSE;
 static int sigusr_received = FALSE;
-static int sigalrm_interval = 60;
+static int sigalrm_interval = 30;
 static uint64_t last_sigalrm_cycle = 0;
 
 
@@ -84,6 +84,7 @@ static void sim_dump_log()
 	sprintf(name, "m2s.%d.%lld", (int) getpid(), (long long) sim_cycle);
 	f = fopen(name, "wt");
 	if (f) {
+		p_print_stats(f);
 		p_dump(f);
 		fclose(f);
 	}
@@ -115,8 +116,10 @@ static void sim_signal_handler(int signum)
 	
 	case SIGABRT:
 		signal(SIGABRT, SIG_DFL);
-		if (debug_status(error_debug_category))
+		if (debug_status(error_debug_category)) {
+			p_print_stats(debug_file(error_debug_category));
 			p_dump(debug_file(error_debug_category));
+		}
 		exit(1);
 		break;
 	
