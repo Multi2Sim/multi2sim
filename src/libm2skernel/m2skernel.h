@@ -72,6 +72,7 @@ struct mem_t {
 	int safe;  /* Safe mode */
 };
 
+extern unsigned long mem_mapped_space;
 
 struct mem_t *mem_create(void);
 void mem_free(struct mem_t *mem);
