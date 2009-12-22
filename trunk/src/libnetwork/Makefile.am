@@ -2,7 +2,7 @@ lib_LIBRARIES = libnetwork.a
 libnetwork_a_SOURCES = \
 	network.h \
 	network.c
-AM_CFLAGS = -Wall -Werror -DMHANDLE
+AM_CFLAGS = -Wall -Werror
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libesim \
