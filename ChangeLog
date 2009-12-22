@@ -397,3 +397,5 @@
 2009-12-22
 	* libmhandle: memory overhead of libmhandle is too high to make it by
 		default. DMHANDLE directive is removed in Makefile.am.
+	* memory.c: global variable mem_mapped_space.
+	* processor.c: stat sim.memory changes meaning.

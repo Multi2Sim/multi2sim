@@ -19,6 +19,8 @@
 
 #include <m2skernel.h>
 
+/* Total space allocated for memory pages */
+unsigned long mem_mapped_space = 0;
 
 
 /* Return mem page corresponding to an address. */
@@ -67,6 +69,7 @@ static struct mem_page_t *mem_page_create(struct mem_t *mem, uint32_t addr, int 
 	/* Insert in pages hash table */
 	page->next = mem->pages[index];
 	mem->pages[index] = page;
+	mem_mapped_space += MEM_PAGESIZE;
 	return page;
 }
 
@@ -95,6 +98,7 @@ static void mem_page_free(struct mem_t *mem, uint32_t addr)
 		prev->next = page->next;
 	else
 		mem->pages[index] = page->next;
+	mem_mapped_space -= MEM_PAGESIZE;
 	free(page);
 }
 
