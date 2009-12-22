@@ -393,3 +393,7 @@
 		were constantly allocated and deallocated.
 	* processor.c, m2s.c: processor stats dumped into debug:error file
 		after SIGABRT received.
+
+2009-12-22
+	* libmhandle: memory overhead of libmhandle is too high to make it by
+		default. DMHANDLE directive is removed in Makefile.am.
