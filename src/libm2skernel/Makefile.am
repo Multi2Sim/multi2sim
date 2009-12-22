@@ -17,7 +17,7 @@ libm2skernel_a_SOURCES = m2skernel.h \
 	signal.c \
 	syscall.c \
 	syscall.dat
-AM_CFLAGS = -Wall -Werror -fno-strict-aliasing -DMHANDLE
+AM_CFLAGS = -Wall -Werror -fno-strict-aliasing
 
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
