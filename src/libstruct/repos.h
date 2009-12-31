@@ -20,12 +20,15 @@
 #ifndef REPOS_H
 #define REPOS_H
 
+#include <stdio.h>
+
 /* Object repository */
 struct repos_t;
 
 /* Creation/destruction */
 struct repos_t *repos_create(int objsize, char *name);
 void repos_free(struct repos_t *repos);
+void repos_free_dump(struct repos_t *repos, void(*dump)(void *, FILE *));
 
 /* Functions to create and free repository objects.
  * The first time an object is created, its memory is allocated
