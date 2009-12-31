@@ -63,7 +63,7 @@ static int dispatch_thread(int core, int thread, int quant)
 			break;
 		}
 	
-		/* Get entry from fetch queue */
+		/* Get entry from uop queue */
 		uop = list_remove_at(THREAD.uopq, 0);
 		assert(uop_exists(uop));
 		uop->in_uopq = 0;

@@ -399,3 +399,7 @@
 		default. DMHANDLE directive is removed in Makefile.am.
 	* memory.c: global variable mem_mapped_space.
 	* processor.c: stat sim.memory changes meaning.
+
+2009-12-31
+	* libstruct/repos.c: implementation improved to provide function
+		repos_free_dump to dump objects not freed.
