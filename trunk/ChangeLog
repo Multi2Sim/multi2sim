@@ -403,3 +403,8 @@
 2009-12-31
 	* libstruct/repos.c: implementation improved to provide function
 		repos_free_dump to dump objects not freed.
+
+2010-01-04
+	* libm2skernel/syscall.c: system call fcntl64 with cmd=3 (F_GETFL)
+		implemented.
+	* libm2skernel/syscall.c: system call 'utime' implemented.
