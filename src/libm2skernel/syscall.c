@@ -1984,6 +1984,27 @@ void syscall_do()
 	}
 
 
+	/* 212 */
+	case syscall_code_chown:
+	{
+		char filename[STRSIZE], fullpath[STRSIZE];
+		uint32_t pfilename, owner, group;
+		int len;
+
+		pfilename = isa_regs->ebx;
+		owner = isa_regs->ecx;
+		group = isa_regs->edx;
+		len = mem_read_string(isa_mem, pfilename, STRSIZE, filename);
+		if (len >= STRSIZE)
+			fatal("syscall chmod: maximum string size exceeded");
+		ld_get_full_path(isa_ctx, filename, fullpath, STRSIZE);
+		syscall_debug("  pfilename=0x%x, owner=%d, group=%d\n", pfilename, owner, group);
+		syscall_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
+		RETVAL(chown(fullpath, owner, group));
+		break;
+	}
+
+
 	/* 219 */
 	case syscall_code_madvise:
 	{
