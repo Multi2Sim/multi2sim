@@ -20,6 +20,7 @@
 #include "m2skernel.h"
 
 #include <unistd.h>
+#include <utime.h>
 #include <time.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -115,6 +116,21 @@ struct string_map_t clone_flags_map = {
 		{ "CLONE_IO",                0x80000000 }
 	}
 };
+
+
+/* For utime */
+
+struct sim_utimbuf {
+	uint32_t actime;
+	uint32_t modtime;
+} __attribute__((packed));
+
+static void syscall_utime_sim_to_read(struct utimbuf *real, struct sim_utimbuf *sim)
+{
+	real->actime = sim->actime;
+	real->modtime = sim->modtime;
+}
+
 
 
 /* For ioctl */
@@ -773,6 +789,33 @@ void syscall_do()
 	case syscall_code_getpid:
 	{
 		retval = isa_ctx->pid;
+		break;
+	}
+
+
+	/* 30 */
+	case syscall_code_utime:
+	{
+		char filename[STRSIZE], fullpath[STRSIZE];
+		uint32_t pfilename, putimbuf;
+		struct utimbuf utimbuf;
+		struct sim_utimbuf sim_utimbuf;
+		int len;
+
+		pfilename = isa_regs->ebx;
+		putimbuf = isa_regs->ecx;
+		len = mem_read_string(isa_mem, pfilename, STRSIZE, filename);
+		if (len >= STRSIZE)
+			fatal("syscall utime: maximum string size exceeded");
+		ld_get_full_path(isa_ctx, filename, fullpath, STRSIZE);
+		mem_read(isa_mem, putimbuf, sizeof(struct sim_utimbuf), &sim_utimbuf);
+		syscall_utime_sim_to_read(&utimbuf, &sim_utimbuf);
+		syscall_debug("  filename='%s', putimbuf=0x%x\n",
+			filename, putimbuf);
+		syscall_debug("  fullpath='%s'\n", fullpath);
+		syscall_debug("  utimbuf.actime = %u, utimbuf.modtime = %u\n",
+			sim_utimbuf.actime, sim_utimbuf.modtime);
+		RETVAL(utime(fullpath, &utimbuf));
 		break;
 	}
 
@@ -1952,9 +1995,11 @@ void syscall_do()
 		case 2:  /* F_SETFD */
 			/* Ignored */
 			break;
+		case 3:  /* F_GETFL */
+			RETVAL(fcntl(efd, F_GETFL));
+			break;
 		case 0:  /* F_DUPFD */
 		case 1:  /* F_GETFD */
-		case 3:  /* F_GETFL */
 		case 4:  /* F_SETFL */
 		default:
 			fatal("syscall fcntl64: cmd = %d not implemented", cmd);
