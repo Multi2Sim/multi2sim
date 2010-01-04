@@ -408,3 +408,4 @@
 	* libm2skernel/syscall.c: system call fcntl64 with cmd=3 (F_GETFL)
 		implemented.
 	* libm2skernel/syscall.c: system call 'utime' implemented.
+	* libm2skernel/syscall.c: system call 'chmod' implemented.
