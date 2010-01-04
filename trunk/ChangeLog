@@ -409,3 +409,4 @@
 		implemented.
 	* libm2skernel/syscall.c: system call 'utime' implemented.
 	* libm2skernel/syscall.c: system call 'chmod' implemented.
+	* libm2skernel/syscall.c: system call 'chown' implemented.
