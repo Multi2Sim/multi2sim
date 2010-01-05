@@ -38,8 +38,10 @@ static char *inst_stat_file = "";
 static char *inst_stop = "";
 static uint64_t inst_reset = 0;
 static uint64_t max_cycles = 0;
+static uint64_t max_inst = 0;
 static uint32_t break_point = 0;
 static uint64_t sim_cycle = 0;
+static uint64_t sim_inst = 0;
 
 
 /* Variables */
@@ -63,6 +65,7 @@ static void sim_reg_options()
 	opt_reg_string("-inst_stop", "stop when executing inst", &inst_stop);
 	opt_reg_uint64("-inst_reset", "cycle to reset instruction stats", &inst_reset);
 	opt_reg_uint64("-max_cycles", "cycle to stop program (0=no stop)", &max_cycles);
+	opt_reg_uint64("-max_inst", "maximum number of instructions", &max_inst);
 	opt_reg_uint32("-break_point", "value for eip to stop", &break_point);
 }
 
@@ -138,14 +141,17 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-		/* Run an instruction from each context */
+		/* Run an instruction from each running context */
 		ke_run();
+		sim_inst += ke->running_count;
+		if (!ke->context_list)
+			break;
 
 		/* Stop conditions */
 		sim_cycle++;
-		if (!ke->context_list)
-			break;
-		if (sim_cycle >= max_cycles && max_cycles) {
+		if ((sim_cycle >= max_cycles && max_cycles) ||
+			(sim_inst >= max_inst && max_inst))
+		{
 			regs_dump(isa_regs, stdout);
 			ke_dump(stdout);
 			break;
@@ -170,14 +176,20 @@ int main(int argc, char **argv)
 
 	/* Stats */
 	fprintf(stderr, "\n");
-	fprintf(stderr, "cycles  %lld  # Simulation cycles\n",
+	fprintf(stderr, "sim.cycles  %lld  # Simulation cycles\n",
 		(long long) sim_cycle);
-	fprintf(stderr, "time  %.1f  # Simulation time\n",
+	fprintf(stderr, "sim.inst  %lld  # Number of instructions executed\n",
+		(long long) sim_inst);
+	fprintf(stderr, "sim.time  %.1f  # Simulation time\n",
 		(double) clock() / CLOCKS_PER_SEC);
-	fprintf(stderr, "cps  %.0f  # Cycles simulated per second\n",
+	fprintf(stderr, "sim.cps  %.0f  # Cycles simulated per second\n",
 		clock() ? (double) sim_cycle / clock() * CLOCKS_PER_SEC : 0.0);
-	fprintf(stderr, "contexts  %d  # Maximum number of concurrent contexts\n",
+	fprintf(stderr, "sim.contexts  %d  # Maximum number of concurrent contexts\n",
 		ke->context_max);
+	fprintf(stderr, "sim.memory  %lu  # Physical memory used by benchmarks\n",
+		mem_mapped_space);
+	fprintf(stderr, "sim.memory_max  %lu  # Maximum physical memory used by benchmarks\n",
+		mem_max_mapped_space);
 	fprintf(stderr, "\n");
 
 	/* Finalization */

@@ -410,3 +410,11 @@
 	* libm2skernel/syscall.c: system call 'utime' implemented.
 	* libm2skernel/syscall.c: system call 'chmod' implemented.
 	* libm2skernel/syscall.c: system call 'chown' implemented.
+
+2010-01-05
+	* libm2skernel/m2skernel.h: global variable 'mem_max_mapped_space',
+		representing the maximum allocated physical memory for
+		benchmarks.
+	* m2s-fast.c: stat names changed. Stat 'sim.memory' and
+		'sim.memory_max' added.
+	* processor.c: stats 'sim.memory' and 'sim.memory_max' added.
