@@ -73,6 +73,7 @@ struct mem_t {
 };
 
 extern unsigned long mem_mapped_space;
+extern unsigned long mem_max_mapped_space;
 
 struct mem_t *mem_create(void);
 void mem_free(struct mem_t *mem);

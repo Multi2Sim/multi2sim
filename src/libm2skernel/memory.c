@@ -21,6 +21,7 @@
 
 /* Total space allocated for memory pages */
 unsigned long mem_mapped_space = 0;
+unsigned long mem_max_mapped_space = 0;
 
 
 /* Return mem page corresponding to an address. */
@@ -70,6 +71,7 @@ static struct mem_page_t *mem_page_create(struct mem_t *mem, uint32_t addr, int 
 	page->next = mem->pages[index];
 	mem->pages[index] = page;
 	mem_mapped_space += MEM_PAGESIZE;
+	mem_max_mapped_space = MAX(mem_max_mapped_space, mem_mapped_space);
 	return page;
 }
 
