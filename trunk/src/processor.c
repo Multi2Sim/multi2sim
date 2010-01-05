@@ -124,8 +124,10 @@ void p_print_stats(FILE *f)
 		(double) now / 1000000);
 	fprintf(f, "sim.cps  %.0f  # Cycles simulated per second\n",
 		now ? (double) sim_cycle / now * 1000000 : 0.0);
-	fprintf(f, "sim.memory  %lu  # Total mapped space by benchmarks\n",
+	fprintf(f, "sim.memory  %lu  # Physical memory used by benchmarks\n",
 		mem_mapped_space);
+	fprintf(f, "sim.memory_max  %lu  # Maximum physical memory used by benchmarks\n",
+		mem_max_mapped_space);
 	fprintf(f, "sim.branches  %lld  # Committed branches\n",
 		(long long) p->branches);
 	fprintf(f, "sim.mispred  %lld  # Mispredicted branches in correct path\n",
