@@ -11,43 +11,13 @@ SUBDIRS = \
 	ptrace
 
 bin_PROGRAMS = \
-	m2s-network \
-	m2s-bpred \
-	m2s-cache \
 	m2s-fast \
 	m2s-objdump \
 	m2s
 
 m2s_fast_SOURCES = m2s-fast.c
 
-m2s_cache_SOURCES = m2s-cache.c
-
 m2s_objdump_SOURCES = m2s-objdump.c
-
-m2s_bpred_SOURCES = \
-	bpred.c \
-	commit.c \
-	decode.c \
-	dispatch.c \
-	fetch.c \
-	fu.c \
-	issue.c \
-	m2s-bpred.c \
-	m2s.h \
-	phregs.c \
-	processor.c \
-	ptrace.c \
-	queues.c \
-	recover.c \
-	rob.c \
-	tcache.c \
-	uop.c \
-	uop1.dat \
-	uop2.dat \
-	writeback.c
-
-m2s_network_SOURCES = \
-	m2s-network.c
 
 m2s_SOURCES = \
 	bpred.c \
