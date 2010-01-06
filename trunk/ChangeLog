@@ -418,3 +418,6 @@
 	* m2s-fast.c: stat names changed. Stat 'sim.memory' and
 		'sim.memory_max' added.
 	* processor.c: stats 'sim.memory' and 'sim.memory_max' added.
+
+2010-01-06
+	* m2s-cache, m2s-bpred, m2s-network: removed.
