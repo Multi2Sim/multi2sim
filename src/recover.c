@@ -29,8 +29,7 @@ void p_recover(int core, int thread)
 	fetchq_recover(core, thread);
 	uopq_recover(core, thread);
 	iq_recover(core, thread);
-	lq_recover(core, thread);
-	sq_recover(core, thread);
+	lsq_recover(core, thread);
 	eventq_recover(core, thread);
 
 	/* Remove instructions from ROB, restoring the state of the

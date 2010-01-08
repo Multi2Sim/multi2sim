@@ -169,7 +169,7 @@ void iq_reg_options()
 	static char *iq_kind_map[] = { "shared", "private" };
 	opt_reg_enum("-iq_kind", "instruction queue kind {shared|private}",
 		(int *) &iq_kind, iq_kind_map, 2);
-	opt_reg_uint32("-iq_size", "instruction queue size",
+	opt_reg_uint32("-iq_size", "instruction queue size per thread",
 		&iq_size);
 }
 
@@ -270,35 +270,39 @@ void iq_recover(int core, int thread)
 
 
 
-/* Load Queue */
+/* Load/Store Queue */
 
-uint32_t lq_size = 20;
-enum lq_kind_enum lq_kind = lq_kind_private;
+uint32_t lsq_size = 20;
+enum lsq_kind_enum lsq_kind = lsq_kind_private;
 
 
-void lq_reg_options()
+void lsq_reg_options()
 {
-	static char *lq_kind_map[] = { "shared", "private" };
-	opt_reg_enum("-lq_kind", "load queue kind {shared|private}",
-		(int *) &lq_kind, lq_kind_map, 2);
-	opt_reg_uint32("-lq_size", "load queue size",
-		&lq_size);
+	static char *lsq_kind_map[] = { "shared", "private" };
+	opt_reg_enum("-lsq_kind", "load/store queue kind {shared|private}",
+		(int *) &lsq_kind, lsq_kind_map, 2);
+	opt_reg_uint32("-lsq_size", "load/store queue size per thread",
+		&lsq_size);
 }
 
 
-void lq_init()
+void lsq_init()
 {
 	int core, thread;
-	FOREACH_CORE FOREACH_THREAD
+	FOREACH_CORE FOREACH_THREAD {
 		THREAD.lq = lnlist_create();
+		THREAD.sq = lnlist_create();
+	}
 }
 
 
-void lq_done()
+void lsq_done()
 {
-	struct lnlist_t *lq;
+	struct lnlist_t *lq, *sq;
 	struct uop_t *uop;
 	int core, thread;
+
+	/* Load queue */
 	FOREACH_CORE FOREACH_THREAD {
 		lq = THREAD.lq;
 		lnlist_head(lq);
@@ -310,36 +314,89 @@ void lq_done()
 		}
 		lnlist_free(lq);
 	}
+
+	/* Store queue */
+	FOREACH_CORE FOREACH_THREAD {
+		sq = THREAD.sq;
+		lnlist_head(sq);
+		while (lnlist_count(sq)) {
+			uop = lnlist_get(sq);
+			uop->in_sq = 0;
+			lnlist_remove(sq);
+			uop_free_if_not_queued(uop);
+		}
+		lnlist_free(sq);
+	}
 }
 
 
-int lq_can_insert(struct uop_t *uop)
+int lsq_can_insert(struct uop_t *uop)
 {
 	int core = uop->core;
 	int thread = uop->thread;
 	int count, size;
 
-	size = lq_kind == lq_kind_private ? lq_size : lq_size * p_threads;
-	count = lq_kind == lq_kind_private ? THREAD.lq_count : CORE.lq_count;
+	size = lsq_kind == lsq_kind_private ? lsq_size : lsq_size * p_threads;
+	count = lsq_kind == lsq_kind_private ? THREAD.lsq_count : CORE.lsq_count;
 	return count < size;
 }
 
 
-/* Insert a uop into the corresponding load queue. Since this is a non-FIFO queue,
- * the insertion position doesn't matter. */
-void lq_insert(struct uop_t *uop)
+/* Insert uop into corresponding load/store queue */
+void lsq_insert(struct uop_t *uop)
 {
 	int core = uop->core;
 	int thread = uop->thread;
 	struct lnlist_t *lq = THREAD.lq;
+	struct lnlist_t *sq = THREAD.sq;
 
-	assert(!uop->in_lq);
-	lnlist_out(lq);
-	lnlist_insert(lq, uop);
-	uop->in_lq = 1;
+	assert(!uop->in_lq && !uop->in_sq);
+	assert((uop->flags & FLOAD) || (uop->flags & FSTORE));
+	if (uop->flags & FLOAD) {
+		lnlist_out(lq);
+		lnlist_insert(lq, uop);
+		uop->in_lq = 1;
+	} else {
+		lnlist_out(sq);
+		lnlist_insert(sq, uop);
+		uop->in_sq = 1;
+	}
+	CORE.lsq_count++;
+	THREAD.lsq_count++;
+}
 
-	CORE.lq_count++;
-	THREAD.lq_count++;
+
+/* Remove all speculative uops from a given load/store queue in the
+ * given thread. */
+void lsq_recover(int core, int thread)
+{
+	struct lnlist_t *lq = THREAD.lq;
+	struct lnlist_t *sq = THREAD.sq;
+	struct uop_t *uop;
+
+	/* Recover load queue */
+	lnlist_head(lq);
+	while (!lnlist_eol(lq)) {
+		uop = lnlist_get(lq);
+		if (uop->specmode) {
+			lq_remove(core, thread);
+			uop_free_if_not_queued(uop);
+			continue;
+		}
+		lnlist_next(lq);
+	}
+
+	/* Recover store queue */
+	lnlist_head(sq);
+	while (!lnlist_eol(sq)) {
+		uop = lnlist_get(sq);
+		if (uop->specmode) {
+			sq_remove(core, thread);
+			uop_free_if_not_queued(uop);
+			continue;
+		}
+		lnlist_next(sq);
+	}
 }
 
 
@@ -355,86 +412,9 @@ void lq_remove(int core, int thread)
 	lnlist_remove(lq);
 	uop->in_lq = 0;
 
-	assert(CORE.lq_count && THREAD.lq_count);
-	CORE.lq_count--;
-	THREAD.lq_count--;
-}
-
-
-/* Remove all speculative uops from the current thread */
-void lq_recover(int core, int thread)
-{
-	struct lnlist_t *lq = THREAD.lq;
-	struct uop_t *uop;
-
-	lnlist_head(lq);
-	while (!lnlist_eol(lq)) {
-		uop = lnlist_get(lq);
-		if (uop->specmode) {
-			lq_remove(core, thread);
-			uop_free_if_not_queued(uop);
-			continue;
-		}
-		lnlist_next(lq);
-	}
-}
-
-
-
-
-/* Store Queue */
-
-uint32_t sq_size = 20;
-
-
-void sq_reg_options()
-{
-	opt_reg_uint32("-sq_size", "load queue size",
-		&sq_size);
-}
-
-
-void sq_init()
-{
-	int core, thread;
-	FOREACH_CORE FOREACH_THREAD
-		THREAD.sq = lnlist_create();
-}
-
-
-void sq_done()
-{
-	struct lnlist_t *sq;
-	struct uop_t *uop;
-	int core, thread;
-	FOREACH_CORE FOREACH_THREAD {
-		sq = THREAD.sq;
-		lnlist_head(sq);
-		while (lnlist_count(sq)) {
-			uop = lnlist_get(sq);
-			uop->in_sq = 0;
-			lnlist_remove(sq);
-			uop_free_if_not_queued(uop);
-		}
-		lnlist_free(sq);
-	}
-}
-
-
-/* Insert a uop into the store queue tail */
-void sq_insert(struct uop_t *uop)
-{
-	int core = uop->core;
-	int thread = uop->thread;
-	struct lnlist_t *sq = THREAD.sq;
-
-	assert(!uop->in_sq);
-	lnlist_out(sq);
-	lnlist_insert(sq, uop);
-	uop->in_sq = 1;
-
-	CORE.sq_count++;
-	THREAD.sq_count++;
+	assert(CORE.lsq_count && THREAD.lsq_count);
+	CORE.lsq_count--;
+	THREAD.lsq_count--;
 }
 
 
@@ -450,40 +430,10 @@ void sq_remove(int core, int thread)
 	lnlist_remove(sq);
 	uop->in_sq = 0;
 
-	assert(CORE.sq_count && THREAD.sq_count);
-	CORE.sq_count--;
-	THREAD.sq_count--;
+	assert(CORE.lsq_count && THREAD.lsq_count);
+	CORE.lsq_count--;
+	THREAD.lsq_count--;
 }
-
-
-int sq_can_insert(struct uop_t *uop)
-{
-	int core = uop->core;
-	int thread = uop->thread;
-
-	return THREAD.sq_count < sq_size;
-}
-
-
-/* Remove all speculative uops from the current thread */
-void sq_recover(int core, int thread)
-{
-	struct lnlist_t *sq = THREAD.sq;
-	struct uop_t *uop;
-
-	lnlist_head(sq);
-	while (!lnlist_eol(sq)) {
-		uop = lnlist_get(sq);
-		if (uop->specmode) {
-			sq_remove(core, thread);
-			uop_free_if_not_queued(uop);
-			continue;
-		}
-		lnlist_next(sq);
-	}
-}
-
-
 
 
 

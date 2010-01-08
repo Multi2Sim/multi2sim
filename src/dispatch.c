@@ -38,10 +38,8 @@ static enum di_stall_enum can_dispatch_thread(int core, int thread)
 		return di_stall_rob;
 	if (!(uop->flags & FMEM) && !iq_can_insert(uop))
 		return di_stall_iq;
-	if ((uop->flags & FLOAD) && !lq_can_insert(uop))
-		return di_stall_lq;
-	if ((uop->flags & FSTORE) && !sq_can_insert(uop))
-		return di_stall_sq;
+	if ((uop->flags & FMEM) && !lsq_can_insert(uop))
+		return di_stall_lsq;
 	if (!phregs_can_rename(uop))
 		return di_stall_rename;
 	
@@ -78,14 +76,10 @@ static int dispatch_thread(int core, int thread, int quant)
 		if (!(uop->flags & FMEM))
 			iq_insert(uop);
 		
-		/* Loads are inserted into the LQ */
-		if ((uop->flags & FLOAD))
-			lq_insert(uop);
+		/* Memory instructions into the LSQ */
+		if (uop->flags & FMEM)
+			lsq_insert(uop);
 		
-		/* Stores are inserted into the SQ */
-		if ((uop->flags & FSTORE))
-			sq_insert(uop);
-
 		/* Another instruction dispatched */
 		ptrace_new_stage(uop, ptrace_dispatch);
 		p->di_stall[uop->specmode ? di_stall_spec : di_stall_used]++;

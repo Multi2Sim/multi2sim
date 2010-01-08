@@ -372,39 +372,25 @@ void iq_recover(int core, int thread);
 
 
 
-/* Load Queue */
+/* Load/Store Queue */
 
-extern uint32_t lq_size;
+extern uint32_t lsq_size;
 
-extern enum lq_kind_enum {
-	lq_kind_shared = 0,
-	lq_kind_private
-} lq_kind;
+extern enum lsq_kind_enum {
+	lsq_kind_shared = 0,
+	lsq_kind_private
+} lsq_kind;
 
-void lq_reg_options(void);
-void lq_init(void);
-void lq_done(void);
+void lsq_reg_options(void);
+void lsq_init(void);
+void lsq_done(void);
 
-int lq_can_insert(struct uop_t *uop);
-void lq_insert(struct uop_t *uop);
+int lsq_can_insert(struct uop_t *uop);
+void lsq_insert(struct uop_t *uop);
+void lsq_recover(int core, int thread);
+
 void lq_remove(int core, int thread);
-void lq_recover(int core, int thread);
-
-
-
-
-/* Store Queue - Assumed private. */
-
-extern uint32_t sq_size;
-
-void sq_reg_options(void);
-void sq_init(void);
-void sq_done(void);
-
-int sq_can_insert(struct uop_t *uop);
-void sq_insert(struct uop_t *uop);
 void sq_remove(int core, int thread);
-void sq_recover(int core, int thread);
 
 
 
@@ -591,8 +577,7 @@ enum di_stall_enum {
 	di_stall_uopq,  /* No instruction in the uop queue */
 	di_stall_rob,  /* No space in the rob */
 	di_stall_iq,  /* No space in the iq */
-	di_stall_lq,  /* No space in the lq */
-	di_stall_sq,  /* No space in the sq */
+	di_stall_lsq,  /* No space in the lsq */
 	di_stall_rename,  /* No free physical register */
 	di_stall_ctx,  /* No running ctx */
 	di_stall_max
@@ -613,8 +598,7 @@ struct processor_thread_t {
 
 	/* Number of uops in private structures */
 	int iq_count;
-	int lq_count;
-	int sq_count;
+	int lsq_count;
 
 	/* Private structures */
 	struct list_t *fetchq;
@@ -658,8 +642,7 @@ struct processor_core_t {
 	/* Per core counters */
 	int context_map_count;
 	int iq_count;
-	int lq_count;
-	int sq_count;
+	int lsq_count;
 
 	/* Reorder Buffer */
 	struct list_t *rob;
@@ -704,8 +687,7 @@ struct processor_t {
 
 	uint64_t occupancy_count;
 	uint64_t occupancy_iq_acc;
-	uint64_t occupancy_lq_acc;
-	uint64_t occupancy_sq_acc;
+	uint64_t occupancy_lsq_acc;
 	uint64_t occupancy_rf_acc;
 	uint64_t occupancy_rob_acc;
 
