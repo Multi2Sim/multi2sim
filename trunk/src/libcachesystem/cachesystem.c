@@ -63,6 +63,8 @@ void ccache_free(struct ccache_t *ccache)
 		fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
 			ccache->name, ccache->accesses ? (double) ccache->hits /
 			ccache->accesses : 0.0);
+		fprintf(stderr, "%s.hits  %lld  # Number of hits\n",
+			ccache->name, (long long) ccache->hits);
 		fprintf(stderr, "%s.evicts  %lld  # Number of evictions\n",
 			ccache->name, (long long) ccache->evicts);
 	}
