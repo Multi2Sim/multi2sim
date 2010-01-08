@@ -389,7 +389,7 @@
 
 2009-12-18
 	* libmhandle/mhandle.c: list storing freed pointers removed. This
-		caused used memory to grown indefinitely when pointers
+		caused used memory to grow indefinitely when pointers
 		were constantly allocated and deallocated.
 	* processor.c, m2s.c: processor stats dumped into debug:error file
 		after SIGABRT received.
@@ -410,6 +410,7 @@
 	* libm2skernel/syscall.c: system call 'utime' implemented.
 	* libm2skernel/syscall.c: system call 'chmod' implemented.
 	* libm2skernel/syscall.c: system call 'chown' implemented.
+	* With these system calls, the Mediabench suite is supported.
 
 2010-01-05
 	* libm2skernel/m2skernel.h: global variable 'mem_max_mapped_space',
@@ -421,3 +422,11 @@
 
 2010-01-06
 	* m2s-cache, m2s-bpred, m2s-network: removed.
+
+2010-01-08
+	* libcachesystem: stat 'cache.hits' added, to avoid the hitratio
+		inaccuracy.
+	* queues.c, m2s.h, ...: LQ and SQ queues unified into LSQ. Para-
+		meters 'lq_size' and 'sq_size' are unified into
+		'lsq_size'.
+

@@ -101,8 +101,7 @@ void p_reg_options()
 	fetchq_reg_options();
 	rob_reg_options();
 	iq_reg_options();
-	lq_reg_options();
-	sq_reg_options();
+	lsq_reg_options();
 	fu_reg_options();
 }
 
@@ -147,10 +146,8 @@ void p_print_stats(FILE *f)
 			(long long) p->di_stall[di_stall_rob]);
 		fprintf(f, "di.stall[iq]  %lld  # Wasted dispatch slots due to full iq\n",
 			(long long) p->di_stall[di_stall_iq]);
-		fprintf(f, "di.stall[lq]  %lld  # Wasted dispatch slots due to full lq\n",
-			(long long) p->di_stall[di_stall_lq]);
-		fprintf(f, "di.stall[sq]  %lld  # Full sq\n",
-			(long long) p->di_stall[di_stall_sq]);
+		fprintf(f, "di.stall[lsq]  %lld  # Wasted dispatch slots due to full lsq\n",
+			(long long) p->di_stall[di_stall_lsq]);
 		fprintf(f, "di.stall[rename]  %lld  # No physical register free\n",
 			(long long) p->di_stall[di_stall_rename]);
 		fprintf(f, "di.stall[ctx]  %lld  # Dispatch stalled due to absence of running context\n",
@@ -177,10 +174,8 @@ void p_print_stats(FILE *f)
 	if (p_occupancy_stats) {
 		fprintf(f, "occupancy.iq  %.2f  # Instruction queue occupancy\n",
 			p->occupancy_count ? (double) p->occupancy_iq_acc / p->occupancy_count : 0);
-		fprintf(f, "occupancy.lq  %.2f  # Load queue occupancy\n",
-			p->occupancy_count ? (double) p->occupancy_lq_acc / p->occupancy_count : 0);
-		fprintf(f, "occupancy.sq  %.2f  # Store queue occupancy\n",
-			p->occupancy_count ? (double) p->occupancy_sq_acc / p->occupancy_count : 0);
+		fprintf(f, "occupancy.lsq  %.2f  # Load/Store queue occupancy\n",
+			p->occupancy_count ? (double) p->occupancy_lsq_acc / p->occupancy_count : 0);
 		fprintf(f, "occupancy.rf  %.2f  # Register file occupancy\n",
 			p->occupancy_count ? (double) p->occupancy_rf_acc / p->occupancy_count : 0);
 		fprintf(f, "occupancy.rob  %.2f  # ROB occupancy\n",
@@ -225,8 +220,7 @@ void p_init()
 	uopq_init();
 	rob_init();
 	iq_init();
-	lq_init();
-	sq_init();
+	lsq_init();
 	eventq_init();
 	fu_init();
 }
@@ -245,8 +239,7 @@ void p_done()
 	uopq_done();
 	rob_done();
 	iq_done();
-	lq_done();
-	sq_done();
+	lsq_done();
 	eventq_done();
 	bpred_done();
 	tcache_done();
@@ -477,7 +470,6 @@ void p_update_occupancy_stats(int core)
 {
 	p->occupancy_count++;
 	p->occupancy_iq_acc += iq_kind == iq_kind_private ? CORE.iq_count / p_cores : CORE.iq_count;
-	p->occupancy_lq_acc += iq_kind == lq_kind_private ? CORE.lq_count / p_cores : CORE.lq_count;
-	p->occupancy_sq_acc += lq_kind == lq_kind_private ? CORE.sq_count / p_cores : CORE.sq_count;
+	p->occupancy_lsq_acc += lsq_kind == lsq_kind_private ? CORE.lsq_count / p_cores : CORE.lsq_count;
 }
 
