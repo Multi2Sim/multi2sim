@@ -363,12 +363,12 @@ static void ld_load_stack(struct ctx_t *ctx)
 	int i;
 
 	/* Allocate stack */
+	ld->stack_base = LD_STACK_BASE;
 	ld->stack_size = LD_STACK_SIZE;
-	mem_map(mem, LD_STACK_BASE - LD_STACK_SIZE, LD_STACK_SIZE,
-		mem_access_read | mem_access_write);
+	ld->stack_top = LD_STACK_BASE - LD_STACK_SIZE;
+	mem_map(mem, ld->stack_top, ld->stack_size, mem_access_read | mem_access_write);
 	ld_debug("mapping region for stack from 0x%x to 0x%x\n",
-		LD_STACK_BASE - LD_STACK_SIZE, LD_STACK_BASE - 1);
-	
+		ld->stack_top, ld->stack_base - 1);
 	
 	/* Load arguments and environment vars */
 	ld->environ_base = LD_STACK_BASE - LD_MAX_ENVIRON;

@@ -78,6 +78,7 @@ extern unsigned long mem_max_mapped_space;
 struct mem_t *mem_create(void);
 void mem_free(struct mem_t *mem);
 
+struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr);
 uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size);
 uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size);
 
@@ -173,7 +174,8 @@ struct loader_t {
 	int stdin_fd, stdout_fd;  /* File descriptors for stdin/stdout */
 
 	/* Code pointers */
-	uint32_t stack_size, text_size;
+	uint32_t stack_base, stack_top, stack_size;
+	uint32_t text_size;
 	uint32_t environ_base, brk, bottom;
 	uint32_t prog_entry;
 	uint32_t phdt_base, phdr_count;
