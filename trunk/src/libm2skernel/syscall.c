@@ -888,6 +888,31 @@ void syscall_do()
 	}
 
 
+	/* 38 */
+	case syscall_code_rename:
+	{
+		uint32_t poldpath, pnewpath;
+		char oldpath[STRSIZE], newpath[STRSIZE];
+		char oldfullpath[STRSIZE], newfullpath[STRSIZE];
+		int len1, len2;
+
+		poldpath = isa_regs->ebx;
+		pnewpath = isa_regs->ecx;
+		len1 = mem_read_string(isa_mem, poldpath, STRSIZE, oldpath);
+		len2 = mem_read_string(isa_mem, pnewpath, STRSIZE, newpath);
+		if (len1 >= STRSIZE || len2 >= STRSIZE)
+			fatal("syscall rename: maximum string size exceeded");
+		ld_get_full_path(isa_ctx, oldpath, oldfullpath, STRSIZE);
+		ld_get_full_path(isa_ctx, newpath, newfullpath, STRSIZE);
+		syscall_debug("  poldpath=0x%x, pnewpath=0x%x\n", poldpath, pnewpath);
+		syscall_debug("  oldpath='%s', newpath='%s'\n", oldpath, newpath);
+		syscall_debug("  oldfullpath='%s', newfullpath='%s'\n", oldfullpath, newfullpath);
+
+		RETVAL(rename(oldfullpath, newfullpath));
+		break;
+	}
+
+
 	/* 39 */
 	case syscall_code_mkdir:
 	{

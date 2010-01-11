@@ -23,6 +23,12 @@
 #include <m2skernel.h>
 
 
+/* Multi2Sim version */
+#ifndef VERSION
+#define VERSION ""
+#endif
+
+
 /* Options */
 static char *sim_title = "";
 static char *configfile = "";
@@ -101,7 +107,8 @@ static void sim_signal_handler(int signum)
 int main(int argc, char **argv)
 {
 	/* Initial information */
-	fprintf(stderr, "\nMulti2Sim. Functional Simulator (m2s-fast)\n");
+	fprintf(stderr, "\nMulti2Sim %s - Fast Functional Simulator (m2s-fast)\n",
+		VERSION);
 	fprintf(stderr, "Last compilation: %s %s\n\n", __DATE__, __TIME__);
 
 	/* Options */

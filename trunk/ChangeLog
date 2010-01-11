@@ -430,3 +430,7 @@
 		meters 'lq_size' and 'sq_size' are unified into
 		'lsq_size'.
 
+2010-01-11
+	* libdisasm/machine.dat: inst mov_r16_rm16 added.
+	* libm2skernel/syscall.c: system call 'rename' implemented.
+
