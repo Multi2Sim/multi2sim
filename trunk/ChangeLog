@@ -433,4 +433,6 @@
 2010-01-11
 	* libdisasm/machine.dat: inst mov_r16_rm16 added.
 	* libm2skernel/syscall.c: system call 'rename' implemented.
+	* libm2skernel/syscall.c: system call 'setrlimit' with RLIMIT_STACK
+		implemented.
 

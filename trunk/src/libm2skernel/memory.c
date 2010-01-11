@@ -25,7 +25,7 @@ unsigned long mem_max_mapped_space = 0;
 
 
 /* Return mem page corresponding to an address. */
-static struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr)
+struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr)
 {
 	uint32_t index, tag;
 	struct mem_page_t *prev, *page;
