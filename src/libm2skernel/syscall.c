@@ -1096,12 +1096,57 @@ void syscall_do()
 		syscall_debug("  rlim->cur=0x%x, rlim->max=0x%x\n",
 			sim_rlimit.cur, sim_rlimit.max);
 		switch (resource) {
+
 		case RLIMIT_DATA:
-			warning("setrlimit: call with RLIMIT_DATA");
+			/* Default limit is maximum.
+			 * This system call is ignored. */
 			break;
+
 		case RLIMIT_STACK:
-			warning("setrlimit: call with RLIMIT_STACK");
+		{
+			uint32_t diff, addr;
+			struct loader_t *ld = isa_ctx->loader;
+			
+			/* Increase stack size 'diff' bytes */
+			if (sim_rlimit.cur > ld->stack_size) {
+				diff = sim_rlimit.cur - ld->stack_size;
+				if (diff % MEM_PAGESIZE)
+					fatal("setrlimit(RLIMIT_STACK, ...): no page size alignment");
+
+				/* If space is already allocated, cannot grow stack */
+				for (addr = ld->stack_top - diff; addr < ld->stack_top; addr += MEM_PAGESIZE) {
+					if (mem_page_get(isa_mem, addr)) {
+						retval = -14;  /* EFAULT */
+						break;
+					}
+				}
+				if (retval < 0)
+					break;
+
+				/* Grow stack */
+				ld->stack_top -= diff;
+				ld->stack_size += diff;
+				mem_map(isa_mem, ld->stack_top, diff, mem_access_read | mem_access_write);
+				syscall_debug("  stack increased 0x%x bytes\n", diff);
+			}
+
+			/* Decrease stack */
+			if (sim_rlimit.cur < ld->stack_size) {
+				diff = ld->stack_size - sim_rlimit.cur;
+				if (diff % MEM_PAGESIZE)
+					fatal("setrlimit(RLIMIT_STACK, ...): no page size alignment");
+				mem_unmap(isa_mem, ld->stack_top, diff);
+				ld->stack_top += diff;
+				ld->stack_size -= diff;
+				syscall_debug("  stack decreased 0x%x bytes\n", diff);
+			}
+
+			/* Debug */
+			syscall_debug("  new stack: top=0x%x, size=0x%x\n",
+				ld->stack_top, ld->stack_size);
 			break;
+		}
+
 		default:
 			fatal("setrlimit: not implemented for resource=%s", sresource);
 		}
