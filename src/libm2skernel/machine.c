@@ -591,6 +591,12 @@ void op_mov_rm32_r32_impl() {
 }
 
 
+void op_mov_r16_rm16_impl() {
+	uint16_t value = isa_load_rm16();
+	isa_store_r16(value);
+}
+
+
 void op_mov_r32_rm32_impl() {
 	uint32_t value = isa_load_rm32();
 	isa_store_r32(value);
