@@ -20,6 +20,12 @@
 #include <m2s.h>
 
 
+/* Multi2Sim version */
+#ifndef VERSION
+#define VERSION ""
+#endif
+
+
 /* Signals */
 static int sigint_received = FALSE;
 static int sigusr_received = FALSE;
@@ -143,7 +149,8 @@ int main(int argc, char **argv)
 		opt_check_config(configfile);
 
 	/* Initial information */
-	fprintf(stderr, "\nMulti2Sim - Multicore Multithreaded Processor Simulator\n");
+	fprintf(stderr, "\nMulti2Sim %s - Multicore Multithreaded Processor Simulator\n",
+		VERSION);
 	fprintf(stderr, "Last compilation: %s %s\n\n", __DATE__, __TIME__);
 	opt_print_options(stderr);
 
