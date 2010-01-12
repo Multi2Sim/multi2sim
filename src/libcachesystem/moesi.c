@@ -315,12 +315,15 @@ void moesi_handler_load(int event, void *data)
 
 	if (event == EV_MOESI_LOAD_ACTION)
 	{
+		int retry;
 		cache_debug("  %lld %lld 0x%x %s load action\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
 		/* Error blocking */
 		if (stack->err) {
-			esim_schedule_event(EV_MOESI_LOAD, stack, RETRY_LATENCY);
+			retry = RETRY_LATENCY;
+			cache_debug("    lock error, retrying in %d cycles\n", retry);
+			esim_schedule_event(EV_MOESI_LOAD, stack, retry);
 			return;
 		}
 
@@ -340,13 +343,16 @@ void moesi_handler_load(int event, void *data)
 
 	if (event == EV_MOESI_LOAD_MISS)
 	{
+		int retry;
 		cache_debug("  %lld %lld 0x%x %s load miss\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
 		/* Error on read request. Unlock block and retry load. */
 		if (stack->err) {
+			retry = RETRY_LATENCY;
 			dir_lock_unlock(stack->dir_lock);
-			esim_schedule_event(EV_MOESI_LOAD, stack, RETRY_LATENCY);
+			cache_debug("    lock error, retrying in %d cycles\n", retry);
+			esim_schedule_event(EV_MOESI_LOAD, stack, retry);
 			return;
 		}
 
@@ -396,12 +402,15 @@ void moesi_handler_store(int event, void *data)
 
 	if (event == EV_MOESI_STORE_ACTION)
 	{
+		int retry;
 		cache_debug("  %lld %lld 0x%x %s store action\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
 		/* Error blocking */
 		if (stack->err) {
-			esim_schedule_event(EV_MOESI_STORE, stack, RETRY_LATENCY);
+			retry = RETRY_LATENCY;
+			cache_debug("    lock error, retrying in %d cycles\n", retry);
+			esim_schedule_event(EV_MOESI_STORE, stack, retry);
 			return;
 		}
 
@@ -423,13 +432,16 @@ void moesi_handler_store(int event, void *data)
 
 	if (event == EV_MOESI_STORE_FINISH)
 	{
+		int retry;
 		cache_debug("%lld %lld 0x%x %s store finish\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
 		/* Error in write request, unlock block and retry store. */
 		if (stack->err) {
+			retry = RETRY_LATENCY;
 			dir_lock_unlock(stack->dir_lock);
-			esim_schedule_event(EV_MOESI_STORE, stack, RETRY_LATENCY);
+			cache_debug("    lock error, retrying in %d cycles\n", retry);
+			esim_schedule_event(EV_MOESI_STORE, stack, retry);
 			return;
 		}
 

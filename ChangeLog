@@ -436,3 +436,7 @@
 	* libm2skernel/syscall.c: system call 'setrlimit' with RLIMIT_STACK
 		implemented.
 
+2010-01-12
+	* libm2skernel/syscall.c: system call 'setrlimit' ignored again.
+	* libcachesystem/moesi.c: debug information for access retries.
+
