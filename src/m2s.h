@@ -203,7 +203,7 @@ enum uop_flags_enum {
 };
 
 #define IDEP_COUNT 3
-#define ODEP_COUNT 5
+#define ODEP_COUNT 4
 
 struct uop_t {
 	
