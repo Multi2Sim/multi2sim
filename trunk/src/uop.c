@@ -109,7 +109,7 @@ void uop_init()
 	uop_repos = repos_create(sizeof(struct uop_t), "uop_repos");
 
 #define X86_INST(_opcode) opcode = op_##_opcode;
-#define UOP(_uop, _idep0, _idep1, _idep2, _odep0, _odep1, _odep2, _odep3, _odep4) \
+#define UOP(_uop, _idep0, _idep1, _idep2, _odep0, _odep1, _odep2, _odep3) \
 	entry = calloc(1, sizeof(struct uop_table_entry_t)); \
 	entry->uop = uop_##_uop; \
 	entry->idep[0] = _idep0; \
@@ -119,7 +119,6 @@ void uop_init()
 	entry->odep[1] = _odep1; \
 	entry->odep[2] = _odep2; \
 	entry->odep[3] = _odep3; \
-	entry->odep[4] = _odep4; \
 	uop_table_entry_add(opcode, entry);
 #include "uop2.dat"
 #undef X86_INST

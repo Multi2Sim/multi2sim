@@ -46,16 +46,7 @@ UOP(fpdiv, fpdiv, FFCOMP)
 UOP(fpcomplex, fpcomplex, FFCOMP)
 
 UOP(load, none, FLOAD | FMEM)
-UOP(load_esi, none, FLOAD | FMEM)
-UOP(load_edi, none, FLOAD | FMEM)
-UOP(load_esp, none, FLOAD | FMEM)
-UOP(load_moffs, none, FLOAD | FMEM)
-
 UOP(store, none, FSTORE | FMEM)
-UOP(store_esi, none, FSTORE | FMEM)
-UOP(store_edi, none, FSTORE | FMEM)
-UOP(store_esp, none, FSTORE | FMEM)
-UOP(store_moffs, none, FSTORE | FMEM)
 
 UOP(call, none, FCTRL | FCALL)
 UOP(ret, none, FCTRL | FRET)
