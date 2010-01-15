@@ -207,8 +207,9 @@ int config_load(struct config_t *cfg)
 	while (!feof(f)) {
 	
 		/* read a line */
-		line = buf;
-		fgets(line, BUFSIZE, f);
+		line = fgets(buf, BUFSIZE, f);
+		if (!line)
+			break;
 		line = trim(line);
 		
 		/* is it a new section? */

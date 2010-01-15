@@ -104,16 +104,18 @@ void check_args(int argc, char **argv)
 
 void stop()
 {
-	char aux[128];
+	char buf[128], *line;
 	int done = 0;
 	
 	do {
 		printf("(Enter=NextCycle, Ctrl+C=End, n=NextPC/inst): ");
-		fgets(aux, 10, kbrd);
-		aux[strlen(aux) - 1] = '\0';
-		if (!aux[0])
+		line = fgets(buf, 10, kbrd);
+		if (!line || !*line)
 			done = 1;
-		else if (!strcmp(aux, "n"))
+		else
+			line[strlen(line) - 1] = '\0';
+
+		if (!strcmp(line, "n"))
 		{
 			if (!start_inst && !start_pc) {
 				printf("\tNeither '-pc' nor '-i' specified/n");
@@ -123,14 +125,15 @@ void stop()
 			done = 1;
 		}
 		else
-			printf("\tCommand not known: %s\n", aux);
+			printf("\tCommand not known: %s\n", line);
 	} while (!done);
 }
 
 
 int main(int argc, char **argv)
 {
-	char s[128], name[128], stg[128], aux[128], *ylbl, status[128];
+	char buf[128], name[128], stg[128], aux[128], *ylbl, status[128];
+	char *line;
 	int ptrace_start = 0, thread_id;
 	uint64_t cycle, seq;
 	uint32_t pc;
@@ -145,20 +148,20 @@ int main(int argc, char **argv)
 	while (1) {
 	
 		/* Read stdin */
-		fgets(s, 128, stdin);
-		if (feof(stdin))
+		line = fgets(buf, 128, stdin);
+		if (!line || feof(stdin))
 			break;
-		if (*s == '@')
+		if (*line == '@')
 			ptrace_start = 1;
 		if (!ptrace_start)
 			continue;
 
 		/* Action depending on command */
-		switch (*s) {
+		switch (*line) {
 			
 		case '@':
 			/* Trace activated */
-			sscanf(s, "@ %Ld", (long long *) &cycle);
+			sscanf(line, "@ %Ld", (long long *) &cycle);
 			if (start_cycle && cycle >= start_cycle)
 				active = 1;
 			
@@ -176,7 +179,7 @@ int main(int argc, char **argv)
 			break;
 				
 		case '+':
-			sscanf(s, "+ %Ld %d %x %s %[^\n]s", (long long *) &seq,
+			sscanf(line, "+ %Ld %d %x %s %[^\n]s", (long long *) &seq,
 				&thread_id, &pc, status, name);
 			sprintf(aux, "%04lld %s %x %s", (long long) seq, status, pc & 0xffffff, name);
 			table_setylbl(table, seq, aux);
@@ -192,12 +195,12 @@ int main(int argc, char **argv)
 			break;
 
 		case '*':
-			sscanf(s, "* %Ld %s", (long long *) &seq, stg);
+			sscanf(line, "* %Ld %s", (long long *) &seq, stg);
 			table_setcell(table, cycle, seq, stg);
 			break;
 
 		case '-':
-			sscanf(s, "- %Ld", (long long *) &seq);
+			sscanf(line, "- %Ld", (long long *) &seq);
 			ylbl = table_ylbl(table, seq);
 			if (ylbl)
 				strncpy(ylbl, "----", 4);
@@ -205,7 +208,7 @@ int main(int argc, char **argv)
 
 		default:
 			if (active)
-				printf("%s", s);
+				printf("%s", line);
 			
 		}
 	}

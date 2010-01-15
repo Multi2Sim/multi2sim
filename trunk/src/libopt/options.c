@@ -496,7 +496,7 @@ void opt_check_options(int *argc, char **argv)
 void opt_check_config(char *cfg_file)
 {
 	FILE *f;
-	char **argv, *argvcurr, buf[1000], *s, *end;
+	char **argv, *argvcurr, buf[1000], *line, *end;
 	int argc, maxargc = 200, len;
 	struct stat fs;
 	
@@ -524,22 +524,21 @@ void opt_check_config(char *cfg_file)
 	while (1) {
 	
 		/* read a line in the file */
-		fgets(buf, 1000, f);
-		if (feof(f))
+		line = fgets(buf, 1000, f);
+		if (!line || feof(f))
 			break;
-		s = buf;
 
 		/* comment */
-		if (*s == '#')
+		if (*line == '#')
 			continue;
 		
 		/* extract arguments */
-		while (*s) {
+		while (*line) {
 			
 			/* erase spaces or end of line */
-			while (*s == '\n' || *s == ' ')
-				s++;
-			if (!*s)
+			while (*line == '\n' || *line == ' ')
+				line++;
+			if (!*line)
 				break;
 		
 			/* maxarg exceeded? */
@@ -549,16 +548,16 @@ void opt_check_config(char *cfg_file)
 			}
 			
 			/* get argument length */
-			end = index(s, ' ');
-			len = end ? end - s : strlen(s);
-			if (s[len - 1] == '\n') len--;
+			end = index(line, ' ');
+			len = end ? end - line : strlen(line);
+			if (line[len - 1] == '\n') len--;
 			
 			/* store argument */
 			argv[argc] = argvcurr;
-			strncpy(argvcurr, s, len);
+			strncpy(argvcurr, line, len);
 			argvcurr[len] = 0;
 			argvcurr += len + 1;
-			s += len;
+			line += len;
 			argc++;
 		}
 	}
