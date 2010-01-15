@@ -444,3 +444,7 @@
 	* libm2skernel/uop1.dat, uop2.dat: uops load_esi, load_edi, load_moffs
 		deleted. The same with stores. Number of odeps for uops changed
 		to 4, and those uops with 5 uops have been changed.
+
+2010-01-15
+	* libstruct, libmisc, ptrace: function calls to 'fgets' changed to
+		capture the return value and avoid warnings in some gcc versions.

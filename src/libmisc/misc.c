@@ -76,8 +76,8 @@ int read_line(FILE *f, char *line, int size)
 {
 	if (!f)
 		return -1;
-	fgets(line, size, f);
-	if (feof(f))
+	line = fgets(line, size, f);
+	if (!line || feof(f))
 		return -1;
 	while (strlen(line) && (line[strlen(line) - 1] == 13 ||
 		line[strlen(line) - 1] == 10))
