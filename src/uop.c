@@ -38,10 +38,10 @@ struct string_map_t dep_map = {
 		{ "fs",         DFS },
 		{ "gs",         DGS },
 
-		{ "ZF-PF-SF",   DZPS },
-		{ "OF",         DOF },
-		{ "CF",         DCF },
-		{ "DF",         DDF },
+		{ "zps",        DZPS },
+		{ "of",         DOF },
+		{ "cf",         DCF },
+		{ "df",         DDF },
 
 		{ "aux",        DAUX },
 		{ "aux2",       DAUX2 },
@@ -292,27 +292,42 @@ int uop_exists(struct uop_t *uop)
 }
 
 
-void uop_dump(struct uop_t *uop, FILE *f)
+void uop_dump_buf(struct uop_t *uop, char *buf, int size)
 {
-	int i;
+	int i, count;
 	char *comma;
-	
-	fprintf(f, "%s ", uop_bank[uop->uop].name);
+
+	dump_buf(&buf, &size, "%s ", uop_bank[uop->uop].name);
 	comma = "";
-	for (i = 0; i < IDEP_COUNT; i++) {
+	for (i = count = 0; i < IDEP_COUNT; i++) {
 		if (!uop->idep[i])
 			continue;
-		fprintf(f, "%s%s", comma, map_value(&dep_map, uop->idep[i]));
+		dump_buf(&buf, &size, "%s%s", comma,
+			map_value(&dep_map, uop->idep[i]));
 		comma = ",";
+		count++;
 	}
-	fprintf(f, "/");
+	if (!count)
+		dump_buf(&buf, &size, "-");
+	dump_buf(&buf, &size, "/");
 	comma = "";
-	for (i = 0; i < ODEP_COUNT; i++) {
+	for (i = count = 0; i < ODEP_COUNT; i++) {
 		if (!uop->odep[i])
 			continue;
-		fprintf(f, "%s%s", comma, map_value(&dep_map, uop->odep[i]));
+		dump_buf(&buf, &size, "%s%s", comma, map_value(&dep_map, uop->odep[i]));
 		comma = ",";
+		count++;
 	}
+	if (!count)
+		dump_buf(&buf, &size, "-");
+}
+
+
+void uop_dump(struct uop_t *uop, FILE *f)
+{
+	char buf[100];
+	uop_dump_buf(uop, buf, sizeof(buf));
+	fprintf(f, buf);
 }
 
 

@@ -128,7 +128,7 @@ int net_add_node(struct net_t *net, enum net_node_kind_enum kind, void *data);
 /* Get the data associated with a node */
 void *net_get_node(struct net_t *net, int node);
 
-/* Add a connection between to nodes */
+/* Add a connection between two nodes */
 void net_add_con(struct net_t *net, int source, int dest);
 
 /* Calculate routes when all nodes have been created. */

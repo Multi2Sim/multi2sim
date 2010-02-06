@@ -42,12 +42,13 @@ static char *ctxfile = "";
 static char *configfile = "";
 static char *sim_title = "";
 
-static char *syscall_debug_file = "";
-static char *loader_debug_file = "";
-static char *isa_call_debug_file = "";
-static char *isa_inst_debug_file = "";
-static char *cache_debug_file = "";
-static char *error_debug_file = "";
+static char *syscall_debug_file_name = "";
+static char *loader_debug_file_name = "";
+static char *isa_call_debug_file_name = "";
+static char *isa_inst_debug_file_name = "";
+static char *cache_debug_file_name = "";
+static char *esim_debug_file_name = "";
+static char *error_debug_file_name = "";
 
 
 /* Simulation cycle */
@@ -71,12 +72,13 @@ static void sim_reg_options()
 	opt_reg_uint64("-max_time", "max running time (in seconds)", &max_time);
 	opt_reg_uint64("-fastfwd", "cycles to run with fast simulation", &fastfwd);
 
-	opt_reg_string("-debug:syscall", "debug information for system calls", &syscall_debug_file);	
-	opt_reg_string("-debug:loader", "debug information from program loader", &loader_debug_file);	
-	opt_reg_string("-debug:call", "debug information about procedure calls", &isa_call_debug_file);	
-	opt_reg_string("-debug:inst", "debug information about executed instructions", &isa_inst_debug_file);
-	opt_reg_string("-debug:cache", "debug information for cache system", &cache_debug_file);
-	opt_reg_string("-debug:error", "debug information after errors", &error_debug_file);
+	opt_reg_string("-debug:syscall", "debug information for system calls", &syscall_debug_file_name);
+	opt_reg_string("-debug:loader", "debug information from program loader", &loader_debug_file_name);
+	opt_reg_string("-debug:call", "debug information about procedure calls", &isa_call_debug_file_name);
+	opt_reg_string("-debug:inst", "debug information about executed instructions", &isa_inst_debug_file_name);
+	opt_reg_string("-debug:cache", "debug information for cache system", &cache_debug_file_name);
+	opt_reg_string("-debug:pipeline", "debug information for pipeline", &esim_debug_file_name);
+	opt_reg_string("-debug:error", "debug information after errors", &error_debug_file_name);
 }
 
 
@@ -141,7 +143,6 @@ int main(int argc, char **argv)
 	/* Options & stats */
 	opt_init();
 	sim_reg_options();
-	ptrace_reg_options();
 	p_reg_options();
 	cache_system_reg_options();
 	opt_check_options(&argc, argv);
@@ -155,7 +156,6 @@ int main(int argc, char **argv)
 	opt_print_options(stderr);
 
 	/* Initialization */
-	ptrace_init();
 	uop_init();
 	esim_init();
 	net_init();
@@ -165,12 +165,13 @@ int main(int argc, char **argv)
 	/* Debug */
 	debug_init();
 	error_debug_category = debug_new_category();
-	debug_assign_file(syscall_debug_category, syscall_debug_file);
-	debug_assign_file(ld_debug_category, loader_debug_file);
-	debug_assign_file(isa_call_debug_category, isa_call_debug_file);
-	debug_assign_file(isa_inst_debug_category, isa_inst_debug_file);
-	debug_assign_file(cache_debug_category, cache_debug_file);
-	debug_assign_file(error_debug_category, error_debug_file);
+	debug_assign_file(syscall_debug_category, syscall_debug_file_name);
+	debug_assign_file(ld_debug_category, loader_debug_file_name);
+	debug_assign_file(isa_call_debug_category, isa_call_debug_file_name);
+	debug_assign_file(isa_inst_debug_category, isa_inst_debug_file_name);
+	debug_assign_file(cache_debug_category, cache_debug_file_name);
+	debug_assign_file(error_debug_category, error_debug_file_name);
+	esim_debug_init(esim_debug_file_name);
 
 	/* Load programs */
 	p_init();
@@ -191,7 +192,6 @@ int main(int argc, char **argv)
 
 		/* Next cycle */
 		sim_cycle++;
-		ptrace_new_cycle();
 
 		/* Processor stages */
 		p_stages();
@@ -217,14 +217,14 @@ int main(int argc, char **argv)
 	signal(SIGALRM, SIG_IGN);
 	signal(SIGABRT, SIG_DFL);
 
-	/* Empty esim. Set a security maximum of 1M iterations.  */
+	/* Finalize esim */
 	while (esim_pending() && esim_cycle < sim_cycle + (1<<20))
 		esim_process_events();
+	esim_debug_done();
 	
 	/* Finalization */
 	fprintf(stderr, "\n");
 	opt_done();
-	ptrace_done();
 	p_done();
 	ke_done();
 	uop_done();

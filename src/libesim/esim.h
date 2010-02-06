@@ -35,6 +35,7 @@ typedef void (*esim_event_handler_t)(int event, void *data);
 void esim_init();
 void esim_done();
 
+/* Events */
 int esim_register_event(esim_event_handler_t handler);
 void esim_schedule_event(int event, void *data, int after);
 
@@ -58,5 +59,12 @@ int esim_pending();
  * when all events are processed, esim heap will be empty;
  * esim_cycle is not incremented */
 void esim_empty();
+
+
+/* Debugging */
+extern FILE *esim_debug_file;
+int esim_debug_init(char *filename);
+void esim_debug_done(void);
+void esim_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 #endif

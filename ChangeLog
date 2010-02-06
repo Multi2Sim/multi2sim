@@ -448,3 +448,7 @@
 2010-01-15
 	* libstruct, libmisc, ptrace: function calls to 'fgets' changed to
 		capture the return value and avoid warnings in some gcc versions.
+
+2010-02-06
+	* fetch.c: bug fixed. Sequence number of macroinstruction (uop->mop_seq)
+		was not correctly assigned.

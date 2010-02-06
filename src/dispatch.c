@@ -81,11 +81,17 @@ static int dispatch_thread(int core, int thread, int quant)
 			lsq_insert(uop);
 		
 		/* Another instruction dispatched */
-		ptrace_new_stage(uop, ptrace_dispatch);
 		p->di_stall[uop->specmode ? di_stall_spec : di_stall_used]++;
 		p->dispatched++;
 		THREAD.dispatched++;
 		quant--;
+
+		/* Debug */
+		esim_debug("uop action=\"create\", seq=%llu, name=\"%s\","
+			" mop_name=\"%s\", mop_count=%d, mop_index=%d, mop_seq=%llu\n",
+			(long long unsigned) uop->seq, uop->name,
+			uop->mop_name, uop->mop_count, uop->mop_index,
+			(long long unsigned) uop->mop_seq);
 	}
 
 	return quant;
