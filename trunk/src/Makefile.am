@@ -7,8 +7,7 @@ SUBDIRS = \
 	libdisasm \
 	libesim \
 	libnetwork \
-	libcachesystem \
-	ptrace
+	libcachesystem
 
 bin_PROGRAMS = \
 	m2s-fast \
@@ -31,7 +30,6 @@ m2s_SOURCES = \
 	m2s.h \
 	phregs.c \
 	processor.c \
-	ptrace.c \
 	queues.c \
 	recover.c \
 	rob.c \

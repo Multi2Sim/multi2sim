@@ -88,7 +88,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 		uop = list_get(fetchq, i);
 		assert(uop);
 		uop->seq = ++p->seq;
-		uop->mop_seq = p->seq + i - count;
+		uop->mop_seq = p->seq - i + count;
 		uop->mop_size = isa_inst.size;
 		uop->mop_count = newcount - count;
 		uop->mop_index = i - count;
@@ -110,9 +110,13 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 			uop->mem_phaddr = mmu_translate(THREAD.ctx->mid, ctx->mem->last_address);
 		}
 
+		/* Store macroinstruction/uop names */
+		uop_dump_buf(uop, uop->name, sizeof(uop->name));
+		if (i == count)
+			x86_inst_dump_buf(&isa_inst, uop->mop_name,
+				sizeof(uop->mop_name));
+
 		/* New uop */
-		ptrace_new_uop(uop);
-		ptrace_new_stage(uop, ptrace_fetch);
 		p->fetched++;
 		THREAD.fetched++;
 		if (fetch_tcache)

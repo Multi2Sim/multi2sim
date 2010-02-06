@@ -93,7 +93,6 @@ void fetchq_recover(int core, int thread)
 		if (!uop->specmode)
 			break;
 		uop = fetchq_remove(core, thread, list_count(fetchq) - 1);
-		ptrace_end_uop(uop);
 		uop_free_if_not_queued(uop);
 	}
 }
@@ -149,7 +148,6 @@ void uopq_recover(int core, int thread)
 		if (!uop->specmode)
 			break;
 		list_remove_at(uopq, list_count(uopq) - 1);
-		ptrace_end_uop(uop);
 		uop->in_uopq = FALSE;
 		uop_free_if_not_queued(uop);
 	}

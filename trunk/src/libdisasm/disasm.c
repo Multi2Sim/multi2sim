@@ -21,6 +21,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <debug.h>
 
 
 /* Flags used in machine.dat */
@@ -441,15 +442,15 @@ int is_next_word(char *src, char *word)
 }
 
 
-void x86_moffs_address_dump(x86_inst_t *inst, FILE *f)
+void x86_moffs_address_dump_buf(x86_inst_t *inst, char **pbuf, int *psize)
 {
-	fprintf(f, "%s:0x%x",
+	dump_buf(pbuf, psize, "%s:0x%x",
 		x86_register_name[inst->segment ? inst->segment : reg_ds],
 		inst->imm.d);
 }
 
 
-void x86_memory_address_dump(x86_inst_t *inst, FILE *f)
+void x86_memory_address_dump_buf(x86_inst_t *inst, char **pbuf, int *psize)
 {
 	int putsign = 0;
 	char seg[10];
@@ -466,27 +467,27 @@ void x86_memory_address_dump(x86_inst_t *inst, FILE *f)
 	if (!inst->ea_base && !inst->ea_index) {
 		if (!seg[0])
 			strcpy(seg, "ds:");
-		fprintf(f, "%s0x%x", seg, inst->disp);
+		dump_buf(pbuf, psize, "%s0x%x", seg, inst->disp);
 		return;
 	}
 
-	fprintf(f, "%s[", seg);
+	dump_buf(pbuf, psize, "%s[", seg);
 	if (inst->ea_base) {
-		fprintf(f, "%s", x86_register_name[inst->ea_base]);
+		dump_buf(pbuf, psize, "%s", x86_register_name[inst->ea_base]);
 		putsign = 1;
 	}
 	if (inst->ea_index) {
-		fprintf(f, "%s%s", putsign ? "+" : "",
+		dump_buf(pbuf, psize, "%s%s", putsign ? "+" : "",
 			x86_register_name[inst->ea_index]);
 		if (inst->ea_scale > 1)
-			fprintf(f, "*%d", inst->ea_scale);
+			dump_buf(pbuf, psize, "*%d", inst->ea_scale);
 		putsign = 1;
 	}
 	if (inst->disp > 0)
-		fprintf(f, "%s0x%x", putsign ? "+" : "", inst->disp);
+		dump_buf(pbuf, psize, "%s0x%x", putsign ? "+" : "", inst->disp);
 	if (inst->disp < 0)
-		fprintf(f, "-0x%x", -inst->disp);
-	fprintf(f, "]");
+		dump_buf(pbuf, psize, "-0x%x", -inst->disp);
+	dump_buf(pbuf, psize, "]");
 }
 
 
@@ -498,7 +499,7 @@ char *x86_inst_name(x86_opcode_t opcode)
 }
 
 
-void x86_inst_dump(x86_inst_t *inst, FILE *f)
+void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 {
 	x86_opcode_t op = inst->opcode;
 	x86_opcode_info_t *info = &x86_opcode_info_list[op];
@@ -507,121 +508,129 @@ void x86_inst_dump(x86_inst_t *inst, FILE *f)
 
 	while (*fmt) {
 		if (is_next_word(fmt, "r8")) {
-			fprintf(f, "%s", x86_register_name[inst->modrm_reg + reg_al]);
+			dump_buf(&buf, &size, "%s", x86_register_name[inst->modrm_reg + reg_al]);
 			fmt += 2;
 		} else if (is_next_word(fmt, "r16")) {
-			fprintf(f, "%s", x86_register_name[inst->modrm_reg + reg_ax]);
+			dump_buf(&buf, &size, "%s", x86_register_name[inst->modrm_reg + reg_ax]);
 			fmt += 3;
 		} else if (is_next_word(fmt, "r32")) {
-			fprintf(f, "%s", x86_register_name[inst->modrm_reg + reg_eax]);
+			dump_buf(&buf, &size, "%s", x86_register_name[inst->modrm_reg + reg_eax]);
 			fmt += 3;
 		} else if (is_next_word(fmt, "rm8")) {
 			if (inst->modrm_mod == 0x03)
-				fprintf(f, "%s",
+				dump_buf(&buf, &size, "%s",
 					x86_register_name[inst->modrm_rm + reg_al]);
 			else {
-				fprintf(f, "BYTE PTR ");
-				x86_memory_address_dump(inst, f);
+				dump_buf(&buf, &size, "BYTE PTR ");
+				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 3;
 		} else if (is_next_word(fmt, "rm16")) {
 			if (inst->modrm_mod == 0x03)
-				fprintf(f, "%s",
+				dump_buf(&buf, &size, "%s",
 					x86_register_name[inst->modrm_rm + reg_ax]);
 			else {
-				fprintf(f, "WORD PTR ");
-				x86_memory_address_dump(inst, f);
+				dump_buf(&buf, &size, "WORD PTR ");
+				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 4;
 		} else if (is_next_word(fmt, "rm32")) {
 			if (inst->modrm_mod == 0x03)
-				fprintf(f, "%s",
+				dump_buf(&buf, &size, "%s",
 					x86_register_name[inst->modrm_rm + reg_eax]);
 			else {
-				fprintf(f, "DWORD PTR ");
-				x86_memory_address_dump(inst, f);
+				dump_buf(&buf, &size, "DWORD PTR ");
+				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 4;
 		} else if (is_next_word(fmt, "m")) {
-			x86_memory_address_dump(inst, f);
+			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt++;
 		} else if (is_next_word(fmt, "imm8")) {
-			fprintf(f, "0x%x", inst->imm.b);
+			dump_buf(&buf, &size, "0x%x", inst->imm.b);
 			fmt += 4;
 		} else if (is_next_word(fmt, "imm16")) {
-			fprintf(f, "0x%x", inst->imm.w);
+			dump_buf(&buf, &size, "0x%x", inst->imm.w);
 			fmt += 5;
 		} else if (is_next_word(fmt, "imm32")) {
-			fprintf(f, "0x%x", inst->imm.d);
+			dump_buf(&buf, &size, "0x%x", inst->imm.d);
 			fmt += 5;
 		} else if (is_next_word(fmt, "rel8")) {
-			fprintf(f, "%x", (int8_t) inst->imm.b + inst->eip + inst->size);
+			dump_buf(&buf, &size, "%x", (int8_t) inst->imm.b + inst->eip + inst->size);
 			fmt += 4;
 		} else if (is_next_word(fmt, "rel16")) {
-			fprintf(f, "%x", (int16_t) inst->imm.w + inst->eip + inst->size);
+			dump_buf(&buf, &size, "%x", (int16_t) inst->imm.w + inst->eip + inst->size);
 		} else if (is_next_word(fmt, "rel32")) {
-			fprintf(f, "%x", inst->imm.d + inst->eip + inst->size);
+			dump_buf(&buf, &size, "%x", inst->imm.d + inst->eip + inst->size);
 			fmt += 5;
 		} else if (is_next_word(fmt, "moffs8")) {
-			x86_moffs_address_dump(inst, f);
+			x86_moffs_address_dump_buf(inst, &buf, &size);
 			fmt += 6;
 		} else if (is_next_word(fmt, "moffs16")) {
-			x86_moffs_address_dump(inst, f);
+			x86_moffs_address_dump_buf(inst, &buf, &size);
 			fmt += 7;
 		} else if (is_next_word(fmt, "moffs32")) {
-			x86_moffs_address_dump(inst, f);
+			x86_moffs_address_dump_buf(inst, &buf, &size);
 			fmt += 7;
 		} else if (is_next_word(fmt, "m8")) {
-			fprintf(f, "BYTE PTR ");
-			x86_memory_address_dump(inst, f);
+			dump_buf(&buf, &size, "BYTE PTR ");
+			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 2;
 		} else if (is_next_word(fmt, "m16")) {
-			fprintf(f, "WORD PTR ");
-			x86_memory_address_dump(inst, f);
+			dump_buf(&buf, &size, "WORD PTR ");
+			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 3;
 		} else if (is_next_word(fmt, "m32")) {
-			fprintf(f, "DWORD PTR ");
-			x86_memory_address_dump(inst, f);
+			dump_buf(&buf, &size, "DWORD PTR ");
+			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 3;
 		} else if (is_next_word(fmt, "m64")) {
-			fprintf(f, "QWORD PTR ");
-			x86_memory_address_dump(inst, f);
+			dump_buf(&buf, &size, "QWORD PTR ");
+			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 3;
 		} else if (is_next_word(fmt, "m80")) {
-			fprintf(f, "TBYTE PTR ");
-			x86_memory_address_dump(inst, f);
+			dump_buf(&buf, &size, "TBYTE PTR ");
+			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 3;
 		} else if (is_next_word(fmt, "st0")) {
-			fprintf(f, "st");
+			dump_buf(&buf, &size, "st");
 			fmt += 3;
 		} else if (is_next_word(fmt, "sti")) {
-			fprintf(f, "st(%d)", inst->opindex);
+			dump_buf(&buf, &size, "st(%d)", inst->opindex);
 			fmt += 3;
 		} else if (is_next_word(fmt, "ir8")) {
-			fprintf(f, "%s", x86_register_name[inst->opindex + reg_al]);
+			dump_buf(&buf, &size, "%s", x86_register_name[inst->opindex + reg_al]);
 			fmt += 3;
 		} else if (is_next_word(fmt, "ir16")) {
-			fprintf(f, "%s", x86_register_name[inst->opindex + reg_ax]);
+			dump_buf(&buf, &size, "%s", x86_register_name[inst->opindex + reg_ax]);
 			fmt += 4;
 		} else if (is_next_word(fmt, "ir32")) {
-			fprintf(f, "%s", x86_register_name[inst->opindex + reg_eax]);
+			dump_buf(&buf, &size, "%s", x86_register_name[inst->opindex + reg_eax]);
 			fmt += 4;
 		} else if (is_next_word(fmt, "sreg")) {
-			fprintf(f, "%s", x86_register_name[inst->reg + reg_es]);
+			dump_buf(&buf, &size, "%s", x86_register_name[inst->reg + reg_es]);
 			fmt += 4;
 		} else {
 			while (*fmt && is_fmt_char(*fmt))
-				fprintf(f, "%c", *fmt++);
+				dump_buf(&buf, &size, "%c", *fmt++);
 			while (*fmt && !is_fmt_char(*fmt)) {
 				if (*fmt == '_') {
-					fprintf(f, "%s", word ? ", " : " ");
+					dump_buf(&buf, &size, "%s", word ? ", " : " ");
 					word++;
 				} else {
-					fprintf(f, "%c", *fmt);
+					dump_buf(&buf, &size, "%c", *fmt);
 				}
 				fmt++;
 			}
 		}
 	}
+}
+
+
+void x86_inst_dump(x86_inst_t *inst, FILE *f)
+{
+	char buf[100];
+	x86_inst_dump_buf(inst, buf, sizeof(buf));
+	fprintf(f, buf);
 }
 

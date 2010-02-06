@@ -40,6 +40,5 @@ AC_CONFIG_FILES([Makefile
                  src/libopt/Makefile
                  src/libstruct/Makefile
 		 src/libmisc/Makefile
-		 src/ptrace/Makefile
 		 ])
 AC_OUTPUT

@@ -87,10 +87,6 @@ static void commit_thread(int core, int thread, int quant)
 		if (tcache_present)
 			tcache_new_uop(THREAD.tcache, uop);
 			
-		/* Pipeline trace */
-		ptrace_new_stage(uop, ptrace_commit);
-		ptrace_end_uop(uop);
-
 		/* Stats */
 		THREAD.last_commit_cycle = sim_cycle;
 		THREAD.committed++;
@@ -102,6 +98,10 @@ static void commit_thread(int core, int thread, int quant)
 			if (uop->neip != uop->pred_neip)
 				p->mispred++;
 		}
+
+		/* Debug */
+		esim_debug("uop action=\"destroy\", seq=%llu\n",
+			(long long unsigned) uop->seq);
 		
 		/* Retire instruction */
 		rob_remove_head(core, thread);
