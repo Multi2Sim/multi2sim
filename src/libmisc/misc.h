@@ -26,10 +26,6 @@
 #include <stdio.h>
 
 
-/* boolean values */
-#define TRUE				1
-#define FALSE				0
-
 /* max string size */
 #define MAX_STRING_SIZE			200
 
