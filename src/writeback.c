@@ -63,7 +63,6 @@ void writeback_core(int core)
 		/* Writeback */
 		uop->completed = 1;
 		phregs_write(uop);
-		ptrace_new_stage(uop, ptrace_writeback);
 		uop_free_if_not_queued(uop);
 
 		/* Recovery. This must be performed at last, because lots of uops might be

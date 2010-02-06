@@ -53,11 +53,16 @@ void p_recover(int core, int thread)
 			THREAD.tcache->squashed++;
 		p->squashed++;
 		
-		/* Undo map and remove entry in ROB */
+		/* Undo map */
 		if (!uop->completed)
 			phregs_write(uop);
 		phregs_undo(uop);
-		ptrace_end_uop(uop);
+
+		/* Debug */
+		esim_debug("uop action=\"squash\", seq=%llu\n",
+			(long long unsigned) uop->seq);
+ 
+		/* Remove entry in ROB */
 		rob_remove_tail(core, thread);
 	}
 

@@ -56,7 +56,6 @@ static int issue_sq(int core, int thread, int quant)
 		sq_remove(core, thread);
 
 		/* Instruction issued */
-		ptrace_new_stage(store, ptrace_memory);
 		THREAD.issued++;
 		p->issued++;
 		quant--;
@@ -104,7 +103,6 @@ static int issue_lq(int core, int thread, int quant)
 		load->in_eventq = TRUE;
 		
 		/* Instruction issued */
-		ptrace_new_stage(load, ptrace_memory);
 		THREAD.issued++;
 		p->issued++;
 		quant--;
@@ -159,7 +157,6 @@ static int issue_iq(int core, int thread, int quant)
 		eventq_insert(CORE.eventq, uop);
 		
 		/* Instruction issued */
-		ptrace_new_stage(uop, ptrace_execution);
 		THREAD.issued++;
 		p->issued++;
 		quant--;

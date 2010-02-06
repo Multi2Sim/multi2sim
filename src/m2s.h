@@ -208,6 +208,7 @@ enum uop_flags_enum {
 struct uop_t {
 	
 	/* Main uop fields */
+	char name[40];
 	enum uop_enum uop;  /* opcode */
 	struct ctx_t *ctx;
 	int core, thread;
@@ -220,6 +221,7 @@ struct uop_t {
 	uint64_t fetch_access;  /* Access identifier to the instruction cache */
 
 	/* Fields associated with macroinstruction */
+	char mop_name[40];
 	int mop_index;  /* Index of uop within macroinstruction */
 	int mop_count;  /* Number of uops within macroinstruction */
 	int mop_size;  /* Corresponding macroinstruction size */
@@ -279,6 +281,7 @@ void uop_lnlist_dump(struct lnlist_t *uop_list, FILE *f);
 struct uop_t *uop_decode(struct list_t *list);
 
 void uop_free_if_not_queued(struct uop_t *uop);
+void uop_dump_buf(struct uop_t *uop, char *buf, int size);
 void uop_dump(struct uop_t *uop, FILE *f);
 int uop_exists(struct uop_t *uop);
 
@@ -712,7 +715,7 @@ void p_dump(FILE *f);
 uint32_t p_tlb_address(int ctx, uint32_t vaddr);
 void p_fast_forward(uint64_t cycles);
 
-void p_update_occupancy_stats(int core);
+void p_update_occupancy_stats(void);
 
 void p_context_map(struct ctx_t *ctx, int *pcore, int *pthread);
 void p_context_unmap(int core, int thread);

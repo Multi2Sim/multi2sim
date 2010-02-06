@@ -135,6 +135,7 @@ void disasm_done(void);
 
 /* Disassemble and dump */
 void x86_disasm(void *buf, uint32_t eip, x86_inst_t *inst);
+void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size);
 void x86_inst_dump(x86_inst_t *inst, FILE *f);
 char *x86_inst_name(x86_opcode_t opcode);
 

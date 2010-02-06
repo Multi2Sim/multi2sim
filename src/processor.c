@@ -400,6 +400,10 @@ void p_stages()
 		stage_time_start = end;
 	}
 
+	/* Occupancy stats */
+	if (p_occupancy_stats)
+		p_update_occupancy_stats();
+
 	/* Stages */
 	STAGE(commit);
 	STAGE(writeback);
@@ -466,10 +470,14 @@ uint32_t p_tlb_address(int ctx, uint32_t vaddr)
 }
 
 
-void p_update_occupancy_stats(int core)
+void p_update_occupancy_stats()
 {
-	p->occupancy_count++;
-	p->occupancy_iq_acc += iq_kind == iq_kind_private ? CORE.iq_count / p_cores : CORE.iq_count;
-	p->occupancy_lsq_acc += lsq_kind == lsq_kind_private ? CORE.lsq_count / p_cores : CORE.lsq_count;
+	int core;
+	FOREACH_CORE {
+		p->occupancy_count++;
+		p->occupancy_iq_acc += iq_kind == iq_kind_private ? CORE.iq_count / p_cores : CORE.iq_count;
+		p->occupancy_lsq_acc += lsq_kind == lsq_kind_private ? CORE.lsq_count / p_cores : CORE.lsq_count;
+		p->occupancy_rob_acc += rob_kind == rob_kind_private ? CORE.rob_count / p_cores : CORE.rob_count;
+	}
 }
 
