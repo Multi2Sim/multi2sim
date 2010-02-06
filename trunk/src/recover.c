@@ -60,7 +60,7 @@ void p_recover(int core, int thread)
 
 		/* Debug */
 		esim_debug("uop action=\"squash\", seq=%llu\n",
-			(long long unsigned) uop->seq);
+			(long long unsigned) uop->di_seq);
  
 		/* Remove entry in ROB */
 		rob_remove_tail(core, thread);

@@ -19,11 +19,32 @@
 
 #include <m2s.h>
 
+static void check_if_ready(struct lnlist_t *list)
+{
+	struct uop_t *uop;
+	lnlist_head(list);
+	for (lnlist_head(list); !lnlist_eol(list); lnlist_next(list)) {
+		uop = lnlist_get(list);
+		if (!phregs_ready(uop))
+			continue;
+		if (!uop->ready)
+			esim_debug("uop action=\"update\", seq=%lld, ready=1\n",
+				(long long) uop->di_seq);
+		uop->ready = 1;
+	}
+}
+
+
 static int issue_sq(int core, int thread, int quant)
 {
 	struct uop_t *store;
 	struct lnlist_t *sq = THREAD.sq;
 
+	/* Debug */
+	if (esim_debug_file)
+		check_if_ready(sq);
+
+	/* Process SQ */
 	lnlist_head(sq);
 	while (!lnlist_eol(sq) && quant) {
 		
@@ -46,11 +67,11 @@ static int issue_sq(int core, int thread, int quant)
 
 		/* Schedule inst in Event Queue */
 		assert(!store->in_eventq);
-		store->issued = TRUE;
+		store->issued = 1;
 		store->issue_when = sim_cycle;
 		store->when = sim_cycle + 1;
 		eventq_insert(CORE.eventq, store);
-		store->in_eventq = TRUE;
+		store->in_eventq = 1;
 		
 		/* Remove it from SQ */
 		sq_remove(core, thread);
@@ -59,6 +80,11 @@ static int issue_sq(int core, int thread, int quant)
 		THREAD.issued++;
 		p->issued++;
 		quant--;
+		
+		/* Debug */
+		esim_debug("uop action=\"update\", seq=%llu, stg_issue=1,"
+			"in_lsq=0, issued=1\n",
+			(long long unsigned) store->di_seq);
 	}
 	return quant;
 }
@@ -68,8 +94,12 @@ static int issue_lq(int core, int thread, int quant)
 {
 	struct lnlist_t *lq = THREAD.lq;
 	struct uop_t *load;
+
+	/* Debug */
+	if (esim_debug_file)
+		check_if_ready(lq);
 	
-	/* Find instruction to issue */
+	/* Process lq */
 	lnlist_head(lq);
 	while (!lnlist_eol(lq) && quant) {
 		
@@ -96,16 +126,21 @@ static int issue_lq(int core, int thread, int quant)
 		/* Schedule 'load' in Event Queue for next cycle.
 		 * Writeback stage will check if it is really completed. */
 		assert(!load->in_eventq);
-		load->issued = TRUE;
+		load->issued = 1;
 		load->issue_when = sim_cycle;
 		load->when = sim_cycle + 1;
 		eventq_insert(CORE.eventq, load);
-		load->in_eventq = TRUE;
+		load->in_eventq = 1;
 		
 		/* Instruction issued */
 		THREAD.issued++;
 		p->issued++;
 		quant--;
+		
+		/* Debug */
+		esim_debug("uop action=\"update\", seq=%llu, stg_issue=1,"
+			"in_lsq=0, issued=1\n",
+			(long long unsigned) load->di_seq);
 	}
 	
 	return quant;
@@ -117,6 +152,10 @@ static int issue_iq(int core, int thread, int quant)
 	struct lnlist_t *iq = THREAD.iq;
 	struct uop_t *uop;
 	int lat;
+
+	/* Debug */
+	if (esim_debug_file)
+		check_if_ready(iq);
 	
 	/* Find instruction to issue */
 	lnlist_head(iq);
@@ -151,7 +190,7 @@ static int issue_iq(int core, int thread, int quant)
 		/* Schedule inst in Event Queue */
 		assert(!uop->in_eventq);
 		assert(lat > 0);
-		uop->issued = TRUE;
+		uop->issued = 1;
 		uop->issue_when = sim_cycle;
 		uop->when = sim_cycle + lat;
 		eventq_insert(CORE.eventq, uop);
@@ -160,6 +199,11 @@ static int issue_iq(int core, int thread, int quant)
 		THREAD.issued++;
 		p->issued++;
 		quant--;
+
+		/* Debug */
+		esim_debug("uop action=\"update\", seq=%llu, stg_issue=1,"
+			"in_iq=0, issued=1\n",
+			(long long unsigned) uop->di_seq);
 	}
 	
 	return quant;

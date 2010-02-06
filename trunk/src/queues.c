@@ -148,7 +148,7 @@ void uopq_recover(int core, int thread)
 		if (!uop->specmode)
 			break;
 		list_remove_at(uopq, list_count(uopq) - 1);
-		uop->in_uopq = FALSE;
+		uop->in_uopq = 0;
 		uop_free_if_not_queued(uop);
 	}
 }
@@ -476,9 +476,9 @@ int eventq_longlat(int core, int thread)
 		if (uop->thread != thread)
 			continue;
 		if (sim_cycle - uop->issue_when > 20)
-			return TRUE;
+			return 1;
 	}
-	return FALSE;
+	return 0;
 }
 
 
@@ -492,9 +492,9 @@ int eventq_cachemiss(int core, int thread)
 		if (uop->thread != thread || !(uop->flags & FLOAD))
 			continue;
 		if (sim_cycle - uop->issue_when > 5)
-			return TRUE;
+			return 1;
 	}
-	return FALSE;
+	return 0;
 }
 
 

@@ -60,6 +60,11 @@ void writeback_core(int core)
 			uop->neip != uop->pred_neip)
 			recover = 1;
 
+		/* Debug */
+		esim_debug("uop action=\"update\", seq=%llu, stg_writeback=1,"
+			"completed=1\n",
+			(long long unsigned) uop->di_seq);
+
 		/* Writeback */
 		uop->completed = 1;
 		phregs_write(uop);

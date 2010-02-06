@@ -35,7 +35,7 @@ static int can_commit_thread(int core, int thread)
 	/* If there is no instruction in the ROB, or the instruction is not
 	 * located at the ROB head in shared approeaches, end. */
 	if (!rob_can_dequeue(core, thread))
-		return FALSE;
+		return 0;
 
 	/* Get instruction from ROB head */
 	uop = rob_head(core, thread);
@@ -48,7 +48,7 @@ static int can_commit_thread(int core, int thread)
 	if (uop->flags & FSTORE)
 		return uop->ready;
 	panic("can_commit_thread: shouln't get here");
-	return TRUE;
+	return 1;
 
 }
 
@@ -100,8 +100,10 @@ static void commit_thread(int core, int thread, int quant)
 		}
 
 		/* Debug */
+		esim_debug("uop action=\"update\", seq=%llu, stg_commit=1\n",
+			(long long unsigned) uop->di_seq);
 		esim_debug("uop action=\"destroy\", seq=%llu\n",
-			(long long unsigned) uop->seq);
+			(long long unsigned) uop->di_seq);
 		
 		/* Retire instruction */
 		rob_remove_head(core, thread);

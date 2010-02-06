@@ -27,8 +27,8 @@
 
 
 /* Signals */
-static int sigint_received = FALSE;
-static int sigusr_received = FALSE;
+static int sigint_received = 0;
+static int sigusr_received = 0;
 static int sigalrm_interval = 30;
 static uint64_t last_sigalrm_cycle = 0;
 
@@ -98,7 +98,7 @@ static void sim_dump_log()
 	}
 
 	/* Ready to receive new SIGUSR signals */
-	sigusr_received = FALSE;
+	sigusr_received = 0;
 }
 
 
@@ -110,7 +110,7 @@ static void sim_signal_handler(int signum)
 	case SIGINT:
 		if (sigint_received)
 			abort();
-		sigint_received = TRUE;
+		sigint_received = 1;
 		p_dump(stderr);
 		fprintf(stderr, "SIGINT received\n");
 		break;
@@ -132,7 +132,7 @@ static void sim_signal_handler(int signum)
 		break;
 	
 	case SIGUSR2:
-		sigusr_received = TRUE;
+		sigusr_received = 1;
 	
 	}
 }

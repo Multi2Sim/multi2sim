@@ -213,6 +213,7 @@ struct uop_t {
 	struct ctx_t *ctx;
 	int core, thread;
 	uint64_t seq;  /* sequence number - unique uop identifier */
+	uint64_t di_seq;  /* dispatch squence number - unique per core */
 	uint32_t eip;  /* address of macroinst */
 	uint32_t neip;  /* address of next non-speculative macroinst */
 	uint32_t pred_neip; /* address of next predicted macroinst (for branches) */
@@ -643,6 +644,7 @@ struct processor_core_t {
 	struct fu_t *fu;
 
 	/* Per core counters */
+	uint64_t di_seq;  /* Sequence number for dispatch stage */
 	int context_map_count;
 	int iq_count;
 	int lsq_count;
