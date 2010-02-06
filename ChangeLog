@@ -452,3 +452,4 @@
 2010-02-06
 	* fetch.c: bug fixed. Sequence number of macroinstruction (uop->mop_seq)
 		was not correctly assigned.
+	* m2s.h: field uop->di_seq added, for dispatch sequence numbers.

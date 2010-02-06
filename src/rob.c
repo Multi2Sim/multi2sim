@@ -124,7 +124,7 @@ void rob_done()
 		for (i = 0; i < total_rob_size; i++) {
 			uop = list_get(CORE.rob, i);
 			if (uop) {
-				uop->in_rob = FALSE;
+				uop->in_rob = 0;
 				uop_free_if_not_queued(uop);
 			}
 		}
@@ -141,16 +141,16 @@ int rob_can_enqueue(struct uop_t *uop)
 	switch (rob_kind) {
 	case rob_kind_private:
 		if (THREAD.rob_count < rob_size)
-			return TRUE;
+			return 1;
 		break;
 	
 	case rob_kind_shared:
 		rob_trim(core);
 		if (CORE.rob_count < total_rob_size)
-			return TRUE;
+			return 1;
 		break;
 	}
-	return FALSE;
+	return 0;
 }
 
 
@@ -182,7 +182,7 @@ void rob_enqueue(struct uop_t *uop)
 	}
 
 	/* Instruction is in the ROB */
-	uop->in_rob = TRUE;
+	uop->in_rob = 1;
 }
 
 
@@ -193,21 +193,21 @@ int rob_can_dequeue(int core, int thread)
 	switch (rob_kind) {
 	case rob_kind_private:
 		if (THREAD.rob_count > 0)
-			return TRUE;
+			return 1;
 		break;
 	
 	case rob_kind_shared:
 		rob_trim(core);
 		if (!CORE.rob_count)
-			return FALSE;
+			return 0;
 		uop = list_get(CORE.rob, CORE.rob_head);
 		assert(uop_exists(uop));
 		assert(uop->core == core);
 		if (uop->thread == thread)
-			return TRUE;
+			return 1;
 		break;
 	}
-	return FALSE;
+	return 0;
 }
 
 
@@ -274,7 +274,7 @@ void rob_remove_head(int core, int thread)
 	}
 
 	/* Free instruction */
-	uop->in_rob = FALSE;
+	uop->in_rob = 0;
 	uop_free_if_not_queued(uop);
 }
 
@@ -373,7 +373,7 @@ void rob_remove_tail(int core, int thread)
 	}
 
 	/* Free instruction */
-	uop->in_rob = FALSE;
+	uop->in_rob = 0;
 	uop_free_if_not_queued(uop);
 }
 

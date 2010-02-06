@@ -206,7 +206,7 @@ int phregs_can_rename(struct uop_t *uop)
 	assert(busy <= phregs_local_size);
 	needs = phregs_needs(uop);
 
-	/* Return TRUE if there are enough registers */
+	/* Return 1 if there are enough registers */
 	return busy + needs <= phregs_local_size;
 }
 
@@ -288,7 +288,7 @@ void phregs_rename(struct uop_t *uop)
 }
 
 
-/* Return true if input dependencies are resolved */
+/* Return 1 if input dependencies are resolved */
 int phregs_ready(struct uop_t *uop)
 {
 	int phreg, idep;
@@ -301,9 +301,9 @@ int phregs_ready(struct uop_t *uop)
 		if (phreg < 0)
 			continue;
 		if (phregs->phreg[phreg].pending)
-			return FALSE;
+			return 0;
 	}
-	return TRUE;
+	return 1;
 }
 
 
