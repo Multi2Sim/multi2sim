@@ -472,9 +472,9 @@ int state_process_cycle(struct ctx_t *ctx, struct state_t *st)
 		puop = uop;
 	}
 
-	/* Next cycle is still far - just advance cycle. */
-	if (cycle > st->cycle + 1) {
-		st->cycle++;
+	/* Advance cycle. */
+	st->cycle++;
+	if (cycle > st->cycle) {
 		fseek(ctx->trace_file, st->trace_file_pos, SEEK_SET);
 		return 1;
 	}
@@ -486,7 +486,6 @@ int state_process_cycle(struct ctx_t *ctx, struct state_t *st)
 			break;
 		if (!strcmp(cmd->name, "clk")) {
 			command_free(cmd);
-			st->cycle++;
 			fseek(ctx->trace_file, st->trace_file_pos, SEEK_SET);
 			break;
 		}
@@ -504,13 +503,19 @@ struct state_t *state_goto(struct ctx_t *ctx, long cycle)
 	long index;
 
 	/* Later than last cycle */
-	if (cycle > ctx->lastcycle)
-		error("state_goto: wrong cycle");
+	if (cycle > ctx->lastcycle) {
+		st = state_create();
+		st->cycle = cycle;
+		fseek(ctx->trace_file, 0, SEEK_END);
+		st->trace_file_pos = ftell(ctx->trace_file);
+		return st;
+	}
 	
 	/* Cycle 0 */
 	if (!cycle) {
 		st = state_create();
 		st->cycle = -1;
+		st->trace_file_pos = 0;
 		state_process_cycle(ctx, st);
 		return st;
 	}
@@ -562,7 +567,7 @@ struct ctx_t *ctx_create(char *trace_file_name, int height, int width, int y, in
 	ctx->state_array = calloc(ctx->state_array_size, sizeof(long));
 
 	/* Generate state file */
-	st = state_create();
+	st = state_goto(ctx, 0);
 	clk = clock() - CLOCKS_PER_SEC;
 	for (;;) {
 		
@@ -623,6 +628,8 @@ void ctx_update_topseq(struct ctx_t *ctx)
 	/* Calculate topseq - seq number of uop at left-top corner */
 	st = state_goto(ctx, ctx->leftcycle);
 	ctx->topseq = 0;
+	if (ctx->leftcycle > ctx->lastcycle)
+		return;
 	for (cycle = ctx->leftcycle; cycle < ctx->leftcycle + ctx->cols; cycle++) {
 		for (uop = st->uops; uop; uop = uop->next)
 			if (uop->seq > ctx->topseq + ctx->rows - 1)
