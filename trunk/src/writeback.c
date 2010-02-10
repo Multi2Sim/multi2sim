@@ -57,6 +57,7 @@ void writeback_core(int core)
 		/* If a mispredicted branch is solved and recovery is configured to be
 		 * performed at writeback, schedule it for the end of the iteration. */
 		if (p_recover_kind == p_recover_kind_writeback &&
+			(uop->flags & FCTRL) && !uop->specmode &&
 			uop->neip != uop->pred_neip)
 			recover = 1;
 
