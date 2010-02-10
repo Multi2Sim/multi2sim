@@ -49,9 +49,7 @@ static struct fu_res_t fu_res_pool[fu_count] = {
 	{ 2, 5, 5, "FpComp", 0 },
 	{ 1, 10, 10, "FpMult", 0 },
 	{ 1, 20, 20, "FpDiv", 0 },
-	{ 1, 40, 40, "FpSqrt", 0 },
-	{ 2, 1, 1, "FpLoad", 0 },
-	{ 2, 1, 1, "FpStore", 0 }
+	{ 1, 40, 40, "FpComplex", 0 }
 };
 
 
