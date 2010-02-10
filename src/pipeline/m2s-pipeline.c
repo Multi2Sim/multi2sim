@@ -42,7 +42,7 @@ struct ctx_t {
 	int maxy, maxx;
 	int topy, topx;
 	int rows, cols;
-	int col_width, header_width, total_width;
+	int col_width, mop_header_width, uop_header_width, total_width;
 
 };
 
@@ -51,6 +51,7 @@ WINDOW *mainwnd;
 struct ctx_t *ctx_array[MAX_CTX];
 int ctx_count;
 int active_ctx = 0;
+int show_mops = 0;
 
 
 
@@ -649,21 +650,22 @@ void ctx_update_display(struct ctx_t *ctx)
 
 	/* Refresh table parameters */
 	getmaxyx(ctx->wnd, ctx->maxy, ctx->maxx);
-	ctx->col_width = 3;
-	ctx->header_width = 30;
-	ctx->rows = ctx->maxy - 2;
-	ctx->cols = ((ctx->maxx - 1) - ctx->header_width - 10) / (ctx->col_width + 1);
-	ctx->total_width = ctx->header_width + 1 + (ctx->col_width + 1) * ctx->cols;
+	ctx->col_width = 4;
+	ctx->mop_header_width = show_mops ? 40 : 0;
+	ctx->uop_header_width = 30;
 	ctx->topy = 0;
 	ctx->topx = 1;
+	ctx->rows = ctx->maxy - ctx->topy - 2;
+	ctx->cols = (ctx->maxx - ctx->topx - ctx->mop_header_width - ctx->uop_header_width) / ctx->col_width;
+	ctx->total_width = ctx->mop_header_width + ctx->uop_header_width + ctx->col_width * ctx->cols;
 	
 	/* Erase window */
 	werase(ctx->wnd);
 	
 	/* Write column headers */
 	for (i = 0; i < ctx->cols; i++)
-		mvwprintw(ctx->wnd, ctx->topy, ctx->topx + ctx->header_width + 1 + i * (ctx->col_width + 1),
-			"%03ld ", (ctx->leftcycle + i) % 1000);
+		mvwprintw(ctx->wnd, ctx->topy, ctx->topx + ctx->mop_header_width + ctx->uop_header_width
+			+ i * ctx->col_width, "%03ld ", (ctx->leftcycle + i) % 1000);
 
 	/* Draw uops */
 	st = state_goto(ctx, ctx->leftcycle);
@@ -676,9 +678,19 @@ void ctx_update_display(struct ctx_t *ctx)
 			y = ctx->topy + uop->seq - ctx->topseq + 1;
 
 			/* Header */
+			if (show_mops) {
+				wattron(ctx->wnd, A_BOLD);
+				strcpy(buf, uop->mop_name);
+				buf[ctx->mop_header_width - 1] = '\0';
+				mvwprintw(ctx->wnd, y, ctx->topx, buf);
+				wattroff(ctx->wnd, A_BOLD);
+			}
+			if (!uop->mop_index)
+				wattron(ctx->wnd, A_BOLD);
 			sprintf(buf, "%03ld %s", uop->seq % 1000, uop->name);
-			buf[ctx->header_width] = '\0';
-			mvwprintw(ctx->wnd, y, ctx->topx, buf);
+			buf[ctx->uop_header_width - 1] = '\0';
+			mvwprintw(ctx->wnd, y, ctx->topx + ctx->mop_header_width, buf);
+			wattroff(ctx->wnd, A_BOLD);
 
 			/* State */
 			buf[0] = '\0';
@@ -703,7 +715,8 @@ void ctx_update_display(struct ctx_t *ctx)
 
 			/* Print */
 			buf_fill(buf, 3, '.');
-			x = ctx->topx + ctx->header_width + 1 + (cycle - ctx->leftcycle) * (ctx->col_width + 1);
+			x = ctx->topx + ctx->mop_header_width + ctx->uop_header_width +
+				(cycle - ctx->leftcycle) * ctx->col_width;
 			mvwprintw(ctx->wnd, y, x, buf);
 			wattroff(ctx->wnd, COLOR_PAIR(color));
 
@@ -711,7 +724,7 @@ void ctx_update_display(struct ctx_t *ctx)
 			strcpy(buf, " ");
 			if (uop->squashed)
 				strcpy(buf, "X");
-			mvwprintw(ctx->wnd, y, x + ctx->col_width, buf);
+			mvwprintw(ctx->wnd, y, x + ctx->col_width - 1, buf);
 		}
 		if (!state_process_cycle(ctx, st))
 			break;
@@ -890,6 +903,10 @@ int main(int argc, char **argv)
 			if (ctx->leftcycle < 0)
 				ctx->leftcycle = 0;
 			ctx_update_topseq(ctx);
+			break;
+
+		case 'm':
+			show_mops = !show_mops;
 			break;
 		}
 	} while (!done);
