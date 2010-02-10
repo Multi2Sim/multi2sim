@@ -237,6 +237,7 @@ struct state_uop_t {
 
 	char name[40];
 	long seq;
+	int spec;
 
 	char mop_name[40];
 	long mop_seq;
@@ -308,6 +309,7 @@ void state_uop_update(struct state_uop_t *uop, struct command_t *cmd)
 {
 	STATE_UOP_UPDATE_STRING(name);
 	STATE_UOP_UPDATE_LONG(seq);
+	STATE_UOP_UPDATE_INT(spec);
 
 	STATE_UOP_UPDATE_STRING(mop_name);
 	STATE_UOP_UPDATE_LONG(mop_seq);
@@ -678,6 +680,8 @@ void ctx_update_display(struct ctx_t *ctx)
 			y = ctx->topy + uop->seq - ctx->topseq + 1;
 
 			/* Header */
+			if (uop->spec)
+				wattron(ctx->wnd, COLOR_PAIR(1));
 			if (show_mops) {
 				wattron(ctx->wnd, A_BOLD);
 				strcpy(buf, uop->mop_name);
@@ -691,6 +695,7 @@ void ctx_update_display(struct ctx_t *ctx)
 			buf[ctx->uop_header_width - 1] = '\0';
 			mvwprintw(ctx->wnd, y, ctx->topx + ctx->mop_header_width, buf);
 			wattroff(ctx->wnd, A_BOLD);
+			wattroff(ctx->wnd, COLOR_PAIR(1));
 
 			/* State */
 			buf[0] = '\0';
@@ -836,7 +841,7 @@ int main(int argc, char **argv)
 		case 'B':
 			for (i = 0; i < ctx_count; i++) {
 				ctx = ctx_array[i];
-				if (ctx->leftcycle < 0)
+				if (ctx->leftcycle > 0)
 					ctx->leftcycle--;
 				ctx_update_topseq(ctx);
 			}

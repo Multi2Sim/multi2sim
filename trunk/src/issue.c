@@ -28,8 +28,8 @@ static void check_if_ready(struct lnlist_t *list)
 		if (!phregs_ready(uop))
 			continue;
 		if (!uop->ready)
-			esim_debug("uop action=\"update\", seq=%lld, ready=1\n",
-				(long long) uop->di_seq);
+			esim_debug("uop action=\"update\", core=%d, seq=%lld, ready=1\n",
+				uop->core, (long long) uop->di_seq);
 		uop->ready = 1;
 	}
 }
@@ -82,9 +82,9 @@ static int issue_sq(int core, int thread, int quant)
 		quant--;
 		
 		/* Debug */
-		esim_debug("uop action=\"update\", seq=%llu, stg_issue=1,"
-			"in_lsq=0, issued=1\n",
-			(long long unsigned) store->di_seq);
+		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
+			" stg_issue=1, in_lsq=0, issued=1\n",
+			store->core, (long long unsigned) store->di_seq);
 	}
 	return quant;
 }
@@ -138,9 +138,9 @@ static int issue_lq(int core, int thread, int quant)
 		quant--;
 		
 		/* Debug */
-		esim_debug("uop action=\"update\", seq=%llu, stg_issue=1,"
-			"in_lsq=0, issued=1\n",
-			(long long unsigned) load->di_seq);
+		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
+			" stg_issue=1, in_lsq=0, issued=1\n",
+			load->core, (long long unsigned) load->di_seq);
 	}
 	
 	return quant;
@@ -201,9 +201,9 @@ static int issue_iq(int core, int thread, int quant)
 		quant--;
 
 		/* Debug */
-		esim_debug("uop action=\"update\", seq=%llu, stg_issue=1,"
-			"in_iq=0, issued=1\n",
-			(long long unsigned) uop->di_seq);
+		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
+			" stg_issue=1, in_iq=0, issued=1\n",
+			uop->core, (long long unsigned) uop->di_seq);
 	}
 	
 	return quant;

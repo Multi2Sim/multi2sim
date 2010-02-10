@@ -88,12 +88,12 @@ static int dispatch_thread(int core, int thread, int quant)
 		quant--;
 
 		/* Pipeline debug */
-		esim_debug("uop action=\"create\", seq=%llu, name=\"%s\","
-			" mop_name=\"%s\", mop_count=%d, mop_index=%d,"
+		esim_debug("uop action=\"create\", core=%d, seq=%llu, name=\"%s\","
+			" mop_name=\"%s\", mop_count=%d, mop_index=%d, spec=%u,"
 			" stg_dispatch=1, in_rob=%u, in_iq=%u, in_lsq=%u\n",
-			(long long unsigned) uop->di_seq, uop->name,
-			uop->mop_name, uop->mop_count, uop->mop_index,
-			uop->in_rob, uop->in_iq, uop->in_lq || uop->in_sq);
+			uop->core, (long long unsigned) uop->di_seq, uop->name,
+			uop->mop_name, uop->mop_count, uop->mop_index, uop->specmode,
+			!!uop->in_rob, !!uop->in_iq, uop->in_lq || uop->in_sq);
 	}
 
 	return quant;
