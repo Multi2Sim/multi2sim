@@ -59,8 +59,8 @@ void p_recover(int core, int thread)
 		phregs_undo(uop);
 
 		/* Debug */
-		esim_debug("uop action=\"squash\", seq=%llu\n",
-			(long long unsigned) uop->di_seq);
+		esim_debug("uop action=\"squash\", core=%d, seq=%llu\n",
+			uop->core, (long long unsigned) uop->di_seq);
  
 		/* Remove entry in ROB */
 		rob_remove_tail(core, thread);

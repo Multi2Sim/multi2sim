@@ -455,3 +455,6 @@
 	* m2s.h: field uop->di_seq added, for dispatch sequence numbers.
 	* writeback.c: bug fixes when recovering from mispeculation. The condition
 		to call 'p_recover' has been changed.
+	* fu.c, m2s.h: functional units - options and operators
+	* m2s-pipeline: new tool to analyze pipeline traces
+

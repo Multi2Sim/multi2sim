@@ -63,30 +63,30 @@ struct fu_t {
 void fu_reg_options()
 {
 	opt_reg_uint32_list("-fu:intadd", "Integer Adder (count, oplat, issuelat)",
-		(uint32_t *) &fu_res_pool[1], 3, NULL);
+		(uint32_t *) &fu_res_pool[fu_intadd], 3, NULL);
 	opt_reg_uint32_list("-fu:intsub", "Integer Subtracter",
-		(uint32_t *) &fu_res_pool[2], 3, NULL);
+		(uint32_t *) &fu_res_pool[fu_intsub], 3, NULL);
 	opt_reg_uint32_list("-fu:intmult", "Integer Multiplier",
-		(uint32_t *) &fu_res_pool[3], 3, NULL);
+		(uint32_t *) &fu_res_pool[fu_intmult], 3, NULL);
 	opt_reg_uint32_list("-fu:intdiv", "Integer Divider",
-		(uint32_t *) &fu_res_pool[4], 3, NULL);
+		(uint32_t *) &fu_res_pool[fu_intdiv], 3, NULL);
 	opt_reg_uint32_list("-fu:effaddr", "Effective Address",
-		(uint32_t *) &fu_res_pool[5], 3, NULL);
+		(uint32_t *) &fu_res_pool[fu_effaddr], 3, NULL);
 	opt_reg_uint32_list("-fu:logical", "Logical Operations",
-		(uint32_t *) &fu_res_pool[6], 3, NULL);
+		(uint32_t *) &fu_res_pool[fu_logical], 3, NULL);
 	
-	opt_reg_uint32_list("-fu:fpsimple", "Floating Point simple operations",
-		(uint32_t *) &fu_res_pool[7], 3, NULL);
-	opt_reg_uint32_list("-fu:fpadd", "Floating Point adder",
-		(uint32_t *) &fu_res_pool[8], 3, NULL);
-	opt_reg_uint32_list("-fu:fpcomp", "Floating Point comparison",
-		(uint32_t *) &fu_res_pool[9], 3, NULL);
-	opt_reg_uint32_list("-fu:fpmult", "Floating Point Multiplier",
-		(uint32_t *) &fu_res_pool[10], 3, NULL);
-	opt_reg_uint32_list("-fu:fpdiv", "Floating Point Divider",
-		(uint32_t *) &fu_res_pool[11], 3, NULL);
-	opt_reg_uint32_list("-fu:fpsqrt", "Floating Point Square Root",
-		(uint32_t *) &fu_res_pool[12], 3, NULL);
+	opt_reg_uint32_list("-fu:fpsimple", "Floating-point simple operator",
+		(uint32_t *) &fu_res_pool[fu_fpsimple], 3, NULL);
+	opt_reg_uint32_list("-fu:fpadd", "Floating-pointer adder",
+		(uint32_t *) &fu_res_pool[fu_fpadd], 3, NULL);
+	opt_reg_uint32_list("-fu:fpcomp", "Floating-point comparator",
+		(uint32_t *) &fu_res_pool[fu_fpcomp], 3, NULL);
+	opt_reg_uint32_list("-fu:fpmult", "Floating-point multiplier",
+		(uint32_t *) &fu_res_pool[fu_fpmult], 3, NULL);
+	opt_reg_uint32_list("-fu:fpdiv", "Floating-point divider",
+		(uint32_t *) &fu_res_pool[fu_fpdiv], 3, NULL);
+	opt_reg_uint32_list("-fu:fpcomplex", "Floating-point complex operator",
+		(uint32_t *) &fu_res_pool[fu_fpcomplex], 3, NULL);
 }
 
 
