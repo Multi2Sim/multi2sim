@@ -183,8 +183,6 @@ enum fu_class_enum {
 	fu_fpmult,
 	fu_fpdiv,
 	fu_fpcomplex,
-	fu_fpload,
-	fu_fpstore,
 
 	fu_count
 };

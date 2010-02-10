@@ -100,10 +100,10 @@ static void commit_thread(int core, int thread, int quant)
 		}
 
 		/* Debug */
-		esim_debug("uop action=\"update\", seq=%llu, stg_commit=1\n",
-			(long long unsigned) uop->di_seq);
-		esim_debug("uop action=\"destroy\", seq=%llu\n",
-			(long long unsigned) uop->di_seq);
+		esim_debug("uop action=\"update\", core=%d, seq=%llu, stg_commit=1\n",
+			uop->core, (long long unsigned) uop->di_seq);
+		esim_debug("uop action=\"destroy\", core=%d, seq=%llu\n",
+			uop->core, (long long unsigned) uop->di_seq);
 		
 		/* Retire instruction */
 		rob_remove_head(core, thread);
