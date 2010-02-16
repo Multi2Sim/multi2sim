@@ -24,10 +24,15 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <assert.h>
-#include <lnlist.h>
 #include <options.h>
-#include <config.h>
 #include <network.h>
+#include <misc.h>
+#include <esim.h>
+
+#include <config.h>
+#include <debug.h>
+#include <repos.h>
+#include <lnlist.h>
 
 
 /* Macro for safe pointer assignment */
@@ -338,6 +343,7 @@ void tlb_free(struct tlb_t *tlb);
 /* Cache System */
 
 extern int cache_min_block_size;
+extern int cache_max_block_size;
 extern struct ccache_t *main_memory;
 
 enum cache_kind_enum {

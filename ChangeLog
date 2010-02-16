@@ -458,3 +458,7 @@
 	* fu.c, m2s.h: functional units - options and operators
 	* m2s-pipeline: new tool to analyze pipeline traces
 
+2010-02-16
+	* network.c: new model for interconnection network, using a more accurate
+		switch model.
+	* cachesystem: updated for new interconnect model.
