@@ -20,128 +20,194 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include <mhandle.h>
-#include <debug.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <repos.h>
-#include <assert.h>
-#include <esim.h>
-#include <misc.h>
-#include <options.h>
+#include <stdint.h>
 
 
+/*
+ * Structures
+ */
 
-/* Network Stack */
+struct net_msg_t {
+	uint64_t seq;
+	uint64_t send_cycle;
+	int size;
+	int src_node_idx, dst_node_idx;
+	struct net_node_t *src_node, *dst_node;
+	void *data;
 
-struct net_stack_t {
+	/* Current position in network */
+	int node_idx;
+	int where;  /* 0..3 = {ibuffer,xbar,obuffer,link} */
+	int port_idx;
+
+	/* Information for in-transit messages. Messages always travel
+	 * from buffers to buffers (or end-nodes) */
+	struct net_buffer_t *src_buffer, *dst_buffer;
+	uint64_t busy;  /* In transit until cycle */
 	
-	struct net_t *net;
-	int src, dst, size;
-	uint64_t send_time;
-	uint64_t packet_id;
-
-	/* Return event */
-	int retevent;
-	struct network_stack_t *retstack;
+	/* Linked list for buffer */
+	struct net_msg_t *next;
 };
 
 
-struct net_stack_t *net_stack_create(struct net_t *net,
-	int retevent, void *retstack);
-void net_stack_return(struct net_stack_t *stack);
+/* Link */
+struct net_link_t {
+	int src_node_idx, src_port_idx;
+	int dst_node_idx, dst_port_idx;
+	int bandwidth;
+	uint64_t busy;  /* Busy until this cycle inclusive */
+};
 
 
+/* Node buffer */
+struct net_buffer_t {
+	char name[30];  /* String identifier */
+	int count, size;  /* Occupied and total size */
+	uint64_t read_busy;
+	uint64_t write_busy;
+
+	/* Linked list of stacks to wake up when new space
+	 * becomes available in the buffer (using stack->wakeup_event) */
+	struct net_stack_t *wakeup_head, *wakeup_tail;
+};
+
+
+/* Node port */
+struct net_port_t {
+	struct net_link_t *link;  /* Connected link (NULL=none) */
+	struct net_buffer_t *buffer;  /* Associated buffer */
+};
+
+
+/* Types of node */
+enum net_node_kind_enum {
+	net_node_end = 0,
+	net_node_switch,
+	net_node_bus
+};
+
+
+/* Node */
+struct net_node_t {
+
+	/* Type of node */
+	enum net_node_kind_enum kind;
+	char name[30];
+	void *data;
+
+	/* Switch crossbar or bus*/
+	int bandwidth;
+	uint64_t bus_busy;
+	
+	/* Ports */
+	struct net_port_t *iports;
+	struct net_port_t *oports;
+	int iport_count;
+	int oport_count;
+};
+
+
+/* Routing table entry */
+struct routing_entry_t {
+	int cost;  /* Cost in hops */
+	int port;  /* Output port */
+	int route;  /* Next hop */
+};
 
 
 /* Network */
-
-enum net_node_kind_enum {
-	net_node_kind_cache = 0,
-	net_node_kind_switch,
-	net_node_kind_main  /* main node, like directory, or lower level cache */
-};
-
-
-struct net_node_con_t {
-	int cost;  /* number of hops to reach this item */
-	int route;  /* next node to reach this item */
-	uint64_t busy;  /* last cycle when the link is busy */
-};
-
-
-struct net_node_t {
-	enum net_node_kind_enum kind;
-	void *data;
-
-	/* Array of connections and routing */
-	struct net_node_con_t *con;
-};
-
-
 struct net_t {
 	
-	/* Array of nodes */
+	/* Properties */
+	char name[30];
+	uint64_t msg_seq;  /* Seq number for messages */
+	
+	/* Nodes */
 	struct net_node_t *nodes;
-	int max_nodes;
-	int num_nodes;
-	int num_caches;  /* number of nodes of kind net_node_kind_cache */
-	int main_node;  /* id of the node of kind net_node_kind_main */
-	int link_width;
-	char name[100];
+	int node_array_size;
+	int node_count;
+	int end_node_count;
 
-	/* For buses */
-	int bus;  /* true if it's a bus */
-	uint64_t bus_busy;  /* last cycle when bus is busy */
-	uint64_t bus_packet_id;  /* packet id occupying the bus */
-	int bus_broadcasting;  /* true if issuing a broadcast */
+	/* 2-dim routing table */
+	struct routing_entry_t *routing_table;
 
 	/* Stats */
-	uint64_t current_packet_id;
-	uint64_t delivered;  /* number of delivered packets */
-	uint64_t deliver_time;  /* acc. deliver time */
+	uint64_t transfers;  /* Transfers */
+	uint64_t lat_acc;  /* Accumulated latency */
+};
+
+
+/* For event-driven simulation */
+struct net_stack_t {
+
+	/* Local variables */
+	struct net_t *net;
+	struct net_msg_t *msg;
+
+	/* Wakeup event and linked list of stacks */
+	int wakeup_event;
+	struct net_stack_t *wakeup_next;
+
+	/* Return event */
+	int retevent;
+	struct net_stack_t *retstack;
 };
 
 
 
 
-/* Initialization */
-void net_reg_options(void);
+/*
+ * Debug
+ */
+
+extern FILE *net_debug_file;
+
+int net_debug_init(char *filename);
+void net_debug_done();
+void net_debug(char *fmt, ...);
+
+
+
+
+
+/*
+ * Functions
+ */
+
 void net_init(void);
 void net_done(void);
 
-
-/* Network creation */
-struct net_t *net_create(void);  /* create a generic network */
-struct net_t *net_create_bus(void);  /* create a bus network */
+struct net_t *net_create(char *name);
 void net_free(struct net_t *net);
-void net_load(char *filename);
 
+int net_new_node(struct net_t *net, char *name, void *data);
+int net_new_switch(struct net_t *net,
+	int iport_count, int ibuffer_size, int oport_count, int obuffer_size,
+	int bandwidth, char *name, void *data);
+int net_new_bus(struct net_t *net,
+	int iport_count, int oport_count,
+	int bandwidth, char *name, void *data);
 
-/* Initialize arrays of nodes */
-void net_init_nodes(struct net_t *net, int max_nodes);
+struct net_node_t *net_get_node(struct net_t *net, int node_idx);
+void *net_get_node_data(struct net_t *net, int node_idx);
 
-/* Add a node to the network. Return the id of the node. The
- * added node can be a cache, switch or directory. */
-int net_add_node(struct net_t *net, enum net_node_kind_enum kind, void *data);
+int net_get_iport_idx(struct net_t *net, int node_idx);
+int net_get_oport_idx(struct net_t *net, int node_idx);
 
-/* Get the data associated with a node */
-void *net_get_node(struct net_t *net, int node);
+void net_new_link(struct net_t *net, int src_node_idx, int dst_node_idx, int bandwidth);
+void net_new_bidirectional_link(struct net_t *net, int node1_idx, int node2_idx, int bandwidth);
 
-/* Add a connection between two nodes */
-void net_add_con(struct net_t *net, int source, int dest);
-
-/* Calculate routes when all nodes have been created. */
 void net_calculate_routes(struct net_t *net);
 void net_dump_routes(struct net_t *net, FILE *f);
 
-/* Send */
-#define net_send(net, src, dst, size) net_send_ev(net, src, dst, size, ESIM_EV_NONE, NULL)
-void net_send_ev(struct net_t *net, int src, int dst, int size,
+int net_valid_route(struct net_t *net, int src_node_idx, int dst_node_idx);
+int net_can_send(struct net_t *net, int src_node_idx, int dst_node_idx);
+uint64_t net_send(struct net_t *net, int src_node_idx, int dst_node_idx, int size);
+uint64_t net_send_ev(struct net_t *net, int src_node_idx, int dst_node_idx, int size,
 	int retevent, void *retstack);
 
-/* Broadcast for buses */
-void net_start_broadcast(struct net_t *net);
-void net_commit_broadcast(struct net_t *net);
+
 
 #endif
+

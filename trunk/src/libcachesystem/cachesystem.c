@@ -56,17 +56,19 @@ struct ccache_t *ccache_create()
 
 void ccache_free(struct ccache_t *ccache)
 {
-	/* Print stats */
-	fprintf(stderr, "%s.accesses  %lld  # Number of accesses to the cache\n",
-		ccache->name, (long long) ccache->accesses);
-	if (ccache->lonet) {
-		fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
-			ccache->name, ccache->accesses ? (double) ccache->hits /
-			ccache->accesses : 0.0);
-		fprintf(stderr, "%s.hits  %lld  # Number of hits\n",
-			ccache->name, (long long) ccache->hits);
-		fprintf(stderr, "%s.evicts  %lld  # Number of evictions\n",
-			ccache->name, (long long) ccache->evicts);
+	/* Print stats - only if cache was accessed */
+	if (ccache->accesses) {
+		fprintf(stderr, "%s.accesses  %lld  # Number of accesses\n",
+			ccache->name, (long long) ccache->accesses);
+		if (ccache->lonet) {
+			fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
+				ccache->name, ccache->accesses ? (double) ccache->hits /
+				ccache->accesses : 0.0);
+			fprintf(stderr, "%s.hits  %lld  # Number of hits\n",
+				ccache->name, (long long) ccache->hits);
+			fprintf(stderr, "%s.evicts  %lld  # Number of evictions\n",
+				ccache->name, (long long) ccache->evicts);
+		}
 	}
 
 	/* Free cache */
@@ -287,11 +289,13 @@ struct tlb_t *tlb_create()
 void tlb_free(struct tlb_t *tlb)
 {
 	/* Print stats */
-	fprintf(stderr, "%s.accesses  %lld  # Number of accesses to the tlb\n",
-		tlb->name, (long long) tlb->accesses);
-	fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
-		tlb->name, tlb->accesses ? (double) tlb->hits /
-		tlb->accesses : 0.0);
+	if (tlb->accesses) {
+		fprintf(stderr, "%s.accesses  %lld  # Number of accesses to the tlb\n",
+			tlb->name, (long long) tlb->accesses);
+		fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
+			tlb->name, tlb->accesses ? (double) tlb->hits /
+			tlb->accesses : 0.0);
+	}
 	
 	/* Free */
 	if (tlb->cache)
@@ -343,6 +347,7 @@ int EV_CACHE_SYSTEM_ACCESS_FINISH;
 char *cache_config_file = "";
 struct config_t *cache_config;
 int cache_min_block_size = 0;
+int cache_max_block_size = 0;
 uint32_t mem_latency = 200;
 static uint32_t iports = 8;
 static int iperfect = 0;
@@ -391,13 +396,13 @@ static void cache_config_default(int def_cores, int def_threads)
 	int def_nodes = def_cores * def_threads;
 
 	/* Write cache topologies */
-	SECTION("CacheTopology L1");
+	SECTION("CacheGeometry L1");
 	KEY_INT("Sets", 256);
 	KEY_INT("Assoc", 2);
 	KEY_INT("BlockSize", 64);
 	KEY_INT("Latency", 2);
 
-	SECTION("CacheTopology L2");
+	SECTION("CacheGeometry L2");
 	KEY_INT("Sets", 1024);
 	KEY_INT("Assoc", 8);
 	KEY_INT("BlockSize", 64);
@@ -428,14 +433,14 @@ static void cache_config_default(int def_cores, int def_threads)
 	for (i = 0; i < def_nodes; i++) {
 		sprintf(buf, "Cache dl1-%d", i);
 		SECTION(buf);
-		KEY_STRING("Topology", "L1");
+		KEY_STRING("Geometry", "L1");
 		KEY_STRING("HiNet", "");
 		sprintf(buf, "net-%d", i / def_threads);
 		KEY_STRING("LoNet", buf);
 
 		sprintf(buf, "Cache il1-%d", i);
 		SECTION(buf);
-		KEY_STRING("Topology", "L1");
+		KEY_STRING("Geometry", "L1");
 		KEY_STRING("HiNet", "");
 		sprintf(buf, "net-%d", i / def_threads);
 		KEY_STRING("LoNet", buf);
@@ -445,7 +450,7 @@ static void cache_config_default(int def_cores, int def_threads)
 	for (core = 0; core < def_cores; core++) {
 		sprintf(buf, "Cache l2-%d", core);
 		SECTION(buf);
-		KEY_STRING("Topology", "L2");
+		KEY_STRING("Geometry", "L2");
 		sprintf(buf, "net-%d", core);
 		KEY_STRING("HiNet", buf);
 		sprintf(buf, "net-%d", def_cores);
@@ -456,8 +461,7 @@ static void cache_config_default(int def_cores, int def_threads)
 	for (core = 0; core <= def_cores; core++) {
 		sprintf(buf, "Net net-%d", core);
 		SECTION(buf);
-		KEY_STRING("Topology", "FatTree");
-		KEY_INT("LinkWidth", 32);
+		KEY_STRING("Topology", "P2P");
 	}
 }
 #undef KEY_INT
@@ -467,7 +471,7 @@ static void cache_config_default(int def_cores, int def_threads)
 
 void cache_system_init(int def_cores, int def_threads)
 {
-	int i;
+	int i, j;
 	struct tlb_t *tlb;
 	char *section;
 	int core, thread, curr;
@@ -535,19 +539,9 @@ void cache_system_init(int def_cores, int def_threads)
 		if (strncasecmp(section, "Net ", 4))
 			continue;
 
-		cache_config_key(section, "Topology");
-		cache_config_key(section, "LinkWidth");
-		strcpy(buf, config_read_string(cache_config, section, "Topology", ""));
-		if (!strcasecmp(buf, "Bus"))
-			net = net_create_bus();
-		else if (!strcasecmp(buf, "FatTree"))
-			net = net_create();
-		else
-			fatal("bad network topology in section '%s'", section);
-		net->link_width = config_read_int(cache_config, section, "LinkWidth", 8);
+		net = net_create(section + 4);
 		net_array[curr++] = net;
 		config_write_ptr(cache_config, section, "ptr", net);
-		strcpy(net->name, section + 4);
 	}
 	assert(curr == net_count);
 
@@ -567,18 +561,14 @@ void cache_system_init(int def_cores, int def_threads)
 		/* High network */
 		sprintf(buf, "net %s", config_read_string(cache_config, section, "HiNet", ""));
 		ccache->hinet = config_read_ptr(cache_config, buf, "ptr", NULL);
-		if (ccache->hinet)
-			ccache->hinet->max_nodes++;
 
 		/* Low network */
 		sprintf(buf, "net %s", config_read_string(cache_config, section, "LoNet", ""));
 		ccache->lonet = config_read_ptr(cache_config, buf, "ptr", NULL);
-		if (ccache->lonet)
-			ccache->lonet->max_nodes++;
 
 		/* Cache parameters */
-		sprintf(buf, "CacheTopology %s", config_read_string(cache_config, section, "Topology", ""));
-		cache_config_key(section, "Topology");
+		sprintf(buf, "CacheGeometry %s", config_read_string(cache_config, section, "Geometry", ""));
+		cache_config_key(section, "Geometry");
 		cache_config_section(buf);
 		cache_config_key(buf, "Latency");
 		cache_config_key(buf, "Sets");
@@ -596,6 +586,7 @@ void cache_system_init(int def_cores, int def_threads)
 		ccache->logbsize = log_base2(bsize);
 		ccache->cache = cache_create(nsets, bsize, assoc, policy);
 		cache_min_block_size = cache_min_block_size ? MIN(cache_min_block_size, bsize) : bsize;
+		cache_max_block_size = cache_max_block_size ? MAX(cache_max_block_size, bsize) : bsize;
 		if (bsize > mmu_page_size)
 			fatal("%s: cache block size greater than memory page size", ccache->name);
 	}
@@ -624,8 +615,6 @@ void cache_system_init(int def_cores, int def_threads)
 	ccache->lat = config_read_int(cache_config, section, "Latency", 0);
 	ccache->bsize = config_read_int(cache_config, section, "BlockSize", 0);
 	ccache->hinet = config_read_ptr(cache_config, buf, "ptr", NULL);
-	if (ccache->hinet)
-		ccache->hinet->max_nodes++;
 	if (cache_min_block_size < 1)
 		fatal("cache block size must >= 1");
 
@@ -657,34 +646,25 @@ void cache_system_init(int def_cores, int def_threads)
 		assert(node->dcache);
 	}
 
-	/* Initialize node_array of networks */
-	for (curr = 0; curr < net_count; curr++) {
-		net = net_array[curr];
-		net_init_nodes(net, net->max_nodes);
-	}
-
 	/* Add lower node_array to networks. */
 	for (curr = 0; curr < ccache_count; curr++) {
 		ccache = ccache_array[curr];
 		net = ccache->hinet;
 		if (!net)
 			continue;
-		if (net->num_nodes)
+		if (net->node_count)
 			fatal("network '%s' has more than one lower node", net->name);
-		net_add_node(net, net_node_kind_main, ccache);
+		net_new_node(net, ccache->name, ccache);
 	}
 
-	/* Add upper node_array to networks. Update 'next' attributes for ccache_array.
-	 * If the network is a fat tree, add connection. */
+	/* Add upper node_array to networks. Update 'next' attributes for ccache_array. */
 	for (curr = 0; curr < ccache_count; curr++) {
 		ccache = ccache_array[curr];
 		net = ccache->lonet;
 		if (!net)
 			continue;
-		ccache->loid = net_add_node(net, net_node_kind_cache, ccache);
-		ccache->next = net_get_node(net, 0);
-		if (!net->bus)
-			net_add_con(net, 0, ccache->loid);
+		ccache->loid = net_new_node(net, ccache->name, ccache);
+		ccache->next = net_get_node_data(net, 0);
 	}
 
 	/* Check that block sizes are equal or larger while we descend through the
@@ -699,9 +679,29 @@ void cache_system_init(int def_cores, int def_threads)
 		}
 	}
 
-	/* Calculate routes for network nodes */
+	/* For each network, add a switch and create node connections.
+	 * Then calculate routes between nodes. */
 	for (i = 0; i < net_count; i++) {
+		int maxmsg, sw;
+		int bandwidth;
+
+		/* Get the maximum message size for network, which is equals to
+		 * the block size of the lower cache plus 8 (moesi msg) */
 		net = net_array[i];
+		ccache = net_get_node_data(net, 0);
+		if (!ccache)
+			continue;
+		maxmsg = ccache->bsize + 8;
+
+		/* Create switch and connections. By default, each i/o buffer has
+		 * space for two maximum-length messages, and 8 bytes/cycle bandwidth. */
+		bandwidth = 8;  /* Bandwidth for links and switch xbar. */
+		snprintf(buf, sizeof(buf), "%s.sw", net->name);
+		sw = net_new_switch(net, net->end_node_count, maxmsg * 2,
+			net->end_node_count, maxmsg * 2, bandwidth, buf, NULL);
+		for (j = 0; j < net->end_node_count; j++)
+			net_new_bidirectional_link(net, j, sw, bandwidth);
+
 		net_calculate_routes(net);
 	}
 
@@ -722,7 +722,7 @@ void cache_system_init(int def_cores, int def_threads)
 
 		/* Other level ccache_array */
 		ccache->dir = dir_create(ccache->cache->nsets, ccache->cache->assoc,
-			ccache->bsize / cache_min_block_size, ccache->hinet->num_nodes);
+			ccache->bsize / cache_min_block_size, ccache->hinet->end_node_count);
 	}
 
 	/* Create tlbs */
