@@ -121,7 +121,7 @@ static struct mmu_page_t *mmu_get_page(int mid, uint32_t vtladdr)
 		/* Create page */
 		page = calloc(1, sizeof(struct mmu_page_t));
 		page->dir = dir_create(mmu_page_size / main_memory->bsize, 1,
-			main_memory->bsize / cache_min_block_size, main_memory->hinet->num_nodes);
+			main_memory->bsize / cache_min_block_size, main_memory->hinet->end_node_count);
 		page->vtladdr = tag;
 		page->mid = mid;
 		page->phaddr = mmu->page_count << mmu_log_page_size;

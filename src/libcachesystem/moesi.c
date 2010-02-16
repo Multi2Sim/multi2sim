@@ -758,7 +758,7 @@ void moesi_handler_read_request(int event, void *data)
 					continue;
 				if (dir_entry->owner == ccache->loid) /* owner is ccache */
 					continue;
-				owner = net_get_node(target->hinet, dir_entry->owner);
+				owner = net_get_node_data(target->hinet, dir_entry->owner);
 				if (dir_entry_tag % owner->bsize) /* not the first owner subblock */
 					continue;
 
@@ -886,7 +886,7 @@ void moesi_handler_read_request(int event, void *data)
 			dir_entry = ccache_get_dir_entry(target, stack->set, stack->way, z);
 			if (!dir_entry->owner)  /* no owner */
 				continue;
-			owner = net_get_node(target->hinet, dir_entry->owner);
+			owner = net_get_node_data(target->hinet, dir_entry->owner);
 			if (dir_entry_tag % owner->bsize)  /* not the first subblock */
 				continue;
 			stack->pending++;
@@ -1156,7 +1156,7 @@ void moesi_handler_invalidate(int event, void *data)
 
 	if (event == EV_MOESI_INVALIDATE)
 	{
-		int num_nodes, i;
+		int node_count, i;
 		struct ccache_t *sharer;
 
 		/* Get block info */
@@ -1170,13 +1170,13 @@ void moesi_handler_invalidate(int event, void *data)
 		for (z = 0; z < dir->zsize; z++) {
 			dir_entry_tag = stack->tag + z * cache_min_block_size;
 			dir_entry = ccache_get_dir_entry(ccache, stack->set, stack->way, z);
-			num_nodes = ccache->hinet ? ccache->hinet->num_nodes : 0;
-			for (i = 1; i < num_nodes; i++) {
+			node_count = ccache->hinet ? ccache->hinet->end_node_count : 0;
+			for (i = 1; i < node_count; i++) {
 				
 				/* Skip non-sharers and 'except' */
 				if (!dir_entry_is_sharer(dir, dir_entry, i))
 					continue;
-				sharer = net_get_node(ccache->hinet, i);
+				sharer = net_get_node_data(ccache->hinet, i);
 				if (sharer == stack->except)
 					continue;
 
