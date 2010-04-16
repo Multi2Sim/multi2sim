@@ -1902,13 +1902,17 @@ void syscall_do()
 		syscall_debug("  resource=%s\n", sresource);
 
 		switch (resource) {
-		case RLIMIT_DATA:
+		case 2:  /* RLIMIT_DATA */
 			sim_rlimit.cur = 0xffffffff;
 			sim_rlimit.max = 0xffffffff;
 			break;
-		case RLIMIT_STACK:
+		case 3:  /* RLIMIT_STACK */
 			sim_rlimit.cur = isa_ctx->loader->stack_size;
 			sim_rlimit.max = 0xffffffff;
+			break;
+		case 7:  /* RLIMIT_NOFILE */
+			sim_rlimit.cur = 0x400;
+			sim_rlimit.max = 0x400;
 			break;
 		default:
 			fatal("getrlimit: not implemented for resource=%s", sresource);
@@ -2127,6 +2131,9 @@ void syscall_do()
 		syscall_debug("  efd=0x%x\n", efd);
 
 		switch (cmd) {
+		case 1:  /* F_GETFD */
+			RETVAL(fcntl(efd, F_GETFD));
+			break;
 		case 2:  /* F_SETFD */
 			/* Ignored */
 			break;
@@ -2134,7 +2141,6 @@ void syscall_do()
 			RETVAL(fcntl(efd, F_GETFL));
 			break;
 		case 0:  /* F_DUPFD */
-		case 1:  /* F_GETFD */
 		case 4:  /* F_SETFL */
 		default:
 			fatal("syscall fcntl64: cmd = %d not implemented", cmd);
@@ -2235,7 +2241,7 @@ void syscall_do()
 			syscall_debug("  futex at 0x%x: %d processes woken up\n", addr1, retval);
 
 			/* The rest of the threads waiting in futex 'addr1' are requeued into futex 'addr2' */
-			for (ctx = ke->suspended_list; ctx; ctx = ctx->suspended_next) {
+			for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_next) {
 				if (ctx_get_status(ctx, ctx_futex) && ctx->wakeup_futex == addr1) {
 					ctx->wakeup_futex = addr2;
 					requeued++;
@@ -2293,18 +2299,44 @@ void syscall_do()
 	}
 
 
+	/* 241 */
+	case syscall_code_sched_setaffinity:
+	{
+		uint32_t pid, len, pmask;
+		uint32_t num_procs = 4;
+		uint32_t mask;
+
+		pid = isa_regs->ebx;
+		len = isa_regs->ecx;
+		pmask = isa_regs->edx;
+
+		mem_read(isa_mem, pmask, 4, &mask);
+		syscall_debug("  pid=%d, len=%d, pmask=0x%x\n", pid, len, pmask);
+		syscall_debug("  mask=0x%x\n", mask);
+
+		/* FIXME: system call ignored. Return the number of procs. */
+		retval = num_procs;
+		break;
+	}
+
+
 	/* 242 */
 	case syscall_code_sched_getaffinity:
 	{
 		uint32_t pid, len, pmask;
+		uint32_t num_procs = 4;
+		uint32_t mask = (1 << num_procs) - 1;
 
 		pid = isa_regs->ebx;
 		len = isa_regs->ecx;
 		pmask = isa_regs->edx;
 		syscall_debug("  pid=%d, len=%d, pmask=0x%x\n", pid, len, pmask);
 
-		fatal("syscall 'sched_getaffinity', pid=%d, len=%d, pmask=0x%x\n",
-			pid, len, pmask);
+		/* FIXME: the affinity is set to 1 for num_procs processors and only the 4 LSBytes are set.
+		 * The return value is set to num_procs. This is the behavior on a 4-core processor
+		 * in a real system. */
+		mem_write(isa_mem, pmask, 4, &mask);
+		retval = num_procs;
 		break;
 	}
 

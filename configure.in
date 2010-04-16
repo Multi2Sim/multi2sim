@@ -8,7 +8,7 @@ AC_PROG_RANLIB
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([ncurses.h fcntl.h stdint.h stdlib.h string.h sys/ioctl.h sys/time.h termios.h unistd.h])
+AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h sys/ioctl.h sys/time.h termios.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -28,6 +28,12 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday mkdir strcasecmp strdup strstr])
+
+# Library ncurses
+AC_CHECK_LIB(ncurses, initscr)
+if test "${ac_cv_lib_ncurses_initscr}" != "yes"; then
+	AC_MSG_ERROR([can not find the ncurses library.])
+fi
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
