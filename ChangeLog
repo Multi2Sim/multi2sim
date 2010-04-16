@@ -502,3 +502,12 @@
 2010-03-30
 	Version 2.3 Released
 
+2010-03-30
+	* m2skernel.h: context lists updated with 'head' and 'tail' pointers.
+	* syscall.c: syscall 'sched_getaffinity'
+	* syscall:c: syscall 'fcntl64' with command F_GETFD.
+	* configure.in: check for ncurses.
+
+2010-04-16
+	* m2s-pipeline.c: KEY_RESIZE event.
+

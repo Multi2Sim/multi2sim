@@ -53,8 +53,7 @@ static struct ctx_t *ctx_do_create()
 	 * corresponding lists. The ctx_running parameter has no
 	 * effect, since it will be updated later. */
 	ctx_set_status(ctx, ctx_running);
-	ke_list_insert(ke_list_context, ctx);
-	ke->context_max = MAX(ke->context_count, ke->context_max);
+	ke_list_insert_head(ke_list_context, ctx);
 
 	/* Structures */
 	ctx->regs = regs_create();
@@ -262,13 +261,13 @@ static void ctx_update_status(struct ctx_t *ctx, enum ctx_status_enum status)
 	
 	/* Insert context into the corresponding lists. */
 	if (ctx->status & ctx_running)
-		ke_list_insert(ke_list_running, ctx);
+		ke_list_insert_head(ke_list_running, ctx);
 	if (ctx->status & ctx_zombie)
-		ke_list_insert(ke_list_zombie, ctx);
+		ke_list_insert_head(ke_list_zombie, ctx);
 	if (ctx->status & ctx_finished)
-		ke_list_insert(ke_list_finished, ctx);
+		ke_list_insert_head(ke_list_finished, ctx);
 	if (ctx->status & ctx_suspended)
-		ke_list_insert(ke_list_suspended, ctx);
+		ke_list_insert_head(ke_list_suspended, ctx);
 	
 	/* Dump new status */
 	if (debug_status(syscall_debug_category)) {
@@ -298,7 +297,7 @@ struct ctx_t *ctx_get(int pid)
 {
 	struct ctx_t *ctx;
 
-	ctx = ke->context_list;
+	ctx = ke->context_list_head;
 	while (ctx && ctx->pid != pid)
 		ctx = ctx->context_next;
 	return ctx;
@@ -312,7 +311,7 @@ struct ctx_t *ctx_get_zombie(struct ctx_t *parent, int pid)
 {
 	struct ctx_t *ctx;
 
-	for (ctx = ke->zombie_list; ctx; ctx = ctx->zombie_next) {
+	for (ctx = ke->zombie_list_head; ctx; ctx = ctx->zombie_next) {
 		if (ctx->parent != parent)
 			continue;
 		if (ctx->pid == pid || pid == -1)
@@ -338,7 +337,7 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	/* From now on, all children have lost their parent. If a children is
 	 * already zombie, finish it, since its parent won't be able to waitpid it
 	 * anymore. */
-	for (aux = ke->context_list; aux; aux = aux->context_next) {
+	for (aux = ke->context_list_head; aux; aux = aux->context_next) {
 		if (aux->parent == ctx) {
 			aux->parent = NULL;
 			if (ctx_get_status(aux, ctx_zombie))
@@ -383,7 +382,7 @@ int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count)
 	/* Look for threads suspended in this futex */
 	while (count) {
 		wakeup_ctx = NULL;
-		for (ctx = ke->suspended_list; ctx; ctx = ctx->suspended_next) {
+		for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_next) {
 			if (!ctx_get_status(ctx, ctx_futex) || ctx->wakeup_futex != futex)
 				continue;
 			if (!wakeup_ctx || ctx->wakeup_futex_sleep < wakeup_ctx->wakeup_futex_sleep)
@@ -439,14 +438,5 @@ void ctx_exit_robust_list(struct ctx_t *ctx)
 			break;
 		lock_entry = next;
 	}
-
-/*	robust_list_elem = ctx->robust_list_head;
-	for (;;) {
-		mem_read(ctx->mem, robust_list_elem, 4, &next);
-		printf("robust_list_elem at 0x%x\n", robust_list_elem);
-		if (next == robust_list_elem)
-			break;
-	}*/
-	//exit(1);
 }
 

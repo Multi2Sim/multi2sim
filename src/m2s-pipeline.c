@@ -927,10 +927,22 @@ int main(int argc, char **argv)
 		case 'm':
 			show_mops = !show_mops;
 			break;
+
 		case KEY_BACKSPACE:
 			if (kbrd_buf[0])
 				kbrd_buf[strlen(kbrd_buf) - 1] = '\0';
 			break;
+
+		case KEY_RESIZE:
+			y = 0;
+			for (i = 0; i < ctx_count; i++) {
+				int height = (LINES - 1) / ctx_count + (i < (LINES - 1) % ctx_count ? 1 : 0);
+				wresize(ctx_array[i]->wnd, height, COLS);
+				mvwin(ctx_array[i]->wnd, y, 0);
+				y += height;
+			}
+			break;
+
 		default:
 			if (ch >= '0' && ch <= '9' && strlen(kbrd_buf) < KBRD_BUF_SIZE - 1) {
 				kbrd_buf[strlen(kbrd_buf) + 1] = '\0';

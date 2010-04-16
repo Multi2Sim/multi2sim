@@ -137,7 +137,7 @@ int main(int argc, char **argv)
 		ld_load_prog_from_ctxconfig(ctxconfig);
 	if (argc > 1)
 		ld_load_prog_from_cmdline(argc - 1, argv + 1);
-	if (!ke->context_list)
+	if (!ke->context_list_head)
 		fatal("no context loaded");
 	
 	/* Simulation loop */
@@ -146,15 +146,15 @@ int main(int argc, char **argv)
 	while (!sigint_received) {
 		
 		/* Break point */
-		if (break_point && ke->context_list->regs->eip == break_point) {
-			regs_dump(ke->context_list->regs, stdout);
+		if (break_point && ke->context_list_head->regs->eip == break_point) {
+			regs_dump(ke->context_list_head->regs, stdout);
 			break;
 		}
 		
 		/* Run an instruction from each running context */
 		ke_run();
 		sim_inst += ke->running_count;
-		if (!ke->context_list)
+		if (!ke->context_list_head)
 			break;
 
 		/* Stop conditions */
@@ -195,8 +195,8 @@ int main(int argc, char **argv)
 		(double) t / 1000000);
 	fprintf(stderr, "sim.cps  %.0f  # Cycles simulated per second\n",
 		t ? (double) sim_cycle / t * 1e6 : 0.0);
-	fprintf(stderr, "sim.contexts  %d  # Maximum number of concurrent contexts\n",
-		ke->context_max);
+	fprintf(stderr, "sim.contexts  %d  # Maximum number of contexts running concurrently\n",
+		ke->running_max);
 	fprintf(stderr, "sim.memory  %lu  # Physical memory used by benchmarks\n",
 		mem_mapped_space);
 	fprintf(stderr, "sim.memory_max  %lu  # Maximum physical memory used by benchmarks\n",
