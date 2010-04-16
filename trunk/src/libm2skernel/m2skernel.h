@@ -488,17 +488,16 @@ struct kernel_t {
 	struct pipemgr_t *pipemgr;
 
 	/* Lists of contexts */
-	int context_max;  /* max number of allocated contexts so far */
-	int context_count;
-	int running_count;
-	int suspended_count;
-	int zombie_count;
-	int finished_count;
-	struct ctx_t *context_list;
-	struct ctx_t *running_list;
-	struct ctx_t *suspended_list;
-	struct ctx_t *zombie_list;
-	struct ctx_t *finished_list;
+	int context_count, context_max;
+	int running_count, running_max;
+	int suspended_count, suspended_max;
+	int zombie_count, zombie_max;
+	int finished_count, finished_max;
+	struct ctx_t *context_list_head, *context_list_tail;
+	struct ctx_t *running_list_head, *running_list_tail;
+	struct ctx_t *suspended_list_head, *suspended_list_tail;
+	struct ctx_t *zombie_list_head, *zombie_list_tail;
+	struct ctx_t *finished_list_head, *finished_list_tail;
 };
 
 enum ke_list_enum {
@@ -509,7 +508,8 @@ enum ke_list_enum {
 	ke_list_finished
 };
 
-void ke_list_insert(enum ke_list_enum list, struct ctx_t *ctx);
+void ke_list_insert_head(enum ke_list_enum list, struct ctx_t *ctx);
+void ke_list_insert_tail(enum ke_list_enum list, struct ctx_t *ctx);
 void ke_list_remove(enum ke_list_enum list, struct ctx_t *ctx);
 int ke_list_member(enum ke_list_enum list, struct ctx_t *ctx);
 

@@ -266,7 +266,7 @@ void p_load_progs(int argc, char **argv, char *ctxfile)
 	if (*ctxfile)
 		ld_load_prog_from_ctxconfig(ctxfile);
 	p_context_map_update();
-	if (!ke->context_list)
+	if (!ke->context_list_head)
 		fatal("no executable loaded");
 }
 
@@ -370,7 +370,7 @@ void p_context_map_update(void)
 	struct ctx_t *ctx;
 	int core, thread;
 	
-	for (ctx = ke->context_list; ctx; ctx = ctx->context_next)
+	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_next)
 		p_context_map(ctx, &core, &thread);
 }
 
@@ -394,7 +394,7 @@ void p_stages()
 {
 	/* Kernel is stuck if all contexts are suspended and
 	 * there is no timer pending. */
-	if (!ke->running_list && !ke->event_timer_next)
+	if (!ke->running_list_head && !ke->event_timer_next)
 		fatal("all contexts suspended");
 
 	/* Time ellapsed since last call to p_stages */
@@ -426,15 +426,15 @@ void p_fast_forward(uint64_t cycles)
 	struct ctx_t *ctx;
 	int core, thread;
 
-	while (cycles && ke->context_list) {
+	while (cycles && ke->context_list_head) {
 		
 		/* Kernel is stuck if all contexts are suspended and
 		 * there is no timer pending. */
-		if (!ke->running_list && !ke->event_timer_next)
+		if (!ke->running_list_head && !ke->event_timer_next)
 			fatal("all contexts suspended");
 
 		/* Run one instruction from each running context */
-		for (ctx = ke->running_list; ctx; ctx = ctx->running_next)
+		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
 			ctx_execute_inst(ctx);
 
 		/* Check for timer events */

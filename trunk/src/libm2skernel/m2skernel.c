@@ -61,13 +61,13 @@ void ke_done(void)
 	struct ctx_t *ctx;
 
 	/* Finish all contexts */
-	for (ctx = ke->context_list; ctx; ctx = ctx->context_next)
+	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_next)
 		if (!ctx_get_status(ctx, ctx_finished))
 			ctx_finish(ctx, 0);
 
 	/* Free contexts */
-	while (ke->context_list)
-		ctx_free(ke->context_list);
+	while (ke->context_list_head)
+		ctx_free(ke->context_list_head);
 
 	pipemgr_done();
 	free(ke);
@@ -83,16 +83,16 @@ void ke_run(void)
 
 	/* Kernel is stuck if all contexts are suspended and
 	 * there is no timer pending. */
-	if (!ke->running_list && !ke->event_timer_next)
+	if (!ke->running_list_head && !ke->event_timer_next)
 		fatal("all contexts suspended");
 
 	/* Run an instruction from every running process */
-	for (ctx = ke->running_list; ctx; ctx = ctx->running_next)
+	for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
 		ctx_execute_inst(ctx);
 	
 	/* Free finished contexts */
-	while (ke->finished_list)
-		ctx_free(ke->finished_list);
+	while (ke->finished_list_head)
+		ctx_free(ke->finished_list_head);
 
 	/* Check for timer events */
 	if (ke->event_timer_next && ke->event_timer_next < ke_timer())
@@ -104,7 +104,7 @@ void ke_dump(FILE *f)
 {
 	struct ctx_t *ctx;
 	int n = 0;
-	ctx = ke->context_list;
+	ctx = ke->context_list_head;
 	fprintf(f, "List of kernel contexts (arbitrary order):\n");
 	while (ctx) {
 		fprintf(f, "kernel context #%d:\n", n);
@@ -115,33 +115,57 @@ void ke_dump(FILE *f)
 }
 
 
-#define LIST_INSERT(name, ctx) { \
+#define LIST_INSERT_HEAD(name, ctx) { \
 	assert(!ctx->name##_next && !ctx->name##_prev); \
-	ctx->name##_next = ke->name##_list; \
+	ctx->name##_next = ke->name##_list_head; \
 	if (ctx->name##_next) ctx->name##_next->name##_prev = ctx; \
-	ke->name##_list = ctx; \
+	ke->name##_list_head = ctx; \
+	if (!ke->name##_list_tail) ke->name##_list_tail = ctx; \
+	ke->name##_count++; \
+	ke->name##_max = MAX(ke->name##_max, ke->name##_count); }
+
+#define LIST_INSERT_TAIL(name, ctx) { \
+	assert(!ctx->name##_next && !ctx->name##_prev); \
+	ctx->name##_prev = ke->name##_list_tail; \
+	if (ctx->name##_prev) ctx->name##_prev->name##_next = ctx; \
+	ke->name##_list_tail = ctx; \
+	if (!ke->name##_list_head) ke->name##_list_head = ctx; \
 	ke->name##_count++; }
 
 #define LIST_REMOVE(name, ctx) { \
-	if (ctx == ke->name##_list) ke->name##_list = ke->name##_list->name##_next; \
+	if (ctx == ke->name##_list_head) ke->name##_list_head = ke->name##_list_head->name##_next; \
+	if (ctx == ke->name##_list_tail) ke->name##_list_tail = ke->name##_list_tail->name##_prev; \
 	if (ctx->name##_prev) ctx->name##_prev->name##_next = ctx->name##_next; \
 	if (ctx->name##_next) ctx->name##_next->name##_prev = ctx->name##_prev; \
 	ctx->name##_prev = ctx->name##_next = NULL; \
 	ke->name##_count--; }
 
 #define LIST_MEMBER(name, ctx) \
-	(ke->name##_list == ctx || ctx->name##_prev || ctx->name##_next)
+	(ke->name##_list_head == ctx || ctx->name##_prev || ctx->name##_next)
 
 
-void ke_list_insert(enum ke_list_enum list, struct ctx_t *ctx)
+void ke_list_insert_head(enum ke_list_enum list, struct ctx_t *ctx)
 {
 	assert(!ke_list_member(list, ctx));
 	switch (list) {
-	case ke_list_context: LIST_INSERT(context, ctx); break;
-	case ke_list_running: LIST_INSERT(running, ctx); break;
-	case ke_list_finished: LIST_INSERT(finished, ctx); break;
-	case ke_list_zombie: LIST_INSERT(zombie, ctx); break;
-	case ke_list_suspended: LIST_INSERT(suspended, ctx); break;
+	case ke_list_context: LIST_INSERT_HEAD(context, ctx); break;
+	case ke_list_running: LIST_INSERT_HEAD(running, ctx); break;
+	case ke_list_finished: LIST_INSERT_HEAD(finished, ctx); break;
+	case ke_list_zombie: LIST_INSERT_HEAD(zombie, ctx); break;
+	case ke_list_suspended: LIST_INSERT_HEAD(suspended, ctx); break;
+	}
+}
+
+
+void ke_list_insert_tail(enum ke_list_enum list, struct ctx_t *ctx)
+{
+	assert(!ke_list_member(list, ctx));
+	switch (list) {
+	case ke_list_context: LIST_INSERT_TAIL(context, ctx); break;
+	case ke_list_running: LIST_INSERT_TAIL(running, ctx); break;
+	case ke_list_finished: LIST_INSERT_TAIL(finished, ctx); break;
+	case ke_list_zombie: LIST_INSERT_TAIL(zombie, ctx); break;
+	case ke_list_suspended: LIST_INSERT_TAIL(suspended, ctx); break;
 	}
 }
 
@@ -205,7 +229,7 @@ void ke_event_timer()
 
 	/* Look at the list of suspended contexts and try to find
 	 * one that needs to be woken up. */
-	for (ctx = ke->suspended_list; ctx; ctx = next) {
+	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
 
 		/* Save next */
 		next = ctx->suspended_next;
@@ -255,7 +279,7 @@ void ke_event_read()
 {
 	struct ctx_t *ctx, *next;
 
-	for (ctx = ke->suspended_list; ctx; ctx = next) {
+	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
 
 		/* Save next */
 		next = ctx->suspended_next;
@@ -307,7 +331,7 @@ void ke_event_write()
 {
 	struct ctx_t *ctx, *next;
 
-	for (ctx = ke->suspended_list; ctx; ctx = next) {
+	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
 
 		/* Save next */
 		next = ctx->suspended_next;
@@ -359,7 +383,7 @@ void ke_event_signal()
 {
 	struct ctx_t *ctx, *next;
 
-	for (ctx = ke->suspended_list; ctx; ctx = next) {
+	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
 
 		/* Save next */
 		next = ctx->suspended_next;
@@ -409,7 +433,7 @@ void ke_event_finish()
 {
 	struct ctx_t *ctx, *next;
 
-	for (ctx = ke->suspended_list; ctx; ctx = next) {
+	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
 
 		/* Save next */
 		next = ctx->suspended_next;
