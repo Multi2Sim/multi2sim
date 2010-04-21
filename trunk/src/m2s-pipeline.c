@@ -721,7 +721,7 @@ void ctx_update_display(struct ctx_t *ctx)
 			wattron(ctx->wnd, COLOR_PAIR(color));
 
 			/* Print */
-			buf_fill(buf, 3, '.');
+			buf_fill(buf, 3, color == 2 ? '_' : '.');
 			x = ctx->topx + ctx->mop_header_width + ctx->uop_header_width +
 				(cycle - ctx->leftcycle) * ctx->col_width;
 			mvwprintw(ctx->wnd, y, x, buf);
@@ -754,6 +754,7 @@ void ctx_update_display(struct ctx_t *ctx)
 	wrefresh(ctx->wnd);
 }
 
+
 /* Draw window */
 void update_display(void)
 {
@@ -762,10 +763,51 @@ void update_display(void)
 	for (i = 0; i < ctx_count; i++)
 		ctx_update_display(ctx_array[i]);
 	wattron(mainwnd, COLOR_PAIR(9));
-	sprintf(buf, "Keypad=move table, w=swap window, n/b=next/prev cycle, N/B=next/back all windows, s=synch, PgUp/PgDn=next/back cycles, q=exit");
+	sprintf(buf, "Keypad-move table; s-swap window; h-help; q-quit");
 	buf_fill(buf, COLS, ' ');
 	mvwprintw(mainwnd, LINES - 1, 0, buf);
 	wattroff(mainwnd, COLOR_PAIR(9));
+}
+
+
+/* Help window */
+void show_help(void)
+{
+	char buf[500];
+	werase(mainwnd);
+
+	/* Help */
+	mvwprintw(mainwnd, 0, 0, "Keyboard commands:\n");
+	wprintw(mainwnd, "\n");
+
+	wprintw(mainwnd, "  n       Next cycle\n");
+	wprintw(mainwnd, "  N       Next cycle in all windows\n");
+	wprintw(mainwnd, "  b       Previous cycle\n");
+	wprintw(mainwnd, "  B       Previous cycle in all windows\n");
+	wprintw(mainwnd, "PgDown    Forward chronogram\n");
+	wprintw(mainwnd, " PgUp     Rewind chronogram\n");
+	wprintw(mainwnd, "Arrows    Scroll chronogram\n");
+	wprintw(mainwnd, " Home     Go to first cycle\n");
+	wprintw(mainwnd, "  End     Go to last cycle\n");
+	wprintw(mainwnd, "\n");
+
+	wprintw(mainwnd, "  s       Synchronize all windows (go to same cycle)\n");
+	wprintw(mainwnd, "  w       Switch current window\n");
+	wprintw(mainwnd, "  m       Show/hide macroinstructions\n");
+	wprintw(mainwnd, "  q       Quit\n");
+	wprintw(mainwnd, "\n");
+
+	wprintw(mainwnd, " 0-9      Write cycle or uop sequence number\n");
+	wprintw(mainwnd, "  g       Go to cycle\n");
+
+	/* Status bar */
+	sprintf(buf, "Press any key to continue...");
+	buf_fill(buf, COLS, ' ');
+	wattron(mainwnd, COLOR_PAIR(8));
+	mvwprintw(mainwnd, LINES - 1, 0, buf);
+	wattroff(mainwnd, COLOR_PAIR(8));
+	wrefresh(mainwnd);
+	wgetch(mainwnd);
 }
 
 
@@ -926,6 +968,10 @@ int main(int argc, char **argv)
 
 		case 'm':
 			show_mops = !show_mops;
+			break;
+
+		case 'h':
+			show_help();
 			break;
 
 		case KEY_BACKSPACE:
