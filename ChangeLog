@@ -511,3 +511,6 @@
 2010-04-16
 	* m2s-pipeline.c: KEY_RESIZE event.
 
+2010-04-21
+	* loader.c: error message for wrong stdin/stdout.
+
