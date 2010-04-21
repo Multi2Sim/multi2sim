@@ -426,8 +426,10 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 	ld->stdout_fd = *stdout_file_fullpath ?
 		open(stdout_file_fullpath, O_CREAT | O_APPEND |
 		O_TRUNC | O_WRONLY, 0660) : 1;
-	if (ld->stdin_fd < 0 || ld->stdout_fd < 0)
-		fatal("%s: cannot open stdin/stdout", exe);
+	if (ld->stdin_fd < 0)
+		fatal("%s: cannot open stdin", ld->stdin_file);
+	if (ld->stdout_fd < 0)
+		fatal("%s: cannot open stdout", ld->stdout_file);
 	ld_debug("\nFile descriptors:\n  stdin=%d, stdout=%d\n",
 		ld->stdin_fd, ld->stdout_fd);
 	
