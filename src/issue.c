@@ -77,8 +77,9 @@ static int issue_sq(int core, int thread, int quant)
 		sq_remove(core, thread);
 
 		/* Instruction issued */
-		THREAD.issued++;
-		p->issued++;
+		THREAD.issued[store->uop]++;
+		CORE.issued[store->uop]++;
+		p->issued[store->uop]++;
 		quant--;
 		
 		/* Debug */
@@ -133,8 +134,9 @@ static int issue_lq(int core, int thread, int quant)
 		load->in_eventq = 1;
 		
 		/* Instruction issued */
-		THREAD.issued++;
-		p->issued++;
+		THREAD.issued[load->uop]++;
+		CORE.issued[load->uop]++;
+		p->issued[load->uop]++;
 		quant--;
 		
 		/* Debug */
@@ -176,7 +178,7 @@ static int issue_iq(int core, int thread, int quant)
 		if (!uop->fu_class) {
 			lat = 1;
 		} else {
-			lat = fu_reserve(CORE.fu, uop->fu_class);
+			lat = fu_reserve(uop);
 			if (!lat) {
 				lnlist_next(iq);
 				continue;
@@ -196,8 +198,9 @@ static int issue_iq(int core, int thread, int quant)
 		eventq_insert(CORE.eventq, uop);
 		
 		/* Instruction issued */
-		THREAD.issued++;
-		p->issued++;
+		THREAD.issued[uop->uop]++;
+		CORE.issued[uop->uop]++;
+		p->issued[uop->uop]++;
 		quant--;
 
 		/* Debug */

@@ -57,6 +57,21 @@ FILE *open_read(char *fname)
 }
 
 
+int can_open_read(char *fname)
+{
+	FILE *f;
+	if (!fname[0])
+		return 0;
+	if (!strcmp(fname, "stdout") || !strcmp(fname, "stderr"))
+		return 0;
+	f = fopen(fname, "rt");
+	if (!f)
+		return 0;
+	fclose(f);
+	return 1;
+}
+
+
 FILE *open_write(char *fname)
 {
 	if (!fname[0])
@@ -67,6 +82,21 @@ FILE *open_write(char *fname)
 		return stderr;
 	else
 		return fopen(fname, "wt");
+}
+
+
+int can_open_write(char *fname)
+{
+	FILE *f;
+	if (!fname[0])
+		return 0;
+	if (!strcmp(fname, "stdout") || !strcmp(fname, "stderr"))
+		return 1;
+	f = fopen(fname, "wt");
+	if (!f)
+		return 0;
+	fclose(f);
+	return 1;
 }
 
 

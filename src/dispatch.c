@@ -57,7 +57,7 @@ static int dispatch_thread(int core, int thread, int quant)
 		/* Check if we can decode */
 		stall = can_dispatch_thread(core, thread);
 		if (stall != di_stall_used) {
-			p->di_stall[stall] += quant;
+			CORE.di_stall[stall] += quant;
 			break;
 		}
 	
@@ -82,9 +82,10 @@ static int dispatch_thread(int core, int thread, int quant)
 		
 		/* Another instruction dispatched */
 		uop->di_seq = ++CORE.di_seq;
-		p->di_stall[uop->specmode ? di_stall_spec : di_stall_used]++;
-		p->dispatched++;
-		THREAD.dispatched++;
+		CORE.di_stall[uop->specmode ? di_stall_spec : di_stall_used]++;
+		THREAD.dispatched[uop->uop]++;
+		CORE.dispatched[uop->uop]++;
+		p->dispatched[uop->uop]++;
 		quant--;
 
 		/* Pipeline debug */

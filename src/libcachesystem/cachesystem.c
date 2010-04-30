@@ -24,6 +24,7 @@
 static int cores = 0;
 static int threads = 0;
 static int ccache_count = 0;
+static int tlb_count = 0;
 static int net_count = 0;
 static uint64_t access_counter = 0;
 
@@ -55,20 +56,10 @@ struct ccache_t *ccache_create()
 
 void ccache_free(struct ccache_t *ccache)
 {
-	/* Print stats - only if cache was accessed */
-	if (ccache->accesses) {
-		fprintf(stderr, "%s.accesses  %lld  # Number of accesses\n",
-			ccache->name, (long long) ccache->accesses);
-		if (ccache->lonet) {
-			fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
-				ccache->name, ccache->accesses ? (double) ccache->hits /
-				ccache->accesses : 0.0);
-			fprintf(stderr, "%s.hits  %lld  # Number of hits\n",
-				ccache->name, (long long) ccache->hits);
-			fprintf(stderr, "%s.evicts  %lld  # Number of evictions\n",
-				ccache->name, (long long) ccache->evicts);
-		}
-	}
+	/* Stats summary, only hitratio (for full stats, print report) */
+	if (ccache->lonet && ccache->accesses)
+		fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
+			ccache->name, (double) ccache->hits / ccache->accesses);
 
 	/* Free cache */
 	if (ccache->dir)
@@ -288,13 +279,9 @@ struct tlb_t *tlb_create()
 void tlb_free(struct tlb_t *tlb)
 {
 	/* Print stats */
-	if (tlb->accesses) {
-		fprintf(stderr, "%s.accesses  %lld  # Number of accesses to the tlb\n",
-			tlb->name, (long long) tlb->accesses);
-		fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
-			tlb->name, tlb->accesses ? (double) tlb->hits /
-			tlb->accesses : 0.0);
-	}
+	if (tlb->accesses)
+		fprintf(stderr, "%s.hitratio  %.4g  # TLB hit ratio\n",
+			tlb->name, (double) tlb->hits / tlb->accesses);
 	
 	/* Free */
 	if (tlb->cache)
@@ -344,6 +331,7 @@ int EV_CACHE_SYSTEM_ACCESS_TLB;
 int EV_CACHE_SYSTEM_ACCESS_FINISH;
 
 char *cache_config_file = "";
+char *cache_system_report_file = "";
 struct config_t *cache_config;
 int cache_min_block_size = 0;
 int cache_max_block_size = 0;
@@ -484,6 +472,11 @@ void cache_system_init(int _cores, int _threads)
 	char buf[200];
 	enum cache_policy_enum policy;
 	char *policy_str;
+
+	/* Try to open report file */
+	if (cache_system_report_file[0] && !can_open_write(cache_system_report_file))
+		fatal("%s: cannot open cache system report file",
+			cache_system_report_file);
 
 	/* Initializations */
 	cores = _cores;
@@ -753,6 +746,7 @@ void cache_system_init(int _cores, int _threads)
 	/* Create tlbs */
 	section = "Tlb";
 	tlb_array = calloc(cores * threads, sizeof(void *));
+	tlb_count = cores * threads;
 	for (core = 0; core < cores; core++) {
 		for (thread = 0; thread < threads; thread++) {
 			tlb = tlb_array[core * threads + thread] = tlb_create();
@@ -767,9 +761,54 @@ void cache_system_init(int _cores, int _threads)
 }
 
 
+void cache_system_dump_report()
+{
+	struct ccache_t *ccache;
+	struct tlb_t *tlb;
+	FILE *f;
+	int curr;
+
+	/* Open file */
+	f = open_write(cache_system_report_file);
+	if (!f)
+		return;
+	
+	/* Report for each cache */
+	for (curr = 0; curr < ccache_count; curr++) {
+		ccache = ccache_array[curr];
+		fprintf(f, "[ %s ]\n", ccache->name);
+		fprintf(f, "Accesses = %lld\n", (long long) ccache->accesses);
+		fprintf(f, "Hits = %lld\n", (long long) ccache->hits);
+		fprintf(f, "Misses = %lld\n", (long long) (ccache->accesses - ccache->hits));
+		fprintf(f, "HitRatio = %.4g\n", ccache->accesses ?
+			(double) ccache->hits / ccache->accesses : 0.0);
+		fprintf(f, "Evictions = %lld\n", (long long) ccache->evictions);
+		fprintf(f, "\n");
+	}
+
+	/* Report for each TLB */
+	for (curr = 0; curr < tlb_count; curr++) {
+		tlb = tlb_array[curr];
+		fprintf(f, "[ %s ]\n", tlb->name);
+		fprintf(f, "Accesses = %lld\n", (long long) tlb->accesses);
+		fprintf(f, "Hits = %lld\n", (long long) tlb->hits);
+		fprintf(f, "Misses = %lld\n", (long long) (tlb->accesses - tlb->hits));
+		fprintf(f, "HitRatio = %.4g\n", tlb->accesses ?
+			(double) tlb->hits / tlb->accesses : 0.0);
+		fprintf(f, "\n");
+	}
+
+	/* Done */
+	fclose(f);
+}
+
+
 void cache_system_done()
 {
 	int i;
+
+	/* Dump report */
+	cache_system_dump_report();
 
 	/* Free ccache_array */
 	for (i = 0; i < ccache_count; i++)
