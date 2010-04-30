@@ -300,7 +300,7 @@ struct ccache_t {
 	uint64_t accesses;
 	uint64_t reads;
 	uint64_t hits;
-	uint64_t evicts;
+	uint64_t evictions;
 };
 
 struct ccache_t *ccache_create();
@@ -342,6 +342,7 @@ void tlb_free(struct tlb_t *tlb);
 
 /* Cache System */
 
+extern char *cache_system_report_file;
 extern int cache_min_block_size;
 extern int cache_max_block_size;
 extern struct ccache_t *main_memory;

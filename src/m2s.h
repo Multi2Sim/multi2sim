@@ -28,8 +28,9 @@
 
 
 
-/* Current simulation cycle */
+/* Current simulation cycle and total committed inst */
 extern uint64_t sim_cycle;
+extern uint64_t sim_inst;
 
 
 /* Environment variables */
@@ -44,6 +45,7 @@ extern int error_debug_category;
 
 /* Processor parameters */
 
+extern char *p_report_file;
 extern int p_stage_time_stats;
 extern uint32_t p_cores;
 extern uint32_t p_threads;
@@ -263,6 +265,7 @@ struct uop_t {
 
 	/* Cycles */
 	uint64_t when;  /* cycle when ready */
+	uint64_t issue_try_when;  /* first cycle when f.u. is tried to be reserved */
 	uint64_t issue_when;  /* cycle when issued */
 
 	/* Branch prediction */
@@ -289,14 +292,21 @@ int uop_exists(struct uop_t *uop);
 
 /* Functional Units */
  
-struct fu_t;
+#define FU_RES_MAX	10
+
+struct fu_t {
+	uint64_t cycle_when_free[fu_count][FU_RES_MAX];
+	uint64_t accesses[fu_count];
+	uint64_t denied[fu_count];
+	uint64_t waiting_time[fu_count];
+};
 
 void fu_reg_options(void);
 void fu_init(void);
 void fu_done(void);
 
-int fu_reserve(struct fu_t *fu, int class);
-void fu_release(struct fu_t *fu);
+int fu_reserve(struct uop_t *uop);
+void fu_release(int core);
 
 
 
@@ -623,10 +633,12 @@ struct processor_thread_t {
 
 	/* Stats */
 	uint64_t fetched;
-	uint64_t dispatched;
-	uint64_t issued;
-	uint64_t committed;
-	uint64_t fpcommitted;
+	uint64_t dispatched[uop_count];
+	uint64_t issued[uop_count];
+	uint64_t committed[uop_count];
+	uint64_t squashed;
+	uint64_t branches;
+	uint64_t mispred;
 	uint64_t last_commit_cycle;
 };
 
@@ -660,6 +672,15 @@ struct processor_core_t {
 	int dispatch_current;
 	int issue_current;
 	int commit_current;
+
+	/* Stats */
+	uint64_t di_stall[di_stall_max];
+	uint64_t dispatched[uop_count];
+	uint64_t issued[uop_count];
+	uint64_t committed[uop_count];
+	uint64_t squashed;
+	uint64_t branches;
+	uint64_t mispred;
 };
 
 
@@ -670,22 +691,21 @@ struct processor_t {
 	struct processor_core_t *core;
 
 	/* Some fields */
-	uint64_t seq;  /* seq num assigned to last instr (with pre-incr) */
+	uint64_t seq;  /* Seq num assigned to last instr (with pre-incr) */
 	char *stage;  /* Name of currently simulated stage */
 	int context_map_count;  /* Number of contexts mapped to threads */
 	
 	/* Structures */
-	struct mm_t *mm;		/* memory management unit */
+	struct mm_t *mm;  /* Memory management unit */
 	
 	/* Statistics */
 	uint64_t fetched;
-	uint64_t dispatched;
-	uint64_t issued;
-	uint64_t committed;
+	uint64_t dispatched[uop_count];
+	uint64_t issued[uop_count];
+	uint64_t committed[uop_count];
 	uint64_t squashed;
 	uint64_t branches;
 	uint64_t mispred;
-	uint64_t di_stall[di_stall_max];
 	double time;
 
 	uint64_t occupancy_count;

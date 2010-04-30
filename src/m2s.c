@@ -51,8 +51,9 @@ static char *esim_debug_file_name = "";
 static char *error_debug_file_name = "";
 
 
-/* Simulation cycle */
+/* Simulation cycle and total committed inst */
 uint64_t sim_cycle;
+uint64_t sim_inst;
 
 
 /* Error debug */
@@ -63,22 +64,25 @@ int error_debug_category;
 
 static void sim_reg_options()
 {
-	opt_reg_string("-title", "simulation title", &sim_title);
-	opt_reg_string("-config", "processor configuration file", &configfile);
-	opt_reg_string("-ctxconfig", "context configuration file", &ctxfile);
+	opt_reg_string("-title", "Simulation title", &sim_title);
+	opt_reg_string("-config", "Processor configuration file", &configfile);
+	opt_reg_string("-ctxconfig", "Context configuration file", &ctxfile);
 
-	opt_reg_uint64("-max_cycles", "cycle to stop program (0=no stop)", &max_cycles);
-	opt_reg_uint64("-max_inst", "max number of retireed instructions (0=no max)", &max_inst);
-	opt_reg_uint64("-max_time", "max running time (in seconds)", &max_time);
-	opt_reg_uint64("-fastfwd", "cycles to run with fast simulation", &fastfwd);
+	opt_reg_uint64("-max_cycles", "Cycle to stop program (0=no stop)", &max_cycles);
+	opt_reg_uint64("-max_inst", "Max number of retireed instructions (0=no max)", &max_inst);
+	opt_reg_uint64("-max_time", "Max running time (in seconds)", &max_time);
+	opt_reg_uint64("-fastfwd", "Cycles to run with fast simulation", &fastfwd);
 
-	opt_reg_string("-debug:syscall", "debug information for system calls", &syscall_debug_file_name);
-	opt_reg_string("-debug:loader", "debug information from program loader", &loader_debug_file_name);
-	opt_reg_string("-debug:call", "debug information about procedure calls", &isa_call_debug_file_name);
-	opt_reg_string("-debug:inst", "debug information about executed instructions", &isa_inst_debug_file_name);
-	opt_reg_string("-debug:cache", "debug information for cache system", &cache_debug_file_name);
-	opt_reg_string("-debug:pipeline", "debug information for pipeline", &esim_debug_file_name);
-	opt_reg_string("-debug:error", "debug information after errors", &error_debug_file_name);
+	opt_reg_string("-debug:syscall", "Debug information for system calls", &syscall_debug_file_name);
+	opt_reg_string("-debug:loader", "Debug information from program loader", &loader_debug_file_name);
+	opt_reg_string("-debug:call", "Debug information about procedure calls", &isa_call_debug_file_name);
+	opt_reg_string("-debug:inst", "Debug information about executed instructions", &isa_inst_debug_file_name);
+	opt_reg_string("-debug:cache", "Debug information for cache system", &cache_debug_file_name);
+	opt_reg_string("-debug:pipeline", "Debug information for pipeline", &esim_debug_file_name);
+	opt_reg_string("-debug:error", "Debug information after errors", &error_debug_file_name);
+
+	opt_reg_string("-report:pipeline", "Report for pipeline statistics", &p_report_file);
+	opt_reg_string("-report:cache", "Report for cache system", &cache_system_report_file);
 }
 
 
@@ -205,7 +209,7 @@ int main(int argc, char **argv)
 			break;
 		if (max_cycles && sim_cycle >= max_cycles)
 			break;
-		if (max_inst && p->committed >= max_inst)
+		if (max_inst && sim_inst >= max_inst)
 			break;
 		if (max_time && !(sim_cycle % 10000) && ke_timer() > max_time * 1000000)
 			break;

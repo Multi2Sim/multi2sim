@@ -82,10 +82,6 @@ void mmu_done()
 	struct mmu_page_t *page;
 	int i;
 
-	/* Memory usage stat */
-	fprintf(stderr, "mmu.phys_mem  %u  # Physical memory allocated\n",
-		mmu->page_count * mmu_page_size);
-
 	/* Free */
 	for (i = 0; i < mmu->page_count; i++) {
 		page = mmu->page_list[i];

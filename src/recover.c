@@ -51,6 +51,8 @@ void p_recover(int core, int thread)
 		/* Stats */
 		if (uop->fetch_tcache)
 			THREAD.tcache->squashed++;
+		THREAD.squashed++;
+		CORE.squashed++;
 		p->squashed++;
 		
 		/* Undo map */

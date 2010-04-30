@@ -31,6 +31,7 @@ uint32_t p_threads = 1;
 uint32_t p_quantum = 1000;
 uint32_t p_switch_penalty = 0;
 int p_occupancy_stats = 0;
+char *p_report_file = "";
 
 enum p_recover_kind_enum p_recover_kind = p_recover_kind_writeback;
 uint32_t p_recover_penalty = 0;
@@ -109,6 +110,178 @@ void p_reg_options()
 }
 
 
+void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix)
+{
+	uint64_t icomp = 0;
+	uint64_t lcomp = 0;
+	uint64_t fcomp = 0;
+	uint64_t mem = 0;
+	uint64_t ctrl = 0;
+	uint64_t total = 0;
+
+#define UOP(_uop, _fu, _flags) \
+	fprintf(f, "%s.Uop." #_uop " = %lld\n", prefix, (long long) uop_stats[uop_##_uop]); \
+	if ((_flags) & FICOMP) icomp += uop_stats[uop_##_uop]; \
+	if ((_flags) & FLCOMP) lcomp += uop_stats[uop_##_uop]; \
+	if ((_flags) & FFCOMP) fcomp += uop_stats[uop_##_uop]; \
+	if ((_flags) & FMEM) mem += uop_stats[uop_##_uop]; \
+	if ((_flags) & FCTRL) ctrl += uop_stats[uop_##_uop]; \
+	total += uop_stats[uop_##_uop];
+#include "uop1.dat"
+#undef UOP
+
+	fprintf(f, "%s.Integer = %lld\n", prefix, (long long) icomp);
+	fprintf(f, "%s.Logical = %lld\n", prefix, (long long) lcomp);
+	fprintf(f, "%s.FloatingPoint = %lld\n", prefix, (long long) fcomp);
+	fprintf(f, "%s.Memory = %lld\n", prefix, (long long) mem);
+	fprintf(f, "%s.Ctrl = %lld\n", prefix, (long long) ctrl);
+	fprintf(f, "%s.Total = %lld\n", prefix, (long long) total);
+	fprintf(f, "%s.IPC = %.4g\n", prefix, sim_cycle ? (double) total / sim_cycle : 0.0);
+	fprintf(f, "\n");
+}
+
+
+#define DUMP_FU_STAT(NAME, ITEM) { \
+	fprintf(f, "fu." #NAME ".Accesses = %lld\n", (long long) CORE.fu->accesses[ITEM]); \
+	fprintf(f, "fu." #NAME ".Denied = %lld\n", (long long) CORE.fu->denied[ITEM]); \
+	fprintf(f, "fu." #NAME ".WaitingTime = %.4g\n", CORE.fu->accesses[ITEM] ? \
+		(double) CORE.fu->waiting_time[ITEM] / CORE.fu->accesses[ITEM] : 0.0); \
+}
+#define DUMP_DISPATCH_STAT(NAME) fprintf(f, "Dispatch.Stall." #NAME " = %lld\n", (long long) CORE.di_stall[di_stall_##NAME])
+void p_dump_report()
+{
+	FILE *f;
+	int core, thread;
+
+	/* Open file */
+	f = open_write(p_report_file);
+	if (!f)
+		return;
+	
+	/* Report for the complete processor */
+	fprintf(f, "# Global statistics\n");
+	fprintf(f, "[ global ]\n\n");
+
+	/* Dispatch stage */
+	fprintf(f, "# Dispatch stage\n");
+	p_dump_uop_report(f, p->dispatched, "Dispatch");
+
+	/* Issue stage */
+	fprintf(f, "# Issue stage\n");
+	p_dump_uop_report(f, p->issued, "Issue");
+
+	/* Commit stage */
+	fprintf(f, "# Commit stage\n");
+	p_dump_uop_report(f, p->committed, "Commit");
+
+	/* Committed branches */
+	fprintf(f, "# Committed branches\n");
+	fprintf(f, "#    Branches - Number of committed control uops\n");
+	fprintf(f, "#    Squashed - Number of mispredicted uops squashed from the ROB\n");
+	fprintf(f, "#    Mispred - Number of mispredicted branches in the correct path\n");
+	fprintf(f, "#    PredAcc - Prediction accuracy\n");
+	fprintf(f, "Commit.Branches = %lld\n", (long long) p->branches);
+	fprintf(f, "Commit.Squashed = %lld\n", (long long) p->mispred);
+	fprintf(f, "Commit.Mispred = %lld\n", (long long) p->mispred);
+	fprintf(f, "Commit.PredAcc = %.4g\n", p->branches ?
+		(double) (p->branches - p->mispred) / p->branches : 0.0);
+	
+	/* Report for each core */
+	FOREACH_CORE {
+		
+		/* Core */
+		fprintf(f, "# Statistics for core %d\n", core);
+		fprintf(f, "[ c%d ]\n\n", core);
+
+		/* Functional units */
+		fprintf(f, "# Functional unit pool\n");
+		fprintf(f, "#    Accesses - Number of uops issued to a f.u.\n");
+		fprintf(f, "#    Denied - Number of requests denied due to busy f.u.\n");
+		fprintf(f, "#    WaitingTime - Average number of waiting cycles to reserve f.u.\n");
+		DUMP_FU_STAT(IntAdd, fu_intadd);
+		DUMP_FU_STAT(IntSub, fu_intsub);
+		DUMP_FU_STAT(IntMult, fu_intmult);
+		DUMP_FU_STAT(IntDiv, fu_intdiv);
+		DUMP_FU_STAT(Effaddr, fu_effaddr);
+		DUMP_FU_STAT(Logical, fu_logical);
+		DUMP_FU_STAT(FPSimple, fu_fpsimple);
+		DUMP_FU_STAT(FPAdd, fu_fpadd);
+		DUMP_FU_STAT(FPComp, fu_fpcomp);
+		DUMP_FU_STAT(FPMult, fu_fpmult);
+		DUMP_FU_STAT(FPDiv, fu_fpdiv);
+		DUMP_FU_STAT(FPComplex, fu_fpcomplex);
+		fprintf(f, "\n");
+
+		/* Dispatch slots */
+		if (p_dispatch_kind == p_dispatch_kind_timeslice) {
+			fprintf(f, "# Dispatch slots usage (sum = cycles * dispatch width)\n");
+			fprintf(f, "#    used - dispatch slot was used by a non-spec uop\n");
+			fprintf(f, "#    spec - used by a mispeculated uop\n");
+			fprintf(f, "#    ctx - no context allocated to thread\n");
+			fprintf(f, "#    uopq,rob,iq,lsq,rename - no space in structure\n");
+			DUMP_DISPATCH_STAT(used);
+			DUMP_DISPATCH_STAT(spec);
+			DUMP_DISPATCH_STAT(uopq);
+			DUMP_DISPATCH_STAT(rob);
+			DUMP_DISPATCH_STAT(iq);
+			DUMP_DISPATCH_STAT(lsq);
+			DUMP_DISPATCH_STAT(rename);
+			DUMP_DISPATCH_STAT(ctx);
+			fprintf(f, "\n");
+		}
+
+		/* Dispatch stage */
+		fprintf(f, "# Dispatch stage\n");
+		p_dump_uop_report(f, CORE.dispatched, "Dispatch");
+
+		/* Issue stage */
+		fprintf(f, "# Issue stage\n");
+		p_dump_uop_report(f, CORE.issued, "Issue");
+
+		/* Commit stage */
+		fprintf(f, "# Commit stage\n");
+		p_dump_uop_report(f, CORE.committed, "Commit");
+
+		/* Committed branches */
+		fprintf(f, "# Committed branches\n");
+		fprintf(f, "Commit.Branches = %lld\n", (long long) CORE.branches);
+		fprintf(f, "Commit.Squashed = %lld\n", (long long) CORE.mispred);
+		fprintf(f, "Commit.Mispred = %lld\n", (long long) CORE.mispred);
+		fprintf(f, "Commit.PredAcc = %.4g\n", CORE.branches ?
+			(double) (CORE.branches - CORE.mispred) / CORE.branches : 0.0);
+
+		/* Report for each thread */
+		FOREACH_THREAD {
+				fprintf(f, "# Statistics for core %d - thread %d\n", core, thread);
+			fprintf(f, "[ c%dt%d ]\n\n", core, thread);
+
+			/* Dispatch stage */
+			fprintf(f, "# Dispatch stage\n");
+			p_dump_uop_report(f, THREAD.dispatched, "Dispatch");
+
+			/* Issue stage */
+			fprintf(f, "# Issue stage\n");
+			p_dump_uop_report(f, THREAD.issued, "Issue");
+
+			/* Commit stage */
+			fprintf(f, "# Commit stage\n");
+			p_dump_uop_report(f, THREAD.committed, "Commit");
+
+			/* Committed branches */
+			fprintf(f, "# Committed branches\n");
+			fprintf(f, "Commit.Branches = %lld\n", (long long) THREAD.branches);
+			fprintf(f, "Commit.Squashed = %lld\n", (long long) THREAD.mispred);
+			fprintf(f, "Commit.Mispred = %lld\n", (long long) THREAD.mispred);
+			fprintf(f, "Commit.PredAcc = %.4g\n", THREAD.branches ?
+				(double) (THREAD.branches - THREAD.mispred) / THREAD.branches : 0.0);
+		}
+	}
+
+	/* Close */
+	fclose(f);
+}
+
+
 void p_print_stats(FILE *f)
 {
 	uint64_t now = ke_timer();
@@ -117,11 +290,11 @@ void p_print_stats(FILE *f)
 	fprintf(f, "sim.cycles  %lld  # Simulation cycles\n",
 		(long long) sim_cycle);
 	fprintf(f, "sim.inst  %lld  # Total committed instructions\n",
-		(long long) p->committed);
-	fprintf(f, "sim.ipc  %.4f  # Global IPC\n",
-		sim_cycle ? (double) p->committed / sim_cycle : 0);
-	fprintf(f, "sim.squashed  %lld  # Number of uops squashed in the ROB\n",
-		(long long) p->squashed);
+		(long long) sim_inst);
+	fprintf(f, "sim.ipc  %.4g  # Global IPC\n",
+		sim_cycle ? (double) sim_inst / sim_cycle : 0);
+	fprintf(f, "sim.predacc  %.4g  # Branch prediction accuracy\n",
+		p->branches ? (double) (p->branches - p->mispred) / p->branches : 0.0);
 	fprintf(f, "sim.time  %.1f  # Simulation time in seconds\n",
 		(double) now / 1000000);
 	fprintf(f, "sim.cps  %.0f  # Cycles simulated per second\n",
@@ -130,33 +303,7 @@ void p_print_stats(FILE *f)
 		mem_mapped_space);
 	fprintf(f, "sim.memory_max  %lu  # Maximum physical memory used by benchmarks\n",
 		mem_max_mapped_space);
-	fprintf(f, "sim.branches  %lld  # Committed branches\n",
-		(long long) p->branches);
-	fprintf(f, "sim.mispred  %lld  # Mispredicted branches in correct path\n",
-		(long long) p->mispred);
-	fprintf(f, "sim.predacc  %.4f  # Branch prediction accuracy\n",
-		p->branches ? (double) (p->branches - p->mispred) / p->branches : 0.0);
 	
-	/* Dispatch stats */
-	if (p_dispatch_kind == p_dispatch_kind_timeslice) {
-		fprintf(f, "di.stall[used]  %lld  # Dispatched slots used with committed inst\n",
-			(long long) p->di_stall[di_stall_used]);
-		fprintf(f, "di.stall[spec]  %lld  # Dispatched slots used in spec mode\n",
-			(long long) p->di_stall[di_stall_spec]);
-		fprintf(f, "di.stall[uopq]  %lld  # Wasted dispatch slots due to empty uop queue\n",
-			(long long) p->di_stall[di_stall_uopq]);
-		fprintf(f, "di.stall[rob]  %lld  # Wasted dispatch slots due to full rob\n",
-			(long long) p->di_stall[di_stall_rob]);
-		fprintf(f, "di.stall[iq]  %lld  # Wasted dispatch slots due to full iq\n",
-			(long long) p->di_stall[di_stall_iq]);
-		fprintf(f, "di.stall[lsq]  %lld  # Wasted dispatch slots due to full lsq\n",
-			(long long) p->di_stall[di_stall_lsq]);
-		fprintf(f, "di.stall[rename]  %lld  # No physical register free\n",
-			(long long) p->di_stall[di_stall_rename]);
-		fprintf(f, "di.stall[ctx]  %lld  # Dispatch stalled due to absence of running context\n",
-			(long long) p->di_stall[di_stall_ctx]);
-	}
-
 	/* Stage time stats */
 	if (p_stage_time_stats && sim_cycle) {
 		fprintf(f, "stage_time.fetch  %.3f  # Time for stage in us/cycle\n",
@@ -185,6 +332,8 @@ void p_print_stats(FILE *f)
 			p->occupancy_count ? (double) p->occupancy_rob_acc / p->occupancy_count : 0);
 	}
 	
+	/* Report */
+	p_dump_report();
 }
 
 
@@ -278,8 +427,8 @@ void p_dump(FILE *f)
 	/* General information */
 	fprintf(f, "\n");
 	fprintf(f, "sim.last_dump  %lld  # Cycle of last dump\n", (long long) p->last_dump);
-	fprintf(f, "sim.ipc_last_dump  %.4f  # IPC since last dump\n", sim_cycle - p->last_dump > 0 ?
-		(double) (p->committed - p->last_committed) / (sim_cycle - p->last_dump) : 0);
+	fprintf(f, "sim.ipc_last_dump  %.4g  # IPC since last dump\n", sim_cycle - p->last_dump > 0 ?
+		(double) (sim_inst - p->last_committed) / (sim_cycle - p->last_dump) : 0);
 	fprintf(f, "\n");
 
 	/* Cores */
@@ -316,7 +465,7 @@ void p_dump(FILE *f)
 
 	/* Register last dump */
 	p->last_dump = sim_cycle;
-	p->last_committed = p->committed;
+	p->last_committed = sim_inst;
 }
 
 
