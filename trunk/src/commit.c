@@ -88,14 +88,21 @@ static void commit_thread(int core, int thread, int quant)
 			
 		/* Stats */
 		THREAD.last_commit_cycle = sim_cycle;
-		THREAD.committed++;
-		p->committed++;
+		THREAD.committed[uop->uop]++;
+		CORE.committed[uop->uop]++;
+		p->committed[uop->uop]++;
+		sim_inst++;
 		if (uop->fetch_tcache)
 			THREAD.tcache->committed++;
 		if (uop->flags & FCTRL) {
+			THREAD.branches++;
+			CORE.branches++;
 			p->branches++;
-			if (uop->neip != uop->pred_neip)
+			if (uop->neip != uop->pred_neip) {
+				THREAD.mispred++;
+				CORE.mispred++;
 				p->mispred++;
+			}
 		}
 
 		/* Debug */
@@ -112,7 +119,7 @@ static void commit_thread(int core, int thread, int quant)
 		 * recovers at commit. */
 		if (recover) {
 			p_recover(core, thread);
-			fu_release(CORE.fu);
+			fu_release(core);
 		}
 	}
 }

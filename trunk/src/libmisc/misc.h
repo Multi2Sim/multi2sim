@@ -127,6 +127,8 @@ void strdump(char *dest, char *src, int size);
 /* open/close file ("stdout", "stderr" or <name>) */
 FILE *open_read(char *fname);
 FILE *open_write(char *fname);
+int can_open_read(char *fname);
+int can_open_write(char *fname);
 int read_line(FILE *f, char *line, int size);
 void close_file(FILE *f);
 

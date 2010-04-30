@@ -514,3 +514,11 @@
 2010-04-21
 	* loader.c: error message for wrong stdin/stdout.
 
+2010-04-29
+	* cachesystem.c: option '-report:cache' to dump detailed stats
+		about the cache system. Stats printed on 'stderr' are
+		reduced to the hit ratio.
+	* processor.c: option '-report:pipeline" to dump detailed stats.
+		Stats dumped in stderr are summarized.
+	
+

@@ -22,39 +22,30 @@
 
 /* Functional Units */
 
-#define FU_RES_MAX	10
-
-
 struct fu_res_t {
 	int count;
 	int oplat;
 	int issuelat;
 	char *name;
-	uint64_t denied;
 };
 
 
 static struct fu_res_t fu_res_pool[fu_count] = {
-	{ 0, 0, 0, "", 0 },
+	{ 0, 0, 0, "" },
 
-	{ 4, 2, 1, "IntAdd", 0 },
-	{ 4, 2, 1, "IntSub", 0 },
-	{ 1, 3, 1, "IntMult", 0 },
-	{ 1, 20, 19, "IntDiv", 0 },
-	{ 4, 2, 1, "EffAddr", 0 },
-	{ 4, 1, 1, "Logical", 0 },
+	{ 4, 2, 1, "IntAdd" },
+	{ 4, 2, 1, "IntSub" },
+	{ 1, 3, 1, "IntMult" },
+	{ 1, 20, 19, "IntDiv" },
+	{ 4, 2, 1, "EffAddr" },
+	{ 4, 1, 1, "Logical" },
 
-	{ 2, 2, 2, "FpSimple", 0 },
-	{ 2, 5, 5, "FpAdd", 0 },
-	{ 2, 5, 5, "FpComp", 0 },
-	{ 1, 10, 10, "FpMult", 0 },
-	{ 1, 20, 20, "FpDiv", 0 },
-	{ 1, 40, 40, "FpComplex", 0 }
-};
-
-
-struct fu_t {
-	uint64_t cycle_when_free[fu_count][FU_RES_MAX];
+	{ 2, 2, 2, "FpSimple" },
+	{ 2, 5, 5, "FpAdd" },
+	{ 2, 5, 5, "FpComp" },
+	{ 1, 10, 10, "FpMult" },
+	{ 1, 20, 20, "FpDiv" },
+	{ 1, 40, 40, "FpComplex" }
 };
 
 
@@ -98,42 +89,52 @@ void fu_init()
 
 void fu_done()
 {
-	int class, core;
-	for (class = 1; class < fu_count; class++) {
-		fprintf(stderr, "denied_fu[%s]  %lld  # Denied accesses\n",
-			fu_res_pool[class].name,
-			(long long) fu_res_pool[class].denied);
-	}
+	int core;
 	FOREACH_CORE
 		free(CORE.fu);
 }
 
 
-/* reserve an fu; return fu latency or
- * 0 if it could not be reserved */
-int fu_reserve(struct fu_t *fu, int class)
+/* Reserve the functional unit required by the uop.
+ * The return value is the f.u. latency, or 0 if it could not
+ * be reserved. */
+int fu_reserve(struct uop_t *uop)
 {
 	int i;
-	for (i = 0; i < fu_res_pool[class].count; i++) {
-		if (fu->cycle_when_free[class][i] <= sim_cycle) {
-			assert(fu_res_pool[class].issuelat > 0);
-			assert(fu_res_pool[class].oplat > 0);
-			fu->cycle_when_free[class][i] = sim_cycle
-				+ fu_res_pool[class].issuelat;
-			return fu_res_pool[class].oplat;
+	int core = uop->core;
+	struct fu_t *fu = CORE.fu;
+	enum fu_class_enum fu_class = uop->fu_class;
+
+	/* First time uop tries to reserve f.u. */
+	if (!uop->issue_try_when)
+		uop->issue_try_when = sim_cycle;
+
+	/* Find a free f.u. */
+	assert(fu_class > fu_none && fu_class < fu_count);
+	assert(fu_res_pool[fu_class].count <= FU_RES_MAX);
+	for (i = 0; i < fu_res_pool[fu_class].count; i++) {
+		if (fu->cycle_when_free[fu_class][i] <= sim_cycle) {
+			assert(fu_res_pool[fu_class].issuelat > 0);
+			assert(fu_res_pool[fu_class].oplat > 0);
+			fu->cycle_when_free[fu_class][i] = sim_cycle + fu_res_pool[fu_class].issuelat;
+			fu->accesses[fu_class]++;
+			fu->waiting_time[fu_class] += sim_cycle - uop->issue_try_when;
+			return fu_res_pool[fu_class].oplat;
 		}
 	}
-	fu_res_pool[class].denied++;
+
+	/* No free f.u. was found */
+	fu->denied[fu_class]++;
 	return 0;
 }
 
 
 /* Release all functional units */
-void fu_release(struct fu_t *fu)
+void fu_release(int core)
 {
 	int i, j;
 	for (i = 0; i < fu_count; i++)
 		for (j = 0; j < fu_res_pool[i].count; j++)
-			fu->cycle_when_free[i][j] = 0;
+			CORE.fu->cycle_when_free[i][j] = 0;
 }
 
