@@ -521,4 +521,5 @@
 	* processor.c: option '-report:pipeline" to dump detailed stats.
 		Stats dumped in stderr are summarized.
 	
-
+2010-04-30
+	* bpred.c: stats removed from stderr.

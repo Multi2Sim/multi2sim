@@ -191,14 +191,6 @@ struct bpred_t *bpred_create()
 
 void bpred_free(struct bpred_t *bpred)
 {
-	/* Print stats */
-	fprintf(stderr, "%s.accesses  %lld  # Accesses while in non speculative mode\n",
-		bpred->name, (long long) bpred->accesses);
-	fprintf(stderr, "%s.hits  %lld  # Correct branch predictions\n",
-		bpred->name, (long long) bpred->hits);
-	fprintf(stderr, "%s.acc  %.4f  # Prediction accuracy\n",
-		bpred->name, bpred->accesses ? (double) bpred->hits / bpred->accesses : 0.0);
-
 	/* Bimodal table */
 	if (bpred_kind == bpred_kind_bimod || bpred_kind == bpred_kind_comb)
 		free(bpred->bimod);
