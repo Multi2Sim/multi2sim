@@ -111,6 +111,11 @@ int mmu_valid_phaddr(uint32_t phaddr);
 
 /* Cache Memory */
 
+enum cache_access_kind_enum {
+	cache_access_kind_read = 0,
+	cache_access_kind_write
+};
+
 extern struct string_map_t cache_policy_map;
 enum cache_policy_enum {
 	cache_policy_invalid = 0,  /* for parsing */
@@ -275,9 +280,12 @@ void moesi_stack_return(struct moesi_stack_t *stack);
 /* Coherent Cache */
 
 struct ccache_access_t {
-	uint32_t address;
-	uint64_t access;  /* id of the access */
-	int valid : 1;
+	enum cache_access_kind_enum cache_access_kind;  /* Read or write */
+	uint32_t address;  /* Block address */
+	uint64_t id;  /* Access identifier */
+	struct lnlist_t *eventq;  /* Event queue to modify when access finishes */
+	void *eventq_item;  /* Item to enqueue when finished */
+	struct ccache_access_t *next;  /* Alias (same address/access, but different eventq_item */
 };
 
 struct ccache_t {
@@ -287,16 +295,18 @@ struct ccache_t {
 	int loid;  /* ID in the low interconnect */
 	struct net_t *hinet, *lonet;  /* High and low interconnects */
 	int lat;
+	int read_ports;  /* Number of read ports */
+	int write_ports;  /* Number of write ports */
 	uint32_t bsize;
 	int logbsize;
 	struct ccache_t *next;  /* Next cache in hierarchy */
 	struct cache_t *cache;  /* Cache holding data */
 	struct dir_t *dir;
 
-	/* Record of pending accesses */
-	struct ccache_access_t *pending;  /* list of pending accesses */
-	int pending_count;
-	int pending_size;
+	/* List of in-flight accesses */
+	struct lnlist_t *access_list;  /* Elements of type ccache_access_t */
+	int pending_reads;  /* Non-aliasing reads in access_list */
+	int pending_writes;  /* Writes in access_list */
 
 	/* Stats */
 	uint64_t accesses;
@@ -374,10 +384,11 @@ enum tlb_kind_enum {
 struct cache_system_stack_t {
 	int core, thread;
 	enum cache_kind_enum cache_kind;
-	int read;  /* 0=write, 1=read */
+	enum cache_access_kind_enum cache_access_kind;
 	uint32_t addr;
-	int *witness;
 	int pending;
+	struct lnlist_t *eventq;
+	void *eventq_item;
 
 	int retevent;
 	void *retstack;
@@ -404,11 +415,9 @@ void cache_system_dump(FILE *f);
 int cache_system_block_size(int core, int thread,
 	enum cache_kind_enum cache_kind);
 
-/* Return true if cache system can be accesses. If not, it can be due to
- * a lack of ports or that an access to the same block is pending. The
- * parameter cache_kind must be cache_kind_dl1 or cache_kind_il1.*/
-int cache_system_can_access(int core, int thread,
-	enum cache_kind_enum cache_kind, uint32_t addr);
+/* Return true if cache system can be accesses. */
+int cache_system_can_access(int core, int thread, enum cache_kind_enum cache_kind,
+	enum cache_access_kind_enum cache_access_kind, uint32_t addr);
 
 /* Return true if the access to address addr or with identifier 'access'
  * has completed. Parameter cache_kind must be dl1 or il1. */
@@ -419,9 +428,9 @@ int cache_system_pending_access(int core, int thread,
 
 /* Functions to access cache system */
 uint64_t cache_system_read(int core, int thread, enum cache_kind_enum cache_kind,
-	uint32_t addr, int *witness);
+	uint32_t addr, struct lnlist_t *eventq, void *item);
 uint64_t cache_system_write(int core, int thread, enum cache_kind_enum cache_kind,
-	uint32_t addr, int *witness);
+	uint32_t addr, struct lnlist_t *eventq, void *eventq_item);
 
 
 #endif

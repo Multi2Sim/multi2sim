@@ -261,7 +261,6 @@ struct uop_t {
 	/* For memory uops */
 	uint32_t mem_vtladdr;  /* virtual address */
 	uint32_t mem_phaddr;  /* physical address */
-	int data_witness;  /* for cache system access */
 
 	/* Cycles */
 	uint64_t when;  /* cycle when ready */
