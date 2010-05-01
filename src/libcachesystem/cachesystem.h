@@ -248,9 +248,11 @@ struct moesi_stack_t {
 	/* Flags */
 	int err : 1;
 	int shared : 1;
+	int read : 1;
 	int blocking : 1;
 	int writeback : 1;
 	int eviction : 1;
+	int retry : 1;
 
 	/* Cache block lock */
 	int lock_event;
@@ -298,9 +300,21 @@ struct ccache_t {
 
 	/* Stats */
 	uint64_t accesses;
-	uint64_t reads;
 	uint64_t hits;
 	uint64_t evictions;
+	uint64_t reads;
+	uint64_t blocking_reads;
+	uint64_t non_blocking_reads;
+	uint64_t writes;
+	uint64_t blocking_writes;
+	uint64_t non_blocking_writes;
+
+	uint64_t read_retries;
+	uint64_t write_retries;
+
+	uint64_t no_retry_accesses;
+	uint64_t no_retry_hits;
+	uint64_t no_retry_reads;
 };
 
 struct ccache_t *ccache_create();
