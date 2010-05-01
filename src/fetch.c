@@ -42,7 +42,8 @@ static int can_fetch(int core, int thread)
 	block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
 	if (block != THREAD.fetch_block) {
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
-		if (!cache_system_can_access(core, thread, cache_kind_inst, phaddr))
+		if (!cache_system_can_access(core, thread, cache_kind_inst,
+			cache_access_kind_read, phaddr))
 			return 0;
 	}
 	
@@ -204,7 +205,7 @@ static void fetch_thread(int core, int thread)
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
 		THREAD.fetch_block = block;
 		THREAD.fetch_access = cache_system_read(core, thread,
-			cache_kind_inst, phaddr, NULL);
+			cache_kind_inst, phaddr, NULL, NULL);
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */

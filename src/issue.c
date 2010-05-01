@@ -58,24 +58,22 @@ static int issue_sq(int core, int thread, int quant)
 		store->ready = 1;
 		if (store->in_rob)
 			break;
-		if (!cache_system_can_access(core, thread, cache_kind_data, store->mem_phaddr))
+		if (!cache_system_can_access(core, thread, cache_kind_data,
+			cache_access_kind_write, store->mem_phaddr))
 			break;
 
-		/* Access */
+		/* Store can be issued. */
+		sq_remove(core, thread);
 		cache_system_write(core, thread, cache_kind_data,
-			store->mem_phaddr, &store->data_witness);
+			store->mem_phaddr, CORE.eventq, store);
 
-		/* Schedule inst in Event Queue */
-		assert(!store->in_eventq);
+		/* The cache system will place the store at the head of the
+		 * event queue when it is ready. For now, mark "in_eventq" to
+		 * prevent the uop from being freed. */
+		store->in_eventq = 1;
 		store->issued = 1;
 		store->issue_when = sim_cycle;
-		store->when = sim_cycle + 1;
-		eventq_insert(CORE.eventq, store);
-		store->in_eventq = 1;
-		
-		/* Remove it from SQ */
-		sq_remove(core, thread);
-
+	
 		/* Instruction issued */
 		THREAD.issued[store->uop]++;
 		CORE.issued[store->uop]++;
@@ -112,26 +110,25 @@ static int issue_lq(int core, int thread, int quant)
 			continue;
 		}
 		load->ready = 1;
-		if (!cache_system_can_access(core, thread, cache_kind_data, load->mem_phaddr)) {
+		if (!cache_system_can_access(core, thread, cache_kind_data,
+			cache_access_kind_read, load->mem_phaddr))
+		{
 			lnlist_next(lq);
 			continue;
 		}
-	
-		/* Ok, we can issue. Access the data TLB and cache */
-		cache_system_read(core, thread, cache_kind_data,
-			load->mem_phaddr, &load->data_witness);
-		
-		/* Remove 'load' from LQ */
+
+		/* Load can be issued. Remove it from lq.
+		 * Access data tlb and cache. */
 		lq_remove(core, thread);
-		
-		/* Schedule 'load' in Event Queue for next cycle.
-		 * Writeback stage will check if it is really completed. */
-		assert(!load->in_eventq);
+		cache_system_read(core, thread, cache_kind_data,
+			load->mem_phaddr, CORE.eventq, load);
+
+		/* The cache system will place the load at the head of the
+		 * event queue when it is ready. For now, mark "in_eventq" to
+		 * prevent the uop from being freed. */
+		load->in_eventq = 1;
 		load->issued = 1;
 		load->issue_when = sim_cycle;
-		load->when = sim_cycle + 1;
-		eventq_insert(CORE.eventq, load);
-		load->in_eventq = 1;
 		
 		/* Instruction issued */
 		THREAD.issued[load->uop]++;

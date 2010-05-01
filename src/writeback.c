@@ -31,7 +31,14 @@ void writeback_core(int core)
 		/* Peek element from the head of the event queue */
 		lnlist_head(CORE.eventq);
 		uop = lnlist_get(CORE.eventq);
-		if (lnlist_error(CORE.eventq) || uop->when > sim_cycle)
+		if (lnlist_error(CORE.eventq))
+			break;
+
+		/* A memory uop placed in the event queue is always complete.
+		 * Other uops are complete when uop->when is equals to sim_cycle. */
+		if (uop->flags & FMEM)
+			uop->when = sim_cycle;
+		if (uop->when > sim_cycle)
 			break;
 		
 		/* Check element integrity */
@@ -41,19 +48,11 @@ void writeback_core(int core)
 		assert(uop->ready);
 		assert(!uop->completed);
 		
-		/* Ok, can extract element */
+		/* Extract element from event queue. */
 		lnlist_remove(CORE.eventq);
 		uop->in_eventq = 0;
 		thread = uop->thread;
 		
-		/* Loads and stores: even if they appear as completed in the event queue,
-		 * they are not until the data witness says so. */
-		if ((uop->flags & FMEM) && !uop->data_witness) {
-			uop->when = sim_cycle + 1;
-			eventq_insert(CORE.eventq, uop);
-			continue;
-		}
-
 		/* If a mispredicted branch is solved and recovery is configured to be
 		 * performed at writeback, schedule it for the end of the iteration. */
 		if (p_recover_kind == p_recover_kind_writeback &&

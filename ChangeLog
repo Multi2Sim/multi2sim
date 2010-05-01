@@ -524,3 +524,20 @@
 2010-04-30
 	* bpred.c: stats removed from stderr.
 	* cachesystem.c: report for caches.
+
+2010-05-01
+	* cachesystem.c: parameters '-iports', '-dports' removed. Instead, keys
+		ReadPorts and WritePorts are added in the CacheGeometry section
+		of the cache configuration file. These fields apply to L1 caches.
+	* issue.c: memory uops are not inserted into the eventq directly, thus
+		avoiding the continuous insertion in the writeback stage. Instead,
+		the cache system inserts them into the eventq when the cache
+		access finishes.
+	* cachesystem.c: the structure and functions tracking pending cache
+		accesses have been redesigned. The most important change is that
+		load accesses are not repeated when a load to the same address
+		is in-flight. Instead, the new aliasing loads wait to the pending one
+		to be completed, and the cache access completion triggers the
+		insertion into the corresponding eventq of all uops awaiting
+		for the load.
+
