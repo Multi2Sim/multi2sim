@@ -540,4 +540,5 @@
 		to be completed, and the cache access completion triggers the
 		insertion into the corresponding eventq of all uops awaiting
 		for the load.
+	* tcache.c: statistics dumped into pipeline report file.
 
