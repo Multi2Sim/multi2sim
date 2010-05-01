@@ -523,3 +523,4 @@
 	
 2010-04-30
 	* bpred.c: stats removed from stderr.
+	* cachesystem.c: report for caches.

@@ -773,29 +773,67 @@ void cache_system_dump_report()
 	if (!f)
 		return;
 	
+	/* Intro */
+	fprintf(f, "# Report for caches, TLBs, and main memory\n");
+	fprintf(f, "#    Accesses - Total number of accesses\n");
+	fprintf(f, "#    Hits, Misses - Accesses resulting in hits/misses\n");
+	fprintf(f, "#    HitRatio - Hits divided by accesses\n");
+	fprintf(f, "#    Evictions - Invalidated or replaced cache blocks\n");
+	fprintf(f, "#    Retries - For L1 caches, accesses that were retried\n");
+	fprintf(f, "#    ReadRetries, WriteRetries - Read/Write retried accesses\n");
+	fprintf(f, "#    NoRetryAccesses - Number of accesses that were not retried\n");
+	fprintf(f, "#    NoRetryHits, NoRetryMisses - Hits and misses for not retried accesses\n");
+	fprintf(f, "#    NoRetryHitRatio - NoRetryHits divided by NoRetryAccesses\n");
+	fprintf(f, "#    NoRetryReads, NoRetryWrites - Not retried reads and writes\n");
+	fprintf(f, "#    Reads, Writes - Total read/write accesses\n");
+	fprintf(f, "#    BlockingReads, BlockingWrites - Reads/writes coming from lower-level cache\n");
+	fprintf(f, "#    NonBlockingReads, NonBlockingWrites - Coming from upper-level cache\n");
+	fprintf(f, "\n\n");
+	
 	/* Report for each cache */
 	for (curr = 0; curr < ccache_count; curr++) {
 		ccache = ccache_array[curr];
-		fprintf(f, "[ %s ]\n", ccache->name);
+		fprintf(f, "[ %s ]\n\n", ccache->name);
 		fprintf(f, "Accesses = %lld\n", (long long) ccache->accesses);
 		fprintf(f, "Hits = %lld\n", (long long) ccache->hits);
 		fprintf(f, "Misses = %lld\n", (long long) (ccache->accesses - ccache->hits));
 		fprintf(f, "HitRatio = %.4g\n", ccache->accesses ?
 			(double) ccache->hits / ccache->accesses : 0.0);
 		fprintf(f, "Evictions = %lld\n", (long long) ccache->evictions);
+		fprintf(f, "Retries = %lld\n", (long long) (ccache->read_retries + ccache->write_retries));
+		fprintf(f, "ReadRetries = %lld\n", (long long) ccache->read_retries);
+		fprintf(f, "WriteRetries = %lld\n", (long long) ccache->write_retries);
 		fprintf(f, "\n");
+		fprintf(f, "NoRetryAccesses = %lld\n", (long long) ccache->no_retry_accesses);
+		fprintf(f, "NoRetryHits = %lld\n", (long long) ccache->no_retry_hits);
+		fprintf(f, "NoRetryMisses = %lld\n", (long long) (ccache->no_retry_accesses -
+			ccache->no_retry_hits));
+		fprintf(f, "NoRetryHitRatio = %.4g\n", ccache->no_retry_accesses ?
+			(double) ccache->no_retry_hits / ccache->no_retry_accesses : 0.0);
+		fprintf(f, "NoRetryReads = %lld\n", (long long) ccache->no_retry_reads);
+		fprintf(f, "NoRetryWrites = %lld\n", (long long) (ccache->no_retry_accesses -
+			ccache->no_retry_reads));
+		fprintf(f, "\n");
+		fprintf(f, "Reads = %lld\n", (long long) ccache->reads);
+		fprintf(f, "BlockingReads = %lld\n", (long long) ccache->blocking_reads);
+		fprintf(f, "NonBlockingReads = %lld\n", (long long) ccache->non_blocking_reads);
+		fprintf(f, "\n");
+		fprintf(f, "Writes = %lld\n", (long long) ccache->writes);
+		fprintf(f, "BlockingWrites = %lld\n", (long long) ccache->blocking_writes);
+		fprintf(f, "NonBlockingWrites = %lld\n", (long long) ccache->non_blocking_writes);
+		fprintf(f, "\n\n");
 	}
 
 	/* Report for each TLB */
 	for (curr = 0; curr < tlb_count; curr++) {
 		tlb = tlb_array[curr];
-		fprintf(f, "[ %s ]\n", tlb->name);
+		fprintf(f, "[ %s ]\n\n", tlb->name);
 		fprintf(f, "Accesses = %lld\n", (long long) tlb->accesses);
 		fprintf(f, "Hits = %lld\n", (long long) tlb->hits);
 		fprintf(f, "Misses = %lld\n", (long long) (tlb->accesses - tlb->hits));
 		fprintf(f, "HitRatio = %.4g\n", tlb->accesses ?
 			(double) tlb->hits / tlb->accesses : 0.0);
-		fprintf(f, "\n");
+		fprintf(f, "\n\n");
 	}
 
 	/* Done */
