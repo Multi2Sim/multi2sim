@@ -185,6 +185,7 @@ void p_dump_report()
 	fprintf(f, "Commit.Mispred = %lld\n", (long long) p->mispred);
 	fprintf(f, "Commit.PredAcc = %.4g\n", p->branches ?
 		(double) (p->branches - p->mispred) / p->branches : 0.0);
+	fprintf(f, "\n");
 	
 	/* Report for each core */
 	FOREACH_CORE {
@@ -249,10 +250,11 @@ void p_dump_report()
 		fprintf(f, "Commit.Mispred = %lld\n", (long long) CORE.mispred);
 		fprintf(f, "Commit.PredAcc = %.4g\n", CORE.branches ?
 			(double) (CORE.branches - CORE.mispred) / CORE.branches : 0.0);
+		fprintf(f, "\n");
 
 		/* Report for each thread */
 		FOREACH_THREAD {
-				fprintf(f, "# Statistics for core %d - thread %d\n", core, thread);
+			fprintf(f, "# Statistics for core %d - thread %d\n", core, thread);
 			fprintf(f, "[ c%dt%d ]\n\n", core, thread);
 
 			/* Dispatch stage */
@@ -274,6 +276,11 @@ void p_dump_report()
 			fprintf(f, "Commit.Mispred = %lld\n", (long long) THREAD.mispred);
 			fprintf(f, "Commit.PredAcc = %.4g\n", THREAD.branches ?
 				(double) (THREAD.branches - THREAD.mispred) / THREAD.branches : 0.0);
+			fprintf(f, "\n");
+
+			/* Trace cache stats */
+			if (THREAD.tcache)
+				tcache_dump_report(THREAD.tcache, f);
 		}
 	}
 

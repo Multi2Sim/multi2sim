@@ -526,6 +526,7 @@ extern uint32_t tcache_queue_size;
 struct tcache_t;
 
 void tcache_reg_options(void);
+void tcache_dump_report(struct tcache_t *tcache, FILE *f);
 void tcache_init(void);
 void tcache_done(void);
 

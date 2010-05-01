@@ -117,25 +117,26 @@ struct tcache_t *tcache_create()
 
 void tcache_free(struct tcache_t *tcache)
 {
-	/* Print stats */
-	fprintf(stderr, "%s.accesses  %lld  # Trace cache accesses\n",
-		tcache->name, (long long) tcache->accesses);
-	fprintf(stderr, "%s.hits  %lld  # Trace cache hits\n",
-		tcache->name, (long long) tcache->hits);
-	fprintf(stderr, "%s.hitratio  %.4f  # Trace cache hit ratio\n",
-		tcache->name, tcache->accesses ? (double) tcache->hits / tcache->accesses : 0.0);
-	fprintf(stderr, "%s.committed  %lld  # Committed uops coming from trace cache\n",
-		tcache->name, (long long) tcache->committed);
-	fprintf(stderr, "%s.squashed  %lld  # Squashed uops coming from trace cache\n",
-		tcache->name, (long long) tcache->squashed);
-	fprintf(stderr, "%s.trace_length  %.2f  # Average trace length\n",
-		tcache->name, tcache->trace_length_count ? (double) tcache->trace_length_acc /
-			tcache->trace_length_count : 0);
-
-	/* Free */
 	free(tcache->entry);
 	free(tcache->temp);
 	free(tcache);
+}
+
+
+void tcache_dump_report(struct tcache_t *tcache, FILE *f)
+{
+	/* Print stats */
+	fprintf(f, "# Trace cache\n");
+	fprintf(f, "TraceCache.Accesses = %lld\n", (long long) tcache->accesses);
+	fprintf(f, "TraceCache.Hits = %lld\n", (long long) tcache->hits);
+	fprintf(f, "TraceCache.HitRatio = %.4g\n", tcache->accesses ? (double)
+		tcache->hits / tcache->accesses : 0.0);
+	fprintf(f, "TraceCache.Committed = %lld\n", (long long) tcache->committed);
+	fprintf(f, "TraceCache.Squashed = %lld\n", (long long) tcache->squashed);
+	fprintf(f, "TraceCache.TraceLength = %.2g\n",
+		tcache->trace_length_count ? (double) tcache->trace_length_acc /
+			tcache->trace_length_count : 0);
+	fprintf(f, "\n");
 }
 
 
