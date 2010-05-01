@@ -202,11 +202,27 @@ void moesi_handler_find_and_lock(int event, void *data)
 		/* Look for block. */
 		hit = ccache_find_block(ccache, stack->addr, &stack->set,
 			&stack->way, &stack->tag, &stack->status);
-		ccache->accesses++;
-		if (hit) {
-			ccache->hits++;
+		if (hit)
 			cache_debug("    %lld 0x%x %s hit: set=%d, way=%d, status=%d\n", ID,
 				stack->tag, ccache->name, stack->set, stack->way, stack->status);
+
+		/* Stats */
+		ccache->accesses++;
+		if (hit)
+			ccache->hits++;
+		if (stack->read) {
+			ccache->reads++;
+			stack->blocking ? ccache->blocking_reads++ : ccache->non_blocking_reads++;
+		} else {
+			ccache->writes++;
+			stack->blocking ? ccache->blocking_writes++ : ccache->non_blocking_writes++;
+		}
+		if (!stack->retry) {
+			ccache->no_retry_accesses++;
+			if (hit)
+				ccache->no_retry_hits++;
+			if (stack->read)
+				ccache->no_retry_reads++;
 		}
 
 		/* Miss */
@@ -309,21 +325,25 @@ void moesi_handler_load(int event, void *data)
 		newstack = moesi_stack_create(stack->id, ccache, stack->addr,
 			EV_MOESI_LOAD_ACTION, stack);
 		newstack->blocking = 0;
+		newstack->read = 1;
+		newstack->retry = stack->retry;
 		esim_schedule_event(EV_MOESI_FIND_AND_LOCK, newstack, 0);
 		return;
 	}
 
 	if (event == EV_MOESI_LOAD_ACTION)
 	{
-		int retry;
+		int retry_lat;
 		cache_debug("  %lld %lld 0x%x %s load action\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
-		/* Error blocking */
+		/* Error locking */
 		if (stack->err) {
-			retry = RETRY_LATENCY;
-			cache_debug("    lock error, retrying in %d cycles\n", retry);
-			esim_schedule_event(EV_MOESI_LOAD, stack, retry);
+			ccache->read_retries++;
+			retry_lat = RETRY_LATENCY;
+			cache_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			stack->retry = 1;
+			esim_schedule_event(EV_MOESI_LOAD, stack, retry_lat);
 			return;
 		}
 
@@ -343,16 +363,18 @@ void moesi_handler_load(int event, void *data)
 
 	if (event == EV_MOESI_LOAD_MISS)
 	{
-		int retry;
+		int retry_lat;
 		cache_debug("  %lld %lld 0x%x %s load miss\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
 		/* Error on read request. Unlock block and retry load. */
 		if (stack->err) {
-			retry = RETRY_LATENCY;
+			ccache->read_retries++;
+			retry_lat = RETRY_LATENCY;
 			dir_lock_unlock(stack->dir_lock);
-			cache_debug("    lock error, retrying in %d cycles\n", retry);
-			esim_schedule_event(EV_MOESI_LOAD, stack, retry);
+			cache_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			stack->retry = 1;
+			esim_schedule_event(EV_MOESI_LOAD, stack, retry_lat);
 			return;
 		}
 
@@ -396,21 +418,25 @@ void moesi_handler_store(int event, void *data)
 		newstack = moesi_stack_create(stack->id, ccache, stack->addr,
 			EV_MOESI_STORE_ACTION, stack);
 		newstack->blocking = 0;
+		newstack->read = 0;
+		newstack->retry = stack->retry;
 		esim_schedule_event(EV_MOESI_FIND_AND_LOCK, newstack, 0);
 		return;
 	}
 
 	if (event == EV_MOESI_STORE_ACTION)
 	{
-		int retry;
+		int retry_lat;
 		cache_debug("  %lld %lld 0x%x %s store action\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
-		/* Error blocking */
+		/* Error locking */
 		if (stack->err) {
-			retry = RETRY_LATENCY;
-			cache_debug("    lock error, retrying in %d cycles\n", retry);
-			esim_schedule_event(EV_MOESI_STORE, stack, retry);
+			ccache->write_retries++;
+			retry_lat = RETRY_LATENCY;
+			cache_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			stack->retry = 1;
+			esim_schedule_event(EV_MOESI_STORE, stack, retry_lat);
 			return;
 		}
 
@@ -432,16 +458,18 @@ void moesi_handler_store(int event, void *data)
 
 	if (event == EV_MOESI_STORE_FINISH)
 	{
-		int retry;
+		int retry_lat;
 		cache_debug("%lld %lld 0x%x %s store finish\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
 		/* Error in write request, unlock block and retry store. */
 		if (stack->err) {
-			retry = RETRY_LATENCY;
+			ccache->write_retries++;
+			retry_lat = RETRY_LATENCY;
 			dir_lock_unlock(stack->dir_lock);
-			cache_debug("    lock error, retrying in %d cycles\n", retry);
-			esim_schedule_event(EV_MOESI_STORE, stack, retry);
+			cache_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			stack->retry = 1;
+			esim_schedule_event(EV_MOESI_STORE, stack, retry_lat);
 			return;
 		}
 
@@ -528,6 +556,8 @@ void moesi_handler_evict(int event, void *data)
 		newstack = moesi_stack_create(stack->id, target, stack->src_tag,
 			EV_MOESI_EVICT_WRITEBACK, stack);
 		newstack->blocking = 0;
+		newstack->read = 0;
+		newstack->retry = 0;
 		esim_schedule_event(EV_MOESI_FIND_AND_LOCK, newstack, 0);
 		return;
 	}
@@ -536,7 +566,7 @@ void moesi_handler_evict(int event, void *data)
 	{
 		cache_debug("  %lld %lld 0x%x %s evict writeback\n", CYCLE, ID,
 			stack->tag, target->name);
-		
+
 		/* Error locking block */
 		if (stack->err) {
 			ret->err = 1;
@@ -704,6 +734,8 @@ void moesi_handler_read_request(int event, void *data)
 		newstack = moesi_stack_create(stack->id, target, stack->addr,
 			EV_MOESI_READ_REQUEST_ACTION, stack);
 		newstack->blocking = target->next == ccache;
+		newstack->read = 1;
+		newstack->retry = 0;
 		esim_schedule_event(EV_MOESI_FIND_AND_LOCK, newstack, 0);
 		return;
 	}
@@ -712,7 +744,7 @@ void moesi_handler_read_request(int event, void *data)
 	{
 		cache_debug("  %lld %lld 0x%x %s read request action\n", CYCLE, ID,
 			stack->tag, target->name);
-		
+
 		/* Check block locking error. If read request is down-up, there should not
 		 * have been any error while locking. */
 		if (stack->err) {
@@ -995,6 +1027,8 @@ void moesi_handler_write_request(int event, void *data)
 		newstack = moesi_stack_create(stack->id, target, stack->addr,
 			EV_MOESI_WRITE_REQUEST_ACTION, stack);
 		newstack->blocking = target->next == ccache;
+		newstack->read = 0;
+		newstack->retry = 0;
 		esim_schedule_event(EV_MOESI_FIND_AND_LOCK, newstack, 0);
 		return;
 	}
