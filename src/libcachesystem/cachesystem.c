@@ -44,12 +44,14 @@ struct ccache_t *main_memory;  /* last element of ccache_array */
 
 /* Coherent Cache */
 
+static struct repos_t *ccache_access_repos;
+
+
 struct ccache_t *ccache_create()
 {
 	struct ccache_t *ccache;
 	ccache = calloc(1, sizeof(struct ccache_t));
-	ccache->pending_size = 8;
-	ccache->pending = calloc(ccache->pending_size, sizeof(struct ccache_access_t));
+	ccache->access_list = lnlist_create();
 	return ccache;
 }
 
@@ -61,77 +63,133 @@ void ccache_free(struct ccache_t *ccache)
 		fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
 			ccache->name, (double) ccache->hits / ccache->accesses);
 
+	/* Free linked list of pending accesses.
+	 * Each element is in turn a linked list of access aliases. */
+	while (lnlist_count(ccache->access_list)) {
+		struct ccache_access_t *a, *n;
+		lnlist_head(ccache->access_list);
+		for (a = lnlist_get(ccache->access_list); a; a = n) {
+			n = a->next;
+			repos_free_object(ccache_access_repos, a);
+		}
+		lnlist_remove(ccache->access_list);
+	}
+	lnlist_free(ccache->access_list);
+
 	/* Free cache */
 	if (ccache->dir)
 		dir_free(ccache->dir);
 	if (ccache->cache)
 		cache_free(ccache->cache);
-	free(ccache->pending);
 	free(ccache);
 }
 
 
-uint64_t ccache_start_access(struct ccache_t *ccache, uint32_t addr)
+/* Look for an in-flight access. If it is found, return the associated
+ * ccache_access_t element, and place the linked list pointer into
+ * its position within access_list. */
+static struct ccache_access_t *ccache_find_access(struct ccache_t *ccache,
+	uint32_t addr)
 {
-	int i;
-
-	/* Grow list */
-	if (ccache->pending_count >= 1000) /* safety */
-		panic("libcachesystem: we should never have more than 1000 concurrent accesses; "
-			"if you think we should, modify this panic message.");
-	if (ccache->pending_count == ccache->pending_size) {
-		ccache->pending_size += ccache->pending_size;
-		ccache->pending = realloc(ccache->pending, ccache->pending_size * sizeof(struct ccache_access_t));
-		assert(ccache->pending);
-		memset(ccache->pending + ccache->pending_count, 0, ccache->pending_count * sizeof(struct ccache_access_t));
-	}
-
-	/* Insert new access */
+	struct ccache_access_t *access;
 	addr &= ~(ccache->bsize - 1);
-	for (i = 0; i < ccache->pending_size; i++)
-		if (!ccache->pending[i].valid)
-			break;
-	assert(i < ccache->pending_size);
-	ccache->pending[i].address = addr;
-	ccache->pending[i].access = ++access_counter;
-	ccache->pending[i].valid = 1;
-	ccache->pending_count++;
-	return ccache->pending[i].access;
+	for (lnlist_head(ccache->access_list); !lnlist_eol(ccache->access_list);
+		lnlist_next(ccache->access_list))
+	{
+		access = lnlist_get(ccache->access_list);
+		if (access->address == addr)
+			return access;
+	}
+	return NULL;
+}
+
+
+struct ccache_access_t *ccache_start_access(struct ccache_t *ccache,
+	enum cache_access_kind_enum cache_access_kind, uint32_t addr,
+	struct lnlist_t *eventq, void *eventq_item)
+{
+	struct ccache_access_t *access, *alias;
+
+	/* Create access */
+	access = repos_create_object(ccache_access_repos);
+	access->cache_access_kind = cache_access_kind;
+	access->address = addr & ~(ccache->bsize - 1);
+	access->eventq = eventq;
+	access->eventq_item = eventq_item;
+
+	/* If an alias is found, insert new access at the alias linked list head.
+	 * If no alias found, a new entry and id are created. */
+	alias = ccache_find_access(ccache, addr);
+	if (alias) {
+		assert(access->cache_access_kind == cache_access_kind_read);
+		assert(alias->cache_access_kind == cache_access_kind_read);
+		access->next = alias->next;
+		alias->next = access;
+		access->id = alias->id;
+	} else {
+		lnlist_out(ccache->access_list);
+		lnlist_insert(ccache->access_list, access);
+		access->id = ++access_counter;
+		cache_access_kind == cache_access_kind_read ? ccache->pending_reads++
+			: ccache->pending_writes++;
+		assert(ccache->pending_reads <= ccache->read_ports);
+		assert(ccache->pending_writes <= ccache->write_ports);
+	}
+	return access;
 }
 
 
 void ccache_end_access(struct ccache_t *ccache, uint32_t addr)
 {
-	int i;
+	struct ccache_access_t *access, *alias;
+
+	/* Find access */
 	addr &= ~(ccache->bsize - 1);
-	assert(ccache->pending_count > 0);
-	for (i = 0; i < ccache->pending_size; i++)
-		if (ccache->pending[i].valid && ccache->pending[i].address == addr)
-			break;
-	assert(i < ccache->pending_size);
-	ccache->pending[i].valid = 0;
-	ccache->pending_count--;
+	access = ccache_find_access(ccache, addr);
+	assert(access && access->address == addr);
+
+	/* Finish actions - insert eventq_item into eventq for all aliases */
+	for (alias = access; alias; alias = alias->next) {
+		if (alias->eventq) {
+			assert(alias->eventq_item);
+			lnlist_head(alias->eventq);
+			lnlist_insert(alias->eventq, alias->eventq_item);
+		}
+	}
+
+	/* Free access and all aliases. */
+	access->cache_access_kind == cache_access_kind_read ? ccache->pending_reads--
+		: ccache->pending_writes--;
+	assert(ccache->pending_reads >= 0);
+	assert(ccache->pending_writes >= 0);
+	while (access) {
+		alias = access->next;
+		repos_free_object(ccache_access_repos, access);
+		access = alias;
+	}
+	lnlist_remove(ccache->access_list);
 }
 
 
-int ccache_pending_access(struct ccache_t *ccache, uint64_t access)
+int ccache_pending_access(struct ccache_t *ccache, uint64_t id)
 {
-	int i;
-	for (i = 0; i < ccache->pending_size; i++)
-		if (ccache->pending[i].valid && ccache->pending[i].access == access)
+	struct ccache_access_t *access;
+	for (lnlist_head(ccache->access_list); !lnlist_eol(ccache->access_list);
+		lnlist_next(ccache->access_list))
+	{
+		access = lnlist_get(ccache->access_list);
+		if (access->id == id)
 			return 1;
+	}
 	return 0;
 }
 
 
 int ccache_pending_address(struct ccache_t *ccache, uint32_t addr)
 {
-	int i;
-	addr &= ~(ccache->bsize - 1);
-	for (i = 0; i < ccache->pending_size; i++)
-		if (ccache->pending[i].valid && ccache->pending[i].address == addr)
-			return 1;
-	return 0;
+	struct ccache_access_t *access;
+	access = ccache_find_access(ccache, addr);
+	return access != NULL;
 }
 
 
@@ -336,17 +394,13 @@ struct config_t *cache_config;
 int cache_min_block_size = 0;
 int cache_max_block_size = 0;
 uint32_t mem_latency = 200;
-static uint32_t iports = 8;
 static int iperfect = 0;
-static uint32_t dports = 8;
 static int dperfect = 0;
 
 
 void cache_system_reg_options(void)
 {
 	opt_reg_string("-cacheconfig", "Cache configuration file", &cache_config_file);
-	opt_reg_uint32("-iports", "Ports of level 1 instruction caches", &iports);
-	opt_reg_uint32("-dports", "Ports of level 1 data caches", &dports);
 	opt_reg_bool("-iperfect", "Perfect instruction cache {t|f}", &iperfect);
 	opt_reg_bool("-dperfect", "Perfect data cache {t|f}", &dperfect);
 
@@ -466,6 +520,7 @@ void cache_system_init(int _cores, int _threads)
 	char *section;
 	int core, thread, curr;
 	int nsets, bsize, assoc;
+	int read_ports, write_ports;
 	struct net_t *net = NULL;
 	struct ccache_t *ccache;
 	struct node_t *node;
@@ -487,6 +542,8 @@ void cache_system_init(int _cores, int _threads)
 	/* Repositories */
 	cache_system_stack_repos = repos_create(sizeof(struct cache_system_stack_t),
 		"cache_system_stack_repos");
+	ccache_access_repos = repos_create(sizeof(struct ccache_access_t),
+		"ccache_access_repos");
 	
 	/* Events */
 	EV_CACHE_SYSTEM_ACCESS = esim_register_event(cache_system_handler);
@@ -563,6 +620,8 @@ void cache_system_init(int _cores, int _threads)
 		nsets = config_read_int(cache_config, buf, "Sets", 0);
 		assoc = config_read_int(cache_config, buf, "Assoc", 0);
 		bsize = config_read_int(cache_config, buf, "BlockSize", 0);
+		read_ports = config_read_int(cache_config, buf, "ReadPorts", 2);
+		write_ports = config_read_int(cache_config, buf, "WritePorts", 1);
 		policy_str = config_read_string(cache_config, buf, "Policy", "LRU");
 		policy = map_string_case(&cache_policy_map, policy_str);
 		if (policy == cache_policy_invalid)
@@ -570,11 +629,15 @@ void cache_system_init(int _cores, int _threads)
 		ccache->lat = config_read_int(cache_config, buf, "Latency", 0);
 		ccache->bsize = bsize;
 		ccache->logbsize = log_base2(bsize);
+		ccache->read_ports = read_ports;
+		ccache->write_ports = write_ports;
 		ccache->cache = cache_create(nsets, bsize, assoc, policy);
 		cache_min_block_size = cache_min_block_size ? MIN(cache_min_block_size, bsize) : bsize;
 		cache_max_block_size = cache_max_block_size ? MAX(cache_max_block_size, bsize) : bsize;
 		if (bsize > mmu_page_size)
 			fatal("%s: cache block size greater than memory page size", ccache->name);
+		if (read_ports < 1 || write_ports < 1)
+			fatal("%s: number of read/write ports must be at least 1", ccache->name);
 	}
 
 	/* Main memory */
@@ -866,6 +929,7 @@ void cache_system_done()
 	/* Other */
 	free(node_array);
 	repos_free(cache_system_stack_repos);
+	repos_free(ccache_access_repos);
 	
 	/* Finalizations */
 	moesi_done();
@@ -949,25 +1013,41 @@ int cache_system_block_size(int core, int thread,
 }
 
 
-int cache_system_can_access(int core, int thread, enum cache_kind_enum cache_kind, uint32_t addr)
+int cache_system_can_access(int core, int thread, enum cache_kind_enum cache_kind,
+	enum cache_access_kind_enum cache_access_kind, uint32_t addr)
 {
 	struct ccache_t *ccache;
-	int ports;
-	
+	struct ccache_access_t *access;
+
+	/* Find cache and an in-flight access to the same address. */
 	ccache = cache_system_get_ccache(core, thread, cache_kind);
-	ports = cache_kind == cache_kind_data ? dports : iports;
-	assert(ccache->pending_count <= ports);
-	return ccache->pending_count < ports &&
-		!cache_system_pending_address(core, thread, cache_kind, addr);
+	access = ccache_find_access(ccache, addr);
+
+	/* If there is no matching access, we just need a free port. */
+	if (!access)
+		return cache_access_kind == cache_access_kind_read ?
+			ccache->pending_reads < ccache->read_ports :
+			ccache->pending_writes < ccache->write_ports;
+	
+	/* If either the matching or the current access is a write,
+	 * concurrency is not allowed. */
+	if (cache_access_kind == cache_access_kind_write ||
+		access->cache_access_kind == cache_access_kind_write)
+		return 0;
+	
+	/* Both current and matching accesses are loads, so the current
+	 * access can get the result of the in-flight one. */
+	return 1;
 }
 
 
-static uint64_t cache_system_access(int core, int thread, uint32_t addr, int *witness,
-	int read, enum cache_kind_enum cache_kind)
+static uint64_t cache_system_access(int core, int thread, enum cache_kind_enum cache_kind,
+	enum cache_access_kind_enum cache_access_kind, uint32_t addr,
+	struct lnlist_t *eventq, void *eventq_item)
 {
 	struct cache_system_stack_t *newstack;
 	struct ccache_t *ccache;
-	uint64_t access;
+	struct ccache_access_t *access, *alias;
 
 	/* Check that the physical address is valid for the MMU, i.e.,
 	 * it belongs to an allocated physical page. */
@@ -978,35 +1058,45 @@ static uint64_t cache_system_access(int core, int thread, uint32_t addr, int *wi
 
 	/* Record immediately a new access */
 	ccache = cache_system_get_ccache(core, thread, cache_kind);
-	access = ccache_start_access(ccache, addr);
+	alias = ccache_find_access(ccache, addr);
+	access = ccache_start_access(ccache, cache_access_kind, addr,
+		eventq, eventq_item);
 
-	/* Schedule event */
-	newstack = cache_system_stack_create(core, thread, addr,
-		ESIM_EV_NONE, NULL);
-	newstack->read = read;
-	newstack->cache_kind = cache_kind;
-	newstack->witness = witness;
-	esim_schedule_event(EV_CACHE_SYSTEM_ACCESS, newstack, 0);
-	return access;
+	/* If there was no alias, start cache access */
+	if (!alias) {
+		newstack = cache_system_stack_create(core, thread, addr,
+			ESIM_EV_NONE, NULL);
+		newstack->cache_kind = cache_kind;
+		newstack->cache_access_kind = cache_access_kind;
+		newstack->eventq = eventq;
+		newstack->eventq_item = eventq_item;
+		esim_schedule_event(EV_CACHE_SYSTEM_ACCESS, newstack, 0);
+	}
+
+	/* Return access identifier */
+	return access->id;
 }
 
 
 uint64_t cache_system_write(int core, int thread, enum cache_kind_enum cache_kind,
-	uint32_t addr, int *witness)
+	uint32_t addr, struct lnlist_t *eventq, void *eventq_item)
 {
 	assert(cache_kind == cache_kind_data);
-	assert(cache_system_can_access(core, thread, cache_kind, addr));
-	return cache_system_access(core, thread, addr, witness, 0, cache_kind);
+	assert(cache_system_can_access(core, thread, cache_kind,
+		cache_access_kind_write, addr));
+	return cache_system_access(core, thread, cache_kind, cache_access_kind_write,
+		addr, eventq, eventq_item);
 }
 
 
 uint64_t cache_system_read(int core, int thread, enum cache_kind_enum cache_kind,
-	uint32_t addr, int *witness)
+	uint32_t addr, struct lnlist_t *eventq, void *eventq_item)
 {
-	assert(cache_system_can_access(core, thread, cache_kind, addr));
-	return cache_system_access(core, thread, addr, witness, 1, cache_kind);
+	assert(cache_system_can_access(core, thread, cache_kind,
+		cache_access_kind_read, addr));
+	return cache_system_access(core, thread, cache_kind, cache_access_kind_read,
+		addr, eventq, eventq_item);
 }
-
 
 void cache_system_handler(int event, void *data)
 {
@@ -1037,8 +1127,8 @@ void cache_system_handler(int event, void *data)
 			stack->cache_kind);
 		newstack = moesi_stack_create(moesi_stack_id++, ccache, stack->addr,
 			EV_CACHE_SYSTEM_ACCESS_FINISH, stack);
-		esim_schedule_event(stack->read ? EV_MOESI_LOAD :
-			EV_MOESI_STORE, newstack, 0);
+		esim_schedule_event(stack->cache_access_kind == cache_access_kind_read ?
+			EV_MOESI_LOAD : EV_MOESI_STORE, newstack, 0);
 		return;
 	}
 
@@ -1079,8 +1169,6 @@ void cache_system_handler(int event, void *data)
 
 		ccache = cache_system_get_ccache(stack->core, stack->thread, stack->cache_kind);
 		ccache_end_access(ccache, stack->addr);
-		if (stack->witness)
-			(*stack->witness)++;
 		cache_system_stack_return(stack);
 		return;
 	}
