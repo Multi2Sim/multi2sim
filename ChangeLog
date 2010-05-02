@@ -543,3 +543,6 @@
 	* tcache.c: statistics dumped into pipeline report file.
 	* processor.c: some more global stats.
 
+2010-05-02
+	Version 2.3.1 Released
+
