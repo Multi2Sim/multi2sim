@@ -152,6 +152,7 @@ void p_dump_report()
 {
 	FILE *f;
 	int core, thread;
+	uint64_t now = ke_timer();
 
 	/* Open file */
 	f = open_write(p_report_file);
@@ -161,6 +162,12 @@ void p_dump_report()
 	/* Report for the complete processor */
 	fprintf(f, "# Global statistics\n");
 	fprintf(f, "[ global ]\n\n");
+	fprintf(f, "Cycles = %lld\n", (long long) sim_cycle);
+	fprintf(f, "Time = %.1f\n", (double) now / 1000000);
+	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) sim_cycle / now * 1000000 : 0.0);
+	fprintf(f, "MemoryUsed = %lu\n", (long) mem_mapped_space);
+	fprintf(f, "MemoryUsedMax = %lu\n", (long) mem_max_mapped_space);
+	fprintf(f, "\n");
 
 	/* Dispatch stage */
 	fprintf(f, "# Dispatch stage\n");
