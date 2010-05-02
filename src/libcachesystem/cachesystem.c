@@ -837,20 +837,20 @@ void cache_system_dump_report()
 		return;
 	
 	/* Intro */
-	fprintf(f, "# Report for caches, TLBs, and main memory\n");
-	fprintf(f, "#    Accesses - Total number of accesses\n");
-	fprintf(f, "#    Hits, Misses - Accesses resulting in hits/misses\n");
-	fprintf(f, "#    HitRatio - Hits divided by accesses\n");
-	fprintf(f, "#    Evictions - Invalidated or replaced cache blocks\n");
-	fprintf(f, "#    Retries - For L1 caches, accesses that were retried\n");
-	fprintf(f, "#    ReadRetries, WriteRetries - Read/Write retried accesses\n");
-	fprintf(f, "#    NoRetryAccesses - Number of accesses that were not retried\n");
-	fprintf(f, "#    NoRetryHits, NoRetryMisses - Hits and misses for not retried accesses\n");
-	fprintf(f, "#    NoRetryHitRatio - NoRetryHits divided by NoRetryAccesses\n");
-	fprintf(f, "#    NoRetryReads, NoRetryWrites - Not retried reads and writes\n");
-	fprintf(f, "#    Reads, Writes - Total read/write accesses\n");
-	fprintf(f, "#    BlockingReads, BlockingWrites - Reads/writes coming from lower-level cache\n");
-	fprintf(f, "#    NonBlockingReads, NonBlockingWrites - Coming from upper-level cache\n");
+	fprintf(f, "; Report for caches, TLBs, and main memory\n");
+	fprintf(f, ";    Accesses - Total number of accesses\n");
+	fprintf(f, ";    Hits, Misses - Accesses resulting in hits/misses\n");
+	fprintf(f, ";    HitRatio - Hits divided by accesses\n");
+	fprintf(f, ";    Evictions - Invalidated or replaced cache blocks\n");
+	fprintf(f, ";    Retries - For L1 caches, accesses that were retried\n");
+	fprintf(f, ";    ReadRetries, WriteRetries - Read/Write retried accesses\n");
+	fprintf(f, ";    NoRetryAccesses - Number of accesses that were not retried\n");
+	fprintf(f, ";    NoRetryHits, NoRetryMisses - Hits and misses for not retried accesses\n");
+	fprintf(f, ";    NoRetryHitRatio - NoRetryHits divided by NoRetryAccesses\n");
+	fprintf(f, ";    NoRetryReads, NoRetryWrites - Not retried reads and writes\n");
+	fprintf(f, ";    Reads, Writes - Total read/write accesses\n");
+	fprintf(f, ";    BlockingReads, BlockingWrites - Reads/writes coming from lower-level cache\n");
+	fprintf(f, ";    NonBlockingReads, NonBlockingWrites - Coming from upper-level cache\n");
 	fprintf(f, "\n\n");
 	
 	/* Report for each cache */
