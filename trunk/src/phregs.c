@@ -43,6 +43,8 @@ static int phregs_reclaim(int core, int thread)
 	assert(phregs->free_phreg_count > 0);
 	phreg = phregs->free_phreg[phregs->free_phreg_count - 1];
 	phregs->free_phreg_count--;
+	CORE.phregs_count++;
+	THREAD.phregs_count++;
 	assert(!phregs->phreg[phreg].busy);
 	assert(!phregs->phreg[phreg].pending);
 	return phreg;
@@ -193,21 +195,14 @@ void phregs_dump(int core, int thread, FILE *f)
 
 int phregs_can_rename(struct uop_t *uop)
 {
-	int needs, busy = 0;
 	int core = uop->core;
 	int thread = uop->thread;
+	int needs;
 	
-	/* Calculate busy registers */
-	if (phregs_kind == phregs_kind_shared) {
-		FOREACH_THREAD
-			busy += THREAD.phregs->size - THREAD.phregs->free_phreg_count;
-	} else
-		busy = THREAD.phregs->size - THREAD.phregs->free_phreg_count;
-	assert(busy <= phregs_local_size);
 	needs = phregs_needs(uop);
-
-	/* Return 1 if there are enough registers */
-	return busy + needs <= phregs_local_size;
+	return phregs_kind == phregs_kind_shared ?
+		CORE.phregs_count + needs <= phregs_local_size :
+		THREAD.phregs_count + needs <= phregs_local_size;
 }
 
 
@@ -351,8 +346,11 @@ void phregs_undo(struct uop_t *uop)
 		phregs->phreg[phreg].busy--;
 		if (!phregs->phreg[phreg].busy) {
 			assert(phregs->free_phreg_count < phregs->size);
+			assert(CORE.phregs_count > 0 && THREAD.phregs_count > 0);
 			phregs->free_phreg[phregs->free_phreg_count] = phreg;
 			phregs->free_phreg_count++;
+			CORE.phregs_count--;
+			THREAD.phregs_count--;
 		}
 
 		/* Return to previous mapping. */
@@ -385,8 +383,11 @@ void phregs_commit(struct uop_t *uop)
 		if (!phregs->phreg[ophreg].busy) {
 			assert(!phregs->phreg[ophreg].pending);
 			assert(phregs->free_phreg_count < phregs->size);
+			assert(CORE.phregs_count > 0 && THREAD.phregs_count > 0);
 			phregs->free_phreg[phregs->free_phreg_count] = ophreg;
 			phregs->free_phreg_count++;
+			CORE.phregs_count--;
+			THREAD.phregs_count--;
 		}
 	}
 }

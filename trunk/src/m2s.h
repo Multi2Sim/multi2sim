@@ -51,7 +51,6 @@ extern uint32_t p_cores;
 extern uint32_t p_threads;
 extern uint32_t p_quantum;
 extern uint32_t p_switch_penalty;
-extern int p_occupancy_stats;
 
 /* recover_kind */
 extern enum p_recover_kind_enum {
@@ -611,6 +610,7 @@ struct processor_thread_t {
 	/* Number of uops in private structures */
 	int iq_count;
 	int lsq_count;
+	int phregs_count;
 
 	/* Private structures */
 	struct list_t *fetchq;
@@ -640,6 +640,12 @@ struct processor_thread_t {
 	uint64_t branches;
 	uint64_t mispred;
 	uint64_t last_commit_cycle;
+	
+	/* Occupancy stats for private structures */
+	uint64_t rob_occ, rob_full;
+	uint64_t iq_occ, iq_full;
+	uint64_t lsq_occ, lsq_full;
+	uint64_t phregs_occ, phregs_full;
 };
 
 
@@ -658,6 +664,7 @@ struct processor_core_t {
 	int context_map_count;
 	int iq_count;
 	int lsq_count;
+	int phregs_count;
 
 	/* Reorder Buffer */
 	struct list_t *rob;
@@ -681,6 +688,12 @@ struct processor_core_t {
 	uint64_t squashed;
 	uint64_t branches;
 	uint64_t mispred;
+	
+	/* Occupancy stats for shared stuctures */
+	uint64_t rob_occ, rob_full;
+	uint64_t iq_occ, iq_full;
+	uint64_t lsq_occ, lsq_full;
+	uint64_t phregs_occ, phregs_full;
 };
 
 
@@ -708,12 +721,6 @@ struct processor_t {
 	uint64_t mispred;
 	double time;
 
-	uint64_t occupancy_count;
-	uint64_t occupancy_iq_acc;
-	uint64_t occupancy_lsq_acc;
-	uint64_t occupancy_rf_acc;
-	uint64_t occupancy_rob_acc;
-
 	/* For dumping */
 	uint64_t last_committed;
 	uint64_t last_dump;
@@ -734,8 +741,6 @@ void p_load_progs(int argc, char **argv, char *ctxfile);
 void p_dump(FILE *f);
 uint32_t p_tlb_address(int ctx, uint32_t vaddr);
 void p_fast_forward(uint64_t cycles);
-
-void p_update_occupancy_stats(void);
 
 void p_context_map(struct ctx_t *ctx, int *pcore, int *pthread);
 void p_context_unmap(int core, int thread);
