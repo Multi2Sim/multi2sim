@@ -541,4 +541,5 @@
 		insertion into the corresponding eventq of all uops awaiting
 		for the load.
 	* tcache.c: statistics dumped into pipeline report file.
+	* processor.c: some more global stats.
 
