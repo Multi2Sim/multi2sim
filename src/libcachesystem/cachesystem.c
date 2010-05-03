@@ -517,7 +517,7 @@ void cache_system_init(int _cores, int _threads)
 {
 	int i, j;
 	struct tlb_t *tlb;
-	char *section;
+	char *section, *value;
 	int core, thread, curr;
 	int nsets, bsize, assoc;
 	int read_ports, write_ports;
@@ -602,12 +602,20 @@ void cache_system_init(int _cores, int _threads)
 		strcpy(ccache->name, section + 6);
 
 		/* High network */
-		sprintf(buf, "net %s", config_read_string(cache_config, section, "HiNet", ""));
+		value = config_read_string(cache_config, section, "HiNet", "");
+		sprintf(buf, "net %s", value);
 		ccache->hinet = config_read_ptr(cache_config, buf, "ptr", NULL);
+		if (!ccache->hinet && *value)
+			fatal("%s: network specified in HiNet does not exist", ccache->name);
 
 		/* Low network */
-		sprintf(buf, "net %s", config_read_string(cache_config, section, "LoNet", ""));
+		value = config_read_string(cache_config, section, "LoNet", "");
+		sprintf(buf, "net %s", value);
 		ccache->lonet = config_read_ptr(cache_config, buf, "ptr", NULL);
+		if (!ccache->lonet && *value)
+			fatal("%s: network specified in LoNet does not exist", ccache->name);
+		if (!*value)
+			fatal("%s: cache must be connected to a lower network (use LoNet)", ccache->name);
 
 		/* Cache parameters */
 		sprintf(buf, "CacheGeometry %s", config_read_string(cache_config, section, "Geometry", ""));
