@@ -553,4 +553,6 @@
 2010-05-03
 	* cachesystem.c: bug fixed - two new checks for wrong format in cache config files.
 		They caused 'asserts' to fail. Now they produce 'fatals'.
+	* moesi.c, mmu.c: code fixed to allow for a system with no caches using only
+		main memory and no interconnect.
 

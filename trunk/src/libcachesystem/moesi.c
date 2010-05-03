@@ -394,7 +394,8 @@ void moesi_handler_load(int event, void *data)
 			stack->tag, ccache->name);
 
 		/* Update LRU, unlock, and return. */
-		cache_access_block(ccache->cache, stack->set, stack->way);
+		if (ccache->cache)
+			cache_access_block(ccache->cache, stack->set, stack->way);
 		dir_lock_unlock(stack->dir_lock);
 		moesi_stack_return(stack);
 		return;
@@ -474,9 +475,11 @@ void moesi_handler_store(int event, void *data)
 		}
 
 		/* Update LRU, tag/status, unlock, and return. */
-		cache_access_block(ccache->cache, stack->set, stack->way);
-		cache_set_block(ccache->cache, stack->set, stack->way,
-			stack->tag, moesi_status_modified);
+		if (ccache->cache) {
+			cache_access_block(ccache->cache, stack->set, stack->way);
+			cache_set_block(ccache->cache, stack->set, stack->way,
+				stack->tag, moesi_status_modified);
+		}
 		dir_lock_unlock(stack->dir_lock);
 		moesi_stack_return(stack);
 		return;
