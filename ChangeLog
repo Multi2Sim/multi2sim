@@ -550,3 +550,7 @@
 	* phregs.c: phregs_can_rename: avoid loop to count busy registers.
 	* processor.c: detailed report with occupancy stats using -report:pipeline.
 
+2010-05-03
+	* cachesystem.c: bug fixed - two new checks for wrong format in cache config files.
+		They caused 'asserts' to fail. Now they produce 'fatals'.
+
