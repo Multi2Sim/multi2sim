@@ -569,8 +569,8 @@ void cache_system_init(int _cores, int _threads)
 	}
 	if (ccache_count < 1)
 		fatal("%s: no cache", cache_config_file);
-	if (net_count < 1)
-		fatal("%s: no network", cache_config_file);
+	/*if (net_count < 1)
+		fatal("%s: no network", cache_config_file);*/
 	ccache_array = calloc(ccache_count, sizeof(void *));
 	net_array = calloc(net_count, sizeof(void *));
 
@@ -600,6 +600,8 @@ void cache_system_init(int _cores, int _threads)
 		ccache = ccache_array[curr++] = ccache_create();
 		config_write_ptr(cache_config, section, "ptr", ccache);
 		strcpy(ccache->name, section + 6);
+		if (!strcasecmp(ccache->name, "MainMemory"))
+			fatal("'%s' is not a valid name for a cache", ccache->name);
 
 		/* High network */
 		value = config_read_string(cache_config, section, "HiNet", "");
@@ -655,11 +657,15 @@ void cache_system_init(int _cores, int _threads)
 	strcpy(ccache->name, "mm");
 	sprintf(buf, "Net %s", config_read_string(cache_config, section, "HiNet", ""));
 	cache_config_section(section);
-	cache_config_key(section, "HiNet");
+	//cache_config_key(section, "HiNet");
 	cache_config_key(section, "Latency");
 	cache_config_key(section, "BlockSize");
-	cache_config_section(buf);
+	//cache_config_section(buf);
 
+	read_ports = config_read_int(cache_config, section, "ReadPorts", 2);
+	write_ports = config_read_int(cache_config, section, "WritePorts", 1);
+	if (read_ports < 1 || write_ports < 1)
+		fatal("%s: number of read/write ports must be at least 1", ccache->name);
 	bsize = config_read_int(cache_config, section, "BlockSize", 0);
 	if (bsize & (bsize - 1))
 		fatal("block size for main memory is not a power of 2");
@@ -671,6 +677,8 @@ void cache_system_init(int _cores, int _threads)
 
 	ccache->lat = config_read_int(cache_config, section, "Latency", 0);
 	ccache->bsize = config_read_int(cache_config, section, "BlockSize", 0);
+	ccache->read_ports = read_ports;
+	ccache->write_ports = write_ports;
 	ccache->hinet = config_read_ptr(cache_config, buf, "ptr", NULL);
 	if (cache_min_block_size < 1)
 		fatal("cache block size must be >= 1");
@@ -702,18 +710,28 @@ void cache_system_init(int _cores, int _threads)
 		node = &node_array[core * threads + thread];
 
 		/* Instruction cache for node */
-		sprintf(buf, "Cache %s", config_read_string(cache_config, section, "ICache", ""));
 		cache_config_key(section, "ICache");
-		cache_config_section(buf);
-		node->icache = config_read_ptr(cache_config, buf, "ptr", NULL);
-		assert(node->icache);
+		value = config_read_string(cache_config, section, "ICache", "");
+		if (!strcasecmp(value, "MainMemory")) {
+			node->icache = main_memory;
+		} else {
+			sprintf(buf, "Cache %s", value);
+			cache_config_section(buf);
+			node->icache = config_read_ptr(cache_config, buf, "ptr", NULL);
+			assert(node->icache);
+		}
 
 		/* Data cache for node */
-		sprintf(buf, "Cache %s", config_read_string(cache_config, section, "DCache", ""));
 		cache_config_key(section, "DCache");
-		cache_config_section(buf);
-		node->dcache = config_read_ptr(cache_config, buf, "ptr", NULL);
-		assert(node->dcache);
+		value = config_read_string(cache_config, section, "DCache", "");
+		if (!strcasecmp(value, "MainMemory")) {
+			node->dcache = main_memory;
+		} else {
+			sprintf(buf, "Cache %s", value);
+			cache_config_section(buf);
+			node->dcache = config_read_ptr(cache_config, buf, "ptr", NULL);
+			assert(node->dcache);
+		}
 	}
 
 	/* Check that all nodes have an entry points to the memory hierarchy */
@@ -798,16 +816,16 @@ void cache_system_init(int _cores, int _threads)
 	for (curr = 0; curr < ccache_count; curr++) {
 		ccache = ccache_array[curr];
 
+		/* Main memory */
+		if (!ccache->lonet)
+			continue;
+
 		/* Level 1 cache */
 		if (!ccache->hinet) {
 			ccache->dir = dir_create(ccache->cache->nsets, ccache->cache->assoc,
 				ccache->bsize / cache_min_block_size, 1);
 			continue;
 		}
-
-		/* Main memory */
-		if (!ccache->lonet)
-			continue;
 
 		/* Other level ccache_array */
 		ccache->dir = dir_create(ccache->cache->nsets, ccache->cache->assoc,
