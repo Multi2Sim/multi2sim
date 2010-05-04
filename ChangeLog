@@ -556,3 +556,7 @@
 	* moesi.c, mmu.c: code fixed to allow for a system with no caches using only
 		main memory and no interconnect.
 
+2010-05-04
+	* syscall.c: system call 'futex': support for cmd = FUTEX_WAKE_BITSET and
+		FUTEX_WAIT_BITSET.
+

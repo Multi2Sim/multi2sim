@@ -30,7 +30,9 @@ exploiting post-miss operations."
 	-Support for this benchmark suite.
 	-Support for context switches to allow multiple contexts in one thread.
 
+* m2skernel maintenance:
+	-Update support for new versions of glibc
+	-'Magic syscall' to communicate source code and simulator.
+
 
 * Mailing list announces:
-	* Barplot
-	* Minibenchmarks

@@ -508,7 +508,7 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, uint32_t prot,
 /* For 'futex' */
 
 struct string_map_t futex_cmd_map = {
-	11, {
+	13, {
 		{ "FUTEX_WAIT",              0 },
 		{ "FUTEX_WAKE",              1 },
 		{ "FUTEX_FD",                2 },
@@ -519,7 +519,9 @@ struct string_map_t futex_cmd_map = {
 		{ "FUTEX_UNLOCK_PI",         7 },
 		{ "FUTEX_TRYLOCK_PI",        8 },
 		{ "FUTEX_WAIT_BITSET",       9 },
-		{ "FUTEX_WAKE_BITSET",       10 }
+		{ "FUTEX_WAKE_BITSET",       10 },
+		{ "FUTEX_WAIT_REQUEUE_PI",   11 },
+		{ "FUTEX_CMP_REQUEUE_PI",    12 }
 	}
 };
 
@@ -2167,7 +2169,7 @@ void syscall_do()
 	{
 		uint32_t addr1, op, val1, ptimeout, addr2, val3;
 		uint32_t timeout_sec, timeout_usec;
-		uint32_t futex, cmd;
+		uint32_t futex, cmd, bitset;
 
 		addr1 = isa_regs->ebx;
 		op = isa_regs->ecx;
@@ -2179,14 +2181,20 @@ void syscall_do()
 			addr1, op, val1, ptimeout, addr2, val3);
 
 	
-		/* Command */
+		/* Command - 'cmd' is obtained by removing 'FUTEX_PRIVATE_FLAG' (128) and
+		 * 'FUTEX_CLOCK_REALTIME' from 'op'. */
 		cmd = op & ~(256|128);
 		mem_read(isa_mem, addr1, 4, &futex);
 		syscall_debug("  futex=%d, cmd=%d (%s)\n",
 			futex, cmd, map_value(&futex_cmd_map, cmd));
 		
 		switch (cmd) {
+
 		case 0:  /* FUTEX_WAIT */
+		case 9:  /* FUTEX_WAIT_BITSET */
+			
+			/* Default bitset value (all bits set) */
+			bitset = cmd == 9 ? val3 : 0xffffffff;
 
 			/* First, we compare the value of the futex with val1. If it's not the
 			 * same, we exit with the error EWOULDBLOCK. */
@@ -2209,13 +2217,17 @@ void syscall_do()
 			
 			/* Suspend thread in the futex. */
 			isa_ctx->wakeup_futex = addr1;
+			isa_ctx->wakeup_futex_bitset = bitset;
 			isa_ctx->wakeup_futex_sleep = ++ke->futex_sleep_count;
 			ctx_set_status(isa_ctx, ctx_suspended | ctx_futex);
 			break;
 
 		case 1:  /* FUTEX_WAKE */
-			
-			retval = ctx_futex_wake(isa_ctx, addr1, val1);
+		case 10:  /* FUTEX_WAKE_BITSET */
+
+			/* Default bitset value (all bits set) */
+			bitset = cmd == 10 ? val3 : 0xffffffff;
+			retval = ctx_futex_wake(isa_ctx, addr1, val1, bitset);
 			syscall_debug("  futex at 0x%x: %d processes woken up\n", addr1, retval);
 			break;
 
@@ -2237,7 +2249,7 @@ void syscall_do()
 
 			/* Wake up 'val1' threads from futex at 'addr1'. The number of woken up threads
 			 * is the return value of the system call. */
-			retval = ctx_futex_wake(isa_ctx, addr1, val1);
+			retval = ctx_futex_wake(isa_ctx, addr1, val1, 0xffffffff);
 			syscall_debug("  futex at 0x%x: %d processes woken up\n", addr1, retval);
 
 			/* The rest of the threads waiting in futex 'addr1' are requeued into futex 'addr2' */
@@ -2274,7 +2286,7 @@ void syscall_do()
 			}
 			mem_write(isa_mem, addr2, 4, &newval);
 
-			retval = ctx_futex_wake(isa_ctx, addr1, val1);
+			retval = ctx_futex_wake(isa_ctx, addr1, val1, 0xffffffff);
 
 			switch (cmp) {
 			case 0: cond = oldval == cmparg; break;  /* FUTEX_OP_CMP_EQ */
@@ -2286,14 +2298,15 @@ void syscall_do()
 			default: fatal("FUTEX_WAKE_OP: invalid condition");
 			}
 			if (cond)
-				retval += ctx_futex_wake(isa_ctx, addr2, val2);
+				retval += ctx_futex_wake(isa_ctx, addr2, val2, 0xffffffff);
 			/* FIXME: we are returning the total number of threads woken up
 			 * counting both calls to ctx_futex_wake. Is this correct? */
 			break;
 		}
 
 		default:
-			fatal("syscall futex: not implemented for cmd=%d", cmd);
+			fatal("syscall futex: not implemented for cmd=%d (%s)",
+				cmd, map_value(&futex_cmd_map, cmd));
 		}
 		break;
 	}
