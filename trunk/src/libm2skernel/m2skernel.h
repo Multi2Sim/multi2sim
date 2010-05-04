@@ -407,6 +407,7 @@ struct ctx_t {
 	int wakeup_events;  /* Events for wake up (poll) */
 	int wakeup_pid;  /* Pid waiting for (waitpid) */
 	uint32_t wakeup_futex;  /* Address of futex where context is suspended */
+	uint32_t wakeup_futex_bitset;  /* Bit mask for selective futex wakeup */
 	uint64_t wakeup_futex_sleep;  /* Assignment from ke->futex_sleep_count */
 
 	/* Links to contexts forming a linked list. */
@@ -461,7 +462,7 @@ int ctx_get_status(struct ctx_t *ctx, enum ctx_status_enum status);
 void ctx_set_status(struct ctx_t *ctx, enum ctx_status_enum status);
 void ctx_clear_status(struct ctx_t *ctx, enum ctx_status_enum status);
 
-int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count);
+int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t bitset);
 void ctx_exit_robust_list(struct ctx_t *ctx);
 
 

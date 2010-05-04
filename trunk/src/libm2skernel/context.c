@@ -359,7 +359,7 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	if (ctx->clear_child_tid) {
 		uint32_t zero = 0;
 		mem_write(ctx->mem, ctx->clear_child_tid, 4, &zero);
-		ctx_futex_wake(ctx, ctx->clear_child_tid, 1);
+		ctx_futex_wake(ctx, ctx->clear_child_tid, 1, 0xffffffff);
 	}
 	ctx_exit_robust_list(ctx);
 
@@ -374,7 +374,7 @@ void ctx_finish(struct ctx_t *ctx, int status)
 }
 
 
-int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count)
+int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t bitset)
 {
 	int wakeup_count = 0;
 	struct ctx_t *wakeup_ctx;
@@ -384,6 +384,8 @@ int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count)
 		wakeup_ctx = NULL;
 		for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_next) {
 			if (!ctx_get_status(ctx, ctx_futex) || ctx->wakeup_futex != futex)
+				continue;
+			if (!(ctx->wakeup_futex_bitset & bitset))
 				continue;
 			if (!wakeup_ctx || ctx->wakeup_futex_sleep < wakeup_ctx->wakeup_futex_sleep)
 				wakeup_ctx = ctx;
