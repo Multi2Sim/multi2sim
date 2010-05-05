@@ -560,3 +560,7 @@
 	* syscall.c: system call 'futex': support for cmd = FUTEX_WAKE_BITSET and
 		FUTEX_WAIT_BITSET.
 
+2010-05-05
+	* elf.c: error messages updated to be more explicit. The error message obtained
+		when trying to execute 64-bit binaries is specific.
+

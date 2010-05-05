@@ -42,32 +42,37 @@ struct elf_file_t {
 };
 
 
-static int elf_read_ehdr(struct elf_file_t *f)
+static void elf_read_ehdr(struct elf_file_t *f)
 {
 	int count;
 	count = fread(&f->ehdr, 1, sizeof(f->ehdr), f->f);
 
 	/* Check magic characters */
 	if (f->ehdr.e_ident[0] != 0x7f || f->ehdr.e_ident[1] != 'E' ||
-		f->ehdr.e_ident[2] != 'L' || f->ehdr.e_ident[3] != 'F') {
-		elf_debug("error: not an ELF file\n");
-		return 0;
-	}
+		f->ehdr.e_ident[2] != 'L' || f->ehdr.e_ident[3] != 'F')
+		fatal("%s: not a valid ELF file\n", f->path);
+	
+	/* Check for 32-bit executable (field e_ident[EI_CLASS]) */
+	if (f->ehdr.e_ident[4] == 2)
+		fatal("%s: this is a 64-bit executable, which is not supported in Multi2Sim. "
+			"If you are compiling your own sources on an x86_64 machine, try "
+			"using the '-m32' flag in the gcc command-line. If you get compilation "
+			"errors about not found '.h' files, check that the 32-bit gcc package "
+			"associated with your Linux distribution is installed.",
+			f->path);
 
 	/* Check header size */
-	if (count != sizeof(f->ehdr) || f->ehdr.e_ehsize != sizeof(f->ehdr)) {
-		elf_debug("error: header size is not %d bytes\n", (int) sizeof(f->ehdr));
-		return 0;
-	}
+	if (count != sizeof(f->ehdr) || f->ehdr.e_ehsize != sizeof(f->ehdr))
+		fatal("%s: header size is not %ld bytes long", f->path, sizeof(f->ehdr));
 
 	/* Check endianness */
-	if (f->ehdr.e_ident[5] != 1) {
-		elf_debug("error: not little endian\n");
-		return 0;
-	}
+	if (f->ehdr.e_ident[5] != 1)
+		fatal("%s: ELF file endianness mismatch", f->path);
 
 	/* Debug */
 	elf_debug("ELF header:\n");
+	elf_debug("  ehdr.e_ident: EI_CLASS=%d, EI_DATA=%d, EI_VERSION=%d\n",
+		f->ehdr.e_ident[4], f->ehdr.e_ident[5], f->ehdr.e_ident[6]);
 	elf_debug("  ehdr.e_type: %d\n", f->ehdr.e_type);
 	elf_debug("  ehdr.e_machine: %u\n", f->ehdr.e_machine);
 	elf_debug("  ehdr.e_entry: 0x%x (program entry point)\n", f->ehdr.e_entry);
@@ -79,8 +84,6 @@ static int elf_read_ehdr(struct elf_file_t *f)
 	elf_debug("  ehdr.e_shnum: %u\n", f->ehdr.e_shnum);
 	elf_debug("  ehdr.e_shstrndx: %u\n", (uint32_t) f->ehdr.e_shstrndx);
 	elf_debug("\n");
-
-	return 1;
 }
 
 
@@ -97,7 +100,7 @@ static int elf_symbol_compare(const void *a, const void *b)
 }
 
 
-static int elf_read_symtab(struct elf_file_t *f, int section)
+static void elf_read_symtab(struct elf_file_t *f, int section)
 {
 	void *buf, *bufnames;
 	int i, count;
@@ -110,7 +113,7 @@ static int elf_read_symtab(struct elf_file_t *f, int section)
 	buf = elf_section_read(f, section);
 	bufnames = elf_section_read(f, f->shdr[section].sh_link);
 	if (!buf || !bufnames)
-		return 0;
+		fatal("%s: bogus symbol table", f->path);
 
 	/* Resize symbol table */
 	count = f->shdr[section].sh_size / sizeof(Elf32_Sym);
@@ -119,7 +122,7 @@ static int elf_read_symtab(struct elf_file_t *f, int section)
 		f->symtab_size = f->symtab_count + count;
 		f->symtab = realloc(f->symtab, f->symtab_size * sizeof(struct elf_symbol_t));
 		if (!f->symtab)
-			return 0;
+			fatal("%s: out of memory resizing symbol table", f->path);
 	}
 
 	/* Insert symbols */
@@ -131,56 +134,47 @@ static int elf_read_symtab(struct elf_file_t *f, int section)
 		symbol->value = sym->st_value;
 		symbol->name = strdup(bufnames + sym->st_name);
 		if (!symbol->name)
-			return 0;
+			fatal("%s: out of memory duplicating symbol name", f->path);
 	}
 
 	/* Success */
 	elf_section_free(buf);
 	elf_section_free(bufnames);
-	return 1;
 }
 
 
-static int elf_read_shdr(struct elf_file_t *f)
+static void elf_read_shdr(struct elf_file_t *f)
 {
 	int i, count;
 	Elf32_Shdr *shdr;
 
 	/* Allocate memory for section headers */
 	f->shdr = calloc(f->ehdr.e_shnum, sizeof(Elf32_Shdr));
-	if (!f->shdr) {
-		elf_debug("out of memory\n");
-		return 1;
-	}
+	if (!f->shdr)
+		fatal("%s: out of memory allocating headers", f->path);
 
 	/* Check section size and number */
-	if (!f->ehdr.e_shnum || f->ehdr.e_shentsize != sizeof(Elf32_Shdr)) {
-		elf_debug("error: number of sections is 0 or section size is not %d\n",
-			(int) sizeof(Elf32_Shdr));
-		goto error;
-	}
+	if (!f->ehdr.e_shnum || f->ehdr.e_shentsize != sizeof(Elf32_Shdr))
+		fatal("%s: number of sections is 0 or section size is not %ld",
+			f->path, sizeof(Elf32_Shdr));
 
 	/* Read section headers */
 	fseek(f->f, f->ehdr.e_shoff, SEEK_SET);
 	for (i = 0; i < f->ehdr.e_shnum; i++) {
 		shdr = &f->shdr[i];
 		count = fread(shdr, 1, sizeof(Elf32_Shdr), f->f);
-		if (count != sizeof(Elf32_Shdr)) {
-			elf_debug("error: unexpected end of file reading shdr\n");
-			goto error;
-		}
+		if (count != sizeof(Elf32_Shdr))
+			fatal("%s: unexpected end of file reading shdr", f->path);
 	}
 
 	/* Read section header string table */
 	if (f->ehdr.e_shstrndx >= f->ehdr.e_shnum ||
-		f->shdr[f->ehdr.e_shstrndx].sh_type != 3) {
-		elf_debug("error: section %d is not a valid string table\n",
-			f->ehdr.e_shstrndx);
-		goto error;
-	}
+		f->shdr[f->ehdr.e_shstrndx].sh_type != 3)
+		fatal("%s: section %d is not a valid string table",
+			f->path, f->ehdr.e_shstrndx);
 	f->shstr = elf_section_read(f, f->ehdr.e_shstrndx);
 	if (!f->shstr)
-		goto error;
+		fatal("%s: could not read section header string table", f->path);
 	
 	/* Dump section headers */
 	elf_debug("Section headers:\n");
@@ -209,48 +203,34 @@ static int elf_read_shdr(struct elf_file_t *f)
 	if (f->symtab)
 		qsort(f->symtab, f->symtab_count, sizeof(struct elf_symbol_t), elf_symbol_compare);
 	elf_debug("\n");
-
-	/* Success */
-	return 1;
-
-error:
-	free(f->shdr);
-	return 0;
 }
 
 
-static int elf_read_phdr(struct elf_file_t *f)
+static void elf_read_phdr(struct elf_file_t *f)
 {
 	int i, count;
 	Elf32_Phdr *phdr;
 
 	/* No program headers */
 	if (!f->ehdr.e_phnum)
-		return 0;
+		return;
 
 	/* Allocate memory for program headers */
 	f->phdr = calloc(f->ehdr.e_phnum, sizeof(Elf32_Phdr));
-	if (!f->phdr) {
-		elf_debug("out of memory\n");
-		return 1;
-	}
+	if (!f->phdr)
+		fatal("%s: out of memory allocating program headers", f->path);
 
 	/* Check phdr size and number */
-	if (f->ehdr.e_phentsize != sizeof(Elf32_Phdr)) {
-		elf_debug("error: program header size is not %d\n",
-			(int) sizeof(Elf32_Phdr));
-		goto error;
-	}
+	if (f->ehdr.e_phentsize != sizeof(Elf32_Phdr))
+		fatal("%s: program header size is not %ld", f->path, sizeof(Elf32_Phdr));
 
 	/* Read program headers */
 	fseek(f->f, f->ehdr.e_phoff, SEEK_SET);
 	for (i = 0; i < f->ehdr.e_phnum; i++) {
 		phdr = &f->phdr[i];
 		count = fread(phdr, 1, sizeof(Elf32_Phdr), f->f);
-		if (count != sizeof(Elf32_Phdr)) {
-			elf_debug("error: unexpected end of file reading phdr\n");
-			goto error;
-		}
+		if (count != sizeof(Elf32_Phdr))
+			fatal("%s: unexpected end of file reading phdr", f->path);
 
 		/* Program header PT_PHDR, specifying location and
 		 * size of the program header table itself. */
@@ -277,13 +257,6 @@ static int elf_read_phdr(struct elf_file_t *f)
 			phdr->p_align);
 	}
 	elf_debug("\n");
-	
-	/* Success */
-	return 1;
-
-error:
-	free(f->shdr);
-	return 0;
 }
 
 
@@ -293,38 +266,25 @@ struct elf_file_t *elf_open(char *path)
 
 	/* Create structure */
 	f = calloc(1, sizeof(struct elf_file_t));
-	if (!f) {
-		elf_debug("elf_open: out of memory\n");
-		return NULL;
-	}
+	if (!f)
+		fatal("elf_open: out of memory\n");
 
 	/* Open file */
 	f->f = fopen(path, "rb");
-	if (!f->f) {
-		elf_debug("%s: cannot open path\n", path);
-		return NULL;
-	}
+	if (!f->f)
+		fatal("%s: cannot open executable file", path);
+	if (strlen(path) >= sizeof(f->path))
+		fatal("%s: executable file path too long", path);
 	strncpy(f->path, path, sizeof(f->path));
-	elf_debug("\n%s: reading ELF file\n", path);
 
-	/* Read header */
-	if (!elf_read_ehdr(f))
-		goto error;
-	
-	/* Read section headers */
-	if (!elf_read_shdr(f))
-		goto error;
-	
-	/* Read program headers */
-	if (!elf_read_phdr(f))
-		goto error;
+	/* Read header, section headers, and program headers. */
+	elf_debug("\n%s: reading ELF file\n", path);
+	elf_read_ehdr(f);
+	elf_read_shdr(f);
+	elf_read_phdr(f);
 	
 	/* Return elf file structure */
 	return f;
-
-error:
-	elf_close(f);
-	return NULL;
 }
 
 
