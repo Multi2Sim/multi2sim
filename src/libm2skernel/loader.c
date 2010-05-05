@@ -436,9 +436,6 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 	/* Load program into mem */
 	ld->exe = strdup(exe_fullpath);
 	ld->elf = elf_open(exe_fullpath);
-	if (!ld->elf)
-		fatal("%s: error opening file, maybe not a valid ELF format",
-			exe_fullpath);
 
 	/* Read sections and program entry */
 	ld_load_sections(ctx, ld->elf);

@@ -33,6 +33,7 @@ exploiting post-miss operations."
 * m2skernel maintenance:
 	-Update support for new versions of glibc
 	-'Magic syscall' to communicate source code and simulator.
+	-Specific error message when trying to execute x86_64 binaries.
 
 
 * Mailing list announces:
