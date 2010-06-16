@@ -22,8 +22,8 @@
 
 /* Global variables */
 
-uint32_t phregs_size = 80;  /* per-thread register file size */
-enum phregs_kind_enum phregs_kind = phregs_kind_private;
+uint32_t rf_size = 80;  /* per-thread register file size */
+enum rf_kind_enum rf_kind = rf_kind_private;
 
 
 
@@ -43,37 +43,13 @@ static int phregs_reclaim(int core, int thread)
 	assert(phregs->free_phreg_count > 0);
 	phreg = phregs->free_phreg[phregs->free_phreg_count - 1];
 	phregs->free_phreg_count--;
-	CORE.phregs_count++;
-	THREAD.phregs_count++;
+	CORE.rf_count++;
+	THREAD.rf_count++;
 	assert(!phregs->phreg[phreg].busy);
 	assert(!phregs->phreg[phreg].pending);
 	return phreg;
 }
 
-
-/* Return the number of destination physical registers needed by an instruction.
- * If there are only flags as destination dependences, only one register is
- * needed. Otherwise, one register per destination operand is needed, and the
- * output flags will be mapped to one of the destination physical registers
- * used for operands. */
-static int phregs_needs(struct uop_t *uop)
-{
-	int odep, loreg, opcount = 0, fcount = 0;
-	for (odep = 0; odep < ODEP_COUNT; odep++) {
-		loreg = uop->odep[odep];
-		if (!DVALID(loreg))
-			continue;
-		if (DFLAG(loreg))
-			fcount++;
-		else
-			opcount++;
-	}
-	if (!fcount && !opcount)
-		return 0;
-	if (fcount && !opcount)
-		return 1;
-	return opcount;
-}
 
 
 
@@ -82,11 +58,11 @@ static int phregs_needs(struct uop_t *uop)
 
 void phregs_reg_options(void)
 {
-	static char *phregs_kind_map[] = { "shared", "private" };
-	opt_reg_enum("-phregs_kind", "physical register file {shared|private}",
-		(int *) &phregs_kind, phregs_kind_map, 2);
-	opt_reg_uint32("-phregs_size", "physical register file size per thread",
-		&phregs_size);
+	static char *rf_kind_map[] = { "shared", "private" };
+	opt_reg_enum("-rf_kind", "physical register file {shared|private}",
+		(int *) &rf_kind, rf_kind_map, 2);
+	opt_reg_uint32("-rf_size", "physical register file size per thread",
+		&rf_size);
 }
 
 
@@ -117,10 +93,10 @@ void phregs_init(void)
 {
 	int core, thread;
 	
-	if (phregs_size < MINREGS)
-		fatal("phregs_size must be at least %d", MINREGS);
-	phregs_local_size = phregs_kind == phregs_kind_private ? phregs_size :
-		phregs_size * p_threads;
+	if (rf_size < MINREGS)
+		fatal("rf_size must be at least %d", MINREGS);
+	phregs_local_size = rf_kind == rf_kind_private ? rf_size :
+		rf_size * p_threads;
 	FOREACH_CORE FOREACH_THREAD {
 		THREAD.phregs = phregs_create(phregs_local_size);
 		phregs_init_thread(core, thread);
@@ -193,16 +169,53 @@ void phregs_dump(int core, int thread, FILE *f)
 }
 
 
+/* Set the number of logical/physical registers needed by an instruction.
+ * If there are only flags as destination dependences, only one register is
+ * needed. Otherwise, one register per destination operand is needed, and the
+ * output flags will be mapped to one of the destination physical registers
+ * used for operands. */
+void phregs_count_deps(struct uop_t *uop)
+{
+	int idep, odep, loreg;
+	int lcount = 0, fcount = 0;
+
+	uop->idep_count = 0;
+	uop->odep_count = 0;
+	uop->ph_idep_count = 0;
+	uop->ph_odep_count = 0;
+
+	/* Count output dependences */
+	for (odep = 0; odep < ODEP_COUNT; odep++) {
+		loreg = uop->odep[odep];
+		if (!DVALID(loreg))
+			continue;
+		uop->odep_count++;
+		if (DFLAG(loreg))
+			fcount++;
+		else
+			lcount++;
+	}
+	uop->ph_odep_count = fcount && !lcount ? 1 : lcount;
+
+	/* Count input dependences */
+	for (idep = 0; idep < IDEP_COUNT; idep++) {
+		loreg = uop->idep[idep];
+		if (!DVALID(loreg))
+			continue;
+		uop->idep_count++;
+		uop->ph_idep_count++;
+	}
+}
+
+
 int phregs_can_rename(struct uop_t *uop)
 {
 	int core = uop->core;
 	int thread = uop->thread;
-	int needs;
 	
-	needs = phregs_needs(uop);
-	return phregs_kind == phregs_kind_shared ?
-		CORE.phregs_count + needs <= phregs_local_size :
-		THREAD.phregs_count + needs <= phregs_local_size;
+	return rf_kind == rf_kind_shared ?
+		CORE.rf_count + uop->ph_odep_count <= phregs_local_size :
+		THREAD.rf_count + uop->ph_odep_count <= phregs_local_size;
 }
 
 
@@ -214,7 +227,7 @@ void phregs_rename(struct uop_t *uop)
 	int core = uop->core;
 	int thread = uop->thread;
 	struct phregs_t *phregs = THREAD.phregs;
-	
+
 	/* Rename input registers */
 	for (idep = 0; idep < IDEP_COUNT; idep++) {
 		loreg = uop->idep[idep];
@@ -226,6 +239,7 @@ void phregs_rename(struct uop_t *uop)
 		/* Rename input register */
 		phreg = phregs->rat[loreg - DFIRST];
 		uop->ph_idep[idep] = phreg;
+		THREAD.rat_reads++;
 	}
 	
 	/* Rename output registers. Store in 'fphreg' an
@@ -258,6 +272,7 @@ void phregs_rename(struct uop_t *uop)
 		uop->ph_oodep[odep] = ophreg;
 		uop->ph_odep[odep] = phreg;
 		phregs->rat[loreg - DFIRST] = phreg;
+		THREAD.rat_writes++;
 	}
 
 	/* Rename flags. If there is no flag, done.
@@ -346,11 +361,11 @@ void phregs_undo(struct uop_t *uop)
 		phregs->phreg[phreg].busy--;
 		if (!phregs->phreg[phreg].busy) {
 			assert(phregs->free_phreg_count < phregs->size);
-			assert(CORE.phregs_count > 0 && THREAD.phregs_count > 0);
+			assert(CORE.rf_count > 0 && THREAD.rf_count > 0);
 			phregs->free_phreg[phregs->free_phreg_count] = phreg;
 			phregs->free_phreg_count++;
-			CORE.phregs_count--;
-			THREAD.phregs_count--;
+			CORE.rf_count--;
+			THREAD.rf_count--;
 		}
 
 		/* Return to previous mapping. */
@@ -383,11 +398,11 @@ void phregs_commit(struct uop_t *uop)
 		if (!phregs->phreg[ophreg].busy) {
 			assert(!phregs->phreg[ophreg].pending);
 			assert(phregs->free_phreg_count < phregs->size);
-			assert(CORE.phregs_count > 0 && THREAD.phregs_count > 0);
+			assert(CORE.rf_count > 0 && THREAD.rf_count > 0);
 			phregs->free_phreg[phregs->free_phreg_count] = ophreg;
 			phregs->free_phreg_count++;
-			CORE.phregs_count--;
-			THREAD.phregs_count--;
+			CORE.rf_count--;
+			THREAD.rf_count--;
 		}
 	}
 }

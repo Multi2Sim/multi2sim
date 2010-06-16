@@ -564,3 +564,20 @@
 	* elf.c: error messages updated to be more explicit. The error message obtained
 		when trying to execute 64-bit binaries is specific.
 
+2010-06-15
+	* processor.c: bug fixed - stats Commit.squashed were showing the same
+		results as Commit.mispred.
+	* m2s.h: '-phregs_size' and '-phregs_kind' options and variables changed to
+		'-rf_size' and 'rf_kind'.
+	* processor.c: pipeline statistics for McPAT.
+	* cachesystem.c: statistics for McPAT.
+
+2010-06-16
+	* phregs.c: function 'phregs_can_rename' substituted by 'phregs_count_deps'.
+		This function is called when the uop is created, and stores the
+		number of required logical/physical ideps/odeps.
+	* cachesystem.c: TLB split into Data-TLB and Inst-TLB for compatibility with
+		McPAT.
+	* processor.c: call to 'uopq_reg_options()' was missing.
+
+

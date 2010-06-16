@@ -68,6 +68,10 @@ void writeback_core(int core)
 		/* Writeback */
 		uop->completed = 1;
 		phregs_write(uop);
+		CORE.rf_writes += uop->ph_odep_count;
+		CORE.iq_wakeup_accesses++;
+		THREAD.rf_writes += uop->ph_odep_count;
+		THREAD.iq_wakeup_accesses++;
 		uop_free_if_not_queued(uop);
 
 		/* Recovery. This must be performed at last, because lots of uops might be

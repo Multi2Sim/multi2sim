@@ -229,11 +229,15 @@ struct uop_t {
 
 	/* Logical dependencies */
 	int idep[IDEP_COUNT];
+	int idep_count;
 	int odep[ODEP_COUNT];
+	int odep_count;
 
 	/* Physical mappings */
 	int ph_idep[IDEP_COUNT];
+	int ph_idep_count;
 	int ph_odep[ODEP_COUNT];
+	int ph_odep_count;
 	int ph_oodep[ODEP_COUNT];
 
 	/* Fetch */
@@ -420,11 +424,11 @@ void eventq_recover(int core, int thread);
 
 /* Physical Register File */
 
-extern uint32_t phregs_size;
-extern enum phregs_kind_enum {
-	phregs_kind_shared = 0,
-	phregs_kind_private
-} phregs_kind;
+extern uint32_t rf_size;
+extern enum rf_kind_enum {
+	rf_kind_shared = 0,
+	rf_kind_private
+} rf_kind;
 
 struct phreg_t {
 	int pending;  /* not completed (bit) */
@@ -449,6 +453,7 @@ struct phregs_t *phregs_create(int size);
 void phregs_free(struct phregs_t *phregs);
 
 void phregs_dump(int core, int thread, FILE *f);
+void phregs_count_deps(struct uop_t *uop);
 int phregs_can_rename(struct uop_t *uop);
 void phregs_rename(struct uop_t *uop);
 int phregs_ready(struct uop_t *uop);
@@ -610,7 +615,7 @@ struct processor_thread_t {
 	/* Number of uops in private structures */
 	int iq_count;
 	int lsq_count;
-	int phregs_count;
+	int rf_count;
 
 	/* Private structures */
 	struct list_t *fetchq;
@@ -641,11 +646,34 @@ struct processor_thread_t {
 	uint64_t mispred;
 	uint64_t last_commit_cycle;
 	
-	/* Occupancy stats for private structures */
-	uint64_t rob_occ, rob_full;
-	uint64_t iq_occ, iq_full;
-	uint64_t lsq_occ, lsq_full;
-	uint64_t phregs_occ, phregs_full;
+	/* Statistics for structures */
+	uint64_t rob_occupancy;
+	uint64_t rob_full;
+	uint64_t rob_reads;
+	uint64_t rob_writes;
+
+	uint64_t iq_occupancy;
+	uint64_t iq_full;
+	uint64_t iq_reads;
+	uint64_t iq_writes;
+	uint64_t iq_wakeup_accesses;
+
+	uint64_t lsq_occupancy;
+	uint64_t lsq_full;
+	uint64_t lsq_reads;
+	uint64_t lsq_writes;
+	uint64_t lsq_wakeup_accesses;
+
+	uint64_t rf_occupancy;
+	uint64_t rf_full;
+	uint64_t rf_reads;
+	uint64_t rf_writes;
+
+	uint64_t rat_reads;
+	uint64_t rat_writes;
+
+	uint64_t btb_reads;
+	uint64_t btb_writes;
 };
 
 
@@ -664,7 +692,7 @@ struct processor_core_t {
 	int context_map_count;
 	int iq_count;
 	int lsq_count;
-	int phregs_count;
+	int rf_count;
 
 	/* Reorder Buffer */
 	struct list_t *rob;
@@ -689,11 +717,28 @@ struct processor_core_t {
 	uint64_t branches;
 	uint64_t mispred;
 	
-	/* Occupancy stats for shared stuctures */
-	uint64_t rob_occ, rob_full;
-	uint64_t iq_occ, iq_full;
-	uint64_t lsq_occ, lsq_full;
-	uint64_t phregs_occ, phregs_full;
+	/* Statistics for shared structures */
+	uint64_t rob_occupancy;
+	uint64_t rob_full;
+	uint64_t rob_reads;
+	uint64_t rob_writes;
+
+	uint64_t iq_occupancy;
+	uint64_t iq_full;
+	uint64_t iq_reads;
+	uint64_t iq_writes;
+	uint64_t iq_wakeup_accesses;
+
+	uint64_t lsq_occupancy;
+	uint64_t lsq_full;
+	uint64_t lsq_reads;
+	uint64_t lsq_writes;
+	uint64_t lsq_wakeup_accesses;
+
+	uint64_t rf_occupancy;
+	uint64_t rf_full;
+	uint64_t rf_reads;
+	uint64_t rf_writes;
 };
 
 

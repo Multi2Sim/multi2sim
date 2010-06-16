@@ -31,9 +31,13 @@ exploiting post-miss operations."
 	-Support for context switches to allow multiple contexts in one thread.
 
 * m2skernel maintenance:
-	-Update support for new versions of glibc
 	-'Magic syscall' to communicate source code and simulator.
-	-Specific error message when trying to execute x86_64 binaries.
+
+* Web site:
+	-List of publications
+	-Section for how to compile your own source code and report related bugs.
 
 
 * Mailing list announces:
+	-Support for new glibc versions.
+
