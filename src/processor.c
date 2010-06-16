@@ -98,16 +98,17 @@ void p_reg_options()
 	/* other options */
 	bpred_reg_options();
 	tcache_reg_options();
-	phregs_reg_options();
 	fetchq_reg_options();
+	uopq_reg_options();
 	rob_reg_options();
+	phregs_reg_options();
 	iq_reg_options();
 	lsq_reg_options();
 	fu_reg_options();
 }
 
 
-void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix)
+void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 {
 	uint64_t icomp = 0;
 	uint64_t lcomp = 0;
@@ -127,13 +128,21 @@ void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix)
 #include "uop1.dat"
 #undef UOP
 
+	fprintf(f, "%s.SimpleInteger = %lld\n", prefix,
+		(long long) (icomp - uop_stats[uop_mult] - uop_stats[uop_div]));
+	fprintf(f, "%s.ComplexInteger = %lld\n", prefix,
+		(long long) (uop_stats[uop_mult] + uop_stats[uop_div]));
 	fprintf(f, "%s.Integer = %lld\n", prefix, (long long) icomp);
 	fprintf(f, "%s.Logical = %lld\n", prefix, (long long) lcomp);
 	fprintf(f, "%s.FloatingPoint = %lld\n", prefix, (long long) fcomp);
 	fprintf(f, "%s.Memory = %lld\n", prefix, (long long) mem);
 	fprintf(f, "%s.Ctrl = %lld\n", prefix, (long long) ctrl);
+	fprintf(f, "%s.WndSwitch = %lld\n", prefix, (long long)
+		(uop_stats[uop_call] + uop_stats[uop_ret]));
 	fprintf(f, "%s.Total = %lld\n", prefix, (long long) total);
 	fprintf(f, "%s.IPC = %.4g\n", prefix, sim_cycle ? (double) total / sim_cycle : 0.0);
+	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, sim_cycle && peak_ipc ?
+		(double) total / sim_cycle / peak_ipc : 0.0);
 	fprintf(f, "\n");
 }
 
@@ -149,19 +158,23 @@ void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix)
 	fprintf(f, "Dispatch.Stall." #NAME " = %lld\n", (long long) CORE.di_stall[di_stall_##NAME]); \
 }
 
-#define DUMP_CORE_OCCUPANCY_STATS(NAME, ITEM) { \
+#define DUMP_CORE_STRUCT_STATS(NAME, ITEM) { \
 	if (ITEM##_kind == ITEM##_kind_shared) { \
 		fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size * p_threads); \
-		fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) CORE.ITEM##_occ / sim_cycle : 0.0); \
+		fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) CORE.ITEM##_occupancy / sim_cycle : 0.0); \
 		fprintf(f, #NAME ".Full = %lld\n", (long long) CORE.ITEM##_full); \
+		fprintf(f, #NAME ".Reads = %lld\n", (long long) CORE.ITEM##_reads); \
+		fprintf(f, #NAME ".Writes = %lld\n", (long long) CORE.ITEM##_writes); \
 	} \
 }
 
-#define DUMP_THREAD_OCCUPANCY_STATS(NAME, ITEM) { \
+#define DUMP_THREAD_STRUCT_STATS(NAME, ITEM) { \
 	if (ITEM##_kind == ITEM##_kind_private) { \
 		fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size); \
-		fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) THREAD.ITEM##_occ / sim_cycle : 0.0); \
+		fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) THREAD.ITEM##_occupancy / sim_cycle : 0.0); \
 		fprintf(f, #NAME ".Full = %lld\n", (long long) THREAD.ITEM##_full); \
+		fprintf(f, #NAME ".Reads = %lld\n", (long long) THREAD.ITEM##_reads); \
+		fprintf(f, #NAME ".Writes = %lld\n", (long long) THREAD.ITEM##_writes); \
 	} \
 }
 
@@ -188,15 +201,15 @@ void p_dump_report()
 
 	/* Dispatch stage */
 	fprintf(f, "; Dispatch stage\n");
-	p_dump_uop_report(f, p->dispatched, "Dispatch");
+	p_dump_uop_report(f, p->dispatched, "Dispatch", p_dispatch_width);
 
 	/* Issue stage */
 	fprintf(f, "; Issue stage\n");
-	p_dump_uop_report(f, p->issued, "Issue");
+	p_dump_uop_report(f, p->issued, "Issue", p_issue_width);
 
 	/* Commit stage */
 	fprintf(f, "; Commit stage\n");
-	p_dump_uop_report(f, p->committed, "Commit");
+	p_dump_uop_report(f, p->committed, "Commit", p_commit_width);
 
 	/* Committed branches */
 	fprintf(f, "; Committed branches\n");
@@ -205,7 +218,7 @@ void p_dump_report()
 	fprintf(f, ";    Mispred - Number of mispredicted branches in the correct path\n");
 	fprintf(f, ";    PredAcc - Prediction accuracy\n");
 	fprintf(f, "Commit.Branches = %lld\n", (long long) p->branches);
-	fprintf(f, "Commit.Squashed = %lld\n", (long long) p->mispred);
+	fprintf(f, "Commit.Squashed = %lld\n", (long long) p->squashed);
 	fprintf(f, "Commit.Mispred = %lld\n", (long long) p->mispred);
 	fprintf(f, "Commit.PredAcc = %.4g\n", p->branches ?
 		(double) (p->branches - p->mispred) / p->branches : 0.0);
@@ -215,7 +228,7 @@ void p_dump_report()
 	FOREACH_CORE {
 		
 		/* Core */
-		fprintf(f, "; Statistics for core %d\n", core);
+		fprintf(f, "\n; Statistics for core %d\n", core);
 		fprintf(f, "[ c%d ]\n\n", core);
 
 		/* Functional units */
@@ -257,20 +270,20 @@ void p_dump_report()
 
 		/* Dispatch stage */
 		fprintf(f, "; Dispatch stage\n");
-		p_dump_uop_report(f, CORE.dispatched, "Dispatch");
+		p_dump_uop_report(f, CORE.dispatched, "Dispatch", p_dispatch_width);
 
 		/* Issue stage */
 		fprintf(f, "; Issue stage\n");
-		p_dump_uop_report(f, CORE.issued, "Issue");
+		p_dump_uop_report(f, CORE.issued, "Issue", p_issue_width);
 
 		/* Commit stage */
 		fprintf(f, "; Commit stage\n");
-		p_dump_uop_report(f, CORE.committed, "Commit");
+		p_dump_uop_report(f, CORE.committed, "Commit", p_commit_width);
 
 		/* Committed branches */
 		fprintf(f, "; Committed branches\n");
 		fprintf(f, "Commit.Branches = %lld\n", (long long) CORE.branches);
-		fprintf(f, "Commit.Squashed = %lld\n", (long long) CORE.mispred);
+		fprintf(f, "Commit.Squashed = %lld\n", (long long) CORE.squashed);
 		fprintf(f, "Commit.Mispred = %lld\n", (long long) CORE.mispred);
 		fprintf(f, "Commit.PredAcc = %.4g\n", CORE.branches ?
 			(double) (CORE.branches - CORE.mispred) / CORE.branches : 0.0);
@@ -278,37 +291,40 @@ void p_dump_report()
 
 		/* Occupancy stats */
 		fprintf(f, "; Structure statistics (reorder buffer, instruction queue,\n");
-		fprintf(f, "; load-store queue, and physical register file)\n");
+		fprintf(f, "; load-store queue, and register file)\n");
 		fprintf(f, ";    Size - Available size\n");
 		fprintf(f, ";    Occupancy - Average number of occupied entries\n");
 		fprintf(f, ";    Full - Number of cycles when the structure was full\n");
-		DUMP_CORE_OCCUPANCY_STATS(ROB, rob);
-		DUMP_CORE_OCCUPANCY_STATS(IQ, iq);
-		DUMP_CORE_OCCUPANCY_STATS(LSQ, lsq);
-		DUMP_CORE_OCCUPANCY_STATS(RF, phregs);
+		fprintf(f, ";    Reads, Writes - Accesses to the structure\n");
+		DUMP_CORE_STRUCT_STATS(ROB, rob);
+		DUMP_CORE_STRUCT_STATS(IQ, iq);
+		if (iq_kind == iq_kind_shared)
+			fprintf(f, "IQ.WakeupAccesses = %lld\n", (long long) CORE.iq_wakeup_accesses);
+		DUMP_CORE_STRUCT_STATS(LSQ, lsq);
+		DUMP_CORE_STRUCT_STATS(RF, rf);
 		fprintf(f, "\n");
 
 		/* Report for each thread */
 		FOREACH_THREAD {
-			fprintf(f, "; Statistics for core %d - thread %d\n", core, thread);
+			fprintf(f, "\n; Statistics for core %d - thread %d\n", core, thread);
 			fprintf(f, "[ c%dt%d ]\n\n", core, thread);
 
 			/* Dispatch stage */
 			fprintf(f, "; Dispatch stage\n");
-			p_dump_uop_report(f, THREAD.dispatched, "Dispatch");
+			p_dump_uop_report(f, THREAD.dispatched, "Dispatch", p_dispatch_width);
 
 			/* Issue stage */
 			fprintf(f, "; Issue stage\n");
-			p_dump_uop_report(f, THREAD.issued, "Issue");
+			p_dump_uop_report(f, THREAD.issued, "Issue", p_issue_width);
 
 			/* Commit stage */
 			fprintf(f, "; Commit stage\n");
-			p_dump_uop_report(f, THREAD.committed, "Commit");
+			p_dump_uop_report(f, THREAD.committed, "Commit", p_commit_width);
 
 			/* Committed branches */
 			fprintf(f, "; Committed branches\n");
 			fprintf(f, "Commit.Branches = %lld\n", (long long) THREAD.branches);
-			fprintf(f, "Commit.Squashed = %lld\n", (long long) THREAD.mispred);
+			fprintf(f, "Commit.Squashed = %lld\n", (long long) THREAD.squashed);
 			fprintf(f, "Commit.Mispred = %lld\n", (long long) THREAD.mispred);
 			fprintf(f, "Commit.PredAcc = %.4g\n", THREAD.branches ?
 				(double) (THREAD.branches - THREAD.mispred) / THREAD.branches : 0.0);
@@ -316,11 +332,17 @@ void p_dump_report()
 
 			/* Occupancy stats */
 			fprintf(f, "; Structure statistics (reorder buffer, instruction queue,\n");
-			fprintf(f, "; load-store queue, and physical register file)\n");
-			DUMP_THREAD_OCCUPANCY_STATS(ROB, rob);
-			DUMP_THREAD_OCCUPANCY_STATS(IQ, iq);
-			DUMP_THREAD_OCCUPANCY_STATS(LSQ, lsq);
-			DUMP_THREAD_OCCUPANCY_STATS(RF, phregs);
+			fprintf(f, "; load-store queue, register file, and renaming table)\n");
+			DUMP_THREAD_STRUCT_STATS(ROB, rob);
+			DUMP_THREAD_STRUCT_STATS(IQ, iq);
+			if (iq_kind == iq_kind_private)
+				fprintf(f, "IQ.WakeupAccesses = %lld\n", (long long) THREAD.iq_wakeup_accesses);
+			DUMP_THREAD_STRUCT_STATS(LSQ, lsq);
+			DUMP_THREAD_STRUCT_STATS(RF, rf);
+			fprintf(f, "RAT.Reads = %lld\n", (long long) THREAD.rat_reads);
+			fprintf(f, "RAT.Writes = %lld\n", (long long) THREAD.rat_writes);
+			fprintf(f, "BTB.Reads = %lld\n", (long long) THREAD.btb_reads);
+			fprintf(f, "BTB.Writes = %lld\n", (long long) THREAD.btb_writes);
 			fprintf(f, "\n");
 
 			/* Trace cache stats */

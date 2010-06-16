@@ -315,9 +315,11 @@ struct ccache_t {
 	uint64_t reads;
 	uint64_t blocking_reads;
 	uint64_t non_blocking_reads;
+	uint64_t read_hits;
 	uint64_t writes;
 	uint64_t blocking_writes;
 	uint64_t non_blocking_writes;
+	uint64_t write_hits;
 
 	uint64_t read_retries;
 	uint64_t write_retries;
@@ -325,6 +327,9 @@ struct ccache_t {
 	uint64_t no_retry_accesses;
 	uint64_t no_retry_hits;
 	uint64_t no_retry_reads;
+	uint64_t no_retry_read_hits;
+	uint64_t no_retry_writes;
+	uint64_t no_retry_write_hits;
 };
 
 struct ccache_t *ccache_create();
@@ -356,6 +361,7 @@ struct tlb_t {
 	/* Stats */
 	uint64_t accesses;
 	uint64_t hits;
+	uint64_t evictions;
 };
 
 struct tlb_t *tlb_create();

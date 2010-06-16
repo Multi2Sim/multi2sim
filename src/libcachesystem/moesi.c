@@ -213,16 +213,27 @@ void moesi_handler_find_and_lock(int event, void *data)
 		if (stack->read) {
 			ccache->reads++;
 			stack->blocking ? ccache->blocking_reads++ : ccache->non_blocking_reads++;
+			if (hit)
+				ccache->read_hits++;
 		} else {
 			ccache->writes++;
 			stack->blocking ? ccache->blocking_writes++ : ccache->non_blocking_writes++;
+			if (hit)
+				ccache->write_hits++;
 		}
 		if (!stack->retry) {
 			ccache->no_retry_accesses++;
 			if (hit)
 				ccache->no_retry_hits++;
-			if (stack->read)
+			if (stack->read) {
 				ccache->no_retry_reads++;
+				if (hit)
+					ccache->no_retry_read_hits++;
+			} else {
+				ccache->no_retry_writes++;
+				if (hit)
+					ccache->no_retry_write_hits++;
+			}
 		}
 
 		/* Miss */

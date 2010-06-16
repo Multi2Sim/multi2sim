@@ -105,6 +105,11 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 		uop->pred_neip = THREAD.fetch_neip;
 		uop->target_neip = isa_target;
 
+		/* Count number of logical/physical input/output
+		 * dependences. Physical odeps might be different than
+		 * logical odeps. */
+		phregs_count_deps(uop);
+
 		/* Memory access uops */
 		if (uop->flags & FMEM) {
 			uop->mem_vtladdr = ctx->mem->last_address;
@@ -206,6 +211,7 @@ static void fetch_thread(int core, int thread)
 		THREAD.fetch_block = block;
 		THREAD.fetch_access = cache_system_read(core, thread,
 			cache_kind_inst, phaddr, NULL, NULL);
+		THREAD.btb_reads++;
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */

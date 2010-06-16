@@ -71,14 +71,22 @@ static int dispatch_thread(int core, int thread, int quant)
 		
 		/* Insert in ROB */
 		rob_enqueue(uop);
+		CORE.rob_writes++;
+		THREAD.rob_writes++;
 		
 		/* Non memory instruction into IQ */
-		if (!(uop->flags & FMEM))
+		if (!(uop->flags & FMEM)) {
 			iq_insert(uop);
+			CORE.iq_writes++;
+			THREAD.iq_writes++;
+		}
 		
 		/* Memory instructions into the LSQ */
-		if (uop->flags & FMEM)
+		if (uop->flags & FMEM) {
 			lsq_insert(uop);
+			CORE.lsq_writes++;
+			THREAD.lsq_writes++;
+		}
 		
 		/* Another instruction dispatched */
 		uop->di_seq = ++CORE.di_seq;
