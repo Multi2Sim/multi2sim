@@ -580,4 +580,6 @@
 		McPAT.
 	* processor.c: call to 'uopq_reg_options()' was missing.
 
+2010-06-16
+	Version 2.3.2 Released
 
