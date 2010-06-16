@@ -516,7 +516,7 @@ static void cache_config_default(void)
 void cache_system_init(int _cores, int _threads)
 {
 	int i, j;
-	struct tlb_t *tlb;
+	struct tlb_t *dtlb, *itlb;
 	char *section, *value;
 	int core, thread, curr;
 	int nsets, bsize, assoc;
@@ -657,10 +657,8 @@ void cache_system_init(int _cores, int _threads)
 	strcpy(ccache->name, "mm");
 	sprintf(buf, "Net %s", config_read_string(cache_config, section, "HiNet", ""));
 	cache_config_section(section);
-	//cache_config_key(section, "HiNet");
 	cache_config_key(section, "Latency");
 	cache_config_key(section, "BlockSize");
-	//cache_config_section(buf);
 
 	read_ports = config_read_int(cache_config, section, "ReadPorts", 2);
 	write_ports = config_read_int(cache_config, section, "WritePorts", 1);
@@ -832,19 +830,24 @@ void cache_system_init(int _cores, int _threads)
 			ccache->bsize / cache_min_block_size, ccache->hinet->end_node_count);
 	}
 
-	/* Create tlbs */
+	/* Create TLBs (one dtlb and one itlb per thread) */
 	section = "Tlb";
-	tlb_array = calloc(cores * threads, sizeof(void *));
-	tlb_count = cores * threads;
+	tlb_count = cores * threads * 2;
+	tlb_array = calloc(tlb_count, sizeof(void *));
 	for (core = 0; core < cores; core++) {
 		for (thread = 0; thread < threads; thread++) {
-			tlb = tlb_array[core * threads + thread] = tlb_create();
-			sprintf(tlb->name, "tlb.%d.%d", core, thread);
-			tlb->hitlat = config_read_int(cache_config, section, "HitLatency", 2);
-			tlb->misslat = config_read_int(cache_config, section, "MissLatency", 30);
+			dtlb = tlb_array[(core * threads + thread) * 2] = tlb_create();
+			itlb = tlb_array[(core * threads + thread) * 2 + 1] = tlb_create();
+			sprintf(dtlb->name, "dtlb.%d.%d", core, thread);
+			sprintf(itlb->name, "itlb.%d.%d", core, thread);
+			dtlb->hitlat = itlb->hitlat =
+				config_read_int(cache_config, section, "HitLatency", 2);
+			dtlb->misslat = itlb->misslat =
+				config_read_int(cache_config, section, "MissLatency", 30);
 			nsets = config_read_int(cache_config, section, "Sets", 64);
 			assoc = config_read_int(cache_config, section, "Assoc", 4);
-			tlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
+			dtlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
+			itlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
 		}
 	}
 }
@@ -900,16 +903,25 @@ void cache_system_dump_report()
 		fprintf(f, "NoRetryHitRatio = %.4g\n", ccache->no_retry_accesses ?
 			(double) ccache->no_retry_hits / ccache->no_retry_accesses : 0.0);
 		fprintf(f, "NoRetryReads = %lld\n", (long long) ccache->no_retry_reads);
-		fprintf(f, "NoRetryWrites = %lld\n", (long long) (ccache->no_retry_accesses -
-			ccache->no_retry_reads));
+		fprintf(f, "NoRetryReadHits = %lld\n", (long long) ccache->no_retry_read_hits);
+		fprintf(f, "NoRetryReadMisses = %lld\n", (long long) (ccache->no_retry_reads -
+			ccache->no_retry_read_hits));
+		fprintf(f, "NoRetryWrites = %lld\n", (long long) ccache->no_retry_writes);
+		fprintf(f, "NoRetryWriteHits = %lld\n", (long long) ccache->no_retry_write_hits);
+		fprintf(f, "NoRetryWriteMisses = %lld\n", (long long) (ccache->no_retry_writes -
+			ccache->no_retry_write_hits));
 		fprintf(f, "\n");
 		fprintf(f, "Reads = %lld\n", (long long) ccache->reads);
 		fprintf(f, "BlockingReads = %lld\n", (long long) ccache->blocking_reads);
 		fprintf(f, "NonBlockingReads = %lld\n", (long long) ccache->non_blocking_reads);
+		fprintf(f, "ReadHits = %lld\n", (long long) ccache->read_hits);
+		fprintf(f, "ReadMisses = %lld\n", (long long) (ccache->reads - ccache->read_hits));
 		fprintf(f, "\n");
 		fprintf(f, "Writes = %lld\n", (long long) ccache->writes);
 		fprintf(f, "BlockingWrites = %lld\n", (long long) ccache->blocking_writes);
 		fprintf(f, "NonBlockingWrites = %lld\n", (long long) ccache->non_blocking_writes);
+		fprintf(f, "WriteHits = %lld\n", (long long) ccache->write_hits);
+		fprintf(f, "WriteMisses = %lld\n", (long long) (ccache->writes - ccache->write_hits));
 		fprintf(f, "\n\n");
 	}
 
@@ -922,6 +934,7 @@ void cache_system_dump_report()
 		fprintf(f, "Misses = %lld\n", (long long) (tlb->accesses - tlb->hits));
 		fprintf(f, "HitRatio = %.4g\n", tlb->accesses ?
 			(double) tlb->hits / tlb->accesses : 0.0);
+		fprintf(f, "Evictions = %lld\n", (long long) tlb->evictions);
 		fprintf(f, "\n\n");
 	}
 
@@ -974,11 +987,12 @@ static struct ccache_t *cache_system_get_ccache(int core, int thread, enum cache
 }
 
 
-static struct tlb_t *cache_system_get_tlb(int core, int thread)
+/* Return the associated itlb/dtlb */
+static struct tlb_t *cache_system_get_tlb(int core, int thread, enum cache_kind_enum cache_kind)
 {
 	int index;
 	assert(core < cores && thread < threads);
-	index = core * threads + thread;
+	index = (core * threads + thread) * 2 + (cache_kind == cache_kind_data ? 0 : 1);
 	return tlb_array[index];
 }
 
@@ -1161,10 +1175,10 @@ void cache_system_handler(int event, void *data)
 	if (event == EV_CACHE_SYSTEM_ACCESS_TLB) {
 		struct tlb_t *tlb;
 		uint32_t set, way, tag;
-		int hit;
+		int status, hit;
 
 		/* Access tlb */
-		tlb = cache_system_get_tlb(stack->core, stack->thread);
+		tlb = cache_system_get_tlb(stack->core, stack->thread, stack->cache_kind);
 		hit = cache_find_block(tlb->cache, stack->addr, &set, &way, NULL);
 
 		/* Stats */
@@ -1176,6 +1190,9 @@ void cache_system_handler(int event, void *data)
 		if (!hit) {
 			cache_decode_address(tlb->cache, stack->addr, &set, &tag, NULL);
 			way = cache_replace_block(tlb->cache, set);
+			cache_get_block(tlb->cache, set, way, NULL, &status);
+			if (status)
+				tlb->evictions++;
 			cache_set_block(tlb->cache, set, way, tag, 1);
 		}
 

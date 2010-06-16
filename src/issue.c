@@ -75,8 +75,12 @@ static int issue_sq(int core, int thread, int quant)
 		store->issue_when = sim_cycle;
 	
 		/* Instruction issued */
-		THREAD.issued[store->uop]++;
 		CORE.issued[store->uop]++;
+		CORE.lsq_reads++;
+		CORE.rf_reads += store->ph_idep_count;
+		THREAD.issued[store->uop]++;
+		THREAD.lsq_reads++;
+		THREAD.rf_reads += store->ph_idep_count;
 		p->issued[store->uop]++;
 		quant--;
 		
@@ -131,8 +135,12 @@ static int issue_lq(int core, int thread, int quant)
 		load->issue_when = sim_cycle;
 		
 		/* Instruction issued */
-		THREAD.issued[load->uop]++;
 		CORE.issued[load->uop]++;
+		CORE.lsq_reads++;
+		CORE.rf_reads += load->ph_idep_count;
+		THREAD.issued[load->uop]++;
+		THREAD.lsq_reads++;
+		THREAD.rf_reads += load->ph_idep_count;
 		p->issued[load->uop]++;
 		quant--;
 		
@@ -195,8 +203,12 @@ static int issue_iq(int core, int thread, int quant)
 		eventq_insert(CORE.eventq, uop);
 		
 		/* Instruction issued */
-		THREAD.issued[uop->uop]++;
 		CORE.issued[uop->uop]++;
+		CORE.iq_reads++;
+		CORE.rf_reads += uop->ph_idep_count;
+		THREAD.issued[uop->uop]++;
+		THREAD.iq_reads++;
+		THREAD.rf_reads += uop->ph_idep_count;
 		p->issued[uop->uop]++;
 		quant--;
 

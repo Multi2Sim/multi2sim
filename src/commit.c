@@ -22,7 +22,7 @@
 
 #define UPDATE_THREAD_OCCUPANCY_STATS(ITEM) { \
 	if (ITEM##_kind == ITEM##_kind_private) { \
-		THREAD.ITEM##_occ += THREAD.ITEM##_count; \
+		THREAD.ITEM##_occupancy += THREAD.ITEM##_count; \
 		if (THREAD.ITEM##_count == ITEM##_size) \
 			THREAD.ITEM##_full++; \
 	} \
@@ -31,7 +31,7 @@
 
 #define UPDATE_CORE_OCCUPANCY_STATS(ITEM) { \
 	if (ITEM##_kind == ITEM##_kind_shared) { \
-		CORE.ITEM##_occ += CORE.ITEM##_count; \
+		CORE.ITEM##_occupancy += CORE.ITEM##_count; \
 		if (CORE.ITEM##_count == ITEM##_size * p_threads) \
 			CORE.ITEM##_full++; \
 	} \
@@ -80,7 +80,7 @@ static void commit_thread(int core, int thread, int quant)
 	UPDATE_THREAD_OCCUPANCY_STATS(rob);
 	UPDATE_THREAD_OCCUPANCY_STATS(iq);
 	UPDATE_THREAD_OCCUPANCY_STATS(lsq);
-	UPDATE_THREAD_OCCUPANCY_STATS(phregs);
+	UPDATE_THREAD_OCCUPANCY_STATS(rf);
 
 	/* Commit stage for thread */
 	while (quant && can_commit_thread(core, thread)) {
@@ -105,6 +105,7 @@ static void commit_thread(int core, int thread, int quant)
 		if (uop->flags & FCTRL) {
 			bpred_update(THREAD.bpred, uop);
 			bpred_btb_update(THREAD.bpred, uop);
+			THREAD.btb_writes++;
 		}
 
 		/* Trace cache */
@@ -138,6 +139,8 @@ static void commit_thread(int core, int thread, int quant)
 		
 		/* Retire instruction */
 		rob_remove_head(core, thread);
+		CORE.rob_reads++;
+		THREAD.rob_reads++;
 		quant--;
 
 		/* Recover. Functional units are cleared when processor
@@ -158,7 +161,7 @@ void commit_core(int core)
 	UPDATE_CORE_OCCUPANCY_STATS(rob);
 	UPDATE_CORE_OCCUPANCY_STATS(iq);
 	UPDATE_CORE_OCCUPANCY_STATS(lsq);
-	UPDATE_CORE_OCCUPANCY_STATS(phregs);
+	UPDATE_CORE_OCCUPANCY_STATS(rf);
 
 	/* Commit stage for core */
 	switch (p_commit_kind) {
