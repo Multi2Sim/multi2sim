@@ -63,7 +63,7 @@ static void elf_read_ehdr(struct elf_file_t *f)
 
 	/* Check header size */
 	if (count != sizeof(f->ehdr) || f->ehdr.e_ehsize != sizeof(f->ehdr))
-		fatal("%s: header size is not %ld bytes long", f->path, sizeof(f->ehdr));
+		fatal("%s: header size is not %d bytes long", f->path, (int) sizeof(f->ehdr));
 
 	/* Check endianness */
 	if (f->ehdr.e_ident[5] != 1)
@@ -155,8 +155,8 @@ static void elf_read_shdr(struct elf_file_t *f)
 
 	/* Check section size and number */
 	if (!f->ehdr.e_shnum || f->ehdr.e_shentsize != sizeof(Elf32_Shdr))
-		fatal("%s: number of sections is 0 or section size is not %ld",
-			f->path, sizeof(Elf32_Shdr));
+		fatal("%s: number of sections is 0 or section size is not %d",
+			f->path, (int) sizeof(Elf32_Shdr));
 
 	/* Read section headers */
 	fseek(f->f, f->ehdr.e_shoff, SEEK_SET);
@@ -222,7 +222,7 @@ static void elf_read_phdr(struct elf_file_t *f)
 
 	/* Check phdr size and number */
 	if (f->ehdr.e_phentsize != sizeof(Elf32_Phdr))
-		fatal("%s: program header size is not %ld", f->path, sizeof(Elf32_Phdr));
+		fatal("%s: program header size is not %d", f->path, (int) sizeof(Elf32_Phdr));
 
 	/* Read program headers */
 	fseek(f->f, f->ehdr.e_phoff, SEEK_SET);

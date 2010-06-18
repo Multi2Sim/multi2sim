@@ -583,3 +583,6 @@
 2010-06-16
 	Version 2.3.2 Released
 
+2010-06-18
+	* elf.c: warnings produced by 'sizeof' removed.
+
