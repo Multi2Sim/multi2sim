@@ -195,6 +195,7 @@ void op_cpuid_impl() {
 	switch (isa_regs->eax) {
 	case 0x0: PUTINFO(0x2, 0x756e6547, 0x6c65746e, 0x49656e69);
 	case 0x1: PUTINFO(0xf29, 0x102080b, 0x4400, 0xbfebfbff);
+	case 0x2: PUTINFO(0x0, 0x0, 0x0, 0x0);
 	case 0x80000000: PUTINFO(0x80000004, 0, 0, 0);
 	case 0x80000001: PUTINFO(0, 0, 0, 0);
 	case 0x80000002: PUTINFO(0x20202020, 0x20202020, 0x20202020, 0x20202020);
@@ -801,6 +802,14 @@ void op_nop_impl() {
 }
 
 
+void op_nop_rm16_impl() {
+}
+
+
+void op_nop_rm32_impl() {
+}
+
+
 void op_not_rm8_impl() {
 	uint8_t value = isa_load_rm8();
 	value = ~value;
@@ -843,6 +852,22 @@ void op_pop_ir32_impl() {
 void op_popf_impl() {
 	mem_read(isa_mem, isa_regs->esp, 4, &isa_regs->eflags);
 	isa_regs->esp += 4;
+}
+
+
+void op_prefetcht0_impl() {
+}
+
+
+void op_prefetcht1_impl() {
+}
+
+
+void op_prefetcht2_impl() {
+}
+
+
+void op_prefetchnta_impl() {
 }
 
 

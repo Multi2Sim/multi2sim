@@ -370,6 +370,8 @@ DEFINST(neg_rm8, 0xf6, SKIP, 3, SKIP, 0)
 DEFINST(neg_rm32, 0xf7, SKIP, 3, SKIP, 0)
 
 DEFINST(nop, 0x90, SKIP, SKIP, SKIP, 0)
+DEFINST(nop_rm16, 0x0f, 0x1f, 0, SKIP, prefix_op)
+DEFINST(nop_rm32, 0x0f, 0x1f, 0, SKIP, 0)
 
 DEFINST(not_rm8, 0xf6, SKIP, 2, SKIP, 0)
 DEFINST(not_rm16, 0xf7, SKIP, 2, SKIP, prefix_op)
@@ -397,6 +399,11 @@ DEFINST(pop_rm32, 0x8f, SKIP, 0, SKIP, 0)
 DEFINST(pop_ir32, 0x58|INDEX, SKIP, SKIP, SKIP, 0)
 
 DEFINST(popf, 0x9d, SKIP, SKIP, SKIP, 0)
+
+DEFINST(prefetcht0, 0x0f, 0x18, MEM|1, SKIP, 0)
+DEFINST(prefetcht1, 0x0f, 0x18, MEM|2, SKIP, 0)
+DEFINST(prefetcht2, 0x0f, 0x18, MEM|3, SKIP, 0)
+DEFINST(prefetchnta, 0x0f, 0x18, MEM|0, SKIP, 0)
 
 DEFINST(push_rm32, 0xff, SKIP, 6, SKIP, 0)
 DEFINST(push_imm8, 0x6a, SKIP, SKIP, IB, 0)

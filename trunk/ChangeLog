@@ -586,3 +586,7 @@
 2010-06-18
 	* elf.c: warnings produced by 'sizeof' removed.
 
+2010-06-23
+	* m2skernel: multi-byte nops implemented. Instruction 'cpuid' with eax=2.
+		PrefetchXX instructions implemented. (All reported by Multi2Sim user).
+
