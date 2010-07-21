@@ -590,3 +590,12 @@
 	* m2skernel: multi-byte nops implemented. Instruction 'cpuid' with eax=2.
 		PrefetchXX instructions implemented. (All reported by Multi2Sim user).
 
+2010-07-21
+	* m2skernel, sched.c: context scheduler implemented. New fields:
+		ke->context_reschedule
+		ctx->alloc_when, ctx->dealloc_when
+		ctx->alloc_core, ctx->alloc_thread
+		ctx->dealloc_signal
+		p->ctx_alloc_oldest
+		p->ctx_dealloc_signals
+

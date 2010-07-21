@@ -49,10 +49,12 @@ extern char *p_report_file;
 extern int p_stage_time_stats;
 extern uint32_t p_cores;
 extern uint32_t p_threads;
-extern uint32_t p_quantum;
-extern uint32_t p_switch_penalty;
+extern uint32_t p_cpus;
+extern uint32_t p_context_quantum;
+extern uint32_t p_thread_quantum;
+extern uint32_t p_thread_switch_penalty;
 
-/* recover_kind */
+/* Recover_kind */
 extern enum p_recover_kind_enum {
 	p_recover_kind_writeback = 0,
 	p_recover_kind_commit
@@ -603,7 +605,8 @@ enum di_stall_enum {
 /* Thread */
 struct processor_thread_t {
 
-	struct ctx_t *ctx;  /* mapped kernel context */
+	struct ctx_t *ctx;  /* allocated kernel context */
+	int last_alloc_pid;  /* pid of last allocated context */
 
 	/* Reorder buffer */
 	int rob_count;
@@ -689,7 +692,6 @@ struct processor_core_t {
 
 	/* Per core counters */
 	uint64_t di_seq;  /* Sequence number for dispatch stage */
-	int context_map_count;
 	int iq_count;
 	int lsq_count;
 	int rf_count;
@@ -751,7 +753,10 @@ struct processor_t {
 	/* Some fields */
 	uint64_t seq;  /* Seq num assigned to last instr (with pre-incr) */
 	char *stage;  /* Name of currently simulated stage */
-	int context_map_count;  /* Number of contexts mapped to threads */
+
+	/* Context allocations */
+	uint64_t ctx_alloc_oldest;  /* Time when oldest context was allocated */
+	int ctx_dealloc_signals;  /* Sent deallocation signals */
 	
 	/* Structures */
 	struct mm_t *mm;  /* Memory management unit */
@@ -787,9 +792,11 @@ void p_dump(FILE *f);
 uint32_t p_tlb_address(int ctx, uint32_t vaddr);
 void p_fast_forward(uint64_t cycles);
 
-void p_context_map(struct ctx_t *ctx, int *pcore, int *pthread);
-void p_context_unmap(int core, int thread);
-void p_context_map_update(void);
+int p_pipeline_empty(int core, int thread);
+void p_map_context(int core, int thread, struct ctx_t *ctx);
+void p_unmap_context(int core, int thread);
+void p_static_schedule(void);
+void p_dynamic_schedule(void);
 
 void p_stages(void);
 void p_fetch(void);
