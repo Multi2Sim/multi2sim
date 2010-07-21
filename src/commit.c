@@ -73,6 +73,7 @@ static int can_commit_thread(int core, int thread)
 
 static void commit_thread(int core, int thread, int quant)
 {
+	struct ctx_t *ctx = THREAD.ctx;
 	struct uop_t *uop;
 	int recover = 0;
 	
@@ -83,6 +84,7 @@ static void commit_thread(int core, int thread, int quant)
 	UPDATE_THREAD_OCCUPANCY_STATS(rf);
 
 	/* Commit stage for thread */
+	assert(ctx);
 	while (quant && can_commit_thread(core, thread)) {
 		
 		/* Get instruction at the head of the ROB */
@@ -150,6 +152,11 @@ static void commit_thread(int core, int thread, int quant)
 			fu_release(core);
 		}
 	}
+
+	/* If context eviction signal is activated and pipeline is empty,
+	 * deallocate context. */
+	if (ctx->dealloc_signal && p_pipeline_empty(core, thread))
+		p_unmap_context(core, thread);
 }
 
 

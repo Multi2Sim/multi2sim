@@ -23,13 +23,14 @@
 static int can_fetch(int core, int thread)
 {
 	uint32_t phaddr, block;
+	struct ctx_t *ctx = THREAD.ctx;
 
 	/* Context must be running */
-	if (!THREAD.ctx || !ctx_get_status(THREAD.ctx, ctx_running))
+	if (!ctx || !ctx_get_status(ctx, ctx_running))
 		return 0;
 	
-	/* Fetch stage must not be stalled */
-	if (THREAD.fetch_stall)
+	/* Fetch stage stalled or context evict signal activated */
+	if (THREAD.fetch_stall || ctx->dealloc_signal)
 		return 0;
 	
 	/* Fetch queue must have not exceeded the limit of stored bytes
@@ -68,8 +69,6 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 	ctx_set_eip(ctx, THREAD.fetch_eip);
 	ctx_execute_inst(ctx);
 	THREAD.fetch_neip = THREAD.fetch_eip + isa_inst.size;
-	if (ke->context_count > p->context_map_count)
-		p_context_map_update();
 
 	/* Split macroinstruction into uops stored in list. */
 	count = list_count(fetchq);
@@ -278,7 +277,7 @@ static void fetch_core(int core)
 		/* Check for context switch */
 		thread = CORE.fetch_current;
 		must_switch = !ctx_get_status(THREAD.ctx, ctx_running);
-		if (sim_cycle - CORE.fetch_switch > p_quantum ||  /* Quantum expired */
+		if (sim_cycle - CORE.fetch_switch > p_thread_quantum ||  /* Quantum expired */
 			eventq_longlat(core, thread) ||  /* Long latency instruction */
 			must_switch)  /* Current context is suspended */
 		{
@@ -286,7 +285,7 @@ static void fetch_core(int core)
 			for (new = (thread + 1) % p_threads; new != thread;
 				new = (new + 1) % p_threads)
 			{
-				/* Do not choose it if it is not fetchable */
+				/* Do not choose it if it is not eligible for fetching */
 				if (!can_fetch(core, new))
 					continue;
 					
@@ -307,7 +306,7 @@ static void fetch_core(int core)
 			if (new != thread) {
 				CORE.fetch_current = new;
 				CORE.fetch_switch = sim_cycle;
-				ITHREAD(new).fetch_stall = p_switch_penalty;
+				ITHREAD(new).fetch_stall = p_thread_switch_penalty;
 			}
 		}
 

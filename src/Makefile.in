@@ -49,7 +49,7 @@ am_m2s_OBJECTS = bpred.$(OBJEXT) commit.$(OBJEXT) decode.$(OBJEXT) \
 	dispatch.$(OBJEXT) fetch.$(OBJEXT) fu.$(OBJEXT) \
 	issue.$(OBJEXT) m2s.$(OBJEXT) phregs.$(OBJEXT) \
 	processor.$(OBJEXT) queues.$(OBJEXT) recover.$(OBJEXT) \
-	rob.$(OBJEXT) tcache.$(OBJEXT) uop.$(OBJEXT) \
+	rob.$(OBJEXT) sched.$(OBJEXT) tcache.$(OBJEXT) uop.$(OBJEXT) \
 	writeback.$(OBJEXT)
 m2s_OBJECTS = $(am_m2s_OBJECTS)
 m2s_LDADD = $(LDADD)
@@ -273,6 +273,7 @@ m2s_SOURCES = \
 	queues.c \
 	recover.c \
 	rob.c \
+	sched.c \
 	tcache.c \
 	uop.c \
 	uop1.dat \
@@ -409,6 +410,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queues.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recover.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rob.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sched.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeback.Po@am__quote@

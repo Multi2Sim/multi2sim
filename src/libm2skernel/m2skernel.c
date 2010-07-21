@@ -49,6 +49,7 @@ void ke_init(void)
 	elf_debug_category = debug_new_category();
 	ld_debug_category = debug_new_category();
 	syscall_debug_category = debug_new_category();
+	ctx_debug_category = debug_new_category();
 
 	/* Record start time */
 	ke_init_time = ke_timer();
@@ -153,6 +154,7 @@ void ke_list_insert_head(enum ke_list_enum list, struct ctx_t *ctx)
 	case ke_list_finished: LIST_INSERT_HEAD(finished, ctx); break;
 	case ke_list_zombie: LIST_INSERT_HEAD(zombie, ctx); break;
 	case ke_list_suspended: LIST_INSERT_HEAD(suspended, ctx); break;
+	case ke_list_alloc: LIST_INSERT_HEAD(alloc, ctx); break;
 	}
 }
 
@@ -166,6 +168,7 @@ void ke_list_insert_tail(enum ke_list_enum list, struct ctx_t *ctx)
 	case ke_list_finished: LIST_INSERT_TAIL(finished, ctx); break;
 	case ke_list_zombie: LIST_INSERT_TAIL(zombie, ctx); break;
 	case ke_list_suspended: LIST_INSERT_TAIL(suspended, ctx); break;
+	case ke_list_alloc: LIST_INSERT_TAIL(alloc, ctx); break;
 	}
 }
 
@@ -179,6 +182,7 @@ void ke_list_remove(enum ke_list_enum list, struct ctx_t *ctx)
 	case ke_list_finished: LIST_REMOVE(finished, ctx); break;
 	case ke_list_zombie: LIST_REMOVE(zombie, ctx); break;
 	case ke_list_suspended: LIST_REMOVE(suspended, ctx); break;
+	case ke_list_alloc: LIST_REMOVE(alloc, ctx); break;
 	}
 }
 
@@ -191,6 +195,7 @@ int ke_list_member(enum ke_list_enum list, struct ctx_t *ctx)
 	case ke_list_finished: return LIST_MEMBER(finished, ctx);
 	case ke_list_zombie: return LIST_MEMBER(zombie, ctx);
 	case ke_list_suspended: return LIST_MEMBER(suspended, ctx);
+	case ke_list_alloc: return LIST_MEMBER(alloc, ctx);
 	}
 	return 0;
 }

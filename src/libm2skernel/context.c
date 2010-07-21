@@ -20,8 +20,11 @@
 #include <m2skernel.h>
 
 
+int ctx_debug_category;
+
+
 static struct string_map_t ctx_status_map = {
-	15, {
+	16, {
 		{ "running",      ctx_running },
 		{ "specmode",     ctx_specmode },
 		{ "suspended",    ctx_suspended },
@@ -36,7 +39,8 @@ static struct string_map_t ctx_status_map = {
 		{ "write",        ctx_write },
 		{ "waitpid",      ctx_waitpid },
 		{ "zombie",       ctx_zombie },
-		{ "futex",        ctx_futex }
+		{ "futex",        ctx_futex },
+		{ "alloc",        ctx_alloc }
 	}
 };
 
@@ -144,6 +148,7 @@ void ctx_free(struct ctx_t *ctx)
 	ke_list_remove(ke_list_context, ctx);
 	if (isa_ctx == ctx)
 		isa_ctx = NULL;
+	ctx_debug("context %d freed\n", ctx->pid);
 	free(ctx);
 }
 
@@ -234,6 +239,8 @@ int ctx_get_status(struct ctx_t *ctx, enum ctx_status_enum status)
 
 static void ctx_update_status(struct ctx_t *ctx, enum ctx_status_enum status)
 {
+	enum ctx_status_enum status_diff;
+
 	/* Remove contexts from the following lists:
 	 *   running, suspended, zombie */
 	if (ke_list_member(ke_list_running, ctx))
@@ -244,13 +251,21 @@ static void ctx_update_status(struct ctx_t *ctx, enum ctx_status_enum status)
 		ke_list_remove(ke_list_zombie, ctx);
 	if (ke_list_member(ke_list_finished, ctx))
 		ke_list_remove(ke_list_finished, ctx);
+	if (ke_list_member(ke_list_alloc, ctx))
+		ke_list_remove(ke_list_alloc, ctx);
+	
+	/* If the difference between the old and new status lies in other
+	 * states other than 'ctx_specmode', a reschedule is marked. */
+	status_diff = ctx->status ^ status;
+	if (status_diff & ~ctx_specmode)
+		ke->context_reschedule = 1;
 	
 	/* Update status */
 	ctx->status = status;
 	if (ctx->status & ctx_finished)
-		ctx->status = ctx_finished;
+		ctx->status = ctx_finished | (status & ctx_alloc);
 	if (ctx->status & ctx_zombie)
-		ctx->status = ctx_zombie;
+		ctx->status = ctx_zombie | (status & ctx_alloc);
 	if (!(ctx->status & ctx_suspended) &&
 		!(ctx->status & ctx_finished) &&
 		!(ctx->status & ctx_zombie) &&
@@ -268,12 +283,14 @@ static void ctx_update_status(struct ctx_t *ctx, enum ctx_status_enum status)
 		ke_list_insert_head(ke_list_finished, ctx);
 	if (ctx->status & ctx_suspended)
 		ke_list_insert_head(ke_list_suspended, ctx);
+	if (ctx->status & ctx_alloc)
+		ke_list_insert_head(ke_list_alloc, ctx);
 	
-	/* Dump new status */
-	if (debug_status(syscall_debug_category)) {
+	/* Dump new status (ignore 'ctx_specmode' status, it's too frequent) */
+	if (debug_status(ctx_debug_category) && (status_diff & ~ctx_specmode)) {
 		char sstatus[200];
 		map_flags(&ctx_status_map, ctx->status, sstatus, 200);
-		syscall_debug("context %d changed status to %s\n",
+		ctx_debug("ctx %d changed status to %s\n",
 			ctx->pid, sstatus);
 	}
 }
