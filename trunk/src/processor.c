@@ -28,8 +28,11 @@ struct processor_t *p;
 int p_stage_time_stats = 0;
 uint32_t p_cores = 1;
 uint32_t p_threads = 1;
-uint32_t p_quantum = 1000;
-uint32_t p_switch_penalty = 0;
+uint32_t p_cpus = 1;
+uint32_t p_context_quantum = 100000;
+int p_context_switch = 1;
+uint32_t p_thread_quantum = 1000;
+uint32_t p_thread_switch_penalty = 0;
 char *p_report_file = "";
 
 enum p_recover_kind_enum p_recover_kind = p_recover_kind_writeback;
@@ -64,6 +67,11 @@ void p_reg_options()
 	opt_reg_uint32("-cores", "number of processor cores", &p_cores);
 	opt_reg_uint32("-threads", "number of threads per core", &p_threads);
 
+	opt_reg_bool("-context_switch", "allow context switches and scheduling",
+		&p_context_switch);
+	opt_reg_uint32("-context_quantum", "quantum for a context before context switch",
+		&p_context_quantum);
+
 	opt_reg_bool("-stage_time_stats", "measure time for stages",
 		&p_stage_time_stats);
 	
@@ -72,10 +80,10 @@ void p_reg_options()
 	opt_reg_uint32("-recover_penalty", "cycles to stall fetch after recover",
 		&p_recover_penalty);
 	
-	opt_reg_uint32("-quantum", "time quantum in cycles for switch-on-event fetch",
-		&p_quantum);
-	opt_reg_uint32("-switch_penalty", "in switchonevent, thread switch penalty",
-		&p_switch_penalty);
+	opt_reg_uint32("-thread_quantum", "thread quantum in cycles for switch-on-event fetch",
+		&p_thread_quantum);
+	opt_reg_uint32("-thread_switch_penalty", "for switch-on-event fetch",
+		&p_thread_switch_penalty);
 	opt_reg_enum("-fetch_kind", "fetch policy {shared|timeslice|switchonevent}",
 		(int *) &p_fetch_kind, p_fetch_kind_map, 3);
 	
@@ -373,6 +381,8 @@ void p_print_stats(FILE *f)
 		(double) now / 1000000);
 	fprintf(f, "sim.cps  %.0f  # Cycles simulated per second\n",
 		now ? (double) sim_cycle / now * 1000000 : 0.0);
+	fprintf(stderr, "sim.contexts  %d  # Maximum number of contexts running concurrently\n",
+		ke->running_max);
 	fprintf(f, "sim.memory  %lu  # Physical memory used by benchmarks\n",
 		mem_mapped_space);
 	fprintf(f, "sim.memory_max  %lu  # Maximum physical memory used by benchmarks\n",
@@ -422,6 +432,7 @@ void p_init()
 	int core;
 	
 	/* Create processor structure and allocate cores/threads */
+	p_cpus = p_cores * p_threads;
 	p = calloc(1, sizeof(struct processor_t));
 	p->core = calloc(p_cores, sizeof(struct processor_core_t));
 	FOREACH_CORE
@@ -476,9 +487,6 @@ void p_load_progs(int argc, char **argv, char *ctxfile)
 		ld_load_prog_from_cmdline(argc - 1, argv + 1);
 	if (*ctxfile)
 		ld_load_prog_from_ctxconfig(ctxfile);
-	p_context_map_update();
-	if (!ke->context_list_head)
-		fatal("no executable loaded");
 }
 
 
@@ -531,60 +539,6 @@ void p_dump(FILE *f)
 }
 
 
-/* Return the pair {core,thread} where a context is mapped. If
- * the context is not mapped, map it. If there are no free threads to
- * map, simulator error. */
-void p_context_map(struct ctx_t *ctx, int *pcore, int *pthread)
-{
-	int core, thread;
-	int free_core = -1, free_thread = -1;
-
-	/* Look for context mapping */
-	assert(pcore && pthread);
-	FOREACH_CORE FOREACH_THREAD {
-		if (!THREAD.ctx && free_thread == -1) {
-			free_core = core;
-			free_thread = thread;
-		}
-		if (THREAD.ctx == ctx) {
-			*pcore = core;
-			*pthread = thread;
-			return;
-		}
-	}
-
-	/* Context not found and no free space to map */
-	if (free_core == -1)
-		fatal("cannot allocate thread to context, increase number of cores/threads");
-
-	/* Context not found - map it */
-	*pcore = core = free_core;
-	*pthread = thread = free_thread;
-	THREAD.ctx = ctx;
-	THREAD.fetch_neip = ctx->regs->eip;
-	p->context_map_count++;
-	CORE.context_map_count++;
-}
-
-
-void p_context_unmap(int core, int thread)
-{
-	assert(p->context_map_count > 0 && CORE.context_map_count > 0);
-	CORE.context_map_count--;
-	p->context_map_count--;
-	THREAD.ctx = NULL;
-}
-
-
-void p_context_map_update(void)
-{
-	struct ctx_t *ctx;
-	int core, thread;
-	
-	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_next)
-		p_context_map(ctx, &core, &thread);
-}
-
 
 uint64_t stage_time_fetch;
 uint64_t stage_time_decode;
@@ -607,6 +561,21 @@ void p_stages()
 	 * there is no timer pending. */
 	if (!ke->running_list_head && !ke->event_timer_next)
 		fatal("all contexts suspended");
+	
+	/* Static scheduler called after any context changed status other than 'sepcmode' */
+	if (!p_context_switch && ke->context_reschedule) {
+		p_static_schedule();
+		ke->context_reschedule = 0;
+	}
+
+	/* Dynamic scheduler called after any context changed status other than 'specmode',
+	 * or quantum of the oldest context expired, and no context is being evicted. */
+	if (p_context_switch && !p->ctx_dealloc_signals &&
+		(ke->context_reschedule || p->ctx_alloc_oldest + p_context_quantum <= sim_cycle))
+	{
+		p_dynamic_schedule();
+		ke->context_reschedule = 0;
+	}
 
 	/* Time ellapsed since last call to p_stages */
 	if (p_stage_time_stats) {
@@ -661,14 +630,6 @@ void p_fast_forward(uint64_t cycles)
 			THREAD.ctx = NULL;
 		}
 	}
-
-	/* Update mappings [ctx]->[core,thread] */
-	p_context_map_update();
-	
-	/* Fetch PCs */
-	FOREACH_CORE FOREACH_THREAD
-		if (THREAD.ctx)
-			THREAD.fetch_neip = THREAD.ctx->regs->eip;
 }
 
 

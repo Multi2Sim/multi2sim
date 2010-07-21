@@ -383,6 +383,9 @@ int pipe_count(int fd);
 
 /* Context */
 
+#define ctx_debug(...) debug(ctx_debug_category, __VA_ARGS__)
+extern int ctx_debug_category;
+
 struct ctx_t {
 	
 	/* Context properties */
@@ -396,6 +399,12 @@ struct ctx_t {
 	uint32_t set_child_tid, clear_child_tid;
 	uint32_t robust_list_head;  /* robust futex list */
 	uint32_t initial_stack;  /* Value of esp when context is cloned */
+
+	/* Allocation to hardware threads */
+	uint64_t alloc_when;  /* esim_cycle of allocation */
+	uint64_t dealloc_when;  /* esim_cycle of deallocation */
+	int alloc_core, alloc_thread;  /* core/thread id of last allocation */
+	int dealloc_signal;  /* signal to deallocate context */
 
 	/* For segmented memory access in glibc */
 	uint32_t glibc_segment_base;
@@ -416,6 +425,7 @@ struct ctx_t {
 	struct ctx_t *suspended_next, *suspended_prev;
 	struct ctx_t *finished_next, *finished_prev;
 	struct ctx_t *zombie_next, *zombie_prev;
+	struct ctx_t *alloc_next, *alloc_prev;
 
 	/* Substructures */
 	struct loader_t *loader;
@@ -441,6 +451,7 @@ enum ctx_status_enum {
 	ctx_waitpid      = 0x1000,  /* 'waitpid' system call */
 	ctx_zombie       = 0x2000,  /* zombie context */
 	ctx_futex        = 0x4000,  /* suspended in a futex */
+	ctx_alloc        = 0x8000,  /* allocated to a core/thread */
 	ctx_none         = 0x0000
 };
 
@@ -488,17 +499,22 @@ struct kernel_t {
 	/* Pipe manager */
 	struct pipemgr_t *pipemgr;
 
+	/* Flag set when any context changes any status other than 'specmode' */
+	int context_reschedule;
+
 	/* Lists of contexts */
 	int context_count, context_max;
 	int running_count, running_max;
 	int suspended_count, suspended_max;
 	int zombie_count, zombie_max;
 	int finished_count, finished_max;
+	int alloc_count, alloc_max;
 	struct ctx_t *context_list_head, *context_list_tail;
 	struct ctx_t *running_list_head, *running_list_tail;
 	struct ctx_t *suspended_list_head, *suspended_list_tail;
 	struct ctx_t *zombie_list_head, *zombie_list_tail;
 	struct ctx_t *finished_list_head, *finished_list_tail;
+	struct ctx_t *alloc_list_head, *alloc_list_tail;
 };
 
 enum ke_list_enum {
@@ -506,7 +522,8 @@ enum ke_list_enum {
 	ke_list_running,
 	ke_list_suspended,
 	ke_list_zombie,
-	ke_list_finished
+	ke_list_finished,
+	ke_list_alloc
 };
 
 void ke_list_insert_head(enum ke_list_enum list, struct ctx_t *ctx);

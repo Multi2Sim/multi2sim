@@ -36,6 +36,7 @@ m2s_SOURCES = \
 	queues.c \
 	recover.c \
 	rob.c \
+	sched.c \
 	tcache.c \
 	uop.c \
 	uop1.dat \

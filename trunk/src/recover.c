@@ -22,7 +22,6 @@
 
 void p_recover(int core, int thread)
 {
-	struct ctx_t *ctx = THREAD.ctx;
 	struct uop_t *uop;
 
 	/* Remove instructions of this thread in fetchq, uopq, iq, sq, lq and eventq. */
@@ -69,11 +68,11 @@ void p_recover(int core, int thread)
 	}
 
 	/* If we actually fetched wrong instructions, recover kernel */
-	if (ctx_get_status(ctx, ctx_specmode))
-		ctx_recover(ctx);
-
+	if (ctx_get_status(THREAD.ctx, ctx_specmode))
+		ctx_recover(THREAD.ctx);
+	
 	/* Stall fetch and set eip to fetch. */
 	THREAD.fetch_stall = MAX(THREAD.fetch_stall, p_recover_penalty);
-	THREAD.fetch_neip = ctx->regs->eip;
+	THREAD.fetch_neip = THREAD.ctx->regs->eip;
 }
 
