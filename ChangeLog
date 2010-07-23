@@ -602,3 +602,10 @@
 2010-07-21
 	Version 2.3.3 Released
 
+2010-07-23
+	* libdisasm/machine.dat: Bug fixed in instruction bt_rm32_r32. The 4th field
+		'SKIP' has been replaced by 'REG'. The Intel manual used as a reference
+		had an error in the instruction format specification.
+	* m2s-objdump.c: Bug fixed after 'if' statement.
+
+
