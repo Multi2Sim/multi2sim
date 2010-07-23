@@ -63,6 +63,7 @@ static void sim_dump(char *file)
 	struct elf_file_t *elf;
 	void *buf;
 	uint32_t addr, size, flags;
+	char *name;
 	int i;
 
 	/* Open file */
@@ -72,8 +73,9 @@ static void sim_dump(char *file)
 	
 	/* Sections */
 	for (i = 0; i < elf_section_count(elf); i++) {
-		elf_section_info(elf, i, NULL, &addr, &size, &flags);
+		elf_section_info(elf, i, &name, &addr, &size, &flags);
 		if (!(flags & SHF_EXECINSTR))
+			continue;
 
 		/* Not in requested range */
 		if (stop_address && stop_address < addr)
