@@ -49,7 +49,7 @@ DEFINST(bsr_r32_rm32, 0x0f, 0xbd, REG, SKIP, 0)
 
 DEFINST(bswap_ir32, 0x0f, 0xc8|INDEX, SKIP, SKIP, 0)
 
-DEFINST(bt_rm32_r32, 0x0f, 0xa3, SKIP, SKIP, 0)
+DEFINST(bt_rm32_r32, 0x0f, 0xa3, REG, SKIP, 0)
 DEFINST(bt_rm32_imm8, 0x0f, 0xba, 4, IB, 0)
 
 DEFINST(bts_rm32_imm8, 0x0f, 0xba, 5, IB, 0)
