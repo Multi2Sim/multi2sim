@@ -612,4 +612,6 @@
 2010-07-26
 	* syscall.c: system calls 'sched_getparam' and 'sched_setparam' implemented.
 	* syscall.c: system call 'clock_getres' implemented.
+	* syscall.c: system calls 'sched_get_priority_min' and 'sched_get_priority_max'
+		implemented.
 

@@ -1632,6 +1632,42 @@ void syscall_do()
 	}
 
 
+	/* 159 */
+	case syscall_code_sched_get_priority_max:
+	{
+		uint32_t policy;
+
+		policy = isa_regs->ebx;
+		syscall_debug("  policy=%d\n", policy);
+
+		switch (policy) {
+		case 0: retval = 0; break;  /* SCHED_OTHER */
+		case 1: retval = 99; break;  /* SCHED_FIFO */
+		case 2: retval = 99; break;  /* SCHED_RR */
+		default: fatal("syscall 'sched_get_priority_max' not implemented for policy=%d", policy);
+		}
+		break;
+	}
+
+
+	/* 160 */
+	case syscall_code_sched_get_priority_min:
+	{
+		uint32_t policy;
+
+		policy = isa_regs->ebx;
+		syscall_debug("  policy=%d\n", policy);
+
+		switch (policy) {
+		case 0: retval = 0; break;  /* SCHED_OTHER */
+		case 1: retval = 1; break;  /* SCHED_FIFO */
+		case 2: retval = 1; break;  /* SCHED_RR */
+		default: fatal("syscall 'sched_get_priority_min' not implemented for policy=%d", policy);
+		}
+		break;
+	}
+
+
 	/* 162 */
 	case syscall_code_nanosleep:
 	{
