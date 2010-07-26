@@ -65,6 +65,6 @@ LDADD = \
 	$(top_builddir)/src/libstruct/libstruct.a \
 	-lm -lncurses
 
-AM_CFLAGS = -Wall -Werror -fno-strict-aliasing
+AM_CFLAGS = -Wall -fno-strict-aliasing
 AM_LDFLAGS = #-static
 
