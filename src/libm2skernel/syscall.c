@@ -1586,6 +1586,41 @@ void syscall_do()
 	}
 
 
+	/* 154 */
+	case syscall_code_sched_setparam:
+	{
+		uint32_t pid, pparam;
+		uint32_t sched_priority;
+		
+		pid = isa_regs->ebx;
+		pparam = isa_regs->ecx;
+		syscall_debug("  pid=%d\n", pid);
+		syscall_debug("  pparam=0x%x\n", pparam);
+		mem_read(isa_mem, pparam, 4, &sched_priority);
+		syscall_debug("    param.sched_priority=%d\n", sched_priority);
+
+		/* Ignore system call */
+		break;
+	}
+
+
+	/* 155 */
+	case syscall_code_sched_getparam:
+	{
+		uint32_t pid, pparam;
+		uint32_t zero = 0;
+		
+		pid = isa_regs->ebx;
+		pparam = isa_regs->ecx;
+		syscall_debug("  pid=%d\n", pid);
+		syscall_debug("  pparam=0x%x\n", pparam);
+
+		/* Return 0 in pparam->sched_priority */
+		mem_write(isa_mem, pparam, 4, &zero);
+		break;
+	}
+
+
 	/* 162 */
 	case syscall_code_nanosleep:
 	{

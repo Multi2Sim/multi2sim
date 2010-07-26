@@ -609,3 +609,6 @@
 	* m2s-objdump.c: Bug fixed after 'if' statement.
 
 
+2010-07-26
+	* syscall.c: system calls 'sched_getparam' and 'sched_setparam' implemented.
+
