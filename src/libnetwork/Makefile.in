@@ -178,7 +178,7 @@ libnetwork_a_SOURCES = \
 	network.h \
 	network.c
 
-AM_CFLAGS = -Wall -Werror
+AM_CFLAGS = -Wall
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libesim \
