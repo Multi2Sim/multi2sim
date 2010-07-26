@@ -5,7 +5,7 @@ libcachesystem_a_SOURCES = cachesystem.h \
 	directory.c \
 	mmu.c \
 	moesi.c
-AM_CFLAGS = -Wall -Werror -fno-strict-aliasing
+AM_CFLAGS = -Wall -fno-strict-aliasing
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libnetwork \

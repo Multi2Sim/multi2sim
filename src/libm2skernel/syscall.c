@@ -2201,6 +2201,24 @@ void syscall_do()
 	}
 
 
+	/* 220 */
+	case syscall_code_getdents64:
+	{
+		uint32_t fd, pdirent, count, efd;
+
+		fd = isa_regs->ebx;
+		pdirent = isa_regs->ecx;
+		count = isa_regs->edx;
+		efd = ld_translate_fd(isa_ctx, fd);
+		syscall_debug("  fd=%d, pdirent=0x%x, count=%d\n",
+			fd, pdirent, count);
+		syscall_debug("  efd=%d\n", efd);
+
+		fatal("not implemented");
+		break;
+	}
+
+
 	/* 221 */
 	case syscall_code_fcntl64:
 	{

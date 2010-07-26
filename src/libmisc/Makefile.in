@@ -175,7 +175,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libmisc.a
 libmisc_a_SOURCES = misc.c misc.h
-AM_CFLAGS = -Wall -Werror
+AM_CFLAGS = -Wall
 all: all-am
 
 .SUFFIXES:
