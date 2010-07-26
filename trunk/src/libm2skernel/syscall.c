@@ -1621,6 +1621,17 @@ void syscall_do()
 	}
 
 
+	/* 157 */
+	case syscall_code_sched_getscheduler:
+	{
+		uint32_t pid;
+
+		pid = isa_regs->ebx;
+		syscall_debug("  pid=%d\n", pid);
+		break;
+	}
+
+
 	/* 162 */
 	case syscall_code_nanosleep:
 	{
@@ -2474,6 +2485,25 @@ void syscall_do()
 
 		isa_ctx->clear_child_tid = tidptr;
 		retval = isa_ctx->pid;
+		break;
+	}
+
+
+	/* 266 */
+	case syscall_code_clock_getres:
+	{
+		uint32_t clk_id, pres;
+		uint32_t tv_sec, tv_nsec;
+
+		clk_id = isa_regs->ebx;
+		pres = isa_regs->ecx;
+		syscall_debug("  clk_id=%d\n", clk_id);
+		syscall_debug("  pres=0x%x\n", pres);
+
+		tv_sec = 0;
+		tv_nsec = 1;
+		mem_write(isa_mem, pres, 4, &tv_sec);
+		mem_write(isa_mem, pres + 4, 4, &tv_nsec);
 		break;
 	}
 
