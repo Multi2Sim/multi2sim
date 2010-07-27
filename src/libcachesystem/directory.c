@@ -93,7 +93,7 @@ void dir_entry_clear_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, in
 }
 
 
-void dir_entry_clear_all_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry)
+void dir_entry_clear_all_sharers(struct dir_t *dir, volatile struct dir_entry_t *dir_entry)
 {
 	memset(&dir_entry->sharer, 0, DIR_ENTRY_SHARERS_SIZE);
 	dir_entry->sharers = 0;
