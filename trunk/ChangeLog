@@ -616,3 +616,7 @@
 		implemented.
 	* Makefile.am: flags '-Werror' removed in all Makefiles.
 
+2010-07-27
+	* disasm.c: qualifier 'volatile' added to 'inst' parameter to avoid
+		compiler optimizations in 'memset' call.
+

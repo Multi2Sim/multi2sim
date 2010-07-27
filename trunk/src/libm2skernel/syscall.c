@@ -2206,6 +2206,9 @@ void syscall_do()
 	{
 		uint32_t fd, pdirent, count, efd;
 
+		mhandle_check();///////
+
+		fatal("not implemented");
 		fd = isa_regs->ebx;
 		pdirent = isa_regs->ecx;
 		count = isa_regs->edx;
@@ -2214,7 +2217,6 @@ void syscall_do()
 			fd, pdirent, count);
 		syscall_debug("  efd=%d\n", efd);
 
-		fatal("not implemented");
 		break;
 	}
 

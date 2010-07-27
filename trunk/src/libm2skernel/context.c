@@ -175,7 +175,6 @@ void ctx_dump(struct ctx_t *ctx, FILE *f)
 	fprintf(f, "\n");
 }
 
-
 void ctx_execute_inst(struct ctx_t *ctx)
 {
 	unsigned char fixed[20];

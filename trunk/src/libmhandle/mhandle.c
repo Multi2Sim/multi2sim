@@ -236,7 +236,7 @@ void *mhandle_malloc(unsigned long size, char *at)
 		outofmem(at);
 	mark_corruption(ptr, size);
 	ht_insert(ptr, size, at);
-		    
+
 	return ptr + CORRUPT_RANGE;
 }
 
@@ -320,12 +320,17 @@ void __mhandle_done()
 
 void __mhandle_check(char *at)
 {
-	int i;
+	int i, count = 0;
 	
 	/* check for corruption in all allocated blocks */
-	for (i = 0; i < ht_size; i++)
-		if (ht[i].active && !ht[i].removed)
+	for (i = 0; i < ht_size; i++) {
+		if (ht[i].active && !ht[i].removed) {
 			check_corruption(ht[i].ptr, ht[i].size, ht[i].at);
+			count++;
+		}
+	}
+	fprintf(stderr, "libmhandle: %d pointers checked for corruption\n", count);
+
 }
 
 
