@@ -80,7 +80,7 @@ void dir_free(struct dir_t *dir);
 struct dir_entry_t *dir_entry_get(struct dir_t *dir, int x, int y, int z);
 void dir_entry_set_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
 void dir_entry_clear_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
-void dir_entry_clear_all_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry);
+void dir_entry_clear_all_sharers(struct dir_t *dir, volatile struct dir_entry_t *dir_entry);
 int dir_entry_is_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
 void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry);
 int dir_entry_group_shared_or_owned(struct dir_t *dir, int x, int y);

@@ -295,7 +295,8 @@ void disasm_done()
 }
 
 
-void x86_disasm(void *buf, uint32_t eip, x86_inst_t *inst)
+/* Pointer to 'inst' is declared volatile to avoid optimizations when calling 'memset' */
+void x86_disasm(void *buf, uint32_t eip, volatile x86_inst_t *inst)
 {
 	x86_opcode_info_elem_t **table, *elem;
 	x86_opcode_info_t *info;
@@ -305,7 +306,7 @@ void x86_disasm(void *buf, uint32_t eip, x86_inst_t *inst)
 	int was_any_prefix;
 
 	/* Initialize instruction */
-	bzero(inst, sizeof(x86_inst_t));
+	memset((void *) inst, 0, sizeof(x86_inst_t));
 	inst->eip = eip;
 	inst->op_size = 4;
 	inst->addr_size = 4;
