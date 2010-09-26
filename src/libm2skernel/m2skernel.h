@@ -67,7 +67,7 @@ struct mem_page_t {
 	uint32_t tag;
 	enum mem_access_enum perm;  /* access permissions; combination of flags */
 	struct mem_page_t *next;
-	unsigned char data[MEM_PAGESIZE];
+	unsigned char *data;
 };
 
 struct mem_t {

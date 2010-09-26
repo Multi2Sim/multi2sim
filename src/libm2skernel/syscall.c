@@ -2202,13 +2202,19 @@ void syscall_do()
 
 
 	/* 220 */
-	case syscall_code_getdents64:
+	/*case syscall_code_getdents64:
 	{
 		uint32_t fd, pdirent, count, efd;
+		void *buf;
 
-		mhandle_check();///////
+		struct linux_dirent64 {
+			uint64_t ino;
+			uint64_t off;
+			uint16_t reclen;
+			uint8_t type;
+			char name[0];
+		} __attribute__((packed));
 
-		fatal("not implemented");
 		fd = isa_regs->ebx;
 		pdirent = isa_regs->ecx;
 		count = isa_regs->edx;
@@ -2217,8 +2223,13 @@ void syscall_do()
 			fd, pdirent, count);
 		syscall_debug("  efd=%d\n", efd);
 
+		buf = calloc(1, count);
+		if (!buf)
+			fatal("syscall getdents64: cannot allocate buffer");
+		retval = syscall(220, efd, buf, count);
+		fatal("retval = %d\n", retval);
 		break;
-	}
+	}*/
 
 
 	/* 221 */

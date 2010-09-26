@@ -620,3 +620,9 @@
 	* disasm.c: qualifier 'volatile' added to 'inst' parameter to avoid
 		compiler optimizations in 'memset' call.
 
+2010-09-26
+	* libm2skernel/memory.c: mem_page_t structure changed to provide a pointer to
+		the page data instead of attaching it to the structure. By doing this,
+		a benchmark can allocate large amounts of memory without causing
+		hyper-paging if the allocated memory pages are not accessed.
+
