@@ -104,6 +104,8 @@ static void mem_page_free(struct mem_t *mem, uint32_t addr)
 	else
 		mem->pages[index] = page->next;
 	mem_mapped_space -= MEM_PAGESIZE;
+	if (page->data)
+		free(page->data);
 	free(page);
 }
 
@@ -124,10 +126,24 @@ void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size)
 	
 	/* Copy */
 	while (size > 0) {
+		
+		/* Get source and destination pages */
 		page_dest = mem_page_get(mem, dest);
 		page_src = mem_page_get(mem, src);
 		assert(page_src && page_dest);
-		memcpy(&page_dest->data, &page_src->data, MEM_PAGESIZE);
+		
+		/* Different actions depending on whether source and
+		 * destination page data are allocated. */
+		if (page_src->data) {
+			if (!page_dest->data)
+				page_dest->data = malloc(MEM_PAGESIZE);
+			memcpy(page_dest->data, page_src->data, MEM_PAGESIZE);
+		} else {
+			if (page_dest->data)
+				memset(page_dest->data, 0, MEM_PAGESIZE);
+		}
+
+		/* Advance pointers */
 		src += MEM_PAGESIZE;
 		dest += MEM_PAGESIZE;
 		size -= MEM_PAGESIZE;
@@ -144,77 +160,80 @@ void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size,
 	struct mem_page_t *page;
 	uint32_t offset;
 
+	/* Get page offset and check page bounds */
 	offset = addr & (MEM_PAGESIZE - 1);
 	if (offset + size > MEM_PAGESIZE)
 		return NULL;
+	
+	/* Look for page */
 	page = mem_page_get(mem, addr);
 	if (!page)
 		return NULL;
+	
+	/* Check page permissions */
 	if ((page->perm & access) != access && mem->safe)
 		fatal("mem_get_buffer: permission denied at 0x%x", addr);
+	
+	/* Allocate and initialize page data if it does not exist yet. */
+	if (!page->data)
+		page->data = calloc(1, MEM_PAGESIZE);
+	
+	/* Return pointer to page data */
 	return page->data + offset;
 }
 
 
-/* Access mem without exceeding page boundaries. */
+/* Access memory without exceeding page boundaries. */
 static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
 	int size, void *buf, enum mem_access_enum access)
 {
 	struct mem_page_t *page;
 	uint32_t offset;
-	void *data;
 
-	/* Find memory page */
+	/* Find memory page and compute offset. */
 	page = mem_page_get(mem, addr);
+	offset = addr & (MEM_PAGESIZE - 1);
+	assert(offset + size <= MEM_PAGESIZE);
 
-	/* If page does not exist and we are in unsafe mode, create it on write
-	 * and return 0s on read. */
-	if (!page && !mem->safe) {
-		switch (access) {
-		
-		/* Return 0s and exit. */
-		case mem_access_read:
-		case mem_access_exec:
+	/* On nonexistent page, raise segmentation fault in safe mode,
+	 * or create page with full privileges for writes in unsafe mode. */
+	if (!page) {
+		if (mem->safe)
+			fatal("mem_access: segmentation fault accessing 0x%x", addr);
+		if (access == mem_access_read || access == mem_access_exec) {
 			memset(buf, 0, size);
 			return;
-		
-		/* Create page */
-		case mem_access_write:
-		case mem_access_init:
+		}
+		if (access == mem_access_write || access == mem_access_init)
 			page = mem_page_create(mem, addr, mem_access_read |
 				mem_access_write | mem_access_exec |
 				mem_access_init);
-			break;
+	}
+	assert(page);
 
-		default:
-			panic("mem_access: unknown access");
-		}
+	/* Check permissions in safe mode */
+	if (mem->safe && (page->perm & access) != access)
+		fatal("mem_access: permission denied at 0x%x", addr);
+
+	/* Read/execute access */
+	if (access == mem_access_read || access == mem_access_exec) {
+		if (page->data)
+			memcpy(buf, page->data + offset, size);
+		else
+			memset(buf, 0, size);
+		return;
 	}
 
-	/* If we are in safe mode, check permissions. */
-	if (mem->safe) {
-		if (!page)
-			fatal("mem_access: segmentation fault accessing 0x%x", addr);
-		if ((page->perm & access) != access)
-			fatal("mem_access: permission denied at 0x%x", addr);
+	/* Write/initialize access */
+	if (access == mem_access_write || access == mem_access_init) {
+		if (!page->data)
+			page->data = calloc(1, MEM_PAGESIZE);
+		memcpy(page->data + offset, buf, size);
+		return;
 	}
-	
-	/* Access */
-	offset = addr & (MEM_PAGESIZE - 1);
-	assert(offset + size <= MEM_PAGESIZE);
-	data = page->data + offset;
-	switch (access) {
-	case mem_access_read:
-	case mem_access_exec:
-		memcpy(buf, data, size);
-		break;
-	case mem_access_write:
-	case mem_access_init:
-		memcpy(data, buf, size);
-		break;
-	default:
-		panic("mem_access: unknown access");
-	}
+
+	/* Shouldn't get here. */
+	abort();
 }
 
 
@@ -261,6 +280,8 @@ void mem_free(struct mem_t *mem)
 		page = mem->pages[i];
 		while (page) {
 			next = page->next;
+			if (page->data)
+				free(page->data);
 			free(page);
 			page = next;
 		}
