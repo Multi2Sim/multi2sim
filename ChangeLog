@@ -626,3 +626,6 @@
 		a benchmark can allocate large amounts of memory without causing
 		hyper-paging if the allocated memory pages are not accessed.
 
+2010-09-29
+	* syscall.c: system calls 'getdents' and 'getdents64' implemented.
+

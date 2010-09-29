@@ -23,6 +23,7 @@
 #include <utime.h>
 #include <time.h>
 #include <errno.h>
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
@@ -30,6 +31,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/times.h>
+#include <sys/syscall.h>
 #include <linux/unistd.h>
 
 #define STRSIZE 0x200
@@ -1502,6 +1504,84 @@ void syscall_do()
 	}
 
 
+	/* 141 */
+	case syscall_code_getdents:
+	{
+		uint32_t fd, pdirent, count, efd;
+		void *buf;
+		int nread, host_offs, guest_offs;
+		char d_type;
+
+		struct linux_dirent {
+			long d_ino;
+			off_t d_off;
+			unsigned short d_reclen;
+			char d_name[];
+		} *dirent;
+
+		struct sim_linux_dirent {
+			uint32_t d_ino;
+			uint32_t d_off;
+			uint16_t d_reclen;
+			char d_name[];
+		} __attribute__((packed)) sim_dirent;
+
+		/* Read parameters */
+		fd = isa_regs->ebx;
+		pdirent = isa_regs->ecx;
+		count = isa_regs->edx;
+		efd = ld_translate_fd(isa_ctx, fd);
+		syscall_debug("  fd=%d, pdirent=0x%x, count=%d\n",
+			fd, pdirent, count);
+		syscall_debug("  efd=%d\n", efd);
+
+		/* Call host getdents */
+		buf = calloc(1, count);
+		if (!buf)
+			fatal("getdents: cannot allocate buffer");
+		nread = syscall(SYS_getdents, efd, buf, count);
+
+		/* Error or no more entries */
+		if (nread < 0)
+			fatal("getdents: call to host system call returned error");
+		if (!nread) {
+			retval = 0;
+			break;
+		}
+
+		/* Copy to host memory */
+		host_offs = 0;
+		guest_offs = 0;
+		while (host_offs < nread) {
+			dirent = (struct linux_dirent *) (buf + host_offs);
+			sim_dirent.d_ino = dirent->d_ino;
+			sim_dirent.d_off = dirent->d_off;
+			sim_dirent.d_reclen = (15 + strlen(dirent->d_name)) / 4 * 4;
+			d_type = * (char *) (buf + host_offs + dirent->d_reclen - 1);
+
+			syscall_debug("    d_ino=%u ", sim_dirent.d_ino);
+			syscall_debug("d_off=%u ", sim_dirent.d_off);
+			syscall_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
+			syscall_debug("d_name='%s'\n", dirent->d_name);
+
+			mem_write(isa_mem, pdirent + guest_offs, 4, &sim_dirent.d_ino);
+			mem_write(isa_mem, pdirent + guest_offs + 4, 4, &sim_dirent.d_off);
+			mem_write(isa_mem, pdirent + guest_offs + 8, 2, &sim_dirent.d_reclen);
+			mem_write_string(isa_mem, pdirent + guest_offs + 10, dirent->d_name);
+			mem_write(isa_mem, pdirent + guest_offs + sim_dirent.d_reclen - 1, 1, &d_type);
+			
+			host_offs += dirent->d_reclen;
+			guest_offs += sim_dirent.d_reclen;
+			if (guest_offs > count)
+				fatal("getdents: host buffer too small");
+		}
+		syscall_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
+		free(buf);
+		retval = guest_offs;
+		break;
+	}
+
+
 	/* 146 */
 	case syscall_code_writev:
 	{
@@ -2202,19 +2282,28 @@ void syscall_do()
 
 
 	/* 220 */
-	/*case syscall_code_getdents64:
+	case syscall_code_getdents64:
 	{
 		uint32_t fd, pdirent, count, efd;
 		void *buf;
+		int nread, host_offs, guest_offs;
 
-		struct linux_dirent64 {
-			uint64_t ino;
-			uint64_t off;
-			uint16_t reclen;
-			uint8_t type;
-			char name[0];
-		} __attribute__((packed));
+		struct linux_dirent {
+			long d_ino;
+			off_t d_off;
+			unsigned short d_reclen;
+			char d_name[];
+		} *dirent;
 
+		struct sim_linux_dirent64 {
+			uint64_t d_ino;
+			int64_t d_off;
+			uint16_t d_reclen;
+			unsigned char d_type;
+			char d_name[];
+		} __attribute__((packed)) sim_dirent;
+
+		/* Read parameters */
 		fd = isa_regs->ebx;
 		pdirent = isa_regs->ecx;
 		count = isa_regs->edx;
@@ -2223,13 +2312,52 @@ void syscall_do()
 			fd, pdirent, count);
 		syscall_debug("  efd=%d\n", efd);
 
+		/* Call host getdents */
 		buf = calloc(1, count);
 		if (!buf)
-			fatal("syscall getdents64: cannot allocate buffer");
-		retval = syscall(220, efd, buf, count);
-		fatal("retval = %d\n", retval);
+			fatal("getdents: cannot allocate buffer");
+		nread = syscall(SYS_getdents, efd, buf, count);
+
+		/* Error or no more entries */
+		if (nread < 0)
+			fatal("getdents: call to host system call returned error");
+		if (!nread) {
+			retval = 0;
+			break;
+		}
+
+		/* Copy to host memory */
+		host_offs = 0;
+		guest_offs = 0;
+		while (host_offs < nread) {
+			dirent = (struct linux_dirent *) (buf + host_offs);
+			sim_dirent.d_ino = dirent->d_ino;
+			sim_dirent.d_off = dirent->d_off;
+			sim_dirent.d_reclen = (27 + strlen(dirent->d_name)) / 8 * 8;
+			sim_dirent.d_type = * (char *) (buf + host_offs + dirent->d_reclen - 1);
+
+			syscall_debug("    d_ino=%lld ", (long long) sim_dirent.d_ino);
+			syscall_debug("d_off=%lld ", (long long) sim_dirent.d_off);
+			syscall_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
+			syscall_debug("d_name='%s'\n", dirent->d_name);
+
+			mem_write(isa_mem, pdirent + guest_offs, 8, &sim_dirent.d_ino);
+			mem_write(isa_mem, pdirent + guest_offs + 8, 8, &sim_dirent.d_off);
+			mem_write(isa_mem, pdirent + guest_offs + 16, 2, &sim_dirent.d_reclen);
+			mem_write(isa_mem, pdirent + guest_offs + 18, 1, &sim_dirent.d_type);
+			mem_write_string(isa_mem, pdirent + guest_offs + 19, dirent->d_name);
+			
+			host_offs += dirent->d_reclen;
+			guest_offs += sim_dirent.d_reclen;
+			if (guest_offs > count)
+				fatal("getdents: host buffer too small");
+		}
+		syscall_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
+		free(buf);
+		retval = guest_offs;
 		break;
-	}*/
+	}
+
 
 
 	/* 221 */
