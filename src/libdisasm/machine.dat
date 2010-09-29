@@ -395,6 +395,8 @@ DEFINST(or_r32_rm32, 0x0b, SKIP, REG, SKIP, 0)
 DEFINST(outsb, 0x6e, SKIP, SKIP, SKIP, 0)
 DEFINST(outsd, 0x6f, SKIP, SKIP, SKIP, 0)
 
+DEFINST(pause, 0x90, SKIP, SKIP, SKIP, prefix_rep)
+
 DEFINST(pop_rm32, 0x8f, SKIP, 0, SKIP, 0)
 DEFINST(pop_ir32, 0x58|INDEX, SKIP, SKIP, SKIP, 0)
 
