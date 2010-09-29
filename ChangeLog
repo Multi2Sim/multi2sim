@@ -628,4 +628,5 @@
 
 2010-09-29
 	* syscall.c: system calls 'getdents' and 'getdents64' implemented.
+	* lidisasm/machine.dat, libm2skernel/machine.c: instruction 'pause' implemented.
 

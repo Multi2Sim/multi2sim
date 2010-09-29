@@ -831,6 +831,10 @@ void op_not_rm32_impl() {
 }
 
 
+void op_pause_impl() {
+}
+
+
 void op_pop_rm32_impl() {
 	uint32_t value;
 	mem_read(isa_mem, isa_regs->esp, 4, &value);
