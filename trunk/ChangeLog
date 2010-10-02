@@ -630,3 +630,10 @@
 	* syscall.c: system calls 'getdents' and 'getdents64' implemented.
 	* lidisasm/machine.dat, libm2skernel/machine.c: instruction 'pause' implemented.
 
+2010-10-02
+	* memory.c: flag 'mem_access_modif' added as a state for the memory page.
+	* syscall.c: system call 'msync' added, but left blank as if it was ignored.
+	* syscall.c, context.c: system call 'exit_group' fixed.
+		Function 'ctx_finish_group' implemented.
+	* syscall.c: system call 'tgkill' implemented.
+

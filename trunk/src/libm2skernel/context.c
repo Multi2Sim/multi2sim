@@ -337,6 +337,36 @@ struct ctx_t *ctx_get_zombie(struct ctx_t *parent, int pid)
 }
 
 
+/* Finish a context group. This call does a subset of action of the 'ctx_finish'
+ * call, but for all parent and child contexts sharing a memory map. */
+void ctx_finish_group(struct ctx_t *ctx, int status)
+{
+	struct ctx_t *aux;
+
+	/* Go to oldest parent. */
+	while (ctx->parent)
+		ctx = ctx->parent;
+	
+	/* Context already finished */
+	if (ctx_get_status(ctx, ctx_finished | ctx_zombie))
+		return;
+
+	/* From now on, all children have lost their parent. If a children is
+	 * already zombie, finish it, since its parent won't be able to waitpid it
+	 * anymore. */
+	for (aux = ke->context_list_head; aux; aux = aux->context_next) {
+		if (aux->mem != ctx->mem)
+			continue;
+		if (ctx_get_status(aux, ctx_zombie))
+			ctx_set_status(aux, ctx_finished);
+		if (ctx_get_status(aux, ctx_handler))
+			signal_handler_return(aux);
+		ctx_set_status(aux, ctx_finished);
+		aux->exit_code = status;
+	}
+}
+
+
 /* Finish a context. If the context has no parent, its status will be set
  * to 'ctx_finished'. If it has, its status is set to 'ctx_zombie', waiting for
  * a call to 'waitpid'.
