@@ -79,6 +79,17 @@ struct string_map_t open_flags_map = {
 };
 
 
+/* For 'msync' */
+
+struct string_map_t msync_flags_map = {
+	3, {
+		{ "MS_ASYNC", 1 },
+		{ "MS_INAVLIAGE", 2 },
+		{ "MS_SYNC", 4 }
+	}
+};
+
+
 /* For 'access' */
 
 struct string_map_t access_mode_map = {
@@ -1582,6 +1593,27 @@ void syscall_do()
 	}
 
 
+	/* 144 */
+	case syscall_code_msync:
+	{
+		uint32_t start, len, flags;
+		char sflags[STRSIZE];
+
+		/* Parameters */
+		start = isa_regs->ebx;
+		len = isa_regs->ecx;
+		flags = isa_regs->edx;
+		map_flags(&msync_flags_map, flags, sflags, STRSIZE);
+		syscall_debug("  start=0x%x, len=0x%x, flags=0x%x\n",
+			start, len, flags);
+		syscall_debug("  flags=%s\n", sflags);
+		
+		/* System call is ignored */
+		/* FIXME */
+		break;
+	}
+
+
 	/* 146 */
 	case syscall_code_writev:
 	{
@@ -2665,7 +2697,7 @@ void syscall_do()
 		status = isa_regs->ebx;
 		syscall_debug("  status=0x%x\n", status);
 
-		ctx_finish(isa_ctx, status);
+		ctx_finish_group(isa_ctx, status);
 		break;
 	}
 
@@ -2699,6 +2731,34 @@ void syscall_do()
 		tv_nsec = 1;
 		mem_write(isa_mem, pres, 4, &tv_sec);
 		mem_write(isa_mem, pres + 4, 4, &tv_nsec);
+		break;
+	}
+
+
+	/* 270 */
+	case syscall_code_tgkill:
+	{
+		uint32_t tgid, pid, sig;
+		struct ctx_t *ctx;
+
+		tgid = isa_regs->ebx;
+		pid = isa_regs->ecx;
+		sig = isa_regs->edx;
+		syscall_debug("  tgid=%d, pid=%d, sig=%d (%s)\n",
+			tgid, pid, sig, sim_signal_name(sig));
+
+		/* Implementation restrictions. */
+		if ((int) tgid == -1)
+			fatal("syscall 'tgkill': not implemented for tgid = -1");
+
+		/* Find context referred by pid. */
+		ctx = ctx_get(pid);
+		if (!ctx)
+			fatal("syscall 'tgkill': pid %d does not exist", pid);
+
+		/* Send signal */
+		sim_sigset_add(&ctx->signal_masks->pending, sig);
+		signal_process(ctx);
 		break;
 	}
 

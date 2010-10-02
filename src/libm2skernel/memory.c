@@ -195,6 +195,11 @@ static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
 	offset = addr & (MEM_PAGESIZE - 1);
 	assert(offset + size <= MEM_PAGESIZE);
 
+	/* If it is a write access, set the 'modified' flag in the page
+	 * attributes (perm). This is not done for 'initialize' access. */
+	if (access == mem_access_write)
+		page->perm |= mem_access_modif;
+
 	/* On nonexistent page, raise segmentation fault in safe mode,
 	 * or create page with full privileges for writes in unsafe mode. */
 	if (!page) {

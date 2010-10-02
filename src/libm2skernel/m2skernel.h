@@ -53,10 +53,11 @@ struct ctx_t;
 #define MEM_PAGE_COUNT     1024
 
 enum mem_access_enum {
-	mem_access_read = 0x01,
-	mem_access_write = 0x02,
-	mem_access_exec = 0x04,
-	mem_access_init = 0x08
+	mem_access_read   = 0x01,
+	mem_access_write  = 0x02,
+	mem_access_exec   = 0x04,
+	mem_access_init   = 0x08,
+	mem_access_modif  = 0x10
 };
 
 /* Safe mode */
@@ -461,6 +462,7 @@ void ctx_free(struct ctx_t *ctx);
 void ctx_dump(struct ctx_t *ctx, FILE *f);
 
 void ctx_finish(struct ctx_t *ctx, int status);
+void ctx_finish_group(struct ctx_t *ctx, int status);
 void ctx_execute_inst(struct ctx_t *ctx);
 
 void ctx_set_eip(struct ctx_t *ctx, uint32_t eip);
