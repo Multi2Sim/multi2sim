@@ -645,3 +645,6 @@
 	* processor.c: two register files supported, one for integer and other for
 		floating-point registers. Statistics are shown separately for both.
 
+2010-10-26
+	Version 2.4 Released
+
