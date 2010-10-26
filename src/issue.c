@@ -25,7 +25,7 @@ static void check_if_ready(struct lnlist_t *list)
 	lnlist_head(list);
 	for (lnlist_head(list); !lnlist_eol(list); lnlist_next(list)) {
 		uop = lnlist_get(list);
-		if (!phregs_ready(uop))
+		if (!rf_ready(uop))
 			continue;
 		if (!uop->ready)
 			esim_debug("uop action=\"update\", core=%d, seq=%lld, ready=1\n",
@@ -53,7 +53,7 @@ static int issue_sq(int core, int thread, int quant)
 		assert(store->flags & FSTORE);
 
 		/* Check that it can issue */
-		if (!store->ready && !phregs_ready(store))
+		if (!store->ready && !rf_ready(store))
 			break;
 		store->ready = 1;
 		if (store->in_rob)
@@ -77,10 +77,12 @@ static int issue_sq(int core, int thread, int quant)
 		/* Instruction issued */
 		CORE.issued[store->uop]++;
 		CORE.lsq_reads++;
-		CORE.rf_reads += store->ph_idep_count;
+		CORE.rf_int_reads += store->ph_int_idep_count;
+		CORE.rf_fp_reads += store->ph_fp_idep_count;
 		THREAD.issued[store->uop]++;
 		THREAD.lsq_reads++;
-		THREAD.rf_reads += store->ph_idep_count;
+		THREAD.rf_int_reads += store->ph_int_idep_count;
+		THREAD.rf_fp_reads += store->ph_fp_idep_count;
 		p->issued[store->uop]++;
 		quant--;
 		
@@ -109,7 +111,7 @@ static int issue_lq(int core, int thread, int quant)
 		/* Get element from LQ.
 		 * If it is not ready, go to the next one */
 		load = lnlist_get(lq);
-		if (!load->ready && !phregs_ready(load)) {
+		if (!load->ready && !rf_ready(load)) {
 			lnlist_next(lq);
 			continue;
 		}
@@ -137,10 +139,12 @@ static int issue_lq(int core, int thread, int quant)
 		/* Instruction issued */
 		CORE.issued[load->uop]++;
 		CORE.lsq_reads++;
-		CORE.rf_reads += load->ph_idep_count;
+		CORE.rf_int_reads += load->ph_int_idep_count;
+		CORE.rf_fp_reads += load->ph_fp_idep_count;
 		THREAD.issued[load->uop]++;
 		THREAD.lsq_reads++;
-		THREAD.rf_reads += load->ph_idep_count;
+		THREAD.rf_int_reads += load->ph_int_idep_count;
+		THREAD.rf_fp_reads += load->ph_fp_idep_count;
 		p->issued[load->uop]++;
 		quant--;
 		
@@ -172,11 +176,11 @@ static int issue_iq(int core, int thread, int quant)
 		uop = lnlist_get(iq);
 		assert(uop_exists(uop));
 		assert(!(uop->flags & FMEM));
-		if (!uop->ready && !phregs_ready(uop)) {
+		if (!uop->ready && !rf_ready(uop)) {
 			lnlist_next(iq);
 			continue;
 		}
-		uop->ready = 1;  /* avoid next call to 'phregs_ready' */
+		uop->ready = 1;  /* avoid next call to 'rf_ready' */
 		
 		/* If inst does not require fu, one cycle latency.
 		 * Otherwise, try to reserve the corresponding fu. */
@@ -205,10 +209,12 @@ static int issue_iq(int core, int thread, int quant)
 		/* Instruction issued */
 		CORE.issued[uop->uop]++;
 		CORE.iq_reads++;
-		CORE.rf_reads += uop->ph_idep_count;
+		CORE.rf_int_reads += uop->ph_int_idep_count;
+		CORE.rf_fp_reads += uop->ph_fp_idep_count;
 		THREAD.issued[uop->uop]++;
 		THREAD.iq_reads++;
-		THREAD.rf_reads += uop->ph_idep_count;
+		THREAD.rf_int_reads += uop->ph_int_idep_count;
+		THREAD.rf_fp_reads += uop->ph_fp_idep_count;
 		p->issued[uop->uop]++;
 		quant--;
 

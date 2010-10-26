@@ -31,10 +31,10 @@ m2s_SOURCES = \
 	issue.c \
 	m2s.c \
 	m2s.h \
-	phregs.c \
 	processor.c \
 	queues.c \
 	recover.c \
+	rf.c \
 	rob.c \
 	sched.c \
 	tcache.c \

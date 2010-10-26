@@ -109,7 +109,7 @@ void p_reg_options()
 	fetchq_reg_options();
 	uopq_reg_options();
 	rob_reg_options();
-	phregs_reg_options();
+	rf_reg_options();
 	iq_reg_options();
 	lsq_reg_options();
 	fu_reg_options();
@@ -167,23 +167,19 @@ void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 }
 
 #define DUMP_CORE_STRUCT_STATS(NAME, ITEM) { \
-	if (ITEM##_kind == ITEM##_kind_shared) { \
-		fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size * p_threads); \
-		fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) CORE.ITEM##_occupancy / sim_cycle : 0.0); \
-		fprintf(f, #NAME ".Full = %lld\n", (long long) CORE.ITEM##_full); \
-		fprintf(f, #NAME ".Reads = %lld\n", (long long) CORE.ITEM##_reads); \
-		fprintf(f, #NAME ".Writes = %lld\n", (long long) CORE.ITEM##_writes); \
-	} \
+	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size * p_threads); \
+	fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) CORE.ITEM##_occupancy / sim_cycle : 0.0); \
+	fprintf(f, #NAME ".Full = %lld\n", (long long) CORE.ITEM##_full); \
+	fprintf(f, #NAME ".Reads = %lld\n", (long long) CORE.ITEM##_reads); \
+	fprintf(f, #NAME ".Writes = %lld\n", (long long) CORE.ITEM##_writes); \
 }
 
 #define DUMP_THREAD_STRUCT_STATS(NAME, ITEM) { \
-	if (ITEM##_kind == ITEM##_kind_private) { \
-		fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size); \
-		fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) THREAD.ITEM##_occupancy / sim_cycle : 0.0); \
-		fprintf(f, #NAME ".Full = %lld\n", (long long) THREAD.ITEM##_full); \
-		fprintf(f, #NAME ".Reads = %lld\n", (long long) THREAD.ITEM##_reads); \
-		fprintf(f, #NAME ".Writes = %lld\n", (long long) THREAD.ITEM##_writes); \
-	} \
+	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size); \
+	fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) THREAD.ITEM##_occupancy / sim_cycle : 0.0); \
+	fprintf(f, #NAME ".Full = %lld\n", (long long) THREAD.ITEM##_full); \
+	fprintf(f, #NAME ".Reads = %lld\n", (long long) THREAD.ITEM##_reads); \
+	fprintf(f, #NAME ".Writes = %lld\n", (long long) THREAD.ITEM##_writes); \
 }
 
 void p_dump_report()
@@ -299,17 +295,23 @@ void p_dump_report()
 
 		/* Occupancy stats */
 		fprintf(f, "; Structure statistics (reorder buffer, instruction queue,\n");
-		fprintf(f, "; load-store queue, and register file)\n");
+		fprintf(f, "; load-store queue, and integer/floating-point register file)\n");
 		fprintf(f, ";    Size - Available size\n");
 		fprintf(f, ";    Occupancy - Average number of occupied entries\n");
 		fprintf(f, ";    Full - Number of cycles when the structure was full\n");
 		fprintf(f, ";    Reads, Writes - Accesses to the structure\n");
-		DUMP_CORE_STRUCT_STATS(ROB, rob);
-		DUMP_CORE_STRUCT_STATS(IQ, iq);
-		if (iq_kind == iq_kind_shared)
+		if (rob_kind == rob_kind_shared)
+			DUMP_CORE_STRUCT_STATS(ROB, rob);
+		if (iq_kind == iq_kind_shared) {
+			DUMP_CORE_STRUCT_STATS(IQ, iq);
 			fprintf(f, "IQ.WakeupAccesses = %lld\n", (long long) CORE.iq_wakeup_accesses);
-		DUMP_CORE_STRUCT_STATS(LSQ, lsq);
-		DUMP_CORE_STRUCT_STATS(RF, rf);
+		}
+		if (lsq_kind == lsq_kind_shared)
+			DUMP_CORE_STRUCT_STATS(LSQ, lsq);
+		if (rf_kind == rf_kind_shared) {
+			DUMP_CORE_STRUCT_STATS(RF_Int, rf_int);
+			DUMP_CORE_STRUCT_STATS(RF_Fp, rf_fp);
+		}
 		fprintf(f, "\n");
 
 		/* Report for each thread */
@@ -339,16 +341,24 @@ void p_dump_report()
 			fprintf(f, "\n");
 
 			/* Occupancy stats */
-			fprintf(f, "; Structure statistics (reorder buffer, instruction queue,\n");
-			fprintf(f, "; load-store queue, register file, and renaming table)\n");
-			DUMP_THREAD_STRUCT_STATS(ROB, rob);
-			DUMP_THREAD_STRUCT_STATS(IQ, iq);
-			if (iq_kind == iq_kind_private)
+			fprintf(f, "; Structure statistics (reorder buffer, instruction queue, load-store queue,\n");
+			fprintf(f, "; integer/floating-point register file, and renaming table)\n");
+			if (rob_kind == rob_kind_private)
+				DUMP_THREAD_STRUCT_STATS(ROB, rob);
+			if (iq_kind == iq_kind_private) {
+				DUMP_THREAD_STRUCT_STATS(IQ, iq);
 				fprintf(f, "IQ.WakeupAccesses = %lld\n", (long long) THREAD.iq_wakeup_accesses);
-			DUMP_THREAD_STRUCT_STATS(LSQ, lsq);
-			DUMP_THREAD_STRUCT_STATS(RF, rf);
-			fprintf(f, "RAT.Reads = %lld\n", (long long) THREAD.rat_reads);
-			fprintf(f, "RAT.Writes = %lld\n", (long long) THREAD.rat_writes);
+			}
+			if (lsq_kind == lsq_kind_private)
+				DUMP_THREAD_STRUCT_STATS(LSQ, lsq);
+			if (rf_kind == rf_kind_private) {
+				DUMP_THREAD_STRUCT_STATS(RF_Int, rf_int);
+				DUMP_THREAD_STRUCT_STATS(RF_Fp, rf_fp);
+			}
+			fprintf(f, "RAT.IntReads = %lld\n", (long long) THREAD.rat_int_reads);
+			fprintf(f, "RAT.IntWrites = %lld\n", (long long) THREAD.rat_int_writes);
+			fprintf(f, "RAT.FpReads = %lld\n", (long long) THREAD.rat_fp_reads);
+			fprintf(f, "RAT.FpWrites = %lld\n", (long long) THREAD.rat_fp_writes);
 			fprintf(f, "BTB.Reads = %lld\n", (long long) THREAD.btb_reads);
 			fprintf(f, "BTB.Writes = %lld\n", (long long) THREAD.btb_writes);
 			fprintf(f, "\n");
@@ -381,7 +391,7 @@ void p_print_stats(FILE *f)
 		(double) now / 1000000);
 	fprintf(f, "sim.cps  %.0f  # Cycles simulated per second\n",
 		now ? (double) sim_cycle / now * 1000000 : 0.0);
-	fprintf(stderr, "sim.contexts  %d  # Maximum number of contexts running concurrently\n",
+	fprintf(f, "sim.contexts  %d  # Maximum number of contexts running concurrently\n",
 		ke->running_max);
 	fprintf(f, "sim.memory  %lu  # Physical memory used by benchmarks\n",
 		mem_mapped_space);
@@ -438,7 +448,7 @@ void p_init()
 	FOREACH_CORE
 		p_core_init(core);
 
-	phregs_init();
+	rf_init();
 	bpred_init();
 	tcache_init();
 	fetchq_init();
@@ -468,7 +478,7 @@ void p_done()
 	eventq_done();
 	bpred_done();
 	tcache_done();
-	phregs_done();
+	rf_done();
 	fu_done();
 
 	/* Free processor */
@@ -523,7 +533,7 @@ void p_dump(FILE *f)
 			uop_lnlist_dump(THREAD.lq, f);
 			fprintf(f, "sq:\n");
 			uop_lnlist_dump(THREAD.sq, f);
-			phregs_dump(core, thread, f);
+			rf_dump(core, thread, f);
 			if (THREAD.ctx) {
 				fprintf(f, "mapped context: %d\n", THREAD.ctx->pid);
 				ctx_dump(THREAD.ctx, f);
