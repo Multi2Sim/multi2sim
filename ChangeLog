@@ -637,3 +637,11 @@
 		Function 'ctx_finish_group' implemented.
 	* syscall.c: system call 'tgkill' implemented.
 
+2010-10-24
+	* rf.c, m2s.h: register renaming mechanism upgraded to support stack-based
+		x86 floating-point operations. In the prior scheme, all FP uops were
+		dependent on each other. The new mechanism allows parallelism to
+		be exploited among FP uops.
+	* processor.c: two register files supported, one for integer and other for
+		floating-point registers. Statistics are shown separately for both.
+

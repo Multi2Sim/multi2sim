@@ -21,20 +21,16 @@
 
 
 #define UPDATE_THREAD_OCCUPANCY_STATS(ITEM) { \
-	if (ITEM##_kind == ITEM##_kind_private) { \
-		THREAD.ITEM##_occupancy += THREAD.ITEM##_count; \
-		if (THREAD.ITEM##_count == ITEM##_size) \
-			THREAD.ITEM##_full++; \
-	} \
+	THREAD.ITEM##_occupancy += THREAD.ITEM##_count; \
+	if (THREAD.ITEM##_count == ITEM##_size) \
+		THREAD.ITEM##_full++; \
 }
 
 
 #define UPDATE_CORE_OCCUPANCY_STATS(ITEM) { \
-	if (ITEM##_kind == ITEM##_kind_shared) { \
-		CORE.ITEM##_occupancy += CORE.ITEM##_count; \
-		if (CORE.ITEM##_count == ITEM##_size * p_threads) \
-			CORE.ITEM##_full++; \
-	} \
+	CORE.ITEM##_occupancy += CORE.ITEM##_count; \
+	if (CORE.ITEM##_count == ITEM##_size * p_threads) \
+		CORE.ITEM##_full++; \
 }
 
 
@@ -77,11 +73,17 @@ static void commit_thread(int core, int thread, int quant)
 	struct uop_t *uop;
 	int recover = 0;
 	
-	/* Update occupancy stats for shared structures */
-	UPDATE_THREAD_OCCUPANCY_STATS(rob);
-	UPDATE_THREAD_OCCUPANCY_STATS(iq);
-	UPDATE_THREAD_OCCUPANCY_STATS(lsq);
-	UPDATE_THREAD_OCCUPANCY_STATS(rf);
+	/* Update occupancy stats for private structures */
+	if (rob_kind == rob_kind_private)
+		UPDATE_THREAD_OCCUPANCY_STATS(rob);
+	if (iq_kind == iq_kind_private)
+		UPDATE_THREAD_OCCUPANCY_STATS(iq);
+	if (lsq_kind == lsq_kind_private)
+		UPDATE_THREAD_OCCUPANCY_STATS(lsq);
+	if (rf_kind == rf_kind_private) {
+		UPDATE_THREAD_OCCUPANCY_STATS(rf_int);
+		UPDATE_THREAD_OCCUPANCY_STATS(rf_fp);
+	}
 
 	/* Commit stage for thread */
 	assert(ctx);
@@ -101,7 +103,7 @@ static void commit_thread(int core, int thread, int quant)
 	
 		/* Free physical registers */
 		assert(!uop->specmode);
-		phregs_commit(uop);
+		rf_commit(uop);
 		
 		/* Branches update branch predictor and btb */
 		if (uop->flags & FCTRL) {
@@ -165,10 +167,16 @@ void commit_core(int core)
 	int pass, quant, new;
 
 	/* Update occupancy stats for shared structures */
-	UPDATE_CORE_OCCUPANCY_STATS(rob);
-	UPDATE_CORE_OCCUPANCY_STATS(iq);
-	UPDATE_CORE_OCCUPANCY_STATS(lsq);
-	UPDATE_CORE_OCCUPANCY_STATS(rf);
+	if (rob_kind == rob_kind_shared)
+		UPDATE_CORE_OCCUPANCY_STATS(rob);
+	if (iq_kind == iq_kind_shared)
+		UPDATE_CORE_OCCUPANCY_STATS(iq);
+	if (lsq_kind == lsq_kind_shared)
+		UPDATE_CORE_OCCUPANCY_STATS(lsq);
+	if (rf_kind == rf_kind_shared) {
+		UPDATE_CORE_OCCUPANCY_STATS(rf_int);
+		UPDATE_CORE_OCCUPANCY_STATS(rf_fp);
+	}
 
 	/* Commit stage for core */
 	switch (p_commit_kind) {

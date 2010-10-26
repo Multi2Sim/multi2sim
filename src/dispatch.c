@@ -40,7 +40,7 @@ static enum di_stall_enum can_dispatch_thread(int core, int thread)
 		return di_stall_iq;
 	if ((uop->flags & FMEM) && !lsq_can_insert(uop))
 		return di_stall_lsq;
-	if (!phregs_can_rename(uop))
+	if (!rf_can_rename(uop))
 		return di_stall_rename;
 	
 	return di_stall_used;
@@ -67,7 +67,7 @@ static int dispatch_thread(int core, int thread, int quant)
 		uop->in_uopq = 0;
 		
 		/* Rename */
-		phregs_rename(uop);
+		rf_rename(uop);
 		
 		/* Insert in ROB */
 		rob_enqueue(uop);

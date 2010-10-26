@@ -56,8 +56,8 @@ void p_recover(int core, int thread)
 		
 		/* Undo map */
 		if (!uop->completed)
-			phregs_write(uop);
-		phregs_undo(uop);
+			rf_write(uop);
+		rf_undo(uop);
 
 		/* Debug */
 		esim_debug("uop action=\"squash\", core=%d, seq=%llu\n",
