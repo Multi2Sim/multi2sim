@@ -110,9 +110,11 @@ int mm_rtranslate(struct mm_t *mm, uint32_t phaddr, int *ctx, uint32_t *vtladdr)
 /* Micro Operations */
 
 enum dep_enum {
+	
 	DNONE	= 0,
-	DFIRST	= 1,
 
+	/** Integer dependences **/
+	
 	DEAX	= 0x01,
 	DECX	= 0x02,
 	DEDX	= 0x03,
@@ -136,14 +138,42 @@ enum dep_enum {
 
 	DAUX	= 0x13,  /* Intermediate results for uops */
 	DAUX2	= 0x14,
-
 	DEA	= 0x15,  /* Internal - Effective address */
 	DDATA   = 0x16,  /* Internal - Data for load/store */
 
-	DFP	= 0x17,  /* FP instructions */
+	DEP_INT_FIRST  = DEAX,
+	DEP_INT_LAST   = DDATA,
+	DEP_INT_COUNT  = DEP_INT_LAST - DEP_INT_FIRST + 1,
 
-	DLAST	= 0x17,
-	DCOUNT	= 0x17,
+	DEP_FLAG_FIRST = DZPS,
+	DEP_FLAG_LAST  = DDF,
+	DEP_FLAG_COUNT = DEP_FLAG_LAST - DEP_FLAG_FIRST + 1,
+
+	
+	/** Floating-point dependences **/
+
+	DST0    = 0x17,  /* FP registers */
+	DST1    = 0x18,
+	DST2    = 0x19,
+	DST3    = 0x1a,
+	DST4    = 0x1b,
+	DST5    = 0x1c,
+	DST6    = 0x1d,
+	DST7    = 0x1e,
+	DFPST   = 0x1f,  /* FP status word */
+	DFPCW   = 0x20,  /* FP control word */
+	DFPAUX  = 0x21,  /* Auxiliary FP reg */
+
+	DEP_FP_FIRST  = DST0,
+	DEP_FP_LAST   = DFPAUX,
+	DEP_FP_COUNT  = DEP_FP_LAST - DEP_FP_FIRST + 1,
+
+	DEP_FP_STACK_FIRST = DST0,
+	DEP_FP_STACK_LAST  = DST7,
+	DEP_FP_STACK_COUNT = DEP_FP_STACK_LAST - DEP_FP_STACK_FIRST + 1,
+
+
+	/** Special dependences **/
 
 	DRM8	= 0x100,
 	DRM16	= 0x101,
@@ -158,11 +188,17 @@ enum dep_enum {
 	DMEM	= 0x500,  /* m8, m16, m32 or m64 */
 	DEASEG	= 0x501,  /* Effective address - segment */
 	DEABAS	= 0x502,  /* Effective address - base */
-	DEAIDX	= 0x503   /* Effective address - index */
+	DEAIDX	= 0x503,  /* Effective address - index */
+	DSTI    = 0x600,  /* FP - ToS+Index */
+	DFPOP   = 0x601,  /* FP - Pop stack */
+	DFPOP2  = 0x602,  /* FP - Pop stack twice */
+	DFPUSH  = 0x603   /* FP - Push stack */
 };
 
-#define DVALID(dep) ((dep) >= DFIRST && (dep) <= DLAST)
-#define DFLAG(dep) ((dep) >= DZPS && (dep) <= DDF)
+#define DEP_IS_INT_REG(dep) ((dep) >= DEP_INT_FIRST && (dep) <= DEP_INT_LAST)
+#define DEP_IS_FP_REG(dep) ((dep) >= DEP_FP_FIRST && (dep) <= DEP_FP_LAST)
+#define DEP_IS_FLAG(dep) ((dep) >= DEP_FLAG_FIRST && (dep) <= DEP_FLAG_LAST)
+#define DEP_IS_VALID(dep) (DEP_IS_INT_REG(dep) || DEP_IS_FP_REG(dep))
 
 enum uop_enum {
 #define UOP(_uop, _fu, _flags) uop_##_uop,
@@ -230,16 +266,16 @@ struct uop_t {
 	uint64_t mop_seq;  /* Sequence number of macroinstruction */
 
 	/* Logical dependencies */
-	int idep[IDEP_COUNT];
 	int idep_count;
-	int odep[ODEP_COUNT];
 	int odep_count;
+	int idep[IDEP_COUNT];
+	int odep[ODEP_COUNT];
 
 	/* Physical mappings */
+	int ph_int_idep_count, ph_fp_idep_count;
+	int ph_int_odep_count, ph_fp_odep_count;
 	int ph_idep[IDEP_COUNT];
-	int ph_idep_count;
 	int ph_odep[ODEP_COUNT];
-	int ph_odep_count;
 	int ph_oodep[ODEP_COUNT];
 
 	/* Fetch */
@@ -426,7 +462,11 @@ void eventq_recover(int core, int thread);
 
 /* Physical Register File */
 
-extern uint32_t rf_size;
+#define RF_MIN_INT_SIZE  (DEP_INT_COUNT + ODEP_COUNT)
+#define RF_MIN_FP_SIZE  (DEP_FP_COUNT + ODEP_COUNT)
+
+extern uint32_t rf_int_size;
+extern uint32_t rf_fp_size;
 extern enum rf_kind_enum {
 	rf_kind_shared = 0,
 	rf_kind_private
@@ -437,32 +477,40 @@ struct phreg_t {
 	int busy;  /* number of mapped logical registers */
 };
 
-struct phregs_t {
-	int size;
-	struct phreg_t *phreg;
-	int rat[DCOUNT];
+struct rf_t {
 
-	/* List of free physical registers */
-	int *free_phreg;
-	int free_phreg_count;
+	/* Integer registers */
+	int int_rat[DEP_INT_COUNT];
+	struct phreg_t *int_phreg;
+	int int_phreg_count;
+	int *int_free_phreg;
+	int int_free_phreg_count;
+
+	/* FP registers */
+	int fp_top_of_stack;  /* Value between 0 and 7 */
+	int fp_rat[DEP_FP_COUNT];
+	struct phreg_t *fp_phreg;
+	int fp_phreg_count;
+	int *fp_free_phreg;
+	int fp_free_phreg_count;
 };
 
-void phregs_reg_options(void);
-void phregs_init(void);
-void phregs_done(void);
+void rf_reg_options(void);
+void rf_init(void);
+void rf_done(void);
 
-struct phregs_t *phregs_create(int size);
-void phregs_free(struct phregs_t *phregs);
+struct rf_t *rf_create(int int_size, int fp_size);
+void rf_free(struct rf_t *rf);
 
-void phregs_dump(int core, int thread, FILE *f);
-void phregs_count_deps(struct uop_t *uop);
-int phregs_can_rename(struct uop_t *uop);
-void phregs_rename(struct uop_t *uop);
-int phregs_ready(struct uop_t *uop);
-void phregs_write(struct uop_t *uop);
-void phregs_undo(struct uop_t *uop);
-void phregs_commit(struct uop_t *uop);
-void phregs_check(int core, int thread);
+void rf_dump(int core, int thread, FILE *f);
+void rf_count_deps(struct uop_t *uop);
+int rf_can_rename(struct uop_t *uop);
+void rf_rename(struct uop_t *uop);
+int rf_ready(struct uop_t *uop);
+void rf_write(struct uop_t *uop);
+void rf_undo(struct uop_t *uop);
+void rf_commit(struct uop_t *uop);
+void rf_check_integrity(int core, int thread);
 
 
 
@@ -618,7 +666,8 @@ struct processor_thread_t {
 	/* Number of uops in private structures */
 	int iq_count;
 	int lsq_count;
-	int rf_count;
+	int rf_int_count;
+	int rf_fp_count;
 
 	/* Private structures */
 	struct list_t *fetchq;
@@ -628,7 +677,7 @@ struct processor_thread_t {
 	struct lnlist_t *sq;
 	struct bpred_t *bpred;  /* branch predictor */
 	struct tcache_t *tcache;  /* trace cache */
-	struct phregs_t *phregs;  /* physical register file */
+	struct rf_t *rf;  /* physical register file */
 
 	/* Fetch */
 	uint32_t fetch_eip, fetch_neip;  /* eip and next eip */
@@ -667,13 +716,20 @@ struct processor_thread_t {
 	uint64_t lsq_writes;
 	uint64_t lsq_wakeup_accesses;
 
-	uint64_t rf_occupancy;
-	uint64_t rf_full;
-	uint64_t rf_reads;
-	uint64_t rf_writes;
+	uint64_t rf_int_occupancy;
+	uint64_t rf_int_full;
+	uint64_t rf_int_reads;
+	uint64_t rf_int_writes;
 
-	uint64_t rat_reads;
-	uint64_t rat_writes;
+	uint64_t rf_fp_occupancy;
+	uint64_t rf_fp_full;
+	uint64_t rf_fp_reads;
+	uint64_t rf_fp_writes;
+
+	uint64_t rat_int_reads;
+	uint64_t rat_int_writes;
+	uint64_t rat_fp_reads;
+	uint64_t rat_fp_writes;
 
 	uint64_t btb_reads;
 	uint64_t btb_writes;
@@ -694,7 +750,8 @@ struct processor_core_t {
 	uint64_t di_seq;  /* Sequence number for dispatch stage */
 	int iq_count;
 	int lsq_count;
-	int rf_count;
+	int rf_int_count;
+	int rf_fp_count;
 
 	/* Reorder Buffer */
 	struct list_t *rob;
@@ -737,10 +794,15 @@ struct processor_core_t {
 	uint64_t lsq_writes;
 	uint64_t lsq_wakeup_accesses;
 
-	uint64_t rf_occupancy;
-	uint64_t rf_full;
-	uint64_t rf_reads;
-	uint64_t rf_writes;
+	uint64_t rf_int_occupancy;
+	uint64_t rf_int_full;
+	uint64_t rf_int_reads;
+	uint64_t rf_int_writes;
+
+	uint64_t rf_fp_occupancy;
+	uint64_t rf_fp_full;
+	uint64_t rf_fp_reads;
+	uint64_t rf_fp_writes;
 };
 
 

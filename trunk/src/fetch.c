@@ -107,7 +107,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 		/* Count number of logical/physical input/output
 		 * dependences. Physical odeps might be different than
 		 * logical odeps. */
-		phregs_count_deps(uop);
+		rf_count_deps(uop);
 
 		/* Memory access uops */
 		if (uop->flags & FMEM) {

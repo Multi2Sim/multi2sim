@@ -21,7 +21,7 @@
 
 
 struct string_map_t dep_map = {
-	23, {
+	33, {
 		{ "eax",        DEAX },
 		{ "ecx",        DECX },
 		{ "edx",        DEDX },
@@ -49,7 +49,18 @@ struct string_map_t dep_map = {
 		{ "addr",       DEA },
 		{ "data",       DDATA },
 
-		{ "fp",		DFP }
+		{ "st",		DST0 },
+		{ "st(1)",      DST1 },
+		{ "st(2)",      DST2 },
+		{ "st(3)",      DST3 },
+		{ "st(4)",      DST4 },
+		{ "st(5)",      DST5 },
+		{ "st(6)",      DST6 },
+		{ "st(7)",      DST7 },
+
+		{ "fpst",	DFPST },
+		{ "fpcw",	DFPCW },
+		{ "fpaux",	DFPAUX }
 	}
 };
 
@@ -162,25 +173,45 @@ void uop_done()
 static int uop_dep_parse(struct list_t *uop_list, int dep)
 {
 	/* Regular dependecy */
-	if (!dep || (dep >= DFIRST && dep <= DLAST))
+	if (DEP_IS_VALID(dep))
 		return dep;
 	
 	/* Instruction dependent */
 	switch (dep) {
+
+	case DNONE:
+	case DFPOP:
+	case DFPOP2:
+	case DFPUSH:
+		return dep;
+
 	case DRM8:
 		return isa_inst.modrm_rm < 4 ? DEAX + isa_inst.modrm_rm : DEAX + isa_inst.modrm_rm - 4;
-	case DRM16: case DRM32:
+
+	case DRM16:
+	case DRM32:
 		return DEAX + isa_inst.modrm_rm;
+
 	case DR8:
 		return isa_inst.reg < 4 ? DEAX + isa_inst.reg : DEAX + isa_inst.reg - 4;
-	case DR16: case DR32:
+
+	case DR16:
+	case DR32:
 		return DEAX + isa_inst.reg;
+
 	case DIR8:
 		return isa_inst.opindex < 4 ? DEAX + isa_inst.opindex : DEAX + isa_inst.opindex - 4;
-	case DIR16: case DIR32:
+
+	case DIR16:
+	case DIR32:
 		return DEAX + isa_inst.opindex;
+
 	case DSREG:
 		return DES + isa_inst.reg;
+	
+	case DSTI:
+		return DST0 + isa_inst.opindex;
+
 	}
 
 	panic("uop_dep_parse: unknown dep: 0x%x\n", dep);
@@ -294,13 +325,13 @@ int uop_exists(struct uop_t *uop)
 
 void uop_dump_buf(struct uop_t *uop, char *buf, int size)
 {
-	int i, count;
+	int i, loreg, count, fp_top_of_stack;
 	char *comma;
 
 	dump_buf(&buf, &size, "%s ", uop_bank[uop->uop].name);
 	comma = "";
 	for (i = count = 0; i < IDEP_COUNT; i++) {
-		if (!uop->idep[i])
+		if (!DEP_IS_VALID(uop->idep[i]))
 			continue;
 		dump_buf(&buf, &size, "%s%s", comma,
 			map_value(&dep_map, uop->idep[i]));
@@ -311,15 +342,25 @@ void uop_dump_buf(struct uop_t *uop, char *buf, int size)
 		dump_buf(&buf, &size, "-");
 	dump_buf(&buf, &size, "/");
 	comma = "";
+	fp_top_of_stack = 0;
 	for (i = count = 0; i < ODEP_COUNT; i++) {
-		if (!uop->odep[i])
+		loreg = uop->odep[i];
+		if (loreg == DFPOP)
+			fp_top_of_stack--;
+		else if (loreg == DFPOP2)
+			fp_top_of_stack -= 2;
+		else if (loreg == DFPUSH)
+			fp_top_of_stack++;
+		if (!DEP_IS_VALID(loreg))
 			continue;
-		dump_buf(&buf, &size, "%s%s", comma, map_value(&dep_map, uop->odep[i]));
+		dump_buf(&buf, &size, "%s%s", comma, map_value(&dep_map, loreg));
 		comma = ",";
 		count++;
 	}
 	if (!count)
 		dump_buf(&buf, &size, "-");
+	if (fp_top_of_stack)
+		dump_buf(&buf, &size, "(st=>%+d)", fp_top_of_stack);
 }
 
 
