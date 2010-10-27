@@ -20,20 +20,6 @@
 #include <m2s.h>
 
 
-#define UPDATE_THREAD_OCCUPANCY_STATS(ITEM) { \
-	THREAD.ITEM##_occupancy += THREAD.ITEM##_count; \
-	if (THREAD.ITEM##_count == ITEM##_size) \
-		THREAD.ITEM##_full++; \
-}
-
-
-#define UPDATE_CORE_OCCUPANCY_STATS(ITEM) { \
-	CORE.ITEM##_occupancy += CORE.ITEM##_count; \
-	if (CORE.ITEM##_count == ITEM##_size * p_threads) \
-		CORE.ITEM##_full++; \
-}
-
-
 static int can_commit_thread(int core, int thread)
 {
 	struct uop_t *uop;
@@ -73,18 +59,6 @@ static void commit_thread(int core, int thread, int quant)
 	struct uop_t *uop;
 	int recover = 0;
 	
-	/* Update occupancy stats for private structures */
-	if (rob_kind == rob_kind_private)
-		UPDATE_THREAD_OCCUPANCY_STATS(rob);
-	if (iq_kind == iq_kind_private)
-		UPDATE_THREAD_OCCUPANCY_STATS(iq);
-	if (lsq_kind == lsq_kind_private)
-		UPDATE_THREAD_OCCUPANCY_STATS(lsq);
-	if (rf_kind == rf_kind_private) {
-		UPDATE_THREAD_OCCUPANCY_STATS(rf_int);
-		UPDATE_THREAD_OCCUPANCY_STATS(rf_fp);
-	}
-
 	/* Commit stage for thread */
 	assert(ctx);
 	while (quant && can_commit_thread(core, thread)) {
@@ -165,18 +139,6 @@ static void commit_thread(int core, int thread, int quant)
 void commit_core(int core)
 {
 	int pass, quant, new;
-
-	/* Update occupancy stats for shared structures */
-	if (rob_kind == rob_kind_shared)
-		UPDATE_CORE_OCCUPANCY_STATS(rob);
-	if (iq_kind == iq_kind_shared)
-		UPDATE_CORE_OCCUPANCY_STATS(iq);
-	if (lsq_kind == lsq_kind_shared)
-		UPDATE_CORE_OCCUPANCY_STATS(lsq);
-	if (rf_kind == rf_kind_shared) {
-		UPDATE_CORE_OCCUPANCY_STATS(rf_int);
-		UPDATE_CORE_OCCUPANCY_STATS(rf_fp);
-	}
 
 	/* Commit stage for core */
 	switch (p_commit_kind) {

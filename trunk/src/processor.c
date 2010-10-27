@@ -26,6 +26,7 @@ struct processor_t *p;
 
 /* processor parameters */
 int p_stage_time_stats = 0;
+int p_occupancy_stats = 0;
 uint32_t p_cores = 1;
 uint32_t p_threads = 1;
 uint32_t p_cpus = 1;
@@ -74,6 +75,8 @@ void p_reg_options()
 
 	opt_reg_bool("-stage_time_stats", "measure time for stages",
 		&p_stage_time_stats);
+	opt_reg_bool("-occupancy_stats", "include occupancy stats in the pipeline report",
+		&p_occupancy_stats);
 	
 	opt_reg_enum("-recover_kind", "when to recover {writeback|commit}",
 		(int *) &p_recover_kind, p_recover_kind_map, 2);
@@ -168,7 +171,8 @@ void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 
 #define DUMP_CORE_STRUCT_STATS(NAME, ITEM) { \
 	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size * p_threads); \
-	fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) CORE.ITEM##_occupancy / sim_cycle : 0.0); \
+	if (p_occupancy_stats) \
+		fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) CORE.ITEM##_occupancy / sim_cycle : 0.0); \
 	fprintf(f, #NAME ".Full = %lld\n", (long long) CORE.ITEM##_full); \
 	fprintf(f, #NAME ".Reads = %lld\n", (long long) CORE.ITEM##_reads); \
 	fprintf(f, #NAME ".Writes = %lld\n", (long long) CORE.ITEM##_writes); \
@@ -176,7 +180,8 @@ void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 
 #define DUMP_THREAD_STRUCT_STATS(NAME, ITEM) { \
 	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size); \
-	fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) THREAD.ITEM##_occupancy / sim_cycle : 0.0); \
+	if (p_occupancy_stats) \
+		fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) THREAD.ITEM##_occupancy / sim_cycle : 0.0); \
 	fprintf(f, #NAME ".Full = %lld\n", (long long) THREAD.ITEM##_full); \
 	fprintf(f, #NAME ".Reads = %lld\n", (long long) THREAD.ITEM##_reads); \
 	fprintf(f, #NAME ".Writes = %lld\n", (long long) THREAD.ITEM##_writes); \
@@ -549,6 +554,54 @@ void p_dump(FILE *f)
 }
 
 
+#define UPDATE_THREAD_OCCUPANCY_STATS(ITEM) { \
+	THREAD.ITEM##_occupancy += THREAD.ITEM##_count; \
+	if (THREAD.ITEM##_count == ITEM##_size) \
+		THREAD.ITEM##_full++; \
+}
+
+
+#define UPDATE_CORE_OCCUPANCY_STATS(ITEM) { \
+	CORE.ITEM##_occupancy += CORE.ITEM##_count; \
+	if (CORE.ITEM##_count == ITEM##_size * p_threads) \
+		CORE.ITEM##_full++; \
+}
+
+
+void p_update_occupancy_stats()
+{
+	int core, thread;
+
+	FOREACH_CORE {
+
+		/* Update occupancy stats for shared structures */
+		if (rob_kind == rob_kind_shared)
+			UPDATE_CORE_OCCUPANCY_STATS(rob);
+		if (iq_kind == iq_kind_shared)
+			UPDATE_CORE_OCCUPANCY_STATS(iq);
+		if (lsq_kind == lsq_kind_shared)
+			UPDATE_CORE_OCCUPANCY_STATS(lsq);
+		if (rf_kind == rf_kind_shared) {
+			UPDATE_CORE_OCCUPANCY_STATS(rf_int);
+			UPDATE_CORE_OCCUPANCY_STATS(rf_fp);
+		}
+
+		/* Occupancy stats for private structures */
+		FOREACH_THREAD {
+			if (rob_kind == rob_kind_private)
+				UPDATE_THREAD_OCCUPANCY_STATS(rob);
+			if (iq_kind == iq_kind_private)
+				UPDATE_THREAD_OCCUPANCY_STATS(iq);
+			if (lsq_kind == lsq_kind_private)
+				UPDATE_THREAD_OCCUPANCY_STATS(lsq);
+			if (rf_kind == rf_kind_private) {
+				UPDATE_THREAD_OCCUPANCY_STATS(rf_int);
+				UPDATE_THREAD_OCCUPANCY_STATS(rf_fp);
+			}
+		}
+	}
+}
+
 
 uint64_t stage_time_fetch;
 uint64_t stage_time_decode;
@@ -602,6 +655,10 @@ void p_stages()
 	STAGE(dispatch);
 	STAGE(decode);
 	STAGE(fetch);
+
+	/* Update stats for structures occupancy */
+	if (p_occupancy_stats)
+		p_update_occupancy_stats();
 }
 #undef STAGE
 
