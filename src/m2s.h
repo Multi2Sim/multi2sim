@@ -851,6 +851,7 @@ void p_init(void);
 void p_done(void);
 void p_load_progs(int argc, char **argv, char *ctxfile);
 void p_dump(FILE *f);
+void p_update_occupancy_stats(void);
 uint32_t p_tlb_address(int ctx, uint32_t vaddr);
 void p_fast_forward(uint64_t cycles);
 
