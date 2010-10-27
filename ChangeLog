@@ -648,3 +648,13 @@
 2010-10-26
 	Version 2.4 Released
 
+2010-10-27
+	* processor.c, commit.c: bug fixed when computing structure occupancy stats
+		in private structures. The macro updating threads' accumulated
+		occupancy was called in commit_thread, which is a function that is
+		not executed necessarily every cycle for every thread. Now, the
+		structures occupancy is accumulated in function p_update_occupancy_stats.
+		Since this can be costly for a high number of cores/threads, command
+		line option '-occupancy_stats' has been added, which defaults to
+		false.
+
