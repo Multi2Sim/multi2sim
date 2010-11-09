@@ -368,7 +368,7 @@ void uop_dump(struct uop_t *uop, FILE *f)
 {
 	char buf[100];
 	uop_dump_buf(uop, buf, sizeof(buf));
-	fprintf(f, buf);
+	fprintf(f, "%s", buf);
 }
 
 

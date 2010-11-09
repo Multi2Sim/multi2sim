@@ -154,7 +154,7 @@ void dump_bin(int x, int digits, FILE *f)
 	for (i = 0; i < digits; i++)
 		s[i] = x & (1 << (digits - i - 1)) ? '1' : '0';
 	s[digits] = 0;
-	fprintf(f, s);
+	fprintf(f, "%s", s);
 }
 
 

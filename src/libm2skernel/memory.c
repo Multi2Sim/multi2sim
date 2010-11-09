@@ -56,6 +56,47 @@ struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr)
 }
 
 
+/* Return the memory page following addr in the current memory map. This function
+ * is useful to reconstruct consecutive ranges of mapped pages. */
+struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr)
+{
+	uint32_t tag, index, mintag;
+	struct mem_page_t *prev, *page, *minpage;
+
+	/* Get tag of the page just following addr */
+	tag = (addr + MEM_PAGESIZE) & ~(MEM_PAGESIZE - 1);
+	if (!tag)
+		return NULL;
+	index = (tag >> MEM_LOGPAGESIZE) % MEM_PAGE_COUNT;
+	page = mem->pages[index];
+	prev = NULL;
+
+	/* Look for a page exactly following addr. If it is found, return it. */
+	while (page && page->tag != tag) {
+		prev = page;
+		page = page->next;
+	}
+	if (page)
+		return page;
+	
+	/* Page following addr is not found, so check all memory pages to find
+	 * the one with the lowest tag following addr. */
+	mintag = 0xffffffff;
+	minpage = NULL;
+	for (index = 0; index < MEM_PAGE_COUNT; index++) {
+		for (page = mem->pages[index]; page; page = page->next) {
+			if (page->tag > tag && page->tag < mintag) {
+				mintag = page->tag;
+				minpage = page;
+			}
+		}
+	}
+
+	/* Return the found page (or NULL) */
+	return minpage;
+}
+
+
 /* Create new mem page */
 static struct mem_page_t *mem_page_create(struct mem_t *mem, uint32_t addr, int perm)
 {
