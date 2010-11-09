@@ -658,3 +658,15 @@
 		line option '-occupancy_stats' has been added, which defaults to
 		false.
 
+2010-11-04
+	* loader.c: warning removed for dynamic linking.
+	* libm2skernel/machine.c: machine instruction 'cpuid' updated to dump in
+		edx register a more accurate information about the modeled CPU.
+	* libm2skernel/memory.c: function 'mem_page_get_next' and
+		'mem_map_dump' added to reconstruct ranges of the current
+		memory map.
+
+2010-11-09
+	* fs.c: new management of file handlers in structure fdt_t. Pipes are handled
+		within.
+	* pipe.c: file removed.

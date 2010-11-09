@@ -43,12 +43,8 @@ void ld_done(struct ctx_t *ctx)
 {
 	struct loader_t *ld = ctx->loader;
 
-	/* Close elf file and stdint/stdout files */
+	/* Close elf file  */
 	elf_close(ld->elf);
-	if (ld->stdin_fd)
-		close(ld->stdin_fd);
-	if (ld->stdout_fd > 2)
-		close(ld->stdout_fd);
 	
 	/* Free arguments and environment variables */
 	for (lnlist_head(ld->args); !lnlist_eol(ld->args); lnlist_next(ld->args))
@@ -80,16 +76,6 @@ void ld_get_full_path(struct ctx_t *ctx, char *filename, char *fullpath, int siz
 	strcpy(fullpath, ctx->loader->cwd);
 	strcat(fullpath, "/");
 	strcat(fullpath, filename);
-}
-
-
-int ld_translate_fd(struct ctx_t *ctx, int fd)
-{
-	if (fd == 1 || fd == 2)
-		return ctx->loader->stdout_fd;
-	else if (!fd)
-		return ctx->loader->stdin_fd;
-	return fd;
 }
 
 
@@ -218,10 +204,6 @@ void ld_load_interp(struct ctx_t *ctx)
 	struct elf_file_t *elf;
 
 	/* Open dynamic loader */
-	warning("'%s': "
-		"dynamic linking provides different behaviors depending on the host machine. "
-		"It is recommended to link your object files with the '-static' flag.",
-		ld->exe);
 	ld_debug("\nLoading program interpreter '%s'\n", ld->interp);
 	elf = elf_open(ld->interp);
 	if (!ld->elf)
@@ -414,26 +396,40 @@ static void ld_load_stack(struct ctx_t *ctx)
 void ld_load_exe(struct ctx_t *ctx, char *exe)
 {
 	struct loader_t *ld = ctx->loader;
+	struct fdt_t *fdt = ctx->fdt;
 	char stdin_file_fullpath[MAX_STRING_SIZE];
 	char stdout_file_fullpath[MAX_STRING_SIZE];
 	char exe_fullpath[MAX_STRING_SIZE];
-	
-	/* Open stdin, stdout, and executable */
+
+	/* Alternative stdin */
 	ld_get_full_path(ctx, ld->stdin_file, stdin_file_fullpath, MAX_STRING_SIZE);
+	if (*stdin_file_fullpath) {
+		struct fd_t *fd;
+		fd = fdt_entry_get(fdt, 0);
+		assert(fd);
+		fd->host_fd = open(stdin_file_fullpath, O_RDONLY);
+		if (fd->host_fd < 0)
+			fatal("%s: cannot open stdin", ld->stdin_file);
+		ld_debug("%s: stdin redirected\n", stdin_file_fullpath);
+	}
+
+	/* Alternative stdout/stderr */
 	ld_get_full_path(ctx, ld->stdout_file, stdout_file_fullpath, MAX_STRING_SIZE);
-	ld_get_full_path(ctx, exe, exe_fullpath, MAX_STRING_SIZE);
-	ld->stdin_fd = *stdin_file_fullpath ? open(stdin_file_fullpath, O_RDONLY) : 0;
-	ld->stdout_fd = *stdout_file_fullpath ?
-		open(stdout_file_fullpath, O_CREAT | O_APPEND |
-		O_TRUNC | O_WRONLY, 0660) : 1;
-	if (ld->stdin_fd < 0)
-		fatal("%s: cannot open stdin", ld->stdin_file);
-	if (ld->stdout_fd < 0)
-		fatal("%s: cannot open stdout", ld->stdout_file);
-	ld_debug("\nFile descriptors:\n  stdin=%d, stdout=%d\n",
-		ld->stdin_fd, ld->stdout_fd);
+	if (*stdout_file_fullpath) {
+		struct fd_t *fd1, *fd2;
+		fd1 = fdt_entry_get(fdt, 1);
+		fd2 = fdt_entry_get(fdt, 2);
+		assert(fd1 && fd2);
+		fd1->host_fd = fd2->host_fd = open(stdout_file_fullpath,
+			O_CREAT | O_APPEND | O_TRUNC | O_WRONLY, 0660);
+		if (fd1->host_fd < 0)
+			fatal("%s: cannot open stdout/stderr", ld->stdout_file);
+		ld_debug("%s: stdout redirected\n", stdout_file_fullpath);
+	}
+	
 	
 	/* Load program into mem */
+	ld_get_full_path(ctx, exe, exe_fullpath, MAX_STRING_SIZE);
 	ld->exe = strdup(exe_fullpath);
 	ld->elf = elf_open(exe_fullpath);
 
@@ -502,7 +498,9 @@ void ld_load_prog_from_ctxconfig(char *ctxconfig)
 			ld->cwd = strdup(cwd);
 		else {
 			ld->cwd = calloc(1, MAX_STRING_SIZE);
-			getcwd(ld->cwd, MAX_STRING_SIZE);
+			ld->cwd = getcwd(ld->cwd, MAX_STRING_SIZE);
+			if (!ld->cwd)
+				fatal("loader: cannot retrieve current directory; increase MAX_STRING_SIZE");
 		}
 		
 		/* Standard input and output */
@@ -533,7 +531,9 @@ void ld_load_prog_from_cmdline(int argc, char **argv)
 
 	/* Current working directory */
 	ld->cwd = calloc(1, MAX_STRING_SIZE);
-	getcwd(ld->cwd, MAX_STRING_SIZE);
+	ld->cwd = getcwd(ld->cwd, MAX_STRING_SIZE);
+	if (!ld->cwd)
+		fatal("loader: cannot retrieve current directory; increase MAX_STRING_SIZE");
 
 	/* Redirections */
 	ld->stdin_file = strdup("");

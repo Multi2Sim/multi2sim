@@ -41,7 +41,6 @@ void ke_init(void)
 	isa_init();
 	ke = calloc(1, sizeof(struct kernel_t));
 	ke->current_pid = 1000;  /* Initial assigned pid */
-	pipemgr_init();
 
 	/* Debug categories */
 	isa_inst_debug_category = debug_new_category();
@@ -70,7 +69,6 @@ void ke_done(void)
 	while (ke->context_list_head)
 		ctx_free(ke->context_list_head);
 
-	pipemgr_done();
 	free(ke);
 	isa_done();
 	syscall_summary();
@@ -283,17 +281,21 @@ void ke_event_timer()
 void ke_event_read()
 {
 	struct ctx_t *ctx, *next;
+	struct fd_t *fd;
 
 	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
 
 		/* Save next */
 		next = ctx->suspended_next;
 
+		/* Get file descriptor that caused suspension of ctx */
+		fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
+
 		/* Context suspended in 'poll' system call with POLLOUT events.
 		 * We can wake it up if the pipe is empty. */
 		if (ctx_get_status(ctx, ctx_poll) &&
 			(ctx->wakeup_events & 0x4 /*POLLOUT*/) &&
-			!pipe_count(ctx->wakeup_fd))
+			!buffer_count(fd->buffer))
 		{
 			uint32_t prevents = ctx->regs->ebx + 6;
 			uint16_t revents = 0x4;
@@ -307,7 +309,7 @@ void ke_event_read()
 		/* Context suspended in 'write' system call, waiting for pipe
 		 * to be empty in order to dump data. */
 		if (ctx_get_status(ctx, ctx_write) &&
-			!pipe_count(ctx->wakeup_fd))
+			!buffer_count(fd->buffer))
 		{
 			uint32_t pbuf, count;
 			void *buf;
@@ -316,7 +318,7 @@ void ke_event_read()
 			count = ctx->regs->edx;
 			buf = malloc(count);
 			mem_read(ctx->mem, pbuf, count, buf);
-			count = pipe_write(ctx->wakeup_fd, buf, count);
+			count = buffer_write(fd->buffer, buf, count);
 			ctx->regs->eax = count;
 			free(buf);
 
@@ -335,17 +337,21 @@ void ke_event_read()
 void ke_event_write()
 {
 	struct ctx_t *ctx, *next;
+	struct fd_t *fd;
 
 	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
 
 		/* Save next */
 		next = ctx->suspended_next;
 
+		/* Get file descriptor that caused suspension of ctx */
+		fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
+
 		/* Context suspended in 'poll' system call with POLLIN events,
 		 * waiting for some data to be available in the pipe. */
 		if (ctx_get_status(ctx, ctx_poll) &&
 			(ctx->wakeup_events & 0x1 /*POLLIN*/) &&
-			pipe_count(ctx->wakeup_fd))
+			buffer_count(fd->buffer))
 		{
 			uint32_t prevents = ctx->regs->ebx + 6;
 			uint16_t revents = 0x1;
@@ -359,7 +365,7 @@ void ke_event_write()
 		/* Context suspended in 'read' system call,
 		 * reading on a pipe. */
 		if (ctx_get_status(ctx, ctx_read) &&
-			pipe_count(ctx->wakeup_fd))
+			buffer_count(fd->buffer))
 		{
 			uint32_t pbuf, count;
 			void *buf;
@@ -367,7 +373,7 @@ void ke_event_write()
 			pbuf = ctx->regs->ecx;
 			count = ctx->regs->edx;
 			buf = malloc(count);
-			count = pipe_read(ctx->wakeup_fd, buf, count);
+			count = buffer_read(fd->buffer, buf, count);
 			ctx->regs->eax = count;
 			mem_write(ctx->mem, pbuf, count, buf);
 			free(buf);

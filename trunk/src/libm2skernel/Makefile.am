@@ -3,6 +3,7 @@ libm2skernel_a_SOURCES = m2skernel.h \
 	isa.c \
 	context.c \
 	elf.c \
+	fs.c \
 	loader.c \
 	m2skernel.c \
 	machine.c \
@@ -12,7 +13,6 @@ libm2skernel_a_SOURCES = m2skernel.h \
 	machine-std.c \
 	machine-str.c \
 	memory.c \
-	pipe.c \
 	regs.c \
 	signal.c \
 	syscall.c \

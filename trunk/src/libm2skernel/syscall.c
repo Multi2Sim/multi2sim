@@ -34,7 +34,6 @@
 #include <sys/syscall.h>
 #include <linux/unistd.h>
 
-#define STRSIZE 0x200
 
 int syscall_debug_category;
 
@@ -453,8 +452,8 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, uint32_t prot,
 {
 	uint32_t alen;  /* aligned len */
 	int perm, fixed;
-	int efd, count;
-	long efd_pos;
+	int host_fd, count;
+	long host_pos;
 	void *buf;
 
 	/* Permissions */
@@ -496,20 +495,17 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, uint32_t prot,
 		return addr;
 
 	/* Mapping from file */
-	efd = ld_translate_fd(isa_ctx, fd);
-	syscall_debug("  efd=0x%x\n", efd);
-
-	/* Go to the position in the file specified by 'offset' */
-	efd_pos = lseek(efd, 0, SEEK_CUR);
-	if (lseek(efd, offset, SEEK_SET) != offset)
+	host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+	host_pos = lseek(host_fd, 0, SEEK_CUR);
+	if (lseek(host_fd, offset, SEEK_SET) != offset)
 		fatal("do_mmap: cannot set position in file");
 
 	/* Read file */
 	buf = calloc(1, len);
 	if (!buf)
 		fatal("do_mmap: out of memory mapping from file");
-	count = read(efd, buf, len);
-	lseek(efd, efd_pos, SEEK_SET);
+	count = read(host_fd, buf, len);
+	lseek(host_fd, host_pos, SEEK_SET);
 
 	/* Write into memory */
 	mem_access(isa_mem, addr, count, buf, mem_access_init);
@@ -654,19 +650,27 @@ void syscall_do()
 	/* 2 */
 	case syscall_code_close:
 	{
-		uint32_t fd, efd;
+		uint32_t guest_fd, host_fd;
+		struct fd_t *fd;
 
-		fd = isa_regs->ebx;
-		syscall_debug("  fd=0x%x\n", fd);
+		guest_fd = isa_regs->ebx;
+		syscall_debug("  guest_fd=%d\n", guest_fd);
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, guest_fd);
+		syscall_debug("  host_fd=%d\n", host_fd);
 
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  efd=0x%x\n", efd);
-		if (pipe_is_pipe(efd)) {
-			syscall_debug("  close pipe\n");
-			pipe_close(efd);
-		} else {
-			RETVAL(close(efd));
+		/* Get file descriptor table entry. */
+		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		if (!fd) {
+			retval = -EBADF;
+			break;
 		}
+
+		/* Close host file descriptor only if it is valid and not stdin/stdout/stderr. */
+		if (host_fd > 2)
+			close(host_fd);
+		
+		/* Free guest file descriptor. */
+		fdt_entry_free(isa_ctx->fdt, fd->guest_fd);
 		break;
 	}
 
@@ -674,42 +678,55 @@ void syscall_do()
 	/* 3 */
 	case syscall_code_read:
 	{
-		uint32_t fd, pbuf, count, efd;
-		int is_pipe;
+		uint32_t pbuf, count;
+		int guest_fd, host_fd;
 		void *buf;
+		struct fd_t *fd;
 
 		/* Get parameters */
-		fd = isa_regs->ebx;
+		guest_fd = isa_regs->ebx;
 		pbuf = isa_regs->ecx;
 		count = isa_regs->edx;
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  fd=0x%x, pbuf=0x%x, count=0x%x\n",
-			fd, pbuf, count);
-		syscall_debug("  efd=0x%x\n", efd);
-		is_pipe = pipe_is_pipe(efd);
+		syscall_debug("  guest_fd=%d, pbuf=0x%x, count=0x%x\n",
+			guest_fd, pbuf, count);
+
+		/* Get file descriptor */
+		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		if (!fd) {
+			retval = -EBADF;
+			break;
+		}
+		host_fd = fd->host_fd;
+		syscall_debug("  host_fd=%d\n", host_fd);
 
 		/* Allocate buffer */
 		buf = calloc(1, count);
 		if (!buf)
 			fatal("syscall read: cannot allocate buffer");
 
-		/* Read from a pipe. If there is no data to read, suspend
-		 * the context until a write operation is performed. */
-		if (is_pipe) {
-			if (pipe_count(efd)) {
-				retval = pipe_read(efd, buf, count);
+		/* Proceed */
+		if (fd->kind == fd_kind_pipe) {
+		
+			/* Read from a pipe. If there is no data to read, suspend
+			 * the context until a write operation is performed. */
+			if (buffer_count(fd->buffer)) {
+				syscall_debug("  read from pipe containing %d bytes - ", buffer_count(fd->buffer));
+				retval = buffer_read(fd->buffer, buf, count);
+				syscall_debug("  %d bytes requested, %d bytes read\n", count, retval);
 				mem_write(isa_mem, pbuf, retval, buf);
 				ke_event_read();
 			} else {
-				isa_ctx->wakeup_fd = efd;
+				syscall_debug("  read from empty pipe - suspend\n");
+				isa_ctx->wakeup_fd = guest_fd;
 				ctx_set_status(isa_ctx, ctx_suspended | ctx_read);
 			}
-		}
 
-		/* Read from a file */
-		if (!is_pipe) {
-			RETVAL(read(efd, buf, count));
-			mem_write(isa_mem, pbuf, retval, buf);
+		} else {
+
+			/* Read from a regular file */
+			RETVAL(read(host_fd, buf, count));
+			if (retval > 0)
+				mem_write(isa_mem, pbuf, retval, buf);
 			ke_event_read();
 		}
 
@@ -722,18 +739,25 @@ void syscall_do()
 	/* 4 */
 	case syscall_code_write:
 	{
-		uint32_t fd, pbuf, count, efd;
-		int is_pipe;
+		uint32_t pbuf, count;
+		int guest_fd, host_fd;
+		struct fd_t *fd;
 		void *buf;
 
-		fd = isa_regs->ebx;
+		guest_fd = isa_regs->ebx;
 		pbuf = isa_regs->ecx;
 		count = isa_regs->edx;
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  fd=0x%x, pbuf=0x%x, count=0x%x\n",
-			fd, pbuf, count);
-		syscall_debug("  efd=0x%x\n", efd);
-		is_pipe = pipe_is_pipe(efd);
+		syscall_debug("  guest_fd=%d, pbuf=0x%x, count=0x%x\n",
+			guest_fd, pbuf, count);
+
+		/* Get file descriptor */
+		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		if (!fd) {
+			retval = -EBADF;
+			break;
+		}
+		host_fd = fd->host_fd;
+		syscall_debug("  host_fd=%d\n", host_fd);
 
 		/* Read buffer from memory */
 		buf = malloc(count);
@@ -742,21 +766,23 @@ void syscall_do()
 		mem_read(isa_mem, pbuf, count, buf);
 		syscall_debug_string("  buf", buf, count);
 
-		/* Write to pipe. If there is some data in the pipe, suspend
-		 * the process until this data is read. */
-		if (is_pipe) {
-			if (!pipe_count(efd)) {
-				retval = pipe_write(efd, buf, count);
+		/* Proceed. */
+		if (fd->kind == fd_kind_pipe) {
+
+			/* Write to pipe. If there is some data in the pipe, suspend
+			 * the process until this data is read. */
+			if (!buffer_count(fd->buffer)) {
+				retval = buffer_write(fd->buffer, buf, count);
 				ke_event_write();
 			} else {
-				isa_ctx->wakeup_fd = efd;
+				isa_ctx->wakeup_fd = guest_fd;
 				ctx_set_status(isa_ctx, ctx_suspended | ctx_write);
 			}
-		}
 
-		/* Write to file */
-		if (!is_pipe) {
-			RETVAL(write(efd, buf, count));
+		} else {
+			
+			/* Write to file descriptors other than pipes. */
+			RETVAL(write(host_fd, buf, count));
 			ke_event_write();
 		}
 
@@ -768,25 +794,42 @@ void syscall_do()
 	/* 5 */
 	case syscall_code_open:
 	{
-		char filename[STRSIZE], fullpath[STRSIZE];
+		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
 		uint32_t pfilename, flags, mode;
-		char sflags[STRSIZE];
+		char sflags[MAX_STRING_SIZE];
 		int length;
+		int host_fd;
+		struct fd_t *fd;
 
+		/* Read parameters */
 		pfilename = isa_regs->ebx;
 		flags = isa_regs->ecx;
 		mode = isa_regs->edx;
-		length = mem_read_string(isa_mem, pfilename, STRSIZE, filename);
-		if (length >= STRSIZE)
-			fatal("syscall open: maximum string size exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, STRSIZE);
+		length = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
+		if (length >= MAX_PATH_SIZE)
+			fatal("syscall open: maximum path length exceeded");
+		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
 		syscall_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
 			filename, flags, mode);
 		syscall_debug("  fullpath='%s'\n", fullpath);
-		map_flags(&open_flags_map, flags, sflags, STRSIZE);
+		map_flags(&open_flags_map, flags, sflags, MAX_STRING_SIZE);
 		syscall_debug("  flags=%s\n", sflags);
 
-		RETVAL(open(fullpath, flags, mode));
+		/* Try to open file. On error, just return it. */
+		host_fd = open(fullpath, flags, mode);
+		if (host_fd < 0) {
+			retval = -errno;
+			break;
+		}
+
+		/* File opened, create a new file descriptor. */
+		fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, host_fd, fullpath);
+		syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
+			fd->guest_fd, fd->host_fd);
+
+
+		/* Return guest file descriptor. */
+		retval = fd->guest_fd;
 		break;
 	}
 
@@ -835,15 +878,15 @@ void syscall_do()
 	/* 10 */
 	case syscall_code_unlink:
 	{
-		char filename[STRSIZE], fullpath[STRSIZE];
+		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
 		uint32_t pfilename;
 		int length;
 
 		pfilename = isa_regs->ebx;
-		length = mem_read_string(isa_mem, pfilename, STRSIZE, filename);
-		if (length >= STRSIZE)
-			fatal("syscall unlink: maximum string size exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, STRSIZE);
+		length = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
+		if (length >= MAX_PATH_SIZE)
+			fatal("syscall unlink: maximum path length exceeded");
+		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
 		syscall_debug("  pfilename=0x%x\n", pfilename);
 		syscall_debug("  filename=%s, fullpath=%s\n", filename, fullpath);
 
@@ -870,16 +913,16 @@ void syscall_do()
 	/* 15 */
 	case syscall_code_chmod:
 	{
-		char filename[STRSIZE], fullpath[STRSIZE];
+		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
 		uint32_t pfilename, mode;
 		int len;
 
 		pfilename = isa_regs->ebx;
 		mode = isa_regs->ecx;
-		len = mem_read_string(isa_mem, pfilename, STRSIZE, filename);
-		if (len >= STRSIZE)
-			fatal("syscall chmod: maximum string size exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, STRSIZE);
+		len = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
+		if (len >= MAX_PATH_SIZE)
+			fatal("syscall chmod: maximum path length exceeded");
+		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
 		syscall_debug("  pfilename=0x%x, mode=0x%x\n", pfilename, mode);
 		syscall_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
 		RETVAL(chmod(fullpath, mode));
@@ -890,17 +933,17 @@ void syscall_do()
 	/* 19 */
 	case syscall_code_lseek:
 	{
-		uint32_t fd, offset, origin, efd;
+		uint32_t fd, offset, origin, host_fd;
 
 		fd = isa_regs->ebx;
 		offset = isa_regs->ecx;
 		origin = isa_regs->edx;
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  fd=0x%x, offset=0x%x, origin=0x%x\n",
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		syscall_debug("  fd=%d, offset=0x%x, origin=0x%x\n",
 			fd, offset, origin);
-		syscall_debug("  efd=0x%x\n", efd);
+		syscall_debug("  host_fd=%d\n", host_fd);
 
-		RETVAL(lseek(efd, offset, origin));
+		RETVAL(lseek(host_fd, offset, origin));
 		break;
 	}
 
@@ -916,7 +959,7 @@ void syscall_do()
 	/* 30 */
 	case syscall_code_utime:
 	{
-		char filename[STRSIZE], fullpath[STRSIZE];
+		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
 		uint32_t pfilename, putimbuf;
 		struct utimbuf utimbuf;
 		struct sim_utimbuf sim_utimbuf;
@@ -924,10 +967,10 @@ void syscall_do()
 
 		pfilename = isa_regs->ebx;
 		putimbuf = isa_regs->ecx;
-		len = mem_read_string(isa_mem, pfilename, STRSIZE, filename);
-		if (len >= STRSIZE)
-			fatal("syscall utime: maximum string size exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, STRSIZE);
+		len = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
+		if (len >= MAX_PATH_SIZE)
+			fatal("syscall utime: maximum path length exceeded");
+		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
 		mem_read(isa_mem, putimbuf, sizeof(struct sim_utimbuf), &sim_utimbuf);
 		syscall_utime_sim_to_read(&utimbuf, &sim_utimbuf);
 		syscall_debug("  filename='%s', putimbuf=0x%x\n",
@@ -943,17 +986,17 @@ void syscall_do()
 	/* 33 */
 	case syscall_code_access:
 	{
-		char filename[STRSIZE], fullpath[STRSIZE], smode[STRSIZE];
+		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE], smode[MAX_STRING_SIZE];
 		uint32_t pfilename, mode;
 		int len;
 
 		pfilename = isa_regs->ebx;
 		mode = isa_regs->ecx;
-		len = mem_read_string(isa_mem, pfilename, STRSIZE, filename);
-		if (len >= STRSIZE)
-			fatal("syscall access: maximum string size exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, STRSIZE);
-		map_flags(&access_mode_map, mode, smode, STRSIZE);
+		len = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
+		if (len >= MAX_PATH_SIZE)
+			fatal("syscall access: maximum path length exceeded");
+		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
+		map_flags(&access_mode_map, mode, smode, MAX_STRING_SIZE);
 		syscall_debug("  filename='%s', mode=0x%x\n",
 			filename, mode);
 		syscall_debug("  fullpath='%s'\n", fullpath);
@@ -992,18 +1035,18 @@ void syscall_do()
 	case syscall_code_rename:
 	{
 		uint32_t poldpath, pnewpath;
-		char oldpath[STRSIZE], newpath[STRSIZE];
-		char oldfullpath[STRSIZE], newfullpath[STRSIZE];
+		char oldpath[MAX_PATH_SIZE], newpath[MAX_PATH_SIZE];
+		char oldfullpath[MAX_PATH_SIZE], newfullpath[MAX_PATH_SIZE];
 		int len1, len2;
 
 		poldpath = isa_regs->ebx;
 		pnewpath = isa_regs->ecx;
-		len1 = mem_read_string(isa_mem, poldpath, STRSIZE, oldpath);
-		len2 = mem_read_string(isa_mem, pnewpath, STRSIZE, newpath);
-		if (len1 >= STRSIZE || len2 >= STRSIZE)
-			fatal("syscall rename: maximum string size exceeded");
-		ld_get_full_path(isa_ctx, oldpath, oldfullpath, STRSIZE);
-		ld_get_full_path(isa_ctx, newpath, newfullpath, STRSIZE);
+		len1 = mem_read_string(isa_mem, poldpath, MAX_PATH_SIZE, oldpath);
+		len2 = mem_read_string(isa_mem, pnewpath, MAX_PATH_SIZE, newpath);
+		if (len1 >= MAX_PATH_SIZE || len2 >= MAX_PATH_SIZE)
+			fatal("syscall rename: maximum path length exceeded");
+		ld_get_full_path(isa_ctx, oldpath, oldfullpath, MAX_PATH_SIZE);
+		ld_get_full_path(isa_ctx, newpath, newfullpath, MAX_PATH_SIZE);
 		syscall_debug("  poldpath=0x%x, pnewpath=0x%x\n", poldpath, pnewpath);
 		syscall_debug("  oldpath='%s', newpath='%s'\n", oldpath, newpath);
 		syscall_debug("  oldfullpath='%s', newfullpath='%s'\n", oldfullpath, newfullpath);
@@ -1017,15 +1060,15 @@ void syscall_do()
 	case syscall_code_mkdir:
 	{
 		uint32_t ppath, mode;
-		char path[STRSIZE], fullpath[STRSIZE];
+		char path[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
 		int length;
 
 		ppath = isa_regs->ebx;
 		mode = isa_regs->ecx;
-		length = mem_read_string(isa_mem, ppath, STRSIZE, path);
-		if (length >= STRSIZE)
-			fatal("syscall open: maximum string size exceeded");
-		ld_get_full_path(isa_ctx, path, fullpath, STRSIZE);
+		length = mem_read_string(isa_mem, ppath, MAX_PATH_SIZE, path);
+		if (length >= MAX_PATH_SIZE)
+			fatal("syscall open: maximum path length exceeded");
+		ld_get_full_path(isa_ctx, path, fullpath, MAX_PATH_SIZE);
 		syscall_debug("  ppath=0x%x, mode=0x%x\n", ppath, mode);
 		syscall_debug("  path='%s', fullpath='%s'\n", path, fullpath);
 		
@@ -1037,16 +1080,39 @@ void syscall_do()
 	/* 41 */
 	case syscall_code_dup:
 	{
-		uint32_t fd, efd;
+		int guest_fd, dup_guest_fd;
+		int host_fd, dup_host_fd;
+		struct fd_t *fd, *dup_fd;
 
-		fd = isa_regs->ebx;
-		syscall_debug("  fd=%d\n", fd);
+		guest_fd = isa_regs->ebx;
+		syscall_debug("  guest_fd=%d\n", guest_fd);
 
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  efd=%d\n", efd);
-		if (pipe_is_pipe(efd))
+		/* Check that file descriptor is valid. */
+		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		if (!fd) {
+			retval = -EBADF;
+			break;
+		}
+		host_fd = fd->host_fd;
+		syscall_debug("  host_fd=%d\n", host_fd);
+
+		/* Dup not supported for files other than regular. */
+		if (fd->kind == fd_kind_pipe)
 			fatal("syscall dup: not supported for pipes");
-		RETVAL(dup(efd));
+
+		/* Duplicate host file descriptor. */
+		dup_host_fd = dup(host_fd);
+		if (dup_host_fd < 0) {
+			retval = -errno;
+			break;
+		}
+
+		/* Create a new entry in the file descriptor table. */
+		dup_fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, dup_host_fd, fd->path);
+		dup_guest_fd = dup_fd->guest_fd;
+
+		/* Return new file descriptor. */
+		retval = dup_guest_fd;
 		break;
 	}
 
@@ -1055,15 +1121,22 @@ void syscall_do()
 	case syscall_code_pipe:
 	{
 		uint32_t pfd;
-		int fd[2];
+		struct fd_t *read_fd, *write_fd;
+		uint32_t guest_read_fd, guest_write_fd;
 
 		pfd = isa_regs->ebx;
 		syscall_debug("  pfd=0x%x\n", pfd);
 
-		pipe_pipe(fd);
-		syscall_debug("  pipe created: fd={%d, %d}\n", fd[0], fd[1]);
-		assert(sizeof(fd) == 8);
-		mem_write(isa_mem, pfd, 8, &fd);
+		/* Create pipe */
+		fdt_pipe_new(isa_ctx->fdt, &read_fd, &write_fd);
+		syscall_debug("  pipe created: fd={%d, %d}\n",
+			read_fd->guest_fd, write_fd->guest_fd);
+		guest_read_fd = read_fd->guest_fd;
+		guest_write_fd = write_fd->guest_fd;
+
+		/* Return file descriptors. */
+		mem_write(isa_mem, pfd, 4, &guest_read_fd);
+		mem_write(isa_mem, pfd + 4, 4, &guest_write_fd);
 		break;
 	}
 
@@ -1141,21 +1214,22 @@ void syscall_do()
 	/* 54 */
 	case syscall_code_ioctl:
 	{
-		uint32_t fd, cmd, arg, efd;
+		uint32_t fd, cmd, arg, host_fd;
 		struct sim_termio sim_termio;
 		struct termio termio;
 
 		fd = isa_regs->ebx;
 		cmd = isa_regs->ecx;
 		arg = isa_regs->edx;
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  fd=0x%x, cmd=0x%x, arg=0x%x\n", fd, cmd, arg);
-		syscall_debug("  efd=0x%x\n", efd);
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		syscall_debug("  fd=%d, cmd=0x%x, arg=0x%x\n",
+			fd, cmd, arg);
+		syscall_debug("  host_fd=%d\n", host_fd);
 
 		if (cmd == 0x5401 || cmd == 0x5405) {
 			mem_read(isa_mem, arg, sizeof(sim_termio), &sim_termio);
 			syscall_termio_sim_to_real(&termio, &sim_termio);
-			RETVAL(ioctl(efd, cmd, &termio));
+			RETVAL(ioctl(host_fd, cmd, &termio));
 			if (!retval) {
 				syscall_termio_real_to_sim(&sim_termio, &termio);
 				mem_write(isa_mem, arg, sizeof(sim_termio), &sim_termio);
@@ -1272,7 +1346,7 @@ void syscall_do()
 		uint32_t pargs;
 		uint32_t addr, len, prot;
 		uint32_t flags, fd, offset;
-		char sprot[STRSIZE], sflags[STRSIZE];
+		char sprot[MAX_STRING_SIZE], sflags[MAX_STRING_SIZE];
 
 		/* 'old_mmap' takes the arguments from memory, at the address
 		 * pointed by EBX. */
@@ -1286,7 +1360,7 @@ void syscall_do()
 		
 		syscall_debug("  pargs=0x%x\n", pargs);
 		syscall_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
-			"fd=0x%x, offset=0x%x\n",
+			"fd=%d, offset=0x%x\n",
 			addr, len, prot, flags, fd, offset);
 		map_flags(&mmap_prot_map, prot, sprot, sizeof(sprot));
 		map_flags(&mmap_flags_map, flags, sflags, sizeof(sflags));
@@ -1320,15 +1394,16 @@ void syscall_do()
 	/* 94 */
 	case syscall_code_fchmod:
 	{
-		uint32_t fd, efd, mode;
+		uint32_t fd, host_fd, mode;
 
 		fd = isa_regs->ebx;
 		mode = isa_regs->ecx;
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  fd=%d, mode=%d\n", fd, mode);
-		syscall_debug("  efd=%d\n", efd);
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		syscall_debug("  fd=%d, mode=%d\n",
+			fd, mode);
+		syscall_debug("  host_fd=%d\n", host_fd);
 
-		RETVAL(fchmod(efd, mode));
+		RETVAL(fchmod(host_fd, mode));
 		break;
 	}
 
@@ -1353,7 +1428,7 @@ void syscall_do()
 		uint32_t flags, newsp, parent_tidptr, child_tidptr;
 		uint32_t supported_flags, mandatory_flags;
 		struct ctx_t *new_ctx;
-		char sflags[STRSIZE];
+		char sflags[MAX_STRING_SIZE];
 
 		flags = isa_regs->ebx;
 		newsp = isa_regs->ecx;
@@ -1361,7 +1436,7 @@ void syscall_do()
 		child_tidptr = isa_regs->edi;
 		syscall_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
 			flags, newsp, parent_tidptr, child_tidptr);
-		map_flags(&clone_flags_map, flags & ~0xff, sflags, STRSIZE);
+		map_flags(&clone_flags_map, flags & ~0xff, sflags, MAX_STRING_SIZE);
 		syscall_debug("  flags=%s\n", sflags);
 
 		if (!newsp)
@@ -1377,12 +1452,12 @@ void syscall_do()
 		mandatory_flags = 0x00000f00;
 		supported_flags = 0x013d00ff | mandatory_flags;
 		if ((flags & mandatory_flags) != mandatory_flags) {
-			map_flags(&clone_flags_map, ~flags & mandatory_flags, sflags, STRSIZE);
+			map_flags(&clone_flags_map, ~flags & mandatory_flags, sflags, MAX_STRING_SIZE);
 			fatal("syscall clone: these mandatory flags are not specified: %s",
 				sflags);
 		}
 		if (flags & ~supported_flags) {
-			map_flags(&clone_flags_map, flags & ~supported_flags, sflags, STRSIZE);
+			map_flags(&clone_flags_map, flags & ~supported_flags, sflags, MAX_STRING_SIZE);
 			fatal("syscall clone: one of these flags is specified and not supported: %s",
 				sflags);
 		}
@@ -1487,7 +1562,7 @@ void syscall_do()
 	/* 140 */
 	case syscall_code_llseek:
 	{
-		uint32_t fd, presult, origin, efd;
+		uint32_t fd, presult, origin, host_fd;
 		int32_t offset_high, offset_low;
 		int64_t offset;
 
@@ -1497,15 +1572,15 @@ void syscall_do()
 		offset = ((int64_t) offset_high << 32) | offset_low;
 		presult = isa_regs->esi;
 		origin = isa_regs->edi;
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  fd=0x%x, offset_high=0x%x, offset_low=0x%x, presult=0x%x, origin=0x%x\n",
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		syscall_debug("  fd=%d, offset_high=0x%x, offset_low=0x%x, presult=0x%x, origin=0x%x\n",
 			fd, offset_high, offset_low, presult, origin);
-		syscall_debug("  efd=0x%x, offset=0x%llx\n",
-			efd, (long long) offset);
+		syscall_debug("  host_fd=%d\n", host_fd);
+		syscall_debug("  offset=0x%llx\n", (long long) offset);
 		if (offset_high != -1 && offset_high)
 			fatal("syscall llseek: only supported for 32-bit files");
 
-		offset = lseek(efd, offset_low, origin);
+		offset = lseek(host_fd, offset_low, origin);
 		retval = offset;
 		if (retval >= 0 && presult) {
 			mem_write(isa_mem, presult, 8, &offset);
@@ -1518,7 +1593,7 @@ void syscall_do()
 	/* 141 */
 	case syscall_code_getdents:
 	{
-		uint32_t fd, pdirent, count, efd;
+		uint32_t fd, pdirent, count, host_fd;
 		void *buf;
 		int nread, host_offs, guest_offs;
 		char d_type;
@@ -1541,16 +1616,16 @@ void syscall_do()
 		fd = isa_regs->ebx;
 		pdirent = isa_regs->ecx;
 		count = isa_regs->edx;
-		efd = ld_translate_fd(isa_ctx, fd);
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
 		syscall_debug("  fd=%d, pdirent=0x%x, count=%d\n",
 			fd, pdirent, count);
-		syscall_debug("  efd=%d\n", efd);
+		syscall_debug("  host_fd=%d\n", host_fd);
 
 		/* Call host getdents */
 		buf = calloc(1, count);
 		if (!buf)
 			fatal("getdents: cannot allocate buffer");
-		nread = syscall(SYS_getdents, efd, buf, count);
+		nread = syscall(SYS_getdents, host_fd, buf, count);
 
 		/* Error or no more entries */
 		if (nread < 0)
@@ -1597,13 +1672,13 @@ void syscall_do()
 	case syscall_code_msync:
 	{
 		uint32_t start, len, flags;
-		char sflags[STRSIZE];
+		char sflags[MAX_STRING_SIZE];
 
 		/* Parameters */
 		start = isa_regs->ebx;
 		len = isa_regs->ecx;
 		flags = isa_regs->edx;
-		map_flags(&msync_flags_map, flags, sflags, STRSIZE);
+		map_flags(&msync_flags_map, flags, sflags, MAX_STRING_SIZE);
 		syscall_debug("  start=0x%x, len=0x%x, flags=0x%x\n",
 			start, len, flags);
 		syscall_debug("  flags=%s\n", sflags);
@@ -1617,21 +1692,32 @@ void syscall_do()
 	/* 146 */
 	case syscall_code_writev:
 	{
-		uint32_t fd, piovec, vlen, efd;
+		int guest_fd, host_fd;
+		struct fd_t *fd;
+		uint32_t piovec, vlen;
 		uint32_t iov_base, iov_len;
 		void *buf;
 		int v, length;
 
-		fd = isa_regs->ebx;
+		guest_fd = isa_regs->ebx;
 		piovec = isa_regs->ecx;
 		vlen = isa_regs->edx;
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  fd=0x%x, piovec = 0x%x, vlen=0x%x\n",
-			fd, piovec, vlen);
-		syscall_debug("  efd=0x%x\n", efd);
-		if (pipe_is_pipe(efd))
+		syscall_debug("  guest_fd=%d, piovec = 0x%x, vlen=0x%x\n",
+			guest_fd, piovec, vlen);
+		
+		
+		/* Check file descriptor */
+		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		if (!fd) {
+			errno = -EBADF;
+			break;
+		}
+		host_fd = fd->host_fd;
+		syscall_debug("  host_fd=%d\n", host_fd);
+		if (fd->kind == fd_kind_pipe)
 			fatal("syscall writev: not supported for pipes");
 
+		/* Proceed */
 		for (v = 0; v < vlen; v++) {
 
 			/* Read io vector element */
@@ -1642,7 +1728,7 @@ void syscall_do()
 			/* Read buffer from memory and write it to file */
 			buf = malloc(iov_len);
 			mem_read(isa_mem, iov_base, iov_len, buf);
-			length = write(efd, buf, iov_len);
+			length = write(host_fd, buf, iov_len);
 			free(buf);
 
 			/* Check error */
@@ -1864,8 +1950,10 @@ void syscall_do()
 	case syscall_code_poll:
 	{
 		uint32_t pufds, nfds, timeout;
-		int efd;
+		int guest_fd, host_fd;
 		struct sim_pollfd pollfd;
+		char sevents[MAX_STRING_SIZE];
+		struct fd_t *fd;
 
 		pufds = isa_regs->ebx;
 		nfds = isa_regs->ecx;
@@ -1878,23 +1966,28 @@ void syscall_do()
 
 		/* Read pollfd */
 		mem_read(isa_mem, pufds, sizeof(struct sim_pollfd), &pollfd);
-		efd = ld_translate_fd(isa_ctx, pollfd.fd);
-		if (!pipe_is_pipe(efd))
-			fatal("syscall poll: only suppoerted for pipes");
-		if (debug_status(syscall_debug_category)) {
-			char sevents[0x200];
-			map_flags(&poll_event_map, pollfd.events, sevents, 0x200);
-			syscall_debug("  fd=0x%x (efd=0x%x), events=%s\n",
-				pollfd.fd, efd, sevents);
-		}
+		guest_fd = pollfd.fd;
+		map_flags(&poll_event_map, pollfd.events, sevents, MAX_STRING_SIZE);
+		syscall_debug("  guest_fd=%d, events=%s\n", guest_fd, sevents);
 
+		/* Get file descriptor */
+		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		if (!fd) {
+			retval = -EBADF;
+			break;
+		}
+		host_fd = fd->host_fd;
+		if (fd->kind != fd_kind_pipe)
+			fatal("syscall poll: only supported for pipes");
+		syscall_debug("  host_fd=%d\n", host_fd);
+	
 		/* Only POLLIN (0x1) and POLLOUT (0x4) supported */
 		if (pollfd.events & ~0x5)
 			fatal("syscall poll: only POLLIN and POLLOUT events supported");
 
 		/* If events contain POLLOUT and the write to a pipe is not going to be
 		 * blocking (i.e. there is no data in the pipe), return immediately. */
-		if ((pollfd.events & 0x4) && !pipe_count(efd)) {
+		if ((pollfd.events & 0x4) && !buffer_count(fd->buffer)) {
 			pollfd.revents = 0x4;
 			mem_write(isa_mem, pufds, sizeof(struct sim_pollfd), &pollfd);
 			retval = 1;
@@ -1903,7 +1996,7 @@ void syscall_do()
 
 		/* If events contain POLLIN and the read to a pipe is not going to be
 		 * blocking (i.e. there is some data in the pipe), return immediately. */
-		if ((pollfd.events & 0x1) && pipe_count(efd)) {
+		if ((pollfd.events & 0x1) && buffer_count(fd->buffer)) {
 			pollfd.revents = 0x1;
 			mem_write(isa_mem, pufds, sizeof(struct sim_pollfd), &pollfd);
 			retval = 1;
@@ -1918,7 +2011,7 @@ void syscall_do()
 			isa_ctx->wakeup_time = ke_timer() + (uint64_t) timeout * 1000;
 
 		/* Suspend process */
-		isa_ctx->wakeup_fd = efd;
+		isa_ctx->wakeup_fd = guest_fd;
 		isa_ctx->wakeup_events = pollfd.events;
 		ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
 		ke_event_timer();
@@ -2127,7 +2220,7 @@ void syscall_do()
 	{
 		uint32_t addr, len, prot;
 		uint32_t flags, fd, offset;
-		char sprot[STRSIZE], sflags[STRSIZE];
+		char sprot[MAX_STRING_SIZE], sflags[MAX_STRING_SIZE];
 
 		/* Read params */
 		addr = isa_regs->ebx;
@@ -2138,11 +2231,10 @@ void syscall_do()
 		offset = isa_regs->ebp;
 
 		/* Debug */
-		syscall_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
-			"fd=0x%x, offset=0x%x\n",
+		syscall_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, fd=%d, offset=0x%x\n",
 			addr, len, prot, flags, fd, offset);
-		map_flags(&mmap_prot_map, prot, sprot, STRSIZE);
-		map_flags(&mmap_flags_map, flags, sflags, STRSIZE);
+		map_flags(&mmap_prot_map, prot, sprot, MAX_STRING_SIZE);
+		map_flags(&mmap_flags_map, flags, sflags, MAX_STRING_SIZE);
 		syscall_debug("  prot=%s, flags=%s\n", sprot, sflags);
 
 		/* Map */
@@ -2156,15 +2248,15 @@ void syscall_do()
 	/* 194 */
 	case syscall_code_ftruncate64:
 	{
-		uint32_t fd, length, efd;
+		uint32_t fd, length, host_fd;
 
 		fd = isa_regs->ebx;
 		length = isa_regs->ecx;
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  fd=0x%x, length=0x%x\n", fd, length);
-		syscall_debug("  efd=0x%x\n", efd);
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		syscall_debug("  fd=%d, length=0x%x\n", fd, length);
+		syscall_debug("  host_fd=%d\n", host_fd);
 		
-		RETVAL(ftruncate(efd, length));
+		RETVAL(ftruncate(host_fd, length));
 		break;
 	}
 
@@ -2173,17 +2265,17 @@ void syscall_do()
 	case syscall_code_stat64:
 	{
 		uint32_t pfilename, pstatbuf;
-		char filename[STRSIZE], fullpath[STRSIZE];
+		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
 		struct stat statbuf;
 		struct sim_stat64 sim_statbuf;
 		int length;
 
 		pfilename = isa_regs->ebx;
 		pstatbuf = isa_regs->ecx;
-		length = mem_read_string(isa_mem, pfilename, STRSIZE, filename);
-		if (length >= STRSIZE)
-			fatal("syscall stat64: maximum string size exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, STRSIZE);
+		length = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
+		if (length >= MAX_PATH_SIZE)
+			fatal("syscall stat64: maximum path length exceeded");
+		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
 		syscall_debug("  pfilename=0x%x, pstatbuf=0x%x\n",
 			pfilename, pstatbuf);
 		syscall_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
@@ -2201,17 +2293,17 @@ void syscall_do()
 	case syscall_code_lstat64:
 	{
 		uint32_t pfilename, pstatbuf;
-		char filename[STRSIZE], fullpath[STRSIZE];
+		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
 		int length;
 		struct stat statbuf;
 		struct sim_stat64 sim_statbuf;
 		
 		pfilename = isa_regs->ebx;
 		pstatbuf = isa_regs->ecx;
-		length = mem_read_string(isa_mem, pfilename, STRSIZE, filename);
-		if (length >= STRSIZE)
-			fatal("syscall lstat64: maximum string size exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, STRSIZE);
+		length = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
+		if (length >= MAX_PATH_SIZE)
+			fatal("syscall lstat64: maximum path length exceeded");
+		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
 		syscall_debug("  pfilename=0x%x, pstatbuf=0x%x\n", pfilename, pstatbuf);
 		syscall_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
 
@@ -2227,17 +2319,17 @@ void syscall_do()
 	/* 197 */
 	case syscall_code_fstat64:
 	{
-		uint32_t fd, pstatbuf, efd;
+		uint32_t fd, pstatbuf, host_fd;
 		struct stat statbuf;
 		struct sim_stat64 sim_statbuf;
 
 		fd = isa_regs->ebx;
 		pstatbuf = isa_regs->ecx;
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  fd=0x%x, pstatbuf=0x%x\n", fd, pstatbuf);
-		syscall_debug("  efd=0x%x\n", efd);
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		syscall_debug("  fd=%d, pstatbuf=0x%x\n", fd, pstatbuf);
+		syscall_debug("  host_fd=%d\n", host_fd);
 
-		RETVAL(fstat(efd, &statbuf));
+		RETVAL(fstat(host_fd, &statbuf));
 		if (!retval) {
 			syscall_copy_stat64(&sim_statbuf, &statbuf);
 			mem_write(isa_mem, pstatbuf, sizeof(sim_statbuf), &sim_statbuf);
@@ -2281,17 +2373,17 @@ void syscall_do()
 	/* 212 */
 	case syscall_code_chown:
 	{
-		char filename[STRSIZE], fullpath[STRSIZE];
+		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
 		uint32_t pfilename, owner, group;
 		int len;
 
 		pfilename = isa_regs->ebx;
 		owner = isa_regs->ecx;
 		group = isa_regs->edx;
-		len = mem_read_string(isa_mem, pfilename, STRSIZE, filename);
-		if (len >= STRSIZE)
-			fatal("syscall chmod: maximum string size exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, STRSIZE);
+		len = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
+		if (len >= MAX_PATH_SIZE)
+			fatal("syscall chmod: maximum path length exceeded");
+		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
 		syscall_debug("  pfilename=0x%x, owner=%d, group=%d\n", pfilename, owner, group);
 		syscall_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
 		RETVAL(chown(fullpath, owner, group));
@@ -2316,7 +2408,7 @@ void syscall_do()
 	/* 220 */
 	case syscall_code_getdents64:
 	{
-		uint32_t fd, pdirent, count, efd;
+		uint32_t fd, pdirent, count, host_fd;
 		void *buf;
 		int nread, host_offs, guest_offs;
 
@@ -2339,16 +2431,16 @@ void syscall_do()
 		fd = isa_regs->ebx;
 		pdirent = isa_regs->ecx;
 		count = isa_regs->edx;
-		efd = ld_translate_fd(isa_ctx, fd);
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
 		syscall_debug("  fd=%d, pdirent=0x%x, count=%d\n",
 			fd, pdirent, count);
-		syscall_debug("  efd=%d\n", efd);
+		syscall_debug("  host_fd=%d\n", host_fd);
 
 		/* Call host getdents */
 		buf = calloc(1, count);
 		if (!buf)
 			fatal("getdents: cannot allocate buffer");
-		nread = syscall(SYS_getdents, efd, buf, count);
+		nread = syscall(SYS_getdents, host_fd, buf, count);
 
 		/* Error or no more entries */
 		if (nread < 0)
@@ -2395,25 +2487,25 @@ void syscall_do()
 	/* 221 */
 	case syscall_code_fcntl64:
 	{
-		uint32_t fd, cmd, arg, efd;
+		uint32_t fd, cmd, arg, host_fd;
 
 		fd = isa_regs->ebx;
 		cmd = isa_regs->ecx;
 		arg = isa_regs->edx;
-		efd = ld_translate_fd(isa_ctx, fd);
-		syscall_debug("  fd=0x%x, cmd=0x%x, arg=0x%x\n",
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		syscall_debug("  fd=%d, cmd=0x%x, arg=0x%x\n",
 			fd, cmd, arg);
-		syscall_debug("  efd=0x%x\n", efd);
+		syscall_debug("  host_fd=%d\n", host_fd);
 
 		switch (cmd) {
 		case 1:  /* F_GETFD */
-			RETVAL(fcntl(efd, F_GETFD));
+			RETVAL(fcntl(host_fd, F_GETFD));
 			break;
 		case 2:  /* F_SETFD */
 			/* Ignored */
 			break;
 		case 3:  /* F_GETFL */
-			RETVAL(fcntl(efd, F_GETFL));
+			RETVAL(fcntl(host_fd, F_GETFL));
 			break;
 		case 0:  /* F_DUPFD */
 		case 4:  /* F_SETFL */

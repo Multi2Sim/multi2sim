@@ -191,10 +191,52 @@ void op_cmpxchg_rm32_r32_impl() {
 #define PUTINFO(EAX, EBX, ECX, EDX) \
 	isa_store_reg(reg_eax, (EAX)); isa_store_reg(reg_ebx, (EBX)); \
 	isa_store_reg(reg_ecx, (ECX)); isa_store_reg(reg_edx, (EDX)); break
-void op_cpuid_impl() {
+void op_cpuid_impl()
+{
+	uint32_t info = 0;
+
 	switch (isa_regs->eax) {
 	case 0x0: PUTINFO(0x2, 0x756e6547, 0x6c65746e, 0x49656e69);
-	case 0x1: PUTINFO(0xf29, 0x102080b, 0x4400, 0xbfebfbff);
+	case 0x1:
+		isa_store_reg(reg_eax, 0x00000f29);
+		isa_store_reg(reg_ebx, 0x0102080b);
+		isa_store_reg(reg_ecx, 0x00004400);
+		isa_store_reg(reg_edx, 0xbfebfbff);
+
+		/* EDX register returns CPU feature information. */
+		info = SETBITVALUE32(info, 31, 1);  /* PBE - Pend Brk En */
+		info = SETBITVALUE32(info, 29, 1);  /* TM - Therm Monitor */
+		info = SETBITVALUE32(info, 28, 1);  /* HTT - Hyper-threading Tech. */
+		info = SETBITVALUE32(info, 27, 1);  /* SS - Self snoop */
+		info = SETBITVALUE32(info, 26, 0);  /* SSE2 - SSE2 Extensions */
+		info = SETBITVALUE32(info, 25, 0);  /* SSE - SSE Extensions */
+		info = SETBITVALUE32(info, 24, 1);  /* FXSR - FXSAVE/FXRSTOR */
+		info = SETBITVALUE32(info, 23, 0);  /* MMX - MMX Technology */
+		info = SETBITVALUE32(info, 22, 1);  /* ACPI - Thermal Monitor and Clock Ctrl */
+		info = SETBITVALUE32(info, 21, 1);  /* DS - Debug Store */
+		info = SETBITVALUE32(info, 19, 1);  /* CLFSH - CFLUSH instruction */
+		info = SETBITVALUE32(info, 18, 0);  /* PSN - Processor Serial Number */
+		info = SETBITVALUE32(info, 17, 1);  /* PSE - Page size extension */
+		info = SETBITVALUE32(info, 16, 1);  /* PAT - Page Attribute Table */
+		info = SETBITVALUE32(info, 15, 1);  /* CMOV - Conditional Move/Compare Instruction */
+		info = SETBITVALUE32(info, 14, 1);  /* MCA - Machine Check Architecture */
+		info = SETBITVALUE32(info, 13, 1);  /* PGE - PTE Global bit */
+		info = SETBITVALUE32(info, 12, 1);  /* MTRR - Memory Type Range Registers */
+		info = SETBITVALUE32(info, 11, 1);  /* SEP - SYSENTER and SYSEXIT */
+		info = SETBITVALUE32(info, 9, 1);  /* APIC - APIC on Chip */
+		info = SETBITVALUE32(info, 8, 1);  /* CX8 - CMPXCHG8B inst. */
+		info = SETBITVALUE32(info, 7, 1);  /* MCE - Machine Check Exception */
+		info = SETBITVALUE32(info, 6, 1);  /* PAE - Physical Address Extensions */
+		info = SETBITVALUE32(info, 5, 1);  /* MSR - RDMSR and WRMSR Support */
+		info = SETBITVALUE32(info, 4, 1);  /* TSC - Time Stamp Counter */
+		info = SETBITVALUE32(info, 3, 1);  /* PSE - Page Size Extensions */
+		info = SETBITVALUE32(info, 2, 1);  /* DE - Debugging Extensions */
+		info = SETBITVALUE32(info, 1, 1);  /* VME - Virtual-8086 Mode Enhancement */
+		info = SETBITVALUE32(info, 0, 1);  /* FPU - x87 FPU on Chip */
+
+		isa_store_reg(reg_edx, info);
+		break;
+
 	case 0x2: PUTINFO(0x0, 0x0, 0x0, 0x0);
 	case 0x80000000: PUTINFO(0x80000004, 0, 0, 0);
 	case 0x80000001: PUTINFO(0, 0, 0, 0);
