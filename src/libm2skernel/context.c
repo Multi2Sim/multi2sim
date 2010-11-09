@@ -74,12 +74,13 @@ struct ctx_t *ctx_create()
 	
 	ctx = ctx_do_create();
 
-	/* A new parent context has a new memory map and a new
-	 * set of signal handlers. */
+	/* A new parent context has a new memory map, a new
+	 * set of signal handlers, a new file descriptor table. */
 	ld_init(ctx);
 	ctx->mid = ke->current_mid++;
 	ctx->mem = mem_create();
 	ctx->signal_handlers = signal_handlers_create();
+	ctx->fdt = fdt_create();
 	
 	return ctx;
 }
@@ -103,6 +104,7 @@ struct ctx_t *ctx_clone(struct ctx_t *ctx)
 	new->mid = ctx->mid;
 	new->loader = ctx->loader;
 	new->signal_handlers = ctx->signal_handlers;
+	new->fdt = ctx->fdt;
 	new->glibc_segment_base = ctx->glibc_segment_base;
 	new->glibc_segment_limit = ctx->glibc_segment_limit;
 
@@ -141,6 +143,7 @@ void ctx_free(struct ctx_t *ctx)
 	if (!ctx->mem->sharing) {
 		ld_done(ctx);
 		mem_free(ctx->mem);
+		fdt_free(ctx->fdt);
 		signal_handlers_free(ctx->signal_handlers);
 	}
 
@@ -174,6 +177,54 @@ void ctx_dump(struct ctx_t *ctx, FILE *f)
 	sim_sigset_dump(ctx->signal_masks->pending, f);
 	fprintf(f, "\n");
 }
+
+
+void ctx_mem_map_dump(struct ctx_t *ctx, FILE *f)
+{
+	uint32_t start, end, stack_start, stack_end;
+	enum mem_access_enum perm, page_perm;
+	struct mem_page_t *page;
+	struct mem_t *mem = ctx->mem;
+	struct loader_t *ld = ctx->loader;
+
+	/* Get stack start/end page tags */
+	stack_start = ld->stack_top & ~(MEM_PAGESIZE - 1);
+	stack_end = ld->stack_base & ~(MEM_PAGESIZE - 1);
+
+	/* Get the first page */
+	end = 0;
+	for (;;) {
+		
+		/* Get start of next range */
+		page = mem_page_get_next(mem, end);
+		if (!page)
+			break;
+		start = page->tag;
+		end = page->tag;
+		perm = page->perm & (mem_access_read | mem_access_write | mem_access_exec);
+
+		/* Get end of range */
+		for (;;) {
+			page = mem_page_get(mem, end + MEM_PAGESIZE);
+			if (!page)
+				break;
+			page_perm = page->perm & (mem_access_read | mem_access_write | mem_access_exec);
+			if (page_perm != perm)
+				break;
+			end += MEM_PAGESIZE;
+			perm = page_perm;
+		}
+
+		/* Dump range */ 
+		fprintf(f, "%08x-%08x %c%c%c%c 00000000 00:00", start, end + MEM_PAGESIZE,
+			perm & mem_access_read ? 'r' : '-',
+			perm & mem_access_write ? 'w' : '-',
+			perm & mem_access_exec ? 'x' : '-',
+			'p');
+		fprintf(f, "\n");
+	}
+}
+
 
 void ctx_execute_inst(struct ctx_t *ctx)
 {

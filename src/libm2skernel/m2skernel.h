@@ -24,6 +24,7 @@
 #include <debug.h>
 #include <config.h>
 #include <buffer.h>
+#include <list.h>
 #include <lnlist.h>
 #include <misc.h>
 #include <elf.h>
@@ -85,6 +86,7 @@ struct mem_t *mem_create(void);
 void mem_free(struct mem_t *mem);
 
 struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr);
+struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr);
 uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size);
 uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size);
 
@@ -178,7 +180,6 @@ struct loader_t {
 	char *exe;  /* Executable file name */
 	char *cwd;  /* Current working directory */
 	char *stdin_file, *stdout_file;  /* File names for stdin and stdout */
-	int stdin_fd, stdout_fd;  /* File descriptors for stdin/stdout */
 
 	/* Code pointers */
 	uint32_t stack_base, stack_top, stack_size;
@@ -205,7 +206,6 @@ void ld_load_prog_from_ctxconfig(char *ctxconfig);
 void ld_load_prog_from_cmdline(int argc, char **argv);
 
 void ld_convert_filename(struct ctx_t *ctx, char *filename);
-int ld_translate_fd(struct ctx_t *ctx, int fd);
 void ld_get_full_path(struct ctx_t *ctx, char *filename, char *fullpath, int size);
 
 
@@ -353,31 +353,44 @@ int sim_sigset_member(uint64_t *sim_sigset, int signal);
 
 
 
-/* System pipes */
+/* Files management */
 
-struct pipe_t {
-	int fd[2];
-	struct buffer_t *buffer;
-	struct pipe_t *next;
+#define MAX_PATH_SIZE  200
+
+enum fd_kind_enum {
+	fd_kind_regular = 0,  /* Regular file */
+	fd_kind_std,  /* Standard input or output */
+	fd_kind_pipe,  /* A pipe */
+	fd_kind_proc_self  /* A file in /proc/self  */
 };
 
-struct pipemgr_t {
-	struct pipe_t *pipe_list;  /* Linked list of existing pipes */
+/* File descriptor */
+struct fd_t {
+	enum fd_kind_enum kind;  /* File type */
+	int guest_fd;  /* Guest file descriptor id */
+	int host_fd;  /* Equivalent open host file */
+	char path[MAX_PATH_SIZE];  /* Equivalent path if applicable */
+	struct buffer_t *buffer;  /* Buffer for pipes */
 };
 
-void pipemgr_init(void);
-void pipemgr_done(void);
+/* File descriptor table */
+struct fdt_t {
+	struct list_t *fd_list;  /* List of file descriptors (fd_t elements) */
+};
 
-struct pipe_t *pipe_create(void);
-void pipe_free(struct pipe_t *pipe);
+struct fdt_t *fdt_create(void);
+void fdt_free(struct fdt_t *fdt);
+void fdt_dump(struct fdt_t *fdt, FILE *f);
 
-void pipe_pipe(int fd[2]);
-void pipe_close(int fd);
-int pipe_is_pipe(int fd);
+struct fd_t *fdt_entry_get(struct fdt_t *fdt, int index);
+struct fd_t *fdt_entry_new(struct fdt_t *fdt, enum fd_kind_enum kind, int host_fd, char *path);
+void fdt_entry_free(struct fdt_t *fdt, int index);
+void fdt_entry_dump(struct fdt_t *fdt, int index, FILE *f);
 
-int pipe_write(int fd, void *buf, int size);
-int pipe_read(int fd, void *buf, int size);
-int pipe_count(int fd);
+int fdt_get_host_fd(struct fdt_t *fdt, int guest_fd);
+
+int fdt_pipe_links(struct fdt_t *fdt, int index);
+void fdt_pipe_new(struct fdt_t *fdt, struct fd_t **pread_fd, struct fd_t **pwrite_fd);
 
 
 
@@ -430,8 +443,9 @@ struct ctx_t {
 
 	/* Substructures */
 	struct loader_t *loader;
-	struct mem_t *mem;
-	struct regs_t *regs;
+	struct mem_t *mem;  /* Virtual memory image */
+	struct fdt_t *fdt;  /* File descriptor table */
+	struct regs_t *regs;  /* Logical register file */
 	struct signal_masks_t *signal_masks;
 	struct signal_handlers_t *signal_handlers;
 };
@@ -460,6 +474,7 @@ struct ctx_t *ctx_create(void);
 struct ctx_t *ctx_clone(struct ctx_t *ctx);
 void ctx_free(struct ctx_t *ctx);
 void ctx_dump(struct ctx_t *ctx, FILE *f);
+void ctx_mem_map_dump(struct ctx_t *ctx, FILE *f);
 
 void ctx_finish(struct ctx_t *ctx, int status);
 void ctx_finish_group(struct ctx_t *ctx, int status);
