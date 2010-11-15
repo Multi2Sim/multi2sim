@@ -194,7 +194,7 @@ void signal_process(struct ctx_t *ctx)
 		if (sim_sigset_member(&ctx->signal_masks->pending, sig) &&
 			!sim_sigset_member(&ctx->signal_masks->blocked, sig))
 		{
-			ke_event_signal();
+			ke_process_suspended_schedule();
 			signal_handler_run(ctx, sig);
 			sim_sigset_del(&ctx->signal_masks->pending, sig);
 			break;

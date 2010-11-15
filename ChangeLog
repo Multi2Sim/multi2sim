@@ -670,3 +670,9 @@
 	* fs.c: new management of file handlers in structure fdt_t. Pipes are handled
 		within.
 	* pipe.c: file removed.
+
+2010-11-12
+	* m2skernel.c: centralized function to wake up suspended contexts.
+	* m2skernel.c: blocking 'poll' system calls handled with an alternative mechanism
+		using child threads (ke_process_suspended_thread).
+

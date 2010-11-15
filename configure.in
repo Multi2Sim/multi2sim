@@ -28,6 +28,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday mkdir strcasecmp strdup strstr])
+AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
 # Library ncurses
 AC_CHECK_LIB(ncurses, initscr)
