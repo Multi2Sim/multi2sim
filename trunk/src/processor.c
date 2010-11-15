@@ -620,11 +620,6 @@ static uint64_t stage_time_start;
 		stage_time_start = end; }
 void p_stages()
 {
-	/* Kernel is stuck if all contexts are suspended and
-	 * there is no timer pending. */
-	if (!ke->running_list_head && !ke->event_timer_next)
-		fatal("all contexts suspended");
-	
 	/* Static scheduler called after any context changed status other than 'sepcmode' */
 	if (!p_context_switch && ke->context_reschedule) {
 		p_static_schedule();
@@ -666,25 +661,11 @@ void p_stages()
 /* Fast forward simulation */
 void p_fast_forward(uint64_t cycles)
 {
-	struct ctx_t *ctx;
 	int core, thread;
 
+	/* Functional simulation */
 	while (cycles && ke->context_list_head) {
-		
-		/* Kernel is stuck if all contexts are suspended and
-		 * there is no timer pending. */
-		if (!ke->running_list_head && !ke->event_timer_next)
-			fatal("all contexts suspended");
-
-		/* Run one instruction from each running context */
-		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
-			ctx_execute_inst(ctx);
-
-		/* Check for timer events */
-		if (ke->event_timer_next && ke->event_timer_next < ke_timer())
-			ke_event_timer();
-
-		/* Next fast forward cycle */
+		ke_run();
 		cycles--;
 	}
 	

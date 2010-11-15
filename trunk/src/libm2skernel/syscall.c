@@ -24,6 +24,7 @@
 #include <time.h>
 #include <errno.h>
 #include <dirent.h>
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
@@ -32,6 +33,7 @@
 #include <sys/resource.h>
 #include <sys/times.h>
 #include <sys/syscall.h>
+#include <sys/socket.h>
 #include <linux/unistd.h>
 
 
@@ -176,6 +178,100 @@ static void syscall_termio_real_to_sim(struct sim_termio *sim, struct termio *re
 	memcpy(&sim->line, &real->c_line,
 		MIN(sizeof(real->c_line), sizeof(sim->line)));
 }
+
+
+/* For 'fcntl' */
+
+struct string_map_t fcntl_cmd_map = {
+	15, {
+		{ "F_DUPFD",		0 },
+		{ "F_GETFD",		1 },
+		{ "F_SETFD",		2 },
+		{ "F_GETFL",		3 },
+		{ "F_SETFL",		4 },
+		{ "F_GETLK",		5 },
+		{ "F_SETLK",		6 },
+		{ "F_SETLKW",		7 },
+		{ "F_SETOWN",		8 },
+		{ "F_GETOWN",		9 },
+		{ "F_SETSIG",		10 },
+		{ "F_GETSIG",		11 },
+		{ "F_GETLK64",		12 },
+		{ "F_SETLK64",		13 },
+		{ "F_SETLKW64",		14 }
+	}
+};
+
+
+/* For 'socketcall' */
+
+struct string_map_t socketcall_call_map = {
+	17, {
+		{ "SYS_SOCKET",		1 },
+		{ "SYS_BIND",		2 },
+		{ "SYS_CONNECT",	3 },
+		{ "SYS_LISTEN",		4 },
+		{ "SYS_ACCEPT",		5 },
+		{ "SYS_GETSOCKNAME",	6 },
+		{ "SYS_GETPEERNAME",	7 },
+		{ "SYS_SOCKETPAIR",	8 },
+		{ "SYS_SEND",		9 },
+		{ "SYS_RECV",		10 },
+		{ "SYS_SENDTO",		11 },
+		{ "SYS_RECVFROM",	12 },
+		{ "SYS_SHUTDOWN",	13 },
+		{ "SYS_SETSOCKOPT",	14 },
+		{ "SYS_GETSOCKOPT",	15 },
+		{ "SYS_SENDMSG",	16 },
+		{ "SYS_RECVMSG",	17 }
+	}
+};
+
+struct string_map_t socket_family_map = {
+	29, {
+		{ "PF_UNSPEC",		0 },
+		{ "PF_UNIX",		1 },
+		{ "PF_INET",		2 },
+		{ "PF_AX25",		3 },
+		{ "PF_IPX",		4 },
+		{ "PF_APPLETALK",	5 },
+		{ "PF_NETROM",		6 },
+		{ "PF_BRIDGE",		7 },
+		{ "PF_ATMPVC",		8 },
+		{ "PF_X25",		9 },
+		{ "PF_INET6",		10 },
+		{ "PF_ROSE",		11 },
+		{ "PF_DECnet",		12 },
+		{ "PF_NETBEUI",		13 },
+		{ "PF_SECURITY",	14 },
+		{ "PF_KEY",		15 },
+		{ "PF_NETLINK",		16 },
+		{ "PF_PACKET",		17 },
+		{ "PF_ASH",		18 },
+		{ "PF_ECONET",		19 },
+		{ "PF_ATMSVC",		20 },
+		{ "PF_SNA",		22 },
+		{ "PF_IRDA",		23 },
+		{ "PF_PPPOX",		24 },
+		{ "PF_WANPIPE",		25 },
+		{ "PF_LLC",		26 },
+		{ "PF_TIPC",		30 },
+		{ "PF_BLUETOOTH",	31 },
+		{ "PF_IUCV",		32 }
+	}
+};
+
+struct string_map_t socket_type_map = {
+	7, {
+		{ "SOCK_STREAM",	1 },
+		{ "SOCK_DGRAM",		2 },
+		{ "SOCK_RAW",		3 },
+		{ "SOCK_RDM",		4 },
+		{ "SOCK_SEQPACKET",	5 },
+		{ "SOCK_DCCP",		6 },
+		{ "SOCK_PACKET",	10 }
+	}
+};
 
 
 /* For fstat64, lstat64 */
@@ -562,8 +658,9 @@ void syscall_summary()
 }
 
 
-/* Print a string in debug output */
-void syscall_debug_string(char *text, char *s, int len)
+/* Print a string in debug output.
+ * If 'force' is set, keep printing after \0 is found. */
+void syscall_debug_string(char *text, char *s, int len, int force)
 {
 	char buf[200], *bufptr;
 	int trunc = 0;
@@ -578,13 +675,16 @@ void syscall_debug_string(char *text, char *s, int len)
 		trunc = 1;
 	}
 	for (;;) {
-		if (!len || !*s) {
+		if (!len || (!*s && !force)) {
 			strcpy(bufptr, !len && trunc ? "\"..." : "\"");
 			break;
 		}
 		if ((unsigned char) *s >= 32) {
 			*bufptr = *s;
 			bufptr++;
+		} else if (*s == '\0') {
+			strcpy(bufptr, "\\0");
+			bufptr += 2;
 		} else if (*s == '\n') {
 			strcpy(bufptr, "\\n");
 			bufptr += 2;
@@ -669,7 +769,9 @@ void syscall_do()
 		if (host_fd > 2)
 			close(host_fd);
 		
-		/* Free guest file descriptor. */
+		/* Free guest file descriptor. This will delete the host file if it's a virtual file. */
+		if (fd->kind == fd_kind_virtual)
+			syscall_debug("    host file '%s': temporary file deleted\n", fd->path);
 		fdt_entry_free(isa_ctx->fdt, fd->guest_fd);
 		break;
 	}
@@ -682,6 +784,7 @@ void syscall_do()
 		int guest_fd, host_fd;
 		void *buf;
 		struct fd_t *fd;
+		struct pollfd fds;
 
 		/* Get parameters */
 		guest_fd = isa_regs->ebx;
@@ -714,7 +817,7 @@ void syscall_do()
 				retval = buffer_read(fd->buffer, buf, count);
 				syscall_debug("  %d bytes requested, %d bytes read\n", count, retval);
 				mem_write(isa_mem, pbuf, retval, buf);
-				ke_event_read();
+				ke_process_suspended_schedule();
 			} else {
 				syscall_debug("  read from empty pipe - suspend\n");
 				isa_ctx->wakeup_fd = guest_fd;
@@ -723,11 +826,20 @@ void syscall_do()
 
 		} else {
 
+			/* Check if read is going to be blocking. If so, warn about it. */
+			fds.fd = host_fd;
+			fds.events = POLLIN;
+			poll(&fds, 1, 0);
+			if (!(fds.revents & POLLIN))
+				syscall_debug("  warning: simulator suspended\n");
+
 			/* Read from a regular file */
 			RETVAL(read(host_fd, buf, count));
-			if (retval > 0)
+			if (retval > 0) {
 				mem_write(isa_mem, pbuf, retval, buf);
-			ke_event_read();
+				syscall_debug_string("  buf", buf, count, 1);
+			}
+			ke_process_suspended_schedule();
 		}
 
 		/* Free buffer */
@@ -743,6 +855,7 @@ void syscall_do()
 		int guest_fd, host_fd;
 		struct fd_t *fd;
 		void *buf;
+		struct pollfd fds;
 
 		guest_fd = isa_regs->ebx;
 		pbuf = isa_regs->ecx;
@@ -764,7 +877,7 @@ void syscall_do()
 		if (!buf)
 			fatal("syscall write: out of memory");
 		mem_read(isa_mem, pbuf, count, buf);
-		syscall_debug_string("  buf", buf, count);
+		syscall_debug_string("  buf", buf, count, 0);
 
 		/* Proceed. */
 		if (fd->kind == fd_kind_pipe) {
@@ -773,7 +886,7 @@ void syscall_do()
 			 * the process until this data is read. */
 			if (!buffer_count(fd->buffer)) {
 				retval = buffer_write(fd->buffer, buf, count);
-				ke_event_write();
+				ke_process_suspended_schedule();
 			} else {
 				isa_ctx->wakeup_fd = guest_fd;
 				ctx_set_status(isa_ctx, ctx_suspended | ctx_write);
@@ -781,9 +894,16 @@ void syscall_do()
 
 		} else {
 			
+			/* Check if write is going to be blocking. If so, warn about it. */
+			fds.fd = host_fd;
+			fds.events = POLLOUT;
+			poll(&fds, 1, 0);
+			if (!(fds.revents & POLLOUT))
+				syscall_debug("  warning: simulator suspended\n");
+
 			/* Write to file descriptors other than pipes. */
 			RETVAL(write(host_fd, buf, count));
-			ke_event_write();
+			ke_process_suspended_schedule();
 		}
 
 		/* Generate write event and free buffer */
@@ -794,7 +914,7 @@ void syscall_do()
 	/* 5 */
 	case syscall_code_open:
 	{
-		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
+		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE], temppath[MAX_PATH_SIZE];
 		uint32_t pfilename, flags, mode;
 		char sflags[MAX_STRING_SIZE];
 		int length;
@@ -815,7 +935,41 @@ void syscall_do()
 		map_flags(&open_flags_map, flags, sflags, MAX_STRING_SIZE);
 		syscall_debug("  flags=%s\n", sflags);
 
-		/* Try to open file. On error, just return it. */
+		/* GPU */
+		if (!strcmp(fullpath, "/dev/ati/card0")) {
+			
+			/* Addfile descriptor table entry. */
+			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_gpu, -1, fullpath);
+			syscall_debug("    GPU communication started\n");
+			retval = fd->guest_fd;
+			break;
+		}
+
+		/* Virtual files */
+		if (!strncmp(fullpath, "/proc/", 6)) {
+			
+			/* File /proc/self/maps */
+			if (!strcmp(fullpath, "/proc/self/maps")) {
+				
+				/* Create temporary file and open it. */
+				ctx_gen_proc_self_maps(isa_ctx, temppath);
+				host_fd = open(temppath, flags, mode);
+				assert(host_fd > 0);
+
+				/* Add file descriptor table entry. */
+				fd = fdt_entry_new(isa_ctx->fdt, fd_kind_virtual, host_fd, temppath);
+				syscall_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
+					temppath, fd->guest_fd, fd->host_fd);
+				retval = fd->guest_fd;
+				break;
+			}
+
+			/* Unhandled virtual file. Let the application read the contents of the host
+			 * version of the file as if it was a regular file. */
+			syscall_debug("    warning: unhandled virtual file\n");
+		}
+
+		/* Regular file. */
 		host_fd = open(fullpath, flags, mode);
 		if (host_fd < 0) {
 			retval = -errno;
@@ -826,10 +980,9 @@ void syscall_do()
 		fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, host_fd, fullpath);
 		syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
 			fd->guest_fd, fd->host_fd);
-
-
-		/* Return guest file descriptor. */
 		retval = fd->guest_fd;
+
+		/* Return */
 		break;
 	}
 
@@ -1214,28 +1367,76 @@ void syscall_do()
 	/* 54 */
 	case syscall_code_ioctl:
 	{
-		uint32_t fd, cmd, arg, host_fd;
-		struct sim_termio sim_termio;
-		struct termio termio;
+		uint32_t cmd, arg;
+		int guest_fd;
+		struct fd_t *fd;
 
-		fd = isa_regs->ebx;
+		guest_fd = isa_regs->ebx;
 		cmd = isa_regs->ecx;
 		arg = isa_regs->edx;
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
-		syscall_debug("  fd=%d, cmd=0x%x, arg=0x%x\n",
-			fd, cmd, arg);
-		syscall_debug("  host_fd=%d\n", host_fd);
+		syscall_debug("  guest_fd=%d, cmd=0x%x, arg=0x%x\n",
+			guest_fd, cmd, arg);
 
+		/* File descriptor */
+		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		if (!fd) {
+			retval = -EBADF;
+			break;
+		}
+
+		/* Process IOCTL */
 		if (cmd == 0x5401 || cmd == 0x5405) {
+			struct sim_termio sim_termio;
+			struct termio termio;
+
 			mem_read(isa_mem, arg, sizeof(sim_termio), &sim_termio);
 			syscall_termio_sim_to_real(&termio, &sim_termio);
-			RETVAL(ioctl(host_fd, cmd, &termio));
+			RETVAL(ioctl(fd->host_fd, cmd, &termio));
 			if (!retval) {
 				syscall_termio_real_to_sim(&sim_termio, &termio);
 				mem_write(isa_mem, arg, sizeof(sim_termio), &sim_termio);
 			}
+		
+		} else if (cmd == 0xc0286450) {  /* Whatever it is, invalid code */
+			
+			retval = -EINVAL;
+
+		} else if (cmd == 0xc0086401) {  /* DRM_IOCTL_GET_UNIQUE */
+			
+			uint32_t unique_len, unique_ptr;
+
+			assert(fd->kind == fd_kind_gpu);
+			mem_read(isa_mem, arg, 4, &unique_len);
+			mem_read(isa_mem, arg + 4, 4, &unique_ptr);
+			syscall_debug("  Code DRM_IOCTL_GET_UNIQUE\n");
+			syscall_debug("    drm_unique.unique_len=%d\n", unique_len);
+			syscall_debug("    drm_unique.unique=0x%x\n", unique_ptr);
+
+			/* Return unique in memory */
+			unique_len = 40;
+			mem_write(isa_mem, arg, 4, &unique_len);
+			if (unique_ptr)
+				mem_write_string(isa_mem, unique_ptr, "PCI:1:0:0");
+
+		} else if (cmd == 0x80046402) {  /* DRM_IOCTL_GET_MAGIC */
+			
+			uint32_t magic;
+
+			assert(fd->kind == fd_kind_gpu);
+			syscall_debug("  Code DRM_IOCTL_GET_MAGIC\n");
+			syscall_debug("    pmagic=0x%x\n", arg);
+
+			/* Return magic number */
+			magic = 0x30;  /* FIXME */
+			mem_write(isa_mem, arg, 4, &magic);
+
+		} else if (cmd == 0xc0106407) {  /* DRM_IOCTL_SET_VERSION */
+			
+			retval = -EINVAL;
+
 		} else
 			fatal("syscall ioctl: cmd = 0x%x not implemented", cmd);
+
 		break;
 	}
 
@@ -1404,6 +1605,149 @@ void syscall_do()
 		syscall_debug("  host_fd=%d\n", host_fd);
 
 		RETVAL(fchmod(host_fd, mode));
+		break;
+	}
+
+
+	/* 102 */
+	case syscall_code_socketcall:
+	{
+		int call;
+		uint32_t args;
+		char *call_name;
+
+		call = isa_regs->ebx;
+		args = isa_regs->ecx;
+		call_name = map_value(&socketcall_call_map, call);
+		syscall_debug("  call=%d (%s)\n", call, call_name);
+		syscall_debug("  args=0x%x\n", args);
+		
+		/* Process call */
+		if (call == 1) {  /* SYS_SOCKET */
+			
+			uint32_t family, type, protocol;
+			char *family_name, *type_name;
+			int host_fd;
+			struct fd_t *fd;
+
+			/* Read parameters */
+			mem_read(isa_mem, args, 4, &family);
+			mem_read(isa_mem, args + 4, 4, &type);
+			mem_read(isa_mem, args + 8, 4, &protocol);
+			family_name = map_value(&socket_family_map, family);
+			type_name = map_value(&socket_type_map, type & 0xff);
+			syscall_debug("  family=0x%x, type=0x%x, protocol=0x%x\n",
+				family, type, protocol);
+			syscall_debug("    family=%s\n", family_name);
+			syscall_debug("    type=%s", type_name);
+			if (type & 0x80000)  /* SOCK_CLOEXEC */
+				syscall_debug("|SOCK_CLOEXEC");
+			if (type & 0x800)  /* SOCK_NONBLOCK */
+				syscall_debug("|SOCK_NONBLOCK");
+			syscall_debug("\n");
+
+			/* Allow only sockets of type SOCK_STREAM */
+			if ((type & 0xff) != 1)
+				fatal("syscall 'socketcall': SYS_SOCKET: only sockets of type SOCK_STREAM allowed");
+
+			/* Create socket */
+			host_fd = socket(family, type, protocol);
+			if (host_fd < 0) {
+				retval = -errno;
+				break;
+			}
+
+			/* Create new file descriptor table entry. */
+			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_socket, host_fd, "");
+			syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
+				fd->guest_fd, fd->host_fd);
+			retval = fd->guest_fd;
+			break;
+
+		} else if (call == 3) {  /* SYS_CONNECT */
+
+			uint32_t guest_fd, paddr, addrlen;
+			struct fd_t *fd;
+			char buf[MAX_STRING_SIZE];
+			struct sockaddr *addr;
+			
+			mem_read(isa_mem, args, 4, &guest_fd);
+			mem_read(isa_mem, args + 4, 4, &paddr);
+			mem_read(isa_mem, args + 8, 4, &addrlen);
+			syscall_debug("  guest_fd=%d, paddr=0x%x, addrlen=%d\n",
+				guest_fd, paddr, addrlen);
+
+			/* Get sockaddr structure - read family and data */
+			if (addrlen > MAX_STRING_SIZE)
+				fatal("syscall 'socketcall': SYS_CONNECT: maximum string size exceeded");
+			addr = (struct sockaddr *) &buf[0];
+			assert(sizeof(addr->sa_family) == 2);
+			assert((void *) &addr->sa_data - (void *) &addr->sa_family == 2);
+			mem_read(isa_mem, paddr, addrlen, addr);
+			syscall_debug("    sockaddr.family=%s\n", map_value(&socket_family_map, addr->sa_family));
+			syscall_debug_string("    sockaddr.data", addr->sa_data, addrlen - 2, 1);
+
+			/* Get file descriptor */
+			fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+			if (!fd) {
+				retval = -EBADF;
+				break;
+			}
+			if (fd->kind != fd_kind_socket)
+				fatal("  syscall 'socketcall': SYS_CONNECT: file descriptor is not a socket");
+			syscall_debug("    host_fd=%d\n", fd->host_fd);
+
+			/* Connect socket */
+			RETVAL(connect(fd->host_fd, addr, addrlen));
+			break;
+
+		} else if (call == 7) {  /* SYS_GETPEERNAME */
+			
+			uint32_t guest_fd, paddr, paddrlen, addrlen;
+			struct fd_t *fd;
+			struct sockaddr *addr;
+			socklen_t host_addrlen;
+
+			mem_read(isa_mem, args, 4, &guest_fd);
+			mem_read(isa_mem, args + 4, 4, &paddr);
+			mem_read(isa_mem, args + 8, 4, &paddrlen);
+			syscall_debug("  guest_fd=%d, paddr=0x%x, paddrlen=0x%x\n",
+				guest_fd, paddr, paddrlen);
+
+			/* Get file descriptor */
+			fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+			if (!fd) {
+				retval = -EBADF;
+				break;
+			}
+			
+			/* Read current buffer size and allocate buffer. */
+			mem_read(isa_mem, paddrlen, 4, &addrlen);
+			syscall_debug("    addrlen=%d\n", addrlen);
+			host_addrlen = addrlen;
+			addr = malloc(addrlen);
+
+			/* Get peer name */
+			RETVAL(getpeername(fd->host_fd, addr, &host_addrlen));
+			if (retval < 0) {
+				free(addr);
+				break;
+			}
+			addrlen = host_addrlen;
+			syscall_debug("  result:\n");
+			syscall_debug("    addrlen=%d\n", host_addrlen);
+			syscall_debug_string("    sockaddr.data", addr->sa_data, addrlen - 2, 1);
+
+			/* Copy result to guest memory */
+			mem_write(isa_mem, paddrlen, 4, &addrlen);
+			mem_write(isa_mem, paddr, addrlen, addr);
+			free(addr);
+			break;
+
+		} else
+			fatal("syscall 'socketcall': call '%s' not implemented",
+				call_name);
+
 		break;
 	}
 
@@ -1885,7 +2229,7 @@ void syscall_do()
 
 		/* Suspend process */
 		ctx_set_status(isa_ctx, ctx_suspended | ctx_nanosleep);
-		ke_event_timer();
+		ke_process_suspended_schedule();
 		break;
 	}
 
@@ -1949,25 +2293,26 @@ void syscall_do()
 	/* 168 */
 	case syscall_code_poll:
 	{
-		uint32_t pufds, nfds, timeout;
-		int guest_fd, host_fd;
-		struct sim_pollfd pollfd;
+		uint32_t pfds, nfds;
+		int timeout, guest_fd, host_fd;
+		struct sim_pollfd guest_fds;
+		struct pollfd host_fds;
 		char sevents[MAX_STRING_SIZE];
 		struct fd_t *fd;
 
-		pufds = isa_regs->ebx;
+		pfds = isa_regs->ebx;
 		nfds = isa_regs->ecx;
 		timeout = isa_regs->edx;
-		syscall_debug("  pufds=0x%x, nfds=%d, timeout=%.2fs\n",
-			pufds, nfds, (double) timeout / 1000);
+		syscall_debug("  pfds=0x%x, nfds=%d, timeout=%d\n",
+			pfds, nfds, timeout);
 		if (nfds != 1)
 			fatal("syscall poll: not suported for nfds != 1");
 		assert(sizeof(struct sim_pollfd) == 8);
 
 		/* Read pollfd */
-		mem_read(isa_mem, pufds, sizeof(struct sim_pollfd), &pollfd);
-		guest_fd = pollfd.fd;
-		map_flags(&poll_event_map, pollfd.events, sevents, MAX_STRING_SIZE);
+		mem_read(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
+		guest_fd = guest_fds.fd;
+		map_flags(&poll_event_map, guest_fds.events, sevents, MAX_STRING_SIZE);
 		syscall_debug("  guest_fd=%d, events=%s\n", guest_fd, sevents);
 
 		/* Get file descriptor */
@@ -1977,44 +2322,98 @@ void syscall_do()
 			break;
 		}
 		host_fd = fd->host_fd;
-		if (fd->kind != fd_kind_pipe)
-			fatal("syscall poll: only supported for pipes");
 		syscall_debug("  host_fd=%d\n", host_fd);
 	
 		/* Only POLLIN (0x1) and POLLOUT (0x4) supported */
-		if (pollfd.events & ~0x5)
+		if (guest_fds.events & ~0x5)
 			fatal("syscall poll: only POLLIN and POLLOUT events supported");
 
-		/* If events contain POLLOUT and the write to a pipe is not going to be
-		 * blocking (i.e. there is no data in the pipe), return immediately. */
-		if ((pollfd.events & 0x4) && !buffer_count(fd->buffer)) {
-			pollfd.revents = 0x4;
-			mem_write(isa_mem, pufds, sizeof(struct sim_pollfd), &pollfd);
-			retval = 1;
+		/* Proceed */
+		if (fd->kind == fd_kind_pipe) {
+
+			/* Non-blocking POLLOUT on a pipe. */
+			if ((guest_fds.events & 4) && !buffer_count(fd->buffer)) {
+				syscall_debug("  non-blocking write to pipe guaranteed\n");
+				guest_fds.revents = 4;
+				mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
+				retval = 1;
+				break;
+			}
+
+			/* Non-blocking POLLIN on a pipe. */
+			if ((guest_fds.events & 1) && buffer_count(fd->buffer)) {
+				syscall_debug("  non-blocking read from pipe guaranteed\n");
+				guest_fds.revents = 1;
+				mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
+				retval = 1;
+				break;
+			}
+
+			/* Context will suspend with timeout (if value is >= 0) */
+			syscall_debug("  process going to sleep waiting for events on pipe\n");
+			isa_ctx->wakeup_time = 0;
+			if (timeout >= 0)
+				isa_ctx->wakeup_time = ke_timer() + (uint64_t) timeout * 1000;
+			isa_ctx->wakeup_fd = guest_fd;
+			isa_ctx->wakeup_events = guest_fds.events;
+			ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
+			ke_process_suspended_schedule();
+			break;
+
+		} else {
+			
+			/* Not supported file descriptor */
+			if (fd->host_fd < 0)
+				fatal("syscall 'poll': not supported file descriptor");
+
+			/* Perform host 'poll' system call with a 0 timeout to distinguish
+			 * blocking from non-blocking cases. */
+			host_fds.fd = host_fd;
+			host_fds.events = ((guest_fds.events & 1) ? POLLIN : 0) |
+				((guest_fds.events & 4) ? POLLOUT : 0);
+			RETVAL(poll(&host_fds, 1, 0));
+			if (retval < 0)
+				break;
+
+			/* If host 'poll' returned a value greater than 0, the guest call is non-blocking,
+			 * since I/O is ready for the file descriptor. */
+			if (retval > 0) {
+				
+				/* Non-blocking POLLOUT on a file. */
+				if ((guest_fds.events & 4) && (host_fds.revents & POLLOUT)) {
+					syscall_debug("  non-blocking write to file guaranteed\n");
+					guest_fds.revents = 4;
+					mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
+					retval = 1;
+					break;
+				}
+
+				/* Non-blocking POLLIN on a file. */
+				if ((guest_fds.events & 1) && (host_fds.revents & POLLIN)) {
+					syscall_debug("  non-blocking read from file guaranteed\n");
+					guest_fds.revents = 1;
+					mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
+					retval = 1;
+					break;
+				}
+
+				/* Never should get here */
+				abort();
+			}
+
+			/* At this point, host 'poll' returned 0, which means that none of the requested
+			 * events is ready on the file, so we must suspend until they occur. */
+			syscall_debug("  process going to sleep waiting for events on file\n");
+			isa_ctx->wakeup_time = 0;
+			if (timeout >= 0)
+				isa_ctx->wakeup_time = ke_timer() + (uint64_t) timeout * 1000;
+			isa_ctx->wakeup_fd = guest_fd;
+			isa_ctx->wakeup_events = guest_fds.events;
+			ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
+			ke_process_suspended_schedule();
 			break;
 		}
 
-		/* If events contain POLLIN and the read to a pipe is not going to be
-		 * blocking (i.e. there is some data in the pipe), return immediately. */
-		if ((pollfd.events & 0x1) && buffer_count(fd->buffer)) {
-			pollfd.revents = 0x1;
-			mem_write(isa_mem, pufds, sizeof(struct sim_pollfd), &pollfd);
-			retval = 1;
-			break;
-		}
-
-		/* We are going to suspend.
-		 * Wake up time will be set to current time plus 'timeout' millisecounds.
-		 * If this value is < 0, no timeout is considered. */
-		isa_ctx->wakeup_time = 0;
-		if ((int) timeout >= 0)
-			isa_ctx->wakeup_time = ke_timer() + (uint64_t) timeout * 1000;
-
-		/* Suspend process */
-		isa_ctx->wakeup_fd = guest_fd;
-		isa_ctx->wakeup_events = pollfd.events;
-		ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
-		ke_event_timer();
 		break;
 	}
 
@@ -2487,30 +2886,49 @@ void syscall_do()
 	/* 221 */
 	case syscall_code_fcntl64:
 	{
-		uint32_t fd, cmd, arg, host_fd;
+		uint32_t guest_fd, cmd, arg;
+		char *cmd_name;
+		struct fd_t *fd;
 
-		fd = isa_regs->ebx;
+		guest_fd = isa_regs->ebx;
 		cmd = isa_regs->ecx;
 		arg = isa_regs->edx;
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
-		syscall_debug("  fd=%d, cmd=0x%x, arg=0x%x\n",
-			fd, cmd, arg);
-		syscall_debug("  host_fd=%d\n", host_fd);
+		syscall_debug("  guest_fd=%d, cmd=%d, arg=0x%x\n",
+			guest_fd, cmd, arg);
+		cmd_name = map_value(&fcntl_cmd_map, cmd);
+		syscall_debug("    cmd=%s\n", cmd_name);
 
+		/* Get file descriptor table entry */
+		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		if (!fd) {
+			retval = -EBADF;
+			break;
+		}
+		if (fd->host_fd < 0)
+			fatal("syscall 'fcntl64': not suported for this type of files");
+		syscall_debug("    host_fd=%d\n", fd->host_fd);
+
+		/* Process command */
 		switch (cmd) {
+
 		case 1:  /* F_GETFD */
-			RETVAL(fcntl(host_fd, F_GETFD));
+			RETVAL(fcntl(fd->host_fd, F_GETFD));
 			break;
+
 		case 2:  /* F_SETFD */
-			/* Ignored */
+			RETVAL(fcntl(fd->host_fd, F_SETFD, arg));
 			break;
+
 		case 3:  /* F_GETFL */
-			RETVAL(fcntl(host_fd, F_GETFL));
+			RETVAL(fcntl(fd->host_fd, F_GETFL));
 			break;
-		case 0:  /* F_DUPFD */
+
 		case 4:  /* F_SETFL */
+			RETVAL(fcntl(fd->host_fd, F_SETFL, arg));
+			break;
+
 		default:
-			fatal("syscall fcntl64: cmd = %d not implemented", cmd);
+			fatal("syscall fcntl64: command %s not implemented", cmd_name);
 		}
 		break;
 	}

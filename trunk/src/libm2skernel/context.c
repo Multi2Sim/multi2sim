@@ -179,53 +179,6 @@ void ctx_dump(struct ctx_t *ctx, FILE *f)
 }
 
 
-void ctx_mem_map_dump(struct ctx_t *ctx, FILE *f)
-{
-	uint32_t start, end, stack_start, stack_end;
-	enum mem_access_enum perm, page_perm;
-	struct mem_page_t *page;
-	struct mem_t *mem = ctx->mem;
-	struct loader_t *ld = ctx->loader;
-
-	/* Get stack start/end page tags */
-	stack_start = ld->stack_top & ~(MEM_PAGESIZE - 1);
-	stack_end = ld->stack_base & ~(MEM_PAGESIZE - 1);
-
-	/* Get the first page */
-	end = 0;
-	for (;;) {
-		
-		/* Get start of next range */
-		page = mem_page_get_next(mem, end);
-		if (!page)
-			break;
-		start = page->tag;
-		end = page->tag;
-		perm = page->perm & (mem_access_read | mem_access_write | mem_access_exec);
-
-		/* Get end of range */
-		for (;;) {
-			page = mem_page_get(mem, end + MEM_PAGESIZE);
-			if (!page)
-				break;
-			page_perm = page->perm & (mem_access_read | mem_access_write | mem_access_exec);
-			if (page_perm != perm)
-				break;
-			end += MEM_PAGESIZE;
-			perm = page_perm;
-		}
-
-		/* Dump range */ 
-		fprintf(f, "%08x-%08x %c%c%c%c 00000000 00:00", start, end + MEM_PAGESIZE,
-			perm & mem_access_read ? 'r' : '-',
-			perm & mem_access_write ? 'w' : '-',
-			perm & mem_access_exec ? 'x' : '-',
-			'p');
-		fprintf(f, "\n");
-	}
-}
-
-
 void ctx_execute_inst(struct ctx_t *ctx)
 {
 	unsigned char fixed[20];
@@ -467,7 +420,7 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	/* Finish context */
 	ctx_set_status(ctx, ctx->parent ? ctx_zombie : ctx_finished);
 	ctx->exit_code = status;
-	ke_event_finish();
+	ke_process_suspended_schedule();
 }
 
 
@@ -537,5 +490,63 @@ void ctx_exit_robust_list(struct ctx_t *ctx)
 			break;
 		lock_entry = next;
 	}
+}
+
+
+/* Generate virtual file '/proc/self/maps' and return it in 'path'. */
+void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path)
+{
+	uint32_t start, end, stack_start, stack_end;
+	enum mem_access_enum perm, page_perm;
+	struct mem_page_t *page;
+	struct mem_t *mem = ctx->mem;
+	struct loader_t *ld = ctx->loader;
+	int fd;
+	FILE *f = NULL;
+
+	/* Create temporary file */
+	strcpy(path, "/tmp/m2s.XXXXXX");
+	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
+		fatal("ctx_gen_proc_self_maps: cannot create temporary file");
+
+	/* Get stack start/end page tags */
+	stack_start = ld->stack_top & ~(MEM_PAGESIZE - 1);
+	stack_end = ld->stack_base & ~(MEM_PAGESIZE - 1);
+
+	/* Get the first page */
+	end = 0;
+	for (;;) {
+		
+		/* Get start of next range */
+		page = mem_page_get_next(mem, end);
+		if (!page)
+			break;
+		start = page->tag;
+		end = page->tag;
+		perm = page->perm & (mem_access_read | mem_access_write | mem_access_exec);
+
+		/* Get end of range */
+		for (;;) {
+			page = mem_page_get(mem, end + MEM_PAGESIZE);
+			if (!page)
+				break;
+			page_perm = page->perm & (mem_access_read | mem_access_write | mem_access_exec);
+			if (page_perm != perm)
+				break;
+			end += MEM_PAGESIZE;
+			perm = page_perm;
+		}
+
+		/* Dump range */ 
+		fprintf(f, "%08x-%08x %c%c%c%c 00000000 00:00", start, end + MEM_PAGESIZE,
+			perm & mem_access_read ? 'r' : '-',
+			perm & mem_access_write ? 'w' : '-',
+			perm & mem_access_exec ? 'x' : '-',
+			'p');
+		fprintf(f, "\n");
+	}
+
+	/* Close file */
+	fclose(f);
 }
 

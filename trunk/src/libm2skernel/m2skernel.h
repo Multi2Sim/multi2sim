@@ -35,6 +35,8 @@
 #include <signal.h>
 #include <disasm.h>
 #include <time.h>
+#include <pthread.h>
+#include <poll.h>
 #include <sys/time.h>
 
 
@@ -361,7 +363,9 @@ enum fd_kind_enum {
 	fd_kind_regular = 0,  /* Regular file */
 	fd_kind_std,  /* Standard input or output */
 	fd_kind_pipe,  /* A pipe */
-	fd_kind_proc_self  /* A file in /proc/self  */
+	fd_kind_virtual,  /* A virtual file with artificial contents */
+	fd_kind_gpu,  /* GPU device */
+	fd_kind_socket  /* Network socket */
 };
 
 /* File descriptor */
@@ -424,6 +428,12 @@ struct ctx_t {
 	uint32_t glibc_segment_base;
 	uint32_t glibc_segment_limit;
 
+	/* This flag is set when a 'ke_process_suspended_thread' thread is launched
+	 * for this context (by caller), and unset when it finished (by thread). It
+	 * should be accessed safely by locking 'ke->process_suspended_mutex'. */
+	int process_suspended_thread_active;  /* flag */
+	pthread_t process_suspended_thread;  /* thread */
+
 	/* Variables used for waking up suspended contexts. */
 	uint64_t wakeup_time;  /* ke_timer time to wake up (poll/nanosleep) */
 	int wakeup_fd;  /* File descriptor (read/write/poll) */
@@ -474,7 +484,6 @@ struct ctx_t *ctx_create(void);
 struct ctx_t *ctx_clone(struct ctx_t *ctx);
 void ctx_free(struct ctx_t *ctx);
 void ctx_dump(struct ctx_t *ctx, FILE *f);
-void ctx_mem_map_dump(struct ctx_t *ctx, FILE *f);
 
 void ctx_finish(struct ctx_t *ctx, int status);
 void ctx_finish_group(struct ctx_t *ctx, int status);
@@ -493,6 +502,7 @@ void ctx_clear_status(struct ctx_t *ctx, enum ctx_status_enum status);
 int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t bitset);
 void ctx_exit_robust_list(struct ctx_t *ctx);
 
+void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path);
 
 
 
@@ -504,10 +514,12 @@ struct kernel_t {
 	int current_pid;
 	int current_mid;
 
-	/* Time based on the value of ke_timer() for the next needed
-	 * call to ke_event_timer, where it is checked whether suspended
-	 * contexts must resume execution. */
-	uint64_t event_timer_next;
+	/* Schedule next call to 'ke_process_suspended()'. The call will occur when the value
+	 * of 'ke_timer()' exceeds 'process_suspended_time', or when 'process_suspended_force'
+	 * becomes true. These variables should be accessed safely using the mutex. */
+	pthread_mutex_t process_suspended_mutex;
+	uint64_t process_suspended_time;
+	int process_suspended_force;
 
 	/* Counter of times that a context has been suspended in a
 	 * futex. Used for FIFO wakeups. */
@@ -559,11 +571,8 @@ void ke_run(void);
 void ke_dump(FILE *f);
 
 uint64_t ke_timer(void);
-void ke_event_timer(void);
-void ke_event_read(void);
-void ke_event_write(void);
-void ke_event_signal(void);
-void ke_event_finish(void);
+void ke_process_suspended(void);
+void ke_process_suspended_schedule(void);
 
 
 
