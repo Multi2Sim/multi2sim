@@ -374,7 +374,7 @@ struct fd_t {
 	int guest_fd;  /* Guest file descriptor id */
 	int host_fd;  /* Equivalent open host file */
 	char path[MAX_PATH_SIZE];  /* Equivalent path if applicable */
-	struct buffer_t *buffer;  /* Buffer for pipes */
+	int flags;  /* O_xxx flags */
 };
 
 /* File descriptor table */
@@ -387,14 +387,11 @@ void fdt_free(struct fdt_t *fdt);
 void fdt_dump(struct fdt_t *fdt, FILE *f);
 
 struct fd_t *fdt_entry_get(struct fdt_t *fdt, int index);
-struct fd_t *fdt_entry_new(struct fdt_t *fdt, enum fd_kind_enum kind, int host_fd, char *path);
+struct fd_t *fdt_entry_new(struct fdt_t *fdt, enum fd_kind_enum kind, int host_fd, char *path, int flags);
 void fdt_entry_free(struct fdt_t *fdt, int index);
 void fdt_entry_dump(struct fdt_t *fdt, int index, FILE *f);
 
 int fdt_get_host_fd(struct fdt_t *fdt, int guest_fd);
-
-int fdt_pipe_links(struct fdt_t *fdt, int index);
-void fdt_pipe_new(struct fdt_t *fdt, struct fd_t **pread_fd, struct fd_t **pwrite_fd);
 
 
 
@@ -525,9 +522,6 @@ struct kernel_t {
 	 * futex. Used for FIFO wakeups. */
 	uint64_t futex_sleep_count;
 	
-	/* Pipe manager */
-	struct pipemgr_t *pipemgr;
-
 	/* Flag set when any context changes any status other than 'specmode' */
 	int context_reschedule;
 

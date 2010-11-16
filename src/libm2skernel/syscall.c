@@ -781,7 +781,7 @@ void syscall_do()
 	case syscall_code_read:
 	{
 		uint32_t pbuf, count;
-		int guest_fd, host_fd;
+		int guest_fd, host_fd, err;
 		void *buf;
 		struct fd_t *fd;
 		struct pollfd fds;
@@ -807,42 +807,31 @@ void syscall_do()
 		if (!buf)
 			fatal("syscall read: cannot allocate buffer");
 
-		/* Proceed */
-		if (fd->kind == fd_kind_pipe) {
-		
-			/* Read from a pipe. If there is no data to read, suspend
-			 * the context until a write operation is performed. */
-			if (buffer_count(fd->buffer)) {
-				syscall_debug("  read from pipe containing %d bytes - ", buffer_count(fd->buffer));
-				retval = buffer_read(fd->buffer, buf, count);
-				syscall_debug("  %d bytes requested, %d bytes read\n", count, retval);
-				mem_write(isa_mem, pbuf, retval, buf);
-				ke_process_suspended_schedule();
-			} else {
-				syscall_debug("  read from empty pipe - suspend\n");
-				isa_ctx->wakeup_fd = guest_fd;
-				ctx_set_status(isa_ctx, ctx_suspended | ctx_read);
-			}
+		/* Poll the file descriptor to check if read is blocking */
+		fds.fd = host_fd;
+		fds.events = POLLIN;
+		err = poll(&fds, 1, 0);
+		if (err < 0)
+			fatal("syscall 'read': error in 'poll'");
 
-		} else {
-
-			/* Check if read is going to be blocking. If so, warn about it. */
-			fds.fd = host_fd;
-			fds.events = POLLIN;
-			poll(&fds, 1, 0);
-			if (!(fds.revents & POLLIN))
-				syscall_debug("  warning: simulator suspended\n");
-
-			/* Read from a regular file */
+		/* Non-blocking read */
+		if (fds.revents || (fd->flags & O_NONBLOCK)) {
 			RETVAL(read(host_fd, buf, count));
 			if (retval > 0) {
 				mem_write(isa_mem, pbuf, retval, buf);
 				syscall_debug_string("  buf", buf, count, 1);
 			}
-			ke_process_suspended_schedule();
+			free(buf);
+			break;
 		}
 
-		/* Free buffer */
+		/* Blocking read - suspend thread */
+		syscall_debug("  blocking read - process suspended\n");
+		isa_ctx->wakeup_fd = guest_fd;
+		isa_ctx->wakeup_events = 1;  /* POLLIN */
+		ctx_set_status(isa_ctx, ctx_suspended | ctx_read);
+		ke_process_suspended_schedule();
+
 		free(buf);
 		break;
 	}
@@ -879,34 +868,27 @@ void syscall_do()
 		mem_read(isa_mem, pbuf, count, buf);
 		syscall_debug_string("  buf", buf, count, 0);
 
-		/* Proceed. */
-		if (fd->kind == fd_kind_pipe) {
+		/* Poll the file descriptor to check if write is blocking */
+		fds.fd = host_fd;
+		fds.events = POLLOUT;
+		poll(&fds, 1, 0);
 
-			/* Write to pipe. If there is some data in the pipe, suspend
-			 * the process until this data is read. */
-			if (!buffer_count(fd->buffer)) {
-				retval = buffer_write(fd->buffer, buf, count);
-				ke_process_suspended_schedule();
-			} else {
-				isa_ctx->wakeup_fd = guest_fd;
-				ctx_set_status(isa_ctx, ctx_suspended | ctx_write);
-			}
-
-		} else {
-			
-			/* Check if write is going to be blocking. If so, warn about it. */
-			fds.fd = host_fd;
-			fds.events = POLLOUT;
-			poll(&fds, 1, 0);
-			if (!(fds.revents & POLLOUT))
-				syscall_debug("  warning: simulator suspended\n");
-
-			/* Write to file descriptors other than pipes. */
+		/* Non-blocking write */
+		if (fds.revents) {
 			RETVAL(write(host_fd, buf, count));
-			ke_process_suspended_schedule();
+			if (retval > 0) {
+				mem_write(isa_mem, pbuf, retval, buf);
+				syscall_debug_string("  buf", buf, count, 1);
+			}
+			free(buf);
+			break;
 		}
 
-		/* Generate write event and free buffer */
+		/* Blocking write - suspend thread */
+		syscall_debug("  blocking write - process suspended\n");
+		isa_ctx->wakeup_fd = guest_fd;
+		ctx_set_status(isa_ctx, ctx_suspended | ctx_write);
+		ke_process_suspended_schedule();
 		free(buf);
 		break;
 	}
@@ -915,7 +897,8 @@ void syscall_do()
 	case syscall_code_open:
 	{
 		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE], temppath[MAX_PATH_SIZE];
-		uint32_t pfilename, flags, mode;
+		uint32_t pfilename;
+		int flags, mode;
 		char sflags[MAX_STRING_SIZE];
 		int length;
 		int host_fd;
@@ -939,7 +922,7 @@ void syscall_do()
 		if (!strcmp(fullpath, "/dev/ati/card0")) {
 			
 			/* Addfile descriptor table entry. */
-			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_gpu, -1, fullpath);
+			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_gpu, -1, fullpath, flags);
 			syscall_debug("    GPU communication started\n");
 			retval = fd->guest_fd;
 			break;
@@ -957,7 +940,7 @@ void syscall_do()
 				assert(host_fd > 0);
 
 				/* Add file descriptor table entry. */
-				fd = fdt_entry_new(isa_ctx->fdt, fd_kind_virtual, host_fd, temppath);
+				fd = fdt_entry_new(isa_ctx->fdt, fd_kind_virtual, host_fd, temppath, flags);
 				syscall_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
 					temppath, fd->guest_fd, fd->host_fd);
 				retval = fd->guest_fd;
@@ -977,7 +960,7 @@ void syscall_do()
 		}
 
 		/* File opened, create a new file descriptor. */
-		fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, host_fd, fullpath);
+		fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, host_fd, fullpath, flags);
 		syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
 			fd->guest_fd, fd->host_fd);
 		retval = fd->guest_fd;
@@ -1249,10 +1232,6 @@ void syscall_do()
 		host_fd = fd->host_fd;
 		syscall_debug("  host_fd=%d\n", host_fd);
 
-		/* Dup not supported for files other than regular. */
-		if (fd->kind == fd_kind_pipe)
-			fatal("syscall dup: not supported for pipes");
-
 		/* Duplicate host file descriptor. */
 		dup_host_fd = dup(host_fd);
 		if (dup_host_fd < 0) {
@@ -1261,7 +1240,7 @@ void syscall_do()
 		}
 
 		/* Create a new entry in the file descriptor table. */
-		dup_fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, dup_host_fd, fd->path);
+		dup_fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, dup_host_fd, fd->path, fd->flags);
 		dup_guest_fd = dup_fd->guest_fd;
 
 		/* Return new file descriptor. */
@@ -1276,12 +1255,21 @@ void syscall_do()
 		uint32_t pfd;
 		struct fd_t *read_fd, *write_fd;
 		uint32_t guest_read_fd, guest_write_fd;
+		int host_fd[2], err;
 
 		pfd = isa_regs->ebx;
 		syscall_debug("  pfd=0x%x\n", pfd);
 
-		/* Create pipe */
-		fdt_pipe_new(isa_ctx->fdt, &read_fd, &write_fd);
+		/* Create host pipe */
+		err = pipe(host_fd);
+		if (err < 0)
+			fatal("syscall 'pipe': could not create pipe");
+		syscall_debug("  host pipe created: fd={%d, %d}\n",
+			host_fd[0], host_fd[1]);
+
+		/* Create guest pipe */
+		read_fd = fdt_entry_new(isa_ctx->fdt, fd_kind_pipe, host_fd[0], "", O_RDONLY);
+		write_fd = fdt_entry_new(isa_ctx->fdt, fd_kind_pipe, host_fd[1], "", O_WRONLY);
 		syscall_debug("  pipe created: fd={%d, %d}\n",
 			read_fd->guest_fd, write_fd->guest_fd);
 		guest_read_fd = read_fd->guest_fd;
@@ -1658,7 +1646,7 @@ void syscall_do()
 			}
 
 			/* Create new file descriptor table entry. */
-			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_socket, host_fd, "");
+			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_socket, host_fd, "", O_RDWR);
 			syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
 				fd->guest_fd, fd->host_fd);
 			retval = fd->guest_fd;
@@ -2308,6 +2296,7 @@ void syscall_do()
 		if (nfds != 1)
 			fatal("syscall poll: not suported for nfds != 1");
 		assert(sizeof(struct sim_pollfd) == 8);
+		assert(POLLIN == 1 && POLLOUT == 4);
 
 		/* Read pollfd */
 		mem_read(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
@@ -2328,92 +2317,55 @@ void syscall_do()
 		if (guest_fds.events & ~0x5)
 			fatal("syscall poll: only POLLIN and POLLOUT events supported");
 
-		/* Proceed */
-		if (fd->kind == fd_kind_pipe) {
+		/* Not supported file descriptor */
+		if (fd->host_fd < 0)
+			fatal("syscall 'poll': not supported file descriptor");
 
-			/* Non-blocking POLLOUT on a pipe. */
-			if ((guest_fds.events & 4) && !buffer_count(fd->buffer)) {
-				syscall_debug("  non-blocking write to pipe guaranteed\n");
-				guest_fds.revents = 4;
-				mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
-				retval = 1;
-				break;
-			}
-
-			/* Non-blocking POLLIN on a pipe. */
-			if ((guest_fds.events & 1) && buffer_count(fd->buffer)) {
-				syscall_debug("  non-blocking read from pipe guaranteed\n");
-				guest_fds.revents = 1;
-				mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
-				retval = 1;
-				break;
-			}
-
-			/* Context will suspend with timeout (if value is >= 0) */
-			syscall_debug("  process going to sleep waiting for events on pipe\n");
-			isa_ctx->wakeup_time = 0;
-			if (timeout >= 0)
-				isa_ctx->wakeup_time = ke_timer() + (uint64_t) timeout * 1000;
-			isa_ctx->wakeup_fd = guest_fd;
-			isa_ctx->wakeup_events = guest_fds.events;
-			ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
-			ke_process_suspended_schedule();
+		/* Perform host 'poll' system call with a 0 timeout to distinguish
+		 * blocking from non-blocking cases. */
+		host_fds.fd = host_fd;
+		host_fds.events = ((guest_fds.events & 1) ? POLLIN : 0) |
+			((guest_fds.events & 4) ? POLLOUT : 0);
+		RETVAL(poll(&host_fds, 1, 0));
+		if (retval < 0)
 			break;
 
-		} else {
-			
-			/* Not supported file descriptor */
-			if (fd->host_fd < 0)
-				fatal("syscall 'poll': not supported file descriptor");
-
-			/* Perform host 'poll' system call with a 0 timeout to distinguish
-			 * blocking from non-blocking cases. */
-			host_fds.fd = host_fd;
-			host_fds.events = ((guest_fds.events & 1) ? POLLIN : 0) |
-				((guest_fds.events & 4) ? POLLOUT : 0);
-			RETVAL(poll(&host_fds, 1, 0));
-			if (retval < 0)
-				break;
-
-			/* If host 'poll' returned a value greater than 0, the guest call is non-blocking,
-			 * since I/O is ready for the file descriptor. */
-			if (retval > 0) {
+		/* If host 'poll' returned a value greater than 0, the guest call is non-blocking,
+		 * since I/O is ready for the file descriptor. */
+		if (retval > 0) {
 				
-				/* Non-blocking POLLOUT on a file. */
-				if ((guest_fds.events & 4) && (host_fds.revents & POLLOUT)) {
-					syscall_debug("  non-blocking write to file guaranteed\n");
-					guest_fds.revents = 4;
-					mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
-					retval = 1;
-					break;
-				}
-
-				/* Non-blocking POLLIN on a file. */
-				if ((guest_fds.events & 1) && (host_fds.revents & POLLIN)) {
-					syscall_debug("  non-blocking read from file guaranteed\n");
-					guest_fds.revents = 1;
-					mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
-					retval = 1;
-					break;
-				}
-
-				/* Never should get here */
-				abort();
+			/* Non-blocking POLLOUT on a file. */
+			if (guest_fds.events & host_fds.revents & POLLOUT) {
+				syscall_debug("  non-blocking write to file guaranteed\n");
+				guest_fds.revents = POLLOUT;
+				mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
+				retval = 1;
+				break;
 			}
 
-			/* At this point, host 'poll' returned 0, which means that none of the requested
-			 * events is ready on the file, so we must suspend until they occur. */
-			syscall_debug("  process going to sleep waiting for events on file\n");
-			isa_ctx->wakeup_time = 0;
-			if (timeout >= 0)
-				isa_ctx->wakeup_time = ke_timer() + (uint64_t) timeout * 1000;
-			isa_ctx->wakeup_fd = guest_fd;
-			isa_ctx->wakeup_events = guest_fds.events;
-			ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
-			ke_process_suspended_schedule();
-			break;
+			/* Non-blocking POLLIN on a file. */
+			if (guest_fds.events & host_fds.revents & POLLIN) {
+				syscall_debug("  non-blocking read from file guaranteed\n");
+				guest_fds.revents = POLLIN;
+				mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
+				retval = 1;
+				break;
+			}
+
+			/* Never should get here */
+			abort();
 		}
 
+		/* At this point, host 'poll' returned 0, which means that none of the requested
+		 * events is ready on the file, so we must suspend until they occur. */
+		syscall_debug("  process going to sleep waiting for events on file\n");
+		isa_ctx->wakeup_time = 0;
+		if (timeout >= 0)
+			isa_ctx->wakeup_time = ke_timer() + (uint64_t) timeout * 1000;
+		isa_ctx->wakeup_fd = guest_fd;
+		isa_ctx->wakeup_events = guest_fds.events;
+		ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
+		ke_process_suspended_schedule();
 		break;
 	}
 
@@ -2888,6 +2840,7 @@ void syscall_do()
 	{
 		uint32_t guest_fd, cmd, arg;
 		char *cmd_name;
+		char sflags[MAX_STRING_SIZE];
 		struct fd_t *fd;
 
 		guest_fd = isa_regs->ebx;
@@ -2921,9 +2874,14 @@ void syscall_do()
 
 		case 3:  /* F_GETFL */
 			RETVAL(fcntl(fd->host_fd, F_GETFL));
+			map_flags(&open_flags_map, retval, sflags, MAX_STRING_SIZE);
+			syscall_debug("    retval=%s\n", sflags);
 			break;
 
 		case 4:  /* F_SETFL */
+			map_flags(&open_flags_map, arg, sflags, MAX_STRING_SIZE);
+			syscall_debug("    arg=%s\n", sflags);
+			fd->flags = arg;
 			RETVAL(fcntl(fd->host_fd, F_SETFL, arg));
 			break;
 

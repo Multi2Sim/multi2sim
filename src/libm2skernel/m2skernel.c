@@ -227,17 +227,21 @@ void *ke_process_suspended_thread(void *arg)
 	struct ctx_t *ctx = (struct ctx_t *) arg;
 	uint64_t now = ke_timer();
 
+	/* Process must be suspended */
+	assert(ctx_get_status(ctx, ctx_suspended));
+	printf("<"), fflush(stdout);
+
 	/* Context suspended in 'poll' system call */
 	if (ctx_get_status(ctx, ctx_poll))
 	{
 		struct fd_t *fd;
 		struct pollfd host_fds;
-		int timeout;
+		int err, timeout;
 		
 		/* Get file descriptor */
 		fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
 		if (!fd)
-			fatal("ke_process_suspended_thread: invalid 'wakeup_fd' in syscall 'poll'");
+			fatal("syscall 'poll': invalid 'wakeup_fd'");
 
 		/* Calculate timeout for host call in milliseconds from now */
 		if (!ctx->wakeup_time)
@@ -250,13 +254,57 @@ void *ke_process_suspended_thread(void *arg)
 		/* Perform blocking host 'poll' */
 		host_fds.fd = fd->host_fd;
 		host_fds.events = ((ctx->wakeup_events & 4) ? POLLOUT : 0) | ((ctx->wakeup_events & 1) ? POLLIN : 0);
-		poll(&host_fds, 1, timeout);
-	}
+		printf("p"), fflush(stdout); ///
+		err = poll(&host_fds, 1, timeout);
+		if (err < 0)
+			fatal("syscall 'poll': unexpected error in host 'poll'");
+	
+	} else if (ctx_get_status(ctx, ctx_read)) {
+		
+		struct fd_t *fd;
+		struct pollfd host_fds;
+		int err;
+
+		/* Get file descriptor */
+		fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
+		if (!fd)
+			fatal("syscall 'read': invalid 'wakeup_fd'");
+
+		/* Perform blocking host 'poll' */
+		host_fds.fd = fd->host_fd;
+		host_fds.events = POLLIN;
+		printf("r"), fflush(stdout); ///
+		err = poll(&host_fds, 1, -1);
+		if (err < 0)
+			fatal("syscall 'read': unexpected error in host 'poll'");
+	
+	} else if (ctx_get_status(ctx, ctx_write)) {
+		
+		struct fd_t *fd;
+		struct pollfd host_fds;
+		int err;
+
+		/* Get file descriptor */
+		fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
+		if (!fd)
+			fatal("syscall 'write': invalid 'wakeup_fd'");
+
+		/* Perform blocking host 'poll' */
+		host_fds.fd = fd->host_fd;
+		host_fds.events = POLLOUT;
+		printf("w"), fflush(stdout); ///
+		err = poll(&host_fds, 1, -1);
+		if (err < 0)
+			fatal("syscall 'write': unexpected error in host 'write'");
+
+	} else
+		fatal("ke_process_suspended_thread: context status not handled");
 
 	/* Event occurred - thread finishes */
 	pthread_mutex_lock(&ke->process_suspended_mutex);
 	ke->process_suspended_force = 1;
 	ctx->process_suspended_thread_active = 0;
+	printf(">"), fflush(stdout);
 	pthread_mutex_unlock(&ke->process_suspended_mutex);
 	return NULL;
 }
@@ -283,13 +331,14 @@ void ke_process_suspended()
 	ke->process_suspended_force = 0;
 	ke->process_suspended_time = 0;
 
+	printf("*"), fflush(stdout);
+
 	/* Look at the list of suspended contexts and try to find
 	 * one that needs to be woken up. */
 	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
 
 		/* Save next */
 		next = ctx->suspended_next;
-
 
 		/* Context is suspended in 'nanosleep' system call. */
 		if (ctx_get_status(ctx, ctx_nanosleep))
@@ -337,56 +386,14 @@ void ke_process_suspended()
 			uint16_t revents = 0;
 			struct fd_t *fd;
 			struct pollfd host_fds;
+			int err;
 
 			/* Get file descriptor */
 			fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
 			if (!fd)
-				fatal("ke_process_suspended: invalid 'wakeup_fd' in syscall 'poll'");
+				fatal("syscall 'poll': invalid 'wakeup_fd'");
 
-			/* Check POLLIN/POLLOUT/timeout events on a pipe */
-			if (fd->kind == fd_kind_pipe) {
-
-				/* POLLOUT event available in a pipe */
-				if (fd->kind == fd_kind_pipe && (ctx->wakeup_events & 4) && !buffer_count(fd->buffer)) {
-					revents = 4;
-					mem_write(ctx->mem, prevents, 2, &revents);
-					ctx->regs->eax = 1;
-					syscall_debug("syscall poll - continue (pid %d) - POLLOUT occurred in pipe\n", ctx->pid);
-					syscall_debug("  retval=%d\n", ctx->regs->eax);
-					ctx_clear_status(ctx, ctx_suspended | ctx_poll);
-					continue;
-				}
-
-				/* POLLIN event available in a pipe */
-				if (fd->kind == fd_kind_pipe && (ctx->wakeup_events & 1) && buffer_count(fd->buffer)) {
-					revents = 1;
-					mem_write(ctx->mem, prevents, 2, &revents);
-					ctx->regs->eax = 1;
-					syscall_debug("syscall poll - continue (pid %d) - POLLIN occurred in pipe\n", ctx->pid);
-					syscall_debug("  retval=%d\n", ctx->regs->eax);
-					ctx_clear_status(ctx, ctx_suspended | ctx_poll);
-					continue;
-				}
-
-				/* Timeout expired */
-				if (ctx->wakeup_time) {
-					if (ctx->wakeup_time <= now) {
-						revents = 0;
-						mem_write(ctx->mem, prevents, 2, &revents);
-						syscall_debug("syscall poll - continue (pid %d) - time out\n", ctx->pid);
-						syscall_debug("  return=0x%x\n", ctx->regs->eax);
-						ctx_clear_status(ctx, ctx_suspended | ctx_poll);
-						continue;
-					} else {
-						/* Time to wake up not reached yet, schedule for later */
-						if (!ke->process_suspended_time || ke->process_suspended_time > ctx->wakeup_time)
-							ke->process_suspended_time = ctx->wakeup_time;
-					}
-				}
-			}
-
-			/* Files other than pipes.
-			 * If 'ke_process_suspended_thread' is still running, do nothing. */
+			/* If 'ke_process_suspended_thread' is still running, do nothing. */
 			if (ctx->process_suspended_thread_active)
 				continue;
 			pthread_join(ctx->process_suspended_thread, NULL);
@@ -394,11 +401,13 @@ void ke_process_suspended()
 			/* Perform host 'poll' call */
 			host_fds.fd = fd->host_fd;
 			host_fds.events = ((ctx->wakeup_events & 4) ? POLLOUT : 0) | ((ctx->wakeup_events & 1) ? POLLIN : 0);
-			poll(&host_fds, 1, 0);
+			err = poll(&host_fds, 1, 0);
+			if (err < 0)
+				fatal("syscall 'poll': unexpected error in host 'poll'");
 
 			/* POLLOUT event available */
-			if ((ctx->wakeup_events & 4) && (host_fds.revents & POLLOUT)) {
-				revents = 4;
+			if (ctx->wakeup_events & host_fds.revents & POLLOUT) {
+				revents = POLLOUT;
 				mem_write(ctx->mem, prevents, 2, &revents);
 				ctx->regs->eax = 1;
 				syscall_debug("syscall poll - continue (pid %d) - POLLOUT occurred in file\n", ctx->pid);
@@ -408,8 +417,8 @@ void ke_process_suspended()
 			}
 
 			/* POLLIN event available */
-			if ((ctx->wakeup_events & 1) && (host_fds.revents & POLLIN)) {
-				revents = 1;
+			if (ctx->wakeup_events & host_fds.revents & POLLIN) {
+				revents = POLLIN;
 				mem_write(ctx->mem, prevents, 2, &revents);
 				ctx->regs->eax = 1;
 				syscall_debug("syscall poll - continue (pid %d) - POLLIN occurred in file\n", ctx->pid);
@@ -431,7 +440,7 @@ void ke_process_suspended()
 			/* No event available, launch 'ke_process_suspended_thread' again */
 			ctx->process_suspended_thread_active = 1;
 			if (pthread_create(&ctx->process_suspended_thread, NULL, ke_process_suspended_thread, ctx))
-				fatal("syscall 'poll': could not create thread");
+				fatal("syscall 'poll': could not create child thread");
 			continue;
 		}
 
@@ -440,52 +449,91 @@ void ke_process_suspended()
 		if (ctx_get_status(ctx, ctx_write))
 		{
 			struct fd_t *fd;
-			uint32_t pbuf, count;
+			int count, err;
+			uint32_t pbuf;
 			void *buf;
+			struct pollfd host_fds;
+
+			/* If 'ke_process_suspended_thread' is still running, do nothing. */
+			if (ctx->process_suspended_thread_active)
+				continue;
+			pthread_join(ctx->process_suspended_thread, NULL);
 
 			/* Get file descriptor */
 			fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
 			if (!fd)
-				fatal("ke_process_suspended: invalid 'wakeup_fd' in syscall 'write'");
+				fatal("syscall 'write': invalid 'wakeup_fd'");
 
-			/* Context waiting for a pipe to get empty */
-			if (fd->kind == fd_kind_pipe && !buffer_count(fd->buffer)) {
+			/* Check if data is ready in file by polling it */
+			host_fds.fd = fd->host_fd;
+			host_fds.events = POLLOUT;
+			err = poll(&host_fds, 1, 0);
+			if (err < 0)
+				fatal("syscall 'write': unexpected error in host 'poll'");
+
+			/* If data is ready in the file, wake up context */
+			if (host_fds.revents) {
 				pbuf = ctx->regs->ecx;
 				count = ctx->regs->edx;
 				buf = malloc(count);
 				mem_read(ctx->mem, pbuf, count, buf);
-				count = buffer_write(fd->buffer, buf, count);
+
+				count = write(fd->host_fd, buf, count);
+				if (count < 0)
+					fatal("syscall 'write': unexpected error in host 'write'");
+
 				ctx->regs->eax = count;
 				free(buf);
 
 				syscall_debug("syscall write - continue (pid %d)\n", ctx->pid);
 				syscall_debug("  return=0x%x\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_write);
-
-				/* A write occurred, so suspended contexts should be processed again */
-				ke->process_suspended_force = 1;
 				continue;
 			}
+
+			/* Data is not ready to be written - launch 'ke_process_suspended_thread' again */
+			ctx->process_suspended_thread_active = 1;
+			if (pthread_create(&ctx->process_suspended_thread, NULL, ke_process_suspended_thread, ctx))
+				fatal("syscall 'write': could not create child thread");
+			continue;
 		}
 
 		/* Context suspended in 'read' system call */
 		if (ctx_get_status(ctx, ctx_read))
 		{
 			struct fd_t *fd;
-			uint32_t pbuf, count;
+			uint32_t pbuf;
+			int count, err;
 			void *buf;
+			struct pollfd host_fds;
+
+			/* If 'ke_process_suspended_thread' is still running, do nothing. */
+			if (ctx->process_suspended_thread_active)
+				continue;
+			pthread_join(ctx->process_suspended_thread, NULL);
 
 			/* Get file descriptor */
 			fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
 			if (!fd)
-				fatal("ke_process_suspended: invalid 'wakeup_fd' in syscall 'write'");
+				fatal("syscall 'read': invalid 'wakeup_fd'");
 
-			/* Gontext waiting for a pipe to contain data */
-			if (fd->kind == fd_kind_pipe && buffer_count(fd->buffer)) {
+			/* Check if data is ready in file by polling it */
+			host_fds.fd = fd->host_fd;
+			host_fds.events = POLLIN;
+			err = poll(&host_fds, 1, 0);
+			if (err < 0)
+				fatal("syscall 'read': unexpected error in host 'poll'");
+
+			/* If data is ready, perform host 'read' call and wake up */
+			if (host_fds.revents) {
 				pbuf = ctx->regs->ecx;
 				count = ctx->regs->edx;
 				buf = malloc(count);
-				count = buffer_read(fd->buffer, buf, count);
+				
+				count = read(fd->host_fd, buf, count);
+				if (count < 0)
+					fatal("syscall 'read': unexpected error in host 'read'");
+
 				ctx->regs->eax = count;
 				mem_write(ctx->mem, pbuf, count, buf);
 				free(buf);
@@ -493,11 +541,14 @@ void ke_process_suspended()
 				syscall_debug("syscall read - continue (pid %d)\n", ctx->pid);
 				syscall_debug("  return=0x%x\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_read);
-
-				/* After a read, suspended contexts should be processed again */
-				ke->process_suspended_force = 1;
 				continue;
 			}
+
+			/* Data is not ready. Launch 'ke_process_suspended_thread' again */
+			ctx->process_suspended_thread_active = 1;
+			if (pthread_create(&ctx->process_suspended_thread, NULL, ke_process_suspended_thread, ctx))
+				fatal("syscall 'read': could not create child thread");
+			continue;
 		}
 
 		/* Context suspended in 'rt_sigsuspend'.
