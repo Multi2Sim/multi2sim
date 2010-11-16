@@ -675,4 +675,5 @@
 	* m2skernel.c: centralized function to wake up suspended contexts.
 	* m2skernel.c: blocking 'poll' system calls handled with an alternative mechanism
 		using child threads (ke_process_suspended_thread).
-
+	* m2skernel.c: pipes treated again as regular files. Thanks to the suspending
+		mechanism using child threads, pipes don't need special treatment.
