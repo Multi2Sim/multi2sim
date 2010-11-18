@@ -245,7 +245,7 @@ static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
 	 * or create page with full privileges for writes in unsafe mode. */
 	if (!page) {
 		if (mem->safe)
-			fatal("mem_access: segmentation fault accessing 0x%x", addr);
+			fatal("illegal access at 0x%x: page not allocated", addr);
 		if (access == mem_access_read || access == mem_access_exec) {
 			memset(buf, 0, size);
 			return;

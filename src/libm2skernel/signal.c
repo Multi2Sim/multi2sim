@@ -194,7 +194,8 @@ void signal_process(struct ctx_t *ctx)
 		if (sim_sigset_member(&ctx->signal_masks->pending, sig) &&
 			!sim_sigset_member(&ctx->signal_masks->blocked, sig))
 		{
-			ke_process_suspended_schedule();
+			ctx_process_suspended_thread_cancel(ctx);
+			ke_process_suspended();
 			signal_handler_run(ctx, sig);
 			sim_sigset_del(&ctx->signal_masks->pending, sig);
 			break;
@@ -203,11 +204,38 @@ void signal_process(struct ctx_t *ctx)
 }
 
 
+/* Structure representing the signal stack frame */
+struct sim_sigframe {
+	uint32_t pretcode;  /* Pointer to return code */
+	uint32_t sig;  /* Received signal */
+
+	uint32_t gs, fs, es, ds;
+	uint32_t edi, esi, ebp, esp;
+	uint32_t ebx, edx, ecx, eax;
+	uint32_t trapno, err, eip, cs;
+	uint32_t eflags;
+	uint32_t esp_at_signal;
+	uint32_t ss;
+	uint32_t pfpstate;  /* Pointer to floating-point state */
+	uint32_t oldmask;
+	uint32_t cr2;
+};
+
+
+/* Signal return code. The return address in the signal handler points
+ * to this code, which performs system call 'sigreturn'. The disassembled
+ * corresponding code is:
+ *     mov eax, 0x77
+ *     int 0x80
+ */
+static char signal_retcode[] = "\x58\xb8\x77\x00\x00\x00\xcd\x80";
+
+
 /* Run a signal handler */
 void signal_handler_run(struct ctx_t *ctx, int sig)
 {
-	unsigned char code[] = "\x58\xb8\x77\x00\x00\x00\xcd\x80";
-	uint32_t retaddr, handler;
+	uint32_t handler;
+	struct sim_sigframe sigframe;
 
 	/* Debug */
 	syscall_debug("context %d executes signal handler for signal %d\n",
@@ -217,20 +245,42 @@ void signal_handler_run(struct ctx_t *ctx, int sig)
 	ctx->signal_masks->regs = regs_create();
 	regs_copy(ctx->signal_masks->regs, ctx->regs);
 
-	/* Push this piece of code into the stack:
-	 *   mov eax, 0x77 (syscall_code_sigreturn)
-	 *   int 0x80 (system call)
-	 * Then save the base address for this code, since it will be the
-	 * return address for the signal handler to execute. */
-	ctx->regs->esp -= 8;
-	mem_write(ctx->mem, ctx->regs->esp, 8, &code);
-	retaddr = ctx->regs->esp;
-	
-	/* Push argument (signal number) and return address */
-	ctx->regs->esp -= 8;
-	mem_write(ctx->mem, ctx->regs->esp + 4, 4, &sig);
-	mem_write(ctx->mem, ctx->regs->esp, 4, &retaddr);
+	/* Create a memory page with execution permission, and copy return code on it. */
+	ctx->signal_masks->pretcode = mem_map_space(ctx->mem, MEM_PAGESIZE, MEM_PAGESIZE);
+	mem_map(ctx->mem, ctx->signal_masks->pretcode, MEM_PAGESIZE, mem_access_exec | mem_access_init);
+	syscall_debug("  return code of signal handler allocated at 0x%x\n", ctx->signal_masks->pretcode);
+	mem_access(ctx->mem, ctx->signal_masks->pretcode, sizeof(signal_retcode), signal_retcode, mem_access_init);
 
+	/* Initialize stack frame */
+	sigframe.pretcode = ctx->signal_masks->pretcode;
+	sigframe.sig = sig;
+	sigframe.gs = ctx->regs->gs;
+	sigframe.fs = ctx->regs->fs;
+	sigframe.es = ctx->regs->es;
+	sigframe.ds = ctx->regs->ds;
+	sigframe.edi = ctx->regs->edi;
+	sigframe.esi = ctx->regs->esi;
+	sigframe.ebp = ctx->regs->ebp;
+	sigframe.esp = ctx->regs->esp;
+	sigframe.ebx = ctx->regs->ebx;
+	sigframe.edx = ctx->regs->edx;
+	sigframe.ecx = ctx->regs->ecx;
+	sigframe.eax = ctx->regs->eax;
+	sigframe.trapno = 0;
+	sigframe.err = 0;
+	sigframe.eip = ctx->regs->eip;
+	sigframe.cs = ctx->regs->cs;
+	sigframe.eflags = ctx->regs->eflags;
+	sigframe.esp_at_signal = ctx->regs->esp;
+	sigframe.ss = ctx->regs->ss;
+	sigframe.pfpstate = 0;
+	sigframe.oldmask = 0;
+	sigframe.cr2 = 0;
+
+	/* Push signal frame */
+	ctx->regs->esp -= sizeof(sigframe);
+	mem_write(ctx->mem, ctx->regs->esp, sizeof(sigframe), &sigframe);
+	
 	/* The program will continue now executing the signal handler.
 	 * In the current implementation, we do not allow other signals to
 	 * interrupt the signal handler, so we notify it in the context status. */
@@ -253,6 +303,11 @@ void signal_handler_return(struct ctx_t *ctx)
 	if (!ctx_get_status(ctx, ctx_handler))
 		fatal("signal_handler_return: not handling a signal");
 	ctx_clear_status(ctx, ctx_handler);
+
+	/* Free signal frame */
+	mem_unmap(ctx->mem, ctx->signal_masks->pretcode, MEM_PAGESIZE);
+	syscall_debug("  signal handler return code at 0x%x deallocated\n",
+		ctx->signal_masks->pretcode);
 
 	/* Restore saved register file and free backup */
 	regs_copy(ctx->regs, ctx->signal_masks->regs);

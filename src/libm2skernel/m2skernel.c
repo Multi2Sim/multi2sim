@@ -227,9 +227,11 @@ void *ke_process_suspended_thread(void *arg)
 	struct ctx_t *ctx = (struct ctx_t *) arg;
 	uint64_t now = ke_timer();
 
-	/* Process must be suspended */
+	/* Detach this thread - we don't want the parent to have to join it to release
+	 * its resources. The thread termination can be observed by atomically checking
+	 * the 'ctx->process_suspended_thread_active' flag. */
 	assert(ctx_get_status(ctx, ctx_suspended));
-	printf("<"), fflush(stdout);
+	pthread_detach(pthread_self());
 
 	/* Context suspended in 'poll' system call */
 	if (ctx_get_status(ctx, ctx_poll))
@@ -254,7 +256,6 @@ void *ke_process_suspended_thread(void *arg)
 		/* Perform blocking host 'poll' */
 		host_fds.fd = fd->host_fd;
 		host_fds.events = ((ctx->wakeup_events & 4) ? POLLOUT : 0) | ((ctx->wakeup_events & 1) ? POLLIN : 0);
-		printf("p"), fflush(stdout); ///
 		err = poll(&host_fds, 1, timeout);
 		if (err < 0)
 			fatal("syscall 'poll': unexpected error in host 'poll'");
@@ -273,7 +274,6 @@ void *ke_process_suspended_thread(void *arg)
 		/* Perform blocking host 'poll' */
 		host_fds.fd = fd->host_fd;
 		host_fds.events = POLLIN;
-		printf("r"), fflush(stdout); ///
 		err = poll(&host_fds, 1, -1);
 		if (err < 0)
 			fatal("syscall 'read': unexpected error in host 'poll'");
@@ -292,7 +292,6 @@ void *ke_process_suspended_thread(void *arg)
 		/* Perform blocking host 'poll' */
 		host_fds.fd = fd->host_fd;
 		host_fds.events = POLLOUT;
-		printf("w"), fflush(stdout); ///
 		err = poll(&host_fds, 1, -1);
 		if (err < 0)
 			fatal("syscall 'write': unexpected error in host 'write'");
@@ -304,7 +303,6 @@ void *ke_process_suspended_thread(void *arg)
 	pthread_mutex_lock(&ke->process_suspended_mutex);
 	ke->process_suspended_force = 1;
 	ctx->process_suspended_thread_active = 0;
-	printf(">"), fflush(stdout);
 	pthread_mutex_unlock(&ke->process_suspended_mutex);
 	return NULL;
 }
@@ -326,12 +324,10 @@ void ke_process_suspended()
 		pthread_mutex_unlock(&ke->process_suspended_mutex);
 		return;
 	}
-		
+	
 	/* By default, no subsequent call to 'ke_process_suspended' is assumed */
 	ke->process_suspended_force = 0;
 	ke->process_suspended_time = 0;
-
-	printf("*"), fflush(stdout);
 
 	/* Look at the list of suspended contexts and try to find
 	 * one that needs to be woken up. */
@@ -396,7 +392,6 @@ void ke_process_suspended()
 			/* If 'ke_process_suspended_thread' is still running, do nothing. */
 			if (ctx->process_suspended_thread_active)
 				continue;
-			pthread_join(ctx->process_suspended_thread, NULL);
 
 			/* Perform host 'poll' call */
 			host_fds.fd = fd->host_fd;
@@ -457,7 +452,6 @@ void ke_process_suspended()
 			/* If 'ke_process_suspended_thread' is still running, do nothing. */
 			if (ctx->process_suspended_thread_active)
 				continue;
-			pthread_join(ctx->process_suspended_thread, NULL);
 
 			/* Get file descriptor */
 			fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
@@ -510,7 +504,14 @@ void ke_process_suspended()
 			/* If 'ke_process_suspended_thread' is still running, do nothing. */
 			if (ctx->process_suspended_thread_active)
 				continue;
-			pthread_join(ctx->process_suspended_thread, NULL);
+
+			/* Context received a signal */
+			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
+				ctx->regs->eax = -EINTR;
+				syscall_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
+				ctx_clear_status(ctx, ctx_suspended | ctx_read);
+				continue;
+			}
 
 			/* Get file descriptor */
 			fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
@@ -538,7 +539,7 @@ void ke_process_suspended()
 				mem_write(ctx->mem, pbuf, count, buf);
 				free(buf);
 
-				syscall_debug("syscall read - continue (pid %d)\n", ctx->pid);
+				syscall_debug("syscall 'read' - continue (pid %d)\n", ctx->pid);
 				syscall_debug("  return=0x%x\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_read);
 				continue;
