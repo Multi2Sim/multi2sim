@@ -876,10 +876,8 @@ void syscall_do()
 		/* Non-blocking write */
 		if (fds.revents) {
 			RETVAL(write(host_fd, buf, count));
-			if (retval > 0) {
+			if (retval > 0)
 				mem_write(isa_mem, pbuf, retval, buf);
-				syscall_debug_string("  buf", buf, count, 1);
-			}
 			free(buf);
 			break;
 		}
@@ -2260,7 +2258,7 @@ void syscall_do()
 	case syscall_code_nanosleep:
 	{
 		uint32_t rqtp, rmtp;
-		uint32_t sec, usec;
+		uint32_t sec, nsec;
 		uint64_t total;
 
 		rqtp = isa_regs->ebx;
@@ -2268,8 +2266,8 @@ void syscall_do()
 		syscall_debug("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
 
 		mem_read(isa_mem, rqtp, 4, &sec);
-		mem_read(isa_mem, rqtp + 4, 4, &usec);
-		total = (uint64_t) sec * 1000000 + usec;
+		mem_read(isa_mem, rqtp + 4, 4, &nsec);
+		total = (uint64_t) sec * 1000000 + (nsec / 1000);
 		syscall_debug("  sleep time (us): %lld\n", (long long) total);
 		isa_ctx->wakeup_time = ke_timer() + total;
 
@@ -2559,6 +2557,7 @@ void syscall_do()
 		isa_ctx->signal_masks->backup = isa_ctx->signal_masks->blocked;
 		isa_ctx->signal_masks->blocked = newset;
 		ctx_set_status(isa_ctx, ctx_suspended | ctx_sigsuspend);
+		ke_process_suspended_schedule();
 		signal_process(isa_ctx);
 		break;
 	}
@@ -3314,9 +3313,11 @@ void syscall_do()
 		}
 	}
 
-	/* Return value */
-	isa_regs->eax = retval;
-	if (!ctx_get_status(isa_ctx, ctx_suspended))
-		syscall_debug("  return=0x%x\n", retval);
+	/* Return value (for all system calls except 'sigreturn') */
+	if (syscode != syscall_code_sigreturn) {
+		isa_regs->eax = retval;
+		if (!ctx_get_status(isa_ctx, ctx_suspended))
+			syscall_debug("  return=0x%x\n", retval);
+	}
 }
 
