@@ -686,4 +686,7 @@
 		a standard signal handler frame is constructed before launching a signal
 		handler, and the return code is inserted into a specially allocated memory
 		page with execution permission, in order to avoid executable stack.
-
+	* m2skernel.c: synchronous waits among guest threads handled completely with host
+		thread 'ke_process_suspended_thread'. Now there is no need for periodical
+		checks of 'ke_timer' in the main simulation loop. Variable 'ke->process_suspended_time'
+		has been removed.

@@ -514,11 +514,9 @@ struct kernel_t {
 	int current_pid;
 	int current_mid;
 
-	/* Schedule next call to 'ke_process_suspended()'. The call will occur when the value
-	 * of 'ke_timer()' exceeds 'process_suspended_time', or when 'process_suspended_force'
-	 * becomes true. These variables should be accessed safely using the mutex. */
+	/* Schedule next call to 'ke_process_suspended()'. The call will occur when 'process_suspended_force'
+	 * becomes true. This flag should be accessed safely using the mutex. */
 	pthread_mutex_t process_suspended_mutex;
-	uint64_t process_suspended_time;
 	int process_suspended_force;
 
 	/* Counter of times that a context has been suspended in a

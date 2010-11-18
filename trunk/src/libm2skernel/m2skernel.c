@@ -234,8 +234,16 @@ void *ke_process_suspended_thread(void *arg)
 	pthread_detach(pthread_self());
 
 	/* Context suspended in 'poll' system call */
-	if (ctx_get_status(ctx, ctx_poll))
-	{
+	if (ctx_get_status(ctx, ctx_nanosleep)) {
+		
+		uint64_t timeout;
+		
+		/* Calculate remaining sleep time in microseconds */
+		timeout = ctx->wakeup_time > now ? ctx->wakeup_time - now : 0;
+		usleep(timeout);
+	
+	} else if (ctx_get_status(ctx, ctx_poll)) {
+
 		struct fd_t *fd;
 		struct pollfd host_fds;
 		int err, timeout;
@@ -308,26 +316,24 @@ void *ke_process_suspended_thread(void *arg)
 }
 
 
-/* Process list of suspended process and wake up those that are ready to resume,
- * only if 'process_suspended_force' or 'process_suspended_time' tell so. */
+/* Process list of suspended process and wake up those that are ready to resume.
+ * The list is only processed if flag 'ke->process_suspended_force' is set. */
 void ke_process_suspended()
 {
 	struct ctx_t *ctx, *next;
-	uint64_t now = ke_timer();
-	int do_process_suspended;
+	uint64_t now;
 
 	/* Check if suspended contexts should be actually processed */
 	pthread_mutex_lock(&ke->process_suspended_mutex);
-	do_process_suspended = ke->process_suspended_force ||
-		(ke->process_suspended_time && ke->process_suspended_time < now);
-	if (!do_process_suspended) {
+	if (!ke->process_suspended_force) {
 		pthread_mutex_unlock(&ke->process_suspended_mutex);
 		return;
 	}
 	
-	/* By default, no subsequent call to 'ke_process_suspended' is assumed */
+	/* By default, no subsequent call to 'ke_process_suspended' is assumed.
+	 * Get current kernel time. */
 	ke->process_suspended_force = 0;
-	ke->process_suspended_time = 0;
+	now = ke_timer();
 
 	/* Look at the list of suspended contexts and try to find
 	 * one that needs to be woken up. */
@@ -344,35 +350,57 @@ void ke_process_suspended()
 			uint32_t sec, usec;
 			uint64_t diff;
 
+			/* If 'ke_process_suspended_thread' is still running for this context, do nothing. */
+			if (ctx->process_suspended_thread_active)
+				continue;
+
 			/* Timeout expired */
 			if (ctx->wakeup_time <= now) {
 				if (rmtp)
 					mem_write(ctx->mem, rmtp, 8, &zero);
-				syscall_debug("syscall nanosleep - continue (pid %d)\n", ctx->pid);
+				syscall_debug("syscall 'nanosleep' - continue (pid %d)\n", ctx->pid);
 				syscall_debug("  return=0x%x\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_nanosleep);
 				continue;
-			} else {
-				/* Time to wake up not reached yet, schedule for later */
-				if (!ke->process_suspended_time || ke->process_suspended_time > ctx->wakeup_time)
-					ke->process_suspended_time = ctx->wakeup_time;
 			}
 
-			/* Wakeup signal received */
+			/* Context received a signal */
 			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
 				if (rmtp) {
-					diff = now < ctx->wakeup_time ? ctx->wakeup_time - now : 0;
+					diff = ctx->wakeup_time - now;
 					sec = diff / 1000000;
 					usec = diff % 1000000;
 					mem_write(ctx->mem, rmtp, 4, &sec);
 					mem_write(ctx->mem, rmtp + 4, 4, &usec);
 				}
-				ctx->regs->eax = -4; /* EINTR */
-				syscall_debug("syscall nanosleep - continue (pid %d)\n", ctx->pid);
-				syscall_debug("  return=0x%x\n", ctx->regs->eax);
+				ctx->regs->eax = -EINTR;
+				syscall_debug("syscall 'nanosleep' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_nanosleep);
 				continue;
 			}
+
+			/* No event available, launch 'ke_process_suspended_thread' again */
+			ctx->process_suspended_thread_active = 1;
+			if (pthread_create(&ctx->process_suspended_thread, NULL, ke_process_suspended_thread, ctx))
+				fatal("syscall 'poll': could not create child thread");
+			continue;
+		}
+
+		/* Context suspended in 'rt_sigsuspend' system call */
+		if (ctx_get_status(ctx, ctx_sigsuspend))
+		{
+			/* Context received a signal */
+			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
+				ctx->signal_masks->blocked = ctx->signal_masks->backup;
+				ctx->regs->eax = -EINTR;
+				syscall_debug("syscall 'nanosleep' - interrupted by signal (pid %d)\n", ctx->pid);
+				ctx_clear_status(ctx, ctx_suspended | ctx_sigsuspend);
+				continue;
+			}
+
+			/* No event available. The context will never awake on its own, so no
+			 * 'ke_process_suspended_thread' is necessary. */
+			continue;
 		}
 
 		/* Context suspended in 'poll' system call */
@@ -384,14 +412,22 @@ void ke_process_suspended()
 			struct pollfd host_fds;
 			int err;
 
+			/* If 'ke_process_suspended_thread' is still running for this context, do nothing. */
+			if (ctx->process_suspended_thread_active)
+				continue;
+
 			/* Get file descriptor */
 			fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
 			if (!fd)
 				fatal("syscall 'poll': invalid 'wakeup_fd'");
 
-			/* If 'ke_process_suspended_thread' is still running, do nothing. */
-			if (ctx->process_suspended_thread_active)
+			/* Context received a signal */
+			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
+				ctx->regs->eax = -EINTR;
+				syscall_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
+				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
 				continue;
+			}
 
 			/* Perform host 'poll' call */
 			host_fds.fd = fd->host_fd;
@@ -449,9 +485,17 @@ void ke_process_suspended()
 			void *buf;
 			struct pollfd host_fds;
 
-			/* If 'ke_process_suspended_thread' is still running, do nothing. */
+			/* If 'ke_process_suspended_thread' is still running for this context, do nothing. */
 			if (ctx->process_suspended_thread_active)
 				continue;
+
+			/* Context received a signal */
+			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
+				ctx->regs->eax = -EINTR;
+				syscall_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
+				ctx_clear_status(ctx, ctx_suspended | ctx_write);
+				continue;
+			}
 
 			/* Get file descriptor */
 			fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
@@ -501,7 +545,7 @@ void ke_process_suspended()
 			void *buf;
 			struct pollfd host_fds;
 
-			/* If 'ke_process_suspended_thread' is still running, do nothing. */
+			/* If 'ke_process_suspended_thread' is still running for this context, do nothing. */
 			if (ctx->process_suspended_thread_active)
 				continue;
 
@@ -552,26 +596,13 @@ void ke_process_suspended()
 			continue;
 		}
 
-		/* Context suspended in 'rt_sigsuspend'.
-		 * The action on wakeup is to restore the saved signal mask. */
-		if (ctx_get_status(ctx, ctx_sigsuspend) &&
-			(ctx->signal_masks->pending & ~ctx->signal_masks->blocked))
-		{
-			ctx->signal_masks->blocked = ctx->signal_masks->backup;
-			ctx->regs->eax = -4; /* EINTR */
-			syscall_debug("syscall sigsuspend - continue (pid %d)\n", ctx->pid);
-			syscall_debug("  retval=%d\n", ctx->regs->eax);
-			ctx_clear_status(ctx, ctx_suspended | ctx_sigsuspend);
-			continue;
-		}
-
-		/* Context suspended in 'waitpid' */
+		/* Context suspended in a 'waitpid' system call */
 		if (ctx_get_status(ctx, ctx_waitpid))
 		{
 			struct ctx_t *child;
 			uint32_t pstatus;
 
-			/* Is this context waiting for any zombie child? */
+			/* A zombie child is available to 'waitpid' it */
 			child = ctx_get_zombie(ctx, ctx->wakeup_pid);
 			if (child) {
 
@@ -587,13 +618,12 @@ void ke_process_suspended()
 				ctx_clear_status(ctx, ctx_suspended | ctx_waitpid);
 				continue;
 			}
+
+			/* No event available. Since this context won't awake on its own, no
+			 * 'ke_process_suspended_thread' is needed. */
+			continue;
 		}
 	}
-
-	/* Assume a deadlock when all contexts are suspended and there is no pending processing
-	 * of the suspended contexts. */
-	//if (!ke->running_list_head && !ke->process_suspended_time && !ke->process_suspended_force)
-		//fatal("all contexts suspended");
 
 	/* Processing of suspended contexts finished, unlock mutex. */
 	pthread_mutex_unlock(&ke->process_suspended_mutex);
