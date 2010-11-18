@@ -677,3 +677,13 @@
 		using child threads (ke_process_suspended_thread).
 	* m2skernel.c: pipes treated again as regular files. Thanks to the suspending
 		mechanism using child threads, pipes don't need special treatment.
+
+2010-11-18
+	* fs.c: new file was missing from repository.
+	* signal.c: signal handler fixed. In the old handler, only the signal number and
+		the return address (pointing at the return code calling syscall 'sigreturn')
+		were inserted into the stack. Now, following the Linux kernel implementation,
+		a standard signal handler frame is constructed before launching a signal
+		handler, and the return code is inserted into a specially allocated memory
+		page with execution permission, in order to avoid executable stack.
+

@@ -922,7 +922,8 @@ void syscall_do()
 		if (!strcmp(fullpath, "/dev/ati/card0")) {
 			
 			/* Addfile descriptor table entry. */
-			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_gpu, -1, fullpath, flags);
+			host_fd = open(fullpath, flags); /// FIXME
+			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_gpu, host_fd, fullpath, flags);
 			syscall_debug("    GPU communication started\n");
 			retval = fd->guest_fd;
 			break;
@@ -1390,6 +1391,7 @@ void syscall_do()
 			retval = -EINVAL;
 
 		} else if (cmd == 0xc0086401) {  /* DRM_IOCTL_GET_UNIQUE */
+#if 0
 			
 			uint32_t unique_len, unique_ptr;
 
@@ -1405,9 +1407,41 @@ void syscall_do()
 			mem_write(isa_mem, arg, 4, &unique_len);
 			if (unique_ptr)
 				mem_write_string(isa_mem, unique_ptr, "PCI:1:0:0");
+#endif
+			struct guest_drm_unique {
+				uint32_t len;
+				uint32_t uptr;
+			} guest_uq;
+
+			struct host_drm_unique {
+				int len;
+				char *uptr;
+			} host_uq;
+
+			char ustr[100];
+
+			mem_read(isa_mem, arg, 8, &guest_uq);
+			syscall_debug("    uq.len=%d\n", guest_uq.len);
+			syscall_debug("    uq.uptr=0x%x\n", guest_uq.uptr);
+
+			/* Host ioctl */
+			host_uq.len = guest_uq.len;
+			host_uq.uptr = &ustr[0];
+			memset(ustr, 0, sizeof(ustr));
+			RETVAL(ioctl(fd->host_fd, cmd, &host_uq));
+
+			/* Return result */
+			if (retval >= 0) {
+				syscall_debug("    uq.len=%d\n", host_uq.len);
+				syscall_debug("    uq.uptr=%x ('%s')", guest_uq.uptr, host_uq.uptr);
+				mem_write(isa_mem, arg, 4, &host_uq.len);
+				if (guest_uq.uptr)
+					mem_write(isa_mem, guest_uq.uptr, host_uq.len, &ustr[0]);
+			}
 
 		} else if (cmd == 0x80046402) {  /* DRM_IOCTL_GET_MAGIC */
 			
+#if 0
 			uint32_t magic;
 
 			assert(fd->kind == fd_kind_gpu);
@@ -1417,6 +1451,30 @@ void syscall_do()
 			/* Return magic number */
 			magic = 0x30;  /* FIXME */
 			mem_write(isa_mem, arg, 4, &magic);
+#endif
+			
+			uint32_t magic;
+			syscall_debug("    pmagic=0x%x\n", arg);
+
+			/* Host ioctl */
+			RETVAL(ioctl(fd->host_fd, cmd, &magic));
+
+			/* Return result */
+			if (retval >= 0) {
+				syscall_debug("    magic=0x%x\n", magic);
+				mem_write(isa_mem, arg, 4, &magic);
+			}
+
+		} else if (cmd == 0x80146454) {  /* DRM_IOCTL_RADEON_FREE */
+
+			int i;
+			uint32_t x;
+
+			for (i = 0; i < 0x14; i += 4) {
+				mem_read(isa_mem, arg + i, 4, &x);
+				syscall_debug("    offs %d: 0x%x\n", i, x);
+			}
+			exit(1);
 
 		} else if (cmd == 0xc0106407) {  /* DRM_IOCTL_SET_VERSION */
 			

@@ -37,6 +37,7 @@
 #include <time.h>
 #include <pthread.h>
 #include <poll.h>
+#include <errno.h>
 #include <sys/time.h>
 
 
@@ -321,6 +322,7 @@ struct signal_masks_t {
 	uint64_t blocked;  /* mask of blocked signals */
 	uint64_t backup;  /* backup of blocked signals while suspended */
 	struct regs_t *regs;  /* backup of regs while executing handler */
+	uint32_t pretcode;  /* base address of a memory page allocated for retcode execution */
 };
 
 struct signal_masks_t *signal_masks_create(void);
@@ -482,6 +484,7 @@ struct ctx_t *ctx_clone(struct ctx_t *ctx);
 void ctx_free(struct ctx_t *ctx);
 void ctx_dump(struct ctx_t *ctx, FILE *f);
 
+void ctx_process_suspended_thread_cancel(struct ctx_t *ctx);
 void ctx_finish(struct ctx_t *ctx, int status);
 void ctx_finish_group(struct ctx_t *ctx, int status);
 void ctx_execute_inst(struct ctx_t *ctx);
