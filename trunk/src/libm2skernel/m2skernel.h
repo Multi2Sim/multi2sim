@@ -41,9 +41,12 @@
 #include <sys/time.h>
 
 
-/* Declaration of the kernel context type. We will need it
- * before specifying all its fields. */
+/* Some forward declarations */
 struct ctx_t;
+struct fd_t;
+
+/* Maximum length for paths */
+#define MAX_PATH_SIZE  200
 
 
 
@@ -67,12 +70,23 @@ enum mem_access_enum {
 /* Safe mode */
 extern int mem_safe_mode;
 
+/* Host mapping: mappings performed with file descriptors other than -1 */
+struct mem_host_mapping_t {
+	void *host_ptr;  /* Pointer to the host memory space */
+	uint32_t addr;  /* Guest range base */
+	uint32_t size;  /* Host mapping size */
+	int pages;  /* Number of allocated pages left */
+	char path[MAX_PATH_SIZE];  /* Path of the mapped file */
+	struct mem_host_mapping_t *next;  /* Linked list */
+};
+
 /* A 4KB page of memory */
 struct mem_page_t {
 	uint32_t tag;
-	enum mem_access_enum perm;  /* access permissions; combination of flags */
+	enum mem_access_enum perm;  /* Access permissions; combination of flags */
 	struct mem_page_t *next;
 	unsigned char *data;
+	struct mem_host_mapping_t *host_mapping;  /* If other than null, page is host mapping */
 };
 
 struct mem_t {
@@ -80,6 +94,7 @@ struct mem_t {
 	int sharing;  /* Number of contexts sharing memory map */
 	uint32_t last_address;  /* Address of last access */
 	int safe;  /* Safe mode */
+	struct mem_host_mapping_t *host_mapping_list;  /* List of host mappings */
 };
 
 extern unsigned long mem_mapped_space;
@@ -90,11 +105,17 @@ void mem_free(struct mem_t *mem);
 
 struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr);
 struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr);
+
 uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size);
 uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size);
 
 void mem_map(struct mem_t *mem, uint32_t addr, int size, enum mem_access_enum perm);
 void mem_unmap(struct mem_t *mem, uint32_t addr, int size);
+
+void mem_map_host(struct mem_t *mem, struct fd_t *fd, uint32_t addr,
+	int size, enum mem_access_enum perm, void *data);
+void mem_unmap_host(struct mem_t *mem, uint32_t addr);
+
 void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_enum perm);
 void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size);
 
@@ -358,8 +379,6 @@ int sim_sigset_member(uint64_t *sim_sigset, int signal);
 
 
 /* Files management */
-
-#define MAX_PATH_SIZE  200
 
 enum fd_kind_enum {
 	fd_kind_regular = 0,  /* Regular file */
