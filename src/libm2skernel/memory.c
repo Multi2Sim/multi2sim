@@ -18,6 +18,7 @@
  */
 
 #include <m2skernel.h>
+#include <sys/mman.h>
 
 /* Total space allocated for memory pages */
 unsigned long mem_mapped_space = 0;
@@ -125,6 +126,7 @@ static void mem_page_free(struct mem_t *mem, uint32_t addr)
 {
 	uint32_t index, tag;
 	struct mem_page_t *prev, *page;
+	struct mem_host_mapping_t *hm;
 	
 	tag = addr & ~(MEM_PAGESIZE - 1);
 	index = (addr >> MEM_LOGPAGESIZE) % MEM_PAGE_COUNT;
@@ -139,6 +141,19 @@ static void mem_page_free(struct mem_t *mem, uint32_t addr)
 	if (!page)
 		return;
 	
+	/* If page belongs to a host mapping, release it if
+	 * this is the last page allocated for it. */
+	hm = page->host_mapping;
+	if (hm) {
+		assert(hm->pages > 0);
+		assert(tag >= hm->addr && tag + MEM_PAGESIZE <= hm->addr + hm->size);
+		hm->pages--;
+		page->data = NULL;
+		page->host_mapping = NULL;
+		if (!hm->pages)
+			mem_unmap_host(mem, hm->addr);
+	}
+
 	/* Free page */
 	if (prev)
 		prev->next = page->next;
@@ -317,23 +332,16 @@ struct mem_t *mem_create()
 
 void mem_free(struct mem_t *mem)
 {
-	struct mem_page_t *page;
-	void *next;
 	int i;
 	
 	/* Free pages */
-	for (i = 0; i < MEM_PAGE_COUNT; i++) {
-		page = mem->pages[i];
-		while (page) {
-			next = page->next;
-			if (page->data)
-				free(page->data);
-			free(page);
-			page = next;
-		}
-	}
+	for (i = 0; i < MEM_PAGE_COUNT; i++)
+		while (mem->pages[i])
+			mem_page_free(mem, mem->pages[i]->tag);
 
-	/* Free mem */
+	/* This must have released all host mappings.
+	 * Now, free memory structure. */
+	assert(!mem->host_mapping_list);
 	free(mem);
 }
 
@@ -436,8 +444,10 @@ void mem_map(struct mem_t *mem, uint32_t addr, int size,
 
 
 /* Deallocate memory pages. The addr and size parameters must be both
- * multiple of the page size. If some page was not allocated, no action
- * is done for that specific page. */
+ * multiple of the page size.
+ * If some page was not allocated, the corresponding address range is skipped.
+ * If a host mapping is caught in the range, it is deallocated with a call
+ * to 'mem_unmap_host'. */
 void mem_unmap(struct mem_t *mem, uint32_t addr, int size)
 {
 	uint32_t tag1, tag2, tag;
@@ -448,10 +458,93 @@ void mem_unmap(struct mem_t *mem, uint32_t addr, int size)
 	tag1 = addr & ~(MEM_PAGESIZE-1);
 	tag2 = (addr + size - 1) & ~(MEM_PAGESIZE-1);
 
-	/* Allocate pages */
+	/* Deallocate pages */
 	for (tag = tag1; tag <= tag2; tag += MEM_PAGESIZE)
-		if (mem_page_get(mem, tag))
-			mem_page_free(mem, tag);
+		mem_page_free(mem, tag);
+}
+
+
+/* Map guest pages with the data allocated by a host 'mmap' call.
+ * When this space is allocated with 'mem_unmap', the host memory
+ * will be freed with a host call to 'munmap'.
+ * Guest pages must already exist.
+ * Both 'addr' and 'size' must be a multiple of the page size. */
+void mem_map_host(struct mem_t *mem, struct fd_t *fd, uint32_t addr, int size,
+	enum mem_access_enum perm, void *host_ptr)
+{
+	uint32_t ptr;
+	struct mem_page_t *page;
+	struct mem_host_mapping_t *hm;
+
+	/* Check restrictions */
+	if (addr & ~MEM_PAGEMASK)
+		fatal("mem_map_host: 'addr' not a multiple of page size");
+	if (size & ~MEM_PAGEMASK)
+		fatal("mem_map_host: 'size' not a multiple of page size");
+	
+	/* Create host mapping, and insert it into the list head. */
+	hm = calloc(1, sizeof(struct mem_host_mapping_t));
+	hm->host_ptr = host_ptr;
+	hm->addr = addr;
+	hm->size = size;
+	hm->next = mem->host_mapping_list;
+	strncpy(hm->path, fd->path, MAX_PATH_SIZE);
+	mem->host_mapping_list = hm;
+	syscall_debug("  host mapping created for '%s'\n", hm->path);
+	
+	/* Make page data point to new data */
+	for (ptr = addr; ptr < addr + size; ptr += MEM_PAGESIZE) {
+		page = mem_page_get(mem, ptr);
+		if (!page)
+			fatal("mem_map_host: requested range not allocated");
+
+		/* It is not allowed that the page belong to a previous host
+		 * mapping. If so, it should have been unmapped before. */
+		if (page->host_mapping)
+			fatal("mem_map_host: cannot overwrite a previous host mapping");
+
+		/* If page is pointing to some data, overwrite it */
+		if (page->data)
+			free(page->data);
+
+		/* Create host mapping */
+		page->host_mapping = hm;
+		page->data = ptr - addr + host_ptr;
+		hm->pages++;
+	}
+}
+
+
+/* Deallocate host mapping starting at address 'addr'.
+ * A host call to 'munmap' is performed to unmap host space. */
+void mem_unmap_host(struct mem_t *mem, uint32_t addr)
+{
+	int ret;
+	struct mem_host_mapping_t *hm, *hmprev;
+
+	/* Locate host mapping in the list */
+	hmprev = NULL;
+	hm = mem->host_mapping_list;
+	while (hm && hm->addr != addr) {
+		hmprev = hm;
+		hm = hm->next;
+	}
+
+	/* Remove it from the list */
+	assert(hm);
+	if (hmprev)
+		hmprev->next = hm->next;
+	else
+		mem->host_mapping_list = hm->next;
+	
+	/* Perform host call to 'munmap' */
+	ret = munmap(hm->host_ptr, hm->size);
+	if (ret < 0)
+		fatal("mem_unmap_host: host call 'munmap' failed");
+	
+	/* Free host mapping */
+	syscall_debug("  host mapping removed for '%s'\n", hm->path);
+	free(hm);
 }
 
 
@@ -460,6 +553,7 @@ void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_enu
 {
 	uint32_t tag1, tag2, tag;
 	struct mem_page_t *page;
+	int prot, err;
 
 	/* Calculate page boundaries */
 	assert(!(addr & (MEM_PAGESIZE - 1)));
@@ -470,8 +564,22 @@ void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_enu
 	/* Allocate pages */
 	for (tag = tag1; tag <= tag2; tag += MEM_PAGESIZE) {
 		page = mem_page_get(mem, tag);
-		if (page)
-			page->perm = perm;
+		if (!page)
+			continue;
+
+		/* Set page new protection flags */
+		page->perm = perm;
+
+		/* If the page corresponds to a host mapping, host page must
+		 * update its permissions, too */
+		if (page->host_mapping) {
+			prot = (perm & mem_access_read ? PROT_READ : 0) |
+				(perm & mem_access_write ? PROT_WRITE : 0) |
+				(perm & mem_access_exec ? PROT_EXEC : 0);
+			err = mprotect(page->data, MEM_PAGESIZE, prot);
+			if (err < 0)
+				fatal("mem_protect: host call to 'mprotect' failed");
+		}
 	}
 }
 

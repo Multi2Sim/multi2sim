@@ -690,3 +690,11 @@
 		thread 'ke_process_suspended_thread'. Now there is no need for periodical
 		checks of 'ke_timer' in the main simulation loop. Variable 'ke->process_suspended_time'
 		has been removed.
+
+2010-11-20
+	* memory.c, syscall.c, m2skernel.h: support for memory mappings using any type of
+		file descriptor. In the previous implementation of mmap, munmap, mprotect,
+		a file mapping was emulated with 'seek' and 'read' system calls. Now,
+		a real host call to 'mmap' is performed, so that any file descriptor can be
+		used for mappings (e.g., a device such as GPU).
+
