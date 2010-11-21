@@ -34,6 +34,7 @@
 #include <sys/times.h>
 #include <sys/syscall.h>
 #include <sys/socket.h>
+#include <sys/mman.h>
 #include <linux/unistd.h>
 
 
@@ -54,6 +55,51 @@ enum {
 };
 
 static uint64_t syscall_freq[syscall_code_count + 1];
+
+
+/* Print a string in debug output.
+ * If 'force' is set, keep printing after \0 is found. */
+void syscall_debug_string(char *text, char *s, int len, int force)
+{
+	char buf[200], *bufptr;
+	int trunc = 0;
+	if (!debug_status(syscall_debug_category))
+		return;
+
+	memset(buf, 0, 200);
+	strcpy(buf, "\"");
+	bufptr = &buf[1];
+	if (len > 40) {
+		len = 40;
+		trunc = 1;
+	}
+	for (;;) {
+		if (!len || (!*s && !force)) {
+			strcpy(bufptr, !len && trunc ? "\"..." : "\"");
+			break;
+		}
+		if ((unsigned char) *s >= 32) {
+			*bufptr = *s;
+			bufptr++;
+		} else if (*s == '\0') {
+			strcpy(bufptr, "\\0");
+			bufptr += 2;
+		} else if (*s == '\n') {
+			strcpy(bufptr, "\\n");
+			bufptr += 2;
+		} else if (*s == '\t') {
+			strcpy(bufptr, "\\t");
+			bufptr += 2;
+		} else {
+			sprintf(bufptr, "\\%02x", *s);
+			bufptr += 3;
+		}
+		s++;
+		len--;
+	}
+	syscall_debug("%s=%s\n", text, buf);
+}
+
 
 
 /* For 'open' */
@@ -543,69 +589,84 @@ struct string_map_t mmap_flags_map = {
 	}
 };
 
-static uint32_t do_mmap(uint32_t addr, uint32_t len, uint32_t prot,
-	uint32_t flags, uint32_t fd, uint32_t offset)
+static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
+	int flags, int guest_fd, uint32_t offset)
 {
-	uint32_t alen;  /* aligned len */
-	int perm, fixed;
-	int host_fd, count;
-	long host_pos;
-	void *buf;
+	uint32_t alen;  /* Aligned len */
+	struct fd_t *fd;
+	int perm, host_fd;
+	void *host_ptr;
+
+	/* Check that protection flags match in guest and host */
+	assert(PROT_READ == 1);
+	assert(PROT_WRITE == 2);
+	assert(PROT_EXEC == 4);
+
+	/* Check that mapping flags match */
+	assert(MAP_SHARED == 0x01);
+	assert(MAP_PRIVATE == 0x02);
+	assert(MAP_FIXED == 0x10);
+	assert(MAP_ANONYMOUS == 0x20);
+
+	/* Translate file descriptor */
+	fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+	host_fd = fd ? fd->host_fd : -1;
+	if (guest_fd > 0 && host_fd < 0)
+		fatal("do_mmap: invalid 'guest_fd'");
 
 	/* Permissions */
 	perm = mem_access_init;
-	perm |= prot & 0x01 ? mem_access_read : 0;
-	perm |= prot & 0x02 ? mem_access_write : 0;
-	perm |= prot & 0x04 ? mem_access_exec : 0;
+	perm |= prot & PROT_READ ? mem_access_read : 0;
+	perm |= prot & PROT_WRITE ? mem_access_write : 0;
+	perm |= prot & PROT_EXEC ? mem_access_exec : 0;
 
-	/* Check enabled flags */
-	fixed = flags & 0x10;  /* MAP_FIXED */
-	if (flags & 0x20)  /* MAP_ANONYMOUS */
-		fd = -1;
+	/* Flag MAP_ANONYMOUS.
+	 * If it is set, the 'fd' parameter is ignored. */
+	if (flags & MAP_ANONYMOUS)
+		host_fd = -1;
 
-	/* Offset must be aligned. Round up 'len'. */
+	/* 'addr' and 'offset' must be aligned to page size boundaries.
+	 * 'len' is rounded up to page boundary. */
+	if (offset & ~MEM_PAGEMASK)
+		fatal("do_mmap: unaligned offset");
 	if (addr & ~MEM_PAGEMASK)
 		fatal("do_mmap: unaligned addr");
 	alen = ROUND_UP(len, MEM_PAGESIZE);
 
-	/* Find region for allocation if start is 0, or if there is no
-	 * free space in the specified start region. */
-	if (fixed && !addr)
-		fatal("do_mmap: no start specified for fixed mapping");
-	if (!fixed) {
+	/* Find region for allocation */
+	if (flags & MAP_FIXED) {
+	 	
+		/* If MAP_FIXED is set, the 'addr' parameter must be obeyed, and is not just a
+		 * hint for a possible base address of the allocated range. */
+		if (!addr)
+			fatal("do_mmap: no start specified for fixed mapping");
+		
+		/* Any allocated page in the range specified by 'addr' and 'len'
+		 * must be discarded. */
+		mem_unmap(isa_mem, addr, alen);
+
+	} else {
+
 		if (!addr || mem_map_space_down(isa_mem, addr, alen) != addr)
 			addr = MMAP_BASE_ADDRESS;
 		addr = mem_map_space_down(isa_mem, addr, alen);
 		if (addr == (uint32_t) -1)
-			fatal("do_mmap: out of memory");
+			fatal("do_mmap: out of guest memory");
 	}
 
-	/* If the allocation is at a fixed location, we may have allocated pages in the
-	 * midst. Get rid of them first. */
-	if (fixed)
-		mem_unmap(isa_mem, addr, alen);
-		
 	/* Allocation of memory */
 	mem_map(isa_mem, addr, alen, perm);
-	if (fd == (uint32_t) -1)
-		return addr;
 
-	/* Mapping from file */
-	host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
-	host_pos = lseek(host_fd, 0, SEEK_CUR);
-	if (lseek(host_fd, offset, SEEK_SET) != offset)
-		fatal("do_mmap: cannot set position in file");
+	/* Host mapping */
+	if (host_fd >= 0) {
+		host_ptr = mmap(NULL, len, prot, flags & ~MAP_FIXED, host_fd, offset);
+		if (host_ptr == MAP_FAILED)
+			fatal("do_mmap: host call to 'mmap' failed");
+		mem_map_host(isa_mem, fd, addr, alen, perm, host_ptr);
+		syscall_debug("    host_ptr=%p\n", host_ptr);
+		syscall_debug("    host_fd=%d\n", host_fd);
+	}
 
-	/* Read file */
-	buf = calloc(1, len);
-	if (!buf)
-		fatal("do_mmap: out of memory mapping from file");
-	count = read(host_fd, buf, len);
-	lseek(host_fd, host_pos, SEEK_SET);
-
-	/* Write into memory */
-	mem_access(isa_mem, addr, count, buf, mem_access_init);
-	free(buf);
 	return addr;
 }
 
@@ -655,50 +716,6 @@ void syscall_summary()
 		syscall_debug("%s  %lld\n", syscall_name[i],
 			(long long) syscall_freq[i]);
 	}
-}
-
-
-/* Print a string in debug output.
- * If 'force' is set, keep printing after \0 is found. */
-void syscall_debug_string(char *text, char *s, int len, int force)
-{
-	char buf[200], *bufptr;
-	int trunc = 0;
-	if (!debug_status(syscall_debug_category))
-		return;
-
-	memset(buf, 0, 200);
-	strcpy(buf, "\"");
-	bufptr = &buf[1];
-	if (len > 40) {
-		len = 40;
-		trunc = 1;
-	}
-	for (;;) {
-		if (!len || (!*s && !force)) {
-			strcpy(bufptr, !len && trunc ? "\"..." : "\"");
-			break;
-		}
-		if ((unsigned char) *s >= 32) {
-			*bufptr = *s;
-			bufptr++;
-		} else if (*s == '\0') {
-			strcpy(bufptr, "\\0");
-			bufptr += 2;
-		} else if (*s == '\n') {
-			strcpy(bufptr, "\\n");
-			bufptr += 2;
-		} else if (*s == '\t') {
-			strcpy(bufptr, "\\t");
-			bufptr += 2;
-		} else {
-			sprintf(bufptr, "\\%02x", *s);
-			bufptr += 3;
-		}
-		s++;
-		len--;
-	}
-	syscall_debug("%s=%s\n", text, buf);
 }
 
 
@@ -1590,7 +1607,8 @@ void syscall_do()
 	{
 		uint32_t pargs;
 		uint32_t addr, len, prot;
-		uint32_t flags, fd, offset;
+		uint32_t flags, offset;
+		int guest_fd;
 		char sprot[MAX_STRING_SIZE], sflags[MAX_STRING_SIZE];
 
 		/* 'old_mmap' takes the arguments from memory, at the address
@@ -1600,20 +1618,20 @@ void syscall_do()
 		mem_read(isa_mem, pargs + 4, 4, &len);
 		mem_read(isa_mem, pargs + 8, 4, &prot);
 		mem_read(isa_mem, pargs + 12, 4, &flags);
-		mem_read(isa_mem, pargs + 16, 4, &fd);
+		mem_read(isa_mem, pargs + 16, 4, &guest_fd);
 		mem_read(isa_mem, pargs + 20, 4, &offset);
 		
 		syscall_debug("  pargs=0x%x\n", pargs);
 		syscall_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
-			"fd=%d, offset=0x%x\n",
-			addr, len, prot, flags, fd, offset);
+			"guest_fd=%d, offset=0x%x\n",
+			addr, len, prot, flags, guest_fd, offset);
 		map_flags(&mmap_prot_map, prot, sprot, sizeof(sprot));
 		map_flags(&mmap_flags_map, flags, sflags, sizeof(sflags));
 		syscall_debug("  prot=%s, flags=%s\n", sprot, sflags);
 
 		/* Map */
 		retval = do_mmap(addr, len, prot, flags,
-			fd, offset);
+			guest_fd, offset);
 		break;
 	}
 
@@ -2072,7 +2090,7 @@ void syscall_do()
 		syscall_debug("  flags=%s\n", sflags);
 		
 		/* System call is ignored */
-		/* FIXME */
+		warning("syscall 'msync' ignored");
 		break;
 	}
 
@@ -2627,7 +2645,8 @@ void syscall_do()
 	case syscall_code_mmap2:  /* 192 */
 	{
 		uint32_t addr, len, prot;
-		uint32_t flags, fd, offset;
+		uint32_t flags, offset;
+		int guest_fd;
 		char sprot[MAX_STRING_SIZE], sflags[MAX_STRING_SIZE];
 
 		/* Read params */
@@ -2635,19 +2654,19 @@ void syscall_do()
 		len = isa_regs->ecx;
 		prot = isa_regs->edx;
 		flags = isa_regs->esi;
-		fd = isa_regs->edi;
+		guest_fd = isa_regs->edi;
 		offset = isa_regs->ebp;
 
 		/* Debug */
-		syscall_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, fd=%d, offset=0x%x\n",
-			addr, len, prot, flags, fd, offset);
+		syscall_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, guest_fd=%d, offset=0x%x\n",
+			addr, len, prot, flags, guest_fd, offset);
 		map_flags(&mmap_prot_map, prot, sprot, MAX_STRING_SIZE);
 		map_flags(&mmap_flags_map, flags, sflags, MAX_STRING_SIZE);
 		syscall_debug("  prot=%s, flags=%s\n", sprot, sflags);
 
 		/* Map */
 		retval = do_mmap(addr, len, prot, flags,
-			fd, offset << MEM_PAGESHIFT);
+			guest_fd, offset << MEM_PAGESHIFT);
 		break;
 
 	}
