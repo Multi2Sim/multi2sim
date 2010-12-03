@@ -228,15 +228,15 @@ static int issue_iq(int core, int thread, int quant)
 }
 
 
-static int issue_thread_iq(int core, int thread, int quant)
+static int issue_thread_lsq(int core, int thread, int quant)
 {
-	quant = issue_sq(core, thread, quant);
 	quant = issue_lq(core, thread, quant);
+	quant = issue_sq(core, thread, quant);
 	return quant;
 }
 
 
-static int issue_thread_lsq(int core, int thread, int quant)
+static int issue_thread_iq(int core, int thread, int quant)
 {
 	quant = issue_iq(core, thread, quant);
 	return quant;
@@ -251,15 +251,6 @@ void issue_core(int core)
 	
 	case p_issue_kind_shared:
 		
-		/* Issue IQs */
-		quant = p_issue_width;
-		skip = p_threads;
-		do {
-			CORE.issue_current = (CORE.issue_current + 1) % p_threads;
-			quant = issue_thread_iq(core, CORE.issue_current, quant);
-			skip--;
-		} while (skip && quant);
-
 		/* Issue LSQs */
 		quant = p_issue_width;
 		skip = p_threads;
@@ -268,10 +259,29 @@ void issue_core(int core)
 			quant = issue_thread_lsq(core, CORE.issue_current, quant);
 			skip--;
 		} while (skip && quant);
+
+		/* Issue IQs */
+		quant = p_issue_width;
+		skip = p_threads;
+		do {
+			CORE.issue_current = (CORE.issue_current + 1) % p_threads;
+			quant = issue_thread_iq(core, CORE.issue_current, quant);
+			skip--;
+		} while (skip && quant);
+		
 		break;
 	
 	case p_issue_kind_timeslice:
 		
+		/* Issue LSQs */
+		quant = p_issue_width;
+		skip = p_threads;
+		do {
+			CORE.issue_current = (CORE.issue_current + 1) % p_threads;
+			quant = issue_thread_lsq(core, CORE.issue_current, quant);
+			skip--;
+		} while (skip && quant == p_issue_width);
+
 		/* Issue IQs */
 		quant = p_issue_width;
 		skip = p_threads;
@@ -281,14 +291,6 @@ void issue_core(int core)
 			skip--;
 		} while (skip && quant == p_issue_width);
 
-		/* Issue LSQs */
-		quant = p_issue_width;
-		skip = p_threads;
-		do {
-			CORE.issue_current = (CORE.issue_current + 1) % p_threads;
-			quant = issue_thread_lsq(core, CORE.issue_current, quant);
-			skip--;
-		} while (skip && quant == p_issue_width);
 		break;
 	}
 }

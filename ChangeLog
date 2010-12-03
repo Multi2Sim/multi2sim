@@ -698,3 +698,8 @@
 		a real host call to 'mmap' is performed, so that any file descriptor can be
 		used for mappings (e.g., a device such as GPU).
 
+2010-12-03
+	* issue.c: bug fixed in the order in which LQ, SQ, and IQ were handled. Memory instructions
+		are prioritized over arithmetic uops.
+
+
