@@ -7,7 +7,8 @@ SUBDIRS = \
 	libdisasm \
 	libesim \
 	libnetwork \
-	libcachesystem
+	libcachesystem \
+	libgpukernel
 
 bin_PROGRAMS = \
 	m2s-fast \
@@ -51,7 +52,8 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libdisasm \
 	-I$(top_srcdir)/src/libesim \
 	-I$(top_srcdir)/src/libnetwork \
-	-I$(top_srcdir)/src/libcachesystem
+	-I$(top_srcdir)/src/libcachesystem \
+	-I$(top_srcdir)/src/libgpukernel
 
 LDADD = \
 	$(top_builddir)/src/libm2skernel/libm2skernel.a \
@@ -60,6 +62,7 @@ LDADD = \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \

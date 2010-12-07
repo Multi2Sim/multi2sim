@@ -38,6 +38,7 @@
 #include <pthread.h>
 #include <poll.h>
 #include <errno.h>
+#include <gpukernel.h>
 #include <sys/time.h>
 
 
