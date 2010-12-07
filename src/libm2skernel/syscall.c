@@ -101,6 +101,14 @@ void syscall_debug_string(char *text, char *s, int len, int force)
 }
 
 
+/* Error messages */
+char *err_syscall_note = 
+	"\tThe system calls performed by the executed application are intercepted by\n"
+	"\tMulti2Sim and emulated in file 'syscall.c'. The most common system calls are\n"
+	"\tcurrently supported, but your application might perform specific unsupported\n"
+	"\tsystem calls or combinations of parameters. To request support for a given\n"
+	"\tsystem call, please email 'development@multi2sim.org'.\n";
+
 
 /* For 'open' */
 
@@ -1401,100 +1409,6 @@ void syscall_do()
 				mem_write(isa_mem, arg, sizeof(sim_termio), &sim_termio);
 			}
 		
-		} else if (cmd == 0xc0286450) {  /* Whatever it is, invalid code */
-			
-			retval = -EINVAL;
-
-		} else if (cmd == 0xc0086401) {  /* DRM_IOCTL_GET_UNIQUE */
-#if 0
-			
-			uint32_t unique_len, unique_ptr;
-
-			assert(fd->kind == fd_kind_gpu);
-			mem_read(isa_mem, arg, 4, &unique_len);
-			mem_read(isa_mem, arg + 4, 4, &unique_ptr);
-			syscall_debug("  Code DRM_IOCTL_GET_UNIQUE\n");
-			syscall_debug("    drm_unique.unique_len=%d\n", unique_len);
-			syscall_debug("    drm_unique.unique=0x%x\n", unique_ptr);
-
-			/* Return unique in memory */
-			unique_len = 40;
-			mem_write(isa_mem, arg, 4, &unique_len);
-			if (unique_ptr)
-				mem_write_string(isa_mem, unique_ptr, "PCI:1:0:0");
-#endif
-			struct guest_drm_unique {
-				uint32_t len;
-				uint32_t uptr;
-			} guest_uq;
-
-			struct host_drm_unique {
-				int len;
-				char *uptr;
-			} host_uq;
-
-			char ustr[100];
-
-			mem_read(isa_mem, arg, 8, &guest_uq);
-			syscall_debug("    uq.len=%d\n", guest_uq.len);
-			syscall_debug("    uq.uptr=0x%x\n", guest_uq.uptr);
-
-			/* Host ioctl */
-			host_uq.len = guest_uq.len;
-			host_uq.uptr = &ustr[0];
-			memset(ustr, 0, sizeof(ustr));
-			RETVAL(ioctl(fd->host_fd, cmd, &host_uq));
-
-			/* Return result */
-			if (retval >= 0) {
-				syscall_debug("    uq.len=%d\n", host_uq.len);
-				syscall_debug("    uq.uptr=%x ('%s')", guest_uq.uptr, host_uq.uptr);
-				mem_write(isa_mem, arg, 4, &host_uq.len);
-				if (guest_uq.uptr)
-					mem_write(isa_mem, guest_uq.uptr, host_uq.len, &ustr[0]);
-			}
-
-		} else if (cmd == 0x80046402) {  /* DRM_IOCTL_GET_MAGIC */
-			
-#if 0
-			uint32_t magic;
-
-			assert(fd->kind == fd_kind_gpu);
-			syscall_debug("  Code DRM_IOCTL_GET_MAGIC\n");
-			syscall_debug("    pmagic=0x%x\n", arg);
-
-			/* Return magic number */
-			magic = 0x30;  /* FIXME */
-			mem_write(isa_mem, arg, 4, &magic);
-#endif
-			
-			uint32_t magic;
-			syscall_debug("    pmagic=0x%x\n", arg);
-
-			/* Host ioctl */
-			RETVAL(ioctl(fd->host_fd, cmd, &magic));
-
-			/* Return result */
-			if (retval >= 0) {
-				syscall_debug("    magic=0x%x\n", magic);
-				mem_write(isa_mem, arg, 4, &magic);
-			}
-
-		} else if (cmd == 0x80146454) {  /* DRM_IOCTL_RADEON_FREE */
-
-			int i;
-			uint32_t x;
-
-			for (i = 0; i < 0x14; i += 4) {
-				mem_read(isa_mem, arg + i, 4, &x);
-				syscall_debug("    offs %d: 0x%x\n", i, x);
-			}
-			exit(1);
-
-		} else if (cmd == 0xc0106407) {  /* DRM_IOCTL_SET_VERSION */
-			
-			retval = -EINVAL;
-
 		} else
 			fatal("syscall ioctl: cmd = 0x%x not implemented", cmd);
 
@@ -3322,13 +3236,49 @@ void syscall_do()
 	}
 
 
+	/* 325 */
+	/* Artificial system call used to implement the OpenCL 1.1 interface. */
+	case syscall_code_opencl:
+	{
+		uint32_t func_code, pargs;
+		uint32_t args[OPENCL_MAX_ARGS];
+		int i;
+		char *func_name;
+		int func_argc;
+
+		func_code = isa_regs->ebx;
+		pargs = isa_regs->ecx;
+
+		/* Check 'func_code' range */
+		if (func_code < OPENCL_FUNC_FIRST || func_code > OPENCL_FUNC_LAST)
+			fatal("syscall 'opencl': func_code out of range");
+		
+		/* Get function info */
+		func_name = opencl_func_names[func_code - OPENCL_FUNC_FIRST];
+		func_argc = opencl_func_argc[func_code - OPENCL_FUNC_FIRST];
+		syscall_debug("  func_code=%d (%s, %d arguments), pargs=0x%x\n",
+			func_code, func_name, func_argc, pargs);
+
+		/* Read function args */
+		assert(func_argc <= OPENCL_MAX_ARGS);
+		mem_read(isa_mem, pargs, func_argc * 4, args);
+		for (i = 0; i < func_argc; i++)
+			syscall_debug("    args[%d] = %d (0x%x)\n",
+				i, args[i], args[i]);
+
+		/* Run OpenCL function */
+		retval = opencl_func_run(func_code, args);
+		break;
+	}
+
+
 	default:
 		if (syscode >= syscall_code_count) {
 			retval = -38;
 		} else {
-			fatal("not implemented system call '%s' (code %d) at 0x%x",
+			fatal("not implemented system call '%s' (code %d) at 0x%x\n%s",
 				syscode < syscall_code_count ? syscall_name[syscode] : "",
-				syscode, isa_regs->eip);
+				syscode, isa_regs->eip, err_syscall_note);
 		}
 	}
 

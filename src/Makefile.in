@@ -59,6 +59,7 @@ m2s_DEPENDENCIES = $(top_builddir)/src/libm2skernel/libm2skernel.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a
@@ -72,6 +73,7 @@ m2s_fast_DEPENDENCIES =  \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a
@@ -85,6 +87,7 @@ m2s_objdump_DEPENDENCIES =  \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a
@@ -98,6 +101,7 @@ m2s_pipeline_DEPENDENCIES =  \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a
@@ -254,7 +258,8 @@ SUBDIRS = \
 	libdisasm \
 	libesim \
 	libnetwork \
-	libcachesystem
+	libcachesystem \
+	libgpukernel
 
 m2s_fast_SOURCES = m2s-fast.c
 m2s_objdump_SOURCES = m2s-objdump.c
@@ -289,7 +294,8 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libdisasm \
 	-I$(top_srcdir)/src/libesim \
 	-I$(top_srcdir)/src/libnetwork \
-	-I$(top_srcdir)/src/libcachesystem
+	-I$(top_srcdir)/src/libcachesystem \
+	-I$(top_srcdir)/src/libgpukernel
 
 LDADD = \
 	$(top_builddir)/src/libm2skernel/libm2skernel.a \
@@ -298,6 +304,7 @@ LDADD = \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \

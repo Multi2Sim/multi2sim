@@ -44,6 +44,7 @@ static char *sim_title = "";
 
 static char *ctx_debug_file_name = "";
 static char *syscall_debug_file_name = "";
+static char *opencl_debug_file_name = "";
 static char *loader_debug_file_name = "";
 static char *isa_call_debug_file_name = "";
 static char *isa_inst_debug_file_name = "";
@@ -76,6 +77,7 @@ static void sim_reg_options()
 
 	opt_reg_string("-debug:ctx", "Debug information for context creation & status updates", &ctx_debug_file_name);
 	opt_reg_string("-debug:syscall", "Debug information for system calls", &syscall_debug_file_name);
+	opt_reg_string("-debug:opencl", "Debug information for OpenCL programs", &opencl_debug_file_name);
 	opt_reg_string("-debug:loader", "Debug information from program loader", &loader_debug_file_name);
 	opt_reg_string("-debug:call", "Debug information about procedure calls", &isa_call_debug_file_name);
 	opt_reg_string("-debug:inst", "Debug information about executed instructions", &isa_inst_debug_file_name);
@@ -173,6 +175,7 @@ int main(int argc, char **argv)
 	error_debug_category = debug_new_category();
 	debug_assign_file(ctx_debug_category, ctx_debug_file_name);
 	debug_assign_file(syscall_debug_category, syscall_debug_file_name);
+	debug_assign_file(opencl_debug_category, opencl_debug_file_name);
 	debug_assign_file(ld_debug_category, loader_debug_file_name);
 	debug_assign_file(isa_call_debug_category, isa_call_debug_file_name);
 	debug_assign_file(isa_inst_debug_category, isa_inst_debug_file_name);

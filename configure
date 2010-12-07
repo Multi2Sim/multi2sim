@@ -5389,7 +5389,7 @@ if test "${ac_cv_lib_ncurses_initscr}" != "yes"; then
 	as_fn_error $? "can not find the ncurses library." "$LINENO" 5
 fi
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/libnetwork/Makefile src/libcachesystem/Makefile src/libm2skernel/Makefile src/libdisasm/Makefile src/libesim/Makefile src/libmhandle/Makefile src/libopt/Makefile src/libstruct/Makefile src/libmisc/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/libnetwork/Makefile src/libgpukernel/Makefile src/libcachesystem/Makefile src/libm2skernel/Makefile src/libdisasm/Makefile src/libesim/Makefile src/libmhandle/Makefile src/libopt/Makefile src/libstruct/Makefile src/libmisc/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6132,6 +6132,7 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "src/libnetwork/Makefile") CONFIG_FILES="$CONFIG_FILES src/libnetwork/Makefile" ;;
+    "src/libgpukernel/Makefile") CONFIG_FILES="$CONFIG_FILES src/libgpukernel/Makefile" ;;
     "src/libcachesystem/Makefile") CONFIG_FILES="$CONFIG_FILES src/libcachesystem/Makefile" ;;
     "src/libm2skernel/Makefile") CONFIG_FILES="$CONFIG_FILES src/libm2skernel/Makefile" ;;
     "src/libdisasm/Makefile") CONFIG_FILES="$CONFIG_FILES src/libdisasm/Makefile" ;;
