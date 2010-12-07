@@ -706,3 +706,9 @@
 2010-12-03
 	Version 2.4.1 Released
 
+2010-12-06
+	* syscall.c: ioctl system call simplified; first gpu implementation attempt reverted.
+		Instead, an additional OpenCL system call is created, used for the implementation
+		of the whole OpenCL 1.1 interface.
+	* libgpukernel: library added to start the OpenCL implementation project.
+

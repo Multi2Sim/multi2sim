@@ -165,7 +165,7 @@ void fatal(char *fmt, ...) {
 	fprintf(stderr, "fatal: ");
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
-	abort();
+	exit(1);
 }
 
 
