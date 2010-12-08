@@ -53,6 +53,9 @@ void ke_init(void)
 	syscall_debug_category = debug_new_category();
 	ctx_debug_category = debug_new_category();
 
+	/* Initialize GPU kernel */
+	gk_init();
+
 	/* Record start time */
 	ke_init_time = ke_timer();
 }
@@ -71,7 +74,11 @@ void ke_done(void)
 	/* Free contexts */
 	while (ke->context_list_head)
 		ctx_free(ke->context_list_head);
+	
+	/* Finalize GPU kernel */
+	gk_done();
 
+	/* End */
 	free(ke);
 	isa_done();
 	syscall_summary();

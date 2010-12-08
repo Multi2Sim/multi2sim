@@ -20,16 +20,20 @@
 #ifndef GPUKERNEL_H
 #define GPUKERNEL_H
 
+#include <stdint.h>
+
+
+
+/* OpenCL API Implementation */
+
 /* Debugging */
 #define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
 extern int opencl_debug_category;
-
 
 /* Some constants */
 #define OPENCL_FUNC_FIRST  1000
 #define OPENCL_FUNC_LAST  1073
 #define OPENCL_MAX_ARGS  14
-
 
 /* An enumeration of the OpenCL functions */
 enum opencl_func_enum {
@@ -39,14 +43,20 @@ enum opencl_func_enum {
 	OPENCL_FUNC_COUNT
 };
 
-
 /* List of OpenCL functions and number of arguments */
 extern char *opencl_func_names[];
 extern int opencl_func_argc[];
 
-
 /* Execute OpenCL call */
 int opencl_func_run(int code, unsigned int *args);
+
+
+
+
+/* GPU kernel */
+
+void gk_init(void);
+void gk_done(void);
 
 
 #endif

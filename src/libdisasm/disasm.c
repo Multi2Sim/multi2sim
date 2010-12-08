@@ -632,6 +632,6 @@ void x86_inst_dump(x86_inst_t *inst, FILE *f)
 {
 	char buf[100];
 	x86_inst_dump_buf(inst, buf, sizeof(buf));
-	fprintf(f, buf);
+	fprintf(f, "%s", buf);
 }
 
