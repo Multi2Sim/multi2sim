@@ -157,6 +157,20 @@ void lnlist_goto(struct lnlist_t *lnlist, int index)
 }
 
 
+void lnlist_find(struct lnlist_t *lnlist, void *data)
+{
+	lnlist->error = 0;
+	lnlist->icurrent = 0;
+	lnlist->current = lnlist->head;
+	while (lnlist->current && lnlist->current->data != data) {
+		lnlist->icurrent++;
+		lnlist->current = lnlist->current->next;
+	}
+	if (!lnlist->current)
+		lnlist->error = LNLIST_EELEM;
+}
+
+
 int lnlist_count(struct lnlist_t *lnlist)
 {
 	lnlist->error = 0;

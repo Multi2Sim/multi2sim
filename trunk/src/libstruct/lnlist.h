@@ -23,6 +23,7 @@
 /* Error constants */
 #define LNLIST_ENOMEM		1
 #define LNLIST_EBOUNDS		2
+#define LNLIST_EELEM		3
 
 struct lnlist_t;
 
@@ -45,6 +46,7 @@ void lnlist_head(struct lnlist_t *lnlist);  /* EBOUNDS */
 void lnlist_tail(struct lnlist_t *lnlist);  /* EBOUNDS */
 void lnlist_out(struct lnlist_t *lnlist);
 void lnlist_goto(struct lnlist_t *lnlist, int index);  /* EBOUNDS */
+void lnlist_find(struct lnlist_t *lnlist, void *data);  /* EELEM */
 
 /* Number of elements and EOL check (end of list = current element == n */
 int lnlist_count(struct lnlist_t *lnlist);
