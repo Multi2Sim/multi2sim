@@ -716,4 +716,5 @@
 	* m2s-pipeline.c: warnings fixed.
 	* disasm.c: warnings fixed.
 	* libgpukernel: restructured, files added, OpenCL extended.
+	* syscall.c, gpukernel.c: redirection of libOpenCL.so to libm2s-opencl.so
 

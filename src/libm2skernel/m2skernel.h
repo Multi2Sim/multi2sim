@@ -447,6 +447,9 @@ struct ctx_t {
 	uint32_t glibc_segment_base;
 	uint32_t glibc_segment_limit;
 
+	/* For the OpenCL library access */
+	int libopencl_open_attempt;
+
 	/* This flag is set when a 'ke_process_suspended_thread' thread is launched
 	 * for this context (by caller), and unset when it finished (by thread). It
 	 * should be accessed safely by locking 'ke->process_suspended_mutex'. */

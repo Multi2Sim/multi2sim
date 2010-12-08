@@ -923,7 +923,7 @@ void syscall_do()
 		uint32_t pfilename;
 		int flags, mode;
 		char sflags[MAX_STRING_SIZE];
-		int length;
+		int length, fullpath_length;
 		int host_fd;
 		struct fd_t *fd;
 
@@ -935,22 +935,15 @@ void syscall_do()
 		if (length >= MAX_PATH_SIZE)
 			fatal("syscall open: maximum path length exceeded");
 		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
+		fullpath_length = strlen(fullpath);
 		syscall_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
 			filename, flags, mode);
 		syscall_debug("  fullpath='%s'\n", fullpath);
 		map_flags(&open_flags_map, flags, sflags, MAX_STRING_SIZE);
 		syscall_debug("  flags=%s\n", sflags);
 
-		/* GPU */
-		if (!strcmp(fullpath, "/dev/ati/card0")) {
-			
-			/* Addfile descriptor table entry. */
-			host_fd = open(fullpath, flags); /// FIXME
-			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_gpu, host_fd, fullpath, flags);
-			syscall_debug("    GPU communication started\n");
-			retval = fd->guest_fd;
-			break;
-		}
+		/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
+		gk_libopencl_redirect(fullpath, MAX_PATH_SIZE);
 
 		/* Virtual files */
 		if (!strncmp(fullpath, "/proc/", 6)) {

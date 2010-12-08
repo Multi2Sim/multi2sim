@@ -92,7 +92,7 @@ void *opencl_object_get_type(enum opencl_obj_enum type)
 /* Assignment of OpenCL object identifiers
  * An identifier is a 32-bit value, whose 16 most significant bits represent the
  * object type, while the 16 least significant bits represent a unique object ID. */
-uint32_t opencl_assign_object_id(enum opencl_obj_enum type)
+uint32_t opencl_object_new_id(enum opencl_obj_enum type)
 {
 	static uint32_t opencl_current_object_id;
 	uint32_t id;
@@ -100,10 +100,37 @@ uint32_t opencl_assign_object_id(enum opencl_obj_enum type)
 	id = (type << 16) | opencl_current_object_id;
 	opencl_current_object_id++;
 	if (opencl_current_object_id > 0xffff)
-		fatal("opencl_assign_object_id: too many OpenCL objects");
+		fatal("opencl_object_new_id: too many OpenCL objects");
 	return id;
 }
 
+
+/* Free all OpenCL objects in the object list */
+void opencl_object_free_all()
+{
+	void *object;
+
+	/* Platforms */
+	while ((object = opencl_object_get_type(OPENCL_OBJ_PLATFORM)))
+		opencl_platform_free((struct opencl_platform_t *) object);
+	
+	/* Devices */
+	while ((object = opencl_object_get_type(OPENCL_OBJ_DEVICE)))
+		opencl_device_free((struct opencl_device_t *) object);
+	
+	/* Contexts */
+	while ((object = opencl_object_get_type(OPENCL_OBJ_CONTEXT)))
+		opencl_context_free((struct opencl_context_t *) object);
+	
+	/* Command queues */
+	while ((object = opencl_object_get_type(OPENCL_OBJ_COMMAND_QUEUE)))
+		opencl_command_queue_free((struct opencl_command_queue_t *) object);
+	
+	/* Any object left */
+	if (lnlist_count(opencl_object_list))
+		panic("opencl_object_free_all: objects remaining in the list");
+	
+}
 
 
 
@@ -118,7 +145,7 @@ struct opencl_platform_t *opencl_platform_create()
 	struct opencl_platform_t *platform;
 
 	platform = calloc(1, sizeof(struct opencl_platform_t));
-	platform->id = opencl_assign_object_id(OPENCL_OBJ_PLATFORM);
+	platform->id = opencl_object_new_id(OPENCL_OBJ_PLATFORM);
 	opencl_object_add(platform);
 	return platform;
 }
@@ -142,7 +169,7 @@ struct opencl_device_t *opencl_device_create()
 	struct opencl_device_t *device;
 
 	device = calloc(1, sizeof(struct opencl_device_t));
-	device->id = opencl_assign_object_id(OPENCL_OBJ_DEVICE);
+	device->id = opencl_object_new_id(OPENCL_OBJ_DEVICE);
 	opencl_object_add(device);
 	return device;
 }
@@ -167,7 +194,7 @@ struct opencl_context_t *opencl_context_create()
 	struct opencl_context_t *context;
 
 	context = calloc(1, sizeof(struct opencl_context_t));
-	context->id = opencl_assign_object_id(OPENCL_OBJ_CONTEXT);
+	context->id = opencl_object_new_id(OPENCL_OBJ_CONTEXT);
 	opencl_object_add(context);
 	return context;
 }
@@ -190,7 +217,7 @@ struct opencl_command_queue_t *opencl_command_queue_create()
 	struct opencl_command_queue_t *command_queue;
 
 	command_queue = calloc(1, sizeof(struct opencl_command_queue_t));
-	command_queue->id = opencl_assign_object_id(OPENCL_OBJ_COMMAND_QUEUE);
+	command_queue->id = opencl_object_new_id(OPENCL_OBJ_COMMAND_QUEUE);
 	opencl_object_add(command_queue);
 	return command_queue;
 }

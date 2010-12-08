@@ -22,6 +22,7 @@
 #include <debug.h>
 #include <lnlist.h>
 #include <stdlib.h>
+#include <m2skernel.h>
 
 
 /* Initialize GPU kernel */
@@ -42,32 +43,68 @@ void gk_init()
 /* Finalize GPU kernel */
 void gk_done()
 {
-	void *object;
-	uint32_t id;
-
-	/* Release OpenCL objects */
-	while (lnlist_count(opencl_object_list)) {
-		lnlist_head(opencl_object_list);
-		object = lnlist_get(opencl_object_list);
-		id = * (uint32_t *) object;
-
-		switch (id) {
-		case OPENCL_OBJ_PLATFORM:
-			opencl_platform_free((struct opencl_platform_t *) object);
-			break;
-		case OPENCL_OBJ_DEVICE:
-			opencl_device_free((struct opencl_device_t *) object);
-			break;
-		case OPENCL_OBJ_CONTEXT:
-			opencl_context_free((struct opencl_context_t *) object);
-			break;
-		case OPENCL_OBJ_COMMAND_QUEUE:
-			opencl_command_queue_free((struct opencl_command_queue_t *) object);
-			break;
-		default:
-			panic("gk_done: unknown OpenCL object");
-		}
-	}
+	opencl_object_free_all();
 	lnlist_free(opencl_object_list);
+}
+
+
+/* If 'fullpath' points to the original OpenCL library, redirect it to 'm2s-opencl.so'
+ * in the same path. */
+void gk_libopencl_redirect(char *fullpath, int size)
+{
+	char fullpath_original[MAX_PATH_SIZE];
+	char buf[MAX_PATH_SIZE];
+	int length;
+	FILE *f;
+
+	/* Get path length */
+	strncpy(fullpath_original, fullpath, MAX_PATH_SIZE);
+	length = strlen(fullpath);
+
+	/* Detect an attempt to open 'libm2s-opencl' and record it */
+	if (length >= 17 && !strcmp(fullpath + length - 17, "/libm2s-opencl.so")) {
+		f = fopen(fullpath, "r");
+		if (f) {
+			fclose(f);
+			isa_ctx->libopencl_open_attempt = 0;
+		} else
+			isa_ctx->libopencl_open_attempt = 1;
+	}
+
+	/* Translate libOpenCL -> libm2s-opencl */
+	if (length >= 13 && !strcmp(fullpath + length - 13, "/libOpenCL.so")) {
+		
+		/* Translate name */
+		fullpath[length - 13] = '\0';
+		snprintf(buf, MAX_STRING_SIZE, "%s/libm2s-opencl.so", fullpath);
+		strncpy(fullpath, buf, size);
+
+		/* Check if this attempt if successful */
+		f = fopen(fullpath, "r");
+		if (f) {
+			fclose(f);
+			warning("path '%s' has been redirected to '%s'\n"
+				"\tYour application is trying to access the default OpenCL library, which is being\n"
+				"\tredirected by Multi2Sim to its own provided library. Even though this should word,\n"
+				"\tthe safest way to simulate an OpenCL program is by linking it initially with\n"
+				"\t'libm2s-opencl.so'. See the Multi2Sim Guide for further details (www.multi2sim.org).\n",
+				fullpath_original, fullpath);
+			isa_ctx->libopencl_open_attempt = 0;
+		} else
+			isa_ctx->libopencl_open_attempt = 1;
+	}
+}
+
+
+/* Dump a warning about failed attempts of context to access OpenCL library */
+void gk_libopencl_failed(int pid)
+{
+	warning("context %d finished after failing to access OpenCL library.\n"
+		"\tMulti2Sim has detected several attempts to access 'libm2s-opencl.so' by your\n"
+		"\tapplication's dynamic linker. Please, make sure that this file is available\n"
+		"\teither in any shared library path, in the current working directory, or in\n"
+		"\tany directory pointed by the environment variable LD_LIBRARY_PATH. See the\n"
+		"\tMulti2Sim Guide for further details (www.multi2sim.org).\n",
+		pid);
 }
 

@@ -58,6 +58,9 @@ int opencl_func_run(int code, unsigned int *args);
 void gk_init(void);
 void gk_done(void);
 
+void gk_libopencl_redirect(char *path, int size);
+void gk_libopencl_failed(int pid);
+
 
 #endif
 
