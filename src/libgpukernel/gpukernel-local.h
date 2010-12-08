@@ -43,7 +43,8 @@ void opencl_object_add(void *object);
 void opencl_object_remove(void *object);
 void *opencl_object_get(enum opencl_obj_enum type, uint32_t id);
 void *opencl_object_get_type(enum opencl_obj_enum type);
-uint32_t opencl_assign_object_id(enum opencl_obj_enum type);
+uint32_t opencl_object_new_id(enum opencl_obj_enum type);
+void opencl_object_free_all(void);
 
 
 
