@@ -60,6 +60,12 @@ char *err_opencl_param_note =
 	"\terror handling is not provided, and any OpenCL error will cause the\n"
 	"\tsimulation to stop.\n";
 
+char *err_opencl_compiler =
+	"\tThe current implementation of OpenCL does not support the compilation of\n"
+	"\tkernels at run time. Instead, the OpenCL kernels should be pre-compiled for\n"
+	"\tan Evergreen compatible target device, and loaded with the clCreateProgramWithBinary\n"
+	"\tcall.\n";
+
 
 /* OpenCL Error Codes,
  * as implemented in ATI SDK */
@@ -279,6 +285,61 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Return success */
 		if (errcode_ret)
 			mem_write(isa_mem, errcode_ret, 4, &zero);
+		break;
+	}
+
+
+	/* 1028 */
+	case OPENCL_FUNC_clCreateProgramWithSource:
+	{
+		uint32_t context = args[0];  /* cl_context context */
+		uint32_t count = args[1];  /* cl_uint count */
+		uint32_t strings = args[2];  /* const char **strings */
+		uint32_t lengths = args[3];  /* const size_t *lengths */
+		uint32_t errcode_ret = args[4];  /* cl_int *errcode_ret */
+
+		opencl_debug("  context=0x%x, count=%d, strings=0x%x, lengths=0x%x, errcode_ret=0x%x\n",
+			context, count, strings, lengths, errcode_ret);
+		fatal("%s: OpenCL source compilation not supported.\n%s",
+			err_prefix, err_opencl_compiler);
+		break;
+	}
+
+
+	/* 1029 */
+	case OPENCL_FUNC_clCreateProgramWithBinary:
+	{
+		uint32_t context = args[0];  /* cl_context context */
+		uint32_t num_devices = args[1];  /* cl_uint num_devices */
+		uint32_t device_list = args[2];  /* const cl_device_id *device_list */
+		uint32_t lengths = args[3];  /* const size_t *lengths */
+		uint32_t binaries = args[4];  /* const unsigned char **binaries */
+		uint32_t binary_status = args[5];  /* cl_int *binary_status */
+		uint32_t errcode_ret = args[6];  /* cl_int *errcode_ret */
+
+		uint32_t zero = 0;
+		uint32_t length;
+
+		opencl_debug("  context=0x%x, num_devices=%d, device_list=0x%x, lengths=0x%x\n"
+			"  binaries=0x%x, binary_status=0x%x, errcode_ret=0x%x\n",
+			context, num_devices, device_list, lengths, binaries,
+			binary_status, errcode_ret);
+
+		/* Check number of devices */
+		if (num_devices != 1)
+			fatal("%s: only supported for 'num_devices' = 1\n%s",
+				err_prefix, err_opencl_note);
+
+		/* Read binary length and code */
+		mem_read(isa_mem, lengths, 4, &length);
+		opencl_debug("    lengths[0] = %d\n", length);
+
+		/* Return success */
+		if (binary_status)
+			mem_write(isa_mem, binary_status, 4, &zero);
+		if (errcode_ret)
+			mem_write(isa_mem, errcode_ret, 4, &zero);
+		fatal("not implemented");
 		break;
 	}
 
