@@ -148,14 +148,13 @@ struct command_t *command_read(struct ctx_t *ctx)
 	cmd = calloc(1, sizeof(struct command_t));
 	cmd->trace_file_pos = ftell(ctx->trace_file);
 
-	buf = string;
-	fgets(buf, sizeof(string), ctx->trace_file);
-	if (*buf && buf[strlen(buf) - 1] == '\n')
-		buf[strlen(buf) - 1] = '\0';
-	if (feof(ctx->trace_file)) {
+	buf = fgets(string, sizeof(string), ctx->trace_file);
+	if (!buf || feof(ctx->trace_file)) {
 		free(cmd);
 		return NULL;
 	}
+	if (*buf && buf[strlen(buf) - 1] == '\n')
+		buf[strlen(buf) - 1] = '\0';
 
 	buf_skip(&buf, " \t");
 	buf_copy(&buf, " \t", cmd->name, sizeof(cmd->name));
@@ -379,14 +378,15 @@ struct state_t *state_read(FILE *f)
 	struct state_t *st;
 	int uop_count = 0, i;
 	struct state_uop_t *uop;
+	int bytes_read;
 
 	st = state_create();
-	fread(st, sizeof(struct state_t), 1, f);
+	bytes_read = fread(st, sizeof(struct state_t), 1, f);
 	st->uops = NULL;
-	fread(&uop_count, sizeof(uop_count), 1, f);
+	bytes_read += fread(&uop_count, sizeof(uop_count), 1, f);
 	for (i = 0; i < uop_count; i++) {
 		uop = calloc(1, sizeof(struct state_uop_t));
-		fread(uop, sizeof(struct state_uop_t), 1, f);
+		bytes_read += fread(uop, sizeof(struct state_uop_t), 1, f);
 		uop->next = st->uops;
 		st->uops = uop;
 	}

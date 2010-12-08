@@ -712,3 +712,8 @@
 		of the whole OpenCL 1.1 interface.
 	* libgpukernel: library added to start the OpenCL implementation project.
 
+2010-12-08
+	* m2s-pipeline.c: warnings fixed.
+	* disasm.c: warnings fixed.
+	* libgpukernel: restructured, files added, OpenCL extended.
+
