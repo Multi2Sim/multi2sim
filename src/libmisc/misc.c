@@ -123,6 +123,21 @@ void close_file(FILE *f)
 }
 
 
+FILE *create_temp_file(char *ret_path, int ret_path_size)
+{
+	char path[MAX_STRING_SIZE];
+	FILE *f;
+	int fd;
+
+	strcpy(path, "/tmp/m2s.XXXXXX");
+	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "w+")) == NULL)
+		return NULL;
+	if (ret_path)
+		strncpy(ret_path, path, ret_path_size);
+	return f;
+}
+
+
 /* dump memory contents, printing a dot for unprintable chars */
 void dump_ptr(void *ptr, int size, FILE *stream)
 {
