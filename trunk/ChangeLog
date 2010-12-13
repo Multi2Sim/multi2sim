@@ -718,3 +718,6 @@
 	* libgpukernel: restructured, files added, OpenCL extended.
 	* syscall.c, gpukernel.c: redirection of libOpenCL.so to libm2s-opencl.so
 
+2010-12-12
+	* libgpukernel: OpenCL implementation.
+

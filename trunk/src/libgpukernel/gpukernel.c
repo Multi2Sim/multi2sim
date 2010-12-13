@@ -85,7 +85,7 @@ void gk_libopencl_redirect(char *fullpath, int size)
 			fclose(f);
 			warning("path '%s' has been redirected to '%s'\n"
 				"\tYour application is trying to access the default OpenCL library, which is being\n"
-				"\tredirected by Multi2Sim to its own provided library. Even though this should word,\n"
+				"\tredirected by Multi2Sim to its own provided library. Though this should work,\n"
 				"\tthe safest way to simulate an OpenCL program is by linking it initially with\n"
 				"\t'libm2s-opencl.so'. See the Multi2Sim Guide for further details (www.multi2sim.org).\n",
 				fullpath_original, fullpath);
