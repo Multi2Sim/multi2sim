@@ -68,8 +68,8 @@ AR = ar
 ARFLAGS = cru
 libgpukernel_a_AR = $(AR) $(ARFLAGS)
 libgpukernel_a_LIBADD =
-am_libgpukernel_a_OBJECTS = gpukernel.$(OBJEXT) opencl.$(OBJEXT) \
-	opencl-obj.$(OBJEXT)
+am_libgpukernel_a_OBJECTS = gpuisa.$(OBJEXT) gpukernel.$(OBJEXT) \
+	gpumachine.$(OBJEXT) opencl.$(OBJEXT) opencl-obj.$(OBJEXT)
 libgpukernel_a_OBJECTS = $(am_libgpukernel_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -177,19 +177,22 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libgpukernel.a
 libgpukernel_a_SOURCES = \
+	gpuisa.c \
 	gpukernel.c \
 	gpukernel.h \
 	gpukernel-local.h \
+	gpumachine.c \
 	opencl.dat \
 	opencl.c \
 	opencl-obj.c
 
-AM_CFLAGS = -Wall -fno-strict-aliasing
+AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libopt \
 	-I$(top_srcdir)/src/libmisc \
 	-I$(top_srcdir)/src/libdisasm \
+	-I$(top_srcdir)/src/libgpudisasm \
 	-I$(top_srcdir)/src/libgpukernel \
 	-I$(top_srcdir)/src/libm2skernel
 
@@ -270,7 +273,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuisa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpukernel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpumachine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opencl-obj.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opencl.Po@am__quote@
 

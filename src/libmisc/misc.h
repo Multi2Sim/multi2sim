@@ -33,6 +33,7 @@
 #define MIN(X, Y) ((X)<(Y)?(X):(Y))
 #define MAX(X, Y) ((X)>(Y)?(X):(Y))
 #define BOOL(X) ((X) ? 't' : 'f')
+#define IN_RANGE(X, X1, X2) ((X)>=(X1)&&(X)<=(X2))
 
 /* round */
 #define ROUND_UP(N,ALIGN)	(((N) + ((ALIGN)-1)) & ~((ALIGN)-1))

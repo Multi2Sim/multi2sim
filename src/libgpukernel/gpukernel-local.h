@@ -153,6 +153,12 @@ struct opencl_kernel_t
 	uint32_t program_id;
 	char kernel_name[MAX_STRING_SIZE];
 	struct list_t *arg_list;
+
+	int work_dim;
+	int global_work_size[3];
+	int local_work_size[3];
+	int work_group_count[3];  /* (global_work_size + local_work_size - 1) / local_work_size */
+	int thread_count;  /* All three 'global_work_size's multiplied */
 };
 
 
@@ -163,17 +169,153 @@ void opencl_kernel_arg_set(struct opencl_kernel_t *kernel, int idx, void *buf, i
 
 
 
+
 /* OpenCL mem */
 
 struct opencl_mem_t
 {
 	uint32_t id;
 	uint32_t size;
-	uint32_t host_ptr;
+	uint32_t flags;
+
+	uint32_t device_ptr;  /* Position assigned in device global memory */
 };
 
 struct opencl_mem_t *opencl_mem_create();
 void opencl_mem_free(struct opencl_mem_t *mem);
+
+
+
+
+/* GPU thread */
+
+#define GPU_MAX_GPR_ELEM  5
+struct gpu_gpr_t {
+	uint32_t elem[GPU_MAX_GPR_ELEM];  /* x, y, z, w, t */
+};
+
+
+#define GPU_MAX_WRITE_TASKS  5
+struct gpu_write_task_t {
+	int alu;  /* ALU generating result [0..GPU_MAX_GPR_ELEM-1] */
+	uint32_t value;  /* Computed value */
+	int gpr, rel, chan, im, wm;
+};
+
+
+struct gpu_thread_t {
+	
+	/* Thread status */
+	struct gpu_gpr_t gpr[128];  /* General purpose registers */
+	struct gpu_gpr_t pv;  /* Result of last computations */
+
+	/* ID */
+	int thread_id;  /* 1D identified */
+	int local_id[3];
+	int global_id[3];
+	int group_id[3];
+
+	/* Instruction pointers */
+	uint32_t cf_ip;
+	uint32_t clause_ip;
+
+	/* Write tasks. These are writes to registers scheduled by processing elements,
+	 * which are performed as a burst all together. */
+	int write_task_count;
+	struct gpu_write_task_t write_tasks[GPU_MAX_WRITE_TASKS];
+};
+
+
+struct gpu_thread_t *gpu_thread_create();
+void gpu_thread_free(struct gpu_thread_t *thread);
+
+
+
+
+/*
+ * GPU ISA
+ */
+
+/* Macros for quick access */
+#define GPU_THR (*gpu_isa_thread)
+#define GPU_THR_I(I)  (*gpu_isa_threads[(I)])
+
+#define GPU_GPR_ELEM(_gpr, _elem)  (gpu_isa_thread->gpr[(_gpr)].elem[(_elem)])
+#define GPU_GPR_X(_gpr)  GPU_GPR_ELEM((_gpr), 0)
+#define GPU_GPR_Y(_gpr)  GPU_GPR_ELEM((_gpr), 1)
+#define GPU_GPR_Z(_gpr)  GPU_GPR_ELEM((_gpr), 2)
+#define GPU_GPR_W(_gpr)  GPU_GPR_ELEM((_gpr), 3)
+#define GPU_GPR_T(_gpr)  GPU_GPR_ELEM((_gpr), 4)
+
+#define GPU_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &gpu_isa_thread->gpr[(_gpr)].elem[(_elem)])
+#define GPU_GPR_FLOAT_X(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 0)
+#define GPU_GPR_FLOAT_Y(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 1)
+#define GPU_GPR_FLOAT_Z(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 2)
+#define GPU_GPR_FLOAT_W(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 3)
+#define GPU_GPR_FLOAT_T(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 4)
+
+
+/* Macros for unsupported parameters */
+extern char *err_gpu_machine_note;
+
+#define GPU_PARAM_NOT_SUPPORTED(p) \
+	fatal("%s: %s: not supported for '" #p "' = 0x%x\n%s", \
+	__FUNCTION__, gpu_isa_inst->info->name, (p), err_gpu_machine_note);
+#define GPU_PARAM_NOT_SUPPORTED_NEQ(p, v) \
+	{ if ((p) != (v)) fatal("%s: %s: not supported for '" #p "' != 0x%x\n%s", \
+	__FUNCTION__, gpu_isa_inst->info->name, (v), err_gpu_machine_note); }
+#define GPU_PARAM_NOT_SUPPORTED_OOR(p, min, max) \
+	{ if ((p) < (min) || (p) > (max)) fatal("%s: %s: not supported for '" #p "' out of range [%d:%d]\n%s", \
+	__FUNCTION__, gpu_isa_inst->info->name, (min), (max), err_opencl_param_note); }
+
+
+/* Global variables */
+extern struct gpu_thread_t *gpu_isa_thread;
+extern struct gpu_thread_t **gpu_isa_threads;
+extern struct amd_inst_t *gpu_isa_inst;
+extern struct amd_alu_group_t *gpu_isa_alu_group;
+
+/* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
+typedef void (*amd_inst_impl_t)(void);
+extern amd_inst_impl_t *amd_inst_impl;
+
+/* For functional simulation */
+uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im);
+uint32_t gpu_isa_read_op_src(int src_idx);
+void gpu_isa_write_op_dst(uint32_t value);
+void gpu_alu_group_commit(void);
+
+void gpu_isa_init();
+void gpu_isa_done();
+void gpu_isa_run(struct opencl_kernel_t *kernel);
+
+
+
+
+/*
+ * GPU Kernel (gk)
+ * This refers to the Multi2Sim object representing the GPU.
+ */
+
+struct gk_t {
+	
+	/* Constant memory (constant buffers)
+	 * There are 15 constant buffers, referenced as CB0 to CB14.
+	 * Each buffer can hold up to 1024 four-component vectors.
+	 * These buffers will be represented as a memory object indexed as
+	 *   buffer_id * 1024 * 4 * 4 + vector_id * 4 * 4 + elem_id * 4
+	 */
+	struct mem_t *const_mem;
+
+	/* Global memory */
+	struct mem_t *global_mem;
+	uint32_t global_mem_top;  /* Current top pointer assigned to 'device_ptr' in 'opencl_mem' objects */
+};
+
+extern struct gk_t *gk;
+
+/* Macros to access constant memory */
+#define GPU_CONST_MEM_ADDR(_bank, _vector, _elem)  ((_bank) * 16384 + (_vector) * 16 + (_elem * 4))
 
 
 #endif

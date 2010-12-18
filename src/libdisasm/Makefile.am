@@ -1,6 +1,7 @@
 lib_LIBRARIES = libdisasm.a
-libdisasm_a_SOURCES = disasm.h \
+libdisasm_a_SOURCES = \
 	disasm.c \
+	disasm.h
 	machine.dat
 
 AM_CFLAGS = -Wall -fno-strict-aliasing
