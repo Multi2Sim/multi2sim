@@ -721,3 +721,13 @@
 2010-12-12
 	* libgpukernel: OpenCL implementation.
 
+2010-12-13
+	* syscall.c: system call 'readlink' implemented.
+
+2010-12-16
+	* libm2skernel/memory.c: bug fixed. Accesses to nonexistent page cause segmentation
+		faults. Page attributes were set to modified before checking if the
+		page was found or not.
+	* libgpukernel: Evergreen ISA + OpenCL
+
+

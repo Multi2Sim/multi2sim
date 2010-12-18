@@ -23,6 +23,14 @@
 #include <lnlist.h>
 #include <stdlib.h>
 #include <m2skernel.h>
+#include <gpudisasm.h>
+
+
+/* Global variables */
+
+struct gk_t *gk;
+
+
 
 
 /* Initialize GPU kernel */
@@ -32,6 +40,19 @@ void gk_init()
 
 	/* Debug categories */
 	opencl_debug_category = debug_new_category();
+
+	/* Initialize kernel */
+	gk = calloc(1, sizeof(struct gk_t));
+	gk->const_mem = mem_create();
+	gk->const_mem->safe = 0;
+	gk->global_mem = mem_create();
+	gk->global_mem->safe = 0;
+
+	/* Initialize disassembler (decoding tables...) */
+	amd_disasm_init();
+
+	/* Initialize ISA (instruction execution tables...) */
+	gpu_isa_init();
 
 	/* Create platform and device */
 	opencl_object_list = lnlist_create();
@@ -45,6 +66,20 @@ void gk_done()
 {
 	opencl_object_free_all();
 	lnlist_free(opencl_object_list);
+
+	/* Finalize disassembler */
+	amd_disasm_done();
+
+	/* Finalize ISA */
+	gpu_isa_done();
+
+	/* Finalize GPU kernel */
+	mem_free(gk->const_mem);
+	mem_free(gk->global_mem);
+	free(gk);
+
+	/* Mhandle */
+	mhandle_done();//////// FIXME
 }
 
 
@@ -106,5 +141,25 @@ void gk_libopencl_failed(int pid)
 		"\tany directory pointed by the environment variable LD_LIBRARY_PATH. See the\n"
 		"\tMulti2Sim Guide for further details (www.multi2sim.org).\n",
 		pid);
+}
+
+
+
+
+/*
+ * GPU Thread
+ */
+
+struct gpu_thread_t *gpu_thread_create()
+{
+	struct gpu_thread_t *thread;
+	thread = calloc(1, sizeof(struct gpu_thread_t));
+	return thread;
+}
+
+
+void gpu_thread_free(struct gpu_thread_t *thread)
+{
+	free(thread);
 }
 
