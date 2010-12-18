@@ -1507,6 +1507,53 @@ void syscall_do()
 		}
 		break;
 	}
+
+
+	/* 85 */
+	case syscall_code_readlink:
+	{
+		uint32_t path, buf, bufsz;
+		char path_str[MAX_PATH_SIZE];
+		char full_path_str[MAX_PATH_SIZE];
+		char dest_path[MAX_PATH_SIZE];
+		int dest_size;
+
+		path = isa_regs->ebx;
+		buf = isa_regs->ecx;
+		bufsz = isa_regs->edx;
+		syscall_debug("  path=0x%x, buf=0x%x, bufsz=%d\n", path, buf, bufsz);
+
+		/* Read path */
+		mem_read_string(isa_mem, path, MAX_PATH_SIZE, path_str);
+		ld_get_full_path(isa_ctx, path_str, full_path_str, MAX_PATH_SIZE);
+		syscall_debug("  path_str='%s'\n", path_str);
+
+		/* Special file '/proc/self/exe' intercepted */
+		if (!strcmp(full_path_str, "/proc/self/exe")) {
+			
+			/* Return path to simulated executable */
+			strcpy(dest_path, isa_ctx->loader->exe);
+
+		} else {
+		
+			/* Perform host call */
+			RETVAL(readlink(full_path_str, dest_path, MAX_PATH_SIZE));
+			if (retval < 0)
+				break;
+		}
+
+		/* Check if guest allocated enough space */
+		dest_size = strlen(dest_path) + 1;
+		if (dest_size > bufsz) {
+			retval = -EFAULT;
+			break;
+		}
+
+		/* Copy host buffer to guest */
+		mem_write_string(isa_mem, buf, dest_path);
+		syscall_debug("  dest_path='%s'\n", dest_path);
+		break;
+	}
 	
 
 	/* 90 */
