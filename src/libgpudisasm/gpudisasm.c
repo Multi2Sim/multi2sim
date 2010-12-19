@@ -51,18 +51,6 @@ void amd_disasm_init()
 	struct amd_inst_info_t *info;
 	int i;
 
-
-
-	{
-		FILE *f = fopen("gpumachine.c", "wt");
-#define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
-fprintf(f, "void gpu_inst_" #_name "_impl() {\n}\n\n\n");
-#include "gpudisasm.dat"
-#undef DEFINST
-		fclose(f);
-	}
-
-
 	/* Read information about all instructions */
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	info = &amd_inst_info[AMD_INST_##_name]; \
