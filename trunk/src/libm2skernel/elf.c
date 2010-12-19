@@ -21,27 +21,6 @@
 
 int elf_debug_category;
 
-struct elf_symbol_t {
-	char *name;
-	uint32_t value;
-};
-
-struct elf_file_t {
-	FILE *f;
-	char path[300];
-	void *shstr;  /* Section header string table */
-	Elf32_Ehdr ehdr;  /* ELF header */
-	Elf32_Shdr *shdr;  /* Section headers (array of ehdr.shnum elements) */
-	Elf32_Phdr *phdr;  /* Program headers (array of ehdr.phnum elements) */
-	uint32_t phdt_base;  /* Program header table base */
-
-	/* Symbol table */
-	int symtab_size;
-	int symtab_count;
-	struct elf_symbol_t *symtab;
-};
-
-
 static void elf_read_ehdr(struct elf_file_t *f)
 {
 	int count;

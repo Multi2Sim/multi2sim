@@ -1142,7 +1142,7 @@ fmt_dump_func_t fmt_dump_func_list[FMT_COUNT] = {
 };
 
 
-void fmt_word_dump(char *buf, enum fmt_enum fmt, FILE *f)
+void fmt_word_dump(void *buf, enum fmt_enum fmt, FILE *f)
 {
 	fmt_dump_func_t dump_func;
 	int i;

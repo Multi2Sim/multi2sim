@@ -57,7 +57,7 @@ void amd_disasm_init()
 		FILE *f = fopen("gpumachine.c", "wt");
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 fprintf(f, "void gpu_inst_" #_name "_impl() {\n}\n\n\n");
-#include "gpuisa.dat"
+#include "gpudisasm.dat"
 #undef DEFINST
 		fclose(f);
 	}
@@ -76,7 +76,7 @@ fprintf(f, "void gpu_inst_" #_name "_impl() {\n}\n\n\n");
 	info->opcode = _opcode; \
 	info->flags = _flags; \
 	info->size = (FMT_##_fmt0 ? 1 : 0) + (FMT_##_fmt1 ? 1 : 0) + (FMT_##_fmt2 ? 1 : 0 );
-#include "gpuisa.dat"
+#include "gpudisasm.dat"
 #undef DEFINST
 	
 	/* Tables of pointers to 'amd_inst_info' */
@@ -130,7 +130,7 @@ void amd_disasm_done()
  * Decoder
  */
 
-char *amd_inst_decode_cf(char *buf, struct amd_inst_t *inst)
+void *amd_inst_decode_cf(void *buf, struct amd_inst_t *inst)
 {
 	uint32_t cf_inst_short, cf_inst_long;
 	int eop;
@@ -166,7 +166,7 @@ char *amd_inst_decode_cf(char *buf, struct amd_inst_t *inst)
 }
 
 
-char *amd_inst_decode_alu(char *buf, struct amd_inst_t *inst)
+void *amd_inst_decode_alu(void *buf, struct amd_inst_t *inst)
 {
 	uint32_t alu_inst_short, alu_inst_long;
 
@@ -192,7 +192,7 @@ char *amd_inst_decode_alu(char *buf, struct amd_inst_t *inst)
 }
 
 
-char *amd_inst_decode_alu_group(char *buf, int group_id, struct amd_alu_group_t *group)
+void *amd_inst_decode_alu_group(void *buf, int group_id, struct amd_alu_group_t *group)
 {
 	int dest_chan, chan, last;
 	struct amd_inst_t *inst;
@@ -259,7 +259,7 @@ char *amd_inst_decode_alu_group(char *buf, int group_id, struct amd_alu_group_t 
 }
 
 
-char *amd_inst_decode_tc(char *buf, struct amd_inst_t *inst)
+void *amd_inst_decode_tc(void *buf, struct amd_inst_t *inst)
 {
 	uint32_t tex_inst;
 

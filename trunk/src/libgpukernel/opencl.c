@@ -515,7 +515,10 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Create the kernel */
 		kernel = opencl_kernel_create();
 		kernel->program_id = program_id;
-		strcpy(kernel->kernel_name, kernel_name_str);
+
+		/* Load kernel information by reading the '.rodata' section
+		 * buffered in the 'opencl_program' object */
+		opencl_kernel_load_rodata(kernel, kernel_name_str);
 
 		/* Return kernel id */
 		retval = kernel->id;
@@ -532,23 +535,24 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t arg_value = args[3];  /* const void *arg_value */
 
 		struct opencl_kernel_t *kernel;
-		void *buf;
+		struct opencl_kernel_arg_t *arg;
 
 		opencl_debug("  kernel_id=0x%x, arg_index=%d, arg_size=%d, arg_value=0x%x\n",
 			kernel_id, arg_index, arg_size, arg_value);
 
-		/* Read argument */
-		buf = malloc(arg_size);
-		if (!buf)
-			fatal("%s: out of memory", err_prefix);
-		mem_read(isa_mem, arg_value, arg_size, buf);
+		/* Check */
+		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
+		OPENCL_PARAM_NOT_SUPPORTED_NEQ(arg_size, 4);
+		if (arg_index >= list_count(kernel->arg_list))
+			fatal("%s: argument index out of bounds.\n%s", err_prefix,
+				err_opencl_param_note);
 
 		/* Copy to kernel object */
-		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
-		opencl_kernel_arg_set(kernel, arg_index, buf, arg_size);
+		arg = list_get(kernel->arg_list, arg_index);
+		assert(arg);
+		mem_read(isa_mem, arg_value, 4, &arg->value);
 
-		/* Free buffer and return */
-		free(buf);
+		/* Return success */
 		break;
 	}
 
@@ -560,6 +564,54 @@ int opencl_func_run(int code, unsigned int *args)
 
 		opencl_debug("  command_queue=0x%x\n", command_queue);
 		/* FIXME: block until command queue empty */
+		break;
+	}
+
+
+	/* 1053 */
+	case OPENCL_FUNC_clEnqueueReadBuffer:
+	{
+		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
+		uint32_t buffer = args[1];  /* cl_mem buffer */
+		uint32_t blocking_read = args[2];  /* cl_bool blocking_read */
+		uint32_t offset = args[3];  /* size_t offset */
+		uint32_t cb = args[4];  /* size_t cb */
+		uint32_t ptr = args[5];  /* void *ptr */
+		uint32_t num_events_in_wait_list = args[6];  /* cl_uint num_events_in_wait_list */
+		uint32_t event_wait_list = args[7];  /* const cl_event *event_wait_list */
+		uint32_t event = args[8];  /* cl_event *event */
+		
+		struct opencl_mem_t *mem;
+		void *buf;
+
+		opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_read=0x%x,\n"
+			"  offset=0x%x, cb=0x%x, ptr=0x%x, num_events_in_wait_list=0x%x,\n"
+			"  event_wait_list=0x%x, event=0x%x\n",
+			command_queue, buffer, blocking_read, offset, cb, ptr,
+			num_events_in_wait_list, event_wait_list, event);
+
+		/* FIXME: 'blocking_read' ignored */
+		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
+		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event, 0);
+
+		/* Get memory object */
+		mem = opencl_object_get(OPENCL_OBJ_MEM, buffer);
+
+		/* Check that device buffer storage is not exceeded */
+		if (offset + cb > mem->size)
+			fatal("%s: buffer storage exceeded\n%s", err_prefix, err_opencl_param_note);
+
+		/* Copy buffer from device memory to host memory */
+		buf = malloc(cb);
+		assert(buf);
+		mem_read(gk->global_mem, mem->device_ptr + offset, cb, buf);
+		mem_write(isa_mem, ptr, cb, buf);
+		free(buf);
+
+		/* Return success */
+		opencl_debug("    %d bytes copied from device memory (0x%x) to host memory (0x%x)\n",
+			cb, mem->device_ptr + offset, ptr);
 		break;
 	}
 
@@ -580,9 +632,13 @@ int opencl_func_run(int code, unsigned int *args)
 		struct opencl_mem_t *mem;
 		void *buf;
 
-		opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_write=0x%x, offset=0x%x, cb=0x%x, ptr=0x%x, num_events_in_wait_list=0x%x, event_wait_list=0x%x, event=0x%x\n",
-			command_queue, buffer, blocking_write, offset, cb, ptr, num_events_in_wait_list, event_wait_list, event);
-		OPENCL_PARAM_NOT_SUPPORTED_EQ(blocking_write, 0);
+		opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_write=0x%x,\n"
+			"  offset=0x%x, cb=0x%x, ptr=0x%x, num_events_in_wait_list=0x%x,\n"
+			"  event_wait_list=0x%x, event=0x%x\n",
+			command_queue, buffer, blocking_write, offset, cb,
+			ptr, num_events_in_wait_list, event_wait_list, event);
+
+		/* FIXME: 'blocking_write' ignored */
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event, 0);
