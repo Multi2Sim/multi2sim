@@ -735,5 +735,5 @@
 	* syscall.c: syscall 'write': bug fixed. After the las modifications in the handling of
 		asynchronous system calls, a bug was introduced in the synchronous write.
 		This bug might affect any simple execution.
-
+	* libdisasm/Makefile.am: bug in file list caused distribution to fail compiling.
 

@@ -1,9 +1,9 @@
 lib_LIBRARIES = libgpudisasm.a
 libgpudisasm_a_SOURCES = \
 	gpudisasm.c \
+	gpudisasm.dat \
 	gpudisasm.h \
-	gpudump.c \
-	gpuisa.dat
+	gpudump.c
 
 AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE
 
