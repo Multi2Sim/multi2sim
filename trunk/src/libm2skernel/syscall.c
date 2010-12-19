@@ -901,8 +901,6 @@ void syscall_do()
 		/* Non-blocking write */
 		if (fds.revents) {
 			RETVAL(write(host_fd, buf, count));
-			if (retval > 0)
-				mem_write(isa_mem, pbuf, retval, buf);
 			free(buf);
 			break;
 		}
