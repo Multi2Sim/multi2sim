@@ -414,7 +414,7 @@ enum amd_inst_enum {
 
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _cf_inst, _flags) \
 	AMD_INST_##_name,
-#include "gpuisa.dat"
+#include "gpudisasm.dat"
 #undef DEFINST
 	
 	/* Max */
@@ -500,7 +500,7 @@ typedef void (*fmt_dump_func_t)(char *buf, FILE *);
 void amd_disasm_init(void);
 void amd_disasm_done(void);
 
-void fmt_word_dump(char *buf, enum fmt_enum fmt, FILE *f);
+void fmt_word_dump(void *buf, enum fmt_enum fmt, FILE *f);
 void amd_inst_dump(struct amd_inst_t *inst, int count, int shift, FILE *f);
 void amd_alu_group_dump(struct amd_alu_group_t *group, int shift, FILE *f);
 
@@ -509,10 +509,10 @@ void amd_inst_get_op_src(struct amd_inst_t *inst, int src_idx,
 	int *sel, int *rel, int *chan, int *neg, int *abs);
 
 /* Decode */
-char *amd_inst_decode_cf(char *buf, struct amd_inst_t *inst);
-char *amd_inst_decode_alu(char *buf, struct amd_inst_t *inst);
-char *amd_inst_decode_alu_group(char *buf, int group_id, struct amd_alu_group_t *group);
-char *amd_inst_decode_tc(char *buf, struct amd_inst_t *inst);
+void *amd_inst_decode_cf(void *buf, struct amd_inst_t *inst);
+void *amd_inst_decode_alu(void *buf, struct amd_inst_t *inst);
+void *amd_inst_decode_alu_group(void *buf, int group_id, struct amd_alu_group_t *group);
+void *amd_inst_decode_tc(void *buf, struct amd_inst_t *inst);
 
 #endif
 

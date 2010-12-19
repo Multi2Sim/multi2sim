@@ -40,7 +40,7 @@ void gpu_isa_init()
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	extern void amd_inst_##_name##_impl(); \
 	amd_inst_impl[AMD_INST_##_name] = amd_inst_##_name##_impl;
-#include <gpuisa.dat>
+#include <gpudisasm.dat>
 #undef DEFINST
 }
 
@@ -98,6 +98,40 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 0, 0), 12, kernel->global_work_size);  /* CB0[0].{x,y,z} */
 	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 1, 0), 12, kernel->local_work_size);  /* CB0[1].{x,y,z} */
 	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 2, 0), 12, kernel->work_group_count);  /* CB0[2].{x,y,z} */
+
+	/* Kernel arguments */
+	for (i = 0; i < list_count(kernel->arg_list); i++) {
+
+		struct opencl_kernel_arg_t *arg;
+		arg = list_get(kernel->arg_list, i);
+		assert(arg);
+
+		switch (arg->kind) {
+
+		case OPENCL_KERNEL_ARG_KIND_VALUE: {
+			
+			/* Value copied directly into device constant memory */
+			mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(1, i, 0), 4, &arg->value);
+			opencl_debug("    arg %d: value '0x%x' loaded\n", i, arg->value);
+			break;
+		}
+
+		case OPENCL_KERNEL_ARG_KIND_POINTER: {
+			struct opencl_mem_t *mem;
+
+			/* Argument value is a pointer to an 'opencl_mem' object.
+			 * It is translated first into a device memory pointer. */
+			mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+			mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(1, i, 0), 4, &mem->device_ptr);
+			opencl_debug("    arg %d: opencl_mem id 0x%x loaded, device_ptr=0x%x\n",
+				i, arg->value, mem->device_ptr);
+			break;
+		}
+
+		default:
+			fatal("%s: argument type not recognized", __FUNCTION__);
+		}
+	}
 	
 	/* Execution loop */
 	cf_ip = 0;
@@ -143,6 +177,31 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 				}
 			}
 		}
+
+		/* Fetch through a Texture Cache Clause */
+		if (cf_inst.info->inst == AMD_INST_TC) {
+			
+			void *tex_buf, *tex_buf_end;
+			struct amd_inst_t tex_inst;
+
+			tex_buf = program->code + cf_inst.words[0].cf_word0.addr * 8;
+			tex_buf_end = tex_buf + (cf_inst.words[1].cf_word1.count + 1) * 16;
+			assert(IN_RANGE(tex_buf, program->code, program->code + program->code_size)
+				&& IN_RANGE(tex_buf_end, program->code, program->code + program->code_size));
+			while (tex_buf < tex_buf_end) {
+				
+				/* Decode TEX inst */
+				tex_buf = amd_inst_decode_tc(tex_buf, &tex_inst);
+				amd_inst_dump(&tex_inst, 0, 0, stdout);
+
+				/* Execute in all threads */
+				gpu_isa_inst = &tex_inst;
+				for (thread_id = 0; thread_id < kernel->thread_count; thread_id++) {
+					gpu_isa_thread = gpu_isa_threads[thread_id];
+					(*amd_inst_impl[gpu_isa_inst->info->inst])();
+				}
+			}
+		}
 	}
 	
 	/* Free threads */
@@ -157,23 +216,19 @@ uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im)
 {
 	GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 4);
 	GPU_PARAM_NOT_SUPPORTED_OOR(gpr, 0, 127);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(rel, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(im, 0);
+	return GPU_GPR_ELEM(gpr, chan);
+}
 
-	if (rel) {
-		switch (im) {
 
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-		case 6:
-			GPU_PARAM_NOT_SUPPORTED(rel);
-		}
-	} else
-		return GPU_GPR_ELEM(gpr, chan);
-	
-	return 0;
+void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value)
+{
+	GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 4);
+	GPU_PARAM_NOT_SUPPORTED_OOR(gpr, 0, 127);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(rel, 0);
+	GPU_GPR_ELEM(gpr, chan) = value;
+	printf("thread %d: GPR(%d).%d set to %d\n", gpu_isa_thread->thread_id, gpr, chan, value), fflush(stdout); ////
 }
 
 
@@ -181,7 +236,7 @@ uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im)
 uint32_t gpu_isa_read_op_src(int src_idx)
 {
 	int sel, rel, chan, neg, abs;
-	int32_t value = 0;  /* FIXME - signed? */
+	int32_t value = 0;  /* Signed, for negative constants and abs operations */
 
 	/* Get the source operand parameters */
 	amd_inst_get_op_src(gpu_isa_inst, src_idx, &sel, &rel, &chan, &neg, &abs);
@@ -212,18 +267,54 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 		goto end;
 	}
 
+	/* 160..191: Kcache 1 constant */
+	if (IN_RANGE(sel, 160, 191)) {
+
+		uint32_t kcache_bank, kcache_mode, kcache_addr;
+		uint32_t addr;
+
+		assert(gpu_isa_cf_inst->info->fmt[0] == FMT_CF_ALU_WORD0 && gpu_isa_cf_inst->info->fmt[1] == FMT_CF_ALU_WORD1);
+		kcache_bank = gpu_isa_cf_inst->words[0].cf_alu_word0.kb1;
+		kcache_mode = gpu_isa_cf_inst->words[1].cf_alu_word1.km1;
+		kcache_addr = gpu_isa_cf_inst->words[1].cf_alu_word1.kcache_addr1;
+
+		GPU_PARAM_NOT_SUPPORTED_NEQ(kcache_mode, 1);
+		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
+		addr = GPU_CONST_MEM_ADDR(kcache_bank, kcache_addr * 16 + sel - 160, chan);
+		mem_read(gk->const_mem, addr, 4, &value);
+		goto end;
+	}
+
 	/* ALU_SRC_LITERAL */
 	if (sel == 253) {
 		assert(gpu_isa_inst->alu_group);
 		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
-		value = * (uint32_t *) &gpu_isa_inst->alu_group->literal[chan];  /* FIXME: what about signed constants? */
+		value = * (uint32_t *) &gpu_isa_inst->alu_group->literal[chan];
 		goto end;
 	}
 
 	/* ALU_SRC_PV */
 	if (sel == 254) {
-		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 4);
+		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
 		value = GPU_THR.pv.elem[chan];
+		goto end;
+	}
+
+	/* ALU_SRC_PS */
+	if (sel == 255) {
+		value = GPU_THR.pv.elem[4];
+		goto end;
+	}
+
+	/* ALU_SRC_1_INT */
+	if (sel == 250) {
+		value = 1;
+		goto end;
+	}
+
+	/* ALU_SRC_M_1_INT */
+	if (sel == 251) {
+		value = -1;
 		goto end;
 	}
 
@@ -240,8 +331,8 @@ end:
 
 
 /* Write to dest operand in ALU instruction */
-#define W0  gpu_isa_inst->words[0].alu_word0
-#define W1  gpu_isa_inst->words[1].alu_word1_op2
+#define W0 gpu_isa_inst->words[0].alu_word0
+#define W1 gpu_isa_inst->words[1].alu_word1_op2
 void gpu_isa_write_op_dst(uint32_t value)
 {
 	struct gpu_write_task_t *wt;
@@ -266,6 +357,8 @@ void gpu_isa_write_op_dst(uint32_t value)
 	/* One more write task */
 	gpu_isa_thread->write_task_count++;
 }
+#undef W0
+#undef W1
 
 
 void gpu_alu_group_commit(void)
@@ -275,14 +368,10 @@ void gpu_alu_group_commit(void)
 
 	for (i = 0; i < gpu_isa_thread->write_task_count; i++) {
 		wt = &gpu_isa_thread->write_tasks[i];
-		GPU_PARAM_NOT_SUPPORTED_NEQ(wt->rel, 0);
-		GPU_PARAM_NOT_SUPPORTED_NEQ(wt->im, 0);
-		GPU_PARAM_NOT_SUPPORTED_OOR(wt->chan, 0, 4);
-		GPU_PARAM_NOT_SUPPORTED_OOR(wt->alu, 0, 4);
-		if (!wt->wm)
-			GPU_GPR_ELEM(wt->gpr, wt->chan) = wt->value;
+		if (wt->wm)
+			gpu_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
 		GPU_THR.pv.elem[wt->alu] = wt->value;
-		printf("thread %d: PV[%d] set to %d\n", gpu_isa_thread->thread_id, wt->alu, wt->value), fflush(stdout); ////
+		printf("thread %d: PV.%d set to %d\n", gpu_isa_thread->thread_id, wt->chan, wt->value), fflush(stdout); ////
 	}
 	gpu_isa_thread->write_task_count = 0;
 }
