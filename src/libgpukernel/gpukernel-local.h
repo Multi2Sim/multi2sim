@@ -134,6 +134,9 @@ struct opencl_program_t
 	void *binary;  /* Main ELF binary  */
 	int binary_size;
 
+	void *rodata;  /* Main ELF binary's '.rodata' section */
+	int rodata_size;
+
 	void *code;  /* Main ELF binary's 1st '.text' section's 2nd '.text' section */
 	int code_size;
 };
@@ -147,12 +150,29 @@ void opencl_program_build(struct opencl_program_t *program);
 
 /* OpenCL kernel */
 
+enum opencl_kernel_arg_kind_enum {
+	OPENCL_KERNEL_ARG_KIND_VALUE = 1,
+	OPENCL_KERNEL_ARG_KIND_POINTER
+};
+
+struct opencl_kernel_arg_t
+{
+	enum opencl_kernel_arg_kind_enum kind;
+	uint32_t value;  /* 32-bit arguments supported */
+
+	/* Last field - memory assigned variably */
+	char name[0];
+};
+
 struct opencl_kernel_t
 {
 	uint32_t id;
 	uint32_t program_id;
 	char kernel_name[MAX_STRING_SIZE];
 	struct list_t *arg_list;
+
+	int memory_hwprivate;
+	int memory_hwlocal;
 
 	int work_dim;
 	int global_work_size[3];
@@ -161,11 +181,13 @@ struct opencl_kernel_t
 	int thread_count;  /* All three 'global_work_size's multiplied */
 };
 
-
 struct opencl_kernel_t *opencl_kernel_create();
 void opencl_kernel_free(struct opencl_kernel_t *kernel);
-void opencl_kernel_arg_free(struct opencl_kernel_t *kernel, int idx);
-void opencl_kernel_arg_set(struct opencl_kernel_t *kernel, int idx, void *buf, int size);
+
+struct opencl_kernel_arg_t *opencl_kernel_arg_create(char *name);
+void opencl_kernel_arg_free(struct opencl_kernel_arg_t *arg);
+
+void opencl_kernel_load_rodata(struct opencl_kernel_t *kernel, char *kernel_name);
 
 
 
@@ -281,6 +303,8 @@ extern amd_inst_impl_t *amd_inst_impl;
 
 /* For functional simulation */
 uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im);
+void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value);
+
 uint32_t gpu_isa_read_op_src(int src_idx);
 void gpu_isa_write_op_dst(uint32_t value);
 void gpu_alu_group_commit(void);

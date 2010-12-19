@@ -730,4 +730,6 @@
 		page was found or not.
 	* libgpukernel: Evergreen ISA + OpenCL
 
+2010-12-17
+	* libgpukernel: functional simulation.
 

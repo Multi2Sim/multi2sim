@@ -483,9 +483,17 @@ void opencl_program_free(struct opencl_program_t *program)
 		free(program->binary);
 	if (program->code)
 		free(program->code);
+	if (program->rodata)
+		free(program->rodata);
 	opencl_object_remove(program);
 	free(program);
 }
+
+char *err_opencl_evergreen_format =
+	"\tYour application tried to load a pre-compiled OpenCL kernel binary which\n"
+	"\tdoes not contain code in the Evergreen ISA. Please, check that the off-line\n"
+	"\tcompilation of your kernel targets this GPU architecture supported by\n"
+	"\tMulti2Sim.\n";
 
 
 void opencl_program_build(struct opencl_program_t *program)
@@ -505,30 +513,48 @@ void opencl_program_build(struct opencl_program_t *program)
 	uint32_t section_size;
 	int i;
 
-	/* Dump binary in a temporary file*/
+	/* Dump binary in a temporary file */
 	program_binary_file = create_temp_file(program_binary_file_name, MAX_PATH_SIZE);
 	fwrite(program->binary, 1, program->binary_size, program_binary_file);
 	fseek(program_binary_file, 0, SEEK_SET);
 	opencl_debug("    program binary dumped in '%s'\n", program_binary_file_name);
 
-	/* Analyze primary ELF - dump '.text' section */
+	/* Open ELF file and check that it corresponds to an Evergreen pre-compiled kernel */
 	program_binary_elf = elf_open(program_binary_file_name);
+	if (program_binary_elf->ehdr.e_machine != 0x3f1)
+		fatal("clCreateProgramWithBinary: invalid binary file.\n%s",
+			err_opencl_evergreen_format);
+
+	/* Analyze file - dump '.text' and get '.rodata' section */
 	section_count = elf_section_count(program_binary_elf);
 	for (i = 0; i < section_count; i++) {
 		elf_section_info(program_binary_elf, i, &section_name, NULL,
 			&section_size, NULL);
-		if (strcmp(section_name, ".text"))
-			continue;
-		if (program_isa_file)
-			fatal("%s: more than one '.text' section in binary file", __FUNCTION__);
-		section_contents = elf_section_read(program_binary_elf, i);
-		program_isa_file = create_temp_file(program_isa_file_name, MAX_PATH_SIZE);
-		fwrite(section_contents, 1, section_size, program_isa_file);
-		fseek(program_isa_file, 0, SEEK_SET);
-		opencl_debug("    first '.text' section (ISA ELF file) dumped in '%s'\n",
-			program_isa_file_name);
-		elf_section_free(section_contents);
+		if (!strcmp(section_name, ".text")) {
+			if (program_isa_file)
+				fatal("%s: more than one '.text' section in binary file", __FUNCTION__);
+			section_contents = elf_section_read(program_binary_elf, i);
+			program_isa_file = create_temp_file(program_isa_file_name, MAX_PATH_SIZE);
+			fwrite(section_contents, 1, section_size, program_isa_file);
+			fseek(program_isa_file, 0, SEEK_SET);
+			opencl_debug("    first '.text' section (ISA ELF file) dumped in '%s'\n",
+				program_isa_file_name);
+			elf_section_free(section_contents);
+		} else if (!strcmp(section_name, ".rodata")) {
+			if (program->rodata)
+				fatal("%s: more than one '.rodata' section in binary file", __FUNCTION__);
+			section_contents = elf_section_read(program_binary_elf, i);
+			program->rodata_size = section_size;
+			program->rodata = malloc(section_size);
+			assert(program->rodata);
+			memcpy(program->rodata, section_contents, section_size);
+			elf_section_free(section_contents);
+		}
 	}
+
+	/* Check that '.text' and '.rodata' sections were found */
+	if (!program->rodata)
+		fatal("%s: no '.rodata' section found in binary", __FUNCTION__);
 	if (!program_isa_file)
 		fatal("%s: no '.text' section found in binary", __FUNCTION__);
 	
@@ -549,8 +575,9 @@ void opencl_program_build(struct opencl_program_t *program)
 		section_contents = elf_section_read(program_isa_elf, i);
 		if (program->code)
 			fatal("%s: program code has already been read", __FUNCTION__);
-		program->code = malloc(section_size);
 		program->code_size = section_size;
+		program->code = malloc(section_size);
+		assert(program->code);
 		memcpy(program->code, section_contents, section_size);
 		elf_section_free(section_contents);
 	}
@@ -589,7 +616,7 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 
 	/* Free arguments */
 	for (i = 0; i < list_count(kernel->arg_list); i++)
-		opencl_kernel_arg_free(kernel, i);
+		opencl_kernel_arg_free((struct opencl_kernel_arg_t *) list_get(kernel->arg_list, i));
 	list_free(kernel->arg_list);
 
 	/* Free kernel */
@@ -598,41 +625,173 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 }
 
 
-void opencl_kernel_arg_free(struct opencl_kernel_t *kernel, int idx)
+struct opencl_kernel_arg_t *opencl_kernel_arg_create(char *name)
 {
-	void *buf;
-
-	/* Get argument */
-	buf = list_get(kernel->arg_list, idx);
-	if (!buf)
-		return;
-	
-	/* Free it if it existed */
-	free(buf);
-	list_set(kernel->arg_list, idx, NULL);
-	opencl_debug("    argument %d freed in kernel 0x%x\n", idx, kernel->id);
+	struct opencl_kernel_arg_t *arg;
+	arg = calloc(1, sizeof(struct opencl_kernel_arg_t) + strlen(name) + 1);
+	strcpy(arg->name, name);
+	return arg;
 }
 
 
-/* Update argument 'idx' for kernel. The contents of 'buf' are replicated in a new memory
- * area managed by the kernel. If the argument was not empty, the previous 'buf' is freed. */
-void opencl_kernel_arg_set(struct opencl_kernel_t *kernel, int idx, void *buf, int size)
+void opencl_kernel_arg_free(struct opencl_kernel_arg_t *arg)
 {
-	void *buf_copy;
+	free(arg);
+}
 
-	/* Replicate buffer */
-	buf_copy = malloc(size);
-	if (!buf_copy)
-		fatal("opencl_kernel_arg_set: out of memory");
-	memcpy(buf_copy, buf, size);
+
+/* This function splits the next line in 'buf' into several tokens separated by colons.
+ * A copy of the next like is stored in 'dest_str', where the colons are replaced by \0.
+ * The pointers to 'dest_str' substrings corresponding to tokens are stored in the
+ * 'dest_str_ptrs' array, and the number of tokens is returned in 'token_count'.
+ * The function returns a pointer to the next line. */
+char *opencl_kernel_load_rodata_line(char *buf, char *dest_str, char **dest_str_ptrs, int *token_count)
+{
+	char *buf_end;
+	int dest_str_len;
+
+	/* Find end of line */
+	buf_end = index(buf, '\n');
+	if (!buf_end || buf_end - buf >= MAX_STRING_SIZE)
+		fatal("%s: no end of line found", __FUNCTION__);
+	dest_str_len = buf_end - buf;
+	strncpy(dest_str, buf, dest_str_len);
+	dest_str[dest_str_len] = '\0';
+
+	/* First characters must be a semicolon */
+	if (*dest_str != ';')
+		fatal("%s: line does not start with ';'", __FUNCTION__);
 	
-	/* Add argument */
-	opencl_kernel_arg_free(kernel, idx);
-	while (list_count(kernel->arg_list) <= idx)
-		list_add(kernel->arg_list, NULL);
-	list_set(kernel->arg_list, idx, buf_copy);
-	assert(!list_error(kernel->arg_list));
-	opencl_debug("    argument %d set (%d bytes) in kernel 0x%x\n", idx, size, kernel->id);
+	/* Replace colon by \0 and add token */
+	*token_count = 0;
+	while (*dest_str) {
+		if (*dest_str == ':' || *dest_str == ';') {
+			dest_str_ptrs[*token_count] = dest_str + 1;
+			(*token_count)++;
+			if (!dest_str[1])
+				fatal("%s: unexpected end of string", __FUNCTION__);
+			*dest_str = '\0';
+		}
+		dest_str++;
+	}
+	
+	/* Return pointer to next line */
+	return buf_end + 1;
+}
+
+
+#define OPENCL_KERNEL_RODATA_TOKEN_COUNT(_tc) \
+	if (token_count != (_tc)) \
+	fatal("%s: entry '%s' in 'rodata' expects %d tokens", \
+	__FUNCTION__, dest_str_ptrs[0], (_tc));
+#define OPENCL_KERNEL_RODATA_NOT_SUPPORTED(_idx) \
+	fatal("%s: entry '%s', token %d: value '%s' not supported.\n%s", \
+	__FUNCTION__, dest_str_ptrs[0], (_idx), dest_str_ptrs[(_idx)], \
+	err_opencl_kernel_rodata_note);
+#define OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(_idx, _str) \
+	if (strcmp(dest_str_ptrs[(_idx)], (_str))) \
+	OPENCL_KERNEL_RODATA_NOT_SUPPORTED(_idx);
+
+char *err_opencl_kernel_rodata_note =
+	"\tThe kernel binary loaded by your application is a valid ELF file. In this\n"
+	"\tfile, a '.rodata' section contains specific information about the OpenCL\n"
+	"\tkernel. However, this information is only partially supported by Multi2Sim.\n"
+	"\tTo request support for this error, please email 'development@multi2sim.org'.\n";
+
+void opencl_kernel_load_rodata(struct opencl_kernel_t *kernel, char *kernel_name)
+{
+	struct opencl_program_t *program;
+	struct opencl_kernel_arg_t *arg;
+
+	char *buf, *buf_end;
+	char header_str[MAX_STRING_SIZE];
+	int header_str_len;
+
+	char dest_str[MAX_STRING_SIZE];
+	char *dest_str_ptrs[MAX_STRING_SIZE];  /* Pointers to positions within 'dest_str' */
+	int token_count;
+
+	/* Get program object */
+	program = opencl_object_get(OPENCL_OBJ_PROGRAM, kernel->program_id);
+	if (!program->rodata)
+		fatal("%s: program has not been built.%s", __FUNCTION__,
+			err_opencl_param_note);
+
+	/* 'rodata' contains info for several kernels. Check that 'kernel_name'
+	 * exists and locate it within the buffer. */
+	snprintf(header_str, MAX_STRING_SIZE, ";ARGSTART:__OpenCL_%s_kernel\n", kernel_name);
+	header_str_len = strlen(header_str);
+	buf_end = program->rodata + program->rodata_size - header_str_len - 1;
+	for (buf = program->rodata; buf < buf_end; buf++)
+		if (!strncmp(buf, header_str, header_str_len))
+			break;
+	if (buf == buf_end)
+		fatal("%s: loaded binary does not contain kernel '%s'.\n%s",
+			__FUNCTION__, kernel_name, err_opencl_param_note);
+
+	/* Analyze lines in 'rodata'. The processing will stop after finding a line like:
+	 * ;ARGEND:__OpenCL_XXX_kernel */
+	opencl_debug("  Analyzing 'rodata' buffer in program\n");
+	for (;;) {
+		
+		/* Read line */
+		buf = opencl_kernel_load_rodata_line(buf, dest_str, dest_str_ptrs, &token_count);
+		if (!strcmp(dest_str_ptrs[0], "ARGEND"))
+			break;
+
+		/* Ignored entries */
+		if (!strcmp(dest_str_ptrs[0], "uniqueid")
+			|| !strcmp(dest_str_ptrs[0], "version")
+			|| !strcmp(dest_str_ptrs[0], "ARGSTART")
+			|| !strcmp(dest_str_ptrs[0], "function")  /* FIXME: any info about location? */
+			|| !strcmp(dest_str_ptrs[0], "uavid"))  /* FIXME: what is this? */
+			continue;
+
+		/* Memory */
+		if (!strcmp(dest_str_ptrs[0], "memory")) {
+			OPENCL_KERNEL_RODATA_TOKEN_COUNT(3);
+			if (!strcmp(dest_str_ptrs[1], "hwprivate"))
+				kernel->memory_hwprivate = atoi(dest_str_ptrs[2]);
+			else if (!strcmp(dest_str_ptrs[1], "hwlocal"))
+				kernel->memory_hwlocal = atoi(dest_str_ptrs[2]);
+			else
+				OPENCL_KERNEL_RODATA_NOT_SUPPORTED(1);
+			continue;
+		}
+
+		/* Entry 'value'. Format: value:<name>:<type>:?:?:<addr> */
+		if (!strcmp(dest_str_ptrs[0], "value")) {
+			OPENCL_KERNEL_RODATA_TOKEN_COUNT(6);
+			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(3, "1");
+			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(4, "1");
+			arg = opencl_kernel_arg_create(dest_str_ptrs[1]);
+			arg->kind = OPENCL_KERNEL_ARG_KIND_VALUE;
+			list_add(kernel->arg_list, arg);
+			opencl_debug("    arg %d: '%s', value of type %s\n",
+				list_count(kernel->arg_list) - 1, arg->name, dest_str_ptrs[2]);
+			continue;
+		}
+
+		/* Entry 'pointer'. Format: pointer:<name>:<type>:?:?:<addr>:?:?:? */
+		if (!strcmp(dest_str_ptrs[0], "pointer")) {
+			OPENCL_KERNEL_RODATA_TOKEN_COUNT(9);
+			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(3, "1");
+			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(4, "1");
+			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(6, "uav");
+			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(7, "1");
+			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(8, "4");
+			arg = opencl_kernel_arg_create(dest_str_ptrs[1]);
+			arg->kind = OPENCL_KERNEL_ARG_KIND_POINTER;
+			list_add(kernel->arg_list, arg);
+			opencl_debug("    arg %d: '%s', pointer to %s values\n",
+				list_count(kernel->arg_list) - 1, arg->name, dest_str_ptrs[2]);
+			continue;
+		}
+
+		/* Entry not recognized */
+		fatal("%s: entry '%s' in 'rodata' section not recognized.\n%s",
+			__FUNCTION__, dest_str_ptrs[0], err_opencl_kernel_rodata_note);
+	}
 }
 
 
