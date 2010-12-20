@@ -281,6 +281,38 @@ struct fmt_alu_word1_op3_t
 };
 
 
+struct fmt_alu_word0_lds_idx_op_t
+{
+	unsigned int src0_sel : 9;  /* [8:0] */
+	unsigned int src0_rel : 1;  /* [9] */
+	unsigned int src0_chan : 2;  /* [11:10] */
+	unsigned int idx_offset_4 : 1;  /* [12] */
+	unsigned int src1_sel : 9;  /* [21:13] */
+	unsigned int src1_rel : 1;  /* [22] */
+	unsigned int src1_chan : 2;  /* [24:23] */
+	unsigned int idx_offset_5 : 1;  /* [25] */
+	unsigned int index_mode : 3;  /* [28:26] */
+	unsigned int pred_sel : 2;  /* [30:29] */
+	unsigned int last : 1;  /* [31] */
+};
+
+
+struct fmt_alu_word1_lds_idx_op_t
+{
+	unsigned int src2_sel : 9;  /* [8:0] */
+	unsigned int src2_rel : 1;  /* [9] */
+	unsigned int src2_chan : 2;  /* [11:10] */
+	unsigned int idx_offset_1 : 1;  /* [12] */
+	unsigned int alu_inst : 5;  /* [17:13] */
+	unsigned int bank_swizzle : 3;  /* [20:18] */
+	unsigned int lds_op : 6;  /* [26:21] */
+	unsigned int idx_offset_0 : 1;  /* [27] */
+	unsigned int idx_offset_2 : 1;  /* [28] */
+	unsigned int dst_chan : 2;  /* [30:29] */
+	unsigned int idx_offset_3 : 1;  /* [31] */
+};
+
+
 struct fmt_vtx_word0_t {
 	unsigned int vc_inst : 5;
 	unsigned int ft : 2;
@@ -378,14 +410,6 @@ struct fmt_tex_word2_t
 };
 
 
-/* Generic insruction word representing any microcode format */
-struct fmt_word_t
-{
-	union {
-	} u;
-};
-
-
 enum amd_category_enum {
 	AMD_CAT_NONE = 0,
 
@@ -445,6 +469,9 @@ union amd_inst_word_t {
 	struct fmt_alu_word1_op2_t alu_word1_op2;
 	struct fmt_alu_word1_op3_t alu_word1_op3;
 
+	struct fmt_alu_word0_lds_idx_op_t alu_word0_lds_idx_op;
+	struct fmt_alu_word1_lds_idx_op_t alu_word1_lds_idx_op;
+
 	struct fmt_vtx_word0_t vtx_word0;
 	struct fmt_vtx_word1_gpr_t vtx_word1_gpr;
 	struct fmt_vtx_word1_sem_t vtx_word1_sem;
@@ -495,7 +522,7 @@ struct amd_alu_group_t
 };
 
 
-typedef void (*fmt_dump_func_t)(char *buf, FILE *);
+typedef void (*fmt_dump_func_t)(void *buf, FILE *);
 
 void amd_disasm_init(void);
 void amd_disasm_done(void);

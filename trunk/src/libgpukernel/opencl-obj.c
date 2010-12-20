@@ -522,7 +522,7 @@ void opencl_program_build(struct opencl_program_t *program)
 	/* Open ELF file and check that it corresponds to an Evergreen pre-compiled kernel */
 	program_binary_elf = elf_open(program_binary_file_name);
 	if (program_binary_elf->ehdr.e_machine != 0x3f1)
-		fatal("clCreateProgramWithBinary: invalid binary file.\n%s",
+		fatal("%s: invalid binary file.\n%s", __FUNCTION__,
 			err_opencl_evergreen_format);
 
 	/* Analyze file - dump '.text' and get '.rodata' section */
@@ -772,19 +772,20 @@ void opencl_kernel_load_rodata(struct opencl_kernel_t *kernel, char *kernel_name
 			continue;
 		}
 
-		/* Entry 'pointer'. Format: pointer:<name>:<type>:?:?:<addr>:?:?:? */
+		/* Entry 'pointer'. Format: pointer:<name>:<type>:?:?:<addr>:?:?:<elem_size> */
 		if (!strcmp(dest_str_ptrs[0], "pointer")) {
 			OPENCL_KERNEL_RODATA_TOKEN_COUNT(9);
 			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(3, "1");
 			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(4, "1");
 			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(6, "uav");
 			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(7, "1");
-			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(8, "4");
 			arg = opencl_kernel_arg_create(dest_str_ptrs[1]);
 			arg->kind = OPENCL_KERNEL_ARG_KIND_POINTER;
+			arg->elem_size = atoi(dest_str_ptrs[8]);
 			list_add(kernel->arg_list, arg);
-			opencl_debug("    arg %d: '%s', pointer to %s values\n",
-				list_count(kernel->arg_list) - 1, arg->name, dest_str_ptrs[2]);
+			opencl_debug("    arg %d: '%s', pointer to %s values (%d-byte group)\n",
+				list_count(kernel->arg_list) - 1, arg->name, dest_str_ptrs[2],
+				arg->elem_size);
 			continue;
 		}
 

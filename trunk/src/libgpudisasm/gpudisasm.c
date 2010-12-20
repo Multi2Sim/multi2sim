@@ -500,30 +500,84 @@ void amd_inst_dump_op_dest(struct amd_inst_t *inst, FILE *f)
 void amd_inst_get_op_src(struct amd_inst_t *inst, int src_idx,
 	int *sel, int *rel, int *chan, int *neg, int *abs)
 {
+	/* Valid formats */
+	assert(inst->info->fmt[0] == FMT_ALU_WORD0
+		|| inst->info->fmt[0] == FMT_ALU_WORD0_LDS_IDX_OP);
+	assert(inst->info->fmt[1] == FMT_ALU_WORD1_OP2
+		|| inst->info->fmt[1] == FMT_ALU_WORD1_OP3
+		|| inst->info->fmt[1] == FMT_ALU_WORD1_LDS_IDX_OP);
+	
 	/* Get parameters */
 	switch (src_idx) {
 
 	case 0:
+		
+		/* Fields:	src0_sel, src0_rel, src_chan
+		 * Present:	ALU_WORD0, ALU_WORD0_LDS_IDX_OP 
+		 * Absent:	-
+		 */
 		*sel = inst->words[0].alu_word0.src0_sel;
 		*rel = inst->words[0].alu_word0.s0r;
 		*chan = inst->words[0].alu_word0.s0c;
-		*neg = inst->words[0].alu_word0.s0n;
+
+		/* Fields:	src0_neg
+		 * Present:	ALU_WORD0
+		 * Absent:	ALU_WORD0_LDS_IDX_OP
+		 */
+		*neg = inst->info->fmt[0] == FMT_ALU_WORD0 ? inst->words[0].alu_word0.s0n : 0;
+
+		/* Fields:	src0_abs
+		 * Present:	ALU_WORD1_OP2
+		 * Absent:	ALU_WORD1_OP3, ALU_WORD1_LDS_IDX_OP
+		 */
 		*abs = inst->info->fmt[1] == FMT_ALU_WORD1_OP2 ? inst->words[1].alu_word1_op2.s0a : 0;
 		break;
 
 	case 1:
+		
+		/* Fields:	src1_sel, src1_rel, src1_chan
+		 * Present:	ALU_WORD0, ALU_WORD0_LDS_IDX_OP
+		 * Absent:	-
+		 */
 		*sel = inst->words[0].alu_word0.src1_sel;
 		*rel = inst->words[0].alu_word0.s1r;
 		*chan = inst->words[0].alu_word0.s1c;
-		*neg = inst->words[0].alu_word0.s1n;
+
+		/* Fields:	src1_neg
+		 * Present:	ALU_WORD0
+		 * Absent:	ALU_WORD0_LDS_IDX_OP
+		 */
+		*neg = inst->info->fmt[0] == FMT_ALU_WORD0 ? inst->words[0].alu_word0.s1n : 0;
+
+		/* Fields:	src_abs
+		 * Present:	ALU_WORD1_OP2
+		 * Absent:	ALU_WORD1_OP3, ALU_WORD1_LDS_IDX_OP
+		 */
 		*abs = inst->info->fmt[1] == FMT_ALU_WORD1_OP2 ? inst->words[1].alu_word1_op2.s1a : 0;
 		break;
 
 	case 2:
+		
+		/* Fields:	src2_sel, src2_rel, src2_chan
+		 * Present:	ALU_WORD1_OP3, ALU_WORD1_LDS_IDX_OP
+		 * Absent:	ALU_WORD1_OP2
+		 */
+		assert(inst->info->fmt[1] == FMT_ALU_WORD1_OP3
+			|| inst->info->fmt[1] == FMT_ALU_WORD1_LDS_IDX_OP);
 		*sel = inst->words[1].alu_word1_op3.src2_sel;
 		*rel = inst->words[1].alu_word1_op3.sr;
 		*chan = inst->words[1].alu_word1_op3.s2c;
-		*neg = inst->words[1].alu_word1_op3.sn;
+
+		/* Fields:	src2_neg
+		 * Present:	ALU_WORD1_OP3
+		 * Absent:	ALU_WORD1_LDS_IDX_OP, ALU_WORD_OP2
+		 */
+		*neg = inst->info->fmt[1] == FMT_ALU_WORD1_OP3 ? inst->words[1].alu_word1_op3.sn : 0;
+
+		/* Fields:	src2_abs
+		 * Present:	-
+		 * Absent:	ALU_WORD1_OP3, ALU_WORD1_LDS_IDX_OP, ALU_WORD_OP2
+		 */
 		*abs = 0;
 		break;
 
@@ -1002,6 +1056,13 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			assert(inst->info->fmt[0] == FMT_VTX_WORD0);
 			mega_fetch_count = inst->words[0].vtx_word0.mfc;
 			fprintf(f, "MEGA(%d)", mega_fetch_count + 1);
+
+		} else if (amd_inst_is_token(fmt_str, "lds_op", &len)) {
+			
+			extern struct string_map_t fmt_lds_op_map;
+			assert(inst->info->fmt[1] == FMT_ALU_WORD1_LDS_IDX_OP);
+			fprintf(f, "%s", map_value(&fmt_lds_op_map,
+				inst->words[1].alu_word1_lds_idx_op.lds_op));
 
 		} else if (amd_inst_is_token(fmt_str, "nl", &len)) {
 			

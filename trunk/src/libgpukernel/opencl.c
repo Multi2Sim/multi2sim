@@ -74,10 +74,20 @@ char *err_opencl_param_note =
 	"\tsimulation to stop.\n";
 
 char *err_opencl_compiler =
-	"\tThe current implementation of OpenCL does not support the compilation of\n"
-	"\tkernels at run time. Instead, the OpenCL kernels should be pre-compiled for\n"
-	"\tan Evergreen compatible target device, and loaded with the clCreateProgramWithBinary\n"
-	"\tcall.\n";
+	"\tThe Multi2Sim implementation of the OpenCL interface does not support runtime\n"
+	"\tcompilation of kernel sources. To run OpenCL kernels, you should first compile\n"
+	"\tthem off-line using an Evergreen-compatible target device. Then, you have two\n"
+	"\toptions two load them:\n"
+	"\t  1) Replace 'clCreateProgramWithSource' calls by 'clCreateProgramWithBinary'\n"
+	"\t     in your source files, referencing the pre-compiled kernel.\n"
+	"\t  2) Tell Multi2Sim to provide the application with your pre-compiled kernel\n"
+	"\t     using command-line option '-opencl:binary'.\n";
+	
+char *err_opencl_binary_note =
+	"\tYou have selected a pre-compiled OpenCL kernel binary to be passed to your\n"
+	"\tOpenCL application when it requests a kernel compilation. It is your\n"
+	"\tresponsibility to check that the chosen binary corresponds to the kernel\n"
+	"\tthat your application is expecting to load.\n";
 
 
 /* Error macros */
@@ -397,16 +407,34 @@ int opencl_func_run(int code, unsigned int *args)
 	/* 1028 */
 	case OPENCL_FUNC_clCreateProgramWithSource:
 	{
-		uint32_t context = args[0];  /* cl_context context */
+		uint32_t context_id = args[0];  /* cl_context context */
 		uint32_t count = args[1];  /* cl_uint count */
 		uint32_t strings = args[2];  /* const char **strings */
 		uint32_t lengths = args[3];  /* const size_t *lengths */
 		uint32_t errcode_ret = args[4];  /* cl_int *errcode_ret */
 
+		struct opencl_context_t *context;
+		struct opencl_program_t *program;
+
 		opencl_debug("  context=0x%x, count=%d, strings=0x%x, lengths=0x%x, errcode_ret=0x%x\n",
-			context, count, strings, lengths, errcode_ret);
-		fatal("%s: OpenCL source compilation not supported.\n%s",
-			err_prefix, err_opencl_compiler);
+			context_id, count, strings, lengths, errcode_ret);
+
+		/* Application tries to compile source, and no binary was passed to Multi2Sim */
+		if (!*gk_opencl_binary_name)
+			fatal("%s: kernel source compilation not supported.\n%s",
+				err_prefix, err_opencl_compiler);
+
+		/* Create program */
+		context = opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
+		program = opencl_program_create();
+		retval = program->id;
+		warning("%s: binary '%s' used as pre-compiled kernel.\n%s",
+			err_prefix, gk_opencl_binary_name, err_opencl_binary_note);
+
+		/* Load OpenCL binary passed to Multi2Sim */
+		program->binary = read_buffer(gk_opencl_binary_name, &program->binary_size);
+		if (!program->binary)
+			fatal("%s: cannot read from file '%s'", err_prefix, gk_opencl_binary_name);
 		break;
 	}
 
@@ -487,6 +515,11 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Get program */
 		program = opencl_object_get(OPENCL_OBJ_PROGRAM, program_id);
+		if (!program->binary)
+			fatal("%s: program binary must be loaded first.\n%s",
+				err_prefix, err_opencl_param_note);
+
+		/* Build program */
 		opencl_program_build(program);
 		break;
 	}
@@ -732,29 +765,34 @@ int opencl_func_run(int code, unsigned int *args)
 		kernel->work_dim = work_dim;
 
 		/* Global work sizes */
-		kernel->global_work_size[1] = 1;
-		kernel->global_work_size[2] = 1;
+		kernel->global_size3[1] = 1;
+		kernel->global_size3[2] = 1;
 		for (i = 0; i < work_dim; i++)
-			mem_read(isa_mem, global_work_size_ptr + i * 4, 4, &kernel->global_work_size[i]);
-		kernel->thread_count = kernel->global_work_size[0] * kernel->global_work_size[1]
-			* kernel->global_work_size[2];
+			mem_read(isa_mem, global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
+		kernel->global_size = kernel->global_size3[0] * kernel->global_size3[1] * kernel->global_size3[2];
 		opencl_debug("    global_work_size=");
-		opencl_debug_array(work_dim, kernel->global_work_size);
+		opencl_debug_array(work_dim, kernel->global_size3);
 		opencl_debug("\n");
 
-		/* Local work sizes */
-		memcpy(kernel->local_work_size, kernel->global_work_size, 12);  /* FIXME - other assignment to local sizes */
+		/* Local work sizes.
+		 * If no pointer provided, assign the same as global size - FIXME: can be done better. */
+		memcpy(kernel->local_size3, kernel->global_size3, 12);
 		if (local_work_size_ptr)
 			for (i = 0; i < work_dim; i++)
-				mem_read(isa_mem, local_work_size_ptr + i * 4, 4, &kernel->local_work_size[i]);
+				mem_read(isa_mem, local_work_size_ptr + i * 4, 4, &kernel->local_size3[i]);
+		kernel->local_size = kernel->local_size3[0] * kernel->local_size3[1] * kernel->local_size3[2];
 		opencl_debug("    local_work_size=");
-		opencl_debug_array(work_dim, kernel->local_work_size);
+		opencl_debug_array(work_dim, kernel->local_size3);
 		opencl_debug("\n");
 
 		/* Calculate number of groups */
 		for (i = 0; i < 3; i++)
-			kernel->work_group_count[i] = (kernel->global_work_size[i] + kernel->local_work_size[i] - 1)
-				/ kernel->local_work_size[i];
+			kernel->group_count3[i] = (kernel->global_size3[i] + kernel->local_size3[i] - 1)
+				/ kernel->local_size3[i];
+		kernel->group_count = kernel->group_count3[0] * kernel->group_count3[1] * kernel->group_count3[2];
+		opencl_debug("    group_count=");
+		opencl_debug_array(work_dim, kernel->group_count3);
+		opencl_debug("\n");
 
 		/* FIXME: enqueue kernel execution in command queue */
 		gpu_isa_run(kernel);

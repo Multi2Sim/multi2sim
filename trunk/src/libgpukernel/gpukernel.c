@@ -24,12 +24,13 @@
 #include <stdlib.h>
 #include <m2skernel.h>
 #include <gpudisasm.h>
+#include <options.h>
 
 
 /* Global variables */
 
 struct gk_t *gk;
-
+char *gk_opencl_binary_name = "";
 
 
 
@@ -80,6 +81,14 @@ void gk_done()
 
 	/* Mhandle */
 	mhandle_done();//////// FIXME
+}
+
+
+/* Register options */
+void gk_reg_options()
+{
+	opt_reg_string("-opencl:binary", "Pre-compiled binary for OpenCL applications",
+		&gk_opencl_binary_name);
 }
 
 

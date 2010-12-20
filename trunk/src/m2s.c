@@ -87,6 +87,8 @@ static void sim_reg_options()
 
 	opt_reg_string("-report:pipeline", "Report for pipeline statistics", &p_report_file);
 	opt_reg_string("-report:cache", "Report for cache system", &cache_system_report_file);
+
+	gk_reg_options();
 }
 
 

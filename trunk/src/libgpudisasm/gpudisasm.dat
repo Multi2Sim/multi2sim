@@ -1411,8 +1411,8 @@ DEFINST(MULADD_UINT24,
 )
 
 DEFINST(LDS_IDX_OP,
-	"%name",
-	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	"LDS_%lds_op  %alu_src0,  %alu_src1,  %alu_src2",
+	ALU_WORD0_LDS_IDX_OP, ALU_WORD1_LDS_IDX_OP, NONE,
 	ALU, 17,
 	0
 )

@@ -65,39 +65,48 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	int alu_group_count;
 
 	int i, x, y, z;
-	int thread_id;
+	int global_id;
 
 	/* Get program */
 	program = opencl_object_get(OPENCL_OBJ_PROGRAM, kernel->program_id);
 
 	/* Create threads */
-	gpu_isa_threads = calloc(kernel->thread_count, sizeof(void *));
-	for (x = 0; x < kernel->global_work_size[0]; x++) {
-		for (y = 0; y < kernel->global_work_size[1]; y++) {
-			for (z = 0; z < kernel->global_work_size[2]; z++) {
-				thread_id = z * kernel->global_work_size[1] * kernel->global_work_size[0]
-					+ y * kernel->global_work_size[0] + x;
-				gpu_isa_threads[thread_id] = gpu_thread_create();
-				gpu_isa_thread = gpu_isa_threads[thread_id];
-				GPU_THR.thread_id = thread_id;
-				GPU_THR.global_id[0] = x;
-				GPU_THR.global_id[1] = y;
-				GPU_THR.global_id[2] = z;
-				GPU_THR.group_id[0] = GPU_GPR_X(1) = x / kernel->local_work_size[0];
-				GPU_THR.group_id[1] = GPU_GPR_Y(1) = y / kernel->local_work_size[1];
-				GPU_THR.group_id[2] = GPU_GPR_Z(1) = z / kernel->local_work_size[2];
-				GPU_THR.local_id[0] = GPU_GPR_X(0) = x % kernel->local_work_size[0];
-				GPU_THR.local_id[1] = GPU_GPR_Y(0) = y % kernel->local_work_size[1];
-				GPU_THR.local_id[2] = GPU_GPR_Z(0) = z % kernel->local_work_size[2];
+	gpu_isa_threads = calloc(kernel->global_size, sizeof(void *));
+	for (x = 0; x < kernel->global_size3[0]; x++) {
+		for (y = 0; y < kernel->global_size3[1]; y++) {
+			for (z = 0; z < kernel->global_size3[2]; z++) {
+				global_id = z * kernel->global_size3[1] * kernel->global_size3[0]
+					+ y * kernel->global_size3[0] + x;
+				gpu_isa_threads[global_id] = gpu_thread_create();
+				gpu_isa_thread = gpu_isa_threads[global_id];
+
+				GPU_THR.global_id3[0] = x;
+				GPU_THR.global_id3[1] = y;
+				GPU_THR.global_id3[2] = z;
+				GPU_THR.global_id = global_id;
+
+				GPU_THR.group_id3[0] = GPU_GPR_X(1) = x / kernel->local_size3[0];
+				GPU_THR.group_id3[1] = GPU_GPR_Y(1) = y / kernel->local_size3[1];
+				GPU_THR.group_id3[2] = GPU_GPR_Z(1) = z / kernel->local_size3[2];
+				GPU_THR.group_id = GPU_THR.group_id3[2] * kernel->group_count3[1] * kernel->group_count3[0]
+					+ GPU_THR.group_id3[1] * kernel->group_count3[0]
+					+ GPU_THR.group_id3[0];
+
+				GPU_THR.local_id3[0] = GPU_GPR_X(0) = x % kernel->local_size3[0];
+				GPU_THR.local_id3[1] = GPU_GPR_Y(0) = y % kernel->local_size3[1];
+				GPU_THR.local_id3[2] = GPU_GPR_Z(0) = z % kernel->local_size3[2];
+				GPU_THR.local_id = GPU_THR.local_id3[2] * kernel->local_size3[1] * kernel->local_size3[0]
+					+ GPU_THR.local_id3[1] * kernel->local_size3[0]
+					+ GPU_THR.local_id3[0];
 			}
 		}
 	}
 
 	/* Initialize constant memory */
 	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 0, 3), 4, &kernel->work_dim);  /* CB0[0].w */
-	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 0, 0), 12, kernel->global_work_size);  /* CB0[0].{x,y,z} */
-	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 1, 0), 12, kernel->local_work_size);  /* CB0[1].{x,y,z} */
-	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 2, 0), 12, kernel->work_group_count);  /* CB0[2].{x,y,z} */
+	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 0, 0), 12, kernel->global_size3);  /* CB0[0].{x,y,z} */
+	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 1, 0), 12, kernel->local_size3);  /* CB0[1].{x,y,z} */
+	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 2, 0), 12, kernel->group_count3);  /* CB0[2].{x,y,z} */
 
 	/* Kernel arguments */
 	for (i = 0; i < list_count(kernel->arg_list); i++) {
@@ -145,8 +154,8 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 
 		/* Execute in all threads */
 		gpu_isa_inst = gpu_isa_cf_inst = &cf_inst;
-		for (thread_id = 0; thread_id < kernel->thread_count; thread_id++) {
-			gpu_isa_thread = gpu_isa_threads[thread_id];
+		for (global_id = 0; global_id < kernel->global_size; global_id++) {
+			gpu_isa_thread = gpu_isa_threads[global_id];
 			(*amd_inst_impl[gpu_isa_inst->info->inst])();
 		}
 		
@@ -167,8 +176,8 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 
 				/* Execute group in all threads */
 				gpu_isa_alu_group = &alu_group;
-				for (thread_id = 0; thread_id < kernel->thread_count; thread_id++) {
-					gpu_isa_thread = gpu_isa_threads[thread_id];
+				for (global_id = 0; global_id < kernel->global_size; global_id++) {
+					gpu_isa_thread = gpu_isa_threads[global_id];
 					for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
 						gpu_isa_inst = &gpu_isa_alu_group->inst[i];
 						(*amd_inst_impl[gpu_isa_inst->info->inst])();
@@ -196,8 +205,8 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 
 				/* Execute in all threads */
 				gpu_isa_inst = &tex_inst;
-				for (thread_id = 0; thread_id < kernel->thread_count; thread_id++) {
-					gpu_isa_thread = gpu_isa_threads[thread_id];
+				for (global_id = 0; global_id < kernel->global_size; global_id++) {
+					gpu_isa_thread = gpu_isa_threads[global_id];
 					(*amd_inst_impl[gpu_isa_inst->info->inst])();
 				}
 			}
@@ -205,7 +214,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	}
 	
 	/* Free threads */
-	for (i = 0; i < kernel->thread_count; i++)
+	for (i = 0; i < kernel->global_size; i++)
 		gpu_thread_free(gpu_isa_threads[i]);
 	free(gpu_isa_threads);
 }
@@ -228,7 +237,7 @@ void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value)
 	GPU_PARAM_NOT_SUPPORTED_OOR(gpr, 0, 127);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(rel, 0);
 	GPU_GPR_ELEM(gpr, chan) = value;
-	printf("thread %d: GPR(%d).%d set to %d\n", gpu_isa_thread->thread_id, gpr, chan, value), fflush(stdout); ////
+	//printf("thread %d: GPR(%d).%d set to %d\n", gpu_isa_thread->global_id, gpr, chan, value), fflush(stdout); ////
 }
 
 
@@ -371,7 +380,7 @@ void gpu_alu_group_commit(void)
 		if (wt->wm)
 			gpu_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
 		GPU_THR.pv.elem[wt->alu] = wt->value;
-		printf("thread %d: PV.%d set to %d\n", gpu_isa_thread->thread_id, wt->chan, wt->value), fflush(stdout); ////
+		//printf("thread %d: PV.%d set to %d\n", gpu_isa_thread->global_id, wt->chan, wt->value), fflush(stdout); ////
 	}
 	gpu_isa_thread->write_task_count = 0;
 }
