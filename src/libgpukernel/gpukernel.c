@@ -163,12 +163,23 @@ struct gpu_thread_t *gpu_thread_create()
 {
 	struct gpu_thread_t *thread;
 	thread = calloc(1, sizeof(struct gpu_thread_t));
+	thread->lds_oqa = list_create(5);
+	thread->lds_oqb = list_create(5);
 	return thread;
 }
 
 
 void gpu_thread_free(struct gpu_thread_t *thread)
 {
+	/* Empty LDS output queues */
+	while (list_count(thread->lds_oqa))
+		free(list_dequeue(thread->lds_oqa));
+	while (list_count(thread->lds_oqb))
+		free(list_dequeue(thread->lds_oqb));
+	list_free(thread->lds_oqa);
+	list_free(thread->lds_oqb);
+
+	/* Free thread */
 	free(thread);
 }
 

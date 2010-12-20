@@ -350,10 +350,10 @@ struct string_map_t cf_cond_map = {
 
 struct string_map_t src_sel_map = {
 	31, {
-		{ "ALU_SRC_LDS_OQ_A", 219 },
-		{ "ALU_SRC_LDS_OQ_B", 220 },
-		{ "ALU_SRC_LDS_OQ_A_POP", 221 },
-		{ "ALU_SRC_LDS_OQ_B_POP", 222 },
+		{ "QA", 219 },  /* ALU_SRC_LDS_OQ_A */
+		{ "QB", 220 },  /* ALU_SRC_LDS_OQ_B */
+		{ "QA.pop", 221 },  /* ALU_SRC_LDS_OQ_A_POP */
+		{ "QB.pop", 222 },  /* ALU_SRC_LDS_OQ_B_POP */
 		{ "ALU_SRC_LDS_DIRECT_A", 223 },
 		{ "ALU_SRC_LDS_DIRECT_B", 224 },
 		{ "ALU_SRC_TIME_HI", 227 },
