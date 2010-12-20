@@ -278,3 +278,43 @@ void strdump(char *dest, char *src, int size)
 }
 
 
+
+
+/*
+ * Buffers
+ */
+
+int write_buffer(char *file_name, void *buf, int size)
+{
+	FILE *f;
+	if (!(f = fopen(file_name, "wb")))
+		return 0;
+	fwrite(buf, size, 1, f);
+	fclose(f);
+	return 1;
+}
+
+
+void *read_buffer(char *file_name, int *psize)
+{
+	FILE *f;
+	void *buf;
+	int size, alloc_size, read_size;
+
+	f = fopen(file_name, "rb");
+	if (!f)
+		return NULL;
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	alloc_size = size ? size : 1;
+	fseek(f, 0, SEEK_SET);
+
+	buf = malloc(alloc_size);
+	if (!buf)
+		return NULL;
+	read_size = fread(buf, 1, size, f);
+	if (psize)
+		*psize = read_size;
+	return buf;
+}
+

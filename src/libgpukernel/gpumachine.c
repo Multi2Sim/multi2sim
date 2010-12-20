@@ -113,7 +113,7 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 		value = gpu_isa_read_gpr(W0.rw_gpr, W0.rr, 0, 0);
 		addr = gpu_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
 		mem_write(gk->global_mem, addr, 4, &value);
-		printf("thread %d: write to 0x%x -> %d\n", gpu_isa_thread->thread_id, addr, value); ////
+		printf("thread %d: write to 0x%x -> %d\n", gpu_isa_thread->global_id, addr, value); ////
 		/* FIXME: array_size: ignored now, cause 'burst_count' = 0 */
 		/* FIXME: valid_pixel_mode */
 		/* FIXME: rat_id */
@@ -1107,9 +1107,17 @@ void amd_inst_MULADD_UINT24_impl() {
 }
 
 
-void amd_inst_LDS_IDX_OP_impl() {
+#define W0 gpu_isa_inst->words[0].alu_word0_lds_idx_op
+#define W1 gpu_isa_inst->words[1].alu_word1_lds_idx_op
+void amd_inst_LDS_IDX_OP_impl()
+{
+	fmt_word_dump(&W0, FMT_ALU_WORD0_LDS_IDX_OP, stdout);
+	fmt_word_dump(&W1, FMT_ALU_WORD1_LDS_IDX_OP, stdout);
+
 	NOT_IMPL();
 }
+#undef W0
+#undef W1
 
 
 void amd_inst_MULADD_impl() {
@@ -1218,7 +1226,7 @@ void amd_inst_FETCH_impl() {
 	uint32_t addr, value;
 	addr = gpu_isa_read_gpr(W0.src_gpr, W0.sr, W0.ssx, 0) * 4;  /* FIXME: x4? */
 	mem_read(gk->global_mem, addr + W2.offset, 4, &value);
-	printf("thread %d: fetch from 0x%x -> %d\n", gpu_isa_thread->thread_id, addr, value); ////
+	printf("thread %d: fetch from 0x%x -> %d\n", gpu_isa_thread->global_id, addr, value); ////
 	gpu_isa_write_gpr(W1.dst_gpr, W1.dr, 0, value);
 }
 #undef W0

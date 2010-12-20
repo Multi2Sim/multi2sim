@@ -158,6 +158,7 @@ enum opencl_kernel_arg_kind_enum {
 struct opencl_kernel_arg_t
 {
 	enum opencl_kernel_arg_kind_enum kind;
+	int elem_size;  /* For a pointer, size of element pointed to */
 	uint32_t value;  /* 32-bit arguments supported */
 
 	/* Last field - memory assigned variably */
@@ -174,11 +175,19 @@ struct opencl_kernel_t
 	int memory_hwprivate;
 	int memory_hwlocal;
 
+	/* Number of work dimensions */
 	int work_dim;
-	int global_work_size[3];
-	int local_work_size[3];
-	int work_group_count[3];  /* (global_work_size + local_work_size - 1) / local_work_size */
-	int thread_count;  /* All three 'global_work_size's multiplied */
+
+	/* 3D Counters */
+	int global_size3[3];  /* Total number of threads */
+	int local_size3[3];  /* Number of threads in a group */
+	int group_count3[3];  /* Number of thread groups */
+	
+	/* 1D Counters. Each counter is equal to the multiplication
+	 * of each component in the corresponding 3D counter. */
+	int global_size;
+	int local_size;
+	int group_count;
 };
 
 struct opencl_kernel_t *opencl_kernel_create();
@@ -231,11 +240,15 @@ struct gpu_thread_t {
 	struct gpu_gpr_t gpr[128];  /* General purpose registers */
 	struct gpu_gpr_t pv;  /* Result of last computations */
 
-	/* ID */
-	int thread_id;  /* 1D identified */
-	int local_id[3];
-	int global_id[3];
-	int group_id[3];
+	/* 1D identifiers */
+	int local_id;
+	int global_id;
+	int group_id;
+
+	/* 3D identifiers */
+	int local_id3[3];
+	int global_id3[3];
+	int group_id3[3];
 
 	/* Instruction pointers */
 	uint32_t cf_ip;
@@ -337,6 +350,7 @@ struct gk_t {
 };
 
 extern struct gk_t *gk;
+extern char *gk_opencl_binary_name;
 
 /* Macros to access constant memory */
 #define GPU_CONST_MEM_ADDR(_bank, _vector, _elem)  ((_bank) * 16384 + (_vector) * 16 + (_elem * 4))
