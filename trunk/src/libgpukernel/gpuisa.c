@@ -108,6 +108,13 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 1, 0), 12, kernel->local_size3);  /* CB0[1].{x,y,z} */
 	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 2, 0), 12, kernel->group_count3);  /* CB0[2].{x,y,z} */
 
+	/* Create local memories */
+	gk->local_mem = calloc(kernel->group_count, sizeof(struct mem_t *));
+	for (i = 0; i < kernel->group_count; i++) {
+		gk->local_mem[i] = mem_create();
+		gk->local_mem[i]->safe = 0;
+	}
+
 	/* Kernel arguments */
 	for (i = 0; i < list_count(kernel->arg_list); i++) {
 
@@ -217,6 +224,11 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	for (i = 0; i < kernel->global_size; i++)
 		gpu_thread_free(gpu_isa_threads[i]);
 	free(gpu_isa_threads);
+
+	/* Free local memories */
+	for (i = 0; i < kernel->group_count; i++)
+		mem_free(gk->local_mem[i]);
+	free(gk->local_mem);
 }
 
 
@@ -294,6 +306,52 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 		goto end;
 	}
 
+	/* QA and QA.pop */
+	if (sel == 219 || sel == 221) {
+		uint32_t *pvalue;
+		pvalue = (uint32_t *) list_dequeue(gpu_isa_thread->lds_oqa);
+		if (!pvalue)
+			fatal("%s: LDS queue A is empty", __FUNCTION__);
+		value = *pvalue;
+		if (sel == 219)
+			list_enqueue(gpu_isa_thread->lds_oqa, pvalue);
+		else
+			free(pvalue);
+		goto end;
+	}
+
+	/* QB and QB.pop */
+	if (sel == 220 || sel == 222) {
+		uint32_t *pvalue;
+		pvalue = (uint32_t *) list_dequeue(gpu_isa_thread->lds_oqb);
+		if (!pvalue)
+			fatal("%s: LDS queue B is empty", __FUNCTION__);
+		value = *pvalue;
+		if (sel == 220)
+			list_enqueue(gpu_isa_thread->lds_oqb, pvalue);
+		else
+			free(pvalue);
+		goto end;
+	}
+
+	/* ALU_SRC_0 */
+	if (sel == 248) {
+		value = 0;
+		goto end;
+	}
+
+	/* ALU_SRC_1_INT */
+	if (sel == 250) {
+		value = 1;
+		goto end;
+	}
+
+	/* ALU_SRC_M_1_INT */
+	if (sel == 251) {
+		value = -1;
+		goto end;
+	}
+
 	/* ALU_SRC_LITERAL */
 	if (sel == 253) {
 		assert(gpu_isa_inst->alu_group);
@@ -312,18 +370,6 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 	/* ALU_SRC_PS */
 	if (sel == 255) {
 		value = GPU_THR.pv.elem[4];
-		goto end;
-	}
-
-	/* ALU_SRC_1_INT */
-	if (sel == 250) {
-		value = 1;
-		goto end;
-	}
-
-	/* ALU_SRC_M_1_INT */
-	if (sel == 251) {
-		value = -1;
 		goto end;
 	}
 
