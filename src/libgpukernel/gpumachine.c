@@ -271,8 +271,11 @@ void amd_inst_LSHL_INT_impl()
 }
 
 
-void amd_inst_MOV_impl() {
-	NOT_IMPL();
+void amd_inst_MOV_impl()
+{
+	uint32_t value;
+	value = gpu_isa_read_op_src(0);
+	gpu_isa_write_op_dst(value);
 }
 
 
@@ -573,7 +576,8 @@ void amd_inst_SUBB_UINT_impl() {
 
 
 void amd_inst_GROUP_BARRIER_impl() {
-	NOT_IMPL();
+	/* FIXME */
+	printf("thread %d - BARRIER\n", gpu_isa_thread->global_id);
 }
 
 
@@ -1111,10 +1115,56 @@ void amd_inst_MULADD_UINT24_impl() {
 #define W1 gpu_isa_inst->words[1].alu_word1_lds_idx_op
 void amd_inst_LDS_IDX_OP_impl()
 {
-	fmt_word_dump(&W0, FMT_ALU_WORD0_LDS_IDX_OP, stdout);
-	fmt_word_dump(&W1, FMT_ALU_WORD1_LDS_IDX_OP, stdout);
+	struct mem_t *local_mem;
+	unsigned int idx_offset;
+	uint32_t src0, src1, src2;
 
-	NOT_IMPL();
+	/* Get local memory */
+	local_mem = gk->local_mem[gpu_isa_thread->group_id];
+	assert(local_mem);
+
+	/* Recompose 'idx_offset' field */
+	idx_offset = (W0.idx_offset_5 << 5) | (W0.idx_offset_4 << 4) |
+		(W1.idx_offset_3 << 3) | (W1.idx_offset_2 << 2) |
+		(W1.idx_offset_1 << 1) | W1.idx_offset_0;
+	
+	/* Read operands */
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	src2 = gpu_isa_read_op_src(2);
+
+	//fmt_word_dump(&W0, FMT_ALU_WORD0_LDS_IDX_OP, stdout);
+	//fmt_word_dump(&W1, FMT_ALU_WORD1_LDS_IDX_OP, stdout);
+
+	/* Process LDS instruction */
+	switch (W1.lds_op) {
+
+	/* DS_INST_WRITE: 1A1D WRITE(dst,src) : DS(dst) = src */
+	case 13: {
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
+		GPU_PARAM_NOT_SUPPORTED_NEQ(src2, 0);
+		GPU_PARAM_NOT_SUPPORTED_NEQ(idx_offset, 0);
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);  /* FIXME: what? */
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_chan, 0);
+		/* FIXME: dst_chan? Does address need to be multiplied? */
+		mem_write(local_mem, src0, 4, &src1);
+		printf("thread %d: local_mem: write to 0x%x -> %d\n", gpu_isa_thread->global_id, src0, src1); ////
+		break;
+	}
+
+	/* DS_INST_READ_RET: 1A READ(dst) : OQA = DS(dst) */
+	case 50: {
+		uint32_t *pvalue;
+		pvalue = malloc(4);
+		mem_read(local_mem, src0, 4, pvalue);
+		list_enqueue(gpu_isa_thread->lds_oqa, pvalue);
+		printf("thread %d: local_mem: write from 0x%x -> %d\n", gpu_isa_thread->global_id, src0, *pvalue); ///
+		break;
+	}
+
+	default:
+		GPU_PARAM_NOT_SUPPORTED(W1.lds_op);
+	}
 }
 #undef W0
 #undef W1

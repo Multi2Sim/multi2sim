@@ -258,6 +258,10 @@ struct gpu_thread_t {
 	 * which are performed as a burst all together. */
 	int write_task_count;
 	struct gpu_write_task_t write_tasks[GPU_MAX_WRITE_TASKS];
+
+	/* LDS (Local Data Share) OQs (Output Queues) */
+	struct list_t *lds_oqa;
+	struct list_t *lds_oqb;
 };
 
 
@@ -347,6 +351,11 @@ struct gk_t {
 	/* Global memory */
 	struct mem_t *global_mem;
 	uint32_t global_mem_top;  /* Current top pointer assigned to 'device_ptr' in 'opencl_mem' objects */
+	
+	/* Array of local memories.
+	 * This array is initialized when the kernel is created.
+	 */
+	struct mem_t **local_mem;
 };
 
 extern struct gk_t *gk;

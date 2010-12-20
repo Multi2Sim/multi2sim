@@ -785,10 +785,16 @@ int opencl_func_run(int code, unsigned int *args)
 		opencl_debug_array(work_dim, kernel->local_size3);
 		opencl_debug("\n");
 
+		/* Check divisibility of global by local sizes */
+		if ((kernel->global_size3[0] % kernel->local_size3[0])
+			|| (kernel->global_size3[1] % kernel->local_size3[1])
+			|| (kernel->global_size3[2] % kernel->local_size3[2]))
+			fatal("%s: global work sizes must be multiples of local sizes.\n%s",
+				err_prefix, err_opencl_param_note);
+
 		/* Calculate number of groups */
 		for (i = 0; i < 3; i++)
-			kernel->group_count3[i] = (kernel->global_size3[i] + kernel->local_size3[i] - 1)
-				/ kernel->local_size3[i];
+			kernel->group_count3[i] = kernel->global_size3[i] / kernel->local_size3[i];
 		kernel->group_count = kernel->group_count3[0] * kernel->group_count3[1] * kernel->group_count3[2];
 		opencl_debug("    group_count=");
 		opencl_debug_array(work_dim, kernel->group_count3);

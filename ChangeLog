@@ -741,4 +741,5 @@
 	* libgpukernel: local memory, functional simulation.
 	* libgpudisasm: LDS formats
 	* libgpukernel: assignment of 1D/3D thread IDs and work sizes.
+	* libgpumachine: LDS implementation
 
