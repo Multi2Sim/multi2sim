@@ -78,6 +78,8 @@ static void sim_reg_options()
 	opt_reg_uint64("-max_inst", "Maximum number of instructions", &max_inst);
 	opt_reg_uint32("-break_point", "Value for eip to stop", &break_point);
 	opt_reg_bool("-mem_safe_mode", "Safe accesses to memory", &mem_safe_mode);
+
+	gk_reg_options();
 }
 
 
