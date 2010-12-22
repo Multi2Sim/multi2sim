@@ -737,9 +737,12 @@
 		This bug might affect any simple execution.
 	* libdisasm/Makefile.am: bug in file list caused distribution to fail compiling.
 
-2010-12-10
+2010-12-20
 	* libgpukernel: local memory, functional simulation.
 	* libgpudisasm: LDS formats
 	* libgpukernel: assignment of 1D/3D thread IDs and work sizes.
 	* libgpumachine: LDS implementation
+
+2010-12-22
+	* libgpukernel: control-flow
 

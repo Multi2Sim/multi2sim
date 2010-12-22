@@ -121,7 +121,7 @@ void amd_disasm_done()
 void *amd_inst_decode_cf(void *buf, struct amd_inst_t *inst)
 {
 	uint32_t cf_inst_short, cf_inst_long;
-	int eop;
+	int end_of_program;
 
 	/* Read instruction words (64-bit) */
 	memset(inst, 0, sizeof(struct amd_inst_t));
@@ -141,12 +141,12 @@ void *amd_inst_decode_cf(void *buf, struct amd_inst_t *inst)
 	}
 
 	/* If 'end_of_program' bit is set, return NULL */
-	eop = 0;
+	end_of_program = 0;
 	if (inst->info->fmt[1] == FMT_CF_WORD1
 		|| inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF
 		|| inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ)
-		eop = inst->words[1].cf_word1.eop;
-	if (eop)
+		end_of_program = inst->words[1].cf_word1.end_of_program;
+	if (end_of_program)
 		return NULL;
 
 	/* Return pointer to next instruction */
@@ -200,21 +200,21 @@ void *amd_inst_decode_alu_group(void *buf, int group_id, struct amd_alu_group_t 
 		inst = &group->inst[group->inst_count];
 		buf = amd_inst_decode_alu(buf, inst);
 		inst->alu_group = group;
-		last = inst->words[0].alu_word0.l;
+		last = inst->words[0].alu_word0.last;
 
 		/* Count associated literals.
 		 * There is at least one literal slot if there is any destination element CHAN_
 		 * There are two literal slots if there is any destination element CHAN_Z or CHAN_W. */
 		if (inst->words[0].alu_word0.src0_sel == 253) {  /* ALU_SRC_LITERAL */
-			chan = inst->words[0].alu_word0.s0c;
+			chan = inst->words[0].alu_word0.src0_chan;
 			group->literal_count = MAX(group->literal_count, (chan + 2) / 2);
 		}
 		if (inst->words[0].alu_word0.src1_sel == 253) {
-			chan = inst->words[0].alu_word0.s1c;
+			chan = inst->words[0].alu_word0.src1_chan;
 			group->literal_count = MAX(group->literal_count, (chan + 2) / 2);
 		}
 		if (inst->info->fmt[1] == FMT_ALU_WORD1_OP3 && inst->words[1].alu_word1_op3.src2_sel == 253) {
-			chan = inst->words[1].alu_word1_op3.s2c;
+			chan = inst->words[1].alu_word1_op3.src2_chan;
 			group->literal_count = MAX(group->literal_count, (chan + 2) / 2);
 		}
 
@@ -223,7 +223,7 @@ void *amd_inst_decode_alu_group(void *buf, int group_id, struct amd_alu_group_t 
 
 		/* Initially, set ALU as indicated by the destination operand. For both OP2 and OP3 formats, field
 		 * 'dest_chan' is located at the same bit position. */
-		dest_chan = inst->words[1].alu_word1_op2.dc;
+		dest_chan = inst->words[1].alu_word1_op2.dst_chan;
 		alu = inst->info->flags & AMD_INST_FLAG_TRANS_ONLY ? AMD_ALU_TRANS : dest_chan;
 		if (alu_busy[alu])
 			alu = AMD_ALU_TRANS;
@@ -476,23 +476,23 @@ void amd_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f)
 
 void amd_inst_dump_op_dest(struct amd_inst_t *inst, FILE *f)
 {
-	int gpr, rel, chan, im;
+	int gpr, rel, chan, index_mode;
 
 	/* Fields 'dst_gpr', 'dst_rel', and 'dst_chan' are at the same bit positions in both
 	 * ALU_WORD1_OP2 and ALU_WORD1_OP3 formats. */
 	gpr = inst->words[1].alu_word1_op2.dst_gpr;
-	rel = inst->words[1].alu_word1_op2.dr;
-	chan = inst->words[1].alu_word1_op2.dc;
-	im = inst->words[0].alu_word0.im;  /* index_mode */
+	rel = inst->words[1].alu_word1_op2.dst_rel;
+	chan = inst->words[1].alu_word1_op2.dst_chan;
+	index_mode = inst->words[0].alu_word0.index_mode;
 
 	/* If 'write_mask' field is clear, print underscore */
-	if (inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && !inst->words[1].alu_word1_op2.wm) {
+	if (inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && !inst->words[1].alu_word1_op2.write_mask) {
 		fprintf(f, "____");
 		return;
 	}
 
 	/* Print register */
-	amd_inst_dump_gpr(gpr, rel, chan, im, f);
+	amd_inst_dump_gpr(gpr, rel, chan, index_mode, f);
 }
 
 
@@ -517,20 +517,20 @@ void amd_inst_get_op_src(struct amd_inst_t *inst, int src_idx,
 		 * Absent:	-
 		 */
 		*sel = inst->words[0].alu_word0.src0_sel;
-		*rel = inst->words[0].alu_word0.s0r;
-		*chan = inst->words[0].alu_word0.s0c;
+		*rel = inst->words[0].alu_word0.src0_rel;
+		*chan = inst->words[0].alu_word0.src0_chan;
 
 		/* Fields:	src0_neg
 		 * Present:	ALU_WORD0
 		 * Absent:	ALU_WORD0_LDS_IDX_OP
 		 */
-		*neg = inst->info->fmt[0] == FMT_ALU_WORD0 ? inst->words[0].alu_word0.s0n : 0;
+		*neg = inst->info->fmt[0] == FMT_ALU_WORD0 ? inst->words[0].alu_word0.src0_neg : 0;
 
 		/* Fields:	src0_abs
 		 * Present:	ALU_WORD1_OP2
 		 * Absent:	ALU_WORD1_OP3, ALU_WORD1_LDS_IDX_OP
 		 */
-		*abs = inst->info->fmt[1] == FMT_ALU_WORD1_OP2 ? inst->words[1].alu_word1_op2.s0a : 0;
+		*abs = inst->info->fmt[1] == FMT_ALU_WORD1_OP2 ? inst->words[1].alu_word1_op2.src0_abs : 0;
 		break;
 
 	case 1:
@@ -540,20 +540,20 @@ void amd_inst_get_op_src(struct amd_inst_t *inst, int src_idx,
 		 * Absent:	-
 		 */
 		*sel = inst->words[0].alu_word0.src1_sel;
-		*rel = inst->words[0].alu_word0.s1r;
-		*chan = inst->words[0].alu_word0.s1c;
+		*rel = inst->words[0].alu_word0.src1_rel;
+		*chan = inst->words[0].alu_word0.src1_chan;
 
 		/* Fields:	src1_neg
 		 * Present:	ALU_WORD0
 		 * Absent:	ALU_WORD0_LDS_IDX_OP
 		 */
-		*neg = inst->info->fmt[0] == FMT_ALU_WORD0 ? inst->words[0].alu_word0.s1n : 0;
+		*neg = inst->info->fmt[0] == FMT_ALU_WORD0 ? inst->words[0].alu_word0.src1_neg : 0;
 
 		/* Fields:	src_abs
 		 * Present:	ALU_WORD1_OP2
 		 * Absent:	ALU_WORD1_OP3, ALU_WORD1_LDS_IDX_OP
 		 */
-		*abs = inst->info->fmt[1] == FMT_ALU_WORD1_OP2 ? inst->words[1].alu_word1_op2.s1a : 0;
+		*abs = inst->info->fmt[1] == FMT_ALU_WORD1_OP2 ? inst->words[1].alu_word1_op2.src1_abs : 0;
 		break;
 
 	case 2:
@@ -565,14 +565,14 @@ void amd_inst_get_op_src(struct amd_inst_t *inst, int src_idx,
 		assert(inst->info->fmt[1] == FMT_ALU_WORD1_OP3
 			|| inst->info->fmt[1] == FMT_ALU_WORD1_LDS_IDX_OP);
 		*sel = inst->words[1].alu_word1_op3.src2_sel;
-		*rel = inst->words[1].alu_word1_op3.sr;
-		*chan = inst->words[1].alu_word1_op3.s2c;
+		*rel = inst->words[1].alu_word1_op3.src2_rel;
+		*chan = inst->words[1].alu_word1_op3.src2_chan;
 
 		/* Fields:	src2_neg
 		 * Present:	ALU_WORD1_OP3
 		 * Absent:	ALU_WORD1_LDS_IDX_OP, ALU_WORD_OP2
 		 */
-		*neg = inst->info->fmt[1] == FMT_ALU_WORD1_OP3 ? inst->words[1].alu_word1_op3.sn : 0;
+		*neg = inst->info->fmt[1] == FMT_ALU_WORD1_OP3 ? inst->words[1].alu_word1_op3.src2_neg : 0;
 
 		/* Fields:	src2_abs
 		 * Present:	-
@@ -603,9 +603,9 @@ void amd_inst_dump_op_src(struct amd_inst_t *inst, int src_idx, FILE *f)
 
 	/* 0..127: Value in GPR */
 	if (IN_RANGE(sel, 0, 127)) {
-		int im;  /* index_mode */
-		im = inst->words[0].alu_word0.im;
-		amd_inst_dump_gpr(sel, rel, chan, im, f);
+		int index_mode;
+		index_mode = inst->words[0].alu_word0.index_mode;
+		amd_inst_dump_gpr(sel, rel, chan, index_mode, f);
 		goto end;
 	}
 
@@ -732,20 +732,20 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 
 			/* ALU_WORD1_OP2 - 'bank_swizzle' field.
 			 * Common for ALU_WORD1_OP2 and ALU_WORD1_OP3 */
-			fprintf(f, "%s", map_value(&bank_swizzle_map, inst->words[1].alu_word1_op2.bs));
+			fprintf(f, "%s", map_value(&bank_swizzle_map, inst->words[1].alu_word1_op2.bank_swizzle));
 			
 			/* ALU_WORD0 - 'pred_sel' field */
-			if (inst->words[0].alu_word0.ps == 2)  /* PRED_SEL_ZERO */
+			if (inst->words[0].alu_word0.pred_sel == 2)  /* PRED_SEL_ZERO */
 				fprintf(f, " (!p)");
-			else if (inst->words[0].alu_word0.ps == 3)  /* PRED_SEL_ONE */
+			else if (inst->words[0].alu_word0.pred_sel == 3)  /* PRED_SEL_ONE */
 				fprintf(f, " (p)");
 
 			/* ALU_WORD1_OP2 - 'update_exec_mask' field */
-			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && inst->words[1].alu_word1_op2.uem)
+			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && inst->words[1].alu_word1_op2.update_exec_mask)
 				fprintf(f, " UPDATE_EXEC_MASK");
 
 			/* ALU_WORD1_OP2 - 'update_pred' field */
-			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && inst->words[1].alu_word1_op2.up)
+			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && inst->words[1].alu_word1_op2.update_pred)
 				fprintf(f, " UPDATE_PRED");
 
 		} else if (amd_inst_is_token(fmt_str, "omod", &len)) {
@@ -767,42 +767,50 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			
 			assert(inst->info->fmt[1] == FMT_CF_WORD1);
 			fprintf(f, "%d", inst->words[1].cf_word1.count + 1);
+		
+		} else if (amd_inst_is_token(fmt_str, "pop_count", &len)) {
+
+			int pop_count;
+			assert(inst->info->fmt[1] == FMT_CF_WORD1);
+			pop_count = inst->words[1].cf_word1.pop_count;
+			if (pop_count)
+				fprintf(f, "POP_CNT(%d)", pop_count);
 
 		} else if (amd_inst_is_token(fmt_str, "cf_cond", &len)) {
 			
-			int cf_cond, vpm;
+			int cf_cond, valid_pixel_mode;
 			assert(inst->info->fmt[1] == FMT_CF_WORD1);
-			vpm = inst->words[1].cf_word1.vpm;
+			valid_pixel_mode = inst->words[1].cf_word1.valid_pixel_mode;
 			cf_cond = inst->words[1].cf_word1.cond;
-			if (vpm && cf_cond)
+			if (valid_pixel_mode && cf_cond)
 				fprintf(f, "CND(%s)", map_value(&cf_cond_map, cf_cond));
 
 		} else if (amd_inst_is_token(fmt_str, "cf_const", &len)) {
 			
-			int cf_const, cf_cond, vpm;
+			int cf_const, cf_cond, valid_pixel_mode;
 			assert(inst->info->fmt[1] == FMT_CF_WORD1);
-			vpm = inst->words[1].cf_word1.vpm;
+			valid_pixel_mode = inst->words[1].cf_word1.valid_pixel_mode;
 			cf_cond = inst->words[1].cf_word1.cond;
 			cf_const = inst->words[1].cf_word1.cf_const;
-			if (vpm && IN_RANGE(cf_cond, 2, 3))
+			if (valid_pixel_mode && IN_RANGE(cf_cond, 2, 3))
 				fprintf(f, "CF_CONST(%d)", cf_const);
 
 		} else if (amd_inst_is_token(fmt_str, "wqm", &len)) {
 			
-			int wqm;
+			int whole_quad_mode;
 			assert(inst->info->fmt[1] == FMT_CF_WORD1 || inst->info->fmt[1] == FMT_CF_ALU_WORD1);
-			wqm = inst->words[1].cf_word1.wqm;
-			if (wqm)
+			whole_quad_mode = inst->words[1].cf_word1.whole_quad_mode;
+			if (whole_quad_mode)
 				fprintf(f, "WHOLE_QUAD");
 
 		} else if (amd_inst_is_token(fmt_str, "vpm", &len)) {
 			
-			int vpm;
+			int valid_pixel_mode;
 			assert(inst->info->fmt[1] == FMT_CF_WORD1 ||
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
-			vpm = inst->words[1].cf_word1.vpm;
-			if (vpm)
+			valid_pixel_mode = inst->words[1].cf_word1.valid_pixel_mode;
+			if (valid_pixel_mode)
 				fprintf(f, "VPM");
 
 		} else if (amd_inst_is_token(fmt_str, "cf_alu_addr", &len)) {
@@ -824,7 +832,7 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			int mark;
 			assert(inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
-			mark = inst->words[1].cf_alloc_export_word1_buf.m;
+			mark = inst->words[1].cf_alloc_export_word1_buf.mark;
 			if (mark)
 				fprintf(f, "MARK");
 
@@ -843,7 +851,7 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 				inst->info->fmt[1] == FMT_CF_ALU_WORD1_EXT ||
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
-			if (!inst->words[1].cf_word1.b)
+			if (!inst->words[1].cf_word1.barrier)
 				fprintf(f, "NO_BARRIER");
 
 		} else if (amd_inst_is_token(fmt_str, "vpm", &len)) {
@@ -851,19 +859,19 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			assert(inst->info->fmt[1] == FMT_CF_WORD1 ||
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
-			if (inst->words[1].cf_word1.vpm)
+			if (inst->words[1].cf_word1.valid_pixel_mode)
 				fprintf(f, "VPM");
 
 		} else if (amd_inst_is_token(fmt_str, "kcache", &len)) {
 			
 			amd_inst_dump_kcache(0,
-				inst->words[0].cf_alu_word0.kb0,
-				inst->words[0].cf_alu_word0.km0,
+				inst->words[0].cf_alu_word0.kcache_bank0,
+				inst->words[0].cf_alu_word0.kcache_mode0,
 				inst->words[1].cf_alu_word1.kcache_addr0,
 				f);
 			amd_inst_dump_kcache(1,
-				inst->words[0].cf_alu_word0.kb1,
-				inst->words[1].cf_alu_word1.km1,
+				inst->words[0].cf_alu_word0.kcache_bank1,
+				inst->words[1].cf_alu_word1.kcache_mode1,
 				inst->words[1].cf_alu_word1.kcache_addr1,
 				f);
 
@@ -881,7 +889,7 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			
 			int rim;
 			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0_RAT);
-			rim = inst->words[0].cf_alloc_export_word0_rat.rim;
+			rim = inst->words[0].cf_alloc_export_word0_rat.rat_index_mode;
 			if (rim)
 				fprintf(f, "+idx%d", rim - 1);
 
@@ -909,7 +917,7 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			int elem_size, array_size;
 			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0 || inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0_RAT);
 			assert(inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF);
-			elem_size = inst->words[0].cf_alloc_export_word0.es;
+			elem_size = inst->words[0].cf_alloc_export_word0.elem_size;
 			array_size = inst->words[1].cf_alloc_export_word1_buf.array_size;
 			fprintf(f, "ARRAY_SIZE(%d", array_size);
 			if (elem_size)
@@ -920,36 +928,35 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			
 			int elem_size;
 			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0 || inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0_RAT);
-			elem_size = inst->words[0].cf_alloc_export_word0.es;
+			elem_size = inst->words[0].cf_alloc_export_word0.elem_size;
 			if (elem_size)
 				fprintf(f, "ELEM_SIZE(%d)", elem_size);
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_dst_gpr", &len)) {
 			
 			int dst_gpr, dst_rel;
-			int dsw, dsz, dsy, dsx;
+			int dst_sel_w, dst_sel_z, dst_sel_y, dst_sel_x;
 
 			/* Destination register */
 			assert(inst->info->fmt[1] == FMT_VTX_WORD1_GPR);
 			dst_gpr = inst->words[1].vtx_word1_gpr.dst_gpr;
-			dst_rel = inst->words[1].vtx_word1_gpr.dr;
+			dst_rel = inst->words[1].vtx_word1_gpr.dst_rel;
 			amd_inst_dump_gpr(dst_gpr, dst_rel, -1, 0, f);
 
 			/* Destination mask */
-			dsx = inst->words[1].vtx_word1_gpr.dsx;
-			dsy = inst->words[1].vtx_word1_gpr.dsy;
-			dsz = inst->words[1].vtx_word1_gpr.dsz;
-			dsw = inst->words[1].vtx_word1_gpr.dsw;
-			if (dsx != 0 || dsy != 1 || dsz != 2 || dsw != 3)
-				fprintf(f, ".%s%s%s%s", map_value(&dst_sel_map, dsx), map_value(&dst_sel_map, dsy),
-					map_value(&dst_sel_map, dsz), map_value(&dst_sel_map, dsw));
+			dst_sel_x = inst->words[1].vtx_word1_gpr.dst_sel_x;
+			dst_sel_y = inst->words[1].vtx_word1_gpr.dst_sel_y;
+			dst_sel_z = inst->words[1].vtx_word1_gpr.dst_sel_z;
+			dst_sel_w = inst->words[1].vtx_word1_gpr.dst_sel_w;
+			if (dst_sel_x != 0 || dst_sel_y != 1 || dst_sel_z != 2 || dst_sel_w != 3)
+				fprintf(f, ".%s%s%s%s", map_value(&dst_sel_map, dst_sel_x), map_value(&dst_sel_map, dst_sel_y),
+					map_value(&dst_sel_map, dst_sel_z), map_value(&dst_sel_map, dst_sel_w));
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_fetch_type", &len)) {
 			
 			int fetch_type;
-			extern struct string_map_t fmt_vtx_fetch_type_map;
 			assert(inst->info->fmt[0] == FMT_VTX_WORD0);
-			fetch_type = inst->words[0].vtx_word0.ft;
+			fetch_type = inst->words[0].vtx_word0.fetch_type;
 			if (fetch_type)
 				fprintf(f, "%sFETCH_TYPE(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_fetch_type_map, fetch_type));
@@ -958,7 +965,7 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			
 			int fetch_whole_quad;
 			assert(inst->info->fmt[0] == FMT_VTX_WORD0);
-			fetch_whole_quad = inst->words[0].vtx_word0.fwq;
+			fetch_whole_quad = inst->words[0].vtx_word0.fetch_whole_quad;
 			if (fetch_whole_quad)
 				fprintf(f, "WHOLE_QUAD");
 
@@ -974,17 +981,17 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			int src_gpr, src_rel, src_sel;
 			assert(inst->info->fmt[0] == FMT_VTX_WORD0);
 			src_gpr = inst->words[0].vtx_word0.src_gpr;
-			src_rel = inst->words[0].vtx_word0.sr;
-			src_sel = inst->words[0].vtx_word0.ssx;
+			src_rel = inst->words[0].vtx_word0.src_rel;
+			src_sel = inst->words[0].vtx_word0.src_sel_x;
 			amd_inst_dump_gpr(src_gpr, src_rel, src_sel, 0, f);
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_data_format", &len)) {
 			
 			int data_format, use_const_fields;
-			extern struct string_map_t fmt_vtx_data_format_map;
+
 			assert(inst->info->fmt[1] == FMT_VTX_WORD1_GPR || inst->info->fmt[1] == FMT_VTX_WORD1_SEM);
 			data_format = inst->words[1].vtx_word1_gpr.data_format;
-			use_const_fields = inst->words[1].vtx_word1_gpr.ucf;
+			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields)
 				fprintf(f, "%sFORMAT(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_data_format_map, data_format));
@@ -992,10 +999,10 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 		} else if (amd_inst_is_token(fmt_str, "vtx_num_format", &len)) {
 			
 			int num_format, use_const_fields;
-			extern struct string_map_t fmt_vtx_num_format_map;
+
 			assert(inst->info->fmt[1] == FMT_VTX_WORD1_GPR || inst->info->fmt[1] == FMT_VTX_WORD1_SEM);
-			num_format = inst->words[1].vtx_word1_gpr.nfa;
-			use_const_fields = inst->words[1].vtx_word1_gpr.ucf;
+			num_format = inst->words[1].vtx_word1_gpr.num_format_all;
+			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && num_format)
 				fprintf(f, "%sNUM_FORMAT(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_num_format_map, num_format));
@@ -1003,10 +1010,10 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 		} else if (amd_inst_is_token(fmt_str, "vtx_format_comp", &len)) {
 			
 			int format_comp, use_const_fields;
-			extern struct string_map_t fmt_vtx_format_comp_map;
+
 			assert(inst->info->fmt[1] == FMT_VTX_WORD1_GPR || inst->info->fmt[1] == FMT_VTX_WORD1_SEM);
-			format_comp = inst->words[1].vtx_word1_gpr.fca;
-			use_const_fields = inst->words[1].vtx_word1_gpr.ucf;
+			format_comp = inst->words[1].vtx_word1_gpr.format_comp_all;
+			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && format_comp)
 				fprintf(f, "%sFORMAT_COMP(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_format_comp_map, format_comp));
@@ -1014,10 +1021,10 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 		} else if (amd_inst_is_token(fmt_str, "vtx_srf_mode", &len)) {
 			
 			int srf_mode, use_const_fields;
-			extern struct string_map_t fmt_vtx_srf_mode_map;
+
 			assert(inst->info->fmt[1] == FMT_VTX_WORD1_GPR || inst->info->fmt[1] == FMT_VTX_WORD1_SEM);
-			srf_mode = inst->words[1].vtx_word1_gpr.sma;
-			use_const_fields = inst->words[1].vtx_word1_gpr.ucf;
+			srf_mode = inst->words[1].vtx_word1_gpr.srf_mode_all;
+			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && srf_mode)
 				fprintf(f, "%sSRF_MODE(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_srf_mode_map, srf_mode));
@@ -1033,11 +1040,11 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 		} else if (amd_inst_is_token(fmt_str, "vtx_endian_swap", &len)) {
 			
 			int endian_swap, use_const_fields;
-			extern struct string_map_t fmt_vtx_endian_swap_map;
+
 			assert(inst->info->fmt[1] == FMT_VTX_WORD1_GPR || inst->info->fmt[1] == FMT_VTX_WORD1_SEM);
 			assert(inst->info->fmt[2] == FMT_VTX_WORD2);
-			use_const_fields = inst->words[1].vtx_word1_gpr.ucf;
-			endian_swap = inst->words[2].vtx_word2.es;
+			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
+			endian_swap = inst->words[2].vtx_word2.endian_swap;
 			if (!use_const_fields && endian_swap)
 				fprintf(f, "%sENDIAN_SWAP(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_endian_swap_map, endian_swap));
@@ -1046,7 +1053,7 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			
 			int cbns;
 			assert(inst->info->fmt[2] == FMT_VTX_WORD2);
-			cbns = inst->words[2].vtx_word2.cbns;
+			cbns = inst->words[2].vtx_word2.const_buf_no_stride;
 			if (cbns)
 				fprintf(f, "%sCONST_BUF_NO_STRIDE", amd_inst_token_prefix(loop_idx, &nl));
 
@@ -1054,12 +1061,11 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 			
 			int mega_fetch_count;
 			assert(inst->info->fmt[0] == FMT_VTX_WORD0);
-			mega_fetch_count = inst->words[0].vtx_word0.mfc;
+			mega_fetch_count = inst->words[0].vtx_word0.mega_fetch_count;
 			fprintf(f, "MEGA(%d)", mega_fetch_count + 1);
 
 		} else if (amd_inst_is_token(fmt_str, "lds_op", &len)) {
 			
-			extern struct string_map_t fmt_lds_op_map;
 			assert(inst->info->fmt[1] == FMT_ALU_WORD1_LDS_IDX_OP);
 			fprintf(f, "%s", map_value(&fmt_lds_op_map,
 				inst->words[1].alu_word1_lds_idx_op.lds_op));
