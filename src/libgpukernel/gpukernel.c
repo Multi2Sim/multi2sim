@@ -41,6 +41,7 @@ void gk_init()
 
 	/* Debug categories */
 	opencl_debug_category = debug_new_category();
+	gpu_isa_debug_category = debug_new_category();
 
 	/* Initialize kernel */
 	gk = calloc(1, sizeof(struct gk_t));

@@ -82,27 +82,27 @@
 #define SETBITVALUE32(X, B, V)	((V) ? SETBIT32((X),(B)) : CLEARBIT32((X),(B)))
 #define SETBITVALUE64(X, B, V)	((V) ? SETBIT64((X),(B)) : CLEARBIT64((X),(B)))
 
-/* bitmaps */
+
+/* Bitmaps manipulation */
 #define BITMAP_TYPE(NAME, SIZE) \
-	byte NAME[((SIZE)+7)>>3]
-#define BITMAP_INIT(NAME, SIZE) { \
-	int irg; \
-	for (irg = 0; irg < (((SIZE)+7)>>3); irg++) \
-	NAME[irg] = 0; }
+	unsigned char NAME[((SIZE) + 7) >> 3]
+#define BITMAP_INIT(NAME, SIZE) { int _i; \
+	for (_i = 0; _i < (((SIZE) + 7) >> 3); _i++) \
+	NAME[_i] = 0; }
 #define BITMAP_SET(NAME, BIT) \
-	(NAME[(BIT)>>3]|=1<<((BIT)&7))
+	(NAME[(BIT) >> 3] |= 1 << ((BIT) & 7))
 #define BITMAP_CLEAR(NAME, BIT) \
-	(NAME[(BIT)>>3]&=~(1<<((BIT)&7)))
-#define BITMAP_IS_SET(NAME, BIT) \
-	(NAME[(BIT)>>3]&(1<<((BIT)&7)))
-#define BITMAP_SET_RANGE(NAME, LO, HI) { \
-	int irg; \
-	for (irg = (LO); irg <= (HI); irg++) \
-	BITMAP_SET((NAME), irg); }
-#define BITMAP_CLEAR_RANGE(NAME, LO, HI) { \
-	int irg; \
-	for (irg = (LO); irg <= (HI); irg++) \
-	BITMAP_CLEAR((NAME), irg); }
+	(NAME[(BIT) >> 3] &= ~(1 << ((BIT) & 7)))
+#define BITMAP_SET_VAL(NAME, BIT, VAL) \
+	((VAL) ? BITMAP_SET((NAME), (BIT)) : BITMAP_CLEAR((NAME), (BIT)))
+#define BITMAP_GET(NAME, BIT) \
+	((NAME[(BIT) >> 3] & (1 << ((BIT) & 7))) > 0)
+#define BITMAP_SET_RANGE(NAME, LO, HI) { int _i; \
+	for (_i = (LO); _i <= (HI); _i++) \
+	BITMAP_SET((NAME), _i); }
+#define BITMAP_CLEAR_RANGE(NAME, LO, HI) { int _i; \
+	for (_i = (LO); _i <= (HI); _i++) \
+	BITMAP_CLEAR((NAME), _i); }
 
 
 /* String Maps */
