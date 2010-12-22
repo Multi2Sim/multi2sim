@@ -191,9 +191,6 @@ int opencl_func_run(int code, unsigned int *args)
 			devices, num_devices);
 		if (platform != opencl_platform->id)
 			fatal("%s: invalid platform\n%s", err_prefix, err_opencl_param_note);
-		if (device_type != 4)  /* CL_DEVICE_TYPE_GPU */
-			fatal("%s: device_type only supported for CL_DEVICE_TYPE_GPU\n%s",
-				err_prefix, err_opencl_note);
 		
 		/* Return 1 in 'num_devices' */
 		if (num_devices)

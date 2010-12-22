@@ -228,12 +228,14 @@ struct gpu_gpr_t {
 
 #define GPU_MAX_WRITE_TASKS  5
 struct gpu_write_task_t {
+	struct amd_inst_t *inst;
 	int alu;  /* ALU generating result [0..GPU_MAX_GPR_ELEM-1] */
 	uint32_t value;  /* Computed value */
-	int gpr, rel, chan, im, wm;
+	int gpr, rel, chan, index_mode, write_mask;
 };
 
 
+#define GPU_MAX_STACK_SIZE  32
 struct gpu_thread_t {
 	
 	/* Thread status */
@@ -250,9 +252,16 @@ struct gpu_thread_t {
 	int global_id3[3];
 	int group_id3[3];
 
-	/* Instruction pointers */
-	uint32_t cf_ip;
-	uint32_t clause_ip;
+	/* CF and ALU predicate bit stack */
+	int alu_active;  /* 1 bit */
+	BITMAP_TYPE(cf_active, GPU_MAX_STACK_SIZE);  /* GPU_MAX_STACK_SIZE bits */
+	int stack_top;  /* Current CF active stack top */
+
+	/* Flag indicating that the first PRED_SET* instruction in the clause should first
+	 * push the active state. Subsequent PRED_SET* instructions just update the machine
+	 * state. This flag is set by the ALU_PUSH_BEFORE instruction and clear by the
+	 * first PRED_SET* instruction found in the clause. */
+	int push_before;
 
 	/* Write tasks. These are writes to registers scheduled by processing elements,
 	 * which are performed as a burst all together. */
@@ -325,6 +334,9 @@ void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value);
 uint32_t gpu_isa_read_op_src(int src_idx);
 void gpu_isa_write_op_dst(uint32_t value);
 void gpu_alu_group_commit(void);
+
+void gpu_stack_push(int active);
+void gpu_stack_pop(int count);
 
 void gpu_isa_init();
 void gpu_isa_done();

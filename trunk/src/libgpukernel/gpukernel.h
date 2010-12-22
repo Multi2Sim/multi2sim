@@ -53,6 +53,16 @@ int opencl_func_run(int code, unsigned int *args);
 
 
 
+/* GPU ISA */
+
+/* Debugging */
+#define gpu_isa_debugging() debug_status(gpu_isa_debug_category)
+#define gpu_isa_debug(...) debug(gpu_isa_debug_category, __VA_ARGS__)
+extern int gpu_isa_debug_category;
+
+
+
+
 /* GPU kernel */
 
 void gk_init(void);

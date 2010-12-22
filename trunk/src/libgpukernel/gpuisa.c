@@ -20,16 +20,20 @@
 #include <gpukernel-local.h>
 #include <gpudisasm.h>
 
+
 /* Some globals */
+
 struct gpu_thread_t *gpu_isa_thread;  /* Active thread */
 struct gpu_thread_t **gpu_isa_threads;  /* Array of kernel threads */
 struct amd_inst_t *gpu_isa_inst;  /* Current instruction */
 struct amd_inst_t *gpu_isa_cf_inst;  /* Current CF instruction */
 struct amd_alu_group_t *gpu_isa_alu_group;  /* Current ALU group */
 
-
 /* Instruction execution table */
 amd_inst_impl_t *amd_inst_impl;
+
+/* Debug */
+int gpu_isa_debug_category;
 
 
 /* Initialization */
@@ -157,29 +161,51 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 		
 		/* Decode CF instruction */
 		cf_buf = amd_inst_decode_cf(cf_buf, &cf_inst);
-		amd_inst_dump(&cf_inst, 0, 0, stdout);
+
+		/* Debug */
+		if (debug_status(gpu_isa_debug_category)) {
+			gpu_isa_debug("\n\n");
+			amd_inst_dump(&cf_inst, 0, 0, debug_file(gpu_isa_debug_category));
+		}
 
 		/* Execute in all threads */
 		gpu_isa_inst = gpu_isa_cf_inst = &cf_inst;
 		for (global_id = 0; global_id < kernel->global_size; global_id++) {
 			gpu_isa_thread = gpu_isa_threads[global_id];
+			GPU_THR.push_before = 0;
 			(*amd_inst_impl[gpu_isa_inst->info->inst])();
 		}
 		
 		/* ALU clause */
 		if (cf_inst.info->fmt[0] == FMT_CF_ALU_WORD0) {
 
+			/* Get ALU clause boundaries */
 			alu_buf = program->code + cf_inst.words[0].cf_alu_word0.addr * 8;
 			alu_buf_end = alu_buf + (cf_inst.words[1].cf_alu_word1.count + 1) * 8;
 			alu_group_count = 0;
 			assert(IN_RANGE(alu_buf, program->code, program->code + program->code_size)
 				&& IN_RANGE(alu_buf_end, program->code, program->code + program->code_size));
+
+			/* Actions before running clause */
+			for (global_id = 0; global_id < kernel->global_size; global_id++) {
+				gpu_isa_thread = gpu_isa_threads[global_id];
+
+				/* Apply active mask */
+				GPU_THR.alu_active = BITMAP_GET(GPU_THR.cf_active, GPU_THR.stack_top);
+			}
+
+			/* Execute clause */
 			while (alu_buf < alu_buf_end) {
 				
 				/* Decode ALU group */
 				alu_buf = amd_inst_decode_alu_group(alu_buf, alu_group_count, &alu_group);
-				amd_alu_group_dump(&alu_group, 0, stdout);
 				alu_group_count++;
+
+				/* Debug */
+				if (debug_status(gpu_isa_debug_category)) {
+					gpu_isa_debug("\n\n");
+					amd_alu_group_dump(&alu_group, 0, debug_file(gpu_isa_debug_category));
+				}
 
 				/* Execute group in all threads */
 				gpu_isa_alu_group = &alu_group;
@@ -208,7 +234,12 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 				
 				/* Decode TEX inst */
 				tex_buf = amd_inst_decode_tc(tex_buf, &tex_inst);
-				amd_inst_dump(&tex_inst, 0, 0, stdout);
+
+				/* Debug */
+				if (debug_status(gpu_isa_debug_category)) {
+					gpu_isa_debug("\n\n");
+					amd_inst_dump(&tex_inst, 0, 0, debug_file(gpu_isa_debug_category));
+				}
 
 				/* Execute in all threads */
 				gpu_isa_inst = &tex_inst;
@@ -232,6 +263,24 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 }
 
 
+/* Dump a destination value depending on the format of the destination operand
+ * in the current instruction, as specified by its flags. */
+void gpu_isa_dest_value_dump(void *pvalue, FILE *f)
+{
+	if (gpu_isa_inst->info->flags & AMD_INST_FLAG_DST_INT)
+		fprintf(f, "%d", * (int *) pvalue);
+	
+	else if (gpu_isa_inst->info->flags & AMD_INST_FLAG_DST_UINT)
+		fprintf(f, "0x%x", * (unsigned int *) pvalue);
+	
+	else if (gpu_isa_inst->info->flags & AMD_INST_FLAG_DST_FLOAT)
+		fprintf(f, "%gf", * (float *) pvalue);
+	
+	else
+		fprintf(f, "(0x%x,%gf)", * (unsigned int *) pvalue, * (float *) pvalue);
+}
+
+
 /* Read source GPR */
 uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im)
 {
@@ -249,7 +298,14 @@ void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value)
 	GPU_PARAM_NOT_SUPPORTED_OOR(gpr, 0, 127);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(rel, 0);
 	GPU_GPR_ELEM(gpr, chan) = value;
-	//printf("thread %d: GPR(%d).%d set to %d\n", gpu_isa_thread->global_id, gpr, chan, value), fflush(stdout); ////
+
+	/* Debug */
+	if (debug_status(gpu_isa_debug_category)) {
+		gpu_isa_debug("  t%d:", GPU_THR.global_id);
+		amd_inst_dump_gpr(gpr, rel, chan, 0, debug_file(gpu_isa_debug_category));
+		gpu_isa_debug("<=");
+		gpu_isa_dest_value_dump(&value, debug_file(gpu_isa_debug_category));
+	}
 }
 
 
@@ -264,9 +320,9 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 
 	/* 0..127: Value in GPR */
 	if (IN_RANGE(sel, 0, 127)) {
-		int im;  /* index_mode */
-		im = gpu_isa_inst->words[0].alu_word0.im;
-		value = gpu_isa_read_gpr(sel, rel, chan, im);
+		int index_mode;
+		index_mode = gpu_isa_inst->words[0].alu_word0.index_mode;
+		value = gpu_isa_read_gpr(sel, rel, chan, index_mode);
 		goto end;
 	}
 
@@ -277,8 +333,8 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 		uint32_t addr;
 
 		assert(gpu_isa_cf_inst->info->fmt[0] == FMT_CF_ALU_WORD0 && gpu_isa_cf_inst->info->fmt[1] == FMT_CF_ALU_WORD1);
-		kcache_bank = gpu_isa_cf_inst->words[0].cf_alu_word0.kb0;
-		kcache_mode = gpu_isa_cf_inst->words[0].cf_alu_word0.km0;
+		kcache_bank = gpu_isa_cf_inst->words[0].cf_alu_word0.kcache_bank0;
+		kcache_mode = gpu_isa_cf_inst->words[0].cf_alu_word0.kcache_mode0;
 		kcache_addr = gpu_isa_cf_inst->words[1].cf_alu_word1.kcache_addr0;
 
 		GPU_PARAM_NOT_SUPPORTED_NEQ(kcache_mode, 1);
@@ -295,8 +351,8 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 		uint32_t addr;
 
 		assert(gpu_isa_cf_inst->info->fmt[0] == FMT_CF_ALU_WORD0 && gpu_isa_cf_inst->info->fmt[1] == FMT_CF_ALU_WORD1);
-		kcache_bank = gpu_isa_cf_inst->words[0].cf_alu_word0.kb1;
-		kcache_mode = gpu_isa_cf_inst->words[1].cf_alu_word1.km1;
+		kcache_bank = gpu_isa_cf_inst->words[0].cf_alu_word0.kcache_bank1;
+		kcache_mode = gpu_isa_cf_inst->words[1].cf_alu_word1.kcache_mode1;
 		kcache_addr = gpu_isa_cf_inst->words[1].cf_alu_word1.kcache_addr1;
 
 		GPU_PARAM_NOT_SUPPORTED_NEQ(kcache_mode, 1);
@@ -397,17 +453,18 @@ void gpu_isa_write_op_dst(uint32_t value)
 	assert(gpu_isa_inst->info->fmt[0] == FMT_ALU_WORD0);
 	assert(gpu_isa_thread->write_task_count < GPU_MAX_WRITE_TASKS);
 	wt = &gpu_isa_thread->write_tasks[gpu_isa_thread->write_task_count];
+	wt->inst = gpu_isa_inst;
 	wt->alu = gpu_isa_inst->alu;
 	wt->gpr = W1.dst_gpr;
-	wt->rel = W1.dr;
-	wt->chan = W1.dc;
-	wt->im = W0.im;
+	wt->rel = W1.dst_rel;
+	wt->chan = W1.dst_chan;
+	wt->index_mode = W0.index_mode;
 	wt->value = value;
 
 	/* For ALU_WORD1_OP2, check 'write_mask' field */
-	wt->wm = 1;
-	if (gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && !gpu_isa_inst->words[1].alu_word1_op2.wm)
-		wt->wm = 0;
+	wt->write_mask = 1;
+	if (gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && !gpu_isa_inst->words[1].alu_word1_op2.write_mask)
+		wt->write_mask = 0;
 
 	/* One more write task */
 	gpu_isa_thread->write_task_count++;
@@ -423,11 +480,40 @@ void gpu_alu_group_commit(void)
 
 	for (i = 0; i < gpu_isa_thread->write_task_count; i++) {
 		wt = &gpu_isa_thread->write_tasks[i];
-		if (wt->wm)
+		gpu_isa_inst = wt->inst;
+		if (wt->write_mask)
 			gpu_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
 		GPU_THR.pv.elem[wt->alu] = wt->value;
-		//printf("thread %d: PV.%d set to %d\n", gpu_isa_thread->global_id, wt->chan, wt->value), fflush(stdout); ////
+
+		/* Debug */
+		if (gpu_isa_debugging()) {
+			gpu_isa_debug("  t%d:PV.%s<=", gpu_isa_thread->global_id,
+				map_value(&amd_alu_map, wt->chan + AMD_ALU_X));
+			gpu_isa_dest_value_dump(&wt->value, debug_file(gpu_isa_debug_category));
+		}
 	}
 	gpu_isa_thread->write_task_count = 0;
+}
+
+
+/* Push a bit into the 'cf_active' stack */
+void gpu_stack_push(int active)
+{
+	if (GPU_THR.stack_top == GPU_MAX_STACK_SIZE - 1)
+		fatal("%s: t%d: stack overflow", gpu_isa_inst->info->name, GPU_THR.global_id);
+	GPU_THR.stack_top++;
+	BITMAP_SET_VAL(GPU_THR.cf_active, GPU_THR.stack_top, active);
+	gpu_isa_debug("  t%d:push,act=%d", GPU_THR.global_id, active);
+}
+
+
+/* Pop 'count' bits from the 'cf_active' stack */
+void gpu_stack_pop(int count)
+{
+	if (count > GPU_THR.stack_top)
+		fatal("%s: t%d: stack underflow", gpu_isa_inst->info->name, GPU_THR.global_id);
+	GPU_THR.stack_top -= count;
+	gpu_isa_debug("  t%d:pop,act=%d", GPU_THR.global_id,
+		BITMAP_GET(GPU_THR.cf_active, GPU_THR.stack_top));
 }
 
