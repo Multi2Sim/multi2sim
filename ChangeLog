@@ -746,3 +746,6 @@
 2010-12-22
 	* libgpukernel: control-flow
 
+2010-12-23
+	* libgpukernel: more control flow
+
