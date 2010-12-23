@@ -19,6 +19,7 @@
 
 #include <gpukernel-local.h>
 #include <gpudisasm.h>
+#include <repos.h>
 
 
 /* Some globals */
@@ -28,6 +29,9 @@ struct gpu_thread_t **gpu_isa_threads;  /* Array of kernel threads */
 struct amd_inst_t *gpu_isa_inst;  /* Current instruction */
 struct amd_inst_t *gpu_isa_cf_inst;  /* Current CF instruction */
 struct amd_alu_group_t *gpu_isa_alu_group;  /* Current ALU group */
+
+/* Repository of deferred tasks */
+struct repos_t *gpu_isa_write_task_repos;
 
 /* Instruction execution table */
 amd_inst_impl_t *amd_inst_impl;
@@ -46,6 +50,10 @@ void gpu_isa_init()
 	amd_inst_impl[AMD_INST_##_name] = amd_inst_##_name##_impl;
 #include <gpudisasm.dat>
 #undef DEFINST
+
+	/* Repository of deferred tasks */
+	gpu_isa_write_task_repos = repos_create(sizeof(struct gpu_isa_write_task_t),
+		"gpu_isa_write_task_repos");
 }
 
 
@@ -53,6 +61,9 @@ void gpu_isa_done()
 {
 	/* Instruction execution table */
 	free(amd_inst_impl);
+
+	/* Repository of deferred tasks */
+	repos_free(gpu_isa_write_task_repos);
 }
 
 
@@ -102,6 +113,9 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 				GPU_THR.local_id = GPU_THR.local_id3[2] * kernel->local_size3[1] * kernel->local_size3[0]
 					+ GPU_THR.local_id3[1] * kernel->local_size3[0]
 					+ GPU_THR.local_id3[0];
+
+				/* Thread is initially active */
+				BITMAP_SET(GPU_THR.active, 0);
 			}
 		}
 	}
@@ -160,19 +174,20 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	while (cf_buf) {
 		
 		/* Decode CF instruction */
+		cf_ip = cf_buf - program->code;
 		cf_buf = amd_inst_decode_cf(cf_buf, &cf_inst);
 
 		/* Debug */
 		if (debug_status(gpu_isa_debug_category)) {
 			gpu_isa_debug("\n\n");
-			amd_inst_dump(&cf_inst, 0, 0, debug_file(gpu_isa_debug_category));
+			amd_inst_dump(&cf_inst, cf_ip / 8, 0,
+				debug_file(gpu_isa_debug_category));
 		}
 
 		/* Execute in all threads */
 		gpu_isa_inst = gpu_isa_cf_inst = &cf_inst;
 		for (global_id = 0; global_id < kernel->global_size; global_id++) {
 			gpu_isa_thread = gpu_isa_threads[global_id];
-			GPU_THR.push_before = 0;
 			(*amd_inst_impl[gpu_isa_inst->info->inst])();
 		}
 		
@@ -190,8 +205,8 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			for (global_id = 0; global_id < kernel->global_size; global_id++) {
 				gpu_isa_thread = gpu_isa_threads[global_id];
 
-				/* Apply active mask */
-				GPU_THR.alu_active = BITMAP_GET(GPU_THR.cf_active, GPU_THR.stack_top);
+				/* Assign 'active' bit to 'predicate' bit */
+				GPU_THR.predicate = BITMAP_GET(GPU_THR.active, GPU_THR.stack_top);
 			}
 
 			/* Execute clause */
@@ -215,7 +230,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 						gpu_isa_inst = &gpu_isa_alu_group->inst[i];
 						(*amd_inst_impl[gpu_isa_inst->info->inst])();
 					}
-					gpu_alu_group_commit();
+					gpu_isa_write_task_commit();
 				}
 			}
 		}
@@ -298,14 +313,6 @@ void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value)
 	GPU_PARAM_NOT_SUPPORTED_OOR(gpr, 0, 127);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(rel, 0);
 	GPU_GPR_ELEM(gpr, chan) = value;
-
-	/* Debug */
-	if (debug_status(gpu_isa_debug_category)) {
-		gpu_isa_debug("  t%d:", GPU_THR.global_id);
-		amd_inst_dump_gpr(gpr, rel, chan, 0, debug_file(gpu_isa_debug_category));
-		gpu_isa_debug("<=");
-		gpu_isa_dest_value_dump(&value, debug_file(gpu_isa_debug_category));
-	}
 }
 
 
@@ -441,60 +448,173 @@ end:
 }
 
 
-/* Write to dest operand in ALU instruction */
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void gpu_isa_write_op_dst(uint32_t value)
+
+
+/*
+ * Deferred tasks for ALU group
+ */
+
+/* Write to destination operand in ALU instruction */
+void gpu_isa_enqueue_write_dest(uint32_t value)
 {
-	struct gpu_write_task_t *wt;
+	struct gpu_isa_write_task_t *wt;
+
+	/* If pixel is inactive, do not enqueue the task */
+	assert(gpu_isa_inst->info->fmt[0] == FMT_ALU_WORD0);
+	if (!GPU_THR.predicate)
+		return;
 
 	/* Fields 'dst_gpr', 'dst_rel', and 'dst_chan' are at the same bit positions in both
 	 * ALU_WORD1_OP2 and ALU_WORD1_OP3 formats. */
-	assert(gpu_isa_inst->info->fmt[0] == FMT_ALU_WORD0);
-	assert(gpu_isa_thread->write_task_count < GPU_MAX_WRITE_TASKS);
-	wt = &gpu_isa_thread->write_tasks[gpu_isa_thread->write_task_count];
+	wt = repos_create_object(gpu_isa_write_task_repos);
+	wt->kind = GPU_ISA_WRITE_TASK_WRITE_DEST;
 	wt->inst = gpu_isa_inst;
-	wt->alu = gpu_isa_inst->alu;
-	wt->gpr = W1.dst_gpr;
-	wt->rel = W1.dst_rel;
-	wt->chan = W1.dst_chan;
-	wt->index_mode = W0.index_mode;
+	wt->gpr = ALU_WORD1_OP2.dst_gpr;
+	wt->rel = ALU_WORD1_OP2.dst_rel;
+	wt->chan = ALU_WORD1_OP2.dst_chan;
+	wt->index_mode = ALU_WORD0.index_mode;
 	wt->value = value;
 
 	/* For ALU_WORD1_OP2, check 'write_mask' field */
 	wt->write_mask = 1;
-	if (gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && !gpu_isa_inst->words[1].alu_word1_op2.write_mask)
+	if (gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && !ALU_WORD1_OP2.write_mask)
 		wt->write_mask = 0;
 
-	/* One more write task */
-	gpu_isa_thread->write_task_count++;
+	/* Enqueue task */
+	lnlist_add(GPU_THR.write_task_list, wt);
 }
-#undef W0
-#undef W1
 
 
-void gpu_alu_group_commit(void)
+void gpu_isa_enqueue_push_before(void)
 {
-	int i;
-	struct gpu_write_task_t *wt;
+	struct gpu_isa_write_task_t *wt;
 
-	for (i = 0; i < gpu_isa_thread->write_task_count; i++) {
-		wt = &gpu_isa_thread->write_tasks[i];
+	/* Create and enqueue task */
+	wt = repos_create_object(gpu_isa_write_task_repos);
+	wt->kind = GPU_ISA_WRITE_TASK_PUSH_BEFORE;
+	wt->inst = gpu_isa_inst;
+	lnlist_add(GPU_THR.write_task_list, wt);
+}
+
+
+void gpu_isa_enqueue_pred_set(int cond)
+{
+	struct gpu_isa_write_task_t *wt;
+
+	/* If pixel is inactive, predicate is not changed */
+	assert(gpu_isa_inst->info->fmt[0] == FMT_ALU_WORD0);
+	assert(gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2);
+	if (!GPU_THR.predicate)
+		return;
+	
+	/* Create and enqueue task */
+	wt = repos_create_object(gpu_isa_write_task_repos);
+	wt->kind = GPU_ISA_WRITE_TASK_PRED_SET;
+	wt->inst = gpu_isa_inst;
+	wt->cond = cond;
+	lnlist_add(GPU_THR.write_task_list, wt);
+}
+
+
+void gpu_isa_write_task_commit(void)
+{
+	struct lnlist_t *task_list = GPU_THR.write_task_list;
+	struct gpu_isa_write_task_t *wt;
+
+	/* Process first WRITE_DEST tasks */
+	for (lnlist_head(task_list); !lnlist_eol(task_list); ) {
+		
+		/* Get task - skip if not WRITE_DEST */
+		wt = lnlist_get(task_list);
 		gpu_isa_inst = wt->inst;
+		if (wt->kind != GPU_ISA_WRITE_TASK_WRITE_DEST) {
+			lnlist_next(task_list);
+			continue;
+		}
+
+		/* Process */
 		if (wt->write_mask)
 			gpu_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
-		GPU_THR.pv.elem[wt->alu] = wt->value;
+		GPU_THR.pv.elem[wt->inst->alu] = wt->value;
 
 		/* Debug */
 		if (gpu_isa_debugging()) {
-			gpu_isa_debug("  t%d:PV.%s<=", gpu_isa_thread->global_id,
+			gpu_isa_debug("  t%d:PV.%s", gpu_isa_thread->global_id,
 				map_value(&amd_alu_map, wt->chan + AMD_ALU_X));
+			if (wt->write_mask) {
+				gpu_isa_debug(",");
+				amd_inst_dump_gpr(wt->gpr, wt->rel, wt->chan, 0,
+					debug_file(gpu_isa_debug_category));
+			}
+			gpu_isa_debug("<=");
 			gpu_isa_dest_value_dump(&wt->value, debug_file(gpu_isa_debug_category));
 		}
+
+		/* Done with this task */
+		repos_free_object(gpu_isa_write_task_repos, wt);
+		lnlist_remove(task_list);
 	}
-	gpu_isa_thread->write_task_count = 0;
+
+	/* Process PUSH_BEFORE, PRED_SET */
+	for (lnlist_head(task_list); !lnlist_eol(task_list); ) {
+		
+		/* Get task */
+		wt = lnlist_get(task_list);
+		gpu_isa_inst = wt->inst;
+
+		/* Process */
+		switch (wt->kind) {
+
+		case GPU_ISA_WRITE_TASK_PUSH_BEFORE:
+		{
+			if (!GPU_THR.push_before_done)
+				gpu_stack_push(BITMAP_GET(GPU_THR.active, GPU_THR.stack_top));
+			GPU_THR.push_before_done = 1;
+			break;
+		}
+
+		case GPU_ISA_WRITE_TASK_PRED_SET:
+		{
+			int update_pred = ALU_WORD1_OP2.update_pred;
+			int update_exec_mask = ALU_WORD1_OP2.update_exec_mask;
+
+			assert(gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2);
+			if (update_pred)
+				GPU_THR.predicate = wt->cond;
+			if (update_exec_mask)
+				BITMAP_SET_VAL(GPU_THR.active, GPU_THR.stack_top, wt->cond);
+
+			/* Debug */
+			if (debug_status(gpu_isa_debug_category)) {
+				if (update_pred && update_exec_mask)
+					gpu_isa_debug("  t%d:act/pred<=%d", GPU_THR.global_id, wt->cond);
+				else if (update_pred)
+					gpu_isa_debug("  t%d:pred=%d", GPU_THR.global_id, wt->cond);
+				else if (update_exec_mask)
+					gpu_isa_debug("  t%d:pred=%d", GPU_THR.global_id, wt->cond);
+			}
+			break;
+		}
+
+		default:
+			abort();
+		}
+		
+		/* Done with task */
+		repos_free_object(gpu_isa_write_task_repos, wt);
+		lnlist_remove(task_list);
+	}
+
+	/* List should be empty */
+	assert(!lnlist_count(task_list));
 }
 
+
+
+
+/*
+ * Stack
+ */
 
 /* Push a bit into the 'cf_active' stack */
 void gpu_stack_push(int active)
@@ -502,8 +622,8 @@ void gpu_stack_push(int active)
 	if (GPU_THR.stack_top == GPU_MAX_STACK_SIZE - 1)
 		fatal("%s: t%d: stack overflow", gpu_isa_inst->info->name, GPU_THR.global_id);
 	GPU_THR.stack_top++;
-	BITMAP_SET_VAL(GPU_THR.cf_active, GPU_THR.stack_top, active);
-	gpu_isa_debug("  t%d:push,act=%d", GPU_THR.global_id, active);
+	BITMAP_SET_VAL(GPU_THR.active, GPU_THR.stack_top, active);
+	gpu_isa_debug("  t%d:push(act=%d)", GPU_THR.global_id, active);
 }
 
 
@@ -512,8 +632,10 @@ void gpu_stack_pop(int count)
 {
 	if (count > GPU_THR.stack_top)
 		fatal("%s: t%d: stack underflow", gpu_isa_inst->info->name, GPU_THR.global_id);
+	if (!count)
+		return;
 	GPU_THR.stack_top -= count;
 	gpu_isa_debug("  t%d:pop,act=%d", GPU_THR.global_id,
-		BITMAP_GET(GPU_THR.cf_active, GPU_THR.stack_top));
+		BITMAP_GET(GPU_THR.active, GPU_THR.stack_top));
 }
 

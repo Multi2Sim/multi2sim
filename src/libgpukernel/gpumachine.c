@@ -61,8 +61,8 @@ void amd_inst_ALU_PUSH_BEFORE_impl()
 	/* FIXME: block constant cache sets */
 	/* FIXME: whole_quad_mode */
 
-	/* Schedule a push of stack for next PRED_SET* instruction */
-	GPU_THR.push_before = 1;
+	/* Flag 'push_before_done' will be set by the first PRED_SET* inst */
+	GPU_THR.push_before_done = 0;
 }
 #undef W0
 #undef W1
@@ -72,7 +72,7 @@ void amd_inst_ALU_PUSH_BEFORE_impl()
 #define W1 gpu_isa_inst->words[1].cf_word1
 void amd_inst_ELSE_impl()
 {
-	int active;
+	int active, active_last;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.cf_const, 0);
@@ -85,14 +85,19 @@ void amd_inst_ELSE_impl()
 	//fmt_word_dump(&W1, FMT_CF_WORD0, stdout);
 	//fmt_word_dump(&W1, FMT_CF_WORD1, stdout);
 
-	/* Pop 'pop_count' from stack */
-	gpu_stack_pop(W1.pop_count);
-
 	/* Invert active mask */
-	active = BITMAP_GET(GPU_THR.cf_active, GPU_THR.stack_top);
-	BITMAP_SET_VAL(GPU_THR.cf_active, GPU_THR.stack_top, active);
+	if (!GPU_THR.stack_top)
+		fatal("ELSE: cannot execute for stack_top=0");
+	active = BITMAP_GET(GPU_THR.active, GPU_THR.stack_top);
+	active_last = BITMAP_GET(GPU_THR.active, GPU_THR.stack_top - 1);
+	BITMAP_SET_VAL(GPU_THR.active, GPU_THR.stack_top, !active && active_last);
+	gpu_isa_debug("  t%d:act=%d", GPU_THR.global_id, BITMAP_GET(GPU_THR.active, GPU_THR.stack_top));
 
-	/* FIXME: jump if all threads in group are inactive */
+
+	/* Pop 'pop_count' from stack if all pixels invactive.
+	 * FIXME: spec says pop should be done _always_. Is this an error? 
+	 * FIXME: jump if all pixels inactive. */
+	//gpu_stack_pop(W1.pop_count);
 }
 #undef W0
 #undef W1
@@ -147,6 +152,10 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.type, 1);  /* EXPORT_WRITE_IND */
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.comp_mask, 1);  /* x___ */
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.burst_count, 0);
+
+		/* If VPM is set, do not export for inactive pixels. */
+		if (W1.valid_pixel_mode && !BITMAP_GET(GPU_THR.active, GPU_THR.stack_top))
+			break;
 
 		/* W0.rw_gpr: GPR register from which to read data */
 		/* W0.rw_rel: relative/absolute rw_gpr */
@@ -332,7 +341,7 @@ void amd_inst_LSHR_INT_impl()
 	src0 = gpu_isa_read_op_src(0);
 	src1 = gpu_isa_read_op_src(1);
 	dst = src0 >> src1;
-	gpu_isa_write_op_dst(dst);
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
@@ -343,7 +352,7 @@ void amd_inst_LSHL_INT_impl()
 	src0 = gpu_isa_read_op_src(0);
 	src1 = gpu_isa_read_op_src(1);
 	dst = src0 << src1;
-	gpu_isa_write_op_dst(dst);
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
@@ -351,7 +360,7 @@ void amd_inst_MOV_impl()
 {
 	uint32_t value;
 	value = gpu_isa_read_op_src(0);
-	gpu_isa_write_op_dst(value);
+	gpu_isa_enqueue_write_dest(value);
 }
 
 
@@ -492,7 +501,7 @@ void amd_inst_ADD_INT_impl()
 	src0 = gpu_isa_read_op_src(0);
 	src1 = gpu_isa_read_op_src(1);
 	dst = src0 + src1;
-	gpu_isa_write_op_dst(dst);
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
@@ -541,9 +550,30 @@ void amd_inst_SETNE_INT_impl() {
 }
 
 
-void amd_inst_SETGT_UINT_impl() {
-	NOT_IMPL();
+#define W0 gpu_isa_inst->words[0].alu_word0
+#define W1 gpu_isa_inst->words[1].alu_word1_op2
+void amd_inst_SETGT_UINT_impl()
+{
+	uint32_t src0, src1;
+	int32_t dst;
+	int cond;
+
+	//fmt_word_dump(&W0, FMT_ALU_WORD0, stdout);
+	//fmt_word_dump(&W1, FMT_ALU_WORD1_OP2, stdout);
+
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
+
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	cond = src0 > src1;
+	dst = cond ? -1 : 0;
+	gpu_isa_enqueue_write_dest(dst);
 }
+#undef W0
+#undef W1
+
 
 
 void amd_inst_SETGE_UINT_impl() {
@@ -596,19 +626,11 @@ void amd_inst_PRED_SETNE_INT_impl()
 	src1 = gpu_isa_read_op_src(1);
 	cond = src0 != src1;
 	dst = cond ? 1.0f : 0.0f;
-	gpu_isa_write_op_dst(* (uint32_t *) &dst);
+	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
 
 	/* Active masks */
-	if (GPU_THR.push_before) {
-		gpu_stack_push(BITMAP_GET(GPU_THR.cf_active, GPU_THR.stack_top));
-		GPU_THR.push_before = 0;
-	}
-	if (W1.update_exec_mask) {
-		BITMAP_SET_VAL(GPU_THR.cf_active, GPU_THR.stack_top, cond);
-		gpu_isa_debug("  t%d:act=%d", GPU_THR.global_id, cond);
-	}
-	if (W1.update_pred)
-		GPU_THR.alu_active = cond;
+	gpu_isa_enqueue_push_before();
+	gpu_isa_enqueue_pred_set(cond);
 }
 #undef W0
 #undef W1
@@ -786,7 +808,7 @@ void amd_inst_MULLO_INT_impl() {
 	src0 = (int32_t) gpu_isa_read_op_src(0);
 	src1 = (int32_t) gpu_isa_read_op_src(1);
 	dst = src0 * src1;
-	gpu_isa_write_op_dst(dst);
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
