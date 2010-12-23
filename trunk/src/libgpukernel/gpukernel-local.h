@@ -218,20 +218,54 @@ void opencl_mem_free(struct opencl_mem_t *mem);
 
 
 
-/* GPU thread */
+/*
+ * GPU Write Tasks
+ */
 
-#define GPU_MAX_GPR_ELEM  5
-struct gpu_gpr_t {
-	uint32_t elem[GPU_MAX_GPR_ELEM];  /* x, y, z, w, t */
+enum gpu_isa_write_task_kind_enum {
+	GPU_ISA_WRITE_TASK_NONE = 0,
+	GPU_ISA_WRITE_TASK_WRITE_DEST,
+	GPU_ISA_WRITE_TASK_PUSH_BEFORE,
+	GPU_ISA_WRITE_TASK_PRED_SET
 };
 
 
-#define GPU_MAX_WRITE_TASKS  5
-struct gpu_write_task_t {
+struct gpu_isa_write_task_t {
+	
+	/* All */
+	enum gpu_isa_write_task_kind_enum kind;
 	struct amd_inst_t *inst;
-	int alu;  /* ALU generating result [0..GPU_MAX_GPR_ELEM-1] */
-	uint32_t value;  /* Computed value */
+	
+	/* WRITE_DEST */
 	int gpr, rel, chan, index_mode, write_mask;
+	uint32_t value;
+
+	/* PRED_SET */
+	int cond;
+};
+
+
+/* Repository for 'struct gpu_isa_write_task_t' objects */
+extern struct repos_t *gpu_isa_write_task_repos;
+
+
+/* Functions to handle deferred tasks */
+void gpu_isa_enqueue_write_dest(uint32_t value);
+void gpu_isa_enqueue_push_before(void);
+void gpu_isa_enqueue_pred_set(int cond);
+void gpu_isa_write_task_commit(void);
+
+
+
+
+/*
+ * GPU Thread (Pixel)
+ */
+
+#define GPU_MAX_GPR_ELEM  5
+struct gpu_gpr_t
+{
+	uint32_t elem[GPU_MAX_GPR_ELEM];  /* x, y, z, w, t */
 };
 
 
@@ -252,21 +286,21 @@ struct gpu_thread_t {
 	int global_id3[3];
 	int group_id3[3];
 
-	/* CF and ALU predicate bit stack */
-	int alu_active;  /* 1 bit */
-	BITMAP_TYPE(cf_active, GPU_MAX_STACK_SIZE);  /* GPU_MAX_STACK_SIZE bits */
-	int stack_top;  /* Current CF active stack top */
+	/* Active bit stack */
+	BITMAP_TYPE(active, GPU_MAX_STACK_SIZE);  /* GPU_MAX_STACK_SIZE bits */
+	int stack_top;  /* Current active bit stack top */
+	
+	/* Predicate bit. At the beginning of an ALU clause, it corresponds
+	 * to the 'active' bit at the top of the stack. */
+	int predicate;
 
-	/* Flag indicating that the first PRED_SET* instruction in the clause should first
-	 * push the active state. Subsequent PRED_SET* instructions just update the machine
-	 * state. This flag is set by the ALU_PUSH_BEFORE instruction and clear by the
-	 * first PRED_SET* instruction found in the clause. */
-	int push_before;
+	/* Flag indicating whether the stack has been pushed after a PRED_SET* instruction
+	 * has executed. This is done within ALU_PUSH_BEFORE instructions. */
+	int push_before_done;
 
-	/* Write tasks. These are writes to registers scheduled by processing elements,
-	 * which are performed as a burst all together. */
-	int write_task_count;
-	struct gpu_write_task_t write_tasks[GPU_MAX_WRITE_TASKS];
+	/* Linked list of write tasks. They are enqueued by machine instructions
+	 * and executed as a burst at the end of an ALU group. */
+	struct lnlist_t *write_task_list;
 
 	/* LDS (Local Data Share) OQs (Output Queues) */
 	struct list_t *lds_oqa;
@@ -317,6 +351,46 @@ extern char *err_gpu_machine_note;
 	__FUNCTION__, gpu_isa_inst->info->name, (min), (max), err_opencl_param_note); }
 
 
+/* Macros for fast access of instruction words */
+#define CF_WORD0			gpu_isa_inst->words[0].cf_word0
+#define CF_GWS_WORD0			gpu_isa_inst->words[0].cf_gws_word0
+#define CF_WORD1			gpu_isa_inst->words[1].cf_word1
+
+#define CF_ALU_WORD0			gpu_isa_inst->words[0].cf_alu_word0
+#define CF_ALU_WORD1			gpu_isa_inst->words[1].cf_alu_word1
+#define CF_ALU_WORD0_EXT		gpu_isa_inst->words[0].cf_alu_word0_ext
+#define CF_ALU_WORD1_EXT		gpu_isa_inst->words[1].cf_alu_word1_ext
+
+#define CF_ALLOC_EXPORT_WORD0		gpu_isa_inst->words[0].cf_alloc_export_word0
+#define CF_ALLOC_EXPORT_WORD0_RAT	gpu_isa_inst->words[0].cf_alloc_export_word0_rat
+#define CF_ALLOC_EXPORT_WORD1_BUF	gpu_isa_inst->words[1].cf_alloc_export_word1_buf
+#define CF_ALLOC_EXPORT_WORD1_SWIZ	gpu_isa_inst->words[1].cf_alloc_export_word1_swiz
+
+#define ALU_WORD0			gpu_isa_inst->words[0].alu_word0
+#define ALU_WORD1_OP2			gpu_isa_inst->words[1].alu_word1_op2
+#define ALU_WORD1_OP3			gpu_isa_inst->words[1].alu_word1_op3
+
+#define ALU_WORD0_LDS_IDX_OP		gpu_isa_inst->words[0].alu_word0_lds_idx_op
+#define ALU_WORD1_LDS_IDX_OP		gpu_isa_inst->words[1].alu_word1_lds_idx_op
+
+#define VTX_WORD0			gpu_isa_inst->words[0].vtx_word0
+#define VTX_WORD1_GPR			gpu_isa_inst->words[1].vtx_word1_gpr
+#define VTX_WORD1_SEM			gpu_isa_inst->words[1].vtx_word1_sem
+#define VTX_WORD2			gpu_isa_inst->words[2].vtx_word2
+
+#define TEX_WORD0			gpu_isa_inst->words[0].tex_word0
+#define TEX_WORD1			gpu_isa_inst->words[1].tex_word1
+#define TEX_WORD2			gpu_isa_inst->words[2].tex_word2
+
+#define MEM_RD_WORD0			gpu_isa_inst->words[0].mem_rd_word0
+#define MEM_RD_WORD1			gpu_isa_inst->words[1].mem_rd_word1
+#define MEM_RD_WORD2			gpu_isa_inst->words[2].mem_rd_word2
+
+#define MEM_GDS_WORD0			gpu_isa_inst->words[0].mem_gds_word0
+#define MEM_GDS_WORD1			gpu_isa_inst->words[1].mem_gds_word1
+#define MEM_GDS_WORD2			gpu_isa_inst->words[2].mem_gds_word2
+
+
 /* Global variables */
 extern struct gpu_thread_t *gpu_isa_thread;
 extern struct gpu_thread_t **gpu_isa_threads;
@@ -332,9 +406,8 @@ uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im);
 void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value);
 
 uint32_t gpu_isa_read_op_src(int src_idx);
-void gpu_isa_write_op_dst(uint32_t value);
-void gpu_alu_group_commit(void);
 
+/* Stack */
 void gpu_stack_push(int active);
 void gpu_stack_pop(int count);
 
