@@ -24,11 +24,14 @@
 
 /* Some globals */
 
-struct gpu_thread_t *gpu_isa_thread;  /* Active thread */
-struct gpu_thread_t **gpu_isa_threads;  /* Array of kernel threads */
+struct gpu_warp_t *gpu_isa_warp;  /* Current warp */
+struct gpu_thread_t *gpu_isa_thread;  /* Current thread */
 struct amd_inst_t *gpu_isa_inst;  /* Current instruction */
 struct amd_inst_t *gpu_isa_cf_inst;  /* Current CF instruction */
 struct amd_alu_group_t *gpu_isa_alu_group;  /* Current ALU group */
+
+struct gpu_thread_t **gpu_isa_threads;  /* Array of kernel threads */
+
 
 /* Repository of deferred tasks */
 struct repos_t *gpu_isa_write_task_repos;
@@ -70,20 +73,22 @@ void gpu_isa_done()
 void gpu_isa_run(struct opencl_kernel_t *kernel)
 {
 	struct opencl_program_t *program;
-	uint32_t cf_ip, clause_ip;
 
-	void *cf_buf;
 	struct amd_inst_t cf_inst;
 
-	void *alu_buf, *alu_buf_end;
 	struct amd_alu_group_t alu_group;
-	int alu_group_count;
+	int alu_group_count = 0;
+
+	struct amd_inst_t tc_inst;
 
 	int i, x, y, z;
 	int global_id;
 
 	/* Get program */
 	program = opencl_object_get(OPENCL_OBJ_PROGRAM, kernel->program_id);
+
+	/* Create one warp where all threads belong */
+	gpu_isa_warp = gpu_warp_create(kernel->global_size, 0);
 
 	/* Create threads */
 	gpu_isa_threads = calloc(kernel->global_size, sizeof(void *));
@@ -94,6 +99,9 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 					+ y * kernel->global_size3[0] + x;
 				gpu_isa_threads[global_id] = gpu_thread_create();
 				gpu_isa_thread = gpu_isa_threads[global_id];
+
+				GPU_THR.warp = gpu_isa_warp;
+				GPU_THR.warp_id = global_id;
 
 				GPU_THR.global_id3[0] = x;
 				GPU_THR.global_id3[1] = y;
@@ -115,7 +123,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 					+ GPU_THR.local_id3[0];
 
 				/* Thread is initially active */
-				BITMAP_SET(GPU_THR.active, 0);
+				bit_map_set(gpu_isa_warp->active_stack, global_id, 1, 1);
 			}
 		}
 	}
@@ -166,110 +174,109 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			fatal("%s: argument type not recognized", __FUNCTION__);
 		}
 	}
-	
+
+
 	/* Execution loop */
-	cf_ip = 0;
-	clause_ip = 0;
-	cf_buf = program->code;
-	while (cf_buf) {
+	gpu_isa_warp->cf_buf_start = program->code;
+	gpu_isa_warp->cf_buf = program->code;
+	gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
+	while (gpu_isa_warp->clause_kind != GPU_CLAUSE_CF || gpu_isa_warp->cf_buf) {
 		
-		/* Decode CF instruction */
-		cf_ip = cf_buf - program->code;
-		cf_buf = amd_inst_decode_cf(cf_buf, &cf_inst);
+		switch (gpu_isa_warp->clause_kind) {
 
-		/* Debug */
-		if (debug_status(gpu_isa_debug_category)) {
-			gpu_isa_debug("\n\n");
-			amd_inst_dump(&cf_inst, cf_ip / 8, 0,
-				debug_file(gpu_isa_debug_category));
-		}
+		case GPU_CLAUSE_CF:
+		{
+			int inst_num;
 
-		/* Execute in all threads */
-		gpu_isa_inst = gpu_isa_cf_inst = &cf_inst;
-		for (global_id = 0; global_id < kernel->global_size; global_id++) {
-			gpu_isa_thread = gpu_isa_threads[global_id];
+			/* Decode CF instruction */
+			inst_num = (gpu_isa_warp->cf_buf - program->code) / 8;
+			gpu_isa_warp->cf_buf = amd_inst_decode_cf(gpu_isa_warp->cf_buf, &cf_inst);
+
+			/* Debug */
+			if (debug_status(gpu_isa_debug_category)) {
+				gpu_isa_debug("\n\n");
+				amd_inst_dump(&cf_inst, inst_num, 0,
+					debug_file(gpu_isa_debug_category));
+			}
+
+			/* Execute once in warp */
+			gpu_isa_inst = &cf_inst;
+			gpu_isa_cf_inst = &cf_inst;
+			gpu_isa_thread = NULL;
 			(*amd_inst_impl[gpu_isa_inst->info->inst])();
+			break;
 		}
-		
-		/* ALU clause */
-		if (cf_inst.info->fmt[0] == FMT_CF_ALU_WORD0) {
 
-			/* Get ALU clause boundaries */
-			alu_buf = program->code + cf_inst.words[0].cf_alu_word0.addr * 8;
-			alu_buf_end = alu_buf + (cf_inst.words[1].cf_alu_word1.count + 1) * 8;
-			alu_group_count = 0;
-			assert(IN_RANGE(alu_buf, program->code, program->code + program->code_size)
-				&& IN_RANGE(alu_buf_end, program->code, program->code + program->code_size));
+		case GPU_CLAUSE_ALU:
+		{
+			/* Decode ALU group */
+			gpu_isa_warp->clause_buf = amd_inst_decode_alu_group(gpu_isa_warp->clause_buf,
+				alu_group_count, &alu_group);
+			alu_group_count++;
 
-			/* Actions before running clause */
-			for (global_id = 0; global_id < kernel->global_size; global_id++) {
+			/* Debug */
+			if (debug_status(gpu_isa_debug_category)) {
+				gpu_isa_debug("\n\n");
+				amd_alu_group_dump(&alu_group, 0, debug_file(gpu_isa_debug_category));
+			}
+
+			/* Execute group for each thread in warp */
+			gpu_isa_cf_inst = &cf_inst;
+			gpu_isa_alu_group = &alu_group;
+			for (global_id = gpu_isa_warp->global_id; global_id < gpu_isa_warp->global_id +
+				gpu_isa_warp->thread_count; global_id++)
+			{
 				gpu_isa_thread = gpu_isa_threads[global_id];
-
-				/* Assign 'active' bit to 'predicate' bit */
-				GPU_THR.predicate = BITMAP_GET(GPU_THR.active, GPU_THR.stack_top);
-			}
-
-			/* Execute clause */
-			while (alu_buf < alu_buf_end) {
-				
-				/* Decode ALU group */
-				alu_buf = amd_inst_decode_alu_group(alu_buf, alu_group_count, &alu_group);
-				alu_group_count++;
-
-				/* Debug */
-				if (debug_status(gpu_isa_debug_category)) {
-					gpu_isa_debug("\n\n");
-					amd_alu_group_dump(&alu_group, 0, debug_file(gpu_isa_debug_category));
-				}
-
-				/* Execute group in all threads */
-				gpu_isa_alu_group = &alu_group;
-				for (global_id = 0; global_id < kernel->global_size; global_id++) {
-					gpu_isa_thread = gpu_isa_threads[global_id];
-					for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
-						gpu_isa_inst = &gpu_isa_alu_group->inst[i];
-						(*amd_inst_impl[gpu_isa_inst->info->inst])();
-					}
-					gpu_isa_write_task_commit();
-				}
-			}
-		}
-
-		/* Fetch through a Texture Cache Clause */
-		if (cf_inst.info->inst == AMD_INST_TC) {
-			
-			void *tex_buf, *tex_buf_end;
-			struct amd_inst_t tex_inst;
-
-			tex_buf = program->code + cf_inst.words[0].cf_word0.addr * 8;
-			tex_buf_end = tex_buf + (cf_inst.words[1].cf_word1.count + 1) * 16;
-			assert(IN_RANGE(tex_buf, program->code, program->code + program->code_size)
-				&& IN_RANGE(tex_buf_end, program->code, program->code + program->code_size));
-			while (tex_buf < tex_buf_end) {
-				
-				/* Decode TEX inst */
-				tex_buf = amd_inst_decode_tc(tex_buf, &tex_inst);
-
-				/* Debug */
-				if (debug_status(gpu_isa_debug_category)) {
-					gpu_isa_debug("\n\n");
-					amd_inst_dump(&tex_inst, 0, 0, debug_file(gpu_isa_debug_category));
-				}
-
-				/* Execute in all threads */
-				gpu_isa_inst = &tex_inst;
-				for (global_id = 0; global_id < kernel->global_size; global_id++) {
-					gpu_isa_thread = gpu_isa_threads[global_id];
+				for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
+					gpu_isa_inst = &gpu_isa_alu_group->inst[i];
 					(*amd_inst_impl[gpu_isa_inst->info->inst])();
 				}
+				gpu_isa_write_task_commit();
 			}
+			break;
+		}
+
+		case GPU_CLAUSE_TC:
+		{
+			/* Decode TEX inst */
+			gpu_isa_warp->clause_buf = amd_inst_decode_tc(gpu_isa_warp->clause_buf, &tc_inst);
+
+			/* Debug */
+			if (debug_status(gpu_isa_debug_category)) {
+				gpu_isa_debug("\n\n");
+				amd_inst_dump(&tc_inst, 0, 0, debug_file(gpu_isa_debug_category));
+			}
+
+			/* Execute in all threads */
+			gpu_isa_inst = &tc_inst;
+			gpu_isa_cf_inst = &cf_inst;
+			for (global_id = gpu_isa_warp->global_id; global_id < gpu_isa_warp->global_id +
+				gpu_isa_warp->thread_count; global_id++)
+			{
+				gpu_isa_thread = gpu_isa_threads[global_id];
+				(*amd_inst_impl[gpu_isa_inst->info->inst])();
+			}
+			break;
+		}
+
+		default:
+			abort();
+		}
+
+		/* If clause end reached, return to CF program */
+		if (gpu_isa_warp->clause_kind != GPU_CLAUSE_CF) {
+			if (gpu_isa_warp->clause_buf > gpu_isa_warp->clause_buf_end)
+				fatal("%s: end of clause exceeded", gpu_isa_warp->name);
+			if (gpu_isa_warp->clause_buf == gpu_isa_warp->clause_buf_end)
+				gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
 		}
 	}
-	
+
 	/* Free threads */
 	for (i = 0; i < kernel->global_size; i++)
 		gpu_thread_free(gpu_isa_threads[i]);
 	free(gpu_isa_threads);
+	gpu_warp_free(gpu_isa_warp);
 
 	/* Free local memories */
 	for (i = 0; i < kernel->group_count; i++)
@@ -461,7 +468,7 @@ void gpu_isa_enqueue_write_dest(uint32_t value)
 
 	/* If pixel is inactive, do not enqueue the task */
 	assert(gpu_isa_inst->info->fmt[0] == FMT_ALU_WORD0);
-	if (!GPU_THR.predicate)
+	if (!gpu_thread_get_pred(gpu_isa_thread))
 		return;
 
 	/* Fields 'dst_gpr', 'dst_rel', and 'dst_chan' are at the same bit positions in both
@@ -489,6 +496,10 @@ void gpu_isa_enqueue_push_before(void)
 {
 	struct gpu_isa_write_task_t *wt;
 
+	/* Do only if instruction initiating ALU clause is ALU_PUSH_BEFORE */
+	if (gpu_isa_cf_inst->info->inst != AMD_INST_ALU_PUSH_BEFORE)
+		return;
+
 	/* Create and enqueue task */
 	wt = repos_create_object(gpu_isa_write_task_repos);
 	wt->kind = GPU_ISA_WRITE_TASK_PUSH_BEFORE;
@@ -504,12 +515,12 @@ void gpu_isa_enqueue_pred_set(int cond)
 	/* If pixel is inactive, predicate is not changed */
 	assert(gpu_isa_inst->info->fmt[0] == FMT_ALU_WORD0);
 	assert(gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2);
-	if (!GPU_THR.predicate)
+	if (!gpu_thread_get_pred(gpu_isa_thread))
 		return;
 	
 	/* Create and enqueue task */
 	wt = repos_create_object(gpu_isa_write_task_repos);
-	wt->kind = GPU_ISA_WRITE_TASK_PRED_SET;
+	wt->kind = GPU_ISA_WRITE_TASK_SET_PRED;
 	wt->inst = gpu_isa_inst;
 	wt->cond = cond;
 	lnlist_add(GPU_THR.write_task_list, wt);
@@ -567,22 +578,22 @@ void gpu_isa_write_task_commit(void)
 
 		case GPU_ISA_WRITE_TASK_PUSH_BEFORE:
 		{
-			if (!GPU_THR.push_before_done)
-				gpu_stack_push(BITMAP_GET(GPU_THR.active, GPU_THR.stack_top));
-			GPU_THR.push_before_done = 1;
+			if (!gpu_isa_warp->push_before_done)
+				gpu_warp_stack_push(gpu_isa_warp);
+			gpu_isa_warp->push_before_done = 1;
 			break;
 		}
 
-		case GPU_ISA_WRITE_TASK_PRED_SET:
+		case GPU_ISA_WRITE_TASK_SET_PRED:
 		{
 			int update_pred = ALU_WORD1_OP2.update_pred;
 			int update_exec_mask = ALU_WORD1_OP2.update_exec_mask;
 
 			assert(gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2);
 			if (update_pred)
-				GPU_THR.predicate = wt->cond;
+				gpu_thread_set_pred(gpu_isa_thread, wt->cond);
 			if (update_exec_mask)
-				BITMAP_SET_VAL(GPU_THR.active, GPU_THR.stack_top, wt->cond);
+				gpu_thread_set_active(gpu_isa_thread, wt->cond);
 
 			/* Debug */
 			if (debug_status(gpu_isa_debug_category)) {
@@ -607,35 +618,5 @@ void gpu_isa_write_task_commit(void)
 
 	/* List should be empty */
 	assert(!lnlist_count(task_list));
-}
-
-
-
-
-/*
- * Stack
- */
-
-/* Push a bit into the 'cf_active' stack */
-void gpu_stack_push(int active)
-{
-	if (GPU_THR.stack_top == GPU_MAX_STACK_SIZE - 1)
-		fatal("%s: t%d: stack overflow", gpu_isa_inst->info->name, GPU_THR.global_id);
-	GPU_THR.stack_top++;
-	BITMAP_SET_VAL(GPU_THR.active, GPU_THR.stack_top, active);
-	gpu_isa_debug("  t%d:push(act=%d)", GPU_THR.global_id, active);
-}
-
-
-/* Pop 'count' bits from the 'cf_active' stack */
-void gpu_stack_pop(int count)
-{
-	if (count > GPU_THR.stack_top)
-		fatal("%s: t%d: stack underflow", gpu_isa_inst->info->name, GPU_THR.global_id);
-	if (!count)
-		return;
-	GPU_THR.stack_top -= count;
-	gpu_isa_debug("  t%d:pop,act=%d", GPU_THR.global_id,
-		BITMAP_GET(GPU_THR.active, GPU_THR.stack_top));
 }
 

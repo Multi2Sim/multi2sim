@@ -105,6 +105,26 @@
 	BITMAP_CLEAR((NAME), _i); }
 
 
+
+
+/* Bit map functions */
+
+struct bit_map_t;
+
+struct bit_map_t *bit_map_create(unsigned int size);
+void bit_map_free(struct bit_map_t *bit_map);
+
+void bit_map_set(struct bit_map_t *bit_map, unsigned int where, unsigned int size,
+	unsigned int value);
+unsigned int bit_map_get(struct bit_map_t *bit_map, unsigned int where, unsigned int size);
+int bit_map_count_ones(struct bit_map_t *bit_map, unsigned int where, unsigned int size);
+void bit_map_copy(struct bit_map_t *dst, unsigned int dst_where,
+	struct bit_map_t *src, unsigned int src_where, unsigned int size);
+void bit_map_dump(struct bit_map_t *bit_map, unsigned int where, unsigned int size, FILE *f);
+
+
+
+
 /* String Maps */
 struct string_map_t {
 	int count;
