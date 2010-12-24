@@ -226,7 +226,7 @@ enum gpu_isa_write_task_kind_enum {
 	GPU_ISA_WRITE_TASK_NONE = 0,
 	GPU_ISA_WRITE_TASK_WRITE_DEST,
 	GPU_ISA_WRITE_TASK_PUSH_BEFORE,
-	GPU_ISA_WRITE_TASK_PRED_SET
+	GPU_ISA_WRITE_TASK_SET_PRED
 };
 
 
@@ -259,6 +259,63 @@ void gpu_isa_write_task_commit(void);
 
 
 /*
+ * GPU Warp
+ */
+
+/* Type of clauses */
+enum gpu_clause_kind_enum {
+	GPU_CLAUSE_NONE = 0,
+	GPU_CLAUSE_CF,  /* Control-flow */
+	GPU_CLAUSE_ALU,  /* ALU clause */
+	GPU_CLAUSE_TC,  /* Fetch trough a Texture Cache Clause */
+	GPU_CLAUSE_VC  /* Fetch through a Vectex Cache Clause */
+};
+
+
+/* Warp */
+#define GPU_MAX_STACK_SIZE  32
+struct gpu_warp_t
+{
+	/* Number of threads and 'global_id' of first thread */
+	int thread_count;
+	int global_id;
+	char name[20];
+
+	/* Current clause kind and instruction pointers */
+	enum gpu_clause_kind_enum clause_kind;
+
+	/* Starting/current CF buffer and instruction */
+	void *cf_buf_start;
+	void *cf_buf;
+	struct amd_inst_t *cf_inst;
+
+	/* Current and end of clause buffer */
+	void *clause_buf;
+	void *clause_buf_end;
+
+	/* Active mask stack */
+	struct bit_map_t *active_stack;  /* GPU_MAX_STACK_SIZE * thread_count elements */
+	int stack_top;
+
+	/* Predicate mask */
+	struct bit_map_t *pred;  /* thread_count elements */
+
+	/* Flag indicating whether the stack has been pushed after a PRED_SET* instruction
+	 * has executed. This is done within ALU_PUSH_BEFORE instructions. */
+	int push_before_done;
+};
+
+
+struct gpu_warp_t *gpu_warp_create(int thread_count, int global_id);
+void gpu_warp_free(struct gpu_warp_t *warp);
+
+void gpu_warp_stack_push(struct gpu_warp_t *warp);
+void gpu_warp_stack_pop(struct gpu_warp_t *warp, int count);
+
+
+
+
+/*
  * GPU Thread (Pixel)
  */
 
@@ -268,15 +325,17 @@ struct gpu_gpr_t
 	uint32_t elem[GPU_MAX_GPR_ELEM];  /* x, y, z, w, t */
 };
 
+struct gpu_thread_t
+{
+	/* Warp where it belongs */
+	struct gpu_warp_t *warp;
 
-#define GPU_MAX_STACK_SIZE  32
-struct gpu_thread_t {
-	
 	/* Thread status */
 	struct gpu_gpr_t gpr[128];  /* General purpose registers */
 	struct gpu_gpr_t pv;  /* Result of last computations */
 
 	/* 1D identifiers */
+	int warp_id;
 	int local_id;
 	int global_id;
 	int group_id;
@@ -285,18 +344,6 @@ struct gpu_thread_t {
 	int local_id3[3];
 	int global_id3[3];
 	int group_id3[3];
-
-	/* Active bit stack */
-	BITMAP_TYPE(active, GPU_MAX_STACK_SIZE);  /* GPU_MAX_STACK_SIZE bits */
-	int stack_top;  /* Current active bit stack top */
-	
-	/* Predicate bit. At the beginning of an ALU clause, it corresponds
-	 * to the 'active' bit at the top of the stack. */
-	int predicate;
-
-	/* Flag indicating whether the stack has been pushed after a PRED_SET* instruction
-	 * has executed. This is done within ALU_PUSH_BEFORE instructions. */
-	int push_before_done;
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
 	 * and executed as a burst at the end of an ALU group. */
@@ -310,6 +357,12 @@ struct gpu_thread_t {
 
 struct gpu_thread_t *gpu_thread_create();
 void gpu_thread_free(struct gpu_thread_t *thread);
+
+/* Consult and change active/predicate bits */
+void gpu_thread_set_active(struct gpu_thread_t *thread, int active);
+int gpu_thread_get_active(struct gpu_thread_t *thread);
+void gpu_thread_set_pred(struct gpu_thread_t *thread, int pred);
+int gpu_thread_get_pred(struct gpu_thread_t *thread);
 
 
 
@@ -394,6 +447,7 @@ extern char *err_gpu_machine_note;
 /* Global variables */
 extern struct gpu_thread_t *gpu_isa_thread;
 extern struct gpu_thread_t **gpu_isa_threads;
+extern struct gpu_warp_t *gpu_isa_warp;
 extern struct amd_inst_t *gpu_isa_inst;
 extern struct amd_alu_group_t *gpu_isa_alu_group;
 

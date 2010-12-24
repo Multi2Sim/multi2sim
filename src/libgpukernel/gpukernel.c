@@ -157,6 +157,61 @@ void gk_libopencl_failed(int pid)
 
 
 /*
+ * GPU Warp
+ */
+
+struct gpu_warp_t *gpu_warp_create(int thread_count, int global_id)
+{
+	struct gpu_warp_t *warp;
+	warp = calloc(1, sizeof(struct gpu_warp_t));
+	warp->thread_count = thread_count;
+	warp->global_id = global_id;
+	warp->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * thread_count);
+	warp->pred = bit_map_create(thread_count);
+	snprintf(warp->name, sizeof(warp->name), "warp[%d-%d]",
+		global_id, global_id + thread_count - 1);
+	return warp;
+}
+
+
+void gpu_warp_free(struct gpu_warp_t *warp)
+{
+	bit_map_free(warp->active_stack);
+	bit_map_free(warp->pred);
+	free(warp);
+}
+
+
+void gpu_warp_stack_push(struct gpu_warp_t *warp)
+{
+	if (warp->stack_top == GPU_MAX_STACK_SIZE - 1)
+		fatal("%s: stack overflow", gpu_isa_inst->info->name);
+	warp->stack_top++;
+	bit_map_copy(warp->active_stack, warp->stack_top * warp->thread_count,
+		warp->active_stack, (warp->stack_top - 1) * warp->thread_count,
+		warp->thread_count);
+	gpu_isa_debug("  %s:push", warp->name);
+}
+
+
+void gpu_warp_stack_pop(struct gpu_warp_t *warp, int count)
+{
+	if (!count)
+		return;
+	if (warp->stack_top < count)
+		fatal("%s: stack underflow", gpu_isa_inst->info->name);
+	warp->stack_top -= count;
+	if (debug_status(gpu_isa_debug_category)) {
+		gpu_isa_debug("  %s:pop(%d),act=", warp->name, count);
+		bit_map_dump(warp->active_stack, warp->stack_top * warp->thread_count,
+			warp->thread_count, debug_file(gpu_isa_debug_category));
+	}
+}
+
+
+
+
+/*
  * GPU Thread
  */
 
@@ -184,5 +239,47 @@ void gpu_thread_free(struct gpu_thread_t *thread)
 
 	/* Free thread */
 	free(thread);
+}
+
+
+void gpu_thread_set_active(struct gpu_thread_t *thread, int active)
+{
+	struct gpu_warp_t *warp = thread->warp;
+	assert(thread->global_id >= warp->global_id &&
+		thread->global_id < warp->global_id + warp->thread_count);
+	assert(thread->warp_id < warp->thread_count);
+	bit_map_set(warp->active_stack, warp->stack_top * warp->thread_count
+		+ thread->warp_id, 1, !!active);
+}
+
+
+int gpu_thread_get_active(struct gpu_thread_t *thread)
+{
+	struct gpu_warp_t *warp = thread->warp;
+	assert(thread->global_id >= warp->global_id &&
+		thread->global_id < warp->global_id + warp->thread_count);
+	assert(thread->warp_id < warp->thread_count);
+	return bit_map_get(warp->active_stack, warp->stack_top * warp->thread_count
+		+ thread->warp_id, 1);
+}
+
+
+void gpu_thread_set_pred(struct gpu_thread_t *thread, int pred)
+{
+	struct gpu_warp_t *warp = thread->warp;
+	assert(thread->global_id >= warp->global_id &&
+		thread->global_id < warp->global_id + warp->thread_count);
+	assert(thread->warp_id < warp->thread_count);
+	bit_map_set(warp->pred, thread->warp_id, 1, !!pred);
+}
+
+
+int gpu_thread_get_pred(struct gpu_thread_t *thread)
+{
+	struct gpu_warp_t *warp = thread->warp;
+	assert(thread->global_id >= warp->global_id &&
+		thread->global_id < warp->global_id + warp->thread_count);
+	assert(thread->warp_id < warp->thread_count);
+	return bit_map_get(warp->pred, thread->warp_id, 1);
 }
 
