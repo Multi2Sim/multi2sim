@@ -758,3 +758,7 @@
 		detail was not taken into account, and they were modeled as if they modified
 		the floating-point status register.
 
+2010-12-27
+	* libgpukernel/opencl-obj.c: improved analysis of ELF kernel binaries based on
+		the symbols contained in the main symbol table.
+

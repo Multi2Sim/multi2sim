@@ -107,10 +107,12 @@ static void elf_read_symtab(struct elf_file_t *f, int section)
 	/* Insert symbols */
 	for (i = 0; i < count; i++) {
 		sym = (Elf32_Sym *) buf + i;
-		if (* (char *) (bufnames + sym->st_name) == '\0' || !sym->st_value)
+		if (* (char *) (bufnames + sym->st_name) == '\0')
 			continue;
 		symbol = &f->symtab[f->symtab_count++];
 		symbol->value = sym->st_value;
+		symbol->size = sym->st_size;
+		symbol->section = sym->st_shndx;
 		symbol->name = strdup(bufnames + sym->st_name);
 		if (!symbol->name)
 			fatal("%s: out of memory duplicating symbol name", f->path);
@@ -326,39 +328,65 @@ uint32_t elf_section_addr(struct elf_file_t *f, int section)
 }
 
 
-void *elf_section_read(struct elf_file_t *f, int section)
+void *elf_section_read_offset(struct elf_file_t *f, int section, uint32_t offset, uint32_t size)
 {
 	void *buf;
 	Elf32_Shdr *shdr;
 	int count;
 
-	/* Allocate memory */
+	/* Check bounds */
 	if (section < 0 || section >= f->ehdr.e_shnum) {
-		elf_debug("elf_section_read: section out of range\n");
+		elf_debug("%s: section out of range\n", __FUNCTION__);
 		return NULL;
 	}
+
+	/* Check valid offset and size */
 	shdr = &f->shdr[section];
-	buf = calloc(1, shdr->sh_size);
+	if (offset + size > shdr->sh_size || !size) {
+		elf_debug("%s: invalid offset/size\n", __FUNCTION__);
+		return NULL;
+	}
+
+	/* Allocate buffer */
+	buf = calloc(1, size);
 	if (!buf) {
-		elf_debug("elf_section_read: out of memory\n");
+		elf_debug("%s: out of memory\n", __FUNCTION__);
 		return NULL;
 	}
 
 	/* Section of type SHT_NOBITS */
 	if (f->shdr[section].sh_type == 8) {
-		memset(buf, 0, shdr->sh_size);
+		memset(buf, 0, size);
 		return buf;
 	}
 
 	/* Copy section contents */
-	fseek(f->f, shdr->sh_offset, SEEK_SET);
-	count = fread(buf, 1, shdr->sh_size, f->f);
-	if (count != shdr->sh_size) {
-		elf_debug("elf_section_read: could not read section\n");
+	fseek(f->f, shdr->sh_offset + offset, SEEK_SET);
+	count = fread(buf, 1, size, f->f);
+	if (count != size) {
+		elf_debug("%s: could not read section\n", __FUNCTION__);
 		free(buf);
 		return NULL;
 	}
+
+	/* Success */
 	return buf;
+}
+
+
+void *elf_section_read(struct elf_file_t *f, int section)
+{
+	Elf32_Shdr *shdr;
+
+	/* Check bounds */
+	if (section < 0 || section >= f->ehdr.e_shnum) {
+		elf_debug("%s: section out of range\n", __FUNCTION__);
+		return NULL;
+	}
+
+	/* Call partial read */
+	shdr = &f->shdr[section];
+	return elf_section_read_offset(f, section, 0, shdr->sh_size);
 }
 
 
@@ -368,7 +396,7 @@ void elf_section_free(void *buf)
 }
 
 
-char *elf_get_symbol(struct elf_file_t *f, uint32_t addr, uint32_t *poffs)
+struct elf_symbol_t *elf_get_symbol_by_address(struct elf_file_t *f, uint32_t addr, uint32_t *poffs)
 {
 	int min, max, mid;
 	
@@ -394,9 +422,21 @@ char *elf_get_symbol(struct elf_file_t *f, uint32_t addr, uint32_t *poffs)
 	/* Go backwards to find appropriate symbol */
 	while (min > 0 && f->symtab[min].value == f->symtab[min - 1].value)
 		min--;
+	if (!f->symtab[min].value)
+		return NULL;
 	if (poffs)
 		*poffs = addr - f->symtab[min].value;
-	return f->symtab[min].name;
+	return &f->symtab[min];
+}
+
+
+struct elf_symbol_t *elf_get_symbol_by_name(struct elf_file_t *f, char *name)
+{
+	int i;
+	for (i = 0; i < f->symtab_count; i++)
+		if (!strcmp(f->symtab[i].name, name))
+			return &f->symtab[i];
+	return NULL;
 }
 
 
