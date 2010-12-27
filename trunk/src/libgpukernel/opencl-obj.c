@@ -139,6 +139,10 @@ void opencl_object_free_all()
 	while ((object = opencl_object_get_type(OPENCL_OBJ_MEM)))
 		opencl_mem_free((struct opencl_mem_t *) object);
 	
+	/* Events */
+	while ((object = opencl_object_get_type(OPENCL_OBJ_EVENT)))
+		opencl_event_free((struct opencl_event_t *) object);
+	
 	/* Any object left */
 	if (lnlist_count(opencl_object_list))
 		panic("opencl_object_free_all: objects remaining in the list");
@@ -334,6 +338,7 @@ struct opencl_context_t *opencl_context_create()
 
 	context = calloc(1, sizeof(struct opencl_context_t));
 	context->id = opencl_object_new_id(OPENCL_OBJ_CONTEXT);
+	context->ref_count = 1;
 	opencl_object_add(context);
 	return context;
 }
@@ -424,6 +429,7 @@ struct opencl_command_queue_t *opencl_command_queue_create()
 
 	command_queue = calloc(1, sizeof(struct opencl_command_queue_t));
 	command_queue->id = opencl_object_new_id(OPENCL_OBJ_COMMAND_QUEUE);
+	command_queue->ref_count = 1;
 	opencl_object_add(command_queue);
 	return command_queue;
 }
@@ -472,6 +478,7 @@ struct opencl_program_t *opencl_program_create()
 
 	program = calloc(1, sizeof(struct opencl_program_t));
 	program->id = opencl_object_new_id(OPENCL_OBJ_PROGRAM);
+	program->ref_count = 1;
 	opencl_object_add(program);
 	return program;
 }
@@ -479,8 +486,14 @@ struct opencl_program_t *opencl_program_create()
 
 void opencl_program_free(struct opencl_program_t *program)
 {
-	if (program->binary)
-		free(program->binary);
+	/* Avoid 'mhandle' library to complain about freeing binary code buffer when
+	 * it was allocated by a call to 'read_buffer'. */
+	if (program->binary) {
+		if (program->binary_loaded_from_file)
+			free_buffer(program->binary);
+		else
+			free(program->binary);
+	}
 	if (program->code)
 		free(program->code);
 	if (program->rodata)
@@ -604,6 +617,7 @@ struct opencl_kernel_t *opencl_kernel_create()
 
 	kernel = calloc(1, sizeof(struct opencl_kernel_t));
 	kernel->id = opencl_object_new_id(OPENCL_OBJ_KERNEL);
+	kernel->ref_count = 1;
 	kernel->arg_list = list_create(10);
 	opencl_object_add(kernel);
 	return kernel;
@@ -728,6 +742,7 @@ void opencl_kernel_load_rodata(struct opencl_kernel_t *kernel, char *kernel_name
 	if (buf == buf_end)
 		fatal("%s: loaded binary does not contain kernel '%s'.\n%s",
 			__FUNCTION__, kernel_name, err_opencl_param_note);
+	strncpy(kernel->name, kernel_name, MAX_STRING_SIZE);
 
 	/* Analyze lines in 'rodata'. The processing will stop after finding a line like:
 	 * ;ARGEND:__OpenCL_XXX_kernel */
@@ -750,11 +765,11 @@ void opencl_kernel_load_rodata(struct opencl_kernel_t *kernel, char *kernel_name
 		/* Memory */
 		if (!strcmp(dest_str_ptrs[0], "memory")) {
 			OPENCL_KERNEL_RODATA_TOKEN_COUNT(3);
-			if (!strcmp(dest_str_ptrs[1], "hwprivate"))
-				kernel->memory_hwprivate = atoi(dest_str_ptrs[2]);
-			else if (!strcmp(dest_str_ptrs[1], "hwlocal"))
-				kernel->memory_hwlocal = atoi(dest_str_ptrs[2]);
-			else
+			if (!strcmp(dest_str_ptrs[1], "hwprivate")) {
+				OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(2, "0");
+			} else if (!strcmp(dest_str_ptrs[1], "hwlocal")) {
+				OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(2, "0");
+			} else
 				OPENCL_KERNEL_RODATA_NOT_SUPPORTED(1);
 			continue;
 		}
@@ -777,15 +792,23 @@ void opencl_kernel_load_rodata(struct opencl_kernel_t *kernel, char *kernel_name
 			OPENCL_KERNEL_RODATA_TOKEN_COUNT(9);
 			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(3, "1");
 			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(4, "1");
-			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(6, "uav");
 			OPENCL_KERNEL_RODATA_NOT_SUPPORTED_NEQ(7, "1");
 			arg = opencl_kernel_arg_create(dest_str_ptrs[1]);
 			arg->kind = OPENCL_KERNEL_ARG_KIND_POINTER;
 			arg->elem_size = atoi(dest_str_ptrs[8]);
 			list_add(kernel->arg_list, arg);
-			opencl_debug("    arg %d: '%s', pointer to %s values (%d-byte group)\n",
+			opencl_debug("    arg %d: '%s', pointer to %s values (%d-byte group) in ",
 				list_count(kernel->arg_list) - 1, arg->name, dest_str_ptrs[2],
 				arg->elem_size);
+			if (!strcmp(dest_str_ptrs[6], "uav")) {
+				arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;
+				opencl_debug("global");
+			} else if (!strcmp(dest_str_ptrs[6], "hl")) {
+				arg->mem_scope = OPENCL_MEM_SCOPE_LOCAL;
+				opencl_debug("local");
+			} else
+				OPENCL_KERNEL_RODATA_NOT_SUPPORTED(6);
+			opencl_debug(" memory\n");
 			continue;
 		}
 
@@ -793,6 +816,48 @@ void opencl_kernel_load_rodata(struct opencl_kernel_t *kernel, char *kernel_name
 		fatal("%s: entry '%s' in 'rodata' section not recognized.\n%s",
 			__FUNCTION__, dest_str_ptrs[0], err_opencl_kernel_rodata_note);
 	}
+}
+
+
+uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint32_t name,
+	struct mem_t *mem, uint32_t addr, uint32_t size)
+{
+	uint32_t size_ret = 0;
+	void *info = NULL;
+
+	uint64_t local_mem_size = 0;
+	uint32_t work_group_size = 256;
+
+	switch (name) {
+
+	case 0x11b0:  /* CL_KERNEL_WORK_GROUP_SIZE */
+		warning("%s: CL_KERNEL_WORK_GROUP_SIZE: %d is returned, but this should be obtained\n"
+			"\tfrom the kernel register usage and the device info.",
+			__FUNCTION__, work_group_size);
+		info = &work_group_size;
+		size_ret = 4;
+		break;
+
+	case 0x11b2:  /* CL_KERNEL_LOCAL_MEM_SIZE */
+		warning("%s: CL_KERNEL_LOCAL_MEM_SIZE: 0 is returned, but this information can be obtained\n"
+			"\tfrom the 'XXX_kernel.text.0' section.", __FUNCTION__);
+		info = &local_mem_size;
+		size_ret = 8;
+		break;
+	
+	case 0x11b1:  /* CL_KERNEL_COMPILE_WORK_GROUP_SIZE */
+	case 0x11b3:  /* CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE */
+	case 0x11b4:  /* CL_KERNEL_PRIVATE_MEM_SIZE */
+	default:
+		fatal("%s: invalid or not implemented value for 'name' (0x%x)\n%s",
+			__FUNCTION__, name, err_opencl_param_note);
+	}
+	
+	/* Write to memory and return size */
+	assert(info);
+	if (addr && size >= size_ret)
+		mem_write(mem, addr, size_ret, info);
+	return size_ret;
 }
 
 
@@ -806,6 +871,7 @@ struct opencl_mem_t *opencl_mem_create()
 
 	mem = calloc(1, sizeof(struct opencl_mem_t));
 	mem->id = opencl_object_new_id(OPENCL_OBJ_MEM);
+	mem->ref_count = 1;
 	opencl_object_add(mem);
 	return mem;
 }
@@ -815,5 +881,70 @@ void opencl_mem_free(struct opencl_mem_t *mem)
 {
 	opencl_object_remove(mem);
 	free(mem);
+}
+
+
+
+
+/* OpenCL Event */
+
+struct opencl_event_t *opencl_event_create(enum opencl_event_kind_enum kind)
+{
+	struct opencl_event_t *event;
+
+	event = calloc(1, sizeof(struct opencl_event_t));
+	event->id = opencl_object_new_id(OPENCL_OBJ_EVENT);
+	event->ref_count = 1;
+	event->kind = kind;
+	opencl_object_add(event);
+	return event;
+}
+
+
+void opencl_event_free(struct opencl_event_t *event)
+{
+	opencl_object_remove(event);
+	free(event);
+}
+
+
+uint32_t opencl_event_get_profiling_info(struct opencl_event_t *event, uint32_t name,
+	struct mem_t *mem, uint32_t addr, uint32_t size)
+{
+	uint32_t size_ret = 0;
+	void *info = NULL;
+
+	switch (name) {
+
+	case 0x1280:  /* CL_PROFILING_COMMAND_QUEUED */
+		size_ret = 8;
+		info = &event->time_queued;
+		break;
+	
+	case 0x1281:  /* CL_PROFILING_COMMAND_SUBMIT */
+		size_ret = 8;
+		info = &event->time_submit;
+		break;
+	
+	case 0x1282:  /* CL_PROFILING_COMMAND_START */
+		size_ret = 8;
+		info = &event->time_start;
+		break;
+	
+	case 0x1283:  /* CL_PROFILING_COMMAND_END */
+		size_ret = 8;
+		info = &event->time_end;
+		break;
+
+	default:
+		fatal("%s: invalid or not implemented value for 'name' (0x%x)\n%s",
+			__FUNCTION__, name, err_opencl_param_note);
+	}
+	
+	/* Write to memory and return size */
+	assert(info);
+	if (addr && size >= size_ret)
+		mem_write(mem, addr, size_ret, info);
+	return size_ret;
 }
 

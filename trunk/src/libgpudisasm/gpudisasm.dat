@@ -127,7 +127,7 @@ DEFINST(MUL_IEEE,
 	"MUL_e%omod     %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 2,
-	0
+	AMD_INST_FLAG_DST_FLOAT
 )
 
 DEFINST(MAX,
@@ -253,7 +253,7 @@ DEFINST(ASHR_INT,
 	"ASHR%omod      %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 21,
-	0
+	AMD_INST_FLAG_DST_INT
 )
 
 DEFINST(LSHR_INT,
@@ -439,7 +439,7 @@ DEFINST(AND_INT,
 )
 
 DEFINST(OR_INT,
-	"%name %alu_dst,  %alu_src0,  %alu_src1",
+	"OR_INT%omod   %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 49,
 	AMD_INST_FLAG_DST_UINT
@@ -1464,7 +1464,7 @@ DEFINST(MULADD_IEEE,
 	"MULADD_e    %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 24,
-	0
+	AMD_INST_FLAG_DST_FLOAT
 )
 
 DEFINST(CNDE,

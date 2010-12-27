@@ -752,3 +752,9 @@
 2010-12-23
 	* libgpukernel: restructure. Warps created.
 
+2010-12-26
+	* libm2skernel/machine-fp.c: BUG FIXED in machine instructions FCOMI, FCOMIP, FUCOMI,
+		FUCOMIP. These instructions exceptionally modify the integer flags. This
+		detail was not taken into account, and they were modeled as if they modified
+		the floating-point status register.
+

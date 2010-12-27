@@ -29,6 +29,10 @@ char *err_gpu_machine_note =
 	gpu_isa_inst->info->name, err_gpu_machine_note)
 
 
+/*
+ * CF Instructions
+ */
+
 #define W0  CF_ALU_WORD0
 #define W1  CF_ALU_WORD1
 void amd_inst_ALU_impl()
@@ -43,58 +47,32 @@ void amd_inst_ALU_impl()
 	gpu_isa_warp->clause_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
 	gpu_isa_warp->clause_buf_end = gpu_isa_warp->clause_buf + (W1.count + 1) * 8;
 	gpu_isa_warp->clause_kind = GPU_CLAUSE_ALU;
-
-	/* Copy 'active' mask at the top of the stack to 'pred' mask */
-	bit_map_copy(gpu_isa_warp->pred, 0, gpu_isa_warp->active_stack,
-		gpu_isa_warp->stack_top * gpu_isa_warp->thread_count, gpu_isa_warp->thread_count);
-	if (debug_status(gpu_isa_debug_category)) {
-		gpu_isa_debug("  %s:pred=", gpu_isa_warp->name);
-		bit_map_dump(gpu_isa_warp->pred, 0, gpu_isa_warp->thread_count,
-			debug_file(gpu_isa_debug_category));
-	}
+	gpu_isa_alu_clause_start();
 }
 #undef W0
 #undef W1
 
 
-void amd_inst_ALU_BREAK_impl() {
-	NOT_IMPL();
+void amd_inst_ALU_BREAK_impl()
+{
+	/* Same behavior as ALU */
+	/* FIXME: what's the difference? */
+	amd_inst_ALU_impl();
 }
 
 
-void amd_inst_ALU_POP_AFTER_impl() {
-	NOT_IMPL();
+void amd_inst_ALU_POP_AFTER_impl()
+{
+	/* Same behavior as ALU */
+	amd_inst_ALU_impl();
 }
 
 
-#define W0  CF_ALU_WORD0
-#define W1  CF_ALU_WORD1
 void amd_inst_ALU_PUSH_BEFORE_impl()
 {
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.alt_const, 0);
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
-	/* FIXME: block constant cache sets */
-	/* FIXME: whole_quad_mode */
-
-	/* Start ALU clause */
-	gpu_isa_warp->clause_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
-	gpu_isa_warp->clause_buf_end = gpu_isa_warp->clause_buf + (W1.count + 1) * 8;
-	gpu_isa_warp->clause_kind = GPU_CLAUSE_ALU;
-
-	/* Flag 'push_before_done' will be set by the first PRED_SET* inst */
-	gpu_isa_warp->push_before_done = 0;
-
-	/* Copy 'active' mask at the top of the stack to 'pred' mask */
-	bit_map_copy(gpu_isa_warp->pred, 0, gpu_isa_warp->active_stack,
-		gpu_isa_warp->stack_top * gpu_isa_warp->thread_count, gpu_isa_warp->thread_count);
-	if (debug_status(gpu_isa_debug_category)) {
-		gpu_isa_debug("  %s:pred=", gpu_isa_warp->name);
-		bit_map_dump(gpu_isa_warp->pred, 0, gpu_isa_warp->thread_count,
-			debug_file(gpu_isa_debug_category));
-	}
+	/* Same behavior as ALU inst */
+	amd_inst_ALU_impl();
 }
-#undef W0
-#undef W1
 
 
 #define W0  CF_WORD0
@@ -172,14 +150,71 @@ void amd_inst_JUMP_impl()
 #undef W1
 
 
-void amd_inst_LOOP_END_impl() {
-	NOT_IMPL();
+#define W0  CF_WORD0
+#define W1  CF_WORD1
+void amd_inst_LOOP_END_impl()
+{
+	int active_count;
+
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.pop_count, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.cf_const, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.cond, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.valid_pixel_mode, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
+
+	/* W0.addr: jump if any pixel is active */
+
+	/* FIXME: Update loop state and check if index is 0 */
+
+	/* Dump current loop state */
+	if (debug_status(gpu_isa_debug_category)) {
+		gpu_isa_debug("  %s:act=", gpu_isa_warp->name);
+		bit_map_dump(gpu_isa_warp->active_stack, gpu_isa_warp->stack_top *
+			gpu_isa_warp->thread_count, gpu_isa_warp->thread_count,
+			debug_file(gpu_isa_debug_category));
+	}
+
+	/* If any pixel is active, jump back */
+	active_count = bit_map_count_ones(gpu_isa_warp->active_stack,
+		gpu_isa_warp->stack_top * gpu_isa_warp->thread_count, gpu_isa_warp->thread_count);
+	if (active_count) {
+		gpu_isa_warp->cf_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
+		return;
+	}
+
+	/* FIXME: pop loop state */
+
+	/* Pop stack once */
+	//gpu_warp_stack_pop(gpu_isa_warp, 1);
 }
+#undef W0
+#undef W1
 
 
-void amd_inst_LOOP_START_DX10_impl() {
-	NOT_IMPL();
+#define W0  CF_WORD0
+#define W1  CF_WORD1
+void amd_inst_LOOP_START_DX10_impl()
+{
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.cf_const, 0);  /* FIXME: what does it refer to? */
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.cond, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.count, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.valid_pixel_mode, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
+
+	/* W0.addr: jump if all pixels fail. */
+	/* W0.pop_count: pop if all pixels fail. */
+	/* FIXME: W1.cf_const: used to set up initial loop state... but how? */
+
+	/* FIXME: if initial condition fails, jump to 'addr' */
+
+	/* FIXME: Push loop state */
+
+	/* FIXME: Set up new loop state */
 }
+#undef W0
+#undef W1
 
 
 #define W0  CF_ALLOC_EXPORT_WORD0_RAT
@@ -193,11 +228,12 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 	/* STORE_RAW */
 	case 2: {
 		uint32_t value, addr;
+		float value_float;
+		int i;
 
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_id, 1);  /* FIXME: what does rat_id mean? */
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_index_mode, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.type, 1);  /* EXPORT_WRITE_IND */
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.comp_mask, 1);  /* x___ */
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.burst_count, 0);
 
 		for (global_id = gpu_isa_warp->global_id; global_id < gpu_isa_warp->global_id
@@ -215,12 +251,22 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 			/* W0.es (elem_size): number of doublewords per array element, minus one */
 			/* W1.array_size: array size (elem-size units) */
 
-			value = gpu_isa_read_gpr(W0.rw_gpr, W0.rr, 0, 0);
 			addr = gpu_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
-			mem_write(gk->global_mem, addr, 4, &value);
-			gpu_isa_debug("  t%d:[0x%x]<=%d", GPU_THR.global_id, addr, value);
+			gpu_isa_debug("  t%d:write(0x%x)", GPU_THR.global_id, addr);
+
+			for (i = 0; i < 4; i++) {
+				if (!(W1.comp_mask & (1 << i)))
+					continue;
+				value = gpu_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
+				value_float = * (float *) &value;
+				/* FIXME: leave gaps when intermediate 'comp_mask' bits are not set? */
+				mem_write(gk->global_mem, addr + i * 4, 4, &value);
+				gpu_isa_debug(",");
+				if (debug_status(gpu_isa_debug_category))
+					amd_inst_dump_gpr(W0.rw_gpr, W0.rr, i, 0, debug_file(gpu_isa_debug_category));
+				gpu_isa_debug("=(0x%x,%gf)", value, value_float);
+			}
 			/* FIXME: array_size: ignored now, because 'burst_count' = 0 */
-			/* FIXME: valid_pixel_mode */
 			/* FIXME: rat_id */
 			/* FIXME: mark - mark memory write to be acknowledged by the next write-ack */
 			/* FIXME: barrier */
@@ -245,8 +291,8 @@ void amd_inst_NOP_CF_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].cf_word0
-#define W1 gpu_isa_inst->words[1].cf_word1
+#define W0  CF_WORD0
+#define W1  CF_WORD1
 void amd_inst_POP_impl()
 {
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
@@ -257,8 +303,9 @@ void amd_inst_POP_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.barrier, 1);
 
-	/* Pop 'pop_count' from stack */
+	/* Pop 'pop_count' from stack and jump to 'addr' */
 	gpu_warp_stack_pop(gpu_isa_warp, W1.pop_count);
+	gpu_isa_warp->cf_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
 }
 #undef W0
 #undef W1
@@ -296,8 +343,14 @@ void amd_inst_TC_impl()
 #undef W1
 
 
-void amd_inst_ADD_impl() {
-	NOT_IMPL();
+void amd_inst_ADD_impl()
+{
+	float src0, src1, dst;
+
+	src0 = gpu_isa_read_op_src_float(0);
+	src1 = gpu_isa_read_op_src_float(1);
+	dst = src0 + src1;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
@@ -306,8 +359,14 @@ void amd_inst_MUL_impl() {
 }
 
 
-void amd_inst_MUL_IEEE_impl() {
-	NOT_IMPL();
+void amd_inst_MUL_IEEE_impl()
+{
+	float src0, src1, dst;
+
+	src0 = gpu_isa_read_op_src_float(0);
+	src1 = gpu_isa_read_op_src_float(1);
+	dst = src0 * src1;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
@@ -396,8 +455,18 @@ void amd_inst_FLOOR_impl() {
 }
 
 
-void amd_inst_ASHR_INT_impl() {
-	NOT_IMPL();
+void amd_inst_ASHR_INT_impl()
+{
+	int32_t src0, dst;
+	uint32_t src1;
+
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	if (src1 > 31)
+		dst = src0 < 0 ? -1 : 0;
+	else
+		dst = src0 >> src1;
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
@@ -541,13 +610,25 @@ void amd_inst_KILLNE_impl() {
 }
 
 
-void amd_inst_AND_INT_impl() {
-	NOT_IMPL();
+void amd_inst_AND_INT_impl()
+{
+	uint32_t src0, src1, dst;
+
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	dst = src0 & src1;
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
-void amd_inst_OR_INT_impl() {
-	NOT_IMPL();
+void amd_inst_OR_INT_impl()
+{
+	uint32_t src0, src1, dst;
+
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	dst = src0 & src1;
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
@@ -1173,7 +1254,8 @@ void amd_inst_ADD_PREV_impl() {
 }
 
 
-void amd_inst_MULADD_PREV_impl() {
+void amd_inst_MULADD_PREV_impl()
+{
 	NOT_IMPL();
 }
 
@@ -1379,8 +1461,15 @@ void amd_inst_MULADD_D2_impl() {
 }
 
 
-void amd_inst_MULADD_IEEE_impl() {
-	NOT_IMPL();
+void amd_inst_MULADD_IEEE_impl()
+{
+	float src0, src1, src2, dst;
+
+	src0 = gpu_isa_read_op_src_float(0);
+	src1 = gpu_isa_read_op_src_float(1);
+	src2 = gpu_isa_read_op_src_float(2);
+	dst = src0 * src1 + src2;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
@@ -1424,16 +1513,15 @@ void amd_inst_MUL_LIT_impl() {
 #define W2  VTX_WORD2
 void amd_inst_FETCH_impl()
 {
-	uint32_t addr, value;
+	uint32_t addr;
+	int data_format;
+	int i;
 
-	//fmt_word_dump(&W0, FMT_VTX_WORD0, stdout);
-	//fmt_word_dump(&W1, FMT_VTX_WORD1_GPR, stdout);
-	//fmt_word_dump(&W2, FMT_VTX_WORD2, stdout);
+	//amd_inst_words_dump(gpu_isa_inst, stdout);///
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.fetch_type, 2);  /* NO_INDEX_OFFSET */
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.fetch_whole_quad, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.buffer_id, 156);  /* FIXME: what is that? */
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.use_const_fields, 1);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.offset, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.endian_swap, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.const_buf_no_stride, 0);
@@ -1447,34 +1535,85 @@ void amd_inst_FETCH_impl()
 	/* W1.dst_gpr: destination GPR to write result */
 	/* W1.dr (dst_rel): relative or absolute dst_gpr */
 	/* W1.{dsx,dsy,dsz,dsw}: specified which element of result to write into dst_gpr.{x,y,z,w} */
-	/* W1.ucf (use_const_fields}: use format given in fetch constant or in this instr */
-	/* W1.data_format: ignored for ucf=1 */
-	/* W1.nfa (num_format_all): ignored for ucf=1 */
-	/* W1.fca (format_comp_all): ignored for ucf=1 */
-	/* W1.sma (srf_mode_all): ignored for ucf=1 */
+	/* W1.use_const_fields: use format given in fetch constant or in this instr */
+	/* W1.data_format: ignored for 'use_const_fields'=1 */
+	/* W1.num_format_all: ignored for 'use_const_fields'=1 */
+	/* W1.format_comp_all: ignored for 'use_const_fields'=1 */
+	/* W1.srf_mode_all: ignored for 'use_const_fields'=1 */
 
 	/* W2.offset: offset to be reading from (byte aligned) */
-	/* W2.es (endian_swap) */
-	/* W2.cbns (const_buf_no_stride): force stride to 0 */
+	/* W2.endian_swap */
+	/* W2.const_buf_no_stride: force stride to 0 */
 	/* W2.mf (mega_fetch) */
 
 	/* FIXME: buffer_id - what does it mean? */
 	
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_x, 0);  /* SEL_X */
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_y, 7);  /* SEL_MASK */
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_z, 7);  /* SEL_MASK */
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_w, 7);  /* SEL_MASK */
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.mega_fetch_count, 3);  /* 4-byte fetch */
+	/* Do not fetch for inactive threads */
+	if (!gpu_thread_get_pred(gpu_isa_thread))
+		return;
+	
+	/* Use constant fields */
+	if (W1.use_const_fields) {
+		/* FIXME: format can be found in constant. See table 2.10 in Evergreen manual.
+		 * No details are given about this. */
+		data_format = 13;  /* DATA_FORMAT_32 */
+	} else {
+		data_format = W1.data_format;
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.num_format_all, 0);
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.format_comp_all, 0);
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.srf_mode_all, 0);
+	}
+	
+	
+	/* Fetch */
+	addr = gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * 4;  /* FIXME: x4? */
+	switch (data_format) {
 
-	if (gpu_thread_get_pred(gpu_isa_thread)) {
-		addr = gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * 4;  /* FIXME: x4? */
+	case 13:  /* DATA_FORMAT_32 */
+	{
+		uint32_t value;
+
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_x, 0);  /* SEL_X */
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_y, 7);  /* SEL_MASK */
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_z, 7);  /* SEL_MASK */
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_w, 7);  /* SEL_MASK */
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.mega_fetch_count, 3);  /* 4-byte fetch */
+
 		mem_read(gk->global_mem, addr + W2.offset, 4, &value);
 		gpu_isa_write_gpr(W1.dst_gpr, W1.dst_rel, 0, value);
 		if (debug_status(gpu_isa_debug_category)) {
 			gpu_isa_debug("  t%d:[0x%x]=%d=>", GPU_THR.global_id, addr, value);
 			amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, 0, 0, debug_file(gpu_isa_debug_category));
 		}
+		break;
 	}
+	
+	case 35:  /* DATA_FORMAT_32_32_32_32_FLOAT */
+	{
+		float value[4];
+
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_x, 0);  /* SEL_X */
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_y, 1);  /* SEL_Y */
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_z, 2);  /* SEL_Z */
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_w, 3);  /* SEL_W */
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.mega_fetch_count, 15);  /* 15-byte fetch */
+
+		mem_read(gk->global_mem, addr + W2.offset, 16, value);
+		gpu_isa_debug("  t%d:read(0x%x)", GPU_THR.global_id, addr);
+		for (i = 0; i < 4; i++) {
+			gpu_isa_write_gpr_float(W1.dst_gpr, W1.dst_rel, i, value[i]);
+			gpu_isa_debug(",");
+			if (debug_status(gpu_isa_debug_category))
+				amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, 0, debug_file(gpu_isa_debug_category));
+			gpu_isa_debug("=%gf", value[i]);
+		}
+		break;
+	}
+
+	default:
+		GPU_PARAM_NOT_SUPPORTED(W1.data_format);
+	}
+
 }
 #undef W0
 #undef W1

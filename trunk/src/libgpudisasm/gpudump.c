@@ -174,7 +174,7 @@ void fmt_cf_word0_dump(void *buf, FILE *f)
 	struct fmt_cf_word0_t *fmt = (struct fmt_cf_word0_t *) buf;
 	fprintf(f, "CF_WORD0\n");
 	fprintf(f, "  addr = %d\n", fmt->addr);
-	fprintf(f, "  jumptable_sel = %d (%s)\n", fmt->jump_table_sel, map_value(&fmt_cf_word0_jts_map, fmt->jump_table_sel));
+	fprintf(f, "  jump_table_sel = %d (%s)\n", fmt->jump_table_sel, map_value(&fmt_cf_word0_jts_map, fmt->jump_table_sel));
 }
 
 
@@ -1279,8 +1279,6 @@ void fmt_word_dump(void *buf, enum fmt_enum fmt, FILE *f)
 	
 	dump_func = fmt_dump_func_list[fmt];
 	dump_func(buf, f);
-
-	fprintf(f, "\n");
 }
 
 

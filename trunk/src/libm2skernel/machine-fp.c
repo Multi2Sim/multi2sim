@@ -306,22 +306,21 @@ void op_fcompp_impl() {
 
 void op_fcomi_st0_sti_impl() {
 	uint8_t st0[10], sti[10];
-	uint16_t status;
+	unsigned long flags = isa_regs->eflags;
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
 	asm volatile (
+		"push %3 ; popf\n\t"
 		"fldt %2\n\t"
 		"fldt %1\n\t"
 		"fcomip %%st(1), %%st\n\t"
-		"fnstsw %%ax\n\t"
 		"fstp %%st(0)\n\t"
-		"mov %%ax, %0\n\t"
-		: "=g" (status)
-		: "m" (*st0), "m" (*sti)
-		: "ax"
+		"pushf ; pop %0\n\t"
+		: "=g" (flags)
+		: "m" (*st0), "m" (*sti), "g" (flags)
 	);
-	isa_store_fpu_code(status);
+	isa_regs->eflags = flags;
 }
 
 
@@ -333,22 +332,21 @@ void op_fcomip_st0_sti_impl() {
 
 void op_fucomi_st0_sti_impl() {
 	uint8_t st0[10], sti[10];
-	uint16_t status;
+	unsigned long flags = isa_regs->eflags;
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
 	asm volatile (
+		"push %3 ; popf\n\t"
 		"fldt %2\n\t"
 		"fldt %1\n\t"
 		"fucomip %%st(1), %%st\n\t"
-		"fnstsw %%ax\n\t"
 		"fstp %%st(0)\n\t"
-		"mov %%ax, %0\n\t"
-		: "=g" (status)
-		: "m" (*st0), "m" (*sti)
-		: "ax"
+		"pushf ; pop %0\n\t"
+		: "=g" (flags)
+		: "m" (*st0), "m" (*sti), "g" (flags)
 	);
-	isa_store_fpu_code(status);
+	isa_regs->eflags = flags;
 }
 
 
