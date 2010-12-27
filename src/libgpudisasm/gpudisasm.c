@@ -1091,6 +1091,18 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 }
 
 
+void amd_inst_words_dump(struct amd_inst_t *inst, FILE *f)
+{
+	int i;
+	fprintf(f, "%s\n", inst->info->name);
+	for (i = 0; i < AMD_INST_MAX_WORDS; i++) {
+		if (!inst->info->fmt[i])
+			break;
+		fmt_word_dump(&inst->words[i], inst->info->fmt[i], f);
+	}
+}
+
+
 void amd_alu_group_dump(struct amd_alu_group_t *group, int shift, FILE *f)
 {
 	int i;

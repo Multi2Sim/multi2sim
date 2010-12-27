@@ -136,6 +136,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 
 	/* Create local memories */
 	gk->local_mem = calloc(kernel->group_count, sizeof(struct mem_t *));
+	gk->local_mem_top = GK_LOCAL_MEM_BASE;
 	for (i = 0; i < kernel->group_count; i++) {
 		gk->local_mem[i] = mem_create();
 		gk->local_mem[i]->safe = 0;
@@ -148,6 +149,12 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 		arg = list_get(kernel->arg_list, i);
 		assert(arg);
 
+		/* Check that argument was set */
+		if (!arg->set)
+			fatal("kernel '%s': argument '%s' has not been assigned with 'clKernelSetArg'.",
+				kernel->name, arg->name);
+
+		/* Process argument depending on its type */
 		switch (arg->kind) {
 
 		case OPENCL_KERNEL_ARG_KIND_VALUE: {
@@ -158,15 +165,39 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			break;
 		}
 
-		case OPENCL_KERNEL_ARG_KIND_POINTER: {
-			struct opencl_mem_t *mem;
+		case OPENCL_KERNEL_ARG_KIND_POINTER:
+		{
+			switch (arg->mem_scope) {
 
-			/* Argument value is a pointer to an 'opencl_mem' object.
-			 * It is translated first into a device memory pointer. */
-			mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
-			mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(1, i, 0), 4, &mem->device_ptr);
-			opencl_debug("    arg %d: opencl_mem id 0x%x loaded, device_ptr=0x%x\n",
-				i, arg->value, mem->device_ptr);
+			case OPENCL_MEM_SCOPE_GLOBAL:
+			{
+				struct opencl_mem_t *mem;
+
+				/* Pointer in __global scope.
+				 * Argument value is a pointer to an 'opencl_mem' object.
+				 * It is translated first into a device memory pointer. */
+				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+				mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(1, i, 0), 4, &mem->device_ptr);
+				opencl_debug("    arg %d: opencl_mem id 0x%x loaded, device_ptr=0x%x\n",
+					i, arg->value, mem->device_ptr);
+				break;
+			}
+
+			case OPENCL_MEM_SCOPE_LOCAL:
+			{
+				/* Pointer in __local scope.
+				 * Argument value is always NULL, just assign space for it. */
+				mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(1, i, 0), 4, &gk->local_mem_top);
+				gk->local_mem_top += arg->size;
+				opencl_debug("    arg %d: %d bytes reserved in local memory\n",
+					i, arg->size);
+				break;
+			}
+
+			default:
+				fatal("%s: argument in memory scope %d not supported",
+					__FUNCTION__, arg->mem_scope);
+			}
 			break;
 		}
 
@@ -267,8 +298,11 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 		if (gpu_isa_warp->clause_kind != GPU_CLAUSE_CF) {
 			if (gpu_isa_warp->clause_buf > gpu_isa_warp->clause_buf_end)
 				fatal("%s: end of clause exceeded", gpu_isa_warp->name);
-			if (gpu_isa_warp->clause_buf == gpu_isa_warp->clause_buf_end)
+			if (gpu_isa_warp->clause_buf == gpu_isa_warp->clause_buf_end) {
+				if (gpu_isa_warp->clause_kind == GPU_CLAUSE_ALU)
+					gpu_isa_alu_clause_end();
 				gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
+			}
 		}
 	}
 
@@ -284,6 +318,44 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	free(gk->local_mem);
 }
 
+
+
+
+/*
+ * ALU Clauses
+ */
+
+/* Called before and ALU clause starts in warp */
+void gpu_isa_alu_clause_start()
+{
+	/* Copy 'active' mask at the top of the stack to 'pred' mask */
+	bit_map_copy(gpu_isa_warp->pred, 0, gpu_isa_warp->active_stack,
+		gpu_isa_warp->stack_top * gpu_isa_warp->thread_count, gpu_isa_warp->thread_count);
+	if (debug_status(gpu_isa_debug_category)) {
+		gpu_isa_debug("  %s:pred=", gpu_isa_warp->name);
+		bit_map_dump(gpu_isa_warp->pred, 0, gpu_isa_warp->thread_count,
+			debug_file(gpu_isa_debug_category));
+	}
+
+	/* Flag 'push_before_done' will be set by the first PRED_SET* inst */
+	gpu_isa_warp->push_before_done = 0;
+}
+
+
+/* Called after an ALU clause completed in a warp */
+void gpu_isa_alu_clause_end()
+{
+	/* If CF inst was ALU_POP_AFTER, pop the stack */
+	if (gpu_isa_cf_inst->info->inst == AMD_INST_ALU_POP_AFTER)
+		gpu_warp_stack_pop(gpu_isa_warp, 1);
+}
+
+
+
+
+/*
+ * Instruction operands
+ */
 
 /* Dump a destination value depending on the format of the destination operand
  * in the current instruction, as specified by its flags. */
@@ -314,12 +386,33 @@ uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im)
 }
 
 
+/* Read source GPR in float format */
+float gpu_isa_read_gpr_float(int gpr, int rel, int chan, int im)
+{
+	uint32_t value;
+	float value_float;
+
+	value = gpu_isa_read_gpr(gpr, rel, chan, im);
+	value_float = * (float *) &value;
+	return value_float;
+}
+
+
 void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value)
 {
 	GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 4);
 	GPU_PARAM_NOT_SUPPORTED_OOR(gpr, 0, 127);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(rel, 0);
 	GPU_GPR_ELEM(gpr, chan) = value;
+}
+
+
+void gpu_isa_write_gpr_float(int gpr, int rel, int chan, float value_float)
+{
+	uint32_t value;
+
+	value = * (uint32_t *) &value_float;
+	gpu_isa_write_gpr(gpr, rel, chan, value);
 }
 
 
@@ -455,6 +548,18 @@ end:
 }
 
 
+float gpu_isa_read_op_src_float(int src_idx)
+{
+	uint32_t value;
+	float value_float;
+
+	value = gpu_isa_read_op_src(src_idx);
+	value_float = * (float *) &value;
+	printf("READ src %d: INT=0x%x, FLOAT=%g\n", src_idx, value, value_float);////////
+	return value_float;
+}
+
+
 
 
 /*
@@ -489,6 +594,15 @@ void gpu_isa_enqueue_write_dest(uint32_t value)
 
 	/* Enqueue task */
 	lnlist_add(GPU_THR.write_task_list, wt);
+}
+
+
+void gpu_isa_enqueue_write_dest_float(float value_float)
+{
+	uint32_t value;
+
+	value = * (uint32_t *) &value_float;
+	gpu_isa_enqueue_write_dest(value);
 }
 
 

@@ -555,6 +555,7 @@ void amd_disasm_done(void);
 void fmt_word_dump(void *buf, enum fmt_enum fmt, FILE *f);
 void amd_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f);
 void amd_inst_dump(struct amd_inst_t *inst, int count, int shift, FILE *f);
+void amd_inst_words_dump(struct amd_inst_t *inst, FILE *f);
 void amd_alu_group_dump(struct amd_alu_group_t *group, int shift, FILE *f);
 
 /* Obtaining source operand fields for ALU instructions */
