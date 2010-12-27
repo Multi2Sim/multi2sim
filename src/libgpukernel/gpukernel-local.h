@@ -45,7 +45,8 @@ enum opencl_obj_enum {
 	OPENCL_OBJ_COMMAND_QUEUE,
 	OPENCL_OBJ_PROGRAM,
 	OPENCL_OBJ_KERNEL,
-	OPENCL_OBJ_MEM
+	OPENCL_OBJ_MEM,
+	OPENCL_OBJ_EVENT
 };
 
 extern struct lnlist_t *opencl_object_list;
@@ -69,7 +70,7 @@ struct opencl_platform_t
 
 extern struct opencl_platform_t *opencl_platform;
 
-struct opencl_platform_t *opencl_platform_create();
+struct opencl_platform_t *opencl_platform_create(void);
 void opencl_platform_free(struct opencl_platform_t *platform);
 uint32_t opencl_platform_get_info(struct opencl_platform_t *platform, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
 
@@ -83,7 +84,7 @@ struct opencl_device_t
 	uint32_t id;
 };
 
-struct opencl_device_t *opencl_device_create();
+struct opencl_device_t *opencl_device_create(void);
 void opencl_device_free(struct opencl_device_t *device);
 uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
 
@@ -95,11 +96,13 @@ uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, s
 struct opencl_context_t
 {
 	uint32_t id;
+	int ref_count;
+
 	uint32_t platform_id;
 	uint32_t device_id;
 };
 
-struct opencl_context_t *opencl_context_create();
+struct opencl_context_t *opencl_context_create(void);
 void opencl_context_free(struct opencl_context_t *context);
 uint32_t opencl_context_get_info(struct opencl_context_t *context, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
 void opencl_context_set_properties(struct opencl_context_t *context, struct mem_t *mem, uint32_t addr);
@@ -112,11 +115,13 @@ void opencl_context_set_properties(struct opencl_context_t *context, struct mem_
 struct opencl_command_queue_t
 {
 	uint32_t id;
+	int ref_count;
+
 	uint32_t device_id;
 	uint32_t context_id;
 };
 
-struct opencl_command_queue_t *opencl_command_queue_create();
+struct opencl_command_queue_t *opencl_command_queue_create(void);
 void opencl_command_queue_free(struct opencl_command_queue_t *command_queue);
 void opencl_command_queue_read_properties(struct opencl_command_queue_t *command_queue, struct mem_t *mem, uint32_t addr);
 
@@ -128,11 +133,14 @@ void opencl_command_queue_read_properties(struct opencl_command_queue_t *command
 struct opencl_program_t
 {
 	uint32_t id;
+	int ref_count;
+
 	uint32_t device_id;  /* Only one device allowed */
 	uint32_t context_id;
 
 	void *binary;  /* Main ELF binary  */
 	int binary_size;
+	int binary_loaded_from_file;  /* Flag */
 
 	void *rodata;  /* Main ELF binary's '.rodata' section */
 	int rodata_size;
@@ -141,7 +149,7 @@ struct opencl_program_t
 	int code_size;
 };
 
-struct opencl_program_t *opencl_program_create();
+struct opencl_program_t *opencl_program_create(void);
 void opencl_program_free(struct opencl_program_t *program);
 void opencl_program_build(struct opencl_program_t *program);
 
@@ -150,6 +158,14 @@ void opencl_program_build(struct opencl_program_t *program);
 
 /* OpenCL kernel */
 
+enum opencl_mem_scope_enum {
+	OPENCL_MEM_SCOPE_NONE = 0,
+	OPENCL_MEM_SCOPE_GLOBAL,
+	OPENCL_MEM_SCOPE_LOCAL,
+	OPENCL_MEM_SCOPE_PRIVATE,
+	OPENCL_MEM_SCOPE_CONSTANT
+};
+
 enum opencl_kernel_arg_kind_enum {
 	OPENCL_KERNEL_ARG_KIND_VALUE = 1,
 	OPENCL_KERNEL_ARG_KIND_POINTER
@@ -157,9 +173,15 @@ enum opencl_kernel_arg_kind_enum {
 
 struct opencl_kernel_arg_t
 {
+	/* Argument properties, as described in .rodata */
 	enum opencl_kernel_arg_kind_enum kind;
+	enum opencl_mem_scope_enum mem_scope;  /* For pointers */
 	int elem_size;  /* For a pointer, size of element pointed to */
+
+	/* Argument fields as set in clSetKernelArg */
+	int set;  /* Set to true when it is assigned */
 	uint32_t value;  /* 32-bit arguments supported */
+	uint32_t size;
 
 	/* Last field - memory assigned variably */
 	char name[0];
@@ -168,12 +190,10 @@ struct opencl_kernel_arg_t
 struct opencl_kernel_t
 {
 	uint32_t id;
+	int ref_count;
 	uint32_t program_id;
-	char kernel_name[MAX_STRING_SIZE];
+	char name[MAX_STRING_SIZE];
 	struct list_t *arg_list;
-
-	int memory_hwprivate;
-	int memory_hwlocal;
 
 	/* Number of work dimensions */
 	int work_dim;
@@ -190,13 +210,15 @@ struct opencl_kernel_t
 	int group_count;
 };
 
-struct opencl_kernel_t *opencl_kernel_create();
+struct opencl_kernel_t *opencl_kernel_create(void);
 void opencl_kernel_free(struct opencl_kernel_t *kernel);
 
 struct opencl_kernel_arg_t *opencl_kernel_arg_create(char *name);
 void opencl_kernel_arg_free(struct opencl_kernel_arg_t *arg);
 
 void opencl_kernel_load_rodata(struct opencl_kernel_t *kernel, char *kernel_name);
+uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint32_t name,
+	struct mem_t *mem, uint32_t addr, uint32_t size);
 
 
 
@@ -206,14 +228,71 @@ void opencl_kernel_load_rodata(struct opencl_kernel_t *kernel, char *kernel_name
 struct opencl_mem_t
 {
 	uint32_t id;
+	int ref_count;
+
 	uint32_t size;
 	uint32_t flags;
 
 	uint32_t device_ptr;  /* Position assigned in device global memory */
 };
 
-struct opencl_mem_t *opencl_mem_create();
+struct opencl_mem_t *opencl_mem_create(void);
 void opencl_mem_free(struct opencl_mem_t *mem);
+
+
+
+
+/* OpenCL Event */
+
+enum opencl_event_kind_enum {
+	OPENCL_EVENT_NONE = 0,
+	OPENCL_EVENT_NDRANGE_KERNEL,
+	OPENCL_EVENT_TASK,
+	OPENCL_EVENT_NATIVE_KERNEL,
+	OPENCL_EVENT_READ_BUFFER,
+	OPENCL_EVENT_WRITE_BUFFER,
+	OPENCL_EVENT_MAP_BUFFER,
+	OPENCL_EVENT_UNMAP_MEM_OBJECT,
+	OPENCL_EVENT_READ_BUFFER_RECT,
+	OPENCL_EVENT_WRITE_BUFFER_RECT,
+	OPENCL_EVENT_READ_IMAGE,
+	OPENCL_EVENT_WRITE_IMAGE,
+	OPENCL_EVENT_MAP_IMAGE,
+	OPENCL_EVENT_COPY_BUFFER,
+	OPENCL_EVENT_COPY_IMAGE,
+	OPENCL_EVENT_COPY_BUFFER_RECT,
+	OPENCL_EVENT_COPY_BUFFER_TO_IMAGE,
+	OPENCL_EVENT_COPY_IMAGE_TO_BUFFER,
+	OPENCL_EVENT_MARKER,
+	OPENCL_EVENT_COUNT
+};
+
+enum opencl_event_status_enum {
+	OPENCL_EVENT_STATUS_NONE = 0,
+	OPENCL_EVENT_STATUS_QUEUED,
+	OPENCL_EVENT_STATUS_SUBMITTED,
+	OPENCL_EVENT_STATUS_RUNNING,
+	OPENCL_EVENT_STATUS_COMPLETE
+};
+
+struct opencl_event_t
+{
+	uint32_t id;
+	int ref_count;
+	enum opencl_event_kind_enum kind;
+	enum opencl_event_status_enum status;
+
+	uint64_t time_queued;
+	uint64_t time_submit;
+	uint64_t time_start;
+	uint64_t time_end;
+};
+
+struct opencl_event_t *opencl_event_create(enum opencl_event_kind_enum kind);
+void opencl_event_free(struct opencl_event_t *event);
+
+uint32_t opencl_event_get_profiling_info(struct opencl_event_t *event, uint32_t name,
+	struct mem_t *mem, uint32_t addr, uint32_t size);
 
 
 
@@ -251,6 +330,7 @@ extern struct repos_t *gpu_isa_write_task_repos;
 
 /* Functions to handle deferred tasks */
 void gpu_isa_enqueue_write_dest(uint32_t value);
+void gpu_isa_enqueue_write_dest_float(float value);
 void gpu_isa_enqueue_push_before(void);
 void gpu_isa_enqueue_pred_set(int cond);
 void gpu_isa_write_task_commit(void);
@@ -355,7 +435,7 @@ struct gpu_thread_t
 };
 
 
-struct gpu_thread_t *gpu_thread_create();
+struct gpu_thread_t *gpu_thread_create(void);
 void gpu_thread_free(struct gpu_thread_t *thread);
 
 /* Consult and change active/predicate bits */
@@ -455,18 +535,21 @@ extern struct amd_alu_group_t *gpu_isa_alu_group;
 typedef void (*amd_inst_impl_t)(void);
 extern amd_inst_impl_t *amd_inst_impl;
 
+/* For ALU clauses */
+void gpu_isa_alu_clause_start(void);
+void gpu_isa_alu_clause_end(void);
+
 /* For functional simulation */
 uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im);
+float gpu_isa_read_gpr_float(int gpr, int rel, int chan, int im);
 void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value);
+void gpu_isa_write_gpr_float(int gpr, int rel, int chan, float value);
 
 uint32_t gpu_isa_read_op_src(int src_idx);
+float gpu_isa_read_op_src_float(int src_idx);
 
-/* Stack */
-void gpu_stack_push(int active);
-void gpu_stack_pop(int count);
-
-void gpu_isa_init();
-void gpu_isa_done();
+void gpu_isa_init(void);
+void gpu_isa_done(void);
 void gpu_isa_run(struct opencl_kernel_t *kernel);
 
 
@@ -476,6 +559,9 @@ void gpu_isa_run(struct opencl_kernel_t *kernel);
  * GPU Kernel (gk)
  * This refers to the Multi2Sim object representing the GPU.
  */
+
+#define GK_GLOBAL_MEM_BASE   0x1000000
+#define GK_LOCAL_MEM_BASE    0x1000000
 
 struct gk_t {
 	
@@ -492,9 +578,9 @@ struct gk_t {
 	uint32_t global_mem_top;  /* Current top pointer assigned to 'device_ptr' in 'opencl_mem' objects */
 	
 	/* Array of local memories.
-	 * This array is initialized when the kernel is created.
-	 */
+	 * This array is initialized when the kernel is created. */
 	struct mem_t **local_mem;
+	uint32_t local_mem_top;  /* Current top pointer assigned to '__local' arguments of variable size */
 };
 
 extern struct gk_t *gk;

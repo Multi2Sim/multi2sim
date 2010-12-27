@@ -307,6 +307,22 @@ int opencl_func_run(int code, unsigned int *args)
 	}
 
 
+	/* 1007 */
+	case OPENCL_FUNC_clReleaseContext:
+	{
+		uint32_t context_id = args[0];  /* cl_context context */
+
+		struct opencl_context_t *context;
+
+		opencl_debug("  context=0x%x\n", context_id);
+		context = opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
+		assert(context->ref_count > 0);
+		if (!--context->ref_count)
+			opencl_context_free(context);
+		break;
+	}
+
+
 	/* 1008 */
 	case OPENCL_FUNC_clGetContextInfo:
 	{
@@ -364,6 +380,22 @@ int opencl_func_run(int code, unsigned int *args)
 	}
 
 
+	/* 1011 */
+	case OPENCL_FUNC_clReleaseCommandQueue:
+	{
+		uint32_t command_queue_id = args[0];  /* cl_command_queue command_queue */
+
+		struct opencl_command_queue_t *command_queue;
+
+		opencl_debug("  command_queue=0x%x\n", command_queue_id);
+		command_queue = opencl_object_get(OPENCL_OBJ_COMMAND_QUEUE, command_queue_id);
+		assert(command_queue->ref_count > 0);
+		if (!--command_queue->ref_count)
+			opencl_command_queue_free(command_queue);
+		break;
+	}
+
+
 	/* 1014 */
 	case OPENCL_FUNC_clCreateBuffer:
 	{
@@ -401,6 +433,22 @@ int opencl_func_run(int code, unsigned int *args)
 	}
 
 
+	/* 1019 */
+	case OPENCL_FUNC_clReleaseMemObject:
+	{
+		uint32_t mem_id = args[0];  /* cl_mem memobj */
+
+		struct opencl_mem_t *mem;
+
+		opencl_debug("  memobj=0x%x\n", mem_id);
+		mem = opencl_object_get(OPENCL_OBJ_MEM, mem_id);
+		assert(mem->ref_count > 0);
+		if (!--mem->ref_count)
+			opencl_mem_free(mem);
+		break;
+	}
+
+
 	/* 1028 */
 	case OPENCL_FUNC_clCreateProgramWithSource:
 	{
@@ -432,6 +480,7 @@ int opencl_func_run(int code, unsigned int *args)
 		program->binary = read_buffer(gk_opencl_binary_name, &program->binary_size);
 		if (!program->binary)
 			fatal("%s: cannot read from file '%s'", err_prefix, gk_opencl_binary_name);
+		program->binary_loaded_from_file = 1;
 		break;
 	}
 
@@ -477,6 +526,7 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Read binary */
 		program->binary = malloc(length);
 		program->binary_size = length;
+		program->binary_loaded_from_file = 0;
 		assert(program->binary);
 		mem_read(isa_mem, binary, length, program->binary);
 
@@ -485,6 +535,22 @@ int opencl_func_run(int code, unsigned int *args)
 			mem_write(isa_mem, binary_status, 4, &opencl_success);
 		if (errcode_ret)
 			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
+		break;
+	}
+
+
+	/* 1031 */
+	case OPENCL_FUNC_clReleaseProgram:
+	{
+		uint32_t program_id = args[0];  /* cl_program program */
+		
+		struct opencl_program_t *program;
+
+		opencl_debug("  program=0x%x\n", program_id);
+		program = opencl_object_get(OPENCL_OBJ_PROGRAM, program_id);
+		assert(program->ref_count > 0);
+		if (!--program->ref_count)
+			opencl_program_free(program);
 		break;
 	}
 
@@ -556,6 +622,22 @@ int opencl_func_run(int code, unsigned int *args)
 	}
 
 
+	/* 1039 */
+	case OPENCL_FUNC_clReleaseKernel:
+	{
+		uint32_t kernel_id = args[0];  /* cl_kernel kernel */
+
+		struct opencl_kernel_t *kernel;
+
+		opencl_debug("  kernel=0x%x\n", kernel_id);
+		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
+		assert(kernel->ref_count > 0);
+		if (!--kernel->ref_count)
+			opencl_kernel_free(kernel);
+		break;
+	}
+
+
 	/* 1040 */
 	case OPENCL_FUNC_clSetKernelArg:
 	{
@@ -572,7 +654,8 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Check */
 		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(arg_size, 4);
+		if (arg_value)
+			OPENCL_PARAM_NOT_SUPPORTED_NEQ(arg_size, 4);
 		if (arg_index >= list_count(kernel->arg_list))
 			fatal("%s: argument index out of bounds.\n%s", err_prefix,
 				err_opencl_param_note);
@@ -580,9 +663,99 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Copy to kernel object */
 		arg = list_get(kernel->arg_list, arg_index);
 		assert(arg);
+		arg->set = 1;
+		arg->size = arg_size;
 		mem_read(isa_mem, arg_value, 4, &arg->value);
 
+		/* If OpenCL argument scope is __local, argument value must be NULL */
+		if (arg->mem_scope == OPENCL_MEM_SCOPE_LOCAL && arg->value)
+			fatal("%s: value for local arguments must be NULL.\n%s", err_prefix,
+				err_opencl_param_note);
+
 		/* Return success */
+		break;
+	}
+
+
+	/* 1042 */
+	case OPENCL_FUNC_clGetKernelWorkGroupInfo:
+	{
+		uint32_t kernel_id = args[0];  /* cl_kernel kernel */
+		uint32_t device_id = args[1];  /* cl_device_id device */
+		uint32_t param_name = args[2];  /* cl_kernel_work_group_info param_name */
+		uint32_t param_value_size = args[3];  /* size_t param_value_size */
+		uint32_t param_value = args[4];  /* void *param_value */
+		uint32_t param_value_size_ret = args[5];  /* size_t *param_value_size_ret */
+		
+		struct opencl_kernel_t *kernel;
+		struct opencl_device_t *device;
+		uint32_t size_ret;
+
+		opencl_debug("  kernel=0x%x, device=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
+			"  param_value=0x%x, param_value_size_ret=0x%x\n",
+			kernel_id, device_id, param_name, param_value_size, param_value,
+			param_value_size_ret);
+
+		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
+		device = opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
+		size_ret = opencl_kernel_get_work_group_info(kernel, param_name, isa_mem,
+			param_value, param_value_size);
+		if (param_value_size_ret)
+			mem_write(isa_mem, param_value_size_ret, 4, &size_ret);
+		break;
+	}
+
+
+	/* 1043 */
+	case OPENCL_FUNC_clWaitForEvents:
+	{
+		uint32_t num_events = args[0];  /* cl_uint num_events */
+		uint32_t event_list = args[1];  /* const cl_event *event_list */
+
+		opencl_debug("  num_events=0x%x, event_list=0x%x\n",
+			num_events, event_list);
+		/* FIXME: block until events in list are completed */
+		break;
+	}
+
+
+	/* 1047 */
+	case OPENCL_FUNC_clReleaseEvent:
+	{
+		uint32_t event_id = args[0];  /* cl_event event */
+
+		struct opencl_event_t *event;
+
+		opencl_debug("  event=0x%x\n", event_id);
+		event = opencl_object_get(OPENCL_OBJ_EVENT, event_id);
+		assert(event->ref_count > 0);
+		if (!--event->ref_count)
+			opencl_event_free(event);
+		break;
+	}
+
+
+	/* 1050 */
+	case OPENCL_FUNC_clGetEventProfilingInfo:
+	{
+		uint32_t event_id = args[0];  /* cl_event event */
+		uint32_t param_name = args[1];  /* cl_profiling_info param_name */
+		uint32_t param_value_size = args[2];  /* size_t param_value_size */
+		uint32_t param_value = args[3];  /* void *param_value */
+		uint32_t param_value_size_ret = args[4];  /* size_t *param_value_size_ret */
+
+		struct opencl_event_t *event;
+		int size_ret;
+
+		opencl_debug("  event=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
+			"  param_value=0x%x, param_value_size_ret=0x%x\n",
+			event_id, param_name, param_value_size, param_value,
+			param_value_size_ret);
+		event = opencl_object_get(OPENCL_OBJ_EVENT, event_id);
+		size_ret = opencl_event_get_profiling_info(event, param_name, isa_mem,
+			param_value, param_value_size);
+		if (param_value_size_ret)
+			mem_write(isa_mem, param_value_size_ret, 4, &size_ret);
 		break;
 	}
 
@@ -609,21 +782,21 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t ptr = args[5];  /* void *ptr */
 		uint32_t num_events_in_wait_list = args[6];  /* cl_uint num_events_in_wait_list */
 		uint32_t event_wait_list = args[7];  /* const cl_event *event_wait_list */
-		uint32_t event = args[8];  /* cl_event *event */
+		uint32_t event_ptr = args[8];  /* cl_event *event */
 		
 		struct opencl_mem_t *mem;
+		struct opencl_event_t *event;
 		void *buf;
 
 		opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_read=0x%x,\n"
 			"  offset=0x%x, cb=0x%x, ptr=0x%x, num_events_in_wait_list=0x%x,\n"
 			"  event_wait_list=0x%x, event=0x%x\n",
 			command_queue, buffer, blocking_read, offset, cb, ptr,
-			num_events_in_wait_list, event_wait_list, event);
+			num_events_in_wait_list, event_wait_list, event_ptr);
 
 		/* FIXME: 'blocking_read' ignored */
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event, 0);
 
 		/* Get memory object */
 		mem = opencl_object_get(OPENCL_OBJ_MEM, buffer);
@@ -638,6 +811,18 @@ int opencl_func_run(int code, unsigned int *args)
 		mem_read(gk->global_mem, mem->device_ptr + offset, cb, buf);
 		mem_write(isa_mem, ptr, cb, buf);
 		free(buf);
+
+		/* Event */
+		if (event_ptr) {
+			event = opencl_event_create(OPENCL_EVENT_NDRANGE_KERNEL);
+			event->status = OPENCL_EVENT_STATUS_SUBMITTED;
+			event->time_queued = ke_timer();
+			event->time_submit = ke_timer();
+			event->time_start = ke_timer();
+			event->time_end = ke_timer();
+			mem_write(isa_mem, event_ptr, 4, &event->id);
+			opencl_debug("    event: 0x%x\n", event->id);
+		}
 
 		/* Return success */
 		opencl_debug("    %d bytes copied from device memory (0x%x) to host memory (0x%x)\n",
@@ -687,6 +872,8 @@ int opencl_func_run(int code, unsigned int *args)
 		mem_write(gk->global_mem, mem->device_ptr + offset, cb, buf);
 		free(buf);
 
+		/* FIXME: Event */
+
 		/* Return success */
 		opencl_debug("    %d bytes copied from host memory (0x%x) to device memory (0x%x)\n",
 			cb, ptr, mem->device_ptr + offset);
@@ -705,22 +892,35 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t cb = args[5];  /* size_t cb */
 		uint32_t num_events_in_wait_list = args[6];  /* cl_uint num_events_in_wait_list */
 		uint32_t event_wait_list = args[7];  /* const cl_event *event_wait_list */
-		uint32_t event = args[8];  /* cl_event *event */
+		uint32_t event_ptr = args[8];  /* cl_event *event */
 		uint32_t errcode_ret = args[9];  /* cl_int *errcode_ret */
 
 		struct opencl_mem_t *mem;
+		struct opencl_event_t *event;
 
 		opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_map=0x%x, map_flags=0x%x,\n"
 			"  offset=0x%x, cb=0x%x, num_events_in_wait_list=0x%x, event_wait_list=0x%x,\n"
 			"  event=0x%x, errcode_ret=0x%x\n",
 			command_queue, buffer, blocking_map, map_flags, offset, cb,
-			num_events_in_wait_list, event_wait_list, event, errcode_ret);
+			num_events_in_wait_list, event_wait_list, event_ptr, errcode_ret);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 		OPENCL_PARAM_NOT_SUPPORTED_EQ(blocking_map, 0);
 
 		/* Get memory object */
 		mem = opencl_object_get(OPENCL_OBJ_MEM, buffer);
+
+		/* Event */
+		if (event_ptr) {
+			event = opencl_event_create(OPENCL_EVENT_MAP_BUFFER);
+			event->status = OPENCL_EVENT_STATUS_COMPLETE;
+			event->time_queued = ke_timer();
+			event->time_submit = ke_timer();
+			event->time_start = ke_timer();
+			event->time_end = ke_timer();  /* FIXME: change for asynchronous exec */
+			mem_write(isa_mem, event_ptr, 4, &event->id);
+			opencl_debug("    event: 0x%x\n", event->id);
+		}
 
 		/* Return success */
 		if (errcode_ret)
@@ -741,21 +941,21 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t local_work_size_ptr = args[5];  /* const size_t *local_work_size */
 		uint32_t num_events_in_wait_list = args[6];  /* cl_uint num_events_in_wait_list */
 		uint32_t event_wait_list = args[7];  /* const cl_event *event_wait_list */
-		uint32_t event = args[8];  /* cl_event *event */
+		uint32_t event_ptr = args[8];  /* cl_event *event */
 
 		struct opencl_kernel_t *kernel;
+		struct opencl_event_t *event;
 		int i;
 
 		opencl_debug("  command_queue=0x%x, kernel=0x%x, work_dim=%d,\n"
 			"  global_work_offset=0x%x, global_work_size_ptr=0x%x, local_work_size_ptr=0x%x,\n"
 			"  num_events_in_wait_list=0x%x, event_wait_list=0x%x, event=0x%x\n",
 			command_queue, kernel_id, work_dim, global_work_offset_ptr, global_work_size_ptr,
-			local_work_size_ptr, num_events_in_wait_list, event_wait_list, event);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event, 0);
+			local_work_size_ptr, num_events_in_wait_list, event_wait_list, event_ptr);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(global_work_offset_ptr, 0);
 		OPENCL_PARAM_NOT_SUPPORTED_OOR(work_dim, 1, 3);
+		if (num_events_in_wait_list || event_wait_list)
+			warning("%s: event list arguments ignored", err_prefix);
 
 		/* Get kernel */
 		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
@@ -797,8 +997,25 @@ int opencl_func_run(int code, unsigned int *args)
 		opencl_debug_array(work_dim, kernel->group_count3);
 		opencl_debug("\n");
 
-		/* FIXME: enqueue kernel execution in command queue */
+		/* Event */
+		if (event_ptr) {
+			event = opencl_event_create(OPENCL_EVENT_NDRANGE_KERNEL);
+			event->status = OPENCL_EVENT_STATUS_SUBMITTED;
+			event->time_queued = ke_timer();
+			event->time_submit = ke_timer();
+			event->time_start = ke_timer();  /* FIXME: change for asynchronous exec */
+			mem_write(isa_mem, event_ptr, 4, &event->id);
+			opencl_debug("    event: 0x%x\n", event->id);
+		}
+
+		/* FIXME: asynchronous execution */
 		gpu_isa_run(kernel);
+
+		/* Event */
+		if (event_ptr) {
+			event->status = OPENCL_EVENT_STATUS_COMPLETE;
+			event->time_end = ke_timer();  /* FIXME: change for asynchronous exec */
+		}
 		break;
 	}
 

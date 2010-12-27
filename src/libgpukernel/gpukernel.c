@@ -49,6 +49,8 @@ void gk_init()
 	gk->const_mem->safe = 0;
 	gk->global_mem = mem_create();
 	gk->global_mem->safe = 0;
+	gk->global_mem_top = GK_GLOBAL_MEM_BASE;
+	gk->local_mem_top = GK_LOCAL_MEM_BASE;
 
 	/* Initialize disassembler (decoding tables...) */
 	amd_disasm_init();

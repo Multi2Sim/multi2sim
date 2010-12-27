@@ -162,6 +162,7 @@ int log_base2(int x);
 /* Buffers */
 int write_buffer(char *file_name, void *buf, int size);
 void *read_buffer(char *file_name, int *psize);
+void free_buffer(void *buf);
 
 #endif
 

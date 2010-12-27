@@ -319,6 +319,12 @@ void *read_buffer(char *file_name, int *psize)
 }
 
 
+void free_buffer(void *buf)
+{
+	free(buf);
+}
+
+
 
 
 /*
