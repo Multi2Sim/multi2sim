@@ -472,7 +472,8 @@ uint16_t isa_load_fpu_status()
 static void isa_debug_call()
 {
 	int i;
-	char *from, *to, *action;
+	struct elf_symbol_t *from, *to;
+	char *action;
 
 	/* Call or return. Otherwise, exit */
 	if (!strncmp(isa_inst.format, "call", 4))
@@ -485,11 +486,17 @@ static void isa_debug_call()
 	/* Debug it */
 	for (i = 0; i < isa_function_level; i++)
 		isa_call_debug("| ");
-	from = elf_get_symbol(isa_ctx->loader->elf, isa_eip, NULL);
-	to = elf_get_symbol(isa_ctx->loader->elf, isa_regs->eip, NULL);
-	from ? isa_call_debug("%s", from) : isa_call_debug("0x%x", isa_eip);
+	from = elf_get_symbol_by_address(isa_ctx->loader->elf, isa_eip, NULL);
+	to = elf_get_symbol_by_address(isa_ctx->loader->elf, isa_regs->eip, NULL);
+	if (from)
+		isa_call_debug("%s", from->name);
+	else
+		isa_call_debug("0x%x", isa_eip);
 	isa_call_debug(" - %s to ", action);
-	to ? isa_call_debug("%s", to) : isa_call_debug("0x%x", isa_regs->eip);
+	if (to)
+		isa_call_debug("%s", to->name);
+	else
+		isa_call_debug("0x%x", isa_regs->eip);
 	isa_call_debug("\n");
 
 	/* Change current level */

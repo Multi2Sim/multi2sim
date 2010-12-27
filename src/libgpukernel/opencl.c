@@ -287,7 +287,6 @@ int opencl_func_run(int code, unsigned int *args)
 			"  user_data=0x%x, errcode_ret=0x%x\n",
 			properties, device_type, pfn_notify, user_data, errcode_ret);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(pfn_notify, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(device_type, 4);  /* CL_DEVICE_TYPE_GPU */
 
 		/* Get device */
 		device = (struct opencl_device_t *) opencl_object_get_type(OPENCL_OBJ_DEVICE);
@@ -460,6 +459,8 @@ int opencl_func_run(int code, unsigned int *args)
 
 		struct opencl_context_t *context;
 		struct opencl_program_t *program;
+		void *buf;
+		int buf_size;
 
 		opencl_debug("  context=0x%x, count=%d, strings=0x%x, lengths=0x%x, errcode_ret=0x%x\n",
 			context_id, count, strings, lengths, errcode_ret);
@@ -476,11 +477,13 @@ int opencl_func_run(int code, unsigned int *args)
 		warning("%s: binary '%s' used as pre-compiled kernel.\n%s",
 			err_prefix, gk_opencl_binary_name, err_opencl_binary_note);
 
-		/* Load OpenCL binary passed to Multi2Sim */
-		program->binary = read_buffer(gk_opencl_binary_name, &program->binary_size);
-		if (!program->binary)
+		/* Load OpenCL binary passed to Multi2Sim and make a copy in temporary file */
+		program->binary_file = create_temp_file(program->binary_file_name, MAX_PATH_SIZE);
+		buf = read_buffer(gk_opencl_binary_name, &buf_size);
+		if (!buf)
 			fatal("%s: cannot read from file '%s'", err_prefix, gk_opencl_binary_name);
-		program->binary_loaded_from_file = 1;
+		write_buffer(program->binary_file_name, buf, buf_size);
+		free_buffer(buf);
 		break;
 	}
 
@@ -501,6 +504,7 @@ int opencl_func_run(int code, unsigned int *args)
 		struct opencl_context_t *context;
 		struct opencl_device_t *device;
 		struct opencl_program_t *program;
+		void *buf;
 
 		opencl_debug("  context=0x%x, num_devices=%d, device_list=0x%x, lengths=0x%x\n"
 			"  binaries=0x%x, binary_status=0x%x, errcode_ret=0x%x\n",
@@ -524,11 +528,14 @@ int opencl_func_run(int code, unsigned int *args)
 		opencl_debug("    binaries[0] = 0x%x\n", binary);
 
 		/* Read binary */
-		program->binary = malloc(length);
-		program->binary_size = length;
-		program->binary_loaded_from_file = 0;
-		assert(program->binary);
-		mem_read(isa_mem, binary, length, program->binary);
+		buf = malloc(length);
+		assert(buf);
+		mem_read(isa_mem, binary, length, buf);
+
+		/* Create program temporary file and copy binary */
+		program->binary_file = create_temp_file(program->binary_file_name, MAX_PATH_SIZE);
+		write_buffer(program->binary_file_name, buf, length);
+		free(buf);
 
 		/* Return success */
 		if (binary_status)
@@ -578,7 +585,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Get program */
 		program = opencl_object_get(OPENCL_OBJ_PROGRAM, program_id);
-		if (!program->binary)
+		if (!program->binary_file)
 			fatal("%s: program binary must be loaded first.\n%s",
 				err_prefix, err_opencl_param_note);
 
@@ -612,9 +619,13 @@ int opencl_func_run(int code, unsigned int *args)
 		kernel = opencl_kernel_create();
 		kernel->program_id = program_id;
 
-		/* Load kernel information by reading the '.rodata' section
-		 * buffered in the 'opencl_program' object */
-		opencl_kernel_load_rodata(kernel, kernel_name_str);
+		/* Program must be built */
+		if (!program->binary_file_elf)
+			fatal("%s: program should be first built with clBuildProgram.\n%s",
+				err_prefix, err_opencl_param_note);
+
+		/* Load kernel */
+		opencl_kernel_load(kernel, kernel_name_str);
 
 		/* Return kernel id */
 		retval = kernel->id;
@@ -816,10 +827,10 @@ int opencl_func_run(int code, unsigned int *args)
 		if (event_ptr) {
 			event = opencl_event_create(OPENCL_EVENT_NDRANGE_KERNEL);
 			event->status = OPENCL_EVENT_STATUS_SUBMITTED;
-			event->time_queued = ke_timer();
-			event->time_submit = ke_timer();
-			event->time_start = ke_timer();
-			event->time_end = ke_timer();
+			event->time_queued = opencl_event_timer();
+			event->time_submit = opencl_event_timer();
+			event->time_start = opencl_event_timer();
+			event->time_end = opencl_event_timer();
 			mem_write(isa_mem, event_ptr, 4, &event->id);
 			opencl_debug("    event: 0x%x\n", event->id);
 		}
@@ -914,10 +925,10 @@ int opencl_func_run(int code, unsigned int *args)
 		if (event_ptr) {
 			event = opencl_event_create(OPENCL_EVENT_MAP_BUFFER);
 			event->status = OPENCL_EVENT_STATUS_COMPLETE;
-			event->time_queued = ke_timer();
-			event->time_submit = ke_timer();
-			event->time_start = ke_timer();
-			event->time_end = ke_timer();  /* FIXME: change for asynchronous exec */
+			event->time_queued = opencl_event_timer();
+			event->time_submit = opencl_event_timer();
+			event->time_start = opencl_event_timer();
+			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
 			mem_write(isa_mem, event_ptr, 4, &event->id);
 			opencl_debug("    event: 0x%x\n", event->id);
 		}
@@ -1001,9 +1012,9 @@ int opencl_func_run(int code, unsigned int *args)
 		if (event_ptr) {
 			event = opencl_event_create(OPENCL_EVENT_NDRANGE_KERNEL);
 			event->status = OPENCL_EVENT_STATUS_SUBMITTED;
-			event->time_queued = ke_timer();
-			event->time_submit = ke_timer();
-			event->time_start = ke_timer();  /* FIXME: change for asynchronous exec */
+			event->time_queued = opencl_event_timer();
+			event->time_submit = opencl_event_timer();
+			event->time_start = opencl_event_timer();  /* FIXME: change for asynchronous exec */
 			mem_write(isa_mem, event_ptr, 4, &event->id);
 			opencl_debug("    event: 0x%x\n", event->id);
 		}
@@ -1014,7 +1025,7 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Event */
 		if (event_ptr) {
 			event->status = OPENCL_EVENT_STATUS_COMPLETE;
-			event->time_end = ke_timer();  /* FIXME: change for asynchronous exec */
+			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
 		}
 		break;
 	}

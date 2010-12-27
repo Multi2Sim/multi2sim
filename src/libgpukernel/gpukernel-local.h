@@ -138,15 +138,10 @@ struct opencl_program_t
 	uint32_t device_id;  /* Only one device allowed */
 	uint32_t context_id;
 
-	void *binary;  /* Main ELF binary  */
-	int binary_size;
-	int binary_loaded_from_file;  /* Flag */
-
-	void *rodata;  /* Main ELF binary's '.rodata' section */
-	int rodata_size;
-
-	void *code;  /* Main ELF binary's 1st '.text' section's 2nd '.text' section */
-	int code_size;
+	/* Binary file */
+	FILE *binary_file;
+	char binary_file_name[MAX_PATH_SIZE];
+	struct elf_file_t *binary_file_elf;
 };
 
 struct opencl_program_t *opencl_program_create(void);
@@ -195,6 +190,25 @@ struct opencl_kernel_t
 	char name[MAX_STRING_SIZE];
 	struct list_t *arg_list;
 
+	/* Excerpts of program ELF binary */
+	/* Kernel metadata */
+	FILE *metadata_file;
+	char metadata_file_name[MAX_PATH_SIZE];
+
+	/* Kernel embedded ELF file */
+	FILE *kernel_file;
+	char kernel_file_name[MAX_PATH_SIZE];
+
+	/* Kernel code - 2nd '.text' section in 'kernel_file' */
+	FILE *code_file;
+	char code_file_name[MAX_PATH_SIZE];
+
+	/* Kernel function metadata */
+	int func_uniqueid;  /* Id of kernel function */
+	int func_mem_local;  /* Local memory usage */
+	FILE *func_file;
+	char func_file_name[MAX_PATH_SIZE];
+
 	/* Number of work dimensions */
 	int work_dim;
 
@@ -208,6 +222,10 @@ struct opencl_kernel_t
 	int global_size;
 	int local_size;
 	int group_count;
+
+	/* Local memory top to assign to local arguments.
+	 * Initially it is equal to the size of local variables in kernel function. */
+	uint32_t local_mem_top;
 };
 
 struct opencl_kernel_t *opencl_kernel_create(void);
@@ -216,7 +234,7 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel);
 struct opencl_kernel_arg_t *opencl_kernel_arg_create(char *name);
 void opencl_kernel_arg_free(struct opencl_kernel_arg_t *arg);
 
-void opencl_kernel_load_rodata(struct opencl_kernel_t *kernel, char *kernel_name);
+void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name);
 uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size);
 
@@ -293,6 +311,7 @@ void opencl_event_free(struct opencl_event_t *event);
 
 uint32_t opencl_event_get_profiling_info(struct opencl_event_t *event, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size);
+uint64_t opencl_event_timer(void);
 
 
 
@@ -560,9 +579,6 @@ void gpu_isa_run(struct opencl_kernel_t *kernel);
  * This refers to the Multi2Sim object representing the GPU.
  */
 
-#define GK_GLOBAL_MEM_BASE   0x1000000
-#define GK_LOCAL_MEM_BASE    0x1000000
-
 struct gk_t {
 	
 	/* Constant memory (constant buffers)
@@ -575,12 +591,11 @@ struct gk_t {
 
 	/* Global memory */
 	struct mem_t *global_mem;
-	uint32_t global_mem_top;  /* Current top pointer assigned to 'device_ptr' in 'opencl_mem' objects */
+	uint32_t global_mem_top;
 	
 	/* Array of local memories.
 	 * This array is initialized when the kernel is created. */
 	struct mem_t **local_mem;
-	uint32_t local_mem_top;  /* Current top pointer assigned to '__local' arguments of variable size */
 };
 
 extern struct gk_t *gk;

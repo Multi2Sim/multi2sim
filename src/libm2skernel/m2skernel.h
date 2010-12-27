@@ -173,6 +173,8 @@ extern int elf_debug_category;
 struct elf_symbol_t {
 	char *name;
 	uint32_t value;
+	uint32_t size;
+	int section;
 };
 
 struct elf_file_t {
@@ -197,15 +199,17 @@ int elf_section_count(struct elf_file_t *f);
 int elf_section_info(struct elf_file_t *f, int section,
 	char **pname, uint32_t *paddr, uint32_t *psize, uint32_t *pflags);
 void *elf_section_read(struct elf_file_t *f, int section);
+void *elf_section_read_offset(struct elf_file_t *f, int section, uint32_t offset, uint32_t size);
 void elf_section_free(void *buf);
 
 void *elf_phdt(struct elf_file_t *f);
 uint32_t elf_phdt_base(struct elf_file_t *f);
 uint32_t elf_phdr_count(struct elf_file_t *f);
 uint32_t elf_phdr_size(struct elf_file_t *f);
-
-char *elf_get_symbol(struct elf_file_t *f, uint32_t addr, uint32_t *poffs);
 uint32_t elf_get_entry(struct elf_file_t *f);
+
+struct elf_symbol_t *elf_get_symbol_by_address(struct elf_file_t *f, uint32_t addr, uint32_t *poffs);
+struct elf_symbol_t *elf_get_symbol_by_name(struct elf_file_t *f, char *name);
 int elf_merge_symtab(struct elf_file_t *f, struct elf_file_t *src);
 
 

@@ -73,6 +73,7 @@ void gpu_isa_done()
 void gpu_isa_run(struct opencl_kernel_t *kernel)
 {
 	struct opencl_program_t *program;
+	void *code_buffer;
 
 	struct amd_inst_t cf_inst;
 
@@ -136,7 +137,6 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 
 	/* Create local memories */
 	gk->local_mem = calloc(kernel->group_count, sizeof(struct mem_t *));
-	gk->local_mem_top = GK_LOCAL_MEM_BASE;
 	for (i = 0; i < kernel->group_count; i++) {
 		gk->local_mem[i] = mem_create();
 		gk->local_mem[i]->safe = 0;
@@ -187,10 +187,10 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			{
 				/* Pointer in __local scope.
 				 * Argument value is always NULL, just assign space for it. */
-				mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(1, i, 0), 4, &gk->local_mem_top);
-				gk->local_mem_top += arg->size;
-				opencl_debug("    arg %d: %d bytes reserved in local memory\n",
-					i, arg->size);
+				mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(1, i, 0), 4, &kernel->local_mem_top);
+				opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
+					i, arg->size, kernel->local_mem_top);
+				kernel->local_mem_top += arg->size;
 				break;
 			}
 
@@ -206,11 +206,15 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 		}
 	}
 
+	/* Load kernel code */
+	code_buffer = read_buffer(kernel->code_file_name, NULL);
+	if (!code_buffer)
+		fatal("%s: cannot load kernel code", __FUNCTION__);
+	gpu_isa_warp->cf_buf_start = code_buffer;
+	gpu_isa_warp->cf_buf = code_buffer;
+	gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
 
 	/* Execution loop */
-	gpu_isa_warp->cf_buf_start = program->code;
-	gpu_isa_warp->cf_buf = program->code;
-	gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
 	while (gpu_isa_warp->clause_kind != GPU_CLAUSE_CF || gpu_isa_warp->cf_buf) {
 		
 		switch (gpu_isa_warp->clause_kind) {
@@ -220,7 +224,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			int inst_num;
 
 			/* Decode CF instruction */
-			inst_num = (gpu_isa_warp->cf_buf - program->code) / 8;
+			inst_num = (gpu_isa_warp->cf_buf - code_buffer) / 8;
 			gpu_isa_warp->cf_buf = amd_inst_decode_cf(gpu_isa_warp->cf_buf, &cf_inst);
 
 			/* Debug */
@@ -305,6 +309,9 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			}
 		}
 	}
+
+	/* Free kernel code */
+	free_buffer(code_buffer);
 
 	/* Free threads */
 	for (i = 0; i < kernel->global_size; i++)
@@ -555,7 +562,6 @@ float gpu_isa_read_op_src_float(int src_idx)
 
 	value = gpu_isa_read_op_src(src_idx);
 	value_float = * (float *) &value;
-	printf("READ src %d: INT=0x%x, FLOAT=%g\n", src_idx, value, value_float);////////
 	return value_float;
 }
 
