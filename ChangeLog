@@ -762,3 +762,7 @@
 	* libgpukernel/opencl-obj.c: improved analysis of ELF kernel binaries based on
 		the symbols contained in the main symbol table.
 
+2010-12-31
+	* libgpukernel/cal-abi.c: new analysis of the secondary ELF kernel binary based on the
+		new information released by AMD.
+

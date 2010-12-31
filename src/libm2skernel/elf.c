@@ -119,8 +119,8 @@ static void elf_read_symtab(struct elf_file_t *f, int section)
 	}
 
 	/* Success */
-	elf_section_free(buf);
-	elf_section_free(bufnames);
+	elf_free_buffer(buf);
+	elf_free_buffer(bufnames);
 }
 
 
@@ -243,29 +243,34 @@ static void elf_read_phdr(struct elf_file_t *f)
 
 struct elf_file_t *elf_open(char *path)
 {
-	struct elf_file_t *f;
+	struct elf_file_t *elf;
 
 	/* Create structure */
-	f = calloc(1, sizeof(struct elf_file_t));
-	if (!f)
+	elf = calloc(1, sizeof(struct elf_file_t));
+	if (!elf)
 		fatal("elf_open: out of memory\n");
 
 	/* Open file */
-	f->f = fopen(path, "rb");
-	if (!f->f)
+	elf->f = fopen(path, "rb");
+	if (!elf->f)
 		fatal("%s: cannot open executable file", path);
-	if (strlen(path) >= sizeof(f->path))
+	if (strlen(path) >= sizeof(elf->path))
 		fatal("%s: executable file path too long", path);
-	strncpy(f->path, path, sizeof(f->path));
+	strcpy(elf->path, path);
+
+	/* Get file size */
+	fseek(elf->f, 0, SEEK_END);
+	elf->size = ftell(elf->f);
+	fseek(elf->f, 0, SEEK_SET);
 
 	/* Read header, section headers, and program headers. */
 	elf_debug("\n%s: reading ELF file\n", path);
-	elf_read_ehdr(f);
-	elf_read_shdr(f);
-	elf_read_phdr(f);
+	elf_read_ehdr(elf);
+	elf_read_shdr(elf);
+	elf_read_phdr(elf);
 	
 	/* Return elf file structure */
-	return f;
+	return elf;
 }
 
 
@@ -290,6 +295,100 @@ void elf_close(struct elf_file_t *f)
 
 	/* Free ELF file struct */
 	free(f);
+}
+
+
+
+
+
+
+/*
+ * Read from ELF file
+ */
+
+void *elf_read_buffer(struct elf_file_t *elf, uint32_t offset, uint32_t size)
+{
+	void *buf;
+	int count;
+
+	/* Check bounds */
+	if (offset + size > elf->size) {
+		elf_debug("%s: invalid offset/size\n", __FUNCTION__);
+		return NULL;
+	}
+	
+	/* Allocate buffer */
+	buf = calloc(1, size);
+	if (!buf) {
+		elf_debug("%s: out of memory\n", __FUNCTION__);
+		return NULL;
+	}
+
+	/* Copy file contents */
+	fseek(elf->f, offset, SEEK_SET);
+	count = fread(buf, 1, size, elf->f);
+	if (count != size) {
+		elf_debug("%s: could not read in file\n", __FUNCTION__);
+		free(buf);
+		return NULL;
+	}
+
+	/* Return read buffer */
+	return buf;
+}
+
+
+void elf_free_buffer(void *buf)
+{
+	free(buf);
+}
+
+
+
+
+/*
+ * Read from sections
+ */
+
+void *elf_section_read_offset(struct elf_file_t *elf, int section, uint32_t offset, uint32_t size)
+{
+	Elf32_Shdr *shdr;
+
+	/* Check bounds */
+	if (section < 0 || section >= elf->ehdr.e_shnum) {
+		elf_debug("%s: section out of range\n", __FUNCTION__);
+		return NULL;
+	}
+
+	/* Check valid offset and size */
+	shdr = &elf->shdr[section];
+	if (offset + size > shdr->sh_size || !size) {
+		elf_debug("%s: invalid offset/size\n", __FUNCTION__);
+		return NULL;
+	}
+
+	/* If section type is SHT_NOBITS, return zeroed buffer */
+	if (elf->shdr[section].sh_type == 8)
+		return calloc(1, size);
+	
+	/* Read section from ELF file */
+	return elf_read_buffer(elf, shdr->sh_offset + offset, size);
+}
+
+
+void *elf_section_read(struct elf_file_t *elf, int section)
+{
+	Elf32_Shdr *shdr;
+
+	/* Check bounds */
+	if (section < 0 || section >= elf->ehdr.e_shnum) {
+		elf_debug("%s: section out of range\n", __FUNCTION__);
+		return NULL;
+	}
+
+	/* Call partial read */
+	shdr = &elf->shdr[section];
+	return elf_section_read_offset(elf, section, 0, shdr->sh_size);
 }
 
 
@@ -328,73 +427,11 @@ uint32_t elf_section_addr(struct elf_file_t *f, int section)
 }
 
 
-void *elf_section_read_offset(struct elf_file_t *f, int section, uint32_t offset, uint32_t size)
-{
-	void *buf;
-	Elf32_Shdr *shdr;
-	int count;
-
-	/* Check bounds */
-	if (section < 0 || section >= f->ehdr.e_shnum) {
-		elf_debug("%s: section out of range\n", __FUNCTION__);
-		return NULL;
-	}
-
-	/* Check valid offset and size */
-	shdr = &f->shdr[section];
-	if (offset + size > shdr->sh_size || !size) {
-		elf_debug("%s: invalid offset/size\n", __FUNCTION__);
-		return NULL;
-	}
-
-	/* Allocate buffer */
-	buf = calloc(1, size);
-	if (!buf) {
-		elf_debug("%s: out of memory\n", __FUNCTION__);
-		return NULL;
-	}
-
-	/* Section of type SHT_NOBITS */
-	if (f->shdr[section].sh_type == 8) {
-		memset(buf, 0, size);
-		return buf;
-	}
-
-	/* Copy section contents */
-	fseek(f->f, shdr->sh_offset + offset, SEEK_SET);
-	count = fread(buf, 1, size, f->f);
-	if (count != size) {
-		elf_debug("%s: could not read section\n", __FUNCTION__);
-		free(buf);
-		return NULL;
-	}
-
-	/* Success */
-	return buf;
-}
 
 
-void *elf_section_read(struct elf_file_t *f, int section)
-{
-	Elf32_Shdr *shdr;
-
-	/* Check bounds */
-	if (section < 0 || section >= f->ehdr.e_shnum) {
-		elf_debug("%s: section out of range\n", __FUNCTION__);
-		return NULL;
-	}
-
-	/* Call partial read */
-	shdr = &f->shdr[section];
-	return elf_section_read_offset(f, section, 0, shdr->sh_size);
-}
-
-
-void elf_section_free(void *buf)
-{
-	free(buf);
-}
-
+/*
+ * ELF symbols
+ */
 
 struct elf_symbol_t *elf_get_symbol_by_address(struct elf_file_t *f, uint32_t addr, uint32_t *poffs)
 {

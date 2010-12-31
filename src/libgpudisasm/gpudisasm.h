@@ -224,7 +224,7 @@ struct fmt_cf_alloc_export_word0_rat_t {
 	unsigned int rw_gpr : 7;  /* [21:15] */
 	unsigned int rr : 1;  /* rw_rel [22] */
 	unsigned int index_gpr : 7;  /* [29:23] */
-	unsigned int es : 2;  /* [31:30] */
+	unsigned int elem_size : 2;  /* [31:30] */
 };
 
 
