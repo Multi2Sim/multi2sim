@@ -33,6 +33,15 @@ extern char *err_opencl_param_note;
 
 
 
+/*
+ * CAL Application Binary Interface (ABI)
+ */
+
+void cal_abi_parse_elf(char *file_name);
+
+
+
+
 /* OpenCL API Implementation */
 
 

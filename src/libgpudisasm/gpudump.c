@@ -444,7 +444,7 @@ void fmt_cf_alloc_export_word0_rat_dump(void *buf, FILE *f)
 	fprintf(f, "  rw_gpr = %d\n", fmt->rw_gpr);
 	fprintf(f, "  rw_rel = %d (%s)\n", fmt->rr, map_value(&fmt_rel_map, fmt->rr));
 	fprintf(f, "  index_gpr = %d\n", fmt->index_gpr);
-	fprintf(f, "  elem_size = %d\n", fmt->es);
+	fprintf(f, "  elem_size = %d\n", fmt->elem_size);
 }
 
 

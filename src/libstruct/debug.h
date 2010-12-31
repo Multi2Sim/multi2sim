@@ -51,6 +51,11 @@ FILE *debug_file(int category);
 /* Flush associated file */
 void debug_flush(int category);
 
+/* Set spaces for next debug messages */
+void debug_tab(int category, int space_count);
+void debug_tab_inc(int category, int space_count);
+void debug_tab_dec(int category, int space_count);
+
 /* Dump a debugging message. */
 void debug(int category, char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 

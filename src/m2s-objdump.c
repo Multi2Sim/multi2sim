@@ -86,7 +86,7 @@ static void sim_dump(char *file)
 		/* Obtain buffer */
 		buf = elf_section_read(elf, i);
 		sim_dump_section(buf, addr, size);
-		elf_section_free(buf);
+		elf_free_buffer(buf);
 	}
 }
 

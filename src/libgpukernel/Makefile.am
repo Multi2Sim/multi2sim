@@ -1,5 +1,6 @@
 lib_LIBRARIES = libgpukernel.a
 libgpukernel_a_SOURCES = \
+	cal-abi.c \
 	gpuisa.c \
 	gpukernel.c \
 	gpukernel.h \
