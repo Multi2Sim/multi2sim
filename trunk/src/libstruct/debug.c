@@ -31,6 +31,7 @@
 
 struct category_t {
 	int status;
+	int space_count;
 	FILE *f;
 	char *filename;
 };
@@ -143,16 +144,55 @@ void debug_flush(int category)
 }
 
 
+void debug_tab(int category, int space_count)
+{
+	struct category_t *c;
+	if (category < 0 || category >= category_count)
+		return;
+	c = &category_list[category];
+	c->space_count = space_count;
+}
+
+
+void debug_tab_inc(int category, int space_count)
+{
+	struct category_t *c;
+	if (category < 0 || category >= category_count)
+		return;
+	c = &category_list[category];
+	c->space_count += space_count;
+	if (c->space_count < 0)
+		c->space_count = 0;
+}
+
+
+void debug_tab_dec(int category, int space_count)
+{
+	debug_tab_inc(category, -space_count);
+}
+
+
 void debug(int category, char *fmt, ...)
 {
 	struct category_t *c;
 	va_list va;
+	char spc[200];
 
+	/* Get category */
 	if (category < 0 || category >= category_count)
 		return;
 	c = &category_list[category];
 	if (!c->status || !c->f)
 		return;
+	
+	/* Print spaces */
+	if (c->space_count >= sizeof(spc))
+		c->space_count = sizeof(spc) - 1;
+	memset(spc, ' ', c->space_count);
+	spc[c->space_count] = '\0';
+	fprintf(c->f, "%s", spc);
+	
+	/* Print message */
 	va_start(va, fmt);
 	vfprintf(c->f, fmt, va);
 	fflush(c->f);

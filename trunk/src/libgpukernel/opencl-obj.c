@@ -534,7 +534,7 @@ FILE *opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_
 	buf = elf_section_read_offset(program->binary_file_elf, symbol->section,
 		symbol->value, symbol->size);
 	write_buffer(file_name, buf, symbol->size);
-	elf_section_free(buf);
+	elf_free_buffer(buf);
 
 	/* Return temporary file descriptor */
 	return f;
@@ -620,6 +620,11 @@ FILE *opencl_kernel_load_code(char *file_name, char *code_name, int code_name_si
 	void *buf;
 	FILE *f;
 
+
+	////////
+	cal_abi_parse_elf(file_name);
+	//////
+
 	elf = elf_open(file_name);
 	for (i = 0; i < elf_section_count(elf); i++) {
 		elf_section_info(elf, i, &section_name, NULL, &section_size, NULL);
@@ -634,7 +639,7 @@ FILE *opencl_kernel_load_code(char *file_name, char *code_name, int code_name_si
 		buf = elf_section_read(elf, i);
 		f = create_temp_file(code_name, code_name_size);
 		write_buffer(code_name, buf, section_size);
-		elf_section_free(buf);
+		elf_free_buffer(buf);
 		return f;
 	}
 

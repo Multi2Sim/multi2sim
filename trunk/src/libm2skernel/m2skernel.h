@@ -170,6 +170,7 @@ void regs_fpu_stack_dump(struct regs_t *regs, FILE *f);
 #define elf_debug(...) debug(elf_debug_category, __VA_ARGS__)
 extern int elf_debug_category;
 
+
 struct elf_symbol_t {
 	char *name;
 	uint32_t value;
@@ -177,13 +178,18 @@ struct elf_symbol_t {
 	int section;
 };
 
+
 struct elf_file_t {
+	
+	/* ELF file */
 	FILE *f;
-	char path[300];
+	char path[MAX_PATH_SIZE];
+
+	uint32_t size;  /* Size of the file */
 	void *shstr;  /* Section header string table */
 	Elf32_Ehdr ehdr;  /* ELF header */
-	Elf32_Shdr *shdr;  /* Section headers (array of ehdr.shnum elements) */
-	Elf32_Phdr *phdr;  /* Program headers (array of ehdr.phnum elements) */
+	Elf32_Shdr *shdr;  /* Section headers (array of ehdr.e_shnum elements) */
+	Elf32_Phdr *phdr;  /* Program headers (array of ehdr.e_phnum elements) */
 	uint32_t phdt_base;  /* Program header table base */
 
 	/* Symbol table */
@@ -192,15 +198,18 @@ struct elf_file_t {
 	struct elf_symbol_t *symtab;
 };
 
+
 struct elf_file_t *elf_open(char *path);
 void elf_close(struct elf_file_t *f);
+
+void *elf_read_buffer(struct elf_file_t *elf, uint32_t offset, uint32_t size);
+void elf_free_buffer(void *buf);
 
 int elf_section_count(struct elf_file_t *f);
 int elf_section_info(struct elf_file_t *f, int section,
 	char **pname, uint32_t *paddr, uint32_t *psize, uint32_t *pflags);
 void *elf_section_read(struct elf_file_t *f, int section);
 void *elf_section_read_offset(struct elf_file_t *f, int section, uint32_t offset, uint32_t size);
-void elf_section_free(void *buf);
 
 void *elf_phdt(struct elf_file_t *f);
 uint32_t elf_phdt_base(struct elf_file_t *f);
