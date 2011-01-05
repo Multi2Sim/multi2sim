@@ -23,6 +23,17 @@
 #include <debug.h>
 
 
+/* Required 'libm2s-opencl.so' version.
+ * Increase this number when the user is required to download an updated release
+ * of the Multi2Sim OpenCL implementation. */
+#define SYS_OPENCL_IMPL_VERSION_MAJOR		1
+#define SYS_OPENCL_IMPL_VERSION_MINOR		0
+#define SYS_OPENCL_IMPL_VERSION_BUILD		0
+#define SYS_OPENCL_IMPL_VERSION			((SYS_OPENCL_IMPL_VERSION_MAJOR << 16) | \
+						(SYS_OPENCL_IMPL_VERSION_MINOR << 8) | \
+						SYS_OPENCL_IMPL_VERSION_BUILD)
+
+
 /* Debug info */
 int opencl_debug_category;
 
@@ -89,6 +100,11 @@ char *err_opencl_binary_note =
 	"\tresponsibility to check that the chosen binary corresponds to the kernel\n"
 	"\tthat your application is expecting to load.\n";
 
+char *err_opencl_version_note =
+	"\tThe version of the 'libm2s-opencl.so' file you have is too old. Please visit\n"
+	"\twww.multi2sim.org and download the latest release for the Multi2Sim OpenCL\n"
+	"\tlibrary implementation.\n";
+
 
 /* Error macros */
 
@@ -138,10 +154,25 @@ int opencl_func_run(int code, unsigned int *args)
 		int num_entries = args[0];  /* cl_uint num_entries */
 		uint32_t platforms = args[1];  /* cl_platform_id *platforms */
 		uint32_t num_platforms = args[2];  /* cl_uint *num_platforms */
+		uint32_t opencl_impl_version = args[3];  /* Implementation-specific */
+
 		uint32_t one = 1;
+		int opencl_impl_version_major = opencl_impl_version >> 16;
+		int opencl_impl_version_minor = (opencl_impl_version >> 8) & 0xff;
+		int opencl_impl_version_build = opencl_impl_version & 0xff;
+
+		/* Check 'libm2s-opencl.so' version */
+		if (opencl_impl_version < SYS_OPENCL_IMPL_VERSION)
+			fatal("wrong version for 'libm2s-opencl.so' (provided=%d.%d.%d, required=%d.%d.%d).\n%s",
+				opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build,
+				SYS_OPENCL_IMPL_VERSION_MAJOR, SYS_OPENCL_IMPL_VERSION_MINOR, SYS_OPENCL_IMPL_VERSION_BUILD,
+				err_opencl_version_note);
+		opencl_debug("  'libm2s-opencl.so' version: %d.%d.%d\n",
+				opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build);
 		
-		opencl_debug("  num_entries=%d, platforms=0x%x, num_platforms=0x%x\n",
-			num_entries, platforms, num_platforms);
+		/* Get platform id */
+		opencl_debug("  num_entries=%d, platforms=0x%x, num_platforms=0x%x, version=0x%x\n",
+			num_entries, platforms, num_platforms, opencl_impl_version);
 		if (num_platforms)
 			mem_write(isa_mem, num_platforms, 4, &one);
 		if (platforms && num_entries > 0)
