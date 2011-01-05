@@ -567,6 +567,10 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 		opencl_kernel_arg_free((struct opencl_kernel_arg_t *) list_get(kernel->arg_list, i));
 	list_free(kernel->arg_list);
 
+	/* CAL ABI */
+	if (kernel->cal_abi)
+		cal_abi_free(kernel->cal_abi);
+
 	/* Program excerpts */
 	if (kernel->metadata_file) {
 		fclose(kernel->metadata_file);
@@ -575,10 +579,6 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 	if (kernel->kernel_file) {
 		fclose(kernel->kernel_file);
 		unlink(kernel->kernel_file_name);
-	}
-	if (kernel->code_file) {
-		fclose(kernel->code_file);
-		unlink(kernel->code_file_name);
 	}
 	if (kernel->func_file) {
 		fclose(kernel->func_file);
@@ -603,50 +603,6 @@ struct opencl_kernel_arg_t *opencl_kernel_arg_create(char *name)
 void opencl_kernel_arg_free(struct opencl_kernel_arg_t *arg)
 {
 	free(arg);
-}
-
-
-/* Read 'file_name' as an ELF file containing a specific kernel function.
- * The second '.text' section contains the disassembly code. This section is
- * dumped into a temporary file, whose name is stored in 'code_name' and whose
- * file handler is returned as the function result. */
-FILE *opencl_kernel_load_code(char *file_name, char *code_name, int code_name_size)
-{
-	struct elf_file_t *elf;
-	int text_section_count = 0;
-	char *section_name;
-	uint32_t section_size;
-	int i;
-	void *buf;
-	FILE *f;
-
-
-	////////
-	cal_abi_parse_elf(file_name);
-	//////
-
-	elf = elf_open(file_name);
-	for (i = 0; i < elf_section_count(elf); i++) {
-		elf_section_info(elf, i, &section_name, NULL, &section_size, NULL);
-		if (strcmp(section_name, ".text"))
-			continue;
-		else
-			text_section_count++;
-		if (text_section_count < 2)
-			continue;
-
-		/* Second '.text' section found */
-		buf = elf_section_read(elf, i);
-		f = create_temp_file(code_name, code_name_size);
-		write_buffer(code_name, buf, section_size);
-		elf_free_buffer(buf);
-		return f;
-	}
-
-	/* Second '.text' section not found */
-	fatal("%s: %s: second '.text' section not found in file",
-		__FUNCTION__, file_name);
-	return NULL;
 }
 
 
@@ -844,9 +800,9 @@ void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name)
 		fatal("%s: kernel '%s' not found in binary.\n%s", __FUNCTION__,
 			kernel_name, err_opencl_param_note);
 	
-	/* Read kernel code from 'kernel' symbol */
-	kernel->code_file = opencl_kernel_load_code(kernel->kernel_file_name,
-		kernel->code_file_name, MAX_PATH_SIZE);
+	/* Create 'cal_abi' object and parse kernel ELF */
+	kernel->cal_abi = cal_abi_create();
+	cal_abi_parse_elf(kernel->cal_abi, kernel->kernel_file_name);
 	
 	/* Analyze 'metadata' file */
 	opencl_kernel_load_metadata(kernel);

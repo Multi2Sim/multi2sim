@@ -71,18 +71,16 @@ void cal_abi_dump_note_header(CALNoteHeader *pt_note_header)
 }
 
 
-/* Given an encoding dictionary entry, find the corresponding PT_NOTE and PT_LOAD segments.
- * Return a pointer to the associated program header, and an allocated copy of the segment contents. */
-void cal_abi_read_segments(struct elf_file_t *elf,
-	CALEncodingDictionaryEntry *enc_dict_entry,
-	Elf32_Phdr **pt_note_phdr, void **pt_note_buffer,
-	Elf32_Phdr **pt_load_phdr, void **pt_load_buffer)
+/* Given an encoding dictionary entry, allocate the corresponding PT_NOTE and PT_LOAD segments
+ * into the 'cal_abi' object pointers. */
+void cal_abi_read_segments(struct cal_abi_t *cal_abi, CALEncodingDictionaryEntry *enc_dict_entry)
 {
+	struct elf_file_t *elf = cal_abi->elf;
 	int phidx;  /* Program header index */
 	Elf32_Phdr *phdr;
 
-	*pt_note_buffer = NULL;
-	*pt_load_buffer = NULL;
+	assert(!cal_abi->pt_note_buffer);
+	assert(!cal_abi->pt_load_buffer);
 	for (phidx = 0; phidx < elf->ehdr.e_phnum; phidx++) {
 		
 		/* Segment referred by program header must fall in range delimited by encoding dictionary entry */
@@ -92,47 +90,42 @@ void cal_abi_read_segments(struct elf_file_t *elf,
 
 		/* Segment PT_NOTE */
 		if (phdr->p_type == PT_NOTE) {
-			if (*pt_note_buffer)
+			if (cal_abi->pt_note_buffer)
 				fatal("%s: more than one PT_NOTE segment for encoding dictionary entry", __FUNCTION__);
-			*pt_note_phdr = phdr;
-			*pt_note_buffer = elf_read_buffer(elf, phdr->p_offset, phdr->p_filesz);
+			cal_abi->pt_note_phdr = phdr;
+			cal_abi->pt_note_buffer = elf_read_buffer(elf, phdr->p_offset, phdr->p_filesz);
 		}
 
 		/* Segment PT_LOAD */
 		if (phdr->p_type == PT_LOAD) {
-			if (*pt_load_buffer)
+			if (cal_abi->pt_load_buffer)
 				fatal("%s: more than one PT_LOAD segment for encoding dictionary entry", __FUNCTION__);
-			*pt_load_phdr = phdr;
-			*pt_load_buffer = elf_read_buffer(elf, phdr->p_offset, phdr->p_filesz);
+			cal_abi->pt_load_phdr = phdr;
+			cal_abi->pt_load_buffer = elf_read_buffer(elf, phdr->p_offset, phdr->p_filesz);
 		}
 	}
 
 	/* Check that both PT_NOTE and PT_LOAD segments were found */
-	if (!*pt_note_buffer)
+	if (!cal_abi->pt_note_buffer)
 		fatal("%s: no PT_NOTE segment found for encoding dictionary entry", __FUNCTION__);
-	if (!*pt_load_buffer)
+	if (!cal_abi->pt_load_buffer)
 		fatal("%s: no PT_LOAD segment found for encoding dictionary entry", __FUNCTION__);
 }
 
 
-/* Given a program header representing a PT_LOAD segment, and the buffer containing the
- * segment contents, return pointers to the '.text', '.data', '.symtab', and '.strtab'
- * sections within that segment. */
-void cal_abi_read_segment_sections(struct elf_file_t *elf, Elf32_Phdr *pt_load_phdr, void *pt_load_buffer,
-	Elf32_Shdr **text_shdr, void **text_buffer,
-	Elf32_Shdr **data_shdr, void **data_buffer,
-	Elf32_Shdr **symtab_shdr, void **symtab_buffer,
-	Elf32_Shdr **strtab_shdr, void **strtab_buffer)
+/* Read the PT_LOAD segment and assign pointers to the different sections. */
+void cal_abi_read_pt_load_sections(struct cal_abi_t *cal_abi)
 {
+	struct elf_file_t *elf = cal_abi->elf;
 	char *section_name;
 	void *section_buffer;
 	Elf32_Shdr *shdr;
 	int i;
 
-	*text_buffer = NULL;
-	*data_buffer = NULL;
-	*symtab_buffer = NULL;
-	*strtab_buffer = NULL;
+	assert(!cal_abi->text_buffer);
+	assert(!cal_abi->data_buffer);
+	assert(!cal_abi->symtab_buffer);
+	assert(!cal_abi->strtab_buffer);
 
 	/* Find sections */
 	for (i = 0; i < elf_section_count(elf); i++) {
@@ -140,74 +133,61 @@ void cal_abi_read_segment_sections(struct elf_file_t *elf, Elf32_Phdr *pt_load_p
 		/* Section must be in segment */
 		shdr = &elf->shdr[i];
 		elf_section_info(elf, i, &section_name, NULL, NULL, NULL);
-		if (!IN_RANGE(shdr->sh_offset, pt_load_phdr->p_offset, pt_load_phdr->p_offset + pt_load_phdr->p_filesz - 1))
+		if (!IN_RANGE(shdr->sh_offset, cal_abi->pt_load_phdr->p_offset, cal_abi->pt_load_phdr->p_offset
+			+ cal_abi->pt_load_phdr->p_filesz - 1))
 			continue;
 
 		/* Locate section within 'pt_load_buffer'. The relative offset is equal to the absolute section offset
 		 * minus the PT_LOAD segment offset. */
-		section_buffer = pt_load_buffer + shdr->sh_offset - pt_load_phdr->p_offset;
+		section_buffer = cal_abi->pt_load_buffer + shdr->sh_offset - cal_abi->pt_load_phdr->p_offset;
 
 		/* Which section is this */
 		if (!strcmp(section_name, ".text")) {
-			if (*text_buffer)
+			if (cal_abi->text_buffer)
 				fatal("%s: duplicated '.text' section", __FUNCTION__);
-			*text_shdr = shdr;
-			*text_buffer = section_buffer;
+			cal_abi->text_shdr = shdr;
+			cal_abi->text_buffer = section_buffer;
 		} else if (!strcmp(section_name, ".data")) {
-			if (*data_buffer)
+			if (cal_abi->data_buffer)
 				fatal("%s: duplicated '.data' section", __FUNCTION__);
-			*data_shdr = shdr;
-			*data_buffer = section_buffer;
+			cal_abi->data_shdr = shdr;
+			cal_abi->data_buffer = section_buffer;
 		} else if (!strcmp(section_name, ".symtab")) {
-			if (*symtab_buffer)
+			if (cal_abi->symtab_buffer)
 				fatal("%s: duplicated '.symtab' section", __FUNCTION__);
-			*symtab_shdr = shdr;
-			*symtab_buffer = section_buffer;
+			cal_abi->symtab_shdr = shdr;
+			cal_abi->symtab_buffer = section_buffer;
 		} else if (!strcmp(section_name, ".strtab")) {
-			if (*strtab_buffer)
+			if (cal_abi->strtab_buffer)
 				fatal("%s: duplicated '.strtab' section", __FUNCTION__);
-			*strtab_shdr = shdr;
-			*strtab_buffer = section_buffer;
+			cal_abi->strtab_shdr = shdr;
+			cal_abi->strtab_buffer = section_buffer;
 		} else
 			fatal("%s: not recognized section name: '%s'", __FUNCTION__, section_name);
 	}
 
 	/* Check that all sections were found */
-	if (!*text_buffer || !*data_buffer || !*symtab_buffer || !*strtab_buffer)
+	if (!cal_abi->text_buffer || !cal_abi->data_buffer || !cal_abi->symtab_buffer || !cal_abi->strtab_buffer)
 		fatal("%s: some section was not found: .text .data .symtab .strtab", __FUNCTION__);
 }
 
 
-void cal_abi_parse_elf(char *file_name)
+void cal_abi_parse_elf(struct cal_abi_t *cal_abi, char *file_name)
 {
-	struct elf_file_t *elf;
-
-	int enc_dict_idx;  /* Index for encoding dictionary in program header table */
-	Elf32_Phdr *enc_dict_phdr;
+	/* Encoding dictionary entries */
 	CALEncodingDictionaryEntry *enc_dict_entries, *enc_dict_entry;
-	int enc_dict_entry_count;
 
-	/* PT_NOTE segment */
-	Elf32_Phdr *pt_note_phdr;
-	void *pt_note_buffer;
-
-	/* For individual pt_notes */
+	/* Individual pt_notes in the PT_NOTE segment */
 	void *pt_note_ptr;
 	CALNoteHeader *pt_note_header;
 
-	/* PT_LOAD segment */
-	Elf32_Phdr *pt_load_phdr;
-	void *pt_load_buffer;
-
-	/* Sections within PT_LOAD segment */
-	Elf32_Shdr *text_shdr, *data_shdr, *symtab_shdr, *strtab_shdr;
-	void *text_buffer, *data_buffer, *symtab_buffer, *strtab_buffer;
-	
 	int i;
+	struct elf_file_t *elf;
 
-	/* Analyze ELF */
-	opencl_debug("CAL ABI analyzer: parsing file '%s'\n", file_name);
-	elf = elf_open(file_name);
+	/* Open ELF file */
+	strncpy(cal_abi->file_name, file_name, MAX_PATH_SIZE);
+	opencl_debug("CAL ABI analyzer: parsing file '%s'\n", cal_abi->file_name);
+	cal_abi->elf = elf = elf_open(cal_abi->file_name);
 	
 	/* ELF header */
 	CAL_ABI_NOT_SUPPORTED_NEQ(elf->ehdr.e_ident[EI_CLASS], ELFCLASS32);
@@ -220,23 +200,26 @@ void cal_abi_parse_elf(char *file_name)
 
 	/* Look for encoding dictionary */
 	opencl_debug("  Parsing encoding dictionary\n");
-	for (enc_dict_idx = 0; enc_dict_idx < elf->ehdr.e_phnum && elf->phdr[enc_dict_idx].p_type != PT_LOPROC + 2; enc_dict_idx++);
-	if (enc_dict_idx == elf->ehdr.e_phnum)
-		CAL_ABI_NOT_SUPPORTED(enc_dict_idx);
-	enc_dict_phdr = &elf->phdr[enc_dict_idx];
+	for (cal_abi->enc_dict_phdr_idx = 0;
+		cal_abi->enc_dict_phdr_idx < elf->ehdr.e_phnum && elf->phdr[cal_abi->enc_dict_phdr_idx].p_type != PT_LOPROC + 2;
+		cal_abi->enc_dict_phdr_idx++);
+	if (cal_abi->enc_dict_phdr_idx == elf->ehdr.e_phnum)
+		CAL_ABI_NOT_SUPPORTED(cal_abi->enc_dict_phdr_idx);
+	cal_abi->enc_dict_phdr = &elf->phdr[cal_abi->enc_dict_phdr_idx];
 
 	/* Parse encoding dictionary */
-	CAL_ABI_NOT_SUPPORTED_NEQ(enc_dict_phdr->p_vaddr, 0);
-	CAL_ABI_NOT_SUPPORTED_NEQ(enc_dict_phdr->p_paddr, 0);
-	CAL_ABI_NOT_SUPPORTED_NEQ(enc_dict_phdr->p_memsz, 0);
-	CAL_ABI_NOT_SUPPORTED_NEQ(enc_dict_phdr->p_flags, 0);
-	CAL_ABI_NOT_SUPPORTED_NEQ(enc_dict_phdr->p_align, 0);
-	enc_dict_entry_count = enc_dict_phdr->p_filesz / sizeof(CALEncodingDictionaryEntry);
-	opencl_debug("%d entries\n", enc_dict_entry_count);
+	CAL_ABI_NOT_SUPPORTED_NEQ(cal_abi->enc_dict_phdr->p_vaddr, 0);
+	CAL_ABI_NOT_SUPPORTED_NEQ(cal_abi->enc_dict_phdr->p_paddr, 0);
+	CAL_ABI_NOT_SUPPORTED_NEQ(cal_abi->enc_dict_phdr->p_memsz, 0);
+	CAL_ABI_NOT_SUPPORTED_NEQ(cal_abi->enc_dict_phdr->p_flags, 0);
+	CAL_ABI_NOT_SUPPORTED_NEQ(cal_abi->enc_dict_phdr->p_align, 0);
+	cal_abi->enc_dict_entry_count = cal_abi->enc_dict_phdr->p_filesz / sizeof(CALEncodingDictionaryEntry);
+	opencl_debug("%d entries\n", cal_abi->enc_dict_entry_count);
 	
-	/* Read entries */
-	enc_dict_entries = elf_read_buffer(elf, enc_dict_phdr->p_offset, enc_dict_phdr->p_filesz);
-	for (i = 0; i < enc_dict_entry_count; i++) {
+	/* Read encoding dictionary entry and locate that entry with 'd_machine'=0x9 */
+	enc_dict_entries = elf_read_buffer(elf, cal_abi->enc_dict_phdr->p_offset, cal_abi->enc_dict_phdr->p_filesz);
+	cal_abi->enc_dict_entry_idx = -1;
+	for (i = 0; i < cal_abi->enc_dict_entry_count; i++) {
 		
 		/* Decode entry */
 		enc_dict_entry = &enc_dict_entries[i];
@@ -249,78 +232,103 @@ void cal_abi_parse_elf(char *file_name)
 		opencl_debug("d_size    = 0x%x\n", enc_dict_entry->d_size);
 		opencl_debug("d_flags   = 0x%x\n", enc_dict_entry->d_flags);
 
-		/* Load PT_NOTE and PT_LOAD segments for encoding dictionary entry */
-		cal_abi_read_segments(elf, enc_dict_entry, &pt_note_phdr, &pt_note_buffer,
-			&pt_load_phdr, &pt_load_buffer);
+		/* Check if 'd_machine' entry is 0x9 */
+		if (enc_dict_entry->d_machine == 0x9) {
+			if (cal_abi->enc_dict_entry_idx >= 0)
+				fatal("%s: two encoding dictionary entries with 'd_machine' = 0x9", __FUNCTION__);
+			cal_abi->enc_dict_entry_idx = i;
+		}
+	}
 
-		/* Get sections within PT_LOAD segment */
-		cal_abi_read_segment_sections(elf, pt_load_phdr, pt_load_buffer,
-			&text_shdr, &text_buffer, &data_shdr, &data_buffer,
-			&symtab_shdr, &symtab_buffer, &strtab_shdr, &strtab_buffer);
+	/* Check that encoding dictionary entry with 'd_machine'=0x9 was found */
+	if (cal_abi->enc_dict_entry_idx < 0)
+		fatal("%s: no encoding dictionary entry with 'd_machine'=0x9 found", __FUNCTION__);
+	enc_dict_entry = &enc_dict_entries[cal_abi->enc_dict_entry_idx];
 
-		/* Decode notes */
-		pt_note_ptr = pt_note_buffer;
-		while (pt_note_ptr < pt_note_buffer + pt_note_phdr->p_filesz) {
+	/* Load PT_NOTE and PT_LOAD segments for selected encoding dictionary entry.
+	 * Also get pointers to sections within PT_LOAD segment */
+	cal_abi_read_segments(cal_abi, enc_dict_entry);
+	cal_abi_read_pt_load_sections(cal_abi);
+
+	/* Decode notes in PT_NOTE segment */
+	pt_note_ptr = cal_abi->pt_note_buffer;
+	while (pt_note_ptr < cal_abi->pt_note_buffer + cal_abi->pt_note_phdr->p_filesz) {
 			
-			/* Get note */
-			pt_note_header = pt_note_ptr;
-			cal_abi_dump_note_header(pt_note_header);
+		/* Get note */
+		pt_note_header = pt_note_ptr;
+		cal_abi_dump_note_header(pt_note_header);
 
-			/* Analyze note */
-			switch (pt_note_header->type) {
+		/* Analyze note */
+		switch (pt_note_header->type) {
 			
-			case 6:  /* ELF_NOTE_ATI_INTCONSTS */
-			{
-				int data_segment_desc_count;
-				CALDataSegmentDesc *data_segment_desc;
-				int j, k;
-				uint32_t c;
+		case 6:  /* ELF_NOTE_ATI_INTCONSTS */
+		{
+			int data_segment_desc_count;
+			CALDataSegmentDesc *data_segment_desc;
+			int j, k;
+			uint32_t c;
 
-				/* Get number of entries */
-				data_segment_desc_count = pt_note_header->descsz / sizeof(CALDataSegmentDesc);
-				opencl_debug("Note including integer constants for constant buffers (%d entries)\n",
+			/* Get number of entries */
+			data_segment_desc_count = pt_note_header->descsz / sizeof(CALDataSegmentDesc);
+			opencl_debug("Note including integer constants for constant buffers (%d entries)\n",
 					data_segment_desc_count);
 
-				/* Decode entries */
-				for (j = 0; j < data_segment_desc_count; j++) {
-					data_segment_desc = pt_note_ptr + sizeof(CALNoteHeader) + j * sizeof(CALDataSegmentDesc);
-					opencl_debug("data_segment_desc[%d]:\n", j);
-					debug_tab_inc(opencl_debug_category, 2);
-					opencl_debug("offset  = 0x%x\n", data_segment_desc->offset);
-					opencl_debug("size    = %u\n", data_segment_desc->size);
+			/* Decode entries */
+			for (j = 0; j < data_segment_desc_count; j++) {
+				data_segment_desc = pt_note_ptr + sizeof(CALNoteHeader) + j * sizeof(CALDataSegmentDesc);
+				opencl_debug("data_segment_desc[%d]:\n", j);
+				debug_tab_inc(opencl_debug_category, 2);
+				opencl_debug("offset  = 0x%x\n", data_segment_desc->offset);
+				opencl_debug("size    = %u\n", data_segment_desc->size);
 
-					/* Dump constants */
-					debug_tab_inc(opencl_debug_category, 2);
-					for (k = 0; k < data_segment_desc->size; k += 4) {
-						c = * (uint32_t *) (data_buffer + data_segment_desc->offset);
-						opencl_debug("constant[%02d] = 0x%08x\n", k / 4, c);
-					}
-					debug_tab_dec(opencl_debug_category, 2);
-					debug_tab_dec(opencl_debug_category, 2);
+				/* Dump constants */
+				debug_tab_inc(opencl_debug_category, 2);
+				for (k = 0; k < data_segment_desc->size; k += 4) {
+					c = * (uint32_t *) (cal_abi->data_buffer + data_segment_desc->offset);
+					opencl_debug("constant[%02d] = 0x%08x\n", k / 4, c);
 				}
-				break;
+				debug_tab_dec(opencl_debug_category, 2);
+				debug_tab_dec(opencl_debug_category, 2);
 			}
-
-			default:
-				opencl_debug("unknown type\n");
-			}
-
-			/* Next note */
-			opencl_debug("\n");
-			pt_note_ptr += sizeof(CALNoteHeader) + pt_note_header->descsz;
+			break;
 		}
 
-		/* Free PT_NOTE and PT_LOAD buffers */
-		elf_free_buffer(pt_note_buffer);
-		elf_free_buffer(pt_load_buffer);
+		default:
+			opencl_debug("unknown type\n");
+		}
+
+		/* Next note */
+		opencl_debug("\n");
+		pt_note_ptr += sizeof(CALNoteHeader) + pt_note_header->descsz;
 	}
+
+	/* Check that the encoding dictionary entry with d_machine=0x9 was found */
+	if (!cal_abi->text_buffer)
+		fatal("%s: no entry with d_machine=0x9 found", __FUNCTION__);
 
 	/* Free structures */
 	elf_free_buffer(enc_dict_entries);
-
-	/* Close */
 	debug_tab(opencl_debug_category, 0);
-	elf_close(elf);
-	exit(1);//////
+}
+
+
+/* Create CAL ABI object */
+struct cal_abi_t *cal_abi_create()
+{
+	struct cal_abi_t *cal_abi;
+
+	cal_abi = calloc(1, sizeof(struct cal_abi_t));
+	return cal_abi;
+}
+
+
+void cal_abi_free(struct cal_abi_t *cal_abi)
+{
+	if (cal_abi->elf) {
+		elf_free_buffer(cal_abi->pt_note_buffer);
+		elf_free_buffer(cal_abi->pt_load_buffer);
+		elf_close(cal_abi->elf);
+	}
+	free(cal_abi);
 }
 
