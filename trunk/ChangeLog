@@ -766,3 +766,5 @@
 	* libgpukernel/cal-abi.c: new analysis of the secondary ELF kernel binary based on the
 		new information released by AMD.
 
+2011-01-05
+	* libgpukernel/cal-abi.c, opencl-obj.c: updated to use the new management of ELF files.
