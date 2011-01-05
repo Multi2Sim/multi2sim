@@ -207,7 +207,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	}
 
 	/* Load kernel code */
-	code_buffer = read_buffer(kernel->code_file_name, NULL);
+	code_buffer = kernel->cal_abi->text_buffer;
 	if (!code_buffer)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
 	gpu_isa_warp->cf_buf_start = code_buffer;
@@ -309,9 +309,6 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			}
 		}
 	}
-
-	/* Free kernel code */
-	free_buffer(code_buffer);
 
 	/* Free threads */
 	for (i = 0; i < kernel->global_size; i++)
