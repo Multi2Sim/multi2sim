@@ -768,3 +768,8 @@
 
 2011-01-05
 	* libgpukernel/cal-abi.c, opencl-obj.c: updated to use the new management of ELF files.
+	* libgpukernel/opencl.c: added a 4th parameter to the clGetPlatformIDs both in the
+		libm2s-opencl.so library and in the OpenCL system call interpreter to pass the
+		library implementation version. This forces the user to always have the latest
+		update for the library.
+

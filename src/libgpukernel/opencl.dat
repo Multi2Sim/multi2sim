@@ -1,4 +1,4 @@
-DEF_OPENCL_FUNC(clGetPlatformIDs, 3)
+DEF_OPENCL_FUNC(clGetPlatformIDs, 4)
 DEF_OPENCL_FUNC(clGetPlatformInfo, 5)
 DEF_OPENCL_FUNC(clGetDeviceIDs, 5)
 DEF_OPENCL_FUNC(clGetDeviceInfo, 5)
