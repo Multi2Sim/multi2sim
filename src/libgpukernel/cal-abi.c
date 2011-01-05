@@ -63,7 +63,7 @@ typedef struct {
 
 void cal_abi_dump_note_header(CALNoteHeader *pt_note_header)
 {
-	debug_tab(opencl_debug_category, 6);
+	debug_tab(opencl_debug_category, 4);
 	opencl_debug("pt_note.namesz = 0x%x\n", pt_note_header->namesz);
 	opencl_debug("pt_note.descsz = 0x%x\n", pt_note_header->descsz);
 	opencl_debug("pt_note.type = 0x%x (%s)\n", pt_note_header->type, map_value(&pt_note_type_map, pt_note_header->type));
@@ -244,6 +244,9 @@ void cal_abi_parse_elf(struct cal_abi_t *cal_abi, char *file_name)
 	if (cal_abi->enc_dict_entry_idx < 0)
 		fatal("%s: no encoding dictionary entry with 'd_machine'=0x9 found", __FUNCTION__);
 	enc_dict_entry = &enc_dict_entries[cal_abi->enc_dict_entry_idx];
+	debug_tab(opencl_debug_category, 2);
+	opencl_debug("\n");
+	opencl_debug("Encoding dictionary entry selected for loading: %d\n", cal_abi->enc_dict_entry_idx);
 
 	/* Load PT_NOTE and PT_LOAD segments for selected encoding dictionary entry.
 	 * Also get pointers to sections within PT_LOAD segment */
