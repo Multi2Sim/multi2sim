@@ -73,13 +73,192 @@ typedef struct {
 } CALDataSegmentDesc;
 
 
-void cal_abi_dump_note_header(CALNoteHeader *pt_note_header)
+typedef struct {
+	Elf32_Word index;  /* Constant buffer identfier */
+	Elf32_Word size;  /* Size in vec4f constants of the buffer */
+} CALConstantBufferMask;
+
+
+typedef struct {
+	Elf32_Word address;  /* Device address */
+	Elf32_Word value;  /* Value */
+} CALProgramInfoEntry;
+
+
+void cal_abi_analyze_note_header(struct cal_abi_t *cal_abi, void *pt_note_ptr)
 {
+	char *pt_note_type;
+	CALNoteHeader *pt_note_header = pt_note_ptr;
+
 	debug_tab(opencl_debug_category, 4);
-	opencl_debug("pt_note.namesz = 0x%x\n", pt_note_header->namesz);
-	opencl_debug("pt_note.descsz = 0x%x\n", pt_note_header->descsz);
-	opencl_debug("pt_note.type = 0x%x (%s)\n", pt_note_header->type, map_value(&pt_note_type_map, pt_note_header->type));
-	opencl_debug("pt_note.name = '%s'\n", pt_note_header->name);
+	pt_note_type = map_value(&pt_note_type_map, pt_note_header->type);
+	opencl_debug("pt_note: type=%d (%s), descsz=%d\n", pt_note_header->type,
+		pt_note_type, pt_note_header->descsz);
+		
+	/* Analyze note */
+	switch (pt_note_header->type) {
+
+	case 1:  /* ELF_NOTE_ATI_PROGINFO */
+	{
+		int prog_info_count;
+		CALProgramInfoEntry *prog_info_entry;
+		int i;
+
+		/* Get number of entries */
+		prog_info_count = pt_note_header->descsz / sizeof(CALProgramInfoEntry);
+		opencl_debug("Note including device configuration unique to the program (%d entries)\n",
+			prog_info_count);
+
+		/* Decode entries */
+		for (i = 0; i < prog_info_count; i++) {
+			prog_info_entry = pt_note_ptr + sizeof(CALNoteHeader) + i * sizeof(CALProgramInfoEntry);
+			opencl_debug("  prog_info_entry: address=0x%x, value=0x%x\n",
+				prog_info_entry->address, prog_info_entry->value);
+		}
+		break;
+	}
+
+	
+	case 2:  /* ELF_NOTE_ATI_INPUTS */
+	{
+		/* FIXME: Analyze program inputs */
+		if (pt_note_header->descsz)
+			warning("%s: pt_note '%s' with descsz != 0 ignored", pt_note_type, __FUNCTION__);
+		break;
+	}
+
+
+	case 3:  /* ELF_NOTE_ATI_OUTPUTS */
+	{
+		/* FIXME: Analyze program inputs */
+		if (pt_note_header->descsz)
+			warning("%s: pt_note '%s' with descsz != 0 ignored", pt_note_type, __FUNCTION__);
+		break;
+	}
+
+	
+	case 4:  /* ELF_NOTE_ATI_CONDOUT */
+		break;
+	
+	case 5:  /* ELF_NOTE_ATI_FLOAT32CONSTS */
+	case 6:  /* ELF_NOTE_ATI_INT32CONSTS */
+	case 7:  /* ELF_NOTE_ATI_BOOL32CONSTS */
+	{
+		int data_segment_desc_count;
+		CALDataSegmentDesc *data_segment_desc;
+		int j, k;
+		uint32_t c;
+		float f;
+
+		/* Get number of entries */
+		data_segment_desc_count = pt_note_header->descsz / sizeof(CALDataSegmentDesc);
+		opencl_debug("Note including data for constant buffers (%d entries)\n",
+				data_segment_desc_count);
+
+		/* Decode entries */
+		for (j = 0; j < data_segment_desc_count; j++) {
+			data_segment_desc = pt_note_ptr + sizeof(CALNoteHeader) + j * sizeof(CALDataSegmentDesc);
+			opencl_debug("data_segment_desc[%d]:\n", j);
+			debug_tab_inc(opencl_debug_category, 2);
+			opencl_debug("offset  = 0x%x\n", data_segment_desc->offset);
+			opencl_debug("size    = %u\n", data_segment_desc->size);
+
+			/* Dump constants */
+			debug_tab_inc(opencl_debug_category, 2);
+			for (k = 0; k < data_segment_desc->size; k += 4) {
+				c = * (uint32_t *) (cal_abi->data_buffer + data_segment_desc->offset);
+				f = * (float *) (cal_abi->data_buffer + data_segment_desc->offset);
+				opencl_debug("constant[%02d] = 0x%08x, %gf\n", k / 4, c, f);
+			}
+			debug_tab_dec(opencl_debug_category, 2);
+			debug_tab_dec(opencl_debug_category, 2);
+		}
+		break;
+	}
+
+	
+	case 8:  /* ELF_NOTE_ATI_EARLYEXIT */
+	{
+		Elf32_Word early_exit;
+
+		/* Get 'early_exit' value */
+		early_exit = pt_note_header->descsz ? * (unsigned int *) (pt_note_ptr + sizeof(CALNoteHeader)) : 0;
+		opencl_debug("  early_exit = %s\n", early_exit ? "TRUE" : "FALSE");
+		break;
+	}
+
+	
+	case 9:  /* ELF_NOTE_ATI_GLOBAL_BUFFERS */
+	{
+		Elf32_Word global_buffers;
+		global_buffers = pt_note_header->descsz ? * (unsigned int *) (pt_note_ptr + sizeof(CALNoteHeader)) : 0;
+		opencl_debug("  global_buffers = %s\n", global_buffers ? "TRUE" : "FALSE");
+		break;
+	}
+	
+	
+	case 10:  /* ELF_NOTE_ATI_CONSTANT_BUFFERS */
+	{
+		int constant_buffer_count;
+		CALConstantBufferMask *constant_buffer_mask;
+		int i;
+
+		/* Get number of entries */
+		constant_buffer_count = pt_note_header->descsz / sizeof(CALConstantBufferMask);
+		debug_tab_inc(opencl_debug_category, 2);
+		opencl_debug("Note including number and size of constant buffers (%d entries)\n",
+			constant_buffer_count);
+
+		/* Decode entries */
+		for (i = 0; i < constant_buffer_count; i++) {
+			constant_buffer_mask = pt_note_ptr + sizeof(CALNoteHeader) + i * sizeof(CALConstantBufferMask);
+			opencl_debug("constant_buffer[%d].size = %d (vec4f constants)\n",
+				constant_buffer_mask->index, constant_buffer_mask->size);
+		}
+		debug_tab_dec(opencl_debug_category, 2);
+		break;
+	}
+
+	
+	case 11:  /* ELF_NOTE_ATI_INPUT_SAMPLERS */
+		break;
+	
+	case 12:  /* ELF_NOTE_ATI_PERSISTENT_BUFFERS */
+	{
+		Elf32_Word persistent_buffers;
+		persistent_buffers = pt_note_header->descsz ? * (unsigned int *) (pt_note_ptr + sizeof(CALNoteHeader)) : 0;
+		opencl_debug("  persistent_buffers = %s\n", persistent_buffers ? "TRUE" : "FALSE");
+		break;
+	}
+
+	
+	case 13:  /* ELF_NOTE_ATI_SCRATCH_BUFFERS */
+	{
+		Elf32_Word scratch_buffers;
+		scratch_buffers = pt_note_header->descsz ? * (unsigned int *) (pt_note_ptr + sizeof(CALNoteHeader)) : 0;
+		opencl_debug("  scratch_buffers = %s\n", scratch_buffers ? "TRUE" : "FALSE");
+		break;
+	}
+
+	
+	case 14:  /* ELF_NOTE_ATI_SUB_CONSTANT_BUFFERS */
+		break;
+	
+	case 15:  /* ELF_NOTE_ATI_UAV_MAILBOX_SIZE */
+		break;
+	
+	case 16:  /* ELF_NOTE_ATI_UAV */
+		break;
+	
+	case 17:  /* ELF_NOTE_ATI_UAV_OP_MASK */
+		break;
+
+	default:
+		opencl_debug("unknown type\n");
+	}
+
+	/* New line */
+	opencl_debug("\n");
 }
 
 
@@ -268,52 +447,8 @@ void cal_abi_parse_elf(struct cal_abi_t *cal_abi, char *file_name)
 	/* Decode notes in PT_NOTE segment */
 	pt_note_ptr = cal_abi->pt_note_buffer;
 	while (pt_note_ptr < cal_abi->pt_note_buffer + cal_abi->pt_note_phdr->p_filesz) {
-			
-		/* Get note */
+		cal_abi_analyze_note_header(cal_abi, pt_note_ptr);
 		pt_note_header = pt_note_ptr;
-		cal_abi_dump_note_header(pt_note_header);
-
-		/* Analyze note */
-		switch (pt_note_header->type) {
-			
-		case 6:  /* ELF_NOTE_ATI_INTCONSTS */
-		{
-			int data_segment_desc_count;
-			CALDataSegmentDesc *data_segment_desc;
-			int j, k;
-			uint32_t c;
-
-			/* Get number of entries */
-			data_segment_desc_count = pt_note_header->descsz / sizeof(CALDataSegmentDesc);
-			opencl_debug("Note including integer constants for constant buffers (%d entries)\n",
-					data_segment_desc_count);
-
-			/* Decode entries */
-			for (j = 0; j < data_segment_desc_count; j++) {
-				data_segment_desc = pt_note_ptr + sizeof(CALNoteHeader) + j * sizeof(CALDataSegmentDesc);
-				opencl_debug("data_segment_desc[%d]:\n", j);
-				debug_tab_inc(opencl_debug_category, 2);
-				opencl_debug("offset  = 0x%x\n", data_segment_desc->offset);
-				opencl_debug("size    = %u\n", data_segment_desc->size);
-
-				/* Dump constants */
-				debug_tab_inc(opencl_debug_category, 2);
-				for (k = 0; k < data_segment_desc->size; k += 4) {
-					c = * (uint32_t *) (cal_abi->data_buffer + data_segment_desc->offset);
-					opencl_debug("constant[%02d] = 0x%08x\n", k / 4, c);
-				}
-				debug_tab_dec(opencl_debug_category, 2);
-				debug_tab_dec(opencl_debug_category, 2);
-			}
-			break;
-		}
-
-		default:
-			opencl_debug("unknown type\n");
-		}
-
-		/* Next note */
-		opencl_debug("\n");
 		pt_note_ptr += sizeof(CALNoteHeader) + pt_note_header->descsz;
 	}
 
