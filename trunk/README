@@ -9,10 +9,10 @@ Directions for new version release:
 		~/multi2sim/trunk$ make
 
 	* Add line in Changelog:
-		"Version X.X.X released"
+		"Version X.Y.Z released"
 
 	* Copy 'trunk' directory into 'tags'. For example:
-		~/multi2sim$ svn cp trunk tags/multi2sim-2.4.1
+		~/multi2sim$ svn cp trunk tags/multi2sim-X.Y.Z
 
 	* svn commit
 
@@ -20,7 +20,7 @@ Directions for new version release:
 		~/multi2sim/trunk$ make distcheck
 
 	* Copy tar ball to Multi2Sim server:
-		scp multi2sim-2.4.1.tar.gz $(M2S-SERVER):public_html/files/
+		scp multi2sim-X.Y.Z.tar.gz $(M2S-SERVER):public_html/files/
 
 	* Update Multi2Sim web site.
 		* Log in.
