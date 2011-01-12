@@ -773,3 +773,5 @@
 		library implementation version. This forces the user to always have the latest
 		update for the library.
 
+2010-01-12
+	* libgpukernel/cal-abi.c: constants for ELF_NOTE_ATI_XXX added as per AMD's notification.
