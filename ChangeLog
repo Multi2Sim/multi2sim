@@ -777,3 +777,6 @@
 	* libgpukernel/cal-abi.c: constants for ELF_NOTE_ATI_XXX added as per AMD's notification.
 	* Version 2.4.2 Released
 
+2010-01-12
+	* libgpukernel/cal-abi.c: debug info for pt_note entries.
+
