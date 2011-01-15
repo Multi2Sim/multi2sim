@@ -467,7 +467,7 @@ DEFINST(ADD_INT,
 )
 
 DEFINST(SUB_INT,
-	"%name",
+	"SUB_INT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 53,
 	AMD_INST_FLAG_DST_INT
@@ -530,14 +530,14 @@ DEFINST(SETNE_INT,
 )
 
 DEFINST(SETGT_UINT,
-	"%name",
+	"SETGT_UINT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 62,
 	AMD_INST_FLAG_DST_INT
 )
 
 DEFINST(SETGE_UINT,
-	"%name",
+	"SETGE_UINT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 63,
 	AMD_INST_FLAG_DST_INT
@@ -824,21 +824,21 @@ DEFINST(MULLO_INT,
 )
 
 DEFINST(MULHI_INT,
-	"%name",
+	"MULHI_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 144,
 	AMD_INST_FLAG_TRANS_ONLY | AMD_INST_FLAG_DST_UINT
 )
 
 DEFINST(MULLO_UINT,
-	"%name",
+	"MULLO_UINT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 145,
 	AMD_INST_FLAG_TRANS_ONLY | AMD_INST_FLAG_DST_UINT
 )
 
 DEFINST(MULHI_UINT,
-	"%name",
+	"MULHI_UINT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 146,
 	AMD_INST_FLAG_TRANS_ONLY | AMD_INST_FLAG_DST_UINT
@@ -852,7 +852,7 @@ DEFINST(RECIP_INT,
 )
 
 DEFINST(RECIP_UINT,
-	"%name",
+	"RCP_UINT%omod  %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 148,
 	AMD_INST_FLAG_TRANS_ONLY
@@ -1489,7 +1489,7 @@ DEFINST(CNDGE,
 )
 
 DEFINST(CNDE_INT,
-	"%name",
+	"CNDE_INT   %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 28,
 	0
