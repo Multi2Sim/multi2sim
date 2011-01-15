@@ -43,6 +43,13 @@ amd_inst_impl_t *amd_inst_impl;
 int gpu_isa_debug_category;
 
 
+
+
+/*
+ * Initialization, finalization
+ */
+
+
 /* Initialization */
 void gpu_isa_init()
 {
@@ -67,6 +74,125 @@ void gpu_isa_done()
 
 	/* Repository of deferred tasks */
 	repos_free(gpu_isa_write_task_repos);
+}
+
+
+
+
+/*
+ * Constant Memory
+ */
+
+void gpu_isa_const_mem_write(int bank, int vector, int elem, void *pvalue)
+{
+	uint32_t addr;
+
+	/* Mark CB0[0..8].{x,y,z,w} positions as initialized */
+	if (!bank && vector < 9)
+		gk->const_mem_cb0_init[vector * 4 + elem] = 1;
+
+	/* Write */
+	addr = bank * 16384 + vector * 16 + elem * 4;
+	mem_write(gk->const_mem, addr, 4, pvalue);
+}
+
+
+void gpu_isa_const_mem_read(int bank, int vector, int elem, void *pvalue)
+{
+	uint32_t addr;
+
+	/* Warn if a position within CB[0..8].{x,y,z,w} is used uninitialized */
+	if (!bank && vector < 9 && !gk->const_mem_cb0_init[vector * 4 + elem])
+		warning("CB0[%d].%c is used uninitialized", vector, "xyzw"[elem]);
+	
+	/* Read */
+	addr = bank * 16384 + vector * 16 + elem * 4;
+	mem_read(gk->const_mem, addr, 4, pvalue);
+}
+
+
+
+
+/*
+ * Main loop
+ */
+
+
+/* Write initial values in constant buffer 0 (CB0) */
+void gpu_isa_const_mem_init(struct opencl_kernel_t *kernel)
+{
+	uint32_t zero = 0;
+	float f;
+
+	/* CB0[0]
+	 * x,y,z: global work size for the {x,y,z} dimensions.
+	 * w: number of work dimensions.  */
+	gpu_isa_const_mem_write(0, 0, 0, &kernel->global_size3[0]);
+	gpu_isa_const_mem_write(0, 0, 1, &kernel->global_size3[1]);
+	gpu_isa_const_mem_write(0, 0, 2, &kernel->global_size3[2]);
+	gpu_isa_const_mem_write(0, 0, 3, &kernel->work_dim);
+
+	/* CB0[1]
+	 * x,y,z: local work size for the {x,y,z} dimensions.
+	 * w: 0  */
+	gpu_isa_const_mem_write(0, 1, 0, &kernel->local_size3[0]);
+	gpu_isa_const_mem_write(0, 1, 1, &kernel->local_size3[1]);
+	gpu_isa_const_mem_write(0, 1, 2, &kernel->local_size3[2]);
+
+	/* CB0[2]
+	 * x,y,z: global work size {x,y,z} / local work size {x,y,z}
+	 * w: 0  */
+	gpu_isa_const_mem_write(0, 2, 0, &kernel->group_count3[0]);
+	gpu_isa_const_mem_write(0, 2, 1, &kernel->group_count3[1]);
+	gpu_isa_const_mem_write(0, 2, 2, &kernel->group_count3[2]);
+
+	/* CB0[3]
+	 * x: Offset to private memory ring (0 if private memory is not emulated).
+	 * y: Private memory allocated per thread.
+	 * z,w: 0  */
+	/* FIXME */
+	
+	/* CB0[4]
+	 * x: Offset to local memory ring (0 if local memory is not emulated).
+	 * y: Local memory allocated per group.
+	 * z: 0
+	 * w: Pointer to location in global buffer where math library tables start. */
+	/* FIXME */
+
+	/* CB[5]
+	 * x: 0.0 as IEEE-32bit float - required for math library.
+	 * y: 0.5 as IEEE-32bit float - required for math library.
+	 * z: 1.0 as IEEE-32bit float - required for math library.
+	 * w: 2.0 as IEEE-32bit float - required for math library. */
+	f = 0.0f;
+	gpu_isa_const_mem_write(0, 5, 0, &f);
+	f = 0.5f;
+	gpu_isa_const_mem_write(0, 5, 1, &f);
+	f = 1.0f;
+	gpu_isa_const_mem_write(0, 5, 2, &f);
+	f = 2.0f;
+	gpu_isa_const_mem_write(0, 5, 3, &f);
+
+	/* CB0[6]
+	 * x,y,z: Global offset for the {x,y,z} dimension of the thread spawn.
+	 * z: Global single dimension flat offset: x * y * z. */
+	gpu_isa_const_mem_write(0, 6, 0, &zero);
+	gpu_isa_const_mem_write(0, 6, 1, &zero);
+	gpu_isa_const_mem_write(0, 6, 2, &zero);
+	gpu_isa_const_mem_write(0, 6, 3, &zero);
+
+	/* CB0[7]
+	 * x,y,z: Group offset for the {x,y,z} dimensions of the thread spawn.
+	 * w: Group single dimension flat offset, x * y * z.  */
+	gpu_isa_const_mem_write(0, 7, 0, &zero);
+	gpu_isa_const_mem_write(0, 7, 1, &zero);
+	gpu_isa_const_mem_write(0, 7, 2, &zero);
+	gpu_isa_const_mem_write(0, 7, 3, &zero);
+
+	/* CB0[8]
+	 * x: Offset in the global buffer where data segment exists.
+	 * y: Offset in buffer for printf support.
+	 * z: Size of the printf buffer. */
 }
 
 
@@ -130,10 +256,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	}
 
 	/* Initialize constant memory */
-	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 0, 3), 4, &kernel->work_dim);  /* CB0[0].w */
-	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 0, 0), 12, kernel->global_size3);  /* CB0[0].{x,y,z} */
-	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 1, 0), 12, kernel->local_size3);  /* CB0[1].{x,y,z} */
-	mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(0, 2, 0), 12, kernel->group_count3);  /* CB0[2].{x,y,z} */
+	gpu_isa_const_mem_init(kernel);
 
 	/* Create local memories */
 	gk->local_mem = calloc(kernel->group_count, sizeof(struct mem_t *));
@@ -160,7 +283,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 		case OPENCL_KERNEL_ARG_KIND_VALUE: {
 			
 			/* Value copied directly into device constant memory */
-			mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(1, i, 0), 4, &arg->value);
+			gpu_isa_const_mem_write(1, i, 0, &arg->value);
 			opencl_debug("    arg %d: value '0x%x' loaded\n", i, arg->value);
 			break;
 		}
@@ -177,7 +300,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 				 * Argument value is a pointer to an 'opencl_mem' object.
 				 * It is translated first into a device memory pointer. */
 				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
-				mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(1, i, 0), 4, &mem->device_ptr);
+				gpu_isa_const_mem_write(1, i, 0, &mem->device_ptr);
 				opencl_debug("    arg %d: opencl_mem id 0x%x loaded, device_ptr=0x%x\n",
 					i, arg->value, mem->device_ptr);
 				break;
@@ -187,7 +310,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			{
 				/* Pointer in __local scope.
 				 * Argument value is always NULL, just assign space for it. */
-				mem_write(gk->const_mem, GPU_CONST_MEM_ADDR(1, i, 0), 4, &kernel->local_mem_top);
+				gpu_isa_const_mem_write(1, i, 0, &kernel->local_mem_top);
 				opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
 					i, arg->size, kernel->local_mem_top);
 				kernel->local_mem_top += arg->size;
@@ -441,7 +564,6 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 	if (IN_RANGE(sel, 128, 159)) {
 
 		uint32_t kcache_bank, kcache_mode, kcache_addr;
-		uint32_t addr;
 
 		assert(gpu_isa_cf_inst->info->fmt[0] == FMT_CF_ALU_WORD0 && gpu_isa_cf_inst->info->fmt[1] == FMT_CF_ALU_WORD1);
 		kcache_bank = gpu_isa_cf_inst->words[0].cf_alu_word0.kcache_bank0;
@@ -450,8 +572,7 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 
 		GPU_PARAM_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
-		addr = GPU_CONST_MEM_ADDR(kcache_bank, kcache_addr * 16 + sel - 128, chan);
-		mem_read(gk->const_mem, addr, 4, &value);
+		gpu_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 128, chan, &value);
 		goto end;
 	}
 
@@ -459,7 +580,6 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 	if (IN_RANGE(sel, 160, 191)) {
 
 		uint32_t kcache_bank, kcache_mode, kcache_addr;
-		uint32_t addr;
 
 		assert(gpu_isa_cf_inst->info->fmt[0] == FMT_CF_ALU_WORD0 && gpu_isa_cf_inst->info->fmt[1] == FMT_CF_ALU_WORD1);
 		kcache_bank = gpu_isa_cf_inst->words[0].cf_alu_word0.kcache_bank1;
@@ -468,8 +588,7 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 
 		GPU_PARAM_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
-		addr = GPU_CONST_MEM_ADDR(kcache_bank, kcache_addr * 16 + sel - 160, chan);
-		mem_read(gk->const_mem, addr, 4, &value);
+		gpu_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 160, chan, &value);
 		goto end;
 	}
 

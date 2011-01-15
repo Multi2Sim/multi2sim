@@ -516,6 +516,14 @@ void opencl_program_build(struct opencl_program_t *program)
 /* Look for a symbol name in program binary and read it from its corresponding section.
  * The contents are dumped in a temporary file, whose name is written in 'file_name'.
  * This file is opened and its file descriptor is returned as the function result. */
+
+char *err_opencl_elf_symbol =
+	"\tThe ELF file analyzer is trying to find a name in the ELF symbol table.\n"
+	"\tIf it is not found, it probably means that your application is requesting\n"
+	"\texecution of a kernel function that is not present in the encoded binary.\n"
+	"\tPlease, check the parameters parsed to the 'clCreateKernel' function in\n"
+	"\tyour application.\n";
+
 FILE *opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_name,
 	char *file_name, int file_name_size)
 {
@@ -527,7 +535,8 @@ FILE *opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_
 	assert(program->binary_file_elf);
 	symbol = elf_get_symbol_by_name(program->binary_file_elf, symbol_name);
 	if (!symbol)
-		return NULL;
+		fatal("%s: ELF symbol '%s' not found.\n%s", __FUNCTION__,
+			symbol_name, err_opencl_elf_symbol);
 	
 	/* Store in file */
 	f = create_temp_file(file_name, file_name_size);
@@ -734,6 +743,8 @@ void opencl_kernel_load_func_metadata(struct opencl_kernel_t *kernel)
 	
 	/* Open as text file */
 	f = fopen(kernel->func_file_name, "rt");
+	if (!f)
+		fatal("%s: unable to open metadata file", __FUNCTION__);
 	for (;;) {
 		
 		/* Read line from file */

@@ -589,6 +589,10 @@ extern struct amd_alu_group_t *gpu_isa_alu_group;
 typedef void (*amd_inst_impl_t)(void);
 extern amd_inst_impl_t *amd_inst_impl;
 
+/* Access to constant memory */
+void gpu_isa_const_mem_write(int bank, int vector, int elem, void *pvalue);
+void gpu_isa_const_mem_read(int bank, int vector, int elem, void *pvalue);
+
 /* For ALU clauses */
 void gpu_isa_alu_clause_start(void);
 void gpu_isa_alu_clause_end(void);
@@ -624,6 +628,11 @@ struct gk_t {
 	 */
 	struct mem_t *const_mem;
 
+	/* Flags indicating whether the first 9 vector positions of CB0
+	 * are initialized. A warning will be issued by the simulator
+	 * if an uninitialized element is used by the kernel. */
+	int const_mem_cb0_init[9 * 4];
+
 	/* Global memory */
 	struct mem_t *global_mem;
 	uint32_t global_mem_top;
@@ -636,9 +645,7 @@ struct gk_t {
 extern struct gk_t *gk;
 extern char *gk_opencl_binary_name;
 
-/* Macros to access constant memory */
-#define GPU_CONST_MEM_ADDR(_bank, _vector, _elem)  ((_bank) * 16384 + (_vector) * 16 + (_elem * 4))
-
+	
 
 #endif
 
