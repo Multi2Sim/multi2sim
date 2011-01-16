@@ -147,10 +147,6 @@ void ctx_free(struct ctx_t *ctx)
 		signal_handlers_free(ctx->signal_handlers);
 	}
 
-	/* Warn about unresolved attempts to access OpenCL library */
-	if (ctx->libopencl_open_attempt)
-		gk_libopencl_failed(ctx->pid);
-
 	/* Remove context from contexts list and free */
 	ke_list_remove(ke_list_context, ctx);
 	if (isa_ctx == ctx)
