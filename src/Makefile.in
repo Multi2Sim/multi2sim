@@ -60,6 +60,7 @@ m2s_DEPENDENCIES = $(top_builddir)/src/libm2skernel/libm2skernel.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
+	$(top_builddir)/src/libgpuguest/libgpuguest.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
@@ -75,6 +76,7 @@ m2s_fast_DEPENDENCIES =  \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
+	$(top_builddir)/src/libgpuguest/libgpuguest.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
@@ -90,6 +92,7 @@ m2s_objdump_DEPENDENCIES =  \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
+	$(top_builddir)/src/libgpuguest/libgpuguest.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
@@ -105,6 +108,7 @@ m2s_pipeline_DEPENDENCIES =  \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
+	$(top_builddir)/src/libgpuguest/libgpuguest.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
@@ -264,7 +268,8 @@ SUBDIRS = \
 	libnetwork \
 	libcachesystem \
 	libgpukernel \
-	libgpudisasm
+	libgpudisasm \
+	libgpuguest
 
 m2s_fast_SOURCES = m2s-fast.c
 m2s_objdump_SOURCES = m2s-objdump.c
@@ -311,6 +316,7 @@ LDADD = \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
+	$(top_builddir)/src/libgpuguest/libgpuguest.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
