@@ -32,7 +32,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-subdir = src/libm2skernel
+subdir = src/libgpuguest
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -66,15 +66,10 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
-libm2skernel_a_AR = $(AR) $(ARFLAGS)
-libm2skernel_a_LIBADD =
-am_libm2skernel_a_OBJECTS = isa.$(OBJEXT) context.$(OBJEXT) \
-	elf.$(OBJEXT) fs.$(OBJEXT) loader.$(OBJEXT) \
-	m2skernel.$(OBJEXT) machine.$(OBJEXT) machine-ctrl.$(OBJEXT) \
-	machine-fp.$(OBJEXT) machine-rot.$(OBJEXT) \
-	machine-std.$(OBJEXT) machine-str.$(OBJEXT) memory.$(OBJEXT) \
-	regs.$(OBJEXT) signal.$(OBJEXT) syscall.$(OBJEXT)
-libm2skernel_a_OBJECTS = $(am_libm2skernel_a_OBJECTS)
+libgpuguest_a_AR = $(AR) $(ARFLAGS)
+libgpuguest_a_DEPENDENCIES = libguest_opencl_so.o
+am_libgpuguest_a_OBJECTS = gpuguest.$(OBJEXT)
+libgpuguest_a_OBJECTS = $(am_libgpuguest_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -83,8 +78,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libm2skernel_a_SOURCES)
-DIST_SOURCES = $(libm2skernel_a_SOURCES)
+SOURCES = $(libgpuguest_a_SOURCES)
+DIST_SOURCES = $(libgpuguest_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -179,34 +174,19 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LIBRARIES = libm2skernel.a
-libm2skernel_a_SOURCES = m2skernel.h \
-	isa.c \
-	context.c \
-	elf.c \
-	fs.c \
-	loader.c \
-	m2skernel.c \
-	machine.c \
-	machine-ctrl.c \
-	machine-fp.c \
-	machine-rot.c \
-	machine-std.c \
-	machine-str.c \
-	memory.c \
-	regs.c \
-	signal.c \
-	syscall.c \
-	syscall.dat
+lib_LIBRARIES = libgpuguest.a
+libgpuguest_a_SOURCES = \
+	gpuguest.c \
+	gpuguest.h
+
+libgpuguest_a_LIBADD = \
+	libguest_opencl_so.o
 
 AM_CFLAGS = -Wall -fno-strict-aliasing
+EXTRA_DIST = guest_code/libguest_opencl.so
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
-	-I$(top_srcdir)/src/libopt \
-	-I$(top_srcdir)/src/libmisc \
-	-I$(top_srcdir)/src/libdisasm \
-	-I$(top_srcdir)/src/libgpukernel \
-	-I$(top_srcdir)/src/libgpuguest
+	-I$(top_srcdir)/src/libmisc
 
 all: all-am
 
@@ -221,9 +201,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/libm2skernel/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/libgpuguest/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/libm2skernel/Makefile
+	  $(AUTOMAKE) --gnu src/libgpuguest/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -274,10 +254,10 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libm2skernel.a: $(libm2skernel_a_OBJECTS) $(libm2skernel_a_DEPENDENCIES) 
-	-rm -f libm2skernel.a
-	$(libm2skernel_a_AR) libm2skernel.a $(libm2skernel_a_OBJECTS) $(libm2skernel_a_LIBADD)
-	$(RANLIB) libm2skernel.a
+libgpuguest.a: $(libgpuguest_a_OBJECTS) $(libgpuguest_a_DEPENDENCIES) 
+	-rm -f libgpuguest.a
+	$(libgpuguest_a_AR) libgpuguest.a $(libgpuguest_a_OBJECTS) $(libgpuguest_a_LIBADD)
+	$(RANLIB) libgpuguest.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -285,22 +265,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/context.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fs.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isa.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/loader.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m2skernel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-ctrl.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-fp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-rot.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-std.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-str.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regs.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/signal.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syscall.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuguest.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -514,6 +479,9 @@ uninstall-am: uninstall-libLIBRARIES
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-libLIBRARIES
 
+
+libguest_opencl_so.o: guest_code/libguest_opencl.so
+	$(LD) -r -b binary -o libguest_opencl_so.o guest_code/libguest_opencl.so
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
