@@ -184,7 +184,7 @@ uint32_t opencl_platform_get_info(struct opencl_platform_t *platform, uint32_t n
 	char *platform_extensions = "";
 
 	uint32_t size_ret = 0;
-	char *info = NULL;
+	char *info;
 
 	switch (name) {
 	

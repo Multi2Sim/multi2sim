@@ -25,7 +25,6 @@
 #include <errno.h>
 #include <dirent.h>
 #include <poll.h>
-#include <gpuguest.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
@@ -942,25 +941,7 @@ void syscall_do()
 		syscall_debug("  flags=%s\n", sflags);
 
 		/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
-		if (fullpath_length >= 13 && !strcmp(fullpath + fullpath_length - 13, "/libOpenCL.so")) {
-			
-			extern char *err_opencl_redirect_note;
-			
-			/* Create temporary file with guest OpenCL library */
-			gpu_guest_extract_opencl(temppath, MAX_PATH_SIZE);
-			host_fd = open(temppath, flags, mode);
-			assert(host_fd > 0);
-			warning("attempt to access OpenCL library detected.\n%s",
-				err_opencl_redirect_note);
-
-			/* Add file descriptor table entry. Create it as a virtual file, so that
-			 * it is removed on close. */
-			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_virtual, host_fd, temppath, flags);
-			syscall_debug("    guest OpenCL library dumped in '%s'\n", temppath);
-			syscall_debug("    guest_fd=%d, host_fd=%d\n", fd->guest_fd, fd->host_fd);
-			retval = fd->guest_fd;
-			break;
-		}
+		gk_libopencl_redirect(fullpath, MAX_PATH_SIZE);
 
 		/* Virtual files */
 		if (!strncmp(fullpath, "/proc/", 6)) {
