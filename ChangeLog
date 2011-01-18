@@ -787,8 +787,3 @@
 	* libgpukernel/gpuisa.c: Initialization of CB[0] as specified by the information provided
 		by AMD.
 
-2010-01-16
-	* libgpuguest: guest OpenCL implementation included as raw data into the final executable.
-		When the guest program requests the library, it is extracted automatically. It
-		is not necessary anymore to include a 'libm2s-opencl.so' library.
-

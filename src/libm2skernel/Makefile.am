@@ -24,6 +24,5 @@ INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libopt \
 	-I$(top_srcdir)/src/libmisc \
 	-I$(top_srcdir)/src/libdisasm \
-	-I$(top_srcdir)/src/libgpukernel \
-	-I$(top_srcdir)/src/libgpuguest
+	-I$(top_srcdir)/src/libgpukernel
 
