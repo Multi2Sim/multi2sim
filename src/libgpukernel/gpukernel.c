@@ -79,9 +79,6 @@ void gk_done()
 	mem_free(gk->const_mem);
 	mem_free(gk->global_mem);
 	free(gk);
-
-	/* Mhandle */
-	mhandle_done();//////// FIXME
 }
 
 
