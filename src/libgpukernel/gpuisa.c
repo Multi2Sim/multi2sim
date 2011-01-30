@@ -626,6 +626,13 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 		goto end;
 	}
 
+	/* ALU_SRC_1 */
+	if (sel == 249) {
+		float f = 1.0f;
+		value = * (uint32_t *) &f;
+		goto end;
+	}
+
 	/* ALU_SRC_1_INT */
 	if (sel == 250) {
 		value = 1;
@@ -787,7 +794,7 @@ void gpu_isa_write_task_commit(void)
 		/* Debug */
 		if (gpu_isa_debugging()) {
 			gpu_isa_debug("  t%d:PV.%s", gpu_isa_thread->global_id,
-				map_value(&amd_alu_map, wt->chan + AMD_ALU_X));
+				map_value(&amd_alu_map, wt->inst->alu));
 			if (wt->write_mask) {
 				gpu_isa_debug(",");
 				amd_inst_dump_gpr(wt->gpr, wt->rel, wt->chan, 0,

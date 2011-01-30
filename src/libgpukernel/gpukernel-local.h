@@ -155,11 +155,11 @@ struct opencl_command_queue_t
 
 	uint32_t device_id;
 	uint32_t context_id;
+	uint32_t properties;
 };
 
 struct opencl_command_queue_t *opencl_command_queue_create(void);
 void opencl_command_queue_free(struct opencl_command_queue_t *command_queue);
-void opencl_command_queue_read_properties(struct opencl_command_queue_t *command_queue, struct mem_t *mem, uint32_t addr);
 
 
 

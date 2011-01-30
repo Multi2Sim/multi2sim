@@ -443,31 +443,6 @@ void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
 }
 
 
-/* Command queue properties */
-void opencl_command_queue_read_properties(struct opencl_command_queue_t *command_queue, struct mem_t *mem, uint32_t addr)
-{
-	uint32_t property;
-	uint32_t value;
-
-	while (addr) {
-
-		/* Read property */
-		mem_read(isa_mem, addr, 4, &property);
-		if (!property)
-			break;
-		mem_read(isa_mem, addr + 4, 4, &value);
-		addr += 8;
-
-		/* Analyze property */
-		switch (property) {
-
-		default:
-			fatal("opencl_command_queue_read_properties: invalid property (0x%x)\n", property);
-		}
-	}
-}
-
-
 
 
 /* OpenCL Program */
