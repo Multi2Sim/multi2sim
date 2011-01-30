@@ -400,7 +400,7 @@ int opencl_func_run(int code, unsigned int *args)
 		command_queue = opencl_command_queue_create();
 		command_queue->context_id = context_id;
 		command_queue->device_id = device_id;
-		opencl_command_queue_read_properties(command_queue, isa_mem, properties);
+		command_queue->properties = properties;
 		retval = command_queue->id;
 
 		/* Return success */
@@ -707,10 +707,11 @@ int opencl_func_run(int code, unsigned int *args)
 		assert(arg);
 		arg->set = 1;
 		arg->size = arg_size;
-		mem_read(isa_mem, arg_value, 4, &arg->value);
+		if (arg_value)
+			mem_read(isa_mem, arg_value, 4, &arg->value);
 
 		/* If OpenCL argument scope is __local, argument value must be NULL */
-		if (arg->mem_scope == OPENCL_MEM_SCOPE_LOCAL && arg->value)
+		if (arg->mem_scope == OPENCL_MEM_SCOPE_LOCAL && arg_value)
 			fatal("%s: value for local arguments must be NULL.\n%s", err_prefix,
 				err_opencl_param_note);
 

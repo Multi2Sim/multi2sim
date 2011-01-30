@@ -793,3 +793,5 @@
 		takes an OpenCL kernel as an input and compiles it for any target device supported
 		by the OpenCL driver. It requires the AMD SDK installed.
 
+2010-01-29
+	* libgpukernel/gpumachine.c: Several instructions implemented. Bug fixed in RECIP_UINT.

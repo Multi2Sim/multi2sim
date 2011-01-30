@@ -17,6 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <unistd.h>
+#include <stdio.h>
+#include <CL/cl.h>
+
 #define SYS_CODE_OPENCL  325
 #define SYS_OPENCL_FUNC_FIRST  1000
 #define SYS_OPENCL_FUNC_LAST  1073
@@ -97,71 +101,6 @@
 #define OPENCL_FUNC_clEnqueueWaitForEvents            1071
 #define OPENCL_FUNC_clEnqueueBarrier                  1072
 #define OPENCL_FUNC_clGetExtensionFunctionAddress     1073
-
-
-typedef int cl_int;
-typedef unsigned int cl_uint;
-typedef long cl_long;
-typedef unsigned long cl_ulong;
-typedef unsigned long size_t;
-
-typedef void *cl_platform_id;
-typedef void *cl_device_id;
-typedef void *cl_context;
-typedef void *cl_command_queue;
-typedef void *cl_mem;
-typedef void *cl_program;
-typedef void *cl_kernel;
-typedef void *cl_event;
-typedef void *cl_sampler;
-
-typedef cl_uint             cl_bool;
-typedef cl_ulong            cl_bitfield;
-typedef cl_bitfield         cl_device_type;
-typedef cl_uint             cl_platform_info;
-typedef cl_uint             cl_device_info;
-typedef cl_bitfield         cl_device_fp_config;
-typedef cl_uint             cl_device_mem_cache_type;
-typedef cl_uint             cl_device_local_mem_type;
-typedef cl_bitfield         cl_device_exec_capabilities;
-typedef cl_bitfield         cl_command_queue_properties;
-
-typedef void *              cl_context_properties;
-typedef cl_uint             cl_context_info;
-typedef cl_uint             cl_command_queue_info;
-typedef cl_uint             cl_channel_order;
-typedef cl_uint             cl_channel_type;
-typedef cl_bitfield         cl_mem_flags;
-typedef cl_uint             cl_mem_object_type;
-typedef cl_uint             cl_mem_info;
-typedef cl_uint             cl_image_info;
-typedef cl_uint             cl_buffer_create_type;
-typedef cl_uint             cl_addressing_mode;
-typedef cl_uint             cl_filter_mode;
-typedef cl_uint             cl_sampler_info;
-typedef cl_bitfield         cl_map_flags;
-typedef cl_uint             cl_program_info;
-typedef cl_uint             cl_program_build_info;
-typedef cl_int              cl_build_status;
-typedef cl_uint             cl_kernel_info;
-typedef cl_uint             cl_kernel_work_group_info;
-typedef cl_uint             cl_event_info;
-typedef cl_uint             cl_command_type;
-typedef cl_uint             cl_profiling_info;
-
-typedef struct {
-    cl_channel_order        image_channel_order;
-    cl_channel_type         image_channel_data_type;
-} cl_image_format;
-
-
-typedef struct {
-    size_t origin;
-    size_t size;
-} cl_buffer_region;
-
-
-extern long int syscall (long int sysno, ...);
 
 
 cl_int clGetPlatformIDs(
@@ -377,6 +316,10 @@ cl_mem clCreateBuffer(
 	sys_args[2] = (unsigned int) size;
 	sys_args[3] = (unsigned int) host_ptr;
 	sys_args[4] = (unsigned int) errcode_ret;
+	//#include <stdio.h>
+	//printf("%d, %d, %d, %d, %d\n", sizeof(context), sizeof(flags), sizeof(size), sizeof(host_ptr), sizeof(errcode_ret));
+	//printf("context=0x%x, flags=0x%x, size=0x%x, host_ptr=0x%x, errcode_ret=0x%x\n",
+	//	sys_args[0], sys_args[1], sys_args[2], sys_args[3], sys_args[4]), fflush(stdout);////////
 	return (cl_mem) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateBuffer, sys_args);
 }
 

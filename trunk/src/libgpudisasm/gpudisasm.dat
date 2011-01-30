@@ -446,7 +446,7 @@ DEFINST(OR_INT,
 )
 
 DEFINST(XOR_INT,
-	"%name",
+	"XOR_INT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 50,
 	AMD_INST_FLAG_DST_UINT
@@ -502,14 +502,14 @@ DEFINST(MIN_UINT,
 )
 
 DEFINST(SETE_INT,
-	"%name",
+	"SETE_INT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 58,
 	AMD_INST_FLAG_DST_INT
 )
 
 DEFINST(SETGT_INT,
-	"%name",
+	"SETGT_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 59,
 	AMD_INST_FLAG_DST_INT
@@ -558,14 +558,14 @@ DEFINST(KILLGE_UINT,
 )
 
 DEFINST(PREDE_INT,
-	"%name",
+	"PREDE_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 66,
 	AMD_INST_FLAG_DST_FLOAT
 )
 
 DEFINST(PRED_SETGT_INT,
-	"%name",
+	"PREDGT_INT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 67,
 	AMD_INST_FLAG_DST_FLOAT
