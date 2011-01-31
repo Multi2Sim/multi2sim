@@ -189,6 +189,20 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = src
+EXTRA_DIST = \
+	tools/libm2s-opencl/m2s-opencl.c \
+	tools/libm2s-opencl/Makefile \
+	tools/m2s-opencl-kc/debug.c \
+	tools/m2s-opencl-kc/debug.h \
+	tools/m2s-opencl-kc/elfanalyze.c \
+	tools/m2s-opencl-kc/elfanalyze.h \
+	tools/m2s-opencl-kc/m2s-opencl-kc.c \
+	tools/m2s-opencl-kc/Makefile \
+	tools/m2s-opencl-kc/misc.c \
+	tools/m2s-opencl-kc/misc.h \
+	tools/barplot/barplot.py \
+	tools/inifile/inifile.py
+
 all: all-recursive
 
 .SUFFIXES:

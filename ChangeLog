@@ -795,3 +795,8 @@
 
 2010-01-29
 	* libgpukernel/gpumachine.c: Several instructions implemented. Bug fixed in RECIP_UINT.
+
+2010-01-30
+	* tools/barplot, tools/inifile: added.
+	* Makefile.am: added files in 'tools' for distribution.
+
