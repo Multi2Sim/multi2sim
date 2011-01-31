@@ -19,7 +19,15 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <CL/cl.h>
+
+#define SYS_OPENCL_IMPL_VERSION_MAJOR		1
+#define SYS_OPENCL_IMPL_VERSION_MINOR		0
+#define SYS_OPENCL_IMPL_VERSION_BUILD		0
+#define SYS_OPENCL_IMPL_VERSION			((SYS_OPENCL_IMPL_VERSION_MAJOR << 16) | \
+						(SYS_OPENCL_IMPL_VERSION_MINOR << 8) | \
+						SYS_OPENCL_IMPL_VERSION_BUILD)
 
 #define SYS_CODE_OPENCL  325
 #define SYS_OPENCL_FUNC_FIRST  1000
@@ -109,10 +117,34 @@ cl_int clGetPlatformIDs(
 	cl_uint *num_platforms)
 {
 	unsigned int sys_args[3];
+	int ret;
+
 	sys_args[0] = (unsigned int) num_entries;
 	sys_args[1] = (unsigned int) platforms;
 	sys_args[2] = (unsigned int) num_platforms;
-	return (cl_int) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetPlatformIDs, sys_args);
+	
+	/* An additional argument is added with the version information of this
+	 * OpenCL implementation. If Multi2Sim expects a later version, the
+	 * system call with fail and cause a 'fatal' message. */
+	sys_args[3] = SYS_OPENCL_IMPL_VERSION;
+
+	/* Perform system call */
+	ret = syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetPlatformIDs, sys_args);
+
+	/* Detect the case where an OpenCL program linked with 'libm2s-opencl' is
+	 * being run natively. */
+	if (ret == -1) {
+		fprintf(stderr, "error: OpenCL program cannot be run natively.\n"
+			"\tThis is an error message provided by the Multi2Sim OpenCL library\n"
+			"\t(libm2s-opencl). Apparently, you are attempting to run natively a\n"
+			"\tprogram that was linked with this library. You should either run\n"
+			"\tit on top of Multi2Sim, or link it with the OpenCL library provided\n"
+			"\tin the ATI Stream SDK if you want to use your physical GPU device.\n");
+		abort();
+	}
+
+	/* Result */
+	return (cl_int) ret;
 }
 
 
@@ -316,10 +348,6 @@ cl_mem clCreateBuffer(
 	sys_args[2] = (unsigned int) size;
 	sys_args[3] = (unsigned int) host_ptr;
 	sys_args[4] = (unsigned int) errcode_ret;
-	//#include <stdio.h>
-	//printf("%d, %d, %d, %d, %d\n", sizeof(context), sizeof(flags), sizeof(size), sizeof(host_ptr), sizeof(errcode_ret));
-	//printf("context=0x%x, flags=0x%x, size=0x%x, host_ptr=0x%x, errcode_ret=0x%x\n",
-	//	sys_args[0], sys_args[1], sys_args[2], sys_args[3], sys_args[4]), fflush(stdout);////////
 	return (cl_mem) syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clCreateBuffer, sys_args);
 }
 

@@ -92,7 +92,11 @@ char *err_opencl_compiler =
 	"\t  1) Replace 'clCreateProgramWithSource' calls by 'clCreateProgramWithBinary'\n"
 	"\t     in your source files, referencing the pre-compiled kernel.\n"
 	"\t  2) Tell Multi2Sim to provide the application with your pre-compiled kernel\n"
-	"\t     using command-line option '-opencl:binary'.\n";
+	"\t     using command-line option '-opencl:binary'.\n"
+	"\t  3) If you are trying to run one of the OpenCL benchmarks provided in the\n"
+	"\t     simulator website, option '--load' can be used as a program argument\n"
+	"\t     (not a simulator argument). This option allows you to specify the path\n"
+	"\t     for the pre-compiled kernel, which is provided in the downloaded package.\n";
 	
 char *err_opencl_binary_note =
 	"\tYou have selected a pre-compiled OpenCL kernel binary to be passed to your\n"
@@ -101,9 +105,10 @@ char *err_opencl_binary_note =
 	"\tthat your application is expecting to load.\n";
 
 char *err_opencl_version_note =
-	"\tThe version of the 'libm2s-opencl.so' file you have is too old. Please visit\n"
-	"\twww.multi2sim.org and download the latest release for the Multi2Sim OpenCL\n"
-	"\tlibrary implementation.\n";
+	"\tThe version of the Multi2Sim OpenCL library ('libm2s-opencl') that your program\n"
+	"\tis using is too old. You need to re-link your program with a version of the\n"
+	"\tlibrary compatible for this Multi2Sim release. Please see the Multi2Sim Guide\n"
+	"\tfor details (www.multi2sim.org).\n";
 
 
 /* Error macros */
@@ -161,13 +166,13 @@ int opencl_func_run(int code, unsigned int *args)
 		int opencl_impl_version_minor = (opencl_impl_version >> 8) & 0xff;
 		int opencl_impl_version_build = opencl_impl_version & 0xff;
 
-		/* Check 'libm2s-opencl.so' version */
+		/* Check 'libm2s-opencl' version */
 		if (opencl_impl_version < SYS_OPENCL_IMPL_VERSION)
-			fatal("wrong version for 'libm2s-opencl.so' (provided=%d.%d.%d, required=%d.%d.%d).\n%s",
+			fatal("wrong Multi2Sim OpenCL library version (provided=%d.%d.%d, required=%d.%d.%d).\n%s",
 				opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build,
 				SYS_OPENCL_IMPL_VERSION_MAJOR, SYS_OPENCL_IMPL_VERSION_MINOR, SYS_OPENCL_IMPL_VERSION_BUILD,
 				err_opencl_version_note);
-		opencl_debug("  'libm2s-opencl.so' version: %d.%d.%d\n",
+		opencl_debug("  'libm2s-opencl' version: %d.%d.%d\n",
 				opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build);
 		
 		/* Get platform id */
