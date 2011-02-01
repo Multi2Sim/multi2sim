@@ -800,3 +800,7 @@
 	* tools/barplot, tools/inifile: added.
 	* Makefile.am: added files in 'tools' for distribution.
 
+2010-01-31
+	* tools/libm2s-opencl: dependency with AMD APP SDK removed. Khronos headers added as
+		a subdirectory of the Multi2Sim OpenCL library.
+	
