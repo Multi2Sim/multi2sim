@@ -17,10 +17,12 @@ EXE = m2s-opencl-kc
 
 $(EXE): $(SRCS) $(HDRS)
 ifndef ATISTREAMSDKROOT
-	@echo "error: ATI SDK not installed.\n" \
+	@echo "error: AMD's APP software kit not installed or not detected.\n" \
 		"\tThe 'm2s-opencl-kc' tool has been included in the set of Multi2Sim tools\n" \
-		"\tto compile OpenCL kernels. It requires the AMD SDK to be installed in\n" \
-		"\tyour system. Please, visit www.amd.com/stream to download it." >&2
+		"\tto compile OpenCL kernels. It requires AMD's APP SDK to be installed in\n" \
+		"\tyour system. Make sure that the environment variable $$ATISTREAMSDKROOT\n" \
+		"\tis set to the directory where the SDK was installed.\n" \
+		"Please, visit www.amd.com/stream to download it." >&2
 	@exit 1
 else
 	$(CC) $(CFLAGS) $(SRCS) -o $(EXE) $(LDFLAGS)
