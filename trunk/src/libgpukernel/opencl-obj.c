@@ -209,6 +209,7 @@ uint32_t opencl_platform_get_info(struct opencl_platform_t *platform, uint32_t n
 		break;
 
 	default:
+		info = NULL;
 		fatal("opencl_platform_get_info: invalid value for 'name' (0x%x)\n%s",
 			name, err_opencl_param_note);
 	}
