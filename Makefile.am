@@ -18,5 +18,7 @@ EXTRA_DIST = \
 	tools/m2s-opencl-kc/misc.c \
 	tools/m2s-opencl-kc/misc.h \
 	tools/barplot/barplot.py \
-	tools/inifile/inifile.py
+	tools/inifile/inifile.py \
+	tools/m2s-pipeline/m2s-pipeline.c \
+	tools/m2s-pipeline/Makefile
 

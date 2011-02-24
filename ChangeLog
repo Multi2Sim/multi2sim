@@ -810,3 +810,8 @@
 2010-02-04
 	* Version 3.0 Released
 
+2010-02-23
+	* tools/m2s-pipeline: Tool for displaying pipeline debug information moved to the 'tools'
+		directory. The dependency with the 'ncurses' library is removed from the
+		central Multi2Sim code.
+
