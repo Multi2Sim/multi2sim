@@ -297,7 +297,7 @@ LDADD = \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
-	-lm -lncurses -lpthread
+	-lm -lpthread
 
 AM_CFLAGS = -Wall -fno-strict-aliasing
 AM_LDFLAGS = #-static
