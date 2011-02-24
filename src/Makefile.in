@@ -32,8 +32,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = m2s-fast$(EXEEXT) m2s-objdump$(EXEEXT) \
-	m2s-pipeline$(EXEEXT) m2s$(EXEEXT)
+bin_PROGRAMS = m2s-fast$(EXEEXT) m2s-objdump$(EXEEXT) m2s$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -94,21 +93,6 @@ m2s_objdump_DEPENDENCIES =  \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a
-am_m2s_pipeline_OBJECTS = m2s-pipeline.$(OBJEXT)
-m2s_pipeline_OBJECTS = $(am_m2s_pipeline_OBJECTS)
-m2s_pipeline_LDADD = $(LDADD)
-m2s_pipeline_DEPENDENCIES =  \
-	$(top_builddir)/src/libm2skernel/libm2skernel.a \
-	$(top_builddir)/src/libdisasm/libdisasm.a \
-	$(top_builddir)/src/libopt/libopt.a \
-	$(top_builddir)/src/libmisc/libmisc.a \
-	$(top_builddir)/src/libcachesystem/libcachesystem.a \
-	$(top_builddir)/src/libgpukernel/libgpukernel.a \
-	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
-	$(top_builddir)/src/libnetwork/libnetwork.a \
-	$(top_builddir)/src/libesim/libesim.a \
-	$(top_builddir)/src/libstruct/libstruct.a \
-	$(top_builddir)/src/libmhandle/libmhandle.a
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -117,10 +101,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(m2s_SOURCES) $(m2s_fast_SOURCES) $(m2s_objdump_SOURCES) \
-	$(m2s_pipeline_SOURCES)
+SOURCES = $(m2s_SOURCES) $(m2s_fast_SOURCES) $(m2s_objdump_SOURCES)
 DIST_SOURCES = $(m2s_SOURCES) $(m2s_fast_SOURCES) \
-	$(m2s_objdump_SOURCES) $(m2s_pipeline_SOURCES)
+	$(m2s_objdump_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -268,7 +251,6 @@ SUBDIRS = \
 
 m2s_fast_SOURCES = m2s-fast.c
 m2s_objdump_SOURCES = m2s-objdump.c
-m2s_pipeline_SOURCES = m2s-pipeline.c
 m2s_SOURCES = \
 	bpred.c \
 	commit.c \
@@ -399,9 +381,6 @@ m2s-fast$(EXEEXT): $(m2s_fast_OBJECTS) $(m2s_fast_DEPENDENCIES)
 m2s-objdump$(EXEEXT): $(m2s_objdump_OBJECTS) $(m2s_objdump_DEPENDENCIES) 
 	@rm -f m2s-objdump$(EXEEXT)
 	$(LINK) $(m2s_objdump_OBJECTS) $(m2s_objdump_LDADD) $(LIBS)
-m2s-pipeline$(EXEEXT): $(m2s_pipeline_OBJECTS) $(m2s_pipeline_DEPENDENCIES) 
-	@rm -f m2s-pipeline$(EXEEXT)
-	$(LINK) $(m2s_pipeline_OBJECTS) $(m2s_pipeline_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -418,7 +397,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/issue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m2s-fast.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m2s-objdump.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m2s-pipeline.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m2s.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/processor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queues.Po@am__quote@

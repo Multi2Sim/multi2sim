@@ -30,12 +30,6 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday mkdir strcasecmp strdup strstr])
 AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
-# Library ncurses
-AC_CHECK_LIB(ncurses, initscr)
-if test "${ac_cv_lib_ncurses_initscr}" != "yes"; then
-	AC_MSG_ERROR([can not find the ncurses library.])
-fi
-
 AC_CONFIG_FILES([Makefile
                  src/Makefile
 		 src/libnetwork/Makefile

@@ -14,14 +14,11 @@ SUBDIRS = \
 bin_PROGRAMS = \
 	m2s-fast \
 	m2s-objdump \
-	m2s-pipeline \
 	m2s
 
 m2s_fast_SOURCES = m2s-fast.c
 
 m2s_objdump_SOURCES = m2s-objdump.c
-
-m2s_pipeline_SOURCES = m2s-pipeline.c
 
 m2s_SOURCES = \
 	bpred.c \
