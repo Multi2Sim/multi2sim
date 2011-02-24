@@ -14,11 +14,14 @@ SUBDIRS = \
 bin_PROGRAMS = \
 	m2s-fast \
 	m2s-objdump \
+	m2s-pipeline \
 	m2s
 
 m2s_fast_SOURCES = m2s-fast.c
 
 m2s_objdump_SOURCES = m2s-objdump.c
+
+m2s_pipeline_SOURCES = m2s-pipeline.c
 
 m2s_SOURCES = \
 	bpred.c \
@@ -66,7 +69,7 @@ LDADD = \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
-	-lm -lpthread
+	-lm -lncurses -lpthread
 
 AM_CFLAGS = -Wall -fno-strict-aliasing
 AM_LDFLAGS = #-static

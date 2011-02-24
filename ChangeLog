@@ -810,14 +810,3 @@
 2010-02-04
 	* Version 3.0 Released
 
-2010-02-23
-	* tools/m2s-pipeline: Tool for displaying pipeline debug information moved to the 'tools'
-		directory. The dependency with the 'ncurses' library is removed from the
-		central Multi2Sim code.
-	* tools/Makefile.am: -lncurses flag removed from linking options.
-
-2010-02-23
-	* Version 3.0.1 Released
-
-
-
