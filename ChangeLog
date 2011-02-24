@@ -816,4 +816,8 @@
 		central Multi2Sim code.
 	* tools/Makefile.am: -lncurses flag removed from linking options.
 
+2010-02-23
+	* Version 3.0.1 Released
+
+
 
