@@ -1,0 +1,31 @@
+Directions for new version release:
+
+	* svn commit all previous changes
+
+	* Update AM_INIT_AUTOMAKE in 'configure.in'
+
+	* Remake all to update 'Makefiles'
+		~/multi2sim/trunk$ make clean
+		~/multi2sim/trunk$ make
+
+	* Add line in Changelog:
+		"Version X.Y.Z released"
+
+	* Copy 'trunk' directory into 'tags'. For example:
+		~/multi2sim$ svn cp trunk tags/multi2sim-X.Y.Z
+
+	* svn commit
+
+	* In trunk directory, create tar ball.
+		~/multi2sim/trunk$ make distcheck
+
+	* Copy tar ball to Multi2Sim server:
+		scp multi2sim-X.Y.Z.tar.gz $(M2S-SERVER):public_html/files/
+
+	* Update Multi2Sim web site.
+		* Log in.
+		* Click toolbox -> Special Pages -> Uncategorized templates
+		* Update 'Latest Version' and 'Latest Version Date'
+
+	* Send email to multi2sim@multi2sim.org
+

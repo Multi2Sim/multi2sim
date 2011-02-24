@@ -1,0 +1,19 @@
+*** Announce on Feb. 4th, 2011 ***
+
+Dear Multi2Sim users:
+
+Four years after the Multi2Sim project started, the simulation framework has come to its third major version release, under the motto "The Multi2Sim Simulation Framework: A CPU-GPU Model for Heterogeneous Computing". The project, managed by Rafael Ubal, is being carried out in the NUCAR group at Northeastern University (Boston, MA), conducted by Prof. David Kaeli, and in collaboration with AMD.
+
+In the new versions, Multi2Sim includes a model for AMD Evergreen Graphics Processing Units (GPUs). It is initially based on the functional simulation of the Evergreen instruction set architecture, and will be progressively extended with a timing model for hardware components. All this combined with the x86 functional model and superscalar/multithreaded/multicore CPUs supported so far. The new distributed material includes:
+
+* Tar-ball for Multi2Sim 3.0.
+* Documentation: New Chapter 7 addressing GPUs. Detailed and simple guidelines given to get started + execution examples.
+* Downloads: New package with OpenCL benchmarks (first version includes just 1) to try it out.
+
+Also, current Multi2Sim users can enjoy the following updates:
+
+* Downloads: New packages of benchmarks, including the latest version of PARSEC-2.1 executables and data.
+* Documentation: Chapter 1 of the Multi2Sim Guide updated with detailed description of the simulation model, considerations for static/dynamic linking, and others.
+
+Please, visit www.multi2sim.org for more information. Click on the 'Mailing List' section to receive announcements on version updates (about 1 mail a month), or to unsubscribe if you are already a member and want to stop receiving these emails.
+
