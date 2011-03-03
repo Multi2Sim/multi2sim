@@ -398,6 +398,7 @@ void signal_handlers_free(struct signal_handlers_t *signal_handlers);
 void signal_handler_run(struct ctx_t *ctx, int sig);
 void signal_handler_return(struct ctx_t *ctx);
 void signal_handler_check(struct ctx_t *ctx);
+void signal_handler_check_intr(struct ctx_t *ctx);
 
 char *sim_signal_name(int signum);
 void sim_sigaction_dump(struct sim_sigaction *sim_sigaction, FILE *f);
