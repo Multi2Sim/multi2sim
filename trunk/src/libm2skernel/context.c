@@ -345,19 +345,35 @@ struct ctx_t *ctx_get_zombie(struct ctx_t *parent, int pid)
 }
 
 
-/* If the context is suspended in a blocking host system call,
- * cancel the host thread 'ke_process_suspended_thread' associated with it
- * and schedule a call to 'ke_process_suspended'. */
-void ctx_process_suspended_thread_cancel(struct ctx_t *ctx)
+/* If the context is running a 'ke_host_thread_suspend' thread,
+ * cancel it and schedule call to 'ke_process_events' */
+void ctx_host_thread_suspend_cancel(struct ctx_t *ctx)
 {
-	pthread_mutex_lock(&ke->process_suspended_mutex);
-	if (ctx->process_suspended_thread_active) {
-		if (pthread_cancel(ctx->process_suspended_thread))
-			fatal("error canceling ke_process_suspended_thread for context %d", ctx->pid);
-		ctx->process_suspended_thread_active = 0;
-		ke->process_suspended_force = 1;
+	pthread_mutex_lock(&ke->process_events_mutex);
+	if (ctx->host_thread_suspend_active) {
+		if (pthread_cancel(ctx->host_thread_suspend))
+			fatal("%s: context %d: error canceling host thread",
+				__FUNCTION__, ctx->pid);
+		ctx->host_thread_suspend_active = 0;
+		ke->process_events_force = 1;
 	}
-	pthread_mutex_unlock(&ke->process_suspended_mutex);
+	pthread_mutex_unlock(&ke->process_events_mutex);
+}
+
+
+/* If the context is running a 'ke_host_thread_timer' thread,
+ * cancel it and schedule call to 'ke_process_events' */
+void ctx_host_thread_timer_cancel(struct ctx_t *ctx)
+{
+	pthread_mutex_lock(&ke->process_events_mutex);
+	if (ctx->host_thread_timer_active) {
+		if (pthread_cancel(ctx->host_thread_timer))
+			fatal("%s: context %d: error canceling host thread",
+				__FUNCTION__, ctx->pid);
+		ctx->host_thread_timer_active = 0;
+		ke->process_events_force = 1;
+	}
+	pthread_mutex_unlock(&ke->process_events_mutex);
 }
 
 
@@ -386,7 +402,8 @@ void ctx_finish_group(struct ctx_t *ctx, int status)
 			ctx_set_status(aux, ctx_finished);
 		if (ctx_get_status(aux, ctx_handler))
 			signal_handler_return(aux);
-		ctx_process_suspended_thread_cancel(aux);
+		ctx_host_thread_suspend_cancel(aux);
+		ctx_host_thread_timer_cancel(aux);
 		ctx_set_status(aux, ctx_finished);
 		aux->exit_code = status;
 	}
@@ -406,9 +423,9 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	if (ctx_get_status(ctx, ctx_finished | ctx_zombie))
 		return;
 	
-	/* Cancel associated 'ke_process_suspended_thread' if context is
-	 * suspended in a blocking system call. */
-	ctx_process_suspended_thread_cancel(ctx);
+	/* If context is waiting for host events, cancel spawned host threads. */
+	ctx_host_thread_suspend_cancel(ctx);
+	ctx_host_thread_timer_cancel(ctx);
 
 	/* From now on, all children have lost their parent. If a child is
 	 * already zombie, finish it, since its parent won't be able to waitpid it
@@ -446,7 +463,7 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	/* Finish context */
 	ctx_set_status(ctx, ctx->parent ? ctx_zombie : ctx_finished);
 	ctx->exit_code = status;
-	ke_process_suspended_schedule();
+	ke_process_events_schedule();
 }
 
 

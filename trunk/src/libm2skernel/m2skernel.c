@@ -42,8 +42,8 @@ void ke_init(void)
 	ke = calloc(1, sizeof(struct kernel_t));
 	ke->current_pid = 1000;  /* Initial assigned pid */
 	
-	/* Initialize mutex for variables controlling calls to 'process_suspended()' */
-	pthread_mutex_init(&ke->process_suspended_mutex, NULL);
+	/* Initialize mutex for variables controlling calls to 'ke_process_events()' */
+	pthread_mutex_init(&ke->process_events_mutex, NULL);
 
 	/* Debug categories */
 	isa_inst_debug_category = debug_new_category();
@@ -99,7 +99,7 @@ void ke_run(void)
 		ctx_free(ke->finished_list_head);
 	
 	/* Process list of suspended contexts */
-	ke_process_suspended();
+	ke_process_events();
 
 }
 
@@ -218,25 +218,27 @@ uint64_t ke_timer()
 }
 
 
-/* Schedule a call to 'ke_process_suspend' */
-void ke_process_suspended_schedule()
+/* Schedule a call to 'ke_process_events' */
+void ke_process_events_schedule()
 {
-	pthread_mutex_lock(&ke->process_suspended_mutex);
-	ke->process_suspended_force = 1;
-	pthread_mutex_unlock(&ke->process_suspended_mutex);
+	pthread_mutex_lock(&ke->process_events_mutex);
+	ke->process_events_force = 1;
+	pthread_mutex_unlock(&ke->process_events_mutex);
 }
 
 
-/* Thread function that suspends itself waiting for an event to occur, and
- * then schedules a call to 'ke_process_suspend' */
-void *ke_process_suspended_thread(void *arg)
+/* Function that suspends the host thread waiting for an event to occur.
+ * When the event finally occurs (i.e., before the function finishes, a
+ * call to 'ke_process_events' is scheduled.
+ * The argument 'arg' is the associated guest context. */
+void *ke_host_thread_suspend(void *arg)
 {
 	struct ctx_t *ctx = (struct ctx_t *) arg;
 	uint64_t now = ke_timer();
 
 	/* Detach this thread - we don't want the parent to have to join it to release
 	 * its resources. The thread termination can be observed by atomically checking
-	 * the 'ctx->process_suspended_thread_active' flag. */
+	 * the 'ctx->host_thread_suspend_active' flag. */
 	assert(ctx_get_status(ctx, ctx_suspended));
 	pthread_detach(pthread_self());
 
@@ -312,35 +314,54 @@ void *ke_process_suspended_thread(void *arg)
 			fatal("syscall 'write': unexpected error in host 'write'");
 
 	} else
-		fatal("ke_process_suspended_thread: context status not handled");
+		fatal("ke_host_thread_suspend: context status not handled");
 
 	/* Event occurred - thread finishes */
-	pthread_mutex_lock(&ke->process_suspended_mutex);
-	ke->process_suspended_force = 1;
-	ctx->process_suspended_thread_active = 0;
-	pthread_mutex_unlock(&ke->process_suspended_mutex);
+	pthread_mutex_lock(&ke->process_events_mutex);
+	ke->process_events_force = 1;
+	ctx->host_thread_suspend_active = 0;
+	pthread_mutex_unlock(&ke->process_events_mutex);
 	return NULL;
 }
 
 
-/* Process list of suspended process and wake up those that are ready to resume.
- * The list is only processed if flag 'ke->process_suspended_force' is set. */
-void ke_process_suspended()
+/* Function that suspends the host thread waiting for a timer to expire,
+ * and then schedules a call to 'ke_process_events'. */
+void *ke_host_thread_timer(void *arg)
+{
+	struct ctx_t *ctx = (struct ctx_t *) arg;
+	uint64_t now = ke_timer();
+	struct timespec ts;
+	uint64_t sleep_time;  /* In usec */
+
+	/* Detach this thread - we don't want the parent to have to join it to release
+	 * its resources. The thread termination can be observed by thread-safely checking
+	 * the 'ctx->host_thread_timer_active' flag. */
+	pthread_detach(pthread_self());
+
+	/* Calculate sleep time, and sleep only if it is greater than 0 */
+	if (ctx->host_thread_timer_wakeup > now) {
+		sleep_time = ctx->host_thread_timer_wakeup - now;
+		ts.tv_sec = sleep_time / 1000000;
+		ts.tv_nsec = (sleep_time % 1000000) * 1000;  /* nsec */
+		nanosleep(&ts, NULL);
+	}
+
+	/* Timer expired, schedule call to 'ke_process_events' */
+	pthread_mutex_lock(&ke->process_events_mutex);
+	ke->process_events_force = 1;
+	ctx->host_thread_timer_active = 0;
+	pthread_mutex_unlock(&ke->process_events_mutex);
+	return NULL;
+}
+
+
+/* Check for events on list of suspended contexts.
+ * Mutex 'ke->process_events_mutex' is assumed to be locked. */
+void ke_process_events_suspend()
 {
 	struct ctx_t *ctx, *next;
-	uint64_t now;
-
-	/* Check if suspended contexts should be actually processed */
-	pthread_mutex_lock(&ke->process_suspended_mutex);
-	if (!ke->process_suspended_force) {
-		pthread_mutex_unlock(&ke->process_suspended_mutex);
-		return;
-	}
-	
-	/* By default, no subsequent call to 'ke_process_suspended' is assumed.
-	 * Get current kernel time. */
-	ke->process_suspended_force = 0;
-	now = ke_timer();
+	uint64_t now = ke_timer();
 
 	/* Look at the list of suspended contexts and try to find
 	 * one that needs to be woken up. */
@@ -357,8 +378,8 @@ void ke_process_suspended()
 			uint32_t sec, usec;
 			uint64_t diff;
 
-			/* If 'ke_process_suspended_thread' is still running for this context, do nothing. */
-			if (ctx->process_suspended_thread_active)
+			/* If 'ke_host_thread_suspend' is still running for this context, do nothing. */
+			if (ctx->host_thread_suspend_active)
 				continue;
 
 			/* Timeout expired */
@@ -386,9 +407,9 @@ void ke_process_suspended()
 				continue;
 			}
 
-			/* No event available, launch 'ke_process_suspended_thread' again */
-			ctx->process_suspended_thread_active = 1;
-			if (pthread_create(&ctx->process_suspended_thread, NULL, ke_process_suspended_thread, ctx))
+			/* No event available, launch 'ke_host_thread_suspend' again */
+			ctx->host_thread_suspend_active = 1;
+			if (pthread_create(&ctx->host_thread_suspend, NULL, ke_host_thread_suspend, ctx))
 				fatal("syscall 'poll': could not create child thread");
 			continue;
 		}
@@ -406,7 +427,7 @@ void ke_process_suspended()
 			}
 
 			/* No event available. The context will never awake on its own, so no
-			 * 'ke_process_suspended_thread' is necessary. */
+			 * 'ke_host_thread_suspend' is necessary. */
 			continue;
 		}
 
@@ -419,8 +440,8 @@ void ke_process_suspended()
 			struct pollfd host_fds;
 			int err;
 
-			/* If 'ke_process_suspended_thread' is still running for this context, do nothing. */
-			if (ctx->process_suspended_thread_active)
+			/* If 'ke_host_thread_suspend' is still running for this context, do nothing. */
+			if (ctx->host_thread_suspend_active)
 				continue;
 
 			/* Get file descriptor */
@@ -475,9 +496,9 @@ void ke_process_suspended()
 				continue;
 			}
 
-			/* No event available, launch 'ke_process_suspended_thread' again */
-			ctx->process_suspended_thread_active = 1;
-			if (pthread_create(&ctx->process_suspended_thread, NULL, ke_process_suspended_thread, ctx))
+			/* No event available, launch 'ke_host_thread_suspend' again */
+			ctx->host_thread_suspend_active = 1;
+			if (pthread_create(&ctx->host_thread_suspend, NULL, ke_host_thread_suspend, ctx))
 				fatal("syscall 'poll': could not create child thread");
 			continue;
 		}
@@ -492,8 +513,8 @@ void ke_process_suspended()
 			void *buf;
 			struct pollfd host_fds;
 
-			/* If 'ke_process_suspended_thread' is still running for this context, do nothing. */
-			if (ctx->process_suspended_thread_active)
+			/* If 'ke_host_thread_suspend' is still running for this context, do nothing. */
+			if (ctx->host_thread_suspend_active)
 				continue;
 
 			/* Context received a signal */
@@ -536,9 +557,9 @@ void ke_process_suspended()
 				continue;
 			}
 
-			/* Data is not ready to be written - launch 'ke_process_suspended_thread' again */
-			ctx->process_suspended_thread_active = 1;
-			if (pthread_create(&ctx->process_suspended_thread, NULL, ke_process_suspended_thread, ctx))
+			/* Data is not ready to be written - launch 'ke_host_thread_suspend' again */
+			ctx->host_thread_suspend_active = 1;
+			if (pthread_create(&ctx->host_thread_suspend, NULL, ke_host_thread_suspend, ctx))
 				fatal("syscall 'write': could not create child thread");
 			continue;
 		}
@@ -552,8 +573,8 @@ void ke_process_suspended()
 			void *buf;
 			struct pollfd host_fds;
 
-			/* If 'ke_process_suspended_thread' is still running for this context, do nothing. */
-			if (ctx->process_suspended_thread_active)
+			/* If 'ke_host_thread_suspend' is still running for this context, do nothing. */
+			if (ctx->host_thread_suspend_active)
 				continue;
 
 			/* Context received a signal */
@@ -596,9 +617,9 @@ void ke_process_suspended()
 				continue;
 			}
 
-			/* Data is not ready. Launch 'ke_process_suspended_thread' again */
-			ctx->process_suspended_thread_active = 1;
-			if (pthread_create(&ctx->process_suspended_thread, NULL, ke_process_suspended_thread, ctx))
+			/* Data is not ready. Launch 'ke_host_thread_suspend' again */
+			ctx->host_thread_suspend_active = 1;
+			if (pthread_create(&ctx->host_thread_suspend, NULL, ke_host_thread_suspend, ctx))
 				fatal("syscall 'read': could not create child thread");
 			continue;
 		}
@@ -627,12 +648,98 @@ void ke_process_suspended()
 			}
 
 			/* No event available. Since this context won't awake on its own, no
-			 * 'ke_process_suspended_thread' is needed. */
+			 * 'ke_host_thread_suspend' is needed. */
 			continue;
 		}
 	}
+}
 
-	/* Processing of suspended contexts finished, unlock mutex. */
-	pthread_mutex_unlock(&ke->process_suspended_mutex);
+
+/* Check for events on list of contexts for timer events.
+ * Mutex 'ke->process_events_mutex' is assumed to be locked. */
+void ke_process_events_timer()
+{
+	struct ctx_t *ctx;
+	uint64_t now = ke_timer();
+	
+	/* Look at the list of all contexts and check timers. */
+	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_next)
+	{
+		int sig[3] = { 14, 26, 27 };  /* SIGALRM, SIGVTALRM, SIGPROF */
+		int i;
+
+		/* If there is already a 'ke_host_thread_timer' running, do nothing. */
+		if (ctx->host_thread_timer_active)
+			continue;
+
+		/* Check for any expired 'itimer': itimer_value < now
+		 * In this case, send corresponding signal to process.
+		 * Then calculate next 'itimer' occurrence: itimer_value = now + itimer_interval */
+		for (i = 0; i < 3; i++ ) {
+			
+			/* Timer inactive or not expired yet */
+			if (!ctx->itimer_value[i] || ctx->itimer_value[i] > now)
+				continue;
+
+			/* Timer expired - send signal */
+			//sim_sigset_add(&ctx->signal_masks->pending, sig[i]);
+			//////// FIXME
+			if (!sim_sigset_member(&ctx->signal_masks->blocked, sig[i]) && !ctx_get_status(ctx, ctx_handler))
+				signal_handler_run(ctx, sig[i]);
+
+			/* Calculate next occurrence */
+			ctx->itimer_value[i] = 0;
+			if (ctx->itimer_interval[i])
+				ctx->itimer_value[i] = now + ctx->itimer_interval[i];
+			printf("*** EXPIRED TIMER: next occurence = %lld\n", (long long) ctx->itimer_value[i]), fflush(stdout);////////
+		}
+
+		/* Calculate the time when next wakeup occurs. */
+		ctx->host_thread_timer_wakeup = 0;
+		for (i = 0; i < 3; i++) {
+			if (!ctx->itimer_value[i])
+				continue;
+			assert(ctx->itimer_value[i] >= now);
+			if (!ctx->host_thread_timer_wakeup || ctx->itimer_value[i] < ctx->host_thread_timer_wakeup)
+				ctx->host_thread_timer_wakeup = ctx->itimer_value[i];
+		}
+
+		/* If a new timer was set, launch 'ke_host_thread_timer' again */
+		if (ctx->host_thread_timer_wakeup) {
+			ctx->host_thread_timer_active = 1;
+			if (pthread_create(&ctx->host_thread_timer, NULL, ke_host_thread_timer, ctx))
+				fatal("%s: could not create child thread", __FUNCTION__);
+		}
+	}
+
+}
+
+
+/* Check for events detected in spawned host threads, like waking up contexts or
+ * sending signals.
+ * The list is only processed if flag 'ke->process_events_force' is set. */
+void ke_process_events()
+{
+
+	/* Check if events need actually be checked. */
+	pthread_mutex_lock(&ke->process_events_mutex);
+	if (!ke->process_events_force) {
+		pthread_mutex_unlock(&ke->process_events_mutex);
+		return;
+	}
+	
+	/* By default, no subsequent call to 'ke_process_events' is assumed */
+	ke->process_events_force = 0;
+
+	/* Process suspended process and timer events */
+	ke_process_events_suspend();
+	ke_process_events_timer();
+	
+	/* Unlock */
+	pthread_mutex_unlock(&ke->process_events_mutex);
+
+	////////////
+	printf("** CALL TO KE_PROCESS_EVENTS **\n"); fflush(stdout);
+	///////////
 }
 

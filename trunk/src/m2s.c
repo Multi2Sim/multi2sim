@@ -208,8 +208,8 @@ int main(int argc, char **argv)
 		/* Processor stages */
 		p_stages();
 
-		/* Process list of suspended contexts */
-		ke_process_suspended();
+		/* Process host threads generating events */
+		ke_process_events();
 
 		/* Event-driven module */
 		esim_process_events();
