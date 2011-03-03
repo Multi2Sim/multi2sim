@@ -773,51 +773,54 @@
 		library implementation version. This forces the user to always have the latest
 		update for the library.
 
-2010-01-12
+2011-01-12
 	* libgpukernel/cal-abi.c: constants for ELF_NOTE_ATI_XXX added as per AMD's notification.
 	* Version 2.4.2 Released
 
-2010-01-12
+2011-01-12
 	* libgpukernel/cal-abi.c: debug info for pt_note entries.
 
-2010-01-15
+2011-01-15
 	* libgpukernel/gpumachine.c, libgpudisasm/gpudisasm.dat: new instructions implemented.
 		Support provided for MatrixMultiplication kernel, both using global and
 		local memory.
 	* libgpukernel/gpuisa.c: Initialization of CB[0] as specified by the information provided
 		by AMD.
 
-2010-01-20
+2011-01-20
 	* tools/libm2s-opencl: Directory containing the Multi2Sim OpenCL library.
 	* tools/m2s-opencl-kc: OpenCL Kernel Compiler. Based on the CAL interface, the tool
 		takes an OpenCL kernel as an input and compiles it for any target device supported
 		by the OpenCL driver. It requires the AMD SDK installed.
 
-2010-01-29
+2011-01-29
 	* libgpukernel/gpumachine.c: Several instructions implemented. Bug fixed in RECIP_UINT.
 
-2010-01-30
+2011-01-30
 	* tools/barplot, tools/inifile: added.
 	* Makefile.am: added files in 'tools' for distribution.
 
-2010-01-31
+2011-01-31
 	* tools/libm2s-opencl: dependency with AMD APP SDK removed. Khronos headers added as
 		a subdirectory of the Multi2Sim OpenCL library.
 
-2010-02-03
+2011-02-03
 	* tools/m2s-opencl-kc: Error message for missing APP SDK updated.
 
-2010-02-04
+2011-02-04
 	* Version 3.0 Released
 
-2010-02-23
+2011-02-23
 	* tools/m2s-pipeline: Tool for displaying pipeline debug information moved to the 'tools'
 		directory. The dependency with the 'ncurses' library is removed from the
 		central Multi2Sim code.
 	* tools/Makefile.am: -lncurses flag removed from linking options.
 
-2010-02-23
+2011-02-23
 	* Version 3.0.1 Released
 
-
+2011-02-03
+	* src/libm2skernel/{m2skernel.*, signal.c, context.c}: signal management restructured, and
+		new loops added in 'ke_process_events'.
+	* src/libm2skernel/syscall.c: system calls 'setitimer', 'getitimer' implemented.
 
