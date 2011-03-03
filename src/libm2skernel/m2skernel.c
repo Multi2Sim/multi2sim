@@ -431,9 +431,8 @@ void ke_process_events()
 		{
 			/* Context received a signal */
 			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
-				signal_handler_check(ctx);
+				signal_handler_check_intr(ctx);
 				ctx->signal_masks->blocked = ctx->signal_masks->backup;
-				ctx->regs->eax = -EINTR;
 				syscall_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_sigsuspend);
 				continue;
@@ -464,7 +463,7 @@ void ke_process_events()
 
 			/* Context received a signal */
 			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
-				ctx->regs->eax = -EINTR;
+				signal_handler_check_intr(ctx);
 				syscall_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
 				continue;
@@ -532,7 +531,7 @@ void ke_process_events()
 
 			/* Context received a signal */
 			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
-				ctx->regs->eax = -EINTR;
+				signal_handler_check_intr(ctx);
 				syscall_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_write);
 				continue;
@@ -592,7 +591,7 @@ void ke_process_events()
 
 			/* Context received a signal */
 			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
-				ctx->regs->eax = -EINTR;
+				signal_handler_check_intr(ctx);
 				syscall_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_read);
 				continue;

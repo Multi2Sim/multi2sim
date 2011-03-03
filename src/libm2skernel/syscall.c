@@ -3574,10 +3574,7 @@ void syscall_do()
 	}
 
 	/* Return value (for all system calls except 'sigreturn') */
-	if (syscode != syscall_code_sigreturn) {
+	if (syscode != syscall_code_sigreturn && !ctx_get_status(isa_ctx, ctx_suspended))
 		isa_regs->eax = retval;
-		if (!ctx_get_status(isa_ctx, ctx_suspended))
-			syscall_debug("  return=0x%x\n", retval);
-	}
 }
 
