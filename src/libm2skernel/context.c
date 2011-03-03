@@ -347,9 +347,9 @@ struct ctx_t *ctx_get_zombie(struct ctx_t *parent, int pid)
 
 /* If the context is running a 'ke_host_thread_suspend' thread,
  * cancel it and schedule call to 'ke_process_events' */
-void ctx_host_thread_suspend_cancel(struct ctx_t *ctx)
+
+void __ctx_host_thread_suspend_cancel(struct ctx_t *ctx)
 {
-	pthread_mutex_lock(&ke->process_events_mutex);
 	if (ctx->host_thread_suspend_active) {
 		if (pthread_cancel(ctx->host_thread_suspend))
 			fatal("%s: context %d: error canceling host thread",
@@ -357,15 +357,21 @@ void ctx_host_thread_suspend_cancel(struct ctx_t *ctx)
 		ctx->host_thread_suspend_active = 0;
 		ke->process_events_force = 1;
 	}
+}
+
+void ctx_host_thread_suspend_cancel(struct ctx_t *ctx)
+{
+	pthread_mutex_lock(&ke->process_events_mutex);
+	__ctx_host_thread_suspend_cancel(ctx);
 	pthread_mutex_unlock(&ke->process_events_mutex);
 }
 
 
 /* If the context is running a 'ke_host_thread_timer' thread,
  * cancel it and schedule call to 'ke_process_events' */
-void ctx_host_thread_timer_cancel(struct ctx_t *ctx)
+
+void __ctx_host_thread_timer_cancel(struct ctx_t *ctx)
 {
-	pthread_mutex_lock(&ke->process_events_mutex);
 	if (ctx->host_thread_timer_active) {
 		if (pthread_cancel(ctx->host_thread_timer))
 			fatal("%s: context %d: error canceling host thread",
@@ -373,6 +379,12 @@ void ctx_host_thread_timer_cancel(struct ctx_t *ctx)
 		ctx->host_thread_timer_active = 0;
 		ke->process_events_force = 1;
 	}
+}
+
+void ctx_host_thread_timer_cancel(struct ctx_t *ctx)
+{
+	pthread_mutex_lock(&ke->process_events_mutex);
+	__ctx_host_thread_timer_cancel(ctx);
 	pthread_mutex_unlock(&ke->process_events_mutex);
 }
 
@@ -444,7 +456,7 @@ void ctx_finish(struct ctx_t *ctx, int status)
 			ctx->exit_signal, ctx->parent->pid);
 		sim_sigset_add(&ctx->parent->signal_masks->pending,
 			ctx->exit_signal);
-		signal_process(ctx->parent);
+		ke_process_events_schedule();
 	}
 
 	/* If clear_child_tid was set, a futex() call must be performed on

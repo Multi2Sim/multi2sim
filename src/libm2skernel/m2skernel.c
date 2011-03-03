@@ -356,15 +356,29 @@ void *ke_host_thread_timer(void *arg)
 }
 
 
-/* Check for events on list of suspended contexts.
- * Mutex 'ke->process_events_mutex' is assumed to be locked. */
-void ke_process_events_suspend()
+/* Check for events detected in spawned host threads, like waking up contexts or
+ * sending signals.
+ * The list is only processed if flag 'ke->process_events_force' is set. */
+void ke_process_events()
 {
 	struct ctx_t *ctx, *next;
 	uint64_t now = ke_timer();
+	
+	/* Check if events need actually be checked. */
+	pthread_mutex_lock(&ke->process_events_mutex);
+	if (!ke->process_events_force) {
+		pthread_mutex_unlock(&ke->process_events_mutex);
+		return;
+	}
+	
+	/* By default, no subsequent call to 'ke_process_events' is assumed */
+	ke->process_events_force = 0;
 
-	/* Look at the list of suspended contexts and try to find
-	 * one that needs to be woken up. */
+	/*
+	 * LOOP 1
+	 * Look at the list of suspended contexts and try to find
+	 * one that needs to be woken up.
+	 */
 	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
 
 		/* Save next */
@@ -419,9 +433,10 @@ void ke_process_events_suspend()
 		{
 			/* Context received a signal */
 			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
+				signal_handler_check(ctx);
 				ctx->signal_masks->blocked = ctx->signal_masks->backup;
 				ctx->regs->eax = -EINTR;
-				syscall_debug("syscall 'nanosleep' - interrupted by signal (pid %d)\n", ctx->pid);
+				syscall_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_sigsuspend);
 				continue;
 			}
@@ -652,17 +667,12 @@ void ke_process_events_suspend()
 			continue;
 		}
 	}
-}
 
 
-/* Check for events on list of contexts for timer events.
- * Mutex 'ke->process_events_mutex' is assumed to be locked. */
-void ke_process_events_timer()
-{
-	struct ctx_t *ctx;
-	uint64_t now = ke_timer();
-	
-	/* Look at the list of all contexts and check timers. */
+	/*
+	 * LOOP 2
+	 * Check list of all contexts for expired timers.
+	 */
 	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_next)
 	{
 		int sig[3] = { 14, 26, 27 };  /* SIGALRM, SIGVTALRM, SIGPROF */
@@ -681,17 +691,18 @@ void ke_process_events_timer()
 			if (!ctx->itimer_value[i] || ctx->itimer_value[i] > now)
 				continue;
 
-			/* Timer expired - send signal */
-			//sim_sigset_add(&ctx->signal_masks->pending, sig[i]);
-			//////// FIXME
-			if (!sim_sigset_member(&ctx->signal_masks->blocked, sig[i]) && !ctx_get_status(ctx, ctx_handler))
-				signal_handler_run(ctx, sig[i]);
+			/* Timer expired - send a signal.
+			 * The target process might be suspended, so the host thread is canceled, and a new
+			 * call to 'ke_process_events' is scheduled. Since 'ke_process_events_mutex' is
+			 * already locked, the thread-unsafe version of 'ctx_host_thread_suspend_cancel' is used. */
+			__ctx_host_thread_suspend_cancel(ctx);
+			ke->process_events_force = 1;
+			sim_sigset_add(&ctx->signal_masks->pending, sig[i]);
 
 			/* Calculate next occurrence */
 			ctx->itimer_value[i] = 0;
 			if (ctx->itimer_interval[i])
 				ctx->itimer_value[i] = now + ctx->itimer_interval[i];
-			printf("*** EXPIRED TIMER: next occurence = %lld\n", (long long) ctx->itimer_value[i]), fflush(stdout);////////
 		}
 
 		/* Calculate the time when next wakeup occurs. */
@@ -712,34 +723,18 @@ void ke_process_events_timer()
 		}
 	}
 
-}
 
-
-/* Check for events detected in spawned host threads, like waking up contexts or
- * sending signals.
- * The list is only processed if flag 'ke->process_events_force' is set. */
-void ke_process_events()
-{
-
-	/* Check if events need actually be checked. */
-	pthread_mutex_lock(&ke->process_events_mutex);
-	if (!ke->process_events_force) {
-		pthread_mutex_unlock(&ke->process_events_mutex);
-		return;
+	/*
+	 * LOOP 3
+	 * Process pending signals in running contexts to launch signal handlers
+	 */
+	for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
+	{
+		signal_handler_check(ctx);
 	}
-	
-	/* By default, no subsequent call to 'ke_process_events' is assumed */
-	ke->process_events_force = 0;
 
-	/* Process suspended process and timer events */
-	ke_process_events_suspend();
-	ke_process_events_timer();
 	
 	/* Unlock */
 	pthread_mutex_unlock(&ke->process_events_mutex);
-
-	////////////
-	printf("** CALL TO KE_PROCESS_EVENTS **\n"); fflush(stdout);
-	///////////
 }
 

@@ -171,40 +171,6 @@ void signal_handlers_free(struct signal_handlers_t *signal_handlers)
 }
 
 
-/* Process pending signals and execute signal handlers
- * accordingly. */
-void signal_process(struct ctx_t *ctx)
-{
-	int sig;
-
-	/* If we are executing a signal handler, we cannot be
-	 * interrupted. After the signal handler finishes, pending
-	 * signals will be processed again. */
-	if (ctx_get_status(ctx, ctx_handler))
-		return;
-
-	/* If there is no unblocked pending signal, we
-	 * can exit the function immediately. */
-	if (!(ctx->signal_masks->pending & ~ctx->signal_masks->blocked))
-		return;
-	
-	/* There is some unblocked pending signal, prepare signal handler to
-	 * be executed. If context is suspended, wake it up. */
-	for (sig = 1; sig <= 64; sig++) {
-		if (sim_sigset_member(&ctx->signal_masks->pending, sig) &&
-			!sim_sigset_member(&ctx->signal_masks->blocked, sig))
-		{
-			ctx_host_thread_suspend_cancel(ctx);
-			ke_process_events_schedule();
-			ke_process_events();
-			signal_handler_run(ctx, sig);
-			sim_sigset_del(&ctx->signal_masks->pending, sig);
-			break;
-		}
-	}
-}
-
-
 /* Structure representing the signal stack frame */
 struct sim_sigframe {
 	uint32_t pretcode;  /* Pointer to return code */
@@ -313,5 +279,33 @@ void signal_handler_return(struct ctx_t *ctx)
 	/* Restore saved register file and free backup */
 	regs_copy(ctx->regs, ctx->signal_masks->regs);
 	regs_free(ctx->signal_masks->regs);
+}
+
+
+/* Check if there is any pending unblocked signal, and run the corresponding
+ * signal handler. */
+void signal_handler_check(struct ctx_t *ctx)
+{
+	int sig;
+
+	/* If context is already running a signal handler, do nothing. */
+	if (ctx_get_status(ctx, ctx_handler))
+		return;
+	
+	/* If there is no pending unblocked signal, do nothing. */
+	if (!(ctx->signal_masks->pending & ~ctx->signal_masks->blocked))
+		return;
+	
+	/* There is some unblocked pending signal, prepare signal handler to
+	 * be executed. */
+	for (sig = 1; sig <= 64; sig++) {
+		if (sim_sigset_member(&ctx->signal_masks->pending, sig) &&
+			!sim_sigset_member(&ctx->signal_masks->blocked, sig))
+		{
+			signal_handler_run(ctx, sig);
+			sim_sigset_del(&ctx->signal_masks->pending, sig);
+			break;
+		}
+	}
 }
 
