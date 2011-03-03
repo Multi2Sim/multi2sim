@@ -823,4 +823,6 @@
 	* src/libm2skernel/{m2skernel.*, signal.c, context.c}: signal management restructured, and
 		new loops added in 'ke_process_events'.
 	* src/libm2skernel/syscall.c: system calls 'setitimer', 'getitimer' implemented.
+	* src/libm2skernel/syscall.c: system call 'select' implemented (for tv = 0).
+
 

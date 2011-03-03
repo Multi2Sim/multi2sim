@@ -239,7 +239,6 @@ void *ke_host_thread_suspend(void *arg)
 	/* Detach this thread - we don't want the parent to have to join it to release
 	 * its resources. The thread termination can be observed by atomically checking
 	 * the 'ctx->host_thread_suspend_active' flag. */
-	assert(ctx_get_status(ctx, ctx_suspended));
 	pthread_detach(pthread_self());
 
 	/* Context suspended in 'poll' system call */
@@ -313,8 +312,7 @@ void *ke_host_thread_suspend(void *arg)
 		if (err < 0)
 			fatal("syscall 'write': unexpected error in host 'write'");
 
-	} else
-		fatal("ke_host_thread_suspend: context status not handled");
+	}
 
 	/* Event occurred - thread finishes */
 	pthread_mutex_lock(&ke->process_events_mutex);
