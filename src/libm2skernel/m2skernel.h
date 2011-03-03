@@ -395,9 +395,9 @@ struct signal_handlers_t {
 struct signal_handlers_t *signal_handlers_create(void);
 void signal_handlers_free(struct signal_handlers_t *signal_handlers);
 
-void signal_process(struct ctx_t *ctx);
 void signal_handler_run(struct ctx_t *ctx, int sig);
 void signal_handler_return(struct ctx_t *ctx);
+void signal_handler_check(struct ctx_t *ctx);
 
 char *sim_signal_name(int signum);
 void sim_sigaction_dump(struct sim_sigaction *sim_sigaction, FILE *f);
@@ -549,7 +549,10 @@ struct ctx_t *ctx_clone(struct ctx_t *ctx);
 void ctx_free(struct ctx_t *ctx);
 void ctx_dump(struct ctx_t *ctx, FILE *f);
 
+/* Thread safe/unsafe versions */
+void __ctx_host_thread_suspend_cancel(struct ctx_t *ctx);
 void ctx_host_thread_suspend_cancel(struct ctx_t *ctx);
+void __ctx_host_thread_timer_cancel(struct ctx_t *ctx);
 void ctx_host_thread_timer_cancel(struct ctx_t *ctx);
 
 void ctx_finish(struct ctx_t *ctx, int status);

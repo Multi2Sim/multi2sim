@@ -1207,7 +1207,9 @@ void syscall_do()
 
 		/* Send signal */
 		sim_sigset_add(&ctx->signal_masks->pending, sig);
-		signal_process(ctx);
+		ctx_host_thread_suspend_cancel(ctx);  /* Target ctx might wake up */
+		ke_process_events_schedule();
+		ke_process_events();
 		break;
 	}
 
@@ -1834,11 +1836,40 @@ void syscall_do()
 	}
 
 
+	/* 105 */
+	case syscall_code_getitimer:
+	{
+		uint32_t which, pvalue;
+		struct sim_itimerval itimerval;
+		uint64_t now = ke_timer();
+		uint64_t rem;
+
+		which = isa_regs->ebx;
+		pvalue = isa_regs->ecx;
+		syscall_debug("  which=%d (%s), pvalue=0x%x\n",
+			which, map_value(&itimer_map, which), pvalue);
+
+		/* Check range of 'which' */
+		if (which >= 3)
+			fatal("syscall 'getitimer': wrong value for 'which' argument");
+
+		/* Return value in structure */
+		rem = now < isa_ctx->itimer_value[which] ? isa_ctx->itimer_value[which] - now : 0;
+		itimerval.it_value.tv_sec = rem / 1000000;
+		itimerval.it_value.tv_usec = rem % 1000000;
+		itimerval.it_interval.tv_sec = isa_ctx->itimer_interval[which] / 1000000;
+		itimerval.it_interval.tv_usec = isa_ctx->itimer_interval[which] % 1000000;
+		mem_write(isa_mem, pvalue, sizeof(itimerval), &itimerval);
+		break;
+	}
+
+
 	/* 119 */
 	case syscall_code_sigreturn:
 	{
 		signal_handler_return(isa_ctx);
-		signal_process(isa_ctx);
+		ke_process_events_schedule();
+		ke_process_events();
 		break;
 	}
 
@@ -2561,7 +2592,8 @@ void syscall_do()
 
 		/* A change in the signal mask can cause pending signals to be
 		 * able to execute, so check this. */
-		signal_process(isa_ctx);
+		ke_process_events_schedule();
+		ke_process_events();
 
 		break;
 	}
@@ -2595,8 +2627,10 @@ void syscall_do()
 		isa_ctx->signal_masks->backup = isa_ctx->signal_masks->blocked;
 		isa_ctx->signal_masks->blocked = newset;
 		ctx_set_status(isa_ctx, ctx_suspended | ctx_sigsuspend);
+
+		/* New signal mask may cause new events */
 		ke_process_events_schedule();
-		signal_process(isa_ctx);
+		ke_process_events();
 		break;
 	}
 
@@ -3322,7 +3356,9 @@ void syscall_do()
 
 		/* Send signal */
 		sim_sigset_add(&ctx->signal_masks->pending, sig);
-		signal_process(ctx);
+		ctx_host_thread_suspend_cancel(ctx);  /* Target ctx might wake up */
+		ke_process_events_schedule();
+		ke_process_events();
 		break;
 	}
 
