@@ -445,6 +445,7 @@ void fdt_entry_free(struct fdt_t *fdt, int index);
 void fdt_entry_dump(struct fdt_t *fdt, int index, FILE *f);
 
 int fdt_get_host_fd(struct fdt_t *fdt, int guest_fd);
+int fdt_get_guest_fd(struct fdt_t *fdt, int host_fd);
 
 
 

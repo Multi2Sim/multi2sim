@@ -95,6 +95,20 @@ int fdt_get_host_fd(struct fdt_t *fdt, int guest_fd)
 }
 
 
+int fdt_get_guest_fd(struct fdt_t *fdt, int host_fd)
+{
+	struct fd_t *fd;
+	int i;
+
+	for (i = 0; i < list_count(fdt->fd_list); i++) {
+		fd = list_get(fdt->fd_list, i);
+		if (fd->host_fd == host_fd)
+			return i;
+	}
+	return -1;
+}
+
+
 void fdt_entry_dump(struct fdt_t *fdt, int index, FILE *f)
 {
 	struct fd_t *fd;

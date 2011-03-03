@@ -399,6 +399,12 @@ struct sim_itimerval {
 	struct sim_timeval it_value;
 } __attribute__((packed));
 
+void sim_timeval_debug(struct sim_timeval *sim_timeval)
+{
+	syscall_debug("    tv_sec=%u, tv_usec=%u\n",
+		sim_timeval->tv_sec, sim_timeval->tv_usec);
+}
+
 void sim_itimerval_debug(struct sim_itimerval *sim_itimerval)
 {
 	syscall_debug("    it_interval: tv_sec=%u, tv_usec=%u\n",
@@ -560,7 +566,7 @@ struct string_map_t sigprocmask_how_map = {
 };
 
 
-/* For poll */
+/* For 'poll' */
 
 struct string_map_t poll_event_map = {
 	6, {
@@ -578,6 +584,91 @@ struct sim_pollfd {
 	uint16_t events;
 	uint16_t revents;
 };
+
+
+/* For 'select' */
+
+/* Dump host 'fd_set' structure */
+void sim_fd_set_dump(char *fd_set_name, fd_set *fds, int n)
+{
+	int i;
+	char *comma;
+
+	/* Set empty */
+	if (!n || !fds) {
+		syscall_debug("    %s={}\n", fd_set_name);
+		return;
+	}
+
+	/* Dump set */
+	syscall_debug("    %s={", fd_set_name);
+	comma = "";
+	for (i = 0; i < n; i++) {
+		if (!FD_ISSET(i, fds))
+			continue;
+		syscall_debug("%s%d", comma, i);
+		comma = ",";
+	}
+	syscall_debug("}\n");
+}
+
+/* Read bitmap of 'guest_fd's from guest memory, and store it into
+ * a bitmap of 'host_fd's into host memory. */
+int sim_fd_set_read(uint32_t addr, fd_set *fds, int n)
+{
+	int nbyte, nbit, i;
+	int host_fd;
+	unsigned char c;
+
+	FD_ZERO(fds);
+	for (i = 0; i < n; i++) {
+		
+		/* Check if fd is set */
+		nbyte = i >> 3;
+		nbit = i & 7;
+		mem_read(isa_mem, addr + nbyte, 1, &c);
+		if (!(c & (1 << nbit)))
+			continue;
+		
+		/* Obtain 'host_fd' */
+		host_fd = fdt_get_host_fd(isa_ctx->fdt, i);
+		if (host_fd < 0)
+			return 0;
+		FD_SET(host_fd, fds);
+	}
+	return 1;
+}
+
+/* Read bitmap of 'host_fd's from host memory, and store it into
+ * a bitmap of 'guest_fd's into guest memory. */
+void sim_fd_set_write(uint32_t addr, fd_set *fds, int n)
+{
+	int nbyte, nbit, i;
+	int guest_fd;
+	unsigned char c;
+
+	/* No valid address given */
+	if (!addr)
+		return;
+
+	/* Write */
+	mem_zero(isa_mem, addr, (n + 7) / 8);
+	for (i = 0; i < n; i++) {
+		
+		/* Check if fd is set */
+		if (!FD_ISSET(i, fds))
+			continue;
+
+		/* Obtain 'guest_fd' and write */
+		guest_fd = fdt_get_guest_fd(isa_ctx->fdt, i);
+		assert(guest_fd >= 0);
+		nbyte = guest_fd >> 3;
+		nbit = guest_fd & 7;
+		mem_read(isa_mem, addr + nbyte, 1, &c);
+		c |= 1 << nbit;
+		mem_write(isa_mem, addr + nbyte, 1, &c);
+	}
+}
 
 
 /* For 'waitpid' */
@@ -2121,6 +2212,64 @@ void syscall_do()
 		syscall_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
 		free(buf);
 		retval = guest_offs;
+		break;
+	}
+
+
+	/* 142 */
+	/* Prototype:
+	 * int select(int n, fd_set *inp, fd_set *outp, fd_set *exp, struct timeval *tvp);
+	 */
+	case syscall_code_select:
+	{
+		uint32_t n, inp, outp, exp, tvp;
+		fd_set in, out, ex;
+		struct sim_timeval sim_tv;
+		struct timeval tv;
+
+		n = isa_regs->ebx;
+		inp = isa_regs->ecx;
+		outp = isa_regs->edx;
+		exp = isa_regs->esi;
+		tvp = isa_regs->edi;
+		syscall_debug("  n=%d, inp=0x%x, outp=0x%x, exp=0x%x, tvp=0x%x\n",
+			n, inp, outp, exp, tvp);
+
+		/* Read file descriptor bitmaps. If any file descriptor is invalid, return EBADF. */
+		if (!sim_fd_set_read(inp, &in, n)
+			|| !sim_fd_set_read(outp, &out, n)
+			|| !sim_fd_set_read(exp, &ex, n))
+		{
+			retval = -EBADF;
+			break;
+		}
+
+		/* Dump file descriptors */
+		sim_fd_set_dump("inp", &in, n);
+		sim_fd_set_dump("outp", &out, n);
+		sim_fd_set_dump("exp", &ex, n);
+
+		/* Read and dump 'sim_tv' */
+		memset(&sim_tv, 0, sizeof(sim_tv));
+		if (tvp)
+			mem_read(isa_mem, tvp, sizeof(sim_tv), &sim_tv);
+		syscall_debug("  tv:\n");
+		sim_timeval_debug(&sim_tv);
+
+		/* Blocking 'select' not supported yet */
+		if (sim_tv.tv_sec || sim_tv.tv_usec)
+			fatal("syscall 'select': not supported for 'tv' other than 0");
+
+		/* Host system call */
+		memset(&tv, 0, sizeof(tv));
+		RETVAL(select(n, &in, &out, &ex, &tv));
+		if (retval < 0)
+			break;
+
+		/* Write result */
+		sim_fd_set_write(inp, &in, n);
+		sim_fd_set_write(outp, &out, n);
+		sim_fd_set_write(exp, &ex, n);
 		break;
 	}
 
