@@ -379,6 +379,36 @@ static void syscall_copy_stat64(struct sim_stat64 *sim, struct stat *real)
 }
 
 
+/* For setitimer */
+
+static struct string_map_t itimer_map = {
+	3, {
+		{"ITIMER_REAL",		0},
+		{"ITIMER_VIRTUAL",	1},
+		{"ITIMER_PROF",		2}
+	}
+};
+
+struct sim_timeval {
+	uint32_t tv_sec;
+	uint32_t tv_usec;
+} __attribute__((packed));
+
+struct sim_itimerval {
+	struct sim_timeval it_interval;
+	struct sim_timeval it_value;
+} __attribute__((packed));
+
+void sim_itimerval_debug(struct sim_itimerval *sim_itimerval)
+{
+	syscall_debug("    it_interval: tv_sec=%u, tv_usec=%u\n",
+		sim_itimerval->it_interval.tv_sec, sim_itimerval->it_interval.tv_usec);
+	syscall_debug("    it_value: tv_sec=%u, tv_usec=%u\n",
+		sim_itimerval->it_value.tv_sec, sim_itimerval->it_value.tv_usec);
+}
+
+
+
 /* For uname */
 
 struct sim_utsname {
@@ -855,7 +885,7 @@ void syscall_do()
 		isa_ctx->wakeup_fd = guest_fd;
 		isa_ctx->wakeup_events = 1;  /* POLLIN */
 		ctx_set_status(isa_ctx, ctx_suspended | ctx_read);
-		ke_process_suspended_schedule();
+		ke_process_events_schedule();
 
 		free(buf);
 		break;
@@ -909,7 +939,7 @@ void syscall_do()
 		syscall_debug("  blocking write - process suspended\n");
 		isa_ctx->wakeup_fd = guest_fd;
 		ctx_set_status(isa_ctx, ctx_suspended | ctx_write);
-		ke_process_suspended_schedule();
+		ke_process_events_schedule();
 		free(buf);
 		break;
 	}
@@ -1766,6 +1796,44 @@ void syscall_do()
 	}
 
 
+	/* 104 */
+	case syscall_code_setitimer:
+	{
+		uint32_t which, pvalue, povalue;
+		struct sim_itimerval itimerval;
+		uint64_t now = ke_timer();
+
+		which = isa_regs->ebx;
+		pvalue = isa_regs->ecx;
+		povalue = isa_regs->edx;
+		syscall_debug("  which=%d (%s), pvalue=0x%x, povalue=0x%x\n",
+			which, map_value(&itimer_map, which), pvalue, povalue);
+
+		/* Read value */
+		if (pvalue) {
+			mem_read(isa_mem, pvalue, sizeof(itimerval), &itimerval);
+			syscall_debug("  itimerval at 'pvalue':\n");
+			sim_itimerval_debug(&itimerval);
+		}
+
+		/* Check range of 'which' */
+		if (which >= 3)
+			fatal("syscall 'setitimer': wrong value for 'which' argument");
+
+		/* Set 'itimer_value' (ke_timer domain) and 'itimer_interval' (usec) */
+		isa_ctx->itimer_value[which] = now + itimerval.it_value.tv_sec * 1000000
+			+ itimerval.it_value.tv_usec;
+		isa_ctx->itimer_interval[which] = itimerval.it_interval.tv_sec * 1000000
+			+ itimerval.it_interval.tv_usec;
+
+		/* New timer inserted, so interrupt current 'ke_host_thread_timer'
+		 * waiting for the next timer expiration. */
+		ctx_host_thread_timer_cancel(isa_ctx);
+		ke_process_events_schedule();
+		break;
+	}
+
+
 	/* 119 */
 	case syscall_code_sigreturn:
 	{
@@ -2243,7 +2311,7 @@ void syscall_do()
 
 		/* Suspend process */
 		ctx_set_status(isa_ctx, ctx_suspended | ctx_nanosleep);
-		ke_process_suspended_schedule();
+		ke_process_events_schedule();
 		break;
 	}
 
@@ -2391,7 +2459,7 @@ void syscall_do()
 		isa_ctx->wakeup_fd = guest_fd;
 		isa_ctx->wakeup_events = guest_fds.events;
 		ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
-		ke_process_suspended_schedule();
+		ke_process_events_schedule();
 		break;
 	}
 
@@ -2527,7 +2595,7 @@ void syscall_do()
 		isa_ctx->signal_masks->backup = isa_ctx->signal_masks->blocked;
 		isa_ctx->signal_masks->blocked = newset;
 		ctx_set_status(isa_ctx, ctx_suspended | ctx_sigsuspend);
-		ke_process_suspended_schedule();
+		ke_process_events_schedule();
 		signal_process(isa_ctx);
 		break;
 	}

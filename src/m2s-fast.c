@@ -148,8 +148,6 @@ int main(int argc, char **argv)
 		ld_load_prog_from_ctxconfig(ctxconfig);
 	if (argc > 1)
 		ld_load_prog_from_cmdline(argc - 1, argv + 1);
-	if (!ke->context_list_head)
-		fatal("no context loaded");
 	
 	/* Simulation loop */
 	signal(SIGINT, &sim_signal_handler);
