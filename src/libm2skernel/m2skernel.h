@@ -481,13 +481,24 @@ struct ctx_t {
 	/* For the OpenCL library access */
 	int libopencl_open_attempt;
 
-	/* This flag is set when a 'ke_process_suspended_thread' thread is launched
-	 * for this context (by caller), and unset when it finished (by thread). It
-	 * should be accessed safely by locking 'ke->process_suspended_mutex'. */
-	int process_suspended_thread_active;  /* flag */
-	pthread_t process_suspended_thread;  /* thread */
+	/* Host thread that suspends and then schedules call to 'ke_process_events'. */
+	/* The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
+	 * is launched for this context (by caller).
+	 * It is clear when the context finished (by the host thread).
+	 * It should be accessed safely by locking global mutex 'ke->process_events_mutex'. */
+	pthread_t host_thread_suspend;  /* Thread */
+	int host_thread_suspend_active;  /* Thread-spawned flag */
 
-	/* Variables used for waking up suspended contexts. */
+	/* Host thread that lets time elapse and schedules call to 'ke_process_events'. */
+	pthread_t host_thread_timer;  /* Thread */
+	int host_thread_timer_active;  /* Thread-spawned flag */
+	uint64_t host_thread_timer_wakeup;  /* Time when the thread will wake up */
+
+	/* Three timers used by 'setitimer' system call - real, virtual, and prof. */
+	uint64_t itimer_value[3];  /* Time when current occurrence of timer expires (0=inactive) */
+	uint64_t itimer_interval[3];  /* Interval (in usec) of repetition (0=inactive) */
+
+	/* Variables used to wake up suspended contexts. */
 	uint64_t wakeup_time;  /* ke_timer time to wake up (poll/nanosleep) */
 	int wakeup_fd;  /* File descriptor (read/write/poll) */
 	int wakeup_events;  /* Events for wake up (poll) */
@@ -538,7 +549,9 @@ struct ctx_t *ctx_clone(struct ctx_t *ctx);
 void ctx_free(struct ctx_t *ctx);
 void ctx_dump(struct ctx_t *ctx, FILE *f);
 
-void ctx_process_suspended_thread_cancel(struct ctx_t *ctx);
+void ctx_host_thread_suspend_cancel(struct ctx_t *ctx);
+void ctx_host_thread_timer_cancel(struct ctx_t *ctx);
+
 void ctx_finish(struct ctx_t *ctx, int status);
 void ctx_finish_group(struct ctx_t *ctx, int status);
 void ctx_execute_inst(struct ctx_t *ctx);
@@ -568,10 +581,11 @@ struct kernel_t {
 	int current_pid;
 	int current_mid;
 
-	/* Schedule next call to 'ke_process_suspended()'. The call will occur when 'process_suspended_force'
-	 * becomes true. This flag should be accessed safely using the mutex. */
-	pthread_mutex_t process_suspended_mutex;
-	int process_suspended_force;
+	/* Schedule next call to 'ke_process_events()'.
+	 * The call will only be effective if 'process_events_force' is set.
+	 * This flag should be accessed thread-safely locking 'process_events_mutex'. */
+	pthread_mutex_t process_events_mutex;
+	int process_events_force;
 
 	/* Counter of times that a context has been suspended in a
 	 * futex. Used for FIFO wakeups. */
@@ -620,8 +634,8 @@ void ke_run(void);
 void ke_dump(FILE *f);
 
 uint64_t ke_timer(void);
-void ke_process_suspended(void);
-void ke_process_suspended_schedule(void);
+void ke_process_events(void);
+void ke_process_events_schedule(void);
 
 
 
