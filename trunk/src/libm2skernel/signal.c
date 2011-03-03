@@ -282,8 +282,51 @@ void signal_handler_return(struct ctx_t *ctx)
 }
 
 
-/* Check if there is any pending unblocked signal, and run the corresponding
- * signal handler. */
+/* Check any pending signal, and run the corresponding signal handler by
+ * considering that the signal interrupted a system call ('syscall_intr').
+ * This has the following implication on the return address from the signal
+ * handler:
+ *   -If flag 'SA_RESTART' is set for the handler, the return address is the
+ *    system call itself, which must be repeated.
+ *   -If flag 'SA_RESTART' is not set, the return address is the instruction
+ *    next to the system call, and register 'eax' is set to -EINTR. */
+void signal_handler_check_intr(struct ctx_t *ctx)
+{
+	int sig;
+
+	/* Context cannot be running a signal handler */
+	/* A signal must be pending and unblocked */
+	assert(!ctx_get_status(ctx, ctx_handler));
+	assert(ctx->signal_masks->pending & ~ctx->signal_masks->blocked);
+
+	/* Get signal number */
+	for (sig = 1; sig <= 64; sig++)
+		if (sim_sigset_member(&ctx->signal_masks->pending, sig) &&
+			!sim_sigset_member(&ctx->signal_masks->blocked, sig))
+			break;
+	assert(sig <= 64);
+
+	/* If signal handling uses 'SA_RESTART' flag, set return address to
+	 * system call. */
+	if (ctx->signal_handlers->sigaction[sig - 1].flags & 0x10000000u)
+	{
+		unsigned char buf[2];
+		ctx->regs->eip -= 2;
+		mem_read(ctx->mem, ctx->regs->eip, 2, buf);
+		assert(buf[0] == 0xcd && buf[1] == 0x80);  /* 'int 0x80' */
+	} else {
+		
+		/* Otherwise, return -EINTR */
+		ctx->regs->eax = -EINTR;
+	}
+
+	/* Run the signal handler */
+	signal_handler_run(ctx, sig);
+	sim_sigset_del(&ctx->signal_masks->pending, sig);
+
+}
+
+
 void signal_handler_check(struct ctx_t *ctx)
 {
 	int sig;
@@ -308,4 +351,5 @@ void signal_handler_check(struct ctx_t *ctx)
 		}
 	}
 }
+
 
