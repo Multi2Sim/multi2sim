@@ -831,4 +831,8 @@
 2011-02-04
 	* src/issue.c: bug fixed in function 'check_if_ready', which caused different performance
 		results for experiments using option '-debug:pipeline'.
+	* src/commit.c: checking 'ready' property for stores moved here, since this is the point
+		when stores are still in the ROB. In issue, they might be already out, and calls
+		to 'rf_ready' will provide inconsistent results.
+
 

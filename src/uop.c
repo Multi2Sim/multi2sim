@@ -401,6 +401,25 @@ void uop_lnlist_dump(struct lnlist_t *uop_list, FILE *f)
 }
 
 
+/* Update 'uop->ready' field of all instructions in a list as per the result
+ * obtained by 'rf_ready'. The 'uop->ready' field is redundant and should always
+ * match the return value of 'rf_ready' while an uop is in the ROB.
+ * A debug message is dumped when the uop transitions to ready. */
+void uop_lnlist_check_if_ready(struct lnlist_t *uop_list)
+{
+	struct uop_t *uop;
+	lnlist_head(uop_list);
+	for (lnlist_head(uop_list); !lnlist_eol(uop_list); lnlist_next(uop_list)) {
+		uop = lnlist_get(uop_list);
+		if (uop->ready || !rf_ready(uop))
+			continue;
+		uop->ready = 1;
+		esim_debug("uop action=\"update\", core=%d, seq=%lld, ready=1\n",
+			uop->core, (long long) uop->di_seq);
+	}
+}
+
+
 /* Decode the macroinstruction currently stored in 'isa_inst', and insert
  * uops into 'list'. If any decoded microinstruction is a control instruction,
  * return it, otherwise return the first decoded uop. */
