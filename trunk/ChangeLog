@@ -828,5 +828,7 @@
 	* src/libm2skernel/syscall.c: system call 'ioctl' updated for ioctl codes using the
 		'struct termios' argument.
 
-
+2011-02-04
+	* src/issue.c: bug fixed in function 'check_if_ready', which caused different performance
+		results for experiments using option '-debug:pipeline'.
 
