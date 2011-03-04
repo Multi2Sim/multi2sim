@@ -320,6 +320,7 @@ void uop_done(void);
 
 void uop_list_dump(struct list_t *uop_list, FILE *f);
 void uop_lnlist_dump(struct lnlist_t *uop_list, FILE *f);
+void uop_lnlist_check_if_ready(struct lnlist_t *uop_list);
 struct uop_t *uop_decode(struct list_t *list);
 
 void uop_free_if_not_queued(struct uop_t *uop);

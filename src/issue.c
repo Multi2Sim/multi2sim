@@ -19,28 +19,11 @@
 
 #include <m2s.h>
 
-static void check_if_ready(struct lnlist_t *list)
-{
-	struct uop_t *uop;
-	lnlist_head(list);
-	for (lnlist_head(list); !lnlist_eol(list); lnlist_next(list)) {
-		uop = lnlist_get(list);
-		if (uop->ready || !rf_ready(uop))
-			continue;
-		esim_debug("uop action=\"update\", core=%d, seq=%lld, ready=1\n",
-			uop->core, (long long) uop->di_seq);
-	}
-}
-
 
 static int issue_sq(int core, int thread, int quant)
 {
 	struct uop_t *store;
 	struct lnlist_t *sq = THREAD.sq;
-
-	/* Debug */
-	if (esim_debug_file)
-		check_if_ready(sq);
 
 	/* Process SQ */
 	lnlist_head(sq);
@@ -51,9 +34,6 @@ static int issue_sq(int core, int thread, int quant)
 		assert(store->flags & FSTORE);
 
 		/* Check that it can issue */
-		if (!store->ready && !rf_ready(store))
-			break;
-		store->ready = 1;
 		if (store->in_rob)
 			break;
 		if (!cache_system_can_access(core, thread, cache_kind_data,
@@ -100,7 +80,7 @@ static int issue_lq(int core, int thread, int quant)
 
 	/* Debug */
 	if (esim_debug_file)
-		check_if_ready(lq);
+		uop_lnlist_check_if_ready(lq);
 	
 	/* Process lq */
 	lnlist_head(lq);
@@ -164,7 +144,7 @@ static int issue_iq(int core, int thread, int quant)
 
 	/* Debug */
 	if (esim_debug_file)
-		check_if_ready(iq);
+		uop_lnlist_check_if_ready(iq);
 	
 	/* Find instruction to issue */
 	lnlist_head(iq);
