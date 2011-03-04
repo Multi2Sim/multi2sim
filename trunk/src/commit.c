@@ -33,7 +33,7 @@ static int can_commit_thread(int core, int thread)
 		panic("c%dt%d: no inst committed in 1M cycles", core, thread);
 
 	/* If there is no instruction in the ROB, or the instruction is not
-	 * located at the ROB head in shared approeaches, end. */
+	 * located at the ROB head in shared approaches, end. */
 	if (!rob_can_dequeue(core, thread))
 		return 0;
 
@@ -42,14 +42,16 @@ static int can_commit_thread(int core, int thread)
 	assert(uop_exists(uop));
 	assert(uop->core == core && uop->thread == thread);
 
-	/* Check if it can be committed */
-	if (!(uop->flags & FMEM) || (uop->flags & FLOAD))
-		return uop->completed;
-	if (uop->flags & FSTORE)
+	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
+	 * if the call to 'rf_ready' shows input registers to be ready. */
+	if (uop->flags & FSTORE) {
+		if (!uop->ready && rf_ready(uop))
+			uop->ready = 1;
 		return uop->ready;
-	panic("can_commit_thread: shouln't get here");
-	return 1;
-
+	}
+	
+	/* Instructions other than stores must be completed. */
+	return uop->completed;
 }
 
 
@@ -58,6 +60,10 @@ static void commit_thread(int core, int thread, int quant)
 	struct ctx_t *ctx = THREAD.ctx;
 	struct uop_t *uop;
 	int recover = 0;
+
+	/* Update pipeline debugger with ready stores */
+	if (esim_debug_file)
+		uop_lnlist_check_if_ready(THREAD.sq);
 	
 	/* Commit stage for thread */
 	assert(ctx);
