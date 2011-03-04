@@ -825,5 +825,8 @@
 	* src/libm2skernel/syscall.c: system calls 'setitimer', 'getitimer' implemented.
 	* src/libm2skernel/syscall.c: system call 'select' implemented (for tv = 0).
 	* src/libm2skernel/signal.c: flag 'SA_RESTART' for sigaction restarting system calls.
+	* src/libm2skernel/syscall.c: system call 'ioctl' updated for ioctl codes using the
+		'struct termios' argument.
+
 
 

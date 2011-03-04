@@ -200,40 +200,6 @@ static void syscall_utime_sim_to_read(struct utimbuf *real, struct sim_utimbuf *
 }
 
 
-
-/* For ioctl */
-
-struct sim_termio {
-	uint16_t iflag;
-	uint16_t oflag;
-	uint16_t cflag;
-	uint16_t lflag;
-	unsigned char line;
-	unsigned char __pad;
-	unsigned char cc[8];
-} __attribute__((packed));
-
-static void syscall_termio_sim_to_real(struct termio *real, struct sim_termio *sim)
-{
-	real->c_iflag = sim->iflag;
-	real->c_oflag = sim->oflag;
-	real->c_cflag = sim->cflag;
-	real->c_lflag = sim->lflag;
-	memcpy(&real->c_line, &sim->line,
-		MIN(sizeof(real->c_line), sizeof(sim->line)));
-}
-
-static void syscall_termio_real_to_sim(struct sim_termio *sim, struct termio *real)
-{
-	sim->iflag = real->c_iflag;
-	sim->oflag = real->c_oflag;
-	sim->cflag = real->c_cflag;
-	sim->lflag = real->c_lflag;
-	memcpy(&sim->line, &real->c_line,
-		MIN(sizeof(real->c_line), sizeof(sim->line)));
-}
-
-
 /* For 'fcntl' */
 
 struct string_map_t fcntl_cmd_map = {
@@ -1491,6 +1457,12 @@ void syscall_do()
 
 
 	/* 54 */
+	/* An 'ioctl' code (first argument) is a 32-bit word split into 4 fields:
+	 *   -NR [7..0]: ioctl code number.
+	 *   -TYPE [15..8]: ioctl category.
+	 *   -SIZE [29..16]: size of the structure passed as 2nd argument.
+	 *   -DIR [31..30]: direction (01=Write, 10=Read, 11=R/W).
+	 */
 	case syscall_code_ioctl:
 	{
 		uint32_t cmd, arg;
@@ -1511,17 +1483,18 @@ void syscall_do()
 		}
 
 		/* Process IOCTL */
-		if (cmd == 0x5401 || cmd == 0x5405) {
-			struct sim_termio sim_termio;
-			struct termio termio;
+		if (cmd >= 0x5401 || cmd <= 0x5408) {
+			
+			/* 'ioctl' commands using 'struct termios' as the argument.
+			 * This structure is 60 bytes long both for x86 and x86_64
+			 * architectures, so it doesn't vary between guest/host.
+			 * No translation needed, so just use a 60-byte I/O buffer. */
+			unsigned char buf[60];
 
-			mem_read(isa_mem, arg, sizeof(sim_termio), &sim_termio);
-			syscall_termio_sim_to_real(&termio, &sim_termio);
-			RETVAL(ioctl(fd->host_fd, cmd, &termio));
-			if (!retval) {
-				syscall_termio_real_to_sim(&sim_termio, &termio);
-				mem_write(isa_mem, arg, sizeof(sim_termio), &sim_termio);
-			}
+			mem_read(isa_mem, arg, sizeof(buf), buf);
+			RETVAL(ioctl(fd->host_fd, cmd, &buf));
+			if (!retval)
+				mem_write(isa_mem, arg, sizeof(buf), buf);
 		
 		} else
 			fatal("syscall ioctl: cmd = 0x%x not implemented", cmd);
