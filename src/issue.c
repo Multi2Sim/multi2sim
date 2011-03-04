@@ -25,12 +25,10 @@ static void check_if_ready(struct lnlist_t *list)
 	lnlist_head(list);
 	for (lnlist_head(list); !lnlist_eol(list); lnlist_next(list)) {
 		uop = lnlist_get(list);
-		if (!rf_ready(uop))
+		if (uop->ready || !rf_ready(uop))
 			continue;
-		if (!uop->ready)
-			esim_debug("uop action=\"update\", core=%d, seq=%lld, ready=1\n",
-				uop->core, (long long) uop->di_seq);
-		uop->ready = 1;
+		esim_debug("uop action=\"update\", core=%d, seq=%lld, ready=1\n",
+			uop->core, (long long) uop->di_seq);
 	}
 }
 
