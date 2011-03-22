@@ -835,4 +835,6 @@
 		when stores are still in the ROB. In issue, they might be already out, and calls
 		to 'rf_ready' will provide inconsistent results.
 
+2011-03-22
+	* src/libgpukernel: support added for more OpenCL benchmarks.
 

@@ -523,7 +523,7 @@ DEFINST(SETGE_INT,
 )
 
 DEFINST(SETNE_INT,
-	"%name",
+	"SETNE_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 61,
 	AMD_INST_FLAG_DST_INT
@@ -656,7 +656,7 @@ DEFINST(PRED_SETLE_PUSH_INT,
 )
 
 DEFINST(FLT_TO_INT,
-	"%name",
+	"F_TO_I      %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 80,
 	AMD_INST_FLAG_TRANS_ONLY
@@ -894,21 +894,21 @@ DEFINST(SQRT_64,
 )
 
 DEFINST(FLT_TO_UINT,
-	"%name",
+	"F_TO_U      %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 154,
 	AMD_INST_FLAG_TRANS_ONLY
 )
 
 DEFINST(INT_TO_FLT,
-	"%name",
+	"I_TO_F      %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 155,
 	AMD_INST_FLAG_TRANS_ONLY
 )
 
 DEFINST(UINT_TO_FLT,
-	"%name",
+	"U_TO_F      %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 156,
 	AMD_INST_FLAG_TRANS_ONLY

@@ -439,26 +439,52 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t size = args[2];  /* size_t size */
 		uint32_t host_ptr = args[3];  /* void *host_ptr */
 		uint32_t errcode_ret = args[4];  /* cl_int *errcode_ret */
+		void *buf;
+
+		char sflags[MAX_STRING_SIZE];
+		static struct string_map_t create_buffer_flags_map = { 4, {
+			{ "CL_MEM_READ_WRITE", 0x1 },
+			{ "CL_MEM_WRITE_ONLY", 0x2 },
+			{ "CL_MEM_READ_ONLY", 0x4 },
+			{ "CL_MEM_USE_HOST_PTR", 0x8 },
+			{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
+			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
+		}};
 
 		struct opencl_mem_t *mem;
 
-		opencl_debug("  context=0x%x, flags=0x%x, size=%d, host_ptr=0x%x, errcode_ret=0x%x\n",
-			context_id, flags, size, host_ptr, errcode_ret);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(host_ptr, 0);
+		map_flags(&create_buffer_flags_map, flags, sflags, sizeof(sflags));
+		opencl_debug("  context=0x%x, flags=%s, size=%d, host_ptr=0x%x, errcode_ret=0x%x\n",
+			context_id, sflags, size, host_ptr, errcode_ret);
 
 		/* Check flags */
-		OPENCL_PARAM_NOT_SUPPORTED_FLAG(flags, 0x08, "CL_MEM_USE_HOST_PTR");
 		OPENCL_PARAM_NOT_SUPPORTED_FLAG(flags, 0x10, "CL_MEM_ALLOC_HOST_PTR");
-		OPENCL_PARAM_NOT_SUPPORTED_FLAG(flags, 0x20, "CL_MEM_COPY_HOST_PTR");
+		if ((flags & 0x8) && !host_ptr)  /* CL_MEM_USE_HOST_PTR */
+			fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
+				err_prefix, err_opencl_param_note);
+		if ((flags & 0x20) && !host_ptr)  /* CL_MEM_COPY_HOST_PTR */
+			fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
+				err_prefix, err_opencl_param_note);
 
 		/* Create memory object */
 		mem = opencl_mem_create();
 		mem->size = size;
 		mem->flags = flags;
+		mem->host_ptr = host_ptr;
 
 		/* Assign position in device global memory */
 		mem->device_ptr = gk->global_mem_top;
 		gk->global_mem_top += size;
+
+		/* If 'host_ptr' was specified, copy buffer into device memory */
+		if (host_ptr) {
+			buf = malloc(size);
+			if (!buf)
+				fatal("%s: out of memory", err_prefix);
+			mem_read(isa_mem, host_ptr, size, buf);
+			mem_write(gk->global_mem, mem->device_ptr, size, buf);
+			free(buf);
+		}
 
 		/* Return memory object */
 		retval = mem->id;
@@ -890,21 +916,21 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t ptr = args[5];  /* const void *ptr */
 		uint32_t num_events_in_wait_list = args[6];  /* cl_uint num_events_in_wait_list */
 		uint32_t event_wait_list = args[7];  /* const cl_event *event_wait_list */
-		uint32_t event = args[8];  /* cl_event *event */
+		uint32_t event_ptr = args[8];  /* cl_event *event */
 
 		struct opencl_mem_t *mem;
+		struct opencl_event_t *event;
 		void *buf;
 
 		opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_write=0x%x,\n"
 			"  offset=0x%x, cb=0x%x, ptr=0x%x, num_events_in_wait_list=0x%x,\n"
 			"  event_wait_list=0x%x, event=0x%x\n",
 			command_queue, buffer, blocking_write, offset, cb,
-			ptr, num_events_in_wait_list, event_wait_list, event);
+			ptr, num_events_in_wait_list, event_wait_list, event_ptr);
 
 		/* FIXME: 'blocking_write' ignored */
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event, 0);
 
 		/* Get memory object */
 		mem = opencl_object_get(OPENCL_OBJ_MEM, buffer);
@@ -920,7 +946,17 @@ int opencl_func_run(int code, unsigned int *args)
 		mem_write(gk->global_mem, mem->device_ptr + offset, cb, buf);
 		free(buf);
 
-		/* FIXME: Event */
+		/* Event */
+		if (event_ptr) {
+			event = opencl_event_create(OPENCL_EVENT_MAP_BUFFER);
+			event->status = OPENCL_EVENT_STATUS_COMPLETE;
+			event->time_queued = opencl_event_timer();
+			event->time_submit = opencl_event_timer();
+			event->time_start = opencl_event_timer();
+			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
+			mem_write(isa_mem, event_ptr, 4, &event->id);
+			opencl_debug("    event: 0x%x\n", event->id);
+		}
 
 		/* Return success */
 		opencl_debug("    %d bytes copied from host memory (0x%x) to device memory (0x%x)\n",

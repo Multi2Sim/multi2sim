@@ -748,9 +748,27 @@ void amd_inst_SETGE_INT_impl() {
 }
 
 
-void amd_inst_SETNE_INT_impl() {
-	NOT_IMPL();
+#define W0 gpu_isa_inst->words[0].alu_word0
+#define W1 gpu_isa_inst->words[1].alu_word1_op2
+void amd_inst_SETNE_INT_impl()
+{
+	int32_t src0, src1;
+	int32_t dst;
+	int cond;
+
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
+
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	cond = src0 != src1;
+	dst = cond ? -1 : 0;
+	gpu_isa_enqueue_write_dest(dst);
 }
+#undef W0
+#undef W1
+
+
 
 
 #define W0 gpu_isa_inst->words[0].alu_word0
@@ -852,7 +870,7 @@ void amd_inst_PRED_SETGT_INT_impl()
 
 	src0 = gpu_isa_read_op_src(0);
 	src1 = gpu_isa_read_op_src(1);
-	cond = src0 >= src1;
+	cond = src0 > src1;
 	dst = cond ? 0.0f : 1.0f;
 	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
 
@@ -1147,14 +1165,34 @@ void amd_inst_FLT_TO_UINT_impl() {
 }
 
 
-void amd_inst_INT_TO_FLT_impl() {
-	NOT_IMPL();
+#define W0 gpu_isa_inst->words[0].alu_word0
+#define W1 gpu_isa_inst->words[1].alu_word1_op2
+void amd_inst_INT_TO_FLT_impl()
+{
+	int32_t src0;
+	float dst;
+
+	src0 = gpu_isa_read_op_src(0);
+	dst = (float) src0;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
+#undef W0
+#undef W1
 
 
-void amd_inst_UINT_TO_FLT_impl() {
-	NOT_IMPL();
+#define W0 gpu_isa_inst->words[0].alu_word0
+#define W1 gpu_isa_inst->words[1].alu_word1_op2
+void amd_inst_UINT_TO_FLT_impl()
+{
+	uint32_t src0;
+	float dst;
+
+	src0 = gpu_isa_read_op_src(0);
+	dst = (float) src0;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
+#undef W0
+#undef W1
 
 
 void amd_inst_BFM_INT_impl() {
@@ -1556,8 +1594,7 @@ void amd_inst_LDS_IDX_OP_impl()
 		GPU_PARAM_NOT_SUPPORTED_NEQ(idx_offset, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_chan, 0);
 		/* FIXME: dst_chan? Does address need to be multiplied? */
-		mem_write(local_mem, op0, 4, &op1);
-		//printf("thread %d: local_mem: write to 0x%x -> %d\n", gpu_isa_thread->global_id, op0, op1); ////
+		gpu_isa_enqueue_write_lds(op0, op1);
 		break;
 	}
 
@@ -1577,9 +1614,8 @@ void amd_inst_LDS_IDX_OP_impl()
 
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_chan, 0);
-		mem_write(local_mem, dst, 4, &src0);
-		mem_write(local_mem, tmp, 4, &src1);  /* FIXME: correct? */
-		//printf("thread %d: local_mem: write to 0x%x, 0x%x -> %f, %f\n", gpu_isa_thread->global_id, dst, tmp, * (float *) &src0, * (float *) &src1); ////
+		gpu_isa_enqueue_write_lds(dst, src0);
+		gpu_isa_enqueue_write_lds(tmp, src1);  /* FIXME: correct? */
 		break;
 	}
 
@@ -1592,7 +1628,7 @@ void amd_inst_LDS_IDX_OP_impl()
 		pvalue = malloc(4);
 		mem_read(local_mem, op0, 4, pvalue);
 		list_enqueue(gpu_isa_thread->lds_oqa, pvalue);
-		//printf("thread %d: local_mem: write from 0x%x -> %d\n", gpu_isa_thread->global_id, op0, *pvalue); ///
+		gpu_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA", GPU_THR.global_id, op0, *pvalue, * (float *) pvalue);
 		break;
 	}
 
@@ -1779,7 +1815,7 @@ void amd_inst_FETCH_impl()
 		mem_read(gk->global_mem, addr + W2.offset, 4, &value);
 		gpu_isa_write_gpr(W1.dst_gpr, W1.dst_rel, 0, value);
 		if (debug_status(gpu_isa_debug_category)) {
-			gpu_isa_debug("=%d=>", value);
+			gpu_isa_debug("=(%d,%gf)=>", value, * (float *) &value);
 			amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, 0, 0, debug_file(gpu_isa_debug_category));
 		}
 		break;

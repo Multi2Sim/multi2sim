@@ -695,6 +695,27 @@ float gpu_isa_read_op_src_float(int src_idx)
  * Deferred tasks for ALU group
  */
 
+
+void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value)
+{
+	struct gpu_isa_write_task_t *wt;
+
+	/* Inactive pixel not enqueued */
+	if (!gpu_thread_get_pred(gpu_isa_thread))
+		return;
+	
+	/* Create task */
+	wt = repos_create_object(gpu_isa_write_task_repos);
+	wt->kind = GPU_ISA_WRITE_TASK_WRITE_LDS;
+	wt->inst = gpu_isa_inst;
+	wt->lds_addr = addr;
+	wt->lds_value = value;
+
+	/* Enqueue task */
+	lnlist_add(GPU_THR.write_task_list, wt);
+}
+
+
 /* Write to destination operand in ALU instruction */
 void gpu_isa_enqueue_write_dest(uint32_t value)
 {
@@ -775,33 +796,56 @@ void gpu_isa_write_task_commit(void)
 	struct lnlist_t *task_list = GPU_THR.write_task_list;
 	struct gpu_isa_write_task_t *wt;
 
-	/* Process first WRITE_DEST tasks */
-	for (lnlist_head(task_list); !lnlist_eol(task_list); ) {
-		
-		/* Get task - skip if not WRITE_DEST */
+	/* Process first tasks of type:
+	 *  - GPU_ISA_WRITE_TASK_WRITE_DEST
+	 *  - GPU_ISA_WRITE_TASK_WRITE_LDS
+	 */
+	for (lnlist_head(task_list); !lnlist_eol(task_list); )
+	{
+
+		/* Get task */
 		wt = lnlist_get(task_list);
 		gpu_isa_inst = wt->inst;
-		if (wt->kind != GPU_ISA_WRITE_TASK_WRITE_DEST) {
-			lnlist_next(task_list);
-			continue;
+
+		switch (wt->kind) {
+		
+		case GPU_ISA_WRITE_TASK_WRITE_DEST:
+		{
+			if (wt->write_mask)
+				gpu_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
+			GPU_THR.pv.elem[wt->inst->alu] = wt->value;
+
+			/* Debug */
+			if (gpu_isa_debugging()) {
+				gpu_isa_debug("  t%d:PV.%s", gpu_isa_thread->global_id,
+					map_value(&amd_alu_map, wt->inst->alu));
+				if (wt->write_mask) {
+					gpu_isa_debug(",");
+					amd_inst_dump_gpr(wt->gpr, wt->rel, wt->chan, 0,
+						debug_file(gpu_isa_debug_category));
+				}
+				gpu_isa_debug("<=");
+				gpu_isa_dest_value_dump(&wt->value, debug_file(gpu_isa_debug_category));
+			}
+
+			break;
 		}
 
-		/* Process */
-		if (wt->write_mask)
-			gpu_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
-		GPU_THR.pv.elem[wt->inst->alu] = wt->value;
+		case GPU_ISA_WRITE_TASK_WRITE_LDS:
+		{
+			struct mem_t *local_mem;
 
-		/* Debug */
-		if (gpu_isa_debugging()) {
-			gpu_isa_debug("  t%d:PV.%s", gpu_isa_thread->global_id,
-				map_value(&amd_alu_map, wt->inst->alu));
-			if (wt->write_mask) {
-				gpu_isa_debug(",");
-				amd_inst_dump_gpr(wt->gpr, wt->rel, wt->chan, 0,
-					debug_file(gpu_isa_debug_category));
-			}
-			gpu_isa_debug("<=");
-			gpu_isa_dest_value_dump(&wt->value, debug_file(gpu_isa_debug_category));
+			local_mem = gk->local_mem[gpu_isa_thread->group_id];
+			assert(local_mem);
+			mem_write(local_mem, wt->lds_addr, 4, &wt->lds_value);
+			gpu_isa_debug("  t%d:LDS[0x%x]<=(%u,%gf)", GPU_THR.global_id, wt->lds_addr,
+				wt->lds_value, * (float *) &wt->lds_value);
+			break;
+		}
+
+		default:
+			lnlist_next(task_list);
+			continue;
 		}
 
 		/* Done with this task */
