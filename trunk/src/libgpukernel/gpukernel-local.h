@@ -285,6 +285,7 @@ struct opencl_mem_t
 
 	uint32_t size;
 	uint32_t flags;
+	uint32_t host_ptr;
 
 	uint32_t device_ptr;  /* Position assigned in device global memory */
 };
@@ -357,6 +358,7 @@ uint64_t opencl_event_timer(void);
 
 enum gpu_isa_write_task_kind_enum {
 	GPU_ISA_WRITE_TASK_NONE = 0,
+	GPU_ISA_WRITE_TASK_WRITE_LDS,
 	GPU_ISA_WRITE_TASK_WRITE_DEST,
 	GPU_ISA_WRITE_TASK_PUSH_BEFORE,
 	GPU_ISA_WRITE_TASK_SET_PRED
@@ -369,11 +371,15 @@ struct gpu_isa_write_task_t {
 	enum gpu_isa_write_task_kind_enum kind;
 	struct amd_inst_t *inst;
 	
-	/* WRITE_DEST */
+	/* When 'kind' == GPU_ISA_WRITE_TASK_WRITE_DEST */
 	int gpr, rel, chan, index_mode, write_mask;
 	uint32_t value;
 
-	/* PRED_SET */
+	/* When 'kind' == GPU_ISA_WRITE_TASK_WRITE_LDS */
+	uint32_t lds_addr;
+	uint32_t lds_value;
+
+	/* When 'kind' == GPU_ISA_WRITE_TASK_PRED_SET */
 	int cond;
 };
 
@@ -383,6 +389,7 @@ extern struct repos_t *gpu_isa_write_task_repos;
 
 
 /* Functions to handle deferred tasks */
+void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value);
 void gpu_isa_enqueue_write_dest(uint32_t value);
 void gpu_isa_enqueue_write_dest_float(float value);
 void gpu_isa_enqueue_push_before(void);
