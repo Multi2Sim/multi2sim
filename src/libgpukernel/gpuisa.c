@@ -215,10 +215,10 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	program = opencl_object_get(OPENCL_OBJ_PROGRAM, kernel->program_id);
 
 	/* Create one warp where all threads belong */
-	gpu_isa_warp = gpu_warp_create(kernel->global_size, 0);
+	gpu_isa_threads = calloc(kernel->global_size, sizeof(void *));
+	gpu_isa_warp = gpu_warp_create(gpu_isa_threads, kernel->global_size, 0);
 
 	/* Create threads */
-	gpu_isa_threads = calloc(kernel->global_size, sizeof(void *));
 	for (x = 0; x < kernel->global_size3[0]; x++) {
 		for (y = 0; y < kernel->global_size3[1]; y++) {
 			for (z = 0; z < kernel->global_size3[2]; z++) {
@@ -362,6 +362,20 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			gpu_isa_cf_inst = &cf_inst;
 			gpu_isa_thread = NULL;
 			(*amd_inst_impl[gpu_isa_inst->info->inst])();
+
+			/* If instruction updates the thread's active mask, update digests */
+			if (gpu_isa_inst->info->flags & AMD_INST_FLAG_ACT_MASK) {
+				for (global_id = gpu_isa_warp->global_id; global_id < gpu_isa_warp->global_id +
+					gpu_isa_warp->thread_count; global_id++)
+				{
+					gpu_isa_thread = gpu_isa_threads[global_id];
+					gpu_thread_update_branch_digest(gpu_isa_thread, gpu_isa_warp->cf_inst_count, inst_num);
+				}
+			}
+
+			/* Stats */
+			gpu_isa_warp->cf_inst_count++;
+
 			break;
 		}
 
@@ -391,6 +405,18 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 				}
 				gpu_isa_write_task_commit();
 			}
+			
+			/* Stats */
+			gpu_isa_warp->alu_group_count++;
+			gpu_isa_warp->alu_inst_count += gpu_isa_alu_group->inst_count;
+
+			/* End of clause reached */
+			assert(gpu_isa_warp->clause_buf <= gpu_isa_warp->clause_buf_end);
+			if (gpu_isa_warp->clause_buf >= gpu_isa_warp->clause_buf_end) {
+				gpu_isa_alu_clause_end();
+				gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
+			}
+
 			break;
 		}
 
@@ -414,6 +440,17 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 				gpu_isa_thread = gpu_isa_threads[global_id];
 				(*amd_inst_impl[gpu_isa_inst->info->inst])();
 			}
+
+			/* Stats */
+			gpu_isa_warp->tc_inst_count++;
+
+			/* End of clause reached */
+			assert(gpu_isa_warp->clause_buf <= gpu_isa_warp->clause_buf_end);
+			if (gpu_isa_warp->clause_buf == gpu_isa_warp->clause_buf_end) {
+				gpu_isa_tc_clause_end();
+				gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
+			}
+
 			break;
 		}
 
@@ -421,17 +458,10 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			abort();
 		}
 
-		/* If clause end reached, return to CF program */
-		if (gpu_isa_warp->clause_kind != GPU_CLAUSE_CF) {
-			if (gpu_isa_warp->clause_buf > gpu_isa_warp->clause_buf_end)
-				fatal("%s: end of clause exceeded", gpu_isa_warp->name);
-			if (gpu_isa_warp->clause_buf == gpu_isa_warp->clause_buf_end) {
-				if (gpu_isa_warp->clause_kind == GPU_CLAUSE_ALU)
-					gpu_isa_alu_clause_end();
-				gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
-			}
-		}
 	}
+
+	/* Dump warp report */
+	gpu_warp_dump(gpu_isa_warp, gk_report_file);
 
 	/* Free threads */
 	for (i = 0; i < kernel->global_size; i++)
@@ -466,6 +496,9 @@ void gpu_isa_alu_clause_start()
 
 	/* Flag 'push_before_done' will be set by the first PRED_SET* inst */
 	gpu_isa_warp->push_before_done = 0;
+
+	/* Stats */
+	gpu_isa_warp->alu_clause_count++;
 }
 
 
@@ -475,6 +508,26 @@ void gpu_isa_alu_clause_end()
 	/* If CF inst was ALU_POP_AFTER, pop the stack */
 	if (gpu_isa_cf_inst->info->inst == AMD_INST_ALU_POP_AFTER)
 		gpu_warp_stack_pop(gpu_isa_warp, 1);
+}
+
+
+
+
+/*
+ * TEX Clauses
+ */
+
+/* Called before and TEX clause starts in warp */
+void gpu_isa_tc_clause_start()
+{
+	/* Stats */
+	gpu_isa_warp->tc_clause_count++;
+}
+
+
+/* Called after a TEX clause completed in a warp */
+void gpu_isa_tc_clause_end()
+{
 }
 
 

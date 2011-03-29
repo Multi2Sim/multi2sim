@@ -31,6 +31,8 @@
 
 struct gk_t *gk;
 char *gk_opencl_binary_name = "";
+char *gk_report_file_name = "";
+FILE *gk_report_file = NULL;
 
 
 
@@ -42,6 +44,13 @@ void gk_init()
 	/* Debug categories */
 	opencl_debug_category = debug_new_category();
 	gpu_isa_debug_category = debug_new_category();
+
+	/* Open report file */
+	if (gk_report_file_name[0]) {
+		gk_report_file = open_write(gk_report_file_name);
+		if (!gk_report_file)
+			fatal("%s: cannot open GPU report file ", gk_report_file_name);
+	}
 
 	/* Initialize kernel */
 	gk = calloc(1, sizeof(struct gk_t));
@@ -66,6 +75,11 @@ void gk_init()
 /* Finalize GPU kernel */
 void gk_done()
 {
+	/* GPU report */
+	if (gk_report_file)
+		fclose(gk_report_file);
+
+	/* Free OpenCL objects */
 	opencl_object_free_all();
 	lnlist_free(opencl_object_list);
 
@@ -87,6 +101,8 @@ void gk_reg_options()
 {
 	opt_reg_string("-opencl:binary", "Pre-compiled binary for OpenCL applications",
 		&gk_opencl_binary_name);
+	opt_reg_string("-report:gpu", "Report for GPU statistics",
+		&gk_report_file_name);
 }
 
 
@@ -157,12 +173,18 @@ void gk_libopencl_failed(int pid)
  * GPU Warp
  */
 
-struct gpu_warp_t *gpu_warp_create(int thread_count, int global_id)
+static uint64_t warp_id;
+
+
+struct gpu_warp_t *gpu_warp_create(struct gpu_thread_t **threads, int thread_count, int global_id)
 {
 	struct gpu_warp_t *warp;
 	warp = calloc(1, sizeof(struct gpu_warp_t));
+	warp->threads = threads;
 	warp->thread_count = thread_count;
 	warp->global_id = global_id;
+	warp->warp_id = warp_id++;
+
 	warp->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * thread_count);
 	warp->pred = bit_map_create(thread_count);
 	snprintf(warp->name, sizeof(warp->name), "warp[%d-%d]",
@@ -171,8 +193,46 @@ struct gpu_warp_t *gpu_warp_create(int thread_count, int global_id)
 }
 
 
+void gpu_warp_dump(struct gpu_warp_t *warp, FILE *f)
+{
+	struct gpu_thread_t *thread;
+	int i;
+
+	if (!f)
+		return;
+	
+	/* Dump warp statistics in GPU report */
+	fprintf(f, "[ Warp %lld ]\n\n", (long long) warp->warp_id);
+
+	fprintf(f, "Name = %s\n", warp->name);
+	fprintf(f, "Global_Id = %d\n", warp->global_id);
+	fprintf(f, "\n");
+
+	fprintf(f, "CF_Inst_Count = %lld\n", (long long) warp->cf_inst_count);
+	fprintf(f, "\n");
+
+	fprintf(f, "ALU_Clause_Count = %lld\n", (long long) warp->alu_clause_count);
+	fprintf(f, "ALU_Group_Count = %lld\n", (long long) warp->alu_group_count);
+	fprintf(f, "ALU_Inst_Count = %lld\n", (long long) warp->alu_inst_count);
+	fprintf(f, "\n");
+
+	fprintf(f, "TC_Clause_Count = %lld\n", (long long) warp->tc_clause_count);
+	fprintf(f, "TC_Inst_Count = %lld\n", (long long) warp->tc_inst_count);
+	fprintf(f, "\n");
+
+	/* Thread digests */
+	for (i = 0; i < warp->thread_count; i++) {
+		thread = warp->threads[i];
+		fprintf(f, "Thread[%d].digest = 0x%08x\n", thread->global_id, thread->branch_digest);
+	}
+
+	fprintf(f, "\n");
+}
+
+
 void gpu_warp_free(struct gpu_warp_t *warp)
 {
+	/* Free warp */
 	bit_map_free(warp->active_stack);
 	bit_map_free(warp->pred);
 	free(warp);
@@ -279,4 +339,28 @@ int gpu_thread_get_pred(struct gpu_thread_t *thread)
 	assert(thread->warp_id < warp->thread_count);
 	return bit_map_get(warp->pred, thread->warp_id, 1);
 }
+
+
+/* Based on an instruction counter, instruction address, and thread mask,
+ * update (xor) branch_digest with a random number */
+void gpu_thread_update_branch_digest(struct gpu_thread_t *thread, uint64_t inst_count, uint32_t inst_addr)
+{
+	struct gpu_warp_t *warp = thread->warp;
+	uint32_t mask = 0;
+
+	/* Update branch digest only if thread is active */
+	if (!bit_map_get(warp->active_stack, warp->stack_top * warp->thread_count + thread->warp_id, 1))
+		return;
+
+	/* Update mask with inst_count */
+	mask = (uint32_t) inst_count * 0x4919f71f;  /* Multiply by prime number to generate sparse mask */
+
+	/* Update mask with inst_addr */
+	mask += inst_addr * 0x31f2e73b;
+
+	/* Update branch digest */
+	thread->branch_digest ^= mask;
+}
+
+
 

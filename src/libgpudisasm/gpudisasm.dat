@@ -49,28 +49,28 @@ DEFINST(ELSE,
 	"ELSE %pop_count ADDR(%cf_addr)",
 	CF_WORD0, CF_WORD1, NONE,
 	CF, 13,
-	0
+	AMD_INST_FLAG_ACT_MASK
 )
 
 DEFINST(JUMP,
 	"JUMP %pop_count ADDR(%cf_addr)",
 	CF_WORD0, CF_WORD1, NONE,
 	CF, 10,
-	0
+	AMD_INST_FLAG_ACT_MASK
 )
 
 DEFINST(LOOP_END,
 	"ENDLOOP %loop_idx PASS_JUMP_ADDR(%cf_addr)",
 	CF_WORD0, CF_WORD1, NONE,
 	CF, 5,
-	AMD_INST_FLAG_DEC_LOOP_IDX
+	AMD_INST_FLAG_DEC_LOOP_IDX | AMD_INST_FLAG_ACT_MASK
 )
 
 DEFINST(LOOP_START_DX10,
 	"LOOP_DX10 %loop_idx FAIL_JUMP_ADDR(%cf_addr)",
 	CF_WORD0, CF_WORD1, NONE,
 	CF, 6,
-	AMD_INST_FLAG_INC_LOOP_IDX
+	AMD_INST_FLAG_INC_LOOP_IDX | AMD_INST_FLAG_ACT_MASK
 )
 
 DEFINST(MEM_RAT_CACHELESS,
@@ -92,13 +92,20 @@ DEFINST(POP,
 	"POP %pop_count ADDR(%cf_addr)",
 	CF_WORD0, CF_WORD1, NONE,
 	CF, 14,
-	0
+	AMD_INST_FLAG_ACT_MASK
 )
 
 DEFINST(TC,
 	"TEX: ADDR(%cf_addr) CNT(%cf_cnt) %no_barrier %cf_cond %cf_const %wqm %vpm",
 	CF_WORD0, CF_WORD1, NONE,
 	CF, 1,
+	0
+)
+
+DEFINST(WAIT_ACK,
+	"WAIT_ACK",
+	CF_WORD0, CF_WORD1, NONE,
+	CF, 26,
 	0
 )
 
@@ -145,14 +152,14 @@ DEFINST(MIN,
 )
 
 DEFINST(MAX_DX10,
-	"%name",
+	"MAX_DX10%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 5,
 	0
 )
 
 DEFINST(MIN_DX10,
-	"%name",
+	"MIN_DX10%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 6,
 	0
@@ -187,28 +194,28 @@ DEFINST(SETNE,
 )
 
 DEFINST(SETE_DX10,
-	"%name",
+	"SETE_DX10%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 12,
 	0
 )
 
 DEFINST(SETGT_DX10,
-	"%name",
+	"SETGT_DX10%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 13,
 	0
 )
 
 DEFINST(SETGE_DX10,
-	"%name",
+	"SETGE_DX10%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 14,
 	0
 )
 
 DEFINST(SETNE_DX10,
-	"%name",
+	"SETNE_DX10%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 15,
 	0
@@ -222,7 +229,7 @@ DEFINST(FRACT,
 )
 
 DEFINST(TRUNC,
-	"%name",
+	"TRUNC       %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 17,
 	0
@@ -474,28 +481,28 @@ DEFINST(SUB_INT,
 )
 
 DEFINST(MAX_INT,
-	"%name",
+	"MAX_INT%omod   %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 54,
 	AMD_INST_FLAG_DST_INT
 )
 
 DEFINST(MIN_INT,
-	"%name",
+	"MIN_INT%omod   %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 55,
 	AMD_INST_FLAG_DST_INT
 )
 
 DEFINST(MAX_UINT,
-	"%name",
+	"MAX_UINT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 56,
 	AMD_INST_FLAG_DST_UINT
 )
 
 DEFINST(MIN_UINT,
-	"%name",
+	"MIN_UINT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 57,
 	AMD_INST_FLAG_DST_UINT
@@ -516,7 +523,7 @@ DEFINST(SETGT_INT,
 )
 
 DEFINST(SETGE_INT,
-	"%name",
+	"SETGE_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 60,
 	AMD_INST_FLAG_DST_INT
@@ -768,7 +775,7 @@ DEFINST(RECIP_FF,
 )
 
 DEFINST(RECIP_IEEE,
-	"%name",
+	"RCP_e%omod    %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 134,
 	AMD_INST_FLAG_TRANS_ONLY
@@ -796,7 +803,7 @@ DEFINST(RECIPSQRT_IEEE,
 )
 
 DEFINST(SQRT_IEEE,
-	"%name",
+	"SQRT_e%omod    %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 138,
 	AMD_INST_FLAG_TRANS_ONLY

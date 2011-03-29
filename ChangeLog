@@ -838,3 +838,8 @@
 2011-03-22
 	* src/libgpukernel: support added for more OpenCL benchmarks.
 
+2011-03-28
+	* src/libgpukernel: option '-debug:gpu' added to dump GPU report. Statistics gathered
+		from kernel execution.
+
+
