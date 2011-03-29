@@ -256,8 +256,14 @@ uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, s
 	uint32_t max_work_item_sizes[3];  /* FIXME */
 	uint32_t local_mem_type = 1;  /* CL_LOCAL FIXME */
 	uint32_t local_mem_size = 32 * 1024;  /* FIXME */
+	uint32_t image_support = 1;
 	char *device_name = "Multi2Sim Virtual GPU Device";
 	char *device_vendor = "www.multi2sim.org";
+	char *device_extensions = "cl_amd_fp64 cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics "
+		"cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store "
+		"cl_khr_gl_sharing cl_ext_device_fission cl_amd_device_attribute_query cl_amd_media_ops cl_amd_popcnt "
+		"cl_amd_printf ";
+	char *device_version = "OpenCL 1.1 ATI-Stream-v2.3 (451)";
 	char *driver_version = VERSION;
 
 	uint32_t size_ret = 0;
@@ -287,6 +293,11 @@ uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, s
 		size_ret = 12;
 		info = max_work_item_sizes;
 		break;
+	
+	case 0x1016:  /* CL_DEVICE_IMAGE_SUPPORT */
+		size_ret = 4;
+		info = &image_support;
+		break;
 
 	case 0x1022:  /* CL_DEVICE_LOCAL_MEM_TYPE */
 		size_ret = 4;
@@ -311,6 +322,16 @@ uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, s
 	case 0x102d:  /* CL_DRIVER_VERSION */
 		size_ret = strlen(driver_version) + 1;
 		info = driver_version;
+		break;
+	
+	case 0x102f:  /* CL_DEVICE_VERSION */
+		size_ret = strlen(device_version) + 1;
+		info = device_version;
+		break;
+	
+	case 0x1030:  /* CL_DEVICE_EXTENSIONS */
+		size_ret = strlen(device_extensions) + 1;
+		info = device_extensions;
 		break;
 
 	default:

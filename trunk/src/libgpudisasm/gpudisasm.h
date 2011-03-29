@@ -454,7 +454,8 @@ enum amd_inst_flags_enum {
 	AMD_INST_FLAG_DEC_LOOP_IDX      = 0x0004,  /* CF inst decreasing loop index */
 	AMD_INST_FLAG_DST_INT           = 0x0008,  /* Inst with integer dest operand */
 	AMD_INST_FLAG_DST_UINT          = 0x0010,  /* Inst with unsigned int dest op */
-	AMD_INST_FLAG_DST_FLOAT         = 0x0020   /* Inst with float dest op */
+	AMD_INST_FLAG_DST_FLOAT         = 0x0020,  /* Inst with float dest op */
+	AMD_INST_FLAG_ACT_MASK		= 0x0040   /* Inst affects the active mask (control flow) */
 };
 
 
