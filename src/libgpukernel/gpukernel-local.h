@@ -26,6 +26,13 @@
 
 
 
+/* Global variables */
+
+extern char *gk_report_file_name;
+extern FILE *gk_report_file;
+
+
+
 /* Error messages */
 
 extern char *err_opencl_note;
@@ -417,9 +424,10 @@ enum gpu_clause_kind_enum {
 #define GPU_MAX_STACK_SIZE  32
 struct gpu_warp_t
 {
-	/* Number of threads and 'global_id' of first thread */
-	int thread_count;
-	int global_id;
+	struct gpu_thread_t **threads;  /* Array of threads in the warp */
+	int thread_count;  /* Number of threads in the warp */
+	int global_id;  /* Global ID of first thread */
+	uint64_t warp_id;  /* A unique identifier for the warp (increasingly assigned on creation) */
 	char name[20];
 
 	/* Current clause kind and instruction pointers */
@@ -444,11 +452,21 @@ struct gpu_warp_t
 	/* Flag indicating whether the stack has been pushed after a PRED_SET* instruction
 	 * has executed. This is done within ALU_PUSH_BEFORE instructions. */
 	int push_before_done;
+
+	/* Statistics */
+	uint64_t cf_inst_count;  /* Number of CF inst executed */
+
+	uint64_t alu_clause_count;  /* Number of ALU clauses started */
+	uint64_t alu_group_count;  /* Number of ALU instruction groups (VLIW) */
+	uint64_t alu_inst_count;  /* Number of ALU instructions */
+
+	uint64_t tc_clause_count;
+	uint64_t tc_inst_count;
 };
 
-
-struct gpu_warp_t *gpu_warp_create(int thread_count, int global_id);
+struct gpu_warp_t *gpu_warp_create(struct gpu_thread_t **threads, int thread_count, int global_id);
 void gpu_warp_free(struct gpu_warp_t *warp);
+void gpu_warp_dump(struct gpu_warp_t *warp, FILE *f);
 
 void gpu_warp_stack_push(struct gpu_warp_t *warp);
 void gpu_warp_stack_pop(struct gpu_warp_t *warp, int count);
@@ -493,6 +511,13 @@ struct gpu_thread_t
 	/* LDS (Local Data Share) OQs (Output Queues) */
 	struct list_t *lds_oqa;
 	struct list_t *lds_oqb;
+
+	/* This is a digest of the active mask updates for this thread. Every time
+	 * an instruction updates the active mask of a warp, this digest is updated
+	 * for active threads by XORing a random number common for the warp.
+	 * At the end, threads with different 'branch_digest' numbers can be considered
+	 * divergent threads. */
+	uint32_t branch_digest;
 };
 
 
@@ -504,6 +529,8 @@ void gpu_thread_set_active(struct gpu_thread_t *thread, int active);
 int gpu_thread_get_active(struct gpu_thread_t *thread);
 void gpu_thread_set_pred(struct gpu_thread_t *thread, int pred);
 int gpu_thread_get_pred(struct gpu_thread_t *thread);
+void gpu_thread_update_branch_digest(struct gpu_thread_t *thread,
+	uint64_t inst_count, uint32_t inst_addr);
 
 
 
@@ -603,6 +630,10 @@ void gpu_isa_const_mem_read(int bank, int vector, int elem, void *pvalue);
 /* For ALU clauses */
 void gpu_isa_alu_clause_start(void);
 void gpu_isa_alu_clause_end(void);
+
+/* For TC clauses */
+void gpu_isa_tc_clause_start(void);
+void gpu_isa_tc_clause_end(void);
 
 /* For functional simulation */
 uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im);

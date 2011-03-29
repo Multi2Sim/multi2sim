@@ -19,6 +19,7 @@
 
 #include <gpukernel-local.h>
 #include <gpudisasm.h>
+#include <math.h>
 
 char *err_gpu_machine_note =
 	"\tThe AMD Evergreen instruction set is partially supported by Multi2Sim. If\n"
@@ -243,9 +244,24 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_id, 1);  /* FIXME: what does rat_id mean? */
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_index_mode, 0);
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.type, 1);  /* EXPORT_WRITE_IND */
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.elem_size, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.burst_count, 0);
+
+		/* Values for W0.type:
+		 *   0  EXPORT_WRITE: Write to the memory buffer.
+		 *   1  EXPORT_WRITE_IND: write to memory buffer, use offset in INDEX_GPR.
+		 *   2  EXPORT_WRITE_ACK: write to memory buffer, request an ACK when write is
+		 *      committed to memory. For UAV, ACK guarantees return value has been writ-
+		 *      ten to memory.
+		 *   3  EXPORT_WRITE_IND_ACK: write to memory buffer with
+		 *      offset in INDEX_GPR, get an ACK when done. For UAV, ACK guarantees return
+		 *      value has been written to memory.
+		 *      FIXME: What is the ACK?
+		 */
+		/* Only 1 and 3 supported */
+		if (W0.type != 1 && W0.type != 3)
+			GPU_PARAM_NOT_SUPPORTED(W0.type);
+
 
 		for (global_id = gpu_isa_warp->global_id; global_id < gpu_isa_warp->global_id
 			+ gpu_isa_warp->thread_count; global_id++)
@@ -340,6 +356,7 @@ void amd_inst_TC_impl()
 	gpu_isa_warp->clause_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
 	gpu_isa_warp->clause_buf_end = gpu_isa_warp->clause_buf + (W1.count + 1) * 16;
 	gpu_isa_warp->clause_kind = GPU_CLAUSE_TC;
+	gpu_isa_tc_clause_start();
 
 	/* If VPM is set, copy 'active' mask at the top of the stack to 'pred' mask.
 	 * This will make all fetches within the clause happen only for active pixels.
@@ -352,6 +369,12 @@ void amd_inst_TC_impl()
 }
 #undef W0
 #undef W1
+
+
+void amd_inst_WAIT_ACK_impl()
+{
+	/* FIXME: wait for Write ACKs */
+}
 
 
 void amd_inst_ADD_impl()
@@ -391,13 +414,29 @@ void amd_inst_MIN_impl() {
 }
 
 
-void amd_inst_MAX_DX10_impl() {
-	NOT_IMPL();
+void amd_inst_MAX_DX10_impl()
+{
+	float src0, src1, dst;
+
+	/* FIXME: This instruction uses the DirectX 10 method of handling of NaNs
+	 * How? */
+	src0 = gpu_isa_read_op_src_float(0);
+	src1 = gpu_isa_read_op_src_float(1);
+	dst = src0 > src1 ? src0 : src1;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
-void amd_inst_MIN_DX10_impl() {
-	NOT_IMPL();
+void amd_inst_MIN_DX10_impl()
+{
+	float src0, src1, dst;
+
+	/* FIXME: This instruction uses the DirectX 10 method of handling of NaNs
+	 * How? */
+	src0 = gpu_isa_read_op_src_float(0);
+	src1 = gpu_isa_read_op_src_float(1);
+	dst = src0 < src1 ? src0 : src1;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
@@ -426,9 +465,25 @@ void amd_inst_SETE_DX10_impl() {
 }
 
 
-void amd_inst_SETGT_DX10_impl() {
-	NOT_IMPL();
+#define W0 gpu_isa_inst->words[0].alu_word0
+#define W1 gpu_isa_inst->words[1].alu_word1_op2
+void amd_inst_SETGT_DX10_impl()
+{
+	float src0, src1;
+	int32_t dst;
+	int cond;
+
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
+
+	src0 = gpu_isa_read_op_src_float(0);
+	src1 = gpu_isa_read_op_src_float(1);
+	cond = src0 > src1;
+	dst = cond ? -1 : 0;
+	gpu_isa_enqueue_write_dest(dst);
 }
+#undef W0
+#undef W1
 
 
 void amd_inst_SETGE_DX10_impl() {
@@ -436,9 +491,25 @@ void amd_inst_SETGE_DX10_impl() {
 }
 
 
-void amd_inst_SETNE_DX10_impl() {
-	NOT_IMPL();
+#define W0 gpu_isa_inst->words[0].alu_word0
+#define W1 gpu_isa_inst->words[1].alu_word1_op2
+void amd_inst_SETNE_DX10_impl()
+{
+	float src0, src1;
+	int32_t dst;
+	int cond;
+
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
+
+	src0 = gpu_isa_read_op_src_float(0);
+	src1 = gpu_isa_read_op_src_float(1);
+	cond = src0 != src1;
+	dst = cond ? -1 : 0;
+	gpu_isa_enqueue_write_dest(dst);
 }
+#undef W0
+#undef W1
 
 
 void amd_inst_FRACT_impl() {
@@ -446,8 +517,13 @@ void amd_inst_FRACT_impl() {
 }
 
 
-void amd_inst_TRUNC_impl() {
-	NOT_IMPL();
+void amd_inst_TRUNC_impl()
+{
+	float src, dst;
+
+	src = gpu_isa_read_op_src_float(0);
+	dst = truncf(src);
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
@@ -681,23 +757,47 @@ void amd_inst_SUB_INT_impl()
 }
 
 
-void amd_inst_MAX_INT_impl() {
-	NOT_IMPL();
+void amd_inst_MAX_INT_impl()
+{
+	int32_t src0, src1, dst;
+
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	dst = src0 > src1 ? src0 : src1;
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
-void amd_inst_MIN_INT_impl() {
-	NOT_IMPL();
+void amd_inst_MIN_INT_impl()
+{
+	int32_t src0, src1, dst;
+
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	dst = src0 < src1 ? src0 : src1;
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
-void amd_inst_MAX_UINT_impl() {
-	NOT_IMPL();
+void amd_inst_MAX_UINT_impl()
+{
+	uint32_t src0, src1, dst;
+
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	dst = src0 > src1 ? src0 : src1;
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
-void amd_inst_MIN_UINT_impl() {
-	NOT_IMPL();
+void amd_inst_MIN_UINT_impl()
+{
+	uint32_t src0, src1, dst;
+
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	dst = src0 < src1 ? src0 : src1;
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
@@ -743,9 +843,25 @@ void amd_inst_SETGT_INT_impl()
 #undef W1
 
 
-void amd_inst_SETGE_INT_impl() {
-	NOT_IMPL();
+#define W0 gpu_isa_inst->words[0].alu_word0
+#define W1 gpu_isa_inst->words[1].alu_word1_op2
+void amd_inst_SETGE_INT_impl()
+{
+	int32_t src0, src1;
+	int32_t dst;
+	int cond;
+
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
+
+	src0 = gpu_isa_read_op_src(0);
+	src1 = gpu_isa_read_op_src(1);
+	cond = src0 >= src1;
+	dst = cond ? -1 : 0;
+	gpu_isa_enqueue_write_dest(dst);
 }
+#undef W0
+#undef W1
 
 
 #define W0 gpu_isa_inst->words[0].alu_word0
@@ -959,8 +1075,21 @@ void amd_inst_PRED_SETLE_PUSH_INT_impl() {
 }
 
 
-void amd_inst_FLT_TO_INT_impl() {
-	NOT_IMPL();
+void amd_inst_FLT_TO_INT_impl()
+{
+	float src;
+	int32_t dst;
+	
+	src = gpu_isa_read_op_src_float(0);
+	if (isinf(src) == 1)
+		dst = INT32_MAX;
+	else if (isinf(src) == -1)
+		dst = INT32_MIN;
+	else if (isnan(src))
+		dst = 0;
+	else
+		dst = src;
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
@@ -1040,8 +1169,13 @@ void amd_inst_RECIP_FF_impl() {
 }
 
 
-void amd_inst_RECIP_IEEE_impl() {
-	NOT_IMPL();
+void amd_inst_RECIP_IEEE_impl()
+{
+	float src, dst;
+
+	src = gpu_isa_read_op_src_float(0);
+	dst = 1.0f / src;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
@@ -1060,8 +1194,13 @@ void amd_inst_RECIPSQRT_IEEE_impl() {
 }
 
 
-void amd_inst_SQRT_IEEE_impl() {
-	NOT_IMPL();
+void amd_inst_SQRT_IEEE_impl()
+{
+	float src, dst;
+
+	src = gpu_isa_read_op_src_float(0);
+	dst = sqrtf(src);
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
@@ -1160,13 +1299,22 @@ void amd_inst_SQRT_64_impl() {
 }
 
 
-void amd_inst_FLT_TO_UINT_impl() {
-	NOT_IMPL();
+void amd_inst_FLT_TO_UINT_impl()
+{
+	float src;
+	uint32_t dst;
+	
+	src = gpu_isa_read_op_src_float(0);
+	if (isinf(src) == 1)
+		dst = UINT32_MAX;
+	else if (isinf(src) == -1 || isnan(src))
+		dst = 0;
+	else
+		dst = src;
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
 void amd_inst_INT_TO_FLT_impl()
 {
 	int32_t src0;
@@ -1176,12 +1324,8 @@ void amd_inst_INT_TO_FLT_impl()
 	dst = (float) src0;
 	gpu_isa_enqueue_write_dest_float(dst);
 }
-#undef W0
-#undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
 void amd_inst_UINT_TO_FLT_impl()
 {
 	uint32_t src0;
@@ -1191,8 +1335,6 @@ void amd_inst_UINT_TO_FLT_impl()
 	dst = (float) src0;
 	gpu_isa_enqueue_write_dest_float(dst);
 }
-#undef W0
-#undef W1
 
 
 void amd_inst_BFM_INT_impl() {
