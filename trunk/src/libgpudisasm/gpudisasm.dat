@@ -78,7 +78,7 @@ DEFINST(MEM_RAT_CACHELESS,
 	"%rat_rw_gpr, %array_size %elem_size %mark %burst_count %no_barrier %vpm",
 	CF_ALLOC_EXPORT_WORD0_RAT, CF_ALLOC_EXPORT_WORD1_BUF, NONE,
 	CF, 87,
-	0
+	AMD_INST_FLAG_MEM
 )
 
 DEFINST(NOP_CF,
@@ -1436,7 +1436,7 @@ DEFINST(LDS_IDX_OP,
 	"LDS_%lds_op  %alu_src0,  %alu_src1,  %alu_src2",
 	ALU_WORD0_LDS_IDX_OP, ALU_WORD1_LDS_IDX_OP, NONE,
 	ALU, 17,
-	0
+	AMD_INST_FLAG_LDS
 )
 
 DEFINST(MULADD,
@@ -1534,7 +1534,7 @@ DEFINST(FETCH,
 	"%vtx_endian_swap %vtx_num_format %vtx_format_comp %vtx_srf_mode %vtx_fetch_type %vtx_cbns",
 	VTX_WORD0, VTX_WORD1_GPR, VTX_WORD2,
 	VTX, 0,
-	0
+	AMD_INST_FLAG_MEM
 )
 
 DEFINST(GET_BUFFER_RESINFO,

@@ -25,6 +25,7 @@
 #include <m2skernel.h>
 #include <gpudisasm.h>
 #include <options.h>
+#include <hash.h>
 
 
 /* Global variables */
@@ -33,6 +34,7 @@ struct gk_t *gk;
 char *gk_opencl_binary_name = "";
 char *gk_report_file_name = "";
 FILE *gk_report_file = NULL;
+int gk_kernel_execution_count = 0;
 
 
 
@@ -179,6 +181,8 @@ static uint64_t warp_id;
 struct gpu_warp_t *gpu_warp_create(struct gpu_thread_t **threads, int thread_count, int global_id)
 {
 	struct gpu_warp_t *warp;
+	char str[MAX_STRING_SIZE];
+
 	warp = calloc(1, sizeof(struct gpu_warp_t));
 	warp->threads = threads;
 	warp->thread_count = thread_count;
@@ -187,46 +191,10 @@ struct gpu_warp_t *gpu_warp_create(struct gpu_thread_t **threads, int thread_cou
 
 	warp->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * thread_count);
 	warp->pred = bit_map_create(thread_count);
-	snprintf(warp->name, sizeof(warp->name), "warp[%d-%d]",
+	snprintf(str, MAX_STRING_SIZE, "work-items[%d..%d]",
 		global_id, global_id + thread_count - 1);
+	warp->name = strdup(str);
 	return warp;
-}
-
-
-void gpu_warp_dump(struct gpu_warp_t *warp, FILE *f)
-{
-	struct gpu_thread_t *thread;
-	int i;
-
-	if (!f)
-		return;
-	
-	/* Dump warp statistics in GPU report */
-	fprintf(f, "[ Warp %lld ]\n\n", (long long) warp->warp_id);
-
-	fprintf(f, "Name = %s\n", warp->name);
-	fprintf(f, "Global_Id = %d\n", warp->global_id);
-	fprintf(f, "\n");
-
-	fprintf(f, "CF_Inst_Count = %lld\n", (long long) warp->cf_inst_count);
-	fprintf(f, "\n");
-
-	fprintf(f, "ALU_Clause_Count = %lld\n", (long long) warp->alu_clause_count);
-	fprintf(f, "ALU_Group_Count = %lld\n", (long long) warp->alu_group_count);
-	fprintf(f, "ALU_Inst_Count = %lld\n", (long long) warp->alu_inst_count);
-	fprintf(f, "\n");
-
-	fprintf(f, "TC_Clause_Count = %lld\n", (long long) warp->tc_clause_count);
-	fprintf(f, "TC_Inst_Count = %lld\n", (long long) warp->tc_inst_count);
-	fprintf(f, "\n");
-
-	/* Thread digests */
-	for (i = 0; i < warp->thread_count; i++) {
-		thread = warp->threads[i];
-		fprintf(f, "Thread[%d].digest = 0x%08x\n", thread->global_id, thread->branch_digest);
-	}
-
-	fprintf(f, "\n");
 }
 
 
@@ -235,7 +203,142 @@ void gpu_warp_free(struct gpu_warp_t *warp)
 	/* Free warp */
 	bit_map_free(warp->active_stack);
 	bit_map_free(warp->pred);
+	free(warp->name);
 	free(warp);
+}
+
+
+/* Comparison function to sort list */
+static int gpu_warp_divergence_compare(const void *elem1, const void *elem2)
+{
+	int count1 = * (int *) elem1;
+	int count2 = * (int *) elem2;
+	
+	if (count1 < count2)
+		return 1;
+	else if (count1 > count2)
+		return -1;
+	return 0;
+}
+
+
+void gpu_warp_divergence_dump(struct gpu_warp_t *warp, FILE *f)
+{
+	struct gpu_thread_t *thread;
+	struct elem_t {
+		int count;  /* 1st field hardcoded for comparison */
+		int list_index;
+		uint32_t branch_digest;
+	};
+	struct elem_t *elem;
+	struct list_t *list;
+	struct hashtable_t *ht;
+	char str[10];
+	int i, j;
+
+	/* Create list and hash table */
+	list = list_create(20);
+	ht = hashtable_create(20, 1);
+
+	/* Create one 'elem' for each thread with a different branch digest, and
+	 * store it into the hash table and list. */
+	for (i = 0; i < warp->thread_count; i++) {
+		thread = warp->threads[i];
+		sprintf(str, "%08x", thread->branch_digest);
+		elem = hashtable_get(ht, str);
+		if (!elem) {
+			elem = calloc(1, sizeof(struct elem_t));
+			hashtable_insert(ht, str, elem);
+			elem->list_index = list_count(list);
+			elem->branch_digest = thread->branch_digest;
+			list_add(list, elem);
+		}
+		elem->count++;
+	}
+
+	/* Sort divergence groups as per size */
+	list_sort(list, gpu_warp_divergence_compare);
+	fprintf(f, "ThreadDivergenceGroups = %d\n", list_count(list));
+	
+	/* Dump size of groups with */
+	fprintf(f, "ThreadDivergenceGroupsSize =");
+	for (i = 0; i < list_count(list); i++) {
+		elem = list_get(list, i);
+		fprintf(f, " %d", elem->count);
+	}
+	fprintf(f, "\n\n");
+
+	/* Dump thread ids contained in each thread divergence group */
+	for (i = 0; i < list_count(list); i++) {
+		elem = list_get(list, i);
+		fprintf(f, "ThreadDivergenceGroup[%d] =", i);
+
+		for (j = 0; j < warp->thread_count; j++) {
+			int first, last;
+			first = warp->threads[j]->branch_digest == elem->branch_digest &&
+				(j == 0 || warp->threads[j - 1]->branch_digest != elem->branch_digest);
+			last = warp->threads[j]->branch_digest == elem->branch_digest &&
+				(j == warp->thread_count - 1 || warp->threads[j + 1]->branch_digest != elem->branch_digest);
+			if (first)
+				fprintf(f, " %d", j);
+			else if (last)
+				fprintf(f, "-%d", j);
+		}
+		fprintf(f, "\n");
+	}
+	fprintf(f, "\n");
+
+	/* Free 'elem's and structures */
+	for (i = 0; i < list_count(list); i++)
+		free(list_get(list, i));
+	list_free(list);
+	hashtable_free(ht);
+}
+
+
+void gpu_warp_dump(struct gpu_warp_t *warp, FILE *f)
+{
+	int i;
+
+	if (!f)
+		return;
+	
+	/* Dump warp statistics in GPU report */
+	fprintf(f, "[ Warp %lld ]\n\n", (long long) warp->warp_id);
+
+	fprintf(f, "KernelExecution = %d\n", gk_kernel_execution_count - 1);
+	fprintf(f, "Name = %s\n", warp->name);
+	fprintf(f, "Global_Id = %d\n", warp->global_id);
+	fprintf(f, "Thread_Count = %d\n", warp->thread_count);
+	fprintf(f, "\n");
+
+	fprintf(f, "Inst_Count = %lld\n", (long long) warp->inst_count);
+	fprintf(f, "Global_Mem_Inst_Count = %lld\n", (long long) warp->global_mem_inst_count);
+	fprintf(f, "Local_Mem_Inst_Count = %lld\n", (long long) warp->local_mem_inst_count);
+	fprintf(f, "\n");
+
+	fprintf(f, "CF_Inst_Count = %lld\n", (long long) warp->cf_inst_count);
+	fprintf(f, "CF_Inst_Global_Mem_Write_Count = %lld\n", (long long) warp->cf_inst_global_mem_write_count);
+	fprintf(f, "\n");
+
+	fprintf(f, "ALU_Clause_Count = %lld\n", (long long) warp->alu_clause_count);
+	fprintf(f, "ALU_Group_Count = %lld\n", (long long) warp->alu_group_count);
+	fprintf(f, "ALU_Group_Size =");
+	for (i = 0; i < 5; i++)
+		fprintf(f, " %lld", (long long) warp->alu_group_size[i]);
+	fprintf(f, "\n");
+	fprintf(f, "ALU_Inst_Count = %lld\n", (long long) warp->alu_inst_count);
+	fprintf(f, "ALU_Inst_Local_Mem_Count = %lld\n", (long long) warp->alu_inst_local_mem_count);
+	fprintf(f, "\n");
+
+	fprintf(f, "TC_Clause_Count = %lld\n", (long long) warp->tc_clause_count);
+	fprintf(f, "TC_Inst_Count = %lld\n", (long long) warp->tc_inst_count);
+	fprintf(f, "TC_Inst_Global_Mem_Read_Count = %lld\n", (long long) warp->tc_inst_global_mem_read_count);
+	fprintf(f, "\n");
+
+	gpu_warp_divergence_dump(warp, f);
+
+	fprintf(f, "\n");
 }
 
 

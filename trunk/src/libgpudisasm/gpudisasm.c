@@ -272,6 +272,16 @@ void *amd_inst_decode_tc(void *buf, struct amd_inst_t *inst)
  * Disassembler
  */
 
+struct string_map_t amd_pv_map = {
+	5, {
+		{ "PV.x", AMD_ALU_X },
+		{ "PV.y", AMD_ALU_Y },
+		{ "PV.z", AMD_ALU_Z },
+		{ "PV.w", AMD_ALU_W },
+		{ "PS", AMD_ALU_TRANS }
+	}
+};
+
 struct string_map_t amd_alu_map = {
 	5, {
 		{ "x", AMD_ALU_X },
