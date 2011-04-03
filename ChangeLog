@@ -839,7 +839,10 @@
 	* src/libgpukernel: support added for more OpenCL benchmarks.
 
 2011-03-28
-	* src/libgpukernel: option '-debug:gpu' added to dump GPU report. Statistics gathered
+	* src/libgpukernel: option '-report:gpu' added to dump GPU report. Statistics gathered
 		from kernel execution.
 
+
+2010-04-02
+	* src/libgpukernels: support for kernels, report gpu, and ISA trace updated.
 
