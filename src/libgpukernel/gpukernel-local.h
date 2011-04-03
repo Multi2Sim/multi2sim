@@ -31,6 +31,8 @@
 extern char *gk_report_file_name;
 extern FILE *gk_report_file;
 
+extern int gk_kernel_execution_count;
+
 
 
 /* Error messages */
@@ -428,7 +430,7 @@ struct gpu_warp_t
 	int thread_count;  /* Number of threads in the warp */
 	int global_id;  /* Global ID of first thread */
 	uint64_t warp_id;  /* A unique identifier for the warp (increasingly assigned on creation) */
-	char name[20];
+	char *name;
 
 	/* Current clause kind and instruction pointers */
 	enum gpu_clause_kind_enum clause_kind;
@@ -454,14 +456,22 @@ struct gpu_warp_t
 	int push_before_done;
 
 	/* Statistics */
+	uint64_t inst_count;  /* Total number of instructions */
+	uint64_t global_mem_inst_count;  /* Instructions (CF or TC) accessing global memory */
+	uint64_t local_mem_inst_count;  /* Instructions (ALU) accessing local memory */
+
 	uint64_t cf_inst_count;  /* Number of CF inst executed */
+	uint64_t cf_inst_global_mem_write_count;  /* Number of instructions writing to global mem (they are CF inst) */
 
 	uint64_t alu_clause_count;  /* Number of ALU clauses started */
 	uint64_t alu_group_count;  /* Number of ALU instruction groups (VLIW) */
+	uint64_t alu_group_size[5];  /* Distribution of group sizes (alu_group_size[0] is the number of groups with 1 inst) */
 	uint64_t alu_inst_count;  /* Number of ALU instructions */
+	uint64_t alu_inst_local_mem_count;  /* Instructions accessing local memory (ALU) */
 
 	uint64_t tc_clause_count;
 	uint64_t tc_inst_count;
+	uint64_t tc_inst_global_mem_read_count;  /* Number of instructions reading from global mem (they are TC inst) */
 };
 
 struct gpu_warp_t *gpu_warp_create(struct gpu_thread_t **threads, int thread_count, int global_id);

@@ -204,12 +204,19 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	struct amd_inst_t cf_inst;
 
 	struct amd_alu_group_t alu_group;
-	int alu_group_count = 0;
 
 	struct amd_inst_t tc_inst;
 
 	int i, x, y, z;
 	int global_id;
+
+	/* Record one more kernel execution and dump report */
+	gk_kernel_execution_count++;
+	if (gk_report_file) {
+		fprintf(gk_report_file, "[ KernelExecution %d ]\n\n", gk_kernel_execution_count - 1);
+		fprintf(gk_report_file, "KernelName = %s\n", kernel->name);
+		fprintf(gk_report_file, "\n\n");
+	}
 
 	/* Get program */
 	program = opencl_object_get(OPENCL_OBJ_PROGRAM, kernel->program_id);
@@ -374,7 +381,12 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			}
 
 			/* Stats */
+			gpu_isa_warp->inst_count++;
 			gpu_isa_warp->cf_inst_count++;
+			if (gpu_isa_inst->info->flags & AMD_INST_FLAG_MEM) {
+				gpu_isa_warp->global_mem_inst_count++;
+				gpu_isa_warp->cf_inst_global_mem_write_count++;  /* CF inst accessing memory is a write */
+			}
 
 			break;
 		}
@@ -383,8 +395,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 		{
 			/* Decode ALU group */
 			gpu_isa_warp->clause_buf = amd_inst_decode_alu_group(gpu_isa_warp->clause_buf,
-				alu_group_count, &alu_group);
-			alu_group_count++;
+				gpu_isa_warp->alu_group_count, &alu_group);
 
 			/* Debug */
 			if (debug_status(gpu_isa_debug_category)) {
@@ -407,8 +418,18 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			}
 			
 			/* Stats */
-			gpu_isa_warp->alu_group_count++;
+			gpu_isa_warp->inst_count += gpu_isa_alu_group->inst_count;
 			gpu_isa_warp->alu_inst_count += gpu_isa_alu_group->inst_count;
+			gpu_isa_warp->alu_group_count++;
+			assert(gpu_isa_alu_group->inst_count > 0 && gpu_isa_alu_group->inst_count < 6);
+			gpu_isa_warp->alu_group_size[gpu_isa_alu_group->inst_count - 1]++;
+			for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
+				gpu_isa_inst = &gpu_isa_alu_group->inst[i];
+				if (gpu_isa_inst->info->flags & AMD_INST_FLAG_LDS) {
+					gpu_isa_warp->local_mem_inst_count++;
+					gpu_isa_warp->alu_inst_local_mem_count++;
+				}
+			}
 
 			/* End of clause reached */
 			assert(gpu_isa_warp->clause_buf <= gpu_isa_warp->clause_buf_end);
@@ -442,7 +463,12 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			}
 
 			/* Stats */
+			gpu_isa_warp->inst_count++;
 			gpu_isa_warp->tc_inst_count++;
+			if (gpu_isa_inst->info->flags & AMD_INST_FLAG_MEM) {
+				gpu_isa_warp->global_mem_inst_count++;
+				gpu_isa_warp->tc_inst_global_mem_read_count++;  /* Memory instructions in TC are reads */
+			}
 
 			/* End of clause reached */
 			assert(gpu_isa_warp->clause_buf <= gpu_isa_warp->clause_buf_end);
@@ -870,8 +896,8 @@ void gpu_isa_write_task_commit(void)
 
 			/* Debug */
 			if (gpu_isa_debugging()) {
-				gpu_isa_debug("  t%d:PV.%s", gpu_isa_thread->global_id,
-					map_value(&amd_alu_map, wt->inst->alu));
+				gpu_isa_debug("  i%d:%s", gpu_isa_thread->global_id,
+					map_value(&amd_pv_map, wt->inst->alu));
 				if (wt->write_mask) {
 					gpu_isa_debug(",");
 					amd_inst_dump_gpr(wt->gpr, wt->rel, wt->chan, 0,
@@ -891,7 +917,7 @@ void gpu_isa_write_task_commit(void)
 			local_mem = gk->local_mem[gpu_isa_thread->group_id];
 			assert(local_mem);
 			mem_write(local_mem, wt->lds_addr, 4, &wt->lds_value);
-			gpu_isa_debug("  t%d:LDS[0x%x]<=(%u,%gf)", GPU_THR.global_id, wt->lds_addr,
+			gpu_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf)", GPU_THR.global_id, wt->lds_addr,
 				wt->lds_value, * (float *) &wt->lds_value);
 			break;
 		}
@@ -938,11 +964,11 @@ void gpu_isa_write_task_commit(void)
 			/* Debug */
 			if (debug_status(gpu_isa_debug_category)) {
 				if (update_pred && update_exec_mask)
-					gpu_isa_debug("  t%d:act/pred<=%d", GPU_THR.global_id, wt->cond);
+					gpu_isa_debug("  i%d:act/pred<=%d", GPU_THR.global_id, wt->cond);
 				else if (update_pred)
-					gpu_isa_debug("  t%d:pred=%d", GPU_THR.global_id, wt->cond);
+					gpu_isa_debug("  i%d:pred=%d", GPU_THR.global_id, wt->cond);
 				else if (update_exec_mask)
-					gpu_isa_debug("  t%d:pred=%d", GPU_THR.global_id, wt->cond);
+					gpu_isa_debug("  i%d:pred=%d", GPU_THR.global_id, wt->cond);
 			}
 			break;
 		}

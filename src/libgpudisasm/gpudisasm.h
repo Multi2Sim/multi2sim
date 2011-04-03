@@ -101,6 +101,7 @@ enum amd_alu_enum {
  * String maps
  */
 
+extern struct string_map_t amd_pv_map;
 extern struct string_map_t amd_alu_map;
 extern struct string_map_t bank_swizzle_map;
 extern struct string_map_t rat_inst_map;
@@ -455,7 +456,9 @@ enum amd_inst_flags_enum {
 	AMD_INST_FLAG_DST_INT           = 0x0008,  /* Inst with integer dest operand */
 	AMD_INST_FLAG_DST_UINT          = 0x0010,  /* Inst with unsigned int dest op */
 	AMD_INST_FLAG_DST_FLOAT         = 0x0020,  /* Inst with float dest op */
-	AMD_INST_FLAG_ACT_MASK		= 0x0040   /* Inst affects the active mask (control flow) */
+	AMD_INST_FLAG_ACT_MASK		= 0x0040,  /* Inst affects the active mask (control flow) */
+	AMD_INST_FLAG_LDS		= 0x0080,  /* Access to local memory */
+	AMD_INST_FLAG_MEM		= 0x0100   /* Access to global memory */
 };
 
 
