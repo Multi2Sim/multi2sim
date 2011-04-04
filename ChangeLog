@@ -848,3 +848,4 @@
 
 2010-04-04
 	* src/m2s.c: detailed simulator command-line options updated to include GPU report.
+	* Version 3.0.2 Released
