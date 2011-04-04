@@ -846,3 +846,5 @@
 2010-04-02
 	* src/libgpukernels: support for kernels, report gpu, and ISA trace updated.
 
+2010-04-04
+	* src/m2s.c: detailed simulator command-line options updated to include GPU report.
