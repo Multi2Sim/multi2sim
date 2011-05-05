@@ -344,6 +344,9 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	gpu_isa_warp->cf_buf = code_buffer;
 	gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
 
+	/* Record starting time */
+	gpu_isa_warp->emu_time_start = ke_timer();
+
 	/* Execution loop */
 	while (gpu_isa_warp->clause_kind != GPU_CLAUSE_CF || gpu_isa_warp->cf_buf) {
 		
@@ -381,6 +384,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			}
 
 			/* Stats */
+			gpu_isa_warp->emu_inst_count++;
 			gpu_isa_warp->inst_count++;
 			gpu_isa_warp->cf_inst_count++;
 			if (gpu_isa_inst->info->flags & AMD_INST_FLAG_MEM) {
@@ -421,6 +425,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			gpu_isa_warp->inst_count += gpu_isa_alu_group->inst_count;
 			gpu_isa_warp->alu_inst_count += gpu_isa_alu_group->inst_count;
 			gpu_isa_warp->alu_group_count++;
+			gpu_isa_warp->emu_inst_count += gpu_isa_alu_group->inst_count * gpu_isa_warp->thread_count;
 			assert(gpu_isa_alu_group->inst_count > 0 && gpu_isa_alu_group->inst_count < 6);
 			gpu_isa_warp->alu_group_size[gpu_isa_alu_group->inst_count - 1]++;
 			for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
@@ -463,6 +468,7 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 			}
 
 			/* Stats */
+			gpu_isa_warp->emu_inst_count += gpu_isa_warp->thread_count;
 			gpu_isa_warp->inst_count++;
 			gpu_isa_warp->tc_inst_count++;
 			if (gpu_isa_inst->info->flags & AMD_INST_FLAG_MEM) {
@@ -485,6 +491,9 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 		}
 
 	}
+
+	/* Record finish time */
+	gpu_isa_warp->emu_time_end = ke_timer();
 
 	/* Dump warp report */
 	gpu_warp_dump(gpu_isa_warp, gk_report_file);
