@@ -17,3 +17,25 @@ Also, current Multi2Sim users can enjoy the following updates:
 
 Please, visit www.multi2sim.org for more information. Click on the 'Mailing List' section to receive announcements on version updates (about 1 mail a month), or to unsubscribe if you are already a member and want to stop receiving these emails.
 
+
+
+*** Announce on Apr. 4th, 2011 ***
+
+Dear Multi2Sim users:
+
+Version 3.0.2 of the simulator has been released, including the following additional features:
+
+GPU functional simulation:
+
+  * The Evergreen ISA functional simulator has been updated to extend the set of supported AMD OpenCL benchmarks. The package 'OpenCL benchmarks' package has been updated with 7 new benchmarks (see 'Downloads' section), including x86 binaries, Evergreen precompiled kernels, and data files.
+
+  * Option '-report:gpu' added to Multi2Sim to obtain statistics from the GPU kernel emulation.
+
+
+CPU simulation modules:
+
+  * The signal handling simulation has been updated in the x86 emulator.
+  * Minor bug fixed in the generation of the pipeline trace for a superscalar pipeline, used by the 'm2s-pipeline' graphical tool.
+
+Please, visit www.multi2sim.org for more information. If you want to stop receiving these emails, please use the 'Unsubscribe' link in the 'Mailing List' section.
+

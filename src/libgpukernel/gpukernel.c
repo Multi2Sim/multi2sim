@@ -299,6 +299,7 @@ void gpu_warp_divergence_dump(struct gpu_warp_t *warp, FILE *f)
 void gpu_warp_dump(struct gpu_warp_t *warp, FILE *f)
 {
 	int i;
+	double emu_time;
 
 	if (!f)
 		return;
@@ -310,6 +311,12 @@ void gpu_warp_dump(struct gpu_warp_t *warp, FILE *f)
 	fprintf(f, "Name = %s\n", warp->name);
 	fprintf(f, "Global_Id = %d\n", warp->global_id);
 	fprintf(f, "Thread_Count = %d\n", warp->thread_count);
+	fprintf(f, "\n");
+
+	emu_time = (double) (warp->emu_time_end = warp->emu_time_start) / 1e6;
+	fprintf(f, "Emu_Inst_Count = %lld\n", (long long) warp->emu_inst_count);
+	fprintf(f, "Emu_Time = %.2f\n", emu_time);
+	fprintf(f, "Emu_Inst_Per_Sec = %.2f\n", (double) warp->emu_inst_count / emu_time);
 	fprintf(f, "\n");
 
 	fprintf(f, "Inst_Count = %lld\n", (long long) warp->inst_count);
