@@ -455,6 +455,11 @@ struct gpu_warp_t
 	 * has executed. This is done within ALU_PUSH_BEFORE instructions. */
 	int push_before_done;
 
+	/* To measure simulation performance */
+	uint64_t emu_inst_count;  /* Total emulated instructions */
+	uint64_t emu_time_start;
+	uint64_t emu_time_end;
+
 	/* Statistics */
 	uint64_t inst_count;  /* Total number of instructions */
 	uint64_t global_mem_inst_count;  /* Instructions (CF or TC) accessing global memory */

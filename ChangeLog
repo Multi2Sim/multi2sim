@@ -849,3 +849,9 @@
 2010-04-04
 	* src/m2s.c: detailed simulator command-line options updated to include GPU report.
 	* Version 3.0.2 Released
+
+2010-05-05
+	* src/libcachesystem/cachesystem.c: additional check in cache configuration files that
+		prevents networks from having no lower cache. This caused infinite loops
+		in subsequent sanity checks, since no way to main memory could be found.
+

@@ -762,6 +762,14 @@ void cache_system_init(int _cores, int _threads)
 		net_new_node(net, ccache->name, ccache);
 	}
 
+	/* Check that all networks got assigned a lower node. */
+	for (i = 0; i < net_count; i++) {
+		net = net_array[i];
+		assert(net->node_count <= 1);
+		if (!net->node_count)
+			fatal("network '%s' has no lower node leading to main memory", net->name);
+	}
+
 	/* Add upper node_array to networks. Update 'next' attributes for ccache_array. */
 	for (curr = 0; curr < ccache_count; curr++) {
 		ccache = ccache_array[curr];
