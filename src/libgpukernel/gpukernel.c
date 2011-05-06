@@ -114,15 +114,19 @@ void gk_libopencl_redirect(char *fullpath, int size)
 {
 	char fullpath_original[MAX_PATH_SIZE];
 	char buf[MAX_PATH_SIZE];
+	char *relpath, *filename;
 	int length;
 	FILE *f;
 
 	/* Get path length */
 	strncpy(fullpath_original, fullpath, MAX_PATH_SIZE);
 	length = strlen(fullpath);
+	relpath = rindex(fullpath, '/');
+	assert(relpath && *relpath == '/');
+	filename = relpath + 1;
 
 	/* Detect an attempt to open 'libm2s-opencl' and record it */
-	if (length >= 17 && !strcmp(fullpath + length - 17, "/libm2s-opencl.so")) {
+	if (!strcmp(filename, "libm2s-opencl.so")) {
 		f = fopen(fullpath, "r");
 		if (f) {
 			fclose(f);
@@ -132,15 +136,23 @@ void gk_libopencl_redirect(char *fullpath, int size)
 	}
 
 	/* Translate libOpenCL -> libm2s-opencl */
-	if (length >= 13 && !strcmp(fullpath + length - 13, "/libOpenCL.so")) {
+	if (!strcmp(filename, "libOpenCL.so") || !strncmp(filename, "libOpenCL.so.", 13)) {
 		
-		/* Translate name */
+		/* Translate name in same path */
 		fullpath[length - 13] = '\0';
 		snprintf(buf, MAX_STRING_SIZE, "%s/libm2s-opencl.so", fullpath);
 		strncpy(fullpath, buf, size);
-
-		/* Check if this attempt if successful */
 		f = fopen(fullpath, "r");
+
+		/* If attempt failed, translate name into current working directory */
+		if (!f) {
+			if (!getcwd(buf, MAX_PATH_SIZE))
+				fatal("%s: cannot get current directory", __FUNCTION__);
+			sprintf(fullpath, "%s/libm2s-opencl.so", buf);
+			f = fopen(fullpath, "r");
+		}
+
+		/* End of attempts */
 		if (f) {
 			fclose(f);
 			warning("path '%s' has been redirected to '%s'\n"
