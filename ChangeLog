@@ -854,4 +854,10 @@
 	* src/libcachesystem/cachesystem.c: additional check in cache configuration files that
 		prevents networks from having no lower cache. This caused infinite loops
 		in subsequent sanity checks, since no way to main memory could be found.
+	
+2010-05-05
+	* src/tools/m2s-opencl-kc: updated to use under APP SDK 2.4
+	* src/libgpukernel/gpukernel.c: Function 'gk_libopencl_redirect' updated to look for
+		'm2s-opencl.so' in the current directory.
+
 
