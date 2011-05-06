@@ -860,4 +860,9 @@
 	* src/libgpukernel/gpukernel.c: Function 'gk_libopencl_redirect' updated to look for
 		'm2s-opencl.so' in the current directory.
 
+2010-05-06
+	* src/libgpukernel/opencl-obj.c: support for new OpenCL Binary Image Format (BIF)
+		in AMD APP SDK 2.4
+	* src/libgpukernel/gpumachine.c: bug fixed in 'FETCH' instruction. Call to
+		'gpu_thread_get_pred' replaced by 'gpu_thread_get_active'.
 

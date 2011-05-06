@@ -668,6 +668,8 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 			OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 			if (!strcmp(line_ptrs[1], "hwprivate")) {
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
+			} else if (!strcmp(line_ptrs[1], "hwregion")) {
+				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
 			} else if (!strcmp(line_ptrs[1], "hwlocal")) {
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
 			} else
@@ -693,7 +695,6 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 			OPENCL_KERNEL_METADATA_TOKEN_COUNT(9);
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
-			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(7, "1");
 			arg = opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = OPENCL_KERNEL_ARG_KIND_POINTER;
 			arg->elem_size = atoi(line_ptrs[8]);
@@ -768,6 +769,8 @@ void opencl_kernel_load_func_metadata(struct opencl_kernel_t *kernel)
 				kernel->local_mem_top = kernel->func_mem_local;
 				opencl_debug("kernel '%s' using %d bytes local memory\n",
 					kernel->name, kernel->func_mem_local);
+			} else if (!strcmp(line_ptrs[1], "hwregion")) {
+				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
 			} else
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
 			continue;
@@ -815,8 +818,12 @@ void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name)
 	/* Analyze 'metadata' file */
 	opencl_kernel_load_metadata(kernel);
 
-	/* Read function 'XXX_fmetadata' symbol */
+	/* Read function 'XX_fmetadata' symbol.
+	 * In old OpenCL Binary Image Format (BIF), 'XX' is the function 'uniqueid' value,
+	 * whereas current BIF format uses the kernel name for 'XX' */
 	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%d_fmetadata", kernel->func_uniqueid);
+	if (!elf_get_symbol_by_name(program->binary_file_elf, symbol_name))
+		snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_fmetadata", kernel_name);
 	kernel->func_file = opencl_program_read_symbol(program, symbol_name,
 		kernel->func_file_name, MAX_PATH_SIZE);
 	

@@ -242,7 +242,7 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 		float value_float;
 		int i;
 
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_id, 1);  /* FIXME: what does rat_id mean? */
+		/* GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_id, 1);  FIXME: what does rat_id mean? */
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_index_mode, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.elem_size, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.burst_count, 0);
@@ -1894,7 +1894,7 @@ void amd_inst_FETCH_impl()
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.fetch_type, 2);  /* NO_INDEX_OFFSET */
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.fetch_whole_quad, 0);
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.buffer_id, 156);  /* FIXME: what is that? */
+	/* GPU_PARAM_NOT_SUPPORTED_NEQ(W0.buffer_id, 156);  FIXME: what is that? */
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.offset, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.endian_swap, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.const_buf_no_stride, 0);
@@ -1922,7 +1922,7 @@ void amd_inst_FETCH_impl()
 	/* FIXME: buffer_id - what does it mean? */
 	
 	/* Do not fetch for inactive threads */
-	if (!gpu_thread_get_pred(gpu_isa_thread))
+	if (!gpu_thread_get_active(gpu_isa_thread))
 		return;
 	
 	/* Use constant fields */
