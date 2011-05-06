@@ -1,6 +1,7 @@
 #include "elfanalyze.h"
 #include <CL/cl.h>
-#include <calcl.h>
+#include <CAL/cal.h>
+#include <CAL/calcl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
