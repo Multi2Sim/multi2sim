@@ -631,21 +631,22 @@ void gpu_isa_write_gpr_float(int gpr, int rel, int chan, float value_float)
 }
 
 
-/* Read source operand in ALU instruction */
-uint32_t gpu_isa_read_op_src(int src_idx)
+/* Read source operand in ALU instruction.
+ * This is a common function for both integer and float formats. */
+static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_ptr)
 {
-	int sel, rel, chan, neg, abs;
+	int sel, rel, chan;
 	int32_t value = 0;  /* Signed, for negative constants and abs operations */
 
 	/* Get the source operand parameters */
-	amd_inst_get_op_src(gpu_isa_inst, src_idx, &sel, &rel, &chan, &neg, &abs);
+	amd_inst_get_op_src(gpu_isa_inst, src_idx, &sel, &rel, &chan, neg_ptr, abs_ptr);
 
 	/* 0..127: Value in GPR */
 	if (IN_RANGE(sel, 0, 127)) {
 		int index_mode;
 		index_mode = gpu_isa_inst->words[0].alu_word0.index_mode;
 		value = gpu_isa_read_gpr(sel, rel, chan, index_mode);
-		goto end;
+		return value;
 	}
 
 	/* 128..159: Kcache 0 constant */
@@ -661,7 +662,7 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 		GPU_PARAM_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
 		gpu_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 128, chan, &value);
-		goto end;
+		return value;
 	}
 
 	/* 160..191: Kcache 1 constant */
@@ -677,7 +678,7 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 		GPU_PARAM_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
 		gpu_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 160, chan, &value);
-		goto end;
+		return value;
 	}
 
 	/* QA and QA.pop */
@@ -691,7 +692,7 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 			list_enqueue(gpu_isa_thread->lds_oqa, pvalue);
 		else
 			free(pvalue);
-		goto end;
+		return value;
 	}
 
 	/* QB and QB.pop */
@@ -705,32 +706,32 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 			list_enqueue(gpu_isa_thread->lds_oqb, pvalue);
 		else
 			free(pvalue);
-		goto end;
+		return value;
 	}
 
 	/* ALU_SRC_0 */
 	if (sel == 248) {
 		value = 0;
-		goto end;
+		return value;
 	}
 
 	/* ALU_SRC_1 */
 	if (sel == 249) {
 		float f = 1.0f;
 		value = * (uint32_t *) &f;
-		goto end;
+		return value;
 	}
 
 	/* ALU_SRC_1_INT */
 	if (sel == 250) {
 		value = 1;
-		goto end;
+		return value;
 	}
 
 	/* ALU_SRC_M_1_INT */
 	if (sel == 251) {
 		value = -1;
-		goto end;
+		return value;
 	}
 
 	/* ALU_SRC_LITERAL */
@@ -738,30 +739,42 @@ uint32_t gpu_isa_read_op_src(int src_idx)
 		assert(gpu_isa_inst->alu_group);
 		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
 		value = * (uint32_t *) &gpu_isa_inst->alu_group->literal[chan];
-		goto end;
+		return value;
 	}
 
 	/* ALU_SRC_PV */
 	if (sel == 254) {
 		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
 		value = GPU_THR.pv.elem[chan];
-		goto end;
+		return value;
 	}
 
 	/* ALU_SRC_PS */
 	if (sel == 255) {
 		value = GPU_THR.pv.elem[4];
-		goto end;
+		return value;
 	}
 
+	/* Not implemented 'sel' field */
 	fatal("gpu_isa_read_op_src: src_idx=%d, not implemented for sel=%d", src_idx, sel);
+	return 0;
+}
 
-end:
+
+uint32_t gpu_isa_read_op_src_int(int src_idx)
+{
+	int neg, abs;
+	int32_t value; /* Signed */
+
+	value = gpu_isa_read_op_src_common(src_idx, &neg, &abs);
+
 	/* Absolute value and negation */
 	if (abs && value < 0)
 		value = -value;
 	if (neg)
 		value = -value;
+	
+	/* Return as unsigned */
 	return value;
 }
 
@@ -770,9 +783,16 @@ float gpu_isa_read_op_src_float(int src_idx)
 {
 	uint32_t value;
 	float value_float;
+	int neg, abs;
 
-	value = gpu_isa_read_op_src(src_idx);
+	value = gpu_isa_read_op_src_common(src_idx, &neg, &abs);
 	value_float = * (float *) &value;
+
+	/* Absolute value and negation */
+	if (abs && value_float < 0.0)
+		value_float = -value_float;
+	if (neg)
+		value_float = -value_float;
 	return value_float;
 }
 

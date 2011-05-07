@@ -866,3 +866,7 @@
 	* src/libgpukernel/gpumachine.c: bug fixed in 'FETCH' instruction. Call to
 		'gpu_thread_get_pred' replaced by 'gpu_thread_get_active'.
 
+2010-05-07
+	* src/libgpukernel/gpuisa.c: bug fixed in function 'gpu_isa_read_op_src' when trying
+		to get absolute value and negation for floating point numbers. This bug fix
+		provides support for additional OpenCL kernels.
