@@ -656,7 +656,7 @@ float gpu_isa_read_gpr_float(int gpr, int rel, int chan, int im);
 void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value);
 void gpu_isa_write_gpr_float(int gpr, int rel, int chan, float value);
 
-uint32_t gpu_isa_read_op_src(int src_idx);
+uint32_t gpu_isa_read_op_src_int(int src_idx);
 float gpu_isa_read_op_src_float(int src_idx);
 
 void gpu_isa_init(void);

@@ -547,8 +547,8 @@ void amd_inst_ASHR_INT_impl()
 	int32_t src0, dst;
 	uint32_t src1;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	if (src1 > 31)
 		dst = src0 < 0 ? -1 : 0;
 	else
@@ -561,8 +561,8 @@ void amd_inst_LSHR_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 >> src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -572,8 +572,8 @@ void amd_inst_LSHL_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 << src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -582,7 +582,7 @@ void amd_inst_LSHL_INT_impl()
 void amd_inst_MOV_impl()
 {
 	uint32_t value;
-	value = gpu_isa_read_op_src(0);
+	value = gpu_isa_read_op_src_int(0);
 	gpu_isa_enqueue_write_dest(value);
 }
 
@@ -701,8 +701,8 @@ void amd_inst_AND_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 & src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -712,8 +712,8 @@ void amd_inst_OR_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 | src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -723,8 +723,8 @@ void amd_inst_XOR_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 ^ src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -739,8 +739,8 @@ void amd_inst_ADD_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 + src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -750,8 +750,8 @@ void amd_inst_SUB_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 - src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -761,8 +761,8 @@ void amd_inst_MAX_INT_impl()
 {
 	int32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 > src1 ? src0 : src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -772,8 +772,8 @@ void amd_inst_MIN_INT_impl()
 {
 	int32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 < src1 ? src0 : src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -783,8 +783,8 @@ void amd_inst_MAX_UINT_impl()
 {
 	uint32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 > src1 ? src0 : src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -794,8 +794,8 @@ void amd_inst_MIN_UINT_impl()
 {
 	uint32_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 < src1 ? src0 : src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -812,8 +812,8 @@ void amd_inst_SETE_INT_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 == src1;
 	dst = cond ? -1 : 0;
 	gpu_isa_enqueue_write_dest(dst);
@@ -833,8 +833,8 @@ void amd_inst_SETGT_INT_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 > src1;
 	dst = cond ? -1 : 0;
 	gpu_isa_enqueue_write_dest(dst);
@@ -854,8 +854,8 @@ void amd_inst_SETGE_INT_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 >= src1;
 	dst = cond ? -1 : 0;
 	gpu_isa_enqueue_write_dest(dst);
@@ -875,8 +875,8 @@ void amd_inst_SETNE_INT_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 != src1;
 	dst = cond ? -1 : 0;
 	gpu_isa_enqueue_write_dest(dst);
@@ -898,8 +898,8 @@ void amd_inst_SETGT_UINT_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 > src1;
 	dst = cond ? -1 : 0;
 	gpu_isa_enqueue_write_dest(dst);
@@ -919,8 +919,8 @@ void amd_inst_SETGE_UINT_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 >= src1;
 	dst = cond ? -1 : 0;
 	gpu_isa_enqueue_write_dest(dst);
@@ -952,8 +952,8 @@ void amd_inst_PREDE_INT_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 == src1;
 	dst = cond ? 0.0f : 1.0f;
 	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
@@ -984,8 +984,8 @@ void amd_inst_PRED_SETGT_INT_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 > src1;
 	dst = cond ? 0.0f : 1.0f;
 	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
@@ -1011,8 +1011,8 @@ void amd_inst_PRED_SETNE_INT_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 != src1;
 	dst = cond ? 0.0f : 1.0f;
 	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
@@ -1218,8 +1218,8 @@ void amd_inst_MULLO_INT_impl()
 {
 	int64_t src0, src1, dst;
 
-	src0 = (int32_t) gpu_isa_read_op_src(0);
-	src1 = (int32_t) gpu_isa_read_op_src(1);
+	src0 = (int32_t) gpu_isa_read_op_src_int(0);
+	src1 = (int32_t) gpu_isa_read_op_src_int(1);
 	dst = src0 * src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -1229,8 +1229,8 @@ void amd_inst_MULHI_INT_impl()
 {
 	int64_t src0, src1, dst;
 
-	src0 = (int32_t) gpu_isa_read_op_src(0);
-	src1 = (int32_t) gpu_isa_read_op_src(1);
+	src0 = (int32_t) gpu_isa_read_op_src_int(0);
+	src1 = (int32_t) gpu_isa_read_op_src_int(1);
 	dst = src0 * src1;
 	gpu_isa_enqueue_write_dest(dst >> 32);
 }
@@ -1240,8 +1240,8 @@ void amd_inst_MULLO_UINT_impl()
 {
 	uint64_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 * src1;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -1251,8 +1251,8 @@ void amd_inst_MULHI_UINT_impl()
 {
 	uint64_t src0, src1, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
 	dst = src0 * src1;
 	gpu_isa_enqueue_write_dest(dst >> 32);
 }
@@ -1268,7 +1268,7 @@ void amd_inst_RECIP_UINT_impl()
 	uint32_t src;
 	uint32_t dst;
 
-	src = gpu_isa_read_op_src(0);
+	src = gpu_isa_read_op_src_int(0);
 	dst = 0xffffffff / src;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -1320,7 +1320,7 @@ void amd_inst_INT_TO_FLT_impl()
 	int32_t src0;
 	float dst;
 
-	src0 = gpu_isa_read_op_src(0);
+	src0 = gpu_isa_read_op_src_int(0);
 	dst = (float) src0;
 	gpu_isa_enqueue_write_dest_float(dst);
 }
@@ -1331,7 +1331,7 @@ void amd_inst_UINT_TO_FLT_impl()
 	uint32_t src0;
 	float dst;
 
-	src0 = gpu_isa_read_op_src(0);
+	src0 = gpu_isa_read_op_src_int(0);
 	dst = (float) src0;
 	gpu_isa_enqueue_write_dest_float(dst);
 }
@@ -1721,9 +1721,9 @@ void amd_inst_LDS_IDX_OP_impl()
 		(W1.idx_offset_1 << 1) | W1.idx_offset_0;
 	
 	/* Read operands */
-	op0 = gpu_isa_read_op_src(0);
-	op1 = gpu_isa_read_op_src(1);
-	op2 = gpu_isa_read_op_src(2);
+	op0 = gpu_isa_read_op_src_int(0);
+	op1 = gpu_isa_read_op_src_int(1);
+	op2 = gpu_isa_read_op_src_int(2);
 
 	/* Process LDS instruction */
 	switch (W1.lds_op) {
@@ -1858,9 +1858,9 @@ void amd_inst_CNDE_INT_impl()
 {
 	uint32_t src0, src1, src2, dst;
 
-	src0 = gpu_isa_read_op_src(0);
-	src1 = gpu_isa_read_op_src(1);
-	src2 = gpu_isa_read_op_src(2);
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
+	src2 = gpu_isa_read_op_src_int(2);
 	dst = src0 == 0 ? src1 : src2;
 	gpu_isa_enqueue_write_dest(dst);
 }
@@ -1888,6 +1888,7 @@ void amd_inst_FETCH_impl()
 {
 	uint32_t addr;
 	int data_format;
+	int dst_sel[4];
 	int i;
 
 	//amd_inst_words_dump(gpu_isa_inst, stdout);///
@@ -1925,6 +1926,12 @@ void amd_inst_FETCH_impl()
 	if (!gpu_thread_get_active(gpu_isa_thread))
 		return;
 	
+	/* Store 'dst_sel_{x,y,z,w}' in array */
+	dst_sel[0] = W1.dst_sel_x;
+	dst_sel[1] = W1.dst_sel_y;
+	dst_sel[2] = W1.dst_sel_z;
+	dst_sel[3] = W1.dst_sel_w;
+	
 	/* Use constant fields */
 	if (W1.use_const_fields) {
 		/* FIXME: format can be found in constant. See table 2.10 in Evergreen manual.
@@ -1948,17 +1955,31 @@ void amd_inst_FETCH_impl()
 	{
 		uint32_t value;
 
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_x, 0);  /* SEL_X */
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_y, 7);  /* SEL_MASK */
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_z, 7);  /* SEL_MASK */
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_w, 7);  /* SEL_MASK */
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.mega_fetch_count, 3);  /* 4-byte fetch */
 
+		/* Read value */
 		mem_read(gk->global_mem, addr + W2.offset, 4, &value);
-		gpu_isa_write_gpr(W1.dst_gpr, W1.dst_rel, 0, value);
-		if (debug_status(gpu_isa_debug_category)) {
-			gpu_isa_debug("=(%d,%gf)=>", value, * (float *) &value);
-			amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, 0, 0, debug_file(gpu_isa_debug_category));
+		gpu_isa_debug("=(%d,%gf)", value, * (float *) &value);
+
+		/* Write to GPR */
+		for (i = 0; i < 4; i++) {
+			switch (dst_sel[i]) {
+			case 0:
+				/* SEL_X: Use read word 0 to store in the i'th GPR element */
+				gpu_isa_write_gpr(W1.dst_gpr, W1.dst_rel, i, value);
+				if (debug_status(gpu_isa_debug_category)) {
+					gpu_isa_debug("=>");
+					amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, 0, debug_file(gpu_isa_debug_category));
+				}
+				break;
+
+			case 7:
+				/* SEL_MASK: mask this element */
+				break;
+
+			default:
+				GPU_PARAM_NOT_SUPPORTED(dst_sel[i]);
+			}
 		}
 		break;
 	}
