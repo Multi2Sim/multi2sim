@@ -1,0 +1,1742 @@
+/*
+ * DEFINST format
+ *      name: Instruction name
+ *      fmt_str: String representing the format for dissasembly
+ *      fmt0: Format for word 0
+ *      fmt1: Format for word 1
+ *      fmt2: Format for word 2 (CF_FMT_INVALID if none)
+ *      category: Instruction category
+ *           CF: control flow instructions
+ *           ALU: ALU clause instructions
+ *           LDS: LDS clause instructions
+ *           VTS: instructions for a fetch through a vertex cache clause
+ *           TEX: instructions for a fetch through a texture cache clause
+ *           MEM_RD: memory read instructions
+ *           MEM_GDS: global data-share read/write instructions
+ *      opcode: Value for cf_inst/alu_inst in format
+ *      flags: Instruction properties
+ */
+
+DEFINST(ALU,
+	"ALU: ADDR(%cf_alu_addr) CNT(%cf_alu_cnt) %kcache",
+	CF_ALU_WORD0, CF_ALU_WORD1, NONE,
+	CF, 8,
+	0
+)
+
+DEFINST(ALU_BREAK,
+	"ALU_BREAK: ADDR(%cf_alu_addr) CNT(%cf_alu_cnt) %kcache",
+	CF_ALU_WORD0, CF_ALU_WORD1, NONE,
+	CF, 14,
+	0
+)
+
+DEFINST(ALU_POP_AFTER,
+	"ALU_POP_AFTER: ADDR(%cf_alu_addr) CNT(%cf_alu_cnt) %kcache",
+	CF_ALU_WORD0, CF_ALU_WORD1, NONE,
+	CF, 10,
+	0
+)
+
+DEFINST(ALU_PUSH_BEFORE,
+	"ALU_PUSH_BEFORE: ADDR(%cf_alu_addr) CNT(%cf_alu_cnt) %no_barrier %kcache",
+	CF_ALU_WORD0, CF_ALU_WORD1, NONE,
+	CF, 9,
+	0
+)
+
+DEFINST(ELSE,
+	"ELSE %pop_count ADDR(%cf_addr)",
+	CF_WORD0, CF_WORD1, NONE,
+	CF, 13,
+	AMD_INST_FLAG_ACT_MASK
+)
+
+DEFINST(JUMP,
+	"JUMP %pop_count ADDR(%cf_addr)",
+	CF_WORD0, CF_WORD1, NONE,
+	CF, 10,
+	AMD_INST_FLAG_ACT_MASK
+)
+
+DEFINST(LOOP_END,
+	"ENDLOOP %loop_idx PASS_JUMP_ADDR(%cf_addr)",
+	CF_WORD0, CF_WORD1, NONE,
+	CF, 5,
+	AMD_INST_FLAG_DEC_LOOP_IDX | AMD_INST_FLAG_ACT_MASK
+)
+
+DEFINST(LOOP_START_DX10,
+	"LOOP_DX10 %loop_idx FAIL_JUMP_ADDR(%cf_addr)",
+	CF_WORD0, CF_WORD1, NONE,
+	CF, 6,
+	AMD_INST_FLAG_INC_LOOP_IDX | AMD_INST_FLAG_ACT_MASK
+)
+
+DEFINST(MEM_RAT_CACHELESS,
+	"MEM_RAT_CACHELESS_%rat_inst: RAT(%rat_id%rat_index_mode)[%rat_index_gpr]%comp_mask, "
+	"%rat_rw_gpr, %array_size %elem_size %mark %burst_count %no_barrier %vpm",
+	CF_ALLOC_EXPORT_WORD0_RAT, CF_ALLOC_EXPORT_WORD1_BUF, NONE,
+	CF, 87,
+	AMD_INST_FLAG_MEM
+)
+
+DEFINST(NOP_CF,
+	"NOP",
+	CF_WORD0, CF_WORD1, NONE,
+	CF, 0,
+	0
+)
+
+DEFINST(POP,
+	"POP %pop_count ADDR(%cf_addr)",
+	CF_WORD0, CF_WORD1, NONE,
+	CF, 14,
+	AMD_INST_FLAG_ACT_MASK
+)
+
+DEFINST(TC,
+	"TEX: ADDR(%cf_addr) CNT(%cf_cnt) %no_barrier %cf_cond %cf_const %wqm %vpm",
+	CF_WORD0, CF_WORD1, NONE,
+	CF, 1,
+	0
+)
+
+DEFINST(WAIT_ACK,
+	"WAIT_ACK",
+	CF_WORD0, CF_WORD1, NONE,
+	CF, 26,
+	0
+)
+
+
+
+
+/*
+ * ALU Instructions
+ */
+
+DEFINST(ADD,
+	"ADD%omod       %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 0,
+	0
+)
+
+DEFINST(MUL,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 1,
+	0
+)
+
+DEFINST(MUL_IEEE,
+	"MUL_e%omod     %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 2,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(MAX,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 3,
+	0
+)
+
+DEFINST(MIN,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 4,
+	0
+)
+
+DEFINST(MAX_DX10,
+	"MAX_DX10%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 5,
+	0
+)
+
+DEFINST(MIN_DX10,
+	"MIN_DX10%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 6,
+	0
+)
+
+DEFINST(SETE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 8,
+	0
+)
+
+DEFINST(SETGT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 9,
+	0
+)
+
+DEFINST(SETGE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 10,
+	0
+)
+
+DEFINST(SETNE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 11,
+	0
+)
+
+DEFINST(SETE_DX10,
+	"SETE_DX10%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 12,
+	0
+)
+
+DEFINST(SETGT_DX10,
+	"SETGT_DX10%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 13,
+	0
+)
+
+DEFINST(SETGE_DX10,
+	"SETGE_DX10%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 14,
+	0
+)
+
+DEFINST(SETNE_DX10,
+	"SETNE_DX10%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 15,
+	0
+)
+
+DEFINST(FRACT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 16,
+	0
+)
+
+DEFINST(TRUNC,
+	"TRUNC       %alu_dst,  %alu_src0  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 17,
+	0
+)
+
+DEFINST(CEIL,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 18,
+	0
+)
+
+DEFINST(RNDNE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 19,
+	0
+)
+
+DEFINST(FLOOR,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 20,
+	0
+)
+
+DEFINST(ASHR_INT,
+	"ASHR%omod      %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 21,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(LSHR_INT,
+	"LSHR%omod      %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 22,
+	AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(LSHL_INT,
+	"LSHL%omod      %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 23,
+	AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(MOV,
+	"MOV%omod       %alu_dst,  %alu_src0  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 25,
+	0
+)
+
+DEFINST(NOP_ALU,
+	"NOP",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 26,
+	0
+)
+
+DEFINST(MUL_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 27,
+	0
+)
+
+DEFINST(FLT64_TO_FLT32,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 28,
+	0
+)
+
+DEFINST(FLT32_TO_FLT64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 29,
+	0
+)
+
+DEFINST(PRED_SETGT_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 30,
+	0
+)
+
+DEFINST(PRED_SETGE_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 31,
+	0
+)
+
+DEFINST(PRED_SETE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 32,
+	0
+)
+
+DEFINST(PRED_SETGT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 33,
+	0
+)
+
+DEFINST(PRED_SETGE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 34,
+	0
+)
+
+DEFINST(PRED_SETNE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 35,
+	0
+)
+
+DEFINST(PRED_SET_INV,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 36,
+	0
+)
+
+DEFINST(PRED_SET_POP,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 37,
+	0
+)
+
+DEFINST(PRED_SET_CLR,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 38,
+	0
+)
+
+DEFINST(PRED_SET_RESTORE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 39,
+	0
+)
+
+DEFINST(PRED_SETE_PUSH,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 40,
+	0
+)
+
+DEFINST(PRED_SETGT_PUSH,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 41,
+	0
+)
+
+DEFINST(PRED_SETGE_PUSH,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 42,
+	0
+)
+
+DEFINST(PRED_SETNE_PUSH,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 43,
+	0
+)
+
+DEFINST(KILLE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 44,
+	0
+)
+
+DEFINST(KILLGT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 45,
+	0
+)
+
+DEFINST(KILLGE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 46,
+	0
+)
+
+DEFINST(KILLNE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 47,
+	0
+)
+
+DEFINST(AND_INT,
+	"AND_INT%omod   %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 48,
+	AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(OR_INT,
+	"OR_INT%omod   %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 49,
+	AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(XOR_INT,
+	"XOR_INT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 50,
+	AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(NOT_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 51,
+	AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(ADD_INT,
+	"ADD_INT%omod   %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 52,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(SUB_INT,
+	"SUB_INT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 53,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(MAX_INT,
+	"MAX_INT%omod   %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 54,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(MIN_INT,
+	"MIN_INT%omod   %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 55,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(MAX_UINT,
+	"MAX_UINT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 56,
+	AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(MIN_UINT,
+	"MIN_UINT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 57,
+	AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(SETE_INT,
+	"SETE_INT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 58,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(SETGT_INT,
+	"SETGT_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 59,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(SETGE_INT,
+	"SETGE_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 60,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(SETNE_INT,
+	"SETNE_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 61,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(SETGT_UINT,
+	"SETGT_UINT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 62,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(SETGE_UINT,
+	"SETGE_UINT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 63,
+	AMD_INST_FLAG_DST_INT
+)
+
+DEFINST(KILLGT_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 64,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(KILLGE_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 65,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(PREDE_INT,
+	"PREDE_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 66,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(PRED_SETGT_INT,
+	"PREDGT_INT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 67,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(PRED_SETGE_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 68,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(PRED_SETNE_INT,
+	"PREDNE_INT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 69,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(KILLE_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 70,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(KILLGT_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 71,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(KILLGE_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 72,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(KILLNE_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 73,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(PRED_SETE_PUSH_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 74,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(PRED_SETGT_PUSH_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 75,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(PRED_SETGE_PUSH_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 76,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(PRED_SETNE_PUSH_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 77,
+	0
+)
+
+DEFINST(PRED_SETLT_PUSH_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 78,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(PRED_SETLE_PUSH_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 79,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(FLT_TO_INT,
+	"F_TO_I      %alu_dst,  %alu_src0  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 80,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(BFREV_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 81,
+	0
+)
+
+DEFINST(ADDC_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 82,
+	0
+)
+
+DEFINST(SUBB_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 83,
+	0
+)
+
+DEFINST(GROUP_BARRIER,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 84,
+	0
+)
+
+DEFINST(GROUP_SEQ_BEGIN,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 85,
+	0
+)
+
+DEFINST(GROUP_SEQ_END,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 86,
+	0
+)
+
+DEFINST(SET_MODE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 87,
+	0
+)
+
+DEFINST(SET_CF_IDX0,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 88,
+	0
+)
+
+DEFINST(SET_CF_IDX1,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 89,
+	0
+)
+
+DEFINST(SET_LDS_SIZE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 90,
+	0
+)
+
+DEFINST(EXP_IEEE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 129,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(LOG_CLAMPED,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 130,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(LOG_IEEE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 131,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(RECIP_CLAMPED,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 132,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(RECIP_FF,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 133,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(RECIP_IEEE,
+	"RCP_e%omod    %alu_dst,  %alu_src0  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 134,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(RECIPSQRT_CLAMPED,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 135,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(RECIPSQRT_FF,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 136,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(RECIPSQRT_IEEE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 137,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(SQRT_IEEE,
+	"SQRT_e%omod    %alu_dst,  %alu_src0  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 138,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(SIN,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 141,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(COS,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 142,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(MULLO_INT,
+	"MULLO_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 143,
+	AMD_INST_FLAG_TRANS_ONLY | AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(MULHI_INT,
+	"MULHI_INT%omod %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 144,
+	AMD_INST_FLAG_TRANS_ONLY | AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(MULLO_UINT,
+	"MULLO_UINT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 145,
+	AMD_INST_FLAG_TRANS_ONLY | AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(MULHI_UINT,
+	"MULHI_UINT%omod%alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 146,
+	AMD_INST_FLAG_TRANS_ONLY | AMD_INST_FLAG_DST_UINT
+)
+
+DEFINST(RECIP_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 147,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(RECIP_UINT,
+	"RCP_UINT%omod  %alu_dst,  %alu_src0  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 148,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(RECIP_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 149,
+	0
+)
+
+DEFINST(RECIP_CLAMPED_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 150,
+	0
+)
+
+DEFINST(RECIPSQRT_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 151,
+	0
+)
+
+DEFINST(RECIPSQRT_CLAMPED_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 152,
+	0
+)
+
+DEFINST(SQRT_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 153,
+	0
+)
+
+DEFINST(FLT_TO_UINT,
+	"F_TO_U      %alu_dst,  %alu_src0  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 154,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(INT_TO_FLT,
+	"I_TO_F      %alu_dst,  %alu_src0  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 155,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(UINT_TO_FLT,
+	"U_TO_F      %alu_dst,  %alu_src0  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 156,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+DEFINST(BFM_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 160,
+	0
+)
+
+DEFINST(FLT32_TO_FLT16,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 162,
+	0
+)
+
+DEFINST(FLT16_TO_FLT32,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 163,
+	0
+)
+
+DEFINST(UBYTE0_FLT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 164,
+	0
+)
+
+DEFINST(UBYTE1_FLT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 165,
+	0
+)
+
+DEFINST(UBYTE2_FLT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 166,
+	0
+)
+
+DEFINST(UBYTE3_FLT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 167,
+	0
+)
+
+DEFINST(BCNT_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 170,
+	0
+)
+
+DEFINST(FFBH_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 171,
+	0
+)
+
+DEFINST(FFBL_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 172,
+	0
+)
+
+DEFINST(FFBH_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 173,
+	0
+)
+
+DEFINST(FLT_TO_UINT4,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 174,
+	0
+)
+
+DEFINST(DOT_IEEE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 175,
+	0
+)
+
+DEFINST(FLT_TO_INT_RPI,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 176,
+	0
+)
+
+DEFINST(FLT_TO_INT_FLOOR,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 177,
+	0
+)
+
+DEFINST(MULHI_UINT24,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 178,
+	0
+)
+
+DEFINST(MBCNT_32HI_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 179,
+	0
+)
+
+DEFINST(OFFSET_TO_FLT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 180,
+	0
+)
+
+DEFINST(MUL_UINT24,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 181,
+	0
+)
+
+DEFINST(BCNT_ACCUM_PREV_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 182,
+	0
+)
+
+DEFINST(MBCNT_32LO_ACCUM_PREV_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 183,
+	0
+)
+
+DEFINST(SETE_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 184,
+	0
+)
+
+DEFINST(SETNE_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 185,
+	0
+)
+
+DEFINST(SETGT_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 186,
+	0
+)
+
+DEFINST(SETGE_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 187,
+	0
+)
+
+DEFINST(MIN_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 188,
+	0
+)
+
+DEFINST(MAX_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 189,
+	0
+)
+
+DEFINST(DOT4,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 190,
+	0
+)
+
+DEFINST(DOT4_IEEE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 191,
+	0
+)
+
+DEFINST(CUBE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 192,
+	0
+)
+
+DEFINST(MAX4,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 193,
+	0
+)
+
+DEFINST(FREXP_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 196,
+	0
+)
+
+DEFINST(LDEXP_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 197,
+	0
+)
+
+DEFINST(FRACT_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 198,
+	0
+)
+
+DEFINST(PRED_SETGT_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 199,
+	0
+)
+
+DEFINST(PRED_SETE_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 200,
+	0
+)
+
+DEFINST(PRED_SETGE_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 201,
+	0
+)
+
+DEFINST(MUL_64_VEC,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 202,
+	0
+)
+
+DEFINST(ADD_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 203,
+	0
+)
+
+DEFINST(MOVA_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 204,
+	0
+)
+
+DEFINST(FLT64_TO_FLT32_VEC,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 205,
+	0
+)
+
+DEFINST(FLT32_TO_FLT64_VEC,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 206,
+	0
+)
+
+DEFINST(SAD_ACCUM_PREV_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 207,
+	0
+)
+
+DEFINST(DOT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 208,
+	0
+)
+
+DEFINST(MUL_PREV,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 209,
+	0
+)
+
+DEFINST(MUL_IEEE_PREV,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 210,
+	0
+)
+
+DEFINST(ADD_PREV,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 211,
+	0
+)
+
+DEFINST(MULADD_PREV,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 212,
+	0
+)
+
+DEFINST(MULADD_IEEE_PREV,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 213,
+	0
+)
+
+DEFINST(INTERP_XY,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 214,
+	0
+)
+
+DEFINST(INTERP_ZW,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 215,
+	0
+)
+
+DEFINST(INTERP_X,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 216,
+	0
+)
+
+DEFINST(INTERP_Z,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 217,
+	0
+)
+
+DEFINST(STORE_FLAGS,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 218,
+	0
+)
+
+DEFINST(LOAD_STORE_FLAGS,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 219,
+	0
+)
+
+DEFINST(LDS_1A,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 220,
+	0
+)
+
+DEFINST(LDS_1A1D,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 221,
+	0
+)
+
+DEFINST(LDS_2A,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 223,
+	0
+)
+
+DEFINST(INTERP_LOAD_P0,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 224,
+	0
+)
+
+DEFINST(INTERP_LOAD_P10,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 225,
+	0
+)
+
+DEFINST(INTERP_LOAD_P20,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP2, NONE,
+	ALU, 226,
+	0
+)
+
+DEFINST(BFE_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 4,
+	0
+)
+
+DEFINST(BFE_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 5,
+	0
+)
+
+DEFINST(BFI_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 6,
+	0
+)
+
+DEFINST(FMA,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 7,
+	0
+)
+
+DEFINST(CNDNE_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 9,
+	0
+)
+
+DEFINST(FMA_64,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 10,
+	0
+)
+
+DEFINST(LERP_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 11,
+	0
+)
+
+DEFINST(BIT_ALIGN_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 12,
+	0
+)
+
+DEFINST(BYTE_ALIGN_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 13,
+	0
+)
+
+DEFINST(SAD_ACCUM_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 14,
+	0
+)
+
+DEFINST(SAD_ACCUM_HI_UINT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 15,
+	0
+)
+
+DEFINST(MULADD_UINT24,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 16,
+	0
+)
+
+DEFINST(LDS_IDX_OP,
+	"LDS_%lds_op  %alu_src0,  %alu_src1,  %alu_src2",
+	ALU_WORD0_LDS_IDX_OP, ALU_WORD1_LDS_IDX_OP, NONE,
+	ALU, 17,
+	AMD_INST_FLAG_LDS
+)
+
+DEFINST(MULADD,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 20,
+	0
+)
+
+DEFINST(MULADD_M2,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 21,
+	0
+)
+
+DEFINST(MULADD_M4,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 22,
+	0
+)
+
+DEFINST(MULADD_D2,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 23,
+	0
+)
+
+DEFINST(MULADD_IEEE,
+	"MULADD_e    %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 24,
+	AMD_INST_FLAG_DST_FLOAT
+)
+
+DEFINST(CNDE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 25,
+	0
+)
+
+DEFINST(CNDGT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 26,
+	0
+)
+
+DEFINST(CNDGE,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 27,
+	0
+)
+
+DEFINST(CNDE_INT,
+	"CNDE_INT   %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 28,
+	0
+)
+
+DEFINST(CMNDGT_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 29,
+	0
+)
+
+DEFINST(CMNDGE_INT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 30,
+	0
+)
+
+DEFINST(MUL_LIT,
+	"%name",
+	ALU_WORD0, ALU_WORD1_OP3, NONE,
+	ALU, 31,
+	AMD_INST_FLAG_TRANS_ONLY
+)
+
+
+
+/*
+ * VTX Instructions
+ */
+
+DEFINST(FETCH,
+	"VFETCH %vtx_dst_gpr, %vtx_src_gpr, %vtx_buffer_id %vtx_data_format %vtx_mega_fetch %vtx_offset %vtx_fetch_whole_quad %nl"
+	"%vtx_endian_swap %vtx_num_format %vtx_format_comp %vtx_srf_mode %vtx_fetch_type %vtx_cbns",
+	VTX_WORD0, VTX_WORD1_GPR, VTX_WORD2,
+	VTX, 0,
+	AMD_INST_FLAG_MEM
+)
+
+DEFINST(GET_BUFFER_RESINFO,
+	"%name",
+	VTX_WORD0, VTX_WORD1_GPR, VTX_WORD2,
+	VTX, 14,
+	0
+)
+
+DEFINST(SEMANTIC,
+	"%name",
+	VTX_WORD0, VTX_WORD1_SEM, VTX_WORD2,
+	VTX, 1,
+	0
+)
+
+
+
+/*
+ * TEX Instructions
+ */
+
+DEFINST(GATHER4,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 21,
+	0
+)
+
+DEFINST(GATHER4_C,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 29,
+	0
+)
+
+DEFINST(GATHER4_C_O,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 31,
+	0
+)
+
+DEFINST(GATHER4_O,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 23,
+	0
+)
+
+DEFINST(GET_GRADIENTS_H,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 7,
+	0
+)
+
+DEFINST(GET_GRADIENTS_V,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 8,
+	0
+)
+
+DEFINST(GET_LOD,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 6,
+	0
+)
+
+DEFINST(GET_NUMBER_OF_SAMPLES,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 5,
+	0
+)
+
+DEFINST(GET_TEXTURE_RESINFO,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 4,
+	0
+)
+
+DEFINST(KEEP_GRADIENTS,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 10,
+	0
+)
+
+DEFINST(LD,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 3,
+	0
+)
+
+DEFINST(SAMPLE,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 16,
+	0
+)
+
+DEFINST(SAMPLE_C,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 24,
+	0
+)
+
+DEFINST(SAMPLE_C_G,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 28,
+	0
+)
+
+DEFINST(SAMPLE_C_G_LB,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 30,
+	0
+)
+
+DEFINST(SAMPLE_C_L,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 25,
+	0
+)
+
+DEFINST(SAMPLE_C_LB,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 26,
+	0
+)
+
+DEFINST(SAMPLE_C_LZ,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 27,
+	0
+)
+
+DEFINST(SAMPLE_G,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 20,
+	0
+)
+
+DEFINST(SAMPLE_G_LB,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 22,
+	0
+)
+
+DEFINST(SAMPLE_L,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 17,
+	0
+)
+
+DEFINST(SAMPLE_LB,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 18,
+	0
+)
+
+DEFINST(SAMPLE_LZ,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 19,
+	0
+)
+
+DEFINST(SET_GRADIENTS_H,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 11,
+	0
+)
+
+DEFINST(SET_GRADIENTS_V,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 12,
+	0
+)
+
+DEFINST(SET_TEXTURE_OFFSETS,
+	"%name",
+	TEX_WORD0, TEX_WORD1, TEX_WORD2,
+	TEX, 9,
+	0
+)
+
+
