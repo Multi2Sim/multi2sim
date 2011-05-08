@@ -870,3 +870,7 @@
 	* src/libgpukernel/gpuisa.c: bug fixed in function 'gpu_isa_read_op_src' when trying
 		to get absolute value and negation for floating point numbers. This bug fix
 		provides support for additional OpenCL kernels.
+
+2010-05-08
+	* Version 3.0.3 Released
+
