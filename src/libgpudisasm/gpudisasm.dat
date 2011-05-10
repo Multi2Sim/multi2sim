@@ -222,7 +222,7 @@ DEFINST(SETNE_DX10,
 )
 
 DEFINST(FRACT,
-	"%name",
+	"FRACT       %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 16,
 	0
@@ -1475,21 +1475,21 @@ DEFINST(MULADD_IEEE,
 )
 
 DEFINST(CNDE,
-	"%name",
+	"CNDE       %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 25,
 	0
 )
 
 DEFINST(CNDGT,
-	"%name",
+	"CNDGT      %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 26,
 	0
 )
 
 DEFINST(CNDGE,
-	"%name",
+	"CNDGE      %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 27,
 	0
