@@ -1976,7 +1976,7 @@ void amd_inst_FETCH_impl()
 {
 	uint32_t addr;
 	int data_format;
-	int dst_sel[4];
+	int dst_sel[4], dst_sel_elem;
 	int i;
 
 	//amd_inst_words_dump(gpu_isa_inst, stdout);///
@@ -2032,32 +2032,50 @@ void amd_inst_FETCH_impl()
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.srf_mode_all, 0);
 	}
 	
-	/* Address */
-	addr = gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * 4;  /* FIXME: x4? */
-	gpu_isa_debug("  t%d:read(0x%x)", GPU_THR.global_id, addr);
-
 	/* Fetch */
 	switch (data_format) {
 
 	case 13:  /* DATA_FORMAT_32 */
+	case 29:  /* DATA_FORMAT_32_32 */
+	case 47:  /* DATA_FORMAT_32_32_32 */
+	case 34:  /* DATA_FORMAT_32_32_32_32 */
+	case 14:  /* DATA_FORMAT_32_FLOAT */
+	case 30:  /* DATA_FORMAT_32_32_FLOAT */
+	case 48:  /* DATA_FORMAT_32_32_32_FLOAT */
+	case 35:  /* DATA_FORMAT_32_32_32_32_FLOAT */
 	{
-		uint32_t value;
+		uint32_t value[4];
+		int num_elem;
 
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.mega_fetch_count, 3);  /* 4-byte fetch */
+		/* Address */
+		addr = gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * 4;
+		gpu_isa_debug("  t%d:read(0x%x)", GPU_THR.global_id, addr);
 
 		/* Read value */
-		mem_read(gk->global_mem, addr + W2.offset, 4, &value);
-		gpu_isa_debug("=(%d,%gf)", value, * (float *) &value);
+		assert(W0.mega_fetch_count == 3 || W0.mega_fetch_count == 7
+			|| W0.mega_fetch_count == 11 || W0.mega_fetch_count == 15);
+		num_elem = (W0.mega_fetch_count + 1) / 4;
+		mem_read(gk->global_mem, addr + W2.offset, num_elem * 4, value);
 
-		/* Write to GPR */
+		/* Write to each component of the GPR */
 		for (i = 0; i < 4; i++) {
-			switch (dst_sel[i]) {
-			case 0:
-				/* SEL_X: Use read word 0 to store in the i'th GPR element */
-				gpu_isa_write_gpr(W1.dst_gpr, W1.dst_rel, i, value);
+
+			/* Get index of read word to place in this GPR component */
+			dst_sel_elem = dst_sel[i];
+			switch (dst_sel_elem) {
+
+			case 0:  /* SEL_X */
+			case 1:  /* SEL_Y */
+			case 2:  /* SEL_Z */
+			case 3:  /* SEL_W */
+
+				if (dst_sel_elem >= num_elem)
+					GPU_PARAM_NOT_SUPPORTED(dst_sel_elem);
+				gpu_isa_write_gpr(W1.dst_gpr, W1.dst_rel, i, value[dst_sel_elem]);
 				if (debug_status(gpu_isa_debug_category)) {
-					gpu_isa_debug("=>");
-					amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, 0, debug_file(gpu_isa_debug_category));
+					gpu_isa_debug(" ");
+					amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, dst_sel_elem, debug_file(gpu_isa_debug_category));
+					gpu_isa_debug("<=(%d,%gf)", value[dst_sel_elem], * (float *) &value[dst_sel_elem]);
 				}
 				break;
 
@@ -2072,27 +2090,6 @@ void amd_inst_FETCH_impl()
 		break;
 	}
 	
-	case 35:  /* DATA_FORMAT_32_32_32_32_FLOAT */
-	{
-		float value[4];
-
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_x, 0);  /* SEL_X */
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_y, 1);  /* SEL_Y */
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_z, 2);  /* SEL_Z */
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_sel_w, 3);  /* SEL_W */
-		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.mega_fetch_count, 15);  /* 15-byte fetch */
-
-		mem_read(gk->global_mem, addr + W2.offset, 16, value);
-		for (i = 0; i < 4; i++) {
-			gpu_isa_write_gpr_float(W1.dst_gpr, W1.dst_rel, i, value[i]);
-			gpu_isa_debug(",");
-			if (debug_status(gpu_isa_debug_category))
-				amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, 0, debug_file(gpu_isa_debug_category));
-			gpu_isa_debug("=%gf", value[i]);
-		}
-		break;
-	}
-
 	default:
 		GPU_PARAM_NOT_SUPPORTED(W1.data_format);
 	}
