@@ -665,19 +665,23 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 
 		/* Memory */
 		if (!strcmp(line_ptrs[0], "memory")) {
-			OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 			if (!strcmp(line_ptrs[1], "hwprivate")) {
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
 			} else if (!strcmp(line_ptrs[1], "hwregion")) {
+				OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
 			} else if (!strcmp(line_ptrs[1], "hwlocal")) {
+				OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
+			} else if (!strcmp(line_ptrs[1], "datareqd")) {
+				OPENCL_KERNEL_METADATA_TOKEN_COUNT(2);
+				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
 			} else
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
 			continue;
 		}
 
-		/* Entry 'value'. Format: value:<name>:<type>:?:?:<addr> */
+		/* Entry 'value'. Format: value:<ArgName>:<DataType>:<Size>:<ConstNum>:<ConstOffset> */
 		if (!strcmp(line_ptrs[0], "value")) {
 			OPENCL_KERNEL_METADATA_TOKEN_COUNT(6);
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
