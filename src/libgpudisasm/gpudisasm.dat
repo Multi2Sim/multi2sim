@@ -124,7 +124,7 @@ DEFINST(ADD,
 )
 
 DEFINST(MUL,
-	"%name",
+	"MUL%omod       %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 1,
 	0
@@ -166,28 +166,28 @@ DEFINST(MIN_DX10,
 )
 
 DEFINST(SETE,
-	"%name",
+	"SETE%omod      %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 8,
 	0
 )
 
 DEFINST(SETGT,
-	"%name",
+	"SETGT%omod     %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 9,
 	0
 )
 
 DEFINST(SETGE,
-	"%name",
+	"SETGE%omod     %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 10,
 	0
 )
 
 DEFINST(SETNE,
-	"%name",
+	"SETNE%omod     %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 11,
 	0
