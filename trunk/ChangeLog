@@ -874,3 +874,5 @@
 2010-05-08
 	* Version 3.0.3 Released
 
+2010-05-10
+	* Function 'amd_inst_FETCH_impl()' extended, providing support for more data formats.

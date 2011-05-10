@@ -2722,7 +2722,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=multi2sim
- VERSION=3.0.2
+ VERSION=3.0.3
 
 
 cat >>confdefs.h <<_ACEOF
