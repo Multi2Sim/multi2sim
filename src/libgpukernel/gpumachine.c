@@ -613,8 +613,13 @@ void amd_inst_SETNE_DX10_impl()
 #undef W1
 
 
-void amd_inst_FRACT_impl() {
-	NOT_IMPL();
+void amd_inst_FRACT_impl()
+{
+	float src, dst;
+
+	src = gpu_isa_read_op_src_float(0);
+	dst = fmodf(src, 1.0f);
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
@@ -2028,18 +2033,39 @@ void amd_inst_MULADD_IEEE_impl()
 }
 
 
-void amd_inst_CNDE_impl() {
-	NOT_IMPL();
+void amd_inst_CNDE_impl()
+{
+	float src0, src1, src2, dst;
+
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
+	src2 = gpu_isa_read_op_src_int(2);
+	dst = src0 == 0.0f ? src1 : src2;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
-void amd_inst_CNDGT_impl() {
-	NOT_IMPL();
+void amd_inst_CNDGT_impl()
+{
+	float src0, src1, src2, dst;
+
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
+	src2 = gpu_isa_read_op_src_int(2);
+	dst = src0 > 0.0f ? src1 : src2;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
-void amd_inst_CNDGE_impl() {
-	NOT_IMPL();
+void amd_inst_CNDGE_impl()
+{
+	float src0, src1, src2, dst;
+
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
+	src2 = gpu_isa_read_op_src_int(2);
+	dst = src0 >= 0.0f ? src1 : src2;
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 

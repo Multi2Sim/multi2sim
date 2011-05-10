@@ -877,3 +877,4 @@
 2010-05-10
 	* Function 'amd_inst_FETCH_impl()' extended, providing support for more data formats.
 	* Functions 'amd_inst_SET???_impl()' and 'amd_inst_SET???_DX10_impl()'
+	* Functions 'amd_inst_CND???_impl()'
