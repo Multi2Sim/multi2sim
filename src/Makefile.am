@@ -6,6 +6,7 @@ SUBDIRS = \
 	libm2skernel \
 	libdisasm \
 	libesim \
+	libcpuarch \
 	libnetwork \
 	libcachesystem \
 	libgpukernel \
@@ -13,34 +14,11 @@ SUBDIRS = \
 
 bin_PROGRAMS = \
 	m2s-fast \
-	m2s-objdump \
 	m2s
 
 m2s_fast_SOURCES = m2s-fast.c
 
-m2s_objdump_SOURCES = m2s-objdump.c
-
-m2s_SOURCES = \
-	bpred.c \
-	commit.c \
-	decode.c \
-	dispatch.c \
-	fetch.c \
-	fu.c \
-	issue.c \
-	m2s.c \
-	m2s.h \
-	processor.c \
-	queues.c \
-	recover.c \
-	rf.c \
-	rob.c \
-	sched.c \
-	tcache.c \
-	uop.c \
-	uop1.dat \
-	uop2.dat \
-	writeback.c
+m2s_SOURCES = m2s.c
 
 INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libstruct \
@@ -49,6 +27,7 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libm2skernel \
 	-I$(top_srcdir)/src/libdisasm \
 	-I$(top_srcdir)/src/libesim \
+	-I$(top_srcdir)/src/libcpuarch \
 	-I$(top_srcdir)/src/libnetwork \
 	-I$(top_srcdir)/src/libcachesystem \
 	-I$(top_srcdir)/src/libgpukernel \
@@ -63,6 +42,7 @@ LDADD = \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
+	$(top_builddir)/src/libcpuarch/libcpuarch.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a \

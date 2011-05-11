@@ -1398,13 +1398,23 @@ void amd_inst_SQRT_IEEE_impl()
 }
 
 
-void amd_inst_SIN_impl() {
-	NOT_IMPL();
+void amd_inst_SIN_impl()
+{
+	float src, dst;
+
+	src = gpu_isa_read_op_src_float(0);
+	dst = sinf(src);
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
-void amd_inst_COS_impl() {
-	NOT_IMPL();
+void amd_inst_COS_impl()
+{
+	float src, dst;
+
+	src = gpu_isa_read_op_src_float(0);
+	dst = cosf(src);
+	gpu_isa_enqueue_write_dest_float(dst);
 }
 
 
