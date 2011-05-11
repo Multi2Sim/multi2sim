@@ -458,7 +458,9 @@ int opencl_func_run(int code, unsigned int *args)
 			context_id, sflags, size, host_ptr, errcode_ret);
 
 		/* Check flags */
-		OPENCL_PARAM_NOT_SUPPORTED_FLAG(flags, 0x10, "CL_MEM_ALLOC_HOST_PTR");
+		if ((flags & 0x10) && host_ptr)
+			fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with CL_MEM_USE_HOST_PTR\n%s",
+				err_prefix, err_opencl_param_note);
 		if ((flags & 0x8) && !host_ptr)  /* CL_MEM_USE_HOST_PTR */
 			fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
 				err_prefix, err_opencl_param_note);

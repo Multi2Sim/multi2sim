@@ -810,14 +810,14 @@ DEFINST(SQRT_IEEE,
 )
 
 DEFINST(SIN,
-	"%name",
+	"SIN%omod       %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 141,
 	AMD_INST_FLAG_TRANS_ONLY
 )
 
 DEFINST(COS,
-	"%name",
+	"COS%omod       %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 142,
 	AMD_INST_FLAG_TRANS_ONLY
