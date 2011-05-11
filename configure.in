@@ -37,7 +37,7 @@ AC_CONFIG_FILES([Makefile
 		 src/libgpukernel/Makefile
 		 src/libgpudisasm/Makefile
 		 src/libcachesystem/Makefile
-                 src/libm2skernel/Makefile
+                 src/libcpukernel/Makefile
 		 src/libcpudisasm/Makefile
 		 src/libesim/Makefile
                  src/libmhandle/Makefile

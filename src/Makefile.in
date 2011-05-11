@@ -47,7 +47,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_m2s_OBJECTS = m2s.$(OBJEXT)
 m2s_OBJECTS = $(am_m2s_OBJECTS)
 m2s_LDADD = $(LDADD)
-m2s_DEPENDENCIES = $(top_builddir)/src/libm2skernel/libm2skernel.a \
+m2s_DEPENDENCIES = $(top_builddir)/src/libcpukernel/libcpukernel.a \
 	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
 	$(top_builddir)/src/libopt/libopt.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
@@ -63,7 +63,7 @@ am_m2s_fast_OBJECTS = m2s-fast.$(OBJEXT)
 m2s_fast_OBJECTS = $(am_m2s_fast_OBJECTS)
 m2s_fast_LDADD = $(LDADD)
 m2s_fast_DEPENDENCIES =  \
-	$(top_builddir)/src/libm2skernel/libm2skernel.a \
+	$(top_builddir)/src/libcpukernel/libcpukernel.a \
 	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
 	$(top_builddir)/src/libopt/libopt.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
@@ -222,7 +222,7 @@ SUBDIRS = \
 	libstruct \
 	libopt \
 	libmisc \
-	libm2skernel \
+	libcpukernel \
 	libcpudisasm \
 	libesim \
 	libcpuarch \
@@ -237,7 +237,7 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libopt \
 	-I$(top_srcdir)/src/libmisc \
-	-I$(top_srcdir)/src/libm2skernel \
+	-I$(top_srcdir)/src/libcpukernel \
 	-I$(top_srcdir)/src/libcpudisasm \
 	-I$(top_srcdir)/src/libesim \
 	-I$(top_srcdir)/src/libcpuarch \
@@ -247,7 +247,7 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libgpudisasm
 
 LDADD = \
-	$(top_builddir)/src/libm2skernel/libm2skernel.a \
+	$(top_builddir)/src/libcpukernel/libcpukernel.a \
 	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
         $(top_builddir)/src/libopt/libopt.a \
 	$(top_builddir)/src/libmisc/libmisc.a \

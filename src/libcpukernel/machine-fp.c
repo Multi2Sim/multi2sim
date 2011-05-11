@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "m2skernel.h"
+#include <cpukernel.h>
 
 #define DUMP_ABORT printf("\n%lld\n", (long long) isa_inst_count), abort()
 

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "m2skernel.h"
+#include <cpukernel.h>
 
 
 #define op_xxx_rm8_1_impl(xxx) void op_##xxx##_rm8_1_impl() { \
