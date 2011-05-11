@@ -4,7 +4,7 @@ SUBDIRS = \
 	libopt \
 	libmisc \
 	libm2skernel \
-	libdisasm \
+	libcpudisasm \
 	libesim \
 	libcpuarch \
 	libnetwork \
@@ -25,7 +25,7 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libopt \
 	-I$(top_srcdir)/src/libmisc \
 	-I$(top_srcdir)/src/libm2skernel \
-	-I$(top_srcdir)/src/libdisasm \
+	-I$(top_srcdir)/src/libcpudisasm \
 	-I$(top_srcdir)/src/libesim \
 	-I$(top_srcdir)/src/libcpuarch \
 	-I$(top_srcdir)/src/libnetwork \
@@ -35,7 +35,7 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 
 LDADD = \
 	$(top_builddir)/src/libm2skernel/libm2skernel.a \
-	$(top_builddir)/src/libdisasm/libdisasm.a \
+	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
         $(top_builddir)/src/libopt/libopt.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \

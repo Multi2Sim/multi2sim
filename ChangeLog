@@ -1,22 +1,22 @@
-2007-03-20  Rafael Ubal Tena <raurte@gap.upv.es>
+2007-03-20  Rafael Ubal Tena <ubal@gap.upv.es>
 
 	* libopt/stats.c: New functions 'stat_reg_dist' and 'stat_add_sample'.
 	* libopt/stats.h: Stat function headers modified.
 
-2007-05-01  Rafael Ubal Tena <raurte@gap.upv.es>
+2007-05-01  Rafael Ubal Tena <ubal@gap.upv.es>
 
 	* kernel/syscall.c: Fixed bug in system call 'llseek'. Many systems
 		calls have been added or corrected to correctly run SPEC2000
 		benchmarks, checking their output with the 'ref' data set.
 
-2007-06-11  Rafael Ubal Tena <raurte@gap.upv.es>
+2007-06-11  Rafael Ubal Tena <ubal@gap.upv.es>
 
 	* cache.c: Fixed bug for level 2 cache configuration.
 	* libopt/options.c: Fixed bug when reading options from command line
 		of type "long long unsigned int". The use of 'atoi' has been
 		replaced with 'sscanf'.
 
-2007-06-12  Rafael Ubal Tena <raurte@gap.upv.es>
+2007-06-12  Rafael Ubal Tena <ubal@gap.upv.es>
 	* mt.h, mt.c, recover.c: added '-mt_recover_penalty', enabling the
 		insertion of fetch stalls when the pipeline is recovered from
 		a mispeculation.
@@ -25,20 +25,20 @@
 	* fu.c: options '-fu:XXX' to change functional units configuration
 		from command line parameters.
 
-2007-06-22  Rafael Ubal Tena <raurte@gap.upv.es>
+2007-06-22  Rafael Ubal Tena <ubal@gap.upv.es>
 
 	* fetch.c: condition modified to stop fetching instructions when
 		the next instruction to fetch is not contained in the current
 		instruction cache block.
 
-2007-11-14  Rafael Ubal Tena <raurte@gap.upv.es>
+2007-11-14  Rafael Ubal Tena <ubal@gap.upv.es>
 
 	* writeback.c: a missing call to 'ptrace_newstage' is added in the
 		writeback stage.
 	* simmt.c: cycle counters are advanced before pipeline stages.
 	* mt.c: message listing mt_decode_kind options was wrong.
 
-2007-11-22  Rafael Ubal Tena <raurte@gap.upv.es>
+2007-11-22  Rafael Ubal Tena <ubal@gap.upv.es>
 	
 	* phregs.c: physical register file access to decode an instruction,
 		i.e., to find a free physical register sweeps all register
@@ -46,7 +46,7 @@
 		is added, updated incrementally. Now, a new register is
 		allocated with constant cost.
 
-2007-12-17  Rafael Ubal Tena <raurte@gap.upv.es>
+2007-12-17  Rafael Ubal Tena <ubal@gap.upv.es>
 
 	* all: Start using the GNU Build System. Executables renamed to
 		m2s, m2s-fast and m2s-ptrace.
@@ -883,3 +883,4 @@
 2010-05-11
 	* src/libcpuarch: Library 'libcpuarch' created, including all files used in the main
 		'src' directory, except those generating executables.
+	* all: Replace email address to 'ubal@gap.upv.es'.
