@@ -21,7 +21,7 @@
 #define GPUKERNEL_LOCAL_H
 
 #include <gpukernel.h>
-#include <m2skernel.h>
+#include <cpukernel.h>
 #include <stdint.h>
 
 

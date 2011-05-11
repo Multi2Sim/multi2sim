@@ -884,3 +884,6 @@
 	* src/libcpuarch: Library 'libcpuarch' created, including all files used in the main
 		'src' directory, except those generating executables.
 	* all: Replace email address to 'ubal@gap.upv.es'.
+	* src/libcpukernel: Library 'libm2skernel' renamed.
+	* src/libcpudisasm: Library 'libdisasm' renamed.
+

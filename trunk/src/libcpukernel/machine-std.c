@@ -18,7 +18,7 @@
  */
 
 
-#include "m2skernel.h"
+#include <cpukernel.h>
 
 
 #define op_stdop_al_imm8(stdop, wb) void op_##stdop##_al_imm8_impl() { \

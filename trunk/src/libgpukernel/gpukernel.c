@@ -22,7 +22,7 @@
 #include <debug.h>
 #include <lnlist.h>
 #include <stdlib.h>
-#include <m2skernel.h>
+#include <cpukernel.h>
 #include <gpudisasm.h>
 #include <options.h>
 #include <hash.h>
