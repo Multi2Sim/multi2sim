@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2007  Rafael Ubal Tena (raurte@gap.upv.es)
+ *  Copyright (C) 2007  Rafael Ubal Tena (ubal@gap.upv.es)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <m2s.h>
+#include <cpuarch.h>
 
 
 /* Global variables */

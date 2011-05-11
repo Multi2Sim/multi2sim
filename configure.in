@@ -32,6 +32,7 @@ AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+		 src/libcpuarch/Makefile
 		 src/libnetwork/Makefile
 		 src/libgpukernel/Makefile
 		 src/libgpudisasm/Makefile
