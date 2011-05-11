@@ -24,7 +24,7 @@
 #include <lnlist.h>
 #include <repos.h>
 #include <cachesystem.h>
-#include <m2skernel.h>
+#include <cpukernel.h>
 
 
 

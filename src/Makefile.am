@@ -3,7 +3,7 @@ SUBDIRS = \
 	libstruct \
 	libopt \
 	libmisc \
-	libm2skernel \
+	libcpukernel \
 	libcpudisasm \
 	libesim \
 	libcpuarch \
@@ -24,7 +24,7 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libopt \
 	-I$(top_srcdir)/src/libmisc \
-	-I$(top_srcdir)/src/libm2skernel \
+	-I$(top_srcdir)/src/libcpukernel \
 	-I$(top_srcdir)/src/libcpudisasm \
 	-I$(top_srcdir)/src/libesim \
 	-I$(top_srcdir)/src/libcpuarch \
@@ -34,7 +34,7 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libgpudisasm
 
 LDADD = \
-	$(top_builddir)/src/libm2skernel/libm2skernel.a \
+	$(top_builddir)/src/libcpukernel/libcpukernel.a \
 	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
         $(top_builddir)/src/libopt/libopt.a \
 	$(top_builddir)/src/libmisc/libmisc.a \

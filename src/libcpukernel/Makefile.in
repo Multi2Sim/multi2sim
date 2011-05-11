@@ -32,7 +32,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-subdir = src/libm2skernel
+subdir = src/libcpukernel
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -66,15 +66,15 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
-libm2skernel_a_AR = $(AR) $(ARFLAGS)
-libm2skernel_a_LIBADD =
-am_libm2skernel_a_OBJECTS = isa.$(OBJEXT) context.$(OBJEXT) \
-	elf.$(OBJEXT) fs.$(OBJEXT) loader.$(OBJEXT) \
-	m2skernel.$(OBJEXT) machine.$(OBJEXT) machine-ctrl.$(OBJEXT) \
+libcpukernel_a_AR = $(AR) $(ARFLAGS)
+libcpukernel_a_LIBADD =
+am_libcpukernel_a_OBJECTS = isa.$(OBJEXT) context.$(OBJEXT) \
+	cpukernel.$(OBJEXT) elf.$(OBJEXT) fs.$(OBJEXT) \
+	loader.$(OBJEXT) machine.$(OBJEXT) machine-ctrl.$(OBJEXT) \
 	machine-fp.$(OBJEXT) machine-rot.$(OBJEXT) \
 	machine-std.$(OBJEXT) machine-str.$(OBJEXT) memory.$(OBJEXT) \
 	regs.$(OBJEXT) signal.$(OBJEXT) syscall.$(OBJEXT)
-libm2skernel_a_OBJECTS = $(am_libm2skernel_a_OBJECTS)
+libcpukernel_a_OBJECTS = $(am_libcpukernel_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -83,8 +83,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libm2skernel_a_SOURCES)
-DIST_SOURCES = $(libm2skernel_a_SOURCES)
+SOURCES = $(libcpukernel_a_SOURCES)
+DIST_SOURCES = $(libcpukernel_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -179,14 +179,15 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LIBRARIES = libm2skernel.a
-libm2skernel_a_SOURCES = m2skernel.h \
+lib_LIBRARIES = libcpukernel.a
+libcpukernel_a_SOURCES = \
+	cpukernel.h \
 	isa.c \
 	context.c \
+	cpukernel.c \
 	elf.c \
 	fs.c \
 	loader.c \
-	m2skernel.c \
 	machine.c \
 	machine-ctrl.c \
 	machine-fp.c \
@@ -220,9 +221,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/libm2skernel/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/libcpukernel/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/libm2skernel/Makefile
+	  $(AUTOMAKE) --gnu src/libcpukernel/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -273,10 +274,10 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libm2skernel.a: $(libm2skernel_a_OBJECTS) $(libm2skernel_a_DEPENDENCIES) 
-	-rm -f libm2skernel.a
-	$(libm2skernel_a_AR) libm2skernel.a $(libm2skernel_a_OBJECTS) $(libm2skernel_a_LIBADD)
-	$(RANLIB) libm2skernel.a
+libcpukernel.a: $(libcpukernel_a_OBJECTS) $(libcpukernel_a_DEPENDENCIES) 
+	-rm -f libcpukernel.a
+	$(libcpukernel_a_AR) libcpukernel.a $(libcpukernel_a_OBJECTS) $(libcpukernel_a_LIBADD)
+	$(RANLIB) libcpukernel.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -285,11 +286,11 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/context.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpukernel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/loader.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m2skernel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-ctrl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-fp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-rot.Po@am__quote@

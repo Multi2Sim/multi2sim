@@ -18,7 +18,7 @@
  */
 
 #include <gpukernel-local.h>
-#include <m2skernel.h>
+#include <cpukernel.h>
 #include <assert.h>
 #include <debug.h>
 

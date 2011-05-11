@@ -1,11 +1,13 @@
-lib_LIBRARIES = libm2skernel.a
-libm2skernel_a_SOURCES = m2skernel.h \
+lib_LIBRARIES = libcpukernel.a
+
+libcpukernel_a_SOURCES = \
+	cpukernel.h \
 	isa.c \
 	context.c \
+	cpukernel.c \
 	elf.c \
 	fs.c \
 	loader.c \
-	m2skernel.c \
 	machine.c \
 	machine-ctrl.c \
 	machine-fp.c \

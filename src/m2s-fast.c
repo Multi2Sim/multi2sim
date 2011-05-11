@@ -20,7 +20,7 @@
 #include <time.h>
 #include <options.h>
 #include <signal.h>
-#include <m2skernel.h>
+#include <cpukernel.h>
 
 
 /* Multi2Sim version */
