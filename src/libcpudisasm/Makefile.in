@@ -32,7 +32,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-subdir = src/libdisasm
+subdir = src/libcpudisasm
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -66,10 +66,10 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
-libdisasm_a_AR = $(AR) $(ARFLAGS)
-libdisasm_a_LIBADD =
-am_libdisasm_a_OBJECTS = disasm.$(OBJEXT)
-libdisasm_a_OBJECTS = $(am_libdisasm_a_OBJECTS)
+libcpudisasm_a_AR = $(AR) $(ARFLAGS)
+libcpudisasm_a_LIBADD =
+am_libcpudisasm_a_OBJECTS = cpudisasm.$(OBJEXT)
+libcpudisasm_a_OBJECTS = $(am_libcpudisasm_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -78,8 +78,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libdisasm_a_SOURCES)
-DIST_SOURCES = $(libdisasm_a_SOURCES)
+SOURCES = $(libcpudisasm_a_SOURCES)
+DIST_SOURCES = $(libcpudisasm_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -174,10 +174,10 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-lib_LIBRARIES = libdisasm.a
-libdisasm_a_SOURCES = \
-	disasm.c \
-	disasm.h \
+lib_LIBRARIES = libcpudisasm.a
+libcpudisasm_a_SOURCES = \
+	cpudisasm.h \
+	cpudisasm.c \
 	machine.dat
 
 AM_CFLAGS = -Wall -fno-strict-aliasing
@@ -197,9 +197,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/libdisasm/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/libcpudisasm/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/libdisasm/Makefile
+	  $(AUTOMAKE) --gnu src/libcpudisasm/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -250,10 +250,10 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libdisasm.a: $(libdisasm_a_OBJECTS) $(libdisasm_a_DEPENDENCIES) 
-	-rm -f libdisasm.a
-	$(libdisasm_a_AR) libdisasm.a $(libdisasm_a_OBJECTS) $(libdisasm_a_LIBADD)
-	$(RANLIB) libdisasm.a
+libcpudisasm.a: $(libcpudisasm_a_OBJECTS) $(libcpudisasm_a_DEPENDENCIES) 
+	-rm -f libcpudisasm.a
+	$(libcpudisasm_a_AR) libcpudisasm.a $(libcpudisasm_a_OBJECTS) $(libcpudisasm_a_LIBADD)
+	$(RANLIB) libcpudisasm.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -261,7 +261,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/disasm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpudisasm.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
