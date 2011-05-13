@@ -37,6 +37,10 @@ FILE *gk_report_file = NULL;
 int gk_kernel_execution_count = 0;
 
 
+/* Architectural parameters introduced in GPU emulator */
+int gpu_warp_size = 3;
+
+
 
 /* Initialize GPU kernel */
 void gk_init()
@@ -190,22 +194,15 @@ void gk_libopencl_failed(int pid)
 static uint64_t warp_id;
 
 
-struct gpu_warp_t *gpu_warp_create(struct gpu_thread_t **threads, int thread_count, int global_id)
+struct gpu_warp_t *gpu_warp_create()
 {
 	struct gpu_warp_t *warp;
-	char str[MAX_STRING_SIZE];
 
 	warp = calloc(1, sizeof(struct gpu_warp_t));
-	warp->threads = threads;
-	warp->thread_count = thread_count;
-	warp->global_id = global_id;
 	warp->warp_id = warp_id++;
 
-	warp->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * thread_count);
-	warp->pred = bit_map_create(thread_count);
-	snprintf(str, MAX_STRING_SIZE, "work-items[%d..%d]",
-		global_id, global_id + thread_count - 1);
-	warp->name = strdup(str);
+	warp->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * gpu_warp_size);
+	warp->pred = bit_map_create(gpu_warp_size);
 	return warp;
 }
 
@@ -215,7 +212,6 @@ void gpu_warp_free(struct gpu_warp_t *warp)
 	/* Free warp */
 	bit_map_free(warp->active_stack);
 	bit_map_free(warp->pred);
-	free(warp->name);
 	free(warp);
 }
 

@@ -5339,7 +5339,7 @@ if test "x$ac_cv_lib_pthread_pthread_create" = x""yes; then :
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/libcpuarch/Makefile src/libnetwork/Makefile src/libgpukernel/Makefile src/libgpudisasm/Makefile src/libcachesystem/Makefile src/libcpukernel/Makefile src/libcpudisasm/Makefile src/libesim/Makefile src/libmhandle/Makefile src/libopt/Makefile src/libstruct/Makefile src/libmisc/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/libcpuarch/Makefile src/libnetwork/Makefile src/libgpuarch/Makefile src/libgpukernel/Makefile src/libgpudisasm/Makefile src/libcachesystem/Makefile src/libcpukernel/Makefile src/libcpudisasm/Makefile src/libesim/Makefile src/libmhandle/Makefile src/libopt/Makefile src/libstruct/Makefile src/libmisc/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6083,6 +6083,7 @@ do
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "src/libcpuarch/Makefile") CONFIG_FILES="$CONFIG_FILES src/libcpuarch/Makefile" ;;
     "src/libnetwork/Makefile") CONFIG_FILES="$CONFIG_FILES src/libnetwork/Makefile" ;;
+    "src/libgpuarch/Makefile") CONFIG_FILES="$CONFIG_FILES src/libgpuarch/Makefile" ;;
     "src/libgpukernel/Makefile") CONFIG_FILES="$CONFIG_FILES src/libgpukernel/Makefile" ;;
     "src/libgpudisasm/Makefile") CONFIG_FILES="$CONFIG_FILES src/libgpudisasm/Makefile" ;;
     "src/libcachesystem/Makefile") CONFIG_FILES="$CONFIG_FILES src/libcachesystem/Makefile" ;;
