@@ -33,7 +33,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <signal.h>
-#include <disasm.h>
+#include <cpudisasm.h>
 #include <time.h>
 #include <pthread.h>
 #include <poll.h>
