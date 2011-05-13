@@ -7,6 +7,7 @@ SUBDIRS = \
 	libcpudisasm \
 	libesim \
 	libcpuarch \
+	libgpuarch \
 	libnetwork \
 	libcachesystem \
 	libgpukernel \
@@ -30,6 +31,7 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libcpuarch \
 	-I$(top_srcdir)/src/libnetwork \
 	-I$(top_srcdir)/src/libcachesystem \
+	-I$(top_srcdir)/src/libgpuarch \
 	-I$(top_srcdir)/src/libgpukernel \
 	-I$(top_srcdir)/src/libgpudisasm
 
@@ -39,6 +41,7 @@ LDADD = \
         $(top_builddir)/src/libopt/libopt.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libgpuarch/libgpuarch.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \

@@ -429,8 +429,9 @@ struct gpu_warp_t
 	struct gpu_thread_t **threads;  /* Array of threads in the warp */
 	int thread_count;  /* Number of threads in the warp */
 	int global_id;  /* Global ID of first thread */
+	int global_id_last;  /* Global ID of last thread */
 	uint64_t warp_id;  /* A unique identifier for the warp (increasingly assigned on creation) */
-	char *name;
+	char name[30];
 
 	/* Current clause kind and instruction pointers */
 	enum gpu_clause_kind_enum clause_kind;
@@ -479,7 +480,7 @@ struct gpu_warp_t
 	uint64_t tc_inst_global_mem_read_count;  /* Number of instructions reading from global mem (they are TC inst) */
 };
 
-struct gpu_warp_t *gpu_warp_create(struct gpu_thread_t **threads, int thread_count, int global_id);
+struct gpu_warp_t *gpu_warp_create();
 void gpu_warp_free(struct gpu_warp_t *warp);
 void gpu_warp_dump(struct gpu_warp_t *warp, FILE *f);
 
