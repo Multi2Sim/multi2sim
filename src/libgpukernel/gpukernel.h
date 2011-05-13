@@ -23,8 +23,21 @@
 #include <stdint.h>
 
 
+/*
+ * Global variables
+ */
 
-/* OpenCL API Implementation */
+/* Architectural parameters that need to be introduced in the GPU functional
+ * simulator, because they are returned by OpenCL functions or affect the
+ * GPU emulation. */
+
+extern int gpu_warp_size;
+
+
+
+/*
+ * OpenCL API Implementation
+ */
 
 /* Debugging */
 #define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)

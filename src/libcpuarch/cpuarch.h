@@ -17,6 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef CPUARCH_H
+#define CPUARCH_H
+
 #include <time.h>
 #include <options.h>
 #include <signal.h>
@@ -870,4 +873,7 @@ void p_issue(void);
 void p_writeback(void);
 void p_commit(void);
 void p_recover(int core, int thread);
+
+
+#endif
 

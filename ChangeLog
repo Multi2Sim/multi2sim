@@ -887,3 +887,7 @@
 	* src/libcpukernel: Library 'libm2skernel' renamed.
 	* src/libcpudisasm: Library 'libdisasm' renamed.
 
+2010-05-13
+	* src/libgpuarch: Makefile.in added
+	* src/libgpukernel/gpuisa.c: support for different warps.
+
