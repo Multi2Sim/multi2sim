@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef M2SKERNEL_H
-#define M2SKERNEL_H
+#ifndef CPUKERNEL_H
+#define CPUKERNEL_H
 
 #include <mhandle.h>
 #include <debug.h>
