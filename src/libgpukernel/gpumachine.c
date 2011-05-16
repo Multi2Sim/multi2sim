@@ -45,9 +45,9 @@ void amd_inst_ALU_impl()
 	/* FIXME: barrier */
 
 	/* Start ALU clause */
-	gpu_isa_warp->clause_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
-	gpu_isa_warp->clause_buf_end = gpu_isa_warp->clause_buf + (W1.count + 1) * 8;
-	gpu_isa_warp->clause_kind = GPU_CLAUSE_ALU;
+	gpu_isa_wavefront->clause_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
+	gpu_isa_wavefront->clause_buf_end = gpu_isa_wavefront->clause_buf + (W1.count + 1) * 8;
+	gpu_isa_wavefront->clause_kind = GPU_CLAUSE_ALU;
 	gpu_isa_alu_clause_start();
 }
 #undef W0
@@ -94,38 +94,38 @@ void amd_inst_ELSE_impl()
 
 	/* Debug */
 	if (debug_status(gpu_isa_debug_category)) {
-		gpu_isa_debug("  %s:act=", gpu_isa_warp->name);
-		bit_map_dump(gpu_isa_warp->active_stack, gpu_isa_warp->stack_top *
-			gpu_isa_warp->thread_count, gpu_isa_warp->thread_count,
+		gpu_isa_debug("  %s:act=", gpu_isa_wavefront->name);
+		bit_map_dump(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
+			gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count,
 			debug_file(gpu_isa_debug_category));
 	}
 
 	/* Invert active mask */
-	if (!gpu_isa_warp->stack_top)
+	if (!gpu_isa_wavefront->stack_top)
 		fatal("ELSE: cannot execute for stack_top=0");
-	for (i = 0; i < gpu_isa_warp->thread_count; i++) {
-		active = bit_map_get(gpu_isa_warp->active_stack, gpu_isa_warp->stack_top *
-			gpu_isa_warp->thread_count + i, 1);
-		active_last = bit_map_get(gpu_isa_warp->active_stack, (gpu_isa_warp->stack_top - 1) *
-			gpu_isa_warp->thread_count + i, 1);
+	for (i = 0; i < gpu_isa_wavefront->work_item_count; i++) {
+		active = bit_map_get(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
+			gpu_isa_wavefront->work_item_count + i, 1);
+		active_last = bit_map_get(gpu_isa_wavefront->active_stack, (gpu_isa_wavefront->stack_top - 1) *
+			gpu_isa_wavefront->work_item_count + i, 1);
 		active_new = !active && active_last;
 		active_count += active_new;
-		bit_map_set(gpu_isa_warp->active_stack, gpu_isa_warp->stack_top *
-			gpu_isa_warp->thread_count + i, 1, active_new);
+		bit_map_set(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
+			gpu_isa_wavefront->work_item_count + i, 1, active_new);
 	}
 	
 	/* Debug */
 	if (debug_status(gpu_isa_debug_category)) {
-		gpu_isa_debug("  %s:invert(act)=", gpu_isa_warp->name);
-		bit_map_dump(gpu_isa_warp->active_stack, gpu_isa_warp->stack_top *
-			gpu_isa_warp->thread_count, gpu_isa_warp->thread_count,
+		gpu_isa_debug("  %s:invert(act)=", gpu_isa_wavefront->name);
+		bit_map_dump(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
+			gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count,
 			debug_file(gpu_isa_debug_category));
 	}
 
 	/* If all pixels are inactive, pop stack and jump */
 	if (!active_count) {
-		gpu_warp_stack_pop(gpu_isa_warp, W1.pop_count);
-		gpu_isa_warp->cf_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
+		gpu_wavefront_stack_pop(gpu_isa_wavefront, W1.pop_count);
+		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
 	}
 }
 #undef W0
@@ -147,11 +147,11 @@ void amd_inst_JUMP_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.barrier, 1);
 
 	/* If all pixels are inactive, pop stack and jump */
-	active_count = bit_map_count_ones(gpu_isa_warp->active_stack,
-		gpu_isa_warp->stack_top * gpu_isa_warp->thread_count, gpu_isa_warp->thread_count);
+	active_count = bit_map_count_ones(gpu_isa_wavefront->active_stack,
+		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
 	if (!active_count) {
-		gpu_warp_stack_pop(gpu_isa_warp, W1.pop_count);
-		gpu_isa_warp->cf_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
+		gpu_wavefront_stack_pop(gpu_isa_wavefront, W1.pop_count);
+		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
 	}
 }
 #undef W0
@@ -177,24 +177,24 @@ void amd_inst_LOOP_END_impl()
 
 	/* Dump current loop state */
 	if (debug_status(gpu_isa_debug_category)) {
-		gpu_isa_debug("  %s:act=", gpu_isa_warp->name);
-		bit_map_dump(gpu_isa_warp->active_stack, gpu_isa_warp->stack_top *
-			gpu_isa_warp->thread_count, gpu_isa_warp->thread_count,
+		gpu_isa_debug("  %s:act=", gpu_isa_wavefront->name);
+		bit_map_dump(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
+			gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count,
 			debug_file(gpu_isa_debug_category));
 	}
 
 	/* If any pixel is active, jump back */
-	active_count = bit_map_count_ones(gpu_isa_warp->active_stack,
-		gpu_isa_warp->stack_top * gpu_isa_warp->thread_count, gpu_isa_warp->thread_count);
+	active_count = bit_map_count_ones(gpu_isa_wavefront->active_stack,
+		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
 	if (active_count) {
-		gpu_isa_warp->cf_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
+		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
 		return;
 	}
 
 	/* FIXME: pop loop state */
 
 	/* Pop stack once */
-	gpu_warp_stack_pop(gpu_isa_warp, 1);
+	gpu_wavefront_stack_pop(gpu_isa_wavefront, 1);
 }
 #undef W0
 #undef W1
@@ -222,7 +222,7 @@ void amd_inst_LOOP_START_DX10_impl()
 	/* FIXME: Set up new loop state */
 
 	/* FIXME: Push active mask? */
-	gpu_warp_stack_push(gpu_isa_warp);///
+	gpu_wavefront_stack_push(gpu_isa_wavefront);///
 }
 #undef W0
 #undef W1
@@ -263,13 +263,13 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 			GPU_PARAM_NOT_SUPPORTED(W0.type);
 
 
-		for (global_id = gpu_isa_warp->global_id; global_id < gpu_isa_warp->global_id
-			+ gpu_isa_warp->thread_count; global_id++)
+		for (global_id = gpu_isa_wavefront->global_id; global_id < gpu_isa_wavefront->global_id
+			+ gpu_isa_wavefront->work_item_count; global_id++)
 		{
-			gpu_isa_thread = gpu_isa_threads[global_id];
+			gpu_isa_work_item = gpu_isa_work_items[global_id];
 
 			/* If VPM is set, do not export for inactive pixels. */
-			if (W1.valid_pixel_mode && !gpu_thread_get_active(gpu_isa_thread))
+			if (W1.valid_pixel_mode && !gpu_work_item_get_active(gpu_isa_work_item))
 				continue;
 
 			/* W0.rw_gpr: GPR register from which to read data */
@@ -331,8 +331,8 @@ void amd_inst_POP_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.barrier, 1);
 
 	/* Pop 'pop_count' from stack and jump to 'addr' */
-	gpu_warp_stack_pop(gpu_isa_warp, W1.pop_count);
-	gpu_isa_warp->cf_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
+	gpu_wavefront_stack_pop(gpu_isa_wavefront, W1.pop_count);
+	gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
 }
 #undef W0
 #undef W1
@@ -353,18 +353,18 @@ void amd_inst_TC_impl()
 	/* FIXME: barrier */
 	
 	/* Start TC clause */
-	gpu_isa_warp->clause_buf = gpu_isa_warp->cf_buf_start + W0.addr * 8;
-	gpu_isa_warp->clause_buf_end = gpu_isa_warp->clause_buf + (W1.count + 1) * 16;
-	gpu_isa_warp->clause_kind = GPU_CLAUSE_TC;
+	gpu_isa_wavefront->clause_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
+	gpu_isa_wavefront->clause_buf_end = gpu_isa_wavefront->clause_buf + (W1.count + 1) * 16;
+	gpu_isa_wavefront->clause_kind = GPU_CLAUSE_TC;
 	gpu_isa_tc_clause_start();
 
 	/* If VPM is set, copy 'active' mask at the top of the stack to 'pred' mask.
 	 * This will make all fetches within the clause happen only for active pixels.
 	 * If VPM is clear, copy a mask set to ones. */
-	for (i = 0; i < gpu_isa_warp->thread_count; i++) {
-		active = W1.valid_pixel_mode ? bit_map_get(gpu_isa_warp->active_stack,
-			gpu_isa_warp->stack_top * gpu_isa_warp->thread_count + i, 1) : 1;
-		bit_map_set(gpu_isa_warp->pred, i, 1, active);
+	for (i = 0; i < gpu_isa_wavefront->work_item_count; i++) {
+		active = W1.valid_pixel_mode ? bit_map_get(gpu_isa_wavefront->active_stack,
+			gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count + i, 1) : 1;
+		bit_map_set(gpu_isa_wavefront->pred, i, 1, active);
 	}
 }
 #undef W0
@@ -1304,7 +1304,7 @@ void amd_inst_SUBB_UINT_impl() {
 
 void amd_inst_GROUP_BARRIER_impl() {
 	/* FIXME */
-	//printf("thread %d - BARRIER\n", gpu_isa_thread->global_id);
+	//printf("work_item %d - BARRIER\n", gpu_isa_work_item->global_id);
 }
 
 
@@ -1916,7 +1916,7 @@ void amd_inst_LDS_IDX_OP_impl()
 	uint32_t op0, op1, op2;
 
 	/* Get local memory */
-	local_mem = gk->local_mem[gpu_isa_thread->group_id];
+	local_mem = gk->local_mem[gpu_isa_work_item->group_id];
 	assert(local_mem);
 
 	/* Recompose 'idx_offset' field */
@@ -1973,7 +1973,7 @@ void amd_inst_LDS_IDX_OP_impl()
 
 		pvalue = malloc(4);
 		mem_read(local_mem, op0, 4, pvalue);
-		list_enqueue(gpu_isa_thread->lds_oqa, pvalue);
+		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue);
 		gpu_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA", GPU_THR.global_id, op0, *pvalue, * (float *) pvalue);
 		break;
 	}
@@ -1987,11 +1987,11 @@ void amd_inst_LDS_IDX_OP_impl()
 
 		pvalue = malloc(4);
 		mem_read(local_mem, op0, 4, pvalue);
-		list_enqueue(gpu_isa_thread->lds_oqa, pvalue);
+		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue);
 
 		pvalue = malloc(4);
 		mem_read(local_mem, op1, 4, pvalue);
-		list_enqueue(gpu_isa_thread->lds_oqb, pvalue);
+		list_enqueue(gpu_isa_work_item->lds_oqb, pvalue);
 		break;
 	}
 
@@ -2147,8 +2147,8 @@ void amd_inst_FETCH_impl()
 
 	/* FIXME: buffer_id - what does it mean? */
 	
-	/* Do not fetch for inactive threads */
-	if (!gpu_thread_get_active(gpu_isa_thread))
+	/* Do not fetch for inactive work_items */
+	if (!gpu_work_item_get_active(gpu_isa_work_item))
 		return;
 	
 	/* Store 'dst_sel_{x,y,z,w}' in array */
