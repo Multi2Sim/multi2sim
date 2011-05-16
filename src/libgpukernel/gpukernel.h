@@ -31,7 +31,7 @@
  * simulator, because they are returned by OpenCL functions or affect the
  * GPU emulation. */
 
-extern int gpu_warp_size;
+extern int gpu_wavefront_size;
 
 
 

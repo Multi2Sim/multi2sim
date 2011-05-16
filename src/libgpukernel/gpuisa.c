@@ -24,15 +24,15 @@
 
 /* Some globals */
 
-struct gpu_warp_t *gpu_isa_warp;  /* Current warp */
-struct gpu_thread_t *gpu_isa_thread;  /* Current thread */
+struct gpu_wavefront_t *gpu_isa_wavefront;  /* Current wavefront */
+struct gpu_work_item_t *gpu_isa_work_item;  /* Current work_item */
 struct amd_inst_t *gpu_isa_inst;  /* Current instruction */
 struct amd_inst_t *gpu_isa_cf_inst;  /* Current CF instruction */
 struct amd_alu_group_t *gpu_isa_alu_group;  /* Current ALU group */
 
-struct gpu_thread_t **gpu_isa_threads;  /* Array of kernel threads */
-struct gpu_warp_t **gpu_isa_warps;  /* Array of warps */
-int gpu_warp_count;  /* Number of warps */
+struct gpu_work_item_t **gpu_isa_work_items;  /* Array of kernel work_items */
+struct gpu_wavefront_t **gpu_isa_wavefronts;  /* Array of wavefronts */
+int gpu_wavefront_count;  /* Number of wavefronts */
 
 /* Repository of deferred tasks */
 struct repos_t *gpu_isa_write_task_repos;
@@ -149,7 +149,7 @@ void gpu_isa_init_const_mem(struct opencl_kernel_t *kernel)
 
 	/* CB0[3]
 	 * x: Offset to private memory ring (0 if private memory is not emulated).
-	 * y: Private memory allocated per thread.
+	 * y: Private memory allocated per work_item.
 	 * z,w: 0  */
 	/* FIXME */
 	
@@ -175,7 +175,7 @@ void gpu_isa_init_const_mem(struct opencl_kernel_t *kernel)
 	gpu_isa_const_mem_write(0, 5, 3, &f);
 
 	/* CB0[6]
-	 * x,y,z: Global offset for the {x,y,z} dimension of the thread spawn.
+	 * x,y,z: Global offset for the {x,y,z} dimension of the work_item spawn.
 	 * z: Global single dimension flat offset: x * y * z. */
 	gpu_isa_const_mem_write(0, 6, 0, &zero);
 	gpu_isa_const_mem_write(0, 6, 1, &zero);
@@ -183,7 +183,7 @@ void gpu_isa_init_const_mem(struct opencl_kernel_t *kernel)
 	gpu_isa_const_mem_write(0, 6, 3, &zero);
 
 	/* CB0[7]
-	 * x,y,z: Group offset for the {x,y,z} dimensions of the thread spawn.
+	 * x,y,z: Group offset for the {x,y,z} dimensions of the work_item spawn.
 	 * w: Group single dimension flat offset, x * y * z.  */
 	gpu_isa_const_mem_write(0, 7, 0, &zero);
 	gpu_isa_const_mem_write(0, 7, 1, &zero);
@@ -197,24 +197,24 @@ void gpu_isa_init_const_mem(struct opencl_kernel_t *kernel)
 }
 
 
-void gpu_isa_init_threads(struct opencl_kernel_t *kernel)
+void gpu_isa_init_work_items(struct opencl_kernel_t *kernel)
 {
 	int i;
 	int global_id;
 	int local_id;
 
-	int warps_per_group;
-	int warp_index;
+	int wavefronts_per_group;
+	int wavefront_index;
 
-	/* Create threads */
-	/*gpu_isa_threads = calloc(kernel->global_size, sizeof(void *));
+	/* Create work_items */
+	/*gpu_isa_work_items = calloc(kernel->global_size, sizeof(void *));
 	for (z = 0; z < kernel->global_size3[2]; z++) {
 		for (y = 0; y < kernel->global_size3[1]; y++) {
 			for (x = 0; x < kernel->global_size3[0]; x++) {
 				global_id = z * kernel->global_size3[1] * kernel->global_size3[0]
 					+ y * kernel->global_size3[0] + x;
-				gpu_isa_threads[global_id] = gpu_thread_create();
-				gpu_isa_thread = gpu_isa_threads[global_id];
+				gpu_isa_work_items[global_id] = gpu_work_item_create();
+				gpu_isa_work_item = gpu_isa_work_items[global_id];
 
 				GPU_THR.global_id3[0] = x;
 				GPU_THR.global_id3[1] = y;
@@ -242,7 +242,7 @@ void gpu_isa_init_threads(struct opencl_kernel_t *kernel)
 
 	int gidx, gidy, gidz;
 	int lidx, lidy, lidz;
-	gpu_isa_threads = calloc(kernel->global_size, sizeof(void *));
+	gpu_isa_work_items = calloc(kernel->global_size, sizeof(void *));
 	global_id = 0;
 	for (gidz = 0; gidz < kernel->group_count3[2]; gidz++) {
 		for (gidy = 0; gidy < kernel->group_count3[1]; gidy++) {
@@ -251,8 +251,8 @@ void gpu_isa_init_threads(struct opencl_kernel_t *kernel)
 				for (lidz = 0; lidz < kernel->local_size3[2]; lidz++) {
 					for (lidy = 0; lidy < kernel->local_size3[1]; lidy++) {
 						for (lidx = 0; lidx < kernel->local_size3[0]; lidx++) {
-							gpu_isa_threads[global_id] = gpu_thread_create();
-							gpu_isa_thread = gpu_isa_threads[global_id];
+							gpu_isa_work_items[global_id] = gpu_work_item_create();
+							gpu_isa_work_item = gpu_isa_work_items[global_id];
 
 							GPU_THR.group_id3[0] = GPU_GPR_X(1) = gidx;
 							GPU_THR.group_id3[1] = GPU_GPR_Y(1) = gidy;
@@ -279,39 +279,39 @@ void gpu_isa_init_threads(struct opencl_kernel_t *kernel)
 		}
 	}
 
-	/* Array of warps */
-	warps_per_group = (kernel->local_size + gpu_warp_size - 1) / gpu_warp_size;
-	gpu_warp_count = warps_per_group * kernel->group_count;
-	assert(warps_per_group > 0 && gpu_warp_count > 0);
-	gpu_isa_warps = calloc(gpu_warp_count, sizeof(void *));
-	for (i = 0; i < gpu_warp_count; i++)
-		gpu_isa_warps[i] = gpu_warp_create();
+	/* Array of wavefronts */
+	wavefronts_per_group = (kernel->local_size + gpu_wavefront_size - 1) / gpu_wavefront_size;
+	gpu_wavefront_count = wavefronts_per_group * kernel->group_count;
+	assert(wavefronts_per_group > 0 && gpu_wavefront_count > 0);
+	gpu_isa_wavefronts = calloc(gpu_wavefront_count, sizeof(void *));
+	for (i = 0; i < gpu_wavefront_count; i++)
+		gpu_isa_wavefronts[i] = gpu_wavefront_create();
 	
-	/* Assign threads to warps */
+	/* Assign work_items to wavefronts */
 	for (i = 0; i < kernel->global_size; i++) {
-		gpu_isa_thread = gpu_isa_threads[i];
-		warp_index = GPU_THR.group_id * warps_per_group + GPU_THR.local_id / gpu_warp_size;
-		assert(warp_index < gpu_warp_count);
-		gpu_isa_warp = gpu_isa_warps[warp_index];
+		gpu_isa_work_item = gpu_isa_work_items[i];
+		wavefront_index = GPU_THR.group_id * wavefronts_per_group + GPU_THR.local_id / gpu_wavefront_size;
+		assert(wavefront_index < gpu_wavefront_count);
+		gpu_isa_wavefront = gpu_isa_wavefronts[wavefront_index];
 
-		GPU_THR.warp = gpu_isa_warp;
-		GPU_THR.warp_id = GPU_THR.local_id % gpu_warp_size;
+		GPU_THR.wavefront = gpu_isa_wavefront;
+		GPU_THR.wavefront_id = GPU_THR.local_id % gpu_wavefront_size;
 		
-		/* Thread is initially active */
-		bit_map_set(gpu_isa_warp->active_stack, GPU_THR.warp_id, 1, 1);
-		if (!GPU_THR.warp_id) {
-			gpu_isa_warp->threads = &gpu_isa_threads[i];
-			gpu_isa_warp->global_id = i;
+		/* work_item is initially active */
+		bit_map_set(gpu_isa_wavefront->active_stack, GPU_THR.wavefront_id, 1, 1);
+		if (!GPU_THR.wavefront_id) {
+			gpu_isa_wavefront->work_items = &gpu_isa_work_items[i];
+			gpu_isa_wavefront->global_id = i;
 		}
-		gpu_isa_warp->global_id_last = i;
-		gpu_isa_warp->thread_count = i - gpu_isa_warp->global_id + 1;
+		gpu_isa_wavefront->global_id_last = i;
+		gpu_isa_wavefront->work_item_count = i - gpu_isa_wavefront->global_id + 1;
 	}
 
-	/* Assign names to warps */
-	for (i = 0; i < gpu_warp_count; i++) {
-		gpu_isa_warp = gpu_isa_warps[i];
-		snprintf(gpu_isa_warp->name, sizeof(gpu_isa_warp->name), "work-items[%d..%d]",
-			gpu_isa_warp->global_id, gpu_isa_warp->global_id_last);
+	/* Assign names to wavefronts */
+	for (i = 0; i < gpu_wavefront_count; i++) {
+		gpu_isa_wavefront = gpu_isa_wavefronts[i];
+		snprintf(gpu_isa_wavefront->name, sizeof(gpu_isa_wavefront->name), "work-items[%d..%d]",
+			gpu_isa_wavefront->global_id, gpu_isa_wavefront->global_id_last);
 	}
 
 	/* Debug */
@@ -321,19 +321,19 @@ void gpu_isa_init_threads(struct opencl_kernel_t *kernel)
 		kernel->global_size3[1], kernel->global_size3[2]);
 	gpu_isa_debug("group_count = %d (%d,%d,%d)\n", kernel->group_count, kernel->group_count3[0],
 		kernel->group_count3[1], kernel->group_count3[2]);
-	gpu_isa_debug("warp_count = %d\n", gpu_warp_count);
-	gpu_isa_debug("warps_per_group = %d\n", warps_per_group);
+	gpu_isa_debug("wavefront_count = %d\n", gpu_wavefront_count);
+	gpu_isa_debug("wavefronts_per_group = %d\n", wavefronts_per_group);
 	gpu_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   lid lid2 lid1 lid0  wid\n");
 	for (i = 0; i < kernel->global_size; i++) {
-		gpu_isa_thread = gpu_isa_threads[i];
-		gpu_isa_warp = gpu_isa_thread->warp;
-		gpu_isa_debug("%4d %4d %4d %4d  ", gpu_isa_thread->global_id, gpu_isa_thread->global_id3[2],
-			gpu_isa_thread->global_id3[1], gpu_isa_thread->global_id3[0]);
-		gpu_isa_debug("%4d %4d %4d %4d  ", gpu_isa_thread->group_id, gpu_isa_thread->group_id3[2],
-			gpu_isa_thread->group_id3[1], gpu_isa_thread->group_id3[0]);
-		gpu_isa_debug("%4d %4d %4d %4d  ", gpu_isa_thread->local_id, gpu_isa_thread->local_id3[2],
-			gpu_isa_thread->local_id3[1], gpu_isa_thread->local_id3[0]);
-		gpu_isa_debug("%s.%d\n", gpu_isa_warp->name, gpu_isa_thread->warp_id);
+		gpu_isa_work_item = gpu_isa_work_items[i];
+		gpu_isa_wavefront = gpu_isa_work_item->wavefront;
+		gpu_isa_debug("%4d %4d %4d %4d  ", gpu_isa_work_item->global_id, gpu_isa_work_item->global_id3[2],
+			gpu_isa_work_item->global_id3[1], gpu_isa_work_item->global_id3[0]);
+		gpu_isa_debug("%4d %4d %4d %4d  ", gpu_isa_work_item->group_id, gpu_isa_work_item->group_id3[2],
+			gpu_isa_work_item->group_id3[1], gpu_isa_work_item->group_id3[0]);
+		gpu_isa_debug("%4d %4d %4d %4d  ", gpu_isa_work_item->local_id, gpu_isa_work_item->local_id3[2],
+			gpu_isa_work_item->local_id3[1], gpu_isa_work_item->local_id3[0]);
+		gpu_isa_debug("%s.%d\n", gpu_isa_wavefront->name, gpu_isa_work_item->wavefront_id);
 	}
 
 }
@@ -409,56 +409,52 @@ void gpu_isa_init_kernel_args(struct opencl_kernel_t *kernel)
 }
 
 
-/* Execute one instruction from 'gpu_isa_warp' */
-void gpu_isa_warp_exec(struct opencl_kernel_t *kernel)
+/* Execute one instruction from 'gpu_isa_wavefront' */
+void gpu_isa_wavefront_exec(struct opencl_kernel_t *kernel)
 {
-	struct amd_inst_t cf_inst;
-	struct amd_alu_group_t alu_group;
-	struct amd_inst_t tc_inst;
-
 	int global_id;
 	int i;
 
-	switch (gpu_isa_warp->clause_kind) {
+	switch (gpu_isa_wavefront->clause_kind) {
 
 	case GPU_CLAUSE_CF:
 	{
 		int inst_num;
 
 		/* Decode CF instruction */
-		inst_num = (gpu_isa_warp->cf_buf - kernel->cal_abi->text_buffer) / 8;
-		gpu_isa_warp->cf_buf = amd_inst_decode_cf(gpu_isa_warp->cf_buf, &cf_inst);
+		inst_num = (gpu_isa_wavefront->cf_buf - kernel->cal_abi->text_buffer) / 8;
+		gpu_isa_wavefront->cf_buf = amd_inst_decode_cf(gpu_isa_wavefront->cf_buf, &gpu_isa_wavefront->cf_inst);
 
 		/* Debug */
 		if (debug_status(gpu_isa_debug_category)) {
 			gpu_isa_debug("\n\n");
-			amd_inst_dump(&cf_inst, inst_num, 0,
+			amd_inst_dump(&gpu_isa_wavefront->cf_inst, inst_num, 0,
 				debug_file(gpu_isa_debug_category));
 		}
 
-		/* Execute once in warp */
-		gpu_isa_inst = &cf_inst;
-		gpu_isa_cf_inst = &cf_inst;
-		gpu_isa_thread = NULL;
+		/* Execute once in wavefront */
+		gpu_isa_inst = &gpu_isa_wavefront->cf_inst;
+		gpu_isa_cf_inst = &gpu_isa_wavefront->cf_inst;
+		gpu_isa_work_item = NULL;
 		(*amd_inst_impl[gpu_isa_inst->info->inst])();
 
-		/* If instruction updates the thread's active mask, update digests */
+		/* If instruction updates the work_item's active mask, update digests */
 		if (gpu_isa_inst->info->flags & AMD_INST_FLAG_ACT_MASK) {
-			for (global_id = gpu_isa_warp->global_id; global_id < gpu_isa_warp->global_id +
-				gpu_isa_warp->thread_count; global_id++)
+			for (global_id = gpu_isa_wavefront->global_id; global_id < gpu_isa_wavefront->global_id +
+				gpu_isa_wavefront->work_item_count; global_id++)
 			{
-				gpu_isa_thread = gpu_isa_threads[global_id];
-				gpu_thread_update_branch_digest(gpu_isa_thread, gpu_isa_warp->cf_inst_count, inst_num);
+				gpu_isa_work_item = gpu_isa_work_items[global_id];
+				gpu_work_item_update_branch_digest(gpu_isa_work_item, gpu_isa_wavefront->cf_inst_count, inst_num);
 			}
 		}
 
 		/* Stats */
-		gpu_isa_warp->emu_inst_count++;
-		gpu_isa_warp->inst_count++;
-		gpu_isa_warp->cf_inst_count++;
+		gpu_isa_wavefront->emu_inst_count++;
+		gpu_isa_wavefront->inst_count++;
+		gpu_isa_wavefront->cf_inst_count++;
 		if (gpu_isa_inst->info->flags & AMD_INST_FLAG_MEM) {
-			gpu_isa_warp->global_mem_inst_count++;
-			gpu_isa_warp->cf_inst_global_mem_write_count++;  /* CF inst accessing memory is a write */
+			gpu_isa_wavefront->global_mem_inst_count++;
+			gpu_isa_wavefront->cf_inst_global_mem_write_count++;  /* CF inst accessing memory is a write */
 		}
 
 		break;
@@ -467,22 +463,22 @@ void gpu_isa_warp_exec(struct opencl_kernel_t *kernel)
 	case GPU_CLAUSE_ALU:
 	{
 		/* Decode ALU group */
-		gpu_isa_warp->clause_buf = amd_inst_decode_alu_group(gpu_isa_warp->clause_buf,
-			gpu_isa_warp->alu_group_count, &alu_group);
+		gpu_isa_wavefront->clause_buf = amd_inst_decode_alu_group(gpu_isa_wavefront->clause_buf,
+			gpu_isa_wavefront->alu_group_count, &gpu_isa_wavefront->alu_group);
 
 		/* Debug */
 		if (debug_status(gpu_isa_debug_category)) {
 			gpu_isa_debug("\n\n");
-			amd_alu_group_dump(&alu_group, 0, debug_file(gpu_isa_debug_category));
+			amd_alu_group_dump(&gpu_isa_wavefront->alu_group, 0, debug_file(gpu_isa_debug_category));
 		}
 
-		/* Execute group for each thread in warp */
-		gpu_isa_cf_inst = &cf_inst;
-		gpu_isa_alu_group = &alu_group;
-		for (global_id = gpu_isa_warp->global_id; global_id < gpu_isa_warp->global_id +
-			gpu_isa_warp->thread_count; global_id++)
+		/* Execute group for each work_item in wavefront */
+		gpu_isa_cf_inst = &gpu_isa_wavefront->cf_inst;
+		gpu_isa_alu_group = &gpu_isa_wavefront->alu_group;
+		for (global_id = gpu_isa_wavefront->global_id; global_id < gpu_isa_wavefront->global_id +
+			gpu_isa_wavefront->work_item_count; global_id++)
 		{
-			gpu_isa_thread = gpu_isa_threads[global_id];
+			gpu_isa_work_item = gpu_isa_work_items[global_id];
 			for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
 				gpu_isa_inst = &gpu_isa_alu_group->inst[i];
 				(*amd_inst_impl[gpu_isa_inst->info->inst])();
@@ -491,25 +487,25 @@ void gpu_isa_warp_exec(struct opencl_kernel_t *kernel)
 		}
 		
 		/* Stats */
-		gpu_isa_warp->inst_count += gpu_isa_alu_group->inst_count;
-		gpu_isa_warp->alu_inst_count += gpu_isa_alu_group->inst_count;
-		gpu_isa_warp->alu_group_count++;
-		gpu_isa_warp->emu_inst_count += gpu_isa_alu_group->inst_count * gpu_isa_warp->thread_count;
+		gpu_isa_wavefront->inst_count += gpu_isa_alu_group->inst_count;
+		gpu_isa_wavefront->alu_inst_count += gpu_isa_alu_group->inst_count;
+		gpu_isa_wavefront->alu_group_count++;
+		gpu_isa_wavefront->emu_inst_count += gpu_isa_alu_group->inst_count * gpu_isa_wavefront->work_item_count;
 		assert(gpu_isa_alu_group->inst_count > 0 && gpu_isa_alu_group->inst_count < 6);
-		gpu_isa_warp->alu_group_size[gpu_isa_alu_group->inst_count - 1]++;
+		gpu_isa_wavefront->alu_group_size[gpu_isa_alu_group->inst_count - 1]++;
 		for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
 			gpu_isa_inst = &gpu_isa_alu_group->inst[i];
 			if (gpu_isa_inst->info->flags & AMD_INST_FLAG_LDS) {
-				gpu_isa_warp->local_mem_inst_count++;
-				gpu_isa_warp->alu_inst_local_mem_count++;
+				gpu_isa_wavefront->local_mem_inst_count++;
+				gpu_isa_wavefront->alu_inst_local_mem_count++;
 			}
 		}
 
 		/* End of clause reached */
-		assert(gpu_isa_warp->clause_buf <= gpu_isa_warp->clause_buf_end);
-		if (gpu_isa_warp->clause_buf >= gpu_isa_warp->clause_buf_end) {
+		assert(gpu_isa_wavefront->clause_buf <= gpu_isa_wavefront->clause_buf_end);
+		if (gpu_isa_wavefront->clause_buf >= gpu_isa_wavefront->clause_buf_end) {
 			gpu_isa_alu_clause_end();
-			gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
+			gpu_isa_wavefront->clause_kind = GPU_CLAUSE_CF;
 		}
 
 		break;
@@ -518,38 +514,39 @@ void gpu_isa_warp_exec(struct opencl_kernel_t *kernel)
 	case GPU_CLAUSE_TC:
 	{
 		/* Decode TEX inst */
-		gpu_isa_warp->clause_buf = amd_inst_decode_tc(gpu_isa_warp->clause_buf, &tc_inst);
+		gpu_isa_wavefront->clause_buf = amd_inst_decode_tc(gpu_isa_wavefront->clause_buf,
+			&gpu_isa_wavefront->tc_inst);
 
 		/* Debug */
 		if (debug_status(gpu_isa_debug_category)) {
 			gpu_isa_debug("\n\n");
-			amd_inst_dump(&tc_inst, 0, 0, debug_file(gpu_isa_debug_category));
+			amd_inst_dump(&gpu_isa_wavefront->tc_inst, 0, 0, debug_file(gpu_isa_debug_category));
 		}
 
-		/* Execute in all threads */
-		gpu_isa_inst = &tc_inst;
-		gpu_isa_cf_inst = &cf_inst;
-		for (global_id = gpu_isa_warp->global_id; global_id < gpu_isa_warp->global_id +
-			gpu_isa_warp->thread_count; global_id++)
+		/* Execute in all work_items */
+		gpu_isa_inst = &gpu_isa_wavefront->tc_inst;
+		gpu_isa_cf_inst = &gpu_isa_wavefront->cf_inst;
+		for (global_id = gpu_isa_wavefront->global_id; global_id < gpu_isa_wavefront->global_id +
+			gpu_isa_wavefront->work_item_count; global_id++)
 		{
-			gpu_isa_thread = gpu_isa_threads[global_id];
+			gpu_isa_work_item = gpu_isa_work_items[global_id];
 			(*amd_inst_impl[gpu_isa_inst->info->inst])();
 		}
 
 		/* Stats */
-		gpu_isa_warp->emu_inst_count += gpu_isa_warp->thread_count;
-		gpu_isa_warp->inst_count++;
-		gpu_isa_warp->tc_inst_count++;
+		gpu_isa_wavefront->emu_inst_count += gpu_isa_wavefront->work_item_count;
+		gpu_isa_wavefront->inst_count++;
+		gpu_isa_wavefront->tc_inst_count++;
 		if (gpu_isa_inst->info->flags & AMD_INST_FLAG_MEM) {
-			gpu_isa_warp->global_mem_inst_count++;
-			gpu_isa_warp->tc_inst_global_mem_read_count++;  /* Memory instructions in TC are reads */
+			gpu_isa_wavefront->global_mem_inst_count++;
+			gpu_isa_wavefront->tc_inst_global_mem_read_count++;  /* Memory instructions in TC are reads */
 		}
 
 		/* End of clause reached */
-		assert(gpu_isa_warp->clause_buf <= gpu_isa_warp->clause_buf_end);
-		if (gpu_isa_warp->clause_buf == gpu_isa_warp->clause_buf_end) {
+		assert(gpu_isa_wavefront->clause_buf <= gpu_isa_wavefront->clause_buf_end);
+		if (gpu_isa_wavefront->clause_buf == gpu_isa_wavefront->clause_buf_end) {
 			gpu_isa_tc_clause_end();
-			gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
+			gpu_isa_wavefront->clause_kind = GPU_CLAUSE_CF;
 		}
 
 		break;
@@ -578,8 +575,8 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	/* Get program */
 	program = opencl_object_get(OPENCL_OBJ_PROGRAM, kernel->program_id);
 
-	/* Initialize threads and warps */
-	gpu_isa_init_threads(kernel);
+	/* Initialize work_items and wavefronts */
+	gpu_isa_init_work_items(kernel);
 
 	/* Initialize constant memory */
 	gpu_isa_init_const_mem(kernel);
@@ -600,46 +597,46 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
 	if (!code_buffer)
 		fatal("%s: cannot load kernel code", __FUNCTION__);
 
-	/* Initialize warps */
-	for (i = 0; i < gpu_warp_count; i++) {
-		gpu_isa_warp = gpu_isa_warps[i];
-		gpu_isa_warp->cf_buf_start = code_buffer;
-		gpu_isa_warp->cf_buf = code_buffer;
-		gpu_isa_warp->clause_kind = GPU_CLAUSE_CF;
-		gpu_isa_warp->emu_time_start = ke_timer();
+	/* Initialize wavefronts */
+	for (i = 0; i < gpu_wavefront_count; i++) {
+		gpu_isa_wavefront = gpu_isa_wavefronts[i];
+		gpu_isa_wavefront->cf_buf_start = code_buffer;
+		gpu_isa_wavefront->cf_buf = code_buffer;
+		gpu_isa_wavefront->clause_kind = GPU_CLAUSE_CF;
+		gpu_isa_wavefront->emu_time_start = ke_timer();
 	}
 
 	/* Execution loop */
 	for (;;) {
 		int finished_count = 0;
 
-		for (i = 0; i < gpu_warp_count; i++) {
-			gpu_isa_warp = gpu_isa_warps[i];
-			if (gpu_isa_warp->clause_kind == GPU_CLAUSE_CF && !gpu_isa_warp->cf_buf) {
+		for (i = 0; i < gpu_wavefront_count; i++) {
+			gpu_isa_wavefront = gpu_isa_wavefronts[i];
+			if (gpu_isa_wavefront->clause_kind == GPU_CLAUSE_CF && !gpu_isa_wavefront->cf_buf) {
 				finished_count++;
 				continue;
 			}
-			gpu_isa_warp_exec(kernel);
+			gpu_isa_wavefront_exec(kernel);
 		}
-		if (finished_count == gpu_warp_count)
+		if (finished_count == gpu_wavefront_count)
 			break;  /* FIXME: implement with linked lists */
 	}
 
 	/* Record finish time */
-	gpu_isa_warp->emu_time_end = ke_timer();
+	gpu_isa_wavefront->emu_time_end = ke_timer();
 
-	/* Dump warp report */
-	gpu_warp_dump(gpu_isa_warp, gk_report_file);
+	/* Dump wavefront report */
+	gpu_wavefront_dump(gpu_isa_wavefront, gk_report_file);
 
-	/* Free warps */
-	for (i = 0; i < gpu_warp_count; i++)
-		gpu_warp_free(gpu_isa_warps[i]);
-	free(gpu_isa_warps);
+	/* Free wavefronts */
+	for (i = 0; i < gpu_wavefront_count; i++)
+		gpu_wavefront_free(gpu_isa_wavefronts[i]);
+	free(gpu_isa_wavefronts);
 
-	/* Free threads */
+	/* Free work_items */
 	for (i = 0; i < kernel->global_size; i++)
-		gpu_thread_free(gpu_isa_threads[i]);
-	free(gpu_isa_threads);
+		gpu_work_item_free(gpu_isa_work_items[i]);
+	free(gpu_isa_work_items);
 
 	/* Free local memories */
 	for (i = 0; i < kernel->group_count; i++)
@@ -654,32 +651,32 @@ void gpu_isa_run(struct opencl_kernel_t *kernel)
  * ALU Clauses
  */
 
-/* Called before and ALU clause starts in warp */
+/* Called before and ALU clause starts in wavefront */
 void gpu_isa_alu_clause_start()
 {
 	/* Copy 'active' mask at the top of the stack to 'pred' mask */
-	bit_map_copy(gpu_isa_warp->pred, 0, gpu_isa_warp->active_stack,
-		gpu_isa_warp->stack_top * gpu_isa_warp->thread_count, gpu_isa_warp->thread_count);
+	bit_map_copy(gpu_isa_wavefront->pred, 0, gpu_isa_wavefront->active_stack,
+		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
 	if (debug_status(gpu_isa_debug_category)) {
-		gpu_isa_debug("  %s:pred=", gpu_isa_warp->name);
-		bit_map_dump(gpu_isa_warp->pred, 0, gpu_isa_warp->thread_count,
+		gpu_isa_debug("  %s:pred=", gpu_isa_wavefront->name);
+		bit_map_dump(gpu_isa_wavefront->pred, 0, gpu_isa_wavefront->work_item_count,
 			debug_file(gpu_isa_debug_category));
 	}
 
 	/* Flag 'push_before_done' will be set by the first PRED_SET* inst */
-	gpu_isa_warp->push_before_done = 0;
+	gpu_isa_wavefront->push_before_done = 0;
 
 	/* Stats */
-	gpu_isa_warp->alu_clause_count++;
+	gpu_isa_wavefront->alu_clause_count++;
 }
 
 
-/* Called after an ALU clause completed in a warp */
+/* Called after an ALU clause completed in a wavefront */
 void gpu_isa_alu_clause_end()
 {
 	/* If CF inst was ALU_POP_AFTER, pop the stack */
 	if (gpu_isa_cf_inst->info->inst == AMD_INST_ALU_POP_AFTER)
-		gpu_warp_stack_pop(gpu_isa_warp, 1);
+		gpu_wavefront_stack_pop(gpu_isa_wavefront, 1);
 }
 
 
@@ -689,15 +686,15 @@ void gpu_isa_alu_clause_end()
  * TEX Clauses
  */
 
-/* Called before and TEX clause starts in warp */
+/* Called before and TEX clause starts in wavefront */
 void gpu_isa_tc_clause_start()
 {
 	/* Stats */
-	gpu_isa_warp->tc_clause_count++;
+	gpu_isa_wavefront->tc_clause_count++;
 }
 
 
-/* Called after a TEX clause completed in a warp */
+/* Called after a TEX clause completed in a wavefront */
 void gpu_isa_tc_clause_end()
 {
 }
@@ -821,12 +818,12 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	/* QA and QA.pop */
 	if (sel == 219 || sel == 221) {
 		uint32_t *pvalue;
-		pvalue = (uint32_t *) list_dequeue(gpu_isa_thread->lds_oqa);
+		pvalue = (uint32_t *) list_dequeue(gpu_isa_work_item->lds_oqa);
 		if (!pvalue)
 			fatal("%s: LDS queue A is empty", __FUNCTION__);
 		value = *pvalue;
 		if (sel == 219)
-			list_enqueue(gpu_isa_thread->lds_oqa, pvalue);
+			list_enqueue(gpu_isa_work_item->lds_oqa, pvalue);
 		else
 			free(pvalue);
 		return value;
@@ -835,12 +832,12 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	/* QB and QB.pop */
 	if (sel == 220 || sel == 222) {
 		uint32_t *pvalue;
-		pvalue = (uint32_t *) list_dequeue(gpu_isa_thread->lds_oqb);
+		pvalue = (uint32_t *) list_dequeue(gpu_isa_work_item->lds_oqb);
 		if (!pvalue)
 			fatal("%s: LDS queue B is empty", __FUNCTION__);
 		value = *pvalue;
 		if (sel == 220)
-			list_enqueue(gpu_isa_thread->lds_oqb, pvalue);
+			list_enqueue(gpu_isa_work_item->lds_oqb, pvalue);
 		else
 			free(pvalue);
 		return value;
@@ -946,7 +943,7 @@ void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value)
 	struct gpu_isa_write_task_t *wt;
 
 	/* Inactive pixel not enqueued */
-	if (!gpu_thread_get_pred(gpu_isa_thread))
+	if (!gpu_work_item_get_pred(gpu_isa_work_item))
 		return;
 	
 	/* Create task */
@@ -968,7 +965,7 @@ void gpu_isa_enqueue_write_dest(uint32_t value)
 
 	/* If pixel is inactive, do not enqueue the task */
 	assert(gpu_isa_inst->info->fmt[0] == FMT_ALU_WORD0);
-	if (!gpu_thread_get_pred(gpu_isa_thread))
+	if (!gpu_work_item_get_pred(gpu_isa_work_item))
 		return;
 
 	/* Fields 'dst_gpr', 'dst_rel', and 'dst_chan' are at the same bit positions in both
@@ -1024,7 +1021,7 @@ void gpu_isa_enqueue_pred_set(int cond)
 	/* If pixel is inactive, predicate is not changed */
 	assert(gpu_isa_inst->info->fmt[0] == FMT_ALU_WORD0);
 	assert(gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2);
-	if (!gpu_thread_get_pred(gpu_isa_thread))
+	if (!gpu_work_item_get_pred(gpu_isa_work_item))
 		return;
 	
 	/* Create and enqueue task */
@@ -1062,7 +1059,7 @@ void gpu_isa_write_task_commit(void)
 
 			/* Debug */
 			if (gpu_isa_debugging()) {
-				gpu_isa_debug("  i%d:%s", gpu_isa_thread->global_id,
+				gpu_isa_debug("  i%d:%s", gpu_isa_work_item->global_id,
 					map_value(&amd_pv_map, wt->inst->alu));
 				if (wt->write_mask) {
 					gpu_isa_debug(",");
@@ -1080,7 +1077,7 @@ void gpu_isa_write_task_commit(void)
 		{
 			struct mem_t *local_mem;
 
-			local_mem = gk->local_mem[gpu_isa_thread->group_id];
+			local_mem = gk->local_mem[gpu_isa_work_item->group_id];
 			assert(local_mem);
 			mem_write(local_mem, wt->lds_addr, 4, &wt->lds_value);
 			gpu_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf)", GPU_THR.global_id, wt->lds_addr,
@@ -1110,9 +1107,9 @@ void gpu_isa_write_task_commit(void)
 
 		case GPU_ISA_WRITE_TASK_PUSH_BEFORE:
 		{
-			if (!gpu_isa_warp->push_before_done)
-				gpu_warp_stack_push(gpu_isa_warp);
-			gpu_isa_warp->push_before_done = 1;
+			if (!gpu_isa_wavefront->push_before_done)
+				gpu_wavefront_stack_push(gpu_isa_wavefront);
+			gpu_isa_wavefront->push_before_done = 1;
 			break;
 		}
 
@@ -1123,9 +1120,9 @@ void gpu_isa_write_task_commit(void)
 
 			assert(gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2);
 			if (update_pred)
-				gpu_thread_set_pred(gpu_isa_thread, wt->cond);
+				gpu_work_item_set_pred(gpu_isa_work_item, wt->cond);
 			if (update_exec_mask)
-				gpu_thread_set_active(gpu_isa_thread, wt->cond);
+				gpu_work_item_set_active(gpu_isa_work_item, wt->cond);
 
 			/* Debug */
 			if (debug_status(gpu_isa_debug_category)) {

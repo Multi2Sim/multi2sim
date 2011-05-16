@@ -23,6 +23,7 @@
 #include <gpukernel.h>
 #include <cpukernel.h>
 #include <stdint.h>
+#include <gpudisasm.h>
 
 
 
@@ -257,9 +258,9 @@ struct opencl_kernel_t
 	int work_dim;
 
 	/* 3D Counters */
-	int global_size3[3];  /* Total number of threads */
-	int local_size3[3];  /* Number of threads in a group */
-	int group_count3[3];  /* Number of thread groups */
+	int global_size3[3];  /* Total number of work_items */
+	int local_size3[3];  /* Number of work_items in a group */
+	int group_count3[3];  /* Number of work_item groups */
 	
 	/* 1D Counters. Each counter is equal to the multiplication
 	 * of each component in the corresponding 3D counter. */
@@ -409,7 +410,7 @@ void gpu_isa_write_task_commit(void);
 
 
 /*
- * GPU Warp
+ * GPU wavefront
  */
 
 /* Type of clauses */
@@ -422,35 +423,39 @@ enum gpu_clause_kind_enum {
 };
 
 
-/* Warp */
+/* wavefront */
 #define GPU_MAX_STACK_SIZE  32
-struct gpu_warp_t
+struct gpu_wavefront_t
 {
-	struct gpu_thread_t **threads;  /* Array of threads in the warp */
-	int thread_count;  /* Number of threads in the warp */
-	int global_id;  /* Global ID of first thread */
-	int global_id_last;  /* Global ID of last thread */
-	uint64_t warp_id;  /* A unique identifier for the warp (increasingly assigned on creation) */
+	struct gpu_work_item_t **work_items;  /* Array of work_items in the wavefront */
+	int work_item_count;  /* Number of work_items in the wavefront */
+	int global_id;  /* Global ID of first work_item */
+	int global_id_last;  /* Global ID of last work_item */
+	uint64_t wavefront_id;  /* A unique identifier for the wavefront (increasingly assigned on creation) */
 	char name[30];
 
 	/* Current clause kind and instruction pointers */
 	enum gpu_clause_kind_enum clause_kind;
 
-	/* Starting/current CF buffer and instruction */
+	/* Current instructions */
+	struct amd_inst_t cf_inst;
+	struct amd_alu_group_t alu_group;
+	struct amd_inst_t tc_inst;
+
+	/* Starting/current CF buffer */
 	void *cf_buf_start;
 	void *cf_buf;
-	struct amd_inst_t *cf_inst;
 
 	/* Current and end of clause buffer */
 	void *clause_buf;
 	void *clause_buf_end;
 
 	/* Active mask stack */
-	struct bit_map_t *active_stack;  /* GPU_MAX_STACK_SIZE * thread_count elements */
+	struct bit_map_t *active_stack;  /* GPU_MAX_STACK_SIZE * work_item_count elements */
 	int stack_top;
 
 	/* Predicate mask */
-	struct bit_map_t *pred;  /* thread_count elements */
+	struct bit_map_t *pred;  /* work_item_count elements */
 
 	/* Flag indicating whether the stack has been pushed after a PRED_SET* instruction
 	 * has executed. This is done within ALU_PUSH_BEFORE instructions. */
@@ -480,18 +485,18 @@ struct gpu_warp_t
 	uint64_t tc_inst_global_mem_read_count;  /* Number of instructions reading from global mem (they are TC inst) */
 };
 
-struct gpu_warp_t *gpu_warp_create();
-void gpu_warp_free(struct gpu_warp_t *warp);
-void gpu_warp_dump(struct gpu_warp_t *warp, FILE *f);
+struct gpu_wavefront_t *gpu_wavefront_create();
+void gpu_wavefront_free(struct gpu_wavefront_t *wavefront);
+void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f);
 
-void gpu_warp_stack_push(struct gpu_warp_t *warp);
-void gpu_warp_stack_pop(struct gpu_warp_t *warp, int count);
+void gpu_wavefront_stack_push(struct gpu_wavefront_t *wavefront);
+void gpu_wavefront_stack_pop(struct gpu_wavefront_t *wavefront, int count);
 
 
 
 
 /*
- * GPU Thread (Pixel)
+ * GPU work_item (Pixel)
  */
 
 #define GPU_MAX_GPR_ELEM  5
@@ -500,17 +505,17 @@ struct gpu_gpr_t
 	uint32_t elem[GPU_MAX_GPR_ELEM];  /* x, y, z, w, t */
 };
 
-struct gpu_thread_t
+struct gpu_work_item_t
 {
-	/* Warp where it belongs */
-	struct gpu_warp_t *warp;
+	/* wavefront where it belongs */
+	struct gpu_wavefront_t *wavefront;
 
-	/* Thread status */
+	/* work_item status */
 	struct gpu_gpr_t gpr[128];  /* General purpose registers */
 	struct gpu_gpr_t pv;  /* Result of last computations */
 
 	/* 1D identifiers */
-	int warp_id;
+	int wavefront_id;
 	int local_id;
 	int global_id;
 	int group_id;
@@ -528,24 +533,24 @@ struct gpu_thread_t
 	struct list_t *lds_oqa;
 	struct list_t *lds_oqb;
 
-	/* This is a digest of the active mask updates for this thread. Every time
-	 * an instruction updates the active mask of a warp, this digest is updated
-	 * for active threads by XORing a random number common for the warp.
-	 * At the end, threads with different 'branch_digest' numbers can be considered
-	 * divergent threads. */
+	/* This is a digest of the active mask updates for this work_item. Every time
+	 * an instruction updates the active mask of a wavefront, this digest is updated
+	 * for active work_items by XORing a random number common for the wavefront.
+	 * At the end, work_items with different 'branch_digest' numbers can be considered
+	 * divergent work_items. */
 	uint32_t branch_digest;
 };
 
 
-struct gpu_thread_t *gpu_thread_create(void);
-void gpu_thread_free(struct gpu_thread_t *thread);
+struct gpu_work_item_t *gpu_work_item_create(void);
+void gpu_work_item_free(struct gpu_work_item_t *work_item);
 
 /* Consult and change active/predicate bits */
-void gpu_thread_set_active(struct gpu_thread_t *thread, int active);
-int gpu_thread_get_active(struct gpu_thread_t *thread);
-void gpu_thread_set_pred(struct gpu_thread_t *thread, int pred);
-int gpu_thread_get_pred(struct gpu_thread_t *thread);
-void gpu_thread_update_branch_digest(struct gpu_thread_t *thread,
+void gpu_work_item_set_active(struct gpu_work_item_t *work_item, int active);
+int gpu_work_item_get_active(struct gpu_work_item_t *work_item);
+void gpu_work_item_set_pred(struct gpu_work_item_t *work_item, int pred);
+int gpu_work_item_get_pred(struct gpu_work_item_t *work_item);
+void gpu_work_item_update_branch_digest(struct gpu_work_item_t *work_item,
 	uint64_t inst_count, uint32_t inst_addr);
 
 
@@ -556,17 +561,17 @@ void gpu_thread_update_branch_digest(struct gpu_thread_t *thread,
  */
 
 /* Macros for quick access */
-#define GPU_THR (*gpu_isa_thread)
-#define GPU_THR_I(I)  (*gpu_isa_threads[(I)])
+#define GPU_THR (*gpu_isa_work_item)
+#define GPU_THR_I(I)  (*gpu_isa_work_items[(I)])
 
-#define GPU_GPR_ELEM(_gpr, _elem)  (gpu_isa_thread->gpr[(_gpr)].elem[(_elem)])
+#define GPU_GPR_ELEM(_gpr, _elem)  (gpu_isa_work_item->gpr[(_gpr)].elem[(_elem)])
 #define GPU_GPR_X(_gpr)  GPU_GPR_ELEM((_gpr), 0)
 #define GPU_GPR_Y(_gpr)  GPU_GPR_ELEM((_gpr), 1)
 #define GPU_GPR_Z(_gpr)  GPU_GPR_ELEM((_gpr), 2)
 #define GPU_GPR_W(_gpr)  GPU_GPR_ELEM((_gpr), 3)
 #define GPU_GPR_T(_gpr)  GPU_GPR_ELEM((_gpr), 4)
 
-#define GPU_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &gpu_isa_thread->gpr[(_gpr)].elem[(_elem)])
+#define GPU_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &gpu_isa_work_item->gpr[(_gpr)].elem[(_elem)])
 #define GPU_GPR_FLOAT_X(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 0)
 #define GPU_GPR_FLOAT_Y(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 1)
 #define GPU_GPR_FLOAT_Z(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 2)
@@ -629,9 +634,9 @@ extern char *err_gpu_machine_note;
 
 
 /* Global variables */
-extern struct gpu_thread_t *gpu_isa_thread;
-extern struct gpu_thread_t **gpu_isa_threads;
-extern struct gpu_warp_t *gpu_isa_warp;
+extern struct gpu_work_item_t *gpu_isa_work_item;
+extern struct gpu_work_item_t **gpu_isa_work_items;
+extern struct gpu_wavefront_t *gpu_isa_wavefront;
 extern struct amd_inst_t *gpu_isa_inst;
 extern struct amd_alu_group_t *gpu_isa_alu_group;
 
