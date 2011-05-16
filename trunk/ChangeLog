@@ -891,3 +891,8 @@
 	* src/libgpuarch: Makefile.in added
 	* src/libgpukernel/gpuisa.c: support for different warps.
 
+2010-05-16
+	* src/libgpukernel: warp -> wavefront, thread -> work_item
+	* src/libgpukernel/gpuisa.c: current decoded instruction added as a field of struct
+		gpu_wavefront_t.
+

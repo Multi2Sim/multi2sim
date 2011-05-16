@@ -38,7 +38,7 @@ int gk_kernel_execution_count = 0;
 
 
 /* Architectural parameters introduced in GPU emulator */
-int gpu_warp_size = 3;
+int gpu_wavefront_size = 3;
 
 
 
@@ -188,36 +188,36 @@ void gk_libopencl_failed(int pid)
 
 
 /*
- * GPU Warp
+ * GPU wavefront
  */
 
-static uint64_t warp_id;
+static uint64_t wavefront_id;
 
 
-struct gpu_warp_t *gpu_warp_create()
+struct gpu_wavefront_t *gpu_wavefront_create()
 {
-	struct gpu_warp_t *warp;
+	struct gpu_wavefront_t *wavefront;
 
-	warp = calloc(1, sizeof(struct gpu_warp_t));
-	warp->warp_id = warp_id++;
+	wavefront = calloc(1, sizeof(struct gpu_wavefront_t));
+	wavefront->wavefront_id = wavefront_id++;
 
-	warp->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * gpu_warp_size);
-	warp->pred = bit_map_create(gpu_warp_size);
-	return warp;
+	wavefront->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * gpu_wavefront_size);
+	wavefront->pred = bit_map_create(gpu_wavefront_size);
+	return wavefront;
 }
 
 
-void gpu_warp_free(struct gpu_warp_t *warp)
+void gpu_wavefront_free(struct gpu_wavefront_t *wavefront)
 {
-	/* Free warp */
-	bit_map_free(warp->active_stack);
-	bit_map_free(warp->pred);
-	free(warp);
+	/* Free wavefront */
+	bit_map_free(wavefront->active_stack);
+	bit_map_free(wavefront->pred);
+	free(wavefront);
 }
 
 
 /* Comparison function to sort list */
-static int gpu_warp_divergence_compare(const void *elem1, const void *elem2)
+static int gpu_wavefront_divergence_compare(const void *elem1, const void *elem2)
 {
 	int count1 = * (int *) elem1;
 	int count2 = * (int *) elem2;
@@ -230,9 +230,9 @@ static int gpu_warp_divergence_compare(const void *elem1, const void *elem2)
 }
 
 
-void gpu_warp_divergence_dump(struct gpu_warp_t *warp, FILE *f)
+void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 {
-	struct gpu_thread_t *thread;
+	struct gpu_work_item_t *work_item;
 	struct elem_t {
 		int count;  /* 1st field hardcoded for comparison */
 		int list_index;
@@ -248,45 +248,45 @@ void gpu_warp_divergence_dump(struct gpu_warp_t *warp, FILE *f)
 	list = list_create(20);
 	ht = hashtable_create(20, 1);
 
-	/* Create one 'elem' for each thread with a different branch digest, and
+	/* Create one 'elem' for each work_item with a different branch digest, and
 	 * store it into the hash table and list. */
-	for (i = 0; i < warp->thread_count; i++) {
-		thread = warp->threads[i];
-		sprintf(str, "%08x", thread->branch_digest);
+	for (i = 0; i < wavefront->work_item_count; i++) {
+		work_item = wavefront->work_items[i];
+		sprintf(str, "%08x", work_item->branch_digest);
 		elem = hashtable_get(ht, str);
 		if (!elem) {
 			elem = calloc(1, sizeof(struct elem_t));
 			hashtable_insert(ht, str, elem);
 			elem->list_index = list_count(list);
-			elem->branch_digest = thread->branch_digest;
+			elem->branch_digest = work_item->branch_digest;
 			list_add(list, elem);
 		}
 		elem->count++;
 	}
 
 	/* Sort divergence groups as per size */
-	list_sort(list, gpu_warp_divergence_compare);
-	fprintf(f, "ThreadDivergenceGroups = %d\n", list_count(list));
+	list_sort(list, gpu_wavefront_divergence_compare);
+	fprintf(f, "work_itemDivergenceGroups = %d\n", list_count(list));
 	
 	/* Dump size of groups with */
-	fprintf(f, "ThreadDivergenceGroupsSize =");
+	fprintf(f, "work_itemDivergenceGroupsSize =");
 	for (i = 0; i < list_count(list); i++) {
 		elem = list_get(list, i);
 		fprintf(f, " %d", elem->count);
 	}
 	fprintf(f, "\n\n");
 
-	/* Dump thread ids contained in each thread divergence group */
+	/* Dump work_item ids contained in each work_item divergence group */
 	for (i = 0; i < list_count(list); i++) {
 		elem = list_get(list, i);
-		fprintf(f, "ThreadDivergenceGroup[%d] =", i);
+		fprintf(f, "work_itemDivergenceGroup[%d] =", i);
 
-		for (j = 0; j < warp->thread_count; j++) {
+		for (j = 0; j < wavefront->work_item_count; j++) {
 			int first, last;
-			first = warp->threads[j]->branch_digest == elem->branch_digest &&
-				(j == 0 || warp->threads[j - 1]->branch_digest != elem->branch_digest);
-			last = warp->threads[j]->branch_digest == elem->branch_digest &&
-				(j == warp->thread_count - 1 || warp->threads[j + 1]->branch_digest != elem->branch_digest);
+			first = wavefront->work_items[j]->branch_digest == elem->branch_digest &&
+				(j == 0 || wavefront->work_items[j - 1]->branch_digest != elem->branch_digest);
+			last = wavefront->work_items[j]->branch_digest == elem->branch_digest &&
+				(j == wavefront->work_item_count - 1 || wavefront->work_items[j + 1]->branch_digest != elem->branch_digest);
 			if (first)
 				fprintf(f, " %d", j);
 			else if (last)
@@ -304,7 +304,7 @@ void gpu_warp_divergence_dump(struct gpu_warp_t *warp, FILE *f)
 }
 
 
-void gpu_warp_dump(struct gpu_warp_t *warp, FILE *f)
+void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 {
 	int i;
 	double emu_time;
@@ -312,74 +312,74 @@ void gpu_warp_dump(struct gpu_warp_t *warp, FILE *f)
 	if (!f)
 		return;
 	
-	/* Dump warp statistics in GPU report */
-	fprintf(f, "[ Warp %lld ]\n\n", (long long) warp->warp_id);
+	/* Dump wavefront statistics in GPU report */
+	fprintf(f, "[ wavefront %lld ]\n\n", (long long) wavefront->wavefront_id);
 
 	fprintf(f, "KernelExecution = %d\n", gk_kernel_execution_count - 1);
-	fprintf(f, "Name = %s\n", warp->name);
-	fprintf(f, "Global_Id = %d\n", warp->global_id);
-	fprintf(f, "Thread_Count = %d\n", warp->thread_count);
+	fprintf(f, "Name = %s\n", wavefront->name);
+	fprintf(f, "Global_Id = %d\n", wavefront->global_id);
+	fprintf(f, "work_item_Count = %d\n", wavefront->work_item_count);
 	fprintf(f, "\n");
 
-	emu_time = (double) (warp->emu_time_end = warp->emu_time_start) / 1e6;
-	fprintf(f, "Emu_Inst_Count = %lld\n", (long long) warp->emu_inst_count);
+	emu_time = (double) (wavefront->emu_time_end = wavefront->emu_time_start) / 1e6;
+	fprintf(f, "Emu_Inst_Count = %lld\n", (long long) wavefront->emu_inst_count);
 	fprintf(f, "Emu_Time = %.2f\n", emu_time);
-	fprintf(f, "Emu_Inst_Per_Sec = %.2f\n", (double) warp->emu_inst_count / emu_time);
+	fprintf(f, "Emu_Inst_Per_Sec = %.2f\n", (double) wavefront->emu_inst_count / emu_time);
 	fprintf(f, "\n");
 
-	fprintf(f, "Inst_Count = %lld\n", (long long) warp->inst_count);
-	fprintf(f, "Global_Mem_Inst_Count = %lld\n", (long long) warp->global_mem_inst_count);
-	fprintf(f, "Local_Mem_Inst_Count = %lld\n", (long long) warp->local_mem_inst_count);
+	fprintf(f, "Inst_Count = %lld\n", (long long) wavefront->inst_count);
+	fprintf(f, "Global_Mem_Inst_Count = %lld\n", (long long) wavefront->global_mem_inst_count);
+	fprintf(f, "Local_Mem_Inst_Count = %lld\n", (long long) wavefront->local_mem_inst_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "CF_Inst_Count = %lld\n", (long long) warp->cf_inst_count);
-	fprintf(f, "CF_Inst_Global_Mem_Write_Count = %lld\n", (long long) warp->cf_inst_global_mem_write_count);
+	fprintf(f, "CF_Inst_Count = %lld\n", (long long) wavefront->cf_inst_count);
+	fprintf(f, "CF_Inst_Global_Mem_Write_Count = %lld\n", (long long) wavefront->cf_inst_global_mem_write_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "ALU_Clause_Count = %lld\n", (long long) warp->alu_clause_count);
-	fprintf(f, "ALU_Group_Count = %lld\n", (long long) warp->alu_group_count);
+	fprintf(f, "ALU_Clause_Count = %lld\n", (long long) wavefront->alu_clause_count);
+	fprintf(f, "ALU_Group_Count = %lld\n", (long long) wavefront->alu_group_count);
 	fprintf(f, "ALU_Group_Size =");
 	for (i = 0; i < 5; i++)
-		fprintf(f, " %lld", (long long) warp->alu_group_size[i]);
+		fprintf(f, " %lld", (long long) wavefront->alu_group_size[i]);
 	fprintf(f, "\n");
-	fprintf(f, "ALU_Inst_Count = %lld\n", (long long) warp->alu_inst_count);
-	fprintf(f, "ALU_Inst_Local_Mem_Count = %lld\n", (long long) warp->alu_inst_local_mem_count);
-	fprintf(f, "\n");
-
-	fprintf(f, "TC_Clause_Count = %lld\n", (long long) warp->tc_clause_count);
-	fprintf(f, "TC_Inst_Count = %lld\n", (long long) warp->tc_inst_count);
-	fprintf(f, "TC_Inst_Global_Mem_Read_Count = %lld\n", (long long) warp->tc_inst_global_mem_read_count);
+	fprintf(f, "ALU_Inst_Count = %lld\n", (long long) wavefront->alu_inst_count);
+	fprintf(f, "ALU_Inst_Local_Mem_Count = %lld\n", (long long) wavefront->alu_inst_local_mem_count);
 	fprintf(f, "\n");
 
-	gpu_warp_divergence_dump(warp, f);
+	fprintf(f, "TC_Clause_Count = %lld\n", (long long) wavefront->tc_clause_count);
+	fprintf(f, "TC_Inst_Count = %lld\n", (long long) wavefront->tc_inst_count);
+	fprintf(f, "TC_Inst_Global_Mem_Read_Count = %lld\n", (long long) wavefront->tc_inst_global_mem_read_count);
+	fprintf(f, "\n");
+
+	gpu_wavefront_divergence_dump(wavefront, f);
 
 	fprintf(f, "\n");
 }
 
 
-void gpu_warp_stack_push(struct gpu_warp_t *warp)
+void gpu_wavefront_stack_push(struct gpu_wavefront_t *wavefront)
 {
-	if (warp->stack_top == GPU_MAX_STACK_SIZE - 1)
+	if (wavefront->stack_top == GPU_MAX_STACK_SIZE - 1)
 		fatal("%s: stack overflow", gpu_isa_inst->info->name);
-	warp->stack_top++;
-	bit_map_copy(warp->active_stack, warp->stack_top * warp->thread_count,
-		warp->active_stack, (warp->stack_top - 1) * warp->thread_count,
-		warp->thread_count);
-	gpu_isa_debug("  %s:push", warp->name);
+	wavefront->stack_top++;
+	bit_map_copy(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
+		wavefront->active_stack, (wavefront->stack_top - 1) * wavefront->work_item_count,
+		wavefront->work_item_count);
+	gpu_isa_debug("  %s:push", wavefront->name);
 }
 
 
-void gpu_warp_stack_pop(struct gpu_warp_t *warp, int count)
+void gpu_wavefront_stack_pop(struct gpu_wavefront_t *wavefront, int count)
 {
 	if (!count)
 		return;
-	if (warp->stack_top < count)
+	if (wavefront->stack_top < count)
 		fatal("%s: stack underflow", gpu_isa_inst->info->name);
-	warp->stack_top -= count;
+	wavefront->stack_top -= count;
 	if (debug_status(gpu_isa_debug_category)) {
-		gpu_isa_debug("  %s:pop(%d),act=", warp->name, count);
-		bit_map_dump(warp->active_stack, warp->stack_top * warp->thread_count,
-			warp->thread_count, debug_file(gpu_isa_debug_category));
+		gpu_isa_debug("  %s:pop(%d),act=", wavefront->name, count);
+		bit_map_dump(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
+			wavefront->work_item_count, debug_file(gpu_isa_debug_category));
 	}
 }
 
@@ -387,87 +387,87 @@ void gpu_warp_stack_pop(struct gpu_warp_t *warp, int count)
 
 
 /*
- * GPU Thread
+ * GPU work_item
  */
 
-struct gpu_thread_t *gpu_thread_create()
+struct gpu_work_item_t *gpu_work_item_create()
 {
-	struct gpu_thread_t *thread;
-	thread = calloc(1, sizeof(struct gpu_thread_t));
-	thread->write_task_list = lnlist_create();
-	thread->lds_oqa = list_create(5);
-	thread->lds_oqb = list_create(5);
-	return thread;
+	struct gpu_work_item_t *work_item;
+	work_item = calloc(1, sizeof(struct gpu_work_item_t));
+	work_item->write_task_list = lnlist_create();
+	work_item->lds_oqa = list_create(5);
+	work_item->lds_oqb = list_create(5);
+	return work_item;
 }
 
 
-void gpu_thread_free(struct gpu_thread_t *thread)
+void gpu_work_item_free(struct gpu_work_item_t *work_item)
 {
 	/* Empty LDS output queues */
-	while (list_count(thread->lds_oqa))
-		free(list_dequeue(thread->lds_oqa));
-	while (list_count(thread->lds_oqb))
-		free(list_dequeue(thread->lds_oqb));
-	list_free(thread->lds_oqa);
-	list_free(thread->lds_oqb);
-	lnlist_free(thread->write_task_list);
+	while (list_count(work_item->lds_oqa))
+		free(list_dequeue(work_item->lds_oqa));
+	while (list_count(work_item->lds_oqb))
+		free(list_dequeue(work_item->lds_oqb));
+	list_free(work_item->lds_oqa);
+	list_free(work_item->lds_oqb);
+	lnlist_free(work_item->write_task_list);
 
-	/* Free thread */
-	free(thread);
+	/* Free work_item */
+	free(work_item);
 }
 
 
-void gpu_thread_set_active(struct gpu_thread_t *thread, int active)
+void gpu_work_item_set_active(struct gpu_work_item_t *work_item, int active)
 {
-	struct gpu_warp_t *warp = thread->warp;
-	assert(thread->global_id >= warp->global_id &&
-		thread->global_id < warp->global_id + warp->thread_count);
-	assert(thread->warp_id < warp->thread_count);
-	bit_map_set(warp->active_stack, warp->stack_top * warp->thread_count
-		+ thread->warp_id, 1, !!active);
+	struct gpu_wavefront_t *wavefront = work_item->wavefront;
+	assert(work_item->global_id >= wavefront->global_id &&
+		work_item->global_id < wavefront->global_id + wavefront->work_item_count);
+	assert(work_item->wavefront_id < wavefront->work_item_count);
+	bit_map_set(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
+		+ work_item->wavefront_id, 1, !!active);
 }
 
 
-int gpu_thread_get_active(struct gpu_thread_t *thread)
+int gpu_work_item_get_active(struct gpu_work_item_t *work_item)
 {
-	struct gpu_warp_t *warp = thread->warp;
-	assert(thread->global_id >= warp->global_id &&
-		thread->global_id < warp->global_id + warp->thread_count);
-	assert(thread->warp_id < warp->thread_count);
-	return bit_map_get(warp->active_stack, warp->stack_top * warp->thread_count
-		+ thread->warp_id, 1);
+	struct gpu_wavefront_t *wavefront = work_item->wavefront;
+	assert(work_item->global_id >= wavefront->global_id &&
+		work_item->global_id < wavefront->global_id + wavefront->work_item_count);
+	assert(work_item->wavefront_id < wavefront->work_item_count);
+	return bit_map_get(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
+		+ work_item->wavefront_id, 1);
 }
 
 
-void gpu_thread_set_pred(struct gpu_thread_t *thread, int pred)
+void gpu_work_item_set_pred(struct gpu_work_item_t *work_item, int pred)
 {
-	struct gpu_warp_t *warp = thread->warp;
-	assert(thread->global_id >= warp->global_id &&
-		thread->global_id < warp->global_id + warp->thread_count);
-	assert(thread->warp_id < warp->thread_count);
-	bit_map_set(warp->pred, thread->warp_id, 1, !!pred);
+	struct gpu_wavefront_t *wavefront = work_item->wavefront;
+	assert(work_item->global_id >= wavefront->global_id &&
+		work_item->global_id < wavefront->global_id + wavefront->work_item_count);
+	assert(work_item->wavefront_id < wavefront->work_item_count);
+	bit_map_set(wavefront->pred, work_item->wavefront_id, 1, !!pred);
 }
 
 
-int gpu_thread_get_pred(struct gpu_thread_t *thread)
+int gpu_work_item_get_pred(struct gpu_work_item_t *work_item)
 {
-	struct gpu_warp_t *warp = thread->warp;
-	assert(thread->global_id >= warp->global_id &&
-		thread->global_id < warp->global_id + warp->thread_count);
-	assert(thread->warp_id < warp->thread_count);
-	return bit_map_get(warp->pred, thread->warp_id, 1);
+	struct gpu_wavefront_t *wavefront = work_item->wavefront;
+	assert(work_item->global_id >= wavefront->global_id &&
+		work_item->global_id < wavefront->global_id + wavefront->work_item_count);
+	assert(work_item->wavefront_id < wavefront->work_item_count);
+	return bit_map_get(wavefront->pred, work_item->wavefront_id, 1);
 }
 
 
-/* Based on an instruction counter, instruction address, and thread mask,
+/* Based on an instruction counter, instruction address, and work_item mask,
  * update (xor) branch_digest with a random number */
-void gpu_thread_update_branch_digest(struct gpu_thread_t *thread, uint64_t inst_count, uint32_t inst_addr)
+void gpu_work_item_update_branch_digest(struct gpu_work_item_t *work_item, uint64_t inst_count, uint32_t inst_addr)
 {
-	struct gpu_warp_t *warp = thread->warp;
+	struct gpu_wavefront_t *wavefront = work_item->wavefront;
 	uint32_t mask = 0;
 
-	/* Update branch digest only if thread is active */
-	if (!bit_map_get(warp->active_stack, warp->stack_top * warp->thread_count + thread->warp_id, 1))
+	/* Update branch digest only if work_item is active */
+	if (!bit_map_get(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count + work_item->wavefront_id, 1))
 		return;
 
 	/* Update mask with inst_count */
@@ -477,7 +477,7 @@ void gpu_thread_update_branch_digest(struct gpu_thread_t *thread, uint64_t inst_
 	mask += inst_addr * 0x31f2e73b;
 
 	/* Update branch digest */
-	thread->branch_digest ^= mask;
+	work_item->branch_digest ^= mask;
 }
 
 
