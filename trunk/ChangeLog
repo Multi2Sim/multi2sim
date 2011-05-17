@@ -900,3 +900,9 @@
 	* src/libmisc/misc.h: double linked lists generalized.
 	* src/libcpukernel/cpukernel.c: using new double linked list macros.
 	* src/libgpukernel: work-groups created. Lists of wavefronts.
+	* src/libgpukernel/gpumachine.c: barriers implemented for synchronization among
+		wavefronts in the same work-group.
+	* src/libgpukernel: Work-groups include lists of running/finished wavefronts, or
+		wavefronts waiting in barriers. OpenCL kernel structure includes a list
+		of running/finished work-groups.
+
