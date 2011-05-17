@@ -1302,9 +1302,33 @@ void amd_inst_SUBB_UINT_impl() {
 }
 
 
-void amd_inst_GROUP_BARRIER_impl() {
-	/* FIXME */
-	//printf("work_item %d - BARRIER\n", gpu_isa_work_item->global_id);
+void amd_inst_GROUP_BARRIER_impl()
+{
+	/* Only the first work-item in a wavefront handles barriers */
+	if (WORK_ITEM.wavefront_id)
+		return;
+	
+	/* Suspend current wavefront at the barrier */
+	assert(DOUBLE_LINKED_LIST_MEMBER(gpu_isa_work_group, running, gpu_isa_wavefront));
+	DOUBLE_LINKED_LIST_REMOVE(gpu_isa_work_group, running, gpu_isa_wavefront);
+	DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_isa_work_group, barrier, gpu_isa_wavefront);
+	gpu_isa_debug("%s (gid=%d) reached barrier (%d reached, %d left)\n",
+		WAVEFRONT.name, WORK_ITEM.group_id, WORK_GROUP.barrier_count,
+		WORK_GROUP.wavefront_count - WORK_GROUP.barrier_count);
+	
+	/* If all wavefronts in work-group reached the barrier, wake them up */
+	if (WORK_GROUP.barrier_count == WORK_GROUP.wavefront_count) {
+		struct gpu_wavefront_t *wavefront;
+		while (WORK_GROUP.barrier_list_head) {
+			wavefront = WORK_GROUP.barrier_list_head;
+			DOUBLE_LINKED_LIST_REMOVE(gpu_isa_work_group, barrier, wavefront);
+			DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_isa_work_group, running, wavefront);
+		}
+		assert(WORK_GROUP.running_count == WORK_GROUP.wavefront_count);
+		assert(WORK_GROUP.barrier_count == 0);
+		gpu_isa_debug("%s completed barrier, waking up wavefronts\n",
+			WORK_GROUP.name);
+	}
 }
 
 
