@@ -896,3 +896,7 @@
 	* src/libgpukernel/gpuisa.c: current decoded instruction added as a field of struct
 		gpu_wavefront_t.
 
+2010-05-17
+	* src/libmisc/misc.h: double linked lists generalized.
+	* src/libcpukernel/cpukernel.c: using new double linked list macros.
+	* src/libgpukernel: work-groups created. Lists of wavefronts.

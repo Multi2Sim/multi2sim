@@ -26,28 +26,28 @@
 #include <stdio.h>
 
 
-/* max string size */
-#define MAX_STRING_SIZE			200
+/* Maximum string size */
+#define MAX_STRING_SIZE  200
 
-/* min max bool */
+/* Min, Max, Book, Range */
 #define MIN(X, Y) ((X)<(Y)?(X):(Y))
 #define MAX(X, Y) ((X)>(Y)?(X):(Y))
 #define BOOL(X) ((X) ? 't' : 'f')
 #define IN_RANGE(X, X1, X2) ((X)>=(X1)&&(X)<=(X2))
 
-/* round */
+/* Round */
 #define ROUND_UP(N,ALIGN)	(((N) + ((ALIGN)-1)) & ~((ALIGN)-1))
 #define ROUND_DOWN(N,ALIGN)	((N) & ~((ALIGN)-1))
 
-/* alignment */
+/* Alignment */
 #define DWORD_ALIGN(N) ROUND_DOWN((N),8)
 #define WORD_ALIGN(N) ROUND_DOWN((N), 4)
 #define HALF_ALIGN(N) ROUND_DOWN((N), 2)
 
-/* modulo */
+/* Modulo handling negative numbers */
 #define MOD(X, Y)		(((X) + (Y)) % (Y))
 
-/* endian control */
+/* Endian control */
 #define SWAPH(X)	(((((half)(X)) & 0xff) << 8) | \
 			((((half)(X)) & 0xff00) >> 8))
 #define SWAPW(X)	((((uint32_t)(X)) << 24) |			\
@@ -64,15 +64,15 @@
 			((((uint64_t)(X)) >> 56) & 0x00000000000000ffULL))
 
 
-/* sign extend */
+/* Sign extension */
 #define SEXT32(X, B)		(((uint32_t)(X))&(1U<<(B-1))?((uint32_t)(X))|~((1U<<B)-1):(X))
 #define SEXT64(X, B)		(((uint64_t)(X))&(1ULL<<(B-1))?((uint64_t)(X))|~((1ULL<<B)-1):(X))
 
-/* extract bits from HI to LO from X */
+/* Extract bits from HI to LO from X */
 #define BITS32(X, HI, LO)	((((uint32_t)(X))>>(LO))&((1U<<((HI)-(LO)+1))-1))
 #define BITS64(X, HI, LO)	((((uint64_t)(X))>>(LO))&((1ULL<<((HI)-(LO)+1ULL))-1ULL))
 
-/* bits */
+/* Bit-handling macros */
 #define GETBIT32(X, B)		((uint32_t)(X)&(1U<<(B)))
 #define GETBIT64(X, B)		((uint64_t)(X)&(1ULL<<(B)))
 #define SETBIT32(X, B)		((uint32_t)(X)|(1U<<(B)))
@@ -103,6 +103,61 @@
 #define BITMAP_CLEAR_RANGE(NAME, LO, HI) { int _i; \
 	for (_i = (LO); _i <= (HI); _i++) \
 	BITMAP_CLEAR((NAME), _i); }
+
+
+/* Double linked list handling macros.
+ * NAME is the name of a list.
+ * CONT is a pointer to a structure containing the following fields:
+ *   struct * CONT->NAME_list_head
+ *   struct * CONT->NAME_list_tail
+ *   int CONT->NAME_count
+ *   int CONT->NAME_max
+ * ELEM is an element of the list containing the following fields:
+ *   struct * ELEM->NAME_next
+ *   struct * ELEM->NAME_prev
+ */
+
+#define DOUBLE_LINKED_LIST_INSERT_HEAD(CONT, NAME, ELEM) { \
+	assert(!(ELEM)->NAME##_next && !(ELEM)->NAME##_prev); \
+	(ELEM)->NAME##_next = (CONT)->NAME##_list_head; \
+	if ((ELEM)->NAME##_next) \
+		(ELEM)->NAME##_next->NAME##_prev = (ELEM); \
+	(CONT)->NAME##_list_head = (ELEM); \
+	if (!(CONT)->NAME##_list_tail) \
+		(CONT)->NAME##_list_tail = (ELEM); \
+	(CONT)->NAME##_count++; \
+	(CONT)->NAME##_max = MAX((CONT)->NAME##_max, (CONT)->NAME##_count); \
+}
+
+#define DOUBLE_LINKED_LIST_INSERT_TAIL(CONT, NAME, ELEM) { \
+	assert(!(ELEM)->NAME##_next && !ELEM->NAME##_prev); \
+	(ELEM)->NAME##_prev = (CONT)->NAME##_list_tail; \
+	if ((ELEM)->NAME##_prev) \
+		(ELEM)->NAME##_prev->NAME##_next = (ELEM); \
+	(CONT)->NAME##_list_tail = (ELEM); \
+	if (!(CONT)->NAME##_list_head) \
+		(CONT)->NAME##_list_head = (ELEM); \
+	(CONT)->NAME##_count++; \
+	(CONT)->NAME##_max = MAX((CONT)->NAME##_max, (CONT)->NAME##_count); \
+}
+
+#define DOUBLE_LINKED_LIST_MEMBER(CONT, NAME, ELEM) \
+	((CONT)->NAME##_list_head == (ELEM) || (ELEM)->NAME##_prev || (ELEM)->NAME##_next)
+
+#define DOUBLE_LINKED_LIST_REMOVE(CONT, NAME, ELEM) { \
+	assert((CONT)->NAME##_count > 0); \
+	assert(DOUBLE_LINKED_LIST_MEMBER(CONT, NAME, ELEM)); \
+	if ((ELEM) == (CONT)->NAME##_list_head) \
+		(CONT)->NAME##_list_head = (CONT)->NAME##_list_head->NAME##_next; \
+	if ((ELEM) == (CONT)->NAME##_list_tail) \
+		(CONT)->NAME##_list_tail = (CONT)->NAME##_list_tail->NAME##_prev; \
+	if ((ELEM)->NAME##_prev) \
+		(ELEM)->NAME##_prev->NAME##_next = (ELEM)->NAME##_next; \
+	if ((ELEM)->NAME##_next) \
+		(ELEM)->NAME##_next->NAME##_prev = (ELEM)->NAME##_prev; \
+	(ELEM)->NAME##_prev = (ELEM)->NAME##_next = NULL; \
+	(CONT)->NAME##_count--; \
+}
 
 
 
