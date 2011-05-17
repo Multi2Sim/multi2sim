@@ -271,6 +271,12 @@ struct opencl_kernel_t
 	/* Local memory top to assign to local arguments.
 	 * Initially it is equal to the size of local variables in kernel function. */
 	uint32_t local_mem_top;
+
+	/* Double linked lists of work-groups */
+	struct gpu_work_group_t *running_list_head, *running_list_tail;
+	struct gpu_work_group_t *finished_list_head, *finished_list_tail;
+	int running_count, running_max;
+	int finished_count, finished_max;
 };
 
 struct opencl_kernel_t *opencl_kernel_create(void);
@@ -422,13 +428,19 @@ struct gpu_work_group_t
 	struct gpu_work_item_t **work_items;  /* Array of consecutive work-items in the group */
 	int work_item_count;  /* Number of work_items (= kernel->local_size) */
 
+	/* Double linked lists of work-groups */
+	struct gpu_work_group_t *running_prev, *running_next;
+	struct gpu_work_group_t *finished_prev, *finished_next;
+
 	/* Double linked lists of wavefronts */
 	struct gpu_wavefront_t *wavefront_list_head, *wavefront_list_tail;
 	struct gpu_wavefront_t *running_list_head, *running_list_tail;
 	struct gpu_wavefront_t *barrier_list_head, *barrier_list_tail;
+	struct gpu_wavefront_t *finished_list_head, *finished_list_tail;
 	int wavefront_count, wavefront_max;
 	int running_count, running_max;
 	int barrier_count, barrier_max;
+	int finished_count, finished_max;
 
 	int global_id;  /* Global ID of first work-item */
 	int global_id_last;  /* Global ID of last work-item */
@@ -497,6 +509,7 @@ struct gpu_wavefront_t
 	struct gpu_wavefront_t *wavefront_next, *wavefront_prev;
 	struct gpu_wavefront_t *running_next, *running_prev;
 	struct gpu_wavefront_t *barrier_next, *barrier_prev;
+	struct gpu_wavefront_t *finished_next, *finished_prev;
 
 	/* To measure simulation performance */
 	uint64_t emu_inst_count;  /* Total emulated instructions */
