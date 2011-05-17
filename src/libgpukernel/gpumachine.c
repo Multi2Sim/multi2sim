@@ -279,7 +279,7 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 			/* W1.array_size: array size (elem-size units) */
 
 			addr = gpu_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
-			gpu_isa_debug("  t%d:write(0x%x)", GPU_THR.global_id, addr);
+			gpu_isa_debug("  t%d:write(0x%x)", WORK_ITEM.global_id, addr);
 
 			for (i = 0; i < 4; i++) {
 				if (!(W1.comp_mask & (1 << i)))
@@ -1974,7 +1974,7 @@ void amd_inst_LDS_IDX_OP_impl()
 		pvalue = malloc(4);
 		mem_read(local_mem, op0, 4, pvalue);
 		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue);
-		gpu_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA", GPU_THR.global_id, op0, *pvalue, * (float *) pvalue);
+		gpu_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA", WORK_ITEM.global_id, op0, *pvalue, * (float *) pvalue);
 		break;
 	}
 
@@ -2186,7 +2186,7 @@ void amd_inst_FETCH_impl()
 
 		/* Address */
 		addr = gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * 4;
-		gpu_isa_debug("  t%d:read(0x%x)", GPU_THR.global_id, addr);
+		gpu_isa_debug("  t%d:read(0x%x)", WORK_ITEM.global_id, addr);
 
 		/* Read value */
 		assert(W0.mega_fetch_count == 3 || W0.mega_fetch_count == 7

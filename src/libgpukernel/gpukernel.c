@@ -188,6 +188,31 @@ void gk_libopencl_failed(int pid)
 
 
 /*
+ * GPU Work-Group
+ */
+
+static uint64_t work_group_id;
+
+
+struct gpu_work_group_t *gpu_work_group_create()
+{
+	struct gpu_work_group_t *work_group;
+
+	work_group = calloc(1, sizeof(struct gpu_work_group_t));
+	work_group->work_group_id = work_group_id++;
+	return work_group;
+}
+
+
+void gpu_work_group_free(struct gpu_work_group_t *work_group)
+{
+	free(work_group);
+}
+
+
+
+
+/*
  * GPU wavefront
  */
 
