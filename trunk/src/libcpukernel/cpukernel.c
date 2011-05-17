@@ -119,45 +119,16 @@ void ke_dump(FILE *f)
 }
 
 
-#define LIST_INSERT_HEAD(name, ctx) { \
-	assert(!ctx->name##_next && !ctx->name##_prev); \
-	ctx->name##_next = ke->name##_list_head; \
-	if (ctx->name##_next) ctx->name##_next->name##_prev = ctx; \
-	ke->name##_list_head = ctx; \
-	if (!ke->name##_list_tail) ke->name##_list_tail = ctx; \
-	ke->name##_count++; \
-	ke->name##_max = MAX(ke->name##_max, ke->name##_count); }
-
-#define LIST_INSERT_TAIL(name, ctx) { \
-	assert(!ctx->name##_next && !ctx->name##_prev); \
-	ctx->name##_prev = ke->name##_list_tail; \
-	if (ctx->name##_prev) ctx->name##_prev->name##_next = ctx; \
-	ke->name##_list_tail = ctx; \
-	if (!ke->name##_list_head) ke->name##_list_head = ctx; \
-	ke->name##_count++; }
-
-#define LIST_REMOVE(name, ctx) { \
-	if (ctx == ke->name##_list_head) ke->name##_list_head = ke->name##_list_head->name##_next; \
-	if (ctx == ke->name##_list_tail) ke->name##_list_tail = ke->name##_list_tail->name##_prev; \
-	if (ctx->name##_prev) ctx->name##_prev->name##_next = ctx->name##_next; \
-	if (ctx->name##_next) ctx->name##_next->name##_prev = ctx->name##_prev; \
-	ctx->name##_prev = ctx->name##_next = NULL; \
-	ke->name##_count--; }
-
-#define LIST_MEMBER(name, ctx) \
-	(ke->name##_list_head == ctx || ctx->name##_prev || ctx->name##_next)
-
-
 void ke_list_insert_head(enum ke_list_enum list, struct ctx_t *ctx)
 {
 	assert(!ke_list_member(list, ctx));
 	switch (list) {
-	case ke_list_context: LIST_INSERT_HEAD(context, ctx); break;
-	case ke_list_running: LIST_INSERT_HEAD(running, ctx); break;
-	case ke_list_finished: LIST_INSERT_HEAD(finished, ctx); break;
-	case ke_list_zombie: LIST_INSERT_HEAD(zombie, ctx); break;
-	case ke_list_suspended: LIST_INSERT_HEAD(suspended, ctx); break;
-	case ke_list_alloc: LIST_INSERT_HEAD(alloc, ctx); break;
+	case ke_list_context: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, context, ctx); break;
+	case ke_list_running: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, running, ctx); break;
+	case ke_list_finished: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, finished, ctx); break;
+	case ke_list_zombie: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, zombie, ctx); break;
+	case ke_list_suspended: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, suspended, ctx); break;
+	case ke_list_alloc: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, alloc, ctx); break;
 	}
 }
 
@@ -166,12 +137,12 @@ void ke_list_insert_tail(enum ke_list_enum list, struct ctx_t *ctx)
 {
 	assert(!ke_list_member(list, ctx));
 	switch (list) {
-	case ke_list_context: LIST_INSERT_TAIL(context, ctx); break;
-	case ke_list_running: LIST_INSERT_TAIL(running, ctx); break;
-	case ke_list_finished: LIST_INSERT_TAIL(finished, ctx); break;
-	case ke_list_zombie: LIST_INSERT_TAIL(zombie, ctx); break;
-	case ke_list_suspended: LIST_INSERT_TAIL(suspended, ctx); break;
-	case ke_list_alloc: LIST_INSERT_TAIL(alloc, ctx); break;
+	case ke_list_context: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, context, ctx); break;
+	case ke_list_running: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, running, ctx); break;
+	case ke_list_finished: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, finished, ctx); break;
+	case ke_list_zombie: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, zombie, ctx); break;
+	case ke_list_suspended: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, suspended, ctx); break;
+	case ke_list_alloc: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, alloc, ctx); break;
 	}
 }
 
@@ -180,12 +151,12 @@ void ke_list_remove(enum ke_list_enum list, struct ctx_t *ctx)
 {
 	assert(ke_list_member(list, ctx));
 	switch (list) {
-	case ke_list_context: LIST_REMOVE(context, ctx); break;
-	case ke_list_running: LIST_REMOVE(running, ctx); break;
-	case ke_list_finished: LIST_REMOVE(finished, ctx); break;
-	case ke_list_zombie: LIST_REMOVE(zombie, ctx); break;
-	case ke_list_suspended: LIST_REMOVE(suspended, ctx); break;
-	case ke_list_alloc: LIST_REMOVE(alloc, ctx); break;
+	case ke_list_context: DOUBLE_LINKED_LIST_REMOVE(ke, context, ctx); break;
+	case ke_list_running: DOUBLE_LINKED_LIST_REMOVE(ke, running, ctx); break;
+	case ke_list_finished: DOUBLE_LINKED_LIST_REMOVE(ke, finished, ctx); break;
+	case ke_list_zombie: DOUBLE_LINKED_LIST_REMOVE(ke, zombie, ctx); break;
+	case ke_list_suspended: DOUBLE_LINKED_LIST_REMOVE(ke, suspended, ctx); break;
+	case ke_list_alloc: DOUBLE_LINKED_LIST_REMOVE(ke, alloc, ctx); break;
 	}
 }
 
@@ -193,20 +164,15 @@ void ke_list_remove(enum ke_list_enum list, struct ctx_t *ctx)
 int ke_list_member(enum ke_list_enum list, struct ctx_t *ctx)
 {
 	switch (list) {
-	case ke_list_context: return LIST_MEMBER(context, ctx);
-	case ke_list_running: return LIST_MEMBER(running, ctx);
-	case ke_list_finished: return LIST_MEMBER(finished, ctx);
-	case ke_list_zombie: return LIST_MEMBER(zombie, ctx);
-	case ke_list_suspended: return LIST_MEMBER(suspended, ctx);
-	case ke_list_alloc: return LIST_MEMBER(alloc, ctx);
+	case ke_list_context: return DOUBLE_LINKED_LIST_MEMBER(ke, context, ctx);
+	case ke_list_running: return DOUBLE_LINKED_LIST_MEMBER(ke, running, ctx);
+	case ke_list_finished: return DOUBLE_LINKED_LIST_MEMBER(ke, finished, ctx);
+	case ke_list_zombie: return DOUBLE_LINKED_LIST_MEMBER(ke, zombie, ctx);
+	case ke_list_suspended: return DOUBLE_LINKED_LIST_MEMBER(ke, suspended, ctx);
+	case ke_list_alloc: return DOUBLE_LINKED_LIST_MEMBER(ke, alloc, ctx);
 	}
 	return 0;
 }
-
-
-#undef LIST_INSERT
-#undef LIST_REMOVE
-#undef LIST_MEMBER
 
 
 /* Return a counter of microseconds. */
