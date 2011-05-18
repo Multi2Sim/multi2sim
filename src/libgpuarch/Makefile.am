@@ -1,7 +1,6 @@
 lib_LIBRARIES = libgpuarch.a
-
 libgpuarch_a_SOURCES = \
-	gpuarch.h
+	gpuarch.h \
 	gpuarch.c
 
 AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE

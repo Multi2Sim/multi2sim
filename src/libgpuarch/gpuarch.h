@@ -20,6 +20,9 @@
 #ifndef GPUARCH_H
 #define GPUARCH_H
 
+void gpu_reg_options();
+void gpu_init();
+void gpu_done();
 
 #endif
 
