@@ -41,11 +41,11 @@ LDADD = \
         $(top_builddir)/src/libopt/libopt.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
-	$(top_builddir)/src/libgpuarch/libgpuarch.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libcpuarch/libcpuarch.a \
+	$(top_builddir)/src/libgpuarch/libgpuarch.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a \

@@ -906,3 +906,5 @@
 		wavefronts waiting in barriers. OpenCL kernel structure includes a list
 		of running/finished work-groups.
 
+2010-05-18
+	* src/libstruct/config.h: functions added to check format of configuration files.

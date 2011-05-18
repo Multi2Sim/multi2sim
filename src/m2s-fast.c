@@ -21,6 +21,7 @@
 #include <options.h>
 #include <signal.h>
 #include <cpukernel.h>
+#include <gpuarch.h>
 
 
 /* Multi2Sim version */
@@ -82,6 +83,7 @@ static void sim_reg_options()
 	opt_reg_bool("-mem_safe_mode", "Safe accesses to memory", &mem_safe_mode);
 
 	gk_reg_options();
+	gpu_reg_options();
 }
 
 
@@ -131,6 +133,9 @@ int main(int argc, char **argv)
 
 	/* Initialize */
 	ke_init();
+
+	/* GPU - FIXME: this is not the place */
+	gpu_init();
 
 	/* Debug */
 	debug_init();
@@ -213,6 +218,7 @@ int main(int argc, char **argv)
 	fprintf(stderr, "\n");
 
 	/* Finalization */
+	gpu_done();  /* FIXME: not here */
 	ke_done();
 	opt_done();
 	debug_done();

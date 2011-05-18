@@ -29,85 +29,87 @@
 #define KEYS_SIZE	20
 
 
-/*
- * TYPES
- */
-
-/* main object;
- * data in 'sections' are of type 'struct hashtable_t';
- * data of 'sections' elements are of type 'char *'; */
+/* Data type in 'sections' is of type 'struct hashtable_t';
+ * Data type of 'sections' elements is of type 'char *'; */
 struct config_t {
-	char	*filename;
-	struct	hashtable_t *sections;
+	char *filename;
+	struct hashtable_t *sections;
+
+	/* Hash table containing allowed/mandatory sections/keys.
+	 * The keys are strings representing section/key names. In case a string
+	 * represents a key, it is stored as "<section_name>\n<key_name>"
+	 * The valuese are NULL. */
+	struct hashtable_t *allowed_items;
+	struct hashtable_t *enforced_items;
 };
 
 
 
 
 /*
- * PRIVATE FUNCTIONS
+ * Private Functions
  */
 
-/* free 'keys' hash table */
+/* Free 'keys' hash table */
 static void free_keys(struct hashtable_t *keys)
 {
 	char *key, *value;
 	
-	/* free all values */
+	/* Free all values */
 	key = hashtable_find_first(keys, (void **) &value);
 	while (key) {
 		free(value);
 		key = hashtable_find_next(keys, (void **) &value);
 	}
 	
-	/* free keys hash table */
+	/* Free keys hash table */
 	hashtable_free(keys);
 }
 
 
-/* free 'sections' hash table */
+/* Free 'sections' hash table */
 static void free_sections(struct hashtable_t *sections)
 {
 	char *section;
 	struct hashtable_t *keys;
 	
-	/* free all 'keys' hash tables */
+	/* Free all 'keys' hash tables */
 	section = hashtable_find_first(sections, (void **) &keys);
 	while (section) {
 		free_keys(keys);
 		section = hashtable_find_next(sections, (void **) &keys);
 	}
 	
-	/* free sections hash table */
+	/* Free sections hash table */
 	hashtable_free(sections);
 }
 
 
 
-/* create new section or return an existing one;
- * return value: ptr to keys hash table */
+/* Create new section or return an existing one.
+ * Return value: ptr to keys hash table */
 static struct hashtable_t *new_section(struct hashtable_t *sections, char *section)
 {
 	struct hashtable_t *keys;
 	
-	/* if section exists, return existing one */
+	/* If section exists, return existing one */
 	keys = (struct hashtable_t *) hashtable_get(sections, section);
 	if (keys)
 		return keys;
 	
-	/* create new section */
+	/* Create new section */
 	keys = hashtable_create(KEYS_SIZE, 0);
 	hashtable_insert(sections, section, keys);
 	return keys;
 }
 
 
-/* create a new key or change the value of an existing one */
+/* Create a new key or change the value of an existing one */
 static void new_key(struct hashtable_t *keys, char *key, char *value)
 {
 	char *ovalue, *nvalue;
 	
-	/* if key already exists, free old value and set new one */
+	/* If key already exists, free old value and set new one */
 	ovalue = (char *) hashtable_get(keys, key);
 	if (ovalue) {
 		free(ovalue);
@@ -116,13 +118,13 @@ static void new_key(struct hashtable_t *keys, char *key, char *value)
 		return;
 	}
 	
-	/* insert new value */
+	/* Insert new value */
 	nvalue = strdup(value);
 	hashtable_insert(keys, key, nvalue);
 }
 
 
-/* delete spaces and final \n */
+/* Delete spaces and final \n */
 static char *trim(char *s)
 {
 	int len = strlen(s);
@@ -134,19 +136,19 @@ static char *trim(char *s)
 }
 
 
-/* break line in the form 'key=value' */
+/* Break line in the form 'key=value' */
 static void break_line(char *s, char **key, char **value)
 {
 	char *equal;
 	
-	/* if no equal sign, error */
+	/* If no equal sign, error */
 	equal = index(s, '=');
 	if (!equal) {
 		*key = *value = NULL;
 		return;
 	}
 	
-	/* compute 'key' and 'value' */
+	/* Compute 'key' and 'value' */
 	*equal = 0;
 	*key = trim(s);
 	*value = trim(equal + 1);
@@ -156,32 +158,40 @@ static void break_line(char *s, char **key, char **value)
 
 
 /*
- * PUBLIC FUNCTIONS
+ * Public Functions
  */
 
-/* creation and destruction */
+/* Creation and destruction */
 struct config_t *config_create(char *filename)
 {
 	struct config_t *cfg;
 	
-	/* config object */
-	cfg = malloc(sizeof(struct config_t));
+	/* Config object */
+	cfg = calloc(1, sizeof(struct config_t));
 	if (!cfg)
 		return NULL;
 	
-	/* sections hash table & file name*/
+	/* Sections hash table & file name*/
 	cfg->sections = hashtable_create(SECTIONS_SIZE, 0);
 	cfg->filename = strdup(filename);
 	if (!cfg->filename || !cfg->sections)
 		return NULL;
 	
-	/* return created object */
+	/* Other hash tables */
+	cfg->allowed_items = hashtable_create(SECTIONS_SIZE, 0);
+	cfg->enforced_items = hashtable_create(SECTIONS_SIZE, 0);
+	if (!cfg->allowed_items || !cfg->enforced_items)
+		return NULL;
+	
+	/* Return created object */
 	return cfg;
 }
 
 
 void config_free(struct config_t *cfg)
 {
+	hashtable_free(cfg->allowed_items);
+	hashtable_free(cfg->enforced_items);
 	free_sections(cfg->sections);
 	free(cfg->filename);
 	free(cfg);
@@ -242,26 +252,26 @@ int config_save(struct config_t *cfg)
 	char *section, *key, *value;
 	struct hashtable_t *keys;
 	
-	/* try to open file for writing */
+	/* Try to open file for writing */
 	f = fopen(cfg->filename, "wt");
 	if (!f)
 		return 0;
 	
-	/* dump sections */
+	/* Dump sections */
 	section = hashtable_find_first(cfg->sections, (void **) &keys);
 	while (section) {
 	
-		/* print section header */
+		/* Print section header */
 		fprintf(f, "[%s]\n", section);
 		
-		/* print all keys in section */
+		/* Print all keys in section */
 		key = hashtable_find_first(keys, (void **) &value);
 		while (key) {
 			fprintf(f, "%s=%s\n", key, value);
 			key = hashtable_find_next(keys, (void **) &value);
 		}
 	
-		/* next section */
+		/* Next section */
 		section = hashtable_find_next(cfg->sections, (void **) &keys);
 		fprintf(f, "\n");
 	}
@@ -282,12 +292,12 @@ int config_key_exists(struct config_t *cfg, char *section, char *key)
 {
 	struct hashtable_t *keys;
 	
-	/* search section */
+	/* Search section */
 	keys = (struct hashtable_t *) hashtable_get(cfg->sections, section);
 	if (!keys)
 		return 0;
 	
-	/* search key */
+	/* Search key */
 	return hashtable_get(keys, key) != NULL;
 }
 
@@ -308,12 +318,12 @@ int config_section_remove(struct config_t *cfg, char *section)
 {
 	struct hashtable_t *keys;
 	
-	/* search section */
+	/* Search section */
 	keys = (struct hashtable_t *) hashtable_remove(cfg->sections, section);
 	if (!keys)
 		return 0;
 	
-	/* free keys */
+	/* Free keys */
 	free_keys(keys);
 	return 1;
 }
@@ -324,17 +334,17 @@ int config_key_remove(struct config_t *cfg, char *section, char *key)
 	struct hashtable_t *keys;
 	char *value;
 	
-	/* search section */
+	/* Search section */
 	keys = (struct hashtable_t *) hashtable_get(cfg->sections, section);
 	if (!keys)
 		return 0;
 	
-	/* remove key */
+	/* Remove key */
 	value = (char *) hashtable_remove(keys, key);
 	if (!value)
 		return 0;
 	
-	/* free removed value */
+	/* Free removed value */
 	free(value);
 	return 1;
 }
@@ -385,12 +395,12 @@ char *config_read_string(struct config_t *cfg, char *section, char *key, char *d
 	struct hashtable_t *keys;
 	char *value;
 	
-	/* search section */
+	/* Search section */
 	keys = (struct hashtable_t *) hashtable_get(cfg->sections, section);
 	if (!keys)
 		return def;
 	
-	/* search key */
+	/* Search key */
 	value = (char *) hashtable_get(keys, key);
 	if (!value)
 		return def;
@@ -441,5 +451,138 @@ void *config_read_ptr(struct config_t *cfg, char *section, char *key, void *def)
 		return def;
 	sscanf(result, "%p", &ptr);
 	return ptr;
+}
+
+
+void config_section_allow(struct config_t *cfg, char *section)
+{
+	char section_copy[BUFSIZE];
+	char *section_trimmed;
+
+	strcpy(section_copy, section);
+	section_trimmed = trim(section_copy);
+	hashtable_insert(cfg->allowed_items, section_trimmed, (void *) 1);
+}
+
+
+void config_section_enforce(struct config_t *cfg, char *section)
+{
+	char section_copy[BUFSIZE];
+	char *section_trimmed;
+
+	strcpy(section_copy, section);
+	section_trimmed = trim(section_copy);
+	hashtable_insert(cfg->enforced_items, section_trimmed, (void *) 1);
+}
+
+
+void config_key_allow(struct config_t *cfg, char *section, char *key)
+{
+	char section_copy[BUFSIZE], key_copy[BUFSIZE], value[BUFSIZE];
+	char *section_trimmed, *key_trimmed;
+
+	strcpy(section_copy, section);
+	strcpy(key_copy, key);
+	section_trimmed = trim(section_copy);
+	key_trimmed = trim(key_copy);
+	snprintf(value, BUFSIZE, "%s\n%s", section_trimmed, key_trimmed);
+	hashtable_insert(cfg->allowed_items, value, (void *) 1);
+}
+
+
+void config_key_enforce(struct config_t *cfg, char *section, char *key)
+{
+	char section_copy[BUFSIZE], key_copy[BUFSIZE], value[BUFSIZE];
+	char *section_trimmed, *key_trimmed;
+
+	strcpy(section_copy, section);
+	strcpy(key_copy, key);
+	section_trimmed = trim(section_copy);
+	key_trimmed = trim(key_copy);
+	snprintf(value, BUFSIZE, "%s\n%s", section_trimmed, key_trimmed);
+	hashtable_insert(cfg->enforced_items, value, (void *) 1);
+}
+
+
+static void split_section_key(char *str, char *section, char *key)
+{
+	char *section_brk;
+
+	strcpy(section, str);
+	section_brk = index(section, '\n');
+	if (section_brk) {
+		*section_brk = '\0';
+		strcpy(key, section_brk + 1);
+	} else
+		*key = '\0';
+}
+
+
+void config_check(struct config_t *cfg)
+{
+	char item_str[BUFSIZE], section_str[BUFSIZE], key_str[BUFSIZE];
+	struct hashtable_t *keys;
+	char *item, *section, *key;
+
+	/* Go through mandatory items and check they are present */
+	item = hashtable_find_first(cfg->enforced_items, NULL);
+	while (item) {
+
+		/* Find value */
+		split_section_key(item, section_str, key_str);
+		keys = (struct hashtable_t *) hashtable_get(cfg->sections, section_str);
+		if (!keys) {
+			fprintf(stderr, "%s: section '[ %s ]' not found in configuration file\n",
+				cfg->filename, section_str);
+			exit(1);
+		}
+	
+		/* Search key */
+		if (key_str[0] && !hashtable_get(keys, key_str)) {
+			fprintf(stderr, "%s: section '[ %s ]': variable '%s' is missing in the configuration file\n",
+				cfg->filename, section_str, key_str);
+			exit(1);
+		}
+
+		/* Next element */
+		item = hashtable_find_next(cfg->enforced_items, NULL);
+	}
+	
+	/* Go through all present sections/keys and check they are present in the
+	 * set of allowed/enforced items. */
+	section = hashtable_find_first(cfg->sections, (void **) &keys);
+	while (section) {
+	
+		/* Check that section name is allowed */
+		if (!hashtable_get(cfg->enforced_items, section) && !hashtable_get(cfg->allowed_items, section)) {
+			fprintf(stderr, "%s: section '[ %s ]' is not valid in the configuration file\n",
+				cfg->filename, section);
+			exit(1);
+		}
+		
+		/* Print all keys in section */
+		key = hashtable_find_first(keys, NULL);
+		while (key) {
+
+			/* Check that key name is allowed */
+			snprintf(item_str, BUFSIZE, "%s\n%s", section, key);
+			if (!hashtable_get(cfg->enforced_items, item_str) && !hashtable_get(cfg->allowed_items, item_str)) {
+				fprintf(stderr, "%s: section '[ %s ]': variable '%s' is not valid in configuration file\n",
+					cfg->filename, section, key);
+				exit(1);
+			}
+
+			/* Next key */
+			key = hashtable_find_next(keys, NULL);
+		}
+	
+		/* Next section */
+		section = hashtable_find_next(cfg->sections, (void **) &keys);
+	}
+}
+
+
+void config_section_check(struct config_t *cfg, char *section)
+{
 }
 
