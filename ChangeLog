@@ -908,3 +908,6 @@
 
 2010-05-18
 	* src/libstruct/config.h: functions added to check format of configuration files.
+	* src/libgpukernel/opencl-obj.c: 'gpu_max_work_group_size' return as result value
+		for OpenCL call.
+

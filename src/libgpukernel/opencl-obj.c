@@ -843,15 +843,11 @@ uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint3
 	void *info = NULL;
 
 	uint64_t local_mem_size = 0;
-	uint32_t work_group_size = 256;
 
 	switch (name) {
 
 	case 0x11b0:  /* CL_KERNEL_WORK_GROUP_SIZE */
-		warning("%s: CL_KERNEL_WORK_GROUP_SIZE: %d is returned, but this should be obtained\n"
-			"\tfrom the kernel register usage and the device info.",
-			__FUNCTION__, work_group_size);
-		info = &work_group_size;
+		info = &gpu_max_work_group_size;
 		size_ret = 4;
 		break;
 

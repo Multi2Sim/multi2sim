@@ -67,12 +67,20 @@ void gpu_init()
 	else if (!config_load(gpu_config))
 		fatal("%s: cannot load GPU configuration file", gpu_config_file_name);
 	
-	/* Check */
-	section = "General";
+	/* Check configuration file format */
+	section = "ComputeUnit";
 	config_section_allow(gpu_config, section);
 	config_key_allow(gpu_config, section, "WavefrontSize");
-	config_key_allow(gpu_config, section, "WorkGroupSize");
+	config_key_allow(gpu_config, section, "MaxWorkGroupSize");
+	config_key_allow(gpu_config, section, "NumStreamCores");
 	config_check(gpu_config);
+
+	/* Read configuration file */
+	section = "ComputeUnit";
+	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
+	gpu_max_work_group_size = config_read_int(gpu_config, section, "MaxWorkGroupSize", gpu_max_work_group_size);
+	if (gpu_max_work_group_size & (gpu_max_work_group_size - 1))
+		fatal("'MaxWorkGroupSize' must be a power of 2");
 	
 	/* Close GPU configuration file */
 	config_free(gpu_config);
