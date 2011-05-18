@@ -61,5 +61,14 @@ int config_read_bool(struct config_t *cfg, char *section, char *key, int def);
 double config_read_double(struct config_t *cfg, char *section, char *key, double def);
 void *config_read_ptr(struct config_t *cfg, char *section, char *key, void *def);
 
+/* Defining and checking allowed/mandatory sections/keys in file */
+void config_section_allow(struct config_t *cfg, char *section);
+void config_section_enforce(struct config_t *cfg, char *section);
+void config_key_allow(struct config_t *cfg, char *section, char *key);
+void config_key_enforce(struct config_t *cfg, char *section, char *key);
+void config_check(struct config_t *cfg);
+void config_section_check(struct config_t *cfg, char *section);
+
+
 #endif
 
