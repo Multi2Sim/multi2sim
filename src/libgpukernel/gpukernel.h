@@ -32,6 +32,7 @@
  * GPU emulation. */
 
 extern int gpu_wavefront_size;
+extern int gpu_max_work_group_size;
 
 
 
