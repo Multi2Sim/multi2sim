@@ -68,7 +68,8 @@ AR = ar
 ARFLAGS = cru
 libgpuarch_a_AR = $(AR) $(ARFLAGS)
 libgpuarch_a_LIBADD =
-am_libgpuarch_a_OBJECTS = gpuarch.$(OBJEXT)
+am_libgpuarch_a_OBJECTS = device.$(OBJEXT) gpuarch.$(OBJEXT) \
+	gpupipeline.$(OBJEXT)
 libgpuarch_a_OBJECTS = $(am_libgpuarch_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -176,8 +177,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libgpuarch.a
 libgpuarch_a_SOURCES = \
+	device.c \
 	gpuarch.h \
-	gpuarch.c
+	gpuarch.c \
+	gpupipeline.c
 
 AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE
 INCLUDES = -I$(top_srcdir)/src/libstruct \
@@ -264,7 +267,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/device.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuarch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpupipeline.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
