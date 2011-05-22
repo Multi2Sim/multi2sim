@@ -17,13 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <gpukernel-local.h>
-#include <assert.h>
-#include <debug.h>
-#include <lnlist.h>
-#include <stdlib.h>
-#include <cpukernel.h>
+#include <gpukernel.h>
 #include <gpudisasm.h>
+#include <cpukernel.h>
 #include <options.h>
 #include <hash.h>
 

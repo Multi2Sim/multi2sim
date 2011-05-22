@@ -911,3 +911,6 @@
 	* src/libgpukernel/opencl-obj.c: 'gpu_max_work_group_size' return as result value
 		for OpenCL call.
 
+2010-05-22
+	* src/libgpuarch/gpupipeline.c: initial 6-stage design of GPU pipeline.
+	* src/libgpukernel/gpukernel-local.h: file removed, unified in 'gpukernel.h'
