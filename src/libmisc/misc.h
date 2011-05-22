@@ -28,6 +28,7 @@
 
 /* Maximum string size */
 #define MAX_STRING_SIZE  200
+#define MAX_PATH_SIZE  200
 
 /* Min, Max, Book, Range */
 #define MIN(X, Y) ((X)<(Y)?(X):(Y))

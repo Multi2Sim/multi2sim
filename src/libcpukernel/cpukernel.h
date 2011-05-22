@@ -46,13 +46,12 @@
 struct ctx_t;
 struct fd_t;
 
-/* Maximum length for paths */
-#define MAX_PATH_SIZE  200
 
 
 
-
-/* Memory */
+/*
+ * Memory
+ */
 
 #define MEM_LOGPAGESIZE    12
 #define MEM_PAGESHIFT      MEM_LOGPAGESIZE
@@ -527,23 +526,24 @@ struct ctx_t {
 };
 
 enum ctx_status_enum {
-	ctx_running      = 0x0001,  /* it is able to run instructions */
-	ctx_specmode     = 0x0002,  /* executing in speculative mode */
-	ctx_suspended    = 0x0004,  /* suspended in a system call */
-	ctx_finished     = 0x0008,  /* no more inst to execute */
-	ctx_exclusive    = 0x0010,  /* executing in excl mode */
-	ctx_locked       = 0x0020,  /* another context is running in excl mode */
-	ctx_handler      = 0x0040,  /* executing a signal handler */
-	ctx_sigsuspend   = 0x0080,  /* suspended after syscall 'sigsuspend' */
-	ctx_nanosleep    = 0x0100,  /* suspended after syscall 'nanosleep' */
-	ctx_poll         = 0x0200,  /* 'poll' system call */
-	ctx_read         = 0x0400,  /* 'read' system call */
-	ctx_write        = 0x0800,  /* 'write' system call */
-	ctx_waitpid      = 0x1000,  /* 'waitpid' system call */
-	ctx_zombie       = 0x2000,  /* zombie context */
-	ctx_futex        = 0x4000,  /* suspended in a futex */
-	ctx_alloc        = 0x8000,  /* allocated to a core/thread */
-	ctx_none         = 0x0000
+	ctx_running      = 0x00001,  /* it is able to run instructions */
+	ctx_specmode     = 0x00002,  /* executing in speculative mode */
+	ctx_suspended    = 0x00004,  /* suspended in a system call */
+	ctx_finished     = 0x00008,  /* no more inst to execute */
+	ctx_exclusive    = 0x00010,  /* executing in excl mode */
+	ctx_locked       = 0x00020,  /* another context is running in excl mode */
+	ctx_handler      = 0x00040,  /* executing a signal handler */
+	ctx_sigsuspend   = 0x00080,  /* suspended after syscall 'sigsuspend' */
+	ctx_nanosleep    = 0x00100,  /* suspended after syscall 'nanosleep' */
+	ctx_poll         = 0x00200,  /* 'poll' system call */
+	ctx_read         = 0x00400,  /* 'read' system call */
+	ctx_write        = 0x00800,  /* 'write' system call */
+	ctx_waitpid      = 0x01000,  /* 'waitpid' system call */
+	ctx_zombie       = 0x02000,  /* zombie context */
+	ctx_futex        = 0x04000,  /* suspended in a futex */
+	ctx_alloc        = 0x08000,  /* allocated to a core/thread */
+	ctx_gpu          = 0x10000,  /* running a GPU kernel */
+	ctx_none         = 0x00000
 };
 
 struct ctx_t *ctx_create(void);
