@@ -24,11 +24,12 @@
 
 /* Some globals */
 
-struct gpu_work_item_t *gpu_isa_work_item;  /* Current work-item */
-struct gpu_wavefront_t *gpu_isa_wavefront;  /* Current wavefront */
+struct gpu_ndrange_t *gpu_isa_ndrange;  /* Current ND-Range */
 struct gpu_work_group_t *gpu_isa_work_group;  /* Current work-group */
-struct amd_inst_t *gpu_isa_inst;  /* Current instruction */
+struct gpu_wavefront_t *gpu_isa_wavefront;  /* Current wavefront */
+struct gpu_work_item_t *gpu_isa_work_item;  /* Current work-item */
 struct amd_inst_t *gpu_isa_cf_inst;  /* Current CF instruction */
+struct amd_inst_t *gpu_isa_inst;  /* Current instruction */
 struct amd_alu_group_t *gpu_isa_alu_group;  /* Current ALU group */
 
 /* Repository of deferred tasks */
@@ -111,597 +112,28 @@ void gpu_isa_const_mem_read(int bank, int vector, int elem, void *pvalue)
 
 
 
-/*
- * Main loop
- */
-
-
-/* Write initial values in constant buffer 0 (CB0) */
-void gpu_isa_init_const_mem(struct opencl_kernel_t *kernel)
-{
-	uint32_t zero = 0;
-	float f;
-
-	/* CB0[0]
-	 * x,y,z: global work size for the {x,y,z} dimensions.
-	 * w: number of work dimensions.  */
-	gpu_isa_const_mem_write(0, 0, 0, &kernel->global_size3[0]);
-	gpu_isa_const_mem_write(0, 0, 1, &kernel->global_size3[1]);
-	gpu_isa_const_mem_write(0, 0, 2, &kernel->global_size3[2]);
-	gpu_isa_const_mem_write(0, 0, 3, &kernel->work_dim);
-
-	/* CB0[1]
-	 * x,y,z: local work size for the {x,y,z} dimensions.
-	 * w: 0  */
-	gpu_isa_const_mem_write(0, 1, 0, &kernel->local_size3[0]);
-	gpu_isa_const_mem_write(0, 1, 1, &kernel->local_size3[1]);
-	gpu_isa_const_mem_write(0, 1, 2, &kernel->local_size3[2]);
-
-	/* CB0[2]
-	 * x,y,z: global work size {x,y,z} / local work size {x,y,z}
-	 * w: 0  */
-	gpu_isa_const_mem_write(0, 2, 0, &kernel->group_count3[0]);
-	gpu_isa_const_mem_write(0, 2, 1, &kernel->group_count3[1]);
-	gpu_isa_const_mem_write(0, 2, 2, &kernel->group_count3[2]);
-
-	/* CB0[3]
-	 * x: Offset to private memory ring (0 if private memory is not emulated).
-	 * y: Private memory allocated per work_item.
-	 * z,w: 0  */
-	/* FIXME */
-	
-	/* CB0[4]
-	 * x: Offset to local memory ring (0 if local memory is not emulated).
-	 * y: Local memory allocated per group.
-	 * z: 0
-	 * w: Pointer to location in global buffer where math library tables start. */
-	/* FIXME */
-
-	/* CB[5]
-	 * x: 0.0 as IEEE-32bit float - required for math library.
-	 * y: 0.5 as IEEE-32bit float - required for math library.
-	 * z: 1.0 as IEEE-32bit float - required for math library.
-	 * w: 2.0 as IEEE-32bit float - required for math library. */
-	f = 0.0f;
-	gpu_isa_const_mem_write(0, 5, 0, &f);
-	f = 0.5f;
-	gpu_isa_const_mem_write(0, 5, 1, &f);
-	f = 1.0f;
-	gpu_isa_const_mem_write(0, 5, 2, &f);
-	f = 2.0f;
-	gpu_isa_const_mem_write(0, 5, 3, &f);
-
-	/* CB0[6]
-	 * x,y,z: Global offset for the {x,y,z} dimension of the work_item spawn.
-	 * z: Global single dimension flat offset: x * y * z. */
-	gpu_isa_const_mem_write(0, 6, 0, &zero);
-	gpu_isa_const_mem_write(0, 6, 1, &zero);
-	gpu_isa_const_mem_write(0, 6, 2, &zero);
-	gpu_isa_const_mem_write(0, 6, 3, &zero);
-
-	/* CB0[7]
-	 * x,y,z: Group offset for the {x,y,z} dimensions of the work_item spawn.
-	 * w: Group single dimension flat offset, x * y * z.  */
-	gpu_isa_const_mem_write(0, 7, 0, &zero);
-	gpu_isa_const_mem_write(0, 7, 1, &zero);
-	gpu_isa_const_mem_write(0, 7, 2, &zero);
-	gpu_isa_const_mem_write(0, 7, 3, &zero);
-
-	/* CB0[8]
-	 * x: Offset in the global buffer where data segment exists.
-	 * y: Offset in buffer for printf support.
-	 * z: Size of the printf buffer. */
-}
-
-
-void gpu_isa_init_work_items(struct opencl_kernel_t *kernel)
-{
-	int gidx, gidy, gidz;  /* 3D work-group ID iterators */
-	int lidx, lidy, lidz;  /* 3D work-item local ID iterators */
-
-	int tid;  /* Global ID iterator */
-	int gid;  /* Group ID iterator */
-	int wid;  /* Wavefront ID iterator */
-	int lid;  /* Local ID iterator */
-
-	/* Array of work-groups */
-	kernel->work_groups = calloc(kernel->group_count, sizeof(void *));
-	for (gid = 0; gid < kernel->group_count; gid++) {
-		kernel->work_groups[gid] = gpu_work_group_create();
-		gpu_isa_work_group = kernel->work_groups[gid];
-		DOUBLE_LINKED_LIST_INSERT_TAIL(kernel, running, gpu_isa_work_group);
-	}
-	
-	/* Array of wavefronts */
-	kernel->wavefronts_per_work_group = (kernel->local_size + gpu_wavefront_size - 1) / gpu_wavefront_size;
-	kernel->wavefront_count = kernel->wavefronts_per_work_group * kernel->group_count;
-	assert(kernel->wavefronts_per_work_group > 0 && kernel->wavefront_count > 0);
-	kernel->wavefronts = calloc(kernel->wavefront_count, sizeof(void *));
-	for (wid = 0; wid < kernel->wavefront_count; wid++) {
-		gid = wid / kernel->wavefronts_per_work_group;
-		kernel->wavefronts[wid] = gpu_wavefront_create();
-		gpu_isa_wavefront = kernel->wavefronts[wid];
-		gpu_isa_work_group = kernel->work_groups[gid];
-
-		WAVEFRONT.id = wid;
-		WAVEFRONT.id_in_work_group = wid % kernel->wavefronts_per_work_group;
-		WAVEFRONT.work_group = gpu_isa_work_group;
-		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_isa_work_group, running, gpu_isa_wavefront);
-	}
-	
-	/* Array of work-items */
-	kernel->work_items = calloc(kernel->global_size, sizeof(void *));
-	tid = 0;
-	gid = 0;
-	for (gidz = 0; gidz < kernel->group_count3[2]; gidz++) {
-		for (gidy = 0; gidy < kernel->group_count3[1]; gidy++) {
-			for (gidx = 0; gidx < kernel->group_count3[0]; gidx++) {
-				
-				/* Assign work-group ID */
-				gpu_isa_work_group = kernel->work_groups[gid];
-				WORK_GROUP.id_3d[0] = gidx;
-				WORK_GROUP.id_3d[1] = gidy;
-				WORK_GROUP.id_3d[2] = gidz;
-				WORK_GROUP.id = gid;
-
-				/* First, last, and number of work-items in work-group */
-				WORK_GROUP.work_item_id_first = tid;
-				WORK_GROUP.work_item_id_last = tid + kernel->local_size;
-				WORK_GROUP.work_item_count = kernel->local_size;
-				WORK_GROUP.work_items = &kernel->work_items[tid];
-				snprintf(WORK_GROUP.name, sizeof(WORK_GROUP.name), "work-group[i%d-i%d]",
-					WORK_GROUP.work_item_id_first, WORK_GROUP.work_item_id_last);
-
-				/* First ,last, and number of wavefronts in work-group */
-				WORK_GROUP.wavefront_id_first = gid * kernel->wavefronts_per_work_group;
-				WORK_GROUP.wavefront_id_last = WORK_GROUP.wavefront_id_first + kernel->wavefronts_per_work_group - 1;
-				WORK_GROUP.wavefront_count = kernel->wavefronts_per_work_group;
-				WORK_GROUP.wavefronts = &kernel->wavefronts[WORK_GROUP.wavefront_id_first];
-
-				/* Iterate through work-items */
-				lid = 0;
-				for (lidz = 0; lidz < kernel->local_size3[2]; lidz++) {
-					for (lidy = 0; lidy < kernel->local_size3[1]; lidy++) {
-						for (lidx = 0; lidx < kernel->local_size3[0]; lidx++) {
-							
-							/* Wavefront ID */
-							wid = gid * kernel->wavefronts_per_work_group +
-								lid / gpu_wavefront_size;
-							assert(wid < kernel->wavefront_count);
-							
-							/* Create work-item */
-							kernel->work_items[tid] = gpu_work_item_create();
-							gpu_isa_work_item = kernel->work_items[tid];
-
-							/* Global IDs */
-							WORK_ITEM.id_3d[0] = gidx * kernel->local_size3[0] + lidx;
-							WORK_ITEM.id_3d[1] = gidy * kernel->local_size3[1] + lidy;
-							WORK_ITEM.id_3d[2] = gidz * kernel->local_size3[2] + lidz;
-							WORK_ITEM.id = tid;
-
-							/* Local IDs */
-							WORK_ITEM.id_in_work_group_3d[0] = GPU_GPR_X(0) = lidx;
-							WORK_ITEM.id_in_work_group_3d[1] = GPU_GPR_Y(0) = lidy;
-							WORK_ITEM.id_in_work_group_3d[2] = GPU_GPR_Z(0) = lidz;
-							WORK_ITEM.id_in_work_group = lid;
-
-							/* Other */
-							WORK_ITEM.id_in_wavefront = WORK_ITEM.id_in_work_group % gpu_wavefront_size;
-							WORK_ITEM.work_group = kernel->work_groups[gid];
-							WORK_ITEM.wavefront = kernel->wavefronts[wid];
-
-							/* First, last, and number of work-items in wavefront */
-							gpu_isa_wavefront = kernel->wavefronts[wid];
-							if (!WAVEFRONT.work_item_count) {
-								WAVEFRONT.work_item_id_first = tid;
-								WAVEFRONT.work_items = &kernel->work_items[tid];
-							}
-							WAVEFRONT.work_item_count++;
-							WAVEFRONT.work_item_id_last = tid;
-							bit_map_set(WAVEFRONT.active_stack, WORK_ITEM.id_in_wavefront, 1, 1);
-
-							/* Save work-group IDs in register R1 */
-							GPU_GPR_X(1) = gidx;
-							GPU_GPR_Y(1) = gidy;
-							GPU_GPR_Z(1) = gidz;
-
-							/* Next work-item */
-							tid++;
-							lid++;
-						}
-					}
-				}
-
-				/* Next work-group */
-				gid++;
-			}
-		}
-	}
-
-	/* Assign names to wavefronts */
-	for (wid = 0; wid < kernel->wavefront_count; wid++) {
-		gpu_isa_wavefront = kernel->wavefronts[wid];
-		snprintf(WAVEFRONT.name, sizeof(WAVEFRONT.name), "wavefront[i%d..i%d]",
-			WAVEFRONT.work_item_id_first, WAVEFRONT.work_item_id_last);
-
-		/* Initialize wavefront program counter */
-		if (!kernel->cal_abi->text_buffer)
-			fatal("%s: cannot load kernel code", __FUNCTION__);
-		WAVEFRONT.cf_buf_start = kernel->cal_abi->text_buffer;
-		WAVEFRONT.cf_buf = kernel->cal_abi->text_buffer;
-		WAVEFRONT.clause_kind = GPU_CLAUSE_CF;
-		WAVEFRONT.emu_time_start = ke_timer();
-	}
-
-	/* Debug */
-	gpu_isa_debug("local_size = %d (%d,%d,%d)\n", kernel->local_size, kernel->local_size3[0],
-		kernel->local_size3[1], kernel->local_size3[2]);
-	gpu_isa_debug("global_size = %d (%d,%d,%d)\n", kernel->global_size, kernel->global_size3[0],
-		kernel->global_size3[1], kernel->global_size3[2]);
-	gpu_isa_debug("group_count = %d (%d,%d,%d)\n", kernel->group_count, kernel->group_count3[0],
-		kernel->group_count3[1], kernel->group_count3[2]);
-	gpu_isa_debug("wavefront_count = %d\n", kernel->wavefront_count);
-	gpu_isa_debug("wavefronts_per_work_group = %d\n", kernel->wavefronts_per_work_group);
-	gpu_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   lid lid2 lid1 lid0  wavefront            work-group\n");
-	for (tid = 0; tid < kernel->global_size; tid++) {
-		gpu_isa_work_item = kernel->work_items[tid];
-		gpu_isa_wavefront = WORK_ITEM.wavefront;
-		gpu_isa_work_group = WORK_ITEM.work_group;
-		gpu_isa_debug("%4d %4d %4d %4d  ", WORK_ITEM.id, WORK_ITEM.id_3d[2],
-			WORK_ITEM.id_3d[1], WORK_ITEM.id_3d[0]);
-		gpu_isa_debug("%4d %4d %4d %4d  ", WORK_GROUP.id, WORK_GROUP.id_3d[2],
-			WORK_GROUP.id_3d[1], WORK_GROUP.id_3d[0]);
-		gpu_isa_debug("%4d %4d %4d %4d  ", WORK_ITEM.id_in_work_group, WORK_ITEM.id_in_work_group_3d[2],
-			WORK_ITEM.id_in_work_group_3d[1], WORK_ITEM.id_in_work_group_3d[0]);
-		gpu_isa_debug("%20s.%-4d  ", WAVEFRONT.name, WORK_ITEM.id_in_wavefront);
-		gpu_isa_debug("%20s.%-4d\n", WORK_GROUP.name, WORK_ITEM.id_in_work_group);
-	}
-
-}
-
-
-void gpu_isa_init_kernel_args(struct opencl_kernel_t *kernel)
-{
-	struct opencl_kernel_arg_t *arg;
-	int i;
-
-	/* Kernel arguments */
-	for (i = 0; i < list_count(kernel->arg_list); i++) {
-
-		arg = list_get(kernel->arg_list, i);
-		assert(arg);
-
-		/* Check that argument was set */
-		if (!arg->set)
-			fatal("kernel '%s': argument '%s' has not been assigned with 'clKernelSetArg'.",
-				kernel->name, arg->name);
-
-		/* Process argument depending on its type */
-		switch (arg->kind) {
-
-		case OPENCL_KERNEL_ARG_KIND_VALUE: {
-			
-			/* Value copied directly into device constant memory */
-			gpu_isa_const_mem_write(1, i, 0, &arg->value);
-			opencl_debug("    arg %d: value '0x%x' loaded\n", i, arg->value);
-			break;
-		}
-
-		case OPENCL_KERNEL_ARG_KIND_POINTER:
-		{
-			switch (arg->mem_scope) {
-
-			case OPENCL_MEM_SCOPE_GLOBAL:
-			{
-				struct opencl_mem_t *mem;
-
-				/* Pointer in __global scope.
-				 * Argument value is a pointer to an 'opencl_mem' object.
-				 * It is translated first into a device memory pointer. */
-				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
-				gpu_isa_const_mem_write(1, i, 0, &mem->device_ptr);
-				opencl_debug("    arg %d: opencl_mem id 0x%x loaded, device_ptr=0x%x\n",
-					i, arg->value, mem->device_ptr);
-				break;
-			}
-
-			case OPENCL_MEM_SCOPE_LOCAL:
-			{
-				/* Pointer in __local scope.
-				 * Argument value is always NULL, just assign space for it. */
-				gpu_isa_const_mem_write(1, i, 0, &kernel->local_mem_top);
-				opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
-					i, arg->size, kernel->local_mem_top);
-				kernel->local_mem_top += arg->size;
-				break;
-			}
-
-			default:
-				fatal("%s: argument in memory scope %d not supported",
-					__FUNCTION__, arg->mem_scope);
-			}
-			break;
-		}
-
-		default:
-			fatal("%s: argument type not recognized", __FUNCTION__);
-		}
-	}
-}
-
-
-/* Initialize kernel execution */
-void gpu_isa_init_kernel(struct opencl_kernel_t *kernel)
-{
-	int i;
-
-	/* Record one more kernel execution and dump report */
-	gk_kernel_execution_count++;
-	if (gk_report_file) {
-		fprintf(gk_report_file, "[ KernelExecution %d ]\n\n", gk_kernel_execution_count - 1);
-		fprintf(gk_report_file, "KernelName = %s\n", kernel->name);
-		fprintf(gk_report_file, "\n\n");
-	}
-
-	/* Initialize work_items and wavefronts */
-	gpu_isa_init_work_items(kernel);
-
-	/* Initialize constant memory */
-	gpu_isa_init_const_mem(kernel);
-
-	/* Create local memories */
-	gk->local_mem = calloc(kernel->group_count, sizeof(struct mem_t *));
-	for (i = 0; i < kernel->group_count; i++) {
-		gk->local_mem[i] = mem_create();
-		gk->local_mem[i]->safe = 0;
-	}
-
-
-	/* Kernel arguments */
-	gpu_isa_init_kernel_args(kernel);
-
-}
-
-
-/* Finalize kernel execution */
-void gpu_isa_finish_kernel(struct opencl_kernel_t *kernel)
-{
-	int i;
-
-	/* Free work-groups */
-	for (i = 0; i < kernel->group_count; i++)
-		gpu_work_group_free(kernel->work_groups[i]);
-	free(kernel->work_groups);
-
-	/* Free wavefronts */
-	for (i = 0; i < kernel->wavefront_count; i++)
-		gpu_wavefront_free(kernel->wavefronts[i]);
-	free(kernel->wavefronts);
-
-	/* Free work-items */
-	for (i = 0; i < kernel->global_size; i++)
-		gpu_work_item_free(kernel->work_items[i]);
-	free(kernel->work_items);
-
-	/* Free local memories */
-	for (i = 0; i < kernel->group_count; i++)
-		mem_free(gk->local_mem[i]);
-	free(gk->local_mem);
-}
-
-
-/* Execute one instruction from 'gpu_isa_wavefront' */
-void gpu_isa_wavefront_exec(struct opencl_kernel_t *kernel)
-{
-	int work_item_id;
-	int i;
-
-	/* Get current work-group */
-	gpu_isa_work_group = WAVEFRONT.work_group;
-	assert(!DOUBLE_LINKED_LIST_MEMBER(gpu_isa_work_group, finished, gpu_isa_wavefront));
-
-	switch (WAVEFRONT.clause_kind) {
-
-	case GPU_CLAUSE_CF:
-	{
-		int inst_num;
-
-		/* Decode CF instruction */
-		inst_num = (WAVEFRONT.cf_buf - kernel->cal_abi->text_buffer) / 8;
-		WAVEFRONT.cf_buf = amd_inst_decode_cf(WAVEFRONT.cf_buf, &WAVEFRONT.cf_inst);
-
-		/* Debug */
-		if (debug_status(gpu_isa_debug_category)) {
-			gpu_isa_debug("\n\n");
-			amd_inst_dump(&WAVEFRONT.cf_inst, inst_num, 0,
-				debug_file(gpu_isa_debug_category));
-		}
-
-		/* Execute once in wavefront */
-		gpu_isa_inst = &WAVEFRONT.cf_inst;
-		gpu_isa_cf_inst = &WAVEFRONT.cf_inst;
-		gpu_isa_work_item = NULL;
-		(*amd_inst_impl[gpu_isa_inst->info->inst])();
-
-		/* If instruction updates the work_item's active mask, update digests */
-		if (gpu_isa_inst->info->flags & AMD_INST_FLAG_ACT_MASK) {
-			FOREACH_WORK_ITEM_IN_WAVEFRONT {
-				gpu_isa_work_item = kernel->work_items[work_item_id];
-				gpu_work_item_update_branch_digest(gpu_isa_work_item, WAVEFRONT.cf_inst_count, inst_num);
-			}
-		}
-
-		/* Stats */
-		WAVEFRONT.emu_inst_count++;
-		WAVEFRONT.inst_count++;
-		WAVEFRONT.cf_inst_count++;
-		if (gpu_isa_inst->info->flags & AMD_INST_FLAG_MEM) {
-			WAVEFRONT.global_mem_inst_count++;
-			WAVEFRONT.cf_inst_global_mem_write_count++;  /* CF inst accessing memory is a write */
-		}
-
-		break;
-	}
-
-	case GPU_CLAUSE_ALU:
-	{
-		/* Decode ALU group */
-		WAVEFRONT.clause_buf = amd_inst_decode_alu_group(WAVEFRONT.clause_buf,
-			WAVEFRONT.alu_group_count, &WAVEFRONT.alu_group);
-
-		/* Debug */
-		if (debug_status(gpu_isa_debug_category)) {
-			gpu_isa_debug("\n\n");
-			amd_alu_group_dump(&WAVEFRONT.alu_group, 0, debug_file(gpu_isa_debug_category));
-		}
-
-		/* Execute group for each work_item in wavefront */
-		gpu_isa_cf_inst = &WAVEFRONT.cf_inst;
-		gpu_isa_alu_group = &WAVEFRONT.alu_group;
-		FOREACH_WORK_ITEM_IN_WAVEFRONT {
-			gpu_isa_work_item = kernel->work_items[work_item_id];
-			for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
-				gpu_isa_inst = &gpu_isa_alu_group->inst[i];
-				(*amd_inst_impl[gpu_isa_inst->info->inst])();
-			}
-			gpu_isa_write_task_commit();
-		}
-		
-		/* Stats */
-		WAVEFRONT.inst_count += gpu_isa_alu_group->inst_count;
-		WAVEFRONT.alu_inst_count += gpu_isa_alu_group->inst_count;
-		WAVEFRONT.alu_group_count++;
-		WAVEFRONT.emu_inst_count += gpu_isa_alu_group->inst_count * WAVEFRONT.work_item_count;
-		assert(gpu_isa_alu_group->inst_count > 0 && gpu_isa_alu_group->inst_count < 6);
-		WAVEFRONT.alu_group_size[gpu_isa_alu_group->inst_count - 1]++;
-		for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
-			gpu_isa_inst = &gpu_isa_alu_group->inst[i];
-			if (gpu_isa_inst->info->flags & AMD_INST_FLAG_LDS) {
-				WAVEFRONT.local_mem_inst_count++;
-				WAVEFRONT.alu_inst_local_mem_count++;
-			}
-		}
-
-		/* End of clause reached */
-		assert(WAVEFRONT.clause_buf <= WAVEFRONT.clause_buf_end);
-		if (WAVEFRONT.clause_buf >= WAVEFRONT.clause_buf_end) {
-			gpu_isa_alu_clause_end();
-			WAVEFRONT.clause_kind = GPU_CLAUSE_CF;
-		}
-
-		break;
-	}
-
-	case GPU_CLAUSE_TC:
-	{
-		/* Decode TEX inst */
-		WAVEFRONT.clause_buf = amd_inst_decode_tc(WAVEFRONT.clause_buf,
-			&WAVEFRONT.tc_inst);
-
-		/* Debug */
-		if (debug_status(gpu_isa_debug_category)) {
-			gpu_isa_debug("\n\n");
-			amd_inst_dump(&WAVEFRONT.tc_inst, 0, 0, debug_file(gpu_isa_debug_category));
-		}
-
-		/* Execute in all work_items */
-		gpu_isa_inst = &WAVEFRONT.tc_inst;
-		gpu_isa_cf_inst = &WAVEFRONT.cf_inst;
-		FOREACH_WORK_ITEM_IN_WAVEFRONT {
-			gpu_isa_work_item = kernel->work_items[work_item_id];
-			(*amd_inst_impl[gpu_isa_inst->info->inst])();
-		}
-
-		/* Stats */
-		WAVEFRONT.emu_inst_count += WAVEFRONT.work_item_count;
-		WAVEFRONT.inst_count++;
-		WAVEFRONT.tc_inst_count++;
-		if (gpu_isa_inst->info->flags & AMD_INST_FLAG_MEM) {
-			WAVEFRONT.global_mem_inst_count++;
-			WAVEFRONT.tc_inst_global_mem_read_count++;  /* Memory instructions in TC are reads */
-		}
-
-		/* End of clause reached */
-		assert(WAVEFRONT.clause_buf <= WAVEFRONT.clause_buf_end);
-		if (WAVEFRONT.clause_buf == WAVEFRONT.clause_buf_end) {
-			gpu_isa_tc_clause_end();
-			WAVEFRONT.clause_kind = GPU_CLAUSE_CF;
-		}
-
-		break;
-	}
-
-	default:
-		abort();
-	}
-
-	/* Check if wavefront finished kernel execution */
-	if (WAVEFRONT.clause_kind == GPU_CLAUSE_CF && !WAVEFRONT.cf_buf) {
-		assert(DOUBLE_LINKED_LIST_MEMBER(gpu_isa_work_group, running, gpu_isa_wavefront));
-		assert(!DOUBLE_LINKED_LIST_MEMBER(gpu_isa_work_group, finished, gpu_isa_wavefront));
-		DOUBLE_LINKED_LIST_REMOVE(gpu_isa_work_group, running, gpu_isa_wavefront);
-		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_isa_work_group, finished, gpu_isa_wavefront);
-
-		/* Check if work-group finished kernel execution */
-		if (WORK_GROUP.finished_count == WORK_GROUP.wavefront_count) {
-			assert(DOUBLE_LINKED_LIST_MEMBER(kernel, running, gpu_isa_work_group));
-			assert(!DOUBLE_LINKED_LIST_MEMBER(kernel, finished, gpu_isa_work_group));
-			DOUBLE_LINKED_LIST_REMOVE(kernel, running, gpu_isa_work_group);
-			DOUBLE_LINKED_LIST_INSERT_TAIL(kernel, finished, gpu_isa_work_group);
-		}
-	}
-}
-
-
-void gpu_isa_run(struct opencl_kernel_t *kernel)
-{
-	/* Execution loop */
-	while (kernel->running_list_head)
-	{
-		int work_group_index;
-		struct gpu_wavefront_t *wavefront_next;
-
-		for (work_group_index = 0; work_group_index < kernel->group_count; work_group_index++) {
-			gpu_isa_work_group = kernel->work_groups[work_group_index];
-
-			/* Loop for each running wavefront */
-			for (gpu_isa_wavefront = WORK_GROUP.running_list_head; gpu_isa_wavefront; gpu_isa_wavefront = wavefront_next) {
-				
-				/* Save next wavefront */
-				wavefront_next = WAVEFRONT.running_next;
-
-				/* Execute instruction in wavefront */
-				gpu_isa_wavefront_exec(kernel);
-			}
-		}
-	}
-
-}
-
-
-
 
 /*
  * ALU Clauses
  */
 
-/* Called before and ALU clause starts in wavefront */
+/* Called before and ALU clause starts in 'gpu_isa_wavefront' */
 void gpu_isa_alu_clause_start()
 {
 	/* Copy 'active' mask at the top of the stack to 'pred' mask */
-	bit_map_copy(WAVEFRONT.pred, 0, WAVEFRONT.active_stack,
-		WAVEFRONT.stack_top * WAVEFRONT.work_item_count, WAVEFRONT.work_item_count);
+	bit_map_copy(gpu_isa_wavefront->pred, 0, gpu_isa_wavefront->active_stack,
+		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
 	if (debug_status(gpu_isa_debug_category)) {
-		gpu_isa_debug("  %s:pred=", WAVEFRONT.name);
-		bit_map_dump(WAVEFRONT.pred, 0, WAVEFRONT.work_item_count,
+		gpu_isa_debug("  %s:pred=", gpu_isa_wavefront->name);
+		bit_map_dump(gpu_isa_wavefront->pred, 0, gpu_isa_wavefront->work_item_count,
 			debug_file(gpu_isa_debug_category));
 	}
 
 	/* Flag 'push_before_done' will be set by the first PRED_SET* inst */
-	WAVEFRONT.push_before_done = 0;
+	gpu_isa_wavefront->push_before_done = 0;
 
 	/* Stats */
-	WAVEFRONT.alu_clause_count++;
+	gpu_isa_wavefront->alu_clause_count++;
 }
 
 
@@ -724,7 +156,7 @@ void gpu_isa_alu_clause_end()
 void gpu_isa_tc_clause_start()
 {
 	/* Stats */
-	WAVEFRONT.tc_clause_count++;
+	gpu_isa_wavefront->tc_clause_count++;
 }
 
 
@@ -852,12 +284,12 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	/* QA and QA.pop */
 	if (sel == 219 || sel == 221) {
 		uint32_t *pvalue;
-		pvalue = (uint32_t *) list_dequeue(WORK_ITEM.lds_oqa);
+		pvalue = (uint32_t *) list_dequeue(gpu_isa_work_item->lds_oqa);
 		if (!pvalue)
 			fatal("%s: LDS queue A is empty", __FUNCTION__);
 		value = *pvalue;
 		if (sel == 219)
-			list_enqueue(WORK_ITEM.lds_oqa, pvalue);
+			list_enqueue(gpu_isa_work_item->lds_oqa, pvalue);
 		else
 			free(pvalue);
 		return value;
@@ -866,12 +298,12 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	/* QB and QB.pop */
 	if (sel == 220 || sel == 222) {
 		uint32_t *pvalue;
-		pvalue = (uint32_t *) list_dequeue(WORK_ITEM.lds_oqb);
+		pvalue = (uint32_t *) list_dequeue(gpu_isa_work_item->lds_oqb);
 		if (!pvalue)
 			fatal("%s: LDS queue B is empty", __FUNCTION__);
 		value = *pvalue;
 		if (sel == 220)
-			list_enqueue(WORK_ITEM.lds_oqb, pvalue);
+			list_enqueue(gpu_isa_work_item->lds_oqb, pvalue);
 		else
 			free(pvalue);
 		return value;
@@ -913,13 +345,13 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	/* ALU_SRC_PV */
 	if (sel == 254) {
 		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
-		value = WORK_ITEM.pv.elem[chan];
+		value = gpu_isa_work_item->pv.elem[chan];
 		return value;
 	}
 
 	/* ALU_SRC_PS */
 	if (sel == 255) {
-		value = WORK_ITEM.pv.elem[4];
+		value = gpu_isa_work_item->pv.elem[4];
 		return value;
 	}
 
@@ -988,7 +420,7 @@ void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value)
 	wt->lds_value = value;
 
 	/* Enqueue task */
-	lnlist_add(WORK_ITEM.write_task_list, wt);
+	lnlist_add(gpu_isa_work_item->write_task_list, wt);
 }
 
 
@@ -1019,7 +451,7 @@ void gpu_isa_enqueue_write_dest(uint32_t value)
 		wt->write_mask = 0;
 
 	/* Enqueue task */
-	lnlist_add(WORK_ITEM.write_task_list, wt);
+	lnlist_add(gpu_isa_work_item->write_task_list, wt);
 }
 
 
@@ -1044,7 +476,7 @@ void gpu_isa_enqueue_push_before(void)
 	wt = repos_create_object(gpu_isa_write_task_repos);
 	wt->kind = GPU_ISA_WRITE_TASK_PUSH_BEFORE;
 	wt->inst = gpu_isa_inst;
-	lnlist_add(WORK_ITEM.write_task_list, wt);
+	lnlist_add(gpu_isa_work_item->write_task_list, wt);
 }
 
 
@@ -1063,13 +495,13 @@ void gpu_isa_enqueue_pred_set(int cond)
 	wt->kind = GPU_ISA_WRITE_TASK_SET_PRED;
 	wt->inst = gpu_isa_inst;
 	wt->cond = cond;
-	lnlist_add(WORK_ITEM.write_task_list, wt);
+	lnlist_add(gpu_isa_work_item->write_task_list, wt);
 }
 
 
 void gpu_isa_write_task_commit(void)
 {
-	struct lnlist_t *task_list = WORK_ITEM.write_task_list;
+	struct lnlist_t *task_list = gpu_isa_work_item->write_task_list;
 	struct gpu_isa_write_task_t *wt;
 
 	/* Process first tasks of type:
@@ -1089,11 +521,11 @@ void gpu_isa_write_task_commit(void)
 		{
 			if (wt->write_mask)
 				gpu_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
-			WORK_ITEM.pv.elem[wt->inst->alu] = wt->value;
+			gpu_isa_work_item->pv.elem[wt->inst->alu] = wt->value;
 
 			/* Debug */
 			if (gpu_isa_debugging()) {
-				gpu_isa_debug("  i%d:%s", WORK_ITEM.id,
+				gpu_isa_debug("  i%d:%s", gpu_isa_work_item->id,
 					map_value(&amd_pv_map, wt->inst->alu));
 				if (wt->write_mask) {
 					gpu_isa_debug(",");
@@ -1111,10 +543,10 @@ void gpu_isa_write_task_commit(void)
 		{
 			struct mem_t *local_mem;
 
-			local_mem = gk->local_mem[WORK_GROUP.id];
+			local_mem = gpu_isa_work_group->local_mem;
 			assert(local_mem);
 			mem_write(local_mem, wt->lds_addr, 4, &wt->lds_value);
-			gpu_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf)", WORK_ITEM.id, wt->lds_addr,
+			gpu_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf)", gpu_isa_work_item->id, wt->lds_addr,
 				wt->lds_value, * (float *) &wt->lds_value);
 			break;
 		}
@@ -1141,9 +573,9 @@ void gpu_isa_write_task_commit(void)
 
 		case GPU_ISA_WRITE_TASK_PUSH_BEFORE:
 		{
-			if (!WAVEFRONT.push_before_done)
+			if (!gpu_isa_wavefront->push_before_done)
 				gpu_wavefront_stack_push(gpu_isa_wavefront);
-			WAVEFRONT.push_before_done = 1;
+			gpu_isa_wavefront->push_before_done = 1;
 			break;
 		}
 
@@ -1161,11 +593,11 @@ void gpu_isa_write_task_commit(void)
 			/* Debug */
 			if (debug_status(gpu_isa_debug_category)) {
 				if (update_pred && update_exec_mask)
-					gpu_isa_debug("  i%d:act/pred<=%d", WORK_ITEM.id, wt->cond);
+					gpu_isa_debug("  i%d:act/pred<=%d", gpu_isa_work_item->id, wt->cond);
 				else if (update_pred)
-					gpu_isa_debug("  i%d:pred=%d", WORK_ITEM.id, wt->cond);
+					gpu_isa_debug("  i%d:pred=%d", gpu_isa_work_item->id, wt->cond);
 				else if (update_exec_mask)
-					gpu_isa_debug("  i%d:pred=%d", WORK_ITEM.id, wt->cond);
+					gpu_isa_debug("  i%d:pred=%d", gpu_isa_work_item->id, wt->cond);
 			}
 			break;
 		}
