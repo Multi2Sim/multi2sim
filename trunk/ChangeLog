@@ -917,3 +917,4 @@
 
 2010-05-25
 	* src/libgpukernel: fields in work-group, work-item, and wavefront unified.
+	* src/libgpukernel: structure 'gpu_ndrange_t' added, code reorganized.

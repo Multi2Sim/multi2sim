@@ -771,7 +771,6 @@ void opencl_kernel_load_func_metadata(struct opencl_kernel_t *kernel)
 			OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 			if (!strcmp(line_ptrs[1], "hwlocal")) {
 				kernel->func_mem_local = atoi(line_ptrs[2]);
-				kernel->local_mem_top = kernel->func_mem_local;
 				opencl_debug("kernel '%s' using %d bytes local memory\n",
 					kernel->name, kernel->func_mem_local);
 			} else if (!strcmp(line_ptrs[1], "hwregion")) {
