@@ -313,11 +313,17 @@ struct opencl_kernel_t
 	int global_size;
 	int local_size;
 	int group_count;
-	int wavefronts_per_work_group;  /* Based on gpu_wavefront_size */
+	int wavefront_count;  /* 'wavefronts_per_work_group' * 'group_count' */
+	int wavefronts_per_work_group;  /* = ceil(local_size / gpu_wavefront_size) */
 
 	/* Local memory top to assign to local arguments.
 	 * Initially it is equal to the size of local variables in kernel function. */
 	uint32_t local_mem_top;
+
+	/* Arrays of work-items, work-groups, and wavefronts */
+	struct gpu_work_item_t **work_items;  /* 'global_size' elements */
+	struct gpu_work_group_t **work_groups;  /* 'group_count' elements */
+	struct gpu_wavefront_t **wavefronts;  /* 'wavefront_count' elements */
 
 	/* Double linked lists of work-groups */
 	struct gpu_work_group_t *running_list_head, *running_list_tail;
@@ -468,29 +474,36 @@ void gpu_isa_write_task_commit(void);
 
 struct gpu_work_group_t
 {
-	uint64_t work_group_id;  /* Unique ID for work-group assigned on creation */
+	/* ID */
 	char name[30];
+	int id;  /* Group ID */
+	int id_3d[3];  /* 3-dimensional Group ID */
 
-	struct gpu_wavefront_t **wavefronts;  /* Array of consecutive wavefronts in the group */
-	struct gpu_work_item_t **work_items;  /* Array of consecutive work-items in the group */
-	int work_item_count;  /* Number of work_items (= kernel->local_size) */
+	/* IDs of work-items contained */
+	int work_item_id_first;
+	int work_item_id_last;
+	int work_item_count;
+
+	/* IDs of wavefronts contained */
+	int wavefront_id_first;
+	int wavefront_id_last;
+	int wavefront_count;
+
+	/* Pointers to wavefronts and work-items */
+	struct gpu_work_item_t **work_items;  /* Ptr to first work_item in 'kernel->work_items' */
+	struct gpu_wavefront_t **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
 
 	/* Double linked lists of work-groups */
 	struct gpu_work_group_t *running_prev, *running_next;
 	struct gpu_work_group_t *finished_prev, *finished_next;
 
 	/* Double linked lists of wavefronts */
-	struct gpu_wavefront_t *wavefront_list_head, *wavefront_list_tail;
 	struct gpu_wavefront_t *running_list_head, *running_list_tail;
 	struct gpu_wavefront_t *barrier_list_head, *barrier_list_tail;
 	struct gpu_wavefront_t *finished_list_head, *finished_list_tail;
-	int wavefront_count, wavefront_max;
 	int running_count, running_max;
 	int barrier_count, barrier_max;
 	int finished_count, finished_max;
-
-	int global_id;  /* Global ID of first work-item */
-	int global_id_last;  /* Global ID of last work-item */
 };
 
 struct gpu_work_group_t *gpu_work_group_create();
@@ -516,14 +529,21 @@ enum gpu_clause_kind_enum {
 #define GPU_MAX_STACK_SIZE  32
 struct gpu_wavefront_t
 {
-	uint64_t wavefront_id;  /* A unique identifier for the wavefront (increasingly assigned on creation) */
+	/* ID */
 	char name[30];
+	int id;
+	int id_in_work_group;
 
-	struct gpu_work_group_t *work_group;  /* Work-group where it belongs */
-	struct gpu_work_item_t **work_items;  /* Array of work-items in the wavefront */
-	int work_item_count;  /* Number of work_items in the wavefront */
-	int global_id;  /* Global ID of first work-item */
-	int global_id_last;  /* Global ID of last work-item */
+	/* IDs of work-items it contains */
+	int work_item_id_first;
+	int work_item_id_last;
+	int work_item_count;
+
+	/* Work-group it belongs to */
+	struct gpu_work_group_t *work_group;
+
+	/* Pointer to work_items */
+	struct gpu_work_item_t **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
 
 	/* Current clause kind and instruction pointers */
 	enum gpu_clause_kind_enum clause_kind;
@@ -553,7 +573,6 @@ struct gpu_wavefront_t
 	int push_before_done;
 
 	/* Linked lists */
-	struct gpu_wavefront_t *wavefront_next, *wavefront_prev;
 	struct gpu_wavefront_t *running_next, *running_prev;
 	struct gpu_wavefront_t *barrier_next, *barrier_prev;
 	struct gpu_wavefront_t *finished_next, *finished_prev;
@@ -582,6 +601,11 @@ struct gpu_wavefront_t
 	uint64_t tc_inst_global_mem_read_count;  /* Number of instructions reading from global mem (they are TC inst) */
 };
 
+#define FOREACH_WAVEFRONT_IN_WORK_GROUP \
+	for (wavefront_id = WORK_GROUP.wavefront_id_first; \
+		wavefront_id <= WORK_GROUP.wavefront_id_last; \
+		wavefront_id++)
+
 struct gpu_wavefront_t *gpu_wavefront_create();
 void gpu_wavefront_free(struct gpu_wavefront_t *wavefront);
 void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f);
@@ -604,6 +628,15 @@ struct gpu_gpr_t
 
 struct gpu_work_item_t
 {
+	/* IDs */
+	int id;  /* global ID */
+	int id_in_wavefront;
+	int id_in_work_group;  /* local ID */
+
+	/* 3-dimensional IDs */
+	int id_3d[3];  /* global 3D IDs */
+	int id_in_work_group_3d[3];  /* local 3D IDs */
+
 	/* Wavefront and work-group where it belongs */
 	struct gpu_wavefront_t *wavefront;
 	struct gpu_work_group_t *work_group;
@@ -611,17 +644,6 @@ struct gpu_work_item_t
 	/* Work-item state */
 	struct gpu_gpr_t gpr[128];  /* General purpose registers */
 	struct gpu_gpr_t pv;  /* Result of last computations */
-
-	/* 1D identifiers */
-	int wavefront_id;
-	int local_id;
-	int global_id;
-	int group_id;
-
-	/* 3D identifiers */
-	int local_id3[3];
-	int global_id3[3];
-	int group_id3[3];
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
 	 * and executed as a burst at the end of an ALU group. */
@@ -639,6 +661,15 @@ struct gpu_work_item_t
 	uint32_t branch_digest;
 };
 
+#define FOREACH_WORK_ITEM_IN_WORK_GROUP \
+	for (work_item_id = WORK_GROUP.work_item_id_first; \
+		work_item_id <= WORK_GROUP.work_item_id_last; \
+		work_item_id++)
+
+#define FOREACH_WORK_ITEM_IN_WAVEFRONT \
+	for (work_item_id = WAVEFRONT.work_item_id_first; \
+		work_item_id <= WAVEFRONT.work_item_id_last; \
+		work_item_id++)
 
 struct gpu_work_item_t *gpu_work_item_create(void);
 void gpu_work_item_free(struct gpu_work_item_t *work_item);
@@ -660,13 +691,13 @@ void gpu_work_item_update_branch_digest(struct gpu_work_item_t *work_item,
 
 /* Macros for quick access */
 #define WORK_ITEM (*gpu_isa_work_item)
-#define WORK_ITEM_I(I)  (*gpu_isa_work_items[(I)])
+#define WORK_ITEM_I(I)  (kernel->work_items[(I)])
 
 #define WAVEFRONT  (*gpu_isa_wavefront)
-#define WAVEFRONT_I  (*gpu_isa_wavefronts[(I)])
+#define WAVEFRONT_I  (*kernel->wavefronts[(I)])
 
 #define WORK_GROUP (*gpu_isa_work_group)
-#define WORK_GROUP_I(I)  (*gpu_isa_work_groups[(I)])
+#define WORK_GROUP_I(I)  (*kernel->work_groups[(I)])
 
 #define GPU_GPR_ELEM(_gpr, _elem)  (gpu_isa_work_item->gpr[(_gpr)].elem[(_elem)])
 #define GPU_GPR_X(_gpr)  GPU_GPR_ELEM((_gpr), 0)
@@ -747,10 +778,6 @@ extern char *err_gpu_machine_note;
 extern struct gpu_work_item_t *gpu_isa_work_item;
 extern struct gpu_wavefront_t *gpu_isa_wavefront;
 extern struct gpu_work_group_t *gpu_isa_work_group;
-
-extern struct gpu_work_item_t **gpu_isa_work_items;
-extern struct gpu_wavefront_t **gpu_isa_wavefronts;
-extern struct gpu_work_group_t **gpu_isa_work_groups;
 
 extern struct amd_inst_t *gpu_isa_inst;
 extern struct amd_alu_group_t *gpu_isa_alu_group;

@@ -56,15 +56,12 @@ struct gpu_compute_unit_t {
 	/* Stream cores */
 	struct gpu_stream_core_t *stream_cores;
 
-	/* State for the 'schedule' stage */
-	int current_wavefront_id;
-	int current_subwavefront_id;
-
 	/* Initial pipe register (for Schedule stage state) */
 	struct {
 		int do_schedule;
-		int wavefront_id;
-		int subwavefront_id;
+		int work_group;
+		int wavefront;
+		int subwavefront;
 	} init_schedule;
 
 	/* Schedule/Fetch pipe register */
@@ -106,7 +103,10 @@ void gpu_compute_unit_next_cycle(int compute_unit);
 
 /* GPU Device */
 
-struct gpu_device_t {
+struct gpu_device_t
+{
+	/* Currently executing kernel */
+	struct opencl_kernel_t *kernel;
 	
 	/* Compute units */
 	struct gpu_compute_unit_t *compute_units;
@@ -118,6 +118,11 @@ void gpu_device_free(struct gpu_device_t *gpu_device);
 
 
 /* Generic public functions */
+
+/* Debugging */
+#define gpu_pipeline_debug(...) debug(gpu_pipeline_debug_category, __VA_ARGS__)
+extern int gpu_pipeline_debug_category;
+
 
 void gpu_reg_options();
 void gpu_init();
