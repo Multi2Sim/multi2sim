@@ -30,21 +30,36 @@
 #define EXECUTE_WRITE  (COMPUTE_UNIT.execute_write)
 
 
+
+
+/*
+ * Public Variables
+ */
+
+int gpu_pipeline_debug_category;
+
+
+
+
 /*
  * Public Functions
  */
 
 void gpu_compute_unit_schedule(int compute_unit)
 {
+	//struct opencl_kernel_t *kernel = gpu_device->kernel;
+
 	/* Check if schedule stage is active */
 	if (!INIT_SCHEDULE.do_schedule)
 		return;
 	
+	/* Check boundaries of wavefront and subwavefront */
+	
 	/* Go to next subwavefront */
-	INIT_SCHEDULE.subwavefront_id++;
-	if (INIT_SCHEDULE.subwavefront_id >= gpu_compute_unit_time_slots) {
-		INIT_SCHEDULE.subwavefront_id = 0;
-		INIT_SCHEDULE.wavefront_id++;
+	INIT_SCHEDULE.subwavefront++;
+	if (INIT_SCHEDULE.subwavefront >= gpu_compute_unit_time_slots) {  /* FIXME partial wavefronts */
+		INIT_SCHEDULE.subwavefront = 0;
+		INIT_SCHEDULE.wavefront++;
 	}
 }
 
@@ -118,5 +133,25 @@ void gpu_compute_unit_next_cycle(int compute_unit)
 /* FIXME */
 void gpu_run(struct opencl_kernel_t *kernel)
 {
+	int compute_unit;
+
+	/* Save currently executing kernel */
+	gpu_device->kernel = kernel;
+
+	/* Debug */
+	gpu_pipeline_debug("init global_size=%d, local_size=%d, group_count=%d, wavefront_size=%d, "
+		"wavefronts_per_work_group=%d\n",
+		kernel->global_size, kernel->local_size, kernel->group_count, gpu_wavefront_size,
+		kernel->wavefronts_per_work_group);
+
+	compute_unit = 0;
+	INIT_SCHEDULE.do_schedule = 1;
+	INIT_SCHEDULE.work_group = 0;
+	INIT_SCHEDULE.wavefront = 0;
+	INIT_SCHEDULE.subwavefront = 0;
+
+	while (INIT_SCHEDULE.do_schedule) {
+		gpu_compute_unit_next_cycle(compute_unit);
+	}
 }
 

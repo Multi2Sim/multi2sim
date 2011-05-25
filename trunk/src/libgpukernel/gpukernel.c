@@ -188,15 +188,12 @@ void gk_libopencl_failed(int pid)
  * GPU Work-Group
  */
 
-static uint64_t work_group_id;
-
 
 struct gpu_work_group_t *gpu_work_group_create()
 {
 	struct gpu_work_group_t *work_group;
 
 	work_group = calloc(1, sizeof(struct gpu_work_group_t));
-	work_group->work_group_id = work_group_id++;
 	return work_group;
 }
 
@@ -213,16 +210,12 @@ void gpu_work_group_free(struct gpu_work_group_t *work_group)
  * GPU wavefront
  */
 
-static uint64_t wavefront_id;
-
 
 struct gpu_wavefront_t *gpu_wavefront_create()
 {
 	struct gpu_wavefront_t *wavefront;
 
 	wavefront = calloc(1, sizeof(struct gpu_wavefront_t));
-	wavefront->wavefront_id = wavefront_id++;
-
 	wavefront->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * gpu_wavefront_size);
 	wavefront->pred = bit_map_create(gpu_wavefront_size);
 	return wavefront;
@@ -254,7 +247,6 @@ static int gpu_wavefront_divergence_compare(const void *elem1, const void *elem2
 
 void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 {
-	struct gpu_work_item_t *work_item;
 	struct elem_t {
 		int count;  /* 1st field hardcoded for comparison */
 		int list_index;
@@ -273,14 +265,14 @@ void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 	/* Create one 'elem' for each work_item with a different branch digest, and
 	 * store it into the hash table and list. */
 	for (i = 0; i < wavefront->work_item_count; i++) {
-		work_item = wavefront->work_items[i];
-		sprintf(str, "%08x", work_item->branch_digest);
+		gpu_isa_work_item = wavefront->work_items[i];
+		sprintf(str, "%08x", gpu_isa_work_item->branch_digest);
 		elem = hashtable_get(ht, str);
 		if (!elem) {
 			elem = calloc(1, sizeof(struct elem_t));
 			hashtable_insert(ht, str, elem);
 			elem->list_index = list_count(list);
-			elem->branch_digest = work_item->branch_digest;
+			elem->branch_digest = gpu_isa_work_item->branch_digest;
 			list_add(list, elem);
 		}
 		elem->count++;
@@ -335,11 +327,11 @@ void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 		return;
 	
 	/* Dump wavefront statistics in GPU report */
-	fprintf(f, "[ wavefront %lld ]\n\n", (long long) wavefront->wavefront_id);
+	fprintf(f, "[ wavefront %lld ]\n\n", (long long) wavefront->id);
 
 	fprintf(f, "KernelExecution = %d\n", gk_kernel_execution_count - 1);
 	fprintf(f, "Name = %s\n", wavefront->name);
-	fprintf(f, "Global_Id = %d\n", wavefront->global_id);
+	fprintf(f, "Global_Id = %d\n", wavefront->work_item_id_first);
 	fprintf(f, "work_item_Count = %d\n", wavefront->work_item_count);
 	fprintf(f, "\n");
 
@@ -439,45 +431,38 @@ void gpu_work_item_free(struct gpu_work_item_t *work_item)
 }
 
 
+
 void gpu_work_item_set_active(struct gpu_work_item_t *work_item, int active)
 {
 	struct gpu_wavefront_t *wavefront = work_item->wavefront;
-	assert(work_item->global_id >= wavefront->global_id &&
-		work_item->global_id < wavefront->global_id + wavefront->work_item_count);
-	assert(work_item->wavefront_id < wavefront->work_item_count);
+	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
 	bit_map_set(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
-		+ work_item->wavefront_id, 1, !!active);
+		+ work_item->id_in_wavefront, 1, !!active);
 }
 
 
 int gpu_work_item_get_active(struct gpu_work_item_t *work_item)
 {
 	struct gpu_wavefront_t *wavefront = work_item->wavefront;
-	assert(work_item->global_id >= wavefront->global_id &&
-		work_item->global_id < wavefront->global_id + wavefront->work_item_count);
-	assert(work_item->wavefront_id < wavefront->work_item_count);
+	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
 	return bit_map_get(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
-		+ work_item->wavefront_id, 1);
+		+ work_item->id_in_wavefront, 1);
 }
 
 
 void gpu_work_item_set_pred(struct gpu_work_item_t *work_item, int pred)
 {
 	struct gpu_wavefront_t *wavefront = work_item->wavefront;
-	assert(work_item->global_id >= wavefront->global_id &&
-		work_item->global_id < wavefront->global_id + wavefront->work_item_count);
-	assert(work_item->wavefront_id < wavefront->work_item_count);
-	bit_map_set(wavefront->pred, work_item->wavefront_id, 1, !!pred);
+	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
+	bit_map_set(wavefront->pred, work_item->id_in_wavefront, 1, !!pred);
 }
 
 
 int gpu_work_item_get_pred(struct gpu_work_item_t *work_item)
 {
 	struct gpu_wavefront_t *wavefront = work_item->wavefront;
-	assert(work_item->global_id >= wavefront->global_id &&
-		work_item->global_id < wavefront->global_id + wavefront->work_item_count);
-	assert(work_item->wavefront_id < wavefront->work_item_count);
-	return bit_map_get(wavefront->pred, work_item->wavefront_id, 1);
+	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
+	return bit_map_get(wavefront->pred, work_item->id_in_wavefront, 1);
 }
 
 
@@ -489,7 +474,8 @@ void gpu_work_item_update_branch_digest(struct gpu_work_item_t *work_item, uint6
 	uint32_t mask = 0;
 
 	/* Update branch digest only if work_item is active */
-	if (!bit_map_get(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count + work_item->wavefront_id, 1))
+	if (!bit_map_get(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
+		+ work_item->id_in_wavefront, 1))
 		return;
 
 	/* Update mask with inst_count */

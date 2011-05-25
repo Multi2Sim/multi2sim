@@ -914,3 +914,6 @@
 2010-05-22
 	* src/libgpuarch/gpupipeline.c: initial 6-stage design of GPU pipeline.
 	* src/libgpukernel/gpukernel-local.h: file removed, unified in 'gpukernel.h'
+
+2010-05-25
+	* src/libgpukernel: fields in work-group, work-item, and wavefront unified.

@@ -232,14 +232,13 @@ void amd_inst_LOOP_START_DX10_impl()
 #define W1  CF_ALLOC_EXPORT_WORD1_BUF
 void amd_inst_MEM_RAT_CACHELESS_impl()
 {
-	int global_id;
-
 	switch (W0.rat_inst) {
 
 	/* STORE_RAW */
 	case 2: {
 		uint32_t value, addr;
 		float value_float;
+		int work_item_idx;
 		int i;
 
 		/* GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_id, 1);  FIXME: what does rat_id mean? */
@@ -262,11 +261,9 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 		if (W0.type != 1 && W0.type != 3)
 			GPU_PARAM_NOT_SUPPORTED(W0.type);
 
-
-		for (global_id = gpu_isa_wavefront->global_id; global_id < gpu_isa_wavefront->global_id
-			+ gpu_isa_wavefront->work_item_count; global_id++)
+		for (work_item_idx = 0; work_item_idx < gpu_isa_wavefront->work_item_count; work_item_idx++)
 		{
-			gpu_isa_work_item = gpu_isa_work_items[global_id];
+			gpu_isa_work_item = gpu_isa_wavefront->work_items[work_item_idx];
 
 			/* If VPM is set, do not export for inactive pixels. */
 			if (W1.valid_pixel_mode && !gpu_work_item_get_active(gpu_isa_work_item))
@@ -279,7 +276,7 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 			/* W1.array_size: array size (elem-size units) */
 
 			addr = gpu_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
-			gpu_isa_debug("  t%d:write(0x%x)", WORK_ITEM.global_id, addr);
+			gpu_isa_debug("  t%d:write(0x%x)", WORK_ITEM.id, addr);
 
 			for (i = 0; i < 4; i++) {
 				if (!(W1.comp_mask & (1 << i)))
@@ -1305,7 +1302,7 @@ void amd_inst_SUBB_UINT_impl() {
 void amd_inst_GROUP_BARRIER_impl()
 {
 	/* Only the first work-item in a wavefront handles barriers */
-	if (WORK_ITEM.wavefront_id)
+	if (WORK_ITEM.id_in_wavefront)
 		return;
 	
 	/* Suspend current wavefront at the barrier */
@@ -1313,7 +1310,7 @@ void amd_inst_GROUP_BARRIER_impl()
 	DOUBLE_LINKED_LIST_REMOVE(gpu_isa_work_group, running, gpu_isa_wavefront);
 	DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_isa_work_group, barrier, gpu_isa_wavefront);
 	gpu_isa_debug("%s (gid=%d) reached barrier (%d reached, %d left)\n",
-		WAVEFRONT.name, WORK_ITEM.group_id, WORK_GROUP.barrier_count,
+		WAVEFRONT.name, WORK_GROUP.id, WORK_GROUP.barrier_count,
 		WORK_GROUP.wavefront_count - WORK_GROUP.barrier_count);
 	
 	/* If all wavefronts in work-group reached the barrier, wake them up */
@@ -1940,7 +1937,7 @@ void amd_inst_LDS_IDX_OP_impl()
 	uint32_t op0, op1, op2;
 
 	/* Get local memory */
-	local_mem = gk->local_mem[gpu_isa_work_item->group_id];
+	local_mem = gk->local_mem[WORK_GROUP.id];
 	assert(local_mem);
 
 	/* Recompose 'idx_offset' field */
@@ -1998,7 +1995,7 @@ void amd_inst_LDS_IDX_OP_impl()
 		pvalue = malloc(4);
 		mem_read(local_mem, op0, 4, pvalue);
 		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue);
-		gpu_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA", WORK_ITEM.global_id, op0, *pvalue, * (float *) pvalue);
+		gpu_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA", WORK_ITEM.id, op0, *pvalue, * (float *) pvalue);
 		break;
 	}
 
@@ -2210,7 +2207,7 @@ void amd_inst_FETCH_impl()
 
 		/* Address */
 		addr = gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * 4;
-		gpu_isa_debug("  t%d:read(0x%x)", WORK_ITEM.global_id, addr);
+		gpu_isa_debug("  t%d:read(0x%x)", WORK_ITEM.id, addr);
 
 		/* Read value */
 		assert(W0.mega_fetch_count == 3 || W0.mega_fetch_count == 7
