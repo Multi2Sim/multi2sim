@@ -74,6 +74,9 @@ void gpu_init()
 {
 	char *section;
 
+	/* Debug */
+	gpu_pipeline_debug_category = debug_new_category();
+
 	/* Load GPU configuration file */
 	gpu_config = config_create(gpu_config_file_name);
 	if (!*gpu_config_file_name)

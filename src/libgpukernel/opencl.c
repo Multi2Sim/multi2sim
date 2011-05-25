@@ -1097,8 +1097,8 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* FIXME: asynchronous execution */
 		gpu_isa_init_kernel(kernel);
-		//gpu_isa_run(kernel);
-		gpu_run(kernel);
+		gpu_isa_run(kernel);
+		//gpu_run(kernel);
 		gpu_isa_finish_kernel(kernel);
 
 		/* Event */
