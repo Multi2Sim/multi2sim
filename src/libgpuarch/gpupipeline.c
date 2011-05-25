@@ -131,6 +131,7 @@ void gpu_compute_unit_next_cycle(int compute_unit)
 
 
 /* FIXME */
+#if 0
 void gpu_run(struct opencl_kernel_t *kernel)
 {
 	int compute_unit;
@@ -154,4 +155,6 @@ void gpu_run(struct opencl_kernel_t *kernel)
 		gpu_compute_unit_next_cycle(compute_unit);
 	}
 }
+#endif
+
 

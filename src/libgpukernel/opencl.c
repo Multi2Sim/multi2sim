@@ -1096,10 +1096,13 @@ int opencl_func_run(int code, unsigned int *args)
 		}
 
 		/* FIXME: asynchronous execution */
-		gpu_isa_init_kernel(kernel);
-		gpu_isa_run(kernel);
+		kernel->ndrange = gpu_ndrange_create(kernel);
+		gpu_ndrange_setup_work_items(kernel->ndrange);
+		gpu_ndrange_setup_const_mem(kernel->ndrange);
+		gpu_ndrange_setup_args(kernel->ndrange);
+		gpu_ndrange_run(kernel->ndrange);
 		//gpu_run(kernel);
-		gpu_isa_finish_kernel(kernel);
+		gpu_ndrange_free(kernel->ndrange);
 
 		/* Event */
 		if (event_ptr) {
