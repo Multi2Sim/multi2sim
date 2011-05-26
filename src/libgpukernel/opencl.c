@@ -1100,8 +1100,8 @@ int opencl_func_run(int code, unsigned int *args)
 		gpu_ndrange_setup_work_items(kernel->ndrange);
 		gpu_ndrange_setup_const_mem(kernel->ndrange);
 		gpu_ndrange_setup_args(kernel->ndrange);
-		gpu_ndrange_run(kernel->ndrange);
-		//gpu_run(kernel);
+		//gpu_ndrange_run(kernel->ndrange);
+		gpu_device_run(gpu_device, kernel->ndrange); /////
 		gpu_ndrange_free(kernel->ndrange);
 
 		/* Event */
