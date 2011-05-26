@@ -38,10 +38,14 @@ extern struct gpu_device_t *gpu_device;
 /* GPU Stream Core */
 
 struct gpu_stream_core_t {
-};
+	
+	/* ID */
+	int id;
 
-#define STREAM_CORE  (gpu_device->compute_units[compute_unit].stream_cores[stream_core])
-#define FOREACH_STREAM_CORE  for (stream_core = 0; stream_core < gpu_num_stream_cores; stream_core++)
+	/* Compute unit it belongs to */
+	struct gpu_compute_unit_t *compute_unit;
+
+};
 
 struct gpu_stream_core_t *gpu_stream_core_create();
 void gpu_stream_core_free(struct gpu_stream_core_t *gpu_stream_core);
@@ -51,17 +55,27 @@ void gpu_stream_core_free(struct gpu_stream_core_t *gpu_stream_core);
 
 /* GPU Compute Unit */
 
-struct gpu_compute_unit_t {
-	
+struct gpu_compute_unit_t
+{
+	/* ID */
+	int id;
+
+	/* Device that it belongs to */
+	struct gpu_device_t *device;
+
 	/* Stream cores */
-	struct gpu_stream_core_t *stream_cores;
+	struct gpu_stream_core_t **stream_cores;
+
+	/* Double linked list for idle compute units */
+	struct gpu_compute_unit_t *idle_prev, *idle_next;
 
 	/* Initial pipe register (for Schedule stage state) */
 	struct {
 		int do_schedule;
-		int work_group;
-		int wavefront;
-		int subwavefront;
+		int work_group_id;
+		int wavefront_id;
+		int subwavefront_id;
+		struct gpu_wavefront_t *wavefront_running_next;
 	} init_schedule;
 
 	/* Schedule/Fetch pipe register */
@@ -90,13 +104,22 @@ struct gpu_compute_unit_t {
 	} execute_write;
 };
 
-#define COMPUTE_UNIT  (gpu_device->compute_units[compute_unit])
-#define FOREACH_COMPUTE_UNIT  for (compute_unit = 0; compute_unit < gpu_num_compute_units; compute_unit++)
+#define FOREACH_STREAM_CORE(STREAM_CORE_ID) \
+	for ((STREAM_CORE_ID) = 0; (STREAM_CORE_ID) < gpu_num_stream_cores; (STREAM_CORE_ID)++)
+
+/* Macros for quick access to pipe registers */
+#define INIT_SCHEDULE  (compute_unit->init_schedule)
+#define SCHEDULE_FETCH  (compute_unit->schedule_fetch)
+#define FETCH_DECODE  (compute_unit->fetch_decode)
+#define DECODE_READ  (compute_unit->decode_read)
+#define READ_EXECUTE  (compute_unit->read_execute)
+#define EXECUTE_WRITE  (compute_unit->execute_write)
+
 
 struct gpu_compute_unit_t *gpu_compute_unit_create();
 void gpu_compute_unit_free(struct gpu_compute_unit_t *gpu_compute_unit);
 
-void gpu_compute_unit_next_cycle(int compute_unit);
+void gpu_compute_unit_next_cycle(struct gpu_compute_unit_t *compute_unit);
 
 
 
@@ -105,15 +128,25 @@ void gpu_compute_unit_next_cycle(int compute_unit);
 
 struct gpu_device_t
 {
-	/* Currently executing kernel */
-	struct opencl_kernel_t *kernel;
-	
+	/* ND-Range running on it */
+	struct gpu_ndrange_t *ndrange;
+
 	/* Compute units */
-	struct gpu_compute_unit_t *compute_units;
+	struct gpu_compute_unit_t **compute_units;
+
+	/* Double linked list of idle compute units */
+	struct gpu_compute_unit_t *idle_list_head, *idle_list_tail;
+	int idle_count, idle_max;
 };
 
+#define FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
+	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
+
 struct gpu_device_t *gpu_device_create();
-void gpu_device_free(struct gpu_device_t *gpu_device);
+void gpu_device_free(struct gpu_device_t *device);
+
+void gpu_device_run(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange);
+
 
 
 
@@ -124,11 +157,10 @@ void gpu_device_free(struct gpu_device_t *gpu_device);
 extern int gpu_pipeline_debug_category;
 
 
-void gpu_reg_options();
-void gpu_init();
-void gpu_done();
+void gpu_reg_options(void);
+void gpu_init(void);
+void gpu_done(void);
 
-void gpu_run(struct opencl_kernel_t *kernel); ///// FIXME
 
 
 #endif
