@@ -68,12 +68,12 @@ AR = ar
 ARFLAGS = cru
 libcpuarch_a_AR = $(AR) $(ARFLAGS)
 libcpuarch_a_LIBADD =
-am_libcpuarch_a_OBJECTS = bpred.$(OBJEXT) commit.$(OBJEXT) \
-	decode.$(OBJEXT) dispatch.$(OBJEXT) fetch.$(OBJEXT) \
-	fu.$(OBJEXT) issue.$(OBJEXT) processor.$(OBJEXT) \
-	queues.$(OBJEXT) recover.$(OBJEXT) rf.$(OBJEXT) rob.$(OBJEXT) \
-	sched.$(OBJEXT) tcache.$(OBJEXT) uop.$(OBJEXT) \
-	writeback.$(OBJEXT)
+am_libcpuarch_a_OBJECTS = stg_fetch.$(OBJEXT) stg_decode.$(OBJEXT) \
+	stg_dispatch.$(OBJEXT) stg_issue.$(OBJEXT) \
+	stg_writeback.$(OBJEXT) stg_commit.$(OBJEXT) bpred.$(OBJEXT) \
+	cpuarch.$(OBJEXT) fu.$(OBJEXT) queues.$(OBJEXT) \
+	recover.$(OBJEXT) rf.$(OBJEXT) rob.$(OBJEXT) sched.$(OBJEXT) \
+	tcache.$(OBJEXT) uop.$(OBJEXT)
 libcpuarch_a_OBJECTS = $(am_libcpuarch_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -182,14 +182,17 @@ top_srcdir = @top_srcdir@
 lib_LIBRARIES = libcpuarch.a
 libcpuarch_a_SOURCES = \
 	cpuarch.h \
+	\
+	stg_fetch.c \
+	stg_decode.c \
+	stg_dispatch.c \
+	stg_issue.c \
+	stg_writeback.c \
+	stg_commit.c \
+	\
 	bpred.c \
-	commit.c \
-	decode.c \
-	dispatch.c \
-	fetch.c \
+	cpuarch.c \
 	fu.c \
-	issue.c \
-	processor.c \
 	queues.c \
 	recover.c \
 	rf.c \
@@ -198,8 +201,7 @@ libcpuarch_a_SOURCES = \
 	tcache.c \
 	uop.c \
 	uop1.dat \
-	uop2.dat \
-	writeback.c
+	uop2.dat
 
 AM_CFLAGS = -Wall -fno-strict-aliasing
 INCLUDES = -I$(top_srcdir)/src/libstruct \
@@ -292,21 +294,21 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bpred.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/decode.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dispatch.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fetch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpuarch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fu.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/issue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/processor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queues.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recover.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rob.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sched.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_commit.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_decode.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_dispatch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_fetch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_issue.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_writeback.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uop.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeback.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

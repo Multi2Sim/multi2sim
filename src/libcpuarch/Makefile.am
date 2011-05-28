@@ -2,14 +2,17 @@ lib_LIBRARIES = libcpuarch.a
 
 libcpuarch_a_SOURCES = \
 	cpuarch.h \
+	\
+	stg_fetch.c \
+	stg_decode.c \
+	stg_dispatch.c \
+	stg_issue.c \
+	stg_writeback.c \
+	stg_commit.c \
+	\
 	bpred.c \
-	commit.c \
-	decode.c \
-	dispatch.c \
-	fetch.c \
+	cpuarch.c \
 	fu.c \
-	issue.c \
-	processor.c \
 	queues.c \
 	recover.c \
 	rf.c \
@@ -18,8 +21,7 @@ libcpuarch_a_SOURCES = \
 	tcache.c \
 	uop.c \
 	uop1.dat \
-	uop2.dat \
-	writeback.c
+	uop2.dat
 
 AM_CFLAGS = -Wall -fno-strict-aliasing
 

@@ -19,6 +19,8 @@
 
 #include <cpuarch.h>
 
+
+
 /*
  * Global variables
  */
@@ -27,7 +29,7 @@
 struct processor_t *p;
 
 /* Configuration file and parameters */
-char *p_cpuconfig_file = "";
+char *cpuconfig_file_name = "";
 
 int p_occupancy_stats = 0;
 uint32_t p_cores = 1;
@@ -59,7 +61,12 @@ uint32_t p_commit_width = 4;
 
 
 
-/* Options & stats */
+/*
+ * Public Functions
+ */
+
+
+/* Options */
 void p_reg_options()
 {
 	static char *p_recover_kind_map[] = { "writeback", "commit" };
@@ -67,6 +74,9 @@ void p_reg_options()
 	static char *p_dispatch_kind_map[] = { "shared", "timeslice" };
 	static char *p_issue_kind_map[] = { "shared", "timeslice" };
 	static char *p_commit_kind_map[] = { "shared", "timeslice" };
+
+	opt_reg_string("-cpuconfig", "Configuration file for the CPU model",
+		&cpuconfig_file_name);
 	
 	opt_reg_uint32("-cores", "number of processor cores", &p_cores);
 	opt_reg_uint32("-threads", "number of threads per core", &p_threads);
