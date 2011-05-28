@@ -420,7 +420,7 @@ static void cache_config_section(char *section)
 /* Check that a key exists in configuration file */
 static void cache_config_key(char *section, char *key)
 {
-	if (!config_key_exists(cache_config, section, key))
+	if (!config_var_exists(cache_config, section, key))
 		fatal("%s: section '%s': key '%s' not present",
 			cache_config_file, section, key);
 }

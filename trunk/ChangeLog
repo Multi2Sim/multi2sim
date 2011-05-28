@@ -926,3 +926,5 @@
 	* src/libcpuarch/processor.c: stage time measures removed. A profiler tool like
 		'gprof' should be used for this purpose.
 	* src/libcpuarch: names of files implementing stages changed.
+	* src/libstruct/config.{c|h}: module redesigned.
+

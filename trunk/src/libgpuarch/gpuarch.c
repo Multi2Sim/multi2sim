@@ -85,24 +85,6 @@ void gpu_init()
 	else if (!config_load(gpu_config))
 		fatal("%s: cannot load GPU configuration file", gpu_config_file_name);
 	
-	/* Specify configuration file format */
-	section = "Device";
-	config_section_allow(gpu_config, section);
-	config_key_allow(gpu_config, section, "NumComputeUnits");
-
-	section = "ComputeUnit";
-	config_section_allow(gpu_config, section);
-	config_key_allow(gpu_config, section, "WavefrontSize");
-	config_key_allow(gpu_config, section, "MaxWorkGroupSize");
-	config_key_allow(gpu_config, section, "NumStreamCores");
-
-	section = "StreamCore";
-	config_section_allow(gpu_config, section);
-
-	/* Check configuration file */
-	config_check(gpu_config);
-
-
 	/*
 	 * Read configuration file
 	 */
@@ -124,6 +106,7 @@ void gpu_init()
 	section = "StreamCore";
 	
 	/* Close GPU configuration file */
+	config_check(gpu_config);
 	config_free(gpu_config);
 
 

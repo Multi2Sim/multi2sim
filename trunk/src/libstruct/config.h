@@ -31,43 +31,44 @@ void config_free(struct config_t *cfg);
 int config_load(struct config_t *cfg);
 int config_save(struct config_t *cfg);
 
-/* Ask for section of key existence */
+/* Ask for section of variable existence */
 int config_section_exists(struct config_t *cfg, char *section);
-int config_key_exists(struct config_t *cfg, char *section, char *key);
+int config_var_exists(struct config_t *cfg, char *section, char *var);
 
-/* Enumerate sections */
+/* Remove a variable/section;
+ * Return value: non-0=ok, 0=variable/section does not exist */
+int config_section_remove(struct config_t *cfg, char *section);
+int config_var_remove(struct config_t *cfg, char *section, char *var);
+
+/* Enumeration of sections */
 char *config_section_first(struct config_t *cfg);
 char *config_section_next(struct config_t *cfg);
 
-/* Remove a key/section;
- * Return value: non-0=ok, 0=key/section does not exist */
-int config_section_remove(struct config_t *cfg, char *section);
-int config_key_remove(struct config_t *cfg, char *section, char *key);
-
-/* Add keys in a section; if section does not exists, it is created;
- * If key already exists, replace old value;
+/* Add variables in a section; if section does not exists, it is created;
+ * If variable already exists, replace old value;
  * String values are strdup'ped, so they can be modified in user program */
-void config_write_string(struct config_t *cfg, char *section, char *key, char *value);
-void config_write_int(struct config_t *cfg, char *section, char *key, int value);
-void config_write_bool(struct config_t *cfg, char *section, char *key, int value);
-void config_write_double(struct config_t *cfg, char *section, char *key, double value);
-void config_write_ptr(struct config_t *cfg, char *section, char *key, void *value);
+void config_write_string(struct config_t *cfg, char *section, char *var, char *value);
+void config_write_int(struct config_t *cfg, char *section, char *var, int value);
+void config_write_bool(struct config_t *cfg, char *section, char *var, int value);
+void config_write_double(struct config_t *cfg, char *section, char *var, double value);
+void config_write_ptr(struct config_t *cfg, char *section, char *var, void *value);
 
-/* Read keys from a section; if section or key do not exist,
- * the default value if returned */
-char *config_read_string(struct config_t *cfg, char *section, char *key, char *def);
-int config_read_int(struct config_t *cfg, char *section, char *key, int def);
-int config_read_bool(struct config_t *cfg, char *section, char *key, int def);
-double config_read_double(struct config_t *cfg, char *section, char *key, double def);
-void *config_read_ptr(struct config_t *cfg, char *section, char *key, void *def);
+/* Read variables from a section.
+ * If a section or variable does not exist, the default value in 'def' is returned.
+ * Sections and variables given in 'config_read_XXX' functions are automatically added
+ *   into the set of allowed sections/variables for the configuration file. */
+char *config_read_string(struct config_t *cfg, char *section, char *var, char *def);
+int config_read_int(struct config_t *cfg, char *section, char *var, int def);
+int config_read_bool(struct config_t *cfg, char *section, char *var, int def);
+double config_read_double(struct config_t *cfg, char *section, char *var, double def);
+void *config_read_ptr(struct config_t *cfg, char *section, char *var, void *def);
 
 /* Defining and checking allowed/mandatory sections/keys in file */
 void config_section_allow(struct config_t *cfg, char *section);
 void config_section_enforce(struct config_t *cfg, char *section);
-void config_key_allow(struct config_t *cfg, char *section, char *key);
-void config_key_enforce(struct config_t *cfg, char *section, char *key);
+void config_var_allow(struct config_t *cfg, char *section, char *key);
+void config_var_enforce(struct config_t *cfg, char *section, char *key);
 void config_check(struct config_t *cfg);
-void config_section_check(struct config_t *cfg, char *section);
 
 
 #endif
