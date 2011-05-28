@@ -26,6 +26,7 @@
 /* Global variables */
 
 char *gpu_config_file_name = "";
+int gpu_pipeline_debug_category;
 
 /* Default parameters based on the AMD Radeon HD 5870 */
 int gpu_num_compute_units = 20;

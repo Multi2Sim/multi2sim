@@ -17,26 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <gpukernel.h>
 #include <gpuarch.h>
-#include <debug.h>
 
 
 
-/*
- * Public Variables
- */
-
-int gpu_pipeline_debug_category;
-
-
-
-
-/*
- * Schedule Stage
- */
-
-static void gpu_compute_unit_schedule_next_subwavefront(struct gpu_compute_unit_t *compute_unit)
+/* Schedule next subwavefront in the work-group, and return 1 if one was found.
+ * Return 0 if the work-group finished. */
+static int gpu_compute_unit_schedule_next_subwavefront(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_device_t *device = compute_unit->device;
 	struct gpu_ndrange_t *ndrange = device->ndrange;
@@ -46,14 +33,16 @@ static void gpu_compute_unit_schedule_next_subwavefront(struct gpu_compute_unit_
 	/* Go to next subwavefront */
 	INIT_SCHEDULE.subwavefront_id++;
 	if (INIT_SCHEDULE.subwavefront_id < gpu_compute_unit_time_slots)
-		return;
+		return 1;
 	
 	/* Scheduling of current wavefront finished */
 	work_group = ndrange->work_groups[INIT_SCHEDULE.work_group_id];
-	assert(work_group->running_list_head);
-	INIT_SCHEDULE.subwavefront_id = 0;
+	if (!gpu_work_group_get_status(work_group, gpu_work_group_running))
+		return 0;
 
 	/* Schedule new wavefront */
+	assert(work_group->running_list_head);
+	INIT_SCHEDULE.subwavefront_id = 0;
 	if (INIT_SCHEDULE.wavefront_running_next &&
 		DOUBLE_LINKED_LIST_MEMBER(work_group, running, INIT_SCHEDULE.wavefront_running_next))
 	{
@@ -64,6 +53,7 @@ static void gpu_compute_unit_schedule_next_subwavefront(struct gpu_compute_unit_
 	}
 	INIT_SCHEDULE.wavefront_id = wavefront->id;
 	INIT_SCHEDULE.wavefront_running_next = wavefront->running_next;
+	return 1;
 }
 
 
@@ -120,6 +110,8 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
+	
+	int result;
 
 	/* Check if schedule stage is active */
 	if (!INIT_SCHEDULE.do_schedule)
@@ -142,73 +134,18 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 	if (!INIT_SCHEDULE.subwavefront_id)
 		gpu_compute_unit_emulate(compute_unit);
 
-	/* Schedule next subwavefront/wavefront */
-	gpu_compute_unit_schedule_next_subwavefront(compute_unit);
-}
+	/* Schedule next subwavefront/wavefront.
+	 * If work-group finished, do not schedule anymore. */
+	result = gpu_compute_unit_schedule_next_subwavefront(compute_unit);
+	if (!result) {
+		gpu_pipeline_debug("cu compute_unit=\"%d\", work_group=\"%d\", action=\"finish\"\n",
+			compute_unit->id, work_group->id);
+		INIT_SCHEDULE.do_schedule = 0;
 
-
-void gpu_compute_unit_fetch(struct gpu_compute_unit_t *compute_unit)
-{
-	/* Check if fetch stage is active */
-	if (!SCHEDULE_FETCH.do_fetch)
-		return;
-
-	/* By default, do not fetch next cycle */
-	SCHEDULE_FETCH.do_fetch = 0;
-}
-
-
-void gpu_compute_unit_decode(struct gpu_compute_unit_t *compute_unit)
-{
-	/* Check if decode stage is active */
-	if (!FETCH_DECODE.do_decode)
-		return;
-	
-	/* By default, do not decode next cycle */
-	FETCH_DECODE.do_decode = 0;
-}
-
-
-void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
-{
-	/* Check if read stage is active */
-	if (!DECODE_READ.do_read)
-		return;
-	
-	/* By default, do not read next cycle */
-	DECODE_READ.do_read = 0;
-}
-
-
-void gpu_compute_unit_execute(struct gpu_compute_unit_t *compute_unit)
-{
-	/* Check if execute stage is active */
-	if (!READ_EXECUTE.do_execute)
-		return;
-	
-	/* By default, do not execute next cycle */
-	READ_EXECUTE.do_execute = 0;
-}
-
-
-void gpu_compute_unit_write(struct gpu_compute_unit_t *compute_unit)
-{
-	/* Check if write stage is active */
-	if (!EXECUTE_WRITE.do_write)
-		return;
-	
-	/* By default, do not write next cycle */
-	EXECUTE_WRITE.do_write = 0;
-}
-
-
-void gpu_compute_unit_next_cycle(struct gpu_compute_unit_t *compute_unit)
-{
-	gpu_compute_unit_write(compute_unit);
-	gpu_compute_unit_execute(compute_unit);
-	gpu_compute_unit_read(compute_unit);
-	gpu_compute_unit_decode(compute_unit);
-	gpu_compute_unit_fetch(compute_unit);
-	gpu_compute_unit_schedule(compute_unit);
+		/* Set compute unit as idle.
+		 * FIXME: this should be done at the last stage of the pipeline */
+		DOUBLE_LINKED_LIST_REMOVE(device, busy, compute_unit);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(device, idle, compute_unit);
+	}
 }
 

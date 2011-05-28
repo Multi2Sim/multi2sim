@@ -66,8 +66,9 @@ struct gpu_compute_unit_t
 	/* Stream cores */
 	struct gpu_stream_core_t **stream_cores;
 
-	/* Double linked list for idle compute units */
+	/* Double linked list of compute units */
 	struct gpu_compute_unit_t *idle_prev, *idle_next;
+	struct gpu_compute_unit_t *busy_prev, *busy_next;
 
 	/* Initial pipe register (for Schedule stage state) */
 	struct {
@@ -119,6 +120,12 @@ struct gpu_compute_unit_t
 struct gpu_compute_unit_t *gpu_compute_unit_create();
 void gpu_compute_unit_free(struct gpu_compute_unit_t *gpu_compute_unit);
 
+void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit);
+void gpu_compute_unit_fetch(struct gpu_compute_unit_t *compute_unit);
+void gpu_compute_unit_decode(struct gpu_compute_unit_t *compute_unit);
+void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit);
+void gpu_compute_unit_execute(struct gpu_compute_unit_t *compute_unit);
+void gpu_compute_unit_write(struct gpu_compute_unit_t *compute_unit);
 void gpu_compute_unit_next_cycle(struct gpu_compute_unit_t *compute_unit);
 
 
@@ -134,9 +141,11 @@ struct gpu_device_t
 	/* Compute units */
 	struct gpu_compute_unit_t **compute_units;
 
-	/* Double linked list of idle compute units */
+	/* Double linked lists of compute units */
 	struct gpu_compute_unit_t *idle_list_head, *idle_list_tail;
+	struct gpu_compute_unit_t *busy_list_head, *busy_list_tail;
 	int idle_count, idle_max;
+	int busy_count, busy_max;
 };
 
 #define FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
@@ -145,6 +154,7 @@ struct gpu_device_t
 struct gpu_device_t *gpu_device_create();
 void gpu_device_free(struct gpu_device_t *device);
 
+void gpu_device_schedule_work_groups(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange);
 void gpu_device_run(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange);
 
 

@@ -478,8 +478,10 @@ struct gpu_ndrange_t
 	int wavefronts_per_work_group;  /* = ceil(local_size / gpu_wavefront_size) */
 
 	/* Double linked lists of work-groups */
+	struct gpu_work_group_t *pending_list_head, *pending_list_tail;
 	struct gpu_work_group_t *running_list_head, *running_list_tail;
 	struct gpu_work_group_t *finished_list_head, *finished_list_tail;
+	int pending_count, pending_max;
 	int running_count, running_max;
 	int finished_count, finished_max;
 	
@@ -503,12 +505,21 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange);
  * GPU Work-Group
  */
 
+enum gpu_work_group_status_enum {
+	gpu_work_group_pending		= 0x0001,
+	gpu_work_group_running		= 0x0002,
+	gpu_work_group_finished		= 0x0004
+};
+
 struct gpu_work_group_t
 {
 	/* ID */
 	char name[30];
 	int id;  /* Group ID */
 	int id_3d[3];  /* 3-dimensional Group ID */
+
+	/* Status */
+	enum gpu_work_group_status_enum status;
 
 	/* NDRange it belongs to */
 	struct gpu_ndrange_t *ndrange;
@@ -528,6 +539,7 @@ struct gpu_work_group_t
 	struct gpu_wavefront_t **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
 
 	/* Double linked lists of work-groups */
+	struct gpu_work_group_t *pending_prev, *pending_next;
 	struct gpu_work_group_t *running_prev, *running_next;
 	struct gpu_work_group_t *finished_prev, *finished_next;
 
@@ -545,6 +557,10 @@ struct gpu_work_group_t
 
 struct gpu_work_group_t *gpu_work_group_create();
 void gpu_work_group_free(struct gpu_work_group_t *work_group);
+
+int gpu_work_group_get_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status);
+void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status);
+void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status);
 
 
 

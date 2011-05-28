@@ -242,7 +242,6 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 	for (gid = 0; gid < kernel->group_count; gid++) {
 		ndrange->work_groups[gid] = gpu_work_group_create();
 		work_group = ndrange->work_groups[gid];
-		DOUBLE_LINKED_LIST_INSERT_TAIL(ndrange, running, work_group);
 	}
 	
 	/* Array of wavefronts */
@@ -279,6 +278,7 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 				work_group->id_3d[1] = gidy;
 				work_group->id_3d[2] = gidz;
 				work_group->id = gid;
+				gpu_work_group_set_status(work_group, gpu_work_group_pending);
 
 				/* First, last, and number of work-items in work-group */
 				work_group->work_item_id_first = tid;
@@ -608,6 +608,52 @@ void gpu_work_group_free(struct gpu_work_group_t *work_group)
 {
 	mem_free(work_group->local_mem);
 	free(work_group);
+}
+
+
+int gpu_work_group_get_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status)
+{
+	return (work_group->status & status) > 0;
+}
+
+
+void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status)
+{
+	struct gpu_ndrange_t *ndrange = work_group->ndrange;
+
+	/* Get only the new bits */
+	status &= ~work_group->status;
+
+	/* Add work-group to lists */
+	if (status & gpu_work_group_pending)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(ndrange, pending, work_group);
+	if (status & gpu_work_group_running)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(ndrange, running, work_group);
+	if (status & gpu_work_group_finished)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(ndrange, finished, work_group);
+
+	/* Update it */
+	work_group->status |= status;
+}
+
+
+void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status)
+{
+	struct gpu_ndrange_t *ndrange = work_group->ndrange;
+
+	/* Get only the bits that are set */
+	status &= work_group->status;
+
+	/* Remove work-group from lists */
+	if (status & gpu_work_group_pending)
+		DOUBLE_LINKED_LIST_REMOVE(ndrange, pending, work_group);
+	if (status & gpu_work_group_running)
+		DOUBLE_LINKED_LIST_REMOVE(ndrange, running, work_group);
+	if (status & gpu_work_group_finished)
+		DOUBLE_LINKED_LIST_REMOVE(ndrange, finished, work_group);
+	
+	/* Update status */
+	work_group->status &= ~status;
 }
 
 
@@ -979,8 +1025,8 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		if (gpu_isa_work_group->finished_count == gpu_isa_work_group->wavefront_count) {
 			assert(DOUBLE_LINKED_LIST_MEMBER(ndrange, running, gpu_isa_work_group));
 			assert(!DOUBLE_LINKED_LIST_MEMBER(ndrange, finished, gpu_isa_work_group));
-			DOUBLE_LINKED_LIST_REMOVE(ndrange, running, gpu_isa_work_group);
-			DOUBLE_LINKED_LIST_INSERT_TAIL(ndrange, finished, gpu_isa_work_group);
+			gpu_work_group_clear_status(gpu_isa_work_group, gpu_work_group_running);
+			gpu_work_group_set_status(gpu_isa_work_group, gpu_work_group_finished);
 		}
 	}
 }

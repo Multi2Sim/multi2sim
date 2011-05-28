@@ -19,13 +19,16 @@
 
 #include <cpuarch.h>
 
+/*
+ * Global variables
+ */
 
 /* Main Processor Global Variable */
 struct processor_t *p;
 
+/* Configuration file and parameters */
+char *p_cpuconfig_file = "";
 
-/* processor parameters */
-int p_stage_time_stats = 0;
 int p_occupancy_stats = 0;
 uint32_t p_cores = 1;
 uint32_t p_threads = 1;
@@ -73,8 +76,6 @@ void p_reg_options()
 	opt_reg_uint32("-context_quantum", "quantum for a context before context switch",
 		&p_context_quantum);
 
-	opt_reg_bool("-stage_time_stats", "measure time for stages",
-		&p_stage_time_stats);
 	opt_reg_bool("-occupancy_stats", "include occupancy stats in the pipeline report",
 		&p_occupancy_stats);
 	
@@ -403,22 +404,6 @@ void p_print_stats(FILE *f)
 	fprintf(f, "sim.memory_max  %lu  # Maximum physical memory used by benchmarks\n",
 		mem_max_mapped_space);
 	
-	/* Stage time stats */
-	if (p_stage_time_stats && sim_cycle) {
-		fprintf(f, "stage_time.fetch  %.3f  # Time for stage in us/cycle\n",
-			(double) stage_time_fetch / sim_cycle);
-		fprintf(f, "stage_time.dispatch  %.3f\n",
-			(double) stage_time_dispatch / sim_cycle);
-		fprintf(f, "stage_time.issue  %.3f\n",
-			(double) stage_time_issue / sim_cycle);
-		fprintf(f, "stage_time.writeback  %.3f\n",
-			(double) stage_time_writeback / sim_cycle);
-		fprintf(f, "stage_time.commit  %.3f\n",
-			(double) stage_time_commit / sim_cycle);
-		fprintf(f, "stage_time.rest  %.3f\n",
-			(double) stage_time_rest / sim_cycle);
-	}
-
 	/* Report */
 	p_dump_report();
 }
@@ -603,21 +588,6 @@ void p_update_occupancy_stats()
 }
 
 
-uint64_t stage_time_fetch;
-uint64_t stage_time_decode;
-uint64_t stage_time_dispatch;
-uint64_t stage_time_issue;
-uint64_t stage_time_writeback;
-uint64_t stage_time_commit;
-uint64_t stage_time_rest;
-static uint64_t stage_time_start;
-
-#define STAGE(name) \
-	p_##name(); \
-	if (p_stage_time_stats) { \
-		uint64_t end = ke_timer(); \
-		stage_time_##name += end - stage_time_start; \
-		stage_time_start = end; }
 void p_stages()
 {
 	/* Static scheduler called after any context changed status other than 'sepcmode' */
@@ -635,27 +605,18 @@ void p_stages()
 		ke->context_reschedule = 0;
 	}
 
-	/* Time ellapsed since last call to p_stages */
-	if (p_stage_time_stats) {
-		uint64_t end = ke_timer();
-		if (stage_time_start)
-			stage_time_rest += end - stage_time_start;
-		stage_time_start = end;
-	}
-
 	/* Stages */
-	STAGE(commit);
-	STAGE(writeback);
-	STAGE(issue);
-	STAGE(dispatch);
-	STAGE(decode);
-	STAGE(fetch);
+	p_commit();
+	p_writeback();
+	p_issue();
+	p_dispatch();
+	p_decode();
+	p_fetch();
 
 	/* Update stats for structures occupancy */
 	if (p_occupancy_stats)
 		p_update_occupancy_stats();
 }
-#undef STAGE
 
 
 /* Fast forward simulation */
