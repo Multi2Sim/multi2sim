@@ -69,7 +69,9 @@ ARFLAGS = cru
 libgpuarch_a_AR = $(AR) $(ARFLAGS)
 libgpuarch_a_LIBADD =
 am_libgpuarch_a_OBJECTS = device.$(OBJEXT) gpuarch.$(OBJEXT) \
-	gpupipeline.$(OBJEXT)
+	stg_schedule.$(OBJEXT) stg_fetch.$(OBJEXT) \
+	stg_decode.$(OBJEXT) stg_read.$(OBJEXT) stg_execute.$(OBJEXT) \
+	stg_write.$(OBJEXT)
 libgpuarch_a_OBJECTS = $(am_libgpuarch_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -180,7 +182,13 @@ libgpuarch_a_SOURCES = \
 	device.c \
 	gpuarch.h \
 	gpuarch.c \
-	gpupipeline.c
+	\
+	stg_schedule.c \
+	stg_fetch.c \
+	stg_decode.c \
+	stg_read.c \
+	stg_execute.c \
+	stg_write.c
 
 AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE
 INCLUDES = -I$(top_srcdir)/src/libstruct \
@@ -269,7 +277,12 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/device.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuarch.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpupipeline.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_decode.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_execute.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_fetch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_read.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_schedule.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_write.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

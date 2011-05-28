@@ -921,3 +921,7 @@
 
 2010-05-26
 	* src/libgpuarch: schedule stage, instruction emulation
+
+2010-05-28
+	* src/libcpuarch/processor.c: stage time measures removed. A profiler tool like
+		'gprof' should be used for this purpose.
