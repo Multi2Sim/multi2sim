@@ -29,7 +29,7 @@
 struct processor_t *p;
 
 /* Configuration file and parameters */
-char *cpuconfig_file_name = "";
+char *p_config_file_name = "";
 
 int p_occupancy_stats = 0;
 uint32_t p_cores = 1;
@@ -76,7 +76,7 @@ void p_reg_options()
 	static char *p_commit_kind_map[] = { "shared", "timeslice" };
 
 	opt_reg_string("-cpuconfig", "Configuration file for the CPU model",
-		&cpuconfig_file_name);
+		&p_config_file_name);
 	
 	opt_reg_uint32("-cores", "number of processor cores", &p_cores);
 	opt_reg_uint32("-threads", "number of threads per core", &p_threads);
@@ -127,6 +127,32 @@ void p_reg_options()
 	iq_reg_options();
 	lsq_reg_options();
 	fu_reg_options();
+}
+
+
+/* Check CPU configuration file */
+void p_config_check(void)
+{
+	struct config_t *cfg;
+	int err;
+	char *section;
+
+	/* Check if user specified a CPU configuration file */
+	if (!p_config_file_name[0])
+		return;
+
+	/* Open file */
+	cfg = config_create(p_config_file_name);
+	err = config_load(cfg);
+	if (!err)
+		fatal("%s: cannot load CPU configuration file", p_config_file_name);
+	
+	/* General configuration */
+	section = "General";
+	config_section_allow(cfg, section);
+	
+	/* Close file */
+	config_free(cfg);
 }
 
 
@@ -440,6 +466,9 @@ void p_core_init(int core)
 void p_init()
 {
 	int core;
+
+	/* Analyze CPU configuration file */
+	p_config_check();
 	
 	/* Create processor structure and allocate cores/threads */
 	p_cpus = p_cores * p_threads;
