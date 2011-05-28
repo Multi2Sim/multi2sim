@@ -3,7 +3,13 @@ libgpuarch_a_SOURCES = \
 	device.c \
 	gpuarch.h \
 	gpuarch.c \
-	gpupipeline.c
+	\
+	stg_schedule.c \
+	stg_fetch.c \
+	stg_decode.c \
+	stg_read.c \
+	stg_execute.c \
+	stg_write.c
 
 AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE
 
