@@ -484,6 +484,42 @@ double config_read_double(struct config_t *cfg, char *section, char *var, double
 }
 
 
+static void enumerate_map(char **map, int map_count)
+{
+	int i;
+	char *comma = "";
+
+	fprintf(stderr, "Possible allowed values are { ");
+	for (i = 0; i < map_count; i++) {
+		fprintf(stderr, "%s%s", comma, map[i]);
+		comma = ", ";
+	}
+	fprintf(stderr, " }\n");
+}
+
+
+int config_read_enum(struct config_t *cfg, char *section, char *var, int def, char **map, int map_count)
+{
+	char *result;
+	int i;
+
+	result = config_read_string(cfg, section, var, NULL);
+	if (!result)
+		return def;
+	
+	/* Translate */
+	for (i = 0; i < map_count; i++)
+		if (!strcasecmp(map[i], result))
+			return i;
+	
+	/* No match found with map */
+	fprintf(stderr, "%s: section '[ %s ]': variable '%s': invalid value ('%s')\n",
+		cfg->file_name, section, var, result);
+	enumerate_map(map, map_count);
+	exit(1);
+}
+
+
 void *config_read_ptr(struct config_t *cfg, char *section, char *var, void *def)
 {
 	char *result;

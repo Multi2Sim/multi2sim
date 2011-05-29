@@ -20,63 +20,17 @@
 #include <cpuarch.h>
 
 
-/* Functional Units */
-
-struct fu_res_t {
-	int count;
-	int oplat;
-	int issuelat;
-	char *name;
-};
+/* Global variables */
 
 
-static struct fu_res_t fu_res_pool[fu_count] = {
-	{ 0, 0, 0, "" },
-
-	{ 4, 2, 1, "IntAdd" },
-	{ 4, 2, 1, "IntSub" },
-	{ 1, 3, 1, "IntMult" },
-	{ 1, 20, 19, "IntDiv" },
-	{ 4, 2, 1, "EffAddr" },
-	{ 4, 1, 1, "Logical" },
-
-	{ 2, 2, 2, "FpSimple" },
-	{ 2, 5, 5, "FpAdd" },
-	{ 2, 5, 5, "FpComp" },
-	{ 1, 10, 10, "FpMult" },
-	{ 1, 20, 20, "FpDiv" },
-	{ 1, 40, 40, "FpComplex" }
-};
+struct fu_res_t fu_res_pool[fu_count];
 
 
-void fu_reg_options()
-{
-	opt_reg_uint32_list("-fu:intadd", "Integer Adder (count, oplat, issuelat)",
-		(uint32_t *) &fu_res_pool[fu_intadd], 3, NULL);
-	opt_reg_uint32_list("-fu:intsub", "Integer Subtracter",
-		(uint32_t *) &fu_res_pool[fu_intsub], 3, NULL);
-	opt_reg_uint32_list("-fu:intmult", "Integer Multiplier",
-		(uint32_t *) &fu_res_pool[fu_intmult], 3, NULL);
-	opt_reg_uint32_list("-fu:intdiv", "Integer Divider",
-		(uint32_t *) &fu_res_pool[fu_intdiv], 3, NULL);
-	opt_reg_uint32_list("-fu:effaddr", "Effective Address",
-		(uint32_t *) &fu_res_pool[fu_effaddr], 3, NULL);
-	opt_reg_uint32_list("-fu:logical", "Logical Operations",
-		(uint32_t *) &fu_res_pool[fu_logical], 3, NULL);
-	
-	opt_reg_uint32_list("-fu:fpsimple", "Floating-point simple operator",
-		(uint32_t *) &fu_res_pool[fu_fpsimple], 3, NULL);
-	opt_reg_uint32_list("-fu:fpadd", "Floating-pointer adder",
-		(uint32_t *) &fu_res_pool[fu_fpadd], 3, NULL);
-	opt_reg_uint32_list("-fu:fpcomp", "Floating-point comparator",
-		(uint32_t *) &fu_res_pool[fu_fpcomp], 3, NULL);
-	opt_reg_uint32_list("-fu:fpmult", "Floating-point multiplier",
-		(uint32_t *) &fu_res_pool[fu_fpmult], 3, NULL);
-	opt_reg_uint32_list("-fu:fpdiv", "Floating-point divider",
-		(uint32_t *) &fu_res_pool[fu_fpdiv], 3, NULL);
-	opt_reg_uint32_list("-fu:fpcomplex", "Floating-point complex operator",
-		(uint32_t *) &fu_res_pool[fu_fpcomplex], 3, NULL);
-}
+
+
+/*
+ * Public functions
+ */
 
 
 void fu_init()

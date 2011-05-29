@@ -30,32 +30,39 @@ struct processor_t *p;
 
 /* Configuration file and parameters */
 char *p_config_file_name = "";
+char *p_report_file_name = "";
 
 int p_occupancy_stats = 0;
-uint32_t p_cores = 1;
-uint32_t p_threads = 1;
-uint32_t p_cpus = 1;
-uint32_t p_context_quantum = 100000;
-int p_context_switch = 1;
-uint32_t p_thread_quantum = 1000;
-uint32_t p_thread_switch_penalty = 0;
-char *p_report_file = "";
 
-enum p_recover_kind_enum p_recover_kind = p_recover_kind_writeback;
-uint32_t p_recover_penalty = 0;
+int p_cores;
+int p_threads;
 
-enum p_fetch_kind_enum p_fetch_kind = p_fetch_kind_timeslice;
+int p_context_quantum;
+int p_context_switch;
 
-uint32_t p_decode_width = 4;
+int p_thread_quantum;
+int p_thread_switch_penalty;
 
-enum p_dispatch_kind_enum p_dispatch_kind = p_dispatch_kind_timeslice;
-uint32_t p_dispatch_width = 4;
+char *p_recover_kind_map[] = { "Writeback", "Commit" };
+enum p_recover_kind_enum p_recover_kind;
+int p_recover_penalty;
 
-enum p_issue_kind_enum p_issue_kind = p_issue_kind_timeslice;
-uint32_t p_issue_width = 4;
+char *p_fetch_kind_map[] = { "Shared", "TimeSlice", "SwitchOnEvent" };
+enum p_fetch_kind_enum p_fetch_kind;
 
-enum p_commit_kind_enum p_commit_kind = p_commit_kind_shared;
-uint32_t p_commit_width = 4;
+int p_decode_width;
+
+char *p_dispatch_kind_map[] = { "Shared", "TimeSlice" };
+enum p_dispatch_kind_enum p_dispatch_kind;
+int p_dispatch_width;
+
+char *p_issue_kind_map[] = { "Shared", "TimeSlice" };
+enum p_issue_kind_enum p_issue_kind;
+int p_issue_width;
+
+char *p_commit_kind_map[] = { "Shared", "TimeSlice" };
+enum p_commit_kind_enum p_commit_kind;
+int p_commit_width;
 
 
 
@@ -69,64 +76,8 @@ uint32_t p_commit_width = 4;
 /* Options */
 void p_reg_options()
 {
-	static char *p_recover_kind_map[] = { "writeback", "commit" };
-	static char *p_fetch_kind_map[] = { "shared", "timeslice", "switchonevent" };
-	static char *p_dispatch_kind_map[] = { "shared", "timeslice" };
-	static char *p_issue_kind_map[] = { "shared", "timeslice" };
-	static char *p_commit_kind_map[] = { "shared", "timeslice" };
-
 	opt_reg_string("-cpuconfig", "Configuration file for the CPU model",
 		&p_config_file_name);
-	
-	opt_reg_uint32("-cores", "number of processor cores", &p_cores);
-	opt_reg_uint32("-threads", "number of threads per core", &p_threads);
-
-	opt_reg_bool("-context_switch", "allow context switches and scheduling",
-		&p_context_switch);
-	opt_reg_uint32("-context_quantum", "quantum for a context before context switch",
-		&p_context_quantum);
-
-	opt_reg_bool("-occupancy_stats", "include occupancy stats in the pipeline report",
-		&p_occupancy_stats);
-	
-	opt_reg_enum("-recover_kind", "when to recover {writeback|commit}",
-		(int *) &p_recover_kind, p_recover_kind_map, 2);
-	opt_reg_uint32("-recover_penalty", "cycles to stall fetch after recover",
-		&p_recover_penalty);
-	
-	opt_reg_uint32("-thread_quantum", "thread quantum in cycles for switch-on-event fetch",
-		&p_thread_quantum);
-	opt_reg_uint32("-thread_switch_penalty", "for switch-on-event fetch",
-		&p_thread_switch_penalty);
-	opt_reg_enum("-fetch_kind", "fetch policy {shared|timeslice|switchonevent}",
-		(int *) &p_fetch_kind, p_fetch_kind_map, 3);
-	
-	opt_reg_uint32("-decode_width", "decode width",
-		&p_decode_width);
-	
-	opt_reg_enum("-dispatch_kind", "dispatch stage sharing {shared|timeslice}",
-		(int *) &p_dispatch_kind, p_dispatch_kind_map, 2);
-	opt_reg_uint32("-dispatch_width", "dispatch width (for shared/timeslice dispatch)",
-		&p_dispatch_width);
-	
-	opt_reg_enum("-issue_kind", "issue stage sharing {shared|timeslice}",
-		(int *) &p_issue_kind, p_issue_kind_map, 2);
-	opt_reg_uint32("-issue_width", "issue width (for shared/timeslice issue)", &p_issue_width);
-	
-	opt_reg_enum("-commit_kind", "commit stage sharing {shared|timeslice}",
-		(int *) &p_commit_kind, p_commit_kind_map, 2);
-	opt_reg_uint32("-commit_width", "commit depth (in instr/thread/cycle)", &p_commit_width);
-
-	/* other options */
-	bpred_reg_options();
-	tcache_reg_options();
-	fetchq_reg_options();
-	uopq_reg_options();
-	rob_reg_options();
-	rf_reg_options();
-	iq_reg_options();
-	lsq_reg_options();
-	fu_reg_options();
 }
 
 
@@ -137,20 +88,148 @@ void p_config_check(void)
 	int err;
 	char *section;
 
-	/* Check if user specified a CPU configuration file */
-	if (!p_config_file_name[0])
-		return;
-
 	/* Open file */
 	cfg = config_create(p_config_file_name);
 	err = config_load(cfg);
-	if (!err)
+	if (!err && p_config_file_name[0])
 		fatal("%s: cannot load CPU configuration file", p_config_file_name);
+
 	
 	/* General configuration */
+
 	section = "General";
-	config_section_allow(cfg, section);
+
+	p_cores = config_read_int(cfg, section, "Cores", 1);
+	p_threads = config_read_int(cfg, section, "Threads", 1);
+
+	p_context_switch = config_read_bool(cfg, section, "ContextSwitch", 1);
+	p_context_quantum = config_read_int(cfg, section, "ContextQuantum", 100000);
+
+	p_thread_quantum = config_read_int(cfg, section, "ThreadQuantum", 1000);
+	p_thread_switch_penalty = config_read_int(cfg, section, "ThreadSwitchPenalty", 0);
+
+	p_recover_kind = config_read_enum(cfg, section, "RecoverKind", p_recover_kind_writeback, p_recover_kind_map, 2);
+	p_recover_penalty = config_read_int(cfg, section, "RecoverPenalty", 0);
+
+
+	/* Section '[ Pipeline ]' */
+
+	section = "Pipeline";
+
+	p_fetch_kind = config_read_enum(cfg, section, "FetchKind", p_fetch_kind_timeslice, p_fetch_kind_map, 3);
+
+	p_decode_width = config_read_int(cfg, section, "DecodeWidth", 4);
+
+	p_dispatch_kind = config_read_enum(cfg, section, "DispatchKind", p_dispatch_kind_timeslice, p_dispatch_kind_map, 2);
+	p_dispatch_width = config_read_int(cfg, section, "DispatchWidth", 4);
+
+	p_issue_kind = config_read_enum(cfg, section, "IssueKind", p_issue_kind_timeslice, p_issue_kind_map, 2);
+	p_issue_width = config_read_int(cfg, section, "IssueWidth", 4);
+
+	p_commit_kind = config_read_enum(cfg, section, "CommitKind", p_commit_kind_shared, p_commit_kind_map, 2);
+	p_commit_width = config_read_int(cfg, section, "CommitWidth", 4);
+
+	p_occupancy_stats = config_read_bool(cfg, section, "OccupancyStats", 0);
+
+
+	/* Section '[ Queues ]' */
+	section = "Queues";
+
+	fetchq_size = config_read_int(cfg, section, "FetchQueueSize", 64);
+
+	uopq_size = config_read_int(cfg, section, "UopQueueSize", 32);
+
+	rob_kind = config_read_enum(cfg, section, "RobKind", rob_kind_private, rob_kind_map, 2);
+	rob_size = config_read_int(cfg, section, "RobSize", 64);
+
+	iq_kind = config_read_enum(cfg, section, "IqKind", iq_kind_private, iq_kind_map, 2);
+	iq_size = config_read_int(cfg, section, "IqSize", 40);
+
+	lsq_kind = config_read_enum(cfg, section, "LsqKind", lsq_kind_private, lsq_kind_map, 2);
+	lsq_size = config_read_int(cfg, section, "LsqSize", 20);
+
 	
+	/* Section '[ RegisterFile ]' */
+	section = "RegisterFile";
+	rf_kind = config_read_enum(cfg, section, "Kind", rf_kind_private, rf_kind_map, 2);
+	rf_int_size = config_read_int(cfg, section, "IntSize", 80);
+	rf_fp_size = config_read_int(cfg, section, "FpSize", 40);
+
+
+	/* Section '[ TraceCache ]' */
+	section = "TraceCache";
+	tcache_present = config_read_bool(cfg, section, "Present", 0);
+	tcache_sets = config_read_int(cfg, section, "Sets", 64);
+	tcache_assoc = config_read_int(cfg, section, "Assoc", 4);
+	tcache_trace_size = config_read_int(cfg, section, "TraceSize", 16);
+	tcache_branch_max = config_read_int(cfg, section, "BranchMax", 3);
+	tcache_queue_size = config_read_int(cfg, section, "QueueSize", 32);
+
+	
+	/* Functional Units */
+	section = "FunctionalUnits";
+
+	fu_res_pool[fu_intadd].count = config_read_int(cfg, section, "IntAdd.Count", 4);
+	fu_res_pool[fu_intadd].oplat = config_read_int(cfg, section, "IntAdd.OpLat", 2);
+	fu_res_pool[fu_intadd].issuelat = config_read_int(cfg, section, "IntAdd.IssueLat", 1);
+
+	fu_res_pool[fu_intsub].count = config_read_int(cfg, section, "IntSub.Count", 4);
+	fu_res_pool[fu_intsub].oplat = config_read_int(cfg, section, "IntSub.OpLat", 2);
+	fu_res_pool[fu_intsub].issuelat = config_read_int(cfg, section, "IntSub.IssueLat", 1);
+
+	fu_res_pool[fu_intmult].count = config_read_int(cfg, section, "IntMult.Count", 1);
+	fu_res_pool[fu_intmult].oplat = config_read_int(cfg, section, "IntMult.OpLat", 3);
+	fu_res_pool[fu_intmult].issuelat = config_read_int(cfg, section, "IntMult.IssueLat", 3);
+
+	fu_res_pool[fu_intdiv].count = config_read_int(cfg, section, "IntDiv.Count", 1);
+	fu_res_pool[fu_intdiv].oplat = config_read_int(cfg, section, "IntDiv.OpLat", 20);
+	fu_res_pool[fu_intdiv].issuelat = config_read_int(cfg, section, "IntDiv.IssueLat", 20);
+
+	fu_res_pool[fu_effaddr].count = config_read_int(cfg, section, "EffAddr.Count", 4);
+	fu_res_pool[fu_effaddr].oplat = config_read_int(cfg, section, "EffAddr.OpLat", 2);
+	fu_res_pool[fu_effaddr].issuelat = config_read_int(cfg, section, "EffAddr.IssueLat", 1);
+
+	fu_res_pool[fu_logical].count = config_read_int(cfg, section, "Logical.Count", 4);
+	fu_res_pool[fu_logical].oplat = config_read_int(cfg, section, "Logical.OpLat", 1);
+	fu_res_pool[fu_logical].issuelat = config_read_int(cfg, section, "Logical.IssueLat", 1);
+
+	fu_res_pool[fu_fpsimple].count = config_read_int(cfg, section, "FpSimple.Count", 2);
+	fu_res_pool[fu_fpsimple].oplat = config_read_int(cfg, section, "FpSimple.OpLat", 2);
+	fu_res_pool[fu_fpsimple].issuelat = config_read_int(cfg, section, "FpSimple.IssueLat", 2);
+
+	fu_res_pool[fu_fpadd].count = config_read_int(cfg, section, "FpAdd.Count", 2);
+	fu_res_pool[fu_fpadd].oplat = config_read_int(cfg, section, "FpAdd.OpLat", 5);
+	fu_res_pool[fu_fpadd].issuelat = config_read_int(cfg, section, "FpAdd.IssueLat", 5);
+
+	fu_res_pool[fu_fpcomp].count = config_read_int(cfg, section, "FpComp.Count", 2);
+	fu_res_pool[fu_fpcomp].oplat = config_read_int(cfg, section, "FpComp.OpLat", 5);
+	fu_res_pool[fu_fpcomp].issuelat = config_read_int(cfg, section, "FpComp.IssueLat", 5);
+
+	fu_res_pool[fu_fpmult].count = config_read_int(cfg, section, "FpMult.Count", 1);
+	fu_res_pool[fu_fpmult].oplat = config_read_int(cfg, section, "FpMult.OpLat", 10);
+	fu_res_pool[fu_fpmult].issuelat = config_read_int(cfg, section, "FpMult.IssueLat", 10);
+
+	fu_res_pool[fu_fpdiv].count = config_read_int(cfg, section, "FpDiv.Count", 1);
+	fu_res_pool[fu_fpdiv].oplat = config_read_int(cfg, section, "FpDiv.OpLat", 20);
+	fu_res_pool[fu_fpdiv].issuelat = config_read_int(cfg, section, "FpDiv.IssueLat", 20);
+
+	fu_res_pool[fu_fpcomplex].count = config_read_int(cfg, section, "FpComplex.Count", 1);
+	fu_res_pool[fu_fpcomplex].oplat = config_read_int(cfg, section, "FpComplex.OpLat", 40);
+	fu_res_pool[fu_fpcomplex].issuelat = config_read_int(cfg, section, "FpComplex.IssueLat", 40);
+
+
+	/* Branch Predictor */
+	section = "BranchPredictor";
+	bpred_kind = config_read_enum(cfg, section, "Kind", bpred_kind_twolevel, bpred_kind_map, 6);
+	bpred_btb_sets = config_read_int(cfg, section, "BTB.Sets", 256);
+	bpred_btb_assoc = config_read_int(cfg, section, "BTB.Assoc", 4);
+	bpred_bimod_size = config_read_int(cfg, section, "Bimod.Size", 1024);
+	bpred_choice_size = config_read_int(cfg, section, "Choice.Size", 1024);
+	bpred_ras_size = config_read_int(cfg, section, "RAS.Size", 32);
+	bpred_twolevel_l1size = config_read_int(cfg, section, "TwoLevel.L1Size", 1);
+	bpred_twolevel_l2size = config_read_int(cfg, section, "TwoLevel.L2Size", 1024);
+	bpred_twolevel_hist_size = config_read_int(cfg, section, "TwoLevel.HistorySize", 8);
+
 	/* Close file */
 	config_free(cfg);
 }
@@ -231,7 +310,7 @@ void p_dump_report()
 	uint64_t now = ke_timer();
 
 	/* Open file */
-	f = open_write(p_report_file);
+	f = open_write(p_report_file_name);
 	if (!f)
 		return;
 	
@@ -469,9 +548,11 @@ void p_init()
 
 	/* Analyze CPU configuration file */
 	p_config_check();
+
+	/* Initialize cache system */
+	cache_system_init(p_cores, p_threads);
 	
 	/* Create processor structure and allocate cores/threads */
-	p_cpus = p_cores * p_threads;
 	p = calloc(1, sizeof(struct processor_t));
 	p->core = calloc(p_cores, sizeof(struct processor_core_t));
 	FOREACH_CORE
@@ -509,6 +590,7 @@ void p_done()
 	tcache_done();
 	rf_done();
 	fu_done();
+	cache_system_done();
 
 	/* Free processor */
 	FOREACH_CORE

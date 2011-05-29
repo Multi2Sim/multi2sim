@@ -22,9 +22,10 @@
 
 /* Global variables */
 
-uint32_t rf_int_size = 80;  /* Per-thread integer register file size */
-uint32_t rf_fp_size = 40;  /* Per-thread floating-point register file size */
+char *rf_kind_map[] = { "Shared", "Private" };
 enum rf_kind_enum rf_kind = rf_kind_private;  /* Sharing policy for register file */
+int rf_int_size = 80;  /* Per-thread integer register file size */
+int rf_fp_size = 40;  /* Per-thread floating-point register file size */
 
 
 
@@ -75,18 +76,6 @@ static int rf_fp_reclaim(int core, int thread)
 
 
 /* Public functions */
-
-void rf_reg_options(void)
-{
-	static char *rf_kind_map[] = { "shared", "private" };
-	opt_reg_enum("-rf_kind", "physical register file {shared|private}",
-		(int *) &rf_kind, rf_kind_map, 2);
-	opt_reg_uint32("-rf_int_size", "integer physical register file size per thread",
-		&rf_int_size);
-	opt_reg_uint32("-rf_fp_size", "floating-point physical register file size per thread",
-		&rf_fp_size);
-}
-
 
 static void rf_init_thread(int core, int thread)
 {

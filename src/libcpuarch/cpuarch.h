@@ -48,23 +48,27 @@ extern int error_debug_category;
 
 /* Processor parameters */
 
-extern char *p_report_file;
-extern int p_stage_time_stats;
-extern uint32_t p_cores;
-extern uint32_t p_threads;
-extern uint32_t p_cpus;
-extern uint32_t p_context_quantum;
-extern uint32_t p_thread_quantum;
-extern uint32_t p_thread_switch_penalty;
+extern char *p_report_file_name;
+
+extern int p_cores;
+extern int p_threads;
+
+extern int p_context_quantum;
+extern int p_context_switch;
+
+extern int p_thread_quantum;
+extern int p_thread_switch_penalty;
 
 /* Recover_kind */
+extern char *p_recover_kind_map[];
 extern enum p_recover_kind_enum {
 	p_recover_kind_writeback = 0,
 	p_recover_kind_commit
 } p_recover_kind;
-extern uint32_t p_recover_penalty;
+extern int p_recover_penalty;
 
 /* Fetch stage */
+extern char *p_fetch_kind_map[];
 extern enum p_fetch_kind_enum {
 	p_fetch_kind_shared = 0,
 	p_fetch_kind_timeslice,
@@ -72,28 +76,31 @@ extern enum p_fetch_kind_enum {
 } p_fetch_kind;
 
 /* Decode stage */
-extern uint32_t p_decode_width;
+extern int p_decode_width;
 
 /* Dispatch stage */
+extern char *p_dispatch_kind_map[];
 extern enum p_dispatch_kind_enum {
 	p_dispatch_kind_shared = 0,
 	p_dispatch_kind_timeslice,
 } p_dispatch_kind;
-extern uint32_t p_dispatch_width;
+extern int p_dispatch_width;
 
 /* Issue stage */
+extern char *p_issue_kind_map[];
 extern enum p_issue_kind_enum {
 	p_issue_kind_shared = 0,
 	p_issue_kind_timeslice,
 } p_issue_kind;
-extern uint32_t p_issue_width;
+extern int p_issue_width;
 
-/* Retire stage */
+/* Commit stage */
+extern char *p_commit_kind_map[];
 extern enum p_commit_kind_enum {
 	p_commit_kind_shared = 0,
 	p_commit_kind_timeslice
 } p_commit_kind;
-extern uint32_t p_commit_width;
+extern int p_commit_width;
 
 
 
@@ -345,6 +352,15 @@ struct fu_t {
 	uint64_t waiting_time[fu_count];
 };
 
+struct fu_res_t {
+	int count;
+	int oplat;
+	int issuelat;
+	char *name;
+};
+
+extern struct fu_res_t fu_res_pool[fu_count];
+
 void fu_reg_options(void);
 void fu_init(void);
 void fu_done(void);
@@ -357,9 +373,8 @@ void fu_release(int core);
 
 /* Fetch Queue */
 
-extern uint32_t fetchq_size;
+extern int fetchq_size;
 
-void fetchq_reg_options(void);
 void fetchq_init(void);
 void fetchq_done(void);
 
@@ -371,9 +386,8 @@ struct uop_t *fetchq_remove(int core, int thread, int index);
 
 /* Uop Queue */
 
-extern uint32_t uopq_size;
+extern int uopq_size;
 
-void uopq_reg_options(void);
 void uopq_init(void);
 void uopq_done(void);
 
@@ -384,13 +398,13 @@ void uopq_recover(int core, int thread);
 
 /* Reorder Buffer */
 
-extern uint32_t rob_size;
+extern char *rob_kind_map[];
 extern enum rob_kind_enum {
 	rob_kind_private = 0,
 	rob_kind_shared
 } rob_kind;
+extern int rob_size;
 
-void rob_reg_options(void);
 void rob_init(void);
 void rob_done(void);
 void rob_dump(int core, FILE *f);
@@ -409,14 +423,13 @@ struct uop_t *rob_get(int core, int thread, int index);
 
 /* Instruction Queue */
 
-extern uint32_t iq_size;
+extern char *iq_kind_map[];
 extern enum iq_kind_enum {
 	iq_kind_shared = 0,
 	iq_kind_private
 } iq_kind;
+extern int iq_size;
 
-
-void iq_reg_options(void);
 void iq_init(void);
 void iq_done(void);
 
@@ -430,14 +443,13 @@ void iq_recover(int core, int thread);
 
 /* Load/Store Queue */
 
-extern uint32_t lsq_size;
-
+extern char *lsq_kind_map[];
 extern enum lsq_kind_enum {
 	lsq_kind_shared = 0,
 	lsq_kind_private
 } lsq_kind;
+extern int lsq_size;
 
-void lsq_reg_options(void);
 void lsq_init(void);
 void lsq_done(void);
 
@@ -469,12 +481,13 @@ void eventq_recover(int core, int thread);
 #define RF_MIN_INT_SIZE  (DEP_INT_COUNT + ODEP_COUNT)
 #define RF_MIN_FP_SIZE  (DEP_FP_COUNT + ODEP_COUNT)
 
-extern uint32_t rf_int_size;
-extern uint32_t rf_fp_size;
+extern char *rf_kind_map[];
 extern enum rf_kind_enum {
 	rf_kind_shared = 0,
 	rf_kind_private
 } rf_kind;
+extern int rf_int_size;
+extern int rf_fp_size;
 
 struct phreg_t {
 	int pending;  /* not completed (bit) */
@@ -499,7 +512,6 @@ struct rf_t {
 	int fp_free_phreg_count;
 };
 
-void rf_reg_options(void);
 void rf_init(void);
 void rf_done(void);
 
@@ -521,9 +533,28 @@ void rf_check_integrity(int core, int thread);
 
 /* Branch Predictor */
 
+extern char *bpred_kind_map[];
+extern enum bpred_kind_enum {
+	bpred_kind_perfect = 0,
+	bpred_kind_taken,
+	bpred_kind_nottaken,
+	bpred_kind_bimod,
+	bpred_kind_twolevel,
+	bpred_kind_comb
+} bpred_kind;
+
+extern int bpred_btb_sets;
+extern int bpred_btb_assoc;
+extern int bpred_ras_size;
+extern int bpred_bimod_size;
+extern int bpred_choice_size;
+
+extern int bpred_twolevel_l1size;
+extern int bpred_twolevel_l2size;
+extern int bpred_twolevel_hist_size;
+
 struct bpred_t;
 
-void bpred_reg_options(void);
 void bpred_init(void);
 void bpred_done(void);
 
@@ -577,16 +608,17 @@ struct tcache_t {
 
 
 extern int tcache_present;
-extern uint32_t tcache_trace_size;
-extern uint32_t tcache_branch_max;
-extern uint32_t tcache_queue_size;
+extern int tcache_sets;
+extern int tcache_assoc;
+extern int tcache_trace_size;
+extern int tcache_branch_max;
+extern int tcache_queue_size;
 
 struct tcache_t;
 
-void tcache_reg_options(void);
-void tcache_dump_report(struct tcache_t *tcache, FILE *f);
 void tcache_init(void);
 void tcache_done(void);
+void tcache_dump_report(struct tcache_t *tcache, FILE *f);
 
 struct tcache_t *tcache_create(void);
 void tcache_free(struct tcache_t *tcache);
@@ -622,14 +654,6 @@ void ptrace_new_cycle(void);
 
 
 /* Multi-Core Multi-Thread Processor */
-
-/* Time for stages */
-extern uint64_t stage_time_fetch;
-extern uint64_t stage_time_dispatch;
-extern uint64_t stage_time_issue;
-extern uint64_t stage_time_writeback;
-extern uint64_t stage_time_commit;
-extern uint64_t stage_time_rest;
 
 /* Fast access macros */
 #define CORE			(p->core[core])

@@ -75,14 +75,6 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 	ret = uop_decode(fetchq);
 	newcount = list_count(fetchq);
 
-	/* Check that at least one instruction was inserted */
-	/*if (isa_inst.opcode && count == newcount && !ctx_get_status(ctx, ctx_specmode)) {
-		fprintf(stderr, "isa_inst: ");
-		x86_inst_dump(&isa_inst, stderr);
-		fprintf(stderr, "\n");
-		panic("no uop added to fetch queue");
-	}*/
-
 	/* Update inserted uop fields */
 	for (i = count; i < newcount; i++) {
 		uop = list_get(fetchq, i);
@@ -201,7 +193,7 @@ static void fetch_thread(int core, int thread)
 	/* Try to fetch from trace cache first */
 	if (fetch_thread_tcache(core, thread))
 		return;
-
+	
 	/* If new block to fetch is not the same as the previously fetched (and stored)
 	 * block, access the instruction cache. */
 	block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
