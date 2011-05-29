@@ -184,7 +184,7 @@ int iq_can_insert(struct uop_t *uop)
 	int thread = uop->thread;
 	int count, size;
 
-	size = iq_kind == iq_kind_private ? iq_size : iq_size * p_threads;
+	size = iq_kind == iq_kind_private ? iq_size : iq_size * cpu_threads;
 	count = iq_kind == iq_kind_private ? THREAD.iq_count : CORE.iq_count;
 	return count < size;
 }
@@ -304,7 +304,7 @@ int lsq_can_insert(struct uop_t *uop)
 	int thread = uop->thread;
 	int count, size;
 
-	size = lsq_kind == lsq_kind_private ? lsq_size : lsq_size * p_threads;
+	size = lsq_kind == lsq_kind_private ? lsq_size : lsq_size * cpu_threads;
 	count = lsq_kind == lsq_kind_private ? THREAD.lsq_count : CORE.lsq_count;
 	return count < size;
 }

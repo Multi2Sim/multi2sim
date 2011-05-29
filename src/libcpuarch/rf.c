@@ -122,8 +122,8 @@ void rf_init(void)
 		rf_int_local_size = rf_int_size;
 		rf_fp_local_size = rf_fp_size;
 	} else {
-		rf_int_local_size = rf_int_size * p_threads;
-		rf_fp_local_size = rf_fp_size * p_threads;
+		rf_int_local_size = rf_int_size * cpu_threads;
+		rf_fp_local_size = rf_fp_size * cpu_threads;
 	}
 
 	/* Create and initialize register files */

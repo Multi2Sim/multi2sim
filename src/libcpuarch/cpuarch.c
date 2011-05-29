@@ -32,42 +32,42 @@ struct cpu_t *cpu;
 
 /* Configuration file and parameters */
 
-enum p_sim_kind_enum p_sim_kind = p_sim_kind_functional;
+enum cpu_sim_kind_enum cpu_sim_kind = cpu_sim_kind_functional;
 
-char *p_config_file_name = "";
-char *p_report_file_name = "";
+char *cpu_config_file_name = "";
+char *cpu_report_file_name = "";
 
-int p_cores;
-int p_threads;
+int cpu_cores;
+int cpu_threads;
 
-int p_context_quantum;
-int p_context_switch;
+int cpu_context_quantum;
+int cpu_context_switch;
 
-int p_thread_quantum;
-int p_thread_switch_penalty;
+int cpu_thread_quantum;
+int cpu_thread_switch_penalty;
 
-char *p_recover_kind_map[] = { "Writeback", "Commit" };
-enum p_recover_kind_enum p_recover_kind;
-int p_recover_penalty;
+char *cpu_recover_kind_map[] = { "Writeback", "Commit" };
+enum cpu_recover_kind_enum cpu_recover_kind;
+int cpu_recover_penalty;
 
-char *p_fetch_kind_map[] = { "Shared", "TimeSlice", "SwitchOnEvent" };
-enum p_fetch_kind_enum p_fetch_kind;
+char *cpu_fetch_kind_map[] = { "Shared", "TimeSlice", "SwitchOnEvent" };
+enum cpu_fetch_kind_enum cpu_fetch_kind;
 
-int p_decode_width;
+int cpu_decode_width;
 
-char *p_dispatch_kind_map[] = { "Shared", "TimeSlice" };
-enum p_dispatch_kind_enum p_dispatch_kind;
-int p_dispatch_width;
+char *cpu_dispatch_kind_map[] = { "Shared", "TimeSlice" };
+enum cpu_dispatch_kind_enum cpu_dispatch_kind;
+int cpu_dispatch_width;
 
-char *p_issue_kind_map[] = { "Shared", "TimeSlice" };
-enum p_issue_kind_enum p_issue_kind;
-int p_issue_width;
+char *cpu_issue_kind_map[] = { "Shared", "TimeSlice" };
+enum cpu_issue_kind_enum cpu_issue_kind;
+int cpu_issue_width;
 
-char *p_commit_kind_map[] = { "Shared", "TimeSlice" };
-enum p_commit_kind_enum p_commit_kind;
-int p_commit_width;
+char *cpu_commit_kind_map[] = { "Shared", "TimeSlice" };
+enum cpu_commit_kind_enum cpu_commit_kind;
+int cpu_commit_width;
 
-int p_occupancy_stats;
+int cpu_occupancy_stats;
 
 
 
@@ -78,54 +78,54 @@ int p_occupancy_stats;
 
 
 /* Check CPU configuration file */
-void p_config_check(void)
+void cpu_config_check(void)
 {
 	struct config_t *cfg;
 	int err;
 	char *section;
 
 	/* Open file */
-	cfg = config_create(p_config_file_name);
+	cfg = config_create(cpu_config_file_name);
 	err = config_load(cfg);
-	if (!err && p_config_file_name[0])
-		fatal("%s: cannot load CPU configuration file", p_config_file_name);
+	if (!err && cpu_config_file_name[0])
+		fatal("%s: cannot load CPU configuration file", cpu_config_file_name);
 
 	
 	/* General configuration */
 
 	section = "General";
 
-	p_cores = config_read_int(cfg, section, "Cores", 1);
-	p_threads = config_read_int(cfg, section, "Threads", 1);
+	cpu_cores = config_read_int(cfg, section, "Cores", 1);
+	cpu_threads = config_read_int(cfg, section, "Threads", 1);
 
-	p_context_switch = config_read_bool(cfg, section, "ContextSwitch", 1);
-	p_context_quantum = config_read_int(cfg, section, "ContextQuantum", 100000);
+	cpu_context_switch = config_read_bool(cfg, section, "ContextSwitch", 1);
+	cpu_context_quantum = config_read_int(cfg, section, "ContextQuantum", 100000);
 
-	p_thread_quantum = config_read_int(cfg, section, "ThreadQuantum", 1000);
-	p_thread_switch_penalty = config_read_int(cfg, section, "ThreadSwitchPenalty", 0);
+	cpu_thread_quantum = config_read_int(cfg, section, "ThreadQuantum", 1000);
+	cpu_thread_switch_penalty = config_read_int(cfg, section, "ThreadSwitchPenalty", 0);
 
-	p_recover_kind = config_read_enum(cfg, section, "RecoverKind", p_recover_kind_writeback, p_recover_kind_map, 2);
-	p_recover_penalty = config_read_int(cfg, section, "RecoverPenalty", 0);
+	cpu_recover_kind = config_read_enum(cfg, section, "RecoverKind", cpu_recover_kind_writeback, cpu_recover_kind_map, 2);
+	cpu_recover_penalty = config_read_int(cfg, section, "RecoverPenalty", 0);
 
 
 	/* Section '[ Pipeline ]' */
 
 	section = "Pipeline";
 
-	p_fetch_kind = config_read_enum(cfg, section, "FetchKind", p_fetch_kind_timeslice, p_fetch_kind_map, 3);
+	cpu_fetch_kind = config_read_enum(cfg, section, "FetchKind", cpu_fetch_kind_timeslice, cpu_fetch_kind_map, 3);
 
-	p_decode_width = config_read_int(cfg, section, "DecodeWidth", 4);
+	cpu_decode_width = config_read_int(cfg, section, "DecodeWidth", 4);
 
-	p_dispatch_kind = config_read_enum(cfg, section, "DispatchKind", p_dispatch_kind_timeslice, p_dispatch_kind_map, 2);
-	p_dispatch_width = config_read_int(cfg, section, "DispatchWidth", 4);
+	cpu_dispatch_kind = config_read_enum(cfg, section, "DispatchKind", cpu_dispatch_kind_timeslice, cpu_dispatch_kind_map, 2);
+	cpu_dispatch_width = config_read_int(cfg, section, "DispatchWidth", 4);
 
-	p_issue_kind = config_read_enum(cfg, section, "IssueKind", p_issue_kind_timeslice, p_issue_kind_map, 2);
-	p_issue_width = config_read_int(cfg, section, "IssueWidth", 4);
+	cpu_issue_kind = config_read_enum(cfg, section, "IssueKind", cpu_issue_kind_timeslice, cpu_issue_kind_map, 2);
+	cpu_issue_width = config_read_int(cfg, section, "IssueWidth", 4);
 
-	p_commit_kind = config_read_enum(cfg, section, "CommitKind", p_commit_kind_shared, p_commit_kind_map, 2);
-	p_commit_width = config_read_int(cfg, section, "CommitWidth", 4);
+	cpu_commit_kind = config_read_enum(cfg, section, "CommitKind", cpu_commit_kind_shared, cpu_commit_kind_map, 2);
+	cpu_commit_width = config_read_int(cfg, section, "CommitWidth", 4);
 
-	p_occupancy_stats = config_read_bool(cfg, section, "OccupancyStats", 0);
+	cpu_occupancy_stats = config_read_bool(cfg, section, "OccupancyStats", 0);
 
 
 	/* Section '[ Queues ]' */
@@ -231,7 +231,7 @@ void p_config_check(void)
 }
 
 
-void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
+void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 {
 	uint64_t icomp = 0;
 	uint64_t lcomp = 0;
@@ -282,8 +282,8 @@ void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 }
 
 #define DUMP_CORE_STRUCT_STATS(NAME, ITEM) { \
-	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size * p_threads); \
-	if (p_occupancy_stats) \
+	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size * cpu_threads); \
+	if (cpu_occupancy_stats) \
 		fprintf(f, #NAME ".Occupancy = %.2f\n", cpu->cycle ? (double) CORE.ITEM##_occupancy / cpu->cycle : 0.0); \
 	fprintf(f, #NAME ".Full = %lld\n", (long long) CORE.ITEM##_full); \
 	fprintf(f, #NAME ".Reads = %lld\n", (long long) CORE.ITEM##_reads); \
@@ -292,21 +292,21 @@ void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 
 #define DUMP_THREAD_STRUCT_STATS(NAME, ITEM) { \
 	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size); \
-	if (p_occupancy_stats) \
+	if (cpu_occupancy_stats) \
 		fprintf(f, #NAME ".Occupancy = %.2f\n", cpu->cycle ? (double) THREAD.ITEM##_occupancy / cpu->cycle : 0.0); \
 	fprintf(f, #NAME ".Full = %lld\n", (long long) THREAD.ITEM##_full); \
 	fprintf(f, #NAME ".Reads = %lld\n", (long long) THREAD.ITEM##_reads); \
 	fprintf(f, #NAME ".Writes = %lld\n", (long long) THREAD.ITEM##_writes); \
 }
 
-void p_dump_report()
+void cpu_dump_report()
 {
 	FILE *f;
 	int core, thread;
 	uint64_t now = ke_timer();
 
 	/* Open file */
-	f = open_write(p_report_file_name);
+	f = open_write(cpu_report_file_name);
 	if (!f)
 		return;
 	
@@ -322,15 +322,15 @@ void p_dump_report()
 
 	/* Dispatch stage */
 	fprintf(f, "; Dispatch stage\n");
-	p_dump_uop_report(f, cpu->dispatched, "Dispatch", p_dispatch_width);
+	cpu_dump_uop_report(f, cpu->dispatched, "Dispatch", cpu_dispatch_width);
 
 	/* Issue stage */
 	fprintf(f, "; Issue stage\n");
-	p_dump_uop_report(f, cpu->issued, "Issue", p_issue_width);
+	cpu_dump_uop_report(f, cpu->issued, "Issue", cpu_issue_width);
 
 	/* Commit stage */
 	fprintf(f, "; Commit stage\n");
-	p_dump_uop_report(f, cpu->committed, "Commit", p_commit_width);
+	cpu_dump_uop_report(f, cpu->committed, "Commit", cpu_commit_width);
 
 	/* Committed branches */
 	fprintf(f, "; Committed branches\n");
@@ -372,7 +372,7 @@ void p_dump_report()
 		fprintf(f, "\n");
 
 		/* Dispatch slots */
-		if (p_dispatch_kind == p_dispatch_kind_timeslice) {
+		if (cpu_dispatch_kind == cpu_dispatch_kind_timeslice) {
 			fprintf(f, "; Dispatch slots usage (sum = cycles * dispatch width)\n");
 			fprintf(f, ";    used - dispatch slot was used by a non-spec uop\n");
 			fprintf(f, ";    spec - used by a mispeculated uop\n");
@@ -391,15 +391,15 @@ void p_dump_report()
 
 		/* Dispatch stage */
 		fprintf(f, "; Dispatch stage\n");
-		p_dump_uop_report(f, CORE.dispatched, "Dispatch", p_dispatch_width);
+		cpu_dump_uop_report(f, CORE.dispatched, "Dispatch", cpu_dispatch_width);
 
 		/* Issue stage */
 		fprintf(f, "; Issue stage\n");
-		p_dump_uop_report(f, CORE.issued, "Issue", p_issue_width);
+		cpu_dump_uop_report(f, CORE.issued, "Issue", cpu_issue_width);
 
 		/* Commit stage */
 		fprintf(f, "; Commit stage\n");
-		p_dump_uop_report(f, CORE.committed, "Commit", p_commit_width);
+		cpu_dump_uop_report(f, CORE.committed, "Commit", cpu_commit_width);
 
 		/* Committed branches */
 		fprintf(f, "; Committed branches\n");
@@ -438,15 +438,15 @@ void p_dump_report()
 
 			/* Dispatch stage */
 			fprintf(f, "; Dispatch stage\n");
-			p_dump_uop_report(f, THREAD.dispatched, "Dispatch", p_dispatch_width);
+			cpu_dump_uop_report(f, THREAD.dispatched, "Dispatch", cpu_dispatch_width);
 
 			/* Issue stage */
 			fprintf(f, "; Issue stage\n");
-			p_dump_uop_report(f, THREAD.issued, "Issue", p_issue_width);
+			cpu_dump_uop_report(f, THREAD.issued, "Issue", cpu_issue_width);
 
 			/* Commit stage */
 			fprintf(f, "; Commit stage\n");
-			p_dump_uop_report(f, THREAD.committed, "Commit", p_commit_width);
+			cpu_dump_uop_report(f, THREAD.committed, "Commit", cpu_commit_width);
 
 			/* Committed branches */
 			fprintf(f, "; Committed branches\n");
@@ -491,7 +491,7 @@ void p_dump_report()
 }
 
 
-void p_print_stats(FILE *f)
+void cpu_print_stats(FILE *f)
 {
 	uint64_t now = ke_timer();
 
@@ -516,11 +516,11 @@ void p_print_stats(FILE *f)
 		mem_max_mapped_space);
 	
 	/* Report */
-	p_dump_report();
+	cpu_dump_report();
 }
 
 
-void p_thread_init(int core, int thread)
+void cpu_thread_init(int core, int thread)
 {
 	/* Save block size of corresponding instruction cache. */
 	THREAD.fetch_bsize = cache_system_block_size(core, thread,
@@ -528,31 +528,31 @@ void p_thread_init(int core, int thread)
 }
 
 
-void p_core_init(int core)
+void cpu_core_init(int core)
 {
 	int thread;
-	CORE.thread = calloc(p_threads, sizeof(struct cpu_thread_t));
+	CORE.thread = calloc(cpu_threads, sizeof(struct cpu_thread_t));
 	FOREACH_THREAD
-		p_thread_init(core, thread);
+		cpu_thread_init(core, thread);
 }
 
 
 /* Initialization */
-void p_init()
+void cpu_init()
 {
 	int core;
 
 	/* Analyze CPU configuration file */
-	p_config_check();
+	cpu_config_check();
 
 	/* Initialize cache system */
-	cache_system_init(p_cores, p_threads);
+	cache_system_init(cpu_cores, cpu_threads);
 	
 	/* Create processor structure and allocate cores/threads */
 	cpu = calloc(1, sizeof(struct cpu_t));
-	cpu->core = calloc(p_cores, sizeof(struct cpu_core_t));
+	cpu->core = calloc(cpu_cores, sizeof(struct cpu_core_t));
 	FOREACH_CORE
-		p_core_init(core);
+		cpu_core_init(core);
 
 	rf_init();
 	bpred_init();
@@ -568,12 +568,12 @@ void p_init()
 
 
 /* Finalization */
-void p_done()
+void cpu_done()
 {
 	int core;
 
 	/* Stats */
-	p_print_stats(stderr);
+	cpu_print_stats(stderr);
 
 	/* Finalize structures */
 	fetchq_done();
@@ -598,7 +598,7 @@ void p_done()
 
 /* Load programs to different contexts from a configuration text file or
  * from arguments */
-void p_load_progs(int argc, char **argv, char *ctxfile)
+void cpu_load_progs(int argc, char **argv, char *ctxfile)
 {
 	if (argc > 1)
 		ld_load_prog_from_cmdline(argc - 1, argv + 1);
@@ -607,7 +607,7 @@ void p_load_progs(int argc, char **argv, char *ctxfile)
 }
 
 
-void p_dump(FILE *f)
+void cpu_dump(FILE *f)
 {
 	int core, thread;
 	
@@ -665,12 +665,12 @@ void p_dump(FILE *f)
 
 #define UPDATE_CORE_OCCUPANCY_STATS(ITEM) { \
 	CORE.ITEM##_occupancy += CORE.ITEM##_count; \
-	if (CORE.ITEM##_count == ITEM##_size * p_threads) \
+	if (CORE.ITEM##_count == ITEM##_size * cpu_threads) \
 		CORE.ITEM##_full++; \
 }
 
 
-void p_update_occupancy_stats()
+void cpu_update_occupancy_stats()
 {
 	int core, thread;
 
@@ -705,49 +705,49 @@ void p_update_occupancy_stats()
 }
 
 
-void p_stages()
+void cpu_stages()
 {
 	/* Static scheduler called after any context changed status other than 'sepcmode' */
-	if (!p_context_switch && ke->context_reschedule) {
-		p_static_schedule();
+	if (!cpu_context_switch && ke->context_reschedule) {
+		cpu_static_schedule();
 		ke->context_reschedule = 0;
 	}
 
 	/* Dynamic scheduler called after any context changed status other than 'specmode',
 	 * or quantum of the oldest context expired, and no context is being evicted. */
-	if (p_context_switch && !cpu->ctx_dealloc_signals &&
-		(ke->context_reschedule || cpu->ctx_alloc_oldest + p_context_quantum <= cpu->cycle))
+	if (cpu_context_switch && !cpu->ctx_dealloc_signals &&
+		(ke->context_reschedule || cpu->ctx_alloc_oldest + cpu_context_quantum <= cpu->cycle))
 	{
-		p_dynamic_schedule();
+		cpu_dynamic_schedule();
 		ke->context_reschedule = 0;
 	}
 
 	/* Stages */
-	p_commit();
-	p_writeback();
-	p_issue();
-	p_dispatch();
-	p_decode();
-	p_fetch();
+	cpu_commit();
+	cpu_writeback();
+	cpu_issue();
+	cpu_dispatch();
+	cpu_decode();
+	cpu_fetch();
 
 	/* Update stats for structures occupancy */
-	if (p_occupancy_stats)
-		p_update_occupancy_stats();
+	if (cpu_occupancy_stats)
+		cpu_update_occupancy_stats();
 }
 
 
 /* return an address that combines the context and the virtual address page;
  * this address will be univocal for all generated
  * addresses and is a kind of hash function to index tlbs */
-uint32_t p_tlb_address(int ctx, uint32_t vaddr)
+uint32_t cpu_tlb_address(int ctx, uint32_t vaddr)
 {
-	assert(ctx >= 0 && ctx < p_cores * p_threads);
-	return (vaddr >> MEM_LOGPAGESIZE) * p_cores * p_threads + ctx;
+	assert(ctx >= 0 && ctx < cpu_cores * cpu_threads);
+	return (vaddr >> MEM_LOGPAGESIZE) * cpu_cores * cpu_threads + ctx;
 }
 
 
 /* Fast forward simulation */
-void p_fast_forward(uint64_t cycles)
+void cpu_fast_forward(uint64_t cycles)
 {
 	int core, thread;
 
@@ -780,7 +780,7 @@ static uint64_t last_sigalrm_cycle = 0;
 
 
 /* Signal handlers */
-static void p_signal_handler(int signum)
+static void cpu_signal_handler(int signum)
 {
 	switch (signum) {
 	
@@ -788,7 +788,7 @@ static void p_signal_handler(int signum)
 		if (sigint_received)
 			abort();
 		sigint_received = 1;
-		p_dump(stderr);
+		cpu_dump(stderr);
 		fprintf(stderr, "SIGINT received\n");
 		break;
 		
@@ -802,8 +802,8 @@ static void p_signal_handler(int signum)
 	case SIGABRT:
 		signal(SIGABRT, SIG_DFL);
 		if (debug_status(error_debug_category)) {
-			p_print_stats(debug_file(error_debug_category));
-			p_dump(debug_file(error_debug_category));
+			cpu_print_stats(debug_file(error_debug_category));
+			cpu_dump(debug_file(error_debug_category));
 		}
 		exit(1);
 		break;
@@ -825,8 +825,8 @@ static void sim_dump_log()
 	sprintf(name, "m2s.%d.%lld", (int) getpid(), (long long) cpu->cycle);
 	f = fopen(name, "wt");
 	if (f) {
-		p_print_stats(f);
-		p_dump(f);
+		cpu_print_stats(f);
+		cpu_dump(f);
 		fclose(f);
 	}
 
@@ -836,15 +836,15 @@ static void sim_dump_log()
 
 
 /* Run simulation loop */
-void p_run()
+void cpu_run()
 {
 	
 	/* Install signal handlers */
-	signal(SIGINT, &p_signal_handler);
-	signal(SIGABRT, &p_signal_handler);
-	signal(SIGUSR1, &p_signal_handler);
-	signal(SIGUSR2, &p_signal_handler);
-	signal(SIGALRM, &p_signal_handler);
+	signal(SIGINT, &cpu_signal_handler);
+	signal(SIGABRT, &cpu_signal_handler);
+	signal(SIGUSR1, &cpu_signal_handler);
+	signal(SIGUSR2, &cpu_signal_handler);
+	signal(SIGALRM, &cpu_signal_handler);
 	alarm(sigalrm_interval);
 	
 	/* Detailed simulation loop */
@@ -854,7 +854,7 @@ void p_run()
 		cpu->cycle++;
 
 		/* Processor stages */
-		p_stages();
+		cpu_stages();
 
 		/* Process host threads generating events */
 		ke_process_events();
@@ -874,7 +874,7 @@ void p_run()
 		if (ke_max_cycles && cpu->cycle >= ke_max_cycles)
 			break;
 
-		/* Halt execution after 'p_max_time' has expired. Since this check
+		/* Halt execution after 'cpu_max_time' has expired. Since this check
 		 * involves a call to 'ke_timer', perform it only every 10000 cycles. */
 		if (ke_max_time && !(cpu->cycle % 10000) && ke_timer() > ke_max_time * 1000000)
 			break;

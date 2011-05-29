@@ -26,7 +26,7 @@ static void decode_thread(int core, int thread)
 	struct uop_t *uop;
 	int i;
 
-	for (i = 0; i < p_decode_width; i++) {
+	for (i = 0; i < cpu_decode_width; i++) {
 		
 		/* Empty fetch queue, full uopq */
 		if (!list_count(fetchq))
@@ -72,7 +72,7 @@ static void decode_core(int core)
 }
 
 
-void p_decode()
+void cpu_decode()
 {
 	int core;
 	cpu->stage = "decode";

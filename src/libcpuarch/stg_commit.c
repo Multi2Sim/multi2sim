@@ -77,7 +77,7 @@ static void commit_thread(int core, int thread, int quant)
 		assert(!recover);
 		
 		/* Mispredicted branch */
-		if (p_recover_kind == p_recover_kind_commit &&
+		if (cpu_recover_kind == cpu_recover_kind_commit &&
 			(uop->flags & FCTRL) && uop->neip != uop->pred_neip)
 			recover = 1;
 	
@@ -130,15 +130,15 @@ static void commit_thread(int core, int thread, int quant)
 		/* Recover. Functional units are cleared when processor
 		 * recovers at commit. */
 		if (recover) {
-			p_recover(core, thread);
+			cpu_recover(core, thread);
 			fu_release(core);
 		}
 	}
 
 	/* If context eviction signal is activated and pipeline is empty,
 	 * deallocate context. */
-	if (ctx->dealloc_signal && p_pipeline_empty(core, thread))
-		p_unmap_context(core, thread);
+	if (ctx->dealloc_signal && cpu_pipeline_empty(core, thread))
+		cpu_unmap_context(core, thread);
 }
 
 
@@ -147,39 +147,39 @@ void commit_core(int core)
 	int pass, quant, new;
 
 	/* Commit stage for core */
-	switch (p_commit_kind) {
+	switch (cpu_commit_kind) {
 
-	case p_commit_kind_shared:
-		pass = p_threads;
-		quant = p_commit_width;
+	case cpu_commit_kind_shared:
+		pass = cpu_threads;
+		quant = cpu_commit_width;
 		while (quant && pass) {
-			CORE.commit_current = (CORE.commit_current + 1) % p_threads;
+			CORE.commit_current = (CORE.commit_current + 1) % cpu_threads;
 			if (can_commit_thread(core, CORE.commit_current)) {
 				commit_thread(core, CORE.commit_current, 1);
 				quant--;
-				pass = p_threads;
+				pass = cpu_threads;
 			} else
 				pass--;
 		}
 		break;
 	
-	case p_commit_kind_timeslice:
+	case cpu_commit_kind_timeslice:
 	
 		/* look for a not empty VB */
-		new = (CORE.commit_current + 1) % p_threads;
+		new = (CORE.commit_current + 1) % cpu_threads;
 		while (new != CORE.commit_current && !can_commit_thread(core, new))
-			new = (new + 1) % p_threads;
+			new = (new + 1) % cpu_threads;
 		
 		/* commit new thread */
 		CORE.commit_current = new;
-		commit_thread(core, new, p_commit_width);
+		commit_thread(core, new, cpu_commit_width);
 		break;
 	
 	}
 }
 
 
-void p_commit()
+void cpu_commit()
 {
 	int core;
 	cpu->stage = "commit";

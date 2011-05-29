@@ -94,7 +94,7 @@ void rob_init()
 	}
 
 	/* Create ROBs */
-	total_rob_size = rob_size * p_threads;
+	total_rob_size = rob_size * cpu_threads;
 	FOREACH_CORE {
 		CORE.rob = list_create(total_rob_size);
 		for (i = 0; i < total_rob_size; i++)

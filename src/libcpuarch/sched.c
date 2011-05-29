@@ -20,7 +20,7 @@
 #include <cpuarch.h>
 
 
-int p_pipeline_empty(int core, int thread)
+int cpu_pipeline_empty(int core, int thread)
 {
 	return !THREAD.rob_count && !list_count(THREAD.fetchq) &&
 		!list_count(THREAD.uopq);
@@ -33,28 +33,28 @@ int p_pipeline_empty(int core, int thread)
  *  3) If there is any free node, return it.
  *  4) Return -1
  */
-int p_context_to_cpu(struct ctx_t *ctx)
+int cpu_context_to_cpu(struct ctx_t *ctx)
 {
 	int node, free_cpu;
 	int core, thread;
 	assert(!ctx_get_status(ctx, ctx_alloc));
-	assert(ke->alloc_count <= p_cores * p_threads);
+	assert(ke->alloc_count <= cpu_cores * cpu_threads);
 
 	/* No free node */
-	if (ke->alloc_count == p_cores * p_threads)
+	if (ke->alloc_count == cpu_cores * cpu_threads)
 		return -1;
 	
 	/* Try to allocate previous node, if the contexts has ever been
 	 * allocated before. */
 	if (ctx->alloc_when && !cpu->core[ctx->alloc_core].thread[ctx->alloc_thread].ctx)
-		return ctx->alloc_core * p_threads + ctx->alloc_thread;
+		return ctx->alloc_core * cpu_threads + ctx->alloc_thread;
 	
 	/* Find a node that has not been used before. This is useful in case
 	 * a context was suspended and tries to allocate later the same node. */
 	free_cpu = -1;
-	for (node = 0; node < p_cores * p_threads; node++) {
-		core = node / p_threads;
-		thread = node % p_threads;
+	for (node = 0; node < cpu_cores * cpu_threads; node++) {
+		core = node / cpu_threads;
+		thread = node % cpu_threads;
 		if (!THREAD.ctx && free_cpu < 0)
 			free_cpu = node;
 		if (!THREAD.last_alloc_pid)
@@ -65,11 +65,11 @@ int p_context_to_cpu(struct ctx_t *ctx)
 }
 
 
-void p_map_context(int core, int thread, struct ctx_t *ctx)
+void cpu_map_context(int core, int thread, struct ctx_t *ctx)
 {
 	assert(!THREAD.ctx);
 	assert(!ctx_get_status(ctx, ctx_alloc));
-	assert(ke->alloc_count < p_cores * p_threads);
+	assert(ke->alloc_count < cpu_cores * cpu_threads);
 	assert(!ctx->dealloc_signal);
 
 	THREAD.ctx = ctx;
@@ -86,7 +86,7 @@ void p_map_context(int core, int thread, struct ctx_t *ctx)
 }
 
 
-void p_unmap_context(int core, int thread)
+void cpu_unmap_context(int core, int thread)
 {
 	struct ctx_t *ctx = THREAD.ctx;
 
@@ -118,14 +118,14 @@ void p_unmap_context(int core, int thread)
  * will be deallocated in the commit stage as soon as the pipeline
  * is empty. Also, no newer instructions will be enter the pipeline
  * hereafter. */
-void p_unmap_context_signal(struct ctx_t *ctx)
+void cpu_unmap_context_signal(struct ctx_t *ctx)
 {
 	int core, thread;
 
 	assert(ctx);
 	assert(ctx_get_status(ctx, ctx_alloc));
 	assert(!ctx->dealloc_signal);
-	assert(cpu->ctx_dealloc_signals < p_cores * p_threads);
+	assert(cpu->ctx_dealloc_signals < cpu_cores * cpu_threads);
 
 	ctx->dealloc_signal = 1;
 	cpu->ctx_dealloc_signals++;
@@ -133,13 +133,13 @@ void p_unmap_context_signal(struct ctx_t *ctx)
 	thread = ctx->alloc_thread;
 	ctx_debug("cycle %lld: ctx %d receives eviction signal from c%dt%d\n",
 		(long long) cpu->cycle, ctx->pid, core, thread);
-	if (p_pipeline_empty(core, thread))
-		p_unmap_context(core, thread);
+	if (cpu_pipeline_empty(core, thread))
+		cpu_unmap_context(core, thread);
 		
 }
 
 
-void p_static_schedule()
+void cpu_static_schedule()
 {
 	struct ctx_t *ctx;
 	int node;
@@ -161,18 +161,18 @@ void p_static_schedule()
 
 		/* Find free node. If none free, static scheduler aborts
 		 * simulation with an error. */
-		node = p_context_to_cpu(ctx);
+		node = cpu_context_to_cpu(ctx);
 		if (node < 0)
 			fatal("no core/thread free for context %d; increase number of cores/threads"
 				" or activate the context scheduler.", ctx->pid);
 
 		/* Allocate context. */
-		p_map_context(node / p_threads, node % p_threads, ctx);
+		cpu_map_context(node / cpu_threads, node % cpu_threads, ctx);
 	}
 }
 
 
-void p_dynamic_schedule()
+void cpu_dynamic_schedule()
 {
 	struct ctx_t *ctx, *found_ctx;
 	int node;
@@ -183,7 +183,7 @@ void p_dynamic_schedule()
 	/* Evict non-running contexts */
 	for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
 		if (!ctx->dealloc_signal && !ctx_get_status(ctx, ctx_running))
-			p_unmap_context_signal(ctx);
+			cpu_unmap_context_signal(ctx);
 
 	/* If all running contexts are allocated, just update the ctx_alloc_oldest counter,
 	 * and exit. */
@@ -196,17 +196,17 @@ void p_dynamic_schedule()
 
 	/* If any quantum expired and no context eviction signal is activated,
 	 * send signal to evict the oldest allocated context. */
-	if (!cpu->ctx_dealloc_signals && cpu->ctx_alloc_oldest + p_context_quantum <= cpu->cycle) {
+	if (!cpu->ctx_dealloc_signals && cpu->ctx_alloc_oldest + cpu_context_quantum <= cpu->cycle) {
 		found_ctx = NULL;
 		for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
 			if (!found_ctx || ctx->alloc_when < found_ctx->alloc_when)
 				found_ctx = ctx;
 		if (found_ctx)
-			p_unmap_context_signal(found_ctx);
+			cpu_unmap_context_signal(found_ctx);
 	}
 	
 	/* Allocate running contexts */
-	while (ke->alloc_count < ke->running_count && ke->alloc_count < p_cores * p_threads) {
+	while (ke->alloc_count < ke->running_count && ke->alloc_count < cpu_cores * cpu_threads) {
 		
 		/* Find running, non-allocated context with lowest dealloc_when value. */
 		found_ctx = NULL;
@@ -218,9 +218,9 @@ void p_dynamic_schedule()
 		ctx = found_ctx;
 
 		/* Allocate context */
-		node = p_context_to_cpu(ctx);
-		assert(node >= 0 && node < p_cores * p_threads);
-		p_map_context(node / p_threads, node % p_threads, ctx);
+		node = cpu_context_to_cpu(ctx);
+		assert(node >= 0 && node < cpu_cores * cpu_threads);
+		cpu_map_context(node / cpu_threads, node % cpu_threads, ctx);
 	}
 
 	/* Calculate the context that was allocated first */
