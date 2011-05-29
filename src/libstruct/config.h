@@ -49,6 +49,7 @@ char *config_section_next(struct config_t *cfg);
  * String values are strdup'ped, so they can be modified in user program */
 void config_write_string(struct config_t *cfg, char *section, char *var, char *value);
 void config_write_int(struct config_t *cfg, char *section, char *var, int value);
+void config_write_llint(struct config_t *cfg, char *section, char *var, long long value);
 void config_write_bool(struct config_t *cfg, char *section, char *var, int value);
 void config_write_double(struct config_t *cfg, char *section, char *var, double value);
 void config_write_enum(struct config_t *cfg, char *section, char *var, int value, char **map, int map_count);
@@ -60,6 +61,7 @@ void config_write_ptr(struct config_t *cfg, char *section, char *var, void *valu
  *   into the set of allowed sections/variables for the configuration file. */
 char *config_read_string(struct config_t *cfg, char *section, char *var, char *def);
 int config_read_int(struct config_t *cfg, char *section, char *var, int def);
+long long config_read_llint(struct config_t *cfg, char *section, char *var, long long def);
 int config_read_bool(struct config_t *cfg, char *section, char *var, int def);
 double config_read_double(struct config_t *cfg, char *section, char *var, double def);
 int config_read_enum(struct config_t *cfg, char *section, char *var, int def, char **map, int map_count);

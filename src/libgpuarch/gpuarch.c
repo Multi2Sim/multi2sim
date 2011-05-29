@@ -70,13 +70,6 @@ static void gpu_config_default()
  * Public Functions
  */
 
-void gpu_reg_options()
-{
-	opt_reg_string("-gpuconfig", "Configuration file for the GPU model",
-		&gpu_config_file_name);
-}
-
-
 void gpu_init()
 {
 	char *section;

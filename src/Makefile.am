@@ -13,11 +13,7 @@ SUBDIRS = \
 	libgpukernel \
 	libgpudisasm
 
-bin_PROGRAMS = \
-	m2s-fast \
-	m2s
-
-m2s_fast_SOURCES = m2s-fast.c
+bin_PROGRAMS = m2s
 
 m2s_SOURCES = m2s.c
 

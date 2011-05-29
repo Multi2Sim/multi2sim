@@ -172,7 +172,6 @@ void gpu_device_run(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange);
 extern int gpu_pipeline_debug_category;
 
 
-void gpu_reg_options(void);
 void gpu_init(void);
 void gpu_done(void);
 
