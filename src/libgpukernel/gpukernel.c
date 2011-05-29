@@ -104,8 +104,6 @@ void gk_reg_options()
 {
 	opt_reg_string("-opencl:binary", "Pre-compiled binary for OpenCL applications",
 		&gk_opencl_binary_name);
-	opt_reg_string("-report:gpu", "Report for GPU statistics",
-		&gk_report_file_name);
 }
 
 

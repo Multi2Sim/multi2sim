@@ -930,3 +930,6 @@
 	* src/libcpuarch/cpuarch.c: configuration for CPU moved into a configuration file
 		with IniFile format, instead of command-line arguments.
 
+2010-05-29
+	* src/m2s.c: command-line interface updated.
+

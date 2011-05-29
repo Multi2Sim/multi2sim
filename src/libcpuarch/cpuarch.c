@@ -29,10 +29,13 @@
 struct processor_t *p;
 
 /* Configuration file and parameters */
+
+enum p_sim_kind_enum p_sim_kind = p_sim_kind_functional;
+
 char *p_config_file_name = "";
 char *p_report_file_name = "";
 
-int p_occupancy_stats = 0;
+int p_occupancy_stats;
 
 int p_cores;
 int p_threads;

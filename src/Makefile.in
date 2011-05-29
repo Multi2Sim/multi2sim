@@ -47,36 +47,36 @@ PROGRAMS = $(bin_PROGRAMS)
 am_m2s_OBJECTS = m2s.$(OBJEXT)
 m2s_OBJECTS = $(am_m2s_OBJECTS)
 m2s_LDADD = $(LDADD)
-m2s_DEPENDENCIES = $(top_builddir)/src/libcpukernel/libcpukernel.a \
-	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
-	$(top_builddir)/src/libopt/libopt.a \
-	$(top_builddir)/src/libmisc/libmisc.a \
-	$(top_builddir)/src/libcachesystem/libcachesystem.a \
-	$(top_builddir)/src/libgpukernel/libgpukernel.a \
-	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
-	$(top_builddir)/src/libnetwork/libnetwork.a \
-	$(top_builddir)/src/libcpuarch/libcpuarch.a \
+m2s_DEPENDENCIES = $(top_builddir)/src/libgpukernel/libgpukernel.a \
+	$(top_builddir)/src/libcpukernel/libcpukernel.a \
 	$(top_builddir)/src/libgpuarch/libgpuarch.a \
+	$(top_builddir)/src/libcpuarch/libcpuarch.a \
+	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
+	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
+	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
-	$(top_builddir)/src/libmhandle/libmhandle.a
+	$(top_builddir)/src/libmhandle/libmhandle.a \
+	$(top_builddir)/src/libopt/libopt.a \
+	$(top_builddir)/src/libmisc/libmisc.a
 am_m2s_fast_OBJECTS = m2s-fast.$(OBJEXT)
 m2s_fast_OBJECTS = $(am_m2s_fast_OBJECTS)
 m2s_fast_LDADD = $(LDADD)
 m2s_fast_DEPENDENCIES =  \
-	$(top_builddir)/src/libcpukernel/libcpukernel.a \
-	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
-	$(top_builddir)/src/libopt/libopt.a \
-	$(top_builddir)/src/libmisc/libmisc.a \
-	$(top_builddir)/src/libcachesystem/libcachesystem.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
-	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
-	$(top_builddir)/src/libnetwork/libnetwork.a \
-	$(top_builddir)/src/libcpuarch/libcpuarch.a \
+	$(top_builddir)/src/libcpukernel/libcpukernel.a \
 	$(top_builddir)/src/libgpuarch/libgpuarch.a \
+	$(top_builddir)/src/libcpuarch/libcpuarch.a \
+	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
+	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
+	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
-	$(top_builddir)/src/libmhandle/libmhandle.a
+	$(top_builddir)/src/libmhandle/libmhandle.a \
+	$(top_builddir)/src/libopt/libopt.a \
+	$(top_builddir)/src/libmisc/libmisc.a
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -251,19 +251,19 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libgpudisasm
 
 LDADD = \
-	$(top_builddir)/src/libcpukernel/libcpukernel.a \
-	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
-        $(top_builddir)/src/libopt/libopt.a \
-	$(top_builddir)/src/libmisc/libmisc.a \
-	$(top_builddir)/src/libcachesystem/libcachesystem.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
-	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
-	$(top_builddir)/src/libnetwork/libnetwork.a \
-	$(top_builddir)/src/libcpuarch/libcpuarch.a \
+	$(top_builddir)/src/libcpukernel/libcpukernel.a \
 	$(top_builddir)/src/libgpuarch/libgpuarch.a \
+	$(top_builddir)/src/libcpuarch/libcpuarch.a \
+	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
+	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
+	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
+        $(top_builddir)/src/libopt/libopt.a \
+	$(top_builddir)/src/libmisc/libmisc.a \
 	-lm -lpthread
 
 AM_CFLAGS = -Wall -fno-strict-aliasing
