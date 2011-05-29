@@ -37,13 +37,13 @@ void writeback_core(int core)
 		/* A memory uop placed in the event queue is always complete.
 		 * Other uops are complete when uop->when is equals to current cycle. */
 		if (uop->flags & FMEM)
-			uop->when = p->cycle;
-		if (uop->when > p->cycle)
+			uop->when = cpu->cycle;
+		if (uop->when > cpu->cycle)
 			break;
 		
 		/* Check element integrity */
 		assert(uop_exists(uop));
-		assert(uop->when == p->cycle);
+		assert(uop->when == cpu->cycle);
 		assert(uop->core == core);
 		assert(uop->ready);
 		assert(!uop->completed);
@@ -87,7 +87,7 @@ void writeback_core(int core)
 void p_writeback()
 {
 	int core;
-	p->stage = "writeback";
+	cpu->stage = "writeback";
 	FOREACH_CORE
 		writeback_core(core);
 }
