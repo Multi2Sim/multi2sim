@@ -269,7 +269,7 @@ static void fetch_core(int core)
 		/* Check for context switch */
 		thread = CORE.fetch_current;
 		must_switch = !ctx_get_status(THREAD.ctx, ctx_running);
-		if (sim_cycle - CORE.fetch_switch > p_thread_quantum ||  /* Quantum expired */
+		if (p->cycle - CORE.fetch_switch > p_thread_quantum ||  /* Quantum expired */
 			eventq_longlat(core, thread) ||  /* Long latency instruction */
 			must_switch)  /* Current context is suspended */
 		{
@@ -297,7 +297,7 @@ static void fetch_core(int core)
 			/* if thread switch successful */
 			if (new != thread) {
 				CORE.fetch_current = new;
-				CORE.fetch_switch = sim_cycle;
+				CORE.fetch_switch = p->cycle;
 				ITHREAD(new).fetch_stall = p_thread_switch_penalty;
 			}
 		}

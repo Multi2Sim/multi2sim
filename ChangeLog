@@ -934,3 +934,5 @@
 	* src/m2s.c: command-line interface updated.
 	* src/m2s-fast.c: file removed. From now on, all is integrated in a single
 		executable file: m2s
+	* src/libcpuarch: global variables sim_cycle and sim_inst removed.
+

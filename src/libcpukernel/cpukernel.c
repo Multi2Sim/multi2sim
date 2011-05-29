@@ -705,8 +705,6 @@ void ke_process_events()
  */
 
 static int sigint_received = 0;
-static uint64_t sim_cycle;  ////////////// FIXME: replace
-uint64_t sim_inst;  ////////// FIXME: use p->committed
 
 
 /* Signal handler while functional simulation loop is running */
@@ -723,7 +721,7 @@ static void ke_signal_handler(int signum)
 	
 	case SIGABRT:
 		signal(SIGABRT, SIG_DFL);
-		fprintf(stderr, "cycle %lld: aborted\n", (long long) sim_cycle);
+		fprintf(stderr, "Aborted\n");
 		isa_dump(stderr);
 		ke_dump(stderr);
 		exit(1);
@@ -736,6 +734,8 @@ static void ke_signal_handler(int signum)
 void ke_run(void)
 {
 	struct ctx_t *ctx;
+	uint64_t inst = 0;
+	uint64_t cycle = 0;
 
 	/* Install signal handlers */
 	signal(SIGINT, &ke_signal_handler);
@@ -745,12 +745,12 @@ void ke_run(void)
 	while (ke->finished_count < ke->context_count) {
 		
 		/* Next cycle */
-		sim_cycle++;
+		cycle++;
 
 		/* Run an instruction from every running process */
 		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
 			ctx_execute_inst(ctx);
-		sim_inst += ke->running_count;
+		inst += ke->running_count;
 	
 		/* Free finished contexts */
 		while (ke->finished_list_head)
@@ -764,16 +764,16 @@ void ke_run(void)
 			break;
 
 		/* Stop if maximum number of instructions exceeded */
-		if (ke_max_inst && sim_inst >= ke_max_inst)
+		if (ke_max_inst && inst >= ke_max_inst)
 			break;
 
 		/* Stop if maximum number of cycles exceeded */
-		if (ke_max_cycles && sim_cycle >= ke_max_cycles)
+		if (ke_max_cycles && cycle >= ke_max_cycles)
 			break;
 		
 		/* Halt execution after 'p_max_time' has expired. Since this check
 		 * involves a call to 'ke_timer', perform it only every 10000 cycles. */
-		if (ke_max_time && !(sim_cycle % 10000) && ke_timer() > ke_max_time * 1000000)
+		if (ke_max_time && !(cycle % 10000) && ke_timer() > ke_max_time * 1000000)
 			break;
 	}
 

@@ -43,9 +43,6 @@ extern int error_debug_category;
 
 /* Processor parameters */
 
-extern uint64_t sim_cycle;///// FIXME
-extern uint64_t sim_inst; ///// FIXME
-
 extern char *p_config_file_name;
 extern char *p_report_file_name;
 
@@ -841,6 +838,10 @@ struct processor_t {
 	
 	/* Array of cores */
 	struct processor_core_t *core;
+
+	/* Cycle and instruction counters */
+	uint64_t cycle;
+	uint64_t inst;
 
 	/* Some fields */
 	uint64_t seq;  /* Seq num assigned to last instr (with pre-incr) */

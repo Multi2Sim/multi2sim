@@ -445,7 +445,7 @@ int eventq_longlat(int core, int thread)
 		uop = lnlist_get(eventq);
 		if (uop->thread != thread)
 			continue;
-		if (sim_cycle - uop->issue_when > 20)
+		if (p->cycle - uop->issue_when > 20)
 			return 1;
 	}
 	return 0;
@@ -461,7 +461,7 @@ int eventq_cachemiss(int core, int thread)
 		uop = lnlist_get(eventq);
 		if (uop->thread != thread || !(uop->flags & FLOAD))
 			continue;
-		if (sim_cycle - uop->issue_when > 5)
+		if (p->cycle - uop->issue_when > 5)
 			return 1;
 	}
 	return 0;
