@@ -79,10 +79,10 @@ void p_map_context(int core, int thread, struct ctx_t *ctx)
 	ctx_set_status(ctx, ctx_alloc);
 	ctx->alloc_core = core;
 	ctx->alloc_thread = thread;
-	ctx->alloc_when = sim_cycle;
+	ctx->alloc_when = p->cycle;
 
 	ctx_debug("cycle %lld: ctx %d allocated to c%dt%d\n",
-		(long long) sim_cycle, ctx->pid, core, thread);
+		(long long) p->cycle, ctx->pid, core, thread);
 }
 
 
@@ -101,12 +101,12 @@ void p_unmap_context(int core, int thread)
 	THREAD.fetch_neip = 0;
 
 	ctx_clear_status(ctx, ctx_alloc);
-	ctx->dealloc_when = sim_cycle;
+	ctx->dealloc_when = p->cycle;
 	ctx->dealloc_signal = 0;
 	p->ctx_dealloc_signals--;
 
 	ctx_debug("cycle %lld: ctx %d evicted from c%dt%d\n",
-		(long long) sim_cycle, ctx->pid, core, thread);
+		(long long) p->cycle, ctx->pid, core, thread);
 	
 	/* If context is finished, free it. */
 	if (ctx_get_status(ctx, ctx_finished))
@@ -132,7 +132,7 @@ void p_unmap_context_signal(struct ctx_t *ctx)
 	core = ctx->alloc_core;
 	thread = ctx->alloc_thread;
 	ctx_debug("cycle %lld: ctx %d receives eviction signal from c%dt%d\n",
-		(long long) sim_cycle, ctx->pid, core, thread);
+		(long long) p->cycle, ctx->pid, core, thread);
 	if (p_pipeline_empty(core, thread))
 		p_unmap_context(core, thread);
 		
@@ -145,7 +145,7 @@ void p_static_schedule()
 	int cpu;
 
 	ctx_debug("cycle %lld: static scheduler called\n",
-		(long long) sim_cycle);
+		(long long) p->cycle);
 	
 	/* If there is no new unallocated context, exit. */
 	assert(ke->alloc_count <= ke->context_count);
@@ -178,7 +178,7 @@ void p_dynamic_schedule()
 	int cpu;
 
 	ctx_debug("cycle %lld: scheduler called\n",
-		(long long) sim_cycle);
+		(long long) p->cycle);
 	
 	/* Evict non-running contexts */
 	for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
@@ -188,15 +188,15 @@ void p_dynamic_schedule()
 	/* If all running contexts are allocated, just update the ctx_alloc_oldest counter,
 	 * and exit. */
 	if (ke->alloc_count == ke->running_count) {
-		p->ctx_alloc_oldest = sim_cycle;
+		p->ctx_alloc_oldest = p->cycle;
 		for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
-			ctx->alloc_when = sim_cycle;
+			ctx->alloc_when = p->cycle;
 		return;
 	}
 
 	/* If any quantum expired and no context eviction signal is activated,
 	 * send signal to evict the oldest allocated context. */
-	if (!p->ctx_dealloc_signals && p->ctx_alloc_oldest + p_context_quantum <= sim_cycle) {
+	if (!p->ctx_dealloc_signals && p->ctx_alloc_oldest + p_context_quantum <= p->cycle) {
 		found_ctx = NULL;
 		for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
 			if (!found_ctx || ctx->alloc_when < found_ctx->alloc_when)
@@ -224,7 +224,7 @@ void p_dynamic_schedule()
 	}
 
 	/* Calculate the context that was allocated first */
-	p->ctx_alloc_oldest = sim_cycle;
+	p->ctx_alloc_oldest = p->cycle;
 	for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
 		if (!ctx->dealloc_signal && ctx->alloc_when < p->ctx_alloc_oldest)
 			p->ctx_alloc_oldest = ctx->alloc_when;
