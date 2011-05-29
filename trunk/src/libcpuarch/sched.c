@@ -38,10 +38,10 @@ int p_context_to_cpu(struct ctx_t *ctx)
 	int cpu, free_cpu;
 	int core, thread;
 	assert(!ctx_get_status(ctx, ctx_alloc));
-	assert(ke->alloc_count <= p_cpus);
+	assert(ke->alloc_count <= p_cores * p_threads);
 
 	/* No free cpu */
-	if (ke->alloc_count == p_cpus)
+	if (ke->alloc_count == p_cores * p_threads)
 		return -1;
 	
 	/* Try to allocate previous cpu, if the contexts has ever been
@@ -52,7 +52,7 @@ int p_context_to_cpu(struct ctx_t *ctx)
 	/* Find a cpu that has not been used before. This is useful in case
 	 * a context was suspended and tries to allocate later the same cpu. */
 	free_cpu = -1;
-	for (cpu = 0; cpu < p_cpus; cpu++) {
+	for (cpu = 0; cpu < p_cores * p_threads; cpu++) {
 		core = cpu / p_threads;
 		thread = cpu % p_threads;
 		if (!THREAD.ctx && free_cpu < 0)
@@ -69,7 +69,7 @@ void p_map_context(int core, int thread, struct ctx_t *ctx)
 {
 	assert(!THREAD.ctx);
 	assert(!ctx_get_status(ctx, ctx_alloc));
-	assert(ke->alloc_count < p_cpus);
+	assert(ke->alloc_count < p_cores * p_threads);
 	assert(!ctx->dealloc_signal);
 
 	THREAD.ctx = ctx;
@@ -125,7 +125,7 @@ void p_unmap_context_signal(struct ctx_t *ctx)
 	assert(ctx);
 	assert(ctx_get_status(ctx, ctx_alloc));
 	assert(!ctx->dealloc_signal);
-	assert(p->ctx_dealloc_signals < p_cpus);
+	assert(p->ctx_dealloc_signals < p_cores * p_threads);
 
 	ctx->dealloc_signal = 1;
 	p->ctx_dealloc_signals++;
@@ -206,7 +206,7 @@ void p_dynamic_schedule()
 	}
 	
 	/* Allocate running contexts */
-	while (ke->alloc_count < ke->running_count && ke->alloc_count < p_cpus) {
+	while (ke->alloc_count < ke->running_count && ke->alloc_count < p_cores * p_threads) {
 		
 		/* Find running, non-allocated context with lowest dealloc_when value. */
 		found_ctx = NULL;
@@ -219,7 +219,7 @@ void p_dynamic_schedule()
 
 		/* Allocate context */
 		cpu = p_context_to_cpu(ctx);
-		assert(cpu >= 0 && cpu < p_cpus);
+		assert(cpu >= 0 && cpu < p_cores * p_threads);
 		p_map_context(cpu / p_threads, cpu % p_threads, ctx);
 	}
 

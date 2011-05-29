@@ -51,6 +51,7 @@ void config_write_string(struct config_t *cfg, char *section, char *var, char *v
 void config_write_int(struct config_t *cfg, char *section, char *var, int value);
 void config_write_bool(struct config_t *cfg, char *section, char *var, int value);
 void config_write_double(struct config_t *cfg, char *section, char *var, double value);
+void config_write_enum(struct config_t *cfg, char *section, char *var, int value, char **map, int map_count);
 void config_write_ptr(struct config_t *cfg, char *section, char *var, void *value);
 
 /* Read variables from a section.
@@ -61,6 +62,7 @@ char *config_read_string(struct config_t *cfg, char *section, char *var, char *d
 int config_read_int(struct config_t *cfg, char *section, char *var, int def);
 int config_read_bool(struct config_t *cfg, char *section, char *var, int def);
 double config_read_double(struct config_t *cfg, char *section, char *var, double def);
+int config_read_enum(struct config_t *cfg, char *section, char *var, int def, char **map, int map_count);
 void *config_read_ptr(struct config_t *cfg, char *section, char *var, void *def);
 
 /* Defining and checking allowed/mandatory sections/keys in file */

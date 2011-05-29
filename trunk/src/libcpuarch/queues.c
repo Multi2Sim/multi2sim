@@ -24,13 +24,7 @@
 
 /* Instruction Fetch Queue */
 
-uint32_t fetchq_size = 64;
-
-
-void fetchq_reg_options()
-{
-	opt_reg_uint32("-fetchq_size", "fetch queue size in bytes", &fetchq_size);
-}
+int fetchq_size;
 
 
 void fetchq_init()
@@ -102,13 +96,7 @@ void fetchq_recover(int core, int thread)
 
 /* Uop Queue */
 
-uint32_t uopq_size = 32;
-
-
-void uopq_reg_options()
-{
-	opt_reg_uint32("-uopq_size", "uop queue size in microinstructions", &uopq_size);
-}
+int uopq_size;
 
 
 void uopq_init()
@@ -158,18 +146,9 @@ void uopq_recover(int core, int thread)
 
 /* Instruction Queue */
 
-uint32_t iq_size = 40;
-enum iq_kind_enum iq_kind = iq_kind_private;
-
-
-void iq_reg_options()
-{
-	static char *iq_kind_map[] = { "shared", "private" };
-	opt_reg_enum("-iq_kind", "instruction queue kind {shared|private}",
-		(int *) &iq_kind, iq_kind_map, 2);
-	opt_reg_uint32("-iq_size", "instruction queue size per thread",
-		&iq_size);
-}
+char *iq_kind_map[] = { "Shared", "Private" };
+enum iq_kind_enum iq_kind;
+int iq_size;
 
 
 void iq_init()
@@ -270,18 +249,9 @@ void iq_recover(int core, int thread)
 
 /* Load/Store Queue */
 
-uint32_t lsq_size = 20;
-enum lsq_kind_enum lsq_kind = lsq_kind_private;
-
-
-void lsq_reg_options()
-{
-	static char *lsq_kind_map[] = { "shared", "private" };
-	opt_reg_enum("-lsq_kind", "load/store queue kind {shared|private}",
-		(int *) &lsq_kind, lsq_kind_map, 2);
-	opt_reg_uint32("-lsq_size", "load/store queue size per thread",
-		&lsq_size);
-}
+char *lsq_kind_map[] = { "Shared", "Private" };
+enum lsq_kind_enum lsq_kind;
+int lsq_size;
 
 
 void lsq_init()
