@@ -388,8 +388,8 @@ int EV_CACHE_SYSTEM_ACCESS_CACHE;
 int EV_CACHE_SYSTEM_ACCESS_TLB;
 int EV_CACHE_SYSTEM_ACCESS_FINISH;
 
-char *cache_config_file = "";
-char *cache_system_report_file = "";
+char *cache_system_config_file_name = "";
+char *cache_system_report_file_name = "";
 struct config_t *cache_config;
 int cache_min_block_size = 0;
 int cache_max_block_size = 0;
@@ -398,22 +398,11 @@ static int iperfect = 0;
 static int dperfect = 0;
 
 
-void cache_system_reg_options(void)
-{
-	opt_reg_string("-cacheconfig", "Cache configuration file", &cache_config_file);
-	opt_reg_bool("-iperfect", "Perfect instruction cache {t|f}", &iperfect);
-	opt_reg_bool("-dperfect", "Perfect data cache {t|f}", &dperfect);
-
-	/* Other options */
-	mmu_reg_options();
-}
-
-
 /* Check that a section exists */
 static void cache_config_section(char *section)
 {
 	if (!config_section_exists(cache_config, section))
-		fatal("%s: section '%s' not present", cache_config_file, section);
+		fatal("%s: section '%s' not present", cache_system_config_file_name, section);
 }
 
 
@@ -422,7 +411,7 @@ static void cache_config_key(char *section, char *key)
 {
 	if (!config_var_exists(cache_config, section, key))
 		fatal("%s: section '%s': key '%s' not present",
-			cache_config_file, section, key);
+			cache_system_config_file_name, section, key);
 }
 
 
@@ -529,9 +518,9 @@ void cache_system_init(int _cores, int _threads)
 	char *policy_str;
 
 	/* Try to open report file */
-	if (cache_system_report_file[0] && !can_open_write(cache_system_report_file))
+	if (cache_system_report_file_name[0] && !can_open_write(cache_system_report_file_name))
 		fatal("%s: cannot open cache system report file",
-			cache_system_report_file);
+			cache_system_report_file_name);
 
 	/* Initializations */
 	cores = _cores;
@@ -552,11 +541,11 @@ void cache_system_init(int _cores, int _threads)
 	EV_CACHE_SYSTEM_ACCESS_FINISH = esim_register_event(cache_system_handler);
 
 	/* Load cache configuration file */
-	cache_config = config_create(cache_config_file);
-	if (!*cache_config_file)
+	cache_config = config_create(cache_system_config_file_name);
+	if (!*cache_system_config_file_name)
 		cache_config_default();
 	else if (!config_load(cache_config))
-		fatal("%s: cannot load cache configuration file", cache_config_file);
+		fatal("%s: cannot load cache configuration file", cache_system_config_file_name);
 	
 	/* Create array of ccaches and networks. */
 	for (section = config_section_first(cache_config); section;
@@ -568,9 +557,9 @@ void cache_system_init(int _cores, int _threads)
 			net_count++;
 	}
 	if (ccache_count < 1)
-		fatal("%s: no cache", cache_config_file);
+		fatal("%s: no cache", cache_system_config_file_name);
 	/*if (net_count < 1)
-		fatal("%s: no network", cache_config_file);*/
+		fatal("%s: no network", cache_system_config_file_name);*/
 	ccache_array = calloc(ccache_count, sizeof(void *));
 	net_array = calloc(net_count, sizeof(void *));
 
@@ -696,13 +685,13 @@ void cache_system_init(int _cores, int _threads)
 		if (core >= cores) {
 			warning("%s: section '[ %s ]' ignored, since it refers to an unexisting core (core %d); "
 				"the number of cores in the current configuration is %d",
-				cache_config_file, section, core, cores);
+				cache_system_config_file_name, section, core, cores);
 			continue;
 		}
 		if (thread >= threads) {
 			warning("%s: section '[ %s ]' ignored, since it refers to an unexisting thread (thread %d); "
 				"the number of threads in the current configuration is %d",
-				cache_config_file, section, core, cores);
+				cache_system_config_file_name, section, core, cores);
 			continue;
 		}
 		node = &node_array[core * threads + thread];
@@ -869,7 +858,7 @@ void cache_system_dump_report()
 	int curr;
 
 	/* Open file */
-	f = open_write(cache_system_report_file);
+	f = open_write(cache_system_report_file_name);
 	if (!f)
 		return;
 	

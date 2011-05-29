@@ -56,12 +56,6 @@ struct mmu_t
 static struct mmu_t *mmu;
 
 
-void mmu_reg_options()
-{
-	opt_reg_uint32("-page_size", "Memory page size", &mmu_page_size);
-}
-
-
 void mmu_init()
 {
 	/* Check page size */

@@ -932,4 +932,5 @@
 
 2010-05-29
 	* src/m2s.c: command-line interface updated.
-
+	* src/m2s-fast.c: file removed. From now on, all is integrated in a single
+		executable file: m2s

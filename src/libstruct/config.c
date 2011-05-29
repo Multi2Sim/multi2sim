@@ -398,6 +398,15 @@ void config_write_int(struct config_t *cfg, char *section, char *var, int value)
 }
 
 
+void config_write_llint(struct config_t *cfg, char *section, char *var, long long value)
+{
+	char value_str[MAX_STRING_SIZE];
+
+	sprintf(value_str, "%lld", value);
+	config_write_string(cfg, section, var, value_str);
+}
+
+
 void config_write_bool(struct config_t *cfg, char *section, char *var, int value)
 {
 	char value_str[MAX_STRING_SIZE];
@@ -455,6 +464,14 @@ int config_read_int(struct config_t *cfg, char *section, char *var, int def)
 	char *result;
 	result = config_read_string(cfg, section, var, NULL);
 	return result ? atoi(result) : def;
+}
+
+
+long long config_read_llint(struct config_t *cfg, char *section, char *var, long long def)
+{
+	char *result;
+	result = config_read_string(cfg, section, var, NULL);
+	return result ? atoll(result) : def;
 }
 
 

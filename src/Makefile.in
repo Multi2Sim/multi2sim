@@ -32,7 +32,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = m2s-fast$(EXEEXT) m2s$(EXEEXT)
+bin_PROGRAMS = m2s$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -60,23 +60,6 @@ m2s_DEPENDENCIES = $(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
 	$(top_builddir)/src/libopt/libopt.a \
 	$(top_builddir)/src/libmisc/libmisc.a
-am_m2s_fast_OBJECTS = m2s-fast.$(OBJEXT)
-m2s_fast_OBJECTS = $(am_m2s_fast_OBJECTS)
-m2s_fast_LDADD = $(LDADD)
-m2s_fast_DEPENDENCIES =  \
-	$(top_builddir)/src/libgpukernel/libgpukernel.a \
-	$(top_builddir)/src/libcpukernel/libcpukernel.a \
-	$(top_builddir)/src/libgpuarch/libgpuarch.a \
-	$(top_builddir)/src/libcpuarch/libcpuarch.a \
-	$(top_builddir)/src/libcachesystem/libcachesystem.a \
-	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
-	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
-	$(top_builddir)/src/libnetwork/libnetwork.a \
-	$(top_builddir)/src/libesim/libesim.a \
-	$(top_builddir)/src/libstruct/libstruct.a \
-	$(top_builddir)/src/libmhandle/libmhandle.a \
-	$(top_builddir)/src/libopt/libopt.a \
-	$(top_builddir)/src/libmisc/libmisc.a
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -85,8 +68,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(m2s_SOURCES) $(m2s_fast_SOURCES)
-DIST_SOURCES = $(m2s_SOURCES) $(m2s_fast_SOURCES)
+SOURCES = $(m2s_SOURCES)
+DIST_SOURCES = $(m2s_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -234,7 +217,6 @@ SUBDIRS = \
 	libgpukernel \
 	libgpudisasm
 
-m2s_fast_SOURCES = m2s-fast.c
 m2s_SOURCES = m2s.c
 INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libstruct \
@@ -342,9 +324,6 @@ clean-binPROGRAMS:
 m2s$(EXEEXT): $(m2s_OBJECTS) $(m2s_DEPENDENCIES) 
 	@rm -f m2s$(EXEEXT)
 	$(LINK) $(m2s_OBJECTS) $(m2s_LDADD) $(LIBS)
-m2s-fast$(EXEEXT): $(m2s_fast_OBJECTS) $(m2s_fast_DEPENDENCIES) 
-	@rm -f m2s-fast$(EXEEXT)
-	$(LINK) $(m2s_fast_OBJECTS) $(m2s_fast_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -352,7 +331,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m2s-fast.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/m2s.Po@am__quote@
 
 .c.o:

@@ -35,8 +35,6 @@ enum p_sim_kind_enum p_sim_kind = p_sim_kind_functional;
 char *p_config_file_name = "";
 char *p_report_file_name = "";
 
-int p_occupancy_stats;
-
 int p_cores;
 int p_threads;
 
@@ -67,6 +65,7 @@ char *p_commit_kind_map[] = { "Shared", "TimeSlice" };
 enum p_commit_kind_enum p_commit_kind;
 int p_commit_width;
 
+int p_occupancy_stats;
 
 
 
@@ -74,14 +73,6 @@ int p_commit_width;
 /*
  * Public Functions
  */
-
-
-/* Options */
-void p_reg_options()
-{
-	opt_reg_string("-cpuconfig", "Configuration file for the CPU model",
-		&p_config_file_name);
-}
 
 
 /* Check CPU configuration file */
@@ -743,6 +734,16 @@ void p_stages()
 }
 
 
+/* return an address that combines the context and the virtual address page;
+ * this address will be univocal for all generated
+ * addresses and is a kind of hash function to index tlbs */
+uint32_t p_tlb_address(int ctx, uint32_t vaddr)
+{
+	assert(ctx >= 0 && ctx < p_cores * p_threads);
+	return (vaddr >> MEM_LOGPAGESIZE) * p_cores * p_threads + ctx;
+}
+
+
 /* Fast forward simulation */
 void p_fast_forward(uint64_t cycles)
 {
@@ -766,12 +767,129 @@ void p_fast_forward(uint64_t cycles)
 }
 
 
-/* return an address that combines the context and the virtual address page;
- * this address will be univocal for all generated
- * addresses and is a kind of hash function to index tlbs */
-uint32_t p_tlb_address(int ctx, uint32_t vaddr)
+/*
+ * Simulation loop
+ */
+
+uint64_t sim_cycle;  ////////////// FIXME: replace by p->cycle
+uint64_t sim_inst;  ////////// FIXME: use p->committed
+
+static int sigint_received = 0;
+static int sigusr_received = 0;
+static int sigalrm_interval = 30;
+static uint64_t last_sigalrm_cycle = 0;
+
+
+/* Signal handlers */
+static void p_signal_handler(int signum)
 {
-	assert(ctx >= 0 && ctx < p_cores * p_threads);
-	return (vaddr >> MEM_LOGPAGESIZE) * p_cores * p_threads + ctx;
+	switch (signum) {
+	
+	case SIGINT:
+		if (sigint_received)
+			abort();
+		sigint_received = 1;
+		p_dump(stderr);
+		fprintf(stderr, "SIGINT received\n");
+		break;
+		
+	case SIGALRM:
+		if (sim_cycle - last_sigalrm_cycle == 0)
+			panic("simulator stalled in stage %s", p->stage);
+		last_sigalrm_cycle = sim_cycle;
+		alarm(sigalrm_interval);
+		break;
+	
+	case SIGABRT:
+		signal(SIGABRT, SIG_DFL);
+		if (debug_status(error_debug_category)) {
+			p_print_stats(debug_file(error_debug_category));
+			p_dump(debug_file(error_debug_category));
+		}
+		exit(1);
+		break;
+	
+	case SIGUSR2:
+		sigusr_received = 1;
+	
+	}
+}
+
+
+/* Dump a log of current status in a file */
+static void sim_dump_log()
+{
+	FILE *f;
+	char name[100];
+	
+	/* Dump log into file */
+	sprintf(name, "m2s.%d.%lld", (int) getpid(), (long long) sim_cycle);
+	f = fopen(name, "wt");
+	if (f) {
+		p_print_stats(f);
+		p_dump(f);
+		fclose(f);
+	}
+
+	/* Ready to receive new SIGUSR signals */
+	sigusr_received = 0;
+}
+
+
+/* Run simulation loop */
+void p_run()
+{
+	
+	/* Install signal handlers */
+	signal(SIGINT, &p_signal_handler);
+	signal(SIGABRT, &p_signal_handler);
+	signal(SIGUSR1, &p_signal_handler);
+	signal(SIGUSR2, &p_signal_handler);
+	signal(SIGALRM, &p_signal_handler);
+	alarm(sigalrm_interval);
+	
+	/* Detailed simulation loop */
+	while (ke->finished_count < ke->context_count) {
+
+		/* Next cycle */
+		sim_cycle++;
+
+		/* Processor stages */
+		p_stages();
+
+		/* Process host threads generating events */
+		ke_process_events();
+
+		/* Event-driven module */
+		esim_process_events();
+		
+		/* Stop if signal SIGINT was received */
+		if (sigint_received)
+			break;
+
+		/* Stop if maximum number of instructions exceeded */
+		if (ke_max_inst && sim_inst >= ke_max_inst)
+			break;
+
+		/* Stop if maximum number of cycles exceeded */
+		if (ke_max_cycles && sim_cycle >= ke_max_cycles)
+			break;
+
+		/* Halt execution after 'p_max_time' has expired. Since this check
+		 * involves a call to 'ke_timer', perform it only every 10000 cycles. */
+		if (ke_max_time && !(sim_cycle % 10000) && ke_timer() > ke_max_time * 1000000)
+			break;
+
+		/* Dump log */
+		if (sigusr_received)
+			sim_dump_log();
+	}
+
+	/* Restore signal handlers */
+	signal(SIGINT, SIG_DFL);
+	signal(SIGABRT, SIG_DFL);
+	signal(SIGUSR1, SIG_IGN);
+	signal(SIGUSR2, SIG_IGN);
+	signal(SIGALRM, SIG_IGN);
 }
 
