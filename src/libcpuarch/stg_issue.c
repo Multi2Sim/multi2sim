@@ -50,7 +50,7 @@ static int issue_sq(int core, int thread, int quant)
 		 * prevent the uop from being freed. */
 		store->in_eventq = 1;
 		store->issued = 1;
-		store->issue_when = sim_cycle;
+		store->issue_when = p->cycle;
 	
 		/* Instruction issued */
 		CORE.issued[store->uop]++;
@@ -112,7 +112,7 @@ static int issue_lq(int core, int thread, int quant)
 		 * prevent the uop from being freed. */
 		load->in_eventq = 1;
 		load->issued = 1;
-		load->issue_when = sim_cycle;
+		load->issue_when = p->cycle;
 		
 		/* Instruction issued */
 		CORE.issued[load->uop]++;
@@ -180,8 +180,8 @@ static int issue_iq(int core, int thread, int quant)
 		assert(!uop->in_eventq);
 		assert(lat > 0);
 		uop->issued = 1;
-		uop->issue_when = sim_cycle;
-		uop->when = sim_cycle + lat;
+		uop->issue_when = p->cycle;
+		uop->when = p->cycle + lat;
 		eventq_insert(CORE.eventq, uop);
 		
 		/* Instruction issued */

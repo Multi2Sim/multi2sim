@@ -35,15 +35,15 @@ void writeback_core(int core)
 			break;
 
 		/* A memory uop placed in the event queue is always complete.
-		 * Other uops are complete when uop->when is equals to sim_cycle. */
+		 * Other uops are complete when uop->when is equals to current cycle. */
 		if (uop->flags & FMEM)
-			uop->when = sim_cycle;
-		if (uop->when > sim_cycle)
+			uop->when = p->cycle;
+		if (uop->when > p->cycle)
 			break;
 		
 		/* Check element integrity */
 		assert(uop_exists(uop));
-		assert(uop->when == sim_cycle);
+		assert(uop->when == p->cycle);
 		assert(uop->core == core);
 		assert(uop->ready);
 		assert(!uop->completed);

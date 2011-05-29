@@ -25,8 +25,10 @@
  * Global variables
  */
 
+
 /* Main Processor Global Variable */
 struct processor_t *p;
+
 
 /* Configuration file and parameters */
 
@@ -261,9 +263,9 @@ void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 	fprintf(f, "%s.WndSwitch = %lld\n", prefix, (long long)
 		(uop_stats[uop_call] + uop_stats[uop_ret]));
 	fprintf(f, "%s.Total = %lld\n", prefix, (long long) total);
-	fprintf(f, "%s.IPC = %.4g\n", prefix, sim_cycle ? (double) total / sim_cycle : 0.0);
-	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, sim_cycle && peak_ipc ?
-		(double) total / sim_cycle / peak_ipc : 0.0);
+	fprintf(f, "%s.IPC = %.4g\n", prefix, p->cycle ? (double) total / p->cycle : 0.0);
+	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, p->cycle && peak_ipc ?
+		(double) total / p->cycle / peak_ipc : 0.0);
 	fprintf(f, "\n");
 }
 
@@ -282,7 +284,7 @@ void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 #define DUMP_CORE_STRUCT_STATS(NAME, ITEM) { \
 	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size * p_threads); \
 	if (p_occupancy_stats) \
-		fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) CORE.ITEM##_occupancy / sim_cycle : 0.0); \
+		fprintf(f, #NAME ".Occupancy = %.2f\n", p->cycle ? (double) CORE.ITEM##_occupancy / p->cycle : 0.0); \
 	fprintf(f, #NAME ".Full = %lld\n", (long long) CORE.ITEM##_full); \
 	fprintf(f, #NAME ".Reads = %lld\n", (long long) CORE.ITEM##_reads); \
 	fprintf(f, #NAME ".Writes = %lld\n", (long long) CORE.ITEM##_writes); \
@@ -291,7 +293,7 @@ void p_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 #define DUMP_THREAD_STRUCT_STATS(NAME, ITEM) { \
 	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size); \
 	if (p_occupancy_stats) \
-		fprintf(f, #NAME ".Occupancy = %.2f\n", sim_cycle ? (double) THREAD.ITEM##_occupancy / sim_cycle : 0.0); \
+		fprintf(f, #NAME ".Occupancy = %.2f\n", p->cycle ? (double) THREAD.ITEM##_occupancy / p->cycle : 0.0); \
 	fprintf(f, #NAME ".Full = %lld\n", (long long) THREAD.ITEM##_full); \
 	fprintf(f, #NAME ".Reads = %lld\n", (long long) THREAD.ITEM##_reads); \
 	fprintf(f, #NAME ".Writes = %lld\n", (long long) THREAD.ITEM##_writes); \
@@ -311,9 +313,9 @@ void p_dump_report()
 	/* Report for the complete processor */
 	fprintf(f, "; Global statistics\n");
 	fprintf(f, "[ global ]\n\n");
-	fprintf(f, "Cycles = %lld\n", (long long) sim_cycle);
+	fprintf(f, "Cycles = %lld\n", (long long) p->cycle);
 	fprintf(f, "Time = %.1f\n", (double) now / 1000000);
-	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) sim_cycle / now * 1000000 : 0.0);
+	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) p->cycle / now * 1000000 : 0.0);
 	fprintf(f, "MemoryUsed = %lu\n", (long) mem_mapped_space);
 	fprintf(f, "MemoryUsedMax = %lu\n", (long) mem_max_mapped_space);
 	fprintf(f, "\n");
@@ -495,17 +497,17 @@ void p_print_stats(FILE *f)
 
 	/* Global stats */
 	fprintf(f, "sim.cycles  %lld  # Simulation cycles\n",
-		(long long) sim_cycle);
+		(long long) p->cycle);
 	fprintf(f, "sim.inst  %lld  # Total committed instructions\n",
-		(long long) sim_inst);
+		(long long) p->inst);
 	fprintf(f, "sim.ipc  %.4g  # Global IPC\n",
-		sim_cycle ? (double) sim_inst / sim_cycle : 0);
+		p->cycle ? (double) p->inst / p->cycle : 0);
 	fprintf(f, "sim.predacc  %.4g  # Branch prediction accuracy\n",
 		p->branches ? (double) (p->branches - p->mispred) / p->branches : 0.0);
 	fprintf(f, "sim.time  %.1f  # Simulation time in seconds\n",
 		(double) now / 1000000);
 	fprintf(f, "sim.cps  %.0f  # Cycles simulated per second\n",
-		now ? (double) sim_cycle / now * 1000000 : 0.0);
+		now ? (double) p->cycle / now * 1000000 : 0.0);
 	fprintf(f, "sim.contexts  %d  # Maximum number of contexts running concurrently\n",
 		ke->running_max);
 	fprintf(f, "sim.memory  %lu  # Physical memory used by benchmarks\n",
@@ -612,8 +614,8 @@ void p_dump(FILE *f)
 	/* General information */
 	fprintf(f, "\n");
 	fprintf(f, "sim.last_dump  %lld  # Cycle of last dump\n", (long long) p->last_dump);
-	fprintf(f, "sim.ipc_last_dump  %.4g  # IPC since last dump\n", sim_cycle - p->last_dump > 0 ?
-		(double) (sim_inst - p->last_committed) / (sim_cycle - p->last_dump) : 0);
+	fprintf(f, "sim.ipc_last_dump  %.4g  # IPC since last dump\n", p->cycle - p->last_dump > 0 ?
+		(double) (p->inst - p->last_committed) / (p->cycle - p->last_dump) : 0);
 	fprintf(f, "\n");
 
 	/* Cores */
@@ -649,8 +651,8 @@ void p_dump(FILE *f)
 	}
 
 	/* Register last dump */
-	p->last_dump = sim_cycle;
-	p->last_committed = sim_inst;
+	p->last_dump = p->cycle;
+	p->last_committed = p->inst;
 }
 
 
@@ -714,7 +716,7 @@ void p_stages()
 	/* Dynamic scheduler called after any context changed status other than 'specmode',
 	 * or quantum of the oldest context expired, and no context is being evicted. */
 	if (p_context_switch && !p->ctx_dealloc_signals &&
-		(ke->context_reschedule || p->ctx_alloc_oldest + p_context_quantum <= sim_cycle))
+		(ke->context_reschedule || p->ctx_alloc_oldest + p_context_quantum <= p->cycle))
 	{
 		p_dynamic_schedule();
 		ke->context_reschedule = 0;
@@ -771,9 +773,6 @@ void p_fast_forward(uint64_t cycles)
  * Simulation loop
  */
 
-uint64_t sim_cycle;  ////////////// FIXME: replace by p->cycle
-uint64_t sim_inst;  ////////// FIXME: use p->committed
-
 static int sigint_received = 0;
 static int sigusr_received = 0;
 static int sigalrm_interval = 30;
@@ -794,9 +793,9 @@ static void p_signal_handler(int signum)
 		break;
 		
 	case SIGALRM:
-		if (sim_cycle - last_sigalrm_cycle == 0)
+		if (p->cycle - last_sigalrm_cycle == 0)
 			panic("simulator stalled in stage %s", p->stage);
-		last_sigalrm_cycle = sim_cycle;
+		last_sigalrm_cycle = p->cycle;
 		alarm(sigalrm_interval);
 		break;
 	
@@ -823,7 +822,7 @@ static void sim_dump_log()
 	char name[100];
 	
 	/* Dump log into file */
-	sprintf(name, "m2s.%d.%lld", (int) getpid(), (long long) sim_cycle);
+	sprintf(name, "m2s.%d.%lld", (int) getpid(), (long long) p->cycle);
 	f = fopen(name, "wt");
 	if (f) {
 		p_print_stats(f);
@@ -852,7 +851,7 @@ void p_run()
 	while (ke->finished_count < ke->context_count) {
 
 		/* Next cycle */
-		sim_cycle++;
+		p->cycle++;
 
 		/* Processor stages */
 		p_stages();
@@ -868,16 +867,16 @@ void p_run()
 			break;
 
 		/* Stop if maximum number of instructions exceeded */
-		if (ke_max_inst && sim_inst >= ke_max_inst)
+		if (ke_max_inst && p->inst >= ke_max_inst)
 			break;
 
 		/* Stop if maximum number of cycles exceeded */
-		if (ke_max_cycles && sim_cycle >= ke_max_cycles)
+		if (ke_max_cycles && p->cycle >= ke_max_cycles)
 			break;
 
 		/* Halt execution after 'p_max_time' has expired. Since this check
 		 * involves a call to 'ke_timer', perform it only every 10000 cycles. */
-		if (ke_max_time && !(sim_cycle % 10000) && ke_timer() > ke_max_time * 1000000)
+		if (ke_max_time && !(p->cycle % 10000) && ke_timer() > ke_max_time * 1000000)
 			break;
 
 		/* Dump log */
