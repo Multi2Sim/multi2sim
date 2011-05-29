@@ -225,56 +225,56 @@ void issue_core(int core)
 {
 	int skip, quant;
 
-	switch (p_issue_kind) {
+	switch (cpu_issue_kind) {
 	
-	case p_issue_kind_shared:
+	case cpu_issue_kind_shared:
 		
 		/* Issue LSQs */
-		quant = p_issue_width;
-		skip = p_threads;
+		quant = cpu_issue_width;
+		skip = cpu_threads;
 		do {
-			CORE.issue_current = (CORE.issue_current + 1) % p_threads;
+			CORE.issue_current = (CORE.issue_current + 1) % cpu_threads;
 			quant = issue_thread_lsq(core, CORE.issue_current, quant);
 			skip--;
 		} while (skip && quant);
 
 		/* Issue IQs */
-		quant = p_issue_width;
-		skip = p_threads;
+		quant = cpu_issue_width;
+		skip = cpu_threads;
 		do {
-			CORE.issue_current = (CORE.issue_current + 1) % p_threads;
+			CORE.issue_current = (CORE.issue_current + 1) % cpu_threads;
 			quant = issue_thread_iq(core, CORE.issue_current, quant);
 			skip--;
 		} while (skip && quant);
 		
 		break;
 	
-	case p_issue_kind_timeslice:
+	case cpu_issue_kind_timeslice:
 		
 		/* Issue LSQs */
-		quant = p_issue_width;
-		skip = p_threads;
+		quant = cpu_issue_width;
+		skip = cpu_threads;
 		do {
-			CORE.issue_current = (CORE.issue_current + 1) % p_threads;
+			CORE.issue_current = (CORE.issue_current + 1) % cpu_threads;
 			quant = issue_thread_lsq(core, CORE.issue_current, quant);
 			skip--;
-		} while (skip && quant == p_issue_width);
+		} while (skip && quant == cpu_issue_width);
 
 		/* Issue IQs */
-		quant = p_issue_width;
-		skip = p_threads;
+		quant = cpu_issue_width;
+		skip = cpu_threads;
 		do {
-			CORE.issue_current = (CORE.issue_current + 1) % p_threads;
+			CORE.issue_current = (CORE.issue_current + 1) % cpu_threads;
 			quant = issue_thread_iq(core, CORE.issue_current, quant);
 			skip--;
-		} while (skip && quant == p_issue_width);
+		} while (skip && quant == cpu_issue_width);
 
 		break;
 	}
 }
 
 
-void p_issue()
+void cpu_issue()
 {
 	int core;
 	cpu->stage = "issue";

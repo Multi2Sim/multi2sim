@@ -937,4 +937,5 @@
 	* src/libcpuarch: global variables sim_cycle and sim_inst removed.
 	* src/libcpuarch/sched.c: variable 'cpu' changed by 'node'.
 	* src/libcpuarch: variable 'p' changed by 'cpu'.
+	* src/libcpuarch: all 'p_XXX' functions and variables replaced by 'cpu_XXX'
 

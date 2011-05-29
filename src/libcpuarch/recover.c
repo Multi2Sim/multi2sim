@@ -20,7 +20,7 @@
 #include <cpuarch.h>
 
 
-void p_recover(int core, int thread)
+void cpu_recover(int core, int thread)
 {
 	struct uop_t *uop;
 
@@ -72,7 +72,7 @@ void p_recover(int core, int thread)
 		ctx_recover(THREAD.ctx);
 	
 	/* Stall fetch and set eip to fetch. */
-	THREAD.fetch_stall = MAX(THREAD.fetch_stall, p_recover_penalty);
+	THREAD.fetch_stall = MAX(THREAD.fetch_stall, cpu_recover_penalty);
 	THREAD.fetch_neip = THREAD.ctx->regs->eip;
 }
 

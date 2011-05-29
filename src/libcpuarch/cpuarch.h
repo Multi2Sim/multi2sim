@@ -48,65 +48,65 @@ extern struct cpu_t *cpu;
 
 /* Processor parameters */
 
-extern char *p_config_file_name;
-extern char *p_report_file_name;
+extern char *cpu_config_file_name;
+extern char *cpu_report_file_name;
 
-extern enum p_sim_kind_enum {
-	p_sim_kind_functional,
-	p_sim_kind_detailed
-} p_sim_kind;
+extern enum cpu_sim_kind_enum {
+	cpu_sim_kind_functional,
+	cpu_sim_kind_detailed
+} cpu_sim_kind;
 
-extern int p_cores;
-extern int p_threads;
+extern int cpu_cores;
+extern int cpu_threads;
 
-extern int p_context_quantum;
-extern int p_context_switch;
+extern int cpu_context_quantum;
+extern int cpu_context_switch;
 
-extern int p_thread_quantum;
-extern int p_thread_switch_penalty;
+extern int cpu_thread_quantum;
+extern int cpu_thread_switch_penalty;
 
 /* Recover_kind */
-extern char *p_recover_kind_map[];
-extern enum p_recover_kind_enum {
-	p_recover_kind_writeback = 0,
-	p_recover_kind_commit
-} p_recover_kind;
-extern int p_recover_penalty;
+extern char *cpu_recover_kind_map[];
+extern enum cpu_recover_kind_enum {
+	cpu_recover_kind_writeback = 0,
+	cpu_recover_kind_commit
+} cpu_recover_kind;
+extern int cpu_recover_penalty;
 
 /* Fetch stage */
-extern char *p_fetch_kind_map[];
-extern enum p_fetch_kind_enum {
-	p_fetch_kind_shared = 0,
-	p_fetch_kind_timeslice,
-	p_fetch_kind_switchonevent
-} p_fetch_kind;
+extern char *cpu_fetch_kind_map[];
+extern enum cpu_fetch_kind_enum {
+	cpu_fetch_kind_shared = 0,
+	cpu_fetch_kind_timeslice,
+	cpu_fetch_kind_switchonevent
+} cpu_fetch_kind;
 
 /* Decode stage */
-extern int p_decode_width;
+extern int cpu_decode_width;
 
 /* Dispatch stage */
-extern char *p_dispatch_kind_map[];
-extern enum p_dispatch_kind_enum {
-	p_dispatch_kind_shared = 0,
-	p_dispatch_kind_timeslice,
-} p_dispatch_kind;
-extern int p_dispatch_width;
+extern char *cpu_dispatch_kind_map[];
+extern enum cpu_dispatch_kind_enum {
+	cpu_dispatch_kind_shared = 0,
+	cpu_dispatch_kind_timeslice,
+} cpu_dispatch_kind;
+extern int cpu_dispatch_width;
 
 /* Issue stage */
-extern char *p_issue_kind_map[];
-extern enum p_issue_kind_enum {
-	p_issue_kind_shared = 0,
-	p_issue_kind_timeslice,
-} p_issue_kind;
-extern int p_issue_width;
+extern char *cpu_issue_kind_map[];
+extern enum cpu_issue_kind_enum {
+	cpu_issue_kind_shared = 0,
+	cpu_issue_kind_timeslice,
+} cpu_issue_kind;
+extern int cpu_issue_width;
 
 /* Commit stage */
-extern char *p_commit_kind_map[];
-extern enum p_commit_kind_enum {
-	p_commit_kind_shared = 0,
-	p_commit_kind_timeslice
-} p_commit_kind;
-extern int p_commit_width;
+extern char *cpu_commit_kind_map[];
+extern enum cpu_commit_kind_enum {
+	cpu_commit_kind_shared = 0,
+	cpu_commit_kind_timeslice
+} cpu_commit_kind;
+extern int cpu_commit_width;
 
 
 
@@ -664,8 +664,8 @@ void ptrace_new_cycle(void);
 #define THREAD			(cpu->core[core].thread[thread])
 #define ICORE(I)		(cpu->core[(I)])
 #define ITHREAD(I)		(cpu->core[core].thread[(I)])
-#define FOREACH_CORE		for (core = 0; core < p_cores; core++)
-#define FOREACH_THREAD		for (thread = 0; thread < p_threads; thread++)
+#define FOREACH_CORE		for (core = 0; core < cpu_cores; core++)
+#define FOREACH_THREAD		for (thread = 0; thread < cpu_threads; thread++)
 
 
 /* Dispatch stall reasons */
@@ -877,32 +877,32 @@ struct cpu_t {
 
 
 /* Procedures and functions */
-void p_print_stats(FILE *f);
-void p_init(void);
-void p_done(void);
+void cpu_print_stats(FILE *f);
+void cpu_init(void);
+void cpu_done(void);
 
-void p_load_progs(int argc, char **argv, char *ctxfile);
-void p_dump(FILE *f);
-void p_update_occupancy_stats(void);
-uint32_t p_tlb_address(int ctx, uint32_t vaddr);
+void cpu_load_progs(int argc, char **argv, char *ctxfile);
+void cpu_dump(FILE *f);
+void cpu_update_occupancy_stats(void);
+uint32_t cpu_tlb_address(int ctx, uint32_t vaddr);
 
-int p_pipeline_empty(int core, int thread);
-void p_map_context(int core, int thread, struct ctx_t *ctx);
-void p_unmap_context(int core, int thread);
-void p_static_schedule(void);
-void p_dynamic_schedule(void);
+int cpu_pipeline_empty(int core, int thread);
+void cpu_map_context(int core, int thread, struct ctx_t *ctx);
+void cpu_unmap_context(int core, int thread);
+void cpu_static_schedule(void);
+void cpu_dynamic_schedule(void);
 
-void p_stages(void);
-void p_fetch(void);
-void p_decode(void);
-void p_dispatch(void);
-void p_issue(void);
-void p_writeback(void);
-void p_commit(void);
-void p_recover(int core, int thread);
+void cpu_stages(void);
+void cpu_fetch(void);
+void cpu_decode(void);
+void cpu_dispatch(void);
+void cpu_issue(void);
+void cpu_writeback(void);
+void cpu_commit(void);
+void cpu_recover(int core, int thread);
 
-void p_fast_forward(uint64_t cycles);
-void p_run(void);
+void cpu_fast_forward(uint64_t cycles);
+void cpu_run(void);
 
 #endif
 
