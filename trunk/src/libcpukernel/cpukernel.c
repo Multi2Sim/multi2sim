@@ -20,9 +20,22 @@
 #include <cpukernel.h>
 
 
-/* Global Multi2Sim
- * Kernel Variable */
+/*
+ * Global variables
+ */
+
+uint64_t ke_max_inst = 0;
+uint64_t ke_max_cycles = 0;
+uint64_t ke_max_time = 0;
+
 struct kernel_t *ke;
+
+
+
+
+/*
+ * Public functions
+ */
 
 
 /* Initialization */
@@ -85,23 +98,6 @@ void ke_done(void)
 }
 
 
-/* Execute one instruction from each running context. */
-void ke_run(void)
-{
-	struct ctx_t *ctx;
-
-	/* Run an instruction from every running process */
-	for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
-		ctx_execute_inst(ctx);
-	
-	/* Free finished contexts */
-	while (ke->finished_list_head)
-		ctx_free(ke->finished_list_head);
-	
-	/* Process list of suspended contexts */
-	ke_process_events();
-
-}
 
 
 void ke_dump(FILE *f)
@@ -700,4 +696,90 @@ void ke_process_events()
 	/* Unlock */
 	pthread_mutex_unlock(&ke->process_events_mutex);
 }
+
+
+
+
+/*
+ * Functional simulation loop
+ */
+
+static int sigint_received = 0;
+static uint64_t sim_cycle;  ////////////// FIXME: replace
+uint64_t sim_inst;  ////////// FIXME: use p->committed
+
+
+/* Signal handler while functional simulation loop is running */
+static void ke_signal_handler(int signum)
+{
+	switch (signum) {
+	
+	case SIGINT:
+		if (sigint_received)
+			abort();
+		sigint_received = 1;
+		fprintf(stderr, "SIGINT received\n");
+		break;
+	
+	case SIGABRT:
+		signal(SIGABRT, SIG_DFL);
+		fprintf(stderr, "cycle %lld: aborted\n", (long long) sim_cycle);
+		isa_dump(stderr);
+		ke_dump(stderr);
+		exit(1);
+		break;
+	}
+}
+
+
+/* CPU Functional simulation loop */
+void ke_run(void)
+{
+	struct ctx_t *ctx;
+
+	/* Install signal handlers */
+	signal(SIGINT, &ke_signal_handler);
+	signal(SIGABRT, &ke_signal_handler);
+
+	/* Functional simulation loop */
+	while (ke->finished_count < ke->context_count) {
+		
+		/* Next cycle */
+		sim_cycle++;
+
+		/* Run an instruction from every running process */
+		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
+			ctx_execute_inst(ctx);
+		sim_inst += ke->running_count;
+	
+		/* Free finished contexts */
+		while (ke->finished_list_head)
+			ctx_free(ke->finished_list_head);
+	
+		/* Process list of suspended contexts */
+		ke_process_events();
+
+		/* Stop if signal SIGINT was received */
+		if (sigint_received)
+			break;
+
+		/* Stop if maximum number of instructions exceeded */
+		if (ke_max_inst && sim_inst >= ke_max_inst)
+			break;
+
+		/* Stop if maximum number of cycles exceeded */
+		if (ke_max_cycles && sim_cycle >= ke_max_cycles)
+			break;
+		
+		/* Halt execution after 'p_max_time' has expired. Since this check
+		 * involves a call to 'ke_timer', perform it only every 10000 cycles. */
+		if (ke_max_time && !(sim_cycle % 10000) && ke_timer() > ke_max_time * 1000000)
+			break;
+	}
+
+	/* Restore signal handlers */
+	signal(SIGABRT, SIG_DFL);
+	signal(SIGINT, SIG_DFL);
+}
+
 

@@ -36,119 +36,32 @@ static char *isa_inst_debug_file_name = "";
 static char *cache_debug_file_name = "";
 static char *esim_debug_file_name = "";
 static char *error_debug_file_name = "";
-
-
-/* Signals */
-static int sigint_received = 0;
-static int sigusr_received = 0;
-static int sigalrm_interval = 30;
-static uint64_t last_sigalrm_cycle = 0;
-
-
-/* Stats */
-static uint64_t max_cycles = 0;
-static uint64_t max_inst = 0;
-static uint64_t max_time = 0;
-static uint64_t fastfwd;
 static char *ctxconfig_file_name = "";
-static char *sim_title = "";
-
-/* Simulation cycle and total committed inst */
-uint64_t sim_cycle;
-uint64_t sim_inst;
 
 
 /* Error debug */
 int error_debug_category;
 
 
-
-
-static void sim_reg_options()
-{
-	opt_reg_string("-title", "Simulation title", &sim_title);
-
-	opt_reg_uint64("-max_cycles", "Cycle to stop program (0=no stop)", &max_cycles);
-	opt_reg_uint64("-max_inst", "Max number of retired instructions (0=no max)", &max_inst);
-	opt_reg_uint64("-max_time", "Max running time (in seconds)", &max_time);
-	opt_reg_uint64("-fastfwd", "Cycles to run with fast simulation", &fastfwd);
-
-	gk_reg_options();
-}
-
-
-/* Dump a log of current status in a file */
-static void sim_dump_log()
-{
-	FILE *f;
-	char name[100];
-	
-	/* Dump log into file */
-	sprintf(name, "m2s.%d.%lld", (int) getpid(), (long long) sim_cycle);
-	f = fopen(name, "wt");
-	if (f) {
-		p_print_stats(f);
-		p_dump(f);
-		fclose(f);
-	}
-
-	/* Ready to receive new SIGUSR signals */
-	sigusr_received = 0;
-}
-
-
-/* Signal handlers */
-static void sim_signal_handler(int signum)
-{
-	switch (signum) {
-	
-	case SIGINT:
-		if (sigint_received)
-			abort();
-		sigint_received = 1;
-		p_dump(stderr);
-		fprintf(stderr, "SIGINT received\n");
-		break;
-		
-	case SIGALRM:
-		if (sim_cycle - last_sigalrm_cycle == 0)
-			panic("simulator stalled in stage %s", p->stage);
-		last_sigalrm_cycle = sim_cycle;
-		alarm(sigalrm_interval);
-		break;
-	
-	case SIGABRT:
-		signal(SIGABRT, SIG_DFL);
-		if (debug_status(error_debug_category)) {
-			p_print_stats(debug_file(error_debug_category));
-			p_dump(debug_file(error_debug_category));
-		}
-		exit(1);
-		break;
-	
-	case SIGUSR2:
-		sigusr_received = 1;
-	
-	}
-}
-
-
-/*	"  --debug-ctx <file>, --debug-syscall <file>, --debug-opencl <file>,\n"
-	"  --debug-gpu-isa <file>, --debug-loader <file>, --debug-call <file>,\n"
-	"  --debug-cpu-isa <file>, --debug-cache <file>, --debug-cpu-pipeline <file>,\n"
-	"  --debug-error <file>\n"*/
-		
-
-
 static char *sim_help =
-	"  --cpu-simulation {functional|detailed}\n"
+	"  --cache-config <file>\n"
+	"      Configuration file for the cache memory hierarchy, including cache levels,\n"
+	"      cache geometry, latencies, and interconnection networks. Type\n"
+	"      'm2s --help-cache-config' for details on the file format.\n"
+	"\n"
+	"  --cpu-config <file>\n"
+	"      Configuration file for the CPU model, including parameters describing the\n"
+	"      stages bandwidth, structures size, and other parameters of processor cores\n"
+	"      and threads. Type 'm2s --help-cpu-config' for details on the file format.\n"
+	"\n"
+	"  --cpu-sim {functional|detailed}\n"
 	"      Choose a functional simulation (emulation) of an x86 program, versus\n"
 	"      a detailed (architectural) simulation. Simulation is function by default.\n"
 	"\n"
-	"  --ctxconfig <file>, -c <file>\n"
+	"  --ctx-config <file>, -c <file>\n"
 	"      Use <file> as the context configuration file. This file describes the\n"
 	"      initial set of running applications, their arguments, and environment\n"
-	"      variables. Type 'm2s --help-ctxconfig' for a description of the file\n"
+	"      variables. Type 'm2s --help-ctx-config' for a description of the file\n"
 	"      format.\n"
 	"\n"
 	"  --debug-<xxx> <file>\n"
@@ -170,16 +83,31 @@ static char *sim_help =
 	"            to obtain graphical timing diagrams.\n"
 	"        --debug-error: on simulation crashes, dump of the modeled CPU state.\n"
 	"\n"
-	"  --gpu-simulation {functional|detailed}\n"
+	"  --gpu-sim {functional|detailed}\n"
 	"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
 	"      detailed (architectural) simulation. Functional simulation is default.\n"
+	"\n"
+	"  --max-cycles <num_cycles>\n"
+	"      Specify a limit in the number of cycles. In the functional simulation, one\n"
+	"      instruction from each active context is executed in a cycle. In the detailed\n"
+	"      simulation, this option refers to CPU cycles. Use a value of 0 (default) for\n"
+	"      unlimited.\n"
+	"\n"
+	"  --max-inst <num_inst>\n"
+	"      Specify the limit in the number of executed instructions. In the detailed\n"
+	"      simulation, this limit refers to the number of committed instructions. Use\n"
+	"      a value of 0 (default) for unlimited.\n"
+	"\n"
+	"  --max-time <seconds>\n"
+	"      Maximum simulation time in seconds. The simulator will stop after this time\n"
+	"      is exceeded. Use 0 (default) for no time limit.\n"
 	"\n"
 	"  --opencl-binary <file>\n"
 	"      Specify OpenCL kernel binary to be loaded when the OpenCL host program\n"
 	"      performs a call to 'clCreateProgramWithSource'. Since on-line compilation\n"
 	"      of OpenCL kernels is not supported, this is a possible way to load them.\n"
 	"\n"
-	"  --report-cpu-pipeline <file>\n"
+	"  --report-cpu <file>\n"
 	"      File to dump a report of the CPU pipeline, such as number of instructions\n"
 	"      handled in every pipeline stage, or read/write accesses performed to\n"
 	"      pipeline queues (ROB, IQ, etc.). Use only when CPU simulation accuracy\n"
@@ -189,6 +117,7 @@ static char *sim_help =
 	"      File to dump report of a GPU device kernel emulation. The report includes\n"
 	"      statistics about type of instructions, VLIW packing, thread divergence, etc.\n"
 	"\n";
+
 
 static char *err_help_note =
 	"Please type 'm2s --help' for a list of valid Multi2Sim command-line options.\n";
@@ -202,8 +131,28 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 	for (argi = 1; argi < argc; argi++) {
 
+		/* Cache system configuration file */
+		if (!strcmp(argv[argi], "--cache-config")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by a cache configuration file name.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			cache_system_config_file_name = argv[argi];
+			continue;
+		}
+
+		/* CPU configuration file */
+		if (!strcmp(argv[argi], "--cpu-config")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by a CPU configuration file name.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			p_config_file_name = argv[argi];
+			continue;
+		}
+
 		/* CPU simulation accuracy */
-		if (!strcmp(argv[argi], "--cpu-simulation")) {
+		if (!strcmp(argv[argi], "--cpu-sim")) {
 			if (argi == argc - 1)
 				fatal("option '%s' requires a simulation accuracy argument.\n%s",
 					argv[argi], err_help_note);
@@ -219,7 +168,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Context configuration file */
-		if (!strcmp(argv[argi], "--ctxconfig") || !strcmp(argv[argi], "-c")) {
+		if (!strcmp(argv[argi], "--ctx-config") || !strcmp(argv[argi], "-c")) {
 			if (argi == argc - 1)
 				fatal("option '%s' must be followed by a file name.\n%s",
 					argv[argi], err_help_note);
@@ -327,9 +276,39 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			error_debug_file_name = argv[argi];
 			continue;
 		}
+
+		/* Maximum number of cycles */
+		if (!strcmp(argv[argi], "--max-cycles")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by an integer number.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			ke_max_cycles = atoll(argv[argi]);
+			continue;
+		}
+
+		/* Maximum number of instructions */
+		if (!strcmp(argv[argi], "--max-inst")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by an integer number.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			ke_max_inst = atoll(argv[argi]);
+			continue;
+		}
+
+		/* Simulation time limit */
+		if (!strcmp(argv[argi], "--max-time")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by an integer number.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			ke_max_time = atoll(argv[argi]);
+			continue;
+		}
 		
 		/* GPU simulation accuracy */
-		if (!strcmp(argv[argi], "--gpu-simulation")) {
+		if (!strcmp(argv[argi], "--gpu-sim")) {
 			if (argi == argc - 1)
 				fatal("option '%s' requires a simulation accuracy argument.\n%s",
 					argv[argi], err_help_note);
@@ -366,12 +345,12 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 				fatal("option '%s' must be followed by a cache report file name.\n%s",
 					argv[argi], err_help_note);
 			argi++;
-			cache_system_report_file = argv[argi];
+			cache_system_report_file_name = argv[argi];
 			continue;
 		}
 
 		/* Pipeline report */
-		if (!strcmp(argv[argi], "--report-cpu-pipeline")) {
+		if (!strcmp(argv[argi], "--report-cpu")) {
 			if (argi == argc - 1)
 				fatal("option '%s' must be followed by a pipeline report file name.\n%s",
 					argv[argi], err_help_note);
@@ -400,6 +379,17 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		break;
 	}
 
+	/* Check configuration consistency */
+	if (p_sim_kind == p_sim_kind_functional) {
+		if (*p_config_file_name || *p_report_file_name)
+			fatal("A CPU configuration file or statistics report cannot be specified for functional CPU simulation.\n"
+				"If you want to run an architectural simulation, add option '--cpu-sim detailed'.\n");
+		if (*cache_system_config_file_name || *cache_system_report_file_name)
+			fatal("A configuration file or statistics report for the cache system cannot be specified\n"
+				"for a functional simulation. If you want to run an architectural simulation,\n"
+				"add command-line option '--cpu-sim detailed'.\n");
+	}
+
 	/* Discard arguments used as options */
 	arg_discard = argi - 1;
 	for (argi = 1; argi < argc - arg_discard; argi++)
@@ -408,15 +398,19 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 }
 
 
+
+/*
+	opt_reg_uint32("-page_size", "Memory page size", &mmu_page_size);
+	opt_reg_bool("-iperfect", "Perfect instruction cache {t|f}", &iperfect);
+	opt_reg_bool("-dperfect", "Perfect data cache {t|f}", &dperfect);
+
+
+*/
+
+
+
 int main(int argc, char **argv)
 {
-	/* Options & stats */
-	opt_init();
-	sim_reg_options();
-	p_reg_options();
-	cache_system_reg_options();
-	//opt_check_options(&argc, argv);
-
 	/* Initial information */
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Multi2Sim %s - A Simulation Framework for CPU-GPU Heterogeneous Computing\n",
@@ -429,12 +423,18 @@ int main(int argc, char **argv)
 	/* Read command line */
 	sim_read_command_line(&argc, argv);
 
-	/* Initialization */
-	uop_init();
-	esim_init();
-	net_init();
+	/* Initialization for functional simulation */
 	ke_init();
-	p_init();
+
+	/* Initialization for detailed simulation */
+	if (p_sim_kind == p_sim_kind_detailed) {
+		uop_init();
+		esim_init();
+		net_init();
+		p_init();
+	}
+	if (gpu_sim_kind == gpu_sim_kind_detailed)
+		gpu_init();
 
 	/* Debug */
 	debug_init();
@@ -453,64 +453,37 @@ int main(int argc, char **argv)
 	/* Load programs */
 	p_load_progs(argc, argv, ctxconfig_file_name);
 
-	/* Fast forward simulation */
-	p_fast_forward(fastfwd);
+	/* Simulation loop */
+	if (p_sim_kind == p_sim_kind_detailed)
+		p_run();
+	else
+		ke_run();
 
-	/* Exhaustive simulation */
-	signal(SIGINT, &sim_signal_handler);
-	signal(SIGABRT, &sim_signal_handler);
-	signal(SIGUSR1, &sim_signal_handler);
-	signal(SIGUSR2, &sim_signal_handler);
-	signal(SIGALRM, &sim_signal_handler);
-	alarm(sigalrm_interval);
-	
-	while (ke->finished_count < ke->context_count) {
-
-		/* Next cycle */
-		sim_cycle++;
-
-		/* Processor stages */
-		p_stages();
-
-		/* Process host threads generating events */
-		ke_process_events();
-
-		/* Event-driven module */
-		esim_process_events();
+	/* Finalization of detailed CPU simulation */
+	if (p_sim_kind == p_sim_kind_detailed) {
 		
-		/* Halt execution. Avoid costly calls to ke_timer by checking
-		 * time only every 10k cycles */
-		if (sigint_received)
-			break;
-		if (max_cycles && sim_cycle >= max_cycles)
-			break;
-		if (max_inst && sim_inst >= max_inst)
-			break;
-		if (max_time && !(sim_cycle % 10000) && ke_timer() > max_time * 1000000)
-			break;
+		/* Finalize event-driven simulations */
+		while (esim_pending() && esim_cycle < sim_cycle + (1 << 20))
+			esim_process_events();
+		esim_debug_done();
 
-		/* Dump log */
-		if (sigusr_received)
-			sim_dump_log();
+		/* Rest */
+		p_done();
+		uop_done();
+		net_done();
+		esim_done();
 	}
-	signal(SIGALRM, SIG_IGN);
-	signal(SIGABRT, SIG_DFL);
 
-	/* Finalize esim */
-	while (esim_pending() && esim_cycle < sim_cycle + (1<<20))
-		esim_process_events();
-	esim_debug_done();
+	/* Finalization of detailed GPU simulation */
+	if (gpu_sim_kind == gpu_sim_kind_detailed)
+		gpu_done();
 	
-	/* Finalization */
-	fprintf(stderr, "\n");
-	opt_done();
-	p_done();
+	/* Finalization of functional simulation */
 	ke_done();
-	uop_done();
-	net_done();
-	esim_done();
 	debug_done();
-	fprintf(stderr, "\n");
 	mhandle_done();
+
+	/* End */
+	fprintf(stderr, "\n");
 	return 0;
 }

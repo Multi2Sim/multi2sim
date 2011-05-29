@@ -99,7 +99,6 @@ extern uint32_t mmu_page_size;
 extern uint32_t mmu_page_mask;
 extern uint32_t mmu_log_page_size;
 
-void mmu_reg_options(void);
 void mmu_init(void);
 void mmu_done(void);
 uint32_t mmu_translate(int mid, uint32_t vtladdr);
@@ -372,7 +371,8 @@ void tlb_free(struct tlb_t *tlb);
 
 /* Cache System */
 
-extern char *cache_system_report_file;
+extern char *cache_system_config_file_name;
+extern char *cache_system_report_file_name;
 extern int cache_min_block_size;
 extern int cache_max_block_size;
 extern struct ccache_t *main_memory;
@@ -411,7 +411,6 @@ extern int EV_CACHE_SYSTEM_ACCESS_CACHE;
 extern int EV_CACHE_SYSTEM_ACCESS_TLB;
 extern int EV_CACHE_SYSTEM_ACCESS_FINISH;
 
-void cache_system_reg_options(void);
 void cache_system_init(int def_cores, int def_threads);
 void cache_system_done(void);
 void cache_system_dump(FILE *f);

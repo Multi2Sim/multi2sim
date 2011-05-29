@@ -42,6 +42,15 @@
 #include <sys/time.h>
 
 
+/* Configuration variables */
+
+extern uint64_t ke_max_cycles;
+extern uint64_t ke_max_inst;
+extern uint64_t ke_max_time;
+
+
+
+
 /* Some forward declarations */
 struct ctx_t;
 struct fd_t;

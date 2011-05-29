@@ -31,11 +31,6 @@
 
 
 
-/* Current simulation cycle and total committed inst */
-extern uint64_t sim_cycle;
-extern uint64_t sim_inst;
-
-
 /* Environment variables */
 extern char **environ;
 
@@ -48,6 +43,10 @@ extern int error_debug_category;
 
 /* Processor parameters */
 
+extern uint64_t sim_cycle;///// FIXME
+extern uint64_t sim_inst; ///// FIXME
+
+extern char *p_config_file_name;
 extern char *p_report_file_name;
 
 extern enum p_sim_kind_enum {
@@ -366,7 +365,6 @@ struct fu_res_t {
 
 extern struct fu_res_t fu_res_pool[fu_count];
 
-void fu_reg_options(void);
 void fu_init(void);
 void fu_done(void);
 
@@ -647,7 +645,6 @@ enum ptrace_stage_enum {
 
 void ptrace_init(void);
 void ptrace_done(void);
-void ptrace_reg_options(void);
 
 void ptrace_new_uop(struct uop_t *uop);
 void ptrace_end_uop(struct uop_t *uop);
@@ -878,15 +875,14 @@ extern struct processor_t *p;
 
 
 /* Procedures and functions */
-void p_reg_options(void);
 void p_print_stats(FILE *f);
 void p_init(void);
 void p_done(void);
+
 void p_load_progs(int argc, char **argv, char *ctxfile);
 void p_dump(FILE *f);
 void p_update_occupancy_stats(void);
 uint32_t p_tlb_address(int ctx, uint32_t vaddr);
-void p_fast_forward(uint64_t cycles);
 
 int p_pipeline_empty(int core, int thread);
 void p_map_context(int core, int thread, struct ctx_t *ctx);
@@ -903,6 +899,8 @@ void p_writeback(void);
 void p_commit(void);
 void p_recover(int core, int thread);
 
+void p_fast_forward(uint64_t cycles);
+void p_run(void);
 
 #endif
 
