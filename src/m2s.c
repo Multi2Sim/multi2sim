@@ -87,7 +87,7 @@ static void sim_reg_options()
 	opt_reg_string("-debug:pipeline", "Debug information for pipeline", &esim_debug_file_name);
 	opt_reg_string("-debug:error", "Debug information after errors", &error_debug_file_name);
 
-	opt_reg_string("-report:pipeline", "Report for pipeline statistics", &p_report_file);
+	opt_reg_string("-report:pipeline", "Report for pipeline statistics", &p_report_file_name);
 	opt_reg_string("-report:cache", "Report for cache system", &cache_system_report_file);
 
 	gk_reg_options();
@@ -171,8 +171,8 @@ int main(int argc, char **argv)
 	uop_init();
 	esim_init();
 	net_init();
-	cache_system_init(p_cores, p_threads);
 	ke_init();
+	p_init();
 
 	/* Debug */
 	debug_init();
@@ -189,7 +189,6 @@ int main(int argc, char **argv)
 	esim_debug_init(esim_debug_file_name);
 
 	/* Load programs */
-	p_init();
 	p_load_progs(argc, argv, ctxfile);
 
 	/* Fast forward simulation */
@@ -246,7 +245,6 @@ int main(int argc, char **argv)
 	p_done();
 	ke_done();
 	uop_done();
-	cache_system_done();
 	net_done();
 	esim_done();
 	debug_done();

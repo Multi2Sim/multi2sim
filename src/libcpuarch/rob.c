@@ -21,11 +21,18 @@
 
 
 
-/* Variables */
+/* Global variables */
 
-uint32_t rob_size = 64;
-enum rob_kind_enum rob_kind = rob_kind_private;
-int total_rob_size = 0;
+char *rob_kind_map[] = { "Private", "Shared" };
+enum rob_kind_enum rob_kind;
+int rob_size;
+
+
+
+
+/* Private variables */
+
+static int total_rob_size = 0;
 
 
 
@@ -62,16 +69,6 @@ static void rob_trim(int core)
 
 
 /* Public Functions */
-
-void rob_reg_options()
-{
-	static char *rob_kind_map[] = { "private", "shared" };
-	opt_reg_enum("-rob_kind", "reorder buffer sharing {private|shared}",
-		(int *) &rob_kind, rob_kind_map, 2);
-	opt_reg_uint32("-rob_size", "reorder buffer size per thread",
-		&rob_size);
-}
-
 
 void rob_init()
 {

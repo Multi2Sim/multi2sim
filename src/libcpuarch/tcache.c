@@ -22,27 +22,12 @@
 
 /* Parameters */
 
-int tcache_present = 0;
-uint32_t tcache_trace_size = 16;
-uint32_t tcache_branch_max = 3;
-uint32_t tcache_queue_size = 32;
-static char *tcache_topo = "64:4";
-static uint32_t tcache_sets;
-static uint32_t tcache_assoc;
-
-
-void tcache_reg_options()
-{
-	opt_reg_bool("-tcache", "Use trace cache {t|f}", &tcache_present);
-	opt_reg_string("-tcache:topo", "Trace cache topology (<sets>:<assoc>)",
-		&tcache_topo);
-	opt_reg_uint32("-tcache:trace_size", "Maximum number of uops in a trace",
-		&tcache_trace_size);
-	opt_reg_uint32("-tcache:branch_max", "Maximum number of branches in a trace",
-		&tcache_branch_max);
-	opt_reg_uint32("-tcache:queue_size", "Fetch queue for predecoded uops",
-		&tcache_queue_size);
-}
+int tcache_present;  /* Use trace cache */
+int tcache_sets;  /* Number of sets */
+int tcache_assoc;  /* Number of ways */
+int tcache_trace_size;  /* Maximum number of uops in a trace */
+int tcache_branch_max;  /* Maximum number of branches in a trace */
+int tcache_queue_size;  /* Fetch queue for pre-decoded uops */
 
 
 void tcache_init()
@@ -52,10 +37,6 @@ void tcache_init()
 	/* Trace cache present */
 	if (!tcache_present)
 		return;
-
-	/* Obtain sets and assoc */
-	if (sscanf(tcache_topo, "%d:%d", &tcache_sets, &tcache_assoc) != 2)
-		fatal("invalid tcache:topo format");
 
 	/* Integrity */
 	if ((tcache_sets & (tcache_sets - 1)) || !tcache_sets)
@@ -125,8 +106,15 @@ void tcache_free(struct tcache_t *tcache)
 
 void tcache_dump_report(struct tcache_t *tcache, FILE *f)
 {
-	/* Print stats */
-	fprintf(f, "# Trace cache\n");
+	fprintf(f, "# Trace cache - parameters\n");
+	fprintf(f, "TraceCache.Sets = %d\n", tcache_sets);
+	fprintf(f, "TraceCache.Assoc = %d\n", tcache_assoc);
+	fprintf(f, "TraceCache.TraceSize = %d\n", tcache_trace_size);
+	fprintf(f, "TraceCache.BranchMax = %d\n", tcache_branch_max);
+	fprintf(f, "TraceCache.QueueSize = %d\n", tcache_queue_size);
+	fprintf(f, "\n");
+
+	fprintf(f, "# Trace cache - statistics\n");
 	fprintf(f, "TraceCache.Accesses = %lld\n", (long long) tcache->accesses);
 	fprintf(f, "TraceCache.Hits = %lld\n", (long long) tcache->hits);
 	fprintf(f, "TraceCache.HitRatio = %.4g\n", tcache->accesses ? (double)
