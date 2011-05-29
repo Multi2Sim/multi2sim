@@ -50,6 +50,11 @@ extern int error_debug_category;
 
 extern char *p_report_file_name;
 
+extern enum p_sim_kind_enum {
+	p_sim_kind_functional,
+	p_sim_kind_detailed
+} p_sim_kind;
+
 extern int p_cores;
 extern int p_threads;
 
