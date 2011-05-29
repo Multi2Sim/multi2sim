@@ -27,38 +27,38 @@ int p_pipeline_empty(int core, int thread)
 }
 
 
-/* Return the cpu identifier that best fits to the context with the following priority:
- *  1) If the cpu where the context was allocated before is free, return it.
- *  2) If there is any cpu that has not been used yet, return it.
- *  3) If there is any free cpu, return it.
+/* Return the node identifier that best fits to the context with the following priority:
+ *  1) If the node where the context was allocated before is free, return it.
+ *  2) If there is any node that has not been used yet, return it.
+ *  3) If there is any free node, return it.
  *  4) Return -1
  */
 int p_context_to_cpu(struct ctx_t *ctx)
 {
-	int cpu, free_cpu;
+	int node, free_cpu;
 	int core, thread;
 	assert(!ctx_get_status(ctx, ctx_alloc));
 	assert(ke->alloc_count <= p_cores * p_threads);
 
-	/* No free cpu */
+	/* No free node */
 	if (ke->alloc_count == p_cores * p_threads)
 		return -1;
 	
-	/* Try to allocate previous cpu, if the contexts has ever been
+	/* Try to allocate previous node, if the contexts has ever been
 	 * allocated before. */
 	if (ctx->alloc_when && !p->core[ctx->alloc_core].thread[ctx->alloc_thread].ctx)
 		return ctx->alloc_core * p_threads + ctx->alloc_thread;
 	
-	/* Find a cpu that has not been used before. This is useful in case
-	 * a context was suspended and tries to allocate later the same cpu. */
+	/* Find a node that has not been used before. This is useful in case
+	 * a context was suspended and tries to allocate later the same node. */
 	free_cpu = -1;
-	for (cpu = 0; cpu < p_cores * p_threads; cpu++) {
-		core = cpu / p_threads;
-		thread = cpu % p_threads;
+	for (node = 0; node < p_cores * p_threads; node++) {
+		core = node / p_threads;
+		thread = node % p_threads;
 		if (!THREAD.ctx && free_cpu < 0)
-			free_cpu = cpu;
+			free_cpu = node;
 		if (!THREAD.last_alloc_pid)
-			return cpu;
+			return node;
 	}
 	assert(free_cpu >= 0);
 	return free_cpu;
@@ -142,7 +142,7 @@ void p_unmap_context_signal(struct ctx_t *ctx)
 void p_static_schedule()
 {
 	struct ctx_t *ctx;
-	int cpu;
+	int node;
 
 	ctx_debug("cycle %lld: static scheduler called\n",
 		(long long) p->cycle);
@@ -159,15 +159,15 @@ void p_static_schedule()
 		if (ctx_get_status(ctx, ctx_alloc))
 			continue;
 
-		/* Find free cpu. If none free, static scheduler aborts
+		/* Find free node. If none free, static scheduler aborts
 		 * simulation with an error. */
-		cpu = p_context_to_cpu(ctx);
-		if (cpu < 0)
-			fatal("no cpu free for context %d; increase number of cores/threads"
+		node = p_context_to_cpu(ctx);
+		if (node < 0)
+			fatal("no core/thread free for context %d; increase number of cores/threads"
 				" or activate the context scheduler.", ctx->pid);
 
 		/* Allocate context. */
-		p_map_context(cpu / p_threads, cpu % p_threads, ctx);
+		p_map_context(node / p_threads, node % p_threads, ctx);
 	}
 }
 
@@ -175,7 +175,7 @@ void p_static_schedule()
 void p_dynamic_schedule()
 {
 	struct ctx_t *ctx, *found_ctx;
-	int cpu;
+	int node;
 
 	ctx_debug("cycle %lld: scheduler called\n",
 		(long long) p->cycle);
@@ -218,9 +218,9 @@ void p_dynamic_schedule()
 		ctx = found_ctx;
 
 		/* Allocate context */
-		cpu = p_context_to_cpu(ctx);
-		assert(cpu >= 0 && cpu < p_cores * p_threads);
-		p_map_context(cpu / p_threads, cpu % p_threads, ctx);
+		node = p_context_to_cpu(ctx);
+		assert(node >= 0 && node < p_cores * p_threads);
+		p_map_context(node / p_threads, node % p_threads, ctx);
 	}
 
 	/* Calculate the context that was allocated first */
