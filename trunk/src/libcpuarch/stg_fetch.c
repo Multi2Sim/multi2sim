@@ -245,18 +245,18 @@ static void fetch_core(int core)
 	int thread, new;
 	int must_switch;
 
-	switch (p_fetch_kind) {
+	switch (cpu_fetch_kind) {
 
 	/* Fetch from all threads */
-	case p_fetch_kind_shared:
+	case cpu_fetch_kind_shared:
 		FOREACH_THREAD
 			if (can_fetch(core, thread))
 				fetch_thread(core, thread);
 		break;
 
-	case p_fetch_kind_timeslice:
+	case cpu_fetch_kind_timeslice:
 		FOREACH_THREAD {
-			CORE.fetch_current = (CORE.fetch_current + 1) % p_threads;
+			CORE.fetch_current = (CORE.fetch_current + 1) % cpu_threads;
 			if (can_fetch(core, CORE.fetch_current)) {
 				fetch_thread(core, CORE.fetch_current);
 				break;
@@ -264,18 +264,18 @@ static void fetch_core(int core)
 		}
 		break;
 	
-	case p_fetch_kind_switchonevent:
+	case cpu_fetch_kind_switchonevent:
 		
 		/* Check for context switch */
 		thread = CORE.fetch_current;
 		must_switch = !ctx_get_status(THREAD.ctx, ctx_running);
-		if (cpu->cycle - CORE.fetch_switch > p_thread_quantum ||  /* Quantum expired */
+		if (cpu->cycle - CORE.fetch_switch > cpu_thread_quantum ||  /* Quantum expired */
 			eventq_longlat(core, thread) ||  /* Long latency instruction */
 			must_switch)  /* Current context is suspended */
 		{
 			/* Find a new thread to switch to */
-			for (new = (thread + 1) % p_threads; new != thread;
-				new = (new + 1) % p_threads)
+			for (new = (thread + 1) % cpu_threads; new != thread;
+				new = (new + 1) % cpu_threads)
 			{
 				/* Do not choose it if it is not eligible for fetching */
 				if (!can_fetch(core, new))
@@ -298,7 +298,7 @@ static void fetch_core(int core)
 			if (new != thread) {
 				CORE.fetch_current = new;
 				CORE.fetch_switch = cpu->cycle;
-				ITHREAD(new).fetch_stall = p_thread_switch_penalty;
+				ITHREAD(new).fetch_stall = cpu_thread_switch_penalty;
 			}
 		}
 
@@ -310,7 +310,7 @@ static void fetch_core(int core)
 }
 
 
-void p_fetch()
+void cpu_fetch()
 {
 	int core;
 	cpu->stage = "fetch";

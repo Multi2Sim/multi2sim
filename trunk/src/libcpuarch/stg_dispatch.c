@@ -110,26 +110,26 @@ static int dispatch_thread(int core, int thread, int quant)
 
 void dispatch_core(int core)
 {
-	int skip = p_threads;
-	int quant = p_dispatch_width;
+	int skip = cpu_threads;
+	int quant = cpu_dispatch_width;
 	int remain;
 
-	switch (p_dispatch_kind) {
+	switch (cpu_dispatch_kind) {
 
-	case p_dispatch_kind_shared:
+	case cpu_dispatch_kind_shared:
 		
 		do {
-			CORE.dispatch_current = (CORE.dispatch_current + 1) % p_threads;
+			CORE.dispatch_current = (CORE.dispatch_current + 1) % cpu_threads;
 			remain = dispatch_thread(core, CORE.dispatch_current, 1);
-			skip = remain ? skip - 1 : p_threads;
+			skip = remain ? skip - 1 : cpu_threads;
 			quant = remain ? quant : quant - 1;
 		} while (quant && skip);
 		break;
 	
-	case p_dispatch_kind_timeslice:
+	case cpu_dispatch_kind_timeslice:
 		
 		do {
-			CORE.dispatch_current = (CORE.dispatch_current + 1) % p_threads;
+			CORE.dispatch_current = (CORE.dispatch_current + 1) % cpu_threads;
 			skip--;
 		} while (skip && can_dispatch_thread(core, CORE.dispatch_current) != di_stall_used);
 		dispatch_thread(core, CORE.dispatch_current, quant);
@@ -138,7 +138,7 @@ void dispatch_core(int core)
 }
 
 
-void p_dispatch()
+void cpu_dispatch()
 {
 	int core;
 	cpu->stage = "dispatch";

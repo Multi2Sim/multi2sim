@@ -147,7 +147,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 				fatal("option '%s' must be followed by a CPU configuration file name.\n%s",
 					argv[argi], err_help_note);
 			argi++;
-			p_config_file_name = argv[argi];
+			cpu_config_file_name = argv[argi];
 			continue;
 		}
 
@@ -158,9 +158,9 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 					argv[argi], err_help_note);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
-				p_sim_kind = p_sim_kind_functional;
+				cpu_sim_kind = cpu_sim_kind_functional;
 			else if (!strcasecmp(argv[argi], "detailed"))
-				p_sim_kind = p_sim_kind_detailed;
+				cpu_sim_kind = cpu_sim_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], err_help_note);
@@ -355,7 +355,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 				fatal("option '%s' must be followed by a pipeline report file name.\n%s",
 					argv[argi], err_help_note);
 			argi++;
-			p_report_file_name = argv[argi];
+			cpu_report_file_name = argv[argi];
 			continue;
 		}
 
@@ -380,8 +380,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Check configuration consistency */
-	if (p_sim_kind == p_sim_kind_functional) {
-		if (*p_config_file_name || *p_report_file_name)
+	if (cpu_sim_kind == cpu_sim_kind_functional) {
+		if (*cpu_config_file_name || *cpu_report_file_name)
 			fatal("A CPU configuration file or statistics report cannot be specified for functional CPU simulation.\n"
 				"If you want to run an architectural simulation, add option '--cpu-sim detailed'.\n");
 		if (*cache_system_config_file_name || *cache_system_report_file_name)
@@ -427,11 +427,11 @@ int main(int argc, char **argv)
 	ke_init();
 
 	/* Initialization for detailed simulation */
-	if (p_sim_kind == p_sim_kind_detailed) {
+	if (cpu_sim_kind == cpu_sim_kind_detailed) {
 		uop_init();
 		esim_init();
 		net_init();
-		p_init();
+		cpu_init();
 	}
 	if (gpu_sim_kind == gpu_sim_kind_detailed)
 		gpu_init();
@@ -451,16 +451,16 @@ int main(int argc, char **argv)
 	esim_debug_init(esim_debug_file_name);
 
 	/* Load programs */
-	p_load_progs(argc, argv, ctxconfig_file_name);
+	cpu_load_progs(argc, argv, ctxconfig_file_name);
 
 	/* Simulation loop */
-	if (p_sim_kind == p_sim_kind_detailed)
-		p_run();
+	if (cpu_sim_kind == cpu_sim_kind_detailed)
+		cpu_run();
 	else
 		ke_run();
 
 	/* Finalization of detailed CPU simulation */
-	if (p_sim_kind == p_sim_kind_detailed) {
+	if (cpu_sim_kind == cpu_sim_kind_detailed) {
 		
 		/* Finalize event-driven simulations */
 		while (esim_pending() && esim_cycle < cpu->cycle + (1 << 20))
@@ -468,7 +468,7 @@ int main(int argc, char **argv)
 		esim_debug_done();
 
 		/* Rest */
-		p_done();
+		cpu_done();
 		uop_done();
 		net_done();
 		esim_done();
