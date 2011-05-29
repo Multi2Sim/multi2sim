@@ -52,7 +52,7 @@ void p_recover(int core, int thread)
 			THREAD.tcache->squashed++;
 		THREAD.squashed++;
 		CORE.squashed++;
-		p->squashed++;
+		cpu->squashed++;
 		
 		/* Undo map */
 		if (!uop->completed)

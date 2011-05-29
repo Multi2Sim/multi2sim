@@ -463,7 +463,7 @@ int main(int argc, char **argv)
 	if (p_sim_kind == p_sim_kind_detailed) {
 		
 		/* Finalize event-driven simulations */
-		while (esim_pending() && esim_cycle < p->cycle + (1 << 20))
+		while (esim_pending() && esim_cycle < cpu->cycle + (1 << 20))
 			esim_process_events();
 		esim_debug_done();
 

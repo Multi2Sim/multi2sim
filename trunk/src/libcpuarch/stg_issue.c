@@ -50,7 +50,7 @@ static int issue_sq(int core, int thread, int quant)
 		 * prevent the uop from being freed. */
 		store->in_eventq = 1;
 		store->issued = 1;
-		store->issue_when = p->cycle;
+		store->issue_when = cpu->cycle;
 	
 		/* Instruction issued */
 		CORE.issued[store->uop]++;
@@ -61,7 +61,7 @@ static int issue_sq(int core, int thread, int quant)
 		THREAD.lsq_reads++;
 		THREAD.rf_int_reads += store->ph_int_idep_count;
 		THREAD.rf_fp_reads += store->ph_fp_idep_count;
-		p->issued[store->uop]++;
+		cpu->issued[store->uop]++;
 		quant--;
 		
 		/* Debug */
@@ -112,7 +112,7 @@ static int issue_lq(int core, int thread, int quant)
 		 * prevent the uop from being freed. */
 		load->in_eventq = 1;
 		load->issued = 1;
-		load->issue_when = p->cycle;
+		load->issue_when = cpu->cycle;
 		
 		/* Instruction issued */
 		CORE.issued[load->uop]++;
@@ -123,7 +123,7 @@ static int issue_lq(int core, int thread, int quant)
 		THREAD.lsq_reads++;
 		THREAD.rf_int_reads += load->ph_int_idep_count;
 		THREAD.rf_fp_reads += load->ph_fp_idep_count;
-		p->issued[load->uop]++;
+		cpu->issued[load->uop]++;
 		quant--;
 		
 		/* Debug */
@@ -180,8 +180,8 @@ static int issue_iq(int core, int thread, int quant)
 		assert(!uop->in_eventq);
 		assert(lat > 0);
 		uop->issued = 1;
-		uop->issue_when = p->cycle;
-		uop->when = p->cycle + lat;
+		uop->issue_when = cpu->cycle;
+		uop->when = cpu->cycle + lat;
 		eventq_insert(CORE.eventq, uop);
 		
 		/* Instruction issued */
@@ -193,7 +193,7 @@ static int issue_iq(int core, int thread, int quant)
 		THREAD.iq_reads++;
 		THREAD.rf_int_reads += uop->ph_int_idep_count;
 		THREAD.rf_fp_reads += uop->ph_fp_idep_count;
-		p->issued[uop->uop]++;
+		cpu->issued[uop->uop]++;
 		quant--;
 
 		/* Debug */
@@ -277,7 +277,7 @@ void issue_core(int core)
 void p_issue()
 {
 	int core;
-	p->stage = "issue";
+	cpu->stage = "issue";
 	FOREACH_CORE
 		issue_core(core);
 }

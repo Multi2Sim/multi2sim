@@ -46,7 +46,7 @@ int p_context_to_cpu(struct ctx_t *ctx)
 	
 	/* Try to allocate previous node, if the contexts has ever been
 	 * allocated before. */
-	if (ctx->alloc_when && !p->core[ctx->alloc_core].thread[ctx->alloc_thread].ctx)
+	if (ctx->alloc_when && !cpu->core[ctx->alloc_core].thread[ctx->alloc_thread].ctx)
 		return ctx->alloc_core * p_threads + ctx->alloc_thread;
 	
 	/* Find a node that has not been used before. This is useful in case
@@ -79,10 +79,10 @@ void p_map_context(int core, int thread, struct ctx_t *ctx)
 	ctx_set_status(ctx, ctx_alloc);
 	ctx->alloc_core = core;
 	ctx->alloc_thread = thread;
-	ctx->alloc_when = p->cycle;
+	ctx->alloc_when = cpu->cycle;
 
 	ctx_debug("cycle %lld: ctx %d allocated to c%dt%d\n",
-		(long long) p->cycle, ctx->pid, core, thread);
+		(long long) cpu->cycle, ctx->pid, core, thread);
 }
 
 
@@ -95,18 +95,18 @@ void p_unmap_context(int core, int thread)
 	assert(!ctx_get_status(ctx, ctx_specmode));
 	assert(!THREAD.rob_count);
 	assert(ctx->dealloc_signal);
-	assert(p->ctx_dealloc_signals > 0);
+	assert(cpu->ctx_dealloc_signals > 0);
 
 	THREAD.ctx = NULL;
 	THREAD.fetch_neip = 0;
 
 	ctx_clear_status(ctx, ctx_alloc);
-	ctx->dealloc_when = p->cycle;
+	ctx->dealloc_when = cpu->cycle;
 	ctx->dealloc_signal = 0;
-	p->ctx_dealloc_signals--;
+	cpu->ctx_dealloc_signals--;
 
 	ctx_debug("cycle %lld: ctx %d evicted from c%dt%d\n",
-		(long long) p->cycle, ctx->pid, core, thread);
+		(long long) cpu->cycle, ctx->pid, core, thread);
 	
 	/* If context is finished, free it. */
 	if (ctx_get_status(ctx, ctx_finished))
@@ -125,14 +125,14 @@ void p_unmap_context_signal(struct ctx_t *ctx)
 	assert(ctx);
 	assert(ctx_get_status(ctx, ctx_alloc));
 	assert(!ctx->dealloc_signal);
-	assert(p->ctx_dealloc_signals < p_cores * p_threads);
+	assert(cpu->ctx_dealloc_signals < p_cores * p_threads);
 
 	ctx->dealloc_signal = 1;
-	p->ctx_dealloc_signals++;
+	cpu->ctx_dealloc_signals++;
 	core = ctx->alloc_core;
 	thread = ctx->alloc_thread;
 	ctx_debug("cycle %lld: ctx %d receives eviction signal from c%dt%d\n",
-		(long long) p->cycle, ctx->pid, core, thread);
+		(long long) cpu->cycle, ctx->pid, core, thread);
 	if (p_pipeline_empty(core, thread))
 		p_unmap_context(core, thread);
 		
@@ -145,7 +145,7 @@ void p_static_schedule()
 	int node;
 
 	ctx_debug("cycle %lld: static scheduler called\n",
-		(long long) p->cycle);
+		(long long) cpu->cycle);
 	
 	/* If there is no new unallocated context, exit. */
 	assert(ke->alloc_count <= ke->context_count);
@@ -178,7 +178,7 @@ void p_dynamic_schedule()
 	int node;
 
 	ctx_debug("cycle %lld: scheduler called\n",
-		(long long) p->cycle);
+		(long long) cpu->cycle);
 	
 	/* Evict non-running contexts */
 	for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
@@ -188,15 +188,15 @@ void p_dynamic_schedule()
 	/* If all running contexts are allocated, just update the ctx_alloc_oldest counter,
 	 * and exit. */
 	if (ke->alloc_count == ke->running_count) {
-		p->ctx_alloc_oldest = p->cycle;
+		cpu->ctx_alloc_oldest = cpu->cycle;
 		for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
-			ctx->alloc_when = p->cycle;
+			ctx->alloc_when = cpu->cycle;
 		return;
 	}
 
 	/* If any quantum expired and no context eviction signal is activated,
 	 * send signal to evict the oldest allocated context. */
-	if (!p->ctx_dealloc_signals && p->ctx_alloc_oldest + p_context_quantum <= p->cycle) {
+	if (!cpu->ctx_dealloc_signals && cpu->ctx_alloc_oldest + p_context_quantum <= cpu->cycle) {
 		found_ctx = NULL;
 		for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
 			if (!found_ctx || ctx->alloc_when < found_ctx->alloc_when)
@@ -224,9 +224,9 @@ void p_dynamic_schedule()
 	}
 
 	/* Calculate the context that was allocated first */
-	p->ctx_alloc_oldest = p->cycle;
+	cpu->ctx_alloc_oldest = cpu->cycle;
 	for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
-		if (!ctx->dealloc_signal && ctx->alloc_when < p->ctx_alloc_oldest)
-			p->ctx_alloc_oldest = ctx->alloc_when;
+		if (!ctx->dealloc_signal && ctx->alloc_when < cpu->ctx_alloc_oldest)
+			cpu->ctx_alloc_oldest = ctx->alloc_when;
 }
 

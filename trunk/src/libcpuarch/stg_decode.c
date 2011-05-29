@@ -75,7 +75,7 @@ static void decode_core(int core)
 void p_decode()
 {
 	int core;
-	p->stage = "decode";
+	cpu->stage = "decode";
 	FOREACH_CORE
 		decode_core(core);
 }
