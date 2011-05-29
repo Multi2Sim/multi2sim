@@ -79,8 +79,8 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 	for (i = count; i < newcount; i++) {
 		uop = list_get(fetchq, i);
 		assert(uop);
-		uop->seq = ++p->seq;
-		uop->mop_seq = p->seq - i + count;
+		uop->seq = ++cpu->seq;
+		uop->mop_seq = cpu->seq - i + count;
 		uop->mop_size = isa_inst.size;
 		uop->mop_count = newcount - count;
 		uop->mop_index = i - count;
@@ -114,7 +114,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 				sizeof(uop->mop_name));
 
 		/* New uop */
-		p->fetched++;
+		cpu->fetched++;
 		THREAD.fetched++;
 		if (fetch_tcache)
 			THREAD.tcacheq_occ++;
@@ -269,7 +269,7 @@ static void fetch_core(int core)
 		/* Check for context switch */
 		thread = CORE.fetch_current;
 		must_switch = !ctx_get_status(THREAD.ctx, ctx_running);
-		if (p->cycle - CORE.fetch_switch > p_thread_quantum ||  /* Quantum expired */
+		if (cpu->cycle - CORE.fetch_switch > p_thread_quantum ||  /* Quantum expired */
 			eventq_longlat(core, thread) ||  /* Long latency instruction */
 			must_switch)  /* Current context is suspended */
 		{
@@ -297,7 +297,7 @@ static void fetch_core(int core)
 			/* if thread switch successful */
 			if (new != thread) {
 				CORE.fetch_current = new;
-				CORE.fetch_switch = p->cycle;
+				CORE.fetch_switch = cpu->cycle;
 				ITHREAD(new).fetch_stall = p_thread_switch_penalty;
 			}
 		}
@@ -313,7 +313,7 @@ static void fetch_core(int core)
 void p_fetch()
 {
 	int core;
-	p->stage = "fetch";
+	cpu->stage = "fetch";
 	FOREACH_CORE
 		fetch_core(core);
 }

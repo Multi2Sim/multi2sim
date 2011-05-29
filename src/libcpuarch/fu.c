@@ -61,18 +61,18 @@ int fu_reserve(struct uop_t *uop)
 
 	/* First time uop tries to reserve f.u. */
 	if (!uop->issue_try_when)
-		uop->issue_try_when = p->cycle;
+		uop->issue_try_when = cpu->cycle;
 
 	/* Find a free f.u. */
 	assert(fu_class > fu_none && fu_class < fu_count);
 	assert(fu_res_pool[fu_class].count <= FU_RES_MAX);
 	for (i = 0; i < fu_res_pool[fu_class].count; i++) {
-		if (fu->cycle_when_free[fu_class][i] <= p->cycle) {
+		if (fu->cycle_when_free[fu_class][i] <= cpu->cycle) {
 			assert(fu_res_pool[fu_class].issuelat > 0);
 			assert(fu_res_pool[fu_class].oplat > 0);
-			fu->cycle_when_free[fu_class][i] = p->cycle + fu_res_pool[fu_class].issuelat;
+			fu->cycle_when_free[fu_class][i] = cpu->cycle + fu_res_pool[fu_class].issuelat;
 			fu->accesses[fu_class]++;
-			fu->waiting_time[fu_class] += p->cycle - uop->issue_try_when;
+			fu->waiting_time[fu_class] += cpu->cycle - uop->issue_try_when;
 			return fu_res_pool[fu_class].oplat;
 		}
 	}

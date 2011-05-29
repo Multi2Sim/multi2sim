@@ -41,6 +41,11 @@ extern int error_debug_category;
 
 
 
+/* CPU variable */
+extern struct cpu_t *cpu;
+
+
+
 /* Processor parameters */
 
 extern char *p_config_file_name;
@@ -655,10 +660,10 @@ void ptrace_new_cycle(void);
 /* Multi-Core Multi-Thread Processor */
 
 /* Fast access macros */
-#define CORE			(p->core[core])
-#define THREAD			(p->core[core].thread[thread])
-#define ICORE(I)		(p->core[(I)])
-#define ITHREAD(I)		(p->core[core].thread[(I)])
+#define CORE			(cpu->core[core])
+#define THREAD			(cpu->core[core].thread[thread])
+#define ICORE(I)		(cpu->core[(I)])
+#define ITHREAD(I)		(cpu->core[core].thread[(I)])
 #define FOREACH_CORE		for (core = 0; core < p_cores; core++)
 #define FOREACH_THREAD		for (thread = 0; thread < p_threads; thread++)
 
@@ -678,7 +683,7 @@ enum di_stall_enum {
 
 
 /* Thread */
-struct processor_thread_t {
+struct cpu_thread_t {
 
 	struct ctx_t *ctx;  /* allocated kernel context */
 	int last_alloc_pid;  /* pid of last allocated context */
@@ -764,10 +769,10 @@ struct processor_thread_t {
 
 
 /* Cores */
-struct processor_core_t {
+struct cpu_core_t {
 
 	/* Array of threads */
-	struct processor_thread_t *thread;
+	struct cpu_thread_t *thread;
 
 	/* Shared structures */
 	struct lnlist_t *eventq;
@@ -834,10 +839,10 @@ struct processor_core_t {
 
 
 /* Processor */
-struct processor_t {
+struct cpu_t {
 	
 	/* Array of cores */
-	struct processor_core_t *core;
+	struct cpu_core_t *core;
 
 	/* Cycle and instruction counters */
 	uint64_t cycle;
@@ -869,10 +874,6 @@ struct processor_t {
 	uint64_t last_dump;
 	
 };
-
-
-/* Processor external variable */
-extern struct processor_t *p;
 
 
 /* Procedures and functions */

@@ -28,8 +28,8 @@ static int can_commit_thread(int core, int thread)
 	/* Sanity check - If the context is running, we assume that something is
 	 * going wrong if more than 1M cycles go by without committing an inst. */
 	if (!ctx || !ctx_get_status(ctx, ctx_running))
-		THREAD.last_commit_cycle = p->cycle;
-	if (p->cycle - THREAD.last_commit_cycle > 1000000)
+		THREAD.last_commit_cycle = cpu->cycle;
+	if (cpu->cycle - THREAD.last_commit_cycle > 1000000)
 		panic("c%dt%d: no inst committed in 1M cycles", core, thread);
 
 	/* If there is no instruction in the ROB, or the instruction is not
@@ -97,21 +97,21 @@ static void commit_thread(int core, int thread, int quant)
 			tcache_new_uop(THREAD.tcache, uop);
 			
 		/* Stats */
-		THREAD.last_commit_cycle = p->cycle;
+		THREAD.last_commit_cycle = cpu->cycle;
 		THREAD.committed[uop->uop]++;
 		CORE.committed[uop->uop]++;
-		p->committed[uop->uop]++;
-		p->inst++;
+		cpu->committed[uop->uop]++;
+		cpu->inst++;
 		if (uop->fetch_tcache)
 			THREAD.tcache->committed++;
 		if (uop->flags & FCTRL) {
 			THREAD.branches++;
 			CORE.branches++;
-			p->branches++;
+			cpu->branches++;
 			if (uop->neip != uop->pred_neip) {
 				THREAD.mispred++;
 				CORE.mispred++;
-				p->mispred++;
+				cpu->mispred++;
 			}
 		}
 
@@ -182,7 +182,7 @@ void commit_core(int core)
 void p_commit()
 {
 	int core;
-	p->stage = "commit";
+	cpu->stage = "commit";
 	FOREACH_CORE
 		commit_core(core);
 }

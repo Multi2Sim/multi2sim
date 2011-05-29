@@ -93,7 +93,7 @@ static int dispatch_thread(int core, int thread, int quant)
 		CORE.di_stall[uop->specmode ? di_stall_spec : di_stall_used]++;
 		THREAD.dispatched[uop->uop]++;
 		CORE.dispatched[uop->uop]++;
-		p->dispatched[uop->uop]++;
+		cpu->dispatched[uop->uop]++;
 		quant--;
 
 		/* Pipeline debug */
@@ -141,7 +141,7 @@ void dispatch_core(int core)
 void p_dispatch()
 {
 	int core;
-	p->stage = "dispatch";
+	cpu->stage = "dispatch";
 	FOREACH_CORE
 		dispatch_core(core);
 }
