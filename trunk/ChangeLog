@@ -939,3 +939,7 @@
 	* src/libcpuarch: variable 'p' changed by 'cpu'.
 	* src/libcpuarch: all 'p_XXX' functions and variables replaced by 'cpu_XXX'
 
+2010-05-30
+	* src/libcpukernel/loader.c: help message for context configuration file
+	* src/libcpuarch/cpuarch.c: help message for CPU configuration file
+

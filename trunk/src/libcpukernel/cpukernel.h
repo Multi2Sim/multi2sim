@@ -257,6 +257,8 @@ struct loader_t {
 #define ld_debug(...) debug(ld_debug_category, __VA_ARGS__)
 extern int ld_debug_category;
 
+extern char *ld_help_ctxconfig;
+
 void ld_init(struct ctx_t *ctx);
 void ld_done(struct ctx_t *ctx);
 

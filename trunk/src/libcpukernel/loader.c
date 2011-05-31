@@ -21,6 +21,41 @@
 
 int ld_debug_category;
 
+char *ld_help_ctxconfig =
+	"A context configuration file contains a list of executable programs and\n"
+	"their parameters that will be simulated by Multi2Sim. The context\n"
+	"confiruation file is a plain text file in the IniFile format, containing\n"
+	"as many sections as x86 programs simulated. Each program is denoted with\n"
+	"a section called '[ Context <num> ]', where <num> is an integer number\n"
+	"starting from 0.\n"
+	"\n"
+	"Variables in section '[ Context <num> ]':\n"
+	"\n"
+	"  Exe = <path> (Required)\n"
+	"      Path for the x86 executable file that will be simulated.\n"
+	"  Args = <arg_list>\n"
+	"      List of command-line arguments for the simulated program.\n"
+	"  Env = <env_list>\n"
+	"      List of environment variables enumerated using single or double\n"
+	"      quotes. These variables will be added to the current set of\n"
+	"      active environment variables.\n"
+	"      E.g.: Env = 'ENV_VAR1=100' \"ENV_VAR2=200\"\n"
+	"  Cwd = <path>\n"
+	"      Current working directory for simulated program. If not specified,\n"
+	"      the current working directory for the simulator will be also used\n"
+	"      for the simulated program.\n"
+	"  StdIn = <file>\n"
+	"      File to use as standard input for the simulated program. If none\n"
+	"      specified, the simulator standard input is selected.\n"
+	"  StdOut = <file>\n"
+	"      File to use as standard output and standard error output for the\n"
+	"      simulated program. If none specified, the standard output for the\n"
+	"      simulator is used in both cases.\n"
+	"\n"
+	"See the Multi2Sim Guide (www.multi2sim.org) for further details and\n"
+	"examples on how to use the context configuration file.\n"
+	"\n";
+
 
 static struct string_map_t sectionflags_map = {
 	3, {
@@ -136,13 +171,16 @@ void ld_add_environ(struct ctx_t *ctx, char *env)
 
 		/* Get new environment variable */
 		switch (*env) {
-		case 0x22: case 0x27:
+
+		case '"':
+		case '\'':
 			if (!(next = strchr(env + 1, *env)))
 				fatal("ld_add_environ: wrong format");
 			*next = 0;
 			lnlist_add(ld->env, strdup(env + 1));
 			env = next + 1;
 			break;
+
 		default:
 			lnlist_add(ld->env, strdup(env));
 			env = NULL;

@@ -44,6 +44,18 @@ int error_debug_category;
 
 
 static char *sim_help =
+	"Syntax:\n"
+	"\n"
+	"        m2s [<options>] [<x86_binary> [<arg_list>]]\n"
+	"\n"
+	"The user command-line supports a sequence of command-line options, and can\n"
+	"include an x86 ELF binary (executable x86 program) followed by its arguments.\n"
+	"The execution of this program will be simulated by Multi2Sim, together with\n"
+	"the rest of the x86 programs specified in the context configuration file\n"
+	"(option '--ctx-config <file>').\n"
+	"\n"
+	"List of supported options:\n"
+	"\n"
 	"  --cache-config <file>\n"
 	"      Configuration file for the cache memory hierarchy, including cache levels,\n"
 	"      cache geometry, latencies, and interconnection networks. Type\n"
@@ -86,6 +98,14 @@ static char *sim_help =
 	"  --gpu-sim {functional|detailed}\n"
 	"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
 	"      detailed (architectural) simulation. Functional simulation is default.\n"
+	"\n"
+	"  --help-<xxx>\n"
+	"      Show help on the format of configuration files for Multi2Sim. <xxx> stands\n"
+	"      for one of the following options:\n"
+	"        --help-cache-config: format of the configuration file for the cache system.\n"
+	"        --help-cpu-config: format of the CPU model configuration file.\n"
+	"        --help-ctx-config: format of the context configuration file.\n"
+	"        --help-gpu-config: format of the GPU model configuration file.\n"
 	"\n"
 	"  --max-cycles <num_cycles>\n"
 	"      Specify a limit in the number of cycles. In the functional simulation, one\n"
@@ -277,6 +297,40 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* GPU simulation accuracy */
+		if (!strcmp(argv[argi], "--gpu-sim")) {
+			if (argi == argc - 1)
+				fatal("option '%s' requires a simulation accuracy argument.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			if (!strcasecmp(argv[argi], "functional"))
+				gpu_sim_kind = gpu_sim_kind_functional;
+			else if (!strcasecmp(argv[argi], "detailed"))
+				gpu_sim_kind = gpu_sim_kind_detailed;
+			else
+				fatal("option '%s': invalid argument ('%s').\n%s",
+					argv[argi - 1], argv[argi], err_help_note);
+			continue;
+		}
+
+		/* Show help */
+		if (!strcmp(argv[argi], "--help") || !strcmp(argv[argi], "-h")) {
+			fprintf(stderr, "%s", sim_help);
+			continue;
+		}
+
+		/* Help for CPU configuration file */
+		if (!strcmp(argv[argi], "--help-cpu-config")) {
+			fprintf(stderr, "%s", cpu_config_help);
+			continue;
+		}
+
+		/* Help for context configuration file format */
+		if (!strcmp(argv[argi], "--help-ctx-config")) {
+			fprintf(stderr, "%s", ld_help_ctxconfig);
+			continue;
+		}
+
 		/* Maximum number of cycles */
 		if (!strcmp(argv[argi], "--max-cycles")) {
 			if (argi == argc - 1)
@@ -307,28 +361,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 		
-		/* GPU simulation accuracy */
-		if (!strcmp(argv[argi], "--gpu-sim")) {
-			if (argi == argc - 1)
-				fatal("option '%s' requires a simulation accuracy argument.\n%s",
-					argv[argi], err_help_note);
-			argi++;
-			if (!strcasecmp(argv[argi], "functional"))
-				gpu_sim_kind = gpu_sim_kind_functional;
-			else if (!strcasecmp(argv[argi], "detailed"))
-				gpu_sim_kind = gpu_sim_kind_detailed;
-			else
-				fatal("option '%s': invalid argument ('%s').\n%s",
-					argv[argi - 1], argv[argi], err_help_note);
-			continue;
-		}
-
-		/* Show help */
-		if (!strcmp(argv[argi], "--help") || !strcmp(argv[argi], "-h")) {
-			fprintf(stderr, "%s", sim_help);
-			continue;
-		}
-
 		/* OpenCL binary */
 		if (!strcmp(argv[argi], "--opencl-binary")) {
 			if (argi == argc - 1)
