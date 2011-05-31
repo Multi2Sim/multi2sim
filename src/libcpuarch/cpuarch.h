@@ -44,6 +44,8 @@ extern int error_debug_category;
 /* CPU variable */
 extern struct cpu_t *cpu;
 
+extern char *cpu_config_help;
+
 
 
 /* Processor parameters */
