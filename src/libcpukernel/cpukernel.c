@@ -98,8 +98,6 @@ void ke_done(void)
 }
 
 
-
-
 void ke_dump(FILE *f)
 {
 	struct ctx_t *ctx;
@@ -780,6 +778,21 @@ void ke_run(void)
 	/* Restore signal handlers */
 	signal(SIGABRT, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
+
+	/* Statistics */
+	fprintf(stderr, "\n");
+	fprintf(stderr, ";\n");
+	fprintf(stderr, "; Simulation Statistics Summary\n");
+	fprintf(stderr, ";\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "[ CPU.FunctionalSimulationSummary ]\n");
+	fprintf(stderr, "Time = %.2f\n", (double) ke_timer() / 1000000);
+	fprintf(stderr, "Instructions = %lld\n", (long long) inst);
+	fprintf(stderr, "InstructionsPerSecond = %.0f\n", ke_timer() ? (double) inst / ke_timer() * 1000000 : 0.0);
+	fprintf(stderr, "Contexts = %d\n", ke->running_max);
+	fprintf(stderr, "Memory = %lu\n", mem_mapped_space);
+	fprintf(stderr, "MemoryMax = %lu\n", mem_max_mapped_space);
+	fprintf(stderr, "\n");
 }
 
 

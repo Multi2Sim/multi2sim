@@ -647,6 +647,7 @@ extern struct kernel_t *ke;
 void ke_init(void);
 void ke_done(void);
 void ke_run(void);
+
 void ke_dump(FILE *f);
 
 uint64_t ke_timer(void);
