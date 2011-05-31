@@ -35,6 +35,13 @@
 #include <lnlist.h>
 
 
+/*
+ * Global variables
+ */
+
+extern char *cache_system_config_help;
+
+
 /* Macro for safe pointer assignment */
 #define PTR_ASSIGN(PTR, VALUE) if (PTR) *(PTR) = (VALUE)
 
@@ -413,6 +420,8 @@ extern int EV_CACHE_SYSTEM_ACCESS_FINISH;
 
 void cache_system_init(int def_cores, int def_threads);
 void cache_system_done(void);
+
+void cache_system_print_stats(FILE *f);
 void cache_system_dump(FILE *f);
 
 /* Return block size of the first cache when accessing the cache system

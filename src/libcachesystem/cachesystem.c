@@ -18,6 +18,79 @@
 
 #include "cachesystem.h"
 
+/* Help message */
+char *cache_system_config_help =
+	"The cache system configuration file is plain text file in the IniFile format,\n"
+	"describing the model for the memory hierarchy and interconnection networks.\n"
+	"This file is passed to Multi2Sim with option '--cache-config <file>', and\n"
+	"should be used together with option '--cpu-sim detailed' to perform an\n"
+	"architectural simulation.\n"
+	"\n"
+	"The sections and variables allowed in the cache configuration file are the\n"
+	"following:\n"
+	"\n"
+	"Section '[ CacheGeometry <name> ]': defines a geometry for a cache. Caches\n"
+	"using this geometry can be instantiated later.\n"
+	"\n"
+	"  Sets = <num_sets> (Required)\n"
+	"      Number of sets in the cache.\n"
+	"  Assoc = <num_ways> (Required)\n"
+	"      Cache associativity. The total number of blocks contained in the cache\n"
+	"      is given by the product Sets * Assoc.\n"
+	"  BlockSize = <size> (Required)\n"
+	"      Size of a cache block in bytes.\n"
+	"  Latency = <num_cycles> (Required)\n"
+	"      Hit latency for a cache in number of CPU cycles.\n"
+	"  Policy = {LRU|FIFO|Random} (Default = LRU)\n"
+	"      Block replacement policy.\n"
+	"  ReadPorts = <num> (Default = 2)\n"
+	"      Number of read ports.\n"
+	"  WritePots = <num> (Default = 1)\n"
+	"      Number of write ports.\n"
+	"\n"
+	"Section '[ Net <name> ]': defines an interconnection network.\n"
+	"\n"
+	"  Topology = {Bus|P2P} (Required)\n"
+	"      Interconnection network topology.\n"
+	"  LinkWidth = <width> (Required)\n"
+	"      Link bandwidth in bytes per cycle.\n"
+	"\n"
+	"Section '[ Cache <name> ]': instantiates a cache based on a cache geometry\n"
+	"defined in a section CacheGeometry.\n"
+	"\n"
+	"  Geometry = <geometry_name> (Required)\n"
+	"      Cache geometry identifier, as specified in a previous section of type\n"
+	"      '[ CacheGeometry <geometry_name> ]'.\n"
+	"  HiNet = <net_name> (Required only for non-L1 caches)\n"
+	"      Upper interconnect where the cache is connected to. <net_name> must\n"
+	"      correspond to a network declared in a previous section of type\n"
+	"      '[ Net <net_name> ]'.\n"
+	"  LoNet = <net_name> (Required)\n"
+	"      Lower interconnect where the cache is connected to.\n"
+	"\n"
+	"Section '[ MainMemory ]'\n"
+	"\n"
+	"  HiNet = <net_name> (Required if there are caches)\n"
+	"      Upper interconnect where main memory is connected to.\n"
+	"  Latency = <num_cycles> (Required)\n"
+	"      Main memory access latency.\n"
+	"  BlockSize = <size> (Required)\n"
+	"      Memory block size in bytes.\n"
+	"\n"
+	"Section '[ Node <name> ]': defines an entry to the memory hierarchy from a\n"
+	"processing node in the CPU, identified as a pair {core, thread}.\n"
+	"\n"
+	"  Core = <core> (Required)\n"
+	"      Core ID in the CPU.\n"
+	"  Thread = <thread> (Required)\n"
+	"      Hardware Thread ID in the CPU.\n"
+	"  DCache = <cache_name> (Required)\n"
+	"      Name of the cache accessed when the processing node reads/writes data.\n"
+	"      The cache must be declared in a previous section of type\n"
+	"      '[ Cache <cache_name> ]'.\n"
+	"  ICache = <cache_name> (Required)\n"
+	"      Name of the cache accessed when the processing node fetches instructions.\n"
+	"\n";
 
 /* Cache system variables */
 
@@ -58,11 +131,6 @@ struct ccache_t *ccache_create()
 
 void ccache_free(struct ccache_t *ccache)
 {
-	/* Stats summary, only hitratio (for full stats, print report) */
-	if (ccache->lonet && ccache->accesses)
-		fprintf(stderr, "%s.hitratio  %.4f  # Cache hit ratio\n",
-			ccache->name, (double) ccache->hits / ccache->accesses);
-
 	/* Free linked list of pending accesses.
 	 * Each element is in turn a linked list of access aliases. */
 	while (lnlist_count(ccache->access_list)) {
@@ -336,11 +404,6 @@ struct tlb_t *tlb_create()
 
 void tlb_free(struct tlb_t *tlb)
 {
-	/* Print stats */
-	if (tlb->accesses)
-		fprintf(stderr, "%s.hitratio  %.4g  # TLB hit ratio\n",
-			tlb->name, (double) tlb->hits / tlb->accesses);
-	
 	/* Free */
 	if (tlb->cache)
 		cache_free(tlb->cache);
@@ -847,6 +910,32 @@ void cache_system_init(int _cores, int _threads)
 			itlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
 		}
 	}
+}
+
+
+void cache_system_print_stats(FILE *f)
+{
+	struct ccache_t *ccache;
+	struct tlb_t *tlb;
+	int curr;
+
+	fprintf(f, "[ CacheSystemSummary ]\n");
+
+	/* Show hit ratio for each cache */
+	for (curr = 0; curr < ccache_count; curr++) {
+		ccache = ccache_array[curr];
+		fprintf(f, "Cache[%s].HitRatio = %.4g\n", ccache->name, ccache->accesses ?
+			(double) ccache->hits / ccache->accesses : 0.0);
+	}
+
+	/* Show hit ratio for each TLB */
+	for (curr = 0; curr < tlb_count; curr++) {
+		tlb = tlb_array[curr];
+		fprintf(f, "Cache[%s].HitRatio = %.4g\n", tlb->name, tlb->accesses ?
+			(double) tlb->hits / tlb->accesses : 0.0);
+	}
+	
+	fprintf(f, "\n");
 }
 
 

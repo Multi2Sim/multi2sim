@@ -943,3 +943,8 @@
 	* src/libcpukernel/loader.c: help message for context configuration file
 	* src/libcpuarch/cpuarch.c: help message for CPU configuration file
 
+2010-05-31
+	* src/libcachesystem/cachesystem.c: help message for cache system configuration
+		file.
+	* src/m2s.c: last changes to statistics reports.
+

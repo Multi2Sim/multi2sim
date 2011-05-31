@@ -471,7 +471,7 @@ void cpu_dump_report()
 	
 	/* Report for the complete processor */
 	fprintf(f, "; Global statistics\n");
-	fprintf(f, "[ global ]\n\n");
+	fprintf(f, "[ Global ]\n\n");
 	fprintf(f, "Cycles = %lld\n", (long long) cpu->cycle);
 	fprintf(f, "Time = %.1f\n", (double) now / 1000000);
 	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) cpu->cycle / now * 1000000 : 0.0);
@@ -654,28 +654,23 @@ void cpu_print_stats(FILE *f)
 {
 	uint64_t now = ke_timer();
 
-	/* Global stats */
-	fprintf(f, "sim.cycles  %lld  # Simulation cycles\n",
-		(long long) cpu->cycle);
-	fprintf(f, "sim.inst  %lld  # Total committed instructions\n",
-		(long long) cpu->inst);
-	fprintf(f, "sim.ipc  %.4g  # Global IPC\n",
-		cpu->cycle ? (double) cpu->inst / cpu->cycle : 0);
-	fprintf(f, "sim.predacc  %.4g  # Branch prediction accuracy\n",
-		cpu->branches ? (double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0);
-	fprintf(f, "sim.time  %.1f  # Simulation time in seconds\n",
-		(double) now / 1000000);
-	fprintf(f, "sim.cps  %.0f  # Cycles simulated per second\n",
-		now ? (double) cpu->cycle / now * 1000000 : 0.0);
-	fprintf(f, "sim.contexts  %d  # Maximum number of contexts running concurrently\n",
-		ke->running_max);
-	fprintf(f, "sim.memory  %lu  # Physical memory used by benchmarks\n",
-		mem_mapped_space);
-	fprintf(f, "sim.memory_max  %lu  # Maximum physical memory used by benchmarks\n",
-		mem_max_mapped_space);
-	
-	/* Report */
-	cpu_dump_report();
+	/* Summary of functional simulation */
+	fprintf(f, "[ CPU.FunctionalSimulationSummary ]\n");
+	fprintf(f, "Time = %.2f\n", (double) now / 1000000);
+	fprintf(f, "Instructions = %lld\n", (long long) cpu->inst);
+	fprintf(f, "InstructionsPerSecond = %.0f\n", now ? (double) cpu->inst / now * 1000000 : 0.0);
+	fprintf(f, "Contexts = %d\n", ke->running_max);
+	fprintf(f, "Memory = %lu\n", mem_mapped_space);
+	fprintf(f, "MemoryMax = %lu\n", mem_max_mapped_space);
+	fprintf(f, "\n");
+
+	/* Summary of detailed simulation */
+	fprintf(f, "[ CPU.DetailedSimulationSummary ]\n");
+	fprintf(f, "Cycles = %lld\n", (long long) cpu->cycle);
+	fprintf(f, "InstructionsPerCycle = %.4g\n", cpu->cycle ? (double) cpu->inst / cpu->cycle : 0);
+	fprintf(f, "BranchPredictionAccuracy = %.4g\n", cpu->branches ? (double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0);
+	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) cpu->cycle / now * 1000000 : 0.0);
+	fprintf(f, "\n");
 }
 
 
@@ -730,9 +725,6 @@ void cpu_init()
 void cpu_done()
 {
 	int core;
-
-	/* Stats */
-	cpu_print_stats(stderr);
 
 	/* Finalize structures */
 	fetchq_done();
@@ -1049,5 +1041,16 @@ void cpu_run()
 	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
 	signal(SIGALRM, SIG_IGN);
+
+	/* CPU report */
+	cpu_dump_report();
+	
+	/* Dump statistics */
+	fprintf(stderr, "\n");
+	fprintf(stderr, ";\n");
+	fprintf(stderr, "; Simulation Statistics Summary\n");
+	fprintf(stderr, ";\n");
+	fprintf(stderr, "\n");
+	cpu_print_stats(stderr);
 }
 
