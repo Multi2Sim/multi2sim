@@ -30,7 +30,7 @@
 
 char *cpu_config_help =
 	"The CPU configuration file is a plain text file with the IniFile format, defining\n"
-	"the parameters of the CPU model used for a detailed (architectural) simulator.\n"
+	"the parameters of the CPU model used for a detailed (architectural) simulation.\n"
 	"This configuration file is passed to Multi2Sim with option '--cpu-config <file>,\n"
 	"which must be accompanied by option '--cpu-sim detailed'.\n"
 	"\n"

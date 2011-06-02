@@ -26,6 +26,10 @@
 
 /* Public variables */
 
+extern char *gpu_config_help;
+
+extern int gpu_pipeline_debug_category;
+
 extern enum gpu_sim_kind_enum {
 	gpu_sim_kind_functional,
 	gpu_sim_kind_detailed
@@ -87,6 +91,7 @@ struct gpu_compute_unit_t
 	/* Schedule/Fetch pipe register */
 	struct {
 		int do_fetch;  /* Set to 1 by 'schedule' stage if output valid */
+		struct gpu_uop_t *uop;
 	} schedule_fetch;
 
 	/* Fetch/Decode pipe register */
@@ -161,6 +166,24 @@ void gpu_device_free(struct gpu_device_t *device);
 
 void gpu_device_schedule_work_groups(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange);
 void gpu_device_run(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange);
+
+
+
+
+/* GPU uop */
+
+struct gpu_uop_t
+{
+	/* Instruction */
+	struct amd_inst_t inst;
+	struct amd_alu_group_t alu_group;
+	
+	/* Clause kind */
+	enum gpu_clause_kind_enum clause_kind;
+};
+
+struct gpu_uop_t *gpu_uop_create();
+void gpu_uop_free(struct gpu_uop_t *gpu_uop);
 
 
 
