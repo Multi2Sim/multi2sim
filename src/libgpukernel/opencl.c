@@ -1031,7 +1031,7 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t event_ptr = args[8];  /* cl_event *event */
 
 		struct opencl_kernel_t *kernel;
-		struct opencl_event_t *event;
+		struct opencl_event_t *event = NULL;
 		int i;
 
 		opencl_debug("  command_queue=0x%x, kernel=0x%x, work_dim=%d,\n"
@@ -1096,12 +1096,20 @@ int opencl_func_run(int code, unsigned int *args)
 		}
 
 		/* FIXME: asynchronous execution */
+
+		/* Setup NDRange */
 		kernel->ndrange = gpu_ndrange_create(kernel);
 		gpu_ndrange_setup_work_items(kernel->ndrange);
 		gpu_ndrange_setup_const_mem(kernel->ndrange);
 		gpu_ndrange_setup_args(kernel->ndrange);
-		//gpu_ndrange_run(kernel->ndrange);
-		gpu_device_run(gpu_device, kernel->ndrange); /////
+
+		/* Launch kernel execution */
+		if (gpu_sim_kind == gpu_sim_kind_functional)
+			gpu_ndrange_run(kernel->ndrange);
+		else
+			gpu_device_run(gpu_device, kernel->ndrange);
+
+		/* Free NDRange */
 		gpu_ndrange_free(kernel->ndrange);
 
 		/* Event */

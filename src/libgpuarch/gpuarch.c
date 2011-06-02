@@ -22,6 +22,7 @@
 #include <options.h>
 #include <config.h>
 #include <debug.h>
+#include <repos.h>
 
 
 
@@ -29,9 +30,39 @@
  * Global variables
  */
 
+char *gpu_config_help =
+	"The GPU configuration file is a plain text file in the IniFile format, defining\n"
+	"the parameters of the GPU model for a detailed (architectural) GPU configuration.\n"
+	"This file is passed to Multi2Sim with the '--gpu-config <file>' option, and\n"
+	"should always be used together with option '--gpu-sim detailed'.\n"
+	"\n"
+	"The following is a list of the sections allowed in the GPU configuration file,\n"
+	"along with the list of variables for each section.\n"
+	"\n"
+	"Section '[ Device ]':\n"
+	"\n"
+	"  NumComputeUnits = <num> (Default = 20)\n"
+	"      Number of compute units in the GPU. These are the hardware components\n"
+	"      where software work-groups are executed.\n"
+	"\n"
+	"Section '[ ComputeUnit ]':\n"
+	"\n"
+	"  WavefrontSize = <size> (Default = 64)\n"
+	"      Number of work-items within a wavefront which execute AMD Evergreen\n"
+	"      instructions in a SIMD fashion.\n"
+	"  MaxWorkGroupSize = <size> (default = 256)\n"
+	"      Maximum number of work-items within a work-group. This is a device-specific\n"
+	"      architectural parameter return by some OpenCL calls.\n"
+	"  NumStreamCores = <num> (Default = 16)\n"
+	"      Number of stream cores within a compute unit. Each work-item is mapped to a\n"
+	"      stream core. Stream cores are time-multiplexed to cover all work-items in a\n"
+	"      wavefront.\n"
+	"\n";
+
 enum gpu_sim_kind_enum gpu_sim_kind = gpu_sim_kind_functional;
 
 char *gpu_config_file_name = "";
+
 int gpu_pipeline_debug_category;
 
 /* Default parameters based on the AMD Radeon HD 5870 */
@@ -45,23 +76,9 @@ int gpu_compute_unit_time_slots;
 
 struct gpu_device_t *gpu_device;
 
+struct repos_t *gpu_uop_repos;
 
 
-
-/* Private variables */
-
-static struct config_t *gpu_config;
-
-
-
-
-/*
- * Private functions
- */
-
-static void gpu_config_default()
-{
-}
 
 
 
@@ -72,6 +89,7 @@ static void gpu_config_default()
 
 void gpu_init()
 {
+	struct config_t *gpu_config;
 	char *section;
 
 	/* Debug */
@@ -79,9 +97,7 @@ void gpu_init()
 
 	/* Load GPU configuration file */
 	gpu_config = config_create(gpu_config_file_name);
-	if (!*gpu_config_file_name)
-		gpu_config_default();
-	else if (!config_load(gpu_config))
+	if (*gpu_config_file_name && !config_load(gpu_config))
 		fatal("%s: cannot load GPU configuration file", gpu_config_file_name);
 	
 	/*
@@ -109,16 +125,37 @@ void gpu_init()
 	config_free(gpu_config);
 
 
-	/*
-	 * Initialize GPU
-	 */
-
+	/* Initialize GPU */
 	gpu_device = gpu_device_create();
+
+	/* GPU uop repository */
+	gpu_uop_repos = repos_create(sizeof(struct gpu_uop_t), "gpu_uop_repos");
 }
 
 
 void gpu_done()
 {
+	repos_free(gpu_uop_repos);
 	gpu_device_free(gpu_device);
+}
+
+
+
+/*
+ * GPU Uop
+ */
+
+struct gpu_uop_t *gpu_uop_create()
+{
+	struct gpu_uop_t *gpu_uop;
+
+	gpu_uop = repos_create_object(gpu_uop_repos);
+	return gpu_uop;
+}
+
+
+void gpu_uop_free(struct gpu_uop_t *gpu_uop)
+{
+	repos_free_object(gpu_uop_repos, gpu_uop);
 }
 

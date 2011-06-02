@@ -506,6 +506,25 @@ void amd_inst_dump_op_dest(struct amd_inst_t *inst, FILE *f)
 }
 
 
+/* Copy an instruction. No special handling of fields is needed here, just copy the whole
+ * structure. */
+void amd_inst_copy(struct amd_inst_t *dest, struct amd_inst_t *src)
+{
+	memcpy(dest, src, sizeof(struct amd_inst_t));
+}
+
+
+/* Copy an ALU group. Fields 'alu_group' in comprising 'alu_inst' elements need to be updated
+ * to point to the destination ALU group. */
+void amd_alu_group_copy(struct amd_alu_group_t *dest, struct amd_alu_group_t *src)
+{
+	int i;
+	memcpy(dest, src, sizeof(struct amd_alu_group_t));
+	for (i = 0; i < src->inst_count; i++)
+		dest->inst[i].alu_group = dest;
+}
+
+
 /* Get parameters for a source register in an ALU instruction */
 void amd_inst_get_op_src(struct amd_inst_t *inst, int src_idx,
 	int *sel, int *rel, int *chan, int *neg, int *abs)
