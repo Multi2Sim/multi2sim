@@ -562,6 +562,10 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int shift, FILE *f);
 void amd_inst_words_dump(struct amd_inst_t *inst, FILE *f);
 void amd_alu_group_dump(struct amd_alu_group_t *group, int shift, FILE *f);
 
+/* Copy instruction */
+void amd_inst_copy(struct amd_inst_t *dest, struct amd_inst_t *src);
+void amd_alu_group_copy(struct amd_alu_group_t *dest, struct amd_alu_group_t *src);
+
 /* Obtaining source operand fields for ALU instructions */
 void amd_inst_get_op_src(struct amd_inst_t *inst, int src_idx,
 	int *sel, int *rel, int *chan, int *neg, int *abs);

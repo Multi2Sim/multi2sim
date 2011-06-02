@@ -30,6 +30,7 @@ static char *ctx_debug_file_name = "";
 static char *syscall_debug_file_name = "";
 static char *opencl_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
+static char *gpu_pipeline_debug_file_name = "";
 static char *loader_debug_file_name = "";
 static char *isa_call_debug_file_name = "";
 static char *isa_inst_debug_file_name = "";
@@ -84,12 +85,14 @@ static char *sim_help =
 	"        --debug-opencl: trace of OpenCL calls and their arguments.\n"
 	"        --debug-gpu-isa: during the emulation of an OpenCL device kernel, trace\n"
 	"            of executed AMD Evergreen ISA instructions.\n"
+	"        --debug-gpu-pipeline: trace of AMD Evergreen instructions in the GPU\n"
+	"            pipeline. This option requires '--gpu-sim detailed' option.\n"
 	"        --debug-loader: information for the x86 ELF binary analysis performed\n"
 	"            by the program loader.\n"
-	"        --debug-call: trace of function calls, based on emulated x86 instr.\n"
-	"        --debug-cpu-isa: trace of emulated x86 ISA instructions.\n"
 	"        --debug-cache: event trace of block transfers and requests in the\n"
 	"            cache memory hierarchy.\n"
+	"        --debug-call: trace of function calls, based on emulated x86 instr.\n"
+	"        --debug-cpu-isa: trace of emulated x86 ISA instructions.\n"
 	"        --debug-cpu-pipeline: trace of x86 microinstructions in the CPU pipeline.\n"
 	"            The output file can be used as an input for the 'm2s-pipeline' tool\n"
 	"            to obtain graphical timing diagrams.\n"
@@ -237,6 +240,16 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* GPU pipeline debug file */
+		if (!strcmp(argv[argi], "--debug-gpu-pipeline")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by the debug file name for the GPU pipeline.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			gpu_pipeline_debug_file_name = argv[argi];
+			continue;
+		}
+
 		/* Loader debug file */
 		if (!strcmp(argv[argi], "--debug-loader")) {
 			if (argi == argc - 1)
@@ -334,6 +347,12 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		/* Help for context configuration file format */
 		if (!strcmp(argv[argi], "--help-ctx-config")) {
 			fprintf(stderr, "%s", ld_help_ctxconfig);
+			continue;
+		}
+
+		/* Help for GPU configuration file */
+		if (!strcmp(argv[argi], "--help-gpu-config")) {
+			fprintf(stderr, "%s", gpu_config_help);
 			continue;
 		}
 
@@ -481,6 +500,7 @@ int main(int argc, char **argv)
 	debug_assign_file(syscall_debug_category, syscall_debug_file_name);
 	debug_assign_file(opencl_debug_category, opencl_debug_file_name);
 	debug_assign_file(gpu_isa_debug_category, gpu_isa_debug_file_name);
+	debug_assign_file(gpu_pipeline_debug_category, gpu_pipeline_debug_file_name);
 	debug_assign_file(ld_debug_category, loader_debug_file_name);
 	debug_assign_file(isa_call_debug_category, isa_call_debug_file_name);
 	debug_assign_file(isa_inst_debug_category, isa_inst_debug_file_name);
@@ -492,10 +512,12 @@ int main(int argc, char **argv)
 	cpu_load_progs(argc, argv, ctxconfig_file_name);
 
 	/* Simulation loop */
-	if (cpu_sim_kind == cpu_sim_kind_detailed)
-		cpu_run();
-	else
-		ke_run();
+	if (ke->running_list_head) {
+		if (cpu_sim_kind == cpu_sim_kind_detailed)
+			cpu_run();
+		else
+			ke_run();
+	}
 
 	/* Finalization of detailed CPU simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed) {

@@ -948,3 +948,5 @@
 		file.
 	* src/m2s.c: last changes to statistics reports.
 
+2010-06-02
+	* src/libgpuarch/gpuarch.c: GPU pipeline debug

@@ -57,14 +57,20 @@ static int gpu_compute_unit_schedule_next_subwavefront(struct gpu_compute_unit_t
 }
 
 
-static void gpu_compute_unit_emulate(struct gpu_compute_unit_t *compute_unit)
+static struct gpu_uop_t *gpu_compute_unit_emulate(struct gpu_compute_unit_t *compute_unit)
 {
 	int i;
 	struct gpu_device_t *device = compute_unit->device;
 	struct gpu_ndrange_t *ndrange = device->ndrange;
 	struct gpu_work_group_t *work_group = ndrange->work_groups[INIT_SCHEDULE.work_group_id];
 	struct gpu_wavefront_t *wavefront = ndrange->wavefronts[INIT_SCHEDULE.wavefront_id];
+	struct gpu_uop_t *uop;
 
+	/* Create uop */
+	uop = gpu_uop_create();
+	uop->clause_kind = wavefront->clause_kind;
+
+	/* Emulate instruction */
 	assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront));
 	gpu_pipeline_debug("emul");
 	switch (wavefront->clause_kind) {
@@ -100,6 +106,9 @@ static void gpu_compute_unit_emulate(struct gpu_compute_unit_t *compute_unit)
 
 	}
 	gpu_pipeline_debug("\n");
+
+	/* Return uop */
+	return uop;
 }
 
 
@@ -110,6 +119,8 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
+
+	struct gpu_uop_t *uop;
 	
 	int result;
 
@@ -131,11 +142,15 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 		INIT_SCHEDULE.work_group_id, INIT_SCHEDULE.wavefront_id, INIT_SCHEDULE.subwavefront_id);
 
 	/* Emulate instruction if it's the first subwavefront */
-	if (!INIT_SCHEDULE.subwavefront_id)
-		gpu_compute_unit_emulate(compute_unit);
+	if (!INIT_SCHEDULE.subwavefront_id) {
+		uop = gpu_compute_unit_emulate(compute_unit);
+		SCHEDULE_FETCH.do_fetch = 1;
+		SCHEDULE_FETCH.uop = uop;
+	}
 
 	/* Schedule next subwavefront/wavefront.
-	 * If work-group finished, do not schedule anymore. */
+	 * If work-group finished, do not schedule anymore.
+	 * A new work-group will be scheduled in the main simulation loop an set back the 'do_schedule' flag. */
 	result = gpu_compute_unit_schedule_next_subwavefront(compute_unit);
 	if (!result) {
 		gpu_pipeline_debug("cu compute_unit=\"%d\", work_group=\"%d\", action=\"finish\"\n",
