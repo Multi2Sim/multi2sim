@@ -215,6 +215,9 @@ void gpu_ndrange_free(struct gpu_ndrange_t *ndrange)
 	for (i = 0; i < ndrange->work_item_count; i++)
 		gpu_work_item_free(ndrange->work_items[i]);
 	free(ndrange->work_items);
+
+	/* Free ndrange */
+	free(ndrange);
 }
 
 

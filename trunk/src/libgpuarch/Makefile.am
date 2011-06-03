@@ -1,6 +1,5 @@
 lib_LIBRARIES = libgpuarch.a
 libgpuarch_a_SOURCES = \
-	device.c \
 	gpuarch.h \
 	gpuarch.c \
 	\
