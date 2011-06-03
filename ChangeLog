@@ -954,3 +954,4 @@
 2010-06-03
 	* src/m2s.c: option '--debug-cpu-pipeline'
 	* src/libgpuarch/stg_fetch.c: working here.
+	* src/libgpuarch: memory leaks
