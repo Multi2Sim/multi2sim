@@ -955,3 +955,5 @@
 	* src/m2s.c: option '--debug-cpu-pipeline'
 	* src/libgpuarch/stg_fetch.c: working here.
 	* src/libgpuarch: memory leaks
+	* src/libgpuarch: 'gpu_device_t' replaced with 'gpu_t', and global variable
+		'gpu' defined, similarly to libcpuarch module.

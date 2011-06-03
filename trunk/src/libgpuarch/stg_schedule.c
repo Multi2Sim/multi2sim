@@ -25,8 +25,7 @@
  * Return 0 if the work-group finished. */
 static int gpu_compute_unit_schedule_next_subwavefront(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_device_t *device = compute_unit->device;
-	struct gpu_ndrange_t *ndrange = device->ndrange;
+	struct gpu_ndrange_t *ndrange = gpu->ndrange;
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
 
@@ -112,8 +111,7 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 
 void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_device_t *device = compute_unit->device;
-	struct gpu_ndrange_t *ndrange = device->ndrange;
+	struct gpu_ndrange_t *ndrange = gpu->ndrange;
 
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
@@ -166,8 +164,8 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 
 		/* Set compute unit as idle.
 		 * FIXME: this should be done at the last stage of the pipeline */
-		DOUBLE_LINKED_LIST_REMOVE(device, busy, compute_unit);
-		DOUBLE_LINKED_LIST_INSERT_TAIL(device, idle, compute_unit);
+		DOUBLE_LINKED_LIST_REMOVE(gpu, busy, compute_unit);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, idle, compute_unit);
 	}
 }
 

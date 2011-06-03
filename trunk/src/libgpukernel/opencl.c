@@ -1108,7 +1108,7 @@ int opencl_func_run(int code, unsigned int *args)
 		if (gpu_sim_kind == gpu_sim_kind_functional)
 			gpu_ndrange_run(kernel->ndrange);
 		else
-			gpu_device_run(gpu_device, kernel->ndrange);
+			gpu_run(kernel->ndrange);
 
 		/* Free NDRange */
 		gpu_ndrange_free(kernel->ndrange);
