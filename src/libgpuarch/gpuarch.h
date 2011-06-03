@@ -108,21 +108,37 @@ struct gpu_compute_unit_t
 		int do_decode;
 		struct gpu_uop_t *uop;
 		int subwavefront_id;
+
 	} fetch_decode;
 
 	/* Decode/Read pipe register */
 	struct {
+		
+		/* Programmable by 'decode' stage */
 		int do_read;
+		struct gpu_uop_t *uop;
+		int subwavefront_id;
+	
 	} decode_read;
 
 	/* Read/Execute pipe register */
 	struct {
+		
+		/* Programmable by 'read' stage */
 		int do_execute;
+		struct gpu_uop_t *uop;
+		int subwavefront_id;
+
 	} read_execute;
 
 	/* Execute/Write pipe register */
 	struct {
+		
+		/* Programmable by 'execute' stage */
 		int do_write;
+		struct gpu_uop_t *uop;
+		int subwavefront_id;
+
 	} execute_write;
 };
 
@@ -158,6 +174,7 @@ struct gpu_uop_t
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
 	int subwavefront_count;
+	int last;  /* 1 if last uop in work-group */
 
 	/* Instruction */
 	struct amd_inst_t inst;

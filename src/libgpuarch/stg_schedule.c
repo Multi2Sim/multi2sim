@@ -28,10 +28,14 @@ static int gpu_compute_unit_schedule_next_subwavefront(struct gpu_compute_unit_t
 	struct gpu_ndrange_t *ndrange = gpu->ndrange;
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
+	int subwavefront_count;
 
 	/* Go to next subwavefront */
+	/* FIXME: limit should be number of subwavefronts */
+	wavefront = ndrange->wavefronts[INIT_SCHEDULE.wavefront_id];
+	subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
 	INIT_SCHEDULE.subwavefront_id++;
-	if (INIT_SCHEDULE.subwavefront_id < gpu_compute_unit_time_slots)
+	if (INIT_SCHEDULE.subwavefront_id < subwavefront_count)
 		return 1;
 	
 	/* Scheduling of current wavefront finished */
@@ -64,18 +68,24 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 
 	/* Set fields */
 	uop->clause_kind = wavefront->clause_kind;
+	uop->subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
 
 	/* Emulate instruction */
 	assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront));
-	gpu_pipeline_debug("emul uop=\"%lld\",", (long long) uop->id);
+	gpu_pipeline_debug("uop "
+		"action=\"emul\", "
+		"id=\"%lld\", ",
+		(long long) uop->id);
+	
 	switch (wavefront->clause_kind) {
 
 	case GPU_CLAUSE_CF:
 		gpu_wavefront_execute(wavefront);
 		amd_inst_copy(&uop->inst, &wavefront->cf_inst);
 
-		gpu_pipeline_debug(" cat=CF");
-		gpu_pipeline_debug(" inst=\"%s\"\n",
+		gpu_pipeline_debug(
+			"cat=\"CF\", "
+			"inst=\"%s\", ",
 			wavefront->cf_inst.info->name);
 		break;
 	
@@ -86,9 +96,9 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 		if (debug_status(gpu_pipeline_debug_category)) {
 			for (i = 0; i < wavefront->alu_group.inst_count; i++) {
 				struct amd_inst_t *inst = &wavefront->alu_group.inst[i];
-				gpu_pipeline_debug(" inst.%s=\"%s\"",
-					map_value(&amd_alu_map, inst->alu),
-					inst->info->name);
+				gpu_pipeline_debug(
+					"inst.%s=\"%s\", ",
+					map_value(&amd_alu_map, inst->alu), inst->info->name);
 			}
 		}
 		break;
@@ -97,8 +107,9 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 		gpu_wavefront_execute(wavefront);
 		amd_inst_copy(&uop->inst, &wavefront->cf_inst);
 
-		gpu_pipeline_debug(" cat=TC");
-		gpu_pipeline_debug(" inst=\"%s\"\n",
+		gpu_pipeline_debug(
+			" cat=\"TC\", "
+			" inst=\"%s\", ",
 			wavefront->tc_inst.info->name);
 		break;
 	
@@ -106,6 +117,16 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 		abort();
 
 	}
+
+	/* Set more fields */
+	uop->last = gpu_work_group_get_status(work_group, gpu_work_group_finished);
+
+	/* Debug */
+	gpu_pipeline_debug(
+		"subwavefront_count=\"%d\", "
+		"last=\"%d\"\n",
+		uop->subwavefront_count,
+		uop->last);
 }
 
 
@@ -138,15 +159,39 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 	/* Create uop and emulate if this is the beginning of a wavefront */
 	uop = INIT_SCHEDULE.uop;
 	if (!INIT_SCHEDULE.subwavefront_id) {
+		
+		/* Create */
 		uop = gpu_uop_create();
 		uop->work_group = work_group;
 		uop->wavefront = wavefront;
-		uop->subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
+		gpu_pipeline_debug("uop "
+			"action=\"create\", "
+			"id=%lld, "
+			"cu=%d, "
+			"work_group=%d, "
+			"wavefront=%d\n",
+			(long long) uop->id,
+			compute_unit->id,
+			work_group->id,
+			wavefront->id);
+
+		/* Emulate */
 		gpu_uop_emulate(uop);
 		INIT_SCHEDULE.uop = uop;
 	}
-	gpu_pipeline_debug("stg name=\"schedule\", uop=\"%lld\", work_group=\"%d\", wavefront=\"%d\", subwavefront=\"%d\"\n",
-		(long long) uop->id, INIT_SCHEDULE.work_group_id, INIT_SCHEDULE.wavefront_id, INIT_SCHEDULE.subwavefront_id);
+	
+	/* Debug */
+	gpu_pipeline_debug("uop "
+		"action=\"update\", "
+		"id=%lld, "
+		"subwf=%d, "
+		"cu=%d, "
+		"stg=\"schedule\""
+		"\n",
+		(long long) uop->id,
+		INIT_SCHEDULE.subwavefront_id,
+		compute_unit->id);
+	
 
 	/* Transfer uop to next stage */
 	SCHEDULE_FETCH.do_fetch = 1;
@@ -155,17 +200,9 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 
 	/* Schedule next subwavefront/wavefront.
 	 * If work-group finished, do not schedule anymore.
-	 * A new work-group will be scheduled in the main simulation loop an set back the 'do_schedule' flag. */
+	 * A new work-group will be scheduled in the main simulation loop and set back the 'do_schedule' flag. */
 	result = gpu_compute_unit_schedule_next_subwavefront(compute_unit);
-	if (!result) {
-		gpu_pipeline_debug("cu compute_unit=\"%d\", work_group=\"%d\", action=\"finish\"\n",
-			compute_unit->id, work_group->id);
+	if (!result)
 		INIT_SCHEDULE.do_schedule = 0;
-
-		/* Set compute unit as idle.
-		 * FIXME: this should be done at the last stage of the pipeline */
-		DOUBLE_LINKED_LIST_REMOVE(gpu, busy, compute_unit);
-		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, idle, compute_unit);
-	}
 }
 

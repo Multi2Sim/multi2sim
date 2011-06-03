@@ -957,3 +957,5 @@
 	* src/libgpuarch: memory leaks
 	* src/libgpuarch: 'gpu_device_t' replaced with 'gpu_t', and global variable
 		'gpu' defined, similarly to libcpuarch module.
+	* src/libgpuarch: first complete version of GPU pipeline.
+
