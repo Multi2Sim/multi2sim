@@ -68,10 +68,9 @@ AR = ar
 ARFLAGS = cru
 libgpuarch_a_AR = $(AR) $(ARFLAGS)
 libgpuarch_a_LIBADD =
-am_libgpuarch_a_OBJECTS = device.$(OBJEXT) gpuarch.$(OBJEXT) \
-	stg_schedule.$(OBJEXT) stg_fetch.$(OBJEXT) \
-	stg_decode.$(OBJEXT) stg_read.$(OBJEXT) stg_execute.$(OBJEXT) \
-	stg_write.$(OBJEXT)
+am_libgpuarch_a_OBJECTS = gpuarch.$(OBJEXT) stg_schedule.$(OBJEXT) \
+	stg_fetch.$(OBJEXT) stg_decode.$(OBJEXT) stg_read.$(OBJEXT) \
+	stg_execute.$(OBJEXT) stg_write.$(OBJEXT)
 libgpuarch_a_OBJECTS = $(am_libgpuarch_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -179,7 +178,6 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libgpuarch.a
 libgpuarch_a_SOURCES = \
-	device.c \
 	gpuarch.h \
 	gpuarch.c \
 	\
@@ -275,7 +273,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/device.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuarch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_decode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_execute.Po@am__quote@

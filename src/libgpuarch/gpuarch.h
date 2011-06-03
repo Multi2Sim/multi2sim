@@ -159,6 +159,9 @@ void gpu_compute_unit_next_cycle(struct gpu_compute_unit_t *compute_unit);
 
 struct gpu_device_t
 {
+	/* Current cycle */
+	uint64_t cycle;
+
 	/* ND-Range running on it */
 	struct gpu_ndrange_t *ndrange;
 
