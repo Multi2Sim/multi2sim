@@ -39,7 +39,7 @@ extern int gpu_num_stream_cores;
 extern int gpu_num_compute_units;
 extern int gpu_compute_unit_time_slots;
 
-extern struct gpu_device_t *gpu_device;
+extern struct gpu_t *gpu;
 
 
 
@@ -68,9 +68,6 @@ struct gpu_compute_unit_t
 {
 	/* ID */
 	int id;
-
-	/* Device that it belongs to */
-	struct gpu_device_t *device;
 
 	/* Stream cores */
 	struct gpu_stream_core_t **stream_cores;
@@ -129,9 +126,6 @@ struct gpu_compute_unit_t
 	} execute_write;
 };
 
-#define FOREACH_STREAM_CORE(STREAM_CORE_ID) \
-	for ((STREAM_CORE_ID) = 0; (STREAM_CORE_ID) < gpu_num_stream_cores; (STREAM_CORE_ID)++)
-
 /* Macros for quick access to pipe registers */
 #define INIT_SCHEDULE  (compute_unit->init_schedule)
 #define SCHEDULE_FETCH  (compute_unit->schedule_fetch)
@@ -151,38 +145,6 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit);
 void gpu_compute_unit_execute(struct gpu_compute_unit_t *compute_unit);
 void gpu_compute_unit_write(struct gpu_compute_unit_t *compute_unit);
 void gpu_compute_unit_next_cycle(struct gpu_compute_unit_t *compute_unit);
-
-
-
-
-/* GPU Device */
-
-struct gpu_device_t
-{
-	/* Current cycle */
-	uint64_t cycle;
-
-	/* ND-Range running on it */
-	struct gpu_ndrange_t *ndrange;
-
-	/* Compute units */
-	struct gpu_compute_unit_t **compute_units;
-
-	/* Double linked lists of compute units */
-	struct gpu_compute_unit_t *idle_list_head, *idle_list_tail;
-	struct gpu_compute_unit_t *busy_list_head, *busy_list_tail;
-	int idle_count, idle_max;
-	int busy_count, busy_max;
-};
-
-#define FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
-	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
-
-struct gpu_device_t *gpu_device_create();
-void gpu_device_free(struct gpu_device_t *device);
-
-void gpu_device_schedule_work_groups(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange);
-void gpu_device_run(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange);
 
 
 
@@ -211,16 +173,42 @@ void gpu_uop_free(struct gpu_uop_t *gpu_uop);
 
 
 
-/* Generic public functions */
+/*
+ * GPU Device
+ */
 
 /* Debugging */
 #define gpu_pipeline_debug(...) debug(gpu_pipeline_debug_category, __VA_ARGS__)
 extern int gpu_pipeline_debug_category;
 
+struct gpu_t
+{
+	/* Current cycle */
+	uint64_t cycle;
+
+	/* ND-Range running on it */
+	struct gpu_ndrange_t *ndrange;
+
+	/* Compute units */
+	struct gpu_compute_unit_t **compute_units;
+
+	/* Double linked lists of compute units */
+	struct gpu_compute_unit_t *idle_list_head, *idle_list_tail;
+	struct gpu_compute_unit_t *busy_list_head, *busy_list_tail;
+	int idle_count, idle_max;
+	int busy_count, busy_max;
+};
+
+#define FOREACH_STREAM_CORE(STREAM_CORE_ID) \
+	for ((STREAM_CORE_ID) = 0; (STREAM_CORE_ID) < gpu_num_stream_cores; (STREAM_CORE_ID)++)
+
+#define FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
+	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
 
 void gpu_init(void);
 void gpu_done(void);
 
+void gpu_run(struct gpu_ndrange_t *ndrange);
 
 
 #endif

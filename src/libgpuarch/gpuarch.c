@@ -74,70 +74,12 @@ int gpu_num_stream_cores = 16;
  * of the quotient between the wavefront size and number of stream cores. */
 int gpu_compute_unit_time_slots;
 
-struct gpu_device_t *gpu_device;
+struct gpu_t *gpu;
 
 struct repos_t *gpu_uop_repos;
 
 
 
-
-
-
-/*
- * Public Functions
- */
-
-void gpu_init()
-{
-	struct config_t *gpu_config;
-	char *section;
-
-	/* Debug */
-	gpu_pipeline_debug_category = debug_new_category();
-
-	/* Load GPU configuration file */
-	gpu_config = config_create(gpu_config_file_name);
-	if (*gpu_config_file_name && !config_load(gpu_config))
-		fatal("%s: cannot load GPU configuration file", gpu_config_file_name);
-	
-	/*
-	 * Read configuration file
-	 */
-	
-	/* Device */
-	section = "Device";
-	gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", gpu_num_compute_units);
-	
-	/* Compute Unit */
-	section = "ComputeUnit";
-	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
-	gpu_max_work_group_size = config_read_int(gpu_config, section, "MaxWorkGroupSize", gpu_max_work_group_size);
-	if (gpu_max_work_group_size & (gpu_max_work_group_size - 1))
-		fatal("'MaxWorkGroupSize' must be a power of 2");
-	gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", gpu_num_stream_cores);
-	gpu_compute_unit_time_slots = (gpu_wavefront_size + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
-	
-	/* Stream Core */
-	section = "StreamCore";
-	
-	/* Close GPU configuration file */
-	config_check(gpu_config);
-	config_free(gpu_config);
-
-
-	/* Initialize GPU */
-	gpu_device = gpu_device_create();
-
-	/* GPU uop repository */
-	gpu_uop_repos = repos_create(sizeof(struct gpu_uop_t), "gpu_uop_repos");
-}
-
-
-void gpu_done()
-{
-	repos_free(gpu_uop_repos);
-	gpu_device_free(gpu_device);
-}
 
 
 
@@ -223,9 +165,8 @@ void gpu_compute_unit_next_cycle(struct gpu_compute_unit_t *compute_unit)
  * GPU Device
  */
 
-struct gpu_device_t *gpu_device_create()
+static void gpu_init_device()
 {
-	struct gpu_device_t *device;
 	struct gpu_compute_unit_t *compute_unit;
 	struct gpu_stream_core_t *stream_core;
 
@@ -233,17 +174,16 @@ struct gpu_device_t *gpu_device_create()
 	int stream_core_id;
 
 	/* Create device */
-	device = calloc(1, sizeof(struct gpu_device_t));
+	gpu = calloc(1, sizeof(struct gpu_t));
 
 	/* Create compute units */
-	device->compute_units = calloc(gpu_num_compute_units, sizeof(void *));
+	gpu->compute_units = calloc(gpu_num_compute_units, sizeof(void *));
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		device->compute_units[compute_unit_id] = gpu_compute_unit_create();
-		compute_unit = device->compute_units[compute_unit_id];
+		gpu->compute_units[compute_unit_id] = gpu_compute_unit_create();
+		compute_unit = gpu->compute_units[compute_unit_id];
 		compute_unit->id = compute_unit_id;
-		compute_unit->device = device;
-		DOUBLE_LINKED_LIST_INSERT_TAIL(device, idle, compute_unit);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, idle, compute_unit);
 		
 		/* Create stream cores */
 		compute_unit->stream_cores = calloc(gpu_num_stream_cores, sizeof(void *));
@@ -255,11 +195,55 @@ struct gpu_device_t *gpu_device_create()
 			stream_core->compute_unit = compute_unit;
 		}
 	}
-	return device;
 }
 
 
-void gpu_device_free(struct gpu_device_t *device)
+void gpu_init()
+{
+	struct config_t *gpu_config;
+	char *section;
+
+	/* Debug */
+	gpu_pipeline_debug_category = debug_new_category();
+
+	/* Load GPU configuration file */
+	gpu_config = config_create(gpu_config_file_name);
+	if (*gpu_config_file_name && !config_load(gpu_config))
+		fatal("%s: cannot load GPU configuration file", gpu_config_file_name);
+	
+	/*
+	 * Read configuration file
+	 */
+	
+	/* Device */
+	section = "Device";
+	gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", gpu_num_compute_units);
+	
+	/* Compute Unit */
+	section = "ComputeUnit";
+	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
+	gpu_max_work_group_size = config_read_int(gpu_config, section, "MaxWorkGroupSize", gpu_max_work_group_size);
+	if (gpu_max_work_group_size & (gpu_max_work_group_size - 1))
+		fatal("'MaxWorkGroupSize' must be a power of 2");
+	gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", gpu_num_stream_cores);
+	gpu_compute_unit_time_slots = (gpu_wavefront_size + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
+	
+	/* Stream Core */
+	section = "StreamCore";
+	
+	/* Close GPU configuration file */
+	config_check(gpu_config);
+	config_free(gpu_config);
+
+	/* Initialize GPU */
+	gpu_init_device();
+
+	/* GPU uop repository */
+	gpu_uop_repos = repos_create(sizeof(struct gpu_uop_t), "gpu_uop_repos");
+}
+
+
+void gpu_done()
 {
 	struct gpu_compute_unit_t *compute_unit;
 	struct gpu_stream_core_t *stream_core;
@@ -267,8 +251,9 @@ void gpu_device_free(struct gpu_device_t *device)
 	int compute_unit_id;
 	int stream_core_id;
 
+	/* Free stream cores, compute units, and device */
 	FOREACH_COMPUTE_UNIT(compute_unit_id) {
-		compute_unit = device->compute_units[compute_unit_id];
+		compute_unit = gpu->compute_units[compute_unit_id];
 		FOREACH_STREAM_CORE(stream_core_id) {
 			stream_core = compute_unit->stream_cores[stream_core_id];
 			gpu_stream_core_free(stream_core);
@@ -276,19 +261,24 @@ void gpu_device_free(struct gpu_device_t *device)
 		free(compute_unit->stream_cores);
 		gpu_compute_unit_free(compute_unit);
 	}
-	free(device->compute_units);
-	free(device);
+	free(gpu->compute_units);
+	free(gpu);
+	
+	/* GPU uop repository */
+	repos_free(gpu_uop_repos);
 }
 
 
-void gpu_device_schedule_work_groups(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange)
+
+static void gpu_schedule_work_groups(void)
 {
+	struct gpu_ndrange_t *ndrange = gpu->ndrange;
 	struct gpu_work_group_t *work_group;
 	struct gpu_compute_unit_t *compute_unit;
 
-	while (device->idle_list_head && ndrange->pending_list_head) {
+	while (gpu->idle_list_head && ndrange->pending_list_head) {
 		work_group = ndrange->pending_list_head;
-		compute_unit = device->idle_list_head;
+		compute_unit = gpu->idle_list_head;
 
 		/* Change work-group status to running, which implicitly removes it from
 		 * the 'pending' list, and inserts it to the 'running' list */
@@ -296,8 +286,8 @@ void gpu_device_schedule_work_groups(struct gpu_device_t *device, struct gpu_ndr
 		gpu_work_group_set_status(work_group, gpu_work_group_running);
 		
 		/* Delete compute unit from 'idle' list and insert it to 'busy' list. */
-		DOUBLE_LINKED_LIST_REMOVE(device, idle, compute_unit);
-		DOUBLE_LINKED_LIST_INSERT_TAIL(device, busy, compute_unit);
+		DOUBLE_LINKED_LIST_REMOVE(gpu, idle, compute_unit);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, busy, compute_unit);
 
 		/* Assign work-group to compute unit */
 		INIT_SCHEDULE.do_schedule = 1;
@@ -312,7 +302,7 @@ void gpu_device_schedule_work_groups(struct gpu_device_t *device, struct gpu_ndr
 }
 
 
-void gpu_device_run(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange)
+void gpu_run(struct gpu_ndrange_t *ndrange)
 {
 	struct opencl_kernel_t *kernel = ndrange->kernel;
 	struct gpu_compute_unit_t *compute_unit, *compute_unit_next;
@@ -323,23 +313,24 @@ void gpu_device_run(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange)
 		kernel->global_size, kernel->local_size, kernel->group_count, gpu_wavefront_size,
 		ndrange->wavefronts_per_work_group);
 
-	device->ndrange = ndrange;
+	gpu->ndrange = ndrange;
 
 	for (;;) {
 		
-		/* Assign pending work-items to idle compute units.
-		 * Exit loop if all work-items were run. */
-		if (device->idle_list_head && ndrange->pending_list_head)
-			gpu_device_schedule_work_groups(device, ndrange);
-		if (!device->busy_list_head)
+		/* Assign pending work-items to idle compute units. */
+		if (gpu->idle_list_head && ndrange->pending_list_head)
+			gpu_schedule_work_groups();
+		
+		/* If no compute unit got any work, done. */
+		if (!gpu->busy_list_head)
 			break;
 
 		/* Next cycle */
-		device->cycle++;
-		gpu_pipeline_debug("clk c=%lld\n", (long long) device->cycle);
+		gpu->cycle++;
+		gpu_pipeline_debug("clk c=%lld\n", (long long) gpu->cycle);
 		
 		/* Advance one cycle on each busy compute unit */
-		for (compute_unit = device->busy_list_head; compute_unit; compute_unit = compute_unit_next) {
+		for (compute_unit = gpu->busy_list_head; compute_unit; compute_unit = compute_unit_next) {
 			
 			/* Save next non-idle compute unit */
 			compute_unit_next = compute_unit->busy_next;
