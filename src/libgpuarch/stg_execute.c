@@ -22,10 +22,38 @@
 
 void gpu_compute_unit_execute(struct gpu_compute_unit_t *compute_unit)
 {
+	struct gpu_uop_t *uop;
+	struct gpu_work_group_t *work_group;
+	struct gpu_wavefront_t *wavefront;
+	int subwavefront_id;
+
 	/* Check if execute stage is active */
 	if (!READ_EXECUTE.do_execute)
 		return;
 	
+	/* Get instruction */
+	uop = READ_EXECUTE.uop;
+	work_group = uop->work_group;
+	wavefront = uop->wavefront;
+	subwavefront_id = READ_EXECUTE.subwavefront_id;
+
+	/* Debug */
+	gpu_pipeline_debug("uop "
+		"action=\"update\", "
+		"id=%lld, "
+		"subwf=%d, "
+		"cu=%d, "
+		"stg=\"execute\""
+		"\n",
+		(long long) uop->id,
+		subwavefront_id,
+		compute_unit->id);
+	
+	/* Send to 'write' stage */
+	EXECUTE_WRITE.do_write = 1;
+	EXECUTE_WRITE.uop = uop;
+	EXECUTE_WRITE.subwavefront_id = subwavefront_id;
+
 	/* By default, do not execute next cycle */
 	READ_EXECUTE.do_execute = 0;
 }
