@@ -23,9 +23,35 @@
 
 void gpu_compute_unit_fetch(struct gpu_compute_unit_t *compute_unit)
 {
+	struct gpu_uop_t *uop;
+	struct gpu_work_group_t *work_group;
+	struct gpu_wavefront_t *wavefront;
+
 	/* Check if fetch stage is active */
 	if (!SCHEDULE_FETCH.do_fetch)
 		return;
+	
+	/* Fetch instruction */
+	uop = SCHEDULE_FETCH.uop;
+	work_group = uop->work_group;
+	wavefront = uop->wavefront;
+
+	/* Debug */
+	gpu_pipeline_debug("stg name=\"fetch\", "
+		"uop_id=\"%lld\", "
+		"work_group=\"%d\", "
+		"wavefront=\"%d\", "
+		"subwavefront=\"%d\""
+		"\n",
+		(long long) uop->id,
+		work_group->id,
+		wavefront->id,
+		SCHEDULE_FETCH.subwavefront_id);
+	
+	/* Send to 'decode' stage */
+	FETCH_DECODE.do_decode = 1;
+	FETCH_DECODE.uop = uop;
+	FETCH_DECODE.subwavefront_id = SCHEDULE_FETCH.subwavefront_id;
 
 	/* By default, do not fetch next cycle */
 	SCHEDULE_FETCH.do_fetch = 0;

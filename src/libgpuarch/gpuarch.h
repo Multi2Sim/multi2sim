@@ -81,22 +81,36 @@ struct gpu_compute_unit_t
 
 	/* Initial pipe register (for Schedule stage state) */
 	struct {
+		
+		/* Programmable */
 		int do_schedule;
 		int work_group_id;
 		int wavefront_id;
 		int subwavefront_id;
+
+		/* State */
 		struct gpu_wavefront_t *wavefront_running_next;
+		struct gpu_uop_t *uop;
+
 	} init_schedule;
 
 	/* Schedule/Fetch pipe register */
 	struct {
-		int do_fetch;  /* Set to 1 by 'schedule' stage if output valid */
+		
+		/* Programmable by 'schedule' stage */
+		int do_fetch;
 		struct gpu_uop_t *uop;
+		int subwavefront_id;
+
 	} schedule_fetch;
 
 	/* Fetch/Decode pipe register */
 	struct {
+		
+		/* Programmable by 'fetch' stage */
 		int do_decode;
+		struct gpu_uop_t *uop;
+		int subwavefront_id;
 	} fetch_decode;
 
 	/* Decode/Read pipe register */
@@ -174,6 +188,12 @@ void gpu_device_run(struct gpu_device_t *device, struct gpu_ndrange_t *ndrange);
 
 struct gpu_uop_t
 {
+	/* IDs */
+	uint64_t id;
+	struct gpu_work_group_t *work_group;
+	struct gpu_wavefront_t *wavefront;
+	int subwavefront_count;
+
 	/* Instruction */
 	struct amd_inst_t inst;
 	struct amd_alu_group_t alu_group;
