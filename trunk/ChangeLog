@@ -950,3 +950,7 @@
 
 2010-06-02
 	* src/libgpuarch/gpuarch.c: GPU pipeline debug
+
+2010-06-03
+	* src/m2s.c: option '--debug-cpu-pipeline'
+	* src/libgpuarch/stg_fetch.c: working here.

@@ -200,6 +200,46 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Cache system debug */
+		if (!strcmp(argv[argi], "--debug-cache")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by a file name for the cache system debug info.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			cache_debug_file_name = argv[argi];
+			continue;
+		}
+
+		/* Function calls debug file */
+		if (!strcmp(argv[argi], "--debug-call")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by a file name for function calls debug info.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			isa_call_debug_file_name = argv[argi];
+			continue;
+		}
+		
+		/* CPU ISA debug file */
+		if (!strcmp(argv[argi], "--debug-cpu-isa")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by the debug file name for CPU x86 instructions.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			isa_inst_debug_file_name = argv[argi];
+			continue;
+		}
+
+		/* CPU pipeline debug */
+		if (!strcmp(argv[argi], "--debug-cpu-pipeline")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by a file name for the CPU pipeline debug info.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			esim_debug_file_name = argv[argi];
+			continue;
+		}
+
 		/* Context debug file */
 		if (!strcmp(argv[argi], "--debug-ctx")) {
 			if (argi == argc - 1)
@@ -210,23 +250,13 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* System call debug file */
-		if (!strcmp(argv[argi], "--debug-syscall")) {
+		/* Error debug */
+		if (!strcmp(argv[argi], "--debug-error")) {
 			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for system call debugging.\n%s",
+				fatal("option '%s' must be followed by a file name for error debug info.\n%s",
 					argv[argi], err_help_note);
 			argi++;
-			syscall_debug_file_name = argv[argi];
-			continue;
-		}
-
-		/* OpenCL debug file */
-		if (!strcmp(argv[argi], "--debug-opencl")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for OpenCL calls debugging.\n%s",
-					argv[argi], err_help_note);
-			argi++;
-			opencl_debug_file_name = argv[argi];
+			error_debug_file_name = argv[argi];
 			continue;
 		}
 
@@ -260,53 +290,23 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Function calls debug file */
-		if (!strcmp(argv[argi], "--debug-call")) {
+		/* OpenCL debug file */
+		if (!strcmp(argv[argi], "--debug-opencl")) {
 			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for function calls debug info.\n%s",
+				fatal("option '%s' must be followed by a file name for OpenCL calls debugging.\n%s",
 					argv[argi], err_help_note);
 			argi++;
-			isa_call_debug_file_name = argv[argi];
-			continue;
-		}
-		
-		/* CPU ISA debug file */
-		if (!strcmp(argv[argi], "--debug-cpu-isa")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by the debug file name for CPU x86 instructions.\n%s",
-					argv[argi], err_help_note);
-			argi++;
-			isa_inst_debug_file_name = argv[argi];
+			opencl_debug_file_name = argv[argi];
 			continue;
 		}
 
-		/* Cache system debug */
-		if (!strcmp(argv[argi], "--debug-cache")) {
+		/* System call debug file */
+		if (!strcmp(argv[argi], "--debug-syscall")) {
 			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for the cache system debug info.\n%s",
+				fatal("option '%s' must be followed by a file name for system call debugging.\n%s",
 					argv[argi], err_help_note);
 			argi++;
-			cache_debug_file_name = argv[argi];
-			continue;
-		}
-
-		/* CPU pipeline debug */
-		if (!strcmp(argv[argi], "--debug-pipeline")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for the CPU pipeline debug info.\n%s",
-					argv[argi], err_help_note);
-			argi++;
-			esim_debug_file_name = argv[argi];
-			continue;
-		}
-
-		/* Error debug */
-		if (!strcmp(argv[argi], "--debug-error")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for error debug info.\n%s",
-					argv[argi], err_help_note);
-			argi++;
-			error_debug_file_name = argv[argi];
+			syscall_debug_file_name = argv[argi];
 			continue;
 		}
 

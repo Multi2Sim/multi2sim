@@ -556,6 +556,12 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 	struct gpu_work_group_t *work_group, *work_group_next;
 	struct gpu_wavefront_t *wavefront, *wavefront_next;
 
+	/* Set all ready work-groups to running */
+	while ((work_group = ndrange->pending_list_head)) {
+		gpu_work_group_clear_status(work_group, gpu_work_group_pending);
+		gpu_work_group_set_status(work_group, gpu_work_group_running);
+	}
+
 	/* Execution loop */
 	while (ndrange->running_list_head)
 	{
