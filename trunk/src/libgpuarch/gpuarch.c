@@ -296,8 +296,13 @@ static void gpu_schedule_work_groups(void)
 		INIT_SCHEDULE.subwavefront_id = 0;
 
 		/* Debug */
-		gpu_pipeline_debug("cu action=\"run\", compute_unit=\"%d\", work_item=\"%d\"\n",
-			compute_unit->id, work_group->id);
+		gpu_pipeline_debug("cu "
+			"action=\"run\", "
+			"id=\"%d\", "
+			"work_group=\"%d\""
+			"\n",
+			compute_unit->id,
+			work_group->id);
 	}
 }
 

@@ -26,6 +26,7 @@ void gpu_compute_unit_decode(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_uop_t *uop;
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
+	int subwavefront_id;
 
 	/* Check if decode stage is active */
 	if (!FETCH_DECODE.do_decode)
@@ -35,19 +36,24 @@ void gpu_compute_unit_decode(struct gpu_compute_unit_t *compute_unit)
 	uop = FETCH_DECODE.uop;
 	work_group = uop->work_group;
 	wavefront = uop->wavefront;
+	subwavefront_id = FETCH_DECODE.subwavefront_id;
 
 	/* Debug */
-	gpu_pipeline_debug("stg "
-		"name=\"decode\", "
-		"uop_id=\"%lld\", "
-		"work_group=\"%d\", "
-		"wavefront=\"%d\", "
-		"subwavefront=\"%d\""
+	gpu_pipeline_debug("uop "
+		"action=\"update\", "
+		"id=%lld, "
+		"subwf=%d, "
+		"cu=%d, "
+		"stg=\"decode\""
 		"\n",
 		(long long) uop->id,
-		work_group->id,
-		wavefront->id,
-		FETCH_DECODE.subwavefront_id);
+		subwavefront_id,
+		compute_unit->id);
+	
+	/* Send to 'read' stage */
+	DECODE_READ.do_read = 1;
+	DECODE_READ.uop = uop;
+	DECODE_READ.subwavefront_id = FETCH_DECODE.subwavefront_id;
 
 	/* By default, do not decode next cycle */
 	FETCH_DECODE.do_decode = 0;

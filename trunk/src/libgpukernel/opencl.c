@@ -1104,7 +1104,6 @@ int opencl_func_run(int code, unsigned int *args)
 		gpu_ndrange_setup_args(kernel->ndrange);
 
 		/* Launch kernel execution */
-		printf("%p\n", kernel->ndrange->running_list_head); /////////
 		if (gpu_sim_kind == gpu_sim_kind_functional)
 			gpu_ndrange_run(kernel->ndrange);
 		else

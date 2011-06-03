@@ -23,9 +23,44 @@
 
 void gpu_compute_unit_write(struct gpu_compute_unit_t *compute_unit)
 {
+	struct gpu_uop_t *uop;
+	struct gpu_work_group_t *work_group;
+	struct gpu_wavefront_t *wavefront;
+	int subwavefront_id;
+
 	/* Check if write stage is active */
 	if (!EXECUTE_WRITE.do_write)
 		return;
+	
+	/* Get instruction */
+	uop = EXECUTE_WRITE.uop;
+	work_group = uop->work_group;
+	wavefront = uop->wavefront;
+	subwavefront_id = EXECUTE_WRITE.subwavefront_id;
+
+	/* Debug */
+	gpu_pipeline_debug("uop "
+		"action=\"update\", "
+		"id=%lld, "
+		"subwf=%d, "
+		"cu=%d, "
+		"stg=\"write\""
+		"\n",
+		(long long) uop->id,
+		subwavefront_id,
+		compute_unit->id);
+	
+	/* Last 'subwavefront_id', free uop.
+	 * If it is the last uop in work-group, set compute unit as idle.*/
+	if (subwavefront_id == uop->subwavefront_count - 1) {
+		if (uop->last) {
+			DOUBLE_LINKED_LIST_REMOVE(gpu, busy, compute_unit);
+			DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, idle, compute_unit);
+			gpu_pipeline_debug("cu compute_unit=\"%d\", work_group=\"%d\", action=\"finish\"\n",
+				compute_unit->id, work_group->id);
+		}
+		gpu_uop_free(uop);
+	}
 	
 	/* By default, do not write next cycle */
 	EXECUTE_WRITE.do_write = 0;
