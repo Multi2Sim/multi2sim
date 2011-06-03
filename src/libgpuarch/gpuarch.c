@@ -145,12 +145,15 @@ void gpu_done()
  * GPU Uop
  */
 
+static uint64_t gpu_uop_id_counter = 1000;
+
 struct gpu_uop_t *gpu_uop_create()
 {
-	struct gpu_uop_t *gpu_uop;
+	struct gpu_uop_t *uop;
 
-	gpu_uop = repos_create_object(gpu_uop_repos);
-	return gpu_uop;
+	uop = repos_create_object(gpu_uop_repos);
+	uop->id = gpu_uop_id_counter++;
+	return uop;
 }
 
 
