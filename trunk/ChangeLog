@@ -959,3 +959,7 @@
 		'gpu' defined, similarly to libcpuarch module.
 	* src/libgpuarch: first complete version of GPU pipeline.
 
+2010-06-05
+	* src/libcpuarch: options FastForward, PageSize, InstructionCachePerfect,
+		DataCachePerfect.
+

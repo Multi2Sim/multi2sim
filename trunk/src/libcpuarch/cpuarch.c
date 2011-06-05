@@ -44,6 +44,9 @@ char *cpu_config_help =
 	"  Threads = <num_threads> (Default = 1)\n"
 	"      Number of hardware threads per core. The total number of computing nodes\n"
 	"      in the CPU model is equals to Cores * Threads.\n"
+	"  FastForward = <num_inst> (Default = 0)\n"
+	"      Number of x86 instructions to run with a fast functional simulation before\n"
+	"      the architectural simulation starts.\n"
 	"  ContextSwitch = {t|f} (Default = t)\n"
 	"      Allow context switches in computing nodes. If this option is set to false,\n"
 	"      the maximum number of contexts that can be run is limited by the number of\n"
@@ -65,6 +68,14 @@ char *cpu_config_help =
 	"  RecoverPenalty = <cycles> (Default = 0)\n"
 	"      Number of cycles that the fetch stage gets stalled after a branch\n"
 	"      misprediction.\n"
+	"  PageSize = <size> (Default = 4kB)\n"
+	"      Memory page size in bytes.\n"
+	"  DataCachePerfect = {t|f} (Default = False)\n"
+	"  InstructionCachePerfect = {t|f} (Default = False)\n"
+	"      Set these options to true to simulate a perfect data/instruction caches,\n"
+	"      respectively, where every access results in a hit. If set to false, the\n"
+	"      parameters of the caches are given in the cache system configuration file\n"
+	"      (option --cache-config <file>).\n"
 	"\n"
 	"Section '[ Pipeline ]':\n"
 	"\n"
@@ -202,6 +213,8 @@ char *cpu_report_file_name = "";
 int cpu_cores;
 int cpu_threads;
 
+uint64_t cpu_fast_forward_count;
+
 int cpu_context_quantum;
 int cpu_context_switch;
 
@@ -260,6 +273,8 @@ void cpu_config_check(void)
 	cpu_cores = config_read_int(cfg, section, "Cores", 1);
 	cpu_threads = config_read_int(cfg, section, "Threads", 1);
 
+	cpu_fast_forward_count = config_read_llint(cfg, section, "FastForward", 0);
+
 	cpu_context_switch = config_read_bool(cfg, section, "ContextSwitch", 1);
 	cpu_context_quantum = config_read_int(cfg, section, "ContextQuantum", 100000);
 
@@ -268,6 +283,10 @@ void cpu_config_check(void)
 
 	cpu_recover_kind = config_read_enum(cfg, section, "RecoverKind", cpu_recover_kind_writeback, cpu_recover_kind_map, 2);
 	cpu_recover_penalty = config_read_int(cfg, section, "RecoverPenalty", 0);
+
+	mmu_page_size = config_read_int(cfg, section, "PageSize", 4096);
+	cache_system_iperfect = config_read_bool(cfg, section, "InstructionCachePerfect", 0);
+	cache_system_dperfect = config_read_bool(cfg, section, "DataCachePerfect", 0);
 
 
 	/* Section '[ Pipeline ]' */
@@ -897,27 +916,6 @@ uint32_t cpu_tlb_address(int ctx, uint32_t vaddr)
 }
 
 
-/* Fast forward simulation */
-void cpu_fast_forward(uint64_t cycles)
-{
-	int core, thread;
-
-	/* Functional simulation */
-	while (cycles && ke->context_list_head) {
-		ke_run();
-		cycles--;
-	}
-	
-	/* Free finished contexts and update
-	 * context mappings. */
-	FOREACH_CORE FOREACH_THREAD {
-		if (THREAD.ctx && ctx_get_status(THREAD.ctx, ctx_finished)) {
-			ke_list_remove(ke_list_finished, THREAD.ctx);
-			ctx_free(THREAD.ctx);
-			THREAD.ctx = NULL;
-		}
-	}
-}
 
 
 /*
@@ -986,6 +984,52 @@ static void sim_dump_log()
 }
 
 
+/* Fast forward simulation */
+static void cpu_fast_forward(uint64_t max_inst)
+{
+	struct ctx_t *ctx;
+	uint64_t inst = 0;
+
+	/* Intro message */
+	fprintf(stderr, "\n");
+	fprintf(stderr, "; Fast-forward simulation (%lld x86 instructions)\n",
+		(long long) max_inst);
+	fprintf(stderr, "\n");
+
+	/* Functional simulation */
+	while (ke->finished_count < ke->context_count) {
+		
+		/* Run an instruction from every running process */
+		inst += ke->running_count;
+		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
+			ctx_execute_inst(ctx);
+	
+		/* Free finished contexts */
+		while (ke->finished_list_head)
+			ctx_free(ke->finished_list_head);
+	
+		/* Process list of suspended contexts */
+		ke_process_events();
+
+		/* Stop if signal SIGINT was received */
+		if (sigint_received)
+			break;
+
+		/* Stop if maximum number of instructions exceeded */
+		if (inst >= max_inst)
+			break;
+	}
+
+	/* End message */
+	fprintf(stderr, "\n");
+	if (ke->finished_count == ke->context_count)
+		fprintf(stderr, "; Program finished during fast-forward simulation.\n");
+	else
+		fprintf(stderr, "; Fast-forward simulation complete - continuing detailed simulation.\n");
+	fprintf(stderr, "\n");
+}
+
+
 /* Run simulation loop */
 void cpu_run()
 {
@@ -997,6 +1041,10 @@ void cpu_run()
 	signal(SIGUSR2, &cpu_signal_handler);
 	signal(SIGALRM, &cpu_signal_handler);
 	alarm(sigalrm_interval);
+
+	/* Fast forward instructions */
+	if (cpu_fast_forward_count)
+		cpu_fast_forward(cpu_fast_forward_count);
 	
 	/* Detailed simulation loop */
 	while (ke->finished_count < ke->context_count) {
