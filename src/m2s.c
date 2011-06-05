@@ -455,17 +455,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 }
 
 
-
-/*
-	opt_reg_uint32("-page_size", "Memory page size", &mmu_page_size);
-	opt_reg_bool("-iperfect", "Perfect instruction cache {t|f}", &iperfect);
-	opt_reg_bool("-dperfect", "Perfect data cache {t|f}", &dperfect);
-
-
-*/
-
-
-
 int main(int argc, char **argv)
 {
 	/* Initial information */
