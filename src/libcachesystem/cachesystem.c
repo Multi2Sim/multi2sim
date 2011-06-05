@@ -457,8 +457,8 @@ struct config_t *cache_config;
 int cache_min_block_size = 0;
 int cache_max_block_size = 0;
 uint32_t mem_latency = 200;
-static int iperfect = 0;
-static int dperfect = 0;
+int cache_system_iperfect = 0;
+int cache_system_dperfect = 0;
 
 
 /* Check that a section exists */
@@ -1235,8 +1235,8 @@ void cache_system_handler(int event, void *data)
 		stack->pending++;
 
 		/* Access to cache if not perfect */
-		if ((stack->cache_kind == cache_kind_data && !dperfect) ||
-			(stack->cache_kind == cache_kind_inst && !iperfect))
+		if ((stack->cache_kind == cache_kind_data && !cache_system_dperfect) ||
+			(stack->cache_kind == cache_kind_inst && !cache_system_iperfect))
 		{
 			esim_schedule_event(EV_CACHE_SYSTEM_ACCESS_CACHE, stack, 0);
 			stack->pending++;

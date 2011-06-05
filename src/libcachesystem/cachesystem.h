@@ -380,8 +380,13 @@ void tlb_free(struct tlb_t *tlb);
 
 extern char *cache_system_config_file_name;
 extern char *cache_system_report_file_name;
+
+extern int cache_system_iperfect;
+extern int cache_system_dperfect;
+
 extern int cache_min_block_size;
 extern int cache_max_block_size;
+
 extern struct ccache_t *main_memory;
 
 enum cache_kind_enum {

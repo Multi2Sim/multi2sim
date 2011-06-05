@@ -903,7 +903,6 @@ void cpu_writeback(void);
 void cpu_commit(void);
 void cpu_recover(int core, int thread);
 
-void cpu_fast_forward(uint64_t cycles);
 void cpu_run(void);
 
 #endif
