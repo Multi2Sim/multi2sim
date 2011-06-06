@@ -78,6 +78,19 @@ struct string_map_t fmt_kcache_mode_map = {
 };
 
 
+struct string_map_t fmt_inst_category_map = {
+	7, {
+		{ "CF", AMD_CAT_CF },
+		{ "ALU", AMD_CAT_ALU },
+		{ "LDS", AMD_CAT_LDS },
+		{ "VTX", AMD_CAT_VTX },
+		{ "TEX", AMD_CAT_TEX },
+		{ "MEM_RD", AMD_CAT_MEM_RD },
+		{ "MEM_GDS", AMD_CAT_MEM_GDS }
+	}
+};
+
+
 struct string_map_t fmt_cf_inst_map = {
 	55, {
 		{ "CF_INST_NOP", 0 },
