@@ -963,3 +963,6 @@
 	* src/libcpuarch: options FastForward, PageSize, InstructionCachePerfect,
 		DataCachePerfect.
 
+2010-06-06
+	* src/libgpuarch, src/libgpudisasm: dump complete Evergreen instructions into
+		GPU pipeline debug file.

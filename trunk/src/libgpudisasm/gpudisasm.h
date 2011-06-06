@@ -433,6 +433,8 @@ struct fmt_tex_word2_t
 };
 
 
+extern struct string_map_t fmt_inst_category_map;
+
 enum amd_category_enum {
 	AMD_CAT_NONE = 0,
 
@@ -555,6 +557,8 @@ typedef void (*fmt_dump_func_t)(void *buf, FILE *);
 
 void amd_disasm_init(void);
 void amd_disasm_done(void);
+
+void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int shift, char *buf, int size);
 
 void fmt_word_dump(void *buf, enum fmt_enum fmt, FILE *f);
 void amd_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f);
