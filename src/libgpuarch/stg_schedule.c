@@ -65,6 +65,9 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 	int i;
 	struct gpu_work_group_t *work_group = uop->work_group;
 	struct gpu_wavefront_t *wavefront = uop->wavefront;
+	struct gpu_ndrange_t *ndrange = work_group->ndrange;
+	char buf[MAX_STRING_SIZE];
+	int inst_num;
 
 	/* Set fields */
 	uop->clause_kind = wavefront->clause_kind;
@@ -74,19 +77,27 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 	assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront));
 	gpu_pipeline_debug("uop "
 		"action=\"emul\", "
-		"id=\"%lld\", ",
+		"id=%lld, ",
 		(long long) uop->id);
 	
 	switch (wavefront->clause_kind) {
 
 	case GPU_CLAUSE_CF:
+	case GPU_CLAUSE_TC:
+		
+		inst_num = (wavefront->cf_buf - ndrange->kernel->cal_abi->text_buffer) / 8;
 		gpu_wavefront_execute(wavefront);
 		amd_inst_copy(&uop->inst, &wavefront->cf_inst);
 
-		gpu_pipeline_debug(
-			"cat=\"CF\", "
-			"inst=\"%s\", ",
-			wavefront->cf_inst.info->name);
+		/* Debug */
+		if (debug_status(gpu_pipeline_debug_category)) {
+			amd_inst_dump_buf(&wavefront->cf_inst, inst_num, 0, buf, MAX_STRING_SIZE);
+			gpu_pipeline_debug(
+				"cat=\"%s\", "
+				"inst=\"%s\", ",
+				map_value(&fmt_inst_category_map, wavefront->cf_inst.info->category),
+				buf);
+		}
 		break;
 	
 	case GPU_CLAUSE_ALU:
@@ -96,23 +107,15 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 		if (debug_status(gpu_pipeline_debug_category)) {
 			for (i = 0; i < wavefront->alu_group.inst_count; i++) {
 				struct amd_inst_t *inst = &wavefront->alu_group.inst[i];
+				amd_inst_dump_buf(inst, -1, 0, buf, MAX_STRING_SIZE);
 				gpu_pipeline_debug(
 					"inst.%s=\"%s\", ",
-					map_value(&amd_alu_map, inst->alu), inst->info->name);
+					map_value(&amd_alu_map, inst->alu),
+					buf);
 			}
 		}
 		break;
 
-	case GPU_CLAUSE_TC:
-		gpu_wavefront_execute(wavefront);
-		amd_inst_copy(&uop->inst, &wavefront->cf_inst);
-
-		gpu_pipeline_debug(
-			" cat=\"TC\", "
-			" inst=\"%s\", ",
-			wavefront->tc_inst.info->name);
-		break;
-	
 	default:
 		abort();
 
