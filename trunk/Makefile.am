@@ -9,6 +9,7 @@ EXTRA_DIST = \
 	tools/libm2s-opencl/CL/cl.h \
 	tools/libm2s-opencl/CL/cl_gl.h \
 	tools/libm2s-opencl/CL/cl_gl_ext.h \
+	\
 	tools/m2s-opencl-kc/debug.c \
 	tools/m2s-opencl-kc/debug.h \
 	tools/m2s-opencl-kc/elfanalyze.c \
@@ -17,8 +18,18 @@ EXTRA_DIST = \
 	tools/m2s-opencl-kc/Makefile \
 	tools/m2s-opencl-kc/misc.c \
 	tools/m2s-opencl-kc/misc.h \
+	\
 	tools/barplot/barplot.py \
+	\
 	tools/inifile/inifile.py \
+	\
 	tools/m2s-pipeline/m2s-pipeline.c \
-	tools/m2s-pipeline/Makefile
+	tools/m2s-pipeline/Makefile \
+	\
+	samples/ctxconfig.args-sort \
+	samples/cpuconfig.args-sort \
+	samples/test-args.c \
+	samples/test-args.i386 \
+	samples/test-sort.c \
+	samples/test-sort.i386
 

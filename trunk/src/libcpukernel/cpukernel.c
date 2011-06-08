@@ -785,7 +785,7 @@ void ke_run(void)
 	fprintf(stderr, "; Simulation Statistics Summary\n");
 	fprintf(stderr, ";\n");
 	fprintf(stderr, "\n");
-	fprintf(stderr, "[ CPU.FunctionalSimulationSummary ]\n");
+	fprintf(stderr, "[ CPU.FunctionalSimulation ]\n");
 	fprintf(stderr, "Time = %.2f\n", (double) ke_timer() / 1000000);
 	fprintf(stderr, "Instructions = %lld\n", (long long) inst);
 	fprintf(stderr, "InstructionsPerSecond = %.0f\n", ke_timer() ? (double) inst / ke_timer() * 1000000 : 0.0);

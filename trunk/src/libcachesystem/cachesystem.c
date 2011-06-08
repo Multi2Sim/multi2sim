@@ -45,7 +45,7 @@ char *cache_system_config_help =
 	"      Block replacement policy.\n"
 	"  ReadPorts = <num> (Default = 2)\n"
 	"      Number of read ports.\n"
-	"  WritePots = <num> (Default = 1)\n"
+	"  WritePorts = <num> (Default = 1)\n"
 	"      Number of write ports.\n"
 	"\n"
 	"Section '[ Net <name> ]': defines an interconnection network.\n"
