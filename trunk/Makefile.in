@@ -215,8 +215,10 @@ EXTRA_DIST = \
 	tools/m2s-pipeline/m2s-pipeline.c \
 	tools/m2s-pipeline/Makefile \
 	\
-	samples/ctxconfig.args-sort \
+	samples/cacheconfig.multicore \
+	samples/cacheconfig.superscalar \
 	samples/cpuconfig.args-sort \
+	samples/ctxconfig.args-sort \
 	samples/test-args.c \
 	samples/test-args.i386 \
 	samples/test-sort.c \
