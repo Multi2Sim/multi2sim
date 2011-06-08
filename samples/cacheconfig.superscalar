@@ -1,0 +1,43 @@
+[ CacheTopology l1topo ]
+Sets = 8
+Assoc = 2
+BlockSize = 64
+Latency = 2
+
+[ CacheTopology l2topo ]
+Sets = 32
+Assoc = 4
+BlockSize = 64
+Latency = 20
+
+[ Net net-0 ]
+Topology = Bus
+LinkWidth = 32
+
+[ Net net-1 ]
+Topology = Bus
+LinkWidth = 32
+
+[ Cache dl1 ]
+Topology = l1topo
+LoNet = net-0
+
+[ Cache il1 ]
+Topology = l1topo
+LoNet = net-0
+
+[ Cache l2 ]
+Topology = l2topo
+HiNet = net-0
+LoNet = net-1
+
+[ MainMemory ]
+HiNet = net-1
+BlockSize = 64
+Latency = 200
+
+[ Node 0 ]
+Core = 0
+Thread = 0
+DCache = dl1
+ICache = il1
