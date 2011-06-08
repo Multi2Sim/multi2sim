@@ -674,7 +674,7 @@ void cpu_print_stats(FILE *f)
 	uint64_t now = ke_timer();
 
 	/* Summary of functional simulation */
-	fprintf(f, "[ CPU.FunctionalSimulationSummary ]\n");
+	fprintf(f, "[ CPU.FunctionalSimulation ]\n");
 	fprintf(f, "Time = %.2f\n", (double) now / 1000000);
 	fprintf(f, "Instructions = %lld\n", (long long) cpu->inst);
 	fprintf(f, "InstructionsPerSecond = %.0f\n", now ? (double) cpu->inst / now * 1000000 : 0.0);
@@ -684,7 +684,7 @@ void cpu_print_stats(FILE *f)
 	fprintf(f, "\n");
 
 	/* Summary of detailed simulation */
-	fprintf(f, "[ CPU.DetailedSimulationSummary ]\n");
+	fprintf(f, "[ CPU.DetailedSimulation ]\n");
 	fprintf(f, "Cycles = %lld\n", (long long) cpu->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", cpu->cycle ? (double) cpu->inst / cpu->cycle : 0);
 	fprintf(f, "BranchPredictionAccuracy = %.4g\n", cpu->branches ? (double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0);
