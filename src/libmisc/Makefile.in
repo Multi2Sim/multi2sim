@@ -176,7 +176,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libmisc.a
 libmisc_a_SOURCES = misc.c misc.h
-AM_CFLAGS = -Wall
+@DEBUG_FALSE@AM_CFLAGS = -fno-strict-aliasing -O3
+@DEBUG_TRUE@AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE -g -O0
 all: all-am
 
 .SUFFIXES:
