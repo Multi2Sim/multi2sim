@@ -27,9 +27,10 @@
 /* Global variables */
 
 struct gk_t *gk;
-char *gk_opencl_binary_name = "";
-char *gk_report_file_name = "";
-FILE *gk_report_file = NULL;
+
+char *gpu_opencl_binary_name = "";
+char *gpu_report_file_name = "";
+FILE *gpu_report_file = NULL;
 
 
 /* Architectural parameters introduced in GPU emulator */
@@ -48,10 +49,10 @@ void gk_init()
 	gpu_isa_debug_category = debug_new_category();
 
 	/* Open report file */
-	if (gk_report_file_name[0]) {
-		gk_report_file = open_write(gk_report_file_name);
-		if (!gk_report_file)
-			fatal("%s: cannot open GPU report file ", gk_report_file_name);
+	if (gpu_report_file_name[0]) {
+		gpu_report_file = open_write(gpu_report_file_name);
+		if (!gpu_report_file)
+			fatal("%s: cannot open GPU report file ", gpu_report_file_name);
 	}
 
 	/* Initialize kernel */
@@ -78,8 +79,8 @@ void gk_init()
 void gk_done()
 {
 	/* GPU report */
-	if (gk_report_file)
-		fclose(gk_report_file);
+	if (gpu_report_file)
+		fclose(gpu_report_file);
 
 	/* Free OpenCL objects */
 	opencl_object_free_all();
@@ -95,14 +96,6 @@ void gk_done()
 	mem_free(gk->const_mem);
 	mem_free(gk->global_mem);
 	free(gk);
-}
-
-
-/* Register options */
-void gk_reg_options()
-{
-	opt_reg_string("-opencl:binary", "Pre-compiled binary for OpenCL applications",
-		&gk_opencl_binary_name);
 }
 
 
@@ -237,6 +230,7 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 	int lid;  /* Local ID iterator */
 
 	/* Array of work-groups */
+	strcpy(ndrange->name, kernel->name);
 	ndrange->work_group_count = kernel->group_count;
 	ndrange->work_group_id_first = 0;
 	ndrange->work_group_id_last = ndrange->work_group_count - 1;
@@ -369,7 +363,7 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 	/* Assign names to wavefronts */
 	for (wid = 0; wid < ndrange->wavefront_count; wid++) {
 		wavefront = ndrange->wavefronts[wid];
-		snprintf(wavefront->name, sizeof(wavefront->name), "wavefront[i%d..i%d]",
+		snprintf(wavefront->name, sizeof(wavefront->name), "wavefront[i%d-i%d]",
 			wavefront->work_item_id_first, wavefront->work_item_id_last);
 
 		/* Initialize wavefront program counter */
@@ -590,6 +584,9 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 			}
 		}
 	}
+
+	/* Dump stats */
+	gpu_ndrange_dump(ndrange, gpu_report_file);
 }
 
 
@@ -696,12 +693,13 @@ void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_w
 void gpu_work_group_dump(struct gpu_work_group_t *work_group, FILE *f)
 {
 	struct gpu_ndrange_t *ndrange = work_group->ndrange;
+	struct gpu_wavefront_t *wavefront;
+	int wavefront_id;
 
 	if (!f)
 		return;
 	
 	fprintf(f, "[ NDRange[%d].WorkGroup[%d] ]\n\n", ndrange->id, work_group->id);
-
 	fprintf(f, "Name = %s\n", work_group->name);
 	fprintf(f, "WaveFrontFirst = %d\n", work_group->wavefront_id_first);
 	fprintf(f, "WaveFrontLast = %d\n", work_group->wavefront_id_last);
@@ -710,6 +708,12 @@ void gpu_work_group_dump(struct gpu_work_group_t *work_group, FILE *f)
 	fprintf(f, "WorkItemLast = %d\n", work_group->work_item_id_last);
 	fprintf(f, "WorkItemCount = %d\n", work_group->work_item_count);
 	fprintf(f, "\n");
+
+	/* Dump wavefronts */
+	FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
+		wavefront = ndrange->wavefronts[wavefront_id];
+		gpu_wavefront_dump(wavefront, f);
+	}
 }
 
 
@@ -790,10 +794,10 @@ void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 
 	/* Sort divergence groups as per size */
 	list_sort(list, gpu_wavefront_divergence_compare);
-	fprintf(f, "work_itemDivergenceGroups = %d\n", list_count(list));
+	fprintf(f, "DivergenceGroups = %d\n", list_count(list));
 	
 	/* Dump size of groups with */
-	fprintf(f, "work_itemDivergenceGroupsSize =");
+	fprintf(f, "DivergenceGroupsSize =");
 	for (i = 0; i < list_count(list); i++) {
 		elem = list_get(list, i);
 		fprintf(f, " %d", elem->count);
@@ -803,7 +807,7 @@ void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 	/* Dump work_item ids contained in each work_item divergence group */
 	for (i = 0; i < list_count(list); i++) {
 		elem = list_get(list, i);
-		fprintf(f, "work_itemDivergenceGroup[%d] =", i);
+		fprintf(f, "DivergenceGroup[%d] =", i);
 
 		for (j = 0; j < wavefront->work_item_count; j++) {
 			int first, last;
@@ -833,7 +837,6 @@ void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
 	struct gpu_work_group_t *work_group = wavefront->work_group;
 	int i;
-	double emu_time;
 
 	if (!f)
 		return;
@@ -846,12 +849,6 @@ void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 	fprintf(f, "WorkItemFirst = %d\n", wavefront->work_item_id_first);
 	fprintf(f, "WorkItemLast = %d\n", wavefront->work_item_id_last);
 	fprintf(f, "WorkItemCount = %d\n", wavefront->work_item_count);
-	fprintf(f, "\n");
-
-	emu_time = (double) (wavefront->emu_time_end = wavefront->emu_time_start) / 1e6;
-	fprintf(f, "Emu_Inst_Count = %lld\n", (long long) wavefront->emu_inst_count);
-	fprintf(f, "Emu_Time = %.2f\n", emu_time);
-	fprintf(f, "Emu_Inst_Per_Sec = %.2f\n", (double) wavefront->emu_inst_count / emu_time);
 	fprintf(f, "\n");
 
 	fprintf(f, "Inst_Count = %lld\n", (long long) wavefront->inst_count);
