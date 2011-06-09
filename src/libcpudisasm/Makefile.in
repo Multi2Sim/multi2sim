@@ -180,7 +180,8 @@ libcpudisasm_a_SOURCES = \
 	cpudisasm.c \
 	machine.dat
 
-AM_CFLAGS = -Wall -fno-strict-aliasing
+@DEBUG_FALSE@AM_CFLAGS = -fno-strict-aliasing -O3
+@DEBUG_TRUE@AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE -g -O0
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle
 

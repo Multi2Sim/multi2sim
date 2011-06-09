@@ -42,8 +42,6 @@
 extern char *gk_report_file_name;
 extern FILE *gk_report_file;
 
-extern int gk_kernel_execution_count;
-
 /* Architectural parameters that need to be introduced in the GPU functional
  * simulator, because they are returned by OpenCL functions or affect the
  * GPU emulation. */
@@ -462,6 +460,7 @@ struct gpu_ndrange_t
 {
 	/* ID */
 	char name[30];
+	int id;  /* Sequential ndrange ID (given by gk->ndrange_count counter) */
 
 	/* OpenCL kernel associated */
 	struct opencl_kernel_t *kernel;
@@ -471,10 +470,22 @@ struct gpu_ndrange_t
 	struct gpu_wavefront_t **wavefronts;
 	struct gpu_work_item_t **work_items;
 
-	/* Sizes */
-	int work_group_count;
-	int wavefront_count;
+	/* IDs of work-items contained */
+	int work_item_id_first;
+	int work_item_id_last;
 	int work_item_count;
+
+	/* IDs of wavefronts contained */
+	int wavefront_id_first;
+	int wavefront_id_last;
+	int wavefront_count;
+
+	/* IDs of work-groups contained */
+	int work_group_id_first;
+	int work_group_id_last;
+	int work_group_count;
+	
+	/* Size of work-groups */
 	int wavefronts_per_work_group;  /* = ceil(local_size / gpu_wavefront_size) */
 
 	/* Double linked lists of work-groups */
@@ -492,6 +503,7 @@ struct gpu_ndrange_t
 
 struct gpu_ndrange_t *gpu_ndrange_create(struct opencl_kernel_t *kernel);
 void gpu_ndrange_free(struct gpu_ndrange_t *ndrange);
+void gpu_ndrange_dump(struct gpu_ndrange_t *ndrange, FILE *f);
 
 void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange);
 void gpu_ndrange_setup_const_mem(struct gpu_ndrange_t *ndrange);
@@ -555,8 +567,14 @@ struct gpu_work_group_t
 	struct mem_t *local_mem;
 };
 
+#define FOREACH_WORK_GROUP_IN_NDRANGE(NDRANGE, WORK_GROUP_ID) \
+	for ((WORK_GROUP_ID) = (NDRANGE)->work_group_id_first; \
+		(WORK_GROUP_ID) <= (NDRANGE)->work_group_id_last; \
+		(WORK_GROUP_ID)++)
+
 struct gpu_work_group_t *gpu_work_group_create();
 void gpu_work_group_free(struct gpu_work_group_t *work_group);
+void gpu_work_group_dump(struct gpu_work_group_t *work_group, FILE *f);
 
 int gpu_work_group_get_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status);
 void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status);
@@ -655,6 +673,11 @@ struct gpu_wavefront_t
 	uint64_t tc_inst_global_mem_read_count;  /* Number of instructions reading from global mem (they are TC inst) */
 };
 
+#define FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \
+	for ((WAVEFRONT_ID) = (NDRANGE)->wavefront_id_first; \
+		(WAVEFRONT_ID) <= (NDRANGE)->wavefront_id_last; \
+		(WAVEFRONT_ID)++)
+
 #define FOREACH_WAVEFRONT_IN_WORK_GROUP(WORK_GROUP, WAVEFRONT_ID) \
 	for ((WAVEFRONT_ID) = (WORK_GROUP)->wavefront_id_first; \
 		(WAVEFRONT_ID) <= (WORK_GROUP)->wavefront_id_last; \
@@ -716,6 +739,11 @@ struct gpu_work_item_t
 	 * divergent work_items. */
 	uint32_t branch_digest;
 };
+
+#define FOREACH_WORK_ITEM_IN_NDRANGE(NDRANGE, WORK_ITEM_ID) \
+	for ((WORK_ITEM_ID) = (NDRANGE)->work_item_id_first; \
+		(WORK_ITEM_ID) <= (NDRANGE)->work_item_id_last; \
+		(WORK_ITEM_ID)++)
 
 #define FOREACH_WORK_ITEM_IN_WORK_GROUP(WORK_GROUP, WORK_ITEM_ID) \
 	for ((WORK_ITEM_ID) = (WORK_GROUP)->work_item_id_first; \
@@ -875,6 +903,9 @@ struct gk_t {
 	/* Global memory */
 	struct mem_t *global_mem;
 	uint32_t global_mem_top;
+
+	/* Number of OpenCL kernels executed */
+	int ndrange_count;
 };
 
 extern struct gk_t *gk;
