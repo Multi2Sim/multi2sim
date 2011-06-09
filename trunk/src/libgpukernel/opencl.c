@@ -531,7 +531,7 @@ int opencl_func_run(int code, unsigned int *args)
 			context_id, count, strings, lengths, errcode_ret);
 
 		/* Application tries to compile source, and no binary was passed to Multi2Sim */
-		if (!*gk_opencl_binary_name)
+		if (!*gpu_opencl_binary_name)
 			fatal("%s: kernel source compilation not supported.\n%s",
 				err_prefix, err_opencl_compiler);
 
@@ -540,13 +540,13 @@ int opencl_func_run(int code, unsigned int *args)
 		program = opencl_program_create();
 		retval = program->id;
 		warning("%s: binary '%s' used as pre-compiled kernel.\n%s",
-			err_prefix, gk_opencl_binary_name, err_opencl_binary_note);
+			err_prefix, gpu_opencl_binary_name, err_opencl_binary_note);
 
 		/* Load OpenCL binary passed to Multi2Sim and make a copy in temporary file */
 		program->binary_file = create_temp_file(program->binary_file_name, MAX_PATH_SIZE);
-		buf = read_buffer(gk_opencl_binary_name, &buf_size);
+		buf = read_buffer(gpu_opencl_binary_name, &buf_size);
 		if (!buf)
-			fatal("%s: cannot read from file '%s'", err_prefix, gk_opencl_binary_name);
+			fatal("%s: cannot read from file '%s'", err_prefix, gpu_opencl_binary_name);
 		write_buffer(program->binary_file_name, buf, buf_size);
 		free_buffer(buf);
 		break;

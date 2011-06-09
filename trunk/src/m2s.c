@@ -397,7 +397,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 				fatal("option '%s' must be followed by an OpenCL binary file name.\n%s",
 					argv[argi], err_help_note);
 			argi++;
-			gk_opencl_binary_name = argv[argi];
+			gpu_opencl_binary_name = argv[argi];
 			continue;
 		}
 
@@ -427,7 +427,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 				fatal("option '%s' must be followed by a GPU report file name.\n%s",
 					argv[argi], err_help_note);
 			argi++;
-			gk_report_file_name = argv[argi];
+			gpu_report_file_name = argv[argi];
 			continue;
 		}
 
