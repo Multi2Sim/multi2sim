@@ -39,8 +39,9 @@
  */
 
 
-extern char *gk_report_file_name;
-extern FILE *gk_report_file;
+extern char *gpu_opencl_binary_name;
+extern char *gpu_report_file_name;
+extern FILE *gpu_report_file;
 
 /* Architectural parameters that need to be introduced in the GPU functional
  * simulator, because they are returned by OpenCL functions or affect the
@@ -459,7 +460,7 @@ void gpu_isa_write_task_commit(void);
 struct gpu_ndrange_t
 {
 	/* ID */
-	char name[30];
+	char name[MAX_STRING_SIZE];
 	int id;  /* Sequential ndrange ID (given by gk->ndrange_count counter) */
 
 	/* OpenCL kernel associated */
@@ -909,11 +910,9 @@ struct gk_t {
 };
 
 extern struct gk_t *gk;
-extern char *gk_opencl_binary_name;
 
 void gk_init(void);
 void gk_done(void);
-void gk_reg_options(void);
 
 void gk_libopencl_redirect(char *path, int size);
 void gk_libopencl_failed(int pid);
