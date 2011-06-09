@@ -248,8 +248,8 @@ LDADD = \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	-lm -lpthread
 
-AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE
-AM_LDFLAGS = #-static
+@DEBUG_FALSE@AM_CFLAGS = -fno-strict-aliasing -O3
+@DEBUG_TRUE@AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE -g -O0
 all: all-recursive
 
 .SUFFIXES:

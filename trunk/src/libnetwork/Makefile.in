@@ -179,7 +179,8 @@ libnetwork_a_SOURCES = \
 	network.h \
 	network.c
 
-AM_CFLAGS = -Wall
+@DEBUG_FALSE@AM_CFLAGS = -O3
+@DEBUG_TRUE@AM_CFLAGS = -Wall -DMHANDLE -g -O0
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libesim \

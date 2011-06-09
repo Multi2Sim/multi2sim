@@ -30,7 +30,6 @@ struct gk_t *gk;
 char *gk_opencl_binary_name = "";
 char *gk_report_file_name = "";
 FILE *gk_report_file = NULL;
-int gk_kernel_execution_count = 0;
 
 
 /* Architectural parameters introduced in GPU emulator */
@@ -239,6 +238,8 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 
 	/* Array of work-groups */
 	ndrange->work_group_count = kernel->group_count;
+	ndrange->work_group_id_first = 0;
+	ndrange->work_group_id_last = ndrange->work_group_count - 1;
 	ndrange->work_groups = calloc(ndrange->work_group_count, sizeof(void *));
 	for (gid = 0; gid < kernel->group_count; gid++) {
 		ndrange->work_groups[gid] = gpu_work_group_create();
@@ -248,6 +249,8 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 	/* Array of wavefronts */
 	ndrange->wavefronts_per_work_group = (kernel->local_size + gpu_wavefront_size - 1) / gpu_wavefront_size;
 	ndrange->wavefront_count = ndrange->wavefronts_per_work_group * ndrange->work_group_count;
+	ndrange->wavefront_id_first = 0;
+	ndrange->wavefront_id_last = ndrange->wavefront_count - 1;
 	assert(ndrange->wavefronts_per_work_group > 0 && ndrange->wavefront_count > 0);
 	ndrange->wavefronts = calloc(ndrange->wavefront_count, sizeof(void *));
 	for (wid = 0; wid < ndrange->wavefront_count; wid++) {
@@ -265,6 +268,8 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 	
 	/* Array of work-items */
 	ndrange->work_item_count = kernel->global_size;
+	ndrange->work_item_id_first = 0;
+	ndrange->work_item_id_last = ndrange->work_item_count - 1;
 	ndrange->work_items = calloc(ndrange->work_item_count, sizeof(void *));
 	tid = 0;
 	gid = 0;
@@ -588,9 +593,33 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 }
 
 
+void gpu_ndrange_dump(struct gpu_ndrange_t *ndrange, FILE *f)
+{
+	struct gpu_work_group_t *work_group;
+	int work_group_id;
 
+	if (!f)
+		return;
+	
+	fprintf(f, "[ NDRange[%d] ]\n\n", ndrange->id);
+	fprintf(f, "Name = %s\n", ndrange->name);
+	fprintf(f, "WorkGroupFirst = %d\n", ndrange->work_group_id_first);
+	fprintf(f, "WorkGroupLast = %d\n", ndrange->work_group_id_last);
+	fprintf(f, "WorkGroupCount = %d\n", ndrange->work_group_count);
+	fprintf(f, "WaveFrontFirst = %d\n", ndrange->wavefront_id_first);
+	fprintf(f, "WaveFrontLast = %d\n", ndrange->wavefront_id_last);
+	fprintf(f, "WaveFrontCount = %d\n", ndrange->wavefront_count);
+	fprintf(f, "WorkItemFirst = %d\n", ndrange->work_item_id_first);
+	fprintf(f, "WorkItemLast = %d\n", ndrange->work_item_id_last);
+	fprintf(f, "WorkItemCount = %d\n", ndrange->work_item_count);
+	fprintf(f, "\n");
 
-
+	/* Work-groups */
+	FOREACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id) {
+		work_group = ndrange->work_groups[work_group_id];
+		gpu_work_group_dump(work_group, f);
+	}
+}
 
 
 
@@ -661,6 +690,26 @@ void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_w
 	
 	/* Update status */
 	work_group->status &= ~status;
+}
+
+
+void gpu_work_group_dump(struct gpu_work_group_t *work_group, FILE *f)
+{
+	struct gpu_ndrange_t *ndrange = work_group->ndrange;
+
+	if (!f)
+		return;
+	
+	fprintf(f, "[ NDRange[%d].WorkGroup[%d] ]\n\n", ndrange->id, work_group->id);
+
+	fprintf(f, "Name = %s\n", work_group->name);
+	fprintf(f, "WaveFrontFirst = %d\n", work_group->wavefront_id_first);
+	fprintf(f, "WaveFrontLast = %d\n", work_group->wavefront_id_last);
+	fprintf(f, "WaveFrontCount = %d\n", work_group->wavefront_count);
+	fprintf(f, "WorkItemFirst = %d\n", work_group->work_item_id_first);
+	fprintf(f, "WorkItemLast = %d\n", work_group->work_item_id_last);
+	fprintf(f, "WorkItemCount = %d\n", work_group->work_item_count);
+	fprintf(f, "\n");
 }
 
 
@@ -781,6 +830,8 @@ void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 
 void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 {
+	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
+	struct gpu_work_group_t *work_group = wavefront->work_group;
 	int i;
 	double emu_time;
 
@@ -788,12 +839,13 @@ void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 		return;
 	
 	/* Dump wavefront statistics in GPU report */
-	fprintf(f, "[ wavefront %lld ]\n\n", (long long) wavefront->id);
+	fprintf(f, "[ NDRange[%d].Wavefront[%d] ]\n\n", ndrange->id, wavefront->id);
 
-	fprintf(f, "KernelExecution = %d\n", gk_kernel_execution_count - 1);
 	fprintf(f, "Name = %s\n", wavefront->name);
-	fprintf(f, "Global_Id = %d\n", wavefront->work_item_id_first);
-	fprintf(f, "work_item_Count = %d\n", wavefront->work_item_count);
+	fprintf(f, "WorkGroup = %d\n", work_group->id);
+	fprintf(f, "WorkItemFirst = %d\n", wavefront->work_item_id_first);
+	fprintf(f, "WorkItemLast = %d\n", wavefront->work_item_id_last);
+	fprintf(f, "WorkItemCount = %d\n", wavefront->work_item_count);
 	fprintf(f, "\n");
 
 	emu_time = (double) (wavefront->emu_time_end = wavefront->emu_time_start) / 1e6;
