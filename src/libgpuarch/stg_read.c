@@ -20,9 +20,16 @@
 #include <gpuarch.h>
 
 
+#define FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(WAVEFRONT, SUBWAVEFRONT_ID, WORK_ITEM_ID) \
+	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first + (SUBWAVEFRONT_ID) * gpu_num_stream_cores; \
+		(WORK_ITEM_ID) <= MIN((WAVEFRONT)->work_item_id_first + ((SUBWAVEFRONT_ID) + 1) \
+			* gpu_num_stream_cores - 1, (WAVEFRONT)->work_item_id_last); \
+		(WORK_ITEM_ID)++)
+
 void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_uop_t *uop;
+	struct gpu_ndrange_t *ndrange;
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
 	int subwavefront_id;
@@ -35,6 +42,7 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 	uop = DECODE_READ.uop;
 	work_group = uop->work_group;
 	wavefront = uop->wavefront;
+	ndrange = work_group->ndrange;
 	subwavefront_id = DECODE_READ.subwavefront_id;
 
 	/* Debug */
@@ -48,6 +56,23 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 		(long long) uop->id,
 		subwavefront_id,
 		compute_unit->id);
+	
+	/* Access to global memory */
+	if (uop->clause_kind != GPU_CLAUSE_ALU && (uop->inst.info->flags & AMD_INST_FLAG_MEM)) {
+
+		struct gpu_work_item_uop_t *work_item_uop;
+		struct gpu_work_item_t *work_item;
+		int work_item_id;
+		printf("Global memory access: WF=%d, SubWF=%d, instr='%s'\n",
+			wavefront->id, subwavefront_id, uop->inst.info->name);
+
+		FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(wavefront, subwavefront_id, work_item_id) {
+			work_item = ndrange->work_items[work_item_id];
+			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+			printf("\tWI=%d: addr=%u, size=%u\n", work_item->id,
+				work_item_uop->global_mem_access_addr, work_item_uop->global_mem_access_size);
+		}
+	}
 	
 	/* Send to 'execute' stage */
 	READ_EXECUTE.do_execute = 1;

@@ -238,8 +238,11 @@ void gpu_init()
 	/* Initialize GPU */
 	gpu_init_device();
 
-	/* GPU uop repository */
-	gpu_uop_repos = repos_create(sizeof(struct gpu_uop_t), "gpu_uop_repos");
+	/* GPU uop repository.
+	 * The size assigned for each 'gpu_uop_t' is equals to the baseline structure size plus the
+	 * size of a 'gpu_work_item_uop_t' element for each work-item in the wavefront. */
+	gpu_uop_repos = repos_create(sizeof(struct gpu_uop_t) + sizeof(struct gpu_work_item_uop_t)
+		* gpu_wavefront_size, "gpu_uop_repos");
 }
 
 

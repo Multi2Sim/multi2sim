@@ -167,6 +167,16 @@ void gpu_compute_unit_next_cycle(struct gpu_compute_unit_t *compute_unit);
 
 /* GPU uop */
 
+/* Part of a GPU instruction specific for each work-item within wavefront. */
+struct gpu_work_item_uop_t {
+	
+	/* For global memory accesses */
+	uint32_t global_mem_access_addr;
+	uint32_t global_mem_access_size;
+};
+
+/* Structure representing a GPU instruction fetched in common for a wavefront.
+ * This is the structure passed from stage to stage in the compute unit pipeline. */
 struct gpu_uop_t
 {
 	/* IDs */
@@ -182,6 +192,13 @@ struct gpu_uop_t
 	
 	/* Clause kind */
 	enum gpu_clause_kind_enum clause_kind;
+
+	/* Flags */
+	int global_mem_access;  /* True if uop contains an access to global memory. */
+
+	/* Per stream-core data. This space is dynamically allocated for an uop.
+	 * It should be always the last field of the structure. */
+	struct gpu_work_item_uop_t work_item_uop[0];
 };
 
 struct gpu_uop_t *gpu_uop_create();

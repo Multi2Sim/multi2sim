@@ -68,7 +68,7 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 	struct gpu_ndrange_t *ndrange = work_group->ndrange;
 	char buf[MAX_STRING_SIZE];
 	int inst_num;
-
+	
 	/* Set fields */
 	uop->clause_kind = wavefront->clause_kind;
 	uop->subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
@@ -88,6 +88,22 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 		inst_num = (wavefront->cf_buf - ndrange->kernel->cal_abi->text_buffer) / 8;
 		gpu_wavefront_execute(wavefront);
 		amd_inst_copy(&uop->inst, &wavefront->cf_inst);
+
+		/* Record lobal memory access */
+		if (uop->inst.info->flags & AMD_INST_FLAG_MEM) {
+			
+			struct gpu_work_item_uop_t *work_item_uop;
+			struct gpu_work_item_t *work_item;
+			int work_item_id;
+
+			uop->global_mem_access = 1;
+			FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
+				work_item = ndrange->work_items[work_item_id];
+				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+				work_item_uop->global_mem_access_addr = work_item->global_mem_access_addr;
+				work_item_uop->global_mem_access_size = work_item->global_mem_access_size;
+			}
+		}
 
 		/* Debug */
 		if (debug_status(gpu_pipeline_debug_category)) {
