@@ -739,6 +739,10 @@ struct gpu_work_item_t
 	 * At the end, work_items with different 'branch_digest' numbers can be considered
 	 * divergent work_items. */
 	uint32_t branch_digest;
+
+	/* Last global memory access */
+	uint32_t global_mem_access_addr;
+	uint32_t global_mem_access_size;
 };
 
 #define FOREACH_WORK_ITEM_IN_NDRANGE(NDRANGE, WORK_ITEM_ID) \

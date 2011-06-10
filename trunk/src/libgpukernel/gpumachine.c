@@ -288,9 +288,21 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 			addr = gpu_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
 			gpu_isa_debug("  t%d:write(0x%x)", gpu_isa_work_item->id, addr);
 
+			/* Record access */
+			gpu_isa_work_item->global_mem_access_addr = addr;
+			gpu_isa_work_item->global_mem_access_size = 0;
+
 			for (i = 0; i < 4; i++) {
+				
+				/* If component is masked, skip */
 				if (!(W1.comp_mask & (1 << i)))
 					continue;
+
+				/* Record size for memory access (warning: this is done inaccurately by assuming a
+				 * baseline access and a contiguous set of accessed elements */
+				gpu_isa_work_item->global_mem_access_size += 4;
+
+				/* Access */
 				value = gpu_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
 				value_float = * (float *) &value;
 				/* FIXME: leave gaps when intermediate 'comp_mask' bits are not set? */
@@ -2220,6 +2232,10 @@ void amd_inst_FETCH_impl()
 			|| W0.mega_fetch_count == 11 || W0.mega_fetch_count == 15);
 		num_elem = (W0.mega_fetch_count + 1) / 4;
 		mem_read(gk->global_mem, addr + W2.offset, num_elem * 4, value);
+
+		/* Record global memory access */
+		gpu_isa_work_item->global_mem_access_addr = addr;
+		gpu_isa_work_item->global_mem_access_size = num_elem * 4;
 
 		/* Write to each component of the GPR */
 		for (i = 0; i < 4; i++) {
