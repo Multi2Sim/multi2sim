@@ -243,6 +243,9 @@ void gpu_init()
 	 * size of a 'gpu_work_item_uop_t' element for each work-item in the wavefront. */
 	gpu_uop_repos = repos_create(sizeof(struct gpu_uop_t) + sizeof(struct gpu_work_item_uop_t)
 		* gpu_wavefront_size, "gpu_uop_repos");
+	
+	/* GPU memory access repository */
+	gpu_mem_access_repos = repos_create(sizeof(struct gpu_mem_access_t), "gpu_mem_access_repos");
 }
 
 
@@ -269,6 +272,9 @@ void gpu_done()
 	
 	/* GPU uop repository */
 	repos_free(gpu_uop_repos);
+
+	/* GPU memory access repository */
+	repos_free(gpu_mem_access_repos);
 }
 
 

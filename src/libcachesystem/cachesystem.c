@@ -621,8 +621,8 @@ void cache_system_init(int _cores, int _threads)
 	}
 	if (ccache_count < 1)
 		fatal("%s: no cache", cache_system_config_file_name);
-	/*if (net_count < 1)
-		fatal("%s: no network", cache_system_config_file_name);*/
+	if (net_count < 1)
+		fatal("%s: no network", cache_system_config_file_name);
 	ccache_array = calloc(ccache_count, sizeof(void *));
 	net_array = calloc(net_count, sizeof(void *));
 
@@ -636,21 +636,32 @@ void cache_system_init(int _cores, int _threads)
 
 		net = net_create(section + 4);
 		net_array[curr++] = net;
-		config_write_ptr(cache_config, section, "ptr", net);
 	}
 	assert(curr == net_count);
 
+	/* Add network pointers to configuration file. This needs to be done separately,
+	 * because configuration file writes alter enumeration of sections. */
+	for (curr = 0; curr < net_count; curr++)
+	{
+		net = net_array[curr];
+		sprintf(buf, "Net %s", net->name);
+		assert(config_section_exists(cache_config, buf));
+		config_write_ptr(cache_config, buf, "ptr", net);
+	}
+
 	/* Create ccache_array */
 	curr = 0;
-	for (section = config_section_first(cache_config); curr < ccache_count && section;
+	for (section = config_section_first(cache_config); section;
 		section = config_section_next(cache_config))
 	{
 		if (strncasecmp(section, "Cache ", 6))
 			continue;
 
 		/* Create cache */
-		ccache = ccache_array[curr++] = ccache_create();
-		config_write_ptr(cache_config, section, "ptr", ccache);
+		assert(curr < ccache_count - 1);
+		ccache = ccache_create();
+		ccache_array[curr] = ccache;
+		curr++;
 		strcpy(ccache->name, section + 6);
 		if (!strcasecmp(ccache->name, "MainMemory"))
 			fatal("'%s' is not a valid name for a cache", ccache->name);
@@ -701,11 +712,24 @@ void cache_system_init(int _cores, int _threads)
 		if (read_ports < 1 || write_ports < 1)
 			fatal("%s: number of read/write ports must be at least 1", ccache->name);
 	}
+	assert(curr == ccache_count - 1);
+
+	/* Add ccache pointers to configuration file. This needs to be done separately,
+	 * because configuration file writes alter enumeration of sections.
+	 * Do not handle last element (ccache_count - 1), which is MainMemory. */
+	for (curr = 0; curr < ccache_count - 1; curr++)
+	{
+		ccache = ccache_array[curr];
+		sprintf(buf, "Cache %s", ccache->name);
+		assert(config_section_exists(cache_config, buf));
+		config_write_ptr(cache_config, buf, "ptr", ccache);
+	}
 
 	/* Main memory */
 	section = "MainMemory";
-	ccache = main_memory = ccache_array[curr++] = ccache_create();
-	assert(curr == ccache_count);
+	ccache = ccache_create();
+	main_memory = ccache;
+	ccache_array[ccache_count - 1] = ccache;
 	strcpy(ccache->name, "mm");
 	sprintf(buf, "Net %s", config_read_string(cache_config, section, "HiNet", ""));
 	cache_config_section(section);
@@ -910,6 +934,9 @@ void cache_system_init(int _cores, int _threads)
 			itlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
 		}
 	}
+
+	/* Free configuration file */
+	config_free(cache_config);
 }
 
 
@@ -1037,12 +1064,13 @@ void cache_system_done()
 	cache_system_dump_report();
 
 	/* Free ccache_array */
-	for (i = 0; i < ccache_count; i++)
+	for (i = 0; i < ccache_count; i++) {
 		ccache_free(ccache_array[i]);
+	}
 	free(ccache_array);
 
 	/* Free tlbs */
-	for (i = 0; i < cores * threads; i++)
+	for (i = 0; i < tlb_count; i++)
 		tlb_free(tlb_array[i]);
 	free(tlb_array);
 

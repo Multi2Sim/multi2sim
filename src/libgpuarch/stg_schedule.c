@@ -96,7 +96,9 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 			struct gpu_work_item_t *work_item;
 			int work_item_id;
 
-			uop->global_mem_access = 1;
+			assert((uop->inst.info->flags & AMD_INST_FLAG_MEM_READ) ||
+				(uop->inst.info->flags & AMD_INST_FLAG_MEM_WRITE));
+			uop->global_mem_access = (uop->inst.info->flags & AMD_INST_FLAG_MEM_READ) ? 1 : 2;
 			FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
 				work_item = ndrange->work_items[work_item_id];
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];

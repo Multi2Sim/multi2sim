@@ -194,7 +194,7 @@ struct gpu_uop_t
 	enum gpu_clause_kind_enum clause_kind;
 
 	/* Flags */
-	int global_mem_access;  /* True if uop contains an access to global memory. */
+	int global_mem_access;  /* Global memory access: 0-none, 1-read, 2-write. */
 
 	/* Per stream-core data. This space is dynamically allocated for an uop.
 	 * It should be always the last field of the structure. */
@@ -204,6 +204,24 @@ struct gpu_uop_t
 struct gpu_uop_t *gpu_uop_create();
 void gpu_uop_free(struct gpu_uop_t *gpu_uop);
 
+
+
+/*
+ * Memory
+ */
+
+struct gpu_mem_access_t {
+	uint32_t addr;
+	uint32_t size;
+};
+
+extern struct repos_t *gpu_mem_access_repos;
+
+void gpu_mem_access_list_coalesce(struct lnlist_t *access_list, uint32_t width);
+
+void gpu_mem_access_list_dump(struct lnlist_t *access_list, FILE *f);
+void gpu_mem_access_list_create_from_subwavefront(struct lnlist_t *access_list,
+	struct gpu_uop_t *uop, int subwavefront_id);
 
 
 
@@ -238,6 +256,12 @@ struct gpu_t
 
 #define FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
 	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
+
+#define FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(WAVEFRONT, SUBWAVEFRONT_ID, WORK_ITEM_ID) \
+	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first + (SUBWAVEFRONT_ID) * gpu_num_stream_cores; \
+		(WORK_ITEM_ID) <= MIN((WAVEFRONT)->work_item_id_first + ((SUBWAVEFRONT_ID) + 1) \
+			* gpu_num_stream_cores - 1, (WAVEFRONT)->work_item_id_last); \
+		(WORK_ITEM_ID)++)
 
 void gpu_init(void);
 void gpu_done(void);
