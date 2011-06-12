@@ -78,7 +78,7 @@ DEFINST(MEM_RAT_CACHELESS,
 	"%rat_rw_gpr, %array_size %elem_size %mark %burst_count %no_barrier %vpm",
 	CF_ALLOC_EXPORT_WORD0_RAT, CF_ALLOC_EXPORT_WORD1_BUF, NONE,
 	CF, 87,
-	AMD_INST_FLAG_MEM
+	AMD_INST_FLAG_MEM | AMD_INST_FLAG_MEM_WRITE
 )
 
 DEFINST(NOP_CF,
@@ -1534,7 +1534,7 @@ DEFINST(FETCH,
 	"%vtx_endian_swap %vtx_num_format %vtx_format_comp %vtx_srf_mode %vtx_fetch_type %vtx_cbns",
 	VTX_WORD0, VTX_WORD1_GPR, VTX_WORD2,
 	VTX, 0,
-	AMD_INST_FLAG_MEM
+	AMD_INST_FLAG_MEM | AMD_INST_FLAG_MEM_READ
 )
 
 DEFINST(GET_BUFFER_RESINFO,
