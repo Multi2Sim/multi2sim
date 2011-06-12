@@ -1,5 +1,6 @@
 lib_LIBRARIES = libgpuarch.a
 libgpuarch_a_SOURCES = \
+	coalesce.c \
 	gpuarch.h \
 	gpuarch.c \
 	\
