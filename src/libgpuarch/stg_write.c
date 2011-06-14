@@ -40,10 +40,10 @@ void gpu_compute_unit_write(struct gpu_compute_unit_t *compute_unit)
 
 	/* Debug */
 	gpu_pipeline_debug("uop "
-		"action=\"update\", "
-		"id=%lld, "
-		"subwf=%d, "
-		"cu=%d, "
+		"a=\"stg\" "
+		"id=%lld "
+		"subwf=%d "
+		"cu=%d "
 		"stg=\"write\""
 		"\n",
 		(long long) uop->id,
@@ -56,8 +56,13 @@ void gpu_compute_unit_write(struct gpu_compute_unit_t *compute_unit)
 		if (uop->last) {
 			DOUBLE_LINKED_LIST_REMOVE(gpu, busy, compute_unit);
 			DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, idle, compute_unit);
-			gpu_pipeline_debug("cu compute_unit=\"%d\", work_group=\"%d\", action=\"finish\"\n",
-				compute_unit->id, work_group->id);
+			gpu_pipeline_debug("cu "
+				"cu=\"%d\" "
+				"wg=\"%d\" "
+				"a=\"finish\""
+				"\n",
+				compute_unit->id,
+				work_group->id);
 		}
 		gpu_uop_free(uop);
 	}

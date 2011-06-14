@@ -39,15 +39,13 @@ void gpu_compute_unit_execute(struct gpu_compute_unit_t *compute_unit)
 
 	/* Debug */
 	gpu_pipeline_debug("uop "
-		"action=\"update\", "
+		"a=\"update\", "
 		"id=%lld, "
 		"subwf=%d, "
-		"cu=%d, "
-		"stg=\"execute\""
+		"stg=\"exec\""
 		"\n",
 		(long long) uop->id,
-		subwavefront_id,
-		compute_unit->id);
+		subwavefront_id);
 	
 	/* Send to 'write' stage */
 	EXECUTE_WRITE.do_write = 1;

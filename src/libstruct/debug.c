@@ -76,6 +76,7 @@ int debug_new_category(void)
 	c->status = 1;
 	c->f = NULL;
 	c->filename = NULL;
+	c->space_count = 0;
 	return category_count++;
 }
 

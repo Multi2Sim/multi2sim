@@ -238,7 +238,10 @@ void map_flags(struct string_map_t *map, int flags, char *out, int size)
 
 
 
-/* strings */
+/*
+ * String functions
+ */
+
 static int memoryleft;
 
 void strccat(char *dest, char *src)
@@ -275,6 +278,38 @@ void strdump(char *dest, char *src, int size)
 		src++, dest++;
 	}
 	*dest = 0;
+}
+
+
+void str_single_spaces(char *dest, char *src, int size)
+{
+	int spc = 0;
+
+	/* Remove initial spaces */
+	while (*src == ' ')
+		src++;
+	
+	/* Remove duplicated and final spaces */
+	while (*src) {
+		if (*src != ' ') {
+			if (spc && size) {
+				*dest++ = ' ';
+				size--;
+			}
+			if (size) {
+				*dest++ = *src;
+				size--;
+			}
+		}
+
+		/* Next character */
+		spc = *src == ' ';
+		src++;
+	}
+
+	/* Null-terminate */
+	if (size)
+		*dest = '\0';
 }
 
 

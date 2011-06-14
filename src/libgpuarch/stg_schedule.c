@@ -67,6 +67,7 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 	struct gpu_wavefront_t *wavefront = uop->wavefront;
 	struct gpu_ndrange_t *ndrange = work_group->ndrange;
 	char buf[MAX_STRING_SIZE];
+	char buf2[MAX_STRING_SIZE];
 	int inst_num;
 	
 	/* Set fields */
@@ -76,8 +77,8 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 	/* Emulate instruction */
 	assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront));
 	gpu_pipeline_debug("uop "
-		"action=\"emul\", "
-		"id=%lld, ",
+		"a=\"emul\" "
+		"id=%lld ",
 		(long long) uop->id);
 	
 	switch (wavefront->clause_kind) {
@@ -110,11 +111,12 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 		/* Debug */
 		if (debug_status(gpu_pipeline_debug_category)) {
 			amd_inst_dump_buf(&wavefront->cf_inst, inst_num, 0, buf, MAX_STRING_SIZE);
+			str_single_spaces(buf2, buf, MAX_STRING_SIZE);
 			gpu_pipeline_debug(
-				"cat=\"%s\", "
-				"inst=\"%s\", ",
+				"cat=\"%s\" "
+				"inst=\"%s\" ",
 				map_value(&fmt_inst_category_map, wavefront->cf_inst.info->category),
-				buf);
+				buf2);
 		}
 		break;
 	
@@ -126,10 +128,11 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 			for (i = 0; i < wavefront->alu_group.inst_count; i++) {
 				struct amd_inst_t *inst = &wavefront->alu_group.inst[i];
 				amd_inst_dump_buf(inst, -1, 0, buf, MAX_STRING_SIZE);
+				str_single_spaces(buf2, buf, MAX_STRING_SIZE);
 				gpu_pipeline_debug(
-					"inst.%s=\"%s\", ",
+					"inst.%s=\"%s\" ",
 					map_value(&amd_alu_map, inst->alu),
-					buf);
+					buf2);
 			}
 		}
 		break;
@@ -144,10 +147,43 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 
 	/* Debug */
 	gpu_pipeline_debug(
-		"subwavefront_count=\"%d\", "
+		"subwf_count=\"%d\" "
 		"last=\"%d\"\n",
 		uop->subwavefront_count,
 		uop->last);
+	
+	/* Active mask debug */
+	if (gpu_pipeline_debugging()) {
+		if (wavefront->active_mask_push || wavefront->active_mask_pop) {
+			gpu_pipeline_debug("uop "
+				"a=\"%s\" "
+				"id=%lld "
+				"top=%d "
+				"act_top=\"",
+				wavefront->active_mask_push ? "push" : "pop",
+				(long long) uop->id,
+				wavefront->stack_top);
+			if (wavefront->stack_top > 0)
+				bit_map_dump(wavefront->active_stack, (wavefront->stack_top - 1) * wavefront->work_item_count,
+					wavefront->work_item_count, debug_file(gpu_pipeline_debug_category));
+			else
+				gpu_pipeline_debug("-");
+			gpu_pipeline_debug("\" act=\"");
+			bit_map_dump(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
+				wavefront->work_item_count, debug_file(gpu_pipeline_debug_category));
+			gpu_pipeline_debug("\"\n");
+		}
+		if (wavefront->active_mask_update) {
+			gpu_pipeline_debug("uop "
+				"a=\"mask\" "
+				"id=%lld "
+				"act=\"",
+				(long long) uop->id);
+			bit_map_dump(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
+				wavefront->work_item_count, debug_file(gpu_pipeline_debug_category));
+			gpu_pipeline_debug("\"\n");
+		}
+	}
 }
 
 
@@ -186,11 +222,11 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 		uop->work_group = work_group;
 		uop->wavefront = wavefront;
 		gpu_pipeline_debug("uop "
-			"action=\"create\", "
-			"id=%lld, "
-			"cu=%d, "
-			"work_group=%d, "
-			"wavefront=%d\n",
+			"a=\"create\" "
+			"id=%lld "
+			"cu=%d "
+			"wg=%d "
+			"wf=%d\n",
 			(long long) uop->id,
 			compute_unit->id,
 			work_group->id,
@@ -203,15 +239,13 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 	
 	/* Debug */
 	gpu_pipeline_debug("uop "
-		"action=\"update\", "
-		"id=%lld, "
-		"subwf=%d, "
-		"cu=%d, "
-		"stg=\"schedule\""
+		"a=\"stg\" "
+		"id=%lld "
+		"subwf=%d "
+		"stg=\"sched\""
 		"\n",
 		(long long) uop->id,
-		INIT_SCHEDULE.subwavefront_id,
-		compute_unit->id);
+		INIT_SCHEDULE.subwavefront_id);
 	
 
 	/* Transfer uop to next stage */

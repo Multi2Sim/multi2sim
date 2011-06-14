@@ -890,6 +890,7 @@ void gpu_wavefront_stack_push(struct gpu_wavefront_t *wavefront)
 		wavefront->active_stack, (wavefront->stack_top - 1) * wavefront->work_item_count,
 		wavefront->work_item_count);
 	gpu_isa_debug("  %s:push", wavefront->name);
+	wavefront->active_mask_push = 1;
 }
 
 
@@ -900,6 +901,7 @@ void gpu_wavefront_stack_pop(struct gpu_wavefront_t *wavefront, int count)
 	if (wavefront->stack_top < count)
 		fatal("%s: stack underflow", wavefront->cf_inst.info->name);
 	wavefront->stack_top -= count;
+	wavefront->active_mask_pop = 1;
 	if (debug_status(gpu_isa_debug_category)) {
 		gpu_isa_debug("  %s:pop(%d),act=", wavefront->name, count);
 		bit_map_dump(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
@@ -933,6 +935,14 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 	gpu_isa_inst = NULL;
 	gpu_isa_alu_group = NULL;
 	assert(!DOUBLE_LINKED_LIST_MEMBER(gpu_isa_work_group, finished, gpu_isa_wavefront));
+
+	/* Reset instruction flags */
+	wavefront->global_mem_write = 0;
+	wavefront->global_mem_read = 0;
+	wavefront->pred_mask_update = 0;
+	wavefront->active_mask_update = 0;
+	wavefront->active_mask_push = 0;
+	wavefront->active_mask_pop = 0;
 
 	switch (wavefront->clause_kind) {
 
@@ -1129,6 +1139,7 @@ void gpu_work_item_set_active(struct gpu_work_item_t *work_item, int active)
 	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
 	bit_map_set(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
 		+ work_item->id_in_wavefront, 1, !!active);
+	wavefront->active_mask_update = 1;
 }
 
 
@@ -1146,6 +1157,7 @@ void gpu_work_item_set_pred(struct gpu_work_item_t *work_item, int pred)
 	struct gpu_wavefront_t *wavefront = work_item->wavefront;
 	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
 	bit_map_set(wavefront->pred, work_item->id_in_wavefront, 1, !!pred);
+	wavefront->pred_mask_update = 1;
 }
 
 
