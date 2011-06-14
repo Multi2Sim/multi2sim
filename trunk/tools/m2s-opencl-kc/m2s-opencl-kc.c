@@ -119,7 +119,7 @@ void kernel_binary_analyze(char *file_name)
 
 	char file_name_dest[MAX_STRING_SIZE];
 	void *section_buf;
-	size_t section_size;
+	uint32_t section_size;
 	char *section_name;
 
 	/* Get file name prefix */

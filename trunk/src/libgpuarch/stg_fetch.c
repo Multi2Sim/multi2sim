@@ -40,10 +40,10 @@ void gpu_compute_unit_fetch(struct gpu_compute_unit_t *compute_unit)
 
 	/* Debug */
 	gpu_pipeline_debug("uop "
-		"action=\"update\", "
-		"id=%lld, "
-		"subwf=%d, "
-		"cu=%d, "
+		"a=\"stg\" "
+		"id=%lld "
+		"subwf=%d "
+		"cu=%d "
 		"stg=\"fetch\""
 		"\n",
 		(long long) uop->id,

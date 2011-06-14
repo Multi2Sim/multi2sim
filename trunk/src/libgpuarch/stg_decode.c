@@ -40,15 +40,13 @@ void gpu_compute_unit_decode(struct gpu_compute_unit_t *compute_unit)
 
 	/* Debug */
 	gpu_pipeline_debug("uop "
-		"action=\"update\", "
+		"a=\"stg\" "
 		"id=%lld, "
 		"subwf=%d, "
-		"cu=%d, "
 		"stg=\"decode\""
 		"\n",
 		(long long) uop->id,
-		subwavefront_id,
-		compute_unit->id);
+		subwavefront_id);
 	
 	/* Send to 'read' stage */
 	DECODE_READ.do_read = 1;

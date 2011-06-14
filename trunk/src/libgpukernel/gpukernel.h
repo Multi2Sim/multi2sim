@@ -641,9 +641,14 @@ struct gpu_wavefront_t
 	/* Predicate mask */
 	struct bit_map_t *pred;  /* work_item_count elements */
 
-	/* Flag indicating whether the stack has been pushed after a PRED_SET* instruction
-	 * has executed. This is done within ALU_PUSH_BEFORE instructions. */
-	int push_before_done;
+	/* Flags updated during instruction execution */
+	unsigned int global_mem_read : 1;
+	unsigned int global_mem_write : 1;
+	unsigned int pred_mask_update : 1;
+	unsigned int active_mask_update : 1;
+	unsigned int active_mask_push : 1;
+	unsigned int active_mask_pop : 1;
+	unsigned int push_before_done : 1;  /* Indicates whether the stack has been pushed after PRED_SET* instr. */
 
 	/* Linked lists */
 	struct gpu_wavefront_t *running_next, *running_prev;
