@@ -231,6 +231,7 @@ void gpu_mem_access_list_create_from_subwavefront(struct lnlist_t *access_list,
 
 /* Debugging */
 #define gpu_pipeline_debug(...) debug(gpu_pipeline_debug_category, __VA_ARGS__)
+#define gpu_pipeline_debugging() debug_status(gpu_pipeline_debug_category)
 extern int gpu_pipeline_debug_category;
 
 struct gpu_t

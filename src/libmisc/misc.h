@@ -196,10 +196,11 @@ char *map_value(struct string_map_t *map, int value);
 void map_value_string(struct string_map_t *map, int value, char *out, int length);
 void map_flags(struct string_map_t *map, int flags, char *out, int length);
 
-/* strings */
+/* Strings */
 void strccpy(char *dest, char *src, int size);
 void strccat(char *dest, char *src);
 void strdump(char *dest, char *src, int size);
+void str_single_spaces(char *dest, char *src, int size);
 
 /* File management */
 FILE *open_read(char *fname);

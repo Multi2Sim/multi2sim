@@ -41,15 +41,13 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 
 	/* Debug */
 	gpu_pipeline_debug("uop "
-		"action=\"update\", "
+		"a=\"stg\", "
 		"id=%lld, "
 		"subwf=%d, "
-		"cu=%d, "
 		"stg=\"read\""
 		"\n",
 		(long long) uop->id,
-		subwavefront_id,
-		compute_unit->id);
+		subwavefront_id);
 	
 	/* Access to global memory */
 	if (uop->global_mem_access) {

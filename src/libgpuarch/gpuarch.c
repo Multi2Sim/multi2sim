@@ -306,9 +306,9 @@ static void gpu_schedule_work_groups(void)
 
 		/* Debug */
 		gpu_pipeline_debug("cu "
-			"action=\"run\", "
-			"id=\"%d\", "
-			"work_group=\"%d\""
+			"a=\"run\" "
+			"id=\"%d\" "
+			"wg=\"%d\""
 			"\n",
 			compute_unit->id,
 			work_group->id);
@@ -322,9 +322,17 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 	struct gpu_compute_unit_t *compute_unit, *compute_unit_next;
 
 	/* Debug */
-	gpu_pipeline_debug("init global_size=%d, local_size=%d, group_count=%d, wavefront_size=%d, "
-		"wavefronts_per_work_group=%d\n",
-		kernel->global_size, kernel->local_size, kernel->group_count, gpu_wavefront_size,
+	gpu_pipeline_debug("init "
+		"global_size=%d "
+		"local_size=%d "
+		"group_count=%d "
+		"wavefront_size=%d "
+		"wavefronts_per_work_group=%d"
+		"\n",
+		kernel->global_size,
+		kernel->local_size,
+		kernel->group_count,
+		gpu_wavefront_size,
 		ndrange->wavefronts_per_work_group);
 
 	gpu->ndrange = ndrange;
