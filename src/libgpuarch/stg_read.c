@@ -41,16 +41,16 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 
 	/* Debug */
 	gpu_pipeline_debug("uop "
-		"a=\"stg\", "
-		"id=%lld, "
-		"subwf=%d, "
+		"a=\"stg\" "
+		"id=%lld "
+		"subwf=%d "
 		"stg=\"read\""
 		"\n",
 		(long long) uop->id,
 		subwavefront_id);
 	
 	/* Access to global memory */
-	if (uop->global_mem_access) {
+	/*if (uop->global_mem_access) {
 		
 		struct lnlist_t *access_list;
 
@@ -60,7 +60,7 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 		gpu_mem_access_list_create_from_subwavefront(access_list, uop, subwavefront_id);
 		gpu_mem_access_list_coalesce(access_list, 4);
 		lnlist_free(access_list);
-	}
+	}*/
 	
 	/* Send to 'execute' stage */
 	READ_EXECUTE.do_execute = 1;
