@@ -39,9 +39,9 @@ void gpu_compute_unit_execute(struct gpu_compute_unit_t *compute_unit)
 
 	/* Debug */
 	gpu_pipeline_debug("uop "
-		"a=\"update\", "
-		"id=%lld, "
-		"subwf=%d, "
+		"a=\"stg\" "
+		"id=%lld "
+		"subwf=%d "
 		"stg=\"exec\""
 		"\n",
 		(long long) uop->id,

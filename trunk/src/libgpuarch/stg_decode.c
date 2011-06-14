@@ -41,8 +41,8 @@ void gpu_compute_unit_decode(struct gpu_compute_unit_t *compute_unit)
 	/* Debug */
 	gpu_pipeline_debug("uop "
 		"a=\"stg\" "
-		"id=%lld, "
-		"subwf=%d, "
+		"id=%lld "
+		"subwf=%d "
 		"stg=\"decode\""
 		"\n",
 		(long long) uop->id,
