@@ -265,6 +265,16 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* GPU-REL: file to introduce faults in active mask stack */
+		if (!strcmp(argv[argi], "--gpu-stack-faults")) {
+			if (argi == argc - 1)
+				fatal("option '%s' required file name.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			gpu_stack_faults_file_name = argv[argi];
+			continue;
+		}
+
 		/* GPU ISA debug file */
 		if (!strcmp(argv[argi], "--debug-gpu-isa")) {
 			if (argi == argc - 1)
