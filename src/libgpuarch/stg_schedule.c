@@ -158,10 +158,12 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 			gpu_pipeline_debug("uop "
 				"a=\"%s\" "
 				"id=%lld "
+				"wf=%d "
 				"top=%d "
 				"act_top=\"",
 				wavefront->active_mask_push ? "push" : "pop",
 				(long long) uop->id,
+				wavefront->id,
 				wavefront->stack_top);
 			if (wavefront->stack_top > 0)
 				bit_map_dump(wavefront->active_stack, (wavefront->stack_top - 1) * wavefront->work_item_count,
@@ -177,8 +179,10 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 			gpu_pipeline_debug("uop "
 				"a=\"mask\" "
 				"id=%lld "
+				"wf=%d "
 				"act=\"",
-				(long long) uop->id);
+				(long long) uop->id,
+				wavefront->id);
 			bit_map_dump(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
 				wavefront->work_item_count, debug_file(gpu_pipeline_debug_category));
 			gpu_pipeline_debug("\"\n");
