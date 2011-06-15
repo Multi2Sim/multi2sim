@@ -76,6 +76,9 @@ struct gpu_compute_unit_t
 	struct gpu_compute_unit_t *idle_prev, *idle_next;
 	struct gpu_compute_unit_t *busy_prev, *busy_next;
 
+	/* Entry point for global memory hierarchy */
+	struct gpu_cache_t *gpu_cache;
+
 	/* Initial pipe register (for Schedule stage state) */
 	struct {
 		
@@ -207,7 +210,7 @@ void gpu_uop_free(struct gpu_uop_t *gpu_uop);
 
 
 /*
- * Memory
+ * Cache system
  */
 
 struct gpu_mem_access_t {
@@ -222,6 +225,28 @@ void gpu_mem_access_list_coalesce(struct lnlist_t *access_list, uint32_t width);
 void gpu_mem_access_list_dump(struct lnlist_t *access_list, FILE *f);
 void gpu_mem_access_list_create_from_subwavefront(struct lnlist_t *access_list,
 	struct gpu_uop_t *uop, int subwavefront_id);
+
+
+struct gpu_cache_t {
+	
+	/* Actual cache structure */
+	struct cache_t *cache;
+
+	/* Lower level cache (NULL for global memory) */
+	struct gpu_cache_t *gpu_cache_next;
+
+	/* Interconnects and IDs */
+	struct net_t *net_hi;
+	struct net_t *net_lo;
+	int id_hi;
+	int id_lo;
+};
+
+struct gpu_cache_t *gpu_cache_create(void);
+void gpu_cache_free(struct gpu_cache_t *gpu_cache);
+
+void gpu_cache_init(void);
+void gpu_cache_done(void);
 
 
 
@@ -250,6 +275,13 @@ struct gpu_t
 	struct gpu_compute_unit_t *busy_list_head, *busy_list_tail;
 	int idle_count, idle_max;
 	int busy_count, busy_max;
+
+	/* Global memory hierarchy - Caches and interconnects */
+	struct gpu_cache_t **gpu_caches;  /* Array of GPU caches */
+	struct net_t **networks;  /* Array of interconnects */
+	int gpu_cache_count;
+	int network_count;
+	struct gpu_cache_t *global_memory;  /* Last element in cache array */
 };
 
 #define FOREACH_STREAM_CORE(STREAM_CORE_ID) \

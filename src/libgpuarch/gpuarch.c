@@ -244,8 +244,8 @@ void gpu_init()
 	gpu_uop_repos = repos_create(sizeof(struct gpu_uop_t) + sizeof(struct gpu_work_item_uop_t)
 		* gpu_wavefront_size, "gpu_uop_repos");
 	
-	/* GPU memory access repository */
-	gpu_mem_access_repos = repos_create(sizeof(struct gpu_mem_access_t), "gpu_mem_access_repos");
+	/* Cache system */
+	gpu_cache_init();
 }
 
 
@@ -256,6 +256,9 @@ void gpu_done()
 
 	int compute_unit_id;
 	int stream_core_id;
+
+	/* Cache system */
+	gpu_cache_done();
 
 	/* Free stream cores, compute units, and device */
 	FOREACH_COMPUTE_UNIT(compute_unit_id) {
@@ -272,9 +275,6 @@ void gpu_done()
 	
 	/* GPU uop repository */
 	repos_free(gpu_uop_repos);
-
-	/* GPU memory access repository */
-	repos_free(gpu_mem_access_repos);
 }
 
 

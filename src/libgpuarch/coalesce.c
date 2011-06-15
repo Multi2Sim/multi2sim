@@ -21,9 +21,6 @@
 #include <repos.h>
 
 
-struct repos_t *gpu_mem_access_repos;
-
-
 void gpu_mem_access_list_dump(struct lnlist_t *access_list, FILE *f)
 {
 	struct gpu_mem_access_t *access;
