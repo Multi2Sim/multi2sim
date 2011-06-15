@@ -69,7 +69,7 @@ ARFLAGS = cru
 libgpuarch_a_AR = $(AR) $(ARFLAGS)
 libgpuarch_a_LIBADD =
 am_libgpuarch_a_OBJECTS = coalesce.$(OBJEXT) gpuarch.$(OBJEXT) \
-	stg_schedule.$(OBJEXT) stg_fetch.$(OBJEXT) \
+	gpucache.$(OBJEXT) stg_schedule.$(OBJEXT) stg_fetch.$(OBJEXT) \
 	stg_decode.$(OBJEXT) stg_read.$(OBJEXT) stg_execute.$(OBJEXT) \
 	stg_write.$(OBJEXT)
 libgpuarch_a_OBJECTS = $(am_libgpuarch_a_OBJECTS)
@@ -182,6 +182,7 @@ libgpuarch_a_SOURCES = \
 	coalesce.c \
 	gpuarch.h \
 	gpuarch.c \
+	gpucache.c \
 	\
 	stg_schedule.c \
 	stg_fetch.c \
@@ -197,7 +198,8 @@ INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libopt \
 	-I$(top_srcdir)/src/libmisc \
 	-I$(top_srcdir)/src/libgpudisasm \
-	-I$(top_srcdir)/src/libgpukernel
+	-I$(top_srcdir)/src/libgpukernel \
+	-I$(top_srcdir)/src/libnetwork
 
 all: all-am
 
@@ -278,6 +280,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coalesce.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuarch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpucache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_decode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_execute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_fetch.Po@am__quote@
