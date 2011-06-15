@@ -78,6 +78,17 @@ struct gpu_t *gpu;
 
 struct repos_t *gpu_uop_repos;
 
+/* GPU-REL: insertion of faults into stack */
+char *gpu_stack_faults_file_name = "";
+struct gpu_stack_fault_t {
+	long long cycle;
+	int compute_unit_id;  /* 0, gpu_num_compute_units - 1 ] */
+	int stack_id;  /* [ 0, gpu_max_work_group_size / gpu_wavefront_size - 1 ] */
+	int active_mask_id;  /* [ 0, GPU_MAX_STACK_SIZE - 1 ] */
+	int bit;  /* [ 0, gpu_wavefront_size - 1 ] */
+};
+struct lnlist_t *gpu_stack_faults;
+
 
 
 
@@ -198,6 +209,162 @@ static void gpu_init_device()
 }
 
 
+/* GPU-REL: stack faults */
+void gpu_stack_faults_init(void)
+{
+	FILE *f;
+	char line[MAX_STRING_SIZE];
+	char *line_ptr;
+	struct gpu_stack_fault_t *stack_fault;
+	int nelem, line_num;
+	long long last_cycle;
+
+	gpu_stack_faults = lnlist_create();
+	if (!*gpu_stack_faults_file_name)
+		return;
+
+	f = fopen(gpu_stack_faults_file_name, "rt");
+	if (!f)
+		fatal("%s: cannot open file", gpu_stack_faults_file_name);
+	
+	line_num = 0;
+	last_cycle = 0;
+	while (!feof(f)) {
+	
+		/* Read a line */
+		line_num++;
+		line_ptr = fgets(line, MAX_STRING_SIZE, f);
+		if (!line_ptr)
+			break;
+
+		/* Read fields */
+		stack_fault = calloc(1, sizeof(struct gpu_stack_fault_t));
+		nelem = sscanf(line, "%lld %d %d %d %d",
+			&stack_fault->cycle,
+			&stack_fault->compute_unit_id,
+			&stack_fault->stack_id,
+			&stack_fault->active_mask_id,
+			&stack_fault->bit);
+		if (nelem != 5)
+			fatal("%s: line %d: wrong format\n",
+				gpu_stack_faults_file_name, line_num);
+
+		/* Check fields */
+		if (stack_fault->cycle < 1)
+			fatal("%s: line %d: lowest possible cycle is 1",
+				gpu_stack_faults_file_name, line_num);
+		if (stack_fault->cycle < last_cycle)
+			fatal("%s: line %d: cycles must be ordered",
+				gpu_stack_faults_file_name, line_num);
+		if (stack_fault->compute_unit_id >= gpu_num_compute_units)
+			fatal("%s: line %d: invalid compute unit ID",
+				gpu_stack_faults_file_name, line_num);
+		if (stack_fault->stack_id >= gpu_max_work_group_size / gpu_wavefront_size)
+			fatal("%s: line %d: invalid stack ID",
+				gpu_stack_faults_file_name, line_num);
+		if (stack_fault->active_mask_id >= GPU_MAX_STACK_SIZE)
+			fatal("%s: line %d: invalid active mask ID",
+				gpu_stack_faults_file_name, line_num);
+		if (stack_fault->bit >= gpu_wavefront_size)
+			fatal("%s: line %d: invalid bit index",
+				gpu_stack_faults_file_name, line_num);
+
+		/* Insert fault */
+		lnlist_out(gpu_stack_faults);
+		lnlist_insert(gpu_stack_faults, stack_fault);
+		last_cycle = stack_fault->cycle;
+	}
+	lnlist_head(gpu_stack_faults);
+	
+#if 0
+	int compute_unit_id;  /* 0, gpu_num_compute_units - 1 ] */
+	int stack_id;  /* [ 0, gpu_max_work_group_size / gpu_wavefront_size - 1 ] */
+	int active_mask_id;  /* [ 0, GPU_MAX_STACK_SIZE - 1 ] */
+	int bit;  /* [ 0, gpu_wavefront_size - 1 ] */
+#endif
+}
+
+
+/* GPU-REL: stack faults */
+void gpu_stack_faults_done(void)
+{
+	while (lnlist_count(gpu_stack_faults)) {
+		lnlist_head(gpu_stack_faults);
+		free(lnlist_get(gpu_stack_faults));
+		lnlist_remove(gpu_stack_faults);
+	}
+	lnlist_free(gpu_stack_faults);
+}
+
+
+/* GPU-REL: insert stack faults */
+void gpu_stack_faults_insert(void)
+{
+	struct gpu_stack_fault_t *stack_fault;
+	struct gpu_compute_unit_t *compute_unit;
+
+	struct gpu_ndrange_t *ndrange = gpu->ndrange;
+	struct gpu_work_group_t *work_group;
+	struct gpu_wavefront_t *wavefront;
+
+	int value;
+
+	for (;;) {
+		lnlist_head(gpu_stack_faults);
+		stack_fault = lnlist_get(gpu_stack_faults);
+		if (!stack_fault || stack_fault->cycle > gpu->cycle)
+			break;
+		printf("%lld %lld\n", stack_fault->cycle, (long long) gpu->cycle);
+
+		/* Insert fault */
+		gpu_pipeline_debug("fault cu=%d stack=%d am=%d bit=%d ",
+			stack_fault->compute_unit_id, stack_fault->stack_id,
+			stack_fault->active_mask_id, stack_fault->bit);
+		assert(stack_fault->cycle == gpu->cycle);
+		compute_unit = gpu->compute_units[stack_fault->compute_unit_id];
+
+		/* If compute unit is idle, dismiss */
+		if (DOUBLE_LINKED_LIST_MEMBER(gpu, idle, compute_unit)) {
+			gpu_pipeline_debug("effect=\"cu_idle\"");
+			goto end_loop;
+		}
+
+		/* Get work-group and wavefront. If wavefront ID exceeds current number, dimiss */
+		work_group = ndrange->work_groups[compute_unit->init_schedule.work_group_id];
+		if (stack_fault->stack_id >= work_group->wavefront_count) {
+			gpu_pipeline_debug("effect=\"wf_idle\"");
+			goto end_loop;
+		}
+		wavefront = work_group->wavefronts[stack_fault->stack_id];
+
+		/* If active_mask_id exceeds stack top, dismiss */
+		if (stack_fault->active_mask_id > wavefront->stack_top) {
+			gpu_pipeline_debug("effect=\"am_idle\"");
+			goto end_loop;
+		}
+
+		/* If 'bit' exceeds number of work-items in wavefront, dismiss */
+		if (stack_fault->bit >= wavefront->work_item_count) {
+			gpu_pipeline_debug("effect=\"wi_idle\"");
+			goto end_loop;
+		}
+
+		/* Invert bit */
+		value = bit_map_get(wavefront->active_stack, stack_fault->active_mask_id * wavefront->work_item_count
+			+ stack_fault->bit, 1);
+		bit_map_set(wavefront->active_stack, stack_fault->active_mask_id * wavefront->work_item_count
+			+ stack_fault->bit, 1, !value);
+		gpu_pipeline_debug("effect=\"error\"");
+
+end_loop:
+		/* Extract and free */
+		free(stack_fault);
+		lnlist_remove(gpu_stack_faults);
+		gpu_pipeline_debug("\n");
+	}
+}
+
+
 void gpu_init()
 {
 	struct config_t *gpu_config;
@@ -246,6 +413,9 @@ void gpu_init()
 	
 	/* Cache system */
 	gpu_cache_init();
+
+	/* GPU-REL: read stack faults file */
+	gpu_stack_faults_init();
 }
 
 
@@ -275,6 +445,9 @@ void gpu_done()
 	
 	/* GPU uop repository */
 	repos_free(gpu_uop_repos);
+
+	/* GPU-REL: read stack faults file */
+	gpu_stack_faults_done();
 }
 
 
@@ -360,6 +533,9 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 			/* Simulate cycle in compute unit */
 			gpu_compute_unit_next_cycle(compute_unit);
 		}
+
+		/* GPU-REL: insert stack faults */
+		gpu_stack_faults_insert();
 	}
 }
 
