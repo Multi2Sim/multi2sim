@@ -41,6 +41,9 @@ extern int gpu_compute_unit_time_slots;
 
 extern struct gpu_t *gpu;
 
+/* GPU-REL: insertion of faults into stack */
+extern char *gpu_stack_faults_file_name;
+
 
 
 
