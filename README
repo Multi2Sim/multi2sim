@@ -69,3 +69,38 @@ where <compute_unit_id>, <stack_id>, <active_mask_id>, and <bit> correspond exac
 "error": fault caused an error, affecting a utilized active mask.
 
 
+
+===============================================================================
+
+src/libgpuarch: Implementation of the memory hierarchy for GPUs
+
+Problem:
+
+          CU-0     CU-1     CU-2    ...    <= Compute units
+	  |        |        |
+	  L1-0     L1-1     L1-2    ...    <= L1 caches
+	  |        |        |
+	  ------------------------        <= Interconnect
+	       |
+	       L2
+	       |
+	      Global
+	      memory
+
+
+Suppose the memory hierarchy above, and a block size of 256 bytes for all caches. Suppose that a work-item in work-group 0 (assigned to CU-0) writes on address 0 in global memory, while another work-item in work-group 1 (assigned to CU-1) writes on address 4. In a naive cache hierarchy without cache coherence, L1-0 and L1-1 will both fetch a copy of block [0..255]. L1-0 will modify its location at byte 0, and L1-1 will modify it at byte 4. This leads to two copies of the block, each of which contains only a valid subset of it.
+
+This leads to a conflict when L1-0 and L1-1 evict the block and write it back to L2. If L1-0 evicts first, and L1-1 evicts next, L2 will contain a copy of the block in which the access performed to byte 0 is completely lost. If later CU-0 fetches the block again and tries to read the word written before, its value is going to be incorrect.
+
+This problem can be solved by implementing a cache coherence protocol, which always enforces that there only be a single copy of a written block in one L1 cache. Whenever another L1 is accessed to write on this block, the original copy is invalidated, written back to L2, fetched again by the new L1, and finally written on. However, this is too conservative a solution, and is not needed in the GPU memory hierarchy, due to the properties of the OpenCL memory model.
+
+
+
+
+* Possible solution:
+
+Use the caches only for read accesses at the granularity of a cache block, which could have any size. However, writes will use write buffers connected to ALL cache levels, and global memory, working at the same granularity as the original access performed by the work-items in the CU (they can still be coalesced, though). If a cache receives a write on a block it doesn't contain, the write is simply ignored, since ultimately it will always be written to global memory. Thus, a cache will only fetch a block after a read access is performed on it.
+
+This mechanism keeps cache coherence only within each branch of the hierarchy, starting from an L1 and ending in global memory. Thus, it is only enforced that each CU sees the previous write accesses performed by itself. It does not guarantee that a CU will eventually see changes performed by another. However, the OpenCL programming model does not allow communication through global memory among work-groups (mapped to individual CUs), so this is not a problem.
+
+
