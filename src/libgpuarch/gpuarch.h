@@ -42,6 +42,9 @@ extern int gpu_compute_unit_time_slots;
 extern struct gpu_t *gpu;
 
 /* GPU-REL: insertion of faults into stack */
+#define gpu_stack_faults_debug(...) debug(gpu_stack_faults_debug_category, __VA_ARGS__)
+extern int gpu_stack_faults_debug_category;
+extern char *gpu_stack_faults_debug_file_name;
 extern char *gpu_stack_faults_file_name;
 
 
@@ -212,6 +215,7 @@ void gpu_uop_free(struct gpu_uop_t *gpu_uop);
 
 
 
+
 /*
  * Cache system
  */
@@ -230,10 +234,44 @@ void gpu_mem_access_list_create_from_subwavefront(struct lnlist_t *access_list,
 	struct gpu_uop_t *uop, int subwavefront_id);
 
 
+/* Stack for event-driven simulation */
+struct gpu_cache_stack_t {
+	uint32_t addr;
+
+	/* Linked list for waiting events */
+	int waiting_list_event;  /* Event to schedule when stack is woken up */
+	struct gpu_cache_stack_t *waiting_list_next;  /* Next stack in waiting list */
+};
+
+
+struct gpu_cache_port_t {
+	struct gpu_cache_stack_t *waiting_list;
+	int locked;
+	uint64_t lock_when;
+};
+
+
+struct gpu_cache_bank_t {
+	struct gpu_cache_stack_t *waiting_list;
+	struct gpu_cache_port_t ports[0];
+};
+
+#define SIZEOF_CACHE_BANK (sizeof(struct gpu_cache_bank_t) * sizeof(struct gpu_cache_port_t 
+
+
 struct gpu_cache_t {
 	
 	/* Actual cache structure */
 	struct cache_t *cache;
+
+	/* Banks and ports */
+	struct gpu_cache_bank_t *banks;
+	int bank_count;
+	int read_port_count;
+	int write_port_count;
+
+	/* Waiting list of events */
+	struct gpu_cache_stack_t *waiting_list;
 
 	/* Lower level cache (NULL for global memory) */
 	struct gpu_cache_t *gpu_cache_next;
@@ -250,6 +288,7 @@ void gpu_cache_free(struct gpu_cache_t *gpu_cache);
 
 void gpu_cache_init(void);
 void gpu_cache_done(void);
+
 
 
 
