@@ -285,6 +285,16 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* GPU-REL: debug file for stack faults */
+		if (!strcmp(argv[argi], "--debug-gpu-stack-faults")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by a file name.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			gpu_stack_faults_debug_file_name = argv[argi];
+			continue;
+		}
+
 		/* GPU pipeline debug file */
 		if (!strcmp(argv[argi], "--debug-gpu-pipeline")) {
 			if (argi == argc - 1)
@@ -499,7 +509,11 @@ int main(int argc, char **argv)
 
 	/* Debug */
 	debug_init();
+
 	error_debug_category = debug_new_category();
+	gpu_stack_faults_debug_category = debug_new_category();  /* GPU-REL */
+	gpu_pipeline_debug_category = debug_new_category();
+
 	debug_assign_file(ctx_debug_category, ctx_debug_file_name);
 	debug_assign_file(syscall_debug_category, syscall_debug_file_name);
 	debug_assign_file(opencl_debug_category, opencl_debug_file_name);
@@ -510,6 +524,7 @@ int main(int argc, char **argv)
 	debug_assign_file(isa_inst_debug_category, isa_inst_debug_file_name);
 	debug_assign_file(cache_debug_category, cache_debug_file_name);
 	debug_assign_file(error_debug_category, error_debug_file_name);
+	debug_assign_file(gpu_stack_faults_debug_category, gpu_stack_faults_debug_file_name);  /* GPU-REL */
 	esim_debug_init(esim_debug_file_name);
 
 	/* Load programs */

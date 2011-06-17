@@ -88,6 +88,8 @@ struct gpu_stack_fault_t {
 	int bit;  /* [ 0, gpu_wavefront_size - 1 ] */
 };
 struct lnlist_t *gpu_stack_faults;
+int gpu_stack_faults_debug_category;
+char *gpu_stack_faults_debug_file_name = "";
 
 
 
@@ -314,10 +316,9 @@ void gpu_stack_faults_insert(void)
 		stack_fault = lnlist_get(gpu_stack_faults);
 		if (!stack_fault || stack_fault->cycle > gpu->cycle)
 			break;
-		printf("%lld %lld\n", stack_fault->cycle, (long long) gpu->cycle);
 
 		/* Insert fault */
-		gpu_pipeline_debug("fault cu=%d stack=%d am=%d bit=%d ",
+		gpu_stack_faults_debug("fault cu=%d stack=%d am=%d bit=%d ",
 			stack_fault->compute_unit_id, stack_fault->stack_id,
 			stack_fault->active_mask_id, stack_fault->bit);
 		assert(stack_fault->cycle == gpu->cycle);
@@ -325,27 +326,27 @@ void gpu_stack_faults_insert(void)
 
 		/* If compute unit is idle, dismiss */
 		if (DOUBLE_LINKED_LIST_MEMBER(gpu, idle, compute_unit)) {
-			gpu_pipeline_debug("effect=\"cu_idle\"");
+			gpu_stack_faults_debug("effect=\"cu_idle\"");
 			goto end_loop;
 		}
 
 		/* Get work-group and wavefront. If wavefront ID exceeds current number, dimiss */
 		work_group = ndrange->work_groups[compute_unit->init_schedule.work_group_id];
 		if (stack_fault->stack_id >= work_group->wavefront_count) {
-			gpu_pipeline_debug("effect=\"wf_idle\"");
+			gpu_stack_faults_debug("effect=\"wf_idle\"");
 			goto end_loop;
 		}
 		wavefront = work_group->wavefronts[stack_fault->stack_id];
 
 		/* If active_mask_id exceeds stack top, dismiss */
 		if (stack_fault->active_mask_id > wavefront->stack_top) {
-			gpu_pipeline_debug("effect=\"am_idle\"");
+			gpu_stack_faults_debug("effect=\"am_idle\"");
 			goto end_loop;
 		}
 
 		/* If 'bit' exceeds number of work-items in wavefront, dismiss */
 		if (stack_fault->bit >= wavefront->work_item_count) {
-			gpu_pipeline_debug("effect=\"wi_idle\"");
+			gpu_stack_faults_debug("effect=\"wi_idle\"");
 			goto end_loop;
 		}
 
@@ -354,13 +355,13 @@ void gpu_stack_faults_insert(void)
 			+ stack_fault->bit, 1);
 		bit_map_set(wavefront->active_stack, stack_fault->active_mask_id * wavefront->work_item_count
 			+ stack_fault->bit, 1, !value);
-		gpu_pipeline_debug("effect=\"error\"");
+		gpu_stack_faults_debug("effect=\"error\"");
 
 end_loop:
 		/* Extract and free */
 		free(stack_fault);
 		lnlist_remove(gpu_stack_faults);
-		gpu_pipeline_debug("\n");
+		gpu_stack_faults_debug("\n");
 	}
 }
 
@@ -369,9 +370,6 @@ void gpu_init()
 {
 	struct config_t *gpu_config;
 	char *section;
-
-	/* Debug */
-	gpu_pipeline_debug_category = debug_new_category();
 
 	/* Load GPU configuration file */
 	gpu_config = config_create(gpu_config_file_name);
