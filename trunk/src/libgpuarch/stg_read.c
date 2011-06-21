@@ -20,6 +20,28 @@
 #include <gpuarch.h>
 
 
+void gpu_mem_access(struct gpu_uop_t *uop, int subwavefront_id)
+{
+	struct gpu_wavefront_t *wavefront = uop->wavefront;
+	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
+	struct gpu_work_item_uop_t *work_item_uop;
+	struct gpu_work_item_t *work_item;
+	int work_item_id;
+	
+	printf("WF %d, SubWF %d:", wavefront->id, subwavefront_id);
+	FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(wavefront, subwavefront_id, work_item_id) {
+		work_item = ndrange->work_items[work_item_id];
+		work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+
+		gpu_cache_read(uop->compute_unit->id, work_item_uop->global_mem_access_addr,
+			work_item_uop->global_mem_access_size);
+		printf(" %d(%d)", work_item_uop->global_mem_access_addr,
+			work_item_uop->global_mem_access_size);
+	}
+	printf("\n");
+}
+
+
 void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_uop_t *uop;
@@ -50,17 +72,12 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 		subwavefront_id);
 	
 	/* Access to global memory */
-	/*if (uop->global_mem_access) {
+	if (uop->global_mem_access) {
 		
-		struct lnlist_t *access_list;
-
 		printf("Global memory access: WF=%d, SubWF=%d, instr='%s'\n",
 			wavefront->id, subwavefront_id, uop->inst.info->name);
-		access_list = lnlist_create();
-		gpu_mem_access_list_create_from_subwavefront(access_list, uop, subwavefront_id);
-		gpu_mem_access_list_coalesce(access_list, 4);
-		lnlist_free(access_list);
-	}*/
+		gpu_mem_access(uop, subwavefront_id);
+	}
 	
 	/* Send to 'execute' stage */
 	READ_EXECUTE.do_execute = 1;
