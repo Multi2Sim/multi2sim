@@ -115,8 +115,8 @@ void gpu_cache_init(void)
 
 	/* Network 'net_l1_l2' switch and paths */
 	sw_id = net_new_switch(net_l1_l2,
-		gpu_num_compute_units + 1, 128, gpu_num_compute_units + 1, 128,  /* FIXME */
-		128, "sw", NULL);
+		gpu_num_compute_units + 1, 512, gpu_num_compute_units + 1, 512,  /* FIXME */
+		512, "sw", NULL);
 	for (i = 0; i < gpu_num_compute_units; i++) {
 		gpu_cache = gpu->gpu_caches[i];
 		net_new_bidirectional_link(net_l1_l2, gpu_cache->id_lo, sw_id, 128);  /* FIXME */
@@ -126,10 +126,10 @@ void gpu_cache_init(void)
 
 	/* Network 'net_l2_gm' switch and paths */
 	sw_id = net_new_switch(net_l2_gm,
-		2, 128, 2, 128,  /* FIXME */
-		128, "sw", NULL);
-	net_new_bidirectional_link(net_l2_gm, gpu_cache_l2->id_lo, sw_id, 128);  /* FIXME */
-	net_new_bidirectional_link(net_l2_gm, sw_id, gpu->global_memory->id_hi, 128);  /* FIXME */
+		2, 512, 2, 512,  /* FIXME */
+		64, "sw", NULL);
+	net_new_bidirectional_link(net_l2_gm, gpu_cache_l2->id_lo, sw_id, 64);  /* FIXME */
+	net_new_bidirectional_link(net_l2_gm, sw_id, gpu->global_memory->id_hi, 64);  /* FIXME */
 	net_calculate_routes(net_l2_gm);
 
 	/* Assign 'net_hi', 'net_lo' */
@@ -295,14 +295,43 @@ void gpu_cache_stack_wait_in_port(struct gpu_cache_stack_t *stack, int event)
 }
 
 
+/* Wake up accesses in 'gpu_cache->waiting_list' */
+void gpu_cache_wakeup(struct gpu_cache_t *gpu_cache)
+{
+	struct gpu_cache_stack_t *stack;
+	int event;
+
+	while (gpu_cache->waiting_list_head) {
+		stack = gpu_cache->waiting_list_head;
+		event = stack->waiting_list_event;
+		DOUBLE_LINKED_LIST_REMOVE(gpu_cache, waiting, stack);
+		esim_schedule_event(event, stack, 0);
+	}
+}
+
+
+/* Wake up accesses in 'port->waiting_list' */
+void gpu_cache_port_wakeup(struct gpu_cache_port_t *port)
+{
+	struct gpu_cache_stack_t *stack;
+	int event;
+
+	while (port->waiting_list_head) {
+		stack = port->waiting_list_head;
+		event = stack->waiting_list_event;
+		DOUBLE_LINKED_LIST_REMOVE(port, waiting, stack);
+		esim_schedule_event(event, stack, 0);
+	}
+}
+
+
 #define CYCLE ((long long) esim_cycle)
 #define ID ((long long) stack->id)
 
 
 void gpu_cache_handler_read(int event, void *data)
 {
-	struct gpu_cache_stack_t *stack = data;
-	//*ret = stack->ret_stack, *newstack;
+	struct gpu_cache_stack_t *stack = data, *newstack;
 	struct gpu_cache_t *gpu_cache = stack->gpu_cache;
 
 	if (event == EV_GPU_CACHE_READ)
@@ -311,14 +340,13 @@ void gpu_cache_handler_read(int event, void *data)
 		int hit;
 		int i;
 
-		gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u\n",
-			CYCLE, ID, gpu_cache->name, stack->addr);
-
 		/* If there is any pending access in the cache, this access should
 		 * be enqueued in the waiting list, since all accesses need to be
 		 * done in order. */
 		if (gpu_cache->waiting_list_head) {
-			gpu_cache_debug("  %lld %lld wait why=\"order\"\n",
+			gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u\n",
+				CYCLE, ID, gpu_cache->name, stack->addr);
+			gpu_cache_debug("%lld %lld wait why=\"order\"\n",
 				CYCLE, ID);
 			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_READ);
 			return;
@@ -335,10 +363,12 @@ void gpu_cache_handler_read(int event, void *data)
 		for (i = 0; i < gpu_cache->read_port_count; i++) {
 			port = GPU_CACHE_READ_PORT_INDEX(gpu_cache, stack->bank, i);
 			if (port->locked && port->lock_when == esim_cycle && port->stack->tag == stack->tag) {
-				gpu_cache_debug("  %lld %lld coalesce id=%lld\n",
-					CYCLE, ID, (long long) port->stack->id);
+				gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
+					CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index);
 				stack->read_port_index = i;
 				stack->port = port;
+				gpu_cache_debug("  %lld %lld coalesce id=%lld bank=%d read_port=%d\n",
+					CYCLE, ID, (long long) port->stack->id, stack->bank_index, stack->read_port_index);
 				gpu_cache_stack_wait_in_port(stack, EV_GPU_CACHE_READ_FINISH);
 				return;
 			}
@@ -355,6 +385,8 @@ void gpu_cache_handler_read(int event, void *data)
 		
 		/* If there is no free read port, enqueue in cache waiting list. */
 		if (!stack->port) {
+			gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
+				CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index);
 			gpu_cache_debug("  %lld %lld wait why=\"no_read_port\"\n", CYCLE, ID);
 			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_READ);
 			return;
@@ -365,7 +397,9 @@ void gpu_cache_handler_read(int event, void *data)
 		port->locked = 1;
 		port->lock_when = esim_cycle;
 		port->stack = stack;
-
+		gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d\n",
+			CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index, stack->read_port_index);
+	
 		/* If there is no cache, assume hit */
 		if (!gpu_cache->cache) {
 			esim_schedule_event(EV_GPU_CACHE_READ_FINISH, stack, gpu_cache->latency);
@@ -377,9 +411,83 @@ void gpu_cache_handler_read(int event, void *data)
 			&stack->set, &stack->way, &stack->status);
 		if (hit)
 			esim_schedule_event(EV_GPU_CACHE_READ_FINISH, stack, gpu_cache->latency);
-		else
+		else {
+			stack->way = cache_replace_block(gpu_cache->cache, stack->set);
 			esim_schedule_event(EV_GPU_CACHE_READ_REQUEST, stack, gpu_cache->latency);
+		}
 
+		return;
+	}
+
+	if (event == EV_GPU_CACHE_READ_REQUEST)
+	{
+		struct net_t *net = gpu_cache->net_lo;
+		struct gpu_cache_t *target = gpu_cache->gpu_cache_next;
+
+		assert(net);
+		assert(target);
+		gpu_cache_debug("  %lld %lld read_request src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+			CYCLE, ID, gpu_cache->name, target->name, net->name);
+		net_send_ev(net, gpu_cache->id_lo, target->id_hi, 8, EV_GPU_CACHE_READ_REQUEST_RECEIVE, stack);
+		return;
+	}
+
+	if (event == EV_GPU_CACHE_READ_REQUEST_RECEIVE)
+	{
+		gpu_cache_debug("  %lld %lld read_request_receive\n", CYCLE, ID);
+
+		newstack = gpu_cache_stack_create(stack->id,
+			gpu_cache->gpu_cache_next, stack->tag,
+			EV_GPU_CACHE_READ_REQUEST_REPLY, stack);
+		esim_schedule_event(EV_GPU_CACHE_READ, newstack, 0);
+		return;
+	}
+
+	if (event == EV_GPU_CACHE_READ_REQUEST_REPLY)
+	{
+		struct net_t *net = gpu_cache->net_lo;
+		struct gpu_cache_t *target = gpu_cache->gpu_cache_next;
+
+		assert(net && target);
+		gpu_cache_debug("  %lld %lld read_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+			CYCLE, ID, target->name, gpu_cache->name, net->name);
+		net_send_ev(net, target->id_hi, gpu_cache->id_lo, gpu_cache->block_size + 8,
+			EV_GPU_CACHE_READ_REQUEST_FINISH, stack);
+		return;
+	}
+
+	if (event == EV_GPU_CACHE_READ_REQUEST_FINISH)
+	{
+		gpu_cache_debug("  %lld %lld read_request_finish\n", CYCLE, ID);
+		assert(gpu_cache->cache);
+
+		/* Set tag and state of the new block.
+		 * A set other than 0 means that the block is valid. */
+		cache_set_block(gpu_cache->cache, stack->set, stack->way, stack->tag, 1);
+		esim_schedule_event(EV_GPU_CACHE_READ_FINISH, stack, 0);
+		return;
+	}
+
+	if (event == EV_GPU_CACHE_READ_FINISH)
+	{
+		struct gpu_cache_port_t *port = stack->port;
+
+		gpu_cache_debug("  %lld %lld read_finish\n", CYCLE, ID);
+
+		/* Update LRU counters */
+		if (gpu_cache->cache)
+			cache_access_block(gpu_cache->cache, stack->set, stack->way);
+
+		/* Unlock port */
+		port->locked = 0;
+		port->stack = NULL;
+
+		/* Wake up accesses in waiting lists */
+		gpu_cache_port_wakeup(port);
+		gpu_cache_wakeup(gpu_cache);
+
+		/* Return */
+		gpu_cache_stack_return(stack);
 		return;
 	}
 
