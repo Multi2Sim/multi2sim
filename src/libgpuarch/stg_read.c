@@ -28,17 +28,17 @@ void gpu_mem_access(struct gpu_uop_t *uop, int subwavefront_id)
 	struct gpu_work_item_t *work_item;
 	int work_item_id;
 	
-	printf("WF %d, SubWF %d:", wavefront->id, subwavefront_id);
+	//printf("WF %d, SubWF %d:", wavefront->id, subwavefront_id);
 	FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(wavefront, subwavefront_id, work_item_id) {
 		work_item = ndrange->work_items[work_item_id];
 		work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 
 		gpu_cache_read(uop->compute_unit->id, work_item_uop->global_mem_access_addr,
 			work_item_uop->global_mem_access_size);
-		printf(" %d(%d)", work_item_uop->global_mem_access_addr,
-			work_item_uop->global_mem_access_size);
+		//printf(" %d(%d)", work_item_uop->global_mem_access_addr,
+			//work_item_uop->global_mem_access_size);
 	}
-	printf("\n");
+	//printf("\n");
 }
 
 
@@ -73,9 +73,7 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 	
 	/* Access to global memory */
 	if (uop->global_mem_access) {
-		
-		printf("Global memory access: WF=%d, SubWF=%d, instr='%s'\n",
-			wavefront->id, subwavefront_id, uop->inst.info->name);
+		///printf("Global memory access: WF=%d, SubWF=%d, instr='%s'\n", wavefront->id, subwavefront_id, uop->inst.info->name);
 		gpu_mem_access(uop, subwavefront_id);
 	}
 	

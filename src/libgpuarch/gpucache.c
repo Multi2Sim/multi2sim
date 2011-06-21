@@ -21,6 +21,7 @@
 #include <repos.h>
 #include <network.h>
 #include <esim.h>
+#include <cachesystem.h>
 
 
 /*
@@ -60,6 +61,11 @@ void gpu_cache_init(void)
 		gpu->gpu_caches[i] = gpu_cache_create();
 		gpu_cache = gpu->gpu_caches[i];
 		gpu->compute_units[i]->gpu_cache = gpu_cache;
+		snprintf(gpu_cache->name, sizeof(gpu_cache->name), "L1[%d]", i);
+		gpu_cache->block_size = 256;  /* FIXME */
+		gpu_cache->log_block_size = log_base2(gpu_cache->block_size);
+		gpu_cache->latency = 1;  /* FIXME */
+		gpu_cache->cache = cache_create(16, gpu_cache->block_size, 2, cache_policy_lru);  /* FIXME */
 	}
 
 	/* L2 cache */
@@ -67,12 +73,21 @@ void gpu_cache_init(void)
 	gpu_cache = gpu_cache_create();
 	gpu->gpu_caches[curr] = gpu_cache;
 	gpu_cache_l2 = gpu_cache;
+	snprintf(gpu_cache->name, sizeof(gpu_cache->name), "L2");
+	gpu_cache->block_size = 256;  /* FIXME */
+	gpu_cache->log_block_size = log_base2(gpu_cache->block_size);
+	gpu_cache->latency = 10;  /* FIXME */
+	gpu_cache->cache = cache_create(64, gpu_cache->block_size, 4, cache_policy_lru);  /* FIXME */
 
 	/* Global memory */
 	curr = gpu_num_compute_units + 1;
 	gpu_cache = gpu_cache_create();
 	gpu->gpu_caches[curr] = gpu_cache;
 	gpu->global_memory = gpu_cache;
+	snprintf(gpu_cache->name, sizeof(gpu_cache->name), "GlobalMem");
+	gpu_cache->block_size = 256;  /* FIXME */
+	gpu_cache->log_block_size = log_base2(gpu_cache->block_size);
+	gpu_cache->latency = 100;  /* FIXME */
 
 	/* Assign 'gpu_cache_next' */
 	for (i = 0; i < gpu_num_compute_units; i++)
@@ -185,6 +200,8 @@ struct gpu_cache_t *gpu_cache_create(void)
 
 void gpu_cache_free(struct gpu_cache_t *gpu_cache)
 {
+	if (gpu_cache->cache)
+		cache_free(gpu_cache->cache);
 	free(gpu_cache->banks);
 	free(gpu_cache);
 }
@@ -199,6 +216,7 @@ void gpu_cache_read(int compute_unit_id, uint32_t addr, uint32_t size)
 	stack = gpu_cache_stack_create(gpu_cache_stack_id,
 		gpu->gpu_caches[compute_unit_id], addr,
 		ESIM_EV_NONE, NULL);
+	esim_schedule_event(EV_GPU_CACHE_READ, stack, 0);
 }
 
 
@@ -266,42 +284,102 @@ void gpu_cache_stack_wait_in_cache(struct gpu_cache_stack_t *stack, int event)
 }
 
 
-void gpu_cache_stack_wait_in_read_port(struct gpu_cache_stack_t *stack, int bank_index, int read_port_index, int event)
+/* Enqueue stack in waiting list of 'stack->port' */
+void gpu_cache_stack_wait_in_port(struct gpu_cache_stack_t *stack, int event)
 {
-	struct gpu_cache_t *gpu_cache = stack->gpu_cache;
-	struct gpu_cache_bank_t *bank;
-	struct gpu_cache_port_t *port;
+	struct gpu_cache_port_t *port = stack->port;
 
-	bank = GPU_CACHE_BANK_INDEX(gpu_cache, bank_index);
-	port = GPU_CACHE_READ_PORT_INDEX(gpu_cache, bank, read_port_index);
 	assert(!DOUBLE_LINKED_LIST_MEMBER(port, waiting, stack));
-
 	stack->waiting_list_event = event;
 	DOUBLE_LINKED_LIST_INSERT_TAIL(port, waiting, stack);
 }
 
 
-void gpu_cache_stack_wait_in_write_port(struct gpu_cache_stack_t *stack, int bank_index, int write_port_index, int event)
-{
-	struct gpu_cache_t *gpu_cache = stack->gpu_cache;
-	struct gpu_cache_bank_t *bank;
-	struct gpu_cache_port_t *port;
-
-	bank = GPU_CACHE_BANK_INDEX(gpu_cache, bank_index);
-	port = GPU_CACHE_WRITE_PORT_INDEX(gpu_cache, bank, write_port_index);
-	assert(!DOUBLE_LINKED_LIST_MEMBER(port, waiting, stack));
-
-	stack->waiting_list_event = event;
-	DOUBLE_LINKED_LIST_INSERT_TAIL(port, waiting, stack);
-}
+#define CYCLE ((long long) esim_cycle)
+#define ID ((long long) stack->id)
 
 
 void gpu_cache_handler_read(int event, void *data)
 {
-	//struct gpu_cache_stack_t *stack = data, *ret = stack->ret_stack, *newstack;
-	//struct gpu_cache_t *gpu_cache = stack->gpu_cache;
+	struct gpu_cache_stack_t *stack = data;
+	//*ret = stack->ret_stack, *newstack;
+	struct gpu_cache_t *gpu_cache = stack->gpu_cache;
 
-	if (event == EV_GPU_CACHE_READ) {
+	if (event == EV_GPU_CACHE_READ)
+	{
+		struct gpu_cache_port_t *port;
+		int hit;
+		int i;
+
+		gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u\n",
+			CYCLE, ID, gpu_cache->name, stack->addr);
+
+		/* If there is any pending access in the cache, this access should
+		 * be enqueued in the waiting list, since all accesses need to be
+		 * done in order. */
+		if (gpu_cache->waiting_list_head) {
+			gpu_cache_debug("  %lld %lld wait why=\"order\"\n",
+				CYCLE, ID);
+			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_READ);
+			return;
+		}
+
+		/* Get bank, set, way, tag, status */
+		stack->tag = stack->addr & ~(gpu_cache->block_size - 1);
+		stack->block_index = stack->tag >> gpu_cache->log_block_size;
+		stack->bank_index = stack->block_index % gpu_cache->bank_count;
+		stack->bank = GPU_CACHE_BANK_INDEX(gpu_cache, stack->bank_index);
+
+		/* If any read port in bank is processing the same tag starting
+		 * in the current cycle, the accesses are coalesced. */
+		for (i = 0; i < gpu_cache->read_port_count; i++) {
+			port = GPU_CACHE_READ_PORT_INDEX(gpu_cache, stack->bank, i);
+			if (port->locked && port->lock_when == esim_cycle && port->stack->tag == stack->tag) {
+				gpu_cache_debug("  %lld %lld coalesce id=%lld\n",
+					CYCLE, ID, (long long) port->stack->id);
+				stack->read_port_index = i;
+				stack->port = port;
+				gpu_cache_stack_wait_in_port(stack, EV_GPU_CACHE_READ_FINISH);
+				return;
+			}
+		}
+
+		/* Look for a free read port */
+		for (i = 0; i < gpu_cache->read_port_count; i++) {
+			port = GPU_CACHE_READ_PORT_INDEX(gpu_cache, stack->bank, i);
+			if (port->locked)
+				continue;
+			stack->read_port_index = i;
+			stack->port = port;
+		}
+		
+		/* If there is no free read port, enqueue in cache waiting list. */
+		if (!stack->port) {
+			gpu_cache_debug("  %lld %lld wait why=\"no_read_port\"\n", CYCLE, ID);
+			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_READ);
+			return;
+		}
+
+		/* Lock read port */
+		port = stack->port;
+		port->locked = 1;
+		port->lock_when = esim_cycle;
+		port->stack = stack;
+
+		/* If there is no cache, assume hit */
+		if (!gpu_cache->cache) {
+			esim_schedule_event(EV_GPU_CACHE_READ_FINISH, stack, gpu_cache->latency);
+			return;
+		}
+
+		/* Get block from cache, consuming 'latency' cycles. */
+		hit = cache_find_block(gpu_cache->cache, stack->tag,
+			&stack->set, &stack->way, &stack->status);
+		if (hit)
+			esim_schedule_event(EV_GPU_CACHE_READ_FINISH, stack, gpu_cache->latency);
+		else
+			esim_schedule_event(EV_GPU_CACHE_READ_REQUEST, stack, gpu_cache->latency);
+
 		return;
 	}
 
