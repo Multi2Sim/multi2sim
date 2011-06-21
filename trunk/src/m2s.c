@@ -536,11 +536,11 @@ int main(int argc, char **argv)
 	/* Initialization for functional simulation */
 	ke_init();
 	esim_init();
+	net_init();
 
 	/* Initialization for detailed simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed) {
 		uop_init();
-		net_init();
 		cpu_init();
 	}
 	if (gpu_sim_kind == gpu_sim_kind_detailed)
@@ -586,7 +586,6 @@ int main(int argc, char **argv)
 		esim_debug_done();
 		cpu_done();
 		uop_done();
-		net_done();
 	}
 
 	/* Finalization of detailed GPU simulation */
@@ -594,6 +593,7 @@ int main(int argc, char **argv)
 		gpu_done();
 	
 	/* Finalization of functional simulation */
+	net_done();
 	esim_done();
 	ke_done();
 	debug_done();
