@@ -31,6 +31,7 @@ static char *syscall_debug_file_name = "";
 static char *opencl_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
 static char *gpu_pipeline_debug_file_name = "";
+static char *gpu_cache_debug_file_name = "";
 static char *loader_debug_file_name = "";
 static char *isa_call_debug_file_name = "";
 static char *isa_inst_debug_file_name = "";
@@ -83,6 +84,8 @@ static char *sim_help =
 	"        --debug-ctx: emulated CPU context status updates.\n"
 	"        --debug-syscall: detailed system calls trace and arguments.\n"
 	"        --debug-opencl: trace of OpenCL calls and their arguments.\n"
+	"        --debug-gpu-cache: trace of event-driven simulation for the GPU memory\n"
+	"            hierarchy. Must be used with '--gpu-sim detailed'.\n"
 	"        --debug-gpu-isa: during the emulation of an OpenCL device kernel, trace\n"
 	"            of executed AMD Evergreen ISA instructions.\n"
 	"        --debug-gpu-pipeline: trace of AMD Evergreen instructions in the GPU\n"
@@ -96,7 +99,12 @@ static char *sim_help =
 	"        --debug-cpu-pipeline: trace of x86 microinstructions in the CPU pipeline.\n"
 	"            The output file can be used as an input for the 'm2s-pipeline' tool\n"
 	"            to obtain graphical timing diagrams.\n"
-	"        --debug-error: on simulation crashes, dump of the modeled CPU state.\n"
+	"        --debug-error: on simulation crashes, dump of the modeled CPU state.\n"\
+	"\n"
+	"  --gpu-config <file>\n"
+	"      Configuration file for the GPU model, including parameters such as number of\n"
+	"      compute units, stream cores, or wavefront size. Type 'm2s --help-gpu-config'\n"
+	"      for details on the file format.\n"
 	"\n"
 	"  --gpu-sim {functional|detailed}\n"
 	"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
@@ -265,6 +273,16 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* GPU configuration file */
+		if (!strcmp(argv[argi], "--gpu-config")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by a GPU configuration file name.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			gpu_config_file_name = argv[argi];
+			continue;
+		}
+
 		/* GPU-REL: file to introduce faults in active mask stack */
 		if (!strcmp(argv[argi], "--gpu-stack-faults")) {
 			if (argi == argc - 1)
@@ -302,6 +320,16 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 					argv[argi], err_help_note);
 			argi++;
 			gpu_pipeline_debug_file_name = argv[argi];
+			continue;
+		}
+
+		/* GPU cache debug file */
+		if (!strcmp(argv[argi], "--debug-gpu-cache")) {
+			if (argi == argc - 1)
+				fatal("option '%s' requires a debug file name for the GPU cache system.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			gpu_cache_debug_file_name = argv[argi];
 			continue;
 		}
 
@@ -464,12 +492,23 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	/* Check configuration consistency */
 	if (cpu_sim_kind == cpu_sim_kind_functional) {
 		if (*cpu_config_file_name || *cpu_report_file_name)
-			fatal("A CPU configuration file or statistics report cannot be specified for functional CPU simulation.\n"
+			fatal("CPU configuration file or statistics report cannot be specified for functional CPU simulation.\n"
 				"If you want to run an architectural simulation, add option '--cpu-sim detailed'.\n");
 		if (*cache_system_config_file_name || *cache_system_report_file_name)
-			fatal("A configuration file or statistics report for the cache system cannot be specified\n"
+			fatal("configuration file or statistics report for the cache system cannot be specified\n"
 				"for a functional simulation. If you want to run an architectural simulation,\n"
 				"add command-line option '--cpu-sim detailed'.\n");
+	}
+	if (gpu_sim_kind == gpu_sim_kind_functional) {
+		if (*gpu_cache_debug_file_name)
+			fatal("option '--debug-gpu-cache' not valid for GPU functional simulation.\n"
+				"Please use option '--gpu-sim detailed' as well.\n");
+		if (*gpu_stack_faults_debug_file_name)  /* GPU-REL */
+			fatal("option '--debug-gpu-stack-faults' not valid for GPU functional simulation.\n"
+				"Please use option '--gpu-sim detailed' as well.\n");
+		if (*gpu_config_file_name)
+			fatal("option '--gpu-config' not valid for GPU functional simulation.\n"
+				"Please use option '--gpu-sim detailed' as well.\n");
 	}
 
 	/* Discard arguments used as options */
@@ -519,6 +558,7 @@ int main(int argc, char **argv)
 	debug_assign_file(opencl_debug_category, opencl_debug_file_name);
 	debug_assign_file(gpu_isa_debug_category, gpu_isa_debug_file_name);
 	debug_assign_file(gpu_pipeline_debug_category, gpu_pipeline_debug_file_name);
+	debug_assign_file(gpu_cache_debug_category, gpu_cache_debug_file_name);
 	debug_assign_file(ld_debug_category, loader_debug_file_name);
 	debug_assign_file(isa_call_debug_category, isa_call_debug_file_name);
 	debug_assign_file(isa_inst_debug_category, isa_inst_debug_file_name);
