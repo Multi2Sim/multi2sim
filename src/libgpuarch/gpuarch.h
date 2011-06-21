@@ -27,6 +27,7 @@
 /* Public variables */
 
 extern char *gpu_config_help;
+extern char *gpu_config_file_name;
 
 extern int gpu_pipeline_debug_category;
 
@@ -220,6 +221,7 @@ void gpu_uop_free(struct gpu_uop_t *gpu_uop);
  * Cache system
  */
 
+////////////// FIXME
 struct gpu_mem_access_t {
 	uint32_t addr;
 	uint32_t size;
@@ -232,19 +234,7 @@ void gpu_mem_access_list_coalesce(struct lnlist_t *access_list, uint32_t width);
 void gpu_mem_access_list_dump(struct lnlist_t *access_list, FILE *f);
 void gpu_mem_access_list_create_from_subwavefront(struct lnlist_t *access_list,
 	struct gpu_uop_t *uop, int subwavefront_id);
-
-
-/* Stack for event-driven simulation */
-struct gpu_cache_stack_t
-{
-	struct gpu_cache_t *gpu_cache;
-	uint32_t addr;
-
-	/* Linked list for waiting events */
-	int waiting_list_event;  /* Event to schedule when stack is woken up */
-	struct gpu_cache_stack_t *waiting_prev, *waiting_next;
-};
-
+///////////// FIXME --- remove till here
 
 /* GPU Cache Port */
 struct gpu_cache_port_t
@@ -302,11 +292,54 @@ struct gpu_cache_t
 	int id_lo;
 };
 
+#define gpu_cache_debugging() debug_status(gpu_cache_debug_category)
+#define gpu_cache_debug(...) debug(gpu_cache_debug_category, __VA_ARGS__)
+extern int gpu_cache_debug_category;
+
 struct gpu_cache_t *gpu_cache_create(void);
 void gpu_cache_free(struct gpu_cache_t *gpu_cache);
 
 void gpu_cache_init(void);
 void gpu_cache_done(void);
+
+
+
+
+/*
+ * GPU Cache system - event driven simulation
+ */
+
+extern int EV_GPU_CACHE_READ;
+extern int EV_GPU_CACHE_READ_REQUEST;
+extern int EV_GPU_CACHE_READ_REQUEST_RECEIVE;
+extern int EV_GPU_CACHE_READ_REQUEST_REPLY;
+extern int EV_GPU_CACHE_READ_REQUEST_FINISH;
+extern int EV_GPU_CACHE_READ_FINISH;
+
+extern int EV_GPU_CACHE_WRITE;
+extern int EV_GPU_CACHE_WRITE_REQUEST_RECEIVE;
+extern int EV_GPU_CACHE_WRITE_FINISH_LOCAL;
+extern int EV_GPU_CACHE_WRITE_FINISH;
+
+/* Stack for event-driven simulation */
+struct gpu_cache_stack_t
+{
+	struct gpu_cache_t *gpu_cache;
+	uint32_t addr;
+
+	/* Linked list for waiting events */
+	int waiting_list_event;  /* Event to schedule when stack is woken up */
+	struct gpu_cache_stack_t *waiting_prev, *waiting_next;
+
+	/* Return stack */
+	struct gpu_cache_stack_t *ret_stack;
+	int ret_event;
+};
+
+extern struct repos_t *gpu_cache_stack_repos;
+
+void gpu_cache_handler_read(int event, void *data);
+void gpu_cache_handler_write(int event, void *data);
 
 
 

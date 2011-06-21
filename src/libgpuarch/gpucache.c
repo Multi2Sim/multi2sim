@@ -20,10 +20,21 @@
 #include <gpuarch.h>
 #include <repos.h>
 #include <network.h>
+#include <esim.h>
 
+
+/*
+ * Global variables
+ */
 
 struct repos_t *gpu_mem_access_repos;
+int gpu_cache_debug_category;
 
+
+
+/*
+ * Public functions
+ */
 
 void gpu_cache_init(void)
 {
@@ -36,6 +47,9 @@ void gpu_cache_init(void)
 	char buf[MAX_STRING_SIZE];
 	int curr, i;
 	int sw_id;
+
+	/* Debug */
+	gpu_cache_debug_category = debug_new_category();
 
 	/* Initialize cache array and caches */
 	gpu->gpu_cache_count = gpu_num_compute_units + 1 + 1;  /* L1 (one per compute unit) + L2 + global mem */
@@ -115,6 +129,22 @@ void gpu_cache_init(void)
 
 	/* GPU memory access repository */
 	gpu_mem_access_repos = repos_create(sizeof(struct gpu_mem_access_t), "gpu_mem_access_repos");
+
+	/* Events */
+	EV_GPU_CACHE_READ = esim_register_event(gpu_cache_handler_read);
+	EV_GPU_CACHE_READ_REQUEST = esim_register_event(gpu_cache_handler_read);
+	EV_GPU_CACHE_READ_REQUEST_RECEIVE = esim_register_event(gpu_cache_handler_read);
+	EV_GPU_CACHE_READ_REQUEST_REPLY = esim_register_event(gpu_cache_handler_read);
+	EV_GPU_CACHE_READ_REQUEST_FINISH = esim_register_event(gpu_cache_handler_read);
+	EV_GPU_CACHE_READ_FINISH = esim_register_event(gpu_cache_handler_read);
+
+	EV_GPU_CACHE_WRITE = esim_register_event(gpu_cache_handler_write);
+	EV_GPU_CACHE_WRITE_REQUEST_RECEIVE = esim_register_event(gpu_cache_handler_write);
+	EV_GPU_CACHE_WRITE_FINISH_LOCAL = esim_register_event(gpu_cache_handler_write);
+	EV_GPU_CACHE_WRITE_FINISH = esim_register_event(gpu_cache_handler_write);
+
+	/* Repository of GPU cache stacks */
+	gpu_cache_stack_repos = repos_create(sizeof(struct gpu_cache_stack_t), "gpu_cache_stack_repos");
 }
 
 
@@ -134,6 +164,9 @@ void gpu_cache_done(void)
 
 	/* GPU memory access repository */
 	repos_free(gpu_mem_access_repos);
+
+	/* GPU cache stack repository */
+	repos_free(gpu_cache_stack_repos);
 }
 
 
@@ -155,6 +188,30 @@ void gpu_cache_free(struct gpu_cache_t *gpu_cache)
 	free(gpu_cache->banks);
 	free(gpu_cache);
 }
+
+
+
+
+/*
+ * Event-driven simulation
+ */
+
+
+/* Events */
+
+int EV_GPU_CACHE_READ;
+int EV_GPU_CACHE_READ_REQUEST;
+int EV_GPU_CACHE_READ_REQUEST_RECEIVE;
+int EV_GPU_CACHE_READ_REQUEST_REPLY;
+int EV_GPU_CACHE_READ_REQUEST_FINISH;
+int EV_GPU_CACHE_READ_FINISH;
+
+int EV_GPU_CACHE_WRITE;
+int EV_GPU_CACHE_WRITE_REQUEST_RECEIVE;
+int EV_GPU_CACHE_WRITE_FINISH_LOCAL;
+int EV_GPU_CACHE_WRITE_FINISH;
+
+struct repos_t *gpu_cache_stack_repos;
 
 
 void gpu_cache_stack_wait_in_cache(struct gpu_cache_stack_t *stack, int event)
@@ -194,5 +251,23 @@ void gpu_cache_stack_wait_in_write_port(struct gpu_cache_stack_t *stack, int ban
 
 	stack->waiting_list_event = event;
 	DOUBLE_LINKED_LIST_INSERT_TAIL(port, waiting, stack);
+}
+
+
+void gpu_cache_handler_read(int event, void *data)
+{
+	//struct gpu_cache_stack_t *stack = data, *ret = stack->ret_stack, *newstack;
+	//struct gpu_cache_t *gpu_cache = stack->gpu_cache;
+
+	if (event == EV_GPU_CACHE_READ) {
+		return;
+	}
+
+	abort();
+}
+
+
+void gpu_cache_handler_write(int event, void *data)
+{
 }
 
