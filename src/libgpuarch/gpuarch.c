@@ -23,6 +23,7 @@
 #include <config.h>
 #include <debug.h>
 #include <repos.h>
+#include <esim.h>
 
 
 
@@ -534,6 +535,9 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 
 		/* GPU-REL: insert stack faults */
 		gpu_stack_faults_insert();
+		
+		/* Event-driven module */
+		esim_process_events();
 	}
 }
 

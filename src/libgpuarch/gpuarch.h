@@ -243,6 +243,7 @@ struct gpu_cache_port_t
 	/* Port lock status */
 	int locked;
 	uint64_t lock_when;
+	struct gpu_cache_stack_t *stack;  /* Current access */
 	
 	/* Waiting list */
 	struct gpu_cache_stack_t *waiting_list_head, *waiting_list_tail;
@@ -272,6 +273,11 @@ struct gpu_cache_t
 {
 	/* Actual cache structure */
 	struct cache_t *cache;
+
+	/* Parameters */
+	char name[30];
+	uint32_t block_size, log_block_size;
+	int latency;
 
 	/* Banks and ports */
 	struct gpu_cache_bank_t *banks;
@@ -329,7 +335,17 @@ struct gpu_cache_stack_t
 {
 	uint64_t id;
 	struct gpu_cache_t *gpu_cache;
+	struct gpu_cache_bank_t *bank;
+	struct gpu_cache_port_t *port;
 	uint32_t addr;
+	uint32_t tag;
+	uint32_t set;
+	uint32_t way;
+	int status;
+	uint32_t block_index;
+	uint32_t bank_index;
+	int read_port_index;
+	int write_port_index;
 
 	/* Linked list for waiting events */
 	int waiting_list_event;  /* Event to schedule when stack is woken up */
