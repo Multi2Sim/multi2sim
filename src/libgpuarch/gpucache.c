@@ -139,15 +139,60 @@ void gpu_cache_done(void)
 
 struct gpu_cache_t *gpu_cache_create(void)
 {
-	struct gpu_cache_t *cache;
+	struct gpu_cache_t *gpu_cache;
 	
-	cache = calloc(1, sizeof(struct gpu_cache_t));
-	return cache;
+	gpu_cache = calloc(1, sizeof(struct gpu_cache_t));
+	gpu_cache->bank_count = 4;  /* FIXME */
+	gpu_cache->read_port_count = 4;  /* FIXME */
+	gpu_cache->write_port_count = 2;  /* FIXME */
+	gpu_cache->banks = calloc(1, gpu_cache->bank_count + SIZEOF_GPU_CACHE_BANK(gpu_cache));
+	return gpu_cache;
 }
 
 
-void gpu_cache_free(struct gpu_cache_t *cache)
+void gpu_cache_free(struct gpu_cache_t *gpu_cache)
 {
-	free(cache);
+	free(gpu_cache->banks);
+	free(gpu_cache);
+}
+
+
+void gpu_cache_stack_wait_in_cache(struct gpu_cache_stack_t *stack, int event)
+{
+	struct gpu_cache_t *gpu_cache = stack->gpu_cache;
+
+	assert(!DOUBLE_LINKED_LIST_MEMBER(gpu_cache, waiting, stack));
+	stack->waiting_list_event = event;
+	DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_cache, waiting, stack);
+}
+
+
+void gpu_cache_stack_wait_in_read_port(struct gpu_cache_stack_t *stack, int bank_index, int read_port_index, int event)
+{
+	struct gpu_cache_t *gpu_cache = stack->gpu_cache;
+	struct gpu_cache_bank_t *bank;
+	struct gpu_cache_port_t *port;
+
+	bank = GPU_CACHE_BANK_INDEX(gpu_cache, bank_index);
+	port = GPU_CACHE_READ_PORT_INDEX(gpu_cache, bank, read_port_index);
+	assert(!DOUBLE_LINKED_LIST_MEMBER(port, waiting, stack));
+
+	stack->waiting_list_event = event;
+	DOUBLE_LINKED_LIST_INSERT_TAIL(port, waiting, stack);
+}
+
+
+void gpu_cache_stack_wait_in_write_port(struct gpu_cache_stack_t *stack, int bank_index, int write_port_index, int event)
+{
+	struct gpu_cache_t *gpu_cache = stack->gpu_cache;
+	struct gpu_cache_bank_t *bank;
+	struct gpu_cache_port_t *port;
+
+	bank = GPU_CACHE_BANK_INDEX(gpu_cache, bank_index);
+	port = GPU_CACHE_WRITE_PORT_INDEX(gpu_cache, bank, write_port_index);
+	assert(!DOUBLE_LINKED_LIST_MEMBER(port, waiting, stack));
+
+	stack->waiting_list_event = event;
+	DOUBLE_LINKED_LIST_INSERT_TAIL(port, waiting, stack);
 }
 
