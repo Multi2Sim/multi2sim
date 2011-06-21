@@ -235,32 +235,50 @@ void gpu_mem_access_list_create_from_subwavefront(struct lnlist_t *access_list,
 
 
 /* Stack for event-driven simulation */
-struct gpu_cache_stack_t {
+struct gpu_cache_stack_t
+{
+	struct gpu_cache_t *gpu_cache;
 	uint32_t addr;
 
 	/* Linked list for waiting events */
 	int waiting_list_event;  /* Event to schedule when stack is woken up */
-	struct gpu_cache_stack_t *waiting_list_next;  /* Next stack in waiting list */
+	struct gpu_cache_stack_t *waiting_prev, *waiting_next;
 };
 
 
-struct gpu_cache_port_t {
-	struct gpu_cache_stack_t *waiting_list;
+/* GPU Cache Port */
+struct gpu_cache_port_t
+{
+	/* Port lock status */
 	int locked;
 	uint64_t lock_when;
+	
+	/* Waiting list */
+	struct gpu_cache_stack_t *waiting_list_head, *waiting_list_tail;
+	int waiting_count, waiting_max;
+
 };
 
 
-struct gpu_cache_bank_t {
-	struct gpu_cache_stack_t *waiting_list;
+/* GPU Cache Bank */
+struct gpu_cache_bank_t
+{
+	/* Ports */
 	struct gpu_cache_port_t ports[0];
 };
 
-#define SIZEOF_CACHE_BANK (sizeof(struct gpu_cache_bank_t) * sizeof(struct gpu_cache_port_t 
+
+#define SIZEOF_GPU_CACHE_BANK(CACHE) (sizeof(struct gpu_cache_bank_t) + sizeof(struct gpu_cache_port_t) \
+	* (CACHE)->read_port_count * (CACHE)->write_port_count)
+
+#define GPU_CACHE_BANK_INDEX(CACHE, I)  ((struct gpu_cache_bank_t *) ((void *) (CACHE)->banks + SIZEOF_GPU_CACHE_BANK(CACHE) * (I)))
+
+#define GPU_CACHE_READ_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(I)])
+#define GPU_CACHE_WRITE_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(CACHE)->read_port_count + (I)])
 
 
-struct gpu_cache_t {
-	
+struct gpu_cache_t
+{
 	/* Actual cache structure */
 	struct cache_t *cache;
 
@@ -271,7 +289,8 @@ struct gpu_cache_t {
 	int write_port_count;
 
 	/* Waiting list of events */
-	struct gpu_cache_stack_t *waiting_list;
+	struct gpu_cache_stack_t *waiting_list_head, *waiting_list_tail;
+	int waiting_count, waiting_max;
 
 	/* Lower level cache (NULL for global memory) */
 	struct gpu_cache_t *gpu_cache_next;
