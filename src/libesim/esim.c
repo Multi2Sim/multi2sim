@@ -169,6 +169,33 @@ void esim_process_events()
 }
 
 
+/* Process all events, until the maximum 'max' is reached, or until the event
+ * heap is empty. If 'max' is 0, no maximum is considered. */
+void esim_process_all_events(int max)
+{
+	int count = 0;
+	struct event_t *e;
+	esim_event_handler_t handler;
+	
+	/* Extract all elements from heap */
+	while (count < max) {
+		
+		/* Extract event */
+		esim_cycle = heap_extract(event_heap, (void **) &e);
+		if (heap_error(event_heap))
+			break;
+		
+		/* Process it */
+		count++;
+		handler = list_get(event_procs, e->event);
+		assert(!list_error(event_procs));
+		assert(handler);
+		handler(e->event, e->data);
+		repos_free_object(event_repos, e);
+	}
+}
+
+
 void esim_empty()
 {
 	struct event_t *e;

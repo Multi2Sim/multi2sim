@@ -535,11 +535,11 @@ int main(int argc, char **argv)
 
 	/* Initialization for functional simulation */
 	ke_init();
+	esim_init();
 
 	/* Initialization for detailed simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed) {
 		uop_init();
-		esim_init();
 		net_init();
 		cpu_init();
 	}
@@ -578,19 +578,15 @@ int main(int argc, char **argv)
 			ke_run();
 	}
 
+	/* Flush event-driven simulation */
+	esim_process_all_events(1000);
+
 	/* Finalization of detailed CPU simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed) {
-		
-		/* Finalize event-driven simulations */
-		while (esim_pending() && esim_cycle < cpu->cycle + (1 << 20))
-			esim_process_events();
 		esim_debug_done();
-
-		/* Rest */
 		cpu_done();
 		uop_done();
 		net_done();
-		esim_done();
 	}
 
 	/* Finalization of detailed GPU simulation */
@@ -598,6 +594,7 @@ int main(int argc, char **argv)
 		gpu_done();
 	
 	/* Finalization of functional simulation */
+	esim_done();
 	ke_done();
 	debug_done();
 	mhandle_done();

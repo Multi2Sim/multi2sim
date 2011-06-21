@@ -193,6 +193,7 @@ struct gpu_uop_t
 	uint64_t id;
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
+	struct gpu_compute_unit_t *compute_unit;
 	int subwavefront_count;
 	int last;  /* 1 if last uop in work-group */
 
@@ -302,6 +303,8 @@ void gpu_cache_free(struct gpu_cache_t *gpu_cache);
 void gpu_cache_init(void);
 void gpu_cache_done(void);
 
+void gpu_cache_read(int compute_unit_id, uint32_t addr, uint32_t size);
+void gpu_cache_write(int compute_unit_id, uint32_t addr, uint32_t size);
 
 
 
@@ -324,6 +327,7 @@ extern int EV_GPU_CACHE_WRITE_FINISH;
 /* Stack for event-driven simulation */
 struct gpu_cache_stack_t
 {
+	uint64_t id;
 	struct gpu_cache_t *gpu_cache;
 	uint32_t addr;
 
@@ -337,6 +341,11 @@ struct gpu_cache_stack_t
 };
 
 extern struct repos_t *gpu_cache_stack_repos;
+extern uint64_t gpu_cache_stack_id;
+
+struct gpu_cache_stack_t *gpu_cache_stack_create(uint64_t id, struct gpu_cache_t *gpu_cache,
+	uint32_t addr, int ret_event, void *ret_stack);
+void gpu_cache_stack_return(struct gpu_cache_stack_t *stack);
 
 void gpu_cache_handler_read(int event, void *data);
 void gpu_cache_handler_write(int event, void *data);

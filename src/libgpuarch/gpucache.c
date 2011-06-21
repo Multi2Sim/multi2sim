@@ -190,6 +190,23 @@ void gpu_cache_free(struct gpu_cache_t *gpu_cache)
 }
 
 
+void gpu_cache_read(int compute_unit_id, uint32_t addr, uint32_t size)
+{
+	struct gpu_cache_stack_t *stack;
+
+	gpu_cache_stack_id++;
+	assert(IN_RANGE(compute_unit_id, 0, gpu_num_compute_units));
+	stack = gpu_cache_stack_create(gpu_cache_stack_id,
+		gpu->gpu_caches[compute_unit_id], addr,
+		ESIM_EV_NONE, NULL);
+}
+
+
+void gpu_cache_write(int compute_unit_id, uint32_t addr, uint32_t size)
+{
+}
+
+
 
 
 /*
@@ -212,6 +229,31 @@ int EV_GPU_CACHE_WRITE_FINISH_LOCAL;
 int EV_GPU_CACHE_WRITE_FINISH;
 
 struct repos_t *gpu_cache_stack_repos;
+uint64_t gpu_cache_stack_id;
+
+
+struct gpu_cache_stack_t *gpu_cache_stack_create(uint64_t id, struct gpu_cache_t *gpu_cache,
+	uint32_t addr, int ret_event, void *ret_stack)
+{
+	struct gpu_cache_stack_t *stack;
+	stack = repos_create_object(gpu_cache_stack_repos);
+	stack->id = id;
+	stack->gpu_cache = gpu_cache;
+	stack->addr = addr;
+	stack->ret_event = ret_event;
+	stack->ret_stack = ret_stack;
+	return stack;
+}
+
+
+void gpu_cache_stack_return(struct gpu_cache_stack_t *stack)
+{
+	int ret_event = stack->ret_event;
+	void *ret_stack = stack->ret_stack;
+
+	repos_free_object(gpu_cache_stack_repos, stack);
+	esim_schedule_event(ret_event, ret_stack, 0);
+}
 
 
 void gpu_cache_stack_wait_in_cache(struct gpu_cache_stack_t *stack, int event)
