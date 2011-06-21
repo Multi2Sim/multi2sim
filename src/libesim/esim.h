@@ -46,6 +46,7 @@ void esim_execute_event(int event, void *data);
 
 /* Advance esim cycle and process events of the new cycle */
 void esim_process_events();
+void esim_process_all_events(int max);
 
 /* Force event extraction; useful to empty event heap before
  * finalization; return false only when heap is empty and

@@ -225,6 +225,7 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 		uop = gpu_uop_create();
 		uop->work_group = work_group;
 		uop->wavefront = wavefront;
+		uop->compute_unit = compute_unit;
 		gpu_pipeline_debug("uop "
 			"a=\"create\" "
 			"id=%lld "
