@@ -222,20 +222,6 @@ void gpu_uop_free(struct gpu_uop_t *gpu_uop);
  * Cache system
  */
 
-////////////// FIXME
-struct gpu_mem_access_t {
-	uint32_t addr;
-	uint32_t size;
-};
-
-extern struct repos_t *gpu_mem_access_repos;
-
-void gpu_mem_access_list_coalesce(struct lnlist_t *access_list, uint32_t width);
-
-void gpu_mem_access_list_dump(struct lnlist_t *access_list, FILE *f);
-void gpu_mem_access_list_create_from_subwavefront(struct lnlist_t *access_list,
-	struct gpu_uop_t *uop, int subwavefront_id);
-///////////// FIXME --- remove till here
 
 /* GPU Cache Port */
 struct gpu_cache_port_t
