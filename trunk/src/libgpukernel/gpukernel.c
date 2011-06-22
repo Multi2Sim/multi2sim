@@ -44,10 +44,6 @@ void gk_init()
 {
 	struct opencl_device_t *device;
 
-	/* Debug categories */
-	opencl_debug_category = debug_new_category();
-	gpu_isa_debug_category = debug_new_category();
-
 	/* Open report file */
 	if (gpu_report_file_name[0]) {
 		gpu_report_file = open_write(gpu_report_file_name);
