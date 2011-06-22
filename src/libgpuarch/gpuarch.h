@@ -282,8 +282,12 @@ struct gpu_cache_t
 	/* Banks and ports */
 	struct gpu_cache_bank_t *banks;
 	int bank_count;
-	int read_port_count;
-	int write_port_count;
+	int read_port_count;  /* Number of read ports (per bank) */
+	int write_port_count;  /* Number of write ports (per bank) */
+
+	/* Number of locked read/write ports (adding up all banks) */
+	int locked_read_port_count;
+	int locked_write_port_count;
 
 	/* Waiting list of events */
 	struct gpu_cache_stack_t *waiting_list_head, *waiting_list_tail;
@@ -323,11 +327,12 @@ extern int EV_GPU_CACHE_READ_REQUEST;
 extern int EV_GPU_CACHE_READ_REQUEST_RECEIVE;
 extern int EV_GPU_CACHE_READ_REQUEST_REPLY;
 extern int EV_GPU_CACHE_READ_REQUEST_FINISH;
+extern int EV_GPU_CACHE_READ_UNLOCK;
 extern int EV_GPU_CACHE_READ_FINISH;
 
 extern int EV_GPU_CACHE_WRITE;
 extern int EV_GPU_CACHE_WRITE_REQUEST_RECEIVE;
-extern int EV_GPU_CACHE_WRITE_FINISH_LOCAL;
+extern int EV_GPU_CACHE_WRITE_UNLOCK;
 extern int EV_GPU_CACHE_WRITE_FINISH;
 
 /* Stack for event-driven simulation */
@@ -346,6 +351,8 @@ struct gpu_cache_stack_t
 	uint32_t bank_index;
 	int read_port_index;
 	int write_port_index;
+	int pending;
+	int hit;
 
 	/* Linked list for waiting events */
 	int waiting_list_event;  /* Event to schedule when stack is woken up */
