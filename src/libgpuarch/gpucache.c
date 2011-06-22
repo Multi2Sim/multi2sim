@@ -28,7 +28,6 @@
  * Global variables
  */
 
-struct repos_t *gpu_mem_access_repos;
 int gpu_cache_debug_category;
 
 
@@ -142,9 +141,6 @@ void gpu_cache_init(void)
 	gpu->global_memory->net_hi = gpu->networks[1];
 	gpu->global_memory->net_lo = NULL;
 
-	/* GPU memory access repository */
-	gpu_mem_access_repos = repos_create(sizeof(struct gpu_mem_access_t), "gpu_mem_access_repos");
-
 	/* Events */
 	EV_GPU_CACHE_READ = esim_register_event(gpu_cache_handler_read);
 	EV_GPU_CACHE_READ_REQUEST = esim_register_event(gpu_cache_handler_read);
@@ -177,9 +173,6 @@ void gpu_cache_done(void)
 	for (i = 0; i < gpu->network_count; i++)
 		net_free(gpu->networks[i]);
 	free(gpu->networks);
-
-	/* GPU memory access repository */
-	repos_free(gpu_mem_access_repos);
 
 	/* GPU cache stack repository */
 	repos_free(gpu_cache_stack_repos);

@@ -68,8 +68,8 @@ AR = ar
 ARFLAGS = cru
 libgpuarch_a_AR = $(AR) $(ARFLAGS)
 libgpuarch_a_LIBADD =
-am_libgpuarch_a_OBJECTS = coalesce.$(OBJEXT) gpuarch.$(OBJEXT) \
-	gpucache.$(OBJEXT) stg_schedule.$(OBJEXT) stg_fetch.$(OBJEXT) \
+am_libgpuarch_a_OBJECTS = gpuarch.$(OBJEXT) gpucache.$(OBJEXT) \
+	stg_schedule.$(OBJEXT) stg_fetch.$(OBJEXT) \
 	stg_decode.$(OBJEXT) stg_read.$(OBJEXT) stg_execute.$(OBJEXT) \
 	stg_write.$(OBJEXT)
 libgpuarch_a_OBJECTS = $(am_libgpuarch_a_OBJECTS)
@@ -179,7 +179,6 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libgpuarch.a
 libgpuarch_a_SOURCES = \
-	coalesce.c \
 	gpuarch.h \
 	gpuarch.c \
 	gpucache.c \
@@ -280,7 +279,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coalesce.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuarch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpucache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_decode.Po@am__quote@

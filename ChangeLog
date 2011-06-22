@@ -1,3 +1,141 @@
+2011-06-22 20:31  ubal
+
+	* src/libgpuarch/gpuarch.h, src/libgpuarch/gpucache.c,
+	  src/libgpuarch/stg_read.c: GPU memory hierarchy: WRITE branch of
+	  events.
+
+2011-06-21 20:41  ubal
+
+	* src/libgpuarch/gpucache.c, src/m2s.c: GPU cache system: READ
+	  event graph
+
+2011-06-21 15:19  ubal
+
+	* src/libgpuarch/Makefile.am, src/libgpuarch/Makefile.in,
+	  src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/gpucache.c, src/libgpuarch/stg_read.c:
+	  EV_GPU_CACHE_READ
+
+2011-06-21 13:46  ubal
+
+	* src/libesim/esim.c, src/libesim/esim.h, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/gpucache.c, src/libgpuarch/stg_read.c,
+	  src/libgpuarch/stg_schedule.c, src/m2s.c: 'libesim' finalization.
+
+2011-06-21 12:57  ubal
+
+	* src/libgpuarch/Makefile.am, src/libgpuarch/Makefile.in,
+	  src/libgpuarch/gpuarch.h, src/libgpuarch/gpucache.c, src/m2s.c:
+	  Command-line, event-driven GPU cache simulation.
+
+2011-06-21 12:00  ubal
+
+	* configure, configure.in, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/gpucache.c: Check for elf.h header. Waiting lists
+	  in GPU cache system.
+
+2011-06-17 16:07  ubal
+
+	* src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h, src/m2s.c:
+	  Stack faults debug info dumped in separate file, using option
+	  '--debug-gpu-stack-faults'.
+
+2011-06-16 17:54  ubal
+
+	* README: Cache coherence problem description for GPUs.
+
+2011-06-15 19:38  ubal
+
+	* src/libgpuarch/stg_schedule.c: Dumping wavefront ID in active
+	  mask operations.
+
+2011-06-15 19:34  ubal
+
+	* README, src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/m2s.c: GPU-REL: insertion of faults in the active mask stack.
+
+2011-06-15 15:44  ubal
+
+	* src/libgpuarch/Makefile.am, src/libgpuarch/Makefile.in,
+	  src/libgpuarch/coalesce.c, src/libgpuarch/gpuarch.c,
+	  src/libgpuarch/gpuarch.h, src/libgpuarch/gpucache.c: Initial GPU
+	  memory hierarchy.
+
+2011-06-14 19:19  ubal
+
+	* src/libgpuarch/stg_decode.c, src/libgpuarch/stg_execute.c,
+	  src/libgpuarch/stg_read.c: GPU pipeline debug messages.
+
+2011-06-14 18:44  ubal
+
+	* src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/stg_decode.c, src/libgpuarch/stg_execute.c,
+	  src/libgpuarch/stg_fetch.c, src/libgpuarch/stg_read.c,
+	  src/libgpuarch/stg_schedule.c, src/libgpuarch/stg_write.c,
+	  src/libgpudisasm/gpudisasm.dat, src/libgpudisasm/gpudisasm.h,
+	  src/libgpukernel/gpukernel.c, src/libgpukernel/gpukernel.h,
+	  src/libmisc/misc.c, src/libmisc/misc.h, src/libstruct/debug.c,
+	  src/m2s.c, tools/m2s-opencl-kc/m2s-opencl-kc.c: Added function
+	  'str_single_spaces' in string manipulation functions in
+	  'libmisc'.
+	  GPU pipeline debug info updates.
+	  Warning removed in 'm2s-opencl-kc' tool.
+	  Debug information of active mask stack updates.
+
+2011-06-14 03:17  ubal
+
+	* configure, configure.in: 'configure.in' updated using 'autoscan'
+	  tool.
+
+2011-06-12 20:21  ubal
+
+	* src/libcachesystem/cachesystem.c, src/libgpuarch/Makefile.am,
+	  src/libgpuarch/Makefile.in, src/libgpuarch/coalesce.c,
+	  src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/stg_read.c, src/libgpuarch/stg_schedule.c,
+	  src/libgpudisasm/gpudisasm.dat, src/libgpudisasm/gpudisasm.h:
+	  Bugs fixed in libcachesystem, which were introduced by the new
+	  libstruct/config.c implementation. When sections are enumerated
+	  with 'config_section_first' and 'config_section_next', writes
+	  cannot be made ('config_write_ptr'). Otherwise, the enumeration
+	  might be messed up.
+
+2011-06-10 20:08  ubal
+
+	* src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/stg_read.c, src/libgpuarch/stg_schedule.c,
+	  src/libgpukernel/gpukernel.h, src/libgpukernel/gpumachine.c:
+	  Global memory access trace.
+
+2011-06-09 22:26  ubal
+
+	* src/libgpukernel/gpukernel.c, src/libgpukernel/gpukernel.h,
+	  src/libgpukernel/opencl.c, src/m2s.c: GPU statistics from
+	  functional simulation obtainable with option '--report-gpu
+	  <file>'.
+
+2011-06-09 21:58  ubal
+
+	* ChangeLog, configure, configure.in, src/Makefile.am,
+	  src/Makefile.in, src/libcachesystem/Makefile.am,
+	  src/libcachesystem/Makefile.in, src/libcpuarch/Makefile.am,
+	  src/libcpuarch/Makefile.in, src/libcpudisasm/Makefile.am,
+	  src/libcpudisasm/Makefile.in, src/libcpukernel/Makefile.am,
+	  src/libcpukernel/Makefile.in, src/libesim/Makefile.am,
+	  src/libesim/Makefile.in, src/libgpuarch/Makefile.am,
+	  src/libgpuarch/Makefile.in, src/libgpudisasm/Makefile.am,
+	  src/libgpudisasm/Makefile.in, src/libgpukernel/Makefile.am,
+	  src/libgpukernel/Makefile.in, src/libgpukernel/gpukernel.c,
+	  src/libgpukernel/gpukernel.h, src/libmisc/Makefile.am,
+	  src/libmisc/Makefile.in, src/libnetwork/Makefile.am,
+	  src/libnetwork/Makefile.in, src/libopt/Makefile.am,
+	  src/libopt/Makefile.in, src/libstruct/Makefile.am,
+	  src/libstruct/Makefile.in: ChangeLog modified, generated
+	  automatically from SVN logs using script.
+	  Makefiles changed to use different optimization flags and debug
+	  information depending on flags '--enable-debug={yes|no}' in
+	  './configure' script.
+
 2011-06-08 11:59  ubal
 
 	* Makefile.am, Makefile.in, samples/cacheconfig.multicore,
