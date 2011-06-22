@@ -539,5 +539,8 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		/* Event-driven module */
 		esim_process_events();
 	}
+
+	/* Dump stats */
+	gpu_ndrange_dump(ndrange, gpu_report_file);
 }
 
