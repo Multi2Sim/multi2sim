@@ -59,10 +59,10 @@ static char *sim_help =
 	"\n"
 	"List of supported options:\n"
 	"\n"
-	"  --cache-config <file>\n"
-	"      Configuration file for the cache memory hierarchy, including cache levels,\n"
-	"      cache geometry, latencies, and interconnection networks. Type\n"
-	"      'm2s --help-cache-config' for details on the file format.\n"
+	"  --cpu-cache-config <file>\n"
+	"      Configuration file for the cache memory hierarchy on the CPU, including\n"
+	"      caches geometry, latencies, or interconnection networks. Type\n"
+	"      'm2s --help-cpu-cache-config' for details on the file format.\n"
 	"\n"
 	"  --cpu-config <file>\n"
 	"      Configuration file for the CPU model, including parameters describing the\n"
@@ -94,8 +94,8 @@ static char *sim_help =
 	"            pipeline. This option requires '--gpu-sim detailed' option.\n"
 	"        --debug-loader: information for the x86 ELF binary analysis performed\n"
 	"            by the program loader.\n"
-	"        --debug-cache: event trace of block transfers and requests in the\n"
-	"            cache memory hierarchy.\n"
+	"        --debug-cpu-cache: event trace of block transfers and requests in the\n"
+	"            CPU cache memory hierarchy.\n"
 	"        --debug-call: trace of function calls, based on emulated x86 instr.\n"
 	"        --debug-cpu-isa: trace of emulated x86 ISA instructions.\n"
 	"        --debug-cpu-pipeline: trace of x86 microinstructions in the CPU pipeline.\n"
@@ -115,7 +115,7 @@ static char *sim_help =
 	"  --help-<xxx>\n"
 	"      Show help on the format of configuration files for Multi2Sim. <xxx> stands\n"
 	"      for one of the following options:\n"
-	"        --help-cache-config: format of the configuration file for the cache system.\n"
+	"        --help-cpu-cache-config: format of the CPU cache configuration file.\n"
 	"        --help-cpu-config: format of the CPU model configuration file.\n"
 	"        --help-ctx-config: format of the context configuration file.\n"
 	"        --help-gpu-config: format of the GPU model configuration file.\n"
@@ -140,18 +140,18 @@ static char *sim_help =
 	"      performs a call to 'clCreateProgramWithSource'. Since on-line compilation\n"
 	"      of OpenCL kernels is not supported, this is a possible way to load them.\n"
 	"\n"
-	"  --report-cache <file>\n"
-	"      File to dump detailed statistics related with the memory hierarchy, such as\n"
-	"      cache misses, hits, evictions, etc. Use only together with a detailed CPU\n"
-	"      simulation (option '--cpu-sim detailed').\n"
-	"\n"
-	"  --report-cpu <file>\n"
+	"  --report-cpu-pipeline <file>\n"
 	"      File to dump a report of the CPU pipeline, such as number of instructions\n"
 	"      handled in every pipeline stage, or read/write accesses performed to\n"
 	"      pipeline queues (ROB, IQ, etc.). Use only together with a detailed CPU\n"
 	"      simulation (option '--cpu-sim detailed').\n"
 	"\n"
-	"  --report-gpu <file>\n"
+	"  --report-cpu-cache <file>\n"
+	"      File to dump detailed statistics related with the memory hierarchy, such as\n"
+	"      cache misses, hits, evictions, etc. Use only together with a detailed CPU\n"
+	"      simulation (option '--cpu-sim detailed').\n"
+	"\n"
+	"  --report-gpu-kernel <file>\n"
 	"      File to dump report of a GPU device kernel emulation. The report includes\n"
 	"      statistics about type of instructions, VLIW packing, thread divergence, etc.\n"
 	"\n";
@@ -170,7 +170,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	for (argi = 1; argi < argc; argi++) {
 
 		/* Cache system configuration file */
-		if (!strcmp(argv[argi], "--cache-config")) {
+		if (!strcmp(argv[argi], "--cpu-cache-config")) {
 			if (argi == argc - 1)
 				fatal("option '%s' must be followed by a cache configuration file name.\n%s",
 					argv[argi], err_help_note);
@@ -215,16 +215,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Cache system debug */
-		if (!strcmp(argv[argi], "--debug-cache")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for the cache system debug info.\n%s",
-					argv[argi], err_help_note);
-			argi++;
-			cache_debug_file_name = argv[argi];
-			continue;
-		}
-
 		/* Function calls debug file */
 		if (!strcmp(argv[argi], "--debug-call")) {
 			if (argi == argc - 1)
@@ -235,6 +225,16 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 		
+		/* Cache system debug */
+		if (!strcmp(argv[argi], "--debug-cpu-cache")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by a file name for the cache system debug info.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			cache_debug_file_name = argv[argi];
+			continue;
+		}
+
 		/* CPU ISA debug file */
 		if (!strcmp(argv[argi], "--debug-cpu-isa")) {
 			if (argi == argc - 1)
@@ -398,7 +398,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Help for cache configuration file */
-		if (!strcmp(argv[argi], "--help-cache-config")) {
+		if (!strcmp(argv[argi], "--help-cpu-cache-config")) {
 			fprintf(stderr, "%s", cache_system_config_help);
 			continue;
 		}
@@ -462,7 +462,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Cache system report */
-		if (!strcmp(argv[argi], "--report-cache")) {
+		if (!strcmp(argv[argi], "--report-cpu-cache")) {
 			if (argi == argc - 1)
 				fatal("option '%s' must be followed by a cache report file name.\n%s",
 					argv[argi], err_help_note);
@@ -472,7 +472,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Pipeline report */
-		if (!strcmp(argv[argi], "--report-cpu")) {
+		if (!strcmp(argv[argi], "--report-cpu-pipeline")) {
 			if (argi == argc - 1)
 				fatal("option '%s' must be followed by a pipeline report file name.\n%s",
 					argv[argi], err_help_note);
@@ -482,7 +482,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU emulation report */
-		if (!strcmp(argv[argi], "--report-gpu")) {
+		if (!strcmp(argv[argi], "--report-gpu-kernel")) {
 			if (argi == argc - 1)
 				fatal("option '%s' must be followed by a GPU report file name.\n%s",
 					argv[argi], err_help_note);
@@ -503,24 +503,32 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 	/* Check configuration consistency */
 	if (cpu_sim_kind == cpu_sim_kind_functional) {
-		if (*cpu_config_file_name || *cpu_report_file_name)
-			fatal("CPU configuration file or statistics report cannot be specified for functional CPU simulation.\n"
-				"If you want to run an architectural simulation, add option '--cpu-sim detailed'.\n");
-		if (*cache_system_config_file_name || *cache_system_report_file_name)
-			fatal("configuration file or statistics report for the cache system cannot be specified\n"
-				"for a functional simulation. If you want to run an architectural simulation,\n"
-				"add command-line option '--cpu-sim detailed'.\n");
+		char *msg = "option '%s' not valid for functional CPU simulation.\n"
+			"Please use option '--cpu-sim detailed' as well.\n";
+		if (*cache_system_config_file_name)
+			fatal(msg, "--cpu-cache-config");
+		if (*cpu_config_file_name)
+			fatal(msg, "--cpu-config");
+		if (*cache_debug_file_name)
+			fatal(msg, "--debug-cpu-cache");
+		if (*esim_debug_file_name)
+			fatal(msg, "--debug-cpu-pipeline");
+		if (*cpu_report_file_name)
+			fatal(msg, "--report-cpu-pipeline");
+		if (*cache_system_report_file_name)
+			fatal(msg, "--report-cpu-cache");
 	}
 	if (gpu_sim_kind == gpu_sim_kind_functional) {
+		char *msg = "option '%s' not valid for functional GPU simulation.\n"
+			"Please use option '--gpu-sim detailed' as well.\n";
 		if (*gpu_cache_debug_file_name)
-			fatal("option '--debug-gpu-cache' not valid for GPU functional simulation.\n"
-				"Please use option '--gpu-sim detailed' as well.\n");
+			fatal(msg, "--debug-gpu-cache");
+		if (*gpu_pipeline_debug_file_name)
+			fatal(msg, "--debug-gpu-pipeline");
 		if (*gpu_stack_faults_debug_file_name)  /* GPU-REL */
-			fatal("option '--debug-gpu-stack-faults' not valid for GPU functional simulation.\n"
-				"Please use option '--gpu-sim detailed' as well.\n");
+			fatal(msg, "--debug-gpu-stack-faults");
 		if (*gpu_config_file_name)
-			fatal("option '--gpu-config' not valid for GPU functional simulation.\n"
-				"Please use option '--gpu-sim detailed' as well.\n");
+			fatal(msg, "--gpu-config");
 	}
 
 	/* Discard arguments used as options */
