@@ -48,9 +48,6 @@ void gpu_cache_init(void)
 	int curr, i;
 	int sw_id;
 
-	/* Debug */
-	gpu_cache_debug_category = debug_new_category();
-
 	/* Initialize cache array and caches */
 	gpu->gpu_cache_count = gpu_num_compute_units + 1 + 1;  /* L1 (one per compute unit) + L2 + global mem */
 	gpu->gpu_caches = calloc(gpu->gpu_cache_count, sizeof(void *));

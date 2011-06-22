@@ -58,14 +58,6 @@ void ke_init(void)
 	/* Initialize mutex for variables controlling calls to 'ke_process_events()' */
 	pthread_mutex_init(&ke->process_events_mutex, NULL);
 
-	/* Debug categories */
-	isa_inst_debug_category = debug_new_category();
-	isa_call_debug_category = debug_new_category();
-	elf_debug_category = debug_new_category();
-	ld_debug_category = debug_new_category();
-	syscall_debug_category = debug_new_category();
-	ctx_debug_category = debug_new_category();
-
 	/* Initialize GPU */
 	gk_init();
 

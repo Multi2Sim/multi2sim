@@ -118,9 +118,6 @@ int EV_MOESI_INVALIDATE_FINISH;
 
 void moesi_init()
 {
-	/* Debug */
-	cache_debug_category = debug_new_category();
-
 	/* Events */
 	EV_MOESI_FIND_AND_LOCK = esim_register_event(moesi_handler_find_and_lock);
 	EV_MOESI_FIND_AND_LOCK_FINISH = esim_register_event(moesi_handler_find_and_lock);

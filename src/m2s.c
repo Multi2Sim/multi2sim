@@ -39,6 +39,7 @@ static char *cache_debug_file_name = "";
 static char *esim_debug_file_name = "";
 static char *error_debug_file_name = "";
 static char *ctxconfig_file_name = "";
+static char *elf_debug_file_name = "";
 
 
 /* Error debug */
@@ -70,7 +71,7 @@ static char *sim_help =
 	"\n"
 	"  --cpu-sim {functional|detailed}\n"
 	"      Choose a functional simulation (emulation) of an x86 program, versus\n"
-	"      a detailed (architectural) simulation. Simulation is function by default.\n"
+	"      a detailed (architectural) simulation. Simulation is functional by default.\n"
 	"\n"
 	"  --ctx-config <file>, -c <file>\n"
 	"      Use <file> as the context configuration file. This file describes the\n"
@@ -82,6 +83,7 @@ static char *sim_help =
 	"      Dump detailed debug information about the program simulation. <xxx> stands\n"
 	"      for one of the following options:\n"
 	"        --debug-ctx: emulated CPU context status updates.\n"
+	"        --debug-elf: debug information related to ELF files processing.\n"
 	"        --debug-syscall: detailed system calls trace and arguments.\n"
 	"        --debug-opencl: trace of OpenCL calls and their arguments.\n"
 	"        --debug-gpu-cache: trace of event-driven simulation for the GPU memory\n"
@@ -260,6 +262,16 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 					argv[argi], err_help_note);
 			argi++;
 			ctx_debug_file_name = argv[argi];
+			continue;
+		}
+
+		/* ELF debug file */
+		if (!strcmp(argv[argi], "--debug-elf")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by an ELF debug file name.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			elf_debug_file_name = argv[argi];
 			continue;
 		}
 
@@ -548,23 +560,19 @@ int main(int argc, char **argv)
 
 	/* Debug */
 	debug_init();
-
-	error_debug_category = debug_new_category();
-	gpu_stack_faults_debug_category = debug_new_category();  /* GPU-REL */
-	gpu_pipeline_debug_category = debug_new_category();
-
-	debug_assign_file(ctx_debug_category, ctx_debug_file_name);
-	debug_assign_file(syscall_debug_category, syscall_debug_file_name);
-	debug_assign_file(opencl_debug_category, opencl_debug_file_name);
-	debug_assign_file(gpu_isa_debug_category, gpu_isa_debug_file_name);
-	debug_assign_file(gpu_pipeline_debug_category, gpu_pipeline_debug_file_name);
-	debug_assign_file(gpu_cache_debug_category, gpu_cache_debug_file_name);
-	debug_assign_file(ld_debug_category, loader_debug_file_name);
-	debug_assign_file(isa_call_debug_category, isa_call_debug_file_name);
-	debug_assign_file(isa_inst_debug_category, isa_inst_debug_file_name);
-	debug_assign_file(cache_debug_category, cache_debug_file_name);
-	debug_assign_file(error_debug_category, error_debug_file_name);
-	debug_assign_file(gpu_stack_faults_debug_category, gpu_stack_faults_debug_file_name);  /* GPU-REL */
+	isa_inst_debug_category = debug_new_category(isa_inst_debug_file_name);
+	isa_call_debug_category = debug_new_category(isa_call_debug_file_name);
+	elf_debug_category = debug_new_category(elf_debug_file_name);
+	ld_debug_category = debug_new_category(loader_debug_file_name);
+	syscall_debug_category = debug_new_category(syscall_debug_file_name);
+	ctx_debug_category = debug_new_category(ctx_debug_file_name);
+	gpu_cache_debug_category = debug_new_category(gpu_cache_debug_file_name);
+	cache_debug_category = debug_new_category(cache_debug_file_name);
+	opencl_debug_category = debug_new_category(opencl_debug_file_name);
+	gpu_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
+	gpu_stack_faults_debug_category = debug_new_category(gpu_stack_faults_debug_file_name);  /* GPU-REL */
+	gpu_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);
+	error_debug_category = debug_new_category(error_debug_file_name);
 	esim_debug_init(esim_debug_file_name);
 
 	/* Load programs */

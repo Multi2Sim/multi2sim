@@ -63,24 +63,6 @@ void debug_done(void)
 }
 
 
-int debug_new_category(void)
-{
-	struct category_t *c;
-	if (category_count == category_list_size) {
-		category_list_size += 10;
-		category_list = realloc(category_list, sizeof(struct category_t) * category_list_size);
-		if (!category_list)
-			abort();
-	}
-	c = &category_list[category_count];
-	c->status = 1;
-	c->f = NULL;
-	c->filename = NULL;
-	c->space_count = 0;
-	return category_count++;
-}
-
-
 FILE *debug_assign_file(int category, char *filename)
 {
 	FILE *f;
@@ -97,6 +79,32 @@ FILE *debug_assign_file(int category, char *filename)
 	category_list[category].f = f;
 	category_list[category].filename = filename;
 	return f;
+}
+
+
+int debug_new_category(char *filename)
+{
+	struct category_t *c;
+	if (category_count == category_list_size) {
+		category_list_size += 10;
+		category_list = realloc(category_list, sizeof(struct category_t) * category_list_size);
+		if (!category_list)
+			abort();
+	}
+	c = &category_list[category_count++];
+
+	/* Initialize */
+	c->status = 1;
+	c->f = NULL;
+	c->filename = NULL;
+	c->space_count = 0;
+
+	/* Assign file name */
+	if (filename && *filename)
+		debug_assign_file(category_count - 1, filename);
+
+	/* Return new category index */
+	return category_count - 1;
 }
 
 
