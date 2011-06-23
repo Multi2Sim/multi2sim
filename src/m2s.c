@@ -103,6 +103,10 @@ static char *sim_help =
 	"            to obtain graphical timing diagrams.\n"
 	"        --debug-error: on simulation crashes, dump of the modeled CPU state.\n"\
 	"\n"
+	"  --gpu-cache-config <file>\n"
+	"      Configuration file for the GPU cache hierarchy (global memory scope). Please\n"
+	"      type 'm2s --help-gpu-cache-config' for a description of the file format.\n"
+	"\n"
 	"  --gpu-config <file>\n"
 	"      Configuration file for the GPU model, including parameters such as number of\n"
 	"      compute units, stream cores, or wavefront size. Type 'm2s --help-gpu-config'\n"
@@ -118,6 +122,7 @@ static char *sim_help =
 	"        --help-cpu-cache-config: format of the CPU cache configuration file.\n"
 	"        --help-cpu-config: format of the CPU model configuration file.\n"
 	"        --help-ctx-config: format of the context configuration file.\n"
+	"        --help-gpu-cache-config: format of the GPU cache configuration file.\n"
 	"        --help-gpu-config: format of the GPU model configuration file.\n"
 	"\n"
 	"  --max-cycles <num_cycles>\n"
@@ -284,27 +289,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			error_debug_file_name = argv[argi];
 			continue;
 		}
-
-		/* GPU configuration file */
-		if (!strcmp(argv[argi], "--gpu-config")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a GPU configuration file name.\n%s",
-					argv[argi], err_help_note);
-			argi++;
-			gpu_config_file_name = argv[argi];
-			continue;
-		}
-
-		/* GPU-REL: file to introduce faults in active mask stack */
-		if (!strcmp(argv[argi], "--gpu-stack-faults")) {
-			if (argi == argc - 1)
-				fatal("option '%s' required file name.\n%s",
-					argv[argi], err_help_note);
-			argi++;
-			gpu_stack_faults_file_name = argv[argi];
-			continue;
-		}
-
 		/* GPU ISA debug file */
 		if (!strcmp(argv[argi], "--debug-gpu-isa")) {
 			if (argi == argc - 1)
@@ -315,13 +299,13 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* GPU-REL: debug file for stack faults */
-		if (!strcmp(argv[argi], "--debug-gpu-stack-faults")) {
+		/* GPU cache debug file */
+		if (!strcmp(argv[argi], "--debug-gpu-cache")) {
 			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name.\n%s",
+				fatal("option '%s' requires a debug file name for the GPU cache system.\n%s",
 					argv[argi], err_help_note);
 			argi++;
-			gpu_stack_faults_debug_file_name = argv[argi];
+			gpu_cache_debug_file_name = argv[argi];
 			continue;
 		}
 
@@ -335,13 +319,13 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* GPU cache debug file */
-		if (!strcmp(argv[argi], "--debug-gpu-cache")) {
+		/* GPU-REL: debug file for stack faults */
+		if (!strcmp(argv[argi], "--debug-gpu-stack-faults")) {
 			if (argi == argc - 1)
-				fatal("option '%s' requires a debug file name for the GPU cache system.\n%s",
+				fatal("option '%s' must be followed by a file name.\n%s",
 					argv[argi], err_help_note);
 			argi++;
-			gpu_cache_debug_file_name = argv[argi];
+			gpu_stack_faults_debug_file_name = argv[argi];
 			continue;
 		}
 
@@ -375,6 +359,27 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+
+		/* GPU cache configuration file */
+		if (!strcmp(argv[argi], "--gpu-cache-config")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by a GPU cache configuration file name.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			gpu_cache_config_file_name = argv[argi];
+			continue;
+		}
+
+		/* GPU configuration file */
+		if (!strcmp(argv[argi], "--gpu-config")) {
+			if (argi == argc - 1)
+				fatal("option '%s' must be followed by a GPU configuration file name.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			gpu_config_file_name = argv[argi];
+			continue;
+		}
+
 		/* GPU simulation accuracy */
 		if (!strcmp(argv[argi], "--gpu-sim")) {
 			if (argi == argc - 1)
@@ -388,6 +393,16 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], err_help_note);
+			continue;
+		}
+
+		/* GPU-REL: file to introduce faults in active mask stack */
+		if (!strcmp(argv[argi], "--gpu-stack-faults")) {
+			if (argi == argc - 1)
+				fatal("option '%s' required file name.\n%s",
+					argv[argi], err_help_note);
+			argi++;
+			gpu_stack_faults_file_name = argv[argi];
 			continue;
 		}
 
@@ -418,6 +433,12 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		/* Help for GPU configuration file */
 		if (!strcmp(argv[argi], "--help-gpu-config")) {
 			fprintf(stderr, "%s", gpu_config_help);
+			continue;
+		}
+
+		/* Help for GPU cache configuration file */
+		if (!strcmp(argv[argi], "--help-gpu-cache-config")) {
+			fprintf(stderr, "%s", gpu_cache_config_help);
 			continue;
 		}
 
@@ -527,6 +548,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--debug-gpu-pipeline");
 		if (*gpu_stack_faults_debug_file_name)  /* GPU-REL */
 			fatal(msg, "--debug-gpu-stack-faults");
+		if (*gpu_cache_config_file_name)
+			fatal(msg, "--gpu-cache-config");
 		if (*gpu_config_file_name)
 			fatal(msg, "--gpu-config");
 	}

@@ -75,7 +75,7 @@ char *cpu_config_help =
 	"      Set these options to true to simulate a perfect data/instruction caches,\n"
 	"      respectively, where every access results in a hit. If set to false, the\n"
 	"      parameters of the caches are given in the cache system configuration file\n"
-	"      (option --cache-config <file>).\n"
+	"      (option --cpu-cache-config <file>).\n"
 	"\n"
 	"Section '[ Pipeline ]':\n"
 	"\n"
