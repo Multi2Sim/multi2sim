@@ -22,7 +22,7 @@
 char *cache_system_config_help =
 	"The cache system configuration file is plain text file in the IniFile format,\n"
 	"describing the model for the memory hierarchy and interconnection networks.\n"
-	"This file is passed to Multi2Sim with option '--cache-config <file>', and\n"
+	"This file is passed to Multi2Sim with option '--cpu-cache-config <file>', and\n"
 	"should be used together with option '--cpu-sim detailed' to perform an\n"
 	"architectural simulation.\n"
 	"\n"
@@ -38,7 +38,8 @@ char *cache_system_config_help =
 	"      Cache associativity. The total number of blocks contained in the cache\n"
 	"      is given by the product Sets * Assoc.\n"
 	"  BlockSize = <size> (Required)\n"
-	"      Size of a cache block in bytes.\n"
+	"      Size of a cache block in bytes. The total size of the cache is given by\n"
+	"      the product Sets * Assoc * BlockSize.\n"
 	"  Latency = <num_cycles> (Required)\n"
 	"      Hit latency for a cache in number of CPU cycles.\n"
 	"  Policy = {LRU|FIFO|Random} (Default = LRU)\n"

@@ -222,6 +222,9 @@ void gpu_uop_free(struct gpu_uop_t *gpu_uop);
  * Cache system
  */
 
+extern char *gpu_cache_config_file_name;
+extern char *gpu_cache_config_help;
+
 
 /* GPU Cache Port */
 struct gpu_cache_port_t
