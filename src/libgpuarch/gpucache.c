@@ -30,6 +30,46 @@
 
 int gpu_cache_debug_category;
 
+char *gpu_cache_config_file_name = "";
+char *gpu_cache_config_help =
+	"The GPU memory hierarchy can be configured by using an IniFile formatted file,\n"
+	"describing the cache and interconnect properties. This file is passed to\n"
+	"Multi2Sim with option '--gpu-cache-config <file>', and should be always used\n"
+	"together with option '--gpu-sim detailed' for an architectural GPU simulation.\n"
+	"\n"
+	"The sections and variables allowed in the cache configuration file are the\n"
+	"following:\n"
+	"\n"
+	"Section '[ CacheGeometry <name> ]': defines a geometry for a cache. Caches\n"
+	"using this geometry can be instantiated later.\n"
+	"\n"
+	"  Sets = <num_sets> (Required)\n"
+	"      Number of sets in the cache.\n"
+	"  Assoc = <num_ways> (Required)\n"
+	"      Cache associativity. The total number of blocks contained in the cache\n"
+	"      is given by the product Sets * Assoc.\n"
+	"  BlockSize = <size> (Required)\n"
+	"      Size of a cache block in bytes. The total size of the cache is given by\n"
+	"      the product Sets * Assoc * BlockSize.\n"
+	"  Latency = <num_cycles> (Required)\n"
+	"      Hit latency for a cache in number of CPU cycles.\n"
+	"  Policy = {LRU|FIFO|Random} (Default = LRU)\n"
+	"      Block replacement policy.\n"
+	"  Banks = <num> (Default = 1)\n"
+	"      Number of banks.\n"
+	"  ReadPorts = <num> (Default = 2)\n"
+	"      Number of read ports per bank.\n"
+	"  WritePorts = <num> (Default = 1)\n"
+	"      Number of write ports per bank.\n"
+	"\n"
+	"Section '[ Net <name> ]': defines an interconnection network.\n"
+	"\n"
+	"  Topology = {Bus|P2P} (Required)\n"
+	"      Interconnection network topology.\n"
+	"  LinkWidth = <width> (Required)\n"
+	"      Link bandwidth in bytes per cycle.\n"
+	"\n";
+
 
 
 /*
