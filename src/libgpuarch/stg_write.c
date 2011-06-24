@@ -50,6 +50,10 @@ void gpu_compute_unit_write(struct gpu_compute_unit_t *compute_unit)
 		subwavefront_id,
 		compute_unit->id);
 	
+	/* Write access to global memory */
+	if (uop->global_mem_access == 2)
+		gpu_uop_mem_access(uop, subwavefront_id, uop->global_mem_access);
+
 	/* Last 'subwavefront_id', free uop.
 	 * If it is the last uop in work-group, set compute unit as idle.*/
 	if (subwavefront_id == uop->subwavefront_count - 1) {
