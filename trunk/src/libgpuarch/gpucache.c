@@ -647,29 +647,21 @@ void gpu_cache_free(struct gpu_cache_t *gpu_cache)
 }
 
 
-void gpu_cache_read(int compute_unit_id, uint32_t addr, uint32_t size)
+/* Access the GPU global memory hierarchy.
+ * Argument 'access' defineds whether it is a read (1) or a write (2). */
+void gpu_cache_access(int compute_unit_id, int access, uint32_t addr, uint32_t size)
 {
 	struct gpu_cache_stack_t *stack;
+	int event;
 
 	gpu_cache_stack_id++;
 	assert(IN_RANGE(compute_unit_id, 0, gpu_num_compute_units));
 	stack = gpu_cache_stack_create(gpu_cache_stack_id,
 		gpu->gpu_caches[compute_unit_id], addr,
 		ESIM_EV_NONE, NULL);
-	esim_schedule_event(EV_GPU_CACHE_READ, stack, 0);
-}
-
-
-void gpu_cache_write(int compute_unit_id, uint32_t addr, uint32_t size)
-{
-	struct gpu_cache_stack_t *stack;
-
-	gpu_cache_stack_id++;
-	assert(IN_RANGE(compute_unit_id, 0, gpu_num_compute_units));
-	stack = gpu_cache_stack_create(gpu_cache_stack_id,
-		gpu->gpu_caches[compute_unit_id], addr,
-		ESIM_EV_NONE, NULL);
-	esim_schedule_event(EV_GPU_CACHE_WRITE, stack, 0);
+	assert(access == 1 || access == 2);
+	event = access == 1 ? EV_GPU_CACHE_READ : EV_GPU_CACHE_WRITE;
+	esim_schedule_event(event, stack, 0);
 }
 
 
