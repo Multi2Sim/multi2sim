@@ -216,6 +216,8 @@ struct gpu_uop_t
 struct gpu_uop_t *gpu_uop_create();
 void gpu_uop_free(struct gpu_uop_t *gpu_uop);
 
+void gpu_uop_mem_access(struct gpu_uop_t *uop, int subwavefront_id, int access);
+
 
 
 
@@ -303,8 +305,7 @@ void gpu_cache_free(struct gpu_cache_t *gpu_cache);
 void gpu_cache_init(void);
 void gpu_cache_done(void);
 
-void gpu_cache_read(int compute_unit_id, uint32_t addr, uint32_t size);
-void gpu_cache_write(int compute_unit_id, uint32_t addr, uint32_t size);
+void gpu_cache_access(int compute_unit_id, int access, uint32_t addr, uint32_t size);
 
 
 

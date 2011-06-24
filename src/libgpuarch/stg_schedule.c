@@ -88,9 +88,9 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 		
 		inst_num = (wavefront->cf_buf - ndrange->kernel->cal_abi->text_buffer) / 8;
 		gpu_wavefront_execute(wavefront);
-		amd_inst_copy(&uop->inst, &wavefront->cf_inst);
+		amd_inst_copy(&uop->inst, uop->clause_kind == GPU_CLAUSE_CF ?
+			&wavefront->cf_inst : &wavefront->tc_inst);
 
-		/* Record lobal memory access */
 		if (uop->inst.info->flags & AMD_INST_FLAG_MEM) {
 			
 			struct gpu_work_item_uop_t *work_item_uop;
@@ -98,7 +98,7 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 			int work_item_id;
 
 			assert((uop->inst.info->flags & AMD_INST_FLAG_MEM_READ) ||
-				(uop->inst.info->flags & AMD_INST_FLAG_MEM_WRITE));
+					(uop->inst.info->flags & AMD_INST_FLAG_MEM_WRITE));
 			uop->global_mem_access = (uop->inst.info->flags & AMD_INST_FLAG_MEM_READ) ? 1 : 2;
 			FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
 				work_item = ndrange->work_items[work_item_id];
@@ -123,7 +123,7 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 	case GPU_CLAUSE_ALU:
 		gpu_wavefront_execute(wavefront);
 		amd_alu_group_copy(&uop->alu_group, &wavefront->alu_group);
-
+		
 		if (debug_status(gpu_pipeline_debug_category)) {
 			for (i = 0; i < wavefront->alu_group.inst_count; i++) {
 				struct amd_inst_t *inst = &wavefront->alu_group.inst[i];
@@ -218,7 +218,6 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 	assert(INIT_SCHEDULE.subwavefront_id >= 0 && INIT_SCHEDULE.subwavefront_id < gpu_compute_unit_time_slots);
 	
 	/* Create uop and emulate if this is the beginning of a wavefront */
-	uop = INIT_SCHEDULE.uop;
 	if (!INIT_SCHEDULE.subwavefront_id) {
 		
 		/* Create */
@@ -240,6 +239,8 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 		/* Emulate */
 		gpu_uop_emulate(uop);
 		INIT_SCHEDULE.uop = uop;
+	} else {
+		uop = INIT_SCHEDULE.uop;
 	}
 	
 	/* Debug */
