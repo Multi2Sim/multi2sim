@@ -83,8 +83,9 @@ struct gpu_compute_unit_t
 	struct gpu_compute_unit_t *idle_prev, *idle_next;
 	struct gpu_compute_unit_t *busy_prev, *busy_next;
 
-	/* Entry point for global memory hierarchy */
-	struct gpu_cache_t *gpu_cache;
+	/* Entry points to global memory hierarchy */
+	struct gpu_cache_t *gpu_cache_inst;
+	struct gpu_cache_t *gpu_cache_data;
 
 	/* Initial pipe register (for Schedule stage state) */
 	struct {
@@ -296,7 +297,7 @@ struct gpu_cache_t
 #define gpu_cache_debug(...) debug(gpu_cache_debug_category, __VA_ARGS__)
 extern int gpu_cache_debug_category;
 
-struct gpu_cache_t *gpu_cache_create(void);
+struct gpu_cache_t *gpu_cache_create(int bank_count, int read_port_count, int write_port_count);
 void gpu_cache_free(struct gpu_cache_t *gpu_cache);
 
 void gpu_cache_init(void);

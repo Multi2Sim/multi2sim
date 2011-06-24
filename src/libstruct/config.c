@@ -259,6 +259,10 @@ int config_load(struct config_t *cfg)
 		if (!line_ptr)
 			break;
 		trim(line_trim, line);
+
+		/* Comment */
+		if (line_trim[0] == ';')
+			continue;
 		
 		/* New "[ <section> ]" entry */
 		if (line_trim[0] == '[' && line_trim[strlen(line_trim) - 1] == ']') {
@@ -384,6 +388,17 @@ char *config_section_next(struct config_t *cfg)
 
 void config_write_string(struct config_t *cfg, char *section, char *var, char *value)
 {
+	char item[MAX_STRING_SIZE];
+
+	/* Add section and variable to the set of allowed items, as long as
+	 * it is not added already as a mandatory item. */
+	get_item_from_section_var(section, var, item);
+	if (!hashtable_get(cfg->allowed_items, section))
+		hashtable_insert(cfg->allowed_items, section, ITEM_ALLOWED);
+	if (!hashtable_get(cfg->allowed_items, item))
+		hashtable_insert(cfg->allowed_items, item, ITEM_ALLOWED);
+	
+	/* Write value */
 	config_insert_section(cfg, section);
 	config_insert_var(cfg, section, var, value);
 }
@@ -609,7 +624,7 @@ void config_var_allow(struct config_t *cfg, char *section, char *var)
 }
 
 
-void config_key_enforce(struct config_t *cfg, char *section, char *var)
+void config_var_enforce(struct config_t *cfg, char *section, char *var)
 {
 	allowed_items_insert(cfg, section, var, ITEM_MANDATORY);
 }
