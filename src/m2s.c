@@ -576,19 +576,6 @@ int main(int argc, char **argv)
 	/* Read command line */
 	sim_read_command_line(&argc, argv);
 
-	/* Initialization for functional simulation */
-	ke_init();
-	esim_init();
-	net_init();
-
-	/* Initialization for detailed simulation */
-	if (cpu_sim_kind == cpu_sim_kind_detailed) {
-		uop_init();
-		cpu_init();
-	}
-	if (gpu_sim_kind == gpu_sim_kind_detailed)
-		gpu_init();
-
 	/* Debug */
 	debug_init();
 	isa_inst_debug_category = debug_new_category(isa_inst_debug_file_name);
@@ -605,6 +592,19 @@ int main(int argc, char **argv)
 	gpu_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);
 	error_debug_category = debug_new_category(error_debug_file_name);
 	esim_debug_init(esim_debug_file_name);
+
+	/* Initialization for functional simulation */
+	ke_init();
+	esim_init();
+	net_init();
+
+	/* Initialization for detailed simulation */
+	if (cpu_sim_kind == cpu_sim_kind_detailed) {
+		uop_init();
+		cpu_init();
+	}
+	if (gpu_sim_kind == gpu_sim_kind_detailed)
+		gpu_init();
 
 	/* Load programs */
 	cpu_load_progs(argc, argv, ctxconfig_file_name);
