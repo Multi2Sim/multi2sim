@@ -618,7 +618,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Flush event-driven simulation */
-	esim_process_all_events(1000);
+	esim_process_all_events(1 << 20);
 
 	/* Finalization of detailed CPU simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed) {

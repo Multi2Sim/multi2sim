@@ -633,7 +633,7 @@ struct gpu_cache_t *gpu_cache_create(int bank_count, int read_port_count, int wr
 	gpu_cache->bank_count = bank_count;
 	gpu_cache->read_port_count = read_port_count;
 	gpu_cache->write_port_count = write_port_count;
-	gpu_cache->banks = calloc(1, gpu_cache->bank_count + SIZEOF_GPU_CACHE_BANK(gpu_cache));
+	gpu_cache->banks = calloc(1, gpu_cache->bank_count * SIZEOF_GPU_CACHE_BANK(gpu_cache));
 	return gpu_cache;
 }
 
@@ -644,6 +644,32 @@ void gpu_cache_free(struct gpu_cache_t *gpu_cache)
 		cache_free(gpu_cache->cache);
 	free(gpu_cache->banks);
 	free(gpu_cache);
+}
+
+
+void gpu_cache_dump(struct gpu_cache_t *gpu_cache, FILE *f)
+{
+	struct gpu_cache_bank_t *bank;
+	struct gpu_cache_port_t *port;
+	struct gpu_cache_stack_t *stack;
+	int i, j;
+
+	/* Read ports */
+	fprintf(f, "gpu_cache '%s'\n", gpu_cache->name);
+	for (i = 0; i < gpu_cache->bank_count; i++) {
+		fprintf(f, "  bank %d:\n", i);
+		bank = GPU_CACHE_BANK_INDEX(gpu_cache, i);
+		for (j = 0; j < gpu_cache->read_port_count; j++) {
+			port = GPU_CACHE_READ_PORT_INDEX(gpu_cache, bank, j);
+			fprintf(f, "  read port %d: ", j);
+
+			/* Waiting list */
+			fprintf(f, "waiting={");
+			for (stack = port->waiting_list_head; stack; stack = stack->waiting_next)
+				fprintf(f, " %lld", (long long) stack->id);
+			fprintf(f, " }\n");
+		}
+	}
 }
 
 
