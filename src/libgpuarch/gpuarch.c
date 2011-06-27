@@ -487,7 +487,7 @@ static void gpu_schedule_work_groups(void)
 		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, busy, compute_unit);
 
 		/* Assign work-group to compute unit */
-		INIT_SCHEDULE.do_schedule = 1;
+		INIT_SCHEDULE.input_ready = 1;
 		INIT_SCHEDULE.work_group_id = work_group->id;
 		INIT_SCHEDULE.wavefront_id = work_group->wavefront_id_first;
 		INIT_SCHEDULE.subwavefront_id = 0;

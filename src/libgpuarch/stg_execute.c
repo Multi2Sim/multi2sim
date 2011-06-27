@@ -27,8 +27,12 @@ void gpu_compute_unit_execute(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_wavefront_t *wavefront;
 	int subwavefront_id;
 
-	/* Check if execute stage is active */
-	if (!READ_EXECUTE.do_execute)
+	/* Check if input is ready */
+	if (!READ_EXECUTE.input_ready)
+		return;
+
+	/* Check if write stage is ready */
+	if (EXECUTE_WRITE.input_ready)
 		return;
 	
 	/* Get instruction */
@@ -47,12 +51,12 @@ void gpu_compute_unit_execute(struct gpu_compute_unit_t *compute_unit)
 		(long long) uop->id,
 		subwavefront_id);
 	
-	/* Send to 'write' stage */
-	EXECUTE_WRITE.do_write = 1;
+	/* Send to write stage */
+	EXECUTE_WRITE.input_ready = 1;
 	EXECUTE_WRITE.uop = uop;
 	EXECUTE_WRITE.subwavefront_id = subwavefront_id;
 
-	/* By default, do not execute next cycle */
-	READ_EXECUTE.do_execute = 0;
+	/* Instruction was consumed by the execute stage */
+	READ_EXECUTE.input_ready = 0;
 }
 

@@ -31,7 +31,6 @@ static int gpu_compute_unit_schedule_next_subwavefront(struct gpu_compute_unit_t
 	int subwavefront_count;
 
 	/* Go to next subwavefront */
-	/* FIXME: limit should be number of subwavefronts */
 	wavefront = ndrange->wavefronts[INIT_SCHEDULE.wavefront_id];
 	subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
 	INIT_SCHEDULE.subwavefront_id++;
@@ -202,12 +201,13 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 	
 	int result;
 
-	/* Check if schedule stage is active */
-	if (!INIT_SCHEDULE.do_schedule)
+	/* Check if input is ready */
+	if (!INIT_SCHEDULE.input_ready)
 		return;
 	
-	/* By default, do not schedule next cycle */
-	//INIT_SCHEDULE.do_schedule = 0;
+	/* Check if fetch stage is free */
+	if (SCHEDULE_FETCH.input_ready)
+		return;
 	
 	/* Check boundaries of wavefront and subwavefront */
 	assert(INIT_SCHEDULE.work_group_id >= 0 && INIT_SCHEDULE.work_group_id < ndrange->work_group_count);
@@ -255,7 +255,7 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 	
 
 	/* Transfer uop to next stage */
-	SCHEDULE_FETCH.do_fetch = 1;
+	SCHEDULE_FETCH.input_ready = 1;
 	SCHEDULE_FETCH.uop = uop;
 	SCHEDULE_FETCH.subwavefront_id = INIT_SCHEDULE.subwavefront_id;
 
@@ -264,6 +264,6 @@ void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit)
 	 * A new work-group will be scheduled in the main simulation loop and set back the 'do_schedule' flag. */
 	result = gpu_compute_unit_schedule_next_subwavefront(compute_unit);
 	if (!result)
-		INIT_SCHEDULE.do_schedule = 0;
+		INIT_SCHEDULE.input_ready = 0;
 }
 
