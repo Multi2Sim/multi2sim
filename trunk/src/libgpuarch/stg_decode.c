@@ -28,8 +28,12 @@ void gpu_compute_unit_decode(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_wavefront_t *wavefront;
 	int subwavefront_id;
 
-	/* Check if decode stage is active */
-	if (!FETCH_DECODE.do_decode)
+	/* Check if input is ready */
+	if (!FETCH_DECODE.input_ready)
+		return;
+
+	/* Check if read stage is ready */
+	if (DECODE_READ.input_ready)
 		return;
 	
 	/* Decode instruction */
@@ -48,12 +52,12 @@ void gpu_compute_unit_decode(struct gpu_compute_unit_t *compute_unit)
 		(long long) uop->id,
 		subwavefront_id);
 	
-	/* Send to 'read' stage */
-	DECODE_READ.do_read = 1;
+	/* Send to read stage */
+	DECODE_READ.input_ready = 1;
 	DECODE_READ.uop = uop;
 	DECODE_READ.subwavefront_id = FETCH_DECODE.subwavefront_id;
 
-	/* By default, do not decode next cycle */
-	FETCH_DECODE.do_decode = 0;
+	/* Instruction consumed by the decode stage */
+	FETCH_DECODE.input_ready = 0;
 }
 

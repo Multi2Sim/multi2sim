@@ -28,8 +28,12 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_wavefront_t *wavefront;
 	int subwavefront_id;
 
-	/* Check if read stage is active */
-	if (!DECODE_READ.do_read)
+	/* Check if input is ready */
+	if (!DECODE_READ.input_ready)
+		return;
+
+	/* Check if execute stage is ready */
+	if (READ_EXECUTE.input_ready)
 		return;
 	
 	/* Get instruction */
@@ -53,12 +57,12 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 	if (uop->global_mem_access == 1)
 		gpu_uop_mem_access(uop, subwavefront_id, uop->global_mem_access);
 	
-	/* Send to 'execute' stage */
-	READ_EXECUTE.do_execute = 1;
+	/* Send to execute stage */
+	READ_EXECUTE.input_ready = 1;
 	READ_EXECUTE.uop = uop;
 	READ_EXECUTE.subwavefront_id = subwavefront_id;
 
-	/* By default, do not read next cycle */
-	DECODE_READ.do_read = 0;
+	/* Instruction consumed by the read stage */
+	DECODE_READ.input_ready = 0;
 }
 

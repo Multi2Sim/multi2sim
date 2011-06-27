@@ -28,8 +28,12 @@ void gpu_compute_unit_fetch(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_wavefront_t *wavefront;
 	int subwavefront_id;
 
-	/* Check if fetch stage is active */
-	if (!SCHEDULE_FETCH.do_fetch)
+	/* Check if there is an input */
+	if (!SCHEDULE_FETCH.input_ready)
+		return;
+
+	/* Check if decode stage is ready */
+	if (FETCH_DECODE.input_ready)
 		return;
 	
 	/* Fetch instruction */
@@ -50,12 +54,12 @@ void gpu_compute_unit_fetch(struct gpu_compute_unit_t *compute_unit)
 		subwavefront_id,
 		compute_unit->id);
 	
-	/* Send to 'decode' stage */
-	FETCH_DECODE.do_decode = 1;
+	/* Send to decode stage */
+	FETCH_DECODE.input_ready = 1;
 	FETCH_DECODE.uop = uop;
 	FETCH_DECODE.subwavefront_id = SCHEDULE_FETCH.subwavefront_id;
 
-	/* By default, do not fetch next cycle */
-	SCHEDULE_FETCH.do_fetch = 0;
+	/* Instruction has been consumed */
+	SCHEDULE_FETCH.input_ready = 0;
 }
 

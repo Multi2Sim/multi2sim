@@ -90,8 +90,9 @@ struct gpu_compute_unit_t
 	/* Initial pipe register (for Schedule stage state) */
 	struct {
 		
+		int input_ready;
+
 		/* Programmable */
-		int do_schedule;
 		int work_group_id;
 		int wavefront_id;
 		int subwavefront_id;
@@ -105,8 +106,9 @@ struct gpu_compute_unit_t
 	/* Schedule/Fetch pipe register */
 	struct {
 		
+		int input_ready;
+
 		/* Programmable by 'schedule' stage */
-		int do_fetch;
 		struct gpu_uop_t *uop;
 		int subwavefront_id;
 
@@ -115,8 +117,9 @@ struct gpu_compute_unit_t
 	/* Fetch/Decode pipe register */
 	struct {
 		
+		int input_ready;
+
 		/* Programmable by 'fetch' stage */
-		int do_decode;
 		struct gpu_uop_t *uop;
 		int subwavefront_id;
 
@@ -125,8 +128,9 @@ struct gpu_compute_unit_t
 	/* Decode/Read pipe register */
 	struct {
 		
+		int input_ready;
+
 		/* Programmable by 'decode' stage */
-		int do_read;
 		struct gpu_uop_t *uop;
 		int subwavefront_id;
 	
@@ -135,8 +139,9 @@ struct gpu_compute_unit_t
 	/* Read/Execute pipe register */
 	struct {
 		
+		int input_ready;
+
 		/* Programmable by 'read' stage */
-		int do_execute;
 		struct gpu_uop_t *uop;
 		int subwavefront_id;
 
@@ -145,8 +150,9 @@ struct gpu_compute_unit_t
 	/* Execute/Write pipe register */
 	struct {
 		
+		int input_ready;
+
 		/* Programmable by 'execute' stage */
-		int do_write;
 		struct gpu_uop_t *uop;
 		int subwavefront_id;
 
@@ -247,13 +253,16 @@ struct gpu_cache_port_t
 /* GPU Cache Bank */
 struct gpu_cache_bank_t
 {
+	/* Stats */
+	uint64_t accesses;
+
 	/* Ports */
 	struct gpu_cache_port_t ports[0];
 };
 
 
 #define SIZEOF_GPU_CACHE_BANK(CACHE) (sizeof(struct gpu_cache_bank_t) + sizeof(struct gpu_cache_port_t) \
-	* (CACHE)->read_port_count * (CACHE)->write_port_count)
+	* ((CACHE)->read_port_count + (CACHE)->write_port_count))
 
 #define GPU_CACHE_BANK_INDEX(CACHE, I)  ((struct gpu_cache_bank_t *) ((void *) (CACHE)->banks + SIZEOF_GPU_CACHE_BANK(CACHE) * (I)))
 
@@ -301,6 +310,7 @@ extern int gpu_cache_debug_category;
 
 struct gpu_cache_t *gpu_cache_create(int bank_count, int read_port_count, int write_port_count);
 void gpu_cache_free(struct gpu_cache_t *gpu_cache);
+void gpu_cache_dump(struct gpu_cache_t *gpu_cache, FILE *f);
 
 void gpu_cache_init(void);
 void gpu_cache_done(void);
