@@ -104,3 +104,22 @@ Use the caches only for read accesses at the granularity of a cache block, which
 This mechanism keeps cache coherence only within each branch of the hierarchy, starting from an L1 and ending in global memory. Thus, it is only enforced that each CU sees the previous write accesses performed by itself. It does not guarantee that a CU will eventually see changes performed by another. However, the OpenCL programming model does not allow communication through global memory among work-groups (mapped to individual CUs), so this is not a problem.
 
 
+===============================================================================
+
+src/libgpuarch: Implementation of wavefront switch upon long-latency operations.
+
+Problem:
+
+Below is the GPU Compute Unit (CU) 6-stage pipeline modeled. Assume a GPU with 16 stream-cores per CU, and wavefronts (WFs) with 64 work-items. Each wavefront is divided in subwavefronts of equal size as the number of stream cores, i.e. 4 subwavefronts of 16 work-items each. SubWFs are scheduled always consecutively.
+
+
+	Schedule   |   Fetch   |   Decode   |   Read   |   Execute   |   Write
+
+         SubWF3        SubWF2       SubWF1      SubWF0
+                                                  \
+						   Long latency operation (miss in global memory)
+
+Question: is there a WF switch here? It would be efficient to overlap execution of other WFs arithmetic instructions to hide this latency. How does it work? Are the instructions in the pipeline before the Read stage squashed? The current model just stalls the pipeline until the read access to global memory finishes.
+
+
+
