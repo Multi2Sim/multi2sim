@@ -174,6 +174,10 @@ void gk_libopencl_failed(int pid)
  * GPU ND-Range
  */
 
+/* Sequential assignment of ND-Range identifiers */
+static int gpu_ndrange_id = 0;
+
+
 struct gpu_ndrange_t *gpu_ndrange_create(struct opencl_kernel_t *kernel)
 {
 	struct gpu_ndrange_t *ndrange;
@@ -181,6 +185,7 @@ struct gpu_ndrange_t *gpu_ndrange_create(struct opencl_kernel_t *kernel)
 	ndrange = calloc(1, sizeof(struct gpu_ndrange_t));
 	ndrange->kernel = kernel;
 	ndrange->local_mem_top = kernel->func_mem_local;
+	ndrange->id = gpu_ndrange_id++;
 	return ndrange;
 }
 
