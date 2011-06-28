@@ -119,29 +119,6 @@ void gpu_uop_free(struct gpu_uop_t *gpu_uop)
 }
 
 
-/* Access the global memory hierarchy by each work-item of a subwavefront.
- * Argument 'access' determines read (1) or write (2).
- * Variables 'work_item_uop->global_mem_access_addr' and 'work_item_uop->global_mem_access_size'
- * determine the address and size of each work-item's access. */
-void gpu_uop_mem_access(struct gpu_uop_t *uop, int subwavefront_id, int access)
-{
-	struct gpu_wavefront_t *wavefront = uop->wavefront;
-	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
-	struct gpu_work_item_uop_t *work_item_uop;
-	struct gpu_work_item_t *work_item;
-	int work_item_id;
-	
-	FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(wavefront, subwavefront_id, work_item_id) {
-		work_item = ndrange->work_items[work_item_id];
-		work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
-		gpu_cache_access(uop->compute_unit->id, access, work_item_uop->global_mem_access_addr,
-			work_item_uop->global_mem_access_size);
-	}
-}
-
-
-
-
 
 
 /*

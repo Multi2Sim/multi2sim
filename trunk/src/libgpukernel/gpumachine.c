@@ -1954,6 +1954,8 @@ void amd_inst_MULADD_UINT24_impl() {
 #define W1 gpu_isa_inst->words[1].alu_word1_lds_idx_op
 void amd_inst_LDS_IDX_OP_impl()
 {
+	struct gpu_wavefront_t *wavefront = gpu_isa_wavefront;
+	struct gpu_work_item_t *work_item = gpu_isa_work_item;
 	struct mem_t *local_mem = gpu_isa_work_group->local_mem;
 	unsigned int idx_offset;
 	uint32_t op0, op1, op2;
@@ -1980,6 +1982,12 @@ void amd_inst_LDS_IDX_OP_impl()
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_chan, 0);
 		/* FIXME: dst_chan? Does address need to be multiplied? */
 		gpu_isa_enqueue_write_lds(op0, op1);
+
+		wavefront->local_mem_write = 1;
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 2;
+		work_item->local_mem_access_addr[0] = op1;
+		work_item->local_mem_access_size[1] = 4;
 		break;
 	}
 
@@ -2001,6 +2009,15 @@ void amd_inst_LDS_IDX_OP_impl()
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_chan, 0);
 		gpu_isa_enqueue_write_lds(dst, src0);
 		gpu_isa_enqueue_write_lds(tmp, src1);  /* FIXME: correct? */
+
+		wavefront->local_mem_write = 1;
+		work_item->local_mem_access_count = 2;
+		work_item->local_mem_access_type[0] = 2;
+		work_item->local_mem_access_addr[0] = dst;
+		work_item->local_mem_access_size[0] = 4;
+		work_item->local_mem_access_type[1] = 2;
+		work_item->local_mem_access_addr[1] = tmp;
+		work_item->local_mem_access_size[1] = 4;
 		break;
 	}
 
@@ -2014,6 +2031,12 @@ void amd_inst_LDS_IDX_OP_impl()
 		mem_read(local_mem, op0, 4, pvalue);
 		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue);
 		gpu_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA", gpu_isa_work_item->id, op0, *pvalue, * (float *) pvalue);
+
+		wavefront->local_mem_read = 1;
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 1;
+		work_item->local_mem_access_addr[0] = op0;
+		work_item->local_mem_access_size[0] = 4;
 		break;
 	}
 
@@ -2031,6 +2054,15 @@ void amd_inst_LDS_IDX_OP_impl()
 		pvalue = malloc(4);
 		mem_read(local_mem, op1, 4, pvalue);
 		list_enqueue(gpu_isa_work_item->lds_oqb, pvalue);
+
+		wavefront->local_mem_read = 1;
+		work_item->local_mem_access_count = 2;
+		work_item->local_mem_access_type[0] = 1;
+		work_item->local_mem_access_addr[0] = op0;
+		work_item->local_mem_access_size[0] = 4;
+		work_item->local_mem_access_type[1] = 1;
+		work_item->local_mem_access_addr[1] = op1;
+		work_item->local_mem_access_size[1] = 4;
 		break;
 	}
 

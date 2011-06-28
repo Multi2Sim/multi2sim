@@ -33,7 +33,6 @@
 #include <gpudisasm.h>
 
 
-
 /*
  * Global variables
  */
@@ -548,7 +547,7 @@ struct gpu_work_group_t
 	int wavefront_count;
 
 	/* Pointers to wavefronts and work-items */
-	struct gpu_work_item_t **work_items;  /* Ptr to first work_item in 'kernel->work_items' */
+	struct gpu_work_item_t **work_items;  /* Pointer to first work_item in 'kernel->work_items' */
 	struct gpu_wavefront_t **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
 
 	/* Double linked lists of work-groups */
@@ -644,6 +643,8 @@ struct gpu_wavefront_t
 	/* Flags updated during instruction execution */
 	unsigned int global_mem_read : 1;
 	unsigned int global_mem_write : 1;
+	unsigned int local_mem_read : 1;
+	unsigned int local_mem_write : 1;
 	unsigned int pred_mask_update : 1;
 	unsigned int active_mask_update : 1;
 	unsigned int active_mask_push : 1;
@@ -705,9 +706,18 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront);
  */
 
 #define GPU_MAX_GPR_ELEM  5
+#define MAX_LOCAL_MEM_ACCESSES_PER_INST  2
+
 struct gpu_gpr_t
 {
 	uint32_t elem[GPU_MAX_GPR_ELEM];  /* x, y, z, w, t */
+};
+
+/* Structure describing a memory access definition */
+struct gpu_mem_access_t {
+	int type;  /* 0-none, 1-read, 2-write */
+	uint32_t addr;
+	int size;
 };
 
 struct gpu_work_item_t
@@ -748,6 +758,12 @@ struct gpu_work_item_t
 	/* Last global memory access */
 	uint32_t global_mem_access_addr;
 	uint32_t global_mem_access_size;
+
+	/* Last local memory access */
+	int local_mem_access_count;  /* Number of local memory access performed by last instruction */
+	uint32_t local_mem_access_addr[MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	uint32_t local_mem_access_size[MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	int local_mem_access_type[MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
 };
 
 #define FOREACH_WORK_ITEM_IN_NDRANGE(NDRANGE, WORK_ITEM_ID) \

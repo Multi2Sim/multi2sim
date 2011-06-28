@@ -26,7 +26,10 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_ndrange_t *ndrange;
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
+	struct gpu_work_item_t *work_item;
+	struct gpu_work_item_uop_t *work_item_uop;
 	int subwavefront_id;
+	int work_item_id;
 
 	/* Check if input is ready */
 	if (!DECODE_READ.input_ready)
@@ -44,25 +47,52 @@ void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit)
 	subwavefront_id = DECODE_READ.subwavefront_id;
 
 	/* Debug */
-	gpu_pipeline_debug("uop "
-		"a=\"stg\" "
-		"id=%lld "
-		"subwf=%d "
-		"stg=\"read\""
-		"\n",
-		(long long) uop->id,
-		subwavefront_id);
+	if (!DECODE_READ.stall_cycle) {
+		gpu_pipeline_debug("uop "
+			"a=\"stg\" "
+			"id=%lld "
+			"subwf=%d "
+			"stg=\"read\""
+			"\n",
+			(long long) uop->id,
+			subwavefront_id);
+	}
 	
-	/* Read access to global memory */
-	if (uop->global_mem_access == 1)
-		gpu_uop_mem_access(uop, subwavefront_id, uop->global_mem_access);
+	/* Read from global memory */
+	if (uop->global_mem_read) {
+
+		/* If this is the first cycle, perform the read */
+		if (!DECODE_READ.stall_cycle) {
+			FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(wavefront, subwavefront_id, work_item_id) {
+				work_item = ndrange->work_items[work_item_id];
+				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+				gpu_cache_access(
+					uop->compute_unit->id,  /* memory hierarchy entry point */
+					1,  /* read access */
+					work_item_uop->global_mem_access_addr,
+					work_item_uop->global_mem_access_size,
+					&uop->global_mem_access_witness);  /* witness */
+				uop->global_mem_access_witness--;
+			}
+		}
+
+		/* Stall read stage until read is complete for all work-items.
+		 * This is reflected in variable 'uop->global_mem_access_witness' */
+		if (uop->global_mem_access_witness) {
+			DECODE_READ.stall_cycle++;
+			return;
+		}
+	}
 	
+	/* Read from local memory */
+
 	/* Send to execute stage */
 	READ_EXECUTE.input_ready = 1;
 	READ_EXECUTE.uop = uop;
 	READ_EXECUTE.subwavefront_id = subwavefront_id;
 
 	/* Instruction consumed by the read stage */
+	DECODE_READ.stall_cycle = 0;
 	DECODE_READ.input_ready = 0;
 }
 

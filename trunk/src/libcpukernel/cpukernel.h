@@ -69,6 +69,7 @@ struct fd_t;
 #define MEM_PAGE_COUNT     1024
 
 enum mem_access_enum {
+	mem_access_none   = 0x00,
 	mem_access_read   = 0x01,
 	mem_access_write  = 0x02,
 	mem_access_exec   = 0x04,
