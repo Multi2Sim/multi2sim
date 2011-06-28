@@ -129,6 +129,7 @@ struct gpu_compute_unit_t
 	struct {
 		
 		int input_ready;
+		int stall_cycle;
 
 		/* Programmable by 'decode' stage */
 		struct gpu_uop_t *uop;
@@ -190,6 +191,12 @@ struct gpu_work_item_uop_t {
 	/* For global memory accesses */
 	uint32_t global_mem_access_addr;
 	uint32_t global_mem_access_size;
+
+	/* Local memory access */
+	int local_mem_access_count;
+	int local_mem_access_type[MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
+	uint32_t local_mem_access_addr[MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	uint32_t local_mem_access_size[MAX_LOCAL_MEM_ACCESSES_PER_INST];
 };
 
 /* Structure representing a GPU instruction fetched in common for a wavefront.
@@ -211,8 +218,14 @@ struct gpu_uop_t
 	/* Clause kind */
 	enum gpu_clause_kind_enum clause_kind;
 
-	/* Flags */
-	int global_mem_access;  /* Global memory access: 0-none, 1-read, 2-write. */
+	/* Flags copied after instruction emulation */
+	unsigned int global_mem_read : 1;
+	unsigned int global_mem_write : 1;
+	unsigned int local_mem_read : 1;
+	unsigned int local_mem_write : 1;
+
+	/* Witness for global memory access */
+	int global_mem_access_witness;
 
 	/* Per stream-core data. This space is dynamically allocated for an uop.
 	 * It should be always the last field of the structure. */
@@ -221,8 +234,6 @@ struct gpu_uop_t
 
 struct gpu_uop_t *gpu_uop_create();
 void gpu_uop_free(struct gpu_uop_t *gpu_uop);
-
-void gpu_uop_mem_access(struct gpu_uop_t *uop, int subwavefront_id, int access);
 
 
 
@@ -315,7 +326,7 @@ void gpu_cache_dump(struct gpu_cache_t *gpu_cache, FILE *f);
 void gpu_cache_init(void);
 void gpu_cache_done(void);
 
-void gpu_cache_access(int compute_unit_id, int access, uint32_t addr, uint32_t size);
+void gpu_cache_access(int compute_unit_id, int access, uint32_t addr, uint32_t size, int *witness_ptr);
 
 
 
@@ -340,6 +351,7 @@ extern int EV_GPU_CACHE_WRITE_FINISH;
 struct gpu_cache_stack_t
 {
 	uint64_t id;
+	int *witness_ptr;
 	struct gpu_cache_t *gpu_cache;
 	struct gpu_cache_bank_t *bank;
 	struct gpu_cache_port_t *port;

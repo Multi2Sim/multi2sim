@@ -935,6 +935,8 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 	/* Reset instruction flags */
 	wavefront->global_mem_write = 0;
 	wavefront->global_mem_read = 0;
+	wavefront->local_mem_write = 0;
+	wavefront->local_mem_read = 0;
 	wavefront->pred_mask_update = 0;
 	wavefront->active_mask_update = 0;
 	wavefront->active_mask_push = 0;
