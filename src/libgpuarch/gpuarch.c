@@ -40,7 +40,7 @@ char *gpu_config_help =
 	"The following is a list of the sections allowed in the GPU configuration file,\n"
 	"along with the list of variables for each section.\n"
 	"\n"
-	"Section '[ Device ]':\n"
+	"Section '[ Device ]': parameters for the GPU.\n"
 	"\n"
 	"  NumComputeUnits = <num> (Default = 20)\n"
 	"      Number of compute units in the GPU. These are the hardware components\n"
@@ -58,6 +58,18 @@ char *gpu_config_help =
 	"      Number of stream cores within a compute unit. Each work-item is mapped to a\n"
 	"      stream core. Stream cores are time-multiplexed to cover all work-items in a\n"
 	"      wavefront.\n"
+	"\n"
+	"Section '[ LocalMemory ]': defines the parameters of the local memory associated to\n"
+	"each compute unit.\n"
+	"\n"
+	"  Latency = <num_cycles> (Default = 2)\n"
+	"      Hit latency in number of cycles.\n"
+	"  Banks = <num> (Default = 4)\n"
+	"      Number of banks.\n"
+	"  ReadPorts = <num> (Default = 2)\n"
+	"      Number of read ports per bank.\n"
+	"  WritePorts = <num> (Default = 2)\n"
+	"      Number of write ports per bank.\n"
 	"\n";
 
 enum gpu_sim_kind_enum gpu_sim_kind = gpu_sim_kind_functional;
@@ -74,6 +86,12 @@ int gpu_num_stream_cores = 16;
  * portions of a wavefront. This parameter is computed as the ceiling
  * of the quotient between the wavefront size and number of stream cores. */
 int gpu_compute_unit_time_slots;
+
+/* Local memory parameters */
+int gpu_local_mem_latency = 2;
+int gpu_local_mem_banks = 4;
+int gpu_local_mem_read_ports = 2;
+int gpu_local_mem_write_ports = 2;
 
 struct gpu_t *gpu;
 
@@ -365,6 +383,10 @@ void gpu_init()
 	struct config_t *gpu_config;
 	char *section;
 
+	char *err_note =
+		"\tPlease run 'm2s --help-gpu-config' or consult the Multi2Sim Guide for a\n"
+		"\tdescription of the GPU configuration file format.";
+
 	/* Load GPU configuration file */
 	gpu_config = config_create(gpu_config_file_name);
 	if (*gpu_config_file_name && !config_load(gpu_config))
@@ -377,18 +399,40 @@ void gpu_init()
 	/* Device */
 	section = "Device";
 	gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", gpu_num_compute_units);
+	if (gpu_num_compute_units < 1)
+		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", gpu_config_file_name, err_note);
 	
 	/* Compute Unit */
 	section = "ComputeUnit";
 	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
 	gpu_max_work_group_size = config_read_int(gpu_config, section, "MaxWorkGroupSize", gpu_max_work_group_size);
-	if (gpu_max_work_group_size & (gpu_max_work_group_size - 1))
-		fatal("'MaxWorkGroupSize' must be a power of 2");
 	gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", gpu_num_stream_cores);
 	gpu_compute_unit_time_slots = (gpu_wavefront_size + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
+	if (gpu_wavefront_size < 1)
+		fatal("%s: invalid value for 'WavefrontSize'.\n%s", gpu_config_file_name, err_note);
+	if ((gpu_max_work_group_size & (gpu_max_work_group_size - 1)) || gpu_max_work_group_size < 1)
+		fatal("%s: 'MaxWorkGroupSize' must be a power of two greater than 0.\n%s",
+			gpu_config_file_name, err_note);
+	if (gpu_num_stream_cores < 1)
+		fatal("%s: invalid value for 'NumStreamCores'.\n%s", gpu_config_file_name, err_note);
+	if (gpu_wavefront_size > gpu_max_work_group_size)
+		fatal("%s: 'WavefrontSize' should not be larget than 'MaxWorkGroupSize'.\n%s",
+			gpu_config_file_name, err_note);
 	
-	/* Stream Core */
-	section = "StreamCore";
+	/* Local memory */
+	section = "LocalMemory";
+	gpu_local_mem_latency = config_read_int(gpu_config, section, "Latency", gpu_local_mem_latency);
+	gpu_local_mem_banks = config_read_int(gpu_config, section, "Banks", gpu_local_mem_banks);
+	gpu_local_mem_read_ports = config_read_int(gpu_config, section, "ReadPorts", gpu_local_mem_read_ports);
+	gpu_local_mem_write_ports = config_read_int(gpu_config, section, "WritePorts", gpu_local_mem_write_ports);
+	if (gpu_local_mem_latency < 1)
+		fatal("%s: invalid value for %s->Latency.\n%s", gpu_config_file_name, section, err_note);
+	if (gpu_local_mem_banks < 1 || (gpu_local_mem_banks & (gpu_local_mem_banks - 1)))
+		fatal("%s: %s->Banks must be a power of 2 greater than 1.\n%s", gpu_config_file_name, section, err_note);
+	if (gpu_local_mem_read_ports < 1)
+		fatal("%s: invalid value for %s->ReadPorts.\n%s", gpu_config_file_name, section, err_note);
+	if (gpu_local_mem_write_ports < 1)
+		fatal("%s: invalid value for %s->WritePorts.\n%s", gpu_config_file_name, section, err_note);
 	
 	/* Close GPU configuration file */
 	config_check(gpu_config);
