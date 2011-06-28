@@ -61,7 +61,6 @@ static int gpu_compute_unit_schedule_next_subwavefront(struct gpu_compute_unit_t
 
 static void gpu_uop_emulate(struct gpu_uop_t *uop)
 {
-	int i;
 	struct gpu_work_group_t *work_group = uop->work_group;
 	struct gpu_wavefront_t *wavefront = uop->wavefront;
 	struct gpu_ndrange_t *ndrange = work_group->ndrange;
@@ -84,13 +83,18 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 
 	case GPU_CLAUSE_CF:
 	case GPU_CLAUSE_TC:
-		
+	{
 		inst_num = (wavefront->cf_buf - ndrange->kernel->cal_abi->text_buffer) / 8;
 		gpu_wavefront_execute(wavefront);
 		amd_inst_copy(&uop->inst, uop->clause_kind == GPU_CLAUSE_CF ?
 			&wavefront->cf_inst : &wavefront->tc_inst);
 
-		if (uop->inst.info->flags & AMD_INST_FLAG_MEM) {
+		/* Copy flags updated by emulation */
+		uop->global_mem_read = wavefront->global_mem_read;
+		uop->global_mem_write = wavefront->global_mem_write;
+
+		/* Record global memory access into 'uop' and 'work_item_uop' fields */
+		if (uop->global_mem_read || uop->global_mem_write) {
 			
 			struct gpu_work_item_uop_t *work_item_uop;
 			struct gpu_work_item_t *work_item;
@@ -98,7 +102,6 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 
 			assert((uop->inst.info->flags & AMD_INST_FLAG_MEM_READ) ||
 					(uop->inst.info->flags & AMD_INST_FLAG_MEM_WRITE));
-			uop->global_mem_access = (uop->inst.info->flags & AMD_INST_FLAG_MEM_READ) ? 1 : 2;
 			FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
 				work_item = ndrange->work_items[work_item_id];
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
@@ -109,7 +112,10 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 
 		/* Debug */
 		if (debug_status(gpu_pipeline_debug_category)) {
-			amd_inst_dump_buf(&wavefront->cf_inst, inst_num, 0, buf, MAX_STRING_SIZE);
+			struct amd_inst_t *inst;
+
+			inst = uop->clause_kind == GPU_CLAUSE_CF ? &wavefront->cf_inst : &wavefront->tc_inst;
+			amd_inst_dump_buf(inst, inst_num, 0, buf, MAX_STRING_SIZE);
 			str_single_spaces(buf2, buf, MAX_STRING_SIZE);
 			gpu_pipeline_debug(
 				"cat=\"%s\" "
@@ -118,14 +124,40 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 				buf2);
 		}
 		break;
+	}
 	
 	case GPU_CLAUSE_ALU:
+	{
+		int i, j;
+		struct gpu_work_item_uop_t *work_item_uop;
+		struct gpu_work_item_t *work_item;
+		struct amd_inst_t *inst;
+		int work_item_id;
+
 		gpu_wavefront_execute(wavefront);
 		amd_alu_group_copy(&uop->alu_group, &wavefront->alu_group);
 		
+		/* Copy flags updated by emulation */
+		uop->local_mem_read = wavefront->local_mem_read;
+		uop->local_mem_write = wavefront->local_mem_write;
+
+		/* Record local memory access into 'uop' and 'work_item_uop' fields */
+		if (uop->local_mem_read || uop->local_mem_write) {
+			FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
+				work_item = ndrange->work_items[work_item_id];
+				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+				work_item_uop->local_mem_access_count = work_item->local_mem_access_count;
+				for (j = 0; j < work_item->local_mem_access_count; j++) {
+					work_item_uop->local_mem_access_type[j] = work_item->local_mem_access_type[j];
+					work_item_uop->local_mem_access_addr[j] = work_item->local_mem_access_addr[j];
+					work_item_uop->local_mem_access_size[j] = work_item->local_mem_access_size[j];
+				}
+			}
+		}
+
 		if (debug_status(gpu_pipeline_debug_category)) {
 			for (i = 0; i < wavefront->alu_group.inst_count; i++) {
-				struct amd_inst_t *inst = &wavefront->alu_group.inst[i];
+				inst = &wavefront->alu_group.inst[i];
 				amd_inst_dump_buf(inst, -1, 0, buf, MAX_STRING_SIZE);
 				str_single_spaces(buf2, buf, MAX_STRING_SIZE);
 				gpu_pipeline_debug(
@@ -135,6 +167,7 @@ static void gpu_uop_emulate(struct gpu_uop_t *uop)
 			}
 		}
 		break;
+	}
 
 	default:
 		abort();
