@@ -40,6 +40,11 @@ extern int gpu_num_stream_cores;
 extern int gpu_num_compute_units;
 extern int gpu_compute_unit_time_slots;
 
+extern int gpu_local_mem_latency;
+extern int gpu_local_mem_banks;
+extern int gpu_local_mem_read_ports;
+extern int gpu_local_mem_write_ports;
+
 extern struct gpu_t *gpu;
 
 /* GPU-REL: insertion of faults into stack */
@@ -87,99 +92,37 @@ struct gpu_compute_unit_t
 	struct gpu_cache_t *gpu_cache_inst;
 	struct gpu_cache_t *gpu_cache_data;
 
-	/* Initial pipe register (for Schedule stage state) */
+	/* Local memory */
+	struct gpu_cache_t *local_memory;
+
+	/* Currently mapped work-group */
+	struct gpu_work_group_t *work_group;
+
+	/* Fields for CF Engine */
 	struct {
-		
-		int input_ready;
+		struct gpu_wavefront_t *wavefront;
+	} cf_engine;
 
-		/* Programmable */
-		int work_group_id;
-		int wavefront_id;
-		int subwavefront_id;
-
-		/* State */
-		struct gpu_wavefront_t *wavefront_running_next;
-		struct gpu_uop_t *uop;
-
-	} init_schedule;
-
-	/* Schedule/Fetch pipe register */
+	/* Fields for ALU Engine */
 	struct {
-		
-		int input_ready;
+		struct gpu_wavefront_t *wavefront;
+	} alu_engine;
 
-		/* Programmable by 'schedule' stage */
-		struct gpu_uop_t *uop;
-		int subwavefront_id;
-
-	} schedule_fetch;
-
-	/* Fetch/Decode pipe register */
+	/* Fields for TEX Engine */
 	struct {
-		
-		int input_ready;
+		struct gpu_wavefront_t *wavefront;
+	} tex_engine;
 
-		/* Programmable by 'fetch' stage */
-		struct gpu_uop_t *uop;
-		int subwavefront_id;
-
-	} fetch_decode;
-
-	/* Decode/Read pipe register */
-	struct {
-		
-		int input_ready;
-		int stall_cycle;
-
-		/* Programmable by 'decode' stage */
-		struct gpu_uop_t *uop;
-		int subwavefront_id;
-	
-	} decode_read;
-
-	/* Read/Execute pipe register */
-	struct {
-		
-		int input_ready;
-
-		/* Programmable by 'read' stage */
-		struct gpu_uop_t *uop;
-		int subwavefront_id;
-
-	} read_execute;
-
-	/* Execute/Write pipe register */
-	struct {
-		
-		int input_ready;
-
-		/* Programmable by 'execute' stage */
-		struct gpu_uop_t *uop;
-		int subwavefront_id;
-
-	} execute_write;
 };
-
-/* Macros for quick access to pipe registers */
-#define INIT_SCHEDULE  (compute_unit->init_schedule)
-#define SCHEDULE_FETCH  (compute_unit->schedule_fetch)
-#define FETCH_DECODE  (compute_unit->fetch_decode)
-#define DECODE_READ  (compute_unit->decode_read)
-#define READ_EXECUTE  (compute_unit->read_execute)
-#define EXECUTE_WRITE  (compute_unit->execute_write)
-
 
 struct gpu_compute_unit_t *gpu_compute_unit_create();
 void gpu_compute_unit_free(struct gpu_compute_unit_t *gpu_compute_unit);
+void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group);
+void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit);
 
-void gpu_compute_unit_schedule(struct gpu_compute_unit_t *compute_unit);
-void gpu_compute_unit_fetch(struct gpu_compute_unit_t *compute_unit);
-void gpu_compute_unit_decode(struct gpu_compute_unit_t *compute_unit);
-void gpu_compute_unit_read(struct gpu_compute_unit_t *compute_unit);
-void gpu_compute_unit_execute(struct gpu_compute_unit_t *compute_unit);
-void gpu_compute_unit_write(struct gpu_compute_unit_t *compute_unit);
-void gpu_compute_unit_next_cycle(struct gpu_compute_unit_t *compute_unit);
-
+void gpu_compute_unit_cf_engine_run(struct gpu_compute_unit_t *compute_unit);
+void gpu_compute_unit_alu_engine_run(struct gpu_compute_unit_t *compute_unit);
+void gpu_compute_unit_tex_engine_run(struct gpu_compute_unit_t *compute_unit);
 
 
 
@@ -224,8 +167,9 @@ struct gpu_uop_t
 	unsigned int local_mem_read : 1;
 	unsigned int local_mem_write : 1;
 
-	/* Witness for global memory access */
+	/* Witness memory accesses */
 	int global_mem_access_witness;
+	int local_mem_access_witness;
 
 	/* Per stream-core data. This space is dynamically allocated for an uop.
 	 * It should be always the last field of the structure. */
@@ -326,7 +270,8 @@ void gpu_cache_dump(struct gpu_cache_t *gpu_cache, FILE *f);
 void gpu_cache_init(void);
 void gpu_cache_done(void);
 
-void gpu_cache_access(int compute_unit_id, int access, uint32_t addr, uint32_t size, int *witness_ptr);
+void gpu_cache_access(struct gpu_cache_t *gpu_cache, int access, uint32_t addr, uint32_t size, int *witness_ptr);
+
 
 
 

@@ -592,7 +592,7 @@ enum gpu_clause_kind_enum {
 	GPU_CLAUSE_NONE = 0,
 	GPU_CLAUSE_CF,  /* Control-flow */
 	GPU_CLAUSE_ALU,  /* ALU clause */
-	GPU_CLAUSE_TC,  /* Fetch trough a Texture Cache Clause */
+	GPU_CLAUSE_TEX,  /* Fetch trough a Texture Cache Clause */
 	GPU_CLAUSE_VC  /* Fetch through a Vertex Cache Clause */
 };
 
@@ -623,7 +623,7 @@ struct gpu_wavefront_t
 	/* Current instructions */
 	struct amd_inst_t cf_inst;
 	struct amd_alu_group_t alu_group;
-	struct amd_inst_t tc_inst;
+	struct amd_inst_t tex_inst;
 
 	/* Starting/current CF buffer */
 	void *cf_buf_start;

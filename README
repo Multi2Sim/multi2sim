@@ -123,3 +123,17 @@ Question: is there a WF switch here? It would be efficient to overlap execution 
 
 
 
+
+
+Compute unit
+------------
+
+* The CF Engine has a 'ready wavefront (WF) pool'. When a CF instruction triggers a secondary clause (TEX or ALU), the WF is removed from the 'ready WF pool' until the secondary clause completes.
+* A WF switch happens after the execution of every CF instruction, selecting only among those WFs in the 'ready WF pool'. In this way, we avoid executing instructions from a WF that might depend on long-latency events and cause a WF to stall. This would happen, for example, if we issue an ALU clause before a previous TEX clause finishes for the same WF. If the TEX clause had a cache miss, the ALU engine would be stalled until the cache miss resolves, and remain unable to execute useful work from other WFs.
+
+
+Processing elements
+-------------------
+* PEs are pipelined functional units, capable of performing additions, multiplications, or transcendental operations (in the case of PE_t elements).
+* A PE accepts one instruction every cycle (this can be configured). This parameter is called the issue latency.
+* The latency of of the instruction (time between the operation starts until the result is ready) depends on the operation (sin >> add). This is configurable as well.

@@ -673,19 +673,17 @@ void gpu_cache_dump(struct gpu_cache_t *gpu_cache, FILE *f)
 }
 
 
-/* Access the GPU global memory hierarchy.
- * Argument 'access' defineds whether it is a read (1) or a write (2).
+/* Access a gpu_cache.
+ * Argument 'access' defines whether it is a read (1) or a write (2).
  * Variable 'witness', if specified, will be increased when the access completes. */
-void gpu_cache_access(int compute_unit_id, int access, uint32_t addr, uint32_t size, int *witness_ptr)
+void gpu_cache_access(struct gpu_cache_t *gpu_cache, int access, uint32_t addr, uint32_t size, int *witness_ptr)
 {
 	struct gpu_cache_stack_t *stack;
 	int event;
 
 	gpu_cache_stack_id++;
-	assert(IN_RANGE(compute_unit_id, 0, gpu_num_compute_units));
 	stack = gpu_cache_stack_create(gpu_cache_stack_id,
-		gpu->gpu_caches[compute_unit_id], addr,
-		ESIM_EV_NONE, NULL);
+		gpu_cache, addr, ESIM_EV_NONE, NULL);
 	stack->witness_ptr = witness_ptr;
 	assert(access == 1 || access == 2);
 	event = access == 1 ? EV_GPU_CACHE_READ : EV_GPU_CACHE_WRITE;

@@ -374,7 +374,7 @@ void amd_inst_TC_impl()
 	/* Start TC clause */
 	gpu_isa_wavefront->clause_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
 	gpu_isa_wavefront->clause_buf_end = gpu_isa_wavefront->clause_buf + (W1.count + 1) * 16;
-	gpu_isa_wavefront->clause_kind = GPU_CLAUSE_TC;
+	gpu_isa_wavefront->clause_kind = GPU_CLAUSE_TEX;
 	gpu_isa_tc_clause_start();
 
 	/* If VPM is set, copy 'active' mask at the top of the stack to 'pred' mask.
