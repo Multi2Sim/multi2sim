@@ -119,7 +119,7 @@ char *gpu_stack_faults_debug_file_name = "";
  * GPU Uop
  */
 
-static uint64_t gpu_uop_id_counter = 1000;
+static uint64_t gpu_uop_id_counter = 0;
 
 struct gpu_uop_t *gpu_uop_create()
 {
@@ -167,28 +167,85 @@ void gpu_stream_core_free(struct gpu_stream_core_t *stream_core)
 struct gpu_compute_unit_t *gpu_compute_unit_create()
 {
 	struct gpu_compute_unit_t *compute_unit;
+	struct gpu_cache_t *local_memory;
 
+	/* Create compute unit */
 	compute_unit = calloc(1, sizeof(struct gpu_compute_unit_t));
+
+	/* Local memory */
+	compute_unit->local_memory = gpu_cache_create(gpu_local_mem_banks,
+		gpu_local_mem_read_ports, gpu_local_mem_write_ports);
+	local_memory = compute_unit->local_memory;
+	local_memory->latency = gpu_local_mem_latency;
+
+	/* Return */
 	return compute_unit;
 }
 
 
 void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 {
+	gpu_cache_free(compute_unit->local_memory);
 	free(compute_unit);
+}
+
+
+void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group)
+{
+	assert(!compute_unit->work_group);
+
+	/* Map work-group */
+	compute_unit->work_group = work_group;
+
+	/* Delete compute unit from 'idle' list and insert it to 'busy' list. */
+	DOUBLE_LINKED_LIST_REMOVE(gpu, idle, compute_unit);
+	DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, busy, compute_unit);
+
+	/* Change work-group status to running */
+	gpu_work_group_clear_status(work_group, gpu_work_group_pending);
+	gpu_work_group_set_status(work_group, gpu_work_group_running);
+
+	/* Debug */
+	gpu_pipeline_debug("cu a=\"map\" "
+		"cu=%d "
+		"wg=%d\n",
+		compute_unit->id,
+		work_group->id);
+}
+
+
+void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit)
+{
+	assert(compute_unit->work_group);
+
+	/* Reset mapped work-group */
+	compute_unit->work_group = NULL;
+
+	/* Delete compute unit from 'busy' list and insert it to 'idle' list. */
+	DOUBLE_LINKED_LIST_REMOVE(gpu, busy, compute_unit);
+	DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, idle, compute_unit);
+
+	/* Debug */
+	gpu_pipeline_debug("cu a=\"unmap\" "
+		"cu=%d\n",
+		compute_unit->id);
 }
 
 
 /* Advance one cycle in the compute unit by running every stage from last to first */
 void gpu_compute_unit_next_cycle(struct gpu_compute_unit_t *compute_unit)
 {
-	gpu_compute_unit_write(compute_unit);
-	gpu_compute_unit_execute(compute_unit);
-	gpu_compute_unit_read(compute_unit);
-	gpu_compute_unit_decode(compute_unit);
-	gpu_compute_unit_fetch(compute_unit);
-	gpu_compute_unit_schedule(compute_unit);
+	/* Checks */
+	assert(compute_unit->work_group);
+
+	/* Run ALU/TEX Engines */
+	gpu_compute_unit_alu_engine_run(compute_unit);
+	gpu_compute_unit_tex_engine_run(compute_unit);
+
+	/* CF Engine */
+	gpu_compute_unit_cf_engine_run(compute_unit);
 }
+
 
 
 
@@ -317,7 +374,6 @@ void gpu_stack_faults_insert(void)
 	struct gpu_stack_fault_t *stack_fault;
 	struct gpu_compute_unit_t *compute_unit;
 
-	struct gpu_ndrange_t *ndrange = gpu->ndrange;
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
 
@@ -343,7 +399,8 @@ void gpu_stack_faults_insert(void)
 		}
 
 		/* Get work-group and wavefront. If wavefront ID exceeds current number, dimiss */
-		work_group = ndrange->work_groups[compute_unit->init_schedule.work_group_id];
+		work_group = compute_unit->work_group;
+		assert(work_group);
 		if (stack_fault->stack_id >= work_group->wavefront_count) {
 			gpu_stack_faults_debug("effect=\"wf_idle\"");
 			goto end_loop;
@@ -487,44 +544,6 @@ void gpu_done()
 }
 
 
-
-static void gpu_schedule_work_groups(void)
-{
-	struct gpu_ndrange_t *ndrange = gpu->ndrange;
-	struct gpu_work_group_t *work_group;
-	struct gpu_compute_unit_t *compute_unit;
-
-	while (gpu->idle_list_head && ndrange->pending_list_head) {
-		work_group = ndrange->pending_list_head;
-		compute_unit = gpu->idle_list_head;
-
-		/* Change work-group status to running, which implicitly removes it from
-		 * the 'pending' list, and inserts it to the 'running' list */
-		gpu_work_group_clear_status(work_group, gpu_work_group_pending);
-		gpu_work_group_set_status(work_group, gpu_work_group_running);
-		
-		/* Delete compute unit from 'idle' list and insert it to 'busy' list. */
-		DOUBLE_LINKED_LIST_REMOVE(gpu, idle, compute_unit);
-		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, busy, compute_unit);
-
-		/* Assign work-group to compute unit */
-		INIT_SCHEDULE.input_ready = 1;
-		INIT_SCHEDULE.work_group_id = work_group->id;
-		INIT_SCHEDULE.wavefront_id = work_group->wavefront_id_first;
-		INIT_SCHEDULE.subwavefront_id = 0;
-
-		/* Debug */
-		gpu_pipeline_debug("cu "
-			"a=\"run\" "
-			"id=\"%d\" "
-			"wg=\"%d\""
-			"\n",
-			compute_unit->id,
-			work_group->id);
-	}
-}
-
-
 void gpu_run(struct gpu_ndrange_t *ndrange)
 {
 	struct opencl_kernel_t *kernel = ndrange->kernel;
@@ -549,10 +568,10 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 	for (;;) {
 		
 		/* Assign pending work-items to idle compute units. */
-		if (gpu->idle_list_head && ndrange->pending_list_head)
-			gpu_schedule_work_groups();
+		while (gpu->idle_list_head && ndrange->pending_list_head)
+			gpu_compute_unit_map_work_group(gpu->idle_list_head, ndrange->pending_list_head);
 		
-		/* If no compute unit got any work, done. */
+		/* If no compute unit got any work, ND-Range finished execution. */
 		if (!gpu->busy_list_head)
 			break;
 
