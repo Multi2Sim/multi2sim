@@ -1040,20 +1040,20 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		break;
 	}
 
-	case GPU_CLAUSE_TC:
+	case GPU_CLAUSE_TEX:
 	{
-		/* Decode TEX inst */
+		/* Decode TEX instruction */
 		gpu_isa_wavefront->clause_buf = amd_inst_decode_tc(gpu_isa_wavefront->clause_buf,
-			&gpu_isa_wavefront->tc_inst);
+			&gpu_isa_wavefront->tex_inst);
 
 		/* Debug */
 		if (debug_status(gpu_isa_debug_category)) {
 			gpu_isa_debug("\n\n");
-			amd_inst_dump(&gpu_isa_wavefront->tc_inst, 0, 0, debug_file(gpu_isa_debug_category));
+			amd_inst_dump(&gpu_isa_wavefront->tex_inst, 0, 0, debug_file(gpu_isa_debug_category));
 		}
 
 		/* Execute in all work_items */
-		gpu_isa_inst = &gpu_isa_wavefront->tc_inst;
+		gpu_isa_inst = &gpu_isa_wavefront->tex_inst;
 		gpu_isa_cf_inst = &gpu_isa_wavefront->cf_inst;
 		FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id) {
 			gpu_isa_work_item = ndrange->work_items[work_item_id];

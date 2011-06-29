@@ -286,12 +286,12 @@ void str_single_spaces(char *dest, char *src, int size)
 	int spc = 0;
 
 	/* Remove initial spaces */
-	while (*src == ' ')
+	while (*src == ' ' || *src == '\n')
 		src++;
 	
 	/* Remove duplicated and final spaces */
 	while (*src) {
-		if (*src != ' ') {
+		if (*src != ' ' && *src != '\n') {
 			if (spc && size) {
 				*dest++ = ' ';
 				size--;
@@ -303,7 +303,7 @@ void str_single_spaces(char *dest, char *src, int size)
 		}
 
 		/* Next character */
-		spc = *src == ' ';
+		spc = *src == ' ' || *src == '\n';
 		src++;
 	}
 
