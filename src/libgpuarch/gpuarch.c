@@ -178,6 +178,10 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 	local_memory = compute_unit->local_memory;
 	local_memory->latency = gpu_local_mem_latency;
 
+	/* Lists */
+	compute_unit->alu_engine.fetch_queue = lnlist_create();
+	compute_unit->alu_engine.inst_queue = lnlist_create();
+
 	/* Return */
 	return compute_unit;
 }
@@ -185,6 +189,8 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 {
+	lnlist_free(compute_unit->alu_engine.fetch_queue);
+	lnlist_free(compute_unit->alu_engine.inst_queue);
 	gpu_cache_free(compute_unit->local_memory);
 	free(compute_unit);
 }
@@ -233,17 +239,17 @@ void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit)
 
 
 /* Advance one cycle in the compute unit by running every stage from last to first */
-void gpu_compute_unit_next_cycle(struct gpu_compute_unit_t *compute_unit)
+void gpu_compute_unit_run(struct gpu_compute_unit_t *compute_unit)
 {
 	/* Checks */
 	assert(compute_unit->work_group);
 
 	/* Run ALU/TEX Engines */
-	gpu_compute_unit_alu_engine_run(compute_unit);
-	gpu_compute_unit_tex_engine_run(compute_unit);
+	gpu_alu_engine_run(compute_unit);
+	gpu_tex_engine_run(compute_unit);
 
 	/* CF Engine */
-	gpu_compute_unit_cf_engine_run(compute_unit);
+	gpu_cf_engine_run(compute_unit);
 }
 
 
@@ -586,7 +592,7 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 			compute_unit_next = compute_unit->busy_next;
 
 			/* Simulate cycle in compute unit */
-			gpu_compute_unit_next_cycle(compute_unit);
+			gpu_compute_unit_run(compute_unit);
 		}
 
 		/* GPU-REL: insert stack faults */
