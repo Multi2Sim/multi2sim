@@ -23,7 +23,7 @@
 
 /* Based on the previous value of 'compute_unit->cf_engine.wavefront', assign the
  * new wavefront to run in the CF Engine. */
-void gpu_compute_unit_cf_engine_schedule(struct gpu_compute_unit_t *compute_unit)
+void gpu_cf_engine_schedule(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_work_group_t *work_group = compute_unit->work_group;
 	struct gpu_wavefront_t *wavefront;
@@ -67,7 +67,7 @@ void gpu_compute_unit_cf_engine_schedule(struct gpu_compute_unit_t *compute_unit
 }
 
 
-void gpu_compute_unit_cf_engine_run(struct gpu_compute_unit_t *compute_unit)
+void gpu_cf_engine_run(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_work_group_t *work_group = compute_unit->work_group;
 	struct gpu_ndrange_t *ndrange = work_group->ndrange;
@@ -78,7 +78,7 @@ void gpu_compute_unit_cf_engine_run(struct gpu_compute_unit_t *compute_unit)
 	int inst_num;
 
 	/* Get next wavefront to run in the CF Engine */
-	gpu_compute_unit_cf_engine_schedule(compute_unit);
+	gpu_cf_engine_schedule(compute_unit);
 	wavefront = compute_unit->cf_engine.wavefront;
 	if (!wavefront) {
 		if (!compute_unit->alu_engine.wavefront && !compute_unit->tex_engine.wavefront)

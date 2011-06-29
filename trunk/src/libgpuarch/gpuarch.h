@@ -106,6 +106,8 @@ struct gpu_compute_unit_t
 	/* Fields for ALU Engine */
 	struct {
 		struct gpu_wavefront_t *wavefront;
+		struct lnlist_t *fetch_queue;  /* Queue of 'gpu_uop's */
+		struct lnlist_t *inst_queue;  /* Queue of 'gpu_uop's */
 	} alu_engine;
 
 	/* Fields for TEX Engine */
@@ -120,9 +122,9 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *gpu_compute_unit);
 void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group);
 void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit);
 
-void gpu_compute_unit_cf_engine_run(struct gpu_compute_unit_t *compute_unit);
-void gpu_compute_unit_alu_engine_run(struct gpu_compute_unit_t *compute_unit);
-void gpu_compute_unit_tex_engine_run(struct gpu_compute_unit_t *compute_unit);
+void gpu_cf_engine_run(struct gpu_compute_unit_t *compute_unit);
+void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit);
+void gpu_tex_engine_run(struct gpu_compute_unit_t *compute_unit);
 
 
 
@@ -168,6 +170,7 @@ struct gpu_uop_t
 	unsigned int local_mem_write : 1;
 
 	/* Witness memory accesses */
+	int inst_cache_witness;
 	int global_mem_access_witness;
 	int local_mem_access_witness;
 

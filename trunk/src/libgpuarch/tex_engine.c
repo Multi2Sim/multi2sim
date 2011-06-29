@@ -21,7 +21,7 @@
 #include <gpuarch.h>
 
 
-void gpu_compute_unit_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
+void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_wavefront_t *wavefront = compute_unit->tex_engine.wavefront;
 	struct gpu_uop_t *uop;
@@ -63,7 +63,7 @@ void gpu_compute_unit_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 }
 
 
-void gpu_compute_unit_tex_engine_run(struct gpu_compute_unit_t *compute_unit)
+void gpu_tex_engine_run(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_wavefront_t *wavefront = compute_unit->tex_engine.wavefront;
 
@@ -72,5 +72,5 @@ void gpu_compute_unit_tex_engine_run(struct gpu_compute_unit_t *compute_unit)
 		return;
 
 	/* ALU Engine stages */
-	gpu_compute_unit_tex_engine_fetch(compute_unit);
+	gpu_tex_engine_fetch(compute_unit);
 }
