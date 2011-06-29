@@ -21,9 +21,81 @@
 #include <gpuarch.h>
 
 
-void gpu_compute_unit_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
+/* FIXME: configurable */
+int gpu_alu_engine_inst_queue_size = 4;  /* Number of instructions */
+int gpu_alu_engine_fetch_queue_size = 64;  /* Number of bytes */
+
+
+void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_wavefront_t *wavefront = compute_unit->alu_engine.wavefront;
+	struct lnlist_t *inst_queue = compute_unit->alu_engine.inst_queue;
+	struct gpu_uop_t *uop;
+
+	/* Get instruction at the head of the instruction queue */
+	lnlist_head(inst_queue);
+	uop = lnlist_get(inst_queue);
+
+	/////// FIXME //////////
+	if (!lnlist_count(inst_queue) && !lnlist_count(compute_unit->alu_engine.fetch_queue)
+			&& wavefront->clause_kind != GPU_CLAUSE_ALU)
+	{
+		compute_unit->alu_engine.wavefront = NULL;
+		return;
+	}
+	///////////////////////
+
+	/* If there was no uop in the queue, done */
+	if (!uop)
+		return;
+
+	/* Extract uop from instruction queue */
+	lnlist_remove(inst_queue);
+
+	///////// FIXME ////////////
+	gpu_uop_free(uop);//////
+	////////////////////////////
+}
+
+
+void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
+{
+	struct lnlist_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
+	struct lnlist_t *inst_queue = compute_unit->alu_engine.inst_queue;
+	struct gpu_uop_t *uop;
+
+	/* Get instruction at the head of the fetch queue */
+	lnlist_head(fetch_queue);
+	uop = lnlist_get(fetch_queue);
+
+	/* If there was no uop in the queue, done */
+	if (!uop)
+		return;
+
+	/* If uop is still being fetch from instruction memory, done */
+	if (!uop->inst_cache_witness)
+		return;
+
+	/* If there is no space in the instruction queue, done */
+	if (lnlist_count(inst_queue) >= gpu_alu_engine_inst_queue_size)
+		return;
+
+	/* Extract uop from fetch queue and insert it into instruction queue */
+	lnlist_remove(fetch_queue);
+	lnlist_out(inst_queue);
+	lnlist_insert(inst_queue, uop);
+
+	/* Debug */
+	gpu_pipeline_debug("alu a=\"decode\" "
+		"uop=%lld\n",
+		uop->id);
+}
+
+
+void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
+{
+	struct gpu_wavefront_t *wavefront = compute_unit->alu_engine.wavefront;
+	struct lnlist_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
 	struct gpu_uop_t *uop;
 
 	struct amd_inst_t *inst;
@@ -31,15 +103,28 @@ void gpu_compute_unit_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	int i;
 
 	/* If wavefront finished the ALU clause, no more instruction fetch */
-	if (wavefront->clause_kind != GPU_CLAUSE_ALU)
+	if (!wavefront || wavefront->clause_kind != GPU_CLAUSE_ALU)
 		return;
 
-	/* Create new uop */
-	uop = gpu_uop_create();
+	/* If fetch queue is full, cannot fetch until space is made */
+	/* FIXME */
+	if (lnlist_count(fetch_queue) > 1)
+		return;
 
 	/* Emulate instruction */
 	gpu_wavefront_execute(wavefront);
+
+	/* Create new uop */
+	uop = gpu_uop_create();
 	amd_alu_group_copy(&uop->alu_group, &wavefront->alu_group);
+
+	/* Access instruction cache */
+	/* FIXME */
+	uop->inst_cache_witness = 1;
+
+	/* Enqueue instruction into fetch queue */
+	lnlist_out(fetch_queue);
+	lnlist_insert(fetch_queue, uop);
 
 	/* Debug */
 	if (debug_status(gpu_pipeline_debug_category)) {
@@ -58,17 +143,10 @@ void gpu_compute_unit_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 		}
 		gpu_pipeline_debug("\"\n");
 	}
-
-
-	/* FIXME */
-	/////////////////////
-	gpu_uop_free(uop);
-	if (wavefront->clause_kind != GPU_CLAUSE_ALU)
-		compute_unit->alu_engine.wavefront = NULL;
 }
 
 
-void gpu_compute_unit_alu_engine_run(struct gpu_compute_unit_t *compute_unit)
+void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_wavefront_t *wavefront = compute_unit->alu_engine.wavefront;
 
@@ -77,5 +155,7 @@ void gpu_compute_unit_alu_engine_run(struct gpu_compute_unit_t *compute_unit)
 		return;
 
 	/* ALU Engine stages */
-	gpu_compute_unit_alu_engine_fetch(compute_unit);
+	gpu_alu_engine_read(compute_unit);
+	gpu_alu_engine_decode(compute_unit);
+	gpu_alu_engine_fetch(compute_unit);
 }
