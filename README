@@ -137,3 +137,4 @@ Processing elements
 * PEs are pipelined functional units, capable of performing additions, multiplications, or transcendental operations (in the case of PE_t elements).
 * A PE accepts one instruction every cycle (this can be configured). This parameter is called the issue latency.
 * The latency of of the instruction (time between the operation starts until the result is ready) depends on the operation (sin >> add). This is configurable as well.
+

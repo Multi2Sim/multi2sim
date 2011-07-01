@@ -159,7 +159,6 @@ void *amd_inst_decode_alu(void *buf, struct amd_inst_t *inst)
 	uint32_t alu_inst_short, alu_inst_long;
 
 	/* Read instruction words (64-bit) */
-	memset(inst, 0, sizeof(struct amd_inst_t));
 	memcpy(inst->words, buf, 8);
 
 	/* Decode instruction */

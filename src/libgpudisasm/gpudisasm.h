@@ -518,6 +518,7 @@ union amd_inst_word_t {
 
 
 #define AMD_INST_MAX_WORDS  3
+
 struct amd_inst_info_t {
 	enum amd_inst_enum inst;
 	enum amd_category_enum category;
@@ -536,11 +537,9 @@ struct amd_inst_t {
 	struct amd_inst_info_t *info;  /* Pointer to 'amd_inst_info' table */
 	union amd_inst_word_t words[AMD_INST_MAX_WORDS];
 	
-	/* For ALU instructions, identifier of assigned ALU (ALU_[X,Y,Z,W] or ALU_TRANS) */
-	enum amd_alu_enum alu;
-
-	/* If 'category' is AMD_CAT_ALU, alu group where it belongs */
-	struct amd_alu_group_t *alu_group;
+	/* ALU instructions */
+	enum amd_alu_enum alu;  /*  identifier of assigned ALU (ALU_[X,Y,Z,W] or ALU_TRANS) */
+	struct amd_alu_group_t *alu_group;  /* 'alu_group' where it belongs */
 };
 
 

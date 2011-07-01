@@ -56,6 +56,86 @@ extern char *gpu_stack_faults_file_name;
 
 
 
+/*
+ * GPU uop
+ */
+
+/* Part of a GPU instruction specific for each work-item within wavefront. */
+struct gpu_work_item_uop_t {
+	
+	/* For global memory accesses */
+	uint32_t global_mem_access_addr;
+	uint32_t global_mem_access_size;
+
+	/* Local memory access */
+	int local_mem_access_count;
+	int local_mem_access_type[MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
+	uint32_t local_mem_access_addr[MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	uint32_t local_mem_access_size[MAX_LOCAL_MEM_ACCESSES_PER_INST];
+};
+
+#define GPU_UOP_MAX_IDEP      (3 * 5)
+#define GPU_UOP_MAX_ODEP      (3 * 5)
+
+#define GPU_UOP_DEP_NONE         0
+#define GPU_UOP_DEP_REG_FIRST    1
+#define GPU_UOP_DEP_REG(X)       ((X) + 1)
+#define GPU_UOP_DEP_REG_LAST     128
+#define GPU_UOP_DEP_PV           129
+#define GPU_UOP_DEP_PS           130
+#define GPU_UOP_DEP_LDS          131
+#define GPU_UOP_DEP_COUNT        132
+
+/* Structure representing a GPU instruction fetched in common for a wavefront.
+ * This is the structure passed from stage to stage in the compute unit pipeline. */
+struct gpu_uop_t
+{
+	/* IDs */
+	uint64_t id;
+
+	/* Flags */
+	unsigned int ready : 1;
+	unsigned int last : 1;
+	unsigned int global_mem_read : 1;
+	unsigned int global_mem_write : 1;
+	unsigned int local_mem_read : 1;
+	unsigned int local_mem_write : 1;
+
+	/* Witness memory accesses */
+	int inst_cache_witness;
+	int global_mem_access_witness;
+	int local_mem_access_witness;
+
+	/* ALU Engine - subwavefronts */
+	int subwavefront_count;
+	int read_subwavefront_count;
+	int write_subwavefront_count;
+
+	/* ALU instructions - input/output dependencies */
+	int idep[GPU_UOP_MAX_IDEP];
+	int odep[GPU_UOP_MAX_ODEP];
+	int idep_count;
+	int odep_count;
+
+	/* Double linked lists of producer-consumers */
+	struct gpu_uop_t *dep_next, *dep_prev;
+	struct gpu_uop_t *dep_list_head, *dep_list_tail;
+	int dep_count, dep_max;
+
+	/* Per stream-core data. This space is dynamically allocated for an uop.
+	 * It should be always the last field of the structure. */
+	struct gpu_work_item_uop_t work_item_uop[0];
+};
+
+struct gpu_uop_t *gpu_uop_create();
+struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_group);
+void gpu_uop_free(struct gpu_uop_t *gpu_uop);
+
+void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count);
+
+
+
+
 /* GPU Stream Core */
 
 struct gpu_stream_core_t {
@@ -108,6 +188,8 @@ struct gpu_compute_unit_t
 		struct gpu_wavefront_t *wavefront;
 		struct lnlist_t *fetch_queue;  /* Queue of 'gpu_uop's */
 		struct lnlist_t *inst_queue;  /* Queue of 'gpu_uop's */
+		struct heap_t *event_queue;  /* Events for instruction execution */
+		struct gpu_uop_t *producers[GPU_UOP_DEP_COUNT];
 	} alu_engine;
 
 	/* Fields for TEX Engine */
@@ -125,62 +207,6 @@ void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit);
 void gpu_cf_engine_run(struct gpu_compute_unit_t *compute_unit);
 void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit);
 void gpu_tex_engine_run(struct gpu_compute_unit_t *compute_unit);
-
-
-
-/* GPU uop */
-
-/* Part of a GPU instruction specific for each work-item within wavefront. */
-struct gpu_work_item_uop_t {
-	
-	/* For global memory accesses */
-	uint32_t global_mem_access_addr;
-	uint32_t global_mem_access_size;
-
-	/* Local memory access */
-	int local_mem_access_count;
-	int local_mem_access_type[MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
-	uint32_t local_mem_access_addr[MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	uint32_t local_mem_access_size[MAX_LOCAL_MEM_ACCESSES_PER_INST];
-};
-
-/* Structure representing a GPU instruction fetched in common for a wavefront.
- * This is the structure passed from stage to stage in the compute unit pipeline. */
-struct gpu_uop_t
-{
-	/* IDs */
-	uint64_t id;
-	struct gpu_work_group_t *work_group;
-	struct gpu_wavefront_t *wavefront;
-	struct gpu_compute_unit_t *compute_unit;
-	int subwavefront_count;
-	int last;  /* 1 if last uop in work-group */
-
-	/* Instruction */
-	struct amd_inst_t inst;
-	struct amd_alu_group_t alu_group;
-	
-	/* Clause kind */
-	enum gpu_clause_kind_enum clause_kind;
-
-	/* Flags copied after instruction emulation */
-	unsigned int global_mem_read : 1;
-	unsigned int global_mem_write : 1;
-	unsigned int local_mem_read : 1;
-	unsigned int local_mem_write : 1;
-
-	/* Witness memory accesses */
-	int inst_cache_witness;
-	int global_mem_access_witness;
-	int local_mem_access_witness;
-
-	/* Per stream-core data. This space is dynamically allocated for an uop.
-	 * It should be always the last field of the structure. */
-	struct gpu_work_item_uop_t work_item_uop[0];
-};
-
-struct gpu_uop_t *gpu_uop_create();
-void gpu_uop_free(struct gpu_uop_t *gpu_uop);
 
 
 
