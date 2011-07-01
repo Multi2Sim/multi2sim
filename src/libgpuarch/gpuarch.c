@@ -24,6 +24,7 @@
 #include <debug.h>
 #include <repos.h>
 #include <esim.h>
+#include <heap.h>
 
 
 
@@ -131,9 +132,110 @@ struct gpu_uop_t *gpu_uop_create()
 }
 
 
+static void gpu_uop_add_src_idep(struct gpu_uop_t *uop, struct amd_inst_t *inst, int src_idx)
+{
+	int sel, rel, chan, neg, abs;
+
+	assert(uop->idep_count < GPU_UOP_MAX_IDEP);
+	amd_inst_get_op_src(inst, src_idx, &sel, &rel, &chan, &neg, &abs);
+
+	/* sel = 0..127: Value in GPR */
+	if (IN_RANGE(sel, 0, 127))
+		uop->idep[uop->idep_count++] = GPU_UOP_DEP_REG(sel);
+
+	/* sel = ALU_SRC_PV */
+	else if (sel == 254)
+		uop->idep[uop->idep_count++] = GPU_UOP_DEP_PV;
+
+	/* sel = ALU_SRC_PS */
+	else if (sel == 255)
+		uop->idep[uop->idep_count++] = GPU_UOP_DEP_PS;
+
+	/* sel = 219..222: QA, QA.pop, QB, QB.pop */
+	else if (IN_RANGE(sel, 219, 222))
+		uop->idep[uop->idep_count++] = GPU_UOP_DEP_LDS;
+}
+
+
+struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_group)
+{
+	struct gpu_uop_t *uop;
+	struct amd_inst_t *inst;
+	int i;
+
+	/* Create uop */
+	uop = gpu_uop_create();
+
+	/* Update dependences */
+	for (i = 0; i < alu_group->inst_count; i++) {
+		inst = &alu_group->inst[i];
+
+		/* Local memory access instruction */
+		if (inst->info->fmt[0] == FMT_ALU_WORD0_LDS_IDX_OP) {
+
+			/* Assume read and write to local memory */
+			assert(uop->idep_count < GPU_UOP_MAX_IDEP);
+			uop->idep[uop->idep_count++] = GPU_UOP_DEP_LDS;
+			assert(uop->odep_count < GPU_UOP_MAX_ODEP);
+			uop->odep[uop->odep_count++] = GPU_UOP_DEP_LDS;
+		}
+
+		/* Arithmetic instruction */
+		else if (inst->info->fmt[0] == FMT_ALU_WORD0) {
+
+			/* Add input dependences */
+			gpu_uop_add_src_idep(uop, inst, 0);
+			gpu_uop_add_src_idep(uop, inst, 1);
+			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP3)
+				gpu_uop_add_src_idep(uop, inst, 2);
+
+			/* Add register output dependence if not masked */
+			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP3 || inst->words[1].alu_word1_op2.write_mask) {
+				assert(uop->odep_count < GPU_UOP_MAX_ODEP);
+				uop->odep[uop->odep_count++] = GPU_UOP_DEP_REG(inst->words[1].alu_word1_op2.dst_gpr);
+			}
+
+			/* Add PV/PS output dependence */
+			assert(uop->odep_count < GPU_UOP_MAX_ODEP);
+			uop->odep[uop->odep_count++] = inst->alu == AMD_ALU_TRANS ? GPU_UOP_DEP_PS : GPU_UOP_DEP_PV;
+		}
+	}
+
+	/* Return */
+	return uop;
+}
+
+
 void gpu_uop_free(struct gpu_uop_t *gpu_uop)
 {
 	repos_free_object(gpu_uop_repos, gpu_uop);
+}
+
+
+void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
+{
+	static struct string_map_t gpu_uop_dep_map = {
+		4, {
+			{ "none", GPU_UOP_DEP_NONE },
+			{ "LDS", GPU_UOP_DEP_LDS },
+			{ "PS", GPU_UOP_DEP_PS },
+			{ "PV", GPU_UOP_DEP_PV }
+		}
+	};
+	char *comma = "";
+	char str[MAX_STRING_SIZE];
+	int i;
+
+	dump_buf(&buf, &size, "{");
+	for (i = 0; i < dep_count; i++) {
+		if (IN_RANGE(dep_list[i], GPU_UOP_DEP_REG_FIRST, GPU_UOP_DEP_REG_LAST))
+			sprintf(str, "R%d", dep_list[i] - GPU_UOP_DEP_REG_FIRST);
+		else
+			strcpy(str, map_value(&gpu_uop_dep_map, dep_list[i]));
+		dump_buf(&buf, &size, "%s%s", comma, str);
+		comma = ",";
+	}
+	dump_buf(&buf, &size, "}");
 }
 
 
@@ -181,6 +283,7 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 	/* Lists */
 	compute_unit->alu_engine.fetch_queue = lnlist_create();
 	compute_unit->alu_engine.inst_queue = lnlist_create();
+	compute_unit->alu_engine.event_queue = heap_create(10);
 
 	/* Return */
 	return compute_unit;
@@ -191,6 +294,7 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 {
 	lnlist_free(compute_unit->alu_engine.fetch_queue);
 	lnlist_free(compute_unit->alu_engine.inst_queue);
+	heap_free(compute_unit->alu_engine.event_queue);
 	gpu_cache_free(compute_unit->local_memory);
 	free(compute_unit);
 }
