@@ -45,6 +45,14 @@ extern int gpu_local_mem_banks;
 extern int gpu_local_mem_read_ports;
 extern int gpu_local_mem_write_ports;
 
+extern int gpu_cf_engine_inst_mem_latency;
+
+extern int gpu_alu_engine_inst_mem_latency;
+extern int gpu_alu_engine_inst_queue_size;
+extern int gpu_alu_engine_fetch_queue_size;
+
+extern int gpu_tex_engine_inst_mem_latency;
+
 extern struct gpu_t *gpu;
 
 /* GPU-REL: insertion of faults into stack */

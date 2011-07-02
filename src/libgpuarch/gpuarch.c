@@ -71,6 +71,25 @@ char *gpu_config_help =
 	"      Number of read ports per bank.\n"
 	"  WritePorts = <num> (Default = 2)\n"
 	"      Number of write ports per bank.\n"
+	"\n"
+	"Section '[ CFEngine ]': parameters for the CF Engine of the Compute Units.\n"
+	"\n"
+	"  InstructionMemoryLatency = <cycles> (Default = 2)\n"
+	"      Latency of an access to the instruction memory in number of cycles.\n"
+	"\n"
+	"Section '[ ALUEngine ]': parameters for the ALU Engine of the Compute Units.\n"
+	"\n"
+	"  InstructionMemoryLatency = <cycles> (Default = 2)\n"
+	"      Latency of an access to the instruction memory in number of cycles.\n"
+	"  FetchQueueSize = <size> (Default = 64)\n"
+	"      Size in bytes of the fetch queue.\n"
+	"  InstructionQueueSize = <num_inst> (Default = 4)\n"
+	"      Number of VLIW bundles that can be stored in the instruction queue.\n"
+	"\n"
+	"Section '[ TEXEngine ]': parameters for the TEX Engine of the Compute Units.\n"
+	"\n"
+	"  InstructionMemoryLatency = <cycles> (Default = 2)\n"
+	"      Latency of an access to the instruction memory in number of cycles.\n"
 	"\n";
 
 enum gpu_sim_kind_enum gpu_sim_kind = gpu_sim_kind_functional;
@@ -600,6 +619,38 @@ void gpu_init()
 		fatal("%s: invalid value for %s->ReadPorts.\n%s", gpu_config_file_name, section, err_note);
 	if (gpu_local_mem_write_ports < 1)
 		fatal("%s: invalid value for %s->WritePorts.\n%s", gpu_config_file_name, section, err_note);
+	
+	/* CF Engine */
+	section = "CFEngine";
+	gpu_cf_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
+		gpu_cf_engine_inst_mem_latency);
+	if (gpu_cf_engine_inst_mem_latency < 1)
+		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
+	
+	/* ALU Engine */
+	section = "ALUEngine";
+	gpu_alu_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
+		gpu_alu_engine_inst_mem_latency);
+	gpu_alu_engine_fetch_queue_size = config_read_int(gpu_config, section, "FetchQueueSize",
+		gpu_alu_engine_fetch_queue_size);
+	gpu_alu_engine_inst_queue_size = config_read_int(gpu_config, section, "InstructionQueueSize",
+		gpu_alu_engine_inst_queue_size);
+	if (gpu_alu_engine_inst_mem_latency < 1)
+		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
+	if (gpu_alu_engine_fetch_queue_size < 56)
+		fatal("%s: the minimum value for %s->FetchQueueSize is 56.\n"
+			"This is the maximum size of one VLIW bundle, including 5 ALU instructions\n"
+			"(2 words each), and 4 literal constants (1 word each).\n%s",
+			gpu_config_file_name, section, err_note);
+	if (gpu_alu_engine_inst_queue_size < 1)
+		fatal("%s: invalid value for %s->InstructionQueueSize.\n%s", gpu_config_file_name, section, err_note);
+
+	/* TEX Engine */
+	section = "TEXEngine";
+	gpu_tex_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
+		gpu_tex_engine_inst_mem_latency);
+	if (gpu_tex_engine_inst_mem_latency < 1)
+		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
 	
 	/* Close GPU configuration file */
 	config_check(gpu_config);
