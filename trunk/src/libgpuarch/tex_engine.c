@@ -21,6 +21,10 @@
 #include <gpuarch.h>
 
 
+/* Configuration parameters */
+int gpu_tex_engine_inst_mem_latency = 2;  /* Instruction memory latency */
+
+
 void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_wavefront_t *wavefront = compute_unit->tex_engine.wavefront;

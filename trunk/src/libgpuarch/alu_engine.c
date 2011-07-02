@@ -22,7 +22,7 @@
 #include <heap.h>
 
 
-/* FIXME: configurable */
+int gpu_alu_engine_inst_mem_latency = 2;  /* Latency of instruction memory */
 int gpu_alu_engine_inst_queue_size = 4;  /* Number of instructions */
 int gpu_alu_engine_fetch_queue_size = 64;  /* Number of bytes */
 

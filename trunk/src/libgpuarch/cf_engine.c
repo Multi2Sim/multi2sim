@@ -21,6 +21,10 @@
 #include <gpuarch.h>
 
 
+/* Configuration parameters */
+int gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
+
+
 /* Based on the previous value of 'compute_unit->cf_engine.wavefront', assign the
  * new wavefront to run in the CF Engine. */
 void gpu_cf_engine_schedule(struct gpu_compute_unit_t *compute_unit)
