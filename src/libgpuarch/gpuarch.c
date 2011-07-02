@@ -85,6 +85,10 @@ char *gpu_config_help =
 	"      Size in bytes of the fetch queue.\n"
 	"  InstructionQueueSize = <num_inst> (Default = 4)\n"
 	"      Number of VLIW bundles that can be stored in the instruction queue.\n"
+	"  ProcessingElementLatency = <cycles> (Default = 4)\n"
+	"      Latency of each processing element (x, y, z, w, t) of a Stream Core\n"
+	"      in number of cycles. This is the time between an instruction is issued\n"
+	"      to a Stream Core and the result of the operation is available.\n"
 	"\n"
 	"Section '[ TEXEngine ]': parameters for the TEX Engine of the Compute Units.\n"
 	"\n"
@@ -635,6 +639,8 @@ void gpu_init()
 		gpu_alu_engine_fetch_queue_size);
 	gpu_alu_engine_inst_queue_size = config_read_int(gpu_config, section, "InstructionQueueSize",
 		gpu_alu_engine_inst_queue_size);
+	gpu_alu_engine_pe_latency = config_read_int(gpu_config, section, "ProcessingElementLatency",
+		gpu_alu_engine_pe_latency);
 	if (gpu_alu_engine_inst_mem_latency < 1)
 		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
 	if (gpu_alu_engine_fetch_queue_size < 56)
@@ -644,6 +650,8 @@ void gpu_init()
 			gpu_config_file_name, section, err_note);
 	if (gpu_alu_engine_inst_queue_size < 1)
 		fatal("%s: invalid value for %s->InstructionQueueSize.\n%s", gpu_config_file_name, section, err_note);
+	if (gpu_alu_engine_pe_latency < 1)
+		fatal("%s: invalud value for %s->ProcessingElementLatency.\n%s", gpu_config_file_name, section, err_note);
 
 	/* TEX Engine */
 	section = "TEXEngine";
