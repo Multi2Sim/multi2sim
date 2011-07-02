@@ -25,6 +25,7 @@
 int gpu_alu_engine_inst_mem_latency = 2;  /* Latency of instruction memory */
 int gpu_alu_engine_inst_queue_size = 4;  /* Number of instructions */
 int gpu_alu_engine_fetch_queue_size = 64;  /* Number of bytes */
+int gpu_alu_engine_pe_latency = 4;  /* Processing element latency */
 
 
 void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
@@ -115,7 +116,7 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 	 * Since processing elements in stream cores are pipelined, they
 	 * accept a new instruction every cycle, so no contention. */
 	heap_insert(compute_unit->alu_engine.event_queue,
-		(long long) gpu->cycle + 4, /* FIXME: PE latency - configurable */
+		(long long) gpu->cycle + gpu_alu_engine_pe_latency,
 		uop);
 	
 	/* If this is the last subwavefront, remove instruction from IQ */
