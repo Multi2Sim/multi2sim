@@ -168,12 +168,9 @@ struct gpu_compute_unit_t
 	struct gpu_compute_unit_t *idle_prev, *idle_next;
 	struct gpu_compute_unit_t *busy_prev, *busy_next;
 
-	/* Entry points to global memory hierarchy */
-	struct gpu_cache_t *gpu_cache_inst;
-	struct gpu_cache_t *gpu_cache_data;
-
-	/* Local memory */
-	struct gpu_cache_t *local_memory;
+	/* Memory */
+	struct gpu_cache_t *data_cache;  /* Entry point to global memory */
+	struct gpu_cache_t *local_memory;  /* Local */
 
 	/* Currently mapped work-group */
 	struct gpu_work_group_t *work_group;
