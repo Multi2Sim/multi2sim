@@ -48,8 +48,9 @@ extern int gpu_local_mem_write_ports;
 extern int gpu_cf_engine_inst_mem_latency;
 
 extern int gpu_alu_engine_inst_mem_latency;
-extern int gpu_alu_engine_inst_queue_size;
 extern int gpu_alu_engine_fetch_queue_size;
+extern int gpu_alu_engine_inst_queue_size;
+extern int gpu_alu_engine_pe_latency;
 
 extern int gpu_tex_engine_inst_mem_latency;
 
