@@ -101,12 +101,10 @@ char *gpu_cache_config_help =
 	"  ComputeUnit = <id>\n"
 	"      Identifier of a compute unit. This must be an integer between 0 and the\n"
 	"      number of compute units minus 1.\n"
-	"  DCache = <cache_name> (Required)\n"
+	"  DataCache = <cache_name> (Required)\n"
 	"      Name of the cache accessed when the compute unit reads/writes data.\n"
 	"      The cache must be declared in a previous section of type\n"
 	"      '[ Cache <cache_name> ]'.\n"
-	"  ICache = <cache_name> (Required)\n"
-	"      Name of the cache accessed when the compute unit fetches instructions.\n"
 	"\n";
 
 
@@ -153,8 +151,7 @@ static void gpu_cache_config_default(struct config_t *config)
 		sprintf(section, "Node cu-%d", compute_unit_id);
 		sprintf(str, "l1-%d", compute_unit_id);
 		config_write_int(config, section, "ComputeUnit", compute_unit_id);
-		config_write_string(config, section, "ICache", str);
-		config_write_string(config, section, "DCache", str);
+		config_write_string(config, section, "DataCache", str);
 	}
 
 	/* L2 cache */
@@ -430,58 +427,38 @@ void gpu_cache_config_read(void)
 				"\t'ComputeUnit' (%d) refers to a non-existent compute unit (the number of\n"
 				"\tavailable compute units was set to %d).",
 				gpu_cache_config_file_name, node_name, compute_unit_id, gpu_num_compute_units);
-			config_var_allow(config, section, "ICache");
-			config_var_allow(config, section, "DCache");
+			config_var_allow(config, section, "DataCache");
 			continue;
 		}
 		compute_unit = gpu->compute_units[compute_unit_id];
 
-		/* Instruction cache for node */
-		value = config_read_string(config, section, "ICache", "");
-		if (!*value)
-			fatal("%s: node '%s': variable 'ICache' not specified.\n%s",
-				gpu_cache_config_file_name, node_name, err_note);
-		if (!strcasecmp(value, "GlobalMemory")) {
-			compute_unit->gpu_cache_inst = gpu->global_memory;
-		} else {
-			sprintf(buf, "Cache %s", value);
-			if (!config_section_exists(config, buf))
-				fatal("%s: node '%s': invalid cache name for variable 'ICache'.\n%s",
-					gpu_cache_config_file_name, node_name, err_note);
-			compute_unit->gpu_cache_inst = config_read_ptr(config, buf, "ptr", NULL);
-		}
-		assert(compute_unit->gpu_cache_inst);
-		
 		/* Data cache for node */
-		value = config_read_string(config, section, "DCache", "");
+		value = config_read_string(config, section, "DataCache", "");
 		if (!*value)
-			fatal("%s: node '%s': variable 'DCache' not specified.\n%s",
+			fatal("%s: node '%s': variable 'DataCache' not specified.\n%s",
 				gpu_cache_config_file_name, node_name, err_note);
 		if (!strcasecmp(value, "GlobalMemory")) {
-			compute_unit->gpu_cache_data = gpu->global_memory;
+			compute_unit->data_cache = gpu->global_memory;
 		} else {
 			sprintf(buf, "Cache %s", value);
 			if (!config_section_exists(config, buf))
-				fatal("%s: node '%s': invalid cache name for variable 'DCache'.\n%s",
+				fatal("%s: node '%s': invalid cache name for variable 'DataCache'.\n%s",
 					gpu_cache_config_file_name, node_name, err_note);
-			compute_unit->gpu_cache_data = config_read_ptr(config, buf, "ptr", NULL);
+			compute_unit->data_cache = config_read_ptr(config, buf, "ptr", NULL);
 		}
-		assert(compute_unit->gpu_cache_data);
-
-		/* Debug */
-		gpu_cache_debug(" cu[%d].{inst='%s',data='%s'}", compute_unit_id,
-			compute_unit->gpu_cache_inst->name, compute_unit->gpu_cache_data->name);
+		assert(compute_unit->data_cache);
+		gpu_cache_debug(" cu[%d].data_cache='%s'}", compute_unit_id,
+			compute_unit->data_cache->name);
 	}
 	gpu_cache_debug("\n");
 
-	/* Check that all compute units have an entry to the global memory hierarchy, both
-	 * for data and instruction caches. */
+	/* Check that all compute units have an entry to the global memory hierarchy */
 	FOREACH_COMPUTE_UNIT(compute_unit_id) {
 		compute_unit = gpu->compute_units[compute_unit_id];
-		if (!compute_unit->gpu_cache_inst || !compute_unit->gpu_cache_data)
+		if (!compute_unit->data_cache)
 			fatal("%s: GPU cache configuration file does not specify a valid entry point\n"
 				"\tto the memory hierarchy for compute unit %d. Please make sure that a valid\n"
-				"\t'[ Node <name> ]' section is used, including variables 'ICache' and 'DCache'.\n%s",
+				"\t'[ Node <name> ]' section is used, including variable 'DataCache'.\n%s",
 				gpu_cache_config_file_name, compute_unit_id, err_note);
 	}
 
