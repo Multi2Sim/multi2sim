@@ -23,7 +23,6 @@
 
 
 int gpu_alu_engine_inst_mem_latency = 2;  /* Latency of instruction memory */
-int gpu_alu_engine_inst_queue_size = 4;  /* Number of instructions */
 int gpu_alu_engine_fetch_queue_size = 64;  /* Number of bytes */
 int gpu_alu_engine_pe_latency = 4;  /* Processing element latency */
 
@@ -80,7 +79,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 
 				assert(!heap_count(compute_unit->alu_engine.event_queue));
 				assert(!lnlist_count(compute_unit->alu_engine.fetch_queue));
-				assert(!lnlist_count(compute_unit->alu_engine.inst_queue));
+				assert(!compute_unit->alu_engine.inst_buffer);
 
 				/* Enqueue CF uop into complete queue in CF Engine */
 				lnlist_out(compute_unit->cf_engine.complete_queue);
@@ -97,47 +96,99 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 }
 
 
-void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
+void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 {
-	struct lnlist_t *inst_queue = compute_unit->alu_engine.inst_queue;
 	struct gpu_uop_t *uop;
 
-	/* Get instruction at the head of the instruction queue */
-	lnlist_head(inst_queue);
-	uop = lnlist_get(inst_queue);
-
-	/* If no instruction, or instruction at the head is not ready, done */
-	if (!uop || !uop->ready)
+	/* Get uop from execution buffer.
+	 * If no instruction, or instruction at the head is not ready, done */
+	uop = compute_unit->alu_engine.exec_buffer;
+	if (!uop || uop->local_mem_witness)
 		return;
 	
-	/* One more SubWF issued for uop */
-	assert(uop->read_subwavefront_count < uop->subwavefront_count);
-	uop->read_subwavefront_count++;
-	gpu_pipeline_debug("alu a=\"read\" "
+	/* One more SubWF launched for execution for uop.
+	 * Enqueue one writeback event for each SubWF.
+	 * Since processing elements in stream cores are pipelined, they
+	 * accept a new instruction every cycle, so no contention. */
+	assert(uop->exec_subwavefront_count < uop->subwavefront_count);
+	uop->exec_subwavefront_count++;
+	heap_insert(compute_unit->alu_engine.event_queue,
+		(long long) gpu->cycle + gpu_alu_engine_pe_latency,
+		uop);
+	
+	/* Debug */
+	gpu_pipeline_debug("alu a=\"exec\" "
 		"cu=%d "
 		"uop=%lld "
 		"subwf=%d\n",
 		compute_unit->id,
 		(long long) uop->id,
-		uop->read_subwavefront_count - 1);
+		uop->exec_subwavefront_count - 1);
 
-	/* Enqueue one writeback event for each SubWF.
-	 * Since processing elements in stream cores are pipelined, they
-	 * accept a new instruction every cycle, so no contention. */
-	heap_insert(compute_unit->alu_engine.event_queue,
-		(long long) gpu->cycle + gpu_alu_engine_pe_latency,
-		uop);
+	/* If this is the last subwavefront, remove uop from execution buffer */
+	if (uop->exec_subwavefront_count == uop->subwavefront_count)
+		compute_unit->alu_engine.exec_buffer = NULL;
+}
+
+
+void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
+{
+	struct gpu_work_group_t *work_group = compute_unit->work_group;
+	struct gpu_ndrange_t *ndrange = work_group->ndrange;
+	struct gpu_wavefront_t *wavefront = compute_unit->alu_engine.wavefront;
+
+	struct gpu_work_item_t *work_item;
+	int work_item_id;
+
+	struct gpu_uop_t *uop;
+	struct gpu_work_item_uop_t *work_item_uop;
+	int i;
+
+	/* Get instruction in the instruction buffer.
+	 * If no instruction, or instruction at the head is not ready, done */
+	uop = compute_unit->alu_engine.inst_buffer;
+	if (!uop || !uop->ready)
+		return;
 	
-	/* If this is the last subwavefront, remove instruction from IQ */
-	if (uop->read_subwavefront_count == uop->subwavefront_count)
-		lnlist_remove(inst_queue);
+	/* If there is no space in the execution buffer, done */
+	if (compute_unit->alu_engine.exec_buffer)
+		return;
+	
+	/* If instruction reads from local memory, do it here. */
+	if (uop->local_mem_read) {
+		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
+			work_item = ndrange->work_items[work_item_id];
+			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+			for (i = 0; i < work_item_uop->local_mem_access_count; i++) {
+				if (work_item_uop->local_mem_access_type[i] != 1)  /* read access */
+					continue;
+				gpu_cache_access(
+					compute_unit->local_memory,
+					1,  /* read access */
+					work_item_uop->local_mem_access_addr[i],
+					work_item_uop->local_mem_access_size[i],
+					&uop->local_mem_witness);
+				uop->local_mem_witness--;
+			}
+		}
+	}
+
+	/* Debug */
+	gpu_pipeline_debug("alu a=\"read\" "
+		"cu=%d "
+		"uop=%lld ",
+		compute_unit->id,
+		(long long) uop->id);
+
+	/* Move uop from instruction buffer into execution buffer */
+	compute_unit->alu_engine.inst_buffer = NULL;
+	compute_unit->alu_engine.exec_buffer = uop;
 }
 
 
 void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 {
 	struct lnlist_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
-	struct lnlist_t *inst_queue = compute_unit->alu_engine.inst_queue;
 	struct gpu_uop_t *uop;
 
 	/* Get instruction at the head of the fetch queue */
@@ -153,7 +204,8 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 		return;
 
 	/* If there is no space in the instruction queue, done */
-	if (lnlist_count(inst_queue) >= gpu_alu_engine_inst_queue_size)
+	/* If instruction buffer is occupied, done */
+	if (compute_unit->alu_engine.inst_buffer)
 		return;
 
 	/* Extract uop from fetch queue */
@@ -161,9 +213,9 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 	compute_unit->alu_engine.fetch_queue_length -= uop->length;
 	assert(compute_unit->alu_engine.fetch_queue_length >= 0);
 
-	/* Insert into instruction queue */
-	lnlist_out(inst_queue);
-	lnlist_insert(inst_queue, uop);
+	/* Insert into instruction buffer */
+	assert(!compute_unit->alu_engine.inst_buffer);
+	compute_unit->alu_engine.inst_buffer = uop;
 
 	/* Debug */
 	gpu_pipeline_debug("alu a=\"decode\" "
@@ -176,13 +228,20 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
+	struct gpu_work_group_t *work_group = compute_unit->work_group;
+	struct gpu_ndrange_t *ndrange = work_group->ndrange;
 	struct gpu_wavefront_t *wavefront = compute_unit->alu_engine.wavefront;
+
 	struct lnlist_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
 	struct amd_alu_group_t *alu_group;
 	struct gpu_uop_t *uop, *producer;
+	struct gpu_work_item_uop_t *work_item_uop;
 
 	struct amd_inst_t *inst;
 	char str1[MAX_STRING_SIZE], str2[MAX_STRING_SIZE];
+
+	struct gpu_work_item_t *work_item;
+	int work_item_id;
 
 	int idep, odep;
 	int i;
@@ -203,6 +262,22 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 		/ gpu_num_stream_cores;
 	uop->last = wavefront->clause_kind != GPU_CLAUSE_ALU;
 	uop->length = alu_group->inst_count * 8 + alu_group->literal_count * 4;
+	uop->local_mem_read = wavefront->local_mem_read;
+	uop->local_mem_write = wavefront->local_mem_write;
+
+	/* If instruction accesses local memory, record addresses. */
+	if (uop->local_mem_read || uop->local_mem_write) {
+		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
+			work_item = ndrange->work_items[work_item_id];
+			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+			work_item_uop->local_mem_access_count = work_item->local_mem_access_count;
+			for (i = 0; i < work_item->local_mem_access_count; i++) {
+				work_item_uop->local_mem_access_type[i] = work_item->local_mem_access_type[i];
+				work_item_uop->local_mem_access_addr[i] = work_item->local_mem_access_addr[i];
+				work_item_uop->local_mem_access_size[i] = work_item->local_mem_access_size[i];
+			}
+		}
+	}
 
 	/* Array 'producers' contains those uops in execution that produce each possible
 	 * output dependence. Find the youngest producer for this uop. */
@@ -242,8 +317,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	if (debug_status(gpu_pipeline_debug_category)) {
 		gpu_pipeline_debug("alu a=\"fetch\" "
 			"cu=%d "
-			"uop=%lld "
-			"inst=\"",
+			"uop=%lld ",
 			compute_unit->id,
 			(long long) uop->id);
 		for (i = 0; i < wavefront->alu_group.inst_count; i++) {
@@ -255,7 +329,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 				map_value(&amd_alu_map, inst->alu),
 				str2);
 		}
-		gpu_pipeline_debug("\" idep=");
+		gpu_pipeline_debug(" idep=");
 		gpu_uop_dump_dep_list(str1, MAX_STRING_SIZE, uop->idep, uop->idep_count);
 		gpu_pipeline_debug("%s odep=", str1);
 		gpu_uop_dump_dep_list(str1, MAX_STRING_SIZE, uop->odep, uop->odep_count);
@@ -277,6 +351,7 @@ void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit)
 
 	/* ALU Engine stages */
 	gpu_alu_engine_write(compute_unit);
+	gpu_alu_engine_execute(compute_unit);
 	gpu_alu_engine_read(compute_unit);
 	gpu_alu_engine_decode(compute_unit);
 	gpu_alu_engine_fetch(compute_unit);
