@@ -157,33 +157,12 @@ void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count);
 
 
 
-/* GPU Stream Core */
-
-struct gpu_stream_core_t {
-	
-	/* ID */
-	int id;
-
-	/* Compute unit it belongs to */
-	struct gpu_compute_unit_t *compute_unit;
-
-};
-
-struct gpu_stream_core_t *gpu_stream_core_create();
-void gpu_stream_core_free(struct gpu_stream_core_t *gpu_stream_core);
-
-
-
-
 /* GPU Compute Unit */
 
 struct gpu_compute_unit_t
 {
 	/* ID */
 	int id;
-
-	/* Stream cores */
-	struct gpu_stream_core_t **stream_cores;
 
 	/* Double linked list of compute units */
 	struct gpu_compute_unit_t *idle_prev, *idle_next;
@@ -443,9 +422,6 @@ struct gpu_t
 	int network_count;
 	struct gpu_cache_t *global_memory;  /* Last element in cache array */
 };
-
-#define FOREACH_STREAM_CORE(STREAM_CORE_ID) \
-	for ((STREAM_CORE_ID) = 0; (STREAM_CORE_ID) < gpu_num_stream_cores; (STREAM_CORE_ID)++)
 
 #define FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
 	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
