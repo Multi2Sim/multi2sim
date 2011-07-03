@@ -23,8 +23,6 @@
 
 /* Configuration parameters */
 int gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
-int gpu_cf_engine_inst_queue_size = 8;  /* Number of instructions */
-int gpu_cf_engine_fetch_queue_size = 64;  /* Number of bytes */
 
 
 void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)

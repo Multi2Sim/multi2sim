@@ -277,9 +277,37 @@ void gpu_cache_config_read(void)
 		read_port_count = config_read_int(config, buf, "ReadPorts", 2);
 		write_port_count = config_read_int(config, buf, "WritePorts", 1);
 
+		/* Checks */
+		policy = map_string_case(&cache_policy_map, policy_str);
+		if (policy == cache_policy_invalid)
+			fatal("%s: cache '%s': %s: invalid block replacement policy.\n%s",
+				gpu_cache_config_file_name, gpu_cache->name, policy_str, err_note);
+		if (sets < 1 || (sets & (sets - 1)))
+			fatal("%s: cache '%s': number of sets must be a power of two greater than 1.\n%s",
+				gpu_cache_config_file_name, gpu_cache->name, err_note);
+		if (assoc < 1 || (assoc & (assoc - 1)))
+			fatal("%s: cache '%s': associativity must be power of two and > 1.\n%s",
+				gpu_cache_config_file_name, gpu_cache->name, err_note);
+		if (block_size < 4 || (block_size & (block_size - 1)))
+			fatal("%s: cache '%s': block size must be power of two and at least 4.\n%s",
+				gpu_cache_config_file_name, gpu_cache->name, err_note);
+		if (latency < 1)
+			fatal("%s: cache '%s': invalid value for variable 'Latency'.\n%s",
+				gpu_cache_config_file_name, gpu_cache->name, err_note);
+		if (bank_count < 1 || (bank_count & (bank_count - 1)))
+			fatal("%s: cache '%s': number of banks must be a power of two greater than 1.\n%s",
+				gpu_cache_config_file_name, gpu_cache->name, err_note);
+		if (read_port_count < 1)
+			fatal("%s: cache '%s': invalid value for variable 'ReadPorts'.\n%s",
+				gpu_cache_config_file_name, gpu_cache->name, err_note);
+		if (write_port_count < 1)
+			fatal("%s: cache '%s': invalid value for variable 'WritePorts'.\n%s",
+				gpu_cache_config_file_name, gpu_cache->name, err_note);
+		
 		/* Create cache */
 		assert(curr < gpu->gpu_cache_count - 1);
-		gpu_cache = gpu_cache_create(bank_count, read_port_count, write_port_count);
+		gpu_cache = gpu_cache_create(bank_count, read_port_count, write_port_count,
+			block_size, latency);
 		gpu->gpu_caches[curr++] = gpu_cache;
 		snprintf(gpu_cache->name, sizeof(gpu_cache->name), "%s", section + 6);
 		gpu_cache_debug(" '%s'", gpu_cache->name);
@@ -306,37 +334,7 @@ void gpu_cache_config_read(void)
 			fatal("%s: cache '%s': lower network must be specified (use LoNet).\n%s",
 				gpu_cache_config_file_name, gpu_cache->name, err_note);
 
-		/* Checks */
-		policy = map_string_case(&cache_policy_map, policy_str);
-		if (policy == cache_policy_invalid)
-			fatal("%s: cache '%s': %s: invalid block replacement policy.\n%s",
-				gpu_cache_config_file_name, gpu_cache->name, policy_str, err_note);
-		if (sets < 1 || (sets & (sets - 1)))
-			fatal("%s: cache '%s': number of sets must be a power of two greater than 1.\n%s",
-				gpu_cache_config_file_name, gpu_cache->name, err_note);
-		if (assoc < 1 || (assoc & (assoc - 1)))
-			fatal("%s: cache '%s': associativity must be power of two and > 1.\n%s",
-				gpu_cache_config_file_name, gpu_cache->name, err_note);
-		if (block_size < 1 || (block_size & (block_size - 1)))
-			fatal("%s: cache '%s': block size must be power of two and > 1.\n%s",
-				gpu_cache_config_file_name, gpu_cache->name, err_note);
-		if (latency < 1)
-			fatal("%s: cache '%s': invalid value for variable 'Latency'.\n%s",
-				gpu_cache_config_file_name, gpu_cache->name, err_note);
-		if (bank_count < 1 || (bank_count & (bank_count - 1)))
-			fatal("%s: cache '%s': number of banks must be a power of two greater than 1.\n%s",
-				gpu_cache_config_file_name, gpu_cache->name, err_note);
-		if (read_port_count < 1)
-			fatal("%s: cache '%s': invalid value for variable 'ReadPorts'.\n%s",
-				gpu_cache_config_file_name, gpu_cache->name, err_note);
-		if (write_port_count < 1)
-			fatal("%s: cache '%s': invalid value for variable 'WritePorts'.\n%s",
-				gpu_cache_config_file_name, gpu_cache->name, err_note);
-		
-		/* Assign values and create cache */
-		gpu_cache->block_size = block_size;
-		gpu_cache->log_block_size = log_base2(block_size);
-		gpu_cache->latency = latency;
+		/* Create cache */
 		gpu_cache->cache = cache_create(sets, block_size, assoc, policy);
 	}
 	gpu_cache_debug("\n");
@@ -368,20 +366,6 @@ void gpu_cache_config_read(void)
 	read_port_count = config_read_int(config, section, "ReadPorts", 2);
 	write_port_count = config_read_int(config, section, "WritePorts", 2);
 
-	/* Global memory - create cache */
-	gpu_cache = gpu_cache_create(bank_count, read_port_count, write_port_count);
-	gpu->global_memory = gpu_cache;
-	gpu->gpu_caches[gpu->gpu_cache_count - 1] = gpu_cache;
-	strcpy(gpu_cache->name, "GlobalMemory");
-
-	/* Global memory - high network */
-	value = config_read_string(config, section, "HiNet", "");
-	sprintf(buf, "net %s", value);
-	gpu_cache->net_hi = config_read_ptr(config, buf, "ptr", NULL);
-	if (!gpu_cache->net_hi && *value)
-		fatal("%s: global memory: invalid network name for variable HiNet.\n%s",
-			gpu_cache_config_file_name, err_note);
-
 	/* Global memory - check parameters */
 	if (block_size < 1 || (block_size & (block_size - 1)))
 		fatal("%s: global memory: block size must be power of two and > 1.\n%s",
@@ -399,11 +383,21 @@ void gpu_cache_config_read(void)
 		fatal("%s: global memory: invalid value for variable 'WritePorts'.\n%s",
 			gpu_cache_config_file_name, err_note);
 
-	/* Global memory - assign parameters */
-	gpu_cache->block_size = block_size;
-	gpu_cache->log_block_size = log_base2(block_size);
-	gpu_cache->latency = latency;
-	
+	/* Global memory - create cache */
+	gpu_cache = gpu_cache_create(bank_count, read_port_count, write_port_count,
+		block_size, latency);
+	gpu->global_memory = gpu_cache;
+	gpu->gpu_caches[gpu->gpu_cache_count - 1] = gpu_cache;
+	strcpy(gpu_cache->name, "GlobalMemory");
+
+	/* Global memory - high network */
+	value = config_read_string(config, section, "HiNet", "");
+	sprintf(buf, "net %s", value);
+	gpu_cache->net_hi = config_read_ptr(config, buf, "ptr", NULL);
+	if (!gpu_cache->net_hi && *value)
+		fatal("%s: global memory: invalid network name for variable HiNet.\n%s",
+			gpu_cache_config_file_name, err_note);
+
 	/* Nodes */
 	gpu_cache_debug("creating access points to memory hierarchy:");
 	for (section = config_section_first(config); section; section = config_section_next(config))
@@ -602,7 +596,8 @@ void gpu_cache_done(void)
 }
 
 
-struct gpu_cache_t *gpu_cache_create(int bank_count, int read_port_count, int write_port_count)
+struct gpu_cache_t *gpu_cache_create(int bank_count, int read_port_count, int write_port_count,
+	int block_size, int latency)
 {
 	struct gpu_cache_t *gpu_cache;
 	
@@ -611,6 +606,13 @@ struct gpu_cache_t *gpu_cache_create(int bank_count, int read_port_count, int wr
 	gpu_cache->read_port_count = read_port_count;
 	gpu_cache->write_port_count = write_port_count;
 	gpu_cache->banks = calloc(1, gpu_cache->bank_count * SIZEOF_GPU_CACHE_BANK(gpu_cache));
+	gpu_cache->latency = latency;
+
+	/* Block size */
+	gpu_cache->block_size = block_size;
+	assert(!(block_size & (block_size - 1)) && block_size >= 4);
+	gpu_cache->log_block_size = log_base2(block_size);
+
 	return gpu_cache;
 }
 

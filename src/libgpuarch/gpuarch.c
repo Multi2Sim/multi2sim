@@ -63,6 +63,8 @@ char *gpu_config_help =
 	"Section '[ LocalMemory ]': defines the parameters of the local memory associated to\n"
 	"each compute unit.\n"
 	"\n"
+	"  BlockSize = <bytes> (Default = 16)\n"
+	"      Access block size, used for access coalescing purposes among work-items.\n"
 	"  Latency = <num_cycles> (Default = 2)\n"
 	"      Hit latency in number of cycles.\n"
 	"  Banks = <num> (Default = 4)\n"
@@ -120,6 +122,7 @@ int gpu_max_wavefront_count;
 
 /* Local memory parameters */
 int gpu_local_mem_latency = 2;
+int gpu_local_mem_block_size = 16;
 int gpu_local_mem_banks = 4;
 int gpu_local_mem_read_ports = 2;
 int gpu_local_mem_write_ports = 2;
@@ -285,9 +288,11 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 	/* Local memory */
 	compute_unit->local_memory = gpu_cache_create(gpu_local_mem_banks,
-		gpu_local_mem_read_ports, gpu_local_mem_write_ports);
+		gpu_local_mem_read_ports, gpu_local_mem_write_ports,
+		gpu_local_mem_block_size, gpu_local_mem_latency);
 	local_memory = compute_unit->local_memory;
-	local_memory->latency = gpu_local_mem_latency;
+	snprintf(local_memory->name, sizeof(local_memory->name),
+		"LocalMemory[%d]", compute_unit->id);
 
 	/* Initialize CF Engine */
 	compute_unit->cf_engine.wavefront_pool = lnlist_create();
@@ -297,7 +302,6 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 	/* Initialize ALU Engine */
 	compute_unit->alu_engine.fetch_queue = lnlist_create();
-	compute_unit->alu_engine.inst_queue = lnlist_create();
 	compute_unit->alu_engine.event_queue = heap_create(10);
 
 	/* Return */
@@ -313,7 +317,6 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	lnlist_free(compute_unit->cf_engine.complete_queue);
 
 	lnlist_free(compute_unit->alu_engine.fetch_queue);
-	lnlist_free(compute_unit->alu_engine.inst_queue);
 	heap_free(compute_unit->alu_engine.event_queue);
 
 	gpu_cache_free(compute_unit->local_memory);
@@ -614,10 +617,14 @@ void gpu_init()
 	
 	/* Local memory */
 	section = "LocalMemory";
+	gpu_local_mem_block_size = config_read_int(gpu_config, section, "BlockSize", gpu_local_mem_block_size);
 	gpu_local_mem_latency = config_read_int(gpu_config, section, "Latency", gpu_local_mem_latency);
 	gpu_local_mem_banks = config_read_int(gpu_config, section, "Banks", gpu_local_mem_banks);
 	gpu_local_mem_read_ports = config_read_int(gpu_config, section, "ReadPorts", gpu_local_mem_read_ports);
 	gpu_local_mem_write_ports = config_read_int(gpu_config, section, "WritePorts", gpu_local_mem_write_ports);
+	if ((gpu_local_mem_block_size & (gpu_local_mem_block_size - 1)) || gpu_local_mem_block_size < 4)
+		fatal("%s: %s->BlockSize must be a power of two and at least 4.\n%s",
+			gpu_config_file_name, section, err_note);
 	if (gpu_local_mem_latency < 1)
 		fatal("%s: invalid value for %s->Latency.\n%s", gpu_config_file_name, section, err_note);
 	if (gpu_local_mem_banks < 1 || (gpu_local_mem_banks & (gpu_local_mem_banks - 1)))
@@ -631,17 +638,8 @@ void gpu_init()
 	section = "CFEngine";
 	gpu_cf_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
 		gpu_cf_engine_inst_mem_latency);
-	gpu_cf_engine_fetch_queue_size = config_read_int(gpu_config, section, "FetchQueueSize",
-		gpu_cf_engine_fetch_queue_size);
-	gpu_cf_engine_inst_queue_size = config_read_int(gpu_config, section, "InstructionQueueSize",
-		gpu_cf_engine_inst_queue_size);
 	if (gpu_cf_engine_inst_mem_latency < 1)
 		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
-	if (gpu_cf_engine_fetch_queue_size < 8)
-		fatal("%s: the minimum value for %s->FetchQueueSize is 8 (size of 1 CF instruction).%s\n",
-			gpu_config_file_name, section, err_note);
-	if (gpu_cf_engine_inst_queue_size < 1)
-		fatal("%s: invalid value for %s->InstructionQueueSize.\n%s", gpu_config_file_name, section, err_note);
 	
 	/* ALU Engine */
 	section = "ALUEngine";
@@ -649,8 +647,6 @@ void gpu_init()
 		gpu_alu_engine_inst_mem_latency);
 	gpu_alu_engine_fetch_queue_size = config_read_int(gpu_config, section, "FetchQueueSize",
 		gpu_alu_engine_fetch_queue_size);
-	gpu_alu_engine_inst_queue_size = config_read_int(gpu_config, section, "InstructionQueueSize",
-		gpu_alu_engine_inst_queue_size);
 	gpu_alu_engine_pe_latency = config_read_int(gpu_config, section, "ProcessingElementLatency",
 		gpu_alu_engine_pe_latency);
 	if (gpu_alu_engine_inst_mem_latency < 1)
@@ -660,8 +656,6 @@ void gpu_init()
 			"This is the maximum size of one VLIW bundle, including 5 ALU instructions\n"
 			"(2 words each), and 4 literal constants (1 word each).\n%s",
 			gpu_config_file_name, section, err_note);
-	if (gpu_alu_engine_inst_queue_size < 1)
-		fatal("%s: invalid value for %s->InstructionQueueSize.\n%s", gpu_config_file_name, section, err_note);
 	if (gpu_alu_engine_pe_latency < 1)
 		fatal("%s: invalud value for %s->ProcessingElementLatency.\n%s", gpu_config_file_name, section, err_note);
 
