@@ -272,27 +272,6 @@ void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 
 
 /*
- * GPU Stream Core
- */
-
-struct gpu_stream_core_t *gpu_stream_core_create()
-{
-	struct gpu_stream_core_t *stream_core;
-
-	stream_core = calloc(1, sizeof(struct gpu_stream_core_t));
-	return stream_core;
-}
-
-
-void gpu_stream_core_free(struct gpu_stream_core_t *stream_core)
-{
-	free(stream_core);
-}
-
-
-
-
-/*
  * GPU Compute Unit
  */
 
@@ -360,6 +339,11 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 	gpu_work_group_clear_status(work_group, gpu_work_group_pending);
 	gpu_work_group_set_status(work_group, gpu_work_group_running);
 
+	/* Initialize compute unit */
+	compute_unit->cf_engine.decode_index = 0;
+	compute_unit->cf_engine.execute_index = 0;
+	compute_unit->cf_engine.finished_wavefronts = 0;
+
 	/* Insert all wavefront into the CF Engine's wavefront pool */
 	assert(!lnlist_count(compute_unit->cf_engine.wavefront_pool));
 	FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
@@ -421,10 +405,7 @@ void gpu_compute_unit_run(struct gpu_compute_unit_t *compute_unit)
 static void gpu_init_device()
 {
 	struct gpu_compute_unit_t *compute_unit;
-	struct gpu_stream_core_t *stream_core;
-
 	int compute_unit_id;
-	int stream_core_id;
 
 	/* Create device */
 	gpu = calloc(1, sizeof(struct gpu_t));
@@ -437,16 +418,6 @@ static void gpu_init_device()
 		compute_unit = gpu->compute_units[compute_unit_id];
 		compute_unit->id = compute_unit_id;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, idle, compute_unit);
-		
-		/* Create stream cores */
-		compute_unit->stream_cores = calloc(gpu_num_stream_cores, sizeof(void *));
-		FOREACH_STREAM_CORE(stream_core_id)
-		{
-			compute_unit->stream_cores[stream_core_id] = gpu_stream_core_create();
-			stream_core = compute_unit->stream_cores[stream_core_id];
-			stream_core->id = stream_core_id;
-			stream_core->compute_unit = compute_unit;
-		}
 	}
 }
 
@@ -725,10 +696,7 @@ void gpu_init()
 void gpu_done()
 {
 	struct gpu_compute_unit_t *compute_unit;
-	struct gpu_stream_core_t *stream_core;
-
 	int compute_unit_id;
-	int stream_core_id;
 
 	/* Cache system */
 	gpu_cache_done();
@@ -736,11 +704,6 @@ void gpu_done()
 	/* Free stream cores, compute units, and device */
 	FOREACH_COMPUTE_UNIT(compute_unit_id) {
 		compute_unit = gpu->compute_units[compute_unit_id];
-		FOREACH_STREAM_CORE(stream_core_id) {
-			stream_core = compute_unit->stream_cores[stream_core_id];
-			gpu_stream_core_free(stream_core);
-		}
-		free(compute_unit->stream_cores);
 		gpu_compute_unit_free(compute_unit);
 	}
 	free(gpu->compute_units);
