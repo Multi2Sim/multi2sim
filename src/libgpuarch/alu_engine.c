@@ -139,16 +139,20 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 	if (!uop)
 		return;
 
-	/* If uop is still being fetch from instruction memory, done */
-	if (!uop->inst_cache_witness)
+	/* If uop is still being fetched from instruction memory, done */
+	if (uop->inst_mem_ready > gpu->cycle)
 		return;
 
 	/* If there is no space in the instruction queue, done */
 	if (lnlist_count(inst_queue) >= gpu_alu_engine_inst_queue_size)
 		return;
 
-	/* Extract uop from fetch queue and insert it into instruction queue */
+	/* Extract uop from fetch queue */
 	lnlist_remove(fetch_queue);
+	compute_unit->alu_engine.fetch_queue_length -= uop->length;
+	assert(compute_unit->alu_engine.fetch_queue_length >= 0);
+
+	/* Insert into instruction queue */
 	lnlist_out(inst_queue);
 	lnlist_insert(inst_queue, uop);
 
@@ -165,6 +169,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_wavefront_t *wavefront = compute_unit->alu_engine.wavefront;
 	struct lnlist_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
+	struct amd_alu_group_t *alu_group;
 	struct gpu_uop_t *uop, *producer;
 
 	struct amd_inst_t *inst;
@@ -178,19 +183,20 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 		return;
 
 	/* If fetch queue is full, cannot fetch until space is made */
-	/* FIXME */
-	if (lnlist_count(fetch_queue) > 1)
+	if (compute_unit->alu_engine.fetch_queue_length >= gpu_alu_engine_fetch_queue_size)
 		return;
 
 	/* Emulate instruction and create uop */
 	gpu_wavefront_execute(wavefront);
-	uop = gpu_uop_create_from_alu_group(&wavefront->alu_group);
+	alu_group = &wavefront->alu_group;
+	uop = gpu_uop_create_from_alu_group(alu_group);
 	uop->subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1)
 		/ gpu_num_stream_cores;
 	uop->last = wavefront->clause_kind != GPU_CLAUSE_ALU;
+	uop->length = alu_group->inst_count * 8 + alu_group->literal_count * 4;
 
 	/* Array 'producers' contains those uops in execution that produce each possible
-	 * output dependence. Find the younguest producer for this uop. */
+	 * output dependence. Find the youngest producer for this uop. */
 	producer = NULL;
 	for (i = 0; i < uop->idep_count; i++) {
 		idep = uop->idep[i];
@@ -214,13 +220,14 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 		compute_unit->alu_engine.producers[odep] = uop;
 	}
 
-	/* Access instruction cache */
-	/* FIXME */
-	uop->inst_cache_witness = 1;
+	/* Access instruction cache. Record the time when the instruction will have been fetched,
+	 * as per the latency of the instruction memory. */
+	uop->inst_mem_ready = gpu->cycle + gpu_alu_engine_inst_mem_latency;
 
 	/* Enqueue instruction into fetch queue */
 	lnlist_out(fetch_queue);
 	lnlist_insert(fetch_queue, uop);
+	compute_unit->alu_engine.fetch_queue_length += uop->length;
 
 	/* Debug */
 	if (debug_status(gpu_pipeline_debug_category)) {

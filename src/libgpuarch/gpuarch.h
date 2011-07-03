@@ -101,6 +101,7 @@ struct gpu_uop_t
 {
 	/* IDs */
 	uint64_t id;
+	int length;  /* Number of bytes occupied by ALU group */
 
 	/* Flags */
 	unsigned int ready : 1;
@@ -111,7 +112,7 @@ struct gpu_uop_t
 	unsigned int local_mem_write : 1;
 
 	/* Witness memory accesses */
-	int inst_cache_witness;
+	uint64_t inst_mem_ready;  /* Cycle when instruction memory access completes */
 	int global_mem_access_witness;
 	int local_mem_access_witness;
 
@@ -191,11 +192,21 @@ struct gpu_compute_unit_t
 
 	/* Fields for ALU Engine */
 	struct {
+		
+		/* Current wavefront runnign in ALU Engine */
 		struct gpu_wavefront_t *wavefront;
-		struct lnlist_t *fetch_queue;  /* Queue of 'gpu_uop's */
+
+		/* Fetch queue (of uops, but occupancy measured in bytes */
+		struct lnlist_t *fetch_queue;
+		int fetch_queue_length;
+
 		struct lnlist_t *inst_queue;  /* Queue of 'gpu_uop's */
 		struct heap_t *event_queue;  /* Events for instruction execution */
+
+		/* Table storing the in-flight uop that produced an output
+		 * dependence. If the producer is not in flight, the value is NULL. */
 		struct gpu_uop_t *producers[GPU_UOP_DEP_COUNT];
+
 	} alu_engine;
 
 	/* Fields for TEX Engine */
