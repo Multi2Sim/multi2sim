@@ -234,7 +234,6 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 	if (uop->inst_mem_ready > gpu->cycle)
 		return;
 
-	/* If there is no space in the instruction queue, done */
 	/* If instruction buffer is occupied, done */
 	if (compute_unit->alu_engine.inst_buffer)
 		return;
@@ -387,3 +386,4 @@ void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit)
 	gpu_alu_engine_decode(compute_unit);
 	gpu_alu_engine_fetch(compute_unit);
 }
+
