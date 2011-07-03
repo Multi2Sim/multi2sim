@@ -1068,6 +1068,9 @@ int opencl_func_run(int code, unsigned int *args)
 		opencl_debug("    local_work_size=");
 		opencl_debug_array(work_dim, kernel->local_size3);
 		opencl_debug("\n");
+		if (kernel->local_size > gpu_max_work_group_size)
+			fatal("%s: maximum work-group size exceeded.\n%s",
+				err_prefix, err_opencl_param_note);
 
 		/* Check divisibility of global by local sizes */
 		if ((kernel->global_size3[0] % kernel->local_size3[0])
