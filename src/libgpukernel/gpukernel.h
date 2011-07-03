@@ -629,8 +629,9 @@ struct gpu_wavefront_t
 	void *cf_buf_start;
 	void *cf_buf;
 
-	/* Current and end of clause buffer */
+	/* Secondary clause boundaries and current position */
 	void *clause_buf;
+	void *clause_buf_start;
 	void *clause_buf_end;
 
 	/* Active mask stack */
