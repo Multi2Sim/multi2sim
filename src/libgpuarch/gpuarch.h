@@ -46,6 +46,8 @@ extern int gpu_local_mem_read_ports;
 extern int gpu_local_mem_write_ports;
 
 extern int gpu_cf_engine_inst_mem_latency;
+extern int gpu_cf_engine_fetch_queue_size;
+extern int gpu_cf_engine_inst_queue_size;
 
 extern int gpu_alu_engine_inst_mem_latency;
 extern int gpu_alu_engine_fetch_queue_size;
@@ -187,7 +189,21 @@ struct gpu_compute_unit_t
 
 	/* Fields for CF Engine */
 	struct {
-		struct gpu_wavefront_t *wavefront;
+		
+		/* Ready wavefront pool.
+		 * It includes suspended wavefronts, but excludes wavefronts in
+		 * flight in the CF pipeline or running on the ALU/TEX Engines. */
+		struct lnlist_t *wavefront_pool;
+
+		/* Fetch queue */
+		struct lnlist_t *fetch_queue;
+		int fetch_queue_length;
+
+		struct lnlist_t *inst_queue;
+		
+		/* Wavefront sent from the schedule to the fetch stage */
+		struct gpu_wavefront_t *sched_wavefront;
+
 	} cf_engine;
 
 	/* Fields for ALU Engine */

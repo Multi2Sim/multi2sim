@@ -106,6 +106,41 @@ void lnlist_prev(struct lnlist_t *lnlist)
 }
 
 
+void lnlist_next_circular(struct lnlist_t *lnlist)
+{
+	if (!lnlist->count) {
+		lnlist->error = LNLIST_EBOUNDS;
+		return;
+	}
+	if (lnlist->icurrent >= lnlist->count - 1) {
+		lnlist->icurrent = 0;
+		lnlist->current = lnlist->head;
+	} else {
+		lnlist->icurrent++;
+		lnlist->current = lnlist->current->next;
+	}
+	lnlist->error = 0;
+}
+
+
+void lnlist_prev_circular(struct lnlist_t *lnlist)
+{
+	if (!lnlist->count) {
+		lnlist->error = LNLIST_EBOUNDS;
+		return;
+	}
+	if (!lnlist->icurrent) {
+		lnlist->icurrent = lnlist->count - 1;
+		lnlist->current = lnlist->tail;
+	} else {
+		lnlist->icurrent--;
+		lnlist->current = lnlist->current ? lnlist->current->prev :
+			lnlist->tail;
+	}
+	lnlist->error = 0;
+}
+
+
 void lnlist_head(struct lnlist_t *lnlist)
 {
 	if (!lnlist->count) {
