@@ -253,7 +253,7 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 
 	/* If instruction is a global memory write, record addresses */
 	if (uop->global_mem_write) {
-		assert((inst->info->flags & AMD_INST_FLAG_MEM_READ) || (inst->info->flags & AMD_INST_FLAG_MEM_WRITE));
+		assert((inst->info->flags & AMD_INST_FLAG_MEM_WRITE));
 		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
 			work_item = ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];

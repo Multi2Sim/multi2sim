@@ -100,6 +100,8 @@ char *gpu_config_help =
 	"\n"
 	"  InstructionMemoryLatency = <cycles> (Default = 2)\n"
 	"      Latency of an access to the instruction memory in number of cycles.\n"
+	"  FetchQueueSize = <size> (Default = 32)\n"
+	"      Size in bytes of the fetch queue.\n"
 	"\n";
 
 enum gpu_sim_kind_enum gpu_sim_kind = gpu_sim_kind_functional;
@@ -304,6 +306,9 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 	compute_unit->alu_engine.fetch_queue = lnlist_create();
 	compute_unit->alu_engine.event_queue = heap_create(10);
 
+	/* Initialize TEX Engine */
+	compute_unit->tex_engine.fetch_queue = lnlist_create();
+
 	/* Return */
 	return compute_unit;
 }
@@ -318,6 +323,8 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 
 	lnlist_free(compute_unit->alu_engine.fetch_queue);
 	heap_free(compute_unit->alu_engine.event_queue);
+
+	lnlist_free(compute_unit->tex_engine.fetch_queue);
 
 	gpu_cache_free(compute_unit->local_memory);
 	free(compute_unit);
@@ -663,8 +670,14 @@ void gpu_init()
 	section = "TEXEngine";
 	gpu_tex_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
 		gpu_tex_engine_inst_mem_latency);
+	gpu_tex_engine_fetch_queue_size = config_read_int(gpu_config, section, "FetchQueueSize",
+		gpu_tex_engine_fetch_queue_size);
 	if (gpu_tex_engine_inst_mem_latency < 1)
 		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
+	if (gpu_tex_engine_fetch_queue_size < 16)
+		fatal("%s: the minimum value for %s->FetchQueueSize is 16.\n"
+			"This size corresponds to the 4 words comprising a TEX Evergreen instruction.\n%s",
+			gpu_config_file_name, section, err_note);
 	
 	/* Close GPU configuration file */
 	config_check(gpu_config);
