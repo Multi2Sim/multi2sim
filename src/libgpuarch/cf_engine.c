@@ -23,8 +23,11 @@
 
 /* Configuration parameters */
 int gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
+int gpu_cf_engine_inst_queue_size = 8;  /* Number of instructions */
+int gpu_cf_engine_fetch_queue_size = 64;  /* Number of bytes */
 
 
+#if 0
 /* Based on the previous value of 'compute_unit->cf_engine.wavefront', assign the
  * new wavefront to run in the CF Engine. */
 void gpu_cf_engine_schedule(struct gpu_compute_unit_t *compute_unit)
@@ -69,8 +72,85 @@ void gpu_cf_engine_schedule(struct gpu_compute_unit_t *compute_unit)
 	compute_unit->cf_engine.wavefront = wavefront;
 	assert(!wavefront || wavefront->clause_kind == GPU_CLAUSE_CF);
 }
+#endif
 
 
+void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
+{
+}
+
+
+void gpu_cf_engine_decode(struct gpu_compute_unit_t *compute_unit)
+{
+}
+
+
+void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
+{
+}
+
+
+void gpu_cf_engine_schedule(struct gpu_compute_unit_t *compute_unit)
+{
+	struct lnlist_t *wavefront_pool = compute_unit->cf_engine.wavefront_pool;
+	struct gpu_work_group_t *work_group = compute_unit->work_group;
+	struct gpu_wavefront_t *wavefront;
+
+	/* If there is no wavefront in the pool, done */
+	if (!lnlist_count(wavefront_pool))
+		return;
+	
+	/* If fetch stage still didn't process the last scheduled wavefront, done */
+	if (compute_unit->cf_engine.sched_wavefront)
+		return;
+	
+	/* Make sure that current wavefront is a valid position in the list. */
+	if (!lnlist_get(wavefront_pool))
+		lnlist_head(wavefront_pool);
+	
+	/* Assign temporarily current wavefront as scheduled candidate */
+	wavefront = lnlist_get(wavefront_pool);
+	compute_unit->cf_engine.sched_wavefront = wavefront;
+
+	/* Search for a candidate that is a running wavefront.
+	 * If there is no running wavefront, done. */
+	if (!DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront)) {
+		do {
+			lnlist_next_circular(wavefront_pool);
+			wavefront = lnlist_get(wavefront_pool);
+		} while (!DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront) &&
+			wavefront != compute_unit->cf_engine.sched_wavefront);
+		if (wavefront == compute_unit->cf_engine.sched_wavefront) {
+			compute_unit->cf_engine.sched_wavefront = NULL;
+			return;
+		}
+	}
+
+	/* Assign final candidate, and extract it from wavefront pool. */
+	compute_unit->cf_engine.sched_wavefront = wavefront;
+	lnlist_remove(wavefront_pool);
+
+	/* Debug */
+	gpu_pipeline_debug("cf a=\"sched\" "
+		"cu=%d "
+		"wf=%d\n",
+		compute_unit->id,
+		wavefront->id);
+}
+
+
+void gpu_cf_engine_run(struct gpu_compute_unit_t *compute_unit)
+{
+	/* Call CF Engine stages */
+	assert(compute_unit->work_group);
+	gpu_cf_engine_execute(compute_unit);
+	gpu_cf_engine_decode(compute_unit);
+	gpu_cf_engine_fetch(compute_unit);
+	gpu_cf_engine_schedule(compute_unit);
+}
+
+
+#if 0
 void gpu_cf_engine_run(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_work_group_t *work_group = compute_unit->work_group;
@@ -128,3 +208,5 @@ void gpu_cf_engine_run(struct gpu_compute_unit_t *compute_unit)
 			wavefront->id);
 	}
 }
+#endif
+

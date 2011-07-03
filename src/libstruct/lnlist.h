@@ -42,6 +42,8 @@ void *lnlist_get(struct lnlist_t *lnlist);  /* EBOUNDS */
 /* Advance or rewind current element */
 void lnlist_next(struct lnlist_t *lnlist);  /* EBOUNDS */
 void lnlist_prev(struct lnlist_t *lnlist);  /* EBOUNDS */
+void lnlist_next_circular(struct lnlist_t *lnlist);  /* EBOUNDS */
+void lnlist_prev_circular(struct lnlist_t *lnlist);  /* EBOUNDS */
 void lnlist_head(struct lnlist_t *lnlist);  /* EBOUNDS */
 void lnlist_tail(struct lnlist_t *lnlist);  /* EBOUNDS */
 void lnlist_out(struct lnlist_t *lnlist);
