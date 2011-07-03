@@ -289,6 +289,7 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 			gpu_isa_debug("  t%d:write(0x%x)", gpu_isa_work_item->id, addr);
 
 			/* Record access */
+			gpu_isa_wavefront->global_mem_write = 1;
 			gpu_isa_work_item->global_mem_access_addr = addr;
 			gpu_isa_work_item->global_mem_access_size = 0;
 
@@ -2266,6 +2267,7 @@ void amd_inst_FETCH_impl()
 		mem_read(gk->global_mem, addr + W2.offset, num_elem * 4, value);
 
 		/* Record global memory access */
+		gpu_isa_wavefront->global_mem_read = 1;
 		gpu_isa_work_item->global_mem_access_addr = addr;
 		gpu_isa_work_item->global_mem_access_size = num_elem * 4;
 
