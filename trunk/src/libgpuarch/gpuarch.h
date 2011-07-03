@@ -54,6 +54,7 @@ extern int gpu_alu_engine_fetch_queue_size;
 extern int gpu_alu_engine_pe_latency;
 
 extern int gpu_tex_engine_inst_mem_latency;
+extern int gpu_tex_engine_fetch_queue_size;
 
 extern struct gpu_t *gpu;
 
@@ -219,6 +220,12 @@ struct gpu_compute_unit_t
 	struct {
 		struct gpu_uop_t *cf_uop;  /* CF instruction triggering TEX clause */
 		struct gpu_wavefront_t *wavefront;
+
+		/* Queues */
+		struct lnlist_t *fetch_queue;  /* Uops from fetch to decode stage */
+		int fetch_queue_length;  /* Number of bytes occupied in fetch queue */
+		struct gpu_uop_t *inst_buffer;  /* Uop from decode to read stage */
+		struct gpu_uop_t *write_buffer;  /* Uop from read to write stage */
 	} tex_engine;
 
 };
