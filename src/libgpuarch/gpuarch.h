@@ -41,18 +41,16 @@ extern int gpu_num_compute_units;
 extern int gpu_compute_unit_time_slots;
 extern int gpu_max_wavefront_count;
 
+extern int gpu_local_mem_block_size;
 extern int gpu_local_mem_latency;
 extern int gpu_local_mem_banks;
 extern int gpu_local_mem_read_ports;
 extern int gpu_local_mem_write_ports;
 
 extern int gpu_cf_engine_inst_mem_latency;
-extern int gpu_cf_engine_fetch_queue_size;
-extern int gpu_cf_engine_inst_queue_size;
 
 extern int gpu_alu_engine_inst_mem_latency;
 extern int gpu_alu_engine_fetch_queue_size;
-extern int gpu_alu_engine_inst_queue_size;
 extern int gpu_alu_engine_pe_latency;
 
 extern int gpu_tex_engine_inst_mem_latency;
@@ -124,12 +122,12 @@ struct gpu_uop_t
 
 	/* Witness memory accesses */
 	uint64_t inst_mem_ready;  /* Cycle when instruction memory access completes */
-	int global_mem_access_witness;
-	int local_mem_access_witness;
+	int global_mem_witness;
+	int local_mem_witness;
 
 	/* ALU Engine - subwavefronts */
 	int subwavefront_count;
-	int read_subwavefront_count;
+	int exec_subwavefront_count;
 	int write_subwavefront_count;
 
 	/* ALU instructions - input/output dependencies */
@@ -204,11 +202,11 @@ struct gpu_compute_unit_t
 		struct gpu_wavefront_t *wavefront;
 		struct gpu_uop_t *cf_uop;  /* CF instruction triggering ALU clause */
 
-		/* Fetch queue (of uops, but occupancy measured in bytes */
-		struct lnlist_t *fetch_queue;
-		int fetch_queue_length;
-
-		struct lnlist_t *inst_queue;  /* Queue of 'gpu_uop's */
+		/* Queues */
+		struct lnlist_t *fetch_queue;  /* Uops from fetch to decode stage */
+		int fetch_queue_length;  /* Number of bytes occupied in fetch queue */
+		struct gpu_uop_t *inst_buffer;  /* Uop from decode to read stage */
+		struct gpu_uop_t *exec_buffer;  /* Uop from read to execute stage */
 		struct heap_t *event_queue;  /* Events for instruction execution */
 
 		/* Table storing the in-flight uop that produced an output
@@ -287,7 +285,7 @@ struct gpu_cache_t
 
 	/* Parameters */
 	char name[30];
-	uint32_t block_size, log_block_size;
+	int block_size, log_block_size;
 	int latency;
 
 	/* Banks and ports */
@@ -318,7 +316,8 @@ struct gpu_cache_t
 #define gpu_cache_debug(...) debug(gpu_cache_debug_category, __VA_ARGS__)
 extern int gpu_cache_debug_category;
 
-struct gpu_cache_t *gpu_cache_create(int bank_count, int read_port_count, int write_port_count);
+struct gpu_cache_t *gpu_cache_create(int bank_count, int read_port_count, int write_port_count,
+	int block_size, int latency);
 void gpu_cache_free(struct gpu_cache_t *gpu_cache);
 void gpu_cache_dump(struct gpu_cache_t *gpu_cache, FILE *f);
 
