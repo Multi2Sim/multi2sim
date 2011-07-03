@@ -29,7 +29,15 @@ int gpu_alu_engine_pe_latency = 4;  /* Processing element latency */
 
 void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 {
+	struct gpu_wavefront_t *wavefront = compute_unit->alu_engine.wavefront;
+	struct gpu_work_group_t *work_group = compute_unit->work_group;
+	struct gpu_ndrange_t *ndrange = work_group->ndrange;
+
+	struct gpu_work_item_t *work_item;
+	int work_item_id;
+
 	struct gpu_uop_t *uop, *consumer;
+	struct gpu_work_item_uop_t *work_item_uop;
 	uint64_t cycle;
 
 	int odep;
@@ -43,6 +51,24 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 			break;
 		assert(cycle == gpu->cycle);
 		heap_extract(compute_unit->alu_engine.event_queue, NULL);
+
+		/* If instruction writes to local memory, do it here. */
+		if (uop->local_mem_write) {
+			FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
+				work_item = ndrange->work_items[work_item_id];
+				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+				for (i = 0; i < work_item_uop->local_mem_access_count; i++) {
+					if (work_item_uop->local_mem_access_type[i] != 2)  /* write access */
+						continue;
+					gpu_cache_access(
+							compute_unit->local_memory,
+							2,  /* write access */
+							work_item_uop->local_mem_access_addr[i],
+							work_item_uop->local_mem_access_size[i],
+							NULL);
+				}
+			}
+		}
 
 		/* One more SubWF writes */
 		assert(uop->write_subwavefront_count < uop->subwavefront_count);
@@ -104,6 +130,11 @@ void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 	 * If no instruction, or instruction at the head is not ready, done */
 	uop = compute_unit->alu_engine.exec_buffer;
 	if (!uop || uop->local_mem_witness)
+		return;
+	
+	/* If instruction writes to local memory, wait till all previous write
+	 * accesses complete, to prevent over-occupancy of write buffers. */
+	if (uop->local_mem_write && compute_unit->local_memory->locked_write_port_count)
 		return;
 	
 	/* One more SubWF launched for execution for uop.
