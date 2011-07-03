@@ -76,6 +76,10 @@ char *gpu_config_help =
 	"\n"
 	"  InstructionMemoryLatency = <cycles> (Default = 2)\n"
 	"      Latency of an access to the instruction memory in number of cycles.\n"
+	"  FetchQueueSize = <size> (Default = 64)\n"
+	"      Size in bytes of the fetch queue.\n"
+	"  InstructionQueueSize = <num_inst> (Default = 4)\n"
+	"      Number of CF instructions that can be stored in the instruction queue.\n"
 	"\n"
 	"Section '[ ALUEngine ]': parameters for the ALU Engine of the Compute Units.\n"
 	"\n"
@@ -304,6 +308,9 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 	local_memory->latency = gpu_local_mem_latency;
 
 	/* Lists */
+	compute_unit->cf_engine.wavefront_pool = lnlist_create();
+	compute_unit->cf_engine.fetch_queue = lnlist_create();
+	compute_unit->cf_engine.inst_queue = lnlist_create();
 	compute_unit->alu_engine.fetch_queue = lnlist_create();
 	compute_unit->alu_engine.inst_queue = lnlist_create();
 	compute_unit->alu_engine.event_queue = heap_create(10);
@@ -315,6 +322,9 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 {
+	lnlist_free(compute_unit->cf_engine.wavefront_pool);
+	lnlist_free(compute_unit->cf_engine.fetch_queue);
+	lnlist_free(compute_unit->cf_engine.inst_queue);
 	lnlist_free(compute_unit->alu_engine.fetch_queue);
 	lnlist_free(compute_unit->alu_engine.inst_queue);
 	heap_free(compute_unit->alu_engine.event_queue);
@@ -325,9 +335,12 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group)
 {
-	assert(!compute_unit->work_group);
+	struct gpu_ndrange_t *ndrange = work_group->ndrange;
+	struct gpu_wavefront_t *wavefront;
+	int wavefront_id;
 
 	/* Map work-group */
+	assert(!compute_unit->work_group);
 	compute_unit->work_group = work_group;
 
 	/* Delete compute unit from 'idle' list and insert it to 'busy' list. */
@@ -337,6 +350,13 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 	/* Change work-group status to running */
 	gpu_work_group_clear_status(work_group, gpu_work_group_pending);
 	gpu_work_group_set_status(work_group, gpu_work_group_running);
+
+	/* Insert all wavefront into the CF Engine's wavefront pool */
+	assert(!lnlist_count(compute_unit->cf_engine.wavefront_pool));
+	FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
+		wavefront = ndrange->wavefronts[wavefront_id];
+		lnlist_add(compute_unit->cf_engine.wavefront_pool, wavefront);
+	}
 
 	/* Debug */
 	gpu_pipeline_debug("cu a=\"map\" "
@@ -349,10 +369,12 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 
 void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit)
 {
-	assert(compute_unit->work_group);
-
 	/* Reset mapped work-group */
+	assert(compute_unit->work_group);
 	compute_unit->work_group = NULL;
+
+	/* Empty CF Engine's wavefront pool */
+	lnlist_clear(compute_unit->cf_engine.wavefront_pool);
 
 	/* Delete compute unit from 'busy' list and insert it to 'idle' list. */
 	DOUBLE_LINKED_LIST_REMOVE(gpu, busy, compute_unit);
@@ -628,8 +650,17 @@ void gpu_init()
 	section = "CFEngine";
 	gpu_cf_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
 		gpu_cf_engine_inst_mem_latency);
+	gpu_cf_engine_fetch_queue_size = config_read_int(gpu_config, section, "FetchQueueSize",
+		gpu_cf_engine_fetch_queue_size);
+	gpu_cf_engine_inst_queue_size = config_read_int(gpu_config, section, "InstructionQueueSize",
+		gpu_cf_engine_inst_queue_size);
 	if (gpu_cf_engine_inst_mem_latency < 1)
 		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
+	if (gpu_cf_engine_fetch_queue_size < 8)
+		fatal("%s: the minimum value for %s->FetchQueueSize is 8 (size of 1 CF instruction).%s\n",
+			gpu_config_file_name, section, err_note);
+	if (gpu_cf_engine_inst_queue_size < 1)
+		fatal("%s: invalid value for %s->InstructionQueueSize.\n%s", gpu_config_file_name, section, err_note);
 	
 	/* ALU Engine */
 	section = "ALUEngine";
