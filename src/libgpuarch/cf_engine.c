@@ -70,8 +70,13 @@ void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)
 void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_work_group_t *work_group = compute_unit->work_group;
+	struct gpu_ndrange_t *ndrange = work_group->ndrange;
 	struct gpu_uop_t *uop;
 	int index;
+
+	struct gpu_work_item_uop_t *work_item_uop;
+	struct gpu_work_item_t *work_item;
+	int work_item_id;
 
 	/* Search entry in instruction buffer to decode */
 	index = compute_unit->cf_engine.execute_index;
@@ -119,6 +124,16 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 		/* Execute instruction in CF Engine - completed next cycle */
 		lnlist_out(compute_unit->cf_engine.complete_queue);
 		lnlist_insert(compute_unit->cf_engine.complete_queue, uop);
+
+		/* Global memory write - execute asynchronously */
+		if (uop->global_mem_write) {
+			FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id) {
+				work_item = ndrange->work_items[work_item_id];
+				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+				gpu_cache_access(compute_unit->data_cache, 2, work_item_uop->global_mem_access_addr,
+					work_item_uop->global_mem_access_size, NULL);
+			}
+		}
 	}
 
 	/* Set next execute candidate */
@@ -186,6 +201,10 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	int inst_num;
 
 	struct gpu_uop_t *uop;
+	struct gpu_work_item_uop_t *work_item_uop;
+	struct gpu_work_item_t *work_item;
+	int work_item_id;
+
 
 	/* If there is no wavefront in the pool, done */
 	if (!lnlist_count(wavefront_pool))
@@ -231,6 +250,19 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->tex_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_TEX;
 	uop->no_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_CF;
 	uop->last = DOUBLE_LINKED_LIST_MEMBER(work_group, finished, wavefront);
+	uop->global_mem_read = wavefront->global_mem_read;
+	uop->global_mem_write = wavefront->global_mem_write;
+
+	/* If instruction is a global memory write, record addresses */
+	if (uop->global_mem_write) {
+		assert((inst->info->flags & AMD_INST_FLAG_MEM_READ) || (inst->info->flags & AMD_INST_FLAG_MEM_WRITE));
+		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
+			work_item = ndrange->work_items[work_item_id];
+			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+			work_item_uop->global_mem_access_addr = work_item->global_mem_access_addr;
+			work_item_uop->global_mem_access_size = work_item->global_mem_access_size;
+		}
+	}
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
