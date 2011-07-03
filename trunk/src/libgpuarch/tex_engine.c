@@ -177,6 +177,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_uop_t *uop;
 	struct gpu_work_item_uop_t *work_item_uop;
 	struct amd_inst_t *inst;
+	int inst_num;
 
 	struct gpu_work_item_t *work_item;
 	int work_item_id;
@@ -192,6 +193,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 		return;
 	
 	/* Emulate instruction and create uop */
+	inst_num = (wavefront->clause_buf - wavefront->clause_buf_start) / 16;
 	gpu_wavefront_execute(wavefront);
 	inst = &wavefront->tex_inst;
 	uop = gpu_uop_create();
@@ -221,7 +223,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 
 	/* Debug */
 	if (debug_status(gpu_pipeline_debug_category)) {
-		amd_inst_dump_buf(inst, 0, 0, str1, MAX_STRING_SIZE);
+		amd_inst_dump_buf(inst, inst_num, 0, str1, MAX_STRING_SIZE);
 		str_single_spaces(str2, str1, MAX_STRING_SIZE);
 		gpu_pipeline_debug("tex a=\"fetch\" "
 			"cu=%d "
