@@ -54,8 +54,9 @@ void amd_inst_ALU_impl()
 	/* FIXME: barrier */
 
 	/* Start ALU clause */
-	gpu_isa_wavefront->clause_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
-	gpu_isa_wavefront->clause_buf_end = gpu_isa_wavefront->clause_buf + (W1.count + 1) * 8;
+	gpu_isa_wavefront->clause_buf_start = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
+	gpu_isa_wavefront->clause_buf_end = gpu_isa_wavefront->clause_buf_start + (W1.count + 1) * 8;
+	gpu_isa_wavefront->clause_buf = gpu_isa_wavefront->clause_buf_start;
 	gpu_isa_wavefront->clause_kind = GPU_CLAUSE_ALU;
 	gpu_isa_alu_clause_start();
 }
@@ -373,8 +374,9 @@ void amd_inst_TC_impl()
 	/* FIXME: barrier */
 	
 	/* Start TC clause */
-	gpu_isa_wavefront->clause_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
-	gpu_isa_wavefront->clause_buf_end = gpu_isa_wavefront->clause_buf + (W1.count + 1) * 16;
+	gpu_isa_wavefront->clause_buf_start = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
+	gpu_isa_wavefront->clause_buf_end = gpu_isa_wavefront->clause_buf_start + (W1.count + 1) * 16;
+	gpu_isa_wavefront->clause_buf = gpu_isa_wavefront->clause_buf_start;
 	gpu_isa_wavefront->clause_kind = GPU_CLAUSE_TEX;
 	gpu_isa_tc_clause_start();
 
