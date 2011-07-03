@@ -77,9 +77,18 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 		/* If this is the last SubWF to write, free uop */
 		if (uop->write_subwavefront_count == uop->subwavefront_count) {
 			if (uop->last) {
+
 				assert(!heap_count(compute_unit->alu_engine.event_queue));
 				assert(!lnlist_count(compute_unit->alu_engine.fetch_queue));
 				assert(!lnlist_count(compute_unit->alu_engine.inst_queue));
+
+				/* Enqueue CF uop into complete queue in CF Engine */
+				lnlist_out(compute_unit->cf_engine.complete_queue);
+				lnlist_insert(compute_unit->cf_engine.complete_queue,
+					compute_unit->alu_engine.cf_uop);
+
+				/* ALU Engine is now free */
+				compute_unit->alu_engine.cf_uop = NULL;
 				compute_unit->alu_engine.wavefront = NULL;
 			}
 			gpu_uop_free(uop);

@@ -115,6 +115,9 @@ int gpu_num_stream_cores = 16;
  * of the quotient between the wavefront size and number of stream cores. */
 int gpu_compute_unit_time_slots;
 
+/* Maximum number of wavefronts within a work-group */
+int gpu_max_wavefront_count;
+
 /* Local memory parameters */
 int gpu_local_mem_latency = 2;
 int gpu_local_mem_banks = 4;
@@ -307,10 +310,13 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 	local_memory = compute_unit->local_memory;
 	local_memory->latency = gpu_local_mem_latency;
 
-	/* Lists */
+	/* Initialize CF Engine */
 	compute_unit->cf_engine.wavefront_pool = lnlist_create();
-	compute_unit->cf_engine.fetch_queue = lnlist_create();
-	compute_unit->cf_engine.inst_queue = lnlist_create();
+	compute_unit->cf_engine.fetch_buffer = calloc(gpu_max_wavefront_count, sizeof(void *));
+	compute_unit->cf_engine.inst_buffer = calloc(gpu_max_wavefront_count, sizeof(void *));
+	compute_unit->cf_engine.complete_queue = lnlist_create();
+
+	/* Initialize ALU Engine */
 	compute_unit->alu_engine.fetch_queue = lnlist_create();
 	compute_unit->alu_engine.inst_queue = lnlist_create();
 	compute_unit->alu_engine.event_queue = heap_create(10);
@@ -323,11 +329,14 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 {
 	lnlist_free(compute_unit->cf_engine.wavefront_pool);
-	lnlist_free(compute_unit->cf_engine.fetch_queue);
-	lnlist_free(compute_unit->cf_engine.inst_queue);
+	free(compute_unit->cf_engine.fetch_buffer);
+	free(compute_unit->cf_engine.inst_buffer);
+	lnlist_free(compute_unit->cf_engine.complete_queue);
+
 	lnlist_free(compute_unit->alu_engine.fetch_queue);
 	lnlist_free(compute_unit->alu_engine.inst_queue);
 	heap_free(compute_unit->alu_engine.event_queue);
+
 	gpu_cache_free(compute_unit->local_memory);
 	free(compute_unit);
 }
@@ -619,7 +628,6 @@ void gpu_init()
 	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
 	gpu_max_work_group_size = config_read_int(gpu_config, section, "MaxWorkGroupSize", gpu_max_work_group_size);
 	gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", gpu_num_stream_cores);
-	gpu_compute_unit_time_slots = (gpu_wavefront_size + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
 	if (gpu_wavefront_size < 1)
 		fatal("%s: invalid value for 'WavefrontSize'.\n%s", gpu_config_file_name, err_note);
 	if ((gpu_max_work_group_size & (gpu_max_work_group_size - 1)) || gpu_max_work_group_size < 1)
@@ -630,6 +638,8 @@ void gpu_init()
 	if (gpu_wavefront_size > gpu_max_work_group_size)
 		fatal("%s: 'WavefrontSize' should not be larget than 'MaxWorkGroupSize'.\n%s",
 			gpu_config_file_name, err_note);
+	gpu_max_wavefront_count = (gpu_max_work_group_size + gpu_wavefront_size - 1) / gpu_wavefront_size;
+	gpu_compute_unit_time_slots = (gpu_wavefront_size + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
 	
 	/* Local memory */
 	section = "LocalMemory";
