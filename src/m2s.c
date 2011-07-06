@@ -145,25 +145,43 @@ static char *sim_help =
 	"      performs a call to 'clCreateProgramWithSource'. Since on-line compilation\n"
 	"      of OpenCL kernels is not supported, this is a possible way to load them.\n"
 	"\n"
+	"  --report-cpu-cache <file>\n"
+	"      File to dump detailed statistics related with the memory hierarchy, such as\n"
+	"      cache misses, hits, evictions, etc. Use only together with a detailed CPU\n"
+	"      simulation (option '--cpu-sim detailed').\n"
+	"\n"
 	"  --report-cpu-pipeline <file>\n"
 	"      File to dump a report of the CPU pipeline, such as number of instructions\n"
 	"      handled in every pipeline stage, or read/write accesses performed to\n"
 	"      pipeline queues (ROB, IQ, etc.). Use only together with a detailed CPU\n"
 	"      simulation (option '--cpu-sim detailed').\n"
 	"\n"
-	"  --report-cpu-cache <file>\n"
-	"      File to dump detailed statistics related with the memory hierarchy, such as\n"
-	"      cache misses, hits, evictions, etc. Use only together with a detailed CPU\n"
-	"      simulation (option '--cpu-sim detailed').\n"
+	"  --report-gpu-cache <file>\n"
+	"      File for a report on the GPU global memory hierarchy, including cache hits,\n"
+	"      misses, evictions, etc. Use together with a detailed GPU simulation\n"
+	"      (option '--gpu-sim detailed').\n"
 	"\n"
 	"  --report-gpu-kernel <file>\n"
 	"      File to dump report of a GPU device kernel emulation. The report includes\n"
 	"      statistics about type of instructions, VLIW packing, thread divergence, etc.\n"
+	"\n"
+	"  --report-gpu-pipeline <file>\n"
+	"      File to dump a report of the GPU pipeline, such as active execution engines,\n"
+	"      compute units occupancy, stream cores utilization, etc. Use together with a\n"
+	"      detailed GPU simulation (option '--gpu-sim detailed').\n"
 	"\n";
 
 
 static char *err_help_note =
 	"Please type 'm2s --help' for a list of valid Multi2Sim command-line options.\n";
+
+
+static void sim_need_argument(int argc, char **argv, int argi)
+{
+	if (argi == argc - 1)
+		fatal("option '%s' required one argument.\n%s",
+			argv[argi], err_help_note);
+}
 
 
 static void sim_read_command_line(int *argc_ptr, char **argv)
@@ -176,9 +194,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* Cache system configuration file */
 		if (!strcmp(argv[argi], "--cpu-cache-config")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a cache configuration file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			cache_system_config_file_name = argv[argi];
 			continue;
@@ -186,9 +202,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* CPU configuration file */
 		if (!strcmp(argv[argi], "--cpu-config")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a CPU configuration file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			cpu_config_file_name = argv[argi];
 			continue;
@@ -196,9 +210,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* CPU simulation accuracy */
 		if (!strcmp(argv[argi], "--cpu-sim")) {
-			if (argi == argc - 1)
-				fatal("option '%s' requires a simulation accuracy argument.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
 				cpu_sim_kind = cpu_sim_kind_functional;
@@ -212,9 +224,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* Context configuration file */
 		if (!strcmp(argv[argi], "--ctx-config") || !strcmp(argv[argi], "-c")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			ctxconfig_file_name = argv[argi];
 			continue;
@@ -222,9 +232,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* Function calls debug file */
 		if (!strcmp(argv[argi], "--debug-call")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for function calls debug info.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			isa_call_debug_file_name = argv[argi];
 			continue;
@@ -232,9 +240,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		
 		/* Cache system debug */
 		if (!strcmp(argv[argi], "--debug-cpu-cache")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for the cache system debug info.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			cache_debug_file_name = argv[argi];
 			continue;
@@ -242,9 +248,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* CPU ISA debug file */
 		if (!strcmp(argv[argi], "--debug-cpu-isa")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by the debug file name for CPU x86 instructions.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			isa_inst_debug_file_name = argv[argi];
 			continue;
@@ -252,9 +256,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* CPU pipeline debug */
 		if (!strcmp(argv[argi], "--debug-cpu-pipeline")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for the CPU pipeline debug info.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			esim_debug_file_name = argv[argi];
 			continue;
@@ -262,9 +264,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* Context debug file */
 		if (!strcmp(argv[argi], "--debug-ctx")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a context debug file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			ctx_debug_file_name = argv[argi];
 			continue;
@@ -272,9 +272,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* ELF debug file */
 		if (!strcmp(argv[argi], "--debug-elf")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by an ELF debug file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			elf_debug_file_name = argv[argi];
 			continue;
@@ -282,18 +280,14 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* Error debug */
 		if (!strcmp(argv[argi], "--debug-error")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for error debug info.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			error_debug_file_name = argv[argi];
 			continue;
 		}
 		/* GPU ISA debug file */
 		if (!strcmp(argv[argi], "--debug-gpu-isa")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by the debug file name for GPU instructions.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_isa_debug_file_name = argv[argi];
 			continue;
@@ -301,9 +295,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* GPU cache debug file */
 		if (!strcmp(argv[argi], "--debug-gpu-cache")) {
-			if (argi == argc - 1)
-				fatal("option '%s' requires a debug file name for the GPU cache system.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_cache_debug_file_name = argv[argi];
 			continue;
@@ -311,9 +303,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* GPU pipeline debug file */
 		if (!strcmp(argv[argi], "--debug-gpu-pipeline")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by the debug file name for the GPU pipeline.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_pipeline_debug_file_name = argv[argi];
 			continue;
@@ -321,9 +311,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* GPU-REL: debug file for stack faults */
 		if (!strcmp(argv[argi], "--debug-gpu-stack-faults")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_stack_faults_debug_file_name = argv[argi];
 			continue;
@@ -331,9 +319,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* Loader debug file */
 		if (!strcmp(argv[argi], "--debug-loader")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for program loading debug info.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			loader_debug_file_name = argv[argi];
 			continue;
@@ -341,9 +327,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* OpenCL debug file */
 		if (!strcmp(argv[argi], "--debug-opencl")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for OpenCL calls debugging.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			opencl_debug_file_name = argv[argi];
 			continue;
@@ -351,9 +335,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* System call debug file */
 		if (!strcmp(argv[argi], "--debug-syscall")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a file name for system call debugging.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			syscall_debug_file_name = argv[argi];
 			continue;
@@ -362,9 +344,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* GPU cache configuration file */
 		if (!strcmp(argv[argi], "--gpu-cache-config")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a GPU cache configuration file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_cache_config_file_name = argv[argi];
 			continue;
@@ -372,9 +352,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* GPU configuration file */
 		if (!strcmp(argv[argi], "--gpu-config")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a GPU configuration file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_config_file_name = argv[argi];
 			continue;
@@ -382,9 +360,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* GPU simulation accuracy */
 		if (!strcmp(argv[argi], "--gpu-sim")) {
-			if (argi == argc - 1)
-				fatal("option '%s' requires a simulation accuracy argument.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
 				gpu_sim_kind = gpu_sim_kind_functional;
@@ -398,9 +374,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* GPU-REL: file to introduce faults in active mask stack */
 		if (!strcmp(argv[argi], "--gpu-stack-faults")) {
-			if (argi == argc - 1)
-				fatal("option '%s' required file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_stack_faults_file_name = argv[argi];
 			continue;
@@ -444,9 +418,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* Maximum number of cycles */
 		if (!strcmp(argv[argi], "--max-cycles")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by an integer number.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			ke_max_cycles = atoll(argv[argi]);
 			continue;
@@ -454,9 +426,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* Maximum number of instructions */
 		if (!strcmp(argv[argi], "--max-inst")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by an integer number.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			ke_max_inst = atoll(argv[argi]);
 			continue;
@@ -464,9 +434,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		/* Simulation time limit */
 		if (!strcmp(argv[argi], "--max-time")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by an integer number.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			ke_max_time = atoll(argv[argi]);
 			continue;
@@ -474,41 +442,49 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		
 		/* OpenCL binary */
 		if (!strcmp(argv[argi], "--opencl-binary")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by an OpenCL binary file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_opencl_binary_name = argv[argi];
 			continue;
 		}
 
-		/* Cache system report */
+		/* CPU memory hierarchy report */
 		if (!strcmp(argv[argi], "--report-cpu-cache")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a cache report file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			cache_system_report_file_name = argv[argi];
 			continue;
 		}
 
-		/* Pipeline report */
+		/* CPU pipeline report */
 		if (!strcmp(argv[argi], "--report-cpu-pipeline")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a pipeline report file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
 			cpu_report_file_name = argv[argi];
 			continue;
 		}
 
+		/* GPU global memory hierarchy report */
+		if (!strcmp(argv[argi], "--report-gpu-cache")) {
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			gpu_cache_report_file_name = argv[argi];
+			continue;
+		}
+
 		/* GPU emulation report */
 		if (!strcmp(argv[argi], "--report-gpu-kernel")) {
-			if (argi == argc - 1)
-				fatal("option '%s' must be followed by a GPU report file name.\n%s",
-					argv[argi], err_help_note);
+			sim_need_argument(argc, argv, argi);
 			argi++;
-			gpu_report_file_name = argv[argi];
+			gpu_kernel_report_file_name = argv[argi];
+			continue;
+		}
+
+		/* GPU pipeline report */
+		if (!strcmp(argv[argi], "--report-gpu-pipeline")) {
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			gpu_pipeline_report_file_name = argv[argi];
 			continue;
 		}
 
