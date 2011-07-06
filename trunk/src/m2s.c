@@ -547,7 +547,6 @@ int main(int argc, char **argv)
 	fprintf(stderr, "; Please use command 'm2s --help' for a list of command-line options.\n");
 	fprintf(stderr, "; Last compilation: %s %s\n", __DATE__, __TIME__);
 	fprintf(stderr, "\n");
-	opt_print_options(stderr);
 
 	/* Read command line */
 	sim_read_command_line(&argc, argv);

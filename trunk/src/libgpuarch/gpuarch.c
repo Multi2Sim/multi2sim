@@ -19,7 +19,6 @@
 
 #include <gpukernel.h>
 #include <gpuarch.h>
-#include <options.h>
 #include <config.h>
 #include <debug.h>
 #include <repos.h>
