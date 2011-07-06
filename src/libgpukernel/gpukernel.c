@@ -20,7 +20,6 @@
 #include <gpukernel.h>
 #include <gpudisasm.h>
 #include <cpukernel.h>
-#include <options.h>
 #include <hash.h>
 
 

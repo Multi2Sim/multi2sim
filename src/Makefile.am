@@ -1,7 +1,6 @@
 SUBDIRS = \
 	libmhandle \
 	libstruct \
-	libopt \
 	libmisc \
 	libcpukernel \
 	libcpudisasm \
@@ -19,7 +18,6 @@ m2s_SOURCES = m2s.c
 
 INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libstruct \
-	-I$(top_srcdir)/src/libopt \
 	-I$(top_srcdir)/src/libmisc \
 	-I$(top_srcdir)/src/libcpukernel \
 	-I$(top_srcdir)/src/libcpudisasm \
@@ -43,7 +41,6 @@ LDADD = \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
-        $(top_builddir)/src/libopt/libopt.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	-lm -lpthread
 
