@@ -39,8 +39,8 @@
 
 
 extern char *gpu_opencl_binary_name;
-extern char *gpu_report_file_name;
-extern FILE *gpu_report_file;
+extern char *gpu_kernel_report_file_name;
+extern FILE *gpu_kernel_report_file;
 
 /* Architectural parameters that need to be introduced in the GPU functional
  * simulator, because they are returned by OpenCL functions or affect the

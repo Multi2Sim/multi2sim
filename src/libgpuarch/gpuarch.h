@@ -28,6 +28,8 @@
 
 extern char *gpu_config_help;
 extern char *gpu_config_file_name;
+extern char *gpu_pipeline_report_file_name;
+extern char *gpu_cache_report_file_name;
 
 extern int gpu_pipeline_debug_category;
 
