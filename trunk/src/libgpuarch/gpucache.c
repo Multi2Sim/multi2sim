@@ -31,6 +31,8 @@
 int gpu_cache_debug_category;
 
 char *gpu_cache_config_file_name = "";
+char *gpu_cache_report_file_name = "";
+
 char *gpu_cache_config_help =
 	"The GPU memory hierarchy can be configured by using an IniFile formatted file,\n"
 	"describing the cache and interconnect properties. This file is passed to\n"

@@ -29,8 +29,8 @@
 struct gk_t *gk;
 
 char *gpu_opencl_binary_name = "";
-char *gpu_report_file_name = "";
-FILE *gpu_report_file = NULL;
+char *gpu_kernel_report_file_name = "";
+FILE *gpu_kernel_report_file = NULL;
 
 
 /* Architectural parameters introduced in GPU emulator */
@@ -45,10 +45,10 @@ void gk_init()
 	struct opencl_device_t *device;
 
 	/* Open report file */
-	if (gpu_report_file_name[0]) {
-		gpu_report_file = open_write(gpu_report_file_name);
-		if (!gpu_report_file)
-			fatal("%s: cannot open GPU report file ", gpu_report_file_name);
+	if (gpu_kernel_report_file_name[0]) {
+		gpu_kernel_report_file = open_write(gpu_kernel_report_file_name);
+		if (!gpu_kernel_report_file)
+			fatal("%s: cannot open GPU report file ", gpu_kernel_report_file_name);
 	}
 
 	/* Initialize kernel */
@@ -75,8 +75,8 @@ void gk_init()
 void gk_done()
 {
 	/* GPU report */
-	if (gpu_report_file)
-		fclose(gpu_report_file);
+	if (gpu_kernel_report_file)
+		fclose(gpu_kernel_report_file);
 
 	/* Free OpenCL objects */
 	opencl_object_free_all();
@@ -587,7 +587,7 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 	}
 
 	/* Dump stats */
-	gpu_ndrange_dump(ndrange, gpu_report_file);
+	gpu_ndrange_dump(ndrange, gpu_kernel_report_file);
 }
 
 

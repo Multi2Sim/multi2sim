@@ -107,6 +107,7 @@ char *gpu_config_help =
 enum gpu_sim_kind_enum gpu_sim_kind = gpu_sim_kind_functional;
 
 char *gpu_config_file_name = "";
+char *gpu_pipeline_report_file_name = "";
 
 int gpu_pipeline_debug_category;
 
@@ -777,6 +778,6 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 	}
 
 	/* Dump stats */
-	gpu_ndrange_dump(ndrange, gpu_report_file);
+	gpu_ndrange_dump(ndrange, gpu_kernel_report_file);
 }
 
