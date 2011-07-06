@@ -557,6 +557,11 @@ void gpu_cache_config_read(void)
 
 void gpu_cache_init(void)
 {
+	/* Try to open report file */
+	if (gpu_cache_report_file_name[0] && !can_open_write(gpu_cache_report_file_name))
+		fatal("%s: cannot open GPU cache report file",
+			gpu_cache_report_file_name);
+
 	/* Events */
 	EV_GPU_CACHE_READ = esim_register_event(gpu_cache_handler_read);
 	EV_GPU_CACHE_READ_REQUEST = esim_register_event(gpu_cache_handler_read);
@@ -583,6 +588,9 @@ void gpu_cache_done(void)
 {
 	int i;
 	
+	/* Dump report */
+	gpu_cache_dump_report();
+
 	/* Free caches and cache array */
 	for (i = 0; i < gpu->gpu_cache_count; i++)
 		gpu_cache_free(gpu->gpu_caches[i]);
@@ -595,6 +603,62 @@ void gpu_cache_done(void)
 
 	/* GPU cache stack repository */
 	repos_free(gpu_cache_stack_repos);
+}
+
+
+void gpu_cache_dump_report(void)
+{
+	FILE *f;
+	int i;
+
+	struct gpu_cache_t *gpu_cache;
+
+	/* Open file */
+	f = open_write(gpu_cache_report_file_name);
+	if (!f)
+		return;
+
+	/* Intro */
+	fprintf(f, "; Report for the GPU global memory hierarchy.\n");
+	fprintf(f, ";    Accesses - Total number of accesses requested from a compute unit or upper-level cache\n");
+	fprintf(f, ";    Reads - Number of read requests received from a compute unit or upper-level cache\n");
+	fprintf(f, ";    Writes - Number of write requests received from a compute unit or upper-level cache\n");
+	fprintf(f, ";    CoalescedReads - Number of reads that were coalesced with previous accesses (discarded)\n");
+	fprintf(f, ";    CoalescedWrites - Number of writes coalesced with previous accesses\n");
+	fprintf(f, ";    EffectiveReads - Number of reads actually performed (= Reads - CoalescedReads)\n");
+	fprintf(f, ";    EffectiveReadHits - Number of effective reads producing cache hit\n");
+	fprintf(f, ";    EffectiveReadMisses - Number of effective reads missing in the cache\n");
+	fprintf(f, ";    EffectiveWrites - Number of writes actually performed (= Writes - CoalescedWrites)\n");
+	fprintf(f, ";    EffectiveWriteHits - Number of effective writes that found the block in the cache\n");
+	fprintf(f, ";    EffectiveWriteMisses - Number of effective writes missing in the cache\n");
+	fprintf(f, ";    Evictions - Number of valid blocks replaced in the cache\n");
+	fprintf(f, "\n\n");
+
+	/* Print cache statistics */
+	for (i = 0; i < gpu->gpu_cache_count; i++) {
+		gpu_cache = gpu->gpu_caches[i];
+		fprintf(f, "[ %s ]\n\n", gpu_cache->name);
+		fprintf(f, "Accesses = %lld\n", (long long) (gpu_cache->reads + gpu_cache->writes));
+		fprintf(f, "Reads = %lld\n", (long long) gpu_cache->reads);
+		fprintf(f, "Writes = %lld\n", (long long) gpu_cache->writes);
+		fprintf(f, "CoalescedReads = %lld\n", (long long) (gpu_cache->reads
+			- gpu_cache->effective_reads));
+		fprintf(f, "CoalescedWrites = %lld\n", (long long) (gpu_cache->writes
+			- gpu_cache->effective_writes));
+		fprintf(f, "EffectiveReads = %lld\n", (long long) gpu_cache->effective_reads);
+		fprintf(f, "EffectiveReadHits = %lld\n", (long long) gpu_cache->effective_read_hits);
+		fprintf(f, "EffectiveReadMisses = %lld\n", (long long) (gpu_cache->effective_reads
+			- gpu_cache->effective_read_hits));
+		fprintf(f, "EffectiveWrites = %lld\n", (long long) gpu_cache->effective_writes);
+		fprintf(f, "EffectiveWriteHits = %lld\n", (long long) gpu_cache->effective_write_hits);
+		fprintf(f, "EffectiveWriteMisses = %lld\n", (long long) (gpu_cache->effective_writes
+			- gpu_cache->effective_write_hits));
+		fprintf(f, "Evictions = %lld\n", (long long) gpu_cache->evictions);
+		fprintf(f, "\n\n");
+	}
+
+	/* Close */
+	fclose(f);
 }
 
 
@@ -817,6 +881,10 @@ void gpu_cache_handler_read(int event, void *data)
 				gpu_cache_debug("  %lld %lld coalesce id=%lld bank=%d read_port=%d\n",
 					CYCLE, ID, (long long) port->stack->id, stack->bank_index, stack->read_port_index);
 				gpu_cache_stack_wait_in_port(stack, EV_GPU_CACHE_READ_FINISH);
+
+				/* Stats */
+				gpu_cache->reads++;
+
 				return;
 			}
 		}
@@ -851,19 +919,30 @@ void gpu_cache_handler_read(int event, void *data)
 		gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d\n",
 			CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index, stack->read_port_index);
 	
+		/* Stats */
+		gpu_cache->reads++;
+		gpu_cache->effective_reads++;
+
 		/* If there is no cache, assume hit */
 		if (!gpu_cache->cache) {
 			esim_schedule_event(EV_GPU_CACHE_READ_UNLOCK, stack, gpu_cache->latency);
+
+			/* Stats */
+			gpu_cache->effective_read_hits++;
 			return;
 		}
 
 		/* Get block from cache, consuming 'latency' cycles. */
 		stack->hit = cache_find_block(gpu_cache->cache, stack->tag,
 			&stack->set, &stack->way, &stack->status);
-		if (stack->hit)
+		if (stack->hit) {
+			gpu_cache->effective_read_hits++;
 			esim_schedule_event(EV_GPU_CACHE_READ_UNLOCK, stack, gpu_cache->latency);
-		else {
+		} else {
 			stack->way = cache_replace_block(gpu_cache->cache, stack->set);
+			cache_get_block(gpu_cache->cache, stack->set, stack->way, NULL, &stack->status);
+			if (stack->status)
+				gpu_cache->evictions++;
 			esim_schedule_event(EV_GPU_CACHE_READ_REQUEST, stack, gpu_cache->latency);
 		}
 
@@ -1018,6 +1097,10 @@ void gpu_cache_handler_write(int event, void *data)
 				gpu_cache_debug("  %lld %lld coalesce id=%lld bank=%d write_port=%d\n",
 					CYCLE, ID, (long long) port->stack->id, stack->bank_index, stack->write_port_index);
 				gpu_cache_stack_wait_in_port(stack, EV_GPU_CACHE_WRITE_FINISH);
+
+				/* Stats */
+				gpu_cache->writes++;
+
 				return;
 			}
 		}
@@ -1051,17 +1134,24 @@ void gpu_cache_handler_write(int event, void *data)
 		gpu_cache->locked_write_port_count++;
 		gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d write_port=%d\n",
 			CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index, stack->write_port_index);
+
+		/* Stats */
+		gpu_cache->writes++;
+		gpu_cache->effective_writes++;
 	
 		/* If this is main memory, access block */
 		if (!gpu_cache->cache) {
 			stack->pending++;
 			esim_schedule_event(EV_GPU_CACHE_WRITE_UNLOCK, stack, gpu_cache->latency);
+			gpu_cache->effective_write_hits++;
 			return;
 		}
 
 		/* Access cache to write on block (write actually occurs only if block is present). */
 		stack->hit = cache_find_block(gpu_cache->cache, stack->tag,
 			&stack->set, &stack->way, &stack->status);
+		if (stack->hit)
+			gpu_cache->effective_write_hits++;
 		stack->pending++;
 		esim_schedule_event(EV_GPU_CACHE_WRITE_UNLOCK, stack, gpu_cache->latency);
 
