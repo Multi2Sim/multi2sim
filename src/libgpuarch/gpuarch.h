@@ -319,6 +319,15 @@ struct gpu_cache_t
 	struct net_t *net_lo;
 	int id_hi;
 	int id_lo;
+
+	/* Stats */
+	uint64_t reads;
+	uint64_t effective_reads;
+	uint64_t effective_read_hits;
+	uint64_t writes;
+	uint64_t effective_writes;
+	uint64_t effective_write_hits;
+	uint64_t evictions;
 };
 
 #define gpu_cache_debugging() debug_status(gpu_cache_debug_category)
@@ -332,6 +341,7 @@ void gpu_cache_dump(struct gpu_cache_t *gpu_cache, FILE *f);
 
 void gpu_cache_init(void);
 void gpu_cache_done(void);
+void gpu_cache_dump_report(void);
 
 void gpu_cache_access(struct gpu_cache_t *gpu_cache, int access, uint32_t addr, uint32_t size, int *witness_ptr);
 
