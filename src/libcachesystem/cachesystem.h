@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <assert.h>
-#include <options.h>
 #include <network.h>
 #include <misc.h>
 #include <esim.h>

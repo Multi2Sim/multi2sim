@@ -21,7 +21,6 @@
 #define CPUARCH_H
 
 #include <time.h>
-#include <options.h>
 #include <signal.h>
 #include <list.h>
 #include <lnlist.h>
