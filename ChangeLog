@@ -1,3 +1,219 @@
+2011-07-07 21:03  ubal
+
+	* NEWS, src/libgpuarch/gpuarch.c, src/libgpuarch/tex_engine.c:
+	  Version for release prepared.
+
+2011-07-07 16:05  ubal
+
+	* src/libgpuarch/gpucache.c: Message in '--help-gpu-cache-config'
+
+2011-07-07 15:57  ubal
+
+	* src/libgpuarch/gpuarch.c, src/libgpuarch/gpucache.c: GPU
+	  Interconnect parameters.
+
+2011-07-07 13:39  ubal
+
+	* src/libgpuarch/alu_engine.c, src/libgpuarch/cf_engine.c,
+	  src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/tex_engine.c, src/m2s.c: GPU pipeline report.
+
+2011-07-07 06:08  ubal
+
+	* src/libgpuarch/gpuarch.c, src/m2s.c: GPU configuration file. Omit
+	  stats summary if no simulation.
+
+2011-07-07 05:15  ubal
+
+	* src/libgpuarch/gpuarch.c, src/libgpukernel/gpukernel.c,
+	  src/libgpukernel/gpukernel.h, src/m2s.c: Simulation statistics
+	  summary.
+
+2011-07-07 04:36  ubal
+
+	* src/libcpuarch/cpuarch.c, src/libcpuarch/cpuarch.h,
+	  src/libcpukernel/context.c, src/libcpukernel/cpukernel.c,
+	  src/libcpukernel/cpukernel.h, src/libgpuarch/cf_engine.c,
+	  src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h, src/m2s.c:
+	  Stats summary in main program.
+
+2011-07-06 21:37  ubal
+
+	* configure, configure.in, src/Makefile.am, src/Makefile.in,
+	  src/libcachesystem/cachesystem.h, src/libcpuarch/cpuarch.h,
+	  src/libgpuarch/gpuarch.c, src/libgpukernel/gpukernel.c,
+	  src/libopt, src/m2s.c: Library 'libopt' removed.
+
+2011-07-06 21:28  ubal
+
+	* src/libgpuarch/gpuarch.h, src/libgpuarch/gpucache.c: GPU cache
+	  report.
+
+2011-07-06 20:40  ubal
+
+	* src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/gpucache.c, src/libgpukernel/gpukernel.c,
+	  src/libgpukernel/gpukernel.h, src/m2s.c: Option
+	  '--gpu-report-pipeline' and '--gpu-report-cache' added.
+
+2011-07-03 21:07  ubal
+
+	* src/libgpuarch/tex_engine.c, src/libgpukernel/gpukernel.h,
+	  src/libgpukernel/gpumachine.c: TEX instructions numbering in
+	  debug file.
+
+2011-07-03 21:00  ubal
+
+	* src/libgpuarch/alu_engine.c, src/libgpuarch/cf_engine.c,
+	  src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/tex_engine.c: TEX Engine.
+
+2011-07-03 19:58  ubal
+
+	* src/libgpuarch/alu_engine.c: ALU Engine: local memory writes.
+
+2011-07-03 19:39  ubal
+
+	* src/libgpuarch/alu_engine.c, src/libgpuarch/cf_engine.c,
+	  src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/gpucache.c: Bug fixed in assigning block size
+	  (coalescing). Local memory reads added in ALU Engine.
+
+2011-07-03 15:30  ubal
+
+	* src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h: Initialize CU
+	  after mapped to WG. Delete Stream Core structures.
+
+2011-07-03 15:19  ubal
+
+	* src/libgpuarch/cf_engine.c, src/libgpukernel/gpumachine.c: Global
+	  memory writes in CF clause
+
+2011-07-03 06:31  ubal
+
+	* src/libgpuarch/alu_engine.c, src/libgpuarch/cf_engine.c,
+	  src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/tex_engine.c, src/libgpukernel/opencl.c: CF Engine
+	  implementation.
+
+2011-07-03 01:45  ubal
+
+	* src/libgpuarch/cf_engine.c, src/libgpuarch/gpuarch.c,
+	  src/libgpuarch/gpuarch.h, src/libstruct/lnlist.c,
+	  src/libstruct/lnlist.h: CF Engine - Schedule stage
+
+2011-07-03 00:15  ubal
+
+	* src/libgpuarch/alu_engine.c, src/libgpuarch/gpuarch.h: ALU
+	  Engine: parameters, fetch queue size, and instruction memory
+	  latency.
+
+2011-07-02 23:44  ubal
+
+	* README, src/libgpuarch/alu_engine.c, src/libgpuarch/gpuarch.c,
+	  src/libgpuarch/gpuarch.h: Processing Element latency
+
+2011-07-02 23:29  ubal
+
+	* src/libgpuarch/alu_engine.c, src/libgpuarch/cf_engine.c,
+	  src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/tex_engine.c: Configuration parameters of CF, ALU,
+	  and TEX Engines
+
+2011-07-02 23:00  ubal
+
+	* src/libgpuarch/gpuarch.h, src/libgpuarch/gpucache.c: Instruction
+	  cache removed from GPU memory hierarchy.
+
+2011-07-01 00:05  ubal
+
+	* README, src/libgpuarch/alu_engine.c, src/libgpuarch/gpuarch.c,
+	  src/libgpuarch/gpuarch.h, src/libgpudisasm/gpudisasm.c,
+	  src/libgpudisasm/gpudisasm.h: ALU Engine
+
+2011-06-29 22:17  ubal
+
+	* src/libgpuarch/alu_engine.c, src/libgpuarch/cf_engine.c,
+	  src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/tex_engine.c: Fetch & decode stages in ALU Engine.
+
+2011-06-29 21:14  ubal
+
+	* README, src/libgpuarch/Makefile.am, src/libgpuarch/Makefile.in,
+	  src/libgpuarch/alu_engine.c, src/libgpuarch/cf_engine.c,
+	  src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/gpucache.c, src/libgpuarch/stg_decode.c,
+	  src/libgpuarch/stg_execute.c, src/libgpuarch/stg_fetch.c,
+	  src/libgpuarch/stg_read.c, src/libgpuarch/stg_schedule.c,
+	  src/libgpuarch/stg_write.c, src/libgpuarch/tex_engine.c,
+	  src/libgpukernel/gpukernel.c, src/libgpukernel/gpukernel.h,
+	  src/libgpukernel/gpumachine.c, src/libmisc/misc.c: New pipeline
+	  based on CF, ALU, and TEX engines.
+
+2011-06-28 15:20  ubal
+
+	* src/libgpuarch/gpuarch.c: Local memory configuration.
+
+2011-06-28 14:36  ubal
+
+	* README, src/libgpukernel/gpukernel.c: ND-Range identifiers.
+
+2011-06-28 13:36  ubal
+
+	* src/libcpukernel/cpukernel.h, src/libgpuarch/gpuarch.c,
+	  src/libgpuarch/gpuarch.h, src/libgpuarch/gpucache.c,
+	  src/libgpuarch/stg_read.c, src/libgpuarch/stg_schedule.c,
+	  src/libgpuarch/stg_write.c, src/libgpukernel/gpukernel.c,
+	  src/libgpukernel/gpukernel.h, src/libgpukernel/gpumachine.c:
+	  Local memory accesses tracked in architectural GPU simulation.
+
+2011-06-27 16:51  ubal
+
+	* src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/gpucache.c, src/libgpuarch/stg_decode.c,
+	  src/libgpuarch/stg_execute.c, src/libgpuarch/stg_fetch.c,
+	  src/libgpuarch/stg_read.c, src/libgpuarch/stg_schedule.c,
+	  src/libgpuarch/stg_write.c, src/m2s.c: Big fixed in cache banks
+	  allocation.
+
+2011-06-24 21:14  ubal
+
+	* src/libgpuarch/gpuarch.c, src/libgpuarch/gpuarch.h,
+	  src/libgpuarch/gpucache.c, src/libgpuarch/stg_read.c,
+	  src/libgpuarch/stg_schedule.c, src/libgpuarch/stg_write.c:
+	  Accesses to the global memory hierarchy added in the pipeline.
+
+2011-06-24 00:19  ubal
+
+	* src/libgpuarch/gpuarch.h, src/libgpuarch/gpucache.c,
+	  src/libstruct/config.c, src/m2s.c: GPU memory hierarchy
+	  configuration.
+
+2011-06-23 15:35  ubal
+
+	* src/libcachesystem/cachesystem.c, src/libcpuarch/cpuarch.c,
+	  src/libgpuarch/gpuarch.h, src/libgpuarch/gpucache.c, src/m2s.c:
+	  Initial setup for GPU cache configuration file.
+
+2011-06-22 21:20  ubal
+
+	* src/libgpuarch/gpuarch.c, src/m2s.c: Error messages for
+	  incompatible command-line options.
+
+2011-06-22 20:55  ubal
+
+	* src/libcachesystem/moesi.c, src/libcpukernel/cpukernel.c,
+	  src/libgpuarch/gpucache.c, src/libgpukernel/gpukernel.c,
+	  src/libstruct/debug.c, src/libstruct/debug.h, src/m2s.c: Debug
+	  files centralized in 'm2s.c'
+
+2011-06-22 20:37  ubal
+
+	* ChangeLog, src/libgpuarch/Makefile.am,
+	  src/libgpuarch/Makefile.in, src/libgpuarch/coalesce.c,
+	  src/libgpuarch/gpuarch.h, src/libgpuarch/gpucache.c: Removed
+	  'coalesce.c'
+
 2011-06-22 20:31  ubal
 
 	* src/libgpuarch/gpuarch.h, src/libgpuarch/gpucache.c,
