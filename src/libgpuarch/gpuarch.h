@@ -28,7 +28,7 @@
 
 extern char *gpu_config_help;
 extern char *gpu_config_file_name;
-extern char *gpu_pipeline_report_file_name;
+extern char *gpu_report_file_name;
 extern char *gpu_cache_report_file_name;
 
 extern int gpu_pipeline_debug_category;
@@ -176,6 +176,9 @@ struct gpu_compute_unit_t
 	/* Currently mapped work-group */
 	struct gpu_work_group_t *work_group;
 
+	/* Stats */
+	uint64_t work_group_mappings;
+
 	/* Fields for CF Engine */
 	struct {
 		
@@ -216,6 +219,9 @@ struct gpu_compute_unit_t
 		 * dependence. If the producer is not in flight, the value is NULL. */
 		struct gpu_uop_t *producers[GPU_UOP_DEP_COUNT];
 
+		/* Stats */
+		uint64_t wavefront_mappings;
+
 	} alu_engine;
 
 	/* Fields for TEX Engine */
@@ -228,6 +234,10 @@ struct gpu_compute_unit_t
 		int fetch_queue_length;  /* Number of bytes occupied in fetch queue */
 		struct gpu_uop_t *inst_buffer;  /* Uop from decode to read stage */
 		struct gpu_uop_t *write_buffer;  /* Uop from read to write stage */
+
+		/* Stats */
+		uint64_t wavefront_mappings;
+
 	} tex_engine;
 
 };
@@ -452,6 +462,7 @@ struct gpu_t
 
 void gpu_init(void);
 void gpu_done(void);
+void gpu_dump_report(void);
 
 void gpu_run(struct gpu_ndrange_t *ndrange);
 

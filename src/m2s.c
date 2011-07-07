@@ -484,7 +484,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--report-gpu-pipeline")) {
 			sim_need_argument(argc, argv, argi);
 			argi++;
-			gpu_pipeline_report_file_name = argv[argi];
+			gpu_report_file_name = argv[argi];
 			continue;
 		}
 
@@ -535,6 +535,42 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	for (argi = 1; argi < argc - arg_discard; argi++)
 		argv[argi] = argv[argi + arg_discard];
 	*argc_ptr = argc - arg_discard;
+}
+
+
+void sim_stats_summary(void)
+{
+	uint64_t now = ke_timer();
+	uint64_t inst_count;
+
+	/* Statistics */
+	fprintf(stderr, "\n");
+	fprintf(stderr, ";\n");
+	fprintf(stderr, "; Simulation Statistics Summary\n");
+	fprintf(stderr, ";\n");
+	fprintf(stderr, "\n");
+
+	/* CPU functional simulation */
+	inst_count = cpu_sim_kind == cpu_sim_kind_functional ? ke->inst_count : cpu->inst;
+	fprintf(stderr, "[ CPU ]\n");
+	fprintf(stderr, "Time = %.2f\n", (double) now / 1000000);
+	fprintf(stderr, "Instructions = %lld\n", (long long) inst_count);
+	fprintf(stderr, "InstructionsPerSecond = %.0f\n", now ? (double) inst_count
+		/ now * 1000000 : 0.0);
+	fprintf(stderr, "Contexts = %d\n", ke->running_max);
+	fprintf(stderr, "Memory = %lu\n", mem_mapped_space);
+	fprintf(stderr, "MemoryMax = %lu\n", mem_max_mapped_space);
+
+	/* CPU detailed simulation */
+	if (cpu_sim_kind == cpu_sim_kind_detailed) {
+		fprintf(stderr, "Cycles = %lld\n", (long long) cpu->cycle);
+		fprintf(stderr, "InstructionsPerCycle = %.4g\n", cpu->cycle ?
+			(double) cpu->inst / cpu->cycle : 0);
+		fprintf(stderr, "BranchPredictionAccuracy = %.4g\n", cpu->branches ?
+			(double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0);
+		fprintf(stderr, "CyclesPerSecond = %.0f\n", now ? (double) cpu->cycle / now * 1000000 : 0.0);
+	}
+	fprintf(stderr, "\n");
 }
 
 
@@ -594,6 +630,9 @@ int main(int argc, char **argv)
 
 	/* Flush event-driven simulation */
 	esim_process_all_events(1 << 20);
+
+	/* Dump statistics summary */
+	sim_stats_summary();
 
 	/* Finalization of detailed CPU simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed) {

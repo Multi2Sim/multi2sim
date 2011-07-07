@@ -106,7 +106,7 @@ char *gpu_config_help =
 enum gpu_sim_kind_enum gpu_sim_kind = gpu_sim_kind_functional;
 
 char *gpu_config_file_name = "";
-char *gpu_pipeline_report_file_name = "";
+char *gpu_report_file_name = "";
 
 int gpu_pipeline_debug_category;
 
@@ -340,6 +340,7 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 	/* Map work-group */
 	assert(!compute_unit->work_group);
 	compute_unit->work_group = work_group;
+	compute_unit->work_group_mappings++;
 
 	/* Delete compute unit from 'idle' list and insert it to 'busy' list. */
 	DOUBLE_LINKED_LIST_REMOVE(gpu, idle, compute_unit);
@@ -580,11 +581,10 @@ end_loop:
 }
 
 
-void gpu_init()
+void gpu_config_read(void)
 {
 	struct config_t *gpu_config;
 	char *section;
-
 	char *err_note =
 		"\tPlease run 'm2s --help-gpu-config' or consult the Multi2Sim Guide for a\n"
 		"\tdescription of the GPU configuration file format.";
@@ -593,10 +593,6 @@ void gpu_init()
 	gpu_config = config_create(gpu_config_file_name);
 	if (*gpu_config_file_name && !config_load(gpu_config))
 		fatal("%s: cannot load GPU configuration file", gpu_config_file_name);
-	
-	/*
-	 * Read configuration file
-	 */
 	
 	/* Device */
 	section = "Device";
@@ -682,6 +678,18 @@ void gpu_init()
 	/* Close GPU configuration file */
 	config_check(gpu_config);
 	config_free(gpu_config);
+}
+
+
+void gpu_init(void)
+{
+	/* Try to open report file */
+	if (gpu_report_file_name[0] && !can_open_write(gpu_report_file_name))
+		fatal("%s: cannot open GPU pipeline report file",
+			gpu_report_file_name);
+
+	/* Read configuration file */
+	gpu_config_read();
 
 	/* Initialize GPU */
 	gpu_init_device();
@@ -705,6 +713,9 @@ void gpu_done()
 	struct gpu_compute_unit_t *compute_unit;
 	int compute_unit_id;
 
+	/* GPU pipeline report */
+	gpu_dump_report();
+
 	/* Cache system */
 	gpu_cache_done();
 
@@ -721,6 +732,48 @@ void gpu_done()
 
 	/* GPU-REL: read stack faults file */
 	gpu_stack_faults_done();
+}
+
+
+void gpu_dump_report(void)
+{
+	struct gpu_compute_unit_t *compute_unit;
+	struct gpu_cache_t *local_memory;
+	int compute_unit_id;
+
+	FILE *f;
+
+	/* Open file */
+	f = open_write(gpu_report_file_name);
+	if (!f)
+		return;
+
+	FOREACH_COMPUTE_UNIT(compute_unit_id) {
+		compute_unit = gpu->compute_units[compute_unit_id];
+		local_memory = compute_unit->local_memory;
+
+		fprintf(f, "[ ComputeUnit %d ]\n\n", compute_unit_id);
+
+		fprintf(f, "WorkGroupMappings = %lld\n", (long long) compute_unit->work_group_mappings);
+		fprintf(f, "\n");
+
+		fprintf(f, "ALUEngine.WavefrontMappings = %lld\n", (long long) compute_unit->alu_engine.wavefront_mappings);
+		fprintf(f, "\n");
+
+		fprintf(f, "TEXEngine.WavefrontMappings = %lld\n", (long long) compute_unit->tex_engine.wavefront_mappings);
+		fprintf(f, "\n");
+
+		fprintf(f, "LocalMemory.Accesses = %lld\n", (long long) (local_memory->reads + local_memory->writes));
+		fprintf(f, "LocalMemory.Reads = %lld\n", (long long) local_memory->reads);
+		fprintf(f, "LocalMemory.EffectiveReads = %lld\n", (long long) local_memory->effective_reads);
+		fprintf(f, "LocalMemory.CoalescedReads = %lld\n", (long long) (local_memory->reads -
+			local_memory->effective_reads));
+		fprintf(f, "LocalMemory.Writes = %lld\n", (long long) local_memory->writes);
+		fprintf(f, "LocalMemory.EffectiveWrites = %lld\n", (long long) local_memory->effective_writes);
+		fprintf(f, "LocalMemory.CoalescedWrites = %lld\n", (long long) (local_memory->writes -
+			local_memory->effective_writes));
+		fprintf(f, "\n\n");
+	}
 }
 
 
