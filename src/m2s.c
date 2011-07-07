@@ -548,6 +548,11 @@ void sim_stats_summary(void)
 	uint64_t gpu_now = gk_timer();
 	uint64_t inst_count;
 
+	/* Check if any simulation was actually performed */
+	inst_count = cpu_sim_kind == cpu_sim_kind_functional ? ke->inst_count : cpu->inst;
+	if (!inst_count)
+		return;
+
 	/* Statistics */
 	fprintf(stderr, "\n");
 	fprintf(stderr, ";\n");
@@ -556,7 +561,6 @@ void sim_stats_summary(void)
 	fprintf(stderr, "\n");
 
 	/* CPU functional simulation */
-	inst_count = cpu_sim_kind == cpu_sim_kind_functional ? ke->inst_count : cpu->inst;
 	fprintf(stderr, "[ CPU ]\n");
 	fprintf(stderr, "Time = %.2f\n", (double) now / 1000000);
 	fprintf(stderr, "Instructions = %lld\n", (long long) inst_count);
