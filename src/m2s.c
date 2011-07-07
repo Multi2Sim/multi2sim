@@ -528,6 +528,10 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--gpu-cache-config");
 		if (*gpu_config_file_name)
 			fatal(msg, "--gpu-config");
+		if (*gpu_report_file_name)
+			fatal(msg, "--report-gpu-pipeline");
+		if (*gpu_cache_report_file_name)
+			fatal(msg, "--report-gpu-cache");
 	}
 
 	/* Discard arguments used as options */
@@ -541,6 +545,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 void sim_stats_summary(void)
 {
 	uint64_t now = ke_timer();
+	uint64_t gpu_now = gk_timer();
 	uint64_t inst_count;
 
 	/* Statistics */
@@ -571,6 +576,27 @@ void sim_stats_summary(void)
 		fprintf(stderr, "CyclesPerSecond = %.0f\n", now ? (double) cpu->cycle / now * 1000000 : 0.0);
 	}
 	fprintf(stderr, "\n");
+
+	/* GPU functional simulation */
+	if (gk->ndrange_count) {
+
+		fprintf(stderr, "[ GPU ]\n");
+		fprintf(stderr, "Time = %.2f\n", (double) gpu_now / 1000000);
+		fprintf(stderr, "NDRangeCount = %d\n", gk->ndrange_count);
+		fprintf(stderr, "Instructions = %lld\n", (long long) gk->inst_count);
+		fprintf(stderr, "InstructionsPerSecond = %.0f\n", gpu_now ? (double) gk->inst_count
+			/ gpu_now * 1000000 : 0.0);
+	
+		/* GPU detailed simulation */
+		if (gpu_sim_kind == gpu_sim_kind_detailed) {
+			fprintf(stderr, "Cycles = %lld\n", (long long) gpu->cycle);
+			fprintf(stderr, "InstructionsPerCycle = %.4g\n", gpu->cycle ?
+				(double) gk->inst_count / gpu->cycle : 0);
+			fprintf(stderr, "CyclesPerSecond = %.0f\n", gpu_now ?
+				(double) gpu->cycle / gpu_now * 1000000 : 0.0);
+		}
+		fprintf(stderr, "\n");
+	}
 }
 
 
