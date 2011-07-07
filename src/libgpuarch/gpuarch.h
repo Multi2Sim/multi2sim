@@ -177,7 +177,9 @@ struct gpu_compute_unit_t
 	struct gpu_work_group_t *work_group;
 
 	/* Stats */
-	uint64_t work_group_mappings;
+	uint64_t work_group_count;
+	uint64_t cycle;
+	uint64_t inst_count;
 
 	/* Fields for CF Engine */
 	struct {
@@ -198,6 +200,9 @@ struct gpu_compute_unit_t
 		/* Complete queue */
 		struct lnlist_t *complete_queue;  /* Queue of completed instructions */
 		int finished_wavefronts;  /* Number of finished wavefronts */
+
+		/* Stats */
+		uint64_t inst_count;
 
 	} cf_engine;
 
@@ -220,7 +225,9 @@ struct gpu_compute_unit_t
 		struct gpu_uop_t *producers[GPU_UOP_DEP_COUNT];
 
 		/* Stats */
-		uint64_t wavefront_mappings;
+		uint64_t wavefront_count;
+		uint64_t cycle;
+		uint64_t inst_count;
 
 	} alu_engine;
 
@@ -236,7 +243,9 @@ struct gpu_compute_unit_t
 		struct gpu_uop_t *write_buffer;  /* Uop from read to write stage */
 
 		/* Stats */
-		uint64_t wavefront_mappings;
+		uint64_t wavefront_count;
+		uint64_t cycle;
+		uint64_t inst_count;
 
 	} tex_engine;
 

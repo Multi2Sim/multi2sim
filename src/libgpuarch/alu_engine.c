@@ -295,6 +295,10 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->local_mem_read = wavefront->local_mem_read;
 	uop->local_mem_write = wavefront->local_mem_write;
 
+	/* Stats */
+	compute_unit->inst_count++;
+	compute_unit->alu_engine.inst_count++;
+
 	/* If instruction accesses local memory, record addresses. */
 	if (uop->local_mem_read || uop->local_mem_write) {
 		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
@@ -385,5 +389,8 @@ void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit)
 	gpu_alu_engine_read(compute_unit);
 	gpu_alu_engine_decode(compute_unit);
 	gpu_alu_engine_fetch(compute_unit);
+
+	/* Stats */
+	compute_unit->alu_engine.cycle++;
 }
 

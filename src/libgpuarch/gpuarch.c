@@ -333,7 +333,7 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 	/* Map work-group */
 	assert(!compute_unit->work_group);
 	compute_unit->work_group = work_group;
-	compute_unit->work_group_mappings++;
+	compute_unit->work_group_count++;
 
 	/* Delete compute unit from 'idle' list and insert it to 'busy' list. */
 	DOUBLE_LINKED_LIST_REMOVE(gpu, idle, compute_unit);
@@ -390,12 +390,13 @@ void gpu_compute_unit_run(struct gpu_compute_unit_t *compute_unit)
 	/* Checks */
 	assert(compute_unit->work_group);
 
-	/* Run ALU/TEX Engines */
+	/* Run Engines */
 	gpu_alu_engine_run(compute_unit);
 	gpu_tex_engine_run(compute_unit);
-
-	/* CF Engine */
 	gpu_cf_engine_run(compute_unit);
+
+	/* Stats */
+	compute_unit->cycle++;
 }
 
 
@@ -733,24 +734,59 @@ void gpu_dump_report(void)
 
 	FILE *f;
 
+	double inst_per_cycle;
+	double cf_inst_per_cycle;
+	double alu_inst_per_cycle;
+	double tex_inst_per_cycle;
+
 	/* Open file */
 	f = open_write(gpu_report_file_name);
 	if (!f)
 		return;
+	
+	/* Report for device */
+	inst_per_cycle = gpu->cycle ? (double) gk->inst_count / gpu->cycle : 0.0;
+	fprintf(f, "[ Device ]\n\n");
+	fprintf(f, "NDRangeCount = %d\n", gk->ndrange_count);
+	fprintf(f, "Instructions = %lld\n", (long long) gk->inst_count);
+	fprintf(f, "Cycles = %lld\n", (long long) gpu->cycle);
+	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
+	fprintf(f, "\n\n");
 
+	/* Report for compute units */
 	FOREACH_COMPUTE_UNIT(compute_unit_id) {
+
 		compute_unit = gpu->compute_units[compute_unit_id];
 		local_memory = compute_unit->local_memory;
 
+		inst_per_cycle = compute_unit->cycle ? (double) compute_unit->inst_count
+			/ compute_unit->cycle : 0.0;
+		cf_inst_per_cycle = compute_unit->cycle ? (double) compute_unit->cf_engine.inst_count
+			/ compute_unit->cycle : 0.0;
+		alu_inst_per_cycle = compute_unit->alu_engine.cycle ? (double) compute_unit->alu_engine.inst_count
+			/ compute_unit->alu_engine.cycle : 0.0;
+		tex_inst_per_cycle = compute_unit->tex_engine.cycle ? (double) compute_unit->tex_engine.inst_count
+			/ compute_unit->tex_engine.cycle : 0.0;
+
 		fprintf(f, "[ ComputeUnit %d ]\n\n", compute_unit_id);
 
-		fprintf(f, "WorkGroupMappings = %lld\n", (long long) compute_unit->work_group_mappings);
+		fprintf(f, "WorkGroupCount = %lld\n", (long long) compute_unit->work_group_count);
+		fprintf(f, "Instructions = %lld\n", (long long) compute_unit->inst_count);
+		fprintf(f, "Cycles = %lld\n", (long long) compute_unit->cycle);
+		fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 		fprintf(f, "\n");
 
-		fprintf(f, "ALUEngine.WavefrontMappings = %lld\n", (long long) compute_unit->alu_engine.wavefront_mappings);
+		fprintf(f, "CFEngine.Instructions = %lld\n", (long long) compute_unit->cf_engine.inst_count);
+		fprintf(f, "CFEngine.InstructionsPerCycle = %.4g\n", cf_inst_per_cycle);
+
+		fprintf(f, "ALUEngine.WavefrontCount = %lld\n", (long long) compute_unit->alu_engine.wavefront_count);
+		fprintf(f, "ALUEngine.Instructions = %lld\n", (long long) compute_unit->alu_engine.inst_count);
+		fprintf(f, "ALUEngine.InstructionsPerCycle = %.4g\n", alu_inst_per_cycle);
 		fprintf(f, "\n");
 
-		fprintf(f, "TEXEngine.WavefrontMappings = %lld\n", (long long) compute_unit->tex_engine.wavefront_mappings);
+		fprintf(f, "TEXEngine.WavefrontCount = %lld\n", (long long) compute_unit->tex_engine.wavefront_count);
+		fprintf(f, "TEXEngine.Instructions = %lld\n", (long long) compute_unit->tex_engine.inst_count);
+		fprintf(f, "TEXEngine.InstructionsPerCycle = %.4g\n", tex_inst_per_cycle);
 		fprintf(f, "\n");
 
 		fprintf(f, "LocalMemory.Accesses = %lld\n", (long long) (local_memory->reads + local_memory->writes));
