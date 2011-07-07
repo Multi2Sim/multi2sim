@@ -200,6 +200,10 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->last = wavefront->clause_kind != GPU_CLAUSE_TEX;
 	uop->global_mem_read = wavefront->global_mem_read;
 	uop->global_mem_write = wavefront->global_mem_write;
+
+	/* Stats */
+	compute_unit->inst_count++;
+	compute_unit->tex_engine.inst_count++;
 	
 	/* If instruction is a global memory read (should be), record addresses */
 	if (uop->global_mem_read) {
@@ -249,5 +253,8 @@ void gpu_tex_engine_run(struct gpu_compute_unit_t *compute_unit)
 	gpu_tex_engine_read(compute_unit);
 	gpu_tex_engine_decode(compute_unit);
 	gpu_tex_engine_fetch(compute_unit);
+
+	/* Stats */
+	compute_unit->tex_engine.cycle++;
 }
 

@@ -109,7 +109,7 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 		assert(!compute_unit->alu_engine.wavefront);
 		compute_unit->alu_engine.cf_uop = uop;
 		compute_unit->alu_engine.wavefront = uop->wavefront;
-		compute_unit->alu_engine.wavefront_mappings++;
+		compute_unit->alu_engine.wavefront_count++;
 
 	} else if (uop->tex_clause_trigger) {
 		
@@ -117,7 +117,7 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 		assert(!compute_unit->tex_engine.wavefront);
 		compute_unit->tex_engine.cf_uop = uop;
 		compute_unit->tex_engine.wavefront = uop->wavefront;
-		compute_unit->tex_engine.wavefront_mappings++;
+		compute_unit->tex_engine.wavefront_count++;
 
 	} else {
 		
@@ -242,6 +242,10 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	inst_num = (wavefront->cf_buf - ndrange->kernel->cal_abi->text_buffer) / 8;
 	gpu_wavefront_execute(wavefront);
 	inst = &wavefront->cf_inst;
+
+	/* Stats */
+	compute_unit->inst_count++;
+	compute_unit->cf_engine.inst_count++;
 
 	/* Create uop */
 	uop = gpu_uop_create();

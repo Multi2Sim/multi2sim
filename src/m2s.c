@@ -548,6 +548,12 @@ void sim_stats_summary(void)
 	uint64_t gpu_now = gk_timer();
 	uint64_t inst_count;
 
+	double sec_count;
+	double inst_per_sec;
+	double inst_per_cycle;
+	double branch_acc;
+	double cycles_per_sec;
+
 	/* Check if any simulation was actually performed */
 	inst_count = cpu_sim_kind == cpu_sim_kind_functional ? ke->inst_count : cpu->inst;
 	if (!inst_count)
@@ -561,43 +567,46 @@ void sim_stats_summary(void)
 	fprintf(stderr, "\n");
 
 	/* CPU functional simulation */
+	sec_count = (double) now / 1e6;
+	inst_per_sec = sec_count > 0.0 ? (double) inst_count / sec_count : 0.0;
 	fprintf(stderr, "[ CPU ]\n");
-	fprintf(stderr, "Time = %.2f\n", (double) now / 1000000);
+	fprintf(stderr, "Time = %.2f\n", sec_count);
 	fprintf(stderr, "Instructions = %lld\n", (long long) inst_count);
-	fprintf(stderr, "InstructionsPerSecond = %.0f\n", now ? (double) inst_count
-		/ now * 1000000 : 0.0);
+	fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	fprintf(stderr, "Contexts = %d\n", ke->running_max);
 	fprintf(stderr, "Memory = %lu\n", mem_mapped_space);
 	fprintf(stderr, "MemoryMax = %lu\n", mem_max_mapped_space);
 
 	/* CPU detailed simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed) {
+		inst_per_cycle = cpu->cycle ? (double) cpu->inst / cpu->cycle : 0.0;
+		branch_acc = cpu->branches ? (double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0;
+		cycles_per_sec = sec_count > 0.0 ? (double) cpu->cycle / sec_count : 0.0;
 		fprintf(stderr, "Cycles = %lld\n", (long long) cpu->cycle);
-		fprintf(stderr, "InstructionsPerCycle = %.4g\n", cpu->cycle ?
-			(double) cpu->inst / cpu->cycle : 0);
-		fprintf(stderr, "BranchPredictionAccuracy = %.4g\n", cpu->branches ?
-			(double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0);
-		fprintf(stderr, "CyclesPerSecond = %.0f\n", now ? (double) cpu->cycle / now * 1000000 : 0.0);
+		fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
+		fprintf(stderr, "BranchPredictionAccuracy = %.4g\n", branch_acc);
+		fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 	}
 	fprintf(stderr, "\n");
 
 	/* GPU functional simulation */
 	if (gk->ndrange_count) {
-
+		
+		sec_count = (double) gpu_now / 1e6;
+		inst_per_sec = sec_count > 0.0 ? (double) gk->inst_count / sec_count : 0.0;
 		fprintf(stderr, "[ GPU ]\n");
-		fprintf(stderr, "Time = %.2f\n", (double) gpu_now / 1000000);
+		fprintf(stderr, "Time = %.2f\n", sec_count);
 		fprintf(stderr, "NDRangeCount = %d\n", gk->ndrange_count);
 		fprintf(stderr, "Instructions = %lld\n", (long long) gk->inst_count);
-		fprintf(stderr, "InstructionsPerSecond = %.0f\n", gpu_now ? (double) gk->inst_count
-			/ gpu_now * 1000000 : 0.0);
+		fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	
 		/* GPU detailed simulation */
 		if (gpu_sim_kind == gpu_sim_kind_detailed) {
+			inst_per_cycle = gpu->cycle ? (double) gk->inst_count / gpu->cycle : 0.0;
+			cycles_per_sec = sec_count > 0.0 ? (double) gpu->cycle / sec_count : 0.0;
 			fprintf(stderr, "Cycles = %lld\n", (long long) gpu->cycle);
-			fprintf(stderr, "InstructionsPerCycle = %.4g\n", gpu->cycle ?
-				(double) gk->inst_count / gpu->cycle : 0);
-			fprintf(stderr, "CyclesPerSecond = %.0f\n", gpu_now ?
-				(double) gpu->cycle / gpu_now * 1000000 : 0.0);
+			fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
+			fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 		}
 		fprintf(stderr, "\n");
 	}
