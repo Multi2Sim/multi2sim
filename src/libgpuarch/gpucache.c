@@ -514,8 +514,21 @@ void gpu_cache_config_read(void)
 	gpu_cache_debug("creating network switches and links:");
 	for (i = 0; i < gpu->network_count; i++)
 	{
-		int maxmsg, sw;
-		int link_width;
+		int max_msg_size;
+		int switch_id;
+		int upper_link_width;
+		int lower_link_width;
+		int inner_link_width;
+		int input_buffer_size;
+		int output_buffer_size;
+
+		char *err_buffer_note =
+			"\tThe input/output buffer size for a switch must be equal or greater than\n"
+			"\tthe maximum length of the package. The biggest package has B + 8 bytes,\n"
+			"\tbeing B the block size of the lower level cache, and 8 the size of the\n"
+			"\tmetadata attached to block transfers.\n"
+			"\tIf you are not sure about this option, leave it blank and an automatic\n"
+			"\tassigned value will default to (B + 8) * 2.\n";
 
 		/* Get the maximum message size for network, which is equals to
 		 * the block size of the lower cache plus 8 (control message) */
@@ -523,28 +536,51 @@ void gpu_cache_config_read(void)
 		gpu_cache = net_get_node_data(net, 0);
 		if (!gpu_cache)
 			continue;
-		maxmsg = gpu_cache->block_size + 8;
+		max_msg_size = gpu_cache->block_size + 8;
 
-		/* Get network link width */
+		/* Get network parameters */
 		sprintf(buf, "Net %s", net->name);
-		config_var_enforce(config, buf, "LinkWidth");
-		link_width = config_read_int(config, buf, "LinkWidth", 8);
-		if (link_width < 1)
-			fatal("%s: network '%s': invalid value for variable 'LinkWidth'.\n%s",
+		upper_link_width = config_read_int(config, buf, "UpperLinkWidth", 8);
+		lower_link_width = config_read_int(config, buf, "LowerLinkWidth", 8);
+		inner_link_width = config_read_int(config, buf, "InnerLinkWidth", 8);
+		input_buffer_size = config_read_int(config, buf, "InputBufferSize", max_msg_size * 2);
+		output_buffer_size = config_read_int(config, buf, "OutputBufferSize", max_msg_size * 2);
+		if (upper_link_width < 1)
+			fatal("%s: network '%s': invalid value for variable 'UpperLinkWidth'.\n%s",
 				gpu_cache_config_file_name, net->name, err_note);
+		if (lower_link_width < 1)
+			fatal("%s: network '%s': invalid value for variable 'LowerLinkWidth'.\n%s",
+				gpu_cache_config_file_name, net->name, err_note);
+		if (inner_link_width < 1)
+			fatal("%s: network '%s': invalid value for variable 'InnerLinkWidth'.\n%s",
+				gpu_cache_config_file_name, net->name, err_note);
+		if (input_buffer_size < max_msg_size)
+			fatal("%s: network '%s': value for 'InputBufferSize' less than %d.\n%s%s",
+				gpu_cache_config_file_name, net->name, max_msg_size, err_buffer_note, err_note);
+		if (output_buffer_size < max_msg_size)
+			fatal("%s: network '%s': value for 'OutputBufferSize' less than %d.\n%s%s",
+				gpu_cache_config_file_name, net->name, max_msg_size, err_buffer_note, err_note);
 
-		/* Create switch and connections. By default, each i/o buffer has
-		 * space for two maximum-length messages. */
+		/* Create switch */
 		snprintf(buf, sizeof(buf), "%s.sw", net->name);
-		sw = net_new_switch(net, net->end_node_count, maxmsg * 2,
-			net->end_node_count, maxmsg * 2, link_width, buf, NULL);
-		gpu_cache_debug(" '%s'.node[%d]='switch'", net->name, sw);
-		for (j = 0; j < net->end_node_count; j++) {
-			net_new_bidirectional_link(net, j, sw, link_width);
+		switch_id = net_new_switch(net, net->end_node_count, input_buffer_size,
+			net->end_node_count, output_buffer_size, inner_link_width, buf, NULL);
+		gpu_cache_debug(" '%s'.node[%d]='switch'", net->name, switch_id);
+		assert(net->node_count);
+
+		/* Lower connection */
+		net_new_bidirectional_link(net, 0, switch_id, upper_link_width);
+		gpu_cache = net_get_node_data(net, 0);
+		gpu_cache_debug(" '%s'.connect('%s','switch')", net->name, gpu_cache->name);
+
+		/* Upper connections */
+		for (j = 1; j < net->end_node_count; j++) {
+			net_new_bidirectional_link(net, j, switch_id, lower_link_width);
 			gpu_cache = net_get_node_data(net, j);
 			gpu_cache_debug(" '%s'.connect('%s','switch')", net->name, gpu_cache->name);
 		}
 
+		/* Build routing table */
 		net_calculate_routes(net);
 	}
 	gpu_cache_debug("\n");
