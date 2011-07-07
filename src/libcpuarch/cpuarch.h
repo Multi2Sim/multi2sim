@@ -878,7 +878,6 @@ struct cpu_t {
 
 
 /* Procedures and functions */
-void cpu_print_stats(FILE *f);
 void cpu_init(void);
 void cpu_done(void);
 

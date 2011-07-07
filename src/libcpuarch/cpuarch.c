@@ -669,30 +669,6 @@ void cpu_dump_report()
 }
 
 
-void cpu_print_stats(FILE *f)
-{
-	uint64_t now = ke_timer();
-
-	/* Summary of functional simulation */
-	fprintf(f, "[ CPU.FunctionalSimulation ]\n");
-	fprintf(f, "Time = %.2f\n", (double) now / 1000000);
-	fprintf(f, "Instructions = %lld\n", (long long) cpu->inst);
-	fprintf(f, "InstructionsPerSecond = %.0f\n", now ? (double) cpu->inst / now * 1000000 : 0.0);
-	fprintf(f, "Contexts = %d\n", ke->running_max);
-	fprintf(f, "Memory = %lu\n", mem_mapped_space);
-	fprintf(f, "MemoryMax = %lu\n", mem_max_mapped_space);
-	fprintf(f, "\n");
-
-	/* Summary of detailed simulation */
-	fprintf(f, "[ CPU.DetailedSimulation ]\n");
-	fprintf(f, "Cycles = %lld\n", (long long) cpu->cycle);
-	fprintf(f, "InstructionsPerCycle = %.4g\n", cpu->cycle ? (double) cpu->inst / cpu->cycle : 0);
-	fprintf(f, "BranchPredictionAccuracy = %.4g\n", cpu->branches ? (double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0);
-	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) cpu->cycle / now * 1000000 : 0.0);
-	fprintf(f, "\n");
-}
-
-
 void cpu_thread_init(int core, int thread)
 {
 	/* Save block size of corresponding instruction cache. */
@@ -950,10 +926,8 @@ static void cpu_signal_handler(int signum)
 	
 	case SIGABRT:
 		signal(SIGABRT, SIG_DFL);
-		if (debug_status(error_debug_category)) {
-			cpu_print_stats(debug_file(error_debug_category));
+		if (debug_status(error_debug_category))
 			cpu_dump(debug_file(error_debug_category));
-		}
 		exit(1);
 		break;
 	
@@ -974,7 +948,6 @@ static void sim_dump_log()
 	sprintf(name, "m2s.%d.%lld", (int) getpid(), (long long) cpu->cycle);
 	f = fopen(name, "wt");
 	if (f) {
-		cpu_print_stats(f);
 		cpu_dump(f);
 		fclose(f);
 	}
@@ -1092,13 +1065,5 @@ void cpu_run()
 
 	/* CPU report */
 	cpu_dump_report();
-	
-	/* Dump statistics */
-	fprintf(stderr, "\n");
-	fprintf(stderr, ";\n");
-	fprintf(stderr, "; Simulation Statistics Summary\n");
-	fprintf(stderr, ";\n");
-	fprintf(stderr, "\n");
-	cpu_print_stats(stderr);
 }
 

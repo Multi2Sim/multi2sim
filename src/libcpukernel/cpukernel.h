@@ -624,6 +624,9 @@ struct kernel_t {
 	struct ctx_t *zombie_list_head, *zombie_list_tail;
 	struct ctx_t *finished_list_head, *finished_list_tail;
 	struct ctx_t *alloc_list_head, *alloc_list_tail;
+
+	/* Stats */
+	uint64_t inst_count;  /* Number of emulated instructions */
 };
 
 enum ke_list_enum {
