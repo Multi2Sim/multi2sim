@@ -931,14 +931,24 @@ struct gk_t {
 	struct mem_t *global_mem;
 	uint32_t global_mem_top;
 
-	/* Number of OpenCL kernels executed */
-	int ndrange_count;
+	/* Timer */
+	int timer_running;  /* Current timer state */
+	uint64_t timer_start_time;  /* Last time (as per ke_timer) when on */
+	uint64_t timer_acc;  /* Accumulated time in previous on-off cycles */
+
+	/* Stats */
+	int ndrange_count;  /* Number of OpenCL kernels executed */
+	uint64_t inst_count;  /* Number of instructions executed by wavefronts */
 };
 
 extern struct gk_t *gk;
 
 void gk_init(void);
 void gk_done(void);
+
+void gk_timer_start(void);
+void gk_timer_stop(void);
+uint64_t gk_timer(void);
 
 void gk_libopencl_redirect(char *path, int size);
 void gk_libopencl_failed(int pid);

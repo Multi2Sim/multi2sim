@@ -796,8 +796,13 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		gpu_wavefront_size,
 		ndrange->wavefronts_per_work_group);
 
+	/* Assign current ND-Range */
 	gpu->ndrange = ndrange;
 
+	/* Start GPU timer */
+	gk_timer_start();
+
+	/* Execution loop */
 	for (;;) {
 		
 		/* Assign pending work-items to idle compute units. */
@@ -828,6 +833,9 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		/* Event-driven module */
 		esim_process_events();
 	}
+
+	/* Stop GPU timer */
+	gk_timer_stop();
 
 	/* Dump stats */
 	gpu_ndrange_dump(ndrange, gpu_kernel_report_file);
