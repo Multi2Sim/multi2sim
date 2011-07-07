@@ -45,9 +45,6 @@ char *gpu_config_help =
 	"  NumComputeUnits = <num> (Default = 20)\n"
 	"      Number of compute units in the GPU. These are the hardware components\n"
 	"      where software work-groups are executed.\n"
-	"\n"
-	"Section '[ ComputeUnit ]':\n"
-	"\n"
 	"  WavefrontSize = <size> (Default = 64)\n"
 	"      Number of work-items within a wavefront which execute AMD Evergreen\n"
 	"      instructions in a SIMD fashion.\n"
@@ -79,8 +76,6 @@ char *gpu_config_help =
 	"      Latency of an access to the instruction memory in number of cycles.\n"
 	"  FetchQueueSize = <size> (Default = 64)\n"
 	"      Size in bytes of the fetch queue.\n"
-	"  InstructionQueueSize = <num_inst> (Default = 4)\n"
-	"      Number of CF instructions that can be stored in the instruction queue.\n"
 	"\n"
 	"Section '[ ALUEngine ]': parameters for the ALU Engine of the Compute Units.\n"
 	"\n"
@@ -88,8 +83,6 @@ char *gpu_config_help =
 	"      Latency of an access to the instruction memory in number of cycles.\n"
 	"  FetchQueueSize = <size> (Default = 64)\n"
 	"      Size in bytes of the fetch queue.\n"
-	"  InstructionQueueSize = <num_inst> (Default = 4)\n"
-	"      Number of VLIW bundles that can be stored in the instruction queue.\n"
 	"  ProcessingElementLatency = <cycles> (Default = 4)\n"
 	"      Latency of each processing element (x, y, z, w, t) of a Stream Core\n"
 	"      in number of cycles. This is the time between an instruction is issued\n"
@@ -597,14 +590,11 @@ void gpu_config_read(void)
 	/* Device */
 	section = "Device";
 	gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", gpu_num_compute_units);
-	if (gpu_num_compute_units < 1)
-		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", gpu_config_file_name, err_note);
-	
-	/* Compute Unit */
-	section = "ComputeUnit";
 	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
 	gpu_max_work_group_size = config_read_int(gpu_config, section, "MaxWorkGroupSize", gpu_max_work_group_size);
 	gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", gpu_num_stream_cores);
+	if (gpu_num_compute_units < 1)
+		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", gpu_config_file_name, err_note);
 	if (gpu_wavefront_size < 1)
 		fatal("%s: invalid value for 'WavefrontSize'.\n%s", gpu_config_file_name, err_note);
 	if ((gpu_max_work_group_size & (gpu_max_work_group_size - 1)) || gpu_max_work_group_size < 1)
