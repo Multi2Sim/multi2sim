@@ -26,23 +26,6 @@ int gpu_tex_engine_inst_mem_latency = 2;  /* Instruction memory latency */
 int gpu_tex_engine_fetch_queue_size = 32;  /* Number of bytes */
 
 
-#if 0
-	/* FIXME */
-	/////////////////////
-	gpu_uop_free(uop);
-	if (wavefront->clause_kind != GPU_CLAUSE_TEX) {
-
-		lnlist_out(compute_unit->cf_engine.complete_queue);
-		lnlist_insert(compute_unit->cf_engine.complete_queue,
-			compute_unit->tex_engine.cf_uop);
-
-		compute_unit->tex_engine.cf_uop = NULL;
-		compute_unit->tex_engine.wavefront = NULL;
-	}
-}
-#endif
-
-
 void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_uop_t *uop;
