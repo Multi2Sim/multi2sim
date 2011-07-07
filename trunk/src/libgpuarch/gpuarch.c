@@ -738,6 +738,8 @@ void gpu_dump_report(void)
 	double cf_inst_per_cycle;
 	double alu_inst_per_cycle;
 	double tex_inst_per_cycle;
+	uint64_t coalesced_reads;
+	uint64_t coalesced_writes;
 
 	/* Open file */
 	f = open_write(gpu_report_file_name);
@@ -767,6 +769,8 @@ void gpu_dump_report(void)
 			/ compute_unit->alu_engine.cycle : 0.0;
 		tex_inst_per_cycle = compute_unit->tex_engine.cycle ? (double) compute_unit->tex_engine.inst_count
 			/ compute_unit->tex_engine.cycle : 0.0;
+		coalesced_reads = local_memory->reads - local_memory->effective_reads;
+		coalesced_writes = local_memory->writes - local_memory->effective_writes;
 
 		fprintf(f, "[ ComputeUnit %d ]\n\n", compute_unit_id);
 
@@ -778,26 +782,27 @@ void gpu_dump_report(void)
 
 		fprintf(f, "CFEngine.Instructions = %lld\n", (long long) compute_unit->cf_engine.inst_count);
 		fprintf(f, "CFEngine.InstructionsPerCycle = %.4g\n", cf_inst_per_cycle);
+		fprintf(f, "\n");
 
 		fprintf(f, "ALUEngine.WavefrontCount = %lld\n", (long long) compute_unit->alu_engine.wavefront_count);
 		fprintf(f, "ALUEngine.Instructions = %lld\n", (long long) compute_unit->alu_engine.inst_count);
+		fprintf(f, "ALUEngine.Cycles = %lld\n", (long long) compute_unit->alu_engine.cycle);
 		fprintf(f, "ALUEngine.InstructionsPerCycle = %.4g\n", alu_inst_per_cycle);
 		fprintf(f, "\n");
 
 		fprintf(f, "TEXEngine.WavefrontCount = %lld\n", (long long) compute_unit->tex_engine.wavefront_count);
 		fprintf(f, "TEXEngine.Instructions = %lld\n", (long long) compute_unit->tex_engine.inst_count);
+		fprintf(f, "TEXEngine.Cycles = %lld\n", (long long) compute_unit->tex_engine.cycle);
 		fprintf(f, "TEXEngine.InstructionsPerCycle = %.4g\n", tex_inst_per_cycle);
 		fprintf(f, "\n");
 
 		fprintf(f, "LocalMemory.Accesses = %lld\n", (long long) (local_memory->reads + local_memory->writes));
 		fprintf(f, "LocalMemory.Reads = %lld\n", (long long) local_memory->reads);
 		fprintf(f, "LocalMemory.EffectiveReads = %lld\n", (long long) local_memory->effective_reads);
-		fprintf(f, "LocalMemory.CoalescedReads = %lld\n", (long long) (local_memory->reads -
-			local_memory->effective_reads));
+		fprintf(f, "LocalMemory.CoalescedReads = %lld\n", (long long) coalesced_reads);
 		fprintf(f, "LocalMemory.Writes = %lld\n", (long long) local_memory->writes);
 		fprintf(f, "LocalMemory.EffectiveWrites = %lld\n", (long long) local_memory->effective_writes);
-		fprintf(f, "LocalMemory.CoalescedWrites = %lld\n", (long long) (local_memory->writes -
-			local_memory->effective_writes));
+		fprintf(f, "LocalMemory.CoalescedWrites = %lld\n", (long long) coalesced_writes);
 		fprintf(f, "\n\n");
 	}
 }
