@@ -724,7 +724,6 @@ static void ke_signal_handler(int signum)
 void ke_run(void)
 {
 	struct ctx_t *ctx;
-	uint64_t inst = 0;
 	uint64_t cycle = 0;
 
 	/* Install signal handlers */
@@ -740,7 +739,6 @@ void ke_run(void)
 		/* Run an instruction from every running process */
 		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
 			ctx_execute_inst(ctx);
-		inst += ke->running_count;
 	
 		/* Free finished contexts */
 		while (ke->finished_list_head)
@@ -754,7 +752,7 @@ void ke_run(void)
 			break;
 
 		/* Stop if maximum number of instructions exceeded */
-		if (ke_max_inst && inst >= ke_max_inst)
+		if (ke_max_inst && ke->inst_count >= ke_max_inst)
 			break;
 
 		/* Stop if maximum number of cycles exceeded */
@@ -770,21 +768,6 @@ void ke_run(void)
 	/* Restore signal handlers */
 	signal(SIGABRT, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
-
-	/* Statistics */
-	fprintf(stderr, "\n");
-	fprintf(stderr, ";\n");
-	fprintf(stderr, "; Simulation Statistics Summary\n");
-	fprintf(stderr, ";\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "[ CPU.FunctionalSimulation ]\n");
-	fprintf(stderr, "Time = %.2f\n", (double) ke_timer() / 1000000);
-	fprintf(stderr, "Instructions = %lld\n", (long long) inst);
-	fprintf(stderr, "InstructionsPerSecond = %.0f\n", ke_timer() ? (double) inst / ke_timer() * 1000000 : 0.0);
-	fprintf(stderr, "Contexts = %d\n", ke->running_max);
-	fprintf(stderr, "Memory = %lu\n", mem_mapped_space);
-	fprintf(stderr, "MemoryMax = %lu\n", mem_max_mapped_space);
-	fprintf(stderr, "\n");
 }
 
 

@@ -109,6 +109,7 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 		assert(!compute_unit->alu_engine.wavefront);
 		compute_unit->alu_engine.cf_uop = uop;
 		compute_unit->alu_engine.wavefront = uop->wavefront;
+		compute_unit->alu_engine.wavefront_mappings++;
 
 	} else if (uop->tex_clause_trigger) {
 		
@@ -116,6 +117,7 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 		assert(!compute_unit->tex_engine.wavefront);
 		compute_unit->tex_engine.cf_uop = uop;
 		compute_unit->tex_engine.wavefront = uop->wavefront;
+		compute_unit->tex_engine.wavefront_mappings++;
 
 	} else {
 		
