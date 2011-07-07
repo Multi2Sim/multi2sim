@@ -74,8 +74,6 @@ char *gpu_config_help =
 	"\n"
 	"  InstructionMemoryLatency = <cycles> (Default = 2)\n"
 	"      Latency of an access to the instruction memory in number of cycles.\n"
-	"  FetchQueueSize = <size> (Default = 64)\n"
-	"      Size in bytes of the fetch queue.\n"
 	"\n"
 	"Section '[ ALUEngine ]': parameters for the ALU Engine of the Compute Units.\n"
 	"\n"

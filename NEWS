@@ -1,3 +1,22 @@
+
+*** Announcement on Jul 7th, 2011 ***
+
+Dear Multi2Sim users,
+
+A new version of Multi2Sim has been released with important changes. As its main novel feature, the new package includes cycle-accurate architectural GPU simulation based on the AMD Evergreen family.
+
+  * A new chapter (Chapter 8) has been included in the Multi2Sim Guide (www.multi2sim.org/files/multi2sim.pdf), describing the Evergreen GPU architectural model, the command-line options for the simulator to configure this model, as well as the structure of the statistics reports.
+
+  * With Multi2Sim 3.1, the user can choose between functional and architectural simulations both for the x86 CPU and the Evergreen GPU models. This integration makes it the first free, open-source tool modeling an heterogeneous CPU-GPU processor at the ISA level as a whole.
+
+  * The Evergreen architectural model includes cycle by cycle simulation for the architecture of GPU stream cores and compute units (based on control-flow, ALU, and texture engines), private and local memories, a configurable global memory hierarchy using caches, and interconnection networks.
+
+  * A completely renewed command-line interface makes the use of Multi2Sim more user-friendly, integrating functional and architectural simulation in a single tool (m2s). Configuration files and statistic reports are all now based on INI files (http://en.wikipedia.org/wiki/INI_file).
+
+Please, visit www.multi2sim.org to download the latest package. If you want to stop receiving these emails, please use the 'Unsubscribe' link in the 'Mailing List' section.
+
+
+
 *** Announce on May 8th, 2011 ***
 
 Dear Multi2Sim users:
@@ -55,6 +74,5 @@ Also, current Multi2Sim users can enjoy the following updates:
 * Documentation: Chapter 1 of the Multi2Sim Guide updated with detailed description of the simulation model, considerations for static/dynamic linking, and others.
 
 Please, visit www.multi2sim.org for more information. Click on the 'Mailing List' section to receive announcements on version updates (about 1 mail a month), or to unsubscribe if you are already a member and want to stop receiving these emails.
-
 
 
