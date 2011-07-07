@@ -94,6 +94,32 @@ void gk_done()
 }
 
 
+void gk_timer_start(void)
+{
+	assert(!gk->timer_running);
+	gk->timer_start_time = ke_timer();
+	gk->timer_running = 1;
+}
+
+
+void gk_timer_stop(void)
+{
+	assert(gk->timer_running);
+	gk->timer_acc += ke_timer() - gk->timer_start_time;
+	gk->timer_running = 0;
+}
+
+
+/* Return a counter of microseconds relative to the first time the GPU started to run.
+ * This counter runs only while the GPU is active, stopping and resuming after calls
+ * to 'gk_timer_stop()' and 'gk_timer_start()', respectively. */
+uint64_t gk_timer(void)
+{
+	return gk->timer_running ? ke_timer() - gk->timer_start_time + gk->timer_acc
+		: gk->timer_acc;
+}
+
+
 /* If 'fullpath' points to the original OpenCL library, redirect it to 'm2s-opencl.so'
  * in the same path. */
 void gk_libopencl_redirect(char *fullpath, int size)
@@ -173,10 +199,6 @@ void gk_libopencl_failed(int pid)
  * GPU ND-Range
  */
 
-/* Sequential assignment of ND-Range identifiers */
-static int gpu_ndrange_id = 0;
-
-
 struct gpu_ndrange_t *gpu_ndrange_create(struct opencl_kernel_t *kernel)
 {
 	struct gpu_ndrange_t *ndrange;
@@ -184,7 +206,7 @@ struct gpu_ndrange_t *gpu_ndrange_create(struct opencl_kernel_t *kernel)
 	ndrange = calloc(1, sizeof(struct gpu_ndrange_t));
 	ndrange->kernel = kernel;
 	ndrange->local_mem_top = kernel->func_mem_local;
-	ndrange->id = gpu_ndrange_id++;
+	ndrange->id = gk->ndrange_count++;
 	return ndrange;
 }
 
@@ -564,6 +586,9 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 		gpu_work_group_set_status(work_group, gpu_work_group_running);
 	}
 
+	/* Start GPU timer */
+	gk_timer_start();
+
 	/* Execution loop */
 	while (ndrange->running_list_head)
 	{
@@ -584,6 +609,9 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 			}
 		}
 	}
+
+	/* Stop GPU timer */
+	gk_timer_stop();
 
 	/* Dump stats */
 	gpu_ndrange_dump(ndrange, gpu_kernel_report_file);
@@ -977,6 +1005,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		}
 
 		/* Stats */
+		gk->inst_count++;
 		gpu_isa_wavefront->emu_inst_count++;
 		gpu_isa_wavefront->inst_count++;
 		gpu_isa_wavefront->cf_inst_count++;
@@ -1015,6 +1044,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		}
 		
 		/* Stats */
+		gk->inst_count++;
 		gpu_isa_wavefront->inst_count += gpu_isa_alu_group->inst_count;
 		gpu_isa_wavefront->alu_inst_count += gpu_isa_alu_group->inst_count;
 		gpu_isa_wavefront->alu_group_count++;
@@ -1060,6 +1090,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		}
 
 		/* Stats */
+		gk->inst_count++;
 		gpu_isa_wavefront->emu_inst_count += gpu_isa_wavefront->work_item_count;
 		gpu_isa_wavefront->inst_count++;
 		gpu_isa_wavefront->tc_inst_count++;
