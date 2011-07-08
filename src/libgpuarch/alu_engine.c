@@ -249,7 +249,7 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 
 	/* Debug */
 	gpu_pipeline_debug("alu a=\"decode\" "
-		"cu=%d\n"
+		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
 		(long long) uop->id);
