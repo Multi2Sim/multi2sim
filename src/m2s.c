@@ -125,16 +125,23 @@ static char *sim_help =
 	"        --help-gpu-cache-config: format of the GPU cache configuration file.\n"
 	"        --help-gpu-config: format of the GPU model configuration file.\n"
 	"\n"
-	"  --max-cycles <num_cycles>\n"
-	"      Specify a limit in the number of cycles. In the functional simulation, one\n"
-	"      instruction from each active context is executed in a cycle. In the detailed\n"
-	"      simulation, this option refers to CPU cycles. Use a value of 0 (default) for\n"
+	"  --max-cpu-cycles <num_cycles>\n"
+	"      Maximum number of CPU cycles. For functional CPU simulation, one instruction\n"
+	"      from each active context is executed every cycle. Use 0 (default) for\n"
 	"      unlimited.\n"
 	"\n"
-	"  --max-inst <num_inst>\n"
-	"      Specify the limit in the number of executed instructions. In the detailed\n"
-	"      simulation, this limit refers to the number of committed instructions. Use\n"
-	"      a value of 0 (default) for unlimited.\n"
+	"  --max-cpu-inst <num_inst>\n"
+	"      Maximum number of CPU x86 instructions executed. For detailed simulation\n"
+	"      this is the number of committed instructions. Use 0 (default) for unlimited.\n"
+	"\n"
+	"  --max-gpu-cycles <num_cycles>\n"
+	"      Maximum number of GPU cycles. For functional GPU simulation, an instruction\n"
+	"      from every work-item in every work-group is executed every cycle. Use 0\n"
+	"      (default) for no limit.\n"
+	"\n"
+	"  --max-gpu-inst <num_inst>\n"
+	"      Maximum number of GPU instructions. An instruction executed in common for a\n"
+	"      whole wavefront counts as 1 toward this limit. Use 0 (default) for no limit.\n"
 	"\n"
 	"  --max-time <seconds>\n"
 	"      Maximum simulation time in seconds. The simulator will stop after this time\n"
@@ -416,19 +423,35 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Maximum number of cycles */
-		if (!strcmp(argv[argi], "--max-cycles")) {
+		/* Maximum number of CPU cycles */
+		if (!strcmp(argv[argi], "--max-cpu-cycles")) {
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			ke_max_cycles = atoll(argv[argi]);
 			continue;
 		}
 
-		/* Maximum number of instructions */
-		if (!strcmp(argv[argi], "--max-inst")) {
+		/* Maximum number of CPU instructions */
+		if (!strcmp(argv[argi], "--max-cpu-inst")) {
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			ke_max_inst = atoll(argv[argi]);
+			continue;
+		}
+
+		/* Maximum number of GPU cycles */
+		if (!strcmp(argv[argi], "--max-gpu-cycles")) {
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			gpu_max_cycles = atoll(argv[argi]);
+			continue;
+		}
+
+		/* Maximum number of CPU instructions */
+		if (!strcmp(argv[argi], "--max-gpu-inst")) {
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			gpu_max_inst = atoll(argv[argi]);
 			continue;
 		}
 

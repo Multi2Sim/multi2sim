@@ -24,10 +24,15 @@
  * Global variables
  */
 
+/* Configuration parameters */
 uint64_t ke_max_inst = 0;
 uint64_t ke_max_cycles = 0;
 uint64_t ke_max_time = 0;
 
+/* Flag indicating end of simulation */
+int ke_sim_finish = 0;
+
+/* CPU kernel */
 struct kernel_t *ke;
 
 
@@ -694,8 +699,6 @@ void ke_process_events()
  * Functional simulation loop
  */
 
-static int sigint_received = 0;
-
 
 /* Signal handler while functional simulation loop is running */
 static void ke_signal_handler(int signum)
@@ -703,9 +706,9 @@ static void ke_signal_handler(int signum)
 	switch (signum) {
 	
 	case SIGINT:
-		if (sigint_received)
+		if (ke_sim_finish)
 			abort();
-		sigint_received = 1;
+		ke_sim_finish = 1;
 		fprintf(stderr, "SIGINT received\n");
 		break;
 	
@@ -747,8 +750,8 @@ void ke_run(void)
 		/* Process list of suspended contexts */
 		ke_process_events();
 
-		/* Stop if signal SIGINT was received */
-		if (sigint_received)
+		/* Stop if 'ke_sim_finish' flag was set */
+		if (ke_sim_finish)
 			break;
 
 		/* Stop if maximum number of instructions exceeded */
