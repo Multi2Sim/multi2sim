@@ -21,6 +21,7 @@
 #define GPUARCH_H
 
 #include <gpukernel.h>
+#include <heap.h>
 
 
 
@@ -152,6 +153,8 @@ struct gpu_uop_t
 struct gpu_uop_t *gpu_uop_create();
 struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_group);
 void gpu_uop_free(struct gpu_uop_t *gpu_uop);
+void gpu_uop_list_free(struct lnlist_t *gpu_uop_list);
+void gpu_uop_heap_free(struct heap_t *gpu_uop_heap);
 
 void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count);
 

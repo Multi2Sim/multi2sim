@@ -898,7 +898,6 @@ uint32_t cpu_tlb_address(int ctx, uint32_t vaddr)
  * Simulation loop
  */
 
-static int sigint_received = 0;
 static int sigusr_received = 0;
 static int sigalrm_interval = 30;
 static uint64_t last_sigalrm_cycle = 0;
@@ -910,9 +909,9 @@ static void cpu_signal_handler(int signum)
 	switch (signum) {
 	
 	case SIGINT:
-		if (sigint_received)
+		if (ke_sim_finish)
 			abort();
-		sigint_received = 1;
+		ke_sim_finish = 1;
 		cpu_dump(stderr);
 		fprintf(stderr, "SIGINT received\n");
 		break;
@@ -984,8 +983,8 @@ static void cpu_fast_forward(uint64_t max_inst)
 		/* Process list of suspended contexts */
 		ke_process_events();
 
-		/* Stop if signal SIGINT was received */
-		if (sigint_received)
+		/* Stop if 'ke_sim_finish' flag was set */
+		if (ke_sim_finish)
 			break;
 
 		/* Stop if maximum number of instructions exceeded */
@@ -1034,8 +1033,8 @@ void cpu_run()
 		/* Event-driven module */
 		esim_process_events();
 		
-		/* Stop if signal SIGINT was received */
-		if (sigint_received)
+		/* Stop if 'ke_sim_finish' flag was set */
+		if (ke_sim_finish)
 			break;
 
 		/* Stop if maximum number of instructions exceeded */

@@ -27,6 +27,9 @@
 
 struct gk_t *gk;
 
+uint64_t gpu_max_cycles = 0;
+uint64_t gpu_max_inst = 0;
+
 char *gpu_opencl_binary_name = "";
 char *gpu_kernel_report_file_name = "";
 FILE *gpu_kernel_report_file = NULL;
@@ -579,6 +582,7 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 {
 	struct gpu_work_group_t *work_group, *work_group_next;
 	struct gpu_wavefront_t *wavefront, *wavefront_next;
+	uint64_t cycle = 0;
 
 	/* Set all ready work-groups to running */
 	while ((work_group = ndrange->pending_list_head)) {
@@ -592,6 +596,9 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 	/* Execution loop */
 	while (ndrange->running_list_head)
 	{
+		/* Next cycle */
+		cycle++;
+
 		/* Execute an instruction from each work-group */
 		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next) {
 			
@@ -607,6 +614,18 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 				/* Execute instruction in wavefront */
 				gpu_wavefront_execute(wavefront);
 			}
+		}
+
+		/* Stop if maximum number of cycles exceeded */
+		if (gpu_max_cycles && cycle >= gpu_max_cycles) {
+			ke_sim_finish = 1;
+			break;
+		}
+
+		/* Stop if maximum number of instructions exceeded */
+		if (gpu_max_inst && gk->inst_count >= gpu_max_inst) {
+			ke_sim_finish = 1;
+			break;
 		}
 	}
 
@@ -1223,6 +1242,4 @@ void gpu_work_item_update_branch_digest(struct gpu_work_item_t *work_item, uint6
 	/* Update branch digest */
 	work_item->branch_digest ^= mask;
 }
-
-
 
