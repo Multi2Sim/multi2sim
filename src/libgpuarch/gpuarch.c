@@ -19,6 +19,7 @@
 
 #include <gpukernel.h>
 #include <gpuarch.h>
+#include <cpukernel.h>
 #include <config.h>
 #include <debug.h>
 #include <repos.h>
@@ -234,7 +235,31 @@ struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_grou
 
 void gpu_uop_free(struct gpu_uop_t *gpu_uop)
 {
+	if (!gpu_uop)
+		return;
 	repos_free_object(gpu_uop_repos, gpu_uop);
+}
+
+
+void gpu_uop_list_free(struct lnlist_t *gpu_uop_list)
+{
+	struct gpu_uop_t *uop;
+	while (lnlist_count(gpu_uop_list)) {
+		lnlist_head(gpu_uop_list);
+		uop = lnlist_get(gpu_uop_list);
+		gpu_uop_free(uop);
+		lnlist_remove(gpu_uop_list);
+	}
+}
+
+
+void gpu_uop_heap_free(struct heap_t *gpu_uop_heap)
+{
+	struct gpu_uop_t *uop;
+	while (heap_count(gpu_uop_heap)) {
+		heap_extract(gpu_uop_heap, (void **) &uop);
+		gpu_uop_free(uop);
+	}
 }
 
 
@@ -307,14 +332,40 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 {
+	int i;
+
+	/* CF Engine - free uops in fetch buffer, instruction buffer, and complete queue */
+	for (i = 0; i < gpu_max_wavefront_count; i++) {
+		gpu_uop_free(compute_unit->cf_engine.fetch_buffer[i]);
+		gpu_uop_free(compute_unit->cf_engine.inst_buffer[i]);
+	}
+	gpu_uop_list_free(compute_unit->cf_engine.complete_queue);
+
+	/* CF Engine - free structures */
 	lnlist_free(compute_unit->cf_engine.wavefront_pool);
 	free(compute_unit->cf_engine.fetch_buffer);
 	free(compute_unit->cf_engine.inst_buffer);
 	lnlist_free(compute_unit->cf_engine.complete_queue);
 
+	/* ALU Engine - free uops in fetch queue, instruction buffer, execution buffer,
+	 * and event queue. Also free CF instruction currently running. */
+	gpu_uop_list_free(compute_unit->alu_engine.fetch_queue);
+	gpu_uop_free(compute_unit->alu_engine.inst_buffer);
+	gpu_uop_free(compute_unit->alu_engine.exec_buffer);
+	gpu_uop_heap_free(compute_unit->alu_engine.event_queue);
+	gpu_uop_free(compute_unit->alu_engine.cf_uop);
+
+	/* ALU Engine - structures */
 	lnlist_free(compute_unit->alu_engine.fetch_queue);
 	heap_free(compute_unit->alu_engine.event_queue);
 
+	/* Text Engine - free uop in fetch queue, instruction buffer, write buffer. */
+	gpu_uop_list_free(compute_unit->tex_engine.fetch_queue);
+	gpu_uop_free(compute_unit->tex_engine.inst_buffer);
+	gpu_uop_free(compute_unit->tex_engine.write_buffer);
+	gpu_uop_free(compute_unit->tex_engine.cf_uop);
+
+	/* TEX Engine - structures */
 	lnlist_free(compute_unit->tex_engine.fetch_queue);
 
 	gpu_cache_free(compute_unit->local_memory);
@@ -861,6 +912,18 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		
 		/* Event-driven module */
 		esim_process_events();
+
+		/* Stop if maximum number of cycles exceeded */
+		if (gpu_max_cycles && gpu->cycle >= gpu_max_cycles) {
+			ke_sim_finish = 1;
+			break;
+		}
+
+		/* Stop if maximum number of instructions exceeded */
+		if (gpu_max_inst && gk->inst_count >= gpu_max_inst) {
+			ke_sim_finish = 1;
+			break;
+		}
 	}
 
 	/* Stop GPU timer */

@@ -42,12 +42,15 @@
 #include <sys/time.h>
 
 
-/* Configuration variables */
+/*
+ * Global variables
+ */
 
 extern uint64_t ke_max_cycles;
 extern uint64_t ke_max_inst;
 extern uint64_t ke_max_time;
 
+extern int ke_sim_finish;
 
 
 
