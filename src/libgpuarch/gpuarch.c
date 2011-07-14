@@ -134,6 +134,7 @@ struct gpu_stack_fault_t {
 	int active_mask_id;  /* [ 0, GPU_MAX_STACK_SIZE - 1 ] */
 	int bit;  /* [ 0, gpu_wavefront_size - 1 ] */
 };
+int gpu_stack_fault_errors = 0;  /* Number of faults causing error */
 struct lnlist_t *gpu_stack_faults;
 int gpu_stack_faults_debug_category;
 char *gpu_stack_faults_debug_file_name = "";
@@ -253,16 +254,6 @@ void gpu_uop_list_free(struct lnlist_t *gpu_uop_list)
 }
 
 
-void gpu_uop_heap_free(struct heap_t *gpu_uop_heap)
-{
-	struct gpu_uop_t *uop;
-	while (heap_count(gpu_uop_heap)) {
-		heap_extract(gpu_uop_heap, (void **) &uop);
-		gpu_uop_free(uop);
-	}
-}
-
-
 void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 {
 	static struct string_map_t gpu_uop_dep_map = {
@@ -332,6 +323,8 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 {
+	struct heap_t *event_queue;
+	struct gpu_uop_t *uop;
 	int i;
 
 	/* CF Engine - free uops in fetch buffer, instruction buffer, and complete queue */
@@ -347,12 +340,20 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	free(compute_unit->cf_engine.inst_buffer);
 	lnlist_free(compute_unit->cf_engine.complete_queue);
 
+	/* ALU Engine - free uops in event queue (heap) */
+	event_queue = compute_unit->alu_engine.event_queue;
+	while (heap_count(event_queue)) {
+		heap_extract(event_queue, (void **) &uop);
+		uop->write_subwavefront_count++;
+		if (uop->write_subwavefront_count == uop->subwavefront_count)
+			gpu_uop_free(uop);
+	}
+
 	/* ALU Engine - free uops in fetch queue, instruction buffer, execution buffer,
 	 * and event queue. Also free CF instruction currently running. */
 	gpu_uop_list_free(compute_unit->alu_engine.fetch_queue);
 	gpu_uop_free(compute_unit->alu_engine.inst_buffer);
 	gpu_uop_free(compute_unit->alu_engine.exec_buffer);
-	gpu_uop_heap_free(compute_unit->alu_engine.event_queue);
 	gpu_uop_free(compute_unit->alu_engine.cf_uop);
 
 	/* ALU Engine - structures */
@@ -614,12 +615,17 @@ void gpu_stack_faults_insert(void)
 		bit_map_set(wavefront->active_stack, stack_fault->active_mask_id * wavefront->work_item_count
 			+ stack_fault->bit, 1, !value);
 		gpu_stack_faults_debug("effect=\"error\"");
+		gpu_stack_fault_errors++;
 
 end_loop:
 		/* Extract and free */
 		free(stack_fault);
 		lnlist_remove(gpu_stack_faults);
 		gpu_stack_faults_debug("\n");
+
+		/* If all faults were inserted and no error was caused, end simulation */
+		if (!lnlist_count(gpu_stack_faults) && !gpu_stack_fault_errors)
+			ke_sim_finish = ke_sim_finish_gpu_no_faults;
 	}
 }
 
@@ -893,6 +899,18 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		if (!gpu->busy_list_head)
 			break;
 
+		/* Stop if maximum number of GPU cycles exceeded */
+		if (gpu_max_cycles && gpu->cycle >= gpu_max_cycles)
+			ke_sim_finish = ke_sim_finish_max_gpu_cycles;
+
+		/* Stop if maximum number of GPU instructions exceeded */
+		if (gpu_max_inst && gk->inst_count >= gpu_max_inst)
+			ke_sim_finish = ke_sim_finish_max_gpu_inst;
+
+		/* Stop if any reason met */
+		if (ke_sim_finish)
+			break;
+
 		/* Next cycle */
 		gpu->cycle++;
 		gpu_pipeline_debug("clk c=%lld\n", (long long) gpu->cycle);
@@ -912,18 +930,6 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		
 		/* Event-driven module */
 		esim_process_events();
-
-		/* Stop if maximum number of cycles exceeded */
-		if (gpu_max_cycles && gpu->cycle >= gpu_max_cycles) {
-			ke_sim_finish = 1;
-			break;
-		}
-
-		/* Stop if maximum number of instructions exceeded */
-		if (gpu_max_inst && gk->inst_count >= gpu_max_inst) {
-			ke_sim_finish = 1;
-			break;
-		}
 	}
 
 	/* Stop GPU timer */

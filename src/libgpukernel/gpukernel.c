@@ -596,6 +596,18 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 	/* Execution loop */
 	while (ndrange->running_list_head)
 	{
+		/* Stop if maximum number of GPU cycles exceeded */
+		if (gpu_max_cycles && cycle >= gpu_max_cycles)
+			ke_sim_finish = ke_sim_finish_max_gpu_cycles;
+
+		/* Stop if maximum number of GPU instructions exceeded */
+		if (gpu_max_inst && gk->inst_count >= gpu_max_inst)
+			ke_sim_finish = ke_sim_finish_max_gpu_inst;
+
+		/* Stop if any reason met */
+		if (ke_sim_finish)
+			break;
+
 		/* Next cycle */
 		cycle++;
 
@@ -614,18 +626,6 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 				/* Execute instruction in wavefront */
 				gpu_wavefront_execute(wavefront);
 			}
-		}
-
-		/* Stop if maximum number of cycles exceeded */
-		if (gpu_max_cycles && cycle >= gpu_max_cycles) {
-			ke_sim_finish = 1;
-			break;
-		}
-
-		/* Stop if maximum number of instructions exceeded */
-		if (gpu_max_inst && gk->inst_count >= gpu_max_inst) {
-			ke_sim_finish = 1;
-			break;
 		}
 	}
 

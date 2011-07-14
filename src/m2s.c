@@ -599,6 +599,7 @@ void sim_stats_summary(void)
 	fprintf(stderr, "Contexts = %d\n", ke->running_max);
 	fprintf(stderr, "Memory = %lu\n", mem_mapped_space);
 	fprintf(stderr, "MemoryMax = %lu\n", mem_max_mapped_space);
+	fprintf(stderr, "SimEnd = %s\n", map_value(&ke_sim_finish_map, ke_sim_finish));
 
 	/* CPU detailed simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed) {
