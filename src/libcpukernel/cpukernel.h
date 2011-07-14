@@ -50,7 +50,19 @@ extern uint64_t ke_max_cycles;
 extern uint64_t ke_max_inst;
 extern uint64_t ke_max_time;
 
-extern int ke_sim_finish;
+/* Reason for simulation end */
+extern struct string_map_t ke_sim_finish_map;
+extern enum ke_sim_finish_enum {
+	ke_sim_finish_none,  /* Simulation not finished */
+	ke_sim_finish_ctx,  /* Contexts finished */
+	ke_sim_finish_max_cpu_inst,  /* Maximum instruction count reached in CPU */
+	ke_sim_finish_max_cpu_cycles,  /* Maximum cycle count reached in CPU */
+	ke_sim_finish_max_gpu_inst,  /* Maximum instruction count reached in GPU */
+	ke_sim_finish_max_gpu_cycles,  /* Maximum cycle count reached in GPU */
+	ke_sim_finish_max_time,  /* Maximum simulation time reached */
+	ke_sim_finish_signal,  /* Signal received */
+	ke_sim_finish_gpu_no_faults  /* GPU-REL: no fault in '--gpu-stack-faults' caused error */
+} ke_sim_finish;
 
 
 

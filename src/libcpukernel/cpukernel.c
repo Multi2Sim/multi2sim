@@ -29,8 +29,20 @@ uint64_t ke_max_inst = 0;
 uint64_t ke_max_cycles = 0;
 uint64_t ke_max_time = 0;
 
-/* Flag indicating end of simulation */
-int ke_sim_finish = 0;
+/* Reason for simulation end */
+enum ke_sim_finish_enum ke_sim_finish = ke_sim_finish_none;
+struct string_map_t ke_sim_finish_map = {
+	8, {
+		{ "ContextsFinished", ke_sim_finish_ctx },
+		{ "MaxCPUInst", ke_sim_finish_max_cpu_inst },
+		{ "MaxCPUCycles", ke_sim_finish_max_cpu_cycles },
+		{ "MaxGPUInst", ke_sim_finish_max_gpu_inst },
+		{ "MaxGPUCycles", ke_sim_finish_max_gpu_cycles },
+		{ "MaxTime", ke_sim_finish_max_time },
+		{ "Signal", ke_sim_finish_signal },
+		{ "GPUNoFaults", ke_sim_finish_gpu_no_faults }  /* GPU-REL */
+	}
+};
 
 /* CPU kernel */
 struct kernel_t *ke;
@@ -708,7 +720,7 @@ static void ke_signal_handler(int signum)
 	case SIGINT:
 		if (ke_sim_finish)
 			abort();
-		ke_sim_finish = 1;
+		ke_sim_finish = ke_sim_finish_signal;
 		fprintf(stderr, "SIGINT received\n");
 		break;
 	
@@ -734,8 +746,28 @@ void ke_run(void)
 	signal(SIGABRT, &ke_signal_handler);
 
 	/* Functional simulation loop */
-	while (ke->finished_count < ke->context_count) {
+	for (;;) {
 		
+		/* Stop if all contexts finished */
+		if (ke->finished_count >= ke->context_count)
+			ke_sim_finish = ke_sim_finish_ctx;
+
+		/* Stop if maximum number of CPU instructions exceeded */
+		if (ke_max_inst && ke->inst_count >= ke_max_inst)
+			ke_sim_finish = ke_sim_finish_max_cpu_inst;
+
+		/* Stop if maximum number of cycles exceeded */
+		if (ke_max_cycles && cycle >= ke_max_cycles)
+			ke_sim_finish = ke_sim_finish_max_cpu_cycles;
+
+		/* Stop if maximum time exceeded (check only every 10k cycles) */
+		if (ke_max_time && !(cycle % 10000) && ke_timer() > ke_max_time * 1000000)
+			ke_sim_finish = ke_sim_finish_max_time;
+
+		/* Stop if any previous reason met */
+		if (ke_sim_finish)
+			break;
+
 		/* Next cycle */
 		cycle++;
 
@@ -749,23 +781,6 @@ void ke_run(void)
 	
 		/* Process list of suspended contexts */
 		ke_process_events();
-
-		/* Stop if 'ke_sim_finish' flag was set */
-		if (ke_sim_finish)
-			break;
-
-		/* Stop if maximum number of instructions exceeded */
-		if (ke_max_inst && ke->inst_count >= ke_max_inst)
-			break;
-
-		/* Stop if maximum number of cycles exceeded */
-		if (ke_max_cycles && cycle >= ke_max_cycles)
-			break;
-		
-		/* Halt execution after 'p_max_time' has expired. Since this check
-		 * involves a call to 'ke_timer', perform it only every 10000 cycles. */
-		if (ke_max_time && !(cycle % 10000) && ke_timer() > ke_max_time * 1000000)
-			break;
 	}
 
 	/* Restore signal handlers */

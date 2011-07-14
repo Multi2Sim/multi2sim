@@ -911,7 +911,7 @@ static void cpu_signal_handler(int signum)
 	case SIGINT:
 		if (ke_sim_finish)
 			abort();
-		ke_sim_finish = 1;
+		ke_sim_finish = ke_sim_finish_signal;
 		cpu_dump(stderr);
 		fprintf(stderr, "SIGINT received\n");
 		break;
@@ -969,8 +969,20 @@ static void cpu_fast_forward(uint64_t max_inst)
 	fprintf(stderr, "\n");
 
 	/* Functional simulation */
-	while (ke->finished_count < ke->context_count) {
+	for (;;) {
+
+		/* Check finished contexts */
+		if (ke->finished_count >= ke->context_count)
+			ke_sim_finish = ke_sim_finish_ctx;
 		
+		/* Stop if any previous reason met */
+		if (ke_sim_finish)
+			break;
+
+		/* Stop if maximum number of fast-forward instructions met */
+		if (inst >= max_inst)
+			break;
+
 		/* Run an instruction from every running process */
 		inst += ke->running_count;
 		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
@@ -982,20 +994,12 @@ static void cpu_fast_forward(uint64_t max_inst)
 	
 		/* Process list of suspended contexts */
 		ke_process_events();
-
-		/* Stop if 'ke_sim_finish' flag was set */
-		if (ke_sim_finish)
-			break;
-
-		/* Stop if maximum number of instructions exceeded */
-		if (inst >= max_inst)
-			break;
 	}
 
 	/* End message */
 	fprintf(stderr, "\n");
-	if (ke->finished_count == ke->context_count)
-		fprintf(stderr, "; Program finished during fast-forward simulation.\n");
+	if (ke_sim_finish)
+		fprintf(stderr, "; Simulation finished during fast-forward simulation.\n");
 	else
 		fprintf(stderr, "; Fast-forward simulation complete - continuing detailed simulation.\n");
 	fprintf(stderr, "\n");
@@ -1019,7 +1023,27 @@ void cpu_run()
 		cpu_fast_forward(cpu_fast_forward_count);
 	
 	/* Detailed simulation loop */
-	while (ke->finished_count < ke->context_count) {
+	for (;;) {
+
+		/* Stop if all contexts finished */
+		if (ke->finished_count >= ke->context_count)
+			ke_sim_finish = ke_sim_finish_ctx;
+
+		/* Stop if maximum number of CPU instructions exceeded */
+		if (ke_max_inst && cpu->inst >= ke_max_inst)
+			ke_sim_finish = ke_sim_finish_max_cpu_inst;
+
+		/* Stop if maximum number of cycles exceeded */
+		if (ke_max_cycles && cpu->cycle >= ke_max_cycles)
+			ke_sim_finish = ke_sim_finish_max_cpu_cycles;
+
+		/* Stop if maximum time exceeded (check only every 10k cycles) */
+		if (ke_max_time && !(cpu->cycle % 10000) && ke_timer() > ke_max_time * 1000000)
+			ke_sim_finish = ke_sim_finish_max_time;
+
+		/* Stop if any previous reason met */
+		if (ke_sim_finish)
+			break;
 
 		/* Next cycle */
 		cpu->cycle++;
@@ -1033,23 +1057,6 @@ void cpu_run()
 		/* Event-driven module */
 		esim_process_events();
 		
-		/* Stop if 'ke_sim_finish' flag was set */
-		if (ke_sim_finish)
-			break;
-
-		/* Stop if maximum number of instructions exceeded */
-		if (ke_max_inst && cpu->inst >= ke_max_inst)
-			break;
-
-		/* Stop if maximum number of cycles exceeded */
-		if (ke_max_cycles && cpu->cycle >= ke_max_cycles)
-			break;
-
-		/* Halt execution after 'cpu_max_time' has expired. Since this check
-		 * involves a call to 'ke_timer', perform it only every 10000 cycles. */
-		if (ke_max_time && !(cpu->cycle % 10000) && ke_timer() > ke_max_time * 1000000)
-			break;
-
 		/* Dump log */
 		if (sigusr_received)
 			sim_dump_log();
