@@ -66,9 +66,8 @@ void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_work_group_t *work_group = compute_unit->work_group;
-	struct gpu_ndrange_t *ndrange = work_group->ndrange;
 	struct gpu_wavefront_t *wavefront = compute_unit->tex_engine.wavefront;
+	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
 
 	struct gpu_work_item_t *work_item;
 	int work_item_id;
@@ -153,9 +152,8 @@ void gpu_tex_engine_decode(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_work_group_t *work_group = compute_unit->work_group;
-	struct gpu_ndrange_t *ndrange = work_group->ndrange;
 	struct gpu_wavefront_t *wavefront = compute_unit->tex_engine.wavefront;
+	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
 
 	struct gpu_uop_t *uop;
 	struct gpu_work_item_uop_t *work_item_uop;

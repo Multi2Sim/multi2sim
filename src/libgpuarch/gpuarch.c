@@ -44,22 +44,32 @@ char *gpu_config_help =
 	"Section '[ Device ]': parameters for the GPU.\n"
 	"\n"
 	"  NumComputeUnits = <num> (Default = 20)\n"
-	"      Number of compute units in the GPU. These are the hardware components\n"
-	"      where software work-groups are executed.\n"
-	"  WavefrontSize = <size> (Default = 64)\n"
-	"      Number of work-items within a wavefront which execute AMD Evergreen\n"
-	"      instructions in a SIMD fashion.\n"
-	"  MaxWorkGroupSize = <size> (default = 256)\n"
-	"      Maximum number of work-items within a work-group. This is a device-specific\n"
-	"      architectural parameter return by some OpenCL calls.\n"
+	"      Number of compute units in the GPU. A compute unit runs one or more\n"
+	"      work-groups at a time.\n"
 	"  NumStreamCores = <num> (Default = 16)\n"
-	"      Number of stream cores within a compute unit. Each work-item is mapped to a\n"
-	"      stream core. Stream cores are time-multiplexed to cover all work-items in a\n"
-	"      wavefront.\n"
+	"      Number of stream cores in the ALU engine of a compute unit. Each work-item\n"
+	"      is mapped to a stream core when a VLIW bundle is executed. Stream cores are\n"
+	"      time-multiplexed to cover all work-items in a wavefront.\n"
+	"  NumRegisters = <num> (Default = 2048)\n"
+	"      Number of registers in a compute unit. These registers are shared among all\n"
+	"      work-items running in a compute unit. This is one of the factors limiting the\n"
+	"      number of work-groups mapped to a compute unit.\n"
+	"  WavefrontSize = <size> (Default = 64)\n"
+	"      Number of work-items in a wavefront, executing AMD Evergreen instructions in\n"
+	"      a SIMD fashion.\n"
+	"  MaxWorkGroupsPerComputeUnit = <num> (Default = 8)\n"
+	"  MaxWavefrontsPerComputeUnit = <num> (Default = 32)\n"
+	"      Maximum number of work-groups and wavefronts allocated at a time in a compute\n"
+	"      unit. These are some of the factors limiting the number of work-groups mapped\n"
+	"      to a compute unit.\n"
 	"\n"
 	"Section '[ LocalMemory ]': defines the parameters of the local memory associated to\n"
 	"each compute unit.\n"
 	"\n"
+	"  Size = <bytes> (Default = 16 KB)\n"
+	"      Local memory capacity per compute unit. This value must be equal or larger\n"
+	"      than BlockSize * Banks. This is one of the factors limiting the number of\n"
+	"      work-groups mapped to a compute unit.\n"
 	"  BlockSize = <bytes> (Default = 16)\n"
 	"      Access block size, used for access coalescing purposes among work-items.\n"
 	"  Latency = <num_cycles> (Default = 2)\n"
@@ -105,16 +115,17 @@ int gpu_pipeline_debug_category;
 /* Default parameters based on the AMD Radeon HD 5870 */
 int gpu_num_compute_units = 20;
 int gpu_num_stream_cores = 16;
+int gpu_num_registers = 2048;
+int gpu_max_work_groups_per_compute_unit = 8;
+int gpu_max_wavefronts_per_compute_unit = 32;
 
 /* Number of time multiplexing slots for a stream core among different
  * portions of a wavefront. This parameter is computed as the ceiling
  * of the quotient between the wavefront size and number of stream cores. */
 int gpu_compute_unit_time_slots;
 
-/* Maximum number of wavefronts within a work-group */
-int gpu_max_wavefront_count;
-
 /* Local memory parameters */
+int gpu_local_mem_size = 16384;  /* 16 KB */
 int gpu_local_mem_latency = 2;
 int gpu_local_mem_block_size = 16;
 int gpu_local_mem_banks = 4;
@@ -305,8 +316,8 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 	/* Initialize CF Engine */
 	compute_unit->cf_engine.wavefront_pool = lnlist_create();
-	compute_unit->cf_engine.fetch_buffer = calloc(gpu_max_wavefront_count, sizeof(void *));
-	compute_unit->cf_engine.inst_buffer = calloc(gpu_max_wavefront_count, sizeof(void *));
+	compute_unit->cf_engine.fetch_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));
+	compute_unit->cf_engine.inst_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));
 	compute_unit->cf_engine.complete_queue = lnlist_create();
 
 	/* Initialize ALU Engine */
@@ -315,6 +326,9 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 	/* Initialize TEX Engine */
 	compute_unit->tex_engine.fetch_queue = lnlist_create();
+
+	/* List of mapped work-groups */
+	compute_unit->work_groups = calloc(gpu_max_work_groups_per_compute_unit, sizeof(void *));
 
 	/* Return */
 	return compute_unit;
@@ -328,7 +342,7 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	int i;
 
 	/* CF Engine - free uops in fetch buffer, instruction buffer, and complete queue */
-	for (i = 0; i < gpu_max_wavefront_count; i++) {
+	for (i = 0; i < gpu_max_wavefronts_per_compute_unit; i++) {
 		gpu_uop_free(compute_unit->cf_engine.fetch_buffer[i]);
 		gpu_uop_free(compute_unit->cf_engine.inst_buffer[i]);
 	}
@@ -369,6 +383,8 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	/* TEX Engine - structures */
 	lnlist_free(compute_unit->tex_engine.fetch_queue);
 
+	/* Compute unit */
+	free(compute_unit->work_groups);  /* List of mapped work-groups */
 	gpu_cache_free(compute_unit->local_memory);
 	free(compute_unit);
 }
@@ -381,25 +397,26 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 	int wavefront_id;
 
 	/* Map work-group */
-	assert(!compute_unit->work_group);
-	compute_unit->work_group = work_group;
-	compute_unit->work_group_count++;
+	assert(compute_unit->work_group_count < gpu->work_groups_per_compute_unit);
+	assert(!work_group->id_in_compute_unit);
+	while (work_group->id_in_compute_unit < gpu->work_groups_per_compute_unit
+		&& compute_unit->work_groups[work_group->id_in_compute_unit])
+		work_group->id_in_compute_unit++;
+	assert(work_group->id_in_compute_unit < gpu->work_groups_per_compute_unit);
+	compute_unit->work_groups[work_group->id_in_compute_unit] = work_group;
 
-	/* Delete compute unit from 'idle' list and insert it to 'busy' list. */
-	DOUBLE_LINKED_LIST_REMOVE(gpu, idle, compute_unit);
-	DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, busy, compute_unit);
+	/* Assign wavefronts identifiers in compute unit */
+	FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
+		wavefront = ndrange->wavefronts[wavefront_id];
+		wavefront->id_in_compute_unit = work_group->id_in_compute_unit *
+			ndrange->wavefronts_per_work_group + wavefront->id_in_work_group;
+	}
 
 	/* Change work-group status to running */
 	gpu_work_group_clear_status(work_group, gpu_work_group_pending);
 	gpu_work_group_set_status(work_group, gpu_work_group_running);
 
-	/* Initialize compute unit */
-	compute_unit->cf_engine.decode_index = 0;
-	compute_unit->cf_engine.execute_index = 0;
-	compute_unit->cf_engine.finished_wavefronts = 0;
-
-	/* Insert all wavefront into the CF Engine's wavefront pool */
-	assert(!lnlist_count(compute_unit->cf_engine.wavefront_pool));
+	/* Insert all wavefronts into the CF Engine's wavefront pool */
 	FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
 		wavefront = ndrange->wavefronts[wavefront_id];
 		lnlist_add(compute_unit->cf_engine.wavefront_pool, wavefront);
@@ -411,21 +428,17 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 		"wg=%d\n",
 		compute_unit->id,
 		work_group->id);
+	
+	/* Stats */
+	compute_unit->mapped_work_groups++;
 }
 
 
-void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit)
+void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group)
 {
 	/* Reset mapped work-group */
-	assert(compute_unit->work_group);
-	compute_unit->work_group = NULL;
-
-	/* Empty CF Engine's wavefront pool */
-	lnlist_clear(compute_unit->cf_engine.wavefront_pool);
-
-	/* Delete compute unit from 'busy' list and insert it to 'idle' list. */
-	DOUBLE_LINKED_LIST_REMOVE(gpu, busy, compute_unit);
-	DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, idle, compute_unit);
+	assert(compute_unit->work_groups[work_group->id_in_compute_unit]);
+	compute_unit->work_groups[work_group->id_in_compute_unit] = NULL;
 
 	/* Debug */
 	gpu_pipeline_debug("cu a=\"unmap\" "
@@ -437,9 +450,6 @@ void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit)
 /* Advance one cycle in the compute unit by running every stage from last to first */
 void gpu_compute_unit_run(struct gpu_compute_unit_t *compute_unit)
 {
-	/* Checks */
-	assert(compute_unit->work_group);
-
 	/* Run Engines */
 	gpu_alu_engine_run(compute_unit);
 	gpu_tex_engine_run(compute_unit);
@@ -472,7 +482,6 @@ static void gpu_init_device()
 		gpu->compute_units[compute_unit_id] = gpu_compute_unit_create();
 		compute_unit = gpu->compute_units[compute_unit_id];
 		compute_unit->id = compute_unit_id;
-		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, idle, compute_unit);
 	}
 }
 
@@ -561,6 +570,7 @@ void gpu_stack_faults_done(void)
 /* GPU-REL: insert stack faults */
 void gpu_stack_faults_insert(void)
 {
+#if 0
 	struct gpu_stack_fault_t *stack_fault;
 	struct gpu_compute_unit_t *compute_unit;
 
@@ -627,6 +637,7 @@ end_loop:
 		if (!lnlist_count(gpu_stack_faults) && !gpu_stack_fault_errors)
 			ke_sim_finish = ke_sim_finish_gpu_no_faults;
 	}
+#endif
 }
 
 
@@ -646,31 +657,35 @@ void gpu_config_read(void)
 	/* Device */
 	section = "Device";
 	gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", gpu_num_compute_units);
-	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
-	gpu_max_work_group_size = config_read_int(gpu_config, section, "MaxWorkGroupSize", gpu_max_work_group_size);
 	gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", gpu_num_stream_cores);
+	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
+	gpu_max_work_groups_per_compute_unit = config_read_int(gpu_config, section, "MaxWorkGroupsPerComputeUnit",
+		gpu_max_work_groups_per_compute_unit);
+	gpu_max_wavefronts_per_compute_unit = config_read_int(gpu_config, section, "MaxWavefrontsPerComputeUnit",
+		gpu_max_wavefronts_per_compute_unit);
 	if (gpu_num_compute_units < 1)
 		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", gpu_config_file_name, err_note);
-	if (gpu_wavefront_size < 1)
-		fatal("%s: invalid value for 'WavefrontSize'.\n%s", gpu_config_file_name, err_note);
-	if ((gpu_max_work_group_size & (gpu_max_work_group_size - 1)) || gpu_max_work_group_size < 1)
-		fatal("%s: 'MaxWorkGroupSize' must be a power of two greater than 0.\n%s",
-			gpu_config_file_name, err_note);
 	if (gpu_num_stream_cores < 1)
 		fatal("%s: invalid value for 'NumStreamCores'.\n%s", gpu_config_file_name, err_note);
-	if (gpu_wavefront_size > gpu_max_work_group_size)
-		fatal("%s: 'WavefrontSize' should not be larget than 'MaxWorkGroupSize'.\n%s",
-			gpu_config_file_name, err_note);
-	gpu_max_wavefront_count = (gpu_max_work_group_size + gpu_wavefront_size - 1) / gpu_wavefront_size;
+	if (gpu_wavefront_size < 1)
+		fatal("%s: invalid value for 'WavefrontSize'.\n%s", gpu_config_file_name, err_note);
+	if (gpu_max_work_groups_per_compute_unit < 1)
+		fatal("%s: invalid value for 'MaxWorkGroupsPerComputeUnit'.\n%s", gpu_config_file_name, err_note);
+	if (gpu_max_wavefronts_per_compute_unit < 1)
+		fatal("%s: invalid value for 'MaxWavefrontsPerComputeUnit'.\n%s", gpu_config_file_name, err_note);
 	gpu_compute_unit_time_slots = (gpu_wavefront_size + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
 	
 	/* Local memory */
 	section = "LocalMemory";
+	gpu_local_mem_size = config_read_int(gpu_config, section, "Size", gpu_local_mem_size);
 	gpu_local_mem_block_size = config_read_int(gpu_config, section, "BlockSize", gpu_local_mem_block_size);
 	gpu_local_mem_latency = config_read_int(gpu_config, section, "Latency", gpu_local_mem_latency);
 	gpu_local_mem_banks = config_read_int(gpu_config, section, "Banks", gpu_local_mem_banks);
 	gpu_local_mem_read_ports = config_read_int(gpu_config, section, "ReadPorts", gpu_local_mem_read_ports);
 	gpu_local_mem_write_ports = config_read_int(gpu_config, section, "WritePorts", gpu_local_mem_write_ports);
+	if ((gpu_local_mem_size & (gpu_local_mem_size - 1)) || gpu_local_mem_size < 4)
+		fatal("%s: %s->Size must be a power of two and at least 4.\n%s",
+			gpu_config_file_name, section, err_note);
 	if ((gpu_local_mem_block_size & (gpu_local_mem_block_size - 1)) || gpu_local_mem_block_size < 4)
 		fatal("%s: %s->BlockSize must be a power of two and at least 4.\n%s",
 			gpu_config_file_name, section, err_note);
@@ -682,6 +697,9 @@ void gpu_config_read(void)
 		fatal("%s: invalid value for %s->ReadPorts.\n%s", gpu_config_file_name, section, err_note);
 	if (gpu_local_mem_write_ports < 1)
 		fatal("%s: invalid value for %s->WritePorts.\n%s", gpu_config_file_name, section, err_note);
+	if (gpu_local_mem_size < gpu_local_mem_block_size * gpu_local_mem_banks)
+		fatal("%s: %s->Size cannot be smaller than %s->BlockSize * %s->Banks.\n%s", gpu_config_file_name,
+			section, section, section, err_note);
 	
 	/* CF Engine */
 	section = "CFEngine";
@@ -829,7 +847,7 @@ void gpu_dump_report(void)
 
 		fprintf(f, "[ ComputeUnit %d ]\n\n", compute_unit_id);
 
-		fprintf(f, "WorkGroupCount = %lld\n", (long long) compute_unit->work_group_count);
+		fprintf(f, "WorkGroupCount = %lld\n", (long long) compute_unit->mapped_work_groups);
 		fprintf(f, "Instructions = %lld\n", (long long) compute_unit->inst_count);
 		fprintf(f, "Cycles = %lld\n", (long long) compute_unit->cycle);
 		fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
@@ -863,10 +881,51 @@ void gpu_dump_report(void)
 }
 
 
+void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
+{
+	int max_work_groups_limitted_by_max_wavefronts;
+	int max_work_groups_limitted_by_num_registers;
+	int max_work_groups_limitted_by_local_mem;
+
+	/* Assign current ND-Range */
+	assert(!gpu->ndrange);
+	gpu->ndrange = ndrange;
+
+	/* Get maximum number of work-groups per compute unit as limited by the maximum number of
+	 * wavefronts, given the number of wavefronts per work-group in the NDRange */
+	max_work_groups_limitted_by_max_wavefronts = gpu_max_wavefronts_per_compute_unit /
+		ndrange->wavefronts_per_work_group;
+	
+	/* Get maximum number of work-groups per compute unit as limited by the number of
+	 * available registers, given the number of registers used per work-item. */
+	max_work_groups_limitted_by_num_registers = gpu_max_work_groups_per_compute_unit;  /* FIXME */
+
+	/* Get maximum number of work-groups per compute unit as limited by the amount of
+	 * available local memory, given the local memory used by each work-group in the NDRange */
+	max_work_groups_limitted_by_local_mem = gpu_max_work_groups_per_compute_unit;  /* FIXME */
+
+	/* Based on the limits above, calculate the actual limit of work-groups per compute unit. */
+	gpu->work_groups_per_compute_unit = gpu_max_work_groups_per_compute_unit;
+	gpu->work_groups_per_compute_unit = MIN(gpu->work_groups_per_compute_unit,
+		max_work_groups_limitted_by_max_wavefronts);
+	gpu->work_groups_per_compute_unit = MIN(gpu->work_groups_per_compute_unit,
+		max_work_groups_limitted_by_num_registers);
+	gpu->work_groups_per_compute_unit = MIN(gpu->work_groups_per_compute_unit,
+		max_work_groups_limitted_by_local_mem);
+	 
+	/* Derived from this, calculate limit of wavefronts and work-items per compute unit. */
+	gpu->wavefronts_per_compute_unit = gpu->work_groups_per_compute_unit * ndrange->wavefronts_per_work_group;
+	gpu->work_items_per_compute_unit = gpu->wavefronts_per_compute_unit * gpu_wavefront_size;
+	assert(gpu->work_groups_per_compute_unit <= gpu_max_work_groups_per_compute_unit);
+	assert(gpu->wavefronts_per_compute_unit <= gpu_max_wavefronts_per_compute_unit);
+}
+
+
 void gpu_run(struct gpu_ndrange_t *ndrange)
 {
 	struct opencl_kernel_t *kernel = ndrange->kernel;
-	struct gpu_compute_unit_t *compute_unit, *compute_unit_next;
+	struct gpu_compute_unit_t *compute_unit;
+	int compute_unit_id;
 
 	/* Debug */
 	gpu_pipeline_debug("init "
@@ -881,9 +940,9 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		kernel->group_count,
 		gpu_wavefront_size,
 		ndrange->wavefronts_per_work_group);
-
-	/* Assign current ND-Range */
-	gpu->ndrange = ndrange;
+	
+	/* Map NDRange */
+	gpu_map_ndrange(ndrange);
 
 	/* Start GPU timer */
 	gk_timer_start();
@@ -891,14 +950,6 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 	/* Execution loop */
 	for (;;) {
 		
-		/* Assign pending work-items to idle compute units. */
-		while (gpu->idle_list_head && ndrange->pending_list_head)
-			gpu_compute_unit_map_work_group(gpu->idle_list_head, ndrange->pending_list_head);
-		
-		/* If no compute unit got any work, ND-Range finished execution. */
-		if (!gpu->busy_list_head)
-			break;
-
 		/* Stop if maximum number of GPU cycles exceeded */
 		if (gpu_max_cycles && gpu->cycle >= gpu_max_cycles)
 			ke_sim_finish = ke_sim_finish_max_gpu_cycles;
@@ -916,12 +967,8 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		gpu_pipeline_debug("clk c=%lld\n", (long long) gpu->cycle);
 		
 		/* Advance one cycle on each busy compute unit */
-		for (compute_unit = gpu->busy_list_head; compute_unit; compute_unit = compute_unit_next) {
-			
-			/* Save next non-idle compute unit */
-			compute_unit_next = compute_unit->busy_next;
-
-			/* Simulate cycle in compute unit */
+		FOREACH_COMPUTE_UNIT(compute_unit_id) {
+			compute_unit = gpu->compute_units[compute_unit_id];
 			gpu_compute_unit_run(compute_unit);
 		}
 

@@ -565,6 +565,10 @@ struct gpu_work_group_t
 	int barrier_count, barrier_max;
 	int finished_count, finished_max;
 	
+	/* Fields introduced for architectural simulation */
+	int id_in_compute_unit;
+	int compute_unit_finished_count;  /* like 'finished_count', but when WF reaches Complete stage */
+
 	/* Local memory */
 	struct mem_t *local_mem;
 };
@@ -663,6 +667,9 @@ struct gpu_wavefront_t
 	uint64_t emu_inst_count;  /* Total emulated instructions */
 	uint64_t emu_time_start;
 	uint64_t emu_time_end;
+
+	/* Fields introduced for architectural simulation */
+	int id_in_compute_unit;
 
 	/* Statistics */
 	uint64_t inst_count;  /* Total number of instructions */
