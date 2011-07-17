@@ -66,9 +66,6 @@ void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_wavefront_t *wavefront = compute_unit->tex_engine.wavefront;
-	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
-
 	struct gpu_work_item_t *work_item;
 	int work_item_id;
 
@@ -93,8 +90,8 @@ void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 	/* Global memory read  */
 	if (uop->global_mem_read) {
 		assert(!uop->global_mem_witness);
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
-			work_item = ndrange->work_items[work_item_id];
+		FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id) {
+			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			gpu_cache_access(compute_unit->data_cache, 1, work_item_uop->global_mem_access_addr,
 					work_item_uop->global_mem_access_size, &uop->global_mem_witness);
@@ -153,8 +150,6 @@ void gpu_tex_engine_decode(struct gpu_compute_unit_t *compute_unit)
 void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_wavefront_t *wavefront = compute_unit->tex_engine.wavefront;
-	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
-
 	struct gpu_uop_t *uop;
 	struct gpu_work_item_uop_t *work_item_uop;
 	struct amd_inst_t *inst;
@@ -178,6 +173,8 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	gpu_wavefront_execute(wavefront);
 	inst = &wavefront->tex_inst;
 	uop = gpu_uop_create();
+	uop->wavefront = wavefront;
+	uop->work_group = wavefront->work_group;
 	uop->last = wavefront->clause_kind != GPU_CLAUSE_TEX;
 	uop->global_mem_read = wavefront->global_mem_read;
 	uop->global_mem_write = wavefront->global_mem_write;
@@ -190,7 +187,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	if (uop->global_mem_read) {
 		assert((inst->info->flags & AMD_INST_FLAG_MEM_READ));
 		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
-			work_item = ndrange->work_items[work_item_id];
+			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			work_item_uop->global_mem_access_addr = work_item->global_mem_access_addr;
 			work_item_uop->global_mem_access_size = work_item->global_mem_access_size;

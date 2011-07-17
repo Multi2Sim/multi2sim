@@ -170,7 +170,7 @@ struct gpu_compute_unit_t
 	int id;
 
 	/* Double linked list of compute units */
-	struct gpu_compute_unit_t *idle_prev, *idle_next;
+	struct gpu_compute_unit_t *ready_prev, *ready_next;
 	struct gpu_compute_unit_t *busy_prev, *busy_next;
 
 	/* Memory */
@@ -213,7 +213,7 @@ struct gpu_compute_unit_t
 	/* Fields for ALU Engine */
 	struct {
 		
-		/* Current wavefront runnign in ALU Engine */
+		/* Current wavefront running in ALU Engine */
 		struct gpu_wavefront_t *wavefront;
 		struct gpu_uop_t *cf_uop;  /* CF instruction triggering ALU clause */
 
@@ -452,6 +452,10 @@ struct gpu_t
 
 	/* Compute units */
 	struct gpu_compute_unit_t **compute_units;
+	struct gpu_compute_unit_t *ready_list_head, *ready_list_tail;  /* CUs accepting work-groups */
+	struct gpu_compute_unit_t *busy_list_head, *busy_list_tail;  /* CUs with at least one work-group */
+	int ready_count, ready_max;
+	int busy_count, busy_max;
 
 	/* Global memory hierarchy - Caches and interconnects */
 	struct gpu_cache_t **gpu_caches;  /* Array of GPU caches */
