@@ -348,7 +348,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-
 		/* GPU cache configuration file */
 		if (!strcmp(argv[argi], "--gpu-cache-config")) {
 			sim_need_argument(argc, argv, argi);
@@ -597,8 +596,7 @@ void sim_stats_summary(void)
 	fprintf(stderr, "Instructions = %lld\n", (long long) inst_count);
 	fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	fprintf(stderr, "Contexts = %d\n", ke->running_max);
-	fprintf(stderr, "Memory = %lu\n", mem_mapped_space);
-	fprintf(stderr, "MemoryMax = %lu\n", mem_max_mapped_space);
+	fprintf(stderr, "Memory = %lu\n", mem_max_mapped_space);
 	fprintf(stderr, "SimEnd = %s\n", map_value(&ke_sim_finish_map, ke_sim_finish));
 
 	/* CPU detailed simulation */

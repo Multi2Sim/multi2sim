@@ -40,8 +40,10 @@ extern enum gpu_sim_kind_enum {
 
 extern int gpu_num_stream_cores;
 extern int gpu_num_compute_units;
+extern int gpu_num_registers;
+extern int gpu_max_work_groups_per_compute_unit;
+extern int gpu_max_wavefronts_per_compute_unit;
 extern int gpu_compute_unit_time_slots;
-extern int gpu_max_wavefront_count;
 
 extern int gpu_local_mem_block_size;
 extern int gpu_local_mem_latency;
@@ -106,6 +108,7 @@ struct gpu_uop_t
 	/* Fields */
 	uint64_t id;
 	struct gpu_wavefront_t *wavefront;  /* Wavefront it belongs to */
+	struct gpu_work_group_t *work_group;  /* Work-group it belongs to */
 	int length;  /* Number of bytes occupied by ALU group */
 
 	/* CF instruction flags */
@@ -174,11 +177,12 @@ struct gpu_compute_unit_t
 	struct gpu_cache_t *data_cache;  /* Entry point to global memory */
 	struct gpu_cache_t *local_memory;  /* Local */
 
-	/* Currently mapped work-group */
-	struct gpu_work_group_t *work_group;
+	/* List of currently mapped work-groups */
+	int work_group_count;
+	struct gpu_work_group_t **work_groups;
 
 	/* Stats */
-	uint64_t work_group_count;
+	uint64_t mapped_work_groups;
 	uint64_t cycle;
 	uint64_t inst_count;
 
@@ -191,8 +195,8 @@ struct gpu_compute_unit_t
 		struct lnlist_t *wavefront_pool;
 
 		/* Buffers */
-		struct gpu_uop_t **fetch_buffer;  /* Array of uops (NumWFs elements)  */
-		struct gpu_uop_t **inst_buffer;  /* Array of uops */
+		struct gpu_uop_t **fetch_buffer;  /* Array of uops (MaxWavefrontsPerComputeUnit elements) */
+		struct gpu_uop_t **inst_buffer;  /* Array of uops (MaxWavefrontsPerComputeUnit elements) */
 
 		/* Wavefront selectors */
 		int decode_index;  /* Next uop in 'fetch_buffer' to decode */
@@ -200,7 +204,6 @@ struct gpu_compute_unit_t
 
 		/* Complete queue */
 		struct lnlist_t *complete_queue;  /* Queue of completed instructions */
-		int finished_wavefronts;  /* Number of finished wavefronts */
 
 		/* Stats */
 		uint64_t inst_count;
@@ -255,7 +258,7 @@ struct gpu_compute_unit_t
 struct gpu_compute_unit_t *gpu_compute_unit_create();
 void gpu_compute_unit_free(struct gpu_compute_unit_t *gpu_compute_unit);
 void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group);
-void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit);
+void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group);
 
 void gpu_cf_engine_run(struct gpu_compute_unit_t *compute_unit);
 void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit);
@@ -443,15 +446,12 @@ struct gpu_t
 
 	/* ND-Range running on it */
 	struct gpu_ndrange_t *ndrange;
+	int work_groups_per_compute_unit;
+	int wavefronts_per_compute_unit;
+	int work_items_per_compute_unit;
 
 	/* Compute units */
 	struct gpu_compute_unit_t **compute_units;
-
-	/* Double linked lists of compute units */
-	struct gpu_compute_unit_t *idle_list_head, *idle_list_tail;
-	struct gpu_compute_unit_t *busy_list_head, *busy_list_tail;
-	int idle_count, idle_max;
-	int busy_count, busy_max;
 
 	/* Global memory hierarchy - Caches and interconnects */
 	struct gpu_cache_t **gpu_caches;  /* Array of GPU caches */
