@@ -29,9 +29,6 @@ int gpu_alu_engine_pe_latency = 4;  /* Processing element latency */
 
 void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_wavefront_t *wavefront = compute_unit->alu_engine.wavefront;
-	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
-
 	struct gpu_work_item_t *work_item;
 	int work_item_id;
 
@@ -53,8 +50,8 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 
 		/* If instruction writes to local memory, do it here. */
 		if (uop->local_mem_write) {
-			FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
-				work_item = ndrange->work_items[work_item_id];
+			FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id) {
+				work_item = gpu->ndrange->work_items[work_item_id];
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 				for (i = 0; i < work_item_uop->local_mem_access_count; i++) {
 					if (work_item_uop->local_mem_access_type[i] != 2)  /* write access */
@@ -163,9 +160,6 @@ void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_wavefront_t *wavefront = compute_unit->alu_engine.wavefront;
-	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
-
 	struct gpu_work_item_t *work_item;
 	int work_item_id;
 
@@ -185,8 +179,8 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 	
 	/* If instruction reads from local memory, do it here. */
 	if (uop->local_mem_read) {
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
-			work_item = ndrange->work_items[work_item_id];
+		FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id) {
+			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			for (i = 0; i < work_item_uop->local_mem_access_count; i++) {
 				if (work_item_uop->local_mem_access_type[i] != 1)  /* read access */
@@ -257,8 +251,6 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_wavefront_t *wavefront = compute_unit->alu_engine.wavefront;
-	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
-
 	struct lnlist_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
 	struct amd_alu_group_t *alu_group;
 	struct gpu_uop_t *uop, *producer;
@@ -285,6 +277,8 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	gpu_wavefront_execute(wavefront);
 	alu_group = &wavefront->alu_group;
 	uop = gpu_uop_create_from_alu_group(alu_group);
+	uop->wavefront = wavefront;
+	uop->work_group = wavefront->work_group;
 	uop->subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1)
 		/ gpu_num_stream_cores;
 	uop->last = wavefront->clause_kind != GPU_CLAUSE_ALU;
@@ -299,7 +293,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	/* If instruction accesses local memory, record addresses. */
 	if (uop->local_mem_read || uop->local_mem_write) {
 		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
-			work_item = ndrange->work_items[work_item_id];
+			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			work_item_uop->local_mem_access_count = work_item->local_mem_access_count;
 			for (i = 0; i < work_item->local_mem_access_count; i++) {

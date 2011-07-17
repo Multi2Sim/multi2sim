@@ -404,6 +404,18 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 		work_group->id_in_compute_unit++;
 	assert(work_group->id_in_compute_unit < gpu->work_groups_per_compute_unit);
 	compute_unit->work_groups[work_group->id_in_compute_unit] = work_group;
+	compute_unit->work_group_count++;
+
+	/* If compute unit reached its maximum load, remove it from 'ready' list.
+	 * Otherwise, move it to the end of the 'ready' list. */
+	assert(DOUBLE_LINKED_LIST_MEMBER(gpu, ready, compute_unit));
+	DOUBLE_LINKED_LIST_REMOVE(gpu, ready, compute_unit);
+	if (compute_unit->work_group_count < gpu->work_groups_per_compute_unit)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, ready, compute_unit);
+	
+	/* If this is the first scheduled work-group, insert to 'busy' list. */
+	if (!DOUBLE_LINKED_LIST_MEMBER(gpu, busy, compute_unit))
+		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, busy, compute_unit);
 
 	/* Assign wavefronts identifiers in compute unit */
 	FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
@@ -437,8 +449,18 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group)
 {
 	/* Reset mapped work-group */
+	assert(compute_unit->work_group_count > 0);
 	assert(compute_unit->work_groups[work_group->id_in_compute_unit]);
 	compute_unit->work_groups[work_group->id_in_compute_unit] = NULL;
+	compute_unit->work_group_count--;
+
+	/* If compute unit accepts work-groups again, insert into 'ready' list */
+	if (!DOUBLE_LINKED_LIST_MEMBER(gpu, ready, compute_unit))
+		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, ready, compute_unit);
+	
+	/* If compute unit is not busy anymore, remove it from 'busy' list */
+	if (!compute_unit->work_group_count && DOUBLE_LINKED_LIST_MEMBER(gpu, busy, compute_unit))
+		DOUBLE_LINKED_LIST_REMOVE(gpu, busy, compute_unit);
 
 	/* Debug */
 	gpu_pipeline_debug("cu a=\"unmap\" "
@@ -482,6 +504,7 @@ static void gpu_init_device()
 		gpu->compute_units[compute_unit_id] = gpu_compute_unit_create();
 		compute_unit = gpu->compute_units[compute_unit_id];
 		compute_unit->id = compute_unit_id;
+		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, ready, compute_unit);
 	}
 }
 
@@ -887,21 +910,29 @@ void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 	int max_work_groups_limitted_by_num_registers;
 	int max_work_groups_limitted_by_local_mem;
 
+	char *err_note =
+		"\tThe GPU has hardware limitations, specified in the GPU configuration file.\n"
+		"\tIf the OpenCL kernel exceeds these boundaries, it cannot be run on the GPU.\n";
+
 	/* Assign current ND-Range */
 	assert(!gpu->ndrange);
 	gpu->ndrange = ndrange;
 
 	/* Get maximum number of work-groups per compute unit as limited by the maximum number of
 	 * wavefronts, given the number of wavefronts per work-group in the NDRange */
+	if (gpu_max_wavefronts_per_compute_unit < ndrange->wavefronts_per_work_group)
+		fatal("number of wavefronts per work-group exceed GPU limits.\n%s", err_note);
 	max_work_groups_limitted_by_max_wavefronts = gpu_max_wavefronts_per_compute_unit /
 		ndrange->wavefronts_per_work_group;
 	
 	/* Get maximum number of work-groups per compute unit as limited by the number of
 	 * available registers, given the number of registers used per work-item. */
+	/* FIXME: check that at least one work-group can be scheduled */
 	max_work_groups_limitted_by_num_registers = gpu_max_work_groups_per_compute_unit;  /* FIXME */
 
 	/* Get maximum number of work-groups per compute unit as limited by the amount of
 	 * available local memory, given the local memory used by each work-group in the NDRange */
+	/* FIXME: check that at least one work-group can be scheduled */
 	max_work_groups_limitted_by_local_mem = gpu_max_work_groups_per_compute_unit;  /* FIXME */
 
 	/* Based on the limits above, calculate the actual limit of work-groups per compute unit. */
@@ -924,8 +955,7 @@ void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 void gpu_run(struct gpu_ndrange_t *ndrange)
 {
 	struct opencl_kernel_t *kernel = ndrange->kernel;
-	struct gpu_compute_unit_t *compute_unit;
-	int compute_unit_id;
+	struct gpu_compute_unit_t *compute_unit, *compute_unit_next;
 
 	/* Debug */
 	gpu_pipeline_debug("init "
@@ -950,6 +980,14 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 	/* Execution loop */
 	for (;;) {
 		
+		/* Allocate work-groups to compute units */
+		while (gpu->ready_list_head && ndrange->pending_list_head)
+			gpu_compute_unit_map_work_group(gpu->ready_list_head, ndrange->pending_list_head);
+		
+		/* If no compute unit is busy, done */
+		if (!gpu->busy_list_head)
+			break;
+		
 		/* Stop if maximum number of GPU cycles exceeded */
 		if (gpu_max_cycles && gpu->cycle >= gpu_max_cycles)
 			ke_sim_finish = ke_sim_finish_max_gpu_cycles;
@@ -967,8 +1005,13 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		gpu_pipeline_debug("clk c=%lld\n", (long long) gpu->cycle);
 		
 		/* Advance one cycle on each busy compute unit */
-		FOREACH_COMPUTE_UNIT(compute_unit_id) {
-			compute_unit = gpu->compute_units[compute_unit_id];
+		for (compute_unit = gpu->busy_list_head; compute_unit; compute_unit = compute_unit_next) {
+
+			/* Store next busy compute unit, since this can change
+			 * during 'gpu_compute_unit_run' */
+			compute_unit_next = compute_unit->busy_next;
+
+			/* Run one cycle */
 			gpu_compute_unit_run(compute_unit);
 		}
 
