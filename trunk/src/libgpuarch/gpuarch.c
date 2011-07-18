@@ -54,6 +54,11 @@ char *gpu_config_help =
 	"      Number of registers in a compute unit. These registers are shared among all\n"
 	"      work-items running in a compute unit. This is one of the factors limiting the\n"
 	"      number of work-groups mapped to a compute unit.\n"
+	"  RegisterAllocSize = <num> (Default = 32)\n"
+	"  RegisterAllocGranularity = {Wavefront|WorkGroup} (Default = WorkGroup)\n"
+	"      Minimum amount of registers allocated as a chunk for each wavefront or\n"
+	"      work-group, depending on the granularity. These parameters have an impact\n"
+	"      in the allocation of work-groups to compute units.\n"
 	"  WavefrontSize = <size> (Default = 64)\n"
 	"      Number of work-items in a wavefront, executing AMD Evergreen instructions in\n"
 	"      a SIMD fashion.\n"
@@ -66,10 +71,13 @@ char *gpu_config_help =
 	"Section '[ LocalMemory ]': defines the parameters of the local memory associated to\n"
 	"each compute unit.\n"
 	"\n"
-	"  Size = <bytes> (Default = 16 KB)\n"
+	"  Size = <bytes> (Default = 32 KB)\n"
 	"      Local memory capacity per compute unit. This value must be equal or larger\n"
 	"      than BlockSize * Banks. This is one of the factors limiting the number of\n"
 	"      work-groups mapped to a compute unit.\n"
+	"  AllocSize = <bytes> (Default = 1 KB)\n"
+	"      Minimum amount of local memory allocated at a time for each work-group.\n"
+	"      This parameter impact on the allocation of work-groups to compute units.\n"
 	"  BlockSize = <bytes> (Default = 16)\n"
 	"      Access block size, used for access coalescing purposes among work-items.\n"
 	"  Latency = <num_cycles> (Default = 2)\n"
@@ -116,6 +124,9 @@ int gpu_pipeline_debug_category;
 int gpu_num_compute_units = 20;
 int gpu_num_stream_cores = 16;
 int gpu_num_registers = 2048;
+int gpu_register_alloc_size = 32;
+char *gpu_register_alloc_granularity_str = "WorkGroup";
+enum gpu_register_alloc_granularity_enum gpu_register_alloc_granularity;
 int gpu_max_work_groups_per_compute_unit = 8;
 int gpu_max_wavefronts_per_compute_unit = 32;
 
@@ -125,7 +136,8 @@ int gpu_max_wavefronts_per_compute_unit = 32;
 int gpu_compute_unit_time_slots;
 
 /* Local memory parameters */
-int gpu_local_mem_size = 16384;  /* 16 KB */
+int gpu_local_mem_size = 32768;  /* 32 KB */
+int gpu_local_mem_alloc_size = 1024;  /* 1 KB */
 int gpu_local_mem_latency = 2;
 int gpu_local_mem_block_size = 16;
 int gpu_local_mem_banks = 4;
@@ -681,6 +693,10 @@ void gpu_config_read(void)
 	section = "Device";
 	gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", gpu_num_compute_units);
 	gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", gpu_num_stream_cores);
+	gpu_num_registers = config_read_int(gpu_config, section, "NumRegisters", gpu_num_registers);
+	gpu_register_alloc_size = config_read_int(gpu_config, section, "RegisterAllocSize", gpu_register_alloc_size);
+	gpu_register_alloc_granularity_str = config_read_string(gpu_config, section, "RegisterAllocGranularity",
+		gpu_register_alloc_granularity_str);
 	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
 	gpu_max_work_groups_per_compute_unit = config_read_int(gpu_config, section, "MaxWorkGroupsPerComputeUnit",
 		gpu_max_work_groups_per_compute_unit);
@@ -690,6 +706,18 @@ void gpu_config_read(void)
 		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", gpu_config_file_name, err_note);
 	if (gpu_num_stream_cores < 1)
 		fatal("%s: invalid value for 'NumStreamCores'.\n%s", gpu_config_file_name, err_note);
+	if (gpu_register_alloc_size < 1)
+		fatal("%s: invalid value for 'RegisterAllocSize'.\n%s", gpu_config_file_name, err_note);
+	if (gpu_num_registers < 1)
+		fatal("%s: invalid value for 'NumRegisters'.\n%s", gpu_config_file_name, err_note);
+	if (gpu_num_registers % gpu_register_alloc_size)
+		fatal("%s: 'NumRegisters' must be a multiple of 'RegisterAllocSize'.\n%s", gpu_config_file_name, err_note);
+	if (!strcasecmp(gpu_register_alloc_granularity_str, "Wavefront"))
+		gpu_register_alloc_granularity = gpu_register_alloc_wavefront;
+	else if (!strcasecmp(gpu_register_alloc_granularity_str, "WorkGroup"))
+		gpu_register_alloc_granularity = gpu_register_alloc_work_group;
+	else
+		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s", gpu_config_file_name, err_note);
 	if (gpu_wavefront_size < 1)
 		fatal("%s: invalid value for 'WavefrontSize'.\n%s", gpu_config_file_name, err_note);
 	if (gpu_max_work_groups_per_compute_unit < 1)
@@ -701,6 +729,7 @@ void gpu_config_read(void)
 	/* Local memory */
 	section = "LocalMemory";
 	gpu_local_mem_size = config_read_int(gpu_config, section, "Size", gpu_local_mem_size);
+	gpu_local_mem_alloc_size = config_read_int(gpu_config, section, "AllocSize", gpu_local_mem_alloc_size);
 	gpu_local_mem_block_size = config_read_int(gpu_config, section, "BlockSize", gpu_local_mem_block_size);
 	gpu_local_mem_latency = config_read_int(gpu_config, section, "Latency", gpu_local_mem_latency);
 	gpu_local_mem_banks = config_read_int(gpu_config, section, "Banks", gpu_local_mem_banks);
@@ -709,9 +738,17 @@ void gpu_config_read(void)
 	if ((gpu_local_mem_size & (gpu_local_mem_size - 1)) || gpu_local_mem_size < 4)
 		fatal("%s: %s->Size must be a power of two and at least 4.\n%s",
 			gpu_config_file_name, section, err_note);
+	if (gpu_local_mem_alloc_size < 1)
+		fatal("%s: invalid value for %s->Allocsize.\n%s", gpu_config_file_name, section, err_note);
+	if (gpu_local_mem_size % gpu_local_mem_alloc_size)
+		fatal("%s: %s->Size must be a multiple of %s->AllocSize.\n%s", gpu_config_file_name,
+			section, section, err_note);
 	if ((gpu_local_mem_block_size & (gpu_local_mem_block_size - 1)) || gpu_local_mem_block_size < 4)
 		fatal("%s: %s->BlockSize must be a power of two and at least 4.\n%s",
 			gpu_config_file_name, section, err_note);
+	if (gpu_local_mem_alloc_size % gpu_local_mem_block_size)
+		fatal("%s: %s->AllocSize must be a multiple of %s->BlockSize.\n%s", gpu_config_file_name,
+			section, section, err_note);
 	if (gpu_local_mem_latency < 1)
 		fatal("%s: invalid value for %s->Latency.\n%s", gpu_config_file_name, section, err_note);
 	if (gpu_local_mem_banks < 1 || (gpu_local_mem_banks & (gpu_local_mem_banks - 1)))
@@ -906,6 +943,10 @@ void gpu_dump_report(void)
 
 void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 {
+	int wavefronts_per_work_group;
+	int registers_per_work_group;
+	int local_mem_per_work_group;
+
 	int max_work_groups_limitted_by_max_wavefronts;
 	int max_work_groups_limitted_by_num_registers;
 	int max_work_groups_limitted_by_local_mem;
@@ -920,20 +961,30 @@ void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 
 	/* Get maximum number of work-groups per compute unit as limited by the maximum number of
 	 * wavefronts, given the number of wavefronts per work-group in the NDRange */
-	if (gpu_max_wavefronts_per_compute_unit < ndrange->wavefronts_per_work_group)
-		fatal("number of wavefronts per work-group exceed GPU limits.\n%s", err_note);
+	wavefronts_per_work_group = ndrange->wavefronts_per_work_group;
+	if (gpu_max_wavefronts_per_compute_unit < wavefronts_per_work_group)
+		fatal("number of wavefronts per work-group exceeds GPU limits.\n%s", err_note);
 	max_work_groups_limitted_by_max_wavefronts = gpu_max_wavefronts_per_compute_unit /
-		ndrange->wavefronts_per_work_group;
+		wavefronts_per_work_group;
 	
 	/* Get maximum number of work-groups per compute unit as limited by the number of
 	 * available registers, given the number of registers used per work-item. */
-	/* FIXME: check that at least one work-group can be scheduled */
-	max_work_groups_limitted_by_num_registers = gpu_max_work_groups_per_compute_unit;  /* FIXME */
+	if (gpu_register_alloc_granularity == gpu_register_alloc_wavefront)
+		registers_per_work_group = ROUND_UP(ndrange->kernel->cal_abi->num_gpr_used * gpu_wavefront_size,
+			gpu_register_alloc_size) * ndrange->wavefronts_per_work_group;
+	else
+		registers_per_work_group = ROUND_UP(ndrange->kernel->cal_abi->num_gpr_used *
+			ndrange->kernel->local_size, gpu_register_alloc_size);
+	if (gpu_num_registers < registers_per_work_group)
+		fatal("number of registers per work-group exceeds GPU limits.\n%s", err_note);
+	max_work_groups_limitted_by_num_registers = gpu_num_registers / registers_per_work_group;
 
 	/* Get maximum number of work-groups per compute unit as limited by the amount of
 	 * available local memory, given the local memory used by each work-group in the NDRange */
-	/* FIXME: check that at least one work-group can be scheduled */
-	max_work_groups_limitted_by_local_mem = gpu_max_work_groups_per_compute_unit;  /* FIXME */
+	local_mem_per_work_group = ROUND_UP(ndrange->local_mem_top, gpu_local_mem_alloc_size);
+	if (gpu_local_mem_size < local_mem_per_work_group)
+		fatal("local memory used per work-group exceeds GPU limits.\n%s", err_note);
+	max_work_groups_limitted_by_local_mem = gpu_local_mem_size / local_mem_per_work_group;
 
 	/* Based on the limits above, calculate the actual limit of work-groups per compute unit. */
 	gpu->work_groups_per_compute_unit = gpu_max_work_groups_per_compute_unit;

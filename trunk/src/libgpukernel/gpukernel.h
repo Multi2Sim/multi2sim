@@ -87,6 +87,11 @@ struct cal_abi_t
 	/* Sections within PT_LOAD segment */
 	Elf32_Shdr *text_shdr, *data_shdr, *symtab_shdr, *strtab_shdr;
 	void *text_buffer, *data_buffer, *symtab_buffer, *strtab_buffer;  /* Pointers to 'pt_load_buffer' */
+
+	/* Program information read from ProgInfo PT_NOTE */
+	int num_gpr_used;
+	int lds_size_used;
+	int stack_size_used;
 };
 
 void cal_abi_parse_elf(struct cal_abi_t *cal_abi, char *file_name);
