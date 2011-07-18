@@ -115,6 +115,22 @@ void cal_abi_analyze_note_header(struct cal_abi_t *cal_abi, void *pt_note_ptr)
 			prog_info_entry = pt_note_ptr + sizeof(CALNoteHeader) + i * sizeof(CALProgramInfoEntry);
 			opencl_debug("  prog_info_entry: address=0x%x, value=0x%x\n",
 				prog_info_entry->address, prog_info_entry->value);
+
+			/* Analyze entry */
+			switch (prog_info_entry->address) {
+
+			case 0x80000080:  /* AMU_ABI_NUM_GPR_USED */
+				cal_abi->num_gpr_used = prog_info_entry->value;
+				break;
+
+			case 0x80000082:  /* AMU_ABI_LDS_SIZE_USED */
+				cal_abi->lds_size_used = prog_info_entry->value;
+				break;
+
+			case 0x80000084:  /* AMU_ABI_STACK_SIZE_USED */
+				cal_abi->stack_size_used = prog_info_entry->value;
+				break;
+			}
 		}
 		break;
 	}

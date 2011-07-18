@@ -41,12 +41,19 @@ extern enum gpu_sim_kind_enum {
 extern int gpu_num_stream_cores;
 extern int gpu_num_compute_units;
 extern int gpu_num_registers;
+extern int gpu_register_alloc_size;
+extern enum gpu_register_alloc_granularity_enum {
+	gpu_register_alloc_wavefront,
+	gpu_register_alloc_work_group
+} gpu_register_alloc_granularity;
 extern int gpu_max_work_groups_per_compute_unit;
 extern int gpu_max_wavefronts_per_compute_unit;
 extern int gpu_compute_unit_time_slots;
 
-extern int gpu_local_mem_block_size;
+extern int gpu_local_mem_size;
+extern int gpu_local_mem_alloc_size;
 extern int gpu_local_mem_latency;
+extern int gpu_local_mem_block_size;
 extern int gpu_local_mem_banks;
 extern int gpu_local_mem_read_ports;
 extern int gpu_local_mem_write_ports;
