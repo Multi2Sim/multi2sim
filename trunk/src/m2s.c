@@ -107,6 +107,13 @@ static char *sim_help =
 	"      Configuration file for the GPU cache hierarchy (global memory scope). Please\n"
 	"      type 'm2s --help-gpu-cache-config' for a description of the file format.\n"
 	"\n"
+	"  --gpu-calc <file_prefix>\n"
+	"      If this option is set, a kernel execution will cause three GPU occupancy plots\n"
+	"      to be dumped in files '<file_prefix>.<ndrange_id>.<plot>.eps', where\n"
+	"      <ndrange_id> is the identifier of the current ND-Range, and <plot> is\n"
+	"      {work_items|registers|local_mem}. This options requires 'gnuplot' to be\n"
+	"      installed in the system.\n"
+	"\n"
 	"  --gpu-config <file>\n"
 	"      Configuration file for the GPU model, including parameters such as number of\n"
 	"      compute units, stream cores, or wavefront size. Type 'm2s --help-gpu-config'\n"
@@ -353,6 +360,14 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_cache_config_file_name = argv[argi];
+			continue;
+		}
+
+		/* GPU occupancy calculation plots */
+		if (!strcmp(argv[argi], "--gpu-calc")) {
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			gpu_calc_file_name = argv[argi];
 			continue;
 		}
 

@@ -48,7 +48,7 @@ extern enum gpu_register_alloc_granularity_enum {
 } gpu_register_alloc_granularity;
 extern int gpu_max_work_groups_per_compute_unit;
 extern int gpu_max_wavefronts_per_compute_unit;
-extern int gpu_compute_unit_time_slots;
+extern char *gpu_calc_file_name;
 
 extern int gpu_local_mem_size;
 extern int gpu_local_mem_alloc_size;

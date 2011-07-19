@@ -130,11 +130,6 @@ enum gpu_register_alloc_granularity_enum gpu_register_alloc_granularity;
 int gpu_max_work_groups_per_compute_unit = 8;
 int gpu_max_wavefronts_per_compute_unit = 32;
 
-/* Number of time multiplexing slots for a stream core among different
- * portions of a wavefront. This parameter is computed as the ceiling
- * of the quotient between the wavefront size and number of stream cores. */
-int gpu_compute_unit_time_slots;
-
 /* Local memory parameters */
 int gpu_local_mem_size = 32768;  /* 32 KB */
 int gpu_local_mem_alloc_size = 1024;  /* 1 KB */
@@ -724,7 +719,6 @@ void gpu_config_read(void)
 		fatal("%s: invalid value for 'MaxWorkGroupsPerComputeUnit'.\n%s", gpu_config_file_name, err_note);
 	if (gpu_max_wavefronts_per_compute_unit < 1)
 		fatal("%s: invalid value for 'MaxWavefrontsPerComputeUnit'.\n%s", gpu_config_file_name, err_note);
-	gpu_compute_unit_time_slots = (gpu_wavefront_size + gpu_num_stream_cores - 1) / gpu_num_stream_cores;
 	
 	/* Local memory */
 	section = "LocalMemory";
