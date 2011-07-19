@@ -937,58 +937,20 @@ void gpu_dump_report(void)
 
 void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 {
-	int wavefronts_per_work_group;
-	int registers_per_work_group;
-	int local_mem_per_work_group;
-
-	int max_work_groups_limitted_by_max_wavefronts;
-	int max_work_groups_limitted_by_num_registers;
-	int max_work_groups_limitted_by_local_mem;
-
-	char *err_note =
-		"\tThe GPU has hardware limitations, specified in the GPU configuration file.\n"
-		"\tIf the OpenCL kernel exceeds these boundaries, it cannot be run on the GPU.\n";
-
 	/* Assign current ND-Range */
 	assert(!gpu->ndrange);
 	gpu->ndrange = ndrange;
 
-	/* Get maximum number of work-groups per compute unit as limited by the maximum number of
-	 * wavefronts, given the number of wavefronts per work-group in the NDRange */
-	wavefronts_per_work_group = ndrange->wavefronts_per_work_group;
-	if (gpu_max_wavefronts_per_compute_unit < wavefronts_per_work_group)
-		fatal("number of wavefronts per work-group exceeds GPU limits.\n%s", err_note);
-	max_work_groups_limitted_by_max_wavefronts = gpu_max_wavefronts_per_compute_unit /
-		wavefronts_per_work_group;
-	
-	/* Get maximum number of work-groups per compute unit as limited by the number of
-	 * available registers, given the number of registers used per work-item. */
-	if (gpu_register_alloc_granularity == gpu_register_alloc_wavefront)
-		registers_per_work_group = ROUND_UP(ndrange->kernel->cal_abi->num_gpr_used * gpu_wavefront_size,
-			gpu_register_alloc_size) * ndrange->wavefronts_per_work_group;
-	else
-		registers_per_work_group = ROUND_UP(ndrange->kernel->cal_abi->num_gpr_used *
-			ndrange->kernel->local_size, gpu_register_alloc_size);
-	if (gpu_num_registers < registers_per_work_group)
-		fatal("number of registers per work-group exceeds GPU limits.\n%s", err_note);
-	max_work_groups_limitted_by_num_registers = gpu_num_registers / registers_per_work_group;
+	/* Check that at least one work-group can be allocated per compute unit */
+	gpu->work_groups_per_compute_unit = gpu_calc_get_work_groups_per_compute_unit(
+		ndrange->kernel->local_size, ndrange->kernel->cal_abi->num_gpr_used,
+		ndrange->local_mem_top);
+	if (!gpu->work_groups_per_compute_unit)
+		fatal("work-group resources cannot be allocated to a compute unit.\n"
+			"\tA compute unit in the GPU has a limit in number of wavefronts, number\n"
+			"\tof registers, and amount of local memory. If the work-group size\n"
+			"\texceeds any of these limits, the ND-Range cannot be executed.\n");
 
-	/* Get maximum number of work-groups per compute unit as limited by the amount of
-	 * available local memory, given the local memory used by each work-group in the NDRange */
-	local_mem_per_work_group = ROUND_UP(ndrange->local_mem_top, gpu_local_mem_alloc_size);
-	if (gpu_local_mem_size < local_mem_per_work_group)
-		fatal("local memory used per work-group exceeds GPU limits.\n%s", err_note);
-	max_work_groups_limitted_by_local_mem = gpu_local_mem_size / local_mem_per_work_group;
-
-	/* Based on the limits above, calculate the actual limit of work-groups per compute unit. */
-	gpu->work_groups_per_compute_unit = gpu_max_work_groups_per_compute_unit;
-	gpu->work_groups_per_compute_unit = MIN(gpu->work_groups_per_compute_unit,
-		max_work_groups_limitted_by_max_wavefronts);
-	gpu->work_groups_per_compute_unit = MIN(gpu->work_groups_per_compute_unit,
-		max_work_groups_limitted_by_num_registers);
-	gpu->work_groups_per_compute_unit = MIN(gpu->work_groups_per_compute_unit,
-		max_work_groups_limitted_by_local_mem);
-	 
 	/* Derived from this, calculate limit of wavefronts and work-items per compute unit. */
 	gpu->wavefronts_per_compute_unit = gpu->work_groups_per_compute_unit * ndrange->wavefronts_per_work_group;
 	gpu->work_items_per_compute_unit = gpu->wavefronts_per_compute_unit * gpu_wavefront_size;
