@@ -21,6 +21,9 @@
 #include <gpuarch.h>
 
 
+char *gpu_calc_file_name = "";
+
+
 int gpu_calc_get_work_groups_per_compute_unit(int work_items_per_work_group,
 	int registers_per_work_item, int local_mem_per_work_group)
 {
@@ -71,6 +74,7 @@ void gpu_calc_plot_work_items_per_work_group(void)
 {
 	FILE *data_file, *script_file;
 
+	char plot_file_name[MAX_PATH_SIZE];
 	char data_file_name[MAX_PATH_SIZE];
 	char script_file_name[MAX_PATH_SIZE];
 	char cmd[MAX_PATH_SIZE];
@@ -82,6 +86,12 @@ void gpu_calc_plot_work_items_per_work_group(void)
 	int wavefronts_per_work_group;
 	int work_groups_per_compute_unit;
 	int wavefronts_per_compute_unit;
+
+	/* Create plot file */
+	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.work_items.eps",
+		gpu_calc_file_name, gpu->ndrange->id);
+	if (!can_open_write(plot_file_name))
+		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
 	/* Generate data file */
 	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
@@ -123,7 +133,7 @@ void gpu_calc_plot_work_items_per_work_group(void)
 	fclose(script_file);
 
 	/* Plot */
-	sprintf(cmd, "gnuplot %s > fig.eps", script_file_name);
+	sprintf(cmd, "gnuplot %s > %s", script_file_name, plot_file_name);
 	system(cmd);
 
 	/* Remove temporary files */
@@ -136,6 +146,7 @@ void gpu_calc_plot_registers_per_work_item(void)
 {
 	FILE *data_file, *script_file;
 
+	char plot_file_name[MAX_PATH_SIZE];
 	char data_file_name[MAX_PATH_SIZE];
 	char script_file_name[MAX_PATH_SIZE];
 	char cmd[MAX_PATH_SIZE];
@@ -147,6 +158,12 @@ void gpu_calc_plot_registers_per_work_item(void)
 	int wavefronts_per_work_group;
 	int work_groups_per_compute_unit;
 	int wavefronts_per_compute_unit;
+
+	/* Create plot file */
+	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.registers.eps",
+		gpu_calc_file_name, gpu->ndrange->id);
+	if (!can_open_write(plot_file_name))
+		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
 	/* Generate data file */
 	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
@@ -188,7 +205,7 @@ void gpu_calc_plot_registers_per_work_item(void)
 	fclose(script_file);
 
 	/* Plot */
-	sprintf(cmd, "gnuplot %s > fig.eps", script_file_name);
+	sprintf(cmd, "gnuplot %s > %s", script_file_name, plot_file_name);
 	system(cmd);
 
 	/* Remove temporary files */
@@ -201,6 +218,7 @@ void gpu_calc_plot_local_mem_per_work_group(void)
 {
 	FILE *data_file, *script_file;
 
+	char plot_file_name[MAX_PATH_SIZE];
 	char data_file_name[MAX_PATH_SIZE];
 	char script_file_name[MAX_PATH_SIZE];
 	char cmd[MAX_PATH_SIZE];
@@ -213,6 +231,12 @@ void gpu_calc_plot_local_mem_per_work_group(void)
 	int work_groups_per_compute_unit;
 	int wavefronts_per_compute_unit;
 	int local_mem_step;
+
+	/* Create plot file */
+	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.local_mem.eps",
+		gpu_calc_file_name, gpu->ndrange->id);
+	if (!can_open_write(plot_file_name))
+		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
 	/* Generate data file */
 	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
@@ -256,7 +280,7 @@ void gpu_calc_plot_local_mem_per_work_group(void)
 	fclose(script_file);
 
 	/* Plot */
-	sprintf(cmd, "gnuplot %s > fig.eps", script_file_name);
+	sprintf(cmd, "gnuplot %s > %s", script_file_name, plot_file_name);
 	system(cmd);
 
 	/* Remove temporary files */
@@ -271,12 +295,10 @@ void gpu_calc_plot(void)
 
 	/* Find 'gnuplot' */
 	ret = system("which gnuplot >/dev/null 2>&1");
-	if (ret) {
-		warning("GPU calculator plots could not be generated.\n"
-			"\tThe tool 'gnuplot' is required to generate GPU calculator plots. Please\n"
+	if (ret)
+		fatal("GPU occupancy calculation plots could not be generated.\n"
+			"\tThe tool 'gnuplot' is required to generate GPU occupancy plots. Please\n"
 			"\tmake sure that it is installed on your system and retry.\n");
-		return;
-	}
 
 	/* Plot varying work-items per work-group */
 	gpu_calc_plot_work_items_per_work_group();
