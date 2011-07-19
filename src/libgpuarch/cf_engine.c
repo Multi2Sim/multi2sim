@@ -247,10 +247,6 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	gpu_wavefront_execute(wavefront);
 	inst = &wavefront->cf_inst;
 
-	/* Stats */
-	compute_unit->inst_count++;
-	compute_unit->cf_engine.inst_count++;
-
 	/* Create uop */
 	uop = gpu_uop_create();
 	uop->wavefront = wavefront;
@@ -280,6 +276,16 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	/* Insert uop to fetch buffer */
 	assert(!compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit]);
 	compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit] = uop;
+
+	/* Stats */
+	compute_unit->inst_count++;
+	compute_unit->cf_engine.inst_count++;
+	if (uop->global_mem_write)
+		compute_unit->cf_engine.global_mem_write_count++;
+	if (uop->alu_clause_trigger)
+		compute_unit->cf_engine.alu_clause_trigger_count++;
+	if (uop->tex_clause_trigger)
+		compute_unit->cf_engine.tex_clause_trigger_count++;
 
 	/* Debug */
 	if (debug_status(gpu_pipeline_debug_category)) {
