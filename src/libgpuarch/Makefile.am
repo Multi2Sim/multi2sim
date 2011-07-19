@@ -1,6 +1,7 @@
 lib_LIBRARIES = libgpuarch.a
 libgpuarch_a_SOURCES = \
 	alu_engine.c \
+	calc.c \
 	cf_engine.c \
 	gpuarch.h \
 	gpuarch.c \
