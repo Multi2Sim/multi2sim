@@ -438,6 +438,15 @@ void gpu_cache_handler_write(int event, void *data);
 
 
 /*
+ * GPU Calculator
+ */
+
+void gpu_calc_plot(void);
+
+
+
+
+/*
  * GPU Device
  */
 

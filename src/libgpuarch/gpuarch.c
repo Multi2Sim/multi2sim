@@ -50,7 +50,7 @@ char *gpu_config_help =
 	"      Number of stream cores in the ALU engine of a compute unit. Each work-item\n"
 	"      is mapped to a stream core when a VLIW bundle is executed. Stream cores are\n"
 	"      time-multiplexed to cover all work-items in a wavefront.\n"
-	"  NumRegisters = <num> (Default = 2048)\n"
+	"  NumRegisters = <num> (Default = 16K)\n"
 	"      Number of registers in a compute unit. These registers are shared among all\n"
 	"      work-items running in a compute unit. This is one of the factors limiting the\n"
 	"      number of work-groups mapped to a compute unit.\n"
@@ -123,7 +123,7 @@ int gpu_pipeline_debug_category;
 /* Default parameters based on the AMD Radeon HD 5870 */
 int gpu_num_compute_units = 20;
 int gpu_num_stream_cores = 16;
-int gpu_num_registers = 2048;
+int gpu_num_registers = 16384;
 int gpu_register_alloc_size = 32;
 char *gpu_register_alloc_granularity_str = "WorkGroup";
 enum gpu_register_alloc_granularity_enum gpu_register_alloc_granularity;
@@ -1024,6 +1024,9 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 	
 	/* Map NDRange */
 	gpu_map_ndrange(ndrange);
+
+	/* GPU calculator plot */
+	gpu_calc_plot();
 
 	/* Start GPU timer */
 	gk_timer_start();
