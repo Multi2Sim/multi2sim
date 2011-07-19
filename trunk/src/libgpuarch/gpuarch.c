@@ -997,6 +997,16 @@ void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 }
 
 
+void gpu_unmap_ndrange(void)
+{
+	/* Dump stats */
+	gpu_ndrange_dump(gpu->ndrange, gpu_kernel_report_file);
+
+	/* Unmap */
+	gpu->ndrange = NULL;
+}
+
+
 void gpu_run(struct gpu_ndrange_t *ndrange)
 {
 	struct opencl_kernel_t *kernel = ndrange->kernel;
@@ -1016,13 +1026,9 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		gpu_wavefront_size,
 		ndrange->wavefronts_per_work_group);
 	
-	/* Map NDRange */
+	/* Initialize */
 	gpu_map_ndrange(ndrange);
-
-	/* GPU calculator plot */
 	gpu_calc_plot();
-
-	/* Start GPU timer */
 	gk_timer_start();
 
 	/* Execution loop */
@@ -1070,10 +1076,8 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		esim_process_events();
 	}
 
-	/* Stop GPU timer */
+	/* Finalize */
 	gk_timer_stop();
-
-	/* Dump stats */
-	gpu_ndrange_dump(ndrange, gpu_kernel_report_file);
+	gpu_unmap_ndrange();
 }
 
