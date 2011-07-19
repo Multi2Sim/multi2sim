@@ -36,6 +36,7 @@ int gpu_calc_get_work_groups_per_compute_unit(int work_items_per_work_group,
 
 	/* Get maximum number of work-groups per compute unit as limited by the maximum number of
 	 * wavefronts, given the number of wavefronts per work-group in the NDRange */
+	assert(gpu_wavefront_size > 0);
 	wavefronts_per_work_group = (work_items_per_work_group + gpu_wavefront_size - 1) /
 		gpu_wavefront_size;
 	max_work_groups_limitted_by_max_wavefronts = gpu_max_wavefronts_per_compute_unit /
@@ -49,12 +50,16 @@ int gpu_calc_get_work_groups_per_compute_unit(int work_items_per_work_group,
 	else
 		registers_per_work_group = ROUND_UP(registers_per_work_item *
 			work_items_per_work_group, gpu_register_alloc_size);
-	max_work_groups_limitted_by_num_registers = gpu_num_registers / registers_per_work_group;
+	max_work_groups_limitted_by_num_registers = registers_per_work_group ?
+		gpu_num_registers / registers_per_work_group :
+		gpu_max_work_groups_per_compute_unit;
 
 	/* Get maximum number of work-groups per compute unit as limited by the amount of
 	 * available local memory, given the local memory used by each work-group in the NDRange */
 	local_mem_per_work_group = ROUND_UP(local_mem_per_work_group, gpu_local_mem_alloc_size);
-	max_work_groups_limitted_by_local_mem = gpu_local_mem_size / local_mem_per_work_group;
+	max_work_groups_limitted_by_local_mem = local_mem_per_work_group ?
+		gpu_local_mem_size / local_mem_per_work_group :
+		gpu_max_work_groups_per_compute_unit;
 
 	/* Based on the limits above, calculate the actual limit of work-groups per compute unit. */
 	work_groups_per_compute_unit = gpu_max_work_groups_per_compute_unit;
