@@ -214,6 +214,9 @@ struct gpu_compute_unit_t
 
 		/* Stats */
 		uint64_t inst_count;
+		uint64_t alu_clause_trigger_count;
+		uint64_t tex_clause_trigger_count;
+		uint64_t global_mem_write_count;
 
 	} cf_engine;
 

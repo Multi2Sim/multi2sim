@@ -909,6 +909,9 @@ void gpu_dump_report(void)
 
 		fprintf(f, "CFEngine.Instructions = %lld\n", (long long) compute_unit->cf_engine.inst_count);
 		fprintf(f, "CFEngine.InstructionsPerCycle = %.4g\n", cf_inst_per_cycle);
+		fprintf(f, "CFEngine.ALUClauseTriggers = %lld\n", (long long) compute_unit->cf_engine.alu_clause_trigger_count);
+		fprintf(f, "CFEngine.TEXClauseTriggers = %lld\n", (long long) compute_unit->cf_engine.tex_clause_trigger_count);
+		fprintf(f, "CFEngine.GlobalMemWrites = %lld\n", (long long) compute_unit->cf_engine.global_mem_write_count);
 		fprintf(f, "\n");
 
 		fprintf(f, "ALUEngine.WavefrontCount = %lld\n", (long long) compute_unit->alu_engine.wavefront_count);
