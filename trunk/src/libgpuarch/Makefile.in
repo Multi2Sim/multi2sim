@@ -68,8 +68,9 @@ AR = ar
 ARFLAGS = cru
 libgpuarch_a_AR = $(AR) $(ARFLAGS)
 libgpuarch_a_LIBADD =
-am_libgpuarch_a_OBJECTS = alu_engine.$(OBJEXT) cf_engine.$(OBJEXT) \
-	gpuarch.$(OBJEXT) gpucache.$(OBJEXT) tex_engine.$(OBJEXT)
+am_libgpuarch_a_OBJECTS = alu_engine.$(OBJEXT) calc.$(OBJEXT) \
+	cf_engine.$(OBJEXT) gpuarch.$(OBJEXT) gpucache.$(OBJEXT) \
+	tex_engine.$(OBJEXT)
 libgpuarch_a_OBJECTS = $(am_libgpuarch_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -178,6 +179,7 @@ top_srcdir = @top_srcdir@
 lib_LIBRARIES = libgpuarch.a
 libgpuarch_a_SOURCES = \
 	alu_engine.c \
+	calc.c \
 	cf_engine.c \
 	gpuarch.h \
 	gpuarch.c \
@@ -276,6 +278,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alu_engine.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/calc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cf_engine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuarch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpucache.Po@am__quote@
