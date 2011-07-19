@@ -441,6 +441,8 @@ void gpu_cache_handler_write(int event, void *data);
  * GPU Calculator
  */
 
+int gpu_calc_get_work_groups_per_compute_unit(int work_items_per_work_group,
+	int registers_per_work_item, int local_mem_per_work_group);
 void gpu_calc_plot(void);
 
 
