@@ -293,6 +293,10 @@ void gpu_calc_plot(void)
 {
 	int ret;
 
+	/* If no file specified for plots, done */
+	if (!*gpu_calc_file_name)
+		return;
+
 	/* Find 'gnuplot' */
 	ret = system("which gnuplot >/dev/null 2>&1");
 	if (ret)
