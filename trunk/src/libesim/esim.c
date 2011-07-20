@@ -178,7 +178,7 @@ void esim_process_all_events(int max)
 	esim_event_handler_t handler;
 	
 	/* Extract all elements from heap */
-	while (count < max) {
+	while (!max || count < max) {
 		
 		/* Extract event */
 		esim_cycle = heap_extract(event_heap, (void **) &e);

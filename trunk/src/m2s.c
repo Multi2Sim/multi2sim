@@ -705,7 +705,8 @@ int main(int argc, char **argv)
 	}
 
 	/* Flush event-driven simulation */
-	esim_process_all_events(1 << 20);
+	//esim_process_all_events(1 << 20);
+	esim_process_all_events(0);/////////
 
 	/* Dump statistics summary */
 	sim_stats_summary();
