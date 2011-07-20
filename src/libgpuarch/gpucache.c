@@ -624,6 +624,7 @@ void gpu_cache_init(void)
 
 	EV_GPU_CACHE_WRITE = esim_register_event(gpu_cache_handler_write);
 	EV_GPU_CACHE_WRITE_REQUEST_RECEIVE = esim_register_event(gpu_cache_handler_write);
+	EV_GPU_CACHE_WRITE_REQUEST_REPLY = esim_register_event(gpu_cache_handler_write);
 	EV_GPU_CACHE_WRITE_UNLOCK = esim_register_event(gpu_cache_handler_write);
 	EV_GPU_CACHE_WRITE_FINISH = esim_register_event(gpu_cache_handler_write);
 
@@ -806,6 +807,7 @@ int EV_GPU_CACHE_READ_FINISH;
 
 int EV_GPU_CACHE_WRITE;
 int EV_GPU_CACHE_WRITE_REQUEST_RECEIVE;
+int EV_GPU_CACHE_WRITE_REQUEST_REPLY;
 int EV_GPU_CACHE_WRITE_UNLOCK;
 int EV_GPU_CACHE_WRITE_FINISH;
 
@@ -1149,9 +1151,12 @@ void gpu_cache_handler_write(int event, void *data)
 					CYCLE, ID, (long long) port->stack->id, stack->bank_index, stack->write_port_index);
 				gpu_cache_stack_wait_in_port(stack, EV_GPU_CACHE_WRITE_FINISH);
 
+				/* Increment witness variable as soon as a port was secured */
+				if (stack->witness_ptr)
+					(*stack->witness_ptr)++;
+
 				/* Stats */
 				gpu_cache->writes++;
-
 				return;
 			}
 		}
@@ -1185,6 +1190,10 @@ void gpu_cache_handler_write(int event, void *data)
 		gpu_cache->locked_write_port_count++;
 		gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d write_port=%d\n",
 			CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index, stack->write_port_index);
+
+		/* Increment witness variable as soon as a port was secured */
+		if (stack->witness_ptr)
+			(*stack->witness_ptr)++;
 
 		/* Stats */
 		gpu_cache->writes++;
@@ -1226,15 +1235,35 @@ void gpu_cache_handler_write(int event, void *data)
 		gpu_cache_debug("  %lld %lld write_request_receive cache=\"%s\"\n",
 			CYCLE, ID, target->name);
 		newstack = gpu_cache_stack_create(stack->id, target, stack->tag,
-			EV_GPU_CACHE_WRITE_FINISH, stack);
+			EV_GPU_CACHE_WRITE_REQUEST_REPLY, stack);
 		esim_schedule_event(EV_GPU_CACHE_WRITE, newstack, 0);
 		return;
 	}
 	
+	if (event == EV_GPU_CACHE_WRITE_REQUEST_REPLY)
+	{
+		struct gpu_cache_t *target = gpu_cache->gpu_cache_next;
+		struct net_t *net = gpu_cache->net_lo;
+
+		assert(target);
+		assert(net);
+		gpu_cache_debug("  %lld %lld write_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+			CYCLE, ID, gpu_cache->name, target->name, net->name);
+		net_send_ev(net, gpu_cache->id_lo, target->id_hi, 8, EV_GPU_CACHE_WRITE_UNLOCK, stack);
+		return;
+	}
+
 	if (event == EV_GPU_CACHE_WRITE_UNLOCK)
 	{
 		struct gpu_cache_port_t *port = stack->port;
 
+		/* Ignore while pending */
+		assert(stack->pending > 0);
+		stack->pending--;
+		if (stack->pending)
+			return;
+
+		/* Debug */
 		gpu_cache_debug("  %lld %lld write_unlock\n", CYCLE, ID);
 
 		/* Update LRU counters */
@@ -1254,23 +1283,13 @@ void gpu_cache_handler_write(int event, void *data)
 		gpu_cache_port_wakeup(port);
 		gpu_cache_wakeup(gpu_cache);
 
+		/* Finish */
 		esim_schedule_event(EV_GPU_CACHE_WRITE_FINISH, stack, 0);
 		return;
 	}
 
 	if (event == EV_GPU_CACHE_WRITE_FINISH)
 	{
-		
-		/* Ignore while pending */
-		assert(stack->pending > 0);
-		stack->pending--;
-		if (stack->pending)
-			return;
-
-		/* Increment witness variable */
-		if (stack->witness_ptr)
-			(*stack->witness_ptr)++;
-
 		/* Return */
 		gpu_cache_debug("  %lld %lld write_finish\n", CYCLE, ID);
 		gpu_cache_stack_return(stack);

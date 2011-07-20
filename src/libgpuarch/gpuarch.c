@@ -1041,11 +1041,6 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		
 		/* Event-driven module */
 		esim_process_events();
-
-
-		//////////////
-		//if (gpu->cycle % 10000 == 0)
-		//	printf("** %d\n", gpu->global_memory->waiting_count);
 	}
 
 	/* Finalize */

@@ -35,10 +35,16 @@ void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)
 	/* Process all uops in the complete queue */
 	while (lnlist_count(complete_queue)) {
 		
-		/* Extract uop from complete queue */
+		/* Get instruction at the head of complete queue */
 		lnlist_head(complete_queue);
 		uop = lnlist_get(complete_queue);
 		work_group = uop->work_group;
+
+		/* If it is a memory write that still couldn't allocate a write port, stall */
+		if (uop->global_mem_write && uop->global_mem_witness)
+			break;
+
+		/* Extract from complete queue */
 		lnlist_remove(complete_queue);
 
 		/* Instruction finishes a wavefront */
@@ -79,6 +85,11 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_work_item_uop_t *work_item_uop;
 	struct gpu_work_item_t *work_item;
 	int work_item_id;
+
+	/* Complete queue must be empty. If it is not, it means that a write access is trying to allocate
+	 * a cache port, so compute unit needs to stall. */
+	if (lnlist_count(compute_unit->cf_engine.complete_queue))
+		return;
 
 	/* Search entry in instruction buffer to decode */
 	index = compute_unit->cf_engine.execute_index;
@@ -137,7 +148,8 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 				work_item = ndrange->work_items[work_item_id];
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 				gpu_cache_access(compute_unit->data_cache, 2, work_item_uop->global_mem_access_addr,
-					work_item_uop->global_mem_access_size, NULL);
+					work_item_uop->global_mem_access_size, &uop->global_mem_witness);
+				uop->global_mem_witness--;
 			}
 		}
 	}
