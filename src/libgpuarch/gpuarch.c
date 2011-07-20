@@ -566,7 +566,7 @@ void gpu_stack_faults_init(void)
 		if (stack_fault->compute_unit_id >= gpu_num_compute_units)
 			fatal("%s: line %d: invalid compute unit ID",
 				gpu_stack_faults_file_name, line_num);
-		if (stack_fault->stack_id >= gpu_max_work_group_size / gpu_wavefront_size)
+		if (stack_fault->stack_id >= gpu_max_wavefronts_per_compute_unit)
 			fatal("%s: line %d: invalid stack ID",
 				gpu_stack_faults_file_name, line_num);
 		if (stack_fault->active_mask_id >= GPU_MAX_STACK_SIZE)
@@ -600,13 +600,14 @@ void gpu_stack_faults_done(void)
 /* GPU-REL: insert stack faults */
 void gpu_stack_faults_insert(void)
 {
-#if 0
 	struct gpu_stack_fault_t *stack_fault;
 	struct gpu_compute_unit_t *compute_unit;
 
 	struct gpu_work_group_t *work_group;
 	struct gpu_wavefront_t *wavefront;
 
+	int work_group_id;  /* in compute unit */
+	int wavefront_id;  /* in compute unit */
 	int value;
 
 	for (;;) {
@@ -616,26 +617,28 @@ void gpu_stack_faults_insert(void)
 			break;
 
 		/* Insert fault */
-		gpu_stack_faults_debug("fault cu=%d stack=%d am=%d bit=%d ",
+		gpu_stack_faults_debug("fault clk=%lld cu=%d stack=%d am=%d bit=%d ",
+			(long long) gpu->cycle,
 			stack_fault->compute_unit_id, stack_fault->stack_id,
 			stack_fault->active_mask_id, stack_fault->bit);
 		assert(stack_fault->cycle == gpu->cycle);
 		compute_unit = gpu->compute_units[stack_fault->compute_unit_id];
 
 		/* If compute unit is idle, dismiss */
-		if (DOUBLE_LINKED_LIST_MEMBER(gpu, idle, compute_unit)) {
+		if (!compute_unit->work_group_count) {
 			gpu_stack_faults_debug("effect=\"cu_idle\"");
 			goto end_loop;
 		}
 
-		/* Get work-group and wavefront. If wavefront ID exceeds current number, dimiss */
-		work_group = compute_unit->work_group;
-		assert(work_group);
-		if (stack_fault->stack_id >= work_group->wavefront_count) {
+		/* Get work-group and wavefront. If wavefront ID exceeds current number, dismiss */
+		work_group_id = stack_fault->stack_id / gpu->ndrange->wavefronts_per_work_group;
+		wavefront_id = stack_fault->stack_id % gpu->ndrange->wavefronts_per_work_group;
+		if (work_group_id > gpu_max_work_groups_per_compute_unit || !compute_unit->work_groups[work_group_id]) {
 			gpu_stack_faults_debug("effect=\"wf_idle\"");
 			goto end_loop;
 		}
-		wavefront = work_group->wavefronts[stack_fault->stack_id];
+		work_group = compute_unit->work_groups[work_group_id];
+		wavefront = work_group->wavefronts[wavefront_id];
 
 		/* If active_mask_id exceeds stack top, dismiss */
 		if (stack_fault->active_mask_id > wavefront->stack_top) {
@@ -667,7 +670,6 @@ end_loop:
 		if (!lnlist_count(gpu_stack_faults) && !gpu_stack_fault_errors)
 			ke_sim_finish = ke_sim_finish_gpu_no_faults;
 	}
-#endif
 }
 
 
@@ -1039,6 +1041,11 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		
 		/* Event-driven module */
 		esim_process_events();
+
+
+		//////////////
+		//if (gpu->cycle % 10000 == 0)
+		//	printf("** %d\n", gpu->global_memory->waiting_count);
 	}
 
 	/* Finalize */

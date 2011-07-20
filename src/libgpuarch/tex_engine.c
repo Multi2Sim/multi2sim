@@ -210,9 +210,11 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 		gpu_pipeline_debug("tex a=\"fetch\" "
 			"cu=%d "
 			"wf=%d "
+			"uop=%lld "
 			"inst=\"%s\"\n",
 			compute_unit->id,
 			wavefront->id,
+			(long long) uop->id,
 			str2);
 	}
 }
