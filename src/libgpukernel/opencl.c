@@ -594,7 +594,8 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Read binary */
 		buf = malloc(length);
-		assert(buf);
+		if (!buf)
+			fatal("out of memory");
 		mem_read(isa_mem, binary, length, buf);
 
 		/* Create program temporary file and copy binary */
@@ -884,7 +885,8 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Copy buffer from device memory to host memory */
 		buf = malloc(cb);
-		assert(buf);
+		if (!buf)
+			fatal("out of memory");
 		mem_read(gk->global_mem, mem->device_ptr + offset, cb, buf);
 		mem_write(isa_mem, ptr, cb, buf);
 		free(buf);
@@ -944,7 +946,8 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Copy buffer from host memory to device memory */
 		buf = malloc(cb);
-		assert(buf);
+		if (!buf)
+			fatal("out of memory");
 		mem_read(isa_mem, ptr, cb, buf);
 		mem_write(gk->global_mem, mem->device_ptr + offset, cb, buf);
 		free(buf);
