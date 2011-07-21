@@ -942,6 +942,9 @@ void gpu_dump_report(void)
 
 void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 {
+	struct gpu_compute_unit_t *compute_unit;
+	int compute_unit_id;
+
 	/* Assign current ND-Range */
 	assert(!gpu->ndrange);
 	gpu->ndrange = ndrange;
@@ -961,6 +964,13 @@ void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 	gpu->work_items_per_compute_unit = gpu->wavefronts_per_compute_unit * gpu_wavefront_size;
 	assert(gpu->work_groups_per_compute_unit <= gpu_max_work_groups_per_compute_unit);
 	assert(gpu->wavefronts_per_compute_unit <= gpu_max_wavefronts_per_compute_unit);
+
+	/* Reset architectural state */
+	FOREACH_COMPUTE_UNIT(compute_unit_id) {
+		compute_unit = gpu->compute_units[compute_unit_id];
+		compute_unit->cf_engine.decode_index = 0;
+		compute_unit->cf_engine.execute_index = 0;
+	}
 }
 
 
