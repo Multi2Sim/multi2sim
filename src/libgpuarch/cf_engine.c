@@ -91,7 +91,7 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 	if (lnlist_count(compute_unit->cf_engine.complete_queue))
 		return;
 
-	/* Search entry in instruction buffer to decode */
+	/* Search entry in instruction buffer to decode. */
 	index = compute_unit->cf_engine.execute_index;
 	for (;;) {
 		
