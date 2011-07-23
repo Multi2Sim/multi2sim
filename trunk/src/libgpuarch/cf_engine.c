@@ -63,6 +63,8 @@ void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)
 			"uop=%lld\n",
 			compute_unit->id,
 			(long long) uop->id);
+		if (debug_status(gpu_stack_debug_category))
+			gpu_uop_debug_active_mask(uop);
 
 		/* Free uop */
 		gpu_uop_free(uop);
@@ -263,12 +265,21 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop = gpu_uop_create();
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
+	uop->compute_unit = compute_unit;
 	uop->alu_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_ALU;
 	uop->tex_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_TEX;
 	uop->no_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_CF;
 	uop->last = DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, finished, wavefront);
 	uop->global_mem_read = wavefront->global_mem_read;
 	uop->global_mem_write = wavefront->global_mem_write;
+	uop->active_mask_update = wavefront->active_mask_update;
+	uop->active_mask_push = wavefront->active_mask_push;
+	uop->active_mask_pop = wavefront->active_mask_pop;
+	uop->active_mask_stack_top = wavefront->stack_top;
+
+	/* If debugging active mask, store active state for work-items */
+	if (debug_status(gpu_stack_debug_category))
+		gpu_uop_save_active_mask(uop);
 
 	/* If instruction is a global memory write, record addresses */
 	if (uop->global_mem_write) {

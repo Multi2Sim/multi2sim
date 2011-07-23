@@ -175,6 +175,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop = gpu_uop_create();
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
+	uop->compute_unit = compute_unit;
 	uop->last = wavefront->clause_kind != GPU_CLAUSE_TEX;
 	uop->global_mem_read = wavefront->global_mem_read;
 	uop->global_mem_write = wavefront->global_mem_write;

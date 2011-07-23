@@ -97,6 +97,12 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 
 		/* If this is the last SubWF to write, free uop */
 		if (uop->write_subwavefront_count == uop->subwavefront_count) {
+			
+			/* Debug info for active mask stack */
+			if (debug_status(gpu_stack_debug_category))
+				gpu_uop_debug_active_mask(uop);
+
+			/* Last instruction in clause */
 			if (uop->last) {
 
 				assert(!heap_count(compute_unit->alu_engine.event_queue));
@@ -279,12 +285,21 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop = gpu_uop_create_from_alu_group(alu_group);
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
+	uop->compute_unit = compute_unit;
 	uop->subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1)
 		/ gpu_num_stream_cores;
 	uop->last = wavefront->clause_kind != GPU_CLAUSE_ALU;
 	uop->length = alu_group->inst_count * 8 + alu_group->literal_count * 4;
 	uop->local_mem_read = wavefront->local_mem_read;
 	uop->local_mem_write = wavefront->local_mem_write;
+	uop->active_mask_update = wavefront->active_mask_update;
+	uop->active_mask_push = wavefront->active_mask_push;
+	uop->active_mask_pop = wavefront->active_mask_pop;
+	uop->active_mask_stack_top = wavefront->stack_top;
+
+	/* If debugging active mask, store active state for work-items */
+	if (debug_status(gpu_stack_debug_category))
+		gpu_uop_save_active_mask(uop);
 
 	/* Stats */
 	compute_unit->inst_count++;
