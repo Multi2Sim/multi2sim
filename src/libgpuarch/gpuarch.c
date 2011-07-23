@@ -168,6 +168,8 @@ char *gpu_stack_faults_debug_file_name = "";
 
 static uint64_t gpu_uop_id_counter = 0;
 
+int gpu_stack_debug_category;
+
 struct gpu_uop_t *gpu_uop_create()
 {
 	struct gpu_uop_t *uop;
@@ -296,6 +298,81 @@ void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 		comma = ",";
 	}
 	dump_buf(&buf, &size, "}");
+}
+
+
+/* Stack debug - store current active mask in each work_item_uop. */
+void gpu_uop_save_active_mask(struct gpu_uop_t *uop)
+{
+	struct gpu_wavefront_t *wavefront = uop->wavefront;
+	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
+	struct gpu_work_item_t *work_item;
+	struct gpu_work_item_uop_t *work_item_uop;
+	int work_item_id;
+
+	if (debug_status(gpu_stack_debug_category) && wavefront->active_mask_update) {
+		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
+			work_item = ndrange->work_items[work_item_id];
+			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+			work_item_uop->active = gpu_work_item_get_active(work_item);
+		}
+	}
+}
+
+
+/* Stack debug - dump active mask */
+void gpu_uop_dump_active_mask(struct gpu_uop_t *uop, FILE *f)
+{
+	struct gpu_wavefront_t *wavefront = uop->wavefront;
+	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
+	struct gpu_work_item_t *work_item;
+	struct gpu_work_item_uop_t *work_item_uop;
+	int work_item_id;
+
+	assert(f);
+	FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
+		work_item = ndrange->work_items[work_item_id];
+		work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+		fprintf(f, "%d", work_item_uop->active);
+	}
+}
+
+
+/* Stack debug - dump debugging information */
+void gpu_uop_debug_active_mask(struct gpu_uop_t *uop)
+{
+	FILE *f;
+	struct gpu_wavefront_t *wavefront = uop->wavefront;
+
+	/* Get debug file */
+	f = debug_file(gpu_stack_debug_category);
+	assert(f);
+
+	/* Pop */
+	if (uop->active_mask_pop) {
+		gpu_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"pop\" cnt=%d top=%d mask=\"",
+			(long long) gpu->cycle,
+			uop->compute_unit->id,
+			wavefront->id_in_compute_unit,
+			wavefront->id,
+			uop->active_mask_pop,
+			uop->active_mask_stack_top);
+		gpu_uop_dump_active_mask(uop, f);
+		gpu_stack_debug("\"\n");
+	}
+
+	/* Push */
+	if (uop->active_mask_push) {
+		gpu_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"push\" cnt=%d top=%d mask=\"",
+			(long long) gpu->cycle,
+			uop->compute_unit->id,
+			wavefront->id_in_compute_unit,
+			wavefront->id,
+			uop->active_mask_push,
+			uop->active_mask_stack_top);
+		gpu_uop_dump_active_mask(uop, f);
+		gpu_stack_debug("\"\n");
+	}
 }
 
 

@@ -82,12 +82,20 @@ extern char *gpu_stack_faults_file_name;
  * GPU uop
  */
 
+/* Debugging */
+#define gpu_stack_debug(...) debug(gpu_stack_debug_category, __VA_ARGS__)
+extern int gpu_stack_debug_category;
+
+
 /* Part of a GPU instruction specific for each work-item within wavefront. */
 struct gpu_work_item_uop_t {
 	
 	/* For global memory accesses */
 	uint32_t global_mem_access_addr;
 	uint32_t global_mem_access_size;
+
+	/* Flags */
+	unsigned int active : 1;  /* Active after instruction emulation */
 
 	/* Local memory access */
 	int local_mem_access_count;
@@ -116,6 +124,7 @@ struct gpu_uop_t
 	uint64_t id;
 	struct gpu_wavefront_t *wavefront;  /* Wavefront it belongs to */
 	struct gpu_work_group_t *work_group;  /* Work-group it belongs to */
+	struct gpu_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
 	int length;  /* Number of bytes occupied by ALU group */
 
 	/* CF instruction flags */
@@ -132,6 +141,10 @@ struct gpu_uop_t
 	unsigned int global_mem_write : 1;
 	unsigned int local_mem_read : 1;
 	unsigned int local_mem_write : 1;
+	unsigned int active_mask_update : 1;
+	int active_mask_push;  /* Number of entries the stack was pushed */
+	int active_mask_pop;  /* Number of entries the stack was popped */
+	int active_mask_stack_top;  /* Top of stack */
 
 	/* Witness memory accesses */
 	uint64_t inst_mem_ready;  /* Cycle when instruction memory access completes */
@@ -162,9 +175,13 @@ struct gpu_uop_t
 struct gpu_uop_t *gpu_uop_create();
 struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_group);
 void gpu_uop_free(struct gpu_uop_t *gpu_uop);
-void gpu_uop_list_free(struct lnlist_t *gpu_uop_list);
 
+void gpu_uop_list_free(struct lnlist_t *gpu_uop_list);
 void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count);
+
+void gpu_uop_save_active_mask(struct gpu_uop_t *uop);
+void gpu_uop_debug_active_mask(struct gpu_uop_t *uop);
+
 
 
 
