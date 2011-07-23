@@ -658,10 +658,10 @@ struct gpu_wavefront_t
 	unsigned int local_mem_read : 1;
 	unsigned int local_mem_write : 1;
 	unsigned int pred_mask_update : 1;
-	unsigned int active_mask_update : 1;
-	unsigned int active_mask_push : 1;
-	unsigned int active_mask_pop : 1;
 	unsigned int push_before_done : 1;  /* Indicates whether the stack has been pushed after PRED_SET* instr. */
+	unsigned int active_mask_update : 1;
+	int active_mask_push;  /* Number of entries the stack was pushed */
+	int active_mask_pop;  /* Number of entries the stack was popped */
 
 	/* Linked lists */
 	struct gpu_wavefront_t *running_next, *running_prev;

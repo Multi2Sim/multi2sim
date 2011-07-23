@@ -933,11 +933,11 @@ void gpu_wavefront_stack_push(struct gpu_wavefront_t *wavefront)
 	if (wavefront->stack_top == GPU_MAX_STACK_SIZE - 1)
 		fatal("%s: stack overflow", wavefront->cf_inst.info->name);
 	wavefront->stack_top++;
+	wavefront->active_mask_push++;
 	bit_map_copy(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
 		wavefront->active_stack, (wavefront->stack_top - 1) * wavefront->work_item_count,
 		wavefront->work_item_count);
 	gpu_isa_debug("  %s:push", wavefront->name);
-	wavefront->active_mask_push = 1;
 }
 
 
@@ -948,7 +948,8 @@ void gpu_wavefront_stack_pop(struct gpu_wavefront_t *wavefront, int count)
 	if (wavefront->stack_top < count)
 		fatal("%s: stack underflow", wavefront->cf_inst.info->name);
 	wavefront->stack_top -= count;
-	wavefront->active_mask_pop = 1;
+	wavefront->active_mask_pop += count;
+	wavefront->active_mask_update = 1;
 	if (debug_status(gpu_isa_debug_category)) {
 		gpu_isa_debug("  %s:pop(%d),act=", wavefront->name, count);
 		bit_map_dump(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,

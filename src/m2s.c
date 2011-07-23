@@ -29,6 +29,7 @@
 static char *ctx_debug_file_name = "";
 static char *syscall_debug_file_name = "";
 static char *opencl_debug_file_name = "";
+static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
 static char *gpu_pipeline_debug_file_name = "";
 static char *gpu_cache_debug_file_name = "";
@@ -92,6 +93,7 @@ static char *sim_help =
 	"            of executed AMD Evergreen ISA instructions.\n"
 	"        --debug-gpu-pipeline: trace of AMD Evergreen instructions in the GPU\n"
 	"            pipeline. This option requires '--gpu-sim detailed' option.\n"
+	"        --debug-gpu-stack: trace of operations on GPU active mask stacks.\n"
 	"        --debug-loader: information for the x86 ELF binary analysis performed\n"
 	"            by the program loader.\n"
 	"        --debug-cpu-cache: event trace of block transfers and requests in the\n"
@@ -320,6 +322,14 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_pipeline_debug_file_name = argv[argi];
+			continue;
+		}
+
+		/* GPU-REL: debug file for stack pushes/pops */
+		if (!strcmp(argv[argi], "--debug-gpu-stack")) {
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			gpu_stack_debug_file_name = argv[argi];
 			continue;
 		}
 
@@ -559,6 +569,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--debug-gpu-cache");
 		if (*gpu_pipeline_debug_file_name)
 			fatal(msg, "--debug-gpu-pipeline");
+		if (*gpu_stack_debug_file_name)
+			fatal(msg, "--debug-gpu-stack");
 		if (*gpu_stack_faults_debug_file_name)  /* GPU-REL */
 			fatal(msg, "--debug-gpu-stack-faults");
 		if (*gpu_cache_config_file_name)
@@ -675,6 +687,7 @@ int main(int argc, char **argv)
 	cache_debug_category = debug_new_category(cache_debug_file_name);
 	opencl_debug_category = debug_new_category(opencl_debug_file_name);
 	gpu_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
+	gpu_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
 	gpu_stack_faults_debug_category = debug_new_category(gpu_stack_faults_debug_file_name);  /* GPU-REL */
 	gpu_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);
 	error_debug_category = debug_new_category(error_debug_file_name);

@@ -42,21 +42,17 @@ Use command-line option '--gpu-stack-faults <file>'. The format of the text file
 
 <cycle>: cycle number. 1 is the first cycle. They must appear in order.
 <compute_unit_id>: identifier of the compute unit. Must be in range [0..NumComputeUnits-1]
-<stack_id>: identifier of the stack_id (or wavefront) within the compute unit. Must be in range [0..MaxWorkGroupSize/WavefrontSize-1]
+<stack_id>: identifier of the stack_id (or wavefront) within the compute unit. Must be in range [0..MaxWavefrontsPerComputeUnit-1]
 <active_mask_id>: active mask index within the stack. Must be in range [0..31], because 32 is the number of entries in the stack. In the Multi2Sim implementation, the current active mask is the element at the top of the stack. Thus, a value of <active_mask_id> matching the top of the stack at a given time will affect the current active mask for a wavefront.
 <bit>: index of the bit in the active mask to switch. Must be in range [0..WavefrontSize-1]
 
-
-Example:
-
-Contents of file 'faults':
+Example for contents of file 'faults':
 7 5 3 4 2
 17 6 2 6 6
 18 0 0 0 0
 
-Command-line:
-m2s --gpu-sim detailed --gpu-stack-faults faults --debug-gpu-pipeline pipeline <opencl_program>
 
+*** Report '--debug-gpu-stack-faults <file>' ***
 
 When a fault is inserted, it will be done at the end of the specified cycle. The pipeline debug information will dump a line notifying about the insertion of the fault, in the following format:
 
@@ -65,10 +61,25 @@ fault cu=<compute_unit_id> stack=<stack_id> am=<active_mask_id> bit=<bit> effect
 where <compute_unit_id>, <stack_id>, <active_mask_id>, and <bit> correspond exactly to the parameters entered in the faults input file, and <effect> is a string taking one of the following values:
 
 "cu_idle": fault with no effect. The compute unit is not executing a work-group.
-"wf_idle": fault with no effect. The compute unit is executing less wavefronts than supported, and this fault fell in an unused active mask stack.
+"wf_idle": fault with no effect. No wavefront is used the specified stack.
 "am_idle": fault with no effect. The active mask index is over the stack top.
 "wi_idle": fault with no effect. The modified bit is unused in the active mask.
 "error": fault caused an error, affecting a utilized active mask.
+
+
+*** Report '--debug-gpu-stack <file>' ***
+
+Dump the report of the active mask stack activity. Each line follows this format:
+stack clk=<cycle> cu=<cu> stack=<stack_id> wf=<wavefront_id> a=<action> cnt=<count> top=<stack_top> mask=<mask>
+  <cycle>  Current GPU cycle
+  <cu>  Compute unit id.
+  <stack>  Active mask identifier (in range [0..MaxWavefrontsPerComputeUnit-1])
+  <wf>  Wavefront global id (unique for every wavefront, grows for every new wavefront).
+  <a>  Action ("push" or "pop")
+  <count>  Number of entries pushed or popped.
+  <stack_top>  Top of the stack after pushing or popping.
+  <mask>  Active mask pushed, or new active mask after popping.
+
 
 
 
