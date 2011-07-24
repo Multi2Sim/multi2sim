@@ -640,14 +640,20 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t user_data = args[5];  /* void *user_data */
 
 		struct opencl_program_t *program;
+		char options_str[MAX_STRING_SIZE];
+
+		options_str[0] = 0;
+		if (options)
+			mem_read_string(isa_mem, options, MAX_STRING_SIZE, options_str);
 
 		opencl_debug("  program=0x%x, num_devices=%d, device_list=0x%x, options=0x%x\n"
-			"  pfn_notify=0x%x, user_data=0x%x\n",
-			program_id, num_devices, device_list, options, pfn_notify, user_data);
+			"  pfn_notify=0x%x, user_data=0x%x, options='%s'\n",
+			program_id, num_devices, device_list, options, pfn_notify, user_data, options_str);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_devices, 1);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(pfn_notify, 0);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(user_data, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(options, 0);
+		if (options_str[0])
+			warning("%s: clBuildProgram: option string '%s' ignored\n", __FUNCTION__, options_str);
 
 		/* Get program */
 		program = opencl_object_get(OPENCL_OBJ_PROGRAM, program_id);
