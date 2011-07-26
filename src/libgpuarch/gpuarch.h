@@ -259,6 +259,7 @@ struct gpu_compute_unit_t
 		uint64_t wavefront_count;
 		uint64_t cycle;
 		uint64_t inst_count;
+		uint64_t local_mem_inst_count;
 
 	} alu_engine;
 
