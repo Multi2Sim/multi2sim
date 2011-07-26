@@ -148,7 +148,7 @@ char *gpu_stack_faults_file_name = "";
 struct gpu_stack_fault_t {
 	long long cycle;
 	int compute_unit_id;  /* 0, gpu_num_compute_units - 1 ] */
-	int stack_id;  /* [ 0, gpu_max_work_group_size / gpu_wavefront_size - 1 ] */
+	int stack_id;  /* [ 0, gpu_max_wavefronts_per_compute_unit - 1 ] */
 	int active_mask_id;  /* [ 0, GPU_MAX_STACK_SIZE - 1 ] */
 	int bit;  /* [ 0, gpu_wavefront_size - 1 ] */
 };
