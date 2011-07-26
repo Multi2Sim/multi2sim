@@ -34,10 +34,7 @@ char *gpu_opencl_binary_name = "";
 char *gpu_kernel_report_file_name = "";
 FILE *gpu_kernel_report_file = NULL;
 
-
-/* Architectural parameters introduced in GPU emulator */
 int gpu_wavefront_size = 64;
-int gpu_max_work_group_size = 256;
 
 
 

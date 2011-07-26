@@ -843,11 +843,12 @@ uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint3
 	void *info = NULL;
 
 	uint64_t local_mem_size = 0;
+	uint32_t max_work_group_size = 256;  /* FIXME */
 
 	switch (name) {
 
 	case 0x11b0:  /* CL_KERNEL_WORK_GROUP_SIZE */
-		info = &gpu_max_work_group_size;
+		info = &max_work_group_size;
 		size_ret = 4;
 		break;
 
