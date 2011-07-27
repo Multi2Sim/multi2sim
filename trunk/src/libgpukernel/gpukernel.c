@@ -638,6 +638,8 @@ void gpu_ndrange_dump(struct gpu_ndrange_t *ndrange, FILE *f)
 {
 	struct gpu_work_group_t *work_group;
 	int work_group_id;
+	int work_item_id, last_work_item_id;
+	uint32_t branch_digest, last_branch_digest;
 
 	if (!f)
 		return;
@@ -653,6 +655,22 @@ void gpu_ndrange_dump(struct gpu_ndrange_t *ndrange, FILE *f)
 	fprintf(f, "WorkItemFirst = %d\n", ndrange->work_item_id_first);
 	fprintf(f, "WorkItemLast = %d\n", ndrange->work_item_id_last);
 	fprintf(f, "WorkItemCount = %d\n", ndrange->work_item_count);
+
+	/* Branch digests */
+	assert(ndrange->work_item_count);
+	last_work_item_id = 0;
+	last_branch_digest = ndrange->work_items[0]->branch_digest;
+	for (work_item_id = 1; work_item_id <= ndrange->work_item_count; work_item_id++) {
+		branch_digest = work_item_id < ndrange->work_item_count ? ndrange->work_items[work_item_id]->branch_digest : 0;
+		if (work_item_id == ndrange->work_item_count || branch_digest != last_branch_digest) {
+			if (last_work_item_id == work_item_id - 1)
+				fprintf(f, "BranchDigest[%d] = %08x\n", last_work_item_id, last_branch_digest);
+			else
+				fprintf(f, "BranchDigest[%d-%d] = %08x\n", last_work_item_id, work_item_id - 1, last_branch_digest);
+			last_work_item_id = work_item_id;
+			last_branch_digest = branch_digest;
+		}
+	}
 	fprintf(f, "\n");
 
 	/* Work-groups */
