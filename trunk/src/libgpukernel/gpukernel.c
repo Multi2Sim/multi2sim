@@ -29,6 +29,7 @@ struct gk_t *gk;
 
 uint64_t gpu_max_cycles = 0;
 uint64_t gpu_max_inst = 0;
+int gpu_max_kernels = 0;
 
 char *gpu_opencl_binary_name = "";
 char *gpu_kernel_report_file_name = "";
@@ -631,6 +632,10 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 
 	/* Dump stats */
 	gpu_ndrange_dump(ndrange, gpu_kernel_report_file);
+
+	/* Stop if maximum number of kernels reached */
+	if (gpu_max_kernels && gk->ndrange_count >= gpu_max_kernels)
+		ke_sim_finish = ke_sim_finish_max_gpu_kernels;
 }
 
 
