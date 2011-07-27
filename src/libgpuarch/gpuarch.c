@@ -946,6 +946,7 @@ void gpu_dump_report(void)
 	double tex_inst_per_cycle;
 	uint64_t coalesced_reads;
 	uint64_t coalesced_writes;
+	char vliw_occupancy[MAX_STRING_SIZE];
 
 	/* Open file */
 	f = open_write(gpu_report_file_name);
@@ -977,6 +978,9 @@ void gpu_dump_report(void)
 			/ compute_unit->tex_engine.cycle : 0.0;
 		coalesced_reads = local_memory->reads - local_memory->effective_reads;
 		coalesced_writes = local_memory->writes - local_memory->effective_writes;
+		snprintf(vliw_occupancy, MAX_STRING_SIZE, "%lld %lld %lld %lld %lld", compute_unit->alu_engine.vliw_slots[0],
+			compute_unit->alu_engine.vliw_slots[1], compute_unit->alu_engine.vliw_slots[2],
+			compute_unit->alu_engine.vliw_slots[3], compute_unit->alu_engine.vliw_slots[4]);
 
 		fprintf(f, "[ ComputeUnit %d ]\n\n", compute_unit_id);
 
@@ -995,6 +999,9 @@ void gpu_dump_report(void)
 
 		fprintf(f, "ALUEngine.WavefrontCount = %lld\n", (long long) compute_unit->alu_engine.wavefront_count);
 		fprintf(f, "ALUEngine.Instructions = %lld\n", (long long) compute_unit->alu_engine.inst_count);
+		fprintf(f, "ALUEngine.InstructionSlots = %lld\n", (long long) compute_unit->alu_engine.inst_slot_count);
+		fprintf(f, "ALUEngine.LocalMemorySlots = %lld\n", (long long) compute_unit->alu_engine.local_mem_slot_count);
+		fprintf(f, "ALUEngine.VLIWOccupancy = %s\n", vliw_occupancy);
 		fprintf(f, "ALUEngine.Cycles = %lld\n", (long long) compute_unit->alu_engine.cycle);
 		fprintf(f, "ALUEngine.InstructionsPerCycle = %.4g\n", alu_inst_per_cycle);
 		fprintf(f, "\n");
