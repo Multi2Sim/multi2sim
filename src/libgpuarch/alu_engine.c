@@ -304,8 +304,11 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	/* Stats */
 	compute_unit->inst_count++;
 	compute_unit->alu_engine.inst_count++;
+	compute_unit->alu_engine.inst_slot_count += alu_group->inst_count;
 	if (uop->local_mem_read || uop->local_mem_write)
-		compute_unit->alu_engine.local_mem_inst_count++;
+		compute_unit->alu_engine.local_mem_slot_count += alu_group->inst_count;
+	assert(IN_RANGE(alu_group->inst_count, 1, 5));
+	compute_unit->alu_engine.vliw_slots[alu_group->inst_count - 1]++;
 
 	/* If instruction accesses local memory, record addresses. */
 	if (uop->local_mem_read || uop->local_mem_write) {
