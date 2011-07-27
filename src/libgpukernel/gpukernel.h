@@ -39,6 +39,7 @@
 
 extern uint64_t gpu_max_cycles;
 extern uint64_t gpu_max_inst;
+extern int gpu_max_kernels;
 
 extern char *gpu_opencl_binary_name;
 extern char *gpu_kernel_report_file_name;

@@ -59,6 +59,7 @@ extern enum ke_sim_finish_enum {
 	ke_sim_finish_max_cpu_cycles,  /* Maximum cycle count reached in CPU */
 	ke_sim_finish_max_gpu_inst,  /* Maximum instruction count reached in GPU */
 	ke_sim_finish_max_gpu_cycles,  /* Maximum cycle count reached in GPU */
+	ke_sim_finish_max_gpu_kernels,  /* Maximum number of GPU kernels */
 	ke_sim_finish_max_time,  /* Maximum simulation time reached */
 	ke_sim_finish_signal,  /* Signal received */
 	ke_sim_finish_gpu_no_faults  /* GPU-REL: no fault in '--gpu-stack-faults' caused error */

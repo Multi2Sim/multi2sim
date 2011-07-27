@@ -1140,5 +1140,9 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 	/* Finalize */
 	gk_timer_stop();
 	gpu_unmap_ndrange();
+
+	/* Stop if maximum number of kernels reached */
+	if (gpu_max_kernels && gk->ndrange_count >= gpu_max_kernels)
+		ke_sim_finish = ke_sim_finish_max_gpu_kernels;
 }
 

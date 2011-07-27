@@ -152,6 +152,10 @@ static char *sim_help =
 	"      Maximum number of GPU instructions. An instruction executed in common for a\n"
 	"      whole wavefront counts as 1 toward this limit. Use 0 (default) for no limit.\n"
 	"\n"
+	"  --max-gpu-kernels <num_kernels>\n"
+	"      Maximum number of GPU kernels (0 for no maximum). After kernel <num_kernels>\n"
+	"      finishes execution, the simulation will stop.\n"
+	"\n"
 	"  --max-time <seconds>\n"
 	"      Maximum simulation time in seconds. The simulator will stop after this time\n"
 	"      is exceeded. Use 0 (default) for no time limit.\n"
@@ -471,11 +475,19 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Maximum number of CPU instructions */
+		/* Maximum number of GPU instructions */
 		if (!strcmp(argv[argi], "--max-gpu-inst")) {
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_max_inst = atoll(argv[argi]);
+			continue;
+		}
+
+		/* Maximum number of GPU kernels */
+		if (!strcmp(argv[argi], "--max-gpu-kernels")) {
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			gpu_max_kernels = atoi(argv[argi]);
 			continue;
 		}
 
