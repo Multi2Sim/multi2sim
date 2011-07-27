@@ -32,12 +32,13 @@ uint64_t ke_max_time = 0;
 /* Reason for simulation end */
 enum ke_sim_finish_enum ke_sim_finish = ke_sim_finish_none;
 struct string_map_t ke_sim_finish_map = {
-	8, {
+	9, {
 		{ "ContextsFinished", ke_sim_finish_ctx },
 		{ "MaxCPUInst", ke_sim_finish_max_cpu_inst },
 		{ "MaxCPUCycles", ke_sim_finish_max_cpu_cycles },
 		{ "MaxGPUInst", ke_sim_finish_max_gpu_inst },
 		{ "MaxGPUCycles", ke_sim_finish_max_gpu_cycles },
+		{ "MaxGPUKernels", ke_sim_finish_max_gpu_kernels },
 		{ "MaxTime", ke_sim_finish_max_time },
 		{ "Signal", ke_sim_finish_signal },
 		{ "GPUNoFaults", ke_sim_finish_gpu_no_faults }  /* GPU-REL */
