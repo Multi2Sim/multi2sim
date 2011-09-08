@@ -887,7 +887,6 @@ void op_pop_rm32_impl() {
 
 void op_pop_ir32_impl() {
 	uint32_t value;
-	assert(isa_inst.opindex != reg_esp - reg_eax);
 	assert(!isa_inst.segment);
 	mem_read(isa_mem, isa_regs->esp, 4, &value);
 	isa_regs->esp += 4;
