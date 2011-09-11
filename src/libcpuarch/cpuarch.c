@@ -899,8 +899,6 @@ uint32_t cpu_tlb_address(int ctx, uint32_t vaddr)
  */
 
 static int sigusr_received = 0;
-static int sigalrm_interval = 30;
-static uint64_t last_sigalrm_cycle = 0;
 
 
 /* Signal handlers */
@@ -916,13 +914,6 @@ static void cpu_signal_handler(int signum)
 		fprintf(stderr, "SIGINT received\n");
 		break;
 		
-	case SIGALRM:
-		if (cpu->cycle - last_sigalrm_cycle == 0)
-			panic("simulator stalled in stage %s", cpu->stage);
-		last_sigalrm_cycle = cpu->cycle;
-		alarm(sigalrm_interval);
-		break;
-	
 	case SIGABRT:
 		signal(SIGABRT, SIG_DFL);
 		if (debug_status(error_debug_category))
@@ -1015,8 +1006,6 @@ void cpu_run()
 	signal(SIGABRT, &cpu_signal_handler);
 	signal(SIGUSR1, &cpu_signal_handler);
 	signal(SIGUSR2, &cpu_signal_handler);
-	signal(SIGALRM, &cpu_signal_handler);
-	alarm(sigalrm_interval);
 
 	/* Fast forward instructions */
 	if (cpu_fast_forward_count)
