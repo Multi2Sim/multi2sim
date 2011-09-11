@@ -261,9 +261,12 @@ void moesi_handler_find_and_lock(int event, void *data)
 			return;
 
 		/* Entry is locked. Record the transient tag so that a subsequent lookup
-		 * detects that the block is being brought. */
-		if (ccache->cache)
+		 * detects that the block is being brought.
+		 * Also, update LRU counters here. */
+		if (ccache->cache) {
 			cache_set_transient_tag(ccache->cache, stack->set, stack->way, stack->tag);
+			cache_access_block(ccache->cache, stack->set, stack->way);
+		}
 
 		/* On miss, evict if victim is a valid block. */
 		if (!hit && stack->status) {
@@ -401,9 +404,7 @@ void moesi_handler_load(int event, void *data)
 		cache_debug("%lld %lld 0x%x %s load finish\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
-		/* Update LRU, unlock, and return. */
-		if (ccache->cache)
-			cache_access_block(ccache->cache, stack->set, stack->way);
+		/* Unlock, and return. */
 		dir_lock_unlock(stack->dir_lock);
 		moesi_stack_return(stack);
 		return;
@@ -482,12 +483,10 @@ void moesi_handler_store(int event, void *data)
 			return;
 		}
 
-		/* Update LRU, tag/status, unlock, and return. */
-		if (ccache->cache) {
-			cache_access_block(ccache->cache, stack->set, stack->way);
+		/* Update tag/status, unlock, and return. */
+		if (ccache->cache)
 			cache_set_block(ccache->cache, stack->set, stack->way,
 				stack->tag, moesi_status_modified);
-		}
 		dir_lock_unlock(stack->dir_lock);
 		moesi_stack_return(stack);
 		return;
@@ -636,12 +635,10 @@ void moesi_handler_evict(int event, void *data)
 			return;
 		}
 
-		/* Set tag, status and lru */
-		if (target->cache) {
+		/* Set tag and status */
+		if (target->cache)
 			cache_set_block(target->cache, stack->set, stack->way, stack->tag,
 				moesi_status_modified);
-			cache_access_block(target->cache, stack->set, stack->way);
-		}
 		esim_schedule_event(EV_MOESI_EVICT_PROCESS, stack, 0);
 		return;
 	}
@@ -897,10 +894,8 @@ void moesi_handler_read_request(int event, void *data)
 			}
 		}
 
-		/* Respond with data, update LRU, unlock */
+		/* Respond with data, unlock */
 		stack->response = ccache->bsize + 8;
-		if (target->cache)
-			cache_access_block(target->cache, stack->set, stack->way);
 		dir_lock_unlock(stack->dir_lock);
 		esim_schedule_event(EV_MOESI_READ_REQUEST_REPLY, stack, 0);
 		return;
@@ -962,10 +957,9 @@ void moesi_handler_read_request(int event, void *data)
 			dir_entry->owner = 0;
 		}
 
-		/* Set status to S, update LRU, unlock */
+		/* Set status to S, unlock */
 		cache_set_block(target->cache, stack->set, stack->way, stack->tag,
 			moesi_status_shared);
-		cache_access_block(target->cache, stack->set, stack->way);
 		dir_lock_unlock(stack->dir_lock);
 		esim_schedule_event(EV_MOESI_READ_REQUEST_REPLY, stack, 0);
 		return;
@@ -1129,13 +1123,10 @@ void moesi_handler_write_request(int event, void *data)
 			assert(dir_entry->sharers == 1);
 		}
 
-		/* Update LRU, set status: M->M, O/E/S/I->E */
-		if (target->cache) {
-			cache_access_block(target->cache, stack->set, stack->way);
-			if (stack->status != moesi_status_modified)
-				cache_set_block(target->cache, stack->set, stack->way,
-					stack->tag, moesi_status_exclusive);
-		}
+		/* Set status: M->M, O/E/S/I->E */
+		if (target->cache && stack->status != moesi_status_modified)
+			cache_set_block(target->cache, stack->set, stack->way,
+				stack->tag, moesi_status_exclusive);
 
 		/* Unlock, response is the data of the size of the requester's block. */
 		dir_lock_unlock(stack->dir_lock);
