@@ -74,7 +74,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 			"uop=%lld "
 			"subwf=%d\n",
 			compute_unit->id,
-			(long long) uop->id,
+			(long long) uop->id_in_compute_unit,
 			uop->write_subwavefront_count - 1);
 
 		/* If this is the first SubWF to write, wake up dependent instructions. */
@@ -155,7 +155,7 @@ void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 		"uop=%lld "
 		"subwf=%d\n",
 		compute_unit->id,
-		(long long) uop->id,
+		(long long) uop->id_in_compute_unit,
 		uop->exec_subwavefront_count - 1);
 
 	/* If this is the last subwavefront, remove uop from execution buffer */
@@ -207,7 +207,7 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id);
+		(long long) uop->id_in_compute_unit);
 
 	/* Move uop from instruction buffer into execution buffer */
 	compute_unit->alu_engine.inst_buffer = NULL;
@@ -250,7 +250,7 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id);
+		(long long) uop->id_in_compute_unit);
 }
 
 
@@ -286,6 +286,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
 	uop->compute_unit = compute_unit;
+	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
 	uop->subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1)
 		/ gpu_num_stream_cores;
 	uop->last = wavefront->clause_kind != GPU_CLAUSE_ALU;
@@ -364,7 +365,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 			"cu=%d "
 			"uop=%lld ",
 			compute_unit->id,
-			(long long) uop->id);
+			(long long) uop->id_in_compute_unit);
 		for (i = 0; i < wavefront->alu_group.inst_count; i++) {
 			inst = &wavefront->alu_group.inst[i];
 			amd_inst_dump_buf(inst, -1, 0, str1, MAX_STRING_SIZE);

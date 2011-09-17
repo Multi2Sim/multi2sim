@@ -62,7 +62,7 @@ void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)
 			"cu=%d "
 			"uop=%lld\n",
 			compute_unit->id,
-			(long long) uop->id);
+			(long long) uop->id_in_compute_unit);
 		if (debug_status(gpu_stack_debug_category))
 			gpu_uop_debug_active_mask(uop);
 
@@ -165,7 +165,7 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id);
+		(long long) uop->id_in_compute_unit);
 }
 
 
@@ -204,7 +204,7 @@ void gpu_cf_engine_decode(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id);
+		(long long) uop->id_in_compute_unit);
 }
 
 
@@ -266,6 +266,7 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
 	uop->compute_unit = compute_unit;
+	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
 	uop->alu_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_ALU;
 	uop->tex_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_TEX;
 	uop->no_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_CF;
@@ -321,7 +322,7 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 			"inst=\"%s\"\n",
 			compute_unit->id,
 			wavefront->id,
-			(long long) uop->id,
+			(long long) uop->id_in_compute_unit,
 			str2);
 	}
 }
