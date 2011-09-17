@@ -122,6 +122,7 @@ struct gpu_uop_t
 {
 	/* Fields */
 	uint64_t id;
+	uint64_t id_in_compute_unit;
 	struct gpu_wavefront_t *wavefront;  /* Wavefront it belongs to */
 	struct gpu_work_group_t *work_group;  /* Work-group it belongs to */
 	struct gpu_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
@@ -190,8 +191,9 @@ void gpu_uop_debug_active_mask(struct gpu_uop_t *uop);
 
 struct gpu_compute_unit_t
 {
-	/* ID */
+	/* IDs */
 	int id;
+	uint64_t gpu_uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
 
 	/* Double linked list of compute units */
 	struct gpu_compute_unit_t *ready_prev, *ready_next;

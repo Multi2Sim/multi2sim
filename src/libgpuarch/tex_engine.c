@@ -47,7 +47,7 @@ void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id);
+		(long long) uop->id_in_compute_unit);
 
 	/* Last uop in clause */
 	if (uop->last) {
@@ -104,7 +104,7 @@ void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id);
+		(long long) uop->id_in_compute_unit);
 }
 
 
@@ -143,7 +143,7 @@ void gpu_tex_engine_decode(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id);
+		(long long) uop->id_in_compute_unit);
 }
 
 
@@ -176,6 +176,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
 	uop->compute_unit = compute_unit;
+	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
 	uop->last = wavefront->clause_kind != GPU_CLAUSE_TEX;
 	uop->global_mem_read = wavefront->global_mem_read;
 	uop->global_mem_write = wavefront->global_mem_write;
@@ -215,7 +216,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 			"inst=\"%s\"\n",
 			compute_unit->id,
 			wavefront->id,
-			(long long) uop->id,
+			(long long) uop->id_in_compute_unit,
 			str2);
 	}
 }
