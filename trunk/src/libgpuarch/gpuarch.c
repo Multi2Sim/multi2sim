@@ -548,8 +548,10 @@ void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, 
 
 	/* Debug */
 	gpu_pipeline_debug("cu a=\"unmap\" "
-		"cu=%d\n",
-		compute_unit->id);
+		"cu=%d "
+		"wg=%d\n",
+		compute_unit->id,
+		work_group->id);
 }
 
 
@@ -1079,13 +1081,15 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		"local_size=%d "
 		"group_count=%d "
 		"wavefront_size=%d "
-		"wavefronts_per_work_group=%d"
+		"wavefronts_per_work_group=%d "
+		"compute_units=%d "
 		"\n",
 		kernel->global_size,
 		kernel->local_size,
 		kernel->group_count,
 		gpu_wavefront_size,
-		ndrange->wavefronts_per_work_group);
+		ndrange->wavefronts_per_work_group,
+		gpu_num_compute_units);
 	
 	/* Initialize */
 	gpu_map_ndrange(ndrange);
