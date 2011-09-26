@@ -363,8 +363,12 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	if (debug_status(gpu_pipeline_debug_category)) {
 		gpu_pipeline_debug("alu a=\"fetch\" "
 			"cu=%d "
+			"wg=%d "
+			"wf=%d "
 			"uop=%lld ",
 			compute_unit->id,
+			uop->work_group->id,
+			wavefront->id,
 			(long long) uop->id_in_compute_unit);
 		for (i = 0; i < wavefront->alu_group.inst_count; i++) {
 			inst = &wavefront->alu_group.inst[i];

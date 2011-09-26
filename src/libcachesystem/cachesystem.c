@@ -391,6 +391,33 @@ struct dir_lock_t *ccache_get_dir_lock(struct ccache_t *ccache,
 }
 
 
+void ccache_dump(struct ccache_t *ccache, FILE *f)
+{
+	struct cache_t *cache = ccache->cache;
+	struct cache_blk_t *blk;
+	struct dir_lock_t *dir_lock;
+	int i, j;
+	
+	if (!cache)
+		return;
+
+	for (i = 0; i < cache->nsets; i++) {
+		fprintf(f, "Set %03d:", i);
+		for (j = 0; j < cache->assoc; j++) {
+			dir_lock = ccache_get_dir_lock(ccache, i, j);
+			blk = &cache->sets[i].blks[j];
+			if (!blk->status)
+				fprintf(f, " %d:I", j);
+			else
+				fprintf(f, " %d:0x%x", j, blk->tag);
+			if (dir_lock->lock)
+				fprintf(f, "*LOCK->0x%x*", blk->transient_tag);
+		}
+		fprintf(f, "\n");
+	}
+}
+
+
 
 
 /* TLB */

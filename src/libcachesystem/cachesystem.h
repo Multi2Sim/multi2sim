@@ -344,6 +344,7 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	uint32_t *pset, uint32_t *pway, uint32_t *ptag, int *pstatus);
 void ccache_get_block(struct ccache_t *ccache, uint32_t set, uint32_t way,
 	uint32_t *ptag, int *pstatus);
+void ccache_dump(struct ccache_t *ccache, FILE *f);
 
 struct dir_t *ccache_get_dir(struct ccache_t *ccache, uint32_t phaddr);
 struct dir_entry_t *ccache_get_dir_entry(struct ccache_t *ccache,
