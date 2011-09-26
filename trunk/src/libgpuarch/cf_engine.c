@@ -313,14 +313,16 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 
 	/* Debug */
 	if (debug_status(gpu_pipeline_debug_category)) {
-		amd_inst_dump_buf(inst, inst_num, 0, str1, MAX_STRING_SIZE);
+		amd_inst_dump_buf(inst, -1, 0, str1, MAX_STRING_SIZE);
 		str_single_spaces(str2, str1, MAX_STRING_SIZE);
 		gpu_pipeline_debug("cf a=\"fetch\" "
 			"cu=%d "
+			"wg=%d "
 			"wf=%d "
 			"uop=%lld "
 			"inst=\"%s\"\n",
 			compute_unit->id,
+			uop->work_group->id,
 			wavefront->id,
 			(long long) uop->id_in_compute_unit,
 			str2);
