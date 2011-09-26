@@ -210,10 +210,17 @@ void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
  * replacement policy is LRU. */
 void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way)
 {
+	int move_to_head;
+	
 	assert(set >= 0 && set < cache->nsets);
 	assert(way >= 0 && way < cache->assoc);
-	if (cache->policy == cache_policy_lru
-		&& cache->sets[set].blks[way].way_prev)
+
+	/* A block is moved to the head of the list for LRU policy.
+	 * It will also be moved if it is its first access for FIFO policy, i.e., if the
+	 * status of the block was invalid. */
+	move_to_head = cache->policy == cache_policy_lru ||
+		(cache->policy == cache_policy_fifo && !cache->sets[set].blks[way].status);
+	if (move_to_head && cache->sets[set].blks[way].way_prev)
 		cache_update_waylist(&cache->sets[set],
 			&cache->sets[set].blks[way],
 			cache_waylist_head);
@@ -225,18 +232,16 @@ void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way)
 uint32_t cache_replace_block(struct cache_t *cache, uint32_t set)
 {
 	struct cache_blk_t *blk;
-	uint32_t way;
 
-	/* Try to find an invalid block */
+	/* Try to find an invalid block. Do this in the LRU order, to avoid picking the
+	 * MRU while its status has not changed to valid yet. */
 	assert(set >= 0 && set < cache->nsets);
-	for (way = 0; way < cache->assoc; way++) {
-		blk = &cache->sets[set].blks[way];
+	for (blk = cache->sets[set].way_tail; blk; blk = blk->way_prev)
 		if (!blk->status)
-			return way;
-	}
+			return blk->way;
 
 	/* LRU and FIFO replacement: return block at the
-	 * head of the linked list */
+	 * tail of the linked list */
 	if (cache->policy == cache_policy_lru ||
 		cache->policy == cache_policy_fifo)
 		return cache->sets[set].way_tail->way;

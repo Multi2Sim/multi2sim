@@ -708,8 +708,10 @@ void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, char *b
 
 	/* Instruction counter */
 	if (inst->info->category == AMD_CAT_CF) {
-		assert(count >= 0);
-		dump_buf(buf_ptr, size_ptr, "%02d ", count);
+		if (count >= 0)
+			dump_buf(buf_ptr, size_ptr, "%02d ", count);
+		else
+			dump_buf(buf_ptr, size_ptr, "   ");
 	} else {
 		if (count >= 0)
 			dump_buf(buf_ptr, size_ptr, "     %2d  ", count);
