@@ -23,7 +23,7 @@
 #include <elf.h>
 #include <stdlib.h>
 #include <string.h>
-#include <misc.h>
+#include "misc.h"
 
 FILE *elf_debug_file;
 
