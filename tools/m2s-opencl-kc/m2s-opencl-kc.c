@@ -1,7 +1,5 @@
 #include "elfanalyze.h"
 #include <CL/cl.h>
-#include <CAL/cal.h>
-#include <CAL/calcl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,43 +69,6 @@ void main_list_devices(FILE *f)
 }
 
 
-void disassemble_kernel(char *file_name)
-{
-	char file_name_prefix[MAX_STRING_SIZE];
-	char file_name_dest[MAX_STRING_SIZE];
-	int len;
-
-	size_t image_size;
-	CALvoid *cl_kernel;
-	CALimage cl_image;
-	CALuint cl_size;
-	CALresult cl_result;
-
-	/* Get file name prefix */
-	strcpy(file_name_prefix, file_name);
-	len = strlen(file_name);
-	if (len > 7 && !strcmp(file_name + len - 7, "_kernel"))
-		file_name_prefix[len - 7] = '\0';
-	sprintf(file_name_dest, "%s_disasm", file_name_prefix);
-	
-	/* Load image */
-	cl_kernel = read_buffer(file_name, &image_size);
-	cl_size = image_size;
-	cl_result = calImageRead(&cl_image, cl_kernel, cl_size);
-	if (cl_result == CAL_RESULT_ERROR)
-		return;
-
-	/* Disassemble */
-	disasm_file = fopen(file_name_dest, "wt");
-	if (!disasm_file)
-		fatal("%s: cannot write on file", file_name_dest);
-	calclDisassembleImage(cl_image, disasm_logfunc);
-	fclose(disasm_file);
-	free(cl_kernel);
-	printf("\t%s: disassembly code dumped\n", file_name_dest);
-}
-
-
 void kernel_binary_analyze(char *file_name)
 {
 	struct elf_file_t *elf;
@@ -134,6 +95,24 @@ void kernel_binary_analyze(char *file_name)
 	if (!elf)
 		fatal("%s: cannot open ELF file", file_name);
 	
+	/* List ELF sections */
+	printf("ELF sections:\n");
+	for (i = 0; i < elf_section_count(elf); i++)
+	{
+		uint32_t addr, offset, size, flags;
+		elf_section_info(elf, i, &section_name, &addr, &offset, &size, &flags);
+
+		/* Dump to file */
+		section_buf = elf_section_read(elf, i);
+		sprintf(file_name_dest, "%s.%s", file_name_prefix, *section_name == '.' ? section_name + 1 : section_name);
+		write_buffer(file_name_dest, section_buf, size);
+		elf_section_free(section_buf);
+
+		/* Info */
+		printf("  section '%s': addr=0x%x, offset=0x%x, size=%d, flags=0x%x\n",
+			section_name, addr, offset, size, flags);
+	}
+	
 	/* Get symbols */
 	for (i = 0; i < elf->symtab_count; i++) {
 		sym = &elf->symtab[i];
@@ -158,9 +137,6 @@ void kernel_binary_analyze(char *file_name)
 		else if (!strcmp(section_name, ".rodata"))
 			printf("\t%s: meta data dumped\n", file_name_dest);
 
-		/* If it is code, disassemble */
-		if (!strcmp(section_name, ".text"))
-			disassemble_kernel(file_name_dest);
 	}
 
 	/* Close file */

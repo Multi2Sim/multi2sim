@@ -1182,9 +1182,31 @@ void amd_inst_PREDE_INT_impl()
 #undef W1
 
 
-void amd_inst_PRED_SETGE_INT_impl() {
-	NOT_IMPL();
+#define W0 gpu_isa_inst->words[0].alu_word0
+#define W1 gpu_isa_inst->words[1].alu_word1_op2
+void amd_inst_PRED_SETGE_INT_impl()
+{
+	int32_t src0, src1;
+	float dst;
+	int cond;
+
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.omod, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.clamp, 0);
+
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
+	cond = src0 >= src1;
+	dst = cond ? 0.0f : 1.0f;
+	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
+
+	/* Active masks */
+	gpu_isa_enqueue_push_before();
+	gpu_isa_enqueue_pred_set(cond);
 }
+#undef W0
+#undef W1
 
 
 #define W0 gpu_isa_inst->words[0].alu_word0
