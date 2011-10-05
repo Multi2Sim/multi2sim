@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -I. -I$(AMDAPPSDKROOT)/include -g
-LDFLAGS = -L$(AMDAPPSDKROOT)/lib/x86 -lOpenCL -ldl -laticalcl -laticalrt
+LDFLAGS = -L$(AMDAPPSDKROOT)/lib/x86 -L$(AMDAPPSDKROOT)/lib/x86_64 -lOpenCL
 
 SRCS = \
 	debug.c \
@@ -14,6 +14,8 @@ HDRS = \
 	misc.h
 
 EXE = m2s-opencl-kc
+
+all: $(EXE)
 
 $(EXE): $(SRCS) $(HDRS)
 ifndef AMDAPPSDKROOT

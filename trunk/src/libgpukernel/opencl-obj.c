@@ -519,7 +519,7 @@ char *err_opencl_elf_symbol =
 	"\tThe ELF file analyzer is trying to find a name in the ELF symbol table.\n"
 	"\tIf it is not found, it probably means that your application is requesting\n"
 	"\texecution of a kernel function that is not present in the encoded binary.\n"
-	"\tPlease, check the parameters parsed to the 'clCreateKernel' function in\n"
+	"\tPlease, check the parameters passed to the 'clCreateKernel' function in\n"
 	"\tyour application.\n";
 
 FILE *opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_name,
@@ -673,7 +673,9 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
 			} else if (!strcmp(line_ptrs[1], "hwlocal")) {
 				OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
-				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
+				kernel->func_mem_local = atoi(line_ptrs[2]);
+				opencl_debug("kernel '%s' using %d bytes local memory\n",
+					kernel->name, kernel->func_mem_local);
 			} else if (!strcmp(line_ptrs[1], "datareqd")) {
 				OPENCL_KERNEL_METADATA_TOKEN_COUNT(2);
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
@@ -769,7 +771,9 @@ void opencl_kernel_load_func_metadata(struct opencl_kernel_t *kernel)
 		/* Memory */
 		if (!strcmp(line_ptrs[0], "memory")) {
 			OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
-			if (!strcmp(line_ptrs[1], "hwlocal")) {
+			if (!strcmp(line_ptrs[1], "hwprivate")) {
+				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
+			} else if (!strcmp(line_ptrs[1], "hwlocal")) {
 				kernel->func_mem_local = atoi(line_ptrs[2]);
 				opencl_debug("kernel '%s' using %d bytes local memory\n",
 					kernel->name, kernel->func_mem_local);
@@ -823,16 +827,17 @@ void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name)
 	opencl_kernel_load_metadata(kernel);
 
 	/* Read function 'XX_fmetadata' symbol.
-	 * In old OpenCL Binary Image Format (BIF), 'XX' is the function 'uniqueid' value,
-	 * whereas current BIF format uses the kernel name for 'XX' */
-	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%d_fmetadata", kernel->func_uniqueid);
+	 * APP SDK 2.3 - OpenCL Binary Image Format (BIF), 'XX' is the function 'uniqueid' value.
+	 * APP SDK 2.4 - The kernel name is the value for 'XX'
+	 * APP SDK 2.5 - Symbol 'XX_fmetadata is omitted. All information included under 'XX_metadata'. */
+	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%d_fmetadata", kernel->func_uniqueid);  /* SDK 2.3 */
 	if (!elf_get_symbol_by_name(program->binary_file_elf, symbol_name))
-		snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_fmetadata", kernel_name);
-	kernel->func_file = opencl_program_read_symbol(program, symbol_name,
-		kernel->func_file_name, MAX_PATH_SIZE);
-	
-	/* Load function metadata */
-	opencl_kernel_load_func_metadata(kernel);
+		snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_fmetadata", kernel_name);  /* SDK 2.4 */
+	if (elf_get_symbol_by_name(program->binary_file_elf, symbol_name)) {
+		kernel->func_file = opencl_program_read_symbol(program, symbol_name,
+			kernel->func_file_name, MAX_PATH_SIZE);
+		opencl_kernel_load_func_metadata(kernel);
+	}
 }
 
 
