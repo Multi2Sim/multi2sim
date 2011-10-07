@@ -702,6 +702,7 @@ void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, char *b
 	int *size_ptr = &size;
 
 	/* Shift */
+	assert(loop_idx >= 0);
 	memset(shift_str, ' ', MAX_STRING_SIZE);
 	shift_str[loop_idx * 4] = '\0';
 	dump_buf(buf_ptr, size_ptr, "%s", shift_str);
@@ -719,10 +720,6 @@ void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, char *b
 			dump_buf(buf_ptr, size_ptr, "         ");
 	}
 	
-	/* ALU assignment for ALU instructions */
-	if (inst->info->category == AMD_CAT_ALU)
-		dump_buf(buf_ptr, size_ptr, "%s: ", map_value(&amd_alu_map, inst->alu));
-
 	/* Format */
 	fmt_str = inst->info->fmt_str;
 	while (*fmt_str) {
@@ -1145,6 +1142,21 @@ void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
 }
 
 
+void amd_inst_dump_debug(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
+{
+	char buf[MAX_STRING_SIZE];
+	char buf_no_spc[MAX_STRING_SIZE];
+
+	amd_inst_dump_buf(inst, -1, 0, buf, MAX_STRING_SIZE);
+	str_single_spaces(buf_no_spc, buf, sizeof(buf_no_spc));
+	if (count >= 0)
+		fprintf(f, "cnt=%d ", count);
+	if (loop_idx >= 0)
+		fprintf(f, "l=%d ", loop_idx);
+	fprintf(f, "inst=\"%s\"", buf_no_spc);
+}
+
+
 void amd_inst_words_dump(struct amd_inst_t *inst, FILE *f)
 {
 	int i;
@@ -1165,3 +1177,28 @@ void amd_alu_group_dump(struct amd_alu_group_t *group, int shift, FILE *f)
 		amd_inst_dump(&group->inst[i], i ? -1 : group->id, shift, f);
 }
 
+
+void amd_alu_group_dump_debug(struct amd_alu_group_t *alu_group, int count, int loop_idx, FILE *f)
+{
+	struct amd_inst_t *inst;
+	char buf[MAX_STRING_SIZE], no_spc_buf[MAX_STRING_SIZE];
+	char *spc;
+	int i;
+
+	/* Count and loop index */
+	if (count >= 0)
+		fprintf(f, "cnt=%d ", count);
+	if (loop_idx >= 0)
+		fprintf(f, "l=%d ", loop_idx);
+
+	/* VLIW slots */
+	spc = "";
+	for (i = 0; i < alu_group->inst_count; i++)
+	{
+		inst = &alu_group->inst[i];
+		amd_inst_dump_buf(inst, -1, 0, buf, sizeof(buf));
+		str_single_spaces(no_spc_buf, buf, sizeof(no_spc_buf));
+		fprintf(f, "%sinst.%s=\"%s\"", spc, map_value(&amd_alu_map, inst->alu), no_spc_buf);
+		spc = " ";
+	}
+}

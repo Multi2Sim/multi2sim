@@ -262,9 +262,6 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_uop_t *uop, *producer;
 	struct gpu_work_item_uop_t *work_item_uop;
 
-	struct amd_inst_t *inst;
-	char str1[MAX_STRING_SIZE], str2[MAX_STRING_SIZE];
-
 	struct gpu_work_item_t *work_item;
 	int work_item_id;
 
@@ -360,7 +357,10 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	compute_unit->alu_engine.fetch_queue_length += uop->length;
 
 	/* Debug */
-	if (debug_status(gpu_pipeline_debug_category)) {
+	if (debug_status(gpu_pipeline_debug_category))
+	{
+		char str[MAX_STRING_SIZE];
+
 		gpu_pipeline_debug("alu a=\"fetch\" "
 			"cu=%d "
 			"wg=%d "
@@ -370,20 +370,12 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 			uop->work_group->id,
 			wavefront->id,
 			(long long) uop->id_in_compute_unit);
-		for (i = 0; i < wavefront->alu_group.inst_count; i++) {
-			inst = &wavefront->alu_group.inst[i];
-			amd_inst_dump_buf(inst, -1, 0, str1, MAX_STRING_SIZE);
-			str_single_spaces(str2, str1, MAX_STRING_SIZE);
-			gpu_pipeline_debug(
-				"inst.%s=\"%s\" ",
-				map_value(&amd_alu_map, inst->alu),
-				str2);
-		}
+		amd_alu_group_dump_debug(&wavefront->alu_group, -1, -1, debug_file(gpu_pipeline_debug_category));
 		gpu_pipeline_debug(" idep=");
-		gpu_uop_dump_dep_list(str1, MAX_STRING_SIZE, uop->idep, uop->idep_count);
-		gpu_pipeline_debug("%s odep=", str1);
-		gpu_uop_dump_dep_list(str1, MAX_STRING_SIZE, uop->odep, uop->odep_count);
-		gpu_pipeline_debug("%s", str1);
+		gpu_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->idep, uop->idep_count);
+		gpu_pipeline_debug("%s odep=", str);
+		gpu_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->odep, uop->odep_count);
+		gpu_pipeline_debug("%s", str);
 		if (producer)
 			gpu_pipeline_debug(" prod=%lld", (long long) producer->id);
 		gpu_pipeline_debug("\n");
