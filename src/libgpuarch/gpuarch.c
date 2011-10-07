@@ -1070,12 +1070,24 @@ void gpu_unmap_ndrange(void)
 }
 
 
-void gpu_run(struct gpu_ndrange_t *ndrange)
+void gpu_pipeline_debug_intro(struct gpu_ndrange_t *ndrange)
 {
 	struct opencl_kernel_t *kernel = ndrange->kernel;
-	struct gpu_compute_unit_t *compute_unit, *compute_unit_next;
 
-	/* Debug */
+	void *cf_buf;
+	int inst_count;
+	int cf_inst_count;
+	int sec_inst_count;
+	int loop_idx;
+
+	FILE *f;
+
+	/* Check if debugging */
+	if (!debug_status(gpu_pipeline_debug_category))
+		return;
+	f = debug_file(gpu_pipeline_debug_category);
+
+	/* Initial */
 	gpu_pipeline_debug("init "
 		"global_size=%d "
 		"local_size=%d "
@@ -1090,8 +1102,86 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		gpu_wavefront_size,
 		ndrange->wavefronts_per_work_group,
 		gpu_num_compute_units);
-	
+
+	/* Disassemble */
+	cf_buf = kernel->cal_abi->text_buffer;
+	inst_count = 0;
+	cf_inst_count = 0;
+	sec_inst_count = 0;
+	loop_idx = 0;
+	while (cf_buf)
+	{
+		struct amd_inst_t cf_inst;
+
+		/* CF Instruction */
+		cf_buf = amd_inst_decode_cf(cf_buf, &cf_inst);
+                if (cf_inst.info->flags & AMD_INST_FLAG_DEC_LOOP_IDX) {
+                        assert(loop_idx > 0);
+                        loop_idx--;
+                }
+
+		fprintf(f, "asm i=%d cl=\"cf\" ", inst_count);
+		amd_inst_dump_debug(&cf_inst, cf_inst_count, loop_idx, f);
+		fprintf(f, "\n");
+
+		cf_inst_count++;
+		inst_count++;
+
+		/* ALU Clause */
+		if (cf_inst.info->fmt[0] == FMT_CF_ALU_WORD0)
+		{
+			void *alu_buf, *alu_buf_end;
+			struct amd_alu_group_t alu_group;
+
+			alu_buf = kernel->cal_abi->text_buffer + cf_inst.words[0].cf_alu_word0.addr * 8;
+			alu_buf_end = alu_buf + (cf_inst.words[1].cf_alu_word1.count + 1) * 8;
+			while (alu_buf < alu_buf_end)
+			{
+				alu_buf = amd_inst_decode_alu_group(alu_buf, sec_inst_count, &alu_group);
+
+				fprintf(f, "asm i=%d cl=\"alu\" ", inst_count);
+				amd_alu_group_dump_debug(&alu_group, sec_inst_count, loop_idx, f);
+				fprintf(f, "\n");
+
+				sec_inst_count++;
+				inst_count++;
+			}
+		}
+
+		/* TEX Clause */
+		if (cf_inst.info->inst == AMD_INST_TC)
+		{
+			char *tex_buf, *tex_buf_end;
+			struct amd_inst_t inst;
+
+			tex_buf = kernel->cal_abi->text_buffer + cf_inst.words[0].cf_word0.addr * 8;
+			tex_buf_end = tex_buf + (cf_inst.words[1].cf_word1.count + 1) * 16;
+			while (tex_buf < tex_buf_end)
+			{
+				tex_buf = amd_inst_decode_tc(tex_buf, &inst);
+
+				fprintf(f, "asm i=%d cl=\"tex\" ", inst_count);
+				amd_inst_dump_debug(&inst, sec_inst_count, loop_idx, f);
+				fprintf(f, "\n");
+
+				sec_inst_count++;
+				inst_count++;
+			}
+		}
+
+		/* Increase loop depth counter */
+                if (cf_inst.info->flags & AMD_INST_FLAG_INC_LOOP_IDX)
+                        loop_idx++;
+	}
+}
+
+
+void gpu_run(struct gpu_ndrange_t *ndrange)
+{
+	struct gpu_compute_unit_t *compute_unit, *compute_unit_next;
+
 	/* Initialize */
+	gpu_pipeline_debug_intro(ndrange);
 	gpu_map_ndrange(ndrange);
 	gpu_calc_plot();
 	gk_timer_start();

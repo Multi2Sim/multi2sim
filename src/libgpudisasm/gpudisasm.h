@@ -565,8 +565,10 @@ void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int shift, char *buf,
 void fmt_word_dump(void *buf, enum fmt_enum fmt, FILE *f);
 void amd_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f);
 void amd_inst_dump(struct amd_inst_t *inst, int count, int shift, FILE *f);
+void amd_inst_dump_debug(struct amd_inst_t *inst, int count, int loop_idx, FILE *f);
 void amd_inst_words_dump(struct amd_inst_t *inst, FILE *f);
 void amd_alu_group_dump(struct amd_alu_group_t *group, int shift, FILE *f);
+void amd_alu_group_dump_debug(struct amd_alu_group_t *alu_group, int count, int loop_idx, FILE *f);
 
 /* Copy instruction */
 void amd_inst_copy(struct amd_inst_t *dest, struct amd_inst_t *src);
