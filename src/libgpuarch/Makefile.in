@@ -68,9 +68,9 @@ AR = ar
 ARFLAGS = cru
 libgpuarch_a_AR = $(AR) $(ARFLAGS)
 libgpuarch_a_LIBADD =
-am_libgpuarch_a_OBJECTS = alu_engine.$(OBJEXT) calc.$(OBJEXT) \
-	cf_engine.$(OBJEXT) gpuarch.$(OBJEXT) gpucache.$(OBJEXT) \
-	tex_engine.$(OBJEXT)
+am_libgpuarch_a_OBJECTS = alu-engine.$(OBJEXT) calc.$(OBJEXT) \
+	cf-engine.$(OBJEXT) compute-unit.$(OBJEXT) gpuarch.$(OBJEXT) \
+	gpucache.$(OBJEXT) tex-engine.$(OBJEXT) uop.$(OBJEXT)
 libgpuarch_a_OBJECTS = $(am_libgpuarch_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -178,13 +178,15 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libgpuarch.a
 libgpuarch_a_SOURCES = \
-	alu_engine.c \
+	alu-engine.c \
 	calc.c \
-	cf_engine.c \
+	cf-engine.c \
+	compute-unit.c \
 	gpuarch.h \
 	gpuarch.c \
 	gpucache.c \
-	tex_engine.c
+	tex-engine.c \
+	uop.c
 
 @DEBUG_FALSE@AM_CFLAGS = -fno-strict-aliasing -O3
 @DEBUG_TRUE@AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE -g -O0
@@ -277,12 +279,14 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alu_engine.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alu-engine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/calc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cf_engine.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cf-engine.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compute-unit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuarch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpucache.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tex_engine.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tex-engine.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uop.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

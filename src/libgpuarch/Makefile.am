@@ -1,12 +1,14 @@
 lib_LIBRARIES = libgpuarch.a
 libgpuarch_a_SOURCES = \
-	alu_engine.c \
+	alu-engine.c \
 	calc.c \
-	cf_engine.c \
+	cf-engine.c \
+	compute-unit.c \
 	gpuarch.h \
 	gpuarch.c \
 	gpucache.c \
-	tex_engine.c
+	tex-engine.c \
+	uop.c
 
 if DEBUG
 AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE -g -O0

@@ -173,7 +173,10 @@ struct gpu_uop_t
 	struct gpu_work_item_uop_t work_item_uop[0];
 };
 
-struct gpu_uop_t *gpu_uop_create();
+void gpu_uop_init(void);
+void gpu_uop_done(void);
+
+struct gpu_uop_t *gpu_uop_create(void);
 struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_group);
 void gpu_uop_free(struct gpu_uop_t *gpu_uop);
 
@@ -187,7 +190,9 @@ void gpu_uop_debug_active_mask(struct gpu_uop_t *uop);
 
 
 
-/* GPU Compute Unit */
+/*
+ * GPU Compute Unit
+ */
 
 struct gpu_compute_unit_t
 {
@@ -295,6 +300,7 @@ void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, 
 void gpu_cf_engine_run(struct gpu_compute_unit_t *compute_unit);
 void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit);
 void gpu_tex_engine_run(struct gpu_compute_unit_t *compute_unit);
+void gpu_compute_unit_run(struct gpu_compute_unit_t *compute_unit);
 
 
 
