@@ -1,16 +1,17 @@
 Multi2Sim
 	-Remove '-decode_kind shared', because dispatch slots are not calculated properly with this option set to shared.
 
-* Statistic reports
-	* Dump extended reports in files specified by parameters
-	* Use inifile format for reports
-
-
 m2s-pipeline:
 	-File $HOME/.m2src -> save configuration about m2s-pipeline, such as 'show macroinstructions' or current cycle.
 	-Key <0..9>s -> go to sequence number.
 	-Multithread/Multicore support.
 
+
+
+
+********************************************************************************
+Reported - pending 01/01/10
+********************************************************************************
 
 -Non-blocking caches and cache ports:
 
@@ -26,18 +27,37 @@ cache misses as long as dependency constraints are observed, thus
 exploiting post-miss operations."
 
 
--PARSEC:
-	-Support for this benchmark suite.
-	-Support for context switches to allow multiple contexts in one thread.
 
-* m2skernel maintenance:
-	-'Magic syscall' to communicate source code and simulator.
+********************************************************************************
+BUG 10/10/11
+********************************************************************************
 
-* Web site:
-	-List of publications
-	-Section for how to compile your own source code and report related bugs.
+In the detailed timing model, the memory address for a load/store uops is obtained from the timing model by the context's last memory access address. I refer to the following code segment of the fetch_inst function
+Code: [Select]
+
+/* Memory access uops */
+if (uop->flags & FMEM) {
+	uop->mem_vtladdr = ctx->mem->last_address;
+	uop->mem_phaddr = mmu_translate(THREAD.ctx->mid, ctx->mem->last_address);
+}
 
 
-* Mailing list announces:
-	-Support for new glibc versions.
+For macro instructions like movsb etc, which put multiple load/store uops in the fetch queue, the memory address for the load/store uops would be same, even when they are actually different.  Won't this lead to wrong lru counters in the caches?
+
+Moreover, in the speculative execution mode (when ctx->status has ctx_specmode bit set), the load/store uops would also have wrong address (as the macro instruction is not actually executed by the functional model, and the last memory access address would point to memory accessed by a previous instruction). This would also wrongly modify the lru counters in the caches. Can someone confirm this?
+
+
+********************************************************************************
+Update M2S-DOC 10/10/11
+********************************************************************************
+
+Update needed for the event-flow diagrams in m2s-doc, after the bug detected by Multi2Sim user, that made a fully associative cache perform worse.
+
+
+
+********************************************************************************
+Update Multi2Sim 10/10/11
+********************************************************************************
+
+Dump input parameters in the statistics reports.
 
