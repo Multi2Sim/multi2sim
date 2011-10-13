@@ -654,9 +654,10 @@ void gpu_unmap_ndrange(void)
 }
 
 
-void gpu_pipeline_debug_intro(struct gpu_ndrange_t *ndrange)
+void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
 {
 	struct opencl_kernel_t *kernel = ndrange->kernel;
+	FILE *f = debug_file(gpu_pipeline_debug_category);
 
 	void *cf_buf;
 	int inst_count;
@@ -664,35 +665,14 @@ void gpu_pipeline_debug_intro(struct gpu_ndrange_t *ndrange)
 	int sec_inst_count;
 	int loop_idx;
 
-	FILE *f;
-
-	/* Check if debugging */
-	if (!debug_status(gpu_pipeline_debug_category))
-		return;
-	f = debug_file(gpu_pipeline_debug_category);
-
-	/* Initial */
-	gpu_pipeline_debug("init "
-		"global_size=%d "
-		"local_size=%d "
-		"group_count=%d "
-		"wavefront_size=%d "
-		"wavefronts_per_work_group=%d "
-		"compute_units=%d "
-		"\n",
-		kernel->global_size,
-		kernel->local_size,
-		kernel->group_count,
-		gpu_wavefront_size,
-		ndrange->wavefronts_per_work_group,
-		gpu_num_compute_units);
-	
-	/* Kernel disassembly */
+	/* Initialize */
 	cf_buf = kernel->cal_abi->text_buffer;
 	inst_count = 0;
 	cf_inst_count = 0;
 	sec_inst_count = 0;
 	loop_idx = 0;
+
+	/* Disassemble */
 	while (cf_buf)
 	{
 		struct amd_inst_t cf_inst;
@@ -760,12 +740,82 @@ void gpu_pipeline_debug_intro(struct gpu_ndrange_t *ndrange)
 }
 
 
+void gpu_pipeline_debug_ndrange(struct gpu_ndrange_t *ndrange)
+{
+	int work_group_id;
+	struct gpu_work_group_t *work_group;
+
+	int wavefront_id;
+	struct gpu_wavefront_t *wavefront;
+
+	/* Work-groups */
+	FOREACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id) {
+		work_group = ndrange->work_groups[work_group_id];
+		gpu_pipeline_debug("new item=\"wg\" "
+			"id=%d "
+			"wi_first=%d "
+			"wi_count=%d "
+			"wf_first=%d "
+			"wf_count=%d\n",
+			work_group->id,
+			work_group->work_item_id_first,
+			work_group->work_item_count,
+			work_group->wavefront_id_first,
+			work_group->wavefront_count);
+	}
+	
+	/* Wavefronts */
+	FOREACH_WAVEFRONT_IN_NDRANGE(ndrange, wavefront_id) {
+		wavefront = ndrange->wavefronts[wavefront_id];
+		gpu_pipeline_debug("new item=\"wf\" "
+			"id=%d "
+			"wg_id=%d "
+			"wi_first=%d "
+			"wi_count=%d\n",
+			wavefront->id,
+			wavefront->work_group->id,
+			wavefront->work_item_id_first,
+			wavefront->work_item_count);
+	}
+}
+
+
+void gpu_pipeline_debug_intro(struct gpu_ndrange_t *ndrange)
+{
+	struct opencl_kernel_t *kernel = ndrange->kernel;
+	//FILE *f = debug_file(gpu_pipeline_debug_category);
+
+	/* Initial */
+	gpu_pipeline_debug("init "
+		"global_size=%d "
+		"local_size=%d "
+		"group_count=%d "
+		"wavefront_size=%d "
+		"wavefronts_per_work_group=%d "
+		"compute_units=%d "
+		"\n",
+		kernel->global_size,
+		kernel->local_size,
+		kernel->group_count,
+		gpu_wavefront_size,
+		ndrange->wavefronts_per_work_group,
+		gpu_num_compute_units);
+	
+}
+
+
 void gpu_run(struct gpu_ndrange_t *ndrange)
 {
 	struct gpu_compute_unit_t *compute_unit, *compute_unit_next;
 
+	/* Debug */
+	if (debug_status(gpu_pipeline_debug_category)) {
+		gpu_pipeline_debug_intro(ndrange);
+		gpu_pipeline_debug_ndrange(ndrange);
+		gpu_pipeline_debug_disasm(ndrange);
+	}
+
 	/* Initialize */
-	gpu_pipeline_debug_intro(ndrange);
 	gpu_map_ndrange(ndrange);
 	gpu_calc_plot();
 	gk_timer_start();
