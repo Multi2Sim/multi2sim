@@ -61,3 +61,10 @@ Update Multi2Sim 10/10/11
 
 Dump input parameters in the statistics reports.
 
+
+
+********************************************************************************
+Bug 10/10/13
+********************************************************************************
+
+Current version of test-math.c hangs.

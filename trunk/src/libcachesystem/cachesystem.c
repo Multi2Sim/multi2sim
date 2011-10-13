@@ -651,6 +651,8 @@ void cache_system_init(int _cores, int _threads)
 		fatal("%s: no cache", cache_system_config_file_name);
 	if (net_count < 1)
 		fatal("%s: no network", cache_system_config_file_name);
+	if (!config_section_exists(cache_config, "MainMemory"))
+		fatal("%s: section [ MainMemory ] is missing", cache_system_config_file_name);
 	ccache_array = calloc(ccache_count, sizeof(void *));
 	net_array = calloc(net_count, sizeof(void *));
 
@@ -795,8 +797,12 @@ void cache_system_init(int _cores, int _threads)
 
 		core = config_read_int(cache_config, section, "Core", -1);
 		thread = config_read_int(cache_config, section, "Thread", -1);
-		if (core < 0 || thread < 0)
-			fatal("cache config: wrong section '%s'", section);
+		if (core < 0)
+			fatal("%s: section '[ %s ]': invalid or missing value for 'Core'",
+				cache_system_config_file_name, section);
+		if (thread < 0)
+			fatal("%s: section '[ %s ]': invalid or missing value for 'Thread'",
+				cache_system_config_file_name, section);
 		if (core >= cores) {
 			warning("%s: section '[ %s ]' ignored, since it refers to an unexisting core (core %d); "
 				"the number of cores in the current configuration is %d",
