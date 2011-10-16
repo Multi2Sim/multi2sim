@@ -91,6 +91,19 @@ char *cache_system_config_help =
 	"      '[ Cache <cache_name> ]'.\n"
 	"  ICache = <cache_name> (Required)\n"
 	"      Name of the cache accessed when the processing node fetches instructions.\n"
+	"\n"
+	"Section '[ TLB <name> ]': defines the parameters of the TLBs. There will be\n"
+	"one instruction TLB and one data TLB per hardware thread. This section is\n"
+	"optional.\n"
+	"\n"
+	"  Sets = <num_sets> (Default = 64)\n"
+	"      Number of sets of data and instruction TLBs\n"
+	"  Assoc = <num_ways> (Default = 4)\n"
+	"      Associativity of TLBs.\n"
+	"  HitLatency = <cycles> (Default = 2)\n"
+	"      Access latency upon a hit.\n"
+	"  MissLatency = <cycles> (Default = 30)\n"
+	"      TLB access latency upon a lookup miss.\n"
 	"\n";
 
 /* Cache system variables */
@@ -1003,6 +1016,7 @@ void cache_system_print_stats(FILE *f)
 void cache_system_dump_report()
 {
 	struct ccache_t *ccache;
+	struct cache_t *cache;
 	struct tlb_t *tlb;
 	FILE *f;
 	int curr;
@@ -1030,9 +1044,26 @@ void cache_system_dump_report()
 	fprintf(f, "\n\n");
 	
 	/* Report for each cache */
-	for (curr = 0; curr < ccache_count; curr++) {
+	for (curr = 0; curr < ccache_count; curr++)
+	{
 		ccache = ccache_array[curr];
-		fprintf(f, "[ %s ]\n\n", ccache->name);
+		cache = ccache->cache;
+		fprintf(f, "[ %s ]\n", ccache->name);
+		fprintf(f, "\n");
+
+		/* Configuration */
+		if (cache) {
+			fprintf(f, "Sets = %d\n", cache->nsets);
+			fprintf(f, "Assoc = %d\n", cache->assoc);
+			fprintf(f, "Policy = %s\n", map_value(&cache_policy_map, cache->policy));
+		}
+		fprintf(f, "BlockSize = %d\n", ccache->bsize);
+		fprintf(f, "Latency = %d\n", ccache->lat);
+		fprintf(f, "ReadPorts = %d\n", ccache->read_ports);
+		fprintf(f, "WritePorts = %d\n", ccache->write_ports);
+		fprintf(f, "\n");
+
+		/* Statistics */
 		fprintf(f, "Accesses = %lld\n", (long long) ccache->accesses);
 		fprintf(f, "Hits = %lld\n", (long long) ccache->hits);
 		fprintf(f, "Misses = %lld\n", (long long) (ccache->accesses - ccache->hits));
@@ -1073,9 +1104,21 @@ void cache_system_dump_report()
 	}
 
 	/* Report for each TLB */
-	for (curr = 0; curr < tlb_count; curr++) {
+	for (curr = 0; curr < tlb_count; curr++)
+	{
 		tlb = tlb_array[curr];
-		fprintf(f, "[ %s ]\n\n", tlb->name);
+		cache = tlb->cache;
+		fprintf(f, "[ %s ]\n", tlb->name);
+		fprintf(f, "\n");
+
+		/* Configuration */
+		fprintf(f, "HitLatency = %d\n", tlb->hitlat);
+		fprintf(f, "MissLatency = %d\n", tlb->misslat);
+		fprintf(f, "Sets = %d\n", cache->nsets);
+		fprintf(f, "Assoc = %d\n", cache->assoc);
+		fprintf(f, "\n");
+
+		/* Statistics */
 		fprintf(f, "Accesses = %lld\n", (long long) tlb->accesses);
 		fprintf(f, "Hits = %lld\n", (long long) tlb->hits);
 		fprintf(f, "Misses = %lld\n", (long long) (tlb->accesses - tlb->hits));

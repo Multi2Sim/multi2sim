@@ -664,6 +664,7 @@ void gpu_cache_dump_report(void)
 	int i;
 
 	struct gpu_cache_t *gpu_cache;
+	struct cache_t *cache;
 
 	/* Open file */
 	f = open_write(gpu_cache_report_file_name);
@@ -687,9 +688,27 @@ void gpu_cache_dump_report(void)
 	fprintf(f, "\n\n");
 
 	/* Print cache statistics */
-	for (i = 0; i < gpu->gpu_cache_count; i++) {
+	for (i = 0; i < gpu->gpu_cache_count; i++)
+	{
+		/* Get cache */
 		gpu_cache = gpu->gpu_caches[i];
+		cache = gpu_cache->cache;
 		fprintf(f, "[ %s ]\n\n", gpu_cache->name);
+
+		/* Configuration */
+		if (cache) {
+			fprintf(f, "Sets = %d\n", cache->nsets);
+			fprintf(f, "Assoc = %d\n", cache->assoc);
+			fprintf(f, "Policy = %s\n", map_value(&cache_policy_map, cache->policy));
+		}
+		fprintf(f, "BlockSize = %d\n", gpu_cache->block_size);
+		fprintf(f, "Latency = %d\n", gpu_cache->latency);
+		fprintf(f, "Banks = %d\n", gpu_cache->bank_count);
+		fprintf(f, "ReadPorts = %d\n", gpu_cache->read_port_count);
+		fprintf(f, "WritePorts = %d\n", gpu_cache->write_port_count);
+		fprintf(f, "\n");
+
+		/* Statistics */
 		fprintf(f, "Accesses = %lld\n", (long long) (gpu_cache->reads + gpu_cache->writes));
 		fprintf(f, "Reads = %lld\n", (long long) gpu_cache->reads);
 		fprintf(f, "Writes = %lld\n", (long long) gpu_cache->writes);
