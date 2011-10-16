@@ -162,7 +162,7 @@ char *cpu_config_help =
 	"      IntMult     Integer multiplier\n"
 	"      IntDiv      Integer divider\n"
 	"      EffAddr     Operator for effective address computations\n"
-	"      Logical     Operator for logical operations\n"
+	"      Logic       Operator for logic operations\n"
 	"      FpSimple    Simple floating-point operations\n"
 	"      FpAdd       Floating-point adder\n"
 	"      FpComp      Comparator of floating-point numbers\n"
@@ -363,9 +363,9 @@ void cpu_config_check(void)
 	fu_res_pool[fu_effaddr].oplat = config_read_int(cfg, section, "EffAddr.OpLat", 2);
 	fu_res_pool[fu_effaddr].issuelat = config_read_int(cfg, section, "EffAddr.IssueLat", 1);
 
-	fu_res_pool[fu_logical].count = config_read_int(cfg, section, "Logical.Count", 4);
-	fu_res_pool[fu_logical].oplat = config_read_int(cfg, section, "Logical.OpLat", 1);
-	fu_res_pool[fu_logical].issuelat = config_read_int(cfg, section, "Logical.IssueLat", 1);
+	fu_res_pool[fu_logic].count = config_read_int(cfg, section, "Logic.Count", 4);
+	fu_res_pool[fu_logic].oplat = config_read_int(cfg, section, "Logic.OpLat", 1);
+	fu_res_pool[fu_logic].issuelat = config_read_int(cfg, section, "Logic.IssueLat", 1);
 
 	fu_res_pool[fu_fpsimple].count = config_read_int(cfg, section, "FpSimple.Count", 2);
 	fu_res_pool[fu_fpsimple].oplat = config_read_int(cfg, section, "FpSimple.OpLat", 2);
@@ -409,6 +409,135 @@ void cpu_config_check(void)
 }
 
 
+/* Dump the CPU configuration */
+void cpu_config_dump(FILE *f)
+{
+	/* General configuration */
+	fprintf(f, "[ Config.General ]\n");
+	fprintf(f, "Cores = %d\n", cpu_cores);
+	fprintf(f, "Threads = %d\n", cpu_threads);
+	fprintf(f, "FastForward = %lld\n", (long long) cpu_fast_forward_count);
+	fprintf(f, "ContextSwitch = %s\n", cpu_context_switch ? "True" : "False");
+	fprintf(f, "ContextQuantum = %d\n", cpu_context_quantum);
+	fprintf(f, "ThreadQuantum = %d\n", cpu_thread_quantum);
+	fprintf(f, "ThreadSwitchPenalty = %d\n", cpu_thread_switch_penalty);
+	fprintf(f, "RecoverKind = %s\n", cpu_recover_kind_map[cpu_recover_kind]);
+	fprintf(f, "RecoverPenalty = %d\n", cpu_recover_penalty);
+	fprintf(f, "PageSize = %d\n", mmu_page_size);
+	fprintf(f, "InstructionCachePerfect = %s\n", cache_system_iperfect ? "True" : "False");
+	fprintf(f, "DataCachePerfect = %s\n", cache_system_dperfect ? "True" : "False");
+	fprintf(f, "\n");
+
+	/* Pipeline */
+	fprintf(f, "[ Config.Pipeline ]\n");
+	fprintf(f, "FetchKind = %s\n", cpu_fetch_kind_map[cpu_fetch_kind]);
+	fprintf(f, "DecodeWidth = %d\n", cpu_decode_width);
+	fprintf(f, "DispatchKind = %s\n", cpu_dispatch_kind_map[cpu_dispatch_kind]);
+	fprintf(f, "DispatchWidth = %d\n", cpu_dispatch_width);
+	fprintf(f, "IssueKind = %s\n", cpu_issue_kind_map[cpu_issue_kind]);
+	fprintf(f, "IssueWidth = %d\n", cpu_issue_width);
+	fprintf(f, "CommitKind = %s\n", cpu_commit_kind_map[cpu_commit_kind]);
+	fprintf(f, "CommitWidth = %d\n", cpu_commit_width);
+	fprintf(f, "OccupancyStats = %s\n", cpu_occupancy_stats ? "True" : "False");
+	fprintf(f, "\n");
+
+	/* Queues */
+	fprintf(f, "[ Config.Queues ]\n");
+	fprintf(f, "FetchQueueSize = %d\n", fetchq_size);
+	fprintf(f, "UopQueueSize = %d\n", uopq_size);
+	fprintf(f, "RobKind = %s\n", rob_kind_map[rob_kind]);
+	fprintf(f, "RobSize = %d\n", rob_size);
+	fprintf(f, "IqKind = %s\n", iq_kind_map[iq_kind]);
+	fprintf(f, "IqSize = %d\n", iq_size);
+	fprintf(f, "LsqKind = %s\n", lsq_kind_map[lsq_kind]);
+	fprintf(f, "LsqSize = %d\n", lsq_size);
+	fprintf(f, "RfKind = %s\n", rf_kind_map[rf_kind]);
+	fprintf(f, "RfIntSize = %d\n", rf_int_size);
+	fprintf(f, "RfFpSize = %d\n", rf_fp_size);
+	fprintf(f, "\n");
+
+	/* Trace Cache */
+	fprintf(f, "[ Config.TraceCache ]\n");
+	fprintf(f, "Present = %s\n", tcache_present ? "True" : "False");
+	fprintf(f, "Sets = %d\n", tcache_sets);
+	fprintf(f, "Assoc = %d\n", tcache_assoc);
+	fprintf(f, "TraceSize = %d\n", tcache_trace_size);
+	fprintf(f, "BranchMax = %d\n", tcache_branch_max);
+	fprintf(f, "QueueSize = %d\n", tcache_queue_size);
+	fprintf(f, "\n");
+
+	/* Functional units */
+	fprintf(f, "[ Config.FunctionalUnits ]\n");
+
+	fprintf(f, "IntAdd.Count = %d\n", fu_res_pool[fu_intadd].count);
+	fprintf(f, "IntAdd.OpLat = %d\n", fu_res_pool[fu_intadd].oplat);
+	fprintf(f, "IntAdd.IssueLat = %d\n", fu_res_pool[fu_intadd].issuelat);
+
+	fprintf(f, "IntSub.Count = %d\n", fu_res_pool[fu_intsub].count);
+	fprintf(f, "IntSub.OpLat = %d\n", fu_res_pool[fu_intsub].oplat);
+	fprintf(f, "IntSub.IssueLat = %d\n", fu_res_pool[fu_intsub].issuelat);
+
+	fprintf(f, "IntMult.Count = %d\n", fu_res_pool[fu_intmult].count);
+	fprintf(f, "IntMult.OpLat = %d\n", fu_res_pool[fu_intmult].oplat);
+	fprintf(f, "IntMult.IssueLat = %d\n", fu_res_pool[fu_intmult].issuelat);
+
+	fprintf(f, "IntDiv.Count = %d\n", fu_res_pool[fu_intdiv].count);
+	fprintf(f, "IntDiv.OpLat = %d\n", fu_res_pool[fu_intdiv].oplat);
+	fprintf(f, "IntDiv.IssueLat = %d\n", fu_res_pool[fu_intdiv].issuelat);
+
+	fprintf(f, "EffAddr.Count = %d\n", fu_res_pool[fu_effaddr].count);
+	fprintf(f, "EffAddr.OpLat = %d\n", fu_res_pool[fu_effaddr].oplat);
+	fprintf(f, "EffAddr.IssueLat = %d\n", fu_res_pool[fu_effaddr].issuelat);
+
+	fprintf(f, "Logic.Count = %d\n", fu_res_pool[fu_logic].count);
+	fprintf(f, "Logic.OpLat = %d\n", fu_res_pool[fu_logic].oplat);
+	fprintf(f, "Logic.IssueLat = %d\n", fu_res_pool[fu_logic].issuelat);
+
+	fprintf(f, "FpSimple.Count = %d\n", fu_res_pool[fu_fpsimple].count);
+	fprintf(f, "FpSimple.OpLat = %d\n", fu_res_pool[fu_fpsimple].oplat);
+	fprintf(f, "FpSimple.IssueLat = %d\n", fu_res_pool[fu_fpsimple].issuelat);
+
+	fprintf(f, "FpAdd.Count = %d\n", fu_res_pool[fu_fpadd].count);
+	fprintf(f, "FpAdd.OpLat = %d\n", fu_res_pool[fu_fpadd].oplat);
+	fprintf(f, "FpAdd.IssueLat = %d\n", fu_res_pool[fu_fpadd].issuelat);
+
+	fprintf(f, "FpComp.Count = %d\n", fu_res_pool[fu_fpcomp].count);
+	fprintf(f, "FpComp.OpLat = %d\n", fu_res_pool[fu_fpcomp].oplat);
+	fprintf(f, "FpComp.IssueLat = %d\n", fu_res_pool[fu_fpcomp].issuelat);
+
+	fprintf(f, "FpMult.Count = %d\n", fu_res_pool[fu_fpmult].count);
+	fprintf(f, "FpMult.OpLat = %d\n", fu_res_pool[fu_fpmult].oplat);
+	fprintf(f, "FpMult.IssueLat = %d\n", fu_res_pool[fu_fpmult].issuelat);
+
+	fprintf(f, "FpDiv.Count = %d\n", fu_res_pool[fu_fpdiv].count);
+	fprintf(f, "FpDiv.OpLat = %d\n", fu_res_pool[fu_fpdiv].oplat);
+	fprintf(f, "FpDiv.IssueLat = %d\n", fu_res_pool[fu_fpdiv].issuelat);
+
+	fprintf(f, "FpComplex.Count = %d\n", fu_res_pool[fu_fpcomplex].count);
+	fprintf(f, "FpComplex.OpLat = %d\n", fu_res_pool[fu_fpcomplex].oplat);
+	fprintf(f, "FpComplex.IssueLat = %d\n", fu_res_pool[fu_fpcomplex].issuelat);
+
+	fprintf(f, "\n");
+
+	/* Branch Predictor */
+	fprintf(f, "[ Config.BranchPredictor ]\n");
+	fprintf(f, "Kind = %s\n", bpred_kind_map[bpred_kind]);
+	fprintf(f, "BTB.Sets = %d\n", bpred_btb_sets);
+	fprintf(f, "BTB.Assoc = %d\n", bpred_btb_assoc);
+	fprintf(f, "Bimod.Size = %d\n", bpred_bimod_size);
+	fprintf(f, "Choice.Size = %d\n", bpred_choice_size);
+	fprintf(f, "RAS.Size = %d\n", bpred_ras_size);
+	fprintf(f, "TwoLevel.L1Size = %d\n", bpred_twolevel_l1size);
+	fprintf(f, "TwoLevel.L2Size = %d\n", bpred_twolevel_l2size);
+	fprintf(f, "TwoLevel.HistorySize = %d\n", bpred_twolevel_hist_size);
+	fprintf(f, "\n");
+
+	/* End of configuration */
+	fprintf(f, "\n");
+
+}
+
+
 void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 {
 	uint64_t icomp = 0;
@@ -434,7 +563,7 @@ void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ip
 	fprintf(f, "%s.ComplexInteger = %lld\n", prefix,
 		(long long) (uop_stats[uop_mult] + uop_stats[uop_div]));
 	fprintf(f, "%s.Integer = %lld\n", prefix, (long long) icomp);
-	fprintf(f, "%s.Logical = %lld\n", prefix, (long long) lcomp);
+	fprintf(f, "%s.Logic = %lld\n", prefix, (long long) lcomp);
 	fprintf(f, "%s.FloatingPoint = %lld\n", prefix, (long long) fcomp);
 	fprintf(f, "%s.Memory = %lld\n", prefix, (long long) mem);
 	fprintf(f, "%s.Ctrl = %lld\n", prefix, (long long) ctrl);
@@ -488,7 +617,12 @@ void cpu_dump_report()
 	if (!f)
 		return;
 	
+	/* Dump CPU configuration */
+	fprintf(f, ";\n; CPU Configuration\n;\n\n");
+	cpu_config_dump(f);
+	
 	/* Report for the complete processor */
+	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
 	fprintf(f, "; Global statistics\n");
 	fprintf(f, "[ Global ]\n\n");
 	fprintf(f, "Cycles = %lld\n", (long long) cpu->cycle);
@@ -540,7 +674,7 @@ void cpu_dump_report()
 		DUMP_FU_STAT(IntMult, fu_intmult);
 		DUMP_FU_STAT(IntDiv, fu_intdiv);
 		DUMP_FU_STAT(Effaddr, fu_effaddr);
-		DUMP_FU_STAT(Logical, fu_logical);
+		DUMP_FU_STAT(Logic, fu_logic);
 		DUMP_FU_STAT(FPSimple, fu_fpsimple);
 		DUMP_FU_STAT(FPAdd, fu_fpadd);
 		DUMP_FU_STAT(FPComp, fu_fpcomp);
