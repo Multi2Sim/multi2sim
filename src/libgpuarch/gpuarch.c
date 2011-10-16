@@ -467,6 +467,54 @@ void gpu_config_read(void)
 }
 
 
+void gpu_config_dump(FILE *f)
+{
+	/* Device configuration */
+	fprintf(f, "[ Config.Device ]\n");
+	fprintf(f, "NumComputeUnits = %d\n", gpu_num_compute_units);
+	fprintf(f, "NumStreamCores = %d\n", gpu_num_stream_cores);
+	fprintf(f, "NumRegisters = %d\n", gpu_num_registers);
+	fprintf(f, "RegisterAllocSize = %d\n", gpu_register_alloc_size);
+	fprintf(f, "RegisterAllocGranularity = %s\n", gpu_register_alloc_granularity_str);
+	fprintf(f, "WavefrontSize = %d\n", gpu_wavefront_size);
+	fprintf(f, "MaxWorkGroupsPerComputeUnit = %d\n", gpu_max_work_groups_per_compute_unit);
+	fprintf(f, "MaxWavefrontsPerComputeUnit = %d\n", gpu_max_wavefronts_per_compute_unit);
+	fprintf(f, "\n");
+
+	/* Local Memory */
+	fprintf(f, "[ Config.LocalMemory ]\n");
+	fprintf(f, "Size = %d\n", gpu_local_mem_size);
+	fprintf(f, "AllocSize = %d\n", gpu_local_mem_alloc_size);
+	fprintf(f, "BlockSize = %d\n", gpu_local_mem_block_size);
+	fprintf(f, "Latency = %d\n", gpu_local_mem_latency);
+	fprintf(f, "Banks = %d\n", gpu_local_mem_banks);
+	fprintf(f, "ReadPorts = %d\n", gpu_local_mem_read_ports);
+	fprintf(f, "WritePorts = %d\n", gpu_local_mem_write_ports);
+	fprintf(f, "\n");
+
+	/* CF Engine */
+	fprintf(f, "[ Config.CFEngine ]\n");
+	fprintf(f, "InstructionMemoryLatency = %d\n", gpu_cf_engine_inst_mem_latency);
+	fprintf(f, "\n");
+
+	/* ALU Engine */
+	fprintf(f, "[ Config.ALUEngine ]\n");
+	fprintf(f, "InstructionMemoryLatency = %d\n", gpu_alu_engine_inst_mem_latency);
+	fprintf(f, "FetchQueueSize = %d\n", gpu_alu_engine_fetch_queue_size);
+	fprintf(f, "ProcessingElementLatency = %d\n", gpu_alu_engine_pe_latency);
+	fprintf(f, "\n");
+
+	/* TEX Engine */
+	fprintf(f, "[ Config.TEXEngine ]\n");
+	fprintf(f, "InstructionMemoryLatency = %d\n", gpu_tex_engine_inst_mem_latency);
+	fprintf(f, "FetchQueueSize = %d\n", gpu_tex_engine_fetch_queue_size);
+	fprintf(f, "\n");
+	
+	/* End of configuration */
+	fprintf(f, "\n");
+}
+
+
 void gpu_init(void)
 {
 	/* Try to open report file */
@@ -539,7 +587,12 @@ void gpu_dump_report(void)
 	if (!f)
 		return;
 	
+	/* Dump GPU configuration */
+	fprintf(f, ";\n; GPU Configuration\n;\n\n");
+	gpu_config_dump(f);
+	
 	/* Report for device */
+	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
 	inst_per_cycle = gpu->cycle ? (double) gk->inst_count / gpu->cycle : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", gk->ndrange_count);

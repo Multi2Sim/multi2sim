@@ -231,7 +231,7 @@ enum fu_class_enum {
 	fu_intmult,
 	fu_intdiv,
 	fu_effaddr,
-	fu_logical,
+	fu_logic,
 
 	fu_fpsimple,
 	fu_fpadd,
@@ -245,7 +245,7 @@ enum fu_class_enum {
 
 enum uop_flags_enum {
 	FICOMP        = 0x001,  /* Integer computation */
-	FLCOMP        = 0x002,  /* Logical computation */
+	FLCOMP        = 0x002,  /* Logic computation */
 	FFCOMP        = 0x004,  /* Floating-point computation */
 	FMEM          = 0x008,  /* Memory access */
 	FLOAD         = 0x010,  /* Load */
