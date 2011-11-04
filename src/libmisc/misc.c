@@ -400,8 +400,8 @@ void bit_map_free(struct bit_map_t *bit_map)
 void bit_map_set(struct bit_map_t *bit_map, unsigned int where, unsigned int size,
 	unsigned int value)
 {
-	unsigned int where_align1, where_word1, where_offset1, size_align1;
-	unsigned int where_align2, where_word2, where_offset2, size_align2;
+	unsigned int where_word1, where_offset1, size_align1;
+	unsigned int where_word2, size_align2;
 	unsigned int *pword1, word1_mask, word1_value;
 	unsigned int *pword2, word2_mask, word2_value;
 
@@ -409,7 +409,6 @@ void bit_map_set(struct bit_map_t *bit_map, unsigned int where, unsigned int siz
 		abort();
 	
 	/* Bits to get from first word */
-	where_align1 = where;
 	where_word1 = where / 32;
 	where_offset1 = where % 32;
 	size_align1 = MIN(size, 32 - where_offset1);
@@ -435,8 +434,6 @@ void bit_map_set(struct bit_map_t *bit_map, unsigned int where, unsigned int siz
 
 	/* Bits to get from second word */
 	where_word2 = where_word1 + 1;
-	where_align2 = where_word2 * 32;
-	where_offset2 = 0;
 	size_align2 = size - size_align1;
 	if (where_word2 >= bit_map->word_count)
 		return;
@@ -452,17 +449,16 @@ void bit_map_set(struct bit_map_t *bit_map, unsigned int where, unsigned int siz
 
 unsigned int bit_map_get(struct bit_map_t *bit_map, unsigned int where, unsigned int size)
 {
-	unsigned int where_align1, where_word1, where_offset1, size_align1;
-	unsigned int where_align2, where_word2, where_offset2, size_align2;
+	unsigned int where_word1, where_offset1, size_align1;
+	unsigned int size_align2;
 	unsigned int word1, word1_mask;
-	unsigned int word2, word2_mask;
+	unsigned int word2_mask;
 	unsigned int result;
 
 	if (size > 32)
 		abort();
 	
 	/* Bits to get from first word */
-	where_align1 = where;
 	where_word1 = where / 32;
 	where_offset1 = where % 32;
 	size_align1 = MIN(size, 32 - where_offset1);
@@ -481,11 +477,7 @@ unsigned int bit_map_get(struct bit_map_t *bit_map, unsigned int where, unsigned
 		return result;
 
 	/* Bits to get from second word */
-	where_word2 = where_word1 + 1;
-	where_align2 = where_word2 * 32;
-	where_offset2 = 0;
 	size_align2 = size - size_align1;
-	word2 = where_word2 < bit_map->word_count ? bit_map->data[where_word1] : 0;
 
 	/* Add to result */
 	word2_mask = (1 << size_align2) - 1;

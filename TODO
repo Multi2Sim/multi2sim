@@ -68,3 +68,27 @@ Bug 10/10/13
 ********************************************************************************
 
 Current version of test-math.c hangs.
+
+--> Found reason for this. Fixed for this particular example, but all FP instructions need to be checked. No regular floating-point operation is currently updating the FPU status register (isa_store_fpu_code).
+
+
+
+********************************************************************************
+Bug 10/27/11 - Comments from M2S User
+********************************************************************************
+I was looking through the code and it seems like multi2sim frontend (cpukernel) does not go down the wrong path:
+
+Code: [Select]
+
+    /* Call the isa module to execute one machine instruction,
+     * only if we are not in speculative mode. */
+    if (!ctx_get_status(ctx, ctx_specmode))
+        isa_execute_inst(buf);
+ 
+
+
+Is my understanding correct?
+
+I would like to model the wrong path (the actual effects of the wrong path memory instructions, for example). I am thinking it could be done by allowing the frontend to go down the wrong path until a) timing model tells the frontend to recover or b) the frontend encounters a syscall or an exception-generating instruction (non-implemented opcode or page fault, for example). The values overwritten by the stores would have to be buffered to enable recovery.
+
+Does this look feasible, or am I missing something that makes this approach particularly hard?

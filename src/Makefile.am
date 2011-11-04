@@ -1,5 +1,4 @@
 SUBDIRS = \
-	libmhandle \
 	libstruct \
 	libmisc \
 	libcpukernel \
@@ -10,6 +9,7 @@ SUBDIRS = \
 	libnetwork \
 	libcachesystem \
 	libgpukernel \
+	libmhandle \
 	libgpudisasm
 
 bin_PROGRAMS = m2s
