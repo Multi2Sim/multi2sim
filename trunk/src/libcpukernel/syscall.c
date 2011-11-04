@@ -1008,7 +1008,7 @@ void syscall_do()
 		uint32_t pfilename;
 		int flags, mode;
 		char sflags[MAX_STRING_SIZE];
-		int length, fullpath_length;
+		int length;
 		int host_fd;
 		struct fd_t *fd;
 
@@ -1020,7 +1020,6 @@ void syscall_do()
 		if (length >= MAX_PATH_SIZE)
 			fatal("syscall open: maximum path length exceeded");
 		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		fullpath_length = strlen(fullpath);
 		syscall_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
 			filename, flags, mode);
 		syscall_debug("  fullpath='%s'\n", fullpath);

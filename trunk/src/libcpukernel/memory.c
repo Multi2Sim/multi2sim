@@ -62,7 +62,7 @@ struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr)
 struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr)
 {
 	uint32_t tag, index, mintag;
-	struct mem_page_t *prev, *page, *minpage;
+	struct mem_page_t *page, *minpage;
 
 	/* Get tag of the page just following addr */
 	tag = (addr + MEM_PAGESIZE) & ~(MEM_PAGESIZE - 1);
@@ -70,13 +70,10 @@ struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr)
 		return NULL;
 	index = (tag >> MEM_LOGPAGESIZE) % MEM_PAGE_COUNT;
 	page = mem->pages[index];
-	prev = NULL;
 
 	/* Look for a page exactly following addr. If it is found, return it. */
-	while (page && page->tag != tag) {
-		prev = page;
+	while (page && page->tag != tag)
 		page = page->next;
-	}
 	if (page)
 		return page;
 	

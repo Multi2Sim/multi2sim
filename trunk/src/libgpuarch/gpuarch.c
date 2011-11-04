@@ -617,9 +617,12 @@ void gpu_dump_report(void)
 			/ compute_unit->tex_engine.cycle : 0.0;
 		coalesced_reads = local_memory->reads - local_memory->effective_reads;
 		coalesced_writes = local_memory->writes - local_memory->effective_writes;
-		snprintf(vliw_occupancy, MAX_STRING_SIZE, "%lld %lld %lld %lld %lld", compute_unit->alu_engine.vliw_slots[0],
-			compute_unit->alu_engine.vliw_slots[1], compute_unit->alu_engine.vliw_slots[2],
-			compute_unit->alu_engine.vliw_slots[3], compute_unit->alu_engine.vliw_slots[4]);
+		snprintf(vliw_occupancy, MAX_STRING_SIZE, "%lld %lld %lld %lld %lld",
+			(long long) compute_unit->alu_engine.vliw_slots[0],
+			(long long) compute_unit->alu_engine.vliw_slots[1],
+			(long long) compute_unit->alu_engine.vliw_slots[2],
+			(long long) compute_unit->alu_engine.vliw_slots[3],
+			(long long) compute_unit->alu_engine.vliw_slots[4]);
 
 		fprintf(f, "[ ComputeUnit %d ]\n\n", compute_unit_id);
 

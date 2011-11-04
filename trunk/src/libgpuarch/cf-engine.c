@@ -216,7 +216,6 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 
 	char str1[MAX_STRING_SIZE], str2[MAX_STRING_SIZE];
 	struct amd_inst_t *inst;
-	int inst_num;
 
 	struct gpu_uop_t *uop;
 	struct gpu_work_item_uop_t *work_item_uop;
@@ -257,7 +256,6 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	lnlist_remove(wavefront_pool);
 
 	/* Emulate CF instruction */
-	inst_num = (wavefront->cf_buf - ndrange->kernel->cal_abi->text_buffer) / 8;
 	gpu_wavefront_execute(wavefront);
 	inst = &wavefront->cf_inst;
 

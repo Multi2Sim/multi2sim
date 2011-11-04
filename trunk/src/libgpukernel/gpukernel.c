@@ -42,8 +42,6 @@ int gpu_wavefront_size = 64;
 /* Initialize GPU kernel */
 void gk_init()
 {
-	struct opencl_device_t *device;
-
 	/* Open report file */
 	if (gpu_kernel_report_file_name[0]) {
 		gpu_kernel_report_file = open_write(gpu_kernel_report_file_name);
@@ -67,7 +65,7 @@ void gk_init()
 	/* Create platform and device */
 	opencl_object_list = lnlist_create();
 	opencl_platform = opencl_platform_create();
-	device = opencl_device_create();
+	opencl_device_create();
 }
 
 
