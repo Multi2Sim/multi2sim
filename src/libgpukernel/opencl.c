@@ -391,16 +391,14 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t properties = args[2];  /* cl_command_queue_properties properties */
 		uint32_t errcode_ret = args[3];  /* cl_int *errcode_ret */
 
-		struct opencl_context_t *context;
-		struct opencl_device_t *device;
 		struct opencl_command_queue_t *command_queue;
 
 		opencl_debug("  context=0x%x, device=0x%x, properties=0x%x, errcode_ret=0x%x\n",
 			context_id, device_id, properties, errcode_ret);
 
 		/* Check that context and device are valid */
-		context = opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
-		device = opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
+		opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
+		opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
 
 		/* Create command queue and return id */
 		command_queue = opencl_command_queue_create();
@@ -522,7 +520,6 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t lengths = args[3];  /* const size_t *lengths */
 		uint32_t errcode_ret = args[4];  /* cl_int *errcode_ret */
 
-		struct opencl_context_t *context;
 		struct opencl_program_t *program;
 		void *buf;
 		int buf_size;
@@ -536,7 +533,7 @@ int opencl_func_run(int code, unsigned int *args)
 				err_prefix, err_opencl_compiler);
 
 		/* Create program */
-		context = opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
+		opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
 		program = opencl_program_create();
 		retval = program->id;
 		warning("%s: binary '%s' used as pre-compiled kernel.\n%s",
@@ -566,8 +563,6 @@ int opencl_func_run(int code, unsigned int *args)
 
 		uint32_t length, binary;
 		uint32_t device_id;
-		struct opencl_context_t *context;
-		struct opencl_device_t *device;
 		struct opencl_program_t *program;
 		void *buf;
 
@@ -579,8 +574,8 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Get device and context */
 		mem_read(isa_mem, device_list, 4, &device_id);
-		device = opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
-		context = opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
+		opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
+		opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
 
 		/* Create program */
 		program = opencl_program_create();
@@ -772,7 +767,6 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t param_value_size_ret = args[5];  /* size_t *param_value_size_ret */
 		
 		struct opencl_kernel_t *kernel;
-		struct opencl_device_t *device;
 		uint32_t size_ret;
 
 		opencl_debug("  kernel=0x%x, device=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
@@ -781,7 +775,7 @@ int opencl_func_run(int code, unsigned int *args)
 			param_value_size_ret);
 
 		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
-		device = opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
+		opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
 		size_ret = opencl_kernel_get_work_group_info(kernel, param_name, isa_mem,
 			param_value, param_value_size);
 		if (param_value_size_ret)
@@ -991,7 +985,6 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t event_ptr = args[8];  /* cl_event *event */
 		uint32_t errcode_ret = args[9];  /* cl_int *errcode_ret */
 
-		struct opencl_mem_t *mem;
 		struct opencl_event_t *event;
 
 		opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_map=0x%x, map_flags=0x%x,\n"
@@ -1004,7 +997,7 @@ int opencl_func_run(int code, unsigned int *args)
 		OPENCL_PARAM_NOT_SUPPORTED_EQ(blocking_map, 0);
 
 		/* Get memory object */
-		mem = opencl_object_get(OPENCL_OBJ_MEM, buffer);
+		opencl_object_get(OPENCL_OBJ_MEM, buffer);
 
 		/* Event */
 		if (event_ptr) {

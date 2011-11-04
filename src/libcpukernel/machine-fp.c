@@ -358,15 +358,20 @@ void op_fucomip_st0_sti_impl() {
 
 void op_fcos_impl() {
 	uint8_t st0[10];
+	uint16_t status;
 	isa_load_fpu(0, st0);
 	asm volatile (
-		"fldt %1\n\t"
+		"fldt %2\n\t"
 		"fcos\n\t"
+		"fnstsw %%ax\n\t"
 		"fstpt %0\n\t"
-		: "=m" (*st0)
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
 		: "m" (*st0)
+		: "ax"
 	);
 	isa_store_fpu(0, st0);
+	isa_store_fpu_code(status);
 }
 
 
@@ -794,35 +799,45 @@ void op_fnstsw_ax_impl() {
 
 void op_fprem_impl() {
 	uint8_t st0[10], st1[10];
+	uint16_t status;
 	isa_load_fpu(0, st0);
 	isa_load_fpu(1, st1);
 	asm volatile (
+		"fldt %3\n\t"
 		"fldt %2\n\t"
-		"fldt %1\n\t"
 		"fprem\n\t"
+		"fnstsw %%ax\n\t"
 		"fstpt %0\n\t"
 		"fstp %%st(0)\n\t"
-		: "=m" (*st0)
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
 		: "m" (*st0), "m" (*st1)
+		: "ax"
 	);
 	isa_store_fpu(0, st0);
+	isa_store_fpu_code(status);
 }
 
 
 void op_fprem1_impl() {
 	uint8_t st0[10], st1[10];
+	uint16_t status;
 	isa_load_fpu(0, st0);
 	isa_load_fpu(1, st1);
 	asm volatile (
+		"fldt %3\n\t"
 		"fldt %2\n\t"
-		"fldt %1\n\t"
 		"fprem1\n\t"
+		"fnstsw %%ax\n\t"
 		"fstpt %0\n\t"
 		"fstp %%st(0)\n\t"
-		: "=m" (*st0)
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
 		: "m" (*st0), "m" (*st1)
+		: "ax"
 	);
 	isa_store_fpu(0, st0);
+	isa_store_fpu_code(status);
 }
 
 
@@ -892,15 +907,20 @@ void op_fscale_impl() {
 
 void op_fsin_impl() {
 	uint8_t st0[10];
+	int16_t status;
 	isa_load_fpu(0, st0);
 	asm volatile (
-		"fldt %1\n\t"
+		"fldt %2\n\t"
 		"fsin\n\t"
+		"fnstsw %%ax\n\t"
 		"fstpt %0\n\t"
-		: "=m" (*st0)
+		"mov %%ax, %1\n\t"
+		: "=m" (*st0), "=g" (status)
 		: "m" (*st0)
+		: "ax"
 	);
 	isa_store_fpu(0, st0);
+	isa_store_fpu_code(status);
 }
 
 

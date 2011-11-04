@@ -554,11 +554,10 @@ void ctx_exit_robust_list(struct ctx_t *ctx)
 /* Generate virtual file '/proc/self/maps' and return it in 'path'. */
 void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path)
 {
-	uint32_t start, end, stack_start, stack_end;
+	uint32_t start, end;
 	enum mem_access_enum perm, page_perm;
 	struct mem_page_t *page;
 	struct mem_t *mem = ctx->mem;
-	struct loader_t *ld = ctx->loader;
 	int fd;
 	FILE *f = NULL;
 
@@ -566,10 +565,6 @@ void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path)
 	strcpy(path, "/tmp/m2s.XXXXXX");
 	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
 		fatal("ctx_gen_proc_self_maps: cannot create temporary file");
-
-	/* Get stack start/end page tags */
-	stack_start = ld->stack_top & ~(MEM_PAGESIZE - 1);
-	stack_end = ld->stack_base & ~(MEM_PAGESIZE - 1);
 
 	/* Get the first page */
 	end = 0;
