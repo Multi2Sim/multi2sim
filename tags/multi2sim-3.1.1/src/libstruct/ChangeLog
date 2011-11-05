@@ -1,0 +1,27 @@
+2005-03-29  Rafael Ubal Tena <ubal@gap.upv.es>
+
+	* arraylist.h: Function arraylist_clear added.
+
+2005-03-30  Rafael Ubal Tena <ubal@gap.upv.es>
+
+	* arraylist.c: Fixed buf in arraylist_push; 'return 1' was missing.
+
+2005-03-30  Rafael Ubal Tena <ubal@gap.upv.es>
+
+	* arraylist.c: methods 'arraylist_delete' and 'arraylist_insert' more efficient.
+		Worst cases are removals and insertions in the center of the list.
+	* arraylist.h: new method 'arraylist_set'.
+
+2005-06-02  Rafael Ubal Tena <ubal@gap.upv.es>
+
+	* heap.c: new files; structure 'bintree' substituted by 'heap'.
+		In the heap, elements with the same value can be inserted, which are
+		then extracted in insertion order.
+
+2006-12-23  Rafael Ubal Tena <ubal@gap.upv.es>
+
+	* repos.c: removed function 'get_repos_id' and added integrity check when repos object is freed.
+		Also added function 'repos_allocated_object'.
+
+2008-10-24
+	* lnlist.h: function 'lnlist_add' added.

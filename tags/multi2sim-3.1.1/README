@@ -1,0 +1,153 @@
+===============================================================================
+Directions for new version release:
+
+	* svn commit all previous changes
+
+	* Run 'svn update' + 'svn2cl.sh'
+
+	* Update AM_INIT_AUTOMAKE in 'configure.in'
+
+	* Remake all to update 'Makefiles'
+		~/multi2sim/trunk$ make clean
+		~/multi2sim/trunk$ make
+
+	* Add line in Changelog:
+		"Version X.Y.Z released"
+
+	* Copy 'trunk' directory into 'tags'. For example:
+		~/multi2sim$ svn cp trunk tags/multi2sim-X.Y.Z
+
+	* svn commit
+
+	* In trunk directory, create tar ball.
+		~/multi2sim/trunk$ make distcheck
+
+	* Copy tar ball to Multi2Sim server:
+		scp multi2sim-X.Y.Z.tar.gz $(M2S-SERVER):public_html/files/
+
+	* Update Multi2Sim web site.
+		* Log in.
+		* Click toolbox -> Special Pages -> Uncategorized templates
+		* Update 'Latest Version' and 'Latest Version Date'
+
+	* Send email to multi2sim@multi2sim.org
+
+
+===============================================================================
+
+GPU-REL: Implementation of fault insertion in active mask
+
+Use command-line option '--gpu-stack-faults <file>'. The format of the text file is a sequence of lines, each with the following format:
+   <cycle> <compute_unit_id> <stack_id> <active_mask_id> <bit>
+
+<cycle>: cycle number. 1 is the first cycle. They must appear in order.
+<compute_unit_id>: identifier of the compute unit. Must be in range [0..NumComputeUnits-1]
+<stack_id>: identifier of the stack_id (or wavefront) within the compute unit. Must be in range [0..MaxWavefrontsPerComputeUnit-1]
+<active_mask_id>: active mask index within the stack. Must be in range [0..31], because 32 is the number of entries in the stack. In the Multi2Sim implementation, the current active mask is the element at the top of the stack. Thus, a value of <active_mask_id> matching the top of the stack at a given time will affect the current active mask for a wavefront.
+<bit>: index of the bit in the active mask to switch. Must be in range [0..WavefrontSize-1]
+
+Example for contents of file 'faults':
+7 5 3 4 2
+17 6 2 6 6
+18 0 0 0 0
+
+
+*** Report '--debug-gpu-stack-faults <file>' ***
+
+When a fault is inserted, it will be done at the end of the specified cycle. The pipeline debug information will dump a line notifying about the insertion of the fault, in the following format:
+
+fault cu=<compute_unit_id> stack=<stack_id> am=<active_mask_id> bit=<bit> effect=<effect>
+
+where <compute_unit_id>, <stack_id>, <active_mask_id>, and <bit> correspond exactly to the parameters entered in the faults input file, and <effect> is a string taking one of the following values:
+
+"cu_idle": fault with no effect. The compute unit is not executing a work-group.
+"wf_idle": fault with no effect. No wavefront is used the specified stack.
+"am_idle": fault with no effect. The active mask index is over the stack top.
+"wi_idle": fault with no effect. The modified bit is unused in the active mask.
+"error": fault caused an error, affecting a utilized active mask.
+
+
+*** Report '--debug-gpu-stack <file>' ***
+
+Dump the report of the active mask stack activity. Each line follows this format:
+stack clk=<cycle> cu=<cu> stack=<stack_id> wf=<wavefront_id> a=<action> cnt=<count> top=<stack_top> mask=<mask>
+  <cycle>  Current GPU cycle
+  <cu>  Compute unit id.
+  <stack>  Active mask identifier (in range [0..MaxWavefrontsPerComputeUnit-1])
+  <wf>  Wavefront global id (unique for every wavefront, grows for every new wavefront).
+  <a>  Action ("push" or "pop")
+  <count>  Number of entries pushed or popped.
+  <stack_top>  Top of the stack after pushing or popping.
+  <mask>  Active mask pushed, or new active mask after popping.
+
+
+
+
+===============================================================================
+
+src/libgpuarch: Implementation of the memory hierarchy for GPUs
+
+Problem:
+
+          CU-0     CU-1     CU-2    ...    <= Compute units
+	  |        |        |
+	  L1-0     L1-1     L1-2    ...    <= L1 caches
+	  |        |        |
+	  ------------------------        <= Interconnect
+	       |
+	       L2
+	       |
+	      Global
+	      memory
+
+
+Suppose the memory hierarchy above, and a block size of 256 bytes for all caches. Suppose that a work-item in work-group 0 (assigned to CU-0) writes on address 0 in global memory, while another work-item in work-group 1 (assigned to CU-1) writes on address 4. In a naive cache hierarchy without cache coherence, L1-0 and L1-1 will both fetch a copy of block [0..255]. L1-0 will modify its location at byte 0, and L1-1 will modify it at byte 4. This leads to two copies of the block, each of which contains only a valid subset of it.
+
+This leads to a conflict when L1-0 and L1-1 evict the block and write it back to L2. If L1-0 evicts first, and L1-1 evicts next, L2 will contain a copy of the block in which the access performed to byte 0 is completely lost. If later CU-0 fetches the block again and tries to read the word written before, its value is going to be incorrect.
+
+This problem can be solved by implementing a cache coherence protocol, which always enforces that there only be a single copy of a written block in one L1 cache. Whenever another L1 is accessed to write on this block, the original copy is invalidated, written back to L2, fetched again by the new L1, and finally written on. However, this is too conservative a solution, and is not needed in the GPU memory hierarchy, due to the properties of the OpenCL memory model.
+
+
+
+
+* Possible solution:
+
+Use the caches only for read accesses at the granularity of a cache block, which could have any size. However, writes will use write buffers connected to ALL cache levels, and global memory, working at the same granularity as the original access performed by the work-items in the CU (they can still be coalesced, though). If a cache receives a write on a block it doesn't contain, the write is simply ignored, since ultimately it will always be written to global memory. Thus, a cache will only fetch a block after a read access is performed on it.
+
+This mechanism keeps cache coherence only within each branch of the hierarchy, starting from an L1 and ending in global memory. Thus, it is only enforced that each CU sees the previous write accesses performed by itself. It does not guarantee that a CU will eventually see changes performed by another. However, the OpenCL programming model does not allow communication through global memory among work-groups (mapped to individual CUs), so this is not a problem.
+
+
+===============================================================================
+
+src/libgpuarch: Implementation of wavefront switch upon long-latency operations.
+
+Problem:
+
+Below is the GPU Compute Unit (CU) 6-stage pipeline modeled. Assume a GPU with 16 stream-cores per CU, and wavefronts (WFs) with 64 work-items. Each wavefront is divided in subwavefronts of equal size as the number of stream cores, i.e. 4 subwavefronts of 16 work-items each. SubWFs are scheduled always consecutively.
+
+
+	Schedule   |   Fetch   |   Decode   |   Read   |   Execute   |   Write
+
+         SubWF3        SubWF2       SubWF1      SubWF0
+                                                  \
+						   Long latency operation (miss in global memory)
+
+Question: is there a WF switch here? It would be efficient to overlap execution of other WFs arithmetic instructions to hide this latency. How does it work? Are the instructions in the pipeline before the Read stage squashed? The current model just stalls the pipeline until the read access to global memory finishes.
+
+
+
+
+
+Compute unit
+------------
+
+* The CF Engine has a 'ready wavefront (WF) pool'. When a CF instruction triggers a secondary clause (TEX or ALU), the WF is removed from the 'ready WF pool' until the secondary clause completes.
+* A WF switch happens after the execution of every CF instruction, selecting only among those WFs in the 'ready WF pool'. In this way, we avoid executing instructions from a WF that might depend on long-latency events and cause a WF to stall. This would happen, for example, if we issue an ALU clause before a previous TEX clause finishes for the same WF. If the TEX clause had a cache miss, the ALU engine would be stalled until the cache miss resolves, and remain unable to execute useful work from other WFs.
+
+
+Processing elements
+-------------------
+* PEs are pipelined functional units, capable of performing additions, multiplications, or transcendental operations (in the case of PE_t elements).
+* A PE accepts one instruction every cycle (this can be configured). This parameter is called the issue latency.
+* The latency of of the instruction (time between the operation starts until the result is ready) depends on the operation (sin >> add). This is configurable as well.
+
