@@ -86,3 +86,82 @@ the target is always zero.
 
 As I asked at the end of my previous I think the RAS is not updated in the commit stage so the target is always zero
 
+
+
+
+********************************************************************************
+Bug 11/06/11 - Documentation MacPAT
+********************************************************************************
+
+
+Hi,
+In the document it is stated:
+
+Code: [Select]
+
+rename_reads     c0t0     RAT.Reads
+rename_writes    c0t0     RAT.Writes
+
+
+The correct stats are RAT.IntReads and RAT.IntWrites
+
+However for the following stats,
+Code: [Select]
+
+fp_rename_reads 
+fp_rename_writes
+
+
+ it is stated that they are not available in multi2sim, but I see:
+
+RAT.FpReads and RAT.FpWrites
+
+aren't they?
+
+
+
+
+
+********************************************************************************
+Bug 11/06/11 - Fix documentation
+********************************************************************************
+
+Hi,
+In the document it is stated:
+
+Code: [Select]
+rename_reads     c0t0     RAT.Reads
+rename_writes    c0t0     RAT.Writes
+The correct stats are RAT.IntReads and RAT.IntWrites
+However for the following stats,
+Code: [Select]
+fp_rename_reads 
+fp_rename_writes
+
+ it is stated that they are not available in multi2sim, but I see:
+ RAT.FpReads and RAT.FpWrites
+ aren't they?
+
+
+
+
+********************************************************************************
+Task 11/07/11 - Write disassemblers
+********************************************************************************
+
+Implement command-line option to disassemble x86 and Evergreen binaries:
+
+m2s --cpu-disasm <file>
+m2s --gpu-disasm <file>
+
+
+
+
+********************************************************************************
+Task 11/08/11 - SIGUSR1 signal
+********************************************************************************
+
+Include GPU simulation report when the simulator receives the SIGUSR1 signal.
+
+
+

@@ -73,6 +73,13 @@ DEFINST(LOOP_START_DX10,
 	AMD_INST_FLAG_INC_LOOP_IDX | AMD_INST_FLAG_ACT_MASK
 )
 
+DEFINST(LOOP_START_NO_AL,
+	"LOOP_NO_AL %loop_idx FAIL_JUMP_ADDR(%cf_addr)",
+	CF_WORD0, CF_WORD1, NONE,
+	CF, 7,
+	AMD_INST_FLAG_INC_LOOP_IDX | AMD_INST_FLAG_ACT_MASK
+)
+
 DEFINST(MEM_RAT_CACHELESS,
 	"MEM_RAT_CACHELESS_%rat_inst: RAT(%rat_id%rat_index_mode)[%rat_index_gpr]%comp_mask, "
 	"%rat_rw_gpr, %array_size %elem_size %mark %burst_count %no_barrier %vpm",
