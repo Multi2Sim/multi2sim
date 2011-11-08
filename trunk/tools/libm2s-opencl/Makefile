@@ -5,7 +5,7 @@ CFLAGS = -Wall -fPIC -m32 -I.
 all: libm2s-opencl.so libm2s-opencl.a
 
 libm2s-opencl.so: m2s-opencl.o
-	$(CC) m2s-opencl.o -shared -o libm2s-opencl.so
+	$(CC) $(CFLAGS) m2s-opencl.o -shared -o libm2s-opencl.so
 
 libm2s-opencl.a: m2s-opencl.o
 	$(AR) cru libm2s-opencl.a m2s-opencl.o

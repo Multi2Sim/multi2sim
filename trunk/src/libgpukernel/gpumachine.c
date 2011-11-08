@@ -238,6 +238,16 @@ void amd_inst_LOOP_START_DX10_impl()
 #undef W1
 
 
+#define W0  CF_WORD0
+#define W1  CF_WORD1
+void amd_inst_LOOP_START_NO_AL_impl()
+{
+	NOT_IMPL();
+}
+#undef W0
+#undef W1
+
+
 #define W0  CF_ALLOC_EXPORT_WORD0_RAT
 #define W1  CF_ALLOC_EXPORT_WORD1_BUF
 void amd_inst_MEM_RAT_CACHELESS_impl()
