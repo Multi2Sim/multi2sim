@@ -183,8 +183,8 @@ void cal_abi_analyze_note_header(struct cal_abi_t *cal_abi, void *pt_note_ptr)
 			/* Dump constants */
 			debug_tab_inc(opencl_debug_category, 2);
 			for (k = 0; k < data_segment_desc->size; k += 4) {
-				c = * (uint32_t *) (cal_abi->data_buffer + data_segment_desc->offset);
-				f = * (float *) (cal_abi->data_buffer + data_segment_desc->offset);
+				c = * (uint32_t *) (cal_abi->data_buffer + data_segment_desc->offset * 16 + k);
+				f = * (float *) (cal_abi->data_buffer + data_segment_desc->offset * 16 + k);
 				opencl_debug("constant[%02d] = 0x%08x, %gf\n", k / 4, c, f);
 			}
 			debug_tab_dec(opencl_debug_category, 2);

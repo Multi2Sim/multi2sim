@@ -739,6 +739,7 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 }
 
 
+/* This function is deprecated. It will not run for APP SDK 2.5 binaries anymore */
 void opencl_kernel_load_func_metadata(struct opencl_kernel_t *kernel)
 {
 	FILE *f;

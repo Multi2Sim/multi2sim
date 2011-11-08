@@ -69,6 +69,55 @@ void main_list_devices(FILE *f)
 }
 
 
+void kernel_binary_analyze_inner_elf(char *file_name)
+{
+	struct elf_file_t *elf;
+	char *section_name;
+	char file_name_dest[MAX_STRING_SIZE];
+	void *section_buf;
+	int i;
+
+	elf = elf_open(file_name);
+	if (!elf)
+		return;
+
+	for (i = 0; i < elf_section_count(elf); i++)
+	{
+		uint32_t addr, offset, size, flags;
+
+		/* Get section info */
+		elf_section_info(elf, i, &section_name, &addr, &offset, &size, &flags);
+		if (!*section_name)
+			continue;
+
+		/* Read section */
+		section_buf = elf_section_read(elf, i);
+		snprintf(file_name_dest, MAX_STRING_SIZE, "%s.%d%s", file_name, i, section_name);
+		write_buffer(file_name_dest, section_buf, size);
+		elf_section_free(section_buf);
+
+		/* Info */
+		printf("\t  %s: inner section '%s' dumped\n", file_name_dest, section_name);
+	}
+}
+
+
+/* Return TRUE if 'suffix' is a suffix of 'str' */
+int str_suffix(char *str, char *suffix)
+{
+	int str_len;
+	int suffix_len;
+
+	str_len = strlen(str);
+	suffix_len = strlen(suffix);
+	if (str_len < suffix_len)
+		return 0;
+	if (strcmp(str + str_len - suffix_len, suffix))
+		return 0;
+	return 1;
+}
+
+
 void kernel_binary_analyze(char *file_name)
 {
 	struct elf_file_t *elf;
@@ -95,6 +144,7 @@ void kernel_binary_analyze(char *file_name)
 	if (!elf)
 		fatal("%s: cannot open ELF file", file_name);
 	
+#if 0
 	/* List ELF sections */
 	printf("ELF sections:\n");
 	for (i = 0; i < elf_section_count(elf); i++)
@@ -112,31 +162,51 @@ void kernel_binary_analyze(char *file_name)
 		printf("  section '%s': addr=0x%x, offset=0x%x, size=%d, flags=0x%x\n",
 			section_name, addr, offset, size, flags);
 	}
+#endif
 	
 	/* Get symbols */
-	for (i = 0; i < elf->symtab_count; i++) {
+	for (i = 0; i < elf->symtab_count; i++)
+	{
+		char kernel_func_name[MAX_STRING_SIZE];
+		int kernel_func_len;
+		int sym_len;
+
 		sym = &elf->symtab[i];
 		if (strncmp(sym->name, "__OpenCL_", 9))
 			continue;
+		sym_len = strlen(sym->name);
 
 		/* Read section */
 		elf_section_info(elf, sym->section, &section_name, NULL, NULL, &section_size, NULL);
 		section_buf = elf_section_read(elf, sym->section);
-
-		/* Dump to file */
-		sprintf(file_name_dest, "%s.%s", file_name_prefix, sym->name + 9);
 		assert(sym->value + sym->size <= section_size);
-		write_buffer(file_name_dest, section_buf + sym->value, sym->size);
-		elf_section_free(section_buf);
 
-		/* Info */
-		if (!strcmp(section_name, ".amdil"))
-			printf("\t%s: AMD IL dumped\n", file_name_dest);
-		else if (!strcmp(section_name, ".text"))
-			printf("\t%s: kernel dumped\n", file_name_dest);
-		else if (!strcmp(section_name, ".rodata"))
+		/* Dump to files */
+		if (str_suffix(sym->name, "_metadata")) {
+
+			kernel_func_len = sym_len - 18;
+			strncpy(kernel_func_name, sym->name + 9, kernel_func_len);
+			kernel_func_name[kernel_func_len] = '\0';
+
+			sprintf(file_name_dest, "%s.%s.metadata", file_name_prefix, kernel_func_name);
+			write_buffer(file_name_dest, section_buf + sym->value, sym->size);
 			printf("\t%s: meta data dumped\n", file_name_dest);
 
+		} else if (str_suffix(sym->name, "_kernel")) {
+			
+			kernel_func_len = sym_len - 16;
+			strncpy(kernel_func_name, sym->name + 9, kernel_func_len);
+			kernel_func_name[kernel_func_len] = '\0';
+
+			sprintf(file_name_dest, "%s.%s.kernel", file_name_prefix, kernel_func_name);
+			write_buffer(file_name_dest, section_buf + sym->value, sym->size);
+			printf("\t%s: inner ELF file dumped\n", file_name_dest);
+			
+			kernel_binary_analyze_inner_elf(file_name_dest);
+		}
+
+		/* Free section */
+		elf_section_free(section_buf);
 	}
 
 	/* Close file */
