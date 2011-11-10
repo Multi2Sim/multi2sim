@@ -22,8 +22,9 @@
 
 
 
+
 /*
- * Public functions
+ * Compute Unit
  */
 
 struct gpu_compute_unit_t *gpu_compute_unit_create()
