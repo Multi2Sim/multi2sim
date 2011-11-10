@@ -165,3 +165,11 @@ Include GPU simulation report when the simulator receives the SIGUSR1 signal.
 
 
 
+********************************************************************************
+Task 11/10/11 - Integrate GPU Visualization
+********************************************************************************
+
+- Figure out how to disable the compilation of a complete executable + libraries
+  depending on whether a library is present in the system, to avoid errors
+  when the user is not interested in this tool.
+

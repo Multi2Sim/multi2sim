@@ -121,14 +121,17 @@ void cal_abi_analyze_note_header(struct cal_abi_t *cal_abi, void *pt_note_ptr)
 
 			case 0x80000080:  /* AMU_ABI_NUM_GPR_USED */
 				cal_abi->num_gpr_used = prog_info_entry->value;
+				opencl_debug("    AMU_ABI_NUM_GPR_USED = %d\n", cal_abi->num_gpr_used);
 				break;
 
 			case 0x80000082:  /* AMU_ABI_LDS_SIZE_USED */
 				cal_abi->lds_size_used = prog_info_entry->value;
+				opencl_debug("    AMU_ABI_LDS_SIZE_USED = %d\n", cal_abi->num_gpr_used);
 				break;
 
 			case 0x80000084:  /* AMU_ABI_STACK_SIZE_USED */
 				cal_abi->stack_size_used = prog_info_entry->value;
+				opencl_debug("    AMU_ABI_STACK_SIZE_USED = %d\n", cal_abi->stack_size_used);
 				break;
 			}
 		}

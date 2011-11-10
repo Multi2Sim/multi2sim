@@ -337,11 +337,11 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* GPU-REL: debug file for stack faults */
-		if (!strcmp(argv[argi], "--debug-gpu-stack-faults")) {
+		/* GPU-REL: debug file for faults */
+		if (!strcmp(argv[argi], "--debug-gpu-faults")) {
 			sim_need_argument(argc, argv, argi);
 			argi++;
-			gpu_stack_faults_debug_file_name = argv[argi];
+			gpu_faults_debug_file_name = argv[argi];
 			continue;
 		}
 
@@ -407,11 +407,11 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* GPU-REL: file to introduce faults in active mask stack */
-		if (!strcmp(argv[argi], "--gpu-stack-faults")) {
+		/* GPU-REL: file to introduce faults  */
+		if (!strcmp(argv[argi], "--gpu-faults")) {
 			sim_need_argument(argc, argv, argi);
 			argi++;
-			gpu_stack_faults_file_name = argv[argi];
+			gpu_faults_file_name = argv[argi];
 			continue;
 		}
 
@@ -583,8 +583,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--debug-gpu-pipeline");
 		if (*gpu_stack_debug_file_name)
 			fatal(msg, "--debug-gpu-stack");
-		if (*gpu_stack_faults_debug_file_name)  /* GPU-REL */
-			fatal(msg, "--debug-gpu-stack-faults");
+		if (*gpu_faults_debug_file_name)  /* GPU-REL */
+			fatal(msg, "--debug-gpu-faults");
 		if (*gpu_cache_config_file_name)
 			fatal(msg, "--gpu-cache-config");
 		if (*gpu_config_file_name)
@@ -700,7 +700,7 @@ int main(int argc, char **argv)
 	opencl_debug_category = debug_new_category(opencl_debug_file_name);
 	gpu_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
 	gpu_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
-	gpu_stack_faults_debug_category = debug_new_category(gpu_stack_faults_debug_file_name);  /* GPU-REL */
+	gpu_faults_debug_category = debug_new_category(gpu_faults_debug_file_name);  /* GPU-REL */
 	gpu_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);
 	error_debug_category = debug_new_category(error_debug_file_name);
 	esim_debug_init(esim_debug_file_name);
@@ -730,8 +730,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Flush event-driven simulation */
-	//esim_process_all_events(1 << 20);
-	esim_process_all_events(0);/////////
+	esim_process_all_events(0);
 
 	/* Dump statistics summary */
 	sim_stats_summary();

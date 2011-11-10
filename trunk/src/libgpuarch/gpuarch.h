@@ -70,10 +70,10 @@ extern int gpu_tex_engine_fetch_queue_size;
 extern struct gpu_t *gpu;
 
 /* GPU-REL: insertion of faults into stack */
-#define gpu_stack_faults_debug(...) debug(gpu_stack_faults_debug_category, __VA_ARGS__)
-extern int gpu_stack_faults_debug_category;
-extern char *gpu_stack_faults_debug_file_name;
-extern char *gpu_stack_faults_file_name;
+#define gpu_faults_debug(...) debug(gpu_faults_debug_category, __VA_ARGS__)
+extern int gpu_faults_debug_category;
+extern char *gpu_faults_debug_file_name;
+extern char *gpu_faults_file_name;
 
 
 
@@ -185,6 +185,28 @@ void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count);
 
 void gpu_uop_save_active_mask(struct gpu_uop_t *uop);
 void gpu_uop_debug_active_mask(struct gpu_uop_t *uop);
+
+
+
+
+/*
+ * Register file in Compute Unit
+ */
+
+struct gpu_reg_file_t;
+
+void gpu_reg_file_init(struct gpu_compute_unit_t *compute_unit);
+void gpu_reg_file_done(struct gpu_compute_unit_t *compute_unit);
+
+void gpu_reg_file_map_work_group(struct gpu_compute_unit_t *compute_unit,
+	struct gpu_work_group_t *work_group);
+void gpu_reg_file_unmap_work_group(struct gpu_compute_unit_t *compute_unit,
+	struct gpu_work_group_t *work_group);
+
+int gpu_reg_file_rename(struct gpu_compute_unit_t *compute_unit,
+	struct gpu_work_item_t *work_item, int logical_register);
+void gpu_reg_file_inverse_rename(struct gpu_compute_unit_t *compute_unit,
+	int physical_register, struct gpu_work_item_t **work_item, int *logical_register);
 
 
 
