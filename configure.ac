@@ -40,6 +40,9 @@ AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap se
 AC_CHECK_LIB([m], [sin])
 AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
+# Check for GTK
+#AM_PATH_GTK_2_0([2.10.0], have_gtk=yes, have_gtk=no))
+
 
 
 # ---------------------------------------------------------------------
