@@ -5616,6 +5616,9 @@ if test "x$ac_cv_lib_pthread_pthread_create" = xyes; then :
 fi
 
 
+# Check for GTK
+#AM_PATH_GTK_2_0([2.10.0], have_gtk=yes, have_gtk=no))
+
 
 
 # ---------------------------------------------------------------------
