@@ -30,7 +30,8 @@
 struct list_t;
 
 /* Creation and destruction */
-struct list_t *list_create(int size);
+struct list_t *list_create(void);
+struct list_t *list_create_with_size(int size);
 void list_free(struct list_t *list);
 
 /* Return error occurred in last list operation;

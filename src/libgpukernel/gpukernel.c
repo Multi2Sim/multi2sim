@@ -839,7 +839,7 @@ void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 	int i, j;
 
 	/* Create list and hash table */
-	list = list_create(20);
+	list = list_create();
 	ht = hashtable_create(20, 1);
 
 	/* Create one 'elem' for each work_item with a different branch digest, and
@@ -1182,8 +1182,8 @@ struct gpu_work_item_t *gpu_work_item_create()
 	struct gpu_work_item_t *work_item;
 	work_item = calloc(1, sizeof(struct gpu_work_item_t));
 	work_item->write_task_list = lnlist_create();
-	work_item->lds_oqa = list_create(5);
-	work_item->lds_oqb = list_create(5);
+	work_item->lds_oqa = list_create();
+	work_item->lds_oqb = list_create();
 	return work_item;
 }
 

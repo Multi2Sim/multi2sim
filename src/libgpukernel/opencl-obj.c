@@ -490,6 +490,8 @@ void opencl_program_free(struct opencl_program_t *program)
 		fclose(program->binary_file);
 		unlink(program->binary_file_name);
 	}
+	if (program->elf_file)
+		elf2_file_free(program->elf_file);
 	opencl_object_remove(program);
 	free(program);
 }
@@ -559,7 +561,7 @@ struct opencl_kernel_t *opencl_kernel_create()
 	kernel = calloc(1, sizeof(struct opencl_kernel_t));
 	kernel->id = opencl_object_new_id(OPENCL_OBJ_KERNEL);
 	kernel->ref_count = 1;
-	kernel->arg_list = list_create(10);
+	kernel->arg_list = list_create();
 	opencl_object_add(kernel);
 	return kernel;
 }

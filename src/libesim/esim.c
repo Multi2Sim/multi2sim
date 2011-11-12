@@ -48,7 +48,7 @@ struct event_t {
 
 void esim_init()
 {
-	event_procs = list_create(10);
+	event_procs = list_create();
 	event_heap = heap_create(20);
 	event_repos = repos_create(sizeof(struct event_t), "event_repos");
 	ESIM_EV_INVALID = esim_register_event(NULL);
