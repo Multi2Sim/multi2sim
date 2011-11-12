@@ -1,5 +1,12 @@
 SUBDIRS = src
 
+images = \
+	images/alu_engine.png \
+	images/cf_engine.png \
+	images/tex_engine.png
+pkgdata_imagesdir = $(pkgdatadir)/images
+pkgdata_images_DATA = ${images}
+
 EXTRA_DIST = \
 	tools/libm2s-opencl/m2s-opencl.c \
 	tools/libm2s-opencl/Makefile \
@@ -33,5 +40,7 @@ EXTRA_DIST = \
 	samples/test-args.c \
 	samples/test-args.i386 \
 	samples/test-sort.c \
-	samples/test-sort.i386
+	samples/test-sort.i386 \
+	\
+	${images}
 

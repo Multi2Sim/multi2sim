@@ -19,6 +19,7 @@
 
 #include <cpuarch.h>
 #include <gpuarch.h>
+#include <gpuvisual.h>
 
 
 /* Multi2Sim version */
@@ -33,6 +34,7 @@ static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
 static char *gpu_pipeline_debug_file_name = "";
 static char *gpu_cache_debug_file_name = "";
+static char *gpu_visual_file_name = "";
 static char *loader_debug_file_name = "";
 static char *isa_call_debug_file_name = "";
 static char *isa_inst_debug_file_name = "";
@@ -124,6 +126,12 @@ static char *sim_help =
 	"  --gpu-sim {functional|detailed}\n"
 	"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
 	"      detailed (architectural) simulation. Functional simulation is default.\n"
+	"\n"
+	"  --gpu-visual <file>\n"
+	"      Run GPU visualization tool. After running a GPU detailed simulation with a\n"
+	"      pipeline trace (option --debug-gpu-pipeline <file>), the generated file can\n"
+	"      be used as an input for the visual tool. To enable this option, the GTK\n"
+	"      library must be installed in your system.\n"
 	"\n"
 	"  --help-<xxx>\n"
 	"      Show help on the format of configuration files for Multi2Sim. <xxx> stands\n"
@@ -393,6 +401,14 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* GPU-REL: file to introduce faults  */
+		if (!strcmp(argv[argi], "--gpu-faults")) {
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			gpu_faults_file_name = argv[argi];
+			continue;
+		}
+
 		/* GPU simulation accuracy */
 		if (!strcmp(argv[argi], "--gpu-sim")) {
 			sim_need_argument(argc, argv, argi);
@@ -407,11 +423,11 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* GPU-REL: file to introduce faults  */
-		if (!strcmp(argv[argi], "--gpu-faults")) {
+		/* GPU visualization */
+		if (!strcmp(argv[argi], "--gpu-visual")) {
 			sim_need_argument(argc, argv, argi);
 			argi++;
-			gpu_faults_file_name = argv[argi];
+			gpu_visual_file_name = argv[argi];
 			continue;
 		}
 
@@ -594,6 +610,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (*gpu_cache_report_file_name)
 			fatal(msg, "--report-gpu-cache");
 	}
+	if (*gpu_visual_file_name && argc > 3)
+		fatal("option '--gpu-visual' is incompatible with any other option.");
 
 	/* Discard arguments used as options */
 	arg_discard = argi - 1;
@@ -686,6 +704,10 @@ int main(int argc, char **argv)
 
 	/* Read command line */
 	sim_read_command_line(&argc, argv);
+
+	/* GPU Visualization tool invocation */
+	if (*gpu_visual_file_name)
+		vgpu_run(gpu_visual_file_name);
 
 	/* Debug */
 	debug_init();

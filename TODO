@@ -173,3 +173,11 @@ Task 11/10/11 - Integrate GPU Visualization
   depending on whether a library is present in the system, to avoid errors
   when the user is not interested in this tool.
 
+
+
+********************************************************************************
+Task 11/10/11 - GPU Visualization - Pointers not freed
+********************************************************************************
+
+- Open main window. Open block diagram. Close main window without closing block
+  diagram. This causes a lot of unfreed pointers.

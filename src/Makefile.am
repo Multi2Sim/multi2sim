@@ -10,7 +10,8 @@ SUBDIRS = \
 	libcachesystem \
 	libgpukernel \
 	libmhandle \
-	libgpudisasm
+	libgpudisasm \
+	libgpuvisual
 
 bin_PROGRAMS = m2s
 
@@ -27,9 +28,11 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libcachesystem \
 	-I$(top_srcdir)/src/libgpuarch \
 	-I$(top_srcdir)/src/libgpukernel \
-	-I$(top_srcdir)/src/libgpudisasm
+	-I$(top_srcdir)/src/libgpudisasm \
+	-I$(top_srcdir)/src/libgpuvisual
 
 LDADD = \
+	$(top_builddir)/src/libgpuvisual/libgpuvisual.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libcpukernel/libcpukernel.a \
 	$(top_builddir)/src/libgpuarch/libgpuarch.a \
@@ -44,3 +47,6 @@ LDADD = \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	-lm -lpthread
 
+if HAVE_GTK
+LDADD += @GTK_LIBS@
+endif
