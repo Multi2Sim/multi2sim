@@ -26,7 +26,7 @@ struct fdt_t *fdt_create()
 
 	/* Create file descriptor table and file descriptor list */
 	fdt = calloc(1, sizeof(struct fdt_t));
-	fdt->fd_list = list_create(3);
+	fdt->fd_list = list_create_with_size(3);
 
 	/* Add stdin */
 	fd0 = calloc(1, sizeof(struct fd_t));

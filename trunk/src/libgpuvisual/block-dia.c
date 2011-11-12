@@ -140,7 +140,7 @@ void block_dia_window_refresh(struct vgpu_compute_unit_t *compute_unit)
 		(int)(vgpu_stage_color[VGPU_ENGINE][VGPU_STG][2] * 0xff)); \
 	gdk_color_parse(str, &color); \
 	frame = gtk_frame_new(NULL); \
-	compute_unit->uop_list_##STG = list_create(10); \
+	compute_unit->uop_list_##STG = list_create(); \
 	compute_unit->list_layout_##STG = list_layout_new(compute_unit->uop_list_##STG, 10, vgpu_uop_get_name, vgpu_uop_info_popup); \
 	gtk_container_add(GTK_CONTAINER(frame), compute_unit->list_layout_##STG->layout); \
 	gtk_widget_modify_bg(compute_unit->list_layout_##STG->layout, GTK_STATE_NORMAL, &color); \

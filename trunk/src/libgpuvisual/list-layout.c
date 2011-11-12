@@ -149,7 +149,7 @@ static void list_layout_popup_show(struct list_layout_t *list_layout)
 	char str[MAX_STRING_SIZE];
 
 	/* Create list of 'list_layout_item_t', each containing an event box, a label, and a pointer.  */
-	list_layout->list_layout_popup_item_list = list_create(10);
+	list_layout->list_layout_popup_item_list = list_create();
 
 	/* Create window */
 	GtkWidget *window;
@@ -260,7 +260,7 @@ struct list_layout_t *list_layout_new(struct list_t *list,
 	list_layout->layout = gtk_layout_new(NULL, NULL);
 	list_layout->item_get_name = item_get_name;
 	list_layout->item_info_popup = item_info_popup;
-	list_layout->list_layout_item_list = list_create(10);
+	list_layout->list_layout_item_list = list_create();
 
 	g_signal_connect(G_OBJECT(list_layout->layout), "destroy", G_CALLBACK(list_layout_destroy_event), list_layout);
 	return list_layout;

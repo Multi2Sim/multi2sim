@@ -6,6 +6,7 @@ libcpukernel_a_SOURCES = \
 	context.c \
 	cpukernel.c \
 	elf.c \
+	elf2.c \
 	fs.c \
 	loader.c \
 	machine.c \

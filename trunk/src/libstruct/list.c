@@ -91,10 +91,12 @@ static void sort(struct list_t *list, int lo, int hi, int (*comp)(const void *, 
 
 
 
-/* Public Methods */
+/*
+ * Public Functions
+ */
 
-/* creation */
-struct list_t *list_create(int size)
+
+struct list_t *list_create_with_size(int size)
 {
 	struct list_t *list;
 	list = calloc(1, sizeof(struct list_t));
@@ -110,7 +112,13 @@ struct list_t *list_create(int size)
 }
 
 
-/* destruction */
+/* If no initial size specified, create a list with 8 elements. */
+struct list_t *list_create(void)
+{
+	return list_create_with_size(8);
+}
+
+
 void list_free(struct list_t *list)
 {
 	free(list->elem);
@@ -118,7 +126,7 @@ void list_free(struct list_t *list)
 }
 
 
-/* return error of last operation */
+/* Return error of last operation */
 int list_error(struct list_t *list)
 {
 	return list->error;
