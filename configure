@@ -5876,8 +5876,23 @@ rm -f core conftest.err conftest.$ac_objext \
      GTK_CFLAGS=""
      GTK_LIBS=""
 
-  	have_gtk=no
-  	echo "WARNING: GTK Not found"
+have_gtk=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+
+	Multi2Sim will be compiled without support for GTK graphical applications.
+	Some features are disabled under this configuration, such as the GPU pipeline
+	debugger. To enable it, please install the development packages for GTK on
+	your system (e.g., package 'libgtk-3-dev' in Debian-based distributions),
+	and run './configure' again.
+" >&5
+$as_echo "$as_me: WARNING:
+
+	Multi2Sim will be compiled without support for GTK graphical applications.
+	Some features are disabled under this configuration, such as the GPU pipeline
+	debugger. To enable it, please install the development packages for GTK on
+	your system (e.g., package 'libgtk-3-dev' in Debian-based distributions),
+	and run './configure' again.
+" >&2;}
 
   fi
 
@@ -5905,7 +5920,7 @@ if test "${enable_debug+set}" = set; then :
 	case "${enableval}" in
 	yes)
 		debug=true
-		CFLAGS="-Wall -fno-strict-aliasing -DMHANDLE -g -O0"
+		CFLAGS="-Wall -Werror -fno-strict-aliasing -DMHANDLE -g -O0"
 		;;
 	no)
 		;;
