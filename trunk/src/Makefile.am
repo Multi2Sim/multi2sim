@@ -44,9 +44,3 @@ LDADD = \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	-lm -lpthread
 
-if DEBUG
-AM_CFLAGS = -Wall -fno-strict-aliasing -DMHANDLE -g -O0
-else
-AM_CFLAGS = -fno-strict-aliasing -O3
-endif
-
