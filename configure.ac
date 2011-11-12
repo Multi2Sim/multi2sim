@@ -41,20 +41,35 @@ AC_CHECK_LIB([m], [sin])
 AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
 # Check for GTK
-#AM_PATH_GTK_2_0([2.10.0], have_gtk=yes, have_gtk=no))
-
+AM_PATH_GTK_3_0([3.0.0], HAVE_GTK=yes,
+  [
+  	HAVE_GTK=no
+  	echo "WARNING: GTK Not found"
+  ])
 
 
 # ---------------------------------------------------------------------
 # Debug and profile
 # ---------------------------------------------------------------------
+debug=false
+AM_CFLAGS="-fno-strict-aliasing -O3"
 AC_ARG_ENABLE(debug,
 [  --enable-debug    Turn on debugging],
-[case "${enableval}" in
-yes) debug=true ;;
-no)  debug=false ;;
-*) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
-esac],[debug=false])
+[
+	case "${enableval}" in
+	yes)
+		debug=true
+		AM_CFLAGS="-Wall -fno-strict-aliasing -DMHANDLE -g -O0"
+		;;
+	no)
+		;;
+	*)
+		AC_MSG_ERROR(bad value ${enableval} for --enable-debug)
+		;;
+	esac
+],
+[])
+AC_SUBST([AM_CFLAGS])
 AM_CONDITIONAL(DEBUG, test x$debug = xtrue)
 
 
@@ -74,3 +89,4 @@ AC_CONFIG_FILES([Makefile
 		 src/libmisc/Makefile
 		 ])
 AC_OUTPUT
+
