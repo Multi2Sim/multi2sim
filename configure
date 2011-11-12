@@ -602,9 +602,8 @@ ac_header_list=
 ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
-DEBUG_FALSE
-DEBUG_TRUE
-AM_CFLAGS
+HAVE_GTK_FALSE
+HAVE_GTK_TRUE
 GTK_LIBS
 GTK_CFLAGS
 PKG_CONFIG
@@ -2404,6 +2403,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
+#AM_INIT_AUTOMAKE(multi2sim, 3.1.1) : ${CFLAGS=""}
 am__api_version='1.11'
 
 ac_aux_dir=
@@ -2911,7 +2911,6 @@ am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'
 
 
 
-: ${CFLAGS=""}
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -5824,7 +5823,7 @@ fi
   if test "x$no_gtk" = x ; then
      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (version $gtk_config_major_version.$gtk_config_minor_version.$gtk_config_micro_version)" >&5
 $as_echo "yes (version $gtk_config_major_version.$gtk_config_minor_version.$gtk_config_micro_version)" >&6; }
-     HAVE_GTK=yes
+     have_gtk=yes
   else
      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5877,7 +5876,7 @@ rm -f core conftest.err conftest.$ac_objext \
      GTK_CFLAGS=""
      GTK_LIBS=""
 
-  	HAVE_GTK=no
+  	have_gtk=no
   	echo "WARNING: GTK Not found"
 
   fi
@@ -5885,20 +5884,28 @@ rm -f core conftest.err conftest.$ac_objext \
 
   rm -f conf.gtktest
 
+ if test x$have_gtk = xyes; then
+  HAVE_GTK_TRUE=
+  HAVE_GTK_FALSE='#'
+else
+  HAVE_GTK_TRUE='#'
+  HAVE_GTK_FALSE=
+fi
+
 
 
 # ---------------------------------------------------------------------
 # Debug and profile
 # ---------------------------------------------------------------------
 debug=false
-AM_CFLAGS="-fno-strict-aliasing -O3"
+CFLAGS="-fno-strict-aliasing -O3"
 # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then :
   enableval=$enable_debug;
 	case "${enableval}" in
 	yes)
 		debug=true
-		AM_CFLAGS="-Wall -fno-strict-aliasing -DMHANDLE -g -O0"
+		CFLAGS="-Wall -fno-strict-aliasing -DMHANDLE -g -O0"
 		;;
 	no)
 		;;
@@ -5910,17 +5917,9 @@ if test "${enable_debug+set}" = set; then :
 fi
 
 
- if test x$debug = xtrue; then
-  DEBUG_TRUE=
-  DEBUG_FALSE='#'
-else
-  DEBUG_TRUE='#'
-  DEBUG_FALSE=
-fi
 
 
-
-ac_config_files="$ac_config_files Makefile src/Makefile src/libcpuarch/Makefile src/libnetwork/Makefile src/libgpuarch/Makefile src/libgpukernel/Makefile src/libgpudisasm/Makefile src/libcachesystem/Makefile src/libcpukernel/Makefile src/libcpudisasm/Makefile src/libesim/Makefile src/libmhandle/Makefile src/libstruct/Makefile src/libmisc/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/libcpuarch/Makefile src/libnetwork/Makefile src/libgpuarch/Makefile src/libgpukernel/Makefile src/libgpudisasm/Makefile src/libgpuvisual/Makefile src/libcachesystem/Makefile src/libcpukernel/Makefile src/libcpudisasm/Makefile src/libesim/Makefile src/libmhandle/Makefile src/libstruct/Makefile src/libmisc/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6087,8 +6086,8 @@ if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${DEBUG_TRUE}" && test -z "${DEBUG_FALSE}"; then
-  as_fn_error $? "conditional \"DEBUG\" was never defined.
+if test -z "${HAVE_GTK_TRUE}" && test -z "${HAVE_GTK_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_GTK\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
@@ -6683,6 +6682,7 @@ do
     "src/libgpuarch/Makefile") CONFIG_FILES="$CONFIG_FILES src/libgpuarch/Makefile" ;;
     "src/libgpukernel/Makefile") CONFIG_FILES="$CONFIG_FILES src/libgpukernel/Makefile" ;;
     "src/libgpudisasm/Makefile") CONFIG_FILES="$CONFIG_FILES src/libgpudisasm/Makefile" ;;
+    "src/libgpuvisual/Makefile") CONFIG_FILES="$CONFIG_FILES src/libgpuvisual/Makefile" ;;
     "src/libcachesystem/Makefile") CONFIG_FILES="$CONFIG_FILES src/libcachesystem/Makefile" ;;
     "src/libcpukernel/Makefile") CONFIG_FILES="$CONFIG_FILES src/libcpukernel/Makefile" ;;
     "src/libcpudisasm/Makefile") CONFIG_FILES="$CONFIG_FILES src/libcpudisasm/Makefile" ;;
