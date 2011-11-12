@@ -53,12 +53,12 @@ struct vgpu_t *vgpu_create(char *trace_file_name)
 	}
 
 	/* Create lists */
-	gpu->state_checkpoint_list = list_create(100);
-	gpu->kernel_source_strings = list_create(10);
-	gpu->compute_unit_list = list_create(10);
-	gpu->work_group_list = list_create(10);
-	gpu->pending_work_group_list = list_create(10);
-	gpu->finished_work_group_list = list_create(10);
+	gpu->state_checkpoint_list = list_create_with_size(100);
+	gpu->kernel_source_strings = list_create();
+	gpu->compute_unit_list = list_create();
+	gpu->work_group_list = list_create();
+	gpu->pending_work_group_list = list_create();
+	gpu->finished_work_group_list = list_create();
 
 	/* Parse trace file */
 	err = vgpu_trace_parse(gpu);
@@ -361,8 +361,8 @@ struct vgpu_compute_unit_t *vgpu_compute_unit_create(struct vgpu_t *gpu, int id)
 	compute_unit = calloc(1, sizeof(struct vgpu_compute_unit_t));
 	compute_unit->gpu = gpu;
 	compute_unit->id = id;
-	compute_unit->work_group_list = list_create(20);
-	compute_unit->uop_list = list_create(20);
+	compute_unit->work_group_list = list_create();
+	compute_unit->uop_list = list_create();
 	return compute_unit;
 };
 

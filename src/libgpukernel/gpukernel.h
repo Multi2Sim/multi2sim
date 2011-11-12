@@ -231,6 +231,9 @@ struct opencl_program_t
 	uint32_t device_id;  /* Only one device allowed */
 	uint32_t context_id;
 
+	/* ELF binary */
+	struct elf2_file_t *elf_file;
+
 	/* Binary file */
 	FILE *binary_file;
 	char binary_file_name[MAX_PATH_SIZE];

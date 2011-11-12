@@ -190,7 +190,9 @@ void regs_fpu_stack_dump(struct regs_t *regs, FILE *f);
 
 
 
-/* ELF File Handling */
+/*
+ * ELF Files
+ */
 
 #define elf_debug(...) debug(elf_debug_category, __VA_ARGS__)
 extern int elf_debug_category;
@@ -245,6 +247,91 @@ uint32_t elf_get_entry(struct elf_file_t *f);
 struct elf_symbol_t *elf_get_symbol_by_address(struct elf_file_t *f, uint32_t addr, uint32_t *poffs);
 struct elf_symbol_t *elf_get_symbol_by_name(struct elf_file_t *f, char *name);
 int elf_merge_symtab(struct elf_file_t *f, struct elf_file_t *src);
+
+
+
+
+/*
+ * ELF Files
+ */
+
+
+/* ELF buffer */
+struct elf2_buffer_t
+{
+	void *buffer;  /* Contents of the buffer */
+	int size;  /* Size of the buffer */
+	int pos;  /* Current position in buffer [0..size-1] */
+};
+
+
+/* ELF section */
+struct elf2_section_t
+{
+	/* Name of the section */
+	char *name;
+
+	/* Pointer to the location in 'elf_file->elf_buffer' where the
+	 * section header is located. */
+	Elf32_Shdr *header;
+
+	/* Sub-buffer (subset of 'elf_file->elf_buffer') where the contents of
+	 * the section can be found. */
+	struct elf2_buffer_t elf_buffer;
+};
+
+
+/* ELF program header */
+struct elf2_program_header_t
+{
+	/* Pointer to the location in 'elf_file->elf_buffer' where the
+	 * program header is located. */
+	Elf32_Phdr *header;
+};
+
+
+/* ELF Symbol */
+struct elf2_symbol_t
+{
+	char *name;
+	uint32_t value;
+	uint32_t size;
+	int section;
+};
+
+
+/* ELF file */
+struct elf2_file_t
+{
+	/* File name, or NULL if loaded from buffer */
+	char *path;
+
+	/* ELF buffer */
+	struct elf2_buffer_t elf_buffer;
+
+	/* ELF header - pointer to a position within 'elf_buffer' */
+	Elf32_Ehdr *header;
+
+	/* ELF sections */
+	struct list_t *section_list;  /* Elements of type 'struct elf2_section_t' */
+	struct elf2_section_t *string_table;  /* String table section */
+
+	/* ELF program headers */
+	struct list_t *program_header_list;  /* Elements of type 'struct elf2_program_header_t' */
+	uint32_t program_header_table_base;  /* Virtual address to load program header table (x86 ELF) */
+
+	/* Symbol table */
+	struct list_t *symbol_table;  /* Elements of type 'struct elf2_symbol_t' */
+};
+
+
+void elf2_buffer_seek(struct elf2_buffer_t *elf_buffer, int pos);
+int elf2_buffer_read(struct elf2_buffer_t *elf_buffer, void *ptr, int size);
+void *elf2_buffer_tell(struct elf2_buffer_t *elf_buffer);
+
+struct elf2_file_t *elf2_file_create_from_buffer(void *buffer, int size);
+struct elf2_file_t *elf2_file_create_from_path(char *path);
+void elf2_file_free(struct elf2_file_t *elf_file);
 
 
 

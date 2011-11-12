@@ -31,7 +31,7 @@ void fetchq_init()
 {
 	int core, thread;
 	FOREACH_CORE FOREACH_THREAD
-		THREAD.fetchq = list_create(fetchq_size);
+		THREAD.fetchq = list_create_with_size(fetchq_size);
 }
 
 
@@ -103,7 +103,7 @@ void uopq_init()
 {
 	int core, thread;
 	FOREACH_CORE FOREACH_THREAD
-		THREAD.uopq = list_create(uopq_size);
+		THREAD.uopq = list_create_with_size(uopq_size);
 }
 
 

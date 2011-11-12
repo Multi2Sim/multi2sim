@@ -544,7 +544,7 @@ void timing_dia_window_show(struct vgpu_compute_unit_t *compute_unit)
 	compute_unit->timing_dia_active = 1;
 
 	/* Create lists */
-	compute_unit->timing_inst_uops = list_create(10);
+	compute_unit->timing_inst_uops = list_create();
 
 	/* Create window */
 	GtkWidget *timing_window;

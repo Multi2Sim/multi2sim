@@ -593,6 +593,9 @@ int opencl_func_run(int code, unsigned int *args)
 			fatal("out of memory");
 		mem_read(isa_mem, binary, length, buf);
 
+		/* NEW ELF - read from new implementation of ELF */
+		program->elf_file = elf2_file_create_from_buffer(buf, length);
+
 		/* Create program temporary file and copy binary */
 		program->binary_file = create_temp_file(program->binary_file_name, MAX_PATH_SIZE);
 		write_buffer(program->binary_file_name, buf, length);

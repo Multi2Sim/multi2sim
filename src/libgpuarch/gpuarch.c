@@ -518,8 +518,6 @@ void gpu_stack_faults_insert(void)
 		case gpu_fault_mem:
 		{
 			struct gpu_work_group_t *work_group;
-			struct gpu_wavefront_t *wavefront;
-			struct gpu_work_item_t *work_item;
 
 			int work_group_id_in_compute_unit;
 			unsigned char value;

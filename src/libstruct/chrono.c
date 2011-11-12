@@ -114,7 +114,7 @@ struct chrono_list_t *chrono_list_create()
 	chrono_list = calloc(1, sizeof(struct chrono_list_t));
 	if (!chrono_list)
 		return NULL;
-	chrono_list->list = list_create(10);
+	chrono_list->list = list_create();
 	if (!chrono_list->list) {
 		free(chrono_list);
 		return NULL;
