@@ -1,6 +1,6 @@
 AC_INIT
+#AM_INIT_AUTOMAKE(multi2sim, 3.1.1) : ${CFLAGS=""}
 AM_INIT_AUTOMAKE(multi2sim, 3.1.1)
-: ${CFLAGS=""}
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_INSTALL
@@ -41,25 +41,26 @@ AC_CHECK_LIB([m], [sin])
 AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
 # Check for GTK
-AM_PATH_GTK_3_0([3.0.0], HAVE_GTK=yes,
+AM_PATH_GTK_3_0([3.0.0], have_gtk=yes,
   [
-  	HAVE_GTK=no
+  	have_gtk=no
   	echo "WARNING: GTK Not found"
   ])
+AM_CONDITIONAL(HAVE_GTK, test x$have_gtk = xyes)
 
 
 # ---------------------------------------------------------------------
 # Debug and profile
 # ---------------------------------------------------------------------
 debug=false
-AM_CFLAGS="-fno-strict-aliasing -O3"
+CFLAGS="-fno-strict-aliasing -O3"
 AC_ARG_ENABLE(debug,
 [  --enable-debug    Turn on debugging],
 [
 	case "${enableval}" in
 	yes)
 		debug=true
-		AM_CFLAGS="-Wall -fno-strict-aliasing -DMHANDLE -g -O0"
+		CFLAGS="-Wall -fno-strict-aliasing -DMHANDLE -g -O0"
 		;;
 	no)
 		;;
@@ -69,8 +70,7 @@ AC_ARG_ENABLE(debug,
 	esac
 ],
 [])
-AC_SUBST([AM_CFLAGS])
-AM_CONDITIONAL(DEBUG, test x$debug = xtrue)
+AC_SUBST([CFLAGS])
 
 
 AC_CONFIG_FILES([Makefile
@@ -80,6 +80,7 @@ AC_CONFIG_FILES([Makefile
 		 src/libgpuarch/Makefile
 		 src/libgpukernel/Makefile
 		 src/libgpudisasm/Makefile
+		 src/libgpuvisual/Makefile
 		 src/libcachesystem/Makefile
                  src/libcpukernel/Makefile
 		 src/libcpudisasm/Makefile
