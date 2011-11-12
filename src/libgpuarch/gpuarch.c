@@ -154,8 +154,9 @@ struct gpu_fault_t {
 	int compute_unit_id;  /* 0, gpu_num_compute_units - 1 ] */
 	int stack_id;  /* [ 0, gpu_max_wavefronts_per_compute_unit - 1 ] */
 	int active_mask_id;  /* [ 0, GPU_MAX_STACK_SIZE - 1 ] */
-	int bit;  /* [ 0, gpu_wavefront_size - 1 ] */
-	int reg_id;  /* [0, gpu_num_registers - 1 ] */
+	int bit;
+	int reg_id;
+	int byte;
 };
 int gpu_fault_errors = 0;  /* Number of faults causing error */
 struct lnlist_t *gpu_fault_list;
@@ -234,7 +235,7 @@ void gpu_stack_faults_init(void)
 			fatal("%s: line %d: cycles must be ordered",
 				gpu_faults_file_name, line_num);
 
-		/* Read <fault> field - type of fault */
+		/* <fault> - Type of fault */
 		line_ptr = strtok(NULL, delim);
 		if (!line_ptr)
 			goto wrong_format;
@@ -248,19 +249,19 @@ void gpu_stack_faults_init(void)
 			fatal("%s: line %d: invalid value for <fault> ('%s')",
 				gpu_faults_file_name, line_num, line_ptr);
 
+		/* <cu_id> - Compute unit */
+		line_ptr = strtok(NULL, delim);
+		if (!line_ptr)
+			goto wrong_format;
+		fault->compute_unit_id = atoi(line_ptr);
+		if (fault->compute_unit_id >= gpu_num_compute_units || fault->compute_unit_id < 0)
+			fatal("%s: line %d: invalid compute unit ID",
+				gpu_faults_file_name, line_num);
+
 		/* Analyze rest of the line depending on fault type */
 		switch (fault->type) {
 
 		case gpu_fault_ams:
-
-			/* <cu_id> - Compute unit */
-			line_ptr = strtok(NULL, delim);
-			if (!line_ptr)
-				goto wrong_format;
-			fault->compute_unit_id = atoi(line_ptr);
-			if (fault->compute_unit_id >= gpu_num_compute_units || fault->compute_unit_id < 0)
-				fatal("%s: line %d: invalid compute unit ID",
-					gpu_faults_file_name, line_num);
 
 			/* <stack_id> - Stack ID */
 			line_ptr = strtok(NULL, delim);
@@ -298,15 +299,6 @@ void gpu_stack_faults_init(void)
 
 		case gpu_fault_reg:
 
-			/* <cu_id> - Compute unit */
-			line_ptr = strtok(NULL, delim);
-			if (!line_ptr)
-				goto wrong_format;
-			fault->compute_unit_id = atoi(line_ptr);
-			if (fault->compute_unit_id >= gpu_num_compute_units || fault->compute_unit_id < 0)
-				fatal("%s: line %d: invalid compute unit ID",
-					gpu_faults_file_name, line_num);
-
 			/* <reg_id> - Register ID */
 			line_ptr = strtok(NULL, delim);
 			if (!line_ptr)
@@ -329,10 +321,28 @@ void gpu_stack_faults_init(void)
 
 		case gpu_fault_mem:
 
+			/* <byte> - Byte position in local memory */
+			line_ptr = strtok(NULL, delim);
+			if (!line_ptr)
+				goto wrong_format;
+			fault->byte = atoi(line_ptr);
+			if (fault->byte >= gpu_local_mem_size || fault->byte < 0)
+				fatal("%s: line %d: invalid byte position",
+					gpu_faults_file_name, line_num);
+
+			/* <bit> - Bit position */
+			line_ptr = strtok(NULL, delim);
+			if (!line_ptr)
+				goto wrong_format;
+			fault->bit = atoi(line_ptr);
+			if (fault->bit > 7 || fault->bit < 0)
+				fatal("%s: line %d: invalid bit position",
+					gpu_faults_file_name, line_num);
+
 			break;
 		}
 
-		/* Insert fault */
+		/* Insert fault in fault list */
 		lnlist_out(gpu_fault_list);
 		lnlist_insert(gpu_fault_list, fault);
 		last_cycle = fault->cycle;
@@ -377,12 +387,13 @@ void gpu_stack_faults_insert(void)
 		{
 			struct gpu_work_group_t *work_group;
 			struct gpu_wavefront_t *wavefront;
+			struct gpu_work_item_t *work_item;
 
 			int work_group_id;  /* in compute unit */
 			int wavefront_id;  /* in compute unit */
 			int value;
 
-
+			/* Initial debug */
 			gpu_faults_debug("fault clk=%lld cu=%d type=\"ams\" stack=%d am=%d bit=%d ",
 				(long long) gpu->cycle,
 				fault->compute_unit_id, fault->stack_id,
@@ -399,7 +410,7 @@ void gpu_stack_faults_insert(void)
 			/* Get work-group and wavefront. If wavefront ID exceeds current number, dismiss */
 			work_group_id = fault->stack_id / gpu->ndrange->wavefronts_per_work_group;
 			wavefront_id = fault->stack_id % gpu->ndrange->wavefronts_per_work_group;
-			if (work_group_id > gpu_max_work_groups_per_compute_unit || !compute_unit->work_groups[work_group_id]) {
+			if (work_group_id >= gpu_max_work_groups_per_compute_unit || !compute_unit->work_groups[work_group_id]) {
 				gpu_faults_debug("effect=\"wf_idle\"");
 				goto end_loop;
 			}
@@ -418,12 +429,18 @@ void gpu_stack_faults_insert(void)
 				goto end_loop;
 			}
 
-			/* Invert bit */
+			/* Fault caused an error, show affected software entities */
+			work_item = wavefront->work_items[fault->bit];
+			gpu_faults_debug("effect=\"error\" wg=%d wf=%d wi=%d",
+				work_group->id,
+				wavefront->id,
+				work_item->id);
+
+			/* Inject fault */
 			value = bit_map_get(wavefront->active_stack, fault->active_mask_id * wavefront->work_item_count
 				+ fault->bit, 1);
 			bit_map_set(wavefront->active_stack, fault->active_mask_id * wavefront->work_item_count
 				+ fault->bit, 1, !value);
-			gpu_faults_debug("effect=\"error\"");
 			gpu_fault_errors++;
 
 			break;
@@ -444,9 +461,12 @@ void gpu_stack_faults_insert(void)
 
 			int lo_reg;
 
-			gpu_faults_debug("fault clk=%lld cu=%d type=\"reg\" ",
+			/* Initial debug */
+			gpu_faults_debug("fault clk=%lld cu=%d type=\"reg\" reg=%d bit=%d ",
 				(long long) gpu->cycle,
-				fault->compute_unit_id);
+				fault->compute_unit_id,
+				fault->reg_id,
+				fault->bit);
 			assert(fault->cycle == gpu->cycle);
 			compute_unit = gpu->compute_units[fault->compute_unit_id];
 
@@ -459,7 +479,7 @@ void gpu_stack_faults_insert(void)
 			/* Get work-group */
 			num_registers_per_work_group = kernel->cal_abi->num_gpr_used * kernel->local_size;
 			work_group_id_in_compute_unit = fault->reg_id / num_registers_per_work_group;
-			if (work_group_id_in_compute_unit >= gpu_num_compute_units) {
+			if (work_group_id_in_compute_unit >= gpu_max_work_groups_per_compute_unit) {
 				gpu_faults_debug("effect=\"reg_idle\"");
 				goto end_loop;
 			}
@@ -471,13 +491,14 @@ void gpu_stack_faults_insert(void)
 				goto end_loop;
 			}
 
-			/* Get work-item */
+			/* Fault caused error - get affected entities */
+			gpu_faults_debug("effect=\"error\" ");
 			work_item_id_in_compute_unit = fault->reg_id / kernel->cal_abi->num_gpr_used;
 			work_item_id_in_work_group = work_item_id_in_compute_unit % kernel->local_size;
 			work_item = work_group->work_items[work_item_id_in_work_group];
 			lo_reg = fault->reg_id % kernel->cal_abi->num_gpr_used;
-			gpu_faults_debug("wg=%d wf=%d wi=%d lo_reg=%d bit=%d ",
-				work_group->id, work_item->wavefront->id, work_item->id, lo_reg, fault->bit);
+			gpu_faults_debug("wg=%d wf=%d wi=%d lo_reg=%d ",
+				work_group->id, work_item->wavefront->id, work_item->id, lo_reg);
 
 			/* Insert the fault */
 			if (fault->bit < 32)
@@ -488,7 +509,56 @@ void gpu_stack_faults_insert(void)
 				work_item->gpr[lo_reg].elem[2] ^= 1 << (fault->bit - 64);
 			else
 				work_item->gpr[lo_reg].elem[3] ^= 1 << (fault->bit - 96);
-			gpu_faults_debug("effect=\"error\"");
+			gpu_fault_errors++;
+
+			break;
+
+		}
+
+		case gpu_fault_mem:
+		{
+			struct gpu_work_group_t *work_group;
+			struct gpu_wavefront_t *wavefront;
+			struct gpu_work_item_t *work_item;
+
+			int work_group_id_in_compute_unit;
+			unsigned char value;
+
+			/* Initial debug */
+			gpu_faults_debug("fault clk=%lld cu=%d type=\"mem\" byte=%d bit=%d ",
+				(long long) gpu->cycle,
+				fault->compute_unit_id,
+				fault->byte,
+				fault->bit);
+			assert(fault->cycle == gpu->cycle);
+			compute_unit = gpu->compute_units[fault->compute_unit_id];
+
+			/* If compute unit is idle, dismiss */
+			if (!compute_unit->work_group_count) {
+				gpu_faults_debug("effect=\"cu_idle\"");
+				goto end_loop;
+			}
+
+			/* Get work-group */
+			work_group_id_in_compute_unit = fault->byte / gpu->ndrange->local_mem_top;
+			if (work_group_id_in_compute_unit >= gpu_max_work_groups_per_compute_unit) {
+				gpu_faults_debug("effect=\"mem_idle\"");
+				goto end_loop;
+			}
+
+			/* Get work-group (again) */
+			work_group = compute_unit->work_groups[work_group_id_in_compute_unit];
+			if (!work_group) {
+				gpu_faults_debug("effect=\"mem_idle\"");
+				goto end_loop;
+			}
+
+			/* Inject fault */
+			gpu_faults_debug("effect=\"error\" wg=%d ",
+				work_group->id);
+			mem_read(work_group->local_mem, fault->byte, 1, &value);
+			value ^= 1 << fault->bit;
+			mem_write(work_group->local_mem, fault->byte, 1, &value);
 			gpu_fault_errors++;
 
 			break;
