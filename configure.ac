@@ -41,11 +41,17 @@ AC_CHECK_LIB([m], [sin])
 AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
 # Check for GTK
-AM_PATH_GTK_3_0([3.0.0], have_gtk=yes,
-  [
-  	have_gtk=no
-  	echo "WARNING: GTK Not found"
-  ])
+AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, [
+have_gtk=no
+AC_MSG_WARN([
+
+	Multi2Sim will be compiled without support for GTK graphical applications.
+	Some features are disabled under this configuration, such as the GPU pipeline
+	debugger. To enable it, please install the development packages for GTK on
+	your system (e.g., package 'libgtk-3-dev' in Debian-based distributions),
+	and run './configure' again.
+])
+])
 AM_CONDITIONAL(HAVE_GTK, test x$have_gtk = xyes)
 
 
@@ -60,7 +66,7 @@ AC_ARG_ENABLE(debug,
 	case "${enableval}" in
 	yes)
 		debug=true
-		CFLAGS="-Wall -fno-strict-aliasing -DMHANDLE -g -O0"
+		CFLAGS="-Wall -Werror -fno-strict-aliasing -DMHANDLE -g -O0"
 		;;
 	no)
 		;;

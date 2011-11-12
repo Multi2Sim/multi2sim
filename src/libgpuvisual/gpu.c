@@ -196,17 +196,18 @@ void vgpu_load_state(struct vgpu_t *gpu)
 	int num_compute_units;
 	int i, j;
 	char label;
+	int count = 0;
 
 	/* Cycle */
-	fread(&label, 1, 1, f);
+	count += fread(&label, 1, 1, f);
 	assert(label == vgpu_state_label);
-	fread(&gpu->cycle, 1, sizeof(int), f);
-	fread(&gpu->trace_line_number, 1, sizeof(int), f);
+	count += fread(&gpu->cycle, 1, sizeof(int), f);
+	count += fread(&gpu->trace_line_number, 1, sizeof(int), f);
 
 	/* Compute units */
-	fread(&num_compute_units, 1, sizeof(int), f);
+	count += fread(&num_compute_units, 1, sizeof(int), f);
 	assert(num_compute_units == gpu->num_compute_units);
-	fread(&gpu->num_mapped_work_groups, 1, sizeof(int), f);
+	count += fread(&gpu->num_mapped_work_groups, 1, sizeof(int), f);
 	for (i = 0; i < gpu->num_compute_units; i++)
 	{
 		struct vgpu_compute_unit_t *compute_unit;
@@ -219,53 +220,59 @@ void vgpu_load_state(struct vgpu_t *gpu)
 		work_group_list = compute_unit->work_group_list;
 
 		/* Fields for compute unit */
-		fread(&label, 1, 1, f);
+		count += fread(&label, 1, 1, f);
 		assert(label == vgpu_work_group_list_label);
-		fread(&compute_unit->last_completed_uop_id, 1, sizeof(int), f);
+		count += fread(&compute_unit->last_completed_uop_id, 1, sizeof(int), f);
 
 		/* List of work-groups */
 		list_clear(work_group_list);
-		fread(&num_work_groups, 1, sizeof(int), f);
+		count += fread(&num_work_groups, 1, sizeof(int), f);
 		for (j = 0; j < num_work_groups; j++)
 		{
 			struct vgpu_work_group_t *work_group;
 			int work_group_id;
 
-			fread(&work_group_id, 1, sizeof(int), f);
+			count += fread(&work_group_id, 1, sizeof(int), f);
 			work_group = list_get(gpu->work_group_list, work_group_id);
 			assert(work_group);
 			list_add(work_group_list, work_group);
 		}
 
 		/* List of uops */
-		fread(&label, 1, 1, f);
+		count += fread(&label, 1, 1, f);
 		assert(label == vgpu_uop_list_label);
 		vgpu_uop_list_clear(compute_unit->uop_list);
-		fread(&num_uops, 1, sizeof(int), f);
+		count += fread(&num_uops, 1, sizeof(int), f);
 		for (j = 0; j < num_uops; j++) {
 			struct vgpu_uop_t *uop;
 			int id, len, k;
 
-			fread(&id, 1, sizeof(int), f);
+			count += fread(&id, 1, sizeof(int), f);
 			uop = vgpu_uop_create(id);
-			fread(&uop->compute_unit_id, 1, sizeof(int), f);
-			fread(&uop->work_group_id, 1, sizeof(int), f);
-			fread(&uop->wavefront_id, 1, sizeof(int), f);
-			fread(&uop->engine, 1, sizeof(int), f);
-			fread(&uop->stage, 1, sizeof(int), f);
-			fread(&uop->stage_cycle, 1, sizeof(int), f);
-			fread(&uop->finished, 1, sizeof(int), f);
-			fread(&len, 1, sizeof(int), f);
-			fread(&uop->name, 1, len + 1, f);
+			count += fread(&uop->compute_unit_id, 1, sizeof(int), f);
+			count += fread(&uop->work_group_id, 1, sizeof(int), f);
+			count += fread(&uop->wavefront_id, 1, sizeof(int), f);
+			count += fread(&uop->engine, 1, sizeof(int), f);
+			count += fread(&uop->stage, 1, sizeof(int), f);
+			count += fread(&uop->stage_cycle, 1, sizeof(int), f);
+			count += fread(&uop->finished, 1, sizeof(int), f);
+			count += fread(&len, 1, sizeof(int), f);
+			count += fread(&uop->name, 1, len + 1, f);
 			for (k = 0; k < 5; k++) {
-				fread(&len, 1, sizeof(int), f);
-				fread(&uop->vliw_slot[k], 1, len + 1, f);
-				fread(&len, 1, sizeof(int), f);
-				fread(&uop->vliw_slot_args[k], 1, len + 1, f);
+				count += fread(&len, 1, sizeof(int), f);
+				count += fread(&uop->vliw_slot[k], 1, len + 1, f);
+				count += fread(&len, 1, sizeof(int), f);
+				count += fread(&uop->vliw_slot_args[k], 1, len + 1, f);
 			}
 			list_add(compute_unit->uop_list, uop);
 		}
 	}
+
+	/* The two lines below are just an excuse to use variable 'count', which
+	 * accumulate the return value of all calls to 'fread'. The whole thing is
+	 * simply a way of avoiding annoying compiler warnings. */
+	if (!count)
+		fatal("%s: read error", __FUNCTION__);
 
 	/* Reconstruct pending list */
 	list_clear(gpu->pending_work_group_list);
