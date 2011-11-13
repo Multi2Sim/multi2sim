@@ -201,6 +201,9 @@ void strccpy(char *dest, char *src, int size);
 void strccat(char *dest, char *src);
 void strdump(char *dest, char *src, int size);
 void str_single_spaces(char *dest, char *src, int size);
+int str_suffix(char *str, char *suffix);
+int str_prefix(char *str, char *prefix);
+void str_substr(char *dest, int dest_size, char *src, int src_pos, int src_count);
 
 /* File management */
 FILE *open_read(char *fname);

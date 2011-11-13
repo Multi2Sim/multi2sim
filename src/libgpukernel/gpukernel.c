@@ -194,6 +194,55 @@ void gk_libopencl_failed(int pid)
 }
 
 
+/* GPU disassembler tool */
+void gk_disasm(char *path)
+{
+	struct elf_file_t *elf_file;
+	struct elf_symbol_t *symbol;
+	struct elf_section_t *section;
+
+	struct amd_bin_t *amd_bin;
+
+	char kernel_name[MAX_STRING_SIZE];
+
+	int i;
+
+	/* Initialize disassembler */
+	amd_disasm_init();
+
+	/* Decode external ELF */
+	elf_file = elf_file_create_from_path(path);
+	for (i = 0; i < list_count(elf_file->symbol_table); i++)
+	{
+		/* Get symbol and section */
+		symbol = list_get(elf_file->symbol_table, i);
+		section = list_get(elf_file->section_list, symbol->section);
+		if (!section)
+			continue;
+
+		/* If symbol is '__OpenCL_XXX_kernel', it points to internal ELF */
+		if (str_prefix(symbol->name, "__OpenCL_") && str_suffix(symbol->name, "_kernel"))
+		{
+			/* Decode internal ELF */
+			str_substr(kernel_name, sizeof(kernel_name), symbol->name, 9, strlen(symbol->name) - 16);
+			amd_bin = amd_bin_create(section->buffer.ptr + symbol->value, symbol->size, kernel_name);
+
+			/* Get kernel name */
+			printf("**\n** Disassembly for '__kernel %s'\n**\n\n", kernel_name);
+			amd_disasm_buffer(&amd_bin->enc_dict_entry_evergreen->sec_text_buffer, stdout);
+			printf("\n\n\n");
+
+			/* Free internal ELF */
+			amd_bin_free(amd_bin);
+		}
+	}
+
+	/* Free external ELF */
+	elf_file_free(elf_file);
+	amd_disasm_done();
+}
+
+
 
 
 /*

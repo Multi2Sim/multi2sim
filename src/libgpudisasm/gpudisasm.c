@@ -112,6 +112,80 @@ void amd_disasm_done()
 }
 
 
+/* Disassemble entire ELF buffer containing Evergreen ISA.
+ * The ELF buffer representing an entire kernel '.text' section can be used here. */
+void amd_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
+{
+	void *cf_buf;
+	int inst_count;
+	int cf_inst_count;
+	int sec_inst_count;
+	int loop_idx;
+
+	/* Initialize */
+	cf_buf = buffer->ptr;
+	inst_count = 0;
+	cf_inst_count = 0;
+	sec_inst_count = 0;
+	loop_idx = 0;
+
+	/* Disassemble */
+	while (cf_buf)
+	{
+		struct amd_inst_t cf_inst;
+
+		/* CF Instruction */
+		cf_buf = amd_inst_decode_cf(cf_buf, &cf_inst);
+                if (cf_inst.info->flags & AMD_INST_FLAG_DEC_LOOP_IDX) {
+                        assert(loop_idx > 0);
+                        loop_idx--;
+                }
+
+		amd_inst_dump(&cf_inst, cf_inst_count, loop_idx, f);
+		cf_inst_count++;
+		inst_count++;
+
+		/* ALU Clause */
+		if (cf_inst.info->fmt[0] == FMT_CF_ALU_WORD0)
+		{
+			void *alu_buf, *alu_buf_end;
+			struct amd_alu_group_t alu_group;
+
+			alu_buf = buffer->ptr + cf_inst.words[0].cf_alu_word0.addr * 8;
+			alu_buf_end = alu_buf + (cf_inst.words[1].cf_alu_word1.count + 1) * 8;
+			while (alu_buf < alu_buf_end)
+			{
+				alu_buf = amd_inst_decode_alu_group(alu_buf, sec_inst_count, &alu_group);
+				amd_alu_group_dump(&alu_group, loop_idx, f);
+				sec_inst_count++;
+				inst_count++;
+			}
+		}
+
+		/* TEX Clause */
+		if (cf_inst.info->inst == AMD_INST_TC)
+		{
+			char *tex_buf, *tex_buf_end;
+			struct amd_inst_t inst;
+
+			tex_buf = buffer->ptr + cf_inst.words[0].cf_word0.addr * 8;
+			tex_buf_end = tex_buf + (cf_inst.words[1].cf_word1.count + 1) * 16;
+			while (tex_buf < tex_buf_end)
+			{
+				tex_buf = amd_inst_decode_tc(tex_buf, &inst);
+				amd_inst_dump(&inst, sec_inst_count, loop_idx, f);
+				sec_inst_count++;
+				inst_count++;
+			}
+		}
+
+		/* Increase loop depth counter */
+                if (cf_inst.info->flags & AMD_INST_FLAG_INC_LOOP_IDX)
+                        loop_idx++;
+	}
+}
+
+
 
 
 /*
