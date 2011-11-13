@@ -578,6 +578,10 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 	if (kernel->cal_abi)
 		cal_abi_free(kernel->cal_abi);
 
+	/* AMD Binary (internal ELF) */
+	if (kernel->amd_bin)
+		amd_bin_free(kernel->amd_bin);
+
 	/* Free kernel */
 	opencl_object_remove(kernel);
 	free(kernel);
@@ -728,6 +732,7 @@ void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name)
 {
 	struct opencl_program_t *program;
 	char symbol_name[MAX_STRING_SIZE];
+	char name[MAX_STRING_SIZE];
 
 	/* First */
 	strncpy(kernel->name, kernel_name, MAX_STRING_SIZE);
@@ -744,7 +749,7 @@ void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name)
 	/* Read 'header' symbol */
 	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_header", kernel_name);
 	opencl_program_read_symbol(program, symbol_name, &kernel->header_buffer);
-	
+
 	/* Create 'cal_abi' object and parse kernel ELF */
 	kernel->cal_abi = cal_abi_create();
 	{
@@ -754,6 +759,11 @@ void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name)
 		write_buffer(path, kernel->kernel_buffer.ptr, kernel->kernel_buffer.size);
 		cal_abi_parse_elf(kernel->cal_abi, path);
 	}
+	
+	/* Create and parse kernel binary (internal ELF).
+	 * The internal ELF is contained in the buffer pointer to by the 'kernel' symbol. */
+	snprintf(name, sizeof(name), "clKernel<%s>.InternalELF", kernel_name);
+	kernel->amd_bin = amd_bin_create(kernel->kernel_buffer.ptr, kernel->kernel_buffer.size, name);
 	
 	/* Analyze 'metadata' file */
 	opencl_kernel_load_metadata(kernel);

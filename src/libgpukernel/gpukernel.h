@@ -103,6 +103,68 @@ void cal_abi_free(struct cal_abi_t *cal_abi);
 
 
 /*
+ * AMD Binary File (Internal ELF)
+ */
+
+
+/* Encoding dictionary entry header (as encoded in ELF file) */
+struct amd_bin_enc_dict_entry_header_t
+{
+	Elf32_Word d_machine;
+	Elf32_Word d_type;
+	Elf32_Off d_offset;  /* Offset for encoding data (PT_NOTE + PT_LOAD segments) */
+	Elf32_Word d_size;  /* Size of encoding data (PT_NOTE + PT_LOAD segments) */
+	Elf32_Word d_flags;
+};
+
+
+/* Encoding dictionary entry */
+struct amd_bin_enc_dict_entry_t
+{
+	/* Header (pointer to ELF buffer contents) */
+	struct amd_bin_enc_dict_entry_header_t *header;
+
+	/* Buffers containing PT_LOAD and PT_NOTE segments */
+	struct elf2_buffer_t pt_load_buffer;
+	struct elf2_buffer_t pt_note_buffer;
+
+	/* Buffers containing sections */
+	struct elf2_buffer_t sec_text_buffer;
+	struct elf2_buffer_t sec_data_buffer;
+	struct elf2_buffer_t sec_symtab_buffer;
+	struct elf2_buffer_t sec_strtab_buffer;
+
+	/* Info read from pt_notes */
+	int num_gpr_used;
+	int lds_size_used;
+	int stack_size_used;
+};
+
+
+/* Binary file */
+struct amd_bin_t
+{
+	/* Associated ELF file */
+	struct elf2_file_t *elf_file;
+
+	/* Encoding dictionary.
+	 * Elements are of type 'struct amd_bin_enc_dict_entry_t'
+	 * Each element of the dictionary contains the binary for a different architecture
+	 * (Evergreen, x86, etc.) */
+	struct list_t *enc_dict;
+
+	/* Encoding dictionary entry containing the Evergree kernel.
+	 * This is a member of the 'enc_dict' list. */
+	struct amd_bin_enc_dict_entry_t *enc_dict_entry_evergreen;
+};
+
+struct amd_bin_t *amd_bin_create(void *ptr, int size, char *name);
+void amd_bin_free(struct amd_bin_t *amd_bin);
+
+
+
+
+/*
  * OpenCL API Implementation
  */
 
@@ -290,6 +352,9 @@ struct opencl_kernel_t
 	struct elf2_buffer_t metadata_buffer;
 	struct elf2_buffer_t kernel_buffer;
 	struct elf2_buffer_t header_buffer;
+
+	/* AMD Kernel binary (internal ELF) */
+	struct amd_bin_t *amd_bin;
 
 	/* CAL ABI data read from 'kernel_file' */
 	struct cal_abi_t *cal_abi;
