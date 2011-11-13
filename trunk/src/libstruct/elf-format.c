@@ -223,8 +223,41 @@ static void elf_file_read_symbol_table(struct elf_file_t *elf_file)
 
 struct elf_symbol_t *elf_symbol_get_by_address(struct elf_file_t *elf_file, uint32_t addr, uint32_t *offset_ptr)
 {
-	panic("%s: not implemented", __FUNCTION__);
-	return NULL;
+	int min, max, mid;
+	struct elf_symbol_t *symbol;
+
+	/* Empty symbol table */
+	if (!list_count(elf_file->symbol_table))
+		return NULL;
+
+	/* All symbols in the table have a higher address */
+	symbol = list_get(elf_file->symbol_table, 0);
+	if (addr < symbol->value)
+		return NULL;
+
+	/* Binary search */
+	min = 0;
+	max = list_count(elf_file->symbol_table);
+	while (min + 1 < max) {
+		mid = (max + min) / 2;
+		symbol = list_get(elf_file->symbol_table, mid);
+		if (symbol->value > addr)
+			max = mid;
+		else if (symbol->value < addr)
+			min = mid;
+		else {
+			min = mid;
+			break;
+		}
+	}
+
+	/* Go backwards to find appropriate symbol */
+	symbol = list_get(elf_file->symbol_table, min);
+	if (!symbol->value)
+		return NULL;
+	if (offset_ptr)
+		*offset_ptr = addr - symbol->value;
+	return symbol;
 }
 
 
