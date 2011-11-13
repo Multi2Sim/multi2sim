@@ -109,7 +109,7 @@ void gpu_calc_plot_work_items_per_work_group(void)
 	/* Generate data file */
 	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
 	local_mem_per_work_group = gpu->ndrange->local_mem_top;
-	registers_per_work_item = gpu->ndrange->kernel->cal_abi->num_gpr_used;
+	registers_per_work_item = gpu->ndrange->kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
 	for (work_items_per_work_group = gpu_wavefront_size;
 		work_items_per_work_group < gpu_max_wavefronts_per_compute_unit * gpu_wavefront_size;
 		work_items_per_work_group += gpu_wavefront_size)
@@ -200,7 +200,7 @@ void gpu_calc_plot_registers_per_work_item(void)
 	fclose(data_file);
 
 	/* Current data point */
-	registers_per_work_item = gpu->ndrange->kernel->cal_abi->num_gpr_used;
+	registers_per_work_item = gpu->ndrange->kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
 	work_groups_per_compute_unit = gpu_calc_get_work_groups_per_compute_unit(
 		work_items_per_work_group, registers_per_work_item, local_mem_per_work_group);
 	wavefronts_per_compute_unit = work_groups_per_compute_unit * wavefronts_per_work_group;
@@ -261,7 +261,7 @@ void gpu_calc_plot_local_mem_per_work_group(void)
 
 	/* Generate data file */
 	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
-	registers_per_work_item = gpu->ndrange->kernel->cal_abi->num_gpr_used;
+	registers_per_work_item = gpu->ndrange->kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
 	local_mem_step = MAX(1, gpu_local_mem_size / 32);
 	work_items_per_work_group = gpu->ndrange->kernel->local_size;
 	wavefronts_per_work_group = (work_items_per_work_group + gpu_wavefront_size - 1) / gpu_wavefront_size;
