@@ -68,9 +68,9 @@ AR = ar
 ARFLAGS = cru
 libgpukernel_a_AR = $(AR) $(ARFLAGS)
 libgpukernel_a_LIBADD =
-am_libgpukernel_a_OBJECTS = amd-bin.$(OBJEXT) cal-abi.$(OBJEXT) \
-	gpuisa.$(OBJEXT) gpukernel.$(OBJEXT) gpumachine.$(OBJEXT) \
-	opencl.$(OBJEXT) opencl-obj.$(OBJEXT)
+am_libgpukernel_a_OBJECTS = amd-bin.$(OBJEXT) gpuisa.$(OBJEXT) \
+	gpukernel.$(OBJEXT) gpumachine.$(OBJEXT) opencl.$(OBJEXT) \
+	opencl-obj.$(OBJEXT)
 libgpukernel_a_OBJECTS = $(am_libgpukernel_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -182,7 +182,6 @@ top_srcdir = @top_srcdir@
 lib_LIBRARIES = libgpukernel.a
 libgpukernel_a_SOURCES = \
 	amd-bin.c \
-	cal-abi.c \
 	gpuisa.c \
 	gpukernel.c \
 	gpukernel.h \
@@ -279,7 +278,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd-bin.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cal-abi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuisa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpukernel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpumachine.Po@am__quote@

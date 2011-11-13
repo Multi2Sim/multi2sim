@@ -475,7 +475,8 @@ void gpu_stack_faults_insert(void)
 			}
 
 			/* Get work-group */
-			num_registers_per_work_group = kernel->cal_abi->num_gpr_used * kernel->local_size;
+			num_registers_per_work_group = kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used
+				* kernel->local_size;
 			work_group_id_in_compute_unit = fault->reg_id / num_registers_per_work_group;
 			if (work_group_id_in_compute_unit >= gpu_max_work_groups_per_compute_unit) {
 				gpu_faults_debug("effect=\"reg_idle\"");
@@ -491,10 +492,11 @@ void gpu_stack_faults_insert(void)
 
 			/* Fault caused error - get affected entities */
 			gpu_faults_debug("effect=\"error\" ");
-			work_item_id_in_compute_unit = fault->reg_id / kernel->cal_abi->num_gpr_used;
+			work_item_id_in_compute_unit = fault->reg_id
+				/ kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
 			work_item_id_in_work_group = work_item_id_in_compute_unit % kernel->local_size;
 			work_item = work_group->work_items[work_item_id_in_work_group];
-			lo_reg = fault->reg_id % kernel->cal_abi->num_gpr_used;
+			lo_reg = fault->reg_id % kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
 			gpu_faults_debug("wg=%d wf=%d wi=%d lo_reg=%d ",
 				work_group->id, work_item->wavefront->id, work_item->id, lo_reg);
 
@@ -917,7 +919,7 @@ void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 
 	/* Check that at least one work-group can be allocated per compute unit */
 	gpu->work_groups_per_compute_unit = gpu_calc_get_work_groups_per_compute_unit(
-		ndrange->kernel->local_size, ndrange->kernel->cal_abi->num_gpr_used,
+		ndrange->kernel->local_size, ndrange->kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used,
 		ndrange->local_mem_top);
 	if (!gpu->work_groups_per_compute_unit)
 		fatal("work-group resources cannot be allocated to a compute unit.\n"
@@ -955,6 +957,8 @@ void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
 	struct opencl_kernel_t *kernel = ndrange->kernel;
 	FILE *f = debug_file(gpu_pipeline_debug_category);
 
+	void *text_buffer_ptr;
+
 	void *cf_buf;
 	int inst_count;
 	int cf_inst_count;
@@ -962,7 +966,8 @@ void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
 	int loop_idx;
 
 	/* Initialize */
-	cf_buf = kernel->cal_abi->text_buffer;
+	text_buffer_ptr = kernel->amd_bin->enc_dict_entry_evergreen->sec_text_buffer.ptr;
+	cf_buf = text_buffer_ptr;
 	inst_count = 0;
 	cf_inst_count = 0;
 	sec_inst_count = 0;
@@ -993,7 +998,7 @@ void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
 			void *alu_buf, *alu_buf_end;
 			struct amd_alu_group_t alu_group;
 
-			alu_buf = kernel->cal_abi->text_buffer + cf_inst.words[0].cf_alu_word0.addr * 8;
+			alu_buf = text_buffer_ptr + cf_inst.words[0].cf_alu_word0.addr * 8;
 			alu_buf_end = alu_buf + (cf_inst.words[1].cf_alu_word1.count + 1) * 8;
 			while (alu_buf < alu_buf_end)
 			{
@@ -1014,7 +1019,7 @@ void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
 			char *tex_buf, *tex_buf_end;
 			struct amd_inst_t inst;
 
-			tex_buf = kernel->cal_abi->text_buffer + cf_inst.words[0].cf_word0.addr * 8;
+			tex_buf = text_buffer_ptr + cf_inst.words[0].cf_word0.addr * 8;
 			tex_buf_end = tex_buf + (cf_inst.words[1].cf_word1.count + 1) * 16;
 			while (tex_buf < tex_buf_end)
 			{
