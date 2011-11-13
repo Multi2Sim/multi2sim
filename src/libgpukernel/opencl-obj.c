@@ -484,12 +484,6 @@ struct opencl_program_t *opencl_program_create()
 
 void opencl_program_free(struct opencl_program_t *program)
 {
-	if (program->binary_file_elf)
-		elf_close(program->binary_file_elf);
-	if (program->binary_file) {
-		fclose(program->binary_file);
-		unlink(program->binary_file_name);
-	}
 	if (program->elf_file)
 		elf2_file_free(program->elf_file);
 	opencl_object_remove(program);
@@ -506,16 +500,17 @@ char *err_opencl_evergreen_format =
 void opencl_program_build(struct opencl_program_t *program)
 {
 	/* Open ELF file and check that it corresponds to an Evergreen pre-compiled kernel */
-	program->binary_file_elf = elf_open(program->binary_file_name);
-	if (program->binary_file_elf->ehdr.e_machine != 0x3f1)
+	assert(program->elf_file);
+	if (program->elf_file->header->e_machine != 0x3f1)
 		fatal("%s: invalid binary file.\n%s", __FUNCTION__,
 			err_opencl_evergreen_format);
 }
 
 
 /* Look for a symbol name in program binary and read it from its corresponding section.
- * The contents are dumped in a temporary file, whose name is written in 'file_name'.
- * This file is opened and its file descriptor is returned as the function result. */
+ * The contents pointed to by the symbol are stored in an ELF buffer.
+ * No allocation happens here, the target buffer will just point to the contents of
+ * an existing section. */
 
 char *err_opencl_elf_symbol =
 	"\tThe ELF file analyzer is trying to find a name in the ELF symbol table.\n"
@@ -524,29 +519,32 @@ char *err_opencl_elf_symbol =
 	"\tPlease, check the parameters passed to the 'clCreateKernel' function in\n"
 	"\tyour application.\n";
 
-FILE *opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_name,
-	char *file_name, int file_name_size)
+void opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_name,
+	struct elf2_buffer_t *buffer)
 {
-	struct elf_symbol_t *symbol;
-	void *buf;
-	FILE *f;
+	struct elf2_file_t *elf_file;
+	struct elf2_symbol_t *symbol;
+	struct elf2_section_t *section;
 	
 	/* Look for symbol */
-	assert(program->binary_file_elf);
-	symbol = elf_get_symbol_by_name(program->binary_file_elf, symbol_name);
+	elf_file = program->elf_file;
+	assert(elf_file);
+	symbol = elf2_symbol_get_by_name(elf_file, symbol_name);
 	if (!symbol)
 		fatal("%s: ELF symbol '%s' not found.\n%s", __FUNCTION__,
 			symbol_name, err_opencl_elf_symbol);
 	
-	/* Store in file */
-	f = create_temp_file(file_name, file_name_size);
-	buf = elf_section_read_offset(program->binary_file_elf, symbol->section,
-		symbol->value, symbol->size);
-	write_buffer(file_name, buf, symbol->size);
-	elf_free_buffer(buf);
+	/* Get section where the symbol is pointing */
+	section = list_get(elf_file->section_list, symbol->section);
+	assert(section);
+	if (symbol->value + symbol->size > section->header->sh_size)
+		fatal("%s: ELF symbol '%s' exceeds section '%s' boundaries.\n%s",
+			__FUNCTION__, symbol->name, section->name, err_opencl_elf_symbol);
 
-	/* Return temporary file descriptor */
-	return f;
+	/* Update buffer */
+	buffer->ptr = section->buffer.ptr + symbol->value;
+	buffer->size = symbol->size;
+	buffer->pos = 0;
 }
 
 
@@ -579,20 +577,6 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 	/* CAL ABI */
 	if (kernel->cal_abi)
 		cal_abi_free(kernel->cal_abi);
-
-	/* Program excerpts */
-	if (kernel->metadata_file) {
-		fclose(kernel->metadata_file);
-		unlink(kernel->metadata_file_name);
-	}
-	if (kernel->kernel_file) {
-		fclose(kernel->kernel_file);
-		unlink(kernel->kernel_file_name);
-	}
-	if (kernel->func_file) {
-		fclose(kernel->func_file);
-		unlink(kernel->func_file_name);
-	}
 
 	/* Free kernel */
 	opencl_object_remove(kernel);
@@ -637,23 +621,24 @@ char *err_opencl_kernel_metadata_note =
 
 void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 {
-	FILE *f;
 	char line[MAX_STRING_SIZE];
 	char *line_ptrs[MAX_STRING_SIZE];
 	int token_count;
 	struct opencl_kernel_arg_t *arg;
+	struct elf2_buffer_t *buffer;
 	
 	/* Open as text file */
-	f = fopen(kernel->metadata_file_name, "rt");
+	buffer = &kernel->metadata_buffer;
+	elf2_buffer_seek(buffer, 0);
 	for (;;) {
 		
-		/* Read line from file */
-		line_ptrs[0] = fgets(line, MAX_STRING_SIZE, f);
-		if (!line_ptrs[0])
+		/* Read line from buffer */
+		elf2_buffer_read_line(buffer, line, MAX_STRING_SIZE);
+		if (!line[0])
 			break;
 
 		/* Split line */
-		line_ptrs[0] = strtok(line_ptrs[0], ":;\n");
+		line_ptrs[0] = strtok(line, ":;\n");
 		for (token_count = 1; (line_ptrs[token_count] = strtok(NULL, ":\n")); token_count++);
 
 		/* Ignored entries */
@@ -735,65 +720,6 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 		warning("kernel '%s': unknown meta data entry '%s'",
 			kernel->name, line_ptrs[0]);
 	}
-
-	/* Close */
-	fclose(f);
-}
-
-
-/* This function is deprecated. It will not run for APP SDK 2.5 binaries anymore */
-void opencl_kernel_load_func_metadata(struct opencl_kernel_t *kernel)
-{
-	FILE *f;
-	char line[MAX_STRING_SIZE];
-	char *line_ptrs[MAX_STRING_SIZE];
-	int token_count;
-	
-	/* Open as text file */
-	f = fopen(kernel->func_file_name, "rt");
-	if (!f)
-		fatal("%s: unable to open metadata file", __FUNCTION__);
-	for (;;) {
-		
-		/* Read line from file */
-		line_ptrs[0] = fgets(line, MAX_STRING_SIZE, f);
-		if (!line_ptrs[0])
-			break;
-
-		/* Split line */
-		line_ptrs[0] = strtok(line_ptrs[0], ":;\n");
-		for (token_count = 1; (line_ptrs[token_count] = strtok(NULL, ":\n")); token_count++);
-
-		/* Ignored entries */
-		if (!line_ptrs[0] ||
-			!strcmp(line_ptrs[0], "ARGSTART") ||
-			!strcmp(line_ptrs[0], "uniqueid") ||
-			!strcmp(line_ptrs[0], "ARGEND"))
-			continue;
-
-		/* Memory */
-		if (!strcmp(line_ptrs[0], "memory")) {
-			OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
-			if (!strcmp(line_ptrs[1], "hwprivate")) {
-				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
-			} else if (!strcmp(line_ptrs[1], "hwlocal")) {
-				kernel->func_mem_local = atoi(line_ptrs[2]);
-				opencl_debug("kernel '%s' using %d bytes local memory\n",
-					kernel->name, kernel->func_mem_local);
-			} else if (!strcmp(line_ptrs[1], "hwregion")) {
-				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
-			} else
-				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
-			continue;
-		}
-
-		/* Warn about uninterpreted entries */
-		warning("kernel '%s': unknown function meta data entry '%s'",
-			kernel->name, line_ptrs[0]);
-	}
-
-	/* Close */
-	fclose(f);
 }
 
 
@@ -809,38 +735,28 @@ void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name)
 
 	/* Read 'metadata' symbol */
 	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_metadata", kernel_name);
-	kernel->metadata_file = opencl_program_read_symbol(program, symbol_name,
-		kernel->metadata_file_name, MAX_PATH_SIZE);
+	opencl_program_read_symbol(program, symbol_name, &kernel->metadata_buffer);
 	
 	/* Read 'kernel' symbol */
 	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_kernel", kernel_name);
-	kernel->kernel_file = opencl_program_read_symbol(program, symbol_name,
-		kernel->kernel_file_name, MAX_PATH_SIZE);
+	opencl_program_read_symbol(program, symbol_name, &kernel->kernel_buffer);
 	
-	/* Check that symbols were found */
-	if (!kernel->metadata_file || !kernel->kernel_file)
-		fatal("%s: kernel '%s' not found in binary.\n%s", __FUNCTION__,
-			kernel_name, err_opencl_param_note);
+	/* Read 'header' symbol */
+	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_header", kernel_name);
+	opencl_program_read_symbol(program, symbol_name, &kernel->header_buffer);
 	
 	/* Create 'cal_abi' object and parse kernel ELF */
 	kernel->cal_abi = cal_abi_create();
-	cal_abi_parse_elf(kernel->cal_abi, kernel->kernel_file_name);
+	{
+		//////// FIXME
+		char path[1000];
+		create_temp_file(path, sizeof(path));
+		write_buffer(path, kernel->kernel_buffer.ptr, kernel->kernel_buffer.size);
+		cal_abi_parse_elf(kernel->cal_abi, path);
+	}
 	
 	/* Analyze 'metadata' file */
 	opencl_kernel_load_metadata(kernel);
-
-	/* Read function 'XX_fmetadata' symbol.
-	 * APP SDK 2.3 - OpenCL Binary Image Format (BIF), 'XX' is the function 'uniqueid' value.
-	 * APP SDK 2.4 - The kernel name is the value for 'XX'
-	 * APP SDK 2.5 - Symbol 'XX_fmetadata is omitted. All information included under 'XX_metadata'. */
-	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%d_fmetadata", kernel->func_uniqueid);  /* SDK 2.3 */
-	if (!elf_get_symbol_by_name(program->binary_file_elf, symbol_name))
-		snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_fmetadata", kernel_name);  /* SDK 2.4 */
-	if (elf_get_symbol_by_name(program->binary_file_elf, symbol_name)) {
-		kernel->func_file = opencl_program_read_symbol(program, symbol_name,
-			kernel->func_file_name, MAX_PATH_SIZE);
-		opencl_kernel_load_func_metadata(kernel);
-	}
 }
 
 
