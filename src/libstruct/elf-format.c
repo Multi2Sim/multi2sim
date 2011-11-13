@@ -171,6 +171,7 @@ static void elf2_file_read_symbol_section(struct elf2_file_t *elf_file, struct e
 		symbol->size = sym->st_size;
 		symbol->section = sym->st_shndx;
 		symbol->name = symbol_names_section->buffer.ptr + sym->st_name;
+		assert(sym->st_name < symbol_names_section->buffer.size);
 
 		/* Add symbol to list */
 		list_add(elf_file->symbol_table, symbol);
@@ -204,10 +205,17 @@ static void elf2_file_read_symbol_table(struct elf2_file_t *elf_file)
 	for (i = 0; i < 80; i++)
 		elf2_debug("-");
 	elf2_debug("\n");
-	for (i = 0; i < list_count(elf_file->symbol_table); i++) {
+	for (i = 0; i < list_count(elf_file->symbol_table); i++)
+	{
+		char section_name[15];
+
 		symbol = list_get(elf_file->symbol_table, i);
 		section = list_get(elf_file->section_list, symbol->section);
-		elf2_debug("%-40s %-15s 0x%-10x %-12d\n", symbol->name, section->name, symbol->value, symbol->size);
+		if (section)
+			snprintf(section_name, sizeof(section_name), "%s", section->name);
+		else
+			snprintf(section_name, sizeof(section_name), "%d", symbol->section);
+		elf2_debug("%-40s %-15s 0x%-10x %-12d\n", symbol->name, section_name, symbol->value, symbol->size);
 	}
 	elf2_debug("\n");
 }
@@ -389,7 +397,7 @@ static void elf2_file_read_program_headers(struct elf2_file_t *elf_file)
 			elf_file->path, elf_header->e_phentsize, (int) sizeof(Elf32_Phdr));
 
 	/* Read program headers */
-	elf2_buffer_seek(buffer, elf_header->e_shoff);
+	elf2_buffer_seek(buffer, elf_header->e_phoff);
 	for (i = 0; i < elf_header->e_phnum; i++)
 	{
 		/* Allocate program header */
@@ -442,7 +450,7 @@ static struct elf2_file_t *elf2_file_create_from_allocated_buffer(void *buffer, 
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Duplicate path string */
-	elf_file->path = strdup(path);
+	elf_file->path = strdup(path ? path : "");
 	if (!elf_file->path)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -458,25 +466,24 @@ static struct elf2_file_t *elf2_file_create_from_allocated_buffer(void *buffer, 
 	elf2_file_read_symbol_table(elf_file);
 
 	/* Return */
+	elf2_debug("\n\n\n");
 	return elf_file;
 }
 
 
-struct elf2_file_t *elf2_file_create_from_buffer(void *buffer, int size)
+struct elf2_file_t *elf2_file_create_from_buffer(void *ptr, int size, char *name)
 {
 	struct elf2_file_t *elf_file;
-	void *buffer_copy;
-	char path[100];
+	void *ptr_copy;
 
 	/* Make a copy of the buffer */
-	buffer_copy = malloc(size);
-	if (!buffer_copy)
+	ptr_copy = malloc(size);
+	if (!ptr_copy)
 		fatal("%s: out of memory", __FUNCTION__);
-	memcpy(buffer_copy, buffer, size);
+	memcpy(ptr_copy, ptr, size);
 
 	/* Create ELF */
-	snprintf(path, sizeof(path), "<buffer at %p>", buffer_copy);
-	elf_file = elf2_file_create_from_allocated_buffer(buffer_copy, size, path);
+	elf_file = elf2_file_create_from_allocated_buffer(ptr_copy, size, name);
 	return elf_file;
 }
 

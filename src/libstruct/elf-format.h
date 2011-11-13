@@ -103,9 +103,10 @@ int elf2_buffer_read_line(struct elf2_buffer_t *buffer, char *str, int size);
 struct elf2_symbol_t *elf2_symbol_get_by_address(struct elf2_file_t *elf_file, uint32_t addr, uint32_t *offset_ptr);
 struct elf2_symbol_t *elf2_symbol_get_by_name(struct elf2_file_t *elf_file, char *name);
 
-struct elf2_file_t *elf2_file_create_from_buffer(void *buffer, int size);
+struct elf2_file_t *elf2_file_create_from_buffer(void *ptr, int size, char *name);
 struct elf2_file_t *elf2_file_create_from_path(char *path);
 void elf2_file_free(struct elf2_file_t *elf_file);
 
 
 #endif
+

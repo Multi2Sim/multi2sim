@@ -105,6 +105,11 @@ static void elf_read_symtab(struct elf_file_t *f, int section)
 	}
 
 	/* Insert symbols */
+	elf_debug("\n");
+	elf_debug("%-40s %-15s %-12s %-12s\n", "name", "section", "value", "size");
+	for (i = 0; i < 80; i++)
+		elf_debug("-");
+	elf_debug("\n");
 	for (i = 0; i < count; i++) {
 		sym = (Elf32_Sym *) buf + i;
 		if (* (char *) (bufnames + sym->st_name) == '\0')
@@ -116,6 +121,7 @@ static void elf_read_symtab(struct elf_file_t *f, int section)
 		symbol->name = strdup(bufnames + sym->st_name);
 		if (!symbol->name)
 			fatal("%s: out of memory duplicating symbol name", f->path);
+		elf_debug("%-40s %-15d 0x%-10x %-12d\n", symbol->name, symbol->section, symbol->value, symbol->size);
 	}
 
 	/* Success */

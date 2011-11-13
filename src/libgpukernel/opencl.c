@@ -559,6 +559,8 @@ int opencl_func_run(int code, unsigned int *args)
 		struct opencl_program_t *program;
 		void *buf;
 
+		char name[MAX_STRING_SIZE];
+
 		opencl_debug("  context=0x%x, num_devices=%d, device_list=0x%x, lengths=0x%x\n"
 			"  binaries=0x%x, binary_status=0x%x, errcode_ret=0x%x\n",
 			context_id, num_devices, device_list, lengths, binaries,
@@ -587,7 +589,8 @@ int opencl_func_run(int code, unsigned int *args)
 		mem_read(isa_mem, binary, length, buf);
 
 		/* Load ELF binary from guest memory */
-		program->elf_file = elf2_file_create_from_buffer(buf, length);
+		snprintf(name, sizeof(name), "clProgram<%d>.externalELF", program->id);
+		program->elf_file = elf2_file_create_from_buffer(buf, length, name);
 		free(buf);
 
 		/* Return success */
