@@ -31,7 +31,7 @@
  * Global Variables
  */
 
-int elf2_debug_category;
+int elf_debug_category;
 
 
 
@@ -42,7 +42,7 @@ int elf2_debug_category;
 
 
 /* Select new position in buffer */
-void elf2_buffer_seek(struct elf2_buffer_t *elf_buffer, int pos)
+void elf_buffer_seek(struct elf_buffer_t *elf_buffer, int pos)
 {
 	if (pos < 0 || pos > elf_buffer->size)
 		fatal("%s: invalid position in buffer (%d)", __FUNCTION__, pos);
@@ -51,7 +51,7 @@ void elf2_buffer_seek(struct elf2_buffer_t *elf_buffer, int pos)
 
 
 /* Return a pointer to the current position */
-void *elf2_buffer_tell(struct elf2_buffer_t *buffer)
+void *elf_buffer_tell(struct elf_buffer_t *buffer)
 {
 	return buffer->ptr + buffer->pos;
 }
@@ -60,7 +60,7 @@ void *elf2_buffer_tell(struct elf2_buffer_t *buffer)
 /* Read a line from 'buffer'.
  * The line is placed in 'str', which is a buffer of 'size' bytes.
  * The function returns the number of bytes read. */
-int elf2_buffer_read_line(struct elf2_buffer_t *buffer, char *str, int size)
+int elf_buffer_read_line(struct elf_buffer_t *buffer, char *str, int size)
 {
 	int read_count = 0;
 	int write_count = 0;
@@ -74,7 +74,7 @@ int elf2_buffer_read_line(struct elf2_buffer_t *buffer, char *str, int size)
 		}
 
 		/* Copy one character */
-		read_count = elf2_buffer_read(buffer, str, 1);
+		read_count = elf_buffer_read(buffer, str, 1);
 		if (!read_count) {
 			*str = '\0';
 			break;
@@ -102,7 +102,7 @@ int elf2_buffer_read_line(struct elf2_buffer_t *buffer, char *str, int size)
  *   actually reading the contents of the buffer.
  *  -The function returns the number of bytes read.
  */
-int elf2_buffer_read(struct elf2_buffer_t *buffer, void *ptr, int size)
+int elf_buffer_read(struct elf_buffer_t *buffer, void *ptr, int size)
 {
 	int left;
 
@@ -129,10 +129,10 @@ int elf2_buffer_read(struct elf2_buffer_t *buffer, void *ptr, int size)
  */
 
 
-static int elf2_symbol_compare(const void *a, const void *b)
+static int elf_symbol_compare(const void *a, const void *b)
 {
-	const struct elf2_symbol_t *symbol_a = a;
-	const struct elf2_symbol_t *symbol_b = b;
+	const struct elf_symbol_t *symbol_a = a;
+	const struct elf_symbol_t *symbol_b = b;
 	if (symbol_a->value < symbol_b->value)
 		return -1;
 	else if (symbol_a->value > symbol_b->value)
@@ -143,17 +143,17 @@ static int elf2_symbol_compare(const void *a, const void *b)
 
 
 /* Add symbols in a section into the symbol table */
-static void elf2_file_read_symbol_section(struct elf2_file_t *elf_file, struct elf2_section_t *section)
+static void elf_file_read_symbol_section(struct elf_file_t *elf_file, struct elf_section_t *section)
 {
 	int i, count;
 	Elf32_Sym *sym;
-	struct elf2_section_t *symbol_names_section;
-	struct elf2_symbol_t *symbol;
+	struct elf_section_t *symbol_names_section;
+	struct elf_symbol_t *symbol;
 
 	/* Read symbol table section */
 	symbol_names_section = list_get(elf_file->section_list, section->header->sh_link);
 	assert(symbol_names_section);
-	elf2_debug("  section '%s' is symbol table with names in section '%s'\n",
+	elf_debug("  section '%s' is symbol table with names in section '%s'\n",
 		section->name, symbol_names_section->name);
 
 	/* Insert symbols */
@@ -166,7 +166,7 @@ static void elf2_file_read_symbol_section(struct elf2_file_t *elf_file, struct e
 			continue;
 
 		/* Create symbol */
-		symbol = calloc(1, sizeof(struct elf2_symbol_t));
+		symbol = calloc(1, sizeof(struct elf_symbol_t));
 		symbol->value = sym->st_value;
 		symbol->size = sym->st_size;
 		symbol->section = sym->st_shndx;
@@ -179,32 +179,32 @@ static void elf2_file_read_symbol_section(struct elf2_file_t *elf_file, struct e
 }
 
 
-static void elf2_file_read_symbol_table(struct elf2_file_t *elf_file)
+static void elf_file_read_symbol_table(struct elf_file_t *elf_file)
 {
-	struct elf2_section_t *section;
-	struct elf2_symbol_t *symbol;
+	struct elf_section_t *section;
+	struct elf_symbol_t *symbol;
 	int i;
 
 	/* Create symbol table */
 	elf_file->symbol_table = list_create();
 
 	/* Load symbols from sections */
-	elf2_debug("Symbol table:\n");
+	elf_debug("Symbol table:\n");
 	for (i = 0; i < list_count(elf_file->section_list); i++) {
 		section = list_get(elf_file->section_list, i);
 		if (section->header->sh_type == 2 || section->header->sh_type == 11)
-			elf2_file_read_symbol_section(elf_file, section);
+			elf_file_read_symbol_section(elf_file, section);
 	}
 
 	/* Sort symbol table */
-	list_sort(elf_file->symbol_table, elf2_symbol_compare);
+	list_sort(elf_file->symbol_table, elf_symbol_compare);
 
 	/* Dump */
-	elf2_debug("\n");
-	elf2_debug("%-40s %-15s %-12s %-12s\n", "name", "section", "value", "size");
+	elf_debug("\n");
+	elf_debug("%-40s %-15s %-12s %-12s\n", "name", "section", "value", "size");
 	for (i = 0; i < 80; i++)
-		elf2_debug("-");
-	elf2_debug("\n");
+		elf_debug("-");
+	elf_debug("\n");
 	for (i = 0; i < list_count(elf_file->symbol_table); i++)
 	{
 		char section_name[15];
@@ -215,22 +215,22 @@ static void elf2_file_read_symbol_table(struct elf2_file_t *elf_file)
 			snprintf(section_name, sizeof(section_name), "%s", section->name);
 		else
 			snprintf(section_name, sizeof(section_name), "%d", symbol->section);
-		elf2_debug("%-40s %-15s 0x%-10x %-12d\n", symbol->name, section_name, symbol->value, symbol->size);
+		elf_debug("%-40s %-15s 0x%-10x %-12d\n", symbol->name, section_name, symbol->value, symbol->size);
 	}
-	elf2_debug("\n");
+	elf_debug("\n");
 }
 
 
-struct elf2_symbol_t *elf2_symbol_get_by_address(struct elf2_file_t *elf_file, uint32_t addr, uint32_t *offset_ptr)
+struct elf_symbol_t *elf_symbol_get_by_address(struct elf_file_t *elf_file, uint32_t addr, uint32_t *offset_ptr)
 {
 	panic("%s: not implemented", __FUNCTION__);
 	return NULL;
 }
 
 
-struct elf2_symbol_t *elf2_symbol_get_by_name(struct elf2_file_t *elf_file, char *name)
+struct elf_symbol_t *elf_symbol_get_by_name(struct elf_file_t *elf_file, char *name)
 {
-	struct elf2_symbol_t *symbol;
+	struct elf_symbol_t *symbol;
 	int i;
 
 	for (i = 0; i < list_count(elf_file->symbol_table); i++) {
@@ -248,9 +248,9 @@ struct elf2_symbol_t *elf2_symbol_get_by_name(struct elf2_file_t *elf_file, char
  * ELF File
  */
 
-static void elf2_file_read_elf_header(struct elf2_file_t *elf_file)
+static void elf_file_read_elf_header(struct elf_file_t *elf_file)
 {
-	struct elf2_buffer_t *buffer;
+	struct elf_buffer_t *buffer;
 	Elf32_Ehdr *elf_header;
 	int count;
 
@@ -258,7 +258,7 @@ static void elf2_file_read_elf_header(struct elf2_file_t *elf_file)
 	buffer = &elf_file->buffer;
 	elf_file->header = buffer->ptr;
 	elf_header = elf_file->header;
-	count = elf2_buffer_read(buffer, NULL, sizeof(Elf32_Ehdr));
+	count = elf_buffer_read(buffer, NULL, sizeof(Elf32_Ehdr));
 	if (count != sizeof(Elf32_Ehdr) || elf_header->e_ehsize != sizeof(Elf32_Ehdr))
 		fatal("%s: not a valid ELF file\n", elf_file->path);
 
@@ -283,29 +283,29 @@ static void elf2_file_read_elf_header(struct elf2_file_t *elf_file)
 		fatal("%s: ELF file endianness mismatch", elf_file->path);
 
 	/* Debug */
-	elf2_debug("ELF header:\n");
-	elf2_debug("  ehdr.e_ident: EI_CLASS=%d, EI_DATA=%d, EI_VERSION=%d\n",
+	elf_debug("ELF header:\n");
+	elf_debug("  ehdr.e_ident: EI_CLASS=%d, EI_DATA=%d, EI_VERSION=%d\n",
 		elf_header->e_ident[4], elf_header->e_ident[5], elf_header->e_ident[6]);
-	elf2_debug("  ehdr.e_type: %d\n", elf_header->e_type);
-	elf2_debug("  ehdr.e_machine: %u\n", elf_header->e_machine);
-	elf2_debug("  ehdr.e_entry: 0x%x (program entry point)\n", elf_header->e_entry);
-	elf2_debug("  ehdr.e_phoff: %u (program header table offset)\n", elf_header->e_phoff);
-	elf2_debug("  ehdr.e_shoff: %u (section header table offset)\n", elf_header->e_shoff);
-	elf2_debug("  ehdr.e_phentsize: %u\n", elf_header->e_phentsize);
-	elf2_debug("  ehdr.e_phnum: %u\n", elf_header->e_phnum);
-	elf2_debug("  ehdr.e_shentsize: %u\n", elf_header->e_shentsize);
-	elf2_debug("  ehdr.e_shnum: %u\n", elf_header->e_shnum);
-	elf2_debug("  ehdr.e_shstrndx: %u\n", (uint32_t) elf_header->e_shstrndx);
-	elf2_debug("\n");
+	elf_debug("  ehdr.e_type: %d\n", elf_header->e_type);
+	elf_debug("  ehdr.e_machine: %u\n", elf_header->e_machine);
+	elf_debug("  ehdr.e_entry: 0x%x (program entry point)\n", elf_header->e_entry);
+	elf_debug("  ehdr.e_phoff: %u (program header table offset)\n", elf_header->e_phoff);
+	elf_debug("  ehdr.e_shoff: %u (section header table offset)\n", elf_header->e_shoff);
+	elf_debug("  ehdr.e_phentsize: %u\n", elf_header->e_phentsize);
+	elf_debug("  ehdr.e_phnum: %u\n", elf_header->e_phnum);
+	elf_debug("  ehdr.e_shentsize: %u\n", elf_header->e_shentsize);
+	elf_debug("  ehdr.e_shnum: %u\n", elf_header->e_shnum);
+	elf_debug("  ehdr.e_shstrndx: %u\n", (uint32_t) elf_header->e_shstrndx);
+	elf_debug("\n");
 }
 
 
-static void elf2_file_read_section_headers(struct elf2_file_t *elf_file)
+static void elf_file_read_section_headers(struct elf_file_t *elf_file)
 {
 	int i, count;
 
-	struct elf2_buffer_t *buffer;
-	struct elf2_section_t *section;
+	struct elf_buffer_t *buffer;
+	struct elf_section_t *section;
 	Elf32_Ehdr *elf_header;
 
 	/* Create section list */
@@ -321,15 +321,15 @@ static void elf2_file_read_section_headers(struct elf2_file_t *elf_file)
 			elf_file->path, (int) sizeof(Elf32_Shdr));
 
 	/* Read section headers */
-	elf2_buffer_seek(buffer, elf_header->e_shoff);
+	elf_buffer_seek(buffer, elf_header->e_shoff);
 	for (i = 0; i < elf_header->e_shnum; i++)
 	{
 		/* Allocate section */
-		section = calloc(1, sizeof(struct elf2_section_t));
-		section->header = elf2_buffer_tell(buffer);
+		section = calloc(1, sizeof(struct elf_section_t));
+		section->header = elf_buffer_tell(buffer);
 
 		/* Advance buffer */
-		count = elf2_buffer_read(buffer, NULL, sizeof(Elf32_Shdr));
+		count = elf_buffer_read(buffer, NULL, sizeof(Elf32_Shdr));
 		if (count < sizeof(Elf32_Shdr))
 			fatal("%s: unexpected end of file while reading section headers", elf_file->path);
 
@@ -355,14 +355,14 @@ static void elf2_file_read_section_headers(struct elf2_file_t *elf_file)
 
 
 	/* Dump section headers */
-	elf2_debug("Section headers:\n");
-	elf2_debug("idx type flags addr       offset     size      link     name\n");
+	elf_debug("Section headers:\n");
+	elf_debug("idx type flags addr       offset     size      link     name\n");
 	for (i = 0; i < 80; i++)
-		elf2_debug("-");
-	elf2_debug("\n");
+		elf_debug("-");
+	elf_debug("\n");
 	for (i = 0; i < list_count(elf_file->section_list); i++) {
 		section = list_get(elf_file->section_list, i);
-		elf2_debug("%-3d %-4u %-5u 0x%-8x 0x%-8x %-9u %-8u %s\n", i,
+		elf_debug("%-3d %-4u %-5u 0x%-8x 0x%-8x %-9u %-8u %s\n", i,
 			section->header->sh_type,
 			section->header->sh_flags,
 			section->header->sh_addr,
@@ -371,14 +371,14 @@ static void elf2_file_read_section_headers(struct elf2_file_t *elf_file)
 			section->header->sh_link,
 			section->name);
 	}
-	elf2_debug("\n");
+	elf_debug("\n");
 }
 
 
-static void elf2_file_read_program_headers(struct elf2_file_t *elf_file)
+static void elf_file_read_program_headers(struct elf_file_t *elf_file)
 {
-	struct elf2_buffer_t *buffer;
-	struct elf2_program_header_t *program_header;
+	struct elf_buffer_t *buffer;
+	struct elf_program_header_t *program_header;
 	Elf32_Ehdr *elf_header;
 
 	int count;
@@ -397,15 +397,15 @@ static void elf2_file_read_program_headers(struct elf2_file_t *elf_file)
 			elf_file->path, elf_header->e_phentsize, (int) sizeof(Elf32_Phdr));
 
 	/* Read program headers */
-	elf2_buffer_seek(buffer, elf_header->e_phoff);
+	elf_buffer_seek(buffer, elf_header->e_phoff);
 	for (i = 0; i < elf_header->e_phnum; i++)
 	{
 		/* Allocate program header */
-		program_header = calloc(1, sizeof(struct elf2_program_header_t));
-		program_header->header = elf2_buffer_tell(buffer);
+		program_header = calloc(1, sizeof(struct elf_program_header_t));
+		program_header->header = elf_buffer_tell(buffer);
 
 		/* Advance buffer */
-		count = elf2_buffer_read(buffer, NULL, sizeof(Elf32_Phdr));
+		count = elf_buffer_read(buffer, NULL, sizeof(Elf32_Phdr));
 		if (count < sizeof(Elf32_Phdr))
 			fatal("%s: unexpected end of file while reading program headers", elf_file->path);
 
@@ -414,14 +414,14 @@ static void elf2_file_read_program_headers(struct elf2_file_t *elf_file)
 	}
 
 	/* Dump program headers */
-	elf2_debug("Program headers:\n");
-	elf2_debug("idx type       offset     vaddr      paddr      filesz    memsz     flags  align\n");
+	elf_debug("Program headers:\n");
+	elf_debug("idx type       offset     vaddr      paddr      filesz    memsz     flags  align\n");
 	for (i = 0; i < 80; i++)
-		elf2_debug("-");
-	elf2_debug("\n");
+		elf_debug("-");
+	elf_debug("\n");
 	for (i = 0; i < list_count(elf_file->program_header_list); i++) {
 		program_header = list_get(elf_file->program_header_list, i);
-		elf2_debug("%-3d 0x%-8x 0x%-8x 0x%-8x 0x%-8x %-9u %-9u %-6u %u\n", i,
+		elf_debug("%-3d 0x%-8x 0x%-8x 0x%-8x 0x%-8x %-9u %-9u %-6u %u\n", i,
 			program_header->header->p_type,
 			program_header->header->p_offset,
 			program_header->header->p_vaddr,
@@ -431,17 +431,17 @@ static void elf2_file_read_program_headers(struct elf2_file_t *elf_file)
 			program_header->header->p_flags,
 			program_header->header->p_align);
 	}
-	elf2_debug("\n");
+	elf_debug("\n");
 }
 
 
-static struct elf2_file_t *elf2_file_create_from_allocated_buffer(void *buffer, int size, char *path)
+static struct elf_file_t *elf_file_create_from_allocated_buffer(void *buffer, int size, char *path)
 {
-	struct elf2_file_t *elf_file;
+	struct elf_file_t *elf_file;
 
 	/* Create buffer */
-	elf2_debug("**\n** Loading ELF file\n** %s\n**\n\n", path);
-	elf_file = calloc(1, sizeof(struct elf2_file_t));
+	elf_debug("**\n** Loading ELF file\n** %s\n**\n\n", path);
+	elf_file = calloc(1, sizeof(struct elf_file_t));
 	if (!elf_file)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -456,20 +456,20 @@ static struct elf2_file_t *elf2_file_create_from_allocated_buffer(void *buffer, 
 	elf_file->buffer.pos = 0;
 
 	/* Read ELF file contents */
-	elf2_file_read_elf_header(elf_file);
-	elf2_file_read_section_headers(elf_file);
-	elf2_file_read_program_headers(elf_file);
-	elf2_file_read_symbol_table(elf_file);
+	elf_file_read_elf_header(elf_file);
+	elf_file_read_section_headers(elf_file);
+	elf_file_read_program_headers(elf_file);
+	elf_file_read_symbol_table(elf_file);
 
 	/* Return */
-	elf2_debug("\n\n\n");
+	elf_debug("\n\n\n");
 	return elf_file;
 }
 
 
-struct elf2_file_t *elf2_file_create_from_buffer(void *ptr, int size, char *name)
+struct elf_file_t *elf_file_create_from_buffer(void *ptr, int size, char *name)
 {
-	struct elf2_file_t *elf_file;
+	struct elf_file_t *elf_file;
 	void *ptr_copy;
 
 	/* Make a copy of the buffer */
@@ -479,14 +479,14 @@ struct elf2_file_t *elf2_file_create_from_buffer(void *ptr, int size, char *name
 	memcpy(ptr_copy, ptr, size);
 
 	/* Create ELF */
-	elf_file = elf2_file_create_from_allocated_buffer(ptr_copy, size, name);
+	elf_file = elf_file_create_from_allocated_buffer(ptr_copy, size, name);
 	return elf_file;
 }
 
 
-struct elf2_file_t *elf2_file_create_from_path(char *path)
+struct elf_file_t *elf_file_create_from_path(char *path)
 {
-	struct elf2_file_t *elf_file;
+	struct elf_file_t *elf_file;
 	struct stat st;
 	FILE *f;
 
@@ -515,12 +515,12 @@ struct elf2_file_t *elf2_file_create_from_path(char *path)
 		fatal("'%s': error reading file contents", path);
 
 	/* Create ELF file */
-	elf_file = elf2_file_create_from_allocated_buffer(buffer, size, path);
+	elf_file = elf_file_create_from_allocated_buffer(buffer, size, path);
 	return elf_file;
 }
 
 
-void elf2_file_free(struct elf2_file_t *elf_file)
+void elf_file_free(struct elf_file_t *elf_file)
 {
 	/* Free symbol table */
 	while (list_count(elf_file->symbol_table))

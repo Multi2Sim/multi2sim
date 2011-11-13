@@ -190,73 +190,12 @@ void regs_fpu_stack_dump(struct regs_t *regs, FILE *f);
 
 
 
-/*
- * ELF Files
- */
-
-#define elf_debug(...) debug(elf_debug_category, __VA_ARGS__)
-extern int elf_debug_category;
-
-
-struct elf_symbol_t {
-	char *name;
-	uint32_t value;
-	uint32_t size;
-	int section;
-};
-
-
-struct elf_file_t {
-	
-	/* ELF file */
-	FILE *f;
-	char path[MAX_PATH_SIZE];
-
-	uint32_t size;  /* Size of the file */
-	void *shstr;  /* Section header string table */
-	Elf32_Ehdr ehdr;  /* ELF header */
-	Elf32_Shdr *shdr;  /* Section headers (array of ehdr.e_shnum elements) */
-	Elf32_Phdr *phdr;  /* Program headers (array of ehdr.e_phnum elements) */
-	uint32_t phdt_base;  /* Program header table base */
-
-	/* Symbol table */
-	int symtab_size;
-	int symtab_count;
-	struct elf_symbol_t *symtab;
-};
-
-
-struct elf_file_t *elf_open(char *path);
-void elf_close(struct elf_file_t *f);
-
-void *elf_read_buffer(struct elf_file_t *elf, uint32_t offset, uint32_t size);
-void elf_free_buffer(void *buf);
-
-int elf_section_count(struct elf_file_t *f);
-int elf_section_info(struct elf_file_t *f, int section,
-	char **pname, uint32_t *paddr, uint32_t *psize, uint32_t *pflags);
-void *elf_section_read(struct elf_file_t *f, int section);
-void *elf_section_read_offset(struct elf_file_t *f, int section, uint32_t offset, uint32_t size);
-
-void *elf_phdt(struct elf_file_t *f);
-uint32_t elf_phdt_base(struct elf_file_t *f);
-uint32_t elf_phdr_count(struct elf_file_t *f);
-uint32_t elf_phdr_size(struct elf_file_t *f);
-uint32_t elf_get_entry(struct elf_file_t *f);
-
-struct elf_symbol_t *elf_get_symbol_by_address(struct elf_file_t *f, uint32_t addr, uint32_t *poffs);
-struct elf_symbol_t *elf_get_symbol_by_name(struct elf_file_t *f, char *name);
-int elf_merge_symtab(struct elf_file_t *f, struct elf_file_t *src);
-
-
-
-
 /* Program loader */
 
 struct loader_t {
 	
 	/* Program data */
-	struct elf2_file_t *elf_file;
+	struct elf_file_t *elf_file;
 	struct lnlist_t *args;
 	struct lnlist_t *env;
 	char *interp;  /* Executable interpreter */

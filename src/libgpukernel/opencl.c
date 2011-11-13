@@ -538,7 +538,7 @@ int opencl_func_run(int code, unsigned int *args)
 			err_prefix, gpu_opencl_binary_name, err_opencl_binary_note);
 
 		/* Load OpenCL binary passed to Multi2Sim and make a copy in temporary file */
-		program->elf_file = elf2_file_create_from_path(gpu_opencl_binary_name);
+		program->elf_file = elf_file_create_from_path(gpu_opencl_binary_name);
 		break;
 	}
 
@@ -590,7 +590,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Load ELF binary from guest memory */
 		snprintf(name, sizeof(name), "clProgram<%d>.externalELF", program->id);
-		program->elf_file = elf2_file_create_from_buffer(buf, length, name);
+		program->elf_file = elf_file_create_from_buffer(buf, length, name);
 		free(buf);
 
 		/* Return success */
