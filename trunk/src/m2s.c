@@ -30,6 +30,7 @@
 static char *ctx_debug_file_name = "";
 static char *syscall_debug_file_name = "";
 static char *opencl_debug_file_name = "";
+static char *gpu_disasm_file_name = "";
 static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
 static char *gpu_pipeline_debug_file_name = "";
@@ -122,6 +123,10 @@ static char *sim_help =
 	"      Configuration file for the GPU model, including parameters such as number of\n"
 	"      compute units, stream cores, or wavefront size. Type 'm2s --help-gpu-config'\n"
 	"      for details on the file format.\n"
+	"\n"
+	"  --gpu-disasm <file>\n"
+	"      Disassembly OpenCL kernel binary provided in <file>. This option must be\n"
+	"      used with no other options.\n"
 	"\n"
 	"  --gpu-sim {functional|detailed}\n"
 	"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
@@ -401,6 +406,14 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* GPU disassembler */
+		if (!strcmp(argv[argi], "--gpu-disasm")) {
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			gpu_disasm_file_name = argv[argi];
+			continue;
+		}
+
 		/* GPU-REL: file to introduce faults  */
 		if (!strcmp(argv[argi], "--gpu-faults")) {
 			sim_need_argument(argc, argv, argi);
@@ -611,7 +624,9 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--report-gpu-cache");
 	}
 	if (*gpu_visual_file_name && argc > 3)
-		fatal("option '--gpu-visual' is incompatible with any other option.");
+		fatal("option '--gpu-visual' is incompatible with any other options.");
+	if (*gpu_disasm_file_name && argc > 3)
+		fatal("option '--gpu-disasm' is incompatible with any other options.");
 
 	/* Discard arguments used as options */
 	arg_discard = argi - 1;
@@ -705,9 +720,13 @@ int main(int argc, char **argv)
 	/* Read command line */
 	sim_read_command_line(&argc, argv);
 
-	/* GPU Visualization tool invocation */
+	/* GPU Visualization tool */
 	if (*gpu_visual_file_name)
 		vgpu_run(gpu_visual_file_name);
+
+	/* GPU disassembler tool */
+	if (*gpu_disasm_file_name)
+		gk_disasm(gpu_disasm_file_name);
 
 	/* Debug */
 	debug_init();

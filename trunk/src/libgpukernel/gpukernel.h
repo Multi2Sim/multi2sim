@@ -986,6 +986,8 @@ uint64_t gk_timer(void);
 void gk_libopencl_redirect(char *path, int size);
 void gk_libopencl_failed(int pid);
 
+void gk_disasm(char *path);
+
 
 #endif
 
