@@ -27,7 +27,7 @@
 #include <list.h>
 #include <lnlist.h>
 #include <misc.h>
-#include <elf.h>
+#include <elf-format.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -256,7 +256,7 @@ int elf_merge_symtab(struct elf_file_t *f, struct elf_file_t *src);
 struct loader_t {
 	
 	/* Program data */
-	struct elf_file_t *elf;
+	struct elf2_file_t *elf_file;
 	struct lnlist_t *args;
 	struct lnlist_t *env;
 	char *interp;  /* Executable interpreter */

@@ -24,7 +24,7 @@ int ld_debug_category;
 char *ld_help_ctxconfig =
 	"A context configuration file contains a list of executable programs and\n"
 	"their parameters that will be simulated by Multi2Sim. The context\n"
-	"confiruation file is a plain text file in the IniFile format, containing\n"
+	"configuration file is a plain text file in the IniFile format, containing\n"
 	"as many sections as x86 programs simulated. Each program is denoted with\n"
 	"a section called '[ Context <num> ]', where <num> is an integer number\n"
 	"starting from 0.\n"
@@ -57,7 +57,7 @@ char *ld_help_ctxconfig =
 	"\n";
 
 
-static struct string_map_t sectionflags_map = {
+static struct string_map_t elf2_section_flags_map = {
 	3, {
 		{ "SHF_WRITE", 1 },
 		{ "SHF_ALLOC", 2 },
@@ -78,8 +78,8 @@ void ld_done(struct ctx_t *ctx)
 {
 	struct loader_t *ld = ctx->loader;
 
-	/* Close elf file  */
-	elf_close(ld->elf);
+	/* Free ELF file  */
+	elf2_file_free(ld->elf_file);
 	
 	/* Free arguments and environment variables */
 	for (lnlist_head(ld->args); !lnlist_eol(ld->args); lnlist_next(ld->args))
@@ -195,70 +195,81 @@ void ld_add_environ(struct ctx_t *ctx, char *env)
 
 
 /* Load sections from an ELF file */
-void ld_load_sections(struct ctx_t *ctx, struct elf_file_t *elf)
+static void ld_load_sections(struct ctx_t *ctx, struct elf2_file_t *elf_file)
 {
 	struct mem_t *mem = ctx->mem;
 	struct loader_t *ld = ctx->loader;
-	int i, count;
-	uint32_t addr, size, flags;
+
+	struct elf2_section_t *section;
+	int i;
+
 	enum mem_access_enum perm;
-	char sflags[200], *name;
-	void *buf;
+	char flags_str[200];
 
 	ld_debug("\nLoading ELF sections\n");
 	ld->bottom = 0xffffffff;
-	count = elf_section_count(elf);
-	for (i = 0; i < count; i++) {
-		elf_section_info(elf, i, &name, &addr, &size, &flags);
+	for (i = 0; i < list_count(elf_file->section_list); i++)
+	{
+		section = list_get(elf_file->section_list, i);
+
 		perm = mem_access_init | mem_access_read;
-		map_flags(&sectionflags_map, flags, sflags, 200);
-		ld_debug("  section '%s'; offs=0x%x; size=%u; flags=%s\n",
-			name, addr, size, sflags);
+		map_flags(&elf2_section_flags_map, section->header->sh_flags, flags_str, sizeof(flags_str));
+		ld_debug("  section %d: name='%s', offset=0x%x, addr=0x%x, size=%u, flags=%s\n",
+			i, section->name, section->header->sh_offset, section->header->sh_addr, section->header->sh_size, flags_str);
 
 		/* Process section */
-		if (flags & SHF_ALLOC) {
-
+		if (section->header->sh_flags & SHF_ALLOC)
+		{
 			/* Permissions */
-			if (flags & SHF_WRITE)
+			if (section->header->sh_flags & SHF_WRITE)
 				perm |= mem_access_write;
-			if (flags & SHF_EXECINSTR)
+			if (section->header->sh_flags & SHF_EXECINSTR)
 				perm |= mem_access_exec;
 
 			/* Load section */
-			mem_map(mem, addr, size, perm);
-			ld->brk = MAX(ld->brk, addr + size);
-			ld->bottom = MIN(ld->bottom, addr);
-			buf = elf_section_read(elf, i);
-			mem_access(mem, addr, size, buf, mem_access_init);
-			elf_free_buffer(buf);
+			mem_map(mem, section->header->sh_addr, section->header->sh_size, perm);
+			ld->brk = MAX(ld->brk, section->header->sh_addr + section->header->sh_size);
+			ld->bottom = MIN(ld->bottom, section->header->sh_addr);
+
+			/* If section type is SHT_NOBITS (sh_type=8), initialize to 0.
+			 * Otherwise, copy section contents from ELF file. */
+			if (section->header->sh_type == 8)
+			{
+				void *ptr;
+
+				ptr = calloc(1, section->header->sh_size);
+				mem_access(mem, section->header->sh_addr, section->header->sh_size,
+					ptr, mem_access_init);
+				free(ptr);
+			} else {
+				mem_access(mem, section->header->sh_addr, section->header->sh_size,
+					section->buffer.ptr, mem_access_init);
+			}
 		}
 	}
 }
 
 
-void ld_load_interp(struct ctx_t *ctx)
+static void ld_load_interp(struct ctx_t *ctx)
 {
 	struct loader_t *ld = ctx->loader;
-	struct elf_file_t *elf;
+	struct elf2_file_t *elf_file;
 
 	/* Open dynamic loader */
 	ld_debug("\nLoading program interpreter '%s'\n", ld->interp);
-	elf = elf_open(ld->interp);
-	if (!ld->elf)
-		fatal("%s: invalid program interpreter", ld->interp);
+	elf_file = elf2_file_create_from_path(ld->interp);
 	
-	/* Read sections */
-	ld_load_sections(ctx, elf);
-	elf_merge_symtab(ld->elf, elf);
+	/* Load section from program interpreter */
+	ld_load_sections(ctx, elf_file);
 
 	/* Change program entry to the one specified by the interpreter */
-	ld->interp_prog_entry = elf_get_entry(elf);
+	ld->interp_prog_entry = elf_file->header->e_entry;
 	ld_debug("  program interpreter entry: 0x%x\n\n", ld->interp_prog_entry);
-	elf_close(elf);
+	elf2_file_free(elf_file);
 }
 
 
-struct string_map_t phdr_type_map = {
+static struct string_map_t elf2_program_header_type_map = {
 	8, {
 		{ "PT_NULL",        0 },
 		{ "PT_LOAD",        1 },
@@ -273,50 +284,68 @@ struct string_map_t phdr_type_map = {
 
 
 /* Load program headers table */
-static void ld_load_phdt(struct ctx_t *ctx)
+static void ld_load_program_headers(struct ctx_t *ctx)
 {
 	struct loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
-	uint32_t phdt_base, phdt_size, phdr_count, phdr_size;
-	void *phdt;
-	Elf32_Phdr *phdr;
-	char buf[200];
+
+	struct elf2_file_t *elf_file = ld->elf_file;
+	struct elf2_program_header_t *program_header;
+
+	uint32_t phdt_base;
+	uint32_t phdt_size;
+	uint32_t phdr_count;
+	uint32_t phdr_size;
+
+	char str[MAX_STRING_SIZE];
 	int i;
 
 	/* Load program header table from ELF */
 	ld_debug("\nLoading program headers\n");
-	phdt = elf_phdt(ld->elf);
-	phdr_count = elf_phdr_count(ld->elf);
-	phdr_size = elf_phdr_size(ld->elf);
+	phdr_count = elf_file->header->e_phnum;
+	phdr_size = elf_file->header->e_phentsize;
 	phdt_size = phdr_count * phdr_size;
+	assert(phdr_count == list_count(elf_file->program_header_list));
 	
-	/* Program header PT_PHDR tells the address where program header table
-	 * must be loaded. If none found, chose ld->bottom - phdt_size. */
-	phdt_base = elf_phdt_base(ld->elf);
-	if (!phdt_base)
-		phdt_base = ld->bottom - phdt_size;
-	ld_debug("  base for program header table: 0x%x\n", phdt_base);
+	/* Program header PT_PHDR, specifying location and size of the program header table itself. */
+	/* Search for program header PT_PHDR, specifying location and size of the program header table.
+	 * If none found, choose ld->bottom - phdt_size. */
+	phdt_base = ld->bottom - phdt_size;
+	for (i = 0; i < list_count(elf_file->program_header_list); i++)
+	{
+		program_header = list_get(elf_file->program_header_list, i);
+		if (program_header->header->p_type == PT_PHDR)
+			phdt_base = program_header->header->p_vaddr;
+	}
+	ld_debug("  virtual address for program header table: 0x%x\n", phdt_base);
 
 	/* Load program headers */
 	mem_map(mem, phdt_base, phdt_size, mem_access_init | mem_access_read);
-	for (i = 0; i < phdr_count; i++) {
-
-		/* Load phdr */
-		phdr = phdt + i * phdr_size;
-		mem_access(mem, phdt_base + i * phdr_size, phdr_size, phdr, mem_access_init);
+	for (i = 0; i < list_count(elf_file->program_header_list); i++)
+	{
+		/* Load program header */
+		program_header = list_get(elf_file->program_header_list, i);
+		mem_access(mem, phdt_base + i * phdr_size, phdr_size,
+			program_header->header, mem_access_init);
 
 		/* Debug */
-		map_value_string(&phdr_type_map, phdr->p_type, buf, sizeof(buf));
+		map_value_string(&elf2_program_header_type_map, program_header->header->p_type,
+			str, sizeof(str));
 		ld_debug("  header loaded at 0x%x\n", phdt_base + i * phdr_size);
 		ld_debug("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
-			buf, phdr->p_offset, phdr->p_vaddr, phdr->p_paddr);
+			str, program_header->header->p_offset,
+			program_header->header->p_vaddr,
+			program_header->header->p_paddr);
 		ld_debug("    filesz=%d, memsz=%d, flags=%d, align=%d\n",
-			phdr->p_filesz, phdr->p_memsz, phdr->p_flags, phdr->p_align);
+			program_header->header->p_filesz,
+			program_header->header->p_memsz,
+			program_header->header->p_flags,
+			program_header->header->p_align);
 
 		/* Program interpreter */
-		if (phdr->p_type == 3) {
-			mem_read_string(mem, phdr->p_vaddr, sizeof(buf), buf);
-			ld->interp = strdup(buf);
+		if (program_header->header->p_type == 3) {
+			mem_read_string(mem, program_header->header->p_vaddr, sizeof(str), str);
+			ld->interp = strdup(str);
 		}
 	}
 
@@ -466,20 +495,20 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 	}
 	
 	
-	/* Load program into mem */
+	/* Load program into memory */
 	ld_get_full_path(ctx, exe, exe_fullpath, MAX_STRING_SIZE);
 	ld->exe = strdup(exe_fullpath);
-	ld->elf = elf_open(exe_fullpath);
+	ld->elf_file = elf2_file_create_from_path(exe_fullpath);
 
 	/* Read sections and program entry */
-	ld_load_sections(ctx, ld->elf);
-	ld->prog_entry = elf_get_entry(ld->elf);
+	ld_load_sections(ctx, ld->elf_file);
+	ld->prog_entry = ld->elf_file->header->e_entry;
 	ld->brk = ROUND_UP(ld->brk, MEM_PAGESIZE);
 
 	/* Load program header table. If we found a PT_INTERP program header,
 	 * we have to load the program interpreter. This means we are dealing with
 	 * a dynamically linked application. */
-	ld_load_phdt(ctx);
+	ld_load_program_headers(ctx);
 	if (ld->interp)
 		ld_load_interp(ctx);
 

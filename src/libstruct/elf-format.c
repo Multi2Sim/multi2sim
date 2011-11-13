@@ -409,10 +409,6 @@ static void elf2_file_read_program_headers(struct elf2_file_t *elf_file)
 		if (count < sizeof(Elf32_Phdr))
 			fatal("%s: unexpected end of file while reading program headers", elf_file->path);
 
-		/* Program header PT_PHDR, specifying location and size of the program header table itself. */
-		if (program_header->header->p_type == PT_PHDR)
-			elf_file->program_header_table_base = program_header->header->p_vaddr;
-
 		/* Add program header to list */
 		list_add(elf_file->program_header_list, program_header);
 	}

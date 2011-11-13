@@ -85,7 +85,6 @@ struct elf2_file_t
 
 	/* ELF program headers */
 	struct list_t *program_header_list;  /* Elements of type 'struct elf2_program_header_t' */
-	uint32_t program_header_table_base;  /* Virtual address to load program header table (x86 ELF) */
 
 	/* Symbol table */
 	struct list_t *symbol_table;  /* Elements of type 'struct elf2_symbol_t' */
