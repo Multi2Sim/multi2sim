@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <elf-format.h>
 
 
 /* Microcode Formats */
@@ -559,6 +560,7 @@ typedef void (*fmt_dump_func_t)(void *buf, FILE *);
 
 void amd_disasm_init(void);
 void amd_disasm_done(void);
+void amd_disasm_buffer(struct elf_buffer_t *buffer, FILE *f);
 
 void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int shift, char *buf, int size);
 

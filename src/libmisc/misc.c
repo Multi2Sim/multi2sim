@@ -312,6 +312,54 @@ void str_single_spaces(char *dest, char *src, int size)
 		*dest = '\0';
 }
 
+/* Return 1 if 'suffix' is a suffix of 'str' */
+int str_suffix(char *str, char *suffix)
+{
+	int str_len;
+	int suffix_len;
+
+	str_len = strlen(str);
+	suffix_len = strlen(suffix);
+	if (str_len < suffix_len)
+		return 0;
+	if (strcmp(str + str_len - suffix_len, suffix))
+		return 0;
+	return 1;
+}
+
+
+/* Return 1 if 'prefix' is a prefix of 'str' */
+int str_prefix(char *str, char *prefix)
+{
+	int str_len;
+	int prefix_len;
+
+	str_len = strlen(str);
+	prefix_len = strlen(prefix);
+	if (str_len < prefix_len)
+		return 0;
+	if (!strncmp(str, prefix, prefix_len))
+		return 1;
+	return 0;
+}
+
+
+/* Copy a substring of 'src' into 'dest' */
+void str_substr(char *dest, int dest_size, char *src, int src_pos, int src_count)
+{
+	int src_len;
+	int count;
+
+	src_len = strlen(src);
+	count = src_count;
+	if (count > dest_size - 1)
+		count = dest_size - 1;
+	if (count > src_len - src_pos)
+		count = src_len - src_pos;
+	memcpy(dest, src + src_pos, count);
+	dest[count] = '\0';
+}
+
 
 
 
