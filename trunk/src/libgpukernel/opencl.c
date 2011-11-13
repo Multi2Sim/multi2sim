@@ -19,7 +19,7 @@
 
 #include <gpukernel.h>
 #include <cpukernel.h>
-#include <gpuarch.h>  /* FIXME */
+#include <gpuarch.h>
 #include <assert.h>
 #include <debug.h>
 
@@ -521,8 +521,6 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t errcode_ret = args[4];  /* cl_int *errcode_ret */
 
 		struct opencl_program_t *program;
-		void *buf;
-		int buf_size;
 
 		opencl_debug("  context=0x%x, count=%d, strings=0x%x, lengths=0x%x, errcode_ret=0x%x\n",
 			context_id, count, strings, lengths, errcode_ret);
@@ -540,12 +538,7 @@ int opencl_func_run(int code, unsigned int *args)
 			err_prefix, gpu_opencl_binary_name, err_opencl_binary_note);
 
 		/* Load OpenCL binary passed to Multi2Sim and make a copy in temporary file */
-		program->binary_file = create_temp_file(program->binary_file_name, MAX_PATH_SIZE);
-		buf = read_buffer(gpu_opencl_binary_name, &buf_size);
-		if (!buf)
-			fatal("%s: cannot read from file '%s'", err_prefix, gpu_opencl_binary_name);
-		write_buffer(program->binary_file_name, buf, buf_size);
-		free_buffer(buf);
+		program->elf_file = elf2_file_create_from_path(gpu_opencl_binary_name);
 		break;
 	}
 
@@ -593,12 +586,8 @@ int opencl_func_run(int code, unsigned int *args)
 			fatal("out of memory");
 		mem_read(isa_mem, binary, length, buf);
 
-		/* NEW ELF - read from new implementation of ELF */
+		/* Load ELF binary from guest memory */
 		program->elf_file = elf2_file_create_from_buffer(buf, length);
-
-		/* Create program temporary file and copy binary */
-		program->binary_file = create_temp_file(program->binary_file_name, MAX_PATH_SIZE);
-		write_buffer(program->binary_file_name, buf, length);
 		free(buf);
 
 		/* Return success */
@@ -655,7 +644,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Get program */
 		program = opencl_object_get(OPENCL_OBJ_PROGRAM, program_id);
-		if (!program->binary_file)
+		if (!program->elf_file)
 			fatal("%s: program binary must be loaded first.\n%s",
 				err_prefix, err_opencl_param_note);
 
@@ -690,7 +679,7 @@ int opencl_func_run(int code, unsigned int *args)
 		kernel->program_id = program_id;
 
 		/* Program must be built */
-		if (!program->binary_file_elf)
+		if (!program->elf_file)
 			fatal("%s: program should be first built with clBuildProgram.\n%s",
 				err_prefix, err_opencl_param_note);
 

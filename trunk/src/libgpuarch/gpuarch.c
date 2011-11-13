@@ -113,8 +113,6 @@ char *gpu_config_help =
 	"      Size in bytes of the fetch queue.\n"
 	"\n";
 
-enum gpu_sim_kind_enum gpu_sim_kind = gpu_sim_kind_functional;
-
 char *gpu_config_file_name = "";
 char *gpu_report_file_name = "";
 

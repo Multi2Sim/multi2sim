@@ -69,8 +69,9 @@ ARFLAGS = cru
 libstruct_a_AR = $(AR) $(ARFLAGS)
 libstruct_a_LIBADD =
 am_libstruct_a_OBJECTS = buffer.$(OBJEXT) chrono.$(OBJEXT) \
-	config.$(OBJEXT) hash.$(OBJEXT) heap.$(OBJEXT) list.$(OBJEXT) \
-	lnlist.$(OBJEXT) repos.$(OBJEXT) debug.$(OBJEXT)
+	config.$(OBJEXT) elf-format.$(OBJEXT) hash.$(OBJEXT) \
+	heap.$(OBJEXT) list.$(OBJEXT) lnlist.$(OBJEXT) repos.$(OBJEXT) \
+	debug.$(OBJEXT)
 libstruct_a_OBJECTS = $(am_libstruct_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -180,9 +181,27 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libstruct.a
-libstruct_a_SOURCES = buffer.c buffer.h chrono.c chrono.h config.c config.h \
-	hash.c hash.h heap.c heap.h list.c list.h lnlist.c lnlist.h \
-	repos.c repos.h debug.c debug.h
+libstruct_a_SOURCES = \
+	buffer.c \
+	buffer.h \
+	chrono.c \
+	chrono.h \
+	config.c \
+	config.h \
+	elf-format.c \
+	elf-format.h \
+	hash.c \
+	hash.h \
+	heap.c \
+	heap.h \
+	list.c \
+	list.h \
+	lnlist.c \
+	lnlist.h \
+	repos.c \
+	repos.h \
+	debug.c \
+	debug.h
 
 INCLUDES = -I$(top_srcdir)/src/libmhandle
 all: all-am
@@ -266,6 +285,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chrono.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debug.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf-format.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
