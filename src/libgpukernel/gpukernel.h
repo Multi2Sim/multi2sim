@@ -62,47 +62,6 @@ extern char *err_opencl_param_note;
 
 
 /*
- * CAL Application Binary Interface (ABI)
- */
-
-struct cal_abi_t
-{
-	/* File as a string and elf file descriptor */
-	char file_name[MAX_PATH_SIZE];
-	struct elf_file_t *elf;
-
-	/* Encoding dictionary */
-	int enc_dict_phdr_idx;  /* Index for encoding dictionary in program header table */
-	Elf32_Phdr *enc_dict_phdr;
-	int enc_dict_entry_count;  /* Number of encoding dictionary entries */
-	int enc_dict_entry_idx;  /* Index of encoding dictionary entry with d_machine=0x9 */
-
-	/* PT_NOTE segment for encoding dictionary with d_machine=0x9 */
-	Elf32_Phdr *pt_note_phdr;
-	void *pt_note_buffer;
-
-	/* PT_LOAD segment for encoding dictionary with d_machine=0x9*/
-	Elf32_Phdr *pt_load_phdr;
-	void *pt_load_buffer;
-
-	/* Sections within PT_LOAD segment */
-	Elf32_Shdr *text_shdr, *data_shdr, *symtab_shdr, *strtab_shdr;
-	void *text_buffer, *data_buffer, *symtab_buffer, *strtab_buffer;  /* Pointers to 'pt_load_buffer' */
-
-	/* Program information read from ProgInfo PT_NOTE */
-	int num_gpr_used;
-	int lds_size_used;
-	int stack_size_used;
-};
-
-void cal_abi_parse_elf(struct cal_abi_t *cal_abi, char *file_name);
-struct cal_abi_t *cal_abi_create();
-void cal_abi_free(struct cal_abi_t *cal_abi);
-
-
-
-
-/*
  * AMD Binary File (Internal ELF)
  */
 

@@ -390,10 +390,10 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 			wavefront->work_item_id_first, wavefront->work_item_id_last);
 
 		/* Initialize wavefront program counter */
-		if (!kernel->cal_abi->text_buffer)
+		if (!kernel->amd_bin->enc_dict_entry_evergreen->sec_text_buffer.size)
 			fatal("%s: cannot load kernel code", __FUNCTION__);
-		wavefront->cf_buf_start = kernel->cal_abi->text_buffer;
-		wavefront->cf_buf = kernel->cal_abi->text_buffer;
+		wavefront->cf_buf_start = kernel->amd_bin->enc_dict_entry_evergreen->sec_text_buffer.ptr;
+		wavefront->cf_buf = wavefront->cf_buf_start;
 		wavefront->clause_kind = GPU_CLAUSE_CF;
 		wavefront->emu_time_start = ke_timer();
 	}
@@ -991,7 +991,6 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 	extern struct amd_alu_group_t *gpu_isa_alu_group;
 
 	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
-	struct opencl_kernel_t *kernel = ndrange->kernel;
 
 	int work_item_id;
 
@@ -1022,7 +1021,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		int inst_num;
 
 		/* Decode CF instruction */
-		inst_num = (gpu_isa_wavefront->cf_buf - kernel->cal_abi->text_buffer) / 8;
+		inst_num = (gpu_isa_wavefront->cf_buf - gpu_isa_wavefront->cf_buf_start) / 8;
 		gpu_isa_wavefront->cf_buf = amd_inst_decode_cf(gpu_isa_wavefront->cf_buf, &gpu_isa_wavefront->cf_inst);
 
 		/* Debug */
