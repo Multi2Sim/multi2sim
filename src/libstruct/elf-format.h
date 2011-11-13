@@ -24,7 +24,7 @@
 
 
 /* ELF buffer */
-struct elf2_buffer_t
+struct elf_buffer_t
 {
 	void *ptr;  /* Contents of the buffer */
 	int size;  /* Size of the buffer */
@@ -33,7 +33,7 @@ struct elf2_buffer_t
 
 
 /* ELF section */
-struct elf2_section_t
+struct elf_section_t
 {
 	/* Name of the section */
 	char *name;
@@ -44,12 +44,12 @@ struct elf2_section_t
 
 	/* Sub-buffer (subset of 'elf_file->buffer') where the contents of
 	 * the section can be found. */
-	struct elf2_buffer_t buffer;
+	struct elf_buffer_t buffer;
 };
 
 
 /* ELF program header */
-struct elf2_program_header_t
+struct elf_program_header_t
 {
 	/* Pointer to the location in 'elf_file->buffer' where the
 	 * program header is located. */
@@ -58,7 +58,7 @@ struct elf2_program_header_t
 
 
 /* ELF Symbol */
-struct elf2_symbol_t
+struct elf_symbol_t
 {
 	char *name;
 	uint32_t value;
@@ -68,43 +68,43 @@ struct elf2_symbol_t
 
 
 /* ELF file */
-struct elf2_file_t
+struct elf_file_t
 {
 	/* File name, or NULL if loaded from buffer */
 	char *path;
 
 	/* ELF buffer */
-	struct elf2_buffer_t buffer;
+	struct elf_buffer_t buffer;
 
 	/* ELF header - pointer to a position within 'buffer' */
 	Elf32_Ehdr *header;
 
 	/* ELF sections */
-	struct list_t *section_list;  /* Elements of type 'struct elf2_section_t' */
-	struct elf2_section_t *string_table;  /* String table section */
+	struct list_t *section_list;  /* Elements of type 'struct elf_section_t' */
+	struct elf_section_t *string_table;  /* String table section */
 
 	/* ELF program headers */
-	struct list_t *program_header_list;  /* Elements of type 'struct elf2_program_header_t' */
+	struct list_t *program_header_list;  /* Elements of type 'struct elf_program_header_t' */
 
 	/* Symbol table */
-	struct list_t *symbol_table;  /* Elements of type 'struct elf2_symbol_t' */
+	struct list_t *symbol_table;  /* Elements of type 'struct elf_symbol_t' */
 };
 
 
-#define elf2_debug(...) debug(elf2_debug_category, __VA_ARGS__)
-extern int elf2_debug_category;
+#define elf_debug(...) debug(elf_debug_category, __VA_ARGS__)
+extern int elf_debug_category;
 
-void elf2_buffer_seek(struct elf2_buffer_t *buffer, int pos);
-void *elf2_buffer_tell(struct elf2_buffer_t *buffer);
-int elf2_buffer_read(struct elf2_buffer_t *buffer, void *ptr, int size);
-int elf2_buffer_read_line(struct elf2_buffer_t *buffer, char *str, int size);
+void elf_buffer_seek(struct elf_buffer_t *buffer, int pos);
+void *elf_buffer_tell(struct elf_buffer_t *buffer);
+int elf_buffer_read(struct elf_buffer_t *buffer, void *ptr, int size);
+int elf_buffer_read_line(struct elf_buffer_t *buffer, char *str, int size);
 
-struct elf2_symbol_t *elf2_symbol_get_by_address(struct elf2_file_t *elf_file, uint32_t addr, uint32_t *offset_ptr);
-struct elf2_symbol_t *elf2_symbol_get_by_name(struct elf2_file_t *elf_file, char *name);
+struct elf_symbol_t *elf_symbol_get_by_address(struct elf_file_t *elf_file, uint32_t addr, uint32_t *offset_ptr);
+struct elf_symbol_t *elf_symbol_get_by_name(struct elf_file_t *elf_file, char *name);
 
-struct elf2_file_t *elf2_file_create_from_buffer(void *ptr, int size, char *name);
-struct elf2_file_t *elf2_file_create_from_path(char *path);
-void elf2_file_free(struct elf2_file_t *elf_file);
+struct elf_file_t *elf_file_create_from_buffer(void *ptr, int size, char *name);
+struct elf_file_t *elf_file_create_from_path(char *path);
+void elf_file_free(struct elf_file_t *elf_file);
 
 
 #endif

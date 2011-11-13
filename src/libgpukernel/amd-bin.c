@@ -79,7 +79,7 @@ struct pt_note_prog_info_entry_t {
 /* Read next note at the current position of the PT_NOTE segment */
 static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_enc_dict_entry_t *enc_dict_entry)
 {
-	struct elf2_buffer_t *buffer;
+	struct elf_buffer_t *buffer;
 
 	struct pt_note_header_t *header;
 	void *desc;
@@ -89,20 +89,20 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 
 	/* Read note header */
 	buffer = &enc_dict_entry->pt_note_buffer;
-	header = elf2_buffer_tell(buffer);
-	count = elf2_buffer_read(buffer, NULL, sizeof(struct pt_note_header_t));
+	header = elf_buffer_tell(buffer);
+	count = elf_buffer_read(buffer, NULL, sizeof(struct pt_note_header_t));
 	if (count < sizeof(struct pt_note_header_t))
 		fatal("%s: error decoding note header", amd_bin->elf_file->path);
 	
 	/* Read note description */
-	desc = elf2_buffer_tell(buffer);
-	count = elf2_buffer_read(buffer, NULL, header->descsz);
+	desc = elf_buffer_tell(buffer);
+	count = elf_buffer_read(buffer, NULL, header->descsz);
 	if (count < header->descsz)
 		fatal("%s: error decoding note description", amd_bin->elf_file->path);
 
 	/* Debug */
 	note_type_str = map_value(&pt_note_type_map, header->type);
-	elf2_debug("  note: type=%d (%s), descsz=%d\n",
+	elf_debug("  note: type=%d (%s), descsz=%d\n",
 		header->type, note_type_str, header->descsz);
 		
 	/* Analyze note */
@@ -117,13 +117,13 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 		/* Get number of entries */
 		assert(header->descsz % sizeof(struct pt_note_prog_info_entry_t) == 0);
 		prog_info_count = header->descsz / sizeof(struct pt_note_prog_info_entry_t);
-		elf2_debug("\tnote including device configuration unique to the program (%d entries)\n",
+		elf_debug("\tnote including device configuration unique to the program (%d entries)\n",
 			prog_info_count);
 
 		/* Decode entries */
 		for (i = 0; i < prog_info_count; i++) {
 			prog_info_entry = desc + i * sizeof(struct pt_note_prog_info_entry_t);
-			elf2_debug("\tprog_info_entry: addr=0x%x, value=0x%x: ",
+			elf_debug("\tprog_info_entry: addr=0x%x, value=0x%x: ",
 				prog_info_entry->address, prog_info_entry->value);
 
 			/* Analyze entry */
@@ -131,21 +131,21 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 
 			case 0x80000080:  /* AMU_ABI_NUM_GPR_USED */
 				enc_dict_entry->num_gpr_used = prog_info_entry->value;
-				elf2_debug("AMU_ABI_NUM_GPR_USED = %d\n", enc_dict_entry->num_gpr_used);
+				elf_debug("AMU_ABI_NUM_GPR_USED = %d\n", enc_dict_entry->num_gpr_used);
 				break;
 
 			case 0x80000082:  /* AMU_ABI_LDS_SIZE_USED */
 				enc_dict_entry->lds_size_used = prog_info_entry->value;
-				elf2_debug("AMU_ABI_LDS_SIZE_USED = %d\n", enc_dict_entry->lds_size_used);
+				elf_debug("AMU_ABI_LDS_SIZE_USED = %d\n", enc_dict_entry->lds_size_used);
 				break;
 
 			case 0x80000084:  /* AMU_ABI_STACK_SIZE_USED */
 				enc_dict_entry->stack_size_used = prog_info_entry->value;
-				elf2_debug("AMU_ABI_STACK_SIZE_USED = %d\n", enc_dict_entry->stack_size_used);
+				elf_debug("AMU_ABI_STACK_SIZE_USED = %d\n", enc_dict_entry->stack_size_used);
 				break;
 
 			default:
-				elf2_debug("?\n");
+				elf_debug("?\n");
 			}
 		}
 		break;
@@ -185,13 +185,13 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 		/* Get number of entries */
 		assert(header->descsz % sizeof(struct pt_note_data_segment_desc_t) == 0);
 		data_segment_desc_count = header->descsz / sizeof(struct pt_note_data_segment_desc_t);
-		elf2_debug("\tnote including data for constant buffers (%d entries)\n",
+		elf_debug("\tnote including data for constant buffers (%d entries)\n",
 				data_segment_desc_count);
 
 		/* Decode entries */
 		for (j = 0; j < data_segment_desc_count; j++) {
 			data_segment_desc = desc + j * sizeof(struct pt_note_data_segment_desc_t);
-			elf2_debug("\tdata_segment_desc[%d]: offset=0x%x, size=%d\n",
+			elf_debug("\tdata_segment_desc[%d]: offset=0x%x, size=%d\n",
 				j, data_segment_desc->offset, data_segment_desc->size);
 
 			/* Dump constants - FIXME*/
@@ -200,7 +200,7 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 				float f;
 				c = * (uint32_t *) (cal_abi->data_buffer + data_segment_desc->offset * 16 + k);
 				f = * (float *) (cal_abi->data_buffer + data_segment_desc->offset * 16 + k);
-				elf2_debug("constant[%02d] = 0x%08x, %gf\n", k / 4, c, f);
+				elf_debug("constant[%02d] = 0x%08x, %gf\n", k / 4, c, f);
 			}*/
 		}
 		break;
@@ -213,7 +213,7 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 
 		/* Get 'early_exit' value */
 		early_exit = header->descsz ? * (uint32_t *) desc : 0;
-		elf2_debug("\tearly_exit = %s\n", early_exit ? "TRUE" : "FALSE");
+		elf_debug("\tearly_exit = %s\n", early_exit ? "TRUE" : "FALSE");
 		break;
 	}
 
@@ -222,7 +222,7 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 	{
 		Elf32_Word global_buffers;
 		global_buffers = header->descsz ? * (uint32_t *) desc : 0;
-		elf2_debug("\tglobal_buffers = %s\n", global_buffers ? "TRUE" : "FALSE");
+		elf_debug("\tglobal_buffers = %s\n", global_buffers ? "TRUE" : "FALSE");
 		break;
 	}
 	
@@ -236,13 +236,13 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 		/* Get number of entries */
 		assert(header->descsz % sizeof(struct pt_note_constant_buffer_mask_t) == 0);
 		constant_buffer_count = header->descsz / sizeof(struct pt_note_constant_buffer_mask_t);
-		elf2_debug("\tnote including number and size of constant buffers (%d entries)\n",
+		elf_debug("\tnote including number and size of constant buffers (%d entries)\n",
 			constant_buffer_count);
 
 		/* Decode entries */
 		for (i = 0; i < constant_buffer_count; i++) {
 			constant_buffer_mask = desc + i * sizeof(struct pt_note_constant_buffer_mask_t);
-			elf2_debug("\tconstant_buffer[%d].size = %d (vec4f constants)\n",
+			elf_debug("\tconstant_buffer[%d].size = %d (vec4f constants)\n",
 				constant_buffer_mask->index, constant_buffer_mask->size);
 		}
 		break;
@@ -256,7 +256,7 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 	{
 		Elf32_Word persistent_buffers;
 		persistent_buffers = header->descsz ? * (uint32_t *) desc : 0;
-		elf2_debug("\tpersistent_buffers = %s\n", persistent_buffers ? "TRUE" : "FALSE");
+		elf_debug("\tpersistent_buffers = %s\n", persistent_buffers ? "TRUE" : "FALSE");
 		break;
 	}
 
@@ -265,7 +265,7 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 	{
 		Elf32_Word scratch_buffers;
 		scratch_buffers = header->descsz ? * (uint32_t *) desc : 0;
-		elf2_debug("\tscratch_buffers = %s\n", scratch_buffers ? "TRUE" : "FALSE");
+		elf_debug("\tscratch_buffers = %s\n", scratch_buffers ? "TRUE" : "FALSE");
 		break;
 	}
 
@@ -283,7 +283,7 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 		break;
 
 	default:
-		elf2_debug("\tunknown type\n");
+		elf_debug("\tunknown type\n");
 	}
 }
 
@@ -291,14 +291,14 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 /* Decode notes in the PT_NOTE segment of the given encoding dictionary entry */
 static void amd_bin_read_notes(struct amd_bin_t *amd_bin, struct amd_bin_enc_dict_entry_t *enc_dict_entry)
 {
-	struct elf2_buffer_t *buffer;
+	struct elf_buffer_t *buffer;
 
 	/* Get buffer and set position */
 	buffer = &enc_dict_entry->pt_note_buffer;
-	elf2_buffer_seek(buffer, 0);
+	elf_buffer_seek(buffer, 0);
 
 	/* Decode notes */
-	elf2_debug("Reading notes in PT_NOTE segment (enc. dict. for machine=0x%x)\n",
+	elf_debug("Reading notes in PT_NOTE segment (enc. dict. for machine=0x%x)\n",
 		enc_dict_entry->header->d_machine);
 	while (buffer->pos < buffer->size)
 		amd_bin_read_note_header(amd_bin, enc_dict_entry);
@@ -307,11 +307,11 @@ static void amd_bin_read_notes(struct amd_bin_t *amd_bin, struct amd_bin_enc_dic
 
 static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
 {
-	struct elf2_file_t *elf_file;
-	struct elf2_buffer_t *buffer;
+	struct elf_file_t *elf_file;
+	struct elf_buffer_t *buffer;
 	Elf32_Ehdr *elf_header;
 
-	struct elf2_program_header_t *program_header;
+	struct elf_program_header_t *program_header;
 
 	struct amd_bin_enc_dict_entry_t *enc_dict_entry;
 	struct amd_bin_enc_dict_entry_header_t *enc_dict_entry_header;
@@ -323,7 +323,7 @@ static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
 	elf_file = amd_bin->elf_file;
 	elf_header = elf_file->header;
 	buffer = &elf_file->buffer;
-	elf2_debug("**\n** Parsing AMD Binary (Internal ELF file)\n** %s\n**\n\n", elf_file->path);
+	elf_debug("**\n** Parsing AMD Binary (Internal ELF file)\n** %s\n**\n\n", elf_file->path);
 	AMD_BIN_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_CLASS], ELFCLASS32);
 	AMD_BIN_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_DATA], ELFDATA2LSB);
 	AMD_BIN_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_OSABI], 0x64);
@@ -341,7 +341,7 @@ static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
 	}
 	if (i == list_count(elf_file->program_header_list) || !program_header)
 		fatal("%s: no encoding dictionary", elf_file->path);
-	elf2_debug("Encoding dictionary found in program header %d\n", i);
+	elf_debug("Encoding dictionary found in program header %d\n", i);
 	
 	/* Parse encoding dictionary */
 	AMD_BIN_NOT_SUPPORTED_NEQ(program_header->header->p_vaddr, 0);
@@ -351,17 +351,17 @@ static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
 	AMD_BIN_NOT_SUPPORTED_NEQ(program_header->header->p_align, 0);
 	assert(program_header->header->p_filesz % sizeof(struct amd_bin_enc_dict_entry_header_t) == 0);
 	enc_dict_entry_count = program_header->header->p_filesz / sizeof(struct amd_bin_enc_dict_entry_header_t);
-	elf2_debug("  -> %d entries\n\n", enc_dict_entry_count);
+	elf_debug("  -> %d entries\n\n", enc_dict_entry_count);
 
 	/* Read encoding dictionary entries */
 	amd_bin->enc_dict = list_create();
-	elf2_buffer_seek(buffer, program_header->header->p_offset);
+	elf_buffer_seek(buffer, program_header->header->p_offset);
 	for (i = 0; i < enc_dict_entry_count; i++) {
 		
 		/* Create entry */
 		enc_dict_entry = calloc(1, sizeof(struct amd_bin_enc_dict_entry_t));
-		enc_dict_entry->header = elf2_buffer_tell(buffer);
-		elf2_buffer_read(buffer, NULL, sizeof(struct amd_bin_enc_dict_entry_header_t));
+		enc_dict_entry->header = elf_buffer_tell(buffer);
+		elf_buffer_read(buffer, NULL, sizeof(struct amd_bin_enc_dict_entry_header_t));
 		list_add(amd_bin->enc_dict, enc_dict_entry);
 
 		/* Store encoding dictionary entry for Evergreen (code 9) */
@@ -370,35 +370,35 @@ static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
 	}
 
 	/* Debug */
-	elf2_debug("idx %-10s %-10s %-10s %-10s %-10s\n", "d_machine", "d_type",
+	elf_debug("idx %-10s %-10s %-10s %-10s %-10s\n", "d_machine", "d_type",
 		"d_offset", "d_size", "d_flags");
 	for (i = 0; i < 80; i++)
-		elf2_debug("-");
-	elf2_debug("\n");
+		elf_debug("-");
+	elf_debug("\n");
 	for (i = 0; i < list_count(amd_bin->enc_dict); i++) {
 		enc_dict_entry = list_get(amd_bin->enc_dict, i);
 		enc_dict_entry_header = enc_dict_entry->header;
-		elf2_debug("%3d 0x%-8x 0x%-8x 0x%-8x %-10d 0x%-8x\n",
+		elf_debug("%3d 0x%-8x 0x%-8x 0x%-8x %-10d 0x%-8x\n",
 			i, enc_dict_entry_header->d_machine,
 			enc_dict_entry_header->d_type,
 			enc_dict_entry_header->d_offset,
 			enc_dict_entry_header->d_size,
 			enc_dict_entry_header->d_flags);
 	}
-	elf2_debug("\n\n");
+	elf_debug("\n\n");
 }
 
 
 static void amd_bin_read_segments(struct amd_bin_t *amd_bin)
 {
-	struct elf2_file_t *elf_file;
+	struct elf_file_t *elf_file;
 
 	struct amd_bin_enc_dict_entry_t *enc_dict_entry;
-	struct elf2_program_header_t *program_header;
+	struct elf_program_header_t *program_header;
 
 	int i, j;
 
-	elf2_debug("Reading PT_NOTE and PT_LOAD segments:\n");
+	elf_debug("Reading PT_NOTE and PT_LOAD segments:\n");
 	elf_file = amd_bin->elf_file;
 	for (i = 0; i < list_count(amd_bin->enc_dict); i++)
 	{
@@ -439,9 +439,9 @@ static void amd_bin_read_segments(struct amd_bin_t *amd_bin)
 			fatal("%s: no PT_NOTE segment found for encoding dictionary entry", __FUNCTION__);
 		if (!enc_dict_entry->pt_load_buffer.size)
 			fatal("%s: no PT_LOAD segment found for encoding dictionary entry", __FUNCTION__);
-		elf2_debug("  Dict. entry %d: PT_NOTE segment: offset=0x%x, size=%d\n", i,
+		elf_debug("  Dict. entry %d: PT_NOTE segment: offset=0x%x, size=%d\n", i,
 			(int) (enc_dict_entry->pt_note_buffer.ptr - elf_file->buffer.ptr), enc_dict_entry->pt_note_buffer.size);
-		elf2_debug("  Dict. entry %d: PT_LOAD segment: offset=0x%x, size=%d\n", i,
+		elf_debug("  Dict. entry %d: PT_LOAD segment: offset=0x%x, size=%d\n", i,
 			(int) (enc_dict_entry->pt_load_buffer.ptr - elf_file->buffer.ptr), enc_dict_entry->pt_load_buffer.size);
 	}
 }
@@ -449,10 +449,10 @@ static void amd_bin_read_segments(struct amd_bin_t *amd_bin)
 
 static void amd_bin_read_sections(struct amd_bin_t *amd_bin)
 {
-	struct elf2_file_t *elf_file;
+	struct elf_file_t *elf_file;
 
 	struct amd_bin_enc_dict_entry_t *enc_dict_entry;
-	struct elf2_section_t *section;
+	struct elf_section_t *section;
 
 	int i, j;
 
@@ -517,7 +517,7 @@ static void amd_bin_read_sections(struct amd_bin_t *amd_bin)
 	}
 
 	/* Finish */
-	elf2_debug("\n");
+	elf_debug("\n");
 }
 
 
@@ -537,7 +537,7 @@ struct amd_bin_t *amd_bin_create(void *ptr, int size, char *name)
 	amd_bin = calloc(1, sizeof(struct amd_bin_t));
 
 	/* Read and parse ELF file */
-	amd_bin->elf_file = elf2_file_create_from_buffer(ptr, size, name);
+	amd_bin->elf_file = elf_file_create_from_buffer(ptr, size, name);
 
 	/* Read encoding dictionary.
 	 * Check that an Evergreen dictionary entry is present */
@@ -572,7 +572,7 @@ void amd_bin_free(struct amd_bin_t *amd_bin)
 	list_free(amd_bin->enc_dict);
 
 	/* Free rest */
-	elf2_file_free(amd_bin->elf_file);
+	elf_file_free(amd_bin->elf_file);
 	free(amd_bin);
 }
 
