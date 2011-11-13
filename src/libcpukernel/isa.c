@@ -472,7 +472,7 @@ uint16_t isa_load_fpu_status()
 static void isa_debug_call()
 {
 	int i;
-	struct elf_symbol_t *from, *to;
+	struct elf2_symbol_t *from, *to;
 	char *action;
 
 	/* Call or return. Otherwise, exit */
@@ -486,8 +486,8 @@ static void isa_debug_call()
 	/* Debug it */
 	for (i = 0; i < isa_function_level; i++)
 		isa_call_debug("| ");
-	from = elf_get_symbol_by_address(isa_ctx->loader->elf, isa_eip, NULL);
-	to = elf_get_symbol_by_address(isa_ctx->loader->elf, isa_regs->eip, NULL);
+	from = elf2_symbol_get_by_address(isa_ctx->loader->elf_file, isa_eip, NULL);
+	to = elf2_symbol_get_by_address(isa_ctx->loader->elf_file, isa_regs->eip, NULL);
 	if (from)
 		isa_call_debug("%s", from->name);
 	else
