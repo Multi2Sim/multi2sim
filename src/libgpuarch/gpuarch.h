@@ -33,11 +33,6 @@ extern char *gpu_cache_report_file_name;
 
 extern int gpu_pipeline_debug_category;
 
-extern enum gpu_sim_kind_enum {
-	gpu_sim_kind_functional,
-	gpu_sim_kind_detailed
-} gpu_sim_kind;
-
 extern int gpu_num_stream_cores;
 extern int gpu_num_compute_units;
 extern int gpu_num_registers;

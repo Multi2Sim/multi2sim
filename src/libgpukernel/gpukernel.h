@@ -28,7 +28,7 @@
 #include <misc.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <elf.h>
+#include <elf-format.h>
 #include <assert.h>
 #include <gpudisasm.h>
 
@@ -36,6 +36,11 @@
 /*
  * Global variables
  */
+
+extern enum gpu_sim_kind_enum {
+	gpu_sim_kind_functional,
+	gpu_sim_kind_detailed
+} gpu_sim_kind;
 
 extern uint64_t gpu_max_cycles;
 extern uint64_t gpu_max_inst;
@@ -233,11 +238,6 @@ struct opencl_program_t
 
 	/* ELF binary */
 	struct elf2_file_t *elf_file;
-
-	/* Binary file */
-	FILE *binary_file;
-	char binary_file_name[MAX_PATH_SIZE];
-	struct elf_file_t *binary_file_elf;
 };
 
 struct opencl_program_t *opencl_program_create(void);
@@ -287,13 +287,9 @@ struct opencl_kernel_t
 	struct list_t *arg_list;
 
 	/* Excerpts of program ELF binary */
-	/* Kernel metadata */
-	FILE *metadata_file;
-	char metadata_file_name[MAX_PATH_SIZE];
-
-	/* Kernel embedded ELF file */
-	FILE *kernel_file;
-	char kernel_file_name[MAX_PATH_SIZE];
+	struct elf2_buffer_t metadata_buffer;
+	struct elf2_buffer_t kernel_buffer;
+	struct elf2_buffer_t header_buffer;
 
 	/* CAL ABI data read from 'kernel_file' */
 	struct cal_abi_t *cal_abi;
