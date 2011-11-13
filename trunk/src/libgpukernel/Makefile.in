@@ -69,8 +69,9 @@ ARFLAGS = cru
 libgpukernel_a_AR = $(AR) $(ARFLAGS)
 libgpukernel_a_LIBADD =
 am_libgpukernel_a_OBJECTS = amd-bin.$(OBJEXT) gpuisa.$(OBJEXT) \
-	gpukernel.$(OBJEXT) gpumachine.$(OBJEXT) opencl.$(OBJEXT) \
-	opencl-obj.$(OBJEXT)
+	gpukernel.$(OBJEXT) gpumachine.$(OBJEXT) ndrange.$(OBJEXT) \
+	opencl.$(OBJEXT) opencl-obj.$(OBJEXT) wavefront.$(OBJEXT) \
+	work-group.$(OBJEXT) work-item.$(OBJEXT)
 libgpukernel_a_OBJECTS = $(am_libgpukernel_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -186,9 +187,13 @@ libgpukernel_a_SOURCES = \
 	gpukernel.c \
 	gpukernel.h \
 	gpumachine.c \
+	ndrange.c \
 	opencl.dat \
 	opencl.c \
-	opencl-obj.c
+	opencl-obj.c \
+	wavefront.c \
+	work-group.c \
+	work-item.c
 
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
@@ -281,8 +286,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuisa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpukernel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpumachine.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ndrange.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opencl-obj.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opencl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wavefront.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/work-group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/work-item.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
