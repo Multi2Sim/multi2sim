@@ -5,9 +5,13 @@ libgpukernel_a_SOURCES = \
 	gpukernel.c \
 	gpukernel.h \
 	gpumachine.c \
+	ndrange.c \
 	opencl.dat \
 	opencl.c \
-	opencl-obj.c
+	opencl-obj.c \
+	wavefront.c \
+	work-group.c \
+	work-item.c
 
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
