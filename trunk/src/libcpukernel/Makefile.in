@@ -69,11 +69,11 @@ ARFLAGS = cru
 libcpukernel_a_AR = $(AR) $(ARFLAGS)
 libcpukernel_a_LIBADD =
 am_libcpukernel_a_OBJECTS = isa.$(OBJEXT) context.$(OBJEXT) \
-	cpukernel.$(OBJEXT) elf.$(OBJEXT) fs.$(OBJEXT) \
-	loader.$(OBJEXT) machine.$(OBJEXT) machine-ctrl.$(OBJEXT) \
-	machine-fp.$(OBJEXT) machine-rot.$(OBJEXT) \
-	machine-std.$(OBJEXT) machine-str.$(OBJEXT) memory.$(OBJEXT) \
-	regs.$(OBJEXT) signal.$(OBJEXT) syscall.$(OBJEXT)
+	cpukernel.$(OBJEXT) fs.$(OBJEXT) loader.$(OBJEXT) \
+	machine.$(OBJEXT) machine-ctrl.$(OBJEXT) machine-fp.$(OBJEXT) \
+	machine-rot.$(OBJEXT) machine-std.$(OBJEXT) \
+	machine-str.$(OBJEXT) memory.$(OBJEXT) regs.$(OBJEXT) \
+	signal.$(OBJEXT) syscall.$(OBJEXT)
 libcpukernel_a_OBJECTS = $(am_libcpukernel_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -188,7 +188,6 @@ libcpukernel_a_SOURCES = \
 	isa.c \
 	context.c \
 	cpukernel.c \
-	elf.c \
 	fs.c \
 	loader.c \
 	machine.c \
@@ -290,7 +289,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/context.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpukernel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/loader.Po@am__quote@

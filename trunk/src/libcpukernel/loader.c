@@ -57,7 +57,7 @@ char *ld_help_ctxconfig =
 	"\n";
 
 
-static struct string_map_t elf2_section_flags_map = {
+static struct string_map_t elf_section_flags_map = {
 	3, {
 		{ "SHF_WRITE", 1 },
 		{ "SHF_ALLOC", 2 },
@@ -79,7 +79,7 @@ void ld_done(struct ctx_t *ctx)
 	struct loader_t *ld = ctx->loader;
 
 	/* Free ELF file  */
-	elf2_file_free(ld->elf_file);
+	elf_file_free(ld->elf_file);
 	
 	/* Free arguments and environment variables */
 	for (lnlist_head(ld->args); !lnlist_eol(ld->args); lnlist_next(ld->args))
@@ -195,12 +195,12 @@ void ld_add_environ(struct ctx_t *ctx, char *env)
 
 
 /* Load sections from an ELF file */
-static void ld_load_sections(struct ctx_t *ctx, struct elf2_file_t *elf_file)
+static void ld_load_sections(struct ctx_t *ctx, struct elf_file_t *elf_file)
 {
 	struct mem_t *mem = ctx->mem;
 	struct loader_t *ld = ctx->loader;
 
-	struct elf2_section_t *section;
+	struct elf_section_t *section;
 	int i;
 
 	enum mem_access_enum perm;
@@ -213,7 +213,7 @@ static void ld_load_sections(struct ctx_t *ctx, struct elf2_file_t *elf_file)
 		section = list_get(elf_file->section_list, i);
 
 		perm = mem_access_init | mem_access_read;
-		map_flags(&elf2_section_flags_map, section->header->sh_flags, flags_str, sizeof(flags_str));
+		map_flags(&elf_section_flags_map, section->header->sh_flags, flags_str, sizeof(flags_str));
 		ld_debug("  section %d: name='%s', offset=0x%x, addr=0x%x, size=%u, flags=%s\n",
 			i, section->name, section->header->sh_offset, section->header->sh_addr, section->header->sh_size, flags_str);
 
@@ -253,11 +253,11 @@ static void ld_load_sections(struct ctx_t *ctx, struct elf2_file_t *elf_file)
 static void ld_load_interp(struct ctx_t *ctx)
 {
 	struct loader_t *ld = ctx->loader;
-	struct elf2_file_t *elf_file;
+	struct elf_file_t *elf_file;
 
 	/* Open dynamic loader */
 	ld_debug("\nLoading program interpreter '%s'\n", ld->interp);
-	elf_file = elf2_file_create_from_path(ld->interp);
+	elf_file = elf_file_create_from_path(ld->interp);
 	
 	/* Load section from program interpreter */
 	ld_load_sections(ctx, elf_file);
@@ -265,11 +265,11 @@ static void ld_load_interp(struct ctx_t *ctx)
 	/* Change program entry to the one specified by the interpreter */
 	ld->interp_prog_entry = elf_file->header->e_entry;
 	ld_debug("  program interpreter entry: 0x%x\n\n", ld->interp_prog_entry);
-	elf2_file_free(elf_file);
+	elf_file_free(elf_file);
 }
 
 
-static struct string_map_t elf2_program_header_type_map = {
+static struct string_map_t elf_program_header_type_map = {
 	8, {
 		{ "PT_NULL",        0 },
 		{ "PT_LOAD",        1 },
@@ -289,8 +289,8 @@ static void ld_load_program_headers(struct ctx_t *ctx)
 	struct loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
 
-	struct elf2_file_t *elf_file = ld->elf_file;
-	struct elf2_program_header_t *program_header;
+	struct elf_file_t *elf_file = ld->elf_file;
+	struct elf_program_header_t *program_header;
 
 	uint32_t phdt_base;
 	uint32_t phdt_size;
@@ -329,7 +329,7 @@ static void ld_load_program_headers(struct ctx_t *ctx)
 			program_header->header, mem_access_init);
 
 		/* Debug */
-		map_value_string(&elf2_program_header_type_map, program_header->header->p_type,
+		map_value_string(&elf_program_header_type_map, program_header->header->p_type,
 			str, sizeof(str));
 		ld_debug("  header loaded at 0x%x\n", phdt_base + i * phdr_size);
 		ld_debug("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
@@ -498,7 +498,7 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 	/* Load program into memory */
 	ld_get_full_path(ctx, exe, exe_fullpath, MAX_STRING_SIZE);
 	ld->exe = strdup(exe_fullpath);
-	ld->elf_file = elf2_file_create_from_path(exe_fullpath);
+	ld->elf_file = elf_file_create_from_path(exe_fullpath);
 
 	/* Read sections and program entry */
 	ld_load_sections(ctx, ld->elf_file);

@@ -84,14 +84,14 @@ struct amd_bin_enc_dict_entry_t
 	struct amd_bin_enc_dict_entry_header_t *header;
 
 	/* Buffers containing PT_LOAD and PT_NOTE segments */
-	struct elf2_buffer_t pt_load_buffer;
-	struct elf2_buffer_t pt_note_buffer;
+	struct elf_buffer_t pt_load_buffer;
+	struct elf_buffer_t pt_note_buffer;
 
 	/* Buffers containing sections */
-	struct elf2_buffer_t sec_text_buffer;
-	struct elf2_buffer_t sec_data_buffer;
-	struct elf2_buffer_t sec_symtab_buffer;
-	struct elf2_buffer_t sec_strtab_buffer;
+	struct elf_buffer_t sec_text_buffer;
+	struct elf_buffer_t sec_data_buffer;
+	struct elf_buffer_t sec_symtab_buffer;
+	struct elf_buffer_t sec_strtab_buffer;
 
 	/* Info read from pt_notes */
 	int num_gpr_used;
@@ -104,7 +104,7 @@ struct amd_bin_enc_dict_entry_t
 struct amd_bin_t
 {
 	/* Associated ELF file */
-	struct elf2_file_t *elf_file;
+	struct elf_file_t *elf_file;
 
 	/* Encoding dictionary.
 	 * Elements are of type 'struct amd_bin_enc_dict_entry_t'
@@ -258,7 +258,7 @@ struct opencl_program_t
 	uint32_t context_id;
 
 	/* ELF binary */
-	struct elf2_file_t *elf_file;
+	struct elf_file_t *elf_file;
 };
 
 struct opencl_program_t *opencl_program_create(void);
@@ -308,9 +308,9 @@ struct opencl_kernel_t
 	struct list_t *arg_list;
 
 	/* Excerpts of program ELF binary */
-	struct elf2_buffer_t metadata_buffer;
-	struct elf2_buffer_t kernel_buffer;
-	struct elf2_buffer_t header_buffer;
+	struct elf_buffer_t metadata_buffer;
+	struct elf_buffer_t kernel_buffer;
+	struct elf_buffer_t header_buffer;
 
 	/* AMD Kernel binary (internal ELF) */
 	struct amd_bin_t *amd_bin;

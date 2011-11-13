@@ -485,7 +485,7 @@ struct opencl_program_t *opencl_program_create()
 void opencl_program_free(struct opencl_program_t *program)
 {
 	if (program->elf_file)
-		elf2_file_free(program->elf_file);
+		elf_file_free(program->elf_file);
 	opencl_object_remove(program);
 	free(program);
 }
@@ -520,16 +520,16 @@ char *err_opencl_elf_symbol =
 	"\tyour application.\n";
 
 void opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_name,
-	struct elf2_buffer_t *buffer)
+	struct elf_buffer_t *buffer)
 {
-	struct elf2_file_t *elf_file;
-	struct elf2_symbol_t *symbol;
-	struct elf2_section_t *section;
+	struct elf_file_t *elf_file;
+	struct elf_symbol_t *symbol;
+	struct elf_section_t *section;
 	
 	/* Look for symbol */
 	elf_file = program->elf_file;
 	assert(elf_file);
-	symbol = elf2_symbol_get_by_name(elf_file, symbol_name);
+	symbol = elf_symbol_get_by_name(elf_file, symbol_name);
 	if (!symbol)
 		fatal("%s: ELF symbol '%s' not found.\n%s", __FUNCTION__,
 			symbol_name, err_opencl_elf_symbol);
@@ -625,15 +625,15 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 	char *line_ptrs[MAX_STRING_SIZE];
 	int token_count;
 	struct opencl_kernel_arg_t *arg;
-	struct elf2_buffer_t *buffer;
+	struct elf_buffer_t *buffer;
 	
 	/* Open as text file */
 	buffer = &kernel->metadata_buffer;
-	elf2_buffer_seek(buffer, 0);
+	elf_buffer_seek(buffer, 0);
 	for (;;) {
 		
 		/* Read line from buffer */
-		elf2_buffer_read_line(buffer, line, MAX_STRING_SIZE);
+		elf_buffer_read_line(buffer, line, MAX_STRING_SIZE);
 		if (!line[0])
 			break;
 

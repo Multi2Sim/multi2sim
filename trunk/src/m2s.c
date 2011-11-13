@@ -43,7 +43,6 @@ static char *esim_debug_file_name = "";
 static char *error_debug_file_name = "";
 static char *ctxconfig_file_name = "";
 static char *elf_debug_file_name = "";
-static char *elf2_debug_file_name = "";
 
 
 /* Error debug */
@@ -304,14 +303,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			elf_debug_file_name = argv[argi];
-			continue;
-		}
-
-		/* ELF debug file */
-		if (!strcmp(argv[argi], "--debug-elf2")) {
-			sim_need_argument(argc, argv, argi);
-			argi++;
-			elf2_debug_file_name = argv[argi];
 			continue;
 		}
 
@@ -723,7 +714,6 @@ int main(int argc, char **argv)
 	isa_inst_debug_category = debug_new_category(isa_inst_debug_file_name);
 	isa_call_debug_category = debug_new_category(isa_call_debug_file_name);
 	elf_debug_category = debug_new_category(elf_debug_file_name);
-	elf2_debug_category = debug_new_category(elf2_debug_file_name);
 	ld_debug_category = debug_new_category(loader_debug_file_name);
 	syscall_debug_category = debug_new_category(syscall_debug_file_name);
 	ctx_debug_category = debug_new_category(ctx_debug_file_name);
