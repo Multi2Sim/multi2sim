@@ -966,6 +966,67 @@ int opencl_func_run(int code, unsigned int *args)
 	}
 
 
+	/* 1057 */
+	case OPENCL_FUNC_clEnqueueCopyBuffer:
+	{
+		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
+		uint32_t src_buffer = args[1];  /* cl_mem src_buffer */
+		uint32_t dst_buffer = args[2];  /* cl_mem dst_buffer */
+		uint32_t src_offset = args[3];  /* size_t src_offset */
+		uint32_t dst_offset = args[4];  /* size_t dst_offset */
+		uint32_t cb = args[5];  /* size_t cb */
+		uint32_t num_events_in_wait_list = args[6];  /* cl_uint num_events_in_wait_list */
+		uint32_t event_wait_list = args[7];  /* const cl_event *event_wait_list */
+		uint32_t event_ptr = args[8];  /* cl_event *event */
+
+		struct opencl_mem_t *src_mem, *dst_mem;
+		struct opencl_event_t *event;
+		void *buf;
+
+		opencl_debug("  command_queue=0x%x, src_buffer=0x%x, dst_buffer=0x%x,\n"
+			"  src_offset=0x%x, dst_offset=0x%x, cb=%u, num_events_in_wait_list=0x%x,\n"
+			"  event_wait_list=0x%x, event=0x%x\n",
+			command_queue, src_buffer, dst_buffer, src_offset, dst_offset, cb,
+			num_events_in_wait_list, event_wait_list, event_ptr);
+
+		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
+		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+
+		/* Get memory objects */
+		src_mem = opencl_object_get(OPENCL_OBJ_MEM, src_buffer);
+		dst_mem = opencl_object_get(OPENCL_OBJ_MEM, dst_buffer);
+
+		/* Check that device buffer storage is not exceeded */
+		if (src_offset + cb > src_mem->size || dst_offset + cb > dst_mem->size)
+			fatal("%s: buffer storage exceeded\n%s", err_prefix, err_opencl_param_note);
+
+		/* Copy buffers */
+		buf = malloc(cb);
+		if (!buf)
+			fatal("out of memory");
+		mem_read(gk->global_mem, src_mem->device_ptr + src_offset, cb, buf);
+		mem_write(gk->global_mem, dst_mem->device_ptr + dst_offset, cb, buf);
+		free(buf);
+
+		/* Event */
+		if (event_ptr) {
+			event = opencl_event_create(OPENCL_EVENT_MAP_BUFFER);
+			event->status = OPENCL_EVENT_STATUS_COMPLETE;
+			event->time_queued = opencl_event_timer();
+			event->time_submit = opencl_event_timer();
+			event->time_start = opencl_event_timer();
+			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
+			mem_write(isa_mem, event_ptr, 4, &event->id);
+			opencl_debug("    event: 0x%x\n", event->id);
+		}
+
+		/* Return success */
+		opencl_debug("    %d bytes copied in device memory from 0x%x to 0x%x\n",
+			cb, src_mem->device_ptr + src_offset, dst_mem->device_ptr + dst_offset);
+		break;
+	}
+
+
 	/* 1064 */
 	case OPENCL_FUNC_clEnqueueMapBuffer:
 	{

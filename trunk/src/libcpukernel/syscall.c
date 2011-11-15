@@ -3049,6 +3049,7 @@ void syscall_do()
 			fatal("getdents: call to host system call returned error");
 		if (!nread) {
 			retval = 0;
+			free(buf);
 			break;
 		}
 
