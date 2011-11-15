@@ -267,9 +267,11 @@ void isa_store_reg(x86_register_t reg, uint32_t value);
 uint8_t isa_load_rm8(void);
 uint16_t isa_load_rm16(void);
 uint32_t isa_load_rm32(void);
+uint64_t isa_load_m64(void);
 void isa_store_rm8(uint8_t value);
 void isa_store_rm16(uint16_t value);
 void isa_store_rm32(uint32_t value);
+void isa_store_m64(uint64_t value);
 
 #define isa_load_r8() isa_load_reg(isa_inst.reg + reg_al)
 #define isa_load_r16() isa_load_reg(isa_inst.reg + reg_ax)

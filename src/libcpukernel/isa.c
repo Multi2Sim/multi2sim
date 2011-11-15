@@ -278,6 +278,15 @@ uint32_t isa_load_rm32(void)
 }
 
 
+uint64_t isa_load_m64(void)
+{
+	uint64_t value;
+	mem_read(isa_mem, isa_effective_address(), 8, &value);
+	isa_inst_debug("  [0x%x]=0x%llx", isa_effective_address(), (unsigned long long) value);
+	return value;
+}
+
+
 void isa_store_rm8(uint8_t value)
 {
 	if (isa_inst.modrm_mod == 0x03) {
@@ -308,6 +317,13 @@ void isa_store_rm32(uint32_t value)
 	}
 	mem_write(isa_mem, isa_effective_address(), 4, &value);
 	isa_inst_debug("  [0x%x] <- 0x%x", isa_effective_address(), value);
+}
+
+
+void isa_store_m64(uint64_t value)
+{
+	mem_write(isa_mem, isa_effective_address(), 8, &value);
+	isa_inst_debug("  [0x%x] <- 0x%llx", isa_effective_address(), (unsigned long long) value);
 }
 
 
