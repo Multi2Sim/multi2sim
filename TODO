@@ -146,32 +146,10 @@ fp_rename_writes
 
 
 ********************************************************************************
-Task 11/07/11 - Write disassemblers
-********************************************************************************
-
-Implement command-line option to disassemble x86 and Evergreen binaries:
-
-m2s --cpu-disasm <file>
-m2s --gpu-disasm <file>
-
-
-
-
-********************************************************************************
 Task 11/08/11 - SIGUSR1 signal
 ********************************************************************************
 
 Include GPU simulation report when the simulator receives the SIGUSR1 signal.
-
-
-
-********************************************************************************
-Task 11/10/11 - Integrate GPU Visualization
-********************************************************************************
-
-- Figure out how to disable the compilation of a complete executable + libraries
-  depending on whether a library is present in the system, to avoid errors
-  when the user is not interested in this tool.
 
 
 
@@ -181,3 +159,12 @@ Task 11/10/11 - GPU Visualization - Pointers not freed
 
 - Open main window. Open block diagram. Close main window without closing block
   diagram. This causes a lot of unfreed pointers.
+
+
+********************************************************************************
+Task 11/10/11 - Bug
+********************************************************************************
+
+- New MatrixMultiplication_Kernels.bin generated with SDK 2.5 fails.
+
+

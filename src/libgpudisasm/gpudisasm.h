@@ -562,11 +562,13 @@ void amd_disasm_init(void);
 void amd_disasm_done(void);
 void amd_disasm_buffer(struct elf_buffer_t *buffer, FILE *f);
 
-void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int shift, char *buf, int size);
+void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, int slot, char *buf, int size);
+void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, char *buf, int size);
 
 void fmt_word_dump(void *buf, enum fmt_enum fmt, FILE *f);
 void amd_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f);
-void amd_inst_dump(struct amd_inst_t *inst, int count, int shift, FILE *f);
+void amd_inst_slot_dump(struct amd_inst_t *inst, int count, int loop_idx, int slot, FILE *f);
+void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f);
 void amd_inst_dump_debug(struct amd_inst_t *inst, int count, int loop_idx, FILE *f);
 void amd_inst_words_dump(struct amd_inst_t *inst, FILE *f);
 void amd_alu_group_dump(struct amd_alu_group_t *group, int shift, FILE *f);
