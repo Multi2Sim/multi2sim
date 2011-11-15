@@ -2016,13 +2016,13 @@ void amd_inst_LDS_IDX_OP_impl()
 		GPU_PARAM_NOT_SUPPORTED_NEQ(idx_offset, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_chan, 0);
 		/* FIXME: dst_chan? Does address need to be multiplied? */
-		gpu_isa_enqueue_write_lds(op0, op1);
+		gpu_isa_enqueue_write_lds(op0, op1, 4);
 
 		wavefront->local_mem_write = 1;
 		work_item->local_mem_access_count = 1;
 		work_item->local_mem_access_type[0] = 2;
 		work_item->local_mem_access_addr[0] = op1;
-		work_item->local_mem_access_size[1] = 4;
+		work_item->local_mem_access_size[0] = 4;
 		break;
 	}
 
@@ -2042,8 +2042,8 @@ void amd_inst_LDS_IDX_OP_impl()
 
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.dst_chan, 0);
-		gpu_isa_enqueue_write_lds(dst, src0);
-		gpu_isa_enqueue_write_lds(tmp, src1);  /* FIXME: correct? */
+		gpu_isa_enqueue_write_lds(dst, src0, 4);
+		gpu_isa_enqueue_write_lds(tmp, src1, 4);  /* FIXME: correct? */
 
 		wavefront->local_mem_write = 1;
 		work_item->local_mem_access_count = 2;
@@ -2056,6 +2056,22 @@ void amd_inst_LDS_IDX_OP_impl()
 		break;
 	}
 
+	/* DS_INST_BYTE_WRITE: 1A1D BYTEWRITE (dst,src) : DS(dst) = src[7:0] */
+	case 18:
+	{
+		uint32_t src, dst; 
+		src = op1;
+		dst = op0;
+
+		gpu_isa_enqueue_write_lds(dst, src, 1);
+
+		wavefront->local_mem_write = 1; 
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 2; /* write */
+		work_item->local_mem_access_addr[0] = dst;
+		work_item->local_mem_access_size[0] = 1;
+		break;
+	}	   
 
 	/* DS_INST_READ_RET: 1A READ(dst) : OQA = DS(dst) */
 	case 50:
@@ -2100,6 +2116,38 @@ void amd_inst_LDS_IDX_OP_impl()
 		work_item->local_mem_access_size[1] = 4;
 		break;
 	}
+
+
+	/* S_INST_BYTE_READ_RET: 1A BYTEREAD(dst) 
+	 *    OQA=SignExtend(DS(dst)[7:0]) */
+	case 54:
+	{
+		char value;
+                int32_t *pvalue_se; 
+
+		mem_read(local_mem, op0, 1, &value);
+		pvalue_se = malloc(4);
+		*pvalue_se = value;
+		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_se);
+
+                break;
+	}
+
+
+        /* DS_INST_UBYTE_READ_RET: 1A UBYTEREAD(dst) 
+         *    OQA={24'h0, DS(dst)[7:0]} */
+        case 55: 
+        {
+		unsigned char value;
+		uint32_t *pvalue_24h0;
+
+		mem_read(local_mem, op0, 1, &value);
+		pvalue_24h0 = malloc(4);
+		*pvalue_24h0 = value;
+		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_24h0);
+
+		break;
+        }
 
 
 	default:

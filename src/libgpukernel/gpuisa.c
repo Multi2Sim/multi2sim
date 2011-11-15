@@ -403,8 +403,7 @@ float gpu_isa_read_op_src_float(int src_idx)
  * Deferred tasks for ALU group
  */
 
-
-void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value)
+void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value, size_t value_size)
 {
 	struct gpu_isa_write_task_t *wt;
 
@@ -418,6 +417,7 @@ void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value)
 	wt->inst = gpu_isa_inst;
 	wt->lds_addr = addr;
 	wt->lds_value = value;
+	wt->lds_value_size = value_size;
 
 	/* Enqueue task */
 	lnlist_add(gpu_isa_work_item->write_task_list, wt);
@@ -545,9 +545,10 @@ void gpu_isa_write_task_commit(void)
 
 			local_mem = gpu_isa_work_group->local_mem;
 			assert(local_mem);
-			mem_write(local_mem, wt->lds_addr, 4, &wt->lds_value);
-			gpu_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf)", gpu_isa_work_item->id, wt->lds_addr,
-				wt->lds_value, * (float *) &wt->lds_value);
+			assert(wt->lds_value_size);
+			mem_write(local_mem, wt->lds_addr, wt->lds_value_size, &wt->lds_value);
+			gpu_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf) (%d bytes)", gpu_isa_work_item->id, wt->lds_addr,
+				wt->lds_value, * (float *) &wt->lds_value, (int)wt->lds_value_size);
 			break;
 		}
 
