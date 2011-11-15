@@ -187,6 +187,29 @@ void op_cmpxchg_rm32_r32_impl() {
 	isa_store_rm32(rm32);
 }
 
+void op_cmpxchg8b_m64_impl()
+{
+	uint32_t eax, ebx, ecx, edx;
+	uint64_t edx_eax, m64;
+
+	eax = isa_regs->eax;
+	ebx = isa_regs->ebx;
+	ecx = isa_regs->ecx;
+	edx = isa_regs->edx;
+	edx_eax = ((uint64_t) edx << 32) | eax;
+	m64 = isa_load_m64();
+
+	if (edx_eax == m64) {
+		isa_set_flag(flag_zf);
+		m64 = ((uint64_t) ecx << 32) | ebx;
+		isa_store_m64(m64);
+	} else {
+		isa_clear_flag(flag_zf);
+		isa_regs->edx = m64 >> 32;
+		isa_regs->eax = m64;
+	}
+}
+
 
 #define PUTINFO(EAX, EBX, ECX, EDX) \
 	isa_store_reg(reg_eax, (EAX)); isa_store_reg(reg_ebx, (EBX)); \
