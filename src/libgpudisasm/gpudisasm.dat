@@ -481,7 +481,7 @@ DEFINST(ADD_INT,
 )
 
 DEFINST(SUB_INT,
-	"SUB_INT%omod  %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
+	"SUB_INT%omod   %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 53,
 	AMD_INST_FLAG_DST_INT
@@ -1482,28 +1482,28 @@ DEFINST(MULADD_IEEE,
 )
 
 DEFINST(CNDE,
-	"CNDE       %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
+	"CNDE        %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 25,
 	0
 )
 
 DEFINST(CNDGT,
-	"CNDGT      %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
+	"CNDGT       %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 26,
 	0
 )
 
 DEFINST(CNDGE,
-	"CNDGE      %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
+	"CNDGE       %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 27,
 	0
 )
 
 DEFINST(CNDE_INT,
-	"CNDE_INT   %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
+	"CNDE_INT    %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 28,
 	0
