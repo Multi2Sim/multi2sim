@@ -765,7 +765,10 @@ end:
 }
 
 
-void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, char *buf, int size)
+/* Dump an instruction. Use -1 for 'count', 'loop_idx', or 'alu', if the corresponding field
+ * is not relevant in the instruction dump. */
+void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, int slot,
+	char *buf, int size)
 {
 	char shift_str[MAX_STRING_SIZE];
 	char *fmt_str;
@@ -794,6 +797,10 @@ void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, char *b
 			dump_buf(buf_ptr, size_ptr, "         ");
 	}
 	
+	/* VLIW slot */
+	if (slot >= 0)
+		dump_buf(buf_ptr, size_ptr, "%s: ", map_value(&amd_alu_map, slot));
+
 	/* Format */
 	fmt_str = inst->info->fmt_str;
 	while (*fmt_str) {
@@ -1196,6 +1203,14 @@ void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, char *b
 }
 
 
+void amd_inst_dump_buf(struct amd_inst_t *inst, int count, int loop_idx,
+	char *buf, int size)
+{
+	amd_inst_slot_dump_buf(inst, count, loop_idx,
+		-1, buf, size);
+}
+
+
 void amd_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f)
 {
 	char buf[MAX_STRING_SIZE];
@@ -1207,12 +1222,19 @@ void amd_inst_dump_gpr(int gpr, int rel, int chan, int im, FILE *f)
 }
 
 
-void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
+void amd_inst_slot_dump(struct amd_inst_t *inst, int count, int loop_idx, int slot, FILE *f)
 {
 	char buf[MAX_STRING_SIZE];
 
-	amd_inst_dump_buf(inst, count, loop_idx, buf, MAX_STRING_SIZE);
+	amd_inst_slot_dump_buf(inst, count, loop_idx, slot, buf, MAX_STRING_SIZE);
 	fprintf(f, "%s\n", buf);
+}
+
+
+void amd_inst_dump(struct amd_inst_t *inst, int count, int loop_idx, FILE *f)
+{
+	amd_inst_slot_dump(inst, count,
+		loop_idx, -1, f);
 }
 
 
@@ -1245,10 +1267,13 @@ void amd_inst_words_dump(struct amd_inst_t *inst, FILE *f)
 
 void amd_alu_group_dump(struct amd_alu_group_t *group, int shift, FILE *f)
 {
+	struct amd_inst_t *inst;
 	int i;
 
-	for (i = 0; i < group->inst_count; i++)
-		amd_inst_dump(&group->inst[i], i ? -1 : group->id, shift, f);
+	for (i = 0; i < group->inst_count; i++) {
+		inst = &group->inst[i];
+		amd_inst_slot_dump(inst, i ? -1 : group->id, shift, inst->alu, f);
+	}
 }
 
 
