@@ -272,6 +272,7 @@ void gpu_ndrange_setup_const_mem(struct gpu_ndrange_t *ndrange)
 	gpu_isa_const_mem_write(0, 1, 0, &kernel->local_size3[0]);
 	gpu_isa_const_mem_write(0, 1, 1, &kernel->local_size3[1]);
 	gpu_isa_const_mem_write(0, 1, 2, &kernel->local_size3[2]);
+	gpu_isa_const_mem_write(0, 1, 3, &zero);
 
 	/* CB0[2]
 	 * x,y,z: global work size {x,y,z} / local work size {x,y,z}
@@ -279,6 +280,7 @@ void gpu_ndrange_setup_const_mem(struct gpu_ndrange_t *ndrange)
 	gpu_isa_const_mem_write(0, 2, 0, &kernel->group_count3[0]);
 	gpu_isa_const_mem_write(0, 2, 1, &kernel->group_count3[1]);
 	gpu_isa_const_mem_write(0, 2, 2, &kernel->group_count3[2]);
+	gpu_isa_const_mem_write(0, 2, 3, &zero);
 
 	/* CB0[3]
 	 * x: Offset to private memory ring (0 if private memory is not emulated).
