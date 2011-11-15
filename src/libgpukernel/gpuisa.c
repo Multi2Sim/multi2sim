@@ -334,6 +334,13 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 		return value;
 	}
 
+	/* ALU_SRC_0_5 */
+	if (sel == 252) {
+		float f = 0.5f;
+		value = * (uint32_t *) &f;
+		return value;
+	}
+
 	/* ALU_SRC_LITERAL */
 	if (sel == 253) {
 		assert(gpu_isa_inst->alu_group);
@@ -356,7 +363,7 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	}
 
 	/* Not implemented 'sel' field */
-	fatal("gpu_isa_read_op_src: src_idx=%d, not implemented for sel=%d", src_idx, sel);
+	fatal("%s: src_idx=%d, not implemented for sel=%d", __FUNCTION__, src_idx, sel);
 	return 0;
 }
 
