@@ -457,6 +457,7 @@ struct gpu_isa_write_task_t {
 	/* When 'kind' == GPU_ISA_WRITE_TASK_WRITE_LDS */
 	uint32_t lds_addr;
 	uint32_t lds_value;
+        size_t   lds_value_size;
 
 	/* When 'kind' == GPU_ISA_WRITE_TASK_PRED_SET */
 	int cond;
@@ -468,7 +469,7 @@ extern struct repos_t *gpu_isa_write_task_repos;
 
 
 /* Functions to handle deferred tasks */
-void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value);
+void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value, size_t value_size);
 void gpu_isa_enqueue_write_dest(uint32_t value);
 void gpu_isa_enqueue_write_dest_float(float value);
 void gpu_isa_enqueue_push_before(void);
