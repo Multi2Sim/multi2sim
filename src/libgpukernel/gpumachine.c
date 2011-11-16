@@ -2322,24 +2322,36 @@ void amd_inst_FETCH_impl()
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.format_comp_all, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.srf_mode_all, 0);
 	}
+
+	size_t elem_size = 0;
+	uint32_t value[4];
+	int num_elem;
 	
 	/* Fetch */
 	switch (data_format) {
 
-	case 13:  /* DATA_FORMAT_32 */
-	case 29:  /* DATA_FORMAT_32_32 */
-	case 47:  /* DATA_FORMAT_32_32_32 */
-	case 34:  /* DATA_FORMAT_32_32_32_32 */
-	case 14:  /* DATA_FORMAT_32_FLOAT */
-	case 30:  /* DATA_FORMAT_32_32_FLOAT */
-	case 48:  /* DATA_FORMAT_32_32_32_FLOAT */
 	case 35:  /* DATA_FORMAT_32_32_32_32_FLOAT */
-	{
-		uint32_t value[4];
-		int num_elem;
+	case 34:  /* DATA_FORMAT_32_32_32_32 */
+
+		elem_size += 4;
+
+	case 48:  /* DATA_FORMAT_32_32_32_FLOAT */
+	case 47:  /* DATA_FORMAT_32_32_32 */
+
+		elem_size += 4;
+
+	case 30:  /* DATA_FORMAT_32_32_FLOAT */
+	case 29:  /* DATA_FORMAT_32_32 */
+
+		elem_size += 4;
+
+	case 14:  /* DATA_FORMAT_32_FLOAT */
+	case 13:  /* DATA_FORMAT_32 */
+
+		elem_size += 4;
 
 		/* Address */
-		addr = gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * 4;
+		addr = gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * elem_size;
 		gpu_isa_debug("  t%d:read(0x%x)", gpu_isa_work_item->id, addr);
 
 		/* Read value */
@@ -2384,7 +2396,6 @@ void amd_inst_FETCH_impl()
 			}
 		}
 		break;
-	}
 	
 	default:
 		GPU_PARAM_NOT_SUPPORTED(W1.data_format);
