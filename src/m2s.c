@@ -30,6 +30,7 @@
 static char *ctx_debug_file_name = "";
 static char *syscall_debug_file_name = "";
 static char *opencl_debug_file_name = "";
+static char *cpu_disasm_file_name = "";
 static char *gpu_disasm_file_name = "";
 static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
@@ -72,6 +73,10 @@ static char *sim_help =
 	"      Configuration file for the CPU model, including parameters describing the\n"
 	"      stages bandwidth, structures size, and other parameters of processor cores\n"
 	"      and threads. Type 'm2s --help-cpu-config' for details on the file format.\n"
+	"\n"
+	"  --cpu-disasm <file>\n"
+	"      Disassemble the x86 ELF file provided in <file>, using the internal x86\n"
+	"      disassembler. This option is incompatible with any other option.\n"
 	"\n"
 	"  --cpu-sim {functional|detailed}\n"
 	"      Choose a functional simulation (emulation) of an x86 program, versus\n"
@@ -125,7 +130,7 @@ static char *sim_help =
 	"      for details on the file format.\n"
 	"\n"
 	"  --gpu-disasm <file>\n"
-	"      Disassembly OpenCL kernel binary provided in <file>. This option must be\n"
+	"      Disassemble OpenCL kernel binary provided in <file>. This option must be\n"
 	"      used with no other options.\n"
 	"\n"
 	"  --gpu-sim {functional|detailed}\n"
@@ -240,6 +245,15 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			cpu_config_file_name = argv[argi];
 			continue;
 		}
+
+		/* CPU disassembler */
+		if (!strcmp(argv[argi], "--cpu-disasm")) {
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			cpu_disasm_file_name = argv[argi];
+			continue;
+		}
+
 
 		/* CPU simulation accuracy */
 		if (!strcmp(argv[argi], "--cpu-sim")) {
@@ -627,6 +641,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		fatal("option '--gpu-visual' is incompatible with any other options.");
 	if (*gpu_disasm_file_name && argc > 3)
 		fatal("option '--gpu-disasm' is incompatible with any other options.");
+	if (*cpu_disasm_file_name && argc > 3)
+		fatal("option '--cpu-disasm' is incompatible with other options.");
 
 	/* Discard arguments used as options */
 	arg_discard = argi - 1;
@@ -720,14 +736,18 @@ int main(int argc, char **argv)
 	/* Read command line */
 	sim_read_command_line(&argc, argv);
 
-	/* GPU Visualization tool */
-	if (*gpu_visual_file_name)
-		vgpu_run(gpu_visual_file_name);
+	/* CPU disassembler tool */
+	if (*cpu_disasm_file_name)
+		ke_disasm(cpu_disasm_file_name);
 
 	/* GPU disassembler tool */
 	if (*gpu_disasm_file_name)
 		gk_disasm(gpu_disasm_file_name);
 
+	/* GPU visualization tool */
+	if (*gpu_visual_file_name)
+		vgpu_run(gpu_visual_file_name);
+	
 	/* Debug */
 	debug_init();
 	isa_inst_debug_category = debug_new_category(isa_inst_debug_file_name);

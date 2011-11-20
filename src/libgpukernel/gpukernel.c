@@ -251,4 +251,9 @@ void gk_disasm(char *path)
 	/* Free external ELF */
 	elf_file_free(elf_file);
 	amd_disasm_done();
+
+	/* End */
+	mhandle_done();
+	exit(0);
 }
+

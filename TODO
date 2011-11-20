@@ -161,10 +161,11 @@ Task 11/10/11 - GPU Visualization - Pointers not freed
   diagram. This causes a lot of unfreed pointers.
 
 
+
 ********************************************************************************
-Task 11/10/11 - Bug
+Task 11/16/11 - SystemC Integration
 ********************************************************************************
 
-- New MatrixMultiplication_Kernels.bin generated with SDK 2.5 fails.
+Has anyone tried linking multi2sim against the SystemC library? I have a module (written in SystemC) that I'd like to integrate into multi2sim. However, compiling with including the header file in src/m2s.c and trying to link the  the SystemC library to the final binary is causing me trouble.  Here are the parameters that I am passing to configure
 
-
+$ ./configure LDFLAGS=-L/path/to/systemC/lib/ LIBS="-lsystemc -lstdc++"  CC=gcc CPPFLAGS=-I/path/to/systemC/headers CXX=g++ CFLAGS="-fPIC"

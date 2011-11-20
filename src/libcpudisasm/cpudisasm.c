@@ -255,22 +255,6 @@ void disasm_init()
 		if (info->imm & ID)
 			info->imm_size = 4;
 	}
-
-	/* Print table */
-	/*{
-		int i, count;
-		for (i = 0; i < 0x100; i++) {
-			count = 0;
-			info = x86_opcode_info_table[i];
-			while (info) {
-				count++;
-				info = info->next;
-			}
-			printf("x86_opcode_info_table[0x%x].count = %d\n",
-				i, count);
-		}
-		abort();
-	}*/
 }
 
 
