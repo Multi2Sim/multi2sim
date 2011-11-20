@@ -610,6 +610,7 @@ extern struct kernel_t *ke;
 void ke_init(void);
 void ke_done(void);
 void ke_run(void);
+void ke_disasm(char *file_name);
 
 void ke_dump(FILE *f);
 
