@@ -790,3 +790,75 @@ void ke_run(void)
 }
 
 
+/* CPU disassembler */
+void ke_disasm(char *file_name)
+{
+	struct elf_file_t *elf_file;
+	struct elf_section_t *section;
+	struct elf_buffer_t *buffer;
+	struct elf_symbol_t *symbol;
+
+	x86_inst_t inst;
+	int curr_sym;
+	int i;
+
+	/* Open ELF file */
+	disasm_init();
+	elf_file = elf_file_create_from_path(file_name);
+
+	/* Read sections */
+	for (i = 0; i < list_count(elf_file->section_list); i++)
+	{
+		/* Get section and skip if it does not contain code */
+		section = list_get(elf_file->section_list, i);
+		if (!(section->header->sh_flags & SHF_EXECINSTR))
+			continue;
+		buffer = &section->buffer;
+		
+		/* Title */
+		printf("**\n** Disassembly for section '%s'\n**\n\n", section->name);
+
+		/* Disassemble */
+		curr_sym = 0;
+		symbol = list_get(elf_file->symbol_table, curr_sym);
+		while (buffer->pos < buffer->size)
+		{
+			uint32_t eip;
+			char str[MAX_STRING_SIZE];
+
+			/* Read instruction */
+			eip = section->header->sh_addr + buffer->pos;
+			x86_disasm(elf_buffer_tell(buffer), eip, &inst);
+			if (inst.size) {
+				elf_buffer_read(buffer, NULL, inst.size);
+				x86_inst_dump_buf(&inst, str, MAX_STRING_SIZE);
+			} else {
+				elf_buffer_read(buffer, NULL, 1);
+				strcpy(str, "???");
+			}
+
+			/* Symbol */
+			while (symbol && symbol->value < eip) {
+				curr_sym++;
+				symbol = list_get(elf_file->symbol_table, curr_sym);
+			}
+			if (symbol && symbol->value == eip)
+				printf("\n%08x <%s>:\n", eip, symbol->name);
+
+			/* Print */
+			printf("%8x:  %s\n", eip, str);
+		}
+
+		/* Pad */
+		printf("\n\n");
+	}
+
+	/* Free ELF */
+	elf_file_free(elf_file);
+	disasm_done();
+
+	/* End */
+	mhandle_done();
+	exit(0);
+}
+
