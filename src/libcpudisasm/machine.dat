@@ -354,6 +354,12 @@ DEFINST(mov_sreg_rm32, 0x8e, SKIP, REG, SKIP, 0)
 DEFINST(mov_rm16_sreg, 0x8c, SKIP, REG, SKIP, prefix_op)
 DEFINST(mov_rm32_sreg, 0x8c, SKIP, REG, SKIP, 0)
 
+DEFINST(movd_xmm_rm32, 0x0f, 0x6e, REG, SKIP, prefix_op)
+DEFINST(movd_rm32_xmm, 0x0f, 0x7e, REG, SKIP, prefix_op)
+
+DEFINST(movq_xmm_xmmm64, 0x0f, 0x7e, REG, SKIP, prefix_rep)
+DEFINST(movq_xmmm64_xmm, 0x0f, 0xd6, REG, SKIP, prefix_op)
+
 DEFINST(movsb, 0xa4, SKIP, SKIP, SKIP, 0)
 DEFINST(movsw, 0xa5, SKIP, SKIP, SKIP, prefix_op)
 DEFINST(movsd, 0xa5, SKIP, SKIP, SKIP, 0)

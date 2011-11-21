@@ -484,6 +484,67 @@ uint16_t isa_load_fpu_status()
 
 
 
+/*
+ * XMM Registers
+ */
+
+void isa_dump_xmm(uint8_t *value, FILE *f)
+{
+	char *comma;
+	int i;
+	for (i = 0; i < 16; i++)
+		fprintf(f, "%02x ", value[i]);
+
+	comma = "(";
+	for (i = 0; i < 4; i++) {
+		fprintf(f, "%s%g", comma, * (float *) (value + i * 4));
+		comma = ", ";
+	}
+	fprintf(f, ")");
+}
+
+
+void isa_store_xmm(uint8_t *value)
+{
+	memcpy(&isa_regs->xmm[isa_inst.modrm_reg], value, 16);
+}
+
+
+void isa_load_xmm(uint8_t *value)
+{
+	memcpy(value, &isa_regs->xmm[isa_inst.modrm_reg], 16);
+}
+
+
+/* Store 'value' to an XMM register of memory.
+ * If the destination operand is memory, the lower 64-bit of 'value' are stored
+ * in the 64-bit memory location.
+ * If the destination operand is a register, the lower 64-bit of 'value' are stored
+ * in the lower 64-bit of the register, leaving the upper 64-bit untouched. */
+void isa_store_xmmm64(uint8_t *value)
+{
+	if (isa_inst.modrm_mod == 0x03) {
+		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 8);
+		return;
+	}
+	mem_write(isa_mem, isa_effective_address(), 8, value);
+}
+
+
+/* Load a 64-bit value into the LSB of 'value'.
+ * If 'value' is a 128-bit array, its upper 64 bits will not be initialized. */
+void isa_load_xmmm64(uint8_t *value)
+{
+	if (isa_inst.modrm_mod == 0x03) {
+		memcpy(value, &isa_regs->xmm[isa_inst.modrm_rm], 8);
+		return;
+	}
+	mem_read(isa_mem, isa_effective_address(), 8, value);
+}
+
+
+
+
 /* Trace call debugging */
 static void isa_debug_call()
 {

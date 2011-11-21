@@ -178,6 +178,10 @@ struct regs_t {
 	int fpu_top;  /* top of stack (field 'top' of status register) */
 	int fpu_code;  /* field 'code' of status register (C3-C2-C1-C0) */
 	uint16_t fpu_ctrl;  /* fpu control word */
+
+	/* XMM registers (8 128-bit regs) */
+	unsigned char xmm[8][16];
+
 } __attribute__((packed));
 
 struct regs_t *regs_create(void);
@@ -300,6 +304,12 @@ void isa_load_extended(uint8_t *value);
 void isa_store_float(float value);
 void isa_store_double(double value);
 void isa_store_extended(uint8_t *value);
+
+void isa_dump_xmm(uint8_t *value, FILE *f);
+void isa_load_xmm(uint8_t *value);
+void isa_store_xmm(uint8_t *value);
+void isa_load_xmmm64(uint8_t *value);
+void isa_store_xmmm64(uint8_t *value);
 
 void isa_double_to_extended(double f, uint8_t *e);
 double isa_extended_to_double(uint8_t *e);

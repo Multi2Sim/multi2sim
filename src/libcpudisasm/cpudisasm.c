@@ -595,6 +595,17 @@ void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 		} else if (is_next_word(fmt, "sreg")) {
 			dump_buf(&buf, &size, "%s", x86_register_name[inst->reg + reg_es]);
 			fmt += 4;
+		} else if (is_next_word(fmt, "xmmm64")) {
+			if (inst->modrm_mod == 0x03)
+				dump_buf(&buf, &size, "xmm%d", inst->modrm_rm);
+			else {
+				dump_buf(&buf, &size, "QWORD PTR ");
+				x86_memory_address_dump_buf(inst, &buf, &size);
+			}
+			fmt += 6;
+		} else if (is_next_word(fmt, "xmm")) {
+			dump_buf(&buf, &size, "xmm%d", inst->modrm_reg);
+			fmt += 3;
 		} else {
 			while (*fmt && is_fmt_char(*fmt))
 				dump_buf(&buf, &size, "%c", *fmt++);
