@@ -43,6 +43,9 @@ DEFINST(and_r8_rm8, 0x22, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(and_r16_rm16, 0x23, SKIP, SKIP, REG, SKIP, prefix_op)
 DEFINST(and_r32_rm32, 0x23, SKIP, SKIP, REG, SKIP, 0)
 
+DEFINST(bound_r16_rm32, 0x62, SKIP, SKIP, REG, SKIP, prefix_op)
+DEFINST(bound_r32_rm64, 0x62, SKIP, SKIP, REG, SKIP, prefix_op)
+
 DEFINST(bsf_r32_rm32, 0x0f, 0xbc, SKIP, REG, SKIP, 0)
 
 DEFINST(bsr_r32_rm32, 0x0f, 0xbd, SKIP, REG, SKIP, 0)
@@ -283,7 +286,9 @@ DEFINST(inc_ir32, 0x40|INDEX, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(insb, 0x6c, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(insd, 0x6d, SKIP, SKIP, SKIP, SKIP, 0)
 
+DEFINST(int_3, 0xcc, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(int_imm8, 0xcd, SKIP, SKIP, SKIP, IB, 0)
+DEFINST(into, 0xce, SKIP, SKIP, SKIP, SKIP, 0)
 
 DEFINST(ja_rel8, 0x77, SKIP, SKIP, SKIP, IB, 0)
 DEFINST(jae_rel8, 0x73, SKIP, SKIP, SKIP, IB, 0)
@@ -443,6 +448,9 @@ DEFINST(pcmpeqd_xmm_xmmm128, 0x0f, 0x76, SKIP, REG, SKIP, prefix_op)
 
 DEFINST(pcmpistri_xmm_xmmm128_imm8, 0x0f, 0x3a, 0x63, REG, IB, prefix_op)
 
+DEFINST(pinsrb_xmm_r32m8_imm8, 0x0f, 0x3a, 0x20, REG, IB, prefix_op)
+DEFINST(pinsrd_xmm_rm32_imm8, 0x0f, 0x3a, 0x22, REG, IB, prefix_op)
+
 DEFINST(pmovmskb_r32_xmmm128, 0x0f, 0xd7, SKIP, REG, SKIP, prefix_op)
 
 DEFINST(pop_rm32, 0x8f, SKIP, SKIP, 0, SKIP, 0)
@@ -455,6 +463,8 @@ DEFINST(prefetcht1, 0x0f, 0x18, SKIP, MEM|2, SKIP, 0)
 DEFINST(prefetcht2, 0x0f, 0x18, SKIP, MEM|3, SKIP, 0)
 DEFINST(prefetchnta, 0x0f, 0x18, SKIP, MEM|0, SKIP, 0)
 
+DEFINST(pshufb_xmm_xmmm128, 0x0f, 0x38, 0x00, REG, SKIP, prefix_op)
+
 DEFINST(pshufd_xmm_xmmm128_imm8, 0x0f, 0x70, SKIP, REG, IB, prefix_op)
 
 DEFINST(pslldq_xmmm128_imm8, 0x0f, 0x73, SKIP, 7, IB, prefix_op)
@@ -466,6 +476,11 @@ DEFINST(psubw_xmm_xmmm128, 0x0f, 0xf9, SKIP, REG, SKIP, prefix_op)
 DEFINST(psubd_xmm_xmmm128, 0x0f, 0xfa, SKIP, REG, SKIP, prefix_op)
 
 DEFINST(ptest_xmm_xmmm128, 0x0f, 0x38, 0x17, REG, SKIP, prefix_op)
+
+DEFINST(punpcklbw_xmm_xmmm128, 0x0f, 0x60, SKIP, REG, SKIP, prefix_op)
+DEFINST(punpcklwd_xmm_xmmm128, 0x0f, 0x61, SKIP, REG, SKIP, prefix_op)
+DEFINST(punpckldq_xmm_xmmm128, 0x0f, 0x62, SKIP, REG, SKIP, prefix_op)
+DEFINST(punpcklqdq_xmm_xmmm128, 0x0f, 0x6c, SKIP, REG, SKIP, prefix_op)
 
 DEFINST(push_rm32, 0xff, SKIP, SKIP, 6, SKIP, 0)
 DEFINST(push_imm8, 0x6a, SKIP, SKIP, SKIP, IB, 0)
