@@ -504,30 +504,15 @@ void isa_dump_xmm(uint8_t *value, FILE *f)
 }
 
 
-void isa_store_xmm(uint8_t *value)
-{
-	memcpy(&isa_regs->xmm[isa_inst.modrm_reg], value, 16);
-}
-
-
 void isa_load_xmm(uint8_t *value)
 {
 	memcpy(value, &isa_regs->xmm[isa_inst.modrm_reg], 16);
 }
 
 
-/* Store 'value' to an XMM register of memory.
- * If the destination operand is memory, the lower 64-bit of 'value' are stored
- * in the 64-bit memory location.
- * If the destination operand is a register, the lower 64-bit of 'value' are stored
- * in the lower 64-bit of the register, leaving the upper 64-bit untouched. */
-void isa_store_xmmm64(uint8_t *value)
+void isa_store_xmm(uint8_t *value)
 {
-	if (isa_inst.modrm_mod == 0x03) {
-		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 8);
-		return;
-	}
-	mem_write(isa_mem, isa_effective_address(), 8, value);
+	memcpy(&isa_regs->xmm[isa_inst.modrm_reg], value, 16);
 }
 
 
@@ -543,6 +528,17 @@ void isa_load_xmmm64(uint8_t *value)
 }
 
 
+/* Store the low 64 bits of 'value' into an XMM register or memory */
+void isa_store_xmmm64(uint8_t *value)
+{
+	if (isa_inst.modrm_mod == 0x03) {
+		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 8);
+		return;
+	}
+	mem_write(isa_mem, isa_effective_address(), 8, value);
+}
+
+
 /* Load a 32-bit value into the lower 32 bits of 'value' */
 void isa_load_xmmm32(uint8_t *value)
 {
@@ -551,6 +547,17 @@ void isa_load_xmmm32(uint8_t *value)
 		return;
 	}
 	mem_read(isa_mem, isa_effective_address(), 4, value);
+}
+
+
+/* Store the low 32 bits of 'value' into an XMM register or memory */
+void isa_store_xmmm32(uint8_t *value)
+{
+	if (isa_inst.modrm_mod == 3) {
+		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 4);
+		return;
+	}
+	mem_write(isa_mem, isa_effective_address(), 4, value);
 }
 
 
