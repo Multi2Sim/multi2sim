@@ -22,13 +22,35 @@
 
 void op_cvttsd2si_r32_xmmm64_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	uint8_t xmm[16];
+	uint32_t r32;
+
+	isa_load_xmmm64(xmm);
+	asm volatile (
+		"cvttsd2si %1, %%eax\n\t"
+		"mov %%eax, %0"
+		: "=m" (r32)
+		: "m" (*xmm)
+		: "eax"
+	);
+	isa_store_r32(r32);
 }
 
 
 void op_cvttss2si_r32_xmmm32_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	uint8_t xmm[16];
+	uint32_t r32;
+
+	isa_load_xmmm32(xmm);
+	asm volatile (
+		"cvttss2si %1, %%eax\n\t"
+		"mov %%eax, %0"
+		: "=m" (r32)
+		: "m" (*xmm)
+		: "eax"
+	);
+	isa_store_r32(r32);
 }
 
 
@@ -195,7 +217,16 @@ void op_movss_xmm_xmmm32_impl()
 
 void op_movss_xmmm32_xmm_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	uint8_t value[16];
+
+	/* xmm <= xmm: bits 127-32 of xmm set to 0.
+	 * m32 <= xmm: copy 32 bits to memory */
+	isa_load_xmm(value);
+	memset(value + 4, 0, 12);
+	if (isa_inst.modrm_mod == 3)
+		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 16);
+	else
+		isa_store_xmmm32(value);
 }
 
 
