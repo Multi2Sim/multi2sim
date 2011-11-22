@@ -610,6 +610,14 @@ void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 		} else if (is_next_word(fmt, "sreg")) {
 			dump_buf(&buf, &size, "%s", x86_register_name[inst->reg + reg_es]);
 			fmt += 4;
+		} else if (is_next_word(fmt, "xmmm32")) {
+			if (inst->modrm_mod == 3)
+				dump_buf(&buf, &size, "xmm%d", inst->modrm_rm);
+			else {
+				dump_buf(&buf, &size, "DWORD PTR ");
+				x86_memory_address_dump_buf(inst, &buf, &size);
+			}
+			fmt += 6;
 		} else if (is_next_word(fmt, "xmmm64")) {
 			if (inst->modrm_mod == 0x03)
 				dump_buf(&buf, &size, "xmm%d", inst->modrm_rm);

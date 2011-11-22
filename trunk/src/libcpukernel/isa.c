@@ -543,6 +543,17 @@ void isa_load_xmmm64(uint8_t *value)
 }
 
 
+/* Load a 32-bit value into the lower 32 bits of 'value' */
+void isa_load_xmmm32(uint8_t *value)
+{
+	if (isa_inst.modrm_mod == 3) {
+		memcpy(value, isa_regs->xmm[isa_inst.modrm_rm], 4);
+		return;
+	}
+	mem_read(isa_mem, isa_effective_address(), 4, value);
+}
+
+
 
 
 /* Trace call debugging */

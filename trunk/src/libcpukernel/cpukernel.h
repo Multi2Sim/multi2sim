@@ -308,6 +308,8 @@ void isa_store_extended(uint8_t *value);
 void isa_dump_xmm(uint8_t *value, FILE *f);
 void isa_load_xmm(uint8_t *value);
 void isa_store_xmm(uint8_t *value);
+void isa_load_xmmm32(uint8_t *value);
+void isa_store_xmmm32(uint8_t *value);
 void isa_load_xmmm64(uint8_t *value);
 void isa_store_xmmm64(uint8_t *value);
 
