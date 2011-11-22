@@ -531,6 +531,14 @@ void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 4;
+		} else if (is_next_word(fmt, "r32m8")) {
+			if (inst->modrm_mod == 3)
+				dump_buf(&buf, &size, "%s", x86_register_name[inst->modrm_rm + reg_eax]);
+			else {
+				dump_buf(&buf, &size, "BYTE PTR ");
+				x86_memory_address_dump_buf(inst, &buf, &size);
+			}
+			fmt += 5;
 		} else if (is_next_word(fmt, "m")) {
 			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt++;

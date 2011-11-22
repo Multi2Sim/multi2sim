@@ -23,6 +23,18 @@
 #define DUMP printf("\n"), x86_inst_dump(&isa_inst, stdout), printf("\n")
 
 
+void op_bound_r16_rm32_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_bound_r32_rm64_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
 void op_bsf_r32_rm32_impl() {
 	uint32_t r32 = isa_load_r32();
 	uint32_t rm32 = isa_load_rm32();
@@ -575,11 +587,24 @@ void op_inc_ir32_impl() {
 }
 
 
+void op_int_3_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
 void op_int_imm8_impl() {
 	uint32_t inum = (uint8_t) isa_inst.imm.b;
 	assert(inum == 0x80);
 	syscall_do();
 }
+
+
+void op_into_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
 
 
 void op_jmp_rel8_impl() {

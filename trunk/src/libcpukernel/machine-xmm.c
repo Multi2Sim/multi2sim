@@ -182,6 +182,48 @@ void op_pcmpistri_xmm_xmmm128_imm8_impl()
 }
 
 
+void op_pinsrb_xmm_r32m8_imm8_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_pinsrd_xmm_rm32_imm8_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_punpcklbw_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_punpcklwd_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_punpckldq_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_punpcklqdq_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_pshufb_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
 void op_pshufd_xmm_xmmm128_imm8_impl()
 {
 	fatal("%s: not implemented", __FUNCTION__);
