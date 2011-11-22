@@ -617,6 +617,11 @@ void op_leave_impl() {
 }
 
 
+void op_lfence_impl()
+{
+}
+
+
 void op_lock_xadd_rm8_r8_impl() {
 	op_xadd_rm8_r8_impl();
 }
@@ -893,6 +898,42 @@ void op_not_rm32_impl() {
 	uint32_t value = isa_load_rm32();
 	value = ~value;
 	isa_store_rm32(value);
+}
+
+
+void op_out_imm8_al_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_out_imm8_ax_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_out_imm8_eax_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_out_dx_al_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_out_dx_ax_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_out_dx_eax_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
 }
 
 
