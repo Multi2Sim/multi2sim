@@ -28,7 +28,7 @@
 /* List of opcodes */
 typedef enum {
 	op_none = 0,
-#define DEFINST(name,op1,op2,op3,imm,prefixes) op_##name,
+#define DEFINST(name,op1,op2,op3,modrm,imm,prefixes) op_##name,
 #include "machine.dat"
 #undef DEFINST
 	x86_opcode_count

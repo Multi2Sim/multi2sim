@@ -256,7 +256,7 @@ extern int isa_call_debug_category;
 extern int isa_inst_debug_category;
 
 /* References to inst implementation functions */
-#define DEFINST(name,op1,op2,op3,imm,pfx) void op_##name##_impl(void);
+#define DEFINST(name,op1,op2,op3,modrm,imm,pfx) void op_##name##_impl(void);
 #include <machine.dat>
 #undef DEFINST
 

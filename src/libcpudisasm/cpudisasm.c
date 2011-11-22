@@ -25,10 +25,9 @@
 
 
 /* Flags used in machine.dat */
-#define SKIP  0x0100  /* for op1, op2, op3, imm */
-#define REG   0x0200  /* for op3 */
-#define MEM   0x0400  /* for op3 */
-#define OP3   0x0800  /* for op3 means that it is the 3rd opcode byte. */
+#define SKIP  0x0100  /* for op1, op2, modrm, imm */
+#define REG   0x0200  /* for modrm */
+#define MEM   0x0400  /* for modrm */
 #define INDEX 0x1000  /* for op1, op2 */
 #define IB    0x2000  /* for imm */
 #define IW    0x4000  /* for imm */
@@ -42,7 +41,7 @@ typedef struct x86_opcode_info_struct {
 
 	/* Obtained from machine.dat */
 	x86_opcode_t opcode;
-	uint32_t op1, op2, op3, imm;
+	uint32_t op1, op2, op3, modrm, imm;
 	x86_prefix_t prefixes;
 	char *fmt;
 
@@ -74,9 +73,9 @@ static x86_opcode_info_elem_t *x86_opcode_info_table_0f[0x100];
 
 /* List of instructions. */
 static x86_opcode_info_t x86_opcode_info_list[x86_opcode_count] = {
-	{op_none, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-#define DEFINST(name,op1,op2,op3,imm,pfx) \
-	,{op_##name,op1,op2,op3,imm,pfx,#name,0,0,0,0,0,0,0,0,0}
+	{op_none, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define DEFINST(name,op1,op2,op3,modrm,imm,pfx) \
+	,{op_##name,op1,op2,op3,modrm,imm,pfx,#name,0,0,0,0,0,0,0,0,0}
 #include <machine.dat>
 #undef DEFINST
 };
@@ -189,32 +188,36 @@ void disasm_init()
 		x86_opcode_info_insert(info);
 
 		/* Compute match_mask and mach_result fields. Start with
-		 * the 'op3' field in the instruction format definition. */
-		if (info->op3 & OP3) {
-
-			/* If op3 is representing the 3rd opcode byte, it must be
-			 * matched entirely. Otherwise, it is the ModR/M field. */
-			info->opcode_size++;
-			info->match_mask = 0xff;
-			info->match_result = info->op3 & 0xff;
-
-		} else if (!(info->op3 & SKIP)) {
+		 * the 'modrm' field in the instruction format definition. */
+		if (!(info->modrm & SKIP)) {
 
 			info->modrm_size = 1;
 
 			/* If part of the offset is in the 'reg' field of the ModR/M byte,
 			 * it must be matched. */
-			if (!(info->op3 & REG)) {
+			if (!(info->modrm & REG)) {
 				info->match_mask = 0x38;
-				info->match_result = (info->op3 & 0x7) << 3;
+				info->match_result = (info->modrm & 0x7) << 3;
 			}
 
 			/* If instruction expects a memory operand, the 'mod' field of 
 			 * the ModR/M byte cannot be 11. */
-			if (info->op3 & MEM) {
+			if (info->modrm & MEM) {
 				info->nomatch_mask = 0xc0;
 				info->nomatch_result = 0xc0;
 			}
+		}
+
+		/* Third opcode byte */
+		if (!(info->op3 & SKIP)) {
+			info->opcode_size++;
+			info->match_mask <<= 8;
+			info->match_result <<= 8;
+			info->nomatch_mask <<= 8;
+			info->nomatch_result <<= 8;
+			info->match_mask |= 0xff;
+			info->match_result |= info->op3 & 0xff;
+			assert(!(info->op3 & INDEX));
 		}
 
 		/* Second opcode byte */
@@ -577,6 +580,10 @@ void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 			dump_buf(&buf, &size, "TBYTE PTR ");
 			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 3;
+		} else if (is_next_word(fmt, "m128")) {
+			dump_buf(&buf, &size, "XMMWORD PTR ");
+			x86_memory_address_dump_buf(inst, &buf, &size);
+			fmt += 4;
 		} else if (is_next_word(fmt, "st0")) {
 			dump_buf(&buf, &size, "st");
 			fmt += 3;
@@ -603,6 +610,14 @@ void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 6;
+		} else if (is_next_word(fmt, "xmmm128")) {
+			if (inst->modrm_mod == 0x03)
+				dump_buf(&buf, &size, "xmm%d", inst->modrm_rm);
+			else {
+				dump_buf(&buf, &size, "XMMWORD PTR ");
+				x86_memory_address_dump_buf(inst, &buf, &size);
+			}
+			fmt += 7;
 		} else if (is_next_word(fmt, "xmm")) {
 			dump_buf(&buf, &size, "xmm%d", inst->modrm_reg);
 			fmt += 3;
