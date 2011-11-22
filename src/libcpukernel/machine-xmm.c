@@ -20,6 +20,18 @@
 #include <cpukernel.h>
 
 
+void op_cvttsd2si_r32_xmmm64_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_cvttss2si_r32_xmmm32_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
 void op_ldmxcsr_m32_impl()
 {
 	fatal("%s: not implemented", __FUNCTION__);
@@ -88,23 +100,47 @@ void op_movdqu_xmmm128_xmm_impl()
 
 void op_movhpd_xmm_m64_impl()
 {
+	uint64_t m64;
+	uint8_t xmm[16];
+
+	isa_load_xmm(xmm);
+	m64 = isa_load_m64();
+	* (uint64_t *) &xmm[8] = m64;
+	isa_store_xmm(xmm);
 }
 
 
 void op_movhpd_m64_xmm_impl()
 {
+	uint64_t m64;
+	uint8_t xmm[16];
+
+	isa_load_xmm(xmm);
+	m64 = * (uint64_t *) &xmm[8];
+	isa_store_m64(m64);
 }
 
 
 void op_movlpd_xmm_m64_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	uint64_t m64;
+	uint8_t xmm[16];
+
+	isa_load_xmm(xmm);
+	m64 = isa_load_m64();
+	* (uint64_t *) xmm = m64;
+	isa_store_xmm(xmm);
 }
 
 
 void op_movlpd_m64_xmm_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	uint64_t m64;
+	uint8_t xmm[16];
+
+	isa_load_xmm(xmm);
+	m64 = * (uint64_t *) xmm;
+	isa_store_m64(m64);
 }
 
 
@@ -124,15 +160,7 @@ void op_movq_xmm_xmmm64_impl()
 {
 	uint8_t value[16];
 
-	/* If 'movq' happens from memory to register, the 64-bit value is 0-extended to 128 bits.
-	 * If 'movq' is from register to register, only the lower 64-bit of the destination register
-	 * should be affected. */
-	if (isa_inst.modrm == 3)
-		isa_load_xmm(value);
-	else
-		memset(value, 0, 16);
-
-	/* Copy lower 64-bit */
+	memset(value, 0, 16);
 	isa_load_xmmm64(value);
 	isa_store_xmm(value);
 }
@@ -141,8 +169,33 @@ void op_movq_xmm_xmmm64_impl()
 void op_movq_xmmm64_xmm_impl()
 {
 	uint8_t value[16];
+
+	memset(value, 0, 16);
+	if (isa_inst.modrm_mod == 3)
+		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 16);
 	isa_load_xmm(value);
 	isa_store_xmmm64(value);
+}
+
+
+void op_movss_xmm_xmmm32_impl()
+{
+	uint8_t value[16];
+
+	/* xmm <= m32: bits 127-32 of xmm set to 0.
+	 * xmm <= xmm: bits 127-32 unmodified */
+	if (isa_inst.modrm_mod == 3)
+		isa_load_xmm(value);
+	else
+		memset(value, 0, 16);
+	isa_load_xmmm32(value);
+	isa_store_xmm(value);
+}
+
+
+void op_movss_xmmm32_xmm_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
 }
 
 

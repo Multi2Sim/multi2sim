@@ -61,6 +61,8 @@ void regs_fpu_stack_dump(struct regs_t *regs, FILE *f)
 
 void regs_dump(struct regs_t *regs, FILE *f)
 {
+	int i, j;
+
 	/* Integer registers */
 	fprintf(f, "  eax=%08x  ecx=%08x  edx=%08x  ebx=%08x\n",
 		regs->eax, regs->ecx, regs->edx, regs->ebx);
@@ -89,5 +91,13 @@ void regs_dump(struct regs_t *regs, FILE *f)
 		GETBIT32(regs->fpu_code, 1) > 0, GETBIT32(regs->fpu_code, 0) > 0);
 	fprintf(f, "  fpu_ctrl=%04x\n",
 		regs->fpu_ctrl);
+
+	/* XMM registers */
+	for (i = 0; i < 8; i++) {
+		fprintf(f, "  xmm%d =", i);
+		for (j = 0; j < 16; j++)
+			fprintf(f, " %02x", regs->xmm[i][j]);
+		fprintf(f, "\n");
+	}
 }
 
