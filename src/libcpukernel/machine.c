@@ -768,56 +768,6 @@ void op_mov_sreg_rm32_impl()
 }
 
 
-void op_movd_xmm_rm32_impl()
-{
-	uint8_t xmm[16];
-	uint32_t value = isa_load_rm32();
-
-	memset(xmm, 0, 16);
-	* (uint32_t *) xmm = value;
-
-	isa_store_xmm(xmm);
-}
-
-
-void op_movd_rm32_xmm_impl()
-{
-	uint8_t xmm[16];
-	uint32_t value;
-
-	isa_load_xmm(xmm);
-	value = * (uint32_t *) xmm;
-
-	isa_store_rm32(value);
-}
-
-
-void op_movq_xmm_xmmm64_impl()
-{
-	uint8_t value[16];
-
-	/* If 'movq' happens from memory to register, the 64-bit value is 0-extended to 128 bits.
-	 * If 'movq' is from register to register, only the lower 64-bit of the destination register
-	 * should be affected. */
-	if (isa_inst.modrm == 3)
-		isa_load_xmm(value);
-	else
-		memset(value, 0, 16);
-
-	/* Copy lower 64-bit */
-	isa_load_xmmm64(value);
-	isa_store_xmm(value);
-}
-
-
-void op_movq_xmmm64_xmm_impl()
-{
-	uint8_t value[16];
-	isa_load_xmm(value);
-	isa_store_xmmm64(value);
-}
-
-
 void op_movsx_r16_rm8_impl() {
 	uint16_t value = (int8_t) isa_load_rm8();
 	isa_store_r16(value);
@@ -1071,6 +1021,11 @@ void op_sahf_impl() {
 	isa_regs->eflags |= isa_load_reg(reg_ah);
 	isa_regs->eflags &= ~0x28;
 	isa_regs->eflags |= 0x2;
+}
+
+
+void op_sfence_impl()
+{
 }
 
 

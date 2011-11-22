@@ -40,7 +40,7 @@ int isa_inst_debug_category;
 typedef void (*inst_impl_fn_t)(void);
 static inst_impl_fn_t inst_impl_table[x86_opcode_count] = {
 	NULL /* for op_none */
-#define DEFINST(name,op1,op2,op3,imm,pfx) ,op_##name##_impl
+#define DEFINST(name,op1,op2,op3,modrm,imm,pfx) ,op_##name##_impl
 #include <machine.dat>
 #undef DEFINST
 };

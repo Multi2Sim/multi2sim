@@ -13,6 +13,7 @@ libcpukernel_a_SOURCES = \
 	machine-rot.c \
 	machine-std.c \
 	machine-str.c \
+	machine-xmm.c \
 	memory.c \
 	regs.c \
 	signal.c \

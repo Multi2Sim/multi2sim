@@ -72,8 +72,8 @@ am_libcpukernel_a_OBJECTS = isa.$(OBJEXT) context.$(OBJEXT) \
 	cpukernel.$(OBJEXT) fs.$(OBJEXT) loader.$(OBJEXT) \
 	machine.$(OBJEXT) machine-ctrl.$(OBJEXT) machine-fp.$(OBJEXT) \
 	machine-rot.$(OBJEXT) machine-std.$(OBJEXT) \
-	machine-str.$(OBJEXT) memory.$(OBJEXT) regs.$(OBJEXT) \
-	signal.$(OBJEXT) syscall.$(OBJEXT)
+	machine-str.$(OBJEXT) machine-xmm.$(OBJEXT) memory.$(OBJEXT) \
+	regs.$(OBJEXT) signal.$(OBJEXT) syscall.$(OBJEXT)
 libcpukernel_a_OBJECTS = $(am_libcpukernel_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -196,6 +196,7 @@ libcpukernel_a_SOURCES = \
 	machine-rot.c \
 	machine-std.c \
 	machine-str.c \
+	machine-xmm.c \
 	memory.c \
 	regs.c \
 	signal.c \
@@ -297,6 +298,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-rot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-std.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-str.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine-xmm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/machine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regs.Po@am__quote@
