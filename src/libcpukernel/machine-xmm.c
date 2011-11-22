@@ -20,6 +20,12 @@
 #include <cpukernel.h>
 
 
+void op_ldmxcsr_m32_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
 void op_movaps_xmm_xmmm128_impl()
 {
 	fatal("%s: not implemented", __FUNCTION__);
@@ -80,6 +86,34 @@ void op_movdqu_xmmm128_xmm_impl()
 }
 
 
+void op_movhpd_xmm_m64_impl()
+{
+}
+
+
+void op_movhpd_m64_xmm_impl()
+{
+}
+
+
+void op_movlpd_xmm_m64_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_movlpd_m64_xmm_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_pmovmskb_r32_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
 void op_movntdq_m128_xmm_impl()
 {
 	fatal("%s: not implemented", __FUNCTION__);
@@ -118,7 +152,85 @@ void op_palignr_xmm_xmmm128_imm8_impl()
 }
 
 
+void op_pand_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_pcmpeqb_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_pcmpeqw_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_pcmpeqd_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_pcmpistri_xmm_xmmm128_imm8_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
 void op_pshufd_xmm_xmmm128_imm8_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_pslldq_xmmm128_imm8_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_psrldq_xmmm128_imm8_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_stmxcsr_m32_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_psubb_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_psubw_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_psubd_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_ptest_xmm_xmmm128_impl()
+{
+	fatal("%s: not implemented", __FUNCTION__);
+}
+
+
+void op_pxor_xmm_xmmm128_impl()
 {
 	fatal("%s: not implemented", __FUNCTION__);
 }
