@@ -96,8 +96,7 @@ static struct uop_table_entry_t *uop_table[x86_opcode_count];
 static struct repos_t *uop_repos;
 
 
-static void uop_table_entry_add(x86_opcode_t opcode,
-	struct uop_table_entry_t *entry)
+static void uop_table_entry_add(enum x86_opcode_t opcode, struct uop_table_entry_t *entry)
 {
 	struct uop_table_entry_t *last;
 	last = uop_table[opcode];
@@ -113,7 +112,7 @@ static void uop_table_entry_add(x86_opcode_t opcode,
 
 void uop_init()
 {
-	x86_opcode_t opcode;
+	enum x86_opcode_t opcode;
 	struct uop_table_entry_t *entry;
 	int i, j;
 
@@ -156,7 +155,7 @@ void uop_init()
 
 void uop_done()
 {
-	x86_opcode_t opcode;
+	enum x86_opcode_t opcode;
 	struct uop_table_entry_t *entry;
 	for (opcode = 0; opcode < x86_opcode_count; opcode++) {
 		while (uop_table[opcode]) {
@@ -233,9 +232,9 @@ static int uop_idep_parse(struct list_t *uop_list, int dep)
 		/* Compute effective address */
 		uop = repos_create_object(uop_repos);
 		uop->uop = uop_effaddr;
-		uop->idep[0] = isa_inst.segment ? isa_inst.segment - reg_es + DES : DNONE;
-		uop->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - reg_eax + DEAX : DNONE;
-		uop->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - reg_eax + DEAX : DNONE;
+		uop->idep[0] = isa_inst.segment ? isa_inst.segment - x86_reg_es + DES : DNONE;
+		uop->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - x86_reg_eax + DEAX : DNONE;
+		uop->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - x86_reg_eax + DEAX : DNONE;
 		uop->odep[0] = DEA;
 		uop->fu_class = uop_bank[uop->uop].fu_class;
 		uop->flags = uop_bank[uop->uop].flags;
@@ -256,11 +255,11 @@ static int uop_idep_parse(struct list_t *uop_list, int dep)
 
 	/* Effective address parts */
 	if (dep == DEASEG)
-		return isa_inst.segment ? isa_inst.segment - reg_es + DES : DNONE;
+		return isa_inst.segment ? isa_inst.segment - x86_reg_es + DES : DNONE;
 	if (dep == DEABAS)
-		return isa_inst.ea_base ? isa_inst.ea_base - reg_eax + DEAX : DNONE;
+		return isa_inst.ea_base ? isa_inst.ea_base - x86_reg_eax + DEAX : DNONE;
 	if (dep == DEAIDX)
-		return isa_inst.ea_index ? isa_inst.ea_index - reg_eax + DEAX : DNONE;
+		return isa_inst.ea_index ? isa_inst.ea_index - x86_reg_eax + DEAX : DNONE;
 
 	/* Regular dependence */
 	return uop_dep_parse(uop_list, dep);
@@ -281,9 +280,9 @@ static int uop_odep_parse(struct list_t *uop_list, int dep)
 		 * as source and destination dependence. */
 		uop = repos_create_object(uop_repos);
 		uop->uop = uop_effaddr;
-		uop->idep[0] = isa_inst.segment ? isa_inst.segment - reg_es + DES : DNONE;
-		uop->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - reg_eax + DEAX : DNONE;
-		uop->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - reg_eax + DEAX : DNONE;
+		uop->idep[0] = isa_inst.segment ? isa_inst.segment - x86_reg_es + DES : DNONE;
+		uop->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - x86_reg_eax + DEAX : DNONE;
+		uop->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - x86_reg_eax + DEAX : DNONE;
 		uop->odep[0] = DEA;
 		uop->fu_class = uop_bank[uop->uop].fu_class;
 		uop->flags = uop_bank[uop->uop].flags;

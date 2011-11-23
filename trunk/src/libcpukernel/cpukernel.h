@@ -246,7 +246,7 @@ extern struct regs_t *isa_regs;
 extern struct mem_t *isa_mem;
 extern uint32_t isa_eip;
 extern uint32_t isa_target;
-extern x86_inst_t isa_inst;
+extern struct x86_inst_t isa_inst;
 extern uint64_t isa_inst_count;
 extern int isa_function_level;
 
@@ -261,12 +261,12 @@ extern int isa_inst_debug_category;
 #undef DEFINST
 
 void isa_dump_flags(FILE *f);
-void isa_set_flag(x86_flag_t flag);
-void isa_clear_flag(x86_flag_t flag);
-int isa_get_flag(x86_flag_t flag);
+void isa_set_flag(enum x86_flag_t flag);
+void isa_clear_flag(enum x86_flag_t flag);
+int isa_get_flag(enum x86_flag_t flag);
 
-uint32_t isa_load_reg(x86_register_t reg);
-void isa_store_reg(x86_register_t reg, uint32_t value);
+uint32_t isa_load_reg(enum x86_reg_t reg);
+void isa_store_reg(enum x86_reg_t reg, uint32_t value);
 
 uint8_t isa_load_rm8(void);
 uint16_t isa_load_rm16(void);
@@ -277,21 +277,21 @@ void isa_store_rm16(uint16_t value);
 void isa_store_rm32(uint32_t value);
 void isa_store_m64(uint64_t value);
 
-#define isa_load_r8() isa_load_reg(isa_inst.reg + reg_al)
-#define isa_load_r16() isa_load_reg(isa_inst.reg + reg_ax)
-#define isa_load_r32() isa_load_reg(isa_inst.reg + reg_eax)
-#define isa_load_sreg() isa_load_reg(isa_inst.reg + reg_es)
-#define isa_store_r8(value) isa_store_reg(isa_inst.reg + reg_al, value)
-#define isa_store_r16(value) isa_store_reg(isa_inst.reg + reg_ax, value)
-#define isa_store_r32(value) isa_store_reg(isa_inst.reg + reg_eax, value)
-#define isa_store_sreg(value) isa_store_reg(isa_inst.reg + reg_es, value)
+#define isa_load_r8() isa_load_reg(isa_inst.reg + x86_reg_al)
+#define isa_load_r16() isa_load_reg(isa_inst.reg + x86_reg_ax)
+#define isa_load_r32() isa_load_reg(isa_inst.reg + x86_reg_eax)
+#define isa_load_sreg() isa_load_reg(isa_inst.reg + x86_reg_es)
+#define isa_store_r8(value) isa_store_reg(isa_inst.reg + x86_reg_al, value)
+#define isa_store_r16(value) isa_store_reg(isa_inst.reg + x86_reg_ax, value)
+#define isa_store_r32(value) isa_store_reg(isa_inst.reg + x86_reg_eax, value)
+#define isa_store_sreg(value) isa_store_reg(isa_inst.reg + x86_reg_es, value)
 
-#define isa_load_ir8() isa_load_reg(isa_inst.opindex + reg_al)
-#define isa_load_ir16() isa_load_reg(isa_inst.opindex + reg_ax)
-#define isa_load_ir32() isa_load_reg(isa_inst.opindex + reg_eax)
-#define isa_store_ir8(value) isa_store_reg(isa_inst.opindex + reg_al, value)
-#define isa_store_ir16(value) isa_store_reg(isa_inst.opindex + reg_ax, value)
-#define isa_store_ir32(value) isa_store_reg(isa_inst.opindex + reg_eax, value)
+#define isa_load_ir8() isa_load_reg(isa_inst.opindex + x86_reg_al)
+#define isa_load_ir16() isa_load_reg(isa_inst.opindex + x86_reg_ax)
+#define isa_load_ir32() isa_load_reg(isa_inst.opindex + x86_reg_eax)
+#define isa_store_ir8(value) isa_store_reg(isa_inst.opindex + x86_reg_al, value)
+#define isa_store_ir16(value) isa_store_reg(isa_inst.opindex + x86_reg_ax, value)
+#define isa_store_ir32(value) isa_store_reg(isa_inst.opindex + x86_reg_eax, value)
 
 void isa_load_fpu(int index, uint8_t *value);
 void isa_store_fpu(int index, uint8_t *value);

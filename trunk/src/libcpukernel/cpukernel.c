@@ -798,12 +798,12 @@ void ke_disasm(char *file_name)
 	struct elf_buffer_t *buffer;
 	struct elf_symbol_t *symbol;
 
-	x86_inst_t inst;
+	struct x86_inst_t inst;
 	int curr_sym;
 	int i;
 
 	/* Open ELF file */
-	disasm_init();
+	x86_disasm_init();
 	elf_file = elf_file_create_from_path(file_name);
 
 	/* Read sections */
@@ -855,7 +855,7 @@ void ke_disasm(char *file_name)
 
 	/* Free ELF */
 	elf_file_free(elf_file);
-	disasm_done();
+	x86_disasm_done();
 
 	/* End */
 	mhandle_done();

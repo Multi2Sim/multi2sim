@@ -42,7 +42,7 @@
 
 #define op_xxx_rm8_cl_impl(xxx) void op_##xxx##_rm8_cl_impl() { \
 	uint8_t rm8 = isa_load_rm8(); \
-	uint8_t count = isa_load_reg(reg_cl); \
+	uint8_t count = isa_load_reg(x86_reg_cl); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
 		"push %4 ; popf\n\t" \
@@ -102,7 +102,7 @@
 
 #define op_xxx_rm16_cl_impl(xxx) void op_##xxx##_rm16_cl_impl() { \
 	uint16_t rm16 = isa_load_rm16(); \
-	uint8_t count = isa_load_reg(reg_cl); \
+	uint8_t count = isa_load_reg(x86_reg_cl); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
 		"push %4 ; popf\n\t" \
@@ -162,7 +162,7 @@
 
 #define op_xxx_rm32_cl_impl(xxx) void op_##xxx##_rm32_cl_impl() { \
 	uint32_t rm32 = isa_load_rm32(); \
-	uint8_t count = isa_load_reg(reg_cl); \
+	uint8_t count = isa_load_reg(x86_reg_cl); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
 		"push %4 ; popf\n\t" \
