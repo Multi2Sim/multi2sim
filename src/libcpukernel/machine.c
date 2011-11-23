@@ -159,9 +159,10 @@ void op_call_rm32_impl() {
 }
 
 
-void op_cbw_impl() {
-	uint16_t ax = (int8_t) isa_load_reg(reg_al);
-	isa_store_reg(reg_ax, ax);
+void op_cbw_impl()
+{
+	uint16_t ax = (int8_t) isa_load_reg(x86_reg_al);
+	isa_store_reg(x86_reg_ax, ax);
 }
 
 
@@ -172,7 +173,7 @@ void op_cdq_impl() {
 
 
 void op_cld_impl() {
-	isa_clear_flag(flag_df);
+	isa_clear_flag(x86_flag_df);
 }
 
 
@@ -195,7 +196,7 @@ void op_cmpxchg_rm32_r32_impl() {
 		: "eax", "ebx", "ecx"
 	);
 	isa_regs->eflags = flags;
-	isa_store_reg(reg_eax, eax);
+	isa_store_reg(x86_reg_eax, eax);
 	isa_store_rm32(rm32);
 }
 
@@ -212,41 +213,46 @@ void op_cmpxchg8b_m64_impl()
 	m64 = isa_load_m64();
 
 	if (edx_eax == m64) {
-		isa_set_flag(flag_zf);
+		isa_set_flag(x86_flag_zf);
 		m64 = ((uint64_t) ecx << 32) | ebx;
 		isa_store_m64(m64);
 	} else {
-		isa_clear_flag(flag_zf);
+		isa_clear_flag(x86_flag_zf);
 		isa_regs->edx = m64 >> 32;
 		isa_regs->eax = m64;
 	}
 }
 
 
-#define PUTINFO(EAX, EBX, ECX, EDX) \
-	isa_store_reg(reg_eax, (EAX)); isa_store_reg(reg_ebx, (EBX)); \
-	isa_store_reg(reg_ecx, (ECX)); isa_store_reg(reg_edx, (EDX)); break
 void op_cpuid_impl()
 {
 	uint32_t info = 0;
 
 	switch (isa_regs->eax) {
-	case 0x0: PUTINFO(0x2, 0x756e6547, 0x6c65746e, 0x49656e69);
-	case 0x1:
-		isa_store_reg(reg_eax, 0x00000f29);
-		isa_store_reg(reg_ebx, 0x0102080b);
-		isa_store_reg(reg_ecx, 0x00004400);
-		isa_store_reg(reg_edx, 0xbfebfbff);
 
-		/* EDX register returns CPU feature information. */
+	case 0x0:
+
+		isa_store_reg(x86_reg_eax, 0x2);
+		isa_store_reg(x86_reg_ebx, 0x756e6547);
+		isa_store_reg(x86_reg_ecx, 0x6c65746e);
+		isa_store_reg(x86_reg_edx, 0x49656e69);
+		break;
+
+	case 0x1:
+
+		isa_store_reg(x86_reg_eax, 0x00000f29);
+		isa_store_reg(x86_reg_ebx, 0x0102080b);
+		isa_store_reg(x86_reg_ecx, 0x00004400);
+
+		/* EDX register returns CPU features information. */
 		info = SETBITVALUE32(info, 31, 1);  /* PBE - Pend Brk En */
 		info = SETBITVALUE32(info, 29, 1);  /* TM - Therm Monitor */
 		info = SETBITVALUE32(info, 28, 1);  /* HTT - Hyper-threading Tech. */
 		info = SETBITVALUE32(info, 27, 1);  /* SS - Self snoop */
-		info = SETBITVALUE32(info, 26, 0);  /* SSE2 - SSE2 Extensions */
-		info = SETBITVALUE32(info, 25, 0);  /* SSE - SSE Extensions */
+		info = SETBITVALUE32(info, 26, 1);  /* SSE2 - SSE2 Extensions */
+		info = SETBITVALUE32(info, 25, 1);  /* SSE - SSE Extensions */
 		info = SETBITVALUE32(info, 24, 1);  /* FXSR - FXSAVE/FXRSTOR */
-		info = SETBITVALUE32(info, 23, 0);  /* MMX - MMX Technology */
+		info = SETBITVALUE32(info, 23, 1);  /* MMX - MMX Technology */
 		info = SETBITVALUE32(info, 22, 1);  /* ACPI - Thermal Monitor and Clock Ctrl */
 		info = SETBITVALUE32(info, 21, 1);  /* DS - Debug Store */
 		info = SETBITVALUE32(info, 19, 1);  /* CLFSH - CFLUSH instruction */
@@ -269,25 +275,67 @@ void op_cpuid_impl()
 		info = SETBITVALUE32(info, 1, 1);  /* VME - Virtual-8086 Mode Enhancement */
 		info = SETBITVALUE32(info, 0, 1);  /* FPU - x87 FPU on Chip */
 
-		isa_store_reg(reg_edx, info);
+		isa_store_reg(x86_reg_edx, info);
 		break;
 
-	case 0x2: PUTINFO(0x0, 0x0, 0x0, 0x0);
-	case 0x80000000: PUTINFO(0x80000004, 0, 0, 0);
-	case 0x80000001: PUTINFO(0, 0, 0, 0);
-	case 0x80000002: PUTINFO(0x20202020, 0x20202020, 0x20202020, 0x20202020);
-	case 0x80000003: PUTINFO(0x6e492020, 0x286c6574, 0x58202952, 0x286e6f65);
-	case 0x80000004: PUTINFO(0x20294d54, 0x20555043, 0x30382e32, 0x7a4847);
+	case 0x2:
+
+		isa_store_reg(x86_reg_eax, 0);
+		isa_store_reg(x86_reg_ebx, 0);
+		isa_store_reg(x86_reg_ecx, 0);
+		isa_store_reg(x86_reg_edx, 0);
+		break;
+
+	case 0x80000000:
+
+		isa_store_reg(x86_reg_eax, 0x80000004);
+		isa_store_reg(x86_reg_ebx, 0);
+		isa_store_reg(x86_reg_ecx, 0);
+		isa_store_reg(x86_reg_edx, 0);
+		break;
+
+	case 0x80000001:
+
+		isa_store_reg(x86_reg_eax, 0);
+		isa_store_reg(x86_reg_ebx, 0);
+		isa_store_reg(x86_reg_ecx, 0);
+		isa_store_reg(x86_reg_edx, 0);
+		break;
+
+	case 0x80000002:
+
+		isa_store_reg(x86_reg_eax, 0x20202020);
+		isa_store_reg(x86_reg_ebx, 0x20202020);
+		isa_store_reg(x86_reg_ecx, 0x20202020);
+		isa_store_reg(x86_reg_edx, 0x20202020);
+		break;
+
+	case 0x80000003:
+
+		isa_store_reg(x86_reg_eax, 0x6e492020);
+		isa_store_reg(x86_reg_ebx, 0x286c6574);
+		isa_store_reg(x86_reg_ecx, 0x58202952);
+		isa_store_reg(x86_reg_edx, 0x286e6f65);
+		break;
+
+	case 0x80000004:
+
+		isa_store_reg(x86_reg_eax, 0x20294d54);
+		isa_store_reg(x86_reg_ebx, 0x20555043);
+		isa_store_reg(x86_reg_ecx, 0x30382e32);
+		isa_store_reg(x86_reg_edx, 0x7a4847);
+		break;
+
 	default:
 		fatal("inst 'cpuid' not implemented for eax=0x%x", isa_regs->eax);
 	}
 }
-#undef PUTINFO
 
 
-void op_cwde_impl() {
-	uint32_t eax = (int16_t) isa_load_reg(reg_ax);
-	isa_store_reg(reg_eax, eax);
+void op_cwde_impl()
+{
+	uint32_t eax = (int16_t) isa_load_reg(x86_reg_ax);
+	isa_store_reg(x86_reg_eax, eax);
 }
 
 
@@ -363,8 +411,9 @@ void op_dec_ir32_impl() {
 }
 
 
-void op_div_rm8_impl() {
-	uint16_t ax = isa_load_reg(reg_ax);
+void op_div_rm8_impl()
+{
+	uint16_t ax = isa_load_reg(x86_reg_ax);
 	uint8_t rm8 = isa_load_rm8();
 	if (!rm8)
 		fatal("div_rm8: division by 0");
@@ -377,7 +426,7 @@ void op_div_rm8_impl() {
 		: "m" (ax), "m" (rm8)
 		: "ax", "bl"
 	);
-	isa_store_reg(reg_ax, ax);
+	isa_store_reg(x86_reg_ax, ax);
 }
 
 
@@ -398,8 +447,8 @@ void op_div_rm32_impl() {
 		: "m" (eax), "m" (edx), "m" (rm32)
 		: "eax", "edx", "ebx"
 	);
-	isa_store_reg(reg_eax, eax);
-	isa_store_reg(reg_edx, edx);
+	isa_store_reg(x86_reg_eax, eax);
+	isa_store_reg(x86_reg_edx, edx);
 }
 
 
@@ -425,13 +474,14 @@ void op_idiv_rm32_impl() {
 		: "m" (eax), "m" (edx), "m" (rm32)
 		: "eax", "edx", "ebx"
 	);
-	isa_store_reg(reg_eax, eax);
-	isa_store_reg(reg_edx, edx);
+	isa_store_reg(x86_reg_eax, eax);
+	isa_store_reg(x86_reg_edx, edx);
 }
 
 
-void op_imul_rm32_impl() {
-	uint32_t eax = isa_load_reg(reg_eax);
+void op_imul_rm32_impl()
+{
+	uint32_t eax = isa_load_reg(x86_reg_eax);
 	uint32_t rm32 = isa_load_rm32();
 	unsigned long flags = isa_regs->eflags;
 	uint32_t edx;
@@ -447,8 +497,8 @@ void op_imul_rm32_impl() {
 		: "m" (eax), "m" (rm32), "g" (flags)
 		: "eax", "edx"
 	);
-	isa_store_reg(reg_eax, eax);
-	isa_store_reg(reg_edx, edx);
+	isa_store_reg(x86_reg_eax, eax);
+	isa_store_reg(x86_reg_edx, edx);
 	isa_regs->eflags = flags;
 }
 
@@ -632,13 +682,14 @@ void op_lea_r32_m_impl() {
 }
 
 
-void op_leave_impl() {
+void op_leave_impl()
+{
 	uint32_t value;
 	isa_regs->esp = isa_regs->ebp;
 	assert(!isa_inst.segment);
 	mem_read(isa_mem, isa_regs->esp, 4, &value);
 	isa_regs->esp += 4;
-	isa_store_reg(reg_ebp, value);
+	isa_store_reg(x86_reg_ebp, value);
 }
 
 
@@ -699,41 +750,47 @@ void op_mov_r32_rm32_impl() {
 }
 
 
-void op_mov_al_moffs8_impl() {
+void op_mov_al_moffs8_impl()
+{
 	uint8_t value;
 	mem_read(isa_mem, isa_moffs_address(), 1, &value);
-	isa_store_reg(reg_al, value);
+	isa_store_reg(x86_reg_al, value);
 }
 
 
-void op_mov_ax_moffs16_impl() {
+void op_mov_ax_moffs16_impl()
+{
 	uint16_t value;
 	mem_read(isa_mem, isa_moffs_address(), 2, &value);
-	isa_store_reg(reg_ax, value);
+	isa_store_reg(x86_reg_ax, value);
 }
 
 
-void op_mov_eax_moffs32_impl() {
+void op_mov_eax_moffs32_impl()
+{
 	uint32_t value;
 	mem_read(isa_mem, isa_moffs_address(), 4, &value);
-	isa_store_reg(reg_eax, value);
+	isa_store_reg(x86_reg_eax, value);
 }
 
 
-void op_mov_moffs8_al_impl() {
-	uint8_t value = isa_load_reg(reg_al);
+void op_mov_moffs8_al_impl()
+{
+	uint8_t value = isa_load_reg(x86_reg_al);
 	mem_write(isa_mem, isa_moffs_address(), 1, &value);
 }
 
 
-void op_mov_moffs16_ax_impl() {
-	uint16_t value = isa_load_reg(reg_ax);
+void op_mov_moffs16_ax_impl()
+{
+	uint16_t value = isa_load_reg(x86_reg_ax);
 	mem_write(isa_mem, isa_moffs_address(), 2, &value);
 }
 
 
-void op_mov_moffs32_eax_impl() {
-	uint32_t value = isa_load_reg(reg_eax);
+void op_mov_moffs32_eax_impl()
+{
+	uint32_t value = isa_load_reg(x86_reg_eax);
 	mem_write(isa_mem, isa_moffs_address(), 4, &value);
 }
 
@@ -834,8 +891,9 @@ void op_movzx_r32_rm16_impl() {
 }
 
 
-void op_mul_rm32_impl() {
-	uint32_t eax = isa_load_reg(reg_eax);
+void op_mul_rm32_impl()
+{
+	uint32_t eax = isa_load_reg(x86_reg_eax);
 	uint32_t rm32 = isa_load_rm32();
 	unsigned long flags = isa_regs->eflags;
 	uint32_t edx;
@@ -851,8 +909,8 @@ void op_mul_rm32_impl() {
 		: "m" (eax), "m" (rm32), "g" (flags)
 		: "eax", "edx"
 	);
-	isa_store_reg(reg_eax, eax);
-	isa_store_reg(reg_edx, edx);
+	isa_store_reg(x86_reg_eax, eax);
+	isa_store_reg(x86_reg_edx, edx);
 	isa_regs->eflags = flags;
 }
 
@@ -1006,45 +1064,51 @@ void op_prefetchnta_impl() {
 
 
 void op_std_impl() {
-	isa_set_flag(flag_df);
+	isa_set_flag(x86_flag_df);
 }
 
 
-void op_push_imm8_impl() {
+void op_push_imm8_impl()
+{
 	uint32_t value = (int8_t) isa_inst.imm.b;
-	isa_store_reg(reg_esp, isa_regs->esp - 4);
+	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
 }
 
 
-void op_push_imm32_impl() {
+void op_push_imm32_impl()
+{
 	uint32_t value = isa_inst.imm.d;
-	isa_store_reg(reg_esp, isa_regs->esp - 4);
+	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
 }
 
 
-void op_push_rm32_impl() {
+void op_push_rm32_impl()
+{
 	uint32_t value = isa_load_rm32();
-	isa_store_reg(reg_esp, isa_regs->esp - 4);
+	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
 }
 
 
-void op_push_ir32_impl() {
+void op_push_ir32_impl()
+{
 	uint32_t value = isa_load_ir32();
-	isa_store_reg(reg_esp, isa_regs->esp - 4);
+	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
 }
 
 
-void op_pushf_impl() {
-	isa_store_reg(reg_esp, isa_regs->esp - 4);
+void op_pushf_impl()
+{
+	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eflags);
 }
 
 
-void op_rdtsc_impl() {
+void op_rdtsc_impl()
+{
 	uint32_t eax, edx;
 	asm volatile (
 		"rdtsc\n\t"
@@ -1054,8 +1118,8 @@ void op_rdtsc_impl() {
 		:
 		: "eax", "edx"
 	);
-	isa_store_reg(reg_edx, edx);
-	isa_store_reg(reg_eax, eax);
+	isa_store_reg(x86_reg_edx, edx);
+	isa_store_reg(x86_reg_eax, eax);
 }
 
 
@@ -1082,9 +1146,10 @@ void op_ret_imm16_impl() {
 }
 
 
-void op_sahf_impl() {
+void op_sahf_impl()
+{
 	isa_regs->eflags &= ~0xff;
-	isa_regs->eflags |= isa_load_reg(reg_ah);
+	isa_regs->eflags |= isa_load_reg(x86_reg_ah);
 	isa_regs->eflags &= ~0x28;
 	isa_regs->eflags |= 0x2;
 }
@@ -1120,7 +1185,7 @@ void op_shld_rm32_r32_imm8_impl() {
 void op_shld_rm32_r32_cl_impl() {
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t r32 = isa_load_r32();
-	uint8_t cl = isa_load_reg(reg_cl);
+	uint8_t cl = isa_load_reg(x86_reg_cl);
 	unsigned long flags = isa_regs->eflags;
 	asm volatile (
 		"push %5 ; popf\n\t"
@@ -1164,7 +1229,7 @@ void op_shrd_rm32_r32_imm8_impl() {
 void op_shrd_rm32_r32_cl_impl() {
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t r32 = isa_load_r32();
-	uint8_t cl = isa_load_reg(reg_cl);
+	uint8_t cl = isa_load_reg(x86_reg_cl);
 	unsigned long flags = isa_regs->eflags;
 	asm volatile (
 		"push %5 ; popf\n\t"
@@ -1226,18 +1291,18 @@ void op_xadd_rm32_r32_impl() {
 void op_xchg_ir16_ax_impl()
 {
 	uint16_t ax, ir16;
-	ax = isa_load_reg(reg_ax);
+	ax = isa_load_reg(x86_reg_ax);
 	ir16 = isa_load_ir16();
-	isa_store_reg(reg_ax, ir16);
+	isa_store_reg(x86_reg_ax, ir16);
 	isa_store_ir16(ax);
 }
 
 void op_xchg_ir32_eax_impl()
 {
 	uint32_t eax, ir32;
-	eax = isa_load_reg(reg_eax);
+	eax = isa_load_reg(x86_reg_eax);
 	ir32 = isa_load_ir32();
-	isa_store_reg(reg_eax, ir32);
+	isa_store_reg(x86_reg_eax, ir32);
 	isa_store_ir32(eax);
 }
 

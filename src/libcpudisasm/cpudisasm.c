@@ -37,12 +37,12 @@
 /* This struct contains information derived from machine.dat, which
  * is initialized in disasm_init, to form linked lists in the table
  * x86_opcode_info_table and a single list in x86_opcode_info_list. */
-typedef struct x86_opcode_info_struct {
+struct x86_opcode_info_t {
 
 	/* Obtained from machine.dat */
-	x86_opcode_t opcode;
+	enum x86_opcode_t opcode;
 	uint32_t op1, op2, op3, modrm, imm;
-	x86_prefix_t prefixes;
+	int prefixes;  /* Mask of prefixes of type 'enum x86_prefix_enum' */
 	char *fmt;
 
 	/* Derived fields */
@@ -53,26 +53,27 @@ typedef struct x86_opcode_info_struct {
 	int opcode_size;  /* size of opcode (1 or 2), not counting the modrm part. */
 	int modrm_size;  /* size of modrm field (0 or 1) */
 	int imm_size;  /* Immediate size (0, 1, 2, or 4) */
-} x86_opcode_info_t;
+};
 
 
 /* Containers for opcode infos. We need this because an info can belong to
  * different lists when there are registers embedded in the opcodes. */
-typedef struct x86_opcode_info_elem_struct {
-	x86_opcode_info_t *info;
-	struct x86_opcode_info_elem_struct *next;
-} x86_opcode_info_elem_t;
+struct x86_opcode_info_elem_t
+{
+	struct x86_opcode_info_t *info;
+	struct x86_opcode_info_elem_t *next;
+};
 
 
 /* Table for fast access of instruction data, indexed by the instruction opcode.
  * The second table contains instructions whose first opcode byte is 0x0f, and
  * is indexed by the second byte of its opcode. */
-static x86_opcode_info_elem_t *x86_opcode_info_table[0x100];
-static x86_opcode_info_elem_t *x86_opcode_info_table_0f[0x100];
+static struct x86_opcode_info_elem_t *x86_opcode_info_table[0x100];
+static struct x86_opcode_info_elem_t *x86_opcode_info_table_0f[0x100];
 
 
 /* List of instructions. */
-static x86_opcode_info_t x86_opcode_info_list[x86_opcode_count] = {
+static struct x86_opcode_info_t x86_opcode_info_list[x86_opcode_count] = {
 	{op_none, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) \
 	,{op_##name,op1,op2,op3,modrm,imm,pfx,#name,0,0,0,0,0,0,0,0,0}
@@ -82,43 +83,93 @@ static x86_opcode_info_t x86_opcode_info_list[x86_opcode_count] = {
 
 
 /* Register names */
-char *x86_register_name[x86_register_count] = {
+char *x86_reg_name[x86_reg_count] =
+{
 	"",
-	"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi",
-	"ax", "cx", "dx", "bx", "sp", "bp", "si", "di",
-	"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh",
-	"es", "cs", "ss", "ds", "fs", "gs"
+
+	"eax",
+	"ecx",
+	"edx",
+	"ebx",
+	"esp",
+	"ebp",
+	"esi",
+	"edi",
+
+	"ax",
+	"cx",
+	"dx",
+	"bx",
+	"sp",
+	"bp",
+	"si",
+	"di",
+
+	"al",
+	"cl",
+	"dl",
+	"bl",
+	"ah",
+	"ch",
+	"dh",
+	"bh",
+
+	"es",
+	"cs",
+	"ss",
+	"ds",
+	"fs",
+	"gs"
 };
 
 
 /* Table indexed by pairs ModRM.mod and ModRM.rm, containing
  * information about what will come next and effective address
  * computation. */
-typedef struct {
-	x86_register_t ea_base;
+struct x86_modrm_table_entry_t {
+	enum x86_reg_t ea_base;
 	int disp_size;
 	int sib_size;
-} modrm_table_entry_t;
-modrm_table_entry_t modrm_table[32] = {
-	{reg_eax, 0, 0}, {reg_ecx, 0, 0},
-	{reg_edx, 0, 0}, {reg_ebx, 0, 0},
-	{reg_none, 0, 1}, {reg_none, 4, 0},
-	{reg_esi, 0, 0}, {reg_edi, 0, 0},
+};
 
-	{reg_eax, 1, 0}, {reg_ecx, 1, 0},
-	{reg_edx, 1, 0}, {reg_ebx, 1, 0},
-	{reg_none, 1, 1}, {reg_ebp, 1, 0},
-	{reg_esi, 1, 0}, {reg_edi, 1, 0},
 
-	{reg_eax, 4, 0}, {reg_ecx, 4, 0},
-	{reg_edx, 4, 0}, {reg_ebx, 4, 0},
-	{reg_none, 4, 1}, {reg_ebp, 4, 0},
-	{reg_esi, 4, 0}, {reg_edi, 4, 0},
+static struct x86_modrm_table_entry_t modrm_table[32] =
+{
+	{x86_reg_eax, 0, 0},
+	{x86_reg_ecx, 0, 0},
+	{x86_reg_edx, 0, 0},
+	{x86_reg_ebx, 0, 0},
+	{x86_reg_none, 0, 1},
+	{x86_reg_none, 4, 0},
+	{x86_reg_esi, 0, 0},
+	{x86_reg_edi, 0, 0},
 
-	{reg_none, 0, 0}, {reg_none, 0, 0},
-	{reg_none, 0, 0}, {reg_none, 0, 0},
-	{reg_none, 0, 0}, {reg_none, 0, 0},
-	{reg_none, 0, 0}, {reg_none, 0, 0}
+	{x86_reg_eax, 1, 0},
+	{x86_reg_ecx, 1, 0},
+	{x86_reg_edx, 1, 0},
+	{x86_reg_ebx, 1, 0},
+	{x86_reg_none, 1, 1},
+	{x86_reg_ebp, 1, 0},
+	{x86_reg_esi, 1, 0},
+	{x86_reg_edi, 1, 0},
+
+	{x86_reg_eax, 4, 0},
+	{x86_reg_ecx, 4, 0},
+	{x86_reg_edx, 4, 0},
+	{x86_reg_ebx, 4, 0},
+	{x86_reg_none, 4, 1},
+	{x86_reg_ebp, 4, 0},
+	{x86_reg_esi, 4, 0},
+	{x86_reg_edi, 4, 0},
+
+	{x86_reg_none, 0, 0},
+	{x86_reg_none, 0, 0},
+	{x86_reg_none, 0, 0},
+	{x86_reg_none, 0, 0},
+	{x86_reg_none, 0, 0},
+	{x86_reg_none, 0, 0},
+	{x86_reg_none, 0, 0},
+	{x86_reg_none, 0, 0}
 };
 
 
@@ -127,10 +178,10 @@ modrm_table_entry_t modrm_table[32] = {
 uint32_t ea_scale_table[4] = { 1, 2, 4, 8};
 
 
-static void x86_opcode_info_insert_at(x86_opcode_info_elem_t **table,
-	x86_opcode_info_elem_t *elem, int at)
+static void x86_opcode_info_insert_at(struct x86_opcode_info_elem_t **table,
+	struct x86_opcode_info_elem_t *elem, int at)
 {
-	x86_opcode_info_elem_t *prev;
+	struct x86_opcode_info_elem_t *prev;
 
 	/* First entry */
 	if (!table[at]) {
@@ -146,10 +197,10 @@ static void x86_opcode_info_insert_at(x86_opcode_info_elem_t **table,
 }
 
 
-static void x86_opcode_info_insert(x86_opcode_info_t *info)
+static void x86_opcode_info_insert(struct x86_opcode_info_t *info)
 {
-	x86_opcode_info_elem_t *elem;
-	x86_opcode_info_elem_t **table;
+	struct x86_opcode_info_elem_t *elem;
+	struct x86_opcode_info_elem_t **table;
 	int index, i, count;
 
 	/* Obtain the table where to insert, the initial index, and
@@ -166,17 +217,107 @@ static void x86_opcode_info_insert(x86_opcode_info_t *info)
 
 	/* Insert */
 	for (i = 0; i < count; i++) {
-		elem = calloc(1, sizeof(x86_opcode_info_elem_t));
+		elem = calloc(1, sizeof(struct x86_opcode_info_elem_t));
 		elem->info = info;
 		x86_opcode_info_insert_at(table, elem, index + i);
 	}
 }
 
 
-void disasm_init()
+static void x86_opcode_info_elem_free_list(struct x86_opcode_info_elem_t *elem)
 {
-	x86_opcode_t op;
-	x86_opcode_info_t *info;
+	struct x86_opcode_info_elem_t *next;
+	while (elem) {
+		next = elem->next;
+		free(elem);
+		elem = next;
+	}
+}
+
+
+static int is_fmt_char(char c)
+{
+	return (c >= 'a' && c <= 'z') ||
+		(c >= 'A' && c <= 'Z') ||
+		(c >= '0' && c <= '9');
+}
+
+
+static int is_next_word(char *src, char *word)
+{
+	int len = strlen(word);
+	if (strlen(src) < len)
+		return 0;
+	if (strncmp(src, word, len))
+		return 0;
+	if (is_fmt_char(src[len]))
+		return 0;
+	return 1;
+}
+
+
+static void x86_moffs_address_dump_buf(struct x86_inst_t *inst, char **pbuf, int *psize)
+{
+	dump_buf(pbuf, psize, "%s:0x%x",
+		x86_reg_name[inst->segment ? inst->segment : x86_reg_ds],
+		inst->imm.d);
+}
+
+
+static void x86_memory_address_dump_buf(struct x86_inst_t *inst, char **pbuf, int *psize)
+{
+	int putsign = 0;
+	char seg[10];
+	assert(inst->modrm_mod != 0x03);
+
+	/* Segment */
+	seg[0] = 0;
+	if (inst->segment) {
+		strcpy(seg, x86_reg_name[inst->segment]);
+		strcat(seg, ":");
+	}
+
+	/* When there is only a displacement */
+	if (!inst->ea_base && !inst->ea_index) {
+		if (!seg[0])
+			strcpy(seg, "ds:");
+		dump_buf(pbuf, psize, "%s0x%x", seg, inst->disp);
+		return;
+	}
+
+	dump_buf(pbuf, psize, "%s[", seg);
+	if (inst->ea_base) {
+		dump_buf(pbuf, psize, "%s", x86_reg_name[inst->ea_base]);
+		putsign = 1;
+	}
+	if (inst->ea_index) {
+		dump_buf(pbuf, psize, "%s%s", putsign ? "+" : "",
+			x86_reg_name[inst->ea_index]);
+		if (inst->ea_scale > 1)
+			dump_buf(pbuf, psize, "*%d", inst->ea_scale);
+		putsign = 1;
+	}
+	if (inst->disp > 0)
+		dump_buf(pbuf, psize, "%s0x%x", putsign ? "+" : "", inst->disp);
+	if (inst->disp < 0)
+		dump_buf(pbuf, psize, "-0x%x", -inst->disp);
+	dump_buf(pbuf, psize, "]");
+}
+
+
+
+
+
+
+/*
+ * Public Functions
+ */
+
+
+void x86_disasm_init()
+{
+	enum x86_opcode_t op;
+	struct x86_opcode_info_t *info;
 
 	/* Initialize x86_opcode_info_table. This table contains lists of
 	 * information about machine instructions. To find an instruction
@@ -261,18 +402,7 @@ void disasm_init()
 }
 
 
-void x86_opcode_info_elem_free_list(x86_opcode_info_elem_t *elem)
-{
-	x86_opcode_info_elem_t *next;
-	while (elem) {
-		next = elem->next;
-		free(elem);
-		elem = next;
-	}
-}
-
-
-void disasm_done()
+void x86_disasm_done()
 {
 	int i;
 	for (i = 0; i < 0x100; i++) {
@@ -283,17 +413,17 @@ void disasm_done()
 
 
 /* Pointer to 'inst' is declared volatile to avoid optimizations when calling 'memset' */
-void x86_disasm(void *buf, uint32_t eip, volatile x86_inst_t *inst)
+void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst)
 {
-	x86_opcode_info_elem_t **table, *elem;
-	x86_opcode_info_t *info;
+	struct x86_opcode_info_elem_t **table, *elem;
+	struct x86_opcode_info_t *info;
 	int index;
 	uint32_t buf32;
-	modrm_table_entry_t *modrm_table_entry;
+	struct x86_modrm_table_entry_t *modrm_table_entry;
 	int was_any_prefix;
 
 	/* Initialize instruction */
-	memset((void *) inst, 0, sizeof(x86_inst_t));
+	memset((void *) inst, 0, sizeof(struct x86_inst_t));
 	inst->eip = eip;
 	inst->op_size = 4;
 	inst->addr_size = 4;
@@ -301,25 +431,64 @@ void x86_disasm(void *buf, uint32_t eip, volatile x86_inst_t *inst)
 	/* Prefixes */
 	do {
 		was_any_prefix = 1;
-		switch (* (unsigned char *) buf) {
-		case 0xf0: /* lock prefix is ignored */ break;
-		case 0xf2: inst->prefixes |= prefix_repnz; break;
-		case 0xf3: inst->prefixes |= prefix_rep; break;
-		case 0x66: inst->prefixes |= prefix_op; inst->op_size = 2; break;
-		case 0x67: inst->prefixes |= prefix_addr; inst->addr_size = 2; break;
-		case 0x2e: inst->segment = reg_cs; break;
-		case 0x36: inst->segment = reg_ss; break;
-		case 0x3e: inst->segment = reg_ds; break;
-		case 0x26: inst->segment = reg_es; break;
-		case 0x64: inst->segment = reg_fs; break;
-		case 0x65: inst->segment = reg_gs; break;
-		default: was_any_prefix = 0;
+		switch (* (unsigned char *) buf)
+		{
+
+		case 0xf0:
+			/* lock prefix is ignored */
+			break;
+
+		case 0xf2:
+			inst->prefixes |= x86_prefix_repnz;
+			break;
+
+		case 0xf3:
+			inst->prefixes |= x86_prefix_rep;
+			break;
+
+		case 0x66:
+			inst->prefixes |= x86_prefix_op;
+			inst->op_size = 2;
+			break;
+
+		case 0x67:
+			inst->prefixes |= x86_prefix_addr;
+			inst->addr_size = 2;
+			break;
+
+		case 0x2e:
+			inst->segment = x86_reg_cs;
+			break;
+
+		case 0x36:
+			inst->segment = x86_reg_ss;
+			break;
+
+		case 0x3e:
+			inst->segment = x86_reg_ds;
+			break;
+
+		case 0x26:
+			inst->segment = x86_reg_es;
+			break;
+
+		case 0x64:
+			inst->segment = x86_reg_fs;
+			break;
+
+		case 0x65:
+			inst->segment = x86_reg_gs;
+			break;
+
+		default:
+			was_any_prefix = 0;
 		}
 
 		if (was_any_prefix) {
 			buf++;
 			inst->prefix_size++;
 		}
+
 	} while (was_any_prefix);
 
 	/* Find instruction */
@@ -374,11 +543,11 @@ void x86_disasm(void *buf, uint32_t eip, volatile x86_inst_t *inst)
 			inst->sib_index = (inst->sib & 0x38) >> 3;
 			inst->sib_base = inst->sib & 0x07;
 			inst->ea_scale = ea_scale_table[inst->sib_scale];
-			inst->ea_index = inst->sib_index == 0x04 ? reg_none :
-				inst->sib_index + reg_eax;
-			inst->ea_base = inst->sib_base + reg_eax;
+			inst->ea_index = inst->sib_index == 0x04 ? x86_reg_none :
+				inst->sib_index + x86_reg_eax;
+			inst->ea_base = inst->sib_base + x86_reg_eax;
 			if (inst->sib_base == 0x05 && inst->modrm_mod == 0x00) {
-				inst->ea_base = reg_none;
+				inst->ea_base = x86_reg_none;
 				inst->disp_size = 4;
 			}
 			buf += inst->sib_size;  /* Skip SIB */
@@ -409,105 +578,27 @@ void x86_disasm(void *buf, uint32_t eip, volatile x86_inst_t *inst)
 }
 
 
-int is_fmt_char(char c)
+void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 {
-	return (c >= 'a' && c <= 'z') ||
-		(c >= 'A' && c <= 'Z') ||
-		(c >= '0' && c <= '9');
-}
-
-
-int is_next_word(char *src, char *word)
-{
-	int len = strlen(word);
-	if (strlen(src) < len)
-		return 0;
-	if (strncmp(src, word, len))
-		return 0;
-	if (is_fmt_char(src[len]))
-		return 0;
-	return 1;
-}
-
-
-void x86_moffs_address_dump_buf(x86_inst_t *inst, char **pbuf, int *psize)
-{
-	dump_buf(pbuf, psize, "%s:0x%x",
-		x86_register_name[inst->segment ? inst->segment : reg_ds],
-		inst->imm.d);
-}
-
-
-void x86_memory_address_dump_buf(x86_inst_t *inst, char **pbuf, int *psize)
-{
-	int putsign = 0;
-	char seg[10];
-	assert(inst->modrm_mod != 0x03);
-
-	/* Segment */
-	seg[0] = 0;
-	if (inst->segment) {
-		strcpy(seg, x86_register_name[inst->segment]);
-		strcat(seg, ":");
-	}
-
-	/* When there is only a displacement */
-	if (!inst->ea_base && !inst->ea_index) {
-		if (!seg[0])
-			strcpy(seg, "ds:");
-		dump_buf(pbuf, psize, "%s0x%x", seg, inst->disp);
-		return;
-	}
-
-	dump_buf(pbuf, psize, "%s[", seg);
-	if (inst->ea_base) {
-		dump_buf(pbuf, psize, "%s", x86_register_name[inst->ea_base]);
-		putsign = 1;
-	}
-	if (inst->ea_index) {
-		dump_buf(pbuf, psize, "%s%s", putsign ? "+" : "",
-			x86_register_name[inst->ea_index]);
-		if (inst->ea_scale > 1)
-			dump_buf(pbuf, psize, "*%d", inst->ea_scale);
-		putsign = 1;
-	}
-	if (inst->disp > 0)
-		dump_buf(pbuf, psize, "%s0x%x", putsign ? "+" : "", inst->disp);
-	if (inst->disp < 0)
-		dump_buf(pbuf, psize, "-0x%x", -inst->disp);
-	dump_buf(pbuf, psize, "]");
-}
-
-
-char *x86_inst_name(x86_opcode_t opcode)
-{
-	if (opcode < 1 || opcode >= x86_opcode_count)
-		return NULL;
-	return x86_opcode_info_list[opcode].fmt;
-}
-
-
-void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
-{
-	x86_opcode_t op = inst->opcode;
-	x86_opcode_info_t *info = &x86_opcode_info_list[op];
+	enum x86_opcode_t op = inst->opcode;
+	struct x86_opcode_info_t *info = &x86_opcode_info_list[op];
 	char *fmt = info->fmt;
 	int word = 0;
 
 	while (*fmt) {
 		if (is_next_word(fmt, "r8")) {
-			dump_buf(&buf, &size, "%s", x86_register_name[inst->modrm_reg + reg_al]);
+			dump_buf(&buf, &size, "%s", x86_reg_name[inst->modrm_reg + x86_reg_al]);
 			fmt += 2;
 		} else if (is_next_word(fmt, "r16")) {
-			dump_buf(&buf, &size, "%s", x86_register_name[inst->modrm_reg + reg_ax]);
+			dump_buf(&buf, &size, "%s", x86_reg_name[inst->modrm_reg + x86_reg_ax]);
 			fmt += 3;
 		} else if (is_next_word(fmt, "r32")) {
-			dump_buf(&buf, &size, "%s", x86_register_name[inst->modrm_reg + reg_eax]);
+			dump_buf(&buf, &size, "%s", x86_reg_name[inst->modrm_reg + x86_reg_eax]);
 			fmt += 3;
 		} else if (is_next_word(fmt, "rm8")) {
 			if (inst->modrm_mod == 0x03)
 				dump_buf(&buf, &size, "%s",
-					x86_register_name[inst->modrm_rm + reg_al]);
+					x86_reg_name[inst->modrm_rm + x86_reg_al]);
 			else {
 				dump_buf(&buf, &size, "BYTE PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
@@ -516,7 +607,7 @@ void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 		} else if (is_next_word(fmt, "rm16")) {
 			if (inst->modrm_mod == 0x03)
 				dump_buf(&buf, &size, "%s",
-					x86_register_name[inst->modrm_rm + reg_ax]);
+					x86_reg_name[inst->modrm_rm + x86_reg_ax]);
 			else {
 				dump_buf(&buf, &size, "WORD PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
@@ -525,7 +616,7 @@ void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 		} else if (is_next_word(fmt, "rm32")) {
 			if (inst->modrm_mod == 0x03)
 				dump_buf(&buf, &size, "%s",
-					x86_register_name[inst->modrm_rm + reg_eax]);
+					x86_reg_name[inst->modrm_rm + x86_reg_eax]);
 			else {
 				dump_buf(&buf, &size, "DWORD PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
@@ -533,7 +624,7 @@ void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 			fmt += 4;
 		} else if (is_next_word(fmt, "r32m8")) {
 			if (inst->modrm_mod == 3)
-				dump_buf(&buf, &size, "%s", x86_register_name[inst->modrm_rm + reg_eax]);
+				dump_buf(&buf, &size, "%s", x86_reg_name[inst->modrm_rm + x86_reg_eax]);
 			else {
 				dump_buf(&buf, &size, "BYTE PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
@@ -599,16 +690,16 @@ void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 			dump_buf(&buf, &size, "st(%d)", inst->opindex);
 			fmt += 3;
 		} else if (is_next_word(fmt, "ir8")) {
-			dump_buf(&buf, &size, "%s", x86_register_name[inst->opindex + reg_al]);
+			dump_buf(&buf, &size, "%s", x86_reg_name[inst->opindex + x86_reg_al]);
 			fmt += 3;
 		} else if (is_next_word(fmt, "ir16")) {
-			dump_buf(&buf, &size, "%s", x86_register_name[inst->opindex + reg_ax]);
+			dump_buf(&buf, &size, "%s", x86_reg_name[inst->opindex + x86_reg_ax]);
 			fmt += 4;
 		} else if (is_next_word(fmt, "ir32")) {
-			dump_buf(&buf, &size, "%s", x86_register_name[inst->opindex + reg_eax]);
+			dump_buf(&buf, &size, "%s", x86_reg_name[inst->opindex + x86_reg_eax]);
 			fmt += 4;
 		} else if (is_next_word(fmt, "sreg")) {
-			dump_buf(&buf, &size, "%s", x86_register_name[inst->reg + reg_es]);
+			dump_buf(&buf, &size, "%s", x86_reg_name[inst->reg + x86_reg_es]);
 			fmt += 4;
 		} else if (is_next_word(fmt, "xmmm32")) {
 			if (inst->modrm_mod == 3)
@@ -654,10 +745,17 @@ void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size)
 }
 
 
-void x86_inst_dump(x86_inst_t *inst, FILE *f)
+void x86_inst_dump(struct x86_inst_t *inst, FILE *f)
 {
 	char buf[100];
 	x86_inst_dump_buf(inst, buf, sizeof(buf));
 	fprintf(f, "%s", buf);
 }
 
+
+char *x86_inst_name(enum x86_opcode_t opcode)
+{
+	if (opcode < 1 || opcode >= x86_opcode_count)
+		return NULL;
+	return x86_opcode_info_list[opcode].fmt;
+}

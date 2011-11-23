@@ -26,57 +26,92 @@
 
 
 /* List of opcodes */
-typedef enum {
+enum x86_opcode_t {
 	op_none = 0,
 #define DEFINST(name,op1,op2,op3,modrm,imm,prefixes) op_##name,
 #include "machine.dat"
 #undef DEFINST
 	x86_opcode_count
-} x86_opcode_t;
+};
 
 
 /* Prefixes */
-typedef enum x86_prefix_t {
-	prefix_none = 0x00,
-	prefix_rep = 0x01,
-	prefix_repz = 0x01,  /* same value as rep */
-	prefix_repnz = 0x02,
-	prefix_lock = 0x04,
-	prefix_addr = 0x08,  /* address-size override */
-	prefix_op = 0x10  /* operand-size override */
-} x86_prefix_t;
+enum x86_prefix_t
+{
+	x86_prefix_none = 0x00,
+	x86_prefix_rep = 0x01,
+	x86_prefix_repz = 0x01,  /* same value as rep */
+	x86_prefix_repnz = 0x02,
+	x86_prefix_lock = 0x04,
+	x86_prefix_addr = 0x08,  /* address-size override */
+	x86_prefix_op = 0x10  /* operand-size override */
+};
 
 
-/* Register identifiers
- * and names. */
-typedef enum {
-	reg_none = 0,
-	reg_eax, reg_ecx, reg_edx, reg_ebx, reg_esp, reg_ebp, reg_esi, reg_edi,
-	reg_ax, reg_cx, reg_dx, reg_bx, reg_sp, reg_bp, reg_si, reg_di,
-	reg_al, reg_cl, reg_dl, reg_bl, reg_ah, reg_ch, reg_dh, reg_bh,
-	reg_es, reg_cs, reg_ss, reg_ds, reg_fs, reg_gs,
-	x86_register_count
-} x86_register_t;
-extern char *x86_register_name[x86_register_count];
+/* Register identifiers and names. */
+enum x86_reg_t
+{
+	x86_reg_none = 0,
+
+	x86_reg_eax,
+	x86_reg_ecx,
+	x86_reg_edx,
+	x86_reg_ebx,
+	x86_reg_esp,
+	x86_reg_ebp,
+	x86_reg_esi,
+	x86_reg_edi,
+
+	x86_reg_ax,
+	x86_reg_cx,
+	x86_reg_dx,
+	x86_reg_bx,
+	x86_reg_sp,
+	x86_reg_bp,
+	x86_reg_si,
+	x86_reg_di,
+
+	x86_reg_al,
+	x86_reg_cl,
+	x86_reg_dl,
+	x86_reg_bl,
+	x86_reg_ah,
+	x86_reg_ch,
+	x86_reg_dh,
+	x86_reg_bh,
+
+	x86_reg_es,
+	x86_reg_cs,
+	x86_reg_ss,
+	x86_reg_ds,
+	x86_reg_fs,
+	x86_reg_gs,
+
+	x86_reg_count
+};
+
+extern char *x86_reg_name[x86_reg_count];
 
 
 /* Names of flags */
-typedef enum {
-	flag_cf = 0,
-	flag_pf = 2,
-	flag_af = 4,
-	flag_zf = 6,
-	flag_sf = 7,
-	flag_df = 10,
-	flag_of = 11
-} x86_flag_t;
+enum x86_flag_t
+{
+	x86_flag_cf = 0,
+	x86_flag_pf = 2,
+	x86_flag_af = 4,
+	x86_flag_zf = 6,
+	x86_flag_sf = 7,
+	x86_flag_df = 10,
+	x86_flag_of = 11
+};
 
 
 /* x86 Instruction */
-typedef struct {
+struct x86_inst_t
+{
 	uint32_t eip;  /* position inside the code */
 	int size;  /* number of instruction bytes */
-	x86_opcode_t opcode;
+	enum x86_opcode_t opcode;
 	char *format;  /* format of the instruction */
 	
 	/* Size of fields */
@@ -92,8 +127,8 @@ typedef struct {
 	int opindex;
 
 	/* Prefixes */
-	x86_register_t segment;  /* Reg. used to override segment */
-	x86_prefix_t prefixes;  /* Prefixes ORed */
+	enum x86_reg_t segment;  /* Reg. used to override segment */
+	int prefixes;  /* Mask of prefixes of type 'enum x86_prefix_enum' */
 	int op_size;  /* Operand size: 2 or 4, default 4 */
 	int addr_size;  /* Address size: 2 or 4, default 4 */
 	int rep;  /* Number of iteration for string inst (updated by user) */
@@ -106,9 +141,9 @@ typedef struct {
 
 	/* SIB Field */
 	unsigned char sib;  /* SIB field */
-	unsigned char sib_scale;  /* scale field of SIB */
-	unsigned char sib_index;  /* index field of SIB */
-	unsigned char sib_base;  /* base field of SIB */
+	unsigned char sib_scale;  /* Scale field of SIB */
+	unsigned char sib_index;  /* Index field of SIB */
+	unsigned char sib_base;  /* Base field of SIB */
 
 	/* Displacement and Immediate */
 	int32_t disp;
@@ -119,25 +154,24 @@ typedef struct {
 	} imm;
 
 	/* Effective address */
-	x86_register_t ea_base;
-	x86_register_t ea_index;
+	enum x86_reg_t ea_base;
+	enum x86_reg_t ea_index;
 	uint32_t ea_scale;
 
 	/* Register */
 	int reg;  /* same as modrm_reg */
-} x86_inst_t;
+};
 
 
 /* Initialization and finalization routines */
-void disasm_init(void);
-void disasm_done(void);
-
+void x86_disasm_init(void);
+void x86_disasm_done(void);
 
 /* Disassemble and dump */
-void x86_disasm(void *buf, uint32_t eip, volatile x86_inst_t *inst);
-void x86_inst_dump_buf(x86_inst_t *inst, char *buf, int size);
-void x86_inst_dump(x86_inst_t *inst, FILE *f);
-char *x86_inst_name(x86_opcode_t opcode);
+void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst);
+void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size);
+void x86_inst_dump(struct x86_inst_t *inst, FILE *f);
+char *x86_inst_name(enum x86_opcode_t opcode);
 
 
 #endif

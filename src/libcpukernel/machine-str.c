@@ -41,7 +41,7 @@
 			op_##X##_impl(); \
 			isa_regs->ecx--; \
 			isa_inst.rep++; \
-			if (!isa_get_flag(flag_zf)) \
+			if (!isa_get_flag(x86_flag_zf)) \
 				break; \
 		} \
 	}
@@ -54,7 +54,7 @@
 			op_##X##_impl(); \
 			isa_regs->ecx--; \
 			isa_inst.rep++; \
-			if (isa_get_flag(flag_zf)) \
+			if (isa_get_flag(x86_flag_zf)) \
 				break; \
 		} \
 	}
@@ -123,8 +123,8 @@ void op_cmpsb_impl() {
 		: "al"
 	);
 	isa_regs->eflags = flags;
-	isa_regs->esi += isa_get_flag(flag_df) ? -1 : 1;
-	isa_regs->edi += isa_get_flag(flag_df) ? -1 : 1;
+	isa_regs->esi += isa_get_flag(x86_flag_df) ? -1 : 1;
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
 }
 
 
@@ -145,8 +145,8 @@ void op_cmpsd_impl() {
 		: "eax"
 	);
 	isa_regs->eflags = flags;
-	isa_regs->esi += isa_get_flag(flag_df) ? -4 : 4;
-	isa_regs->edi += isa_get_flag(flag_df) ? -4 : 4;
+	isa_regs->esi += isa_get_flag(x86_flag_df) ? -4 : 4;
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
 }
 
 
@@ -154,8 +154,8 @@ void op_movsb_impl() {
 	uint8_t m8;
 	mem_read(isa_mem, isa_regs->esi, 1, &m8);
 	mem_write(isa_mem, isa_regs->edi, 1, &m8);
-	isa_regs->edi += isa_get_flag(flag_df) ? -1 : 1;
-	isa_regs->esi += isa_get_flag(flag_df) ? -1 : 1;
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
+	isa_regs->esi += isa_get_flag(x86_flag_df) ? -1 : 1;
 }
 
 
@@ -163,8 +163,8 @@ void op_movsw_impl() {
 	uint16_t m16;
 	mem_read(isa_mem, isa_regs->esi, 2, &m16);
 	mem_write(isa_mem, isa_regs->edi, 2, &m16);
-	isa_regs->edi += isa_get_flag(flag_df) ? -2 : 2;
-	isa_regs->esi += isa_get_flag(flag_df) ? -2 : 2;
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -2 : 2;
+	isa_regs->esi += isa_get_flag(x86_flag_df) ? -2 : 2;
 }
 
 
@@ -172,13 +172,13 @@ void op_movsd_impl() {
 	uint32_t m32;
 	mem_read(isa_mem, isa_regs->esi, 4, &m32);
 	mem_write(isa_mem, isa_regs->edi, 4, &m32);
-	isa_regs->edi += isa_get_flag(flag_df) ? -4 : 4;
-	isa_regs->esi += isa_get_flag(flag_df) ? -4 : 4;
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
+	isa_regs->esi += isa_get_flag(x86_flag_df) ? -4 : 4;
 }
 
 
 void op_scasb_impl() {
-	uint8_t al = isa_load_reg(reg_al);
+	uint8_t al = isa_load_reg(x86_reg_al);
 	uint8_t m8;
 	unsigned long flags = isa_regs->eflags;
 	mem_read(isa_mem, isa_regs->edi, 1, &m8);
@@ -192,12 +192,12 @@ void op_scasb_impl() {
 		: "al"
 	);
 	isa_regs->eflags = flags;
-	isa_regs->edi += isa_get_flag(flag_df) ? -1 : 1;
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
 }
 
 
 void op_scasd_impl() {
-	uint32_t eax = isa_load_reg(reg_eax);
+	uint32_t eax = isa_load_reg(x86_reg_eax);
 	uint32_t m32;
 	unsigned long flags = isa_regs->eflags;
 	mem_read(isa_mem, isa_regs->edi, 4, &m32);
@@ -211,23 +211,23 @@ void op_scasd_impl() {
 		: "eax"
 	);
 	isa_regs->eflags = flags;
-	isa_regs->edi += isa_get_flag(flag_df) ? -4 : 4;
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
 }
 
 
 void op_stosb_impl() {
-	uint8_t m8 = isa_load_reg(reg_al);
-	uint32_t addr = isa_load_reg(reg_edi);
+	uint8_t m8 = isa_load_reg(x86_reg_al);
+	uint32_t addr = isa_load_reg(x86_reg_edi);
 	mem_write(isa_mem, addr, 1, &m8);
-	isa_regs->edi += isa_get_flag(flag_df) ? -1 : 1;
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
 }
 
 
 void op_stosd_impl() {
-	uint32_t m32 = isa_load_reg(reg_eax);
-	uint32_t addr = isa_load_reg(reg_edi);
+	uint32_t m32 = isa_load_reg(x86_reg_eax);
+	uint32_t addr = isa_load_reg(x86_reg_edi);
 	mem_write(isa_mem, addr, 4, &m32);
-	isa_regs->edi += isa_get_flag(flag_df) ? -4 : 4;
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
 }
 
 
