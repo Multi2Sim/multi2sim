@@ -190,7 +190,7 @@ void op_fcmovb_st0_sti_impl()
 {
 	uint8_t sti[10];
 	isa_load_fpu(isa_inst.opindex, sti);
-	if (isa_get_flag(flag_cf))
+	if (isa_get_flag(x86_flag_cf))
 		isa_store_fpu(0, sti);
 }
 
@@ -199,7 +199,7 @@ void op_fcmove_st0_sti_impl()
 {
 	uint8_t sti[10];
 	isa_load_fpu(isa_inst.opindex, sti);
-	if (isa_get_flag(flag_zf))
+	if (isa_get_flag(x86_flag_zf))
 		isa_store_fpu(0, sti);
 }
 
@@ -208,7 +208,7 @@ void op_fcmovbe_st0_sti_impl()
 {
 	uint8_t sti[10];
 	isa_load_fpu(isa_inst.opindex, sti);
-	if (isa_get_flag(flag_cf) || isa_get_flag(flag_zf))
+	if (isa_get_flag(x86_flag_cf) || isa_get_flag(x86_flag_zf))
 		isa_store_fpu(0, sti);
 }
 
@@ -217,7 +217,7 @@ void op_fcmovu_st0_sti_impl()
 {
 	uint8_t sti[10];
 	isa_load_fpu(isa_inst.opindex, sti);
-	if (isa_get_flag(flag_pf))
+	if (isa_get_flag(x86_flag_pf))
 		isa_store_fpu(0, sti);
 }
 
@@ -226,7 +226,7 @@ void op_fcmovnb_st0_sti_impl()
 {
 	uint8_t sti[10];
 	isa_load_fpu(isa_inst.opindex, sti);
-	if (!isa_get_flag(flag_cf))
+	if (!isa_get_flag(x86_flag_cf))
 		isa_store_fpu(0, sti);
 }
 
@@ -235,7 +235,7 @@ void op_fcmovne_st0_sti_impl()
 {
 	uint8_t sti[10];
 	isa_load_fpu(isa_inst.opindex, sti);
-	if (!isa_get_flag(flag_zf))
+	if (!isa_get_flag(x86_flag_zf))
 		isa_store_fpu(0, sti);
 }
 
@@ -244,7 +244,7 @@ void op_fcmovnbe_st0_sti_impl()
 {
 	uint8_t sti[10];
 	isa_load_fpu(isa_inst.opindex, sti);
-	if (!isa_get_flag(flag_cf) && !isa_get_flag(flag_zf))
+	if (!isa_get_flag(x86_flag_cf) && !isa_get_flag(x86_flag_zf))
 		isa_store_fpu(0, sti);
 }
 
@@ -253,7 +253,7 @@ void op_fcmovnu_st0_sti_impl()
 {
 	uint8_t sti[10];
 	isa_load_fpu(isa_inst.opindex, sti);
-	if (!isa_get_flag(flag_pf))
+	if (!isa_get_flag(x86_flag_pf))
 		isa_store_fpu(0, sti);
 }
 
@@ -967,7 +967,7 @@ void op_fnstcw_m16_impl()
 void op_fnstsw_ax_impl()
 {
 	uint16_t status = isa_load_fpu_status();
-	isa_store_reg(reg_ax, status);
+	isa_store_reg(x86_reg_ax, status);
 }
 
 
@@ -1240,7 +1240,7 @@ void op_fstp_sti_impl()
 void op_fstsw_ax_impl()
 {
 	uint16_t status = isa_load_fpu_status();
-	isa_store_reg(reg_ax, status);
+	isa_store_reg(x86_reg_ax, status);
 }
 
 

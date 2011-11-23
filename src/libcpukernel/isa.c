@@ -24,10 +24,10 @@
 struct ctx_t *isa_ctx;
 struct regs_t *isa_regs;
 struct mem_t *isa_mem;
+struct x86_inst_t isa_inst;
 uint32_t isa_eip;
 uint32_t isa_addr;  /* Address of last memory access */
 uint32_t isa_target;  /* Target address of branch/jmp/call/ret inst, even if it's not taken */
-x86_inst_t isa_inst;
 uint64_t isa_inst_count;
 int isa_function_level;
 
@@ -84,24 +84,6 @@ void isa_error(char *fmt, ...) {
 }
 
 
-#ifdef ISA_CHECK_NAN
-#define BIT(x) ((value[9-(x)/8]&(1<<(7-(x%8))))>0)
-int isa_is_nan(uint8_t *value)
-{
-	int exp_0s = 0, sig_0s = 0, i;
-	for (i = 1; i <= 15; i++)
-		if (!BIT(i))
-			exp_0s++;
-	for (i = 16; i <= 79; i++)
-		if (!BIT(i))
-			sig_0s++;
-	return !exp_0s && sig_0s < 64;
-}
-#undef BIT
-#endif
-
-
-
 /* Shift and size inside the regs_t structure. This table is indexed by the
  * op->data.reg.id field. */
 static struct {
@@ -109,52 +91,52 @@ static struct {
 	int size;
 } isa_reg_info[] = {
 	{ 0, 0 },
-	{ 0, 4 }, /* 1. eax */
-	{ 4, 4 }, /* 2. ecx */
-	{ 8, 4 }, /* 3. edx */
-	{ 12, 4 }, /* 4. ebx */
-	{ 16, 4 }, /* 5. esp */
-	{ 20, 4 }, /* 6. ebp */
-	{ 24, 4 }, /* 7. esi */
-	{ 28, 4 }, /* 8. edi */
-	{ 0, 2 }, /* 9. ax */
-	{ 4, 2 }, /* 10. cx */
-	{ 8, 2 }, /* 11. dx */
-	{ 12, 2 }, /* 12. bx */
-	{ 16, 2 }, /* 13. sp */
-	{ 20, 2 }, /* 14. bp */
-	{ 24, 2 }, /* 15. si */
-	{ 28, 2 }, /* 16. di */
-	{ 0, 1 }, /* 17. al */
-	{ 4, 1 }, /* 18. cl */
-	{ 8, 1 }, /* 19. dl */
-	{ 12, 1 }, /* 20. bl */
-	{ 1, 1 }, /* 21. ah */
-	{ 5, 1 }, /* 22. ch */
-	{ 9, 1 }, /* 23. dh */
-	{ 13, 1 }, /* 24. bh */
-	{ 32, 2 }, /* 25. es */
-	{ 34, 2 }, /* 26. cs */
-	{ 36, 2 }, /* 27. ss */
-	{ 38, 2 }, /* 28. ds */
-	{ 40, 2 }, /* 29. fs */
-	{ 42, 2 }, /* 30. gs */
+	{ 0, 4 },	/* 1. eax */
+	{ 4, 4 },	/* 2. ecx */
+	{ 8, 4 },	/* 3. edx */
+	{ 12, 4 },	/* 4. ebx */
+	{ 16, 4 },	/* 5. esp */
+	{ 20, 4 },	/* 6. ebp */
+	{ 24, 4 },	/* 7. esi */
+	{ 28, 4 },	/* 8. edi */
+	{ 0, 2 },	/* 9. ax */
+	{ 4, 2 },	/* 10. cx */
+	{ 8, 2 },	/* 11. dx */
+	{ 12, 2 },	/* 12. bx */
+	{ 16, 2 },	/* 13. sp */
+	{ 20, 2 },	/* 14. bp */
+	{ 24, 2 },	/* 15. si */
+	{ 28, 2 },	/* 16. di */
+	{ 0, 1 },	/* 17. al */
+	{ 4, 1 },	/* 18. cl */
+	{ 8, 1 },	/* 19. dl */
+	{ 12, 1 },	/* 20. bl */
+	{ 1, 1 },	/* 21. ah */
+	{ 5, 1 },	/* 22. ch */
+	{ 9, 1 },	/* 23. dh */
+	{ 13, 1 },	/* 24. bh */
+	{ 32, 2 },	/* 25. es */
+	{ 34, 2 },	/* 26. cs */
+	{ 36, 2 },	/* 27. ss */
+	{ 38, 2 },	/* 28. ds */
+	{ 40, 2 },	/* 29. fs */
+	{ 42, 2 },	/* 30. gs */
 };
 
 
-void isa_set_flag(x86_flag_t flag)
+void isa_set_flag(enum x86_flag_t flag)
 {
 	isa_regs->eflags = SETBIT32(isa_regs->eflags, flag);
 }
 
 
-void isa_clear_flag(x86_flag_t flag)
+void isa_clear_flag(enum x86_flag_t flag)
 {
 	isa_regs->eflags = CLEARBIT32(isa_regs->eflags, flag);
 }
 
 
-int isa_get_flag(x86_flag_t flag)
+int isa_get_flag(enum x86_flag_t flag)
 {
 	int ret;
 	ret = GETBIT32(isa_regs->eflags, flag) > 0;
@@ -167,8 +149,10 @@ int isa_get_flag(x86_flag_t flag)
  * is less than 32 bits, it is zero-extended. These
  * functions work for reg = reg_none, too. 
  */
+
 static uint32_t isa_bit_mask[5] = { 0, 0xff, 0xffff, 0, 0xffffffff};
-uint32_t isa_load_reg(x86_register_t reg)
+
+uint32_t isa_load_reg(enum x86_reg_t reg)
 {
 	uint32_t mask, *preg;
 	mask = isa_bit_mask[isa_reg_info[reg].size];
@@ -177,13 +161,13 @@ uint32_t isa_load_reg(x86_register_t reg)
 }
 
 
-void isa_store_reg(x86_register_t reg, uint32_t value)
+void isa_store_reg(enum x86_reg_t reg, uint32_t value)
 {
 	uint32_t mask, *preg;
 	mask = isa_bit_mask[isa_reg_info[reg].size];
 	preg = (void *) isa_regs + isa_reg_info[reg].shift;
 	*preg = (*preg & ~mask) | (value & mask);
-	isa_inst_debug("  %s <- 0x%x", x86_register_name[reg], value);
+	isa_inst_debug("  %s <- 0x%x", x86_reg_name[reg], value);
 }
 
 
@@ -198,10 +182,10 @@ uint32_t isa_linear_address(uint32_t offset)
 	}
 	
 	/* Segment override */
-	if (isa_inst.segment != reg_gs)
+	if (isa_inst.segment != x86_reg_gs)
 		fatal("segment override not supported for other register than gs");
-	if (isa_load_reg(reg_gs) != 0x33)  /* glibc segment at TLS entry 6 */
-		fatal("isa_linear_address: gs = 0x%x", isa_load_reg(reg_gs));
+	if (isa_load_reg(x86_reg_gs) != 0x33)  /* glibc segment at TLS entry 6 */
+		fatal("isa_linear_address: gs = 0x%x", isa_load_reg(x86_reg_gs));
 	if (!isa_ctx->glibc_segment_base)
 		fatal("isa_linear_address: glibc segment not set");
 
@@ -249,7 +233,7 @@ uint8_t isa_load_rm8(void)
 {
 	uint8_t value;
 	if (isa_inst.modrm_mod == 0x03)
-		return isa_load_reg(isa_inst.modrm_rm + reg_al);
+		return isa_load_reg(isa_inst.modrm_rm + x86_reg_al);
 	mem_read(isa_mem, isa_effective_address(), 1, &value);
 	isa_inst_debug("  [0x%x]=0x%x", isa_effective_address(), value);
 	return value;
@@ -260,7 +244,7 @@ uint16_t isa_load_rm16(void)
 {
 	uint16_t value;
 	if (isa_inst.modrm_mod == 0x03)
-		return isa_load_reg(isa_inst.modrm_rm + reg_ax);
+		return isa_load_reg(isa_inst.modrm_rm + x86_reg_ax);
 	mem_read(isa_mem, isa_effective_address(), 2, &value);
 	isa_inst_debug("  [0x%x]=0x%x", isa_effective_address(), value);
 	return value;
@@ -271,7 +255,7 @@ uint32_t isa_load_rm32(void)
 {
 	uint32_t value;
 	if (isa_inst.modrm_mod == 0x03)
-		return isa_load_reg(isa_inst.modrm_rm + reg_eax);
+		return isa_load_reg(isa_inst.modrm_rm + x86_reg_eax);
 	mem_read(isa_mem, isa_effective_address(), 4, &value);
 	isa_inst_debug("  [0x%x]=0x%x", isa_effective_address(), value);
 	return value;
@@ -290,7 +274,7 @@ uint64_t isa_load_m64(void)
 void isa_store_rm8(uint8_t value)
 {
 	if (isa_inst.modrm_mod == 0x03) {
-		isa_store_reg(isa_inst.modrm_rm + reg_al, value);
+		isa_store_reg(isa_inst.modrm_rm + x86_reg_al, value);
 		return;
 	}
 	mem_write(isa_mem, isa_effective_address(), 1, &value);
@@ -301,7 +285,7 @@ void isa_store_rm8(uint8_t value)
 void isa_store_rm16(uint16_t value)
 {
 	if (isa_inst.modrm_mod == 0x03) {
-		isa_store_reg(isa_inst.modrm_rm + reg_ax, value);
+		isa_store_reg(isa_inst.modrm_rm + x86_reg_ax, value);
 		return;
 	}
 	mem_write(isa_mem, isa_effective_address(), 2, &value);
@@ -312,7 +296,7 @@ void isa_store_rm16(uint16_t value)
 void isa_store_rm32(uint32_t value)
 {
 	if (isa_inst.modrm_mod == 0x03) {
-		isa_store_reg(isa_inst.modrm_rm + reg_eax, value);
+		isa_store_reg(isa_inst.modrm_rm + x86_reg_eax, value);
 		return;
 	}
 	mem_write(isa_mem, isa_effective_address(), 4, &value);
@@ -343,10 +327,6 @@ void isa_store_fpu(int index, uint8_t *value)
 	assert(index >= 0 && index < 8);
 	if (debug_status(isa_inst_debug_category))
 		isa_inst_debug("  st(%d) <- %g", index, isa_extended_to_double(value));
-#ifdef ISA_CHECK_NAN
-	if (isa_is_nan(value))
-		fatal("NaN floating point result");
-#endif
 	index = (isa_regs->fpu_top + index) % 8;
 	assert(isa_regs->fpu_stack[index].valid);
 	memcpy(isa_regs->fpu_stack[index].value, value, 10);
@@ -357,10 +337,6 @@ void isa_push_fpu(uint8_t *value)
 {
 	if (debug_status(isa_inst_debug_category))
 		isa_inst_debug("  st(0) <- %g (pushed)", isa_extended_to_double(value));
-#ifdef ISA_CHECK_NAN
-	if (isa_is_nan(value))
-		fatal("NaN floating point result");
-#endif
 	isa_regs->fpu_top = (isa_regs->fpu_top + 7) % 8;
 	assert(!isa_regs->fpu_stack[isa_regs->fpu_top].valid);
 	isa_regs->fpu_stack[isa_regs->fpu_top].valid = 1;
@@ -606,13 +582,13 @@ static void isa_debug_call()
 
 void isa_init()
 {
-	disasm_init();
+	x86_disasm_init();
 }
 
 
 void isa_done()
 {
-	disasm_done();
+	x86_disasm_done();
 }
 
 

@@ -20,11 +20,11 @@
 #include <cpukernel.h>
 
 
-#define CF isa_get_flag(flag_cf)
-#define ZF isa_get_flag(flag_zf)
-#define SF isa_get_flag(flag_sf)
-#define OF isa_get_flag(flag_of)
-#define PF isa_get_flag(flag_pf)
+#define CF isa_get_flag(x86_flag_cf)
+#define ZF isa_get_flag(x86_flag_zf)
+#define SF isa_get_flag(x86_flag_sf)
+#define OF isa_get_flag(x86_flag_of)
+#define PF isa_get_flag(x86_flag_pf)
 
 
 #define cc_a	(!CF && !ZF)
@@ -90,13 +90,13 @@ op_cc_all(cmov_r32_rm32)
 
 void op_jecxz_rel8_impl() {
 	isa_target = isa_regs->eip + isa_inst.imm.b;
-	if (!isa_load_reg(reg_ecx))
+	if (!isa_load_reg(x86_reg_ecx))
 		isa_regs->eip = isa_target;
 }
 
 void op_jcxz_rel8_impl() {
 	isa_target = isa_regs->eip + isa_inst.imm.b;
-	if (!isa_load_reg(reg_cx))
+	if (!isa_load_reg(x86_reg_cx))
 		isa_regs->eip = isa_target;
 }
 

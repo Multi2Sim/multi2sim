@@ -22,7 +22,7 @@
 
 
 #define op_stdop_al_imm8(stdop, wb) void op_##stdop##_al_imm8_impl() { \
-	uint8_t al = isa_load_reg(reg_al); \
+	uint8_t al = isa_load_reg(x86_reg_al); \
 	uint8_t imm8 = isa_inst.imm.b; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
@@ -36,13 +36,13 @@
 		: "al" \
 	); \
 	if (wb) \
-		isa_store_reg(reg_al, al); \
+		isa_store_reg(x86_reg_al, al); \
 	isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_ax_imm16(stdop, wb) void op_##stdop##_ax_imm16_impl() { \
-	uint16_t ax = isa_load_reg(reg_ax); \
+	uint16_t ax = isa_load_reg(x86_reg_ax); \
 	uint16_t imm16 = isa_inst.imm.w; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
@@ -56,13 +56,13 @@
 		: "ax" \
 	); \
 	if (wb) \
-		isa_store_reg(reg_ax, ax); \
+		isa_store_reg(x86_reg_ax, ax); \
 	isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_eax_imm32(stdop, wb) void op_##stdop##_eax_imm32_impl() { \
-	uint32_t eax = isa_load_reg(reg_eax); \
+	uint32_t eax = isa_load_reg(x86_reg_eax); \
 	uint32_t imm32 = isa_inst.imm.d; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
@@ -76,7 +76,7 @@
 		: "eax" \
 	); \
 	if (wb) \
-		isa_store_reg(reg_eax, eax); \
+		isa_store_reg(x86_reg_eax, eax); \
 	isa_regs->eflags = flags; \
 }
 
