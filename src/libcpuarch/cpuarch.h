@@ -52,11 +52,6 @@ extern char *cpu_config_help;
 extern char *cpu_config_file_name;
 extern char *cpu_report_file_name;
 
-extern enum cpu_sim_kind_enum {
-	cpu_sim_kind_functional,
-	cpu_sim_kind_detailed
-} cpu_sim_kind;
-
 extern int cpu_cores;
 extern int cpu_threads;
 
@@ -68,7 +63,7 @@ extern int cpu_thread_switch_penalty;
 
 /* Recover_kind */
 extern char *cpu_recover_kind_map[];
-extern enum cpu_recover_kind_enum {
+extern enum cpu_recover_kind_t {
 	cpu_recover_kind_writeback = 0,
 	cpu_recover_kind_commit
 } cpu_recover_kind;
@@ -76,7 +71,7 @@ extern int cpu_recover_penalty;
 
 /* Fetch stage */
 extern char *cpu_fetch_kind_map[];
-extern enum cpu_fetch_kind_enum {
+extern enum cpu_fetch_kind_t {
 	cpu_fetch_kind_shared = 0,
 	cpu_fetch_kind_timeslice,
 	cpu_fetch_kind_switchonevent
@@ -87,7 +82,7 @@ extern int cpu_decode_width;
 
 /* Dispatch stage */
 extern char *cpu_dispatch_kind_map[];
-extern enum cpu_dispatch_kind_enum {
+extern enum cpu_dispatch_kind_t {
 	cpu_dispatch_kind_shared = 0,
 	cpu_dispatch_kind_timeslice,
 } cpu_dispatch_kind;
@@ -95,7 +90,7 @@ extern int cpu_dispatch_width;
 
 /* Issue stage */
 extern char *cpu_issue_kind_map[];
-extern enum cpu_issue_kind_enum {
+extern enum cpu_issue_kind_t {
 	cpu_issue_kind_shared = 0,
 	cpu_issue_kind_timeslice,
 } cpu_issue_kind;
@@ -103,7 +98,7 @@ extern int cpu_issue_width;
 
 /* Commit stage */
 extern char *cpu_commit_kind_map[];
-extern enum cpu_commit_kind_enum {
+extern enum cpu_commit_kind_t {
 	cpu_commit_kind_shared = 0,
 	cpu_commit_kind_timeslice
 } cpu_commit_kind;
@@ -126,105 +121,19 @@ int mm_rtranslate(struct mm_t *mm, uint32_t phaddr, int *ctx, uint32_t *vtladdr)
 
 /* Micro Operations */
 
-enum dep_enum {
-	
-	DNONE	= 0,
+enum uop_enum
+{
 
-	/** Integer dependences **/
-	
-	DEAX	= 0x01,
-	DECX	= 0x02,
-	DEDX	= 0x03,
-	DEBX	= 0x04,
-	DESP	= 0x05,
-	DEBP	= 0x06,
-	DESI	= 0x07,
-	DEDI	= 0x08,
-
-	DES	= 0x09,
-	DCS	= 0x0a,
-	DSS	= 0x0b,
-	DDS	= 0x0c,
-	DFS	= 0x0d,
-	DGS	= 0x0e,
-
-	DZPS	= 0x0f,
-	DOF	= 0x10,
-	DCF	= 0x11,
-	DDF	= 0x12,
-
-	DAUX	= 0x13,  /* Intermediate results for uops */
-	DAUX2	= 0x14,
-	DEA	= 0x15,  /* Internal - Effective address */
-	DDATA   = 0x16,  /* Internal - Data for load/store */
-
-	DEP_INT_FIRST  = DEAX,
-	DEP_INT_LAST   = DDATA,
-	DEP_INT_COUNT  = DEP_INT_LAST - DEP_INT_FIRST + 1,
-
-	DEP_FLAG_FIRST = DZPS,
-	DEP_FLAG_LAST  = DDF,
-	DEP_FLAG_COUNT = DEP_FLAG_LAST - DEP_FLAG_FIRST + 1,
-
-	
-	/** Floating-point dependences **/
-
-	DST0    = 0x17,  /* FP registers */
-	DST1    = 0x18,
-	DST2    = 0x19,
-	DST3    = 0x1a,
-	DST4    = 0x1b,
-	DST5    = 0x1c,
-	DST6    = 0x1d,
-	DST7    = 0x1e,
-	DFPST   = 0x1f,  /* FP status word */
-	DFPCW   = 0x20,  /* FP control word */
-	DFPAUX  = 0x21,  /* Auxiliary FP reg */
-
-	DEP_FP_FIRST  = DST0,
-	DEP_FP_LAST   = DFPAUX,
-	DEP_FP_COUNT  = DEP_FP_LAST - DEP_FP_FIRST + 1,
-
-	DEP_FP_STACK_FIRST = DST0,
-	DEP_FP_STACK_LAST  = DST7,
-	DEP_FP_STACK_COUNT = DEP_FP_STACK_LAST - DEP_FP_STACK_FIRST + 1,
-
-
-	/** Special dependences **/
-
-	DRM8	= 0x100,
-	DRM16	= 0x101,
-	DRM32	= 0x102,
-	DIR8	= 0x200,
-	DIR16	= 0x201,
-	DIR32	= 0x202,
-	DR8	= 0x300,
-	DR16	= 0x301,
-	DR32	= 0x302,
-	DSREG	= 0x400,
-	DMEM	= 0x500,  /* m8, m16, m32 or m64 */
-	DEASEG	= 0x501,  /* Effective address - segment */
-	DEABAS	= 0x502,  /* Effective address - base */
-	DEAIDX	= 0x503,  /* Effective address - index */
-	DSTI    = 0x600,  /* FP - ToS+Index */
-	DFPOP   = 0x601,  /* FP - Pop stack */
-	DFPOP2  = 0x602,  /* FP - Pop stack twice */
-	DFPUSH  = 0x603   /* FP - Push stack */
-};
-
-#define DEP_IS_INT_REG(dep) ((dep) >= DEP_INT_FIRST && (dep) <= DEP_INT_LAST)
-#define DEP_IS_FP_REG(dep) ((dep) >= DEP_FP_FIRST && (dep) <= DEP_FP_LAST)
-#define DEP_IS_FLAG(dep) ((dep) >= DEP_FLAG_FIRST && (dep) <= DEP_FLAG_LAST)
-#define DEP_IS_VALID(dep) (DEP_IS_INT_REG(dep) || DEP_IS_FP_REG(dep))
-
-enum uop_enum {
 #define UOP(_uop, _fu, _flags) uop_##_uop,
 #include "uop1.dat"
 #undef UOP
+
 	uop_count
 };
 
-enum fu_class_enum {
+
+enum fu_class_t
+{
 	fu_none = 0,
 	fu_intadd,
 	fu_intsub,
@@ -243,7 +152,9 @@ enum fu_class_enum {
 	fu_count
 };
 
-enum uop_flags_enum {
+
+enum uop_flags_t
+{
 	FICOMP        = 0x001,  /* Integer computation */
 	FLCOMP        = 0x002,  /* Logic computation */
 	FFCOMP        = 0x004,  /* Floating-point computation */
@@ -255,6 +166,7 @@ enum uop_flags_enum {
 	FRET          = 0x100,  /* Return from procedure */
 	FCOND         = 0x200   /* Conditional branch */
 };
+
 
 #define IDEP_COUNT 3
 #define ODEP_COUNT 4
@@ -405,7 +317,7 @@ void uopq_recover(int core, int thread);
 /* Reorder Buffer */
 
 extern char *rob_kind_map[];
-extern enum rob_kind_enum {
+extern enum rob_kind_t {
 	rob_kind_private = 0,
 	rob_kind_shared
 } rob_kind;
@@ -430,7 +342,7 @@ struct uop_t *rob_get(int core, int thread, int index);
 /* Instruction Queue */
 
 extern char *iq_kind_map[];
-extern enum iq_kind_enum {
+extern enum iq_kind_t {
 	iq_kind_shared = 0,
 	iq_kind_private
 } iq_kind;
@@ -450,7 +362,7 @@ void iq_recover(int core, int thread);
 /* Load/Store Queue */
 
 extern char *lsq_kind_map[];
-extern enum lsq_kind_enum {
+extern enum lsq_kind_t {
 	lsq_kind_shared = 0,
 	lsq_kind_private
 } lsq_kind;
@@ -484,11 +396,11 @@ void eventq_recover(int core, int thread);
 
 /* Physical Register File */
 
-#define RF_MIN_INT_SIZE  (DEP_INT_COUNT + ODEP_COUNT)
-#define RF_MIN_FP_SIZE  (DEP_FP_COUNT + ODEP_COUNT)
+#define RF_MIN_INT_SIZE  (x86_dep_int_count + ODEP_COUNT)
+#define RF_MIN_FP_SIZE  (x86_dep_fp_count + ODEP_COUNT)
 
 extern char *rf_kind_map[];
-extern enum rf_kind_enum {
+extern enum rf_kind_t {
 	rf_kind_shared = 0,
 	rf_kind_private
 } rf_kind;
@@ -503,7 +415,7 @@ struct phreg_t {
 struct rf_t {
 
 	/* Integer registers */
-	int int_rat[DEP_INT_COUNT];
+	int int_rat[x86_dep_int_count];
 	struct phreg_t *int_phreg;
 	int int_phreg_count;
 	int *int_free_phreg;
@@ -511,7 +423,7 @@ struct rf_t {
 
 	/* FP registers */
 	int fp_top_of_stack;  /* Value between 0 and 7 */
-	int fp_rat[DEP_FP_COUNT];
+	int fp_rat[x86_dep_fp_count];
 	struct phreg_t *fp_phreg;
 	int fp_phreg_count;
 	int *fp_free_phreg;
@@ -540,7 +452,7 @@ void rf_check_integrity(int core, int thread);
 /* Branch Predictor */
 
 extern char *bpred_kind_map[];
-extern enum bpred_kind_enum {
+extern enum bpred_kind_t {
 	bpred_kind_perfect = 0,
 	bpred_kind_taken,
 	bpred_kind_nottaken,
@@ -636,7 +548,8 @@ int tcache_lookup(struct tcache_t *tcache, uint32_t eip, int pred,
 
 /* Pipeline Trace */
 
-enum ptrace_stage_enum {
+enum ptrace_stage_t
+{
 	ptrace_fetch = 0,
 	ptrace_dispatch,
 	ptrace_issue,
@@ -651,7 +564,7 @@ void ptrace_done(void);
 
 void ptrace_new_uop(struct uop_t *uop);
 void ptrace_end_uop(struct uop_t *uop);
-void ptrace_new_stage(struct uop_t *uop, enum ptrace_stage_enum stage);
+void ptrace_new_stage(struct uop_t *uop, enum ptrace_stage_t stage);
 void ptrace_new_cycle(void);
 
 
@@ -670,7 +583,8 @@ void ptrace_new_cycle(void);
 
 
 /* Dispatch stall reasons */
-enum di_stall_enum {
+enum di_stall_t
+{
 	di_stall_used = 0,  /* Dispatch slot was used with a finally committed inst. */
 	di_stall_spec,  /* Used with a speculative inst. */
 	di_stall_uopq,  /* No instruction in the uop queue */

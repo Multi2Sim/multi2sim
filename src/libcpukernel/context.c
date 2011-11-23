@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2007  Rafael Ubal Tena (ubal@gap.upv.es)
+ *  Copyright (C) 2007  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -241,15 +241,15 @@ void ctx_recover(struct ctx_t *ctx)
 }
 
 
-int ctx_get_status(struct ctx_t *ctx, enum ctx_status_enum status)
+int ctx_get_status(struct ctx_t *ctx, enum ctx_status_t status)
 {
 	return (ctx->status & status) > 0;
 }
 
 
-static void ctx_update_status(struct ctx_t *ctx, enum ctx_status_enum status)
+static void ctx_update_status(struct ctx_t *ctx, enum ctx_status_t status)
 {
-	enum ctx_status_enum status_diff;
+	enum ctx_status_t status_diff;
 
 	/* Remove contexts from the following lists:
 	 *   running, suspended, zombie */
@@ -306,13 +306,13 @@ static void ctx_update_status(struct ctx_t *ctx, enum ctx_status_enum status)
 }
 
 
-void ctx_set_status(struct ctx_t *ctx, enum ctx_status_enum status)
+void ctx_set_status(struct ctx_t *ctx, enum ctx_status_t status)
 {
 	ctx_update_status(ctx, ctx->status | status);
 }
 
 
-void ctx_clear_status(struct ctx_t *ctx, enum ctx_status_enum status)
+void ctx_clear_status(struct ctx_t *ctx, enum ctx_status_t status)
 {
 	ctx_update_status(ctx, ctx->status & ~status);
 }
@@ -555,7 +555,7 @@ void ctx_exit_robust_list(struct ctx_t *ctx)
 void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path)
 {
 	uint32_t start, end;
-	enum mem_access_enum perm, page_perm;
+	enum mem_access_t perm, page_perm;
 	struct mem_page_t *page;
 	struct mem_t *mem = ctx->mem;
 	int fd;

@@ -26,11 +26,14 @@
 
 
 /* List of opcodes */
-enum x86_opcode_t {
-	op_none = 0,
+enum x86_opcode_t
+{
+	x86_op_none = 0,
+
 #define DEFINST(name,op1,op2,op3,modrm,imm,prefixes) op_##name,
 #include "machine.dat"
 #undef DEFINST
+
 	x86_opcode_count
 };
 
@@ -128,7 +131,7 @@ struct x86_inst_t
 
 	/* Prefixes */
 	enum x86_reg_t segment;  /* Reg. used to override segment */
-	int prefixes;  /* Mask of prefixes of type 'enum x86_prefix_enum' */
+	int prefixes;  /* Mask of prefixes of type 'enum x86_prefix_t' */
 	int op_size;  /* Operand size: 2 or 4, default 4 */
 	int addr_size;  /* Address size: 2 or 4, default 4 */
 	int rep;  /* Number of iteration for string inst (updated by user) */

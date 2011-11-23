@@ -2062,7 +2062,7 @@ void syscall_do()
 	case syscall_code_mprotect:
 	{
 		uint32_t start, len, prot;
-		enum mem_access_enum perm = 0;
+		enum mem_access_t perm = 0;
 
 		start = isa_regs->ebx;
 		len = isa_regs->ecx;

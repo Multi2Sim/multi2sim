@@ -147,7 +147,7 @@ void uopq_recover(int core, int thread)
 /* Instruction Queue */
 
 char *iq_kind_map[] = { "Shared", "Private" };
-enum iq_kind_enum iq_kind;
+enum iq_kind_t iq_kind;
 int iq_size;
 
 
@@ -250,7 +250,7 @@ void iq_recover(int core, int thread)
 /* Load/Store Queue */
 
 char *lsq_kind_map[] = { "Shared", "Private" };
-enum lsq_kind_enum lsq_kind;
+enum lsq_kind_t lsq_kind;
 int lsq_size;
 
 
