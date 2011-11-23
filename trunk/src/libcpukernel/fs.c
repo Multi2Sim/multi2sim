@@ -131,7 +131,7 @@ struct fd_t *fdt_entry_get(struct fdt_t *fdt, int index)
 }
 
 
-struct fd_t *fdt_entry_new(struct fdt_t *fdt, enum fd_kind_enum kind,
+struct fd_t *fdt_entry_new(struct fdt_t *fdt, enum fd_kind_t kind,
 	int host_fd, char *path, int flags)
 {
 	int i, guest_fd;

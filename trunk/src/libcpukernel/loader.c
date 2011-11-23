@@ -203,7 +203,7 @@ static void ld_load_sections(struct ctx_t *ctx, struct elf_file_t *elf_file)
 	struct elf_section_t *section;
 	int i;
 
-	enum mem_access_enum perm;
+	enum mem_access_t perm;
 	char flags_str[200];
 
 	ld_debug("\nLoading ELF sections\n");

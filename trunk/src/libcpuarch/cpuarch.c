@@ -205,8 +205,6 @@ struct cpu_t *cpu;
 
 /* Configuration file and parameters */
 
-enum cpu_sim_kind_enum cpu_sim_kind = cpu_sim_kind_functional;
-
 char *cpu_config_file_name = "";
 char *cpu_report_file_name = "";
 
@@ -222,24 +220,24 @@ int cpu_thread_quantum;
 int cpu_thread_switch_penalty;
 
 char *cpu_recover_kind_map[] = { "Writeback", "Commit" };
-enum cpu_recover_kind_enum cpu_recover_kind;
+enum cpu_recover_kind_t cpu_recover_kind;
 int cpu_recover_penalty;
 
 char *cpu_fetch_kind_map[] = { "Shared", "TimeSlice", "SwitchOnEvent" };
-enum cpu_fetch_kind_enum cpu_fetch_kind;
+enum cpu_fetch_kind_t cpu_fetch_kind;
 
 int cpu_decode_width;
 
 char *cpu_dispatch_kind_map[] = { "Shared", "TimeSlice" };
-enum cpu_dispatch_kind_enum cpu_dispatch_kind;
+enum cpu_dispatch_kind_t cpu_dispatch_kind;
 int cpu_dispatch_width;
 
 char *cpu_issue_kind_map[] = { "Shared", "TimeSlice" };
-enum cpu_issue_kind_enum cpu_issue_kind;
+enum cpu_issue_kind_t cpu_issue_kind;
 int cpu_issue_width;
 
 char *cpu_commit_kind_map[] = { "Shared", "TimeSlice" };
-enum cpu_commit_kind_enum cpu_commit_kind;
+enum cpu_commit_kind_t cpu_commit_kind;
 int cpu_commit_width;
 
 int cpu_occupancy_stats;

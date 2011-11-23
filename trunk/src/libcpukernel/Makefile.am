@@ -18,7 +18,8 @@ libcpukernel_a_SOURCES = \
 	regs.c \
 	signal.c \
 	syscall.c \
-	syscall.dat
+	syscall.dat \
+	uinst.c
 
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \

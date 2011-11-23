@@ -22,7 +22,7 @@
 
 /* Return the reason why a thread cannot be dispatched. If it can,
  * return di_stall_used. */
-static enum di_stall_enum can_dispatch_thread(int core, int thread)
+static enum di_stall_t can_dispatch_thread(int core, int thread)
 {
 	struct list_t *uopq = THREAD.uopq;
 	struct uop_t *uop;
@@ -50,7 +50,7 @@ static enum di_stall_enum can_dispatch_thread(int core, int thread)
 static int dispatch_thread(int core, int thread, int quant)
 {
 	struct uop_t *uop;
-	enum di_stall_enum stall;
+	enum di_stall_t stall;
 
 	while (quant) {
 		

@@ -73,12 +73,15 @@ static struct x86_opcode_info_elem_t *x86_opcode_info_table_0f[0x100];
 
 
 /* List of instructions. */
-static struct x86_opcode_info_t x86_opcode_info_list[x86_opcode_count] = {
-	{op_none, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+static struct x86_opcode_info_t x86_opcode_info_list[x86_opcode_count] =
+{
+	{ x86_op_none, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) \
-	,{op_##name,op1,op2,op3,modrm,imm,pfx,#name,0,0,0,0,0,0,0,0,0}
+, { op_##name, op1, op2, op3, modrm, imm, pfx, #name, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 #include <machine.dat>
 #undef DEFINST
+
 };
 
 
@@ -493,7 +496,7 @@ void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst)
 
 	/* Find instruction */
 	buf32 = * (uint32_t *) buf;
-	inst->opcode = op_none;
+	inst->opcode = x86_op_none;
 	table = * (unsigned char *) buf == 0x0f ? x86_opcode_info_table_0f : x86_opcode_info_table;
 	index = * (unsigned char *) buf == 0x0f ? * (unsigned char *) (buf + 1): * (unsigned char *) buf;
 	for (elem = table[index]; elem; elem = elem->next) {
@@ -554,21 +557,38 @@ void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst)
 		}
 
 		/* Decode Displacement */
-		switch (inst->disp_size) {
-		case 1: inst->disp = * (int8_t *) buf; break;
-		case 2: inst->disp = * (int16_t *) buf; break;
-		case 4: inst->disp = * (int32_t *) buf; break;
+		switch (inst->disp_size)
+		{
+		case 1:
+			inst->disp = * (int8_t *) buf;
+			break;
+
+		case 2:
+			inst->disp = * (int16_t *) buf;
+			break;
+
+		case 4:
+			inst->disp = * (int32_t *) buf;
+			break;
 		}
 		buf += inst->disp_size;  /* Skip disp */
 	}
 
 	/* Decode Immediate */
 	inst->imm_size = info->imm_size;
-	switch (inst->imm_size) {
-	case 0: break;
-	case 1: inst->imm.b = * (uint8_t *) buf; break;
-	case 2: inst->imm.w = * (uint16_t *) buf; break;
-	case 4: inst->imm.d = * (uint32_t *) buf; break;
+	switch (inst->imm_size)
+	{
+	case 1:
+		inst->imm.b = * (uint8_t *) buf;
+		break;
+
+	case 2:
+		inst->imm.w = * (uint16_t *) buf;
+		break;
+
+	case 4:
+		inst->imm.d = * (uint32_t *) buf;
+		break;
 	}
 	buf += inst->imm_size;  /* Skip imm */
 

@@ -208,7 +208,7 @@ void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size)
  * mem. The returned buffer is null if addr+size exceeds the page
  * boundaries. */
 void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size,
-	enum mem_access_enum access)
+	enum mem_access_t access)
 {
 	struct mem_page_t *page;
 	uint32_t offset;
@@ -238,7 +238,7 @@ void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size,
 
 /* Access memory without exceeding page boundaries. */
 static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
-	int size, void *buf, enum mem_access_enum access)
+	int size, void *buf, enum mem_access_t access)
 {
 	struct mem_page_t *page;
 	uint32_t offset;
@@ -298,7 +298,7 @@ static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
 /* Access mem at address 'addr'.
  * This access can cross page boundaries. */
 void mem_access(struct mem_t *mem, uint32_t addr, int size, void *buf,
-	enum mem_access_enum access)
+	enum mem_access_t access)
 {
 	uint32_t offset;
 	int chunksize;
@@ -421,7 +421,7 @@ uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size)
  * aligned to page boundaries.
  * If some page already exists, add permissions. */
 void mem_map(struct mem_t *mem, uint32_t addr, int size,
-	enum mem_access_enum perm)
+	enum mem_access_t perm)
 {
 	uint32_t tag1, tag2, tag;
 	struct mem_page_t *page;
@@ -467,7 +467,7 @@ void mem_unmap(struct mem_t *mem, uint32_t addr, int size)
  * Guest pages must already exist.
  * Both 'addr' and 'size' must be a multiple of the page size. */
 void mem_map_host(struct mem_t *mem, struct fd_t *fd, uint32_t addr, int size,
-	enum mem_access_enum perm, void *host_ptr)
+	enum mem_access_t perm, void *host_ptr)
 {
 	uint32_t ptr;
 	struct mem_page_t *page;
@@ -546,7 +546,7 @@ void mem_unmap_host(struct mem_t *mem, uint32_t addr)
 
 
 /* Assign protection attributes to pages */
-void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_enum perm)
+void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t perm)
 {
 	uint32_t tag1, tag2, tag;
 	struct mem_page_t *page;

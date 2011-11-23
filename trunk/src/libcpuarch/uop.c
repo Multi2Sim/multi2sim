@@ -22,45 +22,45 @@
 
 struct string_map_t dep_map = {
 	33, {
-		{ "eax",        DEAX },
-		{ "ecx",        DECX },
-		{ "edx",        DEDX },
-		{ "ebx",        DEBX },
-		{ "esp",        DESP },
-		{ "ebp",        DEBP },
-		{ "esi",        DESI },
-		{ "edi",        DEDI },
+		{ "eax",        x86_dep_eax },
+		{ "ecx",        x86_dep_ecx },
+		{ "edx",        x86_dep_edx },
+		{ "ebx",        x86_dep_ebx },
+		{ "esp",        x86_dep_esp },
+		{ "ebp",        x86_dep_ebp },
+		{ "esi",        x86_dep_esi },
+		{ "edi",        x86_dep_edi },
 		
-		{ "es",         DES },
-		{ "cs",         DCS },
-		{ "ss",         DSS },
-		{ "ds",         DDS },
-		{ "fs",         DFS },
-		{ "gs",         DGS },
+		{ "es",         x86_dep_es },
+		{ "cs",         x86_dep_cs },
+		{ "ss",         x86_dep_ss },
+		{ "ds",         x86_dep_ds },
+		{ "fs",         x86_dep_fs },
+		{ "gs",         x86_dep_gs },
 
-		{ "zps",        DZPS },
-		{ "of",         DOF },
-		{ "cf",         DCF },
-		{ "df",         DDF },
+		{ "zps",        x86_dep_zps },
+		{ "of",         x86_dep_of },
+		{ "cf",         x86_dep_cf },
+		{ "df",         x86_dep_df },
 
-		{ "aux",        DAUX },
-		{ "aux2",       DAUX2 },
+		{ "aux",        x86_dep_aux },
+		{ "aux2",       x86_dep_aux2 },
 
-		{ "addr",       DEA },
-		{ "data",       DDATA },
+		{ "addr",       x86_dep_ea },
+		{ "data",       x86_dep_data },
 
-		{ "st",		DST0 },
-		{ "st(1)",      DST1 },
-		{ "st(2)",      DST2 },
-		{ "st(3)",      DST3 },
-		{ "st(4)",      DST4 },
-		{ "st(5)",      DST5 },
-		{ "st(6)",      DST6 },
-		{ "st(7)",      DST7 },
+		{ "st",		x86_dep_st0 },
+		{ "st(1)",      x86_dep_st1 },
+		{ "st(2)",      x86_dep_st2 },
+		{ "st(3)",      x86_dep_st3 },
+		{ "st(4)",      x86_dep_st4 },
+		{ "st(5)",      x86_dep_st5 },
+		{ "st(6)",      x86_dep_st6 },
+		{ "st(7)",      x86_dep_st7 },
 
-		{ "fpst",	DFPST },
-		{ "fpcw",	DFPCW },
-		{ "fpaux",	DFPAUX }
+		{ "fpst",	x86_dep_fpst },
+		{ "fpcw",	x86_dep_fpcw },
+		{ "fpaux",	x86_dep_fpaux }
 	}
 };
 
@@ -172,44 +172,44 @@ void uop_done()
 static int uop_dep_parse(struct list_t *uop_list, int dep)
 {
 	/* Regular dependecy */
-	if (DEP_IS_VALID(dep))
+	if (X86_DEP_IS_VALID(dep))
 		return dep;
 	
 	/* Instruction dependent */
 	switch (dep) {
 
-	case DNONE:
-	case DFPOP:
-	case DFPOP2:
-	case DFPUSH:
+	case x86_dep_none:
+	case x86_dep_fpop:
+	case x86_dep_fpop2:
+	case x86_dep_fpush:
 		return dep;
 
-	case DRM8:
-		return isa_inst.modrm_rm < 4 ? DEAX + isa_inst.modrm_rm : DEAX + isa_inst.modrm_rm - 4;
+	case x86_dep_rm8:
+		return isa_inst.modrm_rm < 4 ? x86_dep_eax + isa_inst.modrm_rm : x86_dep_eax + isa_inst.modrm_rm - 4;
 
-	case DRM16:
-	case DRM32:
-		return DEAX + isa_inst.modrm_rm;
+	case x86_dep_rm16:
+	case x86_dep_rm32:
+		return x86_dep_eax + isa_inst.modrm_rm;
 
-	case DR8:
-		return isa_inst.reg < 4 ? DEAX + isa_inst.reg : DEAX + isa_inst.reg - 4;
+	case x86_dep_r8:
+		return isa_inst.reg < 4 ? x86_dep_eax + isa_inst.reg : x86_dep_eax + isa_inst.reg - 4;
 
-	case DR16:
-	case DR32:
-		return DEAX + isa_inst.reg;
+	case x86_dep_r16:
+	case x86_dep_r32:
+		return x86_dep_eax + isa_inst.reg;
 
-	case DIR8:
-		return isa_inst.opindex < 4 ? DEAX + isa_inst.opindex : DEAX + isa_inst.opindex - 4;
+	case x86_dep_ir8:
+		return isa_inst.opindex < 4 ? x86_dep_eax + isa_inst.opindex : x86_dep_eax + isa_inst.opindex - 4;
 
-	case DIR16:
-	case DIR32:
-		return DEAX + isa_inst.opindex;
+	case x86_dep_ir16:
+	case x86_dep_ir32:
+		return x86_dep_eax + isa_inst.opindex;
 
-	case DSREG:
-		return DES + isa_inst.reg;
+	case x86_dep_sreg:
+		return x86_dep_es + isa_inst.reg;
 	
-	case DSTI:
-		return DST0 + isa_inst.opindex;
+	case x86_dep_sti:
+		return x86_dep_st0 + isa_inst.opindex;
 
 	}
 
@@ -225,17 +225,17 @@ static int uop_idep_parse(struct list_t *uop_list, int dep)
 	/* Load data from memory first if:
 	 *   Dependence is rm8/rm16/rm32 and it is a memory reference.
 	 *   Dependence is m8/m16/m32/m64 */
-	if (((dep == DRM8 || dep == DRM16 || dep == DRM32) && isa_inst.modrm_mod != 3) ||
-		dep == DMEM)
+	if (((dep == x86_dep_rm8 || dep == x86_dep_rm16 || dep == x86_dep_rm32) && isa_inst.modrm_mod != 3) ||
+		dep == x86_dep_mem32)
 	{
 		
 		/* Compute effective address */
 		uop = repos_create_object(uop_repos);
 		uop->uop = uop_effaddr;
-		uop->idep[0] = isa_inst.segment ? isa_inst.segment - x86_reg_es + DES : DNONE;
-		uop->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - x86_reg_eax + DEAX : DNONE;
-		uop->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - x86_reg_eax + DEAX : DNONE;
-		uop->odep[0] = DEA;
+		uop->idep[0] = isa_inst.segment ? isa_inst.segment - x86_reg_es + x86_dep_es : x86_dep_none;
+		uop->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - x86_reg_eax + x86_dep_eax : x86_dep_none;
+		uop->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - x86_reg_eax + x86_dep_eax : x86_dep_none;
+		uop->odep[0] = x86_dep_ea;
 		uop->fu_class = uop_bank[uop->uop].fu_class;
 		uop->flags = uop_bank[uop->uop].flags;
 		list_add(uop_list, uop);
@@ -243,23 +243,23 @@ static int uop_idep_parse(struct list_t *uop_list, int dep)
 		/* Load */
 		uop = repos_create_object(uop_repos);
 		uop->uop = uop_load;
-		uop->idep[0] = DEA;
-		uop->odep[0] = DDATA;
+		uop->idep[0] = x86_dep_ea;
+		uop->odep[0] = x86_dep_data;
 		uop->fu_class = uop_bank[uop->uop].fu_class;
 		uop->flags = uop_bank[uop->uop].flags;
 		list_add(uop_list, uop);
 
-		/* Input dependence of instruction is converted into DDATA */
-		return DDATA;
+		/* Input dependence of instruction is converted into x86_dep_data */
+		return x86_dep_data;
 	}
 
 	/* Effective address parts */
-	if (dep == DEASEG)
-		return isa_inst.segment ? isa_inst.segment - x86_reg_es + DES : DNONE;
-	if (dep == DEABAS)
-		return isa_inst.ea_base ? isa_inst.ea_base - x86_reg_eax + DEAX : DNONE;
-	if (dep == DEAIDX)
-		return isa_inst.ea_index ? isa_inst.ea_index - x86_reg_eax + DEAX : DNONE;
+	if (dep == x86_dep_easeg)
+		return isa_inst.segment ? isa_inst.segment - x86_reg_es + x86_dep_es : x86_dep_none;
+	if (dep == x86_dep_eabas)
+		return isa_inst.ea_base ? isa_inst.ea_base - x86_reg_eax + x86_dep_eax : x86_dep_none;
+	if (dep == x86_dep_eaidx)
+		return isa_inst.ea_index ? isa_inst.ea_index - x86_reg_eax + x86_dep_eax : x86_dep_none;
 
 	/* Regular dependence */
 	return uop_dep_parse(uop_list, dep);
@@ -271,19 +271,19 @@ static int uop_odep_parse(struct list_t *uop_list, int dep)
 	struct uop_t *uop;
 
 	/* Insert store uops */
-	if (((dep == DRM8 || dep == DRM16 || dep == DRM32) && isa_inst.modrm_mod != 3) ||
-		dep == DMEM)
+	if (((dep == x86_dep_rm8 || dep == x86_dep_rm16 || dep == x86_dep_rm32) && isa_inst.modrm_mod != 3) ||
+		dep == x86_dep_mem32)
 	{
 		/* Compute effective address.
 		 * FIXME: The address computation should be removed if there was a
-		 * previous load with the same effective address (e.g. DRM32
+		 * previous load with the same effective address (e.g. x86_dep_rm32
 		 * as source and destination dependence. */
 		uop = repos_create_object(uop_repos);
 		uop->uop = uop_effaddr;
-		uop->idep[0] = isa_inst.segment ? isa_inst.segment - x86_reg_es + DES : DNONE;
-		uop->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - x86_reg_eax + DEAX : DNONE;
-		uop->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - x86_reg_eax + DEAX : DNONE;
-		uop->odep[0] = DEA;
+		uop->idep[0] = isa_inst.segment ? isa_inst.segment - x86_reg_es + x86_dep_es : x86_dep_none;
+		uop->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - x86_reg_eax + x86_dep_eax : x86_dep_none;
+		uop->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - x86_reg_eax + x86_dep_eax : x86_dep_none;
+		uop->odep[0] = x86_dep_ea;
 		uop->fu_class = uop_bank[uop->uop].fu_class;
 		uop->flags = uop_bank[uop->uop].flags;
 		list_add(uop_list, uop);
@@ -291,14 +291,14 @@ static int uop_odep_parse(struct list_t *uop_list, int dep)
 		/* Store */
 		uop = repos_create_object(uop_repos);
 		uop->uop = uop_store;
-		uop->idep[0] = DEA;
-		uop->idep[1] = DDATA;
+		uop->idep[0] = x86_dep_ea;
+		uop->idep[1] = x86_dep_data;
 		uop->fu_class = uop_bank[uop->uop].fu_class;
 		uop->flags = uop_bank[uop->uop].flags;
 		list_add(uop_list, uop);
 
-		/* Output dependence of instruction is DDATA */
-		return DDATA;
+		/* Output dependence of instruction is x86_dep_data */
+		return x86_dep_data;
 	}
 	
 	/* Regular dependence */
@@ -330,7 +330,7 @@ void uop_dump_buf(struct uop_t *uop, char *buf, int size)
 	dump_buf(&buf, &size, "%s ", uop_bank[uop->uop].name);
 	comma = "";
 	for (i = count = 0; i < IDEP_COUNT; i++) {
-		if (!DEP_IS_VALID(uop->idep[i]))
+		if (!X86_DEP_IS_VALID(uop->idep[i]))
 			continue;
 		dump_buf(&buf, &size, "%s%s", comma,
 			map_value(&dep_map, uop->idep[i]));
@@ -344,13 +344,13 @@ void uop_dump_buf(struct uop_t *uop, char *buf, int size)
 	fp_top_of_stack = 0;
 	for (i = count = 0; i < ODEP_COUNT; i++) {
 		loreg = uop->odep[i];
-		if (loreg == DFPOP)
+		if (loreg == x86_dep_fpop)
 			fp_top_of_stack--;
-		else if (loreg == DFPOP2)
+		else if (loreg == x86_dep_fpop2)
 			fp_top_of_stack -= 2;
-		else if (loreg == DFPUSH)
+		else if (loreg == x86_dep_fpush)
 			fp_top_of_stack++;
-		if (!DEP_IS_VALID(loreg))
+		if (!X86_DEP_IS_VALID(loreg))
 			continue;
 		dump_buf(&buf, &size, "%s%s", comma, map_value(&dep_map, loreg));
 		comma = ",";
