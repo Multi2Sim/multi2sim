@@ -690,6 +690,8 @@ int opencl_func_run(int code, unsigned int *args)
 		opencl_kernel_load(kernel, kernel_name_str);
 
 		/* Return kernel id */
+		if (errcode_ret)
+			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
 		retval = kernel->id;
 		break;
 	}
