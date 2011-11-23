@@ -50,9 +50,17 @@ extern uint64_t ke_max_cycles;
 extern uint64_t ke_max_inst;
 extern uint64_t ke_max_time;
 
+extern enum cpu_sim_kind_t {
+	cpu_sim_kind_functional,
+	cpu_sim_kind_detailed
+} cpu_sim_kind;
+
+
 /* Reason for simulation end */
 extern struct string_map_t ke_sim_finish_map;
-extern enum ke_sim_finish_enum {
+
+extern enum ke_sim_finish_t
+{
 	ke_sim_finish_none,  /* Simulation not finished */
 	ke_sim_finish_ctx,  /* Contexts finished */
 	ke_sim_finish_max_cpu_inst,  /* Maximum instruction count reached in CPU */
@@ -80,11 +88,12 @@ struct fd_t;
 
 #define MEM_LOGPAGESIZE    12
 #define MEM_PAGESHIFT      MEM_LOGPAGESIZE
-#define MEM_PAGESIZE       (1<<MEM_LOGPAGESIZE)
-#define MEM_PAGEMASK       (~(MEM_PAGESIZE-1))
+#define MEM_PAGESIZE       (1 << MEM_LOGPAGESIZE)
+#define MEM_PAGEMASK       (~(MEM_PAGESIZE - 1))
 #define MEM_PAGE_COUNT     1024
 
-enum mem_access_enum {
+enum mem_access_t
+{
 	mem_access_none   = 0x00,
 	mem_access_read   = 0x01,
 	mem_access_write  = 0x02,
@@ -97,7 +106,8 @@ enum mem_access_enum {
 extern int mem_safe_mode;
 
 /* Host mapping: mappings performed with file descriptors other than -1 */
-struct mem_host_mapping_t {
+struct mem_host_mapping_t
+{
 	void *host_ptr;  /* Pointer to the host memory space */
 	uint32_t addr;  /* Guest range base */
 	uint32_t size;  /* Host mapping size */
@@ -107,15 +117,17 @@ struct mem_host_mapping_t {
 };
 
 /* A 4KB page of memory */
-struct mem_page_t {
+struct mem_page_t
+{
 	uint32_t tag;
-	enum mem_access_enum perm;  /* Access permissions; combination of flags */
+	enum mem_access_t perm;  /* Access permissions; combination of flags */
 	struct mem_page_t *next;
 	unsigned char *data;
 	struct mem_host_mapping_t *host_mapping;  /* If other than null, page is host mapping */
 };
 
-struct mem_t {
+struct mem_t
+{
 	struct mem_page_t *pages[MEM_PAGE_COUNT];
 	int sharing;  /* Number of contexts sharing memory map */
 	uint32_t last_address;  /* Address of last access */
@@ -135,23 +147,23 @@ struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr);
 uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size);
 uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size);
 
-void mem_map(struct mem_t *mem, uint32_t addr, int size, enum mem_access_enum perm);
+void mem_map(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t perm);
 void mem_unmap(struct mem_t *mem, uint32_t addr, int size);
 
 void mem_map_host(struct mem_t *mem, struct fd_t *fd, uint32_t addr,
-	int size, enum mem_access_enum perm, void *data);
+	int size, enum mem_access_t perm, void *data);
 void mem_unmap_host(struct mem_t *mem, uint32_t addr);
 
-void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_enum perm);
+void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t perm);
 void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size);
 
 #define mem_read(mem, addr, size, buf) mem_access(mem, addr, size, buf, mem_access_read)
 #define mem_write(mem, addr, size, buf) mem_access(mem, addr, size, buf, mem_access_write)
-void mem_access(struct mem_t *mem, uint32_t addr, int size, void *buf, enum mem_access_enum access);
+void mem_access(struct mem_t *mem, uint32_t addr, int size, void *buf, enum mem_access_t access);
 void mem_zero(struct mem_t *mem, uint32_t addr, int size);
 int mem_read_string(struct mem_t *mem, uint32_t addr, int size, char *str);
 void mem_write_string(struct mem_t *mem, uint32_t addr, char *str);
-void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size, enum mem_access_enum access);
+void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t access);
 
 void mem_dump(struct mem_t *mem, char *filename, uint32_t start, uint32_t end);
 void mem_load(struct mem_t *mem, char *filename, uint32_t start);
@@ -161,8 +173,8 @@ void mem_load(struct mem_t *mem, char *filename, uint32_t start);
 
 /* Registers */
 
-struct regs_t {
-	
+struct regs_t
+{
 	/* Integer registers */
 	uint32_t eax, ecx, edx, ebx;
 	uint32_t esp, ebp, esi, edi;
@@ -196,8 +208,8 @@ void regs_fpu_stack_dump(struct regs_t *regs, FILE *f);
 
 /* Program loader */
 
-struct loader_t {
-	
+struct loader_t
+{
 	/* Program data */
 	struct elf_file_t *elf_file;
 	struct lnlist_t *args;
@@ -239,7 +251,180 @@ void ld_get_full_path(struct ctx_t *ctx, char *filename, char *fullpath, int siz
 
 
 
-/* Machine & ISA */
+
+/*
+ * Microinstructions
+ */
+
+enum x86_dep_t {
+
+	x86_dep_none = 0,
+
+	/** Integer dependences **/
+
+	x86_dep_eax = 1,
+	x86_dep_ecx = 2,
+	x86_dep_edx = 3,
+	x86_dep_ebx = 4,
+	x86_dep_esp = 5,
+	x86_dep_ebp = 6,
+	x86_dep_esi = 7,
+	x86_dep_edi = 8,
+
+	x86_dep_es = 9,
+	x86_dep_cs = 10,
+	x86_dep_ss = 11,
+	x86_dep_ds = 12,
+	x86_dep_fs = 13,
+	x86_dep_gs = 14,
+
+	x86_dep_zps = 15,
+	x86_dep_of = 16,
+	x86_dep_cf = 17,
+	x86_dep_df = 18,
+
+	x86_dep_aux = 19,  /* Intermediate results for uops */
+	x86_dep_aux2 = 20,
+	x86_dep_ea = 21,  /* Internal - Effective address */
+	x86_dep_data = 22,  /* Internal - Data for load/store */
+
+	x86_dep_int_first = x86_dep_eax,
+	x86_dep_int_last = x86_dep_data,
+	x86_dep_int_count = x86_dep_int_last - x86_dep_int_first + 1,
+
+	x86_dep_flag_first = x86_dep_zps,
+	x86_dep_flag_last = x86_dep_df,
+	x86_dep_flag_count = x86_dep_flag_last - x86_dep_flag_first + 1,
+
+
+	/** Floating-point dependences **/
+
+	x86_dep_st0 = 23,  /* FP registers */
+	x86_dep_st1 = 24,
+	x86_dep_st2 = 25,
+	x86_dep_st3 = 26,
+	x86_dep_st4 = 27,
+	x86_dep_st5 = 28,
+	x86_dep_st6 = 29,
+	x86_dep_st7 = 30,
+	x86_dep_fpst = 31,  /* FP status word */
+	x86_dep_fpcw = 32,  /* FP control word */
+	x86_dep_fpaux = 33,  /* Auxiliary FP reg */
+
+	x86_dep_fp_first = x86_dep_st0,
+	x86_dep_fp_last = x86_dep_fpaux,
+	x86_dep_fp_count = x86_dep_fp_last - x86_dep_fp_first + 1,
+
+	x86_dep_fp_stack_first = x86_dep_st0,
+	x86_dep_fp_stack_last  = x86_dep_st7,
+	x86_dep_fp_stack_count = x86_dep_fp_stack_last - x86_dep_fp_stack_first + 1,
+
+
+	/** Special dependences **/
+
+	x86_dep_rm8 = 0x100,
+	x86_dep_rm16 = 0x101,
+	x86_dep_rm32 = 0x102,
+
+	x86_dep_ir8 = 0x200,
+	x86_dep_ir16 = 0x201,
+	x86_dep_ir32 = 0x202,
+
+	x86_dep_r8 = 0x300,
+	x86_dep_r16 = 0x301,
+	x86_dep_r32 = 0x302,
+	x86_dep_sreg = 0x400,
+
+	x86_dep_mem8 = 0x500,
+	x86_dep_mem16 = 0x501,
+	x86_dep_mem32 = 0x502,
+	x86_dep_mem64 = 0x503,
+
+	x86_dep_easeg = 0x601,  /* Effective address - segment */
+	x86_dep_eabas = 0x602,  /* Effective address - base */
+	x86_dep_eaidx = 0x603,  /* Effective address - index */
+
+	x86_dep_sti = 0x700,  /* FP - ToS+Index */
+	x86_dep_fpop = 0x701,  /* FP - Pop stack */
+	x86_dep_fpop2 = 0x702,  /* FP - Pop stack twice */
+	x86_dep_fpush = 0x703   /* FP - Push stack */
+};
+
+#define X86_DEP_IS_INT_REG(dep) ((dep) >= x86_dep_int_first && (dep) <= x86_dep_int_last)
+#define X86_DEP_IS_FP_REG(dep) ((dep) >= x86_dep_fp_first && (dep) <= x86_dep_fp_last)
+#define X86_DEP_IS_FLAG(dep) ((dep) >= x86_dep_flag_first && (dep) <= x86_dep_flag_last)
+#define X86_DEP_IS_VALID(dep) (X86_DEP_IS_INT_REG(dep) || X86_DEP_IS_FP_REG(dep))
+
+
+enum x86_uinst_opcode_t
+{
+	x86_uinst_nop = 0,
+	x86_uinst_move,
+	x86_uinst_add,
+	x86_uinst_sub,
+	x86_uinst_mult,
+	x86_uinst_div,
+	x86_uinst_effaddr,
+
+	x86_uinst_and,
+	x86_uinst_or,
+	x86_uinst_xor,
+	x86_uinst_not,
+	x86_uinst_shift,
+	x86_uinst_sign,
+
+	x86_uinst_fp_move,
+	x86_uinst_fp_add,
+	x86_uinst_fp_sub,
+	x86_uinst_fp_mult,
+	x86_uinst_fp_div,
+	x86_uinst_fp_sqrt,
+
+	x86_uinst_load,
+	x86_uinst_store,
+
+	x86_uinst_call,
+	x86_uinst_ret,
+	x86_uinst_jump,
+	x86_uinst_branch,
+
+	x86_uinst_syscall,
+
+	x86_uinst_opcode_count
+};
+
+
+#define X86_UINST_MAX_IDEPS 3
+#define X86_UINST_MAX_ODEPS 4
+
+struct x86_uinst_t
+{
+	/* Operation */
+	enum x86_uinst_opcode_t opcode;
+
+	/* Input dependences */
+	int idep_count;
+	enum x86_dep_t idep[X86_UINST_MAX_IDEPS];
+
+	/* Output dependences */
+	int odep_count;
+	enum x86_dep_t odep[X86_UINST_MAX_ODEPS];
+
+	/* Memory access */
+	uint32_t address;
+	int size;
+};
+
+
+struct x86_uinst_t *x86_uinst_create(void);
+void x86_uinst_free(struct x86_uinst_t *uinst);
+
+
+
+
+/*
+ * Machine & ISA
+ */
 
 extern struct ctx_t *isa_ctx;
 extern struct regs_t *isa_regs;
@@ -249,13 +434,14 @@ extern uint32_t isa_target;
 extern struct x86_inst_t isa_inst;
 extern uint64_t isa_inst_count;
 extern int isa_function_level;
+extern struct list_t *isa_uinst_list;
 
 #define isa_call_debug(...) debug(isa_call_debug_category, __VA_ARGS__)
 #define isa_inst_debug(...) debug(isa_inst_debug_category, __VA_ARGS__)
 extern int isa_call_debug_category;
 extern int isa_inst_debug_category;
 
-/* References to inst implementation functions */
+/* References to functions emulating x86 instructions */
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) void op_##name##_impl(void);
 #include <machine.dat>
 #undef DEFINST
@@ -324,6 +510,16 @@ uint16_t isa_load_fpu_status(void);
 uint32_t isa_effective_address(void);
 uint32_t isa_moffs_address(void);
 
+void isa_uinst_add(enum x86_uinst_opcode_t opcode,
+	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
+	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
+	enum x86_dep_t odep3);
+void isa_uinst_add_mem(enum x86_uinst_opcode_t opcode, uint32_t addr, int size,
+	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
+	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
+	enum x86_dep_t odep3);
+void isa_uinst_clear(void);
+
 void isa_init(void);
 void isa_done(void);
 void isa_dump(FILE *f);
@@ -352,7 +548,8 @@ void syscall_summary(void);
 /* System signals */
 
 /* Every contexts (parent and children) has its own masks */
-struct signal_masks_t {
+struct signal_masks_t
+{
 	uint64_t pending;  /* mask of pending signals */
 	uint64_t blocked;  /* mask of blocked signals */
 	uint64_t backup;  /* backup of blocked signals while suspended */
@@ -365,7 +562,8 @@ void signal_masks_free(struct signal_masks_t *signal_masks);
 
 /* This structure is shared for parent and child contexts. A change
  * in the singal handler by any of them affects all of them. */
-struct signal_handlers_t {
+struct signal_handlers_t
+{
 	struct sim_sigaction {
 		uint32_t handler;
 		uint32_t flags;
@@ -395,7 +593,8 @@ int sim_sigset_member(uint64_t *sim_sigset, int signal);
 
 /* Files management */
 
-enum fd_kind_enum {
+enum fd_kind_t
+{
 	fd_kind_regular = 0,  /* Regular file */
 	fd_kind_std,  /* Standard input or output */
 	fd_kind_pipe,  /* A pipe */
@@ -405,8 +604,9 @@ enum fd_kind_enum {
 };
 
 /* File descriptor */
-struct fd_t {
-	enum fd_kind_enum kind;  /* File type */
+struct fd_t
+{
+	enum fd_kind_t kind;  /* File type */
 	int guest_fd;  /* Guest file descriptor id */
 	int host_fd;  /* Equivalent open host file */
 	char path[MAX_PATH_SIZE];  /* Equivalent path if applicable */
@@ -414,7 +614,8 @@ struct fd_t {
 };
 
 /* File descriptor table */
-struct fdt_t {
+struct fdt_t
+{
 	struct list_t *fd_list;  /* List of file descriptors (fd_t elements) */
 };
 
@@ -423,7 +624,7 @@ void fdt_free(struct fdt_t *fdt);
 void fdt_dump(struct fdt_t *fdt, FILE *f);
 
 struct fd_t *fdt_entry_get(struct fdt_t *fdt, int index);
-struct fd_t *fdt_entry_new(struct fdt_t *fdt, enum fd_kind_enum kind, int host_fd, char *path, int flags);
+struct fd_t *fdt_entry_new(struct fdt_t *fdt, enum fd_kind_t kind, int host_fd, char *path, int flags);
 void fdt_entry_free(struct fdt_t *fdt, int index);
 void fdt_entry_dump(struct fdt_t *fdt, int index, FILE *f);
 
@@ -438,8 +639,8 @@ int fdt_get_guest_fd(struct fdt_t *fdt, int host_fd);
 #define ctx_debug(...) debug(ctx_debug_category, __VA_ARGS__)
 extern int ctx_debug_category;
 
-struct ctx_t {
-	
+struct ctx_t
+{
 	/* Context properties */
 	int status;
 	int pid;  /* Context id */
@@ -508,7 +709,8 @@ struct ctx_t {
 	struct signal_handlers_t *signal_handlers;
 };
 
-enum ctx_status_enum {
+enum ctx_status_t
+{
 	ctx_running      = 0x00001,  /* it is able to run instructions */
 	ctx_specmode     = 0x00002,  /* executing in speculative mode */
 	ctx_suspended    = 0x00004,  /* suspended in a system call */
@@ -550,9 +752,9 @@ void ctx_recover(struct ctx_t *ctx);
 struct ctx_t *ctx_get(int pid);
 struct ctx_t *ctx_get_zombie(struct ctx_t *parent, int pid);
 
-int ctx_get_status(struct ctx_t *ctx, enum ctx_status_enum status);
-void ctx_set_status(struct ctx_t *ctx, enum ctx_status_enum status);
-void ctx_clear_status(struct ctx_t *ctx, enum ctx_status_enum status);
+int ctx_get_status(struct ctx_t *ctx, enum ctx_status_t status);
+void ctx_set_status(struct ctx_t *ctx, enum ctx_status_t status);
+void ctx_clear_status(struct ctx_t *ctx, enum ctx_status_t status);
 
 int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t bitset);
 void ctx_exit_robust_list(struct ctx_t *ctx);
@@ -563,8 +765,8 @@ void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path);
 
 /* Kernel */
 
-struct kernel_t {
-
+struct kernel_t
+{
 	/* pid & mid assignment */
 	int current_pid;
 	int current_mid;
@@ -600,7 +802,8 @@ struct kernel_t {
 	uint64_t inst_count;  /* Number of emulated instructions */
 };
 
-enum ke_list_enum {
+enum ke_list_kind_t
+{
 	ke_list_context = 0,
 	ke_list_running,
 	ke_list_suspended,
@@ -609,10 +812,10 @@ enum ke_list_enum {
 	ke_list_alloc
 };
 
-void ke_list_insert_head(enum ke_list_enum list, struct ctx_t *ctx);
-void ke_list_insert_tail(enum ke_list_enum list, struct ctx_t *ctx);
-void ke_list_remove(enum ke_list_enum list, struct ctx_t *ctx);
-int ke_list_member(enum ke_list_enum list, struct ctx_t *ctx);
+void ke_list_insert_head(enum ke_list_kind_t list, struct ctx_t *ctx);
+void ke_list_insert_tail(enum ke_list_kind_t list, struct ctx_t *ctx);
+void ke_list_remove(enum ke_list_kind_t list, struct ctx_t *ctx);
+int ke_list_member(enum ke_list_kind_t list, struct ctx_t *ctx);
 
 
 /* Global Multi2Sim

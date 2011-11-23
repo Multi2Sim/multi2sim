@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2007  Rafael Ubal Tena (ubal@gap.upv.es)
+ *  Copyright (C) 2007  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,9 +28,11 @@
 uint64_t ke_max_inst = 0;
 uint64_t ke_max_cycles = 0;
 uint64_t ke_max_time = 0;
+enum cpu_sim_kind_t cpu_sim_kind = cpu_sim_kind_functional;
+
 
 /* Reason for simulation end */
-enum ke_sim_finish_enum ke_sim_finish = ke_sim_finish_none;
+enum ke_sim_finish_t ke_sim_finish = ke_sim_finish_none;
 struct string_map_t ke_sim_finish_map = {
 	9, {
 		{ "ContextsFinished", ke_sim_finish_ctx },
@@ -123,7 +125,7 @@ void ke_dump(FILE *f)
 }
 
 
-void ke_list_insert_head(enum ke_list_enum list, struct ctx_t *ctx)
+void ke_list_insert_head(enum ke_list_kind_t list, struct ctx_t *ctx)
 {
 	assert(!ke_list_member(list, ctx));
 	switch (list) {
@@ -137,7 +139,7 @@ void ke_list_insert_head(enum ke_list_enum list, struct ctx_t *ctx)
 }
 
 
-void ke_list_insert_tail(enum ke_list_enum list, struct ctx_t *ctx)
+void ke_list_insert_tail(enum ke_list_kind_t list, struct ctx_t *ctx)
 {
 	assert(!ke_list_member(list, ctx));
 	switch (list) {
@@ -151,7 +153,7 @@ void ke_list_insert_tail(enum ke_list_enum list, struct ctx_t *ctx)
 }
 
 
-void ke_list_remove(enum ke_list_enum list, struct ctx_t *ctx)
+void ke_list_remove(enum ke_list_kind_t list, struct ctx_t *ctx)
 {
 	assert(ke_list_member(list, ctx));
 	switch (list) {
@@ -165,7 +167,7 @@ void ke_list_remove(enum ke_list_enum list, struct ctx_t *ctx)
 }
 
 
-int ke_list_member(enum ke_list_enum list, struct ctx_t *ctx)
+int ke_list_member(enum ke_list_kind_t list, struct ctx_t *ctx)
 {
 	switch (list) {
 	case ke_list_context: return DOUBLE_LINKED_LIST_MEMBER(ke, context, ctx);

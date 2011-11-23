@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2007  Rafael Ubal Tena (ubal@gap.upv.es)
+ *  Copyright (C) 2007  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,9 +19,6 @@
 
 #include <cpukernel.h>
 
-#define DUMP_ABORT printf("\n%lld\n", (long long) isa_inst_count), abort()
-#define DUMP printf("\n"), x86_inst_dump(&isa_inst, stdout), printf("\n")
-
 
 void op_bound_r16_rm32_impl()
 {
@@ -35,28 +32,36 @@ void op_bound_r32_rm64_impl()
 }
 
 
-void op_bsf_r32_rm32_impl() {
+void op_bsf_r32_rm32_impl()
+{
 	uint32_t r32 = isa_load_r32();
 	uint32_t rm32 = isa_load_rm32();
+
 	unsigned long flags = isa_regs->eflags;
 	asm volatile (
-		"push %4 ; popf\n\t"
+		"push %4\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"bsf %3, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=g" (r32)
 		: "g" (r32), "g" (rm32), "g" (flags)
 		: "eax"
 	);
 	isa_store_r32(r32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_r32, x86_dep_zps, 0, 0);
 }
 
 
-void op_bsr_r32_rm32_impl() {
+void op_bsr_r32_rm32_impl()
+{
 	uint32_t r32 = isa_load_r32();
 	uint32_t rm32 = isa_load_rm32();
+
 	unsigned long flags = isa_regs->eflags;
 	asm volatile (
 		"push %4 ; popf\n\t"
@@ -70,11 +75,15 @@ void op_bsr_r32_rm32_impl() {
 	);
 	isa_store_r32(r32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_r32, x86_dep_zps, 0, 0);
 }
 
 
-void op_bswap_ir32_impl() {
+void op_bswap_ir32_impl()
+{
 	uint32_t ir32 = isa_load_ir32();
+
 	asm volatile (
 		"mov %1, %%eax\n\t"
 		"bswap %%eax\n\t"
@@ -84,13 +93,17 @@ void op_bswap_ir32_impl() {
 		: "eax"
 	);
 	isa_store_ir32(ir32);
+
+	isa_uinst_add(x86_uinst_shift, x86_dep_ir32, 0, 0, x86_dep_ir32, 0, 0, 0);
 }
 
 
-void op_bt_rm32_r32_impl() {
+void op_bt_rm32_r32_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t r32 = isa_load_r32();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
 		"push %3 ; popf\n\t"
 		"mov %2, %%ecx\n\t"
@@ -102,13 +115,17 @@ void op_bt_rm32_r32_impl() {
 		: "eax", "ecx"
 	);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_cf, 0, 0, 0);
 }
 
 
-void op_bt_rm32_imm8_impl() {
+void op_bt_rm32_imm8_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t imm8 = isa_inst.imm.b;
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
 		"push %3 ; popf\n\t"
 		"mov %2, %%ecx\n\t"
@@ -120,34 +137,45 @@ void op_bt_rm32_imm8_impl() {
 		: "eax", "ecx"
 	);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_cf, 0, 0, 0);
 }
 
 
-void op_bts_rm32_imm8_impl() {
+void op_bts_rm32_imm8_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t imm8 = isa_inst.imm.b;
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %4 ; popf\n\t"
+		"push %4\n\t"
+		"popf\n\t"
 		"mov %3, %%ecx\n\t"
 		"mov %2, %%eax\n\t"
 		"btsl %%ecx, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (rm32)
 		: "m" (rm32), "m" (imm8), "g" (flags)
 		: "eax", "ecx"
 	);
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_cf, 0, 0);
 }
 
 
-void op_call_rel32_impl() {
+void op_call_rel32_impl()
+{
 	isa_regs->esp -= 4;
 	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eip);
 	isa_target = isa_regs->eip + isa_inst.imm.d;
 	isa_regs->eip = isa_target;
+
+	isa_uinst_add(x86_uinst_call, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -156,6 +184,8 @@ void op_call_rm32_impl() {
 	isa_regs->esp -= 4;
 	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eip);
 	isa_regs->eip = isa_target;
+
+	isa_uinst_add(x86_uinst_call, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -163,32 +193,44 @@ void op_cbw_impl()
 {
 	uint16_t ax = (int8_t) isa_load_reg(x86_reg_al);
 	isa_store_reg(x86_reg_ax, ax);
+
+	isa_uinst_add(x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
-void op_cdq_impl() {
+void op_cdq_impl()
+{
 	int32_t signed_eax = isa_regs->eax;
 	isa_regs->edx = signed_eax < 0 ? (int32_t) -1 : 0;
+
+	isa_uinst_add(x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_edx, 0, 0, 0);
 }
 
 
-void op_cld_impl() {
+void op_cld_impl()
+{
 	isa_clear_flag(x86_flag_df);
+
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, 0, x86_dep_df, 0, 0);
 }
 
 
-void op_cmpxchg_rm32_r32_impl() {
+void op_cmpxchg_rm32_r32_impl()
+{
 	uint32_t eax = isa_regs->eax;
 	unsigned long flags = isa_regs->eflags;
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t r32 = isa_load_r32();
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %4, %%eax\n\t"
 		"mov %5, %%ebx\n\t"
 		"mov %6, %%ecx\n\t"
 		"cmpxchg %%ecx, %%ebx\n\t"
-		"pushf\n\tpop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		"mov %%eax, %1\n\t"
 		"mov %%ebx, %2\n\t"
 		: "=g" (flags), "=m" (eax), "=m" (rm32)
@@ -198,6 +240,10 @@ void op_cmpxchg_rm32_r32_impl() {
 	isa_regs->eflags = flags;
 	isa_store_reg(x86_reg_eax, eax);
 	isa_store_rm32(rm32);
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_eax, x86_dep_rm32, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
+	isa_uinst_add(x86_uinst_move, x86_dep_zps, x86_dep_r32, 0, x86_dep_rm32, 0, 0, 0);
+	isa_uinst_add(x86_uinst_move, x86_dep_cf, x86_dep_rm32, 0, x86_dep_eax, 0, 0, 0);
 }
 
 void op_cmpxchg8b_m64_impl()
@@ -221,6 +267,10 @@ void op_cmpxchg8b_m64_impl()
 		isa_regs->edx = m64 >> 32;
 		isa_regs->eax = m64;
 	}
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_edx, x86_dep_eax, x86_dep_mem64, x86_dep_cf, 0, 0, 0);
+	isa_uinst_add(x86_uinst_move, x86_dep_ecx, x86_dep_edx, 0, x86_dep_mem64, 0, 0, 0);
+	isa_uinst_add(x86_uinst_move, x86_dep_mem64, 0, 0, x86_dep_edx, x86_dep_eax, 0, 0);
 }
 
 
@@ -329,6 +379,11 @@ void op_cpuid_impl()
 	default:
 		fatal("inst 'cpuid' not implemented for eax=0x%x", isa_regs->eax);
 	}
+
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_eax, 0, 0, 0);
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_ebx, 0, 0, 0);
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_ecx, 0, 0, 0);
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_edx, 0, 0, 0);
 }
 
 
@@ -336,78 +391,104 @@ void op_cwde_impl()
 {
 	uint32_t eax = (int16_t) isa_load_reg(x86_reg_ax);
 	isa_store_reg(x86_reg_eax, eax);
+
+	isa_uinst_add(x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
-void op_dec_rm8_impl() {
+void op_dec_rm8_impl()
+{
 	uint8_t rm8 = isa_load_rm8();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%al\n\t"
 		"dec %%al\n\t"
 		"mov %%al, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=g" (rm8)
 		: "g" (rm8), "g" (flags)
 		: "al"
 	);
 	isa_store_rm8(rm8);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_of, 0);
 }
 
 
-void op_dec_rm32_impl() {
+void op_dec_rm32_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"dec %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=g" (rm32)
 		: "g" (rm32), "g" (flags)
 		: "eax"
 	);
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_of, 0);
 }
 
 
-void op_dec_ir16_impl() {
+void op_dec_ir16_impl()
+{
 	uint16_t ir16 = isa_load_ir16();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%ax\n\t"
 		"dec %%ax\n\t"
 		"mov %%ax, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0"
 		: "=g" (flags), "=g" (ir16)
 		: "g" (ir16), "g" (flags)
 		: "eax"
 	);
 	isa_store_ir16(ir16);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_ir16, 0, 0, x86_dep_ir16, x86_dep_zps, x86_dep_of, 0);
 }
 
 
-void op_dec_ir32_impl() {
+void op_dec_ir32_impl()
+{
 	uint32_t ir32 = isa_load_ir32();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"dec %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=g" (ir32)
 		: "g" (ir32), "g" (flags)
 		: "eax"
 	);
 	isa_store_ir32(ir32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_ir32, 0, 0, x86_dep_ir32, x86_dep_zps, x86_dep_of, 0);
 }
 
 
@@ -415,8 +496,9 @@ void op_div_rm8_impl()
 {
 	uint16_t ax = isa_load_reg(x86_reg_ax);
 	uint8_t rm8 = isa_load_rm8();
+
 	if (!rm8)
-		fatal("div_rm8: division by 0");
+		fatal("%s: division by 0", __FUNCTION__);
 	asm volatile(
 		"mov %1, %%ax\n\t"
 		"mov %2, %%bl\n\t"
@@ -427,15 +509,19 @@ void op_div_rm8_impl()
 		: "ax", "bl"
 	);
 	isa_store_reg(x86_reg_ax, ax);
+
+	isa_uinst_add(x86_uinst_div, x86_dep_eax, x86_dep_rm8, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
-void op_div_rm32_impl() {
+void op_div_rm32_impl()
+{
 	uint32_t eax = isa_regs->eax;
 	uint32_t edx = isa_regs->edx;
 	uint32_t rm32 = isa_load_rm32();
+
 	if (!rm32)
-		fatal("div_rm32: division by 0");
+		fatal("%s: division by 0", __FUNCTION__);
 	asm volatile (
 		"mov %2, %%eax\n\t"
 		"mov %3, %%edx\n\t"
@@ -449,20 +535,25 @@ void op_div_rm32_impl() {
 	);
 	isa_store_reg(x86_reg_eax, eax);
 	isa_store_reg(x86_reg_edx, edx);
+
+	isa_uinst_add(x86_uinst_div, x86_dep_edx, x86_dep_eax, x86_dep_rm32, x86_dep_eax, x86_dep_edx, 0, 0);
 }
 
 
-void op_hlt_impl() {
-	abort();
+void op_hlt_impl()
+{
+	fatal("%s: 'hlt' instruction", __FUNCTION__);
 }
 
 
-void op_idiv_rm32_impl() {
+void op_idiv_rm32_impl()
+{
 	uint32_t eax = isa_regs->eax;
 	uint32_t edx = isa_regs->edx;
 	uint32_t rm32 = isa_load_rm32();
+
 	if (!rm32)
-		fatal("idiv_rm32: division by 0");
+		fatal("%s: division by 0", __FUNCTION__);
 	asm volatile (
 		"mov %2, %%eax\n\t"
 		"mov %3, %%edx\n\t"
@@ -476,6 +567,8 @@ void op_idiv_rm32_impl() {
 	);
 	isa_store_reg(x86_reg_eax, eax);
 	isa_store_reg(x86_reg_edx, edx);
+
+	isa_uinst_add(x86_uinst_div, x86_dep_rm32, x86_dep_eax, 0, x86_dep_eax, x86_dep_edx, 0, 0);
 }
 
 
@@ -485,14 +578,17 @@ void op_imul_rm32_impl()
 	uint32_t rm32 = isa_load_rm32();
 	unsigned long flags = isa_regs->eflags;
 	uint32_t edx;
+
 	asm volatile (
-		"push %5 ; popf\n\t"
+		"push %5\n\t"
+		"popf\n\t"
 		"mov %3, %%eax\n\t"
 		"mov %4, %%edx\n\t"
 		"imul %%edx\n\t"
 		"mov %%edx, %1\n\t"
 		"mov %%eax, %2\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (edx), "=m" (eax)
 		: "m" (eax), "m" (rm32), "g" (flags)
 		: "eax", "edx"
@@ -500,140 +596,184 @@ void op_imul_rm32_impl()
 	isa_store_reg(x86_reg_eax, eax);
 	isa_store_reg(x86_reg_edx, edx);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_mult, x86_dep_rm32, x86_dep_eax, 0, x86_dep_eax, x86_dep_edx, x86_dep_cf, x86_dep_of);
 }
 
 
-void op_imul_r32_rm32_impl() {
+void op_imul_r32_rm32_impl()
+{
 	uint32_t r32 = isa_load_r32();
 	uint32_t rm32 = isa_load_rm32();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %4 ; popf\n\t"
+		"push %4\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"mov %3, %%ebx\n\t"
 		"imul %%ebx, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (r32)
 		: "m" (r32), "m" (rm32), "g" (flags)
 		: "eax", "ebx"
 	);
 	isa_store_r32(r32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_mult, x86_dep_r32, x86_dep_rm32, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
 }
 
 
-void op_imul_r32_rm32_imm8_impl() {
+void op_imul_r32_rm32_imm8_impl()
+{
 	uint32_t r32;
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t imm8 = (int8_t) isa_inst.imm.b;
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %4 ; popf\n\t"
+		"push %4\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"mov %3, %%ebx\n\t"
 		"imul %%ebx, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (r32)
 		: "m" (rm32), "m" (imm8), "g" (flags)
 		: "eax", "ebx"
 	);
 	isa_store_r32(r32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_mult, x86_dep_rm32, 0, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
 }
 
 
-void op_imul_r32_rm32_imm32_impl() {
+void op_imul_r32_rm32_imm32_impl()
+{
 	uint32_t r32;
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t imm32 = isa_inst.imm.d;
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %4 ; popf\n\t"
+		"push %4\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"mov %3, %%ebx\n\t"
 		"imul %%ebx, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (r32)
 		: "m" (rm32), "m" (imm32), "g" (flags)
 		: "eax", "ebx"
 	);
 	isa_store_r32(r32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_mult, x86_dep_rm32, 0, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
 }
 
 
-void op_inc_rm8_impl() {
+void op_inc_rm8_impl()
+{
 	uint8_t rm8 = isa_load_rm8();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%al\n\t"
 		"inc %%al\n\t"
 		"mov %%al, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=g" (rm8)
 		: "g" (rm8), "g" (flags)
 		: "al"
 	);
 	isa_store_rm8(rm8);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_add, x86_dep_rm8, 0, 0, x86_dep_rm8, 0, x86_dep_zps, x86_dep_of);
 }
 
 
-void op_inc_rm32_impl() {
+void op_inc_rm32_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"inc %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0"
 		: "=g" (flags), "=g" (rm32)
 		: "g" (rm32), "g" (flags)
 		: "eax"
 	);
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_add, x86_dep_rm32, 0, 0, x86_dep_rm32, 0, x86_dep_zps, x86_dep_of);
 }
 
 
-void op_inc_ir16_impl() {
+void op_inc_ir16_impl()
+{
 	uint16_t ir16 = isa_load_ir16();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%ax\n\t"
 		"inc %%ax\n\t"
 		"mov %%ax, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0"
 		: "=g" (flags), "=g" (ir16)
 		: "g" (ir16), "g" (flags)
 		: "ax"
 	);
 	isa_store_ir16(ir16);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_add, x86_dep_ir16, 0, 0, x86_dep_ir16, 0, x86_dep_zps, x86_dep_of);
 }
 
 
-void op_inc_ir32_impl() {
+void op_inc_ir32_impl()
+{
 	uint32_t ir32 = isa_load_ir32();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"inc %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0"
 		: "=g" (flags), "=g" (ir32)
 		: "g" (ir32), "g" (flags)
 		: "eax"
 	);
 	isa_store_ir32(ir32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_add, x86_dep_ir32, 0, 0, x86_dep_ir32, 0, x86_dep_zps, x86_dep_of);
 }
 
 
@@ -643,10 +783,13 @@ void op_int_3_impl()
 }
 
 
-void op_int_imm8_impl() {
+void op_int_imm8_impl()
+{
 	uint32_t inum = (uint8_t) isa_inst.imm.b;
 	assert(inum == 0x80);
 	syscall_do();
+
+	isa_uinst_add(x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -657,28 +800,40 @@ void op_into_impl()
 
 
 
-void op_jmp_rel8_impl() {
+void op_jmp_rel8_impl()
+{
 	isa_target = isa_regs->eip + (int8_t) isa_inst.imm.b;
 	isa_regs->eip = isa_target;
+
+	isa_uinst_add(x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_jmp_rel32_impl() {
+void op_jmp_rel32_impl()
+{
 	isa_target = isa_regs->eip + isa_inst.imm.d;
 	isa_regs->eip = isa_target;
+
+	isa_uinst_add(x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_jmp_rm32_impl() {
+void op_jmp_rm32_impl()
+{
 	isa_target = isa_load_rm32();
 	isa_regs->eip = isa_target;
+
+	isa_uinst_add(x86_uinst_jump, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_lea_r32_m_impl() {
+void op_lea_r32_m_impl()
+{
 	uint32_t value = isa_effective_address();
 	assert(!isa_inst.segment);
 	isa_store_r32(value);
+
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_easeg, x86_dep_eabas, x86_dep_eaidx, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -690,6 +845,11 @@ void op_leave_impl()
 	mem_read(isa_mem, isa_regs->esp, 4, &value);
 	isa_regs->esp += 4;
 	isa_store_reg(x86_reg_ebp, value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_ebp, 0, 0, x86_dep_esp, 0, 0, 0);
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ebp, 0, 0, 0);
+	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
@@ -698,79 +858,114 @@ void op_lfence_impl()
 }
 
 
-void op_lock_xadd_rm8_r8_impl() {
+void op_lock_xadd_rm8_r8_impl()
+{
 	op_xadd_rm8_r8_impl();
 }
 
 
-void op_lock_xadd_rm32_r32_impl() {
+void op_lock_xadd_rm32_r32_impl()
+{
 	op_xadd_rm32_r32_impl();
 }
 
 
-void op_mov_rm8_imm8_impl() {
+void op_mov_rm8_imm8_impl()
+{
 	uint8_t value = isa_inst.imm.b;
 	isa_store_rm8(value);
+
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_rm8, 0, 0, 0);
 }
 
 
-void op_mov_r8_rm8_impl() {
+void op_mov_r8_rm8_impl()
+{
 	uint8_t value = isa_load_rm8();
 	isa_store_r8(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r8, 0, 0, 0);
 }
 
 
-void op_mov_rm8_r8_impl() {
+void op_mov_rm8_r8_impl()
+{
 	uint8_t value = isa_load_r8();
 	isa_store_rm8(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_r8, 0, 0, x86_dep_rm8, 0, 0, 0);
 }
 
 
-void op_mov_rm16_r16_impl() {
+void op_mov_rm16_r16_impl()
+{
 	uint16_t value = isa_load_r16();
 	isa_store_rm16(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_r16, 0, 0, x86_dep_rm16, 0, 0, 0);
 }
 
 
-void op_mov_rm32_r32_impl() {
+void op_mov_rm32_r32_impl()
+{
 	uint32_t value = isa_load_r32();
 	isa_store_rm32(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_r32, 0, 0, x86_dep_rm32, 0, 0, 0);
 }
 
 
-void op_mov_r16_rm16_impl() {
+void op_mov_r16_rm16_impl()
+{
 	uint16_t value = isa_load_rm16();
 	isa_store_r16(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_r16, 0, 0, 0);
 }
 
 
-void op_mov_r32_rm32_impl() {
+void op_mov_r32_rm32_impl()
+{
 	uint32_t value = isa_load_rm32();
 	isa_store_r32(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_rm32, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
 void op_mov_al_moffs8_impl()
 {
 	uint8_t value;
+
 	mem_read(isa_mem, isa_moffs_address(), 1, &value);
 	isa_store_reg(x86_reg_al, value);
+
+	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_load, isa_moffs_address(), 1, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
 void op_mov_ax_moffs16_impl()
 {
 	uint16_t value;
+
 	mem_read(isa_mem, isa_moffs_address(), 2, &value);
 	isa_store_reg(x86_reg_ax, value);
+
+	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_load, isa_moffs_address(), 2, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
 void op_mov_eax_moffs32_impl()
 {
 	uint32_t value;
+
 	mem_read(isa_mem, isa_moffs_address(), 4, &value);
 	isa_store_reg(x86_reg_eax, value);
+
+	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_load, isa_moffs_address(), 4, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
@@ -778,6 +973,9 @@ void op_mov_moffs8_al_impl()
 {
 	uint8_t value = isa_load_reg(x86_reg_al);
 	mem_write(isa_mem, isa_moffs_address(), 1, &value);
+
+	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_store, isa_moffs_address(), 1, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
 }
 
 
@@ -785,6 +983,9 @@ void op_mov_moffs16_ax_impl()
 {
 	uint16_t value = isa_load_reg(x86_reg_ax);
 	mem_write(isa_mem, isa_moffs_address(), 2, &value);
+
+	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_store, isa_moffs_address(), 2, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
 }
 
 
@@ -792,36 +993,54 @@ void op_mov_moffs32_eax_impl()
 {
 	uint32_t value = isa_load_reg(x86_reg_eax);
 	mem_write(isa_mem, isa_moffs_address(), 4, &value);
+
+	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_store, isa_moffs_address(), 4, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
 }
 
 
-void op_mov_ir8_imm8_impl() {
+void op_mov_ir8_imm8_impl()
+{
 	uint8_t value = isa_inst.imm.b;
 	isa_store_ir8(value);
+
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_ir8, 0, 0, 0);
 }
 
 
-void op_mov_ir16_imm16_impl() {
+void op_mov_ir16_imm16_impl()
+{
 	uint16_t value = isa_inst.imm.w;
 	isa_store_ir16(value);
+
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_ir16, 0, 0, 0);
 }
 
 
-void op_mov_ir32_imm32_impl() {
+void op_mov_ir32_imm32_impl()
+{
 	uint32_t value = isa_inst.imm.d;
 	isa_store_ir32(value);
+
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_ir32, 0, 0, 0);
 }
 
 
-void op_mov_rm16_imm16_impl() {
+void op_mov_rm16_imm16_impl()
+{
 	uint16_t value = isa_inst.imm.w;
 	isa_store_rm16(value);
+
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_rm16, 0, 0, 0);
 }
 
 
-void op_mov_rm32_imm32_impl() {
+void op_mov_rm32_imm32_impl()
+{
 	uint32_t value = isa_inst.imm.d;
 	isa_store_rm32(value);
+
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_rm32, 0, 0, 0);
 }
 
 
@@ -829,8 +1048,10 @@ void op_mov_rm16_sreg_impl()
 {
 	uint16_t value = isa_load_sreg();
 	if (isa_inst.reg != 5)
-		fatal("mov_sreg_rm16: not supported for sreg != gs");
+		fatal("%s: not supported for sreg != gs", __FUNCTION__);
 	isa_store_rm16(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_sreg, 0, 0, x86_dep_rm16, 0, 0, 0);
 }
 
 
@@ -844,8 +1065,10 @@ void op_mov_sreg_rm16_impl()
 {
 	uint16_t value = isa_load_rm16();
 	if (isa_inst.reg != 5)
-		fatal("mov_sreg_rm16: not supported for sreg != gs");
+		fatal("%s: not supported for sreg != gs", __FUNCTION__);
 	isa_store_sreg(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_sreg, 0, 0, 0);
 }
 
 
@@ -855,39 +1078,57 @@ void op_mov_sreg_rm32_impl()
 }
 
 
-void op_movsx_r16_rm8_impl() {
+void op_movsx_r16_rm8_impl()
+{
 	uint16_t value = (int8_t) isa_load_rm8();
 	isa_store_r16(value);
+
+	isa_uinst_add(x86_uinst_sign, x86_dep_rm8, 0, 0, x86_dep_r16, 0, 0, 0);
 }
 
 
-void op_movsx_r32_rm8_impl() {
+void op_movsx_r32_rm8_impl()
+{
 	uint32_t value = (int8_t) isa_load_rm8();
 	isa_store_r32(value);
+
+	isa_uinst_add(x86_uinst_sign, x86_dep_rm8, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
-void op_movsx_r32_rm16_impl() {
+void op_movsx_r32_rm16_impl()
+{
 	uint32_t value = (int16_t) isa_load_rm16();
 	isa_store_r32(value);
+
+	isa_uinst_add(x86_uinst_sign, x86_dep_rm16, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
-void op_movzx_r16_rm8_impl() {
+void op_movzx_r16_rm8_impl()
+{
 	uint8_t value = isa_load_rm8();
 	isa_store_r16(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r16, 0, 0, 0);
 }
 
 
-void op_movzx_r32_rm8_impl() {
+void op_movzx_r32_rm8_impl()
+{
 	uint8_t value = isa_load_rm8();
 	isa_store_r32(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
-void op_movzx_r32_rm16_impl() {
+void op_movzx_r32_rm16_impl()
+{
 	uint16_t value = isa_load_rm16();
 	isa_store_r32(value);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -897,14 +1138,17 @@ void op_mul_rm32_impl()
 	uint32_t rm32 = isa_load_rm32();
 	unsigned long flags = isa_regs->eflags;
 	uint32_t edx;
+
 	asm volatile (
-		"push %5 ; popf\n\t"
+		"push %5\n\t"
+		"popf\n\t"
 		"mov %3, %%eax\n\t"
 		"mov %4, %%edx\n\t"
 		"mul %%edx\n\t"
 		"mov %%edx, %1\n\t"
 		"mov %%eax, %2\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (edx), "=m" (eax)
 		: "m" (eax), "m" (rm32), "g" (flags)
 		: "eax", "edx"
@@ -912,42 +1156,56 @@ void op_mul_rm32_impl()
 	isa_store_reg(x86_reg_eax, eax);
 	isa_store_reg(x86_reg_edx, edx);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_mult, x86_dep_rm32, x86_dep_eax, 0, x86_dep_edx, x86_dep_eax, x86_dep_of, x86_dep_cf);
 }
 
 
-void op_neg_rm8_impl() {
+void op_neg_rm8_impl()
+{
 	uint8_t rm8 = isa_load_rm8();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%al\n\t"
 		"neg %%al\n\t"
 		"mov %%al, %1\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=g" (rm8)
 		: "g" (rm8), "g" (flags)
 		: "al"
 	);
 	isa_store_rm8(rm8);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
-void op_neg_rm32_impl() {
+void op_neg_rm32_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"neg %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=g" (rm32)
 		: "g" (rm32), "g" (flags)
 		: "eax"
 	);
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -963,24 +1221,33 @@ void op_nop_rm32_impl() {
 }
 
 
-void op_not_rm8_impl() {
+void op_not_rm8_impl()
+{
 	uint8_t value = isa_load_rm8();
 	value = ~value;
 	isa_store_rm8(value);
+
+	isa_uinst_add(x86_uinst_not, x86_dep_rm8, 0, 0, x86_dep_rm8, 0, 0, 0);
 }
 
 
-void op_not_rm16_impl() {
+void op_not_rm16_impl()
+{
 	uint16_t value = isa_load_rm16();
 	value = ~value;
 	isa_store_rm16(value);
+
+	isa_uinst_add(x86_uinst_not, x86_dep_rm8, 0, 0, x86_dep_rm16, 0, 0, 0);
 }
 
 
-void op_not_rm32_impl() {
+void op_not_rm32_impl()
+{
 	uint32_t value = isa_load_rm32();
 	value = ~value;
 	isa_store_rm32(value);
+
+	isa_uinst_add(x86_uinst_not, x86_dep_rm8, 0, 0, x86_dep_rm32, 0, 0, 0);
 }
 
 
@@ -1020,30 +1287,47 @@ void op_out_dx_eax_impl()
 }
 
 
-void op_pause_impl() {
+void op_pause_impl()
+{
 }
 
 
-void op_pop_rm32_impl() {
+void op_pop_rm32_impl()
+{
 	uint32_t value;
+
 	mem_read(isa_mem, isa_regs->esp, 4, &value);
 	isa_regs->esp += 4;
 	isa_store_rm32(value);
+
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_rm32, 0, 0, 0);
+	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
-void op_pop_ir32_impl() {
+void op_pop_ir32_impl()
+{
 	uint32_t value;
 	assert(!isa_inst.segment);
 	mem_read(isa_mem, isa_regs->esp, 4, &value);
 	isa_regs->esp += 4;
 	isa_store_ir32(value);
+
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ir32, 0, 0, 0);
+	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
-void op_popf_impl() {
+void op_popf_impl()
+{
 	mem_read(isa_mem, isa_regs->esp, 4, &isa_regs->eflags);
 	isa_regs->esp += 4;
+
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
+	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
@@ -1063,16 +1347,15 @@ void op_prefetchnta_impl() {
 }
 
 
-void op_std_impl() {
-	isa_set_flag(x86_flag_df);
-}
-
-
 void op_push_imm8_impl()
 {
 	uint32_t value = (int8_t) isa_inst.imm.b;
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1081,6 +1364,10 @@ void op_push_imm32_impl()
 	uint32_t value = isa_inst.imm.d;
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1089,6 +1376,10 @@ void op_push_rm32_impl()
 	uint32_t value = isa_load_rm32();
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, x86_dep_rm32, 0, 0, 0, 0, 0);
 }
 
 
@@ -1097,6 +1388,10 @@ void op_push_ir32_impl()
 	uint32_t value = isa_load_ir32();
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, x86_dep_ir32, 0, 0, 0, 0, 0);
 }
 
 
@@ -1104,6 +1399,11 @@ void op_pushf_impl()
 {
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eflags);
+
+	isa_uinst_add(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add(x86_uinst_move, x86_dep_zps, x86_dep_cf, x86_dep_of, x86_dep_aux2, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, x86_dep_aux2, 0, 0, 0, 0, 0);
 }
 
 
@@ -1120,29 +1420,44 @@ void op_rdtsc_impl()
 	);
 	isa_store_reg(x86_reg_edx, edx);
 	isa_store_reg(x86_reg_eax, eax);
+
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_eax, x86_dep_edx, 0, 0);
 }
 
 
-void op_ret_impl() {
+void op_ret_impl()
+{
 	assert(!isa_inst.segment);
 	mem_read(isa_mem, isa_regs->esp, 4, &isa_target);
 	isa_regs->esp += 4;
 	isa_regs->eip = isa_target;
+
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
+	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);  /* add esp, 4 */
+	isa_uinst_add(x86_uinst_ret, x86_dep_aux, 0, 0, 0, 0, 0, 0);  /* jmp aux */
 }
 
 
-void op_repz_ret_impl() {
+void op_repz_ret_impl()
+{
 	op_ret_impl();
 }
 
 
-void op_ret_imm16_impl() {
+void op_ret_imm16_impl()
+{
 	uint16_t pop;
 	assert(!isa_inst.segment);
 	mem_read(isa_mem, isa_regs->esp, 4, &isa_target);
 	pop = isa_inst.imm.w;
 	isa_regs->esp += 4 + pop;
 	isa_regs->eip = isa_target;
+
+	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4 - pop, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
+	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);  /* add esp, 4 */
+	isa_uinst_add(x86_uinst_ret, x86_dep_aux, 0, 0, 0, 0, 0, 0);  /* jmp aux */
 }
 
 
@@ -1152,6 +1467,8 @@ void op_sahf_impl()
 	isa_regs->eflags |= isa_load_reg(x86_reg_ah);
 	isa_regs->eflags &= ~0x28;
 	isa_regs->eflags |= 0x2;
+
+	isa_uinst_add(x86_uinst_move, x86_dep_eax, 0, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -1160,105 +1477,143 @@ void op_sfence_impl()
 }
 
 
-void op_shld_rm32_r32_imm8_impl() {
+void op_shld_rm32_r32_imm8_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t r32 = isa_load_r32();
 	uint8_t imm8 = isa_inst.imm.b;
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %5 ; popf\n\t"
+		"push %5\n\t"
+		"popf\n\t"
 		"mov %4, %%cl\n\t"
 		"mov %3, %%ebx\n\t"
 		"mov %2, %%eax\n\t"
 		"shld %%cl, %%ebx, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (rm32)
 		: "m" (rm32), "m" (r32), "m" (imm8), "g" (flags)
 		: "eax", "ebx", "cl"
 	);
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
-void op_shld_rm32_r32_cl_impl() {
+void op_shld_rm32_r32_cl_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t r32 = isa_load_r32();
 	uint8_t cl = isa_load_reg(x86_reg_cl);
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %5 ; popf\n\t"
+		"push %5\n\t"
+		"popf\n\t"
 		"mov %4, %%cl\n\t"
 		"mov %3, %%ebx\n\t"
 		"mov %2, %%eax\n\t"
 		"shld %%cl, %%ebx, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (rm32)
 		: "m" (rm32), "m" (r32), "m" (cl), "g" (flags)
 		: "eax", "ebx", "cl"
 	);
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, x86_dep_ecx,
+		x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
-void op_shrd_rm32_r32_imm8_impl() {
+void op_shrd_rm32_r32_imm8_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t r32 = isa_load_r32();
 	uint8_t imm8 = isa_inst.imm.b;
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %5 ; popf\n\t"
+		"push %5\n\t"
+		"popf\n\t"
 		"mov %4, %%cl\n\t"
 		"mov %3, %%ebx\n\t"
 		"mov %2, %%eax\n\t"
 		"shrd %%cl, %%ebx, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (rm32)
 		: "m" (rm32), "m" (r32), "m" (imm8), "g" (flags)
 		: "eax", "ebx", "cl"
 	);
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
-void op_shrd_rm32_r32_cl_impl() {
+void op_shrd_rm32_r32_cl_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t r32 = isa_load_r32();
 	uint8_t cl = isa_load_reg(x86_reg_cl);
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %5 ; popf\n\t"
+		"push %5\n\t"
+		"popf\n\t"
 		"mov %4, %%cl\n\t"
 		"mov %3, %%ebx\n\t"
 		"mov %2, %%eax\n\t"
 		"shrd %%cl, %%ebx, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0"
 		: "=g" (flags), "=m" (rm32)
 		: "m" (rm32), "m" (r32), "m" (cl), "g" (flags)
 		: "eax", "ebx", "cl"
 	);
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, x86_dep_ecx,
+		x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
-void op_xadd_rm8_r8_impl() {
+void op_std_impl()
+{
+	isa_set_flag(x86_flag_df);
+
+	isa_uinst_add(x86_uinst_move, 0, 0, 0, 0, x86_dep_df, 0, 0);
+}
+
+
+void op_xadd_rm8_r8_impl()
+{
 	uint8_t rm8 = isa_load_rm8();
 	uint8_t r8 = isa_load_r8();
 	uint8_t sum;
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %4 ; popf\n\t"
+		"push %4\n\t"
+		"popf\n\t"
 		"mov %2, %%al\n\t"
 		"add %3, %%al\n\t"
 		"mov %%al, %1\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (sum)
 		: "m" (rm8), "m" (r8), "g" (flags)
 		: "al"
@@ -1266,19 +1621,28 @@ void op_xadd_rm8_r8_impl() {
 	isa_store_r8(rm8);
 	isa_store_rm8(sum);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_add, x86_dep_rm8, x86_dep_r8, 0, x86_dep_aux, x86_dep_zps, x86_dep_cf, x86_dep_of);
+	isa_uinst_add(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_rm8, 0, 0, 0);
+	isa_uinst_add(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_r8, 0, 0, 0);
 }
 
-void op_xadd_rm32_r32_impl() {
+
+void op_xadd_rm32_r32_impl()
+{
 	uint32_t rm32 = isa_load_rm32();
 	uint32_t r32 = isa_load_r32();
 	uint32_t sum;
 	unsigned long flags = isa_regs->eflags;
+
 	asm volatile (
-		"push %4 ; popf\n\t"
+		"push %4\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"add %3, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
 		: "=g" (flags), "=m" (sum)
 		: "m" (rm32), "m" (r32), "g" (flags)
 		: "eax"
@@ -1286,7 +1650,12 @@ void op_xadd_rm32_r32_impl() {
 	isa_store_r32(rm32);
 	isa_store_rm32(sum);
 	isa_regs->eflags = flags;
+
+	isa_uinst_add(x86_uinst_add, x86_dep_rm32, x86_dep_r32, 0, x86_dep_aux, x86_dep_zps, x86_dep_cf, x86_dep_of);
+	isa_uinst_add(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_rm32, 0, 0, 0);
+	isa_uinst_add(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_r32, 0, 0, 0);
 }
+
 
 void op_xchg_ir16_ax_impl()
 {
@@ -1295,7 +1664,10 @@ void op_xchg_ir16_ax_impl()
 	ir16 = isa_load_ir16();
 	isa_store_reg(x86_reg_ax, ir16);
 	isa_store_ir16(ax);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_ir16, x86_dep_eax, 0, x86_dep_ir16, x86_dep_eax, 0, 0);
 }
+
 
 void op_xchg_ir32_eax_impl()
 {
@@ -1304,7 +1676,10 @@ void op_xchg_ir32_eax_impl()
 	ir32 = isa_load_ir32();
 	isa_store_reg(x86_reg_eax, ir32);
 	isa_store_ir32(eax);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_ir32, x86_dep_eax, 0, x86_dep_ir32, x86_dep_eax, 0, 0);
 }
+
 
 void op_xchg_rm8_r8_impl()
 {
@@ -1313,7 +1688,10 @@ void op_xchg_rm8_r8_impl()
 	r8 = isa_load_r8();
 	isa_store_rm8(r8);
 	isa_store_r8(rm8);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_rm8, x86_dep_r8, 0, x86_dep_rm8, x86_dep_r8, 0, 0);
 }
+
 
 void op_xchg_rm16_r16_impl()
 {
@@ -1322,7 +1700,10 @@ void op_xchg_rm16_r16_impl()
 	r16 = isa_load_r16();
 	isa_store_rm16(r16);
 	isa_store_r16(rm16);
+
+	isa_uinst_add(x86_uinst_move, x86_dep_rm16, x86_dep_r16, 0, x86_dep_rm16, x86_dep_r16, 0, 0);
 }
+
 
 void op_xchg_rm32_r32_impl()
 {
@@ -1331,5 +1712,6 @@ void op_xchg_rm32_r32_impl()
 	r32 = isa_load_r32();
 	isa_store_rm32(r32);
 	isa_store_r32(rm32);
-}
 
+	isa_uinst_add(x86_uinst_move, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_r32, 0, 0);
+}

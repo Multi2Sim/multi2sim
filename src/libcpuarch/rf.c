@@ -23,7 +23,7 @@
 /* Global variables */
 
 char *rf_kind_map[] = { "Shared", "Private" };
-enum rf_kind_enum rf_kind = rf_kind_private;  /* Sharing policy for register file */
+enum rf_kind_t rf_kind = rf_kind_private;  /* Sharing policy for register file */
 int rf_int_size = 80;  /* Per-thread integer register file size */
 int rf_fp_size = 40;  /* Per-thread floating-point register file size */
 
@@ -86,8 +86,8 @@ static void rf_init_thread(int core, int thread)
 	 * Map each logical register to a new physical register,
 	 * and map all flags to the first allocated physical register. */
 	fphreg = -1;
-	for (dep = 0; dep < DEP_INT_COUNT; dep++) {
-		if (DEP_IS_FLAG(dep + DEP_INT_FIRST)) {
+	for (dep = 0; dep < x86_dep_int_count; dep++) {
+		if (X86_DEP_IS_FLAG(dep + x86_dep_int_first)) {
 			assert(fphreg >= 0);
 			phreg = fphreg;
 		} else {
@@ -99,7 +99,7 @@ static void rf_init_thread(int core, int thread)
 	}
 
 	/* Initial mapping for floating-point registers. */
-	for (dep = 0; dep < DEP_FP_COUNT; dep++) {
+	for (dep = 0; dep < x86_dep_fp_count; dep++) {
 		phreg = rf_fp_reclaim(core, thread);
 		rf->fp_phreg[phreg].busy++;
 		rf->fp_rat[dep] = phreg;
@@ -197,9 +197,9 @@ void rf_dump(int core, int thread, FILE *f)
 	}
 
 	fprintf(f, "\nIteger Register Aliasing Table:\n");
-	for (i = DEP_INT_FIRST; i <= DEP_INT_LAST; i++) {
-		fprintf(f, "  %2d->%-3d", i, THREAD.rf->int_rat[i - DEP_INT_FIRST]);
-		if ((i - DEP_INT_FIRST) % 8 == 7)
+	for (i = x86_dep_int_first; i <= x86_dep_int_last; i++) {
+		fprintf(f, "  %2d->%-3d", i, THREAD.rf->int_rat[i - x86_dep_int_first]);
+		if ((i - x86_dep_int_first) % 8 == 7)
 			fprintf(f, "\n");
 	}
 
@@ -220,9 +220,9 @@ void rf_dump(int core, int thread, FILE *f)
 	}
 
 	fprintf(f, "\nIteger Register Aliasing Table:\n");
-	for (i = DEP_FP_FIRST; i <= DEP_FP_LAST; i++) {
-		fprintf(f, "  %2d->%-3d", i, THREAD.rf->fp_rat[i - DEP_FP_FIRST]);
-		if ((i - DEP_FP_FIRST) % 8 == 7)
+	for (i = x86_dep_fp_first; i <= x86_dep_fp_last; i++) {
+		fprintf(f, "  %2d->%-3d", i, THREAD.rf->fp_rat[i - x86_dep_fp_first]);
+		if ((i - x86_dep_fp_first) % 8 == 7)
 			fprintf(f, "\n");
 	}
 
@@ -255,11 +255,11 @@ void rf_count_deps(struct uop_t *uop)
 	int_count = fp_count = flag_count = 0;
 	for (dep = 0; dep < ODEP_COUNT; dep++) {
 		loreg = uop->odep[dep];
-		if (DEP_IS_FLAG(loreg))
+		if (X86_DEP_IS_FLAG(loreg))
 			flag_count++;
-		else if (DEP_IS_INT_REG(loreg))
+		else if (X86_DEP_IS_INT_REG(loreg))
 			int_count++;
-		else if (DEP_IS_FP_REG(loreg))
+		else if (X86_DEP_IS_FP_REG(loreg))
 			fp_count++;
 	}
 	uop->odep_count = flag_count + int_count + fp_count;
@@ -270,11 +270,11 @@ void rf_count_deps(struct uop_t *uop)
 	int_count = fp_count = flag_count = 0;
 	for (dep = 0; dep < IDEP_COUNT; dep++) {
 		loreg = uop->idep[dep];
-		if (DEP_IS_FLAG(loreg))
+		if (X86_DEP_IS_FLAG(loreg))
 			flag_count++;
-		else if (DEP_IS_INT_REG(loreg))
+		else if (X86_DEP_IS_INT_REG(loreg))
 			int_count++;
-		else if (DEP_IS_FP_REG(loreg))
+		else if (X86_DEP_IS_FP_REG(loreg))
 			fp_count++;
 	}
 	uop->idep_count = flag_count + int_count + fp_count;
@@ -319,18 +319,18 @@ void rf_rename(struct uop_t *uop)
 	/* Rename input int/FP registers */
 	for (dep = 0; dep < IDEP_COUNT; dep++) {
 		loreg = uop->idep[dep];
-		if (DEP_IS_INT_REG(loreg)) {
-			phreg = rf->int_rat[loreg - DEP_INT_FIRST];
+		if (X86_DEP_IS_INT_REG(loreg)) {
+			phreg = rf->int_rat[loreg - x86_dep_int_first];
 			uop->ph_idep[dep] = phreg;
 			THREAD.rat_int_reads++;
-		} else if (DEP_IS_FP_REG(loreg)) {
+		} else if (X86_DEP_IS_FP_REG(loreg)) {
 
 			/* Convert to top-of-stack relative */
-			streg = (loreg - DEP_FP_FIRST + rf->fp_top_of_stack) % 8 + DEP_FP_FIRST;
-			assert(DEP_IS_FP_REG(streg));
+			streg = (loreg - x86_dep_fp_first + rf->fp_top_of_stack) % 8 + x86_dep_fp_first;
+			assert(X86_DEP_IS_FP_REG(streg));
 
 			/* Rename it. */
-			phreg = rf->fp_rat[streg - DEP_FP_FIRST];
+			phreg = rf->fp_rat[streg - x86_dep_fp_first];
 			uop->ph_idep[dep] = phreg;
 			THREAD.rat_fp_reads++;
 
@@ -344,56 +344,56 @@ void rf_rename(struct uop_t *uop)
 	flag_count = 0;
 	for (dep = 0; dep < ODEP_COUNT; dep++) {
 		loreg = uop->odep[dep];
-		if (DEP_IS_FLAG(loreg)) {
+		if (X86_DEP_IS_FLAG(loreg)) {
 			
 			/* Record a new flag */
 			flag_count++;
 
-		} else if (DEP_IS_INT_REG(loreg)) {
+		} else if (X86_DEP_IS_INT_REG(loreg)) {
 
 			/* Reclaim a free integer register */
 			phreg = rf_int_reclaim(core, thread);
 			rf->int_phreg[phreg].busy++;
 			rf->int_phreg[phreg].pending = 1;
-			ophreg = rf->int_rat[loreg - DEP_INT_FIRST];
+			ophreg = rf->int_rat[loreg - x86_dep_int_first];
 			if (flag_phreg < 0)
 				flag_phreg = phreg;
 
 			/* Allocate it */
 			uop->ph_odep[dep] = phreg;
 			uop->ph_oodep[dep] = ophreg;
-			rf->int_rat[loreg - DEP_INT_FIRST] = phreg;
+			rf->int_rat[loreg - x86_dep_int_first] = phreg;
 			THREAD.rat_int_writes++;
 
-		} else if (DEP_IS_FP_REG(loreg)) {
+		} else if (X86_DEP_IS_FP_REG(loreg)) {
 		
 			/* Convert to top-of-stack relative */
-			streg = (loreg - DEP_FP_FIRST + rf->fp_top_of_stack) % 8 + DEP_FP_FIRST;
-			assert(DEP_IS_FP_REG(streg));
+			streg = (loreg - x86_dep_fp_first + rf->fp_top_of_stack) % 8 + x86_dep_fp_first;
+			assert(X86_DEP_IS_FP_REG(streg));
 			
 			/* Reclaim a free FP register */
 			phreg = rf_fp_reclaim(core, thread);
 			rf->fp_phreg[phreg].busy++;
 			rf->fp_phreg[phreg].pending = 1;
-			ophreg = rf->fp_rat[streg - DEP_FP_FIRST];
+			ophreg = rf->fp_rat[streg - x86_dep_fp_first];
 			
 			/* Allocate it */
 			uop->ph_odep[dep] = phreg;
 			uop->ph_oodep[dep] = ophreg;
-			rf->fp_rat[streg - DEP_FP_FIRST] = phreg;
+			rf->fp_rat[streg - x86_dep_fp_first] = phreg;
 			THREAD.rat_fp_writes++;
 
-		} else if (loreg == DFPOP) {
+		} else if (loreg == x86_dep_fpop) {
 			
 			/* Pop floating-point stack */
 			rf->fp_top_of_stack = (rf->fp_top_of_stack + 1) % 8;
 
-		} else if (loreg == DFPOP2) {
+		} else if (loreg == x86_dep_fpop2) {
 			
 			/* Pop floating-point stack 2 positions */
 			rf->fp_top_of_stack = (rf->fp_top_of_stack + 2) % 8;
 
-		} else if (loreg == DFPUSH) {
+		} else if (loreg == x86_dep_fpush) {
 			
 			/* Push floating-point stack */
 			rf->fp_top_of_stack = (rf->fp_top_of_stack + 7) % 8;
@@ -412,14 +412,14 @@ void rf_rename(struct uop_t *uop)
 			flag_phreg = rf_int_reclaim(core, thread);
 		for (dep = 0; dep < ODEP_COUNT; dep++) {
 			loreg = uop->odep[dep];
-			if (!DEP_IS_FLAG(loreg))
+			if (!X86_DEP_IS_FLAG(loreg))
 				continue;
 			rf->int_phreg[flag_phreg].busy++;
 			rf->int_phreg[flag_phreg].pending = 1;
-			ophreg = rf->int_rat[loreg - DEP_INT_FIRST];
+			ophreg = rf->int_rat[loreg - x86_dep_int_first];
 			uop->ph_oodep[dep] = ophreg;
 			uop->ph_odep[dep] = flag_phreg;
-			rf->int_rat[loreg - DEP_INT_FIRST] = flag_phreg;
+			rf->int_rat[loreg - x86_dep_int_first] = flag_phreg;
 		}
 	}
 }
@@ -436,9 +436,9 @@ int rf_ready(struct uop_t *uop)
 	for (dep = 0; dep < IDEP_COUNT; dep++) {
 		loreg = uop->idep[dep];
 		phreg = uop->ph_idep[dep];
-		if (DEP_IS_INT_REG(loreg) && rf->int_phreg[phreg].pending)
+		if (X86_DEP_IS_INT_REG(loreg) && rf->int_phreg[phreg].pending)
 			return 0;
-		if (DEP_IS_FP_REG(loreg) && rf->fp_phreg[phreg].pending)
+		if (X86_DEP_IS_FP_REG(loreg) && rf->fp_phreg[phreg].pending)
 			return 0;
 	}
 	return 1;
@@ -455,9 +455,9 @@ void rf_write(struct uop_t *uop)
 	for (dep = 0; dep < ODEP_COUNT; dep++) {
 		loreg = uop->odep[dep];
 		phreg = uop->ph_odep[dep];
-		if (DEP_IS_INT_REG(loreg))
+		if (X86_DEP_IS_INT_REG(loreg))
 			rf->int_phreg[phreg].pending = 0;
-		else if (DEP_IS_FP_REG(loreg))
+		else if (X86_DEP_IS_FP_REG(loreg))
 			rf->fp_phreg[phreg].pending = 0;
 	}
 }
@@ -477,7 +477,7 @@ void rf_undo(struct uop_t *uop)
 		loreg = uop->odep[dep];
 		phreg = uop->ph_odep[dep];
 		ophreg = uop->ph_oodep[dep];
-		if (DEP_IS_INT_REG(loreg)) {
+		if (X86_DEP_IS_INT_REG(loreg)) {
 			
 			/* Decrease busy counter and free if 0. */
 			assert(rf->int_phreg[phreg].busy > 0);
@@ -493,14 +493,14 @@ void rf_undo(struct uop_t *uop)
 			}
 
 			/* Return to previous mapping */
-			rf->int_rat[loreg - DEP_INT_FIRST] = ophreg;
+			rf->int_rat[loreg - x86_dep_int_first] = ophreg;
 			assert(rf->int_phreg[ophreg].busy);
 		
-		} else if (DEP_IS_FP_REG(loreg)) {
+		} else if (X86_DEP_IS_FP_REG(loreg)) {
 			
 			/* Convert to top-of-stack relative */
-			streg = (loreg - DEP_FP_FIRST + rf->fp_top_of_stack) % 8 + DEP_FP_FIRST;
-			assert(DEP_IS_FP_REG(streg));
+			streg = (loreg - x86_dep_fp_first + rf->fp_top_of_stack) % 8 + x86_dep_fp_first;
+			assert(X86_DEP_IS_FP_REG(streg));
 			
 			/* Decrease busy counter and free if 0. */
 			assert(rf->fp_phreg[phreg].busy > 0);
@@ -516,20 +516,20 @@ void rf_undo(struct uop_t *uop)
 			}
 
 			/* Return to previous mapping */
-			rf->fp_rat[streg - DEP_FP_FIRST] = ophreg;
+			rf->fp_rat[streg - x86_dep_fp_first] = ophreg;
 			assert(rf->fp_phreg[ophreg].busy);
 
-		} else if (loreg == DFPOP) {
+		} else if (loreg == x86_dep_fpop) {
 			
 			/* Inverse-pop floating-point stack */
 			rf->fp_top_of_stack = (rf->fp_top_of_stack + 7) % 8;
 
-		} else if (loreg == DFPOP2) {
+		} else if (loreg == x86_dep_fpop2) {
 			
 			/* Inverse-pop floating-point stack 2 positions */
 			rf->fp_top_of_stack = (rf->fp_top_of_stack + 6) % 8;
 
-		} else if (loreg == DFPUSH) {
+		} else if (loreg == x86_dep_fpush) {
 			
 			/* Inverse-push floating-point stack */
 			rf->fp_top_of_stack = (rf->fp_top_of_stack + 1) % 8;
@@ -557,7 +557,7 @@ void rf_commit(struct uop_t *uop)
 		phreg = uop->ph_odep[dep];
 		ophreg = uop->ph_oodep[dep];
 
-		if (DEP_IS_INT_REG(loreg)) {
+		if (X86_DEP_IS_INT_REG(loreg)) {
 			
 			/* Decrease counter of previous mapping and free if 0. */
 			assert(rf->int_phreg[ophreg].busy > 0);
@@ -572,7 +572,7 @@ void rf_commit(struct uop_t *uop)
 				THREAD.rf_int_count--;
 			}
 
-		} else if (DEP_IS_FP_REG(loreg)) {
+		} else if (X86_DEP_IS_FP_REG(loreg)) {
 
 			/* Decrease counter of previous mapping and free if 0. */
 			assert(rf->fp_phreg[ophreg].busy > 0);
@@ -587,7 +587,7 @@ void rf_commit(struct uop_t *uop)
 				THREAD.rf_fp_count--;
 			}
 
-		} else if (loreg == DFPUSH || loreg == DFPOP || loreg == DFPOP2) {
+		} else if (loreg == x86_dep_fpush || loreg == x86_dep_fpop || loreg == x86_dep_fpop2) {
 			
 			/* No action for floating-point top-of-stack management. */
 
@@ -620,12 +620,12 @@ void rf_check_integrity(int core, int thread)
 	}
 
 	/* Check that all mapped registers are busy */
-	for (loreg = DEP_INT_FIRST; loreg <= DEP_INT_LAST; loreg++) {
-		phreg = rf->int_rat[loreg - DEP_INT_FIRST];
+	for (loreg = x86_dep_int_first; loreg <= x86_dep_int_last; loreg++) {
+		phreg = rf->int_rat[loreg - x86_dep_int_first];
 		assert(rf->int_phreg[phreg].busy);
 	}
-	for (loreg = DEP_FP_FIRST; loreg <= DEP_FP_LAST; loreg++) {
-		phreg = rf->fp_rat[loreg - DEP_FP_FIRST];
+	for (loreg = x86_dep_fp_first; loreg <= x86_dep_fp_last; loreg++) {
+		phreg = rf->fp_rat[loreg - x86_dep_fp_first];
 		assert(rf->fp_phreg[phreg].busy);
 	}
 
@@ -638,10 +638,10 @@ void rf_check_integrity(int core, int thread)
 			loreg = uop->odep[dep];
 			phreg = uop->ph_odep[dep];
 			ophreg = uop->ph_oodep[dep];
-			if (DEP_IS_INT_REG(loreg)) {
+			if (X86_DEP_IS_INT_REG(loreg)) {
 				assert(rf->int_phreg[phreg].busy);
 				assert(rf->int_phreg[ophreg].busy);
-			} else if (DEP_IS_FP_REG(loreg)) {
+			} else if (X86_DEP_IS_FP_REG(loreg)) {
 				assert(rf->fp_phreg[phreg].busy);
 				assert(rf->fp_phreg[ophreg].busy);
 			} else {

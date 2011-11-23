@@ -24,7 +24,7 @@
 /* Global variables */
 
 char *rob_kind_map[] = { "Private", "Shared" };
-enum rob_kind_enum rob_kind;
+enum rob_kind_t rob_kind;
 int rob_size;
 
 

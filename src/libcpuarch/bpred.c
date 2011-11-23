@@ -63,7 +63,7 @@ struct bpred_t {
 
 
 char *bpred_kind_map[] = { "Perfect", "Taken", "NotTaken", "Bimodal", "TwoLevel", "Combined" };
-enum bpred_kind_enum bpred_kind;
+enum bpred_kind_t bpred_kind;
 int bpred_btb_sets;  /* Number of BTB sets */
 int bpred_btb_assoc;  /* Number of BTB ways */
 int bpred_ras_size;  /* Return address stack size */

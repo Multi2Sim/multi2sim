@@ -30,6 +30,7 @@ uint32_t isa_addr;  /* Address of last memory access */
 uint32_t isa_target;  /* Target address of branch/jmp/call/ret inst, even if it's not taken */
 uint64_t isa_inst_count;
 int isa_function_level;
+struct list_t *isa_uinst_list;
 
 int isa_call_debug_category;
 int isa_inst_debug_category;
@@ -577,17 +578,98 @@ static void isa_debug_call()
 
 
 
-/* Public functions */
+/*
+ * Microinstruction list
+ */
+
+static inline struct x86_uinst_t *isa_uinst_create(enum x86_uinst_opcode_t opcode,
+	uint32_t address, int size,
+	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
+	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
+	enum x86_dep_t odep3)
+{
+	struct x86_uinst_t *uinst;
+
+	uinst = x86_uinst_create();
+
+	uinst->opcode = opcode;
+
+	uinst->idep[0] = idep0;
+	uinst->idep[1] = idep1;
+	uinst->idep[2] = idep2;
+
+	uinst->odep[0] = odep0;
+	uinst->odep[1] = odep1;
+	uinst->odep[2] = odep2;
+	uinst->odep[3] = odep3;
+
+	uinst->address = address;
+	uinst->size = size;
+
+	return uinst;
+}
+
+
+void isa_uinst_add_mem(enum x86_uinst_opcode_t opcode,
+	uint32_t address, int size,
+	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
+	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
+	enum x86_dep_t odep3)
+{
+	struct x86_uinst_t *uinst;
+
+	/* Do nothing for functional simulation */
+	if (cpu_sim_kind == cpu_sim_kind_functional)
+		return;
+
+	/* Create uinst and add to list */
+	uinst = isa_uinst_create(opcode, address, size, idep0, idep1, idep2,
+		odep0, odep1, odep2, odep3);
+	list_add(isa_uinst_list, uinst);
+}
+
+
+void isa_uinst_add(enum x86_uinst_opcode_t opcode,
+	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
+	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
+	enum x86_dep_t odep3)
+{
+	isa_uinst_add_mem(opcode, 0, 0, idep0, idep1, idep2,
+		odep0, odep1, odep2, odep3);
+}
+
+
+void isa_uinst_clear(void)
+{
+	while (list_count(isa_uinst_list))
+		x86_uinst_free(list_remove_at(isa_uinst_list, 0));
+}
+
+
+
+
+/*
+ * Instruction execution
+ */
 
 
 void isa_init()
 {
+	/* Initialize disassembler */
 	x86_disasm_init();
+
+	/* Create uinst list */
+	isa_uinst_list = list_create();
 }
 
 
 void isa_done()
 {
+	/* Clear uinst list */
+	isa_uinst_clear();
+	list_free(isa_uinst_list);
+
+	/* Finalize disassembler */
 	x86_disasm_done();
 }
 
@@ -611,7 +693,7 @@ void isa_dump(FILE *f)
 
 void isa_execute_inst(void *buf)
 {
-	if (isa_inst.opcode == op_none) {
+	if (isa_inst.opcode == x86_op_none) {
 		unsigned char b1, b2, b3, b4;
 		mem_read(isa_mem, isa_eip, 1, &b1);
 		mem_read(isa_mem, isa_eip + 1, 1, &b2);
@@ -628,6 +710,11 @@ void isa_execute_inst(void *buf)
 		x86_inst_dump(&isa_inst, debug_file(isa_inst_debug_category));
 		isa_inst_debug("  (%d bytes)", isa_inst.size);
 	}
+
+	/* Clear existing list of microinstructions, though the architectural
+	 * simulator might have cleared it already.
+	 * A new list will be generated for the next executed x86 instruction. */
+	isa_uinst_clear();
 
 	/* Execute */
 	isa_target = 0;

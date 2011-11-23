@@ -57,7 +57,7 @@ int fu_reserve(struct uop_t *uop)
 	int i;
 	int core = uop->core;
 	struct fu_t *fu = CORE.fu;
-	enum fu_class_enum fu_class = uop->fu_class;
+	enum fu_class_t fu_class = uop->fu_class;
 
 	/* First time uop tries to reserve f.u. */
 	if (!uop->issue_try_when)
