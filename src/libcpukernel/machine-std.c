@@ -21,309 +21,422 @@
 #include <cpukernel.h>
 
 
-#define op_stdop_al_imm8(stdop, wb) void op_##stdop##_al_imm8_impl() { \
+#define op_stdop_al_imm8(stdop, wb, uinst) \
+void op_##stdop##_al_imm8_impl() \
+{ \
 	uint8_t al = isa_load_reg(x86_reg_al); \
 	uint8_t imm8 = isa_inst.imm.b; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%al\n\t" \
 		#stdop " %3, %%al\n\t" \
 		"mov %%al, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (al) \
 		: "m" (al), "m" (imm8), "g" (flags) \
 		: "al" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_reg(x86_reg_al, al); \
+		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_ax_imm16(stdop, wb) void op_##stdop##_ax_imm16_impl() { \
+#define op_stdop_ax_imm16(stdop, wb, uinst) \
+void op_##stdop##_ax_imm16_impl() \
+{ \
 	uint16_t ax = isa_load_reg(x86_reg_ax); \
 	uint16_t imm16 = isa_inst.imm.w; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%ax\n\t" \
 		#stdop " %3, %%ax\n\t" \
 		"mov %%ax, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (ax) \
 		: "m" (ax), "m" (imm16), "g" (flags) \
 		: "ax" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_reg(x86_reg_ax, ax); \
+		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_eax_imm32(stdop, wb) void op_##stdop##_eax_imm32_impl() { \
+#define op_stdop_eax_imm32(stdop, wb, uinst) \
+void op_##stdop##_eax_imm32_impl() \
+{ \
 	uint32_t eax = isa_load_reg(x86_reg_eax); \
 	uint32_t imm32 = isa_inst.imm.d; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%eax\n\t" \
 		#stdop " %3, %%eax\n\t" \
 		"mov %%eax, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (eax) \
 		: "m" (eax), "m" (imm32), "g" (flags) \
 		: "eax" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_reg(x86_reg_eax, eax); \
+		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_rm8_imm8(stdop, wb) void op_##stdop##_rm8_imm8_impl() { \
+#define op_stdop_rm8_imm8(stdop, wb, uinst) \
+void op_##stdop##_rm8_imm8_impl() \
+{ \
 	uint8_t rm8 = isa_load_rm8(); \
 	uint8_t imm8 = isa_inst.imm.b; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%al\n\t" \
 		#stdop " %3, %%al\n\t" \
 		"mov %%al, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (rm8) \
 		: "m" (rm8), "m" (imm8), "g" (flags) \
 		: "al" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_rm8(rm8); \
+		x86_uinst_new(uinst, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_rm8, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_rm16_imm16(stdop, wb) void op_##stdop##_rm16_imm16_impl() { \
+#define op_stdop_rm16_imm16(stdop, wb, uinst) \
+void op_##stdop##_rm16_imm16_impl() \
+{ \
 	uint16_t rm16 = isa_load_rm16(); \
 	uint16_t imm16 = isa_inst.imm.w; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%ax\n\t" \
 		#stdop " %3, %%ax\n\t" \
 		"mov %%ax, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (rm16) \
 		: "m" (rm16), "m" (imm16), "g" (flags) \
 		: "ax" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_rm16(rm16); \
+		x86_uinst_new(uinst, x86_dep_rm16, 0, 0, x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_rm16, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_rm32_imm32(stdop, wb) void op_##stdop##_rm32_imm32_impl() { \
+#define op_stdop_rm32_imm32(stdop, wb, uinst) \
+void op_##stdop##_rm32_imm32_impl() \
+{ \
 	uint32_t rm32 = isa_load_rm32(); \
 	uint32_t imm32 = isa_inst.imm.d; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%eax\n\t" \
 		#stdop " %3, %%eax\n\t" \
 		"mov %%eax, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (rm32) \
 		: "m" (rm32), "m" (imm32), "g" (flags) \
 		: "eax" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_rm32(rm32); \
+		x86_uinst_new(uinst, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_rm32, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_rm16_imm8(stdop, wb) void op_##stdop##_rm16_imm8_impl() { \
+#define op_stdop_rm16_imm8(stdop, wb, uinst) \
+void op_##stdop##_rm16_imm8_impl() \
+{ \
 	uint16_t rm16 = isa_load_rm16(); \
 	uint16_t imm8 = (int8_t) isa_inst.imm.b; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%ax\n\t" \
 		#stdop " %3, %%ax\n\t" \
 		"mov %%ax, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (rm16) \
 		: "m" (rm16), "m" (imm8), "g" (flags) \
 		: "ax" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_rm16(rm16); \
+		x86_uinst_new(uinst, x86_dep_rm16, 0, 0, x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_rm16, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_rm32_imm8(stdop, wb) void op_##stdop##_rm32_imm8_impl() { \
+#define op_stdop_rm32_imm8(stdop, wb, uinst) \
+void op_##stdop##_rm32_imm8_impl() \
+{ \
 	uint32_t rm32 = isa_load_rm32(); \
 	uint32_t imm8 = (int8_t) isa_inst.imm.b; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%eax\n\t" \
 		#stdop " %3, %%eax\n\t" \
 		"mov %%eax, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (rm32) \
 		: "m" (rm32), "m" (imm8), "g" (flags) \
 		: "eax" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_rm32(rm32); \
+		x86_uinst_new(uinst, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_rm32, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_rm8_r8(stdop, wb) void op_##stdop##_rm8_r8_impl() { \
+#define op_stdop_rm8_r8(stdop, wb, uinst) \
+void op_##stdop##_rm8_r8_impl() \
+{ \
 	uint8_t rm8 = isa_load_rm8(); \
 	uint8_t r8 = isa_load_r8(); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%al\n\t" \
 		#stdop " %3, %%al\n\t" \
 		"mov %%al, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (rm8) \
 		: "m" (rm8), "m" (r8), "g" (flags) \
 		: "al" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_rm8(rm8); \
+		x86_uinst_new(uinst, x86_dep_rm8, x86_dep_r8, 0, x86_dep_rm8, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_rm8, x86_dep_r8, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_rm16_r16(stdop, wb) void op_##stdop##_rm16_r16_impl() { \
+#define op_stdop_rm16_r16(stdop, wb, uinst) \
+void op_##stdop##_rm16_r16_impl() \
+{ \
 	uint16_t rm16 = isa_load_rm16(); \
 	uint16_t r16 = isa_load_r16(); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%ax\n\t" \
 		#stdop " %3, %%ax\n\t" \
 		"mov %%ax, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (rm16) \
 		: "m" (rm16), "m" (r16), "g" (flags) \
 		: "ax" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_rm16(rm16); \
+		x86_uinst_new(uinst, x86_dep_rm16, x86_dep_r16, 0, x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_rm16, x86_dep_r16, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_rm32_r32(stdop, wb) void op_##stdop##_rm32_r32_impl() { \
+#define op_stdop_rm32_r32(stdop, wb, uinst) \
+void op_##stdop##_rm32_r32_impl() \
+{ \
 	uint32_t rm32 = isa_load_rm32(); \
 	uint32_t r32 = isa_load_r32(); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%eax\n\t" \
 		#stdop " %3, %%eax\n\t" \
 		"mov %%eax, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (rm32) \
 		: "m" (rm32), "m" (r32), "g" (flags) \
 		: "eax" \
 	); \
-	if (wb) \
-		isa_store_rm32(rm32); \
 	isa_regs->eflags = flags; \
+	if (wb) { \
+		isa_store_rm32(rm32); \
+		x86_uinst_new(uinst, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else  { \
+		x86_uinst_new(uinst, x86_dep_rm32, x86_dep_r32, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 }
 
 
-#define op_stdop_r8_rm8(stdop, wb) void op_##stdop##_r8_rm8_impl() { \
+#define op_stdop_r8_rm8(stdop, wb, uinst) \
+void op_##stdop##_r8_rm8_impl() \
+{ \
 	uint8_t r8 = isa_load_r8(); \
 	uint8_t rm8 = isa_load_rm8(); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%al\n\t" \
 		#stdop " %3, %%al\n\t" \
 		"mov %%al, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (r8) \
 		: "m" (r8), "m" (rm8), "g" (flags) \
 		: "al" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_r8(r8); \
+		x86_uinst_new(uinst, x86_dep_r8, x86_dep_rm8, 0, x86_dep_r8, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_r8, x86_dep_rm8, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_r16_rm16(stdop, wb) void op_##stdop##_r16_rm16_impl() { \
+#define op_stdop_r16_rm16(stdop, wb, uinst) \
+void op_##stdop##_r16_rm16_impl() \
+{ \
 	uint16_t r16 = isa_load_r16(); \
 	uint16_t rm16 = isa_load_rm16(); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%ax\n\t" \
 		#stdop " %3, %%ax\n\t" \
 		"mov %%ax, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (r16) \
 		: "m" (r16), "m" (rm16), "g" (flags) \
 		: "ax" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_r16(r16); \
+		x86_uinst_new(uinst, x86_dep_r16, x86_dep_rm16, 0, x86_dep_r16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_r16, x86_dep_rm16, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_r32_rm32(stdop, wb) void op_##stdop##_r32_rm32_impl() { \
+#define op_stdop_r32_rm32(stdop, wb, uinst) \
+void op_##stdop##_r32_rm32_impl() \
+{ \
 	uint32_t r32 = isa_load_r32(); \
 	uint32_t rm32 = isa_load_rm32(); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"push %4 ; popf\n\t" \
+		"push %4\n\t" \
+		"popf\n\t" \
 		"mov %2, %%eax\n\t" \
 		#stdop " %3, %%eax\n\t" \
 		"mov %%eax, %1\n\t" \
-		"pushf ; pop %0\n\t" \
+		"pushf\n\t" \
+		"pop %0\n\t" \
 		: "=g" (flags), "=m" (r32) \
 		: "m" (r32), "m" (rm32), "g" (flags) \
 		: "eax" \
 	); \
-	if (wb) \
+	if (wb) { \
 		isa_store_r32(r32); \
+		x86_uinst_new(uinst, x86_dep_r32, x86_dep_rm32, 0, x86_dep_r32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+	} else { \
+		x86_uinst_new(uinst, x86_dep_r32, x86_dep_rm32, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+	} \
 	isa_regs->eflags = flags; \
 }
 
 
-#define op_stdop_all(stdop, wb) \
-	op_stdop_al_imm8(stdop, wb) \
-	op_stdop_ax_imm16(stdop, wb) \
-	op_stdop_eax_imm32(stdop, wb) \
-	op_stdop_rm8_imm8(stdop, wb) \
-	op_stdop_rm16_imm16(stdop, wb) \
-	op_stdop_rm32_imm32(stdop, wb) \
-	op_stdop_rm16_imm8(stdop, wb) \
-	op_stdop_rm32_imm8(stdop, wb) \
-	op_stdop_rm8_r8(stdop, wb) \
-	op_stdop_rm16_r16(stdop, wb) \
-	op_stdop_rm32_r32(stdop, wb) \
-	op_stdop_r8_rm8(stdop, wb) \
-	op_stdop_r16_rm16(stdop, wb) \
-	op_stdop_r32_rm32(stdop, wb)
+#define op_stdop_all(stdop, wb, uinst) \
+	op_stdop_al_imm8(stdop, wb, uinst) \
+	op_stdop_ax_imm16(stdop, wb, uinst) \
+	op_stdop_eax_imm32(stdop, wb, uinst) \
+	op_stdop_rm8_imm8(stdop, wb, uinst) \
+	op_stdop_rm16_imm16(stdop, wb, uinst) \
+	op_stdop_rm32_imm32(stdop, wb, uinst) \
+	op_stdop_rm16_imm8(stdop, wb, uinst) \
+	op_stdop_rm32_imm8(stdop, wb, uinst) \
+	op_stdop_rm8_r8(stdop, wb, uinst) \
+	op_stdop_rm16_r16(stdop, wb, uinst) \
+	op_stdop_rm32_r32(stdop, wb, uinst) \
+	op_stdop_r8_rm8(stdop, wb, uinst) \
+	op_stdop_r16_rm16(stdop, wb, uinst) \
+	op_stdop_r32_rm32(stdop, wb, uinst)
 
 
-op_stdop_all(adc, 1)
-op_stdop_all(add, 1)
-op_stdop_all(and, 1)
-op_stdop_all(cmp, 0)
-op_stdop_all(or, 1)
-op_stdop_all(sbb, 1)
-op_stdop_all(sub, 1)
-op_stdop_all(test, 0)
-op_stdop_all(xor, 1)
+op_stdop_all(adc, 1, x86_uinst_add)
+op_stdop_all(add, 1, x86_uinst_add)
+op_stdop_all(and, 1, x86_uinst_and)
+op_stdop_all(cmp, 0, x86_uinst_sub)
+op_stdop_all(or, 1, x86_uinst_or)
+op_stdop_all(sbb, 1, x86_uinst_sub)
+op_stdop_all(sub, 1, x86_uinst_sub)
+op_stdop_all(test, 0, x86_uinst_and)
+op_stdop_all(xor, 1, x86_uinst_xor)
+

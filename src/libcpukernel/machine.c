@@ -53,7 +53,7 @@ void op_bsf_r32_rm32_impl()
 	isa_store_r32(r32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_r32, x86_dep_zps, 0, 0);
+	x86_uinst_new(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_r32, x86_dep_zps, 0, 0);
 }
 
 
@@ -76,7 +76,7 @@ void op_bsr_r32_rm32_impl()
 	isa_store_r32(r32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_r32, x86_dep_zps, 0, 0);
+	x86_uinst_new(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_r32, x86_dep_zps, 0, 0);
 }
 
 
@@ -94,7 +94,7 @@ void op_bswap_ir32_impl()
 	);
 	isa_store_ir32(ir32);
 
-	isa_uinst_add(x86_uinst_shift, x86_dep_ir32, 0, 0, x86_dep_ir32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_shift, x86_dep_ir32, 0, 0, x86_dep_ir32, 0, 0, 0);
 }
 
 
@@ -116,7 +116,7 @@ void op_bt_rm32_r32_impl()
 	);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_cf, 0, 0, 0);
+	x86_uinst_new(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_cf, 0, 0, 0);
 }
 
 
@@ -138,7 +138,7 @@ void op_bt_rm32_imm8_impl()
 	);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_cf, 0, 0, 0);
+	x86_uinst_new(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_cf, 0, 0, 0);
 }
 
 
@@ -164,7 +164,7 @@ void op_bts_rm32_imm8_impl()
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_cf, 0, 0);
+	x86_uinst_new(x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_cf, 0, 0);
 }
 
 
@@ -175,7 +175,7 @@ void op_call_rel32_impl()
 	isa_target = isa_regs->eip + isa_inst.imm.d;
 	isa_regs->eip = isa_target;
 
-	isa_uinst_add(x86_uinst_call, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_call, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -185,7 +185,7 @@ void op_call_rm32_impl() {
 	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eip);
 	isa_regs->eip = isa_target;
 
-	isa_uinst_add(x86_uinst_call, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_call, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -194,7 +194,7 @@ void op_cbw_impl()
 	uint16_t ax = (int8_t) isa_load_reg(x86_reg_al);
 	isa_store_reg(x86_reg_ax, ax);
 
-	isa_uinst_add(x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
@@ -203,7 +203,7 @@ void op_cdq_impl()
 	int32_t signed_eax = isa_regs->eax;
 	isa_regs->edx = signed_eax < 0 ? (int32_t) -1 : 0;
 
-	isa_uinst_add(x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_edx, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_edx, 0, 0, 0);
 }
 
 
@@ -211,7 +211,7 @@ void op_cld_impl()
 {
 	isa_clear_flag(x86_flag_df);
 
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, 0, x86_dep_df, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, 0, x86_dep_df, 0, 0);
 }
 
 
@@ -241,9 +241,9 @@ void op_cmpxchg_rm32_r32_impl()
 	isa_store_reg(x86_reg_eax, eax);
 	isa_store_rm32(rm32);
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_eax, x86_dep_rm32, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
-	isa_uinst_add(x86_uinst_move, x86_dep_zps, x86_dep_r32, 0, x86_dep_rm32, 0, 0, 0);
-	isa_uinst_add(x86_uinst_move, x86_dep_cf, x86_dep_rm32, 0, x86_dep_eax, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_eax, x86_dep_rm32, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_zps, x86_dep_r32, 0, x86_dep_rm32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_cf, x86_dep_rm32, 0, x86_dep_eax, 0, 0, 0);
 }
 
 void op_cmpxchg8b_m64_impl()
@@ -268,9 +268,14 @@ void op_cmpxchg8b_m64_impl()
 		isa_regs->eax = m64;
 	}
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_edx, x86_dep_eax, x86_dep_mem64, x86_dep_cf, 0, 0, 0);
-	isa_uinst_add(x86_uinst_move, x86_dep_ecx, x86_dep_edx, 0, x86_dep_mem64, 0, 0, 0);
-	isa_uinst_add(x86_uinst_move, x86_dep_mem64, 0, 0, x86_dep_edx, x86_dep_eax, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_effective_address(), 8, 0, 0, 0,
+		x86_dep_aux, 0, 0, 0);  /* Load m64 */
+	x86_uinst_new(x86_uinst_sub, x86_dep_edx, x86_dep_eax, x86_dep_aux,
+		x86_dep_zps, 0, 0, 0);  /* Compare edx-eax with m64 */
+	x86_uinst_new_mem(x86_uinst_store, isa_effective_address(), 8, x86_dep_zps, x86_dep_ecx, x86_dep_ebx,
+		x86_dep_mem64, 0, 0, 0);  /* Conditionally store m64 */
+	x86_uinst_new(x86_uinst_move, x86_dep_zps, 0, 0,
+		x86_dep_edx, x86_dep_eax, 0, 0);  /* Conditionaly store edx-eax */
 }
 
 
@@ -380,10 +385,10 @@ void op_cpuid_impl()
 		fatal("inst 'cpuid' not implemented for eax=0x%x", isa_regs->eax);
 	}
 
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_eax, 0, 0, 0);
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_ebx, 0, 0, 0);
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_ecx, 0, 0, 0);
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_edx, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_eax, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_ebx, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_ecx, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_edx, 0, 0, 0);
 }
 
 
@@ -392,7 +397,7 @@ void op_cwde_impl()
 	uint32_t eax = (int16_t) isa_load_reg(x86_reg_ax);
 	isa_store_reg(x86_reg_eax, eax);
 
-	isa_uinst_add(x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
@@ -416,7 +421,7 @@ void op_dec_rm8_impl()
 	isa_store_rm8(rm8);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_of, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_of, 0);
 }
 
 
@@ -440,7 +445,7 @@ void op_dec_rm32_impl()
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_of, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_of, 0);
 }
 
 
@@ -464,7 +469,7 @@ void op_dec_ir16_impl()
 	isa_store_ir16(ir16);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_ir16, 0, 0, x86_dep_ir16, x86_dep_zps, x86_dep_of, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_ir16, 0, 0, x86_dep_ir16, x86_dep_zps, x86_dep_of, 0);
 }
 
 
@@ -488,7 +493,7 @@ void op_dec_ir32_impl()
 	isa_store_ir32(ir32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_ir32, 0, 0, x86_dep_ir32, x86_dep_zps, x86_dep_of, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_ir32, 0, 0, x86_dep_ir32, x86_dep_zps, x86_dep_of, 0);
 }
 
 
@@ -510,7 +515,7 @@ void op_div_rm8_impl()
 	);
 	isa_store_reg(x86_reg_ax, ax);
 
-	isa_uinst_add(x86_uinst_div, x86_dep_eax, x86_dep_rm8, 0, x86_dep_eax, 0, 0, 0);
+	x86_uinst_new(x86_uinst_div, x86_dep_eax, x86_dep_rm8, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
@@ -536,7 +541,7 @@ void op_div_rm32_impl()
 	isa_store_reg(x86_reg_eax, eax);
 	isa_store_reg(x86_reg_edx, edx);
 
-	isa_uinst_add(x86_uinst_div, x86_dep_edx, x86_dep_eax, x86_dep_rm32, x86_dep_eax, x86_dep_edx, 0, 0);
+	x86_uinst_new(x86_uinst_div, x86_dep_edx, x86_dep_eax, x86_dep_rm32, x86_dep_eax, x86_dep_edx, 0, 0);
 }
 
 
@@ -568,7 +573,7 @@ void op_idiv_rm32_impl()
 	isa_store_reg(x86_reg_eax, eax);
 	isa_store_reg(x86_reg_edx, edx);
 
-	isa_uinst_add(x86_uinst_div, x86_dep_rm32, x86_dep_eax, 0, x86_dep_eax, x86_dep_edx, 0, 0);
+	x86_uinst_new(x86_uinst_div, x86_dep_rm32, x86_dep_eax, 0, x86_dep_eax, x86_dep_edx, 0, 0);
 }
 
 
@@ -597,7 +602,7 @@ void op_imul_rm32_impl()
 	isa_store_reg(x86_reg_edx, edx);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_mult, x86_dep_rm32, x86_dep_eax, 0, x86_dep_eax, x86_dep_edx, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_mult, x86_dep_rm32, x86_dep_eax, 0, x86_dep_eax, x86_dep_edx, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -623,7 +628,7 @@ void op_imul_r32_rm32_impl()
 	isa_store_r32(r32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_mult, x86_dep_r32, x86_dep_rm32, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_mult, x86_dep_r32, x86_dep_rm32, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -650,7 +655,7 @@ void op_imul_r32_rm32_imm8_impl()
 	isa_store_r32(r32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_mult, x86_dep_rm32, 0, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_mult, x86_dep_rm32, 0, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -677,7 +682,7 @@ void op_imul_r32_rm32_imm32_impl()
 	isa_store_r32(r32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_mult, x86_dep_rm32, 0, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_mult, x86_dep_rm32, 0, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -701,7 +706,7 @@ void op_inc_rm8_impl()
 	isa_store_rm8(rm8);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_add, x86_dep_rm8, 0, 0, x86_dep_rm8, 0, x86_dep_zps, x86_dep_of);
+	x86_uinst_new(x86_uinst_add, x86_dep_rm8, 0, 0, x86_dep_rm8, 0, x86_dep_zps, x86_dep_of);
 }
 
 
@@ -725,7 +730,7 @@ void op_inc_rm32_impl()
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_add, x86_dep_rm32, 0, 0, x86_dep_rm32, 0, x86_dep_zps, x86_dep_of);
+	x86_uinst_new(x86_uinst_add, x86_dep_rm32, 0, 0, x86_dep_rm32, 0, x86_dep_zps, x86_dep_of);
 }
 
 
@@ -749,7 +754,7 @@ void op_inc_ir16_impl()
 	isa_store_ir16(ir16);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_add, x86_dep_ir16, 0, 0, x86_dep_ir16, 0, x86_dep_zps, x86_dep_of);
+	x86_uinst_new(x86_uinst_add, x86_dep_ir16, 0, 0, x86_dep_ir16, 0, x86_dep_zps, x86_dep_of);
 }
 
 
@@ -773,7 +778,7 @@ void op_inc_ir32_impl()
 	isa_store_ir32(ir32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_add, x86_dep_ir32, 0, 0, x86_dep_ir32, 0, x86_dep_zps, x86_dep_of);
+	x86_uinst_new(x86_uinst_add, x86_dep_ir32, 0, 0, x86_dep_ir32, 0, x86_dep_zps, x86_dep_of);
 }
 
 
@@ -789,7 +794,7 @@ void op_int_imm8_impl()
 	assert(inum == 0x80);
 	syscall_do();
 
-	isa_uinst_add(x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -805,7 +810,7 @@ void op_jmp_rel8_impl()
 	isa_target = isa_regs->eip + (int8_t) isa_inst.imm.b;
 	isa_regs->eip = isa_target;
 
-	isa_uinst_add(x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -814,7 +819,7 @@ void op_jmp_rel32_impl()
 	isa_target = isa_regs->eip + isa_inst.imm.d;
 	isa_regs->eip = isa_target;
 
-	isa_uinst_add(x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -823,7 +828,7 @@ void op_jmp_rm32_impl()
 	isa_target = isa_load_rm32();
 	isa_regs->eip = isa_target;
 
-	isa_uinst_add(x86_uinst_jump, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_jump, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -833,7 +838,7 @@ void op_lea_r32_m_impl()
 	assert(!isa_inst.segment);
 	isa_store_r32(value);
 
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_easeg, x86_dep_eabas, x86_dep_eaidx, x86_dep_r32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_easeg, x86_dep_eabas, x86_dep_eaidx, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -846,10 +851,10 @@ void op_leave_impl()
 	isa_regs->esp += 4;
 	isa_store_reg(x86_reg_ebp, value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_ebp, 0, 0, x86_dep_esp, 0, 0, 0);
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ebp, 0, 0, 0);
-	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_ebp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ebp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
@@ -875,7 +880,7 @@ void op_mov_rm8_imm8_impl()
 	uint8_t value = isa_inst.imm.b;
 	isa_store_rm8(value);
 
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_rm8, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_rm8, 0, 0, 0);
 }
 
 
@@ -884,7 +889,7 @@ void op_mov_r8_rm8_impl()
 	uint8_t value = isa_load_rm8();
 	isa_store_r8(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r8, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r8, 0, 0, 0);
 }
 
 
@@ -893,7 +898,7 @@ void op_mov_rm8_r8_impl()
 	uint8_t value = isa_load_r8();
 	isa_store_rm8(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_r8, 0, 0, x86_dep_rm8, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_r8, 0, 0, x86_dep_rm8, 0, 0, 0);
 }
 
 
@@ -902,7 +907,7 @@ void op_mov_rm16_r16_impl()
 	uint16_t value = isa_load_r16();
 	isa_store_rm16(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_r16, 0, 0, x86_dep_rm16, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_r16, 0, 0, x86_dep_rm16, 0, 0, 0);
 }
 
 
@@ -911,7 +916,7 @@ void op_mov_rm32_r32_impl()
 	uint32_t value = isa_load_r32();
 	isa_store_rm32(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_r32, 0, 0, x86_dep_rm32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_r32, 0, 0, x86_dep_rm32, 0, 0, 0);
 }
 
 
@@ -920,7 +925,7 @@ void op_mov_r16_rm16_impl()
 	uint16_t value = isa_load_rm16();
 	isa_store_r16(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_r16, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_r16, 0, 0, 0);
 }
 
 
@@ -929,7 +934,7 @@ void op_mov_r32_rm32_impl()
 	uint32_t value = isa_load_rm32();
 	isa_store_r32(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_rm32, 0, 0, x86_dep_r32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_rm32, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -940,8 +945,8 @@ void op_mov_al_moffs8_impl()
 	mem_read(isa_mem, isa_moffs_address(), 1, &value);
 	isa_store_reg(x86_reg_al, value);
 
-	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_load, isa_moffs_address(), 1, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_moffs_address(), 1, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
@@ -952,8 +957,8 @@ void op_mov_ax_moffs16_impl()
 	mem_read(isa_mem, isa_moffs_address(), 2, &value);
 	isa_store_reg(x86_reg_ax, value);
 
-	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_load, isa_moffs_address(), 2, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_moffs_address(), 2, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
@@ -964,8 +969,8 @@ void op_mov_eax_moffs32_impl()
 	mem_read(isa_mem, isa_moffs_address(), 4, &value);
 	isa_store_reg(x86_reg_eax, value);
 
-	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_load, isa_moffs_address(), 4, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_moffs_address(), 4, x86_dep_aux, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
@@ -974,8 +979,8 @@ void op_mov_moffs8_al_impl()
 	uint8_t value = isa_load_reg(x86_reg_al);
 	mem_write(isa_mem, isa_moffs_address(), 1, &value);
 
-	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_store, isa_moffs_address(), 1, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_moffs_address(), 1, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
 }
 
 
@@ -984,8 +989,8 @@ void op_mov_moffs16_ax_impl()
 	uint16_t value = isa_load_reg(x86_reg_ax);
 	mem_write(isa_mem, isa_moffs_address(), 2, &value);
 
-	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_store, isa_moffs_address(), 2, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_moffs_address(), 2, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
 }
 
 
@@ -994,8 +999,8 @@ void op_mov_moffs32_eax_impl()
 	uint32_t value = isa_load_reg(x86_reg_eax);
 	mem_write(isa_mem, isa_moffs_address(), 4, &value);
 
-	isa_uinst_add(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_store, isa_moffs_address(), 4, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_moffs_address(), 4, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
 }
 
 
@@ -1004,7 +1009,7 @@ void op_mov_ir8_imm8_impl()
 	uint8_t value = isa_inst.imm.b;
 	isa_store_ir8(value);
 
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_ir8, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_ir8, 0, 0, 0);
 }
 
 
@@ -1013,7 +1018,7 @@ void op_mov_ir16_imm16_impl()
 	uint16_t value = isa_inst.imm.w;
 	isa_store_ir16(value);
 
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_ir16, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_ir16, 0, 0, 0);
 }
 
 
@@ -1022,7 +1027,7 @@ void op_mov_ir32_imm32_impl()
 	uint32_t value = isa_inst.imm.d;
 	isa_store_ir32(value);
 
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_ir32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_ir32, 0, 0, 0);
 }
 
 
@@ -1031,7 +1036,7 @@ void op_mov_rm16_imm16_impl()
 	uint16_t value = isa_inst.imm.w;
 	isa_store_rm16(value);
 
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_rm16, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_rm16, 0, 0, 0);
 }
 
 
@@ -1040,7 +1045,7 @@ void op_mov_rm32_imm32_impl()
 	uint32_t value = isa_inst.imm.d;
 	isa_store_rm32(value);
 
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_rm32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_rm32, 0, 0, 0);
 }
 
 
@@ -1051,7 +1056,7 @@ void op_mov_rm16_sreg_impl()
 		fatal("%s: not supported for sreg != gs", __FUNCTION__);
 	isa_store_rm16(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_sreg, 0, 0, x86_dep_rm16, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_sreg, 0, 0, x86_dep_rm16, 0, 0, 0);
 }
 
 
@@ -1068,7 +1073,7 @@ void op_mov_sreg_rm16_impl()
 		fatal("%s: not supported for sreg != gs", __FUNCTION__);
 	isa_store_sreg(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_sreg, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_sreg, 0, 0, 0);
 }
 
 
@@ -1083,7 +1088,7 @@ void op_movsx_r16_rm8_impl()
 	uint16_t value = (int8_t) isa_load_rm8();
 	isa_store_r16(value);
 
-	isa_uinst_add(x86_uinst_sign, x86_dep_rm8, 0, 0, x86_dep_r16, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sign, x86_dep_rm8, 0, 0, x86_dep_r16, 0, 0, 0);
 }
 
 
@@ -1092,7 +1097,7 @@ void op_movsx_r32_rm8_impl()
 	uint32_t value = (int8_t) isa_load_rm8();
 	isa_store_r32(value);
 
-	isa_uinst_add(x86_uinst_sign, x86_dep_rm8, 0, 0, x86_dep_r32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sign, x86_dep_rm8, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -1101,7 +1106,7 @@ void op_movsx_r32_rm16_impl()
 	uint32_t value = (int16_t) isa_load_rm16();
 	isa_store_r32(value);
 
-	isa_uinst_add(x86_uinst_sign, x86_dep_rm16, 0, 0, x86_dep_r32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sign, x86_dep_rm16, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -1110,7 +1115,7 @@ void op_movzx_r16_rm8_impl()
 	uint8_t value = isa_load_rm8();
 	isa_store_r16(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r16, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r16, 0, 0, 0);
 }
 
 
@@ -1119,7 +1124,7 @@ void op_movzx_r32_rm8_impl()
 	uint8_t value = isa_load_rm8();
 	isa_store_r32(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -1128,7 +1133,7 @@ void op_movzx_r32_rm16_impl()
 	uint16_t value = isa_load_rm16();
 	isa_store_r32(value);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_r32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -1157,7 +1162,7 @@ void op_mul_rm32_impl()
 	isa_store_reg(x86_reg_edx, edx);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_mult, x86_dep_rm32, x86_dep_eax, 0, x86_dep_edx, x86_dep_eax, x86_dep_of, x86_dep_cf);
+	x86_uinst_new(x86_uinst_mult, x86_dep_rm32, x86_dep_eax, 0, x86_dep_edx, x86_dep_eax, x86_dep_of, x86_dep_cf);
 }
 
 
@@ -1181,7 +1186,7 @@ void op_neg_rm8_impl()
 	isa_store_rm8(rm8);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_sub, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -1205,7 +1210,7 @@ void op_neg_rm32_impl()
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_sub, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -1227,7 +1232,7 @@ void op_not_rm8_impl()
 	value = ~value;
 	isa_store_rm8(value);
 
-	isa_uinst_add(x86_uinst_not, x86_dep_rm8, 0, 0, x86_dep_rm8, 0, 0, 0);
+	x86_uinst_new(x86_uinst_not, x86_dep_rm8, 0, 0, x86_dep_rm8, 0, 0, 0);
 }
 
 
@@ -1237,7 +1242,7 @@ void op_not_rm16_impl()
 	value = ~value;
 	isa_store_rm16(value);
 
-	isa_uinst_add(x86_uinst_not, x86_dep_rm8, 0, 0, x86_dep_rm16, 0, 0, 0);
+	x86_uinst_new(x86_uinst_not, x86_dep_rm8, 0, 0, x86_dep_rm16, 0, 0, 0);
 }
 
 
@@ -1247,7 +1252,7 @@ void op_not_rm32_impl()
 	value = ~value;
 	isa_store_rm32(value);
 
-	isa_uinst_add(x86_uinst_not, x86_dep_rm8, 0, 0, x86_dep_rm32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_not, x86_dep_rm8, 0, 0, x86_dep_rm32, 0, 0, 0);
 }
 
 
@@ -1300,9 +1305,9 @@ void op_pop_rm32_impl()
 	isa_regs->esp += 4;
 	isa_store_rm32(value);
 
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_rm32, 0, 0, 0);
-	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_rm32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
@@ -1314,9 +1319,9 @@ void op_pop_ir32_impl()
 	isa_regs->esp += 4;
 	isa_store_ir32(value);
 
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ir32, 0, 0, 0);
-	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ir32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
@@ -1325,9 +1330,9 @@ void op_popf_impl()
 	mem_read(isa_mem, isa_regs->esp, 4, &isa_regs->eflags);
 	isa_regs->esp += 4;
 
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
-	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
@@ -1353,9 +1358,9 @@ void op_push_imm8_impl()
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1365,9 +1370,9 @@ void op_push_imm32_impl()
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1377,9 +1382,9 @@ void op_push_rm32_impl()
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, x86_dep_rm32, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, x86_dep_rm32, 0, 0, 0, 0, 0);
 }
 
 
@@ -1389,9 +1394,9 @@ void op_push_ir32_impl()
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &value);
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, x86_dep_ir32, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, x86_dep_ir32, 0, 0, 0, 0, 0);
 }
 
 
@@ -1400,10 +1405,10 @@ void op_pushf_impl()
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
 	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eflags);
 
-	isa_uinst_add(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add(x86_uinst_move, x86_dep_zps, x86_dep_cf, x86_dep_of, x86_dep_aux2, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, x86_dep_aux2, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_zps, x86_dep_cf, x86_dep_of, x86_dep_aux2, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_regs->esp, 4, x86_dep_aux, x86_dep_aux2, 0, 0, 0, 0, 0);
 }
 
 
@@ -1421,7 +1426,7 @@ void op_rdtsc_impl()
 	isa_store_reg(x86_reg_edx, edx);
 	isa_store_reg(x86_reg_eax, eax);
 
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, x86_dep_eax, x86_dep_edx, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_eax, x86_dep_edx, 0, 0);
 }
 
 
@@ -1432,10 +1437,10 @@ void op_ret_impl()
 	isa_regs->esp += 4;
 	isa_regs->eip = isa_target;
 
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
-	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);  /* add esp, 4 */
-	isa_uinst_add(x86_uinst_ret, x86_dep_aux, 0, 0, 0, 0, 0, 0);  /* jmp aux */
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
+	x86_uinst_new(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);  /* add esp, 4 */
+	x86_uinst_new(x86_uinst_ret, x86_dep_aux, 0, 0, 0, 0, 0, 0);  /* jmp aux */
 }
 
 
@@ -1454,10 +1459,10 @@ void op_ret_imm16_impl()
 	isa_regs->esp += 4 + pop;
 	isa_regs->eip = isa_target;
 
-	isa_uinst_add(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	isa_uinst_add_mem(x86_uinst_load, isa_regs->esp - 4 - pop, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
-	isa_uinst_add(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);  /* add esp, 4 */
-	isa_uinst_add(x86_uinst_ret, x86_dep_aux, 0, 0, 0, 0, 0, 0);  /* jmp aux */
+	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->esp - 4 - pop, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
+	x86_uinst_new(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);  /* add esp, 4 */
+	x86_uinst_new(x86_uinst_ret, x86_dep_aux, 0, 0, 0, 0, 0, 0);  /* jmp aux */
 }
 
 
@@ -1468,7 +1473,7 @@ void op_sahf_impl()
 	isa_regs->eflags &= ~0x28;
 	isa_regs->eflags |= 0x2;
 
-	isa_uinst_add(x86_uinst_move, x86_dep_eax, 0, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_move, x86_dep_eax, 0, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -1501,7 +1506,7 @@ void op_shld_rm32_r32_imm8_impl()
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -1529,7 +1534,7 @@ void op_shld_rm32_r32_cl_impl()
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, x86_dep_ecx,
+	x86_uinst_new(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, x86_dep_ecx,
 		x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
@@ -1558,7 +1563,7 @@ void op_shrd_rm32_r32_imm8_impl()
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
 
@@ -1586,7 +1591,7 @@ void op_shrd_rm32_r32_cl_impl()
 	isa_store_rm32(rm32);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, x86_dep_ecx,
+	x86_uinst_new(x86_uinst_shift, x86_dep_rm32, x86_dep_r32, x86_dep_ecx,
 		x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
 
@@ -1595,7 +1600,7 @@ void op_std_impl()
 {
 	isa_set_flag(x86_flag_df);
 
-	isa_uinst_add(x86_uinst_move, 0, 0, 0, 0, x86_dep_df, 0, 0);
+	x86_uinst_new(x86_uinst_move, 0, 0, 0, 0, x86_dep_df, 0, 0);
 }
 
 
@@ -1622,9 +1627,9 @@ void op_xadd_rm8_r8_impl()
 	isa_store_rm8(sum);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_add, x86_dep_rm8, x86_dep_r8, 0, x86_dep_aux, x86_dep_zps, x86_dep_cf, x86_dep_of);
-	isa_uinst_add(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_rm8, 0, 0, 0);
-	isa_uinst_add(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_r8, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_rm8, x86_dep_r8, 0, x86_dep_aux, x86_dep_zps, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_rm8, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_r8, 0, 0, 0);
 }
 
 
@@ -1651,9 +1656,9 @@ void op_xadd_rm32_r32_impl()
 	isa_store_rm32(sum);
 	isa_regs->eflags = flags;
 
-	isa_uinst_add(x86_uinst_add, x86_dep_rm32, x86_dep_r32, 0, x86_dep_aux, x86_dep_zps, x86_dep_cf, x86_dep_of);
-	isa_uinst_add(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_rm32, 0, 0, 0);
-	isa_uinst_add(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_r32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_rm32, x86_dep_r32, 0, x86_dep_aux, x86_dep_zps, x86_dep_cf, x86_dep_of);
+	x86_uinst_new(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_rm32, 0, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -1665,7 +1670,7 @@ void op_xchg_ir16_ax_impl()
 	isa_store_reg(x86_reg_ax, ir16);
 	isa_store_ir16(ax);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_ir16, x86_dep_eax, 0, x86_dep_ir16, x86_dep_eax, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_ir16, x86_dep_eax, 0, x86_dep_ir16, x86_dep_eax, 0, 0);
 }
 
 
@@ -1677,7 +1682,7 @@ void op_xchg_ir32_eax_impl()
 	isa_store_reg(x86_reg_eax, ir32);
 	isa_store_ir32(eax);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_ir32, x86_dep_eax, 0, x86_dep_ir32, x86_dep_eax, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_ir32, x86_dep_eax, 0, x86_dep_ir32, x86_dep_eax, 0, 0);
 }
 
 
@@ -1689,7 +1694,7 @@ void op_xchg_rm8_r8_impl()
 	isa_store_rm8(r8);
 	isa_store_r8(rm8);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_rm8, x86_dep_r8, 0, x86_dep_rm8, x86_dep_r8, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_rm8, x86_dep_r8, 0, x86_dep_rm8, x86_dep_r8, 0, 0);
 }
 
 
@@ -1701,7 +1706,7 @@ void op_xchg_rm16_r16_impl()
 	isa_store_rm16(r16);
 	isa_store_r16(rm16);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_rm16, x86_dep_r16, 0, x86_dep_rm16, x86_dep_r16, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_rm16, x86_dep_r16, 0, x86_dep_rm16, x86_dep_r16, 0, 0);
 }
 
 
@@ -1713,5 +1718,5 @@ void op_xchg_rm32_r32_impl()
 	isa_store_rm32(r32);
 	isa_store_r32(rm32);
 
-	isa_uinst_add(x86_uinst_move, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_r32, 0, 0);
+	x86_uinst_new(x86_uinst_move, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_r32, 0, 0);
 }

@@ -171,7 +171,9 @@ void mem_load(struct mem_t *mem, char *filename, uint32_t start);
 
 
 
-/* Registers */
+/*
+ * X86 Registers
+ */
 
 struct regs_t
 {
@@ -206,7 +208,9 @@ void regs_fpu_stack_dump(struct regs_t *regs, FILE *f);
 
 
 
-/* Program loader */
+/*
+ * Program loader
+ */
 
 struct loader_t
 {
@@ -335,6 +339,7 @@ enum x86_dep_t {
 	x86_dep_r32 = 0x302,
 	x86_dep_sreg = 0x400,
 
+	/******** FIXME dependences below to be removed ********/
 	x86_dep_mem8 = 0x500,
 	x86_dep_mem16 = 0x501,
 	x86_dep_mem32 = 0x502,
@@ -403,11 +408,9 @@ struct x86_uinst_t
 	enum x86_uinst_opcode_t opcode;
 
 	/* Input dependences */
-	int idep_count;
 	enum x86_dep_t idep[X86_UINST_MAX_IDEPS];
 
 	/* Output dependences */
-	int odep_count;
 	enum x86_dep_t odep[X86_UINST_MAX_ODEPS];
 
 	/* Memory access */
@@ -416,8 +419,35 @@ struct x86_uinst_t
 };
 
 
+extern struct list_t *x86_uinst_list;
+
+void x86_uinst_init(void);
+void x86_uinst_done(void);
+
 struct x86_uinst_t *x86_uinst_create(void);
 void x86_uinst_free(struct x86_uinst_t *uinst);
+
+/* To prevent performance degradation in functional simulation, do the check before the actual
+ * function call. Notice that 'x86_uinst_new' calls are done for every x86 instruction emulation. */
+#define x86_uinst_new(opcode, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
+	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
+	__x86_uinst_new(opcode, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
+#define x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
+	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
+	__x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
+
+void __x86_uinst_new(enum x86_uinst_opcode_t opcode,
+	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
+	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
+	enum x86_dep_t odep3);
+void __x86_uinst_new_mem(enum x86_uinst_opcode_t opcode, uint32_t addr, int size,
+	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
+	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
+	enum x86_dep_t odep3);
+void x86_uinst_clear(void);
+
+void x86_uinst_dump(struct x86_uinst_t *uinst, FILE *f);
+void x86_uinst_list_dump(FILE *f);
 
 
 
@@ -434,7 +464,6 @@ extern uint32_t isa_target;
 extern struct x86_inst_t isa_inst;
 extern uint64_t isa_inst_count;
 extern int isa_function_level;
-extern struct list_t *isa_uinst_list;
 
 #define isa_call_debug(...) debug(isa_call_debug_category, __VA_ARGS__)
 #define isa_inst_debug(...) debug(isa_inst_debug_category, __VA_ARGS__)
@@ -509,16 +538,6 @@ uint16_t isa_load_fpu_status(void);
 
 uint32_t isa_effective_address(void);
 uint32_t isa_moffs_address(void);
-
-void isa_uinst_add(enum x86_uinst_opcode_t opcode,
-	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
-	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
-	enum x86_dep_t odep3);
-void isa_uinst_add_mem(enum x86_uinst_opcode_t opcode, uint32_t addr, int size,
-	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
-	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
-	enum x86_dep_t odep3);
-void isa_uinst_clear(void);
 
 void isa_init(void);
 void isa_done(void);
