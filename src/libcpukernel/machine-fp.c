@@ -373,12 +373,16 @@ void op_fcomi_st0_sti_impl()
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"pushf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"fldt %2\n\t"
 		"fldt %1\n\t"
 		"fcomip %%st(1), %%st\n\t"
 		"fstp %%st(0)\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags)
 		: "m" (*st0), "m" (*sti), "g" (flags)
 	);
@@ -401,12 +405,16 @@ void op_fucomi_st0_sti_impl()
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"pushf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"fldt %2\n\t"
 		"fldt %1\n\t"
 		"fucomip %%st(1), %%st\n\t"
 		"fstp %%st(0)\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags)
 		: "m" (*st0), "m" (*sti), "g" (flags)
 	);
@@ -650,8 +658,12 @@ void op_fild_m16_impl()
 	uint8_t e[10];
 
 	mem_read(isa_mem, isa_effective_address(), 2, &m16);
-	asm volatile ("filds %1; fstpt %0\n\t"
-		: "=m" (*e) : "m" (m16));
+	asm volatile (
+		"filds %1\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*e)
+		: "m" (m16)
+	);
 	isa_push_fpu(e);
 }
 
@@ -662,8 +674,12 @@ void op_fild_m32_impl()
 	uint8_t e[10];
 
 	mem_read(isa_mem, isa_effective_address(), 4, &m32);
-	asm volatile ("fildl %1; fstpt %0\n\t"
-		: "=m" (*e) : "m" (m32));
+	asm volatile (
+		"fildl %1\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*e)
+		: "m" (m32)
+	);
 	isa_push_fpu(e);
 }
 
@@ -674,8 +690,12 @@ void op_fild_m64_impl()
 	uint8_t e[10];
 
 	mem_read(isa_mem, isa_effective_address(), 8, &m64);
-	asm volatile ("fildq %1; fstpt %0\n\t"
-		: "=m" (*e) : "m" (m64));
+	asm volatile (
+		"fildq %1\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*e)
+		: "m" (m64)
+	);
 	isa_push_fpu(e);
 }
 
@@ -686,8 +706,12 @@ void op_fist_m16_impl()
 	uint8_t e[10];
 
 	isa_load_fpu(0, e);
-	asm volatile ("fldt %1; fistps %0\n\t"
-		: "=m" (m16) : "m" (*e));
+	asm volatile (
+		"fldt %1\n\t"
+		"fistps %0\n\t"
+		: "=m" (m16)
+		: "m" (*e)
+	);
 	mem_write(isa_mem, isa_effective_address(), 2, &m16);
 }
 
@@ -698,8 +722,12 @@ void op_fist_m32_impl()
 	uint8_t e[10];
 
 	isa_load_fpu(0, e);
-	asm volatile ("fldt %1; fistpl %0\n\t"
-		: "=m" (m32) : "m" (*e));
+	asm volatile (
+		"fldt %1\n\t"
+		"fistpl %0\n\t"
+		: "=m" (m32)
+		: "m" (*e)
+	);
 	mem_write(isa_mem, isa_effective_address(), 4, &m32);
 }
 
@@ -710,8 +738,12 @@ void op_fist_m64_impl()
 	uint8_t e[10];
 
 	isa_load_fpu(0, e);
-	asm volatile ("fldt %1; fistpq %0\n\t"
-		: "=m" (m64) : "m" (*e));
+	asm volatile (
+		"fldt %1\n\t"
+		"fistpq %0\n\t"
+		: "=m" (m64)
+		: "m" (*e)
+	);
 	mem_write(isa_mem, isa_effective_address(), 8, &m64);
 }
 
@@ -740,7 +772,11 @@ void op_fistp_m64_impl()
 void op_fld1_impl()
 {
 	uint8_t v[10];
-	asm volatile ("fld1; fstpt %0\n\t" : "=m" (*v));
+	asm volatile (
+		"fld1\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
 	isa_push_fpu(v);
 }
 
@@ -748,7 +784,11 @@ void op_fld1_impl()
 void op_fldl2e_impl()
 {
 	uint8_t v[10];
-	asm volatile ("fldl2e; fstpt %0\n\t" : "=m" (*v));
+	asm volatile (
+		"fldl2e\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
 	isa_push_fpu(v);
 }
 
@@ -756,7 +796,11 @@ void op_fldl2e_impl()
 void op_fldl2t_impl()
 {
 	uint8_t v[10];
-	asm volatile ("fldl2t; fstpt %0\n\t" : "=m" (*v));
+	asm volatile (
+		"fldl2t\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
 	isa_push_fpu(v);
 }
 
@@ -764,7 +808,11 @@ void op_fldl2t_impl()
 void op_fldpi_impl()
 {
 	uint8_t v[10];
-	asm volatile ("fldpi; fstpt %0\n\t" : "=m" (*v));
+	asm volatile (
+		"fldpi\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
 	isa_push_fpu(v);
 }
 
@@ -772,7 +820,11 @@ void op_fldpi_impl()
 void op_fldlg2_impl()
 {
 	uint8_t v[10];
-	asm volatile ("fldlg2; fstpt %0\n\t" : "=m" (*v));
+	asm volatile (
+		"fldlg2\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
 	isa_push_fpu(v);
 }
 
@@ -780,7 +832,11 @@ void op_fldlg2_impl()
 void op_fldln2_impl()
 {
 	uint8_t v[10];
-	asm volatile ("fldln2; fstpt %0\n\t" : "=m" (*v));
+	asm volatile (
+		"fldln2\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
 	isa_push_fpu(v);
 }
 
@@ -788,7 +844,11 @@ void op_fldln2_impl()
 void op_fldz_impl()
 {
 	uint8_t v[10];
-	asm volatile ("fldz; fstpt %0\n\t" : "=m" (*v));
+	asm volatile (
+		"fldz\n\t"
+		"fstpt %0\n\t"
+		: "=m" (*v)
+	);
 	isa_push_fpu(v);
 }
 

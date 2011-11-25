@@ -364,6 +364,7 @@ enum x86_dep_t {
 enum x86_uinst_opcode_t
 {
 	x86_uinst_nop = 0,
+
 	x86_uinst_move,
 	x86_uinst_add,
 	x86_uinst_sub,
@@ -379,11 +380,12 @@ enum x86_uinst_opcode_t
 	x86_uinst_sign,
 
 	x86_uinst_fp_move,
+	x86_uinst_fp_simple,
 	x86_uinst_fp_add,
-	x86_uinst_fp_sub,
+	x86_uinst_fp_comp,
 	x86_uinst_fp_mult,
 	x86_uinst_fp_div,
-	x86_uinst_fp_sqrt,
+	x86_uinst_fp_complex,
 
 	x86_uinst_load,
 	x86_uinst_store,
@@ -401,17 +403,17 @@ enum x86_uinst_opcode_t
 
 #define X86_UINST_MAX_IDEPS 3
 #define X86_UINST_MAX_ODEPS 4
+#define X86_UINST_MAX_DEPS  (X86_UINST_MAX_IDEPS + X86_UINST_MAX_ODEPS)
 
 struct x86_uinst_t
 {
 	/* Operation */
 	enum x86_uinst_opcode_t opcode;
 
-	/* Input dependences */
-	enum x86_dep_t idep[X86_UINST_MAX_IDEPS];
-
-	/* Output dependences */
-	enum x86_dep_t odep[X86_UINST_MAX_ODEPS];
+	/* Dependences */
+	enum x86_dep_t dep[X86_UINST_MAX_IDEPS + X86_UINST_MAX_ODEPS];
+	enum x86_dep_t *idep;  /* First 'X86_UINST_MAX_IDEPS' elements of 'dep' */
+	enum x86_dep_t *odep;  /* Last 'X86_UINST_MAX_ODEPS' elements of 'dep' */
 
 	/* Memory access */
 	uint32_t address;
@@ -433,8 +435,12 @@ void x86_uinst_free(struct x86_uinst_t *uinst);
 	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
 	__x86_uinst_new(opcode, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
 #define x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
-	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
+	{ assert(opcode == x86_uinst_load || opcode == x86_uinst_store); \
+	if (cpu_sim_kind == cpu_sim_kind_detailed) \
 	__x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
+#define x86_uinst_new_move(idep, odep) \
+	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
+	__x86_uinst_new_move(idep, odep); }
 
 void __x86_uinst_new(enum x86_uinst_opcode_t opcode,
 	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
@@ -444,6 +450,7 @@ void __x86_uinst_new_mem(enum x86_uinst_opcode_t opcode, uint32_t addr, int size
 	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
 	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
 	enum x86_dep_t odep3);
+void __x86_uinst_new_move(enum x86_dep_t idep, enum x86_dep_t odep);
 void x86_uinst_clear(void);
 
 void x86_uinst_dump(struct x86_uinst_t *uinst, FILE *f);
