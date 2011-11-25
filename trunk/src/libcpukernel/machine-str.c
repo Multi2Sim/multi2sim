@@ -106,7 +106,8 @@ OP_REPNZ_IMPL(scasd)
 /* String Instructions */
 
 
-void op_cmpsb_impl() {
+void op_cmpsb_impl()
+{
 	uint8_t op1, op2;
 	unsigned long flags;
 
@@ -114,10 +115,14 @@ void op_cmpsb_impl() {
 	mem_read(isa_mem, isa_regs->edi, 1, &op2);
 	flags = isa_regs->eflags;
 	asm volatile (
-		"push %1 ; popf\n\t"
+		"pushf\n\t"
+		"push %1\n\t"
+		"popf\n\t"
 		"mov %2, %%al\n\t"
 		"cmp %3, %%al\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags)
 		: "g" (flags), "m" (op1), "m" (op2)
 		: "al"
@@ -128,7 +133,8 @@ void op_cmpsb_impl() {
 }
 
 
-void op_cmpsd_impl() {
+void op_cmpsd_impl()
+{
 	uint32_t op1, op2;
 	unsigned long flags;
 
@@ -136,10 +142,14 @@ void op_cmpsd_impl() {
 	mem_read(isa_mem, isa_regs->esi, 4, &op2);
 	flags = isa_regs->eflags;
 	asm volatile (
-		"push %1 ; popf\n\t"
+		"pushf\n\t"
+		"push %1\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"cmp %3, %%eax\n\t"
-		"pushf ; pop %0"
+		"pushf\n\t"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags)
 		: "g" (flags), "m" (op1), "m" (op2)
 		: "eax"
@@ -150,7 +160,8 @@ void op_cmpsd_impl() {
 }
 
 
-void op_movsb_impl() {
+void op_movsb_impl()
+{
 	uint8_t m8;
 	mem_read(isa_mem, isa_regs->esi, 1, &m8);
 	mem_write(isa_mem, isa_regs->edi, 1, &m8);
@@ -159,7 +170,8 @@ void op_movsb_impl() {
 }
 
 
-void op_movsw_impl() {
+void op_movsw_impl()
+{
 	uint16_t m16;
 	mem_read(isa_mem, isa_regs->esi, 2, &m16);
 	mem_write(isa_mem, isa_regs->edi, 2, &m16);
@@ -168,7 +180,8 @@ void op_movsw_impl() {
 }
 
 
-void op_movsd_impl() {
+void op_movsd_impl()
+{
 	uint32_t m32;
 	mem_read(isa_mem, isa_regs->esi, 4, &m32);
 	mem_write(isa_mem, isa_regs->edi, 4, &m32);
@@ -177,16 +190,21 @@ void op_movsd_impl() {
 }
 
 
-void op_scasb_impl() {
+void op_scasb_impl()
+{
 	uint8_t al = isa_load_reg(x86_reg_al);
 	uint8_t m8;
 	unsigned long flags = isa_regs->eflags;
 	mem_read(isa_mem, isa_regs->edi, 1, &m8);
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"pushf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %1, %%al\n\t"
 		"cmp %2, %%al\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags)
 		: "m" (al), "m" (m8), "g" (flags)
 		: "al"
@@ -196,16 +214,21 @@ void op_scasb_impl() {
 }
 
 
-void op_scasd_impl() {
+void op_scasd_impl()
+{
 	uint32_t eax = isa_load_reg(x86_reg_eax);
 	uint32_t m32;
 	unsigned long flags = isa_regs->eflags;
 	mem_read(isa_mem, isa_regs->edi, 4, &m32);
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"pushf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %1, %%eax\n\t"
 		"cmp %2, %%eax\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags)
 		: "m" (eax), "m" (m32), "g" (flags)
 		: "eax"
@@ -229,6 +252,4 @@ void op_stosd_impl() {
 	mem_write(isa_mem, addr, 4, &m32);
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
 }
-
-
 

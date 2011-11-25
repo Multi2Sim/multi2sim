@@ -39,6 +39,7 @@ void op_bsf_r32_rm32_impl()
 
 	unsigned long flags = isa_regs->eflags;
 	asm volatile (
+		"pushf\n\t"
 		"push %4\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
@@ -46,6 +47,7 @@ void op_bsf_r32_rm32_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (r32)
 		: "g" (r32), "g" (rm32), "g" (flags)
 		: "eax"
@@ -64,11 +66,15 @@ void op_bsr_r32_rm32_impl()
 
 	unsigned long flags = isa_regs->eflags;
 	asm volatile (
-		"push %4 ; popf\n\t"
+		"pushf\n\t"
+		"push %4\n\t"
+		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"bsr %3, %%eax\n\t"
 		"mov %%eax, %1\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (r32)
 		: "m" (r32), "m" (rm32), "g" (flags)
 		: "eax"
@@ -105,11 +111,15 @@ void op_bt_rm32_r32_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"pushf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%ecx\n\t"
 		"mov %1, %%eax\n\t"
 		"bt %%ecx, %%eax\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags)
 		: "m" (rm32), "m" (r32), "g" (flags)
 		: "eax", "ecx"
@@ -127,11 +137,15 @@ void op_bt_rm32_imm8_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
-		"push %3 ; popf\n\t"
+		"pushf\n\t"
+		"push %3\n\t"
+		"popf\n\t"
 		"mov %2, %%ecx\n\t"
 		"mov %1, %%eax\n\t"
 		"bt %%ecx, %%eax\n\t"
-		"pushf ; pop %0\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags)
 		: "m" (rm32), "m" (imm8), "g" (flags)
 		: "eax", "ecx"
@@ -149,6 +163,7 @@ void op_bts_rm32_imm8_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %4\n\t"
 		"popf\n\t"
 		"mov %3, %%ecx\n\t"
@@ -157,6 +172,7 @@ void op_bts_rm32_imm8_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (rm32)
 		: "m" (rm32), "m" (imm8), "g" (flags)
 		: "eax", "ecx"
@@ -223,6 +239,7 @@ void op_cmpxchg_rm32_r32_impl()
 	uint32_t r32 = isa_load_r32();
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %4, %%eax\n\t"
@@ -233,6 +250,7 @@ void op_cmpxchg_rm32_r32_impl()
 		"pop %0\n\t"
 		"mov %%eax, %1\n\t"
 		"mov %%ebx, %2\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (eax), "=m" (rm32)
 		: "g" (flags), "m" (eax), "m" (rm32), "m" (r32)
 		: "eax", "ebx", "ecx"
@@ -407,6 +425,7 @@ void op_dec_rm8_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %2, %%al\n\t"
@@ -414,6 +433,7 @@ void op_dec_rm8_impl()
 		"mov %%al, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (rm8)
 		: "g" (rm8), "g" (flags)
 		: "al"
@@ -431,6 +451,7 @@ void op_dec_rm32_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
@@ -438,6 +459,7 @@ void op_dec_rm32_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (rm32)
 		: "g" (rm32), "g" (flags)
 		: "eax"
@@ -455,13 +477,15 @@ void op_dec_ir16_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %2, %%ax\n\t"
 		"dec %%ax\n\t"
 		"mov %%ax, %1\n\t"
 		"pushf\n\t"
-		"pop %0"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (ir16)
 		: "g" (ir16), "g" (flags)
 		: "eax"
@@ -479,6 +503,7 @@ void op_dec_ir32_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
@@ -486,6 +511,7 @@ void op_dec_ir32_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (ir32)
 		: "g" (ir32), "g" (flags)
 		: "eax"
@@ -505,10 +531,12 @@ void op_div_rm8_impl()
 	if (!rm8)
 		fatal("%s: division by 0", __FUNCTION__);
 	asm volatile(
+		"pushf\n\t"
 		"mov %1, %%ax\n\t"
 		"mov %2, %%bl\n\t"
 		"div %%bl\n\t"
 		"mov %%ax, %0\n\t"
+		"popf\n\t"
 		: "=m" (ax)
 		: "m" (ax), "m" (rm8)
 		: "ax", "bl"
@@ -528,12 +556,14 @@ void op_div_rm32_impl()
 	if (!rm32)
 		fatal("%s: division by 0", __FUNCTION__);
 	asm volatile (
+		"pushf\n\t"
 		"mov %2, %%eax\n\t"
 		"mov %3, %%edx\n\t"
 		"mov %4, %%ebx\n\t"
 		"div %%ebx\n\t"
 		"mov %%eax, %0\n\t"
 		"mov %%edx, %1\n\t"
+		"popf\n\t"
 		: "=m" (eax), "=m" (edx)
 		: "m" (eax), "m" (edx), "m" (rm32)
 		: "eax", "edx", "ebx"
@@ -560,12 +590,14 @@ void op_idiv_rm32_impl()
 	if (!rm32)
 		fatal("%s: division by 0", __FUNCTION__);
 	asm volatile (
+		"pushf\n\t"
 		"mov %2, %%eax\n\t"
 		"mov %3, %%edx\n\t"
 		"mov %4, %%ebx\n\t"
 		"idiv %%ebx\n\t"
 		"mov %%eax, %0\n\t"
 		"mov %%edx, %1\n\t"
+		"popf\n\t"
 		: "=m" (eax), "=m" (edx)
 		: "m" (eax), "m" (edx), "m" (rm32)
 		: "eax", "edx", "ebx"
@@ -585,6 +617,7 @@ void op_imul_rm32_impl()
 	uint32_t edx;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %5\n\t"
 		"popf\n\t"
 		"mov %3, %%eax\n\t"
@@ -594,6 +627,7 @@ void op_imul_rm32_impl()
 		"mov %%eax, %2\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (edx), "=m" (eax)
 		: "m" (eax), "m" (rm32), "g" (flags)
 		: "eax", "edx"
@@ -613,6 +647,7 @@ void op_imul_r32_rm32_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %4\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
@@ -621,6 +656,7 @@ void op_imul_r32_rm32_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (r32)
 		: "m" (r32), "m" (rm32), "g" (flags)
 		: "eax", "ebx"
@@ -640,6 +676,7 @@ void op_imul_r32_rm32_imm8_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %4\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
@@ -648,6 +685,7 @@ void op_imul_r32_rm32_imm8_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (r32)
 		: "m" (rm32), "m" (imm8), "g" (flags)
 		: "eax", "ebx"
@@ -667,6 +705,7 @@ void op_imul_r32_rm32_imm32_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %4\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
@@ -675,6 +714,7 @@ void op_imul_r32_rm32_imm32_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (r32)
 		: "m" (rm32), "m" (imm32), "g" (flags)
 		: "eax", "ebx"
@@ -692,6 +732,7 @@ void op_inc_rm8_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %2, %%al\n\t"
@@ -699,6 +740,7 @@ void op_inc_rm8_impl()
 		"mov %%al, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (rm8)
 		: "g" (rm8), "g" (flags)
 		: "al"
@@ -716,13 +758,15 @@ void op_inc_rm32_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"inc %%eax\n\t"
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
-		"pop %0"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (rm32)
 		: "g" (rm32), "g" (flags)
 		: "eax"
@@ -740,13 +784,15 @@ void op_inc_ir16_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %2, %%ax\n\t"
 		"inc %%ax\n\t"
 		"mov %%ax, %1\n\t"
 		"pushf\n\t"
-		"pop %0"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (ir16)
 		: "g" (ir16), "g" (flags)
 		: "ax"
@@ -764,13 +810,15 @@ void op_inc_ir32_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"inc %%eax\n\t"
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
-		"pop %0"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (ir32)
 		: "g" (ir32), "g" (flags)
 		: "eax"
@@ -1145,6 +1193,7 @@ void op_mul_rm32_impl()
 	uint32_t edx;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %5\n\t"
 		"popf\n\t"
 		"mov %3, %%eax\n\t"
@@ -1154,6 +1203,7 @@ void op_mul_rm32_impl()
 		"mov %%eax, %2\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (edx), "=m" (eax)
 		: "m" (eax), "m" (rm32), "g" (flags)
 		: "eax", "edx"
@@ -1172,6 +1222,7 @@ void op_neg_rm8_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %2, %%al\n\t"
@@ -1179,6 +1230,7 @@ void op_neg_rm8_impl()
 		"mov %%al, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (rm8)
 		: "g" (rm8), "g" (flags)
 		: "al"
@@ -1196,6 +1248,7 @@ void op_neg_rm32_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %3\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
@@ -1203,6 +1256,7 @@ void op_neg_rm32_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=g" (rm32)
 		: "g" (rm32), "g" (flags)
 		: "eax"
@@ -1416,9 +1470,11 @@ void op_rdtsc_impl()
 {
 	uint32_t eax, edx;
 	asm volatile (
+		"pushf\n\t"
 		"rdtsc\n\t"
 		"mov %%eax, %0\n\t"
 		"mov %%edx, %1\n\t"
+		"popf\n\t"
 		: "=g" (eax), "=g" (edx)
 		:
 		: "eax", "edx"
@@ -1490,6 +1546,7 @@ void op_shld_rm32_r32_imm8_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %5\n\t"
 		"popf\n\t"
 		"mov %4, %%cl\n\t"
@@ -1499,6 +1556,7 @@ void op_shld_rm32_r32_imm8_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (rm32)
 		: "m" (rm32), "m" (r32), "m" (imm8), "g" (flags)
 		: "eax", "ebx", "cl"
@@ -1518,6 +1576,7 @@ void op_shld_rm32_r32_cl_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %5\n\t"
 		"popf\n\t"
 		"mov %4, %%cl\n\t"
@@ -1527,6 +1586,7 @@ void op_shld_rm32_r32_cl_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (rm32)
 		: "m" (rm32), "m" (r32), "m" (cl), "g" (flags)
 		: "eax", "ebx", "cl"
@@ -1547,6 +1607,7 @@ void op_shrd_rm32_r32_imm8_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %5\n\t"
 		"popf\n\t"
 		"mov %4, %%cl\n\t"
@@ -1556,6 +1617,7 @@ void op_shrd_rm32_r32_imm8_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (rm32)
 		: "m" (rm32), "m" (r32), "m" (imm8), "g" (flags)
 		: "eax", "ebx", "cl"
@@ -1575,6 +1637,7 @@ void op_shrd_rm32_r32_cl_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %5\n\t"
 		"popf\n\t"
 		"mov %4, %%cl\n\t"
@@ -1583,7 +1646,8 @@ void op_shrd_rm32_r32_cl_impl()
 		"shrd %%cl, %%ebx, %%eax\n\t"
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
-		"pop %0"
+		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (rm32)
 		: "m" (rm32), "m" (r32), "m" (cl), "g" (flags)
 		: "eax", "ebx", "cl"
@@ -1612,6 +1676,7 @@ void op_xadd_rm8_r8_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %4\n\t"
 		"popf\n\t"
 		"mov %2, %%al\n\t"
@@ -1619,6 +1684,7 @@ void op_xadd_rm8_r8_impl()
 		"mov %%al, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (sum)
 		: "m" (rm8), "m" (r8), "g" (flags)
 		: "al"
@@ -1641,6 +1707,7 @@ void op_xadd_rm32_r32_impl()
 	unsigned long flags = isa_regs->eflags;
 
 	asm volatile (
+		"pushf\n\t"
 		"push %4\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
@@ -1648,6 +1715,7 @@ void op_xadd_rm32_r32_impl()
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
+		"popf\n\t"
 		: "=g" (flags), "=m" (sum)
 		: "m" (rm32), "m" (r32), "g" (flags)
 		: "eax"
