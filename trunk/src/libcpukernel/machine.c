@@ -322,10 +322,10 @@ void op_cpuid_impl()
 		info = SETBITVALUE32(info, 29, 1);  /* TM - Therm Monitor */
 		info = SETBITVALUE32(info, 28, 1);  /* HTT - Hyper-threading Tech. */
 		info = SETBITVALUE32(info, 27, 1);  /* SS - Self snoop */
-		info = SETBITVALUE32(info, 26, 1);  /* SSE2 - SSE2 Extensions */
-		info = SETBITVALUE32(info, 25, 1);  /* SSE - SSE Extensions */
+		info = SETBITVALUE32(info, 26, 0);  /* SSE2 - SSE2 Extensions */
+		info = SETBITVALUE32(info, 25, 0);  /* SSE - SSE Extensions */
 		info = SETBITVALUE32(info, 24, 1);  /* FXSR - FXSAVE/FXRSTOR */
-		info = SETBITVALUE32(info, 23, 1);  /* MMX - MMX Technology */
+		info = SETBITVALUE32(info, 23, 0);  /* MMX - MMX Technology */
 		info = SETBITVALUE32(info, 22, 1);  /* ACPI - Thermal Monitor and Clock Ctrl */
 		info = SETBITVALUE32(info, 21, 1);  /* DS - Debug Store */
 		info = SETBITVALUE32(info, 19, 1);  /* CLFSH - CFLUSH instruction */

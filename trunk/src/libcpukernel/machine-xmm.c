@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2007  Rafael Ubal Tena (ubal@gap.upv.es)
+ *  Copyright (C) 2007  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ void op_cvttsd2si_r32_xmmm64_impl()
 		: "eax"
 	);
 	isa_store_r32(r32);
+
+	x86_uinst_new(x86_uinst_xmm_conv, x86_dep_xmmm64, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -51,6 +53,8 @@ void op_cvttss2si_r32_xmmm32_impl()
 		: "eax"
 	);
 	isa_store_r32(r32);
+
+	x86_uinst_new(x86_uinst_xmm_conv, x86_dep_xmmm32, 0, 0, x86_dep_r32, 0, 0, 0);
 }
 
 
@@ -81,6 +85,8 @@ void op_movd_xmm_rm32_impl()
 	* (uint32_t *) xmm = value;
 
 	isa_store_xmm(xmm);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_rm32, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
@@ -93,6 +99,8 @@ void op_movd_rm32_xmm_impl()
 	value = * (uint32_t *) xmm;
 
 	isa_store_rm32(value);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_rm32, 0, 0, 0);
 }
 
 
@@ -129,6 +137,8 @@ void op_movhpd_xmm_m64_impl()
 	m64 = isa_load_m64();
 	* (uint64_t *) &xmm[8] = m64;
 	isa_store_xmm(xmm);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
@@ -140,6 +150,8 @@ void op_movhpd_m64_xmm_impl()
 	isa_load_xmm(xmm);
 	m64 = * (uint64_t *) &xmm[8];
 	isa_store_m64(m64);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm64, 0, 0, 0);
 }
 
 
@@ -152,6 +164,8 @@ void op_movlpd_xmm_m64_impl()
 	m64 = isa_load_m64();
 	* (uint64_t *) xmm = m64;
 	isa_store_xmm(xmm);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
@@ -163,6 +177,8 @@ void op_movlpd_m64_xmm_impl()
 	isa_load_xmm(xmm);
 	m64 = * (uint64_t *) xmm;
 	isa_store_m64(m64);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm64, 0, 0, 0);
 }
 
 
@@ -185,6 +201,8 @@ void op_movq_xmm_xmmm64_impl()
 	memset(value, 0, 16);
 	isa_load_xmmm64(value);
 	isa_store_xmm(value);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmmm64, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
@@ -197,6 +215,8 @@ void op_movq_xmmm64_xmm_impl()
 		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 16);
 	isa_load_xmm(value);
 	isa_store_xmmm64(value);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm64, 0, 0, 0);
 }
 
 
@@ -212,6 +232,8 @@ void op_movss_xmm_xmmm32_impl()
 		memset(value, 0, 16);
 	isa_load_xmmm32(value);
 	isa_store_xmm(value);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmmm32, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
@@ -227,6 +249,8 @@ void op_movss_xmmm32_xmm_impl()
 		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 16);
 	else
 		isa_store_xmmm32(value);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm32, 0, 0, 0);
 }
 
 
