@@ -40,6 +40,8 @@ void op_f2xm1_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_exp, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -61,6 +63,8 @@ void op_fabs_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_simple, x86_dep_st0,	0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -85,6 +89,8 @@ void op_fadd_m32_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_add, x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -109,6 +115,8 @@ void op_fadd_m64_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_add, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -132,6 +140,8 @@ void op_fadd_st0_sti_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_add, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -155,6 +165,8 @@ void op_fadd_sti_st0_impl()
 	);
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_add, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
 
 
@@ -162,6 +174,8 @@ void op_faddp_sti_st0_impl()
 {
 	op_fadd_sti_st0_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -183,6 +197,8 @@ void op_fchs_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_simple, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -192,6 +208,8 @@ void op_fcmovb_st0_sti_impl()
 	isa_load_fpu(isa_inst.opindex, sti);
 	if (isa_get_flag(x86_flag_cf))
 		isa_store_fpu(0, sti);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -201,6 +219,8 @@ void op_fcmove_st0_sti_impl()
 	isa_load_fpu(isa_inst.opindex, sti);
 	if (isa_get_flag(x86_flag_zf))
 		isa_store_fpu(0, sti);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -210,6 +230,8 @@ void op_fcmovbe_st0_sti_impl()
 	isa_load_fpu(isa_inst.opindex, sti);
 	if (isa_get_flag(x86_flag_cf) || isa_get_flag(x86_flag_zf))
 		isa_store_fpu(0, sti);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, x86_dep_zps, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -219,6 +241,8 @@ void op_fcmovu_st0_sti_impl()
 	isa_load_fpu(isa_inst.opindex, sti);
 	if (isa_get_flag(x86_flag_pf))
 		isa_store_fpu(0, sti);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -228,6 +252,8 @@ void op_fcmovnb_st0_sti_impl()
 	isa_load_fpu(isa_inst.opindex, sti);
 	if (!isa_get_flag(x86_flag_cf))
 		isa_store_fpu(0, sti);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -237,6 +263,8 @@ void op_fcmovne_st0_sti_impl()
 	isa_load_fpu(isa_inst.opindex, sti);
 	if (!isa_get_flag(x86_flag_zf))
 		isa_store_fpu(0, sti);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -246,6 +274,8 @@ void op_fcmovnbe_st0_sti_impl()
 	isa_load_fpu(isa_inst.opindex, sti);
 	if (!isa_get_flag(x86_flag_cf) && !isa_get_flag(x86_flag_zf))
 		isa_store_fpu(0, sti);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_sti, x86_dep_cf, x86_dep_zps, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -255,6 +285,8 @@ void op_fcmovnu_st0_sti_impl()
 	isa_load_fpu(isa_inst.opindex, sti);
 	if (!isa_get_flag(x86_flag_pf))
 		isa_store_fpu(0, sti);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_sti, x86_dep_zps, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -276,6 +308,8 @@ void op_fcom_m32_impl()
 		: "ax"
 	);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_mem32, 0, x86_dep_fpst, 0, 0, 0);
 }
 
 
@@ -297,6 +331,8 @@ void op_fcom_m64_impl()
 		: "ax"
 	);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_mem64, 0, x86_dep_fpst, 0, 0, 0);
 }
 
 
@@ -318,6 +354,8 @@ void op_fcom_sti_impl()
 		: "ax"
 	);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_fpst, 0, 0, 0);
 }
 
 
@@ -325,6 +363,8 @@ void op_fcomp_m32_impl()
 {
 	op_fcom_m32_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -332,6 +372,8 @@ void op_fcomp_m64_impl()
 {
 	op_fcom_m64_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -339,6 +381,8 @@ void op_fcomp_sti_impl()
 {
 	op_fcom_sti_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -362,6 +406,10 @@ void op_fcompp_impl()
 	isa_store_fpu_code(status);
 	isa_pop_fpu(NULL);
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_st1, 0, x86_dep_fpst, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -387,6 +435,8 @@ void op_fcomi_st0_sti_impl()
 		: "m" (*st0), "m" (*sti), "g" (flags)
 	);
 	isa_regs->eflags = flags;
+
+	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_fpst, 0, 0, 0);
 }
 
 
@@ -394,6 +444,8 @@ void op_fcomip_st0_sti_impl()
 {
 	op_fcomi_st0_sti_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -419,6 +471,8 @@ void op_fucomi_st0_sti_impl()
 		: "m" (*st0), "m" (*sti), "g" (flags)
 	);
 	isa_regs->eflags = flags;
+
+	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_fpst, 0, 0, 0);
 }
 
 
@@ -426,6 +480,8 @@ void op_fucomip_st0_sti_impl()
 {
 	op_fucomi_st0_sti_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -447,6 +503,8 @@ void op_fcos_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_cos, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -471,6 +529,8 @@ void op_fdiv_m32_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_div, x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -495,6 +555,8 @@ void op_fdiv_m64_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_div, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -518,6 +580,8 @@ void op_fdiv_st0_sti_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_div, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -541,6 +605,8 @@ void op_fdiv_sti_st0_impl()
 	);
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_div, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
 
 
@@ -548,6 +614,8 @@ void op_fdivp_sti_st0_impl()
 {
 	op_fdiv_sti_st0_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -572,6 +640,8 @@ void op_fdivr_m32_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_div, x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -596,6 +666,8 @@ void op_fdivr_m64_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_div, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -619,6 +691,8 @@ void op_fdivr_st0_sti_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_div, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -642,6 +716,8 @@ void op_fdivr_sti_st0_impl()
 	);
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_div, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
 
 
@@ -649,6 +725,8 @@ void op_fdivrp_sti_st0_impl()
 {
 	op_fdivr_sti_st0_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -665,6 +743,9 @@ void op_fild_m16_impl()
 		: "m" (m16)
 	);
 	isa_push_fpu(e);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_mem16, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -681,6 +762,9 @@ void op_fild_m32_impl()
 		: "m" (m32)
 	);
 	isa_push_fpu(e);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_mem32, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -697,6 +781,9 @@ void op_fild_m64_impl()
 		: "m" (m64)
 	);
 	isa_push_fpu(e);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_mem64, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -713,6 +800,8 @@ void op_fist_m16_impl()
 		: "m" (*e)
 	);
 	mem_write(isa_mem, isa_effective_address(), 2, &m16);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem16, 0, 0, 0);
 }
 
 
@@ -729,6 +818,8 @@ void op_fist_m32_impl()
 		: "m" (*e)
 	);
 	mem_write(isa_mem, isa_effective_address(), 4, &m32);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem32, 0, 0, 0);
 }
 
 
@@ -745,6 +836,8 @@ void op_fist_m64_impl()
 		: "m" (*e)
 	);
 	mem_write(isa_mem, isa_effective_address(), 8, &m64);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem64, 0, 0, 0);
 }
 
 
@@ -752,6 +845,8 @@ void op_fistp_m16_impl()
 {
 	op_fist_m16_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -759,6 +854,8 @@ void op_fistp_m32_impl()
 {
 	op_fist_m32_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -766,6 +863,8 @@ void op_fistp_m64_impl()
 {
 	op_fist_m64_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -778,6 +877,9 @@ void op_fld1_impl()
 		: "=m" (*v)
 	);
 	isa_push_fpu(v);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -790,6 +892,9 @@ void op_fldl2e_impl()
 		: "=m" (*v)
 	);
 	isa_push_fpu(v);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -802,6 +907,9 @@ void op_fldl2t_impl()
 		: "=m" (*v)
 	);
 	isa_push_fpu(v);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -814,6 +922,9 @@ void op_fldpi_impl()
 		: "=m" (*v)
 	);
 	isa_push_fpu(v);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -826,6 +937,9 @@ void op_fldlg2_impl()
 		: "=m" (*v)
 	);
 	isa_push_fpu(v);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -838,6 +952,9 @@ void op_fldln2_impl()
 		: "=m" (*v)
 	);
 	isa_push_fpu(v);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -850,20 +967,9 @@ void op_fldz_impl()
 		: "=m" (*v)
 	);
 	isa_push_fpu(v);
-}
 
-
-void op_fldcw_m16_impl()
-{
-	uint32_t addr = isa_effective_address();
-	uint16_t value;
-	mem_read(isa_mem, addr, 2, &value);
-	isa_regs->fpu_ctrl = value;
-	asm volatile (
-		"fldcw %0\n\t"
-		:
-		: "m" (value)
-	);
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, 0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -875,6 +981,9 @@ void op_fld_m32_impl()
 	m32 = isa_load_float();
 	isa_float_to_extended(m32, e);
 	isa_push_fpu(e);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_mem32, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -886,6 +995,9 @@ void op_fld_m64_impl()
 	m64 = isa_load_double();
 	isa_double_to_extended(m64, e);
 	isa_push_fpu(e);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_mem64, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -894,6 +1006,9 @@ void op_fld_m80_impl()
 	uint8_t e[10];
 	isa_load_extended(e);
 	isa_push_fpu(e);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_mem80, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -902,6 +1017,27 @@ void op_fld_sti_impl()
 	uint8_t sti[10];
 	isa_load_fpu(isa_inst.opindex, sti);
 	isa_push_fpu(sti);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_sti, 0, 0, x86_dep_fpaux, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_fpaux, 0, 0, x86_dep_st0, 0, 0, 0);
+}
+
+
+void op_fldcw_m16_impl()
+{
+	uint32_t addr = isa_effective_address();
+	uint16_t value;
+
+	mem_read(isa_mem, addr, 2, &value);
+	isa_regs->fpu_ctrl = value;
+	asm volatile (
+		"fldcw %0\n\t"
+		:
+		: "m" (value)
+	);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_mem16, 0, 0, x86_dep_fpcw, 0, 0, 0);
 }
 
 
@@ -926,6 +1062,8 @@ void op_fmul_m32_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_mult, x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -950,6 +1088,8 @@ void op_fmul_m64_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_mult, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -973,6 +1113,8 @@ void op_fmul_st0_sti_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_mult, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -996,6 +1138,8 @@ void op_fmul_sti_st0_impl()
 	);
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_mult, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
 
 
@@ -1003,18 +1147,8 @@ void op_fmulp_sti_st0_impl()
 {
 	op_fmul_sti_st0_impl();
 	isa_pop_fpu(NULL);
-}
 
-
-void op_fstcw_m16_impl()
-{
-	uint16_t value = isa_regs->fpu_ctrl;
-	asm volatile (
-		"fnstcw %0\n\t"
-		:
-		: "m" (value)
-	);
-	mem_write(isa_mem, isa_effective_address(), 2, &value);
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1028,6 +1162,8 @@ void op_fnstsw_ax_impl()
 {
 	uint16_t status = isa_load_fpu_status();
 	isa_store_reg(x86_reg_ax, status);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_fpst, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
@@ -1052,6 +1188,8 @@ void op_fpatan_impl()
 	isa_store_fpu(1, st1);
 	isa_pop_fpu(NULL);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_atan, x86_dep_st0, x86_dep_st1, 0, x86_dep_st1, x86_dep_fpop, 0, 0);
 }
 
 
@@ -1076,6 +1214,8 @@ void op_fprem_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_div, x86_dep_st0, x86_dep_st1, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1100,6 +1240,8 @@ void op_fprem1_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_div, x86_dep_st0, x86_dep_st1, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1121,6 +1263,9 @@ void op_fptan_impl()
 		: "ax"
 	);
 	isa_store_fpu(0, st0);
+
+	x86_uinst_new(x86_uinst_fp_tan, x86_dep_st0, 0, 0, x86_dep_st0, x86_dep_st1, 0, 0);
+
 	op_fld1_impl();
 	isa_store_fpu_code(status);
 }
@@ -1144,6 +1289,8 @@ void op_frndint_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_simple, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1168,6 +1315,8 @@ void op_fscale_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_exp, x86_dep_st0, x86_dep_st1, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1189,6 +1338,8 @@ void op_fsin_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_sin, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1214,6 +1365,9 @@ void op_fsincos_impl()
 	isa_store_fpu(0, vsin);
 	isa_push_fpu(vcos);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_sincos, x86_dep_st1, 0, 0, x86_dep_st0, x86_dep_st1, 0, 0);
 }
 
 
@@ -1235,6 +1389,8 @@ void op_fsqrt_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_sqrt, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1242,9 +1398,12 @@ void op_fst_m32_impl()
 {
 	uint8_t st0[10];
 	float m32;
+
 	isa_load_fpu(0, st0);
 	m32 = isa_extended_to_float(st0);
 	isa_store_float(m32);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem32, 0, 0, 0);
 }
 
 
@@ -1256,6 +1415,8 @@ void op_fst_m64_impl()
 	isa_load_fpu(0, st0);
 	m64 = isa_extended_to_double(st0);
 	isa_store_double(m64);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem64, 0, 0, 0);
 }
 
 
@@ -1265,6 +1426,8 @@ void op_fst_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_store_fpu(isa_inst.opindex, st0);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_sti, 0, 0, 0);
 }
 
 
@@ -1272,6 +1435,8 @@ void op_fstp_m32_impl()
 {
 	op_fst_m32_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1279,6 +1444,8 @@ void op_fstp_m64_impl()
 {
 	op_fst_m64_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1287,6 +1454,9 @@ void op_fstp_m80_impl()
 	uint8_t m80[10];
 	isa_pop_fpu(m80);
 	isa_store_extended(m80);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem80, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1294,6 +1464,8 @@ void op_fstp_sti_impl()
 {
 	op_fst_sti_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1301,6 +1473,8 @@ void op_fstsw_ax_impl()
 {
 	uint16_t status = isa_load_fpu_status();
 	isa_store_reg(x86_reg_ax, status);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_fpst, 0, 0, x86_dep_eax, 0, 0, 0);
 }
 
 
@@ -1325,6 +1499,8 @@ void op_fsub_m32_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_sub,	x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1349,6 +1525,8 @@ void op_fsub_m64_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_sub, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1372,6 +1550,8 @@ void op_fsub_st0_sti_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_sub, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1395,6 +1575,8 @@ void op_fsub_sti_st0_impl()
 	);
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_sub, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
 
 
@@ -1402,6 +1584,8 @@ void op_fsubp_sti_st0_impl()
 {
 	op_fsub_sti_st0_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1426,6 +1610,8 @@ void op_fsubr_m32_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_sub, x86_dep_st0, x86_dep_mem32, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1450,6 +1636,8 @@ void op_fsubr_m64_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_sub, x86_dep_st0, x86_dep_mem64, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1473,6 +1661,8 @@ void op_fsubr_st0_sti_impl()
 	);
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_sub, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1496,6 +1686,8 @@ void op_fsubr_sti_st0_impl()
 	);
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_sub, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
 }
 
 
@@ -1503,6 +1695,22 @@ void op_fsubrp_sti_st0_impl()
 {
 	op_fsubr_sti_st0_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
+}
+
+
+void op_fstcw_m16_impl()
+{
+	uint16_t value = isa_regs->fpu_ctrl;
+	asm volatile (
+		"fnstcw %0\n\t"
+		:
+		: "m" (value)
+	);
+	mem_write(isa_mem, isa_effective_address(), 2, &value);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_fpcw, 0, 0, x86_dep_mem32, 0, 0, 0);
 }
 
 
@@ -1523,6 +1731,8 @@ void op_ftst_impl()
 		: "ax"
 	);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, 0, 0, x86_dep_fpst, 0, 0, 0);
 }
 
 
@@ -1544,6 +1754,8 @@ void op_fucom_sti_impl()
 		: "ax"
 	);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_fpst, 0, 0, 0);
 }
 
 
@@ -1551,6 +1763,8 @@ void op_fucomp_sti_impl()
 {
 	op_fucom_sti_impl();
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1574,6 +1788,10 @@ void op_fucompp_impl()
 	isa_store_fpu_code(status);
 	isa_pop_fpu(NULL);
 	isa_pop_fpu(NULL);
+
+	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_fpst, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1594,6 +1812,8 @@ void op_fxam_impl()
 		: "ax"
 	);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, 0, 0, x86_dep_fpst, 0, 0, 0);
 }
 
 
@@ -1604,6 +1824,8 @@ void op_fxch_sti_impl()
 	isa_load_fpu(isa_inst.opindex, sti);
 	isa_store_fpu(0, sti);
 	isa_store_fpu(isa_inst.opindex, st0);
+
+	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, x86_dep_sti, 0, 0);
 }
 
 
@@ -1628,6 +1850,9 @@ void op_fyl2x_impl()
 	isa_store_fpu(1, st1);
 	isa_pop_fpu(NULL);
 	isa_store_fpu_code(status);
+
+	x86_uinst_new(x86_uinst_fp_log, x86_dep_st0, x86_dep_st1, 0, x86_dep_st1, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1652,5 +1877,7 @@ void op_fyl2xp1_impl()
 	isa_store_fpu(1, st1);
 	isa_pop_fpu(NULL);
 	isa_store_fpu_code(status);
-}
 
+	x86_uinst_new(x86_uinst_fp_log, x86_dep_st0, x86_dep_st1, 0, x86_dep_st1, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
+}

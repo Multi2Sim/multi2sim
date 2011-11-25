@@ -324,6 +324,22 @@ enum x86_dep_t {
 	x86_dep_fp_stack_count = x86_dep_fp_stack_last - x86_dep_fp_stack_first + 1,
 
 
+	/** XMM dependences */
+
+	x86_dep_xmm0 = 34,
+	x86_dep_xmm1 = 35,
+	x86_dep_xmm2 = 36,
+	x86_dep_xmm3 = 37,
+	x86_dep_xmm4 = 38,
+	x86_dep_xmm5 = 39,
+	x86_dep_xmm6 = 40,
+	x86_dep_xmm7 = 41,
+
+	x86_dep_xmm_first = x86_dep_xmm0,
+	x86_dep_xmm_last = x86_dep_xmm7,
+	x86_dep_xmm_count = x86_dep_xmm_last - x86_dep_xmm_first + 1,
+
+
 	/** Special dependences **/
 
 	x86_dep_rm8 = 0x100,
@@ -344,21 +360,30 @@ enum x86_dep_t {
 	x86_dep_mem16 = 0x501,
 	x86_dep_mem32 = 0x502,
 	x86_dep_mem64 = 0x503,
+	x86_dep_mem80 = 0x504,
+	x86_dep_mem128 = 0x505,
 
 	x86_dep_easeg = 0x601,  /* Effective address - segment */
 	x86_dep_eabas = 0x602,  /* Effective address - base */
 	x86_dep_eaidx = 0x603,  /* Effective address - index */
 
 	x86_dep_sti = 0x700,  /* FP - ToS+Index */
-	x86_dep_fpop = 0x701,  /* FP - Pop stack */
-	x86_dep_fpop2 = 0x702,  /* FP - Pop stack twice */
-	x86_dep_fpush = 0x703   /* FP - Push stack */
+	x86_dep_fpop = 0x701,  /* FP - Pop stack FIXME: remove */
+	x86_dep_fpop2 = 0x702,  /* FP - Pop stack twice  FIXME: remove*/
+	x86_dep_fpush = 0x703,   /* FP - Push stack  FIXME: remove*/
+
+	x86_dep_xmmm32 = 0x800,
+	x86_dep_xmmm64 = 0x801,
+	x86_dep_xmmm128 = 0x802,
+
+	x86_dep_xmm = 0x900
 };
 
 #define X86_DEP_IS_INT_REG(dep) ((dep) >= x86_dep_int_first && (dep) <= x86_dep_int_last)
 #define X86_DEP_IS_FP_REG(dep) ((dep) >= x86_dep_fp_first && (dep) <= x86_dep_fp_last)
+#define X86_DEP_IS_XMM_REG(dep)  ((dep) >= x86_dep_xmm_first && (dep) <= x86_dep_xmm_last)
 #define X86_DEP_IS_FLAG(dep) ((dep) >= x86_dep_flag_first && (dep) <= x86_dep_flag_last)
-#define X86_DEP_IS_VALID(dep) (X86_DEP_IS_INT_REG(dep) || X86_DEP_IS_FP_REG(dep))
+#define X86_DEP_IS_VALID(dep) (X86_DEP_IS_INT_REG(dep) || X86_DEP_IS_FP_REG(dep) || X86_DEP_IS_XMM_REG(dep))
 
 
 enum x86_uinst_opcode_t
@@ -382,10 +407,25 @@ enum x86_uinst_opcode_t
 	x86_uinst_fp_move,
 	x86_uinst_fp_simple,
 	x86_uinst_fp_add,
+	x86_uinst_fp_sub,
 	x86_uinst_fp_comp,
 	x86_uinst_fp_mult,
 	x86_uinst_fp_div,
-	x86_uinst_fp_complex,
+
+	x86_uinst_fp_exp,
+	x86_uinst_fp_log,
+	x86_uinst_fp_sin,
+	x86_uinst_fp_cos,
+	x86_uinst_fp_sincos,
+	x86_uinst_fp_tan,
+	x86_uinst_fp_atan,
+	x86_uinst_fp_sqrt,
+
+	x86_uinst_fp_push,
+	x86_uinst_fp_pop,
+
+	x86_uinst_xmm_move,
+	x86_uinst_xmm_conv,
 
 	x86_uinst_load,
 	x86_uinst_store,

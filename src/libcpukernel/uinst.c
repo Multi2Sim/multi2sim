@@ -27,7 +27,7 @@
 struct list_t *x86_uinst_list;
 
 struct string_map_t x86_uinst_dep_map = {
-	50, {
+	55, {
 		{ "none", x86_dep_none },
 
 		{ "eax", x86_dep_eax },
@@ -68,6 +68,15 @@ struct string_map_t x86_uinst_dep_map = {
 		{ "fpcw", x86_dep_fpcw },
 		{ "fpaux", x86_dep_fpaux },
 
+		{ "xmm0", x86_dep_xmm0 },
+		{ "xmm1", x86_dep_xmm1 },
+		{ "xmm2", x86_dep_xmm2 },
+		{ "xmm3", x86_dep_xmm3 },
+		{ "xmm4", x86_dep_xmm4 },
+		{ "xmm5", x86_dep_xmm5 },
+		{ "xmm6", x86_dep_xmm6 },
+		{ "xmm7", x86_dep_xmm7 },
+
 		{ "*RM8*", x86_dep_rm8 },
 		{ "*RM16*", x86_dep_rm16 },
 		{ "*RM32*", x86_dep_rm32 },
@@ -85,9 +94,9 @@ struct string_map_t x86_uinst_dep_map = {
 		{ "*EAIDX*", x86_dep_eaidx },
 
 		{ "*STI*", x86_dep_sti },
-		{ "*FPOP*", x86_dep_fpop },
-		{ "*FPOP2*", x86_dep_fpop2 },
-		{ "*FPUSH*", x86_dep_fpush }
+		{ "*FPOP*", x86_dep_fpop },  /* FIXME remove */
+		{ "*FPOP2*", x86_dep_fpop2 },  /* FIXME remove */
+		{ "*FPUSH*", x86_dep_fpush }  /* FIXME remove */
 	}
 };
 
@@ -112,13 +121,28 @@ struct x86_uinst_info_t
 	{ "shift" },
 	{ "sign" },
 
-	{ "fp_move" },
-	{ "fp_simple" },
-	{ "fp_add" },
-	{ "fp_comp" },
-	{ "fp_mult" },
-	{ "fp_div" },
-	{ "fp_complex" },
+	{ "fmove" },
+	{ "fsimple" },
+	{ "fadd" },
+	{ "fsub" },
+	{ "fcomp" },
+	{ "fmult" },
+	{ "fdiv" },
+
+	{ "fexp" },
+	{ "flog" },
+	{ "fsin" },
+	{ "fcos" },
+	{ "fsincos" },
+	{ "ftan" },
+	{ "fatan" },
+	{ "fsqrt" },
+
+	{ "fpush" },
+	{ "fpop" },
+
+	{ "xmove" },
+	{ "xconv" },
 
 	{ "load" },
 	{ "store" },
@@ -139,26 +163,66 @@ struct x86_uinst_info_t
  */
 
 
-/* This variable is set to 1 whenever an 'rm8', 'rm16', or 'rm32' dependence
- * has been processed in the current macroinstruction. Implication:
- *   Subsequent 'rmXXX' dependences shouldn't generate a new address computation,
- *   but just read the 'x86_dep_ea' dependence.
- * The variable is reset on a call to 'x86_uinst_clear' */
-static int x86_uinst_dep_rm_occurred;
+/* This variable is set to 1 whenever a memory dependence is found and processed
+ * in the current x86 macro-instruction. Subsequent memory dependences shouldn't
+ * generate a new address computation, but just read the 'x86_dep_ea' dependence. */
+static int x86_uinst_effaddr_emitted;
+
+
+/* If dependence 'index' in 'uinst' is a memory operand, return its size in bytes.
+ * Otherwise, return 0. */
+static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index)
+{
+	int dep;
+
+	assert(index >= 0 && index < X86_UINST_MAX_DEPS);
+	dep = uinst->dep[index];
+
+	switch (dep)
+	{
+
+	case x86_dep_rm8:
+	case x86_dep_rm16:
+	case x86_dep_rm32:
+
+		/* The 'modrm_mod' field indicates whether it's actually a memory dependence
+		 * or a register. */
+		return isa_inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_rm8);
+
+	case x86_dep_mem8:
+	case x86_dep_mem16:
+	case x86_dep_mem32:
+	case x86_dep_mem64:
+	case x86_dep_mem128:
+
+		return 1 << (dep - x86_dep_mem8);
+
+	case x86_dep_mem80:
+
+		return 10;
+
+	case x86_dep_xmmm32:
+	case x86_dep_xmmm64:
+	case x86_dep_xmmm128:
+
+		return isa_inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_xmmm32 + 2);
+
+	default:
+		return 0;
+	}
+}
 
 
 static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index)
 {
 	struct x86_uinst_t *new_uinst;
-	int dep;
 
-	/* Not an 'rmXXX' dependence */
-	dep = uinst->dep[index];
-	if (isa_inst.modrm_mod == 3 || dep < x86_dep_rm8 || dep > x86_dep_rm32)
+	/* Check if it is a memory dependence */
+	if (!x86_uinst_mem_dep_size(uinst, index))
 		return;
 
 	/* Record occurrence */
-	x86_uinst_dep_rm_occurred = 1;
+	x86_uinst_effaddr_emitted = 1;
 	
 	/* Emit 'effaddr' */
 	new_uinst = x86_uinst_create();
@@ -191,8 +255,29 @@ static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index)
 
 		break;
 
+	case x86_dep_easeg:
+
+		uinst->dep[index] = isa_inst.segment ? isa_inst.segment
+			- x86_reg_es + x86_dep_es : x86_dep_none;
+		break;
+
+	case x86_dep_eabas:
+
+		uinst->dep[index] = isa_inst.ea_base ? isa_inst.ea_base
+			- x86_reg_eax + x86_dep_eax : x86_dep_none;
+		break;
+
+	case x86_dep_eaidx:
+
+		uinst->dep[index] = isa_inst.ea_index ? isa_inst.ea_index
+			- x86_reg_eax + x86_dep_eax : x86_dep_none;
+		break;
+
+	/* If we reached this point, 'rmXXX' dependences are actually registers.
+	 * Otherwise, they would have been handled by 'parse_idep'/'parse_odep' functions. */
 	case x86_dep_rm8:
 
+		assert(isa_inst.modrm_mod == 3);
 		uinst->dep[index] = isa_inst.modrm_rm < 4 ? x86_dep_eax + isa_inst.modrm_rm
 			: x86_dep_eax + isa_inst.modrm_rm - 4;
 		break;
@@ -200,6 +285,7 @@ static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index)
 	case x86_dep_rm16:
 	case x86_dep_rm32:
 
+		assert(isa_inst.modrm_mod == 3);
 		uinst->dep[index] = x86_dep_eax + isa_inst.modrm_rm;
 		break;
 
@@ -237,6 +323,19 @@ static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index)
 		uinst->dep[index] = x86_dep_st0 + isa_inst.opindex;
 		break;
 	
+	case x86_dep_xmmm32:
+	case x86_dep_xmmm64:
+	case x86_dep_xmmm128:
+
+		assert(isa_inst.modrm_mod == 3);
+		uinst->dep[index] = x86_dep_xmm0 + isa_inst.modrm_rm;
+		break;
+
+	case x86_dep_xmm:
+
+		uinst->dep[index] = x86_dep_xmm0 + isa_inst.reg;
+		break;
+
 	default:
 
 		panic("%s: unknown dep: %d\n", __FUNCTION__, dep);
@@ -263,7 +362,7 @@ static int x86_uinst_add_idep(struct x86_uinst_t *uinst, enum x86_dep_t dep)
 static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
 {
 	struct x86_uinst_t *new_uinst;
-	int size;
+	int mem_dep_size;
 	int dep;
 
 	/* Get dependence */
@@ -272,11 +371,10 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
 	if (!dep)
 		return;
 
-	if (isa_inst.modrm_mod != 3 && dep >= x86_dep_rm8 && dep <= x86_dep_rm32)
+	/* Memory dependence */
+	mem_dep_size = x86_uinst_mem_dep_size(uinst, index);
+	if (mem_dep_size)
 	{
-		/* Calculate operand size (1 for 'rm8', 2 for 'rm16', 4 for 'rm32') */
-		size = 1 << (dep - x86_dep_rm8);
-
 		/* If uinst is 'move', just convert it into a 'store' */
 		if (uinst->opcode == x86_uinst_move) {
 
@@ -285,7 +383,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
 				uinst->opcode = x86_uinst_store;
 				uinst->dep[index] = x86_dep_none;
 				uinst->address = isa_effective_address();
-				uinst->size = size;
+				uinst->size = mem_dep_size;
 				return;
 			}
 		}
@@ -296,24 +394,23 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
 		new_uinst->idep[0] = x86_dep_ea;
 		new_uinst->idep[1] = x86_dep_data;
 		new_uinst->address = isa_effective_address();
-		new_uinst->size = size;
+		new_uinst->size = mem_dep_size;
 		list_add(x86_uinst_list, new_uinst);
 
 		/* Output dependence of instruction is x86_dep_data */
 		uinst->dep[index] = x86_dep_data;
+		return;
 	}
-	else
-	{
-		/* Regular dependence */
-		x86_uinst_parse_dep(uinst, index);
-	}
+
+	/* Regular dependence */
+	x86_uinst_parse_dep(uinst, index);
 }
 
 
 static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index)
 {
 	struct x86_uinst_t *new_uinst;
-	int size;
+	int mem_dep_size;
 	int dep;
 
 	/* Get dependence */
@@ -322,18 +419,17 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index)
 	if (!dep)
 		return;
 	
-	if (isa_inst.modrm_mod != 3 && dep >= x86_dep_rm8 && dep <= x86_dep_rm32)
+	/* Memory dependence */
+	mem_dep_size = x86_uinst_mem_dep_size(uinst ,index);
+	if (mem_dep_size)
 	{
-		/* Calculate operand size (1 for 'rm8', 2 for 'rm16', 4 for 'rm32') */
-		size = 1 << (dep - x86_dep_rm8);
-
 		/* If uinst is 'move', just convert it into a 'load' */
 		/* Replace 'rmXXX' by 'ea' dependence */
 		if (uinst->opcode == x86_uinst_move) {
 			uinst->opcode = x86_uinst_load;
 			uinst->dep[index] = x86_dep_ea;
 			uinst->address = isa_effective_address();
-			uinst->size = size;
+			uinst->size = mem_dep_size;
 			return;
 		}
 
@@ -343,33 +439,16 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index)
 		new_uinst->idep[0] = x86_dep_ea;
 		new_uinst->odep[0] = x86_dep_data;
 		new_uinst->address = isa_effective_address();
-		new_uinst->size = size;
+		new_uinst->size = mem_dep_size;
 		list_add(x86_uinst_list, new_uinst);
 
 		/* Input dependence of instruction is converted into 'x86_dep_data' */
 		uinst->dep[index] = x86_dep_data;
+		return;
+	}
 
-	}
-	else if (dep == x86_dep_easeg)
-	{
-		uinst->dep[index] = isa_inst.segment ? isa_inst.segment
-			- x86_reg_es + x86_dep_es : x86_dep_none;
-	}
-	else if (dep == x86_dep_eabas)
-	{
-		uinst->dep[index] = isa_inst.ea_base ? isa_inst.ea_base
-			- x86_reg_eax + x86_dep_eax : x86_dep_none;
-	}
-	else if (dep == x86_dep_eaidx)
-	{
-		uinst->dep[index] = isa_inst.ea_index ? isa_inst.ea_index
-			- x86_reg_eax + x86_dep_eax : x86_dep_none;
-	}
-	else
-	{
-		/* Regular dependence */
-		x86_uinst_parse_dep(uinst, index);
-	}
+	/* Regular dependence */
+	x86_uinst_parse_dep(uinst, index);
 }
 
 
@@ -439,7 +518,7 @@ void __x86_uinst_new_mem(enum x86_uinst_opcode_t opcode, uint32_t address, int s
 
 	/* Emit effective address computation if any dependence is 'rmXXX' and none
 	 * 'effaddr' uinst has been inserted in the list so far. */
-	for (i = 0; !x86_uinst_dep_rm_occurred && i < X86_UINST_MAX_DEPS; i++)
+	for (i = 0; !x86_uinst_effaddr_emitted && i < X86_UINST_MAX_DEPS; i++)
 		x86_uinst_emit_effaddr(uinst, i);
 	
 	/* Parse input dependences */
@@ -471,7 +550,7 @@ void x86_uinst_clear(void)
 		x86_uinst_free(list_remove_at(x86_uinst_list, 0));
 	
 	/* Forget occurrence of 'rmXXX' in previous inst */
-	x86_uinst_dep_rm_occurred = 0;
+	x86_uinst_effaddr_emitted = 0;
 }
 
 
