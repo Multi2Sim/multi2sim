@@ -327,6 +327,7 @@ void uop_dump_buf(struct uop_t *uop, char *buf, int size)
 	int i, loreg, count, fp_top_of_stack;
 	char *comma;
 
+	assert(uop->uop >= 0 && uop->uop <= uop_count);
 	dump_buf(&buf, &size, "%s ", uop_bank[uop->uop].name);
 	comma = "";
 	for (i = count = 0; i < IDEP_COUNT; i++) {
