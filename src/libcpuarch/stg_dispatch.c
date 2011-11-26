@@ -36,9 +36,9 @@ static enum di_stall_t can_dispatch_thread(int core, int thread)
 	/* If iq/lq/sq/rob full, done */
 	if (!rob_can_enqueue(uop))
 		return di_stall_rob;
-	if (!(uop->flags & FMEM) && !iq_can_insert(uop))
+	if (!(uop->flags & X86_UINST_MEM) && !iq_can_insert(uop))
 		return di_stall_iq;
-	if ((uop->flags & FMEM) && !lsq_can_insert(uop))
+	if ((uop->flags & X86_UINST_MEM) && !lsq_can_insert(uop))
 		return di_stall_lsq;
 	if (!rf_can_rename(uop))
 		return di_stall_rename;
@@ -75,14 +75,14 @@ static int dispatch_thread(int core, int thread, int quant)
 		THREAD.rob_writes++;
 		
 		/* Non memory instruction into IQ */
-		if (!(uop->flags & FMEM)) {
+		if (!(uop->flags & X86_UINST_MEM)) {
 			iq_insert(uop);
 			CORE.iq_writes++;
 			THREAD.iq_writes++;
 		}
 		
 		/* Memory instructions into the LSQ */
-		if (uop->flags & FMEM) {
+		if (uop->flags & X86_UINST_MEM) {
 			lsq_insert(uop);
 			CORE.lsq_writes++;
 			THREAD.lsq_writes++;
@@ -91,9 +91,9 @@ static int dispatch_thread(int core, int thread, int quant)
 		/* Another instruction dispatched */
 		uop->di_seq = ++CORE.di_seq;
 		CORE.di_stall[uop->specmode ? di_stall_spec : di_stall_used]++;
-		THREAD.dispatched[uop->uop]++;
-		CORE.dispatched[uop->uop]++;
-		cpu->dispatched[uop->uop]++;
+		THREAD.dispatched[uop->uinst->opcode]++;
+		CORE.dispatched[uop->uinst->opcode]++;
+		cpu->dispatched[uop->uinst->opcode]++;
 		quant--;
 
 		/* Pipeline debug */

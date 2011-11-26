@@ -100,59 +100,58 @@ struct string_map_t x86_uinst_dep_map = {
 	}
 };
 
-struct x86_uinst_info_t
+
+struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 {
-	char *name;
-} x86_uinst_info[x86_uinst_opcode_count] = {
 
-	{ "nop" },
+	{ "nop", 0 },
 
-	{ "move" },
-	{ "add" },
-	{ "sub" },
-	{ "mult" },
-	{ "div" },
-	{ "effaddr" },
+	{ "move", X86_UINST_INT },
+	{ "add", X86_UINST_INT },
+	{ "sub", X86_UINST_INT },
+	{ "mult", X86_UINST_INT },
+	{ "div", X86_UINST_INT },
+	{ "effaddr", X86_UINST_INT },
 
-	{ "and" },
-	{ "or" },
-	{ "xor" },
-	{ "not" },
-	{ "shift" },
-	{ "sign" },
+	{ "and", X86_UINST_LOGICAL },
+	{ "or", X86_UINST_LOGICAL },
+	{ "xor", X86_UINST_LOGICAL },
+	{ "not", X86_UINST_LOGICAL },
+	{ "shift", X86_UINST_LOGICAL },
+	{ "sign", X86_UINST_LOGICAL },
 
-	{ "fmove" },
-	{ "fsimple" },
-	{ "fadd" },
-	{ "fsub" },
-	{ "fcomp" },
-	{ "fmult" },
-	{ "fdiv" },
+	{ "fmove", X86_UINST_FP },
+	{ "fsimple", X86_UINST_FP },
+	{ "fadd", X86_UINST_FP },
+	{ "fsub", X86_UINST_FP },
+	{ "fcomp", X86_UINST_FP },
+	{ "fmult", X86_UINST_FP },
+	{ "fdiv", X86_UINST_FP },
 
-	{ "fexp" },
-	{ "flog" },
-	{ "fsin" },
-	{ "fcos" },
-	{ "fsincos" },
-	{ "ftan" },
-	{ "fatan" },
-	{ "fsqrt" },
+	{ "fexp", X86_UINST_FP },
+	{ "flog", X86_UINST_FP },
+	{ "fsin", X86_UINST_FP },
+	{ "fcos", X86_UINST_FP },
+	{ "fsincos", X86_UINST_FP },
+	{ "ftan", X86_UINST_FP },
+	{ "fatan", X86_UINST_FP },
+	{ "fsqrt", X86_UINST_FP },
 
-	{ "fpush" },
-	{ "fpop" },
+	{ "fpush", X86_UINST_FP },
+	{ "fpop", X86_UINST_FP },
 
-	{ "xmove" },
-	{ "xconv" },
+	{ "xmove", X86_UINST_XMM },
+	{ "xconv", X86_UINST_XMM },
 
-	{ "load" },
-	{ "store" },
+	{ "load", X86_UINST_MEM },
+	{ "store", X86_UINST_MEM },
 
-	{ "call" },
-	{ "ret" },
-	{ "jump" },
-	{ "branch" },
+	{ "call", X86_UINST_CTRL },
+	{ "ret", X86_UINST_CTRL },
+	{ "jump", X86_UINST_CTRL },
+	{ "branch", X86_UINST_CTRL },
 
-	{ "syscall" }
+	{ "syscall", 0 }
 };
 
 
@@ -554,28 +553,28 @@ void x86_uinst_clear(void)
 }
 
 
-void x86_uinst_dump(struct x86_uinst_t *uinst, FILE *f)
+void x86_uinst_dump_buf(struct x86_uinst_t *uinst, char *buf, int size)
 {
 	char *comma;
 	enum x86_dep_t dep;
 	int i;
 
 	/* Instruction name */
-	fprintf(f, "%s ", x86_uinst_info[uinst->opcode].name);
+	dump_buf(&buf, &size, "%s ", x86_uinst_info[uinst->opcode].name);
 
 	/* Output operands */
 	comma = "";
-	fprintf(f, "<");
+	dump_buf(&buf, &size, "<");
 	for (i = 0; i < X86_UINST_MAX_ODEPS; i++) {
 		dep = uinst->odep[i];
 		if (!dep)
 			continue;
-		fprintf(f, "%s%s", comma, map_value(&x86_uinst_dep_map, dep));
+		dump_buf(&buf, &size, "%s%s", comma, map_value(&x86_uinst_dep_map, dep));
 		comma = ",";
 	}
 
 	/* Separator */
-	fprintf(f, ">/<");
+	dump_buf(&buf, &size, ">/<");
 
 	/* Input operands */
 	comma = "";
@@ -583,17 +582,23 @@ void x86_uinst_dump(struct x86_uinst_t *uinst, FILE *f)
 		dep = uinst->idep[i];
 		if (!dep)
 			continue;
-		fprintf(f, "%s%s", comma, map_value(&x86_uinst_dep_map, dep));
+		dump_buf(&buf, &size, "%s%s", comma, map_value(&x86_uinst_dep_map, dep));
 		comma = ",";
 	}
-	fprintf(f, ">");
+	dump_buf(&buf, &size, ">");
 
 	/* Memory address */
 	if (uinst->size)
-		fprintf(f, " [0x%x,%d]", uinst->address, uinst->size);
+		dump_buf(&buf, &size, " [0x%x,%d]", uinst->address, uinst->size);
+}
 
-	/* End */
-	fprintf(f, "\n");
+
+void x86_uinst_dump(struct x86_uinst_t *uinst, FILE *f)
+{
+	char buf[MAX_STRING_SIZE];
+
+	x86_uinst_dump_buf(uinst, buf, sizeof(buf));
+	fprintf(f, "%s", buf);
 }
 
 

@@ -538,6 +538,7 @@ void cpu_config_dump(FILE *f)
 
 void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 {
+#if 0
 	uint64_t icomp = 0;
 	uint64_t lcomp = 0;
 	uint64_t fcomp = 0;
@@ -572,6 +573,7 @@ void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ip
 	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, cpu->cycle && peak_ipc ?
 		(double) total / cpu->cycle / peak_ipc : 0.0);
 	fprintf(f, "\n");
+#endif
 }
 
 

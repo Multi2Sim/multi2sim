@@ -107,7 +107,9 @@ extern int cpu_commit_width;
 
 
 
-/* Memory Management Unit */
+/*
+ * Memory Management Unit
+ */
 
 struct mm_t;
 
@@ -119,18 +121,9 @@ int mm_rtranslate(struct mm_t *mm, uint32_t phaddr, int *ctx, uint32_t *vtladdr)
 
 
 
-/* Micro Operations */
-
-enum uop_enum
-{
-
-#define UOP(_uop, _fu, _flags) uop_##_uop,
-#include "uop1.dat"
-#undef UOP
-
-	uop_count
-};
-
+/*
+ * Micro Operations
+ */
 
 enum fu_class_t
 {
@@ -153,37 +146,29 @@ enum fu_class_t
 };
 
 
-enum uop_flags_t
+struct uop_t
 {
-	FICOMP        = 0x001,  /* Integer computation */
-	FLCOMP        = 0x002,  /* Logic computation */
-	FFCOMP        = 0x004,  /* Floating-point computation */
-	FMEM          = 0x008,  /* Memory access */
-	FLOAD         = 0x010,  /* Load */
-	FSTORE        = 0x020,  /* Store */
-	FCTRL         = 0x040,  /* Control */
-	FCALL         = 0x080,  /* Call to procedure */
-	FRET          = 0x100,  /* Return from procedure */
-	FCOND         = 0x200   /* Conditional branch */
-};
+	/* Micro-instruction */
+	struct x86_uinst_t *uinst;
+	enum x86_uinst_flag_t flags;
 
-
-#define IDEP_COUNT 3
-#define ODEP_COUNT 4
-
-struct uop_t {
-	
-	/* Main uop fields */
+	/* Name and sequence numbers */
 	char name[40];
-	enum uop_enum uop;  /* opcode */
+	uint32_t magic;  /* Magic number for debugging */
+	uint64_t seq;  /* Sequence number - unique uop identifier */
+	uint64_t di_seq;  /* Dispatch sequence number - unique per core */
+
+	/* Context info */
 	struct ctx_t *ctx;
-	int core, thread;
-	uint64_t seq;  /* sequence number - unique uop identifier */
-	uint64_t di_seq;  /* dispatch squence number - unique per core */
-	uint32_t eip;  /* address of macroinst */
-	uint32_t neip;  /* address of next non-speculative macroinst */
-	uint32_t pred_neip; /* address of next predicted macroinst (for branches) */
-	uint32_t target_neip;  /* address of target macroinst assuming branch taken (for branches) */
+	int core;
+	int thread;
+
+	/* Fetch info */
+	int fetch_tcache;  /* True if uop comes from trace cache */
+	uint32_t eip;  /* Address of x86 macro-instruction */
+	uint32_t neip;  /* Address of next non-speculative x86 macro-instruction */
+	uint32_t pred_neip; /* Address of next predicted x86 macro-instruction (for branches) */
+	uint32_t target_neip;  /* Address of target x86 macro-instruction assuming branch taken (for branches) */
 	int specmode;
 	uint64_t fetch_access;  /* Access identifier to the instruction cache */
 
@@ -197,22 +182,16 @@ struct uop_t {
 	/* Logical dependencies */
 	int idep_count;
 	int odep_count;
-	int idep[IDEP_COUNT];
-	int odep[ODEP_COUNT];
 
 	/* Physical mappings */
 	int ph_int_idep_count, ph_fp_idep_count;
 	int ph_int_odep_count, ph_fp_odep_count;
-	int ph_idep[IDEP_COUNT];
-	int ph_odep[ODEP_COUNT];
-	int ph_oodep[ODEP_COUNT];
-
-	/* Fetch */
-	int fetch_tcache;  /* True if uop comes from trace cache */
+	int ph_idep[X86_UINST_MAX_IDEPS];
+	int ph_odep[X86_UINST_MAX_ODEPS];
+	int ph_oodep[X86_UINST_MAX_ODEPS];
 
 	/* Execution */
 	int fu_class;
-	int flags;
 
 	/* Queues where instruction is */
 	int in_fetchq : 1;
@@ -229,8 +208,7 @@ struct uop_t {
 	int completed;
 
 	/* For memory uops */
-	uint32_t mem_vtladdr;  /* virtual address */
-	uint32_t mem_phaddr;  /* physical address */
+	uint32_t physical_address;  /* ... corresponding to 'uop->uinst->address' */
 
 	/* Cycles */
 	uint64_t when;  /* cycle when ready */
@@ -244,34 +222,33 @@ struct uop_t {
 	int choice_index, choice_pred;
 };
 
-void uop_init(void);
-void uop_done(void);
+struct uop_t *uop_create(void);
+void uop_free_if_not_queued(struct uop_t *uop);
+int uop_exists(struct uop_t *uop);
 
 void uop_list_dump(struct list_t *uop_list, FILE *f);
 void uop_lnlist_dump(struct lnlist_t *uop_list, FILE *f);
 void uop_lnlist_check_if_ready(struct lnlist_t *uop_list);
-struct uop_t *uop_decode(struct list_t *list);
-
-void uop_free_if_not_queued(struct uop_t *uop);
-void uop_dump_buf(struct uop_t *uop, char *buf, int size);
-void uop_dump(struct uop_t *uop, FILE *f);
-int uop_exists(struct uop_t *uop);
 
 
 
 
-/* Functional Units */
+/*
+ * Functional Units
+ */
  
-#define FU_RES_MAX	10
+#define FU_RES_MAX  10
 
-struct fu_t {
+struct fu_t
+{
 	uint64_t cycle_when_free[fu_count][FU_RES_MAX];
 	uint64_t accesses[fu_count];
 	uint64_t denied[fu_count];
 	uint64_t waiting_time[fu_count];
 };
 
-struct fu_res_t {
+struct fu_res_t
+{
 	int count;
 	int oplat;
 	int issuelat;
@@ -289,7 +266,9 @@ void fu_release(int core);
 
 
 
-/* Fetch Queue */
+/*
+ * Fetch Queue
+ */
 
 extern int fetchq_size;
 
@@ -302,7 +281,9 @@ struct uop_t *fetchq_remove(int core, int thread, int index);
 
 
 
-/* Uop Queue */
+/*
+ * Uop Queue
+ */
 
 extern int uopq_size;
 
@@ -314,7 +295,9 @@ void uopq_recover(int core, int thread);
 
 
 
-/* Reorder Buffer */
+/*
+ * Reorder Buffer
+ */
 
 extern char *rob_kind_map[];
 extern enum rob_kind_t {
@@ -339,7 +322,9 @@ struct uop_t *rob_get(int core, int thread, int index);
 
 
 
-/* Instruction Queue */
+/*
+ * Instruction Queue
+ */
 
 extern char *iq_kind_map[];
 extern enum iq_kind_t {
@@ -359,7 +344,9 @@ void iq_recover(int core, int thread);
 
 
 
-/* Load/Store Queue */
+/*
+ * Load/Store Queue
+ */
 
 extern char *lsq_kind_map[];
 extern enum lsq_kind_t {
@@ -381,7 +368,9 @@ void sq_remove(int core, int thread);
 
 
 
-/* Event Queue */
+/*
+ * Event Queue
+ */
 
 void eventq_init(void);
 void eventq_done(void);
@@ -394,10 +383,13 @@ void eventq_recover(int core, int thread);
 
 
 
-/* Physical Register File */
 
-#define RF_MIN_INT_SIZE  (x86_dep_int_count + ODEP_COUNT)
-#define RF_MIN_FP_SIZE  (x86_dep_fp_count + ODEP_COUNT)
+/*
+ * Physical Register File
+ */
+
+#define RF_MIN_INT_SIZE  (x86_dep_int_count + X86_UINST_MAX_ODEPS)
+#define RF_MIN_FP_SIZE  (x86_dep_fp_count + X86_UINST_MAX_ODEPS)
 
 extern char *rf_kind_map[];
 extern enum rf_kind_t {
@@ -449,7 +441,9 @@ void rf_check_integrity(int core, int thread);
 
 
 
-/* Branch Predictor */
+/*
+ * Branch Predictor
+ */
 
 extern char *bpred_kind_map[];
 extern enum bpred_kind_t {
@@ -489,7 +483,9 @@ uint32_t bpred_btb_next_branch(struct bpred_t *bpred, uint32_t eip, uint32_t bsi
 
 
 
-/* Trace cache */
+/*
+ * Trace cache
+ */
 
 #define TCACHE_ENTRY_SIZE  (sizeof(struct tcache_entry_t) + sizeof(uint32_t) * tcache_trace_size)
 #define TCACHE_ENTRY(SET, WAY)  ((struct tcache_entry_t *) (((unsigned char *) tcache->entry) + TCACHE_ENTRY_SIZE * ((SET) * tcache_assoc + (WAY))))
@@ -546,7 +542,9 @@ int tcache_lookup(struct tcache_t *tcache, uint32_t eip, int pred,
 
 
 
-/* Pipeline Trace */
+/*
+ * Pipeline Trace
+ */
 
 enum ptrace_stage_t
 {
@@ -571,7 +569,10 @@ void ptrace_new_cycle(void);
 
 
 
-/* Multi-Core Multi-Thread Processor */
+/*
+ * Multi-Core Multi-Thread Processor
+ */
+
 
 /* Fast access macros */
 #define CORE			(cpu->core[core])
@@ -598,8 +599,8 @@ enum di_stall_t
 
 
 /* Thread */
-struct cpu_thread_t {
-
+struct cpu_thread_t
+{
 	struct ctx_t *ctx;  /* allocated kernel context */
 	int last_alloc_pid;  /* pid of last allocated context */
 
@@ -637,9 +638,9 @@ struct cpu_thread_t {
 
 	/* Stats */
 	uint64_t fetched;
-	uint64_t dispatched[uop_count];
-	uint64_t issued[uop_count];
-	uint64_t committed[uop_count];
+	uint64_t dispatched[x86_uinst_opcode_count];
+	uint64_t issued[x86_uinst_opcode_count];
+	uint64_t committed[x86_uinst_opcode_count];
 	uint64_t squashed;
 	uint64_t branches;
 	uint64_t mispred;
@@ -684,8 +685,8 @@ struct cpu_thread_t {
 
 
 /* Cores */
-struct cpu_core_t {
-
+struct cpu_core_t
+{
 	/* Array of threads */
 	struct cpu_thread_t *thread;
 
@@ -716,9 +717,9 @@ struct cpu_core_t {
 
 	/* Stats */
 	uint64_t di_stall[di_stall_max];
-	uint64_t dispatched[uop_count];
-	uint64_t issued[uop_count];
-	uint64_t committed[uop_count];
+	uint64_t dispatched[x86_uinst_opcode_count];
+	uint64_t issued[x86_uinst_opcode_count];
+	uint64_t committed[x86_uinst_opcode_count];
 	uint64_t squashed;
 	uint64_t branches;
 	uint64_t mispred;
@@ -754,8 +755,8 @@ struct cpu_core_t {
 
 
 /* Processor */
-struct cpu_t {
-	
+struct cpu_t
+{
 	/* Array of cores */
 	struct cpu_core_t *core;
 
@@ -776,9 +777,9 @@ struct cpu_t {
 	
 	/* Statistics */
 	uint64_t fetched;
-	uint64_t dispatched[uop_count];
-	uint64_t issued[uop_count];
-	uint64_t committed[uop_count];
+	uint64_t dispatched[x86_uinst_opcode_count];
+	uint64_t issued[x86_uinst_opcode_count];
+	uint64_t committed[x86_uinst_opcode_count];
 	uint64_t squashed;
 	uint64_t branches;
 	uint64_t mispred;
@@ -787,7 +788,6 @@ struct cpu_t {
 	/* For dumping */
 	uint64_t last_committed;
 	uint64_t last_dump;
-	
 };
 
 

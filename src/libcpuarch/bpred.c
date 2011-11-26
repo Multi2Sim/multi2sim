@@ -196,8 +196,8 @@ int bpred_lookup(struct bpred_t *bpred, struct uop_t *uop)
 	 * provides information about the branch, i.e., target address and whether it
 	 * is a call, ret, jump, or conditional branch. Thus, branches other than
 	 * conditional ones are always predicted taken. */
-	assert(uop->flags & FCTRL);
-	if ((uop->flags & FCALL) || (uop->flags & FRET) || !(uop->flags & FCOND)) {
+	assert(uop->flags & X86_UINST_CTRL);
+	if (uop->uinst->opcode != x86_uinst_branch) {
 		uop->pred = 1;
 		return 1;
 	}
@@ -286,7 +286,7 @@ void bpred_update(struct bpred_t *bpred, struct uop_t *uop)
 	uint32_t *pbhr;  /* pointer to branch history register */
 
 	assert(!uop->specmode);
-	assert(uop->flags & FCTRL);
+	assert(uop->flags & X86_UINST_CTRL);
 	taken = uop->neip != uop->eip + uop->mop_size;
 
 	/* Stats */
@@ -297,8 +297,7 @@ void bpred_update(struct bpred_t *bpred, struct uop_t *uop)
 	/* Update predictors. This is only done for conditional branches. Thus,
 	 * exit now if instruction is a call, ret, or jmp.
 	 * No update is performed in a perfect branch predictor either. */
-	if ((uop->flags & FCALL) || (uop->flags & FRET) || !(uop->flags & FCOND)
-		|| bpred_kind == bpred_kind_perfect)
+	if (uop->uinst->opcode != x86_uinst_branch || bpred_kind == bpred_kind_perfect)
 		return;
 	
 	/* Bimodal predictor was used */
@@ -342,7 +341,7 @@ uint32_t bpred_btb_lookup(struct bpred_t *bpred, struct uop_t *uop)
 	int hit = 0;
 
 	/* Perfect branch predictor */
-	assert(uop->flags & FCTRL);
+	assert(uop->flags & X86_UINST_CTRL);
 	if (bpred_kind == bpred_kind_perfect)
 		return uop->neip;
 
@@ -360,14 +359,14 @@ uint32_t bpred_btb_lookup(struct bpred_t *bpred, struct uop_t *uop)
 	/* If there was a hit, we know whether branch is a call.
 	 * In this case, push return address into RAS. To avoid
 	 * updates at recovery, do it only for non-spec instructions. */
-	if (hit && (uop->flags & FCALL) && !uop->specmode) {
+	if (hit && uop->uinst->opcode == x86_uinst_call && !uop->specmode) {
 		bpred->ras[bpred->ras_idx] = uop->eip + uop->mop_size;
 		bpred->ras_idx = (bpred->ras_idx + 1) % bpred_ras_size;
 	}
 
 	/* If there was a hit, we know whether branch is a ret. In this case,
 	 * pop target from the RAS, and ignore target obtained from BTB. */
-	if (hit && (uop->flags & FRET) && !uop->specmode) {
+	if (hit && uop->uinst->opcode == x86_uinst_ret && !uop->specmode) {
 		bpred->ras_idx = (bpred->ras_idx + bpred_ras_size - 1) % bpred_ras_size;
 		target = bpred->ras[bpred->ras_idx];
 	}

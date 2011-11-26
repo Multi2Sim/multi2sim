@@ -253,8 +253,8 @@ void rf_count_deps(struct uop_t *uop)
 
 	/* Output dependences */
 	int_count = fp_count = flag_count = 0;
-	for (dep = 0; dep < ODEP_COUNT; dep++) {
-		loreg = uop->odep[dep];
+	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++) {
+		loreg = uop->uinst->odep[dep];
 		if (X86_DEP_IS_FLAG(loreg))
 			flag_count++;
 		else if (X86_DEP_IS_INT_REG(loreg))
@@ -268,8 +268,8 @@ void rf_count_deps(struct uop_t *uop)
 
 	/* Input dependences */
 	int_count = fp_count = flag_count = 0;
-	for (dep = 0; dep < IDEP_COUNT; dep++) {
-		loreg = uop->idep[dep];
+	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++) {
+		loreg = uop->uinst->idep[dep];
 		if (X86_DEP_IS_FLAG(loreg))
 			flag_count++;
 		else if (X86_DEP_IS_INT_REG(loreg))
@@ -317,8 +317,8 @@ void rf_rename(struct uop_t *uop)
 	struct rf_t *rf = THREAD.rf;
 
 	/* Rename input int/FP registers */
-	for (dep = 0; dep < IDEP_COUNT; dep++) {
-		loreg = uop->idep[dep];
+	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++) {
+		loreg = uop->uinst->idep[dep];
 		if (X86_DEP_IS_INT_REG(loreg)) {
 			phreg = rf->int_rat[loreg - x86_dep_int_first];
 			uop->ph_idep[dep] = phreg;
@@ -342,8 +342,8 @@ void rf_rename(struct uop_t *uop)
 	/* Rename output int/FP registers (not flags) */
 	flag_phreg = -1;
 	flag_count = 0;
-	for (dep = 0; dep < ODEP_COUNT; dep++) {
-		loreg = uop->odep[dep];
+	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++) {
+		loreg = uop->uinst->odep[dep];
 		if (X86_DEP_IS_FLAG(loreg)) {
 			
 			/* Record a new flag */
@@ -410,8 +410,8 @@ void rf_rename(struct uop_t *uop)
 	if (flag_count > 0) {
 		if (flag_phreg < 0)
 			flag_phreg = rf_int_reclaim(core, thread);
-		for (dep = 0; dep < ODEP_COUNT; dep++) {
-			loreg = uop->odep[dep];
+		for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++) {
+			loreg = uop->uinst->odep[dep];
 			if (!X86_DEP_IS_FLAG(loreg))
 				continue;
 			rf->int_phreg[flag_phreg].busy++;
@@ -433,8 +433,8 @@ int rf_ready(struct uop_t *uop)
 	int thread = uop->thread;
 	struct rf_t *rf = THREAD.rf;
 	
-	for (dep = 0; dep < IDEP_COUNT; dep++) {
-		loreg = uop->idep[dep];
+	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++) {
+		loreg = uop->uinst->idep[dep];
 		phreg = uop->ph_idep[dep];
 		if (X86_DEP_IS_INT_REG(loreg) && rf->int_phreg[phreg].pending)
 			return 0;
@@ -452,8 +452,8 @@ void rf_write(struct uop_t *uop)
 	int thread = uop->thread;
 	struct rf_t *rf = THREAD.rf;
 	
-	for (dep = 0; dep < ODEP_COUNT; dep++) {
-		loreg = uop->odep[dep];
+	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++) {
+		loreg = uop->uinst->odep[dep];
 		phreg = uop->ph_odep[dep];
 		if (X86_DEP_IS_INT_REG(loreg))
 			rf->int_phreg[phreg].pending = 0;
@@ -473,8 +473,8 @@ void rf_undo(struct uop_t *uop)
 	/* Undo mappings in reverse order, in case an instruction has a
 	 * duplicated output dependence. */
 	assert(uop->specmode);
-	for (dep = ODEP_COUNT - 1; dep >= 0; dep--) {
-		loreg = uop->odep[dep];
+	for (dep = X86_UINST_MAX_ODEPS - 1; dep >= 0; dep--) {
+		loreg = uop->uinst->odep[dep];
 		phreg = uop->ph_odep[dep];
 		ophreg = uop->ph_oodep[dep];
 		if (X86_DEP_IS_INT_REG(loreg)) {
@@ -552,8 +552,8 @@ void rf_commit(struct uop_t *uop)
 	struct rf_t *rf = THREAD.rf;
 
 	assert(!uop->specmode);
-	for (dep = 0; dep < ODEP_COUNT; dep++) {
-		loreg = uop->odep[dep];
+	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++) {
+		loreg = uop->uinst->odep[dep];
 		phreg = uop->ph_odep[dep];
 		ophreg = uop->ph_oodep[dep];
 
@@ -634,8 +634,8 @@ void rf_check_integrity(int core, int thread)
 	for (i = 0; i < THREAD.rob_count; i++) {
 		uop = rob_get(core, thread, i);
 		assert(uop);
-		for (dep = 0; dep < ODEP_COUNT; dep++) {
-			loreg = uop->odep[dep];
+		for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++) {
+			loreg = uop->uinst->odep[dep];
 			phreg = uop->ph_odep[dep];
 			ophreg = uop->ph_oodep[dep];
 			if (X86_DEP_IS_INT_REG(loreg)) {

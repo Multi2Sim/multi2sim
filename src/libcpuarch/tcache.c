@@ -221,7 +221,8 @@ void tcache_new_uop(struct tcache_t *tcache, struct uop_t *uop)
 
 	/* Instruction is branch. If maximum number of branches is reached,
 	 * commit trace. */
-	if (uop->flags & FCTRL) {
+	if (uop->flags & X86_UINST_CTRL)
+	{
 		taken = uop->neip != uop->eip + uop->mop_size;
 		trace->branch_mask |= 1 << trace->branch_count;
 		trace->branch_flags |= taken << trace->branch_count;
