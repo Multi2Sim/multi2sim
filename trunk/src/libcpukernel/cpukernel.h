@@ -389,7 +389,7 @@ enum x86_dep_t {
 enum x86_uinst_flag_t
 {
 	X86_UINST_INT		= 0x001,
-	X86_UINST_LOGICAL	= 0x002,
+	X86_UINST_LOGIC		= 0x002,
 	X86_UINST_FP		= 0x004,
 	X86_UINST_MEM		= 0x008,
 	X86_UINST_CTRL		= 0x010,
