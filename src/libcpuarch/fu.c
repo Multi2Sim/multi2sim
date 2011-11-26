@@ -39,7 +39,54 @@ struct fu_res_t fu_res_pool[fu_count];
  * associated with a given type of micro-instruction. */
 static enum fu_class_t fu_class_table[x86_uinst_opcode_count] =
 {
-	fu_none
+	fu_none,  /* x86_uinst_nop */
+
+	fu_none,  /* x86_uinst_move */
+	fu_intadd,  /* x86_uinst_add */
+	fu_intsub,  /* x86_uinst_sub */
+	fu_intmult,  /* x86_uinst_mult */
+	fu_intdiv,  /* x86_uinst_div */
+	fu_effaddr,  /* x86_uinst_effaddr */
+
+	fu_logic,  /* x86_uinst_and */
+	fu_logic,  /* x86_uinst_or */
+	fu_logic,  /* x86_uinst_xor */
+	fu_logic,  /* x86_uinst_not */
+	fu_logic,  /* x86_uinst_shift */
+	fu_logic,  /* x86_uinst_sign */
+
+	fu_none,  /* x86_uinst_fp_move */
+	fu_fpsimple,  /* x86_uinst_fp_simple */
+	fu_fpadd,  /* x86_uinst_fp_add */
+	fu_fpadd,  /* x86_uinst_fp_sub */
+	fu_fpcomp,  /* x86_uinst_fp_comp */
+	fu_fpmult,  /* x86_uinst_fp_mult */
+	fu_fpdiv,  /* x86_uinst_fp_div */
+
+	fu_fpcomplex,  /* x86_uinst_fp_exp */
+	fu_fpcomplex,  /* x86_uinst_fp_log */
+	fu_fpcomplex,  /* x86_uinst_fp_sin */
+	fu_fpcomplex,  /* x86_uinst_fp_cos */
+	fu_fpcomplex,  /* x86_uinst_fp_sincos */
+	fu_fpcomplex,  /* x86_uinst_fp_tan */
+	fu_fpcomplex,  /* x86_uinst_fp_atan */
+	fu_fpcomplex,  /* x86_uinst_fp_sqrt */
+
+	fu_none,  /* x86_uinst_fp_push */
+	fu_none,  /* x86_uinst_fp_pop */
+
+	fu_none,  /* x86_uinst_xmm_move FIXME */
+	fu_none,  /* x86_uinst_xmm_conv FIXME */
+
+	fu_none,  /* x86_uinst_load */
+	fu_none,  /* x86_uinst_store */
+
+	fu_none,  /* x86_uinst_call */
+	fu_none,  /* x86_uinst_ret */
+	fu_none,  /* x86_uinst_jump */
+	fu_none,  /* x86_uinst_branch */
+
+	fu_none  /* x86_uinst_syscall */
 };
 
 
