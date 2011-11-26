@@ -538,42 +538,47 @@ void cpu_config_dump(FILE *f)
 
 void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
 {
-#if 0
-	uint64_t icomp = 0;
-	uint64_t lcomp = 0;
-	uint64_t fcomp = 0;
-	uint64_t mem = 0;
-	uint64_t ctrl = 0;
-	uint64_t total = 0;
+	uint64_t uinst_int_count = 0;
+	uint64_t uinst_logic_count = 0;
+	uint64_t uinst_fp_count = 0;
+	uint64_t uinst_mem_count = 0;
+	uint64_t uinst_ctrl_count = 0;
+	uint64_t uinst_total = 0;
 
-#define UOP(_uop, _fu, _flags) \
-	fprintf(f, "%s.Uop." #_uop " = %lld\n", prefix, (long long) uop_stats[uop_##_uop]); \
-	if ((_flags) & FICOMP) icomp += uop_stats[uop_##_uop]; \
-	if ((_flags) & FLCOMP) lcomp += uop_stats[uop_##_uop]; \
-	if ((_flags) & FFCOMP) fcomp += uop_stats[uop_##_uop]; \
-	if ((_flags) & FMEM) mem += uop_stats[uop_##_uop]; \
-	if ((_flags) & FCTRL) ctrl += uop_stats[uop_##_uop]; \
-	total += uop_stats[uop_##_uop];
-#include "uop1.dat"
-#undef UOP
+	char *name;
+	enum x86_uinst_flag_t flags;
+	int i;
 
-	fprintf(f, "%s.SimpleInteger = %lld\n", prefix,
-		(long long) (icomp - uop_stats[uop_mult] - uop_stats[uop_div]));
-	fprintf(f, "%s.ComplexInteger = %lld\n", prefix,
-		(long long) (uop_stats[uop_mult] + uop_stats[uop_div]));
-	fprintf(f, "%s.Integer = %lld\n", prefix, (long long) icomp);
-	fprintf(f, "%s.Logic = %lld\n", prefix, (long long) lcomp);
-	fprintf(f, "%s.FloatingPoint = %lld\n", prefix, (long long) fcomp);
-	fprintf(f, "%s.Memory = %lld\n", prefix, (long long) mem);
-	fprintf(f, "%s.Ctrl = %lld\n", prefix, (long long) ctrl);
+	for (i = 1; i < x86_uinst_opcode_count; i++)
+	{
+		name = x86_uinst_info[i].name;
+		flags = x86_uinst_info[i].flags;
+
+		fprintf(f, "%s.Uop.%s = %lld\n", prefix, name, (long long) uop_stats[i]);
+		if (flags & X86_UINST_INT)
+			uinst_int_count += uop_stats[i];
+		if (flags & X86_UINST_LOGIC)
+			uinst_logic_count += uop_stats[i];
+		if (flags & X86_UINST_FP)
+			uinst_fp_count += uop_stats[i];
+		if (flags & X86_UINST_MEM)
+			uinst_mem_count += uop_stats[i];
+		if (flags & X86_UINST_CTRL)
+			uinst_ctrl_count += uop_stats[i];
+		uinst_total += uop_stats[i];
+	}
+	fprintf(f, "%s.Integer = %lld\n", prefix, (long long) uinst_int_count);
+	fprintf(f, "%s.Logic = %lld\n", prefix, (long long) uinst_logic_count);
+	fprintf(f, "%s.FloatingPoint = %lld\n", prefix, (long long) uinst_fp_count);
+	fprintf(f, "%s.Memory = %lld\n", prefix, (long long) uinst_mem_count);
+	fprintf(f, "%s.Ctrl = %lld\n", prefix, (long long) uinst_ctrl_count);
 	fprintf(f, "%s.WndSwitch = %lld\n", prefix, (long long)
-		(uop_stats[uop_call] + uop_stats[uop_ret]));
-	fprintf(f, "%s.Total = %lld\n", prefix, (long long) total);
-	fprintf(f, "%s.IPC = %.4g\n", prefix, cpu->cycle ? (double) total / cpu->cycle : 0.0);
+		(uop_stats[x86_uinst_call] + uop_stats[x86_uinst_ret]));
+	fprintf(f, "%s.Total = %lld\n", prefix, (long long) uinst_total);
+	fprintf(f, "%s.IPC = %.4g\n", prefix, cpu->cycle ? (double) uinst_total / cpu->cycle : 0.0);
 	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, cpu->cycle && peak_ipc ?
-		(double) total / cpu->cycle / peak_ipc : 0.0);
+		(double) uinst_total / cpu->cycle / peak_ipc : 0.0);
 	fprintf(f, "\n");
-#endif
 }
 
 

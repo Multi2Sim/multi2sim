@@ -120,12 +120,12 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "div", X86_UINST_INT },
 	{ "effaddr", X86_UINST_INT },
 
-	{ "and", X86_UINST_LOGICAL },
-	{ "or", X86_UINST_LOGICAL },
-	{ "xor", X86_UINST_LOGICAL },
-	{ "not", X86_UINST_LOGICAL },
-	{ "shift", X86_UINST_LOGICAL },
-	{ "sign", X86_UINST_LOGICAL },
+	{ "and", X86_UINST_LOGIC },
+	{ "or", X86_UINST_LOGIC },
+	{ "xor", X86_UINST_LOGIC },
+	{ "not", X86_UINST_LOGIC },
+	{ "shift", X86_UINST_LOGIC },
+	{ "sign", X86_UINST_LOGIC },
 
 	{ "fmove", X86_UINST_FP },
 	{ "fsimple", X86_UINST_FP },
