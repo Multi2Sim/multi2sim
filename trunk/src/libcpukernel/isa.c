@@ -34,6 +34,8 @@ int isa_function_level;
 int isa_call_debug_category;
 int isa_inst_debug_category;
 
+long isa_host_flags;
+
 
 /* Table including references to functions in machine.c
  * that implement machine instructions. */
