@@ -114,6 +114,8 @@ void op_cmpsb_impl()
 	mem_read(isa_mem, isa_regs->esi, 1, &op1);
 	mem_read(isa_mem, isa_regs->edi, 1, &op2);
 	flags = isa_regs->eflags;
+
+	__ISA_ASM_START__
 	asm volatile (
 		"push %1\n\t"
 		"popf\n\t"
@@ -125,6 +127,8 @@ void op_cmpsb_impl()
 		: "g" (flags), "m" (op1), "m" (op2)
 		: "al"
 	);
+	__ISA_ASM_END__
+
 	isa_regs->eflags = flags;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -1 : 1;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
@@ -139,6 +143,8 @@ void op_cmpsd_impl()
 	mem_read(isa_mem, isa_regs->edi, 4, &op1);
 	mem_read(isa_mem, isa_regs->esi, 4, &op2);
 	flags = isa_regs->eflags;
+
+	__ISA_ASM_START__ \
 	asm volatile (
 		"push %1\n\t"
 		"popf\n\t"
@@ -150,6 +156,8 @@ void op_cmpsd_impl()
 		: "g" (flags), "m" (op1), "m" (op2)
 		: "eax"
 	);
+	__ISA_ASM_END__ \
+
 	isa_regs->eflags = flags;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -4 : 4;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
@@ -191,7 +199,10 @@ void op_scasb_impl()
 	uint8_t al = isa_load_reg(x86_reg_al);
 	uint8_t m8;
 	unsigned long flags = isa_regs->eflags;
+
 	mem_read(isa_mem, isa_regs->edi, 1, &m8);
+
+	__ISA_ASM_START__ \
 	asm volatile (
 		"push %3\n\t"
 		"popf\n\t"
@@ -203,6 +214,8 @@ void op_scasb_impl()
 		: "m" (al), "m" (m8), "g" (flags)
 		: "al"
 	);
+	__ISA_ASM_END__ \
+
 	isa_regs->eflags = flags;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
 }
@@ -213,7 +226,10 @@ void op_scasd_impl()
 	uint32_t eax = isa_load_reg(x86_reg_eax);
 	uint32_t m32;
 	unsigned long flags = isa_regs->eflags;
+
 	mem_read(isa_mem, isa_regs->edi, 4, &m32);
+
+	__ISA_ASM_START__ \
 	asm volatile (
 		"push %3\n\t"
 		"popf\n\t"
@@ -225,6 +241,8 @@ void op_scasd_impl()
 		: "m" (eax), "m" (m32), "g" (flags)
 		: "eax"
 	);
+	__ISA_ASM_END__ \
+
 	isa_regs->eflags = flags;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
 }

@@ -26,6 +26,8 @@ void op_cvttsd2si_r32_xmmm64_impl()
 	uint32_t r32;
 
 	isa_load_xmmm64(xmm);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"cvttsd2si %1, %%eax\n\t"
 		"mov %%eax, %0"
@@ -33,6 +35,8 @@ void op_cvttsd2si_r32_xmmm64_impl()
 		: "m" (*xmm)
 		: "eax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_r32(r32);
 
 	x86_uinst_new(x86_uinst_xmm_conv, x86_dep_xmmm64, 0, 0, x86_dep_r32, 0, 0, 0);
@@ -45,6 +49,8 @@ void op_cvttss2si_r32_xmmm32_impl()
 	uint32_t r32;
 
 	isa_load_xmmm32(xmm);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"cvttss2si %1, %%eax\n\t"
 		"mov %%eax, %0"
@@ -52,6 +58,8 @@ void op_cvttss2si_r32_xmmm32_impl()
 		: "m" (*xmm)
 		: "eax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_r32(r32);
 
 	x86_uinst_new(x86_uinst_xmm_conv, x86_dep_xmmm32, 0, 0, x86_dep_r32, 0, 0, 0);

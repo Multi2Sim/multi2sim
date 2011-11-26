@@ -28,6 +28,8 @@ void op_f2xm1_impl()
 	uint16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"f2xm1\n\t"
@@ -38,6 +40,8 @@ void op_f2xm1_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -51,6 +55,8 @@ void op_fabs_impl()
 	uint16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fabs\n\t"
@@ -61,6 +67,8 @@ void op_fabs_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -76,6 +84,8 @@ void op_fadd_m32_impl()
 
 	m32 = isa_load_float();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fld %3\n\t"
@@ -87,6 +97,8 @@ void op_fadd_m32_impl()
 		: "m" (*st0), "m" (m32)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -102,6 +114,8 @@ void op_fadd_m64_impl()
 
 	m64 = isa_load_double();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldl %3\n\t"
@@ -113,6 +127,8 @@ void op_fadd_m64_impl()
 		: "m" (*st0), "m" (m64)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -127,6 +143,8 @@ void op_fadd_st0_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -138,6 +156,8 @@ void op_fadd_st0_sti_impl()
 		: "m" (*st0), "m" (*sti)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -152,6 +172,8 @@ void op_fadd_sti_st0_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -163,6 +185,8 @@ void op_fadd_sti_st0_impl()
 		: "m" (*sti), "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
 
@@ -185,6 +209,8 @@ void op_fchs_impl()
 	uint16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fchs\n\t"
@@ -195,6 +221,8 @@ void op_fchs_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -298,6 +326,8 @@ void op_fcom_m32_impl()
 
 	isa_load_fpu(0, st0);
 	m32 = isa_load_float();
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %1\n\t"
 		"fcomps %2\n\t"
@@ -307,6 +337,8 @@ void op_fcom_m32_impl()
 		: "m" (*st0), "m" (m32)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu_code(status);
 
 	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_mem32, 0, x86_dep_fpst, 0, 0, 0);
@@ -321,6 +353,8 @@ void op_fcom_m64_impl()
 
 	isa_load_fpu(0, st0);
 	m64 = isa_load_double();
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %1\n\t"
 		"fcompl %2\n\t"
@@ -330,6 +364,8 @@ void op_fcom_m64_impl()
 		: "m" (*st0), "m" (m64)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu_code(status);
 
 	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_mem64, 0, x86_dep_fpst, 0, 0, 0);
@@ -343,6 +379,8 @@ void op_fcom_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %1\n\t"
@@ -353,6 +391,8 @@ void op_fcom_sti_impl()
 		: "m" (*st0), "m" (*sti)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu_code(status);
 
 	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_fpst, 0, 0, 0);
@@ -393,6 +433,8 @@ void op_fcompp_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(1, st1);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %1\n\t"
@@ -403,6 +445,8 @@ void op_fcompp_impl()
 		: "m" (*st0), "m" (*st1)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu_code(status);
 	isa_pop_fpu(NULL);
 	isa_pop_fpu(NULL);
@@ -420,6 +464,8 @@ void op_fcomi_st0_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"push %3\n\t"
 		"popf\n\t"
@@ -432,6 +478,8 @@ void op_fcomi_st0_sti_impl()
 		: "=g" (flags)
 		: "m" (*st0), "m" (*sti), "g" (flags)
 	);
+	__ISA_ASM_END__
+
 	isa_regs->eflags = flags;
 
 	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_zps, x86_dep_cf, 0, 0);
@@ -454,6 +502,8 @@ void op_fucomi_st0_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"push %3\n\t"
 		"popf\n\t"
@@ -466,6 +516,8 @@ void op_fucomi_st0_sti_impl()
 		: "=g" (flags)
 		: "m" (*st0), "m" (*sti), "g" (flags)
 	);
+	__ISA_ASM_END__
+
 	isa_regs->eflags = flags;
 
 	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_zps, x86_dep_cf, 0, 0);
@@ -487,6 +539,8 @@ void op_fcos_impl()
 	uint16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fcos\n\t"
@@ -497,6 +551,8 @@ void op_fcos_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -512,6 +568,8 @@ void op_fdiv_m32_impl()
 
 	m32 = isa_load_float();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fld %3\n\t"
@@ -523,6 +581,8 @@ void op_fdiv_m32_impl()
 		: "m" (*st0), "m" (m32)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -538,6 +598,8 @@ void op_fdiv_m64_impl()
 
 	m64 = isa_load_double();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldl %3\n\t"
@@ -549,6 +611,8 @@ void op_fdiv_m64_impl()
 		: "m" (*st0), "m" (m64)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -563,6 +627,8 @@ void op_fdiv_st0_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -574,6 +640,8 @@ void op_fdiv_st0_sti_impl()
 		: "m" (*st0), "m" (*sti)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -588,6 +656,8 @@ void op_fdiv_sti_st0_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -599,6 +669,8 @@ void op_fdiv_sti_st0_impl()
 		: "m" (*sti), "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
 
@@ -623,6 +695,8 @@ void op_fdivr_m32_impl()
 
 	m32 = isa_load_float();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fld %2\n\t"
 		"fldt %3\n\t"
@@ -634,6 +708,8 @@ void op_fdivr_m32_impl()
 		: "m" (m32), "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -649,6 +725,8 @@ void op_fdivr_m64_impl()
 
 	m64 = isa_load_double();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldl %2\n\t"
 		"fldt %3\n\t"
@@ -660,6 +738,8 @@ void op_fdivr_m64_impl()
 		: "m" (m64), "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -674,6 +754,8 @@ void op_fdivr_st0_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -685,6 +767,8 @@ void op_fdivr_st0_sti_impl()
 		: "m" (*sti), "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -699,6 +783,8 @@ void op_fdivr_sti_st0_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -710,6 +796,8 @@ void op_fdivr_sti_st0_impl()
 		: "m" (*st0), "m" (*sti)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
 
@@ -732,12 +820,16 @@ void op_fild_m16_impl()
 	uint8_t e[10];
 
 	mem_read(isa_mem, isa_effective_address(), 2, &m16);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"filds %1\n\t"
 		"fstpt %0\n\t"
 		: "=m" (*e)
 		: "m" (m16)
 	);
+	__ISA_ASM_END__
+
 	isa_push_fpu(e);
 
 	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -751,12 +843,16 @@ void op_fild_m32_impl()
 	uint8_t e[10];
 
 	mem_read(isa_mem, isa_effective_address(), 4, &m32);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fildl %1\n\t"
 		"fstpt %0\n\t"
 		: "=m" (*e)
 		: "m" (m32)
 	);
+	__ISA_ASM_END__
+
 	isa_push_fpu(e);
 
 	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -770,12 +866,16 @@ void op_fild_m64_impl()
 	uint8_t e[10];
 
 	mem_read(isa_mem, isa_effective_address(), 8, &m64);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fildq %1\n\t"
 		"fstpt %0\n\t"
 		: "=m" (*e)
 		: "m" (m64)
 	);
+	__ISA_ASM_END__
+
 	isa_push_fpu(e);
 
 	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -789,12 +889,16 @@ void op_fist_m16_impl()
 	uint8_t e[10];
 
 	isa_load_fpu(0, e);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %1\n\t"
 		"fistps %0\n\t"
 		: "=m" (m16)
 		: "m" (*e)
 	);
+	__ISA_ASM_END__
+
 	mem_write(isa_mem, isa_effective_address(), 2, &m16);
 
 	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem16, 0, 0, 0);
@@ -807,12 +911,16 @@ void op_fist_m32_impl()
 	uint8_t e[10];
 
 	isa_load_fpu(0, e);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %1\n\t"
 		"fistpl %0\n\t"
 		: "=m" (m32)
 		: "m" (*e)
 	);
+	__ISA_ASM_END__
+
 	mem_write(isa_mem, isa_effective_address(), 4, &m32);
 
 	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem32, 0, 0, 0);
@@ -825,12 +933,16 @@ void op_fist_m64_impl()
 	uint8_t e[10];
 
 	isa_load_fpu(0, e);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %1\n\t"
 		"fistpq %0\n\t"
 		: "=m" (m64)
 		: "m" (*e)
 	);
+	__ISA_ASM_END__
+
 	mem_write(isa_mem, isa_effective_address(), 8, &m64);
 
 	x86_uinst_new(x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_mem64, 0, 0, 0);
@@ -867,11 +979,15 @@ void op_fistp_m64_impl()
 void op_fld1_impl()
 {
 	uint8_t v[10];
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fld1\n\t"
 		"fstpt %0\n\t"
 		: "=m" (*v)
 	);
+	__ISA_ASM_END__
+
 	isa_push_fpu(v);
 
 	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -882,11 +998,15 @@ void op_fld1_impl()
 void op_fldl2e_impl()
 {
 	uint8_t v[10];
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldl2e\n\t"
 		"fstpt %0\n\t"
 		: "=m" (*v)
 	);
+	__ISA_ASM_END__
+
 	isa_push_fpu(v);
 
 	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -897,11 +1017,15 @@ void op_fldl2e_impl()
 void op_fldl2t_impl()
 {
 	uint8_t v[10];
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldl2t\n\t"
 		"fstpt %0\n\t"
 		: "=m" (*v)
 	);
+	__ISA_ASM_END__
+
 	isa_push_fpu(v);
 
 	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -912,11 +1036,15 @@ void op_fldl2t_impl()
 void op_fldpi_impl()
 {
 	uint8_t v[10];
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldpi\n\t"
 		"fstpt %0\n\t"
 		: "=m" (*v)
 	);
+	__ISA_ASM_END__
+
 	isa_push_fpu(v);
 
 	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -927,11 +1055,15 @@ void op_fldpi_impl()
 void op_fldlg2_impl()
 {
 	uint8_t v[10];
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldlg2\n\t"
 		"fstpt %0\n\t"
 		: "=m" (*v)
 	);
+	__ISA_ASM_END__
+
 	isa_push_fpu(v);
 
 	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -942,11 +1074,15 @@ void op_fldlg2_impl()
 void op_fldln2_impl()
 {
 	uint8_t v[10];
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldln2\n\t"
 		"fstpt %0\n\t"
 		: "=m" (*v)
 	);
+	__ISA_ASM_END__
+
 	isa_push_fpu(v);
 
 	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -957,11 +1093,15 @@ void op_fldln2_impl()
 void op_fldz_impl()
 {
 	uint8_t v[10];
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldz\n\t"
 		"fstpt %0\n\t"
 		: "=m" (*v)
 	);
+	__ISA_ASM_END__
+
 	isa_push_fpu(v);
 
 	x86_uinst_new(x86_uinst_fp_push, 0, 0, 0, 0, 0, 0, 0);
@@ -1027,11 +1167,14 @@ void op_fldcw_m16_impl()
 
 	mem_read(isa_mem, addr, 2, &value);
 	isa_regs->fpu_ctrl = value;
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldcw %0\n\t"
 		:
 		: "m" (value)
 	);
+	__ISA_ASM_END__
 
 	x86_uinst_new(x86_uinst_fp_move, x86_dep_mem16, 0, 0, x86_dep_fpcw, 0, 0, 0);
 }
@@ -1045,6 +1188,8 @@ void op_fmul_m32_impl()
 
 	m32 = isa_load_float();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fld %3\n\t"
@@ -1056,6 +1201,8 @@ void op_fmul_m32_impl()
 		: "m" (*st0), "m" (m32)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1071,6 +1218,8 @@ void op_fmul_m64_impl()
 
 	m64 = isa_load_double();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldl %3\n\t"
@@ -1082,6 +1231,8 @@ void op_fmul_m64_impl()
 		: "m" (*st0), "m" (m64)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1096,6 +1247,8 @@ void op_fmul_st0_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -1107,6 +1260,8 @@ void op_fmul_st0_sti_impl()
 		: "m" (*st0), "m" (*sti)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1121,6 +1276,8 @@ void op_fmul_sti_st0_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -1132,6 +1289,8 @@ void op_fmul_sti_st0_impl()
 		: "m" (*sti), "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
 
@@ -1170,6 +1329,8 @@ void op_fpatan_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(1, st1);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %3\n\t"
 		"fldt %2\n\t"
@@ -1181,6 +1342,8 @@ void op_fpatan_impl()
 		: "m" (*st0), "m" (*st1)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(1, st1);
 	isa_pop_fpu(NULL);
 	isa_store_fpu_code(status);
@@ -1196,6 +1359,8 @@ void op_fprem_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(1, st1);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %3\n\t"
 		"fldt %2\n\t"
@@ -1208,6 +1373,8 @@ void op_fprem_impl()
 		: "m" (*st0), "m" (*st1)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1222,6 +1389,8 @@ void op_fprem1_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(1, st1);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %3\n\t"
 		"fldt %2\n\t"
@@ -1234,6 +1403,8 @@ void op_fprem1_impl()
 		: "m" (*st0), "m" (*st1)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1247,6 +1418,8 @@ void op_fptan_impl()
 	uint16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fptan\n\t"
@@ -1258,6 +1431,8 @@ void op_fptan_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 
 	x86_uinst_new(x86_uinst_fp_tan, x86_dep_st0, 0, 0, x86_dep_st0, x86_dep_st1, 0, 0);
@@ -1273,6 +1448,8 @@ void op_frndint_impl()
 	uint16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"frndint\n\t"
@@ -1283,6 +1460,8 @@ void op_frndint_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1297,6 +1476,8 @@ void op_fscale_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(1, st1);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %3\n\t"
 		"fldt %2\n\t"
@@ -1309,6 +1490,8 @@ void op_fscale_impl()
 		: "m" (*st0), "m" (*st1)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1322,6 +1505,8 @@ void op_fsin_impl()
 	int16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fsin\n\t"
@@ -1332,6 +1517,8 @@ void op_fsin_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1345,6 +1532,8 @@ void op_fsincos_impl()
 	uint16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %3\n\t"
 		"fsin\n\t"
@@ -1358,6 +1547,8 @@ void op_fsincos_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, vsin);
 	isa_push_fpu(vcos);
 	isa_store_fpu_code(status);
@@ -1373,6 +1564,8 @@ void op_fsqrt_impl()
 	uint16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fsqrt\n\t"
@@ -1383,6 +1576,8 @@ void op_fsqrt_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1482,6 +1677,8 @@ void op_fsub_m32_impl()
 
 	m32 = isa_load_float();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fld %3\n\t"
@@ -1493,6 +1690,8 @@ void op_fsub_m32_impl()
 		: "m" (*st0), "m" (m32)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1508,6 +1707,8 @@ void op_fsub_m64_impl()
 
 	m64 = isa_load_double();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldl %3\n\t"
@@ -1519,6 +1720,8 @@ void op_fsub_m64_impl()
 		: "m" (*st0), "m" (m64)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1533,6 +1736,8 @@ void op_fsub_st0_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -1544,6 +1749,8 @@ void op_fsub_st0_sti_impl()
 		: "m" (*st0), "m" (*sti)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1558,6 +1765,8 @@ void op_fsub_sti_st0_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -1569,6 +1778,8 @@ void op_fsub_sti_st0_impl()
 		: "m" (*sti), "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
 
@@ -1593,6 +1804,8 @@ void op_fsubr_m32_impl()
 
 	m32 = isa_load_float();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fld %2\n\t"
 		"fldt %3\n\t"
@@ -1604,6 +1817,8 @@ void op_fsubr_m32_impl()
 		: "m" (m32), "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1619,6 +1834,8 @@ void op_fsubr_m64_impl()
 
 	m64 = isa_load_double();
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldl %2\n\t"
 		"fldt %3\n\t"
@@ -1630,6 +1847,8 @@ void op_fsubr_m64_impl()
 		: "m" (m64), "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1644,6 +1863,8 @@ void op_fsubr_st0_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -1655,6 +1876,8 @@ void op_fsubr_st0_sti_impl()
 		: "m" (*sti), "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
@@ -1669,6 +1892,8 @@ void op_fsubr_sti_st0_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %3\n\t"
@@ -1680,6 +1905,8 @@ void op_fsubr_sti_st0_impl()
 		: "m" (*st0), "m" (*sti)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(isa_inst.opindex, sti);
 	isa_store_fpu_code(status);
 
@@ -1699,11 +1926,15 @@ void op_fsubrp_sti_st0_impl()
 void op_fstcw_m16_impl()
 {
 	uint16_t value = isa_regs->fpu_ctrl;
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fnstcw %0\n\t"
 		:
 		: "m" (value)
 	);
+	__ISA_ASM_END__
+
 	mem_write(isa_mem, isa_effective_address(), 2, &value);
 
 	x86_uinst_new(x86_uinst_fp_move, x86_dep_fpcw, 0, 0, x86_dep_mem32, 0, 0, 0);
@@ -1716,6 +1947,8 @@ void op_ftst_impl()
 	uint16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %1\n\t"
 		"ftst\n\t"
@@ -1726,6 +1959,8 @@ void op_ftst_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu_code(status);
 
 	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, 0, 0, x86_dep_fpst, 0, 0, 0);
@@ -1739,6 +1974,8 @@ void op_fucom_sti_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(isa_inst.opindex, sti);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %1\n\t"
@@ -1749,6 +1986,8 @@ void op_fucom_sti_impl()
 		: "m" (*st0), "m" (*sti)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu_code(status);
 
 	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_fpst, 0, 0, 0);
@@ -1771,6 +2010,8 @@ void op_fucompp_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(1, st1);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %2\n\t"
 		"fldt %1\n\t"
@@ -1781,6 +2022,8 @@ void op_fucompp_impl()
 		: "m" (*st0), "m" (*st1)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu_code(status);
 	isa_pop_fpu(NULL);
 	isa_pop_fpu(NULL);
@@ -1797,6 +2040,8 @@ void op_fxam_impl()
 	uint16_t status;
 
 	isa_load_fpu(0, st0);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %1\n\t"
 		"fxam\n\t"
@@ -1807,6 +2052,8 @@ void op_fxam_impl()
 		: "m" (*st0)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu_code(status);
 
 	x86_uinst_new(x86_uinst_fp_comp, x86_dep_st0, 0, 0, x86_dep_fpst, 0, 0, 0);
@@ -1832,6 +2079,8 @@ void op_fyl2x_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(1, st1);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %3\n\t"
 		"fldt %2\n\t"
@@ -1843,6 +2092,8 @@ void op_fyl2x_impl()
 		: "m" (*st0), "m" (*st1)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(1, st1);
 	isa_pop_fpu(NULL);
 	isa_store_fpu_code(status);
@@ -1859,6 +2110,8 @@ void op_fyl2xp1_impl()
 
 	isa_load_fpu(0, st0);
 	isa_load_fpu(1, st1);
+
+	__ISA_ASM_START__
 	asm volatile (
 		"fldt %3\n\t"
 		"fldt %2\n\t"
@@ -1870,6 +2123,8 @@ void op_fyl2xp1_impl()
 		: "m" (*st0), "m" (*st1)
 		: "ax"
 	);
+	__ISA_ASM_END__
+
 	isa_store_fpu(1, st1);
 	isa_pop_fpu(NULL);
 	isa_store_fpu_code(status);
