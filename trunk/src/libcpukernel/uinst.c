@@ -28,62 +28,64 @@ struct list_t *x86_uinst_list;
 
 
 /* Direct look-up table for regular dependences */
-/*char *x86_uinst_dep_name = {
-};*/
+char *x86_uinst_dep_name[] = {
+
+	"-",  /* 0 */
+
+	"eax",  /* 1 */
+	"ecx",  /* 2 */
+	"edx",  /* 3 */
+	"ebx",  /* 4 */
+	"esp",  /* 5 */
+	"ebp",  /* 6 */
+	"esi",  /* 7 */
+	"edi",  /* 8 */
+
+	"es",  /* 9 */
+	"cs",  /* 10 */
+	"ss",  /* 11 */
+	"ds",  /* 12 */
+	"fs",  /* 13 */
+	"gs",  /* 14 */
+
+	"zps", /* 15 */
+	"of",  /* 16 */
+	"cf",  /* 17 */
+	"df",  /* 18 */
+
+	"aux",  /* 19 */
+	"aux2",  /* 20 */
+	"ea",  /* 21 */
+	"data",  /* 22 */
+
+	"st0",  /* 23 */
+	"st1",  /* 24 */
+	"st2",  /* 25 */
+	"st3",  /* 26 */
+	"st4",  /* 27 */
+	"st5",  /* 28 */
+	"st6",  /* 29 */
+	"st7",  /* 30 */
+
+	"fpst",  /* 31 */
+	"fpcw",  /* 32 */
+	"fpaux",  /* 33 */
+
+	"xmm0",  /* 34 */
+	"xmm1",  /* 35 */
+	"xmm2",  /* 36 */
+	"xmm3",  /* 37 */
+	"xmm4",  /* 38 */
+	"xmm5",  /* 39 */
+	"xmm6",  /* 40 */
+	"xmm7",  /* 41 */
+};
 
 
 /* String map for the rest of the dependences */
-struct string_map_t x86_uinst_dep_map = {
-	52, {
-		{ "none", x86_dep_none },
-
-		{ "eax", x86_dep_eax },
-		{ "ecx", x86_dep_ecx },
-		{ "edx", x86_dep_edx },
-		{ "ebx", x86_dep_ebx },
-		{ "esp", x86_dep_esp },
-		{ "ebp", x86_dep_ebp },
-		{ "esi", x86_dep_esi },
-		{ "edi", x86_dep_edi },
-
-		{ "es", x86_dep_es },
-		{ "cs", x86_dep_cs },
-		{ "ss", x86_dep_ss },
-		{ "ds", x86_dep_ds },
-		{ "fs", x86_dep_fs },
-		{ "gs", x86_dep_gs },
-
-		{ "zps", x86_dep_zps },
-		{ "of", x86_dep_of },
-		{ "cf", x86_dep_cf },
-		{ "df", x86_dep_df },
-
-		{ "aux", x86_dep_aux },
-		{ "aux2", x86_dep_aux2 },
-		{ "ea", x86_dep_ea },
-		{ "data", x86_dep_data },
-
-		{ "st0", x86_dep_st0 },
-		{ "st1", x86_dep_st1 },
-		{ "st2", x86_dep_st2 },
-		{ "st3", x86_dep_st3 },
-		{ "st4", x86_dep_st4 },
-		{ "st5", x86_dep_st5 },
-		{ "st6", x86_dep_st6 },
-		{ "st7", x86_dep_st7 },
-		{ "fpst", x86_dep_fpst },
-		{ "fpcw", x86_dep_fpcw },
-		{ "fpaux", x86_dep_fpaux },
-
-		{ "xmm0", x86_dep_xmm0 },
-		{ "xmm1", x86_dep_xmm1 },
-		{ "xmm2", x86_dep_xmm2 },
-		{ "xmm3", x86_dep_xmm3 },
-		{ "xmm4", x86_dep_xmm4 },
-		{ "xmm5", x86_dep_xmm5 },
-		{ "xmm6", x86_dep_xmm6 },
-		{ "xmm7", x86_dep_xmm7 },
-
+struct string_map_t x86_uinst_dep_map =
+{
+	13, {
 		{ "*RM8*", x86_dep_rm8 },
 		{ "*RM16*", x86_dep_rm16 },
 		{ "*RM32*", x86_dep_rm32 },
@@ -105,6 +107,7 @@ struct string_map_t x86_uinst_dep_map = {
 };
 
 
+/* Information related with a micro-instruction opcode */
 struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 {
 
@@ -452,6 +455,15 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index)
 }
 
 
+static char *x86_uinst_dep_name_get(int dep)
+{
+	if (X86_DEP_IS_VALID(dep))
+		return x86_uinst_dep_name[dep];
+	else
+		return map_value(&x86_uinst_dep_map, dep);
+}
+
+
 
 
 /*
@@ -516,8 +528,7 @@ void __x86_uinst_new_mem(enum x86_uinst_opcode_t opcode, uint32_t address, int s
 	uinst->address = address;
 	uinst->size = size;
 
-	/* Emit effective address computation if any dependence is 'rmXXX' and none
-	 * 'effaddr' uinst has been inserted in the list so far. */
+	/* Emit effective address computation if needed. */
 	for (i = 0; !x86_uinst_effaddr_emitted && i < X86_UINST_MAX_DEPS; i++)
 		x86_uinst_emit_effaddr(uinst, i);
 	
@@ -549,7 +560,7 @@ void x86_uinst_clear(void)
 	while (list_count(x86_uinst_list))
 		x86_uinst_free(list_remove_at(x86_uinst_list, 0));
 	
-	/* Forget occurrence of 'rmXXX' in previous inst */
+	/* Forget occurrence of effective address computation in previous inst */
 	x86_uinst_effaddr_emitted = 0;
 }
 
@@ -558,6 +569,7 @@ void x86_uinst_dump_buf(struct x86_uinst_t *uinst, char *buf, int size)
 {
 	char *comma;
 	enum x86_dep_t dep;
+	int dep_count;
 	int i;
 
 	/* Instruction name */
@@ -565,28 +577,35 @@ void x86_uinst_dump_buf(struct x86_uinst_t *uinst, char *buf, int size)
 
 	/* Output operands */
 	comma = "";
-	dump_buf(&buf, &size, "<");
-	for (i = 0; i < X86_UINST_MAX_ODEPS; i++) {
+	dep_count = 0;
+	for (i = 0; i < X86_UINST_MAX_ODEPS; i++)
+	{
 		dep = uinst->odep[i];
 		if (!dep)
 			continue;
-		dump_buf(&buf, &size, "%s%s", comma, map_value(&x86_uinst_dep_map, dep));
+		dep_count++;
+		dump_buf(&buf, &size, "%s%s", comma, x86_uinst_dep_name_get(dep));
 		comma = ",";
 	}
+	if (!dep_count)
+		dump_buf(&buf, &size, "-");
 
 	/* Separator */
-	dump_buf(&buf, &size, ">/<");
+	dump_buf(&buf, &size, "/");
 
 	/* Input operands */
 	comma = "";
+	dep_count = 0;
 	for (i = 0; i < X86_UINST_MAX_IDEPS; i++) {
 		dep = uinst->idep[i];
 		if (!dep)
 			continue;
-		dump_buf(&buf, &size, "%s%s", comma, map_value(&x86_uinst_dep_map, dep));
+		dep_count++;
+		dump_buf(&buf, &size, "%s%s", comma, x86_uinst_dep_name_get(dep));
 		comma = ",";
 	}
-	dump_buf(&buf, &size, ">");
+	if (!dep_count)
+		dump_buf(&buf, &size, "-");
 
 	/* Memory address */
 	if (uinst->size)
