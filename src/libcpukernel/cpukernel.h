@@ -517,6 +517,10 @@ extern int isa_function_level;
 extern int isa_call_debug_category;
 extern int isa_inst_debug_category;
 
+extern long isa_host_flags;
+#define __ISA_ASM_START__ asm volatile ("pushf\n\t" "pop %0\n\t" : "=m" (isa_host_flags));
+#define __ISA_ASM_END__ asm volatile ("push %0\n\t" "popf\n\t" : "=m" (isa_host_flags));
+
 /* References to functions emulating x86 instructions */
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) void op_##name##_impl(void);
 #include <machine.dat>
