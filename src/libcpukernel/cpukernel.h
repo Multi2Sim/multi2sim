@@ -398,7 +398,8 @@ enum x86_uinst_flag_t
 
 
 /* Micro-instruction opcodes.
- * WARNING: update 'x86_uinst_info' in 'uinst.c' if modified. */
+ * WARNING: update 'x86_uinst_info' if modified (uinst.c).
+ * WARNING: also update 'fu_class_table' if modified (src/libcpuarch/fu.c). */
 enum x86_uinst_opcode_t
 {
 	x86_uinst_nop = 0,

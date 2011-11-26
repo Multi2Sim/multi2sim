@@ -109,9 +109,8 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 		uop->pred_neip = THREAD.fetch_neip;
 		uop->target_neip = isa_target;
 
-		/* Count number of logical/physical input/output
-		 * dependences. Physical odeps might be different than
-		 * logical odeps. */
+		/* Process uop dependences and classify them in integer, floating-point,
+		 * flags, etc. */
 		rf_count_deps(uop);
 
 		/* Calculate physical address of a memory access */
@@ -120,7 +119,6 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 				uinst->address);
 
 		/* Store x86 macro-instruction and uinst names */
-		/* FIXME: needs to be faster */
 		x86_uinst_dump_buf(uinst, uop->name, sizeof(uop->name));
 		if (!uinst_index)
 			x86_inst_dump_buf(&isa_inst, uop->mop_name,
