@@ -44,7 +44,7 @@ static int can_commit_thread(int core, int thread)
 
 	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
 	 * if the call to 'rf_ready' shows input registers to be ready. */
-	if (uop->flags & FSTORE) {
+	if (uop->uinst->opcode == x86_uinst_store) {
 		if (!uop->ready && rf_ready(uop))
 			uop->ready = 1;
 		return uop->ready;
@@ -78,7 +78,7 @@ static void commit_thread(int core, int thread, int quant)
 		
 		/* Mispredicted branch */
 		if (cpu_recover_kind == cpu_recover_kind_commit &&
-			(uop->flags & FCTRL) && uop->neip != uop->pred_neip)
+			(uop->flags & X86_UINST_CTRL) && uop->neip != uop->pred_neip)
 			recover = 1;
 	
 		/* Free physical registers */
@@ -86,7 +86,7 @@ static void commit_thread(int core, int thread, int quant)
 		rf_commit(uop);
 		
 		/* Branches update branch predictor and btb */
-		if (uop->flags & FCTRL) {
+		if (uop->flags & X86_UINST_CTRL) {
 			bpred_update(THREAD.bpred, uop);
 			bpred_btb_update(THREAD.bpred, uop);
 			THREAD.btb_writes++;
@@ -98,13 +98,13 @@ static void commit_thread(int core, int thread, int quant)
 			
 		/* Stats */
 		THREAD.last_commit_cycle = cpu->cycle;
-		THREAD.committed[uop->uop]++;
-		CORE.committed[uop->uop]++;
-		cpu->committed[uop->uop]++;
+		THREAD.committed[uop->uinst->opcode]++;
+		CORE.committed[uop->uinst->opcode]++;
+		cpu->committed[uop->uinst->opcode]++;
 		cpu->inst++;
 		if (uop->fetch_tcache)
 			THREAD.tcache->committed++;
-		if (uop->flags & FCTRL) {
+		if (uop->flags & X86_UINST_CTRL) {
 			THREAD.branches++;
 			CORE.branches++;
 			cpu->branches++;

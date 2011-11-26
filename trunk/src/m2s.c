@@ -773,7 +773,6 @@ int main(int argc, char **argv)
 
 	/* Initialization for detailed simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed) {
-		uop_init();
 		cpu_init();
 	}
 	if (gpu_sim_kind == gpu_sim_kind_detailed)
@@ -800,7 +799,6 @@ int main(int argc, char **argv)
 	if (cpu_sim_kind == cpu_sim_kind_detailed) {
 		esim_debug_done();
 		cpu_done();
-		uop_done();
 	}
 
 	/* Finalization of detailed GPU simulation */

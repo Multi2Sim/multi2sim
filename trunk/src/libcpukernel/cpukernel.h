@@ -355,7 +355,6 @@ enum x86_dep_t {
 	x86_dep_r32 = 0x302,
 	x86_dep_sreg = 0x400,
 
-	/******** FIXME dependences below to be removed ********/
 	x86_dep_mem8 = 0x500,
 	x86_dep_mem16 = 0x501,
 	x86_dep_mem32 = 0x502,
@@ -384,6 +383,17 @@ enum x86_dep_t {
 #define X86_DEP_IS_XMM_REG(dep)  ((dep) >= x86_dep_xmm_first && (dep) <= x86_dep_xmm_last)
 #define X86_DEP_IS_FLAG(dep) ((dep) >= x86_dep_flag_first && (dep) <= x86_dep_flag_last)
 #define X86_DEP_IS_VALID(dep) (X86_DEP_IS_INT_REG(dep) || X86_DEP_IS_FP_REG(dep) || X86_DEP_IS_XMM_REG(dep))
+
+
+enum x86_uinst_flag_t
+{
+	X86_UINST_INT		= 0x001,
+	X86_UINST_LOGICAL	= 0x002,
+	X86_UINST_FP		= 0x004,
+	X86_UINST_MEM		= 0x008,
+	X86_UINST_CTRL		= 0x010,
+	X86_UINST_XMM		= 0x020
+};
 
 
 enum x86_uinst_opcode_t
@@ -441,6 +451,13 @@ enum x86_uinst_opcode_t
 };
 
 
+extern struct x86_uinst_info_t
+{
+	char *name;
+	enum x86_uinst_flag_t flags;
+} x86_uinst_info[x86_uinst_opcode_count];
+
+
 #define X86_UINST_MAX_IDEPS 3
 #define X86_UINST_MAX_ODEPS 4
 #define X86_UINST_MAX_DEPS  (X86_UINST_MAX_IDEPS + X86_UINST_MAX_ODEPS)
@@ -493,6 +510,7 @@ void __x86_uinst_new_mem(enum x86_uinst_opcode_t opcode, uint32_t addr, int size
 void __x86_uinst_new_move(enum x86_dep_t idep, enum x86_dep_t odep);
 void x86_uinst_clear(void);
 
+void x86_uinst_dump_buf(struct x86_uinst_t *uinst, char *buf, int size);
 void x86_uinst_dump(struct x86_uinst_t *uinst, FILE *f);
 void x86_uinst_list_dump(FILE *f);
 
