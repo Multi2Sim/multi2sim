@@ -36,7 +36,7 @@ void writeback_core(int core)
 
 		/* A memory uop placed in the event queue is always complete.
 		 * Other uops are complete when uop->when is equals to current cycle. */
-		if (uop->flags & FMEM)
+		if (uop->flags & X86_UINST_MEM)
 			uop->when = cpu->cycle;
 		if (uop->when > cpu->cycle)
 			break;
@@ -56,7 +56,7 @@ void writeback_core(int core)
 		/* If a mispredicted branch is solved and recovery is configured to be
 		 * performed at writeback, schedule it for the end of the iteration. */
 		if (cpu_recover_kind == cpu_recover_kind_writeback &&
-			(uop->flags & FCTRL) && !uop->specmode &&
+			(uop->flags & X86_UINST_CTRL) && !uop->specmode &&
 			uop->neip != uop->pred_neip)
 			recover = 1;
 

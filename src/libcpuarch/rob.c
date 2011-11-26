@@ -386,15 +386,18 @@ void rob_dump(int core, FILE *f)
 			fprintf(f, "  rob for thread %d (entries %d to %d), count=%d, size=%d\n",
 				thread, THREAD.rob_left_bound, THREAD.rob_right_bound,
 				THREAD.rob_count, rob_size);
-			for (i = THREAD.rob_left_bound; i <= THREAD.rob_right_bound; i++) {
+			for (i = THREAD.rob_left_bound; i <= THREAD.rob_right_bound; i++)
+			{
 				uop = list_get(CORE.rob, i);
 				fprintf(f, "   %c%c ",
 					i == THREAD.rob_head ? 'H' : ' ',
 					i == THREAD.rob_tail ? 'T' : ' ');
-				if (uop)
-					uop_dump(uop, f), fprintf(f, "\n");
-				else
+				if (uop) {
+					x86_uinst_dump(uop->uinst, f);
+					fprintf(f, "\n");
+				} else {
 					fprintf(f, "-\n");
+				}
 			}
 		}
 		break;
@@ -406,10 +409,12 @@ void rob_dump(int core, FILE *f)
 			fprintf(f, " %c%c ",
 				i == CORE.rob_head ? 'H' : ' ',
 				i == CORE.rob_tail ? 'T' : ' ');
-			if (uop)
-				uop_dump(uop, f), fprintf(f, "\n");
-			else
+			if (uop) {
+				x86_uinst_dump(uop->uinst, f);
+				fprintf(f, "\n");
+			} else {
 				fprintf(f, "-\n");
+			}
 		}
 		break;
 	}

@@ -53,16 +53,19 @@ static int can_fetch(int core, int thread)
 }
 
 
-/* Execute in the simulation kernel a macroinstruction.
- * Decode instruction 'isa_inst' and insert uops into the fetch queue.
- * As 'uop_decode' does, return the first uop from the fetched macroinst,
- * or the last control uop if there was any. */
+/* Execute in the simulation kernel a macroinstruction and create uops.
+ * If any of the uops is a control uop, this uop will be the return value of
+ * the function. Otherwise, the first decoded uop is returned. */
 static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 {
 	struct ctx_t *ctx = THREAD.ctx;
-	struct list_t *fetchq = THREAD.fetchq;
-	int count, newcount, i;
-	struct uop_t *uop, *ret;
+
+	struct uop_t *uop;
+	struct uop_t *ret_uop;
+
+	struct x86_uinst_t *uinst;
+	int uinst_count;
+	int uinst_index;
 
 	/* Functional simulation */
 	THREAD.fetch_eip = THREAD.fetch_neip;
@@ -70,23 +73,33 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 	ctx_execute_inst(ctx);
 	THREAD.fetch_neip = THREAD.fetch_eip + isa_inst.size;
 
-	/* Split macroinstruction into uops stored in list. */
-	count = list_count(fetchq);
-	ret = uop_decode(fetchq);
-	newcount = list_count(fetchq);
+	/* Microinstructions created by the x86 instructions can be found now
+	 * in 'x86_uinst_list'. */
+	uinst_count = list_count(x86_uinst_list);
+	uinst_index = 0;
+	ret_uop = NULL;
+	while (list_count(x86_uinst_list))
+	{
+		/* Get uinst from head of list */
+		uinst = list_remove_at(x86_uinst_list, 0);
 
-	/* Update inserted uop fields */
-	for (i = count; i < newcount; i++) {
-		uop = list_get(fetchq, i);
-		assert(uop);
+		/* Create uop */
+		uop = uop_create();
+		uop->uinst = uinst;
+		assert(uinst->opcode > 0 && uinst->opcode < x86_uinst_opcode_count);
+		uop->flags = x86_uinst_info[uinst->opcode].flags;
 		uop->seq = ++cpu->seq;
-		uop->mop_seq = cpu->seq - i + count;
-		uop->mop_size = isa_inst.size;
-		uop->mop_count = newcount - count;
-		uop->mop_index = i - count;
+
 		uop->ctx = ctx;
 		uop->core = core;
 		uop->thread = thread;
+
+		/* FIXME: rename mop_XXX */
+		uop->mop_count = uinst_count;
+		uop->mop_size = isa_inst.size;
+		uop->mop_seq = uop->seq - uinst_index;
+		uop->mop_index = uinst_index;
+
 		uop->eip = THREAD.fetch_eip;
 		uop->in_fetchq = 1;
 		uop->fetch_tcache = fetch_tcache;
@@ -101,30 +114,38 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 		 * logical odeps. */
 		rf_count_deps(uop);
 
-		/* Memory access uops */
-		if (uop->flags & FMEM) {
-			uop->mem_vtladdr = ctx->mem->last_address;
-			uop->mem_phaddr = mmu_translate(THREAD.ctx->mid, ctx->mem->last_address);
-		}
+		/* Calculate physical address of a memory access */
+		if (uop->flags & X86_UINST_MEM)
+			uop->physical_address = mmu_translate(THREAD.ctx->mid,
+				uinst->address);
 
-		/* Store macroinstruction/uop names */
-		uop_dump_buf(uop, uop->name, sizeof(uop->name));
-		if (i == count)
+		/* Store x86 macro-instruction and uinst names */
+		/* FIXME: needs to be faster */
+		x86_uinst_dump_buf(uinst, uop->name, sizeof(uop->name));
+		if (!uinst_index)
 			x86_inst_dump_buf(&isa_inst, uop->mop_name,
 				sizeof(uop->mop_name));
 
-		/* New uop */
+		/* Select as returned uop */
+		if (!ret_uop || (uop->flags & X86_UINST_CTRL))
+			ret_uop = uop;
+
+		/* Insert into fetch queue */
+		list_add(THREAD.fetchq, uop);
 		cpu->fetched++;
 		THREAD.fetched++;
 		if (fetch_tcache)
 			THREAD.tcacheq_occ++;
+
+		/* Next uinst */
+		uinst_index++;
 	}
 
 	/* Increase fetch queue occupancy if instruction does not come from
 	 * trace cache, and return. */
-	if (ret && !fetch_tcache)
-		THREAD.fetchq_occ += ret->mop_size;
-	return ret;
+	if (ret_uop && !fetch_tcache)
+		THREAD.fetchq_occ += ret_uop->mop_size;
+	return ret_uop;
 }
 
 
@@ -170,7 +191,7 @@ static int fetch_thread_tcache(int core, int thread)
 
 		/* If instruction is a branch, access branch predictor just in order
 		 * to have the necessary information to update it at commit. */
-		if (uop->flags & FCTRL) {
+		if (uop->flags & X86_UINST_CTRL) {
 			bpred_lookup(THREAD.bpred, uop);
 			uop->pred_neip = i == mop_count - 1 ? neip :
 				mop_array[i + 1];
@@ -225,10 +246,12 @@ static void fetch_thread(int core, int thread)
 		/* Instruction detected as branches by the BTB are checked for branch
 		 * direction in the branch predictor. If they are predicted taken,
 		 * stop fetching from this block and set new fetch address. */
-		if (uop->flags & FCTRL) {
+		if (uop->flags & X86_UINST_CTRL)
+		{
 			target = bpred_btb_lookup(THREAD.bpred, uop);
 			taken = target && bpred_lookup(THREAD.bpred, uop);
-			if (taken) {
+			if (taken)
+			{
 				THREAD.fetch_neip = target;
 				uop->pred_neip = target;
 				break;

@@ -31,19 +31,19 @@ static int issue_sq(int core, int thread, int quant)
 		
 		/* Get store */
 		store = lnlist_get(sq);
-		assert(store->flags & FSTORE);
+		assert(store->uinst->opcode == x86_uinst_store);
 
 		/* Check that it can issue */
 		if (store->in_rob)
 			break;
 		if (!cache_system_can_access(core, thread, cache_kind_data,
-			cache_access_kind_write, store->mem_phaddr))
+			cache_access_kind_write, store->physical_address))
 			break;
 
 		/* Store can be issued. */
 		sq_remove(core, thread);
 		cache_system_write(core, thread, cache_kind_data,
-			store->mem_phaddr, CORE.eventq, store);
+			store->physical_address, CORE.eventq, store);
 
 		/* The cache system will place the store at the head of the
 		 * event queue when it is ready. For now, mark "in_eventq" to
@@ -53,15 +53,15 @@ static int issue_sq(int core, int thread, int quant)
 		store->issue_when = cpu->cycle;
 	
 		/* Instruction issued */
-		CORE.issued[store->uop]++;
+		CORE.issued[store->uinst->opcode]++;
 		CORE.lsq_reads++;
 		CORE.rf_int_reads += store->ph_int_idep_count;
 		CORE.rf_fp_reads += store->ph_fp_idep_count;
-		THREAD.issued[store->uop]++;
+		THREAD.issued[store->uinst->opcode]++;
 		THREAD.lsq_reads++;
 		THREAD.rf_int_reads += store->ph_int_idep_count;
 		THREAD.rf_fp_reads += store->ph_fp_idep_count;
-		cpu->issued[store->uop]++;
+		cpu->issued[store->uinst->opcode]++;
 		quant--;
 		
 		/* Debug */
@@ -95,7 +95,7 @@ static int issue_lq(int core, int thread, int quant)
 		}
 		load->ready = 1;
 		if (!cache_system_can_access(core, thread, cache_kind_data,
-			cache_access_kind_read, load->mem_phaddr))
+			cache_access_kind_read, load->physical_address))
 		{
 			lnlist_next(lq);
 			continue;
@@ -104,8 +104,9 @@ static int issue_lq(int core, int thread, int quant)
 		/* Load can be issued. Remove it from lq.
 		 * Access data tlb and cache. */
 		lq_remove(core, thread);
+		assert(load->uinst->opcode == x86_uinst_load);
 		cache_system_read(core, thread, cache_kind_data,
-			load->mem_phaddr, CORE.eventq, load);
+			load->physical_address, CORE.eventq, load);
 
 		/* The cache system will place the load at the head of the
 		 * event queue when it is ready. For now, mark "in_eventq" to
@@ -115,15 +116,15 @@ static int issue_lq(int core, int thread, int quant)
 		load->issue_when = cpu->cycle;
 		
 		/* Instruction issued */
-		CORE.issued[load->uop]++;
+		CORE.issued[load->uinst->opcode]++;
 		CORE.lsq_reads++;
 		CORE.rf_int_reads += load->ph_int_idep_count;
 		CORE.rf_fp_reads += load->ph_fp_idep_count;
-		THREAD.issued[load->uop]++;
+		THREAD.issued[load->uinst->opcode]++;
 		THREAD.lsq_reads++;
 		THREAD.rf_int_reads += load->ph_int_idep_count;
 		THREAD.rf_fp_reads += load->ph_fp_idep_count;
-		cpu->issued[load->uop]++;
+		cpu->issued[load->uinst->opcode]++;
 		quant--;
 		
 		/* Debug */
@@ -153,7 +154,7 @@ static int issue_iq(int core, int thread, int quant)
 		/* Get element from IQ */
 		uop = lnlist_get(iq);
 		assert(uop_exists(uop));
-		assert(!(uop->flags & FMEM));
+		assert(!(uop->flags & X86_UINST_MEM));
 		if (!uop->ready && !rf_ready(uop)) {
 			lnlist_next(iq);
 			continue;
@@ -185,15 +186,15 @@ static int issue_iq(int core, int thread, int quant)
 		eventq_insert(CORE.eventq, uop);
 		
 		/* Instruction issued */
-		CORE.issued[uop->uop]++;
+		CORE.issued[uop->uinst->opcode]++;
 		CORE.iq_reads++;
 		CORE.rf_int_reads += uop->ph_int_idep_count;
 		CORE.rf_fp_reads += uop->ph_fp_idep_count;
-		THREAD.issued[uop->uop]++;
+		THREAD.issued[uop->uinst->opcode]++;
 		THREAD.iq_reads++;
 		THREAD.rf_int_reads += uop->ph_int_idep_count;
 		THREAD.rf_fp_reads += uop->ph_fp_idep_count;
-		cpu->issued[uop->uop]++;
+		cpu->issued[uop->uinst->opcode]++;
 		quant--;
 
 		/* Debug */

@@ -319,12 +319,15 @@ void lsq_insert(struct uop_t *uop)
 	struct lnlist_t *sq = THREAD.sq;
 
 	assert(!uop->in_lq && !uop->in_sq);
-	assert((uop->flags & FLOAD) || (uop->flags & FSTORE));
-	if (uop->flags & FLOAD) {
+	assert(uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_store);
+	if (uop->uinst->opcode == x86_uinst_load)
+	{
 		lnlist_out(lq);
 		lnlist_insert(lq, uop);
 		uop->in_lq = 1;
-	} else {
+	}
+	else
+	{
 		lnlist_out(sq);
 		lnlist_insert(sq, uop);
 		uop->in_sq = 1;
@@ -459,7 +462,7 @@ int eventq_cachemiss(int core, int thread)
 
 	for (lnlist_head(eventq); !lnlist_eol(eventq); lnlist_next(eventq)) {
 		uop = lnlist_get(eventq);
-		if (uop->thread != thread || !(uop->flags & FLOAD))
+		if (uop->thread != thread || uop->uinst->opcode != x86_uinst_load)
 			continue;
 		if (cpu->cycle - uop->issue_when > 5)
 			return 1;
