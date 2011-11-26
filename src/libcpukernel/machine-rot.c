@@ -27,7 +27,6 @@ void op_##xxx##_rm8_1_impl() \
 	uint8_t count = 1; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"pushf\n\t" \
 		"push %4\n\t" \
 		"popf\n\t" \
 		"mov %2, %%al\n\t" \
@@ -36,7 +35,6 @@ void op_##xxx##_rm8_1_impl() \
 		"mov %%al, %1\n\t" \
 		"pushf\n\t" \
 		"pop %0\n\t" \
-		"popf\n\t" \
 		: "=g" (flags), "=m" (rm8) \
 		: "m" (rm8), "m" (count), "g" (flags) \
 		: "al", "cl" \
@@ -54,7 +52,6 @@ void op_##xxx##_rm8_cl_impl() \
 	uint8_t count = isa_load_reg(x86_reg_cl); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"pushf\n\t" \
 		"push %4\n\t" \
 		"popf\n\t" \
 		"mov %2, %%al\n\t" \
@@ -63,7 +60,6 @@ void op_##xxx##_rm8_cl_impl() \
 		"mov %%al, %1\n\t" \
 		"pushf\n\t" \
 		"pop %0\n\t" \
-		"popf\n\t" \
 		: "=g" (flags), "=m" (rm8) \
 		: "m" (rm8), "m" (count), "g" (flags) \
 		: "al", "cl" \
@@ -81,7 +77,6 @@ void op_##xxx##_rm8_imm8_impl() \
 	uint8_t count = isa_inst.imm.b; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"pushf\n\t" \
 		"push %4\n\t" \
 		"popf\n\t" \
 		"mov %2, %%al\n\t" \
@@ -90,7 +85,6 @@ void op_##xxx##_rm8_imm8_impl() \
 		"mov %%al, %1\n\t" \
 		"pushf\n\t" \
 		"pop %0\n\t" \
-		"popf\n\t" \
 		: "=g" (flags), "=m" (rm8) \
 		: "m" (rm8), "m" (count), "g" (flags) \
 		: "al", "cl" \
@@ -108,7 +102,6 @@ void op_##xxx##_rm16_1_impl() \
 	uint8_t count = 1; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"pushf\n\t" \
 		"push %4\n\t" \
 		"popf\n\t" \
 		"mov %2, %%ax\n\t" \
@@ -117,7 +110,6 @@ void op_##xxx##_rm16_1_impl() \
 		"mov %%ax, %1\n\t" \
 		"pushf\n\t" \
 		"pop %0\n\t" \
-		"popf\n\t" \
 		: "=g" (flags), "=m" (rm16) \
 		: "m" (rm16), "m" (count), "g" (flags) \
 		: "ax", "cl" \
@@ -135,7 +127,6 @@ void op_##xxx##_rm16_cl_impl() \
 	uint8_t count = isa_load_reg(x86_reg_cl); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"pushf\n\t" \
 		"push %4\n\t" \
 		"popf\n\t" \
 		"mov %2, %%ax\n\t" \
@@ -144,7 +135,6 @@ void op_##xxx##_rm16_cl_impl() \
 		"mov %%ax, %1\n\t" \
 		"pushf\n\t" \
 		"pop %0\n\t" \
-		"popf\n\t" \
 		: "=g" (flags), "=m" (rm16) \
 		: "m" (rm16), "m" (count), "g" (flags) \
 		: "ax", "cl" \
@@ -162,7 +152,6 @@ void op_##xxx##_rm16_imm8_impl() \
 	uint8_t count = isa_inst.imm.b; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"pushf\n\t" \
 		"push %4\n\t" \
 		"popf\n\t" \
 		"mov %2, %%ax\n\t" \
@@ -171,7 +160,6 @@ void op_##xxx##_rm16_imm8_impl() \
 		"mov %%ax, %1\n\t" \
 		"pushf\n\t" \
 		"pop %0\n\t" \
-		"popf\n\t" \
 		: "=g" (flags), "=m" (rm16) \
 		: "m" (rm16), "m" (count), "g" (flags) \
 		: "ax", "cl" \
@@ -189,7 +177,6 @@ void op_##xxx##_rm32_1_impl() \
 	uint8_t count = 1; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"pushf\n\t" \
 		"push %4\n\t" \
 		"popf\n\t" \
 		"mov %2, %%eax\n\t" \
@@ -198,7 +185,6 @@ void op_##xxx##_rm32_1_impl() \
 		"mov %%eax, %1\n\t" \
 		"pushf\n\t" \
 		"pop %0\n\t" \
-		"popf\n\t" \
 		: "=g" (flags), "=m" (rm32) \
 		: "m" (rm32), "m" (count), "g" (flags) \
 		: "eax", "cl" \
@@ -216,7 +202,6 @@ void op_##xxx##_rm32_cl_impl() \
 	uint8_t count = isa_load_reg(x86_reg_cl); \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"pushf\n\t" \
 		"push %4\n\t" \
 		"popf\n\t" \
 		"mov %2, %%eax\n\t" \
@@ -225,7 +210,6 @@ void op_##xxx##_rm32_cl_impl() \
 		"mov %%eax, %1\n\t" \
 		"pushf\n\t" \
 		"pop %0\n\t" \
-		"popf\n\t" \
 		: "=g" (flags), "=m" (rm32) \
 		: "m" (rm32), "m" (count), "g" (flags) \
 		: "eax", "cl" \
@@ -243,7 +227,6 @@ void op_##xxx##_rm32_imm8_impl() \
 	uint8_t count = isa_inst.imm.b; \
 	unsigned long flags = isa_regs->eflags; \
 	asm volatile ( \
-		"pushf\n\t" \
 		"push %4\n\t" \
 		"popf\n\t" \
 		"mov %2, %%eax\n\t" \
@@ -252,7 +235,6 @@ void op_##xxx##_rm32_imm8_impl() \
 		"mov %%eax, %1\n\t" \
 		"pushf\n\t" \
 		"pop %0\n\t" \
-		"popf\n\t" \
 		: "=g" (flags), "=m" (rm32) \
 		: "m" (rm32), "m" (count), "g" (flags) \
 		: "eax", "cl" \
