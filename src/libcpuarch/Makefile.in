@@ -68,9 +68,9 @@ AR = ar
 ARFLAGS = cru
 libcpuarch_a_AR = $(AR) $(ARFLAGS)
 libcpuarch_a_LIBADD =
-am_libcpuarch_a_OBJECTS = stg_fetch.$(OBJEXT) stg_decode.$(OBJEXT) \
-	stg_dispatch.$(OBJEXT) stg_issue.$(OBJEXT) \
-	stg_writeback.$(OBJEXT) stg_commit.$(OBJEXT) bpred.$(OBJEXT) \
+am_libcpuarch_a_OBJECTS = stg-fetch.$(OBJEXT) stg-decode.$(OBJEXT) \
+	stg-dispatch.$(OBJEXT) stg-issue.$(OBJEXT) \
+	stg-writeback.$(OBJEXT) stg-commit.$(OBJEXT) bpred.$(OBJEXT) \
 	cpuarch.$(OBJEXT) fu.$(OBJEXT) queues.$(OBJEXT) \
 	recover.$(OBJEXT) rf.$(OBJEXT) rob.$(OBJEXT) sched.$(OBJEXT) \
 	tcache.$(OBJEXT) uop.$(OBJEXT)
@@ -186,12 +186,12 @@ lib_LIBRARIES = libcpuarch.a
 libcpuarch_a_SOURCES = \
 	cpuarch.h \
 	\
-	stg_fetch.c \
-	stg_decode.c \
-	stg_dispatch.c \
-	stg_issue.c \
-	stg_writeback.c \
-	stg_commit.c \
+	stg-fetch.c \
+	stg-decode.c \
+	stg-dispatch.c \
+	stg-issue.c \
+	stg-writeback.c \
+	stg-commit.c \
 	\
 	bpred.c \
 	cpuarch.c \
@@ -303,12 +303,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rob.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sched.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_commit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_decode.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_dispatch.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_fetch.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_issue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg_writeback.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg-commit.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg-decode.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg-dispatch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg-fetch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg-issue.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stg-writeback.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uop.Po@am__quote@
 

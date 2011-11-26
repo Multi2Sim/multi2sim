@@ -260,6 +260,10 @@ void ld_get_full_path(struct ctx_t *ctx, char *filename, char *fullpath, int siz
  * Microinstructions
  */
 
+
+/* Micro-instruction dependences.
+ * WARNING: update 'x86_uinst_dep_name' if modified (uinst.c).
+ * WARNING: also update 'x86_uinst_dep_map' if modified (uinst.c). */
 enum x86_dep_t {
 
 	x86_dep_none = 0,
@@ -367,9 +371,6 @@ enum x86_dep_t {
 	x86_dep_eaidx = 0x603,  /* Effective address - index */
 
 	x86_dep_sti = 0x700,  /* FP - ToS+Index */
-	x86_dep_fpop = 0x701,  /* FP - Pop stack FIXME: remove */
-	x86_dep_fpop2 = 0x702,  /* FP - Pop stack twice  FIXME: remove*/
-	x86_dep_fpush = 0x703,   /* FP - Push stack  FIXME: remove*/
 
 	x86_dep_xmmm32 = 0x800,
 	x86_dep_xmmm64 = 0x801,
@@ -396,6 +397,8 @@ enum x86_uinst_flag_t
 };
 
 
+/* Micro-instruction opcodes.
+ * WARNING: update 'x86_uinst_info' in 'uinst.c' if modified. */
 enum x86_uinst_opcode_t
 {
 	x86_uinst_nop = 0,
@@ -622,7 +625,9 @@ void isa_inst_stat_reset(void);
 
 
 
-/* System calls */
+/*
+ * System calls
+ */
 
 #define syscall_debug(...) debug(syscall_debug_category, __VA_ARGS__)
 extern int syscall_debug_category;
@@ -633,7 +638,10 @@ void syscall_summary(void);
 
 
 
-/* System signals */
+/*
+ * System signals
+ */
+
 
 /* Every contexts (parent and children) has its own masks */
 struct signal_masks_t
@@ -647,6 +655,7 @@ struct signal_masks_t
 
 struct signal_masks_t *signal_masks_create(void);
 void signal_masks_free(struct signal_masks_t *signal_masks);
+
 
 /* This structure is shared for parent and child contexts. A change
  * in the singal handler by any of them affects all of them. */
@@ -679,7 +688,10 @@ int sim_sigset_member(uint64_t *sim_sigset, int signal);
 
 
 
-/* Files management */
+/*
+ * File management
+ */
+
 
 enum fd_kind_t
 {
@@ -691,6 +703,7 @@ enum fd_kind_t
 	fd_kind_socket  /* Network socket */
 };
 
+
 /* File descriptor */
 struct fd_t
 {
@@ -701,11 +714,13 @@ struct fd_t
 	int flags;  /* O_xxx flags */
 };
 
+
 /* File descriptor table */
 struct fdt_t
 {
 	struct list_t *fd_list;  /* List of file descriptors (fd_t elements) */
 };
+
 
 struct fdt_t *fdt_create(void);
 void fdt_free(struct fdt_t *fdt);
@@ -722,7 +737,9 @@ int fdt_get_guest_fd(struct fdt_t *fdt, int host_fd);
 
 
 
-/* Context */
+/*
+ * Context
+ */
 
 #define ctx_debug(...) debug(ctx_debug_category, __VA_ARGS__)
 extern int ctx_debug_category;
@@ -851,7 +868,10 @@ void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path);
 
 
 
-/* Kernel */
+
+/*
+ * CPU Emulation Kernel
+ */
 
 struct kernel_t
 {
@@ -906,8 +926,7 @@ void ke_list_remove(enum ke_list_kind_t list, struct ctx_t *ctx);
 int ke_list_member(enum ke_list_kind_t list, struct ctx_t *ctx);
 
 
-/* Global Multi2Sim
- * Kernel Variable */
+/* Global CPU kernel variable */
 extern struct kernel_t *ke;
 
 void ke_init(void);

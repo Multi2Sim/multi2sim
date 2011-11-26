@@ -20,11 +20,27 @@
 #include <cpuarch.h>
 
 
-/* Global variables */
+/*
+ * Global variables
+ */
 
 
 struct fu_res_t fu_res_pool[fu_count];
 
+
+
+
+/*
+ * Private
+ */
+
+
+/* Table indexed by 'uop->uinst->opcode', providing the functional unit type
+ * associated with a given type of micro-instruction. */
+static enum fu_class_t fu_class_table[x86_uinst_opcode_count] =
+{
+	fu_none
+};
 
 
 
@@ -57,7 +73,14 @@ int fu_reserve(struct uop_t *uop)
 	int i;
 	int core = uop->core;
 	struct fu_t *fu = CORE.fu;
-	enum fu_class_t fu_class = uop->fu_class;
+	enum fu_class_t fu_class;
+
+	/* Get the functional unit class required by the uop.
+	 * If the uop does not require a functional unit, return
+	 * 1 cycle latency. */
+	fu_class = fu_class_table[uop->uinst->opcode];
+	if (!fu_class)
+		return 1;
 
 	/* First time uop tries to reserve f.u. */
 	if (!uop->issue_try_when)
