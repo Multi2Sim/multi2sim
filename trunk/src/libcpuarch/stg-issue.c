@@ -161,16 +161,14 @@ static int issue_iq(int core, int thread, int quant)
 		}
 		uop->ready = 1;  /* avoid next call to 'rf_ready' */
 		
-		/* If inst does not require fu, one cycle latency.
-		 * Otherwise, try to reserve the corresponding fu. */
-		if (!uop->fu_class) {
-			lat = 1;
-		} else {
-			lat = fu_reserve(uop);
-			if (!lat) {
-				lnlist_next(iq);
-				continue;
-			}
+		/* Run the instruction in its corresponding functional unit.
+		 * If the instruction does not require a functional unit, 'fu_reserve'
+		 * returns 1 cycle latency. If there is no functional unit available,
+		 * 'fu_reserve' returns 0. */
+		lat = fu_reserve(uop);
+		if (!lat) {
+			lnlist_next(iq);
+			continue;
 		}
 		
 		/* Instruction was issued to the corresponding fu.

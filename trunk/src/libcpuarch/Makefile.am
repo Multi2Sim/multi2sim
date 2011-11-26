@@ -3,12 +3,12 @@ lib_LIBRARIES = libcpuarch.a
 libcpuarch_a_SOURCES = \
 	cpuarch.h \
 	\
-	stg_fetch.c \
-	stg_decode.c \
-	stg_dispatch.c \
-	stg_issue.c \
-	stg_writeback.c \
-	stg_commit.c \
+	stg-fetch.c \
+	stg-decode.c \
+	stg-dispatch.c \
+	stg-issue.c \
+	stg-writeback.c \
+	stg-commit.c \
 	\
 	bpred.c \
 	cpuarch.c \
