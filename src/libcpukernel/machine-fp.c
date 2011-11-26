@@ -1348,7 +1348,8 @@ void op_fpatan_impl()
 	isa_pop_fpu(NULL);
 	isa_store_fpu_code(status);
 
-	x86_uinst_new(x86_uinst_fp_atan, x86_dep_st0, x86_dep_st1, 0, x86_dep_st1, x86_dep_fpop, 0, 0);
+	x86_uinst_new(x86_uinst_fp_atan, x86_dep_st0, x86_dep_st1, 0, x86_dep_st1, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 

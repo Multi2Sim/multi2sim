@@ -125,27 +125,6 @@ int mm_rtranslate(struct mm_t *mm, uint32_t phaddr, int *ctx, uint32_t *vtladdr)
  * Micro Operations
  */
 
-enum fu_class_t
-{
-	fu_none = 0,
-	fu_intadd,
-	fu_intsub,
-	fu_intmult,
-	fu_intdiv,
-	fu_effaddr,
-	fu_logic,
-
-	fu_fpsimple,
-	fu_fpadd,
-	fu_fpcomp,
-	fu_fpmult,
-	fu_fpdiv,
-	fu_fpcomplex,
-
-	fu_count
-};
-
-
 struct uop_t
 {
 	/* Micro-instruction */
@@ -189,9 +168,6 @@ struct uop_t
 	int ph_idep[X86_UINST_MAX_IDEPS];
 	int ph_odep[X86_UINST_MAX_ODEPS];
 	int ph_oodep[X86_UINST_MAX_ODEPS];
-
-	/* Execution */
-	int fu_class;
 
 	/* Queues where instruction is */
 	int in_fetchq : 1;
@@ -238,6 +214,27 @@ void uop_lnlist_check_if_ready(struct lnlist_t *uop_list);
  */
  
 #define FU_RES_MAX  10
+
+enum fu_class_t
+{
+	fu_none = 0,
+
+	fu_intadd,
+	fu_intsub,
+	fu_intmult,
+	fu_intdiv,
+	fu_effaddr,
+	fu_logic,
+
+	fu_fpsimple,
+	fu_fpadd,
+	fu_fpcomp,
+	fu_fpmult,
+	fu_fpdiv,
+	fu_fpcomplex,
+
+	fu_count
+};
 
 struct fu_t
 {

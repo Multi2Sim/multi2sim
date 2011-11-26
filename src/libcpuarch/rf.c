@@ -316,15 +316,30 @@ void rf_rename(struct uop_t *uop)
 	int thread = uop->thread;
 	struct rf_t *rf = THREAD.rf;
 
+	/* Update floating-point top of stack */
+	if (uop->uinst->opcode == x86_uinst_fp_pop)
+	{
+		/* Pop floating-point stack */
+		rf->fp_top_of_stack = (rf->fp_top_of_stack + 1) % 8;
+	}
+	else if (uop->uinst->opcode == x86_uinst_fp_push)
+	{
+		/* Push floating-point stack */
+		rf->fp_top_of_stack = (rf->fp_top_of_stack + 7) % 8;
+	}
+
 	/* Rename input int/FP registers */
-	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++) {
+	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++)
+	{
 		loreg = uop->uinst->idep[dep];
-		if (X86_DEP_IS_INT_REG(loreg)) {
+		if (X86_DEP_IS_INT_REG(loreg))
+		{
 			phreg = rf->int_rat[loreg - x86_dep_int_first];
 			uop->ph_idep[dep] = phreg;
 			THREAD.rat_int_reads++;
-		} else if (X86_DEP_IS_FP_REG(loreg)) {
-
+		}
+		else if (X86_DEP_IS_FP_REG(loreg))
+		{
 			/* Convert to top-of-stack relative */
 			streg = (loreg - x86_dep_fp_first + rf->fp_top_of_stack) % 8 + x86_dep_fp_first;
 			assert(X86_DEP_IS_FP_REG(streg));
@@ -333,8 +348,9 @@ void rf_rename(struct uop_t *uop)
 			phreg = rf->fp_rat[streg - x86_dep_fp_first];
 			uop->ph_idep[dep] = phreg;
 			THREAD.rat_fp_reads++;
-
-		} else {
+		}
+		else
+		{
 			uop->ph_idep[dep] = -1;
 		}
 	}
@@ -342,15 +358,16 @@ void rf_rename(struct uop_t *uop)
 	/* Rename output int/FP registers (not flags) */
 	flag_phreg = -1;
 	flag_count = 0;
-	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++) {
+	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
+	{
 		loreg = uop->uinst->odep[dep];
-		if (X86_DEP_IS_FLAG(loreg)) {
-			
+		if (X86_DEP_IS_FLAG(loreg))
+		{
 			/* Record a new flag */
 			flag_count++;
-
-		} else if (X86_DEP_IS_INT_REG(loreg)) {
-
+		}
+		else if (X86_DEP_IS_INT_REG(loreg))
+		{
 			/* Reclaim a free integer register */
 			phreg = rf_int_reclaim(core, thread);
 			rf->int_phreg[phreg].busy++;
@@ -365,8 +382,9 @@ void rf_rename(struct uop_t *uop)
 			rf->int_rat[loreg - x86_dep_int_first] = phreg;
 			THREAD.rat_int_writes++;
 
-		} else if (X86_DEP_IS_FP_REG(loreg)) {
-		
+		}
+		else if (X86_DEP_IS_FP_REG(loreg))
+		{
 			/* Convert to top-of-stack relative */
 			streg = (loreg - x86_dep_fp_first + rf->fp_top_of_stack) % 8 + x86_dep_fp_first;
 			assert(X86_DEP_IS_FP_REG(streg));
@@ -382,24 +400,9 @@ void rf_rename(struct uop_t *uop)
 			uop->ph_oodep[dep] = ophreg;
 			rf->fp_rat[streg - x86_dep_fp_first] = phreg;
 			THREAD.rat_fp_writes++;
-
-		} else if (loreg == x86_dep_fpop) {
-			
-			/* Pop floating-point stack */
-			rf->fp_top_of_stack = (rf->fp_top_of_stack + 1) % 8;
-
-		} else if (loreg == x86_dep_fpop2) {
-			
-			/* Pop floating-point stack 2 positions */
-			rf->fp_top_of_stack = (rf->fp_top_of_stack + 2) % 8;
-
-		} else if (loreg == x86_dep_fpush) {
-			
-			/* Push floating-point stack */
-			rf->fp_top_of_stack = (rf->fp_top_of_stack + 7) % 8;
-
-		} else {
-			
+		}
+		else
+		{
 			/* Not a valid output dependence */
 			uop->ph_odep[dep] = -1;
 			uop->ph_oodep[dep] = -1;
@@ -473,17 +476,19 @@ void rf_undo(struct uop_t *uop)
 	/* Undo mappings in reverse order, in case an instruction has a
 	 * duplicated output dependence. */
 	assert(uop->specmode);
-	for (dep = X86_UINST_MAX_ODEPS - 1; dep >= 0; dep--) {
+	for (dep = X86_UINST_MAX_ODEPS - 1; dep >= 0; dep--)
+	{
 		loreg = uop->uinst->odep[dep];
 		phreg = uop->ph_odep[dep];
 		ophreg = uop->ph_oodep[dep];
-		if (X86_DEP_IS_INT_REG(loreg)) {
-			
+		if (X86_DEP_IS_INT_REG(loreg))
+		{
 			/* Decrease busy counter and free if 0. */
 			assert(rf->int_phreg[phreg].busy > 0);
 			assert(!rf->int_phreg[phreg].pending);
 			rf->int_phreg[phreg].busy--;
-			if (!rf->int_phreg[phreg].busy) {
+			if (!rf->int_phreg[phreg].busy)
+			{
 				assert(rf->int_free_phreg_count < rf_int_local_size);
 				assert(CORE.rf_int_count > 0 && THREAD.rf_int_count > 0);
 				rf->int_free_phreg[rf->int_free_phreg_count] = phreg;
@@ -495,9 +500,9 @@ void rf_undo(struct uop_t *uop)
 			/* Return to previous mapping */
 			rf->int_rat[loreg - x86_dep_int_first] = ophreg;
 			assert(rf->int_phreg[ophreg].busy);
-		
-		} else if (X86_DEP_IS_FP_REG(loreg)) {
-			
+		}
+		else if (X86_DEP_IS_FP_REG(loreg))
+		{
 			/* Convert to top-of-stack relative */
 			streg = (loreg - x86_dep_fp_first + rf->fp_top_of_stack) % 8 + x86_dep_fp_first;
 			assert(X86_DEP_IS_FP_REG(streg));
@@ -506,7 +511,8 @@ void rf_undo(struct uop_t *uop)
 			assert(rf->fp_phreg[phreg].busy > 0);
 			assert(!rf->fp_phreg[phreg].pending);
 			rf->fp_phreg[phreg].busy--;
-			if (!rf->fp_phreg[phreg].busy) {
+			if (!rf->fp_phreg[phreg].busy)
+			{
 				assert(rf->fp_free_phreg_count < rf_fp_local_size);
 				assert(CORE.rf_fp_count > 0 && THREAD.rf_fp_count > 0);
 				rf->fp_free_phreg[rf->fp_free_phreg_count] = phreg;
@@ -518,28 +524,25 @@ void rf_undo(struct uop_t *uop)
 			/* Return to previous mapping */
 			rf->fp_rat[streg - x86_dep_fp_first] = ophreg;
 			assert(rf->fp_phreg[ophreg].busy);
-
-		} else if (loreg == x86_dep_fpop) {
-			
-			/* Inverse-pop floating-point stack */
-			rf->fp_top_of_stack = (rf->fp_top_of_stack + 7) % 8;
-
-		} else if (loreg == x86_dep_fpop2) {
-			
-			/* Inverse-pop floating-point stack 2 positions */
-			rf->fp_top_of_stack = (rf->fp_top_of_stack + 6) % 8;
-
-		} else if (loreg == x86_dep_fpush) {
-			
-			/* Inverse-push floating-point stack */
-			rf->fp_top_of_stack = (rf->fp_top_of_stack + 1) % 8;
-
-		} else {
-			
+		}
+		else
+		{
 			/* Not a valid dependence. */
 			assert(phreg == -1);
 			assert(ophreg == -1);
 		}
+	}
+
+	/* Undo modification in floating-point top of stack */
+	if (uop->uinst->opcode == x86_uinst_fp_pop)
+	{
+		/* Inverse-pop floating-point stack */
+		rf->fp_top_of_stack = (rf->fp_top_of_stack + 7) % 8;
+	}
+	else if (uop->uinst->opcode == x86_uinst_fp_push)
+	{
+		/* Inverse-push floating-point stack */
+		rf->fp_top_of_stack = (rf->fp_top_of_stack + 1) % 8;
 	}
 }
 
@@ -552,17 +555,19 @@ void rf_commit(struct uop_t *uop)
 	struct rf_t *rf = THREAD.rf;
 
 	assert(!uop->specmode);
-	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++) {
+	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
+	{
 		loreg = uop->uinst->odep[dep];
 		phreg = uop->ph_odep[dep];
 		ophreg = uop->ph_oodep[dep];
 
-		if (X86_DEP_IS_INT_REG(loreg)) {
-			
+		if (X86_DEP_IS_INT_REG(loreg))
+		{
 			/* Decrease counter of previous mapping and free if 0. */
 			assert(rf->int_phreg[ophreg].busy > 0);
 			rf->int_phreg[ophreg].busy--;
-			if (!rf->int_phreg[ophreg].busy) {
+			if (!rf->int_phreg[ophreg].busy)
+			{
 				assert(!rf->int_phreg[ophreg].pending);
 				assert(rf->int_free_phreg_count < rf_int_local_size);
 				assert(CORE.rf_int_count > 0 && THREAD.rf_int_count > 0);
@@ -571,13 +576,14 @@ void rf_commit(struct uop_t *uop)
 				CORE.rf_int_count--;
 				THREAD.rf_int_count--;
 			}
-
-		} else if (X86_DEP_IS_FP_REG(loreg)) {
-
+		}
+		else if (X86_DEP_IS_FP_REG(loreg))
+		{
 			/* Decrease counter of previous mapping and free if 0. */
 			assert(rf->fp_phreg[ophreg].busy > 0);
 			rf->fp_phreg[ophreg].busy--;
-			if (!rf->fp_phreg[ophreg].busy) {
+			if (!rf->fp_phreg[ophreg].busy)
+			{
 				assert(!rf->fp_phreg[ophreg].pending);
 				assert(rf->fp_free_phreg_count < rf_fp_local_size);
 				assert(CORE.rf_fp_count > 0 && THREAD.rf_fp_count > 0);
@@ -586,13 +592,9 @@ void rf_commit(struct uop_t *uop)
 				CORE.rf_fp_count--;
 				THREAD.rf_fp_count--;
 			}
-
-		} else if (loreg == x86_dep_fpush || loreg == x86_dep_fpop || loreg == x86_dep_fpop2) {
-			
-			/* No action for floating-point top-of-stack management. */
-
-		} else {
-			
+		}
+		else
+		{
 			/* Not a valid dependence. */
 			assert(phreg == -1);
 			assert(ophreg == -1);

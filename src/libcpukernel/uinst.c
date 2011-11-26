@@ -26,8 +26,15 @@
 
 struct list_t *x86_uinst_list;
 
+
+/* Direct look-up table for regular dependences */
+/*char *x86_uinst_dep_name = {
+};*/
+
+
+/* String map for the rest of the dependences */
 struct string_map_t x86_uinst_dep_map = {
-	55, {
+	52, {
 		{ "none", x86_dep_none },
 
 		{ "eax", x86_dep_eax },
@@ -94,9 +101,6 @@ struct string_map_t x86_uinst_dep_map = {
 		{ "*EAIDX*", x86_dep_eaidx },
 
 		{ "*STI*", x86_dep_sti },
-		{ "*FPOP*", x86_dep_fpop },  /* FIXME remove */
-		{ "*FPOP2*", x86_dep_fpop2 },  /* FIXME remove */
-		{ "*FPUSH*", x86_dep_fpush }  /* FIXME remove */
 	}
 };
 
@@ -248,9 +252,6 @@ static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index)
 	switch (dep) {
 
 	case x86_dep_none:
-	case x86_dep_fpop:
-	case x86_dep_fpop2:
-	case x86_dep_fpush:
 
 		break;
 
