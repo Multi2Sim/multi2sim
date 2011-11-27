@@ -20,6 +20,23 @@
 #include <cpukernel.h>
 
 
+/* Macros defined to prevent accidental use of 'mem_<xx>' instructions */
+#define mem_access __COMPILATION_ERROR__
+#define mem_read __COMPILATION_ERROR__
+#define mem_write __COMPILATION_ERROR__
+#define mem_zero __COMPILATION_ERROR__
+#define mem_read_string __COMPILATION_ERROR__
+#define mem_write_string __COMPILATION_ERROR__
+#define mem_get_buffer __COMPILATION_ERROR__
+#define fatal __COMPILATION_ERROR__
+#define panic __COMPILATION_ERROR__
+#define warning __COMPILATION_ERROR__
+#ifdef assert
+#undef assert
+#endif
+#define assert __COMPILATION_ERROR__
+
+
 void op_cvttsd2si_r32_xmmm64_impl()
 {
 	uint8_t xmm[16];
@@ -68,19 +85,19 @@ void op_cvttss2si_r32_xmmm32_impl()
 
 void op_ldmxcsr_m32_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_movaps_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_movaps_xmmm128_xmm_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
@@ -114,25 +131,25 @@ void op_movd_rm32_xmm_impl()
 
 void op_movdqa_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_movdqa_xmmm128_xmm_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_movdqu_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_movdqu_xmmm128_xmm_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
@@ -192,13 +209,13 @@ void op_movlpd_m64_xmm_impl()
 
 void op_pmovmskb_r32_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_movntdq_m128_xmm_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
@@ -264,132 +281,132 @@ void op_movss_xmmm32_xmm_impl()
 
 void op_palignr_xmm_xmmm128_imm8_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pand_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pcmpeqb_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pcmpeqw_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pcmpeqd_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pcmpistri_xmm_xmmm128_imm8_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pinsrb_xmm_r32m8_imm8_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pinsrd_xmm_rm32_imm8_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_punpcklbw_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_punpcklwd_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_punpckldq_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_punpcklqdq_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pshufb_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pshufd_xmm_xmmm128_imm8_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pslldq_xmmm128_imm8_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_psrldq_xmmm128_imm8_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_stmxcsr_m32_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_psubb_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_psubw_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_psubd_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_ptest_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_pxor_xmm_xmmm128_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 

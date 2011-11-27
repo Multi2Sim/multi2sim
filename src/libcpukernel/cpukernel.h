@@ -157,9 +157,10 @@ void mem_unmap_host(struct mem_t *mem, uint32_t addr);
 void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t perm);
 void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size);
 
-#define mem_read(mem, addr, size, buf) mem_access(mem, addr, size, buf, mem_access_read)
-#define mem_write(mem, addr, size, buf) mem_access(mem, addr, size, buf, mem_access_write)
 void mem_access(struct mem_t *mem, uint32_t addr, int size, void *buf, enum mem_access_t access);
+void mem_read(struct mem_t *mem, uint32_t addr, int size, void *buf);
+void mem_write(struct mem_t *mem, uint32_t addr, int size, void *buf);
+
 void mem_zero(struct mem_t *mem, uint32_t addr, int size);
 int mem_read_string(struct mem_t *mem, uint32_t addr, int size, char *str);
 void mem_write_string(struct mem_t *mem, uint32_t addr, char *str);
@@ -496,8 +497,7 @@ void x86_uinst_free(struct x86_uinst_t *uinst);
 	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
 	__x86_uinst_new(opcode, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
 #define x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
-	{ assert(opcode == x86_uinst_load || opcode == x86_uinst_store); \
-	if (cpu_sim_kind == cpu_sim_kind_detailed) \
+	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
 	__x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
 #define x86_uinst_new_move(idep, odep) \
 	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
@@ -528,6 +528,7 @@ void x86_uinst_list_dump(FILE *f);
 extern struct ctx_t *isa_ctx;
 extern struct regs_t *isa_regs;
 extern struct mem_t *isa_mem;
+extern int isa_spec_mode;
 extern uint32_t isa_eip;
 extern uint32_t isa_target;
 extern struct x86_inst_t isa_inst;
@@ -543,10 +544,32 @@ extern long isa_host_flags;
 #define __ISA_ASM_START__ asm volatile ("pushf\n\t" "pop %0\n\t" : "=m" (isa_host_flags));
 #define __ISA_ASM_END__ asm volatile ("push %0\n\t" "popf\n\t" : "=m" (isa_host_flags));
 
+extern uint16_t isa_host_fpcw;
+extern uint16_t isa_guest_fpcw;
+#define __ISA_FP_ASM_START__ asm volatile ( \
+	"pushf\n\t" \
+	"pop %0\n\t" \
+	"fstcw %1\n\t" \
+	"fldcw %2\n\t" \
+	: "=m" (isa_host_flags), "=m" (isa_host_fpcw) \
+	: "m" (isa_guest_fpcw));
+#define __ISA_FP_ASM_END__ asm volatile ( \
+	"push %0\n\t" \
+	"popf\n\t" \
+	"fnclex\n\t" \
+	"fldcw %1\n\t" \
+	: "=m" (isa_host_flags) \
+	: "m" (isa_host_fpcw));
+
 /* References to functions emulating x86 instructions */
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) void op_##name##_impl(void);
 #include <machine.dat>
 #undef DEFINST
+
+void isa_error(char *fmt, ...);
+
+void isa_mem_read(struct mem_t *mem, uint32_t addr, int size, void *buf);
+void isa_mem_write(struct mem_t *mem, uint32_t addr, int size, void *buf);
 
 void isa_dump_flags(FILE *f);
 void isa_set_flag(enum x86_flag_t flag);
@@ -615,7 +638,8 @@ uint32_t isa_moffs_address(void);
 void isa_init(void);
 void isa_done(void);
 void isa_dump(FILE *f);
-void isa_execute_inst(void *buf);
+
+void isa_execute_inst(void);
 
 void isa_trace_call_init(char *filename);
 void isa_trace_call_done(void);
@@ -754,7 +778,6 @@ struct ctx_t
 	struct ctx_t *parent;
 	int exit_signal;  /* Signal to send parent when finished */
 	int exit_code;  /* For zombie processes */
-	uint32_t backup_eip;  /* Saved eip when in specmode */
 	uint32_t set_child_tid, clear_child_tid;
 	uint32_t robust_list_head;  /* robust futex list */
 	uint32_t initial_stack;  /* Value of esp when context is cloned */
@@ -811,6 +834,7 @@ struct ctx_t
 	struct mem_t *mem;  /* Virtual memory image */
 	struct fdt_t *fdt;  /* File descriptor table */
 	struct regs_t *regs;  /* Logical register file */
+	struct regs_t *backup_regs;  /* Backup when entering in speculative mode */
 	struct signal_masks_t *signal_masks;
 	struct signal_handlers_t *signal_handlers;
 };

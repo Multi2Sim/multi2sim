@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2007  Rafael Ubal Tena (ubal@gap.upv.es)
+ *  Copyright (C) 2007  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ struct ctx_t *isa_ctx;
 struct regs_t *isa_regs;
 struct mem_t *isa_mem;
 struct x86_inst_t isa_inst;
+int isa_spec_mode;  /* If true, instructions will not modify memory */
 uint32_t isa_eip;
 uint32_t isa_addr;  /* Address of last memory access */
 uint32_t isa_target;  /* Target address of branch/jmp/call/ret inst, even if it's not taken */
@@ -34,7 +35,10 @@ int isa_function_level;
 int isa_call_debug_category;
 int isa_inst_debug_category;
 
+/* Variables used to preserve host state before running assembly */
 long isa_host_flags;
+uint16_t isa_guest_fpcw;
+uint16_t isa_host_fpcw;
 
 
 /* Table including references to functions in machine.c
@@ -49,10 +53,79 @@ static inst_impl_fn_t inst_impl_table[x86_opcode_count] = {
 
 
 
+/*
+ * Memory access based on 'isa_spec_mode'
+ * -- This should be the first section in the file --
+ * -- Macros are defined after these two functions --
+ */
 
-/* Instruction stats */
+void isa_mem_read(struct mem_t *mem, uint32_t addr, int size, void *buf)
+{
+	/* Allow an unsafe memory read if running on speculative mode,
+	 * without triggering guest segmentation faults. */
+	mem->safe = isa_spec_mode ? 0 : mem_safe_mode;
+
+	/* Read and return to default safe mode. */
+	mem_read(mem, addr, size, buf);
+	mem->safe = mem_safe_mode;
+}
+
+
+void isa_mem_write(struct mem_t *mem, uint32_t addr, int size, void *buf)
+{
+	/* No write to memory is done if running on speculative mode. */
+	if (isa_spec_mode)
+		return;
+
+	/* Write */
+	mem_write(mem, addr, size, buf);
+}
+
+
+void isa_error(char *fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+
+	/* No error shown on speculative mode */
+	if (isa_spec_mode)
+		return;
+
+	/* Error */
+	fprintf(stderr, "fatal: context %d at 0x%08x inst %lld: ",
+		isa_ctx->pid, isa_eip, (long long) isa_inst_count);
+	vfprintf(stderr, fmt, va);
+	fprintf(stderr, "\n");
+	exit(1);
+}
+
+
+/* Macros defined to prevent accidental use of 'mem_<xx>' instructions.
+ * Error messages should only be shown based on speculative execution. */
+#define mem_access __COMPILATION_ERROR__
+#define mem_read __COMPILATION_ERROR__
+#define mem_write __COMPILATION_ERROR__
+#define mem_zero __COMPILATION_ERROR__
+#define mem_read_string __COMPILATION_ERROR__
+#define mem_write_string __COMPILATION_ERROR__
+#define mem_get_buffer __COMPILATION_ERROR__
+#define fatal __COMPILATION_ERROR__
+#define panic __COMPILATION_ERROR__
+#define warning __COMPILATION_ERROR__
+#ifdef assert
+#undef assert
+#endif
+#define assert __COMPILATION_ERROR__
+
+
+
+
+/*
+ * Instruction statistics
+ */
 
 static uint64_t inst_freq[x86_opcode_count];
+
 
 void isa_inst_stat_dump(FILE *f)
 {
@@ -65,6 +138,7 @@ void isa_inst_stat_dump(FILE *f)
 	}
 }
 
+
 void isa_inst_stat_reset(void)
 {
 	int i;
@@ -73,17 +147,47 @@ void isa_inst_stat_reset(void)
 }
 
 
+/* Trace call debugging */
+static void isa_debug_call()
+{
+	int i;
+	struct elf_symbol_t *from, *to;
+	char *action;
 
+	/* Call or return. Otherwise, exit */
+	if (!strncmp(isa_inst.format, "call", 4))
+		action = "call";
+	else if (!strncmp(isa_inst.format, "ret", 3))
+		action = "ret";
+	else
+		return;
 
-void isa_error(char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	fprintf(stderr, "fatal: context %d at 0x%08x inst %lld: ",
-		isa_ctx->pid, isa_eip, (long long) isa_inst_count);
-	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
-	abort();
+	/* Debug it */
+	for (i = 0; i < isa_function_level; i++)
+		isa_call_debug("| ");
+	from = elf_symbol_get_by_address(isa_ctx->loader->elf_file, isa_eip, NULL);
+	to = elf_symbol_get_by_address(isa_ctx->loader->elf_file, isa_regs->eip, NULL);
+	if (from)
+		isa_call_debug("%s", from->name);
+	else
+		isa_call_debug("0x%x", isa_eip);
+	isa_call_debug(" - %s to ", action);
+	if (to)
+		isa_call_debug("%s", to->name);
+	else
+		isa_call_debug("0x%x", isa_regs->eip);
+	isa_call_debug("\n");
+
+	/* Change current level */
+	strncmp(isa_inst.format, "call", 4) ? isa_function_level-- : isa_function_level++;
 }
+
+
+
+
+/*
+ * Integer registers
+ */
 
 
 /* Shift and size inside the regs_t structure. This table is indexed by the
@@ -142,17 +246,15 @@ int isa_get_flag(enum x86_flag_t flag)
 {
 	int ret;
 	ret = GETBIT32(isa_regs->eflags, flag) > 0;
-	assert(ret == 0 || ret == 1);
 	return ret;
 }
 
 
-/* Load/store the value of a register. If the register size
- * is less than 32 bits, it is zero-extended. These
- * functions work for reg = reg_none, too. 
- */
+/* Load/store the value of a register. If the register size is less than 32 bits,
+ * it is zero-extended. These functions work for reg = reg_none, too. */
 
 static uint32_t isa_bit_mask[5] = { 0, 0xff, 0xffff, 0, 0xffffffff};
+
 
 uint32_t isa_load_reg(enum x86_reg_t reg)
 {
@@ -173,6 +275,12 @@ void isa_store_reg(enum x86_reg_t reg, uint32_t value)
 }
 
 
+
+
+/*
+ * Effective address computation
+ */
+
 /* Return the final address obtained from binding address 'addr' inside
  * the corresponding segment. The segment boundaries are checked. */
 uint32_t isa_linear_address(uint32_t offset)
@@ -184,12 +292,21 @@ uint32_t isa_linear_address(uint32_t offset)
 	}
 	
 	/* Segment override */
-	if (isa_inst.segment != x86_reg_gs)
-		fatal("segment override not supported for other register than gs");
-	if (isa_load_reg(x86_reg_gs) != 0x33)  /* glibc segment at TLS entry 6 */
-		fatal("isa_linear_address: gs = 0x%x", isa_load_reg(x86_reg_gs));
-	if (!isa_ctx->glibc_segment_base)
-		fatal("isa_linear_address: glibc segment not set");
+	if (isa_inst.segment != x86_reg_gs) {
+		isa_error("segment override not supported for other register than gs");
+		return 0;
+	}
+
+	/* GLibc segment at TLS entry 6 */
+	if (isa_load_reg(x86_reg_gs) != 0x33)  {
+		isa_error("isa_linear_address: gs = 0x%x", isa_load_reg(x86_reg_gs));
+		return 0;
+	}
+
+	if (!isa_ctx->glibc_segment_base) {
+		isa_error("isa_linear_address: glibc segment not set");
+		return 0;
+	}
 
 	/* Return address */
 	isa_addr = isa_ctx->glibc_segment_base + offset;
@@ -197,11 +314,16 @@ uint32_t isa_linear_address(uint32_t offset)
 }
 
 
-/* Return the effective address obtained from the SIB and disp fields */
+/* Return the effective address obtained from the 'SIB' and 'disp' fields */
 uint32_t isa_effective_address()
 {
 	uint32_t addr;
-	assert(isa_inst.modrm_mod != 0x03);
+
+	/* Check 'modrm_mod' field */
+	if (isa_inst.modrm_mod == 3) {
+		isa_error("%s: wrong value for 'modrm_mod'", __FUNCTION__);
+		return 0;
+	}
 
 	/* Address */
 	addr = isa_load_reg(isa_inst.ea_base) +
@@ -231,12 +353,19 @@ uint32_t isa_moffs_address()
 }
 
 
+
+
+/*
+ * Register/Memory dependences
+ */
+
+
 uint8_t isa_load_rm8(void)
 {
 	uint8_t value;
 	if (isa_inst.modrm_mod == 0x03)
 		return isa_load_reg(isa_inst.modrm_rm + x86_reg_al);
-	mem_read(isa_mem, isa_effective_address(), 1, &value);
+	isa_mem_read(isa_mem, isa_effective_address(), 1, &value);
 	isa_inst_debug("  [0x%x]=0x%x", isa_effective_address(), value);
 	return value;
 }
@@ -247,7 +376,7 @@ uint16_t isa_load_rm16(void)
 	uint16_t value;
 	if (isa_inst.modrm_mod == 0x03)
 		return isa_load_reg(isa_inst.modrm_rm + x86_reg_ax);
-	mem_read(isa_mem, isa_effective_address(), 2, &value);
+	isa_mem_read(isa_mem, isa_effective_address(), 2, &value);
 	isa_inst_debug("  [0x%x]=0x%x", isa_effective_address(), value);
 	return value;
 }
@@ -258,7 +387,7 @@ uint32_t isa_load_rm32(void)
 	uint32_t value;
 	if (isa_inst.modrm_mod == 0x03)
 		return isa_load_reg(isa_inst.modrm_rm + x86_reg_eax);
-	mem_read(isa_mem, isa_effective_address(), 4, &value);
+	isa_mem_read(isa_mem, isa_effective_address(), 4, &value);
 	isa_inst_debug("  [0x%x]=0x%x", isa_effective_address(), value);
 	return value;
 }
@@ -267,7 +396,7 @@ uint32_t isa_load_rm32(void)
 uint64_t isa_load_m64(void)
 {
 	uint64_t value;
-	mem_read(isa_mem, isa_effective_address(), 8, &value);
+	isa_mem_read(isa_mem, isa_effective_address(), 8, &value);
 	isa_inst_debug("  [0x%x]=0x%llx", isa_effective_address(), (unsigned long long) value);
 	return value;
 }
@@ -279,7 +408,7 @@ void isa_store_rm8(uint8_t value)
 		isa_store_reg(isa_inst.modrm_rm + x86_reg_al, value);
 		return;
 	}
-	mem_write(isa_mem, isa_effective_address(), 1, &value);
+	isa_mem_write(isa_mem, isa_effective_address(), 1, &value);
 	isa_inst_debug("  [0x%x] <- 0x%x", isa_effective_address(), value);
 }
 
@@ -290,7 +419,7 @@ void isa_store_rm16(uint16_t value)
 		isa_store_reg(isa_inst.modrm_rm + x86_reg_ax, value);
 		return;
 	}
-	mem_write(isa_mem, isa_effective_address(), 2, &value);
+	isa_mem_write(isa_mem, isa_effective_address(), 2, &value);
 	isa_inst_debug("  [0x%x] <- 0x%x", isa_effective_address(), value);
 }
 
@@ -301,23 +430,39 @@ void isa_store_rm32(uint32_t value)
 		isa_store_reg(isa_inst.modrm_rm + x86_reg_eax, value);
 		return;
 	}
-	mem_write(isa_mem, isa_effective_address(), 4, &value);
+	isa_mem_write(isa_mem, isa_effective_address(), 4, &value);
 	isa_inst_debug("  [0x%x] <- 0x%x", isa_effective_address(), value);
 }
 
 
 void isa_store_m64(uint64_t value)
 {
-	mem_write(isa_mem, isa_effective_address(), 8, &value);
+	isa_mem_write(isa_mem, isa_effective_address(), 8, &value);
 	isa_inst_debug("  [0x%x] <- 0x%llx", isa_effective_address(), (unsigned long long) value);
 }
+
+
+
+
+/*
+ * Floating-point
+ */
 
 
 void isa_load_fpu(int index, uint8_t *value)
 {
 	int eff_index = (isa_regs->fpu_top + index) % 8;
-	assert(index >= 0 && index < 8);
-	assert(isa_regs->fpu_stack[eff_index].valid);
+
+	if (index < 0 || index >= 8) {
+		isa_error("%s: invalid value for 'index'", __FUNCTION__);
+		return;
+	}
+
+	if (!isa_regs->fpu_stack[eff_index].valid) {
+		isa_error("%s: invalid FPU stack entry", __FUNCTION__);
+		return;
+	}
+
 	memcpy(value, isa_regs->fpu_stack[eff_index].value, 10);
 	if (debug_status(isa_inst_debug_category))
 		isa_inst_debug("  st(%d)=%g", index, isa_extended_to_double(value));
@@ -326,12 +471,22 @@ void isa_load_fpu(int index, uint8_t *value)
 
 void isa_store_fpu(int index, uint8_t *value)
 {
-	assert(index >= 0 && index < 8);
+	if (index < 0 || index >= 8) {
+		isa_error("%s: invalid value for 'index'", __FUNCTION__);
+		return;
+	}
+
+	/* Get index */
+	index = (isa_regs->fpu_top + index) % 8;
+	if (!isa_regs->fpu_stack[index].valid) {
+		isa_error("%s: invalid FPU stack entry", __FUNCTION__);
+		return;
+	}
+
+	/* Store value */
+	memcpy(isa_regs->fpu_stack[index].value, value, 10);
 	if (debug_status(isa_inst_debug_category))
 		isa_inst_debug("  st(%d) <- %g", index, isa_extended_to_double(value));
-	index = (isa_regs->fpu_top + index) % 8;
-	assert(isa_regs->fpu_stack[index].valid);
-	memcpy(isa_regs->fpu_stack[index].value, value, 10);
 }
 
 
@@ -339,8 +494,14 @@ void isa_push_fpu(uint8_t *value)
 {
 	if (debug_status(isa_inst_debug_category))
 		isa_inst_debug("  st(0) <- %g (pushed)", isa_extended_to_double(value));
+
+	/* Get stack top */
 	isa_regs->fpu_top = (isa_regs->fpu_top + 7) % 8;
-	assert(!isa_regs->fpu_stack[isa_regs->fpu_top].valid);
+	if (isa_regs->fpu_stack[isa_regs->fpu_top].valid) {
+		isa_error("%s: unexpected valid entry", __FUNCTION__);
+		return;
+	}
+
 	isa_regs->fpu_stack[isa_regs->fpu_top].valid = 1;
 	memcpy(isa_regs->fpu_stack[isa_regs->fpu_top].value, value, 10);
 }
@@ -348,7 +509,11 @@ void isa_push_fpu(uint8_t *value)
 
 void isa_pop_fpu(uint8_t *value)
 {
-	assert(isa_regs->fpu_stack[isa_regs->fpu_top].valid);
+	if (!isa_regs->fpu_stack[isa_regs->fpu_top].valid) {
+		isa_error("%s: unexpected invalid entry", __FUNCTION__);
+		return;
+	}
+
 	if (value) {
 		memcpy(value, isa_regs->fpu_stack[isa_regs->fpu_top].value, 10);
 		if (debug_status(isa_inst_debug_category))
@@ -362,7 +527,7 @@ void isa_pop_fpu(uint8_t *value)
 double isa_load_double()
 {
 	double value;
-	mem_read(isa_mem, isa_effective_address(), 8, &value);
+	isa_mem_read(isa_mem, isa_effective_address(), 8, &value);
 	isa_inst_debug("  [0x%x]=%g", isa_effective_address(), value);
 	return value;
 }
@@ -402,19 +567,19 @@ float isa_extended_to_float(uint8_t *e)
 
 void isa_load_extended(uint8_t *value)
 {
-	mem_read(isa_mem, isa_effective_address(), 10, value);
+	isa_mem_read(isa_mem, isa_effective_address(), 10, value);
 }
 
 
 void isa_store_extended(uint8_t *value)
 {
-	mem_write(isa_mem, isa_effective_address(), 10, value);
+	isa_mem_write(isa_mem, isa_effective_address(), 10, value);
 }
 
 
 void isa_store_double(double value)
 {
-	mem_write(isa_mem, isa_effective_address(), 8, &value);
+	isa_mem_write(isa_mem, isa_effective_address(), 8, &value);
 	isa_inst_debug("  [0x%x] <- %g", isa_effective_address(), value);
 }
 
@@ -422,7 +587,7 @@ void isa_store_double(double value)
 float isa_load_float()
 {
 	float value;
-	mem_read(isa_mem, isa_effective_address(), 4, &value);
+	isa_mem_read(isa_mem, isa_effective_address(), 4, &value);
 	isa_inst_debug("  [0x%x]=%g", isa_effective_address(), (double) value);
 	return value;
 }
@@ -430,7 +595,7 @@ float isa_load_float()
 
 void isa_store_float(float value)
 {
-	mem_write(isa_mem, isa_effective_address(), 4, &value);
+	isa_mem_write(isa_mem, isa_effective_address(), 4, &value);
 	isa_inst_debug("  [0x%x] <- %g", isa_effective_address(), (double) value);
 }
 
@@ -451,7 +616,12 @@ void isa_store_fpu_code(uint16_t status)
 uint16_t isa_load_fpu_status()
 {
 	uint16_t status = 0;
-	assert(isa_regs->fpu_top < 8);
+
+	if (isa_regs->fpu_top < 0 || isa_regs->fpu_top >= 8) {
+		isa_error("%s: wrong FPU stack top", __FUNCTION__);
+		return 0;
+	}
+
 	status |= isa_regs->fpu_top << 11;
 	if (GETBIT32(isa_regs->fpu_code, 3))
 		status |= 0x4000;
@@ -502,7 +672,7 @@ void isa_load_xmmm64(uint8_t *value)
 		memcpy(value, &isa_regs->xmm[isa_inst.modrm_rm], 8);
 		return;
 	}
-	mem_read(isa_mem, isa_effective_address(), 8, value);
+	isa_mem_read(isa_mem, isa_effective_address(), 8, value);
 }
 
 
@@ -513,7 +683,7 @@ void isa_store_xmmm64(uint8_t *value)
 		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 8);
 		return;
 	}
-	mem_write(isa_mem, isa_effective_address(), 8, value);
+	isa_mem_write(isa_mem, isa_effective_address(), 8, value);
 }
 
 
@@ -524,7 +694,7 @@ void isa_load_xmmm32(uint8_t *value)
 		memcpy(value, isa_regs->xmm[isa_inst.modrm_rm], 4);
 		return;
 	}
-	mem_read(isa_mem, isa_effective_address(), 4, value);
+	isa_mem_read(isa_mem, isa_effective_address(), 4, value);
 }
 
 
@@ -535,52 +705,14 @@ void isa_store_xmmm32(uint8_t *value)
 		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 4);
 		return;
 	}
-	mem_write(isa_mem, isa_effective_address(), 4, value);
-}
-
-
-
-
-/* Trace call debugging */
-static void isa_debug_call()
-{
-	int i;
-	struct elf_symbol_t *from, *to;
-	char *action;
-
-	/* Call or return. Otherwise, exit */
-	if (!strncmp(isa_inst.format, "call", 4))
-		action = "call";
-	else if (!strncmp(isa_inst.format, "ret", 3))
-		action = "ret";
-	else
-		return;
-	
-	/* Debug it */
-	for (i = 0; i < isa_function_level; i++)
-		isa_call_debug("| ");
-	from = elf_symbol_get_by_address(isa_ctx->loader->elf_file, isa_eip, NULL);
-	to = elf_symbol_get_by_address(isa_ctx->loader->elf_file, isa_regs->eip, NULL);
-	if (from)
-		isa_call_debug("%s", from->name);
-	else
-		isa_call_debug("0x%x", isa_eip);
-	isa_call_debug(" - %s to ", action);
-	if (to)
-		isa_call_debug("%s", to->name);
-	else
-		isa_call_debug("0x%x", isa_regs->eip);
-	isa_call_debug("\n");
-
-	/* Change current level */
-	strncmp(isa_inst.format, "call", 4) ? isa_function_level-- : isa_function_level++;
+	isa_mem_write(isa_mem, isa_effective_address(), 4, value);
 }
 
 
 
 
 /*
- * Instruction execution
+ * Public Functions
  */
 
 
@@ -588,6 +720,13 @@ void isa_init()
 {
 	x86_disasm_init();
 	x86_uinst_init();
+
+	/* Initialize default floating-point control word (FPCW) */
+	asm volatile (
+		"fstcw %0\n\t"
+		: "=m" (isa_guest_fpcw)
+	);
+	isa_guest_fpcw |= 0x3f;
 }
 
 
@@ -615,20 +754,11 @@ void isa_dump(FILE *f)
 }
 
 
-void isa_execute_inst(void *buf)
+void isa_execute_inst(void)
 {
-	if (isa_inst.opcode == x86_op_none) {
-		unsigned char b1, b2, b3, b4;
-		mem_read(isa_mem, isa_eip, 1, &b1);
-		mem_read(isa_mem, isa_eip + 1, 1, &b2);
-		mem_read(isa_mem, isa_eip + 2, 1, &b3);
-		mem_read(isa_mem, isa_eip + 3, 1, &b4);
-		isa_error("not implemented (%02x %02x %02x %02x...)",
-			b1, b2, b3, b4);
-	}
-	
 	/* Debug instruction */
-	if (debug_status(isa_inst_debug_category)) {
+	if (debug_status(isa_inst_debug_category))
+	{
 		isa_inst_debug("%d %8lld %x: ", isa_ctx->pid,
 			(long long) isa_inst_count, isa_eip);
 		x86_inst_dump(&isa_inst, debug_file(isa_inst_debug_category));
@@ -643,7 +773,8 @@ void isa_execute_inst(void *buf)
 	/* Execute */
 	isa_target = 0;
 	isa_regs->eip = isa_regs->eip + isa_inst.size;
-	inst_impl_table[isa_inst.opcode]();
+	if (isa_inst.opcode)
+		inst_impl_table[isa_inst.opcode]();
 	inst_freq[isa_inst.opcode]++;
 
 	/* Debug */
@@ -659,4 +790,3 @@ void isa_execute_inst(void *buf)
 	printf("\n");*/
 	/////////////////
 }
-

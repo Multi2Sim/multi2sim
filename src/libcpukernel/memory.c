@@ -316,6 +316,18 @@ void mem_access(struct mem_t *mem, uint32_t addr, int size, void *buf,
 }
 
 
+void mem_read(struct mem_t *mem, uint32_t addr, int size, void *buf)
+{
+	mem_access(mem, addr, size, buf, mem_access_read);
+}
+
+
+void mem_write(struct mem_t *mem, uint32_t addr, int size, void *buf)
+{
+	mem_access(mem, addr, size, buf, mem_access_write);
+}
+
+
 /* Creation and destruction */
 struct mem_t *mem_create()
 {
