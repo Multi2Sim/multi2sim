@@ -23,7 +23,8 @@
 int ctx_debug_category;
 
 
-static struct string_map_t ctx_status_map = {
+static struct string_map_t ctx_status_map =
+{
 	16, {
 		{ "running",      ctx_running },
 		{ "specmode",     ctx_specmode },
@@ -61,6 +62,7 @@ static struct ctx_t *ctx_do_create()
 
 	/* Structures */
 	ctx->regs = regs_create();
+	ctx->backup_regs = regs_create();
 	ctx->signal_masks = signal_masks_create();
 
 	/* Return context */
@@ -135,6 +137,7 @@ void ctx_free(struct ctx_t *ctx)
 		
 	/* Free private structures */
 	regs_free(ctx->regs);
+	regs_free(ctx->backup_regs);
 	signal_masks_free(ctx->signal_masks);
 
 	/* Shared structures are only freed if this
@@ -186,7 +189,7 @@ void ctx_dump(struct ctx_t *ctx, FILE *f)
 void ctx_execute_inst(struct ctx_t *ctx)
 {
 	unsigned char fixed[20];
-	void *buf;
+	unsigned char *buf;
 
 	/* The isa_xxx functions work on these global
 	 * variables. */
@@ -194,38 +197,44 @@ void ctx_execute_inst(struct ctx_t *ctx)
 	isa_regs = ctx->regs;
 	isa_mem = ctx->mem;
 	isa_eip = isa_regs->eip;
+	isa_spec_mode = ctx_get_status(isa_ctx, ctx_specmode);
 	isa_inst_count++;
 
-	/* Read instruction from memory */
-	ctx->mem->safe = mem_safe_mode;
-	if (ctx_get_status(ctx, ctx_specmode))
-		ctx->mem->safe = 0;
+	/* Read instruction from memory. Memory should be accessed here in unsafe mode
+	 * (i.e., allowing segmentation faults) if executing speculatively. */
+	ctx->mem->safe = isa_spec_mode ? 0 : mem_safe_mode;
 	buf = mem_get_buffer(ctx->mem, ctx->regs->eip, 20, mem_access_exec);
 	if (!buf) {
-		buf = &fixed;
+		buf = fixed;
 		mem_access(ctx->mem, ctx->regs->eip, 20, buf, mem_access_exec);
 	}
 	ctx->mem->safe = mem_safe_mode;
 
 	/* Disassemble */
 	x86_disasm(buf, isa_eip, &isa_inst);
+	if (isa_inst.opcode == x86_op_none && !isa_spec_mode)
+		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)",
+			isa_eip, buf[0], buf[1], buf[2], buf[3]);
 
-	/* Call the isa module to execute one machine instruction,
-	 * only if we are not in speculative mode. */
-	if (!ctx_get_status(ctx, ctx_specmode))
-		isa_execute_inst(buf);
+
+	/* Execute instruction */
+	isa_execute_inst();
 	
 	/* Stats */
 	ke->inst_count++;
 }
 
 
+/* Force a new 'eip' value for the context. The forced value should be the same as
+ * the current 'eip' under normal circumstances. If it is not, speculative execution
+ * starts, which will end on the next call to 'ctx_recover'. */
 void ctx_set_eip(struct ctx_t *ctx, uint32_t eip)
 {
 	/* Entering specmode */
-	if (ctx->regs->eip != eip && !ctx_get_status(ctx, ctx_specmode)) {
+	if (ctx->regs->eip != eip && !ctx_get_status(ctx, ctx_specmode))
+	{
 		ctx_set_status(ctx, ctx_specmode);
-		ctx->backup_eip = ctx->regs->eip;
+		regs_copy(ctx->backup_regs, ctx->regs);
 	}
 	
 	/* Set it */
@@ -237,7 +246,7 @@ void ctx_recover(struct ctx_t *ctx)
 {
 	assert(ctx_get_status(ctx, ctx_specmode));
 	ctx_clear_status(ctx, ctx_specmode);
-	ctx->regs->eip = ctx->backup_eip;
+	regs_copy(ctx->regs, ctx->backup_regs);
 }
 
 

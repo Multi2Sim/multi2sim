@@ -20,15 +20,32 @@
 #include <cpukernel.h>
 
 
+/* Macros defined to prevent accidental use of 'mem_<xx>' instructions */
+#define mem_access __COMPILATION_ERROR__
+#define mem_read __COMPILATION_ERROR__
+#define mem_write __COMPILATION_ERROR__
+#define mem_zero __COMPILATION_ERROR__
+#define mem_read_string __COMPILATION_ERROR__
+#define mem_write_string __COMPILATION_ERROR__
+#define mem_get_buffer __COMPILATION_ERROR__
+#define fatal __COMPILATION_ERROR__
+#define panic __COMPILATION_ERROR__
+#define warning __COMPILATION_ERROR__
+#ifdef assert
+#undef assert
+#endif
+#define assert __COMPILATION_ERROR__
+
+
 void op_bound_r16_rm32_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_bound_r32_rm64_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
@@ -195,7 +212,7 @@ void op_bts_rm32_imm8_impl()
 void op_call_rel32_impl()
 {
 	isa_regs->esp -= 4;
-	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eip);
+	isa_mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eip);
 	isa_target = isa_regs->eip + isa_inst.imm.d;
 	isa_regs->eip = isa_target;
 
@@ -206,7 +223,7 @@ void op_call_rel32_impl()
 void op_call_rm32_impl() {
 	isa_target = isa_load_rm32();
 	isa_regs->esp -= 4;
-	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eip);
+	isa_mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eip);
 	isa_regs->eip = isa_target;
 
 	x86_uinst_new(x86_uinst_call, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
@@ -409,7 +426,8 @@ void op_cpuid_impl()
 		break;
 
 	default:
-		fatal("inst 'cpuid' not implemented for eax=0x%x", isa_regs->eax);
+
+		isa_error("inst 'cpuid' not implemented for eax=0x%x", isa_regs->eax);
 	}
 
 	x86_uinst_new(x86_uinst_move, 0, 0, 0, x86_dep_eax, 0, 0, 0);
@@ -541,8 +559,11 @@ void op_div_rm8_impl()
 	uint16_t ax = isa_load_reg(x86_reg_ax);
 	uint8_t rm8 = isa_load_rm8();
 
-	if (!rm8)
-		fatal("%s: division by 0", __FUNCTION__);
+	if (!rm8) {
+		isa_error("%s: division by 0", __FUNCTION__);
+		return;
+	}
+
 	__ISA_ASM_START__
 	asm volatile (
 		"mov %1, %%ax\n\t"
@@ -567,8 +588,11 @@ void op_div_rm32_impl()
 	uint32_t edx = isa_regs->edx;
 	uint32_t rm32 = isa_load_rm32();
 
-	if (!rm32)
-		fatal("%s: division by 0", __FUNCTION__);
+	if (!rm32) {
+		isa_error("%s: division by 0", __FUNCTION__);
+		return;
+	}
+
 	__ISA_ASM_START__
 	asm volatile (
 		"mov %2, %%eax\n\t"
@@ -592,7 +616,7 @@ void op_div_rm32_impl()
 
 void op_hlt_impl()
 {
-	fatal("%s: 'hlt' instruction", __FUNCTION__);
+	isa_error("%s: 'hlt' instruction", __FUNCTION__);
 }
 
 
@@ -602,8 +626,11 @@ void op_idiv_rm32_impl()
 	uint32_t edx = isa_regs->edx;
 	uint32_t rm32 = isa_load_rm32();
 
-	if (!rm32)
-		fatal("%s: division by 0", __FUNCTION__);
+	if (!rm32) {
+		isa_error("%s: division by 0", __FUNCTION__);
+		return;
+	}
+
 	__ISA_ASM_START__
 	asm volatile (
 		"mov %2, %%eax\n\t"
@@ -856,15 +883,22 @@ void op_inc_ir32_impl()
 
 void op_int_3_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_int_imm8_impl()
 {
-	uint32_t inum = (uint8_t) isa_inst.imm.b;
-	assert(inum == 0x80);
-	syscall_do();
+	uint32_t num;
+
+	/* Interrupt code */
+	num = (uint8_t) isa_inst.imm.b;
+	if (num != 0x80)
+		isa_error("%s: not supported for num != 0x80", __FUNCTION__);
+
+	/* Do system call if not in speculative mode */
+	if (!isa_spec_mode)
+		syscall_do();
 
 	x86_uinst_new(x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -872,7 +906,7 @@ void op_int_imm8_impl()
 
 void op_into_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
@@ -907,7 +941,12 @@ void op_jmp_rm32_impl()
 void op_lea_r32_m_impl()
 {
 	uint32_t value = isa_effective_address();
-	assert(!isa_inst.segment);
+
+	if (isa_inst.segment) {
+		isa_error("%s: not supported for this segment", __FUNCTION__);
+		return;
+	}
+
 	isa_store_r32(value);
 
 	x86_uinst_new(x86_uinst_effaddr, x86_dep_easeg, x86_dep_eabas, x86_dep_eaidx, x86_dep_r32, 0, 0, 0);
@@ -918,8 +957,13 @@ void op_leave_impl()
 {
 	uint32_t value;
 	isa_regs->esp = isa_regs->ebp;
-	assert(!isa_inst.segment);
-	mem_read(isa_mem, isa_regs->esp, 4, &value);
+
+	if (isa_inst.segment) {
+		isa_error("%s: not supported segment", __FUNCTION__);
+		return;
+	}
+
+	isa_mem_read(isa_mem, isa_regs->esp, 4, &value);
 	isa_regs->esp += 4;
 	isa_store_reg(x86_reg_ebp, value);
 
@@ -1014,7 +1058,7 @@ void op_mov_al_moffs8_impl()
 {
 	uint8_t value;
 
-	mem_read(isa_mem, isa_moffs_address(), 1, &value);
+	isa_mem_read(isa_mem, isa_moffs_address(), 1, &value);
 	isa_store_reg(x86_reg_al, value);
 
 	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1026,7 +1070,7 @@ void op_mov_ax_moffs16_impl()
 {
 	uint16_t value;
 
-	mem_read(isa_mem, isa_moffs_address(), 2, &value);
+	isa_mem_read(isa_mem, isa_moffs_address(), 2, &value);
 	isa_store_reg(x86_reg_ax, value);
 
 	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1038,7 +1082,7 @@ void op_mov_eax_moffs32_impl()
 {
 	uint32_t value;
 
-	mem_read(isa_mem, isa_moffs_address(), 4, &value);
+	isa_mem_read(isa_mem, isa_moffs_address(), 4, &value);
 	isa_store_reg(x86_reg_eax, value);
 
 	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1049,7 +1093,7 @@ void op_mov_eax_moffs32_impl()
 void op_mov_moffs8_al_impl()
 {
 	uint8_t value = isa_load_reg(x86_reg_al);
-	mem_write(isa_mem, isa_moffs_address(), 1, &value);
+	isa_mem_write(isa_mem, isa_moffs_address(), 1, &value);
 
 	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(x86_uinst_store, isa_moffs_address(), 1, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
@@ -1059,7 +1103,7 @@ void op_mov_moffs8_al_impl()
 void op_mov_moffs16_ax_impl()
 {
 	uint16_t value = isa_load_reg(x86_reg_ax);
-	mem_write(isa_mem, isa_moffs_address(), 2, &value);
+	isa_mem_write(isa_mem, isa_moffs_address(), 2, &value);
 
 	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(x86_uinst_store, isa_moffs_address(), 2, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
@@ -1069,7 +1113,7 @@ void op_mov_moffs16_ax_impl()
 void op_mov_moffs32_eax_impl()
 {
 	uint32_t value = isa_load_reg(x86_reg_eax);
-	mem_write(isa_mem, isa_moffs_address(), 4, &value);
+	isa_mem_write(isa_mem, isa_moffs_address(), 4, &value);
 
 	x86_uinst_new(x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(x86_uinst_store, isa_moffs_address(), 4, x86_dep_aux, x86_dep_eax, 0, 0, 0, 0, 0);
@@ -1125,7 +1169,7 @@ void op_mov_rm16_sreg_impl()
 {
 	uint16_t value = isa_load_sreg();
 	if (isa_inst.reg != 5)
-		fatal("%s: not supported for sreg != gs", __FUNCTION__);
+		isa_error("%s: not supported for sreg != gs", __FUNCTION__);
 	isa_store_rm16(value);
 
 	x86_uinst_new(x86_uinst_move, x86_dep_sreg, 0, 0, x86_dep_rm16, 0, 0, 0);
@@ -1142,7 +1186,7 @@ void op_mov_sreg_rm16_impl()
 {
 	uint16_t value = isa_load_rm16();
 	if (isa_inst.reg != 5)
-		fatal("%s: not supported for sreg != gs", __FUNCTION__);
+		isa_error("%s: not supported for sreg != gs", __FUNCTION__);
 	isa_store_sreg(value);
 
 	x86_uinst_new(x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_sreg, 0, 0, 0);
@@ -1339,37 +1383,37 @@ void op_not_rm32_impl()
 
 void op_out_imm8_al_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_out_imm8_ax_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_out_imm8_eax_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_out_dx_al_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_out_dx_ax_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 void op_out_dx_eax_impl()
 {
-	fatal("%s: not implemented", __FUNCTION__);
+	isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
@@ -1382,7 +1426,7 @@ void op_pop_rm32_impl()
 {
 	uint32_t value;
 
-	mem_read(isa_mem, isa_regs->esp, 4, &value);
+	isa_mem_read(isa_mem, isa_regs->esp, 4, &value);
 	isa_regs->esp += 4;
 	isa_store_rm32(value);
 
@@ -1395,8 +1439,13 @@ void op_pop_rm32_impl()
 void op_pop_ir32_impl()
 {
 	uint32_t value;
-	assert(!isa_inst.segment);
-	mem_read(isa_mem, isa_regs->esp, 4, &value);
+
+	if (isa_inst.segment) {
+		isa_error("%s: not supported segment", __FUNCTION__);
+		return;
+	}
+
+	isa_mem_read(isa_mem, isa_regs->esp, 4, &value);
 	isa_regs->esp += 4;
 	isa_store_ir32(value);
 
@@ -1408,7 +1457,7 @@ void op_pop_ir32_impl()
 
 void op_popf_impl()
 {
-	mem_read(isa_mem, isa_regs->esp, 4, &isa_regs->eflags);
+	isa_mem_read(isa_mem, isa_regs->esp, 4, &isa_regs->eflags);
 	isa_regs->esp += 4;
 
 	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1437,7 +1486,7 @@ void op_push_imm8_impl()
 {
 	uint32_t value = (int8_t) isa_inst.imm.b;
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
-	mem_write(isa_mem, isa_regs->esp, 4, &value);
+	isa_mem_write(isa_mem, isa_regs->esp, 4, &value);
 
 	x86_uinst_new(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1449,7 +1498,7 @@ void op_push_imm32_impl()
 {
 	uint32_t value = isa_inst.imm.d;
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
-	mem_write(isa_mem, isa_regs->esp, 4, &value);
+	isa_mem_write(isa_mem, isa_regs->esp, 4, &value);
 
 	x86_uinst_new(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1461,7 +1510,7 @@ void op_push_rm32_impl()
 {
 	uint32_t value = isa_load_rm32();
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
-	mem_write(isa_mem, isa_regs->esp, 4, &value);
+	isa_mem_write(isa_mem, isa_regs->esp, 4, &value);
 
 	x86_uinst_new(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1473,7 +1522,7 @@ void op_push_ir32_impl()
 {
 	uint32_t value = isa_load_ir32();
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
-	mem_write(isa_mem, isa_regs->esp, 4, &value);
+	isa_mem_write(isa_mem, isa_regs->esp, 4, &value);
 
 	x86_uinst_new(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1484,7 +1533,7 @@ void op_push_ir32_impl()
 void op_pushf_impl()
 {
 	isa_store_reg(x86_reg_esp, isa_regs->esp - 4);
-	mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eflags);
+	isa_mem_write(isa_mem, isa_regs->esp, 4, &isa_regs->eflags);
 
 	x86_uinst_new(x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1517,8 +1566,12 @@ void op_rdtsc_impl()
 
 void op_ret_impl()
 {
-	assert(!isa_inst.segment);
-	mem_read(isa_mem, isa_regs->esp, 4, &isa_target);
+	if (isa_inst.segment) {
+		isa_error("%s: not supported segment", __FUNCTION__);
+		return;
+	}
+
+	isa_mem_read(isa_mem, isa_regs->esp, 4, &isa_target);
 	isa_regs->esp += 4;
 	isa_regs->eip = isa_target;
 
@@ -1538,8 +1591,13 @@ void op_repz_ret_impl()
 void op_ret_imm16_impl()
 {
 	uint16_t pop;
-	assert(!isa_inst.segment);
-	mem_read(isa_mem, isa_regs->esp, 4, &isa_target);
+
+	if (isa_inst.segment) {
+		isa_error("%s: not supported segment", __FUNCTION__);
+		return;
+	}
+
+	isa_mem_read(isa_mem, isa_regs->esp, 4, &isa_target);
 	pop = isa_inst.imm.w;
 	isa_regs->esp += 4 + pop;
 	isa_regs->eip = isa_target;
