@@ -556,6 +556,8 @@ void op_dec_ir32_impl()
 
 void op_div_rm8_impl()
 {
+	int skip_emulation = 0;
+
 	uint16_t ax = isa_load_reg(x86_reg_ax);
 	uint8_t rm8 = isa_load_rm8();
 
@@ -564,17 +566,26 @@ void op_div_rm8_impl()
 		return;
 	}
 
-	__ISA_ASM_START__
-	asm volatile (
-		"mov %1, %%ax\n\t"
-		"mov %2, %%bl\n\t"
-		"div %%bl\n\t"
-		"mov %%ax, %0\n\t"
-		: "=m" (ax)
-		: "m" (ax), "m" (rm8)
-		: "ax", "bl"
-	);
-	__ISA_ASM_END__
+	/* A devide exception would occur in the host process if the 'div' instruction
+	 * in the assembly code below generates a result greater than 0xff. */
+	if (isa_spec_mode && ax > 0xff)
+		skip_emulation = 1;
+
+	/* Emulate */
+	if (!skip_emulation)
+	{
+		__ISA_ASM_START__
+		asm volatile (
+			"mov %1, %%ax\n\t"
+			"mov %2, %%bl\n\t"
+			"div %%bl\n\t"
+			"mov %%ax, %0\n\t"
+			: "=m" (ax)
+			: "m" (ax), "m" (rm8)
+			: "ax", "bl"
+		);
+		__ISA_ASM_END__
+	}
 
 	isa_store_reg(x86_reg_ax, ax);
 
@@ -584,6 +595,8 @@ void op_div_rm8_impl()
 
 void op_div_rm32_impl()
 {
+	int skip_emulation = 0;
+
 	uint32_t eax = isa_regs->eax;
 	uint32_t edx = isa_regs->edx;
 	uint32_t rm32 = isa_load_rm32();
@@ -593,19 +606,28 @@ void op_div_rm32_impl()
 		return;
 	}
 
-	__ISA_ASM_START__
-	asm volatile (
-		"mov %2, %%eax\n\t"
-		"mov %3, %%edx\n\t"
-		"mov %4, %%ebx\n\t"
-		"div %%ebx\n\t"
-		"mov %%eax, %0\n\t"
-		"mov %%edx, %1\n\t"
-		: "=m" (eax), "=m" (edx)
-		: "m" (eax), "m" (edx), "m" (rm32)
-		: "eax", "edx", "ebx"
-	);
-	__ISA_ASM_END__
+	/* A devide exception would occur in the host process if the 'div' instruction
+	 * in the assembly code below generates a result greater than 0xffffffff. */
+	if (isa_spec_mode && edx)
+		skip_emulation = 1;
+
+	/* Emulate */
+	if (!skip_emulation)
+	{
+		__ISA_ASM_START__
+		asm volatile (
+			"mov %2, %%eax\n\t"
+			"mov %3, %%edx\n\t"
+			"mov %4, %%ebx\n\t"
+			"div %%ebx\n\t"
+			"mov %%eax, %0\n\t"
+			"mov %%edx, %1\n\t"
+			: "=m" (eax), "=m" (edx)
+			: "m" (eax), "m" (edx), "m" (rm32)
+			: "eax", "edx", "ebx"
+		);
+		__ISA_ASM_END__
+	}
 
 	isa_store_reg(x86_reg_eax, eax);
 	isa_store_reg(x86_reg_edx, edx);
@@ -622,6 +644,8 @@ void op_hlt_impl()
 
 void op_idiv_rm32_impl()
 {
+	int skip_emulation = 0;
+
 	uint32_t eax = isa_regs->eax;
 	uint32_t edx = isa_regs->edx;
 	uint32_t rm32 = isa_load_rm32();
@@ -631,19 +655,29 @@ void op_idiv_rm32_impl()
 		return;
 	}
 
-	__ISA_ASM_START__
-	asm volatile (
-		"mov %2, %%eax\n\t"
-		"mov %3, %%edx\n\t"
-		"mov %4, %%ebx\n\t"
-		"idiv %%ebx\n\t"
-		"mov %%eax, %0\n\t"
-		"mov %%edx, %1\n\t"
-		: "=m" (eax), "=m" (edx)
-		: "m" (eax), "m" (edx), "m" (rm32)
-		: "eax", "edx", "ebx"
-	);
-	__ISA_ASM_END__
+	/* Avoid emulation in speculative mode if it could cause a divide exception */
+	if (isa_spec_mode) {
+		int64_t edx_eax = ((uint64_t) edx << 32) | eax;
+		if (edx_eax > 0x7fffffffll || edx_eax < 0xffffffff80000000ll)
+			skip_emulation = 1;
+	}
+
+	if (!skip_emulation)
+	{
+		__ISA_ASM_START__
+		asm volatile (
+			"mov %2, %%eax\n\t"
+			"mov %3, %%edx\n\t"
+			"mov %4, %%ebx\n\t"
+			"idiv %%ebx\n\t"
+			"mov %%eax, %0\n\t"
+			"mov %%edx, %1\n\t"
+			: "=m" (eax), "=m" (edx)
+			: "m" (eax), "m" (edx), "m" (rm32)
+			: "eax", "edx", "ebx"
+		);
+		__ISA_ASM_END__
+	}
 
 	isa_store_reg(x86_reg_eax, eax);
 	isa_store_reg(x86_reg_edx, edx);
