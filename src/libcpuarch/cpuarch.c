@@ -549,7 +549,7 @@ void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ip
 	enum x86_uinst_flag_t flags;
 	int i;
 
-	for (i = 1; i < x86_uinst_opcode_count; i++)
+	for (i = 0; i < x86_uinst_opcode_count; i++)
 	{
 		name = x86_uinst_info[i].name;
 		flags = x86_uinst_info[i].flags;

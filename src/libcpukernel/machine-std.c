@@ -21,6 +21,23 @@
 #include <cpukernel.h>
 
 
+/* Macros defined to prevent accidental use of 'mem_<xx>' instructions */
+#define mem_access __COMPILATION_ERROR__
+#define mem_read __COMPILATION_ERROR__
+#define mem_write __COMPILATION_ERROR__
+#define mem_zero __COMPILATION_ERROR__
+#define mem_read_string __COMPILATION_ERROR__
+#define mem_write_string __COMPILATION_ERROR__
+#define mem_get_buffer __COMPILATION_ERROR__
+#define fatal __COMPILATION_ERROR__
+#define panic __COMPILATION_ERROR__
+#define warning __COMPILATION_ERROR__
+#ifdef assert
+#undef assert
+#endif
+#define assert __COMPILATION_ERROR__
+
+
 #define op_stdop_al_imm8(stdop, wb, uinst) \
 void op_##stdop##_al_imm8_impl() \
 { \
