@@ -541,8 +541,13 @@ extern int isa_call_debug_category;
 extern int isa_inst_debug_category;
 
 extern long isa_host_flags;
-#define __ISA_ASM_START__ asm volatile ("pushf\n\t" "pop %0\n\t" : "=m" (isa_host_flags));
-#define __ISA_ASM_END__ asm volatile ("push %0\n\t" "popf\n\t" : "=m" (isa_host_flags));
+#define __ISA_ASM_START__ asm volatile ( \
+	"pushf\n\t" \
+	"pop %0\n\t" \
+	: "=m" (isa_host_flags));
+#define __ISA_ASM_END__ asm volatile ( \
+	"push %0\n\t" "popf\n\t" \
+	: "=m" (isa_host_flags));
 
 extern uint16_t isa_host_fpcw;
 extern uint16_t isa_guest_fpcw;
