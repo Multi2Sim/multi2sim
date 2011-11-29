@@ -197,7 +197,13 @@ int bpred_lookup(struct bpred_t *bpred, struct uop_t *uop)
 	 * is a call, ret, jump, or conditional branch. Thus, branches other than
 	 * conditional ones are always predicted taken. */
 	assert(uop->flags & X86_UINST_CTRL);
-	if (uop->uinst->opcode != x86_uinst_branch) {
+	if (uop->flags | X86_UINST_UNCOND) {
+		uop->pred = 1;
+		return 1;
+	}
+
+	/* An internal branch (string operations) is always predicted taken */
+	if (uop->uinst->opcode == x86_uinst_ibranch) {
 		uop->pred = 1;
 		return 1;
 	}
@@ -297,7 +303,9 @@ void bpred_update(struct bpred_t *bpred, struct uop_t *uop)
 	/* Update predictors. This is only done for conditional branches. Thus,
 	 * exit now if instruction is a call, ret, or jmp.
 	 * No update is performed in a perfect branch predictor either. */
-	if (uop->uinst->opcode != x86_uinst_branch || bpred_kind == bpred_kind_perfect)
+	if (bpred_kind == bpred_kind_perfect)
+		return;
+	if (uop->flags & X86_UINST_UNCOND)
 		return;
 	
 	/* Bimodal predictor was used */
@@ -340,10 +348,15 @@ uint32_t bpred_btb_lookup(struct bpred_t *bpred, struct uop_t *uop)
 	uint32_t way, set, target = 0;
 	int hit = 0;
 
-	/* Perfect branch predictor */
 	assert(uop->flags & X86_UINST_CTRL);
+
+	/* Perfect branch predictor */
 	if (bpred_kind == bpred_kind_perfect)
 		return uop->neip;
+
+	/* Internal branch (string operations) always predicted to jump to itself */
+	if (uop->uinst->opcode == x86_uinst_ibranch)
+		return uop->eip;
 
 	/* Search address in BTB */
 	set = uop->eip & (bpred_btb_sets - 1);
