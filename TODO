@@ -169,3 +169,13 @@ Task 11/16/11 - SystemC Integration
 Has anyone tried linking multi2sim against the SystemC library? I have a module (written in SystemC) that I'd like to integrate into multi2sim. However, compiling with including the header file in src/m2s.c and trying to link the  the SystemC library to the final binary is causing me trouble.  Here are the parameters that I am passing to configure
 
 $ ./configure LDFLAGS=-L/path/to/systemC/lib/ LIBS="-lsystemc -lstdc++"  CC=gcc CPPFLAGS=-I/path/to/systemC/headers CXX=g++ CFLAGS="-fPIC"
+
+
+
+
+
+********************************************************************************
+Task 11/29/11 - Disassemblers
+********************************************************************************
+
+Add to documentation options '--gpu-disasm' and '--cpu-disasm'.

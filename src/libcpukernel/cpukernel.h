@@ -395,7 +395,8 @@ enum x86_uinst_flag_t
 	X86_UINST_MEM		= 0x008,  /* Memory micro-instructions */
 	X86_UINST_CTRL		= 0x010,  /* Micro-instruction affecting control flow */
 	X86_UINST_COND		= 0x020,  /* Conditional branch */
-	X86_UINST_XMM		= 0x040
+	X86_UINST_UNCOND	= 0x040,  /* Unconditional jump */
+	X86_UINST_XMM		= 0x080   /* XMM micro-instruction */
 };
 
 

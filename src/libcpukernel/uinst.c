@@ -153,9 +153,9 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "load", X86_UINST_MEM },
 	{ "store", X86_UINST_MEM },
 
-	{ "call", X86_UINST_CTRL },
-	{ "ret", X86_UINST_CTRL },
-	{ "jump", X86_UINST_CTRL },
+	{ "call", X86_UINST_CTRL | X86_UINST_UNCOND },
+	{ "ret", X86_UINST_CTRL | X86_UINST_UNCOND },
+	{ "jump", X86_UINST_CTRL | X86_UINST_UNCOND },
 	{ "branch", X86_UINST_CTRL | X86_UINST_COND },
 	{ "ibranch", X86_UINST_CTRL | X86_UINST_COND },
 

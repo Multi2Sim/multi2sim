@@ -37,20 +37,42 @@
 #define assert __COMPILATION_ERROR__
 
 
-/* Observation:
- * Speculative values in 'isa_regs->ecx' can cause instructions with repetition
- * prefixes to run an overly high number of iterations. This is why these
- * instructions should be stopped on speculative execution. */
+/* For macros implementing string operations with repetition prefixes, loops are repeated
+ * only once if there is speculative execution. There are two reasons for this:
+ *   1) A speculative value in register 'isa_regs->ecx' is undefined and could be extremely
+ *      large, causing the functional simulator to stall if the insruction is executed
+ *      normally.
+ *   2) Internal branch micro-instructions (x86_uinst_ibranch) generated here are interpreted
+ *      by the architectural simulator as branches that jump to the same instruction. The
+ *      BTB always returns 'uop->eip' as a branch target address. This will cause the
+ *      string instruction to be fetched continuously until the first non-taken branch is
+ *      resolved. For every time the string instruction is fetched in speculative mode,
+ *      i.e., any time but the first one, only one group of micro-instructions will be
+ *      inserted to the pipeline, corresponding to one iteration of the loop.
+ */
 
 
 #define OP_REP_IMPL(X) \
-	void op_rep_##X##_impl() { \
+	void op_rep_##X##_impl() \
+	{ \
 		isa_inst.rep = 0; \
-		while (isa_regs->ecx && !isa_spec_mode) \
+		if (isa_spec_mode) \
 		{ \
 			op_##X##_impl(); \
 			isa_regs->ecx--; \
 			isa_inst.rep++; \
+			\
+			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
+			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, 0, 0, 0, 0, 0, 0); \
+			return; \
+		} \
+		\
+		while (isa_regs->ecx) \
+		{ \
+			op_##X##_impl(); \
+			isa_regs->ecx--; \
+			isa_inst.rep++; \
+			\
 			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
 			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, 0, 0, 0, 0, 0, 0); \
 		} \
@@ -58,13 +80,27 @@
 
 
 #define OP_REPZ_IMPL(X) \
-	void op_repz_##X##_impl() { \
+	void op_repz_##X##_impl() \
+	{ \
 		isa_inst.rep = 0; \
-		while (isa_regs->ecx && !isa_spec_mode) \
+		if (isa_spec_mode) { \
+			op_##X##_impl(); \
+			isa_regs->ecx--; \
+			isa_inst.rep++; \
+			\
+			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
+			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
+			return; \
+		} \
+		\
+		while (isa_regs->ecx) \
 		{ \
 			op_##X##_impl(); \
 			isa_regs->ecx--; \
 			isa_inst.rep++; \
+			\
+			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
+			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
 			if (!isa_get_flag(x86_flag_zf)) \
 				break; \
 		} \
@@ -72,13 +108,27 @@
 
 
 #define OP_REPNZ_IMPL(X) \
-	void op_repnz_##X##_impl() { \
+	void op_repnz_##X##_impl() \
+	{ \
 		isa_inst.rep = 0; \
-		while (isa_regs->ecx && !isa_spec_mode) \
+		if (isa_spec_mode) { \
+			op_##X##_impl(); \
+			isa_regs->ecx--; \
+			isa_inst.rep++; \
+			\
+			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
+			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
+			return; \
+		} \
+		\
+		while (isa_regs->ecx) \
 		{ \
 			op_##X##_impl(); \
 			isa_regs->ecx--; \
 			isa_inst.rep++; \
+			\
+			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
+			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
 			if (isa_get_flag(x86_flag_zf)) \
 				break; \
 		} \
@@ -158,7 +208,9 @@ OP_REPNZ_IMPL(scasd)
 
 
 
-/* String Instructions */
+/*
+ * String Instructions
+ */
 
 
 void op_cmpsb_impl()
@@ -184,9 +236,16 @@ void op_cmpsb_impl()
 	);
 	__ISA_ASM_END__
 
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 1, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_aux2, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
+
 	isa_regs->eflags = flags;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -1 : 1;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
+
+	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
@@ -213,9 +272,16 @@ void op_cmpsd_impl()
 	);
 	__ISA_ASM_END__ \
 
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->esi, 4, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 4, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_aux2, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
+
 	isa_regs->eflags = flags;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -4 : 4;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
+
+	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
@@ -232,8 +298,8 @@ void op_movsb_impl()
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -1 : 1;
 
-	x86_uinst_new(x86_uinst_add, x86_dep_edi, 0, 0, x86_dep_edi, 0, 0, 0);
-	x86_uinst_new(x86_uinst_add, x86_dep_esi, 0, 0, x86_dep_esi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
 }
 
 
@@ -250,8 +316,8 @@ void op_movsw_impl()
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -2 : 2;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -2 : 2;
 
-	x86_uinst_new(x86_uinst_add, x86_dep_edi, 0, 0, x86_dep_edi, 0, 0, 0);
-	x86_uinst_new(x86_uinst_add, x86_dep_esi, 0, 0, x86_dep_esi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
 }
 
 
@@ -268,8 +334,8 @@ void op_movsd_impl()
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -4 : 4;
 
-	x86_uinst_new(x86_uinst_add, x86_dep_edi, 0, 0, x86_dep_edi, 0, 0, 0);
-	x86_uinst_new(x86_uinst_add, x86_dep_esi, 0, 0, x86_dep_esi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
 }
 
 
@@ -295,8 +361,13 @@ void op_scasb_impl()
 	);
 	__ISA_ASM_END__ \
 
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 1, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_eax, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
+
 	isa_regs->eflags = flags;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
+
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
@@ -322,8 +393,13 @@ void op_scasd_impl()
 	);
 	__ISA_ASM_END__ \
 
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 4, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_eax, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
+
 	isa_regs->eflags = flags;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
+
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
@@ -332,7 +408,12 @@ void op_stosb_impl()
 	uint8_t m8 = isa_load_reg(x86_reg_al);
 	uint32_t addr = isa_load_reg(x86_reg_edi);
 	isa_mem_write(isa_mem, addr, 1, &m8);
+
+	x86_uinst_new_mem(x86_uinst_store, addr, 1, x86_dep_edi, x86_dep_eax, 0, 0, 0, 0, 0);
+
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
+
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
@@ -341,6 +422,11 @@ void op_stosd_impl()
 	uint32_t m32 = isa_load_reg(x86_reg_eax);
 	uint32_t addr = isa_load_reg(x86_reg_edi);
 	isa_mem_write(isa_mem, addr, 4, &m32);
+
+	x86_uinst_new_mem(x86_uinst_store, addr, 4, x86_dep_edi, x86_dep_eax, 0, 0, 0, 0, 0);
+
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
+
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
