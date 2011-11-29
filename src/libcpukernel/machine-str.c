@@ -51,6 +51,8 @@
 			op_##X##_impl(); \
 			isa_regs->ecx--; \
 			isa_inst.rep++; \
+			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
+			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, 0, 0, 0, 0, 0, 0); \
 		} \
 	}
 
@@ -220,30 +222,54 @@ void op_cmpsd_impl()
 void op_movsb_impl()
 {
 	uint8_t m8;
+
 	isa_mem_read(isa_mem, isa_regs->esi, 1, &m8);
 	isa_mem_write(isa_mem, isa_regs->edi, 1, &m8);
+
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 1, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_regs->esi, 1, x86_dep_esi, x86_dep_aux, 0, 0, 0, 0, 0);
+
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -1 : 1;
+
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, 0, 0, x86_dep_edi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esi, 0, 0, x86_dep_esi, 0, 0, 0);
 }
 
 
 void op_movsw_impl()
 {
 	uint16_t m16;
+
 	isa_mem_read(isa_mem, isa_regs->esi, 2, &m16);
 	isa_mem_write(isa_mem, isa_regs->edi, 2, &m16);
+
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 2, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_regs->esi, 2, x86_dep_esi, x86_dep_aux, 0, 0, 0, 0, 0);
+
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -2 : 2;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -2 : 2;
+
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, 0, 0, x86_dep_edi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esi, 0, 0, x86_dep_esi, 0, 0, 0);
 }
 
 
 void op_movsd_impl()
 {
 	uint32_t m32;
+
 	isa_mem_read(isa_mem, isa_regs->esi, 4, &m32);
 	isa_mem_write(isa_mem, isa_regs->edi, 4, &m32);
+
+	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 4, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, isa_regs->esi, 4, x86_dep_esi, x86_dep_aux, 0, 0, 0, 0, 0);
+
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -4 : 4;
+
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, 0, 0, x86_dep_edi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esi, 0, 0, x86_dep_esi, 0, 0, 0);
 }
 
 
