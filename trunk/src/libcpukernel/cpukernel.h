@@ -389,12 +389,13 @@ enum x86_dep_t {
 
 enum x86_uinst_flag_t
 {
-	X86_UINST_INT		= 0x001,
-	X86_UINST_LOGIC		= 0x002,
-	X86_UINST_FP		= 0x004,
-	X86_UINST_MEM		= 0x008,
-	X86_UINST_CTRL		= 0x010,
-	X86_UINST_XMM		= 0x020
+	X86_UINST_INT		= 0x001,  /* Arithmetic integer instruction */
+	X86_UINST_LOGIC		= 0x002,  /* Logic computation */
+	X86_UINST_FP		= 0x004,  /* Floating-point micro-instruction */
+	X86_UINST_MEM		= 0x008,  /* Memory micro-instructions */
+	X86_UINST_CTRL		= 0x010,  /* Micro-instruction affecting control flow */
+	X86_UINST_COND		= 0x020,  /* Conditional branch */
+	X86_UINST_XMM		= 0x040
 };
 
 
@@ -449,6 +450,7 @@ enum x86_uinst_opcode_t
 	x86_uinst_ret,
 	x86_uinst_jump,
 	x86_uinst_branch,
+	x86_uinst_ibranch,
 
 	x86_uinst_syscall,
 
@@ -499,9 +501,6 @@ void x86_uinst_free(struct x86_uinst_t *uinst);
 #define x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
 	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
 	__x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
-#define x86_uinst_new_move(idep, odep) \
-	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
-	__x86_uinst_new_move(idep, odep); }
 
 void __x86_uinst_new(enum x86_uinst_opcode_t opcode,
 	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
@@ -511,7 +510,6 @@ void __x86_uinst_new_mem(enum x86_uinst_opcode_t opcode, uint32_t addr, int size
 	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
 	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
 	enum x86_dep_t odep3);
-void __x86_uinst_new_move(enum x86_dep_t idep, enum x86_dep_t odep);
 void x86_uinst_clear(void);
 
 void x86_uinst_dump_buf(struct x86_uinst_t *uinst, char *buf, int size);
@@ -537,20 +535,27 @@ extern int isa_function_level;
 
 #define isa_call_debug(...) debug(isa_call_debug_category, __VA_ARGS__)
 #define isa_inst_debug(...) debug(isa_inst_debug_category, __VA_ARGS__)
+
 extern int isa_call_debug_category;
 extern int isa_inst_debug_category;
 
+
 extern long isa_host_flags;
+
 #define __ISA_ASM_START__ asm volatile ( \
 	"pushf\n\t" \
 	"pop %0\n\t" \
 	: "=m" (isa_host_flags));
+
 #define __ISA_ASM_END__ asm volatile ( \
-	"push %0\n\t" "popf\n\t" \
+	"push %0\n\t" \
+	"popf\n\t" \
 	: "=m" (isa_host_flags));
+
 
 extern uint16_t isa_host_fpcw;
 extern uint16_t isa_guest_fpcw;
+
 #define __ISA_FP_ASM_START__ asm volatile ( \
 	"pushf\n\t" \
 	"pop %0\n\t" \
@@ -558,6 +563,7 @@ extern uint16_t isa_guest_fpcw;
 	"fldcw %2\n\t" \
 	: "=m" (isa_host_flags), "=m" (isa_host_fpcw) \
 	: "m" (isa_guest_fpcw));
+
 #define __ISA_FP_ASM_END__ asm volatile ( \
 	"push %0\n\t" \
 	"popf\n\t" \
@@ -565,6 +571,7 @@ extern uint16_t isa_guest_fpcw;
 	"fldcw %1\n\t" \
 	: "=m" (isa_host_flags) \
 	: "m" (isa_host_fpcw));
+
 
 /* References to functions emulating x86 instructions */
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) void op_##name##_impl(void);

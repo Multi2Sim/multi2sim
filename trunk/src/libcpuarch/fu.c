@@ -85,6 +85,7 @@ static enum fu_class_t fu_class_table[x86_uinst_opcode_count] =
 	fu_none,  /* x86_uinst_ret */
 	fu_none,  /* x86_uinst_jump */
 	fu_none,  /* x86_uinst_branch */
+	fu_none,  /* x86_uinst_ibranch */
 
 	fu_none  /* x86_uinst_syscall */
 };

@@ -156,7 +156,8 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "call", X86_UINST_CTRL },
 	{ "ret", X86_UINST_CTRL },
 	{ "jump", X86_UINST_CTRL },
-	{ "branch", X86_UINST_CTRL },
+	{ "branch", X86_UINST_CTRL | X86_UINST_COND },
+	{ "ibranch", X86_UINST_CTRL | X86_UINST_COND },
 
 	{ "syscall", 0 }
 };
