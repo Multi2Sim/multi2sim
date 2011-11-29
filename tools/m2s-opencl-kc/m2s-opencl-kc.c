@@ -272,7 +272,11 @@ void main_compile_kernel()
 	/* Get number and size of binaries */
 	clGetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof(bin_sizes), bin_sizes, &bin_sizes_ret);
 	assert(bin_sizes_ret / sizeof(size_t) == num_devices);
-	assert(bin_sizes[device_id] > 0);
+	for (device_id = 0; device_id < num_devices; device_id++)
+		if (bin_sizes[device_id])
+			break;
+	if (device_id == num_devices)
+		fatal("no binary generated");
 
 	/* Dump binary into file */
 	memset(bin_bits, 0, sizeof(bin_bits));
