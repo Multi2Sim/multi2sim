@@ -158,14 +158,12 @@ char *cpu_config_help =
 	"  where <func_unit> refers to a functional unit type, and <field> refers to a\n"
 	"  property of it. Possible values for <func_unit> are:\n"
 	"      IntAdd      Integer adder\n"
-	"      IntSub      Integer subtracter\n"
 	"      IntMult     Integer multiplier\n"
 	"      IntDiv      Integer divider\n"
 	"      EffAddr     Operator for effective address computations\n"
 	"      Logic       Operator for logic operations\n"
 	"      FpSimple    Simple floating-point operations\n"
 	"      FpAdd       Floating-point adder\n"
-	"      FpComp      Comparator of floating-point numbers\n"
 	"      FpMult      Floating-point multiplier\n"
 	"      FpDiv       Floating-point divider\n"
 	"      FpComplex   Operator for complex floating-point computations\n"
@@ -345,10 +343,6 @@ void cpu_config_check(void)
 	fu_res_pool[fu_intadd].oplat = config_read_int(cfg, section, "IntAdd.OpLat", 2);
 	fu_res_pool[fu_intadd].issuelat = config_read_int(cfg, section, "IntAdd.IssueLat", 1);
 
-	fu_res_pool[fu_intsub].count = config_read_int(cfg, section, "IntSub.Count", 4);
-	fu_res_pool[fu_intsub].oplat = config_read_int(cfg, section, "IntSub.OpLat", 2);
-	fu_res_pool[fu_intsub].issuelat = config_read_int(cfg, section, "IntSub.IssueLat", 1);
-
 	fu_res_pool[fu_intmult].count = config_read_int(cfg, section, "IntMult.Count", 1);
 	fu_res_pool[fu_intmult].oplat = config_read_int(cfg, section, "IntMult.OpLat", 3);
 	fu_res_pool[fu_intmult].issuelat = config_read_int(cfg, section, "IntMult.IssueLat", 3);
@@ -372,10 +366,6 @@ void cpu_config_check(void)
 	fu_res_pool[fu_fpadd].count = config_read_int(cfg, section, "FpAdd.Count", 2);
 	fu_res_pool[fu_fpadd].oplat = config_read_int(cfg, section, "FpAdd.OpLat", 5);
 	fu_res_pool[fu_fpadd].issuelat = config_read_int(cfg, section, "FpAdd.IssueLat", 5);
-
-	fu_res_pool[fu_fpcomp].count = config_read_int(cfg, section, "FpComp.Count", 2);
-	fu_res_pool[fu_fpcomp].oplat = config_read_int(cfg, section, "FpComp.OpLat", 5);
-	fu_res_pool[fu_fpcomp].issuelat = config_read_int(cfg, section, "FpComp.IssueLat", 5);
 
 	fu_res_pool[fu_fpmult].count = config_read_int(cfg, section, "FpMult.Count", 1);
 	fu_res_pool[fu_fpmult].oplat = config_read_int(cfg, section, "FpMult.OpLat", 10);
@@ -471,10 +461,6 @@ void cpu_config_dump(FILE *f)
 	fprintf(f, "IntAdd.OpLat = %d\n", fu_res_pool[fu_intadd].oplat);
 	fprintf(f, "IntAdd.IssueLat = %d\n", fu_res_pool[fu_intadd].issuelat);
 
-	fprintf(f, "IntSub.Count = %d\n", fu_res_pool[fu_intsub].count);
-	fprintf(f, "IntSub.OpLat = %d\n", fu_res_pool[fu_intsub].oplat);
-	fprintf(f, "IntSub.IssueLat = %d\n", fu_res_pool[fu_intsub].issuelat);
-
 	fprintf(f, "IntMult.Count = %d\n", fu_res_pool[fu_intmult].count);
 	fprintf(f, "IntMult.OpLat = %d\n", fu_res_pool[fu_intmult].oplat);
 	fprintf(f, "IntMult.IssueLat = %d\n", fu_res_pool[fu_intmult].issuelat);
@@ -498,10 +484,6 @@ void cpu_config_dump(FILE *f)
 	fprintf(f, "FpAdd.Count = %d\n", fu_res_pool[fu_fpadd].count);
 	fprintf(f, "FpAdd.OpLat = %d\n", fu_res_pool[fu_fpadd].oplat);
 	fprintf(f, "FpAdd.IssueLat = %d\n", fu_res_pool[fu_fpadd].issuelat);
-
-	fprintf(f, "FpComp.Count = %d\n", fu_res_pool[fu_fpcomp].count);
-	fprintf(f, "FpComp.OpLat = %d\n", fu_res_pool[fu_fpcomp].oplat);
-	fprintf(f, "FpComp.IssueLat = %d\n", fu_res_pool[fu_fpcomp].issuelat);
 
 	fprintf(f, "FpMult.Count = %d\n", fu_res_pool[fu_fpmult].count);
 	fprintf(f, "FpMult.OpLat = %d\n", fu_res_pool[fu_fpmult].oplat);
@@ -675,14 +657,12 @@ void cpu_dump_report()
 		fprintf(f, ";    Denied - Number of requests denied due to busy f.u.\n");
 		fprintf(f, ";    WaitingTime - Average number of waiting cycles to reserve f.u.\n");
 		DUMP_FU_STAT(IntAdd, fu_intadd);
-		DUMP_FU_STAT(IntSub, fu_intsub);
 		DUMP_FU_STAT(IntMult, fu_intmult);
 		DUMP_FU_STAT(IntDiv, fu_intdiv);
 		DUMP_FU_STAT(Effaddr, fu_effaddr);
 		DUMP_FU_STAT(Logic, fu_logic);
 		DUMP_FU_STAT(FPSimple, fu_fpsimple);
 		DUMP_FU_STAT(FPAdd, fu_fpadd);
-		DUMP_FU_STAT(FPComp, fu_fpcomp);
 		DUMP_FU_STAT(FPMult, fu_fpmult);
 		DUMP_FU_STAT(FPDiv, fu_fpdiv);
 		DUMP_FU_STAT(FPComplex, fu_fpcomplex);
