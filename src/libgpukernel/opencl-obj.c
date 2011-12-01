@@ -257,7 +257,10 @@ uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, s
 	uint32_t max_work_item_sizes[3];  /* FIXME */
 	uint32_t local_mem_type = 1;  /* CL_LOCAL FIXME */
 	uint32_t local_mem_size = 32 * 1024;  /* FIXME */
+	uint32_t max_clock_frequency = 850;
+	uint64_t global_mem_size = 1ull << 31;  /* 2GB of global memory reported */
 	uint32_t image_support = 1;
+
 	char *device_name = "Multi2Sim Virtual GPU Device";
 	char *device_vendor = "www.multi2sim.org";
 	char *device_extensions = "cl_amd_fp64 cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics "
@@ -295,9 +298,19 @@ uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, s
 		info = max_work_item_sizes;
 		break;
 	
+	case 0x100c:  /* CL_DEVICE_MAX_CLOCK_FREQUENCY */
+		size_ret = 4;
+		info = &max_clock_frequency;
+		break;
+
 	case 0x1016:  /* CL_DEVICE_IMAGE_SUPPORT */
 		size_ret = 4;
 		info = &image_support;
+		break;
+
+	case 0x101f:  /* CL_GLOBAL_MEM_SIZE */
+		size_ret = 8;
+		info = &global_mem_size;
 		break;
 
 	case 0x1022:  /* CL_DEVICE_LOCAL_MEM_TYPE */
