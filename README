@@ -151,3 +151,15 @@ Processing elements
 * A PE accepts one instruction every cycle (this can be configured). This parameter is called the issue latency.
 * The latency of of the instruction (time between the operation starts until the result is ready) depends on the operation (sin >> add). This is configurable as well.
 
+
+
+===============================================================================
+
+Command to update Copyright in all files:
+
+sources=$(find | grep \\.c$)
+sed -i "s,^ \*  Copyright.*$, *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)," $sources
+
+
+===============================================================================
+

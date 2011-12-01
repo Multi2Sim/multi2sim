@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2007  Rafael Ubal Tena (ubal@gap.upv.es)
+ *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
