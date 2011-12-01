@@ -220,7 +220,6 @@ enum fu_class_t
 	fu_none = 0,
 
 	fu_intadd,
-	fu_intsub,
 	fu_intmult,
 	fu_intdiv,
 	fu_effaddr,
@@ -228,7 +227,6 @@ enum fu_class_t
 
 	fu_fpsimple,
 	fu_fpadd,
-	fu_fpcomp,
 	fu_fpmult,
 	fu_fpdiv,
 	fu_fpcomplex,

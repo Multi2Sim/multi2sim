@@ -43,7 +43,7 @@ static enum fu_class_t fu_class_table[x86_uinst_opcode_count] =
 
 	fu_none,  /* x86_uinst_move */
 	fu_intadd,  /* x86_uinst_add */
-	fu_intsub,  /* x86_uinst_sub */
+	fu_intadd,  /* x86_uinst_sub */
 	fu_intmult,  /* x86_uinst_mult */
 	fu_intdiv,  /* x86_uinst_div */
 	fu_effaddr,  /* x86_uinst_effaddr */
@@ -61,7 +61,7 @@ static enum fu_class_t fu_class_table[x86_uinst_opcode_count] =
 
 	fu_fpadd,  /* x86_uinst_fp_add */
 	fu_fpadd,  /* x86_uinst_fp_sub */
-	fu_fpcomp,  /* x86_uinst_fp_comp */
+	fu_fpadd,  /* x86_uinst_fp_comp */
 	fu_fpmult,  /* x86_uinst_fp_mult */
 	fu_fpdiv,  /* x86_uinst_fp_div */
 
