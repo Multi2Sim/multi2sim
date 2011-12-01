@@ -656,7 +656,7 @@ void ctx_update_display(struct ctx_t *ctx)
 	getmaxyx(ctx->wnd, ctx->maxy, ctx->maxx);
 	ctx->col_width = 4;
 	ctx->mop_header_width = show_mops ? 40 : 0;
-	ctx->uop_header_width = 30;
+	ctx->uop_header_width = 40;
 	ctx->topy = 0;
 	ctx->topx = 1;
 	ctx->rows = ctx->maxy - ctx->topy - 2;

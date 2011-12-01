@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2007  Rafael Ubal Tena (raurte@gap.upv.es)
+ *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -401,8 +401,10 @@ enum x86_uinst_flag_t
 
 
 /* Micro-instruction opcodes.
- * WARNING: update 'x86_uinst_info' if modified (uinst.c).
- * WARNING: also update 'fu_class_table' if modified (src/libcpuarch/fu.c). */
+ * WARNING: when the set of micro-instructions is modified, also update:
+ *   - Variable 'x86_uinst_info' (uinst.c).
+ *   - Variable 'fu_class_table' (src/libcpuarch/fu.c). 
+ *   - M2S Guide (CISC instruction decoding) */
 enum x86_uinst_opcode_t
 {
 	x86_uinst_nop = 0,
