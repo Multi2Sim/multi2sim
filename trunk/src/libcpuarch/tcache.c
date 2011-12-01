@@ -38,6 +38,16 @@ void tcache_init()
 	if (!tcache_present)
 		return;
 
+	/* FIXME: trace cache disabled.
+	 * New mechanism of micro-instruction generation is not supported by
+	 * old trace cache implementation.
+	 */
+	fatal("trace cache temporarily not supported.\n"
+		"\tAs of SVN Rev. 330, a new mechanism has been implemented for x86 CISC\n"
+		"\tinstructions decoding. This is a more accurate mechanism that is not\n"
+		"\tcompatible with the old trace cache model. To request this update, please\n"
+		"\temail development@multi2sim.org, or use the Multi2Sim forum.\n");
+
 	/* Integrity */
 	if ((tcache_sets & (tcache_sets - 1)) || !tcache_sets)
 		fatal("trace cache sets must be power of 2 and > 0");
@@ -195,6 +205,9 @@ void tcache_new_uop(struct tcache_t *tcache, struct uop_t *uop)
 	int taken;
 
 	/* Only uops heading the macroinst are inserted in the trace for simulation. */
+	/* FIXME: wrong. Control instructions and string operations generate intermediate
+	 * branch instructions. This is not handled properly.
+	 * FIXME: trace cache option disabled for now. */
 	if (uop->mop_index)
 		return;
 

@@ -87,7 +87,7 @@ void op_fabs_impl()
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
-	x86_uinst_new(x86_uinst_fp_simple, x86_dep_st0,	0, 0, x86_dep_st0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_sign, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -241,7 +241,7 @@ void op_fchs_impl()
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
-	x86_uinst_new(x86_uinst_fp_simple, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_sign, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 
@@ -1481,7 +1481,7 @@ void op_frndint_impl()
 	isa_store_fpu(0, st0);
 	isa_store_fpu_code(status);
 
-	x86_uinst_new(x86_uinst_fp_simple, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
+	x86_uinst_new(x86_uinst_fp_round, x86_dep_st0, 0, 0, x86_dep_st0, 0, 0, 0);
 }
 
 

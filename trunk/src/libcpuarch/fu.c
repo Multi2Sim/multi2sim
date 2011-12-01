@@ -56,7 +56,9 @@ static enum fu_class_t fu_class_table[x86_uinst_opcode_count] =
 	fu_logic,  /* x86_uinst_sign */
 
 	fu_none,  /* x86_uinst_fp_move */
-	fu_fpsimple,  /* x86_uinst_fp_simple */
+	fu_fpsimple,  /* x86_uinst_fp_sign */
+	fu_fpsimple,  /* x86_uinst_fp_round */
+
 	fu_fpadd,  /* x86_uinst_fp_add */
 	fu_fpadd,  /* x86_uinst_fp_sub */
 	fu_fpcomp,  /* x86_uinst_fp_comp */
