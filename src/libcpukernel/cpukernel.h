@@ -424,7 +424,9 @@ enum x86_uinst_opcode_t
 	x86_uinst_sign,
 
 	x86_uinst_fp_move,
-	x86_uinst_fp_simple,
+	x86_uinst_fp_sign,
+	x86_uinst_fp_round,
+
 	x86_uinst_fp_add,
 	x86_uinst_fp_sub,
 	x86_uinst_fp_comp,
