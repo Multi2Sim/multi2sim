@@ -128,7 +128,9 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "sign", X86_UINST_LOGIC },
 
 	{ "fmove", X86_UINST_FP },
-	{ "fsimple", X86_UINST_FP },
+	{ "fsign", X86_UINST_FP },
+	{ "fround", X86_UINST_FP },
+
 	{ "fadd", X86_UINST_FP },
 	{ "fsub", X86_UINST_FP },
 	{ "fcomp", X86_UINST_FP },
