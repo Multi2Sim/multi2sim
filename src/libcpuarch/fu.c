@@ -78,6 +78,7 @@ static enum fu_class_t fu_class_table[x86_uinst_opcode_count] =
 	fu_none,  /* x86_uinst_fp_pop */
 
 	fu_none,  /* x86_uinst_xmm_move FIXME */
+	fu_none,  /* x86_uinst_xmm_shuf FIXME */
 	fu_none,  /* x86_uinst_xmm_conv FIXME */
 
 	fu_none,  /* x86_uinst_load */

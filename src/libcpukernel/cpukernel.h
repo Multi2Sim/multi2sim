@@ -446,6 +446,7 @@ enum x86_uinst_opcode_t
 	x86_uinst_fp_pop,
 
 	x86_uinst_xmm_move,
+	x86_uinst_xmm_shuf,
 	x86_uinst_xmm_conv,
 
 	x86_uinst_load,
@@ -640,6 +641,8 @@ void isa_load_xmmm32(uint8_t *value);
 void isa_store_xmmm32(uint8_t *value);
 void isa_load_xmmm64(uint8_t *value);
 void isa_store_xmmm64(uint8_t *value);
+void isa_load_xmmm128(uint8_t *value);
+void isa_store_xmmm128(uint8_t *value);
 
 void isa_double_to_extended(double f, uint8_t *e);
 double isa_extended_to_double(uint8_t *e);
