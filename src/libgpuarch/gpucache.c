@@ -236,9 +236,11 @@ void gpu_cache_config_read(void)
 			gpu->network_count++;
 	}
 	if (!gpu->gpu_cache_count)
-		fatal("%s: no cache defined.\n%s", cache_system_config_file_name, err_note);
+		fatal("%s: no cache defined.\n%s", gpu_cache_config_file_name, err_note);
 	if (!gpu->network_count)
-		fatal("%s: no network defined.\n%s", cache_system_config_file_name, err_note);
+		fatal("%s: no network defined.\n%s", gpu_cache_config_file_name, err_note);
+	if (!config_section_exists(config, "GlobalMemory"))
+		fatal("%s: section [ GlobalMemory ] is missing\n%s", gpu_cache_config_file_name, err_note);
 	gpu->gpu_caches = calloc(gpu->gpu_cache_count, sizeof(void *));
 	gpu->networks = calloc(gpu->network_count, sizeof(void *));
 	gpu_cache_debug("gpu_caches: array of %d caches allocated\n", gpu->gpu_cache_count);
