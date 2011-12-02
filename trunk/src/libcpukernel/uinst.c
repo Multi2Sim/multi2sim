@@ -150,6 +150,7 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "fpop", X86_UINST_FP },
 
 	{ "xmove", X86_UINST_XMM },
+	{ "xshuf", X86_UINST_XMM },
 	{ "xconv", X86_UINST_XMM },
 
 	{ "load", X86_UINST_MEM },

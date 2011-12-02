@@ -359,7 +359,18 @@ void op_pshufb_xmm_xmmm128_impl()
 
 void op_pshufd_xmm_xmmm128_imm8_impl()
 {
-	isa_error("%s: not implemented", __FUNCTION__);
+	uint32_t src[4], dst[4];
+	uint8_t imm = isa_inst.imm.b;
+
+	isa_load_xmmm128((uint8_t *) src);
+	dst[0] = src[imm & 3];
+	dst[1] = src[(imm >> 2) & 3];
+	dst[2] = src[(imm >> 4) & 3];
+	dst[3] = src[(imm >> 6) & 3];
+	isa_store_xmm((uint8_t *) dst);
+
+	x86_uinst_new(x86_uinst_xmm_shuf, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
+	isa_error("%s: not debugged", __FUNCTION__);
 }
 
 
