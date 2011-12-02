@@ -366,12 +366,17 @@ static void elf_file_read_section_headers(struct elf_file_t *elf_file)
 		if (count < sizeof(Elf32_Shdr))
 			fatal("%s: unexpected end of file while reading section headers", elf_file->path);
 
-		/* Get section contents */
-		section->buffer.ptr = buffer->ptr + section->header->sh_offset;
-		section->buffer.size = section->header->sh_size;
-		section->buffer.pos = 0;
-		assert(section->buffer.ptr >= buffer->ptr);
-		assert(section->buffer.ptr + section->buffer.size <= buffer->ptr + buffer->size);
+		/* Get section contents, if section type is not SHT_NOBITS (8) */
+		if (section->header->sh_type != 8)
+		{
+			section->buffer.ptr = buffer->ptr + section->header->sh_offset;
+			section->buffer.size = section->header->sh_size;
+			section->buffer.pos = 0;
+			assert(section->buffer.ptr >= buffer->ptr);
+			if (section->buffer.ptr + section->buffer.size > buffer->ptr + buffer->size)
+				fatal("section %d out of the ELF boundaries (offs=0x%x, size=%u, ELF_size=%u)",
+						i, section->header->sh_offset, section->header->sh_size, buffer->size);
+		}
 
 		/* Add section to list */
 		list_add(elf_file->section_list, section);
