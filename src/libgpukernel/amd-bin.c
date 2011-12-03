@@ -35,6 +35,32 @@ struct pt_note_header_t {
 };
 
 
+static struct string_map_t enc_dict_machine_map = {
+	20, {
+		{ "R600",	0 },
+		{ "RV610",	1 },
+		{ "RV630",	2 },
+		{ "RV670",	3 },
+		{ "R700",	4 },
+		{ "RV770",	5 },
+		{ "RV710",	6 },
+		{ "RV730",	7 },
+		{ "Cypress",	8 },
+		{ "Juniper",	9 },
+		{ "Redwood",	10 },
+		{ "Cedar",	11 },
+		{ "Sumo",	12 },
+		{ "Supersumo",	13 },
+		{ "Wrestler",	14 },
+		{ "Cayman",	15 },
+		{ "Kauai",	16 },
+		{ "Barts",	17 },
+		{ "Turks",	18 },
+		{ "Caicos",	19 }
+	}
+};
+
+
 static struct string_map_t pt_note_type_map = {
 	17, {
 		{ "ELF_NOTE_ATI_PROGINFO", 1 },
@@ -54,6 +80,46 @@ static struct string_map_t pt_note_type_map = {
 		{ "ELF_NOTE_ATI_UAV_MAILBOX_SIZE", 15 },
 		{ "ELF_NOTE_ATI_UAV", 16 },
 		{ "ELF_NOTE_ATI_UAV_OP_MASK", 17 }
+	}
+};
+
+
+static struct string_map_t prog_info_entry_map = {
+	34, {
+		{ "mmSQ_PGM_START_LS",			0xa234 },
+		{ "mmSQ_PGM_RESOURCES_LS",		0xa235 },
+		{ "mmSQ_PGM_RESOURCES_2_LS",		0xa236 },
+		{ "mmSPI_THREAD_GROUPING",		0xa1b2 },
+		{ "mmSQ_DYN_GPR_CNTL_PS_FLUSH_REQ",	0x2363 },
+		{ "mmSQ_GPR_RESOURCE_MGMT_1",		0x2301 },
+		{ "mmSQ_GPR_RESOURCE_MGMT_3__EG",	0x2303 },
+		{ "mmSPI_GPR_MGMT",			0xa1be },
+		{ "mmSPI_WAVE_MGMT_1",			0xa1c1 },
+		{ "mmSPI_WAVE_MGMT_2",			0xa1c2 },
+		{ "mmSQ_THREAD_RESOURCE_MGMT__EG",	0x2306 },
+		{ "mmSQ_THREAD_RESOURCE_MGMT_2__EG",	0x2307 },
+		{ "mmSPI_COMPUTE_INPUT_CNTL",		0xa1ba },
+		{ "mmSQ_LDS_ALLOC",			0xa23a },
+		{ "AMU_ABI_CS_MAX_SCRATCH_REGS",	0x80000002 },
+		{ "AMU_ABI_CS_NUM_SHARED_GPR_USER",	0x80000003 },
+		{ "AMU_ABI_CS_NUM_SHARED_GPR_TOTAL",	0x80000004 },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP",	0x80000006 },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP_X",	0x8000001c },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP_Y",	0x8000001d },
+		{ "AMU_ABI_NUM_THREAD_PER_GROUP_Z",	0x8000001e },
+		{ "AMU_ABI_TOTAL_NUM_THREAD_GROUP",	0x80000007 },
+		{ "AMU_ABI_NUM_WAVEFRONT_PER_SIMD",	0x8000000a },
+		{ "AMU_ABI_IS_MAX_NUM_WAVE_PER_SIMD",	0x8000000b },
+		{ "AMU_ABI_SET_BUFFER_FOR_NUM_GROUP",	0x8000000c },
+		{ "AMU_ABI_RAT_OP_IS_USED",		0x8000001f },
+		{ "AMU_ABI_RAT_ATOMIC_OP_IS_USED",	0x80000020 },
+		{ "AMU_ABI_WAVEFRONT_SIZE",		0x80000078 },
+		{ "AMU_ABI_NUM_GPR_AVAIL",		0x80000079 },
+		{ "AMU_ABI_NUM_GPR_USED",		0x80000080 },
+		{ "AMU_ABI_LDS_SIZE_AVAIL",		0x80000081 },
+		{ "AMU_ABI_LDS_SIZE_USED",		0x80000082 },
+		{ "AMU_ABI_STACK_SIZE_AVAIL",		0x80000083 },
+		{ "AMU_ABI_STACK_SIZE_USED",		0x80000084 }
 	}
 };
 
@@ -121,31 +187,27 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 			prog_info_count);
 
 		/* Decode entries */
-		for (i = 0; i < prog_info_count; i++) {
+		for (i = 0; i < prog_info_count; i++)
+		{
 			prog_info_entry = desc + i * sizeof(struct pt_note_prog_info_entry_t);
-			elf_debug("\tprog_info_entry: addr=0x%x, value=0x%x: ",
-				prog_info_entry->address, prog_info_entry->value);
+			elf_debug("\tprog_info_entry: addr=0x%x (%s), value=%u\n",
+				prog_info_entry->address, map_value(&prog_info_entry_map,
+				prog_info_entry->address), prog_info_entry->value);
 
 			/* Analyze entry */
 			switch (prog_info_entry->address) {
 
 			case 0x80000080:  /* AMU_ABI_NUM_GPR_USED */
 				enc_dict_entry->num_gpr_used = prog_info_entry->value;
-				elf_debug("AMU_ABI_NUM_GPR_USED = %d\n", enc_dict_entry->num_gpr_used);
 				break;
 
 			case 0x80000082:  /* AMU_ABI_LDS_SIZE_USED */
 				enc_dict_entry->lds_size_used = prog_info_entry->value;
-				elf_debug("AMU_ABI_LDS_SIZE_USED = %d\n", enc_dict_entry->lds_size_used);
 				break;
 
 			case 0x80000084:  /* AMU_ABI_STACK_SIZE_USED */
 				enc_dict_entry->stack_size_used = prog_info_entry->value;
-				elf_debug("AMU_ABI_STACK_SIZE_USED = %d\n", enc_dict_entry->stack_size_used);
 				break;
-
-			default:
-				elf_debug("?\n");
 			}
 		}
 		break;
@@ -302,6 +364,7 @@ static void amd_bin_read_notes(struct amd_bin_t *amd_bin, struct amd_bin_enc_dic
 		enc_dict_entry->header->d_machine);
 	while (buffer->pos < buffer->size)
 		amd_bin_read_note_header(amd_bin, enc_dict_entry);
+	elf_debug("\n\n\n");
 }
 
 
@@ -370,16 +433,22 @@ static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
 	}
 
 	/* Debug */
-	elf_debug("idx %-10s %-10s %-10s %-10s %-10s\n", "d_machine", "d_type",
+	elf_debug("idx %-15s %-10s %-10s %-10s %-10s\n", "d_machine", "d_type",
 		"d_offset", "d_size", "d_flags");
 	for (i = 0; i < 80; i++)
 		elf_debug("-");
 	elf_debug("\n");
-	for (i = 0; i < list_count(amd_bin->enc_dict); i++) {
+	for (i = 0; i < list_count(amd_bin->enc_dict); i++)
+	{
+		char machine_str[MAX_STRING_SIZE];
+
 		enc_dict_entry = list_get(amd_bin->enc_dict, i);
 		enc_dict_entry_header = enc_dict_entry->header;
-		elf_debug("%3d 0x%-8x 0x%-8x 0x%-8x %-10d 0x%-8x\n",
-			i, enc_dict_entry_header->d_machine,
+		snprintf(machine_str, sizeof(machine_str), "%d (%s)",
+			enc_dict_entry_header->d_machine, map_value(&enc_dict_machine_map,
+			enc_dict_entry_header->d_machine - 1));
+		elf_debug("%3d %-15s 0x%-8x 0x%-8x %-10d 0x%-8x\n",
+			i, machine_str,
 			enc_dict_entry_header->d_type,
 			enc_dict_entry_header->d_offset,
 			enc_dict_entry_header->d_size,
@@ -489,6 +558,21 @@ static void amd_bin_read_sections(struct amd_bin_t *amd_bin)
 				enc_dict_entry->sec_data_buffer.ptr = elf_file->buffer.ptr + section->header->sh_offset;
 				enc_dict_entry->sec_data_buffer.size = section->header->sh_size;
 				enc_dict_entry->sec_data_buffer.pos = 0;
+
+				////////////////
+				/*printf("======= Data section ===========\n");
+				int k;
+				struct elf_buffer_t *buffer = &enc_dict_entry->sec_data_buffer;
+				for (k = 0; k < buffer->size; k += 16) {
+					uint32_t *consts = (uint32_t *) (buffer + k);
+					printf("Constant %d:\n", k / 16);
+					printf("  x=%u\n", consts[0]);
+					printf("  y=%u\n", consts[1]);
+					printf("  z=%u\n", consts[2]);
+					printf("  w=%u\n", consts[3]);
+				}
+				printf("================================\n");*/
+				////////////////
 			} else if (!strcmp(section->name, ".symtab")) {
 				if (enc_dict_entry->sec_symtab_buffer.size)
 					fatal("%s: duplicated '.symtab' section", __FUNCTION__);
