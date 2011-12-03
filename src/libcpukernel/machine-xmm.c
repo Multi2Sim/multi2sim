@@ -370,7 +370,6 @@ void op_pshufd_xmm_xmmm128_imm8_impl()
 	isa_store_xmm((uint8_t *) dst);
 
 	x86_uinst_new(x86_uinst_xmm_shuf, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
-	isa_error("%s: not debugged", __FUNCTION__);
 }
 
 
