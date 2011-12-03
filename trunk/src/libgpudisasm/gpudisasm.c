@@ -938,7 +938,10 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 
 		} else if (amd_inst_is_token(fmt_str, "loop_idx", &len)) {
 			
-			dump_buf(buf_ptr, size_ptr, "i%d", loop_idx);
+			//dump_buf(buf_ptr, size_ptr, "i%d", loop_idx);
+			/* FIXME: what is this field? I think it is the CF_CONST value, but
+			 * needs to be checked with AMD's ISA dump. */
+			dump_buf(buf_ptr, size_ptr, "i%d", inst->words[1].cf_word1.cf_const);
 
 		} else if (amd_inst_is_token(fmt_str, "mark", &len)) {
 			
