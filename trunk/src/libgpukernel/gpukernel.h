@@ -77,6 +77,15 @@ struct amd_bin_enc_dict_entry_header_t
 };
 
 
+/* Constats embedded in the '.data' section */
+struct amd_bin_enc_dict_entry_consts_t
+{
+	float float_consts[256][4];
+	uint32_t int_consts[32][4];
+	uint32_t bool_consts[32];
+};
+
+
 /* Encoding dictionary entry */
 struct amd_bin_enc_dict_entry_t
 {
@@ -92,6 +101,9 @@ struct amd_bin_enc_dict_entry_t
 	struct elf_buffer_t sec_data_buffer;
 	struct elf_buffer_t sec_symtab_buffer;
 	struct elf_buffer_t sec_strtab_buffer;
+
+	/* Constants extract from '.data' section */
+	struct amd_bin_enc_dict_entry_consts_t *consts;
 
 	/* Info read from pt_notes */
 	int num_gpr_used;

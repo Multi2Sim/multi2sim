@@ -242,28 +242,39 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 		int data_segment_desc_count;
 		struct pt_note_data_segment_desc_t *data_segment_desc;
 
+		struct amd_bin_enc_dict_entry_consts_t *consts;
+		char const_value[MAX_STRING_SIZE];
+
 		int j;
 
 		/* Get number of entries */
+		consts = enc_dict_entry->consts;
 		assert(header->descsz % sizeof(struct pt_note_data_segment_desc_t) == 0);
 		data_segment_desc_count = header->descsz / sizeof(struct pt_note_data_segment_desc_t);
 		elf_debug("\tnote including data for constant buffers (%d entries)\n",
 				data_segment_desc_count);
 
 		/* Decode entries */
-		for (j = 0; j < data_segment_desc_count; j++) {
+		for (j = 0; j < data_segment_desc_count; j++)
+		{
 			data_segment_desc = desc + j * sizeof(struct pt_note_data_segment_desc_t);
-			elf_debug("\tdata_segment_desc[%d]: offset=0x%x, size=%d\n",
-				j, data_segment_desc->offset, data_segment_desc->size);
-
-			/* Dump constants - FIXME*/
-			/*for (k = 0; k < data_segment_desc->size; k += 4) {
-				uint32_t c;
-				float f;
-				c = * (uint32_t *) (cal_abi->data_buffer + data_segment_desc->offset * 16 + k);
-				f = * (float *) (cal_abi->data_buffer + data_segment_desc->offset * 16 + k);
-				elf_debug("constant[%02d] = 0x%08x, %gf\n", k / 4, c, f);
-			}*/
+			if (header->type == 5)
+				snprintf(const_value, sizeof(const_value), "{%g,%g,%g,%g}",
+					consts->float_consts[data_segment_desc->offset][0],
+					consts->float_consts[data_segment_desc->offset][1],
+					consts->float_consts[data_segment_desc->offset][2],
+					consts->float_consts[data_segment_desc->offset][3]);
+			else if (header->type == 6)
+				snprintf(const_value, sizeof(const_value), "{%u,%u,%u,%u}",
+					consts->int_consts[data_segment_desc->offset][0],
+					consts->int_consts[data_segment_desc->offset][1],
+					consts->int_consts[data_segment_desc->offset][2],
+					consts->int_consts[data_segment_desc->offset][3]);
+			else
+				snprintf(const_value, sizeof(const_value), "%d",
+					consts->bool_consts[data_segment_desc->offset]);
+			elf_debug("\tdata_segment_desc[%d]: offset=0x%x, size=%d, value=%s\n",
+				j, data_segment_desc->offset, data_segment_desc->size, const_value);
 		}
 		break;
 	}
@@ -519,6 +530,7 @@ static void amd_bin_read_segments(struct amd_bin_t *amd_bin)
 static void amd_bin_read_sections(struct amd_bin_t *amd_bin)
 {
 	struct elf_file_t *elf_file;
+	struct elf_buffer_t *buffer;
 
 	struct amd_bin_enc_dict_entry_t *enc_dict_entry;
 	struct elf_section_t *section;
@@ -546,46 +558,44 @@ static void amd_bin_read_sections(struct amd_bin_t *amd_bin)
 				pt_load_offset + pt_load_size);
 
 			/* Sections */
-			if (!strcmp(section->name, ".text")) {
+			if (!strcmp(section->name, ".text"))
+			{
 				if (enc_dict_entry->sec_text_buffer.size)
 					fatal("%s: duplicated '.text' section", __FUNCTION__);
 				enc_dict_entry->sec_text_buffer.ptr = elf_file->buffer.ptr + section->header->sh_offset;
 				enc_dict_entry->sec_text_buffer.size = section->header->sh_size;
 				enc_dict_entry->sec_text_buffer.pos = 0;
-			} else if (!strcmp(section->name, ".data")) {
-				if (enc_dict_entry->sec_data_buffer.size)
+			}
+			else if (!strcmp(section->name, ".data"))
+			{
+				buffer = &enc_dict_entry->sec_data_buffer;
+				if (buffer->size)
 					fatal("%s: duplicated '.data' section", __FUNCTION__);
-				enc_dict_entry->sec_data_buffer.ptr = elf_file->buffer.ptr + section->header->sh_offset;
-				enc_dict_entry->sec_data_buffer.size = section->header->sh_size;
-				enc_dict_entry->sec_data_buffer.pos = 0;
-
-				////////////////
-				/*printf("======= Data section ===========\n");
-				int k;
-				struct elf_buffer_t *buffer = &enc_dict_entry->sec_data_buffer;
-				for (k = 0; k < buffer->size; k += 16) {
-					uint32_t *consts = (uint32_t *) (buffer + k);
-					printf("Constant %d:\n", k / 16);
-					printf("  x=%u\n", consts[0]);
-					printf("  y=%u\n", consts[1]);
-					printf("  z=%u\n", consts[2]);
-					printf("  w=%u\n", consts[3]);
-				}
-				printf("================================\n");*/
-				////////////////
-			} else if (!strcmp(section->name, ".symtab")) {
+				buffer->ptr = elf_file->buffer.ptr + section->header->sh_offset;
+				buffer->size = section->header->sh_size;
+				buffer->pos = 0;
+				if (buffer->size != 4736)
+					fatal("%s: '.data' section expected to be 4736 bytes", __FUNCTION__);
+				enc_dict_entry->consts = buffer->ptr;
+			}
+			else if (!strcmp(section->name, ".symtab"))
+			{
 				if (enc_dict_entry->sec_symtab_buffer.size)
 					fatal("%s: duplicated '.symtab' section", __FUNCTION__);
 				enc_dict_entry->sec_symtab_buffer.ptr = elf_file->buffer.ptr + section->header->sh_offset;
 				enc_dict_entry->sec_symtab_buffer.size = section->header->sh_size;
 				enc_dict_entry->sec_symtab_buffer.pos = 0;
-			} else if (!strcmp(section->name, ".strtab")) {
+			}
+			else if (!strcmp(section->name, ".strtab"))
+			{
 				if (enc_dict_entry->sec_strtab_buffer.size)
 					fatal("%s: duplicated '.strtab' section", __FUNCTION__);
 				enc_dict_entry->sec_strtab_buffer.ptr = elf_file->buffer.ptr + section->header->sh_offset;
 				enc_dict_entry->sec_strtab_buffer.size = section->header->sh_size;
 				enc_dict_entry->sec_strtab_buffer.pos = 0;
-			} else {
+			}
+			else
+			{
 				fatal("%s: not recognized section name: '%s'",
 					__FUNCTION__, section->name);
 			}
