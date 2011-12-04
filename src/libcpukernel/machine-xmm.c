@@ -131,25 +131,45 @@ void op_movd_rm32_xmm_impl()
 
 void op_movdqa_xmm_xmmm128_impl()
 {
-	isa_error("%s: not implemented", __FUNCTION__);
+	uint8_t xmm[16];
+
+	isa_load_xmmm128(xmm);
+	isa_store_xmm(xmm);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
 void op_movdqa_xmmm128_xmm_impl()
 {
-	isa_error("%s: not implemented", __FUNCTION__);
+	uint8_t xmm[16];
+
+	isa_load_xmm(xmm);
+	isa_store_xmmm128(xmm);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
 
 
 void op_movdqu_xmm_xmmm128_impl()
 {
-	isa_error("%s: not implemented", __FUNCTION__);
+	uint8_t xmm[16];
+
+	isa_load_xmmm128(xmm);
+	isa_store_xmm(xmm);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 
 void op_movdqu_xmmm128_xmm_impl()
 {
-	isa_error("%s: not implemented", __FUNCTION__);
+	uint8_t xmm[16];
+
+	isa_load_xmm(xmm);
+	isa_store_xmmm128(xmm);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm128, 0, 0, 0);
 }
 
 
