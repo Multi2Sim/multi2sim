@@ -34,6 +34,8 @@ struct gpu_wavefront_t *gpu_wavefront_create()
 	wavefront = calloc(1, sizeof(struct gpu_wavefront_t));
 	wavefront->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * gpu_wavefront_size);
 	wavefront->pred = bit_map_create(gpu_wavefront_size);
+	/* FIXME: Remove once loop state is part of stack */
+	wavefront->loop_depth = 0;
 	return wavefront;
 }
 

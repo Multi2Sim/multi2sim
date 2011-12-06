@@ -176,11 +176,10 @@ void amd_inst_LOOP_END_impl()
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.pop_count, 0);
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.cf_const, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.cond, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.valid_pixel_mode, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
-
+ 
 	/* W0.addr: jump if any pixel is active */
 
 	/* FIXME: Update loop state and check if index is 0 */
@@ -193,10 +192,13 @@ void amd_inst_LOOP_END_impl()
 			debug_file(gpu_isa_debug_category));
 	}
 
+	/* Decrement remaining loop iterations */
+	--gpu_isa_wavefront->loop_iterations_remaining;
+
 	/* If any pixel is active, jump back */
 	active_count = bit_map_count_ones(gpu_isa_wavefront->active_stack,
 		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
-	if (active_count) {
+	if (active_count && gpu_isa_wavefront->loop_iterations_remaining != 0) {
 		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
 		return;
 	}
@@ -205,6 +207,12 @@ void amd_inst_LOOP_END_impl()
 
 	/* Pop stack once */
 	gpu_wavefront_stack_pop(gpu_isa_wavefront, 1);
+
+	/* FIXME: Get rid of this once loop state is pushed on the stack */
+	--gpu_isa_wavefront->loop_depth;
+	if(gpu_isa_wavefront->loop_depth != 0) {		
+		fatal("Unexpected loop depth (%d)", gpu_isa_wavefront->loop_depth);
+	}
 }
 #undef W0
 #undef W1
@@ -231,6 +239,12 @@ void amd_inst_LOOP_START_DX10_impl()
 
 	/* FIXME: Set up new loop state */
 
+	/* FIXME: Remove this once loop state is part of stack */
+	++gpu_isa_wavefront->loop_depth;
+	if(gpu_isa_wavefront->loop_depth > 1) {		
+		fatal("Nested loops not supported");
+	}
+
 	/* FIXME: Push active mask? */
 	gpu_wavefront_stack_push(gpu_isa_wavefront);///
 }
@@ -242,7 +256,26 @@ void amd_inst_LOOP_START_DX10_impl()
 #define W1  CF_WORD1
 void amd_inst_LOOP_START_NO_AL_impl()
 {
-	NOT_IMPL();
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.valid_pixel_mode, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.pop_count, 0);
+
+	/* FIXME: Remove this once loop state is part of stack */
+	++gpu_isa_wavefront->loop_depth;
+	if(gpu_isa_wavefront->loop_depth > 1) {		
+		fatal("Nested loops not supported");
+	}
+
+	/* Initialize the loop state for the wavefront */
+	gpu_isa_wavefront->loop_max_trip_count = 
+	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
+	gpu_isa_wavefront->loop_start = 
+	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
+	gpu_isa_wavefront->loop_step = 
+	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
+	gpu_isa_wavefront->loop_iterations_remaining = gpu_isa_wavefront->loop_max_trip_count;
+
+	gpu_wavefront_stack_push(gpu_isa_wavefront);
 }
 #undef W0
 #undef W1
@@ -1936,7 +1969,16 @@ void amd_inst_BFE_INT_impl() {
 
 
 void amd_inst_BFI_INT_impl() {
-	NOT_IMPL();
+
+	uint32_t src0, src1, src2, dst;
+
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
+	src2 = gpu_isa_read_op_src_int(2);
+
+	/* dst = (src1 & src0) | (src2 & -src0) */
+	dst = (src1 & src0) | (src2 & (0xffffffffU^src0));
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
@@ -2073,6 +2115,24 @@ void amd_inst_LDS_IDX_OP_impl()
 		break;
 	}	   
 
+	/* DS_INST_SHORT_WRITE: 1A1D SHORTWRITE (dst,src) : DS(dst) = src[15:0] */
+	case 19:
+	{
+		uint32_t src, dst;
+		src = op1;
+		dst = op0;
+
+		gpu_isa_enqueue_write_lds(dst, src, 2);
+
+		wavefront->local_mem_write = 1;
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 2; /* write */
+		work_item->local_mem_access_addr[0] = dst;
+		work_item->local_mem_access_size[0] = 2;
+		break;
+
+	}
+
 	/* DS_INST_READ_RET: 1A READ(dst) : OQA = DS(dst) */
 	case 50:
 	{
@@ -2118,26 +2178,31 @@ void amd_inst_LDS_IDX_OP_impl()
 	}
 
 
-	/* S_INST_BYTE_READ_RET: 1A BYTEREAD(dst) 
+	/* DS_INST_BYTE_READ_RET: 1A BYTEREAD(dst) 
 	 *    OQA=SignExtend(DS(dst)[7:0]) */
 	case 54:
 	{
 		char value;
-                int32_t *pvalue_se; 
+		int32_t *pvalue_se; 
 
 		mem_read(local_mem, op0, 1, &value);
 		pvalue_se = malloc(4);
 		*pvalue_se = value;
 		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_se);
 
-                break;
+		wavefront->local_mem_read = 1;
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 1; /* read */
+		work_item->local_mem_access_addr[0] = op0;
+		work_item->local_mem_access_size[0] = 1;
+		break;
 	}
 
 
-        /* DS_INST_UBYTE_READ_RET: 1A UBYTEREAD(dst) 
-         *    OQA={24'h0, DS(dst)[7:0]} */
-        case 55: 
-        {
+	/* DS_INST_UBYTE_READ_RET: 1A UBYTEREAD(dst) 
+	 *    OQA={24'h0, DS(dst)[7:0]} */
+	case 55: 
+	{
 		unsigned char value;
 		uint32_t *pvalue_24h0;
 
@@ -2146,9 +2211,54 @@ void amd_inst_LDS_IDX_OP_impl()
 		*pvalue_24h0 = value;
 		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_24h0);
 
+		wavefront->local_mem_read = 1;
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 1; /* read */
+		work_item->local_mem_access_addr[0] = op0;
+		work_item->local_mem_access_size[0] = 1;
 		break;
-        }
+	}
 
+	/* DS_INST_SHORT_READ_RET: 1A SHORTREAD(dst) 
+	 *    OQA=SignExtend({16'h0, DS(dst)[15:0]}) */
+	case 56: 
+	{
+		short value;
+		int32_t *pvalue_se;
+
+		mem_read(local_mem, op0, 2, &value);
+		pvalue_se = malloc(4);
+		*pvalue_se = value;
+		gpu_isa_debug("  t%d: %d (pvalue = %d)", gpu_isa_work_item->id, value, *pvalue_se);
+		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_se);
+
+		wavefront->local_mem_read = 1;
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 1; /* read */
+		work_item->local_mem_access_addr[0] = op0;
+		work_item->local_mem_access_size[0] = 2;
+		break;
+	}
+
+	/* DS_INST_USHORT_READ_RET: 1A USHORTREAD(dst) 
+	 *    OQA={16'h0, DS(dst)[15:0]} */
+	case 57: 
+	{
+		unsigned short value;
+		uint32_t *pvalue_16h0;
+
+		mem_read(local_mem, op0, 2, &value);
+		pvalue_16h0 = malloc(4);
+		*pvalue_16h0 = value;
+		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_16h0);
+
+		wavefront->local_mem_read = 1;
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 1; /* read */
+		work_item->local_mem_access_addr[0] = op0;
+		work_item->local_mem_access_size[0] = 2;
+		break;
+	}
 
 	default:
 		GPU_PARAM_NOT_SUPPORTED(W1.lds_op);
