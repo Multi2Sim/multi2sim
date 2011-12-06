@@ -793,6 +793,47 @@ int opencl_func_run(int code, unsigned int *args)
 		break;
 	}
 
+	
+	/* 1044 */
+	case OPENCL_FUNC_clGetEventInfo:
+	{
+		uint32_t param_name = args[1]; /* cl_event_info param_name */
+		uint32_t param_value = args[3]; /* void *param_value */
+
+		switch(param_name) {
+
+		case 0x11d0: /* CL_EVENT_COMMAND_QUEUE */
+			fatal("param_name CL_EVENT_COMMAND_QUEUE not supported for clGetEventInfo"); 
+			break;
+
+		case 0x11d1: /* CL_EVENT_COMMAND_TYPE */
+			fatal("param_name CL_EVENT_COMMAND_TYPE not supported for clGetEventInfo"); 
+			break;
+
+		case 0x11d2: /* CL_EVENT_REFERENCE_COUNT */
+			fatal("param_name CL_EVENT_REFERNCE_COUNT not supported for clGetEventInfo"); 
+			break;
+
+		case 0x11d3: /* CL_EVENT_COMMAND_EXECUTION_STATUS */
+		{
+			warning("clGetEventInfo always returns CL_COMPLETE");
+			int status = 0x0; /* CL_COMPLETE */;
+			mem_write(isa_mem, param_value, 4, &status);
+			break;
+		}
+
+		case 0x11d4: /* CL_EVENT_CONTEXT */
+			fatal("param_name CL_EVENT_CONTEXT not supported for clGetEventInfo"); 
+			break;
+
+		default:
+			fatal("invalid param_name to clGetEventInfo"); 
+			break;
+		}
+
+		break;
+	}
+
 
 	/* 1047 */
 	case OPENCL_FUNC_clReleaseEvent:
@@ -831,6 +872,16 @@ int opencl_func_run(int code, unsigned int *args)
 			param_value, param_value_size);
 		if (param_value_size_ret)
 			mem_write(isa_mem, param_value_size_ret, 4, &size_ret);
+		break;
+	}
+
+
+	/* 1051 */
+	case OPENCL_FUNC_clFlush:
+	{
+		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
+
+		opencl_debug("  command_queue=0x%x\n", command_queue);
 		break;
 	}
 
