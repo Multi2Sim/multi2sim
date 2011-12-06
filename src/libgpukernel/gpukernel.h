@@ -684,6 +684,14 @@ struct gpu_wavefront_t
 	/* Predicate mask */
 	struct bit_map_t *pred;  /* work_item_count elements */
 
+	/* Loop counters */
+	/* FIXME: Include this as part of the stack to handle nested loops */
+	int loop_depth;
+	int loop_max_trip_count;
+	int loop_start;
+	int loop_step;
+	int loop_iterations_remaining;
+
 	/* Flags updated during instruction execution */
 	unsigned int global_mem_read : 1;
 	unsigned int global_mem_write : 1;
