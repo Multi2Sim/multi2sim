@@ -210,9 +210,6 @@ void amd_inst_LOOP_END_impl()
 
 	/* FIXME: Get rid of this once loop state is pushed on the stack */
 	--gpu_isa_wavefront->loop_depth;
-	if(gpu_isa_wavefront->loop_depth != 0) {		
-		fatal("Unexpected loop depth (%d)", gpu_isa_wavefront->loop_depth);
-	}
 }
 #undef W0
 #undef W1
@@ -241,9 +238,6 @@ void amd_inst_LOOP_START_DX10_impl()
 
 	/* FIXME: Remove this once loop state is part of stack */
 	++gpu_isa_wavefront->loop_depth;
-	if(gpu_isa_wavefront->loop_depth > 1) {		
-		fatal("Nested loops not supported");
-	}
 
 	/* FIXME: Push active mask? */
 	gpu_wavefront_stack_push(gpu_isa_wavefront);///
