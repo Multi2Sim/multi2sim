@@ -975,7 +975,7 @@ void gpu_cache_handler_read(int event, void *data)
 			/* Current block is handled by an in-flight access, wait for it. */
 			gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u\n",
 				CYCLE, ID, gpu_cache->name, stack->addr);
-			gpu_cache_debug("%lld %lld wait why=\"in-flight\"\n",
+			gpu_cache_debug("%lld %lld wait why=\"in_flight\"\n",
 				CYCLE, ID);
 			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_READ);
 			return;
@@ -1184,11 +1184,21 @@ void gpu_cache_handler_write(int event, void *data)
 		stack->bank_index = stack->block_index % gpu_cache->bank_count;
 		stack->bank = GPU_CACHE_BANK_INDEX(gpu_cache, stack->bank_index);
 
-		/* If any write port in bank is processing the same tag starting
-		 * in the current cycle, the accesses are coalesced. */
-		for (i = 0; i < gpu_cache->write_port_count; i++) {
+		/* If any write port in bank is processing the same tag, there are two options:
+		 *   1) If the previous access started in the same cycle, it will be coalesced with the
+		 *      current access, assuming that they were issued simultaneously.
+		 *   2) If the previous access started in a previous cycle, the new access will
+		 *      wait until the previous access finishes, because there might be writes in
+		 *      between. */
+		for (i = 0; i < gpu_cache->write_port_count; i++)
+		{
+			/* Do what follows only if the port is locked and it is handling the same tag. */
 			port = GPU_CACHE_WRITE_PORT_INDEX(gpu_cache, stack->bank, i);
-			if (port->locked && port->lock_when == esim_cycle && port->stack->tag == stack->tag) {
+			if (!port->locked || port->stack->tag != stack->tag)
+				continue;
+
+			if (port->lock_when == esim_cycle)
+			{
 				gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
 					CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index);
 				stack->write_port_index = i;
@@ -1206,6 +1216,14 @@ void gpu_cache_handler_write(int event, void *data)
 				gpu_cache->writes++;
 				return;
 			}
+
+			/* Current block is handled by an in-flight access, wait for it. */
+			gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u\n",
+				CYCLE, ID, gpu_cache->name, stack->addr);
+			gpu_cache_debug("%lld %lld wait why=\"in_flight\"\n",
+				CYCLE, ID);
+			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_WRITE);
+			return;
 		}
 
 		/* Look for a free write port */
