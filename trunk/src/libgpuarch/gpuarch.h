@@ -37,7 +37,8 @@ extern int gpu_num_stream_cores;
 extern int gpu_num_compute_units;
 extern int gpu_num_registers;
 extern int gpu_register_alloc_size;
-extern enum gpu_register_alloc_granularity_enum {
+extern enum gpu_register_alloc_granularity_t
+{
 	gpu_register_alloc_wavefront,
 	gpu_register_alloc_work_group
 } gpu_register_alloc_granularity;
@@ -61,6 +62,7 @@ extern int gpu_alu_engine_pe_latency;
 
 extern int gpu_tex_engine_inst_mem_latency;
 extern int gpu_tex_engine_fetch_queue_size;
+extern int gpu_tex_engine_load_queue_size;
 
 extern struct gpu_t *gpu;
 
@@ -83,7 +85,8 @@ extern int gpu_stack_debug_category;
 
 
 /* Part of a GPU instruction specific for each work-item within wavefront. */
-struct gpu_work_item_uop_t {
+struct gpu_work_item_uop_t
+{
 	
 	/* For global memory accesses */
 	uint32_t global_mem_access_addr;
@@ -298,7 +301,7 @@ struct gpu_compute_unit_t
 		struct lnlist_t *fetch_queue;  /* Uops from fetch to decode stage */
 		int fetch_queue_length;  /* Number of bytes occupied in fetch queue */
 		struct gpu_uop_t *inst_buffer;  /* Uop from decode to read stage */
-		struct gpu_uop_t *write_buffer;  /* Uop from read to write stage */
+		struct lnlist_t *load_queue;  /* Uops from read to write stage */
 
 		/* Stats */
 		uint64_t wavefront_count;

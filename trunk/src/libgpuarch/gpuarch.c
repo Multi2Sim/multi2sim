@@ -111,6 +111,9 @@ char *gpu_config_help =
 	"      Latency of an access to the instruction memory in number of cycles.\n"
 	"  FetchQueueSize = <size> (Default = 32)\n"
 	"      Size in bytes of the fetch queue.\n"
+	"  LoadQueueSize = <size> (Default = 8)\n"
+	"      Size of the load queue in number of uops. This size is equal to the\n"
+	"      maximum number of load uops in flight.\n"
 	"\n";
 
 char *gpu_config_file_name = "";
@@ -124,7 +127,7 @@ int gpu_num_stream_cores = 16;
 int gpu_num_registers = 16384;
 int gpu_register_alloc_size = 32;
 char *gpu_register_alloc_granularity_str = "WorkGroup";
-enum gpu_register_alloc_granularity_enum gpu_register_alloc_granularity;
+enum gpu_register_alloc_granularity_t gpu_register_alloc_granularity;
 int gpu_max_work_groups_per_compute_unit = 8;
 int gpu_max_wavefronts_per_compute_unit = 32;
 
@@ -696,11 +699,16 @@ void gpu_config_read(void)
 		gpu_tex_engine_inst_mem_latency);
 	gpu_tex_engine_fetch_queue_size = config_read_int(gpu_config, section, "FetchQueueSize",
 		gpu_tex_engine_fetch_queue_size);
+	gpu_tex_engine_load_queue_size = config_read_int(gpu_config, section, "LoadQueueSize",
+		gpu_tex_engine_load_queue_size);
 	if (gpu_tex_engine_inst_mem_latency < 1)
-		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
+		fatal("%s: invalid value for %s.InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
 	if (gpu_tex_engine_fetch_queue_size < 16)
-		fatal("%s: the minimum value for %s->FetchQueueSize is 16.\n"
+		fatal("%s: the minimum value for %s.FetchQueueSize is 16.\n"
 			"This size corresponds to the 4 words comprising a TEX Evergreen instruction.\n%s",
+			gpu_config_file_name, section, err_note);
+	if (gpu_tex_engine_load_queue_size < 1)
+		fatal("%s: the minimum value for %s.LoadQueueSize is 1.\n%s",
 			gpu_config_file_name, section, err_note);
 	
 	/* Close GPU configuration file */
@@ -750,6 +758,7 @@ void gpu_config_dump(FILE *f)
 	fprintf(f, "[ Config.TEXEngine ]\n");
 	fprintf(f, "InstructionMemoryLatency = %d\n", gpu_tex_engine_inst_mem_latency);
 	fprintf(f, "FetchQueueSize = %d\n", gpu_tex_engine_fetch_queue_size);
+	fprintf(f, "LoadQueueSize = %d\n", gpu_tex_engine_load_queue_size);
 	fprintf(f, "\n");
 	
 	/* End of configuration */
