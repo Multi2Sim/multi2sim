@@ -55,6 +55,7 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 	/* Initialize TEX Engine */
 	compute_unit->tex_engine.fetch_queue = lnlist_create();
+	compute_unit->tex_engine.load_queue = lnlist_create();
 
 	/* List of mapped work-groups */
 	compute_unit->work_groups = calloc(gpu_max_work_groups_per_compute_unit, sizeof(void *));
@@ -106,11 +107,12 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	/* Text Engine - free uop in fetch queue, instruction buffer, write buffer. */
 	gpu_uop_list_free(compute_unit->tex_engine.fetch_queue);
 	gpu_uop_free(compute_unit->tex_engine.inst_buffer);
-	gpu_uop_free(compute_unit->tex_engine.write_buffer);
+	gpu_uop_list_free(compute_unit->tex_engine.load_queue);
 	gpu_uop_free(compute_unit->tex_engine.cf_uop);
 
 	/* TEX Engine - structures */
 	lnlist_free(compute_unit->tex_engine.fetch_queue);
+	lnlist_free(compute_unit->tex_engine.load_queue);
 
 	/* Compute unit */
 	free(compute_unit->work_groups);  /* List of mapped work-groups */

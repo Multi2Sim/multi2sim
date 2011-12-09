@@ -943,11 +943,22 @@ void gpu_cache_handler_read(int event, void *data)
 		stack->bank_index = stack->block_index % gpu_cache->bank_count;
 		stack->bank = GPU_CACHE_BANK_INDEX(gpu_cache, stack->bank_index);
 
-		/* If any read port in bank is processing the same tag starting
-		 * in the current cycle, the accesses are coalesced. */
-		for (i = 0; i < gpu_cache->read_port_count; i++) {
+		/* If any read port in bank is processing the same tag, there are two options:
+		 *   1) If the previous access started in the same cycle, it will be coalesced with the
+		 *      current access, assuming that they were issued simultaneously.
+		 *   2) If the previous access started in a previous cycle, the new access will
+		 *      wait until the previous access finishes, because there might be writes in
+		 *      between. */
+		for (i = 0; i < gpu_cache->read_port_count; i++)
+		{
+			/* Do something if the port is locked and it is handling the same tag. */
 			port = GPU_CACHE_READ_PORT_INDEX(gpu_cache, stack->bank, i);
-			if (port->locked && port->lock_when == esim_cycle && port->stack->tag == stack->tag) {
+			if (!port->locked || port->stack->tag != stack->tag)
+				continue;
+
+			/* If current and previous access are in the same cycle, coalesce. */
+			if (port->lock_when == esim_cycle)
+			{
 				gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
 					CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index);
 				stack->read_port_index = i;
@@ -958,9 +969,16 @@ void gpu_cache_handler_read(int event, void *data)
 
 				/* Stats */
 				gpu_cache->reads++;
-
 				return;
 			}
+
+			/* Current block is handled by an in-flight access, wait for it. */
+			gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u\n",
+				CYCLE, ID, gpu_cache->name, stack->addr);
+			gpu_cache_debug("%lld %lld wait why=\"in-flight\"\n",
+				CYCLE, ID);
+			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_READ);
+			return;
 		}
 
 		/* Look for a free read port */
@@ -990,29 +1008,33 @@ void gpu_cache_handler_read(int event, void *data)
 		port->lock_when = esim_cycle;
 		port->stack = stack;
 		gpu_cache->locked_read_port_count++;
-		gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d\n",
-			CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index, stack->read_port_index);
 	
 		/* Stats */
 		gpu_cache->reads++;
 		gpu_cache->effective_reads++;
 
 		/* If there is no cache, assume hit */
-		if (!gpu_cache->cache) {
+		if (!gpu_cache->cache)
+		{
 			esim_schedule_event(EV_GPU_CACHE_READ_UNLOCK, stack, gpu_cache->latency);
 
 			/* Stats */
 			gpu_cache->effective_read_hits++;
+			gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d\n",
+				CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index, stack->read_port_index);
 			return;
 		}
 
 		/* Get block from cache, consuming 'latency' cycles. */
 		stack->hit = cache_find_block(gpu_cache->cache, stack->tag,
 			&stack->set, &stack->way, &stack->status);
-		if (stack->hit) {
+		if (stack->hit)
+		{
 			gpu_cache->effective_read_hits++;
 			esim_schedule_event(EV_GPU_CACHE_READ_UNLOCK, stack, gpu_cache->latency);
-		} else {
+		}
+		else
+		{
 			stack->way = cache_replace_block(gpu_cache->cache, stack->set);
 			cache_get_block(gpu_cache->cache, stack->set, stack->way, NULL, &stack->status);
 			if (stack->status)
@@ -1020,6 +1042,10 @@ void gpu_cache_handler_read(int event, void *data)
 			esim_schedule_event(EV_GPU_CACHE_READ_REQUEST, stack, gpu_cache->latency);
 		}
 
+		/* Debug */
+		gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d set=%d way=%d\n",
+			CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index, stack->read_port_index,
+			stack->set, stack->way);
 		return;
 	}
 

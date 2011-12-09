@@ -24,23 +24,25 @@
 /* Configuration parameters */
 int gpu_tex_engine_inst_mem_latency = 2;  /* Instruction memory latency */
 int gpu_tex_engine_fetch_queue_size = 32;  /* Number of bytes */
+int gpu_tex_engine_load_queue_size = 8;  /* Maximum number of in-flight global memory reads */
 
 
 void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_uop_t *uop;
 
-	/* Get instruction at the write buffer. */
-	uop = compute_unit->tex_engine.write_buffer;
+	/* Get instruction at the head of the load queue. */
+	lnlist_head(compute_unit->tex_engine.load_queue);
+	uop = lnlist_get(compute_unit->tex_engine.load_queue);
 	if (!uop)
 		return;
 	
-	/* If memory reads did not complete, done. */
+	/* If the memory read did not complete, done. */
 	if (uop->global_mem_witness)
 		return;
 	
-	/* Clear write buffer, and finish instruction. */
-	compute_unit->tex_engine.write_buffer = NULL;
+	/* Extract from load queue. */
+	lnlist_remove(compute_unit->tex_engine.load_queue);
 
 	/* Debug */
 	gpu_pipeline_debug("tex a=\"write\" "
@@ -77,15 +79,14 @@ void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 	if (!uop)
 		return;
 	
-	/* If there is no space in write buffer, an uop is currently
-	 * being processed in the memory hierarchy, done. */
-	if (compute_unit->tex_engine.write_buffer)
+	/* If there is no space in the load queue, done. */
+	if (lnlist_count(compute_unit->tex_engine.load_queue) >= gpu_tex_engine_load_queue_size)
 		return;
 	
-	/* Move uop from instruction buffer into write buffer */
-	assert(!compute_unit->tex_engine.write_buffer);
+	/* Extract uop from instruction buffer and insert into load queue. */
 	compute_unit->tex_engine.inst_buffer = NULL;
-	compute_unit->tex_engine.write_buffer = uop;
+	lnlist_out(compute_unit->tex_engine.load_queue);
+	lnlist_insert(compute_unit->tex_engine.load_queue, uop);
 
 	/* Global memory read  */
 	if (uop->global_mem_read) {
