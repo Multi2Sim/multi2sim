@@ -1962,7 +1962,8 @@ void amd_inst_BFE_INT_impl() {
 }
 
 
-void amd_inst_BFI_INT_impl() {
+void amd_inst_BFI_INT_impl()
+{
 
 	uint32_t src0, src1, src2, dst;
 
@@ -1970,8 +1971,9 @@ void amd_inst_BFI_INT_impl() {
 	src1 = gpu_isa_read_op_src_int(1);
 	src2 = gpu_isa_read_op_src_int(2);
 
-	/* dst = (src1 & src0) | (src2 & -src0) */
-	dst = (src1 & src0) | (src2 & (0xffffffffU^src0));
+	/* Documentation says: dst = (src1 & src0) | (src2 & -src0)
+	 * Though probably it means '~src0'. */
+	dst = (src1 & src0) | (src2 & ~src0);
 	gpu_isa_enqueue_write_dest(dst);
 }
 
