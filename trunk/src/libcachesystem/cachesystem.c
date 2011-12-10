@@ -187,7 +187,7 @@ static struct ccache_access_t *ccache_find_access(struct ccache_t *ccache,
 
 
 struct ccache_access_t *ccache_start_access(struct ccache_t *ccache,
-	enum cache_access_kind_enum cache_access_kind, uint32_t addr,
+	enum cache_access_kind_t cache_access_kind, uint32_t addr,
 	struct lnlist_t *eventq, void *eventq_item)
 {
 	struct ccache_access_t *access, *alias;
@@ -618,7 +618,7 @@ void cache_system_init(int _cores, int _threads)
 	struct ccache_t *ccache;
 	struct node_t *node;
 	char buf[200];
-	enum cache_policy_enum policy;
+	enum cache_policy_t policy;
 	char *policy_str;
 
 	/* Try to open report file */
@@ -1169,7 +1169,7 @@ void cache_system_done()
 
 /* Return the entry point in the cache hierarchy depending on the core-thread pair
  * and the type of block accessed (if data=1, data cache, otherwise, instruction cache) */
-static struct ccache_t *cache_system_get_ccache(int core, int thread, enum cache_kind_enum cache_kind)
+static struct ccache_t *cache_system_get_ccache(int core, int thread, enum cache_kind_t cache_kind)
 {
 	int index;
 	assert(core < cores && thread < threads);
@@ -1179,7 +1179,7 @@ static struct ccache_t *cache_system_get_ccache(int core, int thread, enum cache
 
 
 /* Return the associated itlb/dtlb */
-static struct tlb_t *cache_system_get_tlb(int core, int thread, enum cache_kind_enum cache_kind)
+static struct tlb_t *cache_system_get_tlb(int core, int thread, enum cache_kind_t cache_kind)
 {
 	int index;
 	assert(core < cores && thread < threads);
@@ -1188,7 +1188,7 @@ static struct tlb_t *cache_system_get_tlb(int core, int thread, enum cache_kind_
 }
 
 
-static void cache_system_dump_route(int core, int thread, enum cache_kind_enum kind, FILE *f)
+static void cache_system_dump_route(int core, int thread, enum cache_kind_t kind, FILE *f)
 {
 	struct ccache_t *ccache;
 
@@ -1218,7 +1218,7 @@ void cache_system_dump(FILE *f)
 
 
 int cache_system_pending_address(int core, int thread,
-	enum cache_kind_enum cache_kind, uint32_t addr)
+	enum cache_kind_t cache_kind, uint32_t addr)
 {
 	struct ccache_t *ccache;
 	ccache = cache_system_get_ccache(core, thread, cache_kind);
@@ -1227,7 +1227,7 @@ int cache_system_pending_address(int core, int thread,
 
 
 int cache_system_pending_access(int core, int thread,
-	enum cache_kind_enum cache_kind, uint64_t access)
+	enum cache_kind_t cache_kind, uint64_t access)
 {
 	struct ccache_t *ccache;
 	ccache = cache_system_get_ccache(core, thread, cache_kind);
@@ -1236,7 +1236,7 @@ int cache_system_pending_access(int core, int thread,
 
 
 int cache_system_block_size(int core, int thread,
-	enum cache_kind_enum cache_kind)
+	enum cache_kind_t cache_kind)
 {
 	struct ccache_t *ccache;
 	ccache = cache_system_get_ccache(core, thread, cache_kind);
@@ -1244,8 +1244,8 @@ int cache_system_block_size(int core, int thread,
 }
 
 
-int cache_system_can_access(int core, int thread, enum cache_kind_enum cache_kind,
-	enum cache_access_kind_enum cache_access_kind, uint32_t addr)
+int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
+	enum cache_access_kind_t cache_access_kind, uint32_t addr)
 {
 	struct ccache_t *ccache;
 	struct ccache_access_t *access;
@@ -1272,8 +1272,8 @@ int cache_system_can_access(int core, int thread, enum cache_kind_enum cache_kin
 }
 
 
-static uint64_t cache_system_access(int core, int thread, enum cache_kind_enum cache_kind,
-	enum cache_access_kind_enum cache_access_kind, uint32_t addr,
+static uint64_t cache_system_access(int core, int thread, enum cache_kind_t cache_kind,
+	enum cache_access_kind_t cache_access_kind, uint32_t addr,
 	struct lnlist_t *eventq, void *eventq_item)
 {
 	struct cache_system_stack_t *newstack;
@@ -1309,7 +1309,7 @@ static uint64_t cache_system_access(int core, int thread, enum cache_kind_enum c
 }
 
 
-uint64_t cache_system_write(int core, int thread, enum cache_kind_enum cache_kind,
+uint64_t cache_system_write(int core, int thread, enum cache_kind_t cache_kind,
 	uint32_t addr, struct lnlist_t *eventq, void *eventq_item)
 {
 	assert(cache_kind == cache_kind_data);
@@ -1320,7 +1320,7 @@ uint64_t cache_system_write(int core, int thread, enum cache_kind_enum cache_kin
 }
 
 
-uint64_t cache_system_read(int core, int thread, enum cache_kind_enum cache_kind,
+uint64_t cache_system_read(int core, int thread, enum cache_kind_t cache_kind,
 	uint32_t addr, struct lnlist_t *eventq, void *eventq_item)
 {
 	assert(cache_system_can_access(core, thread, cache_kind,
