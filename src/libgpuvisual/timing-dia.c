@@ -471,19 +471,11 @@ static gboolean timing_dia_scroll_event(GtkWidget *range, GtkScrollType scroll, 
 
 static gboolean timing_window_delete_event(GtkWidget *widget, GdkEvent *event, struct vgpu_compute_unit_t *compute_unit)
 {
-	/* Toggle button */
+	/* Toggle button. The evevents that this triggers will take car of
+	 * destroying the window and freeing structures. */
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(compute_unit->timing_dia_toggle_button), FALSE);
 
-	/* Free timing diagram */
-	if (compute_unit->timing_dia) {
-		free(compute_unit->timing_dia);
-		compute_unit->timing_dia = NULL;
-	}
-
-	/* Instruction list */
-	vgpu_uop_list_free(compute_unit->timing_inst_uops);
-
-	/* Destroy window */
+	/* Don't destroy the window yet */
 	return TRUE;
 }
 
@@ -634,8 +626,19 @@ void timing_dia_window_show(struct vgpu_compute_unit_t *compute_unit)
 
 void timing_dia_window_hide(struct vgpu_compute_unit_t *compute_unit)
 {
+	assert(compute_unit->timing_inst_uops);
 	assert(compute_unit->timing_dia_active);
+	assert(compute_unit->timing_window);
+	assert(compute_unit->timing_dia);
+
+	/* Destroy window */
 	gtk_widget_destroy(compute_unit->timing_window);
+
+	/* Free structures */
+	free(compute_unit->timing_dia);
+	vgpu_uop_list_free(compute_unit->timing_inst_uops);
+	compute_unit->timing_dia = NULL;
 	compute_unit->timing_window = NULL;
+	compute_unit->timing_inst_uops = NULL;
 	compute_unit->timing_dia_active = 0;
 }
