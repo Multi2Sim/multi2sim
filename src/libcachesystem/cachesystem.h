@@ -34,9 +34,12 @@
 #include <lnlist.h>
 
 
+
+
 /*
  * Global variables
  */
+
 
 extern char *cache_system_config_help;
 
@@ -45,7 +48,12 @@ extern char *cache_system_config_help;
 #define PTR_ASSIGN(PTR, VALUE) if (PTR) *(PTR) = (VALUE)
 
 
-/* Directory */
+
+
+/*
+ * Directory
+ */
+
 
 struct dir_lock_t {
 	int lock;
@@ -99,7 +107,9 @@ void dir_unlock(struct dir_t *dir, int x, int y);
 
 
 
-/* Memory Management Unit */
+/*
+ * Memory Management Unit
+ */
 
 extern uint32_t mmu_page_size;
 extern uint32_t mmu_page_mask;
@@ -114,22 +124,27 @@ int mmu_valid_phaddr(uint32_t phaddr);
 
 
 
-/* Cache Memory */
+/*
+ * Cache Memory
+ */
 
-enum cache_access_kind_enum {
+enum cache_access_kind_t
+{
 	cache_access_kind_read = 0,
 	cache_access_kind_write
 };
 
 extern struct string_map_t cache_policy_map;
-enum cache_policy_enum {
+enum cache_policy_t
+{
 	cache_policy_invalid = 0,  /* for parsing */
 	cache_policy_lru,
 	cache_policy_fifo,
 	cache_policy_random
 };
 
-struct cache_blk_t {
+struct cache_blk_t
+{
 	struct cache_blk_t *way_next;
 	struct cache_blk_t *way_prev;
 	uint32_t tag, transient_tag;
@@ -137,17 +152,19 @@ struct cache_blk_t {
 	int status;
 };
 
-struct cache_set_t {
+struct cache_set_t
+{
 	struct cache_blk_t *way_head;
 	struct cache_blk_t *way_tail;
 	struct cache_blk_t *blks;
 };
 
-struct cache_t {
+struct cache_t
+{
 	uint32_t nsets;
 	uint32_t bsize;
 	uint32_t assoc;
-	enum cache_policy_enum policy;
+	enum cache_policy_t policy;
 
 	struct cache_set_t *sets;
 	uint32_t bmask;
@@ -156,7 +173,7 @@ struct cache_t {
 
 
 struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc,
-	enum cache_policy_enum policy);
+	enum cache_policy_t policy);
 void cache_free(struct cache_t *cache);
 
 int cache_log2(uint32_t x);
@@ -175,7 +192,9 @@ void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, 
 
 
 
-/* MOESI Protocol */
+/*
+ * MOESI Protocol
+ */
 
 #define cache_debug(...) debug(cache_debug_category, __VA_ARGS__)
 extern int cache_debug_category;
@@ -247,7 +266,8 @@ enum {
 	moesi_status_shared
 };
 
-struct moesi_stack_t {
+struct moesi_stack_t
+{
 	uint64_t id;
 	struct ccache_t *ccache, *target, *except;
 	uint32_t addr, set, way, tag;
@@ -282,10 +302,13 @@ void moesi_stack_return(struct moesi_stack_t *stack);
 
 
 
-/* Coherent Cache */
+/*
+ * Coherent Cache
+ */
 
-struct ccache_access_t {
-	enum cache_access_kind_enum cache_access_kind;  /* Read or write */
+struct ccache_access_t
+{
+	enum cache_access_kind_t cache_access_kind;  /* Read or write */
 	uint32_t address;  /* Block address */
 	uint64_t id;  /* Access identifier */
 	struct lnlist_t *eventq;  /* Event queue to modify when access finishes */
@@ -293,8 +316,8 @@ struct ccache_access_t {
 	struct ccache_access_t *next;  /* Alias (same address/access, but different eventq_item */
 };
 
-struct ccache_t {
-	
+struct ccache_t
+{
 	/* Parameters */
 	char name[100];
 	int loid;  /* ID in the low interconnect */
@@ -354,10 +377,13 @@ struct dir_lock_t *ccache_get_dir_lock(struct ccache_t *ccache,
 
 
 
-/* Tlb */
 
-struct tlb_t {
-	
+/*
+ * TLB
+ */
+
+struct tlb_t
+{
 	/* Parameters */
 	char name[100];
 	int hitlat;
@@ -376,7 +402,9 @@ void tlb_free(struct tlb_t *tlb);
 
 
 
-/* Cache System */
+/*
+ * Cache System
+ */
 
 extern char *cache_system_config_file_name;
 extern char *cache_system_report_file_name;
@@ -389,20 +417,23 @@ extern int cache_max_block_size;
 
 extern struct ccache_t *main_memory;
 
-enum cache_kind_enum {
+enum cache_kind_t
+{
 	cache_kind_inst,
 	cache_kind_data
 };
 
-enum tlb_kind_enum {
+enum tlb_kind_t
+{
 	tlb_kind_data = 0,
 	tlb_kind_inst
 };
 
-struct cache_system_stack_t {
+struct cache_system_stack_t
+{
 	int core, thread;
-	enum cache_kind_enum cache_kind;
-	enum cache_access_kind_enum cache_access_kind;
+	enum cache_kind_t cache_kind;
+	enum cache_access_kind_t cache_access_kind;
 	uint32_t addr;
 	int pending;
 	struct lnlist_t *eventq;
@@ -413,6 +444,7 @@ struct cache_system_stack_t {
 };
 
 extern struct repos_t *cache_system_stack_repos;
+
 struct cache_system_stack_t *cache_system_stack_create(int core, int thread, uint32_t addr,
 	int retevent, void *retstack);
 void cache_system_stack_return(struct cache_system_stack_t *stack);
@@ -432,23 +464,23 @@ void cache_system_dump(FILE *f);
 /* Return block size of the first cache when accessing the cache system
  * by a given core-thread and cache kind. */
 int cache_system_block_size(int core, int thread,
-	enum cache_kind_enum cache_kind);
+	enum cache_kind_t cache_kind);
 
 /* Return true if cache system can be accesses. */
-int cache_system_can_access(int core, int thread, enum cache_kind_enum cache_kind,
-	enum cache_access_kind_enum cache_access_kind, uint32_t addr);
+int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
+	enum cache_access_kind_t cache_access_kind, uint32_t addr);
 
 /* Return true if the access to address addr or with identifier 'access'
  * has completed. Parameter cache_kind must be dl1 or il1. */
 int cache_system_pending_address(int core, int thread,
-	enum cache_kind_enum cache_kind, uint32_t addr);
+	enum cache_kind_t cache_kind, uint32_t addr);
 int cache_system_pending_access(int core, int thread,
-	enum cache_kind_enum cache_kind, uint64_t access);
+	enum cache_kind_t cache_kind, uint64_t access);
 
 /* Functions to access cache system */
-uint64_t cache_system_read(int core, int thread, enum cache_kind_enum cache_kind,
+uint64_t cache_system_read(int core, int thread, enum cache_kind_t cache_kind,
 	uint32_t addr, struct lnlist_t *eventq, void *item);
-uint64_t cache_system_write(int core, int thread, enum cache_kind_enum cache_kind,
+uint64_t cache_system_write(int core, int thread, enum cache_kind_t cache_kind,
 	uint32_t addr, struct lnlist_t *eventq, void *eventq_item);
 
 
