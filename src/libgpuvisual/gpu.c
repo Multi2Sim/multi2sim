@@ -369,6 +369,10 @@ struct vgpu_compute_unit_t *vgpu_compute_unit_create(struct vgpu_t *gpu, int id)
 
 void vgpu_compute_unit_free(struct vgpu_compute_unit_t *compute_unit)
 {
+	if (compute_unit->timing_dia_active)
+		timing_dia_window_hide(compute_unit);
+	if (compute_unit->block_dia_active)
+		block_dia_window_hide(compute_unit);
 	list_free(compute_unit->work_group_list);
 	vgpu_uop_list_free(compute_unit->uop_list);
 	free(compute_unit);
