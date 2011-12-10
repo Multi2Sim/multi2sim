@@ -235,23 +235,24 @@ void gpu_cache_config_read(void)
 		else if (!strncasecmp(section, "Net ", 4))
 			gpu->network_count++;
 	}
-	if (!gpu->gpu_cache_count)
-		fatal("%s: no cache defined.\n%s", gpu_cache_config_file_name, err_note);
-	if (!gpu->network_count)
-		fatal("%s: no network defined.\n%s", gpu_cache_config_file_name, err_note);
 	if (!config_section_exists(config, "GlobalMemory"))
 		fatal("%s: section [ GlobalMemory ] is missing\n%s", gpu_cache_config_file_name, err_note);
+	if (!gpu->gpu_cache_count)
+		fatal("%s: no cache defined.\n%s", gpu_cache_config_file_name, err_note);
 	gpu->gpu_caches = calloc(gpu->gpu_cache_count, sizeof(void *));
-	gpu->networks = calloc(gpu->network_count, sizeof(void *));
+	if (gpu->network_count)
+		gpu->networks = calloc(gpu->network_count, sizeof(void *));
 	gpu_cache_debug("gpu_caches: array of %d caches allocated\n", gpu->gpu_cache_count);
 	gpu_cache_debug("networks: array of %d networks allocated\n", gpu->network_count);
 	
 	/* Create networks */
 	gpu_cache_debug("creating networks:");
 	curr = 0;
-	for (section = config_section_first(config); section; section = config_section_next(config)) {
+	for (section = config_section_first(config); section; section = config_section_next(config))
+	{
 		if (strncasecmp(section, "Net ", 4))
 			continue;
+		assert(gpu->networks);
 		net = net_create(section + 4);
 		gpu_cache_debug(" '%s'", net->name);
 		gpu->networks[curr++] = net;
@@ -373,10 +374,14 @@ void gpu_cache_config_read(void)
 	/* Global memory */
 	gpu_cache_debug("creating global memory\n");
 	section = "GlobalMemory";
-	sprintf(buf, "Net %s", config_read_string(config, section, "HiNet", ""));
-	config_section_enforce(config, buf);
 	config_var_enforce(config, section, "Latency");
 	config_var_enforce(config, section, "BlockSize");
+	value = config_read_string(config, section, "HiNet", "");
+	if (*value)
+	{
+		sprintf(buf, "Net %s", value);
+		config_section_enforce(config, buf);
+	}
 
 	/* Global memory - read parameters */
 	block_size = config_read_int(config, section, "BlockSize", 64);
@@ -434,7 +439,8 @@ void gpu_cache_config_read(void)
 		if (compute_unit_id < 0)
 			fatal("%s: node '%s': invalid value for variable 'ComputeUnit'.\n%s",
 				gpu_cache_config_file_name, node_name, err_note);
-		if (compute_unit_id >= gpu_num_compute_units) {
+		if (compute_unit_id >= gpu_num_compute_units)
+		{
 			warning("%s: node '%s': section ignored.\n"
 				"\tThis entry in the file will be ignored, because the value for variable\n"
 				"\t'ComputeUnit' (%d) refers to a non-existent compute unit (the number of\n"
@@ -450,9 +456,12 @@ void gpu_cache_config_read(void)
 		if (!*value)
 			fatal("%s: node '%s': variable 'DataCache' not specified.\n%s",
 				gpu_cache_config_file_name, node_name, err_note);
-		if (!strcasecmp(value, "GlobalMemory")) {
+		if (!strcasecmp(value, "GlobalMemory"))
+		{
 			compute_unit->data_cache = gpu->global_memory;
-		} else {
+		}
+		else
+		{
 			sprintf(buf, "Cache %s", value);
 			if (!config_section_exists(config, buf))
 				fatal("%s: node '%s': invalid cache name for variable 'DataCache'.\n%s",
@@ -491,7 +500,8 @@ void gpu_cache_config_read(void)
 	gpu_cache_debug("\n");
 
 	/* Check that all networks got assigned a lower node. */
-	for (curr = 0; curr < gpu->network_count; curr++) {
+	for (curr = 0; curr < gpu->network_count; curr++)
+	{
 		net = gpu->networks[curr];
 		assert(net->node_count <= 1);
 		if (!net->node_count)
@@ -501,7 +511,8 @@ void gpu_cache_config_read(void)
 
 	/* Add upper caches to networks. Update 'gpu_cache_next' attributes for caches. */
 	gpu_cache_debug("adding upper caches to networks:");
-	for (curr = 0; curr < gpu->gpu_cache_count; curr++) {
+	for (curr = 0; curr < gpu->gpu_cache_count; curr++)
+	{
 		gpu_cache = gpu->gpu_caches[curr];
 		net = gpu_cache->net_lo;
 		if (!net)
@@ -653,7 +664,8 @@ void gpu_cache_done(void)
 	/* Free networks */
 	for (i = 0; i < gpu->network_count; i++)
 		net_free(gpu->networks[i]);
-	free(gpu->networks);
+	if (gpu->networks)
+		free(gpu->networks);
 
 	/* GPU cache stack repository */
 	repos_free(gpu_cache_stack_repos);
