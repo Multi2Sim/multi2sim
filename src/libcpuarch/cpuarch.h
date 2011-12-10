@@ -108,20 +108,6 @@ extern int cpu_commit_width;
 
 
 /*
- * Memory Management Unit
- */
-
-struct mm_t;
-
-struct mm_t *mm_create();
-void mm_free(struct mm_t *mm);
-void mm_translate(struct mm_t *mm, int ctx, uint32_t vtl_addr, uint32_t *phaddr);
-int mm_rtranslate(struct mm_t *mm, uint32_t phaddr, int *ctx, uint32_t *vtladdr);
-
-
-
-
-/*
  * Micro Operations
  */
 
