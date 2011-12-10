@@ -212,7 +212,7 @@ void gpu_cache_config_read(void)
 	int sets, assoc, block_size, latency;
 	int bank_count, read_port_count, write_port_count;
 	char *policy_str;
-	enum cache_policy_enum policy;
+	enum cache_policy_t policy;
 
 	int compute_unit_id;
 	struct gpu_compute_unit_t *compute_unit;

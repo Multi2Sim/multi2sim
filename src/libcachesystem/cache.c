@@ -90,7 +90,7 @@ static void cache_update_waylist(struct cache_set_t *set,
 
 
 struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc,
-	enum cache_policy_enum policy)
+	enum cache_policy_t policy)
 {
 	struct cache_t *cache;
 	struct cache_blk_t *blk;
