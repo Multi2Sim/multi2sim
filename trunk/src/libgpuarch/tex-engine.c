@@ -255,7 +255,9 @@ void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 void gpu_tex_engine_run(struct gpu_compute_unit_t *compute_unit)
 {
 	/* If no wavefront to run, avoid entering loop */
-	/* FIXME - add support for this condition */
+	if (!lnlist_count(compute_unit->tex_engine.pending_queue) &&
+		!lnlist_count(compute_unit->tex_engine.finished_queue))
+		return;
 
 	/* TEX Engine stages */
 	gpu_tex_engine_write(compute_unit);
