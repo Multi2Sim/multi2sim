@@ -46,13 +46,13 @@ void gpu_work_group_free(struct gpu_work_group_t *work_group)
 }
 
 
-int gpu_work_group_get_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status)
+int gpu_work_group_get_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status)
 {
 	return (work_group->status & status) > 0;
 }
 
 
-void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status)
+void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status)
 {
 	struct gpu_ndrange_t *ndrange = work_group->ndrange;
 
@@ -72,7 +72,7 @@ void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_wor
 }
 
 
-void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status)
+void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status)
 {
 	struct gpu_ndrange_t *ndrange = work_group->ndrange;
 

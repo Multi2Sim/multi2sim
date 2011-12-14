@@ -34,7 +34,7 @@ uint64_t gpu_max_cycles = 0;
 uint64_t gpu_max_inst = 0;
 int gpu_max_kernels = 0;
 
-enum gpu_sim_kind_enum gpu_sim_kind = gpu_sim_kind_functional;
+enum gpu_sim_kind_t gpu_sim_kind = gpu_sim_kind_functional;
 
 char *gpu_opencl_binary_name = "";
 char *gpu_kernel_report_file_name = "";
