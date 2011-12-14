@@ -544,15 +544,21 @@ void vgpu_uop_info_popup(void *item)
 		"Assembly:\n\n");
 
 	/* Instruction name */
-	if (uop->engine == VGPU_ENGINE_CF) {
+	if (uop->engine == VGPU_ENGINE_CF)
+	{
 		cursor += snprintf(cursor, size - (cursor - buffer),
 			"   <span color=\"darkgreen\"><b>%s</b></span>\n", uop->name);
-	} else if (uop->engine == VGPU_ENGINE_TEX) {
+	}
+	else if (uop->engine == VGPU_ENGINE_TEX)
+	{
 		cursor += snprintf(cursor, size - (cursor - buffer),
 			"   <span color=\"blue\"><b>%s</b></span>\n", uop->name);
-	} else {
-		char vliw_slot_label[5] = { 'x', 'y', 'z', 't', 'w' };
-		for (i = 0; i < 5; i++) {
+	}
+	else
+	{
+		char vliw_slot_label[5] = { 'x', 'y', 'z', 'w', 't' };
+		for (i = 0; i < 5; i++)
+		{
 			if (!uop->vliw_slot[i][0])
 				continue;
 			cursor += snprintf(cursor, size - (cursor - buffer),

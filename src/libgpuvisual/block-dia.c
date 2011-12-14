@@ -225,6 +225,7 @@ void block_dia_window_show(struct vgpu_compute_unit_t *compute_unit)
 
 	/* Show */
 	gtk_widget_show_all(block_dia_window);
+	block_dia_window_refresh(compute_unit);
 }
 
 
