@@ -37,7 +37,8 @@
  * Global variables
  */
 
-extern enum gpu_sim_kind_enum {
+extern enum gpu_sim_kind_t
+{
 	gpu_sim_kind_functional,
 	gpu_sim_kind_detailed
 } gpu_sim_kind;
@@ -149,7 +150,8 @@ extern int opencl_debug_category;
 #define OPENCL_MAX_ARGS  14
 
 /* An enumeration of the OpenCL functions */
-enum opencl_func_enum {
+enum opencl_func_t
+{
 #define DEF_OPENCL_FUNC(_name, _argc) OPENCL_FUNC_##_name,
 #include "opencl.dat"
 #undef DEF_OPENCL_FUNC
@@ -167,7 +169,8 @@ int opencl_func_run(int code, unsigned int *args);
 
 /* OpenCL objects */
 
-enum opencl_obj_enum {
+enum opencl_obj_t
+{
 	OPENCL_OBJ_PLATFORM = 1,
 	OPENCL_OBJ_DEVICE,
 	OPENCL_OBJ_CONTEXT,
@@ -182,9 +185,9 @@ extern struct lnlist_t *opencl_object_list;
 
 void opencl_object_add(void *object);
 void opencl_object_remove(void *object);
-void *opencl_object_get(enum opencl_obj_enum type, uint32_t id);
-void *opencl_object_get_type(enum opencl_obj_enum type);
-uint32_t opencl_object_new_id(enum opencl_obj_enum type);
+void *opencl_object_get(enum opencl_obj_t type, uint32_t id);
+void *opencl_object_get_type(enum opencl_obj_t type);
+uint32_t opencl_object_new_id(enum opencl_obj_t type);
 void opencl_object_free_all(void);
 
 
@@ -282,7 +285,8 @@ void opencl_program_build(struct opencl_program_t *program);
 
 /* OpenCL kernel */
 
-enum opencl_mem_scope_enum {
+enum opencl_mem_scope_t
+{
 	OPENCL_MEM_SCOPE_NONE = 0,
 	OPENCL_MEM_SCOPE_GLOBAL,
 	OPENCL_MEM_SCOPE_LOCAL,
@@ -290,7 +294,8 @@ enum opencl_mem_scope_enum {
 	OPENCL_MEM_SCOPE_CONSTANT
 };
 
-enum opencl_kernel_arg_kind_enum {
+enum opencl_kernel_arg_kind_t
+{
 	OPENCL_KERNEL_ARG_KIND_VALUE = 1,
 	OPENCL_KERNEL_ARG_KIND_POINTER
 };
@@ -298,8 +303,8 @@ enum opencl_kernel_arg_kind_enum {
 struct opencl_kernel_arg_t
 {
 	/* Argument properties, as described in .rodata */
-	enum opencl_kernel_arg_kind_enum kind;
-	enum opencl_mem_scope_enum mem_scope;  /* For pointers */
+	enum opencl_kernel_arg_kind_t kind;
+	enum opencl_mem_scope_t mem_scope;  /* For pointers */
 	int elem_size;  /* For a pointer, size of element pointed to */
 
 	/* Argument fields as set in clSetKernelArg */
@@ -389,7 +394,8 @@ void opencl_mem_free(struct opencl_mem_t *mem);
 
 /* OpenCL Event */
 
-enum opencl_event_kind_enum {
+enum opencl_event_kind_t
+{
 	OPENCL_EVENT_NONE = 0,
 	OPENCL_EVENT_NDRANGE_KERNEL,
 	OPENCL_EVENT_TASK,
@@ -412,7 +418,8 @@ enum opencl_event_kind_enum {
 	OPENCL_EVENT_COUNT
 };
 
-enum opencl_event_status_enum {
+enum opencl_event_status_t
+{
 	OPENCL_EVENT_STATUS_NONE = 0,
 	OPENCL_EVENT_STATUS_QUEUED,
 	OPENCL_EVENT_STATUS_SUBMITTED,
@@ -424,8 +431,8 @@ struct opencl_event_t
 {
 	uint32_t id;
 	int ref_count;
-	enum opencl_event_kind_enum kind;
-	enum opencl_event_status_enum status;
+	enum opencl_event_kind_t kind;
+	enum opencl_event_status_t status;
 
 	uint64_t time_queued;
 	uint64_t time_submit;
@@ -433,7 +440,7 @@ struct opencl_event_t
 	uint64_t time_end;
 };
 
-struct opencl_event_t *opencl_event_create(enum opencl_event_kind_enum kind);
+struct opencl_event_t *opencl_event_create(enum opencl_event_kind_t kind);
 void opencl_event_free(struct opencl_event_t *event);
 
 uint32_t opencl_event_get_profiling_info(struct opencl_event_t *event, uint32_t name,
@@ -447,7 +454,8 @@ uint64_t opencl_event_timer(void);
  * GPU Write Tasks
  */
 
-enum gpu_isa_write_task_kind_enum {
+enum gpu_isa_write_task_kind_t
+{
 	GPU_ISA_WRITE_TASK_NONE = 0,
 	GPU_ISA_WRITE_TASK_WRITE_LDS,
 	GPU_ISA_WRITE_TASK_WRITE_DEST,
@@ -456,10 +464,10 @@ enum gpu_isa_write_task_kind_enum {
 };
 
 
-struct gpu_isa_write_task_t {
-	
+struct gpu_isa_write_task_t
+{
 	/* All */
-	enum gpu_isa_write_task_kind_enum kind;
+	enum gpu_isa_write_task_kind_t kind;
 	struct amd_inst_t *inst;
 	
 	/* When 'kind' == GPU_ISA_WRITE_TASK_WRITE_DEST */
@@ -556,7 +564,8 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange);
  * GPU Work-Group
  */
 
-enum gpu_work_group_status_enum {
+enum gpu_work_group_status_t
+{
 	gpu_work_group_pending		= 0x0001,
 	gpu_work_group_running		= 0x0002,
 	gpu_work_group_finished		= 0x0004
@@ -570,7 +579,7 @@ struct gpu_work_group_t
 	int id_3d[3];  /* 3-dimensional Group ID */
 
 	/* Status */
-	enum gpu_work_group_status_enum status;
+	enum gpu_work_group_status_t status;
 
 	/* NDRange it belongs to */
 	struct gpu_ndrange_t *ndrange;
@@ -619,9 +628,9 @@ struct gpu_work_group_t *gpu_work_group_create();
 void gpu_work_group_free(struct gpu_work_group_t *work_group);
 void gpu_work_group_dump(struct gpu_work_group_t *work_group, FILE *f);
 
-int gpu_work_group_get_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status);
-void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status);
-void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_enum status);
+int gpu_work_group_get_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status);
+void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status);
+void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status);
 
 
 
@@ -631,7 +640,8 @@ void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_w
  */
 
 /* Type of clauses */
-enum gpu_clause_kind_enum {
+enum gpu_clause_kind_t
+{
 	GPU_CLAUSE_NONE = 0,
 	GPU_CLAUSE_CF,  /* Control-flow */
 	GPU_CLAUSE_ALU,  /* ALU clause */
@@ -661,7 +671,7 @@ struct gpu_wavefront_t
 	struct gpu_work_item_t **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
 
 	/* Current clause kind and instruction pointers */
-	enum gpu_clause_kind_enum clause_kind;
+	enum gpu_clause_kind_t clause_kind;
 
 	/* Current instructions */
 	struct amd_inst_t cf_inst;
@@ -715,6 +725,7 @@ struct gpu_wavefront_t
 
 	/* Fields introduced for architectural simulation */
 	int id_in_compute_unit;
+	int alu_engine_in_flight;  /* Number of in-flight uops in ALU engine */
 
 	/* Statistics */
 	uint64_t inst_count;  /* Total number of instructions */
