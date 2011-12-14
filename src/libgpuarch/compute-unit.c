@@ -50,10 +50,14 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 	compute_unit->cf_engine.complete_queue = lnlist_create();
 
 	/* Initialize ALU Engine */
+	compute_unit->alu_engine.pending_queue = lnlist_create();
+	compute_unit->alu_engine.finished_queue = lnlist_create();
 	compute_unit->alu_engine.fetch_queue = lnlist_create();
 	compute_unit->alu_engine.event_queue = heap_create(10);
 
 	/* Initialize TEX Engine */
+	compute_unit->tex_engine.pending_queue = lnlist_create();
+	compute_unit->tex_engine.finished_queue = lnlist_create();
 	compute_unit->tex_engine.fetch_queue = lnlist_create();
 	compute_unit->tex_engine.load_queue = lnlist_create();
 
@@ -72,7 +76,8 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	int i;
 
 	/* CF Engine - free uops in fetch buffer, instruction buffer, and complete queue */
-	for (i = 0; i < gpu_max_wavefronts_per_compute_unit; i++) {
+	for (i = 0; i < gpu_max_wavefronts_per_compute_unit; i++)
+	{
 		gpu_uop_free(compute_unit->cf_engine.fetch_buffer[i]);
 		gpu_uop_free(compute_unit->cf_engine.inst_buffer[i]);
 	}
@@ -95,22 +100,28 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 
 	/* ALU Engine - free uops in fetch queue, instruction buffer, execution buffer,
 	 * and event queue. Also free CF instruction currently running. */
+	gpu_uop_list_free(compute_unit->alu_engine.pending_queue);
+	gpu_uop_list_free(compute_unit->alu_engine.finished_queue);
 	gpu_uop_list_free(compute_unit->alu_engine.fetch_queue);
 	gpu_uop_free(compute_unit->alu_engine.inst_buffer);
 	gpu_uop_free(compute_unit->alu_engine.exec_buffer);
-	gpu_uop_free(compute_unit->alu_engine.cf_uop);
 
 	/* ALU Engine - structures */
+	lnlist_free(compute_unit->alu_engine.pending_queue);
+	lnlist_free(compute_unit->alu_engine.finished_queue);
 	lnlist_free(compute_unit->alu_engine.fetch_queue);
 	heap_free(compute_unit->alu_engine.event_queue);
 
-	/* Text Engine - free uop in fetch queue, instruction buffer, write buffer. */
+	/* TEX Engine - free uop in fetch queue, instruction buffer, write buffer. */
+	gpu_uop_list_free(compute_unit->tex_engine.pending_queue);
+	gpu_uop_list_free(compute_unit->tex_engine.finished_queue);
 	gpu_uop_list_free(compute_unit->tex_engine.fetch_queue);
 	gpu_uop_free(compute_unit->tex_engine.inst_buffer);
 	gpu_uop_list_free(compute_unit->tex_engine.load_queue);
-	gpu_uop_free(compute_unit->tex_engine.cf_uop);
 
 	/* TEX Engine - structures */
+	lnlist_free(compute_unit->tex_engine.pending_queue);
+	lnlist_free(compute_unit->tex_engine.finished_queue);
 	lnlist_free(compute_unit->tex_engine.fetch_queue);
 	lnlist_free(compute_unit->tex_engine.load_queue);
 

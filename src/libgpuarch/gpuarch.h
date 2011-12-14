@@ -87,7 +87,6 @@ extern int gpu_stack_debug_category;
 /* Part of a GPU instruction specific for each work-item within wavefront. */
 struct gpu_work_item_uop_t
 {
-	
 	/* For global memory accesses */
 	uint32_t global_mem_access_addr;
 	uint32_t global_mem_access_size;
@@ -124,6 +123,7 @@ struct gpu_uop_t
 	struct gpu_wavefront_t *wavefront;  /* Wavefront it belongs to */
 	struct gpu_work_group_t *work_group;  /* Work-group it belongs to */
 	struct gpu_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
+	struct gpu_uop_t *cf_uop;  /* For ALU/TEX uops, CF uop that triggered clause */
 	int length;  /* Number of bytes occupied by ALU group */
 
 	/* CF instruction flags */
@@ -133,9 +133,9 @@ struct gpu_uop_t
 
 	/* ALU group flags */
 	unsigned int ready : 1;
-	unsigned int last : 1;
 
 	/* Flags */
+	unsigned int last : 1;  /* Last instruction in the clause */
 	unsigned int global_mem_read : 1;
 	unsigned int global_mem_write : 1;
 	unsigned int local_mem_read : 1;
@@ -238,8 +238,8 @@ struct gpu_compute_unit_t
 	uint64_t inst_count;
 
 	/* Fields for CF Engine */
-	struct {
-		
+	struct
+	{
 		/* Ready wavefront pool.
 		 * It includes suspended wavefronts, but excludes wavefronts in
 		 * flight in the CF pipeline or running on the ALU/TEX Engines. */
@@ -265,11 +265,15 @@ struct gpu_compute_unit_t
 	} cf_engine;
 
 	/* Fields for ALU Engine */
-	struct {
-		
-		/* Current wavefront running in ALU Engine */
-		struct gpu_wavefront_t *wavefront;
-		struct gpu_uop_t *cf_uop;  /* CF instruction triggering ALU clause */
+	struct
+	{
+		/* CF uop queues.
+		 * The CF engine enqueues a CF uop that triggers an ALU clause into 'pending_queue'.
+		 * When the secondary clause finishes fetching, the CF uop is moved to
+		 * 'finished_queue'. When secondary clause exists pipeline, it is extracted from
+		 " 'finished_queue'. */
+		struct lnlist_t *pending_queue;
+		struct lnlist_t *finished_queue;
 
 		/* Queues */
 		struct lnlist_t *fetch_queue;  /* Uops from fetch to decode stage */
@@ -293,9 +297,11 @@ struct gpu_compute_unit_t
 	} alu_engine;
 
 	/* Fields for TEX Engine */
-	struct {
-		struct gpu_uop_t *cf_uop;  /* CF instruction triggering TEX clause */
-		struct gpu_wavefront_t *wavefront;
+	struct
+	{
+		/* CF uop queues (see comment for ALU engine) */
+		struct lnlist_t *pending_queue;
+		struct lnlist_t *finished_queue;
 
 		/* Queues */
 		struct lnlist_t *fetch_queue;  /* Uops from fetch to decode stage */

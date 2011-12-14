@@ -50,7 +50,7 @@ void opencl_object_remove(void *object)
 
 /* Look for an OpenCL object in the object list. The 'id' is the
  * first field for every object. */
-void *opencl_object_get(enum opencl_obj_enum type, uint32_t id)
+void *opencl_object_get(enum opencl_obj_t type, uint32_t id)
 {
 	void *object;
 	uint32_t object_id;
@@ -70,7 +70,7 @@ void *opencl_object_get(enum opencl_obj_enum type, uint32_t id)
 
 
 /* Get the oldest created OpenCL object of the specified type */
-void *opencl_object_get_type(enum opencl_obj_enum type)
+void *opencl_object_get_type(enum opencl_obj_t type)
 {
 	void *object;
 	uint32_t object_id;
@@ -93,7 +93,7 @@ void *opencl_object_get_type(enum opencl_obj_enum type)
 /* Assignment of OpenCL object identifiers
  * An identifier is a 32-bit value, whose 16 most significant bits represent the
  * object type, while the 16 least significant bits represent a unique object ID. */
-uint32_t opencl_object_new_id(enum opencl_obj_enum type)
+uint32_t opencl_object_new_id(enum opencl_obj_t type)
 {
 	static uint32_t opencl_current_object_id;
 	uint32_t id;
@@ -847,7 +847,7 @@ void opencl_mem_free(struct opencl_mem_t *mem)
 
 /* OpenCL Event */
 
-struct opencl_event_t *opencl_event_create(enum opencl_event_kind_enum kind)
+struct opencl_event_t *opencl_event_create(enum opencl_event_kind_t kind)
 {
 	struct opencl_event_t *event;
 
