@@ -425,7 +425,9 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit)
 {
 	/* If no wavefront to run, avoid entering loop */
-	/* FIXME - add support for this condition */
+	if (!lnlist_count(compute_unit->alu_engine.pending_queue) &&
+		!lnlist_count(compute_unit->alu_engine.finished_queue))
+		return;
 
 	/* ALU Engine stages */
 	gpu_alu_engine_write(compute_unit);
