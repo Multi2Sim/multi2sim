@@ -316,7 +316,8 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 		int uop_id;
 
 		compute_unit_id = vgpu_trace_line_token_int(&trace_line, "cu");
-		if (compute_unit_id < 0 || compute_unit_id >= gpu->num_compute_units) {
+		if (compute_unit_id < 0 || compute_unit_id >= gpu->num_compute_units)
+		{
 			VGPU_TRACE_ERROR("invalid compute unit id");
 			return 2;
 		}
@@ -328,7 +329,8 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 		if (!strcmp(stage, "fetch"))
 		{
 			/* Create uop */
-			if (vgpu_uop_list_get(compute_unit->uop_list, uop_id)) {
+			if (vgpu_uop_list_get(compute_unit->uop_list, uop_id))
+			{
 				VGPU_TRACE_ERROR("uop already exists");
 				return 2;
 			}
@@ -357,7 +359,8 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 		{
 			/* Get uop */
 			uop = vgpu_uop_list_get(compute_unit->uop_list, uop_id);
-			if (!uop) {
+			if (!uop)
+			{
 				VGPU_TRACE_ERROR("invalid uop");
 				return 2;
 			}
@@ -374,10 +377,13 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 				uop->stage = VGPU_STAGE_DECODE;
 			else if (!strcmp(stage, "execute"))
 				uop->stage = VGPU_STAGE_EXECUTE;
-			else if (!strcmp(stage, "complete")) {
+			else if (!strcmp(stage, "complete"))
+			{
 				uop->stage = VGPU_STAGE_COMPLETE;
 				uop->finished = 1;
-			} else {
+			}
+			else
+			{
 				VGPU_TRACE_ERROR("invalid stage");
 				return 2;
 			}
@@ -396,10 +402,13 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 				uop->stage = VGPU_STAGE_READ;
 			else if (!strcmp(stage, "exec"))
 				uop->stage = VGPU_STAGE_EXECUTE;
-			else if (!strcmp(stage, "write")) {
+			else if (!strcmp(stage, "write"))
+			{
 				uop->stage = VGPU_STAGE_WRITE;
 				uop->finished = 1;
-			} else {
+			}
+			else
+			{
 				VGPU_TRACE_ERROR("invalid stage");
 				return 2;
 			}
@@ -427,7 +436,8 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 	}
 
 	/* Other command */
-	else {
+	else
+	{
 		VGPU_TRACE_ERROR("invalid command");
 		return 2;
 	}
@@ -520,7 +530,8 @@ int vgpu_trace_cycle(struct vgpu_t *gpu, int cycle)
 		load_checkpoint = FALSE;
 
 	/* Load checkpoint */
-	if (load_checkpoint) {
+	if (load_checkpoint)
+	{
 		checkpoint = list_get(gpu->state_checkpoint_list, checkpoint_index);
 		if (!checkpoint)
 			return 1;
@@ -531,7 +542,8 @@ int vgpu_trace_cycle(struct vgpu_t *gpu, int cycle)
 	}
 
 	/* Go to cycle */
-	while (gpu->cycle < cycle) {
+	while (gpu->cycle < cycle)
+	{
 		err = vgpu_trace_next_cycle(gpu);
 		if (err)
 			return err;
@@ -569,14 +581,15 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 		command = trace_line.command;
 
 		/* Initialization command */
-		if (!strcmp(command, "init")) {
-
+		if (!strcmp(command, "init"))
+		{
 			struct vgpu_compute_unit_t *compute_unit;
 			int i;
 
 			gpu->num_work_groups = vgpu_trace_line_token_int(&trace_line, "group_count");
 			gpu->num_compute_units = vgpu_trace_line_token_int(&trace_line, "compute_units");
-			for (i = 0; i < gpu->num_compute_units; i++) {
+			for (i = 0; i < gpu->num_compute_units; i++)
+			{
 				compute_unit = vgpu_compute_unit_create(gpu, i);
 				list_add(gpu->compute_unit_list, compute_unit);
 			}
@@ -598,7 +611,8 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 
 				/* Get ID */
 				id = vgpu_trace_line_token_int(&trace_line, "id");
-				if (id != list_count(gpu->work_group_list)) {
+				if (id != list_count(gpu->work_group_list))
+				{
 					VGPU_TRACE_ERROR("unordered work-group id");
 					return 2;
 				}
@@ -626,7 +640,8 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 			}
 
 			/* Not recognized */
-			else {
+			else
+			{
 				VGPU_TRACE_ERROR("invalid value for token 'item'");
 				return 2;
 			}
@@ -642,7 +657,8 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 			/* Get disassembly line */
 			inst_idx = vgpu_trace_line_token_int(&trace_line, "i");
 			clause = vgpu_trace_line_token(&trace_line, "cl");
-			if (!clause || inst_idx != list_count(gpu->kernel_source_strings)) {
+			if (!clause || inst_idx != list_count(gpu->kernel_source_strings))
+			{
 				VGPU_TRACE_ERROR("invalid disassembly");
 				return 2;
 			}
@@ -748,7 +764,8 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 
 		/* Command not belonging to intro anymore.
 		 * Return to previous position and leave. */
-		else {
+		else
+		{
 			gpu->trace_line_number--;
 			fseek(gpu->trace_file, trace_file_pos, SEEK_SET);
 			break;
@@ -770,8 +787,8 @@ int vgpu_trace_parse(struct vgpu_t *gpu)
 		return err;
 
 	/* Parse whole file */
-	do {
-
+	do
+	{
 		/* Make state checkpoint */
 		if (gpu->cycle % VGPU_STATE_CHECKPOINT_INTERVAL == 0)
 		{
