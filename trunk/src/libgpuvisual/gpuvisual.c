@@ -41,7 +41,8 @@ void show_kernel_source(struct vgpu_t *gpu)
 
 	/* Get total size */
 	size = 0;
-	for (i = 0; i < list_count(gpu->kernel_source_strings); i++) {
+	for (i = 0; i < list_count(gpu->kernel_source_strings); i++)
+	{
 		line = list_get(gpu->kernel_source_strings, i);
 		size += strlen(line) + 1;
 	}
@@ -51,7 +52,8 @@ void show_kernel_source(struct vgpu_t *gpu)
 	cursor = buffer;
 
 	/* Copy lines */
-	for (i = 0; i < list_count(gpu->kernel_source_strings); i++) {
+	for (i = 0; i < list_count(gpu->kernel_source_strings); i++)
+	{
 		line = list_get(gpu->kernel_source_strings, i);
 		strcpy(cursor, line);
 		cursor += strlen(cursor);
