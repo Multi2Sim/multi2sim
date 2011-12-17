@@ -243,7 +243,8 @@ void vgpu_load_state(struct vgpu_t *gpu)
 		assert(label == vgpu_uop_list_label);
 		vgpu_uop_list_clear(compute_unit->uop_list);
 		count += fread(&num_uops, 1, sizeof(int), f);
-		for (j = 0; j < num_uops; j++) {
+		for (j = 0; j < num_uops; j++)
+		{
 			struct vgpu_uop_t *uop;
 			int id, len, k;
 
@@ -281,7 +282,22 @@ void vgpu_load_state(struct vgpu_t *gpu)
 
 	/* Reconstruct finished list */
 	list_clear(gpu->finished_work_group_list);
-	/* FIXME */
+	for (i = 0; i < gpu->num_mapped_work_groups; i++)
+		list_add(gpu->finished_work_group_list, list_get(gpu->work_group_list, i));
+	for (i = 0; i < gpu->num_compute_units; i++)
+	{
+		struct vgpu_compute_unit_t *compute_unit;
+		struct list_t *work_group_list;
+		struct vgpu_work_group_t *work_group_curr;
+
+		compute_unit = list_get(gpu->compute_unit_list, i);
+		work_group_list = compute_unit->work_group_list;
+		for (j = 0; j < list_count(work_group_list); j++)
+		{
+			work_group_curr = list_get(work_group_list, j);
+			list_remove(gpu->finished_work_group_list, work_group_curr);
+		}
+	}
 }
 
 

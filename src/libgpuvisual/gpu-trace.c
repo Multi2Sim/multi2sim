@@ -262,25 +262,36 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			/* Remove work-group from compute unit */
 			work_group_id = vgpu_trace_line_token_int(&trace_line, "wg");
 			found = 0;
-			for (i = 0; i < list_count(compute_unit->work_group_list); i++) {
+			for (i = 0; i < list_count(compute_unit->work_group_list); i++)
+			{
 				work_group = list_get(compute_unit->work_group_list, i);
-				if (work_group->id == work_group_id) {
+				if (work_group->id == work_group_id)
+				{
 					found = 1;
 					list_remove_at(compute_unit->work_group_list, i);
 					break;
 				}
 			}
-			if (!found) {
+			if (!found)
+			{
 				VGPU_TRACE_ERROR("work-group is not in compute unit");
 				return 2;
 			}
 
-			/* Add work-group to finished list */
-			if (list_index_of(gpu->finished_work_group_list, work_group) >= 0) {
+			/* Add work-group to finished list in order */
+			if (list_index_of(gpu->finished_work_group_list, work_group) >= 0)
+			{
 				VGPU_TRACE_ERROR("work-group is already in finished list");
 				return 2;
 			}
-			list_add(gpu->finished_work_group_list, work_group);
+			for (i = list_count(gpu->finished_work_group_list); i > 0; i--)
+			{
+				struct vgpu_work_group_t *work_group_curr;
+				work_group_curr = list_get(gpu->finished_work_group_list, i - 1);
+				if (work_group_curr->id < work_group->id)
+					break;
+			}
+			list_insert(gpu->finished_work_group_list, i, work_group);
 		}
 
 		/* Unknown action */
@@ -297,7 +308,8 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 		int cycle;
 
 		cycle = vgpu_trace_line_token_int(&trace_line, "c");
-		if (cycle != gpu->cycle + 1) {
+		if (cycle != gpu->cycle + 1)
+		{
 			VGPU_TRACE_ERROR("invalid cycle number");
 			return 2;
 		}
@@ -348,7 +360,8 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 
 			/* Add it to uop list */
 			err = vgpu_uop_list_add(compute_unit->uop_list, uop);
-			if (err) {
+			if (err)
+			{
 				VGPU_TRACE_ERROR("non-sequential uop id");
 				return 2;
 			}
