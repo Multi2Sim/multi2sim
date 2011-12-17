@@ -172,11 +172,13 @@ void vgpu_trace_line_read_vliw(struct vgpu_trace_line_t *trace_line, struct vgpu
 
 	char vliw_elem_name[MAX_STRING_SIZE];
 	char str[MAX_STRING_SIZE];
+	char *name_ptr;
 	int i;
 
 	uop->name[0] = '\0';
-	for (i = 0; i < 5; i++) {
-
+	name_ptr = uop->name;
+	for (i = 0; i < 5; i++)
+	{
 		/* Get VLIW slot */
 		vliw_elem = vliw_elems[i];
 		sprintf(str, "inst.%c", vliw_elem);
@@ -187,6 +189,8 @@ void vgpu_trace_line_read_vliw(struct vgpu_trace_line_t *trace_line, struct vgpu
 		/* Add to instruction name */
 		snprintf(uop->vliw_slot[i], sizeof(uop->vliw_slot[i]), "%s", strtok(vliw_elem_name, " "));
 		snprintf(uop->vliw_slot_args[i], sizeof(uop->vliw_slot_args[i]), "%s", strtok(NULL, ""));
+		name_ptr += snprintf(name_ptr, sizeof(uop->name) - (name_ptr - uop->name),
+			"%c: %s %s   ", vliw_elems[i], uop->vliw_slot[i], uop->vliw_slot_args[i]);
 	}
 }
 
@@ -235,13 +239,15 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			/* Remove work-group from pending list */
 			work_group_id = vgpu_trace_line_token_int(&trace_line, "wg");
 			work_group = list_remove_at(gpu->pending_work_group_list, 0);
-			if (!work_group || work_group->id != work_group_id) {
+			if (!work_group || work_group->id != work_group_id)
+			{
 				VGPU_TRACE_ERROR("work-group not in head of pending list");
 				return 2;
 			}
 
 			/* Add work-group to compute unit's list */
-			if (list_index_of(compute_unit->work_group_list, work_group) >= 0) {
+			if (list_index_of(compute_unit->work_group_list, work_group) >= 0)
+			{
 				VGPU_TRACE_ERROR("work-group is already in compute unit");
 				return 2;
 			}
@@ -250,6 +256,10 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			/* Record another mapped work-group */
 			assert(gpu->num_mapped_work_groups == work_group_id);
 			gpu->num_mapped_work_groups++;
+
+			/* Status */
+			vgpu_status_write(gpu, "<b>WG-%d</b> mapped to <b>CU-%d</b>\n",
+				work_group->id, compute_unit->id);
 		}
 
 		/* Unmap work-group */
@@ -292,6 +302,10 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 					break;
 			}
 			list_insert(gpu->finished_work_group_list, i, work_group);
+
+			/* Status */
+			vgpu_status_write(gpu, "<b>WG-%d</b> finished execution in <b>CU-%d</b>\n",
+				work_group->id, compute_unit->id);
 		}
 
 		/* Unknown action */
@@ -385,15 +399,35 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			uop->engine = VGPU_ENGINE_CF;
 			uop->stage_cycle = gpu->cycle;
 			if (!strcmp(stage, "fetch"))
+			{
 				uop->stage = VGPU_STAGE_FETCH;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"CF uop <span color=\"darkgreen\"><b>I-%d</b></span> - Fetch - "
+					"<span color=\"darkgreen\"><b>%s</b></span>\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id,
+					uop->id, uop->name);
+			}
 			else if (!strcmp(stage, "decode"))
+			{
 				uop->stage = VGPU_STAGE_DECODE;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"CF uop <span color=\"darkgreen\"><b>I-%d</b></span> - Decode\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
+			}
 			else if (!strcmp(stage, "execute"))
+			{
 				uop->stage = VGPU_STAGE_EXECUTE;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"CF uop <span color=\"darkgreen\"><b>I-%d</b></span> - Execute\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
+			}
 			else if (!strcmp(stage, "complete"))
 			{
 				uop->stage = VGPU_STAGE_COMPLETE;
 				uop->finished = 1;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"CF uop <span color=\"darkgreen\"><b>I-%d</b></span> - Complete\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
 			else
 			{
@@ -408,17 +442,42 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			uop->engine = VGPU_ENGINE_ALU;
 			uop->stage_cycle = gpu->cycle;
 			if (!strcmp(stage, "fetch"))
+			{
 				uop->stage = VGPU_STAGE_FETCH;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"ALU uop <span color=\"red\"><b>I-%d</b></span> - Fetch - "
+					"<span color=\"red\"><b>%s</b></span>\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id,
+					uop->id, uop->name);
+			}
 			else if (!strcmp(stage, "decode"))
+			{
 				uop->stage = VGPU_STAGE_DECODE;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"ALU uop <span color=\"red\"><b>I-%d</b></span> - Decode\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
+			}
 			else if (!strcmp(stage, "read"))
+			{
 				uop->stage = VGPU_STAGE_READ;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"ALU uop <span color=\"red\"><b>I-%d</b></span> - Read\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
+			}
 			else if (!strcmp(stage, "exec"))
+			{
 				uop->stage = VGPU_STAGE_EXECUTE;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"ALU uop <span color=\"red\"><b>I-%d</b></span> - Execute\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
+			}
 			else if (!strcmp(stage, "write"))
 			{
 				uop->stage = VGPU_STAGE_WRITE;
 				uop->finished = 1;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"ALU uop <span color=\"red\"><b>I-%d</b></span> - Write\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
 			else
 			{
@@ -433,15 +492,38 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			uop->engine = VGPU_ENGINE_TEX;
 			uop->stage_cycle = gpu->cycle;
 			if (!strcmp(stage, "fetch"))
+			{
 				uop->stage = VGPU_STAGE_FETCH;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"TEX uop <span color=\"blue\"><b>I-%d</b></span> - Fetch - "
+					"<span color=\"blue\"><b>%s</b></span>\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id,
+					uop->id, uop->name);
+			}
 			else if (!strcmp(stage, "decode"))
+			{
 				uop->stage = VGPU_STAGE_DECODE;
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"TEX uop <span color=\"blue\"><b>I-%d</b></span> - Decode\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
+			}
 			else if (!strcmp(stage, "read"))
+			{
 				uop->stage = VGPU_STAGE_READ;
-			else if (!strcmp(stage, "write")) {
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"TEX uop <span color=\"blue\"><b>I-%d</b></span> - Read\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
+			}
+			else if (!strcmp(stage, "write"))
+			{
 				uop->stage = VGPU_STAGE_WRITE;
 				uop->finished = TRUE;
-			} else {
+				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+					"TEX uop <span color=\"blue\"><b>I-%d</b></span> - Write\n",
+					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
+			}
+			else
+			{
 				VGPU_TRACE_ERROR("invalid stage");
 				return 2;
 			}
@@ -502,6 +584,9 @@ int vgpu_trace_next_cycle(struct vgpu_t *gpu)
 				break;
 		}
 	}
+
+	/* Clear status text */
+	vgpu_status_clear(gpu);
 
 	/* Parse line until the next 'clk' command. When it is found,
 	 * go back to it so that next time it will be processed first. */

@@ -1132,6 +1132,10 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 	/* Execution loop */
 	for (;;) {
 		
+		/* Next cycle */
+		gpu->cycle++;
+		gpu_pipeline_debug("clk c=%lld\n", (long long) gpu->cycle);
+
 		/* Allocate work-groups to compute units */
 		while (gpu->ready_list_head && ndrange->pending_list_head)
 			gpu_compute_unit_map_work_group(gpu->ready_list_head, ndrange->pending_list_head);
@@ -1152,10 +1156,6 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 		if (ke_sim_finish)
 			break;
 
-		/* Next cycle */
-		gpu->cycle++;
-		gpu_pipeline_debug("clk c=%lld\n", (long long) gpu->cycle);
-		
 		/* Advance one cycle on each busy compute unit */
 		for (compute_unit = gpu->busy_list_head; compute_unit; compute_unit = compute_unit_next) {
 
