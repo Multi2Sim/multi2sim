@@ -31,6 +31,8 @@ GtkWidget *cycle_scale;
 struct list_layout_t *pending_work_group_list_layout;
 struct list_layout_t *finished_work_group_list_layout;
 
+char m2s_icon_path[MAX_STRING_SIZE];
+
 
 void show_kernel_source(struct vgpu_t *gpu)
 {
@@ -158,6 +160,12 @@ void main_window_show()
 	gtk_window_set_title(GTK_WINDOW(main_window), "Multi2Sim GPU Pipeline Debugger");
 	gtk_container_set_border_width(GTK_CONTAINER(main_window), 10);
 	g_signal_connect(G_OBJECT(main_window), "destroy", G_CALLBACK(main_window_delete_event), G_OBJECT(main_window));
+
+	/* Icon */
+	GdkPixbuf *pixbuf;
+	pixbuf = gdk_pixbuf_new_from_file(m2s_icon_path, NULL);
+	if (pixbuf)
+		gtk_window_set_icon(GTK_WINDOW(main_window), pixbuf);
 
 	/* White */
 	GdkColor color;
@@ -339,6 +347,7 @@ void vgpu_run(char *file_name)
 	search_dist_file("cf_engine.png", "images", "images", block_dia_cf_engine_image_path, MAX_STRING_SIZE);
 	search_dist_file("alu_engine.png", "images", "images", block_dia_alu_engine_image_path, MAX_STRING_SIZE);
 	search_dist_file("tex_engine.png", "images", "images", block_dia_tex_engine_image_path, MAX_STRING_SIZE);
+	search_dist_file("m2s_icon.png", "images", "images", m2s_icon_path, MAX_STRING_SIZE);
 
 	/* Create GPU */
 	gpu = vgpu_create(file_name);
