@@ -134,7 +134,8 @@ static void timing_dia_refresh(struct vgpu_compute_unit_t *compute_unit)
 
 			/* If uop is not present in instruction list, make a copy */
 			dup_uop = list_get(compute_unit->timing_inst_uops, j);
-			if (!dup_uop) {
+			if (!dup_uop)
+			{
 				dup_uop = vgpu_uop_dup(uop);
 				while (list_count(compute_unit->timing_inst_uops) <= j)
 					list_add(compute_unit->timing_inst_uops, NULL);
@@ -307,7 +308,8 @@ static gboolean timing_dia_title_area_draw_event(GtkWidget *widget, cairo_t *cr,
 
 	/* Draw */
 	cairo_set_line_width(cr, 1);
-	for (i = 0; i < compute_unit->timing_dia_width; i++) {
+	for (i = 0; i < compute_unit->timing_dia_width; i++)
+	{
 		int x1, x2, y1, y2;
 		char text[MAX_STRING_SIZE];
 		cairo_text_extents_t text_extents;
@@ -371,7 +373,8 @@ static gboolean timing_dia_area_draw_event(GtkWidget *widget, cairo_t *cr, struc
 	/* Draw */
 	cairo_set_line_width(cr, 1);
 	top_y = timing_dia_row_height - ((int) compute_unit->timing_dia_vscrollbar_value % timing_dia_row_height);
-	for (i = 0; i < compute_unit->timing_dia_width; i++) {
+	for (i = 0; i < compute_unit->timing_dia_width; i++)
+	{
 		for (j = 0; j < compute_unit->timing_dia_height; j++)
 		{
 			struct timing_dia_entry_t *timing_dia_entry;
@@ -395,7 +398,8 @@ static gboolean timing_dia_area_draw_event(GtkWidget *widget, cairo_t *cr, struc
 			cairo_clip(cr);
 
 			/* Fill */
-			if (timing_dia_entry->fill) {
+			if (timing_dia_entry->fill)
+			{
 				cairo_set_source_rgb(cr, timing_dia_entry->fill_r, timing_dia_entry->fill_g,
 					timing_dia_entry->fill_b);
 				cairo_rectangle(cr, x1, y1, timing_dia_col_width, timing_dia_row_height);
@@ -437,10 +441,13 @@ static gboolean timing_dia_area_draw_event(GtkWidget *widget, cairo_t *cr, struc
 
 static gboolean timing_dia_area_scroll_event(GtkWidget *widget, GdkEventScroll *event, struct vgpu_compute_unit_t *compute_unit)
 {
-	if (event->direction == GDK_SCROLL_UP) {
+	if (event->direction == GDK_SCROLL_UP)
+	{
 		compute_unit->timing_dia_vscrollbar_value = MAX(compute_unit->timing_dia_vscrollbar_value -
 			compute_unit->timing_dia_vscrollbar_incr_step, 0);
-	} else {
+	}
+	else
+	{
 		compute_unit->timing_dia_vscrollbar_value = MIN(compute_unit->timing_dia_vscrollbar_value +
 			compute_unit->timing_dia_vscrollbar_incr_step, (double) compute_unit->max_uops * timing_dia_row_height);
 	}
@@ -455,11 +462,14 @@ static gboolean timing_dia_scroll_event(GtkWidget *range, GtkScrollType scroll, 
 {
 	struct vgpu_t *gpu = compute_unit->gpu;
 
-	if (range == compute_unit->timing_dia_hscrollbar) {
+	if (range == compute_unit->timing_dia_hscrollbar)
+	{
 		value = MAX(value, 0);
 		value = MIN(value, (double) gpu->max_cycles * timing_dia_col_width);
 		compute_unit->timing_dia_hscrollbar_value = value;
-	} else {
+	}
+	else
+	{
 		value = MAX(value, 0);
 		value = MIN(value, (double) compute_unit->max_uops * timing_dia_row_height);
 		compute_unit->timing_dia_vscrollbar_value = value;
@@ -471,7 +481,7 @@ static gboolean timing_dia_scroll_event(GtkWidget *range, GtkScrollType scroll, 
 
 static gboolean timing_window_delete_event(GtkWidget *widget, GdkEvent *event, struct vgpu_compute_unit_t *compute_unit)
 {
-	/* Toggle button. The evevents that this triggers will take car of
+	/* Toggle button. The events that this triggers will take car of
 	 * destroying the window and freeing structures. */
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(compute_unit->timing_dia_toggle_button), FALSE);
 

@@ -52,6 +52,10 @@ struct vgpu_t *vgpu_create(char *trace_file_name)
 		return NULL;
 	}
 
+	/* Create status text */
+	gpu->status_text_size = MAX_STRING_SIZE;
+	gpu->status_text = calloc(1, MAX_STRING_SIZE);
+
 	/* Create lists */
 	gpu->state_checkpoint_list = list_create_with_size(100);
 	gpu->kernel_source_strings = list_create();
@@ -102,6 +106,9 @@ void vgpu_free(struct vgpu_t *gpu)
 		vgpu_compute_unit_free(list_get(gpu->compute_unit_list, i));
 	list_free(gpu->compute_unit_list);
 
+	/* Status text */
+	free(gpu->status_text);
+
 	/* GPU */
 	free(gpu);
 }
@@ -118,11 +125,17 @@ void vgpu_store_state(struct vgpu_t *gpu)
 {
 	FILE *f = gpu->state_file;
 	int i, j;
+	int size;
 
 	/* Cycle */
 	fwrite(&vgpu_state_label, 1, 1, f);
 	fwrite(&gpu->cycle, 1, sizeof(int), f);
 	fwrite(&gpu->trace_line_number, 1, sizeof(int), f);
+
+	/* Status */
+	size = strlen(gpu->status_text) + 1;
+	fwrite(&size, 1, sizeof(int), f);
+	fwrite(gpu->status_text, 1, size, f);
 
 	/* Compute units */
 	fwrite(&gpu->num_compute_units, 1, sizeof(int), f);
@@ -175,7 +188,8 @@ void vgpu_store_state(struct vgpu_t *gpu)
 			fwrite(&uop->name, 1, len + 1, f);
 
 			/* VLIW bundle */
-			for (k = 0; k < 5; k++) {
+			for (k = 0; k < 5; k++)
+			{
 				len = strlen(uop->vliw_slot[k]);
 				fwrite(&len, 1, sizeof(int), f);
 				fwrite(&uop->vliw_slot[k], 1, len + 1, f);
@@ -197,12 +211,24 @@ void vgpu_load_state(struct vgpu_t *gpu)
 	int i, j;
 	char label;
 	int count = 0;
+	int size;
 
 	/* Cycle */
 	count += fread(&label, 1, 1, f);
 	assert(label == vgpu_state_label);
 	count += fread(&gpu->cycle, 1, sizeof(int), f);
 	count += fread(&gpu->trace_line_number, 1, sizeof(int), f);
+
+	/* Status text */
+	count += fread(&size, 1, sizeof(int), f);
+	if (size > gpu->status_text_size)
+	{
+		gpu->status_text_size = size;
+		gpu->status_text = realloc(gpu->status_text, size);
+		if (!gpu->status_text)
+			fatal("%s: out of memory", __FUNCTION__);
+	}
+	count += fread(gpu->status_text, 1, size, f);
 
 	/* Compute units */
 	count += fread(&num_compute_units, 1, sizeof(int), f);
@@ -259,7 +285,8 @@ void vgpu_load_state(struct vgpu_t *gpu)
 			count += fread(&uop->finished, 1, sizeof(int), f);
 			count += fread(&len, 1, sizeof(int), f);
 			count += fread(&uop->name, 1, len + 1, f);
-			for (k = 0; k < 5; k++) {
+			for (k = 0; k < 5; k++)
+			{
 				count += fread(&len, 1, sizeof(int), f);
 				count += fread(&uop->vliw_slot[k], 1, len + 1, f);
 				count += fread(&len, 1, sizeof(int), f);
@@ -298,6 +325,32 @@ void vgpu_load_state(struct vgpu_t *gpu)
 			list_remove(gpu->finished_work_group_list, work_group_curr);
 		}
 	}
+}
+
+
+void vgpu_status_write(struct vgpu_t *gpu, char *fmt, ...)
+{
+	char str[MAX_STRING_SIZE];
+	va_list va;
+	int size;
+
+	va_start(va, fmt);
+	vsnprintf(str, MAX_STRING_SIZE, fmt, va);
+	size = strlen(gpu->status_text) + strlen(str) + 1;
+	if (size > gpu->status_text_size)
+	{
+		gpu->status_text_size = MAX(size, gpu->status_text_size * 2);
+		gpu->status_text = realloc(gpu->status_text, gpu->status_text_size);
+	}
+	if (!gpu->status_text)
+		fatal("%s: out of memory", __FUNCTION__);
+	strcat(gpu->status_text, str);
+}
+
+
+void vgpu_status_clear(struct vgpu_t *gpu)
+{
+	memset(gpu->status_text, 0, gpu->status_text_size);
 }
 
 

@@ -90,8 +90,12 @@ static void cycle_update(int cycle)
 	if (err)
 		g_print("trace file error: %s\n", vgpu_trace_err);
 
+	/* Update status panel */
+	gtk_label_set_markup(GTK_LABEL(gpu->status_label), gpu->status_text);
+
 	/* Scroll timing diagrams to new cycle */
-	for (i = 0; i < gpu->num_compute_units; i++) {
+	for (i = 0; i < gpu->num_compute_units; i++)
+	{
 		compute_unit = list_get(gpu->compute_unit_list, i);
 		timing_dia_window_goto(compute_unit, cycle);
 	}
@@ -302,19 +306,34 @@ void main_window_show()
 	gtk_box_pack_start(GTK_BOX(vbox1), halign4, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox1), vgpu_frame, TRUE, TRUE, 0);
 
+	/* Label for status panel */
 	GtkWidget *label5;
 	GtkWidget *halign5;
 	label5 = gtk_label_new("Status");
 	halign5 = gtk_alignment_new(0, 0, 0, 0);
 	gtk_container_add(GTK_CONTAINER(halign5), label5);
 
+	/* Status panel */
 	GtkWidget *status_frame;
-	GtkWidget *status_layout;
-	status_layout = gtk_layout_new(NULL, NULL);
+	GtkWidget *status_window;
+	GtkWidget *status_label;
+	status_window = gtk_scrolled_window_new(NULL, NULL);
 	status_frame = gtk_frame_new(NULL);
-	gtk_widget_set_size_request(status_layout, 200, 80);
-	gtk_container_add(GTK_CONTAINER(status_frame), status_layout);
-	gtk_widget_modify_bg(status_layout, GTK_STATE_NORMAL, &color);
+	status_label = gtk_label_new(NULL);
+	gtk_label_set_justify(GTK_LABEL(status_label), GTK_JUSTIFY_LEFT);
+	gtk_misc_set_alignment(GTK_MISC(status_label), 0, 0);
+	gtk_widget_set_size_request(status_window, 200, 80);
+	gtk_container_add(GTK_CONTAINER(status_frame), status_window);
+	gtk_widget_modify_bg(status_window, GTK_STATE_NORMAL, &color);
+	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(status_window), status_label);
+	gpu->status_label = status_label;
+
+	/* Set label font attributes for status */
+	PangoAttrList *attrs;
+	attrs = pango_attr_list_new();
+	PangoAttribute *size_attr = pango_attr_size_new_absolute(12 << 10);
+	pango_attr_list_insert(attrs, size_attr);
+	gtk_label_set_attributes(GTK_LABEL(status_label), attrs);
 
 	/* VBox containing 'halign5' and 'status_frame' */
 	GtkWidget *vbox2;

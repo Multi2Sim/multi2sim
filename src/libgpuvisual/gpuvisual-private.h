@@ -142,6 +142,11 @@ struct vgpu_t
 	struct list_t *finished_work_group_list;
 	struct list_t *compute_unit_list;
 
+	/* Status bar text */
+	char *status_text;
+	int status_text_size;  /* Size allocated for status text */
+	GtkWidget *status_label;
+
 	/* Kernel source */
 	struct list_t *kernel_source_strings;
 };
@@ -150,6 +155,9 @@ extern char vgpu_trace_err[MAX_STRING_SIZE];
 
 struct vgpu_t *vgpu_create(char *trace_file_name);
 void vgpu_free(struct vgpu_t *gpu);
+
+void vgpu_status_write(struct vgpu_t *gpu, char *fmt, ...);
+void vgpu_status_clear(struct vgpu_t *gpu);
 
 void vgpu_store_state(struct vgpu_t *gpu);
 void vgpu_load_state(struct vgpu_t *gpu);
@@ -193,14 +201,16 @@ void work_group_info_popup(void *work_group);
  * Uop
  */
 
-enum vgpu_engine_enum {
+enum vgpu_engine_t
+{
 	VGPU_ENGINE_CF,
 	VGPU_ENGINE_ALU,
 	VGPU_ENGINE_TEX,
 	VGPU_ENGINE_COUNT
 };
 
-enum vgpu_stage_enum {
+enum vgpu_stage_t
+{
 	VGPU_STAGE_FETCH,
 	VGPU_STAGE_DECODE,
 	VGPU_STAGE_READ,
@@ -210,7 +220,8 @@ enum vgpu_stage_enum {
 	VGPU_STAGE_COUNT
 };
 
-struct vgpu_uop_t {
+struct vgpu_uop_t
+{
 	int id;
 
 	char name[MAX_STRING_SIZE];
@@ -219,8 +230,8 @@ struct vgpu_uop_t {
 	int compute_unit_id;
 	int work_group_id;
 	int wavefront_id;
-	enum vgpu_engine_enum engine;
-	enum vgpu_stage_enum stage;
+	enum vgpu_engine_t engine;
+	enum vgpu_stage_t stage;
 	int stage_cycle;  /* Cycle when the last stage transition occurred */
 	int finished;
 };
