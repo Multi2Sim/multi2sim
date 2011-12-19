@@ -187,7 +187,7 @@ void warning(char *fmt, ...) {
 }
 
 
-void dump_buf(char **pbuf, int *psize, char *fmt, ...) {
+void str_printf(char **pbuf, int *psize, char *fmt, ...) {
 	va_list va;
 	int len;
 	if (*psize <= 1)

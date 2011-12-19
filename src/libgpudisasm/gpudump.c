@@ -572,17 +572,17 @@ struct string_map_t fmt_alu_word0_pred_sel_map = {
 static void fmt_alu_src_sel_dump_buf(uint32_t src_sel, char **pbuf, int *psize)
 {
 	if (IN_RANGE(src_sel, 0, 127))
-		dump_buf(pbuf, psize, "GPR[%d]", src_sel);
+		str_printf(pbuf, psize, "GPR[%d]", src_sel);
 	else if (IN_RANGE(src_sel, 128, 159))
-		dump_buf(pbuf, psize, "Kcache contant %d in bank 0", src_sel - 128);
+		str_printf(pbuf, psize, "Kcache contant %d in bank 0", src_sel - 128);
 	else if (IN_RANGE(src_sel, 160, 191))
-		dump_buf(pbuf, psize, "Kcache constant %d in bank 1", src_sel - 160);
+		str_printf(pbuf, psize, "Kcache constant %d in bank 1", src_sel - 160);
 	else if (IN_RANGE(src_sel, 256, 287))
-		dump_buf(pbuf, psize, "Kcache constant %d in bank 2", src_sel - 256);
+		str_printf(pbuf, psize, "Kcache constant %d in bank 2", src_sel - 256);
 	else if (IN_RANGE(src_sel, 288, 319))
-		dump_buf(pbuf, psize, "Kcache constant %d in bank 3", src_sel - 288);
+		str_printf(pbuf, psize, "Kcache constant %d in bank 3", src_sel - 288);
 	else
-		dump_buf(pbuf, psize, "%s", map_value(&fmt_alu_src_sel_map, src_sel));
+		str_printf(pbuf, psize, "%s", map_value(&fmt_alu_src_sel_map, src_sel));
 }
 
 

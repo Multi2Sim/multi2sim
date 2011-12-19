@@ -27,12 +27,18 @@
 
 
 /* Maximum string size */
-#define MAX_STRING_SIZE  200
-#define MAX_PATH_SIZE  200
+#define MAX_STRING_SIZE  400
+#define MAX_PATH_SIZE  400
+
+/* Min, Max */
+#ifndef MIN
+#define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+#endif
+#ifndef MAX
+#define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
+#endif
 
 /* Min, Max, Book, Range */
-#define MIN(X, Y) ((X)<(Y)?(X):(Y))
-#define MAX(X, Y) ((X)>(Y)?(X):(Y))
 #define BOOL(X) ((X) ? 't' : 'f')
 #define IN_RANGE(X, X1, X2) ((X)>=(X1)&&(X)<=(X2))
 
@@ -163,7 +169,9 @@
 
 
 
-/* Bit map functions */
+/*
+ * Bitmap functions
+ */
 
 struct bit_map_t;
 
@@ -181,8 +189,12 @@ void bit_map_dump(struct bit_map_t *bit_map, unsigned int where, unsigned int si
 
 
 
-/* String Maps */
-struct string_map_t {
+/*
+ * String Maps
+ */
+
+struct string_map_t
+{
 	int count;
 	struct {
 		char *string;
@@ -196,33 +208,73 @@ char *map_value(struct string_map_t *map, int value);
 void map_value_string(struct string_map_t *map, int value, char *out, int length);
 void map_flags(struct string_map_t *map, int flags, char *out, int length);
 
-/* Strings */
+
+
+
+/*
+ * Strings
+ */
+
 void strccpy(char *dest, char *src, int size);
 void strccat(char *dest, char *src);
 void strdump(char *dest, char *src, int size);
+
 void str_single_spaces(char *dest, char *src, int size);
+
 int str_suffix(char *str, char *suffix);
 int str_prefix(char *str, char *prefix);
+
 void str_substr(char *dest, int dest_size, char *src, int src_pos, int src_count);
 
-/* File management */
+/* Dump formatted string into a buffer with a specific size. Its size is then
+ * decreased, and the buffer is advanced to the end of the dumped string.
+ * This function is useful for being used in other functions that dump
+ * several strings into a buffer, with the header
+ *   obj_dump(struct obj_t *obj, char *buf, int size); */
+void str_printf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
+
+
+
+
+/*
+ * File management
+ */
+
+
 FILE *open_read(char *fname);
 FILE *open_write(char *fname);
+void close_file(FILE *f);
+
 int can_open_read(char *fname);
 int can_open_write(char *fname);
+
 int read_line(FILE *f, char *line, int size);
-void close_file(FILE *f);
 FILE *create_temp_file(char *ret_path, int ret_path_size);
 
-/* other */
-void dump_bin(int x, int digits, FILE *f);
-void dump_ptr(void *ptr, int size, FILE *stream);
-int log_base2(int x);
 
-/* Buffers */
+
+
+/*
+ * Buffers
+ */
+
 int write_buffer(char *file_name, void *buf, int size);
 void *read_buffer(char *file_name, int *psize);
 void free_buffer(void *buf);
+
+
+
+
+/*
+ * Other
+ */
+
+void dump_bin(int x, int digits, FILE *f);
+void dump_ptr(void *ptr, int size, FILE *stream);
+int log_base2(int x);
+void search_dist_file(char *file_name, char *dist_path, char *non_dist_path,
+	char *buffer, int size);
+
 
 #endif
 

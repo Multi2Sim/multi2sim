@@ -134,7 +134,7 @@ void block_dia_window_refresh(struct vgpu_compute_unit_t *compute_unit)
 #define BLOCK_DIA_LAYOUT(LAYOUT, STG, X, Y, W, H, VGPU_ENGINE, VGPU_STG) { \
 	GdkColor color; \
 	char str[MAX_STRING_SIZE]; \
-	snprintf(str, sizeof(str), "#%02x%02x%02x", \
+	snprintf(str, sizeof str, "#%02x%02x%02x", \
 		(int)(vgpu_stage_color[VGPU_ENGINE][VGPU_STG][0] * 0xff), \
 		(int)(vgpu_stage_color[VGPU_ENGINE][VGPU_STG][1] * 0xff), \
 		(int)(vgpu_stage_color[VGPU_ENGINE][VGPU_STG][2] * 0xff)); \
@@ -162,7 +162,7 @@ void block_dia_window_show(struct vgpu_compute_unit_t *compute_unit)
 	/* Create window */
 	GtkWidget *block_dia_window;
 	block_dia_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	snprintf(text, sizeof(text), "Compute Unit %d - Block Diagram", compute_unit->id);
+	snprintf(text, sizeof text, "Compute Unit %d - Block Diagram", compute_unit->id);
 	gtk_window_set_title(GTK_WINDOW(block_dia_window), text);
 	gtk_window_set_resizable(GTK_WINDOW(block_dia_window), FALSE);
 	gtk_window_set_position(GTK_WINDOW(block_dia_window), GTK_WIN_POS_CENTER);

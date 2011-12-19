@@ -31,21 +31,21 @@ struct vgpu_t *vgpu_create(char *trace_file_name)
 	gpu = calloc(1, sizeof(struct vgpu_t));
 
 	/* Open trace file */
-	snprintf(gpu->trace_file_name, sizeof(gpu->trace_file_name), "%s",
+	snprintf(gpu->trace_file_name, sizeof gpu->trace_file_name, "%s",
 		trace_file_name);
 	gpu->trace_file = fopen(trace_file_name, "rt");
 	if (!gpu->trace_file) {
-		snprintf(vgpu_trace_err, sizeof(vgpu_trace_err),
+		snprintf(vgpu_trace_err, sizeof vgpu_trace_err,
 			"%s: cannot open file", trace_file_name);
 		free(gpu);
 		return NULL;
 	}
 
 	/* Open status file */
-	snprintf(gpu->state_file_name, MAX_STRING_SIZE, "%s.status", trace_file_name);
+	snprintf(gpu->state_file_name, sizeof gpu->state_file_name, "%s.status", trace_file_name);
 	gpu->state_file = fopen(gpu->state_file_name, "w+b");
 	if (!gpu->state_file) {
-		snprintf(vgpu_trace_err, sizeof(vgpu_trace_err),
+		snprintf(vgpu_trace_err, sizeof vgpu_trace_err,
 			"%s: cannot create state file", gpu->state_file_name);
 		fclose(gpu->trace_file);
 		free(gpu);
@@ -387,24 +387,21 @@ void work_group_get_name(void *item, char *buf, int size)
 
 void work_group_info_popup(void *item)
 {
-	char buffer[10000], *cursor;
-	int size;
+	char buf[10000];
+
+	char *buf_ptr = buf;
+	int buf_size = sizeof buf;
 
 	struct vgpu_work_group_t *work_group = item;
 	if (!work_group)
 		return;
 	
-	/* Initialize */
-	cursor = buffer;
-	size = sizeof(buffer);
-
 	/* Text */
-	cursor += snprintf(cursor, size - (cursor - buffer),
-		"<b>Work-Group %d</b>\n"
+	str_printf(&buf_ptr, &buf_size, "<b>Work-Group %d</b>\n"
 		"\n", work_group->id);
 	
 	/* Work-items and wavefronts */
-	cursor += snprintf(cursor, size - (cursor - buffer),
+	str_printf(&buf_ptr, &buf_size,
 		"Name:         <b>WG-%d</b>\n"
 		"Work-items:   [ <b>WI-%d</b> ... <b>WI-%d</b> ]  (%d work-items)\n"
 		"Wavefronts:   [ <b>WF-%d</b> ... <b>WF-%d</b> ]  (%d wavefronts)\n"
@@ -414,7 +411,7 @@ void work_group_info_popup(void *item)
 		work_group->wavefront_id_first, work_group->wavefront_id_last, work_group->wavefront_count);
 	
 	/* Show */
-	info_popup_show(buffer);
+	info_popup_show(buf);
 }
 
 
@@ -564,26 +561,28 @@ void vgpu_uop_get_name(void *item, char *buf, int size)
 }
 
 
-void vgpu_uop_get_markup(struct vgpu_uop_t *uop, char *buffer, int size)
+void vgpu_uop_get_markup(struct vgpu_uop_t *uop, char *buf_ptr, int buf_size)
 {
 	char vliw_elems[5] = { 'x', 'y', 'z', 'w', 't' };
 	char *uop_color[3] = { "darkgreen", "red", "blue" };
-	char *cursor = buffer;
+
 	int i;
 
 	if (uop->engine == VGPU_ENGINE_ALU)
 	{
-		cursor += snprintf(cursor, size - (cursor - buffer), "<span color=\"%s\">",
+		str_printf(&buf_ptr, &buf_size, "<span color=\"%s\">",
 			uop_color[uop->engine]);
 		for (i = 0; i < 5; i++)
 		{
 			if (uop->vliw_slot[i][0])
-				cursor += snprintf(cursor, size - (cursor - buffer), "  <b>%c:</b> %s",
+				str_printf(&buf_ptr, &buf_size, "  <b>%c:</b> %s",
 					vliw_elems[i], uop->vliw_slot[i]);
 		}
-		cursor += snprintf(cursor, size - (cursor - buffer), "</span>");
-	} else {
-		cursor += snprintf(cursor, size - (cursor - buffer), "<span color=\"%s\">%s</span>",
+		str_printf(&buf_ptr, &buf_size, "</span>");
+	}
+	else
+	{
+		str_printf(&buf_ptr, &buf_size, "<span color=\"%s\">%s</span>",
 			uop_color[uop->engine], uop->name);
 	}
 }
@@ -591,8 +590,10 @@ void vgpu_uop_get_markup(struct vgpu_uop_t *uop, char *buffer, int size)
 
 void vgpu_uop_info_popup(void *item)
 {
-	char buffer[10000], *cursor;
-	int size;
+	char buf[10000];
+
+	char *buf_ptr = buf;
+	int buf_size = sizeof buf;
 
 	struct vgpu_uop_t *uop = item;
 	int i;
@@ -601,26 +602,21 @@ void vgpu_uop_info_popup(void *item)
 	if (!uop)
 		return;
 
-	/* Initialize buffer */
-	buffer[0] = '\0';
-	cursor = buffer;
-	size = sizeof(buffer);
-
 	/* Intro */
-	cursor += snprintf(cursor, size - (cursor - buffer),
+	str_printf(&buf_ptr, &buf_size,
 		"<b>Instruction %d</b>\n\n", uop->id);
-	cursor += snprintf(cursor, size - (cursor - buffer),
+	str_printf(&buf_ptr, &buf_size,
 		"Assembly:\n\n");
 
 	/* Instruction name */
 	if (uop->engine == VGPU_ENGINE_CF)
 	{
-		cursor += snprintf(cursor, size - (cursor - buffer),
+		str_printf(&buf_ptr, &buf_size,
 			"   <span color=\"darkgreen\"><b>%s</b></span>\n", uop->name);
 	}
 	else if (uop->engine == VGPU_ENGINE_TEX)
 	{
-		cursor += snprintf(cursor, size - (cursor - buffer),
+		str_printf(&buf_ptr, &buf_size,
 			"   <span color=\"blue\"><b>%s</b></span>\n", uop->name);
 	}
 	else
@@ -630,14 +626,14 @@ void vgpu_uop_info_popup(void *item)
 		{
 			if (!uop->vliw_slot[i][0])
 				continue;
-			cursor += snprintf(cursor, size - (cursor - buffer),
+			str_printf(&buf_ptr, &buf_size,
 				"<b><span color=\"darkred\">   %c: </span><span color=\"red\">%-12s %s</span></b>   \n",
 				vliw_slot_label[i], uop->vliw_slot[i], uop->vliw_slot_args[i]);
 		}
 	}
 
 	/* Additional info */
-	cursor += snprintf(cursor, size - (cursor - buffer),
+	str_printf(&buf_ptr, &buf_size,
 		"\n"
 		"Compute unit:  <b>CU-%d</b>\n"
 		"Work-group:    <b>WG-%d</b>\n"
@@ -648,5 +644,5 @@ void vgpu_uop_info_popup(void *item)
 		uop->wavefront_id);
 
 	/* Show the popup */
-	info_popup_show(buffer);
+	info_popup_show(buf);
 }

@@ -13,7 +13,6 @@ libgpuvisual_a_SOURCES += \
 	gpuvisual-private.h \
 	info-popup.c \
 	list-layout.c \
-	misc.c \
 	timing-dia.c
 
 AM_CFLAGS = @GTK_CFLAGS@
@@ -25,9 +24,9 @@ libgpuvisual_a_SOURCES += \
 
 endif
 
-
 INCLUDES = \
 	-I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libstruct \
-	-I$(top_srcdir)/src/libgpuvisual
+	-I$(top_srcdir)/src/libgpuvisual \
+	-I$(top_srcdir)/src/libmisc
 

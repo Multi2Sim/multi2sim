@@ -25,14 +25,17 @@
 #include "misc.h"
 
 
+/*
+ * Numeric functions
+ */
 
-
-/* numeric functions */
-int log_base2(int x) {
+int log_base2(int x)
+{
 	int res = 0, value = x;
 	if (!value)
 		abort();
-	while (!(value & 1)) {
+	while (!(value & 1))
+	{
 		value >>= 1;
 		res++;
 	}
@@ -43,7 +46,13 @@ int log_base2(int x) {
 
 
 
-/* open file, choosing from "stdout", "stderr" or <name> */
+
+/*
+ * File management
+ */
+
+
+/* Open file, choosing from "stdout", "stderr" or <name> */
 FILE *open_read(char *fname)
 {
 	if (!fname[0])
@@ -100,7 +109,7 @@ int can_open_write(char *fname)
 }
 
 
-/* read a line from a text file, deleting final '\n';
+/* Read a line from a text file, deleting final '\n';
  * if eof, return -1; else return length of string */
 int read_line(FILE *f, char *line, int size)
 {
@@ -138,42 +147,13 @@ FILE *create_temp_file(char *ret_path, int ret_path_size)
 }
 
 
-/* dump memory contents, printing a dot for unprintable chars */
-void dump_ptr(void *ptr, int size, FILE *stream)
-{
-	int i, j, val;
-	for (i = 0; i < size; i++, ptr++) {
-		for (j = 0; j < 2; j++) {
-			val = j ? *(unsigned char *) ptr & 0xf :
-				*(unsigned char *) ptr >> 4;
-			if (val < 10)
-				fprintf(stream, "%d", val);
-			else
-				fprintf(stream, "%c", val - 10 + 'a');
-		}
-		fprintf(stream, " ");
-	}
-}
 
 
-/* Dump binary value */
-void dump_bin(int x, int digits, FILE *f)
-{
-	int i;
-	char s[33];
-	if (!digits) {
-		fprintf(f, "0");
-		return;
-	}
-	digits = MAX(MIN(digits, 32), 1);
-	for (i = 0; i < digits; i++)
-		s[i] = x & (1 << (digits - i - 1)) ? '1' : '0';
-	s[digits] = 0;
-	fprintf(f, "%s", s);
-}
+/*
+ * String maps
+ */
 
 
-/* string mapping functions */
 int map_string(struct string_map_t *map, char *string)
 {
 	int i;
@@ -235,6 +215,7 @@ void map_flags(struct string_map_t *map, int flags, char *out, int size)
 	}
 	strccat(out, "}");
 }
+
 
 
 
@@ -358,6 +339,22 @@ void str_substr(char *dest, int dest_size, char *src, int src_pos, int src_count
 		count = src_len - src_pos;
 	memcpy(dest, src + src_pos, count);
 	dest[count] = '\0';
+}
+
+
+void str_printf(char **pbuf, int *psize, char *fmt, ...)
+{
+	va_list va;
+	int len;
+
+	if (*psize <= 1)
+		return;
+	va_start(va, fmt);
+	len = vsnprintf(*pbuf, *psize, fmt, va);
+	if (len >= *psize)
+		len = *psize - 1;
+	*psize -= len;
+	*pbuf += len;
 }
 
 
@@ -569,3 +566,115 @@ void bit_map_dump(struct bit_map_t *bit_map, unsigned int where, unsigned int si
 		fprintf(f, "%d", bit_map_get(bit_map, where + i, 1));
 }
 
+
+
+
+/*
+ * Other
+ */
+
+
+/* Dump memory contents, printing a dot for unprintable chars */
+void dump_ptr(void *ptr, int size, FILE *stream)
+{
+	int i, j, val;
+	for (i = 0; i < size; i++, ptr++) {
+		for (j = 0; j < 2; j++) {
+			val = j ? *(unsigned char *) ptr & 0xf :
+				*(unsigned char *) ptr >> 4;
+			if (val < 10)
+				fprintf(stream, "%d", val);
+			else
+				fprintf(stream, "%c", val - 10 + 'a');
+		}
+		fprintf(stream, " ");
+	}
+}
+
+
+/* Dump binary value */
+void dump_bin(int x, int digits, FILE *f)
+{
+	int i;
+	char s[33];
+	if (!digits) {
+		fprintf(f, "0");
+		return;
+	}
+	digits = MAX(MIN(digits, 32), 1);
+	for (i = 0; i < digits; i++)
+		s[i] = x & (1 << (digits - i - 1)) ? '1' : '0';
+	s[digits] = 0;
+	fprintf(f, "%s", s);
+}
+
+
+/* Search for a file 'file_name' in two directories:
+ *   -The distributed data path (relative to PACKAGE_DATA_DIR)
+ *   -The non-distribution path (relative to top directory in build system)
+ * The file absolute path is returned in 'buffer' with a maximum of 'size' bytes.
+ * If the file is not found, the program is aborted.
+ */
+
+#ifndef PACKAGE_DATA_DIR
+#define PACKAGE_DATA_DIR ""
+#endif
+
+void search_dist_file(char *file_name, char *dist_path, char *non_dist_path,
+	char *buffer, int size)
+{
+	char dist_path_abs[MAX_STRING_SIZE];
+	char non_dist_path_abs[MAX_STRING_SIZE];
+
+	FILE *f;
+
+	char exe_name[MAX_STRING_SIZE];
+	int len, levels;
+
+	/* Look for file in distribution directory */
+	snprintf(dist_path_abs, MAX_STRING_SIZE, "%s/%s/%s",
+		PACKAGE_DATA_DIR, dist_path, file_name);
+	f = fopen(dist_path_abs, "r");
+	if (f) {
+		snprintf(buffer, size, "%s", dist_path_abs);
+		fclose(f);
+		return;
+	}
+
+	/* Look for file in non-distribution package.
+	 * Assuming that 'm2s-debug-pipeline' runs in '$(TOPDIR)/src/',
+	 * distribution file should be in '$(TOPDIR)/', i.e., one level higher. */
+	exe_name[0] = '\0';
+	len = readlink("/proc/self/exe", exe_name, MAX_STRING_SIZE);
+	if (len < 0 || len >= MAX_STRING_SIZE)
+	{
+		fprintf(stderr, "%s: error when calling 'readlink'", __FUNCTION__);
+		exit(1);
+	}
+	exe_name[len] = '\0';
+
+	levels = 2;
+	while (len && levels) {
+		if (exe_name[len - 1] == '/')
+			levels--;
+		exe_name[--len] = '\0';
+	}
+
+	snprintf(non_dist_path_abs, MAX_STRING_SIZE, "%s/%s/%s",
+		exe_name, non_dist_path, file_name);
+	f = fopen(non_dist_path_abs, "r");
+	if (f) {
+		snprintf(buffer, size, "%s", non_dist_path_abs);
+		fclose(f);
+		return;
+	}
+
+	/* File not found */
+	fprintf(stderr, "distribution file '%s' not found.\n"
+		"\tOne or more distribution files cannot be located by Multi2Sim.\n"
+		"\tPlease report this bug to 'webmaster@multi2sim.org', and it will\n"
+		"\tbe resolved as quickly as possible.\n"
+		"\tThe current value of PACKAGE_DATA_DIR is '%s'.\n",
+		file_name, PACKAGE_DATA_DIR);
+	exit(1);
+}

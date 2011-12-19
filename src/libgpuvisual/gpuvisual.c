@@ -78,7 +78,7 @@ static void cycle_update(int cycle)
 	cycle = MIN(cycle, gpu->max_cycles);
 
 	/* Write text in entry widget */
-	snprintf(text, sizeof(text), "%d", cycle);
+	snprintf(text, sizeof text, "%d", cycle);
 	gtk_entry_set_text(GTK_ENTRY(cycle_entry), text);
 	/* FIXME: select text in entry here */
 
@@ -362,11 +362,16 @@ void main_window_show()
 
 void vgpu_run(char *file_name)
 {
+	char *img_folder = "images";
+
 	/* Search for distribution files */
-	search_dist_file("cf_engine.png", "images", "images", block_dia_cf_engine_image_path, MAX_STRING_SIZE);
-	search_dist_file("alu_engine.png", "images", "images", block_dia_alu_engine_image_path, MAX_STRING_SIZE);
-	search_dist_file("tex_engine.png", "images", "images", block_dia_tex_engine_image_path, MAX_STRING_SIZE);
-	search_dist_file("m2s_icon.png", "images", "images", m2s_icon_path, MAX_STRING_SIZE);
+	search_dist_file("cf_engine.png", img_folder, img_folder, block_dia_cf_engine_image_path, MAX_STRING_SIZE);
+	search_dist_file("alu_engine.png", img_folder, img_folder, block_dia_alu_engine_image_path, MAX_STRING_SIZE);
+	search_dist_file("tex_engine.png", img_folder, img_folder, block_dia_tex_engine_image_path, MAX_STRING_SIZE);
+	search_dist_file("m2s_icon.png", img_folder, img_folder, m2s_icon_path, MAX_STRING_SIZE);
+
+	search_dist_file("close.png", img_folder, img_folder, img_close_path, MAX_STRING_SIZE);
+	search_dist_file("close-sel.png", img_folder, img_folder, img_close_sel_path, MAX_STRING_SIZE);
 
 	/* Create GPU */
 	gpu = vgpu_create(file_name);

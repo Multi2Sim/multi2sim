@@ -20,6 +20,20 @@
 #include <gpuvisual-private.h>
 
 
+/*
+ * Global variables
+ */
+
+char img_close_path[MAX_STRING_SIZE];
+char img_close_sel_path[MAX_STRING_SIZE];
+
+
+
+
+/*
+ * Private functions
+ */
+
 static gboolean list_layout_popup_button_press_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
 {
 	int width;
@@ -164,8 +178,13 @@ static void list_layout_popup_show(struct list_layout_t *list_layout)
 
 	GtkWidget *scrolled_window;
 	scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-	gtk_container_add(GTK_CONTAINER(window), scrolled_window);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+
+	/* Vertical frame */
+	GtkWidget *vbox;
+	vbox = gtk_vbox_new(FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(vbox), scrolled_window);
+	gtk_container_add(GTK_CONTAINER(window), vbox);
 
 	GdkColor color;
 	gdk_color_parse("#ffffa0", &color);
@@ -182,7 +201,7 @@ static void list_layout_popup_show(struct list_layout_t *list_layout)
 		if (list_layout->item_get_name)
 			(*list_layout->item_get_name)(item, str, sizeof(str));
 		else
-			snprintf(str, sizeof(str), "item-%d", i);
+			snprintf(str, sizeof str, "item-%d", i);
 		label = gtk_label_new(str);
 
 		/* Set label font attributes */
@@ -306,8 +325,8 @@ void list_layout_refresh(struct list_layout_t *list_layout)
 		if (list_layout->item_get_name)
 			(*list_layout->item_get_name)(item, temp_str, sizeof(temp_str));
 		else
-			snprintf(temp_str, sizeof(temp_str), "item-%d", i);
-		snprintf(str, sizeof(str), "%s%s", temp_str, i < count - 1 ? "," : "");
+			snprintf(temp_str, sizeof temp_str, "item-%d", i);
+		snprintf(str, sizeof str, "%s%s", temp_str, i < count - 1 ? "," : "");
 		label = gtk_label_new(str);
 
 		/* Set label font attributes */
@@ -325,7 +344,7 @@ void list_layout_refresh(struct list_layout_t *list_layout)
 			x = 0;
 			y += req.height;
 			if (y + 2 * req.height >= height && i < count - 1) {
-				snprintf(str, sizeof(str), "+ %d more", count - i);
+				snprintf(str, sizeof str, "+ %d more", count - i);
 				gtk_label_set_text(GTK_LABEL(label), str);
 				gtk_widget_size_request(label, &req);
 				last = TRUE;

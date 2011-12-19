@@ -28,17 +28,19 @@ char vgpu_trace_err[MAX_STRING_SIZE];
 
 #define VGPU_STATE_CHECKPOINT_INTERVAL  500
 
-#define VGPU_TRACE_ERROR(MSG) snprintf(vgpu_trace_err, MAX_STRING_SIZE, "%s:%d: %s", \
+#define VGPU_TRACE_ERROR(MSG) snprintf(vgpu_trace_err, sizeof vgpu_trace_err, "%s:%d: %s", \
 	gpu->trace_file_name, gpu->trace_line_number, (MSG))
 
 #define VGPU_TRACE_LINE_MAX_TOKENS  30
 
-struct vgpu_trace_line_token_t {
+struct vgpu_trace_line_token_t
+{
 	char *var;
 	char *value;
 };
 
-struct vgpu_trace_line_t {
+struct vgpu_trace_line_t
+{
 	char line[MAX_STRING_SIZE];
 	int num_tokens;
 	char *command;
@@ -59,7 +61,8 @@ int vgpu_trace_line_read(struct vgpu_t *gpu, struct vgpu_trace_line_t *trace_lin
 	struct vgpu_trace_line_token_t *token;
 
 	/* Read line from file */
-	do {
+	do
+	{
 		line = fgets(trace_line->line, MAX_STRING_SIZE, gpu->trace_file);
 		if (!line)
 			return 1;
@@ -67,6 +70,8 @@ int vgpu_trace_line_read(struct vgpu_t *gpu, struct vgpu_trace_line_t *trace_lin
 
 		/* Remove spaces and '\n' */
 		len = strlen(line);
+		if (len >= sizeof trace_line->line - 1)
+			fatal("%s: maximum trace line length exceeded", __FUNCTION__);
 		while (len > 0 && (line[len - 1] == ' ' || line[len - 1] == '\n'))
 			line[len--] = '\0';
 		while (len > 0 && line[0] == ' ')
@@ -83,8 +88,8 @@ int vgpu_trace_line_read(struct vgpu_t *gpu, struct vgpu_trace_line_t *trace_lin
 
 	/* Get tokens */
 	trace_line->num_tokens = 0;
-	while (*line) {
-
+	while (*line)
+	{
 		/* New token */
 		if (trace_line->num_tokens >= VGPU_TRACE_LINE_MAX_TOKENS) {
 			VGPU_TRACE_ERROR("maximum number of tokens exceeded");
@@ -108,14 +113,17 @@ int vgpu_trace_line_read(struct vgpu_t *gpu, struct vgpu_trace_line_t *trace_lin
 			*line++ = '\0';
 
 		/* Read value */
-		if (*line == '"') {
+		if (*line == '"')
+		{
 			*line++ = '\0';
 			token->value = line;
 			while (*line && *line != '"')
 				line++;
 			if (*line == '"')
 				*line++ = '\0';
-		} else {
+		}
+		else
+		{
 			token->value = line;
 			while (!isspace(*line))
 				line++;
@@ -134,7 +142,8 @@ static int vgpu_trace_line_token_index(struct vgpu_trace_line_t *trace_line, cha
 	struct vgpu_trace_line_token_t *token;
 	int i;
 
-	for (i = 0; i < trace_line->num_tokens; i++) {
+	for (i = 0; i < trace_line->num_tokens; i++)
+	{
 		token = &trace_line->tokens[i];
 		if (!strcmp(token->var, var))
 			return i;
@@ -172,25 +181,29 @@ void vgpu_trace_line_read_vliw(struct vgpu_trace_line_t *trace_line, struct vgpu
 
 	char vliw_elem_name[MAX_STRING_SIZE];
 	char str[MAX_STRING_SIZE];
+
 	char *name_ptr;
+	int name_size;
+
 	int i;
 
 	uop->name[0] = '\0';
 	name_ptr = uop->name;
+	name_size = sizeof uop->name;
+
 	for (i = 0; i < 5; i++)
 	{
 		/* Get VLIW slot */
 		vliw_elem = vliw_elems[i];
-		sprintf(str, "inst.%c", vliw_elem);
-		snprintf(vliw_elem_name, sizeof(vliw_elem_name), "%s", vgpu_trace_line_token(trace_line, str));
+		snprintf(str, sizeof str, "inst.%c", vliw_elem);
+		snprintf(vliw_elem_name, sizeof vliw_elem_name , "%s", vgpu_trace_line_token(trace_line, str));
 		if (!vliw_elem_name[0])
 			continue;
 
 		/* Add to instruction name */
-		snprintf(uop->vliw_slot[i], sizeof(uop->vliw_slot[i]), "%s", strtok(vliw_elem_name, " "));
-		snprintf(uop->vliw_slot_args[i], sizeof(uop->vliw_slot_args[i]), "%s", strtok(NULL, ""));
-		name_ptr += snprintf(name_ptr, sizeof(uop->name) - (name_ptr - uop->name),
-			"%c: %s %s   ", vliw_elems[i], uop->vliw_slot[i], uop->vliw_slot_args[i]);
+		snprintf(uop->vliw_slot[i], sizeof uop->vliw_slot[i], "%s", strtok(vliw_elem_name, " "));
+		snprintf(uop->vliw_slot_args[i], sizeof uop->vliw_slot_args[i], "%s", strtok(NULL, ""));
+		str_printf(&name_ptr, &name_size, "%c: %s %s   ", vliw_elems[i], uop->vliw_slot[i], uop->vliw_slot_args[i]);
 	}
 }
 
@@ -364,7 +377,7 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			uop->compute_unit_id = compute_unit_id;
 			uop->work_group_id = vgpu_trace_line_token_int(&trace_line, "wg");
 			uop->wavefront_id = vgpu_trace_line_token_int(&trace_line, "wf");
-			str_single_space(uop->name, vgpu_trace_line_token(&trace_line, "inst"), sizeof(uop->name));
+			str_single_spaces(uop->name, vgpu_trace_line_token(&trace_line, "inst"), sizeof uop->name);
 			if (uop_id > compute_unit->max_uops)
 				compute_unit->max_uops = uop_id;
 
@@ -768,8 +781,8 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 				int count;
 				int loop_idx;
 
-				int size = sizeof(text);
-				char *cursor = text;
+				char *text_ptr = text;
+				int text_size = sizeof text;
 
 				int i;
 
@@ -778,8 +791,8 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 				loop_idx = vgpu_trace_line_token_int(&trace_line, "l");
 
 				for (i = 0; i < 3 * loop_idx; i++)
-					cursor += snprintf(cursor, size - (cursor - text), " ");
-				cursor += snprintf(cursor, size - (cursor - text),
+					str_printf(&text_ptr, &text_size, " ");
+				str_printf(&text_ptr, &text_size,
 					"<span color=\"darkgreen\">%02d <b>%s</b></span>\n", count, inst);
 				list_add(gpu->kernel_source_strings, strdup(text));
 			}
@@ -787,8 +800,8 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 			/* ALU clause */
 			else if (!strcmp(clause, "alu"))
 			{
-				int size = sizeof(text);
-				char *cursor = text;
+				char *text_ptr = text;
+				int text_size = sizeof text;
 
 				char *slot_name[5] = { "x", "y", "z", "w", "t" };
 				char *slot_inst_name[5] = { "inst.x", "inst.y", "inst.z", "inst.w", "inst.t" };
@@ -803,7 +816,7 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 				count = vgpu_trace_line_token_int(&trace_line, "cnt");
 				loop_idx = vgpu_trace_line_token_int(&trace_line, "l");
 
-				cursor += snprintf(cursor, size - (cursor - text), "<span color=\"red\">");
+				str_printf(&text_ptr, &text_size, "<span color=\"red\">");
 				for (j = 0; j < 5; j++)
 				{
 					inst = vgpu_trace_line_token(&trace_line, slot_inst_name[j]);
@@ -811,26 +824,26 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 						continue;
 
 					for (i = 0; i < 3 * loop_idx; i++)
-						cursor += snprintf(cursor, size - (cursor - text), " ");
+						str_printf(&text_ptr, &text_size, " ");
 
 					if (first_printed_slot)
-						cursor += snprintf(cursor, size - (cursor - text), "%4d", count);
+						str_printf(&text_ptr, &text_size, "%4d", count);
 					else
-						cursor += snprintf(cursor, size - (cursor - text), "%4s", "");
+						str_printf(&text_ptr, &text_size, "%4s", "");
 					first_printed_slot = 0;
 
-					cursor += snprintf(cursor, size - (cursor - text),
+					str_printf(&text_ptr, &text_size,
 						" <b><span color=\"darkred\">%s</span>: %s</b>\n", slot_name[j], inst);
 				}
-				cursor += snprintf(cursor, size - (cursor - text), "</span>");
+				str_printf(&text_ptr, &text_size, "</span>");
 				list_add(gpu->kernel_source_strings, strdup(text));
 			}
 
 			/* TEX clause */
 			else if (!strcmp(clause, "tex"))
 			{
-				int size = sizeof(text);
-				char *cursor = text;
+				char *text_ptr = text;
+				int text_size = sizeof text;
 
 				char *inst;
 				int i;
@@ -842,19 +855,19 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 				loop_idx = vgpu_trace_line_token_int(&trace_line, "l");
 
 				for (i = 0; i < 3 * loop_idx; i++)
-					cursor += snprintf(cursor, size - (cursor - text), " ");
+					str_printf(&text_ptr, &text_size, " ");
 
 				inst = vgpu_trace_line_token(&trace_line, "inst");
-				cursor += snprintf(cursor, size - (cursor - text), "<span color=\"blue\">");
-				cursor += snprintf(cursor, size - (cursor - text), "%4d", count);
-				cursor += snprintf(cursor, size - (cursor - text),
-					" <b>%s</b>\n", inst);
-				cursor += snprintf(cursor, size - (cursor - text), "</span>");
+				str_printf(&text_ptr, &text_size, "<span color=\"blue\">");
+				str_printf(&text_ptr, &text_size, "%4d", count);
+				str_printf(&text_ptr, &text_size, " <b>%s</b>\n", inst);
+				str_printf(&text_ptr, &text_size, "</span>");
 				list_add(gpu->kernel_source_strings, strdup(text));
 			}
 
 			/* Invalid */
-			else {
+			else
+			{
 				VGPU_TRACE_ERROR("invalid clause in disassembly");
 				return 2;
 			}
