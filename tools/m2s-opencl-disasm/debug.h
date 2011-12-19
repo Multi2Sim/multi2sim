@@ -64,7 +64,7 @@ void panic(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
  * This function is useful for being used in other functions that dump
  * several strings into a buffer, with the header
  *   obj_dump(struct obj_t *obj, char *buf, int size); */
-void dump_buf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
+void str_printf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 
 
 #endif

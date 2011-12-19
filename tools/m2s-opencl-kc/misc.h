@@ -35,7 +35,7 @@
 
 
 void fatal(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
-void dump_buf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
+void str_printf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 
 struct string_map_t {
 	int count;

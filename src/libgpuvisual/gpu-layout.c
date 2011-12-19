@@ -117,7 +117,7 @@ static void vgpu_layout_refresh(struct vgpu_t *gpu)
 		/* Event box and frame */
 		GtkWidget *event_box;
 		GtkWidget *compute_unit_frame;
-		snprintf(str, sizeof(str), "CU-%d", compute_unit->id);
+		snprintf(str, sizeof str, "CU-%d", compute_unit->id);
 		event_box = gtk_event_box_new();
 		compute_unit_frame = gtk_frame_new(str);
 		gtk_widget_set_size_request(compute_unit_frame, VGPU_COMPUTE_UNIT_WIDTH, VGPU_COMPUTE_UNIT_HEIGHT);

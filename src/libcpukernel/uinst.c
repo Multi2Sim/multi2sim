@@ -577,7 +577,7 @@ void x86_uinst_dump_buf(struct x86_uinst_t *uinst, char *buf, int size)
 	int i;
 
 	/* Instruction name */
-	dump_buf(&buf, &size, "%s ", x86_uinst_info[uinst->opcode].name);
+	str_printf(&buf, &size, "%s ", x86_uinst_info[uinst->opcode].name);
 
 	/* Output operands */
 	comma = "";
@@ -588,14 +588,14 @@ void x86_uinst_dump_buf(struct x86_uinst_t *uinst, char *buf, int size)
 		if (!dep)
 			continue;
 		dep_count++;
-		dump_buf(&buf, &size, "%s%s", comma, x86_uinst_dep_name_get(dep));
+		str_printf(&buf, &size, "%s%s", comma, x86_uinst_dep_name_get(dep));
 		comma = ",";
 	}
 	if (!dep_count)
-		dump_buf(&buf, &size, "-");
+		str_printf(&buf, &size, "-");
 
 	/* Separator */
-	dump_buf(&buf, &size, "/");
+	str_printf(&buf, &size, "/");
 
 	/* Input operands */
 	comma = "";
@@ -605,15 +605,15 @@ void x86_uinst_dump_buf(struct x86_uinst_t *uinst, char *buf, int size)
 		if (!dep)
 			continue;
 		dep_count++;
-		dump_buf(&buf, &size, "%s%s", comma, x86_uinst_dep_name_get(dep));
+		str_printf(&buf, &size, "%s%s", comma, x86_uinst_dep_name_get(dep));
 		comma = ",";
 	}
 	if (!dep_count)
-		dump_buf(&buf, &size, "-");
+		str_printf(&buf, &size, "-");
 
 	/* Memory address */
 	if (uinst->size)
-		dump_buf(&buf, &size, " [0x%x,%d]", uinst->address, uinst->size);
+		str_printf(&buf, &size, " [0x%x,%d]", uinst->address, uinst->size);
 }
 
 

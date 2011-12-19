@@ -515,17 +515,17 @@ void amd_inst_dump_kcache_buf(int kcache_idx, int kcache_bank, int kcache_mode, 
 {
 	if (!kcache_mode)  /* KCACHE_MODE_NOP */
 		return;
-	dump_buf(buf_ptr, size_ptr, "KCACHE%d(CB%d:", kcache_idx, kcache_bank);
+	str_printf(buf_ptr, size_ptr, "KCACHE%d(CB%d:", kcache_idx, kcache_bank);
 	switch (kcache_mode) {
 	case 1:  /* KCACHE_LOCK_1 */
-		dump_buf(buf_ptr, size_ptr, "%d-%d", kcache_addr * 16, kcache_addr * 16 + 15);  /* FIXME: correct? */
+		str_printf(buf_ptr, size_ptr, "%d-%d", kcache_addr * 16, kcache_addr * 16 + 15);  /* FIXME: correct? */
 		break;
 	case 2:  /* KCACHE_LOCK_2 */
 	case 3:  /* KCACHE_LOCK_LOOP_INDEX */
 	default:
 		fatal("amd_inst_dump_kcache: kcache_mode=%d not supported", kcache_mode);
 	}
-	dump_buf(buf_ptr, size_ptr, ") ");
+	str_printf(buf_ptr, size_ptr, ") ");
 }
 
 
@@ -543,19 +543,19 @@ void amd_inst_dump_gpr_buf(int gpr, int rel, int chan, int im,
 	/* Relative addressing */
 	if (rel) {
 		if (rel && IN_RANGE(im, 0, 3))
-			dump_buf(buf_ptr, size_ptr, "%s[A0.%s]", gpr_str, map_value(&amd_alu_map, AMD_ALU_X + im));
+			str_printf(buf_ptr, size_ptr, "%s[A0.%s]", gpr_str, map_value(&amd_alu_map, AMD_ALU_X + im));
 		else if (im == 4)
-			dump_buf(buf_ptr, size_ptr, "%s[AL]", gpr_str);
+			str_printf(buf_ptr, size_ptr, "%s[AL]", gpr_str);
 		else if (im == 5)
-			dump_buf(buf_ptr, size_ptr, "SR%d", gpr);
+			str_printf(buf_ptr, size_ptr, "SR%d", gpr);
 		else if (im == 6)
-			dump_buf(buf_ptr, size_ptr, "SR%d[A0.x]", gpr);
+			str_printf(buf_ptr, size_ptr, "SR%d[A0.x]", gpr);
 	} else
-		dump_buf(buf_ptr, size_ptr, "%s", gpr_str);
+		str_printf(buf_ptr, size_ptr, "%s", gpr_str);
 
 	/* Vector element */
 	if (chan >= 0)
-		dump_buf(buf_ptr, size_ptr, ".%s", map_value(&amd_alu_map, AMD_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, ".%s", map_value(&amd_alu_map, AMD_ALU_X + chan));
 }
 
 
@@ -572,7 +572,7 @@ void amd_inst_dump_op_dest_buf(struct amd_inst_t *inst, char **buf_ptr, int *siz
 
 	/* If 'write_mask' field is clear, print underscore */
 	if (inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && !inst->words[1].alu_word1_op2.write_mask) {
-		dump_buf(buf_ptr, size_ptr, "____");
+		str_printf(buf_ptr, size_ptr, "____");
 		return;
 	}
 
@@ -701,9 +701,9 @@ void amd_inst_dump_op_src_buf(struct amd_inst_t *inst, int src_idx, char **buf_p
 
 	/* Negation and first bracket for abs */
 	if (neg)
-		dump_buf(buf_ptr, size_ptr, "-");
+		str_printf(buf_ptr, size_ptr, "-");
 	if (abs)
-		dump_buf(buf_ptr, size_ptr, "|");
+		str_printf(buf_ptr, size_ptr, "|");
 
 	/* 0..127: Value in GPR */
 	if (IN_RANGE(sel, 0, 127)) {
@@ -715,25 +715,25 @@ void amd_inst_dump_op_src_buf(struct amd_inst_t *inst, int src_idx, char **buf_p
 
 	/* 128..159: Kcache constants in bank 0 */
 	if (IN_RANGE(sel, 128, 159)) {
-		dump_buf(buf_ptr, size_ptr, "KC0[%d].%s", sel - 128, map_value(&amd_alu_map, AMD_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC0[%d].%s", sel - 128, map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
 	/* 160..191: Kcache constants in bank 1 */
 	if (IN_RANGE(sel, 160, 191)) {
-		dump_buf(buf_ptr, size_ptr, "KC1[%d].%s", sel - 160, map_value(&amd_alu_map, AMD_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC1[%d].%s", sel - 160, map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
 	/* 256..287: Kcache constants in bank 2 */
 	if (IN_RANGE(sel, 256, 287)) {
-		dump_buf(buf_ptr, size_ptr, "KC2[%d].%s", sel - 256, map_value(&amd_alu_map, AMD_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC2[%d].%s", sel - 256, map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
 	/* 288..319: Kcache constant in bank 3 */
 	if (IN_RANGE(sel, 288, 319)) {
-		dump_buf(buf_ptr, size_ptr, "KC3[%d].%s", sel - 288, map_value(&amd_alu_map, AMD_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "KC3[%d].%s", sel - 288, map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
@@ -745,23 +745,23 @@ void amd_inst_dump_op_src_buf(struct amd_inst_t *inst, int src_idx, char **buf_p
 		assert(inst->alu_group);
 		literal_float = inst->alu_group->literal[chan];
 		literal_int = * (uint32_t *) &literal_float;
-		dump_buf(buf_ptr, size_ptr, "(0x%08x, %.9ef).%s", literal_int, literal_float, map_value(&amd_alu_map, AMD_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "(0x%08x, %.9ef).%s", literal_int, literal_float, map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
 	/* ALU_SRC_PV */
 	if (sel == 254) {
-		dump_buf(buf_ptr, size_ptr, "PV.%s", map_value(&amd_alu_map, AMD_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "PV.%s", map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
 	/* Other */
-	dump_buf(buf_ptr, size_ptr, "%s", map_value(&src_sel_map, sel));
+	str_printf(buf_ptr, size_ptr, "%s", map_value(&src_sel_map, sel));
 
 end:
 	/* Second bracket for abs */
 	if (abs)
-		dump_buf(buf_ptr, size_ptr, "|");
+		str_printf(buf_ptr, size_ptr, "|");
 }
 
 
@@ -782,24 +782,24 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 	assert(loop_idx >= 0);
 	memset(shift_str, ' ', MAX_STRING_SIZE);
 	shift_str[loop_idx * 4] = '\0';
-	dump_buf(buf_ptr, size_ptr, "%s", shift_str);
+	str_printf(buf_ptr, size_ptr, "%s", shift_str);
 
 	/* Instruction counter */
 	if (inst->info->category == AMD_CAT_CF) {
 		if (count >= 0)
-			dump_buf(buf_ptr, size_ptr, "%02d ", count);
+			str_printf(buf_ptr, size_ptr, "%02d ", count);
 		else
-			dump_buf(buf_ptr, size_ptr, "   ");
+			str_printf(buf_ptr, size_ptr, "   ");
 	} else {
 		if (count >= 0)
-			dump_buf(buf_ptr, size_ptr, "     %2d  ", count);
+			str_printf(buf_ptr, size_ptr, "     %2d  ", count);
 		else
-			dump_buf(buf_ptr, size_ptr, "         ");
+			str_printf(buf_ptr, size_ptr, "         ");
 	}
 	
 	/* VLIW slot */
 	if (slot >= 0)
-		dump_buf(buf_ptr, size_ptr, "%s: ", map_value(&amd_alu_map, slot));
+		str_printf(buf_ptr, size_ptr, "%s: ", map_value(&amd_alu_map, slot));
 
 	/* Format */
 	fmt_str = inst->info->fmt_str;
@@ -807,7 +807,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 		
 		/* Literal */
 		if (*fmt_str != '%') {
-			dump_buf(buf_ptr, size_ptr, "%c", *fmt_str);
+			str_printf(buf_ptr, size_ptr, "%c", *fmt_str);
 			fmt_str++;
 			continue;
 		}
@@ -817,9 +817,9 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 		if (amd_inst_is_token(fmt_str, "name", &len)) {
 
 			if (inst->info->category == AMD_CAT_ALU)
-				dump_buf(buf_ptr, size_ptr, "%-11s", inst->info->name);
+				str_printf(buf_ptr, size_ptr, "%-11s", inst->info->name);
 			else
-				dump_buf(buf_ptr, size_ptr, "%s", inst->info->name);
+				str_printf(buf_ptr, size_ptr, "%s", inst->info->name);
 
 		} else if (amd_inst_is_token(fmt_str, "alu_dst", &len)) {
 			
@@ -841,45 +841,45 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			
 			/* Padding */
 			assert(inst->info->fmt[1] == FMT_ALU_WORD1_OP2 || inst->info->fmt[1] == FMT_ALU_WORD1_OP3);
-			dump_buf(buf_ptr, size_ptr, "    ");
+			str_printf(buf_ptr, size_ptr, "    ");
 
 			/* ALU_WORD1_OP2 - 'bank_swizzle' field.
 			 * Common for ALU_WORD1_OP2 and ALU_WORD1_OP3 */
-			dump_buf(buf_ptr, size_ptr, "%s", map_value(&bank_swizzle_map, inst->words[1].alu_word1_op2.bank_swizzle));
+			str_printf(buf_ptr, size_ptr, "%s", map_value(&bank_swizzle_map, inst->words[1].alu_word1_op2.bank_swizzle));
 			
 			/* ALU_WORD0 - 'pred_sel' field */
 			if (inst->words[0].alu_word0.pred_sel == 2)  /* PRED_SEL_ZERO */
-				dump_buf(buf_ptr, size_ptr, " (!p)");
+				str_printf(buf_ptr, size_ptr, " (!p)");
 			else if (inst->words[0].alu_word0.pred_sel == 3)  /* PRED_SEL_ONE */
-				dump_buf(buf_ptr, size_ptr, " (p)");
+				str_printf(buf_ptr, size_ptr, " (p)");
 
 			/* ALU_WORD1_OP2 - 'update_exec_mask' field */
 			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && inst->words[1].alu_word1_op2.update_exec_mask)
-				dump_buf(buf_ptr, size_ptr, " UPDATE_EXEC_MASK");
+				str_printf(buf_ptr, size_ptr, " UPDATE_EXEC_MASK");
 
 			/* ALU_WORD1_OP2 - 'update_pred' field */
 			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && inst->words[1].alu_word1_op2.update_pred)
-				dump_buf(buf_ptr, size_ptr, " UPDATE_PRED");
+				str_printf(buf_ptr, size_ptr, " UPDATE_PRED");
 
 		} else if (amd_inst_is_token(fmt_str, "omod", &len)) {
 			
 			assert(inst->info->fmt[1] == FMT_ALU_WORD1_OP2);
 			switch (inst->words[1].alu_word1_op2.omod) {
-				case 0: dump_buf(buf_ptr, size_ptr, "  "); break;
-				case 1: dump_buf(buf_ptr, size_ptr, "*2"); break;
-				case 2: dump_buf(buf_ptr, size_ptr, "*4"); break;
-				case 3: dump_buf(buf_ptr, size_ptr, "/2"); break;
+				case 0: str_printf(buf_ptr, size_ptr, "  "); break;
+				case 1: str_printf(buf_ptr, size_ptr, "*2"); break;
+				case 2: str_printf(buf_ptr, size_ptr, "*4"); break;
+				case 3: str_printf(buf_ptr, size_ptr, "/2"); break;
 			}
 			
 		} else if (amd_inst_is_token(fmt_str, "cf_addr", &len)) {
 
 			assert(inst->info->fmt[0] == FMT_CF_WORD0);
-			dump_buf(buf_ptr, size_ptr, "%d", inst->words[0].cf_word0.addr);
+			str_printf(buf_ptr, size_ptr, "%d", inst->words[0].cf_word0.addr);
 
 		} else if (amd_inst_is_token(fmt_str, "cf_cnt", &len)) {
 			
 			assert(inst->info->fmt[1] == FMT_CF_WORD1);
-			dump_buf(buf_ptr, size_ptr, "%d", inst->words[1].cf_word1.count + 1);
+			str_printf(buf_ptr, size_ptr, "%d", inst->words[1].cf_word1.count + 1);
 		
 		} else if (amd_inst_is_token(fmt_str, "pop_count", &len)) {
 
@@ -887,7 +887,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[1] == FMT_CF_WORD1);
 			pop_count = inst->words[1].cf_word1.pop_count;
 			if (pop_count)
-				dump_buf(buf_ptr, size_ptr, "POP_CNT(%d)", pop_count);
+				str_printf(buf_ptr, size_ptr, "POP_CNT(%d)", pop_count);
 
 		} else if (amd_inst_is_token(fmt_str, "cf_cond", &len)) {
 			
@@ -896,7 +896,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			valid_pixel_mode = inst->words[1].cf_word1.valid_pixel_mode;
 			cf_cond = inst->words[1].cf_word1.cond;
 			if (valid_pixel_mode && cf_cond)
-				dump_buf(buf_ptr, size_ptr, "CND(%s)", map_value(&cf_cond_map, cf_cond));
+				str_printf(buf_ptr, size_ptr, "CND(%s)", map_value(&cf_cond_map, cf_cond));
 
 		} else if (amd_inst_is_token(fmt_str, "cf_const", &len)) {
 			
@@ -906,7 +906,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			cf_cond = inst->words[1].cf_word1.cond;
 			cf_const = inst->words[1].cf_word1.cf_const;
 			if (valid_pixel_mode && IN_RANGE(cf_cond, 2, 3))
-				dump_buf(buf_ptr, size_ptr, "CF_CONST(%d)", cf_const);
+				str_printf(buf_ptr, size_ptr, "CF_CONST(%d)", cf_const);
 
 		} else if (amd_inst_is_token(fmt_str, "wqm", &len)) {
 			
@@ -914,7 +914,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[1] == FMT_CF_WORD1 || inst->info->fmt[1] == FMT_CF_ALU_WORD1);
 			whole_quad_mode = inst->words[1].cf_word1.whole_quad_mode;
 			if (whole_quad_mode)
-				dump_buf(buf_ptr, size_ptr, "WHOLE_QUAD");
+				str_printf(buf_ptr, size_ptr, "WHOLE_QUAD");
 
 		} else if (amd_inst_is_token(fmt_str, "vpm", &len)) {
 			
@@ -924,24 +924,24 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
 			valid_pixel_mode = inst->words[1].cf_word1.valid_pixel_mode;
 			if (valid_pixel_mode)
-				dump_buf(buf_ptr, size_ptr, "VPM");
+				str_printf(buf_ptr, size_ptr, "VPM");
 
 		} else if (amd_inst_is_token(fmt_str, "cf_alu_addr", &len)) {
 
 			assert(inst->info->fmt[0] == FMT_CF_ALU_WORD0);
-			dump_buf(buf_ptr, size_ptr, "%d", inst->words[0].cf_alu_word0.addr);
+			str_printf(buf_ptr, size_ptr, "%d", inst->words[0].cf_alu_word0.addr);
 
 		} else if (amd_inst_is_token(fmt_str, "cf_alu_cnt", &len)) {
 
 			assert(inst->info->fmt[1] == FMT_CF_ALU_WORD1);
-			dump_buf(buf_ptr, size_ptr, "%d", inst->words[1].cf_alu_word1.count + 1);
+			str_printf(buf_ptr, size_ptr, "%d", inst->words[1].cf_alu_word1.count + 1);
 
 		} else if (amd_inst_is_token(fmt_str, "loop_idx", &len)) {
 			
-			//dump_buf(buf_ptr, size_ptr, "i%d", loop_idx);
+			//str_printf(buf_ptr, size_ptr, "i%d", loop_idx);
 			/* FIXME: what is this field? I think it is the CF_CONST value, but
 			 * needs to be checked with AMD's ISA dump. */
-			dump_buf(buf_ptr, size_ptr, "i%d", inst->words[1].cf_word1.cf_const);
+			str_printf(buf_ptr, size_ptr, "i%d", inst->words[1].cf_word1.cf_const);
 
 		} else if (amd_inst_is_token(fmt_str, "mark", &len)) {
 			
@@ -950,7 +950,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
 			mark = inst->words[1].cf_alloc_export_word1_buf.mark;
 			if (mark)
-				dump_buf(buf_ptr, size_ptr, "MARK");
+				str_printf(buf_ptr, size_ptr, "MARK");
 
 		} else if (amd_inst_is_token(fmt_str, "burst_count", &len)) {
 
@@ -959,7 +959,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
 			burst_count = inst->words[1].cf_alloc_export_word1_buf.burst_count;
 			if (burst_count)
-				dump_buf(buf_ptr, size_ptr, "BRSTCNT(%d)", burst_count);
+				str_printf(buf_ptr, size_ptr, "BRSTCNT(%d)", burst_count);
 
 		} else if (amd_inst_is_token(fmt_str, "no_barrier", &len)) {
 			
@@ -968,7 +968,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
 			if (!inst->words[1].cf_word1.barrier)
-				dump_buf(buf_ptr, size_ptr, "NO_BARRIER");
+				str_printf(buf_ptr, size_ptr, "NO_BARRIER");
 
 		} else if (amd_inst_is_token(fmt_str, "vpm", &len)) {
 			
@@ -976,7 +976,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF ||
 				inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
 			if (inst->words[1].cf_word1.valid_pixel_mode)
-				dump_buf(buf_ptr, size_ptr, "VPM");
+				str_printf(buf_ptr, size_ptr, "VPM");
 
 		} else if (amd_inst_is_token(fmt_str, "kcache", &len)) {
 			
@@ -994,12 +994,12 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 		} else if (amd_inst_is_token(fmt_str, "rat_inst", &len)) {
 			
 			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0_RAT);
-			dump_buf(buf_ptr, size_ptr, "%s", map_value(&rat_inst_map, inst->words[0].cf_alloc_export_word0_rat.rat_inst));
+			str_printf(buf_ptr, size_ptr, "%s", map_value(&rat_inst_map, inst->words[0].cf_alloc_export_word0_rat.rat_inst));
 
 		} else if (amd_inst_is_token(fmt_str, "rat_id", &len)) {
 			
 			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0_RAT);
-			dump_buf(buf_ptr, size_ptr, "%d", inst->words[0].cf_alloc_export_word0_rat.rat_id);
+			str_printf(buf_ptr, size_ptr, "%d", inst->words[0].cf_alloc_export_word0_rat.rat_id);
 
 		} else if (amd_inst_is_token(fmt_str, "rat_index_mode", &len)) {
 			
@@ -1007,7 +1007,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0_RAT);
 			rim = inst->words[0].cf_alloc_export_word0_rat.rat_index_mode;
 			if (rim)
-				dump_buf(buf_ptr, size_ptr, "+idx%d", rim - 1);
+				str_printf(buf_ptr, size_ptr, "+idx%d", rim - 1);
 
 		} else if (amd_inst_is_token(fmt_str, "rat_index_gpr", &len)) {
 			
@@ -1020,7 +1020,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF);
 			comp_mask = inst->words[1].cf_alloc_export_word1_buf.comp_mask;
 			if (comp_mask != 0xf)
-				dump_buf(buf_ptr, size_ptr, ".%s%s%s%s", comp_mask & 1 ? "x" : "_", comp_mask & 2 ? "y" : "_",
+				str_printf(buf_ptr, size_ptr, ".%s%s%s%s", comp_mask & 1 ? "x" : "_", comp_mask & 2 ? "y" : "_",
 					comp_mask & 4 ? "z" : "_", comp_mask & 8 ? "w" : "_");
 
 		} else if (amd_inst_is_token(fmt_str, "rat_rw_gpr", &len)) {
@@ -1035,10 +1035,10 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF);
 			elem_size = inst->words[0].cf_alloc_export_word0.elem_size;
 			array_size = inst->words[1].cf_alloc_export_word1_buf.array_size;
-			dump_buf(buf_ptr, size_ptr, "ARRAY_SIZE(%d", array_size);
+			str_printf(buf_ptr, size_ptr, "ARRAY_SIZE(%d", array_size);
 			if (elem_size)
-				dump_buf(buf_ptr, size_ptr, ",%d", elem_size + 1);
-			dump_buf(buf_ptr, size_ptr, ")");
+				str_printf(buf_ptr, size_ptr, ",%d", elem_size + 1);
+			str_printf(buf_ptr, size_ptr, ")");
 
 		} else if (amd_inst_is_token(fmt_str, "elem_size", &len)) {
 			
@@ -1046,7 +1046,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0 || inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0_RAT);
 			elem_size = inst->words[0].cf_alloc_export_word0.elem_size;
 			if (elem_size)
-				dump_buf(buf_ptr, size_ptr, "ELEM_SIZE(%d)", elem_size);
+				str_printf(buf_ptr, size_ptr, "ELEM_SIZE(%d)", elem_size);
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_dst_gpr", &len)) {
 			
@@ -1065,7 +1065,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			dst_sel_z = inst->words[1].vtx_word1_gpr.dst_sel_z;
 			dst_sel_w = inst->words[1].vtx_word1_gpr.dst_sel_w;
 			if (dst_sel_x != 0 || dst_sel_y != 1 || dst_sel_z != 2 || dst_sel_w != 3)
-				dump_buf(buf_ptr, size_ptr, ".%s%s%s%s", map_value(&dst_sel_map, dst_sel_x), map_value(&dst_sel_map, dst_sel_y),
+				str_printf(buf_ptr, size_ptr, ".%s%s%s%s", map_value(&dst_sel_map, dst_sel_x), map_value(&dst_sel_map, dst_sel_y),
 					map_value(&dst_sel_map, dst_sel_z), map_value(&dst_sel_map, dst_sel_w));
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_fetch_type", &len)) {
@@ -1074,7 +1074,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[0] == FMT_VTX_WORD0);
 			fetch_type = inst->words[0].vtx_word0.fetch_type;
 			if (fetch_type)
-				dump_buf(buf_ptr, size_ptr, "%sFETCH_TYPE(%s)", amd_inst_token_prefix(loop_idx, &nl),
+				str_printf(buf_ptr, size_ptr, "%sFETCH_TYPE(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_fetch_type_map, fetch_type));
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_fetch_whole_quad", &len)) {
@@ -1083,14 +1083,14 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[0] == FMT_VTX_WORD0);
 			fetch_whole_quad = inst->words[0].vtx_word0.fetch_whole_quad;
 			if (fetch_whole_quad)
-				dump_buf(buf_ptr, size_ptr, "WHOLE_QUAD");
+				str_printf(buf_ptr, size_ptr, "WHOLE_QUAD");
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_buffer_id", &len)) {
 			
 			int buffer_id;
 			assert(inst->info->fmt[0] == FMT_VTX_WORD0);
 			buffer_id = inst->words[0].vtx_word0.buffer_id;
-			dump_buf(buf_ptr, size_ptr, "fc%d", buffer_id);
+			str_printf(buf_ptr, size_ptr, "fc%d", buffer_id);
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_src_gpr", &len)) {
 			
@@ -1109,7 +1109,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			data_format = inst->words[1].vtx_word1_gpr.data_format;
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields)
-				dump_buf(buf_ptr, size_ptr, "%sFORMAT(%s)", amd_inst_token_prefix(loop_idx, &nl),
+				str_printf(buf_ptr, size_ptr, "%sFORMAT(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_data_format_map, data_format));
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_num_format", &len)) {
@@ -1120,7 +1120,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			num_format = inst->words[1].vtx_word1_gpr.num_format_all;
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && num_format)
-				dump_buf(buf_ptr, size_ptr, "%sNUM_FORMAT(%s)", amd_inst_token_prefix(loop_idx, &nl),
+				str_printf(buf_ptr, size_ptr, "%sNUM_FORMAT(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_num_format_map, num_format));
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_format_comp", &len)) {
@@ -1131,7 +1131,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			format_comp = inst->words[1].vtx_word1_gpr.format_comp_all;
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && format_comp)
-				dump_buf(buf_ptr, size_ptr, "%sFORMAT_COMP(%s)", amd_inst_token_prefix(loop_idx, &nl),
+				str_printf(buf_ptr, size_ptr, "%sFORMAT_COMP(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_format_comp_map, format_comp));
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_srf_mode", &len)) {
@@ -1142,7 +1142,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			srf_mode = inst->words[1].vtx_word1_gpr.srf_mode_all;
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			if (!use_const_fields && srf_mode)
-				dump_buf(buf_ptr, size_ptr, "%sSRF_MODE(%s)", amd_inst_token_prefix(loop_idx, &nl),
+				str_printf(buf_ptr, size_ptr, "%sSRF_MODE(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_srf_mode_map, srf_mode));
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_offset", &len)) {
@@ -1151,7 +1151,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[2] == FMT_VTX_WORD2);
 			offset = inst->words[2].vtx_word2.offset;
 			if (offset)
-				dump_buf(buf_ptr, size_ptr, "OFFSET(%d)", offset);
+				str_printf(buf_ptr, size_ptr, "OFFSET(%d)", offset);
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_endian_swap", &len)) {
 			
@@ -1162,7 +1162,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			use_const_fields = inst->words[1].vtx_word1_gpr.use_const_fields;
 			endian_swap = inst->words[2].vtx_word2.endian_swap;
 			if (!use_const_fields && endian_swap)
-				dump_buf(buf_ptr, size_ptr, "%sENDIAN_SWAP(%s)", amd_inst_token_prefix(loop_idx, &nl),
+				str_printf(buf_ptr, size_ptr, "%sENDIAN_SWAP(%s)", amd_inst_token_prefix(loop_idx, &nl),
 					map_value(&fmt_vtx_endian_swap_map, endian_swap));
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_cbns", &len)) {
@@ -1171,19 +1171,19 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[2] == FMT_VTX_WORD2);
 			cbns = inst->words[2].vtx_word2.const_buf_no_stride;
 			if (cbns)
-				dump_buf(buf_ptr, size_ptr, "%sCONST_BUF_NO_STRIDE", amd_inst_token_prefix(loop_idx, &nl));
+				str_printf(buf_ptr, size_ptr, "%sCONST_BUF_NO_STRIDE", amd_inst_token_prefix(loop_idx, &nl));
 
 		} else if (amd_inst_is_token(fmt_str, "vtx_mega_fetch", &len)) {
 			
 			int mega_fetch_count;
 			assert(inst->info->fmt[0] == FMT_VTX_WORD0);
 			mega_fetch_count = inst->words[0].vtx_word0.mega_fetch_count;
-			dump_buf(buf_ptr, size_ptr, "MEGA(%d)", mega_fetch_count + 1);
+			str_printf(buf_ptr, size_ptr, "MEGA(%d)", mega_fetch_count + 1);
 
 		} else if (amd_inst_is_token(fmt_str, "lds_op", &len)) {
 			
 			assert(inst->info->fmt[1] == FMT_ALU_WORD1_LDS_IDX_OP);
-			dump_buf(buf_ptr, size_ptr, "%s", map_value(&fmt_lds_op_map,
+			str_printf(buf_ptr, size_ptr, "%s", map_value(&fmt_lds_op_map,
 				inst->words[1].alu_word1_lds_idx_op.lds_op));
 
 		} else if (amd_inst_is_token(fmt_str, "nl", &len)) {
@@ -1194,7 +1194,7 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 		} else if (amd_inst_is_token(fmt_str, "dump", &len)) {
 
 			int i;
-			dump_buf(buf_ptr, size_ptr, "\n\n");
+			str_printf(buf_ptr, size_ptr, "\n\n");
 			for (i = 0; i < AMD_INST_MAX_WORDS; i++)
 				if (inst->info->fmt[i])
 					fmt_word_dump(inst->words[i].bytes, inst->info->fmt[i], stdout);

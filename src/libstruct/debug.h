@@ -65,12 +65,5 @@ void warning(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 void fatal(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 void panic(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
-/* Dump formatted string into a buffer with a specific size. Its size is then
- * decreased, and the buffer is advanced to the end of the dumped string.
- * This function is useful for being used in other functions that dump
- * several strings into a buffer, with the header
- *   obj_dump(struct obj_t *obj, char *buf, int size); */
-void dump_buf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
-
 
 #endif

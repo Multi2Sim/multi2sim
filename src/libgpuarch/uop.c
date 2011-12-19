@@ -179,16 +179,16 @@ void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 	char str[MAX_STRING_SIZE];
 	int i;
 
-	dump_buf(&buf, &size, "{");
+	str_printf(&buf, &size, "{");
 	for (i = 0; i < dep_count; i++) {
 		if (IN_RANGE(dep_list[i], GPU_UOP_DEP_REG_FIRST, GPU_UOP_DEP_REG_LAST))
 			sprintf(str, "R%d", dep_list[i] - GPU_UOP_DEP_REG_FIRST);
 		else
 			strcpy(str, map_value(&gpu_uop_dep_map, dep_list[i]));
-		dump_buf(&buf, &size, "%s%s", comma, str);
+		str_printf(&buf, &size, "%s%s", comma, str);
 		comma = ",";
 	}
-	dump_buf(&buf, &size, "}");
+	str_printf(&buf, &size, "}");
 }
 
 

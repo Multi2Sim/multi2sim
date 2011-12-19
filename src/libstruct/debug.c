@@ -17,9 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef DEBUG_H
-#define DEBUG_H
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -235,21 +232,3 @@ void warning(char *fmt, ...) {
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 }
-
-
-void dump_buf(char **pbuf, int *psize, char *fmt, ...)
-{
-	va_list va;
-	int len;
-
-	if (*psize <= 1)
-		return;
-	va_start(va, fmt);
-	len = vsnprintf(*pbuf, *psize, fmt, va);
-	if (len >= *psize)
-		len = *psize - 1;
-	*psize -= len;
-	*pbuf += len;
-}
-
-#endif

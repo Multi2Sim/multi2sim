@@ -41,7 +41,6 @@ POST_UNINSTALL = :
 @HAVE_GTK_TRUE@	gpuvisual-private.h \
 @HAVE_GTK_TRUE@	info-popup.c \
 @HAVE_GTK_TRUE@	list-layout.c \
-@HAVE_GTK_TRUE@	misc.c \
 @HAVE_GTK_TRUE@	timing-dia.c
 
 @HAVE_GTK_FALSE@am__append_2 = \
@@ -85,13 +84,11 @@ libgpuvisual_a_AR = $(AR) $(ARFLAGS)
 libgpuvisual_a_LIBADD =
 am__libgpuvisual_a_SOURCES_DIST = gpuvisual.h block-dia.c gpu.c \
 	gpu-layout.c gpu-trace.c gpuvisual.c gpuvisual-private.h \
-	info-popup.c list-layout.c misc.c timing-dia.c \
-	gpuvisual-nogtk.c
+	info-popup.c list-layout.c timing-dia.c gpuvisual-nogtk.c
 @HAVE_GTK_TRUE@am__objects_1 = block-dia.$(OBJEXT) gpu.$(OBJEXT) \
 @HAVE_GTK_TRUE@	gpu-layout.$(OBJEXT) gpu-trace.$(OBJEXT) \
 @HAVE_GTK_TRUE@	gpuvisual.$(OBJEXT) info-popup.$(OBJEXT) \
-@HAVE_GTK_TRUE@	list-layout.$(OBJEXT) misc.$(OBJEXT) \
-@HAVE_GTK_TRUE@	timing-dia.$(OBJEXT)
+@HAVE_GTK_TRUE@	list-layout.$(OBJEXT) timing-dia.$(OBJEXT)
 @HAVE_GTK_FALSE@am__objects_2 = gpuvisual-nogtk.$(OBJEXT)
 am_libgpuvisual_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libgpuvisual_a_OBJECTS = $(am_libgpuvisual_a_OBJECTS)
@@ -208,7 +205,8 @@ libgpuvisual_a_SOURCES = gpuvisual.h $(am__append_1) $(am__append_2)
 INCLUDES = \
 	-I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libstruct \
-	-I$(top_srcdir)/src/libgpuvisual
+	-I$(top_srcdir)/src/libgpuvisual \
+	-I$(top_srcdir)/src/libmisc
 
 all: all-am
 
@@ -295,7 +293,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpuvisual.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/info-popup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list-layout.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timing-dia.Po@am__quote@
 
 .c.o:
