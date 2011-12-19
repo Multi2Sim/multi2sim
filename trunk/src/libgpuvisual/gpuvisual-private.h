@@ -31,26 +31,17 @@
 #include <lnlist.h>
 #include <gpuvisual.h>
 #include <debug.h>
+#include <misc.h>
 #include <mhandle.h>
 
 
-#ifndef PACKAGE_DATA_DIR
-#define PACKAGE_DATA_DIR ""
-#endif
-
 
 /*
- * General purpose macros and functions
+ * Global variables
  */
 
-#define MAX_STRING_SIZE 2000
-
-int str_single_space(char *dest, char *src, int size);
-
-void search_dist_file(char *file_name, char *dist_path, char *non_dist_path,
-	char *buffer, int size);
-
-
+extern char img_close_path[MAX_STRING_SIZE];
+extern char img_close_sel_path[MAX_STRING_SIZE];
 
 
 /*

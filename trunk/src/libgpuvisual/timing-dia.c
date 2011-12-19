@@ -146,7 +146,7 @@ static void timing_dia_refresh(struct vgpu_compute_unit_t *compute_unit)
 			if (uop->finished && gpu->cycle > uop->stage_cycle)
 				continue;
 			timing_dia_entry = &compute_unit->timing_dia[i * compute_unit->timing_dia_height + j];
-			snprintf(timing_dia_entry->text, sizeof(timing_dia_entry->text), "%s", vgpu_stage_name[uop->stage]);
+			snprintf(timing_dia_entry->text, sizeof timing_dia_entry->text, "%s", vgpu_stage_name[uop->stage]);
 			timing_dia_entry->fill = TRUE;
 			timing_dia_entry->fill_r = vgpu_stage_color[uop->engine][uop->stage][0];
 			timing_dia_entry->fill_g = vgpu_stage_color[uop->engine][uop->stage][1];
@@ -246,7 +246,7 @@ static void timing_inst_layout_refresh(struct vgpu_compute_unit_t *compute_unit)
 		{
 			/* Create label + event box for 'I-x' */
 			x = 0;
-			snprintf(text, sizeof(text), "I-%d", uop->id);
+			snprintf(text, sizeof text, "I-%d", uop->id);
 			label = gtk_label_new(text);
 			event_box = gtk_event_box_new();
 			gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
@@ -328,7 +328,7 @@ static gboolean timing_dia_title_area_draw_event(GtkWidget *widget, cairo_t *cr,
 		cairo_clip(cr);
 
 		/* Show text */
-		snprintf(text, sizeof(text), "%d", compute_unit->timing_dia_cycle_first + i);
+		snprintf(text, sizeof text, "%d", compute_unit->timing_dia_cycle_first + i);
 		cairo_text_extents(cr, text, &text_extents);
 		cairo_move_to(cr, (x1 + x2) / 2 - text_extents.x_advance / 2, y2 - timing_dia_font_extents.descent);
 		cairo_set_source_rgb(cr, 0, 0, 0);
@@ -407,7 +407,7 @@ static gboolean timing_dia_area_draw_event(GtkWidget *widget, cairo_t *cr, struc
 			}
 
 			/* Show text */
-			snprintf(text, sizeof(text), "%s", timing_dia_entry->text);
+			snprintf(text, sizeof text, "%s", timing_dia_entry->text);
 			cairo_text_extents(cr, text, &text_extents);
 			cairo_move_to(cr, (x1 + x2) / 2 - text_extents.x_advance / 2, y2 - timing_dia_font_extents.descent);
 			cairo_set_source_rgb(cr, 0, 0, 0);
@@ -551,7 +551,7 @@ void timing_dia_window_show(struct vgpu_compute_unit_t *compute_unit)
 	/* Create window */
 	GtkWidget *timing_window;
 	timing_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	snprintf(text, sizeof(text), "Compute Unit %d - Timing Diagram", compute_unit->id);
+	snprintf(text, sizeof text, "Compute Unit %d - Timing Diagram", compute_unit->id);
 	gtk_window_set_title(GTK_WINDOW(timing_window), text);
 	gtk_window_set_position(GTK_WINDOW(timing_window), GTK_WIN_POS_CENTER);
 	gtk_window_set_default_size(GTK_WINDOW(timing_window), 700, 200);
