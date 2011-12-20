@@ -1,0 +1,251 @@
+[ CacheTopology l1 ]
+Sets = 256
+Assoc = 2
+BlockSize = 64
+Latency = 2
+
+[ CacheTopology l2 ]
+Sets = 1024
+Assoc = 8
+BlockSize = 64
+Latency = 10
+
+[ CacheTopology l3 ]
+Sets = 8192
+Assoc = 16
+BlockSize = 64
+Latency = 50
+
+
+
+#
+# Level 1 Caches
+#
+
+[ Cache dl1-0 ]
+Topology = l1
+HiNet = 
+LoNet = net-0
+
+[ Cache il1-0 ]
+Topology = l1
+HiNet =
+LoNet = net-0
+
+[ Cache dl1-1 ]
+Topology = l1
+HiNet =
+LoNet = net-0
+
+[ Cache il1-1 ]
+Topology = l1
+HiNet = 
+LoNet = net-0
+
+[ Cache dl1-2 ]
+Topology = l1
+HiNet = 
+LoNet = net-1
+
+[ Cache il1-2 ]
+Topology = l1
+HiNet = 
+LoNet = net-1
+
+[ Cache dl1-3 ]
+Topology = l1
+HiNet = 
+LoNet = net-1
+
+[ Cache il1-3 ]
+Topology = l1
+HiNet = 
+LoNet = net-1
+
+[ Cache dl1-4 ]
+Topology = l1
+HiNet = 
+LoNet = net-2
+
+[ Cache il1-4 ]
+Topology = l1
+HiNet = 
+LoNet = net-2
+
+[ Cache dl1-5 ]
+Topology = l1
+HiNet = 
+LoNet = net-2
+
+[ Cache il1-5 ]
+Topology = l1
+HiNet = 
+LoNet = net-2
+
+[ Cache dl1-6 ]
+Topology = l1
+HiNet = 
+LoNet = net-3
+
+[ Cache il1-6 ]
+Topology = l1
+HiNet = 
+LoNet = net-3
+
+[ Cache dl1-7 ]
+Topology = l1
+HiNet = 
+LoNet = net-3
+
+[ Cache il1-7 ]
+Topology = l1
+HiNet = 
+LoNet = net-3
+
+
+#
+# Level 2 Caches
+#
+
+[ Cache l2-0 ]
+Topology = l2
+HiNet = net-0
+LoNet = net-4
+
+[ Cache l2-1 ]
+Topology = l2
+HiNet = net-1
+LoNet = net-4
+
+[ Cache l2-2 ]
+Topology = l2
+HiNet = net-2
+LoNet = net-5
+
+[ Cache l2-3 ]
+Topology = l2
+HiNet = net-3
+LoNet = net-5
+
+
+#
+# Level 3 Caches
+#
+
+[ Cache l3-0 ]
+Topology = l3
+HiNet = net-4
+LoNet = net-6
+
+[ Cache l3-1 ]
+Topology = l3
+HiNet = net-5
+LoNet = net-6
+
+
+#
+# Main memory
+#
+
+[ MainMemory ]
+HiNet = net-6
+Latency = 200
+BlockSize = 64
+
+
+#
+# Nodes
+#
+
+[ Node 0 ]
+Core = 0
+Thread = 0
+ICache = il1-0
+DCache = dl1-0
+
+[ Node 1 ]
+Core = 1
+Thread = 0
+ICache = il1-1
+DCache = dl1-1
+
+[ Node 2 ]
+Core = 2
+Thread = 0
+ICache = il1-2
+DCache = dl1-2
+
+[ Node 3 ]
+Core = 3
+Thread = 0
+ICache = il1-3
+DCache = dl1-3
+
+[ Node 4 ]
+Core = 4
+Thread = 0
+ICache = il1-4
+DCache = dl1-4
+
+[ Node 5 ]
+Core = 5
+Thread = 0
+ICache = il1-5
+DCache = dl1-5
+
+[ Node 6 ]
+Core = 6
+Thread = 0
+ICache = il1-6
+DCache = dl1-6
+
+[ Node 7 ]
+Core = 7
+Thread = 0
+ICache = il1-7
+DCache = dl1-7
+
+
+#
+# Interconnects
+#
+
+[ Net net-0 ]
+Topology = FatTree
+LinkWidth = 32
+
+[ Net net-1 ]
+Topology = FatTree
+LinkWidth = 32
+
+[ Net net-2 ]
+Topology = FatTree
+LinkWidth = 32
+
+[ Net net-3 ]
+Topology = FatTree
+LinkWidth = 32
+
+[ Net net-4 ]
+Topology = Bus
+LinkWidth = 32
+
+[ Net net-5 ]
+Topology = Bus
+LinkWidth = 32
+
+[ Net net-6 ]
+Topology = Bus
+LinkWidth = 32
+
+
+#
+# TLBs
+#
+
+[ Tlb ]
+Sets = 64
+Assoc = 4
+HitLatency = 2
+MissLatency = 30
+
