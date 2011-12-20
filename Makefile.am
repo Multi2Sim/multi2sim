@@ -4,7 +4,9 @@ images = \
 	images/alu_engine.png \
 	images/cf_engine.png \
 	images/tex_engine.png \
-	images/m2s_icon.png
+	images/m2s_icon.png \
+	images/close.png \
+	images/close-sel.png
 
 pkgdata_imagesdir = $(pkgdatadir)/images
 pkgdata_images_DATA = ${images}
