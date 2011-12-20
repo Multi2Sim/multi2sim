@@ -165,7 +165,8 @@ static void vgpu_layout_refresh(struct vgpu_t *gpu)
 		gtk_table_attach(GTK_TABLE(table), pad, 3, 4, 0, 1, GTK_FILL | GTK_EXPAND, GTK_FILL, 0, 0);
 
 		/* Layout */
-		compute_unit->work_group_list_layout = list_layout_new(compute_unit->work_group_list, 12,
+		compute_unit->work_group_list_layout = list_layout_new(main_window, "Work-group list",
+			compute_unit->work_group_list, 12,
 			work_group_get_name, work_group_info_popup);
 		gtk_table_attach(GTK_TABLE(table), compute_unit->work_group_list_layout->layout, 0, 4, 1, 2,
 			GTK_FILL | GTK_EXPAND, GTK_FILL | GTK_EXPAND, 0, 0);

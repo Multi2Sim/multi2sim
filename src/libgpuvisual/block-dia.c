@@ -141,7 +141,8 @@ void block_dia_window_refresh(struct vgpu_compute_unit_t *compute_unit)
 	gdk_color_parse(str, &color); \
 	frame = gtk_frame_new(NULL); \
 	compute_unit->uop_list_##STG = list_create(); \
-	compute_unit->list_layout_##STG = list_layout_new(compute_unit->uop_list_##STG, 10, vgpu_uop_get_name, vgpu_uop_info_popup); \
+	compute_unit->list_layout_##STG = list_layout_new(block_dia_window, \
+		"uop list", compute_unit->uop_list_##STG, 10, vgpu_uop_get_name, vgpu_uop_info_popup); \
 	gtk_container_add(GTK_CONTAINER(frame), compute_unit->list_layout_##STG->layout); \
 	gtk_widget_modify_bg(compute_unit->list_layout_##STG->layout, GTK_STATE_NORMAL, &color); \
 	gtk_widget_set_size_request(frame, (W), (H)); \
