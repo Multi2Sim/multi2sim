@@ -43,6 +43,9 @@
 extern char img_close_path[MAX_STRING_SIZE];
 extern char img_close_sel_path[MAX_STRING_SIZE];
 
+extern GtkWidget *main_window;
+
+
 
 /*
  * Forward declarations
@@ -67,7 +70,14 @@ struct list_layout_item_t
 
 struct list_layout_t
 {
+	char title[MAX_STRING_SIZE];
+
+	GtkWidget *parent_window;
 	GtkWidget *layout;
+
+	GtkWidget *popup_window;
+	GtkWidget *img_close;
+
 	struct list_t *item_list;
 	void (*item_get_name)(void *item, char *buf, int size);
 	void (*item_info_popup)(void *item);
@@ -78,7 +88,9 @@ struct list_layout_t
 	struct list_t *list_layout_popup_item_list;
 };
 
-struct list_layout_t *list_layout_new(struct list_t *list,
+struct list_layout_t *list_layout_new(GtkWidget *parent_window,
+	char *title,
+	struct list_t *list,
 	int text_size,
 	void (*item_get_name)(void *item, char *buf, int size),
 	void (*item_info_popup)(void *item));
