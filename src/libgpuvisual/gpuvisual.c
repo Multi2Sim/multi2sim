@@ -20,6 +20,9 @@
 #include <debug.h>
 #include <gpuvisual-private.h>
 #include <gdk/gdkkeysyms.h>
+#include <config.h>
+#include <sys/stat.h>
+#include <pwd.h>
 
 
 struct vgpu_t *gpu;
@@ -31,10 +34,42 @@ GtkWidget *cycle_scale;
 struct list_layout_t *pending_work_group_list_layout;
 struct list_layout_t *finished_work_group_list_layout;
 
-char m2s_icon_path[MAX_STRING_SIZE];
+static char m2s_icon_path[MAX_STRING_SIZE];
+
+static char vgpu_config_path[MAX_STRING_SIZE];
+static char vgpu_config_file_name[MAX_STRING_SIZE];
+static struct config_t *vgpu_config_file;
 
 
-void show_kernel_source(struct vgpu_t *gpu)
+static void vgpu_config_load(void)
+{
+        struct passwd *p;
+
+	/* Get file name */
+        p = getpwuid(getuid());
+        if (!p)
+        	fatal("%s: 'getpwnam' failed", __FUNCTION__);
+        snprintf(vgpu_config_path, sizeof(vgpu_config_path), "%s/%s", p->pw_dir, ".multi2sim");
+        snprintf(vgpu_config_file_name, sizeof(vgpu_config_file_name), "%s/%s", vgpu_config_path, "gpu-visual.ini");
+	mkdir(vgpu_config_path, 0770);
+
+	/* Load configuration */
+	vgpu_config_file = config_create(vgpu_config_file_name);
+	if (!config_load(vgpu_config_file))
+		return;
+
+}
+
+
+static void vgpu_config_store(void)
+{
+	//config_save(vgpu_config_file);
+	config_free(vgpu_config_file);
+}
+
+
+#if 0
+static void show_kernel_source(struct vgpu_t *gpu)
 {
 	char *line;
 	int size;
@@ -65,6 +100,7 @@ void show_kernel_source(struct vgpu_t *gpu)
 	info_popup_show(buffer);
 	free(buffer);
 }
+#endif
 
 
 static void cycle_update(int cycle)
@@ -156,7 +192,7 @@ static gboolean main_window_delete_event(GtkWidget *widget, GdkEvent *event, gpo
 }
 
 
-void main_window_show()
+static void main_window_show()
 {
 	/* Main window */
 	main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -370,8 +406,8 @@ void vgpu_run(char *file_name)
 	search_dist_file("tex_engine.png", img_folder, img_folder, block_dia_tex_engine_image_path, MAX_STRING_SIZE);
 	search_dist_file("m2s_icon.png", img_folder, img_folder, m2s_icon_path, MAX_STRING_SIZE);
 
-	search_dist_file("close.png", img_folder, img_folder, img_close_path, MAX_STRING_SIZE);
-	search_dist_file("close-sel.png", img_folder, img_folder, img_close_sel_path, MAX_STRING_SIZE);
+	/* Load configuration */
+	vgpu_config_load();
 
 	/* Create GPU */
 	gpu = vgpu_create(file_name);
@@ -382,5 +418,8 @@ void vgpu_run(char *file_name)
 	gtk_init(NULL, NULL);
 	main_window_show();
 	gtk_main();
+
+	/* Save configuration */
+	vgpu_config_store();
 }
 

@@ -330,12 +330,12 @@ void vgpu_load_state(struct vgpu_t *gpu)
 
 void vgpu_status_write(struct vgpu_t *gpu, char *fmt, ...)
 {
-	char str[MAX_STRING_SIZE];
+	char str[MAX_LONG_STRING_SIZE];
 	va_list va;
 	int size;
 
 	va_start(va, fmt);
-	vsnprintf(str, MAX_STRING_SIZE, fmt, va);
+	vsnprintf(str, sizeof str, fmt, va);
 	size = strlen(gpu->status_text) + strlen(str) + 1;
 	if (size > gpu->status_text_size)
 	{

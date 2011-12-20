@@ -151,7 +151,7 @@ void block_dia_window_refresh(struct vgpu_compute_unit_t *compute_unit)
 
 void block_dia_window_show(struct vgpu_compute_unit_t *compute_unit)
 {
-	char text[MAX_STRING_SIZE];
+	char text[MAX_LONG_STRING_SIZE];
 	GtkRequisition req;
 	GtkWidget *frame;
 

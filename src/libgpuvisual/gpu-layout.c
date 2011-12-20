@@ -143,6 +143,8 @@ static void vgpu_layout_refresh(struct vgpu_t *gpu)
 		timing_dia_toggle_button = gtk_toggle_button_new_with_label("T");
 		gtk_button_set_focus_on_click(GTK_BUTTON(timing_dia_toggle_button), FALSE);
 		gtk_table_attach(GTK_TABLE(table), timing_dia_toggle_button, 1, 2, 0, 1, GTK_FILL | GTK_EXPAND, GTK_FILL, 0, 0);
+		if (compute_unit->timing_dia_active)
+			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(timing_dia_toggle_button), TRUE);
 		g_signal_connect(G_OBJECT(timing_dia_toggle_button), "toggled", G_CALLBACK(timing_dia_toggle_button_toggled_event), compute_unit);
 		compute_unit->timing_dia_toggle_button = timing_dia_toggle_button;
 
@@ -151,6 +153,8 @@ static void vgpu_layout_refresh(struct vgpu_t *gpu)
 		block_dia_toggle_button = gtk_toggle_button_new_with_label("B");
 		gtk_button_set_focus_on_click(GTK_BUTTON(block_dia_toggle_button), FALSE);
 		gtk_table_attach(GTK_TABLE(table), block_dia_toggle_button, 2, 3, 0, 1, GTK_FILL | GTK_EXPAND, GTK_FILL, 0, 0);
+		if (compute_unit->block_dia_active)
+			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(block_dia_toggle_button), TRUE);
 		g_signal_connect(G_OBJECT(block_dia_toggle_button), "toggled", G_CALLBACK(block_dia_toggle_button_toggled_event), compute_unit);
 		compute_unit->block_dia_toggle_button = block_dia_toggle_button;
 
@@ -183,7 +187,9 @@ static void vgpu_layout_refresh(struct vgpu_t *gpu)
 /* Draw GPU */
 static gboolean vgpu_widget_size_allocate_event(GtkWidget *widget, GdkEventConfigure *event, struct vgpu_t *gpu)
 {
+	struct vgpu_compute_unit_t *compute_unit;
 	int width, height;
+	int i;
 
 	/* Check if dimensions have actually changed */
 	width = gtk_widget_get_allocated_width(widget);
@@ -191,7 +197,14 @@ static gboolean vgpu_widget_size_allocate_event(GtkWidget *widget, GdkEventConfi
 	if (gpu->layout_width == width && gpu->layout_height == height)
 		return FALSE;
 
+	/* Refresh GPU layout */
 	vgpu_layout_refresh(gpu);
+	for (i = 0; i < gpu->num_compute_units; i++)
+	{
+		compute_unit = list_get(gpu->compute_unit_list, i);
+		list_layout_refresh(compute_unit->work_group_list_layout);
+	}
+
 	return FALSE;
 }
 
