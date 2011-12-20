@@ -1,3 +1,68 @@
+*** Announcement on Dec 20th, 2011 ***
+
+Dear Multi2Sim users,
+
+A new version of Multi2Sim has been released with important new features. The main added feature is a graphical tool to navigate through timing and block diagrams generated during GPU simulations. Additional changes include:
+
+== GPU Simulation ==
+
+* Documentation for the new GPU Visualization Tool on Chapter 9 of the Multi2Sim Guide. Here are some screenshots of the tool: http://www.multi2sim.org/index.html?Page=gpu-visual
+
+* A tool called the "GPU Occupancy Calculator" has been introduced to measure GPU resources occupancy, documented in Section 8.3 of the Multi2Sim Guide. Check out some screenshots here: http://www.multi2sim.org/index.html?Page=gpu-calc
+
+* An Evergreen disassembly tool has been included to extract the plain-text ISA from OpenCL kernel binaries (option --gpu-disasm <file>).
+
+
+== CPU Simulation ==
+
+* A more accurate and realistic x86 instruction decoding mechanism has been implemented and documented in Section 2.3 of the Multi2Sim Guide. The new supported micro-instruction set is documented in Appendix IV.
+
+* Support for accurate simulation of micro-coded x86 string operations has been introduced.
+
+* Multi2Sim's x86 functional simulator has been extended with a partial implementation of the SSE2 instruction set (XMM instructions), increasing support for simulation of custom code.
+
+
+
+
+*** Announcement on Nov. 4th, 2011 ***
+
+Dear Multi2Sim users,
+
+A new version of Multi2Sim has been released, including the following features:
+
+
+== GPU Simulation ==
+
+* The work-group scheduler has been improved to allow for multiple
+work-group into single compute-unit mappings.
+
+* A GPU occupancy calculator has been included (--gpu-calc <file>).
+For a given GPU configuration, compute unit occupancy plots are
+generated depending on the register and local memory requirements of
+an OpenCL kernel.
+
+* Generation of plain-text traces for architectural GPU simulation
+(--debug-gpu-pipeline <file>). These traces will be consumed by a
+graphical tool, showing timing and block diagrams. This tool will be
+released shortly.
+
+
+== CPU Simulation ==
+
+* Configuration parameters are included as part of the statistics
+reports for an easier interpretation of results.
+
+* Bug fixed for highly associative caches simulation. A wrong
+assignment of LRU counters under specific circumstances caused a
+higher number of ways to provide worse performance results.
+
+* Bug fixed for floating-point x86 instructions emulation (fsin, fcos,
+fsincos, fptan, and others). The FPU status register was not updated
+properly, causing new implementations of "libmath" to hang in some
+cases.
+
+
+
 
 *** Announcement on Jul 7th, 2011 ***
 

@@ -5,7 +5,7 @@ Directions for new version release:
 
 	* Run 'svn update' + 'svn2cl.sh'
 
-	* Update AM_INIT_AUTOMAKE in 'configure.in'
+	* Update AM_INIT_AUTOMAKE in 'configure.ac'
 
 	* Remake all to update 'Makefiles'
 		~/multi2sim/trunk$ make clean

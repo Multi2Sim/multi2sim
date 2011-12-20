@@ -202,9 +202,7 @@ libcpuarch_a_SOURCES = \
 	rob.c \
 	sched.c \
 	tcache.c \
-	uop.c \
-	uop1.dat \
-	uop2.dat
+	uop.c
 
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
