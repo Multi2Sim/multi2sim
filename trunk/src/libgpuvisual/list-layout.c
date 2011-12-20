@@ -160,7 +160,7 @@ static void list_layout_popup_show(struct list_layout_t *list_layout)
 {
 	int i;
 	int count;
-	char str[MAX_STRING_SIZE];
+	char str[MAX_LONG_STRING_SIZE];
 
 	/* Create list of 'list_layout_item_t', each containing an event box, a label, and a pointer.  */
 	list_layout->list_layout_popup_item_list = list_create();
@@ -294,7 +294,7 @@ void list_layout_refresh(struct list_layout_t *list_layout)
 	int x, y;
 	int width, height;
 
-	char str[MAX_STRING_SIZE];
+	char str[MAX_LONG_STRING_SIZE];
 	int count;
 	struct list_t *item_list = list_layout->item_list;
 	GtkStyle *style;
@@ -317,13 +317,13 @@ void list_layout_refresh(struct list_layout_t *list_layout)
 	for (i = 0; i < count; i++)
 	{
 		int last;
-		char temp_str[MAX_STRING_SIZE];
+		char temp_str[MAX_LONG_STRING_SIZE];
 		void *item = list_get(item_list, i);
 
 		/* Create label */
 		GtkWidget *label;
 		if (list_layout->item_get_name)
-			(*list_layout->item_get_name)(item, temp_str, sizeof(temp_str));
+			(*list_layout->item_get_name)(item, temp_str, sizeof temp_str);
 		else
 			snprintf(temp_str, sizeof temp_str, "item-%d", i);
 		snprintf(str, sizeof str, "%s%s", temp_str, i < count - 1 ? "," : "");

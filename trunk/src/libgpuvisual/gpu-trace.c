@@ -41,7 +41,7 @@ struct vgpu_trace_line_token_t
 
 struct vgpu_trace_line_t
 {
-	char line[MAX_STRING_SIZE];
+	char line[MAX_LONG_STRING_SIZE];
 	int num_tokens;
 	char *command;
 	struct vgpu_trace_line_token_t tokens[VGPU_TRACE_LINE_MAX_TOKENS];
@@ -63,7 +63,7 @@ int vgpu_trace_line_read(struct vgpu_t *gpu, struct vgpu_trace_line_t *trace_lin
 	/* Read line from file */
 	do
 	{
-		line = fgets(trace_line->line, MAX_STRING_SIZE, gpu->trace_file);
+		line = fgets(trace_line->line, sizeof trace_line->line, gpu->trace_file);
 		if (!line)
 			return 1;
 		gpu->trace_line_number++;
@@ -180,7 +180,7 @@ void vgpu_trace_line_read_vliw(struct vgpu_trace_line_t *trace_line, struct vgpu
 	char vliw_elem;
 
 	char vliw_elem_name[MAX_STRING_SIZE];
-	char str[MAX_STRING_SIZE];
+	char str[MAX_LONG_STRING_SIZE];
 
 	char *name_ptr;
 	int name_size;
@@ -763,7 +763,7 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 		{
 			int inst_idx;
 			char *clause;
-			char text[MAX_STRING_SIZE];
+			char text[MAX_LONG_STRING_SIZE];
 
 			/* Get disassembly line */
 			inst_idx = vgpu_trace_line_token_int(&trace_line, "i");
