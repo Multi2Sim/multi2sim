@@ -34,36 +34,6 @@ char img_close_sel_path[MAX_STRING_SIZE];
  * Private functions
  */
 
-static gboolean list_layout_popup_button_press_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
-{
-	int width;
-	int height;
-
-	width = gtk_widget_get_allocated_width(widget);
-	height = gtk_widget_get_allocated_height(widget);
-	if (event->x < 0 || event->y < 0 || event->x > width || event->y > height) {
-		gdk_pointer_ungrab(GDK_CURRENT_TIME);
-		gtk_widget_destroy(widget);
-	}
-	return FALSE;
-}
-
-
-static gboolean list_layout_popup_motion_event(GtkWidget *widget, GdkEventMotion *event, gpointer data)
-{
-	int width;
-	int height;
-
-	width = gtk_widget_get_allocated_width(widget);
-	height = gtk_widget_get_allocated_height(widget);
-	if (event->x < -20 || event->y < -20 || event->x > width + 20 || event->y > height + 20) {
-		gdk_pointer_ungrab(GDK_CURRENT_TIME);
-		gtk_widget_destroy(widget);
-	}
-	return FALSE;
-}
-
-
 gboolean list_layout_label_enter_notify_event(GtkWidget *widget, GdkEventCrossing *event, gpointer data)
 {
 	GtkWidget *label;
@@ -156,6 +126,29 @@ static void list_layout_popup_destroy_event(GtkWidget *widget, struct list_layou
 }
 
 
+static gboolean list_layout_img_close_enter_notify_event(GtkWidget *widget, GdkEventCrossing *event,
+	struct list_layout_t *list_layout)
+{
+	gtk_image_set_from_file(GTK_IMAGE(list_layout->img_close), img_close_sel_path);
+	return FALSE;
+}
+
+
+static gboolean list_layout_img_close_leave_notify_event(GtkWidget *widget, GdkEventCrossing *event,
+	struct list_layout_t *list_layout)
+{
+	gtk_image_set_from_file(GTK_IMAGE(list_layout->img_close), img_close_path);
+	return FALSE;
+}
+
+
+static void list_layout_img_close_clicked_event(GtkWidget *widget, GdkEventButton *event,
+	struct list_layout_t *list_layout)
+{
+	gtk_widget_destroy(list_layout->popup_window);
+}
+
+
 static void list_layout_popup_show(struct list_layout_t *list_layout)
 {
 	int i;
@@ -168,23 +161,43 @@ static void list_layout_popup_show(struct list_layout_t *list_layout)
 	/* Create window */
 	GtkWidget *window;
 	window = gtk_window_new(GTK_WINDOW_POPUP);
+	list_layout->popup_window = window;
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
 	gtk_widget_set_size_request(window, 200, 250);
 	gtk_window_set_modal(GTK_WINDOW(window), TRUE);
-	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK);
-	g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(list_layout_popup_button_press_event), NULL);
-	g_signal_connect(G_OBJECT(window), "motion-notify-event", G_CALLBACK(list_layout_popup_motion_event), NULL);
+	gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(list_layout->parent_window));
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(list_layout_popup_destroy_event), list_layout);
 
+	/* Close button */
+	GtkWidget *img_close = gtk_image_new_from_file(img_close_path);
+	GtkWidget *evbox_close = gtk_event_box_new();
+	gtk_container_add(GTK_CONTAINER(evbox_close), img_close);
+	gtk_widget_add_events(evbox_close, GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
+	g_signal_connect(G_OBJECT(evbox_close), "enter-notify-event",
+		G_CALLBACK(list_layout_img_close_enter_notify_event), list_layout);
+	g_signal_connect(G_OBJECT(evbox_close), "leave-notify-event",
+		G_CALLBACK(list_layout_img_close_leave_notify_event), list_layout);
+	g_signal_connect(G_OBJECT(evbox_close), "button-press-event",
+		G_CALLBACK(list_layout_img_close_clicked_event), list_layout);
+
+	/* Title and separator */
+	GtkWidget *title_label = gtk_label_new(list_layout->title);
+	GtkWidget *hsep = gtk_hseparator_new();
+	list_layout->img_close = img_close;
+
+	/* Scrolled window */
 	GtkWidget *scrolled_window;
 	scrolled_window = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 
-	/* Vertical frame */
-	GtkWidget *vbox;
-	vbox = gtk_vbox_new(FALSE, 0);
-	gtk_container_add(GTK_CONTAINER(vbox), scrolled_window);
-	gtk_container_add(GTK_CONTAINER(window), vbox);
+	/* Main table */
+	GtkWidget *main_table;
+	main_table = gtk_table_new(3, 2, FALSE);
+	gtk_table_attach(GTK_TABLE(main_table), title_label, 0, 1, 0, 1, GTK_FILL | GTK_EXPAND, GTK_FILL, 0, 0);
+	gtk_table_attach(GTK_TABLE(main_table), evbox_close, 1, 2, 0, 1, GTK_FILL, GTK_FILL, 0, 0);
+	gtk_table_attach(GTK_TABLE(main_table), hsep, 0, 2, 1, 2, GTK_FILL, GTK_FILL, 0, 0);
+	gtk_table_attach_defaults(GTK_TABLE(main_table), scrolled_window, 0, 2, 2, 3);
+	gtk_container_add(GTK_CONTAINER(window), main_table);
 
 	GdkColor color;
 	gdk_color_parse("#ffffa0", &color);
@@ -243,8 +256,6 @@ static void list_layout_popup_show(struct list_layout_t *list_layout)
 	gtk_container_add(GTK_CONTAINER(scrolled_window), viewport);
 
 	gtk_widget_show_all(window);
-	gdk_pointer_grab(gtk_widget_get_window(window), TRUE, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK,
-		NULL, NULL, GDK_CURRENT_TIME);
 }
 
 
@@ -266,14 +277,16 @@ static void list_layout_destroy_event(GtkWidget *widget, struct list_layout_t *l
 }
 
 
-struct list_layout_t *list_layout_new(struct list_t *list,
-	int text_size,
+struct list_layout_t *list_layout_new(GtkWidget *parent_window, char *title,
+	struct list_t *list, int text_size,
 	void (*item_get_name)(void *item, char *buf, int size),
 	void (*item_info_popup)(void *item))
 {
 	struct list_layout_t *list_layout;
 
 	list_layout = calloc(1, sizeof(struct list_layout_t));
+	list_layout->parent_window = parent_window;
+	snprintf(list_layout->title, sizeof list_layout->title, "%s", title);
 	list_layout->text_size = text_size;
 	list_layout->item_list = list;
 	list_layout->layout = gtk_layout_new(NULL, NULL);

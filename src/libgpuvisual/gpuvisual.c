@@ -226,8 +226,8 @@ static void main_window_show()
 	/* Pending work-groups */
 	GtkWidget *pending_frame;
 	pending_frame = gtk_frame_new(NULL);
-	pending_work_group_list_layout = list_layout_new(gpu->pending_work_group_list, 12,
-		work_group_get_name, work_group_info_popup);
+	pending_work_group_list_layout = list_layout_new(main_window, "Work-group list",
+		gpu->pending_work_group_list, 12, work_group_get_name, work_group_info_popup);
 	gtk_widget_set_size_request(pending_frame, 100, 50);
 	gtk_container_add(GTK_CONTAINER(pending_frame), pending_work_group_list_layout->layout);
 	gtk_widget_modify_bg(pending_work_group_list_layout->layout, GTK_STATE_NORMAL, &color);
@@ -245,8 +245,8 @@ static void main_window_show()
 	/* Finished work-groups */
 	GtkWidget *finished_frame;
 	finished_frame = gtk_frame_new(NULL);
-	finished_work_group_list_layout = list_layout_new(gpu->finished_work_group_list, 12,
-		work_group_get_name, work_group_info_popup);
+	finished_work_group_list_layout = list_layout_new(main_window, "Work-group list",
+		gpu->finished_work_group_list, 12, work_group_get_name, work_group_info_popup);
 	gtk_widget_set_size_request(finished_frame, 100, 50);
 	gtk_container_add(GTK_CONTAINER(finished_frame), finished_work_group_list_layout->layout);
 	gtk_widget_modify_bg(finished_work_group_list_layout->layout, GTK_STATE_NORMAL, &color);
@@ -405,6 +405,8 @@ void vgpu_run(char *file_name)
 	search_dist_file("alu_engine.png", img_folder, img_folder, block_dia_alu_engine_image_path, MAX_STRING_SIZE);
 	search_dist_file("tex_engine.png", img_folder, img_folder, block_dia_tex_engine_image_path, MAX_STRING_SIZE);
 	search_dist_file("m2s_icon.png", img_folder, img_folder, m2s_icon_path, MAX_STRING_SIZE);
+	search_dist_file("close.png", img_folder, img_folder, img_close_path, sizeof img_close_path);
+	search_dist_file("close-sel.png", img_folder, img_folder, img_close_sel_path, sizeof img_close_sel_path);
 
 	/* Load configuration */
 	vgpu_config_load();
