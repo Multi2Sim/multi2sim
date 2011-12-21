@@ -28,8 +28,7 @@ int gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
 void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_ndrange_t *ndrange = gpu->ndrange;
-	struct lnlist_t *wavefront_pool = compute_unit->cf_engine.wavefront_pool;
-	struct gpu_wavefront_t *wavefront, *temp_wavefront;
+	struct gpu_wavefront_t *wavefront;
 
 	char str1[MAX_STRING_SIZE], str2[MAX_STRING_SIZE];
 	struct amd_inst_t *inst;
@@ -39,38 +38,10 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_work_item_t *work_item;
 	int work_item_id;
 
-
-	/* If there is no wavefront in the pool, done */
-	if (!lnlist_count(wavefront_pool))
+	/* Schedule wavefront */
+	wavefront = gpu_schedule(compute_unit);
+	if (!wavefront)
 		return;
-
-	/* Select current position in pool as initial candidate wavefront */
-	if (!lnlist_get(wavefront_pool))
-		lnlist_head(wavefront_pool);
-	wavefront = lnlist_get(wavefront_pool);
-	temp_wavefront = wavefront;
-
-	/* Look for a valid candidate */
-	for (;;)
-	{
-		/* Wavefront must be running,
-		 * and the corresponding slot in fetch buffer must be free. */
-		assert(wavefront->id_in_compute_unit < gpu->wavefronts_per_compute_unit);
-		if (DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, running, wavefront) &&
-			!compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit])
-			break;
-
-		/* Current candidate is not valid - go to next.
-		 * If we went through the whole pool, no fetch. */
-		lnlist_next_circular(wavefront_pool);
-		wavefront = lnlist_get(wavefront_pool);
-		if (wavefront == temp_wavefront)
-			return;
-	}
-
-	/* Wavefront found, remove from pool. */
-	assert(wavefront->clause_kind == GPU_CLAUSE_CF);
-	lnlist_remove(wavefront_pool);
 
 	/* Emulate CF instruction */
 	gpu_wavefront_execute(wavefront);
@@ -275,7 +246,7 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)
 {
 	struct lnlist_t *complete_queue = compute_unit->cf_engine.complete_queue;
-	struct lnlist_t *wavefront_pool = compute_unit->cf_engine.wavefront_pool;
+	struct lnlist_t *wavefront_pool = compute_unit->wavefront_pool;
 	struct gpu_work_group_t *work_group;
 	struct gpu_uop_t *uop;
 
@@ -296,11 +267,12 @@ void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)
 
 		/* Instruction finishes a wavefront */
 		if (uop->last)
+		{
 			work_group->compute_unit_finished_count++;
-	
-		/* Insert wavefront into wavefront pool */
+		}
 		else
 		{
+			/* Insert wavefront into wavefront pool */
 			lnlist_insert(wavefront_pool, uop->wavefront);
 			lnlist_next_circular(wavefront_pool);
 		}

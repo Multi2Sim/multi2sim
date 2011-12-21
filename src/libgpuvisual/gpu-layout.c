@@ -77,14 +77,14 @@ static gboolean block_dia_toggle_button_toggled_event(GtkWidget *widget, struct 
 }
 
 
-/* Refresh GPU layout contents */
-static void vgpu_layout_refresh(struct vgpu_t *gpu)
+/* Refresh vgpu layout contents */
+static void vgpu_layout_refresh(struct vgpu_t *vgpu)
 {
 	int i;
 	int x, y;
 	int width;
 
-	GtkWidget *layout = gpu->layout;
+	GtkWidget *layout = vgpu->layout;
 
 	/* Delete all components */
 	GList *list;
@@ -99,13 +99,13 @@ static void vgpu_layout_refresh(struct vgpu_t *gpu)
 
 	/* Draw compute units */
 	x = y = VGPU_COMPUTE_UNIT_SPACING;
-	width = gtk_widget_get_allocated_width(gpu->layout);
-	for (i = 0; i < gpu->num_compute_units; i++)
+	width = gtk_widget_get_allocated_width(vgpu->layout);
+	for (i = 0; i < vgpu->num_compute_units; i++)
 	{
 		struct vgpu_compute_unit_t *compute_unit;
 		char str[MAX_STRING_SIZE];
 
-		compute_unit = list_get(gpu->compute_unit_list, i);
+		compute_unit = list_get(vgpu->compute_unit_list, i);
 
 		/* Position */
 		if (x > VGPU_COMPUTE_UNIT_SPACING && x + VGPU_COMPUTE_UNIT_WIDTH + VGPU_COMPUTE_UNIT_SPACING >= width)
@@ -179,14 +179,14 @@ static void vgpu_layout_refresh(struct vgpu_t *gpu)
 	}
 
 	/* Adjust layout size and record new dimensions */
-	gpu->layout_width = width;
-	gpu->layout_height = y + VGPU_COMPUTE_UNIT_HEIGHT + VGPU_COMPUTE_UNIT_SPACING;
-	gtk_widget_set_size_request(layout, -1, gpu->layout_height);
+	vgpu->layout_width = width;
+	vgpu->layout_height = y + VGPU_COMPUTE_UNIT_HEIGHT + VGPU_COMPUTE_UNIT_SPACING;
+	gtk_widget_set_size_request(layout, -1, vgpu->layout_height);
 }
 
 
-/* Draw GPU */
-static gboolean vgpu_widget_size_allocate_event(GtkWidget *widget, GdkEventConfigure *event, struct vgpu_t *gpu)
+/* Draw vgpu */
+static gboolean vgpu_widget_size_allocate_event(GtkWidget *widget, GdkEventConfigure *event, struct vgpu_t *vgpu)
 {
 	struct vgpu_compute_unit_t *compute_unit;
 	int width, height;
@@ -195,14 +195,14 @@ static gboolean vgpu_widget_size_allocate_event(GtkWidget *widget, GdkEventConfi
 	/* Check if dimensions have actually changed */
 	width = gtk_widget_get_allocated_width(widget);
 	height = gtk_widget_get_allocated_height(widget);
-	if (gpu->layout_width == width && gpu->layout_height == height)
+	if (vgpu->layout_width == width && vgpu->layout_height == height)
 		return FALSE;
 
-	/* Refresh GPU layout */
-	vgpu_layout_refresh(gpu);
-	for (i = 0; i < gpu->num_compute_units; i++)
+	/* Refresh vgpu layout */
+	vgpu_layout_refresh(vgpu);
+	for (i = 0; i < vgpu->num_compute_units; i++)
 	{
-		compute_unit = list_get(gpu->compute_unit_list, i);
+		compute_unit = list_get(vgpu->compute_unit_list, i);
 		list_layout_refresh(compute_unit->work_group_list_layout);
 	}
 
@@ -210,36 +210,36 @@ static gboolean vgpu_widget_size_allocate_event(GtkWidget *widget, GdkEventConfi
 }
 
 
-/* Create GPU widget */
-GtkWidget *vgpu_widget_new(struct vgpu_t *gpu)
+/* Create vgpu widget */
+GtkWidget *vgpu_widget_new(struct vgpu_t *vgpu)
 {
 	GdkColor color;
 
 	/* Create scrolled window and layout */
-	gpu->widget = gtk_scrolled_window_new(NULL, NULL);
-	gtk_widget_set_size_request(gpu->widget, VGPU_COMPUTE_UNIT_WIDTH + VGPU_COMPUTE_UNIT_SPACING * 2 + 5, -1);
-	gpu->layout = gtk_layout_new(NULL, NULL);
-	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(gpu->widget), gpu->layout);
-	gtk_widget_add_events(gpu->layout, GDK_STRUCTURE_MASK);
-	g_signal_connect(G_OBJECT(gpu->widget), "size-allocate", G_CALLBACK(vgpu_widget_size_allocate_event), gpu);
+	vgpu->widget = gtk_scrolled_window_new(NULL, NULL);
+	gtk_widget_set_size_request(vgpu->widget, VGPU_COMPUTE_UNIT_WIDTH + VGPU_COMPUTE_UNIT_SPACING * 2 + 5, -1);
+	vgpu->layout = gtk_layout_new(NULL, NULL);
+	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(vgpu->widget), vgpu->layout);
+	gtk_widget_add_events(vgpu->layout, GDK_STRUCTURE_MASK);
+	g_signal_connect(G_OBJECT(vgpu->widget), "size-allocate", G_CALLBACK(vgpu_widget_size_allocate_event), vgpu);
 
 	/* Make it white */
 	gdk_color_parse("white", &color);
-	gtk_widget_modify_bg(gpu->layout, GTK_STATE_NORMAL, &color);
+	gtk_widget_modify_bg(vgpu->layout, GTK_STATE_NORMAL, &color);
 
 	/* Return it */
-	return gpu->widget;
+	return vgpu->widget;
 }
 
 
-void vgpu_widget_refresh(struct vgpu_t *gpu)
+void vgpu_widget_refresh(struct vgpu_t *vgpu)
 {
 	struct vgpu_compute_unit_t *compute_unit;
 	int i;
 
-	vgpu_layout_refresh(gpu);
-	for (i = 0; i < gpu->num_compute_units; i++) {
-		compute_unit = list_get(gpu->compute_unit_list, i);
+	vgpu_layout_refresh(vgpu);
+	for (i = 0; i < vgpu->num_compute_units; i++) {
+		compute_unit = list_get(vgpu->compute_unit_list, i);
 		list_layout_refresh(compute_unit->work_group_list_layout);
 		compute_unit_status_expose_event(compute_unit->status_widget, NULL, compute_unit);
 		timing_dia_window_refresh(compute_unit);
