@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <misc.h>
+#include <sys/stat.h>
 
 
 
@@ -125,6 +126,7 @@ void kernel_binary_analyze(char *file_name)
 	int i;
 
 	char file_name_prefix[MAX_STRING_SIZE];
+	char subdir[MAX_STRING_SIZE];
 	int len;
 
 	char file_name_dest[MAX_STRING_SIZE];
@@ -138,23 +140,29 @@ void kernel_binary_analyze(char *file_name)
 	if (len > 4 && !strcmp(file_name + len - 4, ".bin"))
 		file_name_prefix[len - 4] = '\0';
 
+	/* Create subdirectory */
+	snprintf(subdir, sizeof subdir, "%s_files", file_name_prefix);
+	mkdir(subdir, 0755);
+
 	/* Analyze ELF file */
 	elf_debug_file = fopen("/dev/null", "wt");
 	elf = elf_open(file_name);
 	if (!elf)
 		fatal("%s: cannot open ELF file", file_name);
 	
-#if 0
 	/* List ELF sections */
 	printf("ELF sections:\n");
 	for (i = 0; i < elf_section_count(elf); i++)
 	{
 		uint32_t addr, offset, size, flags;
 		elf_section_info(elf, i, &section_name, &addr, &offset, &size, &flags);
+		if (!size)
+			continue;
 
 		/* Dump to file */
 		section_buf = elf_section_read(elf, i);
-		sprintf(file_name_dest, "%s.%s", file_name_prefix, *section_name == '.' ? section_name + 1 : section_name);
+		sprintf(file_name_dest, "%s/%s.%s", subdir, file_name_prefix,
+			*section_name == '.' ? section_name + 1 : section_name);
 		write_buffer(file_name_dest, section_buf, size);
 		elf_section_free(section_buf);
 
@@ -162,7 +170,6 @@ void kernel_binary_analyze(char *file_name)
 		printf("  section '%s': addr=0x%x, offset=0x%x, size=%d, flags=0x%x\n",
 			section_name, addr, offset, size, flags);
 	}
-#endif
 	
 	/* Get symbols */
 	for (i = 0; i < elf->symtab_count; i++)
@@ -175,6 +182,8 @@ void kernel_binary_analyze(char *file_name)
 		if (strncmp(sym->name, "__OpenCL_", 9))
 			continue;
 		sym_len = strlen(sym->name);
+		if (!sym->size)
+			continue;
 
 		/* Read section */
 		elf_section_info(elf, sym->section, &section_name, NULL, NULL, &section_size, NULL);
@@ -182,23 +191,24 @@ void kernel_binary_analyze(char *file_name)
 		assert(sym->value + sym->size <= section_size);
 
 		/* Dump to files */
-		if (str_suffix(sym->name, "_metadata")) {
-
+		if (str_suffix(sym->name, "_metadata"))
+		{
 			kernel_func_len = sym_len - 18;
 			strncpy(kernel_func_name, sym->name + 9, kernel_func_len);
 			kernel_func_name[kernel_func_len] = '\0';
 
-			sprintf(file_name_dest, "%s.%s.metadata", file_name_prefix, kernel_func_name);
+			sprintf(file_name_dest, "%s/%s.%s.metadata", subdir, file_name_prefix, kernel_func_name);
 			write_buffer(file_name_dest, section_buf + sym->value, sym->size);
 			printf("\t%s: meta data dumped\n", file_name_dest);
 
-		} else if (str_suffix(sym->name, "_kernel")) {
-			
+		}
+		else if (str_suffix(sym->name, "_kernel"))
+		{
 			kernel_func_len = sym_len - 16;
 			strncpy(kernel_func_name, sym->name + 9, kernel_func_len);
 			kernel_func_name[kernel_func_len] = '\0';
 
-			sprintf(file_name_dest, "%s.%s.kernel", file_name_prefix, kernel_func_name);
+			sprintf(file_name_dest, "%s/%s.%s.kernel", subdir, file_name_prefix, kernel_func_name);
 			write_buffer(file_name_dest, section_buf + sym->value, sym->size);
 			printf("\t%s: inner ELF file dumped\n", file_name_dest);
 			
