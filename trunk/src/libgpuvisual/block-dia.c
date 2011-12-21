@@ -50,7 +50,7 @@ static gboolean block_dia_window_delete_event(GtkWidget *widget, GdkEvent *event
 
 void block_dia_window_refresh(struct vgpu_compute_unit_t *compute_unit)
 {
-	struct vgpu_t *gpu = compute_unit->gpu;
+	struct vgpu_t *vgpu = compute_unit->vgpu;
 	struct list_t *uop_list;
 	int i;
 
@@ -79,7 +79,7 @@ void block_dia_window_refresh(struct vgpu_compute_unit_t *compute_unit)
 	{
 		struct vgpu_uop_t *uop;
 		uop = list_get(uop_list, i);
-		if (uop->finished && uop->stage_cycle < gpu->cycle)
+		if (uop->finished && uop->stage_cycle < vgpu->cycle)
 			continue;
 
 		if (uop->engine == VGPU_ENGINE_CF) {

@@ -21,7 +21,7 @@
 
 
 /*
- * GPU Trace
+ * vgpu Trace
  */
 
 char vgpu_trace_err[MAX_STRING_SIZE];
@@ -29,7 +29,7 @@ char vgpu_trace_err[MAX_STRING_SIZE];
 #define VGPU_STATE_CHECKPOINT_INTERVAL  500
 
 #define VGPU_TRACE_ERROR(MSG) snprintf(vgpu_trace_err, sizeof vgpu_trace_err, "%s:%d: %s", \
-	gpu->trace_file_name, gpu->trace_line_number, (MSG))
+	vgpu->trace_file_name, vgpu->trace_line_number, (MSG))
 
 #define VGPU_TRACE_LINE_MAX_TOKENS  30
 
@@ -54,7 +54,7 @@ struct vgpu_trace_line_t
  *   1 - End of file reached
  *   2 - Other error - stored in 'vgpu_trace_err'
  */
-int vgpu_trace_line_read(struct vgpu_t *gpu, struct vgpu_trace_line_t *trace_line)
+int vgpu_trace_line_read(struct vgpu_t *vgpu, struct vgpu_trace_line_t *trace_line)
 {
 	char *line;
 	int len;
@@ -63,10 +63,10 @@ int vgpu_trace_line_read(struct vgpu_t *gpu, struct vgpu_trace_line_t *trace_lin
 	/* Read line from file */
 	do
 	{
-		line = fgets(trace_line->line, sizeof trace_line->line, gpu->trace_file);
+		line = fgets(trace_line->line, sizeof trace_line->line, vgpu->trace_file);
 		if (!line)
 			return 1;
-		gpu->trace_line_number++;
+		vgpu->trace_line_number++;
 
 		/* Remove spaces and '\n' */
 		len = strlen(line);
@@ -213,14 +213,14 @@ void vgpu_trace_line_read_vliw(struct vgpu_trace_line_t *trace_line, struct vgpu
  *   1 - End of trace reached
  *   2 - Format error in line
  */
-int vgpu_trace_line_process(struct vgpu_t *gpu)
+int vgpu_trace_line_process(struct vgpu_t *vgpu)
 {
 	struct vgpu_trace_line_t trace_line;
 	char *command;
 	int err;
 
 	/* Read trace line */
-	err = vgpu_trace_line_read(gpu, &trace_line);
+	err = vgpu_trace_line_read(vgpu, &trace_line);
 	if (err)
 		return err;
 	command = trace_line.command;
@@ -234,11 +234,11 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 		
 		/* Get compute unit */
 		compute_unit_id = vgpu_trace_line_token_int(&trace_line, "cu");
-		if (compute_unit_id < 0 || compute_unit_id >= gpu->num_compute_units) {
+		if (compute_unit_id < 0 || compute_unit_id >= vgpu->num_compute_units) {
 			VGPU_TRACE_ERROR("compute unit id out of bounds");
 			return 2;
 		}
-		compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);
+		compute_unit = list_get(vgpu->compute_unit_list, compute_unit_id);
 
 		/* Get action */
 		action = vgpu_trace_line_token(&trace_line, "a");
@@ -251,7 +251,7 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 
 			/* Remove work-group from pending list */
 			work_group_id = vgpu_trace_line_token_int(&trace_line, "wg");
-			work_group = list_remove_at(gpu->pending_work_group_list, 0);
+			work_group = list_remove_at(vgpu->pending_work_group_list, 0);
 			if (!work_group || work_group->id != work_group_id)
 			{
 				VGPU_TRACE_ERROR("work-group not in head of pending list");
@@ -267,11 +267,11 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			list_add(compute_unit->work_group_list, work_group);
 
 			/* Record another mapped work-group */
-			assert(gpu->num_mapped_work_groups == work_group_id);
-			gpu->num_mapped_work_groups++;
+			assert(vgpu->num_mapped_work_groups == work_group_id);
+			vgpu->num_mapped_work_groups++;
 
 			/* Status */
-			vgpu_status_write(gpu, "<b>WG-%d</b> mapped to <b>CU-%d</b>\n",
+			vgpu_status_write(vgpu, "<b>WG-%d</b> mapped to <b>CU-%d</b>\n",
 				work_group->id, compute_unit->id);
 		}
 
@@ -302,22 +302,22 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			}
 
 			/* Add work-group to finished list in order */
-			if (list_index_of(gpu->finished_work_group_list, work_group) >= 0)
+			if (list_index_of(vgpu->finished_work_group_list, work_group) >= 0)
 			{
 				VGPU_TRACE_ERROR("work-group is already in finished list");
 				return 2;
 			}
-			for (i = list_count(gpu->finished_work_group_list); i > 0; i--)
+			for (i = list_count(vgpu->finished_work_group_list); i > 0; i--)
 			{
 				struct vgpu_work_group_t *work_group_curr;
-				work_group_curr = list_get(gpu->finished_work_group_list, i - 1);
+				work_group_curr = list_get(vgpu->finished_work_group_list, i - 1);
 				if (work_group_curr->id < work_group->id)
 					break;
 			}
-			list_insert(gpu->finished_work_group_list, i, work_group);
+			list_insert(vgpu->finished_work_group_list, i, work_group);
 
 			/* Status */
-			vgpu_status_write(gpu, "<b>WG-%d</b> finished execution in <b>CU-%d</b>\n",
+			vgpu_status_write(vgpu, "<b>WG-%d</b> finished execution in <b>CU-%d</b>\n",
 				work_group->id, compute_unit->id);
 		}
 
@@ -335,14 +335,14 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 		int cycle;
 
 		cycle = vgpu_trace_line_token_int(&trace_line, "c");
-		if (cycle != gpu->cycle + 1)
+		if (cycle != vgpu->cycle + 1)
 		{
 			VGPU_TRACE_ERROR("invalid cycle number");
 			return 2;
 		}
-		gpu->cycle = cycle;
-		if (cycle > gpu->max_cycles)
-			gpu->max_cycles = cycle;
+		vgpu->cycle = cycle;
+		if (cycle > vgpu->max_cycles)
+			vgpu->max_cycles = cycle;
 	}
 
 	/* Create a 'uop' */
@@ -355,12 +355,12 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 		int uop_id;
 
 		compute_unit_id = vgpu_trace_line_token_int(&trace_line, "cu");
-		if (compute_unit_id < 0 || compute_unit_id >= gpu->num_compute_units)
+		if (compute_unit_id < 0 || compute_unit_id >= vgpu->num_compute_units)
 		{
 			VGPU_TRACE_ERROR("invalid compute unit id");
 			return 2;
 		}
-		compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);
+		compute_unit = list_get(vgpu->compute_unit_list, compute_unit_id);
 
 		/* Stage 'fetch' for any engine */
 		stage = vgpu_trace_line_token(&trace_line, "a");
@@ -410,11 +410,11 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 		if (!strcmp(command, "cf"))
 		{
 			uop->engine = VGPU_ENGINE_CF;
-			uop->stage_cycle = gpu->cycle;
+			uop->stage_cycle = vgpu->cycle;
 			if (!strcmp(stage, "fetch"))
 			{
 				uop->stage = VGPU_STAGE_FETCH;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"CF uop <span color=\"darkgreen\"><b>I-%d</b></span> - Fetch - "
 					"<span color=\"darkgreen\"><b>%s</b></span>\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id,
@@ -423,14 +423,14 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			else if (!strcmp(stage, "decode"))
 			{
 				uop->stage = VGPU_STAGE_DECODE;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"CF uop <span color=\"darkgreen\"><b>I-%d</b></span> - Decode\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
 			else if (!strcmp(stage, "execute"))
 			{
 				uop->stage = VGPU_STAGE_EXECUTE;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"CF uop <span color=\"darkgreen\"><b>I-%d</b></span> - Execute\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
@@ -438,7 +438,7 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			{
 				uop->stage = VGPU_STAGE_COMPLETE;
 				uop->finished = 1;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"CF uop <span color=\"darkgreen\"><b>I-%d</b></span> - Complete\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
@@ -453,11 +453,11 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 		else if (!strcmp(command, "alu"))
 		{
 			uop->engine = VGPU_ENGINE_ALU;
-			uop->stage_cycle = gpu->cycle;
+			uop->stage_cycle = vgpu->cycle;
 			if (!strcmp(stage, "fetch"))
 			{
 				uop->stage = VGPU_STAGE_FETCH;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"ALU uop <span color=\"red\"><b>I-%d</b></span> - Fetch - "
 					"<span color=\"red\"><b>%s</b></span>\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id,
@@ -466,21 +466,21 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			else if (!strcmp(stage, "decode"))
 			{
 				uop->stage = VGPU_STAGE_DECODE;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"ALU uop <span color=\"red\"><b>I-%d</b></span> - Decode\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
 			else if (!strcmp(stage, "read"))
 			{
 				uop->stage = VGPU_STAGE_READ;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"ALU uop <span color=\"red\"><b>I-%d</b></span> - Read\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
 			else if (!strcmp(stage, "exec"))
 			{
 				uop->stage = VGPU_STAGE_EXECUTE;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"ALU uop <span color=\"red\"><b>I-%d</b></span> - Execute\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
@@ -488,7 +488,7 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			{
 				uop->stage = VGPU_STAGE_WRITE;
 				uop->finished = 1;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"ALU uop <span color=\"red\"><b>I-%d</b></span> - Write\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
@@ -503,11 +503,11 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 		else
 		{
 			uop->engine = VGPU_ENGINE_TEX;
-			uop->stage_cycle = gpu->cycle;
+			uop->stage_cycle = vgpu->cycle;
 			if (!strcmp(stage, "fetch"))
 			{
 				uop->stage = VGPU_STAGE_FETCH;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"TEX uop <span color=\"blue\"><b>I-%d</b></span> - Fetch - "
 					"<span color=\"blue\"><b>%s</b></span>\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id,
@@ -516,14 +516,14 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			else if (!strcmp(stage, "decode"))
 			{
 				uop->stage = VGPU_STAGE_DECODE;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"TEX uop <span color=\"blue\"><b>I-%d</b></span> - Decode\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
 			else if (!strcmp(stage, "read"))
 			{
 				uop->stage = VGPU_STAGE_READ;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"TEX uop <span color=\"blue\"><b>I-%d</b></span> - Read\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
@@ -531,7 +531,7 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
 			{
 				uop->stage = VGPU_STAGE_WRITE;
 				uop->finished = TRUE;
-				vgpu_status_write(gpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
+				vgpu_status_write(vgpu, "<b>CU-%d</b>, <b>WG-%d</b>, <b>WF-%d</b>: "
 					"TEX uop <span color=\"blue\"><b>I-%d</b></span> - Write\n",
 					uop->compute_unit_id, uop->work_group_id, uop->wavefront_id, uop->id);
 			}
@@ -560,7 +560,7 @@ int vgpu_trace_line_process(struct vgpu_t *gpu)
  *   1 - Already in last cycle
  *   2 - Error found in some trace line
  */
-int vgpu_trace_next_cycle(struct vgpu_t *gpu)
+int vgpu_trace_next_cycle(struct vgpu_t *vgpu)
 {
 	int cycle;
 	int err;
@@ -570,22 +570,22 @@ int vgpu_trace_next_cycle(struct vgpu_t *gpu)
 	/* Parse commands until the next 'clk' command is found.
 	 * This should only happen when skipping the initialization commands before cycle 1.
 	 * Otherwise, the current trace line should contain the 'clk' command. */
-	cycle = gpu->cycle;
+	cycle = vgpu->cycle;
 	do {
-		err = vgpu_trace_line_process(gpu);
+		err = vgpu_trace_line_process(vgpu);
 		if (err)
 			return err;
-	} while (gpu->cycle == cycle);
+	} while (vgpu->cycle == cycle);
 
 	/* First thing to do in a new cycle is remove all finished uops from the
 	 * compute units' uop lists. */
-	for (i = 0; i < gpu->num_compute_units; i++)
+	for (i = 0; i < vgpu->num_compute_units; i++)
 	{
 		struct vgpu_compute_unit_t *compute_unit;
 		struct list_t *uop_list;
 		struct vgpu_uop_t *uop;
 
-		compute_unit = list_get(gpu->compute_unit_list, i);
+		compute_unit = list_get(vgpu->compute_unit_list, i);
 		uop_list = compute_unit->uop_list;
 		while (list_count(uop_list)) {
 			uop = list_get(uop_list, 0);
@@ -599,20 +599,20 @@ int vgpu_trace_next_cycle(struct vgpu_t *gpu)
 	}
 
 	/* Clear status text */
-	vgpu_status_clear(gpu);
+	vgpu_status_clear(vgpu);
 
 	/* Parse line until the next 'clk' command. When it is found,
 	 * go back to it so that next time it will be processed first. */
-	cycle = gpu->cycle;
+	cycle = vgpu->cycle;
 	do {
-		trace_file_pos = ftell(gpu->trace_file);
-		err = vgpu_trace_line_process(gpu);
+		trace_file_pos = ftell(vgpu->trace_file);
+		err = vgpu_trace_line_process(vgpu);
 		if (err == 2)
 			return 2;
-	} while (gpu->cycle == cycle && !err);
-	fseek(gpu->trace_file, trace_file_pos, SEEK_SET);
-	gpu->trace_line_number--;
-	gpu->cycle = cycle;
+	} while (vgpu->cycle == cycle && !err);
+	fseek(vgpu->trace_file, trace_file_pos, SEEK_SET);
+	vgpu->trace_line_number--;
+	vgpu->cycle = cycle;
 
 	/* File position should be at the end, or right at a 'clk' trace line. */
 	return 0;
@@ -624,7 +624,7 @@ int vgpu_trace_next_cycle(struct vgpu_t *gpu)
  *   1 - Cycle exceeds end of file
  *   2 - Error in trace lines
  */
-int vgpu_trace_cycle(struct vgpu_t *gpu, int cycle)
+int vgpu_trace_cycle(struct vgpu_t *vgpu, int cycle)
 {
 	int err;
 	int checkpoint_index;
@@ -633,29 +633,29 @@ int vgpu_trace_cycle(struct vgpu_t *gpu, int cycle)
 	struct vgpu_state_checkpoint_t *checkpoint;
 
 	/* Check if it is better to load a checkpoint or to go to the target
-	 * cycle from the current GPU state. */
+	 * cycle from the current vgpu state. */
 	load_checkpoint = TRUE;
 	checkpoint_index = cycle / VGPU_STATE_CHECKPOINT_INTERVAL;
 	distance_from_checkpoint = cycle - checkpoint_index * VGPU_STATE_CHECKPOINT_INTERVAL;
-	if (gpu->cycle <= cycle && distance_from_checkpoint >= cycle - gpu->cycle)
+	if (vgpu->cycle <= cycle && distance_from_checkpoint >= cycle - vgpu->cycle)
 		load_checkpoint = FALSE;
 
 	/* Load checkpoint */
 	if (load_checkpoint)
 	{
-		checkpoint = list_get(gpu->state_checkpoint_list, checkpoint_index);
+		checkpoint = list_get(vgpu->state_checkpoint_list, checkpoint_index);
 		if (!checkpoint)
 			return 1;
-		fseek(gpu->state_file, checkpoint->state_file_pos, SEEK_SET);
-		fseek(gpu->trace_file, checkpoint->trace_file_pos, SEEK_SET);
-		vgpu_load_state(gpu);
-		assert(gpu->cycle == checkpoint->cycle);
+		fseek(vgpu->state_file, checkpoint->state_file_pos, SEEK_SET);
+		fseek(vgpu->trace_file, checkpoint->trace_file_pos, SEEK_SET);
+		vgpu_load_state(vgpu);
+		assert(vgpu->cycle == checkpoint->cycle);
 	}
 
 	/* Go to cycle */
-	while (gpu->cycle < cycle)
+	while (vgpu->cycle < cycle)
 	{
-		err = vgpu_trace_next_cycle(gpu);
+		err = vgpu_trace_next_cycle(vgpu);
 		if (err)
 			return err;
 	}
@@ -670,7 +670,7 @@ int vgpu_trace_cycle(struct vgpu_t *gpu, int cycle)
  *   1 - End of trace reached before intro finished
  *   2 - Format error in line
  */
-int vgpu_trace_parse_intro(struct vgpu_t *gpu)
+int vgpu_trace_parse_intro(struct vgpu_t *vgpu)
 {
 	int err;
 	long int trace_file_pos;
@@ -681,8 +681,8 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 	for (;;)
 	{
 		/* Get a trace line */
-		trace_file_pos = ftell(gpu->trace_file);
-		err = vgpu_trace_line_read(gpu, &trace_line);
+		trace_file_pos = ftell(vgpu->trace_file);
+		err = vgpu_trace_line_read(vgpu, &trace_line);
 
 		/* Errors */
 		if (err == 1)
@@ -697,12 +697,12 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 			struct vgpu_compute_unit_t *compute_unit;
 			int i;
 
-			gpu->num_work_groups = vgpu_trace_line_token_int(&trace_line, "group_count");
-			gpu->num_compute_units = vgpu_trace_line_token_int(&trace_line, "compute_units");
-			for (i = 0; i < gpu->num_compute_units; i++)
+			vgpu->num_work_groups = vgpu_trace_line_token_int(&trace_line, "group_count");
+			vgpu->num_compute_units = vgpu_trace_line_token_int(&trace_line, "compute_units");
+			for (i = 0; i < vgpu->num_compute_units; i++)
 			{
-				compute_unit = vgpu_compute_unit_create(gpu, i);
-				list_add(gpu->compute_unit_list, compute_unit);
+				compute_unit = vgpu_compute_unit_create(vgpu, i);
+				list_add(vgpu->compute_unit_list, compute_unit);
 			}
 		}
 
@@ -722,7 +722,7 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 
 				/* Get ID */
 				id = vgpu_trace_line_token_int(&trace_line, "id");
-				if (id != list_count(gpu->work_group_list))
+				if (id != list_count(vgpu->work_group_list))
 				{
 					VGPU_TRACE_ERROR("unordered work-group id");
 					return 2;
@@ -730,8 +730,8 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 
 				/* Create work_group */
 				work_group = vgpu_work_group_create(id);
-				list_add(gpu->work_group_list, work_group);
-				list_add(gpu->pending_work_group_list, work_group);
+				list_add(vgpu->work_group_list, work_group);
+				list_add(vgpu->pending_work_group_list, work_group);
 
 				/* Fields */
 				work_group->id = id;
@@ -768,7 +768,7 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 			/* Get disassembly line */
 			inst_idx = vgpu_trace_line_token_int(&trace_line, "i");
 			clause = vgpu_trace_line_token(&trace_line, "cl");
-			if (!clause || inst_idx != list_count(gpu->kernel_source_strings))
+			if (!clause || inst_idx != list_count(vgpu->kernel_source_strings))
 			{
 				VGPU_TRACE_ERROR("invalid disassembly");
 				return 2;
@@ -794,7 +794,7 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 					str_printf(&text_ptr, &text_size, " ");
 				str_printf(&text_ptr, &text_size,
 					"<span color=\"darkgreen\">%02d <b>%s</b></span>\n", count, inst);
-				list_add(gpu->kernel_source_strings, strdup(text));
+				list_add(vgpu->kernel_source_strings, strdup(text));
 			}
 
 			/* ALU clause */
@@ -836,7 +836,7 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 						" <b><span color=\"darkred\">%s</span>: %s</b>\n", slot_name[j], inst);
 				}
 				str_printf(&text_ptr, &text_size, "</span>");
-				list_add(gpu->kernel_source_strings, strdup(text));
+				list_add(vgpu->kernel_source_strings, strdup(text));
 			}
 
 			/* TEX clause */
@@ -862,7 +862,7 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 				str_printf(&text_ptr, &text_size, "%4d", count);
 				str_printf(&text_ptr, &text_size, " <b>%s</b>\n", inst);
 				str_printf(&text_ptr, &text_size, "</span>");
-				list_add(gpu->kernel_source_strings, strdup(text));
+				list_add(vgpu->kernel_source_strings, strdup(text));
 			}
 
 			/* Invalid */
@@ -877,8 +877,8 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 		 * Return to previous position and leave. */
 		else
 		{
-			gpu->trace_line_number--;
-			fseek(gpu->trace_file, trace_file_pos, SEEK_SET);
+			vgpu->trace_line_number--;
+			fseek(vgpu->trace_file, trace_file_pos, SEEK_SET);
 			break;
 		}
 	}
@@ -888,12 +888,12 @@ int vgpu_trace_parse_intro(struct vgpu_t *gpu)
 }
 
 
-int vgpu_trace_parse(struct vgpu_t *gpu)
+int vgpu_trace_parse(struct vgpu_t *vgpu)
 {
 	int err;
 
 	/* Parse initial trace line */
-	err = vgpu_trace_parse_intro(gpu);
+	err = vgpu_trace_parse_intro(vgpu);
 	if (err)
 		return err;
 
@@ -901,25 +901,25 @@ int vgpu_trace_parse(struct vgpu_t *gpu)
 	do
 	{
 		/* Make state checkpoint */
-		if (gpu->cycle % VGPU_STATE_CHECKPOINT_INTERVAL == 0)
+		if (vgpu->cycle % VGPU_STATE_CHECKPOINT_INTERVAL == 0)
 		{
 			struct vgpu_state_checkpoint_t *checkpoint;
 			checkpoint = calloc(1, sizeof(struct vgpu_state_checkpoint_t));
-			checkpoint->cycle = gpu->cycle;
-			checkpoint->state_file_pos = ftell(gpu->state_file);
-			checkpoint->trace_file_pos = ftell(gpu->trace_file);
-			list_add(gpu->state_checkpoint_list, checkpoint);
-			vgpu_store_state(gpu);
+			checkpoint->cycle = vgpu->cycle;
+			checkpoint->state_file_pos = ftell(vgpu->state_file);
+			checkpoint->trace_file_pos = ftell(vgpu->trace_file);
+			list_add(vgpu->state_checkpoint_list, checkpoint);
+			vgpu_store_state(vgpu);
 		}
 
 		/* Go to next cycle */
-		err = vgpu_trace_next_cycle(gpu);
+		err = vgpu_trace_next_cycle(vgpu);
 		if (err == 2)
 			return err;
 	} while (!err);
 
 	/* Go to first cycle */
-	vgpu_trace_cycle(gpu, 0);
+	vgpu_trace_cycle(vgpu, 0);
 
 	/* Return success */
 	return 0;

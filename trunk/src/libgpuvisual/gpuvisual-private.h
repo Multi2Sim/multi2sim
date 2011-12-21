@@ -106,7 +106,7 @@ gboolean list_layout_label_leave_notify_event(GtkWidget *widget, GdkEventCrossin
 
 
 /*
- * GPU
+ * vgpu
  */
 
 struct vgpu_state_checkpoint_t
@@ -157,19 +157,19 @@ struct vgpu_t
 extern char vgpu_trace_err[MAX_STRING_SIZE];
 
 struct vgpu_t *vgpu_create(char *trace_file_name);
-void vgpu_free(struct vgpu_t *gpu);
+void vgpu_free(struct vgpu_t *vgpu);
 
-void vgpu_status_write(struct vgpu_t *gpu, char *fmt, ...);
-void vgpu_status_clear(struct vgpu_t *gpu);
+void vgpu_status_write(struct vgpu_t *vgpu, char *fmt, ...);
+void vgpu_status_clear(struct vgpu_t *vgpu);
 
-void vgpu_store_state(struct vgpu_t *gpu);
-void vgpu_load_state(struct vgpu_t *gpu);
+void vgpu_store_state(struct vgpu_t *vgpu);
+void vgpu_load_state(struct vgpu_t *vgpu);
 
-int vgpu_trace_parse(struct vgpu_t *gpu);
-int vgpu_trace_cycle(struct vgpu_t *gpu, int cycle);
+int vgpu_trace_parse(struct vgpu_t *vgpu);
+int vgpu_trace_cycle(struct vgpu_t *vgpu, int cycle);
 
-GtkWidget *vgpu_widget_new(struct vgpu_t *gpu);
-void vgpu_widget_refresh(struct vgpu_t *gpu);
+GtkWidget *vgpu_widget_new(struct vgpu_t *vgpu);
+void vgpu_widget_refresh(struct vgpu_t *vgpu);
 
 
 
@@ -272,7 +272,7 @@ struct timing_dia_entry_t
 
 struct vgpu_compute_unit_t
 {
-	struct vgpu_t *gpu;
+	struct vgpu_t *vgpu;
 
 	int id;
 
@@ -283,7 +283,7 @@ struct vgpu_compute_unit_t
 	int max_uops;  /* Total number of uops registered for this CU in the whole trace */
 	int last_completed_uop_id;  /* ID of last completed uop */
 
-	/* In GPU widget */
+	/* In vgpu widget */
 	struct list_layout_t *work_group_list_layout;
 	GtkWidget *status_widget;
 
@@ -346,7 +346,7 @@ struct vgpu_compute_unit_t
 	struct list_t *uop_list_tex_write;
 };
 
-struct vgpu_compute_unit_t *vgpu_compute_unit_create(struct vgpu_t *gpu, int id);
+struct vgpu_compute_unit_t *vgpu_compute_unit_create(struct vgpu_t *vgpu, int id);
 void vgpu_compute_unit_free(struct vgpu_compute_unit_t *compute_unit);
 
 

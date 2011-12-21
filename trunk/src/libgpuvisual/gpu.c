@@ -21,96 +21,96 @@
 
 
 
-/* Create gpu structure based on an input trace */
+/* Create vgpu structure based on an input trace */
 struct vgpu_t *vgpu_create(char *trace_file_name)
 {
-	struct vgpu_t *gpu;
+	struct vgpu_t *vgpu;
 	int err;
 
 	/* Create it */
-	gpu = calloc(1, sizeof(struct vgpu_t));
+	vgpu = calloc(1, sizeof(struct vgpu_t));
 
 	/* Open trace file */
-	snprintf(gpu->trace_file_name, sizeof gpu->trace_file_name, "%s",
+	snprintf(vgpu->trace_file_name, sizeof vgpu->trace_file_name, "%s",
 		trace_file_name);
-	gpu->trace_file = fopen(trace_file_name, "rt");
-	if (!gpu->trace_file) {
+	vgpu->trace_file = fopen(trace_file_name, "rt");
+	if (!vgpu->trace_file) {
 		snprintf(vgpu_trace_err, sizeof vgpu_trace_err,
 			"%s: cannot open file", trace_file_name);
-		free(gpu);
+		free(vgpu);
 		return NULL;
 	}
 
 	/* Open status file */
-	snprintf(gpu->state_file_name, sizeof gpu->state_file_name, "%s.status", trace_file_name);
-	gpu->state_file = fopen(gpu->state_file_name, "w+b");
-	if (!gpu->state_file) {
+	snprintf(vgpu->state_file_name, sizeof vgpu->state_file_name, "%s.status", trace_file_name);
+	vgpu->state_file = fopen(vgpu->state_file_name, "w+b");
+	if (!vgpu->state_file) {
 		snprintf(vgpu_trace_err, sizeof vgpu_trace_err,
-			"%s: cannot create state file", gpu->state_file_name);
-		fclose(gpu->trace_file);
-		free(gpu);
+			"%s: cannot create state file", vgpu->state_file_name);
+		fclose(vgpu->trace_file);
+		free(vgpu);
 		return NULL;
 	}
 
 	/* Create status text */
-	gpu->status_text_size = MAX_STRING_SIZE;
-	gpu->status_text = calloc(1, MAX_STRING_SIZE);
+	vgpu->status_text_size = MAX_STRING_SIZE;
+	vgpu->status_text = calloc(1, MAX_STRING_SIZE);
 
 	/* Create lists */
-	gpu->state_checkpoint_list = list_create_with_size(100);
-	gpu->kernel_source_strings = list_create();
-	gpu->compute_unit_list = list_create();
-	gpu->work_group_list = list_create();
-	gpu->pending_work_group_list = list_create();
-	gpu->finished_work_group_list = list_create();
+	vgpu->state_checkpoint_list = list_create_with_size(100);
+	vgpu->kernel_source_strings = list_create();
+	vgpu->compute_unit_list = list_create();
+	vgpu->work_group_list = list_create();
+	vgpu->pending_work_group_list = list_create();
+	vgpu->finished_work_group_list = list_create();
 
 	/* Parse trace file */
-	err = vgpu_trace_parse(gpu);
+	err = vgpu_trace_parse(vgpu);
 	if (err) {
 		/* FIXME: free stuff created before (including what 'vgpu_trace_parse' created) */
 		return NULL;
 	}
 
 	/* Return it */
-	return gpu;
+	return vgpu;
 }
 
 
-void vgpu_free(struct vgpu_t *gpu)
+void vgpu_free(struct vgpu_t *vgpu)
 {
 	int i;
 
 	/* Close trace files */
-	fclose(gpu->state_file);
-	fclose(gpu->trace_file);
+	fclose(vgpu->state_file);
+	fclose(vgpu->trace_file);
 
 	/* State info list */
-	for (i = 0; i < list_count(gpu->state_checkpoint_list); i++)
-		free(list_get(gpu->state_checkpoint_list, i));
-	list_free(gpu->state_checkpoint_list);
+	for (i = 0; i < list_count(vgpu->state_checkpoint_list); i++)
+		free(list_get(vgpu->state_checkpoint_list, i));
+	list_free(vgpu->state_checkpoint_list);
 
 	/* Kernel source */
-	for (i = 0; i < list_count(gpu->kernel_source_strings); i++)
-		free(list_get(gpu->kernel_source_strings, i));
-	list_free(gpu->kernel_source_strings);
+	for (i = 0; i < list_count(vgpu->kernel_source_strings); i++)
+		free(list_get(vgpu->kernel_source_strings, i));
+	list_free(vgpu->kernel_source_strings);
 
 	/* Work-groups */
-	for (i = 0; i < list_count(gpu->work_group_list); i++)
-		vgpu_work_group_free(list_get(gpu->work_group_list, i));
-	list_free(gpu->work_group_list);
-	list_free(gpu->finished_work_group_list);
-	list_free(gpu->pending_work_group_list);
+	for (i = 0; i < list_count(vgpu->work_group_list); i++)
+		vgpu_work_group_free(list_get(vgpu->work_group_list, i));
+	list_free(vgpu->work_group_list);
+	list_free(vgpu->finished_work_group_list);
+	list_free(vgpu->pending_work_group_list);
 
 	/* Compute units */
-	for (i = 0; i < list_count(gpu->compute_unit_list); i++)
-		vgpu_compute_unit_free(list_get(gpu->compute_unit_list, i));
-	list_free(gpu->compute_unit_list);
+	for (i = 0; i < list_count(vgpu->compute_unit_list); i++)
+		vgpu_compute_unit_free(list_get(vgpu->compute_unit_list, i));
+	list_free(vgpu->compute_unit_list);
 
 	/* Status text */
-	free(gpu->status_text);
+	free(vgpu->status_text);
 
-	/* GPU */
-	free(gpu);
+	/* vgpu */
+	free(vgpu);
 }
 
 
@@ -120,27 +120,27 @@ static char vgpu_work_group_list_label = 0x22;
 static char vgpu_uop_list_label = 0x33;
 
 
-/* Store the GPU state in the current position in gpu->state_file */
-void vgpu_store_state(struct vgpu_t *gpu)
+/* Store the vgpu state in the current position in vgpu->state_file */
+void vgpu_store_state(struct vgpu_t *vgpu)
 {
-	FILE *f = gpu->state_file;
+	FILE *f = vgpu->state_file;
 	int i, j;
 	int size;
 
 	/* Cycle */
 	fwrite(&vgpu_state_label, 1, 1, f);
-	fwrite(&gpu->cycle, 1, sizeof(int), f);
-	fwrite(&gpu->trace_line_number, 1, sizeof(int), f);
+	fwrite(&vgpu->cycle, 1, sizeof(int), f);
+	fwrite(&vgpu->trace_line_number, 1, sizeof(int), f);
 
 	/* Status */
-	size = strlen(gpu->status_text) + 1;
+	size = strlen(vgpu->status_text) + 1;
 	fwrite(&size, 1, sizeof(int), f);
-	fwrite(gpu->status_text, 1, size, f);
+	fwrite(vgpu->status_text, 1, size, f);
 
 	/* Compute units */
-	fwrite(&gpu->num_compute_units, 1, sizeof(int), f);
-	fwrite(&gpu->num_mapped_work_groups, 1, sizeof(int), f);
-	for (i = 0; i < gpu->num_compute_units; i++)
+	fwrite(&vgpu->num_compute_units, 1, sizeof(int), f);
+	fwrite(&vgpu->num_mapped_work_groups, 1, sizeof(int), f);
+	for (i = 0; i < vgpu->num_compute_units; i++)
 	{
 		struct vgpu_compute_unit_t *compute_unit;
 		struct list_t *work_group_list;
@@ -148,7 +148,7 @@ void vgpu_store_state(struct vgpu_t *gpu)
 		int num_uops;
 
 		/* Get compute unit and work groups */
-		compute_unit = list_get(gpu->compute_unit_list, i);
+		compute_unit = list_get(vgpu->compute_unit_list, i);
 		work_group_list = compute_unit->work_group_list;
 
 		/* Fields for compute unit */
@@ -203,10 +203,10 @@ void vgpu_store_state(struct vgpu_t *gpu)
 }
 
 
-/* Load the GPU state from the current position in gpu->state_file */
-void vgpu_load_state(struct vgpu_t *gpu)
+/* Load the vgpu state from the current position in vgpu->state_file */
+void vgpu_load_state(struct vgpu_t *vgpu)
 {
-	FILE *f = gpu->state_file;
+	FILE *f = vgpu->state_file;
 	int num_compute_units;
 	int i, j;
 	char label;
@@ -216,25 +216,25 @@ void vgpu_load_state(struct vgpu_t *gpu)
 	/* Cycle */
 	count += fread(&label, 1, 1, f);
 	assert(label == vgpu_state_label);
-	count += fread(&gpu->cycle, 1, sizeof(int), f);
-	count += fread(&gpu->trace_line_number, 1, sizeof(int), f);
+	count += fread(&vgpu->cycle, 1, sizeof(int), f);
+	count += fread(&vgpu->trace_line_number, 1, sizeof(int), f);
 
 	/* Status text */
 	count += fread(&size, 1, sizeof(int), f);
-	if (size > gpu->status_text_size)
+	if (size > vgpu->status_text_size)
 	{
-		gpu->status_text_size = size;
-		gpu->status_text = realloc(gpu->status_text, size);
-		if (!gpu->status_text)
+		vgpu->status_text_size = size;
+		vgpu->status_text = realloc(vgpu->status_text, size);
+		if (!vgpu->status_text)
 			fatal("%s: out of memory", __FUNCTION__);
 	}
-	count += fread(gpu->status_text, 1, size, f);
+	count += fread(vgpu->status_text, 1, size, f);
 
 	/* Compute units */
 	count += fread(&num_compute_units, 1, sizeof(int), f);
-	assert(num_compute_units == gpu->num_compute_units);
-	count += fread(&gpu->num_mapped_work_groups, 1, sizeof(int), f);
-	for (i = 0; i < gpu->num_compute_units; i++)
+	assert(num_compute_units == vgpu->num_compute_units);
+	count += fread(&vgpu->num_mapped_work_groups, 1, sizeof(int), f);
+	for (i = 0; i < vgpu->num_compute_units; i++)
 	{
 		struct vgpu_compute_unit_t *compute_unit;
 		struct list_t *work_group_list;
@@ -242,7 +242,7 @@ void vgpu_load_state(struct vgpu_t *gpu)
 		int num_uops;
 
 		/* Get compute unit and work groups */
-		compute_unit = list_get(gpu->compute_unit_list, i);
+		compute_unit = list_get(vgpu->compute_unit_list, i);
 		work_group_list = compute_unit->work_group_list;
 
 		/* Fields for compute unit */
@@ -259,7 +259,7 @@ void vgpu_load_state(struct vgpu_t *gpu)
 			int work_group_id;
 
 			count += fread(&work_group_id, 1, sizeof(int), f);
-			work_group = list_get(gpu->work_group_list, work_group_id);
+			work_group = list_get(vgpu->work_group_list, work_group_id);
 			assert(work_group);
 			list_add(work_group_list, work_group);
 		}
@@ -303,32 +303,32 @@ void vgpu_load_state(struct vgpu_t *gpu)
 		fatal("%s: read error", __FUNCTION__);
 
 	/* Reconstruct pending list */
-	list_clear(gpu->pending_work_group_list);
-	for (i = gpu->num_mapped_work_groups; i < gpu->num_work_groups; i++)
-		list_add(gpu->pending_work_group_list, list_get(gpu->work_group_list, i));
+	list_clear(vgpu->pending_work_group_list);
+	for (i = vgpu->num_mapped_work_groups; i < vgpu->num_work_groups; i++)
+		list_add(vgpu->pending_work_group_list, list_get(vgpu->work_group_list, i));
 
 	/* Reconstruct finished list */
-	list_clear(gpu->finished_work_group_list);
-	for (i = 0; i < gpu->num_mapped_work_groups; i++)
-		list_add(gpu->finished_work_group_list, list_get(gpu->work_group_list, i));
-	for (i = 0; i < gpu->num_compute_units; i++)
+	list_clear(vgpu->finished_work_group_list);
+	for (i = 0; i < vgpu->num_mapped_work_groups; i++)
+		list_add(vgpu->finished_work_group_list, list_get(vgpu->work_group_list, i));
+	for (i = 0; i < vgpu->num_compute_units; i++)
 	{
 		struct vgpu_compute_unit_t *compute_unit;
 		struct list_t *work_group_list;
 		struct vgpu_work_group_t *work_group_curr;
 
-		compute_unit = list_get(gpu->compute_unit_list, i);
+		compute_unit = list_get(vgpu->compute_unit_list, i);
 		work_group_list = compute_unit->work_group_list;
 		for (j = 0; j < list_count(work_group_list); j++)
 		{
 			work_group_curr = list_get(work_group_list, j);
-			list_remove(gpu->finished_work_group_list, work_group_curr);
+			list_remove(vgpu->finished_work_group_list, work_group_curr);
 		}
 	}
 }
 
 
-void vgpu_status_write(struct vgpu_t *gpu, char *fmt, ...)
+void vgpu_status_write(struct vgpu_t *vgpu, char *fmt, ...)
 {
 	char str[MAX_LONG_STRING_SIZE];
 	va_list va;
@@ -336,28 +336,28 @@ void vgpu_status_write(struct vgpu_t *gpu, char *fmt, ...)
 
 	va_start(va, fmt);
 	vsnprintf(str, sizeof str, fmt, va);
-	size = strlen(gpu->status_text) + strlen(str) + 1;
-	if (size > gpu->status_text_size)
+	size = strlen(vgpu->status_text) + strlen(str) + 1;
+	if (size > vgpu->status_text_size)
 	{
-		gpu->status_text_size = MAX(size, gpu->status_text_size * 2);
-		gpu->status_text = realloc(gpu->status_text, gpu->status_text_size);
+		vgpu->status_text_size = MAX(size, vgpu->status_text_size * 2);
+		vgpu->status_text = realloc(vgpu->status_text, vgpu->status_text_size);
 	}
-	if (!gpu->status_text)
+	if (!vgpu->status_text)
 		fatal("%s: out of memory", __FUNCTION__);
-	strcat(gpu->status_text, str);
+	strcat(vgpu->status_text, str);
 }
 
 
-void vgpu_status_clear(struct vgpu_t *gpu)
+void vgpu_status_clear(struct vgpu_t *vgpu)
 {
-	memset(gpu->status_text, 0, gpu->status_text_size);
+	memset(vgpu->status_text, 0, vgpu->status_text_size);
 }
 
 
 
 
 /*
- * GPU Work-Group
+ * vgpu Work-Group
  */
 
 
@@ -418,14 +418,14 @@ void work_group_info_popup(void *item)
 
 
 /*
- * GPU Compute unit
+ * vgpu Compute unit
  */
 
-struct vgpu_compute_unit_t *vgpu_compute_unit_create(struct vgpu_t *gpu, int id)
+struct vgpu_compute_unit_t *vgpu_compute_unit_create(struct vgpu_t *vgpu, int id)
 {
 	struct vgpu_compute_unit_t *compute_unit;
 	compute_unit = calloc(1, sizeof(struct vgpu_compute_unit_t));
-	compute_unit->gpu = gpu;
+	compute_unit->vgpu = vgpu;
 	compute_unit->id = id;
 	compute_unit->work_group_list = list_create();
 	compute_unit->uop_list = list_create();

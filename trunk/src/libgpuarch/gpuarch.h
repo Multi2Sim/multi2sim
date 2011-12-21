@@ -237,14 +237,14 @@ struct gpu_compute_unit_t
 	uint64_t cycle;
 	uint64_t inst_count;
 
+	/* Ready wavefront pool.
+	 * It includes suspended wavefronts, but excludes wavefronts in
+	 * flight in the CF pipeline or running on the ALU/TEX Engines. */
+	struct lnlist_t *wavefront_pool;
+
 	/* Fields for CF Engine */
 	struct
 	{
-		/* Ready wavefront pool.
-		 * It includes suspended wavefronts, but excludes wavefronts in
-		 * flight in the CF pipeline or running on the ALU/TEX Engines. */
-		struct lnlist_t *wavefront_pool;
-
 		/* Buffers */
 		struct gpu_uop_t **fetch_buffer;  /* Array of uops (MaxWavefrontsPerComputeUnit elements) */
 		struct gpu_uop_t **inst_buffer;  /* Array of uops (MaxWavefrontsPerComputeUnit elements) */
@@ -322,6 +322,8 @@ struct gpu_compute_unit_t *gpu_compute_unit_create();
 void gpu_compute_unit_free(struct gpu_compute_unit_t *gpu_compute_unit);
 void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group);
 void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group);
+
+struct gpu_wavefront_t *gpu_schedule(struct gpu_compute_unit_t *compute_unit);
 
 void gpu_cf_engine_run(struct gpu_compute_unit_t *compute_unit);
 void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit);
