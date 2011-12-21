@@ -85,7 +85,7 @@ double vgpu_stage_color[VGPU_ENGINE_COUNT][VGPU_STAGE_COUNT][3] = {
 
 static void timing_dia_refresh(struct vgpu_compute_unit_t *compute_unit)
 {
-	struct vgpu_t *gpu = compute_unit->gpu;
+	struct vgpu_t *vgpu = compute_unit->vgpu;
 	int vgpu_cycle;
 	int i, j;
 	int err;
@@ -103,14 +103,14 @@ static void timing_dia_refresh(struct vgpu_compute_unit_t *compute_unit)
 	compute_unit->timing_dia_uop_first = compute_unit->timing_dia_vscrollbar_value / timing_dia_row_height;
 
 	/* Create timing diagram */
-	vgpu_cycle = gpu->cycle;
+	vgpu_cycle = vgpu->cycle;
 	compute_unit->timing_dia = calloc(compute_unit->timing_dia_width * compute_unit->timing_dia_height, sizeof(struct timing_dia_entry_t));
 	for (i = 0; i < compute_unit->timing_dia_width; i++)
 	{
 		struct vgpu_uop_t *uop_head;
 
 		/* Go to cycle */
-		err = vgpu_trace_cycle(gpu, compute_unit->timing_dia_cycle_first + i);
+		err = vgpu_trace_cycle(vgpu, compute_unit->timing_dia_cycle_first + i);
 		if (err)
 			break;
 
@@ -143,7 +143,7 @@ static void timing_dia_refresh(struct vgpu_compute_unit_t *compute_unit)
 			}
 
 			/* Timing diagram cell */
-			if (uop->finished && gpu->cycle > uop->stage_cycle)
+			if (uop->finished && vgpu->cycle > uop->stage_cycle)
 				continue;
 			timing_dia_entry = &compute_unit->timing_dia[i * compute_unit->timing_dia_height + j];
 			snprintf(timing_dia_entry->text, sizeof timing_dia_entry->text, "%s", vgpu_stage_name[uop->stage]);
@@ -154,8 +154,8 @@ static void timing_dia_refresh(struct vgpu_compute_unit_t *compute_unit)
 		}
 	}
 
-	/* Restore original GPU cycle */
-	vgpu_trace_cycle(gpu, vgpu_cycle);
+	/* Restore original vgpu cycle */
+	vgpu_trace_cycle(vgpu, vgpu_cycle);
 }
 
 
@@ -345,7 +345,7 @@ static gboolean timing_dia_title_area_draw_event(GtkWidget *widget, cairo_t *cr,
 
 static gboolean timing_dia_area_draw_event(GtkWidget *widget, cairo_t *cr, struct vgpu_compute_unit_t *compute_unit)
 {
-	struct vgpu_t *gpu = compute_unit->gpu;
+	struct vgpu_t *vgpu = compute_unit->vgpu;
 	GtkWidget *timing_dia_area = compute_unit->timing_dia_area;
 	GdkWindow *window;
 
@@ -419,7 +419,7 @@ static gboolean timing_dia_area_draw_event(GtkWidget *widget, cairo_t *cr, struc
 
 	/* Adjust increments for scroll bars */
 	gtk_range_set_range(GTK_RANGE(compute_unit->timing_dia_hscrollbar), 0,
-		(double) gpu->max_cycles * timing_dia_col_width);
+		(double) vgpu->max_cycles * timing_dia_col_width);
 	gtk_range_set_range(GTK_RANGE(compute_unit->timing_dia_vscrollbar), 0,
 		(double) compute_unit->max_uops * timing_dia_row_height);
 	compute_unit->timing_dia_hscrollbar_incr_step = (double) timing_dia_col_width * 0.4;
@@ -460,12 +460,12 @@ static gboolean timing_dia_area_scroll_event(GtkWidget *widget, GdkEventScroll *
 
 static gboolean timing_dia_scroll_event(GtkWidget *range, GtkScrollType scroll, gdouble value, struct vgpu_compute_unit_t *compute_unit)
 {
-	struct vgpu_t *gpu = compute_unit->gpu;
+	struct vgpu_t *vgpu = compute_unit->vgpu;
 
 	if (range == compute_unit->timing_dia_hscrollbar)
 	{
 		value = MAX(value, 0);
-		value = MIN(value, (double) gpu->max_cycles * timing_dia_col_width);
+		value = MIN(value, (double) vgpu->max_cycles * timing_dia_col_width);
 		compute_unit->timing_dia_hscrollbar_value = value;
 	}
 	else
@@ -512,7 +512,7 @@ void timing_dia_window_refresh(struct vgpu_compute_unit_t *compute_unit)
 
 void timing_dia_window_goto(struct vgpu_compute_unit_t *compute_unit, int cycle)
 {
-	struct vgpu_t *gpu = compute_unit->gpu;
+	struct vgpu_t *vgpu = compute_unit->vgpu;
 	double value;
 
 	/* Ignore if timing diagram is not being shown */
@@ -520,7 +520,7 @@ void timing_dia_window_goto(struct vgpu_compute_unit_t *compute_unit, int cycle)
 		return;
 
 	/* Go to cycle horizontally */
-	cycle = MIN(MAX(cycle, 0), gpu->max_cycles);
+	cycle = MIN(MAX(cycle, 0), vgpu->max_cycles);
 	value = (double) cycle * timing_dia_col_width;
 	compute_unit->timing_dia_hscrollbar_value = value;
 	gtk_range_set_value(GTK_RANGE(compute_unit->timing_dia_hscrollbar), value);
@@ -538,7 +538,7 @@ void timing_dia_window_goto(struct vgpu_compute_unit_t *compute_unit, int cycle)
 
 void timing_dia_window_show(struct vgpu_compute_unit_t *compute_unit)
 {
-	struct vgpu_t *gpu = compute_unit->gpu;
+	struct vgpu_t *vgpu = compute_unit->vgpu;
 	char text[MAX_STRING_SIZE];
 
 	/* Activate */
@@ -602,6 +602,8 @@ void timing_dia_window_show(struct vgpu_compute_unit_t *compute_unit)
 	/* Scrollbars */
 	GtkWidget *hscrollbar = gtk_hscrollbar_new(NULL);
 	GtkWidget *vscrollbar = gtk_vscrollbar_new(NULL);
+	g_signal_connect(G_OBJECT(hscrollbar), "change-value", G_CALLBACK(timing_dia_scroll_event), compute_unit);
+	g_signal_connect(G_OBJECT(vscrollbar), "change-value", G_CALLBACK(timing_dia_scroll_event), compute_unit);
 
 	/* Table */
 	GtkWidget *table;
@@ -609,8 +611,6 @@ void timing_dia_window_show(struct vgpu_compute_unit_t *compute_unit)
 	gtk_table_attach_defaults(GTK_TABLE(table), hpane, 0, 1, 0, 1);
 	gtk_table_attach(GTK_TABLE(table), hscrollbar, 0, 1, 1, 2, GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_FILL, 0, 0);
 	gtk_table_attach(GTK_TABLE(table), vscrollbar, 1, 2, 0, 1, GTK_FILL, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
-	g_signal_connect(G_OBJECT(hscrollbar), "change-value", G_CALLBACK(timing_dia_scroll_event), compute_unit);
-	g_signal_connect(G_OBJECT(vscrollbar), "change-value", G_CALLBACK(timing_dia_scroll_event), compute_unit);
 
 	/* Frame */
 	GtkWidget *frame;
@@ -630,7 +630,7 @@ void timing_dia_window_show(struct vgpu_compute_unit_t *compute_unit)
 
 	/* Go to current cycle */
 	timing_dia_refresh(compute_unit);
-	timing_dia_window_goto(compute_unit, gpu->cycle);
+	timing_dia_window_goto(compute_unit, vgpu->cycle);
 }
 
 

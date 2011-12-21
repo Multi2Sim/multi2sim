@@ -24,8 +24,7 @@
 #include <sys/stat.h>
 #include <pwd.h>
 
-
-struct vgpu_t *gpu;
+static struct vgpu_t *vgpu;
 
 GtkWidget *main_window;
 GtkWidget *cycle_entry;
@@ -50,7 +49,7 @@ static void vgpu_config_load(void)
         if (!p)
         	fatal("%s: 'getpwnam' failed", __FUNCTION__);
         snprintf(vgpu_config_path, sizeof(vgpu_config_path), "%s/%s", p->pw_dir, ".multi2sim");
-        snprintf(vgpu_config_file_name, sizeof(vgpu_config_file_name), "%s/%s", vgpu_config_path, "gpu-visual.ini");
+        snprintf(vgpu_config_file_name, sizeof(vgpu_config_file_name), "%s/%s", vgpu_config_path, "vgpu-visual.ini");
 	mkdir(vgpu_config_path, 0770);
 
 	/* Load configuration */
@@ -69,7 +68,7 @@ static void vgpu_config_store(void)
 
 
 #if 0
-static void show_kernel_source(struct vgpu_t *gpu)
+static void show_kernel_source(struct vgpu_t *vgpu)
 {
 	char *line;
 	int size;
@@ -78,9 +77,9 @@ static void show_kernel_source(struct vgpu_t *gpu)
 
 	/* Get total size */
 	size = 0;
-	for (i = 0; i < list_count(gpu->kernel_source_strings); i++)
+	for (i = 0; i < list_count(vgpu->kernel_source_strings); i++)
 	{
-		line = list_get(gpu->kernel_source_strings, i);
+		line = list_get(vgpu->kernel_source_strings, i);
 		size += strlen(line) + 1;
 	}
 
@@ -89,9 +88,9 @@ static void show_kernel_source(struct vgpu_t *gpu)
 	cursor = buffer;
 
 	/* Copy lines */
-	for (i = 0; i < list_count(gpu->kernel_source_strings); i++)
+	for (i = 0; i < list_count(vgpu->kernel_source_strings); i++)
 	{
-		line = list_get(gpu->kernel_source_strings, i);
+		line = list_get(vgpu->kernel_source_strings, i);
 		strcpy(cursor, line);
 		cursor += strlen(cursor);
 	}
@@ -111,7 +110,7 @@ static void cycle_update(int cycle)
 
 	/* Adjust range */
 	cycle = MAX(cycle, 0);
-	cycle = MIN(cycle, gpu->max_cycles);
+	cycle = MIN(cycle, vgpu->max_cycles);
 
 	/* Write text in entry widget */
 	snprintf(text, sizeof text, "%d", cycle);
@@ -122,22 +121,22 @@ static void cycle_update(int cycle)
 	gtk_range_set_value(GTK_RANGE(cycle_scale), cycle);
 
 	/* Go to desired cycle */
-	err = vgpu_trace_cycle(gpu, cycle);
+	err = vgpu_trace_cycle(vgpu, cycle);
 	if (err)
 		g_print("trace file error: %s\n", vgpu_trace_err);
 
 	/* Update status panel */
-	gtk_label_set_markup(GTK_LABEL(gpu->status_label), gpu->status_text);
+	gtk_label_set_markup(GTK_LABEL(vgpu->status_label), vgpu->status_text);
 
 	/* Scroll timing diagrams to new cycle */
-	for (i = 0; i < gpu->num_compute_units; i++)
+	for (i = 0; i < vgpu->num_compute_units; i++)
 	{
-		compute_unit = list_get(gpu->compute_unit_list, i);
+		compute_unit = list_get(vgpu->compute_unit_list, i);
 		timing_dia_window_goto(compute_unit, cycle);
 	}
 
-	/* Update GPU status */
-	vgpu_widget_refresh(gpu);
+	/* Update vgpu status */
+	vgpu_widget_refresh(vgpu);
 	list_layout_refresh(pending_work_group_list_layout);
 	list_layout_refresh(finished_work_group_list_layout);
 }
@@ -157,7 +156,7 @@ static gboolean cycle_button_clicked_event(GtkWidget *button, int delta)
 }
 
 
-static gboolean cycle_entry_key_press_event(GtkWidget *entry, GdkEventKey *event, struct vgpu_t *gpu)
+static gboolean cycle_entry_key_press_event(GtkWidget *entry, GdkEventKey *event, struct vgpu_t *vgpu)
 {
 	const char *text;
 	int cycle;
@@ -171,7 +170,7 @@ static gboolean cycle_entry_key_press_event(GtkWidget *entry, GdkEventKey *event
 }
 
 
-static gboolean cycle_scale_change_value_event(GtkWidget *widget, GtkScrollType scroll, double value, struct vgpu_t *gpu)
+static gboolean cycle_scale_change_value_event(GtkWidget *widget, GtkScrollType scroll, double value, struct vgpu_t *vgpu)
 {
 	/* Set new cycle */
 	cycle_update(value);
@@ -181,8 +180,8 @@ static gboolean cycle_scale_change_value_event(GtkWidget *widget, GtkScrollType 
 
 static gboolean main_window_delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-	/* Free GPU */
-	vgpu_free(gpu);
+	/* Free vgpu */
+	vgpu_free(vgpu);
 
 	/* End program */
 	gtk_main_quit();
@@ -197,7 +196,7 @@ static void main_window_show()
 	/* Main window */
 	main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_position(GTK_WINDOW(main_window), GTK_WIN_POS_CENTER);
-	gtk_window_set_title(GTK_WINDOW(main_window), "Multi2Sim GPU Pipeline Debugger");
+	gtk_window_set_title(GTK_WINDOW(main_window), "Multi2Sim vgpu Pipeline Debugger");
 	gtk_container_set_border_width(GTK_CONTAINER(main_window), 10);
 	g_signal_connect(G_OBJECT(main_window), "destroy", G_CALLBACK(main_window_delete_event), G_OBJECT(main_window));
 
@@ -227,7 +226,7 @@ static void main_window_show()
 	GtkWidget *pending_frame;
 	pending_frame = gtk_frame_new(NULL);
 	pending_work_group_list_layout = list_layout_new(main_window, "Work-group list",
-		gpu->pending_work_group_list, 12, work_group_get_name, work_group_info_popup);
+		vgpu->pending_work_group_list, 12, work_group_get_name, work_group_info_popup);
 	gtk_widget_set_size_request(pending_frame, 100, 50);
 	gtk_container_add(GTK_CONTAINER(pending_frame), pending_work_group_list_layout->layout);
 	gtk_widget_modify_bg(pending_work_group_list_layout->layout, GTK_STATE_NORMAL, &color);
@@ -246,7 +245,7 @@ static void main_window_show()
 	GtkWidget *finished_frame;
 	finished_frame = gtk_frame_new(NULL);
 	finished_work_group_list_layout = list_layout_new(main_window, "Work-group list",
-		gpu->finished_work_group_list, 12, work_group_get_name, work_group_info_popup);
+		vgpu->finished_work_group_list, 12, work_group_get_name, work_group_info_popup);
 	gtk_widget_set_size_request(finished_frame, 100, 50);
 	gtk_container_add(GTK_CONTAINER(finished_frame), finished_work_group_list_layout->layout);
 	gtk_widget_modify_bg(finished_work_group_list_layout->layout, GTK_STATE_NORMAL, &color);
@@ -269,8 +268,8 @@ static void main_window_show()
 	/* Scale */
 	cycle_scale = gtk_hscale_new_with_range(0, 100, 1);
 	gtk_scale_set_draw_value(GTK_SCALE(cycle_scale), FALSE);
-	gtk_range_set_range(GTK_RANGE(cycle_scale), 0, gpu->max_cycles);
-	g_signal_connect(G_OBJECT(cycle_scale), "change-value", G_CALLBACK(cycle_scale_change_value_event), gpu);
+	gtk_range_set_range(GTK_RANGE(cycle_scale), 0, vgpu->max_cycles);
+	g_signal_connect(G_OBJECT(cycle_scale), "change-value", G_CALLBACK(cycle_scale_change_value_event), vgpu);
 
 	/* Under the scale */
 	GtkWidget *button1;
@@ -306,7 +305,7 @@ static void main_window_show()
 	gtk_container_add(GTK_CONTAINER(hbox1), button5);
 	gtk_container_add(GTK_CONTAINER(hbox1), button6);
 	gtk_container_add(GTK_CONTAINER(hbox1), button7);
-	g_signal_connect(G_OBJECT(cycle_entry), "key-press-event", G_CALLBACK(cycle_entry_key_press_event), gpu);
+	g_signal_connect(G_OBJECT(cycle_entry), "key-press-event", G_CALLBACK(cycle_entry_key_press_event), vgpu);
 	g_signal_connect(G_OBJECT(button1), "clicked", G_CALLBACK(cycle_button_clicked_event), (gpointer) -100);
 	g_signal_connect(G_OBJECT(button2), "clicked", G_CALLBACK(cycle_button_clicked_event), (gpointer) -10);
 	g_signal_connect(G_OBJECT(button3), "clicked", G_CALLBACK(cycle_button_clicked_event), (gpointer) -1);
@@ -322,18 +321,18 @@ static void main_window_show()
 	gtk_container_add(GTK_CONTAINER(vbox3), hbox1);
 	gtk_container_add(GTK_CONTAINER(cycle_frame), vbox3);
 
-	/* GPU label */
+	/* vgpu label */
 	GtkWidget *label4;
 	GtkWidget *halign4;
-	label4 = gtk_label_new("GPU Compute Device");
+	label4 = gtk_label_new("vgpu Compute Device");
 	halign4 = gtk_alignment_new(0, 0, 0, 0);
 	gtk_container_add(GTK_CONTAINER(halign4), label4);
 
-	/* GPU */
+	/* vgpu */
 	GtkWidget *vgpu_frame;
 	GtkWidget *vgpu_widget;
 	vgpu_frame = gtk_frame_new(NULL);
-	vgpu_widget = vgpu_widget_new(gpu);
+	vgpu_widget = vgpu_widget_new(vgpu);
 	gtk_container_add(GTK_CONTAINER(vgpu_frame), vgpu_widget);
 
 	/* VBox containing halign4 and vgpu_frame */
@@ -362,7 +361,7 @@ static void main_window_show()
 	gtk_container_add(GTK_CONTAINER(status_frame), status_window);
 	gtk_widget_modify_bg(status_window, GTK_STATE_NORMAL, &color);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(status_window), status_label);
-	gpu->status_label = status_label;
+	vgpu->status_label = status_label;
 
 	/* Set label font attributes for status */
 	PangoAttrList *attrs;
@@ -411,9 +410,9 @@ void vgpu_run(char *file_name)
 	/* Load configuration */
 	vgpu_config_load();
 
-	/* Create GPU */
-	gpu = vgpu_create(file_name);
-	if (!gpu)
+	/* Create vgpu */
+	vgpu = vgpu_create(file_name);
+	if (!vgpu)
 		fatal("Trace file error: %s\n", vgpu_trace_err);
 
 	/* Initialize GTK */

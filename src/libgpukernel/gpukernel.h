@@ -726,6 +726,7 @@ struct gpu_wavefront_t
 	/* Fields introduced for architectural simulation */
 	int id_in_compute_unit;
 	int alu_engine_in_flight;  /* Number of in-flight uops in ALU engine */
+	uint64_t sched_when;  /* GPU cycle when wavefront was last scheduled */
 
 	/* Statistics */
 	uint64_t inst_count;  /* Total number of instructions */
