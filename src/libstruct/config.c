@@ -24,6 +24,7 @@
 #include <assert.h>
 #include "config.h"
 #include "hash.h"
+#include "lnlist.h"
 
 #define MAX_STRING_SIZE		1000
 #define HASH_TABLE_SIZE		100
@@ -38,8 +39,8 @@
  *    If a key is the name of a variable, it is represented as "<section>\n<var>"
  *
  */
-struct config_t {
-
+struct config_t
+{
 	/* Text file name containing configuration */
 	char *file_name;
 	
@@ -291,18 +292,49 @@ int config_load(struct config_t *cfg)
 }
 
 
-int config_save(struct config_t *cfg)
+int config_save(struct config_t *config)
 {
+	struct lnlist_t *section_list;
+	char *section;
+	char *item, *value;
 	FILE *f;
 	
 	/* Try to open file for writing */
-	f = fopen(cfg->file_name, "wt");
+	f = fopen(config->file_name, "wt");
 	if (!f)
 		return 0;
 	
-	/* Dump sections */
-	fprintf(stderr, "%s: not implemented\n", __FUNCTION__);
-	abort();
+	/* Create a list with all sections first */
+	section_list = lnlist_create();
+	for (item = hashtable_find_first(config->items, (void **) &value); item;
+		item = hashtable_find_next(config->items, (void **) &value))
+	{
+		if (value == (char *) 1)
+			lnlist_add(section_list, item);
+	}
+
+	/* Dump all variables for each section */
+	for (lnlist_head(section_list); !lnlist_eol(section_list); lnlist_next(section_list))
+	{
+		char section_buf[MAX_STRING_SIZE];
+		char var_buf[MAX_STRING_SIZE];
+
+		section = lnlist_get(section_list);
+		fprintf(f, "[ %s ]\n", section);
+
+		for (item = hashtable_find_first(config->items, (void **) &value); item;
+			item = hashtable_find_next(config->items, (void **) &value))
+		{
+			get_section_var_from_item(item, section_buf, var_buf);
+			if (var_buf[0] && !strcmp(section_buf, section))
+				fprintf(f, "%s = %s\n", var_buf, value);
+		}
+
+		fprintf(f, "\n");
+	}
+
+	/* Free section list */
+	lnlist_free(section_list);
 	
 	/* close file */
 	fclose(f);
