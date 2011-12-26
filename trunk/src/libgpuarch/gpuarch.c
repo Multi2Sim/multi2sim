@@ -67,6 +67,10 @@ char *gpu_config_help =
 	"      Maximum number of work-groups and wavefronts allocated at a time in a compute\n"
 	"      unit. These are some of the factors limiting the number of work-groups mapped\n"
 	"      to a compute unit.\n"
+	"  SchedulingPolicy = {RoundRobin|Greedy} (Default = RoundRobin)\n"
+	"      Wavefront scheduling algorithm.\n"
+	"      'RoundRobin' selects wavefronts in a cyclic fashion.\n"
+	"      'Greedy' selects the most recently used wavefront.\n"
 	"\n"
 	"Section '[ LocalMemory ]': defines the parameters of the local memory associated to\n"
 	"each compute unit.\n"
@@ -126,8 +130,15 @@ int gpu_num_compute_units = 20;
 int gpu_num_stream_cores = 16;
 int gpu_num_registers = 16384;
 int gpu_register_alloc_size = 32;
-char *gpu_register_alloc_granularity_str = "WorkGroup";
+
+struct string_map_t gpu_register_alloc_granularity_map = {
+	2, {
+		{ "Wavefront", gpu_register_alloc_wavefront },
+		{ "WorkGroup", gpu_register_alloc_work_group }
+	}
+};
 enum gpu_register_alloc_granularity_t gpu_register_alloc_granularity;
+
 int gpu_max_work_groups_per_compute_unit = 8;
 int gpu_max_wavefronts_per_compute_unit = 32;
 
@@ -144,12 +155,14 @@ struct gpu_t *gpu;
 
 /* GPU-REL: insertion of faults into stack */
 char *gpu_faults_file_name = "";
-enum gpu_fault_type_enum {
+enum gpu_fault_type_enum
+{
 	gpu_fault_ams,
 	gpu_fault_reg,
 	gpu_fault_mem
 };
-struct gpu_fault_t {
+struct gpu_fault_t
+{
 	enum gpu_fault_type_enum type;
 	long long cycle;
 	int compute_unit_id;  /* 0, gpu_num_compute_units - 1 ] */
@@ -592,6 +605,9 @@ void gpu_config_read(void)
 		"\tPlease run 'm2s --help-gpu-config' or consult the Multi2Sim Guide for a\n"
 		"\tdescription of the GPU configuration file format.";
 
+	char *gpu_register_alloc_granularity_str;
+	char *gpu_sched_policy_str;
+
 	/* Load GPU configuration file */
 	gpu_config = config_create(gpu_config_file_name);
 	if (*gpu_config_file_name && !config_load(gpu_config))
@@ -603,13 +619,13 @@ void gpu_config_read(void)
 	gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", gpu_num_stream_cores);
 	gpu_num_registers = config_read_int(gpu_config, section, "NumRegisters", gpu_num_registers);
 	gpu_register_alloc_size = config_read_int(gpu_config, section, "RegisterAllocSize", gpu_register_alloc_size);
-	gpu_register_alloc_granularity_str = config_read_string(gpu_config, section, "RegisterAllocGranularity",
-		gpu_register_alloc_granularity_str);
+	gpu_register_alloc_granularity_str = config_read_string(gpu_config, section, "RegisterAllocGranularity", "WorkGroup");
 	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
 	gpu_max_work_groups_per_compute_unit = config_read_int(gpu_config, section, "MaxWorkGroupsPerComputeUnit",
 		gpu_max_work_groups_per_compute_unit);
 	gpu_max_wavefronts_per_compute_unit = config_read_int(gpu_config, section, "MaxWavefrontsPerComputeUnit",
 		gpu_max_wavefronts_per_compute_unit);
+	gpu_sched_policy_str = config_read_string(gpu_config, section, "SchedulingPolicy", "RoundRobin");
 	if (gpu_num_compute_units < 1)
 		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", gpu_config_file_name, err_note);
 	if (gpu_num_stream_cores < 1)
@@ -620,12 +636,15 @@ void gpu_config_read(void)
 		fatal("%s: invalid value for 'NumRegisters'.\n%s", gpu_config_file_name, err_note);
 	if (gpu_num_registers % gpu_register_alloc_size)
 		fatal("%s: 'NumRegisters' must be a multiple of 'RegisterAllocSize'.\n%s", gpu_config_file_name, err_note);
-	if (!strcasecmp(gpu_register_alloc_granularity_str, "Wavefront"))
-		gpu_register_alloc_granularity = gpu_register_alloc_wavefront;
-	else if (!strcasecmp(gpu_register_alloc_granularity_str, "WorkGroup"))
-		gpu_register_alloc_granularity = gpu_register_alloc_work_group;
-	else
+
+	gpu_register_alloc_granularity = map_string_case(&gpu_register_alloc_granularity_map, gpu_register_alloc_granularity_str);
+	if (gpu_register_alloc_granularity == gpu_register_alloc_invalid)
 		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s", gpu_config_file_name, err_note);
+
+	gpu_sched_policy = map_string_case(&gpu_sched_policy_map, gpu_sched_policy_str);
+	if (gpu_sched_policy == gpu_sched_invalid)
+		fatal("%s: invalid value for 'SchedulingPolicy'.\n%s", gpu_config_file_name, err_note);
+
 	if (gpu_wavefront_size < 1)
 		fatal("%s: invalid value for 'WavefrontSize'.\n%s", gpu_config_file_name, err_note);
 	if (gpu_max_work_groups_per_compute_unit < 1)
@@ -725,10 +744,11 @@ void gpu_config_dump(FILE *f)
 	fprintf(f, "NumStreamCores = %d\n", gpu_num_stream_cores);
 	fprintf(f, "NumRegisters = %d\n", gpu_num_registers);
 	fprintf(f, "RegisterAllocSize = %d\n", gpu_register_alloc_size);
-	fprintf(f, "RegisterAllocGranularity = %s\n", gpu_register_alloc_granularity_str);
+	fprintf(f, "RegisterAllocGranularity = %s\n", map_value(&gpu_register_alloc_granularity_map, gpu_register_alloc_granularity));
 	fprintf(f, "WavefrontSize = %d\n", gpu_wavefront_size);
 	fprintf(f, "MaxWorkGroupsPerComputeUnit = %d\n", gpu_max_work_groups_per_compute_unit);
 	fprintf(f, "MaxWavefrontsPerComputeUnit = %d\n", gpu_max_wavefronts_per_compute_unit);
+	fprintf(f, "SchedulingPolicy = %s\n", map_value(&gpu_sched_policy_map, gpu_sched_policy));
 	fprintf(f, "\n");
 
 	/* Local Memory */
