@@ -39,10 +39,14 @@ static char vgpu_config_path[MAX_STRING_SIZE];
 static char vgpu_config_file_name[MAX_STRING_SIZE];
 static struct config_t *vgpu_config_file;
 
+static int vgpu_status_panel_width;
+static int vgpu_status_panel_height;
+
 
 static void vgpu_config_load(void)
 {
         struct passwd *p;
+        char *section;
 
 	/* Get file name */
         p = getpwuid(getuid());
@@ -57,12 +61,17 @@ static void vgpu_config_load(void)
 	if (!config_load(vgpu_config_file))
 		return;
 
+	/* Main window configuration */
+	section = "MainWindow";
+	config_read_int(vgpu_config_file, section, "StatusPanelWidth", vgpu_status_panel_width);
+	config_read_int(vgpu_config_file, section, "StatusPanelHeight", vgpu_status_panel_height);
+
 }
 
 
 static void vgpu_config_store(void)
 {
-	//config_save(vgpu_config_file);
+	config_save(vgpu_config_file);
 	config_free(vgpu_config_file);
 }
 
@@ -196,7 +205,7 @@ static void main_window_show()
 	/* Main window */
 	main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_position(GTK_WINDOW(main_window), GTK_WIN_POS_CENTER);
-	gtk_window_set_title(GTK_WINDOW(main_window), "Multi2Sim vgpu Pipeline Debugger");
+	gtk_window_set_title(GTK_WINDOW(main_window), "Multi2Sim GPU Visualization Tool");
 	gtk_container_set_border_width(GTK_CONTAINER(main_window), 10);
 	g_signal_connect(G_OBJECT(main_window), "destroy", G_CALLBACK(main_window_delete_event), G_OBJECT(main_window));
 
@@ -357,8 +366,8 @@ static void main_window_show()
 	status_label = gtk_label_new(NULL);
 	gtk_label_set_justify(GTK_LABEL(status_label), GTK_JUSTIFY_LEFT);
 	gtk_misc_set_alignment(GTK_MISC(status_label), 0, 0);
-	gtk_widget_set_size_request(status_window, 200, 80);
 	gtk_container_add(GTK_CONTAINER(status_frame), status_window);
+	gtk_widget_set_size_request(status_frame, 400, 80);
 	gtk_widget_modify_bg(status_window, GTK_STATE_NORMAL, &color);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(status_window), status_label);
 	vgpu->status_label = status_label;

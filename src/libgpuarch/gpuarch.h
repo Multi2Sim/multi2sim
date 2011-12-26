@@ -37,13 +37,26 @@ extern int gpu_num_stream_cores;
 extern int gpu_num_compute_units;
 extern int gpu_num_registers;
 extern int gpu_register_alloc_size;
+
+extern struct string_map_t gpu_register_alloc_granularity_map;
 extern enum gpu_register_alloc_granularity_t
 {
+	gpu_register_alloc_invalid = 0,  /* For invalid user input */
 	gpu_register_alloc_wavefront,
 	gpu_register_alloc_work_group
 } gpu_register_alloc_granularity;
+
 extern int gpu_max_work_groups_per_compute_unit;
 extern int gpu_max_wavefronts_per_compute_unit;
+
+extern struct string_map_t gpu_sched_policy_map;
+extern enum gpu_sched_policy_t
+{
+	gpu_sched_invalid = 0,  /* For invalid user input */
+	gpu_sched_round_robin,
+	gpu_sched_greedy
+} gpu_sched_policy;
+
 extern char *gpu_calc_file_name;
 
 extern int gpu_local_mem_size;

@@ -20,13 +20,13 @@
 #include <gpukernel.h>
 #include <gpuarch.h>
 
-enum gpu_sched_policy_t
-{
-	gpu_sched_round_robin = 0,
-	gpu_sched_greedy
-};
-
-enum gpu_sched_policy_t gpu_sched_policy = gpu_sched_round_robin;
+struct string_map_t gpu_sched_policy_map = {
+		2, {
+			{ "RoundRobin", gpu_sched_round_robin },
+			{ "Greedy", gpu_sched_greedy }
+		}
+	};
+enum gpu_sched_policy_t gpu_sched_policy;
 
 
 
@@ -105,6 +105,7 @@ static struct gpu_wavefront_t *gpu_schedule_greedy(struct gpu_compute_unit_t *co
 	/* Wavefront found, remove from pool and return. */
 	assert(wavefront->clause_kind == GPU_CLAUSE_CF);
 	lnlist_remove(wavefront_pool);
+	wavefront->sched_when = gpu->cycle;
 	return wavefront;
 }
 
@@ -145,6 +146,5 @@ struct gpu_wavefront_t *gpu_schedule(struct gpu_compute_unit_t *compute_unit)
 	}
 
 	/* Scheduled wavefront */
-	wavefront->sched_when = gpu->cycle;
 	return wavefront;
 }
