@@ -77,36 +77,36 @@ static struct gpu_wavefront_t *gpu_schedule_greedy(struct gpu_compute_unit_t *co
 	struct lnlist_t *wavefront_pool = compute_unit->wavefront_pool;
 
 	/* Check all candidates */
-
-	/* Select current position in pool as initial candidate wavefront */
-	if (!lnlist_get(wavefront_pool))
-		lnlist_head(wavefront_pool);
-	wavefront = lnlist_get(wavefront_pool);
-	temp_wavefront = wavefront;
-
-	/* Look for a valid candidate */
-	for (;;)
+	temp_wavefront = NULL;
+	for (lnlist_head(wavefront_pool); !lnlist_eol(wavefront_pool); lnlist_next(wavefront_pool))
 	{
+		/* Get wavefront from list */
+		wavefront = lnlist_get(wavefront_pool);
+		
 		/* Wavefront must be running,
 		 * and the corresponding slot in fetch buffer must be free. */
 		assert(wavefront->id_in_compute_unit < gpu->wavefronts_per_compute_unit);
-		if (DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, running, wavefront) &&
-			!compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit])
-			break;
+		if (!DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, running, wavefront) ||
+			compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit])
+			continue;
 
-		/* Current candidate is not valid - go to next.
-		 * If we went through the whole pool, no fetch. */
-		lnlist_next_circular(wavefront_pool);
-		wavefront = lnlist_get(wavefront_pool);
-		if (wavefront == temp_wavefront)
-			return NULL;
+		/* Select current wavefront temporarily */
+		if (!temp_wavefront || temp_wavefront->sched_when < wavefront->sched_when)
+			temp_wavefront = wavefront;
 	}
 
+	/* No wavefront found */
+	wavefront = NULL;
+	if (!temp_wavefront)
+		return NULL;
+
 	/* Wavefront found, remove from pool and return. */
-	assert(wavefront->clause_kind == GPU_CLAUSE_CF);
+	assert(temp_wavefront->clause_kind == GPU_CLAUSE_CF);
+	lnlist_find(wavefront_pool, temp_wavefront);
+	assert(!lnlist_error(wavefront_pool));
 	lnlist_remove(wavefront_pool);
-	wavefront->sched_when = gpu->cycle;
-	return wavefront;
+	temp_wavefront->sched_when = gpu->cycle;
+	return temp_wavefront;
 }
 
 
