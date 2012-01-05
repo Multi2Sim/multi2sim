@@ -8,6 +8,7 @@ libgpukernel_a_SOURCES = \
 	ndrange.c \
 	opencl.dat \
 	opencl.c \
+	opencl-syscall.c \
 	opencl-obj.c \
 	wavefront.c \
 	work-group.c \
