@@ -3536,6 +3536,15 @@ void syscall_do()
 	}
 
 
+	/* 326 */
+	/* OpenCL system call for libm2s-opencl.so Version 2.0 */
+	case 326:
+	{
+		fatal("OpenCL system call for libm2s-opencl.so 2.0 not implemented");
+		break;
+	}
+
+
 	default:
 		if (syscode >= syscall_code_count) {
 			retval = -38;

@@ -188,8 +188,8 @@ void ctx_dump(struct ctx_t *ctx, FILE *f)
 
 void ctx_execute_inst(struct ctx_t *ctx)
 {
-	unsigned char fixed[20];
-	unsigned char *buf;
+	unsigned char buffer[20];
+	unsigned char *buffer_ptr;
 
 	/* The isa_xxx functions work on these global
 	 * variables. */
@@ -202,19 +202,24 @@ void ctx_execute_inst(struct ctx_t *ctx)
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
-	ctx->mem->safe = isa_spec_mode ? 0 : mem_safe_mode;
-	buf = mem_get_buffer(ctx->mem, ctx->regs->eip, 20, mem_access_exec);
-	if (!buf) {
-		buf = fixed;
-		mem_access(ctx->mem, ctx->regs->eip, 20, buf, mem_access_exec);
+	isa_mem->safe = isa_spec_mode ? 0 : mem_safe_mode;
+	buffer_ptr = mem_get_buffer(isa_mem, isa_regs->eip, 20, mem_access_exec);
+	if (!buffer_ptr)
+	{
+		/* Disable safe mode. If a part of the 20 read bytes does not belong to the
+		 * actual instruction, and they lie on a page with no permissions, this would
+		 * generate an undesired protection fault. */
+		isa_mem->safe = 0;
+		buffer_ptr = buffer;
+		mem_access(isa_mem, isa_regs->eip, 20, buffer_ptr, mem_access_exec);
 	}
-	ctx->mem->safe = mem_safe_mode;
+	isa_mem->safe = mem_safe_mode;
 
 	/* Disassemble */
-	x86_disasm(buf, isa_eip, &isa_inst);
+	x86_disasm(buffer_ptr, isa_eip, &isa_inst);
 	if (isa_inst.opcode == x86_op_none && !isa_spec_mode)
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)",
-			isa_eip, buf[0], buf[1], buf[2], buf[3]);
+			isa_eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 
 
 	/* Execute instruction */
