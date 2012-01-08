@@ -574,8 +574,9 @@ extern uint16_t isa_guest_fpcw;
 	"push %0\n\t" \
 	"popf\n\t" \
 	"fnclex\n\t" \
-	"fldcw %1\n\t" \
-	: "=m" (isa_host_flags) \
+	"fstcw %1\n\t" \
+	"fldcw %2\n\t" \
+	: "=m" (isa_host_flags), "=m" (isa_guest_fpcw) \
 	: "m" (isa_host_fpcw));
 
 

@@ -1173,8 +1173,15 @@ int opencl_func_run(int code, unsigned int *args)
 		 * If no pointer provided, assign the same as global size - FIXME: can be done better. */
 		memcpy(kernel->local_size3, kernel->global_size3, 12);
 		if (local_work_size_ptr)
+		{
 			for (i = 0; i < work_dim; i++)
+			{
 				mem_read(isa_mem, local_work_size_ptr + i * 4, 4, &kernel->local_size3[i]);
+				if (kernel->local_size3[i] < 1)
+					fatal("%s: local work size must be greater than 0.\n%s",
+						err_prefix, err_opencl_param_note);
+			}
+		}
 		kernel->local_size = kernel->local_size3[0] * kernel->local_size3[1] * kernel->local_size3[2];
 		opencl_debug("    local_work_size=");
 		opencl_debug_array(work_dim, kernel->local_size3);
