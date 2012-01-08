@@ -23,6 +23,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <debug.h>
+#include <gpukernel.h>
 #include <CL/cl.h>
 
 #define SYS_OPENCL_IMPL_VERSION_MAJOR		1
@@ -126,6 +128,29 @@
 
 
 
+/* Error macros */
+
+extern char *err_opencl_note;
+extern char *err_opencl_param_note;
+
+#define OPENCL_PARAM_NOT_SUPPORTED(p) \
+	fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, p, err_opencl_note);
+#define OPENCL_PARAM_NOT_SUPPORTED_EQ(p, v) \
+	{ if ((p) == (v)) fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, (v), err_opencl_param_note); }
+#define OPENCL_PARAM_NOT_SUPPORTED_NEQ(p, v) \
+	{ if ((p) != (v)) fatal("%s: not supported for '" #p "' != 0x%x\n%s", __FUNCTION__, (v), err_opencl_param_note); }
+#define OPENCL_PARAM_NOT_SUPPORTED_LT(p, v) \
+	{ if ((p) < (v)) fatal("%s: not supported for '" #p "' < %d\n%s", __FUNCTION__, (v), err_opencl_param_note); }
+#define OPENCL_PARAM_NOT_SUPPORTED_OOR(p, min, max) \
+	{ if ((p) < (min) || (p) > (max)) fatal("%s: not supported for '" #p "' out of range [%d:%d]\n%s", \
+	__FUNCTION__, (min), (max), err_opencl_param_note); }
+#define OPENCL_PARAM_NOT_SUPPORTED_FLAG(p, flag, name) \
+	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", __FUNCTION__, err_opencl_param_note); }
+
+
+
+
+
 struct _cl_platform_id
 {
 	unsigned int id;
@@ -163,6 +188,7 @@ struct _cl_program
 	unsigned int id;
 
 	cl_context context;
+	struct amd_bin_t *amd_bin;
 };
 
 

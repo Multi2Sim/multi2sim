@@ -23,6 +23,10 @@
 #include <m2s-opencl.h>
 
 
+/*
+ * Public Functions
+ */
+
 cl_program clCreateProgramWithSource(
 	cl_context context,
 	cl_uint count,
@@ -35,6 +39,11 @@ cl_program clCreateProgramWithSource(
 
 	/* Create program */
 	program = calloc(1, sizeof(struct _cl_program));
+	program->context = context;
+
+	/* FIXME
+	 * New system call that returns the binary provided through "--opencl-kernel"
+	 * in the simulator command line */
 
 	/* System call */
 	sys_args[0] = context->id;
@@ -61,8 +70,15 @@ cl_program clCreateProgramWithBinary(
 	cl_program program;
 	unsigned int sys_args[7];
 
+	/* Check arguments */
+	OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_devices, 1);
+
 	/* Create program */
 	program = calloc(1, sizeof(struct _cl_program));
+	program->context = context;
+
+	/* Read binary */
+	//program->amd_bin = amd_bin_create((void *) *binaries, *lengths, "opencl-bin");  /* FIXME: any better name? */
 
 	/* System call */
 	sys_args[0] = context->id;
