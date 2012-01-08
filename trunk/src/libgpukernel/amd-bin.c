@@ -18,7 +18,7 @@
  */
 
 #include <gpukernel.h>
-	
+
 #define AMD_BIN_NOT_SUPPORTED(__var) \
 	fatal("%s: value 0x%x not supported for parameter '" #__var "'", __FUNCTION__, (__var))
 #define AMD_BIN_NOT_SUPPORTED_NEQ(__var, __val) \
@@ -27,7 +27,8 @@
 
 
 /* Note header */
-struct pt_note_header_t {
+struct pt_note_header_t
+{
 	Elf32_Word namesz;  /* Size of the name field. Must be 8 */
 	Elf32_Word descsz;  /* Size of the data payload */
 	Elf32_Word type;  /* Type of the payload */
@@ -35,7 +36,8 @@ struct pt_note_header_t {
 };
 
 
-static struct string_map_t enc_dict_machine_map = {
+static struct string_map_t enc_dict_machine_map =
+{
 	20, {
 		{ "R600",	0 },
 		{ "RV610",	1 },
@@ -124,19 +126,22 @@ static struct string_map_t prog_info_entry_map = {
 };
 
 
-struct pt_note_data_segment_desc_t {
+struct pt_note_data_segment_desc_t
+{
 	Elf32_Word offset;  /* Offsets in bytes to start of data */
 	Elf32_Word size;  /* Size in bytes of data */
 };
 
 
-struct pt_note_constant_buffer_mask_t {
-	Elf32_Word index;  /* Constant buffer identfier */
+struct pt_note_constant_buffer_mask_t
+{
+	Elf32_Word index;  /* Constant buffer identifier */
 	Elf32_Word size;  /* Size in vec4f constants of the buffer */
 };
 
 
-struct pt_note_prog_info_entry_t {
+struct pt_note_prog_info_entry_t
+{
 	Elf32_Word address;  /* Device address */
 	Elf32_Word value;  /* Value */
 };
