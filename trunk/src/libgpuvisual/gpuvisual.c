@@ -333,7 +333,7 @@ static void main_window_show()
 	/* vgpu label */
 	GtkWidget *label4;
 	GtkWidget *halign4;
-	label4 = gtk_label_new("vgpu Compute Device");
+	label4 = gtk_label_new("Compute Device");
 	halign4 = gtk_alignment_new(0, 0, 0, 0);
 	gtk_container_add(GTK_CONTAINER(halign4), label4);
 
