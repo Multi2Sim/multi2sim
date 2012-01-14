@@ -548,21 +548,31 @@ void gpu_stack_faults_insert(void)
 			compute_unit = gpu->compute_units[fault->compute_unit_id];
 
 			/* If compute unit is idle, dismiss */
-			if (!compute_unit->work_group_count) {
+			if (!compute_unit->work_group_count)
+			{
 				gpu_faults_debug("effect=\"cu_idle\"");
+				goto end_loop;
+			}
+
+			/* Check if there is any local memory used at all */
+			if (!gpu->ndrange->local_mem_top)
+			{
+				gpu_faults_debug("effect=\"mem_idle\"");
 				goto end_loop;
 			}
 
 			/* Get work-group */
 			work_group_id_in_compute_unit = fault->byte / gpu->ndrange->local_mem_top;
-			if (work_group_id_in_compute_unit >= gpu_max_work_groups_per_compute_unit) {
+			if (work_group_id_in_compute_unit >= gpu_max_work_groups_per_compute_unit)
+			{
 				gpu_faults_debug("effect=\"mem_idle\"");
 				goto end_loop;
 			}
 
 			/* Get work-group (again) */
 			work_group = compute_unit->work_groups[work_group_id_in_compute_unit];
-			if (!work_group) {
+			if (!work_group)
+			{
 				gpu_faults_debug("effect=\"mem_idle\"");
 				goto end_loop;
 			}
