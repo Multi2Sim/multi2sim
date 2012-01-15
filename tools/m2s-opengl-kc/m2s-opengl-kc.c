@@ -92,6 +92,7 @@ void kernel_binary_analyze(const char *file_name)
 			FILE *f;
 			f = fopen(file_name_dest, "wb");
 			fwrite(tmp_buf, file_size-i, 1, f);
+			free(tmp_buf);
 			fclose(f);	
 		}
 		file_buffer++;
