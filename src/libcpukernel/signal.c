@@ -213,8 +213,8 @@ void signal_handler_run(struct ctx_t *ctx, int sig)
 	regs_copy(ctx->signal_masks->regs, ctx->regs);
 
 	/* Create a memory page with execution permission, and copy return code on it. */
-	ctx->signal_masks->pretcode = mem_map_space(ctx->mem, MEM_PAGESIZE, MEM_PAGESIZE);
-	mem_map(ctx->mem, ctx->signal_masks->pretcode, MEM_PAGESIZE, mem_access_exec | mem_access_init);
+	ctx->signal_masks->pretcode = mem_map_space(ctx->mem, MEM_PAGE_SIZE, MEM_PAGE_SIZE);
+	mem_map(ctx->mem, ctx->signal_masks->pretcode, MEM_PAGE_SIZE, mem_access_exec | mem_access_init);
 	syscall_debug("  return code of signal handler allocated at 0x%x\n", ctx->signal_masks->pretcode);
 	mem_access(ctx->mem, ctx->signal_masks->pretcode, sizeof(signal_retcode), signal_retcode, mem_access_init);
 
@@ -272,7 +272,7 @@ void signal_handler_return(struct ctx_t *ctx)
 	ctx_clear_status(ctx, ctx_handler);
 
 	/* Free signal frame */
-	mem_unmap(ctx->mem, ctx->signal_masks->pretcode, MEM_PAGESIZE);
+	mem_unmap(ctx->mem, ctx->signal_masks->pretcode, MEM_PAGE_SIZE);
 	syscall_debug("  signal handler return code at 0x%x deallocated\n",
 		ctx->signal_masks->pretcode);
 

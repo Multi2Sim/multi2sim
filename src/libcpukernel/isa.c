@@ -44,7 +44,8 @@ uint16_t isa_host_fpcw;
 /* Table including references to functions in machine.c
  * that implement machine instructions. */
 typedef void (*inst_impl_fn_t)(void);
-static inst_impl_fn_t inst_impl_table[x86_opcode_count] = {
+static inst_impl_fn_t inst_impl_table[x86_opcode_count] =
+{
 	NULL /* for op_none */
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) ,op_##name##_impl
 #include <machine.dat>
@@ -55,29 +56,34 @@ static inst_impl_fn_t inst_impl_table[x86_opcode_count] = {
 
 /*
  * Memory access based on 'isa_spec_mode'
- * -- This should be the first section in the file --
- * -- Macros are defined after these two functions --
+ * IMPORTANT: This should be the first section in the file.
+ *            Macros are defined after these two functions.
  */
 
 void isa_mem_read(struct mem_t *mem, uint32_t addr, int size, void *buf)
 {
-	/* Allow an unsafe memory read if running on speculative mode,
-	 * without triggering guest segmentation faults. */
-	mem->safe = isa_spec_mode ? 0 : mem_safe_mode;
+	/* Speculative mode read */
+	if (isa_spec_mode)
+	{
+		spec_mem_read(isa_ctx->spec_mem, addr, size, buf);
+		return;
+	}
 
-	/* Read and return to default safe mode. */
+	/* Read in regular mode */
 	mem_read(mem, addr, size, buf);
-	mem->safe = mem_safe_mode;
 }
 
 
 void isa_mem_write(struct mem_t *mem, uint32_t addr, int size, void *buf)
 {
-	/* No write to memory is done if running on speculative mode. */
+	/* Speculative mode write */
 	if (isa_spec_mode)
+	{
+		spec_mem_write(isa_ctx->spec_mem, addr, size, buf);
 		return;
+	}
 
-	/* Write */
+	/* Write in regular mode */
 	mem_write(mem, addr, size, buf);
 }
 

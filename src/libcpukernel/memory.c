@@ -34,8 +34,8 @@ struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr)
 	uint32_t index, tag;
 	struct mem_page_t *prev, *page;
 
-	tag = addr & ~(MEM_PAGESIZE - 1);
-	index = (addr >> MEM_LOGPAGESIZE) % MEM_PAGE_COUNT;
+	tag = addr & ~(MEM_PAGE_SIZE - 1);
+	index = (addr >> MEM_LOG_PAGE_SIZE) % MEM_PAGE_COUNT;
 	page = mem->pages[index];
 	prev = NULL;
 	
@@ -65,10 +65,10 @@ struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr)
 	struct mem_page_t *page, *minpage;
 
 	/* Get tag of the page just following addr */
-	tag = (addr + MEM_PAGESIZE) & ~(MEM_PAGESIZE - 1);
+	tag = (addr + MEM_PAGE_SIZE) & ~(MEM_PAGE_SIZE - 1);
 	if (!tag)
 		return NULL;
-	index = (tag >> MEM_LOGPAGESIZE) % MEM_PAGE_COUNT;
+	index = (tag >> MEM_LOG_PAGE_SIZE) % MEM_PAGE_COUNT;
 	page = mem->pages[index];
 
 	/* Look for a page exactly following addr. If it is found, return it. */
@@ -101,8 +101,8 @@ static struct mem_page_t *mem_page_create(struct mem_t *mem, uint32_t addr, int 
 	uint32_t index, tag;
 	struct mem_page_t *page;
 
-	tag = addr & ~(MEM_PAGESIZE - 1);
-	index = (addr >> MEM_LOGPAGESIZE) % MEM_PAGE_COUNT;
+	tag = addr & ~(MEM_PAGE_SIZE - 1);
+	index = (addr >> MEM_LOG_PAGE_SIZE) % MEM_PAGE_COUNT;
 	
 	/* Create new page */
 	page = calloc(1, sizeof(struct mem_page_t));
@@ -112,7 +112,7 @@ static struct mem_page_t *mem_page_create(struct mem_t *mem, uint32_t addr, int 
 	/* Insert in pages hash table */
 	page->next = mem->pages[index];
 	mem->pages[index] = page;
-	mem_mapped_space += MEM_PAGESIZE;
+	mem_mapped_space += MEM_PAGE_SIZE;
 	mem_max_mapped_space = MAX(mem_max_mapped_space, mem_mapped_space);
 	return page;
 }
@@ -125,8 +125,8 @@ static void mem_page_free(struct mem_t *mem, uint32_t addr)
 	struct mem_page_t *prev, *page;
 	struct mem_host_mapping_t *hm;
 	
-	tag = addr & ~(MEM_PAGESIZE - 1);
-	index = (addr >> MEM_LOGPAGESIZE) % MEM_PAGE_COUNT;
+	tag = addr & ~(MEM_PAGE_SIZE - 1);
+	index = (addr >> MEM_LOG_PAGE_SIZE) % MEM_PAGE_COUNT;
 	prev = NULL;
 
 	/* Find page */
@@ -143,7 +143,7 @@ static void mem_page_free(struct mem_t *mem, uint32_t addr)
 	hm = page->host_mapping;
 	if (hm) {
 		assert(hm->pages > 0);
-		assert(tag >= hm->addr && tag + MEM_PAGESIZE <= hm->addr + hm->size);
+		assert(tag >= hm->addr && tag + MEM_PAGE_SIZE <= hm->addr + hm->size);
 		hm->pages--;
 		page->data = NULL;
 		page->host_mapping = NULL;
@@ -156,7 +156,7 @@ static void mem_page_free(struct mem_t *mem, uint32_t addr)
 		prev->next = page->next;
 	else
 		mem->pages[index] = page->next;
-	mem_mapped_space -= MEM_PAGESIZE;
+	mem_mapped_space -= MEM_PAGE_SIZE;
 	if (page->data)
 		free(page->data);
 	free(page);
@@ -170,9 +170,9 @@ void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size)
 	struct mem_page_t *page_dest, *page_src;
 
 	/* Restrictions. No overlapping allowed. */
-	assert(!(dest & (MEM_PAGESIZE-1)));
-	assert(!(src & (MEM_PAGESIZE-1)));
-	assert(!(size & (MEM_PAGESIZE-1)));
+	assert(!(dest & (MEM_PAGE_SIZE-1)));
+	assert(!(src & (MEM_PAGE_SIZE-1)));
+	assert(!(size & (MEM_PAGE_SIZE-1)));
 	if ((src < dest && src + size > dest) ||
 		(dest < src && dest + size > src))
 		fatal("mem_copy: cannot copy overlapping regions");
@@ -189,17 +189,17 @@ void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size)
 		 * destination page data are allocated. */
 		if (page_src->data) {
 			if (!page_dest->data)
-				page_dest->data = malloc(MEM_PAGESIZE);
-			memcpy(page_dest->data, page_src->data, MEM_PAGESIZE);
+				page_dest->data = malloc(MEM_PAGE_SIZE);
+			memcpy(page_dest->data, page_src->data, MEM_PAGE_SIZE);
 		} else {
 			if (page_dest->data)
-				memset(page_dest->data, 0, MEM_PAGESIZE);
+				memset(page_dest->data, 0, MEM_PAGE_SIZE);
 		}
 
 		/* Advance pointers */
-		src += MEM_PAGESIZE;
-		dest += MEM_PAGESIZE;
-		size -= MEM_PAGESIZE;
+		src += MEM_PAGE_SIZE;
+		dest += MEM_PAGE_SIZE;
+		size -= MEM_PAGE_SIZE;
 	}
 }
 
@@ -214,8 +214,8 @@ void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size,
 	uint32_t offset;
 
 	/* Get page offset and check page bounds */
-	offset = addr & (MEM_PAGESIZE - 1);
-	if (offset + size > MEM_PAGESIZE)
+	offset = addr & (MEM_PAGE_SIZE - 1);
+	if (offset + size > MEM_PAGE_SIZE)
 		return NULL;
 	
 	/* Look for page */
@@ -229,7 +229,7 @@ void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size,
 	
 	/* Allocate and initialize page data if it does not exist yet. */
 	if (!page->data)
-		page->data = calloc(1, MEM_PAGESIZE);
+		page->data = calloc(1, MEM_PAGE_SIZE);
 	
 	/* Return pointer to page data */
 	return page->data + offset;
@@ -245,8 +245,8 @@ static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
 
 	/* Find memory page and compute offset. */
 	page = mem_page_get(mem, addr);
-	offset = addr & (MEM_PAGESIZE - 1);
-	assert(offset + size <= MEM_PAGESIZE);
+	offset = addr & (MEM_PAGE_SIZE - 1);
+	assert(offset + size <= MEM_PAGE_SIZE);
 
 	/* On nonexistent page, raise segmentation fault in safe mode,
 	 * or create page with full privileges for writes in unsafe mode. */
@@ -285,7 +285,7 @@ static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
 	/* Write/initialize access */
 	if (access == mem_access_write || access == mem_access_init) {
 		if (!page->data)
-			page->data = calloc(1, MEM_PAGESIZE);
+			page->data = calloc(1, MEM_PAGE_SIZE);
 		memcpy(page->data + offset, buf, size);
 		return;
 	}
@@ -305,8 +305,8 @@ void mem_access(struct mem_t *mem, uint32_t addr, int size, void *buf,
 
 	mem->last_address = addr;
 	while (size) {
-		offset = addr & (MEM_PAGESIZE - 1);
-		chunksize = MIN(size, MEM_PAGESIZE - offset);
+		offset = addr & (MEM_PAGE_SIZE - 1);
+		chunksize = MIN(size, MEM_PAGE_SIZE - offset);
 		mem_access_page_boundary(mem, addr, chunksize, buf, access);
 
 		size -= chunksize;
@@ -361,8 +361,8 @@ uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size)
 {
 	uint32_t tag_start, tag_end;
 
-	assert(!(addr & (MEM_PAGESIZE - 1)));
-	assert(!(size & (MEM_PAGESIZE - 1)));
+	assert(!(addr & (MEM_PAGE_SIZE - 1)));
+	assert(!(size & (MEM_PAGE_SIZE - 1)));
 	tag_start = addr;
 	tag_end = addr;
 	for (;;) {
@@ -373,18 +373,18 @@ uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size)
 		
 		/* Not enough free pages in current region */
 		if (mem_page_get(mem, tag_end)) {
-			tag_end += MEM_PAGESIZE;
+			tag_end += MEM_PAGE_SIZE;
 			tag_start = tag_end;
 			continue;
 		}
 		
 		/* Enough free pages */
-		if (tag_end - tag_start + MEM_PAGESIZE == size)
+		if (tag_end - tag_start + MEM_PAGE_SIZE == size)
 			break;
-		assert(tag_end - tag_start + MEM_PAGESIZE < size);
+		assert(tag_end - tag_start + MEM_PAGE_SIZE < size);
 		
 		/* we have a new free page */
-		tag_end += MEM_PAGESIZE;
+		tag_end += MEM_PAGE_SIZE;
 	}
 
 
@@ -397,8 +397,8 @@ uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size)
 {
 	uint32_t tag_start, tag_end;
 
-	assert(!(addr & (MEM_PAGESIZE - 1)));
-	assert(!(size & (MEM_PAGESIZE - 1)));
+	assert(!(addr & (MEM_PAGE_SIZE - 1)));
+	assert(!(size & (MEM_PAGE_SIZE - 1)));
 	tag_start = addr;
 	tag_end = addr;
 	for (;;) {
@@ -409,18 +409,18 @@ uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size)
 		
 		/* Not enough free pages in current region */
 		if (mem_page_get(mem, tag_start)) {
-			tag_start -= MEM_PAGESIZE;
+			tag_start -= MEM_PAGE_SIZE;
 			tag_end = tag_start;
 			continue;
 		}
 		
 		/* Enough free pages */
-		if (tag_end - tag_start + MEM_PAGESIZE == size)
+		if (tag_end - tag_start + MEM_PAGE_SIZE == size)
 			break;
-		assert(tag_end - tag_start + MEM_PAGESIZE < size);
+		assert(tag_end - tag_start + MEM_PAGE_SIZE < size);
 		
 		/* we have a new free page */
-		tag_start -= MEM_PAGESIZE;
+		tag_start -= MEM_PAGE_SIZE;
 	}
 
 	/* Return the start of the free space */
@@ -439,11 +439,11 @@ void mem_map(struct mem_t *mem, uint32_t addr, int size,
 	struct mem_page_t *page;
 
 	/* Calculate page boundaries */
-	tag1 = addr & ~(MEM_PAGESIZE-1);
-	tag2 = (addr + size - 1) & ~(MEM_PAGESIZE-1);
+	tag1 = addr & ~(MEM_PAGE_SIZE-1);
+	tag2 = (addr + size - 1) & ~(MEM_PAGE_SIZE-1);
 
 	/* Allocate pages */
-	for (tag = tag1; tag <= tag2; tag += MEM_PAGESIZE) {
+	for (tag = tag1; tag <= tag2; tag += MEM_PAGE_SIZE) {
 		page = mem_page_get(mem, tag);
 		if (!page)
 			page = mem_page_create(mem, tag, perm);
@@ -462,13 +462,13 @@ void mem_unmap(struct mem_t *mem, uint32_t addr, int size)
 	uint32_t tag1, tag2, tag;
 
 	/* Calculate page boundaries */
-	assert(!(addr & (MEM_PAGESIZE - 1)));
-	assert(!(size & (MEM_PAGESIZE - 1)));
-	tag1 = addr & ~(MEM_PAGESIZE-1);
-	tag2 = (addr + size - 1) & ~(MEM_PAGESIZE-1);
+	assert(!(addr & (MEM_PAGE_SIZE - 1)));
+	assert(!(size & (MEM_PAGE_SIZE - 1)));
+	tag1 = addr & ~(MEM_PAGE_SIZE-1);
+	tag2 = (addr + size - 1) & ~(MEM_PAGE_SIZE-1);
 
 	/* Deallocate pages */
-	for (tag = tag1; tag <= tag2; tag += MEM_PAGESIZE)
+	for (tag = tag1; tag <= tag2; tag += MEM_PAGE_SIZE)
 		mem_page_free(mem, tag);
 }
 
@@ -486,9 +486,9 @@ void mem_map_host(struct mem_t *mem, struct fd_t *fd, uint32_t addr, int size,
 	struct mem_host_mapping_t *hm;
 
 	/* Check restrictions */
-	if (addr & ~MEM_PAGEMASK)
+	if (addr & ~MEM_PAGE_MASK)
 		fatal("mem_map_host: 'addr' not a multiple of page size");
-	if (size & ~MEM_PAGEMASK)
+	if (size & ~MEM_PAGE_MASK)
 		fatal("mem_map_host: 'size' not a multiple of page size");
 	
 	/* Create host mapping, and insert it into the list head. */
@@ -502,7 +502,7 @@ void mem_map_host(struct mem_t *mem, struct fd_t *fd, uint32_t addr, int size,
 	syscall_debug("  host mapping created for '%s'\n", hm->path);
 	
 	/* Make page data point to new data */
-	for (ptr = addr; ptr < addr + size; ptr += MEM_PAGESIZE) {
+	for (ptr = addr; ptr < addr + size; ptr += MEM_PAGE_SIZE) {
 		page = mem_page_get(mem, ptr);
 		if (!page)
 			fatal("mem_map_host: requested range not allocated");
@@ -565,13 +565,13 @@ void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t p
 	int prot, err;
 
 	/* Calculate page boundaries */
-	assert(!(addr & (MEM_PAGESIZE - 1)));
-	assert(!(size & (MEM_PAGESIZE - 1)));
-	tag1 = addr & ~(MEM_PAGESIZE-1);
-	tag2 = (addr + size - 1) & ~(MEM_PAGESIZE-1);
+	assert(!(addr & (MEM_PAGE_SIZE - 1)));
+	assert(!(size & (MEM_PAGE_SIZE - 1)));
+	tag1 = addr & ~(MEM_PAGE_SIZE-1);
+	tag2 = (addr + size - 1) & ~(MEM_PAGE_SIZE-1);
 
 	/* Allocate pages */
-	for (tag = tag1; tag <= tag2; tag += MEM_PAGESIZE) {
+	for (tag = tag1; tag <= tag2; tag += MEM_PAGE_SIZE) {
 		page = mem_page_get(mem, tag);
 		if (!page)
 			continue;
@@ -585,7 +585,7 @@ void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t p
 			prot = (perm & mem_access_read ? PROT_READ : 0) |
 				(perm & mem_access_write ? PROT_WRITE : 0) |
 				(perm & mem_access_exec ? PROT_EXEC : 0);
-			err = mprotect(page->data, MEM_PAGESIZE, prot);
+			err = mprotect(page->data, MEM_PAGE_SIZE, prot);
 			if (err < 0)
 				fatal("mem_protect: host call to 'mprotect' failed");
 		}
@@ -626,7 +626,7 @@ void mem_dump(struct mem_t *mem, char *filename, uint32_t start, uint32_t end)
 {
 	FILE *f;
 	uint32_t size;
-	uint8_t buf[MEM_PAGESIZE];
+	uint8_t buf[MEM_PAGE_SIZE];
 
 	f = fopen(filename, "wb");
 	if (!f)
@@ -635,7 +635,7 @@ void mem_dump(struct mem_t *mem, char *filename, uint32_t start, uint32_t end)
 	/* Set unsafe mode and dump */
 	mem->safe = 0;
 	while (start < end) {
-		size = MIN(MEM_PAGESIZE, end - start);
+		size = MIN(MEM_PAGE_SIZE, end - start);
 		mem_access(mem, start, size, buf, mem_access_read);
 		fwrite(buf, size, 1, f);
 		start += size;
@@ -651,7 +651,7 @@ void mem_load(struct mem_t *mem, char *filename, uint32_t start)
 {
 	FILE *f;
 	uint32_t size;
-	uint8_t buf[MEM_PAGESIZE];
+	uint8_t buf[MEM_PAGE_SIZE];
 	
 	f = fopen(filename, "rb");
 	if (!f)
@@ -660,7 +660,7 @@ void mem_load(struct mem_t *mem, char *filename, uint32_t start)
 	/* Set unsafe mode and load */
 	mem->safe = 0;
 	for (;;) {
-		size = fread(buf, 1, MEM_PAGESIZE, f);
+		size = fread(buf, 1, MEM_PAGE_SIZE, f);
 		if (!size)
 			break;
 		mem_access(mem, start, size, buf, mem_access_write);

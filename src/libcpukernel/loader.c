@@ -372,7 +372,7 @@ static uint32_t ld_load_av(struct ctx_t *ctx, uint32_t where)
 	LD_AV_ENTRY(5, ld->phdr_count);  /* AT_PHNUM */
 
 	/* Other values */
-	LD_AV_ENTRY(6, MEM_PAGESIZE);  /* AT_PAGESZ */
+	LD_AV_ENTRY(6, MEM_PAGE_SIZE);  /* AT_PAGESZ */
 	LD_AV_ENTRY(7, 0);  /* AT_BASE */
 	LD_AV_ENTRY(8, 0);  /* AT_FLAGS */
 	LD_AV_ENTRY(9, ld->prog_entry);  /* AT_ENTRY */
@@ -503,7 +503,7 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 	/* Read sections and program entry */
 	ld_load_sections(ctx, ld->elf_file);
 	ld->prog_entry = ld->elf_file->header->e_entry;
-	ld->brk = ROUND_UP(ld->brk, MEM_PAGESIZE);
+	ld->brk = ROUND_UP(ld->brk, MEM_PAGE_SIZE);
 
 	/* Load program header table. If we found a PT_INTERP program header,
 	 * we have to load the program interpreter. This means we are dealing with
