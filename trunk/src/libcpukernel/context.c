@@ -76,11 +76,15 @@ struct ctx_t *ctx_create()
 	
 	ctx = ctx_do_create();
 
-	/* A new parent context has a new memory map, a new
-	 * set of signal handlers, a new file descriptor table. */
+	/* Loader */
 	ld_init(ctx);
+
+	/* Memory */
 	ctx->mid = ke->current_mid++;
 	ctx->mem = mem_create();
+	ctx->spec_mem = spec_mem_create(ctx->mem);
+
+	/* Signal handlers and file descriptor table */
 	ctx->signal_handlers = signal_handlers_create();
 	ctx->fdt = fdt_create();
 	
@@ -104,6 +108,7 @@ struct ctx_t *ctx_clone(struct ctx_t *ctx)
 	new->mem = ctx->mem;
 	new->mem->sharing++;
 	new->mid = ctx->mid;
+	new->spec_mem = spec_mem_create(ctx->mem);
 	new->loader = ctx->loader;
 	new->signal_handlers = ctx->signal_handlers;
 	new->fdt = ctx->fdt;
@@ -139,6 +144,7 @@ void ctx_free(struct ctx_t *ctx)
 	regs_free(ctx->regs);
 	regs_free(ctx->backup_regs);
 	signal_masks_free(ctx->signal_masks);
+	spec_mem_free(ctx->spec_mem);
 
 	/* Shared structures are only freed if this
 	 * is the last context sharing them. */
@@ -252,6 +258,7 @@ void ctx_recover(struct ctx_t *ctx)
 	assert(ctx_get_status(ctx, ctx_specmode));
 	ctx_clear_status(ctx, ctx_specmode);
 	regs_copy(ctx->regs, ctx->backup_regs);
+	spec_mem_clear(ctx->spec_mem);
 }
 
 
@@ -594,18 +601,18 @@ void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path)
 
 		/* Get end of range */
 		for (;;) {
-			page = mem_page_get(mem, end + MEM_PAGESIZE);
+			page = mem_page_get(mem, end + MEM_PAGE_SIZE);
 			if (!page)
 				break;
 			page_perm = page->perm & (mem_access_read | mem_access_write | mem_access_exec);
 			if (page_perm != perm)
 				break;
-			end += MEM_PAGESIZE;
+			end += MEM_PAGE_SIZE;
 			perm = page_perm;
 		}
 
 		/* Dump range */ 
-		fprintf(f, "%08x-%08x %c%c%c%c 00000000 00:00", start, end + MEM_PAGESIZE,
+		fprintf(f, "%08x-%08x %c%c%c%c 00000000 00:00", start, end + MEM_PAGE_SIZE,
 			perm & mem_access_read ? 'r' : '-',
 			perm & mem_access_write ? 'w' : '-',
 			perm & mem_access_exec ? 'x' : '-',

@@ -17,6 +17,7 @@ libcpukernel_a_SOURCES = \
 	memory.c \
 	regs.c \
 	signal.c \
+	spec-mem.c \
 	syscall.c \
 	syscall.dat \
 	uinst.c
