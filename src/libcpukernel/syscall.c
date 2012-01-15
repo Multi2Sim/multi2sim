@@ -722,11 +722,11 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
 
 	/* 'addr' and 'offset' must be aligned to page size boundaries.
 	 * 'len' is rounded up to page boundary. */
-	if (offset & ~MEM_PAGEMASK)
+	if (offset & ~MEM_PAGE_MASK)
 		fatal("do_mmap: unaligned offset");
-	if (addr & ~MEM_PAGEMASK)
+	if (addr & ~MEM_PAGE_MASK)
 		fatal("do_mmap: unaligned addr");
-	alen = ROUND_UP(len, MEM_PAGESIZE);
+	alen = ROUND_UP(len, MEM_PAGE_SIZE);
 
 	/* Find region for allocation */
 	if (flags & MAP_FIXED) {
@@ -1414,8 +1414,8 @@ void syscall_do()
 		syscall_debug("  newbrk=0x%x (previous brk was 0x%x)\n",
 			newbrk, oldbrk);
 
-		newbrk_rnd = ROUND_UP(newbrk, MEM_PAGESIZE);
-		oldbrk_rnd = ROUND_UP(oldbrk, MEM_PAGESIZE);
+		newbrk_rnd = ROUND_UP(newbrk, MEM_PAGE_SIZE);
+		oldbrk_rnd = ROUND_UP(oldbrk, MEM_PAGE_SIZE);
 
 		/* If argument is zero, the system call is used to
 		 * obtain the current top of the heap. */
@@ -1692,10 +1692,10 @@ void syscall_do()
 		addr = isa_regs->ebx;
 		size = isa_regs->ecx;
 		syscall_debug("  addr=0x%x, size=0x%x\n", addr, size);
-		if (addr & (MEM_PAGESIZE - 1))
+		if (addr & (MEM_PAGE_SIZE - 1))
 			fatal("munmap: size is not a multiple of page size");
 
-		size_align = ROUND_UP(size, MEM_PAGESIZE);
+		size_align = ROUND_UP(size, MEM_PAGE_SIZE);
 		mem_unmap(isa_mem, addr, size_align);
 		break;
 	}
@@ -2482,9 +2482,9 @@ void syscall_do()
 			addr, old_len, new_len, flags);
 
 		/* Restrictions */
-		assert(!(addr & (MEM_PAGESIZE-1)));
-		assert(!(old_len & (MEM_PAGESIZE-1)));
-		assert(!(new_len & (MEM_PAGESIZE-1)));
+		assert(!(addr & (MEM_PAGE_SIZE-1)));
+		assert(!(old_len & (MEM_PAGE_SIZE-1)));
+		assert(!(new_len & (MEM_PAGE_SIZE-1)));
 		if (!(flags & 0x1))
 			fatal("syscall mremap: flags MAP_MAYMOVE must be present");
 		if (!old_len || !new_len)
@@ -2841,7 +2841,7 @@ void syscall_do()
 
 		/* Map */
 		retval = do_mmap(addr, len, prot, flags,
-			guest_fd, offset << MEM_PAGESHIFT);
+			guest_fd, offset << MEM_PAGE_SHIFT);
 		break;
 
 	}

@@ -1007,7 +1007,7 @@ void cpu_stages()
 uint32_t cpu_tlb_address(int ctx, uint32_t vaddr)
 {
 	assert(ctx >= 0 && ctx < cpu_cores * cpu_threads);
-	return (vaddr >> MEM_LOGPAGESIZE) * cpu_cores * cpu_threads + ctx;
+	return (vaddr >> MEM_LOG_PAGE_SIZE) * cpu_cores * cpu_threads + ctx;
 }
 
 
