@@ -6,17 +6,23 @@
 #include <GL/freeglut.h>
 #include "misc.h"
 
-#define         PROGRAM_BINARY_RETRIEVABLE_HINT             0x8257
+#define		MAX_STRING_SIZE  200
+
+#define		PROGRAM_BINARY_RETRIEVABLE_HINT 	0x8257
 
 static char *syntax =
 	"Syntax: %s [<options>] <Vertex/Fragment shader source file>\n"
 	"\tOptions:\n"
+	"\t-a           Dump intermediate ELF files\n"
 	"\t-v           Vertex shader source code\n"
 	"\t-f            Fragment shader source code\n"
 	"\t-e            Evaluation shader source code\n"
 	"\t-f            Geometry shader source code\n"
 	"\t-c            Control shader source code\n"
 	"\t-o           Output binary file name\n";
+
+
+int dump_intermediate = 0;  /* Dump intermediate files */
 
 int InitGLContext(int argc, char *argv[])
 {
@@ -58,6 +64,39 @@ int InitGLContext(int argc, char *argv[])
 	}
 
 	return 0;
+}
+
+void kernel_binary_analyze(const char *file_name)
+{
+	const char ELF_magic[4]={0x7F,0x45,0x4C,0x46};
+	char file_name_dest[MAX_STRING_SIZE];
+	// read shader binary file into a buffer
+	char *	file_buffer = NULL;
+	size_t	file_size;
+	file_buffer = (char*)read_buffer((char*)file_name, &file_size);
+
+	// find ELF magic in shader binary and dump 
+	int i;
+	int count = 0;
+	for (i = 0; i < file_size - sizeof(ELF_magic); ++i)
+	{
+		if (memcmp(file_buffer,ELF_magic,sizeof(ELF_magic)) == 0)
+		{
+			printf("Find ELF Magic in position %d\n", i);
+			sprintf(file_name_dest, "%s.elf.%d", file_name, count);
+			count++;
+
+			void* tmp_buf = (void*)malloc(file_size-i);
+			memcpy(tmp_buf, file_buffer, file_size-i);
+
+			FILE *f;
+			f = fopen(file_name_dest, "wb");
+			fwrite(tmp_buf, file_size-i, 1, f);
+			fclose(f);	
+		}
+		file_buffer++;
+
+	}
 }
 
 int MainGetBinary(const GLchar** vertexSource, const GLchar** fragmentSource, const GLchar** controlSource, const GLchar** evaluationSource, const GLchar** geometrySource, const char* outputfile)
@@ -309,14 +348,17 @@ int MainGetBinary(const GLchar** vertexSource, const GLchar** fragmentSource, co
 	fwrite(bin_buffer, bin_length, 1, f);
 	fclose(f);
 
+	/* Process generated binary */
+	if (dump_intermediate)
+		kernel_binary_analyze(outputfile);
+	
 	free(bin_buffer);
-
 	return 0;
 }
 
 int main(int argc, char *argv[])
 {
-
+	// printf("%s\n", ELF_magic);
 	/* No arguments */
 	if (argc == 1) {
 		fprintf(stderr, syntax, argv[0]);
@@ -331,9 +373,14 @@ int main(int argc, char *argv[])
 	char *output = "shader.bin";
 
 	int argi;
-
 	for (argi = 1; argi < argc; argi++)
 	{
+		//  
+		if (!strcmp(argv[argi], "-a")) {
+			argi++;
+			dump_intermediate = 1;
+			continue;
+		}			
 		// vertex source
 		if (!strcmp(argv[argi], "-v")) {
 			argi++;
@@ -383,7 +430,11 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	InitGLContext(argc, argv);
+	if (InitGLContext(argc, argv))
+	{
+		printf("Initilize Context Failed !\n");
+		return -1;
+	}
 
 	char *VSShaderSource = NULL;
 	char *FSShaderSource = NULL;
