@@ -46,7 +46,7 @@ char *err_opencl_param_note =
  * Public functions
  */
 
-void * clGetExtensionFunctionAddress(
+void *clGetExtensionFunctionAddress(
 	const char *func_name)
 {
 	unsigned int sys_args[1];
