@@ -530,7 +530,12 @@ char *err_opencl_elf_symbol =
 	"\tIf it is not found, it probably means that your application is requesting\n"
 	"\texecution of a kernel function that is not present in the encoded binary.\n"
 	"\tPlease, check the parameters passed to the 'clCreateKernel' function in\n"
-	"\tyour application.\n";
+	"\tyour application.\n"
+	"\tThis could be also a symptom of compiling an OpenCL kernel source on a\n"
+	"\tmachine with an installation of the APP SDK (using 'm2s-opencl-kc') but\n"
+	"\twith an incorrect or missing installation of the GPU driver. In this case,\n"
+	"\tthe tool will still compile the kernel into LLVM, but the ISA section will\n"
+	"\tbe missing in the kernel binary.\n";
 
 void opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_name,
 	struct elf_buffer_t *buffer)
