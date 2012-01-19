@@ -11,15 +11,6 @@
 
 
 
-static FILE *disasm_file;
-
-void disasm_logfunc(const char *str)
-{
-	fprintf(disasm_file, "%s", str);
-}
-
-
-
 #define MAX_STRING_SIZE  200
 #define MAX_DEVICES  100
 #define CL_CONTEXT_OFFLINE_DEVICES_AMD  0x403f
@@ -31,13 +22,14 @@ static char *syntax =
 	"\t-l            Print list of available devices\n"
 	"\t-d <dev>      Select target device for compilation\n"
 	"\t-a            Dump intermediate files\n"
-	"\t-e            ELF verbose\n";
+	"\t-e            ELF verbose\n"
+	"\t-v            Dump debug information\n";
 
 char *output_file_prefix = "kernel";
 char *input_file_name;
 
+int verbose = 0;  /* Dump OpenCL calls results */
 int action_list_devices = 0;  /* Dump list of devices */
-int elf_verbose = 0;  /* Dump ELF details */
 int dump_intermediate = 0;  /* Dump intermediate files */
 char *kernel_file_name = NULL;  /* Kernel source file */
 char kernel_file_prefix[MAX_STRING_SIZE];  /* Prefix used for output files */
@@ -352,8 +344,8 @@ int main(int argc, char **argv)
 		case 'a':
 			dump_intermediate = 1;
 			break;
-		case 'e':
-			elf_verbose = 1;
+		case 'v':
+			verbose = 1;
 			break;
 		default:
 			fprintf(stderr, syntax, argv[0]);
