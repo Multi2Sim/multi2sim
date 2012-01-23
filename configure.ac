@@ -54,6 +54,12 @@ AC_MSG_WARN([
 AM_CONDITIONAL(HAVE_GTK, test x$have_gtk = xyes)
 
 
+DATADIR=`eval echo $datadir`
+AC_SUBST([DATADIR])
+PKGDATADIR="$datadir/multi2sim"
+AC_SUBST([PKGDATADIR])
+
+
 # ---------------------------------------------------------------------
 # Debug and profile
 # ---------------------------------------------------------------------

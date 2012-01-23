@@ -678,3 +678,4 @@ void search_dist_file(char *file_name, char *dist_path, char *non_dist_path,
 		file_name, PACKAGE_DATA_DIR);
 	exit(1);
 }
+
