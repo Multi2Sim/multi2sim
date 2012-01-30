@@ -320,8 +320,6 @@ struct ccache_t
 {
 	/* Parameters */
 	char name[100];
-	int loid;  /* ID in the low interconnect */
-	struct net_t *hinet, *lonet;  /* High and low interconnects */
 	int lat;
 	int read_ports;  /* Number of read ports */
 	int write_ports;  /* Number of write ports */
@@ -330,6 +328,12 @@ struct ccache_t
 	struct ccache_t *next;  /* Next cache in hierarchy */
 	struct cache_t *cache;  /* Cache holding data */
 	struct dir_t *dir;
+
+	/* Networks */
+	struct net_t *net_hi;
+	struct net_t *net_lo;
+	struct net_node_t *net_node_hi;  /* Node in upper network */
+	struct net_node_t *net_node_lo;  /* Node in lower network */
 
 	/* List of in-flight accesses */
 	struct lnlist_t *access_list;  /* Elements of type ccache_access_t */

@@ -534,8 +534,14 @@ void moesi_handler_evict(int event, void *data)
 
 	if (event == EV_MOESI_EVICT_ACTION)
 	{
+		struct net_node_t *lower_node;
+
 		cache_debug("  %lld %lld 0x%x %s evict action\n", CYCLE, ID,
 			stack->tag, ccache->name);
+
+		/* Get lower node */
+		lower_node = list_get(ccache->net_lo->node_list, 0);
+		assert(lower_node && lower_node->user_data);
 		
 		/* status = I */
 		if (stack->status == moesi_status_invalid) {
@@ -545,20 +551,22 @@ void moesi_handler_evict(int event, void *data)
 
 		/* status = M/O */
 		if (stack->status == moesi_status_modified ||
-			stack->status == moesi_status_owned) {
-			net_send_ev(ccache->lonet, ccache->loid, 0,
+			stack->status == moesi_status_owned)
+		{
+			net_send_ev(ccache->net_lo, ccache->net_node_lo, lower_node,
 				ccache->bsize + 8, EV_MOESI_EVICT_RECEIVE, stack);
 			stack->writeback = 1;
 			return;
 		}
 
 		/* status = S/E */
-		net_send_ev(ccache->lonet, ccache->loid, 0, 8,
+		net_send_ev(ccache->net_lo, ccache->net_node_lo, lower_node, 8,
 			EV_MOESI_EVICT_RECEIVE, stack);
 		return;
 	}
 
-	if (event == EV_MOESI_EVICT_RECEIVE) {
+	if (event == EV_MOESI_EVICT_RECEIVE)
+	{
 		cache_debug("  %lld %lld 0x%x %s evict receive\n", CYCLE, ID,
 			stack->tag, target->name);
 		
@@ -651,13 +659,14 @@ void moesi_handler_evict(int event, void *data)
 
 		/* Remove sharer, owner, and unlock */
 		dir = ccache_get_dir(target, stack->tag);
-		for (z = 0; z < dir->zsize; z++) {
+		for (z = 0; z < dir->zsize; z++)
+		{
 			dir_entry_tag = stack->tag + z * cache_min_block_size;
 			if (dir_entry_tag < stack->src_tag || dir_entry_tag >= stack->src_tag + ccache->bsize)
 				continue;
 			dir_entry = ccache_get_dir_entry(target, stack->set, stack->way, z);
-			dir_entry_clear_sharer(dir, dir_entry, ccache->loid);
-			if (dir_entry->owner == ccache->loid)
+			dir_entry_clear_sharer(dir, dir_entry, ccache->net_node_lo->index);
+			if (dir_entry->owner == ccache->net_node_lo->index)
 				dir_entry->owner = 0;
 		}
 		dir_lock_unlock(stack->dir_lock);
@@ -671,7 +680,7 @@ void moesi_handler_evict(int event, void *data)
 		cache_debug("  %lld %lld 0x%x %s evict reply\n", CYCLE, ID,
 			stack->tag, target->name);
 		
-		net_send_ev(target->hinet, 0, ccache->loid, 8,
+		net_send_ev(target->net_hi, target->net_node_hi, ccache->net_node_lo, 8,
 			EV_MOESI_EVICT_REPLY_RECEIVE, stack);
 		return;
 
@@ -716,7 +725,9 @@ void moesi_handler_read_request(int event, void *data)
 	if (event == EV_MOESI_READ_REQUEST)
 	{
 		struct net_t *net;
-		int src, dest;
+		struct net_node_t *src_node;
+		struct net_node_t *dst_node;
+
 		cache_debug("  %lld %lld 0x%x %s read request\n", CYCLE, ID,
 			stack->addr, ccache->name);
 
@@ -724,12 +735,16 @@ void moesi_handler_read_request(int event, void *data)
 		ret->shared = 0;
 		ret->err = 0;
 
-		/* Send request to target */
+		/* Get network to send request */
 		assert(ccache->next == target || target->next == ccache);
-		net = ccache->next == target ? ccache->lonet : ccache->hinet;
-		src = ccache->next == target ? ccache->loid : 0;
-		dest = ccache->next == target ? 0 : target->loid;
-		net_send_ev(net, src, dest, 8, EV_MOESI_READ_REQUEST_RECEIVE, stack);
+		net = ccache->next == target ? ccache->net_lo : ccache->net_hi;
+
+		/* Get source and destination nodes */
+		src_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
+		dst_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
+
+		/* Send request */
+		net_send_ev(net, src_node, dst_node, 8, EV_MOESI_READ_REQUEST_RECEIVE, stack);
 		return;
 	}
 
@@ -775,30 +790,35 @@ void moesi_handler_read_request(int event, void *data)
 			stack->tag, target->name);
 		stack->pending = 1;
 		
-		if (stack->status) {
-			
+		if (stack->status)
+		{
 			/* Status = M/O/E/S
 			 * Check: addr multiple of requester's bsize
 			 * Check: no subblock requested by ccache is already owned by ccache */
 			assert(stack->addr % ccache->bsize == 0);
 			dir = ccache_get_dir(target, stack->tag);
-			for (z = 0; z < dir->zsize; z++) {
+			for (z = 0; z < dir->zsize; z++)
+			{
 				dir_entry_tag = stack->tag + z * cache_min_block_size;
 				if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + ccache->bsize)
 					continue;
 				dir_entry = ccache_get_dir_entry(target, stack->set, stack->way, z);
-				assert(dir_entry->owner != ccache->loid);
+				assert(dir_entry->owner != ccache->net_node_lo->index);
 			}
 
 			/* Send read request to owners other than ccache for all subblocks. */
-			for (z = 0; z < dir->zsize; z++) {
+			for (z = 0; z < dir->zsize; z++)
+			{
+				struct net_node_t *node;
+
 				dir_entry = ccache_get_dir_entry(target, stack->set, stack->way, z);
 				dir_entry_tag = stack->tag + z * cache_min_block_size;
 				if (!dir_entry->owner) /* no owner */
 					continue;
-				if (dir_entry->owner == ccache->loid) /* owner is ccache */
+				if (dir_entry->owner == ccache->net_node_lo->index) /* owner is ccache */
 					continue;
-				owner = net_get_node_data(target->hinet, dir_entry->owner);
+				node = list_get(target->net_hi->node_list, dir_entry->owner);
+				owner = node->user_data;
 				if (dir_entry_tag % owner->bsize) /* not the first owner subblock */
 					continue;
 
@@ -863,7 +883,7 @@ void moesi_handler_read_request(int event, void *data)
 		dir = ccache_get_dir(target, stack->tag);
 		for (z = 0; z < dir->zsize; z++) {
 			dir_entry = ccache_get_dir_entry(target, stack->set, stack->way, z);
-			if (dir_entry->owner != ccache->loid)
+			if (dir_entry->owner != ccache->net_node_lo->index)
 				dir_entry->owner = 0;
 		}
 
@@ -875,7 +895,7 @@ void moesi_handler_read_request(int event, void *data)
 			if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + ccache->bsize)
 				continue;
 			dir_entry = ccache_get_dir_entry(target, stack->set, stack->way, z);
-			dir_entry_set_sharer(dir, dir_entry, ccache->loid);
+			dir_entry_set_sharer(dir, dir_entry, ccache->net_node_lo->index);
 			if (dir_entry->sharers > 1)
 				shared = 1;
 		}
@@ -890,7 +910,7 @@ void moesi_handler_read_request(int event, void *data)
 				if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + ccache->bsize)
 					continue;
 				dir_entry = ccache_get_dir_entry(target, stack->set, stack->way, z);
-				dir_entry->owner = ccache->loid;
+				dir_entry->owner = ccache->net_node_lo->index;
 			}
 		}
 
@@ -919,14 +939,20 @@ void moesi_handler_read_request(int event, void *data)
 
 		/* Send a read request to the owner of each subblock. */
 		dir = ccache_get_dir(target, stack->tag);
-		for (z = 0; z < dir->zsize; z++) {
+		for (z = 0; z < dir->zsize; z++)
+		{
+			struct net_node_t *node;
+
 			dir_entry_tag = stack->tag + z * cache_min_block_size;
 			dir_entry = ccache_get_dir_entry(target, stack->set, stack->way, z);
 			if (!dir_entry->owner)  /* no owner */
 				continue;
-			owner = net_get_node_data(target->hinet, dir_entry->owner);
+
+			node = list_get(target->net_hi->node_list, dir_entry->owner);
+			owner = node->user_data;
 			if (dir_entry_tag % owner->bsize)  /* not the first subblock */
 				continue;
+
 			stack->pending++;
 			stack->response = target->bsize + 8;
 			newstack = moesi_stack_create(stack->id, target, dir_entry_tag,
@@ -968,16 +994,19 @@ void moesi_handler_read_request(int event, void *data)
 	if (event == EV_MOESI_READ_REQUEST_REPLY)
 	{
 		struct net_t *net;
-		int src, dest;
+		struct net_node_t *src_node;
+		struct net_node_t *dst_node;
+
 		cache_debug("  %lld %lld 0x%x %s read request reply\n", CYCLE, ID,
 			stack->tag, target->name);
 
 		assert(stack->response);
 		assert(ccache->next == target || target->next == ccache);
-		net = ccache->next == target ? ccache->lonet : ccache->hinet;
-		src = ccache->next == target ? 0 : target->loid;
-		dest = ccache->next == target ? ccache->loid : 0;
-		net_send_ev(net, src, dest, stack->response,
+		net = ccache->next == target ? ccache->net_lo : ccache->net_hi;
+
+		src_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
+		dst_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
+		net_send_ev(net, src_node, dst_node, stack->response,
 			EV_MOESI_READ_REQUEST_FINISH, stack);
 		return;
 	}
@@ -1007,19 +1036,23 @@ void moesi_handler_write_request(int event, void *data)
 	if (event == EV_MOESI_WRITE_REQUEST)
 	{
 		struct net_t *net;
-		int src, dest;
+		struct net_node_t *src_node;
+		struct net_node_t *dst_node;
+
 		cache_debug("  %lld %lld 0x%x %s write request\n", CYCLE, ID,
 			stack->addr, ccache->name);
 
 		/* Default return values */
 		ret->err = 0;
 
-		/* Send request to target */
+		/* Get network */
 		assert(ccache->next == target || target->next == ccache);
-		net = ccache->next == target ? ccache->lonet : ccache->hinet;
-		src = ccache->next == target ? ccache->loid : 0;
-		dest = ccache->next == target ? 0 : target->loid;
-		net_send_ev(net, src, dest, 8, EV_MOESI_WRITE_REQUEST_RECEIVE, stack);
+		net = ccache->next == target ? ccache->net_lo : ccache->net_hi;
+
+		/* Send request */
+		src_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
+		dst_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
+		net_send_ev(net, src_node, dst_node, 8, EV_MOESI_WRITE_REQUEST_RECEIVE, stack);
 		return;
 	}
 
@@ -1118,8 +1151,8 @@ void moesi_handler_write_request(int event, void *data)
 			if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + ccache->bsize)
 				continue;
 			dir_entry = ccache_get_dir_entry(target, stack->set, stack->way, z);
-			dir_entry_set_sharer(dir, dir_entry, ccache->loid);
-			dir_entry->owner = ccache->loid;
+			dir_entry_set_sharer(dir, dir_entry, ccache->net_node_lo->index);
+			dir_entry->owner = ccache->net_node_lo->index;
 			assert(dir_entry->sharers == 1);
 		}
 
@@ -1154,16 +1187,21 @@ void moesi_handler_write_request(int event, void *data)
 	if (event == EV_MOESI_WRITE_REQUEST_REPLY)
 	{
 		struct net_t *net;
-		int src, dest;
+		struct net_node_t *src_node;
+		struct net_node_t *dst_node;
+
 		cache_debug("  %lld %lld 0x%x %s write request reply\n", CYCLE, ID,
 			stack->tag, target->name);
 
+		/* Get network */
 		assert(stack->response);
 		assert(ccache->next == target || target->next == ccache);
-		net = ccache->next == target ? ccache->lonet : ccache->hinet;
-		src = ccache->next == target ? 0 : target->loid;
-		dest = ccache->next == target ? ccache->loid : 0;
-		net_send_ev(net, src, dest, stack->response,
+		net = ccache->next == target ? ccache->net_lo : ccache->net_hi;
+
+		/* Send reply */
+		src_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
+		dst_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
+		net_send_ev(net, src_node, dst_node, stack->response,
 			EV_MOESI_WRITE_REQUEST_FINISH, stack);
 		return;
 	}
@@ -1203,16 +1241,21 @@ void moesi_handler_invalidate(int event, void *data)
 
 		/* Send write request to all upper level sharers but ccache */
 		dir = ccache_get_dir(ccache, stack->tag);
-		for (z = 0; z < dir->zsize; z++) {
+		for (z = 0; z < dir->zsize; z++)
+		{
 			dir_entry_tag = stack->tag + z * cache_min_block_size;
 			dir_entry = ccache_get_dir_entry(ccache, stack->set, stack->way, z);
-			node_count = ccache->hinet ? ccache->hinet->end_node_count : 0;
-			for (i = 1; i < node_count; i++) {
+			node_count = ccache->net_hi ? ccache->net_hi->end_node_count : 0;
+			for (i = 1; i < node_count; i++)
+			{
+				struct net_node_t *node;
 				
 				/* Skip non-sharers and 'except' */
 				if (!dir_entry_is_sharer(dir, dir_entry, i))
 					continue;
-				sharer = net_get_node_data(ccache->hinet, i);
+
+				node = list_get(ccache->net_hi->node_list, i);
+				sharer = node->user_data;
 				if (sharer == stack->except)
 					continue;
 

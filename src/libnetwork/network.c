@@ -17,39 +17,49 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "network.h"
-
-#include <stdarg.h>
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-#include <repos.h>
-#include <esim.h>
-#include <misc.h>
-#include <mhandle.h>
+#include <network.h>
 
 
 /*
- * Access macros
+ * Variables
  */
 
-#define NET_ENTRY(i, j) (&net->routing_table[(i) * net->node_count + (j)])
-#define NET_COST(i, j) (NET_ENTRY(i, j)->cost)
-#define NET_ROUTE(i, j) (NET_ENTRY(i, j)->route)
-#define NET_PORT(i, j) (NET_ENTRY(i, j)->port)
+int net_debug_category;
 
+char *err_net_end_nodes =
+	"\tAn attempt has been made to send a message from/to an intermediate\n"
+	"\tswitch or bus. Both the initial source and the final destination\n"
+	"\tof a network message have to be end nodes.\n";
 
+char *err_net_no_route =
+	"\tA message has been sent between two nodes with no possible route.\n"
+	"\tPlease redesign your network, considering that every pair of end\n"
+	"\tnodes sending messages to each other need to be connected with a\n"
+	"\tlink.\n";
 
+char *err_net_large_message =
+	"\tA message has been sent in a network where some input/output buffer\n"
+	"\tdoes not have enough capacity to hold it. Please redesign your\n"
+	"\tnetwork, considering that the size of each buffer should be at\n"
+	"\tleast as large as the largest possible message.\n";
 
-/*
- * Private Variables
- */
+char *err_net_node_name_duplicate =
+	"\tA node has been added to a network with a name duplicate. Please make\n"
+	"\tsure that all intermediate and end nodes of your network have\n"
+	"\tdifferent names.\n";
 
-static struct repos_t *net_msg_repos;
+char *err_net_config =
+	"\tA network is being loaded from an IniFile configuration file.\n"
+	"\tHowever, some feature of the provided file does not comply with the\n"
+	"\texpected format. Please run 'm2s --help-network' for a list of\n"
+	"\tpossible sections/variables in the network configuration file.\n";
+	/* FIXME: implement '--help-network' option */
 
-static int EV_NET_SEND;
-static int EV_NET_RECEIVE;
-
+char *err_net_can_send =
+	"\tAn attempt has been detected of injecting a package in a network\n"
+	"\tfrom a source node that has no available space in its output\n"
+	"\tbuffer. This can be solved by making sure a message can be sent\n"
+	"\tbefore injecting it (use function 'net_can_send').\n";
 
 
 
@@ -57,143 +67,12 @@ static int EV_NET_RECEIVE;
  * Private Functions
  */
 
-static void net_error(char *fmt, ...) {
-	va_list va;
-	va_start(va, fmt);
-	fprintf(stderr, "fatal: libnetwork: ");
-	vfprintf(stderr, fmt, va);
-	fprintf(stderr, "\n");
-	abort();
-}
-
-
-
-static int net_allocate_node(struct net_t *net, enum net_node_kind_enum kind,
-	int iport_count, int ibuffer_size, int oport_count, int obuffer_size,
-	int bandwidth, char *name, void *data)
-{
-	struct net_node_t *node;
-	struct net_buffer_t *buffer;
-	int i;
-
-	/* Resize node array */
-	if (net->node_count == net->node_array_size) {
-		net->node_array_size *= 2;
-		net->nodes = realloc(net->nodes, net->node_array_size * sizeof(struct net_node_t));
-		if (!net->nodes)
-			net_error("out of memory");
-		memset(net->nodes + net->node_count, 0, (net->node_array_size - net->node_count) *
-			sizeof(struct net_node_t));
-	}
-
-	/* Get new node */
-	net->node_count++;
-	node = &net->nodes[net->node_count - 1];
-
-	/* Name and data */
-	strncpy(node->name, name, sizeof(node->name));
-	node->data = data;
-	node->kind = kind;
-
-	/* Bandwidth */
-	node->bandwidth = bandwidth;
-	if (bandwidth < 1)
-		net_error("switch bandwidth must be >= 1");
-
-	/* Initialize input ports */
-	assert(iport_count > 0);
-	node->iport_count = iport_count;
-	node->iports = calloc(iport_count, sizeof(struct net_port_t));
-	if (ibuffer_size) {
-		for (i = 0; i < iport_count; i++) {
-			node->iports[i].buffer = buffer = calloc(1, sizeof(struct net_buffer_t));
-			if (!buffer)
-				net_error("out of memory");
-			buffer->size = ibuffer_size;
-			snprintf(buffer->name, sizeof(buffer->name), "%s.iport[%d].buffer",
-				node->name, i);
-		}
-	}
-
-	/* Initialize output ports */
-	assert(oport_count > 0);
-	node->oport_count = oport_count;
-	node->oports = calloc(oport_count, sizeof(struct net_port_t));
-	if (obuffer_size) {
-		for (i = 0; i < oport_count; i++) {
-			node->oports[i].buffer = buffer = calloc(1, sizeof(struct net_buffer_t));
-			if (!buffer)
-				net_error("out of memory");
-			buffer->size = obuffer_size;
-			snprintf(buffer->name, sizeof(buffer->name), "%s.oport[%d].buffer",
-				node->name, i);
-		}
-	}
-
-	/* Return node index */
-	return net->node_count - 1;
-}
-
-
-static void net_buffer_insert(struct net_t *net, struct net_buffer_t *buffer, struct net_msg_t *msg)
-{
-	assert(buffer->count + msg->size <= buffer->size);
-	buffer->count += msg->size;
-	esim_debug("msg action=\"insert\", net=\"%s\", seq=%lld, buffer=\"%s\"\n",
-		net->name, (long long) msg->seq, buffer->name);
-}
-
-
-static void net_buffer_extract(struct net_t *net, struct net_buffer_t *buffer, struct net_msg_t *msg)
-{
-	struct net_stack_t *stack;
-	
-	assert(buffer->count >= msg->size);
-	buffer->count -= msg->size;
-	esim_debug("msg action=\"extract\", net=\"%s\", seq=%lld, buffer=\"%s\"\n",
-		net->name, (long long) msg->seq, buffer->name);
-
-	/* Call events waiting for some free space in the buffer. */
-	while (buffer->wakeup_head) {
-		stack = buffer->wakeup_head;
-		if (buffer->wakeup_head == buffer->wakeup_tail)
-			buffer->wakeup_head = buffer->wakeup_tail = NULL;
-		else
-			buffer->wakeup_head = stack->wakeup_next;
-		esim_schedule_event(stack->wakeup_event, stack, 0);
-		stack->wakeup_event = 0;
-		stack->wakeup_next = NULL;
-	}
-}
-
-
-/* Schedule an event to be called when the buffer releases some space. */
-static void net_buffer_notify(struct net_t *net, struct net_buffer_t *buffer, int event,
-	struct net_stack_t *stack)
-{
-	/* No event */
-	if (event == ESIM_EV_NONE)
-		return;
-	
-	/* Schedule notification */
-	assert(buffer->size > 0 && buffer->count > 0);
-	assert(stack && !stack->wakeup_event && !stack->wakeup_next);
-	stack->wakeup_event = event;
-	if (!buffer->wakeup_tail)
-		buffer->wakeup_head = buffer->wakeup_tail = stack;
-	else {
-		buffer->wakeup_tail->wakeup_next = stack;
-		buffer->wakeup_tail = stack;
-	}
-}
-
-
 /* Insert a message into the in-flight messages hash table. */
-static void net_msg_table_insert(struct net_t *net, struct net_msg_t *msg)
+void net_msg_table_insert(struct net_t *net, struct net_msg_t *msg)
 {
 	int index;
 
-	index = msg->seq % NET_MSG_TABLE_SIZE;
+	index = msg->id % NET_MSG_TABLE_SIZE;
 	assert(!msg->bucket_next);
 	msg->bucket_next = net->msg_table[index];
 	net->msg_table[index] = msg;
@@ -201,34 +80,36 @@ static void net_msg_table_insert(struct net_t *net, struct net_msg_t *msg)
 
 
 /* Return a message from the in-flight messages hash table */
-static struct net_msg_t *net_msg_table_get(struct net_t *net, uint64_t seq)
+struct net_msg_t *net_msg_table_get(struct net_t *net, uint64_t id)
 {
 	int index;
 	struct net_msg_t *msg;
 
-	index = seq % NET_MSG_TABLE_SIZE;
+	index = id % NET_MSG_TABLE_SIZE;
 	msg = net->msg_table[index];
-	while (msg && msg->seq != seq)
+	while (msg && msg->id != id)
 		msg = msg->bucket_next;
 	return msg;
 }
 
 
 /* Extract a message from the in-flight messages hash table */
-static struct net_msg_t *net_msg_table_extract(struct net_t *net, uint64_t seq)
+struct net_msg_t *net_msg_table_extract(struct net_t *net, uint64_t id)
 {
 	int index;
 	struct net_msg_t *prev, *msg;
 
-	index = seq % NET_MSG_TABLE_SIZE;
+	index = id % NET_MSG_TABLE_SIZE;
 	prev = NULL;
 	msg = net->msg_table[index];
-	while (msg && msg->seq != seq) {
+	while (msg && msg->id != id)
+	{
 		prev = msg;
 		msg = msg->bucket_next;
 	}
 	if (!msg)
-		net_error("msg %lld not in hash table", (long long) seq);
+		panic("%s: message %lld not in hash table",
+			__FUNCTION__, (long long) id);
 	if (prev)
 		prev->bucket_next = msg->bucket_next;
 	else
@@ -239,788 +120,537 @@ static struct net_msg_t *net_msg_table_extract(struct net_t *net, uint64_t seq)
 
 
 
-
-/*
- * Event-driven Simulation
- */
-
-static struct repos_t *net_stack_repos;
-
-
-static struct net_stack_t *net_stack_create(struct net_t *net,
-	int retevent, void *retstack)
-{
-	struct net_stack_t *stack;
-	stack = repos_create_object(net_stack_repos);
-	stack->net = net;
-	stack->retevent = retevent;
-	stack->retstack = retstack;
-	return stack;
-}
-
-
-static void net_stack_return(struct net_stack_t *stack)
-{
-	int retevent = stack->retevent;
-	struct net_stack_t *retstack = stack->retstack;
-	repos_free_object(net_stack_repos, stack);
-	esim_schedule_event(retevent, retstack, 0);
-}
-
-#define NET_CAN_TRANSFER  0
-#define NET_DO_TRANSFER   1
-
-#define NET_WHERE_IBUFFER 0
-#define NET_WHERE_XBAR    1
-#define NET_WHERE_OBUFFER 2
-#define NET_WHERE_LINK    3
-
-/* Transfer message through network.
- *   how = NET_CAN_TRANSFER: if msg can be transferred to next buffer or destination, return the
- *                           required latency.
- *                           If not, return 0, and schedule event for the cycle when the test
- *                           should be made again.
- *   how = NET_DO_TRANSFER:  make the transfer and reserve resources for 'lat' cycles
- *                           until next buffer or destination. Messages are not inserted/extracted
- *                           from buffers. On the contrary, the 'src_buffer' and 'dst_buffer'
- *                           attributes are set in 'msg'.
- */
-static int net_transfer(struct net_t *net, struct net_msg_t *msg, int how, int lat,
-	int event, void *stack)
-{
-	int node_idx, where, port_idx, routing_port_idx;
-	struct net_node_t *node;
-	struct net_port_t *port;
-	struct net_link_t *link;
-	struct net_buffer_t *buffer;
-
-	/* Check that routes have been calculated */
-	if (!net->routing_table)
-		net_error("%s: no routing table", net->name);
-
-	/* Store current position */
-	node_idx = msg->node_idx;
-	where = msg->where;
-	port_idx = msg->port_idx;
-
-	/* Initialize */
-	if (how == NET_CAN_TRANSFER) {
-		assert(!esim_cycle || msg->busy < esim_cycle);
-		lat = 1;
-	}
-	if (how == NET_DO_TRANSFER) {
-		if (lat < 1)
-			net_error("net_transfer: lat must be >= 1");
-		msg->busy = esim_cycle + lat - 1;
-		msg->src_buffer = NULL;
-		msg->dst_buffer = NULL;
-	}
-
-	/* Start virtual transfer */
-	while (node_idx != msg->dst_node_idx) {
-		
-		/* Message in obuffer */
-		if (where == NET_WHERE_OBUFFER) {
-			
-			/* Check valid route */
-			node = &net->nodes[node_idx];
-			routing_port_idx = NET_PORT(node_idx, msg->dst_node_idx);
-			if (routing_port_idx < 0)
-				net_error("%s: no route from %s to %s", net->name,
-					node->name, msg->dst_node->name);
-			assert(routing_port_idx == port_idx);
-			
-			/* Go to output link of same node */
-			port = &node->oports[port_idx];
-			link = port->link;
-			buffer = port->buffer;
-			where = NET_WHERE_LINK;
-
-			/* Action */
-			if (how == NET_CAN_TRANSFER) {
-				if (buffer && buffer->read_busy >= esim_cycle) {
-					esim_schedule_event(event, stack,
-						buffer->read_busy - esim_cycle + 1);
-					esim_debug("msg action=\"stall\", net=\"%s\", seq=%lld, node=%d,"
-						" where=obuffer, port=%d, retry=%lld, why=\"read port busy\"\n",
-						net->name, (long long) msg->seq, msg->node_idx, msg->port_idx,
-						(long long) buffer->read_busy + 1);
-					return 0;
-				}
-				if (link->busy >= esim_cycle) {
-					esim_schedule_event(event, stack,
-						link->busy - esim_cycle + 1);
-					esim_debug("msg action=\"stall\", net=\"%s\", seq=%lld, node=%d,"
-						" where=obuffer, port=%d, retry=%lld, why=\"link busy\"\n",
-						net->name, (long long) msg->seq, msg->node_idx, msg->port_idx,
-						(long long) link->busy + 1);
-					return 0;
-				}
-				lat = MAX(lat, (msg->size + link->bandwidth - 1) / link->bandwidth);
-			}
-			if (how == NET_DO_TRANSFER) {
-				msg->where = NET_WHERE_LINK;
-				link->busy = esim_cycle + lat - 1;
-				if (buffer) {
-					msg->src_buffer = buffer;
-					buffer->read_busy = esim_cycle + lat - 1;
-				}
-				esim_debug("msg action=\"transfer\", net=\"%s\", seq=%lld, node=%d, where=link,"
-					" port=%d, busy=%lld\n",
-					net->name, (long long) msg->seq, msg->node_idx, msg->port_idx,
-					(long long) link->busy);
-			}
-		}
-
-		/* Message in a link */
-		else if (where == NET_WHERE_LINK) {
-
-			/* Go to input buffer of next node */
-			node = &net->nodes[node_idx];
-			link = node->oports[port_idx].link;
-			node_idx = link->dst_node_idx;
-			port_idx = link->dst_port_idx;
-			node = &net->nodes[node_idx];
-			port = &node->iports[port_idx];
-			buffer = port->buffer;
-			where = NET_WHERE_IBUFFER;
-
-			/* Action - if there is no input buffer, continue. */
-			if (how == NET_CAN_TRANSFER && buffer) {
-				if (buffer->size < msg->size)
-					net_error("msg of size %d cannot enter buffer of size %d in"
-						" node %s, input port %d", msg->size, buffer->size,
-						node->name, port_idx);
-				if (buffer->write_busy >= esim_cycle) {
-					esim_schedule_event(event, stack,
-						buffer->write_busy - esim_cycle + 1);
-					esim_debug("msg action=\"stall\", net=\"%s\", seq=%lld, node=%d, where=link,"
-						" port=%d, retry=%lld, why=\"write port busy\"\n",
-						net->name, (long long) msg->seq, msg->node_idx, msg->port_idx,
-						(long long) buffer->write_busy + 1);
-					return 0;
-				}
-				if (buffer->count + msg->size > buffer->size) {
-					net_buffer_notify(net, buffer, event, stack);
-					esim_debug("msg action=\"stall\", net=\"%s\", seq=%lld, node=%d, where=link,"
-						" port=%d, why=\"%s full\"\n",
-						net->name, (long long) msg->seq, msg->node_idx, msg->port_idx,
-						buffer->name);
-					return 0;
-				}
-				return lat;
-			}
-			if (how == NET_DO_TRANSFER) {
-				msg->node_idx = node_idx;
-				msg->port_idx = port_idx;
-				msg->where = NET_WHERE_IBUFFER;
-				esim_debug("msg action=\"transfer\", net=\"%s\", seq=%lld, node=%d,"
-					" where=ibuffer, port=%d\n",
-					net->name, (long long) msg->seq, msg->node_idx, msg->port_idx);
-				if (buffer) {
-					msg->dst_buffer = buffer;
-					buffer->write_busy = esim_cycle + lat - 1;
-					return lat;
-				}
-			}
-		}
-
-		/* Message in an ibuffer */
-		else if (where == NET_WHERE_IBUFFER) {
-			
-			/* Go to crossbar of same node */
-			node = &net->nodes[node_idx];
-			port = &node->iports[port_idx];
-			buffer = port->buffer;
-			where = NET_WHERE_XBAR;
-
-			/* Action */
-			if (how == NET_CAN_TRANSFER) {
-				if (buffer && buffer->read_busy >= esim_cycle) {
-					esim_schedule_event(event, stack,
-						buffer->read_busy - esim_cycle + 1);
-					esim_debug("msg action=\"stall\", net=\"%s\", seq=%lld, node=%d,"
-						" where=ibuffer, port=%d, retry=%lld, why=\"read port busy\"\n",
-						net->name, (long long) msg->seq, msg->node_idx, msg->port_idx,
-						(long long) buffer->read_busy + 1);
-					return 0;
-				}
-				if (node->kind == net_node_bus && node->bus_busy >= esim_cycle) {
-					esim_schedule_event(event, stack,
-						node->bus_busy - esim_cycle + 1);
-					esim_debug("msg action=\"stall\", net=\"%s\", seq=%lld, node=%d,"
-						" where=ibuffer, port=%d, retry=%lld, why=\"bus busy\"\n",
-						net->name, (long long) msg->seq, msg->node_idx, msg->port_idx,
-						(long long) node->bus_busy + 1);
-					return 0;
-				}
-				lat = MAX(lat, (msg->size + node->bandwidth - 1) / node->bandwidth);
-			}
-			if (how == NET_DO_TRANSFER) {
-				msg->where = NET_WHERE_XBAR;
-				if (node->kind == net_node_bus)
-					node->bus_busy = esim_cycle + lat - 1;
-				esim_debug("msg action=\"transfer\", net=\"%s\", seq=%lld, node=%d,"
-					" where=xbar, port=%d\n",
-					net->name, (long long) msg->seq, msg->node_idx, msg->port_idx);
-				if (buffer) {
-					msg->src_buffer = buffer;
-					buffer->read_busy = esim_cycle + lat - 1;
-				}
-			}
-		}
-
-		/* Message in a node crossbar */
-		else if (where == NET_WHERE_XBAR) {
-			
-			/* Go to output buffer of same node */
-			node = &net->nodes[node_idx];
-			port_idx = NET_PORT(node_idx, msg->dst_node_idx);
-			if (port_idx < 0)
-				net_error("no route from %d to %d", node_idx, msg->dst_node_idx);
-			port = &node->oports[port_idx];
-			buffer = port->buffer;
-			where = NET_WHERE_OBUFFER;
-
-			/* Action */
-			if (how == NET_CAN_TRANSFER && buffer) {
-				if (buffer->size < msg->size)
-					net_error("msg of size %d cannot enter buffer of size %d in"
-						" node %s, output port %d", msg->size, buffer->size,
-						node->name, port_idx);
-				if (buffer->write_busy >= esim_cycle) {
-					esim_schedule_event(event, stack,
-						buffer->write_busy - esim_cycle + 1);
-					esim_debug("msg action=\"stall\", net=\"%s\", seq=%lld, node=%d, where=xbar,"
-						" port=%d, retry=%lld, why=\"write port busy\"\n",
-						net->name, (long long) msg->seq, msg->node_idx, msg->port_idx,
-						(long long) buffer->write_busy + 1);
-					return 0;
-				}
-				if (buffer->count + msg->size > buffer->size) {
-					net_buffer_notify(net, buffer, event, stack);
-					esim_debug("msg action=\"stall\", net=\"%s\", seq=%lld, node=%d, where=xbar,"
-						" port=%d, why=\"%s full\"\n",
-						net->name, (long long) msg->seq, msg->node_idx, msg->port_idx,
-						buffer->name);
-					return 0;
-				}
-				return lat;
-			}
-			if (how == NET_DO_TRANSFER) {
-				msg->where = NET_WHERE_OBUFFER;
-				msg->port_idx = port_idx;
-				esim_debug("msg action=\"transfer\", net=\"%s\", seq=%lld, node=%d,"
-					" where=obuffer, port=%d\n",
-					net->name, (long long) msg->seq, msg->node_idx, msg->port_idx);
-				if (buffer) {
-					msg->dst_buffer = buffer;
-					buffer->write_busy = esim_cycle + lat - 1;
-					return lat;
-				}
-			}
-		}
-	}
-
-	/* Destination reached */
-	return lat;
-}
-
-
-static void net_handler(int event, void *data)
-{
-	struct net_stack_t *stack = data;
-	struct net_t *net = stack->net;
-	struct net_msg_t *msg = stack->msg;
-
-	if (event == EV_NET_SEND)
-	{
-		int lat;
-
-		lat = net_transfer(net, msg, NET_CAN_TRANSFER, 0,
-			EV_NET_SEND, stack);
-		if (!lat)
-			return;
-
-		/* Do the transfer */
-		esim_debug("msg action=\"send\", net=\"%s\", seq=%lld, node=%d, dst=%d\n",
-			net->name, (long long) msg->seq, msg->node_idx, msg->dst_node_idx);
-		net_transfer(net, msg, NET_DO_TRANSFER, lat, 0, NULL);
-		esim_schedule_event(EV_NET_RECEIVE, stack, lat);
-
-		/* Reserve space in dest buffer */
-		if (msg->dst_buffer)
-			net_buffer_insert(net, msg->dst_buffer, msg);
-	}
-
-	else if (event == EV_NET_RECEIVE)
-	{
-		int lat;
-
-		esim_debug("msg action=\"receive\", net=\"%s\", seq=%lld, node=%d\n",
-			net->name, (long long) msg->seq, msg->node_idx);
-
-		/* Remove msg from source buffer */
-		if (msg->src_buffer)
-			net_buffer_extract(net, msg->src_buffer, msg);
-
-		/* Next hop */
-		if (msg->node_idx == msg->dst_node_idx) {
-			lat = esim_cycle - msg->send_cycle;
-			esim_debug("msg action=\"deliver\", net=\"%s\", seq=%lld, node=%d, lat=%d\n",
-				net->name, (long long) msg->seq, msg->dst_node_idx, lat);
-
-			/* Stats */
-			net->transfers++;
-			net->lat_acc += lat;
-
-			/* Free message and stack */
-			net_msg_table_extract(net, msg->seq);
-			repos_free_object(net_msg_repos, msg);
-			net_stack_return(stack);
-		} else
-			esim_schedule_event(EV_NET_SEND, stack, 0);
-	}
-}
-
-
-
-
-
 /*
  * Public Functions
  */
 
+
+int EV_NET_SEND;
+int EV_NET_OUTPUT_BUFFER;
+int EV_NET_INPUT_BUFFER;
+int EV_NET_RECEIVE;
+
 void net_init(void)
 {
-	net_stack_repos = repos_create(sizeof(struct net_stack_t), "net_stack");
-	net_msg_repos = repos_create(sizeof(struct net_msg_t), "net_msg");
-	EV_NET_SEND = esim_register_event(net_handler);
-	EV_NET_RECEIVE = esim_register_event(net_handler);
+	EV_NET_SEND = esim_register_event(net_event_handler);
+	EV_NET_OUTPUT_BUFFER = esim_register_event(net_event_handler);
+	EV_NET_INPUT_BUFFER = esim_register_event(net_event_handler);
+	EV_NET_RECEIVE = esim_register_event(net_event_handler);
 }
 
 
 void net_done(void)
 {
-	repos_free(net_stack_repos);
-	repos_free(net_msg_repos);
 }
 
 
 struct net_t *net_create(char *name)
 {
 	struct net_t *net;
+
+	/* Create */
 	net = calloc(1, sizeof(struct net_t));
-	strncpy(net->name, name, sizeof(net->name));
-	net->node_array_size = 1;
-	net->nodes = calloc(net->node_array_size, sizeof(struct net_node_t));
+	if (!net)
+		fatal("%s: out of memory", __FUNCTION__);
+	
+	/* Initialize */
+	net->name = strdup(name);
+	net->node_list = list_create();
+	net->link_list = list_create();
+	net->routing_table = net_routing_table_create(net);
+
+	/* Return */
+	return net;
+}
+
+
+struct net_t *net_create_from_config(struct config_t *config, char *name)
+{
+	struct net_t *net;
+	char *section;
+	char section_str[MAX_STRING_SIZE];
+
+	int def_input_buffer_size;
+	int def_output_buffer_size;
+	int def_bandwidth;
+
+	/* Create network */
+	net = net_create(name);
+
+	/* Main section */
+	snprintf(section_str, sizeof section_str, "Network.%s", name);
+	for (section = config_section_first(config); section; section = config_section_next(config))
+	{
+		if (strcasecmp(section, section_str))
+			continue;
+
+		def_input_buffer_size = config_read_int(config, section, "DefaultInputBufferSize", 0);
+		def_output_buffer_size = config_read_int(config, section, "DefaultOutputBufferSize", 0);
+		def_bandwidth = config_read_int(config, section, "DefaultBandwidth", 0);
+		if (!def_input_buffer_size)
+			fatal("%s:%s: DefaultInputBufferSize: invalid/missing value.\n%s",
+				net->name, section, err_net_config);
+		if (!def_output_buffer_size)
+			fatal("%s:%s: DefaultOutputBufferSize: invalid/missing value.\n%s",
+				net->name, section, err_net_config);
+		if (!def_bandwidth)
+			fatal("%s:%s: DefaultBandwidth: invalid/missing value.\n%s",
+				net->name, section, err_net_config);
+	}
+
+	/* Nodes */
+	for (section = config_section_first(config); section; section = config_section_next(config))
+	{
+		char *delim = ".";
+		char *token;
+
+		char *node_name;
+		char *node_type;
+		int input_buffer_size;
+		int output_buffer_size;
+		int bandwidth;
+
+		/* First token must be 'Network' */
+		snprintf(section_str, sizeof section_str, "%s", section);
+		token = strtok(section_str, delim);
+		if (!token || strcasecmp(token, "Network"))
+			continue;
+
+		/* Second token must be the name of the network */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, name))
+			continue;
+
+		/* Third token must be 'Node' */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, "Node"))
+			continue;
+
+		/* Get name */
+		node_name = strtok(NULL, delim);
+		token = strtok(NULL, delim);
+		if (!node_name || token)
+			fatal("%s:%s: wrong format for node.\n%s",
+				net->name, section, err_net_config);
+
+		/* Get properties */
+		node_type = config_read_string(config, section, "Type", "");
+		input_buffer_size = config_read_int(config, section,
+			"InputBufferSize", def_input_buffer_size);
+		output_buffer_size = config_read_int(config, section,
+			"OutputBufferSize", def_output_buffer_size);
+		bandwidth = config_read_int(config, section,
+			"BandWidth", def_bandwidth);
+
+		/* Create node */
+		if (!strcasecmp(node_type, "EndNode"))
+			net_add_end_node(net, input_buffer_size, output_buffer_size,
+				node_name, NULL);
+		else if (!strcasecmp(node_type, "Switch"))
+			net_add_switch(net, input_buffer_size, output_buffer_size,
+				bandwidth, node_name);
+		else
+			fatal("%s:%s: Type: invalid/missing value.\n%s",
+				net->name, section, err_net_config);
+	}
+
+	/* Links */
+	for (section = config_section_first(config); section; section = config_section_next(config))
+	{
+		char *delim = ".";
+		char *token;
+
+		char *link_name;
+		char *link_type;
+		int bandwidth;
+
+		char *src_node_name;
+		char *dst_node_name;
+		struct net_node_t *src_node;
+		struct net_node_t *dst_node;
+
+		/* First token must be 'Network' */
+		snprintf(section_str, sizeof section_str, "%s", section);
+		token = strtok(section_str, delim);
+		if (!token || strcasecmp(token, "Network"))
+			continue;
+
+		/* Second token must be the name of the network */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, name))
+			continue;
+
+		/* Third token must be 'Link' */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, "Link"))
+			continue;
+
+		/* Fourth token must name of the link */
+		link_name = strtok(NULL, delim);
+		token = strtok(NULL, delim);
+		if (!link_name || token)
+			fatal("%s: %s: bad format for link.\n%s",
+				name, section, err_net_config);
+
+		/* Fields */
+		link_type = config_read_string(config, section, "Type", "Unidirectional");
+		bandwidth = config_read_int(config, section, "Bandwidth", def_bandwidth);
+		src_node_name = config_read_string(config, section, "Source", "");
+		dst_node_name = config_read_string(config, section, "Dest", "");
+
+		/* Nodes */
+		src_node = net_get_node_by_name(net, src_node_name);
+		dst_node = net_get_node_by_name(net, dst_node_name);
+		if (!src_node)
+			fatal("%s: %s: %s: source node does not exist.\n%s",
+				name, section, src_node_name, err_net_config);
+		if (!dst_node)
+			fatal("%s: %s: %s: destination node does not exist.\n%s",
+				name, section, dst_node_name, err_net_config);
+		if (!strcasecmp(link_type, "Unidirectional"))
+			net_add_link(net, src_node, dst_node, bandwidth);
+		else if (!strcasecmp(link_type, "Bidirectional"))
+			net_add_bidirectional_link(net, src_node, dst_node, bandwidth);
+	}
+
+
+	/* Return */
 	return net;
 }
 
 
 void net_free(struct net_t *net)
 {
-	int i, j;
-	struct net_node_t *node;
-	struct net_port_t *port;
+	int i;
 
-	if (net->routing_table)
-		free(net->routing_table);
-	for (i = 0; i < net->node_count; i++) {
-		node = &net->nodes[i];
+	/* Free nodes */
+	for (i = 0; i < list_count(net->node_list); i++)
+		net_node_free(list_get(net->node_list, i));
+	list_free(net->node_list);
 
-		/* Input ports */
-		for (j = 0; j < node->iport_count; j++) {
-			port = &node->iports[j];
-			if (port->buffer)
-				free(port->buffer);
+	/* Free links */
+	for (i = 0; i < list_count(net->link_list); i++)
+		net_link_free(list_get(net->link_list, i));
+	list_free(net->link_list);
+
+	/* Routing table */
+	net_routing_table_free(net->routing_table);
+
+	/* Free messages in flight */
+	for (i = 0; i < NET_MSG_TABLE_SIZE; i++)
+	{
+		while (net->msg_table[i])
+		{
+			struct net_msg_t *next;
+			next = net->msg_table[i]->bucket_next;
+			net_msg_free(net->msg_table[i]);
+			net->msg_table[i] = next;
 		}
-		free(node->iports);
-
-		/* Output ports */
-		for (j = 0; j < node->oport_count; j++) {
-			port = &node->oports[j];
-			if (port->buffer)
-				free(port->buffer);
-			if (port->link)
-				free(port->link);
-		}
-		free(node->oports);
 	}
-	free(net->nodes);
+
+	/* Network */
+	free(net->name);
 	free(net);
 }
 
 
-int net_new_node(struct net_t *net, char *name, void *data)
+void net_dump_report(struct net_t *net, FILE *f)
 {
+	int i;
+
+	/* General stats */
+	fprintf(f, "[ Network.%s.General ]\n", net->name);
+	fprintf(f, "Transfers = %lld\n", net->transfers);
+	fprintf(f, "AverageMessageSize = %.2f\n", net->transfers ?
+		(double) net->msg_size_acc / net->transfers : 0.0);
+	fprintf(f, "AverageLatency = %.4f\n", esim_cycle ?
+		(double) net->lat_acc / esim_cycle : 0.0);
+	fprintf(f, "\n");
+
+	/* Links */
+	for (i = 0; i < list_count(net->link_list); i++)
+	{
+		struct net_link_t *link;
+
+		link = list_get(net->link_list, i);
+		net_link_dump_report(link, f);
+	}
+
+	/* Nodes */
+	for (i = 0; i < list_count(net->node_list); i++)
+	{
+		struct net_node_t *node;
+
+		node = list_get(net->node_list, i);
+		net_node_dump_report(node, f);
+	}
+}
+
+
+struct net_node_t *net_add_end_node(struct net_t *net,
+	int input_buffer_size, int output_buffer_size,
+	char *name, void *user_data)
+{
+	struct net_node_t *node;
+
+	/* Create node */
+	node = net_node_create(net,
+		net_node_end,  /* kind */
+		net->node_count,  /* index */
+		input_buffer_size,
+		output_buffer_size,
+		0,  /* bandwidth */
+		name,
+		user_data);
+
+	/* Add to list */
+	net->node_count++;
 	net->end_node_count++;
-	return net_allocate_node(net, net_node_end,
-		1, 0,  /* 1 input port with no buffer */
-		1, 0,  /* 1 output port with no buffer */
-		1,  /* ignored xbar bandwidth */
-		name, data);
+	list_add(net->node_list, node);
+
+	/* Return */
+	return node;
 }
 
 
-int net_new_bus(struct net_t *net,
-	int iport_count, int oport_count,
-	int bandwidth, char *name, void *data)
-{
-	return net_allocate_node(net, net_node_bus,
-		iport_count, 0,  /* No input buffers in bus */
-		oport_count, 0,  /* No output buffers */
-		bandwidth, name, data);
-}
-
-
-int net_new_switch(struct net_t *net,
-	int iport_count, int ibuffer_size, int oport_count, int obuffer_size,
-	int bandwidth, char *name, void *data)
-{
-	return net_allocate_node(net, net_node_switch,
-		iport_count, ibuffer_size, oport_count, obuffer_size,
-		bandwidth, name, data);
-}
-
-
-struct net_node_t *net_get_node(struct net_t *net, int node_idx)
-{
-	if (node_idx < 0 || node_idx >= net->node_count)
-		net_error("network %s: node %d out of range",
-			net->name, node_idx);
-	return &net->nodes[node_idx];
-}
-
-
-void *net_get_node_data(struct net_t *net, int node_idx)
+struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name)
 {
 	struct net_node_t *node;
-	node = net_get_node(net, node_idx);
-	return node->data;
+
+	/* Not supported */
+	panic("%s: buses not supported", __FUNCTION__);
+
+	/* Create node */
+	node = net_node_create(net,
+		net_node_bus,  /* kind */
+		net->node_count,  /* index */
+		0,  /* input_buffer_size */
+		0,  /* output_buffer_size */
+		bandwidth,
+		name,
+		NULL);  /* user_data */
+
+	/* Add to list */
+	net->node_count++;
+	list_add(net->node_list, node);
+
+	/* Return */
+	return node;
 }
 
 
-/* Return the next free input port. */
-int net_get_iport_idx(struct net_t *net, int node_idx)
+struct net_node_t *net_add_switch(struct net_t *net,
+	int input_buffer_size, int output_buffer_size,
+	int bandwidth, char *name)
 {
+	struct net_node_t *node;
+
+	/* Create node */
+	node = net_node_create(net,
+		net_node_switch,  /* kind */
+		net->node_count,  /* index */
+		input_buffer_size,
+		output_buffer_size,
+		bandwidth,
+		name,
+		NULL);  /* user_data */
+
+	/* Add to list */
+	net->node_count++;
+	list_add(net->node_list, node);
+
+	/* Return */
+	return node;
+}
+
+
+/* Get a node by its name. If none found, return NULL.
+ * Search is case-insensitive. */
+struct net_node_t *net_get_node_by_name(struct net_t *net, char *name)
+{
+	struct net_node_t *node;
 	int i;
-	struct net_node_t *node;
-	
-	node = net_get_node(net, node_idx);
-	for (i = 0; i < node->iport_count; i++)
-		if (!node->iports[i].link)
-			return i;
-	return -1;
-}
 
-
-/* Return the next free input port. */
-int net_get_oport_idx(struct net_t *net, int node_idx)
-{
-	int i;
-	struct net_node_t *node;
-	
-	node = net_get_node(net, node_idx);
-	for (i = 0; i < node->oport_count; i++)
-		if (!node->oports[i].link)
-			return i;
-	return -1;
+	for (i = 0; i < list_count(net->node_list); i++)
+	{
+		node = list_get(net->node_list, i);
+		if (!strcasecmp(node->name, name))
+			return node;
+	}
+	return NULL;
 }
 
 
 /* Create a new unidirectional link */
-void net_new_link(struct net_t *net, int src_node_idx, int dst_node_idx, int bandwidth)
+struct net_link_t *net_add_link(struct net_t *net,
+	struct net_node_t *src_node, struct net_node_t *dst_node,
+	int bandwidth)
 {
-	int iport_idx, oport_idx;
 	struct net_link_t *link;
-	struct net_node_t *src_node, *dst_node;
+	struct net_buffer_t *src_buffer;
+	struct net_buffer_t *dst_buffer;
 
-	src_node = &net->nodes[src_node_idx];
-	dst_node = &net->nodes[dst_node_idx];
-	oport_idx = net_get_oport_idx(net, src_node_idx);
-	iport_idx = net_get_iport_idx(net, dst_node_idx);
-	if (oport_idx < 0)
-		net_error("node %s.%s: no oport free",
-			net->name, src_node->name);
-	if (iport_idx < 0)
-		net_error("node %s.%s: no iport free",
-			net->name, dst_node->name);
-	assert(oport_idx >= 0 && oport_idx < src_node->oport_count);
-	assert(iport_idx >= 0 && iport_idx < dst_node->iport_count);
+	/* Checks */
+	assert(src_node->net == net);
+	assert(dst_node->net == net);
+	if (src_node->kind == net_node_end && dst_node->kind == net_node_end)
+		fatal("network \"%s\": link cannot connect two end nodes\n", net->name);
 
-	/* Create link */
-	link = calloc(1, sizeof(struct net_link_t));
-	if (!link)
-		net_error("net %s: out of memory");
-	link->bandwidth = bandwidth;
-	link->src_node_idx = src_node_idx;
-	link->src_port_idx = oport_idx;
-	link->dst_node_idx = dst_node_idx;
-	link->dst_port_idx = iport_idx;
+	/* Create output buffer in source node and input buffer in destination node */
+	src_buffer = net_node_add_output_buffer(src_node);
+	dst_buffer = net_node_add_input_buffer(dst_node);
 
-	/* Update ports */
-	src_node->oports[oport_idx].link = link;
-	dst_node->iports[iport_idx].link = link;
+	/* Create link connecting buffers */
+	link = net_link_create(net, src_node, src_buffer,
+		dst_node, dst_buffer, bandwidth);
+
+	/* Add to link list */
+	list_add(net->link_list, link);
+
+	/* Return */
+	return link;
 }
 
 
 /* Create bidirectional link */
-void net_new_bidirectional_link(struct net_t *net, int node1_idx, int node2_idx, int bandwidth)
+void net_add_bidirectional_link(struct net_t *net,
+	struct net_node_t *src_node, struct net_node_t *dst_node,
+	int bandwidth)
 {
-	net_new_link(net, node1_idx, node2_idx, bandwidth);
-	net_new_link(net, node2_idx, node1_idx, bandwidth);
+	net_add_link(net, src_node, dst_node, bandwidth);
+	net_add_link(net, dst_node, src_node, bandwidth);
 }
 
 
-void net_calculate_routes(struct net_t *net)
+int net_can_send(struct net_t *net, struct net_node_t *src_node,
+	struct net_node_t *dst_node, int size)
 {
-	int i, j, k;
-	int next, port;
-	struct net_link_t *link;
+	struct net_routing_table_t *routing_table = net->routing_table;
+	struct net_routing_table_entry_t *entry;
+	struct net_buffer_t *output_buffer;
 
-	/* Allocate routing table */
-	if (net->routing_table)
-		net_error("network %s: routing table already exists", net->name);
-	net->routing_table = calloc(net->node_count * net->node_count, sizeof(struct routing_entry_t));
-	if (!net->routing_table)
-		net_error("network %s: out of memory allocating routing table", net->name);
+	/* Get output buffer */
+	entry = net_routing_table_lookup(routing_table, src_node, dst_node);
+	output_buffer = entry->output_buffer;
 
-	/* Initialize table with infinite costs */
-	for (i = 0; i < net->node_count; i++) {
-		for (j = 0; j < net->node_count; j++) {
-			NET_COST(i, j) = i == j ? 0 : net->node_count;  /* infinite or 0 */
-			NET_ROUTE(i, j) = -1;  /* no route */
+	/* No route to destination */
+	if (!output_buffer)
+		return 0;
+	
+	/* Output buffer is busy */
+	if (output_buffer->write_busy >= esim_cycle)
+		return 0;
+	
+	/* Message does not fit in output buffer */
+	if (output_buffer->count + size > output_buffer->size)
+		return 0;
 
-		}
-	}
-
-	/* Set 1-jump connections */
-	for (i = 0; i < net->node_count; i++) {
-		for (j = 0; j < net->nodes[i].oport_count; j++) {
-			link = net->nodes[i].oports[j].link;
-			if (link) {
-				NET_COST(i, link->dst_node_idx) = 1;
-				NET_ROUTE(i, link->dst_node_idx) = link->dst_node_idx;
-			}
-		}
-	}
-
-	/* Calculate shortest paths Floyd-Warshall algorithm. The NET_ROUTE values do
-	 * not necessarily point to the immediate next hop after this. */
-	for (k = 0; k < net->node_count; k++) {
-		for (i = 0; i < net->node_count; i++) {
-			for (j = 0; j < net->node_count; j++) {
-				if (NET_COST(i, k) + NET_COST(k, j) < NET_COST(i, j)) {
-					NET_COST(i, j) = NET_COST(i, k) + NET_COST(k, j);
-					NET_ROUTE(i, j) = k;
-				}
-			}
-		}
-	}
-
-	/* Calculate NET_PORT values */
-	for (i = 0; i < net->node_count; i++) {
-		for (j = 0; j < net->node_count; j++) {
-			next = NET_ROUTE(i, j);
-			if (next < 0) {
-				NET_PORT(i, j) = -1;
-				continue;
-			}
-			while (NET_COST(i, next) > 1)
-				next = NET_ROUTE(i, next);
-			for (port = 0; port < net->nodes[i].oport_count; port++) {
-				link = net->nodes[i].oports[port].link;
-				if (link && link->dst_node_idx == next)
-					break;
-			}
-			assert(port < net->nodes[i].oport_count);
-			NET_PORT(i, j) = port;
-		}
-	}
-
-	/* Update NET_ROUTES to point to the next hop */
-	for (i = 0; i < net->node_count; i++) {
-		for (j = 0; j < net->node_count; j++) {
-			port = NET_PORT(i, j);
-			if (port >= 0) {
-				link = net->nodes[i].oports[port].link;
-				assert(link);
-				NET_ROUTE(i, j) = link->dst_node_idx;
-			}
-		}
-	}
+	/* All conditions satisfied, can send */
+	return 1;
 }
 
 
-void net_dump_routes(struct net_t *net, FILE *f)
+/* Return TRUE if a message can be sent to the network. If it cannot be
+ * sent, return FALSE, and schedule 'event' for the cycle when the check
+ * should be performed again. This function should not be called if
+ * the reason why a message cannot be sent is permanent (e.g., no route
+ * to destination). */
+int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
+	struct net_node_t *dst_node, int size, int event, void *stack)
 {
-	int i, j, k;
+	struct net_routing_table_t *routing_table = net->routing_table;
+	struct net_routing_table_entry_t *entry;
+	struct net_buffer_t *output_buffer;
 
-	/* Routing table */
-	fprintf(f, "         ");
-	for (i = 0; i < net->node_count; i++)
-		fprintf(f, "%2d ", i);
-	fprintf(f, "\n");
-	for (i = 0; i < net->node_count; i++) {
-		fprintf(f, "node %2d: ", i);
-		for (j = 0; j < net->node_count; j++) {
-			if (NET_ROUTE(i, j) >= 0)
-				fprintf(f, "%2d ", NET_ROUTE(i, j));
-			else
-				fprintf(f, "-- ");
-		}
-		fprintf(f, "\n");
+	/* Get output buffer */
+	entry = net_routing_table_lookup(routing_table, src_node, dst_node);
+	output_buffer = entry->output_buffer;
+
+	/* No route to destination */
+	if (!output_buffer)
+		fatal("%s: no route to destination.\n%s", net->name, err_net_no_route);
+	
+	/* Message is too long */
+	if (size > output_buffer->size)
+		fatal("%s: message too long.\n%s", net->name, err_net_large_message);
+	
+	/* Output buffer is busy */
+	if (output_buffer->write_busy >= esim_cycle)
+	{
+		esim_schedule_event(event, stack, output_buffer->write_busy - esim_cycle + 1);
+		return 0;
 	}
-	fprintf(f, "\n");
-
-	/* Node combinations */
-	for (i = 0; i < net->node_count; i++) {
-		for (j = 0; j < net->node_count; j++) {
-			fprintf(f, "from %2d to %2d: ", i, j);
-			k = i;
-			while (k != j) {
-				if (NET_ROUTE(k, j) < 0) {
-					fprintf(f, "x ");
-					break;
-				}
-				fprintf(f, "%2d ", NET_ROUTE(k, j));
-				k = NET_ROUTE(k, j);
-			}
-			fprintf(f, "\n");
-		}
-		fprintf(f, "\n");
+	
+	/* Message does not fit in output buffer */
+	if (output_buffer->count + size > output_buffer->size)
+	{
+		net_buffer_wait(output_buffer, event, stack);
+		return 0;
 	}
+
+	/* All conditions satisfied, can send */
+	return 1;
 }
 
 
-int net_valid_route(struct net_t *net, int src_node_idx, int dst_node_idx)
+struct net_msg_t *net_send(struct net_t *net, struct net_node_t *src_node,
+	struct net_node_t *dst_node, int size)
 {
-	net_get_node(net, src_node_idx);
-	net_get_node(net, dst_node_idx);
-	return NET_ROUTE(src_node_idx, dst_node_idx) != -1;
-}
-
-
-int net_can_send(struct net_t *net, int src_node_idx, int dst_node_idx)
-{
-	struct net_msg_t *msg;
-	struct net_node_t *src_node, *dst_node;
-	int result;
-
-	/* Get nodes */
-	src_node = net_get_node(net, src_node_idx);
-	dst_node = net_get_node(net, dst_node_idx);
-	if (src_node->kind != net_node_end || dst_node->kind != net_node_end)
-		net_error("net_can_send: extreme nodes must be end nodes");
-
-	/* Create message */
-	msg = repos_create_object(net_msg_repos);
-	msg->src_node_idx = src_node_idx;
-	msg->dst_node_idx = dst_node_idx;
-	msg->src_node = src_node;
-	msg->dst_node = dst_node;
-	msg->size = 1;
-
-	/* Initial msg position */
-	msg->node_idx = src_node_idx;
-	msg->where = NET_WHERE_OBUFFER;
-	msg->port_idx = 0;
-	assert(!net->nodes[msg->node_idx].oports[msg->port_idx].buffer);
-
-	/* Try to send */
-	result = net_transfer(net, msg, NET_CAN_TRANSFER, 0, ESIM_EV_NONE, NULL);
-
-	/* Free msg and return result */
-	repos_free_object(net_msg_repos, msg);
-	return result;
-}
-
-
-uint64_t net_send(struct net_t *net, int src_node_idx, int dst_node_idx, int size)
-{
-	return net_send_ev(net, src_node_idx, dst_node_idx, size,
+	return net_send_ev(net, src_node, dst_node, size,
 		ESIM_EV_NONE, NULL);
 }
 
 
-uint64_t net_send_ev(struct net_t *net, int src_node_idx, int dst_node_idx, int size,
-	int retevent, void *retstack)
+struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node, struct net_node_t *dst_node,
+	int size, int retevent, void *retstack)
 {
 	struct net_stack_t *stack;
 	struct net_msg_t *msg;
-	struct net_node_t *src_node, *dst_node;
 
 	/* Check nodes */
-	src_node = net_get_node(net, src_node_idx);
-	dst_node = net_get_node(net, dst_node_idx);
 	if (src_node->kind != net_node_end || dst_node->kind != net_node_end)
-		net_error("net_send_ev: extreme nodes must be end nodes");
+		fatal("%s: not end nodes.\n%s", __FUNCTION__, err_net_end_nodes);
 
 	/* Create message */
-	msg = repos_create_object(net_msg_repos);
-	msg->src_node_idx = src_node_idx;
-	msg->dst_node_idx = dst_node_idx;
-	msg->src_node = src_node;
-	msg->dst_node = dst_node;
-	msg->size = size;
-	msg->seq = ++net->msg_seq;
-	msg->send_cycle = esim_cycle;
+	msg = net_msg_create(net, src_node, dst_node, size);
 
 	/* Insert message into hash table of in-flight messages */
 	net_msg_table_insert(net, msg);
 
-	/* Initial message position */
-	msg->node_idx = src_node_idx;
-	msg->where = NET_WHERE_OBUFFER;
-	msg->port_idx = 0;
-	assert(!net->nodes[msg->node_idx].oports[msg->port_idx].buffer);
-
-	/* Call event */
+	/* Start event-driven simulation */
 	stack = net_stack_create(net, ESIM_EV_NONE, NULL);
 	stack->msg = msg;
 	stack->retevent = retevent;
 	stack->retstack = retstack;
 	esim_execute_event(EV_NET_SEND, stack);
-	return msg->seq;
+
+	/* Return created message */
+	return msg;
 }
 
 
-int net_in_transit(struct net_t *net, uint64_t seq)
+/* Absorb a message at the head of the input buffer of an end node */
+void net_receive(struct net_t *net, struct net_node_t *node, struct net_msg_t *msg)
 {
-	return net_msg_table_get(net, seq) != NULL;
-}
+	struct net_buffer_t *buffer;
 
+	/* Checks */
+	assert(node->net == net);
+	assert(msg->net == net);
+	if (msg->node != node)
+		panic("%s: message not at end node", __FUNCTION__);
 
-
-
-/*
- * Debug
- */
-
-FILE *net_debug_file;
-
-int net_debug_init(char *filename)
-{
-	net_debug_file = strcmp(filename, "stdout") ?
-		(strcmp(filename, "stderr") ?
-		fopen(filename, "wt") : stderr) : stdout;
-	return net_debug_file != NULL;
-}
-
-void net_debug_done()
-{
-	if (net_debug_file)
-		fclose(net_debug_file);
-}
-
-void net_debug(char *fmt, ...)
-{
-	va_list va;
-
-	if (!net_debug_file)
-		return;
-	va_start(va, fmt);
-	vfprintf(net_debug_file, fmt, va);
+	/* Get buffer */
+	buffer = msg->buffer;
+	assert(buffer->node == node);
+	if (!list_count(buffer->msg_list))
+		panic("%s: empty buffer", __FUNCTION__);
+	if (list_get(buffer->msg_list, 0) != msg)
+		panic("%s: message not at input buffer head", __FUNCTION__);
+	
+	/* Extract and free message */
+	net_buffer_extract(buffer, msg);
+	net_msg_table_extract(net, msg->id);
+	net_msg_free(msg);
 }
 

@@ -21,6 +21,7 @@
 #define ESIM_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 /* Variable to indicate esim cycle */
 extern uint64_t esim_cycle;

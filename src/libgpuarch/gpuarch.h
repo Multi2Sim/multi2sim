@@ -419,8 +419,8 @@ struct gpu_cache_t
 	/* Interconnects and IDs */
 	struct net_t *net_hi;
 	struct net_t *net_lo;
-	int id_hi;
-	int id_lo;
+	struct net_node_t *net_node_hi;
+	struct net_node_t *net_node_lo;
 
 	/* Stats */
 	uint64_t reads;
@@ -463,8 +463,10 @@ extern int EV_GPU_CACHE_READ_UNLOCK;
 extern int EV_GPU_CACHE_READ_FINISH;
 
 extern int EV_GPU_CACHE_WRITE;
+extern int EV_GPU_CACHE_WRITE_REQUEST_SEND;
 extern int EV_GPU_CACHE_WRITE_REQUEST_RECEIVE;
 extern int EV_GPU_CACHE_WRITE_REQUEST_REPLY;
+extern int EV_GPU_CACHE_WRITE_REQUEST_REPLY_RECEIVE;
 extern int EV_GPU_CACHE_WRITE_UNLOCK;
 extern int EV_GPU_CACHE_WRITE_FINISH;
 
@@ -487,6 +489,9 @@ struct gpu_cache_stack_t
 	int write_port_index;
 	int pending;
 	int hit;
+
+	/* Message sent through interconnect */
+	struct net_msg_t *msg;
 
 	/* Linked list for waiting events */
 	int waiting_list_event;  /* Event to schedule when stack is woken up */
