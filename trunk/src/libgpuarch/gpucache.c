@@ -209,8 +209,19 @@ void gpu_cache_config_read(void)
 	int curr;
 	int i, j;
 
-	int sets, assoc, block_size, latency;
-	int bank_count, read_port_count, write_port_count;
+	int sets;
+	int assoc;
+	int block_size;
+	int latency;
+
+	int bank_count;
+	int read_port_count;
+	int write_port_count;
+
+	int net_msg_size;
+	int net_buffer_size;
+	int net_link_width;
+
 	char *policy_str;
 	enum cache_policy_t policy;
 
@@ -229,7 +240,8 @@ void gpu_cache_config_read(void)
 		fatal("%s: cannot load GPU cache configuration file", gpu_cache_config_file_name);
 	
 	/* Create array of caches and networks */
-	for (section = config_section_first(config); section; section = config_section_next(config)) {
+	for (section = config_section_first(config); section; section = config_section_next(config))
+	{
 		if (!strncasecmp(section, "Cache ", 6) || !strcasecmp(section, "GlobalMemory"))
 			gpu->gpu_cache_count++;
 		else if (!strncasecmp(section, "Net ", 4))
@@ -475,7 +487,8 @@ void gpu_cache_config_read(void)
 	gpu_cache_debug("\n");
 
 	/* Check that all compute units have an entry to the global memory hierarchy */
-	FOREACH_COMPUTE_UNIT(compute_unit_id) {
+	FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
 		compute_unit = gpu->compute_units[compute_unit_id];
 		if (!compute_unit->data_cache)
 			fatal("%s: GPU cache configuration file does not specify a valid entry point\n"
@@ -484,9 +497,16 @@ void gpu_cache_config_read(void)
 				gpu_cache_config_file_name, compute_unit_id, err_note);
 	}
 
+	/* Calculate default buffer sizes and link widths, based on the
+	 * maximum size of a messages (block_size + 8). */
+	net_msg_size = gpu->global_memory->block_size + 8;
+	net_link_width = net_msg_size;  /* One message transferred in one cycle */
+	net_buffer_size = net_msg_size * 2;  /* Two messages in a buffer */
+
 	/* Add lower cache to networks. */
 	gpu_cache_debug("adding lower cache to networks:");
-	for (curr = 0; curr < gpu->gpu_cache_count; curr++) {
+	for (curr = 0; curr < gpu->gpu_cache_count; curr++)
+	{
 		gpu_cache = gpu->gpu_caches[curr];
 		net = gpu_cache->net_hi;
 		if (!net)
@@ -494,7 +514,10 @@ void gpu_cache_config_read(void)
 		if (net->node_count)
 			fatal("%s: network '%s': only one lower node allowed.\n%s",
 				gpu_cache_config_file_name, net->name, err_note);
-		net_new_node(net, gpu_cache->name, gpu_cache);
+
+		/* Buffers with capacity for 2 packages */
+		gpu_cache->net_node_hi = net_add_end_node(net, net_buffer_size, net_buffer_size,
+			gpu_cache->name, gpu_cache);
 		gpu_cache_debug(" '%s'.node[0]='%s'", net->name, gpu_cache->name);
 	}
 	gpu_cache_debug("\n");
@@ -513,25 +536,38 @@ void gpu_cache_config_read(void)
 	gpu_cache_debug("adding upper caches to networks:");
 	for (curr = 0; curr < gpu->gpu_cache_count; curr++)
 	{
+		struct net_node_t *lower_node;
+
+		/* Get cache and lower network */
 		gpu_cache = gpu->gpu_caches[curr];
 		net = gpu_cache->net_lo;
 		if (!net)
 			continue;
-		gpu_cache->id_lo = net_new_node(net, gpu_cache->name, gpu_cache);
-		gpu_cache->gpu_cache_next = net_get_node_data(net, 0);
-		gpu_cache_debug(" '%s'.node[%d]='%s'", net->name, gpu_cache->id_lo, gpu_cache->name);
+
+		/* Create node in lower network */
+		gpu_cache->net_node_lo = net_add_end_node(net, net_buffer_size, net_buffer_size,
+			gpu_cache->name, gpu_cache);
+
+		/* Get lower-level cache */
+		lower_node = list_get(net->node_list, 0);
+		gpu_cache->gpu_cache_next = lower_node->user_data;
+		gpu_cache_debug(" '%s'.node[%d]='%s'", net->name,
+			lower_node->index, gpu_cache->name);
 	}
 	gpu_cache_debug("\n");
 
 	/* Check that block sizes are equal or larger while we descend through the
 	 * memory hierarchy. */
-	for (curr = 0; curr < gpu->gpu_cache_count; curr++) {
+	for (curr = 0; curr < gpu->gpu_cache_count; curr++)
+	{
 		block_size = 0;
-		for (gpu_cache = gpu->gpu_caches[curr]; gpu_cache; gpu_cache = gpu_cache->gpu_cache_next) {
+		for (gpu_cache = gpu->gpu_caches[curr]; gpu_cache; gpu_cache = gpu_cache->gpu_cache_next)
+		{
 			if (gpu_cache->block_size < block_size)
 				fatal("%s: cache '%s': non-growing block size.\n"
-					"\tA cache has been found in the GPU memory hierarchy with a block size larger\n"
-					"\tthan some of its lower-level caches, which is not allowed.\n%s",
+					"\tA cache has been found in the GPU memory hierarchy\n"
+					"\twith a block size larger than some of its lower-level\n"
+					"\tcaches, which is not allowed.\n%s",
 					gpu_cache_config_file_name, gpu_cache->name, err_note);
 			block_size = gpu_cache->block_size;
 		}
@@ -542,13 +578,15 @@ void gpu_cache_config_read(void)
 	gpu_cache_debug("creating network switches and links:");
 	for (i = 0; i < gpu->network_count; i++)
 	{
-		int max_msg_size;
-		int switch_id;
 		int upper_link_width;
 		int lower_link_width;
 		int inner_link_width;
 		int input_buffer_size;
 		int output_buffer_size;
+
+		struct net_node_t *lower_node;
+		struct net_node_t *switch_node;
+		struct net_node_t *node;
 
 		char *err_buffer_note =
 			"\tThe input/output buffer size for a switch must be equal or greater than\n"
@@ -558,21 +596,18 @@ void gpu_cache_config_read(void)
 			"\tIf you are not sure about this option, leave it blank and an automatic\n"
 			"\tassigned value will default to (B + 8) * 2.\n";
 
-		/* Get the maximum message size for network, which is equals to
-		 * the block size of the lower cache plus 8 (control message) */
+		/* Get network and lower level cache */
 		net = gpu->networks[i];
-		gpu_cache = net_get_node_data(net, 0);
-		if (!gpu_cache)
-			continue;
-		max_msg_size = gpu_cache->block_size + 8;
+		lower_node = list_get(net->node_list, 0);
+		assert(lower_node);
 
 		/* Get network parameters */
 		sprintf(buf, "Net %s", net->name);
-		upper_link_width = config_read_int(config, buf, "UpperLinkWidth", 8);
-		lower_link_width = config_read_int(config, buf, "LowerLinkWidth", 8);
-		inner_link_width = config_read_int(config, buf, "InnerLinkWidth", 8);
-		input_buffer_size = config_read_int(config, buf, "InputBufferSize", max_msg_size * 2);
-		output_buffer_size = config_read_int(config, buf, "OutputBufferSize", max_msg_size * 2);
+		upper_link_width = config_read_int(config, buf, "UpperLinkWidth", net_link_width);
+		lower_link_width = config_read_int(config, buf, "LowerLinkWidth", net_link_width);
+		inner_link_width = config_read_int(config, buf, "InnerLinkWidth", net_link_width);
+		input_buffer_size = config_read_int(config, buf, "InputBufferSize", net_buffer_size);
+		output_buffer_size = config_read_int(config, buf, "OutputBufferSize", net_buffer_size);
 		if (upper_link_width < 1)
 			fatal("%s: network '%s': invalid value for variable 'UpperLinkWidth'.\n%s",
 				gpu_cache_config_file_name, net->name, err_note);
@@ -582,34 +617,36 @@ void gpu_cache_config_read(void)
 		if (inner_link_width < 1)
 			fatal("%s: network '%s': invalid value for variable 'InnerLinkWidth'.\n%s",
 				gpu_cache_config_file_name, net->name, err_note);
-		if (input_buffer_size < max_msg_size)
+		if (input_buffer_size < net_msg_size)
 			fatal("%s: network '%s': value for 'InputBufferSize' less than %d.\n%s%s",
-				gpu_cache_config_file_name, net->name, max_msg_size, err_buffer_note, err_note);
-		if (output_buffer_size < max_msg_size)
+				gpu_cache_config_file_name, net->name, net_msg_size, err_buffer_note, err_note);
+		if (output_buffer_size < net_msg_size)
 			fatal("%s: network '%s': value for 'OutputBufferSize' less than %d.\n%s%s",
-				gpu_cache_config_file_name, net->name, max_msg_size, err_buffer_note, err_note);
+				gpu_cache_config_file_name, net->name, net_msg_size, err_buffer_note, err_note);
 
 		/* Create switch */
 		snprintf(buf, sizeof(buf), "%s.sw", net->name);
-		switch_id = net_new_switch(net, net->end_node_count, input_buffer_size,
-			net->end_node_count, output_buffer_size, inner_link_width, buf, NULL);
-		gpu_cache_debug(" '%s'.node[%d]='switch'", net->name, switch_id);
+		switch_node = net_add_switch(net, input_buffer_size,
+			output_buffer_size, inner_link_width, buf);
+		gpu_cache_debug(" '%s'.node[%d]='switch'", net->name, switch_node->index);
 		assert(net->node_count);
 
 		/* Lower connection */
-		net_new_bidirectional_link(net, 0, switch_id, upper_link_width);
-		gpu_cache = net_get_node_data(net, 0);
+		net_add_bidirectional_link(net, lower_node, switch_node, upper_link_width);
+		gpu_cache = lower_node->user_data;
 		gpu_cache_debug(" '%s'.connect('%s','switch')", net->name, gpu_cache->name);
 
 		/* Upper connections */
-		for (j = 1; j < net->end_node_count; j++) {
-			net_new_bidirectional_link(net, j, switch_id, lower_link_width);
-			gpu_cache = net_get_node_data(net, j);
+		for (j = 1; j < net->end_node_count; j++)
+		{
+			node = list_get(net->node_list, j);
+			net_add_bidirectional_link(net, switch_node, node, lower_link_width);
+			gpu_cache = node->user_data;
 			gpu_cache_debug(" '%s'.connect('%s','switch')", net->name, gpu_cache->name);
 		}
 
 		/* Build routing table */
-		net_calculate_routes(net);
+		net_routing_table_calculate(net->routing_table);
 	}
 	gpu_cache_debug("\n");
 
@@ -636,8 +673,10 @@ void gpu_cache_init(void)
 	EV_GPU_CACHE_READ_FINISH = esim_register_event(gpu_cache_handler_read);
 
 	EV_GPU_CACHE_WRITE = esim_register_event(gpu_cache_handler_write);
+	EV_GPU_CACHE_WRITE_REQUEST_SEND = esim_register_event(gpu_cache_handler_write);
 	EV_GPU_CACHE_WRITE_REQUEST_RECEIVE = esim_register_event(gpu_cache_handler_write);
 	EV_GPU_CACHE_WRITE_REQUEST_REPLY = esim_register_event(gpu_cache_handler_write);
+	EV_GPU_CACHE_WRITE_REQUEST_REPLY_RECEIVE = esim_register_event(gpu_cache_handler_write);
 	EV_GPU_CACHE_WRITE_UNLOCK = esim_register_event(gpu_cache_handler_write);
 	EV_GPU_CACHE_WRITE_FINISH = esim_register_event(gpu_cache_handler_write);
 
@@ -741,6 +780,11 @@ void gpu_cache_dump_report(void)
 		fprintf(f, "Evictions = %lld\n", (long long) gpu_cache->evictions);
 		fprintf(f, "\n\n");
 	}
+	
+	
+	/* Dump report for networks */
+	for (i = 0; i < gpu->network_count; i++)
+		net_dump_report(gpu->networks[i], f);
 
 	/* Close */
 	fclose(f);
@@ -839,8 +883,10 @@ int EV_GPU_CACHE_READ_UNLOCK;
 int EV_GPU_CACHE_READ_FINISH;
 
 int EV_GPU_CACHE_WRITE;
+int EV_GPU_CACHE_WRITE_REQUEST_SEND;
 int EV_GPU_CACHE_WRITE_REQUEST_RECEIVE;
 int EV_GPU_CACHE_WRITE_REQUEST_REPLY;
+int EV_GPU_CACHE_WRITE_REQUEST_REPLY_RECEIVE;
 int EV_GPU_CACHE_WRITE_UNLOCK;
 int EV_GPU_CACHE_WRITE_FINISH;
 
@@ -1070,7 +1116,15 @@ void gpu_cache_handler_read(int event, void *data)
 		assert(target);
 		gpu_cache_debug("  %lld %lld read_request src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, gpu_cache->name, target->name, net->name);
-		net_send_ev(net, gpu_cache->id_lo, target->id_hi, 8, EV_GPU_CACHE_READ_REQUEST_RECEIVE, stack);
+
+		/* Check whether we can send message. If not, retry later. */
+		if (!net_can_send_ev(net, gpu_cache->net_node_lo, target->net_node_hi,
+			8, event, stack))
+			return;
+
+		/* Send message */
+		stack->msg = net_send_ev(net, gpu_cache->net_node_lo, target->net_node_hi, 8,
+			EV_GPU_CACHE_READ_REQUEST_RECEIVE, stack);
 		return;
 	}
 
@@ -1081,6 +1135,10 @@ void gpu_cache_handler_read(int event, void *data)
 		gpu_cache_debug("  %lld %lld read_request_receive cache=\"%s\"\n",
 			CYCLE, ID, target->name);
 
+		/* Receive element */
+		net_receive(target->net_hi, target->net_node_hi, stack->msg);
+
+		/* Function call to 'EV_GPU_CACHE_READ' */
 		newstack = gpu_cache_stack_create(stack->id,
 			gpu_cache->gpu_cache_next, stack->tag,
 			EV_GPU_CACHE_READ_REQUEST_REPLY, stack);
@@ -1096,8 +1154,15 @@ void gpu_cache_handler_read(int event, void *data)
 		assert(net && target);
 		gpu_cache_debug("  %lld %lld read_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, target->name, gpu_cache->name, net->name);
-		net_send_ev(net, target->id_hi, gpu_cache->id_lo, gpu_cache->block_size + 8,
-			EV_GPU_CACHE_READ_REQUEST_FINISH, stack);
+
+		/* Check whether message can be sent. If not, retry later. */
+		if (!net_can_send_ev(net, target->net_node_hi, gpu_cache->net_node_lo,
+			gpu_cache->block_size + 8, event, stack))
+			return;
+
+		/* Send message */
+		stack->msg = net_send_ev(net, target->net_node_hi, gpu_cache->net_node_lo,
+			gpu_cache->block_size + 8, EV_GPU_CACHE_READ_REQUEST_FINISH, stack);
 		return;
 	}
 
@@ -1105,6 +1170,9 @@ void gpu_cache_handler_read(int event, void *data)
 	{
 		gpu_cache_debug("  %lld %lld read_request_finish\n", CYCLE, ID);
 		assert(gpu_cache->cache);
+
+		/* Receive message */
+		net_receive(gpu_cache->net_lo, gpu_cache->net_node_lo, stack->msg);
 
 		/* Set tag and state of the new block.
 		 * A set other than 0 means that the block is valid. */
@@ -1163,13 +1231,12 @@ void gpu_cache_handler_write(int event, void *data)
 
 	if (event == EV_GPU_CACHE_WRITE)
 	{
-		struct gpu_cache_t *target;
 		struct gpu_cache_port_t *port;
-		struct net_t *net;
 		int i;
 
 		/* If there is any pending access in the cache, access gets enqueued. */
-		if (gpu_cache->waiting_list_head) {
+		if (gpu_cache->waiting_list_head)
+		{
 			gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u\n",
 				CYCLE, ID, gpu_cache->name, stack->addr);
 			gpu_cache_debug("%lld %lld wait why=\"order\"\n",
@@ -1181,7 +1248,8 @@ void gpu_cache_handler_write(int event, void *data)
 		/* If there is any locked read port in the cache, the write is stalled.
 		 * The reason is that a write must wait for all reads to be complete, since
 		 * writes could be faster than reads in the memory hierarchy. */
-		if (gpu_cache->locked_read_port_count) {
+		if (gpu_cache->locked_read_port_count)
+		{
 			gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u\n",
 				CYCLE, ID, gpu_cache->name, stack->addr);
 			gpu_cache_debug("%lld %lld wait why=\"write_after_read\"\n",
@@ -1215,9 +1283,9 @@ void gpu_cache_handler_write(int event, void *data)
 					CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index);
 				stack->write_port_index = i;
 				stack->port = port;
-				stack->pending++;
 				gpu_cache_debug("  %lld %lld coalesce id=%lld bank=%d write_port=%d\n",
-					CYCLE, ID, (long long) port->stack->id, stack->bank_index, stack->write_port_index);
+					CYCLE, ID, (long long) port->stack->id, stack->bank_index,
+					stack->write_port_index);
 				gpu_cache_stack_wait_in_port(stack, EV_GPU_CACHE_WRITE_FINISH);
 
 				/* Increment witness variable as soon as a port was secured */
@@ -1239,9 +1307,11 @@ void gpu_cache_handler_write(int event, void *data)
 		}
 
 		/* Look for a free write port */
-		for (i = 0; i < gpu_cache->write_port_count; i++) {
+		for (i = 0; i < gpu_cache->write_port_count; i++)
+		{
 			port = GPU_CACHE_WRITE_PORT_INDEX(gpu_cache, stack->bank, i);
-			if (!port->locked) {
+			if (!port->locked)
+			{
 				stack->write_port_index = i;
 				stack->port = port;
 				break;
@@ -1249,7 +1319,8 @@ void gpu_cache_handler_write(int event, void *data)
 		}
 		
 		/* If there is no free write port, enqueue in cache waiting list. */
-		if (!stack->port) {
+		if (!stack->port)
+		{
 			gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
 				CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index);
 			gpu_cache_debug("  %lld %lld wait why=\"no_write_port\"\n", CYCLE, ID);
@@ -1260,7 +1331,8 @@ void gpu_cache_handler_write(int event, void *data)
 		/* Lock write port */
 		port = stack->port;
 		assert(!port->locked);
-		assert(gpu_cache->locked_write_port_count < gpu_cache->write_port_count * gpu_cache->bank_count);
+		assert(gpu_cache->locked_write_port_count <
+			gpu_cache->write_port_count * gpu_cache->bank_count);
 		port->locked = 1;
 		port->lock_when = esim_cycle;
 		port->stack = stack;
@@ -1277,7 +1349,8 @@ void gpu_cache_handler_write(int event, void *data)
 		gpu_cache->effective_writes++;
 	
 		/* If this is main memory, access block */
-		if (!gpu_cache->cache) {
+		if (!gpu_cache->cache)
+		{
 			stack->pending++;
 			esim_schedule_event(EV_GPU_CACHE_WRITE_UNLOCK, stack, gpu_cache->latency);
 			gpu_cache->effective_write_hits++;
@@ -1293,14 +1366,33 @@ void gpu_cache_handler_write(int event, void *data)
 		esim_schedule_event(EV_GPU_CACHE_WRITE_UNLOCK, stack, gpu_cache->latency);
 
 		/* Access lower level cache */
+		stack->pending++;
+		esim_schedule_event(EV_GPU_CACHE_WRITE_REQUEST_SEND, stack, 0);
+		return;
+	}
+
+	if (event == EV_GPU_CACHE_WRITE_REQUEST_SEND)
+	{
+		struct net_t *net;
+		struct gpu_cache_t *target;
+
 		net = gpu_cache->net_lo;
 		target = gpu_cache->gpu_cache_next;
 		assert(target);
 		assert(net);
-		stack->pending++;
-		gpu_cache_debug("  %lld %lld write_request src=\"%s\" dest=\"%s\" net=\"%s\"\n",
-			CYCLE, ID, target->name, gpu_cache->name, net->name);
-		net_send_ev(net, gpu_cache->id_lo, target->id_hi, 8, EV_GPU_CACHE_WRITE_REQUEST_RECEIVE, stack);
+
+		/* Debug */
+		gpu_cache_debug("  %lld %lld write_request_send src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+			CYCLE, ID, gpu_cache->name, target->name, net->name);
+
+		/* Check if message can be sent. If not, retry later. */
+		if (!net_can_send_ev(net, gpu_cache->net_node_lo, target->net_node_hi,
+			8, event, stack))
+			return;
+
+		/* Send message */
+		stack->msg = net_send_ev(net, gpu_cache->net_node_lo, target->net_node_hi, 8,
+			EV_GPU_CACHE_WRITE_REQUEST_RECEIVE, stack);
 		return;
 	}
 
@@ -1311,6 +1403,11 @@ void gpu_cache_handler_write(int event, void *data)
 
 		gpu_cache_debug("  %lld %lld write_request_receive cache=\"%s\"\n",
 			CYCLE, ID, target->name);
+
+		/* Receive message */
+		net_receive(target->net_hi, target->net_node_hi, stack->msg);
+
+		/* Function call to 'EV_GPU_CACHE_WRITE' */
 		newstack = gpu_cache_stack_create(stack->id, target, stack->tag,
 			EV_GPU_CACHE_WRITE_REQUEST_REPLY, stack);
 		esim_schedule_event(EV_GPU_CACHE_WRITE, newstack, 0);
@@ -1326,7 +1423,28 @@ void gpu_cache_handler_write(int event, void *data)
 		assert(net);
 		gpu_cache_debug("  %lld %lld write_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, gpu_cache->name, target->name, net->name);
-		net_send_ev(net, gpu_cache->id_lo, target->id_hi, 8, EV_GPU_CACHE_WRITE_UNLOCK, stack);
+
+		/* Check if message can be sent. If not, retry later. */
+		if (!net_can_send_ev(net, target->net_node_hi, gpu_cache->net_node_lo,
+			8, event, stack))
+			return;
+
+		/* Send message */
+		stack->msg = net_send_ev(net, target->net_node_hi, gpu_cache->net_node_lo, 8,
+			EV_GPU_CACHE_WRITE_REQUEST_REPLY_RECEIVE, stack);
+		return;
+	}
+
+	if (event == EV_GPU_CACHE_WRITE_REQUEST_REPLY_RECEIVE)
+	{
+		gpu_cache_debug("  %lld %lld write_request_reply_receive dest=\"%s\" net=\"%s\"\n",
+			CYCLE, ID, gpu_cache->name, gpu_cache->net_lo->name);
+
+		/* Receive message */
+		net_receive(gpu_cache->net_lo, gpu_cache->net_node_lo, stack->msg);
+
+		/* Continue */
+		esim_schedule_event(EV_GPU_CACHE_WRITE_UNLOCK, stack, 0);
 		return;
 	}
 
@@ -1344,7 +1462,8 @@ void gpu_cache_handler_write(int event, void *data)
 		gpu_cache_debug("  %lld %lld write_unlock\n", CYCLE, ID);
 
 		/* Update LRU counters */
-		if (stack->hit) {
+		if (stack->hit)
+		{
 			assert(gpu_cache->cache);
 			cache_access_block(gpu_cache->cache, stack->set, stack->way);
 		}

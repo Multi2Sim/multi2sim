@@ -1,7 +1,12 @@
 lib_LIBRARIES = libnetwork.a
 libnetwork_a_SOURCES = \
+	buffer.c \
+	link.c \
+	message.c \
 	network.h \
-	network.c
+	network.c \
+	node.c \
+	routing-table.c
 
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \

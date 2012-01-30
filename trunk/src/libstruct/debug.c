@@ -26,7 +26,8 @@
 #include "debug.h"
 
 
-struct category_t {
+struct category_t
+{
 	int status;
 	int space_count;
 	FILE *f;
@@ -47,7 +48,8 @@ void debug_done(void)
 {
 	int i;
 	FILE *f;
-	for (i = 0; i < category_count; i++) {
+	for (i = 0; i < category_count; i++)
+	{
 		f = category_list[i].f;
 		if (f && f != stdout && f != stderr)
 			fclose(f);
@@ -82,7 +84,8 @@ FILE *debug_assign_file(int category, char *filename)
 int debug_new_category(char *filename)
 {
 	struct category_t *c;
-	if (category_count == category_list_size) {
+	if (category_count == category_list_size)
+	{
 		category_list_size += 10;
 		category_list = realloc(category_list, sizeof(struct category_t) * category_list_size);
 		if (!category_list)
@@ -205,7 +208,8 @@ void debug(int category, char *fmt, ...)
 }
 
 
-void fatal(char *fmt, ...) {
+void fatal(char *fmt, ...)
+{
 	va_list va;
 	va_start(va, fmt);
 	fprintf(stderr, "fatal: ");
@@ -215,7 +219,8 @@ void fatal(char *fmt, ...) {
 }
 
 
-void panic(char *fmt, ...) {
+void panic(char *fmt, ...)
+{
 	va_list va;
 	va_start(va, fmt);
 	fprintf(stderr, "panic: ");
@@ -225,10 +230,12 @@ void panic(char *fmt, ...) {
 }
 
 
-void warning(char *fmt, ...) {
+void warning(char *fmt, ...)
+{
 	va_list va;
 	va_start(va, fmt);
 	fprintf(stderr, "warning: ");
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 }
+
