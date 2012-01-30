@@ -45,6 +45,7 @@ static char *esim_debug_file_name = "";
 static char *error_debug_file_name = "";
 static char *ctxconfig_file_name = "";
 static char *elf_debug_file_name = "";
+static char *net_debug_file_name = "";
 
 
 /* Error debug */
@@ -104,6 +105,7 @@ static char *sim_help =
 	"        --debug-gpu-stack: trace of operations on GPU active mask stacks.\n"
 	"        --debug-loader: information for the x86 ELF binary analysis performed\n"
 	"            by the program loader.\n"
+	"        --debug-network: trace of interconnection networks activity.\n"
 	"        --debug-cpu-cache: event trace of block transfers and requests in the\n"
 	"            CPU cache memory hierarchy.\n"
 	"        --debug-call: trace of function calls, based on emulated x86 instr.\n"
@@ -228,10 +230,11 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	int argi;
 	int arg_discard = 0;
 
-	for (argi = 1; argi < argc; argi++) {
-
+	for (argi = 1; argi < argc; argi++)
+	{
 		/* Cache system configuration file */
-		if (!strcmp(argv[argi], "--cpu-cache-config")) {
+		if (!strcmp(argv[argi], "--cpu-cache-config"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			cache_system_config_file_name = argv[argi];
@@ -239,7 +242,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* CPU configuration file */
-		if (!strcmp(argv[argi], "--cpu-config")) {
+		if (!strcmp(argv[argi], "--cpu-config"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			cpu_config_file_name = argv[argi];
@@ -247,7 +251,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* CPU disassembler */
-		if (!strcmp(argv[argi], "--cpu-disasm")) {
+		if (!strcmp(argv[argi], "--cpu-disasm"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			cpu_disasm_file_name = argv[argi];
@@ -256,7 +261,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 
 		/* CPU simulation accuracy */
-		if (!strcmp(argv[argi], "--cpu-sim")) {
+		if (!strcmp(argv[argi], "--cpu-sim"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
@@ -270,7 +276,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Context configuration file */
-		if (!strcmp(argv[argi], "--ctx-config") || !strcmp(argv[argi], "-c")) {
+		if (!strcmp(argv[argi], "--ctx-config") || !strcmp(argv[argi], "-c"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			ctxconfig_file_name = argv[argi];
@@ -278,7 +285,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Function calls debug file */
-		if (!strcmp(argv[argi], "--debug-call")) {
+		if (!strcmp(argv[argi], "--debug-call"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			isa_call_debug_file_name = argv[argi];
@@ -286,7 +294,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 		
 		/* Cache system debug */
-		if (!strcmp(argv[argi], "--debug-cpu-cache")) {
+		if (!strcmp(argv[argi], "--debug-cpu-cache"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			cache_debug_file_name = argv[argi];
@@ -294,7 +303,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* CPU ISA debug file */
-		if (!strcmp(argv[argi], "--debug-cpu-isa")) {
+		if (!strcmp(argv[argi], "--debug-cpu-isa"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			isa_inst_debug_file_name = argv[argi];
@@ -302,7 +312,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* CPU pipeline debug */
-		if (!strcmp(argv[argi], "--debug-cpu-pipeline")) {
+		if (!strcmp(argv[argi], "--debug-cpu-pipeline"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			esim_debug_file_name = argv[argi];
@@ -310,7 +321,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Context debug file */
-		if (!strcmp(argv[argi], "--debug-ctx")) {
+		if (!strcmp(argv[argi], "--debug-ctx"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			ctx_debug_file_name = argv[argi];
@@ -318,7 +330,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* ELF debug file */
-		if (!strcmp(argv[argi], "--debug-elf")) {
+		if (!strcmp(argv[argi], "--debug-elf"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			elf_debug_file_name = argv[argi];
@@ -326,14 +339,17 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Error debug */
-		if (!strcmp(argv[argi], "--debug-error")) {
+		if (!strcmp(argv[argi], "--debug-error"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			error_debug_file_name = argv[argi];
 			continue;
 		}
+
 		/* GPU ISA debug file */
-		if (!strcmp(argv[argi], "--debug-gpu-isa")) {
+		if (!strcmp(argv[argi], "--debug-gpu-isa"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_isa_debug_file_name = argv[argi];
@@ -341,15 +357,26 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU cache debug file */
-		if (!strcmp(argv[argi], "--debug-gpu-cache")) {
+		if (!strcmp(argv[argi], "--debug-gpu-cache"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_cache_debug_file_name = argv[argi];
 			continue;
 		}
 
+		/* Interconnect debug file */
+		if (!strcmp(argv[argi], "--debug-network"))
+		{
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			net_debug_file_name = argv[argi];
+			continue;
+		}
+
 		/* GPU pipeline debug file */
-		if (!strcmp(argv[argi], "--debug-gpu-pipeline")) {
+		if (!strcmp(argv[argi], "--debug-gpu-pipeline"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_pipeline_debug_file_name = argv[argi];
@@ -357,7 +384,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU-REL: debug file for stack pushes/pops */
-		if (!strcmp(argv[argi], "--debug-gpu-stack")) {
+		if (!strcmp(argv[argi], "--debug-gpu-stack"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_stack_debug_file_name = argv[argi];
@@ -365,7 +393,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU-REL: debug file for faults */
-		if (!strcmp(argv[argi], "--debug-gpu-faults")) {
+		if (!strcmp(argv[argi], "--debug-gpu-faults"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_faults_debug_file_name = argv[argi];
@@ -373,7 +402,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Loader debug file */
-		if (!strcmp(argv[argi], "--debug-loader")) {
+		if (!strcmp(argv[argi], "--debug-loader"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			loader_debug_file_name = argv[argi];
@@ -381,7 +411,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* OpenCL debug file */
-		if (!strcmp(argv[argi], "--debug-opencl")) {
+		if (!strcmp(argv[argi], "--debug-opencl"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			opencl_debug_file_name = argv[argi];
@@ -389,7 +420,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* System call debug file */
-		if (!strcmp(argv[argi], "--debug-syscall")) {
+		if (!strcmp(argv[argi], "--debug-syscall"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			syscall_debug_file_name = argv[argi];
@@ -397,7 +429,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU cache configuration file */
-		if (!strcmp(argv[argi], "--gpu-cache-config")) {
+		if (!strcmp(argv[argi], "--gpu-cache-config"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_cache_config_file_name = argv[argi];
@@ -405,7 +438,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU occupancy calculation plots */
-		if (!strcmp(argv[argi], "--gpu-calc")) {
+		if (!strcmp(argv[argi], "--gpu-calc"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_calc_file_name = argv[argi];
@@ -413,7 +447,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU configuration file */
-		if (!strcmp(argv[argi], "--gpu-config")) {
+		if (!strcmp(argv[argi], "--gpu-config"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_config_file_name = argv[argi];
@@ -421,7 +456,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU disassembler */
-		if (!strcmp(argv[argi], "--gpu-disasm")) {
+		if (!strcmp(argv[argi], "--gpu-disasm"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_disasm_file_name = argv[argi];
@@ -429,7 +465,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU-REL: file to introduce faults  */
-		if (!strcmp(argv[argi], "--gpu-faults")) {
+		if (!strcmp(argv[argi], "--gpu-faults"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_faults_file_name = argv[argi];
@@ -437,7 +474,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU simulation accuracy */
-		if (!strcmp(argv[argi], "--gpu-sim")) {
+		if (!strcmp(argv[argi], "--gpu-sim"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
@@ -451,7 +489,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU visualization */
-		if (!strcmp(argv[argi], "--gpu-visual")) {
+		if (!strcmp(argv[argi], "--gpu-visual"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_visual_file_name = argv[argi];
@@ -459,43 +498,50 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Show help */
-		if (!strcmp(argv[argi], "--help") || !strcmp(argv[argi], "-h")) {
+		if (!strcmp(argv[argi], "--help") || !strcmp(argv[argi], "-h"))
+		{
 			fprintf(stderr, "%s", sim_help);
 			continue;
 		}
 
 		/* Help for cache configuration file */
-		if (!strcmp(argv[argi], "--help-cpu-cache-config")) {
+		if (!strcmp(argv[argi], "--help-cpu-cache-config"))
+		{
 			fprintf(stderr, "%s", cache_system_config_help);
 			continue;
 		}
 
 		/* Help for CPU configuration file */
-		if (!strcmp(argv[argi], "--help-cpu-config")) {
+		if (!strcmp(argv[argi], "--help-cpu-config"))
+		{
 			fprintf(stderr, "%s", cpu_config_help);
 			continue;
 		}
 
 		/* Help for context configuration file format */
-		if (!strcmp(argv[argi], "--help-ctx-config")) {
+		if (!strcmp(argv[argi], "--help-ctx-config"))
+		{
 			fprintf(stderr, "%s", ld_help_ctxconfig);
 			continue;
 		}
 
 		/* Help for GPU configuration file */
-		if (!strcmp(argv[argi], "--help-gpu-config")) {
+		if (!strcmp(argv[argi], "--help-gpu-config"))
+		{
 			fprintf(stderr, "%s", gpu_config_help);
 			continue;
 		}
 
 		/* Help for GPU cache configuration file */
-		if (!strcmp(argv[argi], "--help-gpu-cache-config")) {
+		if (!strcmp(argv[argi], "--help-gpu-cache-config"))
+		{
 			fprintf(stderr, "%s", gpu_cache_config_help);
 			continue;
 		}
 
 		/* Maximum number of CPU cycles */
-		if (!strcmp(argv[argi], "--max-cpu-cycles")) {
+		if (!strcmp(argv[argi], "--max-cpu-cycles"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			ke_max_cycles = atoll(argv[argi]);
@@ -503,7 +549,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Maximum number of CPU instructions */
-		if (!strcmp(argv[argi], "--max-cpu-inst")) {
+		if (!strcmp(argv[argi], "--max-cpu-inst"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			ke_max_inst = atoll(argv[argi]);
@@ -511,7 +558,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Maximum number of GPU cycles */
-		if (!strcmp(argv[argi], "--max-gpu-cycles")) {
+		if (!strcmp(argv[argi], "--max-gpu-cycles"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_max_cycles = atoll(argv[argi]);
@@ -519,7 +567,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Maximum number of GPU instructions */
-		if (!strcmp(argv[argi], "--max-gpu-inst")) {
+		if (!strcmp(argv[argi], "--max-gpu-inst"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_max_inst = atoll(argv[argi]);
@@ -527,7 +576,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Maximum number of GPU kernels */
-		if (!strcmp(argv[argi], "--max-gpu-kernels")) {
+		if (!strcmp(argv[argi], "--max-gpu-kernels"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_max_kernels = atoi(argv[argi]);
@@ -535,7 +585,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Simulation time limit */
-		if (!strcmp(argv[argi], "--max-time")) {
+		if (!strcmp(argv[argi], "--max-time"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			ke_max_time = atoll(argv[argi]);
@@ -543,7 +594,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 		
 		/* OpenCL binary */
-		if (!strcmp(argv[argi], "--opencl-binary")) {
+		if (!strcmp(argv[argi], "--opencl-binary"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_opencl_binary_name = argv[argi];
@@ -551,7 +603,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* CPU memory hierarchy report */
-		if (!strcmp(argv[argi], "--report-cpu-cache")) {
+		if (!strcmp(argv[argi], "--report-cpu-cache"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			cache_system_report_file_name = argv[argi];
@@ -559,7 +612,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* CPU pipeline report */
-		if (!strcmp(argv[argi], "--report-cpu-pipeline")) {
+		if (!strcmp(argv[argi], "--report-cpu-pipeline"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			cpu_report_file_name = argv[argi];
@@ -567,7 +621,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU global memory hierarchy report */
-		if (!strcmp(argv[argi], "--report-gpu-cache")) {
+		if (!strcmp(argv[argi], "--report-gpu-cache"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_cache_report_file_name = argv[argi];
@@ -575,7 +630,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU emulation report */
-		if (!strcmp(argv[argi], "--report-gpu-kernel")) {
+		if (!strcmp(argv[argi], "--report-gpu-kernel"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_kernel_report_file_name = argv[argi];
@@ -583,7 +639,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU pipeline report */
-		if (!strcmp(argv[argi], "--report-gpu-pipeline")) {
+		if (!strcmp(argv[argi], "--report-gpu-pipeline"))
+		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_report_file_name = argv[argi];
@@ -591,7 +648,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* Invalid option */
-		if (argv[argi][0] == '-') {
+		if (argv[argi][0] == '-')
+		{
 			fatal("'%s' is not a valid command-line option.\n%s",
 				argv[argi], err_help_note);
 		}
@@ -601,7 +659,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Check configuration consistency */
-	if (cpu_sim_kind == cpu_sim_kind_functional) {
+	if (cpu_sim_kind == cpu_sim_kind_functional)
+	{
 		char *msg = "option '%s' not valid for functional CPU simulation.\n"
 			"Please use option '--cpu-sim detailed' as well.\n";
 		if (*cache_system_config_file_name)
@@ -617,7 +676,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (*cache_system_report_file_name)
 			fatal(msg, "--report-cpu-cache");
 	}
-	if (gpu_sim_kind == gpu_sim_kind_functional) {
+	if (gpu_sim_kind == gpu_sim_kind_functional)
+	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
 			"Please use option '--gpu-sim detailed' as well.\n";
 		if (*gpu_cache_debug_file_name)
@@ -753,6 +813,7 @@ int main(int argc, char **argv)
 	isa_inst_debug_category = debug_new_category(isa_inst_debug_file_name);
 	isa_call_debug_category = debug_new_category(isa_call_debug_file_name);
 	elf_debug_category = debug_new_category(elf_debug_file_name);
+	net_debug_category = debug_new_category(net_debug_file_name);
 	ld_debug_category = debug_new_category(loader_debug_file_name);
 	syscall_debug_category = debug_new_category(syscall_debug_file_name);
 	ctx_debug_category = debug_new_category(ctx_debug_file_name);

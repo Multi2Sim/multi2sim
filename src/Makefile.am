@@ -29,7 +29,8 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libgpuarch \
 	-I$(top_srcdir)/src/libgpukernel \
 	-I$(top_srcdir)/src/libgpudisasm \
-	-I$(top_srcdir)/src/libgpuvisual
+	-I$(top_srcdir)/src/libgpuvisual \
+	-I$(top_srcdir)/src/libsdram
 
 LDADD = \
 	$(top_builddir)/src/libgpuvisual/libgpuvisual.a \
@@ -45,6 +46,7 @@ LDADD = \
 	$(top_builddir)/src/libstruct/libstruct.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
+	$(top_builddir)/src/libsdram/libsdram.a \
 	-lm -lpthread
 
 if HAVE_GTK

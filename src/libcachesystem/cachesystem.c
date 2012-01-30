@@ -106,6 +106,26 @@ char *cache_system_config_help =
 	"      TLB access latency upon a lookup miss.\n"
 	"\n";
 
+char *err_cachesystem_icache =
+	"\tA node described in the cache configuration file does not\n"
+	"\thave an entry into the memory hierarchy for fetching instructions\n"
+	"\t(instruction cache). Please write a '[ Node <name> ]' section in\n"
+	"\tthe cache configuration file for it, including an\n"
+	"\t'ICache = <cache>' entry.\n";
+
+char *err_cachesystem_dcache =
+	"\tA node described in the cache configuration file does not\n"
+	"\thave an entry into the memory hierarchy for data\n"
+	"\t(data cache). Please write a '[ Node <name> ]' section in\n"
+	"\tthe cache configuration file for it, including a\n"
+	"\t'DCache = <cache>' entry.\n";
+
+char *err_cachesystem_ignored =
+	"\tA '[ Node <id> ]' section is ignored in the cache configuration\n"
+	"\tfile if it refers to an unused core/thread, as specified in the\n"
+	"\tCPU configuration file.\n";
+
+
 /* Cache system variables */
 
 static int cores = 0;
@@ -279,7 +299,8 @@ void ccache_get_block(struct ccache_t *ccache, uint32_t set, uint32_t way,
 	uint32_t *ptag, int *pstatus)
 {
 	/* Main memory */
-	if (!ccache->lonet) {
+	if (!ccache->net_lo)
+	{
 		assert(!way);
 		PTR_ASSIGN(ptag, set << ccache->logbsize);
 		PTR_ASSIGN(pstatus, moesi_status_exclusive);
@@ -301,7 +322,7 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	uint32_t set, way, tag;
 
 	/* Main memory */
-	if (!ccache->lonet) {
+	if (!ccache->net_lo) {
 		PTR_ASSIGN(pset, addr >> ccache->logbsize);
 		PTR_ASSIGN(pway, 0);
 		PTR_ASSIGN(ptag, addr & ~(ccache->bsize - 1));
@@ -348,7 +369,7 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 struct dir_t *ccache_get_dir(struct ccache_t *ccache, uint32_t phaddr)
 {
 	struct dir_t *dir;
-	dir = ccache->lonet ? ccache->dir : mmu_get_dir(phaddr);
+	dir = ccache->net_lo ? ccache->dir : mmu_get_dir(phaddr);
 	assert(dir);
 	return dir;
 }
@@ -366,7 +387,7 @@ struct dir_entry_t *ccache_get_dir_entry(struct ccache_t *ccache,
 	dir = ccache_get_dir(ccache, set << ccache->logbsize);
 
 	/* Main memory */
-	if (!ccache->lonet) {
+	if (!ccache->net_lo) {
 		assert(way == 0);
 		assert(subblk < main_memory->bsize / cache_min_block_size);
 		set = set % dir->xsize;
@@ -394,7 +415,7 @@ struct dir_lock_t *ccache_get_dir_lock(struct ccache_t *ccache,
 	dir = ccache_get_dir(ccache, set << main_memory->logbsize);
 
 	/* Main memory */
-	if (!ccache->lonet) {
+	if (!ccache->net_lo) {
 		set = set % dir->xsize;
 		return dir_lock_get(dir, set, way);
 	}
@@ -609,17 +630,32 @@ static void cache_config_default(void)
 void cache_system_init(int _cores, int _threads)
 {
 	int i, j;
-	struct tlb_t *dtlb, *itlb;
-	char *section, *value;
-	int core, thread, curr;
-	int nsets, bsize, assoc;
-	int read_ports, write_ports;
+
+	struct tlb_t *dtlb;
+	struct tlb_t *itlb;
+	
+	char *section;
+	char *value;
+
+	int core, thread;
+	int curr;
+
+	int nsets;
+	int bsize;
+	int assoc;
+	int read_ports;
+	int write_ports;
+
 	struct net_t *net = NULL;
 	struct ccache_t *ccache;
 	struct node_t *node;
 	char buf[200];
 	enum cache_policy_t policy;
 	char *policy_str;
+
+	int net_msg_size;
+	int net_bandwidth;
+	int net_buffer_size;
 
 	/* Try to open report file */
 	if (cache_system_report_file_name[0] && !can_open_write(cache_system_report_file_name))
@@ -712,15 +748,15 @@ void cache_system_init(int _cores, int _threads)
 		/* High network */
 		value = config_read_string(cache_config, section, "HiNet", "");
 		sprintf(buf, "net %s", value);
-		ccache->hinet = config_read_ptr(cache_config, buf, "ptr", NULL);
-		if (!ccache->hinet && *value)
+		ccache->net_hi = config_read_ptr(cache_config, buf, "ptr", NULL);
+		if (!ccache->net_hi && *value)
 			fatal("%s: network specified in HiNet does not exist", ccache->name);
 
 		/* Low network */
 		value = config_read_string(cache_config, section, "LoNet", "");
 		sprintf(buf, "net %s", value);
-		ccache->lonet = config_read_ptr(cache_config, buf, "ptr", NULL);
-		if (!ccache->lonet && *value)
+		ccache->net_lo = config_read_ptr(cache_config, buf, "ptr", NULL);
+		if (!ccache->net_lo && *value)
 			fatal("%s: network specified in LoNet does not exist", ccache->name);
 		if (!*value)
 			fatal("%s: cache must be connected to a lower network (use LoNet)", ccache->name);
@@ -796,9 +832,15 @@ void cache_system_init(int _cores, int _threads)
 	ccache->bsize = config_read_int(cache_config, section, "BlockSize", 0);
 	ccache->read_ports = read_ports;
 	ccache->write_ports = write_ports;
-	ccache->hinet = config_read_ptr(cache_config, buf, "ptr", NULL);
+	ccache->net_hi = config_read_ptr(cache_config, buf, "ptr", NULL);
 	if (cache_min_block_size < 1)
 		fatal("cache block size must be >= 1");
+	
+	/* Calculate default network buffer sizes and bandwidth, based on the
+	 * maximum message size (block_size + 8). */
+	net_msg_size = main_memory->bsize + 8;
+	net_bandwidth = net_msg_size;  /* One message in one cycle */
+	net_buffer_size = net_msg_size * 8;  /* Two messages in a buffer */
 
 	/* Nodes */
 	node_array = calloc(cores * threads, sizeof(struct node_t));
@@ -816,16 +858,16 @@ void cache_system_init(int _cores, int _threads)
 		if (thread < 0)
 			fatal("%s: section '[ %s ]': invalid or missing value for 'Thread'",
 				cache_system_config_file_name, section);
-		if (core >= cores) {
-			warning("%s: section '[ %s ]' ignored, since it refers to an unexisting core (core %d); "
-				"the number of cores in the current configuration is %d",
-				cache_system_config_file_name, section, core, cores);
+		if (core >= cores)
+		{
+			warning("%s: section '[ %s ]' ignored.%s\n", cache_system_config_file_name,
+				section, err_cachesystem_ignored);
 			continue;
 		}
-		if (thread >= threads) {
-			warning("%s: section '[ %s ]' ignored, since it refers to an unexisting thread (thread %d); "
-				"the number of threads in the current configuration is %d",
-				cache_system_config_file_name, section, core, cores);
+		if (thread >= threads)
+		{
+			warning("%s: section '[ %s ]' ignored.%s\n", cache_system_config_file_name,
+				section, err_cachesystem_ignored);
 			continue;
 		}
 		node = &node_array[core * threads + thread];
@@ -833,9 +875,12 @@ void cache_system_init(int _cores, int _threads)
 		/* Instruction cache for node */
 		cache_config_key(section, "ICache");
 		value = config_read_string(cache_config, section, "ICache", "");
-		if (!strcasecmp(value, "MainMemory")) {
+		if (!strcasecmp(value, "MainMemory"))
+		{
 			node->icache = main_memory;
-		} else {
+		}
+		else
+		{
 			sprintf(buf, "Cache %s", value);
 			cache_config_section(buf);
 			node->icache = config_read_ptr(cache_config, buf, "ptr", NULL);
@@ -845,9 +890,12 @@ void cache_system_init(int _cores, int _threads)
 		/* Data cache for node */
 		cache_config_key(section, "DCache");
 		value = config_read_string(cache_config, section, "DCache", "");
-		if (!strcasecmp(value, "MainMemory")) {
+		if (!strcasecmp(value, "MainMemory"))
+		{
 			node->dcache = main_memory;
-		} else {
+		}
+		else
+		{
 			sprintf(buf, "Cache %s", value);
 			cache_config_section(buf);
 			node->dcache = config_read_ptr(cache_config, buf, "ptr", NULL);
@@ -856,37 +904,36 @@ void cache_system_init(int _cores, int _threads)
 	}
 
 	/* Check that all nodes have an entry points to the memory hierarchy */
-	for (core = 0; core < cores; core++) {
-		for (thread = 0; thread < threads; thread++) {
+	for (core = 0; core < cores; core++)
+	{
+		for (thread = 0; thread < threads; thread++)
+		{
 			node = &node_array[core * threads + thread];
 			if (!node->icache)
-				fatal("core/thread %d/%d does not have an entry into the memory hierarchy "
-					"for fetching instructions (instruction cache); "
-					"please write a '[ Node <name> ]' section in the cache configuration file for it, "
-					"including an 'ICache = <cache>' entry.",
-					core, thread);
+				fatal("core/thread %d/%d missing ICache.\n%s",
+					core, thread, err_cachesystem_icache);
 			if (!node->dcache)
-				fatal("core/thread %d/%d does not have an entry into the memory hierarchy "
-					"to read or write data (data cache); "
-					"please write a '[ Node <name> ]' section in the cache configuration file for it, "
-					"including a 'DCache = <cache>' entry.",
-					core, thread);
+				fatal("core/thread %d/%d missing DCache.\n%s",
+					core, thread, err_cachesystem_dcache);
 		}
 	}
 
 	/* Add lower node_array to networks. */
-	for (curr = 0; curr < ccache_count; curr++) {
+	for (curr = 0; curr < ccache_count; curr++)
+	{
 		ccache = ccache_array[curr];
-		net = ccache->hinet;
+		net = ccache->net_hi;
 		if (!net)
 			continue;
 		if (net->node_count)
 			fatal("network '%s' has more than one lower node", net->name);
-		net_new_node(net, ccache->name, ccache);
+		ccache->net_node_hi = net_add_end_node(net, net_buffer_size, net_buffer_size,
+			ccache->name, ccache);
 	}
 
 	/* Check that all networks got assigned a lower node. */
-	for (i = 0; i < net_count; i++) {
+	for (i = 0; i < net_count; i++)
+	{
 		net = net_array[i];
 		assert(net->node_count <= 1);
 		if (!net->node_count)
@@ -894,20 +941,32 @@ void cache_system_init(int _cores, int _threads)
 	}
 
 	/* Add upper node_array to networks. Update 'next' attributes for ccache_array. */
-	for (curr = 0; curr < ccache_count; curr++) {
+	for (curr = 0; curr < ccache_count; curr++)
+	{
+		struct net_node_t *lower_node;
+
 		ccache = ccache_array[curr];
-		net = ccache->lonet;
+		net = ccache->net_lo;
 		if (!net)
 			continue;
-		ccache->loid = net_new_node(net, ccache->name, ccache);
-		ccache->next = net_get_node_data(net, 0);
+
+		/* Create node */
+		ccache->net_node_lo = net_add_end_node(net, net_buffer_size,
+			net_buffer_size, ccache->name, ccache);
+
+		/* Associate with lower node */
+		lower_node = list_get(net->node_list, 0);
+		assert(lower_node && lower_node->user_data);
+		ccache->next = lower_node->user_data;
 	}
 
 	/* Check that block sizes are equal or larger while we descend through the
 	 * memory hierarchy. */
-	for (curr = 0; curr < ccache_count; curr++) {
+	for (curr = 0; curr < ccache_count; curr++)
+	{
 		bsize = 0;
-		for (ccache = ccache_array[curr]; ccache; ccache = ccache->next) {
+		for (ccache = ccache_array[curr]; ccache; ccache = ccache->next)
+		{
 			if (ccache->bsize < bsize)
 				fatal("cache %s has a smaller block size than some "
 					"of its upper level caches", ccache->name);
@@ -917,40 +976,45 @@ void cache_system_init(int _cores, int _threads)
 
 	/* For each network, add a switch and create node connections.
 	 * Then calculate routes between nodes. */
-	for (i = 0; i < net_count; i++) {
-		int maxmsg, sw;
-		int bandwidth;
+	for (i = 0; i < net_count; i++)
+	{
+		struct net_node_t *lower_node;
+		struct net_node_t *switch_node;
+		struct net_node_t *node;
 
-		/* Get the maximum message size for network, which is equals to
-		 * the block size of the lower cache plus 8 (moesi msg) */
+		/* Get lower node */
 		net = net_array[i];
-		ccache = net_get_node_data(net, 0);
-		if (!ccache)
-			continue;
-		maxmsg = ccache->bsize + 8;
+		lower_node = list_get(net->node_list, 0);
+		assert(lower_node && lower_node->user_data);
 
-		/* Create switch and connections. By default, each i/o buffer has
-		 * space for two maximum-length messages, and 8 bytes/cycle bandwidth. */
-		bandwidth = 8;  /* Bandwidth for links and switch xbar. */
+		/* Create switch */
 		snprintf(buf, sizeof(buf), "%s.sw", net->name);
-		sw = net_new_switch(net, net->end_node_count, maxmsg * 2,
-			net->end_node_count, maxmsg * 2, bandwidth, buf, NULL);
-		for (j = 0; j < net->end_node_count; j++)
-			net_new_bidirectional_link(net, j, sw, bandwidth);
+		switch_node = net_add_switch(net, net_buffer_size, net_buffer_size,
+			net_bandwidth, buf);
 
-		net_calculate_routes(net);
+		/* Create connections */
+		for (j = 0; j < net->end_node_count; j++)
+		{
+			node = list_get(net->node_list, j);
+			net_add_bidirectional_link(net, node, switch_node, net_bandwidth);
+		}
+
+		/* Routing table */
+		net_routing_table_calculate(net->routing_table);
 	}
 
 	/* Directories */
-	for (curr = 0; curr < ccache_count; curr++) {
+	for (curr = 0; curr < ccache_count; curr++)
+	{
 		ccache = ccache_array[curr];
 
 		/* Main memory */
-		if (!ccache->lonet)
+		if (!ccache->net_lo)
 			continue;
 
 		/* Level 1 cache */
-		if (!ccache->hinet) {
+		if (!ccache->net_hi)
+		{
 			ccache->dir = dir_create(ccache->cache->nsets, ccache->cache->assoc,
 				ccache->bsize / cache_min_block_size, 1);
 			continue;
@@ -958,15 +1022,17 @@ void cache_system_init(int _cores, int _threads)
 
 		/* Other level ccache_array */
 		ccache->dir = dir_create(ccache->cache->nsets, ccache->cache->assoc,
-			ccache->bsize / cache_min_block_size, ccache->hinet->end_node_count);
+			ccache->bsize / cache_min_block_size, ccache->net_hi->end_node_count);
 	}
 
 	/* Create TLBs (one dtlb and one itlb per thread) */
 	section = "Tlb";
 	tlb_count = cores * threads * 2;
 	tlb_array = calloc(tlb_count, sizeof(void *));
-	for (core = 0; core < cores; core++) {
-		for (thread = 0; thread < threads; thread++) {
+	for (core = 0; core < cores; core++)
+	{
+		for (thread = 0; thread < threads; thread++)
+		{
 			dtlb = tlb_array[(core * threads + thread) * 2] = tlb_create();
 			itlb = tlb_array[(core * threads + thread) * 2 + 1] = tlb_create();
 			sprintf(dtlb->name, "dtlb.%d.%d", core, thread);
@@ -1195,9 +1261,9 @@ static void cache_system_dump_route(int core, int thread, enum cache_kind_t kind
 	ccache = cache_system_get_ccache(core, thread, kind);
 	while (ccache) {
 		fprintf(f, "    %s loid=%d\n",
-			ccache->name, ccache->loid);
-		if (ccache->lonet)
-			fprintf(f, "    %s\n", ccache->lonet->name);
+			ccache->name, ccache->net_node_lo->index);
+		if (ccache->net_lo)
+			fprintf(f, "    %s\n", ccache->net_lo->name);
 		ccache = ccache->next;
 	}
 }

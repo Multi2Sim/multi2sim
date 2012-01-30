@@ -86,6 +86,7 @@ AC_SUBST([CFLAGS])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+		 src/libsdram/Makefile
 		 src/libcpuarch/Makefile
 		 src/libnetwork/Makefile
 		 src/libgpuarch/Makefile

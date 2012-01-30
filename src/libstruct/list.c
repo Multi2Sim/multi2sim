@@ -21,10 +21,13 @@
 #include <mhandle.h>
 #include "list.h"
 
-struct list_t {
-	int size, count;
+struct list_t
+{
+	int size;
+	int count;
 	int error;
-	int head, tail;
+	int head;
+	int tail;
 	void **elem;
 };
 
@@ -102,9 +105,10 @@ struct list_t *list_create_with_size(int size)
 	list = calloc(1, sizeof(struct list_t));
 	if (!list)
 		return NULL;
-	list->size = size < 10 ? 10 : size;
+	list->size = size < 4 ? 4 : size;
 	list->elem = calloc(list->size, sizeof(void *));
-	if (!list->elem) {
+	if (!list->elem)
+	{
 		free(list);
 		return NULL;
 	}
@@ -135,11 +139,21 @@ int list_error(struct list_t *list)
 
 char *list_error_msg(struct list_t *list)
 {
-	switch (list->error) {
-	case LIST_ENOMEM: return "out of memory";
-	case LIST_EBOUNDS: return "array index out of bounds";
-	case LIST_EELEM: return "element not found";
-	case LIST_EEMPTY: return "list is empty";
+	switch (list->error)
+	{
+
+	case LIST_ENOMEM:
+		return "out of memory";
+
+	case LIST_EBOUNDS:
+		return "array index out of bounds";
+
+	case LIST_EELEM:
+		return "element not found";
+
+	case LIST_EEMPTY:
+		return "list is empty";
+
 	}
 	return "";
 }
@@ -155,7 +169,8 @@ int list_count(struct list_t *list)
 void list_add(struct list_t *list, void *elem)
 {
 	/* grow list if necessary */
-	if (list->count == list->size && !grow(list)) {
+	if (list->count == list->size && !grow(list))
+	{
 		list->error = LIST_ENOMEM;
 		return;
 	}
@@ -172,7 +187,8 @@ void list_add(struct list_t *list, void *elem)
 void *list_get(struct list_t *list, int index)
 {
 	/* check bounds */
-	if (index < 0 || index >= list->count) {
+	if (index < 0 || index >= list->count)
+	{
 		list->error = LIST_EBOUNDS;
 		return NULL;
 	}
@@ -188,7 +204,8 @@ void *list_get(struct list_t *list, int index)
 void list_set(struct list_t *list, int index, void *elem)
 {
 	/* check bounds */
-	if (index < 0 || index >= list->count) {
+	if (index < 0 || index >= list->count)
+	{
 		list->error = LIST_EBOUNDS;
 		return;
 	}
@@ -206,13 +223,15 @@ void list_insert(struct list_t *list, int index, void *elem)
 	int shiftcount, pos, i;
 
 	/* check bounds */
-	if (index < 0 || index > list->count) {
+	if (index < 0 || index > list->count)
+	{
 		list->error = LIST_EBOUNDS;
 		return;
 	}
 
 	/* grow list if necessary */
-	if (list->count == list->size && !grow(list)) {
+	if (list->count == list->size && !grow(list))
+	{
 		list->error = LIST_ENOMEM;
 		return;
 	}
@@ -220,14 +239,17 @@ void list_insert(struct list_t *list, int index, void *elem)
 	/* Escoge si desplazar elementos a la derecha aumentando 'tail' o desplazar
 	 * los de la izq decrementando 'head', igual q en 'arraylist_delete'.
 	 */
-	if (index > list->count / 2) {
+	if (index > list->count / 2)
+	{
 		shiftcount = list->count - index;
 		for (i = 0, pos = list->tail;
 			 i < shiftcount;
 			 i++, pos = INLIST(pos - 1))		 
 			list->elem[pos] = list->elem[INLIST(pos - 1)];
 		list->tail = (list->tail + 1) % list->size;
-	} else {
+	}
+	else
+	{
 		for (i = 0, pos = list->head;
 			 i < index;
 			 i++, pos = (pos + 1) % list->size)
@@ -267,7 +289,8 @@ void *list_remove_at(struct list_t *list, int index)
 	void *elem;
 
 	/* check bounds */
-	if (index < 0 || index >= list->count) {
+	if (index < 0 || index >= list->count)
+	{
 		list->error = LIST_EBOUNDS;
 		return NULL;
 	}
@@ -276,7 +299,8 @@ void *list_remove_at(struct list_t *list, int index)
 	elem = list->elem[(list->head + index) % list->size];
 
 	/* delete */
-	if (index > list->count / 2) {
+	if (index > list->count / 2)
+	{
 		shiftcount = list->count - index - 1;
 		for (i = 0, pos = (list->head + index) % list->size;
 			 i < shiftcount;
@@ -284,7 +308,9 @@ void *list_remove_at(struct list_t *list, int index)
 			list->elem[pos] = list->elem[(pos + 1) % list->size];
 		list->elem[pos] = NULL;
 		list->tail = INLIST(list->tail - 1);
-	} else {
+	}
+	else
+	{
 		for (i = 0, pos = (list->head + index) % list->size;
 			 i < index;
 			 i++, pos = INLIST(pos - 1))
@@ -334,7 +360,8 @@ void list_push(struct list_t *list, void *elem)
 
 void *list_pop(struct list_t *list)
 {
-	if (!list->count) {
+	if (!list->count)
+	{
 		list->error = LIST_EEMPTY;
 		return NULL;
 	}
@@ -344,7 +371,8 @@ void *list_pop(struct list_t *list)
 
 void *list_top(struct list_t *list)
 {
-	if (!list->count) {
+	if (!list->count)
+	{
 		list->error = LIST_EEMPTY;
 		return NULL;
 	}
@@ -354,7 +382,8 @@ void *list_top(struct list_t *list)
 
 void *list_bottom(struct list_t *list)
 {
-	if (!list->count) {
+	if (!list->count)
+	{
 		list->error = LIST_EEMPTY;
 		return NULL;
 	}
@@ -370,7 +399,8 @@ void list_enqueue(struct list_t *list, void *elem)
 
 void *list_dequeue(struct list_t *list)
 {
-	if (!list->count) {
+	if (!list->count)
+	{
 		list->error = LIST_EEMPTY;
 		return NULL;
 	}
@@ -380,7 +410,8 @@ void *list_dequeue(struct list_t *list)
 
 void *list_head(struct list_t *list)
 {
-	if (!list->count) {
+	if (!list->count)
+	{
 		list->error = LIST_EEMPTY;
 		return NULL;
 	}
@@ -390,7 +421,8 @@ void *list_head(struct list_t *list)
 
 void *list_tail(struct list_t *list)
 {
-	if (!list->count) {
+	if (!list->count)
+	{
 		list->error = LIST_EEMPTY;
 		return NULL;
 	}
