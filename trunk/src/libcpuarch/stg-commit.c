@@ -19,6 +19,12 @@
 
 #include <cpuarch.h>
 
+static char *err_commit_stall =
+	"\tThe CPU commit stage has not received any instruction for 1M\n"
+	"\tcycles. Most likely, this means that a deadlock condition\n"
+	"\toccurred in the management of some modeled structure (network,\n"
+	"\tcache system, core queues, etc.).\n";
+
 
 static int can_commit_thread(int core, int thread)
 {
@@ -30,7 +36,8 @@ static int can_commit_thread(int core, int thread)
 	if (!ctx || !ctx_get_status(ctx, ctx_running))
 		THREAD.last_commit_cycle = cpu->cycle;
 	if (cpu->cycle - THREAD.last_commit_cycle > 1000000)
-		panic("c%dt%d: no inst committed in 1M cycles", core, thread);
+		panic("core-thread %d-%d: commit stall.\n%s",
+			core, thread, err_commit_stall);
 
 	/* If there is no instruction in the ROB, or the instruction is not
 	 * located at the ROB head in shared approaches, end. */

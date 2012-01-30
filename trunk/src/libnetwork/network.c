@@ -363,8 +363,8 @@ void net_dump_report(struct net_t *net, FILE *f)
 	fprintf(f, "Transfers = %lld\n", net->transfers);
 	fprintf(f, "AverageMessageSize = %.2f\n", net->transfers ?
 		(double) net->msg_size_acc / net->transfers : 0.0);
-	fprintf(f, "AverageLatency = %.4f\n", esim_cycle ?
-		(double) net->lat_acc / esim_cycle : 0.0);
+	fprintf(f, "AverageLatency = %.4f\n", net->transfers ?
+		(double) net->lat_acc / net->transfers : 0.0);
 	fprintf(f, "\n");
 
 	/* Links */
