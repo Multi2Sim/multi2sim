@@ -55,19 +55,21 @@ extern char *cache_system_config_help;
  */
 
 
-struct dir_lock_t {
+struct dir_lock_t
+{
 	int lock;
 	struct moesi_stack_t *lock_queue;
 };
 
-struct dir_entry_t {
+struct dir_entry_t
+{
 	int owner;  /* node owning the block */
 	int sharers;  /* number of 1s in next field */
 	unsigned char sharer[0];  /* bitmap of sharers (must be last field) */
 };
 
-struct dir_t {
-
+struct dir_t
+{
 	/* Number of possible sharers for a block. This determines
 	 * the size of the directory entry bitmap. */
 	int nodes;
@@ -274,6 +276,9 @@ struct moesi_stack_t
 	uint32_t src_set, src_way, src_tag;
 	struct dir_lock_t *dir_lock;
 	int status, response, pending;
+
+	/* Message sent to the network */
+	struct net_msg_t *msg;
 	
 	/* Flags */
 	int err : 1;

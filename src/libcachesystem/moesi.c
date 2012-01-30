@@ -553,15 +553,35 @@ void moesi_handler_evict(int event, void *data)
 		if (stack->status == moesi_status_modified ||
 			stack->status == moesi_status_owned)
 		{
-			net_send_ev(ccache->net_lo, ccache->net_node_lo, lower_node,
+			/* Check if we can send. If not, retry later. */
+			if (!net_can_send_ev(ccache->net_lo, ccache->net_node_lo,
+				lower_node, ccache->bsize + 8, event, stack))
+				return;
+
+			/* Send message */
+			stack->msg = net_send_ev(ccache->net_lo, ccache->net_node_lo, lower_node,
 				ccache->bsize + 8, EV_MOESI_EVICT_RECEIVE, stack);
 			stack->writeback = 1;
 			return;
 		}
 
 		/* status = S/E */
-		net_send_ev(ccache->net_lo, ccache->net_node_lo, lower_node, 8,
-			EV_MOESI_EVICT_RECEIVE, stack);
+		if (stack->status == moesi_status_shared ||
+			stack->status == moesi_status_exclusive)
+		{
+			/* Check if we can send. If not, retry later. */
+			if (!net_can_send_ev(ccache->net_lo, ccache->net_node_lo,
+				lower_node, 8, event, stack))
+				return;
+
+			/* Send message */
+			stack->msg = net_send_ev(ccache->net_lo, ccache->net_node_lo, lower_node, 8,
+				EV_MOESI_EVICT_RECEIVE, stack);
+			return;
+		}
+
+		/* Shouldn't get here */
+		panic("%s: invalid moesi status", __FUNCTION__);
 		return;
 	}
 
@@ -569,6 +589,9 @@ void moesi_handler_evict(int event, void *data)
 	{
 		cache_debug("  %lld %lld 0x%x %s evict receive\n", CYCLE, ID,
 			stack->tag, target->name);
+
+		/* Receive message */
+		net_receive(target->net_hi, target->net_node_hi, stack->msg);
 		
 		/* Find and lock */
 		newstack = moesi_stack_create(stack->id, target, stack->src_tag,
@@ -679,8 +702,14 @@ void moesi_handler_evict(int event, void *data)
 	{
 		cache_debug("  %lld %lld 0x%x %s evict reply\n", CYCLE, ID,
 			stack->tag, target->name);
-		
-		net_send_ev(target->net_hi, target->net_node_hi, ccache->net_node_lo, 8,
+
+		/* Check that we can send. If not, retry later */
+		if (!net_can_send_ev(target->net_hi, target->net_node_hi, ccache->net_node_lo,
+			8, event, stack))
+			return;
+
+		/* Send */
+		stack->msg = net_send_ev(target->net_hi, target->net_node_hi, ccache->net_node_lo, 8,
 			EV_MOESI_EVICT_REPLY_RECEIVE, stack);
 		return;
 
@@ -690,6 +719,9 @@ void moesi_handler_evict(int event, void *data)
 	{
 		cache_debug("  %lld %lld 0x%x %s evict reply receive\n", CYCLE, ID,
 			stack->tag, ccache->name);
+
+		/* Receive message */
+		net_receive(ccache->net_lo, ccache->net_node_lo, stack->msg);
 
 		/* Invalidate block if there was no error. */
 		if (!stack->err)
@@ -743,8 +775,13 @@ void moesi_handler_read_request(int event, void *data)
 		src_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
 		dst_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
 
+		/* Check if we can send. If not, retry later. */
+		if (!net_can_send_ev(net, src_node, dst_node, 8, event, stack))
+			return;
+
 		/* Send request */
-		net_send_ev(net, src_node, dst_node, 8, EV_MOESI_READ_REQUEST_RECEIVE, stack);
+		stack->msg = net_send_ev(net, src_node, dst_node, 8,
+			EV_MOESI_READ_REQUEST_RECEIVE, stack);
 		return;
 	}
 
@@ -752,6 +789,12 @@ void moesi_handler_read_request(int event, void *data)
 	{
 		cache_debug("  %lld %lld 0x%x %s read request receive\n", CYCLE, ID,
 			stack->addr, target->name);
+
+		/* Receive message */
+		if (ccache->next == target)
+			net_receive(target->net_hi, target->net_node_hi, stack->msg);
+		else
+			net_receive(target->net_lo, target->net_node_lo, stack->msg);
 		
 		/* Find and lock */
 		newstack = moesi_stack_create(stack->id, target, stack->addr,
@@ -1000,13 +1043,21 @@ void moesi_handler_read_request(int event, void *data)
 		cache_debug("  %lld %lld 0x%x %s read request reply\n", CYCLE, ID,
 			stack->tag, target->name);
 
+		/* Get network */
 		assert(stack->response);
 		assert(ccache->next == target || target->next == ccache);
 		net = ccache->next == target ? ccache->net_lo : ccache->net_hi;
 
+		/* Get source and destination nodes */
 		src_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
 		dst_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
-		net_send_ev(net, src_node, dst_node, stack->response,
+
+		/* Check if network is available. If not, try later. */
+		if (!net_can_send_ev(net, src_node, dst_node, stack->response, event, stack))
+			return;
+
+		/* Send message. */
+		stack->msg = net_send_ev(net, src_node, dst_node, stack->response,
 			EV_MOESI_READ_REQUEST_FINISH, stack);
 		return;
 	}
@@ -1016,6 +1067,13 @@ void moesi_handler_read_request(int event, void *data)
 		cache_debug("  %lld %lld 0x%x %s read request finish\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
+		/* Receive message */
+		if (ccache->next == target)
+			net_receive(ccache->net_lo, ccache->net_node_lo, stack->msg);
+		else
+			net_receive(ccache->net_hi, ccache->net_node_hi, stack->msg);
+
+		/* Return */
 		moesi_stack_return(stack);
 		return;
 	}
@@ -1049,10 +1107,17 @@ void moesi_handler_write_request(int event, void *data)
 		assert(ccache->next == target || target->next == ccache);
 		net = ccache->next == target ? ccache->net_lo : ccache->net_hi;
 
-		/* Send request */
+		/* Get source and destination nodes */
 		src_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
 		dst_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
-		net_send_ev(net, src_node, dst_node, 8, EV_MOESI_WRITE_REQUEST_RECEIVE, stack);
+
+		/* Check network availability */
+		if (!net_can_send_ev(net, src_node, dst_node, 8, event, stack))
+			return;
+
+		/* Send message */
+		stack->msg = net_send_ev(net, src_node, dst_node, 8,
+			EV_MOESI_WRITE_REQUEST_RECEIVE, stack);
 		return;
 	}
 
@@ -1060,6 +1125,12 @@ void moesi_handler_write_request(int event, void *data)
 	{
 		cache_debug("  %lld %lld 0x%x %s write request receive\n", CYCLE, ID,
 			stack->addr, target->name);
+
+		/* Receive message */
+		if (ccache->next == target)
+			net_receive(target->net_hi, target->net_node_hi, stack->msg);
+		else
+			net_receive(target->net_lo, target->net_node_lo, stack->msg);
 		
 		/* Find and lock */
 		newstack = moesi_stack_create(stack->id, target, stack->addr,
@@ -1198,10 +1269,16 @@ void moesi_handler_write_request(int event, void *data)
 		assert(ccache->next == target || target->next == ccache);
 		net = ccache->next == target ? ccache->net_lo : ccache->net_hi;
 
-		/* Send reply */
+		/* Get source and destination nodes */
 		src_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
 		dst_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
-		net_send_ev(net, src_node, dst_node, stack->response,
+
+		/* Check network availability */
+		if (!net_can_send_ev(net, src_node, dst_node, stack->response, event, stack))
+			return;
+
+		/* Send message */
+		stack->msg = net_send_ev(net, src_node, dst_node, stack->response,
 			EV_MOESI_WRITE_REQUEST_FINISH, stack);
 		return;
 	}
@@ -1211,6 +1288,13 @@ void moesi_handler_write_request(int event, void *data)
 		cache_debug("  %lld %lld 0x%x %s write request finish\n", CYCLE, ID,
 			stack->tag, ccache->name);
 
+		/* Receive message */
+		if (ccache->next == target)
+			net_receive(ccache->net_lo, ccache->net_node_lo, stack->msg);
+		else
+			net_receive(ccache->net_hi, ccache->net_node_hi, stack->msg);
+
+		/* Return */
 		moesi_stack_return(stack);
 		return;
 	}
