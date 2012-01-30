@@ -11,7 +11,8 @@ SUBDIRS = \
 	libgpukernel \
 	libmhandle \
 	libgpudisasm \
-	libgpuvisual
+	libgpuvisual \
+	libsdram
 
 bin_PROGRAMS = m2s
 
