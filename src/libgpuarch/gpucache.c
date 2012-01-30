@@ -1117,14 +1117,9 @@ void gpu_cache_handler_read(int event, void *data)
 		gpu_cache_debug("  %lld %lld read_request src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, gpu_cache->name, target->name, net->name);
 
-		/* Check whether we can send message. If not, retry later. */
-		if (!net_can_send_ev(net, gpu_cache->net_node_lo, target->net_node_hi,
-			8, event, stack))
-			return;
-
 		/* Send message */
-		stack->msg = net_send_ev(net, gpu_cache->net_node_lo, target->net_node_hi, 8,
-			EV_GPU_CACHE_READ_REQUEST_RECEIVE, stack);
+		stack->msg = net_try_send_ev(net, gpu_cache->net_node_lo, target->net_node_hi,
+			8, EV_GPU_CACHE_READ_REQUEST_RECEIVE, stack, event, stack);
 		return;
 	}
 
@@ -1155,14 +1150,10 @@ void gpu_cache_handler_read(int event, void *data)
 		gpu_cache_debug("  %lld %lld read_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, target->name, gpu_cache->name, net->name);
 
-		/* Check whether message can be sent. If not, retry later. */
-		if (!net_can_send_ev(net, target->net_node_hi, gpu_cache->net_node_lo,
-			gpu_cache->block_size + 8, event, stack))
-			return;
-
 		/* Send message */
-		stack->msg = net_send_ev(net, target->net_node_hi, gpu_cache->net_node_lo,
-			gpu_cache->block_size + 8, EV_GPU_CACHE_READ_REQUEST_FINISH, stack);
+		stack->msg = net_try_send_ev(net, target->net_node_hi, gpu_cache->net_node_lo,
+			gpu_cache->block_size + 8, EV_GPU_CACHE_READ_REQUEST_FINISH, stack,
+			event, stack);
 		return;
 	}
 
@@ -1385,14 +1376,9 @@ void gpu_cache_handler_write(int event, void *data)
 		gpu_cache_debug("  %lld %lld write_request_send src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, gpu_cache->name, target->name, net->name);
 
-		/* Check if message can be sent. If not, retry later. */
-		if (!net_can_send_ev(net, gpu_cache->net_node_lo, target->net_node_hi,
-			8, event, stack))
-			return;
-
 		/* Send message */
-		stack->msg = net_send_ev(net, gpu_cache->net_node_lo, target->net_node_hi, 8,
-			EV_GPU_CACHE_WRITE_REQUEST_RECEIVE, stack);
+		stack->msg = net_try_send_ev(net, gpu_cache->net_node_lo, target->net_node_hi, 8,
+			EV_GPU_CACHE_WRITE_REQUEST_RECEIVE, stack, event, stack);
 		return;
 	}
 
@@ -1424,14 +1410,9 @@ void gpu_cache_handler_write(int event, void *data)
 		gpu_cache_debug("  %lld %lld write_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, gpu_cache->name, target->name, net->name);
 
-		/* Check if message can be sent. If not, retry later. */
-		if (!net_can_send_ev(net, target->net_node_hi, gpu_cache->net_node_lo,
-			8, event, stack))
-			return;
-
 		/* Send message */
-		stack->msg = net_send_ev(net, target->net_node_hi, gpu_cache->net_node_lo, 8,
-			EV_GPU_CACHE_WRITE_REQUEST_REPLY_RECEIVE, stack);
+		stack->msg = net_try_send_ev(net, target->net_node_hi, gpu_cache->net_node_lo, 8,
+			EV_GPU_CACHE_WRITE_REQUEST_REPLY_RECEIVE, stack, event, stack);
 		return;
 	}
 
