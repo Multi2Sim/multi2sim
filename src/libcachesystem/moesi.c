@@ -553,14 +553,10 @@ void moesi_handler_evict(int event, void *data)
 		if (stack->status == moesi_status_modified ||
 			stack->status == moesi_status_owned)
 		{
-			/* Check if we can send. If not, retry later. */
-			if (!net_can_send_ev(ccache->net_lo, ccache->net_node_lo,
-				lower_node, ccache->bsize + 8, event, stack))
-				return;
-
 			/* Send message */
-			stack->msg = net_send_ev(ccache->net_lo, ccache->net_node_lo, lower_node,
-				ccache->bsize + 8, EV_MOESI_EVICT_RECEIVE, stack);
+			stack->msg = net_try_send_ev(ccache->net_lo, ccache->net_node_lo,
+				lower_node, ccache->bsize + 8, EV_MOESI_EVICT_RECEIVE, stack,
+				event, stack);
 			stack->writeback = 1;
 			return;
 		}
@@ -569,14 +565,9 @@ void moesi_handler_evict(int event, void *data)
 		if (stack->status == moesi_status_shared ||
 			stack->status == moesi_status_exclusive)
 		{
-			/* Check if we can send. If not, retry later. */
-			if (!net_can_send_ev(ccache->net_lo, ccache->net_node_lo,
-				lower_node, 8, event, stack))
-				return;
-
 			/* Send message */
-			stack->msg = net_send_ev(ccache->net_lo, ccache->net_node_lo, lower_node, 8,
-				EV_MOESI_EVICT_RECEIVE, stack);
+			stack->msg = net_try_send_ev(ccache->net_lo, ccache->net_node_lo,
+				lower_node, 8, EV_MOESI_EVICT_RECEIVE, stack, event, stack);
 			return;
 		}
 
@@ -703,14 +694,10 @@ void moesi_handler_evict(int event, void *data)
 		cache_debug("  %lld %lld 0x%x %s evict reply\n", CYCLE, ID,
 			stack->tag, target->name);
 
-		/* Check that we can send. If not, retry later */
-		if (!net_can_send_ev(target->net_hi, target->net_node_hi, ccache->net_node_lo,
-			8, event, stack))
-			return;
-
-		/* Send */
-		stack->msg = net_send_ev(target->net_hi, target->net_node_hi, ccache->net_node_lo, 8,
-			EV_MOESI_EVICT_REPLY_RECEIVE, stack);
+		/* Send message */
+		stack->msg = net_try_send_ev(target->net_hi, target->net_node_hi,
+			ccache->net_node_lo, 8, EV_MOESI_EVICT_REPLY_RECEIVE, stack,
+			event, stack);
 		return;
 
 	}
@@ -775,13 +762,9 @@ void moesi_handler_read_request(int event, void *data)
 		src_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
 		dst_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
 
-		/* Check if we can send. If not, retry later. */
-		if (!net_can_send_ev(net, src_node, dst_node, 8, event, stack))
-			return;
-
-		/* Send request */
-		stack->msg = net_send_ev(net, src_node, dst_node, 8,
-			EV_MOESI_READ_REQUEST_RECEIVE, stack);
+		/* Send message */
+		stack->msg = net_try_send_ev(net, src_node, dst_node, 8,
+			EV_MOESI_READ_REQUEST_RECEIVE, stack, event, stack);
 		return;
 	}
 
@@ -1052,13 +1035,9 @@ void moesi_handler_read_request(int event, void *data)
 		src_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
 		dst_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
 
-		/* Check if network is available. If not, try later. */
-		if (!net_can_send_ev(net, src_node, dst_node, stack->response, event, stack))
-			return;
-
-		/* Send message. */
-		stack->msg = net_send_ev(net, src_node, dst_node, stack->response,
-			EV_MOESI_READ_REQUEST_FINISH, stack);
+		/* Send message */
+		stack->msg = net_try_send_ev(net, src_node, dst_node, stack->response,
+			EV_MOESI_READ_REQUEST_FINISH, stack, event, stack);
 		return;
 	}
 
@@ -1111,13 +1090,9 @@ void moesi_handler_write_request(int event, void *data)
 		src_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
 		dst_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
 
-		/* Check network availability */
-		if (!net_can_send_ev(net, src_node, dst_node, 8, event, stack))
-			return;
-
 		/* Send message */
-		stack->msg = net_send_ev(net, src_node, dst_node, 8,
-			EV_MOESI_WRITE_REQUEST_RECEIVE, stack);
+		stack->msg = net_try_send_ev(net, src_node, dst_node, 8,
+			EV_MOESI_WRITE_REQUEST_RECEIVE, stack, event, stack);
 		return;
 	}
 
@@ -1273,13 +1248,9 @@ void moesi_handler_write_request(int event, void *data)
 		src_node = ccache->next == target ? target->net_node_hi : target->net_node_lo;
 		dst_node = ccache->next == target ? ccache->net_node_lo : ccache->net_node_hi;
 
-		/* Check network availability */
-		if (!net_can_send_ev(net, src_node, dst_node, stack->response, event, stack))
-			return;
-
 		/* Send message */
-		stack->msg = net_send_ev(net, src_node, dst_node, stack->response,
-			EV_MOESI_WRITE_REQUEST_FINISH, stack);
+		stack->msg = net_try_send_ev(net, src_node, dst_node, stack->response,
+			EV_MOESI_WRITE_REQUEST_FINISH, stack, event, stack);
 		return;
 	}
 

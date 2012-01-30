@@ -69,13 +69,9 @@ struct net_stack_t
 	struct net_t *net;
 	struct net_msg_t *msg;
 
-	/* Wakeup event and linked list of stacks */
-	int wakeup_event;
-	struct net_stack_t *wakeup_next;
-
 	/* Return event */
-	int retevent;
-	struct net_stack_t *retstack;
+	int ret_event;
+	struct net_stack_t *ret_stack;
 };
 
 struct net_stack_t *net_stack_create(struct net_t *net,
@@ -397,12 +393,22 @@ void net_add_bidirectional_link(struct net_t *net,
 int net_can_send(struct net_t *net, struct net_node_t *src_node,
 	struct net_node_t *dst_node, int size);
 int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
-	struct net_node_t *dst_node, int size, int event, void *stack);
+	struct net_node_t *dst_node, int size,
+	int retry_event, void *retry_stack);
 
 struct net_msg_t *net_send(struct net_t *net, struct net_node_t *src_node,
 	struct net_node_t *dst_node, int size);
 struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node,
-	struct net_node_t *dst_node, int size, int retevent, void *retstack);
+	struct net_node_t *dst_node, int size,
+	int receive_event, void *receive_stack);
+
+struct net_msg_t *net_try_send(struct net_t *net, struct net_node_t *src_node,
+	struct net_node_t *dst_node, int size,
+	int retry_event, void *retry_stack);
+struct net_msg_t *net_try_send_ev(struct net_t *net, struct net_node_t *src_node,
+	struct net_node_t *dst_node, int size, int receive_event, void *receive_stack,
+	int retry_event, void *retry_stack);
+
 
 void net_receive(struct net_t *net, struct net_node_t *node, struct net_msg_t *msg);
 

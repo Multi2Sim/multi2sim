@@ -73,8 +73,8 @@ struct net_stack_t *net_stack_create(struct net_t *net,
 	
 	/* Initialize */
 	stack->net = net;
-	stack->retevent = retevent;
-	stack->retstack = retstack;
+	stack->ret_event = retevent;
+	stack->ret_stack = retstack;
 
 	/* Return */
 	return stack;
@@ -83,8 +83,8 @@ struct net_stack_t *net_stack_create(struct net_t *net,
 
 void net_stack_return(struct net_stack_t *stack)
 {
-	int retevent = stack->retevent;
-	struct net_stack_t *retstack = stack->retstack;
+	int retevent = stack->ret_event;
+	struct net_stack_t *retstack = stack->ret_stack;
 
 	free(stack);
 	esim_schedule_event(retevent, retstack, 0);
@@ -378,7 +378,7 @@ void net_event_handler(int event, void *data)
 		net->msg_size_acc += msg->size;
 
 		/* If not return event was specified, free message here */
-		if (stack->retevent == ESIM_EV_NONE)
+		if (stack->ret_event == ESIM_EV_NONE)
 			net_receive(net, node, msg);
 
 		/* Finish */
