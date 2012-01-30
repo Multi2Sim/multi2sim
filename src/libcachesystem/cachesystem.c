@@ -1086,6 +1086,7 @@ void cache_system_dump_report()
 	struct tlb_t *tlb;
 	FILE *f;
 	int curr;
+	int i;
 
 	/* Open file */
 	f = open_write(cache_system_report_file_name);
@@ -1194,6 +1195,10 @@ void cache_system_dump_report()
 		fprintf(f, "\n\n");
 	}
 
+	/* Dump report for networks */
+	for (i = 0; i < net_count; i++)
+		net_dump_report(net_array[i], f);
+	
 	/* Done */
 	fclose(f);
 }
