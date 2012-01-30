@@ -648,12 +648,14 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 	/* Open as text file */
 	buffer = &kernel->metadata_buffer;
 	elf_buffer_seek(buffer, 0);
+	opencl_debug("Kernel Metadata:\n"); 
 	for (;;) {
 		
 		/* Read line from buffer */
 		elf_buffer_read_line(buffer, line, MAX_STRING_SIZE);
 		if (!line[0])
 			break;
+		opencl_debug("\t%s\n", line);
 
 		/* Split line */
 		line_ptrs[0] = strtok(line, ":;\n");
@@ -704,7 +706,10 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 
 		/* Entry 'pointer'. Format: pointer:<name>:<type>:?:?:<addr>:?:?:<elem_size> */
 		if (!strcmp(line_ptrs[0], "pointer")) {
-			OPENCL_KERNEL_METADATA_TOKEN_COUNT(9);
+			/* APP SDK 2.5 supplies 9 tokens, 2.6 supplies 10 tokens */
+			if(token_count != 9 && token_count != 10) {
+				OPENCL_KERNEL_METADATA_TOKEN_COUNT(10);
+			}
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
 			arg = opencl_kernel_arg_create(line_ptrs[1]);

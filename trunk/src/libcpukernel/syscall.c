@@ -395,8 +395,8 @@ struct sim_utsname {
 struct sim_utsname sim_utsname = {
 	"Linux",
 	"multi2sim",
-	"2.6.18-6-686",
-	"#1 Mon Jul 17 09:21:59 UTC 2006",
+	"3.1.9-1.fc16.i686"
+	"#1 Fri Jan 13 16:37:42 UTC 2012",
 	"i686"
 	""
 };
