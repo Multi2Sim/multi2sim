@@ -522,6 +522,8 @@ void net_add_bidirectional_link(struct net_t *net,
 }
 
 
+/* Return TRUE if a message can be sent through the network. Return FALSE
+ * otherwise, whether the reason is temporary of permanent. */
 int net_can_send(struct net_t *net, struct net_node_t *src_node,
 	struct net_node_t *dst_node, int size)
 {
@@ -551,12 +553,13 @@ int net_can_send(struct net_t *net, struct net_node_t *src_node,
 
 
 /* Return TRUE if a message can be sent to the network. If it cannot be
- * sent, return FALSE, and schedule 'event' for the cycle when the check
+ * sent, return FALSE, and schedule 'retry_event' for the cycle when the check
  * should be performed again. This function should not be called if
  * the reason why a message cannot be sent is permanent (e.g., no route
  * to destination). */
 int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
-	struct net_node_t *dst_node, int size, int event, void *stack)
+	struct net_node_t *dst_node, int size,
+	int retry_event, void *retry_stack)
 {
 	struct net_routing_table_t *routing_table = net->routing_table;
 	struct net_routing_table_entry_t *entry;
@@ -577,14 +580,15 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 	/* Output buffer is busy */
 	if (output_buffer->write_busy >= esim_cycle)
 	{
-		esim_schedule_event(event, stack, output_buffer->write_busy - esim_cycle + 1);
+		esim_schedule_event(retry_event, retry_stack,
+			output_buffer->write_busy - esim_cycle + 1);
 		return 0;
 	}
 	
 	/* Message does not fit in output buffer */
 	if (output_buffer->count + size > output_buffer->size)
 	{
-		net_buffer_wait(output_buffer, event, stack);
+		net_buffer_wait(output_buffer, retry_event, retry_stack);
 		return 0;
 	}
 
@@ -593,6 +597,12 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 }
 
 
+/* Send a message through the network.
+ * When using this function, the caller must make sure that the message can be
+ * injected in the network, calling 'net_can_send' first.
+ * When the message is received in 'dst_node' it will be removed automatically
+ * from its input buffer, and the 'msg' object return by this function will be
+ * invalid. */
 struct net_msg_t *net_send(struct net_t *net, struct net_node_t *src_node,
 	struct net_node_t *dst_node, int size)
 {
@@ -601,8 +611,15 @@ struct net_msg_t *net_send(struct net_t *net, struct net_node_t *src_node,
 }
 
 
-struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node, struct net_node_t *dst_node,
-	int size, int retevent, void *retstack)
+/* Send a message through network.
+ * The caller must make sure that the message can be injected in the network, with
+ * a previous call to 'net_can_send'.
+ * When the message reaches the head of the input buffer in 'dst_node', event
+ * 'receive_event' will be scheduled, and object 'msg' will be accessible.
+ * The message needs to be removed by the caller with an additional call to
+ * 'net_receive', which will invalidate and free the 'msg' object. */
+struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node,
+	struct net_node_t *dst_node, int size, int receive_event, void *receive_stack)
 {
 	struct net_stack_t *stack;
 	struct net_msg_t *msg;
@@ -620,12 +637,38 @@ struct net_msg_t *net_send_ev(struct net_t *net, struct net_node_t *src_node, st
 	/* Start event-driven simulation */
 	stack = net_stack_create(net, ESIM_EV_NONE, NULL);
 	stack->msg = msg;
-	stack->retevent = retevent;
-	stack->retstack = retstack;
+	stack->ret_event = receive_event;
+	stack->ret_stack = receive_stack;
 	esim_execute_event(EV_NET_SEND, stack);
 
 	/* Return created message */
 	return msg;
+}
+
+
+struct net_msg_t *net_try_send(struct net_t *net, struct net_node_t *src_node,
+	struct net_node_t *dst_node, int size,
+	int retry_event, void *retry_stack)
+{
+	/* Check if network is available */
+	if (!net_can_send_ev(net, src_node, dst_node, size, retry_event, retry_stack))
+		return NULL;
+
+	/* Send message */
+	return net_send(net, src_node, dst_node, size);
+}
+
+
+struct net_msg_t *net_try_send_ev(struct net_t *net, struct net_node_t *src_node,
+	struct net_node_t *dst_node, int size, int receive_event, void *receive_stack,
+	int retry_event, void *retry_stack)
+{
+	/* Check if network is available */
+	if (!net_can_send_ev(net, src_node, dst_node, size, retry_event, retry_stack))
+		return NULL;
+
+	/* Send message */
+	return net_send_ev(net, src_node, dst_node, size, receive_event, receive_stack);
 }
 
 
