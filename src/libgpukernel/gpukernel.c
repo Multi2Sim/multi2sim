@@ -150,18 +150,44 @@ void gk_libopencl_redirect(char *fullpath, int size)
 	filename = relpath + 1;
 
 	/* Detect an attempt to open 'libm2s-opencl' and record it */
-	if (!strcmp(filename, "libm2s-opencl.so")) {
+	if (!strcmp(filename, "libm2s-opencl.so"))
+	{
+		/* Attempt to open original location */
 		f = fopen(fullpath, "r");
-		if (f) {
+		if (f)
+		{
 			fclose(f);
 			isa_ctx->libopencl_open_attempt = 0;
-		} else
-			isa_ctx->libopencl_open_attempt = 1;
+		}
+		else
+		{
+			/* Attempt to open 'libm2s-openc.so' in current directory */
+			if (!getcwd(buf, MAX_PATH_SIZE))
+				fatal("%s: cannot get current directory", __FUNCTION__);
+			sprintf(fullpath, "%s/libm2s-opencl.so", buf);
+			f = fopen(fullpath, "r");
+			if (f)
+			{
+				fclose(f);
+				warning("path '%s' has been redirected to '%s'\n"
+					"\tYour application is trying to access the Multi2Sim OpenCL library. A copy of\n"
+					"\tthis library has been found in the current working directory, and this copy\n"
+					"\twill be used in the linker. To avoid this message, please link your program\n"
+					"\tstatically. See the Multi2Sim Guide for further details (www.multi2sim.org).\n",
+					fullpath_original, fullpath);
+				isa_ctx->libopencl_open_attempt = 0;
+			}
+			else
+			{
+				/* Attemps failed, record this. */
+				isa_ctx->libopencl_open_attempt = 1;
+			}
+		}
 	}
 
 	/* Translate libOpenCL -> libm2s-opencl */
-	if (!strcmp(filename, "libOpenCL.so") || !strncmp(filename, "libOpenCL.so.", 13)) {
-		
+	if (!strcmp(filename, "libOpenCL.so") || !strncmp(filename, "libOpenCL.so.", 13))
+	{
 		/* Translate name in same path */
 		fullpath[length - 13] = '\0';
 		snprintf(buf, MAX_STRING_SIZE, "%s/libm2s-opencl.so", fullpath);
@@ -169,7 +195,8 @@ void gk_libopencl_redirect(char *fullpath, int size)
 		f = fopen(fullpath, "r");
 
 		/* If attempt failed, translate name into current working directory */
-		if (!f) {
+		if (!f)
+		{
 			if (!getcwd(buf, MAX_PATH_SIZE))
 				fatal("%s: cannot get current directory", __FUNCTION__);
 			sprintf(fullpath, "%s/libm2s-opencl.so", buf);
@@ -177,7 +204,8 @@ void gk_libopencl_redirect(char *fullpath, int size)
 		}
 
 		/* End of attempts */
-		if (f) {
+		if (f)
+		{
 			fclose(f);
 			warning("path '%s' has been redirected to '%s'\n"
 				"\tYour application is trying to access the default OpenCL library, which is being\n"
@@ -186,8 +214,11 @@ void gk_libopencl_redirect(char *fullpath, int size)
 				"\t'libm2s-opencl.so'. See the Multi2Sim Guide for further details (www.multi2sim.org).\n",
 				fullpath_original, fullpath);
 			isa_ctx->libopencl_open_attempt = 0;
-		} else
+		}
+		else
+		{
 			isa_ctx->libopencl_open_attempt = 1;
+		}
 	}
 }
 
