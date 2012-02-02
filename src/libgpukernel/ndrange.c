@@ -337,6 +337,7 @@ void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange)
 	struct opencl_kernel_t *kernel = ndrange->kernel;
 	struct opencl_kernel_arg_t *arg;
 	int i;
+	int cb_index = 0;
 
 	/* Kernel arguments */
 	for (i = 0; i < list_count(kernel->arg_list); i++) {
@@ -355,10 +356,40 @@ void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange)
 		case OPENCL_KERNEL_ARG_KIND_VALUE: {
 			
 			/* Value copied directly into device constant memory */
-			gpu_isa_const_mem_write(1, i, 0, &arg->value);
-			opencl_debug("    arg %d: value '0x%x' loaded\n", i, arg->value);
+			gpu_isa_const_mem_write(1, cb_index, 0, &arg->value);
+			opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i, 
+					arg->value, cb_index);
+			cb_index++;
 			break;
 		}
+
+		case OPENCL_KERNEL_ARG_KIND_IMAGE:
+
+			switch (arg->mem_scope) 
+			{
+
+			case OPENCL_MEM_SCOPE_GLOBAL:
+			{
+				struct opencl_mem_t *mem;
+
+				/* Image type
+				 * Images really take up two slots, but for now we'll
+				 * just copy the pointer into both. */
+				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+				gpu_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
+				opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
+						" device_ptr=0x%x\n", i, arg->value, cb_index,
+						mem->device_ptr);
+				gpu_isa_const_mem_write(1, cb_index+1, 0, &mem->device_ptr);
+				cb_index += 2;
+				break;
+			}
+
+			default:
+				fatal("%s: argument in memory scope %d not supported",
+					__FUNCTION__, arg->mem_scope);
+			}
+			break;
 
 		case OPENCL_KERNEL_ARG_KIND_POINTER:
 		{
@@ -372,9 +403,11 @@ void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange)
 				 * Argument value is a pointer to an 'opencl_mem' object.
 				 * It is translated first into a device memory pointer. */
 				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
-				gpu_isa_const_mem_write(1, i, 0, &mem->device_ptr);
-				opencl_debug("    arg %d: opencl_mem id 0x%x loaded, device_ptr=0x%x\n",
-					i, arg->value, mem->device_ptr);
+				gpu_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
+				opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
+						" device_ptr=0x%x\n", i, arg->value, cb_index,
+						mem->device_ptr);
+				cb_index++;
 				break;
 			}
 
@@ -382,10 +415,11 @@ void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange)
 			{
 				/* Pointer in __local scope.
 				 * Argument value is always NULL, just assign space for it. */
-				gpu_isa_const_mem_write(1, i, 0, &ndrange->local_mem_top);
+				gpu_isa_const_mem_write(1, cb_index, 0, &ndrange->local_mem_top);
 				opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
 					i, arg->size, ndrange->local_mem_top);
 				ndrange->local_mem_top += arg->size;
+				cb_index++;
 				break;
 			}
 
@@ -393,6 +427,13 @@ void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange)
 				fatal("%s: argument in memory scope %d not supported",
 					__FUNCTION__, arg->mem_scope);
 			}
+			break;
+		}
+
+		case OPENCL_KERNEL_ARG_KIND_SAMPLER:
+		{
+			opencl_debug("    arg %d: sampler at CB1[%d]\n", i, cb_index);
+			cb_index++;
 			break;
 		}
 

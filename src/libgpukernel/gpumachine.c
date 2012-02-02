@@ -29,6 +29,8 @@ extern struct amd_inst_t *gpu_isa_cf_inst;
 extern struct amd_inst_t *gpu_isa_inst;
 extern struct amd_alu_group_t *gpu_isa_alu_group;
 
+void fmt_cf_alloc_export_word0_rat_dump(void *buf, FILE *f);
+void fmt_cf_alloc_export_word1_buf_dump(void *buf, FILE *f);
 
 char *err_gpu_machine_note =
 	"\tThe AMD Evergreen instruction set is partially supported by Multi2Sim. If\n"
@@ -274,22 +276,26 @@ void amd_inst_LOOP_START_NO_AL_impl()
 #undef W0
 #undef W1
 
-
 #define W0  CF_ALLOC_EXPORT_WORD0_RAT
 #define W1  CF_ALLOC_EXPORT_WORD1_BUF
-void amd_inst_MEM_RAT_CACHELESS_impl()
+void amd_inst_MEM_RAT_impl()
 {
 	switch (W0.rat_inst) {
 
 	/* STORE_RAW */
+	case 1:
+		/* FIXME Need to support multiple elements (multi-channel images) */
 	case 2: {
 		
 		uint32_t value, addr;
 		float value_float;
 		int work_item_id;
 		int i;
+		int uav;
+		struct opencl_kernel_arg_t *arg;
+		struct opencl_mem_t *mem;
+		uint32_t base_addr;
 
-		/* GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_id, 1);  FIXME: what does rat_id mean? */
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_index_mode, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.elem_size, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.burst_count, 0);
@@ -318,11 +324,115 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 				continue;
 
 			/* W0.rw_gpr: GPR register from which to read data */
-			/* W0.rw_rel: relative/absolute rw_gpr */
+			/* W0.rr: relative/absolute rw_gpr */
 			/* W0.index_gpr: GPR containing buffer coordinates. It is multiplied by (elem_size+1) */
 			/* W0.elem_size: number of doublewords per array element, minus one */
 			/* W1.array_size: array size (elem-size units) */
 
+			/* This is a write, so we need to get the correct address based on the UAV number */
+			uav = W0.rat_id;
+
+			/* Otherwise, we have an image, and we need to provide a base address */
+			arg = list_get(gpu_isa_ndrange->kernel->uav_write_list, uav);
+			mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+			base_addr = mem->device_ptr;
+			addr = base_addr + gpu_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
+			gpu_isa_debug("  t%d:write(0x%x)", gpu_isa_work_item->id, addr);
+
+			/* Record access */
+			gpu_isa_wavefront->global_mem_write = 1;
+			gpu_isa_work_item->global_mem_access_addr = addr;
+			gpu_isa_work_item->global_mem_access_size = 0;
+
+			for (i = 0; i < 4; i++) {
+				
+				/* If component is masked, skip */
+				if (!(W1.comp_mask & (1 << i)))
+					continue;
+
+				/* FIXME We only support single-channel images, and don't know
+				 * how the ISA knows which components to write */
+				if(i != 0) 
+					continue;
+
+				/* Record size for memory access (warning: this is done inaccurately by assuming a
+				 * baseline access and a contiguous set of accessed elements */
+				gpu_isa_work_item->global_mem_access_size += 4;
+
+				/* Access */
+				value = gpu_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
+				value_float = * (float *) &value;
+
+				/* FIXME: leave gaps when intermediate 'comp_mask' bits are not set? */
+				mem_write(gk->global_mem, addr + i * 4, 4, &value);
+				gpu_isa_debug(",");
+				if (debug_status(gpu_isa_debug_category))
+					amd_inst_dump_gpr(W0.rw_gpr, W0.rr, i, 0, debug_file(gpu_isa_debug_category));
+				gpu_isa_debug("=(0x%x,%gf)", value, value_float);
+			}
+			/* FIXME: array_size: ignored now, because 'burst_count' = 0 */
+			/* FIXME: rat_id */
+			/* FIXME: mark - mark memory write to be acknowledged by the next write-ack */
+			/* FIXME: barrier */
+		}
+		break;
+	}
+
+	default:
+		GPU_PARAM_NOT_SUPPORTED(W0.rat_inst);
+	}
+}
+#undef W0
+#undef W1
+
+#define W0  CF_ALLOC_EXPORT_WORD0_RAT
+#define W1  CF_ALLOC_EXPORT_WORD1_BUF
+void amd_inst_MEM_RAT_CACHELESS_impl()
+{
+	switch (W0.rat_inst) {
+
+	/* STORE_RAW */
+	case 2: {
+		
+		uint32_t value, addr;
+		float value_float;
+		int work_item_id;
+		int i;
+
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rat_index_mode, 0);
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W0.elem_size, 0);
+		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.burst_count, 0);
+
+		/* Values for W0.type:
+		 *   0  EXPORT_WRITE: Write to the memory buffer.
+		 *   1  EXPORT_WRITE_IND: write to memory buffer, use offset in INDEX_GPR.
+		 *   2  EXPORT_WRITE_ACK: write to memory buffer, request an ACK when write is
+		 *      committed to memory. For UAV, ACK guarantees return value has been writ-
+		 *      ten to memory.
+		 *   3  EXPORT_WRITE_IND_ACK: write to memory buffer with
+		 *      offset in INDEX_GPR, get an ACK when done. For UAV, ACK guarantees return
+		 *      value has been written to memory.
+		 *      FIXME: What is the ACK?
+		 */
+		/* Only 1 and 3 supported */
+		if (W0.type != 1 && W0.type != 3)
+			GPU_PARAM_NOT_SUPPORTED(W0.type);
+
+		FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id)
+		{
+			gpu_isa_work_item = gpu_isa_ndrange->work_items[work_item_id];
+
+			/* If VPM is set, do not export for inactive pixels. */
+			if (W1.valid_pixel_mode && !gpu_work_item_get_active(gpu_isa_work_item))
+				continue;
+
+			/* W0.rw_gpr: GPR register from which to read data */
+			/* W0.rr: relative/absolute rw_gpr */
+			/* W0.index_gpr: GPR containing buffer coordinates. It is multiplied by (elem_size+1) */
+			/* W0.elem_size: number of doublewords per array element, minus one */
+			/* W1.array_size: array size (elem-size units) */
+
+			/* This is a write, so we need to get the correct address based on the UAV number */
 			addr = gpu_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
 			gpu_isa_debug("  t%d:write(0x%x)", gpu_isa_work_item->id, addr);
 
@@ -344,6 +454,7 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 				/* Access */
 				value = gpu_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
 				value_float = * (float *) &value;
+
 				/* FIXME: leave gaps when intermediate 'comp_mask' bits are not set? */
 				mem_write(gk->global_mem, addr + i * 4, 4, &value);
 				gpu_isa_debug(",");
@@ -702,8 +813,17 @@ void amd_inst_RNDNE_impl() {
 }
 
 
-void amd_inst_FLOOR_impl() {
-	NOT_IMPL();
+void amd_inst_FLOOR_impl() 
+{
+	float src0, dst;
+
+	src0 = gpu_isa_read_op_src_int(0);
+	
+	dst = trunc(src0);
+	if((src0 < 0.0f) && (src0 != dst))
+		dst += -1.0f;
+
+	gpu_isa_enqueue_write_dest(dst);
 }
 
 
@@ -1952,9 +2072,36 @@ void amd_inst_INTERP_LOAD_P20_impl() {
 }
 
 
-void amd_inst_BFE_UINT_impl() {
-	NOT_IMPL();
+#define W0 gpu_isa_inst->words[0].alu_word0
+#define W1 gpu_isa_inst->words[1].alu_word1_op3
+void amd_inst_BFE_UINT_impl() 
+{
+	uint32_t src0, src1, src2, dst;
+
+	src0 = gpu_isa_read_op_src_int(0);
+	src1 = gpu_isa_read_op_src_int(1);
+	src2 = gpu_isa_read_op_src_int(2);
+
+	src1 = (src1 & 0x1F);
+	src2 = (src2 & 0x1F);
+
+	if (src2 == 0) 
+	{
+		dst = 0;
+	}
+	else if (src2 + src1 < 32) 
+	{
+		dst = (src0 << (32-src1-src2)) >> (32-src2);
+	}
+	else 
+	{
+		dst = src0 >> src1;
+	}
+
+	gpu_isa_enqueue_write_dest(dst);
 }
+#undef W0
+#undef W1
 
 
 void amd_inst_BFE_INT_impl() {
@@ -2458,7 +2605,7 @@ void amd_inst_FETCH_impl()
 
 		/* Address */
 		addr = gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * elem_size;
-		gpu_isa_debug("  t%d:read(0x%x)", gpu_isa_work_item->id, addr);
+		gpu_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr);
 
 		/* Read value */
 		assert(W0.mega_fetch_count == 3 || W0.mega_fetch_count == 7
@@ -2578,9 +2725,115 @@ void amd_inst_LD_impl() {
 }
 
 
+#define W0  TEX_WORD0
+#define W1  TEX_WORD1
+#define W2  TEX_WORD2
 void amd_inst_SAMPLE_impl() {
-	NOT_IMPL();
+
+	int i;
+	uint32_t base_addr;
+	uint32_t addr;
+	float f_addr; 
+	uint32_t value;
+	int dst_sel[4], dst_sel_elem;
+	struct opencl_kernel_arg_t *arg;
+	struct opencl_mem_t *image;
+
+	/* FIXME Only works for single channel, floating-point data */
+	uint32_t elem_size = sizeof(float);
+	uint32_t num_elems = 1;
+
+	/* W0.tex_inst: <unknown> */
+	/* W0.inst_mod: instruction modifier */
+	/* W0.fwq (fetch_whole_quad): whether or not to fetch data for inactive work-items */
+	/* W0.resource_id: surface (image?) id to read from */
+	/* W0.src_gpr: source GPR to read from */
+	/* W0.sr (src_rel): relative or absolute src_gpr */
+	/* W0.ac (alt_const): whether the clause uses constants from alternative thread */
+	/* W0.rim (resource_index_mode):  whether to add index0 or index1 to the resource ID */
+	/* W0.sim (sampler_index_mode): whether to add index0 or index1 to the sampler ID */
+
+	/* W1.dst_gpr: destination GPR to write result */
+	/* W1.dr (dst_rel): relative or absolute dst_gpr */
+	/* W1.{dsx,dsy,dsz,dsw}: specified which element of result to write into dst_gpr.{x,y,z,w} */
+	/* W1.lod_bias: constant level-of-detail to add to the computed bias (twos-complement fixed-point value [-4,4))*/
+	/* W1.{ctx,cty,ctz,ctw}: specifies type of source element ([un]normalized)*/
+
+	/* W2.{offsetx,offsety,offsetz}: values added to address elements before sampling */
+	/* W2.sampler_id: sampler ID */
+	/* W2.{ssx,ssy,ssz,ssw}: specifies the element src */
+
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.tex_inst, 16); 
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.inst_mod, 0); /* Not used for SAMPLE */
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.fwq, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.sr, 0); 
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.ac, 0); 
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.rim, 0); 
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.sim, 0); 
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.ssx, 0); 
+
+	/* Address */
+	arg = list_get(gpu_isa_ndrange->kernel->uav_read_list, W0.resource_id);
+	image = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+	base_addr = image->device_ptr;
+	addr = gpu_isa_read_gpr(W0.src_gpr, 0, 0, 0);  /* FIXME Always reads from X */
+	f_addr = * (float *) &addr;
+	addr = base_addr + (uint32_t)round(f_addr) * elem_size;
+
+	mem_read(gk->global_mem, addr, elem_size*num_elems, &value);
+
+	gpu_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr);
+	gpu_isa_debug("<=(%d,%gf) ", value, * (float *) &value);
+
+	/* Do not fetch for inactive work_items */
+	if (!gpu_work_item_get_active(gpu_isa_work_item))
+		return;
+
+	/* Store 'dst_sel_{x,y,z,w}' in array */
+	dst_sel[0] = W1.dsx;
+	dst_sel[1] = W1.dsy;
+	dst_sel[2] = W1.dsz;
+	dst_sel[3] = W1.dsw;
+	
+	/* Record global memory access */
+	gpu_isa_wavefront->global_mem_read = 1;
+	gpu_isa_work_item->global_mem_access_addr = addr;
+	gpu_isa_work_item->global_mem_access_size = num_elems * elem_size;
+
+	/* Write to each component of the GPR */
+	for (i = 0; i < 4; i++) {
+
+		/* Get index of read word to place in this GPR component */
+		dst_sel_elem = dst_sel[i];
+		switch (dst_sel_elem) {
+
+		case 0:  /* SEL_X */
+		case 1:  /* SEL_Y */
+		case 2:  /* SEL_Z */
+		case 3:  /* SEL_W */
+
+			if (dst_sel_elem >= num_elems)
+				GPU_PARAM_NOT_SUPPORTED(dst_sel_elem);
+			gpu_isa_write_gpr(W1.dst_gpr, W1.dr, i, value);
+			if (debug_status(gpu_isa_debug_category)) {
+				gpu_isa_debug(" ");
+				amd_inst_dump_gpr(W1.dst_gpr, W1.dr, i, dst_sel_elem, debug_file(gpu_isa_debug_category));
+				gpu_isa_debug("<=(%d,%gf)", value, * (float *) &value);
+			}
+			break;
+
+		case 7:
+			/* SEL_MASK: mask this element */
+			break;
+
+		default:
+			GPU_PARAM_NOT_SUPPORTED(dst_sel[i]);
+		}
+	}
 }
+#undef W0
+#undef W1
+#undef W2
 
 
 void amd_inst_SAMPLE_C_impl() {

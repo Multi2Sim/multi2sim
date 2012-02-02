@@ -178,7 +178,8 @@ enum opencl_obj_t
 	OPENCL_OBJ_PROGRAM,
 	OPENCL_OBJ_KERNEL,
 	OPENCL_OBJ_MEM,
-	OPENCL_OBJ_EVENT
+	OPENCL_OBJ_EVENT,
+	OPENCL_OBJ_SAMPLER
 };
 
 extern struct lnlist_t *opencl_object_list;
@@ -283,6 +284,63 @@ void opencl_program_build(struct opencl_program_t *program);
 
 
 
+/* OpenCL sampler */
+
+struct opencl_sampler_t
+{
+	uint32_t id;
+	int ref_count;
+
+	uint32_t normalized_coords;
+	uint32_t filter_mode;
+	uint32_t addressing_mode;
+};
+
+struct opencl_sampler_t *opencl_sampler_create(void);
+void opencl_sampler_free(struct opencl_sampler_t *sampler);
+
+
+
+/* OpenCL mem */
+
+struct opencl_mem_t
+{
+	uint32_t id;
+	int ref_count;
+
+	uint32_t type;  /* 0 buffer, 1 2D image, 2 3D image */
+
+	uint32_t size;
+
+	/* Used for images only */
+	uint32_t height;
+	uint32_t width;
+	uint32_t depth;
+	uint32_t num_elems;
+	uint32_t elem_size;
+
+	uint32_t flags;
+	uint32_t host_ptr;
+
+	uint32_t device_ptr;  /* Position assigned in device global memory */
+};
+
+struct opencl_mem_t *opencl_mem_create(void);
+void opencl_mem_free(struct opencl_mem_t *mem);
+
+
+/* OpenCL Image */
+
+struct opencl_image_format_t
+{
+	uint32_t image_channel_order;
+	uint32_t image_channel_data_type;
+};
+
+
+
+
+
 /* OpenCL kernel */
 
 enum opencl_mem_scope_t
@@ -297,14 +355,25 @@ enum opencl_mem_scope_t
 enum opencl_kernel_arg_kind_t
 {
 	OPENCL_KERNEL_ARG_KIND_VALUE = 1,
-	OPENCL_KERNEL_ARG_KIND_POINTER
+	OPENCL_KERNEL_ARG_KIND_POINTER,
+	OPENCL_KERNEL_ARG_KIND_IMAGE,
+	OPENCL_KERNEL_ARG_KIND_SAMPLER
 };
+
+enum opencl_kernel_arg_access_type_t
+{
+	OPENCL_KERNEL_ARG_READ_ONLY = 1,
+	OPENCL_KERNEL_ARG_WRITE_ONLY,
+	OPENCL_KERNEL_ARG_READ_WRITE
+};
+
 
 struct opencl_kernel_arg_t
 {
 	/* Argument properties, as described in .rodata */
 	enum opencl_kernel_arg_kind_t kind;
 	enum opencl_mem_scope_t mem_scope;  /* For pointers */
+	enum opencl_kernel_arg_access_type_t access_type;
 	int elem_size;  /* For a pointer, size of element pointed to */
 
 	/* Argument fields as set in clSetKernelArg */
@@ -355,6 +424,10 @@ struct opencl_kernel_t
 	int local_size;
 	int group_count;
 
+	/* UAV lists */
+	struct list_t *uav_read_list;
+	struct list_t *uav_write_list;
+
 	/* State of the running kernel */
 	struct gpu_ndrange_t *ndrange;
 };
@@ -368,26 +441,6 @@ void opencl_kernel_arg_free(struct opencl_kernel_arg_t *arg);
 void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name);
 uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size);
-
-
-
-
-/* OpenCL mem */
-
-struct opencl_mem_t
-{
-	uint32_t id;
-	int ref_count;
-
-	uint32_t size;
-	uint32_t flags;
-	uint32_t host_ptr;
-
-	uint32_t device_ptr;  /* Position assigned in device global memory */
-};
-
-struct opencl_mem_t *opencl_mem_create(void);
-void opencl_mem_free(struct opencl_mem_t *mem);
 
 
 
