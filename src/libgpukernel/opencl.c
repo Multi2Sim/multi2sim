@@ -469,6 +469,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Create memory object */
 		mem = opencl_mem_create();
+		mem->type = 0;  /* FIXME */
 		mem->size = size;
 		mem->flags = flags;
 		mem->host_ptr = host_ptr;
@@ -494,6 +495,311 @@ int opencl_func_run(int code, unsigned int *args)
 		break;
 	}
 
+	/* 1016 */
+	case OPENCL_FUNC_clCreateImage2D:
+	{
+		uint32_t context_id = args[0];  /* cl_context context */
+		uint32_t flags = args[1];  /* cl_mem_flags flags */
+		uint32_t image_format_ptr = args[2];  /* cl_image_format *image_format */
+		uint32_t image_width = args[3];  /* size_t image_width */
+		uint32_t image_height = args[4];  /* size_t image_height */
+		uint32_t image_row_pitch = args[5];  /* size_t image_row_pitch */
+		uint32_t host_ptr = args[6];  /* void *host_ptr */
+		uint32_t errcode_ret_ptr = args[7];  /* cl_int *errcode_ret */
+
+		char sflags[MAX_STRING_SIZE];
+
+		void *image;
+
+		static struct string_map_t create_image_flags_map = { 4, {
+			{ "CL_MEM_READ_WRITE", 0x1 },
+			{ "CL_MEM_WRITE_ONLY", 0x2 },
+			{ "CL_MEM_READ_ONLY", 0x4 },
+			{ "CL_MEM_USE_HOST_PTR", 0x8 },
+			{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
+			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
+		}};
+
+		uint32_t channel_order;
+		uint32_t channel_type;
+		struct opencl_image_format_t image_format;
+
+		mem_read(isa_mem, image_format_ptr, 8, &image_format);
+		channel_order = image_format.image_channel_order;
+		channel_type = image_format.image_channel_data_type;
+
+		map_flags(&create_image_flags_map, flags, sflags, sizeof(sflags));
+		opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, channel_type=0x%x, image_width=%u, image_height=%u, image_row_pitch=%u, host_ptr=0x%x, errcode_ret=0x%x\n",
+			context_id, sflags, channel_order, channel_type, image_width, image_height, image_row_pitch, host_ptr, errcode_ret_ptr);
+
+		/* Check flags */
+		if ((flags & 0x10) && host_ptr)
+			fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with CL_MEM_USE_HOST_PTR\n%s",
+				err_prefix, err_opencl_param_note);
+		if ((flags & 0x8) && !host_ptr)  /* CL_MEM_USE_HOST_PTR */
+			fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
+				err_prefix, err_opencl_param_note);
+		if ((flags & 0x20) && !host_ptr)  /* CL_MEM_COPY_HOST_PTR */
+			fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
+				err_prefix, err_opencl_param_note);
+
+		uint32_t num_elements_per_pixel;
+		uint32_t element_size;
+
+		/* Evaluate image channel order */
+		switch(channel_order) {
+
+		case 0x10B0:  /* CL_R */
+		{
+			num_elements_per_pixel = 1;
+			break;
+		}
+
+		case 0x10B5: /* CL_RGBA */
+		{
+			num_elements_per_pixel = 4;
+			break;
+		}
+		
+		default:
+		{
+			fatal("%s: image channel order %u not supported\n%s",
+				err_prefix, channel_order, err_opencl_param_note);
+		}
+
+		}
+
+		/* Evaluate image channel type */
+		switch(channel_type) {
+
+		case 0x10DA: /* CL_UNSIGNED_INT8 */
+		{
+			element_size = 1;
+			break;
+		}
+
+		case 0x10DE: /* CL_FLOAT */
+		{
+			element_size = 4;
+			break;
+		}
+		
+		default:
+		{
+			fatal("%s: image channel type %u not supported\n%s",
+				err_prefix, channel_type, err_opencl_param_note);
+		}
+
+		}
+
+		/* Determine image geometry */
+		uint32_t pixel_size = num_elements_per_pixel * element_size;
+
+		if(image_row_pitch == 0) {
+			image_row_pitch = image_width*pixel_size;
+		}
+		else if(image_row_pitch < image_width*pixel_size) {
+
+			fatal("%s: image_row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
+				err_prefix, err_opencl_param_note);
+		}
+
+		struct opencl_mem_t *mem;
+
+		/* Create memory object */
+		uint32_t size = image_row_pitch*image_height;
+		mem = opencl_mem_create();
+		mem->type = 1;  /* FIXME */
+		mem->size = size;
+		mem->flags = flags;
+		mem->host_ptr = host_ptr;
+		mem->num_elems = size/pixel_size;
+		mem->elem_size = pixel_size;
+		mem->width = image_width;
+		mem->height = image_height;
+		mem->depth = 1;
+
+		/* Assign position in device global memory */
+		mem->device_ptr = gk->global_mem_top;
+		gk->global_mem_top += size;
+
+		/* If 'host_ptr' was specified, copy image into device memory */
+		if (host_ptr) {
+			image = malloc(size);
+			if (!image)
+				fatal("%s: out of memory", err_prefix);
+			mem_read(isa_mem, host_ptr, size, image);
+			mem_write(gk->global_mem, mem->device_ptr, size, image);
+			free(image);
+		}
+		fflush(NULL);
+
+		/* Return memory object */
+		retval = mem->id;
+		if (errcode_ret_ptr)
+			mem_write(isa_mem, errcode_ret_ptr, 4, &opencl_success);
+		break;
+	}
+
+	/* 1017 */
+	case OPENCL_FUNC_clCreateImage3D:
+	{
+		uint32_t context_id = args[0];  /* cl_context context */
+		uint32_t flags = args[1];  /* cl_mem_flags flags */
+		uint32_t image_format_ptr = args[2];  /* cl_image_format *image_format */
+		uint32_t image_width = args[3];  /* size_t image_width */
+		uint32_t image_height = args[4];  /* size_t image_height */
+		uint32_t image_depth = args[5];  /* size_t image_depth */
+		uint32_t image_row_pitch = args[6];  /* size_t image_row_pitch */
+		uint32_t image_slice_pitch = args[7];  /* size_t image_slice_pitch */
+		uint32_t host_ptr = args[8];  /* void *host_ptr */
+		uint32_t errcode_ret_ptr = args[9];  /* cl_int *errcode_ret */
+
+		char sflags[MAX_STRING_SIZE];
+
+		void *image;
+
+		static struct string_map_t create_image_flags_map = { 4, {
+			{ "CL_MEM_READ_WRITE", 0x1 },
+			{ "CL_MEM_WRITE_ONLY", 0x2 },
+			{ "CL_MEM_READ_ONLY", 0x4 },
+			{ "CL_MEM_USE_HOST_PTR", 0x8 },
+			{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
+			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
+		}};
+
+		uint32_t channel_order;
+		uint32_t channel_type;
+		struct opencl_image_format_t image_format;
+
+		mem_read(isa_mem, image_format_ptr, 8, &image_format);
+		channel_order = image_format.image_channel_order;
+		channel_type = image_format.image_channel_data_type;
+
+		map_flags(&create_image_flags_map, flags, sflags, sizeof(sflags));
+		opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, channel_type=0x%x\n" 
+			     "  image_width=%u, image_height=%u, image_depth=%u\n"
+			     "  image_row_pitch=%u, image_slice_pitch=%u, host_ptr=0x%x\n"
+			     "  errcode_ret=0x%x\n",
+			context_id, sflags, channel_order, channel_type, image_width, image_height, image_depth, 
+			image_row_pitch, image_slice_pitch, host_ptr, errcode_ret_ptr);
+
+		/* Check flags */
+		if ((flags & 0x10) && host_ptr)
+			fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with CL_MEM_USE_HOST_PTR\n%s",
+				err_prefix, err_opencl_param_note);
+		if ((flags & 0x8) && !host_ptr)  /* CL_MEM_USE_HOST_PTR */
+			fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
+				err_prefix, err_opencl_param_note);
+		if ((flags & 0x20) && !host_ptr)  /* CL_MEM_COPY_HOST_PTR */
+			fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
+				err_prefix, err_opencl_param_note);
+
+		uint32_t num_elements_per_pixel;
+		uint32_t element_size;
+
+		/* Evaluate image channel order */
+		switch(channel_order) {
+
+		case 0x10B0:  /* CL_R */
+		{
+			num_elements_per_pixel = 1;
+			break;
+		}
+
+		case 0x10B5: /* CL_RGBA */
+		{
+			num_elements_per_pixel = 4;
+			break;
+		}
+		
+		default:
+		{
+			fatal("%s: image channel order %u not supported\n%s",
+				err_prefix, channel_order, err_opencl_param_note);
+		}
+
+		}
+
+		/* Evaluate image channel type */
+		switch(channel_type) {
+
+		case 0x10DA: /* CL_UNSIGNED_INT8 */
+		{
+			element_size = 1;
+			break;
+		}
+
+		case 0x10DE: /* CL_FLOAT */
+		{
+			element_size = 4;
+			break;
+		}
+		
+		default:
+		{
+			fatal("%s: image channel type %u not supported\n%s",
+				err_prefix, channel_type, err_opencl_param_note);
+		}
+
+		}
+
+		/* Determine image geometry */
+		uint32_t pixel_size = num_elements_per_pixel * element_size;
+
+		if(image_row_pitch == 0) {
+			image_row_pitch = image_width*pixel_size;
+		}
+		else if(image_row_pitch < image_width*pixel_size) {
+
+			fatal("%s: image_row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
+				err_prefix, err_opencl_param_note);
+		}
+
+		if(image_slice_pitch == 0) {
+			image_slice_pitch = image_row_pitch*image_height;
+		}
+		else if(image_slice_pitch < image_row_pitch*image_height) {
+
+			fatal("%s: image_slice_pitch must be 0 or >= image_row_pitch * image_height\n%s", 
+				err_prefix, err_opencl_param_note);
+		}
+
+		struct opencl_mem_t *mem;
+
+		/* Create memory object */
+		uint32_t size = image_slice_pitch*image_depth;
+		mem = opencl_mem_create();
+		mem->type = 2; /* FIXME */
+		mem->size = size;
+		mem->flags = flags;
+		mem->host_ptr = host_ptr;
+		mem->num_elems = size/pixel_size;
+		mem->elem_size = pixel_size;
+		mem->width = image_width;
+		mem->height = image_height;
+		mem->depth = image_depth;
+
+		/* Assign position in device global memory */
+		mem->device_ptr = gk->global_mem_top;
+		gk->global_mem_top += size;
+
+		/* If 'host_ptr' was specified, copy image into device memory */
+		if (host_ptr) {
+			image = malloc(size);
+			if (!image)
+				fatal("%s: out of memory", err_prefix);
+			mem_read(isa_mem, host_ptr, size, image);
+			mem_write(gk->global_mem, mem->device_ptr, size, image);
+			free(image);
+		}
+
+		/* Return memory object */
+		retval = mem->id;
+		if (errcode_ret_ptr)
+			mem_write(isa_mem, errcode_ret_ptr, 4, &opencl_success);
+		break;
+	}
 
 	/* 1019 */
 	case OPENCL_FUNC_clReleaseMemObject:
@@ -510,6 +816,51 @@ int opencl_func_run(int code, unsigned int *args)
 		break;
 	}
 
+	/* 1024 */
+	case OPENCL_FUNC_clCreateSampler:
+	{
+		uint32_t context = args[0];  /* cl_context context */
+		uint32_t normalized_coords = args[1];  /* cl_bool normalized_coords */
+		uint32_t addressing_mode = args[2];  /* cl_addressing_mode addressing_mode */
+		uint32_t filter_mode = args[3];  /* cl_filter_mode filter_mode */
+		uint32_t errcode_ret = args[4];  /* cl_int *errcode_ret */
+
+		struct opencl_sampler_t *sampler;
+
+		opencl_debug("  context=0x%x, normalized_coords=%d, addressing_mode=0x%x," 
+				" lengths=0x%x, errcode_ret=0x%x\n",
+			context, normalized_coords, addressing_mode, filter_mode, errcode_ret);
+
+		if(normalized_coords != 0) 
+		{
+			fatal("%s: Normalized coordinates are not supported.\n", err_prefix);
+		}
+
+		if(filter_mode != 0x1140)  /* only CL_FILTER_NEAREST supported */
+		{
+			fatal("%s: filter mode %u not supported.\n", err_prefix, filter_mode);
+		}
+
+		if(addressing_mode != 0x1130) /* only CL_ADDRESS_NONE supported */
+		{
+			fatal("%s: addressing mode %u not supported.\n", err_prefix, 
+					addressing_mode);
+		}
+
+		opencl_object_get(OPENCL_OBJ_CONTEXT, context);
+
+		/* Create command queue and return id */
+		sampler = opencl_sampler_create();
+		sampler->normalized_coords = normalized_coords;
+		sampler->addressing_mode = addressing_mode;
+		sampler->filter_mode = filter_mode;
+		retval = sampler->id;
+
+		/* Return success */
+		if (errcode_ret)
+			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
+		break;
+	}
 
 	/* 1028 */
 	case OPENCL_FUNC_clCreateProgramWithSource:
@@ -1079,6 +1430,103 @@ int opencl_func_run(int code, unsigned int *args)
 		break;
 	}
 
+	/* 1059 */ 
+	case OPENCL_FUNC_clEnqueueReadImage:
+	{
+		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
+		uint32_t image = args[1];  /* cl_mem image*/
+		uint32_t blocking_read = args[2];  /* cl_bool blocking_read */
+		uint32_t origin = args[3];  /* size_t origin[3] */
+		uint32_t region = args[4];  /* size_t region[3] */
+		uint32_t row_pitch = args[5];  /* size_t row_pitch */
+		uint32_t slice_pitch = args[6];  /* size_t slice_pitch */
+		uint32_t ptr = args[7];  /* void *ptr */
+		uint32_t num_events_in_wait_list = args[8];  /* cl_uint num_events_in_wait_list */
+		uint32_t event_wait_list = args[9];  /* const cl_event *event_wait_list */
+		uint32_t event_ptr = args[10];  /* cl_event *event */
+		
+		struct opencl_mem_t *mem;
+		struct opencl_event_t *event;
+		void *img;
+
+		opencl_debug("  command_queue=0x%x, image=0x%x, blocking_read=0x%x,\n"
+			"  origin=0x%x, region=0x%x, row_pitch=0x%x, slice_pitch=0x%x, ptr=0x%x\n"
+			"  num_events_in_wait_list=0x%x, event_wait_list=0x%x, event=0x%x\n",
+			command_queue, image, blocking_read, origin, region, row_pitch, 
+			slice_pitch, ptr, num_events_in_wait_list, event_wait_list, event_ptr);
+
+		/* FIXME: 'blocking_read' ignored */
+		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
+		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+
+		/* Get memory object */
+		mem = opencl_object_get(OPENCL_OBJ_MEM, image);
+
+		/* Determine image geometry */
+		/* NOTE size_t is 32-bits on 32-bit systems, but 64-bits on 64-bit systems.  Since
+		 * the simulator may be on a 64-bit system, we should not use size_t here, but uint32_t 
+		 * instead. */
+		uint32_t read_region[3]; 
+		uint32_t read_origin[3];
+		mem_read(isa_mem, region, 12, read_region);
+		mem_read(isa_mem, origin, 12, read_origin);
+
+		if(row_pitch == 0) {
+			row_pitch = mem->width*mem->elem_size;
+		}
+		else if(row_pitch < mem->width*mem->elem_size) {
+
+			fatal("%s: row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
+				err_prefix, err_opencl_param_note);
+		}
+
+		if(slice_pitch == 0) {
+			slice_pitch = row_pitch*mem->height;
+		}
+		else if(slice_pitch < row_pitch*mem->height) {
+
+			fatal("%s: slice_pitch must be 0 or >= row_pitch * image_height\n%s", 
+				err_prefix, err_opencl_param_note);
+		}
+
+		/* FIXME Start with origin = {0,0,0}, region = {width, height, depth},
+		 * then add support for subregions */
+		if(read_origin[0] != 0 || read_origin[1] != 0 || read_origin[2] != 0 ||
+		   read_region[0] != mem->width || read_region[1] != mem->height || 
+		   read_region[2] != mem->depth) {
+
+			fatal("%s: Origin/region must match dimensions of image\n%s", 
+				err_prefix, err_opencl_param_note);
+		}
+
+		/* Copy image from device memory to host memory */
+		img = malloc(mem->size);
+		if (!img)
+			fatal("out of memory");
+
+		/* Read the entire image */
+		mem_read(gk->global_mem, mem->device_ptr, mem->size, img);
+		mem_write(isa_mem, ptr, mem->size, img);
+		free(img);
+
+		/* Event */
+		if (event_ptr) {
+			event = opencl_event_create(OPENCL_EVENT_NDRANGE_KERNEL);
+			event->status = OPENCL_EVENT_STATUS_SUBMITTED;
+			event->time_queued = opencl_event_timer();
+			event->time_submit = opencl_event_timer();
+			event->time_start = opencl_event_timer();
+			event->time_end = opencl_event_timer();
+			mem_write(isa_mem, event_ptr, 4, &event->id);
+			opencl_debug("    event: 0x%x\n", event->id);
+		}
+
+		/* Return success */
+		/* FIXME Return size of region, not entire image */
+		opencl_debug("    %d bytes copied from device memory (0x%x) to host memory (0x%x)\n",
+			mem->size, mem->device_ptr, ptr);
+		break;
+	}
 
 	/* 1064 */
 	case OPENCL_FUNC_clEnqueueMapBuffer:
@@ -1143,6 +1591,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		struct opencl_kernel_t *kernel;
 		struct opencl_event_t *event = NULL;
+		struct opencl_kernel_arg_t *arg;
 		int i;
 
 		opencl_debug("  command_queue=0x%x, kernel=0x%x, work_dim=%d,\n"
@@ -1158,6 +1607,32 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Get kernel */
 		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
 		kernel->work_dim = work_dim;
+
+		/* Build UAV lists */
+		kernel->uav_read_list = list_create();
+		kernel->uav_write_list = list_create();
+		for (i = 0; i < list_count(kernel->arg_list); i++) 
+		{
+			arg = list_get(kernel->arg_list, i);
+
+			/* If arg is an image, add it to the appropriate UAV list*/
+			if (arg->kind == OPENCL_KERNEL_ARG_KIND_IMAGE) 
+			{
+				if (arg->access_type == OPENCL_KERNEL_ARG_READ_ONLY) 
+				{
+					list_add(kernel->uav_read_list, arg);
+				} 
+				else if (arg->access_type == OPENCL_KERNEL_ARG_WRITE_ONLY) 
+				{
+					list_add(kernel->uav_write_list, arg);
+				} 
+				else 
+				{
+					fatal("%s: unsupported image access type (%d)\n", err_prefix, arg->access_type);
+				}	
+			}
+		}
+			
 
 		/* Global work sizes */
 		kernel->global_size3[1] = 1;
@@ -1226,6 +1701,11 @@ int opencl_func_run(int code, unsigned int *args)
 			gpu_ndrange_run(kernel->ndrange);
 		else
 			gpu_run(kernel->ndrange);
+
+		/* Free UAV Lists */
+		/* FIXME Will not work with Asynchronous execution */
+		list_free(kernel->uav_read_list);
+		list_free(kernel->uav_write_list);
 
 		/* Free NDRange */
 		gpu_ndrange_free(kernel->ndrange);

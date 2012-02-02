@@ -165,7 +165,7 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 	if (count < sizeof(struct pt_note_header_t))
 		fatal("%s: error decoding note header", amd_bin->elf_file->path);
 	
-	/* Read note description */
+	/* Read note description (payload) */
 	desc = elf_buffer_tell(buffer);
 	count = elf_buffer_read(buffer, NULL, header->descsz);
 	if (count < header->descsz)
@@ -222,8 +222,9 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 	case 2:  /* ELF_NOTE_ATI_INPUTS */
 	{
 		/* FIXME: Analyze program inputs */
-		if (header->descsz)
-			warning("%s: pt_note '%s' with descsz != 0 ignored", note_type_str, __FUNCTION__);
+		if (header->descsz) 
+			warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)", note_type_str, __FUNCTION__, * (unsigned int*)desc);
+
 		break;
 	}
 
@@ -231,8 +232,9 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 	case 3:  /* ELF_NOTE_ATI_OUTPUTS */
 	{
 		/* FIXME: Analyze program inputs */
-		if (header->descsz)
-			warning("%s: pt_note '%s' with descsz != 0 ignored", note_type_str, __FUNCTION__);
+		if (header->descsz) 
+			warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)", note_type_str, __FUNCTION__, * (unsigned int*)desc);
+
 		break;
 	}
 
