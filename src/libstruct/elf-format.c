@@ -28,11 +28,18 @@
 
 
 /*
- * Global Variables
+ * Variables
  */
 
 int elf_debug_category;
 
+static char *err_elf_64bit =
+	"\tThe ELF file being loaded is a 64-bit file, currently not supported\n"
+	"\tby Multi2Sim. If you are compiling your own source code on a 64-bit\n"
+	"\tmachine, please use the '-m32' flag in the gcc command-line. If you\n"
+	"\tget compilation errors related with missing '.h' files, check that\n"
+	"\tthe 32-bit gcc package associated with your Linux distribution is\n"
+	"\tinstalled.\n";
 
 
 
@@ -292,7 +299,7 @@ static void elf_file_read_elf_header(struct elf_file_t *elf_file)
 	elf_file->header = buffer->ptr;
 	elf_header = elf_file->header;
 	count = elf_buffer_read(buffer, NULL, sizeof(Elf32_Ehdr));
-	if (count != sizeof(Elf32_Ehdr) || elf_header->e_ehsize != sizeof(Elf32_Ehdr))
+	if (count < EI_NIDENT)
 		fatal("%s: not a valid ELF file\n", elf_file->path);
 
 	/* Check magic characters */
@@ -304,12 +311,12 @@ static void elf_file_read_elf_header(struct elf_file_t *elf_file)
 
 	/* Check for 32-bit executable (field e_ident[EI_CLASS]) */
 	if (elf_header->e_ident[4] == 2)
-		fatal("%s: this is a 64-bit executable, which is not supported in Multi2Sim. "
-			"If you are compiling your own sources on an x86_64 machine, try "
-			"using the '-m32' flag in the gcc command-line. If you get compilation "
-			"errors about not found '.h' files, check that the 32-bit gcc package "
-			"associated with your Linux distribution is installed.",
-			elf_file->path);
+		fatal("%s: not supported architecture.\n%s",
+			elf_file->path, err_elf_64bit);
+	
+	/* Check that header size is correct */
+	if (elf_header->e_ehsize != sizeof(Elf32_Ehdr))
+		fatal("%s: invalid ELF header size", elf_file->path);
 
 	/* Check endianness */
 	if (elf_header->e_ident[5] != 1)
