@@ -80,6 +80,14 @@ DEFINST(LOOP_START_NO_AL,
 	AMD_INST_FLAG_INC_LOOP_IDX | AMD_INST_FLAG_ACT_MASK
 )
 
+DEFINST(MEM_RAT,
+	"MEM_RAT: RAT(%rat_id%rat_index_mode)[%rat_index_gpr]%comp_mask, "
+	"%rat_rw_gpr, %array_size %elem_size %mark %burst_count %no_barrier %vpm",
+	CF_ALLOC_EXPORT_WORD0_RAT, CF_ALLOC_EXPORT_WORD1_BUF, NONE,
+	CF, 86,
+	AMD_INST_FLAG_MEM | AMD_INST_FLAG_MEM_WRITE
+)
+
 DEFINST(MEM_RAT_CACHELESS,
 	"MEM_RAT_CACHELESS_%rat_inst: RAT(%rat_id%rat_index_mode)[%rat_index_gpr]%comp_mask, "
 	"%rat_rw_gpr, %array_size %elem_size %mark %burst_count %no_barrier %vpm",
@@ -257,7 +265,7 @@ DEFINST(RNDNE,
 )
 
 DEFINST(FLOOR,
-	"%name",
+	"FLOOR       %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 20,
 	0
@@ -1641,8 +1649,9 @@ DEFINST(LD,
 	0
 )
 
+/* Format: OPCODE DestReg ', ' SrcReg ', ' ResourceId ', ' SamplerId TexProperties */
 DEFINST(SAMPLE,
-	"%name",
+	"%name %tex_dst_reg, %tex_src_reg, %tex_res_id, %tex_sampler_id  %tex_props",
 	TEX_WORD0, TEX_WORD1, TEX_WORD2,
 	TEX, 16,
 	0

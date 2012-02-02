@@ -143,6 +143,10 @@ void opencl_object_free_all()
 	/* Events */
 	while ((object = opencl_object_get_type(OPENCL_OBJ_EVENT)))
 		opencl_event_free((struct opencl_event_t *) object);
+
+	/* Samplers */
+	while ((object = opencl_object_get_type(OPENCL_OBJ_SAMPLER)))
+		opencl_sampler_free((struct opencl_sampler_t *) object);
 	
 	/* Any object left */
 	if (lnlist_count(opencl_object_list))
@@ -455,6 +459,25 @@ void opencl_context_set_properties(struct opencl_context_t *context, struct mem_
 
 
 
+/* OpenCL Sampler */
+struct opencl_sampler_t *opencl_sampler_create()
+{
+	struct opencl_sampler_t *sampler;
+
+	sampler = calloc(1, sizeof(struct opencl_sampler_t));
+	sampler->id = opencl_object_new_id(OPENCL_OBJ_SAMPLER);
+	sampler->ref_count = 1;
+	opencl_object_add(sampler);
+	return sampler;
+}
+
+/* Free sampler */
+void opencl_sampler_free(struct opencl_sampler_t *sampler)
+{
+	opencl_object_remove(sampler);
+	free(sampler);
+}
+
 
 /* OpenCL Command Queue */
 
@@ -644,13 +667,13 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 	int token_count;
 	struct opencl_kernel_arg_t *arg;
 	struct elf_buffer_t *buffer;
-	
+
 	/* Open as text file */
 	buffer = &kernel->metadata_buffer;
 	elf_buffer_seek(buffer, 0);
 	opencl_debug("Kernel Metadata:\n"); 
 	for (;;) {
-		
+
 		/* Read line from buffer */
 		elf_buffer_read_line(buffer, line, MAX_STRING_SIZE);
 		if (!line[0])
@@ -671,6 +694,37 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 			!strcmp(line_ptrs[0], "ARGEND"))
 			continue;
 
+		/* Image */
+		if (!strcmp(line_ptrs[0], "image")) {
+
+			/* Create input image argument */
+			arg = opencl_kernel_arg_create(line_ptrs[1]);
+			arg->kind = OPENCL_KERNEL_ARG_KIND_IMAGE;
+			if (!strcmp(line_ptrs[2], "2D")) {
+				/* Ignore dimensions for now */
+			} else if (!strcmp(line_ptrs[2], "3D")) {
+				/* Ignore dimensions for now */
+			} else {
+				fatal("%s: Invalid number of dimensions for OpenCL Image (%s)\n%s",
+					__FUNCTION__, line_ptrs[2], err_opencl_param_note);
+			}
+			
+			if (!strcmp(line_ptrs[3], "RO")) {
+				arg->access_type = OPENCL_KERNEL_ARG_READ_ONLY;
+			} else if (!strcmp(line_ptrs[3], "WO")) {
+				arg->access_type = OPENCL_KERNEL_ARG_WRITE_ONLY;
+			} else {
+				fatal("%s: Invalid memory access type for OpenCL Image (%s)\n%s",
+					__FUNCTION__, line_ptrs[3], err_opencl_param_note);
+			}
+			arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;
+
+			list_add(kernel->arg_list, arg);
+
+			continue;
+
+		} 
+
 		/* Memory */
 		if (!strcmp(line_ptrs[0], "memory")) {
 			if (!strcmp(line_ptrs[1], "hwprivate")) {
@@ -681,13 +735,12 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 			} else if (!strcmp(line_ptrs[1], "hwlocal")) {
 				OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 				kernel->func_mem_local = atoi(line_ptrs[2]);
-				opencl_debug("kernel '%s' using %d bytes local memory\n",
-					kernel->name, kernel->func_mem_local);
 			} else if (!strcmp(line_ptrs[1], "datareqd")) {
 				OPENCL_KERNEL_METADATA_TOKEN_COUNT(2);
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
 			} else
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
+
 			continue;
 		}
 
@@ -699,8 +752,7 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 			arg = opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = OPENCL_KERNEL_ARG_KIND_VALUE;
 			list_add(kernel->arg_list, arg);
-			opencl_debug("    arg %d: '%s', value of type %s\n",
-				list_count(kernel->arg_list) - 1, arg->name, line_ptrs[2]);
+
 			continue;
 		}
 
@@ -716,18 +768,13 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 			arg->kind = OPENCL_KERNEL_ARG_KIND_POINTER;
 			arg->elem_size = atoi(line_ptrs[8]);
 			list_add(kernel->arg_list, arg);
-			opencl_debug("    arg %d: '%s', pointer to %s values (%d-byte group) in ",
-				list_count(kernel->arg_list) - 1, arg->name, line_ptrs[2],
-				arg->elem_size);
 			if (!strcmp(line_ptrs[6], "uav")) {
 				arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;
-				opencl_debug("global");
 			} else if (!strcmp(line_ptrs[6], "hl")) {
 				arg->mem_scope = OPENCL_MEM_SCOPE_LOCAL;
-				opencl_debug("local");
 			} else
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(6);
-			opencl_debug(" memory\n");
+
 			continue;
 		}
 
@@ -736,6 +783,16 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 			OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(1, "1");
 			kernel->func_uniqueid = atoi(line_ptrs[2]);
+			continue;
+		}
+
+		/* Entry 'sampler'. Format: sampler:name:ID:location:value.
+		 * 'location' is 1 for kernel defined samplers, 0 for kernel argument.
+		 * 'value' is bitfield value of sampler (0 if a kernel argument) */
+		if (!strcmp(line_ptrs[0], "sampler")) {
+
+			/* As far as I can tell, the actual sampler data is stored 
+			 * as a value, so adding it to the argument list is not required */
 			continue;
 		}
 

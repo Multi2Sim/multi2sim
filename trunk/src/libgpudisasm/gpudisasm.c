@@ -1199,6 +1199,119 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				if (inst->info->fmt[i])
 					fmt_word_dump(inst->words[i].bytes, inst->info->fmt[i], stdout);
 
+		} else if (amd_inst_is_token(fmt_str, "tex_src_reg", &len)) {
+
+			assert(inst->info->fmt[0] == FMT_TEX_WORD0);
+			assert(inst->info->fmt[2] == FMT_TEX_WORD2);
+
+			int src_gpr = inst->words[0].tex_word0.src_gpr;
+
+			int src_sel[4];
+			src_sel[0] = inst->words[2].tex_word2.ssx;
+			src_sel[1] = inst->words[2].tex_word2.ssy;
+			src_sel[2] = inst->words[2].tex_word2.ssz;
+			src_sel[3] = inst->words[2].tex_word2.ssw;
+
+			char src_sel_chars[4];
+
+			/* Add element selections */
+			int i;
+			for(i = 0; i < 4; i++) {
+				if(src_sel[i] == 0) {
+					src_sel_chars[i] = 'x';
+				} else if(src_sel[i] == 1) {
+					src_sel_chars[i] = 'y';
+				} else if(src_sel[i] == 2) {
+					src_sel_chars[i] = 'z';
+				} else if(src_sel[i] == 3) {
+					src_sel_chars[i] = 'w';
+				} else if(src_sel[i] == 4) {
+					src_sel_chars[i] = '0';
+				} else if(src_sel[i] == 5) {
+					src_sel_chars[i] = '1';
+				} else if(src_sel[i] == 6) {
+					fatal("%s: src_sel value 6 in reserved", fmt_str);
+				} else if(src_sel[i] == 7) {
+					fatal("%s: src_sel value 7 is not supported", fmt_str);
+				} else {
+					fatal("%s: src_sel value %d is unknown", fmt_str, src_sel[i]);
+				}
+			}
+
+			str_printf(buf_ptr, size_ptr, "R%d.%c%c%c%c", src_gpr, src_sel_chars[0], src_sel_chars[1],
+					src_sel_chars[2], src_sel_chars[3]);
+
+		} else if (amd_inst_is_token(fmt_str, "tex_dst_reg", &len)) {
+
+			assert(inst->info->fmt[1] == FMT_TEX_WORD1);
+
+			int dst_gpr = inst->words[1].tex_word1.dst_gpr;
+
+			int dst_sel[4];
+			dst_sel[0] = inst->words[1].tex_word1.dsx;
+			dst_sel[1] = inst->words[1].tex_word1.dsy;
+			dst_sel[2] = inst->words[1].tex_word1.dsz;
+			dst_sel[3] = inst->words[1].tex_word1.dsw;
+
+			char dst_sel_chars[4];
+
+			/* Add element selections */
+			int i;
+			for(i = 0; i < 4; i++) {
+				if(dst_sel[i] == 0) {
+					dst_sel_chars[i] = 'x';
+				} else if(dst_sel[i] == 1) {
+					dst_sel_chars[i] = 'y';
+				} else if(dst_sel[i] == 2) {
+					dst_sel_chars[i] = 'z';
+				} else if(dst_sel[i] == 3) {
+					dst_sel_chars[i] = 'w';
+				} else if(dst_sel[i] == 4) {
+					dst_sel_chars[i] = '0';
+				} else if(dst_sel[i] == 5) {
+					dst_sel_chars[i] = '1';
+				} else if(dst_sel[i] == 6) {
+					fatal("%s: dst_sel value 6 in reserved", fmt_str);
+				} else if(dst_sel[i] == 7) {
+					dst_sel_chars[i] = '_';
+				} else {
+					fatal("%s: dst_sel value %d is unknown", fmt_str, dst_sel[i]);
+				}
+			}
+
+			str_printf(buf_ptr, size_ptr, "R%d.%c%c%c%c", dst_gpr, dst_sel_chars[0], dst_sel_chars[1],
+					dst_sel_chars[2], dst_sel_chars[3]);
+
+		} else if (amd_inst_is_token(fmt_str, "tex_res_id", &len)) {
+
+			assert(inst->info->fmt[0] == FMT_TEX_WORD0);
+
+			int resource_id = inst->words[0].tex_word0.resource_id;
+			str_printf(buf_ptr, size_ptr, "t%d", resource_id);
+
+		} else if (amd_inst_is_token(fmt_str, "tex_sampler_id", &len)) {
+
+			assert(inst->info->fmt[2] == FMT_TEX_WORD2);
+
+			int sampler_id = inst->words[2].tex_word2.sampler_id;
+			str_printf(buf_ptr, size_ptr, "s%d", sampler_id);
+
+		} else if (amd_inst_is_token(fmt_str, "tex_props", &len)) {
+
+			assert(inst->info->fmt[1] == FMT_TEX_WORD1);
+
+			if(inst->words[1].tex_word1.ctx || inst->words[1].tex_word1.cty ||
+			   inst->words[1].tex_word1.ctz || inst->words[1].tex_word1.ctw) {
+
+				/* We can't tell if coordinates are normalized or if sampler
+				 * is going to be a kernel argument */
+			}
+			else {
+
+				str_printf(buf_ptr, size_ptr, "UNNORM(XYZW)");
+			}
+
+
 		} else
 			fatal("%s: token not recognized", fmt_str);
 		fmt_str += len;
