@@ -40,8 +40,9 @@ AC_CHECK_LIB([m], [sin])
 AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
 # Check for GTK
-AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, [
 have_gtk=no
+ifdef([AM_PATH_GTK_3_0], [AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, )])
+if test x$have_gtk != xyes; then
 AC_MSG_WARN([
 
 	Multi2Sim will be compiled without support for GTK graphical applications.
@@ -50,7 +51,7 @@ AC_MSG_WARN([
 	your system (e.g., package 'libgtk-3-dev' in Debian-based distributions),
 	and run './configure' again.
 ])
-])
+fi
 AM_CONDITIONAL(HAVE_GTK, test x$have_gtk = xyes)
 
 
