@@ -246,6 +246,7 @@ void ctx_set_eip(struct ctx_t *ctx, uint32_t eip)
 	{
 		ctx_set_status(ctx, ctx_specmode);
 		regs_copy(ctx->backup_regs, ctx->regs);
+		ctx->regs->fpu_ctrl |= 0x3f; /* mask all FP exceptions on wrong path */
 	}
 	
 	/* Set it */

@@ -38,7 +38,7 @@ int isa_inst_debug_category;
 /* Variables used to preserve host state before running assembly */
 long isa_host_flags;
 uint16_t isa_guest_fpcw;
-uint16_t isa_host_fpcw;
+uint8_t isa_host_fpenv[28];
 
 
 /* Table including references to functions in machine.c
