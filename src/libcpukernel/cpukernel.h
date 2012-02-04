@@ -611,25 +611,25 @@ extern long isa_host_flags;
 	: "=m" (isa_host_flags));
 
 
-extern uint16_t isa_host_fpcw;
+extern uint8_t isa_host_fpenv[28];
 extern uint16_t isa_guest_fpcw;
 
 #define __ISA_FP_ASM_START__ asm volatile ( \
 	"pushf\n\t" \
 	"pop %0\n\t" \
-	"fstcw %1\n\t" \
+	"fnstenv %1\n\t" /* store host FPU environment */ \
+	"fnclex\n\t" /* clear host FP exceptions */ \
 	"fldcw %2\n\t" \
-	: "=m" (isa_host_flags), "=m" (isa_host_fpcw) \
+	: "=m" (isa_host_flags), "=m" (*isa_host_fpenv) \
 	: "m" (isa_guest_fpcw));
 
 #define __ISA_FP_ASM_END__ asm volatile ( \
 	"push %0\n\t" \
 	"popf\n\t" \
-	"fnclex\n\t" \
-	"fstcw %1\n\t" \
-	"fldcw %2\n\t" \
+	"fnstcw %1\n\t" \
+	"fldenv %2\n\t" /* restore host FPU environment */ \
 	: "=m" (isa_host_flags), "=m" (isa_guest_fpcw) \
-	: "m" (isa_host_fpcw));
+	: "m" (*isa_host_fpenv));
 
 
 /* References to functions emulating x86 instructions */
