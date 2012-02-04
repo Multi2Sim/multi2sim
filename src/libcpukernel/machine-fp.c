@@ -1181,6 +1181,7 @@ void op_fldcw_m16_impl()
 	uint16_t value;
 
 	isa_mem_read(isa_mem, addr, 2, &value);
+	if(isa_spec_mode) value |= 0x3f; /* mask all FP exceptions on wrong path */
 	isa_regs->fpu_ctrl = value;
 
 	__ISA_FP_ASM_START__
