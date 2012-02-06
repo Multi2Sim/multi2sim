@@ -113,6 +113,25 @@ int bin_config_load(struct bin_config_t *bin_config);
 int bin_config_save(struct bin_config_t *bin_config);
 
 
+/** Export configuration file into a plain-text, human readable format.
+ *
+ * @param bin_config
+ *	Configuration file object.
+ * @param file_name
+ * 	Path to dump the plain-text version.
+ *
+ * @return
+ *	The function returns a non-zero value if the operation succeeds, and 0
+ *	otherwise. The error code is updated to one of the following values:
+ *
+ *	BIN_CONFIG_ERR_OK
+ *		No error.
+ *	BIN_CONFIG_ERR_IO
+ *		I/O error accessing file.
+ */
+int bin_config_export_text(struct bin_config_t *bin_config, char *file_name);
+
+
 /** Add a variable to the configuration file.
  *
  * @param bin_config
