@@ -18,7 +18,7 @@
  */
 
 #include <gpukernel.h>
-#include <hash.h>
+#include <hash-table.h>
 
 
 
@@ -73,23 +73,23 @@ void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 	};
 	struct elem_t *elem;
 	struct list_t *list;
-	struct hashtable_t *ht;
+	struct hash_table_t *ht;
 	char str[10];
 	int i, j;
 
 	/* Create list and hash table */
 	list = list_create();
-	ht = hashtable_create(20, 1);
+	ht = hash_table_create(20, 1);
 
 	/* Create one 'elem' for each work_item with a different branch digest, and
 	 * store it into the hash table and list. */
 	for (i = 0; i < wavefront->work_item_count; i++) {
 		work_item = wavefront->work_items[i];
 		sprintf(str, "%08x", work_item->branch_digest);
-		elem = hashtable_get(ht, str);
+		elem = hash_table_get(ht, str);
 		if (!elem) {
 			elem = calloc(1, sizeof(struct elem_t));
-			hashtable_insert(ht, str, elem);
+			hash_table_insert(ht, str, elem);
 			elem->list_index = list_count(list);
 			elem->branch_digest = work_item->branch_digest;
 			list_add(list, elem);
@@ -133,7 +133,7 @@ void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 	for (i = 0; i < list_count(list); i++)
 		free(list_get(list, i));
 	list_free(list);
-	hashtable_free(ht);
+	hash_table_free(ht);
 }
 
 

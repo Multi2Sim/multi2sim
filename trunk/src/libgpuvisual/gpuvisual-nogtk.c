@@ -18,6 +18,7 @@
  */
 
 #include <gpuvisual.h>
+#include <debug.h>
 
 
 void vgpu_run(char *file_name)

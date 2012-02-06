@@ -1,6 +1,8 @@
 lib_LIBRARIES = libstruct.a
 
 libstruct_a_SOURCES = \
+	bin-config.c \
+	bin-config.h \
 	buffer.c \
 	buffer.h \
 	chrono.c \
@@ -9,8 +11,8 @@ libstruct_a_SOURCES = \
 	config.h \
 	elf-format.c \
 	elf-format.h \
-	hash.c \
-	hash.h \
+	hash-table.c \
+	hash-table.h \
 	heap.c \
 	heap.h \
 	list.c \
