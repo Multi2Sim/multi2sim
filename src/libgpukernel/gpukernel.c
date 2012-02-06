@@ -76,7 +76,7 @@ void gk_init()
 	gpu_isa_init();
 
 	/* Create platform and device */
-	opencl_object_list = lnlist_create();
+	opencl_object_list = linked_list_create();
 	opencl_platform = opencl_platform_create();
 	opencl_device_create();
 }
@@ -91,7 +91,7 @@ void gk_done()
 
 	/* Free OpenCL objects */
 	opencl_object_free_all();
-	lnlist_free(opencl_object_list);
+	linked_list_free(opencl_object_list);
 
 	/* Finalize disassembler */
 	amd_disasm_done();

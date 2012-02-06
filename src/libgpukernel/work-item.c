@@ -29,7 +29,7 @@ struct gpu_work_item_t *gpu_work_item_create()
 {
 	struct gpu_work_item_t *work_item;
 	work_item = calloc(1, sizeof(struct gpu_work_item_t));
-	work_item->write_task_list = lnlist_create();
+	work_item->write_task_list = linked_list_create();
 	work_item->lds_oqa = list_create();
 	work_item->lds_oqb = list_create();
 	return work_item;
@@ -45,7 +45,7 @@ void gpu_work_item_free(struct gpu_work_item_t *work_item)
 		free(list_dequeue(work_item->lds_oqb));
 	list_free(work_item->lds_oqa);
 	list_free(work_item->lds_oqb);
-	lnlist_free(work_item->write_task_list);
+	linked_list_free(work_item->write_task_list);
 
 	/* Free work_item */
 	free(work_item);

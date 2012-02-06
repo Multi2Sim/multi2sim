@@ -69,8 +69,8 @@ static struct string_map_t elf_section_flags_map = {
 void ld_init(struct ctx_t *ctx)
 {
 	ctx->loader = calloc(1, sizeof(struct loader_t));
-	ctx->loader->args = lnlist_create();
-	ctx->loader->env = lnlist_create();
+	ctx->loader->args = linked_list_create();
+	ctx->loader->env = linked_list_create();
 }
 
 
@@ -82,12 +82,12 @@ void ld_done(struct ctx_t *ctx)
 	elf_file_free(ld->elf_file);
 	
 	/* Free arguments and environment variables */
-	for (lnlist_head(ld->args); !lnlist_eol(ld->args); lnlist_next(ld->args))
-		free(lnlist_get(ld->args));
-	for (lnlist_head(ld->env); !lnlist_eol(ld->env); lnlist_next(ld->env))
-		free(lnlist_get(ld->env));
-	lnlist_free(ld->args);
-	lnlist_free(ld->env);
+	for (linked_list_head(ld->args); !linked_list_is_end(ld->args); linked_list_next(ld->args))
+		free(linked_list_get(ld->args));
+	for (linked_list_head(ld->env); !linked_list_is_end(ld->env); linked_list_next(ld->env))
+		free(linked_list_get(ld->env));
+	linked_list_free(ld->args);
+	linked_list_free(ld->env);
 
 	/* Free loader */
 	if (ld->interp)
@@ -119,7 +119,7 @@ void ld_add_args_vector(struct ctx_t *ctx, int argc, char **argv)
 	struct loader_t *ld = ctx->loader;
 	int i;
 	for (i = 0; i < argc; i++)
-		lnlist_add(ld->args, strdup(argv[i]));
+		linked_list_add(ld->args, strdup(argv[i]));
 }
 
 
@@ -142,7 +142,7 @@ void ld_add_args_string(struct ctx_t *ctx, char *args)
 		/* Retrieve new argument in 'arg' */
 		arg = calloc(1, wordlen + 1);
 		memcpy(arg, args, wordlen);
-		lnlist_add(ld->args, arg);
+		linked_list_add(ld->args, arg);
 		args += wordlen;
 		wordlen = 0;
 	}
@@ -160,7 +160,7 @@ void ld_add_environ(struct ctx_t *ctx, char *env)
 
 	/* Add variables from actual environment */
 	for (i = 0; environ[i]; i++)
-		lnlist_add(ld->env, strdup(environ[i]));
+		linked_list_add(ld->env, strdup(environ[i]));
 	
 	/* Add the environment vars provided in 'env' */
 	while (env) {
@@ -177,12 +177,12 @@ void ld_add_environ(struct ctx_t *ctx, char *env)
 			if (!(next = strchr(env + 1, *env)))
 				fatal("ld_add_environ: wrong format");
 			*next = 0;
-			lnlist_add(ld->env, strdup(env + 1));
+			linked_list_add(ld->env, strdup(env + 1));
 			env = next + 1;
 			break;
 
 		default:
-			lnlist_add(ld->env, strdup(env));
+			linked_list_add(ld->env, strdup(env));
 			env = NULL;
 		}
 	}
@@ -416,7 +416,7 @@ static void ld_load_stack(struct ctx_t *ctx)
 	/* Load arguments and environment vars */
 	ld->environ_base = LD_STACK_BASE - LD_MAX_ENVIRON;
 	sp = ld->environ_base;
-	argc = lnlist_count(ld->args);
+	argc = linked_list_count(ld->args);
 	ld_debug("  saved 'argc=%d' at 0x%x\n", argc, sp);
 	mem_write(mem, sp, 4, &argc);
 	sp += 4;
@@ -425,7 +425,7 @@ static void ld_load_stack(struct ctx_t *ctx)
 
 	/* Save space for environ and null */
 	envp = sp;
-	sp += lnlist_count(ld->env) * 4 + 4;
+	sp += linked_list_count(ld->env) * 4 + 4;
 
 	/* Load here the auxiliary vector */
 	sp += ld_load_av(ctx, sp);
@@ -433,8 +433,8 @@ static void ld_load_stack(struct ctx_t *ctx)
 	/* Write arguments into stack */
 	ld_debug("\nArguments:\n");
 	for (i = 0; i < argc; i++) {
-		lnlist_goto(ld->args, i);
-		str = lnlist_get(ld->args);
+		linked_list_goto(ld->args, i);
+		str = linked_list_get(ld->args);
 		mem_write(mem, argvp + i * 4, 4, &sp);
 		mem_write_string(mem, sp, str);
 		ld_debug("  argument %d at 0x%x: '%s'\n", i, sp, str);
@@ -444,9 +444,9 @@ static void ld_load_stack(struct ctx_t *ctx)
 
 	/* Write environment variables */
 	ld_debug("\nEnvironment variables:\n");
-	for (i = 0; i < lnlist_count(ld->env); i++) {
-		lnlist_goto(ld->env, i);
-		str = lnlist_get(ld->env);
+	for (i = 0; i < linked_list_count(ld->env); i++) {
+		linked_list_goto(ld->env, i);
+		str = linked_list_get(ld->env);
 		mem_write(mem, envp + i * 4, 4, &sp);
 		mem_write_string(mem, sp, str);
 		ld_debug("  env var %d at 0x%x: '%s'\n", i, sp, str);
@@ -553,7 +553,7 @@ void ld_load_prog_from_ctxconfig(char *ctxconfig)
 		
 		/* Arguments and environment variables */
 		exe = config_read_string(config, section, "exe", "");
-		lnlist_add(ld->args, strdup(exe));
+		linked_list_add(ld->args, strdup(exe));
 		ld_add_args_string(ctx,
 			config_read_string(config, section, "args", ""));
 		ld_add_environ(ctx,

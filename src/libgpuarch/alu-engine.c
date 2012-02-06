@@ -29,10 +29,10 @@ int gpu_alu_engine_pe_latency = 4;  /* Processing element latency */
 
 void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
-	struct lnlist_t *pending_queue = compute_unit->alu_engine.pending_queue;
-	struct lnlist_t *finished_queue = compute_unit->alu_engine.finished_queue;
+	struct linked_list_t *pending_queue = compute_unit->alu_engine.pending_queue;
+	struct linked_list_t *finished_queue = compute_unit->alu_engine.finished_queue;
 
-	struct lnlist_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
+	struct linked_list_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
 	struct amd_alu_group_t *alu_group;
 	struct gpu_uop_t *cf_uop, *uop, *producer;
 	struct gpu_work_item_uop_t *work_item_uop;
@@ -45,8 +45,8 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	int i;
 
 	/* Get wavefront to fetch from */
-	lnlist_head(pending_queue);
-	cf_uop = lnlist_get(pending_queue);
+	linked_list_head(pending_queue);
+	cf_uop = linked_list_get(pending_queue);
 	if (!cf_uop)
 		return;
 	wavefront = cf_uop->wavefront;
@@ -81,8 +81,8 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	 * insert it into finished wavefront queue. */
 	if (uop->last)
 	{
-		lnlist_remove(pending_queue);
-		lnlist_add(finished_queue, cf_uop);
+		linked_list_remove(pending_queue);
+		linked_list_add(finished_queue, cf_uop);
 	}
 
 	/* If debugging active mask, store active state for work-items */
@@ -150,8 +150,8 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->inst_mem_ready = gpu->cycle + gpu_alu_engine_inst_mem_latency;
 
 	/* Enqueue instruction into fetch queue */
-	lnlist_out(fetch_queue);
-	lnlist_insert(fetch_queue, uop);
+	linked_list_out(fetch_queue);
+	linked_list_insert(fetch_queue, uop);
 	compute_unit->alu_engine.fetch_queue_length += uop->length;
 
 	/* Debug */
@@ -183,12 +183,12 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 {
-	struct lnlist_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
+	struct linked_list_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
 	struct gpu_uop_t *uop;
 
 	/* Get instruction at the head of the fetch queue */
-	lnlist_head(fetch_queue);
-	uop = lnlist_get(fetch_queue);
+	linked_list_head(fetch_queue);
+	uop = linked_list_get(fetch_queue);
 
 	/* If there was no uop in the queue, done */
 	if (!uop)
@@ -203,7 +203,7 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 		return;
 
 	/* Extract uop from fetch queue */
-	lnlist_remove(fetch_queue);
+	linked_list_remove(fetch_queue);
 	compute_unit->alu_engine.fetch_queue_length -= uop->length;
 	assert(compute_unit->alu_engine.fetch_queue_length >= 0);
 
@@ -316,7 +316,7 @@ void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 {
-	struct lnlist_t *finished_queue = compute_unit->alu_engine.finished_queue;
+	struct linked_list_t *finished_queue = compute_unit->alu_engine.finished_queue;
 
 	struct gpu_wavefront_t *wavefront;
 	struct gpu_work_item_t *work_item;
@@ -407,12 +407,12 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 				/* Extract CF uop from finished queue. Since instruction execution may
 				 * vary in latency, finished CF uop may not be the one at the head of the queue. */
 				cf_uop = uop->cf_uop;
-				lnlist_find(finished_queue, cf_uop);
-				assert(!lnlist_error(finished_queue));
-				lnlist_remove(finished_queue);
+				linked_list_find(finished_queue, cf_uop);
+				assert(!linked_list_error(finished_queue));
+				linked_list_remove(finished_queue);
 
 				/* Enqueue CF uop into complete queue in CF Engine */
-				lnlist_add(compute_unit->cf_engine.complete_queue, cf_uop);
+				linked_list_add(compute_unit->cf_engine.complete_queue, cf_uop);
 			}
 
 			/* Free uop */
@@ -425,8 +425,8 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit)
 {
 	/* If no wavefront to run, avoid entering loop */
-	if (!lnlist_count(compute_unit->alu_engine.pending_queue) &&
-		!lnlist_count(compute_unit->alu_engine.finished_queue))
+	if (!linked_list_count(compute_unit->alu_engine.pending_queue) &&
+		!linked_list_count(compute_unit->alu_engine.finished_queue))
 		return;
 
 	/* ALU Engine stages */

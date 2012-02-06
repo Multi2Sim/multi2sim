@@ -173,7 +173,7 @@ struct gpu_fault_t
 	int byte;
 };
 int gpu_fault_errors = 0;  /* Number of faults causing error */
-struct lnlist_t *gpu_fault_list;
+struct linked_list_t *gpu_fault_list;
 int gpu_faults_debug_category;
 char *gpu_faults_debug_file_name = "";
 
@@ -214,7 +214,7 @@ void gpu_stack_faults_init(void)
 	int line_num;
 	long long last_cycle;
 
-	gpu_fault_list = lnlist_create();
+	gpu_fault_list = linked_list_create();
 	if (!*gpu_faults_file_name)
 		return;
 
@@ -357,8 +357,8 @@ void gpu_stack_faults_init(void)
 		}
 
 		/* Insert fault in fault list */
-		lnlist_out(gpu_fault_list);
-		lnlist_insert(gpu_fault_list, fault);
+		linked_list_out(gpu_fault_list);
+		linked_list_insert(gpu_fault_list, fault);
 		last_cycle = fault->cycle;
 		continue;
 
@@ -366,19 +366,19 @@ wrong_format:
 		fatal("%s: line %d: not enough arguments",
 			gpu_faults_file_name, line_num);
 	}
-	lnlist_head(gpu_fault_list);
+	linked_list_head(gpu_fault_list);
 }
 
 
 /* GPU-REL: stack faults */
 void gpu_stack_faults_done(void)
 {
-	while (lnlist_count(gpu_fault_list)) {
-		lnlist_head(gpu_fault_list);
-		free(lnlist_get(gpu_fault_list));
-		lnlist_remove(gpu_fault_list);
+	while (linked_list_count(gpu_fault_list)) {
+		linked_list_head(gpu_fault_list);
+		free(linked_list_get(gpu_fault_list));
+		linked_list_remove(gpu_fault_list);
 	}
-	lnlist_free(gpu_fault_list);
+	linked_list_free(gpu_fault_list);
 }
 
 
@@ -389,8 +389,8 @@ void gpu_stack_faults_insert(void)
 	struct gpu_compute_unit_t *compute_unit;
 
 	for (;;) {
-		lnlist_head(gpu_fault_list);
-		fault = lnlist_get(gpu_fault_list);
+		linked_list_head(gpu_fault_list);
+		fault = linked_list_get(gpu_fault_list);
 		if (!fault || fault->cycle > gpu->cycle)
 			break;
 
@@ -597,11 +597,11 @@ void gpu_stack_faults_insert(void)
 end_loop:
 		/* Extract and free */
 		free(fault);
-		lnlist_remove(gpu_fault_list);
+		linked_list_remove(gpu_fault_list);
 		gpu_faults_debug("\n");
 
 		/* If all faults were inserted and no error was caused, end simulation */
-		if (!lnlist_count(gpu_fault_list) && !gpu_fault_errors)
+		if (!linked_list_count(gpu_fault_list) && !gpu_fault_errors)
 			ke_sim_finish = ke_sim_finish_gpu_no_faults;
 	}
 }

@@ -17,8 +17,8 @@ libstruct_a_SOURCES = \
 	heap.h \
 	list.c \
 	list.h \
-	lnlist.c \
-	lnlist.h \
+	linked-list.c \
+	linked-list.h \
 	repos.c \
 	repos.h \
 	debug.c \
