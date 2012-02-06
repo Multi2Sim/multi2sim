@@ -1,5 +1,49 @@
 ===============================================================================
-Directions for new version release:
+Coding Guidelines
+===============================================================================
+
+* Indenting:
+	
+	Tabs should be used for indenting. It is recommended to configure your
+	editor with a tab size of 8 spaces for a coherent layout with other
+	developers of Multi2Sim.
+
+* Line wrapping:
+	
+	Lines should have an approximate maximum length of 80 characters,
+	including initial tabs (and assuming a tab counts as 8 characters).
+	Code should continue on the next line with an additional tab
+	otherwise. Example:
+
+	int long_function_with_many_arguments(int argument_1, char *arg2,
+		int arg3)
+	{
+		/* Function body */
+	}
+
+* Comments:
+
+	Comments should not use the double slash '//' notation. They should
+	be declared with the '/* */' notation.
+
+* Code blocks:
+
+	Brackets in code blocks should not share a line with other code, both
+	for opening and closing brackets. Example:
+
+	if (cond)
+	{
+		/* Block 1 */
+	}
+	else
+	{
+		/* Block 2 */
+	}
+
+
+===============================================================================
+Steps to Release a New Version Release (Administrator):
+===============================================================================
 
 	* svn commit all previous changes
 
