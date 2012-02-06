@@ -41,9 +41,12 @@ AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
 # Check for GTK
 have_gtk=no
+have_gtk_test=yes
 
-m4_pattern_allow(AM_PATH_GTK_3_0)
-ifdef([AM_PATH_GTK_3_0], [AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, )], [ AC_MSG_WARN([
+ifdef([AM_PATH_GTK_3_0], [AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, )], [have_gtk_test=no] )
+
+if test x$have_gtk_test == xno; then
+AC_MSG_WARN([
 	
 	The 'autoconf' tool could not interpret the 'AM_PATH_GTK_3_0' macro, checking
 	for the presence of the GTK development library (libgtk-3-dev) in your system.
@@ -51,9 +54,10 @@ ifdef([AM_PATH_GTK_3_0], [AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, )], [ AC_MSG_WA
 	Before releasing a version with this configuration, please install this package
 	and rerun 'autoconf'. This will guarantee that the conditional inclusion of
 	GTK will depend on the user configuration.
-])])
+])
+fi
 
-if test x$have_gtk != xyes; then
+if test x$have_gtk == xno; then
 AC_MSG_WARN([
 
 	Multi2Sim will be compiled without support for GTK graphical applications.
