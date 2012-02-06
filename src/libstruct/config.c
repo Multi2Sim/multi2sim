@@ -22,8 +22,8 @@
 #include <string.h>
 #include <mhandle.h>
 #include <assert.h>
-#include "config.h"
-#include "hash.h"
+#include <config.h>
+#include <hash-table.h>
 #include "lnlist.h"
 
 #define MAX_STRING_SIZE		1000
@@ -47,12 +47,12 @@ struct config_t
 	/* Hash table containing present elements
  	 * The values for sections are (void *) 1, while the values for variables are the
 	 * actual value represented for that variable in the config file. */
-	struct hashtable_t *items;
+	struct hash_table_t *items;
 
 	/* Hash table containing allowed items.
 	 * The keys are strings "<section>\n<variable>".
 	 * The values are SECTION_VARIABLE_ALLOWED/SECTION_VARIABLE_MANDATORY */
-	struct hashtable_t *allowed_items;
+	struct hash_table_t *allowed_items;
 };
 
 
@@ -148,7 +148,7 @@ static void config_insert_section(struct config_t *cfg, char *section)
 	char section_trim[MAX_STRING_SIZE];
 
 	trim(section_trim, section);
-	hashtable_insert(cfg->items, section, (void *) 1);
+	hash_table_insert(cfg->items, section, (void *) 1);
 }
 
 
@@ -165,15 +165,15 @@ static void config_insert_var(struct config_t *cfg, char *section, char *var, ch
 	nvalue = strdup(value_trim);
 
 	/* Free previous value if variable existed */
-	ovalue = hashtable_get(cfg->items, item);
+	ovalue = hash_table_get(cfg->items, item);
 	if (ovalue) {
 		free(ovalue);
-		hashtable_set(cfg->items, item, nvalue);
+		hash_table_set(cfg->items, item, nvalue);
 		return;
 	}
 
 	/* Insert new value */
-	hashtable_insert(cfg->items, item, nvalue);
+	hash_table_insert(cfg->items, item, nvalue);
 }
 
 
@@ -197,8 +197,8 @@ struct config_t *config_create(char *filename)
 	
 	/* Main hash table & file name*/
 	cfg->file_name = strdup(filename);
-	cfg->items = hashtable_create(HASH_TABLE_SIZE, 0);
-	cfg->allowed_items = hashtable_create(HASH_TABLE_SIZE, 0);
+	cfg->items = hash_table_create(HASH_TABLE_SIZE, 0);
+	cfg->allowed_items = hash_table_create(HASH_TABLE_SIZE, 0);
 
 	/* Return created object */
 	if (!cfg->items || !cfg->file_name || !cfg->allowed_items) {
@@ -217,8 +217,8 @@ void config_free(struct config_t *cfg)
 	char var[MAX_STRING_SIZE];
 
 	/* Free variable values */
-	for (item = hashtable_find_first(cfg->items, &value);
-		item; item = hashtable_find_next(cfg->items, &value))
+	for (item = hash_table_find_first(cfg->items, &value);
+		item; item = hash_table_find_next(cfg->items, &value))
 	{
 		get_section_var_from_item(item, section, var);
 		if (var[0]) {
@@ -230,8 +230,8 @@ void config_free(struct config_t *cfg)
 
 	/* Free rest */
 	free(cfg->file_name);
-	hashtable_free(cfg->items);
-	hashtable_free(cfg->allowed_items);
+	hash_table_free(cfg->items);
+	hash_table_free(cfg->allowed_items);
 	free(cfg);
 }
 
@@ -306,8 +306,8 @@ int config_save(struct config_t *config)
 	
 	/* Create a list with all sections first */
 	section_list = lnlist_create();
-	for (item = hashtable_find_first(config->items, (void **) &value); item;
-		item = hashtable_find_next(config->items, (void **) &value))
+	for (item = hash_table_find_first(config->items, (void **) &value); item;
+		item = hash_table_find_next(config->items, (void **) &value))
 	{
 		if (value == (char *) 1)
 			lnlist_add(section_list, item);
@@ -322,8 +322,8 @@ int config_save(struct config_t *config)
 		section = lnlist_get(section_list);
 		fprintf(f, "[ %s ]\n", section);
 
-		for (item = hashtable_find_first(config->items, (void **) &value); item;
-			item = hashtable_find_next(config->items, (void **) &value))
+		for (item = hash_table_find_first(config->items, (void **) &value); item;
+			item = hash_table_find_next(config->items, (void **) &value))
 		{
 			get_section_var_from_item(item, section_buf, var_buf);
 			if (var_buf[0] && !strcmp(section_buf, section))
@@ -347,7 +347,7 @@ int config_section_exists(struct config_t *cfg, char *section)
 	char section_trim[MAX_STRING_SIZE];
 
 	trim(section_trim, section);
-	return hashtable_get(cfg->items, section_trim) != NULL;
+	return hash_table_get(cfg->items, section_trim) != NULL;
 }
 
 
@@ -356,7 +356,7 @@ int config_var_exists(struct config_t *cfg, char *section, char *var)
 	char item[MAX_STRING_SIZE];
 
 	get_item_from_section_var(section, var, item);
-	return hashtable_get(cfg->items, item) != NULL;
+	return hash_table_get(cfg->items, item) != NULL;
 }
 
 
@@ -386,7 +386,7 @@ char *config_section_first(struct config_t *cfg)
 	char section[MAX_STRING_SIZE];
 	char var[MAX_STRING_SIZE];
 
-	item = hashtable_find_first(cfg->items, NULL);
+	item = hash_table_find_first(cfg->items, NULL);
 	if (!item)
 		return NULL;
 	get_section_var_from_item(item, section, var);
@@ -403,7 +403,7 @@ char *config_section_next(struct config_t *cfg)
 	char var[MAX_STRING_SIZE];
 
 	do {
-		item = hashtable_find_next(cfg->items, NULL);
+		item = hash_table_find_next(cfg->items, NULL);
 		if (!item)
 			return NULL;
 		get_section_var_from_item(item, section, var);
@@ -425,10 +425,10 @@ void config_write_string(struct config_t *cfg, char *section, char *var, char *v
 	/* Add section and variable to the set of allowed items, as long as
 	 * it is not added already as a mandatory item. */
 	get_item_from_section_var(section, var, item);
-	if (!hashtable_get(cfg->allowed_items, section))
-		hashtable_insert(cfg->allowed_items, section, ITEM_ALLOWED);
-	if (!hashtable_get(cfg->allowed_items, item))
-		hashtable_insert(cfg->allowed_items, item, ITEM_ALLOWED);
+	if (!hash_table_get(cfg->allowed_items, section))
+		hash_table_insert(cfg->allowed_items, section, ITEM_ALLOWED);
+	if (!hash_table_get(cfg->allowed_items, item))
+		hash_table_insert(cfg->allowed_items, item, ITEM_ALLOWED);
 	
 	/* Write value */
 	config_insert_section(cfg, section);
@@ -495,13 +495,13 @@ char *config_read_string(struct config_t *cfg, char *section, char *var, char *d
 	/* Add section and variable to the set of allowed items, as long as
 	 * it is not added already as a mandatory item. */
 	get_item_from_section_var(section, var, item);
-	if (!hashtable_get(cfg->allowed_items, section))
-		hashtable_insert(cfg->allowed_items, section, ITEM_ALLOWED);
-	if (!hashtable_get(cfg->allowed_items, item))
-		hashtable_insert(cfg->allowed_items, item, ITEM_ALLOWED);
+	if (!hash_table_get(cfg->allowed_items, section))
+		hash_table_insert(cfg->allowed_items, section, ITEM_ALLOWED);
+	if (!hash_table_get(cfg->allowed_items, item))
+		hash_table_insert(cfg->allowed_items, item, ITEM_ALLOWED);
 	
 	/* Read value */
-	value = hashtable_get(cfg->items, item);
+	value = hash_table_get(cfg->items, item);
 	return value ? value : def;
 }
 
@@ -610,9 +610,9 @@ static void allowed_items_insert(struct config_t *cfg, char *section, char *var,
 	char item[MAX_STRING_SIZE];
 
 	get_item_from_section_var(section, var, item);
-	if (hashtable_get(cfg->allowed_items, item))
-		hashtable_set(cfg->allowed_items, item, property);
-	hashtable_insert(cfg->allowed_items, item, property);
+	if (hash_table_get(cfg->allowed_items, item))
+		hash_table_set(cfg->allowed_items, item, property);
+	hash_table_insert(cfg->allowed_items, item, property);
 }
 
 
@@ -623,7 +623,7 @@ static int item_is_allowed(struct config_t *cfg, char *section, char *var)
 	char item[MAX_STRING_SIZE];
 
 	get_item_from_section_var(section, var, item);
-	return hashtable_get(cfg->allowed_items, item) != NULL;
+	return hash_table_get(cfg->allowed_items, item) != NULL;
 }
 
 
@@ -634,7 +634,7 @@ static int item_is_present(struct config_t *cfg, char *section, char *var)
 	char item[MAX_STRING_SIZE];
 
 	get_item_from_section_var(section, var, item);
-	return hashtable_get(cfg->items, item) != NULL;
+	return hash_table_get(cfg->items, item) != NULL;
 }
 
 
@@ -671,8 +671,8 @@ void config_check(struct config_t *cfg)
 	char var[MAX_STRING_SIZE];
 
 	/* Go through mandatory items and check they are present */
-	for (item = hashtable_find_first(cfg->allowed_items, &property);
-		item; item = hashtable_find_next(cfg->allowed_items, &property))
+	for (item = hash_table_find_first(cfg->allowed_items, &property);
+		item; item = hash_table_find_next(cfg->allowed_items, &property))
 	{
 		
 		/* If this is an allowed (not mandatory) item, continue */
@@ -695,8 +695,8 @@ void config_check(struct config_t *cfg)
 	
 	/* Go through all present sections/keys and check they are present in the
 	 * set of allowed/mandatory items. */
-	for (item = hashtable_find_first(cfg->items, NULL);
-		item; item = hashtable_find_next(cfg->items, NULL))
+	for (item = hash_table_find_first(cfg->items, NULL);
+		item; item = hash_table_find_next(cfg->items, NULL))
 	{
 		/* Check if it is allowed */
 		get_section_var_from_item(item, section, var);
