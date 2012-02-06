@@ -48,12 +48,12 @@ ifdef([AM_PATH_GTK_3_0], [AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, )], [have_gtk_t
 if test x$have_gtk_test == xno; then
 AC_MSG_WARN([
 	
-	The 'autoconf' tool could not interpret the 'AM_PATH_GTK_3_0' macro, checking
-	for the presence of the GTK development library (libgtk-3-dev) in your system.
+	The 'autoconf' tool could not interpret the macro checking for the
+	presence of the GTK development library (libgtk-3-dev) in your system.
 	Multi2Sim will be permanently compiled without support for GTK.
-	Before releasing a version with this configuration, please install this package
-	and rerun 'autoconf'. This will guarantee that the conditional inclusion of
-	GTK will depend on the user configuration.
+	Before releasing a version with this configuration (running 'make dist'),
+	please install this package and rerun 'autoconf'. This will guarantee
+	that the conditional inclusion of GTK will depend on the user configuration.
 ])
 fi
 
