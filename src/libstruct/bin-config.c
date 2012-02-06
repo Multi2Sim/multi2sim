@@ -25,6 +25,7 @@
 #include <hash-table.h>
 #include <bin-config.h>
 
+
 /*
  * Private functions
  */
@@ -111,9 +112,16 @@ struct bin_config_elem_t *bin_config_add(struct bin_config_t *bin_config,
 	
 	/* Add to main/parent's list of elements */
 	if (!hash_table_insert(child_elem_list, var, elem))
-		fatal("%s: duplicated element", __FUNCTION__);
+	{
+		bin_config_elem_free(elem);
+		bin_config->error_code = BIN_CONFIG_ERR_DUPLICATE;
+		return NULL;
+	}
+
+	/* FIXME - didn't debug this - to be editted */
 	
 	/* Return created element */
+	bin_config->error_code = BIN_CONFIG_ERR_OK;
 	return elem;
 }
 
