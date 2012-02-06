@@ -73,18 +73,18 @@ void uop_list_dump(struct list_t *uop_list, FILE *f)
 }
 
 
-void uop_lnlist_dump(struct lnlist_t *uop_list, FILE *f)
+void uop_lnlist_dump(struct linked_list_t *uop_list, FILE *f)
 {
 	struct uop_t *uop;
 	
-	lnlist_head(uop_list);
-	while (!lnlist_eol(uop_list))
+	linked_list_head(uop_list);
+	while (!linked_list_is_end(uop_list))
 	{
-		uop = lnlist_get(uop_list);
-		fprintf(f, "%3d. ", lnlist_current(uop_list));
+		uop = linked_list_get(uop_list);
+		fprintf(f, "%3d. ", linked_list_current(uop_list));
 		x86_uinst_dump(uop->uinst, f);
 		fprintf(f, "\n");
-		lnlist_next(uop_list);
+		linked_list_next(uop_list);
 	}
 }
 
@@ -93,12 +93,12 @@ void uop_lnlist_dump(struct lnlist_t *uop_list, FILE *f)
  * obtained by 'rf_ready'. The 'uop->ready' field is redundant and should always
  * match the return value of 'rf_ready' while an uop is in the ROB.
  * A debug message is dumped when the uop transitions to ready. */
-void uop_lnlist_check_if_ready(struct lnlist_t *uop_list)
+void uop_lnlist_check_if_ready(struct linked_list_t *uop_list)
 {
 	struct uop_t *uop;
-	lnlist_head(uop_list);
-	for (lnlist_head(uop_list); !lnlist_eol(uop_list); lnlist_next(uop_list)) {
-		uop = lnlist_get(uop_list);
+	linked_list_head(uop_list);
+	for (linked_list_head(uop_list); !linked_list_is_end(uop_list); linked_list_next(uop_list)) {
+		uop = linked_list_get(uop_list);
 		if (uop->ready || !rf_ready(uop))
 			continue;
 		uop->ready = 1;

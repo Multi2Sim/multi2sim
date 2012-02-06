@@ -24,7 +24,7 @@
 #include <assert.h>
 #include <config.h>
 #include <hash-table.h>
-#include "lnlist.h"
+#include <linked-list.h>
 
 #define MAX_STRING_SIZE		1000
 #define HASH_TABLE_SIZE		100
@@ -294,7 +294,7 @@ int config_load(struct config_t *cfg)
 
 int config_save(struct config_t *config)
 {
-	struct lnlist_t *section_list;
+	struct linked_list_t *section_list;
 	char *section;
 	char *item, *value;
 	FILE *f;
@@ -305,21 +305,21 @@ int config_save(struct config_t *config)
 		return 0;
 	
 	/* Create a list with all sections first */
-	section_list = lnlist_create();
+	section_list = linked_list_create();
 	for (item = hash_table_find_first(config->items, (void **) &value); item;
 		item = hash_table_find_next(config->items, (void **) &value))
 	{
 		if (value == (char *) 1)
-			lnlist_add(section_list, item);
+			linked_list_add(section_list, item);
 	}
 
 	/* Dump all variables for each section */
-	for (lnlist_head(section_list); !lnlist_eol(section_list); lnlist_next(section_list))
+	for (linked_list_head(section_list); !linked_list_is_end(section_list); linked_list_next(section_list))
 	{
 		char section_buf[MAX_STRING_SIZE];
 		char var_buf[MAX_STRING_SIZE];
 
-		section = lnlist_get(section_list);
+		section = linked_list_get(section_list);
 		fprintf(f, "[ %s ]\n", section);
 
 		for (item = hash_table_find_first(config->items, (void **) &value); item;
@@ -334,7 +334,7 @@ int config_save(struct config_t *config)
 	}
 
 	/* Free section list */
-	lnlist_free(section_list);
+	linked_list_free(section_list);
 	
 	/* close file */
 	fclose(f);

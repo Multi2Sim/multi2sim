@@ -22,29 +22,28 @@
 #include <assert.h>
 #include <debug.h>
 #include <stdlib.h>
-#include <lnlist.h>
 
 
 /* OpenCL Objects */
 
-struct lnlist_t *opencl_object_list;
+struct linked_list_t *opencl_object_list;
 
 
 /* Add an OpenCL object to object list */
 void opencl_object_add(void *object)
 {
-	lnlist_find(opencl_object_list, object);
-	assert(lnlist_error(opencl_object_list));
-	lnlist_add(opencl_object_list, object);
+	linked_list_find(opencl_object_list, object);
+	assert(linked_list_error(opencl_object_list));
+	linked_list_add(opencl_object_list, object);
 }
 
 
 /* Remove an OpenCL object from object list */
 void opencl_object_remove(void *object)
 {
-	lnlist_find(opencl_object_list, object);
-	assert(!lnlist_error(opencl_object_list));
-	lnlist_remove(opencl_object_list);
+	linked_list_find(opencl_object_list, object);
+	assert(!linked_list_error(opencl_object_list));
+	linked_list_remove(opencl_object_list);
 }
 
 
@@ -57,8 +56,8 @@ void *opencl_object_get(enum opencl_obj_t type, uint32_t id)
 
 	if (id >> 16 != type)
 		fatal("opencl_object_get: requested OpenCL object of incorrect type");
-	for (lnlist_head(opencl_object_list); !lnlist_eol(opencl_object_list); lnlist_next(opencl_object_list)) {
-		if (!(object = lnlist_get(opencl_object_list)))
+	for (linked_list_head(opencl_object_list); !linked_list_is_end(opencl_object_list); linked_list_next(opencl_object_list)) {
+		if (!(object = linked_list_get(opencl_object_list)))
 			panic("opencl_object_get: empty object");
 		object_id = * (uint32_t *) object;
 		if (object_id == id)
@@ -76,8 +75,8 @@ void *opencl_object_get_type(enum opencl_obj_t type)
 	uint32_t object_id;
 
 	/* Find object */
-	for (lnlist_head(opencl_object_list); !lnlist_eol(opencl_object_list); lnlist_next(opencl_object_list)) {
-		if (!(object = lnlist_get(opencl_object_list)))
+	for (linked_list_head(opencl_object_list); !linked_list_is_end(opencl_object_list); linked_list_next(opencl_object_list)) {
+		if (!(object = linked_list_get(opencl_object_list)))
 			panic("opencl_object_get_type: empty object");
 		object_id = * (uint32_t *) object;
 		if (object_id >> 16 == type)
@@ -149,7 +148,7 @@ void opencl_object_free_all()
 		opencl_sampler_free((struct opencl_sampler_t *) object);
 	
 	/* Any object left */
-	if (lnlist_count(opencl_object_list))
+	if (linked_list_count(opencl_object_list))
 		panic("opencl_object_free_all: objects remaining in the list");
 	
 }

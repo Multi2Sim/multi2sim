@@ -32,7 +32,7 @@
 #include <esim.h>
 #include <misc.h>
 #include <list.h>
-#include <lnlist.h>
+#include <linked-list.h>
 #include <config.h>
 
 
@@ -202,7 +202,7 @@ struct net_buffer_t
 
 	/* List of events to schedule when new space becomes available
 	 * in the buffer. Elements are of type 'struct net_buffer_wakeup_t' */
-	struct lnlist_t *wakeup_list;
+	struct linked_list_t *wakeup_list;
 
 	/* Stats */
 	int occupancy_bytes_value;

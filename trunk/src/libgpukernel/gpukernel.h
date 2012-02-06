@@ -24,7 +24,7 @@
 #include <debug.h>
 #include <config.h>
 #include <list.h>
-#include <lnlist.h>
+#include <linked-list.h>
 #include <misc.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -182,7 +182,7 @@ enum opencl_obj_t
 	OPENCL_OBJ_SAMPLER
 };
 
-extern struct lnlist_t *opencl_object_list;
+extern struct linked_list_t *opencl_object_list;
 
 void opencl_object_add(void *object);
 void opencl_object_remove(void *object);
@@ -862,7 +862,7 @@ struct gpu_work_item_t
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
 	 * and executed as a burst at the end of an ALU group. */
-	struct lnlist_t *write_task_list;
+	struct linked_list_t *write_task_list;
 
 	/* LDS (Local Data Share) OQs (Output Queues) */
 	struct list_t *lds_oqa;

@@ -29,8 +29,8 @@ int gpu_tex_engine_load_queue_size = 8;  /* Maximum number of in-flight global m
 
 void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
-	struct lnlist_t *pending_queue = compute_unit->tex_engine.pending_queue;
-	struct lnlist_t *finished_queue = compute_unit->tex_engine.finished_queue;
+	struct linked_list_t *pending_queue = compute_unit->tex_engine.pending_queue;
+	struct linked_list_t *finished_queue = compute_unit->tex_engine.finished_queue;
 
 	struct gpu_wavefront_t *wavefront;
 	struct gpu_uop_t *cf_uop, *uop;
@@ -44,8 +44,8 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	char str1[MAX_STRING_SIZE], str2[MAX_STRING_SIZE];
 
 	/* Get wavefront to fetch from */
-	lnlist_head(pending_queue);
-	cf_uop = lnlist_get(pending_queue);
+	linked_list_head(pending_queue);
+	cf_uop = linked_list_get(pending_queue);
 	if (!cf_uop)
 		return;
 	wavefront = cf_uop->wavefront;
@@ -74,8 +74,8 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	 * insert it into 'finished_queue'. */
 	if (uop->last)
 	{
-		lnlist_remove(pending_queue);
-		lnlist_add(finished_queue, cf_uop);
+		linked_list_remove(pending_queue);
+		linked_list_add(finished_queue, cf_uop);
 	}
 
 	/* Stats */
@@ -100,8 +100,8 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->inst_mem_ready = gpu->cycle + gpu_tex_engine_inst_mem_latency;
 
 	/* Enqueue uop into fetch queue */
-	lnlist_out(compute_unit->tex_engine.fetch_queue);
-	lnlist_insert(compute_unit->tex_engine.fetch_queue, uop);
+	linked_list_out(compute_unit->tex_engine.fetch_queue);
+	linked_list_insert(compute_unit->tex_engine.fetch_queue, uop);
 	compute_unit->tex_engine.fetch_queue_length += uop->length;
 
 	/* Debug */
@@ -126,12 +126,12 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_tex_engine_decode(struct gpu_compute_unit_t *compute_unit)
 {
-	struct lnlist_t *fetch_queue = compute_unit->tex_engine.fetch_queue;
+	struct linked_list_t *fetch_queue = compute_unit->tex_engine.fetch_queue;
 	struct gpu_uop_t *uop;
 
 	/* Get instruction at the head of the fetch queue */
-	lnlist_head(fetch_queue);
-	uop = lnlist_get(fetch_queue);
+	linked_list_head(fetch_queue);
+	uop = linked_list_get(fetch_queue);
 
 	/* If there was no uop in the queue, done */
 	if (!uop)
@@ -146,7 +146,7 @@ void gpu_tex_engine_decode(struct gpu_compute_unit_t *compute_unit)
 		return;
 
 	/* Extract uop from fetch queue */
-	lnlist_remove(fetch_queue);
+	linked_list_remove(fetch_queue);
 	compute_unit->tex_engine.fetch_queue_length -= uop->length;
 	assert(compute_unit->tex_engine.fetch_queue_length >= 0);
 
@@ -177,13 +177,13 @@ void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 		return;
 
 	/* If there is no space in the load queue, done. */
-	if (lnlist_count(compute_unit->tex_engine.load_queue) >= gpu_tex_engine_load_queue_size)
+	if (linked_list_count(compute_unit->tex_engine.load_queue) >= gpu_tex_engine_load_queue_size)
 		return;
 	
 	/* Extract uop from instruction buffer and insert into load queue. */
 	compute_unit->tex_engine.inst_buffer = NULL;
-	lnlist_out(compute_unit->tex_engine.load_queue);
-	lnlist_insert(compute_unit->tex_engine.load_queue, uop);
+	linked_list_out(compute_unit->tex_engine.load_queue);
+	linked_list_insert(compute_unit->tex_engine.load_queue, uop);
 
 	/* Global memory read  */
 	if (uop->global_mem_read)
@@ -210,13 +210,13 @@ void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 {
-	struct lnlist_t *finished_queue = compute_unit->tex_engine.finished_queue;
+	struct linked_list_t *finished_queue = compute_unit->tex_engine.finished_queue;
 
 	struct gpu_uop_t *cf_uop, *uop;
 
 	/* Get instruction at the head of the load queue. */
-	lnlist_head(compute_unit->tex_engine.load_queue);
-	uop = lnlist_get(compute_unit->tex_engine.load_queue);
+	linked_list_head(compute_unit->tex_engine.load_queue);
+	uop = linked_list_get(compute_unit->tex_engine.load_queue);
 	if (!uop)
 		return;
 
@@ -225,7 +225,7 @@ void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 		return;
 
 	/* Extract from load queue. */
-	lnlist_remove(compute_unit->tex_engine.load_queue);
+	linked_list_remove(compute_unit->tex_engine.load_queue);
 
 	/* Debug */
 	gpu_pipeline_debug("tex a=\"write\" "
@@ -238,13 +238,13 @@ void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 	if (uop->last)
 	{
 		/* Extract CF uop from 'finished_queue' */
-		lnlist_head(finished_queue);
-		cf_uop = lnlist_get(finished_queue);
+		linked_list_head(finished_queue);
+		cf_uop = linked_list_get(finished_queue);
 		assert(cf_uop == uop->cf_uop);
-		lnlist_remove(finished_queue);
+		linked_list_remove(finished_queue);
 
 		/* Enqueue CF uop into complete queue in CF Engine */
-		lnlist_add(compute_unit->cf_engine.complete_queue, cf_uop);
+		linked_list_add(compute_unit->cf_engine.complete_queue, cf_uop);
 	}
 
 	/* Free uop */
@@ -255,8 +255,8 @@ void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 void gpu_tex_engine_run(struct gpu_compute_unit_t *compute_unit)
 {
 	/* If no wavefront to run, avoid entering loop */
-	if (!lnlist_count(compute_unit->tex_engine.pending_queue) &&
-		!lnlist_count(compute_unit->tex_engine.finished_queue))
+	if (!linked_list_count(compute_unit->tex_engine.pending_queue) &&
+		!linked_list_count(compute_unit->tex_engine.finished_queue))
 		return;
 
 	/* TEX Engine stages */

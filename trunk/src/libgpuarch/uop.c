@@ -153,14 +153,14 @@ void gpu_uop_free(struct gpu_uop_t *gpu_uop)
 }
 
 
-void gpu_uop_list_free(struct lnlist_t *gpu_uop_list)
+void gpu_uop_list_free(struct linked_list_t *gpu_uop_list)
 {
 	struct gpu_uop_t *uop;
-	while (lnlist_count(gpu_uop_list)) {
-		lnlist_head(gpu_uop_list);
-		uop = lnlist_get(gpu_uop_list);
+	while (linked_list_count(gpu_uop_list)) {
+		linked_list_head(gpu_uop_list);
+		uop = linked_list_get(gpu_uop_list);
 		gpu_uop_free(uop);
-		lnlist_remove(gpu_uop_list);
+		linked_list_remove(gpu_uop_list);
 	}
 }
 

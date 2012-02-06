@@ -23,7 +23,7 @@
 #include <time.h>
 #include <signal.h>
 #include <list.h>
-#include <lnlist.h>
+#include <linked-list.h>
 #include <repos.h>
 #include <cachesystem.h>
 #include <cpukernel.h>
@@ -189,8 +189,8 @@ void uop_free_if_not_queued(struct uop_t *uop);
 int uop_exists(struct uop_t *uop);
 
 void uop_list_dump(struct list_t *uop_list, FILE *f);
-void uop_lnlist_dump(struct lnlist_t *uop_list, FILE *f);
-void uop_lnlist_check_if_ready(struct lnlist_t *uop_list);
+void uop_lnlist_dump(struct linked_list_t *uop_list, FILE *f);
+void uop_lnlist_check_if_ready(struct linked_list_t *uop_list);
 
 
 
@@ -358,8 +358,8 @@ void eventq_done(void);
 
 int eventq_longlat(int core, int thread);
 int eventq_cachemiss(int core, int thread);
-void eventq_insert(struct lnlist_t *eventq, struct uop_t *uop);
-struct uop_t *eventq_extract(struct lnlist_t *eventq);
+void eventq_insert(struct linked_list_t *eventq, struct uop_t *uop);
+struct uop_t *eventq_extract(struct linked_list_t *eventq);
 void eventq_recover(int core, int thread);
 
 
@@ -601,9 +601,9 @@ struct cpu_thread_t
 	/* Private structures */
 	struct list_t *fetchq;
 	struct list_t *uopq;
-	struct lnlist_t *iq;
-	struct lnlist_t *lq;
-	struct lnlist_t *sq;
+	struct linked_list_t *iq;
+	struct linked_list_t *lq;
+	struct linked_list_t *sq;
 	struct bpred_t *bpred;  /* branch predictor */
 	struct tcache_t *tcache;  /* trace cache */
 	struct rf_t *rf;  /* physical register file */
@@ -672,7 +672,7 @@ struct cpu_core_t
 	struct cpu_thread_t *thread;
 
 	/* Shared structures */
-	struct lnlist_t *eventq;
+	struct linked_list_t *eventq;
 	struct fu_t *fu;
 
 	/* Per core counters */

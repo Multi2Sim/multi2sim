@@ -23,14 +23,14 @@
 static int issue_sq(int core, int thread, int quant)
 {
 	struct uop_t *store;
-	struct lnlist_t *sq = THREAD.sq;
+	struct linked_list_t *sq = THREAD.sq;
 
 	/* Process SQ */
-	lnlist_head(sq);
-	while (!lnlist_eol(sq) && quant) {
+	linked_list_head(sq);
+	while (!linked_list_is_end(sq) && quant) {
 		
 		/* Get store */
-		store = lnlist_get(sq);
+		store = linked_list_get(sq);
 		assert(store->uinst->opcode == x86_uinst_store);
 
 		/* Check that it can issue */
@@ -75,7 +75,7 @@ static int issue_sq(int core, int thread, int quant)
 
 static int issue_lq(int core, int thread, int quant)
 {
-	struct lnlist_t *lq = THREAD.lq;
+	struct linked_list_t *lq = THREAD.lq;
 	struct uop_t *load;
 
 	/* Debug */
@@ -83,21 +83,21 @@ static int issue_lq(int core, int thread, int quant)
 		uop_lnlist_check_if_ready(lq);
 	
 	/* Process lq */
-	lnlist_head(lq);
-	while (!lnlist_eol(lq) && quant) {
+	linked_list_head(lq);
+	while (!linked_list_is_end(lq) && quant) {
 		
 		/* Get element from LQ.
 		 * If it is not ready, go to the next one */
-		load = lnlist_get(lq);
+		load = linked_list_get(lq);
 		if (!load->ready && !rf_ready(load)) {
-			lnlist_next(lq);
+			linked_list_next(lq);
 			continue;
 		}
 		load->ready = 1;
 		if (!cache_system_can_access(core, thread, cache_kind_data,
 			cache_access_kind_read, load->physical_address))
 		{
-			lnlist_next(lq);
+			linked_list_next(lq);
 			continue;
 		}
 
@@ -139,7 +139,7 @@ static int issue_lq(int core, int thread, int quant)
 
 static int issue_iq(int core, int thread, int quant)
 {
-	struct lnlist_t *iq = THREAD.iq;
+	struct linked_list_t *iq = THREAD.iq;
 	struct uop_t *uop;
 	int lat;
 
@@ -148,15 +148,15 @@ static int issue_iq(int core, int thread, int quant)
 		uop_lnlist_check_if_ready(iq);
 	
 	/* Find instruction to issue */
-	lnlist_head(iq);
-	while (!lnlist_eol(iq) && quant) {
+	linked_list_head(iq);
+	while (!linked_list_is_end(iq) && quant) {
 		
 		/* Get element from IQ */
-		uop = lnlist_get(iq);
+		uop = linked_list_get(iq);
 		assert(uop_exists(uop));
 		assert(!(uop->flags & X86_UINST_MEM));
 		if (!uop->ready && !rf_ready(uop)) {
-			lnlist_next(iq);
+			linked_list_next(iq);
 			continue;
 		}
 		uop->ready = 1;  /* avoid next call to 'rf_ready' */
@@ -167,7 +167,7 @@ static int issue_iq(int core, int thread, int quant)
 		 * 'fu_reserve' returns 0. */
 		lat = fu_reserve(uop);
 		if (!lat) {
-			lnlist_next(iq);
+			linked_list_next(iq);
 			continue;
 		}
 		

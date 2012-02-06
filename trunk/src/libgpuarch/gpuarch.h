@@ -191,7 +191,7 @@ struct gpu_uop_t *gpu_uop_create(void);
 struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_group);
 void gpu_uop_free(struct gpu_uop_t *gpu_uop);
 
-void gpu_uop_list_free(struct lnlist_t *gpu_uop_list);
+void gpu_uop_list_free(struct linked_list_t *gpu_uop_list);
 void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count);
 
 void gpu_uop_save_active_mask(struct gpu_uop_t *uop);
@@ -253,7 +253,7 @@ struct gpu_compute_unit_t
 	/* Ready wavefront pool.
 	 * It includes suspended wavefronts, but excludes wavefronts in
 	 * flight in the CF pipeline or running on the ALU/TEX Engines. */
-	struct lnlist_t *wavefront_pool;
+	struct linked_list_t *wavefront_pool;
 
 	/* Fields for CF Engine */
 	struct
@@ -267,7 +267,7 @@ struct gpu_compute_unit_t
 		int execute_index;  /* Next uop in 'inst_buffer' to execute */
 
 		/* Complete queue */
-		struct lnlist_t *complete_queue;  /* Queue of completed instructions */
+		struct linked_list_t *complete_queue;  /* Queue of completed instructions */
 
 		/* Stats */
 		uint64_t inst_count;
@@ -285,11 +285,11 @@ struct gpu_compute_unit_t
 		 * When the secondary clause finishes fetching, the CF uop is moved to
 		 * 'finished_queue'. When secondary clause exists pipeline, it is extracted from
 		 " 'finished_queue'. */
-		struct lnlist_t *pending_queue;
-		struct lnlist_t *finished_queue;
+		struct linked_list_t *pending_queue;
+		struct linked_list_t *finished_queue;
 
 		/* Queues */
-		struct lnlist_t *fetch_queue;  /* Uops from fetch to decode stage */
+		struct linked_list_t *fetch_queue;  /* Uops from fetch to decode stage */
 		int fetch_queue_length;  /* Number of bytes occupied in fetch queue */
 		struct gpu_uop_t *inst_buffer;  /* Uop from decode to read stage */
 		struct gpu_uop_t *exec_buffer;  /* Uop from read to execute stage */
@@ -313,14 +313,14 @@ struct gpu_compute_unit_t
 	struct
 	{
 		/* CF uop queues (see comment for ALU engine) */
-		struct lnlist_t *pending_queue;
-		struct lnlist_t *finished_queue;
+		struct linked_list_t *pending_queue;
+		struct linked_list_t *finished_queue;
 
 		/* Queues */
-		struct lnlist_t *fetch_queue;  /* Uops from fetch to decode stage */
+		struct linked_list_t *fetch_queue;  /* Uops from fetch to decode stage */
 		int fetch_queue_length;  /* Number of bytes occupied in fetch queue */
 		struct gpu_uop_t *inst_buffer;  /* Uop from decode to read stage */
-		struct lnlist_t *load_queue;  /* Uops from read to write stage */
+		struct linked_list_t *load_queue;  /* Uops from read to write stage */
 
 		/* Stats */
 		uint64_t wavefront_count;

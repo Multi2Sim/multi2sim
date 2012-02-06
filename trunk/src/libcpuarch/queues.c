@@ -155,25 +155,25 @@ void iq_init()
 {
 	int core, thread;
 	FOREACH_CORE FOREACH_THREAD
-		THREAD.iq = lnlist_create();
+		THREAD.iq = linked_list_create();
 }
 
 
 void iq_done()
 {
-	struct lnlist_t *iq;
+	struct linked_list_t *iq;
 	struct uop_t *uop;
 	int core, thread;
 	FOREACH_CORE FOREACH_THREAD {
 		iq = THREAD.iq;
-		lnlist_head(iq);
-		while (lnlist_count(iq)) {
-			uop = lnlist_get(iq);
+		linked_list_head(iq);
+		while (linked_list_count(iq)) {
+			uop = linked_list_get(iq);
 			uop->in_iq = 0;
-			lnlist_remove(iq);
+			linked_list_remove(iq);
 			uop_free_if_not_queued(uop);
 		}
-		lnlist_free(iq);
+		linked_list_free(iq);
 	}
 }
 
@@ -196,11 +196,11 @@ void iq_insert(struct uop_t *uop)
 {
 	int core = uop->core;
 	int thread = uop->thread;
-	struct lnlist_t *iq = THREAD.iq;
+	struct linked_list_t *iq = THREAD.iq;
 
 	assert(!uop->in_iq);
-	lnlist_out(iq);
-	lnlist_insert(iq, uop);
+	linked_list_out(iq);
+	linked_list_insert(iq, uop);
 	uop->in_iq = 1;
 
 	CORE.iq_count++;
@@ -212,12 +212,12 @@ void iq_insert(struct uop_t *uop)
  * the IQ of the specified thread. */
 void iq_remove(int core, int thread)
 {
-	struct lnlist_t *iq = THREAD.iq;
+	struct linked_list_t *iq = THREAD.iq;
 	struct uop_t *uop;
 
-	uop = lnlist_get(iq);
+	uop = linked_list_get(iq);
 	assert(uop_exists(uop));
-	lnlist_remove(iq);
+	linked_list_remove(iq);
 	uop->in_iq = 0;
 
 	assert(CORE.iq_count && THREAD.iq_count);
@@ -229,18 +229,18 @@ void iq_remove(int core, int thread)
 /* Remove all speculative uops from the current thread */
 void iq_recover(int core, int thread)
 {
-	struct lnlist_t *iq = THREAD.iq;
+	struct linked_list_t *iq = THREAD.iq;
 	struct uop_t *uop;
 
-	lnlist_head(iq);
-	while (!lnlist_eol(iq)) {
-		uop = lnlist_get(iq);
+	linked_list_head(iq);
+	while (!linked_list_is_end(iq)) {
+		uop = linked_list_get(iq);
 		if (uop->specmode) {
 			iq_remove(core, thread);
 			uop_free_if_not_queued(uop);
 			continue;
 		}
-		lnlist_next(iq);
+		linked_list_next(iq);
 	}
 }
 
@@ -258,42 +258,42 @@ void lsq_init()
 {
 	int core, thread;
 	FOREACH_CORE FOREACH_THREAD {
-		THREAD.lq = lnlist_create();
-		THREAD.sq = lnlist_create();
+		THREAD.lq = linked_list_create();
+		THREAD.sq = linked_list_create();
 	}
 }
 
 
 void lsq_done()
 {
-	struct lnlist_t *lq, *sq;
+	struct linked_list_t *lq, *sq;
 	struct uop_t *uop;
 	int core, thread;
 
 	/* Load queue */
 	FOREACH_CORE FOREACH_THREAD {
 		lq = THREAD.lq;
-		lnlist_head(lq);
-		while (lnlist_count(lq)) {
-			uop = lnlist_get(lq);
+		linked_list_head(lq);
+		while (linked_list_count(lq)) {
+			uop = linked_list_get(lq);
 			uop->in_lq = 0;
-			lnlist_remove(lq);
+			linked_list_remove(lq);
 			uop_free_if_not_queued(uop);
 		}
-		lnlist_free(lq);
+		linked_list_free(lq);
 	}
 
 	/* Store queue */
 	FOREACH_CORE FOREACH_THREAD {
 		sq = THREAD.sq;
-		lnlist_head(sq);
-		while (lnlist_count(sq)) {
-			uop = lnlist_get(sq);
+		linked_list_head(sq);
+		while (linked_list_count(sq)) {
+			uop = linked_list_get(sq);
 			uop->in_sq = 0;
-			lnlist_remove(sq);
+			linked_list_remove(sq);
 			uop_free_if_not_queued(uop);
 		}
-		lnlist_free(sq);
+		linked_list_free(sq);
 	}
 }
 
@@ -315,21 +315,21 @@ void lsq_insert(struct uop_t *uop)
 {
 	int core = uop->core;
 	int thread = uop->thread;
-	struct lnlist_t *lq = THREAD.lq;
-	struct lnlist_t *sq = THREAD.sq;
+	struct linked_list_t *lq = THREAD.lq;
+	struct linked_list_t *sq = THREAD.sq;
 
 	assert(!uop->in_lq && !uop->in_sq);
 	assert(uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_store);
 	if (uop->uinst->opcode == x86_uinst_load)
 	{
-		lnlist_out(lq);
-		lnlist_insert(lq, uop);
+		linked_list_out(lq);
+		linked_list_insert(lq, uop);
 		uop->in_lq = 1;
 	}
 	else
 	{
-		lnlist_out(sq);
-		lnlist_insert(sq, uop);
+		linked_list_out(sq);
+		linked_list_insert(sq, uop);
 		uop->in_sq = 1;
 	}
 	CORE.lsq_count++;
@@ -341,32 +341,32 @@ void lsq_insert(struct uop_t *uop)
  * given thread. */
 void lsq_recover(int core, int thread)
 {
-	struct lnlist_t *lq = THREAD.lq;
-	struct lnlist_t *sq = THREAD.sq;
+	struct linked_list_t *lq = THREAD.lq;
+	struct linked_list_t *sq = THREAD.sq;
 	struct uop_t *uop;
 
 	/* Recover load queue */
-	lnlist_head(lq);
-	while (!lnlist_eol(lq)) {
-		uop = lnlist_get(lq);
+	linked_list_head(lq);
+	while (!linked_list_is_end(lq)) {
+		uop = linked_list_get(lq);
 		if (uop->specmode) {
 			lq_remove(core, thread);
 			uop_free_if_not_queued(uop);
 			continue;
 		}
-		lnlist_next(lq);
+		linked_list_next(lq);
 	}
 
 	/* Recover store queue */
-	lnlist_head(sq);
-	while (!lnlist_eol(sq)) {
-		uop = lnlist_get(sq);
+	linked_list_head(sq);
+	while (!linked_list_is_end(sq)) {
+		uop = linked_list_get(sq);
 		if (uop->specmode) {
 			sq_remove(core, thread);
 			uop_free_if_not_queued(uop);
 			continue;
 		}
-		lnlist_next(sq);
+		linked_list_next(sq);
 	}
 }
 
@@ -375,12 +375,12 @@ void lsq_recover(int core, int thread)
  * the load queue of the specified thread. */
 void lq_remove(int core, int thread)
 {
-	struct lnlist_t *lq = THREAD.lq;
+	struct linked_list_t *lq = THREAD.lq;
 	struct uop_t *uop;
 
-	uop = lnlist_get(lq);
+	uop = linked_list_get(lq);
 	assert(uop_exists(uop));
-	lnlist_remove(lq);
+	linked_list_remove(lq);
 	uop->in_lq = 0;
 
 	assert(CORE.lsq_count && THREAD.lsq_count);
@@ -392,13 +392,13 @@ void lq_remove(int core, int thread)
 /* Remove an uop in the current position of the store queue */
 void sq_remove(int core, int thread)
 {
-	struct lnlist_t *sq = THREAD.sq;
+	struct linked_list_t *sq = THREAD.sq;
 	struct uop_t *uop;
 
-	uop = lnlist_get(sq);
+	uop = linked_list_get(sq);
 	assert(uop_exists(uop));
 	assert(uop->in_sq);
-	lnlist_remove(sq);
+	linked_list_remove(sq);
 	uop->in_sq = 0;
 
 	assert(CORE.lsq_count && THREAD.lsq_count);
@@ -415,7 +415,7 @@ void eventq_init()
 {
 	int core;
 	FOREACH_CORE
-		CORE.eventq = lnlist_create();
+		CORE.eventq = linked_list_create();
 }
 
 
@@ -423,9 +423,9 @@ void eventq_done()
 {
 	int core;
 	FOREACH_CORE {
-		while (lnlist_count(CORE.eventq))
+		while (linked_list_count(CORE.eventq))
 			uop_free_if_not_queued(eventq_extract(CORE.eventq));
-		lnlist_free(CORE.eventq);
+		linked_list_free(CORE.eventq);
 	}
 }
 
@@ -441,11 +441,11 @@ static int eventq_compare(const void *item1, const void *item2)
 
 int eventq_longlat(int core, int thread)
 {
-	struct lnlist_t *eventq = CORE.eventq;
+	struct linked_list_t *eventq = CORE.eventq;
 	struct uop_t *uop;
 	
-	for (lnlist_head(eventq); !lnlist_eol(eventq); lnlist_next(eventq)) {
-		uop = lnlist_get(eventq);
+	for (linked_list_head(eventq); !linked_list_is_end(eventq); linked_list_next(eventq)) {
+		uop = linked_list_get(eventq);
 		if (uop->thread != thread)
 			continue;
 		if (cpu->cycle - uop->issue_when > 20)
@@ -457,11 +457,11 @@ int eventq_longlat(int core, int thread)
 
 int eventq_cachemiss(int core, int thread)
 {
-	struct lnlist_t *eventq = CORE.eventq;
+	struct linked_list_t *eventq = CORE.eventq;
 	struct uop_t *uop;
 
-	for (lnlist_head(eventq); !lnlist_eol(eventq); lnlist_next(eventq)) {
-		uop = lnlist_get(eventq);
+	for (linked_list_head(eventq); !linked_list_is_end(eventq); linked_list_next(eventq)) {
+		uop = linked_list_get(eventq);
 		if (uop->thread != thread || uop->uinst->opcode != x86_uinst_load)
 			continue;
 		if (cpu->cycle - uop->issue_when > 5)
@@ -471,32 +471,32 @@ int eventq_cachemiss(int core, int thread)
 }
 
 
-void eventq_insert(struct lnlist_t *eventq, struct uop_t *uop)
+void eventq_insert(struct linked_list_t *eventq, struct uop_t *uop)
 {
 	struct uop_t *item;
 	assert(!uop->in_eventq);
-	lnlist_head(eventq);
+	linked_list_head(eventq);
 	for (;;) {
-		item = lnlist_get(eventq);
+		item = linked_list_get(eventq);
 		if (!item || eventq_compare(uop, item) < 0)
 			break;
-		lnlist_next(eventq);
+		linked_list_next(eventq);
 	}
-	lnlist_insert(eventq, uop);
+	linked_list_insert(eventq, uop);
 	uop->in_eventq = 1;
 }
 
 
-struct uop_t *eventq_extract(struct lnlist_t *eventq)
+struct uop_t *eventq_extract(struct linked_list_t *eventq)
 {
 	struct uop_t *uop;
-	if (!lnlist_count(eventq))
+	if (!linked_list_count(eventq))
 		return NULL;
-	lnlist_head(eventq);
-	uop = lnlist_get(eventq);
+	linked_list_head(eventq);
+	uop = linked_list_get(eventq);
 	assert(uop_exists(uop));
 	assert(uop->in_eventq);
-	lnlist_remove(eventq);
+	linked_list_remove(eventq);
 	uop->in_eventq = 0;
 	return uop;
 }
@@ -504,19 +504,19 @@ struct uop_t *eventq_extract(struct lnlist_t *eventq)
 
 void eventq_recover(int core, int thread)
 {
-	struct lnlist_t *eventq = CORE.eventq;
+	struct linked_list_t *eventq = CORE.eventq;
 	struct uop_t *uop;
 
-	lnlist_head(eventq);
-	while (!lnlist_eol(eventq)) {
-		uop = lnlist_get(eventq);
+	linked_list_head(eventq);
+	while (!linked_list_is_end(eventq)) {
+		uop = linked_list_get(eventq);
 		if (uop->thread == thread && uop->specmode) {
-			lnlist_remove(eventq);
+			linked_list_remove(eventq);
 			uop->in_eventq = 0;
 			uop_free_if_not_queued(uop);
 			continue;
 		}
-		lnlist_next(eventq);
+		linked_list_next(eventq);
 	}
 }
 
