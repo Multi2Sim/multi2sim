@@ -34,7 +34,7 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 	/* Create compute unit */
 	compute_unit = calloc(1, sizeof(struct gpu_compute_unit_t));
-	compute_unit->wavefront_pool = lnlist_create();
+	compute_unit->wavefront_pool = linked_list_create();
 
 	/* Local memory */
 	compute_unit->local_memory = gpu_cache_create(gpu_local_mem_banks,
@@ -47,19 +47,19 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 	/* Initialize CF Engine */
 	compute_unit->cf_engine.fetch_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));
 	compute_unit->cf_engine.inst_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));
-	compute_unit->cf_engine.complete_queue = lnlist_create();
+	compute_unit->cf_engine.complete_queue = linked_list_create();
 
 	/* Initialize ALU Engine */
-	compute_unit->alu_engine.pending_queue = lnlist_create();
-	compute_unit->alu_engine.finished_queue = lnlist_create();
-	compute_unit->alu_engine.fetch_queue = lnlist_create();
+	compute_unit->alu_engine.pending_queue = linked_list_create();
+	compute_unit->alu_engine.finished_queue = linked_list_create();
+	compute_unit->alu_engine.fetch_queue = linked_list_create();
 	compute_unit->alu_engine.event_queue = heap_create(10);
 
 	/* Initialize TEX Engine */
-	compute_unit->tex_engine.pending_queue = lnlist_create();
-	compute_unit->tex_engine.finished_queue = lnlist_create();
-	compute_unit->tex_engine.fetch_queue = lnlist_create();
-	compute_unit->tex_engine.load_queue = lnlist_create();
+	compute_unit->tex_engine.pending_queue = linked_list_create();
+	compute_unit->tex_engine.finished_queue = linked_list_create();
+	compute_unit->tex_engine.fetch_queue = linked_list_create();
+	compute_unit->tex_engine.load_queue = linked_list_create();
 
 	/* List of mapped work-groups */
 	compute_unit->work_groups = calloc(gpu_max_work_groups_per_compute_unit, sizeof(void *));
@@ -86,7 +86,7 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	/* CF Engine - free structures */
 	free(compute_unit->cf_engine.fetch_buffer);
 	free(compute_unit->cf_engine.inst_buffer);
-	lnlist_free(compute_unit->cf_engine.complete_queue);
+	linked_list_free(compute_unit->cf_engine.complete_queue);
 
 	/* ALU Engine - free uops in event queue (heap) */
 	event_queue = compute_unit->alu_engine.event_queue;
@@ -106,9 +106,9 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	gpu_uop_free(compute_unit->alu_engine.exec_buffer);
 
 	/* ALU Engine - structures */
-	lnlist_free(compute_unit->alu_engine.pending_queue);
-	lnlist_free(compute_unit->alu_engine.finished_queue);
-	lnlist_free(compute_unit->alu_engine.fetch_queue);
+	linked_list_free(compute_unit->alu_engine.pending_queue);
+	linked_list_free(compute_unit->alu_engine.finished_queue);
+	linked_list_free(compute_unit->alu_engine.fetch_queue);
 	heap_free(compute_unit->alu_engine.event_queue);
 
 	/* TEX Engine - free uop in fetch queue, instruction buffer, write buffer. */
@@ -119,13 +119,13 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	gpu_uop_list_free(compute_unit->tex_engine.load_queue);
 
 	/* TEX Engine - structures */
-	lnlist_free(compute_unit->tex_engine.pending_queue);
-	lnlist_free(compute_unit->tex_engine.finished_queue);
-	lnlist_free(compute_unit->tex_engine.fetch_queue);
-	lnlist_free(compute_unit->tex_engine.load_queue);
+	linked_list_free(compute_unit->tex_engine.pending_queue);
+	linked_list_free(compute_unit->tex_engine.finished_queue);
+	linked_list_free(compute_unit->tex_engine.fetch_queue);
+	linked_list_free(compute_unit->tex_engine.load_queue);
 
 	/* Compute unit */
-	lnlist_free(compute_unit->wavefront_pool);
+	linked_list_free(compute_unit->wavefront_pool);
 	free(compute_unit->work_groups);  /* List of mapped work-groups */
 	gpu_cache_free(compute_unit->local_memory);
 	free(compute_unit);
@@ -173,7 +173,7 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 	/* Insert all wavefronts into the CF Engine's wavefront pool */
 	FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
 		wavefront = ndrange->wavefronts[wavefront_id];
-		lnlist_add(compute_unit->wavefront_pool, wavefront);
+		linked_list_add(compute_unit->wavefront_pool, wavefront);
 	}
 
 	/* Debug */

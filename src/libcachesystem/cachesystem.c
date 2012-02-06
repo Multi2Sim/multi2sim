@@ -158,7 +158,7 @@ struct ccache_t *ccache_create()
 {
 	struct ccache_t *ccache;
 	ccache = calloc(1, sizeof(struct ccache_t));
-	ccache->access_list = lnlist_create();
+	ccache->access_list = linked_list_create();
 	return ccache;
 }
 
@@ -167,16 +167,16 @@ void ccache_free(struct ccache_t *ccache)
 {
 	/* Free linked list of pending accesses.
 	 * Each element is in turn a linked list of access aliases. */
-	while (lnlist_count(ccache->access_list)) {
+	while (linked_list_count(ccache->access_list)) {
 		struct ccache_access_t *a, *n;
-		lnlist_head(ccache->access_list);
-		for (a = lnlist_get(ccache->access_list); a; a = n) {
+		linked_list_head(ccache->access_list);
+		for (a = linked_list_get(ccache->access_list); a; a = n) {
 			n = a->next;
 			repos_free_object(ccache_access_repos, a);
 		}
-		lnlist_remove(ccache->access_list);
+		linked_list_remove(ccache->access_list);
 	}
-	lnlist_free(ccache->access_list);
+	linked_list_free(ccache->access_list);
 
 	/* Free cache */
 	if (ccache->dir)
@@ -195,10 +195,10 @@ static struct ccache_access_t *ccache_find_access(struct ccache_t *ccache,
 {
 	struct ccache_access_t *access;
 	addr &= ~(ccache->bsize - 1);
-	for (lnlist_head(ccache->access_list); !lnlist_eol(ccache->access_list);
-		lnlist_next(ccache->access_list))
+	for (linked_list_head(ccache->access_list); !linked_list_is_end(ccache->access_list);
+		linked_list_next(ccache->access_list))
 	{
-		access = lnlist_get(ccache->access_list);
+		access = linked_list_get(ccache->access_list);
 		if (access->address == addr)
 			return access;
 	}
@@ -208,7 +208,7 @@ static struct ccache_access_t *ccache_find_access(struct ccache_t *ccache,
 
 struct ccache_access_t *ccache_start_access(struct ccache_t *ccache,
 	enum cache_access_kind_t cache_access_kind, uint32_t addr,
-	struct lnlist_t *eventq, void *eventq_item)
+	struct linked_list_t *eventq, void *eventq_item)
 {
 	struct ccache_access_t *access, *alias;
 
@@ -229,8 +229,8 @@ struct ccache_access_t *ccache_start_access(struct ccache_t *ccache,
 		alias->next = access;
 		access->id = alias->id;
 	} else {
-		lnlist_out(ccache->access_list);
-		lnlist_insert(ccache->access_list, access);
+		linked_list_out(ccache->access_list);
+		linked_list_insert(ccache->access_list, access);
 		access->id = ++access_counter;
 		cache_access_kind == cache_access_kind_read ? ccache->pending_reads++
 			: ccache->pending_writes++;
@@ -254,8 +254,8 @@ void ccache_end_access(struct ccache_t *ccache, uint32_t addr)
 	for (alias = access; alias; alias = alias->next) {
 		if (alias->eventq) {
 			assert(alias->eventq_item);
-			lnlist_head(alias->eventq);
-			lnlist_insert(alias->eventq, alias->eventq_item);
+			linked_list_head(alias->eventq);
+			linked_list_insert(alias->eventq, alias->eventq_item);
 		}
 	}
 
@@ -269,17 +269,17 @@ void ccache_end_access(struct ccache_t *ccache, uint32_t addr)
 		repos_free_object(ccache_access_repos, access);
 		access = alias;
 	}
-	lnlist_remove(ccache->access_list);
+	linked_list_remove(ccache->access_list);
 }
 
 
 int ccache_pending_access(struct ccache_t *ccache, uint64_t id)
 {
 	struct ccache_access_t *access;
-	for (lnlist_head(ccache->access_list); !lnlist_eol(ccache->access_list);
-		lnlist_next(ccache->access_list))
+	for (linked_list_head(ccache->access_list); !linked_list_is_end(ccache->access_list);
+		linked_list_next(ccache->access_list))
 	{
-		access = lnlist_get(ccache->access_list);
+		access = linked_list_get(ccache->access_list);
 		if (access->id == id)
 			return 1;
 	}
@@ -1345,7 +1345,7 @@ int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
 
 static uint64_t cache_system_access(int core, int thread, enum cache_kind_t cache_kind,
 	enum cache_access_kind_t cache_access_kind, uint32_t addr,
-	struct lnlist_t *eventq, void *eventq_item)
+	struct linked_list_t *eventq, void *eventq_item)
 {
 	struct cache_system_stack_t *newstack;
 	struct ccache_t *ccache;
@@ -1381,7 +1381,7 @@ static uint64_t cache_system_access(int core, int thread, enum cache_kind_t cach
 
 
 uint64_t cache_system_write(int core, int thread, enum cache_kind_t cache_kind,
-	uint32_t addr, struct lnlist_t *eventq, void *eventq_item)
+	uint32_t addr, struct linked_list_t *eventq, void *eventq_item)
 {
 	assert(cache_kind == cache_kind_data);
 	assert(cache_system_can_access(core, thread, cache_kind,
@@ -1392,7 +1392,7 @@ uint64_t cache_system_write(int core, int thread, enum cache_kind_t cache_kind,
 
 
 uint64_t cache_system_read(int core, int thread, enum cache_kind_t cache_kind,
-	uint32_t addr, struct lnlist_t *eventq, void *eventq_item)
+	uint32_t addr, struct linked_list_t *eventq, void *eventq_item)
 {
 	assert(cache_system_can_access(core, thread, cache_kind,
 		cache_access_kind_read, addr));

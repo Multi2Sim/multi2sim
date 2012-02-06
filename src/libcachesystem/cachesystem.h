@@ -31,7 +31,7 @@
 #include <config.h>
 #include <debug.h>
 #include <repos.h>
-#include <lnlist.h>
+#include <linked-list.h>
 
 
 
@@ -316,7 +316,7 @@ struct ccache_access_t
 	enum cache_access_kind_t cache_access_kind;  /* Read or write */
 	uint32_t address;  /* Block address */
 	uint64_t id;  /* Access identifier */
-	struct lnlist_t *eventq;  /* Event queue to modify when access finishes */
+	struct linked_list_t *eventq;  /* Event queue to modify when access finishes */
 	void *eventq_item;  /* Item to enqueue when finished */
 	struct ccache_access_t *next;  /* Alias (same address/access, but different eventq_item */
 };
@@ -341,7 +341,7 @@ struct ccache_t
 	struct net_node_t *net_node_lo;  /* Node in lower network */
 
 	/* List of in-flight accesses */
-	struct lnlist_t *access_list;  /* Elements of type ccache_access_t */
+	struct linked_list_t *access_list;  /* Elements of type ccache_access_t */
 	int pending_reads;  /* Non-aliasing reads in access_list */
 	int pending_writes;  /* Writes in access_list */
 
@@ -445,7 +445,7 @@ struct cache_system_stack_t
 	enum cache_access_kind_t cache_access_kind;
 	uint32_t addr;
 	int pending;
-	struct lnlist_t *eventq;
+	struct linked_list_t *eventq;
 	void *eventq_item;
 
 	int retevent;
@@ -488,9 +488,9 @@ int cache_system_pending_access(int core, int thread,
 
 /* Functions to access cache system */
 uint64_t cache_system_read(int core, int thread, enum cache_kind_t cache_kind,
-	uint32_t addr, struct lnlist_t *eventq, void *item);
+	uint32_t addr, struct linked_list_t *eventq, void *item);
 uint64_t cache_system_write(int core, int thread, enum cache_kind_t cache_kind,
-	uint32_t addr, struct lnlist_t *eventq, void *eventq_item);
+	uint32_t addr, struct linked_list_t *eventq, void *eventq_item);
 
 
 #endif

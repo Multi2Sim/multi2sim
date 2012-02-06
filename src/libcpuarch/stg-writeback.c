@@ -29,9 +29,9 @@ void writeback_core(int core)
 	for (;;) {
 	
 		/* Peek element from the head of the event queue */
-		lnlist_head(CORE.eventq);
-		uop = lnlist_get(CORE.eventq);
-		if (lnlist_error(CORE.eventq))
+		linked_list_head(CORE.eventq);
+		uop = linked_list_get(CORE.eventq);
+		if (linked_list_error(CORE.eventq))
 			break;
 
 		/* A memory uop placed in the event queue is always complete.
@@ -49,7 +49,7 @@ void writeback_core(int core)
 		assert(!uop->completed);
 		
 		/* Extract element from event queue. */
-		lnlist_remove(CORE.eventq);
+		linked_list_remove(CORE.eventq);
 		uop->in_eventq = 0;
 		thread = uop->thread;
 		

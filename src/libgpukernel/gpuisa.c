@@ -427,7 +427,7 @@ void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value, size_t value_size)
 	wt->lds_value_size = value_size;
 
 	/* Enqueue task */
-	lnlist_add(gpu_isa_work_item->write_task_list, wt);
+	linked_list_add(gpu_isa_work_item->write_task_list, wt);
 }
 
 
@@ -458,7 +458,7 @@ void gpu_isa_enqueue_write_dest(uint32_t value)
 		wt->write_mask = 0;
 
 	/* Enqueue task */
-	lnlist_add(gpu_isa_work_item->write_task_list, wt);
+	linked_list_add(gpu_isa_work_item->write_task_list, wt);
 }
 
 
@@ -483,7 +483,7 @@ void gpu_isa_enqueue_push_before(void)
 	wt = repos_create_object(gpu_isa_write_task_repos);
 	wt->kind = GPU_ISA_WRITE_TASK_PUSH_BEFORE;
 	wt->inst = gpu_isa_inst;
-	lnlist_add(gpu_isa_work_item->write_task_list, wt);
+	linked_list_add(gpu_isa_work_item->write_task_list, wt);
 }
 
 
@@ -502,24 +502,24 @@ void gpu_isa_enqueue_pred_set(int cond)
 	wt->kind = GPU_ISA_WRITE_TASK_SET_PRED;
 	wt->inst = gpu_isa_inst;
 	wt->cond = cond;
-	lnlist_add(gpu_isa_work_item->write_task_list, wt);
+	linked_list_add(gpu_isa_work_item->write_task_list, wt);
 }
 
 
 void gpu_isa_write_task_commit(void)
 {
-	struct lnlist_t *task_list = gpu_isa_work_item->write_task_list;
+	struct linked_list_t *task_list = gpu_isa_work_item->write_task_list;
 	struct gpu_isa_write_task_t *wt;
 
 	/* Process first tasks of type:
 	 *  - GPU_ISA_WRITE_TASK_WRITE_DEST
 	 *  - GPU_ISA_WRITE_TASK_WRITE_LDS
 	 */
-	for (lnlist_head(task_list); !lnlist_eol(task_list); )
+	for (linked_list_head(task_list); !linked_list_is_end(task_list); )
 	{
 
 		/* Get task */
-		wt = lnlist_get(task_list);
+		wt = linked_list_get(task_list);
 		gpu_isa_inst = wt->inst;
 
 		switch (wt->kind) {
@@ -560,20 +560,20 @@ void gpu_isa_write_task_commit(void)
 		}
 
 		default:
-			lnlist_next(task_list);
+			linked_list_next(task_list);
 			continue;
 		}
 
 		/* Done with this task */
 		repos_free_object(gpu_isa_write_task_repos, wt);
-		lnlist_remove(task_list);
+		linked_list_remove(task_list);
 	}
 
 	/* Process PUSH_BEFORE, PRED_SET */
-	for (lnlist_head(task_list); !lnlist_eol(task_list); ) {
+	for (linked_list_head(task_list); !linked_list_is_end(task_list); ) {
 		
 		/* Get task */
-		wt = lnlist_get(task_list);
+		wt = linked_list_get(task_list);
 		gpu_isa_inst = wt->inst;
 
 		/* Process */
@@ -616,10 +616,10 @@ void gpu_isa_write_task_commit(void)
 		
 		/* Done with task */
 		repos_free_object(gpu_isa_write_task_repos, wt);
-		lnlist_remove(task_list);
+		linked_list_remove(task_list);
 	}
 
 	/* List should be empty */
-	assert(!lnlist_count(task_list));
+	assert(!linked_list_count(task_list));
 }
 

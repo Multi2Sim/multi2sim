@@ -38,12 +38,12 @@ enum gpu_sched_policy_t gpu_sched_policy;
 static struct gpu_wavefront_t *gpu_schedule_round_robin(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_wavefront_t *wavefront, *temp_wavefront;
-	struct lnlist_t *wavefront_pool = compute_unit->wavefront_pool;
+	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 
 	/* Select current position in pool as initial candidate wavefront */
-	if (!lnlist_get(wavefront_pool))
-		lnlist_head(wavefront_pool);
-	wavefront = lnlist_get(wavefront_pool);
+	if (!linked_list_get(wavefront_pool))
+		linked_list_head(wavefront_pool);
+	wavefront = linked_list_get(wavefront_pool);
 	temp_wavefront = wavefront;
 
 	/* Look for a valid candidate */
@@ -58,15 +58,15 @@ static struct gpu_wavefront_t *gpu_schedule_round_robin(struct gpu_compute_unit_
 
 		/* Current candidate is not valid - go to next.
 		 * If we went through the whole pool, no fetch. */
-		lnlist_next_circular(wavefront_pool);
-		wavefront = lnlist_get(wavefront_pool);
+		linked_list_next_circular(wavefront_pool);
+		wavefront = linked_list_get(wavefront_pool);
 		if (wavefront == temp_wavefront)
 			return NULL;
 	}
 
 	/* Wavefront found, remove from pool and return. */
 	assert(wavefront->clause_kind == GPU_CLAUSE_CF);
-	lnlist_remove(wavefront_pool);
+	linked_list_remove(wavefront_pool);
 	return wavefront;
 }
 
@@ -74,14 +74,14 @@ static struct gpu_wavefront_t *gpu_schedule_round_robin(struct gpu_compute_unit_
 static struct gpu_wavefront_t *gpu_schedule_greedy(struct gpu_compute_unit_t *compute_unit)
 {
 	struct gpu_wavefront_t *wavefront, *temp_wavefront;
-	struct lnlist_t *wavefront_pool = compute_unit->wavefront_pool;
+	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 
 	/* Check all candidates */
 	temp_wavefront = NULL;
-	for (lnlist_head(wavefront_pool); !lnlist_eol(wavefront_pool); lnlist_next(wavefront_pool))
+	for (linked_list_head(wavefront_pool); !linked_list_is_end(wavefront_pool); linked_list_next(wavefront_pool))
 	{
 		/* Get wavefront from list */
-		wavefront = lnlist_get(wavefront_pool);
+		wavefront = linked_list_get(wavefront_pool);
 		
 		/* Wavefront must be running,
 		 * and the corresponding slot in fetch buffer must be free. */
@@ -102,9 +102,9 @@ static struct gpu_wavefront_t *gpu_schedule_greedy(struct gpu_compute_unit_t *co
 
 	/* Wavefront found, remove from pool and return. */
 	assert(temp_wavefront->clause_kind == GPU_CLAUSE_CF);
-	lnlist_find(wavefront_pool, temp_wavefront);
-	assert(!lnlist_error(wavefront_pool));
-	lnlist_remove(wavefront_pool);
+	linked_list_find(wavefront_pool, temp_wavefront);
+	assert(!linked_list_error(wavefront_pool));
+	linked_list_remove(wavefront_pool);
 	temp_wavefront->sched_when = gpu->cycle;
 	return temp_wavefront;
 }
@@ -124,7 +124,7 @@ struct gpu_wavefront_t *gpu_schedule(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_wavefront_t *wavefront;
 
 	/* If there is no wavefront in the pool, return NULL. */
-	if (!lnlist_count(compute_unit->wavefront_pool))
+	if (!linked_list_count(compute_unit->wavefront_pool))
 		return NULL;
 
 	/* Run different scheduling algorithm depending on configured policy */

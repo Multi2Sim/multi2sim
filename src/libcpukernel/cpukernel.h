@@ -25,7 +25,7 @@
 #include <config.h>
 #include <buffer.h>
 #include <list.h>
-#include <lnlist.h>
+#include <linked-list.h>
 #include <misc.h>
 #include <elf-format.h>
 #include <stdio.h>
@@ -269,8 +269,8 @@ struct loader_t
 {
 	/* Program data */
 	struct elf_file_t *elf_file;
-	struct lnlist_t *args;
-	struct lnlist_t *env;
+	struct linked_list_t *args;
+	struct linked_list_t *env;
 	char *interp;  /* Executable interpreter */
 	char *exe;  /* Executable file name */
 	char *cwd;  /* Current working directory */

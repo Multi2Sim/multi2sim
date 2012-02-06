@@ -172,7 +172,7 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 
 	/* Complete queue must be empty. If it is not, it means that a write access is trying to allocate
 	 * a cache port, so compute unit needs to stall. */
-	if (lnlist_count(compute_unit->cf_engine.complete_queue))
+	if (linked_list_count(compute_unit->cf_engine.complete_queue))
 		return;
 
 	/* Search entry in instruction buffer to execute. */
@@ -201,20 +201,20 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 	if (uop->alu_clause_trigger)
 	{
 		/* Trigger secondary ALU clause */
-		lnlist_add(compute_unit->alu_engine.pending_queue, uop);
+		linked_list_add(compute_unit->alu_engine.pending_queue, uop);
 		compute_unit->alu_engine.wavefront_count++;
 	}
 	else if (uop->tex_clause_trigger)
 	{
 		/* Trigger secondary TEX clause */
-		lnlist_add(compute_unit->tex_engine.pending_queue, uop);
+		linked_list_add(compute_unit->tex_engine.pending_queue, uop);
 		compute_unit->tex_engine.wavefront_count++;
 	}
 	else
 	{
 		/* Execute instruction in CF Engine - completed next cycle */
-		lnlist_out(compute_unit->cf_engine.complete_queue);
-		lnlist_insert(compute_unit->cf_engine.complete_queue, uop);
+		linked_list_out(compute_unit->cf_engine.complete_queue);
+		linked_list_insert(compute_unit->cf_engine.complete_queue, uop);
 
 		/* Global memory write - execute asynchronously */
 		if (uop->global_mem_write)
@@ -245,17 +245,17 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)
 {
-	struct lnlist_t *complete_queue = compute_unit->cf_engine.complete_queue;
-	struct lnlist_t *wavefront_pool = compute_unit->wavefront_pool;
+	struct linked_list_t *complete_queue = compute_unit->cf_engine.complete_queue;
+	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
 	struct gpu_work_group_t *work_group;
 	struct gpu_uop_t *uop;
 
 	/* Process all uops in the complete queue */
-	while (lnlist_count(complete_queue))
+	while (linked_list_count(complete_queue))
 	{
 		/* Get instruction at the head of complete queue */
-		lnlist_head(complete_queue);
-		uop = lnlist_get(complete_queue);
+		linked_list_head(complete_queue);
+		uop = linked_list_get(complete_queue);
 		work_group = uop->work_group;
 
 		/* If it is a memory write that still couldn't allocate a write port, stall */
@@ -263,7 +263,7 @@ void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)
 			break;
 
 		/* Extract from complete queue */
-		lnlist_remove(complete_queue);
+		linked_list_remove(complete_queue);
 
 		/* Instruction finishes a wavefront */
 		if (uop->last)
@@ -273,8 +273,8 @@ void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)
 		else
 		{
 			/* Insert wavefront into wavefront pool */
-			lnlist_insert(wavefront_pool, uop->wavefront);
-			lnlist_next_circular(wavefront_pool);
+			linked_list_insert(wavefront_pool, uop->wavefront);
+			linked_list_next_circular(wavefront_pool);
 		}
 
 		/* Debug */

@@ -17,63 +17,67 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef LNLIST_H
-#define LNLIST_H
+#ifndef LINKED_LIST_H
+#define LINKED_LIST_H
 
 /* Error constants */
-#define LNLIST_ENOMEM		1
-#define LNLIST_EBOUNDS		2
-#define LNLIST_EELEM		3
+enum linked_list_error_t
+{
+	LINKED_LIST_ERR_OK = 0,
+	LINKED_LIST_ERR_MEM,
+	LINKED_LIST_ERR_BOUNDS,
+	LINKED_LIST_ERR_NOT_FOUND
+};
 
-struct lnlist_t;
+struct linked_list_t;
 
 /* Creation/Destruction */
-struct lnlist_t *lnlist_create();
-void lnlist_free(struct lnlist_t *lnlist);
+struct linked_list_t *linked_list_create();
+void linked_list_free(struct linked_list_t *list);
 
 /* Get the index of the current element.
  * In a list with n elements, the current element can range from 0 up to n. */
-int lnlist_current(struct lnlist_t *lnlist);
+int linked_list_current(struct linked_list_t *list);
 
 /* Get the data corresponding to the current element.
  * If current element is 'n', return NULL and raise EBOUNDS. */
-void *lnlist_get(struct lnlist_t *lnlist);  /* EBOUNDS */
+void *linked_list_get(struct linked_list_t *list);  /* EBOUNDS */
 
 /* Advance or rewind current element */
-void lnlist_next(struct lnlist_t *lnlist);  /* EBOUNDS */
-void lnlist_prev(struct lnlist_t *lnlist);  /* EBOUNDS */
-void lnlist_next_circular(struct lnlist_t *lnlist);  /* EBOUNDS */
-void lnlist_prev_circular(struct lnlist_t *lnlist);  /* EBOUNDS */
-void lnlist_head(struct lnlist_t *lnlist);  /* EBOUNDS */
-void lnlist_tail(struct lnlist_t *lnlist);  /* EBOUNDS */
-void lnlist_out(struct lnlist_t *lnlist);
-void lnlist_goto(struct lnlist_t *lnlist, int index);  /* EBOUNDS */
-void lnlist_find(struct lnlist_t *lnlist, void *data);  /* EELEM */
+void linked_list_next(struct linked_list_t *list);  /* EBOUNDS */
+void linked_list_prev(struct linked_list_t *list);  /* EBOUNDS */
+void linked_list_next_circular(struct linked_list_t *list);  /* EBOUNDS */
+void linked_list_prev_circular(struct linked_list_t *list);  /* EBOUNDS */
+void linked_list_head(struct linked_list_t *list);  /* EBOUNDS */
+void linked_list_tail(struct linked_list_t *list);  /* EBOUNDS */
+void linked_list_out(struct linked_list_t *list);
+void linked_list_goto(struct linked_list_t *list, int index);  /* EBOUNDS */
+void linked_list_find(struct linked_list_t *list, void *data);  /* EELEM */
 
 /* Number of elements and EOL check (end of list = current element == n */
-int lnlist_count(struct lnlist_t *lnlist);
-int lnlist_eol(struct lnlist_t *lnlist);
+int linked_list_count(struct linked_list_t *list);
+int linked_list_is_end(struct linked_list_t *list);
 
 /* Insert an element before the current one. If current element index is n,
  * insert it at the end of the list */
-void lnlist_insert(struct lnlist_t *lnlist, void *data); /* ENOMEM */
+void linked_list_insert(struct linked_list_t *list, void *data); /* ENOMEM */
 
 /* Add an element at the end of the list, then set the current element
  * to the next after the last one. */
-void lnlist_add(struct lnlist_t *lnlist, void *data); /* ENOMEM */
+void linked_list_add(struct linked_list_t *list, void *data); /* ENOMEM */
 
 /* Remove elements from the list. */
-void lnlist_remove(struct lnlist_t *lnlist); /* EBOUNDS */
-void lnlist_clear(struct lnlist_t *lnlist);
+void linked_list_remove(struct linked_list_t *list); /* EBOUNDS */
+void linked_list_clear(struct linked_list_t *list);
 
 /* Sort */
-void lnlist_sort(struct lnlist_t *lnlist,
+void linked_list_sort(struct linked_list_t *list,
 	int (*comp)(const void *, const void *));
-int lnlist_sorted(struct lnlist_t *lnlist,
+int linked_list_sorted(struct linked_list_t *list,
 	int (*comp)(const void *, const void *));
 
 /* Error and error messages */
-int lnlist_error(struct lnlist_t *lnlist);
-char *lnlist_error_msg(struct lnlist_t *lnlist);
+int linked_list_error(struct linked_list_t *list);
+char *linked_list_error_msg(struct linked_list_t *list);
 
 #endif
