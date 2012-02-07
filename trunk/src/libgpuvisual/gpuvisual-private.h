@@ -28,7 +28,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <list.h>
-#include <lnlist.h>
+#include <linked-list.h>
 #include <gpuvisual.h>
 #include <debug.h>
 #include <misc.h>

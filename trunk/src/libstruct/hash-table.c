@@ -21,6 +21,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <mhandle.h>
+#include <debug.h>
 #include <hash-table.h>
 
 #define	MIN_INITIAL_SIZE  5
@@ -31,7 +32,7 @@
  */
 
 /* Hash table element */
-struct elem_t
+struct hash_table_elem_t
 {
 	char active;
 	char removed;
@@ -46,7 +47,7 @@ struct hash_table_t
 	int count;
 	int size;
 	int case_sensitive;
-	struct elem_t *elem;
+	struct hash_table_elem_t *elem;
 	int (*cmp)(const char *, const char *);
 	int findpos;
 } hash_table_t;
@@ -76,15 +77,16 @@ static unsigned int hashcode(char *str, int case_sensitive)
 
 /* if key exists, return corresponding element;
  * otherwise, return element where it should be placed */
-static struct elem_t *hashelem(struct hash_table_t *ht, char *key)
+static struct hash_table_elem_t *hashelem(struct hash_table_t *ht, char *key)
 {
 	int pos, insertpos;
-	struct elem_t *e;
+	struct hash_table_elem_t *e;
 	
 	/* find key of possible insert position */
 	insertpos = -1;
 	pos = hashcode(key, ht->case_sensitive) % ht->size;
-	for (;;) {
+	for (;;)
+	{
 	
 		/* we run out of collision list */
 		e = &ht->elem[pos];
@@ -109,22 +111,22 @@ static struct elem_t *hashelem(struct hash_table_t *ht, char *key)
 }
 
 
-/* rehashing */
-static int rehash(struct hash_table_t *ht)
+/* Rehashing */
+static void rehash(struct hash_table_t *ht)
 {
 	int osize, nsize, i;
-	struct elem_t *oelem, *oe, *ne;
+	struct hash_table_elem_t *oelem, *oe, *ne;
 	
-	/* create new elements vector */
+	/* Create new elements vector */
 	oelem = ht->elem;
 	osize = ht->size;
 	nsize = osize * 2;
-	ht->elem = calloc(nsize, sizeof(struct elem_t));
-	if (!ht->elem)
-		return 0;
 	ht->size = nsize;
+	ht->elem = calloc(nsize, sizeof(struct hash_table_elem_t));
+	if (!ht->elem)
+		fatal("%s: out of memory", __FUNCTION__);
 	
-	/* assign new elements */
+	/* Assign new elements */
 	for (i = 0; i < osize; i++)
 	{
 		oe = &oelem[i];
@@ -137,9 +139,8 @@ static int rehash(struct hash_table_t *ht)
 		}
 	}
 	
-	/* free old vector */
+	/* Free old vector */
 	free(oelem);
-	return 1;
 }
 
 
@@ -156,18 +157,15 @@ struct hash_table_t *hash_table_create(int size, int case_sensitive)
 	/* Create */
 	ht = calloc(1, sizeof(struct hash_table_t));
 	if (!ht)
-		return NULL;
+		fatal("%s: out of memory", __FUNCTION__);
 	
 	/* Assign fields */
 	ht->size = size < MIN_INITIAL_SIZE ? MIN_INITIAL_SIZE : size;
 	ht->case_sensitive = case_sensitive;
 	ht->cmp = case_sensitive ? strcmp : strcasecmp;
-	ht->elem = calloc(ht->size, sizeof(struct elem_t));
+	ht->elem = calloc(ht->size, sizeof(struct hash_table_elem_t));
 	if (!ht->elem)
-	{
-		free(ht);
-		return NULL;
-	}
+		fatal("%s: out of memory", __FUNCTION__);
 	
 	/* Return */
 	return ht;
@@ -177,7 +175,7 @@ struct hash_table_t *hash_table_create(int size, int case_sensitive)
 void hash_table_free(struct hash_table_t *ht)
 {
 	int i;
-	struct elem_t *e;
+	struct hash_table_elem_t *e;
 	
 	/* Free keys */
 	for (i = 0; i < ht->size; i++) {
@@ -194,7 +192,7 @@ void hash_table_free(struct hash_table_t *ht)
 
 int hash_table_insert(struct hash_table_t *ht, char *key, void *data)
 {
-	struct elem_t *e;
+	struct hash_table_elem_t *e;
 	
 	/* Data cannot be null */
 	if (!data)
@@ -202,8 +200,7 @@ int hash_table_insert(struct hash_table_t *ht, char *key, void *data)
 	
 	/* Rehashing */
 	if (ht->count >= ht->size / 2)
-		if (!rehash(ht))
-			return 0;
+		rehash(ht);
 	
 	/* Element must not exists */
 	e = hashelem(ht, key);
@@ -222,7 +219,7 @@ int hash_table_insert(struct hash_table_t *ht, char *key, void *data)
 
 int hash_table_set(struct hash_table_t *ht, char *key, void *data)
 {
-	struct elem_t *e;
+	struct hash_table_elem_t *e;
 	
 	/* Data cannot be null */
 	if (!data)
@@ -247,7 +244,7 @@ int hash_table_count(struct hash_table_t *ht)
 
 void *hash_table_get(struct hash_table_t *ht, char *key)
 {
-	struct elem_t *e;
+	struct hash_table_elem_t *e;
 	
 	/* Element must exist */
 	e = hashelem(ht, key);
@@ -261,7 +258,7 @@ void *hash_table_get(struct hash_table_t *ht, char *key)
 
 void *hash_table_remove(struct hash_table_t *ht, char *key)
 {
-	struct elem_t *e;
+	struct hash_table_elem_t *e;
 	void *data;
 	
 	/* Element must exist */
@@ -280,27 +277,31 @@ void *hash_table_remove(struct hash_table_t *ht, char *key)
 }
 
 
-char *hash_table_find_first(struct hash_table_t *ht, void **data)
+char *hash_table_find_first(struct hash_table_t *ht, void **data_ptr)
 {
 	ht->findpos = 0;
-	return hash_table_find_next(ht, data);
+	return hash_table_find_next(ht, data_ptr);
 }
 
 
-char *hash_table_find_next(struct hash_table_t *ht, void **data)
+char *hash_table_find_next(struct hash_table_t *ht, void **data_ptr)
 {
-	struct elem_t *e;
+	struct hash_table_elem_t *e;
 	while (ht->findpos < ht->size)
 	{
 		e = &ht->elem[ht->findpos];
 		ht->findpos++;
 		if (e->active && !e->removed)
 		{
-			if (data)
-				*data = e->data;
+			if (data_ptr)
+				*data_ptr = e->data;
 			return e->key;
 		}
 	}
+
+	/* No more elements found */
+	if (data_ptr)
+		*data_ptr = NULL;
 	return NULL;
 }
 

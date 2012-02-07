@@ -25,6 +25,8 @@ enum bin_config_error_t
 {
 	BIN_CONFIG_ERR_OK = 0,
 	BIN_CONFIG_ERR_NOT_FOUND,
+	BIN_CONFIG_ERR_PARENT,
+	BIN_CONFIG_ERR_DATA,
 	BIN_CONFIG_ERR_DUPLICATE,
 	BIN_CONFIG_ERR_IO,
 	BIN_CONFIG_ERR_FORMAT
@@ -43,13 +45,14 @@ struct bin_config_elem_t
 	/* List of child elements - NULL if no children */
 	struct hash_table_t *child_elem_list;
 
-	/* Size of 'data' field */
+	/* Data */
+	void *data;
 	int size;
 
-	/* Data contained in element. This field must be the last
-	 * in the structure. The total size allocated for this structure
-	 * will depend on the size allocated for the data. */
-	unsigned char data[0];
+	/* If TRUE, the 'data' pointer contains a newly allocated memory
+	 * that needs to be freed. Otherwise, it is a pointer allocated
+	 * and handled by the caller. */
+	int dup_data;
 };
 
 
@@ -113,23 +116,18 @@ int bin_config_load(struct bin_config_t *bin_config);
 int bin_config_save(struct bin_config_t *bin_config);
 
 
-/** Export configuration file into a plain-text, human readable format.
+/** Dump configuration in a human-readable format.
  *
  * @param bin_config
  *	Configuration file object.
- * @param file_name
- * 	Path to dump the plain-text version.
+ * @param f
+ * 	File to dump information (e.g., stdout).
  *
  * @return
- *	The function returns a non-zero value if the operation succeeds, and 0
- *	otherwise. The error code is updated to one of the following values:
- *
- *	BIN_CONFIG_ERR_OK
- *		No error.
- *	BIN_CONFIG_ERR_IO
- *		I/O error accessing file.
+ *	No value is returned.
+ *	The error code is set to BIN_CONFIG_ERR_OK.
  */
-int bin_config_export_text(struct bin_config_t *bin_config, char *file_name);
+void bin_config_dump(struct bin_config_t *bin_config, FILE *f);
 
 
 /** Add a variable to the configuration file.
@@ -142,7 +140,8 @@ int bin_config_export_text(struct bin_config_t *bin_config, char *file_name);
  *	element returned by a previous call to 'bin_config_add'.
  * @param var
  *	Variable to add. If the variable already exists, the function will fail.
- *	data: Data associated with the variable (can be NULL). This data will be
+ * @param data
+ *	Data associated with the variable (can be NULL). The data will be
  *	duplicated internally, so an external change will not affect the internal
  *	contents.
  * @param size
@@ -158,8 +157,48 @@ int bin_config_export_text(struct bin_config_t *bin_config, char *file_name);
  *		No error.
  *	BIN_CONFIG_ERR_DUPLICATE
  *		A variable with the same name already exists.
+ *	BIN_CONFIG_ERR_DATA
+ *		Argument 'size' is greater than 0, but 'data' is NULL.
+ *	BIN_CONFIG_ERR_PARENT
+ *		Element 'parent_elem' does not belong to 'bin_config'.
  */
 struct bin_config_elem_t *bin_config_add(struct bin_config_t *bin_config,
+	struct bin_config_elem_t *parent_elem, char *var, void *data, int size);
+
+
+/** Add a variable to the configuration file with no contents duplication.
+ *
+ * @param bin_config
+ *	Configuration file object.
+ * @param parent_elem
+ *	Parent element to add the variable to. If NULL, the variable will be
+ *	added to the highest level of the hierarchy. This argument should be the
+ *	element returned by a previous call to 'bin_config_add'.
+ * @param var
+ *	Variable to add. If the variable already exists, the function will fail.
+ * @param data:
+ *	Data associated with the variable (can be NULL). The data will not be
+ *	duplicated in this case. The caller needs to guarantee that the pointed
+ *	value remains valid as long as the 'bin_config' object exists.
+ * @param size
+ *	Size of the data.
+ *
+ * @return
+ *	The function returns a pointer to the created element. This pointer can
+ *	be used in future calls to create child elements. In case of error, the
+ *	function returns NULL. The error code is updated with one of the
+ *	following values:
+ *
+ *	BIN_CONFIG_ERR_OK
+ *		No error.
+ *	BIN_CONFIG_ERR_DUPLICATE
+ *		A variable with the same name already exists.
+ *	BIN_CONFIG_ERR_DATA
+ *		Argument 'size' is greater than 0, but 'data' is NULL.
+ *	BIN_CONFIG_ERR_PARENT
+ *		Element 'parent_elem' does not belong to 'bin_config'.
+ */
+struct bin_config_elem_t *bin_config_add_no_dup(struct bin_config_t *bin_config,
 	struct bin_config_elem_t *parent_elem, char *var, void *data, int size);
 
 
@@ -181,6 +220,8 @@ struct bin_config_elem_t *bin_config_add(struct bin_config_t *bin_config,
  *		No error.
  *	BIN_CONFIG_ERR_NOT_FOUND
  *		Variable was not found.
+ *	BIN_CONFIG_ERR_PARENT
+ *		Element 'parent_elem' does not belong to 'bin_config'.
  */
 int bin_config_remove(struct bin_config_t *bin_config,
 	struct bin_config_elem_t *parent_elem, char *var);
@@ -213,6 +254,8 @@ int bin_config_remove(struct bin_config_t *bin_config,
  *		No error.
  *	BIN_CONFIG_ERR_NOT_FOUND
  *		Variable was not found.
+ *	BIN_CONFIG_ERR_PARENT
+ *		Element 'parent_elem' does not belong to 'bin_config'.
  */	
 struct bin_config_elem_t *bin_config_get(struct bin_config_t *bin_config,
 	struct bin_config_elem_t *parent_elem, char *var,
