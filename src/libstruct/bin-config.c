@@ -22,7 +22,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <zlib.h>
 #include <assert.h>
+#include <mhandle.h>
 #include <debug.h>
 #include <hash-table.h>
 #include <bin-config.h>
@@ -31,9 +33,6 @@
 /*
  * Private functions
  */
-
-
-static void bin_config_free_elem_list(struct hash_table_t *elem_list);
 
 
 static struct bin_config_elem_t *bin_config_elem_create(struct bin_config_t *bin_config,
@@ -49,18 +48,8 @@ static struct bin_config_elem_t *bin_config_elem_create(struct bin_config_t *bin
 	/* Initialize */
 	elem->bin_config = bin_config;
 	elem->size = size;
+	elem->data = data;
 	elem->dup_data = dup_data;
-	if (dup_data)
-	{
-		elem->data = malloc(size);
-		if (!elem->data)
-			fatal("%s: out of memory", __FUNCTION__);
-		memcpy(elem->data, data, size);
-	}
-	else
-	{
-		elem->data = data;
-	}
 	
 	/* Return */
 	return elem;
@@ -69,9 +58,19 @@ static struct bin_config_elem_t *bin_config_elem_create(struct bin_config_t *bin
 
 static void bin_config_elem_free(struct bin_config_elem_t *elem)
 {
+	struct bin_config_elem_t *child_elem;
+
 	/* Free list of child elements */
 	if (elem->child_elem_list)
-		bin_config_free_elem_list(elem->child_elem_list);
+	{
+		for (hash_table_find_first(elem->child_elem_list, (void **) &child_elem);
+			child_elem;
+			hash_table_find_next(elem->child_elem_list, (void **) &child_elem))
+		{
+			bin_config_elem_free(child_elem);
+		}
+		hash_table_free(elem->child_elem_list);
+	}
 
 	/* Free element */
 	if (elem->dup_data && elem->data)
@@ -131,20 +130,6 @@ static struct bin_config_elem_t *bin_config_add_dup_data(struct bin_config_t *bi
 	/* Return created element */
 	bin_config->error_code = BIN_CONFIG_ERR_OK;
 	return elem;
-}
-
-
-static void bin_config_free_elem_list(struct hash_table_t *elem_list)
-{
-	struct bin_config_elem_t *elem;
-
-	assert(elem_list);
-	for (hash_table_find_first(elem_list, (void **) &elem); elem;
-		hash_table_find_next(elem_list, (void **) &elem))
-	{
-		bin_config_elem_free(elem);
-	}
-	hash_table_free(elem_list);
 }
 
 
@@ -251,8 +236,14 @@ struct bin_config_t *bin_config_create(char *file_name)
 
 void bin_config_free(struct bin_config_t *bin_config)
 {
+	/* Free elements */
 	if (bin_config->elem_list)
-		bin_config_free_elem_list(bin_config->elem_list);
+	{
+		bin_config_clear(bin_config);
+		hash_table_free(bin_config->elem_list);
+	}
+	
+	/* Free configuration object */
 	free(bin_config->file_name);
 	free(bin_config);
 }
@@ -261,8 +252,25 @@ void bin_config_free(struct bin_config_t *bin_config)
 struct bin_config_elem_t *bin_config_add(struct bin_config_t *bin_config,
 	struct bin_config_elem_t *parent_elem, char *var, void *data, int size)
 {
+	void *data_copy;
+
+	/* Create duplicate of data */
+	if (data && size > 0)
+	{
+		/* Copy data */
+		data_copy = malloc(size);
+		if (!data_copy)
+			fatal("%s: out of memory", __FUNCTION__);
+		memcpy(data_copy, data, size);
+	}
+	else
+	{
+		data_copy = NULL;
+	}
+
+	/* Add variable */
 	return bin_config_add_dup_data(bin_config, parent_elem,
-		var, data, size, 1);
+		var, data_copy, size, 1);
 }
 
 
@@ -356,6 +364,159 @@ struct bin_config_elem_t *bin_config_get(struct bin_config_t *bin_config,
 }
 
 
+static void bin_config_elem_list_save(struct hash_table_t *elem_list, gzFile f)
+{
+	struct bin_config_elem_t *elem;
+	int num_elem;
+
+	char *var;
+	int var_len;
+
+	/* Empty list */
+	assert(sizeof(int) == 4);
+	if (!elem_list)
+	{
+		num_elem = 0;
+		gzwrite(f, &num_elem, 4);
+		return;
+	}
+
+	/* Number of elements */
+	num_elem = hash_table_count(elem_list);
+	gzwrite(f, &num_elem, 4);
+
+	/* List of elements */
+	for (var = hash_table_find_first(elem_list, (void **) &elem); elem;
+		var = hash_table_find_next(elem_list, (void **) &elem))
+	{
+		/* Variable name */
+		var_len = strlen(var);
+		gzwrite(f, &var_len, 4);
+		gzwrite(f, var, var_len);
+
+		/* Variable value */
+		gzwrite(f, &elem->size, 4);
+		if (elem->data)
+			gzwrite(f, elem->data, elem->size);
+
+		/* Child elements */
+		bin_config_elem_list_save(elem->child_elem_list, f);
+
+	}
+}
+
+
+int bin_config_save(struct bin_config_t *bin_config)
+{
+	gzFile f;
+
+	/* Open file */
+	f = gzopen(bin_config->file_name, "wb");
+	if (!f)
+	{
+		bin_config->error_code = BIN_CONFIG_ERR_IO;
+		return 0;
+	}
+
+	/* Store list of elements */
+	bin_config_elem_list_save(bin_config->elem_list, f);
+
+	/* Close */
+	gzclose(f);
+	bin_config->error_code = BIN_CONFIG_ERR_OK;
+	return 1;
+}
+
+
+static struct hash_table_t *bin_config_load_elem_list(struct bin_config_t *bin_config,
+	gzFile f)
+{
+	struct hash_table_t *elem_list;
+	struct bin_config_elem_t *elem;
+
+	int num_elem;
+	int i;
+
+	/* Get number of elements */
+	num_elem = 0;
+	gzread(f, &num_elem, 4);
+	if (!num_elem)
+		return NULL;
+	
+	/* Create list */
+	elem_list = hash_table_create(num_elem, 0);
+
+	/* Read elements */
+	for (i = 0; i < num_elem; i++)
+	{
+		char *var;
+		int var_len;
+
+		int size;
+		void *data;
+
+		/* Read variable */
+		var_len = 0;
+		gzread(f, &var_len, 4);
+		var = calloc(1, var_len + 1);
+		if (!var)
+			fatal("%s: out of memory", __FUNCTION__);
+		gzread(f, var, var_len);
+
+		/* Read data */
+		size = 0;
+		gzread(f, &size, 4);
+		data = malloc(size);
+		if (!data)
+			fatal("%s: out of memory", __FUNCTION__);
+		gzread(f, data, size);
+
+		/* Create and add element */
+		elem = bin_config_elem_create(bin_config, data, size, 1);
+		hash_table_insert(elem_list, var, elem);
+
+		/* Read child elements */
+		elem->child_elem_list = bin_config_load_elem_list(bin_config, f);
+
+		/* Free variable */
+		free(var);
+	}
+
+	/* Return list */
+	return elem_list;
+}
+
+
+int bin_config_load(struct bin_config_t *bin_config)
+{
+	gzFile f;
+
+	/* Open file */
+	f = gzopen(bin_config->file_name, "rb");
+	if (!f)
+	{
+		bin_config->error_code = BIN_CONFIG_ERR_IO;
+		return 0;
+	}
+
+	/* Clear configuration file */
+	bin_config_clear(bin_config);
+	if (bin_config->elem_list)
+	{
+		hash_table_free(bin_config->elem_list);
+		bin_config->elem_list = NULL;
+	}
+
+	/* Load list of elements */
+	bin_config->elem_list = bin_config_load_elem_list(bin_config, f);
+
+	/* Close */
+	gzclose(f);
+	bin_config->error_code = BIN_CONFIG_ERR_OK;
+	return 1;
+}
+
+
 void bin_config_dump(struct bin_config_t *bin_config, FILE *f)
 {
 	/* Dump list of elements */
@@ -364,3 +525,133 @@ void bin_config_dump(struct bin_config_t *bin_config, FILE *f)
 	/* Success */
 	bin_config->error_code = BIN_CONFIG_ERR_OK;
 }
+
+
+void bin_config_clear(struct bin_config_t *bin_config)
+{
+	struct hash_table_t *elem_list;
+	struct bin_config_elem_t *elem;
+	char *var;
+
+	/* Get element list */
+	elem_list = bin_config->elem_list;
+	if (!elem_list)
+		return;
+	
+	/* Empty list */
+	while ((var = hash_table_find_first(elem_list, (void **) &elem)))
+	{
+		bin_config_elem_free(elem);
+		hash_table_remove(elem_list, var);
+	}
+
+	/* Success */
+	bin_config->error_code = BIN_CONFIG_ERR_OK;
+}
+
+
+struct bin_config_elem_t *bin_config_find_first(struct bin_config_t *bin_config,
+	struct bin_config_elem_t *parent_elem,
+	char **var_ptr, void **data_ptr, int *size_ptr)
+{
+	struct hash_table_t *elem_list;
+	struct bin_config_elem_t *elem;
+	char *var;
+
+	/* Reset return values */
+	if (var_ptr)
+		*var_ptr = NULL;
+	if (data_ptr)
+		*data_ptr = NULL;
+	if (size_ptr)
+		*size_ptr = 0;
+
+	/* Check parent element */
+	if (parent_elem && parent_elem->bin_config != bin_config)
+	{
+		bin_config->error_code = BIN_CONFIG_ERR_PARENT;
+		return NULL;
+	}
+
+	/* Get list of elements */
+	elem_list = parent_elem ? parent_elem->child_elem_list
+		: bin_config->elem_list;
+	if (!elem_list)
+	{
+		bin_config->error_code = BIN_CONFIG_ERR_NOT_FOUND;
+		return NULL;
+	}
+
+	/* Get element */
+	var = hash_table_find_first(elem_list, (void **) &elem);
+	if (!var)
+	{
+		bin_config->error_code = BIN_CONFIG_ERR_NOT_FOUND;
+		return NULL;
+	}
+
+	/* Return element */
+	assert(elem);
+	if (var_ptr)
+		*var_ptr = var;
+	if (data_ptr)
+		*data_ptr = elem->data;
+	if (size_ptr)
+		*size_ptr = elem->size;
+	bin_config->error_code = BIN_CONFIG_ERR_OK;
+	return elem;
+}
+
+
+struct bin_config_elem_t *bin_config_find_next(struct bin_config_t *bin_config,
+	struct bin_config_elem_t *parent_elem,
+	char **var_ptr, void **data_ptr, int *size_ptr)
+{
+	struct hash_table_t *elem_list;
+	struct bin_config_elem_t *elem;
+	char *var;
+
+	/* Reset return values */
+	if (var_ptr)
+		*var_ptr = NULL;
+	if (data_ptr)
+		*data_ptr = NULL;
+	if (size_ptr)
+		*size_ptr = 0;
+
+	/* Check parent element */
+	if (parent_elem && parent_elem->bin_config != bin_config)
+	{
+		bin_config->error_code = BIN_CONFIG_ERR_PARENT;
+		return NULL;
+	}
+
+	/* Get list of elements */
+	elem_list = parent_elem ? parent_elem->child_elem_list
+		: bin_config->elem_list;
+	if (!elem_list)
+	{
+		bin_config->error_code = BIN_CONFIG_ERR_NOT_FOUND;
+		return NULL;
+	}
+
+	/* Get element */
+	var = hash_table_find_next(elem_list, (void **) &elem);
+	if (!var)
+	{
+		bin_config->error_code = BIN_CONFIG_ERR_NOT_FOUND;
+		return NULL;
+	}
+
+	/* Return element */
+	assert(elem);
+	if (var_ptr)
+		*var_ptr = var;
+	if (data_ptr)
+		*data_ptr = elem->data;
+	if (size_ptr)
+		*size_ptr = elem->size;
+	bin_config->error_code = BIN_CONFIG_ERR_OK;
+	return elem;
+}
+

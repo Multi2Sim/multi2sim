@@ -130,6 +130,18 @@ int bin_config_save(struct bin_config_t *bin_config);
 void bin_config_dump(struct bin_config_t *bin_config, FILE *f);
 
 
+/** Clear configuration contents.
+ *
+ * @param bin_config
+ *	Configuration file object.
+ *
+ * @return
+ *	No value is returned.
+ *	The error code is set to BIN_CONFIG_ERR_OK.
+ */
+void bin_config_clear(struct bin_config_t *bin_config);
+
+
 /** Add a variable to the configuration file.
  *
  * @param bin_config
@@ -140,6 +152,8 @@ void bin_config_dump(struct bin_config_t *bin_config, FILE *f);
  *	element returned by a previous call to 'bin_config_add'.
  * @param var
  *	Variable to add. If the variable already exists, the function will fail.
+ *	The variable name will be internally duplicated, so the caller can
+ *	safely rewrite it without affecting the configuration file.
  * @param data
  *	Data associated with the variable (can be NULL). The data will be
  *	duplicated internally, so an external change will not affect the internal
@@ -260,6 +274,83 @@ int bin_config_remove(struct bin_config_t *bin_config,
 struct bin_config_elem_t *bin_config_get(struct bin_config_t *bin_config,
 	struct bin_config_elem_t *parent_elem, char *var,
 	void **data_ptr, int *size_ptr);
+
+
+/** Start an enumeration of variables.
+ * This call should be followed by a sequence of 'bin_config_find_next'.
+ *
+ * @param bin_config
+ *	Configuration file object.
+ * @param parent_elem
+ *	Parent element to look for child variables. If NULL, the enumeration
+ *	will start in the highest level of the hierarchy.
+ * @param var_ptr
+ *	If not NULL, the first variable name in the enumeration will be stored
+ *	at the location pointed to by 'var_ptr'.
+ * @param data_ptr
+ *	If not NULL, pointer to a variable where the data associated with the
+ *	first child element should be returned.
+ * @param size_ptr
+ *	If not NULL, pointer to a variable where the size of the data associated
+ *	with the first child element should be returned.
+ *
+ * @return
+ *	On success, the function returns the first element found in the list.
+ *	Fields 'data' and 'size' of the returned object are the same as those
+ *	returned in 'data_ptr' and 'size_ptr'. If there is no element in the
+ *	list, the function returns NULL.
+ *	The error code will be set to one of the following values:
+ *
+ *	BIN_CONFIG_ERR_OK
+ *		No error.
+ *	BIN_CONFIG_ERR_NOT_FOUND
+ *		No element found in the list.
+ *	BIN_CONFIG_ERR_PARENT
+ *		Element 'parent_elem' does not belong to 'bin_config'.
+ */
+struct bin_config_elem_t *bin_config_find_first(struct bin_config_t *bin_config,
+	struct bin_config_elem_t *parent_elem,
+	char **var_ptr, void **data_ptr, int *size_ptr);
+
+
+/** Continue an enumeration of variables.
+ *
+ * @param bin_config
+ *	Configuration file object.
+ * @param parent_elem
+ *	Parent element to look for child variables. If NULL, the enumeration
+ *	will start in the highest level of the hierarchy.
+ * @param var_ptr
+ *	If not NULL, the first variable name in the enumeration will be stored
+ *	at the location pointed to by 'var_ptr'.
+ * @param data_ptr
+ *	If not NULL, pointer to a variable where the data associated with the
+ *	first child element should be returned.
+ * @param size_ptr
+ *	If not NULL, pointer to a variable where the size of the data associated
+ *	with the first child element should be returned.
+ *
+ * @return
+ *	On success, the function returns the next element found in the list, and
+ *	variables pointed to by 'var_ptr', 'data_ptr', and 'size_ptr' are set
+ *	accordingly. If no more elements were found in the list, the function
+ *	returns NULL.
+ *	This call must be preceded by a call to 'bin_config_find_first'. The
+ *	return value is undefined if any call to other 'bin_config_xxx' function
+ *	was performed between 'bin_config_find_first' and subsequent calls to
+ *	'bin_config_find_next'.
+ *	The error code is set to one of the following values:
+ *
+ *	BIN_CONFIG_ERR_OK
+ *		No error.
+ *	BIN_CONFIG_ERR_NOT_FOUND
+ *		No more elements found in the list.
+ *	BIN_CONFIG_ERR_PARENT
+ *		Element 'parent_elem' does not belong to 'bin_config'.
+ */
+struct bin_config_elem_t *bin_config_find_next(struct bin_config_t *bin_config,
+	struct bin_config_elem_t *parent_elem,
+	char **var_ptr, void **data_ptr, int *size_ptr);
 
 #endif
 

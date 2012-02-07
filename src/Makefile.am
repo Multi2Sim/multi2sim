@@ -48,7 +48,7 @@ LDADD = \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
 	$(top_builddir)/src/libsdram/libsdram.a \
-	-lm -lpthread
+	-lm -lpthread -lz
 
 if HAVE_GTK
 LDADD += @GTK_LIBS@
