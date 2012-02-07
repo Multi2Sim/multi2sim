@@ -10,6 +10,7 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([fcntl.h float.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h utime.h])
 AC_CHECK_HEADER([elf.h], [AC_DEFINE([HAVE_ELF_H])], [AC_MSG_ERROR([cannot find header elf.h])])
+AC_CHECK_HEADER([zlib.h], [AC_DEFINE([HAVE_ZLIB_H])], [AC_MSG_ERROR([cannot find header zlib.h])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_INT16_T
@@ -36,6 +37,7 @@ AC_FUNC_MMAP
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap select socket strcasecmp strchr strdup strncasecmp strtol utime])
 
+AC_CHECK_LIB([z], [inflate])
 AC_CHECK_LIB([m], [sin])
 AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
