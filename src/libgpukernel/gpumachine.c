@@ -292,7 +292,6 @@ void amd_inst_MEM_RAT_impl()
 		int work_item_id;
 		int i;
 		int uav;
-		struct opencl_kernel_arg_t *arg;
 		struct opencl_mem_t *mem;
 		uint32_t base_addr;
 
@@ -315,6 +314,9 @@ void amd_inst_MEM_RAT_impl()
 		if (W0.type != 1 && W0.type != 3)
 			GPU_PARAM_NOT_SUPPORTED(W0.type);
 
+		/* Record access */
+		gpu_isa_wavefront->global_mem_write = 1;
+
 		FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id)
 		{
 			gpu_isa_work_item = gpu_isa_ndrange->work_items[work_item_id];
@@ -333,14 +335,12 @@ void amd_inst_MEM_RAT_impl()
 			uav = W0.rat_id;
 
 			/* Otherwise, we have an image, and we need to provide a base address */
-			arg = list_get(gpu_isa_ndrange->kernel->uav_write_list, uav);
-			mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+			mem = list_get(gpu_isa_ndrange->kernel->uav_write_table, uav);
 			base_addr = mem->device_ptr;
 			addr = base_addr + gpu_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
 			gpu_isa_debug("  t%d:write(0x%x)", gpu_isa_work_item->id, addr);
 
 			/* Record access */
-			gpu_isa_wavefront->global_mem_write = 1;
 			gpu_isa_work_item->global_mem_access_addr = addr;
 			gpu_isa_work_item->global_mem_access_size = 0;
 
@@ -2072,8 +2072,6 @@ void amd_inst_INTERP_LOAD_P20_impl() {
 }
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op3
 void amd_inst_BFE_UINT_impl() 
 {
 	uint32_t src0, src1, src2, dst;
@@ -2100,12 +2098,33 @@ void amd_inst_BFE_UINT_impl()
 
 	gpu_isa_enqueue_write_dest(dst);
 }
-#undef W0
-#undef W1
 
 
 void amd_inst_BFE_INT_impl() {
-	NOT_IMPL();
+
+        uint32_t src0, src1, src2, dst;
+
+        src0 = gpu_isa_read_op_src_int(0);
+        src1 = gpu_isa_read_op_src_int(1);
+        src2 = gpu_isa_read_op_src_int(2);
+
+        src1 = (src1 & 0x1F);
+        src2 = (src2 & 0x1F);
+
+        if (src2 == 0)
+        {
+                dst = 0;
+        }
+        else if (src2 + src1 < 32)
+        {
+                dst = (src0 << (32-src1-src2)) >> (32-src2);
+        }
+        else
+        {
+                dst = src0 >> src1;
+        }
+
+        gpu_isa_enqueue_write_dest(dst);
 }
 
 
@@ -2519,15 +2538,19 @@ void amd_inst_MUL_LIT_impl() {
 void amd_inst_FETCH_impl()
 {
 	uint32_t addr;
+	uint32_t base_addr;
 	int data_format;
 	int dst_sel[4], dst_sel_elem;
 	int i;
+	uint32_t value[4];
 
-	//amd_inst_words_dump(gpu_isa_inst, stdout);///
+	/* Related to data type */
+	struct opencl_mem_t *mem;
+	size_t elem_size = 0;
+	int num_elem;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.fetch_type, 2);  /* NO_INDEX_OFFSET */
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.fetch_whole_quad, 0);
-	/* GPU_PARAM_NOT_SUPPORTED_NEQ(W0.buffer_id, 156);  FIXME: what is that? */
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.offset, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.endian_swap, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.const_buf_no_stride, 0);
@@ -2552,8 +2575,6 @@ void amd_inst_FETCH_impl()
 	/* W2.const_buf_no_stride: force stride to 0 */
 	/* W2.mf (mega_fetch) */
 
-	/* FIXME: buffer_id - what does it mean? */
-	
 	/* Do not fetch for inactive work_items */
 	if (!gpu_work_item_get_active(gpu_isa_work_item))
 		return;
@@ -2563,97 +2584,141 @@ void amd_inst_FETCH_impl()
 	dst_sel[1] = W1.dst_sel_y;
 	dst_sel[2] = W1.dst_sel_z;
 	dst_sel[3] = W1.dst_sel_w;
+
+	base_addr = 0;
 	
-	/* Use constant fields */
+	/* Data type information is either stored in instruction or constant fields */
 	if (W1.use_const_fields) {
-		/* FIXME: format can be found in constant. See table 2.10 in Evergreen manual.
-		 * No details are given about this. */
-		data_format = 13;  /* DATA_FORMAT_32 */
+
+		/* Don't know what these buffers are */
+		if (W0.buffer_id < 130) {
+
+			fatal("Fetch instruction has unknown buffer ID (%d)\n", W0.buffer_id);
+		}
+		/* Information is in a constant buffer (filled by us) */
+		else if (W0.buffer_id >= 130 && W0.buffer_id < 153) { /* FIXME Verify that 153 is correct */
+
+			mem = list_get(gpu_isa_ndrange->kernel->constant_table, W0.buffer_id-128);
+			if(!mem) 
+				fatal("No table entry for constant UAV %d\n", W0.buffer_id);
+
+			base_addr = mem->device_ptr;
+
+			/* FIXME For constant pointers, it appears that 1 constant register is always
+			 * filled, regardless of data size. */
+			elem_size = 4;
+			num_elem = 4; 
+		}
+		/* Information is in a pre-initialized location (not by us) */
+		else if (W0.buffer_id >= 153 && W0.buffer_id <= 175) {
+
+			switch (W0.buffer_id) {
+
+			case 153: /* float */
+				elem_size = 4;
+				num_elem = 1;
+				break;
+			case 173: /* uint4 */
+				elem_size = 4;
+				num_elem = 4;
+				break;
+			case 175: /* float4 */
+				elem_size = 4;
+				num_elem = 4;
+				break;
+			default:
+				fatal("Fetch instruction has unknown buffer ID (%d)\n", 
+						W0.buffer_id);
+				break;
+			}
+		}
+
 	} else {
 		data_format = W1.data_format;
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.num_format_all, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.format_comp_all, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.srf_mode_all, 0);
-	}
 
-	size_t elem_size = 0;
-	uint32_t value[4];
-	int num_elem;
-	
-	/* Fetch */
-	switch (data_format) {
+		/* Fetch */
+		switch (data_format) {
 
-	case 35:  /* DATA_FORMAT_32_32_32_32_FLOAT */
-	case 34:  /* DATA_FORMAT_32_32_32_32 */
+		case 35:  /* DATA_FORMAT_32_32_32_32_FLOAT */
+		case 34:  /* DATA_FORMAT_32_32_32_32 */
 
-		elem_size += 4;
+			elem_size = 4;
+			num_elem = 4;
+			break;
 
-	case 48:  /* DATA_FORMAT_32_32_32_FLOAT */
-	case 47:  /* DATA_FORMAT_32_32_32 */
+		case 48:  /* DATA_FORMAT_32_32_32_FLOAT */
+		case 47:  /* DATA_FORMAT_32_32_32 */
 
-		elem_size += 4;
+			elem_size = 4;
+			num_elem = 3;
+			break;
 
-	case 30:  /* DATA_FORMAT_32_32_FLOAT */
-	case 29:  /* DATA_FORMAT_32_32 */
+		case 30:  /* DATA_FORMAT_32_32_FLOAT */
+		case 29:  /* DATA_FORMAT_32_32 */
 
-		elem_size += 4;
+			elem_size = 4;
+			num_elem = 2;
+			break;
 
-	case 14:  /* DATA_FORMAT_32_FLOAT */
-	case 13:  /* DATA_FORMAT_32 */
+		case 14:  /* DATA_FORMAT_32_FLOAT */
+		case 13:  /* DATA_FORMAT_32 */
 
-		elem_size += 4;
+			elem_size = 4;
+			num_elem = 1;
+			break;
 
-		/* Address */
-		addr = gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * elem_size;
-		gpu_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr);
-
-		/* Read value */
-		assert(W0.mega_fetch_count == 3 || W0.mega_fetch_count == 7
-			|| W0.mega_fetch_count == 11 || W0.mega_fetch_count == 15);
-		num_elem = (W0.mega_fetch_count + 1) / 4;
-		mem_read(gk->global_mem, addr + W2.offset, num_elem * 4, value);
-
-		/* Record global memory access */
-		gpu_isa_wavefront->global_mem_read = 1;
-		gpu_isa_work_item->global_mem_access_addr = addr;
-		gpu_isa_work_item->global_mem_access_size = num_elem * 4;
-
-		/* Write to each component of the GPR */
-		for (i = 0; i < 4; i++) {
-
-			/* Get index of read word to place in this GPR component */
-			dst_sel_elem = dst_sel[i];
-			switch (dst_sel_elem) {
-
-			case 0:  /* SEL_X */
-			case 1:  /* SEL_Y */
-			case 2:  /* SEL_Z */
-			case 3:  /* SEL_W */
-
-				if (dst_sel_elem >= num_elem)
-					GPU_PARAM_NOT_SUPPORTED(dst_sel_elem);
-				gpu_isa_write_gpr(W1.dst_gpr, W1.dst_rel, i, value[dst_sel_elem]);
-				if (debug_status(gpu_isa_debug_category)) {
-					gpu_isa_debug(" ");
-					amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, dst_sel_elem, debug_file(gpu_isa_debug_category));
-					gpu_isa_debug("<=(%d,%gf)", value[dst_sel_elem], * (float *) &value[dst_sel_elem]);
-				}
-				break;
-
-			case 7:
-				/* SEL_MASK: mask this element */
-				break;
-
-			default:
-				GPU_PARAM_NOT_SUPPORTED(dst_sel[i]);
-			}
+		default:
+			GPU_PARAM_NOT_SUPPORTED(W1.data_format);
 		}
-		break;
-	
-	default:
-		GPU_PARAM_NOT_SUPPORTED(W1.data_format);
 	}
 
+	/* Address */
+	addr = base_addr + gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * elem_size;
+	gpu_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr);
+
+	/* FIXME The number of bytes to read is defined by mega_fetch, but we currently
+	 * cannot handle cases where num_elem*elem_size != mega_fetch */
+	mem_read(gk->global_mem, addr + W2.offset, num_elem * elem_size, value);
+
+	/* Record global memory access */
+	gpu_isa_wavefront->global_mem_read = 1;
+	gpu_isa_work_item->global_mem_access_addr = addr;
+	gpu_isa_work_item->global_mem_access_size = num_elem * elem_size;
+
+	/* Write to each component of the GPR */
+	for (i = 0; i < 4; i++) {
+
+		/* Get index of read word to place in this GPR component */
+		dst_sel_elem = dst_sel[i];
+		switch (dst_sel_elem) {
+
+		case 0:  /* SEL_X */
+		case 1:  /* SEL_Y */
+		case 2:  /* SEL_Z */
+		case 3:  /* SEL_W */
+
+			if (dst_sel_elem >= num_elem)
+				GPU_PARAM_NOT_SUPPORTED(dst_sel_elem);
+
+			gpu_isa_write_gpr(W1.dst_gpr, W1.dst_rel, i, value[dst_sel_elem]);
+			if (debug_status(gpu_isa_debug_category)) {
+				gpu_isa_debug(" ");
+				amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, dst_sel_elem, debug_file(gpu_isa_debug_category));
+				gpu_isa_debug("<=(%d,%gf)", value[dst_sel_elem], * (float *) &value[dst_sel_elem]);
+			}
+			break;
+
+		case 7:
+			/* SEL_MASK: mask this element */
+			break;
+
+		default:
+			GPU_PARAM_NOT_SUPPORTED(dst_sel[i]);
+		}
+	}
 }
 #undef W0
 #undef W1
@@ -2736,7 +2801,6 @@ void amd_inst_SAMPLE_impl() {
 	float f_addr; 
 	uint32_t value;
 	int dst_sel[4], dst_sel_elem;
-	struct opencl_kernel_arg_t *arg;
 	struct opencl_mem_t *image;
 
 	/* FIXME Only works for single channel, floating-point data */
@@ -2772,9 +2836,12 @@ void amd_inst_SAMPLE_impl() {
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.sim, 0); 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.ssx, 0); 
 
-	/* Address */
-	arg = list_get(gpu_isa_ndrange->kernel->uav_read_list, W0.resource_id);
-	image = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+	/* Look up the image object based on UAV */
+	image = list_get(gpu_isa_ndrange->kernel->uav_read_table, W0.resource_id);
+	if(!image) 
+		fatal("No table entry for read-only UAV %d\n", W0.resource_id);
+
+	/* Calculate read address */
 	base_addr = image->device_ptr;
 	addr = gpu_isa_read_gpr(W0.src_gpr, 0, 0, 0);  /* FIXME Always reads from X */
 	f_addr = * (float *) &addr;

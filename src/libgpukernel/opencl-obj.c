@@ -716,6 +716,7 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 				fatal("%s: Invalid memory access type for OpenCL Image (%s)\n%s",
 					__FUNCTION__, line_ptrs[3], err_opencl_param_note);
 			}
+			arg->uav = atoi(line_ptrs[4]);
 			arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;
 
 			list_add(kernel->arg_list, arg);
@@ -757,20 +758,35 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 
 		/* Entry 'pointer'. Format: pointer:<name>:<type>:?:?:<addr>:?:?:<elem_size> */
 		if (!strcmp(line_ptrs[0], "pointer")) {
+
 			/* APP SDK 2.5 supplies 9 tokens, 2.6 supplies 10 tokens */
 			if(token_count != 9 && token_count != 10) {
 				OPENCL_KERNEL_METADATA_TOKEN_COUNT(10);
 			}
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
+
 			arg = opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = OPENCL_KERNEL_ARG_KIND_POINTER;
-			arg->elem_size = atoi(line_ptrs[8]);
+
+			/* Set number of elements */
+			/* NOTE The kernel metadata lists 32-bit types as being 8-byte 
+			 * aligned, and 4x32-bit types as being 32-byte aligned.  The 
+			 * following code assumes that this holds true for all types */
+			if (atoi(line_ptrs[8]) % 8 != 0) {
+				fatal ("%s: Unexpected alignment in metadata (%d)\n",
+					__FUNCTION__, atoi(line_ptrs[8]));
+			}
+
 			list_add(kernel->arg_list, arg);
 			if (!strcmp(line_ptrs[6], "uav")) {
 				arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;
+				arg->uav = atoi(line_ptrs[7]);
 			} else if (!strcmp(line_ptrs[6], "hl")) {
 				arg->mem_scope = OPENCL_MEM_SCOPE_LOCAL;
+			} else if (!strcmp(line_ptrs[6], "hc")) {
+				arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;
+				arg->uav = atoi(line_ptrs[7]);
 			} else
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(6);
 
