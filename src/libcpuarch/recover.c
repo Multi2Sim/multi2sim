@@ -72,7 +72,7 @@ void cpu_recover(int core, int thread)
 		ctx_recover(THREAD.ctx);
 	
 	/* Stall fetch and set eip to fetch. */
-	THREAD.fetch_stall = MAX(THREAD.fetch_stall, cpu_recover_penalty);
+	THREAD.fetch_stall_until = MAX(THREAD.fetch_stall_until, cpu->cycle + cpu_recover_penalty - 1);
 	THREAD.fetch_neip = THREAD.ctx->regs->eip;
 }
 

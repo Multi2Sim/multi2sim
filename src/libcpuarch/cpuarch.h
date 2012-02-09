@@ -612,10 +612,10 @@ struct cpu_thread_t
 	uint32_t fetch_eip, fetch_neip;  /* eip and next eip */
 	int fetchq_occ;  /* Number of bytes occupied in the fetch queue */
 	int tcacheq_occ;  /* Number of uops occupied in the trace cache queue */
-	int fetch_stall;
 	int fetch_bsize;  /* Block size of instruction cache for this thread */
 	uint32_t fetch_block;  /* Virtual address of last fetched block */
 	uint64_t fetch_access;  /* Cache access id of last instruction cache access */
+	uint64_t fetch_stall_until;  /* Cycle until which fetching is stalled (inclussive) */
 
 	/* Stats */
 	uint64_t fetched;
@@ -689,8 +689,8 @@ struct cpu_core_t
 	int rob_tail;
 
 	/* Stages */
-	int fetch_current;		/* for thread switch policy */
-	int64_t fetch_switch;		/* for switchonevent */
+	int fetch_current;  /* Currently fetching thread */
+	uint64_t fetch_switch_when;  /* Cycle for last thread switch (for SwitchOnEvent) */
 	int decode_current;
 	int dispatch_current;
 	int issue_current;
