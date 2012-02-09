@@ -29,8 +29,8 @@ static int can_fetch(int core, int thread)
 	if (!ctx || !ctx_get_status(ctx, ctx_running))
 		return 0;
 	
-	/* Fetch stage stalled or context evict signal activated */
-	if (THREAD.fetch_stall || ctx->dealloc_signal)
+	/* Fetch stalled or context evict signal activated */
+	if (THREAD.fetch_stall_until >= cpu->cycle || ctx->dealloc_signal)
 		return 0;
 	
 	/* Fetch queue must have not exceeded the limit of stored bytes
@@ -263,36 +263,58 @@ static void fetch_thread(int core, int thread)
 
 static void fetch_core(int core)
 {
-	int thread, new;
-	int must_switch;
+	int thread;
 
 	switch (cpu_fetch_kind) {
 
-	/* Fetch from all threads */
 	case cpu_fetch_kind_shared:
+	{
+		/* Fetch from all threads */
 		FOREACH_THREAD
+		{
 			if (can_fetch(core, thread))
 				fetch_thread(core, thread);
+		}
 		break;
+	}
 
 	case cpu_fetch_kind_timeslice:
-		FOREACH_THREAD {
+	{
+		/* Round-robin fetch */
+		FOREACH_THREAD
+		{
 			CORE.fetch_current = (CORE.fetch_current + 1) % cpu_threads;
-			if (can_fetch(core, CORE.fetch_current)) {
+			if (can_fetch(core, CORE.fetch_current))
+			{
 				fetch_thread(core, CORE.fetch_current);
 				break;
 			}
 		}
 		break;
+	}
 	
 	case cpu_fetch_kind_switchonevent:
-		
-		/* Check for context switch */
+	{
+		int must_switch;
+		int new;
+
+		/* If current thread is stalled, it means that we just switched to it.
+		 * No fetching and no switching either. */
 		thread = CORE.fetch_current;
-		must_switch = !ctx_get_status(THREAD.ctx, ctx_running);
-		if (cpu->cycle - CORE.fetch_switch > cpu_thread_quantum ||  /* Quantum expired */
-			eventq_longlat(core, thread) ||  /* Long latency instruction */
-			must_switch)  /* Current context is suspended */
+		if (THREAD.fetch_stall_until >= cpu->cycle)
+			break;
+
+		/* Switch thread if:
+		 * - Quantum expired for current thread.
+		 * - Long latency instruction is in progress. */
+		must_switch = !can_fetch(core, thread);
+		must_switch = must_switch || cpu->cycle - CORE.fetch_switch_when >
+			cpu_thread_quantum + cpu_thread_switch_penalty;
+		must_switch = must_switch ||
+			eventq_longlat(core, thread);
+
+		/* Switch thread */
+		if (must_switch)
 		{
 			/* Find a new thread to switch to */
 			for (new = (thread + 1) % cpu_threads; new != thread;
@@ -306,7 +328,8 @@ static void fetch_core(int core)
 				if (must_switch)
 					break;
 
-				/* Do not choose it if it is unfair */
+				/* Do not choose it if it is unfair.
+				 * FIXME: more meaningful fairness policy needed here. */
 				if (ITHREAD(new).committed > THREAD.committed + 100000)
 					continue;
 
@@ -315,11 +338,12 @@ static void fetch_core(int core)
 					break;
 			}
 				
-			/* if thread switch successful */
-			if (new != thread) {
+			/* Thread switch successful? */
+			if (new != thread)
+			{
 				CORE.fetch_current = new;
-				CORE.fetch_switch = cpu->cycle;
-				ITHREAD(new).fetch_stall = cpu_thread_switch_penalty;
+				CORE.fetch_switch_when = cpu->cycle;
+				ITHREAD(new).fetch_stall_until = cpu->cycle + cpu_thread_switch_penalty - 1;
 			}
 		}
 
@@ -327,6 +351,11 @@ static void fetch_core(int core)
 		if (can_fetch(core, CORE.fetch_current))
 			fetch_thread(core, CORE.fetch_current);
 		break;
+	}
+
+	default:
+		
+		panic("%s: wrong fetch policy", __FUNCTION__);
 	}
 }
 
