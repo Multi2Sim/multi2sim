@@ -141,6 +141,7 @@ int opencl_func_run(int code, unsigned int *args)
 	uint32_t opencl_success = 0;
 	int func_code, func_argc;
 	int retval = 0;
+	int i;
 	
 	/* Decode OpenCL function */
 	assert(code >= OPENCL_FUNC_FIRST && code <= OPENCL_FUNC_LAST);
@@ -1032,6 +1033,21 @@ int opencl_func_run(int code, unsigned int *args)
 		kernel = opencl_kernel_create();
 		kernel->program_id = program_id;
 
+		/* Create the UAV-to-physical-address lookup tables */
+		kernel->uav_read_table = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
+		kernel->uav_write_table = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
+		kernel->constant_table = list_create_with_size(25); /* For constant buffers (128 to 153) */
+		/* FIXME Replace with new list functionality */
+		for(i = 0; i < 12; i++) 
+		{
+			list_add(kernel->uav_read_table, NULL);
+			list_add(kernel->uav_write_table, NULL);
+		}
+		for(i = 0; i < 25; i++) 
+		{
+			list_add(kernel->constant_table, NULL);
+		}
+
 		/* Program must be built */
 		if (!program->elf_file)
 			fatal("%s: program should be first built with clBuildProgram.\n%s",
@@ -1059,6 +1075,9 @@ int opencl_func_run(int code, unsigned int *args)
 		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
 		assert(kernel->ref_count > 0);
 		if (!--kernel->ref_count)
+			list_free(kernel->uav_read_table);
+			list_free(kernel->uav_write_table);
+			list_free(kernel->constant_table);
 			opencl_kernel_free(kernel);
 		break;
 	}
@@ -1592,6 +1611,7 @@ int opencl_func_run(int code, unsigned int *args)
 		struct opencl_kernel_t *kernel;
 		struct opencl_event_t *event = NULL;
 		struct opencl_kernel_arg_t *arg;
+		struct opencl_mem_t *mem;
 		int i;
 
 		opencl_debug("  command_queue=0x%x, kernel=0x%x, work_dim=%d,\n"
@@ -1608,9 +1628,7 @@ int opencl_func_run(int code, unsigned int *args)
 		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
 		kernel->work_dim = work_dim;
 
-		/* Build UAV lists */
-		kernel->uav_read_list = list_create();
-		kernel->uav_write_list = list_create();
+		/* Build UAV tables */
 		for (i = 0; i < list_count(kernel->arg_list); i++) 
 		{
 			arg = list_get(kernel->arg_list, i);
@@ -1618,18 +1636,30 @@ int opencl_func_run(int code, unsigned int *args)
 			/* If arg is an image, add it to the appropriate UAV list*/
 			if (arg->kind == OPENCL_KERNEL_ARG_KIND_IMAGE) 
 			{
+				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+
 				if (arg->access_type == OPENCL_KERNEL_ARG_READ_ONLY) 
 				{
-					list_add(kernel->uav_read_list, arg);
+					list_set(kernel->uav_read_table, arg->uav, mem);
 				} 
 				else if (arg->access_type == OPENCL_KERNEL_ARG_WRITE_ONLY) 
 				{
-					list_add(kernel->uav_write_list, arg);
+					list_set(kernel->uav_write_table, arg->uav, mem);
 				} 
 				else 
 				{
-					fatal("%s: unsupported image access type (%d)\n", err_prefix, arg->access_type);
+					fatal("%s: unsupported image access type (%d)\n", err_prefix, 
+						arg->access_type);
 				}	
+			}
+
+			/* If arg is a pointer and not in UAV 11, then it is 
+			   presumably a constant pointer */
+			/* TODO Check if __read_only or __write_only affects uav number */
+			if(arg->kind == OPENCL_KERNEL_ARG_KIND_POINTER && arg->uav != 11) 
+			{	
+				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+				list_set(kernel->constant_table, arg->uav, mem);
 			}
 		}
 			
@@ -1701,11 +1731,6 @@ int opencl_func_run(int code, unsigned int *args)
 			gpu_ndrange_run(kernel->ndrange);
 		else
 			gpu_run(kernel->ndrange);
-
-		/* Free UAV Lists */
-		/* FIXME Will not work with Asynchronous execution */
-		list_free(kernel->uav_read_list);
-		list_free(kernel->uav_write_list);
 
 		/* Free NDRange */
 		gpu_ndrange_free(kernel->ndrange);

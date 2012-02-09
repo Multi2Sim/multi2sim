@@ -373,8 +373,8 @@ struct opencl_kernel_arg_t
 	/* Argument properties, as described in .rodata */
 	enum opencl_kernel_arg_kind_t kind;
 	enum opencl_mem_scope_t mem_scope;  /* For pointers */
+	int uav;  /* For memory objects */
 	enum opencl_kernel_arg_access_type_t access_type;
-	int elem_size;  /* For a pointer, size of element pointed to */
 
 	/* Argument fields as set in clSetKernelArg */
 	int set;  /* Set to true when it is assigned */
@@ -425,8 +425,9 @@ struct opencl_kernel_t
 	int group_count;
 
 	/* UAV lists */
-	struct list_t *uav_read_list;
-	struct list_t *uav_write_list;
+	struct list_t *uav_read_table;
+	struct list_t *uav_write_table;
+	struct list_t *constant_table;
 
 	/* State of the running kernel */
 	struct gpu_ndrange_t *ndrange;
@@ -1022,6 +1023,7 @@ float gpu_isa_read_op_src_float(int src_idx);
 
 void gpu_isa_init(void);
 void gpu_isa_done(void);
+
 
 
 
