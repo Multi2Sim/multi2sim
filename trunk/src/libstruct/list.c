@@ -19,66 +19,61 @@
 
 #include <stdlib.h>
 #include <mhandle.h>
-#include "list.h"
-
-struct list_t
-{
-	int size;
-	int count;
-	int error;
-	int head;
-	int tail;
-	void **elem;
-};
-
+#include <debug.h>
+#include <list.h>
 
 
 #define INLIST(X) (((X) + list->size) % list->size)
 #define ELEM(X) list->elem[((X) + list->head) % list->size]
 
 
-/* Private Methods */
+/*
+ * Private Functions
+ */
 
-/* duplicate list size */
-static int grow(struct list_t *list)
+
+/* Duplicate list size */
+static void list_grow(struct list_t *list)
 {
 	void **nelem;
 	int nsize, i, index;
 
-	/* create new array */
+	/* Create new array */
 	nsize = list->size * 2;
 	nelem = calloc(nsize, sizeof(void *));
 	if (!nelem)
-		return 0;
+		fatal("%s: out of memory", __FUNCTION__);
 
-	/* copy contents to new array */
+	/* Copy contents to new array */
 	for (i = list->head, index = 0;
 		index < list->count;
 		i = (i + 1) % list->size, index++)
 		nelem[index] = list->elem[i];
 
-	/* update fields */
+	/* Update fields */
 	free(list->elem);
 	list->elem = nelem;
 	list->size = nsize;
 	list->head = 0;
 	list->tail = list->count;
-	return 1;
 }
 
 
-static void sort(struct list_t *list, int lo, int hi, int (*comp)(const void *, const void *))
+static void sort(struct list_t *list, int lo, int hi,
+	int (*comp)(const void *, const void *))
 {
 	void *ptr, *tmp;
 	int i = lo, j = hi;
 	
 	ptr = ELEM(hi);
-	do {
+	do
+	{
 		while (comp(ELEM(i), ptr) < 0)
 			i++;
 		while (comp(ELEM(j), ptr) > 0)
 			j--;
-		if (i <= j) {
+		if (i <= j)
+		{
 			tmp = ELEM(i);
 			ELEM(i) = ELEM(j);
 			ELEM(j) = tmp;
@@ -98,20 +93,22 @@ static void sort(struct list_t *list, int lo, int hi, int (*comp)(const void *, 
  * Public Functions
  */
 
-
 struct list_t *list_create_with_size(int size)
 {
 	struct list_t *list;
+
+	/* Create list */
 	list = calloc(1, sizeof(struct list_t));
 	if (!list)
-		return NULL;
+		fatal("%s: out of memory", __FUNCTION__);
+	
+	/* Create vector of elements */
 	list->size = size < 4 ? 4 : size;
 	list->elem = calloc(list->size, sizeof(void *));
 	if (!list->elem)
-	{
-		free(list);
-		return NULL;
-	}
+		fatal("%s: out of memory", __FUNCTION__);
+	
+	/* Return list */
 	return list;
 }
 
@@ -130,115 +127,77 @@ void list_free(struct list_t *list)
 }
 
 
-/* Return error of last operation */
-int list_error(struct list_t *list)
-{
-	return list->error;
-}
-
-
-char *list_error_msg(struct list_t *list)
-{
-	switch (list->error)
-	{
-
-	case LIST_ENOMEM:
-		return "out of memory";
-
-	case LIST_EBOUNDS:
-		return "array index out of bounds";
-
-	case LIST_EELEM:
-		return "element not found";
-
-	case LIST_EEMPTY:
-		return "list is empty";
-
-	}
-	return "";
-}
-
-
 int list_count(struct list_t *list)
 {
 	return list->count;
 }
 
 
-/* add element at the end of the list */
 void list_add(struct list_t *list, void *elem)
 {
-	/* grow list if necessary */
-	if (list->count == list->size && !grow(list))
-	{
-		list->error = LIST_ENOMEM;
-		return;
-	}
+	/* Grow list if necessary */
+	if (list->count == list->size)
+		list_grow(list);
 
-	/* add element */
+	/* Add element */
 	list->elem[list->tail] = elem;
 	list->tail = (list->tail + 1) % list->size;
 	list->count++;
-	list->error = 0;
+	list->error_code = LIST_ERR_OK;
 }
 
 
-/* get element from list */
 void *list_get(struct list_t *list, int index)
 {
-	/* check bounds */
+	/* Check bounds */
 	if (index < 0 || index >= list->count)
 	{
-		list->error = LIST_EBOUNDS;
+		list->error_code = LIST_ERR_BOUNDS;
 		return NULL;
 	}
 
-	/* return element */
+	/* Return element */
 	index = (index + list->head) % list->size;
-	list->error = 0;
+	list->error_code = LIST_ERR_OK;
 	return list->elem[index];
 }
 
 
-/* set an element's value */
 void list_set(struct list_t *list, int index, void *elem)
 {
 	/* check bounds */
 	if (index < 0 || index >= list->count)
 	{
-		list->error = LIST_EBOUNDS;
+		list->error_code = LIST_ERR_BOUNDS;
 		return;
 	}
 
-	/* return element */
+	/* Return element */
 	index = (index + list->head) % list->size;
 	list->elem[index] = elem;
-	list->error = 0;
+	list->error_code = LIST_ERR_OK;
 }
 
 
-/* insert an element in the list */
 void list_insert(struct list_t *list, int index, void *elem)
 {
-	int shiftcount, pos, i;
+	int shiftcount;
+	int pos;
+	int i;
 
-	/* check bounds */
+	/* Check bounds */
 	if (index < 0 || index > list->count)
 	{
-		list->error = LIST_EBOUNDS;
+		list->error_code = LIST_ERR_BOUNDS;
 		return;
 	}
 
-	/* grow list if necessary */
-	if (list->count == list->size && !grow(list))
-	{
-		list->error = LIST_ENOMEM;
-		return;
-	}
+	/* Grow list if necessary */
+	if (list->count == list->size)
+		list_grow(list);
 
-	/* Escoge si desplazar elementos a la derecha aumentando 'tail' o desplazar
-	 * los de la izq decrementando 'head', igual q en 'arraylist_delete'.
-	 */
+	/* Choose whether to shift elements on the right increasing 'tail', or
+	 * shift elements on the left decreasing 'head'. */
 	if (index > list->count / 2)
 	{
 		shiftcount = list->count - index;
@@ -259,46 +218,49 @@ void list_insert(struct list_t *list, int index, void *elem)
 
 	list->elem[(list->head + index) % list->size] = elem;
 	list->count++;
-	list->error = 0;
+	list->error_code = LIST_ERR_OK;
 }
 
 
-/* return index of the first occurence of 'elem' in the list;
- * return -1 if 'elem' is not in the list */
 int list_index_of(struct list_t *list, void *elem)
 {
-	int pos, i;
+	int pos;
+	int i;
 	
-	/* search element */
-	list->error = 0;
+	/* Search element */
+	list->error_code = LIST_ERR_OK;
 	for (i = 0, pos = list->head;
 		i < list->count;
 		i++, pos = (pos + 1) % list->size)
+	{
 		if (list->elem[pos] == elem)
 			return i;
+	}
 	
-	/* element not found */
-	list->error = LIST_EELEM;
+	/* Element not found */
+	list->error_code = LIST_ERR_NOT_FOUND;
 	return -1;
 }
 
 
 void *list_remove_at(struct list_t *list, int index)
 {
-	int shiftcount, pos, i;
+	int shiftcount;
+	int pos;
+	int i;
 	void *elem;
 
 	/* check bounds */
 	if (index < 0 || index >= list->count)
 	{
-		list->error = LIST_EBOUNDS;
+		list->error_code = LIST_ERR_BOUNDS;
 		return NULL;
 	}
 
-	/* get element before deleting it */
+	/* Get element before deleting it */
 	elem = list->elem[(list->head + index) % list->size];
 
-	/* delete */
+	/* Delete */
 	if (index > list->count / 2)
 	{
 		shiftcount = list->count - index - 1;
@@ -320,7 +282,7 @@ void *list_remove_at(struct list_t *list, int index)
 	}
 	
 	list->count--;
-	list->error = 0;
+	list->error_code = LIST_ERR_OK;
 	return elem;
 }
 
@@ -329,9 +291,12 @@ void *list_remove(struct list_t *list, void *elem)
 {
 	int index;
 	
+	/* Get index of element */
 	index = list_index_of(list, elem);
-	if (list->error)
+	if (list->error_code)
 		return NULL;
+	
+	/* Delete element at found position */
 	return list_remove_at(list, index);
 }
 
@@ -341,7 +306,7 @@ void list_clear(struct list_t *list)
 	list->count = 0;
 	list->head = 0;
 	list->tail = 0;
-	list->error = 0;
+	list->error_code = LIST_ERR_OK;
 }
 
 
@@ -362,7 +327,7 @@ void *list_pop(struct list_t *list)
 {
 	if (!list->count)
 	{
-		list->error = LIST_EEMPTY;
+		list->error_code = LIST_ERR_EMPTY;
 		return NULL;
 	}
 	return list_remove_at(list, list->count - 1);
@@ -373,7 +338,7 @@ void *list_top(struct list_t *list)
 {
 	if (!list->count)
 	{
-		list->error = LIST_EEMPTY;
+		list->error_code = LIST_ERR_EMPTY;
 		return NULL;
 	}
 	return list_get(list, list->count - 1);
@@ -384,7 +349,7 @@ void *list_bottom(struct list_t *list)
 {
 	if (!list->count)
 	{
-		list->error = LIST_EEMPTY;
+		list->error_code = LIST_ERR_EMPTY;
 		return NULL;
 	}
 	return list_get(list, 0);
@@ -401,7 +366,7 @@ void *list_dequeue(struct list_t *list)
 {
 	if (!list->count)
 	{
-		list->error = LIST_EEMPTY;
+		list->error_code = LIST_ERR_EMPTY;
 		return NULL;
 	}
 	return list_remove_at(list, 0);
@@ -412,7 +377,7 @@ void *list_head(struct list_t *list)
 {
 	if (!list->count)
 	{
-		list->error = LIST_EEMPTY;
+		list->error_code = LIST_ERR_EMPTY;
 		return NULL;
 	}
 	return list_get(list, 0);
@@ -423,8 +388,9 @@ void *list_tail(struct list_t *list)
 {
 	if (!list->count)
 	{
-		list->error = LIST_EEMPTY;
+		list->error_code = LIST_ERR_EMPTY;
 		return NULL;
 	}
 	return list_get(list, list->count - 1);
 }
+

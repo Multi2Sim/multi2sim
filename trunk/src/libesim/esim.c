@@ -130,7 +130,6 @@ void esim_execute_event(int event, void *data)
 	
 	/* execute event handler */
 	handler = list_get(event_procs, event);
-	assert(!list_error(event_procs));
 	assert(handler);
 	handler(event, data);
 }
@@ -158,7 +157,6 @@ void esim_process_events()
 		/* ok, process it */
 		heap_extract(event_heap, NULL);
 		handler = list_get(event_procs, e->event);
-		assert(!list_error(event_procs));
 		assert(handler);
 		handler(e->event, e->data);
 		repos_free_object(event_repos, e);
@@ -188,7 +186,6 @@ void esim_process_all_events(int max)
 		/* Process it */
 		count++;
 		handler = list_get(event_procs, e->event);
-		assert(!list_error(event_procs));
 		assert(handler);
 		handler(e->event, e->data);
 		repos_free_object(event_repos, e);
@@ -215,7 +212,6 @@ void esim_empty()
 		
 		/* process it */
 		handler = list_get(event_procs, e->event);
-		assert(!list_error(event_procs));
 		assert(handler);
 		handler(e->event, e->data);
 		repos_free_object(event_repos, e);
