@@ -408,7 +408,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 				 * vary in latency, finished CF uop may not be the one at the head of the queue. */
 				cf_uop = uop->cf_uop;
 				linked_list_find(finished_queue, cf_uop);
-				assert(!linked_list_error(finished_queue));
+				assert(!finished_queue->error_code);
 				linked_list_remove(finished_queue);
 
 				/* Enqueue CF uop into complete queue in CF Engine */

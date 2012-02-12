@@ -33,7 +33,7 @@ struct linked_list_t *opencl_object_list;
 void opencl_object_add(void *object)
 {
 	linked_list_find(opencl_object_list, object);
-	assert(linked_list_error(opencl_object_list));
+	assert(opencl_object_list->error_code);
 	linked_list_add(opencl_object_list, object);
 }
 
@@ -42,7 +42,7 @@ void opencl_object_add(void *object)
 void opencl_object_remove(void *object)
 {
 	linked_list_find(opencl_object_list, object);
-	assert(!linked_list_error(opencl_object_list));
+	assert(!opencl_object_list->error_code);
 	linked_list_remove(opencl_object_list);
 }
 
