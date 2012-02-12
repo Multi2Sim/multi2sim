@@ -103,7 +103,7 @@ static struct gpu_wavefront_t *gpu_schedule_greedy(struct gpu_compute_unit_t *co
 	/* Wavefront found, remove from pool and return. */
 	assert(temp_wavefront->clause_kind == GPU_CLAUSE_CF);
 	linked_list_find(wavefront_pool, temp_wavefront);
-	assert(!linked_list_error(wavefront_pool));
+	assert(!wavefront_pool->error_code);
 	linked_list_remove(wavefront_pool);
 	temp_wavefront->sched_when = gpu->cycle;
 	return temp_wavefront;
