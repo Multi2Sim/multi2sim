@@ -3,6 +3,7 @@ libnetwork_a_SOURCES = \
 	buffer.c \
 	link.c \
 	message.c \
+	netlib.c \
 	network.h \
 	network.c \
 	node.c \

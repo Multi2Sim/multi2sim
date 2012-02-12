@@ -33,13 +33,14 @@
 #include <misc.h>
 #include <list.h>
 #include <linked-list.h>
+#include <hash-table.h>
 #include <config.h>
 
 
 
 
 /*
- * Error messages
+ * Messages
  */
 
 extern char *err_net_end_nodes;
@@ -47,6 +48,9 @@ extern char *err_net_no_route;
 extern char *err_net_large_message;
 extern char *err_net_node_name_duplicate;
 extern char *err_net_can_send;
+extern char *err_net_config;
+
+extern char *net_config_help;
 
 
 
@@ -331,12 +335,6 @@ struct net_routing_table_entry_t *net_routing_table_lookup(struct net_routing_ta
 
 #define NET_MSG_TABLE_SIZE 32
 
-
-/* Debug */
-#define net_debug(...) debug(net_debug_category, __VA_ARGS__)
-extern int net_debug_category;
-
-
 /* Network */
 struct net_t
 {
@@ -365,8 +363,7 @@ struct net_t
 };
 
 
-void net_init(void);
-void net_done(void);
+/* Functions */
 
 struct net_t *net_create(char *name);
 struct net_t *net_create_from_config(struct config_t *config, char *name);
@@ -413,5 +410,29 @@ struct net_msg_t *net_try_send_ev(struct net_t *net, struct net_node_t *src_node
 void net_receive(struct net_t *net, struct net_node_t *node, struct net_msg_t *msg);
 
 
-#endif
 
+
+/*
+ * Main Library Functions (netlib.c)
+ */
+
+/* Debug */
+#define net_debug(...) debug(net_debug_category, __VA_ARGS__)
+extern int net_debug_category;
+
+/* Configuration parameters */
+extern char *net_config_file_name;
+extern long long net_max_cycles;
+extern double net_injection_rate;
+
+/* Functions */
+void net_init(void);
+void net_done(void);
+
+void net_load(char *file_name);
+struct net_t *net_find(char *name);
+
+void net_sim(void);
+
+
+#endif
