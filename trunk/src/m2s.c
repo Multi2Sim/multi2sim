@@ -180,6 +180,25 @@ static char *sim_help =
 	"      Maximum simulation time in seconds. The simulator will stop after this time\n"
 	"      is exceeded. Use 0 (default) for no time limit.\n"
 	"\n"
+	"  --net-sim <network>\n"
+	"      Runs a network simulation, where <network> is the name of a network\n"
+	"      specified in the network configuration file (option '--net-config').\n"
+	"\n"
+	"  --net-injection-rate <rate>\n"
+	"      For network simulation, packet injection rate for nodes (e.g. 0.01 means one\n"
+	"      packet every 100 cycles on average. Nodes will injects packets into the\n"
+	"      network using random delays with exponential distribution with lambda = <rate>.\n"
+	"      This option must be used together with '--net-sim'.\n"
+	"\n"
+	"  --net-config <file>\n"
+	"      Network configuration file. All networks are defined here, and referenced from\n"
+	"      other configuration files. For a description of the format, please run\n"
+	"      'm2s --help-net-config'.\n"
+	"\n"
+	"  --net-max-cycles <cycles>\n"
+	"      Maximum number of cycles for network simulation. This option must be used\n"
+	"      together with option '--net-sim').\n"
+	"\n"
 	"  --opencl-binary <file>\n"
 	"      Specify OpenCL kernel binary to be loaded when the OpenCL host program\n"
 	"      performs a call to 'clCreateProgramWithSource'. Since on-line compilation\n"
@@ -536,6 +555,13 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--help-gpu-cache-config"))
 		{
 			fprintf(stderr, "%s", gpu_cache_config_help);
+			continue;
+		}
+
+		/* Help for network configuration file */
+		if (!strcmp(argv[argi], "--help-net-config"))
+		{
+			fprintf(stderr, "%s", net_config_help);
 			continue;
 		}
 
