@@ -21,49 +21,6 @@
 
 
 /*
- * Variables
- */
-
-int net_debug_category;
-
-char *err_net_end_nodes =
-	"\tAn attempt has been made to send a message from/to an intermediate\n"
-	"\tswitch or bus. Both the initial source and the final destination\n"
-	"\tof a network message have to be end nodes.\n";
-
-char *err_net_no_route =
-	"\tA message has been sent between two nodes with no possible route.\n"
-	"\tPlease redesign your network, considering that every pair of end\n"
-	"\tnodes sending messages to each other need to be connected with a\n"
-	"\tlink.\n";
-
-char *err_net_large_message =
-	"\tA message has been sent in a network where some input/output buffer\n"
-	"\tdoes not have enough capacity to hold it. Please redesign your\n"
-	"\tnetwork, considering that the size of each buffer should be at\n"
-	"\tleast as large as the largest possible message.\n";
-
-char *err_net_node_name_duplicate =
-	"\tA node has been added to a network with a name duplicate. Please make\n"
-	"\tsure that all intermediate and end nodes of your network have\n"
-	"\tdifferent names.\n";
-
-char *err_net_config =
-	"\tA network is being loaded from an IniFile configuration file.\n"
-	"\tHowever, some feature of the provided file does not comply with the\n"
-	"\texpected format. Please run 'm2s --help-network' for a list of\n"
-	"\tpossible sections/variables in the network configuration file.\n";
-	/* FIXME: implement '--help-network' option */
-
-char *err_net_can_send =
-	"\tAn attempt has been detected of injecting a package in a network\n"
-	"\tfrom a source node that has no available space in its output\n"
-	"\tbuffer. This can be solved by making sure a message can be sent\n"
-	"\tbefore injecting it (use function 'net_can_send').\n";
-
-
-
-/*
  * Private Functions
  */
 
@@ -123,26 +80,6 @@ struct net_msg_t *net_msg_table_extract(struct net_t *net, uint64_t id)
 /*
  * Public Functions
  */
-
-
-int EV_NET_SEND;
-int EV_NET_OUTPUT_BUFFER;
-int EV_NET_INPUT_BUFFER;
-int EV_NET_RECEIVE;
-
-void net_init(void)
-{
-	EV_NET_SEND = esim_register_event(net_event_handler);
-	EV_NET_OUTPUT_BUFFER = esim_register_event(net_event_handler);
-	EV_NET_INPUT_BUFFER = esim_register_event(net_event_handler);
-	EV_NET_RECEIVE = esim_register_event(net_event_handler);
-}
-
-
-void net_done(void)
-{
-}
-
 
 struct net_t *net_create(char *name)
 {
