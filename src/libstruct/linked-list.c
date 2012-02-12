@@ -20,40 +20,21 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <mhandle.h>
+#include <debug.h>
 #include <linked-list.h>
-#include <repos.h>
-
-
-struct linked_list_elem_t
-{
-	struct linked_list_elem_t *prev, *next;
-	void *data;
-};
-
-
-struct linked_list_t
-{
-	struct repos_t *elem_repos;
-	struct linked_list_elem_t *head, *tail, *current;
-	int icurrent, count;
-	int error;
-};
 
 
 /* Creation */
 struct linked_list_t *linked_list_create()
 {
 	struct linked_list_t *list;
+
+	/* Create list */
 	list = calloc(1, sizeof(struct linked_list_t));
 	if (!list)
-		return NULL;
+		fatal("%s: out of memory", __FUNCTION__);
 
-	/* FIXME: get rid of repository */
-	list->elem_repos = repos_create(sizeof(struct linked_list_elem_t), "linked_list_elem_repos");
-	if (!list->elem_repos) {
-		free(list);
-		return NULL;
-	}
+	/* Return */
 	return list;
 }
 
@@ -62,49 +43,57 @@ struct linked_list_t *linked_list_create()
 void linked_list_free(struct linked_list_t *list)
 {
 	linked_list_clear(list);
-	repos_free(list->elem_repos);
 	free(list);
 }
 
 
 int linked_list_current(struct linked_list_t *list)
 {
-	list->error = 0;
-	return list->icurrent;
+	list->error_code = LINKED_LIST_ERR_OK;
+	return list->current_index;
 }
 
 
 void *linked_list_get(struct linked_list_t *list)
 {
-	if (list->icurrent == list->count) {
-		list->error = LINKED_LIST_ERR_BOUNDS;
+	if (list->current_index == list->count)
+	{
+		list->error_code = LINKED_LIST_ERR_BOUNDS;
 		return NULL;
 	}
-	list->error = 0;
+	list->error_code = LINKED_LIST_ERR_OK;
 	return list->current->data;
 }
 
 
 void linked_list_next(struct linked_list_t *list)
 {
-	if (list->icurrent == list->count) {
-		list->error = LINKED_LIST_ERR_BOUNDS;
+	/* Check bounds */
+	if (list->current_index == list->count)
+	{
+		list->error_code = LINKED_LIST_ERR_BOUNDS;
 		return;
 	}
-	list->error = 0;
-	list->icurrent++;
+
+	/* Go to next element */
+	list->error_code = LINKED_LIST_ERR_OK;
+	list->current_index++;
 	list->current = list->current->next;
 }
 
 
 void linked_list_prev(struct linked_list_t *list)
 {
-	if (!list->icurrent) {
-		list->error = LINKED_LIST_ERR_BOUNDS;
+	/* Check bounds */
+	if (!list->current_index)
+	{
+		list->error_code = LINKED_LIST_ERR_BOUNDS;
 		return;
 	}
-	list->error = 0;
-	list->icurrent--;
+
+	/* Move to previous element */
+	list->error_code = LINKED_LIST_ERR_OK;
+	list->current_index--;
 	list->current = list->current ? list->current->prev :
 		list->tail;
 }
@@ -112,84 +101,97 @@ void linked_list_prev(struct linked_list_t *list)
 
 void linked_list_next_circular(struct linked_list_t *list)
 {
-	if (!list->count) {
-		list->error = LINKED_LIST_ERR_BOUNDS;
+	if (!list->count)
+	{
+		list->error_code = LINKED_LIST_ERR_EMPTY;
 		return;
 	}
-	if (list->icurrent >= list->count - 1) {
-		list->icurrent = 0;
+	if (list->current_index >= list->count - 1)
+	{
+		list->current_index = 0;
 		list->current = list->head;
-	} else {
-		list->icurrent++;
+	}
+	else
+	{
+		list->current_index++;
 		list->current = list->current->next;
 	}
-	list->error = 0;
+	list->error_code = LINKED_LIST_ERR_OK;
 }
 
 
 void linked_list_prev_circular(struct linked_list_t *list)
 {
-	if (!list->count) {
-		list->error = LINKED_LIST_ERR_BOUNDS;
+	if (!list->count)
+	{
+		list->error_code = LINKED_LIST_ERR_EMPTY;
 		return;
 	}
-	if (!list->icurrent) {
-		list->icurrent = list->count - 1;
+	if (!list->current_index)
+	{
+		list->current_index = list->count - 1;
 		list->current = list->tail;
-	} else {
-		list->icurrent--;
+	}
+	else
+	{
+		list->current_index--;
 		list->current = list->current ? list->current->prev :
 			list->tail;
 	}
-	list->error = 0;
+	list->error_code = LINKED_LIST_ERR_OK;
 }
 
 
 void linked_list_head(struct linked_list_t *list)
 {
-	if (!list->count) {
-		list->error = LINKED_LIST_ERR_BOUNDS;
+	if (!list->count)
+	{
+		list->error_code = LINKED_LIST_ERR_EMPTY;
 		return;
 	}
-	list->error = 0;
-	list->icurrent = 0;
+	list->error_code = LINKED_LIST_ERR_OK;
+	list->current_index = 0;
 	list->current = list->head;
 }
 
 
 void linked_list_tail(struct linked_list_t *list)
 {
-	if (!list->count) {
-		list->error = LINKED_LIST_ERR_BOUNDS;
+	if (!list->count)
+	{
+		list->error_code = LINKED_LIST_ERR_EMPTY;
 		return;
 	}
-	list->icurrent = list->count - 1;
+	list->current_index = list->count - 1;
 	list->current = list->tail;
-	list->error = 0;
+	list->error_code = LINKED_LIST_ERR_OK;
 }
 
 
 void linked_list_out(struct linked_list_t *list)
 {
-	list->error = 0;
-	list->icurrent = list->count;
+	list->error_code = LINKED_LIST_ERR_OK;
+	list->current_index = list->count;
 	list->current = NULL;
 }
 
 
 void linked_list_goto(struct linked_list_t *list, int index)
 {
-	if (index < 0 || index > list->count) {
-		list->error = LINKED_LIST_ERR_BOUNDS;
+	if (index < 0 || index > list->count)
+	{
+		list->error_code = LINKED_LIST_ERR_BOUNDS;
 		return;
 	}
-	list->error = 0;
-	while (list->icurrent < index) {
-		list->icurrent++;
+	list->error_code = LINKED_LIST_ERR_OK;
+	while (list->current_index < index)
+	{
+		list->current_index++;
 		list->current = list->current->next;
 	}
-	while (list->icurrent > index) {
-		list->icurrent--;
+	while (list->current_index > index)
+	{
+		list->current_index--;
 		list->current = list->current ? list->current->prev :
 			list->tail;
 	}
@@ -198,29 +200,30 @@ void linked_list_goto(struct linked_list_t *list, int index)
 
 void linked_list_find(struct linked_list_t *list, void *data)
 {
-	list->error = 0;
-	list->icurrent = 0;
+	list->error_code = LINKED_LIST_ERR_OK;
+	list->current_index = 0;
 	list->current = list->head;
-	while (list->current && list->current->data != data) {
-		list->icurrent++;
+	while (list->current && list->current->data != data)
+	{
+		list->current_index++;
 		list->current = list->current->next;
 	}
 	if (!list->current)
-		list->error = LINKED_LIST_ERR_NOT_FOUND;
+		list->error_code = LINKED_LIST_ERR_NOT_FOUND;
 }
 
 
 int linked_list_count(struct linked_list_t *list)
 {
-	list->error = 0;
+	list->error_code = LINKED_LIST_ERR_OK;
 	return list->count;
 }
 
 
 int linked_list_is_end(struct linked_list_t *list)
 {
-	list->error = 0;
-	return list->icurrent == list->count;
+	list->error_code = LINKED_LIST_ERR_OK;
+	return list->current_index == list->count;
 }
 
 
@@ -228,37 +231,37 @@ void linked_list_insert(struct linked_list_t *list, void *data)
 {
 	struct linked_list_elem_t *elem;
 	
-	/* create new linked_list_elem_t */
-	elem = repos_create_object(list->elem_repos);
-	if (!elem) {
-		list->error = LINKED_LIST_ERR_MEM;
-		return;
-	}
+	/* Create a new element */
+	elem = calloc(1, sizeof(struct linked_list_elem_t));
+	if (!elem)
+		fatal("%s: out of memory", __FUNCTION__);
 	elem->data = data;
 	
-	/* insert it */
-	if (!list->count) {
-	
-		/* no element in the list */
-		list->current = list->head = list->tail = elem;
-		
-	} else if (list->current == list->head) {
-	
-		/* insert at the beginning */
+	/* Insert it */
+	if (!list->count)
+	{
+		/* No element in the list */
+		list->current = elem;
+		list->head = elem;
+		list->tail = elem;
+	}
+	else if (list->current == list->head)
+	{
+		/* Insert at the head */
 		elem->next = list->head;
 		list->head->prev = elem;
 		list->head = elem;
-		
-	} else if (!list->current) {
-		
-		/* insert at the end */
+	}
+	else if (!list->current)
+	{
+		/* Insert at the tail */
 		elem->prev = list->tail;
 		list->tail->next = elem;
 		list->tail = elem;
-		
-	} else {
-		
-		/* insert in the middle */
+	}
+	else
+	{
+		/* Insert in the middle */
 		elem->prev = list->current->prev;
 		elem->next = list->current;
 		list->current->prev = elem;
@@ -266,8 +269,8 @@ void linked_list_insert(struct linked_list_t *list, void *data)
 		
 	}
 	
-	/* update list status */
-	list->error = 0;
+	/* Update state */
+	list->error_code = LINKED_LIST_ERR_OK;
 	list->count++;
 	list->current = elem;
 }
@@ -277,8 +280,7 @@ void linked_list_add(struct linked_list_t *list, void *data)
 {
 	linked_list_out(list);
 	linked_list_insert(list, data);
-	if (!list->error)
-		linked_list_out(list);
+	linked_list_out(list);
 }
 
 
@@ -286,32 +288,42 @@ void linked_list_remove(struct linked_list_t *list)
 {
 	struct linked_list_elem_t *elem;
 	
-	/* check bounds */
-	if (list->icurrent == list->count) {
-		list->error = LINKED_LIST_ERR_BOUNDS;
+	/* Check bounds */
+	if (list->current_index == list->count)
+	{
+		list->error_code = LINKED_LIST_ERR_BOUNDS;
 		return;
 	}
 	
-	/* remove current element */
+	/* Remove current element */
 	elem = list->current;
-	if (list->count == 1) {
-		list->tail = list->head = NULL;
-	} else if (elem == list->head) {
+	if (list->count == 1)
+	{
+		list->tail = NULL;
+		list->head = NULL;
+	}
+	else if (elem == list->head)
+	{
 		elem->next->prev = NULL;
 		list->head = elem->next;
-	} else if (elem == list->tail) {
+	}
+	else if (elem == list->tail)
+	{
 		elem->prev->next = NULL;
 		list->tail = elem->prev;
-	} else {
+	}
+	else
+	{
 		elem->prev->next = elem->next;
 		elem->next->prev = elem->prev;
 	}
 	
-	/* update list status */
-	list->error = 0;
+	/* Update list state */
+	assert(list->count > 0);
+	list->error_code = LINKED_LIST_ERR_OK;
 	list->count--;
 	list->current = elem->next;
-	repos_free_object(list->elem_repos, elem);
+	free(elem);
 }
 
 
@@ -319,17 +331,22 @@ void linked_list_clear(struct linked_list_t *list)
 {
 	struct linked_list_elem_t *elem, *next;
 	
+	/* Free all elements */
 	elem = list->head;
-	while (elem) {
+	while (elem)
+	{
 		next = elem->next;
-		repos_free_object(list->elem_repos, elem);
+		free(elem);
 		elem = next;
 	}
 	
-	list->error = 0;
-	list->icurrent = 0;
+	/* Update list state */
+	list->error_code = LINKED_LIST_ERR_OK;
+	list->current_index = 0;
 	list->count = 0;
-	list->tail = list->head = list->current = NULL;
+	list->tail = NULL;
+	list->head = NULL;
+	list->current = NULL;
 }
 
 
@@ -363,15 +380,20 @@ void linked_list_sort(struct linked_list_t *list, int (*comp)(const void *, cons
 	struct linked_list_elem_t **array;
 	int i;
 	
-	/* Empty lists are not sorted */
-	list->error = 0;
+	/* No need to sort an empty list */
+	list->error_code = LINKED_LIST_ERR_OK;
 	if (!list->count)
 		return;
 	
-	/* Build an array with the pointers */
+	/* Create an array for elements */
 	array = calloc(list->count, sizeof(struct linked_list_elem_t *));
+	if (!array)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Convert linked list into array */
 	list->current = list->head;
-	for (i = 0; i < list->count; i++) {
+	for (i = 0; i < list->count; i++)
+	{
 		array[i] = list->current;
 		list->current = list->current->next;
 	}
@@ -382,14 +404,15 @@ void linked_list_sort(struct linked_list_t *list, int (*comp)(const void *, cons
 	/* Rebuild linked list */
 	list->head = array[0];
 	list->tail = array[list->count - 1];
-	for (i = 0; i < list->count; i++) {
+	for (i = 0; i < list->count; i++)
+	{
 		array[i]->prev = i > 0 ? array[i - 1] : NULL;
 		array[i]->next = i < list->count - 1 ? array[i + 1] : NULL;
 	}
 	free(array);
 	
 	/* Set the first element as current element */
-	list->icurrent = 0;
+	list->current_index = 0;
 	list->current = list->head;
 }
 
@@ -398,13 +421,17 @@ int linked_list_sorted(struct linked_list_t *list,
 	int (*comp)(const void *, const void *))
 {
 	struct linked_list_elem_t *elem, *prev;
-	int i= 0;
-	list->error = 0;
+	int i = 0;
+
+	/* An empty list is sorted */
+	list->error_code = LINKED_LIST_ERR_OK;
 	if (!list->head)
 		return 1;
+
 	prev = list->head;
 	elem = list->head->next;
-	while (elem) {
+	while (elem)
+	{
 		i++;
 		if (comp(prev->data, elem->data) > 0)
 			return 0;
@@ -412,26 +439,4 @@ int linked_list_sorted(struct linked_list_t *list,
 		elem = elem->next;
 	}
 	return 1;
-}
-
-
-int linked_list_error(struct linked_list_t *list)
-{
-	return list->error;
-}
-
-
-char *linked_list_error_msg(struct linked_list_t *list)
-{
-	switch (list->error) {
-
-	case LINKED_LIST_ERR_MEM:
-		return "out of memory";
-
-	case LINKED_LIST_ERR_BOUNDS:
-		return "array index out of bounds";
-
-	default:
-		return "";
-	}
 }

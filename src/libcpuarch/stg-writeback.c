@@ -26,12 +26,12 @@ void writeback_core(int core)
 	struct uop_t *uop;
 	int thread, recover = 0;
 
-	for (;;) {
-	
-		/* Peek element from the head of the event queue */
+	for (;;)
+	{
+		/* Pick element from the head of the event queue */
 		linked_list_head(CORE.eventq);
 		uop = linked_list_get(CORE.eventq);
-		if (linked_list_error(CORE.eventq))
+		if (!uop)
 			break;
 
 		/* A memory uop placed in the event queue is always complete.
