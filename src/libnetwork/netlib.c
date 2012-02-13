@@ -18,6 +18,7 @@
  */
 
 #include <network.h>
+#include <math.h>
 
 
 /*
@@ -126,8 +127,27 @@ static struct hash_table_t *net_list;
 
 /* Configuration parameters */
 char *net_config_file_name = "";
+
+char *net_report_file_name = "";
+FILE *net_report_file;
+
+char *net_sim_network_name = "";
 long long net_max_cycles = 1000000;  /* 1M cycles default */
-double net_injection_rate;
+double net_injection_rate = 0.01;  /* 1 packet every 100 cycles */
+int net_msg_size = 1;  /* Message size in bytes */
+
+
+
+/*
+ * Private Functions
+ */
+
+static double exp_random(double lambda)
+{
+	double x = (double) random() / RAND_MAX;
+	return log(1 - x) / -lambda;
+}
+
 
 
 
@@ -135,6 +155,86 @@ double net_injection_rate;
 /*
  * Public Functions
  */
+
+
+void net_config_load(void)
+{
+	struct config_t *config;
+	char *section;
+	int i;
+
+	struct list_t *net_name_list;
+
+	/* Configuration file */
+	if (!*net_config_file_name)
+		return;
+
+	/* Open network configuration file */
+	config = config_create(net_config_file_name);
+	if (!config_load(config))
+		fatal("%s: cannot open network configuration file", net_config_file_name);
+
+	/* Create a temporary list of network names found in configuration file */
+	net_name_list = list_create();
+	for (section = config_section_first(config); section; section = config_section_next(config))
+	{
+		char section_str[MAX_STRING_SIZE];
+		char *token;
+		char *net_name;
+		char *delim = ".";
+
+		/* Create a copy of section name */
+		snprintf(section_str, sizeof section_str, "%s", section);
+		section = section_str;
+
+		/* First token must be 'Network' */
+		token = strtok(section, delim);
+		if (strcasecmp(token, "Network"))
+			continue;
+
+		/* Second token is network name */
+		net_name = strtok(NULL, delim);
+		if (!net_name)
+			continue;
+
+		/* No third token */
+		token = strtok(NULL, delim);
+		if (token)
+			continue;
+
+		/* Insert new network name */
+		net_name = strdup(net_name);
+		if (!net_name)
+			fatal("%s: out of memory", __FUNCTION__);
+		list_add(net_name_list, net_name);
+	}
+
+	/* Print network names */
+	net_debug("%s: loading network configuration file\n", net_config_file_name);
+	net_debug("networks found:\n");
+	for (i = 0; i < net_name_list->count; i++)
+		net_debug("\t%s\n", (char *) list_get(net_name_list, i));
+	net_debug("\n");
+
+	/* Load networks */
+	net_list = hash_table_create(0, 0);
+	for (i = 0; i < net_name_list->count; i++)
+	{
+		struct net_t *network;
+		char *net_name;
+
+		net_name = list_get(net_name_list, i);
+		network = net_create_from_config(config, net_name);
+
+		hash_table_insert(net_list, net_name, network);
+	}
+
+	/* Free list of network names and configuration file */
+	while (net_name_list->count)
+		free(list_remove_at(net_name_list, 0));
+	list_free(net_name_list);
+	config_free(config);
+}
 
 
 void net_init(void)
@@ -145,30 +245,118 @@ void net_init(void)
 	EV_NET_INPUT_BUFFER = esim_register_event(net_event_handler);
 	EV_NET_RECEIVE = esim_register_event(net_event_handler);
 
-	/* List of networks */
-	net_list = hash_table_create(0, 0);
+	/* Load network configuration file */
+	net_config_load();
+
+	/* Report file */
+	if (*net_report_file_name)
+	{
+		net_report_file = open_write(net_report_file_name);
+		if (!net_report_file)
+			fatal("%s: cannot write on network report file",
+				net_report_file_name);
+	}
 }
 
 
 void net_done(void)
 {
+	struct net_t *net;
+
 	/* Free list of networks */
-	hash_table_free(net_list);
-}
+	if (net_list)
+	{
+		for (hash_table_find_first(net_list, (void **) &net); net;
+			hash_table_find_next(net_list, (void **) &net))
+		{
+			/* Dump report for network */
+			if (net_report_file)
+				net_dump_report(net, net_report_file);
 
+			/* Free network */
+			net_free(net);
+		}
+		hash_table_free(net_list);
+	}
 
-void net_load(char *file_name)
-{
+	/* Close report file */
+	close_file(net_report_file);
 }
 
 
 struct net_t *net_find(char *name)
 {
-	return NULL;
+	return hash_table_get(net_list, name);
 }
 
 
 void net_sim(void)
 {
-}
+	struct net_t *net;
 
+	double *inject_time;  /* Next injection time (one per node) */
+
+	/* Network to work with */
+	if (!*net_sim_network_name)
+		panic("%s: no network", __FUNCTION__);
+	net = net_find(net_sim_network_name);
+	if (!net)
+		fatal("%s: network does not exist", net_sim_network_name);
+
+	/* Calculate routing table */
+	net_routing_table_calculate(net->routing_table);
+
+	/* Initialize */
+	inject_time = calloc(net->node_count, sizeof(double));
+	if (!inject_time)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* FIXME: error for no dest node in network */
+
+	/* Simulation loop */
+	esim_process_events();
+	while (esim_cycle < net_max_cycles)
+	{
+		struct net_node_t *node;
+		struct net_node_t *dst_node;
+		int i;
+
+		/* Inject messages */
+		for (i = 0; i < net->node_count; i++)
+		{
+			/* Get end node */
+			node = list_get(net->node_list, i);
+			if (node->kind != net_node_end)
+				continue;
+
+			/* Turn for next injection? */
+			if (inject_time[i] > esim_cycle)
+				continue;
+
+			/* Get a random destination node */
+			do {
+				dst_node = list_get(net->node_list, random() %
+					list_count(net->node_list));
+			} while (dst_node->kind != net_node_end || dst_node == node);
+
+			/* Inject */
+			while (inject_time[i] < esim_cycle)
+			{
+				inject_time[i] += exp_random(net_injection_rate);
+				if (net_can_send(net, node, dst_node, net_msg_size))
+					net_send(net, node, dst_node, net_msg_size);
+			}
+		}
+
+		/* Next cycle */
+		net_debug("___ cycle %lld ___\n", (long long) esim_cycle);
+		esim_process_events();
+	}
+
+	/* Drain events */
+	while (esim_pending())
+		esim_process_events();
+
+	/* Free */
+	free(inject_time);
+}
