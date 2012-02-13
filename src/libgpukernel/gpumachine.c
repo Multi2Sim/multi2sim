@@ -2676,7 +2676,7 @@ void amd_inst_FETCH_impl()
 	}
 
 	/* Address */
-	addr = base_addr + gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * elem_size;
+	addr = base_addr + gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * (elem_size*num_elem);
 	gpu_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr);
 
 	/* FIXME The number of bytes to read is defined by mega_fetch, but we currently
