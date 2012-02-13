@@ -784,6 +784,7 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 				arg->uav = atoi(line_ptrs[7]);
 			} else if (!strcmp(line_ptrs[6], "hl")) {
 				arg->mem_scope = OPENCL_MEM_SCOPE_LOCAL;
+				arg->uav = atoi(line_ptrs[7]);
 			} else if (!strcmp(line_ptrs[6], "hc")) {
 				arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;
 				arg->uav = atoi(line_ptrs[7]);
