@@ -180,10 +180,6 @@ static char *sim_help =
 	"      Maximum simulation time in seconds. The simulator will stop after this time\n"
 	"      is exceeded. Use 0 (default) for no time limit.\n"
 	"\n"
-	"  --net-sim <network>\n"
-	"      Runs a network simulation, where <network> is the name of a network\n"
-	"      specified in the network configuration file (option '--net-config').\n"
-	"\n"
 	"  --net-injection-rate <rate>\n"
 	"      For network simulation, packet injection rate for nodes (e.g. 0.01 means one\n"
 	"      packet every 100 cycles on average. Nodes will injects packets into the\n"
@@ -197,7 +193,17 @@ static char *sim_help =
 	"\n"
 	"  --net-max-cycles <cycles>\n"
 	"      Maximum number of cycles for network simulation. This option must be used\n"
-	"      together with option '--net-sim').\n"
+	"      together with option '--net-sim'.\n"
+	"\n"
+	"  --net-msg-size <size>\n"
+	"      For network simulation, packet size in bytes. An entire packet is assumed to\n"
+	"      fit in a node's buffer, but its transfer latency through a link will depend\n"
+	"      on the message size and the link bandwidth. This option must be used together\n"
+	"      with '--net-sim'.\n"
+	"\n"
+	"  --net-sim <network>\n"
+	"      Runs a network simulation, where <network> is the name of a network\n"
+	"      specified in the network configuration file (option '--net-config').\n"
 	"\n"
 	"  --opencl-binary <file>\n"
 	"      Specify OpenCL kernel binary to be loaded when the OpenCL host program\n"
@@ -228,6 +234,11 @@ static char *sim_help =
 	"      File to dump a report of the GPU pipeline, such as active execution engines,\n"
 	"      compute units occupancy, stream cores utilization, etc. Use together with a\n"
 	"      detailed GPU simulation (option '--gpu-sim detailed').\n"
+	"\n"
+	"  --report-net <file>\n"
+	"      File to dump detailed statistics for each network defined in the network\n"
+	"      configuration file (option '--net-config'). The report includes statistics\n"
+	"      on bandwidth utilization, network traffic, etc.\n"
 	"\n";
 
 
@@ -248,6 +259,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	int argc = *argc_ptr;
 	int argi;
 	int arg_discard = 0;
+
+	char *net_sim_last_option = NULL;
 
 	for (argi = 1; argi < argc; argi++)
 	{
@@ -619,6 +632,54 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 		
+		/* Network configuration file */
+		if (!strcmp(argv[argi], "--net-config"))
+		{
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			net_config_file_name = argv[argi];
+			continue;
+		}
+
+		/* Injection rate for network simulation */
+		if (!strcmp(argv[argi], "--net-injection-rate"))
+		{
+			sim_need_argument(argc, argv, argi);
+			net_sim_last_option = argv[argi];
+			argi++;
+			net_injection_rate = atof(argv[argi]);
+			continue;
+		}
+
+		/* Cycles for network simulation */
+		if (!strcmp(argv[argi], "--net-max-cycles"))
+		{
+			sim_need_argument(argc, argv, argi);
+			net_sim_last_option = argv[argi];
+			argi++;
+			net_max_cycles = atoll(argv[argi]);
+			continue;
+		}
+
+		/* Network message size */
+		if (!strcmp(argv[argi], "--net-msg-size"))
+		{
+			sim_need_argument(argc, argv, argi);
+			net_sim_last_option = argv[argi];
+			argi++;
+			net_msg_size = atoi(argv[argi]);
+			continue;
+		}
+
+		/* Network simulation */
+		if (!strcmp(argv[argi], "--net-sim"))
+		{
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			net_sim_network_name = argv[argi];
+			continue;
+		}
+
 		/* OpenCL binary */
 		if (!strcmp(argv[argi], "--opencl-binary"))
 		{
@@ -670,6 +731,15 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_report_file_name = argv[argi];
+			continue;
+		}
+
+		/* Network report file */
+		if (!strcmp(argv[argi], "--report-net"))
+		{
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			net_report_file_name = argv[argi];
 			continue;
 		}
 
@@ -729,6 +799,10 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		fatal("option '--gpu-disasm' is incompatible with any other options.");
 	if (*cpu_disasm_file_name && argc > 3)
 		fatal("option '--cpu-disasm' is incompatible with other options.");
+	if (!*net_sim_network_name && net_sim_last_option)
+		fatal("option '%s' requires '--net-sim'", net_sim_last_option);
+	if (*net_sim_network_name && !*net_config_file_name)
+		fatal("option '--net-sim' requires '--net-config'");
 
 	/* Discard arguments used as options */
 	arg_discard = argi - 1;
@@ -834,6 +908,26 @@ int main(int argc, char **argv)
 	if (*gpu_visual_file_name)
 		vgpu_run(gpu_visual_file_name);
 	
+	/* Network simulation tool */
+	if (*net_sim_network_name)
+	{
+		/* Initialize */
+		debug_init();
+		esim_init();
+		net_init();
+		net_debug_category = debug_new_category(net_debug_file_name);
+
+		/* Run */
+		net_sim();
+
+		/* Finalize */
+		net_done();
+		esim_done();
+		debug_done();
+		mhandle_done();
+		return 0;
+	}
+
 	/* Debug */
 	debug_init();
 	isa_inst_debug_category = debug_new_category(isa_inst_debug_file_name);
@@ -859,9 +953,8 @@ int main(int argc, char **argv)
 	net_init();
 
 	/* Initialization for detailed simulation */
-	if (cpu_sim_kind == cpu_sim_kind_detailed) {
+	if (cpu_sim_kind == cpu_sim_kind_detailed)
 		cpu_init();
-	}
 	if (gpu_sim_kind == gpu_sim_kind_detailed)
 		gpu_init();
 
@@ -869,7 +962,8 @@ int main(int argc, char **argv)
 	cpu_load_progs(argc, argv, ctxconfig_file_name);
 
 	/* Simulation loop */
-	if (ke->running_list_head) {
+	if (ke->running_list_head)
+	{
 		if (cpu_sim_kind == cpu_sim_kind_detailed)
 			cpu_run();
 		else
@@ -883,7 +977,8 @@ int main(int argc, char **argv)
 	sim_stats_summary();
 
 	/* Finalization of detailed CPU simulation */
-	if (cpu_sim_kind == cpu_sim_kind_detailed) {
+	if (cpu_sim_kind == cpu_sim_kind_detailed)
+	{
 		esim_debug_done();
 		cpu_done();
 	}
@@ -902,4 +997,3 @@ int main(int argc, char **argv)
 	/* End */
 	return 0;
 }
-
