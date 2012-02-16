@@ -34,7 +34,7 @@ static int can_fetch(int core, int thread)
 		return 0;
 	
 	/* Fetch queue must have not exceeded the limit of stored bytes
-	 * to be able to store new macroinstructions. */
+	 * to be able to store new macro-instructions. */
 	if (THREAD.fetchq_occ >= fetchq_size)
 		return 0;
 	
@@ -53,7 +53,7 @@ static int can_fetch(int core, int thread)
 }
 
 
-/* Execute in the simulation kernel a macroinstruction and create uops.
+/* Execute in the simulation kernel a macro-instruction and create uops.
  * If any of the uops is a control uop, this uop will be the return value of
  * the function. Otherwise, the first decoded uop is returned. */
 static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
@@ -73,7 +73,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 	ctx_execute_inst(ctx);
 	THREAD.fetch_neip = THREAD.fetch_eip + isa_inst.size;
 
-	/* Microinstructions created by the x86 instructions can be found now
+	/* Micro-instructions created by the x86 instructions can be found now
 	 * in 'x86_uinst_list'. */
 	uinst_count = list_count(x86_uinst_list);
 	uinst_index = 0;
@@ -94,7 +94,6 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 		uop->core = core;
 		uop->thread = thread;
 
-		/* FIXME: rename mop_XXX */
 		uop->mop_count = uinst_count;
 		uop->mop_size = isa_inst.size;
 		uop->mop_seq = uop->seq - uinst_index;
@@ -173,8 +172,8 @@ static int fetch_thread_tcache(int core, int thread)
 		return 0;
 	
 	/* Fetch instruction in trace cache line. */
-	for (i = 0; i < mop_count; i++) {
-		
+	for (i = 0; i < mop_count; i++)
+	{
 		/* If instruction caused context to suspend or finish */
 		if (!ctx_get_status(THREAD.ctx, ctx_running))
 			break;
@@ -189,7 +188,8 @@ static int fetch_thread_tcache(int core, int thread)
 
 		/* If instruction is a branch, access branch predictor just in order
 		 * to have the necessary information to update it at commit. */
-		if (uop->flags & X86_UINST_CTRL) {
+		if (uop->flags & X86_UINST_CTRL)
+		{
 			bpred_lookup(THREAD.bpred, uop);
 			uop->pred_neip = i == mop_count - 1 ? neip :
 				mop_array[i + 1];
@@ -216,7 +216,8 @@ static void fetch_thread(int core, int thread)
 	/* If new block to fetch is not the same as the previously fetched (and stored)
 	 * block, access the instruction cache. */
 	block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
-	if (block != THREAD.fetch_block) {
+	if (block != THREAD.fetch_block)
+	{
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
 		THREAD.fetch_block = block;
 		THREAD.fetch_access = cache_system_read(core, thread,
@@ -225,20 +226,24 @@ static void fetch_thread(int core, int thread)
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */
-	while ((THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1)) == block) {
-		
+	while ((THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1)) == block)
+	{
 		/* If instruction caused context to suspend or finish */
 		if (!ctx_get_status(ctx, ctx_running))
 			break;
+	
+		/* If fetch queue full, stop fetching */
+		if (THREAD.fetchq_occ >= fetchq_size)
+			break;
 		
-		/* Insert macroinstruction into the fetch queue. Since the macroinstruction
+		/* Insert macro-instruction into the fetch queue. Since the macro-instruction
 		 * information is only available at this point, we use it to decode
-		 * instruction now and insert uops into the fetchq. However, the fetchq
-		 * occupancy is increased with as many bytes as macroinst size. */
+		 * instruction now and insert uops into the fetch queue. However, the
+		 * fetch queue occupancy is increased with the macro-instruction size. */
 		uop = fetch_inst(core, thread, 0);
 		if (!isa_inst.size)  /* isa_inst invalid - no forward progress in loop */
 			break;
-		if (!uop)  /* no uop was produced by this macroinst */
+		if (!uop)  /* no uop was produced by this macro-instruction */
 			continue;
 
 		/* Instruction detected as branches by the BTB are checked for branch
@@ -265,7 +270,8 @@ static void fetch_core(int core)
 {
 	int thread;
 
-	switch (cpu_fetch_kind) {
+	switch (cpu_fetch_kind)
+	{
 
 	case cpu_fetch_kind_shared:
 	{
