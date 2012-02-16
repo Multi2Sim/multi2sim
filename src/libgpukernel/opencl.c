@@ -141,7 +141,6 @@ int opencl_func_run(int code, unsigned int *args)
 	uint32_t opencl_success = 0;
 	int func_code, func_argc;
 	int retval = 0;
-	int i;
 	
 	/* Decode OpenCL function */
 	assert(code >= OPENCL_FUNC_FIRST && code <= OPENCL_FUNC_LAST);
@@ -1033,21 +1032,6 @@ int opencl_func_run(int code, unsigned int *args)
 		kernel = opencl_kernel_create();
 		kernel->program_id = program_id;
 
-		/* Create the UAV-to-physical-address lookup tables */
-		kernel->uav_read_table = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
-		kernel->uav_write_table = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
-		kernel->constant_table = list_create_with_size(25); /* For constant buffers (128 to 153) */
-		/* FIXME Replace with new list functionality */
-		for(i = 0; i < 12; i++) 
-		{
-			list_add(kernel->uav_read_table, NULL);
-			list_add(kernel->uav_write_table, NULL);
-		}
-		for(i = 0; i < 25; i++) 
-		{
-			list_add(kernel->constant_table, NULL);
-		}
-
 		/* Program must be built */
 		if (!program->elf_file)
 			fatal("%s: program should be first built with clBuildProgram.\n%s",
@@ -1075,9 +1059,6 @@ int opencl_func_run(int code, unsigned int *args)
 		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
 		assert(kernel->ref_count > 0);
 		if (!--kernel->ref_count)
-			list_free(kernel->uav_read_table);
-			list_free(kernel->uav_write_table);
-			list_free(kernel->constant_table);
 			opencl_kernel_free(kernel);
 		break;
 	}

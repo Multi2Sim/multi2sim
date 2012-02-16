@@ -595,11 +595,28 @@ void opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_n
 struct opencl_kernel_t *opencl_kernel_create()
 {
 	struct opencl_kernel_t *kernel;
+	int i;
 
 	kernel = calloc(1, sizeof(struct opencl_kernel_t));
 	kernel->id = opencl_object_new_id(OPENCL_OBJ_KERNEL);
 	kernel->ref_count = 1;
 	kernel->arg_list = list_create();
+
+	/* Create the UAV-to-physical-address lookup tables */
+	kernel->uav_read_table = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
+	kernel->uav_write_table = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
+	kernel->constant_table = list_create_with_size(25); /* For constant buffers (128 to 153) */
+	/* FIXME Replace with new list functionality */
+	for(i = 0; i < 12; i++) 
+	{
+		list_add(kernel->uav_read_table, NULL);
+		list_add(kernel->uav_write_table, NULL);
+	}
+	for(i = 0; i < 25; i++) 
+	{
+		list_add(kernel->constant_table, NULL);
+	}
+
 	opencl_object_add(kernel);
 	return kernel;
 }
@@ -613,6 +630,11 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 	for (i = 0; i < list_count(kernel->arg_list); i++)
 		opencl_kernel_arg_free((struct opencl_kernel_arg_t *) list_get(kernel->arg_list, i));
 	list_free(kernel->arg_list);
+
+	/* Free tables */
+	list_free(kernel->uav_read_table);
+	list_free(kernel->uav_write_table);
+	list_free(kernel->constant_table);
 
 	/* AMD Binary (internal ELF) */
 	if (kernel->amd_bin)
