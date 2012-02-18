@@ -133,6 +133,51 @@ struct amd_bin_t
 struct amd_bin_t *amd_bin_create(void *ptr, int size, char *name);
 void amd_bin_free(struct amd_bin_t *amd_bin);
 
+/*
+ * AMD OpenGL Binary File (Internal ELF)
+ */
+
+/* Shader types */
+enum amd_opengl_shader_kind_t {
+	AMD_OPENGL_SHADER_VERTEX,
+	AMD_OPENGL_SHADER_FRAGMENT,
+	AMD_OPENGL_SHADER_GEOMETRY,
+	AMD_OPENGL_SHADER_EVALUATION,
+	AMD_OPENGL_SHADER_CONTROL
+};
+
+/* OpenGL shader binary */
+struct amd_opengl_shader_t
+{
+	/* Shader kind */
+	enum amd_opengl_shader_kind_t shader_kind;
+
+	/* Associated ELF file */
+	struct elf_file_t *external_elf_file;
+	struct elf_file_t *internal_elf_file;
+
+	/* ISA buffer, which ptr element points to .text section in internel_elf_file  */
+	struct elf_buffer_t isa_buffer;
+};
+
+/* OpenGL shader binary */
+struct amd_opengl_bin_t
+{
+	/* Name of the associated binary file */
+	char *name;
+	
+	/* List of shaders associated with binary file.
+	 * Elements are of type 'struct amd_opengl_shader_t' */
+	struct list_t *shader_list;
+
+	/* NEED or NOT ? */
+	// struct amd_opengl_shader_t *amd_opengl_shader;
+};
+
+struct amd_opengl_bin_t *amd_opengl_bin_create(void *ptr, int size, char *name);
+void amd_opengl_bin_free(struct amd_opengl_bin_t *amd_opengl_bin);
+
+
 
 
 
@@ -1075,7 +1120,7 @@ void gk_libopencl_redirect(char *path, int size);
 void gk_libopencl_failed(int pid);
 
 void gk_disasm(char *path);
-
+void gl_disasm(char *path, int opengl_shader_index);
 
 #endif
 

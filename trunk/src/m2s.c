@@ -32,6 +32,7 @@ static char *syscall_debug_file_name = "";
 static char *opencl_debug_file_name = "";
 static char *cpu_disasm_file_name = "";
 static char *gpu_disasm_file_name = "";
+static char *opengl_disasm_file_name = "";
 static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
 static char *gpu_pipeline_debug_file_name = "";
@@ -47,6 +48,7 @@ static char *ctxconfig_file_name = "";
 static char *elf_debug_file_name = "";
 static char *net_debug_file_name = "";
 
+static int opengl_disasm_shader_index = 1;
 
 /* Error debug */
 int error_debug_category;
@@ -134,6 +136,10 @@ static char *sim_help =
 	"  --gpu-disasm <file>\n"
 	"      Disassemble OpenCL kernel binary provided in <file>. This option must be\n"
 	"      used with no other options.\n"
+	"\n"
+	"  --opengl-disasm <file> <index>\n"
+	"      Disassemble OpenGL shader binary provided in <file>. The shader is specified by <index>\n"
+	"      This option must be used with no other options.\n"
 	"\n"
 	"  --gpu-sim {functional|detailed}\n"
 	"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
@@ -496,6 +502,20 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* OpenGL shader binary disassembler */
+		if (!strcmp(argv[argi], "--opengl-disasm"))
+		{
+			if ( argc != 4 )
+				fatal("option '%s' required two argument.\n%s",
+					argv[argi], err_help_note);			
+			argi++;
+			opengl_disasm_file_name = argv[argi];
+			argi++;
+			opengl_disasm_shader_index = atoi(argv[argi]);
+			continue;
+		}
+
+
 		/* GPU-REL: file to introduce faults  */
 		if (!strcmp(argv[argi], "--gpu-faults"))
 		{
@@ -797,6 +817,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		fatal("option '--gpu-visual' is incompatible with any other options.");
 	if (*gpu_disasm_file_name && argc > 3)
 		fatal("option '--gpu-disasm' is incompatible with any other options.");
+	if (*opengl_disasm_file_name && argc != 4)
+		fatal("option '--opengl-disasm' is incompatible with any other options.");	
 	if (*cpu_disasm_file_name && argc > 3)
 		fatal("option '--cpu-disasm' is incompatible with other options.");
 	if (!*net_sim_network_name && net_sim_last_option)
@@ -903,6 +925,10 @@ int main(int argc, char **argv)
 	/* GPU disassembler tool */
 	if (*gpu_disasm_file_name)
 		gk_disasm(gpu_disasm_file_name);
+
+	/* OpenGL disassembler tool */
+	if (*opengl_disasm_file_name)
+		gl_disasm(opengl_disasm_file_name, opengl_disasm_shader_index);	
 
 	/* GPU visualization tool */
 	if (*gpu_visual_file_name)
