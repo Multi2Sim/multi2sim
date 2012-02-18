@@ -15,10 +15,10 @@ static char *syntax =
 	"\tOptions:\n"
 	"\t-a           Dump intermediate ELF files\n"
 	"\t-v           Vertex shader source code\n"
-	"\t-f            Fragment shader source code\n"
-	"\t-e            Evaluation shader source code\n"
-	"\t-f            Geometry shader source code\n"
-	"\t-c            Control shader source code\n"
+	"\t-f           Fragment shader source code\n"
+	"\t-e           Evaluation shader source code\n"
+	"\t-g           Geometry shader source code\n"
+	"\t-c           Control shader source code\n"
 	"\t-o           Output binary file name\n";
 
 

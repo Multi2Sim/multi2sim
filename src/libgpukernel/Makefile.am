@@ -1,6 +1,7 @@
 lib_LIBRARIES = libgpukernel.a
 libgpukernel_a_SOURCES = \
 	amd-bin.c \
+	amd-opengl-bin.c \
 	gpuisa.c \
 	gpukernel.c \
 	gpukernel.h \
