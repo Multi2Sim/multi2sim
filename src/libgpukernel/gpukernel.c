@@ -288,3 +288,46 @@ void gk_disasm(char *path)
 	exit(0);
 }
 
+/* GPU OpenGL disassembler tool */
+void gl_disasm(char *path, int opengl_shader_index)
+{
+	void *file_buffer;
+	int file_size;
+
+	struct amd_opengl_bin_t *amd_opengl_bin;
+	struct amd_opengl_shader_t *amd_opengl_shader;
+
+	/* Initialize disassembler */
+	amd_disasm_init();
+
+	/* Load file into memory buffer */
+	file_buffer = read_buffer(path, &file_size);
+	if(!file_buffer)
+		fatal("%s:Invalid file!", path);
+
+	/* Analyze the file and initialize structure */	
+	amd_opengl_bin = amd_opengl_bin_create(file_buffer, file_size, path);
+
+	free_buffer(file_buffer);
+
+	/* Basic info of the shader binary */
+	printf("This shader binary contains %d shaders\n\n", list_count(amd_opengl_bin->shader_list));
+	if (opengl_shader_index > list_count(amd_opengl_bin->shader_list) || opengl_shader_index <= 0 )
+	{
+		fatal("Shader index out of range! Please choose <index> from 1 ~ %d", list_count(amd_opengl_bin->shader_list));
+	}
+
+	/* Disaseemble */
+	amd_opengl_shader = list_get(amd_opengl_bin->shader_list, opengl_shader_index -1 );
+	printf("**\n** Disassembly for shader %d\n**\n\n", opengl_shader_index);
+	amd_disasm_buffer(&amd_opengl_shader->isa_buffer, stdout);
+	printf("\n\n\n");
+
+	/* Free */
+	amd_opengl_bin_free(amd_opengl_bin);
+	amd_disasm_done();
+
+	/* End */
+	mhandle_done();
+	exit(0);
+}
