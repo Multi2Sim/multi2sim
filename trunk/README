@@ -147,12 +147,29 @@ Steps to Release a New Version Release (Administrator):
 
 
 ===============================================================================
-
 Command to update Copyright in all files:
+===============================================================================
 
 sources=$(find | grep \\.c$)
 sed -i "s,^ \*  Copyright.*$, *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)," $sources
 
 
 ===============================================================================
+Notes about the memory system
+===============================================================================
+
+When a memory address is accessed in an SRAM bank, the access time is calculated based on the following time components:
+
+* T_precharge: time to store the contents of the row buffer into its corresponding memory location.
+* T_row_buf_access: base access time to the row buffer.
+* T_activate: time to load a memory location into the row buffer.
+
+There are three possibilities to compute the access time T_access, one for each of the following scenarios:
+
+1) Row-closed. The row buffer is empty, and the new row needs to be activated before being accessed. T_access = T_activate + T_row_buf_access.
+2) Row-hit. The row buffer contains the requested address. T_access = T_row_buf_access.
+3) Row-conflict. The row buffer contains a different address. T_access = T_precharge + T_activate + T_row_buf_access.
+
+
+
 

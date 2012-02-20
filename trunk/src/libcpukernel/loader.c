@@ -189,7 +189,7 @@ void ld_add_environ(struct ctx_t *ctx, char *env)
 }
 
 
-#define LD_STACK_BASE  0xffff0000
+#define LD_STACK_BASE  0xc0000000
 #define LD_MAX_ENVIRON  0x10000  /* 16KB for environment */
 #define LD_STACK_SIZE  0x800000  /* 8MB stack size */
 
@@ -356,8 +356,15 @@ static void ld_load_program_headers(struct ctx_t *ctx)
 
 
 /* Load auxiliary vector, and return its size in bytes. */
-#define LD_AV_ENTRY(t, v) { uint32_t a_type = t, a_value = v; \
-	mem_write(mem, sp, 4, &a_type); mem_write(mem, sp + 4, 4, &a_value); sp += 8; }
+
+#define LD_AV_ENTRY(t, v) { \
+	uint32_t a_type = t; \
+	uint32_t a_value = v; \
+	mem_write(mem, sp, 4, &a_type); \
+	mem_write(mem, sp + 4, 4, &a_value); \
+	sp += 8; \
+}
+
 static uint32_t ld_load_av(struct ctx_t *ctx, uint32_t where)
 {
 	struct loader_t *ld = ctx->loader;
@@ -383,6 +390,10 @@ static uint32_t ld_load_av(struct ctx_t *ctx, uint32_t where)
 	LD_AV_ENTRY(17, 0x64);  /* AT_CLKTCK */
 	LD_AV_ENTRY(23, 0);  /* AT_SECURE */
 
+	/* Random bytes */
+	ld->at_random_addr_holder = sp + 4;
+	LD_AV_ENTRY(25, 0);  /* AT_RANDOM */
+
 	/*LD_AV_ENTRY(32, 0xffffe400);
 	LD_AV_ENTRY(33, 0xffffe000);
 	LD_AV_ENTRY(16, 0xbfebfbff);*/
@@ -395,6 +406,35 @@ static uint32_t ld_load_av(struct ctx_t *ctx, uint32_t where)
 }
 #undef LD_AV_ENTRY
 
+
+/* Load stack with the following layout.
+ *
+ * Address		Description			Size	Value
+ * ------------------------------------------------------------------------------
+ * (0xc0000000)		< bottom of stack >		0	(virtual)
+ * (0xbffffffc)		[ end marker ]			4	(= NULL)
+ *
+ * 			[ environment ASCIIZ strings ]	>= 0
+ * 			[ argument ASCIIZ strings ]	>= 0
+ * 			[ padding ]			0 - 16
+ *
+ * 			[ auxv[term] (Elf32_auxv_t) ]	8	(= AT_NULL vector)
+ * 			[ auxv[...] (Elf32_auxv_t) ]
+ * 			[ auxv[1] (Elf32_auxv_t) ]	8
+ * 			[ auxv[0] (Elf32_auxv_t) ]	8
+ *
+ * 			[ envp[term] (pointer) ]	4	(= NULL)
+ * 			[ envp[...] (pointer) ]
+ * 			[ envp[1] (pointer) ]		4
+ * 			[ envp[0] (pointer) ]		4
+ *
+ * 			[ argv[argc] (pointer) ]	4	(= NULL)
+ * 			[ argv[argc - 1] (pointer) ]	4
+ * 			[ argv[...] (pointer) ]
+ * 			[ argv[1] (pointer) ]		4
+ * 			[ argv[0] (pointer) ]		4	(program name)
+ * stack pointer ->	[ argc ]			4	(number of arguments)
+ */
 
 static void ld_load_stack(struct ctx_t *ctx)
 {
@@ -432,7 +472,8 @@ static void ld_load_stack(struct ctx_t *ctx)
 
 	/* Write arguments into stack */
 	ld_debug("\nArguments:\n");
-	for (i = 0; i < argc; i++) {
+	for (i = 0; i < argc; i++)
+	{
 		linked_list_goto(ld->args, i);
 		str = linked_list_get(ld->args);
 		mem_write(mem, argvp + i * 4, 4, &sp);
@@ -444,7 +485,8 @@ static void ld_load_stack(struct ctx_t *ctx)
 
 	/* Write environment variables */
 	ld_debug("\nEnvironment variables:\n");
-	for (i = 0; i < linked_list_count(ld->env); i++) {
+	for (i = 0; i < linked_list_count(ld->env); i++)
+	{
 		linked_list_goto(ld->env, i);
 		str = linked_list_get(ld->env);
 		mem_write(mem, envp + i * 4, 4, &sp);
@@ -454,9 +496,20 @@ static void ld_load_stack(struct ctx_t *ctx)
 	}
 	mem_write(mem, envp + i * 4, 4, &zero);
 
+	/* Random bytes */
+	ld->at_random_addr = sp;
+	for (i = 0; i < 16; i++)
+	{
+		unsigned char c = random();
+		mem_write(mem, sp, 1, &c);
+		sp++;
+	}
+	mem_write(mem, ld->at_random_addr_holder, 4, &ld->at_random_addr);
+
 	/* Check that we didn't overflow */
 	if (sp > LD_STACK_BASE)
-		fatal("'environ' overflow, increment LD_MAX_ENVIRON");
+		fatal("%s: initial stack overflow, increment LD_MAX_ENVIRON",
+			__FUNCTION__);
 }
 
 
