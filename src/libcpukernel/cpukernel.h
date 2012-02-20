@@ -282,6 +282,9 @@ struct loader_t
 	uint32_t environ_base, brk, bottom;
 	uint32_t prog_entry, interp_prog_entry;
 	uint32_t phdt_base, phdr_count;
+
+	uint32_t at_random_addr;
+	uint32_t at_random_addr_holder;
 };
 
 
