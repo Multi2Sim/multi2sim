@@ -134,7 +134,6 @@ struct x86_inst_t
 	int prefixes;  /* Mask of prefixes of type 'enum x86_prefix_t' */
 	int op_size;  /* Operand size: 2 or 4, default 4 */
 	int addr_size;  /* Address size: 2 or 4, default 4 */
-	int rep;  /* Number of iteration for string inst (updated by user) */
 	
 	/* ModR/M Field */
 	unsigned char modrm;  /* ModR/M field */

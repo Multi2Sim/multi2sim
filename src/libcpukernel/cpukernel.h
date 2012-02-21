@@ -858,6 +858,13 @@ struct ctx_t
 	uint32_t robust_list_head;  /* robust futex list */
 	uint32_t initial_stack;  /* Value of esp when context is cloned */
 
+	/* For emulation of string operations */
+	uint32_t last_eip;  /* Eip of last emulated instruction */
+	uint32_t str_op_esi;  /* Initial value for register 'esi' in string operation */
+	uint32_t str_op_edi;  /* Initial value for register 'edi' in string operation */
+	int str_op_dir;  /* Direction: 1 = forward, -1 = backward */
+	int str_op_count;  /* Number of iterations in string operation */
+
 	/* Allocation to hardware threads */
 	uint64_t alloc_when;  /* esim_cycle of allocation */
 	uint64_t dealloc_when;  /* esim_cycle of deallocation */
