@@ -37,183 +37,103 @@
 #define assert __COMPILATION_ERROR__
 
 
-/* For macros implementing string operations with repetition prefixes, loops are repeated
- * only once if there is speculative execution. There are two reasons for this:
- *   1) A speculative value in register 'isa_regs->ecx' is undefined and could be extremely
- *      large, causing the functional simulator to stall if the insruction is executed
- *      normally.
- *   2) Internal branch micro-instructions (x86_uinst_ibranch) generated here are interpreted
- *      by the architectural simulator as branches that jump to the same instruction. The
- *      BTB always returns 'uop->eip' as a branch target address. This will cause the
- *      string instruction to be fetched continuously until the first non-taken branch is
- *      resolved. For every time the string instruction is fetched in speculative mode,
- *      i.e., any time but the first one, only one group of micro-instructions will be
- *      inserted to the pipeline, corresponding to one iteration of the loop.
- */
+/* Reset or update iteration counters for string operations. */
+static void op_rep_init(void)
+{
+	if (isa_ctx->last_eip == isa_eip)
+	{
+		isa_ctx->str_op_count++;
+	}
+	else
+	{
+		isa_ctx->str_op_count = 0;
+		isa_ctx->str_op_esi = isa_regs->esi;
+		isa_ctx->str_op_edi = isa_regs->edi;
+		isa_ctx->str_op_dir = isa_regs->eflags & (1 << 10) ? -1 : 1;
+	}
+}
 
 
-#define OP_REP_IMPL(X) \
+#define OP_REP_IMPL(X, SIZE) \
 	void op_rep_##X##_impl() \
 	{ \
-		isa_inst.rep = 0; \
-		if (isa_spec_mode) \
+		op_rep_init(); \
+		\
+		if (isa_regs->ecx) \
 		{ \
-			op_##X##_impl(); \
+			op_##X##_run(); \
 			isa_regs->ecx--; \
-			isa_inst.rep++; \
-			\
-			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
-			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, 0, 0, 0, 0, 0, 0); \
-			return; \
+			isa_regs->eip -= isa_inst.size; \
 		} \
 		\
-		while (isa_regs->ecx) \
-		{ \
-			op_##X##_impl(); \
-			isa_regs->ecx--; \
-			isa_inst.rep++; \
-			\
-			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
-			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, 0, 0, 0, 0, 0, 0); \
-		} \
+		op_##X##_uinst( \
+			isa_ctx->str_op_esi + isa_ctx->str_op_count * (SIZE) * isa_ctx->str_op_dir, \
+			isa_ctx->str_op_edi + isa_ctx->str_op_count * (SIZE) * isa_ctx->str_op_dir); \
+		x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
+		x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, 0, 0, 0, 0, 0, 0); \
 	}
 
 
-#define OP_REPZ_IMPL(X) \
+#define OP_REPZ_IMPL(X, SIZE) \
 	void op_repz_##X##_impl() \
 	{ \
-		isa_inst.rep = 0; \
-		if (isa_spec_mode) { \
-			op_##X##_impl(); \
+		op_rep_init(); \
+		\
+		if (isa_regs->ecx) \
+		{ \
+			op_##X##_run(); \
 			isa_regs->ecx--; \
-			isa_inst.rep++; \
-			\
-			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
-			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
-			return; \
+			if (isa_get_flag(x86_flag_zf)) \
+				isa_regs->eip -= isa_inst.size; \
 		} \
 		\
-		while (isa_regs->ecx) \
-		{ \
-			op_##X##_impl(); \
-			isa_regs->ecx--; \
-			isa_inst.rep++; \
-			\
-			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
-			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
-			if (!isa_get_flag(x86_flag_zf)) \
-				break; \
-		} \
+		op_##X##_uinst( \
+			isa_ctx->str_op_esi + isa_ctx->str_op_count * (SIZE) * isa_ctx->str_op_dir, \
+			isa_ctx->str_op_edi + isa_ctx->str_op_count * (SIZE) * isa_ctx->str_op_dir); \
+		x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
+		x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
 	}
 
 
-#define OP_REPNZ_IMPL(X) \
+#define OP_REPNZ_IMPL(X, SIZE) \
 	void op_repnz_##X##_impl() \
 	{ \
-		isa_inst.rep = 0; \
-		if (isa_spec_mode) { \
-			op_##X##_impl(); \
+		op_rep_init(); \
+		\
+		if (isa_regs->ecx) \
+		{ \
+			op_##X##_run(); \
 			isa_regs->ecx--; \
-			isa_inst.rep++; \
-			\
-			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
-			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
-			return; \
+			if (!isa_get_flag(x86_flag_zf)) \
+				isa_regs->eip -= isa_inst.size; \
 		} \
 		\
-		while (isa_regs->ecx) \
-		{ \
-			op_##X##_impl(); \
-			isa_regs->ecx--; \
-			isa_inst.rep++; \
-			\
-			x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
-			x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
-			if (isa_get_flag(x86_flag_zf)) \
-				break; \
-		} \
+		op_##X##_uinst( \
+			isa_ctx->str_op_esi + isa_ctx->str_op_count * (SIZE) * isa_ctx->str_op_dir, \
+			isa_ctx->str_op_edi + isa_ctx->str_op_count * (SIZE) * isa_ctx->str_op_dir); \
+		x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
+		x86_uinst_new(x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
 	}
-
-
-
-
-/* Implementation of string instructions with the
- * REP, REPZ or REPNZ preffix. */
-
-void op_insb_impl()
-{
-	isa_error("%s: not implemented", __FUNCTION__);
-}
-
-
-void op_insd_impl()
-{
-	isa_error("%s: not implemented", __FUNCTION__);
-}
-
-
-void op_lodsb_impl()
-{
-	isa_error("%s: not implemented", __FUNCTION__);
-}
-
-
-void op_lodsd_impl()
-{
-	isa_error("%s: not implemented", __FUNCTION__);
-}
-
-
-void op_outsb_impl()
-{
-	isa_error("%s: not implemented", __FUNCTION__);
-}
-
-
-void op_outsd_impl()
-{
-	isa_error("%s: not implemented", __FUNCTION__);
-}
-
-
-
-OP_REP_IMPL(insb)
-OP_REP_IMPL(insd)
-
-OP_REP_IMPL(movsb)
-OP_REP_IMPL(movsw)
-OP_REP_IMPL(movsd)
-
-OP_REP_IMPL(outsb)
-OP_REP_IMPL(outsd)
-
-OP_REP_IMPL(lodsb)
-OP_REP_IMPL(lodsd)
-
-OP_REP_IMPL(stosb)
-OP_REP_IMPL(stosd)
-
-OP_REPZ_IMPL(cmpsb)
-OP_REPZ_IMPL(cmpsd)
-
-OP_REPZ_IMPL(scasb)
-OP_REPZ_IMPL(scasd)
-
-OP_REPNZ_IMPL(cmpsb)
-OP_REPNZ_IMPL(cmpsd)
-
-OP_REPNZ_IMPL(scasb)
-OP_REPNZ_IMPL(scasd)
 
 
 
 
 /*
- * String Instructions
+ * CMPSB
  */
 
+static void op_cmpsb_uinst(uint32_t esi, uint32_t edi)
+{
+	x86_uinst_new_mem(x86_uinst_load, esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, edi, 1, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_aux2, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
 
-void op_cmpsb_impl()
+	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
+}
+
+
+static void op_cmpsb_run(void)
 {
 	uint8_t op1, op2;
 	unsigned long flags;
@@ -236,20 +156,37 @@ void op_cmpsb_impl()
 	);
 	__ISA_ASM_END__
 
-	x86_uinst_new_mem(x86_uinst_load, isa_regs->esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 1, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
-	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_aux2, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
-
 	isa_regs->eflags = flags;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -1 : 1;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
+}
+
+
+void op_cmpsb_impl()
+{
+	op_cmpsb_uinst(isa_regs->esi, isa_regs->edi);
+	op_cmpsb_run();
+}
+
+
+
+
+/*
+ * CMPSD
+ */
+
+static void op_cmpsd_uinst(uint32_t esi, uint32_t edi)
+{
+	x86_uinst_new_mem(x86_uinst_load, esi, 4, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_load, edi, 4, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_aux2, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
 
 	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
 	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
-void op_cmpsd_impl()
+static void op_cmpsd_run(void)
 {
 	uint32_t op1, op2;
 	unsigned long flags;
@@ -272,31 +209,181 @@ void op_cmpsd_impl()
 	);
 	__ISA_ASM_END__ \
 
-	x86_uinst_new_mem(x86_uinst_load, isa_regs->esi, 4, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 4, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
-	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_aux2, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
-
 	isa_regs->eflags = flags;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -4 : 4;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
-
-	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
-	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
-void op_movsb_impl()
+void op_cmpsd_impl()
+{
+	op_cmpsd_uinst(isa_regs->esi, isa_regs->edi);
+	op_cmpsd_run();
+}
+
+
+
+
+/*
+ * INSB
+ */
+
+static void op_insb_run(void)
+{
+	/* Not implemented */
+}
+
+
+static void op_insb_uinst(uint32_t esi, uint32_t edi)
+{
+	/* Not implemented */
+}
+
+
+void op_insb_impl()
+{
+	op_insb_uinst(isa_regs->esi, isa_regs->edi);
+	op_insb_run();
+	isa_error("%s: not implemented", __FUNCTION__);
+}
+
+
+
+
+/*
+ * INSD
+ */
+
+static void op_insd_run(void)
+{
+	/* Not implemented */
+}
+
+
+static void op_insd_uinst(uint32_t esi, uint32_t edi)
+{
+	/* Not implemented */
+}
+
+
+void op_insd_impl()
+{
+	op_insd_uinst(isa_regs->esi, isa_regs->edi);
+	op_insd_run();
+	isa_error("%s: not implemented", __FUNCTION__);
+}
+
+
+
+
+/*
+ * LODSB
+ */
+
+static void op_lodsb_run(void)
+{
+	/* Not implemented */
+}
+
+
+static void op_lodsb_uinst(uint32_t esi, uint32_t edi)
+{
+	/* Not implemented */
+}
+
+
+void op_lodsb_impl()
+{
+	op_lodsb_uinst(isa_regs->esi, isa_regs->edi);
+	op_lodsb_run();
+	isa_error("%s: not implemented", __FUNCTION__);
+}
+
+
+
+
+/*
+ * LODSD
+ */
+
+static void op_lodsd_run(void)
+{
+	/* Not implemented */
+}
+
+
+static void op_lodsd_uinst(uint32_t esi, uint32_t edi)
+{
+	/* Not implemented */
+}
+
+
+void op_lodsd_impl()
+{
+	op_lodsd_uinst(isa_regs->esi, isa_regs->edi);
+	op_lodsd_run();
+	isa_error("%s: not implemented", __FUNCTION__);
+}
+
+
+
+
+/*
+ * MOVSB
+ */
+
+static void op_movsb_run(void)
 {
 	uint8_t m8;
 
 	isa_mem_read(isa_mem, isa_regs->esi, 1, &m8);
 	isa_mem_write(isa_mem, isa_regs->edi, 1, &m8);
 
-	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 1, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(x86_uinst_store, isa_regs->esi, 1, x86_dep_esi, x86_dep_aux, 0, 0, 0, 0, 0);
-
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
 	isa_regs->esi += isa_get_flag(x86_flag_df) ? -1 : 1;
+}
+
+
+static void op_movsb_uinst(uint32_t esi, uint32_t edi)
+{
+	x86_uinst_new_mem(x86_uinst_load, esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, edi, 1, x86_dep_edi, x86_dep_aux, 0, 0, 0, 0, 0);
+
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
+}
+
+
+void op_movsb_impl()
+{
+	op_movsb_uinst(isa_regs->esi, isa_regs->edi);
+	op_movsb_run();
+}
+
+
+
+
+/*
+ * MOVSW
+ */
+
+static void op_movsw_run(void)
+{
+	uint16_t m16;
+
+	isa_mem_read(isa_mem, isa_regs->esi, 2, &m16);
+	isa_mem_write(isa_mem, isa_regs->edi, 2, &m16);
+
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -2 : 2;
+	isa_regs->esi += isa_get_flag(x86_flag_df) ? -2 : 2;
+
+}
+
+
+static void op_movsw_uinst(uint32_t esi, uint32_t edi)
+{
+	x86_uinst_new_mem(x86_uinst_load, esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, edi, 1, x86_dep_edi, x86_dep_aux, 0, 0, 0, 0, 0);
 
 	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
@@ -305,16 +392,33 @@ void op_movsb_impl()
 
 void op_movsw_impl()
 {
-	uint16_t m16;
+	op_movsw_uinst(isa_regs->esi, isa_regs->edi);
+	op_movsw_run();
+}
 
-	isa_mem_read(isa_mem, isa_regs->esi, 2, &m16);
-	isa_mem_write(isa_mem, isa_regs->edi, 2, &m16);
 
-	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 2, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(x86_uinst_store, isa_regs->esi, 2, x86_dep_esi, x86_dep_aux, 0, 0, 0, 0, 0);
 
-	isa_regs->edi += isa_get_flag(x86_flag_df) ? -2 : 2;
-	isa_regs->esi += isa_get_flag(x86_flag_df) ? -2 : 2;
+/*
+ * MOVSD
+ */
+
+static void op_movsd_run(void)
+{
+	uint32_t m32;
+
+	isa_mem_read(isa_mem, isa_regs->esi, 4, &m32);
+	isa_mem_write(isa_mem, isa_regs->edi, 4, &m32);
+
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
+	isa_regs->esi += isa_get_flag(x86_flag_df) ? -4 : 4;
+
+}
+
+
+static void op_movsd_uinst(uint32_t esi, uint32_t edi)
+{
+	x86_uinst_new_mem(x86_uinst_load, esi, 4, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new_mem(x86_uinst_store, edi, 4, x86_dep_edi, x86_dep_aux, 0, 0, 0, 0, 0);
 
 	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
@@ -323,23 +427,70 @@ void op_movsw_impl()
 
 void op_movsd_impl()
 {
-	uint32_t m32;
-
-	isa_mem_read(isa_mem, isa_regs->esi, 4, &m32);
-	isa_mem_write(isa_mem, isa_regs->edi, 4, &m32);
-
-	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 4, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(x86_uinst_store, isa_regs->esi, 4, x86_dep_esi, x86_dep_aux, 0, 0, 0, 0, 0);
-
-	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
-	isa_regs->esi += isa_get_flag(x86_flag_df) ? -4 : 4;
-
-	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
-	x86_uinst_new(x86_uinst_add, x86_dep_esi, x86_dep_df, 0, x86_dep_esi, 0, 0, 0);
+	op_movsd_uinst(isa_regs->esi, isa_regs->edi);
+	op_movsd_run();
 }
 
 
-void op_scasb_impl()
+
+
+/*
+ * OUTSB
+ */
+
+static void op_outsb_run(void)
+{
+	/* Not implemented */
+}
+
+
+static void op_outsb_uinst(uint32_t esi, uint32_t edi)
+{
+	/* Not implemented */
+}
+
+
+void op_outsb_impl()
+{
+	op_outsb_uinst(isa_regs->esi, isa_regs->edi);
+	op_outsb_run();
+	isa_error("%s: not implemented", __FUNCTION__);
+}
+
+
+
+
+/*
+ * OUTSD
+ */
+
+static void op_outsd_run(void)
+{
+	/* Not implemented */
+}
+
+
+static void op_outsd_uinst(uint32_t esi, uint32_t edi)
+{
+	/* Not implemented */
+}
+
+
+void op_outsd_impl()
+{
+	op_outsd_uinst(isa_regs->esi, isa_regs->edi);
+	op_outsd_run();
+	isa_error("%s: not implemented", __FUNCTION__);
+}
+
+
+
+
+/*
+ * SCAS
+ */
+
+static void op_scasb_run(void)
 {
 	uint8_t al = isa_load_reg(x86_reg_al);
 	uint8_t m8;
@@ -361,17 +512,33 @@ void op_scasb_impl()
 	);
 	__ISA_ASM_END__ \
 
-	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 1, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_eax, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
-
 	isa_regs->eflags = flags;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
 
+}
+
+
+static void op_scasb_uinst(uint32_t esi, uint32_t edi)
+{
+	x86_uinst_new_mem(x86_uinst_load, edi, 1, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_eax, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
 	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
-void op_scasd_impl()
+void op_scasb_impl()
+{
+	op_scasb_uinst(isa_regs->esi, isa_regs->edi);
+	op_scasb_run();
+}
+
+
+
+/*
+ * SCASD
+ */
+
+static void op_scasd_run(void)
 {
 	uint32_t eax = isa_load_reg(x86_reg_eax);
 	uint32_t m32;
@@ -393,40 +560,117 @@ void op_scasd_impl()
 	);
 	__ISA_ASM_END__ \
 
-	x86_uinst_new_mem(x86_uinst_load, isa_regs->edi, 4, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_eax, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
-
 	isa_regs->eflags = flags;
 	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
 
+}
+
+
+static void op_scasd_uinst(uint32_t esi, uint32_t edi)
+{
+	x86_uinst_new_mem(x86_uinst_load, edi, 4, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
+	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_eax, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
+	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
+}
+
+
+void op_scasd_impl()
+{
+	op_scasd_uinst(isa_regs->esi, isa_regs->edi);
+	op_scasd_run();
+}
+
+
+
+/*
+ * STOSB
+ */
+
+static void op_stosb_run(void)
+{
+	uint8_t m8 = isa_load_reg(x86_reg_al);
+	uint32_t addr = isa_load_reg(x86_reg_edi);
+	
+	isa_mem_write(isa_mem, addr, 1, &m8);
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
+}
+
+
+static void op_stosb_uinst(uint32_t esi, uint32_t edi)
+{
+	x86_uinst_new_mem(x86_uinst_store, edi, 1, x86_dep_edi, x86_dep_eax, 0, 0, 0, 0, 0);
 	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
 void op_stosb_impl()
 {
-	uint8_t m8 = isa_load_reg(x86_reg_al);
+	op_stosb_uinst(isa_regs->esi, isa_regs->edi);
+	op_stosb_run();
+}
+
+
+
+
+/*
+ * STOSD
+ */
+
+static void op_stosd_run(void)
+{
+	uint32_t m32 = isa_load_reg(x86_reg_eax);
 	uint32_t addr = isa_load_reg(x86_reg_edi);
-	isa_mem_write(isa_mem, addr, 1, &m8);
+	
+	isa_mem_write(isa_mem, addr, 4, &m32);
+	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
+}
 
-	x86_uinst_new_mem(x86_uinst_store, addr, 1, x86_dep_edi, x86_dep_eax, 0, 0, 0, 0, 0);
 
-	isa_regs->edi += isa_get_flag(x86_flag_df) ? -1 : 1;
-
+static void op_stosd_uinst(uint32_t esi, uint32_t edi)
+{
+	x86_uinst_new_mem(x86_uinst_store, edi, 4, x86_dep_edi, x86_dep_eax, 0, 0, 0, 0, 0);
 	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
 void op_stosd_impl()
 {
-	uint32_t m32 = isa_load_reg(x86_reg_eax);
-	uint32_t addr = isa_load_reg(x86_reg_edi);
-	isa_mem_write(isa_mem, addr, 4, &m32);
-
-	x86_uinst_new_mem(x86_uinst_store, addr, 4, x86_dep_edi, x86_dep_eax, 0, 0, 0, 0, 0);
-
-	isa_regs->edi += isa_get_flag(x86_flag_df) ? -4 : 4;
-
-	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
+	op_stosd_uinst(isa_regs->esi, isa_regs->edi);
+	op_stosd_run();
 }
+
+
+
+
+/*
+ * Repetition prefixes
+ */
+
+OP_REP_IMPL(insb, 1)
+OP_REP_IMPL(insd, 4)
+
+OP_REP_IMPL(movsb, 1)
+OP_REP_IMPL(movsw, 2)
+OP_REP_IMPL(movsd, 4)
+
+OP_REP_IMPL(outsb, 1)
+OP_REP_IMPL(outsd, 4)
+
+OP_REP_IMPL(lodsb, 1)
+OP_REP_IMPL(lodsd, 4)
+
+OP_REP_IMPL(stosb, 1)
+OP_REP_IMPL(stosd, 4)
+
+OP_REPZ_IMPL(cmpsb, 1)
+OP_REPZ_IMPL(cmpsd, 4)
+
+OP_REPZ_IMPL(scasb, 1)
+OP_REPZ_IMPL(scasd, 4)
+
+OP_REPNZ_IMPL(cmpsb, 1)
+OP_REPNZ_IMPL(cmpsd, 4)
+
+OP_REPNZ_IMPL(scasb, 1)
+OP_REPNZ_IMPL(scasd, 4)
 
