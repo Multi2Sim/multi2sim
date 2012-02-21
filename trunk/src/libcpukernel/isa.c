@@ -776,7 +776,6 @@ void isa_dump(FILE *f)
 	fprintf(f, "  ");
 	x86_inst_dump(&isa_inst, f);
 	fprintf(f, "  (%d bytes)\n", isa_inst.size);
-	fprintf(f, "  rep=%d\n", isa_inst.rep);
 	fprintf(f, "isa_regs:\n");
 	regs_dump(isa_regs, f);
 }
@@ -803,18 +802,14 @@ void isa_execute_inst(void)
 	isa_regs->eip = isa_regs->eip + isa_inst.size;
 	if (isa_inst.opcode)
 		inst_impl_table[isa_inst.opcode]();
+	isa_ctx->last_eip = isa_eip;
+	
+	/* Stats */
 	inst_freq[isa_inst.opcode]++;
 
 	/* Debug */
 	isa_inst_debug("\n");
 	if (debug_status(isa_call_debug_category))
 		isa_debug_call();
-
-	///////////////////
-	/*printf("%x: ", isa_inst.eip);
-	x86_inst_dump(&isa_inst, stdout);
-	printf("\n");
-	x86_uinst_list_dump(stdout);
-	printf("\n");*/
-	/////////////////
 }
+
