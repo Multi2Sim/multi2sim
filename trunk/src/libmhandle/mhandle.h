@@ -45,7 +45,7 @@
 #define mhandle_done()
 #define mhandle_used_memory() (0UL)
 
-#endif // MHANDLE
+#endif
 
 
 void *mhandle_malloc(unsigned long size, char *at);
@@ -59,3 +59,4 @@ void __mhandle_done();
 unsigned long __mhandle_used_memory();
 
 #endif
+
