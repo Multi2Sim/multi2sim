@@ -83,14 +83,14 @@ AC_SUBST([PKGDATADIR])
 # Debug and profile
 # ---------------------------------------------------------------------
 debug=false
-CFLAGS="-fno-strict-aliasing -O3"
+CFLAGS="-fno-strict-aliasing -O3 -std=gnu99"
 AC_ARG_ENABLE(debug,
 [  --enable-debug    Turn on debugging],
 [
 	case "${enableval}" in
 	yes)
 		debug=true
-		CFLAGS="-Wall -Werror -fno-strict-aliasing -DMHANDLE -g -O0"
+		CFLAGS="-Wall -Werror -fno-strict-aliasing -DMHANDLE -g -O0 -std=gnu99"
 		;;
 	no)
 		;;
