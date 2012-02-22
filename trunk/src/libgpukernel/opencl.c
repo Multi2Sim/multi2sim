@@ -1673,6 +1673,14 @@ int opencl_func_run(int code, unsigned int *args)
 		opencl_debug_array(work_dim, kernel->local_size3);
 		opencl_debug("\n");
 
+		/* Check valid global/local sizes */
+		if (kernel->global_size3[0] < 1 || kernel->global_size3[1] < 1
+				|| kernel->global_size3[2] < 1)
+			fatal("%s: invalid global size.\n%s", err_prefix, err_opencl_param_note);
+		if (kernel->local_size3[0] < 1 || kernel->local_size3[1] < 1
+				|| kernel->local_size3[2] < 1)
+			fatal("%s: invalid local size.\n%s", err_prefix, err_opencl_param_note);
+
 		/* Check divisibility of global by local sizes */
 		if ((kernel->global_size3[0] % kernel->local_size3[0])
 			|| (kernel->global_size3[1] % kernel->local_size3[1])
