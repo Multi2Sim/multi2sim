@@ -690,7 +690,6 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
 	uint32_t alen;  /* Aligned len */
 	struct fd_t *fd;
 	int perm, host_fd;
-	void *host_ptr;
 
 	/* Check that protection flags match in guest and host */
 	assert(PROT_READ == 1);
@@ -729,8 +728,8 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
 	alen = ROUND_UP(len, MEM_PAGE_SIZE);
 
 	/* Find region for allocation */
-	if (flags & MAP_FIXED) {
-	 	
+	if (flags & MAP_FIXED)
+	{
 		/* If MAP_FIXED is set, the 'addr' parameter must be obeyed, and is not just a
 		 * hint for a possible base address of the allocated range. */
 		if (!addr)
@@ -739,9 +738,9 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
 		/* Any allocated page in the range specified by 'addr' and 'len'
 		 * must be discarded. */
 		mem_unmap(isa_mem, addr, alen);
-
-	} else {
-
+	}
+	else
+	{
 		if (!addr || mem_map_space_down(isa_mem, addr, alen) != addr)
 			addr = MMAP_BASE_ADDRESS;
 		addr = mem_map_space_down(isa_mem, addr, alen);
@@ -753,13 +752,31 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
 	mem_map(isa_mem, addr, alen, perm);
 
 	/* Host mapping */
-	if (host_fd >= 0) {
-		host_ptr = mmap(NULL, len, prot, flags & ~MAP_FIXED, host_fd, offset);
-		if (host_ptr == MAP_FAILED)
-			fatal("do_mmap: host call to 'mmap' failed");
-		mem_map_host(isa_mem, fd, addr, alen, perm, host_ptr);
-		syscall_debug("    host_ptr=%p\n", host_ptr);
-		syscall_debug("    host_fd=%d\n", host_fd);
+	if (host_fd >= 0)
+	{
+		unsigned char buf[MEM_PAGE_SIZE];
+		off_t last_pos;
+		int size;
+		uint32_t curr_addr;
+
+		/* Save previous position */
+		last_pos = lseek(host_fd, 0, SEEK_CUR);
+		lseek(host_fd, offset, SEEK_SET);
+
+		/* Read pages */
+		assert(alen % MEM_PAGE_SIZE == 0);
+		assert(addr % MEM_PAGE_SIZE == 0);
+		curr_addr = addr;
+		for (size = alen; size > 0; size -= MEM_PAGE_SIZE)
+		{
+			memset(buf, 0, MEM_PAGE_SIZE);
+			read(host_fd, buf, MEM_PAGE_SIZE);
+			mem_access(isa_mem, curr_addr, MEM_PAGE_SIZE, buf, mem_access_init);
+			curr_addr += MEM_PAGE_SIZE;
+		}
+
+		/* Return file to last position */
+		lseek(host_fd, last_pos, SEEK_SET);
 	}
 
 	return addr;
@@ -2025,7 +2042,6 @@ void syscall_do()
 
 			/*if (uinfo.entry_number != 6)
 				fatal("syscall clone: uinfo.entry_number=0x%x (!= 6)", uinfo.entry_number);*/
-			/// FIXME? ///
 			uinfo.entry_number = 6;
 			mem_write(isa_mem, puinfo, 4, &uinfo.entry_number);
 
