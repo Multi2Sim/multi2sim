@@ -105,17 +105,6 @@ enum mem_access_t
 /* Safe mode */
 extern int mem_safe_mode;
 
-/* Host mapping: mappings performed with file descriptors other than -1 */
-struct mem_host_mapping_t
-{
-	void *host_ptr;  /* Pointer to the host memory space */
-	uint32_t addr;  /* Guest range base */
-	uint32_t size;  /* Host mapping size */
-	int pages;  /* Number of allocated pages left */
-	char path[MAX_PATH_SIZE];  /* Path of the mapped file */
-	struct mem_host_mapping_t *next;  /* Linked list */
-};
-
 /* A 4KB page of memory */
 struct mem_page_t
 {
@@ -123,7 +112,6 @@ struct mem_page_t
 	enum mem_access_t perm;  /* Access permissions; combination of flags */
 	struct mem_page_t *next;
 	unsigned char *data;
-	struct mem_host_mapping_t *host_mapping;  /* If other than null, page is host mapping */
 };
 
 struct mem_t
@@ -132,7 +120,6 @@ struct mem_t
 	int sharing;  /* Number of contexts sharing memory map */
 	uint32_t last_address;  /* Address of last access */
 	int safe;  /* Safe mode */
-	struct mem_host_mapping_t *host_mapping_list;  /* List of host mappings */
 };
 
 extern unsigned long mem_mapped_space;
@@ -149,10 +136,6 @@ uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size);
 
 void mem_map(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t perm);
 void mem_unmap(struct mem_t *mem, uint32_t addr, int size);
-
-void mem_map_host(struct mem_t *mem, struct fd_t *fd, uint32_t addr,
-	int size, enum mem_access_t perm, void *data);
-void mem_unmap_host(struct mem_t *mem, uint32_t addr);
 
 void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t perm);
 void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size);
