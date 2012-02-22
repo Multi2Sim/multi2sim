@@ -40,13 +40,15 @@ struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr)
 	prev = NULL;
 	
 	/* Look for page */
-	while (page && page->tag != tag) {
+	while (page && page->tag != tag)
+	{
 		prev = page;
 		page = page->next;
 	}
 	
 	/* Place page into list head */
-	if (prev && page) {
+	if (prev && page)
+	{
 		prev->next = page->next;
 		page->next = mem->pages[index];
 		mem->pages[index] = page;
@@ -82,8 +84,10 @@ struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr)
 	mintag = 0xffffffff;
 	minpage = NULL;
 	for (index = 0; index < MEM_PAGE_COUNT; index++) {
-		for (page = mem->pages[index]; page; page = page->next) {
-			if (page->tag > tag && page->tag < mintag) {
+		for (page = mem->pages[index]; page; page = page->next)
+		{
+			if (page->tag > tag && page->tag < mintag)
+			{
 				mintag = page->tag;
 				minpage = page;
 			}
@@ -101,11 +105,14 @@ static struct mem_page_t *mem_page_create(struct mem_t *mem, uint32_t addr, int 
 	uint32_t index, tag;
 	struct mem_page_t *page;
 
-	tag = addr & ~(MEM_PAGE_SIZE - 1);
-	index = (addr >> MEM_LOG_PAGE_SIZE) % MEM_PAGE_COUNT;
-	
 	/* Create new page */
 	page = calloc(1, sizeof(struct mem_page_t));
+	if (!page)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	tag = addr & ~(MEM_PAGE_SIZE - 1);
+	index = (addr >> MEM_LOG_PAGE_SIZE) % MEM_PAGE_COUNT;
 	page->tag = tag;
 	page->perm = perm;
 	
@@ -114,6 +121,8 @@ static struct mem_page_t *mem_page_create(struct mem_t *mem, uint32_t addr, int 
 	mem->pages[index] = page;
 	mem_mapped_space += MEM_PAGE_SIZE;
 	mem_max_mapped_space = MAX(mem_max_mapped_space, mem_mapped_space);
+
+	/* Return */
 	return page;
 }
 
@@ -123,7 +132,6 @@ static void mem_page_free(struct mem_t *mem, uint32_t addr)
 {
 	uint32_t index, tag;
 	struct mem_page_t *prev, *page;
-	struct mem_host_mapping_t *hm;
 	
 	tag = addr & ~(MEM_PAGE_SIZE - 1);
 	index = (addr >> MEM_LOG_PAGE_SIZE) % MEM_PAGE_COUNT;
@@ -131,26 +139,14 @@ static void mem_page_free(struct mem_t *mem, uint32_t addr)
 
 	/* Find page */
 	page = mem->pages[index];
-	while (page && page->tag != tag) {
+	while (page && page->tag != tag)
+	{
 		prev = page;
 		page = page->next;
 	}
 	if (!page)
 		return;
 	
-	/* If page belongs to a host mapping, release it if
-	 * this is the last page allocated for it. */
-	hm = page->host_mapping;
-	if (hm) {
-		assert(hm->pages > 0);
-		assert(tag >= hm->addr && tag + MEM_PAGE_SIZE <= hm->addr + hm->size);
-		hm->pages--;
-		page->data = NULL;
-		page->host_mapping = NULL;
-		if (!hm->pages)
-			mem_unmap_host(mem, hm->addr);
-	}
-
 	/* Free page */
 	if (prev)
 		prev->next = page->next;
@@ -178,8 +174,8 @@ void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size)
 		fatal("mem_copy: cannot copy overlapping regions");
 	
 	/* Copy */
-	while (size > 0) {
-		
+	while (size > 0)
+	{
 		/* Get source and destination pages */
 		page_dest = mem_page_get(mem, dest);
 		page_src = mem_page_get(mem, src);
@@ -187,11 +183,18 @@ void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size)
 		
 		/* Different actions depending on whether source and
 		 * destination page data are allocated. */
-		if (page_src->data) {
+		if (page_src->data)
+		{
 			if (!page_dest->data)
+			{
 				page_dest->data = malloc(MEM_PAGE_SIZE);
+				if (!page_dest->data)
+					fatal("%s: out of memory", __FUNCTION__);
+			}
 			memcpy(page_dest->data, page_src->data, MEM_PAGE_SIZE);
-		} else {
+		}
+		else
+		{
 			if (page_dest->data)
 				memset(page_dest->data, 0, MEM_PAGE_SIZE);
 		}
@@ -229,7 +232,11 @@ void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size,
 	
 	/* Allocate and initialize page data if it does not exist yet. */
 	if (!page->data)
+	{
 		page->data = calloc(1, MEM_PAGE_SIZE);
+		if (!page->data)
+			fatal("%s: out of memory", __FUNCTION__);
+	}
 	
 	/* Return pointer to page data */
 	return page->data + offset;
@@ -250,17 +257,21 @@ static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
 
 	/* On nonexistent page, raise segmentation fault in safe mode,
 	 * or create page with full privileges for writes in unsafe mode. */
-	if (!page) {
+	if (!page)
+	{
 		if (mem->safe)
 			fatal("illegal access at 0x%x: page not allocated", addr);
-		if (access == mem_access_read || access == mem_access_exec) {
+		if (access == mem_access_read || access == mem_access_exec)
+		{
 			memset(buf, 0, size);
 			return;
 		}
 		if (access == mem_access_write || access == mem_access_init)
+		{
 			page = mem_page_create(mem, addr, mem_access_read |
 				mem_access_write | mem_access_exec |
 				mem_access_init);
+		}
 	}
 	assert(page);
 
@@ -274,7 +285,8 @@ static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
 		fatal("mem_access: permission denied at 0x%x", addr);
 
 	/* Read/execute access */
-	if (access == mem_access_read || access == mem_access_exec) {
+	if (access == mem_access_read || access == mem_access_exec)
+	{
 		if (page->data)
 			memcpy(buf, page->data + offset, size);
 		else
@@ -283,9 +295,14 @@ static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
 	}
 
 	/* Write/initialize access */
-	if (access == mem_access_write || access == mem_access_init) {
+	if (access == mem_access_write || access == mem_access_init)
+	{
 		if (!page->data)
+		{
 			page->data = calloc(1, MEM_PAGE_SIZE);
+			if (!page->data)
+				fatal("%s: out of memory", __FUNCTION__);
+		}
 		memcpy(page->data + offset, buf, size);
 		return;
 	}
@@ -304,7 +321,8 @@ void mem_access(struct mem_t *mem, uint32_t addr, int size, void *buf,
 	int chunksize;
 
 	mem->last_address = addr;
-	while (size) {
+	while (size)
+	{
 		offset = addr & (MEM_PAGE_SIZE - 1);
 		chunksize = MIN(size, MEM_PAGE_SIZE - offset);
 		mem_access_page_boundary(mem, addr, chunksize, buf, access);
@@ -332,9 +350,17 @@ void mem_write(struct mem_t *mem, uint32_t addr, int size, void *buf)
 struct mem_t *mem_create()
 {
 	struct mem_t *mem;
+
+	/* Create */
 	mem = calloc(1, sizeof(struct mem_t));
+	if (!mem)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	mem->sharing = 1;
 	mem->safe = mem_safe_mode;
+
+	/* Return */
 	return mem;
 }
 
@@ -350,7 +376,6 @@ void mem_free(struct mem_t *mem)
 
 	/* This must have released all host mappings.
 	 * Now, free memory structure. */
-	assert(!mem->host_mapping_list);
 	free(mem);
 }
 
@@ -443,7 +468,8 @@ void mem_map(struct mem_t *mem, uint32_t addr, int size,
 	tag2 = (addr + size - 1) & ~(MEM_PAGE_SIZE-1);
 
 	/* Allocate pages */
-	for (tag = tag1; tag <= tag2; tag += MEM_PAGE_SIZE) {
+	for (tag = tag1; tag <= tag2; tag += MEM_PAGE_SIZE)
+	{
 		page = mem_page_get(mem, tag);
 		if (!page)
 			page = mem_page_create(mem, tag, perm);
@@ -473,96 +499,11 @@ void mem_unmap(struct mem_t *mem, uint32_t addr, int size)
 }
 
 
-/* Map guest pages with the data allocated by a host 'mmap' call.
- * When this space is allocated with 'mem_unmap', the host memory
- * will be freed with a host call to 'munmap'.
- * Guest pages must already exist.
- * Both 'addr' and 'size' must be a multiple of the page size. */
-void mem_map_host(struct mem_t *mem, struct fd_t *fd, uint32_t addr, int size,
-	enum mem_access_t perm, void *host_ptr)
-{
-	uint32_t ptr;
-	struct mem_page_t *page;
-	struct mem_host_mapping_t *hm;
-
-	/* Check restrictions */
-	if (addr & ~MEM_PAGE_MASK)
-		fatal("mem_map_host: 'addr' not a multiple of page size");
-	if (size & ~MEM_PAGE_MASK)
-		fatal("mem_map_host: 'size' not a multiple of page size");
-	
-	/* Create host mapping, and insert it into the list head. */
-	hm = calloc(1, sizeof(struct mem_host_mapping_t));
-	hm->host_ptr = host_ptr;
-	hm->addr = addr;
-	hm->size = size;
-	hm->next = mem->host_mapping_list;
-	strncpy(hm->path, fd->path, MAX_PATH_SIZE);
-	mem->host_mapping_list = hm;
-	syscall_debug("  host mapping created for '%s'\n", hm->path);
-	
-	/* Make page data point to new data */
-	for (ptr = addr; ptr < addr + size; ptr += MEM_PAGE_SIZE) {
-		page = mem_page_get(mem, ptr);
-		if (!page)
-			fatal("mem_map_host: requested range not allocated");
-
-		/* It is not allowed that the page belong to a previous host
-		 * mapping. If so, it should have been unmapped before. */
-		if (page->host_mapping)
-			fatal("mem_map_host: cannot overwrite a previous host mapping");
-
-		/* If page is pointing to some data, overwrite it */
-		if (page->data)
-			free(page->data);
-
-		/* Create host mapping */
-		page->host_mapping = hm;
-		page->data = ptr - addr + host_ptr;
-		hm->pages++;
-	}
-}
-
-
-/* Deallocate host mapping starting at address 'addr'.
- * A host call to 'munmap' is performed to unmap host space. */
-void mem_unmap_host(struct mem_t *mem, uint32_t addr)
-{
-	int ret;
-	struct mem_host_mapping_t *hm, *hmprev;
-
-	/* Locate host mapping in the list */
-	hmprev = NULL;
-	hm = mem->host_mapping_list;
-	while (hm && hm->addr != addr) {
-		hmprev = hm;
-		hm = hm->next;
-	}
-
-	/* Remove it from the list */
-	assert(hm);
-	if (hmprev)
-		hmprev->next = hm->next;
-	else
-		mem->host_mapping_list = hm->next;
-	
-	/* Perform host call to 'munmap' */
-	ret = munmap(hm->host_ptr, hm->size);
-	if (ret < 0)
-		fatal("mem_unmap_host: host call 'munmap' failed");
-	
-	/* Free host mapping */
-	syscall_debug("  host mapping removed for '%s'\n", hm->path);
-	free(hm);
-}
-
-
 /* Assign protection attributes to pages */
 void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t perm)
 {
 	uint32_t tag1, tag2, tag;
 	struct mem_page_t *page;
-	int prot, err;
 
 	/* Calculate page boundaries */
 	assert(!(addr & (MEM_PAGE_SIZE - 1)));
@@ -571,24 +512,14 @@ void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t p
 	tag2 = (addr + size - 1) & ~(MEM_PAGE_SIZE-1);
 
 	/* Allocate pages */
-	for (tag = tag1; tag <= tag2; tag += MEM_PAGE_SIZE) {
+	for (tag = tag1; tag <= tag2; tag += MEM_PAGE_SIZE)
+	{
 		page = mem_page_get(mem, tag);
 		if (!page)
 			continue;
 
 		/* Set page new protection flags */
 		page->perm = perm;
-
-		/* If the page corresponds to a host mapping, host page must
-		 * update its permissions, too */
-		if (page->host_mapping) {
-			prot = (perm & mem_access_read ? PROT_READ : 0) |
-				(perm & mem_access_write ? PROT_WRITE : 0) |
-				(perm & mem_access_exec ? PROT_EXEC : 0);
-			err = mprotect(page->data, MEM_PAGE_SIZE, prot);
-			if (err < 0)
-				fatal("mem_protect: host call to 'mprotect' failed");
-		}
 	}
 }
 
