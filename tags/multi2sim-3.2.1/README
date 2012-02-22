@@ -1,0 +1,175 @@
+===============================================================================
+Coding Guidelines
+===============================================================================
+
+* Indenting:
+	
+	Tabs should be used for indenting. It is recommended to configure your
+	editor with a tab size of 8 spaces for a coherent layout with other
+	developers of Multi2Sim.
+
+* Line wrapping:
+	
+	Lines should have an approximate maximum length of 80 characters,
+	including initial tabs (and assuming a tab counts as 8 characters).
+	Code should continue on the next line with an additional tab
+	otherwise. Example:
+
+	int long_function_with_many_arguments(int argument_1, char *arg2,
+		int arg3)
+	{
+		/* Function body */
+	}
+
+* Comments:
+
+	Comments should not use the double slash '//' notation. They should
+	use instead the '/* */' notation. Multiple-line comments should
+	use a '*' character at the beginning of each new line, respecting
+	the 80-character limit of the lines.
+
+	/* This is an example of a comment that spans multiple lines. When the
+	 * second line starts, an asterisk is used. */
+
+* Code blocks:
+
+	Brackets in code blocks should not share a line with other code, both
+	for opening and closing brackets.
+	The opening parenthesis should have no space on the left for a function
+	declaration, but it should have it for 'if', 'while', and 'for' blocks.
+	Examples:
+
+	void function(int arg1, char *arg2)
+	{
+	}
+
+	if (cond)
+	{
+		/* Block 1 */
+	}
+	else
+	{
+		/* Block 2 */
+	}
+
+	while (1)
+	{
+	}
+
+	for (i = 0; i < 10; i++)
+		only_one_line_example();
+
+* Enumerations:
+
+	Enumeration types should be named 'enum <xxx>_t', without using
+	'typedef' declarations. For example:
+
+	enum my_enum_t
+	{
+		err_list_ok = 0,
+		err_list_bounds,
+		err_list_not_fount
+	};
+
+* Structure declaration:
+
+	Structure types should be named 'struct <XXX>_t', without using
+	'typedef' declarations. For example:
+
+	struct my_struct_t
+	{
+		int field1;
+		char *field2;
+	};
+
+	If a structure is used with dynamic allocation simulating a C++
+	object, there should be two functions 'xxx_create' and 'xxx_free'
+	with the following structure:
+
+	struct my_struct_t *my_struct_create(void)
+	{
+		struct my_struct_t *my_struct;
+
+		/* Create object */
+		my_struct = calloc(1, sizeof(struct my_struct_t));
+		if (!my_struct)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* Initialize */
+		my_struct->field1 = ...
+		my_struct->field2 = ...
+
+		/* Return */
+		return my_struct;
+	}
+
+	void my_struct_free(struct my_struct_t *my_struct)
+	{
+		[ ... free fields ... ]
+		free(my_struct);
+	}
+
+
+===============================================================================
+Steps to Release a New Version Release (Administrator):
+===============================================================================
+
+	* svn commit all previous changes
+
+	* Run 'svn update' + 'svn2cl.sh'
+
+	* Update AM_INIT_AUTOMAKE in 'configure.ac'
+
+	* Remake all to update 'Makefiles'
+		~/multi2sim/trunk$ make clean
+		~/multi2sim/trunk$ make
+
+	* Add line in Changelog:
+		"Version X.Y.Z released"
+
+	* Copy 'trunk' directory into 'tags'. For example:
+		~/multi2sim$ svn cp trunk tags/multi2sim-X.Y.Z
+
+	* svn commit
+
+	* In trunk directory, create tar ball.
+		~/multi2sim/trunk$ make distcheck
+
+	* Copy tar ball to Multi2Sim server:
+		scp multi2sim-X.Y.Z.tar.gz $(M2S-SERVER):public_html/files/
+
+	* Update Multi2Sim web site.
+		* Log in.
+		* Click toolbox -> Special Pages -> Uncategorized templates
+		* Update 'Latest Version' and 'Latest Version Date'
+
+	* Send email to multi2sim@multi2sim.org
+
+
+===============================================================================
+Command to update Copyright in all files:
+===============================================================================
+
+sources=$(find | grep \\.c$)
+sed -i "s,^ \*  Copyright.*$, *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)," $sources
+
+
+===============================================================================
+Notes about the memory system
+===============================================================================
+
+When a memory address is accessed in an SRAM bank, the access time is calculated based on the following time components:
+
+* T_precharge: time to store the contents of the row buffer into its corresponding memory location.
+* T_row_buf_access: base access time to the row buffer.
+* T_activate: time to load a memory location into the row buffer.
+
+There are three possibilities to compute the access time T_access, one for each of the following scenarios:
+
+1) Row-closed. The row buffer is empty, and the new row needs to be activated before being accessed. T_access = T_activate + T_row_buf_access.
+2) Row-hit. The row buffer contains the requested address. T_access = T_row_buf_access.
+3) Row-conflict. The row buffer contains a different address. T_access = T_precharge + T_activate + T_row_buf_access.
+
+
+
+
