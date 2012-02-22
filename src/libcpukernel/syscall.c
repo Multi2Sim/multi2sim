@@ -758,6 +758,7 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
 		off_t last_pos;
 		int size;
 		uint32_t curr_addr;
+		ssize_t count;
 
 		/* Save previous position */
 		last_pos = lseek(host_fd, 0, SEEK_CUR);
@@ -770,8 +771,9 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
 		for (size = alen; size > 0; size -= MEM_PAGE_SIZE)
 		{
 			memset(buf, 0, MEM_PAGE_SIZE);
-			read(host_fd, buf, MEM_PAGE_SIZE);
-			mem_access(isa_mem, curr_addr, MEM_PAGE_SIZE, buf, mem_access_init);
+			count = read(host_fd, buf, MEM_PAGE_SIZE);
+			if (count)
+				mem_access(isa_mem, curr_addr, MEM_PAGE_SIZE, buf, mem_access_init);
 			curr_addr += MEM_PAGE_SIZE;
 		}
 
