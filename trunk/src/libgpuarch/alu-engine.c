@@ -168,7 +168,8 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 			uop->work_group->id,
 			wavefront->id,
 			(long long) uop->id_in_compute_unit);
-		amd_alu_group_dump_debug(&wavefront->alu_group, -1, -1, debug_file(gpu_pipeline_debug_category));
+		amd_alu_group_dump_debug(&wavefront->alu_group, -1, -1,
+			debug_file(gpu_pipeline_debug_category));
 		gpu_pipeline_debug(" idep=");
 		gpu_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->idep, uop->idep_count);
 		gpu_pipeline_debug("%s odep=", str);

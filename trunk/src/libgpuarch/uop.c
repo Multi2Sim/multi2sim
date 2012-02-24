@@ -106,12 +106,13 @@ struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_grou
 	uop = gpu_uop_create();
 
 	/* Update dependences */
-	for (i = 0; i < alu_group->inst_count; i++) {
+	for (i = 0; i < alu_group->inst_count; i++)
+	{
 		inst = &alu_group->inst[i];
 
 		/* Local memory access instruction */
-		if (inst->info->fmt[0] == FMT_ALU_WORD0_LDS_IDX_OP) {
-
+		if (inst->info->fmt[0] == FMT_ALU_WORD0_LDS_IDX_OP)
+		{
 			/* Assume read and write to local memory */
 			assert(uop->idep_count < GPU_UOP_MAX_IDEP);
 			uop->idep[uop->idep_count++] = GPU_UOP_DEP_LDS;
@@ -120,8 +121,8 @@ struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_grou
 		}
 
 		/* Arithmetic instruction */
-		else if (inst->info->fmt[0] == FMT_ALU_WORD0) {
-
+		else if (inst->info->fmt[0] == FMT_ALU_WORD0)
+		{
 			/* Add input dependences */
 			gpu_uop_add_src_idep(uop, inst, 0);
 			gpu_uop_add_src_idep(uop, inst, 1);
@@ -129,14 +130,18 @@ struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_grou
 				gpu_uop_add_src_idep(uop, inst, 2);
 
 			/* Add register output dependence if not masked */
-			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP3 || inst->words[1].alu_word1_op2.write_mask) {
+			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP3 ||
+				inst->words[1].alu_word1_op2.write_mask)
+			{
 				assert(uop->odep_count < GPU_UOP_MAX_ODEP);
-				uop->odep[uop->odep_count++] = GPU_UOP_DEP_REG(inst->words[1].alu_word1_op2.dst_gpr);
+				uop->odep[uop->odep_count++] =
+					GPU_UOP_DEP_REG(inst->words[1].alu_word1_op2.dst_gpr);
 			}
 
 			/* Add PV/PS output dependence */
 			assert(uop->odep_count < GPU_UOP_MAX_ODEP);
-			uop->odep[uop->odep_count++] = inst->alu == AMD_ALU_TRANS ? GPU_UOP_DEP_PS : GPU_UOP_DEP_PV;
+			uop->odep[uop->odep_count++] =
+				inst->alu == AMD_ALU_TRANS ? GPU_UOP_DEP_PS : GPU_UOP_DEP_PV;
 		}
 	}
 
@@ -156,7 +161,8 @@ void gpu_uop_free(struct gpu_uop_t *gpu_uop)
 void gpu_uop_list_free(struct linked_list_t *gpu_uop_list)
 {
 	struct gpu_uop_t *uop;
-	while (linked_list_count(gpu_uop_list)) {
+	while (linked_list_count(gpu_uop_list))
+	{
 		linked_list_head(gpu_uop_list);
 		uop = linked_list_get(gpu_uop_list);
 		gpu_uop_free(uop);
@@ -180,7 +186,8 @@ void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 	int i;
 
 	str_printf(&buf, &size, "{");
-	for (i = 0; i < dep_count; i++) {
+	for (i = 0; i < dep_count; i++)
+	{
 		if (IN_RANGE(dep_list[i], GPU_UOP_DEP_REG_FIRST, GPU_UOP_DEP_REG_LAST))
 			sprintf(str, "R%d", dep_list[i] - GPU_UOP_DEP_REG_FIRST);
 		else
@@ -201,8 +208,10 @@ void gpu_uop_save_active_mask(struct gpu_uop_t *uop)
 	struct gpu_work_item_uop_t *work_item_uop;
 	int work_item_id;
 
-	if (debug_status(gpu_stack_debug_category) && wavefront->active_mask_update) {
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
+	if (debug_status(gpu_stack_debug_category) && wavefront->active_mask_update)
+	{
+		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		{
 			work_item = ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			work_item_uop->active = gpu_work_item_get_active(work_item);
@@ -221,7 +230,8 @@ void gpu_uop_dump_active_mask(struct gpu_uop_t *uop, FILE *f)
 	int work_item_id;
 
 	assert(f);
-	FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id) {
+	FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+	{
 		work_item = ndrange->work_items[work_item_id];
 		work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 		fprintf(f, "%d", work_item_uop->active);
@@ -240,7 +250,8 @@ void gpu_uop_debug_active_mask(struct gpu_uop_t *uop)
 	assert(f);
 
 	/* Pop */
-	if (uop->active_mask_pop) {
+	if (uop->active_mask_pop)
+	{
 		gpu_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"pop\" cnt=%d top=%d mask=\"",
 			(long long) gpu->cycle,
 			uop->compute_unit->id,
@@ -253,7 +264,8 @@ void gpu_uop_debug_active_mask(struct gpu_uop_t *uop)
 	}
 
 	/* Push */
-	if (uop->active_mask_push) {
+	if (uop->active_mask_push)
+	{
 		gpu_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"push\" cnt=%d top=%d mask=\"",
 			(long long) gpu->cycle,
 			uop->compute_unit->id,
