@@ -373,12 +373,43 @@ wrong_format:
 /* GPU-REL: stack faults */
 void gpu_stack_faults_done(void)
 {
-	while (linked_list_count(gpu_fault_list)) {
+	while (linked_list_count(gpu_fault_list))
+	{
 		linked_list_head(gpu_fault_list);
 		free(linked_list_get(gpu_fault_list));
 		linked_list_remove(gpu_fault_list);
 	}
 	linked_list_free(gpu_fault_list);
+}
+
+
+/* GPU-REL */
+int gpu_stack_faults_is_odep(struct gpu_uop_t *uop,
+	struct gpu_wavefront_t *wavefront, int lo_reg)
+{
+	int i;
+
+	if (wavefront != uop->wavefront)
+		return 0;
+	for (i = 0; i < GPU_UOP_MAX_ODEP; i++)
+		if (uop->odep[i] == GPU_UOP_DEP_REG(lo_reg))
+			return 1;
+	return 0;
+}
+
+
+/* GPU-REL */
+static int gpu_stack_faults_is_idep(struct gpu_uop_t *uop,
+	struct gpu_wavefront_t *wavefront, int lo_reg)
+{
+	int i;
+
+	if (wavefront != uop->wavefront)
+		return 0;
+	for (i = 0; i < GPU_UOP_MAX_IDEP; i++)
+		if (uop->idep[i] == GPU_UOP_DEP_REG(lo_reg))
+			return 1;
+	return 0;
 }
 
 
@@ -388,14 +419,16 @@ void gpu_stack_faults_insert(void)
 	struct gpu_fault_t *fault;
 	struct gpu_compute_unit_t *compute_unit;
 
-	for (;;) {
+	for (;;)
+	{
 		linked_list_head(gpu_fault_list);
 		fault = linked_list_get(gpu_fault_list);
 		if (!fault || fault->cycle > gpu->cycle)
 			break;
 
 		/* Insert fault depending on fault type */
-		switch (fault->type) {
+		switch (fault->type)
+		{
 
 		case gpu_fault_ams:
 		{
@@ -424,7 +457,9 @@ void gpu_stack_faults_insert(void)
 			/* Get work-group and wavefront. If wavefront ID exceeds current number, dismiss */
 			work_group_id = fault->stack_id / gpu->ndrange->wavefronts_per_work_group;
 			wavefront_id = fault->stack_id % gpu->ndrange->wavefronts_per_work_group;
-			if (work_group_id >= gpu_max_work_groups_per_compute_unit || !compute_unit->work_groups[work_group_id]) {
+			if (work_group_id >= gpu_max_work_groups_per_compute_unit
+				|| !compute_unit->work_groups[work_group_id])
+			{
 				gpu_faults_debug("effect=\"wf_idle\"");
 				goto end_loop;
 			}
@@ -432,13 +467,15 @@ void gpu_stack_faults_insert(void)
 			wavefront = work_group->wavefronts[wavefront_id];
 
 			/* If active_mask_id exceeds stack top, dismiss */
-			if (fault->active_mask_id > wavefront->stack_top) {
+			if (fault->active_mask_id > wavefront->stack_top)
+			{
 				gpu_faults_debug("effect=\"am_idle\"");
 				goto end_loop;
 			}
 
 			/* If 'bit' exceeds number of work-items in wavefront, dismiss */
-			if (fault->bit >= wavefront->work_item_count) {
+			if (fault->bit >= wavefront->work_item_count)
+			{
 				gpu_faults_debug("effect=\"wi_idle\"");
 				goto end_loop;
 			}
@@ -451,9 +488,11 @@ void gpu_stack_faults_insert(void)
 				work_item->id);
 
 			/* Inject fault */
-			value = bit_map_get(wavefront->active_stack, fault->active_mask_id * wavefront->work_item_count
+			value = bit_map_get(wavefront->active_stack,
+				fault->active_mask_id * wavefront->work_item_count
 				+ fault->bit, 1);
-			bit_map_set(wavefront->active_stack, fault->active_mask_id * wavefront->work_item_count
+			bit_map_set(wavefront->active_stack,
+				fault->active_mask_id * wavefront->work_item_count
 				+ fault->bit, 1, !value);
 			gpu_fault_errors++;
 
@@ -466,12 +505,19 @@ void gpu_stack_faults_insert(void)
 
 			int work_group_id_in_compute_unit;
 			struct gpu_work_group_t *work_group;
+			struct gpu_wavefront_t *wavefront;
 
 			int num_registers_per_work_group;
 
 			int work_item_id_in_compute_unit;
 			int work_item_id_in_work_group;
 			struct gpu_work_item_t *work_item;
+
+			struct linked_list_t *fetch_queue;
+			struct gpu_uop_t *inst_buffer;
+			struct gpu_uop_t *exec_buffer;
+			struct heap_t *event_queue;
+			struct gpu_uop_t *uop;
 
 			int lo_reg;
 
@@ -485,7 +531,8 @@ void gpu_stack_faults_insert(void)
 			compute_unit = gpu->compute_units[fault->compute_unit_id];
 
 			/* If compute unit is idle, dismiss */
-			if (!compute_unit->work_group_count) {
+			if (!compute_unit->work_group_count)
+			{
 				gpu_faults_debug("effect=\"cu_idle\"");
 				goto end_loop;
 			}
@@ -494,25 +541,89 @@ void gpu_stack_faults_insert(void)
 			num_registers_per_work_group = kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used
 				* kernel->local_size;
 			work_group_id_in_compute_unit = fault->reg_id / num_registers_per_work_group;
-			if (work_group_id_in_compute_unit >= gpu_max_work_groups_per_compute_unit) {
+			if (work_group_id_in_compute_unit >= gpu_max_work_groups_per_compute_unit)
+			{
 				gpu_faults_debug("effect=\"reg_idle\"");
 				goto end_loop;
 			}
 
 			/* Get work-group (again) */
 			work_group = compute_unit->work_groups[work_group_id_in_compute_unit];
-			if (!work_group) {
+			if (!work_group)
+			{
 				gpu_faults_debug("effect=\"reg_idle\"");
 				goto end_loop;
 			}
 
-			/* Fault caused error - get affected entities */
-			gpu_faults_debug("effect=\"error\" ");
+			/* Get affected entities */
 			work_item_id_in_compute_unit = fault->reg_id
 				/ kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
 			work_item_id_in_work_group = work_item_id_in_compute_unit % kernel->local_size;
 			work_item = work_group->work_items[work_item_id_in_work_group];
+			wavefront = work_item->wavefront;
 			lo_reg = fault->reg_id % kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
+
+			/* Fault falling between Fetch and Read stage of an instruction
+			 * consuming register. This case cannot be modeled due to functional
+			 * simulation skew. */
+			fetch_queue = compute_unit->alu_engine.fetch_queue;
+			inst_buffer = compute_unit->alu_engine.inst_buffer;
+			for (linked_list_head(fetch_queue); !linked_list_is_end(fetch_queue);
+				linked_list_next(fetch_queue))
+			{
+				uop = linked_list_get(fetch_queue);
+				if (gpu_stack_faults_is_idep(uop, wavefront, lo_reg))
+				{
+					gpu_faults_debug("effect=\"reg_read\"");
+					goto end_loop;
+				}
+			}
+			uop = inst_buffer;
+			if (uop && gpu_stack_faults_is_idep(uop, wavefront, lo_reg))
+			{
+				gpu_faults_debug("effect=\"reg_read\"");
+				goto end_loop;
+			}
+
+			/* Fault falling between Fetch and Write stage of an instruction
+			 * writing on the register. The instruction will overwrite the fault,
+			 * so this shouldn't cause its injection. */
+			exec_buffer = compute_unit->alu_engine.exec_buffer;
+			for (linked_list_head(fetch_queue); !linked_list_is_end(fetch_queue);
+				linked_list_next(fetch_queue))
+			{
+				uop = linked_list_get(fetch_queue);
+				if (gpu_stack_faults_is_odep(uop, wavefront, lo_reg))
+				{
+					gpu_faults_debug("effect=\"reg_write\"");
+					goto end_loop;
+				}
+			}
+			uop = inst_buffer;
+			if (uop && gpu_stack_faults_is_odep(uop, wavefront, lo_reg))
+			{
+				gpu_faults_debug("effect=\"reg_write\"");
+				goto end_loop;
+			}
+			uop = exec_buffer;
+			if (uop && gpu_stack_faults_is_odep(uop, wavefront, lo_reg))
+			{
+				gpu_faults_debug("effect=\"reg_write\"");
+				goto end_loop;
+			}
+			event_queue = compute_unit->alu_engine.event_queue;
+			for (heap_first(event_queue, (void **) &uop); uop;
+				heap_next(event_queue, (void **) &uop))
+			{
+				if (gpu_stack_faults_is_odep(uop, wavefront, lo_reg))
+				{
+					gpu_faults_debug("effect=\"reg_write\"");
+					goto end_loop;
+				}
+			}
+
+			/* Fault caused error */
+			gpu_faults_debug("effect=\"error\" ");
 			gpu_faults_debug("wg=%d wf=%d wi=%d lo_reg=%d ",
 				work_group->id, work_item->wavefront->id, work_item->id, lo_reg);
 
