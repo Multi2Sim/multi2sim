@@ -1,5 +1,6 @@
 lib_LIBRARIES = libsdram.a
 libsdram_a_SOURCES = \
+	mem-ctrl.c \
 	sdram.c \
 	sdram.h
 
