@@ -16,6 +16,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "cachesystem.h"
 
+/*
+ * Memory Controller
+ */
 
+struct mem_ctrl_t
+{
+	char *name;
+
+	/* Network and node */
+	struct net_t *net;
+	struct net_node_t *net_node;
+};
+
+struct mem_ctrl_t *mem_ctrl_create(char *name);
+void mem_ctrl_free(struct mem_ctrl_t *mem_ctrl);

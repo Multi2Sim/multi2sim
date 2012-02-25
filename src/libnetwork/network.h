@@ -378,7 +378,10 @@ struct net_node_t *net_add_bus(struct net_t *net, int bandwidth, char *name);
 struct net_node_t *net_add_switch(struct net_t *net,
 	int input_buffer_size, int output_buffer_size,
 	int bandwidth, char *name);
+
 struct net_node_t *net_get_node_by_name(struct net_t *net, char *name);
+struct net_node_t *net_get_node_by_user_data(struct net_t *net,
+	void *user_data);
 
 struct net_link_t *net_add_link(struct net_t *net,
 	struct net_node_t *src_node, struct net_node_t *dst_node,

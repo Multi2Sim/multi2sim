@@ -250,6 +250,8 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 			net_add_bidirectional_link(net, src_node, dst_node, bandwidth);
 	}
 
+	/* Calculate routing table */
+	net_routing_table_calculate(net->routing_table);
 
 	/* Return */
 	return net;
@@ -412,6 +414,22 @@ struct net_node_t *net_get_node_by_name(struct net_t *net, char *name)
 	{
 		node = list_get(net->node_list, i);
 		if (!strcasecmp(node->name, name))
+			return node;
+	}
+	return NULL;
+}
+
+
+/* Get a node by its user data. If none found, return NULL. */
+struct net_node_t *net_get_node_by_user_data(struct net_t *net, void *user_data)
+{
+	struct net_node_t *node;
+	int i;
+
+	for (i = 0; i < list_count(net->node_list); i++)
+	{
+		node = list_get(net->node_list, i);
+		if (node->user_data == user_data)
 			return node;
 	}
 	return NULL;
