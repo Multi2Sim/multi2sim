@@ -279,10 +279,14 @@ struct net_routing_table_entry_t *net_routing_table_lookup(struct net_routing_ta
 {
 	struct net_routing_table_entry_t *entry;
 
+	/* Check for valid routing table */
+	if (!routing_table->dim)
+		panic("%s: routing table not initialized\n", __FUNCTION__);
+
 	assert(src_node->index < routing_table->dim);
 	assert(dst_node->index < routing_table->dim);
-	assert(routing_table->dim > 0);
 
 	entry = &routing_table->entries[src_node->index * routing_table->dim + dst_node->index];
 	return entry;
 }
+

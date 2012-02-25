@@ -303,9 +303,6 @@ void net_sim(void)
 	if (!net)
 		fatal("%s: network does not exist", net_sim_network_name);
 
-	/* Calculate routing table */
-	net_routing_table_calculate(net->routing_table);
-
 	/* Initialize */
 	inject_time = calloc(net->node_count, sizeof(double));
 	if (!inject_time)

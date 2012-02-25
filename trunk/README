@@ -109,6 +109,33 @@ Coding Guidelines
 		free(my_struct);
 	}
 
+* Spaces:
+
+	Conditions and expressions in parenthesis should be have a space on the
+	left of the opening parenthesis. Arguments in a function and function
+	calls should not have a space on the left of the opening parenthesis.
+		
+		if (condition)
+		while (condition)
+		for (...)
+		void my_func_declaration(...);
+		my_func_call();
+	
+	No spaces are used after an opening parenthesis or before a closing
+	parenthesis. One space used after commas.
+
+		if (a < b)
+		void my_func_decl(int a, int b);
+	
+	Spaces should be used on both sides of operators, such as assignments or
+	arithmetic:
+
+		var1 = var2;
+		for (x = 0; x < 10; x++)
+		a += 2;
+		var1 = a < 3 ? 10 : 20;
+		result = (a + 3) / 5;
+
 
 ===============================================================================
 Steps to Release a New Version Release (Administrator):

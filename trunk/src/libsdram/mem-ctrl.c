@@ -17,5 +17,32 @@
  */
 
 #include <sdram.h>
+#include <stdlib.h>
+#include <debug.h>
+#include <string.h>
 
 
+struct mem_ctrl_t *mem_ctrl_create(char *name)
+{
+	struct mem_ctrl_t *mem_ctrl;
+
+	/* Create memory controller */
+	mem_ctrl = calloc(1, sizeof(struct mem_ctrl_t));
+	if (!mem_ctrl)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	mem_ctrl->name = strdup(name);
+	if (!mem_ctrl->name)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Return */
+	return mem_ctrl;
+}
+
+
+void mem_ctrl_free(struct mem_ctrl_t *mem_ctrl)
+{
+	free(mem_ctrl->name);
+	free(mem_ctrl);
+}
