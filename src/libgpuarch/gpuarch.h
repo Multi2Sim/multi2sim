@@ -347,7 +347,7 @@ void gpu_compute_unit_run(struct gpu_compute_unit_t *compute_unit);
 
 
 /*
- * Cache system
+ * Memory hierarchy ('mem-hier.c' and 'mem-config.c')
  */
 
 extern char *gpu_cache_config_file_name;
@@ -443,6 +443,8 @@ void gpu_cache_dump(struct gpu_cache_t *gpu_cache, FILE *f);
 
 void gpu_cache_init(void);
 void gpu_cache_done(void);
+
+void gpu_cache_config_read(void);
 void gpu_cache_dump_report(void);
 
 void gpu_cache_access(struct gpu_cache_t *gpu_cache, int access, uint32_t addr, uint32_t size, int *witness_ptr);
@@ -572,6 +574,7 @@ struct gpu_t
 
 void gpu_init(void);
 void gpu_done(void);
+
 void gpu_dump_report(void);
 
 void gpu_run(struct gpu_ndrange_t *ndrange);
