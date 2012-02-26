@@ -35,7 +35,7 @@ struct mem_system_t *mem_system;
  * Public Functions
  */
 
-void gpu_mem_init(void)
+void mem_system_init(void)
 {
 	/* Try to open report file */
 	if (*mem_report_file_name && !can_open_write(mem_report_file_name))
@@ -51,7 +51,7 @@ void gpu_mem_init(void)
 	mem_system->net_list = list_create();
 	mem_system->mod_list = list_create();
 
-	/* Events */
+	/* GPU Event-driven simulation */
 	EV_GPU_MEM_READ = esim_register_event(gpu_mod_handler_read);
 	EV_GPU_MEM_READ_REQUEST = esim_register_event(gpu_mod_handler_read);
 	EV_GPU_MEM_READ_REQUEST_RECEIVE = esim_register_event(gpu_mod_handler_read);
@@ -69,16 +69,16 @@ void gpu_mem_init(void)
 	EV_GPU_MEM_WRITE_FINISH = esim_register_event(gpu_mod_handler_write);
 
 	/* Read cache configuration file */
-	gpu_mem_config_read();
+	mem_system_config_read();
 }
 
 
-void gpu_mem_done(void)
+void mem_system_done(void)
 {
 	int i;
 
 	/* Dump report */
-	gpu_mem_dump_report();
+	mem_system_dump_report();
 
 	/* Free memory modules */
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
@@ -95,7 +95,7 @@ void gpu_mem_done(void)
 }
 
 
-void gpu_mem_dump_report(void)
+void mem_system_dump_report(void)
 {
 	FILE *f;
 	int i;
@@ -109,10 +109,10 @@ void gpu_mem_dump_report(void)
 		return;
 
 	/* Intro */
-	fprintf(f, "; Report for the GPU global memory hierarchy.\n");
-	fprintf(f, ";    Accesses - Total number of accesses requested from a compute unit or upper-level cache\n");
-	fprintf(f, ";    Reads - Number of read requests received from a compute unit or upper-level cache\n");
-	fprintf(f, ";    Writes - Number of write requests received from a compute unit or upper-level cache\n");
+	fprintf(f, "; Report for memory hierarchy.\n");
+	fprintf(f, ";    Accesses - Total number of accesses requested\n");
+	fprintf(f, ";    Reads - Number of read requests\n");
+	fprintf(f, ";    Writes - Number of write requests\n");
 	fprintf(f, ";    CoalescedReads - Number of reads that were coalesced with previous accesses (discarded)\n");
 	fprintf(f, ";    CoalescedWrites - Number of writes coalesced with previous accesses\n");
 	fprintf(f, ";    EffectiveReads - Number of reads actually performed (= Reads - CoalescedReads)\n");
