@@ -251,7 +251,7 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 			{
 				if (work_item_uop->local_mem_access_type[i] != 1)  /* read access */
 					continue;
-				gpu_cache_access(
+				mod_access(
 					compute_unit->local_memory,
 					1,  /* read access */
 					work_item_uop->local_mem_access_addr[i],
@@ -351,7 +351,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 				{
 					if (work_item_uop->local_mem_access_type[i] != 2)  /* write access */
 						continue;
-					gpu_cache_access(compute_unit->local_memory, 2,
+					mod_access(compute_unit->local_memory, 2,
 						work_item_uop->local_mem_access_addr[i],
 						work_item_uop->local_mem_access_size[i], NULL);
 				}
