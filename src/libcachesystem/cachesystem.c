@@ -312,12 +312,12 @@ void ccache_get_block(struct ccache_t *ccache, uint32_t set, uint32_t way,
 }
 
 
-/* Return {set, way, tag, status} for an address. */
+/* Return {set, way, tag, state} for an address. */
 int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	uint32_t *pset, uint32_t *pway, uint32_t *ptag, int *pstatus)
 {
 	struct cache_t *cache = ccache->cache;
-	struct cache_blk_t *blk;
+	struct cache_block_t *blk;
 	struct dir_lock_t *dir_lock;
 	uint32_t set, way, tag;
 
@@ -332,11 +332,11 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	
 	/* Cache. A transient tag is considered a hit if the block is
 	 * locked in the corresponding directory. */
-	tag = addr & ~cache->bmask;
-	set = (tag >> cache->logbsize) % cache->nsets;
+	tag = addr & ~cache->block_mask;
+	set = (tag >> cache->log_block_size) % cache->num_sets;
 	for (way = 0; way < cache->assoc; way++) {
-		blk = &cache->sets[set].blks[way];
-		if (blk->tag == tag && blk->status)
+		blk = &cache->sets[set].blocks[way];
+		if (blk->tag == tag && blk->state)
 			break;
 		if (blk->transient_tag == tag) {
 			dir_lock = dir_lock_get(ccache->dir, set, way);
@@ -358,7 +358,7 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	PTR_ASSIGN(pset, set);
 	PTR_ASSIGN(pway, way);
 	PTR_ASSIGN(ptag, tag);
-	PTR_ASSIGN(pstatus, cache->sets[set].blks[way].status);
+	PTR_ASSIGN(pstatus, cache->sets[set].blocks[way].state);
 	return 1;
 }
 
@@ -428,19 +428,19 @@ struct dir_lock_t *ccache_get_dir_lock(struct ccache_t *ccache,
 void ccache_dump(struct ccache_t *ccache, FILE *f)
 {
 	struct cache_t *cache = ccache->cache;
-	struct cache_blk_t *blk;
+	struct cache_block_t *blk;
 	struct dir_lock_t *dir_lock;
 	int i, j;
 	
 	if (!cache)
 		return;
 
-	for (i = 0; i < cache->nsets; i++) {
+	for (i = 0; i < cache->num_sets; i++) {
 		fprintf(f, "Set %03d:", i);
 		for (j = 0; j < cache->assoc; j++) {
 			dir_lock = ccache_get_dir_lock(ccache, i, j);
-			blk = &cache->sets[i].blks[j];
-			if (!blk->status)
+			blk = &cache->sets[i].blocks[j];
+			if (!blk->state)
 				fprintf(f, " %d:I", j);
 			else
 				fprintf(f, " %d:0x%x", j, blk->tag);
@@ -1015,13 +1015,13 @@ void cache_system_init(int _cores, int _threads)
 		/* Level 1 cache */
 		if (!ccache->net_hi)
 		{
-			ccache->dir = dir_create(ccache->cache->nsets, ccache->cache->assoc,
+			ccache->dir = dir_create(ccache->cache->num_sets, ccache->cache->assoc,
 				ccache->bsize / cache_min_block_size, 1);
 			continue;
 		}
 
 		/* Other level ccache_array */
-		ccache->dir = dir_create(ccache->cache->nsets, ccache->cache->assoc,
+		ccache->dir = dir_create(ccache->cache->num_sets, ccache->cache->assoc,
 			ccache->bsize / cache_min_block_size, ccache->net_hi->end_node_count);
 	}
 
@@ -1120,7 +1120,7 @@ void cache_system_dump_report()
 
 		/* Configuration */
 		if (cache) {
-			fprintf(f, "Sets = %d\n", cache->nsets);
+			fprintf(f, "Sets = %d\n", cache->num_sets);
 			fprintf(f, "Assoc = %d\n", cache->assoc);
 			fprintf(f, "Policy = %s\n", map_value(&cache_policy_map, cache->policy));
 		}
@@ -1181,7 +1181,7 @@ void cache_system_dump_report()
 		/* Configuration */
 		fprintf(f, "HitLatency = %d\n", tlb->hitlat);
 		fprintf(f, "MissLatency = %d\n", tlb->misslat);
-		fprintf(f, "Sets = %d\n", cache->nsets);
+		fprintf(f, "Sets = %d\n", cache->num_sets);
 		fprintf(f, "Assoc = %d\n", cache->assoc);
 		fprintf(f, "\n");
 
@@ -1437,7 +1437,7 @@ void cache_system_handler(int event, void *data)
 	if (event == EV_CACHE_SYSTEM_ACCESS_TLB) {
 		struct tlb_t *tlb;
 		uint32_t set, way, tag;
-		int status, hit;
+		int state, hit;
 
 		/* Access tlb */
 		tlb = cache_system_get_tlb(stack->core, stack->thread, stack->cache_kind);
@@ -1452,8 +1452,8 @@ void cache_system_handler(int event, void *data)
 		if (!hit) {
 			cache_decode_address(tlb->cache, stack->addr, &set, &tag, NULL);
 			way = cache_replace_block(tlb->cache, set);
-			cache_get_block(tlb->cache, set, way, NULL, &status);
-			if (status)
+			cache_get_block(tlb->cache, set, way, NULL, &state);
+			if (state)
 				tlb->evictions++;
 			cache_set_block(tlb->cache, set, way, tag, 1);
 		}

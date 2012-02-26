@@ -135,7 +135,7 @@ void gpu_mem_dump_report(void)
 		/* Configuration */
 		if (cache)
 		{
-			fprintf(f, "Sets = %d\n", cache->nsets);
+			fprintf(f, "Sets = %d\n", cache->num_sets);
 			fprintf(f, "Assoc = %d\n", cache->assoc);
 			fprintf(f, "Policy = %s\n", map_value(&cache_policy_map, cache->policy));
 		}

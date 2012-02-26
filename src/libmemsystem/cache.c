@@ -46,7 +46,7 @@ enum cache_waylist_enum
 };
 
 static void cache_update_waylist(struct cache_set_t *set,
-	struct cache_blk_t *blk, enum cache_waylist_enum where)
+	struct cache_block_t *blk, enum cache_waylist_enum where)
 {
 	if (!blk->way_prev && !blk->way_next)
 	{
@@ -104,38 +104,53 @@ static void cache_update_waylist(struct cache_set_t *set,
  */
 
 
-struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc,
+struct cache_t *cache_create(uint32_t num_sets, uint32_t block_size, uint32_t assoc,
 	enum cache_policy_t policy)
 {
 	struct cache_t *cache;
-	struct cache_blk_t *blk;
+	struct cache_block_t *block;
 	uint32_t set, way;
 
 	/* Create cache */
 	cache = calloc(1, sizeof(struct cache_t));
-	cache->nsets = nsets;
-	cache->bsize = bsize;
+	if (!cache)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	cache->num_sets = num_sets;
+	cache->block_size = block_size;
 	cache->assoc = assoc;
 	cache->policy = policy;
 
-	/* Derivated fields */
-	assert(!(nsets & (nsets - 1)));
-	assert(!(bsize & (bsize - 1)));
+	/* Derived fields */
+	assert(!(num_sets & (num_sets - 1)));
+	assert(!(block_size & (block_size - 1)));
 	assert(!(assoc & (assoc - 1)));
-	cache->logbsize = cache_log2(bsize);
-	cache->bmask = bsize - 1;
+	cache->log_block_size = log_base2(block_size);
+	cache->block_mask = block_size - 1;
 	
-	/* Create sets and blocks */
-	cache->sets = calloc(nsets, sizeof(struct cache_set_t));
-	for (set = 0; set < nsets; set++) {
-		cache->sets[set].blks = calloc(assoc, sizeof(struct cache_blk_t));
-		cache->sets[set].way_head = &cache->sets[set].blks[0];
-		cache->sets[set].way_tail = &cache->sets[set].blks[assoc - 1];
-		for (way = 0; way < assoc; way++) {
-			blk = &cache->sets[set].blks[way];
-			blk->way = way;
-			blk->way_prev = way ? &cache->sets[set].blks[way - 1] : NULL;
-			blk->way_next = way < assoc - 1 ? &cache->sets[set].blks[way + 1] : NULL;
+	/* Create array of sets */
+	cache->sets = calloc(num_sets, sizeof(struct cache_set_t));
+	if (!cache->sets)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize array of sets */
+	for (set = 0; set < num_sets; set++)
+	{
+		/* Create array of blocks */
+		cache->sets[set].blocks = calloc(assoc, sizeof(struct cache_block_t));
+		if (!cache->sets[set].blocks)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* Initialize array of blocks */
+		cache->sets[set].way_head = &cache->sets[set].blocks[0];
+		cache->sets[set].way_tail = &cache->sets[set].blocks[assoc - 1];
+		for (way = 0; way < assoc; way++)
+		{
+			block = &cache->sets[set].blocks[way];
+			block->way = way;
+			block->way_prev = way ? &cache->sets[set].blocks[way - 1] : NULL;
+			block->way_next = way < assoc - 1 ? &cache->sets[set].blocks[way + 1] : NULL;
 		}
 	}
 	
@@ -147,54 +162,39 @@ struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc,
 void cache_free(struct cache_t *cache)
 {
 	uint32_t set;
-	for (set = 0; set < cache->nsets; set++)
-		free(cache->sets[set].blks);
+
+	for (set = 0; set < cache->num_sets; set++)
+		free(cache->sets[set].blocks);
 	free(cache->sets);
 	free(cache);
 }
 
 
-int cache_log2(uint32_t x)
-{
-	int result = 0;
-	if (!x)
-		abort();
-	while (!(x & 1))
-	{
-		x >>= 1;
-		result++;
-	}
-	if (x != 1)
-		abort();
-	return result;
-}
-
-
 /* Return {set, tag, offset} for a given address */
 void cache_decode_address(struct cache_t *cache, uint32_t addr,
-	uint32_t *pset, uint32_t *ptag, uint32_t *poffset)
+	uint32_t *set_ptr, uint32_t *tag_ptr, uint32_t *offset_ptr)
 {
-	PTR_ASSIGN(pset, (addr >> cache->logbsize) % cache->nsets);
-	PTR_ASSIGN(ptag, addr & ~cache->bmask);
-	PTR_ASSIGN(poffset, addr & cache->bmask);
+	PTR_ASSIGN(set_ptr, (addr >> cache->log_block_size) % cache->num_sets);
+	PTR_ASSIGN(tag_ptr, addr & ~cache->block_mask);
+	PTR_ASSIGN(offset_ptr, addr & cache->block_mask);
 }
 
 
 /* Look for a block in the cache. If it is found and its state is other than 0,
- * the function returns 1 and the status and way of the block are also returned.
+ * the function returns 1 and the state and way of the block are also returned.
  * The set where the address would belong is returned anyways. */
 int cache_find_block(struct cache_t *cache, uint32_t addr,
-	uint32_t *pset, uint32_t *pway, int *pstatus)
+	uint32_t *set_ptr, uint32_t *way_ptr, int *state_ptr)
 {
 	uint32_t set, tag, way;
 
 	/* Locate block */
-	tag = addr & ~cache->bmask;
-	set = (addr >> cache->logbsize) % cache->nsets;
-	PTR_ASSIGN(pset, set);
-	PTR_ASSIGN(pstatus, 0);  /* Invalid */
+	tag = addr & ~cache->block_mask;
+	set = (addr >> cache->log_block_size) % cache->num_sets;
+	PTR_ASSIGN(set_ptr, set);
+	PTR_ASSIGN(state_ptr, 0);  /* Invalid */
 	for (way = 0; way < cache->assoc; way++)
-		if (cache->sets[set].blks[way].tag == tag && cache->sets[set].blks[way].status)
+		if (cache->sets[set].blocks[way].tag == tag && cache->sets[set].blocks[way].state)
 			break;
 	
 	/* Block not found */
@@ -202,38 +202,38 @@ int cache_find_block(struct cache_t *cache, uint32_t addr,
 		return 0;
 	
 	/* Block found */
-	PTR_ASSIGN(pway, way);
-	PTR_ASSIGN(pstatus, cache->sets[set].blks[way].status);
+	PTR_ASSIGN(way_ptr, way);
+	PTR_ASSIGN(state_ptr, cache->sets[set].blocks[way].state);
 	return 1;
 }
 
 
-/* Set the tag and status of a block.
+/* Set the tag and state of a block.
  * If replacement policy is FIFO, update linked list in case a new
  * block is brought to cache, i.e., a new tag is set. */
 void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
-	uint32_t tag, int status)
+	uint32_t tag, int state)
 {
-	assert(set >= 0 && set < cache->nsets);
+	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
-	assert(set == (tag >> cache->logbsize) % cache->nsets || !status);
+	assert(set == (tag >> cache->log_block_size) % cache->num_sets || !state);
 	if (cache->policy == cache_policy_fifo
-		&& cache->sets[set].blks[way].tag != tag)
+		&& cache->sets[set].blocks[way].tag != tag)
 		cache_update_waylist(&cache->sets[set],
-			&cache->sets[set].blks[way],
+			&cache->sets[set].blocks[way],
 			cache_waylist_head);
-	cache->sets[set].blks[way].tag = tag;
-	cache->sets[set].blks[way].status = status;
+	cache->sets[set].blocks[way].tag = tag;
+	cache->sets[set].blocks[way].state = state;
 }
 
 
 void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
-	uint32_t *ptag, int *pstatus)
+	uint32_t *tag_ptr, int *state_ptr)
 {
-	assert(set >= 0 && set < cache->nsets);
+	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
-	PTR_ASSIGN(ptag, cache->sets[set].blks[way].tag);
-	PTR_ASSIGN(pstatus, cache->sets[set].blks[way].status);
+	PTR_ASSIGN(tag_ptr, cache->sets[set].blocks[way].tag);
+	PTR_ASSIGN(state_ptr, cache->sets[set].blocks[way].state);
 }
 
 
@@ -243,17 +243,17 @@ void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way)
 {
 	int move_to_head;
 	
-	assert(set >= 0 && set < cache->nsets);
+	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 
 	/* A block is moved to the head of the list for LRU policy.
 	 * It will also be moved if it is its first access for FIFO policy, i.e., if the
-	 * status of the block was invalid. */
+	 * state of the block was invalid. */
 	move_to_head = cache->policy == cache_policy_lru ||
-		(cache->policy == cache_policy_fifo && !cache->sets[set].blks[way].status);
-	if (move_to_head && cache->sets[set].blks[way].way_prev)
+		(cache->policy == cache_policy_fifo && !cache->sets[set].blocks[way].state);
+	if (move_to_head && cache->sets[set].blocks[way].way_prev)
 		cache_update_waylist(&cache->sets[set],
-			&cache->sets[set].blks[way],
+			&cache->sets[set].blocks[way],
 			cache_waylist_head);
 }
 
@@ -262,14 +262,14 @@ void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way)
  * depending on the replacement policy */
 uint32_t cache_replace_block(struct cache_t *cache, uint32_t set)
 {
-	struct cache_blk_t *blk;
+	struct cache_block_t *block;
 
 	/* Try to find an invalid block. Do this in the LRU order, to avoid picking the
-	 * MRU while its status has not changed to valid yet. */
-	assert(set >= 0 && set < cache->nsets);
-	for (blk = cache->sets[set].way_tail; blk; blk = blk->way_prev)
-		if (!blk->status)
-			return blk->way;
+	 * MRU while its state has not changed to valid yet. */
+	assert(set >= 0 && set < cache->num_sets);
+	for (block = cache->sets[set].way_tail; block; block = block->way_prev)
+		if (!block->state)
+			return block->way;
 
 	/* LRU and FIFO replacement: return block at the
 	 * tail of the linked list */
@@ -285,8 +285,9 @@ uint32_t cache_replace_block(struct cache_t *cache, uint32_t set)
 
 void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, uint32_t tag)
 {
-	struct cache_blk_t *blk;
-	blk = &cache->sets[set].blks[way];
-	blk->transient_tag = tag;
+	struct cache_block_t *block;
+
+	block = &cache->sets[set].blocks[way];
+	block->transient_tag = tag;
 }
 

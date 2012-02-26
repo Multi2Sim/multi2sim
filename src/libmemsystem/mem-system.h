@@ -51,48 +51,47 @@ enum cache_policy_t
 	cache_policy_random
 };
 
-struct cache_blk_t
+struct cache_block_t
 {
-	struct cache_blk_t *way_next;
-	struct cache_blk_t *way_prev;
+	struct cache_block_t *way_next;
+	struct cache_block_t *way_prev;
 	uint32_t tag, transient_tag;
 	uint32_t way;
-	int status;
+	int state;
 };
 
 struct cache_set_t
 {
-	struct cache_blk_t *way_head;
-	struct cache_blk_t *way_tail;
-	struct cache_blk_t *blks;
+	struct cache_block_t *way_head;
+	struct cache_block_t *way_tail;
+	struct cache_block_t *blocks;
 };
 
 struct cache_t
 {
-	uint32_t nsets;
-	uint32_t bsize;
+	uint32_t num_sets;
+	uint32_t block_size;
 	uint32_t assoc;
 	enum cache_policy_t policy;
 
 	struct cache_set_t *sets;
-	uint32_t bmask;
-	int logbsize;
+	uint32_t block_mask;
+	int log_block_size;
 };
 
 
-struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc,
+struct cache_t *cache_create(uint32_t num_sets, uint32_t block_size, uint32_t assoc,
 	enum cache_policy_t policy);
 void cache_free(struct cache_t *cache);
 
-int cache_log2(uint32_t x);
 void cache_decode_address(struct cache_t *cache, uint32_t addr,
-	uint32_t *pset, uint32_t *ptag, uint32_t *poffset);
+	uint32_t *set_ptr, uint32_t *tag_ptr, uint32_t *offset_ptr);
 int cache_find_block(struct cache_t *cache, uint32_t addr,
-	uint32_t *pset, uint32_t *pway, int *pstatus);
+	uint32_t *set_ptr, uint32_t *pway, int *state_ptr);
 void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
-	uint32_t tag, int status);
+	uint32_t tag, int state);
 void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
-	uint32_t *ptag, int *pstatus);
+	uint32_t *tag_ptr, int *state_ptr);
 void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way);
 uint32_t cache_replace_block(struct cache_t *cache, uint32_t set);
 void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, uint32_t tag);
