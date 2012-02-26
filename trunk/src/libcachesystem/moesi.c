@@ -819,7 +819,7 @@ void moesi_handler_read_request(int event, void *data)
 		if (stack->status)
 		{
 			/* Status = M/O/E/S
-			 * Check: addr multiple of requester's bsize
+			 * Check: addr multiple of requester's block_size
 			 * Check: no subblock requested by ccache is already owned by ccache */
 			assert(stack->addr % ccache->bsize == 0);
 			dir = ccache_get_dir(target, stack->tag);
@@ -1188,7 +1188,7 @@ void moesi_handler_write_request(int event, void *data)
 			return;
 		}
 
-		/* Check that addr is a multiple of ccache.bsize.
+		/* Check that addr is a multiple of ccache.block_size.
 		 * Set ccache as sharer and owner. */
 		dir = ccache_get_dir(target, stack->tag);
 		for (z = 0; z < dir->zsize; z++) {
