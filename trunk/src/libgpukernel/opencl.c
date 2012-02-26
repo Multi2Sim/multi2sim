@@ -19,7 +19,6 @@
 
 #include <gpukernel.h>
 #include <cpukernel.h>
-#include <gpuarch.h>
 #include <assert.h>
 #include <debug.h>
 
@@ -1719,7 +1718,15 @@ int opencl_func_run(int code, unsigned int *args)
 		if (gpu_sim_kind == gpu_sim_kind_functional)
 			gpu_ndrange_run(kernel->ndrange);
 		else
+		{
+			/* The following function is currently the only
+			 * dependence with 'libgpuarch'. This is not safe, but
+			 * let's just include the external reference here. */
+			void gpu_run(struct gpu_ndrange_t *ndrange);
+			/* FIXME!!! - this will be fixed when asynchronous execution is
+			 * implemented. */
 			gpu_run(kernel->ndrange);
+		}
 
 		/* Free NDRange */
 		gpu_ndrange_free(kernel->ndrange);

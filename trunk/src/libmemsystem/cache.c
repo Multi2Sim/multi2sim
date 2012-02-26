@@ -16,10 +16,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "cachesystem.h"
+#include <mem-system.h>
 
 
-struct string_map_t cache_policy_map = {
+/*
+ * Public Variables
+ */
+
+struct string_map_t cache_policy_map =
+{
 	3, {
 		{ "LRU",        cache_policy_lru },
 		{ "FIFO",       cache_policy_fifo },
@@ -28,65 +33,75 @@ struct string_map_t cache_policy_map = {
 };
 
 
-int cache_log2(uint32_t x) {
-	int result = 0;
-	if (!x)
-		abort();
-	while (!(x & 1)) {
-		x >>= 1;
-		result++;
-	}
-	if (x != 1)
-		abort();
-	return result;
-}
 
 
-enum cache_waylist_enum {
+/*
+ * Private Functions
+ */
+
+enum cache_waylist_enum
+{
 	cache_waylist_head,
 	cache_waylist_tail
 };
 
-
 static void cache_update_waylist(struct cache_set_t *set,
 	struct cache_blk_t *blk, enum cache_waylist_enum where)
 {
-	if (!blk->way_prev && !blk->way_next) {
+	if (!blk->way_prev && !blk->way_next)
+	{
 		assert(set->way_head == blk && set->way_tail == blk);
 		return;
 		
-	} else if (!blk->way_prev) {
+	}
+	else if (!blk->way_prev)
+	{
 		assert(set->way_head == blk && set->way_tail != blk);
 		if (where == cache_waylist_head)
 			return;
 		set->way_head = blk->way_next;
 		blk->way_next->way_prev = NULL;
 		
-	} else if (!blk->way_next) {
+	}
+	else if (!blk->way_next)
+	{
 		assert(set->way_head != blk && set->way_tail == blk);
 		if (where == cache_waylist_tail)
 			return;
 		set->way_tail = blk->way_prev;
 		blk->way_prev->way_next = NULL;
 		
-	} else {
+	}
+	else
+	{
 		assert(set->way_head != blk && set->way_tail != blk);
 		blk->way_prev->way_next = blk->way_next;
 		blk->way_next->way_prev = blk->way_prev;
 	}
 
-	if (where == cache_waylist_head) {
+	if (where == cache_waylist_head)
+	{
 		blk->way_next = set->way_head;
 		blk->way_prev = NULL;
 		set->way_head->way_prev = blk;
 		set->way_head = blk;
-	} else {
+	}
+	else
+	{
 		blk->way_prev = set->way_tail;
 		blk->way_next = NULL;
 		set->way_tail->way_next = blk;
 		set->way_tail = blk;
 	}
 }
+
+
+
+
+
+/*
+ * Public Functions
+ */
 
 
 struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc,
@@ -139,6 +154,22 @@ void cache_free(struct cache_t *cache)
 }
 
 
+int cache_log2(uint32_t x)
+{
+	int result = 0;
+	if (!x)
+		abort();
+	while (!(x & 1))
+	{
+		x >>= 1;
+		result++;
+	}
+	if (x != 1)
+		abort();
+	return result;
+}
+
+
 /* Return {set, tag, offset} for a given address */
 void cache_decode_address(struct cache_t *cache, uint32_t addr,
 	uint32_t *pset, uint32_t *ptag, uint32_t *poffset)
@@ -161,7 +192,7 @@ int cache_find_block(struct cache_t *cache, uint32_t addr,
 	tag = addr & ~cache->bmask;
 	set = (addr >> cache->logbsize) % cache->nsets;
 	PTR_ASSIGN(pset, set);
-	PTR_ASSIGN(pstatus, moesi_status_invalid);
+	PTR_ASSIGN(pstatus, 0);  /* Invalid */
 	for (way = 0; way < cache->assoc; way++)
 		if (cache->sets[set].blks[way].tag == tag && cache->sets[set].blks[way].status)
 			break;

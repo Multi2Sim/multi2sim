@@ -168,6 +168,10 @@
 }
 
 
+/* Safe pointer assignment for values returned in arguments passed by reference */
+#define PTR_ASSIGN(PTR, VALUE) if (PTR) *(PTR) = (VALUE)
+
+
 
 
 /*

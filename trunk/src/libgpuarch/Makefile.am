@@ -6,8 +6,6 @@ libgpuarch_a_SOURCES = \
 	compute-unit.c \
 	gpuarch.h \
 	gpuarch.c \
-	gpu-mem.c\
-	gpu-mod.c \
 	sched.c \
 	tex-engine.c \
 	uop.c
@@ -21,6 +19,7 @@ INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libnetwork \
 	-I$(top_srcdir)/src/libesim \
 	-I$(top_srcdir)/src/libcachesystem \
+	-I$(top_srcdir)/src/libmemsystem \
 	-I$(top_srcdir)/src/libcpukernel \
 	-I$(top_srcdir)/src/libcpudisasm
 
