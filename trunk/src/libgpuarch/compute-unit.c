@@ -30,19 +30,17 @@
 struct gpu_compute_unit_t *gpu_compute_unit_create()
 {
 	struct gpu_compute_unit_t *compute_unit;
-	struct mod_t *local_memory;
+	char buf[MAX_STRING_SIZE];
 
 	/* Create compute unit */
 	compute_unit = calloc(1, sizeof(struct gpu_compute_unit_t));
 	compute_unit->wavefront_pool = linked_list_create();
 
 	/* Local memory */
-	compute_unit->local_memory = mod_create(gpu_local_mem_banks,
-		gpu_local_mem_read_ports, gpu_local_mem_write_ports,
+	snprintf(buf, sizeof buf, "LocalMemory[%d]", compute_unit->id);
+	compute_unit->local_memory = mod_create(buf, mod_kind_main_memory,
+		gpu_local_mem_banks, gpu_local_mem_read_ports, gpu_local_mem_write_ports,
 		gpu_local_mem_block_size, gpu_local_mem_latency);
-	local_memory = compute_unit->local_memory;
-	snprintf(local_memory->name, sizeof(local_memory->name),
-		"LocalMemory[%d]", compute_unit->id);
 
 	/* Initialize CF Engine */
 	compute_unit->cf_engine.fetch_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));

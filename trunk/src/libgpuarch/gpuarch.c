@@ -948,6 +948,8 @@ void gpu_done()
 		gpu_compute_unit_free(compute_unit);
 	}
 	free(gpu->compute_units);
+
+	/* Free GPU */
 	free(gpu);
 	
 	/* Uops */
