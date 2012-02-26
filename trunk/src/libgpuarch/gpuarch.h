@@ -412,6 +412,13 @@ enum mod_kind_t
 	mod_kind_main_memory
 };
 
+enum mod_range_kind_t
+{
+	mod_range_invalid = 0,
+	mod_range_bounds,
+	mod_range_interleaved
+};
+
 /* Memory module */
 struct mod_t
 {
@@ -421,6 +428,23 @@ struct mod_t
 	int block_size;
 	int log_block_size;
 	int latency;
+
+	/* Address range */
+	enum mod_range_kind_t range_kind;
+	union {
+		/* For range_kind = mod_range_bounds */
+		struct {
+			uint32_t low;
+			uint32_t high;
+		} bounds;
+
+		/* For range_kind = mod_range_interleaved */
+		struct {
+			uint32_t mod;
+			uint32_t div;
+			uint32_t eq;
+		} interleaved;
+	} range;
 
 	/* Banks and ports */
 	struct mod_bank_t *banks;
@@ -578,7 +602,6 @@ struct gpu_t
 	/* Global memory hierarchy - Caches and interconnects */
 	struct list_t *net_list;  /* List of networks */
 	struct list_t *mod_list;  /* List of memory modules */
-	struct mod_t *global_memory;  /* Last element in cache array */
 };
 
 #define FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \

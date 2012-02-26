@@ -356,6 +356,18 @@ void str_token(char *dest, int dest_size, char *src, int index, char *delim)
 }
 
 
+int str_to_int(char *str)
+{
+	int result = 0;
+
+	if (!strncasecmp(str, "0x", 2))
+		sscanf(str + 2, "%x", &result);
+	else
+		sscanf(str, "%d", &result);
+	return result;
+}
+
+
 void str_printf(char **pbuf, int *psize, char *fmt, ...)
 {
 	va_list va;
