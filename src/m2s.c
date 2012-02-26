@@ -36,8 +36,8 @@ static char *opengl_disasm_file_name = "";
 static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
 static char *gpu_pipeline_debug_file_name = "";
-static char *gpu_mem_debug_file_name = "";
 static char *gpu_visual_file_name = "";
+static char *mem_debug_file_name = "";
 static char *loader_debug_file_name = "";
 static char *isa_call_debug_file_name = "";
 static char *isa_inst_debug_file_name = "";
@@ -67,11 +67,6 @@ static char *sim_help =
 	"\n"
 	"List of supported options:\n"
 	"\n"
-	"  --cpu-cache-config <file>\n"
-	"      Configuration file for the cache memory hierarchy on the CPU, including\n"
-	"      caches geometry, latencies, or interconnection networks. Type\n"
-	"      'm2s --help-cpu-cache-config' for details on the file format.\n"
-	"\n"
 	"  --cpu-config <file>\n"
 	"      Configuration file for the CPU model, including parameters describing the\n"
 	"      stages bandwidth, structures size, and other parameters of processor cores\n"
@@ -98,7 +93,7 @@ static char *sim_help =
 	"        --debug-elf: debug information related to ELF files processing.\n"
 	"        --debug-syscall: detailed system calls trace and arguments.\n"
 	"        --debug-opencl: trace of OpenCL calls and their arguments.\n"
-	"        --debug-gpu-mem: trace of event-driven simulation for the GPU memory\n"
+	"        --debug-mem: trace of event-driven simulation for memory system\n"
 	"            hierarchy. Must be used with '--gpu-sim detailed'.\n"
 	"        --debug-gpu-isa: during the emulation of an OpenCL device kernel, trace\n"
 	"            of executed AMD Evergreen ISA instructions.\n"
@@ -108,18 +103,12 @@ static char *sim_help =
 	"        --debug-loader: information for the x86 ELF binary analysis performed\n"
 	"            by the program loader.\n"
 	"        --debug-network: trace of interconnection networks activity.\n"
-	"        --debug-cpu-cache: event trace of block transfers and requests in the\n"
-	"            CPU cache memory hierarchy.\n"
 	"        --debug-call: trace of function calls, based on emulated x86 instr.\n"
 	"        --debug-cpu-isa: trace of emulated x86 ISA instructions.\n"
 	"        --debug-cpu-pipeline: trace of x86 microinstructions in the CPU pipeline.\n"
 	"            The output file can be used as an input for the 'm2s-pipeline' tool\n"
 	"            to obtain graphical timing diagrams.\n"
 	"        --debug-error: on simulation crashes, dump of the modeled CPU state.\n"\
-	"\n"
-	"  --gpu-mem-config <file>\n"
-	"      Configuration file for the GPU cache hierarchy (global memory scope). Please\n"
-	"      type 'm2s --help-gpu-mem-config' for a description of the file format.\n"
 	"\n"
 	"  --gpu-calc <file_prefix>\n"
 	"      If this option is set, a kernel execution will cause three GPU occupancy plots\n"
@@ -154,11 +143,10 @@ static char *sim_help =
 	"  --help-<xxx>\n"
 	"      Show help on the format of configuration files for Multi2Sim. <xxx> stands\n"
 	"      for one of the following options:\n"
-	"        --help-cpu-cache-config: format of the CPU cache configuration file.\n"
 	"        --help-cpu-config: format of the CPU model configuration file.\n"
 	"        --help-ctx-config: format of the context configuration file.\n"
-	"        --help-gpu-mem-config: format of the GPU cache configuration file.\n"
 	"        --help-gpu-config: format of the GPU model configuration file.\n"
+	"        --help-mem-config: format of the memory system configuration file.\n"
 	"\n"
 	"  --max-cpu-cycles <num_cycles>\n"
 	"      Maximum number of CPU cycles. For functional CPU simulation, one instruction\n"
@@ -185,6 +173,10 @@ static char *sim_help =
 	"  --max-time <seconds>\n"
 	"      Maximum simulation time in seconds. The simulator will stop after this time\n"
 	"      is exceeded. Use 0 (default) for no time limit.\n"
+	"\n"
+	"  --mem-config <file>\n"
+	"      Configuration file for memory hierarchy. Run 'm2s --help-mem-config' for a\n"
+	"      description of the file format.\n"
 	"\n"
 	"  --net-injection-rate <rate>\n"
 	"      For network simulation, packet injection rate for nodes (e.g. 0.01 means one\n"
@@ -216,21 +208,11 @@ static char *sim_help =
 	"      performs a call to 'clCreateProgramWithSource'. Since on-line compilation\n"
 	"      of OpenCL kernels is not supported, this is a possible way to load them.\n"
 	"\n"
-	"  --report-cpu-cache <file>\n"
-	"      File to dump detailed statistics related with the memory hierarchy, such as\n"
-	"      cache misses, hits, evictions, etc. Use only together with a detailed CPU\n"
-	"      simulation (option '--cpu-sim detailed').\n"
-	"\n"
 	"  --report-cpu-pipeline <file>\n"
 	"      File to dump a report of the CPU pipeline, such as number of instructions\n"
 	"      handled in every pipeline stage, or read/write accesses performed to\n"
 	"      pipeline queues (ROB, IQ, etc.). Use only together with a detailed CPU\n"
 	"      simulation (option '--cpu-sim detailed').\n"
-	"\n"
-	"  --report-gpu-mem <file>\n"
-	"      File for a report on the GPU global memory hierarchy, including cache hits,\n"
-	"      misses, evictions, etc. Use together with a detailed GPU simulation\n"
-	"      (option '--gpu-sim detailed').\n"
 	"\n"
 	"  --report-gpu-kernel <file>\n"
 	"      File to dump report of a GPU device kernel emulation. The report includes\n"
@@ -240,6 +222,10 @@ static char *sim_help =
 	"      File to dump a report of the GPU pipeline, such as active execution engines,\n"
 	"      compute units occupancy, stream cores utilization, etc. Use together with a\n"
 	"      detailed GPU simulation (option '--gpu-sim detailed').\n"
+	"\n"
+	"  --report-mem <file>\n"
+	"      File for a report on the memory hierarchy, including cache hits, misses,\n"
+	"      evictions, etc. Use together with detailed CPU or GPU simulation.\n"
 	"\n"
 	"  --report-net <file>\n"
 	"      File to dump detailed statistics for each network defined in the network\n"
@@ -270,15 +256,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 	for (argi = 1; argi < argc; argi++)
 	{
-		/* Cache system configuration file */
-		if (!strcmp(argv[argi], "--cpu-cache-config"))
-		{
-			sim_need_argument(argc, argv, argi);
-			argi++;
-			cache_system_config_file_name = argv[argi];
-			continue;
-		}
-
 		/* CPU configuration file */
 		if (!strcmp(argv[argi], "--cpu-config"))
 		{
@@ -331,15 +308,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 		
-		/* Cache system debug */
-		if (!strcmp(argv[argi], "--debug-cpu-cache"))
-		{
-			sim_need_argument(argc, argv, argi);
-			argi++;
-			cache_debug_file_name = argv[argi];
-			continue;
-		}
-
 		/* CPU ISA debug file */
 		if (!strcmp(argv[argi], "--debug-cpu-isa"))
 		{
@@ -394,15 +362,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* GPU cache debug file */
-		if (!strcmp(argv[argi], "--debug-gpu-mem"))
-		{
-			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_mem_debug_file_name = argv[argi];
-			continue;
-		}
-
 		/* Interconnect debug file */
 		if (!strcmp(argv[argi], "--debug-network"))
 		{
@@ -448,6 +407,15 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Memory hierarchy debug file */
+		if (!strcmp(argv[argi], "--debug-mem"))
+		{
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			mem_debug_file_name = argv[argi];
+			continue;
+		}
+
 		/* OpenCL debug file */
 		if (!strcmp(argv[argi], "--debug-opencl"))
 		{
@@ -463,15 +431,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			syscall_debug_file_name = argv[argi];
-			continue;
-		}
-
-		/* GPU cache configuration file */
-		if (!strcmp(argv[argi], "--gpu-mem-config"))
-		{
-			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_mem_config_file_name = argv[argi];
 			continue;
 		}
 
@@ -556,13 +515,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Help for cache configuration file */
-		if (!strcmp(argv[argi], "--help-cpu-cache-config"))
-		{
-			fprintf(stderr, "%s", cache_system_config_help);
-			continue;
-		}
-
 		/* Help for CPU configuration file */
 		if (!strcmp(argv[argi], "--help-cpu-config"))
 		{
@@ -584,10 +536,10 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Help for GPU cache configuration file */
-		if (!strcmp(argv[argi], "--help-gpu-mem-config"))
+		/* Help for memory hierarchy configuration file */
+		if (!strcmp(argv[argi], "--help-mem-config"))
 		{
-			fprintf(stderr, "%s", gpu_mem_config_help);
+			fprintf(stderr, "%s", mem_config_help);
 			continue;
 		}
 
@@ -652,6 +604,15 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 		
+		/* Memory hierarchy configuration file */
+		if (!strcmp(argv[argi], "--mem-config"))
+		{
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			mem_config_file_name = argv[argi];
+			continue;
+		}
+
 		/* Network configuration file */
 		if (!strcmp(argv[argi], "--net-config"))
 		{
@@ -709,30 +670,12 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* CPU memory hierarchy report */
-		if (!strcmp(argv[argi], "--report-cpu-cache"))
-		{
-			sim_need_argument(argc, argv, argi);
-			argi++;
-			cache_system_report_file_name = argv[argi];
-			continue;
-		}
-
 		/* CPU pipeline report */
 		if (!strcmp(argv[argi], "--report-cpu-pipeline"))
 		{
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			cpu_report_file_name = argv[argi];
-			continue;
-		}
-
-		/* GPU global memory hierarchy report */
-		if (!strcmp(argv[argi], "--report-gpu-mem"))
-		{
-			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_mem_report_file_name = argv[argi];
 			continue;
 		}
 
@@ -751,6 +694,15 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			gpu_report_file_name = argv[argi];
+			continue;
+		}
+
+		/* Memory hierarchy report */
+		if (!strcmp(argv[argi], "--report-mem"))
+		{
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			mem_report_file_name = argv[argi];
 			continue;
 		}
 
@@ -779,39 +731,27 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	{
 		char *msg = "option '%s' not valid for functional CPU simulation.\n"
 			"Please use option '--cpu-sim detailed' as well.\n";
-		if (*cache_system_config_file_name)
-			fatal(msg, "--cpu-cache-config");
 		if (*cpu_config_file_name)
 			fatal(msg, "--cpu-config");
-		if (*cache_debug_file_name)
-			fatal(msg, "--debug-cpu-cache");
 		if (*esim_debug_file_name)
 			fatal(msg, "--debug-cpu-pipeline");
 		if (*cpu_report_file_name)
 			fatal(msg, "--report-cpu-pipeline");
-		if (*cache_system_report_file_name)
-			fatal(msg, "--report-cpu-cache");
 	}
 	if (gpu_sim_kind == gpu_sim_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
 			"Please use option '--gpu-sim detailed' as well.\n";
-		if (*gpu_mem_debug_file_name)
-			fatal(msg, "--debug-gpu-mem");
 		if (*gpu_pipeline_debug_file_name)
 			fatal(msg, "--debug-gpu-pipeline");
 		if (*gpu_stack_debug_file_name)
 			fatal(msg, "--debug-gpu-stack");
 		if (*gpu_faults_debug_file_name)  /* GPU-REL */
 			fatal(msg, "--debug-gpu-faults");
-		if (*gpu_mem_config_file_name)
-			fatal(msg, "--gpu-mem-config");
 		if (*gpu_config_file_name)
 			fatal(msg, "--gpu-config");
 		if (*gpu_report_file_name)
 			fatal(msg, "--report-gpu-pipeline");
-		if (*gpu_mem_report_file_name)
-			fatal(msg, "--report-gpu-mem");
 	}
 	if (*gpu_visual_file_name && argc > 3)
 		fatal("option '--gpu-visual' is incompatible with any other options.");
@@ -963,7 +903,7 @@ int main(int argc, char **argv)
 	ld_debug_category = debug_new_category(loader_debug_file_name);
 	syscall_debug_category = debug_new_category(syscall_debug_file_name);
 	ctx_debug_category = debug_new_category(ctx_debug_file_name);
-	gpu_mem_debug_category = debug_new_category(gpu_mem_debug_file_name);
+	mem_debug_category = debug_new_category(mem_debug_file_name);
 	cache_debug_category = debug_new_category(cache_debug_file_name);
 	opencl_debug_category = debug_new_category(opencl_debug_file_name);
 	gpu_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);

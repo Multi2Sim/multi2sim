@@ -30,7 +30,7 @@
 extern char *gpu_config_help;
 extern char *gpu_config_file_name;
 extern char *gpu_report_file_name;
-extern char *gpu_mem_report_file_name;
+extern char *mem_report_file_name;
 
 extern int gpu_pipeline_debug_category;
 

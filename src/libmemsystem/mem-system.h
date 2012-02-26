@@ -229,26 +229,11 @@ struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
 
 
 /*
- * GPU Event-Driven Simulation
+ * CPU/GPU Common Event-Driven Simulation
  */
 
-extern int EV_GPU_MEM_READ;
-extern int EV_GPU_MEM_READ_REQUEST;
-extern int EV_GPU_MEM_READ_REQUEST_RECEIVE;
-extern int EV_GPU_MEM_READ_REQUEST_REPLY;
-extern int EV_GPU_MEM_READ_REQUEST_FINISH;
-extern int EV_GPU_MEM_READ_UNLOCK;
-extern int EV_GPU_MEM_READ_FINISH;
 
-extern int EV_GPU_MEM_WRITE;
-extern int EV_GPU_MEM_WRITE_REQUEST_SEND;
-extern int EV_GPU_MEM_WRITE_REQUEST_RECEIVE;
-extern int EV_GPU_MEM_WRITE_REQUEST_REPLY;
-extern int EV_GPU_MEM_WRITE_REQUEST_REPLY_RECEIVE;
-extern int EV_GPU_MEM_WRITE_UNLOCK;
-extern int EV_GPU_MEM_WRITE_FINISH;
-
-/* Stack for event-driven simulation */
+/* Stack */
 struct mod_stack_t
 {
 	uint64_t id;
@@ -289,8 +274,32 @@ struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
 	uint32_t addr, int ret_event, void *ret_stack);
 void mod_stack_return(struct mod_stack_t *stack);
 
-void mod_handler_read(int event, void *data);
-void mod_handler_write(int event, void *data);
+
+
+
+
+/*
+ * GPU Event-Driven Simulation
+ */
+
+extern int EV_GPU_MEM_READ;
+extern int EV_GPU_MEM_READ_REQUEST;
+extern int EV_GPU_MEM_READ_REQUEST_RECEIVE;
+extern int EV_GPU_MEM_READ_REQUEST_REPLY;
+extern int EV_GPU_MEM_READ_REQUEST_FINISH;
+extern int EV_GPU_MEM_READ_UNLOCK;
+extern int EV_GPU_MEM_READ_FINISH;
+
+extern int EV_GPU_MEM_WRITE;
+extern int EV_GPU_MEM_WRITE_REQUEST_SEND;
+extern int EV_GPU_MEM_WRITE_REQUEST_RECEIVE;
+extern int EV_GPU_MEM_WRITE_REQUEST_REPLY;
+extern int EV_GPU_MEM_WRITE_REQUEST_REPLY_RECEIVE;
+extern int EV_GPU_MEM_WRITE_UNLOCK;
+extern int EV_GPU_MEM_WRITE_FINISH;
+
+void gpu_mod_handler_read(int event, void *data);
+void gpu_mod_handler_write(int event, void *data);
 
 
 
@@ -299,14 +308,14 @@ void mod_handler_write(int event, void *data);
  * Memory System
  */
 
-extern char *gpu_mem_config_file_name;
-extern char *gpu_mem_config_help;
+extern char *mem_config_file_name;
+extern char *mem_config_help;
 
-extern char *gpu_mem_report_file_name;
+extern char *mem_report_file_name;
 
-#define gpu_mem_debugging() debug_status(gpu_mem_debug_category)
-#define gpu_mem_debug(...) debug(gpu_mem_debug_category, __VA_ARGS__)
-extern int gpu_mem_debug_category;
+#define mem_debugging() debug_status(mem_debug_category)
+#define mem_debug(...) debug(mem_debug_category, __VA_ARGS__)
+extern int mem_debug_category;
 
 struct mem_system_t
 {

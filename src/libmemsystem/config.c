@@ -31,10 +31,10 @@
  * Global Variables
  */
 
-char *gpu_mem_config_file_name = "";
-char *gpu_mem_report_file_name = "";
+char *mem_config_file_name = "";
+char *mem_report_file_name = "";
 
-char *gpu_mem_config_help = "FIXME\n";
+char *mem_config_help = "FIXME\n";
 #if 0
 	"The GPU memory hierarchy can be configured by using an IniFile formatted file,\n"
 	"describing the cache and interconnect properties. This file is passed to\n"
@@ -250,7 +250,7 @@ static void gpu_mem_config_read_networks(struct config_t *config)
 	char *section;
 
 	/* Create networks */
-	gpu_mem_debug("Creating internal networks:\n");
+	mem_debug("Creating internal networks:\n");
 	for (section = config_section_first(config); section; section = config_section_next(config))
 	{
 		char *net_name;
@@ -262,10 +262,10 @@ static void gpu_mem_config_read_networks(struct config_t *config)
 
 		/* Create network */
 		net = net_create(net_name);
-		gpu_mem_debug("\t%s\n", net_name);
+		mem_debug("\t%s\n", net_name);
 		list_add(mem_system->net_list, net);
 	}
-	gpu_mem_debug("\n");
+	mem_debug("\n");
 
 	/* Add network pointers to configuration file. This needs to be done separately,
 	 * because configuration file writes alter enumeration of sections. */
@@ -307,13 +307,13 @@ static void gpu_mem_config_insert_module_in_network(struct config_t *config,
 	/* For private networks, 'net_node_name' should be empty */
 	if (*net_node_name)
 		fatal("%s: %s: network node name should be empty.\n%s",
-			gpu_mem_config_file_name, mod->name,
+			mem_config_file_name, mod->name,
 			err_gpu_mem_config_note);
 
 	/* Network should not have this module already */
 	if (net_get_node_by_user_data(net, mod))
 		fatal("%s: network '%s' already contains module '%s'.\n%s",
-			gpu_mem_config_file_name, net->name,
+			mem_config_file_name, net->name,
 			mod->name, err_gpu_mem_config_note);
 
 	/* Read buffer sizes from network */
@@ -321,17 +321,17 @@ static void gpu_mem_config_insert_module_in_network(struct config_t *config,
 	def_output_buffer_size = config_read_int(config, buf, "DefaultOutputBufferSize", 0);
 	if (!def_input_buffer_size)
 		fatal("%s: network %s: variable 'DefaultInputBufferSize' missing.\n%s",
-			gpu_mem_config_file_name, net->name, err_gpu_mem_config_note);
+			mem_config_file_name, net->name, err_gpu_mem_config_note);
 	if (!def_output_buffer_size)
 		fatal("%s: network %s: variable 'DefaultOutputBufferSize' missing.\n%s",
-			gpu_mem_config_file_name, net->name, err_gpu_mem_config_note);
+			mem_config_file_name, net->name, err_gpu_mem_config_note);
 	if (def_input_buffer_size < mod->block_size + 8)
 		fatal("%s: network %s: minimum input buffer size is %d for cache '%s'.\n%s",
-			gpu_mem_config_file_name, net->name, mod->block_size + 8,
+			mem_config_file_name, net->name, mod->block_size + 8,
 			mod->name, err_gpu_mem_config_note);
 	if (def_output_buffer_size < mod->block_size + 8)
 		fatal("%s: network %s: minimum output buffer size is %d for cache '%s'.\n%s",
-			gpu_mem_config_file_name, net->name, mod->block_size + 8,
+			mem_config_file_name, net->name, mod->block_size + 8,
 			mod->name, err_gpu_mem_config_note);
 
 	/* Insert module in network */
@@ -350,32 +350,32 @@ try_external_network:
 	net = net_find(net_name);
 	if (!net)
 		fatal("%s: %s: invalid network name.\n%s%s",
-			gpu_mem_config_file_name, net_name,
+			mem_config_file_name, net_name,
 			err_gpu_mem_config_note, err_gpu_mem_config_net);
 
 	/* Node name must be specified */
 	if (!*net_node_name)
 		fatal("%s: %s: network node name required for external network.\n%s%s",
-			gpu_mem_config_file_name, mod->name,
+			mem_config_file_name, mod->name,
 			err_gpu_mem_config_note, err_gpu_mem_config_net);
 
 	/* Get node */
 	node = net_get_node_by_name(net, net_node_name);
 	if (!node)
 		fatal("%s: network %s: node %s: invalid node name.\n%s%s",
-			gpu_mem_config_file_name, net_name, net_node_name,
+			mem_config_file_name, net_name, net_node_name,
 			err_gpu_mem_config_note, err_gpu_mem_config_net);
 
 	/* No module must have been assigned previously to this node */
 	if (node->user_data)
 		fatal("%s: network %s: node '%s' already assigned.\n%s",
-			gpu_mem_config_file_name, net->name,
+			mem_config_file_name, net->name,
 			net_node_name, err_gpu_mem_config_note);
 
 	/* Network should not have this module already */
 	if (net_get_node_by_user_data(net, mod))
 		fatal("%s: network %s: module '%s' is already present.\n%s",
-			gpu_mem_config_file_name, net->name,
+			mem_config_file_name, net->name,
 			mod->name, err_gpu_mem_config_note);
 
 	/* Assign module to network node and return */
@@ -434,29 +434,29 @@ static struct mod_t *gpu_mem_config_read_cache(struct config_t *config, char *se
 	policy = map_string_case(&cache_policy_map, policy_str);
 	if (policy == cache_policy_invalid)
 		fatal("%s: cache '%s': %s: invalid block replacement policy.\n%s",
-			gpu_mem_config_file_name, mod_name,
+			mem_config_file_name, mod_name,
 			policy_str, err_gpu_mem_config_note);
 	if (sets < 1 || (sets & (sets - 1)))
 		fatal("%s: cache '%s': number of sets must be a power of two greater than 1.\n%s",
-			gpu_mem_config_file_name, mod_name, err_gpu_mem_config_note);
+			mem_config_file_name, mod_name, err_gpu_mem_config_note);
 	if (assoc < 1 || (assoc & (assoc - 1)))
 		fatal("%s: cache '%s': associativity must be power of two and > 1.\n%s",
-			gpu_mem_config_file_name, mod_name, err_gpu_mem_config_note);
+			mem_config_file_name, mod_name, err_gpu_mem_config_note);
 	if (block_size < 4 || (block_size & (block_size - 1)))
 		fatal("%s: cache '%s': block size must be power of two and at least 4.\n%s",
-			gpu_mem_config_file_name, mod_name, err_gpu_mem_config_note);
+			mem_config_file_name, mod_name, err_gpu_mem_config_note);
 	if (latency < 1)
 		fatal("%s: cache '%s': invalid value for variable 'Latency'.\n%s",
-			gpu_mem_config_file_name, mod_name, err_gpu_mem_config_note);
+			mem_config_file_name, mod_name, err_gpu_mem_config_note);
 	if (bank_count < 1 || (bank_count & (bank_count - 1)))
 		fatal("%s: cache '%s': number of banks must be a power of two greater than 1.\n%s",
-			gpu_mem_config_file_name, mod_name, err_gpu_mem_config_note);
+			mem_config_file_name, mod_name, err_gpu_mem_config_note);
 	if (read_port_count < 1)
 		fatal("%s: cache '%s': invalid value for variable 'ReadPorts'.\n%s",
-			gpu_mem_config_file_name, mod_name, err_gpu_mem_config_note);
+			mem_config_file_name, mod_name, err_gpu_mem_config_note);
 	if (write_port_count < 1)
 		fatal("%s: cache '%s': invalid value for variable 'WritePorts'.\n%s",
-			gpu_mem_config_file_name, mod_name, err_gpu_mem_config_note);
+			mem_config_file_name, mod_name, err_gpu_mem_config_note);
 
 	/* Create module */
 	mod = mod_create(mod_name, mod_kind_cache,
@@ -517,19 +517,19 @@ static struct mod_t *gpu_mem_config_read_main_memory(struct config_t *config, ch
 	/* Check parameters */
 	if (block_size < 1 || (block_size & (block_size - 1)))
 		fatal("%s: global memory: block size must be power of two and > 1.\n%s",
-			gpu_mem_config_file_name, err_gpu_mem_config_note);
+			mem_config_file_name, err_gpu_mem_config_note);
 	if (latency < 1)
 		fatal("%s: global memory: invalid value for variable 'Latency'.\n%s",
-			gpu_mem_config_file_name, err_gpu_mem_config_note);
+			mem_config_file_name, err_gpu_mem_config_note);
 	if (bank_count < 1 || (bank_count & (bank_count - 1)))
 		fatal("%s: global_memory: number of banks must be a power of two greater than 1.\n%s",
-			gpu_mem_config_file_name, err_gpu_mem_config_note);
+			mem_config_file_name, err_gpu_mem_config_note);
 	if (read_port_count < 1)
 		fatal("%s: global memory: invalid value for variable 'ReadPorts'.\n%s",
-			gpu_mem_config_file_name, err_gpu_mem_config_note);
+			mem_config_file_name, err_gpu_mem_config_note);
 	if (write_port_count < 1)
 		fatal("%s: global memory: invalid value for variable 'WritePorts'.\n%s",
-			gpu_mem_config_file_name, err_gpu_mem_config_note);
+			mem_config_file_name, err_gpu_mem_config_note);
 
 	/* Create module */
 	mod = mod_create(mod_name, mod_kind_main_memory,
@@ -651,7 +651,7 @@ static void gpu_mem_config_read_module_address_range(struct config_t *config,
 invalid_format:
 
 	fatal("%s: %s: invalid format for 'AddressRange'.\n%s",
-		gpu_mem_config_file_name, mod->name, err_gpu_mem_config_note);
+		mem_config_file_name, mod->name, err_gpu_mem_config_note);
 }
 
 
@@ -667,7 +667,7 @@ static void gpu_mem_config_read_modules(struct config_t *config)
 	int i;
 
 	/* Create modules */
-	gpu_mem_debug("Creating modules:\n");
+	mem_debug("Creating modules:\n");
 	for (section = config_section_first(config); section; section = config_section_next(config))
 	{
 		/* Section for a module */
@@ -683,7 +683,7 @@ static void gpu_mem_config_read_modules(struct config_t *config)
 			mod = gpu_mem_config_read_main_memory(config, section);
 		else
 			fatal("%s: %s: invalid or missing value for 'Type'.\n%s",
-				gpu_mem_config_file_name, mod_name,
+				mem_config_file_name, mod_name,
 				err_gpu_mem_config_note);
 
 		/* Read module address range */
@@ -691,11 +691,11 @@ static void gpu_mem_config_read_modules(struct config_t *config)
 
 		/* Add module */
 		list_add(mem_system->mod_list, mod);
-		gpu_mem_debug("\t%s\n", mod_name);
+		mem_debug("\t%s\n", mod_name);
 	}
 
 	/* Debug */
-	gpu_mem_debug("\n");
+	mem_debug("\n");
 
 	/* Add module pointers to configuration file. This needs to be done separately,
 	 * because configuration file writes alter enumeration of sections. */
@@ -717,26 +717,26 @@ static void gpu_mem_config_check_route_to_main_memory(struct mod_t *mod, int blo
 	/* Maximum level */
 	if (level > GPU_MEM_MAX_LEVELS)
 		fatal("%s: %s: too many cache levels.\n%s%s",
-			gpu_mem_config_file_name, mod->name,
+			mem_config_file_name, mod->name,
 			err_gpu_mem_levels, err_gpu_mem_config_note);
 
 	/* Check block size */
 	if (mod->block_size < block_size)
 		fatal("%s: %s: decreasing block size.\n%s%s",
-			gpu_mem_config_file_name, mod->name,
+			mem_config_file_name, mod->name,
 			err_gpu_mem_block_size, err_gpu_mem_config_note);
 	block_size = mod->block_size;
 
 	/* Dump current module */
-	gpu_mem_debug("\t");
+	mem_debug("\t");
 	for (i = 0; i < level * 2; i++)
-		gpu_mem_debug(" ");
-	gpu_mem_debug("%s\n", mod->name);
+		mem_debug(" ");
+	mem_debug("%s\n", mod->name);
 
 	/* Check that cache has a way to main memory */
 	if (!linked_list_count(mod->low_mod_list) && mod->kind == mod_kind_cache)
 		fatal("%s: %s: main memory not accessible from cache.\n%s",
-			gpu_mem_config_file_name, mod->name,
+			mem_config_file_name, mod->name,
 			err_gpu_mem_config_note);
 
 	/* Dump children */
@@ -792,7 +792,7 @@ static void gpu_mem_config_read_low_modules(struct config_t *config)
 			snprintf(buf, sizeof buf, "Module %s", low_mod_name);
 			if (!config_section_exists(config, buf))
 				fatal("%s: %s: invalid module name in 'LowCaches'.\n%s",
-					gpu_mem_config_file_name, mod->name,
+					mem_config_file_name, mod->name,
 					err_gpu_mem_config_note);
 
 			/* Get low cache and assign */
@@ -807,13 +807,13 @@ static void gpu_mem_config_read_low_modules(struct config_t *config)
 	}
 
 	/* Check paths to main memory */
-	gpu_mem_debug("Checking paths between caches and main memories:\n");
+	mem_debug("Checking paths between caches and main memories:\n");
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
 	{
 		mod = list_get(mem_system->mod_list, i);
 		gpu_mem_config_check_route_to_main_memory(mod, mod->block_size, 1);
 	}
-	gpu_mem_debug("\n");
+	mem_debug("\n");
 }
 
 
@@ -828,7 +828,7 @@ static void gpu_mem_config_read_nodes(struct config_t *config)
 	char *value;
 
 	/* Nodes */
-	gpu_mem_debug("Creating access points to memory hierarchy:\n");
+	mem_debug("Creating access points to memory hierarchy:\n");
 	for (section = config_section_first(config); section; section = config_section_next(config))
 	{
 		/* Section is a node */
@@ -839,15 +839,15 @@ static void gpu_mem_config_read_nodes(struct config_t *config)
 		/* Get compute unit */
 		if (!config_var_exists(config, section, "ComputeUnit"))
 			fatal("%s: node %s: variable 'ComputeUnit' not specified.\n%s",
-				gpu_mem_config_file_name, node_name, err_gpu_mem_config_note);
+				mem_config_file_name, node_name, err_gpu_mem_config_note);
 		compute_unit_id = config_read_int(config, section, "ComputeUnit", 0);
 		if (compute_unit_id < 0)
 			fatal("%s: node %s: invalid value for variable 'ComputeUnit'.\n%s",
-				gpu_mem_config_file_name, node_name, err_gpu_mem_config_note);
+				mem_config_file_name, node_name, err_gpu_mem_config_note);
 		if (compute_unit_id >= gpu_num_compute_units)
 		{
 			warning("%s: node %s: section ignored.\n%s",
-				gpu_mem_config_file_name, node_name, err_gpu_mem_ignored_node);
+				mem_config_file_name, node_name, err_gpu_mem_ignored_node);
 			config_var_allow(config, section, "DataCache");
 			continue;
 		}
@@ -857,21 +857,21 @@ static void gpu_mem_config_read_nodes(struct config_t *config)
 		value = config_read_string(config, section, "DataCache", "");
 		if (!*value)
 			fatal("%s: node '%s': variable 'DataCache' not specified.\n%s",
-				gpu_mem_config_file_name, node_name, err_gpu_mem_config_note);
+				mem_config_file_name, node_name, err_gpu_mem_config_note);
 
 		/* Get module */
 		snprintf(buf, sizeof buf, "Module %s", value);
 		if (!config_section_exists(config, buf))
 			fatal("%s: node '%s': invalid cache name for variable 'DataCache'.\n%s",
-				gpu_mem_config_file_name, node_name, err_gpu_mem_config_note);
+				mem_config_file_name, node_name, err_gpu_mem_config_note);
 
 		/* Assign entry */
 		compute_unit->data_cache = config_read_ptr(config, buf, "ptr", NULL);
 		assert(compute_unit->data_cache);
-		gpu_mem_debug("\tcu[%d] -> %s\n", compute_unit_id,
+		mem_debug("\tcu[%d] -> %s\n", compute_unit_id,
 			compute_unit->data_cache->name);
 	}
-	gpu_mem_debug("\n");
+	mem_debug("\n");
 
 	/* Check that all compute units have an entry to the global memory hierarchy */
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
@@ -879,7 +879,7 @@ static void gpu_mem_config_read_nodes(struct config_t *config)
 		compute_unit = gpu->compute_units[compute_unit_id];
 		if (!compute_unit->data_cache)
 			fatal("%s: missing entry point for compute unit %d.\n%s",
-				gpu_mem_config_file_name, compute_unit_id,
+				mem_config_file_name, compute_unit_id,
 				err_gpu_mem_config_note);
 	}
 }
@@ -902,7 +902,7 @@ static void gpu_mem_config_create_switches(struct config_t *config)
 	int j;
 
 	/* For each network, add a switch and create node connections */
-	gpu_mem_debug("Creating network switches and links for internal networks:\n");
+	mem_debug("Creating network switches and links for internal networks:\n");
 	for (i = 0; i < list_count(mem_system->net_list); i++)
 	{
 		/* Get network and lower level cache */
@@ -914,7 +914,7 @@ static void gpu_mem_config_create_switches(struct config_t *config)
 		def_bandwidth = config_read_int(config, buf, "DefaultBandwidth", 0);
 		if (def_bandwidth < 1)
 			fatal("%s: %s: invalid or missing value for 'DefaultBandwidth'.\n%s",
-				gpu_mem_config_file_name, net->name, err_gpu_mem_config_note);
+				mem_config_file_name, net->name, err_gpu_mem_config_note);
 
 		/* Get input/output buffer sizes.
 		 * Checks for these variables has done before. */
@@ -927,7 +927,7 @@ static void gpu_mem_config_create_switches(struct config_t *config)
 		snprintf(net_switch_name, sizeof net_switch_name, "Switch");
 		net_switch = net_add_switch(net, def_input_buffer_size, def_output_buffer_size,
 			def_bandwidth, net_switch_name);
-		gpu_mem_debug("\t%s.Switch ->", net->name);
+		mem_debug("\t%s.Switch ->", net->name);
 
 		/* Create connections between switch and every end node */
 		for (j = 0; j < list_count(net->node_list); j++)
@@ -937,7 +937,7 @@ static void gpu_mem_config_create_switches(struct config_t *config)
 			{
 				net_add_bidirectional_link(net, net_node, net_switch,
 					def_bandwidth);
-				gpu_mem_debug(" %s", net_node->name);
+				mem_debug(" %s", net_node->name);
 			}
 		}
 
@@ -945,9 +945,9 @@ static void gpu_mem_config_create_switches(struct config_t *config)
 		net_routing_table_calculate(net->routing_table);
 
 		/* Debug */
-		gpu_mem_debug("\n");
+		mem_debug("\n");
 	}
-	gpu_mem_debug("\n");
+	mem_debug("\n");
 
 }
 
@@ -959,28 +959,28 @@ void gpu_mem_config_check_routes(void)
 	int i;
 
 	/* For each module, check accessibility to low/high modules */
-	gpu_mem_debug("Checking accessibility to low and high modules:\n");
+	mem_debug("Checking accessibility to low and high modules:\n");
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
 	{
 		struct mod_t *low_mod;
 
 		/* Get module */
 		mod = list_get(mem_system->mod_list, i);
-		gpu_mem_debug("\t%s\n", mod->name);
+		mem_debug("\t%s\n", mod->name);
 
 		/* List of low modules */
-		gpu_mem_debug("\t\tLow modules:");
+		mem_debug("\t\tLow modules:");
 		for (linked_list_head(mod->low_mod_list); !linked_list_is_end(mod->low_mod_list);
 			linked_list_next(mod->low_mod_list))
 		{
 			/* Get low module */
 			low_mod = linked_list_get(mod->low_mod_list);
-			gpu_mem_debug(" %s", low_mod->name);
+			mem_debug(" %s", low_mod->name);
 
 			/* Check that nodes are in the same network */
 			if (mod->low_net != low_mod->high_net)
 				fatal("%s: %s: low node '%s' is not in the same network.\n%s",
-					gpu_mem_config_file_name, mod->name, low_mod->name,
+					mem_config_file_name, mod->name, low_mod->name,
 					err_gpu_mem_config_note);
 
 			/* Check that there is a route */
@@ -988,12 +988,12 @@ void gpu_mem_config_check_routes(void)
 				mod->low_net_node, low_mod->high_net_node);
 			if (!entry->output_buffer)
 				fatal("%s: %s: network does not connect '%s' with '%s'.\n%s",
-					gpu_mem_config_file_name, mod->low_net->name,
+					mem_config_file_name, mod->low_net->name,
 					mod->name, low_mod->name, err_gpu_mem_connect);
 		}
 
 		/* List of high modules */
-		gpu_mem_debug("\n\t\tHigh modules:");
+		mem_debug("\n\t\tHigh modules:");
 		for (linked_list_head(mod->high_mod_list); !linked_list_is_end(mod->high_mod_list);
 			linked_list_next(mod->high_mod_list))
 		{
@@ -1001,12 +1001,12 @@ void gpu_mem_config_check_routes(void)
 
 			/* Get high module */
 			high_mod = linked_list_get(mod->high_mod_list);
-			gpu_mem_debug(" %s", high_mod->name);
+			mem_debug(" %s", high_mod->name);
 
 			/* Check that nodes are in the same network */
 			if (mod->high_net != high_mod->low_net)
 				fatal("%s: %s: high node '%s' is not in the same network.\n%s",
-					gpu_mem_config_file_name, mod->name, high_mod->name,
+					mem_config_file_name, mod->name, high_mod->name,
 					err_gpu_mem_config_note);
 
 			/* Check that there is a route */
@@ -1014,16 +1014,16 @@ void gpu_mem_config_check_routes(void)
 				mod->high_net_node, high_mod->low_net_node);
 			if (!entry->output_buffer)
 				fatal("%s: %s: network does not connect '%s' with '%s'.\n%s",
-					gpu_mem_config_file_name, mod->high_net->name,
+					mem_config_file_name, mod->high_net->name,
 					mod->name, high_mod->name, err_gpu_mem_connect);
 		}
 
 		/* Debug */
-		gpu_mem_debug("\n");
+		mem_debug("\n");
 	}
 
 	/* Debug */
-	gpu_mem_debug("\n");
+	mem_debug("\n");
 }
 
 
@@ -1038,11 +1038,11 @@ void gpu_mem_config_read(void)
 	struct config_t *config;
 
 	/* Load cache configuration file */
-	config = config_create(gpu_mem_config_file_name);
-	if (!*gpu_mem_config_file_name)
+	config = config_create(mem_config_file_name);
+	if (!*mem_config_file_name)
 		gpu_mem_config_default(config);
 	else if (!config_load(config))
-		fatal("%s: cannot load GPU cache configuration file", gpu_mem_config_file_name);
+		fatal("%s: cannot load GPU cache configuration file", mem_config_file_name);
 
 	/* Read networks */
 	gpu_mem_config_read_networks(config);
