@@ -6,13 +6,13 @@ SUBDIRS = \
 	libesim \
 	libcpuarch \
 	libgpuarch \
+	libmemsystem \
 	libnetwork \
 	libcachesystem \
 	libgpukernel \
 	libmhandle \
 	libgpudisasm \
-	libgpuvisual \
-	libsdram
+	libgpuvisual
 
 bin_PROGRAMS = m2s
 
@@ -25,13 +25,13 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libcpudisasm \
 	-I$(top_srcdir)/src/libesim \
 	-I$(top_srcdir)/src/libcpuarch \
+	-I$(top_srcdir)/src/libmemsystem \
 	-I$(top_srcdir)/src/libnetwork \
 	-I$(top_srcdir)/src/libcachesystem \
 	-I$(top_srcdir)/src/libgpuarch \
 	-I$(top_srcdir)/src/libgpukernel \
 	-I$(top_srcdir)/src/libgpudisasm \
-	-I$(top_srcdir)/src/libgpuvisual \
-	-I$(top_srcdir)/src/libsdram
+	-I$(top_srcdir)/src/libgpuvisual
 
 LDADD = \
 	$(top_builddir)/src/libgpuvisual/libgpuvisual.a \
@@ -40,6 +40,7 @@ LDADD = \
 	$(top_builddir)/src/libgpuarch/libgpuarch.a \
 	$(top_builddir)/src/libcpuarch/libcpuarch.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
+	$(top_builddir)/src/libmemsystem/libmemsystem.a \
 	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
 	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
@@ -47,7 +48,6 @@ LDADD = \
 	$(top_builddir)/src/libstruct/libstruct.a \
 	$(top_builddir)/src/libmhandle/libmhandle.a \
 	$(top_builddir)/src/libmisc/libmisc.a \
-	$(top_builddir)/src/libsdram/libsdram.a \
 	-lm -lpthread -lz
 
 if HAVE_GTK
