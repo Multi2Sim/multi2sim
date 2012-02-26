@@ -135,7 +135,7 @@ int EV_GPU_MEM_WRITE_FINISH;
 #define ID ((long long) stack->id)
 
 
-void mod_handler_read(int event, void *data)
+void gpu_mod_handler_read(int event, void *data)
 {
 	struct mod_stack_t *stack = data, *newstack;
 	struct mod_t *mod = stack->mod;
@@ -149,9 +149,9 @@ void mod_handler_read(int event, void *data)
 		 * be enqueued in the waiting list, since all accesses need to be
 		 * done in order. */
 		if (mod->waiting_list_head) {
-			gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u\n",
+			mem_debug("%lld %lld read cache=\"%s\" addr=%u\n",
 				CYCLE, ID, mod->name, stack->addr);
-			gpu_mem_debug("%lld %lld wait why=\"order\"\n",
+			mem_debug("%lld %lld wait why=\"order\"\n",
 				CYCLE, ID);
 			mod_stack_wait_in_cache(stack, EV_GPU_MEM_READ);
 			return;
@@ -179,11 +179,11 @@ void mod_handler_read(int event, void *data)
 			/* If current and previous access are in the same cycle, coalesce. */
 			if (port->lock_when == esim_cycle)
 			{
-				gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
+				mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
 					CYCLE, ID, mod->name, stack->addr, stack->bank_index);
 				stack->read_port_index = i;
 				stack->port = port;
-				gpu_mem_debug("  %lld %lld coalesce id=%lld bank=%d read_port=%d\n",
+				mem_debug("  %lld %lld coalesce id=%lld bank=%d read_port=%d\n",
 					CYCLE, ID, (long long) port->stack->id, stack->bank_index, stack->read_port_index);
 				mod_stack_wait_in_port(stack, EV_GPU_MEM_READ_FINISH);
 
@@ -193,9 +193,9 @@ void mod_handler_read(int event, void *data)
 			}
 
 			/* Current block is handled by an in-flight access, wait for it. */
-			gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u\n",
+			mem_debug("%lld %lld read cache=\"%s\" addr=%u\n",
 				CYCLE, ID, mod->name, stack->addr);
-			gpu_mem_debug("%lld %lld wait why=\"in_flight\"\n",
+			mem_debug("%lld %lld wait why=\"in_flight\"\n",
 				CYCLE, ID);
 			mod_stack_wait_in_cache(stack, EV_GPU_MEM_READ);
 			return;
@@ -213,9 +213,9 @@ void mod_handler_read(int event, void *data)
 		
 		/* If there is no free read port, enqueue in cache waiting list. */
 		if (!stack->port) {
-			gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
+			mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
 				CYCLE, ID, mod->name, stack->addr, stack->bank_index);
-			gpu_mem_debug("  %lld %lld wait why=\"no_read_port\"\n", CYCLE, ID);
+			mem_debug("  %lld %lld wait why=\"no_read_port\"\n", CYCLE, ID);
 			mod_stack_wait_in_cache(stack, EV_GPU_MEM_READ);
 			return;
 		}
@@ -240,7 +240,7 @@ void mod_handler_read(int event, void *data)
 
 			/* Stats */
 			mod->effective_read_hits++;
-			gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d\n",
+			mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d\n",
 				CYCLE, ID, mod->name, stack->addr, stack->bank_index, stack->read_port_index);
 			return;
 		}
@@ -263,7 +263,7 @@ void mod_handler_read(int event, void *data)
 		}
 
 		/* Debug */
-		gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d set=%d way=%d\n",
+		mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d set=%d way=%d\n",
 			CYCLE, ID, mod->name, stack->addr, stack->bank_index, stack->read_port_index,
 			stack->set, stack->way);
 		return;
@@ -277,7 +277,7 @@ void mod_handler_read(int event, void *data)
 		net = mod->low_net;
 		assert(net);
 		stack->target_mod = mod_get_low_mod(mod, stack->addr);
-		gpu_mem_debug("  %lld %lld read_request src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+		mem_debug("  %lld %lld read_request src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, mod->name, stack->target_mod->name, net->name);
 
 		/* Send message */
@@ -291,7 +291,7 @@ void mod_handler_read(int event, void *data)
 		struct mod_t *target_mod = stack->target_mod;
 
 		assert(target_mod);
-		gpu_mem_debug("  %lld %lld read_request_receive cache=\"%s\"\n",
+		mem_debug("  %lld %lld read_request_receive cache=\"%s\"\n",
 			CYCLE, ID, target_mod->name);
 
 		/* Receive element */
@@ -311,7 +311,7 @@ void mod_handler_read(int event, void *data)
 		struct mod_t *target_mod = stack->target_mod;
 
 		assert(net && target_mod);
-		gpu_mem_debug("  %lld %lld read_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+		mem_debug("  %lld %lld read_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, target_mod->name, mod->name, net->name);
 
 		/* Send message */
@@ -323,7 +323,7 @@ void mod_handler_read(int event, void *data)
 
 	if (event == EV_GPU_MEM_READ_REQUEST_FINISH)
 	{
-		gpu_mem_debug("  %lld %lld read_request_finish\n", CYCLE, ID);
+		mem_debug("  %lld %lld read_request_finish\n", CYCLE, ID);
 		assert(mod->cache);
 
 		/* Receive message */
@@ -340,7 +340,7 @@ void mod_handler_read(int event, void *data)
 	{
 		struct mod_port_t *port = stack->port;
 
-		gpu_mem_debug("  %lld %lld read_unlock\n", CYCLE, ID);
+		mem_debug("  %lld %lld read_unlock\n", CYCLE, ID);
 
 		/* Update LRU counters */
 		if (mod->cache)
@@ -363,7 +363,7 @@ void mod_handler_read(int event, void *data)
 
 	if (event == EV_GPU_MEM_READ_FINISH)
 	{
-		gpu_mem_debug("  %lld %lld read_finish\n", CYCLE, ID);
+		mem_debug("  %lld %lld read_finish\n", CYCLE, ID);
 
 		/* Increment witness variable */
 		if (stack->witness_ptr)
@@ -379,7 +379,7 @@ void mod_handler_read(int event, void *data)
 }
 
 
-void mod_handler_write(int event, void *data)
+void gpu_mod_handler_write(int event, void *data)
 {
 	struct mod_stack_t *stack = data;
 	struct mod_t *mod = stack->mod;
@@ -392,9 +392,9 @@ void mod_handler_write(int event, void *data)
 		/* If there is any pending access in the cache, access gets enqueued. */
 		if (mod->waiting_list_head)
 		{
-			gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
+			mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
 				CYCLE, ID, mod->name, stack->addr);
-			gpu_mem_debug("%lld %lld wait why=\"order\"\n",
+			mem_debug("%lld %lld wait why=\"order\"\n",
 				CYCLE, ID);
 			mod_stack_wait_in_cache(stack, EV_GPU_MEM_WRITE);
 			return;
@@ -405,9 +405,9 @@ void mod_handler_write(int event, void *data)
 		 * writes could be faster than reads in the memory hierarchy. */
 		if (mod->locked_read_port_count)
 		{
-			gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
+			mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
 				CYCLE, ID, mod->name, stack->addr);
-			gpu_mem_debug("%lld %lld wait why=\"write_after_read\"\n",
+			mem_debug("%lld %lld wait why=\"write_after_read\"\n",
 				CYCLE, ID);
 			mod_stack_wait_in_cache(stack, EV_GPU_MEM_WRITE);
 			return;
@@ -434,11 +434,11 @@ void mod_handler_write(int event, void *data)
 
 			if (port->lock_when == esim_cycle)
 			{
-				gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
+				mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
 					CYCLE, ID, mod->name, stack->addr, stack->bank_index);
 				stack->write_port_index = i;
 				stack->port = port;
-				gpu_mem_debug("  %lld %lld coalesce id=%lld bank=%d write_port=%d\n",
+				mem_debug("  %lld %lld coalesce id=%lld bank=%d write_port=%d\n",
 					CYCLE, ID, (long long) port->stack->id, stack->bank_index,
 					stack->write_port_index);
 				mod_stack_wait_in_port(stack, EV_GPU_MEM_WRITE_FINISH);
@@ -453,9 +453,9 @@ void mod_handler_write(int event, void *data)
 			}
 
 			/* Current block is handled by an in-flight access, wait for it. */
-			gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
+			mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
 				CYCLE, ID, mod->name, stack->addr);
-			gpu_mem_debug("%lld %lld wait why=\"in_flight\"\n",
+			mem_debug("%lld %lld wait why=\"in_flight\"\n",
 				CYCLE, ID);
 			mod_stack_wait_in_cache(stack, EV_GPU_MEM_WRITE);
 			return;
@@ -476,9 +476,9 @@ void mod_handler_write(int event, void *data)
 		/* If there is no free write port, enqueue in cache waiting list. */
 		if (!stack->port)
 		{
-			gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
+			mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
 				CYCLE, ID, mod->name, stack->addr, stack->bank_index);
-			gpu_mem_debug("  %lld %lld wait why=\"no_write_port\"\n", CYCLE, ID);
+			mem_debug("  %lld %lld wait why=\"no_write_port\"\n", CYCLE, ID);
 			mod_stack_wait_in_cache(stack, EV_GPU_MEM_WRITE);
 			return;
 		}
@@ -492,7 +492,7 @@ void mod_handler_write(int event, void *data)
 		port->lock_when = esim_cycle;
 		port->stack = stack;
 		mod->locked_write_port_count++;
-		gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d write_port=%d\n",
+		mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d write_port=%d\n",
 			CYCLE, ID, mod->name, stack->addr, stack->bank_index, stack->write_port_index);
 
 		/* Increment witness variable as soon as a port was secured */
@@ -536,7 +536,7 @@ void mod_handler_write(int event, void *data)
 		stack->target_mod = mod_get_low_mod(mod, stack->addr);
 
 		/* Debug */
-		gpu_mem_debug("  %lld %lld write_request_send src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+		mem_debug("  %lld %lld write_request_send src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, mod->name, stack->target_mod->name, net->name);
 
 		/* Send message */
@@ -551,7 +551,7 @@ void mod_handler_write(int event, void *data)
 		struct mod_stack_t *newstack;
 
 		assert(target);
-		gpu_mem_debug("  %lld %lld write_request_receive cache=\"%s\"\n",
+		mem_debug("  %lld %lld write_request_receive cache=\"%s\"\n",
 			CYCLE, ID, target->name);
 
 		/* Receive message */
@@ -571,7 +571,7 @@ void mod_handler_write(int event, void *data)
 
 		assert(target);
 		assert(net);
-		gpu_mem_debug("  %lld %lld write_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+		mem_debug("  %lld %lld write_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, mod->name, target->name, net->name);
 
 		/* Send message */
@@ -582,7 +582,7 @@ void mod_handler_write(int event, void *data)
 
 	if (event == EV_GPU_MEM_WRITE_REQUEST_REPLY_RECEIVE)
 	{
-		gpu_mem_debug("  %lld %lld write_request_reply_receive dest=\"%s\" net=\"%s\"\n",
+		mem_debug("  %lld %lld write_request_reply_receive dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, mod->name, mod->low_net->name);
 
 		/* Receive message */
@@ -604,7 +604,7 @@ void mod_handler_write(int event, void *data)
 			return;
 
 		/* Debug */
-		gpu_mem_debug("  %lld %lld write_unlock\n", CYCLE, ID);
+		mem_debug("  %lld %lld write_unlock\n", CYCLE, ID);
 
 		/* Update LRU counters */
 		if (stack->hit)
@@ -632,7 +632,7 @@ void mod_handler_write(int event, void *data)
 	if (event == EV_GPU_MEM_WRITE_FINISH)
 	{
 		/* Return */
-		gpu_mem_debug("  %lld %lld write_finish\n", CYCLE, ID);
+		mem_debug("  %lld %lld write_finish\n", CYCLE, ID);
 		mod_stack_return(stack);
 		return;
 	}

@@ -24,7 +24,7 @@
  * Global Variables
  */
 
-int gpu_mem_debug_category;
+int mem_debug_category;
 
 struct mem_system_t *mem_system;
 
@@ -38,9 +38,9 @@ struct mem_system_t *mem_system;
 void gpu_mem_init(void)
 {
 	/* Try to open report file */
-	if (*gpu_mem_report_file_name && !can_open_write(gpu_mem_report_file_name))
+	if (*mem_report_file_name && !can_open_write(mem_report_file_name))
 		fatal("%s: cannot open GPU cache report file",
-			gpu_mem_report_file_name);
+			mem_report_file_name);
 
 	/* Create memory system */
 	mem_system = calloc(1, sizeof(struct mem_system_t));
@@ -52,21 +52,21 @@ void gpu_mem_init(void)
 	mem_system->mod_list = list_create();
 
 	/* Events */
-	EV_GPU_MEM_READ = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_REQUEST = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_REQUEST_RECEIVE = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_REQUEST_REPLY = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_REQUEST_FINISH = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_UNLOCK = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_FINISH = esim_register_event(mod_handler_read);
+	EV_GPU_MEM_READ = esim_register_event(gpu_mod_handler_read);
+	EV_GPU_MEM_READ_REQUEST = esim_register_event(gpu_mod_handler_read);
+	EV_GPU_MEM_READ_REQUEST_RECEIVE = esim_register_event(gpu_mod_handler_read);
+	EV_GPU_MEM_READ_REQUEST_REPLY = esim_register_event(gpu_mod_handler_read);
+	EV_GPU_MEM_READ_REQUEST_FINISH = esim_register_event(gpu_mod_handler_read);
+	EV_GPU_MEM_READ_UNLOCK = esim_register_event(gpu_mod_handler_read);
+	EV_GPU_MEM_READ_FINISH = esim_register_event(gpu_mod_handler_read);
 
-	EV_GPU_MEM_WRITE = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_REQUEST_SEND = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_REQUEST_RECEIVE = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_REQUEST_REPLY_RECEIVE = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_UNLOCK = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_FINISH = esim_register_event(mod_handler_write);
+	EV_GPU_MEM_WRITE = esim_register_event(gpu_mod_handler_write);
+	EV_GPU_MEM_WRITE_REQUEST_SEND = esim_register_event(gpu_mod_handler_write);
+	EV_GPU_MEM_WRITE_REQUEST_RECEIVE = esim_register_event(gpu_mod_handler_write);
+	EV_GPU_MEM_WRITE_REQUEST_REPLY = esim_register_event(gpu_mod_handler_write);
+	EV_GPU_MEM_WRITE_REQUEST_REPLY_RECEIVE = esim_register_event(gpu_mod_handler_write);
+	EV_GPU_MEM_WRITE_UNLOCK = esim_register_event(gpu_mod_handler_write);
+	EV_GPU_MEM_WRITE_FINISH = esim_register_event(gpu_mod_handler_write);
 
 	/* Read cache configuration file */
 	gpu_mem_config_read();
@@ -104,7 +104,7 @@ void gpu_mem_dump_report(void)
 	struct cache_t *cache;
 
 	/* Open file */
-	f = open_write(gpu_mem_report_file_name);
+	f = open_write(mem_report_file_name);
 	if (!f)
 		return;
 
