@@ -27,6 +27,9 @@
  * Global variables
  */
 
+int gpu_mem_debug_category;
+
+char *gpu_mem_report_file_name = "";
 char *gpu_mem_config_file_name = "";
 
 char *gpu_mem_config_help =
@@ -917,6 +920,135 @@ static void gpu_mem_config_check_routes(void)
 /*
  * Public Functions
  */
+
+void gpu_mem_init(void)
+{
+	/* Try to open report file */
+	if (gpu_mem_report_file_name[0] && !can_open_write(gpu_mem_report_file_name))
+		fatal("%s: cannot open GPU cache report file",
+			gpu_mem_report_file_name);
+
+	/* Events */
+	EV_GPU_MEM_READ = esim_register_event(mod_handler_read);
+	EV_GPU_MEM_READ_REQUEST = esim_register_event(mod_handler_read);
+	EV_GPU_MEM_READ_REQUEST_RECEIVE = esim_register_event(mod_handler_read);
+	EV_GPU_MEM_READ_REQUEST_REPLY = esim_register_event(mod_handler_read);
+	EV_GPU_MEM_READ_REQUEST_FINISH = esim_register_event(mod_handler_read);
+	EV_GPU_MEM_READ_UNLOCK = esim_register_event(mod_handler_read);
+	EV_GPU_MEM_READ_FINISH = esim_register_event(mod_handler_read);
+
+	EV_GPU_MEM_WRITE = esim_register_event(mod_handler_write);
+	EV_GPU_MEM_WRITE_REQUEST_SEND = esim_register_event(mod_handler_write);
+	EV_GPU_MEM_WRITE_REQUEST_RECEIVE = esim_register_event(mod_handler_write);
+	EV_GPU_MEM_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_write);
+	EV_GPU_MEM_WRITE_REQUEST_REPLY_RECEIVE = esim_register_event(mod_handler_write);
+	EV_GPU_MEM_WRITE_UNLOCK = esim_register_event(mod_handler_write);
+	EV_GPU_MEM_WRITE_FINISH = esim_register_event(mod_handler_write);
+
+	/* Read cache configuration file */
+	gpu_mem_config_read();
+}
+
+
+void gpu_mem_done(void)
+{
+	int i;
+	
+	/* Dump report */
+	gpu_mem_dump_report();
+
+	/* Free caches and cache array */
+	for (i = 0; i < gpu->mod_count; i++)
+		mod_free(gpu->gpu_mods[i]);
+	free(gpu->gpu_mods);
+
+	/* Free networks */
+	for (i = 0; i < gpu->network_count; i++)
+		net_free(gpu->networks[i]);
+	if (gpu->networks)
+		free(gpu->networks);
+}
+
+
+void gpu_mem_dump_report(void)
+{
+	FILE *f;
+	int i;
+
+	struct mod_t *mod;
+	struct cache_t *cache;
+
+	/* Open file */
+	f = open_write(gpu_mem_report_file_name);
+	if (!f)
+		return;
+
+	/* Intro */
+	fprintf(f, "; Report for the GPU global memory hierarchy.\n");
+	fprintf(f, ";    Accesses - Total number of accesses requested from a compute unit or upper-level cache\n");
+	fprintf(f, ";    Reads - Number of read requests received from a compute unit or upper-level cache\n");
+	fprintf(f, ";    Writes - Number of write requests received from a compute unit or upper-level cache\n");
+	fprintf(f, ";    CoalescedReads - Number of reads that were coalesced with previous accesses (discarded)\n");
+	fprintf(f, ";    CoalescedWrites - Number of writes coalesced with previous accesses\n");
+	fprintf(f, ";    EffectiveReads - Number of reads actually performed (= Reads - CoalescedReads)\n");
+	fprintf(f, ";    EffectiveReadHits - Number of effective reads producing cache hit\n");
+	fprintf(f, ";    EffectiveReadMisses - Number of effective reads missing in the cache\n");
+	fprintf(f, ";    EffectiveWrites - Number of writes actually performed (= Writes - CoalescedWrites)\n");
+	fprintf(f, ";    EffectiveWriteHits - Number of effective writes that found the block in the cache\n");
+	fprintf(f, ";    EffectiveWriteMisses - Number of effective writes missing in the cache\n");
+	fprintf(f, ";    Evictions - Number of valid blocks replaced in the cache\n");
+	fprintf(f, "\n\n");
+
+	/* Print cache statistics */
+	for (i = 0; i < gpu->mod_count; i++)
+	{
+		/* Get cache */
+		mod = gpu->gpu_mods[i];
+		cache = mod->cache;
+		fprintf(f, "[ %s ]\n\n", mod->name);
+
+		/* Configuration */
+		if (cache) {
+			fprintf(f, "Sets = %d\n", cache->nsets);
+			fprintf(f, "Assoc = %d\n", cache->assoc);
+			fprintf(f, "Policy = %s\n", map_value(&cache_policy_map, cache->policy));
+		}
+		fprintf(f, "BlockSize = %d\n", mod->block_size);
+		fprintf(f, "Latency = %d\n", mod->latency);
+		fprintf(f, "Banks = %d\n", mod->bank_count);
+		fprintf(f, "ReadPorts = %d\n", mod->read_port_count);
+		fprintf(f, "WritePorts = %d\n", mod->write_port_count);
+		fprintf(f, "\n");
+
+		/* Statistics */
+		fprintf(f, "Accesses = %lld\n", (long long) (mod->reads + mod->writes));
+		fprintf(f, "Reads = %lld\n", (long long) mod->reads);
+		fprintf(f, "Writes = %lld\n", (long long) mod->writes);
+		fprintf(f, "CoalescedReads = %lld\n", (long long) (mod->reads
+			- mod->effective_reads));
+		fprintf(f, "CoalescedWrites = %lld\n", (long long) (mod->writes
+			- mod->effective_writes));
+		fprintf(f, "EffectiveReads = %lld\n", (long long) mod->effective_reads);
+		fprintf(f, "EffectiveReadHits = %lld\n", (long long) mod->effective_read_hits);
+		fprintf(f, "EffectiveReadMisses = %lld\n", (long long) (mod->effective_reads
+			- mod->effective_read_hits));
+		fprintf(f, "EffectiveWrites = %lld\n", (long long) mod->effective_writes);
+		fprintf(f, "EffectiveWriteHits = %lld\n", (long long) mod->effective_write_hits);
+		fprintf(f, "EffectiveWriteMisses = %lld\n", (long long) (mod->effective_writes
+			- mod->effective_write_hits));
+		fprintf(f, "Evictions = %lld\n", (long long) mod->evictions);
+		fprintf(f, "\n\n");
+	}
+	
+	
+	/* Dump report for networks */
+	for (i = 0; i < gpu->network_count; i++)
+		net_dump_report(gpu->networks[i], f);
+
+	/* Close */
+	fclose(f);
+}
+
 
 void gpu_mem_config_read(void)
 {
