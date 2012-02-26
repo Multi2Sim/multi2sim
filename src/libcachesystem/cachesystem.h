@@ -29,6 +29,7 @@
 #include <esim.h>
 
 #include <config.h>
+#include <mem-system.h>
 #include <debug.h>
 #include <repos.h>
 #include <linked-list.h>
@@ -42,10 +43,6 @@
 
 
 extern char *cache_system_config_help;
-
-
-/* Macro for safe pointer assignment */
-#define PTR_ASSIGN(PTR, VALUE) if (PTR) *(PTR) = (VALUE)
 
 
 
@@ -122,74 +119,6 @@ void mmu_done(void);
 uint32_t mmu_translate(int mid, uint32_t vtladdr);
 struct dir_t *mmu_get_dir(uint32_t phaddr);
 int mmu_valid_phaddr(uint32_t phaddr);
-
-
-
-
-/*
- * Cache Memory
- */
-
-enum cache_access_kind_t
-{
-	cache_access_kind_read = 0,
-	cache_access_kind_write
-};
-
-extern struct string_map_t cache_policy_map;
-enum cache_policy_t
-{
-	cache_policy_invalid = 0,  /* for parsing */
-	cache_policy_lru,
-	cache_policy_fifo,
-	cache_policy_random
-};
-
-struct cache_blk_t
-{
-	struct cache_blk_t *way_next;
-	struct cache_blk_t *way_prev;
-	uint32_t tag, transient_tag;
-	uint32_t way;
-	int status;
-};
-
-struct cache_set_t
-{
-	struct cache_blk_t *way_head;
-	struct cache_blk_t *way_tail;
-	struct cache_blk_t *blks;
-};
-
-struct cache_t
-{
-	uint32_t nsets;
-	uint32_t bsize;
-	uint32_t assoc;
-	enum cache_policy_t policy;
-
-	struct cache_set_t *sets;
-	uint32_t bmask;
-	int logbsize;
-};
-
-
-struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc,
-	enum cache_policy_t policy);
-void cache_free(struct cache_t *cache);
-
-int cache_log2(uint32_t x);
-void cache_decode_address(struct cache_t *cache, uint32_t addr,
-	uint32_t *pset, uint32_t *ptag, uint32_t *poffset);
-int cache_find_block(struct cache_t *cache, uint32_t addr,
-	uint32_t *pset, uint32_t *pway, int *pstatus);
-void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
-	uint32_t tag, int status);
-void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
-	uint32_t *ptag, int *pstatus);
-void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way);
-uint32_t cache_replace_block(struct cache_t *cache, uint32_t set);
-void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, uint32_t tag);
 
 
 

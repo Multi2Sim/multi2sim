@@ -19,6 +19,310 @@
 #ifndef MEM_SYSTEM_H
 #define MEM_SYSTEM_H
 
+#include <mhandle.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <debug.h>
+#include <network.h>
+#include <list.h>
+#include <linked-list.h>
+#include <misc.h>
+
+
+
+
+/*
+ * Cache Memory
+ */
+
+enum cache_access_kind_t
+{
+	cache_access_kind_read = 0,
+	cache_access_kind_write
+};
+
+extern struct string_map_t cache_policy_map;
+
+enum cache_policy_t
+{
+	cache_policy_invalid = 0,
+	cache_policy_lru,
+	cache_policy_fifo,
+	cache_policy_random
+};
+
+struct cache_blk_t
+{
+	struct cache_blk_t *way_next;
+	struct cache_blk_t *way_prev;
+	uint32_t tag, transient_tag;
+	uint32_t way;
+	int status;
+};
+
+struct cache_set_t
+{
+	struct cache_blk_t *way_head;
+	struct cache_blk_t *way_tail;
+	struct cache_blk_t *blks;
+};
+
+struct cache_t
+{
+	uint32_t nsets;
+	uint32_t bsize;
+	uint32_t assoc;
+	enum cache_policy_t policy;
+
+	struct cache_set_t *sets;
+	uint32_t bmask;
+	int logbsize;
+};
+
+
+struct cache_t *cache_create(uint32_t nsets, uint32_t bsize, uint32_t assoc,
+	enum cache_policy_t policy);
+void cache_free(struct cache_t *cache);
+
+int cache_log2(uint32_t x);
+void cache_decode_address(struct cache_t *cache, uint32_t addr,
+	uint32_t *pset, uint32_t *ptag, uint32_t *poffset);
+int cache_find_block(struct cache_t *cache, uint32_t addr,
+	uint32_t *pset, uint32_t *pway, int *pstatus);
+void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
+	uint32_t tag, int status);
+void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
+	uint32_t *ptag, int *pstatus);
+void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way);
+uint32_t cache_replace_block(struct cache_t *cache, uint32_t set);
+void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, uint32_t tag);
+
+
+
+
+/*
+ * Memory Module
+ */
+
+/* Port */
+struct mod_port_t
+{
+	/* Port lock status */
+	int locked;
+	uint64_t lock_when;
+	struct mod_stack_t *stack;  /* Current access */
+
+	/* Waiting list */
+	struct mod_stack_t *waiting_list_head, *waiting_list_tail;
+	int waiting_count, waiting_max;
+
+};
+
+
+/* Bank */
+struct mod_bank_t
+{
+	/* Stats */
+	uint64_t accesses;
+
+	/* Ports */
+	struct mod_port_t ports[0];
+};
+
+
+#define SIZEOF_MOD_BANK(CACHE) (sizeof(struct mod_bank_t) + sizeof(struct mod_port_t) \
+	* ((CACHE)->read_port_count + (CACHE)->write_port_count))
+
+#define MOD_BANK_INDEX(CACHE, I)  ((struct mod_bank_t *) ((void *) (CACHE)->banks + SIZEOF_MOD_BANK(CACHE) * (I)))
+
+#define MOD_READ_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(I)])
+#define MOD_WRITE_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(CACHE)->read_port_count + (I)])
+
+/* Module types */
+enum mod_kind_t
+{
+	mod_kind_invalid = 0,
+	mod_kind_cache,
+	mod_kind_main_memory
+};
+
+enum mod_range_kind_t
+{
+	mod_range_invalid = 0,
+	mod_range_bounds,
+	mod_range_interleaved
+};
+
+/* Memory module */
+struct mod_t
+{
+	/* Parameters */
+	enum mod_kind_t kind;
+	char *name;
+	int block_size;
+	int log_block_size;
+	int latency;
+
+	/* Address range */
+	enum mod_range_kind_t range_kind;
+	union {
+		/* For range_kind = mod_range_bounds */
+		struct {
+			uint32_t low;
+			uint32_t high;
+		} bounds;
+
+		/* For range_kind = mod_range_interleaved */
+		struct {
+			uint32_t mod;
+			uint32_t div;
+			uint32_t eq;
+		} interleaved;
+	} range;
+
+	/* Banks and ports */
+	struct mod_bank_t *banks;
+	int bank_count;
+	int read_port_count;  /* Number of read ports (per bank) */
+	int write_port_count;  /* Number of write ports (per bank) */
+
+	/* Number of locked read/write ports (adding up all banks) */
+	int locked_read_port_count;
+	int locked_write_port_count;
+
+	/* Waiting list of events */
+	struct mod_stack_t *waiting_list_head, *waiting_list_tail;
+	int waiting_count, waiting_max;
+
+	/* Cache structure */
+	struct cache_t *cache;
+
+	/* Low and high memory modules */
+	struct linked_list_t *high_mod_list;
+	struct linked_list_t *low_mod_list;
+
+	/* Interconnects */
+	struct net_t *high_net;
+	struct net_t *low_net;
+	struct net_node_t *high_net_node;
+	struct net_node_t *low_net_node;
+
+	/* Stats */
+	uint64_t reads;
+	uint64_t effective_reads;
+	uint64_t effective_read_hits;
+	uint64_t writes;
+	uint64_t effective_writes;
+	uint64_t effective_write_hits;
+	uint64_t evictions;
+};
+
+struct mod_t *mod_create(char *name, enum mod_kind_t kind,
+	int bank_count, int read_port_count, int write_port_count,
+	int block_size, int latency);
+void mod_free(struct mod_t *mod);
+void mod_dump(struct mod_t *mod, FILE *f);
+
+void mod_access(struct mod_t *mod, int access, uint32_t addr, uint32_t size, int *witness_ptr);
+struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
+
+
+
+
+/*
+ * GPU Event-Driven Simulation
+ */
+
+extern int EV_GPU_MEM_READ;
+extern int EV_GPU_MEM_READ_REQUEST;
+extern int EV_GPU_MEM_READ_REQUEST_RECEIVE;
+extern int EV_GPU_MEM_READ_REQUEST_REPLY;
+extern int EV_GPU_MEM_READ_REQUEST_FINISH;
+extern int EV_GPU_MEM_READ_UNLOCK;
+extern int EV_GPU_MEM_READ_FINISH;
+
+extern int EV_GPU_MEM_WRITE;
+extern int EV_GPU_MEM_WRITE_REQUEST_SEND;
+extern int EV_GPU_MEM_WRITE_REQUEST_RECEIVE;
+extern int EV_GPU_MEM_WRITE_REQUEST_REPLY;
+extern int EV_GPU_MEM_WRITE_REQUEST_REPLY_RECEIVE;
+extern int EV_GPU_MEM_WRITE_UNLOCK;
+extern int EV_GPU_MEM_WRITE_FINISH;
+
+/* Stack for event-driven simulation */
+struct mod_stack_t
+{
+	uint64_t id;
+	int *witness_ptr;
+
+	struct mod_t *mod;
+	struct mod_t *target_mod;
+
+	struct mod_bank_t *bank;
+	struct mod_port_t *port;
+	uint32_t addr;
+	uint32_t tag;
+	uint32_t set;
+	uint32_t way;
+	int status;
+	uint32_t block_index;
+	uint32_t bank_index;
+	int read_port_index;
+	int write_port_index;
+	int pending;
+	int hit;
+
+	/* Message sent through interconnect */
+	struct net_msg_t *msg;
+
+	/* Linked list for waiting events */
+	int waiting_list_event;  /* Event to schedule when stack is waken up */
+	struct mod_stack_t *waiting_prev, *waiting_next;
+
+	/* Return stack */
+	struct mod_stack_t *ret_stack;
+	int ret_event;
+};
+
+extern long long mod_stack_id;
+
+struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
+	uint32_t addr, int ret_event, void *ret_stack);
+void mod_stack_return(struct mod_stack_t *stack);
+
+void mod_handler_read(int event, void *data);
+void mod_handler_write(int event, void *data);
+
+
+
+
+/*
+ * Memory System
+ */
+
+extern char *gpu_mem_config_file_name;
+extern char *gpu_mem_config_help;
+
+extern char *gpu_mem_report_file_name;
+
+#define gpu_mem_debugging() debug_status(gpu_mem_debug_category)
+#define gpu_mem_debug(...) debug(gpu_mem_debug_category, __VA_ARGS__)
+extern int gpu_mem_debug_category;
+
+struct mem_system_t
+{
+	struct list_t *net_list;
+	struct list_t *mod_list;
+};
+
+extern struct mem_system_t *mem_system;
+
+void gpu_mem_init(void);
+void gpu_mem_done(void);
+
+void gpu_mem_config_read(void);
+void gpu_mem_dump_report(void);
+
 
 #endif
 
