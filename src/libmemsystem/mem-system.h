@@ -325,11 +325,11 @@ struct mem_system_t
 
 extern struct mem_system_t *mem_system;
 
-void gpu_mem_init(void);
-void gpu_mem_done(void);
+void mem_system_init(void);
+void mem_system_done(void);
 
-void gpu_mem_config_read(void);
-void gpu_mem_dump_report(void);
+void mem_system_config_read(void);
+void mem_system_dump_report(void);
 
 
 #endif
