@@ -404,15 +404,22 @@ struct mod_bank_t
 #define MOD_READ_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(I)])
 #define MOD_WRITE_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(CACHE)->read_port_count + (I)])
 
-/* Module */
+/* Module types */
+enum mod_kind_t
+{
+	mod_kind_invalid = 0,
+	mod_kind_cache,
+	mod_kind_main_memory
+};
+
+/* Memory module */
 struct mod_t
 {
-	/* Cache structure */
-	struct cache_t *cache;
-
 	/* Parameters */
-	char name[30];
-	int block_size, log_block_size;
+	enum mod_kind_t kind;
+	char *name;
+	int block_size;
+	int log_block_size;
 	int latency;
 
 	/* Banks and ports */
@@ -429,14 +436,17 @@ struct mod_t
 	struct mod_stack_t *waiting_list_head, *waiting_list_tail;
 	int waiting_count, waiting_max;
 
-	/* Lower level cache (NULL for global memory) */
+	/* Cache structure */
+	struct cache_t *cache;
+
+	/* Low memory module */
 	struct mod_t *low_mod;
 
-	/* Interconnects and IDs */
-	struct net_t *net_hi;
-	struct net_t *net_lo;
-	struct net_node_t *net_node_hi;
-	struct net_node_t *net_node_lo;
+	/* Interconnects */
+	struct net_t *high_net;
+	struct net_t *low_net;
+	struct net_node_t *high_net_node;
+	struct net_node_t *low_net_node;
 
 	/* Stats */
 	uint64_t reads;
@@ -448,7 +458,8 @@ struct mod_t
 	uint64_t evictions;
 };
 
-struct mod_t *mod_create(int bank_count, int read_port_count, int write_port_count,
+struct mod_t *mod_create(char *name, enum mod_kind_t kind,
+	int bank_count, int read_port_count, int write_port_count,
 	int block_size, int latency);
 void mod_free(struct mod_t *mod);
 void mod_dump(struct mod_t *mod, FILE *f);
@@ -561,10 +572,8 @@ struct gpu_t
 	int busy_count, busy_max;
 
 	/* Global memory hierarchy - Caches and interconnects */
-	struct mod_t **gpu_mods;  /* Array of GPU caches */
-	struct net_t **networks;  /* Array of interconnects */
-	int mod_count;
-	int network_count;
+	struct list_t *net_list;  /* List of networks */
+	struct list_t *mod_list;  /* List of memory modules */
 	struct mod_t *global_memory;  /* Last element in cache array */
 };
 
