@@ -27,9 +27,9 @@
  * Global variables
  */
 
-int gpu_cache_debug_category;
+int gpu_mem_debug_category;
 
-char *gpu_cache_report_file_name = "";
+char *gpu_mem_report_file_name = "";
 
 
 
@@ -38,12 +38,12 @@ char *gpu_cache_report_file_name = "";
  * Public Functions
  */
 
-void gpu_cache_init(void)
+void gpu_mem_init(void)
 {
 	/* Try to open report file */
-	if (gpu_cache_report_file_name[0] && !can_open_write(gpu_cache_report_file_name))
+	if (gpu_mem_report_file_name[0] && !can_open_write(gpu_mem_report_file_name))
 		fatal("%s: cannot open GPU cache report file",
-			gpu_cache_report_file_name);
+			gpu_mem_report_file_name);
 
 	/* Events */
 	EV_GPU_CACHE_READ = esim_register_event(gpu_cache_handler_read);
@@ -66,16 +66,16 @@ void gpu_cache_init(void)
 	gpu_cache_stack_repos = repos_create(sizeof(struct gpu_cache_stack_t), "gpu_cache_stack_repos");
 	
 	/* Read cache configuration file */
-	gpu_cache_config_read();
+	gpu_mem_config_read();
 }
 
 
-void gpu_cache_done(void)
+void gpu_mem_done(void)
 {
 	int i;
 	
 	/* Dump report */
-	gpu_cache_dump_report();
+	gpu_mem_dump_report();
 
 	/* Free caches and cache array */
 	for (i = 0; i < gpu->gpu_cache_count; i++)
@@ -93,7 +93,7 @@ void gpu_cache_done(void)
 }
 
 
-void gpu_cache_dump_report(void)
+void gpu_mem_dump_report(void)
 {
 	FILE *f;
 	int i;
@@ -102,7 +102,7 @@ void gpu_cache_dump_report(void)
 	struct cache_t *cache;
 
 	/* Open file */
-	f = open_write(gpu_cache_report_file_name);
+	f = open_write(gpu_mem_report_file_name);
 	if (!f)
 		return;
 
@@ -369,9 +369,9 @@ void gpu_cache_handler_read(int event, void *data)
 		 * be enqueued in the waiting list, since all accesses need to be
 		 * done in order. */
 		if (gpu_cache->waiting_list_head) {
-			gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u\n",
+			gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u\n",
 				CYCLE, ID, gpu_cache->name, stack->addr);
-			gpu_cache_debug("%lld %lld wait why=\"order\"\n",
+			gpu_mem_debug("%lld %lld wait why=\"order\"\n",
 				CYCLE, ID);
 			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_READ);
 			return;
@@ -399,11 +399,11 @@ void gpu_cache_handler_read(int event, void *data)
 			/* If current and previous access are in the same cycle, coalesce. */
 			if (port->lock_when == esim_cycle)
 			{
-				gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
+				gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
 					CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index);
 				stack->read_port_index = i;
 				stack->port = port;
-				gpu_cache_debug("  %lld %lld coalesce id=%lld bank=%d read_port=%d\n",
+				gpu_mem_debug("  %lld %lld coalesce id=%lld bank=%d read_port=%d\n",
 					CYCLE, ID, (long long) port->stack->id, stack->bank_index, stack->read_port_index);
 				gpu_cache_stack_wait_in_port(stack, EV_GPU_CACHE_READ_FINISH);
 
@@ -413,9 +413,9 @@ void gpu_cache_handler_read(int event, void *data)
 			}
 
 			/* Current block is handled by an in-flight access, wait for it. */
-			gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u\n",
+			gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u\n",
 				CYCLE, ID, gpu_cache->name, stack->addr);
-			gpu_cache_debug("%lld %lld wait why=\"in_flight\"\n",
+			gpu_mem_debug("%lld %lld wait why=\"in_flight\"\n",
 				CYCLE, ID);
 			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_READ);
 			return;
@@ -433,9 +433,9 @@ void gpu_cache_handler_read(int event, void *data)
 		
 		/* If there is no free read port, enqueue in cache waiting list. */
 		if (!stack->port) {
-			gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
+			gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
 				CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index);
-			gpu_cache_debug("  %lld %lld wait why=\"no_read_port\"\n", CYCLE, ID);
+			gpu_mem_debug("  %lld %lld wait why=\"no_read_port\"\n", CYCLE, ID);
 			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_READ);
 			return;
 		}
@@ -460,7 +460,7 @@ void gpu_cache_handler_read(int event, void *data)
 
 			/* Stats */
 			gpu_cache->effective_read_hits++;
-			gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d\n",
+			gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d\n",
 				CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index, stack->read_port_index);
 			return;
 		}
@@ -483,7 +483,7 @@ void gpu_cache_handler_read(int event, void *data)
 		}
 
 		/* Debug */
-		gpu_cache_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d set=%d way=%d\n",
+		gpu_mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d set=%d way=%d\n",
 			CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index, stack->read_port_index,
 			stack->set, stack->way);
 		return;
@@ -496,7 +496,7 @@ void gpu_cache_handler_read(int event, void *data)
 
 		assert(net);
 		assert(target);
-		gpu_cache_debug("  %lld %lld read_request src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+		gpu_mem_debug("  %lld %lld read_request src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, gpu_cache->name, target->name, net->name);
 
 		/* Send message */
@@ -509,7 +509,7 @@ void gpu_cache_handler_read(int event, void *data)
 	{
 		struct gpu_cache_t *target = gpu_cache->gpu_cache_next;
 
-		gpu_cache_debug("  %lld %lld read_request_receive cache=\"%s\"\n",
+		gpu_mem_debug("  %lld %lld read_request_receive cache=\"%s\"\n",
 			CYCLE, ID, target->name);
 
 		/* Receive element */
@@ -529,7 +529,7 @@ void gpu_cache_handler_read(int event, void *data)
 		struct gpu_cache_t *target = gpu_cache->gpu_cache_next;
 
 		assert(net && target);
-		gpu_cache_debug("  %lld %lld read_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+		gpu_mem_debug("  %lld %lld read_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, target->name, gpu_cache->name, net->name);
 
 		/* Send message */
@@ -541,7 +541,7 @@ void gpu_cache_handler_read(int event, void *data)
 
 	if (event == EV_GPU_CACHE_READ_REQUEST_FINISH)
 	{
-		gpu_cache_debug("  %lld %lld read_request_finish\n", CYCLE, ID);
+		gpu_mem_debug("  %lld %lld read_request_finish\n", CYCLE, ID);
 		assert(gpu_cache->cache);
 
 		/* Receive message */
@@ -558,7 +558,7 @@ void gpu_cache_handler_read(int event, void *data)
 	{
 		struct gpu_cache_port_t *port = stack->port;
 
-		gpu_cache_debug("  %lld %lld read_unlock\n", CYCLE, ID);
+		gpu_mem_debug("  %lld %lld read_unlock\n", CYCLE, ID);
 
 		/* Update LRU counters */
 		if (gpu_cache->cache)
@@ -581,7 +581,7 @@ void gpu_cache_handler_read(int event, void *data)
 
 	if (event == EV_GPU_CACHE_READ_FINISH)
 	{
-		gpu_cache_debug("  %lld %lld read_finish\n", CYCLE, ID);
+		gpu_mem_debug("  %lld %lld read_finish\n", CYCLE, ID);
 
 		/* Increment witness variable */
 		if (stack->witness_ptr)
@@ -610,9 +610,9 @@ void gpu_cache_handler_write(int event, void *data)
 		/* If there is any pending access in the cache, access gets enqueued. */
 		if (gpu_cache->waiting_list_head)
 		{
-			gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u\n",
+			gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
 				CYCLE, ID, gpu_cache->name, stack->addr);
-			gpu_cache_debug("%lld %lld wait why=\"order\"\n",
+			gpu_mem_debug("%lld %lld wait why=\"order\"\n",
 				CYCLE, ID);
 			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_WRITE);
 			return;
@@ -623,9 +623,9 @@ void gpu_cache_handler_write(int event, void *data)
 		 * writes could be faster than reads in the memory hierarchy. */
 		if (gpu_cache->locked_read_port_count)
 		{
-			gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u\n",
+			gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
 				CYCLE, ID, gpu_cache->name, stack->addr);
-			gpu_cache_debug("%lld %lld wait why=\"write_after_read\"\n",
+			gpu_mem_debug("%lld %lld wait why=\"write_after_read\"\n",
 				CYCLE, ID);
 			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_WRITE);
 			return;
@@ -652,11 +652,11 @@ void gpu_cache_handler_write(int event, void *data)
 
 			if (port->lock_when == esim_cycle)
 			{
-				gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
+				gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
 					CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index);
 				stack->write_port_index = i;
 				stack->port = port;
-				gpu_cache_debug("  %lld %lld coalesce id=%lld bank=%d write_port=%d\n",
+				gpu_mem_debug("  %lld %lld coalesce id=%lld bank=%d write_port=%d\n",
 					CYCLE, ID, (long long) port->stack->id, stack->bank_index,
 					stack->write_port_index);
 				gpu_cache_stack_wait_in_port(stack, EV_GPU_CACHE_WRITE_FINISH);
@@ -671,9 +671,9 @@ void gpu_cache_handler_write(int event, void *data)
 			}
 
 			/* Current block is handled by an in-flight access, wait for it. */
-			gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u\n",
+			gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
 				CYCLE, ID, gpu_cache->name, stack->addr);
-			gpu_cache_debug("%lld %lld wait why=\"in_flight\"\n",
+			gpu_mem_debug("%lld %lld wait why=\"in_flight\"\n",
 				CYCLE, ID);
 			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_WRITE);
 			return;
@@ -694,9 +694,9 @@ void gpu_cache_handler_write(int event, void *data)
 		/* If there is no free write port, enqueue in cache waiting list. */
 		if (!stack->port)
 		{
-			gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
+			gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
 				CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index);
-			gpu_cache_debug("  %lld %lld wait why=\"no_write_port\"\n", CYCLE, ID);
+			gpu_mem_debug("  %lld %lld wait why=\"no_write_port\"\n", CYCLE, ID);
 			gpu_cache_stack_wait_in_cache(stack, EV_GPU_CACHE_WRITE);
 			return;
 		}
@@ -710,7 +710,7 @@ void gpu_cache_handler_write(int event, void *data)
 		port->lock_when = esim_cycle;
 		port->stack = stack;
 		gpu_cache->locked_write_port_count++;
-		gpu_cache_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d write_port=%d\n",
+		gpu_mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d write_port=%d\n",
 			CYCLE, ID, gpu_cache->name, stack->addr, stack->bank_index, stack->write_port_index);
 
 		/* Increment witness variable as soon as a port was secured */
@@ -755,7 +755,7 @@ void gpu_cache_handler_write(int event, void *data)
 		assert(net);
 
 		/* Debug */
-		gpu_cache_debug("  %lld %lld write_request_send src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+		gpu_mem_debug("  %lld %lld write_request_send src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, gpu_cache->name, target->name, net->name);
 
 		/* Send message */
@@ -769,7 +769,7 @@ void gpu_cache_handler_write(int event, void *data)
 		struct gpu_cache_t *target = gpu_cache->gpu_cache_next;
 		struct gpu_cache_stack_t *newstack;
 
-		gpu_cache_debug("  %lld %lld write_request_receive cache=\"%s\"\n",
+		gpu_mem_debug("  %lld %lld write_request_receive cache=\"%s\"\n",
 			CYCLE, ID, target->name);
 
 		/* Receive message */
@@ -789,7 +789,7 @@ void gpu_cache_handler_write(int event, void *data)
 
 		assert(target);
 		assert(net);
-		gpu_cache_debug("  %lld %lld write_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
+		gpu_mem_debug("  %lld %lld write_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, gpu_cache->name, target->name, net->name);
 
 		/* Send message */
@@ -800,7 +800,7 @@ void gpu_cache_handler_write(int event, void *data)
 
 	if (event == EV_GPU_CACHE_WRITE_REQUEST_REPLY_RECEIVE)
 	{
-		gpu_cache_debug("  %lld %lld write_request_reply_receive dest=\"%s\" net=\"%s\"\n",
+		gpu_mem_debug("  %lld %lld write_request_reply_receive dest=\"%s\" net=\"%s\"\n",
 			CYCLE, ID, gpu_cache->name, gpu_cache->net_lo->name);
 
 		/* Receive message */
@@ -822,7 +822,7 @@ void gpu_cache_handler_write(int event, void *data)
 			return;
 
 		/* Debug */
-		gpu_cache_debug("  %lld %lld write_unlock\n", CYCLE, ID);
+		gpu_mem_debug("  %lld %lld write_unlock\n", CYCLE, ID);
 
 		/* Update LRU counters */
 		if (stack->hit)
@@ -850,7 +850,7 @@ void gpu_cache_handler_write(int event, void *data)
 	if (event == EV_GPU_CACHE_WRITE_FINISH)
 	{
 		/* Return */
-		gpu_cache_debug("  %lld %lld write_finish\n", CYCLE, ID);
+		gpu_mem_debug("  %lld %lld write_finish\n", CYCLE, ID);
 		gpu_cache_stack_return(stack);
 		return;
 	}
