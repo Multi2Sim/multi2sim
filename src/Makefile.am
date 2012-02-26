@@ -40,9 +40,9 @@ LDADD = \
 	$(top_builddir)/src/libgpuarch/libgpuarch.a \
 	$(top_builddir)/src/libcpuarch/libcpuarch.a \
 	$(top_builddir)/src/libcachesystem/libcachesystem.a \
-	$(top_builddir)/src/libmemsystem/libmemsystem.a \
 	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
 	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
+	$(top_builddir)/src/libmemsystem/libmemsystem.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	$(top_builddir)/src/libesim/libesim.a \
 	$(top_builddir)/src/libstruct/libstruct.a \

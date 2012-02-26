@@ -1,5 +1,4 @@
 /*
- *  Multi2Sim
  *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -17,23 +16,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
+#include <mem-system.h>
+#include <config.h>
+#include <misc.h>
+
+
+/* FIXME: remove this dependence, figure out alternative for initialization of compute units.
+ * E.g.: pass number of compute units in mem_system_init. Same for CPU cores */
 #include <gpuarch.h>
-#include <network.h>
-#include <esim.h>
-#include <cachesystem.h>
 
 
 /*
- * Global variables
+ * Global Variables
  */
 
-int gpu_mem_debug_category;
-
-char *gpu_mem_report_file_name = "";
 char *gpu_mem_config_file_name = "";
+char *gpu_mem_report_file_name = "";
 
 char *gpu_mem_config_help = "FIXME\n";
-
 #if 0
 	"The GPU memory hierarchy can be configured by using an IniFile formatted file,\n"
 	"describing the cache and interconnect properties. This file is passed to\n"
@@ -127,6 +128,8 @@ char *gpu_mem_config_help = "FIXME\n";
 #endif
 
 
+
+
 /*
  * Private functions
  */
@@ -160,6 +163,7 @@ static char *err_gpu_mem_connect =
 	"\ta memory module and an associated low/high module. Please add the\n"
 	"\tnecessary links in the network configuration file.\n";
 
+
 static void gpu_mem_config_default(struct config_t *config)
 {
 	char section[MAX_STRING_SIZE];
@@ -190,6 +194,7 @@ static void gpu_mem_config_default(struct config_t *config)
 	config_write_int(config, section, "WritePorts", 2);
 
 	/* L1 caches and nodes */
+	/* FIXME: design this without dependence with gpuarch/cpuarch? */
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		snprintf(section, sizeof section, "Module l1-%d", compute_unit_id);
@@ -254,19 +259,19 @@ static void gpu_mem_config_read_networks(struct config_t *config)
 		if (strncasecmp(section, "Network ", 8))
 			continue;
 		net_name = section + 8;
-		
+
 		/* Create network */
 		net = net_create(net_name);
 		gpu_mem_debug("\t%s\n", net_name);
-		list_add(gpu->net_list, net);
+		list_add(mem_system->net_list, net);
 	}
 	gpu_mem_debug("\n");
 
 	/* Add network pointers to configuration file. This needs to be done separately,
 	 * because configuration file writes alter enumeration of sections. */
-	for (i = 0; i < list_count(gpu->net_list); i++)
+	for (i = 0; i < list_count(mem_system->net_list); i++)
 	{
-		net = list_get(gpu->net_list, i);
+		net = list_get(mem_system->net_list, i);
 		snprintf(buf, sizeof buf, "Network %s", net->name);
 		assert(config_section_exists(config, buf));
 		config_write_ptr(config, buf, "ptr", net);
@@ -298,19 +303,19 @@ static void gpu_mem_config_insert_module_in_network(struct config_t *config,
 	net = config_read_ptr(config, buf, "ptr", NULL);
 	if (!net)
 		goto try_external_network;
-	
+
 	/* For private networks, 'net_node_name' should be empty */
 	if (*net_node_name)
 		fatal("%s: %s: network node name should be empty.\n%s",
 			gpu_mem_config_file_name, mod->name,
 			err_gpu_mem_config_note);
-	
+
 	/* Network should not have this module already */
 	if (net_get_node_by_user_data(net, mod))
 		fatal("%s: network '%s' already contains module '%s'.\n%s",
 			gpu_mem_config_file_name, net->name,
 			mod->name, err_gpu_mem_config_note);
-	
+
 	/* Read buffer sizes from network */
 	def_input_buffer_size = config_read_int(config, buf, "DefaultInputBufferSize", 0);
 	def_output_buffer_size = config_read_int(config, buf, "DefaultOutputBufferSize", 0);
@@ -328,11 +333,11 @@ static void gpu_mem_config_insert_module_in_network(struct config_t *config,
 		fatal("%s: network %s: minimum output buffer size is %d for cache '%s'.\n%s",
 			gpu_mem_config_file_name, net->name, mod->block_size + 8,
 			mod->name, err_gpu_mem_config_note);
-	
+
 	/* Insert module in network */
 	node = net_add_end_node(net, def_input_buffer_size, def_output_buffer_size,
 		mod->name, mod);
-	
+
 	/* Return */
 	*net_ptr = net;
 	*net_node_ptr = node;
@@ -347,32 +352,32 @@ try_external_network:
 		fatal("%s: %s: invalid network name.\n%s%s",
 			gpu_mem_config_file_name, net_name,
 			err_gpu_mem_config_note, err_gpu_mem_config_net);
-	
+
 	/* Node name must be specified */
 	if (!*net_node_name)
 		fatal("%s: %s: network node name required for external network.\n%s%s",
 			gpu_mem_config_file_name, mod->name,
 			err_gpu_mem_config_note, err_gpu_mem_config_net);
-	
+
 	/* Get node */
 	node = net_get_node_by_name(net, net_node_name);
 	if (!node)
 		fatal("%s: network %s: node %s: invalid node name.\n%s%s",
 			gpu_mem_config_file_name, net_name, net_node_name,
 			err_gpu_mem_config_note, err_gpu_mem_config_net);
-	
+
 	/* No module must have been assigned previously to this node */
 	if (node->user_data)
 		fatal("%s: network %s: node '%s' already assigned.\n%s",
 			gpu_mem_config_file_name, net->name,
 			net_node_name, err_gpu_mem_config_note);
-	
+
 	/* Network should not have this module already */
 	if (net_get_node_by_user_data(net, mod))
 		fatal("%s: network %s: module '%s' is already present.\n%s",
 			gpu_mem_config_file_name, net->name,
 			mod->name, err_gpu_mem_config_note);
-	
+
 	/* Assign module to network node and return */
 	node->user_data = mod;
 	*net_ptr = net;
@@ -557,7 +562,7 @@ static void gpu_mem_config_read_module_address_range(struct config_t *config,
 	{
 		mod->range_kind = mod_range_bounds;
 		mod->range.bounds.low = 0;
-		mod->range.bounds.high = 0xffffffff;
+		mod->range.bounds.high = -1;
 		return;
 	}
 
@@ -565,13 +570,13 @@ static void gpu_mem_config_read_module_address_range(struct config_t *config,
 	range_str = strdup(range_str);
 	if (!range_str)
 		fatal("%s: out of memory", __FUNCTION__);
-	
+
 	/* Split in tokens */
 	delim = " ";
 	token = strtok(range_str, delim);
 	if (!token)
 		goto invalid_format;
-	
+
 	/* First token - ADDR or BOUNDS */
 	if (!strcasecmp(token, "BOUNDS"))
 	{
@@ -611,7 +616,7 @@ static void gpu_mem_config_read_module_address_range(struct config_t *config,
 		/* Token 'MOD' */
 		if (!(token = strtok(NULL, delim)) || strcasecmp(token, "MOD"))
 			goto invalid_format;
-		
+
 		/* Field <mod> */
 		if (!(token = strtok(NULL, delim)))
 			goto invalid_format;
@@ -622,14 +627,14 @@ static void gpu_mem_config_read_module_address_range(struct config_t *config,
 		/* Token 'EQ' */
 		if (!(token = strtok(NULL, delim)) || strcasecmp(token, "EQ"))
 			goto invalid_format;
-		
+
 		/* Field <eq> */
 		if (!(token = strtok(NULL, delim)))
 			goto invalid_format;
 		mod->range.interleaved.eq = str_to_int(token);
 		if (mod->range.interleaved.eq >= mod->range.interleaved.mod)
 			goto invalid_format;
-		
+
 		/* No more tokens */
 		if ((token = strtok(NULL, delim)))
 			goto invalid_format;
@@ -685,7 +690,7 @@ static void gpu_mem_config_read_modules(struct config_t *config)
 		gpu_mem_config_read_module_address_range(config, mod, section);
 
 		/* Add module */
-		list_add(gpu->mod_list, mod);
+		list_add(mem_system->mod_list, mod);
 		gpu_mem_debug("\t%s\n", mod_name);
 	}
 
@@ -694,9 +699,9 @@ static void gpu_mem_config_read_modules(struct config_t *config)
 
 	/* Add module pointers to configuration file. This needs to be done separately,
 	 * because configuration file writes alter enumeration of sections. */
-	for (i = 0; i < list_count(gpu->mod_list); i++)
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
 	{
-		mod = list_get(gpu->mod_list, i);
+		mod = list_get(mem_system->mod_list, i);
 		snprintf(buf, sizeof buf, "Module %s", mod->name);
 		assert(config_section_exists(config, buf));
 		config_write_ptr(config, buf, "ptr", mod);
@@ -757,10 +762,10 @@ static void gpu_mem_config_read_low_modules(struct config_t *config)
 	int i;
 
 	/* Lower level modules */
-	for (i = 0; i < list_count(gpu->mod_list); i++)
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
 	{
 		/* Get cache module */
-		mod = list_get(gpu->mod_list, i);
+		mod = list_get(mem_system->mod_list, i);
 		if (mod->kind != mod_kind_cache)
 			continue;
 
@@ -803,9 +808,9 @@ static void gpu_mem_config_read_low_modules(struct config_t *config)
 
 	/* Check paths to main memory */
 	gpu_mem_debug("Checking paths between caches and main memories:\n");
-	for (i = 0; i < list_count(gpu->mod_list); i++)
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
 	{
-		mod = list_get(gpu->mod_list, i);
+		mod = list_get(mem_system->mod_list, i);
 		gpu_mem_config_check_route_to_main_memory(mod, mod->block_size, 1);
 	}
 	gpu_mem_debug("\n");
@@ -898,10 +903,10 @@ static void gpu_mem_config_create_switches(struct config_t *config)
 
 	/* For each network, add a switch and create node connections */
 	gpu_mem_debug("Creating network switches and links for internal networks:\n");
-	for (i = 0; i < list_count(gpu->net_list); i++)
+	for (i = 0; i < list_count(mem_system->net_list); i++)
 	{
 		/* Get network and lower level cache */
-		net = list_get(gpu->net_list, i);
+		net = list_get(mem_system->net_list, i);
 
 		/* Get switch bandwidth */
 		snprintf(buf, sizeof buf, "Network %s", net->name);
@@ -955,12 +960,12 @@ void gpu_mem_config_check_routes(void)
 
 	/* For each module, check accessibility to low/high modules */
 	gpu_mem_debug("Checking accessibility to low and high modules:\n");
-	for (i = 0; i < list_count(gpu->mod_list); i++)
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
 	{
 		struct mod_t *low_mod;
 
 		/* Get module */
-		mod = list_get(gpu->mod_list, i);
+		mod = list_get(mem_system->mod_list, i);
 		gpu_mem_debug("\t%s\n", mod->name);
 
 		/* List of low modules */
@@ -971,7 +976,7 @@ void gpu_mem_config_check_routes(void)
 			/* Get low module */
 			low_mod = linked_list_get(mod->low_mod_list);
 			gpu_mem_debug(" %s", low_mod->name);
-			
+
 			/* Check that nodes are in the same network */
 			if (mod->low_net != low_mod->high_net)
 				fatal("%s: %s: low node '%s' is not in the same network.\n%s",
@@ -997,7 +1002,7 @@ void gpu_mem_config_check_routes(void)
 			/* Get high module */
 			high_mod = linked_list_get(mod->high_mod_list);
 			gpu_mem_debug(" %s", high_mod->name);
-			
+
 			/* Check that nodes are in the same network */
 			if (mod->high_net != high_mod->low_net)
 				fatal("%s: %s: high node '%s' is not in the same network.\n%s",
@@ -1028,139 +1033,6 @@ void gpu_mem_config_check_routes(void)
  * Public Functions
  */
 
-void gpu_mem_init(void)
-{
-	/* Try to open report file */
-	if (gpu_mem_report_file_name[0] && !can_open_write(gpu_mem_report_file_name))
-		fatal("%s: cannot open GPU cache report file",
-			gpu_mem_report_file_name);
-
-	/* Create network and module list */
-	gpu->net_list = list_create();
-	gpu->mod_list = list_create();
-
-	/* Events */
-	EV_GPU_MEM_READ = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_REQUEST = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_REQUEST_RECEIVE = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_REQUEST_REPLY = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_REQUEST_FINISH = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_UNLOCK = esim_register_event(mod_handler_read);
-	EV_GPU_MEM_READ_FINISH = esim_register_event(mod_handler_read);
-
-	EV_GPU_MEM_WRITE = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_REQUEST_SEND = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_REQUEST_RECEIVE = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_REQUEST_REPLY_RECEIVE = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_UNLOCK = esim_register_event(mod_handler_write);
-	EV_GPU_MEM_WRITE_FINISH = esim_register_event(mod_handler_write);
-
-	/* Read cache configuration file */
-	gpu_mem_config_read();
-}
-
-
-void gpu_mem_done(void)
-{
-	int i;
-	
-	/* Dump report */
-	gpu_mem_dump_report();
-
-	/* Free memory modules */
-	for (i = 0; i < list_count(gpu->mod_list); i++)
-		mod_free(list_get(gpu->mod_list, i));
-	list_free(gpu->mod_list);
-
-	/* Free networks */
-	for (i = 0; i < list_count(gpu->net_list); i++)
-		net_free(list_get(gpu->net_list, i));
-	list_free(gpu->net_list);
-}
-
-
-void gpu_mem_dump_report(void)
-{
-	FILE *f;
-	int i;
-
-	struct mod_t *mod;
-	struct cache_t *cache;
-
-	/* Open file */
-	f = open_write(gpu_mem_report_file_name);
-	if (!f)
-		return;
-
-	/* Intro */
-	fprintf(f, "; Report for the GPU global memory hierarchy.\n");
-	fprintf(f, ";    Accesses - Total number of accesses requested from a compute unit or upper-level cache\n");
-	fprintf(f, ";    Reads - Number of read requests received from a compute unit or upper-level cache\n");
-	fprintf(f, ";    Writes - Number of write requests received from a compute unit or upper-level cache\n");
-	fprintf(f, ";    CoalescedReads - Number of reads that were coalesced with previous accesses (discarded)\n");
-	fprintf(f, ";    CoalescedWrites - Number of writes coalesced with previous accesses\n");
-	fprintf(f, ";    EffectiveReads - Number of reads actually performed (= Reads - CoalescedReads)\n");
-	fprintf(f, ";    EffectiveReadHits - Number of effective reads producing cache hit\n");
-	fprintf(f, ";    EffectiveReadMisses - Number of effective reads missing in the cache\n");
-	fprintf(f, ";    EffectiveWrites - Number of writes actually performed (= Writes - CoalescedWrites)\n");
-	fprintf(f, ";    EffectiveWriteHits - Number of effective writes that found the block in the cache\n");
-	fprintf(f, ";    EffectiveWriteMisses - Number of effective writes missing in the cache\n");
-	fprintf(f, ";    Evictions - Number of valid blocks replaced in the cache\n");
-	fprintf(f, "\n\n");
-
-	/* Print cache statistics */
-	for (i = 0; i < list_count(gpu->mod_list); i++)
-	{
-		/* Get cache */
-		mod = list_get(gpu->mod_list, i);
-		cache = mod->cache;
-		fprintf(f, "[ %s ]\n\n", mod->name);
-
-		/* Configuration */
-		if (cache)
-		{
-			fprintf(f, "Sets = %d\n", cache->nsets);
-			fprintf(f, "Assoc = %d\n", cache->assoc);
-			fprintf(f, "Policy = %s\n", map_value(&cache_policy_map, cache->policy));
-		}
-		fprintf(f, "BlockSize = %d\n", mod->block_size);
-		fprintf(f, "Latency = %d\n", mod->latency);
-		fprintf(f, "Banks = %d\n", mod->bank_count);
-		fprintf(f, "ReadPorts = %d\n", mod->read_port_count);
-		fprintf(f, "WritePorts = %d\n", mod->write_port_count);
-		fprintf(f, "\n");
-
-		/* Statistics */
-		fprintf(f, "Accesses = %lld\n", (long long) (mod->reads + mod->writes));
-		fprintf(f, "Reads = %lld\n", (long long) mod->reads);
-		fprintf(f, "Writes = %lld\n", (long long) mod->writes);
-		fprintf(f, "CoalescedReads = %lld\n", (long long) (mod->reads
-			- mod->effective_reads));
-		fprintf(f, "CoalescedWrites = %lld\n", (long long) (mod->writes
-			- mod->effective_writes));
-		fprintf(f, "EffectiveReads = %lld\n", (long long) mod->effective_reads);
-		fprintf(f, "EffectiveReadHits = %lld\n", (long long) mod->effective_read_hits);
-		fprintf(f, "EffectiveReadMisses = %lld\n", (long long) (mod->effective_reads
-			- mod->effective_read_hits));
-		fprintf(f, "EffectiveWrites = %lld\n", (long long) mod->effective_writes);
-		fprintf(f, "EffectiveWriteHits = %lld\n", (long long) mod->effective_write_hits);
-		fprintf(f, "EffectiveWriteMisses = %lld\n", (long long) (mod->effective_writes
-			- mod->effective_write_hits));
-		fprintf(f, "Evictions = %lld\n", (long long) mod->evictions);
-		fprintf(f, "\n\n");
-	}
-	
-	
-	/* Dump report for networks */
-	for (i = 0; i < list_count(gpu->net_list); i++)
-		net_dump_report(list_get(gpu->net_list, i), f);
-
-	/* Close */
-	fclose(f);
-}
-
-
 void gpu_mem_config_read(void)
 {
 	struct config_t *config;
@@ -1171,7 +1043,7 @@ void gpu_mem_config_read(void)
 		gpu_mem_config_default(config);
 	else if (!config_load(config))
 		fatal("%s: cannot load GPU cache configuration file", gpu_mem_config_file_name);
-	
+
 	/* Read networks */
 	gpu_mem_config_read_networks(config);
 
