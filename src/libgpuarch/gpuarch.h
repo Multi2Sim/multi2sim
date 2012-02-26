@@ -510,14 +510,14 @@ struct mod_stack_t
 	int ret_event;
 };
 
-extern uint64_t mod_stack_id;
+extern long long mod_stack_id;
 
-struct mod_stack_t *mod_stack_create(uint64_t id, struct mod_t *mod,
+struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
 	uint32_t addr, int ret_event, void *ret_stack);
 void mod_stack_return(struct mod_stack_t *stack);
 
-void gpu_mem_handler_read(int event, void *data);
-void gpu_mem_handler_write(int event, void *data);
+void mod_handler_read(int event, void *data);
+void mod_handler_write(int event, void *data);
 
 
 
