@@ -801,8 +801,8 @@ static void gpu_mem_config_read_low_modules(struct config_t *config)
 		free(low_mod_name_list);
 	}
 
-	/* Check paths to global memory */
-	gpu_mem_debug("Creating paths to global memory:\n");
+	/* Check paths to main memory */
+	gpu_mem_debug("Checking paths between caches and main memories:\n");
 	for (i = 0; i < list_count(gpu->mod_list); i++)
 	{
 		mod = list_get(gpu->mod_list, i);
