@@ -137,8 +137,8 @@ char *mem_config_help = "FIXME\n";
 #define GPU_MEM_MAX_LEVELS  10
 
 static char *err_gpu_mem_config_note =
-	"\tPlease run 'm2s --help-gpu-cache-config' or consult the Multi2Sim Guide for\n"
-	"\ta description of the GPU cache configuration file format.\n";
+	"\tPlease run 'm2s --help-mem-config' or consult the Multi2Sim Guide for\n"
+	"\ta description of the memory system configuration file format.\n";
 
 static char *err_gpu_mem_config_net =
 	"\tNetwork identifiers need to be declared either in the cache configuration\n"
@@ -164,7 +164,7 @@ static char *err_gpu_mem_connect =
 	"\tnecessary links in the network configuration file.\n";
 
 
-static void gpu_mem_config_default(struct config_t *config)
+static void mem_config_default(struct config_t *config)
 {
 	char section[MAX_STRING_SIZE];
 	char str[MAX_STRING_SIZE];
@@ -241,7 +241,7 @@ static void gpu_mem_config_default(struct config_t *config)
 }
 
 
-static void gpu_mem_config_read_networks(struct config_t *config)
+static void mem_config_read_networks(struct config_t *config)
 {
 	struct net_t *net;
 	int i;
@@ -655,7 +655,7 @@ invalid_format:
 }
 
 
-static void gpu_mem_config_read_modules(struct config_t *config)
+static void mem_config_read_modules(struct config_t *config)
 {
 	struct mod_t *mod;
 
@@ -748,7 +748,7 @@ static void gpu_mem_config_check_route_to_main_memory(struct mod_t *mod, int blo
 	}
 }
 
-static void gpu_mem_config_read_low_modules(struct config_t *config)
+static void mem_config_read_low_modules(struct config_t *config)
 {
 	char buf[MAX_STRING_SIZE];
 	char *delim;
@@ -817,7 +817,7 @@ static void gpu_mem_config_read_low_modules(struct config_t *config)
 }
 
 
-static void gpu_mem_config_read_nodes(struct config_t *config)
+static void mem_config_read_nodes(struct config_t *config)
 {
 	char *section;
 	int compute_unit_id;
@@ -885,7 +885,7 @@ static void gpu_mem_config_read_nodes(struct config_t *config)
 }
 
 
-static void gpu_mem_config_create_switches(struct config_t *config)
+static void mem_config_create_switches(struct config_t *config)
 {
 	struct net_t *net;
 	struct net_node_t *net_node;
@@ -952,7 +952,7 @@ static void gpu_mem_config_create_switches(struct config_t *config)
 }
 
 
-void gpu_mem_config_check_routes(void)
+void mem_config_check_routes(void)
 {
 	struct mod_t *mod;
 	struct net_routing_table_entry_t *entry;
@@ -1033,34 +1033,34 @@ void gpu_mem_config_check_routes(void)
  * Public Functions
  */
 
-void gpu_mem_config_read(void)
+void mem_system_config_read(void)
 {
 	struct config_t *config;
 
 	/* Load cache configuration file */
 	config = config_create(mem_config_file_name);
 	if (!*mem_config_file_name)
-		gpu_mem_config_default(config);
+		mem_config_default(config);
 	else if (!config_load(config))
-		fatal("%s: cannot load GPU cache configuration file", mem_config_file_name);
+		fatal("%s: cannot read memory system configuration file", mem_config_file_name);
 
 	/* Read networks */
-	gpu_mem_config_read_networks(config);
+	mem_config_read_networks(config);
 
 	/* Read modules */
-	gpu_mem_config_read_modules(config);
+	mem_config_read_modules(config);
 
 	/* Read low level caches */
-	gpu_mem_config_read_low_modules(config);
+	mem_config_read_low_modules(config);
 
 	/* Read nodes */
-	gpu_mem_config_read_nodes(config);
+	mem_config_read_nodes(config);
 
 	/* Create switches in internal networks */
-	gpu_mem_config_create_switches(config);
+	mem_config_create_switches(config);
 
 	/* Check routes to low and high modules */
-	gpu_mem_config_check_routes();
+	mem_config_check_routes();
 
 	/* Check that all enforced sections and variables were specified */
 	config_check(config);
