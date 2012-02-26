@@ -380,7 +380,7 @@ try_external_network:
 }
 
 
-static void gpu_mem_config_read_cache(struct config_t *config, char *section)
+static struct mod_t *gpu_mem_config_read_cache(struct config_t *config, char *section)
 {
 	char buf[MAX_STRING_SIZE];
 	char mod_name[MAX_STRING_SIZE];
@@ -453,11 +453,10 @@ static void gpu_mem_config_read_cache(struct config_t *config, char *section)
 		fatal("%s: cache '%s': invalid value for variable 'WritePorts'.\n%s",
 			gpu_mem_config_file_name, mod_name, err_gpu_mem_config_note);
 
-	/* Create cache */
+	/* Create module */
 	mod = mod_create(mod_name, mod_kind_cache,
 		bank_count, read_port_count, write_port_count,
 		block_size, latency);
-	list_add(gpu->mod_list, mod);
 
 	/* High network */
 	net_name = config_read_string(config, section, "HighNetwork", "");
@@ -477,10 +476,13 @@ static void gpu_mem_config_read_cache(struct config_t *config, char *section)
 
 	/* Create cache */
 	mod->cache = cache_create(sets, block_size, assoc, policy);
+
+	/* Return */
+	return mod;
 }
 
 
-static void gpu_mem_config_read_main_memory(struct config_t *config, char *section)
+static struct mod_t *gpu_mem_config_read_main_memory(struct config_t *config, char *section)
 {
 	char mod_name[MAX_STRING_SIZE];
 
@@ -528,8 +530,6 @@ static void gpu_mem_config_read_main_memory(struct config_t *config, char *secti
 	mod = mod_create(mod_name, mod_kind_main_memory,
 			bank_count, read_port_count, write_port_count,
 			block_size, latency);
-	gpu->global_memory = mod;
-	list_add(gpu->mod_list, mod);
 
 	/* High network */
 	net_name = config_read_string(config, section, "HighNetwork", "");
@@ -538,6 +538,115 @@ static void gpu_mem_config_read_main_memory(struct config_t *config, char *secti
 			&net, &net_node);
 	mod->high_net = net;
 	mod->high_net_node = net_node;
+
+	/* Return */
+	return mod;
+}
+
+
+static void gpu_mem_config_read_module_address_range(struct config_t *config,
+	struct mod_t *mod, char *section)
+{
+	char *range_str;
+	char *token;
+	char *delim;
+
+	/* Read address range */
+	range_str = config_read_string(config, section, "AddressRange", "");
+	if (!*range_str)
+	{
+		mod->range_kind = mod_range_bounds;
+		mod->range.bounds.low = 0;
+		mod->range.bounds.high = 0xffffffff;
+		return;
+	}
+
+	/* Duplicate string */
+	range_str = strdup(range_str);
+	if (!range_str)
+		fatal("%s: out of memory", __FUNCTION__);
+	
+	/* Split in tokens */
+	delim = " ";
+	token = strtok(range_str, delim);
+	if (!token)
+		goto invalid_format;
+	
+	/* First token - ADDR or BOUNDS */
+	if (!strcasecmp(token, "BOUNDS"))
+	{
+		/* Format is: BOUNDS <low> <high> */
+		mod->range_kind = mod_range_bounds;
+
+		/* Low bound */
+		if (!(token = strtok(NULL, delim)))
+			goto invalid_format;
+		mod->range.bounds.low = str_to_int(token);
+
+		/* High bound */
+		if (!(token = strtok(NULL, delim)))
+			goto invalid_format;
+		mod->range.bounds.high = str_to_int(token);
+
+		/* No more tokens */
+		if ((token = strtok(NULL, delim)))
+			goto invalid_format;
+	}
+	else if (!strcasecmp(token, "ADDR"))
+	{
+		/* Format is: ADDR DIV <div> MOD <mod> EQ <eq> */
+		mod->range_kind = mod_range_interleaved;
+
+		/* Token 'DIV' */
+		if (!(token = strtok(NULL, delim)) || strcasecmp(token, "DIV"))
+			goto invalid_format;
+
+		/* Field <div> */
+		if (!(token = strtok(NULL, delim)))
+			goto invalid_format;
+		mod->range.interleaved.div = str_to_int(token);
+		if (mod->range.interleaved.div < 1)
+			goto invalid_format;
+
+		/* Token 'MOD' */
+		if (!(token = strtok(NULL, delim)) || strcasecmp(token, "MOD"))
+			goto invalid_format;
+		
+		/* Field <mod> */
+		if (!(token = strtok(NULL, delim)))
+			goto invalid_format;
+		mod->range.interleaved.mod = str_to_int(token);
+		if (mod->range.interleaved.mod < 1)
+			goto invalid_format;
+
+		/* Token 'EQ' */
+		if (!(token = strtok(NULL, delim)) || strcasecmp(token, "EQ"))
+			goto invalid_format;
+		
+		/* Field <eq> */
+		if (!(token = strtok(NULL, delim)))
+			goto invalid_format;
+		mod->range.interleaved.eq = str_to_int(token);
+		if (mod->range.interleaved.eq >= mod->range.interleaved.mod)
+			goto invalid_format;
+		
+		/* No more tokens */
+		if ((token = strtok(NULL, delim)))
+			goto invalid_format;
+	}
+	else
+	{
+		goto invalid_format;
+	}
+
+	/* Free string duplicate */
+	free(range_str);
+	return;
+
+invalid_format:
+
+	fatal("%s: %s: invalid format for 'AddressRange'.\n%s",
+		gpu_mem_config_file_name, mod->name, err_gpu_mem_config_note);
 }
 
 
@@ -560,19 +669,23 @@ static void gpu_mem_config_read_modules(struct config_t *config)
 		if (strncasecmp(section, "Module ", 7))
 			continue;
 
-		/* Ignore if module is not a cache */
+		/* Create module, depending on the type. */
 		str_token(mod_name, sizeof mod_name, section, 1, " ");
 		mod_type = config_read_string(config, section, "Type", "");
 		if (!strcasecmp(mod_type, "Cache"))
-			gpu_mem_config_read_cache(config, section);
+			mod = gpu_mem_config_read_cache(config, section);
 		else if (!strcasecmp(mod_type, "MainMemory"))
-			gpu_mem_config_read_main_memory(config, section);
+			mod = gpu_mem_config_read_main_memory(config, section);
 		else
 			fatal("%s: %s: invalid or missing value for 'Type'.\n%s",
 				gpu_mem_config_file_name, mod_name,
 				err_gpu_mem_config_note);
 
-		/* Debug */
+		/* Read module address range */
+		gpu_mem_config_read_module_address_range(config, mod, section);
+
+		/* Add module */
+		list_add(gpu->mod_list, mod);
 		gpu_mem_debug("\t%s\n", mod_name);
 	}
 
