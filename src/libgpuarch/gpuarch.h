@@ -29,7 +29,7 @@
 extern char *gpu_config_help;
 extern char *gpu_config_file_name;
 extern char *gpu_report_file_name;
-extern char *gpu_cache_report_file_name;
+extern char *gpu_mem_report_file_name;
 
 extern int gpu_pipeline_debug_category;
 
@@ -350,9 +350,25 @@ void gpu_compute_unit_run(struct gpu_compute_unit_t *compute_unit);
  * Memory hierarchy ('mem-hier.c' and 'mem-config.c')
  */
 
-extern char *gpu_cache_config_file_name;
-extern char *gpu_cache_config_help;
+extern char *gpu_mem_config_file_name;
+extern char *gpu_mem_config_help;
 
+#define gpu_mem_debugging() debug_status(gpu_mem_debug_category)
+#define gpu_mem_debug(...) debug(gpu_mem_debug_category, __VA_ARGS__)
+extern int gpu_mem_debug_category;
+
+void gpu_mem_init(void);
+void gpu_mem_done(void);
+
+void gpu_mem_config_read(void);
+void gpu_mem_dump_report(void);
+
+
+
+
+/*
+ * Memory Module
+ */
 
 /* GPU Cache Port */
 struct gpu_cache_port_t
@@ -432,20 +448,10 @@ struct gpu_cache_t
 	uint64_t evictions;
 };
 
-#define gpu_cache_debugging() debug_status(gpu_cache_debug_category)
-#define gpu_cache_debug(...) debug(gpu_cache_debug_category, __VA_ARGS__)
-extern int gpu_cache_debug_category;
-
 struct gpu_cache_t *gpu_cache_create(int bank_count, int read_port_count, int write_port_count,
 	int block_size, int latency);
 void gpu_cache_free(struct gpu_cache_t *gpu_cache);
 void gpu_cache_dump(struct gpu_cache_t *gpu_cache, FILE *f);
-
-void gpu_cache_init(void);
-void gpu_cache_done(void);
-
-void gpu_cache_config_read(void);
-void gpu_cache_dump_report(void);
 
 void gpu_cache_access(struct gpu_cache_t *gpu_cache, int access, uint32_t addr, uint32_t size, int *witness_ptr);
 
