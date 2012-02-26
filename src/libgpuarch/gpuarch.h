@@ -238,8 +238,8 @@ struct gpu_compute_unit_t
 	struct gpu_compute_unit_t *busy_prev, *busy_next;
 
 	/* Memory */
-	struct gpu_cache_t *data_cache;  /* Entry point to global memory */
-	struct gpu_cache_t *local_memory;  /* Local */
+	struct mod_t *data_cache;  /* Entry point to global memory */
+	struct mod_t *local_memory;  /* Local */
 
 	/* List of currently mapped work-groups */
 	int work_group_count;
@@ -370,44 +370,44 @@ void gpu_mem_dump_report(void);
  * Memory Module
  */
 
-/* GPU Cache Port */
-struct gpu_cache_port_t
+/* Port */
+struct mod_port_t
 {
 	/* Port lock status */
 	int locked;
 	uint64_t lock_when;
-	struct gpu_cache_stack_t *stack;  /* Current access */
+	struct mod_stack_t *stack;  /* Current access */
 	
 	/* Waiting list */
-	struct gpu_cache_stack_t *waiting_list_head, *waiting_list_tail;
+	struct mod_stack_t *waiting_list_head, *waiting_list_tail;
 	int waiting_count, waiting_max;
 
 };
 
 
-/* GPU Cache Bank */
-struct gpu_cache_bank_t
+/* Bank */
+struct mod_bank_t
 {
 	/* Stats */
 	uint64_t accesses;
 
 	/* Ports */
-	struct gpu_cache_port_t ports[0];
+	struct mod_port_t ports[0];
 };
 
 
-#define SIZEOF_GPU_CACHE_BANK(CACHE) (sizeof(struct gpu_cache_bank_t) + sizeof(struct gpu_cache_port_t) \
+#define SIZEOF_MOD_BANK(CACHE) (sizeof(struct mod_bank_t) + sizeof(struct mod_port_t) \
 	* ((CACHE)->read_port_count + (CACHE)->write_port_count))
 
-#define GPU_CACHE_BANK_INDEX(CACHE, I)  ((struct gpu_cache_bank_t *) ((void *) (CACHE)->banks + SIZEOF_GPU_CACHE_BANK(CACHE) * (I)))
+#define MOD_BANK_INDEX(CACHE, I)  ((struct mod_bank_t *) ((void *) (CACHE)->banks + SIZEOF_MOD_BANK(CACHE) * (I)))
 
-#define GPU_CACHE_READ_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(I)])
-#define GPU_CACHE_WRITE_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(CACHE)->read_port_count + (I)])
+#define MOD_READ_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(I)])
+#define MOD_WRITE_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(CACHE)->read_port_count + (I)])
 
-
-struct gpu_cache_t
+/* Module */
+struct mod_t
 {
-	/* Actual cache structure */
+	/* Cache structure */
 	struct cache_t *cache;
 
 	/* Parameters */
@@ -416,7 +416,7 @@ struct gpu_cache_t
 	int latency;
 
 	/* Banks and ports */
-	struct gpu_cache_bank_t *banks;
+	struct mod_bank_t *banks;
 	int bank_count;
 	int read_port_count;  /* Number of read ports (per bank) */
 	int write_port_count;  /* Number of write ports (per bank) */
@@ -426,11 +426,11 @@ struct gpu_cache_t
 	int locked_write_port_count;
 
 	/* Waiting list of events */
-	struct gpu_cache_stack_t *waiting_list_head, *waiting_list_tail;
+	struct mod_stack_t *waiting_list_head, *waiting_list_tail;
 	int waiting_count, waiting_max;
 
 	/* Lower level cache (NULL for global memory) */
-	struct gpu_cache_t *gpu_cache_next;
+	struct mod_t *low_mod;
 
 	/* Interconnects and IDs */
 	struct net_t *net_hi;
@@ -448,44 +448,44 @@ struct gpu_cache_t
 	uint64_t evictions;
 };
 
-struct gpu_cache_t *gpu_cache_create(int bank_count, int read_port_count, int write_port_count,
+struct mod_t *mod_create(int bank_count, int read_port_count, int write_port_count,
 	int block_size, int latency);
-void gpu_cache_free(struct gpu_cache_t *gpu_cache);
-void gpu_cache_dump(struct gpu_cache_t *gpu_cache, FILE *f);
+void mod_free(struct mod_t *mod);
+void mod_dump(struct mod_t *mod, FILE *f);
 
-void gpu_cache_access(struct gpu_cache_t *gpu_cache, int access, uint32_t addr, uint32_t size, int *witness_ptr);
+void mod_access(struct mod_t *mod, int access, uint32_t addr, uint32_t size, int *witness_ptr);
 
 
 
 
 /*
- * GPU Cache system - event driven simulation
+ * Event driven simulation
  */
 
-extern int EV_GPU_CACHE_READ;
-extern int EV_GPU_CACHE_READ_REQUEST;
-extern int EV_GPU_CACHE_READ_REQUEST_RECEIVE;
-extern int EV_GPU_CACHE_READ_REQUEST_REPLY;
-extern int EV_GPU_CACHE_READ_REQUEST_FINISH;
-extern int EV_GPU_CACHE_READ_UNLOCK;
-extern int EV_GPU_CACHE_READ_FINISH;
+extern int EV_GPU_MEM_READ;
+extern int EV_GPU_MEM_READ_REQUEST;
+extern int EV_GPU_MEM_READ_REQUEST_RECEIVE;
+extern int EV_GPU_MEM_READ_REQUEST_REPLY;
+extern int EV_GPU_MEM_READ_REQUEST_FINISH;
+extern int EV_GPU_MEM_READ_UNLOCK;
+extern int EV_GPU_MEM_READ_FINISH;
 
-extern int EV_GPU_CACHE_WRITE;
-extern int EV_GPU_CACHE_WRITE_REQUEST_SEND;
-extern int EV_GPU_CACHE_WRITE_REQUEST_RECEIVE;
-extern int EV_GPU_CACHE_WRITE_REQUEST_REPLY;
-extern int EV_GPU_CACHE_WRITE_REQUEST_REPLY_RECEIVE;
-extern int EV_GPU_CACHE_WRITE_UNLOCK;
-extern int EV_GPU_CACHE_WRITE_FINISH;
+extern int EV_GPU_MEM_WRITE;
+extern int EV_GPU_MEM_WRITE_REQUEST_SEND;
+extern int EV_GPU_MEM_WRITE_REQUEST_RECEIVE;
+extern int EV_GPU_MEM_WRITE_REQUEST_REPLY;
+extern int EV_GPU_MEM_WRITE_REQUEST_REPLY_RECEIVE;
+extern int EV_GPU_MEM_WRITE_UNLOCK;
+extern int EV_GPU_MEM_WRITE_FINISH;
 
 /* Stack for event-driven simulation */
-struct gpu_cache_stack_t
+struct mod_stack_t
 {
 	uint64_t id;
 	int *witness_ptr;
-	struct gpu_cache_t *gpu_cache;
-	struct gpu_cache_bank_t *bank;
-	struct gpu_cache_port_t *port;
+	struct mod_t *mod;
+	struct mod_bank_t *bank;
+	struct mod_port_t *port;
 	uint32_t addr;
 	uint32_t tag;
 	uint32_t set;
@@ -502,23 +502,22 @@ struct gpu_cache_stack_t
 	struct net_msg_t *msg;
 
 	/* Linked list for waiting events */
-	int waiting_list_event;  /* Event to schedule when stack is woken up */
-	struct gpu_cache_stack_t *waiting_prev, *waiting_next;
+	int waiting_list_event;  /* Event to schedule when stack is waken up */
+	struct mod_stack_t *waiting_prev, *waiting_next;
 
 	/* Return stack */
-	struct gpu_cache_stack_t *ret_stack;
+	struct mod_stack_t *ret_stack;
 	int ret_event;
 };
 
-extern struct repos_t *gpu_cache_stack_repos;
-extern uint64_t gpu_cache_stack_id;
+extern uint64_t mod_stack_id;
 
-struct gpu_cache_stack_t *gpu_cache_stack_create(uint64_t id, struct gpu_cache_t *gpu_cache,
+struct mod_stack_t *mod_stack_create(uint64_t id, struct mod_t *mod,
 	uint32_t addr, int ret_event, void *ret_stack);
-void gpu_cache_stack_return(struct gpu_cache_stack_t *stack);
+void mod_stack_return(struct mod_stack_t *stack);
 
-void gpu_cache_handler_read(int event, void *data);
-void gpu_cache_handler_write(int event, void *data);
+void gpu_mem_handler_read(int event, void *data);
+void gpu_mem_handler_write(int event, void *data);
 
 
 
@@ -562,11 +561,11 @@ struct gpu_t
 	int busy_count, busy_max;
 
 	/* Global memory hierarchy - Caches and interconnects */
-	struct gpu_cache_t **gpu_caches;  /* Array of GPU caches */
+	struct mod_t **gpu_mods;  /* Array of GPU caches */
 	struct net_t **networks;  /* Array of interconnects */
-	int gpu_cache_count;
+	int mod_count;
 	int network_count;
-	struct gpu_cache_t *global_memory;  /* Last element in cache array */
+	struct mod_t *global_memory;  /* Last element in cache array */
 };
 
 #define FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \

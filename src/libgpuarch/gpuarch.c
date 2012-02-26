@@ -961,7 +961,7 @@ void gpu_done()
 void gpu_dump_report(void)
 {
 	struct gpu_compute_unit_t *compute_unit;
-	struct gpu_cache_t *local_memory;
+	struct mod_t *local_memory;
 	int compute_unit_id;
 
 	FILE *f;
