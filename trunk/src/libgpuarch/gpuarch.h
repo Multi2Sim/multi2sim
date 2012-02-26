@@ -439,8 +439,9 @@ struct mod_t
 	/* Cache structure */
 	struct cache_t *cache;
 
-	/* Low memory module */
-	struct mod_t *low_mod;
+	/* Low and high memory modules */
+	struct linked_list_t *high_mod_list;
+	struct linked_list_t *low_mod_list;
 
 	/* Interconnects */
 	struct net_t *high_net;
@@ -494,7 +495,10 @@ struct mod_stack_t
 {
 	uint64_t id;
 	int *witness_ptr;
+
 	struct mod_t *mod;
+	struct mod_t *target_mod;
+
 	struct mod_bank_t *bank;
 	struct mod_port_t *port;
 	uint32_t addr;

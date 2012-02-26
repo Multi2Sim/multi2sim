@@ -227,6 +227,8 @@ int str_prefix(char *str, char *prefix);
 
 void str_substr(char *dest, int dest_size, char *src, int src_pos, int src_count);
 
+void str_token(char *dest, int dest_size, char *src, int index, char *delim);
+
 /* Dump formatted string into a buffer with a specific size. Its size is then
  * decreased, and the buffer is advanced to the end of the dumped string.
  * This function is useful for being used in other functions that dump

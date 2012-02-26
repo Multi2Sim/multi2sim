@@ -51,6 +51,10 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind,
 	mod->banks = calloc(1, mod->bank_count * SIZEOF_MOD_BANK(mod));
 	mod->latency = latency;
 
+	/* Lists */
+	mod->low_mod_list = linked_list_create();
+	mod->high_mod_list = linked_list_create();
+
 	/* Block size */
 	mod->block_size = block_size;
 	assert(!(block_size & (block_size - 1)) && block_size >= 4);
@@ -62,6 +66,8 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind,
 
 void mod_free(struct mod_t *mod)
 {
+	linked_list_free(mod->low_mod_list);
+	linked_list_free(mod->high_mod_list);
 	if (mod->cache)
 		cache_free(mod->cache);
 	free(mod->banks);
@@ -111,6 +117,22 @@ void mod_access(struct mod_t *mod, int access, uint32_t addr, uint32_t size, int
 	assert(access == 1 || access == 2);
 	event = access == 1 ? EV_GPU_MEM_READ : EV_GPU_MEM_WRITE;
 	esim_schedule_event(event, stack, 0);
+}
+
+
+/* Return the low module serving a given address. */
+struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr)
+{
+	/* FIXME - for now, just return first module in list */
+	/* Check that there is at least one lower-level module */
+	if (mod->kind != mod_kind_cache)
+		panic("%s: invalid module kind", __FUNCTION__);
+	if (!mod->low_mod_list->count)
+		fatal("%s: no low memory module", mod->name);
+
+	/* Return first element */
+	linked_list_head(mod->low_mod_list);
+	return linked_list_get(mod->low_mod_list);
 }
 
 
@@ -368,33 +390,35 @@ void mod_handler_read(int event, void *data)
 
 	if (event == EV_GPU_MEM_READ_REQUEST)
 	{
-		struct net_t *net = mod->low_net;
-		struct mod_t *target = mod->low_mod;
+		struct net_t *net;
 
+		/* Get low network and module */
+		net = mod->low_net;
 		assert(net);
-		assert(target);
+		stack->target_mod = mod_get_low_mod(mod, stack->addr);
 		gpu_mem_debug("  %lld %lld read_request src=\"%s\" dest=\"%s\" net=\"%s\"\n",
-			CYCLE, ID, mod->name, target->name, net->name);
+			CYCLE, ID, mod->name, stack->target_mod->name, net->name);
 
 		/* Send message */
-		stack->msg = net_try_send_ev(net, mod->low_net_node, target->high_net_node,
+		stack->msg = net_try_send_ev(net, mod->low_net_node, stack->target_mod->high_net_node,
 			8, EV_GPU_MEM_READ_REQUEST_RECEIVE, stack, event, stack);
 		return;
 	}
 
 	if (event == EV_GPU_MEM_READ_REQUEST_RECEIVE)
 	{
-		struct mod_t *target = mod->low_mod;
+		struct mod_t *target_mod = stack->target_mod;
 
+		assert(target_mod);
 		gpu_mem_debug("  %lld %lld read_request_receive cache=\"%s\"\n",
-			CYCLE, ID, target->name);
+			CYCLE, ID, target_mod->name);
 
 		/* Receive element */
-		net_receive(target->high_net, target->high_net_node, stack->msg);
+		net_receive(target_mod->high_net, target_mod->high_net_node, stack->msg);
 
 		/* Function call to 'EV_GPU_MEM_READ' */
 		newstack = mod_stack_create(stack->id,
-			mod->low_mod, stack->tag,
+			target_mod, stack->tag,
 			EV_GPU_MEM_READ_REQUEST_REPLY, stack);
 		esim_schedule_event(EV_GPU_MEM_READ, newstack, 0);
 		return;
@@ -403,14 +427,14 @@ void mod_handler_read(int event, void *data)
 	if (event == EV_GPU_MEM_READ_REQUEST_REPLY)
 	{
 		struct net_t *net = mod->low_net;
-		struct mod_t *target = mod->low_mod;
+		struct mod_t *target_mod = stack->target_mod;
 
-		assert(net && target);
+		assert(net && target_mod);
 		gpu_mem_debug("  %lld %lld read_request_reply src=\"%s\" dest=\"%s\" net=\"%s\"\n",
-			CYCLE, ID, target->name, mod->name, net->name);
+			CYCLE, ID, target_mod->name, mod->name, net->name);
 
 		/* Send message */
-		stack->msg = net_try_send_ev(net, target->high_net_node, mod->low_net_node,
+		stack->msg = net_try_send_ev(net, target_mod->high_net_node, mod->low_net_node,
 			mod->block_size + 8, EV_GPU_MEM_READ_REQUEST_FINISH, stack,
 			event, stack);
 		return;
@@ -624,28 +648,28 @@ void mod_handler_write(int event, void *data)
 	if (event == EV_GPU_MEM_WRITE_REQUEST_SEND)
 	{
 		struct net_t *net;
-		struct mod_t *target;
 
+		/* Get low network and module */
 		net = mod->low_net;
-		target = mod->low_mod;
-		assert(target);
 		assert(net);
+		stack->target_mod = mod_get_low_mod(mod, stack->addr);
 
 		/* Debug */
 		gpu_mem_debug("  %lld %lld write_request_send src=\"%s\" dest=\"%s\" net=\"%s\"\n",
-			CYCLE, ID, mod->name, target->name, net->name);
+			CYCLE, ID, mod->name, stack->target_mod->name, net->name);
 
 		/* Send message */
-		stack->msg = net_try_send_ev(net, mod->low_net_node, target->high_net_node, 8,
+		stack->msg = net_try_send_ev(net, mod->low_net_node, stack->target_mod->high_net_node, 8,
 			EV_GPU_MEM_WRITE_REQUEST_RECEIVE, stack, event, stack);
 		return;
 	}
 
 	if (event == EV_GPU_MEM_WRITE_REQUEST_RECEIVE)
 	{
-		struct mod_t *target = mod->low_mod;
+		struct mod_t *target = stack->target_mod;
 		struct mod_stack_t *newstack;
 
+		assert(target);
 		gpu_mem_debug("  %lld %lld write_request_receive cache=\"%s\"\n",
 			CYCLE, ID, target->name);
 
@@ -661,7 +685,7 @@ void mod_handler_write(int event, void *data)
 	
 	if (event == EV_GPU_MEM_WRITE_REQUEST_REPLY)
 	{
-		struct mod_t *target = mod->low_mod;
+		struct mod_t *target = stack->target_mod;
 		struct net_t *net = mod->low_net;
 
 		assert(target);

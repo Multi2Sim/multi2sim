@@ -342,6 +342,20 @@ void str_substr(char *dest, int dest_size, char *src, int src_pos, int src_count
 }
 
 
+void str_token(char *dest, int dest_size, char *src, int index, char *delim)
+{
+	char buf[MAX_STRING_SIZE];
+	char *token;
+	int i;
+
+	snprintf(buf, sizeof buf, "%s", src);
+	token = strtok(buf, delim);
+	for (i = 0; i < index; i++)
+		token = strtok(NULL, delim);
+	snprintf(dest, dest_size, "%s", token);
+}
+
+
 void str_printf(char **pbuf, int *psize, char *fmt, ...)
 {
 	va_list va;
