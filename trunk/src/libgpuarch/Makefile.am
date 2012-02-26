@@ -6,8 +6,8 @@ libgpuarch_a_SOURCES = \
 	compute-unit.c \
 	gpuarch.h \
 	gpuarch.c \
-	mem-config.c \
-	mem-hier.c\
+	gpu-mem.c\
+	gpu-mod.c \
 	sched.c \
 	tex-engine.c \
 	uop.c
