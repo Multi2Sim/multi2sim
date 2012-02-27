@@ -48,6 +48,82 @@ extern char *cache_system_config_help;
 
 
 /*
+ * Directory
+ */
+
+
+struct dir_lock_t
+{
+	int lock;
+	struct moesi_stack_t *lock_queue;
+};
+
+struct dir_entry_t
+{
+	int owner;  /* node owning the block */
+	int sharers;  /* number of 1s in next field */
+	unsigned char sharer[0];  /* bitmap of sharers (must be last field) */
+};
+
+struct dir_t
+{
+	/* Number of possible sharers for a block. This determines
+	 * the size of the directory entry bitmap. */
+	int nodes;
+
+	/* Width, height and depth of the directory. For caches, it is
+	 * useful to have a 3-dim directory. XSize is the number of
+	 * sets, YSize is the number of ways of the cache, and ZSize
+	 * is the number of subblocks of size 'cache_min_block_size'
+	 * that fit within a block. */
+	int xsize, ysize, zsize;
+
+	/* Array of xsize*ysize locks. Each lock corresponds to a
+	 * block, i.e. a set of zsize directory entries */
+	struct dir_lock_t *dir_lock;
+
+	/* Last field. This is an array of xsize*ysize*zsize elements of type
+	 * dir_entry_t, which have likewise variable size. */
+	unsigned char data[0];
+};
+
+struct dir_t *dir_create(int xsize, int ysize, int zsize, int nodes);
+void dir_free(struct dir_t *dir);
+
+struct dir_entry_t *dir_entry_get(struct dir_t *dir, int x, int y, int z);
+void dir_entry_set_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
+void dir_entry_clear_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
+void dir_entry_clear_all_sharers(struct dir_t *dir, volatile struct dir_entry_t *dir_entry);
+int dir_entry_is_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
+void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry);
+int dir_entry_group_shared_or_owned(struct dir_t *dir, int x, int y);
+
+struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y);
+int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *stack);
+void dir_lock_unlock(struct dir_lock_t *dir_lock);
+void dir_unlock(struct dir_t *dir, int x, int y);
+
+
+
+
+/*
+ * Memory Management Unit
+ */
+
+extern uint32_t mmu_page_size;
+extern uint32_t mmu_page_mask;
+extern uint32_t mmu_log_page_size;
+
+void mmu_init(void);
+void mmu_done(void);
+uint32_t mmu_translate(int mid, uint32_t vtladdr);
+struct dir_t *mmu_get_dir(uint32_t phaddr);
+int mmu_valid_phaddr(uint32_t phaddr);
+
+
+
+
+/*
  * Coherent Cache
  */
 
@@ -60,72 +136,6 @@ struct ccache_access_t
 	void *eventq_item;  /* Item to enqueue when finished */
 	struct ccache_access_t *next;  /* Alias (same address/access, but different eventq_item */
 };
-
-
-#if 0
-struct mod_t
-{
-	/* Parameters */
-	enum mod_kind_t kind;
-	char *name;
-	int block_size;
-	int log_block_size;
-	int latency;
-
-	/* Address range */
-	enum mod_range_kind_t range_kind;
-	union {
-		/* For range_kind = mod_range_bounds */
-		struct {
-			uint32_t low;
-			uint32_t high;
-		} bounds;
-
-		/* For range_kind = mod_range_interleaved */
-		struct {
-			uint32_t mod;
-			uint32_t div;
-			uint32_t eq;
-		} interleaved;
-	} range;
-
-	/* Banks and ports */
-	struct mod_bank_t *banks;
-	int bank_count;
-	int read_port_count;  /* Number of read ports (per bank) */
-	int write_port_count;  /* Number of write ports (per bank) */
-
-	/* Number of locked read/write ports (adding up all banks) */
-	int locked_read_port_count;
-	int locked_write_port_count;
-
-	/* Waiting list of events */
-	struct mod_stack_t *waiting_list_head, *waiting_list_tail;
-	int waiting_count, waiting_max;
-
-	/* Cache structure */
-	struct cache_t *cache;
-
-	/* Low and high memory modules */
-	struct linked_list_t *high_mod_list;
-	struct linked_list_t *low_mod_list;
-
-	/* Interconnects */
-	struct net_t *high_net;
-	struct net_t *low_net;
-	struct net_node_t *high_net_node;
-	struct net_node_t *low_net_node;
-
-	/* Stats */
-	uint64_t reads;
-	uint64_t effective_reads;
-	uint64_t effective_read_hits;
-	uint64_t writes;
-	uint64_t effective_writes;
-	uint64_t effective_write_hits;
-	uint64_t evictions;
-};
-#endif
 
 
 struct ccache_t

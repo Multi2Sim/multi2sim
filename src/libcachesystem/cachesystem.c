@@ -395,9 +395,9 @@ struct dir_entry_t *ccache_get_dir_entry(struct ccache_t *ccache,
 	dir = ccache_get_dir(ccache, set << ccache->log_block_size);
 
 	/* Main memory */
-	if (!ccache->low_net) {
+	if (!ccache->low_net)
+	{
 		assert(way == 0);
-		assert(subblk < main_memory->block_size / cache_min_block_size);
 		set = set % dir->xsize;
 		return dir_entry_get(dir, set, 0, subblk);
 	}
@@ -420,16 +420,17 @@ struct dir_lock_t *ccache_get_dir_lock(struct ccache_t *ccache,
 {
 	struct dir_t *dir;
 	
-	dir = ccache_get_dir(ccache, set << main_memory->log_block_size);
-
 	/* Main memory */
-	if (!ccache->low_net) {
+	if (ccache->kind == mod_kind_main_memory)
+	{
+		dir = mmu_get_dir(set << ccache->log_block_size);
 		set = set % dir->xsize;
 		return dir_lock_get(dir, set, way);
 	}
 
 	/* Cache */
-	return dir_lock_get(dir, set, way);
+	assert(ccache->dir);
+	return dir_lock_get(ccache->dir, set, way);
 }
 
 
@@ -852,7 +853,7 @@ void cache_system_init(int _cores, int _threads)
 	
 	/* Calculate default network buffer sizes and bandwidth, based on the
 	 * maximum message size (block_size + 8). */
-	net_msg_size = main_memory->block_size + 8;
+	net_msg_size = 64 + 8;
 	net_bandwidth = net_msg_size;  /* One message in one cycle */
 	net_buffer_size = net_msg_size * 8;  /* Two messages in a buffer */
 
@@ -889,32 +890,18 @@ void cache_system_init(int _cores, int _threads)
 		/* Instruction cache for node */
 		cache_config_key(section, "ICache");
 		value = config_read_string(cache_config, section, "ICache", "");
-		if (!strcasecmp(value, "MainMemory"))
-		{
-			node->icache = main_memory;
-		}
-		else
-		{
-			sprintf(buf, "Cache %s", value);
-			cache_config_section(buf);
-			node->icache = config_read_ptr(cache_config, buf, "ptr", NULL);
-			assert(node->icache);
-		}
+		sprintf(buf, "Cache %s", value);
+		cache_config_section(buf);
+		node->icache = config_read_ptr(cache_config, buf, "ptr", NULL);
+		assert(node->icache);
 
 		/* Data cache for node */
 		cache_config_key(section, "DCache");
 		value = config_read_string(cache_config, section, "DCache", "");
-		if (!strcasecmp(value, "MainMemory"))
-		{
-			node->dcache = main_memory;
-		}
-		else
-		{
-			sprintf(buf, "Cache %s", value);
-			cache_config_section(buf);
-			node->dcache = config_read_ptr(cache_config, buf, "ptr", NULL);
-			assert(node->dcache);
-		}
+		sprintf(buf, "Cache %s", value);
+		cache_config_section(buf);
+		node->dcache = config_read_ptr(cache_config, buf, "ptr", NULL);
+		assert(node->dcache);
 	}
 
 	/* Check that all nodes have an entry points to the memory hierarchy */
