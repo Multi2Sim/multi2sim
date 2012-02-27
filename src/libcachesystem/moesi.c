@@ -207,26 +207,33 @@ void moesi_handler_find_and_lock(int event, void *data)
 		ccache->accesses++;
 		if (hit)
 			ccache->hits++;
-		if (stack->read) {
+		if (stack->read)
+		{
 			ccache->reads++;
 			stack->blocking ? ccache->blocking_reads++ : ccache->non_blocking_reads++;
 			if (hit)
 				ccache->read_hits++;
-		} else {
+		}
+		else
+		{
 			ccache->writes++;
 			stack->blocking ? ccache->blocking_writes++ : ccache->non_blocking_writes++;
 			if (hit)
 				ccache->write_hits++;
 		}
-		if (!stack->retry) {
+		if (!stack->retry)
+		{
 			ccache->no_retry_accesses++;
 			if (hit)
 				ccache->no_retry_hits++;
-			if (stack->read) {
+			if (stack->read)
+			{
 				ccache->no_retry_reads++;
 				if (hit)
 					ccache->no_retry_read_hits++;
-			} else {
+			}
+			else
+			{
 				ccache->no_retry_writes++;
 				if (hit)
 					ccache->no_retry_write_hits++;
@@ -234,10 +241,10 @@ void moesi_handler_find_and_lock(int event, void *data)
 		}
 
 		/* Miss */
-		if (!hit) {
-			
+		if (!hit)
+		{
 			assert(!stack->blocking);
-			assert(ccache != main_memory);
+			assert(ccache->kind == mod_kind_cache);
 
 			/* Find victim */
 			stack->way = cache_replace_block(ccache->cache, stack->set);
@@ -250,7 +257,8 @@ void moesi_handler_find_and_lock(int event, void *data)
 
 		/* Lock entry */
 		stack->dir_lock = ccache_get_dir_lock(ccache, stack->set, stack->way);
-		if (stack->dir_lock->lock && !stack->blocking) {
+		if (stack->dir_lock->lock && !stack->blocking)
+		{
 			cache_debug("    %lld 0x%x %s block already locked: set=%d, way=%d\n",
 				ID, stack->tag, ccache->name, stack->set, stack->way);
 			ret->err = 1;
@@ -263,13 +271,15 @@ void moesi_handler_find_and_lock(int event, void *data)
 		/* Entry is locked. Record the transient tag so that a subsequent lookup
 		 * detects that the block is being brought.
 		 * Also, update LRU counters here. */
-		if (ccache->cache) {
+		if (ccache->cache)
+		{
 			cache_set_transient_tag(ccache->cache, stack->set, stack->way, stack->tag);
 			cache_access_block(ccache->cache, stack->set, stack->way);
 		}
 
 		/* On miss, evict if victim is a valid block. */
-		if (!hit && stack->status) {
+		if (!hit && stack->status)
+		{
 			stack->eviction = 1;
 			newstack = moesi_stack_create(stack->id, ccache, 0,
 				EV_MOESI_FIND_AND_LOCK_FINISH, stack);
@@ -290,7 +300,8 @@ void moesi_handler_find_and_lock(int event, void *data)
 			stack->tag, ccache->name, stack->err);
 
 		/* If evict produced err, return err */
-		if (stack->err) {
+		if (stack->err)
+		{
 			cache_get_block(ccache->cache, stack->set, stack->way, NULL, &stack->status);
 			assert(stack->status);
 			assert(stack->eviction);
@@ -301,7 +312,8 @@ void moesi_handler_find_and_lock(int event, void *data)
 		}
 
 		/* Eviction */
-		if (stack->eviction) {
+		if (stack->eviction)
+		{
 			ccache->evictions++;
 			cache_get_block(ccache->cache, stack->set, stack->way, NULL, &stack->status);
 			assert(!stack->status);
@@ -349,7 +361,8 @@ void moesi_handler_load(int event, void *data)
 			stack->tag, ccache->name);
 
 		/* Error locking */
-		if (stack->err) {
+		if (stack->err)
+		{
 			ccache->read_retries++;
 			retry_lat = RETRY_LATENCY;
 			cache_debug("    lock error, retrying in %d cycles\n", retry_lat);
@@ -359,7 +372,8 @@ void moesi_handler_load(int event, void *data)
 		}
 
 		/* Hit */
-		if (stack->status) {
+		if (stack->status)
+		{
 			esim_schedule_event(EV_MOESI_LOAD_FINISH, stack, 0);
 			return;
 		}
@@ -379,7 +393,8 @@ void moesi_handler_load(int event, void *data)
 			stack->tag, ccache->name);
 
 		/* Error on read request. Unlock block and retry load. */
-		if (stack->err) {
+		if (stack->err)
+		{
 			ccache->read_retries++;
 			retry_lat = RETRY_LATENCY;
 			dir_lock_unlock(stack->dir_lock);
@@ -441,7 +456,8 @@ void moesi_handler_store(int event, void *data)
 			stack->tag, ccache->name);
 
 		/* Error locking */
-		if (stack->err) {
+		if (stack->err)
+		{
 			ccache->write_retries++;
 			retry_lat = RETRY_LATENCY;
 			cache_debug("    lock error, retrying in %d cycles\n", retry_lat);
@@ -473,7 +489,8 @@ void moesi_handler_store(int event, void *data)
 			stack->tag, ccache->name);
 
 		/* Error in write request, unlock block and retry store. */
-		if (stack->err) {
+		if (stack->err)
+		{
 			ccache->write_retries++;
 			retry_lat = RETRY_LATENCY;
 			dir_lock_unlock(stack->dir_lock);
@@ -543,13 +560,14 @@ void moesi_handler_evict(int event, void *data)
 		lower_node = list_get(ccache->low_net->node_list, 0);
 		assert(lower_node && lower_node->user_data);
 		
-		/* status = I */
-		if (stack->status == moesi_state_invalid) {
+		/* State = I */
+		if (stack->status == moesi_state_invalid)
+		{
 			esim_schedule_event(EV_MOESI_EVICT_FINISH, stack, 0);
 			return;
 		}
 
-		/* status = M/O */
+		/* State = M/O */
 		if (stack->status == moesi_state_modified ||
 			stack->status == moesi_state_owned)
 		{
@@ -561,7 +579,7 @@ void moesi_handler_evict(int event, void *data)
 			return;
 		}
 
-		/* status = S/E */
+		/* State = S/E */
 		if (stack->status == moesi_state_shared ||
 			stack->status == moesi_state_exclusive)
 		{
@@ -600,14 +618,16 @@ void moesi_handler_evict(int event, void *data)
 			stack->tag, target->name);
 
 		/* Error locking block */
-		if (stack->err) {
+		if (stack->err)
+		{
 			ret->err = 1;
 			esim_schedule_event(EV_MOESI_EVICT_REPLY, stack, 0);
 			return;
 		}
 
 		/* No writeback */
-		if (!stack->writeback) {
+		if (!stack->writeback)
+		{
 			esim_schedule_event(EV_MOESI_EVICT_PROCESS, stack, 0);
 			return;
 		}
@@ -650,7 +670,8 @@ void moesi_handler_evict(int event, void *data)
 			stack->tag, target->name);
 
 		/* Error in write request */
-		if (stack->err) {
+		if (stack->err)
+		{
 			ret->err = 1;
 			dir_lock_unlock(stack->dir_lock);
 			esim_schedule_event(EV_MOESI_EVICT_REPLY, stack, 0);
@@ -879,7 +900,8 @@ void moesi_handler_read_request(int event, void *data)
 			stack->tag, target->name);
 		
 		/* Check error */
-		if (stack->err) {
+		if (stack->err)
+		{
 			dir_lock_unlock(stack->dir_lock);
 			ret->err = 1;
 			stack->response = 8;
@@ -919,7 +941,8 @@ void moesi_handler_read_request(int event, void *data)
 		/* For each subblock requested by ccache, set ccache as sharer, and
 		 * check whether there is other cache sharing it. */
 		shared = 0;
-		for (z = 0; z < dir->zsize; z++) {
+		for (z = 0; z < dir->zsize; z++)
+		{
 			dir_entry_tag = stack->tag + z * cache_min_block_size;
 			if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + ccache->block_size)
 				continue;
@@ -933,8 +956,10 @@ void moesi_handler_read_request(int event, void *data)
 		 * as owner of all of them. Otherwise, notify requester that the block is
 		 * shared by setting the 'shared' return value to true. */
 		ret->shared = shared;
-		if (!shared) {
-			for (z = 0; z < dir->zsize; z++) {
+		if (!shared)
+		{
+			for (z = 0; z < dir->zsize; z++)
+			{
 				dir_entry_tag = stack->tag + z * cache_min_block_size;
 				if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + ccache->block_size)
 					continue;
@@ -1006,7 +1031,8 @@ void moesi_handler_read_request(int event, void *data)
 
 		/* Set owner of subblocks to 0. */
 		dir = ccache_get_dir(target, stack->tag);
-		for (z = 0; z < dir->zsize; z++) {
+		for (z = 0; z < dir->zsize; z++)
+		{
 			dir_entry_tag = stack->tag + z * cache_min_block_size;
 			dir_entry = ccache_get_dir_entry(target, stack->set, stack->way, z);
 			dir_entry->owner = 0;
@@ -1167,7 +1193,8 @@ void moesi_handler_write_request(int event, void *data)
 
 		/* status = M/E */
 		if (stack->status == moesi_state_modified ||
-			stack->status == moesi_state_exclusive) {
+			stack->status == moesi_state_exclusive)
+		{
 			esim_schedule_event(EV_MOESI_WRITE_REQUEST_UPDOWN_FINISH, stack, 0);
 			return;
 		}
@@ -1186,7 +1213,8 @@ void moesi_handler_write_request(int event, void *data)
 			stack->tag, target->name);
 
 		/* Error in write request to next cache level */
-		if (stack->err) {
+		if (stack->err)
+		{
 			ret->err = 1;
 			stack->response = 8;
 			dir_lock_unlock(stack->dir_lock);
@@ -1197,7 +1225,8 @@ void moesi_handler_write_request(int event, void *data)
 		/* Check that addr is a multiple of ccache.block_size.
 		 * Set ccache as sharer and owner. */
 		dir = ccache_get_dir(target, stack->tag);
-		for (z = 0; z < dir->zsize; z++) {
+		for (z = 0; z < dir->zsize; z++)
+		{
 			assert(stack->addr % ccache->block_size == 0);
 			dir_entry_tag = stack->tag + z * cache_min_block_size;
 			if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + ccache->block_size)
