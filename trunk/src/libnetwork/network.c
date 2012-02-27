@@ -293,6 +293,25 @@ void net_free(struct net_t *net)
 }
 
 
+void net_dump(struct net_t *net, FILE *f)
+{
+	struct net_node_t *node;
+	int i;
+
+	/* Network name */
+	fprintf(f, "*\n* Network %s\n*\n\n", net->name);
+
+	/* Nodes */
+	for (i = 0; i < list_count(net->node_list); i++)
+	{
+		fprintf(f, "Node %d\n", i);
+		node = list_get(net->node_list, i);
+		net_node_dump(node, f);
+	}
+	fprintf(f, "\n");
+}
+
+
 void net_dump_report(struct net_t *net, FILE *f)
 {
 	int i;

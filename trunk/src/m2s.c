@@ -256,6 +256,24 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 	for (argi = 1; argi < argc; argi++)
 	{
+		/* CPU cache configuration - FIXME: remove */
+		if (!strcmp(argv[argi], "--cpu-cache-config"))
+		{
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			cache_system_config_file_name = argv[argi];
+			continue;
+		}
+
+		/* CPU cache debug - FIXME: remove */
+		if (!strcmp(argv[argi], "--debug-cpu-cache"))
+		{
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			cache_debug_file_name = argv[argi];
+			continue;
+		}
+
 		/* CPU configuration file */
 		if (!strcmp(argv[argi], "--cpu-config"))
 		{

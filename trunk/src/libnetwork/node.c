@@ -79,6 +79,14 @@ void net_node_free(struct net_node_t *node)
 }
 
 
+void net_node_dump(struct net_node_t *node, FILE *f)
+{
+	fprintf(f, "\tName = %s\n", node->name);
+	fprintf(f, "\tNumber of input buffers = %d\n", list_count(node->input_buffer_list));
+	fprintf(f, "\tNumber of output buffers = %d\n", list_count(node->output_buffer_list));
+}
+
+
 void net_node_dump_report(struct net_node_t *node, FILE *f)
 {
 	struct net_t *net = node->net;
