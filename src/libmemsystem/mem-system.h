@@ -311,6 +311,7 @@ void gpu_mod_handler_write(int event, void *data);
 extern int cache_debug_category;
 
 extern int EV_MOESI_FIND_AND_LOCK;
+extern int EV_MOESI_FIND_AND_LOCK_ACTION;
 extern int EV_MOESI_FIND_AND_LOCK_FINISH;
 
 extern int EV_MOESI_LOAD;
@@ -385,6 +386,7 @@ struct moesi_stack_t
 	uint32_t src_set, src_way, src_tag;
 	struct dir_lock_t *dir_lock;
 	int status, response, pending;
+	int hit;
 
 	/* Message sent to the network */
 	struct net_msg_t *msg;

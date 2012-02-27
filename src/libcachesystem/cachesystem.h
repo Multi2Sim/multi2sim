@@ -78,7 +78,7 @@ struct dir_t
 	 * that fit within a block. */
 	int xsize, ysize, zsize;
 
-	/* Array of xsize*ysize locks. Each lock corresponds to a
+	/* Array of xsize * ysize locks. Each lock corresponds to a
 	 * block, i.e. a set of zsize directory entries */
 	struct dir_lock_t *dir_lock;
 
@@ -146,6 +146,12 @@ struct ccache_t
 	int log_block_size;
 	int latency;
 
+	/* Directory */
+	struct dir_t *dir;
+	uint32_t dir_size;
+	uint32_t dir_num_sets;
+	uint32_t dir_assoc;
+
 	/* Address range */
 	enum mod_range_kind_t range_kind;
 	union {
@@ -175,7 +181,6 @@ struct ccache_t
 
 	/* Associated structures */
 	struct cache_t *cache;  /* Cache holding data */
-	struct dir_t *dir;
 
 	/* Networks */
 	struct net_t *high_net;

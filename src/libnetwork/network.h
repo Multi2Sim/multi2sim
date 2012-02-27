@@ -284,6 +284,7 @@ struct net_node_t *net_node_create(struct net_t *net,
 	int input_buffer_size, int output_buffer_size,
 	int bandwidth, char *name, void *user_data);
 void net_node_free(struct net_node_t *node);
+void net_node_dump(struct net_node_t *node, FILE *f);
 
 void net_node_dump_report(struct net_node_t *node, FILE *f);
 
@@ -368,6 +369,7 @@ struct net_t
 struct net_t *net_create(char *name);
 struct net_t *net_create_from_config(struct config_t *config, char *name);
 void net_free(struct net_t *net);
+void net_dump(struct net_t *net, FILE *f);
 
 void net_dump_report(struct net_t *net, FILE *f);
 
