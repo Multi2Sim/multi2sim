@@ -154,11 +154,16 @@ struct ccache_t *main_memory;  /* last element of ccache_array */
 static struct repos_t *ccache_access_repos;
 
 
-struct ccache_t *ccache_create()
+struct ccache_t *ccache_create(char *name, enum mod_kind_t kind)
 {
 	struct ccache_t *ccache;
+
 	ccache = calloc(1, sizeof(struct ccache_t));
+	ccache->kind = kind;
+	ccache->name = strdup(name);
 	ccache->access_list = linked_list_create();
+	ccache->high_mod_list = linked_list_create();
+	ccache->low_mod_list = linked_list_create();
 	return ccache;
 }
 
@@ -183,6 +188,9 @@ void ccache_free(struct ccache_t *ccache)
 		dir_free(ccache->dir);
 	if (ccache->cache)
 		cache_free(ccache->cache);
+	linked_list_free(ccache->high_mod_list);
+	linked_list_free(ccache->low_mod_list);
+	free(ccache->name);
 	free(ccache);
 }
 
@@ -194,7 +202,7 @@ static struct ccache_access_t *ccache_find_access(struct ccache_t *ccache,
 	uint32_t addr)
 {
 	struct ccache_access_t *access;
-	addr &= ~(ccache->bsize - 1);
+	addr &= ~(ccache->block_size - 1);
 	for (linked_list_head(ccache->access_list); !linked_list_is_end(ccache->access_list);
 		linked_list_next(ccache->access_list))
 	{
@@ -215,7 +223,7 @@ struct ccache_access_t *ccache_start_access(struct ccache_t *ccache,
 	/* Create access */
 	access = repos_create_object(ccache_access_repos);
 	access->cache_access_kind = cache_access_kind;
-	access->address = addr & ~(ccache->bsize - 1);
+	access->address = addr & ~(ccache->block_size - 1);
 	access->eventq = eventq;
 	access->eventq_item = eventq_item;
 
@@ -234,8 +242,8 @@ struct ccache_access_t *ccache_start_access(struct ccache_t *ccache,
 		access->id = ++access_counter;
 		cache_access_kind == cache_access_kind_read ? ccache->pending_reads++
 			: ccache->pending_writes++;
-		assert(ccache->pending_reads <= ccache->read_ports);
-		assert(ccache->pending_writes <= ccache->write_ports);
+		assert(ccache->pending_reads <= ccache->read_port_count);
+		assert(ccache->pending_writes <= ccache->write_port_count);
 	}
 	return access;
 }
@@ -246,7 +254,7 @@ void ccache_end_access(struct ccache_t *ccache, uint32_t addr)
 	struct ccache_access_t *access, *alias;
 
 	/* Find access */
-	addr &= ~(ccache->bsize - 1);
+	addr &= ~(ccache->block_size - 1);
 	access = ccache_find_access(ccache, addr);
 	assert(access && access->address == addr);
 
@@ -299,11 +307,11 @@ void ccache_get_block(struct ccache_t *ccache, uint32_t set, uint32_t way,
 	uint32_t *ptag, int *pstatus)
 {
 	/* Main memory */
-	if (!ccache->net_lo)
+	if (!ccache->low_net)
 	{
 		assert(!way);
-		PTR_ASSIGN(ptag, set << ccache->logbsize);
-		PTR_ASSIGN(pstatus, moesi_status_exclusive);
+		PTR_ASSIGN(ptag, set << ccache->log_block_size);
+		PTR_ASSIGN(pstatus, moesi_state_exclusive);
 		return;
 	}
 	
@@ -322,11 +330,11 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	uint32_t set, way, tag;
 
 	/* Main memory */
-	if (!ccache->net_lo) {
-		PTR_ASSIGN(pset, addr >> ccache->logbsize);
+	if (!ccache->low_net) {
+		PTR_ASSIGN(pset, addr >> ccache->log_block_size);
 		PTR_ASSIGN(pway, 0);
-		PTR_ASSIGN(ptag, addr & ~(ccache->bsize - 1));
-		PTR_ASSIGN(pstatus, moesi_status_exclusive);
+		PTR_ASSIGN(ptag, addr & ~(ccache->block_size - 1));
+		PTR_ASSIGN(pstatus, moesi_state_exclusive);
 		return 1;
 	}
 	
@@ -369,7 +377,7 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 struct dir_t *ccache_get_dir(struct ccache_t *ccache, uint32_t phaddr)
 {
 	struct dir_t *dir;
-	dir = ccache->net_lo ? ccache->dir : mmu_get_dir(phaddr);
+	dir = ccache->low_net ? ccache->dir : mmu_get_dir(phaddr);
 	assert(dir);
 	return dir;
 }
@@ -384,12 +392,12 @@ struct dir_entry_t *ccache_get_dir_entry(struct ccache_t *ccache,
 	struct dir_t *dir;
 
 	/* Get directory first */
-	dir = ccache_get_dir(ccache, set << ccache->logbsize);
+	dir = ccache_get_dir(ccache, set << ccache->log_block_size);
 
 	/* Main memory */
-	if (!ccache->net_lo) {
+	if (!ccache->low_net) {
 		assert(way == 0);
-		assert(subblk < main_memory->bsize / cache_min_block_size);
+		assert(subblk < main_memory->block_size / cache_min_block_size);
 		set = set % dir->xsize;
 		return dir_entry_get(dir, set, 0, subblk);
 	}
@@ -412,10 +420,10 @@ struct dir_lock_t *ccache_get_dir_lock(struct ccache_t *ccache,
 {
 	struct dir_t *dir;
 	
-	dir = ccache_get_dir(ccache, set << main_memory->logbsize);
+	dir = ccache_get_dir(ccache, set << main_memory->log_block_size);
 
 	/* Main memory */
-	if (!ccache->net_lo) {
+	if (!ccache->low_net) {
 		set = set % dir->xsize;
 		return dir_lock_get(dir, set, way);
 	}
@@ -449,6 +457,14 @@ void ccache_dump(struct ccache_t *ccache, FILE *f)
 		}
 		fprintf(f, "\n");
 	}
+}
+
+
+/* Get lower node */
+struct ccache_t *ccache_get_low_mod(struct ccache_t *ccache)
+{
+	linked_list_head(ccache->low_mod_list);
+	return linked_list_get(ccache->low_mod_list);
 }
 
 
@@ -738,25 +754,24 @@ void cache_system_init(int _cores, int _threads)
 
 		/* Create cache */
 		assert(curr < ccache_count - 1);
-		ccache = ccache_create();
+		ccache = ccache_create(section + 6, mod_kind_cache);
 		ccache_array[curr] = ccache;
 		curr++;
-		strcpy(ccache->name, section + 6);
 		if (!strcasecmp(ccache->name, "MainMemory"))
 			fatal("'%s' is not a valid name for a cache", ccache->name);
 
 		/* High network */
 		value = config_read_string(cache_config, section, "HiNet", "");
 		sprintf(buf, "net %s", value);
-		ccache->net_hi = config_read_ptr(cache_config, buf, "ptr", NULL);
-		if (!ccache->net_hi && *value)
+		ccache->high_net = config_read_ptr(cache_config, buf, "ptr", NULL);
+		if (!ccache->high_net && *value)
 			fatal("%s: network specified in HiNet does not exist", ccache->name);
 
 		/* Low network */
 		value = config_read_string(cache_config, section, "LoNet", "");
 		sprintf(buf, "net %s", value);
-		ccache->net_lo = config_read_ptr(cache_config, buf, "ptr", NULL);
-		if (!ccache->net_lo && *value)
+		ccache->low_net = config_read_ptr(cache_config, buf, "ptr", NULL);
+		if (!ccache->low_net && *value)
 			fatal("%s: network specified in LoNet does not exist", ccache->name);
 		if (!*value)
 			fatal("%s: cache must be connected to a lower network (use LoNet)", ccache->name);
@@ -778,11 +793,11 @@ void cache_system_init(int _cores, int _threads)
 		policy = map_string_case(&cache_policy_map, policy_str);
 		if (policy == cache_policy_invalid)
 			fatal("%s: invalid block replacement policy", policy_str);
-		ccache->lat = config_read_int(cache_config, buf, "Latency", 0);
-		ccache->bsize = bsize;
-		ccache->logbsize = log_base2(bsize);
-		ccache->read_ports = read_ports;
-		ccache->write_ports = write_ports;
+		ccache->latency = config_read_int(cache_config, buf, "Latency", 0);
+		ccache->block_size = bsize;
+		ccache->log_block_size = log_base2(bsize);
+		ccache->read_port_count = read_ports;
+		ccache->write_port_count = write_ports;
 		ccache->cache = cache_create(nsets, bsize, assoc, policy);
 		cache_min_block_size = cache_min_block_size ? MIN(cache_min_block_size, bsize) : bsize;
 		cache_max_block_size = cache_max_block_size ? MAX(cache_max_block_size, bsize) : bsize;
@@ -806,10 +821,9 @@ void cache_system_init(int _cores, int _threads)
 
 	/* Main memory */
 	section = "MainMemory";
-	ccache = ccache_create();
+	ccache = ccache_create("mm", mod_kind_main_memory);
 	main_memory = ccache;
 	ccache_array[ccache_count - 1] = ccache;
-	strcpy(ccache->name, "mm");
 	sprintf(buf, "Net %s", config_read_string(cache_config, section, "HiNet", ""));
 	cache_config_section(section);
 	cache_config_key(section, "Latency");
@@ -824,21 +838,21 @@ void cache_system_init(int _cores, int _threads)
 		fatal("block size for main memory is not a power of 2");
 	if (bsize > mmu_page_size)
 		fatal("main memory block size cannot be greater than page size");
-	ccache->bsize = bsize;
-	ccache->logbsize = log_base2(bsize);
+	ccache->block_size = bsize;
+	ccache->log_block_size = log_base2(bsize);
 	cache_min_block_size = cache_min_block_size ? MIN(cache_min_block_size, bsize) : bsize;
 
-	ccache->lat = config_read_int(cache_config, section, "Latency", 0);
-	ccache->bsize = config_read_int(cache_config, section, "BlockSize", 0);
-	ccache->read_ports = read_ports;
-	ccache->write_ports = write_ports;
-	ccache->net_hi = config_read_ptr(cache_config, buf, "ptr", NULL);
+	ccache->latency = config_read_int(cache_config, section, "Latency", 0);
+	ccache->block_size = config_read_int(cache_config, section, "BlockSize", 0);
+	ccache->read_port_count = read_ports;
+	ccache->write_port_count = write_ports;
+	ccache->high_net = config_read_ptr(cache_config, buf, "ptr", NULL);
 	if (cache_min_block_size < 1)
 		fatal("cache block size must be >= 1");
 	
 	/* Calculate default network buffer sizes and bandwidth, based on the
 	 * maximum message size (block_size + 8). */
-	net_msg_size = main_memory->bsize + 8;
+	net_msg_size = main_memory->block_size + 8;
 	net_bandwidth = net_msg_size;  /* One message in one cycle */
 	net_buffer_size = net_msg_size * 8;  /* Two messages in a buffer */
 
@@ -922,12 +936,12 @@ void cache_system_init(int _cores, int _threads)
 	for (curr = 0; curr < ccache_count; curr++)
 	{
 		ccache = ccache_array[curr];
-		net = ccache->net_hi;
+		net = ccache->high_net;
 		if (!net)
 			continue;
 		if (net->node_count)
 			fatal("network '%s' has more than one lower node", net->name);
-		ccache->net_node_hi = net_add_end_node(net, net_buffer_size, net_buffer_size,
+		ccache->high_net_node = net_add_end_node(net, net_buffer_size, net_buffer_size,
 			ccache->name, ccache);
 	}
 
@@ -946,18 +960,19 @@ void cache_system_init(int _cores, int _threads)
 		struct net_node_t *lower_node;
 
 		ccache = ccache_array[curr];
-		net = ccache->net_lo;
+		net = ccache->low_net;
 		if (!net)
 			continue;
 
 		/* Create node */
-		ccache->net_node_lo = net_add_end_node(net, net_buffer_size,
+		ccache->low_net_node = net_add_end_node(net, net_buffer_size,
 			net_buffer_size, ccache->name, ccache);
 
 		/* Associate with lower node */
 		lower_node = list_get(net->node_list, 0);
 		assert(lower_node && lower_node->user_data);
-		ccache->next = lower_node->user_data;
+		assert(!linked_list_count(ccache->low_mod_list));
+		linked_list_add(ccache->low_mod_list, lower_node->user_data);
 	}
 
 	/* Check that block sizes are equal or larger while we descend through the
@@ -965,12 +980,14 @@ void cache_system_init(int _cores, int _threads)
 	for (curr = 0; curr < ccache_count; curr++)
 	{
 		bsize = 0;
-		for (ccache = ccache_array[curr]; ccache; ccache = ccache->next)
+		for (ccache = ccache_array[curr]; ccache; )
 		{
-			if (ccache->bsize < bsize)
+			if (ccache->block_size < bsize)
 				fatal("cache %s has a smaller block size than some "
 					"of its upper level caches", ccache->name);
-			bsize = ccache->bsize;
+			bsize = ccache->block_size;
+			linked_list_head(ccache->low_mod_list);
+			ccache = linked_list_get(ccache->low_mod_list);
 		}
 	}
 
@@ -1009,20 +1026,20 @@ void cache_system_init(int _cores, int _threads)
 		ccache = ccache_array[curr];
 
 		/* Main memory */
-		if (!ccache->net_lo)
+		if (!ccache->low_net)
 			continue;
 
 		/* Level 1 cache */
-		if (!ccache->net_hi)
+		if (!ccache->high_net)
 		{
 			ccache->dir = dir_create(ccache->cache->num_sets, ccache->cache->assoc,
-				ccache->bsize / cache_min_block_size, 1);
+				ccache->block_size / cache_min_block_size, 1);
 			continue;
 		}
 
 		/* Other level ccache_array */
 		ccache->dir = dir_create(ccache->cache->num_sets, ccache->cache->assoc,
-			ccache->bsize / cache_min_block_size, ccache->net_hi->end_node_count);
+			ccache->block_size / cache_min_block_size, ccache->high_net->end_node_count);
 	}
 
 	/* Create TLBs (one dtlb and one itlb per thread) */
@@ -1124,10 +1141,10 @@ void cache_system_dump_report()
 			fprintf(f, "Assoc = %d\n", cache->assoc);
 			fprintf(f, "Policy = %s\n", map_value(&cache_policy_map, cache->policy));
 		}
-		fprintf(f, "BlockSize = %d\n", ccache->bsize);
-		fprintf(f, "Latency = %d\n", ccache->lat);
-		fprintf(f, "ReadPorts = %d\n", ccache->read_ports);
-		fprintf(f, "WritePorts = %d\n", ccache->write_ports);
+		fprintf(f, "BlockSize = %d\n", ccache->block_size);
+		fprintf(f, "Latency = %d\n", ccache->latency);
+		fprintf(f, "ReadPorts = %d\n", ccache->read_port_count);
+		fprintf(f, "WritePorts = %d\n", ccache->write_port_count);
 		fprintf(f, "\n");
 
 		/* Statistics */
@@ -1266,10 +1283,11 @@ static void cache_system_dump_route(int core, int thread, enum cache_kind_t kind
 	ccache = cache_system_get_ccache(core, thread, kind);
 	while (ccache) {
 		fprintf(f, "    %s loid=%d\n",
-			ccache->name, ccache->net_node_lo->index);
-		if (ccache->net_lo)
-			fprintf(f, "    %s\n", ccache->net_lo->name);
-		ccache = ccache->next;
+			ccache->name, ccache->low_net_node->index);
+		if (ccache->low_net)
+			fprintf(f, "    %s\n", ccache->low_net->name);
+		linked_list_head(ccache->low_mod_list);
+		ccache = linked_list_get(ccache->low_mod_list);
 	}
 }
 
@@ -1311,7 +1329,7 @@ int cache_system_block_size(int core, int thread,
 {
 	struct ccache_t *ccache;
 	ccache = cache_system_get_ccache(core, thread, cache_kind);
-	return ccache->bsize;
+	return ccache->block_size;
 }
 
 
@@ -1328,8 +1346,8 @@ int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
 	/* If there is no matching access, we just need a free port. */
 	if (!access)
 		return cache_access_kind == cache_access_kind_read ?
-			ccache->pending_reads < ccache->read_ports :
-			ccache->pending_writes < ccache->write_ports;
+			ccache->pending_reads < ccache->read_port_count :
+			ccache->pending_writes < ccache->write_port_count;
 	
 	/* If either the matching or the current access is a write,
 	 * concurrency is not allowed. */

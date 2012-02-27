@@ -48,195 +48,6 @@ extern char *cache_system_config_help;
 
 
 /*
- * Directory
- */
-
-
-struct dir_lock_t
-{
-	int lock;
-	struct moesi_stack_t *lock_queue;
-};
-
-struct dir_entry_t
-{
-	int owner;  /* node owning the block */
-	int sharers;  /* number of 1s in next field */
-	unsigned char sharer[0];  /* bitmap of sharers (must be last field) */
-};
-
-struct dir_t
-{
-	/* Number of possible sharers for a block. This determines
-	 * the size of the directory entry bitmap. */
-	int nodes;
-
-	/* Width, height and depth of the directory. For caches, it is
-	 * useful to have a 3-dim directory. XSize is the number of
-	 * sets, YSize is the number of ways of the cache, and ZSize
-	 * is the number of subblocks of size 'cache_min_block_size'
-	 * that fit within a block. */
-	int xsize, ysize, zsize;
-
-	/* Array of xsize*ysize locks. Each lock corresponds to a
-	 * block, i.e. a set of zsize directory entries */
-	struct dir_lock_t *dir_lock;
-
-	/* Last field. This is an array of xsize*ysize*zsize elements of type
-	 * dir_entry_t, which have likewise variable size. */
-	unsigned char data[0];
-};
-
-struct dir_t *dir_create(int xsize, int ysize, int zsize, int nodes);
-void dir_free(struct dir_t *dir);
-
-struct dir_entry_t *dir_entry_get(struct dir_t *dir, int x, int y, int z);
-void dir_entry_set_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
-void dir_entry_clear_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
-void dir_entry_clear_all_sharers(struct dir_t *dir, volatile struct dir_entry_t *dir_entry);
-int dir_entry_is_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
-void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry);
-int dir_entry_group_shared_or_owned(struct dir_t *dir, int x, int y);
-
-struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y);
-int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *stack);
-void dir_lock_unlock(struct dir_lock_t *dir_lock);
-void dir_unlock(struct dir_t *dir, int x, int y);
-
-
-
-
-/*
- * Memory Management Unit
- */
-
-extern uint32_t mmu_page_size;
-extern uint32_t mmu_page_mask;
-extern uint32_t mmu_log_page_size;
-
-void mmu_init(void);
-void mmu_done(void);
-uint32_t mmu_translate(int mid, uint32_t vtladdr);
-struct dir_t *mmu_get_dir(uint32_t phaddr);
-int mmu_valid_phaddr(uint32_t phaddr);
-
-
-
-
-/*
- * MOESI Protocol
- */
-
-#define cache_debug(...) debug(cache_debug_category, __VA_ARGS__)
-extern int cache_debug_category;
-
-extern int EV_MOESI_FIND_AND_LOCK;
-extern int EV_MOESI_FIND_AND_LOCK_FINISH;
-
-extern int EV_MOESI_LOAD;
-extern int EV_MOESI_LOAD_ACTION;
-extern int EV_MOESI_LOAD_MISS;
-extern int EV_MOESI_LOAD_FINISH;
-
-extern int EV_MOESI_STORE;
-extern int EV_MOESI_STORE_ACTION;
-extern int EV_MOESI_STORE_FINISH;
-
-extern int EV_MOESI_EVICT;
-extern int EV_MOESI_EVICT_ACTION;
-extern int EV_MOESI_EVICT_RECEIVE;
-extern int EV_MOESI_EVICT_WRITEBACK;
-extern int EV_MOESI_EVICT_WRITEBACK_EXCLUSIVE;
-extern int EV_MOESI_EVICT_WRITEBACK_FINISH;
-extern int EV_MOESI_EVICT_PROCESS;
-extern int EV_MOESI_EVICT_REPLY;
-extern int EV_MOESI_EVICT_REPLY_RECEIVE;
-extern int EV_MOESI_EVICT_FINISH;
-
-extern int EV_MOESI_WRITE_REQUEST;
-extern int EV_MOESI_WRITE_REQUEST_RECEIVE;
-extern int EV_MOESI_WRITE_REQUEST_ACTION;
-extern int EV_MOESI_WRITE_REQUEST_EXCLUSIVE;
-extern int EV_MOESI_WRITE_REQUEST_UPDOWN;
-extern int EV_MOESI_WRITE_REQUEST_UPDOWN_FINISH;
-extern int EV_MOESI_WRITE_REQUEST_DOWNUP;
-extern int EV_MOESI_WRITE_REQUEST_REPLY;
-extern int EV_MOESI_WRITE_REQUEST_FINISH;
-
-extern int EV_MOESI_READ_REQUEST;
-extern int EV_MOESI_READ_REQUEST_RECEIVE;
-extern int EV_MOESI_READ_REQUEST_ACTION;
-extern int EV_MOESI_READ_REQUEST_UPDOWN;
-extern int EV_MOESI_READ_REQUEST_UPDOWN_MISS;
-extern int EV_MOESI_READ_REQUEST_UPDOWN_FINISH;
-extern int EV_MOESI_READ_REQUEST_DOWNUP;
-extern int EV_MOESI_READ_REQUEST_DOWNUP_FINISH;
-extern int EV_MOESI_READ_REQUEST_REPLY;
-extern int EV_MOESI_READ_REQUEST_FINISH;
-
-extern int EV_MOESI_INVALIDATE;
-extern int EV_MOESI_INVALIDATE_FINISH;
-
-void moesi_handler_find_and_lock(int event, void *data);
-void moesi_handler_load(int event, void *data);
-void moesi_handler_store(int event, void *data);
-void moesi_handler_evict(int event, void *data);
-void moesi_handler_write_request(int event, void *data);
-void moesi_handler_read_request(int event, void *data);
-void moesi_handler_invalidate(int event, void *data);
-
-
-void moesi_init(void);
-void moesi_done(void);
-
-enum {
-	moesi_status_invalid = 0,
-	moesi_status_modified,
-	moesi_status_owned,
-	moesi_status_exclusive,
-	moesi_status_shared
-};
-
-struct moesi_stack_t
-{
-	uint64_t id;
-	struct ccache_t *ccache, *target, *except;
-	uint32_t addr, set, way, tag;
-	uint32_t src_set, src_way, src_tag;
-	struct dir_lock_t *dir_lock;
-	int status, response, pending;
-
-	/* Message sent to the network */
-	struct net_msg_t *msg;
-	
-	/* Flags */
-	int err : 1;
-	int shared : 1;
-	int read : 1;
-	int blocking : 1;
-	int writeback : 1;
-	int eviction : 1;
-	int retry : 1;
-
-	/* Cache block lock */
-	int lock_event;
-	struct moesi_stack_t *lock_next;
-
-	/* Return event */
-	int retevent;
-	void *retstack;
-};
-
-extern uint64_t moesi_stack_id;
-
-struct moesi_stack_t *moesi_stack_create(uint64_t id, struct ccache_t *ccache,
-	uint32_t addr, int retevent, void *retstack);
-void moesi_stack_return(struct moesi_stack_t *stack);
-
-
-
-
-/*
  * Coherent Cache
  */
 
@@ -250,24 +61,117 @@ struct ccache_access_t
 	struct ccache_access_t *next;  /* Alias (same address/access, but different eventq_item */
 };
 
-struct ccache_t
+
+#if 0
+struct mod_t
 {
 	/* Parameters */
-	char name[100];
-	int lat;
-	int read_ports;  /* Number of read ports */
-	int write_ports;  /* Number of write ports */
-	uint32_t bsize;
-	int logbsize;
-	struct ccache_t *next;  /* Next cache in hierarchy */
+	enum mod_kind_t kind;
+	char *name;
+	int block_size;
+	int log_block_size;
+	int latency;
+
+	/* Address range */
+	enum mod_range_kind_t range_kind;
+	union {
+		/* For range_kind = mod_range_bounds */
+		struct {
+			uint32_t low;
+			uint32_t high;
+		} bounds;
+
+		/* For range_kind = mod_range_interleaved */
+		struct {
+			uint32_t mod;
+			uint32_t div;
+			uint32_t eq;
+		} interleaved;
+	} range;
+
+	/* Banks and ports */
+	struct mod_bank_t *banks;
+	int bank_count;
+	int read_port_count;  /* Number of read ports (per bank) */
+	int write_port_count;  /* Number of write ports (per bank) */
+
+	/* Number of locked read/write ports (adding up all banks) */
+	int locked_read_port_count;
+	int locked_write_port_count;
+
+	/* Waiting list of events */
+	struct mod_stack_t *waiting_list_head, *waiting_list_tail;
+	int waiting_count, waiting_max;
+
+	/* Cache structure */
+	struct cache_t *cache;
+
+	/* Low and high memory modules */
+	struct linked_list_t *high_mod_list;
+	struct linked_list_t *low_mod_list;
+
+	/* Interconnects */
+	struct net_t *high_net;
+	struct net_t *low_net;
+	struct net_node_t *high_net_node;
+	struct net_node_t *low_net_node;
+
+	/* Stats */
+	uint64_t reads;
+	uint64_t effective_reads;
+	uint64_t effective_read_hits;
+	uint64_t writes;
+	uint64_t effective_writes;
+	uint64_t effective_write_hits;
+	uint64_t evictions;
+};
+#endif
+
+
+struct ccache_t
+{
+	enum mod_kind_t kind;
+	char *name;
+	uint32_t block_size;
+	int log_block_size;
+	int latency;
+
+	/* Address range */
+	enum mod_range_kind_t range_kind;
+	union {
+		/* For range_kind = mod_range_bounds */
+		struct {
+			uint32_t low;
+			uint32_t high;
+		} bounds;
+
+		/* For range_kind = mod_range_interleaved */
+		struct {
+			uint32_t mod;
+			uint32_t div;
+			uint32_t eq;
+		} interleaved;
+	} range;
+
+	/* Banks and ports */
+	struct mod_bank_t *banks;
+	int bank_count;
+	int read_port_count;  /* Number of read ports (per bank) */
+	int write_port_count;  /* Number of write ports (per bank) */
+
+	/* Low and high memory modules */
+	struct linked_list_t *high_mod_list;
+	struct linked_list_t *low_mod_list;
+
+	/* Associated structures */
 	struct cache_t *cache;  /* Cache holding data */
 	struct dir_t *dir;
 
 	/* Networks */
-	struct net_t *net_hi;
-	struct net_t *net_lo;
-	struct net_node_t *net_node_hi;  /* Node in upper network */
-	struct net_node_t *net_node_lo;  /* Node in lower network */
+	struct net_t *high_net;
+	struct net_t *low_net;
+	struct net_node_t *high_net_node;  /* Node in upper network */
+	struct net_node_t *low_net_node;  /* Node in lower network */
 
 	/* List of in-flight accesses */
 	struct linked_list_t *access_list;  /* Elements of type ccache_access_t */
@@ -298,7 +202,7 @@ struct ccache_t
 	uint64_t no_retry_write_hits;
 };
 
-struct ccache_t *ccache_create();
+struct ccache_t *ccache_create(char *name, enum mod_kind_t kind);
 void ccache_free(struct ccache_t *ccache);
 
 int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
@@ -306,6 +210,7 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 void ccache_get_block(struct ccache_t *ccache, uint32_t set, uint32_t way,
 	uint32_t *ptag, int *pstatus);
 void ccache_dump(struct ccache_t *ccache, FILE *f);
+struct ccache_t *ccache_get_low_mod(struct ccache_t *ccache);
 
 struct dir_t *ccache_get_dir(struct ccache_t *ccache, uint32_t phaddr);
 struct dir_entry_t *ccache_get_dir_entry(struct ccache_t *ccache,
