@@ -64,6 +64,7 @@ void moesi_stack_return(struct moesi_stack_t *stack)
 /* Events */
 
 int EV_MOESI_FIND_AND_LOCK;
+int EV_MOESI_FIND_AND_LOCK_ACTION;
 int EV_MOESI_FIND_AND_LOCK_FINISH;
 
 int EV_MOESI_LOAD;
@@ -76,6 +77,7 @@ int EV_MOESI_STORE_ACTION;
 int EV_MOESI_STORE_FINISH;
 
 int EV_MOESI_EVICT;
+int EV_MOESI_EVICT_INVALID;
 int EV_MOESI_EVICT_ACTION;
 int EV_MOESI_EVICT_RECEIVE;
 int EV_MOESI_EVICT_WRITEBACK;
@@ -120,6 +122,7 @@ void moesi_init()
 {
 	/* Events */
 	EV_MOESI_FIND_AND_LOCK = esim_register_event(moesi_handler_find_and_lock);
+	EV_MOESI_FIND_AND_LOCK_ACTION = esim_register_event(moesi_handler_find_and_lock);
 	EV_MOESI_FIND_AND_LOCK_FINISH = esim_register_event(moesi_handler_find_and_lock);
 
 	EV_MOESI_LOAD = esim_register_event(moesi_handler_load);
@@ -132,6 +135,7 @@ void moesi_init()
 	EV_MOESI_STORE_FINISH = esim_register_event(moesi_handler_store);
 
 	EV_MOESI_EVICT = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_INVALID = esim_register_event(moesi_handler_evict);
 	EV_MOESI_EVICT_ACTION = esim_register_event(moesi_handler_evict);
 	EV_MOESI_EVICT_RECEIVE = esim_register_event(moesi_handler_evict);
 	EV_MOESI_EVICT_WRITEBACK = esim_register_event(moesi_handler_evict);
@@ -185,7 +189,6 @@ void moesi_handler_find_and_lock(int event, void *data)
 
 	if (event == EV_MOESI_FIND_AND_LOCK)
 	{
-		int hit;
 		cache_debug("  %lld %lld 0x%x %s find and lock (blocking=%d)\n", CYCLE, ID,
 			stack->addr, ccache->name, stack->blocking);
 
@@ -197,54 +200,53 @@ void moesi_handler_find_and_lock(int event, void *data)
 		ret->tag = 0;
 
 		/* Look for block. */
-		hit = ccache_find_block(ccache, stack->addr, &stack->set,
+		stack->hit = ccache_find_block(ccache, stack->addr, &stack->set,
 			&stack->way, &stack->tag, &stack->status);
-		if (hit)
+		if (stack->hit)
 			cache_debug("    %lld 0x%x %s hit: set=%d, way=%d, status=%d\n", ID,
 				stack->tag, ccache->name, stack->set, stack->way, stack->status);
 
 		/* Stats */
 		ccache->accesses++;
-		if (hit)
+		if (stack->hit)
 			ccache->hits++;
 		if (stack->read)
 		{
 			ccache->reads++;
 			stack->blocking ? ccache->blocking_reads++ : ccache->non_blocking_reads++;
-			if (hit)
+			if (stack->hit)
 				ccache->read_hits++;
 		}
 		else
 		{
 			ccache->writes++;
 			stack->blocking ? ccache->blocking_writes++ : ccache->non_blocking_writes++;
-			if (hit)
+			if (stack->hit)
 				ccache->write_hits++;
 		}
 		if (!stack->retry)
 		{
 			ccache->no_retry_accesses++;
-			if (hit)
+			if (stack->hit)
 				ccache->no_retry_hits++;
 			if (stack->read)
 			{
 				ccache->no_retry_reads++;
-				if (hit)
+				if (stack->hit)
 					ccache->no_retry_read_hits++;
 			}
 			else
 			{
 				ccache->no_retry_writes++;
-				if (hit)
+				if (stack->hit)
 					ccache->no_retry_write_hits++;
 			}
 		}
 
 		/* Miss */
-		if (!hit)
+		if (!stack->hit)
 		{
 			assert(!stack->blocking);
-			assert(ccache->kind == mod_kind_cache);
 
 			/* Find victim */
 			stack->way = cache_replace_block(ccache->cache, stack->set);
@@ -271,14 +273,21 @@ void moesi_handler_find_and_lock(int event, void *data)
 		/* Entry is locked. Record the transient tag so that a subsequent lookup
 		 * detects that the block is being brought.
 		 * Also, update LRU counters here. */
-		if (ccache->cache)
-		{
-			cache_set_transient_tag(ccache->cache, stack->set, stack->way, stack->tag);
-			cache_access_block(ccache->cache, stack->set, stack->way);
-		}
+		cache_set_transient_tag(ccache->cache, stack->set, stack->way, stack->tag);
+		cache_access_block(ccache->cache, stack->set, stack->way);
+
+		/* Access latency */
+		esim_schedule_event(EV_MOESI_FIND_AND_LOCK_ACTION, stack, ccache->latency);
+		return;
+	}
+
+	if (event == EV_MOESI_FIND_AND_LOCK_ACTION)
+	{
+		cache_debug("  %lld %lld 0x%x %s find and lock action\n", CYCLE, ID,
+			stack->tag, ccache->name);
 
 		/* On miss, evict if victim is a valid block. */
-		if (!hit && stack->status)
+		if (!stack->hit && stack->status)
 		{
 			stack->eviction = 1;
 			newstack = moesi_stack_create(stack->id, ccache, 0,
@@ -317,6 +326,15 @@ void moesi_handler_find_and_lock(int event, void *data)
 			ccache->evictions++;
 			cache_get_block(ccache->cache, stack->set, stack->way, NULL, &stack->status);
 			assert(!stack->status);
+		}
+
+		/* If this is a main memory, the block is here. A previous miss was just a miss
+		 * in the directory. */
+		if (ccache->kind == mod_kind_main_memory && !stack->status)
+		{
+			stack->status = moesi_state_exclusive;
+			cache_set_block(ccache->cache, stack->set, stack->way,
+				stack->tag, stack->status);
 		}
 
 		/* Return */
@@ -541,11 +559,31 @@ void moesi_handler_evict(int event, void *data)
 
 		/* Send write request to all sharers */
 		newstack = moesi_stack_create(stack->id, ccache, 0,
-			EV_MOESI_EVICT_ACTION, stack);
+			EV_MOESI_EVICT_INVALID, stack);
 		newstack->except = NULL;
 		newstack->set = stack->set;
 		newstack->way = stack->way;
 		esim_schedule_event(EV_MOESI_INVALIDATE, newstack, 0);
+		return;
+	}
+
+	if (event == EV_MOESI_EVICT_INVALID)
+	{
+		cache_debug("  %lld %lld 0x%x %s evict invalid\n", CYCLE, ID,
+			stack->tag, ccache->name);
+
+		/* If module is main memory, no writeback.
+		 * We just need to set the block as invalid, and finish. */
+		if (ccache->kind == mod_kind_main_memory)
+		{
+			cache_set_block(ccache->cache, stack->src_set, stack->src_way,
+				0, moesi_state_invalid);
+			esim_schedule_event(EV_MOESI_EVICT_FINISH, stack, 0);
+			return;
+		}
+
+		/* Continue */
+		esim_schedule_event(EV_MOESI_EVICT_ACTION, stack, 0);
 		return;
 	}
 

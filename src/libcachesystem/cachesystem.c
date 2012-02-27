@@ -306,15 +306,6 @@ int ccache_pending_address(struct ccache_t *ccache, uint32_t addr)
 void ccache_get_block(struct ccache_t *ccache, uint32_t set, uint32_t way,
 	uint32_t *ptag, int *pstatus)
 {
-	/* Main memory */
-	if (!ccache->low_net)
-	{
-		assert(!way);
-		PTR_ASSIGN(ptag, set << ccache->log_block_size);
-		PTR_ASSIGN(pstatus, moesi_state_exclusive);
-		return;
-	}
-	
 	/* Caches */
 	cache_get_block(ccache->cache, set, way, ptag, pstatus);
 }
@@ -329,15 +320,6 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	struct dir_lock_t *dir_lock;
 	uint32_t set, way, tag;
 
-	/* Main memory */
-	if (!ccache->low_net) {
-		PTR_ASSIGN(pset, addr >> ccache->log_block_size);
-		PTR_ASSIGN(pway, 0);
-		PTR_ASSIGN(ptag, addr & ~(ccache->block_size - 1));
-		PTR_ASSIGN(pstatus, moesi_state_exclusive);
-		return 1;
-	}
-	
 	/* Cache. A transient tag is considered a hit if the block is
 	 * locked in the corresponding directory. */
 	tag = addr & ~cache->block_mask;
@@ -377,7 +359,7 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 struct dir_t *ccache_get_dir(struct ccache_t *ccache, uint32_t phaddr)
 {
 	struct dir_t *dir;
-	dir = ccache->low_net ? ccache->dir : mmu_get_dir(phaddr);
+	dir = ccache->dir;
 	assert(dir);
 	return dir;
 }
@@ -394,14 +376,6 @@ struct dir_entry_t *ccache_get_dir_entry(struct ccache_t *ccache,
 	/* Get directory first */
 	dir = ccache_get_dir(ccache, set << ccache->log_block_size);
 
-	/* Main memory */
-	if (!ccache->low_net)
-	{
-		assert(way == 0);
-		set = set % dir->xsize;
-		return dir_entry_get(dir, set, 0, subblk);
-	}
-	
 	/* Cache */
 	dir = ccache->dir;
 	assert(dir);
@@ -418,17 +392,6 @@ struct dir_entry_t *ccache_get_dir_entry(struct ccache_t *ccache,
 struct dir_lock_t *ccache_get_dir_lock(struct ccache_t *ccache,
 	uint32_t set, uint32_t way)
 {
-	struct dir_t *dir;
-	
-	/* Main memory */
-	if (ccache->kind == mod_kind_main_memory)
-	{
-		dir = mmu_get_dir(set << ccache->log_block_size);
-		set = set % dir->xsize;
-		return dir_lock_get(dir, set, way);
-	}
-
-	/* Cache */
 	assert(ccache->dir);
 	return dir_lock_get(ccache->dir, set, way);
 }
@@ -585,6 +548,8 @@ static void cache_config_default(void)
 	sprintf(buf, "net-%d", cores);
 	KEY_STRING("HiNet", buf);
 	KEY_INT("BlockSize", 64);
+	KEY_INT("DirectorySize", 1024);
+	KEY_INT("DirectoryAssoc", 8);
 	KEY_INT("Latency", 200);
 
 	/* Nodes */
@@ -851,6 +816,14 @@ void cache_system_init(int _cores, int _threads)
 	if (cache_min_block_size < 1)
 		fatal("cache block size must be >= 1");
 	
+	ccache->dir_size = config_read_int(cache_config, section, "DirectorySize", 1024);
+	ccache->dir_assoc = config_read_int(cache_config, section, "DirectoryAssoc", 8);
+	if (ccache->dir_size & (ccache->dir_size - 1))
+		fatal("main directory size is not a power of 2");
+	if (ccache->dir_assoc & (ccache->dir_assoc - 1))
+		fatal("main directory associativity is not a power of 2");
+	ccache->dir_num_sets = ccache->dir_size / ccache->dir_assoc;
+	
 	/* Calculate default network buffer sizes and bandwidth, based on the
 	 * maximum message size (block_size + 8). */
 	net_msg_size = 64 + 8;
@@ -875,13 +848,13 @@ void cache_system_init(int _cores, int _threads)
 				cache_system_config_file_name, section);
 		if (core >= cores)
 		{
-			warning("%s: section '[ %s ]' ignored.%s\n", cache_system_config_file_name,
+			warning("%s: section '[ %s ]' ignored.\n%s", cache_system_config_file_name,
 				section, err_cachesystem_ignored);
 			continue;
 		}
 		if (thread >= threads)
 		{
-			warning("%s: section '[ %s ]' ignored.%s\n", cache_system_config_file_name,
+			warning("%s: section '[ %s ]' ignored.\n%s", cache_system_config_file_name,
 				section, err_cachesystem_ignored);
 			continue;
 		}
@@ -945,6 +918,7 @@ void cache_system_init(int _cores, int _threads)
 	for (curr = 0; curr < ccache_count; curr++)
 	{
 		struct net_node_t *lower_node;
+		struct ccache_t *low_ccache;
 
 		ccache = ccache_array[curr];
 		net = ccache->low_net;
@@ -958,8 +932,10 @@ void cache_system_init(int _cores, int _threads)
 		/* Associate with lower node */
 		lower_node = list_get(net->node_list, 0);
 		assert(lower_node && lower_node->user_data);
+		low_ccache = lower_node->user_data;
 		assert(!linked_list_count(ccache->low_mod_list));
-		linked_list_add(ccache->low_mod_list, lower_node->user_data);
+		linked_list_add(ccache->low_mod_list, low_ccache);
+		linked_list_add(low_ccache->high_mod_list, ccache);
 	}
 
 	/* Check that block sizes are equal or larger while we descend through the
@@ -1013,20 +989,34 @@ void cache_system_init(int _cores, int _threads)
 		ccache = ccache_array[curr];
 
 		/* Main memory */
-		if (!ccache->low_net)
+		if (ccache->kind == mod_kind_main_memory)
+		{
+			printf("*** Main memory directory: size=%d, num_sets=%d, assoc=%d, block_size=%d\n",
+				ccache->dir_size, ccache->dir_num_sets, ccache->dir_assoc, ccache->block_size);
+			ccache->dir = dir_create(ccache->dir_num_sets, ccache->dir_assoc,
+				ccache->block_size / cache_min_block_size, ccache->high_net->node_count);
+			ccache->cache = cache_create(ccache->dir_num_sets, ccache->block_size,
+				ccache->dir_assoc, cache_policy_lru);
 			continue;
+		}
 
 		/* Level 1 cache */
 		if (!ccache->high_net)
 		{
+			ccache->dir_size = ccache->cache->num_sets * ccache->cache->assoc;
+			ccache->dir_num_sets = ccache->cache->num_sets;
+			ccache->dir_assoc = ccache->cache->assoc;
 			ccache->dir = dir_create(ccache->cache->num_sets, ccache->cache->assoc,
 				ccache->block_size / cache_min_block_size, 1);
 			continue;
 		}
 
 		/* Other level ccache_array */
+		ccache->dir_size = ccache->cache->num_sets * ccache->cache->assoc;
+		ccache->dir_num_sets = ccache->cache->num_sets;
+		ccache->dir_assoc = ccache->cache->assoc;
 		ccache->dir = dir_create(ccache->cache->num_sets, ccache->cache->assoc,
-			ccache->block_size / cache_min_block_size, ccache->high_net->end_node_count);
+			ccache->block_size / cache_min_block_size, ccache->high_net->node_count);
 	}
 
 	/* Create TLBs (one dtlb and one itlb per thread) */
