@@ -117,7 +117,6 @@ extern uint32_t mmu_log_page_size;
 void mmu_init(void);
 void mmu_done(void);
 uint32_t mmu_translate(int mid, uint32_t vtladdr);
-struct dir_t *mmu_get_dir(uint32_t phaddr);
 int mmu_valid_phaddr(uint32_t phaddr);
 
 
@@ -222,16 +221,8 @@ void ccache_free(struct ccache_t *ccache);
 
 int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	uint32_t *pset, uint32_t *pway, uint32_t *ptag, int *pstatus);
-void ccache_get_block(struct ccache_t *ccache, uint32_t set, uint32_t way,
-	uint32_t *ptag, int *pstatus);
 void ccache_dump(struct ccache_t *ccache, FILE *f);
 struct ccache_t *ccache_get_low_mod(struct ccache_t *ccache);
-
-struct dir_t *ccache_get_dir(struct ccache_t *ccache, uint32_t phaddr);
-struct dir_entry_t *ccache_get_dir_entry(struct ccache_t *ccache,
-	uint32_t set, uint32_t way, uint32_t subblk);
-struct dir_lock_t *ccache_get_dir_lock(struct ccache_t *ccache,
-	uint32_t set, uint32_t way);
 
 
 

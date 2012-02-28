@@ -135,7 +135,8 @@ static int tlb_count = 0;
 static int net_count = 0;
 static uint64_t access_counter = 0;
 
-struct node_t {
+struct node_t
+{
 	struct ccache_t *icache;
 	struct ccache_t *dcache;
 };
@@ -144,7 +145,6 @@ static struct node_t *node_array;
 static struct ccache_t **ccache_array;
 static struct tlb_t **tlb_array;
 static struct net_t **net_array;
-struct ccache_t *main_memory;  /* last element of ccache_array */
 
 
 
@@ -172,10 +172,12 @@ void ccache_free(struct ccache_t *ccache)
 {
 	/* Free linked list of pending accesses.
 	 * Each element is in turn a linked list of access aliases. */
-	while (linked_list_count(ccache->access_list)) {
+	while (linked_list_count(ccache->access_list))
+	{
 		struct ccache_access_t *a, *n;
 		linked_list_head(ccache->access_list);
-		for (a = linked_list_get(ccache->access_list); a; a = n) {
+		for (a = linked_list_get(ccache->access_list); a; a = n)
+		{
 			n = a->next;
 			repos_free_object(ccache_access_repos, a);
 		}
@@ -303,14 +305,6 @@ int ccache_pending_address(struct ccache_t *ccache, uint32_t addr)
 }
 
 
-void ccache_get_block(struct ccache_t *ccache, uint32_t set, uint32_t way,
-	uint32_t *ptag, int *pstatus)
-{
-	/* Caches */
-	cache_get_block(ccache->cache, set, way, ptag, pstatus);
-}
-
-
 /* Return {set, way, tag, state} for an address. */
 int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	uint32_t *pset, uint32_t *pway, uint32_t *ptag, int *pstatus)
@@ -324,11 +318,13 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	 * locked in the corresponding directory. */
 	tag = addr & ~cache->block_mask;
 	set = (tag >> cache->log_block_size) % cache->num_sets;
-	for (way = 0; way < cache->assoc; way++) {
+	for (way = 0; way < cache->assoc; way++)
+	{
 		blk = &cache->sets[set].blocks[way];
 		if (blk->tag == tag && blk->state)
 			break;
-		if (blk->transient_tag == tag) {
+		if (blk->transient_tag == tag)
+		{
 			dir_lock = dir_lock_get(ccache->dir, set, way);
 			if (dir_lock->lock)
 				break;
@@ -336,7 +332,8 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 	}
 
 	/* Miss */
-	if (way == cache->assoc) {
+	if (way == cache->assoc)
+	{
 		PTR_ASSIGN(pset, set);
 		PTR_ASSIGN(ptag, tag);
 		PTR_ASSIGN(pway, 0);
@@ -353,50 +350,6 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 }
 
 
-/* Return directory corresponding to a ccache (either cache or main memory). In
- * the latter case, the physical address is needed to obtain the proper
- * directory. */
-struct dir_t *ccache_get_dir(struct ccache_t *ccache, uint32_t phaddr)
-{
-	struct dir_t *dir;
-	dir = ccache->dir;
-	assert(dir);
-	return dir;
-}
-
-
-/* Return the directory entry corresponding to a set, way, and subblock
- * within a ccache. It ccache is main memory, set refers to a physical
- * address divided by the main memory block size. */
-struct dir_entry_t *ccache_get_dir_entry(struct ccache_t *ccache,
-	uint32_t set, uint32_t way, uint32_t subblk)
-{
-	struct dir_t *dir;
-
-	/* Get directory first */
-	dir = ccache_get_dir(ccache, set << ccache->log_block_size);
-
-	/* Cache */
-	dir = ccache->dir;
-	assert(dir);
-	assert(set < dir->xsize);
-	assert(way < dir->ysize);
-	assert(subblk < dir->zsize);
-	return dir_entry_get(dir, set, way, subblk);
-}
-
-
-/* Return a directory lock. There is a directory lock per
- * block, and not per directory entry, so the subblock is not passed as
- * parameter. */
-struct dir_lock_t *ccache_get_dir_lock(struct ccache_t *ccache,
-	uint32_t set, uint32_t way)
-{
-	assert(ccache->dir);
-	return dir_lock_get(ccache->dir, set, way);
-}
-
-
 void ccache_dump(struct ccache_t *ccache, FILE *f)
 {
 	struct cache_t *cache = ccache->cache;
@@ -410,7 +363,7 @@ void ccache_dump(struct ccache_t *ccache, FILE *f)
 	for (i = 0; i < cache->num_sets; i++) {
 		fprintf(f, "Set %03d:", i);
 		for (j = 0; j < cache->assoc; j++) {
-			dir_lock = ccache_get_dir_lock(ccache, i, j);
+			dir_lock = dir_lock_get(ccache->dir, i, j);
 			blk = &cache->sets[i].blocks[j];
 			if (!blk->state)
 				fprintf(f, " %d:I", j);
@@ -788,7 +741,6 @@ void cache_system_init(int _cores, int _threads)
 	/* Main memory */
 	section = "MainMemory";
 	ccache = ccache_create("mm", mod_kind_main_memory);
-	main_memory = ccache;
 	ccache_array[ccache_count - 1] = ccache;
 	sprintf(buf, "Net %s", config_read_string(cache_config, section, "HiNet", ""));
 	cache_config_section(section);
