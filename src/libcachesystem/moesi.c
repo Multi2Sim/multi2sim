@@ -294,12 +294,12 @@ void moesi_handler_find_and_lock(int event, void *data)
 				EV_MOESI_FIND_AND_LOCK_FINISH, stack);
 			newstack->set = stack->set;
 			newstack->way = stack->way;
-			esim_schedule_event(EV_MOESI_EVICT, newstack, ccache->latency);
+			esim_schedule_event(EV_MOESI_EVICT, newstack, 0);
 			return;
 		}
 
 		/* Access latency */
-		esim_schedule_event(EV_MOESI_FIND_AND_LOCK_FINISH, stack, ccache->latency);
+		esim_schedule_event(EV_MOESI_FIND_AND_LOCK_FINISH, stack, 0);
 		return;
 	}
 
