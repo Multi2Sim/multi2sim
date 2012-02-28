@@ -125,14 +125,14 @@ struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y)
 	struct dir_lock_t *dir_lock;
 	assert(x < dir->xsize && y < dir->ysize);
 	dir_lock = &dir->dir_lock[x * dir->ysize + y];
-	cache_debug("  %lld dir_lock %p - retrieve\n", (long long) esim_cycle, dir_lock);
+	cache_debug("  %lld dir_lock retrieve\n", (long long) esim_cycle);
 	return dir_lock;
 }
 
 
 int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *stack)
 {
-	cache_debug("  dir_lock %p - lock\n", dir_lock);
+	cache_debug("  dir_lock lock\n");
 
 	/* If the entry is already locked, enqueue a new waiter and
 	 * return failure to lock. */
@@ -152,7 +152,7 @@ int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *
 
 void dir_lock_unlock(struct dir_lock_t *dir_lock)
 {
-	cache_debug("  dir_lock %p - unlock\n", dir_lock);
+	cache_debug("  dir_lock unlock\n");
 
 	/* Wake up all waiters */
 	while (dir_lock->lock_queue) {

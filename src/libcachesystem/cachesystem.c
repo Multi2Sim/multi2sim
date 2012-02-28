@@ -991,8 +991,6 @@ void cache_system_init(int _cores, int _threads)
 		/* Main memory */
 		if (ccache->kind == mod_kind_main_memory)
 		{
-			printf("*** Main memory directory: size=%d, num_sets=%d, assoc=%d, block_size=%d\n",
-				ccache->dir_size, ccache->dir_num_sets, ccache->dir_assoc, ccache->block_size);
 			ccache->dir = dir_create(ccache->dir_num_sets, ccache->dir_assoc,
 				ccache->block_size / cache_min_block_size, ccache->high_net->node_count);
 			ccache->cache = cache_create(ccache->dir_num_sets, ccache->block_size,
