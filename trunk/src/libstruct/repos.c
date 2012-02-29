@@ -43,12 +43,12 @@ struct repos_t
 };
 
 
-struct repos_t *repos_create(int objsize, char *name)
+struct repos_t *repos_create(int object_size, char *name)
 {
 	struct repos_t *repos;
 
 	/* Check */
-	if (objsize <= 0)
+	if (object_size <= 0)
 		panic("%s: invalid object size", __FUNCTION__);
 
 	/* Allocate repository */
@@ -59,7 +59,7 @@ struct repos_t *repos_create(int objsize, char *name)
 	/* Initialize */
 	repos->id = random();
 	repos->name = name;
-	repos->object_size = objsize;
+	repos->object_size = object_size;
 
 	/* Return */
 	return repos;
@@ -73,7 +73,8 @@ void repos_free_dump(struct repos_t *repos, void(*dump)(void *, FILE *))
 	int count = 0;
 
 	/* Free objects in unallocated list */
-	for (obj = repos->dealloc_head; obj; obj = next_obj) {
+	for (obj = repos->dealloc_head; obj; obj = next_obj)
+	{
 		objtail = obj + repos->object_size;
 		next_obj = objtail->next;
 		free(obj);
@@ -81,11 +82,13 @@ void repos_free_dump(struct repos_t *repos, void(*dump)(void *, FILE *))
 
 	/* Free objects in allocated list */
 	count = 0;
-	for (obj = repos->alloc_head; obj; obj = next_obj) {
+	for (obj = repos->alloc_head; obj; obj = next_obj)
+	{
 		objtail = obj + repos->object_size;
 		next_obj = objtail->next;
 		count++;
-		if (dump) {
+		if (dump)
+		{
 			fprintf(stderr, "warning: %s: object not freed: ", repos->name);
 			dump(obj, stderr);
 			fprintf(stderr, "\n");
@@ -113,10 +116,14 @@ void *repos_create_object(struct repos_t *repos)
 	
 	/* No unallocated object available. Create a new object.
 	 * Insert it into the unallocated list head. */
-	if (!repos->dealloc_head) {
+	if (!repos->dealloc_head)
+	{
+		/* Allocate */
 		obj = calloc(1, repos->object_size + sizeof(struct objtail_t));
 		if (!obj)
-			return NULL;
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* Initialize */
 		objtail = obj + repos->object_size;
 		objtail->id = repos->id;
 		repos->dealloc_head = obj;
@@ -156,19 +163,15 @@ void repos_free_object(struct repos_t *repos, void *obj)
 	/* Integrity */
 	if (!obj)
 		return;
-	if (!repos_allocated_object(repos, obj)) {
-		fprintf(stderr, "panic: %s.repos_free_object: freed object not valid\n",
+	if (!repos_allocated_object(repos, obj))
+		panic("%s.repos_free_object: invalid object\n",
 			repos->name);
-		abort();
-	}
 
 	/* Check that object was allocated */
 	objtail = obj + repos->object_size;
-	if (!objtail->status) {
-		fprintf(stderr, "panic: %s.repos_free_object: object was not allocated\n",
+	if (!objtail->status)
+		panic("%s.repos_free_object: object not allocated\n",
 			repos->name);
-		abort();
-	}
 
 	/* Remove object from allocated list */
 	prev_obj = objtail->prev;
@@ -202,4 +205,3 @@ int repos_allocated_object(struct repos_t *repos, void *obj)
 	objtail = obj + repos->object_size;
 	return objtail->id == repos->id && objtail->status;
 }
-
