@@ -154,7 +154,7 @@ void gpu_mod_handler_read(int event, void *data)
 			return;
 		}
 
-		/* Get bank, set, way, tag, status */
+		/* Get bank, set, way, tag, state */
 		stack->tag = stack->addr & ~(mod->block_size - 1);
 		stack->block_index = stack->tag >> mod->log_block_size;
 		stack->bank_index = stack->block_index % mod->bank_count;
@@ -244,7 +244,7 @@ void gpu_mod_handler_read(int event, void *data)
 
 		/* Get block from cache, consuming 'latency' cycles. */
 		stack->hit = cache_find_block(mod->cache, stack->tag,
-			&stack->set, &stack->way, &stack->status);
+			&stack->set, &stack->way, &stack->state);
 		if (stack->hit)
 		{
 			mod->effective_read_hits++;
@@ -253,8 +253,8 @@ void gpu_mod_handler_read(int event, void *data)
 		else
 		{
 			stack->way = cache_replace_block(mod->cache, stack->set);
-			cache_get_block(mod->cache, stack->set, stack->way, NULL, &stack->status);
-			if (stack->status)
+			cache_get_block(mod->cache, stack->set, stack->way, NULL, &stack->state);
+			if (stack->state)
 				mod->evictions++;
 			esim_schedule_event(EV_GPU_MEM_READ_REQUEST, stack, mod->latency);
 		}
@@ -410,7 +410,7 @@ void gpu_mod_handler_write(int event, void *data)
 			return;
 		}
 
-		/* Get bank, set, way, tag, status */
+		/* Get bank, set, way, tag, state */
 		stack->tag = stack->addr & ~(mod->block_size - 1);
 		stack->block_index = stack->tag >> mod->log_block_size;
 		stack->bank_index = stack->block_index % mod->bank_count;
@@ -511,7 +511,7 @@ void gpu_mod_handler_write(int event, void *data)
 
 		/* Access cache to write on block (write actually occurs only if block is present). */
 		stack->hit = cache_find_block(mod->cache, stack->tag,
-			&stack->set, &stack->way, &stack->status);
+			&stack->set, &stack->way, &stack->state);
 		if (stack->hit)
 			mod->effective_write_hits++;
 		stack->pending++;
