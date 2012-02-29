@@ -131,7 +131,6 @@ char *err_cachesystem_ignored =
 static int cores = 0;
 static int threads = 0;
 static int mod_count = 0;
-static int tlb_count = 0;
 static int net_count = 0;
 static uint64_t access_counter = 0;
 
@@ -143,7 +142,6 @@ struct node_t
 
 static struct node_t *node_array;
 static struct mod_t **mod_array;
-static struct tlb_t **tlb_array;
 static struct net_t **net_array;
 
 
@@ -389,27 +387,6 @@ struct mod_t *__mod_get_low_mod(struct mod_t *mod)
 
 
 
-/* TLB */
-
-struct tlb_t *tlb_create()
-{
-	struct tlb_t *tlb;
-	tlb = calloc(1, sizeof(struct tlb_t));
-	return tlb;
-}
-
-
-void tlb_free(struct tlb_t *tlb)
-{
-	/* Free */
-	if (tlb->cache)
-		cache_free(tlb->cache);
-	free(tlb);
-}
-
-
-
-
 /* Cache System Stack */
 
 struct cache_system_stack_t *cache_system_stack_create(int core, int thread, uint32_t addr,
@@ -442,7 +419,6 @@ void cache_system_stack_return(struct cache_system_stack_t *stack)
 
 int EV_CACHE_SYSTEM_ACCESS;
 int EV_CACHE_SYSTEM_ACCESS_CACHE;
-int EV_CACHE_SYSTEM_ACCESS_TLB;
 int EV_CACHE_SYSTEM_ACCESS_FINISH;
 
 char *cache_system_config_file_name = "";
@@ -565,9 +541,6 @@ void cache_system_init(int _cores, int _threads)
 {
 	int i, j;
 
-	struct tlb_t *dtlb;
-	struct tlb_t *itlb;
-	
 	char *section;
 	char *value;
 
@@ -603,7 +576,6 @@ void cache_system_init(int _cores, int _threads)
 	/* Events */
 	EV_CACHE_SYSTEM_ACCESS = esim_register_event(cache_system_handler);
 	EV_CACHE_SYSTEM_ACCESS_CACHE = esim_register_event(cache_system_handler);
-	EV_CACHE_SYSTEM_ACCESS_TLB = esim_register_event(cache_system_handler);
 	EV_CACHE_SYSTEM_ACCESS_FINISH = esim_register_event(cache_system_handler);
 
 	/* Load cache configuration file */
@@ -960,29 +932,6 @@ void cache_system_init(int _cores, int _threads)
 			mod->block_size / cache_min_block_size, mod->high_net->node_count);
 	}
 
-	/* Create TLBs (one dtlb and one itlb per thread) */
-	section = "Tlb";
-	tlb_count = cores * threads * 2;
-	tlb_array = calloc(tlb_count, sizeof(void *));
-	for (core = 0; core < cores; core++)
-	{
-		for (thread = 0; thread < threads; thread++)
-		{
-			dtlb = tlb_array[(core * threads + thread) * 2] = tlb_create();
-			itlb = tlb_array[(core * threads + thread) * 2 + 1] = tlb_create();
-			sprintf(dtlb->name, "dtlb.%d.%d", core, thread);
-			sprintf(itlb->name, "itlb.%d.%d", core, thread);
-			dtlb->hitlat = itlb->hitlat =
-				config_read_int(cache_config, section, "HitLatency", 2);
-			dtlb->misslat = itlb->misslat =
-				config_read_int(cache_config, section, "MissLatency", 30);
-			nsets = config_read_int(cache_config, section, "Sets", 64);
-			assoc = config_read_int(cache_config, section, "Assoc", 4);
-			dtlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
-			itlb->cache = cache_create(nsets, mmu_page_size, assoc, cache_policy_lru);
-		}
-	}
-
 	/* Free configuration file */
 	config_free(cache_config);
 }
@@ -991,7 +940,6 @@ void cache_system_init(int _cores, int _threads)
 void cache_system_print_stats(FILE *f)
 {
 	struct mod_t *mod;
-	struct tlb_t *tlb;
 	int curr;
 
 	fprintf(f, "[ CacheSystemSummary ]\n");
@@ -1004,14 +952,6 @@ void cache_system_print_stats(FILE *f)
 			(double) mod->hits / mod->accesses : 0.0);
 	}
 
-	/* Show hit ratio for each TLB */
-	for (curr = 0; curr < tlb_count; curr++)
-	{
-		tlb = tlb_array[curr];
-		fprintf(f, "Cache[%s].HitRatio = %.4g\n", tlb->name, tlb->accesses ?
-			(double) tlb->hits / tlb->accesses : 0.0);
-	}
-	
 	fprintf(f, "\n");
 }
 
@@ -1020,7 +960,6 @@ void cache_system_dump_report()
 {
 	struct mod_t *mod;
 	struct cache_t *cache;
-	struct tlb_t *tlb;
 	FILE *f;
 	int curr;
 	int i;
@@ -1031,7 +970,7 @@ void cache_system_dump_report()
 		return;
 	
 	/* Intro */
-	fprintf(f, "; Report for caches, TLBs, and main memory\n");
+	fprintf(f, "; Report for caches and main memory\n");
 	fprintf(f, ";    Accesses - Total number of accesses\n");
 	fprintf(f, ";    Hits, Misses - Accesses resulting in hits/misses\n");
 	fprintf(f, ";    HitRatio - Hits divided by accesses\n");
@@ -1107,31 +1046,6 @@ void cache_system_dump_report()
 		fprintf(f, "\n\n");
 	}
 
-	/* Report for each TLB */
-	for (curr = 0; curr < tlb_count; curr++)
-	{
-		tlb = tlb_array[curr];
-		cache = tlb->cache;
-		fprintf(f, "[ %s ]\n", tlb->name);
-		fprintf(f, "\n");
-
-		/* Configuration */
-		fprintf(f, "HitLatency = %d\n", tlb->hitlat);
-		fprintf(f, "MissLatency = %d\n", tlb->misslat);
-		fprintf(f, "Sets = %d\n", cache->num_sets);
-		fprintf(f, "Assoc = %d\n", cache->assoc);
-		fprintf(f, "\n");
-
-		/* Statistics */
-		fprintf(f, "Accesses = %lld\n", tlb->accesses);
-		fprintf(f, "Hits = %lld\n", tlb->hits);
-		fprintf(f, "Misses = %lld\n", tlb->accesses - tlb->hits);
-		fprintf(f, "HitRatio = %.4g\n", tlb->accesses ?
-			(double) tlb->hits / tlb->accesses : 0.0);
-		fprintf(f, "Evictions = %lld\n", tlb->evictions);
-		fprintf(f, "\n\n");
-	}
-
 	/* Dump report for networks */
 	for (i = 0; i < net_count; i++)
 		net_dump_report(net_array[i], f);
@@ -1154,11 +1068,6 @@ void cache_system_done()
 	}
 	free(mod_array);
 
-	/* Free tlbs */
-	for (i = 0; i < tlb_count; i++)
-		tlb_free(tlb_array[i]);
-	free(tlb_array);
-
 	/* Free networks */
 	for (i = 0; i < net_count; i++)
 		net_free(net_array[i]);
@@ -1177,16 +1086,6 @@ static struct mod_t *cache_system_get_mod(int core, int thread, enum cache_kind_
 	assert(core < cores && thread < threads);
 	index = core * threads + thread;
 	return cache_kind == cache_kind_data ? node_array[index].dcache : node_array[index].icache;
-}
-
-
-/* Return the associated itlb/dtlb */
-static struct tlb_t *cache_system_get_tlb(int core, int thread, enum cache_kind_t cache_kind)
-{
-	int index;
-	assert(core < cores && thread < threads);
-	index = (core * threads + thread) * 2 + (cache_kind == cache_kind_data ? 0 : 1);
-	return tlb_array[index];
 }
 
 
@@ -1338,25 +1237,18 @@ void cache_system_handler(int event, void *data)
 
 	if (event == EV_CACHE_SYSTEM_ACCESS)
 	{
-		/* Access to TLB */
-		esim_schedule_event(EV_CACHE_SYSTEM_ACCESS_TLB, stack, 0);
-		stack->pending++;
-
-		/* Access to cache if not perfect */
-		if ((stack->cache_kind == cache_kind_data && !cache_system_dperfect) ||
-			(stack->cache_kind == cache_kind_inst && !cache_system_iperfect))
-		{
-			esim_schedule_event(EV_CACHE_SYSTEM_ACCESS_CACHE, stack, 0);
-			stack->pending++;
-		}
-		return;
-	}
-
-	if (event == EV_CACHE_SYSTEM_ACCESS_CACHE)
-	{
 		struct mod_t *mod;
 		struct mod_stack_t *new_stack;
 
+		/* Perfect cache */
+		if ((stack->cache_kind == cache_kind_data && cache_system_dperfect) ||
+			(stack->cache_kind == cache_kind_inst && cache_system_iperfect))
+		{
+			esim_schedule_event(EV_CACHE_SYSTEM_ACCESS_FINISH, stack, 0);
+			return;
+		}
+
+		/* Access module */
 		mod_stack_id++;
 		mod = cache_system_get_mod(stack->core, stack->thread,
 			stack->cache_kind);
@@ -1367,45 +1259,9 @@ void cache_system_handler(int event, void *data)
 		return;
 	}
 
-	if (event == EV_CACHE_SYSTEM_ACCESS_TLB)
-	{
-		struct tlb_t *tlb;
-		uint32_t set, way, tag;
-		int state, hit;
-
-		/* Access tlb */
-		tlb = cache_system_get_tlb(stack->core, stack->thread, stack->cache_kind);
-		hit = cache_find_block(tlb->cache, stack->addr, &set, &way, NULL);
-
-		/* Stats */
-		tlb->accesses++;
-		if (hit)
-			tlb->hits++;
-
-		/* On a miss, replace an entry */
-		if (!hit) {
-			cache_decode_address(tlb->cache, stack->addr, &set, &tag, NULL);
-			way = cache_replace_block(tlb->cache, set);
-			cache_get_block(tlb->cache, set, way, NULL, &state);
-			if (state)
-				tlb->evictions++;
-			cache_set_block(tlb->cache, set, way, tag, 1);
-		}
-
-		/* Schedule finish of access after latency. */
-		cache_access_block(tlb->cache, set, way);
-		esim_schedule_event(EV_CACHE_SYSTEM_ACCESS_FINISH, stack,
-			hit ? tlb->hitlat : tlb->misslat);
-		return;
-	}
-
 	if (event == EV_CACHE_SYSTEM_ACCESS_FINISH)
 	{
 		struct mod_t *mod;
-
-		stack->pending--;
-		if (stack->pending)
-			return;
 
 		mod = cache_system_get_mod(stack->core, stack->thread, stack->cache_kind);
 		__mod_end_access(mod, stack->addr);

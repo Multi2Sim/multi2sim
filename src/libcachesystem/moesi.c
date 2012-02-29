@@ -21,9 +21,8 @@
 
 /* Debug */
 
-int cache_debug_category;
-
 #define RETRY_LATENCY (random() % mod->latency + mod->latency)
+
 
 
 /* Events */
@@ -94,7 +93,7 @@ void mod_handler_find_and_lock(int event, void *data)
 
 	if (event == EV_MOD_FIND_AND_LOCK)
 	{
-		cache_debug("  %lld %lld 0x%x %s find and lock (blocking=%d)\n",
+		mem_debug("  %lld %lld 0x%x %s find and lock (blocking=%d)\n",
 			esim_cycle, stack->id, stack->addr, mod->name, stack->blocking);
 
 		/* Default return values */
@@ -108,7 +107,7 @@ void mod_handler_find_and_lock(int event, void *data)
 		stack->hit = __mod_find_block(mod, stack->addr, &stack->set,
 			&stack->way, &stack->tag, &stack->state);
 		if (stack->hit)
-			cache_debug("    %lld 0x%x %s hit: set=%d, way=%d, state=%d\n", stack->id,
+			mem_debug("    %lld 0x%x %s hit: set=%d, way=%d, state=%d\n", stack->id,
 				stack->tag, mod->name, stack->set, stack->way, stack->state);
 
 		/* Stats */
@@ -158,7 +157,7 @@ void mod_handler_find_and_lock(int event, void *data)
 			cache_get_block(mod->cache, stack->set, stack->way, NULL, &stack->state);
 			assert(stack->state || !dir_entry_group_shared_or_owned(mod->dir,
 				stack->set, stack->way));
-			cache_debug("    %lld 0x%x %s miss -> lru: set=%d, way=%d, state=%d\n",
+			mem_debug("    %lld 0x%x %s miss -> lru: set=%d, way=%d, state=%d\n",
 				stack->id, stack->tag, mod->name, stack->set, stack->way, stack->state);
 		}
 
@@ -166,7 +165,7 @@ void mod_handler_find_and_lock(int event, void *data)
 		stack->dir_lock = dir_lock_get(mod->dir, stack->set, stack->way);
 		if (stack->dir_lock->lock && !stack->blocking)
 		{
-			cache_debug("    %lld 0x%x %s block already locked: set=%d, way=%d\n",
+			mem_debug("    %lld 0x%x %s block already locked: set=%d, way=%d\n",
 				stack->id, stack->tag, mod->name, stack->set, stack->way);
 			ret->err = 1;
 			mod_stack_return(stack);
@@ -188,7 +187,7 @@ void mod_handler_find_and_lock(int event, void *data)
 
 	if (event == EV_MOD_FIND_AND_LOCK_ACTION)
 	{
-		cache_debug("  %lld %lld 0x%x %s find and lock action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s find and lock action\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* On miss, evict if victim is a valid block. */
@@ -210,7 +209,7 @@ void mod_handler_find_and_lock(int event, void *data)
 
 	if (event == EV_MOD_FIND_AND_LOCK_FINISH)
 	{
-		cache_debug("  %lld %lld 0x%x %s find and lock finish (err=%d)\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s find and lock finish (err=%d)\n", esim_cycle, stack->id,
 			stack->tag, mod->name, stack->err);
 
 		/* If evict produced err, return err */
@@ -267,7 +266,7 @@ void mod_handler_load(int event, void *data)
 
 	if (event == EV_MOD_LOAD)
 	{
-		cache_debug("%lld %lld 0x%x %s load\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s load\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
 		/* Call find and lock */
@@ -283,7 +282,7 @@ void mod_handler_load(int event, void *data)
 	if (event == EV_MOD_LOAD_ACTION)
 	{
 		int retry_lat;
-		cache_debug("  %lld %lld 0x%x %s load action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s load action\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Error locking */
@@ -291,7 +290,7 @@ void mod_handler_load(int event, void *data)
 		{
 			mod->read_retries++;
 			retry_lat = RETRY_LATENCY;
-			cache_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
 			stack->retry = 1;
 			esim_schedule_event(EV_MOD_LOAD, stack, retry_lat);
 			return;
@@ -315,7 +314,7 @@ void mod_handler_load(int event, void *data)
 	if (event == EV_MOD_LOAD_MISS)
 	{
 		int retry_lat;
-		cache_debug("  %lld %lld 0x%x %s load miss\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s load miss\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Error on read request. Unlock block and retry load. */
@@ -324,7 +323,7 @@ void mod_handler_load(int event, void *data)
 			mod->read_retries++;
 			retry_lat = RETRY_LATENCY;
 			dir_lock_unlock(stack->dir_lock);
-			cache_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
 			stack->retry = 1;
 			esim_schedule_event(EV_MOD_LOAD, stack, retry_lat);
 			return;
@@ -342,7 +341,7 @@ void mod_handler_load(int event, void *data)
 
 	if (event == EV_MOD_LOAD_FINISH)
 	{
-		cache_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Unlock, and return. */
@@ -365,7 +364,7 @@ void mod_handler_store(int event, void *data)
 
 	if (event == EV_MOD_STORE)
 	{
-		cache_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
 		/* Call find and lock */
@@ -381,7 +380,7 @@ void mod_handler_store(int event, void *data)
 	if (event == EV_MOD_STORE_ACTION)
 	{
 		int retry_lat;
-		cache_debug("  %lld %lld 0x%x %s store action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s store action\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Error locking */
@@ -389,7 +388,7 @@ void mod_handler_store(int event, void *data)
 		{
 			mod->write_retries++;
 			retry_lat = RETRY_LATENCY;
-			cache_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
 			stack->retry = 1;
 			esim_schedule_event(EV_MOD_STORE, stack, retry_lat);
 			return;
@@ -414,7 +413,7 @@ void mod_handler_store(int event, void *data)
 	if (event == EV_MOD_STORE_FINISH)
 	{
 		int retry_lat;
-		cache_debug("%lld %lld 0x%x %s store finish\n", esim_cycle, stack->id,
+		mem_debug("%lld %lld 0x%x %s store finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Error in write request, unlock block and retry store. */
@@ -423,7 +422,7 @@ void mod_handler_store(int event, void *data)
 			mod->write_retries++;
 			retry_lat = RETRY_LATENCY;
 			dir_lock_unlock(stack->dir_lock);
-			cache_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
 			stack->retry = 1;
 			esim_schedule_event(EV_MOD_STORE, stack, retry_lat);
 			return;
@@ -466,7 +465,7 @@ void mod_handler_evict(int event, void *data)
 		cache_get_block(mod->cache, stack->set, stack->way, &stack->tag, &stack->state);
 		assert(stack->state || !dir_entry_group_shared_or_owned(mod->dir,
 			stack->set, stack->way));
-		cache_debug("  %lld %lld 0x%x %s evict (set=%d, way=%d, state=%d)\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict (set=%d, way=%d, state=%d)\n", esim_cycle, stack->id,
 			stack->tag, mod->name, stack->set, stack->way, stack->state);
 	
 		/* Save some data */
@@ -488,7 +487,7 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT_INVALID)
 	{
-		cache_debug("  %lld %lld 0x%x %s evict invalid\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict invalid\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* If module is main memory, no writeback.
@@ -510,7 +509,7 @@ void mod_handler_evict(int event, void *data)
 	{
 		struct net_node_t *lower_node;
 
-		cache_debug("  %lld %lld 0x%x %s evict action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict action\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Get lower node */
@@ -553,7 +552,7 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT_RECEIVE)
 	{
-		cache_debug("  %lld %lld 0x%x %s evict receive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict receive\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Receive message */
@@ -571,7 +570,7 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT_WRITEBACK)
 	{
-		cache_debug("  %lld %lld 0x%x %s evict writeback\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict writeback\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Error locking block */
@@ -601,7 +600,7 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT_WRITEBACK_EXCLUSIVE)
 	{
-		cache_debug("  %lld %lld 0x%x %s evict writeback exclusive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict writeback exclusive\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* State = O/S/I */
@@ -623,7 +622,7 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT_WRITEBACK_FINISH)
 	{
-		cache_debug("  %lld %lld 0x%x %s evict writeback finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict writeback finish\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Error in write request */
@@ -646,7 +645,7 @@ void mod_handler_evict(int event, void *data)
 	if (event == EV_MOD_EVICT_PROCESS)
 	{
 
-		cache_debug("  %lld %lld 0x%x %s evict process\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict process\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Remove sharer, owner, and unlock */
@@ -669,7 +668,7 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT_REPLY)
 	{
-		cache_debug("  %lld %lld 0x%x %s evict reply\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict reply\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Send message */
@@ -682,7 +681,7 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT_REPLY_RECEIVE)
 	{
-		cache_debug("  %lld %lld 0x%x %s evict reply receive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict reply receive\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Receive message */
@@ -700,7 +699,7 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT_FINISH)
 	{
-		cache_debug("  %lld %lld 0x%x %s evict finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s evict finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 		
 		mod_stack_return(stack);
@@ -731,7 +730,7 @@ void mod_handler_read_request(int event, void *data)
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
 
-		cache_debug("  %lld %lld 0x%x %s read request\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
 		/* Default return values*/
@@ -755,7 +754,7 @@ void mod_handler_read_request(int event, void *data)
 
 	if (event == EV_MOD_READ_REQUEST_RECEIVE)
 	{
-		cache_debug("  %lld %lld 0x%x %s read request receive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request receive\n", esim_cycle, stack->id,
 			stack->addr, target_mod->name);
 
 		/* Receive message */
@@ -776,7 +775,7 @@ void mod_handler_read_request(int event, void *data)
 
 	if (event == EV_MOD_READ_REQUEST_ACTION)
 	{
-		cache_debug("  %lld %lld 0x%x %s read request action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request action\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Check block locking error. If read request is down-up, there should not
@@ -799,7 +798,7 @@ void mod_handler_read_request(int event, void *data)
 	{
 		struct mod_t *owner;
 
-		cache_debug("  %lld %lld 0x%x %s read request updown\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request updown\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 		stack->pending = 1;
 		
@@ -859,7 +858,7 @@ void mod_handler_read_request(int event, void *data)
 
 	if (event == EV_MOD_READ_REQUEST_UPDOWN_MISS)
 	{
-		cache_debug("  %lld %lld 0x%x %s read request updown miss\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request updown miss\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 		
 		/* Check error */
@@ -890,7 +889,7 @@ void mod_handler_read_request(int event, void *data)
 		stack->pending--;
 		if (stack->pending)
 			return;
-		cache_debug("  %lld %lld 0x%x %s read request updown finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request updown finish\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Set owner to 0 for all directory entries not owned by mod. */
@@ -943,7 +942,7 @@ void mod_handler_read_request(int event, void *data)
 	{
 		struct mod_t *owner;
 
-		cache_debug("  %lld %lld 0x%x %s read request downup\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request downup\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Check: state must not be invalid.
@@ -990,7 +989,7 @@ void mod_handler_read_request(int event, void *data)
 		stack->pending--;
 		if (stack->pending)
 			return;
-		cache_debug("  %lld %lld 0x%x %s read request downup finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request downup finish\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Set owner of subblocks to 0. */
@@ -1016,7 +1015,7 @@ void mod_handler_read_request(int event, void *data)
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
 
-		cache_debug("  %lld %lld 0x%x %s read request reply\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request reply\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Get network */
@@ -1037,7 +1036,7 @@ void mod_handler_read_request(int event, void *data)
 
 	if (event == EV_MOD_READ_REQUEST_FINISH)
 	{
-		cache_debug("  %lld %lld 0x%x %s read request finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s read request finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Receive message */
@@ -1076,7 +1075,7 @@ void mod_handler_write_request(int event, void *data)
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
 
-		cache_debug("  %lld %lld 0x%x %s write request\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
 		/* Default return values */
@@ -1099,7 +1098,7 @@ void mod_handler_write_request(int event, void *data)
 
 	if (event == EV_MOD_WRITE_REQUEST_RECEIVE)
 	{
-		cache_debug("  %lld %lld 0x%x %s write request receive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request receive\n", esim_cycle, stack->id,
 			stack->addr, target_mod->name);
 
 		/* Receive message */
@@ -1120,7 +1119,7 @@ void mod_handler_write_request(int event, void *data)
 
 	if (event == EV_MOD_WRITE_REQUEST_ACTION)
 	{
-		cache_debug("  %lld %lld 0x%x %s write request action\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request action\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Check lock error. If write request is down-up, there should
@@ -1146,7 +1145,7 @@ void mod_handler_write_request(int event, void *data)
 
 	if (event == EV_MOD_WRITE_REQUEST_EXCLUSIVE)
 	{
-		cache_debug("  %lld %lld 0x%x %s write request exclusive\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request exclusive\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		if (__mod_get_low_mod(mod) == target_mod)
@@ -1158,7 +1157,7 @@ void mod_handler_write_request(int event, void *data)
 
 	if (event == EV_MOD_WRITE_REQUEST_UPDOWN)
 	{
-		cache_debug("  %lld %lld 0x%x %s write request updown\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request updown\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* state = M/E */
@@ -1179,7 +1178,7 @@ void mod_handler_write_request(int event, void *data)
 
 	if (event == EV_MOD_WRITE_REQUEST_UPDOWN_FINISH)
 	{
-		cache_debug("  %lld %lld 0x%x %s write request updown finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request updown finish\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Error in write request to next cache level */
@@ -1221,7 +1220,7 @@ void mod_handler_write_request(int event, void *data)
 
 	if (event == EV_MOD_WRITE_REQUEST_DOWNUP)
 	{
-		cache_debug("  %lld %lld 0x%x %s write request downup\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request downup\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Compute reply_size, set state to I, unlock */
@@ -1241,7 +1240,7 @@ void mod_handler_write_request(int event, void *data)
 		struct net_node_t *src_node;
 		struct net_node_t *dst_node;
 
-		cache_debug("  %lld %lld 0x%x %s write request reply\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request reply\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
 		/* Get network */
@@ -1262,7 +1261,7 @@ void mod_handler_write_request(int event, void *data)
 
 	if (event == EV_MOD_WRITE_REQUEST_FINISH)
 	{
-		cache_debug("  %lld %lld 0x%x %s write request finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s write request finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Receive message */
@@ -1301,7 +1300,7 @@ void mod_handler_invalidate(int event, void *data)
 
 		/* Get block info */
 		cache_get_block(mod->cache, stack->set, stack->way, &stack->tag, &stack->state);
-		cache_debug("  %lld %lld 0x%x %s invalidate (set=%d, way=%d, state=%d)\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s invalidate (set=%d, way=%d, state=%d)\n", esim_cycle, stack->id,
 			stack->tag, mod->name, stack->set, stack->way, stack->state);
 		stack->pending = 1;
 
@@ -1346,7 +1345,7 @@ void mod_handler_invalidate(int event, void *data)
 
 	if (event == EV_MOD_INVALIDATE_FINISH)
 	{
-		cache_debug("  %lld %lld 0x%x %s invalidate finish\n", esim_cycle, stack->id,
+		mem_debug("  %lld %lld 0x%x %s invalidate finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Ignore while pending */
