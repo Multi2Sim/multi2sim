@@ -24,23 +24,23 @@
 #include <assert.h>
 #include <list.h>
 #include <heap.h>
-#include <repos.h>
 #include <mhandle.h>
-#include "esim.h"
+#include <debug.h>
+#include <esim.h>
 
 static int curr_event = 0;
 static int ESIM_EV_INVALID;
 static int esim_lock_schedule = 0;
 
-uint64_t esim_cycle = 0;
+long long esim_cycle;
 int ESIM_EV_NONE;
 
-static struct list_t *event_procs;
+static struct list_t *event_handler_list;
 static struct heap_t *event_heap;
-static struct repos_t *event_repos;
 
 
-struct event_t {
+struct esim_event_t
+{
 	int event;
 	void *data;
 };
@@ -48,9 +48,8 @@ struct event_t {
 
 void esim_init()
 {
-	event_procs = list_create();
+	event_handler_list = list_create();
 	event_heap = heap_create(20);
-	event_repos = repos_create(sizeof(struct event_t), "event_repos");
 	ESIM_EV_INVALID = esim_register_event(NULL);
 	ESIM_EV_NONE = esim_register_event(NULL);
 }
@@ -58,50 +57,45 @@ void esim_init()
 
 void esim_done()
 {
-	list_free(event_procs);
+	list_free(event_handler_list);
 	heap_free(event_heap);
-	repos_free(event_repos);
 }
 
 
 int esim_register_event(esim_event_handler_t handler)
 {
-	list_add(event_procs, handler);
+	list_add(event_handler_list, handler);
 	return curr_event++;
 }
 
 
 void esim_schedule_event(int event, void *data, int after)
 {
-	struct event_t *e;
+	struct esim_event_t *e;
 	uint64_t when = esim_cycle + after;
 	
 	/* Schedule locked? */
 	if (esim_lock_schedule)
 		return;
 	
-	/* integrity */
-	if (event < 0 || event >= list_count(event_procs)) {
-		fprintf(stderr, "esim: unknown scheduled event\n");
-		abort();
-	}
-	if (when < esim_cycle) {
-		fprintf(stderr, "esim: cycle %lld: event scheduled in the past\n",
-			(long long) esim_cycle);
-		abort();
-	}
-	if (!event) {
-		fprintf(stderr, "esim: scheduled event of kind 0; esim_register_event forgotten?\n");
-		abort();
-	}
+	/* Integrity */
+	if (event < 0 || event >= list_count(event_handler_list))
+		panic("%s: unknown event", __FUNCTION__);
+	if (when < esim_cycle)
+		panic("%s: event scheduled in the past", __FUNCTION__);
+	if (!event)
+		panic("%s: invalid event (forgot to call to 'esim_register_event'?)", __FUNCTION__);
 	
-	/* if this is an empty event, ignore it */
+	/* If this is an empty event, ignore it */
 	if (event == ESIM_EV_NONE)
 		return;
 	
-	/* create and insert event */
-	e = repos_create_object(event_repos);
-	assert(e);
+	/* Create event */
+	e = malloc(sizeof(struct esim_event_t));
+	if (!e)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize and insert */
 	e->event = event;
 	e->data = data;
 	heap_insert(event_heap, when, e);
@@ -112,54 +106,53 @@ void esim_execute_event(int event, void *data)
 {
 	esim_event_handler_t handler;
 	
-	/* schedule locked? */
+	/* Schedule locked */
 	if (esim_lock_schedule)
 		return;
 		
-	/* integrity */
-	if (event < 0 || event >= list_count(event_procs)) {
-		fprintf(stderr, "esim: unknown scheduled event\n");
-		abort();
-	}
-	if (!event) {
-		fprintf(stderr, "esim: scheduled event of kind 0; esim_register_event forgotten?\n");
-		abort();
-	}
+	/* Integrity */
+	if (event < 0 || event >= list_count(event_handler_list))
+		panic("%s: unkown event", __FUNCTION__);
+	if (!event)
+		panic("%s: invalid event (forgot to call to 'esim_register_event'?)", __FUNCTION__);
 	if (event == ESIM_EV_NONE)
 		return;
 	
 	/* execute event handler */
-	handler = list_get(event_procs, event);
+	handler = list_get(event_handler_list, event);
 	assert(handler);
 	handler(event, data);
 }
 
 
-/* new cycle; process activated events */
+/* New cycle. Process activated events */
 void esim_process_events()
 {
 	uint64_t when;
-	struct event_t *e;
+	struct esim_event_t *e;
 	esim_event_handler_t handler;
 	
-	/* process events scheduled for this cycle */
-	while (1) {
-		/* extract event from heap */
+	/* Process events scheduled for this cycle */
+	while (1)
+	{
+		/* Extract event from heap */
 		when = heap_peek(event_heap, (void **) &e);
 		if (heap_error(event_heap))
 			break;
 		
-		/* must we process it? */
+		/* Must process it? */
 		assert(when >= esim_cycle);
 		if (when != esim_cycle)
 			break;
 		
-		/* ok, process it */
+		/* Process it */
 		heap_extract(event_heap, NULL);
-		handler = list_get(event_procs, e->event);
+		handler = list_get(event_handler_list, e->event);
 		assert(handler);
 		handler(e->event, e->data);
-		repos_free_object(event_repos, e);
+
+		/* Free event */
+		free(e);
 	}
 	
 	/* advance cycle counter */
@@ -172,12 +165,12 @@ void esim_process_events()
 void esim_process_all_events(int max)
 {
 	int count = 0;
-	struct event_t *e;
+	struct esim_event_t *e;
 	esim_event_handler_t handler;
 	
 	/* Extract all elements from heap */
-	while (!max || count < max) {
-		
+	while (!max || count < max)
+	{
 		/* Extract event */
 		esim_cycle = heap_extract(event_heap, (void **) &e);
 		if (heap_error(event_heap))
@@ -185,46 +178,50 @@ void esim_process_all_events(int max)
 		
 		/* Process it */
 		count++;
-		handler = list_get(event_procs, e->event);
+		handler = list_get(event_handler_list, e->event);
 		assert(handler);
 		handler(e->event, e->data);
-		repos_free_object(event_repos, e);
+
+		/* Free event */
+		free(e);
 	}
 }
 
 
 void esim_empty()
 {
-	struct event_t *e;
+	struct esim_event_t *e;
 	esim_event_handler_t handler;
 	
-	/* lock event scheduling, so no event will be
+	/* Lock event scheduling, so no event will be
 	 * inserted into the heap */
 	esim_lock_schedule = 1;
 	
 	/* extract all elements from heap */
-	while (1) {
-		
-		/* extract event */
+	while (1)
+	{
+		/* Extract event */
 		heap_extract(event_heap, (void **) &e);
 		if (heap_error(event_heap))
 			break;
 		
-		/* process it */
-		handler = list_get(event_procs, e->event);
+		/* Process it */
+		handler = list_get(event_handler_list, e->event);
 		assert(handler);
 		handler(e->event, e->data);
-		repos_free_object(event_repos, e);
+
+		/* Free event */
+		free(e);
 	}
 	
-	/* unlock event scheduling */
+	/* Unlock event scheduling */
 	esim_lock_schedule = 0;
 }
 
 
 uint64_t esim_extract_event(int *pkind, void **pdata)
 {
-	struct event_t *e;
+	struct esim_event_t *e;
 	uint64_t when;
 	
 	/* Extract head of the heap */
@@ -240,8 +237,8 @@ uint64_t esim_extract_event(int *pkind, void **pdata)
 	*pkind = e->event;
 	*pdata = e->data;
 	
-	/* free event and return success */
-	repos_free_object(event_repos, e);
+	/* Free event and return success */
+	free(e);
 	return when;
 }
 
