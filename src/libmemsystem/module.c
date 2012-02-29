@@ -92,15 +92,14 @@ void mod_dump(struct mod_t *mod, FILE *f)
 			/* Waiting list */
 			fprintf(f, "waiting={");
 			for (stack = port->waiting_list_head; stack; stack = stack->waiting_next)
-				fprintf(f, " %lld", (long long) stack->id);
+				fprintf(f, " %lld", stack->id);
 			fprintf(f, " }\n");
 		}
 	}
 }
 
 
-/* Access a mod.
- * Argument 'access' defines whether it is a read (1) or a write (2).
+/* Access a memory module.
  * Variable 'witness', if specified, will be increased when the access completes. */
 void mod_access(struct mod_t *mod, int access, uint32_t addr, uint32_t size, int *witness_ptr)
 {

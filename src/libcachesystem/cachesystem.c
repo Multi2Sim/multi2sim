@@ -214,14 +214,14 @@ static struct ccache_access_t *__mod_find_access(struct mod_t *mod,
 
 
 struct ccache_access_t *__mod_start_access(struct mod_t *mod,
-	enum cache_access_kind_t cache_access_kind, uint32_t addr,
+	enum mod_access_kind_t access_kind, uint32_t addr,
 	struct linked_list_t *eventq, void *eventq_item)
 {
 	struct ccache_access_t *access, *alias;
 
 	/* Create access */
 	access = calloc(1, sizeof(struct ccache_access_t));
-	access->cache_access_kind = cache_access_kind;
+	access->access_kind = access_kind;
 	access->address = addr & ~(mod->block_size - 1);
 	access->eventq = eventq;
 	access->eventq_item = eventq_item;
@@ -230,8 +230,8 @@ struct ccache_access_t *__mod_start_access(struct mod_t *mod,
 	 * If no alias found, a new entry and id are created. */
 	alias = __mod_find_access(mod, addr);
 	if (alias) {
-		assert(access->cache_access_kind == cache_access_kind_read);
-		assert(alias->cache_access_kind == cache_access_kind_read);
+		assert(access->access_kind == mod_access_kind_read);
+		assert(alias->access_kind == mod_access_kind_read);
 		access->next = alias->next;
 		alias->next = access;
 		access->id = alias->id;
@@ -239,7 +239,7 @@ struct ccache_access_t *__mod_start_access(struct mod_t *mod,
 		linked_list_out(mod->access_list);
 		linked_list_insert(mod->access_list, access);
 		access->id = ++access_counter;
-		cache_access_kind == cache_access_kind_read ? mod->pending_reads++
+		access_kind == mod_access_kind_read ? mod->pending_reads++
 			: mod->pending_writes++;
 		assert(mod->pending_reads <= mod->read_port_count);
 		assert(mod->pending_writes <= mod->write_port_count);
@@ -269,7 +269,7 @@ void __mod_end_access(struct mod_t *mod, uint32_t addr)
 	}
 
 	/* Free access and all aliases. */
-	access->cache_access_kind == cache_access_kind_read ? mod->pending_reads--
+	access->access_kind == mod_access_kind_read ? mod->pending_reads--
 		: mod->pending_writes--;
 	assert(mod->pending_reads >= 0);
 	assert(mod->pending_writes >= 0);
@@ -1070,42 +1070,42 @@ void cache_system_dump_report()
 		fprintf(f, "\n");
 
 		/* Statistics */
-		fprintf(f, "Accesses = %lld\n", (long long) mod->accesses);
-		fprintf(f, "Hits = %lld\n", (long long) mod->hits);
-		fprintf(f, "Misses = %lld\n", (long long) (mod->accesses - mod->hits));
+		fprintf(f, "Accesses = %lld\n", mod->accesses);
+		fprintf(f, "Hits = %lld\n", mod->hits);
+		fprintf(f, "Misses = %lld\n", mod->accesses - mod->hits);
 		fprintf(f, "HitRatio = %.4g\n", mod->accesses ?
 			(double) mod->hits / mod->accesses : 0.0);
-		fprintf(f, "Evictions = %lld\n", (long long) mod->evictions);
-		fprintf(f, "Retries = %lld\n", (long long) (mod->read_retries + mod->write_retries));
-		fprintf(f, "ReadRetries = %lld\n", (long long) mod->read_retries);
-		fprintf(f, "WriteRetries = %lld\n", (long long) mod->write_retries);
+		fprintf(f, "Evictions = %lld\n", mod->evictions);
+		fprintf(f, "Retries = %lld\n", mod->read_retries + mod->write_retries);
+		fprintf(f, "ReadRetries = %lld\n", mod->read_retries);
+		fprintf(f, "WriteRetries = %lld\n", mod->write_retries);
 		fprintf(f, "\n");
-		fprintf(f, "NoRetryAccesses = %lld\n", (long long) mod->no_retry_accesses);
-		fprintf(f, "NoRetryHits = %lld\n", (long long) mod->no_retry_hits);
-		fprintf(f, "NoRetryMisses = %lld\n", (long long) (mod->no_retry_accesses -
-			mod->no_retry_hits));
+		fprintf(f, "NoRetryAccesses = %lld\n", mod->no_retry_accesses);
+		fprintf(f, "NoRetryHits = %lld\n", mod->no_retry_hits);
+		fprintf(f, "NoRetryMisses = %lld\n", mod->no_retry_accesses -
+			mod->no_retry_hits);
 		fprintf(f, "NoRetryHitRatio = %.4g\n", mod->no_retry_accesses ?
 			(double) mod->no_retry_hits / mod->no_retry_accesses : 0.0);
-		fprintf(f, "NoRetryReads = %lld\n", (long long) mod->no_retry_reads);
-		fprintf(f, "NoRetryReadHits = %lld\n", (long long) mod->no_retry_read_hits);
-		fprintf(f, "NoRetryReadMisses = %lld\n", (long long) (mod->no_retry_reads -
-			mod->no_retry_read_hits));
-		fprintf(f, "NoRetryWrites = %lld\n", (long long) mod->no_retry_writes);
-		fprintf(f, "NoRetryWriteHits = %lld\n", (long long) mod->no_retry_write_hits);
-		fprintf(f, "NoRetryWriteMisses = %lld\n", (long long) (mod->no_retry_writes -
-			mod->no_retry_write_hits));
+		fprintf(f, "NoRetryReads = %lld\n", mod->no_retry_reads);
+		fprintf(f, "NoRetryReadHits = %lld\n", mod->no_retry_read_hits);
+		fprintf(f, "NoRetryReadMisses = %lld\n", mod->no_retry_reads -
+			mod->no_retry_read_hits);
+		fprintf(f, "NoRetryWrites = %lld\n", mod->no_retry_writes);
+		fprintf(f, "NoRetryWriteHits = %lld\n", mod->no_retry_write_hits);
+		fprintf(f, "NoRetryWriteMisses = %lld\n", mod->no_retry_writes -
+			mod->no_retry_write_hits);
 		fprintf(f, "\n");
-		fprintf(f, "Reads = %lld\n", (long long) mod->reads);
-		fprintf(f, "BlockingReads = %lld\n", (long long) mod->blocking_reads);
-		fprintf(f, "NonBlockingReads = %lld\n", (long long) mod->non_blocking_reads);
-		fprintf(f, "ReadHits = %lld\n", (long long) mod->read_hits);
-		fprintf(f, "ReadMisses = %lld\n", (long long) (mod->reads - mod->read_hits));
+		fprintf(f, "Reads = %lld\n", mod->reads);
+		fprintf(f, "BlockingReads = %lld\n", mod->blocking_reads);
+		fprintf(f, "NonBlockingReads = %lld\n", mod->non_blocking_reads);
+		fprintf(f, "ReadHits = %lld\n", mod->read_hits);
+		fprintf(f, "ReadMisses = %lld\n", mod->reads - mod->read_hits);
 		fprintf(f, "\n");
-		fprintf(f, "Writes = %lld\n", (long long) mod->writes);
-		fprintf(f, "BlockingWrites = %lld\n", (long long) mod->blocking_writes);
-		fprintf(f, "NonBlockingWrites = %lld\n", (long long) mod->non_blocking_writes);
-		fprintf(f, "WriteHits = %lld\n", (long long) mod->write_hits);
-		fprintf(f, "WriteMisses = %lld\n", (long long) (mod->writes - mod->write_hits));
+		fprintf(f, "Writes = %lld\n", mod->writes);
+		fprintf(f, "BlockingWrites = %lld\n", mod->blocking_writes);
+		fprintf(f, "NonBlockingWrites = %lld\n", mod->non_blocking_writes);
+		fprintf(f, "WriteHits = %lld\n", mod->write_hits);
+		fprintf(f, "WriteMisses = %lld\n", mod->writes - mod->write_hits);
 		fprintf(f, "\n\n");
 	}
 
@@ -1125,12 +1125,12 @@ void cache_system_dump_report()
 		fprintf(f, "\n");
 
 		/* Statistics */
-		fprintf(f, "Accesses = %lld\n", (long long) tlb->accesses);
-		fprintf(f, "Hits = %lld\n", (long long) tlb->hits);
-		fprintf(f, "Misses = %lld\n", (long long) (tlb->accesses - tlb->hits));
+		fprintf(f, "Accesses = %lld\n", tlb->accesses);
+		fprintf(f, "Hits = %lld\n", tlb->hits);
+		fprintf(f, "Misses = %lld\n", tlb->accesses - tlb->hits);
 		fprintf(f, "HitRatio = %.4g\n", tlb->accesses ?
 			(double) tlb->hits / tlb->accesses : 0.0);
-		fprintf(f, "Evictions = %lld\n", (long long) tlb->evictions);
+		fprintf(f, "Evictions = %lld\n", tlb->evictions);
 		fprintf(f, "\n\n");
 	}
 
@@ -1255,7 +1255,7 @@ int cache_system_block_size(int core, int thread,
 
 
 int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
-	enum cache_access_kind_t cache_access_kind, uint32_t addr)
+	enum mod_access_kind_t access_kind, uint32_t addr)
 {
 	struct mod_t *mod;
 	struct ccache_access_t *access;
@@ -1266,14 +1266,14 @@ int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
 
 	/* If there is no matching access, we just need a free port. */
 	if (!access)
-		return cache_access_kind == cache_access_kind_read ?
+		return access_kind == mod_access_kind_read ?
 			mod->pending_reads < mod->read_port_count :
 			mod->pending_writes < mod->write_port_count;
 	
 	/* If either the matching or the current access is a write,
 	 * concurrency is not allowed. */
-	if (cache_access_kind == cache_access_kind_write ||
-		access->cache_access_kind == cache_access_kind_write)
+	if (access_kind == mod_access_kind_write ||
+		access->access_kind == mod_access_kind_write)
 		return 0;
 	
 	/* Both current and matching accesses are loads, so the current
@@ -1283,7 +1283,7 @@ int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
 
 
 static uint64_t cache_system_access(int core, int thread, enum cache_kind_t cache_kind,
-	enum cache_access_kind_t cache_access_kind, uint32_t addr,
+	enum mod_access_kind_t access_kind, uint32_t addr,
 	struct linked_list_t *eventq, void *eventq_item)
 {
 	struct cache_system_stack_t *newstack;
@@ -1292,23 +1292,22 @@ static uint64_t cache_system_access(int core, int thread, enum cache_kind_t cach
 
 	/* Check that the physical address is valid for the MMU, i.e.,
 	 * it belongs to an allocated physical page. */
-	if (!mmu_valid_phaddr(addr)) {
-		fprintf(stderr, "fatal: cache_system_access: not allocated physical page\n");
-		abort();
-	}
+	if (!mmu_valid_phaddr(addr))
+		panic("%s: page not allocated", __FUNCTION__);
 
 	/* Record immediately a new access */
 	mod = cache_system_get_mod(core, thread, cache_kind);
 	alias = __mod_find_access(mod, addr);
-	access = __mod_start_access(mod, cache_access_kind, addr,
+	access = __mod_start_access(mod, access_kind, addr,
 		eventq, eventq_item);
 
 	/* If there was no alias, start cache access */
-	if (!alias) {
+	if (!alias)
+	{
 		newstack = cache_system_stack_create(core, thread, addr,
 			ESIM_EV_NONE, NULL);
 		newstack->cache_kind = cache_kind;
-		newstack->cache_access_kind = cache_access_kind;
+		newstack->access_kind = access_kind;
 		newstack->eventq = eventq;
 		newstack->eventq_item = eventq_item;
 		esim_schedule_event(EV_CACHE_SYSTEM_ACCESS, newstack, 0);
@@ -1324,8 +1323,8 @@ uint64_t cache_system_write(int core, int thread, enum cache_kind_t cache_kind,
 {
 	assert(cache_kind == cache_kind_data);
 	assert(cache_system_can_access(core, thread, cache_kind,
-		cache_access_kind_write, addr));
-	return cache_system_access(core, thread, cache_kind, cache_access_kind_write,
+		mod_access_kind_write, addr));
+	return cache_system_access(core, thread, cache_kind, mod_access_kind_write,
 		addr, eventq, eventq_item);
 }
 
@@ -1334,8 +1333,8 @@ uint64_t cache_system_read(int core, int thread, enum cache_kind_t cache_kind,
 	uint32_t addr, struct linked_list_t *eventq, void *eventq_item)
 {
 	assert(cache_system_can_access(core, thread, cache_kind,
-		cache_access_kind_read, addr));
-	return cache_system_access(core, thread, cache_kind, cache_access_kind_read,
+		mod_access_kind_read, addr));
+	return cache_system_access(core, thread, cache_kind, mod_access_kind_read,
 		addr, eventq, eventq_item);
 }
 
@@ -1368,12 +1367,13 @@ void cache_system_handler(int event, void *data)
 			stack->cache_kind);
 		newstack = moesi_stack_create(moesi_stack_id++, mod, stack->addr,
 			EV_CACHE_SYSTEM_ACCESS_FINISH, stack);
-		esim_schedule_event(stack->cache_access_kind == cache_access_kind_read ?
+		esim_schedule_event(stack->access_kind == mod_access_kind_read ?
 			EV_MOESI_LOAD : EV_MOESI_STORE, newstack, 0);
 		return;
 	}
 
-	if (event == EV_CACHE_SYSTEM_ACCESS_TLB) {
+	if (event == EV_CACHE_SYSTEM_ACCESS_TLB)
+	{
 		struct tlb_t *tlb;
 		uint32_t set, way, tag;
 		int state, hit;

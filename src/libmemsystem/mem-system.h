@@ -35,12 +35,6 @@
  * Cache Memory
  */
 
-enum cache_access_kind_t
-{
-	cache_access_kind_read = 0,
-	cache_access_kind_write
-};
-
 extern struct string_map_t cache_policy_map;
 
 enum cache_policy_t
@@ -122,7 +116,7 @@ struct mod_port_t
 struct mod_bank_t
 {
 	/* Stats */
-	uint64_t accesses;
+	long long accesses;
 
 	/* Ports */
 	struct mod_port_t ports[0];
@@ -137,6 +131,15 @@ struct mod_bank_t
 #define MOD_READ_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(I)])
 #define MOD_WRITE_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(CACHE)->read_port_count + (I)])
 
+/* Access type */
+enum mod_access_kind_t
+{
+	mod_access_kind_invalid = 0,
+	mod_access_kind_read,
+	mod_access_kind_write,
+	mod_access_kind_nc_write
+};
+
 /* Module types */
 enum mod_kind_t
 {
@@ -145,6 +148,7 @@ enum mod_kind_t
 	mod_kind_main_memory
 };
 
+/* Type of address range */
 enum mod_range_kind_t
 {
 	mod_range_invalid = 0,
@@ -207,13 +211,13 @@ struct mod_t
 	struct net_node_t *low_net_node;
 
 	/* Stats */
-	uint64_t reads;
-	uint64_t effective_reads;
-	uint64_t effective_read_hits;
-	uint64_t writes;
-	uint64_t effective_writes;
-	uint64_t effective_write_hits;
-	uint64_t evictions;
+	long long reads;
+	long long effective_reads;
+	long long effective_read_hits;
+	long long writes;
+	long long effective_writes;
+	long long effective_write_hits;
+	long long evictions;
 
 
 	/*************** FOR MOESI **********/
@@ -227,24 +231,24 @@ struct mod_t
 	int pending_reads;
 	int pending_writes;
 
-	uint64_t accesses;
-	uint64_t hits;
-	uint64_t blocking_reads;
-	uint64_t non_blocking_reads;
-	uint64_t read_hits;
-	uint64_t blocking_writes;
-	uint64_t non_blocking_writes;
-	uint64_t write_hits;
+	long long accesses;
+	long long hits;
+	long long blocking_reads;
+	long long non_blocking_reads;
+	long long read_hits;
+	long long blocking_writes;
+	long long non_blocking_writes;
+	long long write_hits;
 
-	uint64_t read_retries;
-	uint64_t write_retries;
+	long long read_retries;
+	long long write_retries;
 
-	uint64_t no_retry_accesses;
-	uint64_t no_retry_hits;
-	uint64_t no_retry_reads;
-	uint64_t no_retry_read_hits;
-	uint64_t no_retry_writes;
-	uint64_t no_retry_write_hits;
+	long long no_retry_accesses;
+	long long no_retry_hits;
+	long long no_retry_reads;
+	long long no_retry_read_hits;
+	long long no_retry_writes;
+	long long no_retry_write_hits;
 };
 
 struct mod_t *mod_create(char *name, enum mod_kind_t kind,
@@ -267,7 +271,7 @@ struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
 /* Stack */
 struct mod_stack_t
 {
-	uint64_t id;
+	long long id;
 	int *witness_ptr;
 
 	struct mod_t *mod;
