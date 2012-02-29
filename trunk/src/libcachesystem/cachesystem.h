@@ -31,7 +31,6 @@
 #include <config.h>
 #include <mem-system.h>
 #include <debug.h>
-#include <repos.h>
 #include <linked-list.h>
 
 
@@ -139,7 +138,7 @@ struct ccache_access_t
 	struct ccache_access_t *next;  /* Alias (same address/access, but different eventq_item */
 };
 
-
+#if 0
 struct ccache_t
 {
 	enum mod_kind_t kind;
@@ -218,15 +217,128 @@ struct ccache_t
 	uint64_t no_retry_writes;
 	uint64_t no_retry_write_hits;
 };
+#endif
 
-struct ccache_t *ccache_create(char *name, enum mod_kind_t kind);
-void ccache_free(struct ccache_t *ccache);
+struct mod_t *__mod_create(char *name, enum mod_kind_t kind);
+void __mod_free(struct mod_t *mod);
 
-int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
+int __mod_find_block(struct mod_t *mod, uint32_t addr,
 	uint32_t *pset, uint32_t *pway, uint32_t *ptag, int *pstatus);
-void ccache_dump(struct ccache_t *ccache, FILE *f);
-struct ccache_t *ccache_get_low_mod(struct ccache_t *ccache);
+void __mod_dump(struct mod_t *mod, FILE *f);
+struct mod_t *__mod_get_low_mod(struct mod_t *mod);
 
+
+/*
+ * CPU Event-Driven Simulation
+ */
+
+#define cache_debug(...) debug(cache_debug_category, __VA_ARGS__)
+extern int cache_debug_category;
+
+extern int EV_MOESI_FIND_AND_LOCK;
+extern int EV_MOESI_FIND_AND_LOCK_ACTION;
+extern int EV_MOESI_FIND_AND_LOCK_FINISH;
+
+extern int EV_MOESI_LOAD;
+extern int EV_MOESI_LOAD_ACTION;
+extern int EV_MOESI_LOAD_MISS;
+extern int EV_MOESI_LOAD_FINISH;
+
+extern int EV_MOESI_STORE;
+extern int EV_MOESI_STORE_ACTION;
+extern int EV_MOESI_STORE_FINISH;
+
+extern int EV_MOESI_EVICT;
+extern int EV_MOESI_EVICT_ACTION;
+extern int EV_MOESI_EVICT_RECEIVE;
+extern int EV_MOESI_EVICT_WRITEBACK;
+extern int EV_MOESI_EVICT_WRITEBACK_EXCLUSIVE;
+extern int EV_MOESI_EVICT_WRITEBACK_FINISH;
+extern int EV_MOESI_EVICT_PROCESS;
+extern int EV_MOESI_EVICT_REPLY;
+extern int EV_MOESI_EVICT_REPLY_RECEIVE;
+extern int EV_MOESI_EVICT_FINISH;
+
+extern int EV_MOESI_WRITE_REQUEST;
+extern int EV_MOESI_WRITE_REQUEST_RECEIVE;
+extern int EV_MOESI_WRITE_REQUEST_ACTION;
+extern int EV_MOESI_WRITE_REQUEST_EXCLUSIVE;
+extern int EV_MOESI_WRITE_REQUEST_UPDOWN;
+extern int EV_MOESI_WRITE_REQUEST_UPDOWN_FINISH;
+extern int EV_MOESI_WRITE_REQUEST_DOWNUP;
+extern int EV_MOESI_WRITE_REQUEST_REPLY;
+extern int EV_MOESI_WRITE_REQUEST_FINISH;
+
+extern int EV_MOESI_READ_REQUEST;
+extern int EV_MOESI_READ_REQUEST_RECEIVE;
+extern int EV_MOESI_READ_REQUEST_ACTION;
+extern int EV_MOESI_READ_REQUEST_UPDOWN;
+extern int EV_MOESI_READ_REQUEST_UPDOWN_MISS;
+extern int EV_MOESI_READ_REQUEST_UPDOWN_FINISH;
+extern int EV_MOESI_READ_REQUEST_DOWNUP;
+extern int EV_MOESI_READ_REQUEST_DOWNUP_FINISH;
+extern int EV_MOESI_READ_REQUEST_REPLY;
+extern int EV_MOESI_READ_REQUEST_FINISH;
+
+extern int EV_MOESI_INVALIDATE;
+extern int EV_MOESI_INVALIDATE_FINISH;
+
+void moesi_handler_find_and_lock(int event, void *data);
+void moesi_handler_load(int event, void *data);
+void moesi_handler_store(int event, void *data);
+void moesi_handler_evict(int event, void *data);
+void moesi_handler_write_request(int event, void *data);
+void moesi_handler_read_request(int event, void *data);
+void moesi_handler_invalidate(int event, void *data);
+
+
+void moesi_init(void);
+void moesi_done(void);
+
+enum {
+	moesi_state_invalid = 0,
+	moesi_state_modified,
+	moesi_state_owned,
+	moesi_state_exclusive,
+	moesi_state_shared
+};
+
+struct moesi_stack_t
+{
+	uint64_t id;
+	struct mod_t *mod, *target, *except;
+	uint32_t addr, set, way, tag;
+	uint32_t src_set, src_way, src_tag;
+	struct dir_lock_t *dir_lock;
+	int status, response, pending;
+	int hit;
+
+	/* Message sent to the network */
+	struct net_msg_t *msg;
+
+	/* Flags */
+	int err : 1;
+	int shared : 1;
+	int read : 1;
+	int blocking : 1;
+	int writeback : 1;
+	int eviction : 1;
+	int retry : 1;
+
+	/* Cache block lock */
+	int lock_event;
+	struct moesi_stack_t *lock_next;
+
+	/* Return event */
+	int retevent;
+	void *retstack;
+};
+
+extern uint64_t moesi_stack_id;
+
+struct moesi_stack_t *moesi_stack_create(uint64_t id, struct mod_t *mod,
+	uint32_t addr, int retevent, void *retstack);
+void moesi_stack_return(struct moesi_stack_t *stack);
 
 
 
@@ -267,8 +379,6 @@ extern int cache_system_dperfect;
 extern int cache_min_block_size;
 extern int cache_max_block_size;
 
-extern struct ccache_t *main_memory;
-
 enum cache_kind_t
 {
 	cache_kind_inst,
@@ -294,8 +404,6 @@ struct cache_system_stack_t
 	int retevent;
 	void *retstack;
 };
-
-extern struct repos_t *cache_system_stack_repos;
 
 struct cache_system_stack_t *cache_system_stack_create(int core, int thread, uint32_t addr,
 	int retevent, void *retstack);
