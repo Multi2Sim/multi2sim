@@ -44,7 +44,7 @@ static int can_fetch(int core, int thread)
 	if (block != THREAD.fetch_block) {
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
 		if (!cache_system_can_access(core, thread, cache_kind_inst,
-			cache_access_kind_read, phaddr))
+			mod_access_kind_read, phaddr))
 			return 0;
 	}
 	
