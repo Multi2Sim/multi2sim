@@ -165,7 +165,7 @@ struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y)
 }
 
 
-int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *stack)
+int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct mod_stack_t *stack)
 {
 	mem_debug("  dir_lock lock\n");
 
@@ -173,8 +173,8 @@ int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *
 	 * return failure to lock. */
 	if (dir_lock->lock)
 	{
-		stack->lock_next = dir_lock->lock_queue;
-		stack->lock_event = event;
+		stack->dir_lock_next = dir_lock->lock_queue;
+		stack->dir_lock_event = event;
 		dir_lock->lock_queue = stack;
 		mem_debug("    0x%x access suspended\n", stack->tag);
 		return 0;
@@ -193,9 +193,9 @@ void dir_lock_unlock(struct dir_lock_t *dir_lock)
 	/* Wake up all waiters */
 	while (dir_lock->lock_queue)
 	{
-		esim_schedule_event(dir_lock->lock_queue->lock_event, dir_lock->lock_queue, 1);
+		esim_schedule_event(dir_lock->lock_queue->dir_lock_event, dir_lock->lock_queue, 1);
 		mem_debug("    0x%x access resumed\n", dir_lock->lock_queue->tag);
-		dir_lock->lock_queue = dir_lock->lock_queue->lock_next;
+		dir_lock->lock_queue = dir_lock->lock_queue->dir_lock_next;
 	}
 
 	/* Unlock entry */

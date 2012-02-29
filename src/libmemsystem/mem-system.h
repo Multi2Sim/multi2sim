@@ -45,13 +45,26 @@ enum cache_policy_t
 	cache_policy_random
 };
 
+enum cache_block_state_t
+{
+	cache_block_invalid = 0,
+	cache_block_non_coherent,
+	cache_block_modified,
+	cache_block_owned,
+	cache_block_exclusive,
+	cache_block_shared
+};
+
 struct cache_block_t
 {
 	struct cache_block_t *way_next;
 	struct cache_block_t *way_prev;
-	uint32_t tag, transient_tag;
+
+	uint32_t tag;
+	uint32_t transient_tag;
 	uint32_t way;
-	int state;
+
+	enum cache_block_state_t state;
 };
 
 struct cache_set_t
@@ -100,7 +113,7 @@ void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, 
 struct dir_lock_t
 {
 	int lock;
-	struct moesi_stack_t *lock_queue;
+	struct mod_stack_t *lock_queue;
 };
 
 #define DIR_ENTRY_OWNER_NONE  (-1)
@@ -147,7 +160,7 @@ void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry);
 int dir_entry_group_shared_or_owned(struct dir_t *dir, int x, int y);
 
 struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y);
-int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *stack);
+int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct mod_stack_t *stack);
 void dir_lock_unlock(struct dir_lock_t *dir_lock);
 void dir_unlock(struct dir_t *dir, int x, int y);
 
@@ -270,6 +283,12 @@ struct mod_t
 	int locked_read_port_count;
 	int locked_write_port_count;
 
+	/* Directory */
+	struct dir_t *dir;
+	int dir_size;
+	int dir_assoc;
+	int dir_num_sets;
+
 	/* Waiting list of events */
 	struct mod_stack_t *waiting_list_head, *waiting_list_tail;
 	int waiting_count, waiting_max;
@@ -287,7 +306,14 @@ struct mod_t
 	struct net_node_t *high_net_node;
 	struct net_node_t *low_net_node;
 
+	struct linked_list_t *access_list;  /* Elements of type ccache_access_t */
+	int pending_reads;
+	int pending_writes;
+
 	/* Stats */
+	long long accesses;
+	long long hits;
+
 	long long reads;
 	long long effective_reads;
 	long long effective_read_hits;
@@ -296,20 +322,6 @@ struct mod_t
 	long long effective_write_hits;
 	long long evictions;
 
-
-	/*************** FOR MOESI **********/
-
-	struct dir_t *dir;
-	int dir_size;
-	int dir_assoc;
-	int dir_num_sets;
-
-	struct linked_list_t *access_list;  /* Elements of type ccache_access_t */
-	int pending_reads;
-	int pending_writes;
-
-	long long accesses;
-	long long hits;
 	long long blocking_reads;
 	long long non_blocking_reads;
 	long long read_hits;
@@ -344,6 +356,81 @@ struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
  * CPU/GPU Common Event-Driven Simulation
  */
 
+extern int EV_MOD_GPU_READ;
+extern int EV_MOD_GPU_READ_REQUEST;
+extern int EV_MOD_GPU_READ_REQUEST_RECEIVE;
+extern int EV_MOD_GPU_READ_REQUEST_REPLY;
+extern int EV_MOD_GPU_READ_REQUEST_FINISH;
+extern int EV_MOD_GPU_READ_UNLOCK;
+extern int EV_MOD_GPU_READ_FINISH;
+
+extern int EV_MOD_GPU_WRITE;
+extern int EV_MOD_GPU_WRITE_REQUEST_SEND;
+extern int EV_MOD_GPU_WRITE_REQUEST_RECEIVE;
+extern int EV_MOD_GPU_WRITE_REQUEST_REPLY;
+extern int EV_MOD_GPU_WRITE_REQUEST_REPLY_RECEIVE;
+extern int EV_MOD_GPU_WRITE_UNLOCK;
+extern int EV_MOD_GPU_WRITE_FINISH;
+
+
+
+/*
+ * CPU Event-Driven Simulation
+ */
+
+extern int EV_MOD_FIND_AND_LOCK;
+extern int EV_MOD_FIND_AND_LOCK_ACTION;
+extern int EV_MOD_FIND_AND_LOCK_FINISH;
+
+extern int EV_MOD_LOAD;
+extern int EV_MOD_LOAD_ACTION;
+extern int EV_MOD_LOAD_MISS;
+extern int EV_MOD_LOAD_FINISH;
+
+extern int EV_MOD_STORE;
+extern int EV_MOD_STORE_ACTION;
+extern int EV_MOD_STORE_FINISH;
+
+extern int EV_MOD_EVICT;
+extern int EV_MOD_EVICT_INVALID;
+extern int EV_MOD_EVICT_ACTION;
+extern int EV_MOD_EVICT_RECEIVE;
+extern int EV_MOD_EVICT_WRITEBACK;
+extern int EV_MOD_EVICT_WRITEBACK_EXCLUSIVE;
+extern int EV_MOD_EVICT_WRITEBACK_FINISH;
+extern int EV_MOD_EVICT_PROCESS;
+extern int EV_MOD_EVICT_REPLY;
+extern int EV_MOD_EVICT_REPLY_RECEIVE;
+extern int EV_MOD_EVICT_FINISH;
+
+extern int EV_MOD_WRITE_REQUEST;
+extern int EV_MOD_WRITE_REQUEST_RECEIVE;
+extern int EV_MOD_WRITE_REQUEST_ACTION;
+extern int EV_MOD_WRITE_REQUEST_EXCLUSIVE;
+extern int EV_MOD_WRITE_REQUEST_UPDOWN;
+extern int EV_MOD_WRITE_REQUEST_UPDOWN_FINISH;
+extern int EV_MOD_WRITE_REQUEST_DOWNUP;
+extern int EV_MOD_WRITE_REQUEST_REPLY;
+extern int EV_MOD_WRITE_REQUEST_FINISH;
+
+extern int EV_MOD_READ_REQUEST;
+extern int EV_MOD_READ_REQUEST_RECEIVE;
+extern int EV_MOD_READ_REQUEST_ACTION;
+extern int EV_MOD_READ_REQUEST_UPDOWN;
+extern int EV_MOD_READ_REQUEST_UPDOWN_MISS;
+extern int EV_MOD_READ_REQUEST_UPDOWN_FINISH;
+extern int EV_MOD_READ_REQUEST_DOWNUP;
+extern int EV_MOD_READ_REQUEST_DOWNUP_FINISH;
+extern int EV_MOD_READ_REQUEST_REPLY;
+extern int EV_MOD_READ_REQUEST_FINISH;
+
+extern int EV_MOD_INVALIDATE;
+extern int EV_MOD_INVALIDATE_FINISH;
+
+
+/* Current identifier for stack */
+extern long long mod_stack_id;
+
 
 /* Stack */
 struct mod_stack_t
@@ -353,6 +440,7 @@ struct mod_stack_t
 
 	struct mod_t *mod;
 	struct mod_t *target_mod;
+	struct mod_t *except_mod;
 
 	struct mod_bank_t *bank;
 	struct mod_port_t *port;
@@ -362,12 +450,28 @@ struct mod_stack_t
 	uint32_t way;
 	int state;
 
+	uint32_t src_set;
+	uint32_t src_way;
+	uint32_t src_tag;
+
 	uint32_t block_index;
 	uint32_t bank_index;
 	int read_port_index;
 	int write_port_index;
+
+	struct dir_lock_t *dir_lock;
+	int reply_size;
 	int pending;
-	int hit;
+
+	/* Flags */
+	int hit : 1;
+	int err : 1;
+	int shared : 1;
+	int read : 1;
+	int blocking : 1;
+	int writeback : 1;
+	int eviction : 1;
+	int retry : 1;
 
 	/* Message sent through interconnect */
 	struct net_msg_t *msg;
@@ -375,6 +479,10 @@ struct mod_stack_t
 	/* Linked list for waiting events */
 	int waiting_list_event;  /* Event to schedule when stack is waken up */
 	struct mod_stack_t *waiting_prev, *waiting_next;
+
+	/* Events wiating in directory lock */
+	int dir_lock_event;
+	struct mod_stack_t *dir_lock_next;
 
 	/* Return stack */
 	struct mod_stack_t *ret_stack;
@@ -388,153 +496,16 @@ struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
 void mod_stack_return(struct mod_stack_t *stack);
 
 
+void mod_handler_gpu_read(int event, void *data);
+void mod_handler_gpu_write(int event, void *data);
 
-
-
-/*
- * GPU Event-Driven Simulation
- */
-
-extern int EV_GPU_MEM_READ;
-extern int EV_GPU_MEM_READ_REQUEST;
-extern int EV_GPU_MEM_READ_REQUEST_RECEIVE;
-extern int EV_GPU_MEM_READ_REQUEST_REPLY;
-extern int EV_GPU_MEM_READ_REQUEST_FINISH;
-extern int EV_GPU_MEM_READ_UNLOCK;
-extern int EV_GPU_MEM_READ_FINISH;
-
-extern int EV_GPU_MEM_WRITE;
-extern int EV_GPU_MEM_WRITE_REQUEST_SEND;
-extern int EV_GPU_MEM_WRITE_REQUEST_RECEIVE;
-extern int EV_GPU_MEM_WRITE_REQUEST_REPLY;
-extern int EV_GPU_MEM_WRITE_REQUEST_REPLY_RECEIVE;
-extern int EV_GPU_MEM_WRITE_UNLOCK;
-extern int EV_GPU_MEM_WRITE_FINISH;
-
-void gpu_mod_handler_read(int event, void *data);
-void gpu_mod_handler_write(int event, void *data);
-
-
-
-/*
- * CPU Event-Driven Simulation
- */
-
-enum {
-	moesi_state_invalid = 0,
-	moesi_state_modified,
-	moesi_state_owned,
-	moesi_state_exclusive,
-	moesi_state_shared
-};
-
-extern long long moesi_stack_id;
-
-struct moesi_stack_t
-{
-	long long id;
-
-	struct mod_t *mod;
-	struct mod_t *target_mod;
-	struct mod_t *except_mod;
-
-	uint32_t addr;
-	uint32_t set;
-	uint32_t way;
-	uint32_t tag;
-	int state;
-
-	uint32_t src_set;
-	uint32_t src_way;
-	uint32_t src_tag;
-
-	struct dir_lock_t *dir_lock;
-	int reply_size;
-	int pending;
-
-	/* Message sent to the network */
-	struct net_msg_t *msg;
-
-	/* Flags */
-	int hit : 1;
-	int err : 1;
-	int shared : 1;
-	int read : 1;
-	int blocking : 1;
-	int writeback : 1;
-	int eviction : 1;
-	int retry : 1;
-
-	/* Cache block lock */
-	int lock_event;
-	struct moesi_stack_t *lock_next;
-
-	/* Return event */
-	int ret_event;
-	void *ret_stack;
-};
-
-struct moesi_stack_t *moesi_stack_create(uint64_t id, struct mod_t *mod,
-	uint32_t addr, int retevent, void *retstack);
-void moesi_stack_return(struct moesi_stack_t *stack);
-
-
-extern int EV_MOESI_FIND_AND_LOCK;
-extern int EV_MOESI_FIND_AND_LOCK_ACTION;
-extern int EV_MOESI_FIND_AND_LOCK_FINISH;
-
-extern int EV_MOESI_LOAD;
-extern int EV_MOESI_LOAD_ACTION;
-extern int EV_MOESI_LOAD_MISS;
-extern int EV_MOESI_LOAD_FINISH;
-
-extern int EV_MOESI_STORE;
-extern int EV_MOESI_STORE_ACTION;
-extern int EV_MOESI_STORE_FINISH;
-
-extern int EV_MOESI_EVICT;
-extern int EV_MOESI_EVICT_INVALID;
-extern int EV_MOESI_EVICT_ACTION;
-extern int EV_MOESI_EVICT_RECEIVE;
-extern int EV_MOESI_EVICT_WRITEBACK;
-extern int EV_MOESI_EVICT_WRITEBACK_EXCLUSIVE;
-extern int EV_MOESI_EVICT_WRITEBACK_FINISH;
-extern int EV_MOESI_EVICT_PROCESS;
-extern int EV_MOESI_EVICT_REPLY;
-extern int EV_MOESI_EVICT_REPLY_RECEIVE;
-extern int EV_MOESI_EVICT_FINISH;
-
-extern int EV_MOESI_WRITE_REQUEST;
-extern int EV_MOESI_WRITE_REQUEST_RECEIVE;
-extern int EV_MOESI_WRITE_REQUEST_ACTION;
-extern int EV_MOESI_WRITE_REQUEST_EXCLUSIVE;
-extern int EV_MOESI_WRITE_REQUEST_UPDOWN;
-extern int EV_MOESI_WRITE_REQUEST_UPDOWN_FINISH;
-extern int EV_MOESI_WRITE_REQUEST_DOWNUP;
-extern int EV_MOESI_WRITE_REQUEST_REPLY;
-extern int EV_MOESI_WRITE_REQUEST_FINISH;
-
-extern int EV_MOESI_READ_REQUEST;
-extern int EV_MOESI_READ_REQUEST_RECEIVE;
-extern int EV_MOESI_READ_REQUEST_ACTION;
-extern int EV_MOESI_READ_REQUEST_UPDOWN;
-extern int EV_MOESI_READ_REQUEST_UPDOWN_MISS;
-extern int EV_MOESI_READ_REQUEST_UPDOWN_FINISH;
-extern int EV_MOESI_READ_REQUEST_DOWNUP;
-extern int EV_MOESI_READ_REQUEST_DOWNUP_FINISH;
-extern int EV_MOESI_READ_REQUEST_REPLY;
-extern int EV_MOESI_READ_REQUEST_FINISH;
-
-extern int EV_MOESI_INVALIDATE;
-extern int EV_MOESI_INVALIDATE_FINISH;
-
-void moesi_handler_find_and_lock(int event, void *data);
-void moesi_handler_load(int event, void *data);
-void moesi_handler_store(int event, void *data);
-void moesi_handler_evict(int event, void *data);
-void moesi_handler_write_request(int event, void *data);
-void moesi_handler_read_request(int event, void *data);
-void moesi_handler_invalidate(int event, void *data);
+void mod_handler_find_and_lock(int event, void *data);
+void mod_handler_load(int event, void *data);
+void mod_handler_store(int event, void *data);
+void mod_handler_evict(int event, void *data);
+void mod_handler_write_request(int event, void *data);
+void mod_handler_read_request(int event, void *data);
+void mod_handler_invalidate(int event, void *data);
 
 
 
