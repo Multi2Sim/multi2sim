@@ -361,8 +361,9 @@ struct opencl_mem_t
 	uint32_t height;
 	uint32_t width;
 	uint32_t depth;
-	uint32_t num_elems;
-	uint32_t elem_size;
+	uint32_t num_pixels;
+	uint32_t pixel_size;
+	uint32_t num_channels_per_pixel;
 
 	uint32_t flags;
 	uint32_t host_ptr;

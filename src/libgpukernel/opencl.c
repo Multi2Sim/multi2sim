@@ -509,6 +509,12 @@ int opencl_func_run(int code, unsigned int *args)
 		char sflags[MAX_STRING_SIZE];
 
 		void *image;
+		uint32_t channel_order;
+		uint32_t channel_type;
+		struct opencl_image_format_t image_format;
+
+		uint32_t num_channels_per_pixel;
+		uint32_t pixel_size;
 
 		static struct string_map_t create_image_flags_map = { 4, {
 			{ "CL_MEM_READ_WRITE", 0x1 },
@@ -518,10 +524,6 @@ int opencl_func_run(int code, unsigned int *args)
 			{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
 			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
 		}};
-
-		uint32_t channel_order;
-		uint32_t channel_type;
-		struct opencl_image_format_t image_format;
 
 		mem_read(isa_mem, image_format_ptr, 8, &image_format);
 		channel_order = image_format.image_channel_order;
@@ -542,21 +544,18 @@ int opencl_func_run(int code, unsigned int *args)
 			fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
 				err_prefix, err_opencl_param_note);
 
-		uint32_t num_elements_per_pixel;
-		uint32_t element_size;
-
 		/* Evaluate image channel order */
 		switch(channel_order) {
 
 		case 0x10B0:  /* CL_R */
 		{
-			num_elements_per_pixel = 1;
+			num_channels_per_pixel = 1;
 			break;
 		}
 
 		case 0x10B5: /* CL_RGBA */
 		{
-			num_elements_per_pixel = 4;
+			num_channels_per_pixel = 4;
 			break;
 		}
 		
@@ -573,13 +572,13 @@ int opencl_func_run(int code, unsigned int *args)
 
 		case 0x10DA: /* CL_UNSIGNED_INT8 */
 		{
-			element_size = 1;
+			pixel_size = 1*num_channels_per_pixel;
 			break;
 		}
 
 		case 0x10DE: /* CL_FLOAT */
 		{
-			element_size = 4;
+			pixel_size = 4*num_channels_per_pixel;
 			break;
 		}
 		
@@ -591,9 +590,8 @@ int opencl_func_run(int code, unsigned int *args)
 
 		}
 
-		/* Determine image geometry */
-		uint32_t pixel_size = num_elements_per_pixel * element_size;
 
+		/* Determine image geometry */
 		if(image_row_pitch == 0) {
 			image_row_pitch = image_width*pixel_size;
 		}
@@ -612,8 +610,9 @@ int opencl_func_run(int code, unsigned int *args)
 		mem->size = size;
 		mem->flags = flags;
 		mem->host_ptr = host_ptr;
-		mem->num_elems = size/pixel_size;
-		mem->elem_size = pixel_size;
+		mem->pixel_size = pixel_size;
+		mem->num_pixels = size/pixel_size;
+		mem->num_channels_per_pixel = num_channels_per_pixel;
 		mem->width = image_width;
 		mem->height = image_height;
 		mem->depth = 1;
@@ -621,6 +620,7 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Assign position in device global memory */
 		mem->device_ptr = gk->global_mem_top;
 		gk->global_mem_top += size;
+		opencl_debug("  creating device ptr at %u, for %u bytes\n", mem->device_ptr, size);
 
 		/* If 'host_ptr' was specified, copy image into device memory */
 		if (host_ptr) {
@@ -658,6 +658,13 @@ int opencl_func_run(int code, unsigned int *args)
 
 		void *image;
 
+		uint32_t channel_order;
+		uint32_t channel_type;
+		struct opencl_image_format_t image_format;
+
+		uint32_t num_channels_per_pixel;
+		uint32_t pixel_size;
+
 		static struct string_map_t create_image_flags_map = { 4, {
 			{ "CL_MEM_READ_WRITE", 0x1 },
 			{ "CL_MEM_WRITE_ONLY", 0x2 },
@@ -666,10 +673,6 @@ int opencl_func_run(int code, unsigned int *args)
 			{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
 			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
 		}};
-
-		uint32_t channel_order;
-		uint32_t channel_type;
-		struct opencl_image_format_t image_format;
 
 		mem_read(isa_mem, image_format_ptr, 8, &image_format);
 		channel_order = image_format.image_channel_order;
@@ -694,21 +697,18 @@ int opencl_func_run(int code, unsigned int *args)
 			fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
 				err_prefix, err_opencl_param_note);
 
-		uint32_t num_elements_per_pixel;
-		uint32_t element_size;
-
 		/* Evaluate image channel order */
 		switch(channel_order) {
 
 		case 0x10B0:  /* CL_R */
 		{
-			num_elements_per_pixel = 1;
+			num_channels_per_pixel = 1;
 			break;
 		}
 
 		case 0x10B5: /* CL_RGBA */
 		{
-			num_elements_per_pixel = 4;
+			num_channels_per_pixel = 4;
 			break;
 		}
 		
@@ -725,13 +725,13 @@ int opencl_func_run(int code, unsigned int *args)
 
 		case 0x10DA: /* CL_UNSIGNED_INT8 */
 		{
-			element_size = 1;
+			pixel_size = 1*num_channels_per_pixel;
 			break;
 		}
 
 		case 0x10DE: /* CL_FLOAT */
 		{
-			element_size = 4;
+			pixel_size = 4*num_channels_per_pixel;
 			break;
 		}
 		
@@ -744,8 +744,6 @@ int opencl_func_run(int code, unsigned int *args)
 		}
 
 		/* Determine image geometry */
-		uint32_t pixel_size = num_elements_per_pixel * element_size;
-
 		if(image_row_pitch == 0) {
 			image_row_pitch = image_width*pixel_size;
 		}
@@ -773,8 +771,9 @@ int opencl_func_run(int code, unsigned int *args)
 		mem->size = size;
 		mem->flags = flags;
 		mem->host_ptr = host_ptr;
-		mem->num_elems = size/pixel_size;
-		mem->elem_size = pixel_size;
+		mem->num_pixels = size/pixel_size;
+		mem->pixel_size = pixel_size;
+		mem->num_channels_per_pixel = num_channels_per_pixel;
 		mem->width = image_width;
 		mem->height = image_height;
 		mem->depth = image_depth;
@@ -1471,9 +1470,9 @@ int opencl_func_run(int code, unsigned int *args)
 		mem_read(isa_mem, origin, 12, read_origin);
 
 		if(row_pitch == 0) {
-			row_pitch = mem->width*mem->elem_size;
+			row_pitch = mem->width*mem->pixel_size;
 		}
-		else if(row_pitch < mem->width*mem->elem_size) {
+		else if(row_pitch < mem->width*mem->pixel_size) {
 
 			fatal("%s: row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
 				err_prefix, err_opencl_param_note);
