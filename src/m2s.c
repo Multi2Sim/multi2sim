@@ -41,7 +41,6 @@ static char *mem_debug_file_name = "";
 static char *loader_debug_file_name = "";
 static char *isa_call_debug_file_name = "";
 static char *isa_inst_debug_file_name = "";
-static char *cache_debug_file_name = "";
 static char *esim_debug_file_name = "";
 static char *error_debug_file_name = "";
 static char *ctxconfig_file_name = "";
@@ -262,15 +261,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			cache_system_config_file_name = argv[argi];
-			continue;
-		}
-
-		/* CPU cache debug - FIXME: remove */
-		if (!strcmp(argv[argi], "--debug-cpu-cache"))
-		{
-			sim_need_argument(argc, argv, argi);
-			argi++;
-			cache_debug_file_name = argv[argi];
 			continue;
 		}
 
@@ -922,7 +912,6 @@ int main(int argc, char **argv)
 	syscall_debug_category = debug_new_category(syscall_debug_file_name);
 	ctx_debug_category = debug_new_category(ctx_debug_file_name);
 	mem_debug_category = debug_new_category(mem_debug_file_name);
-	cache_debug_category = debug_new_category(cache_debug_file_name);
 	opencl_debug_category = debug_new_category(opencl_debug_file_name);
 	gpu_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
 	gpu_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
