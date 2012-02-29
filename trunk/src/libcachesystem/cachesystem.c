@@ -1355,14 +1355,15 @@ void cache_system_handler(int event, void *data)
 	if (event == EV_CACHE_SYSTEM_ACCESS_CACHE)
 	{
 		struct mod_t *mod;
-		struct moesi_stack_t *newstack;
+		struct mod_stack_t *new_stack;
 
+		mod_stack_id++;
 		mod = cache_system_get_mod(stack->core, stack->thread,
 			stack->cache_kind);
-		newstack = moesi_stack_create(moesi_stack_id++, mod, stack->addr,
+		new_stack = mod_stack_create(mod_stack_id, mod, stack->addr,
 			EV_CACHE_SYSTEM_ACCESS_FINISH, stack);
 		esim_schedule_event(stack->access_kind == mod_access_kind_read ?
-			EV_MOESI_LOAD : EV_MOESI_STORE, newstack, 0);
+			EV_MOD_LOAD : EV_MOD_STORE, new_stack, 0);
 		return;
 	}
 
