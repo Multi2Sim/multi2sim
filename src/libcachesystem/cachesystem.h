@@ -130,7 +130,7 @@ int mmu_valid_phaddr(uint32_t phaddr);
 
 struct ccache_access_t
 {
-	enum cache_access_kind_t cache_access_kind;  /* Read or write */
+	enum mod_access_kind_t access_kind;  /* Read or write */
 	uint32_t address;  /* Block address */
 	uint64_t id;  /* Access identifier */
 	struct linked_list_t *eventq;  /* Event queue to modify when access finishes */
@@ -355,9 +355,9 @@ struct tlb_t
 	struct cache_t *cache;  /* Cache holding data */
 
 	/* Stats */
-	uint64_t accesses;
-	uint64_t hits;
-	uint64_t evictions;
+	long long accesses;
+	long long hits;
+	long long evictions;
 };
 
 struct tlb_t *tlb_create();
@@ -395,7 +395,7 @@ struct cache_system_stack_t
 {
 	int core, thread;
 	enum cache_kind_t cache_kind;
-	enum cache_access_kind_t cache_access_kind;
+	enum mod_access_kind_t access_kind;
 	uint32_t addr;
 	int pending;
 	struct linked_list_t *eventq;
@@ -428,7 +428,7 @@ int cache_system_block_size(int core, int thread,
 
 /* Return true if cache system can be accesses. */
 int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
-	enum cache_access_kind_t cache_access_kind, uint32_t addr);
+	enum mod_access_kind_t access_kind, uint32_t addr);
 
 /* Return true if the access to address addr or with identifier 'access'
  * has completed. Parameter cache_kind must be dl1 or il1. */
