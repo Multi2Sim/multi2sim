@@ -21,13 +21,6 @@
 
 
 /*
- * Memory module access stack (for event-driven simulation)
- */
-
-
-
-
-/*
  * Memory Module
  */
 
@@ -118,7 +111,7 @@ void mod_access(struct mod_t *mod, int access, uint32_t addr, uint32_t size, int
 		mod, addr, ESIM_EV_NONE, NULL);
 	stack->witness_ptr = witness_ptr;
 	assert(access == 1 || access == 2);
-	event = access == 1 ? EV_GPU_MEM_READ : EV_GPU_MEM_WRITE;
+	event = access == 1 ? EV_MOD_GPU_READ : EV_MOD_GPU_WRITE;
 	esim_schedule_event(event, stack, 0);
 }
 
@@ -139,5 +132,43 @@ struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr)
 }
 
 
+
+
+/*
+ * Memory module access stack (for event-driven simulation)
+ */
+
+long long mod_stack_id;
+
+struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
+	uint32_t addr, int ret_event, void *ret_stack)
+{
+	struct mod_stack_t *stack;
+
+	/* Create stack */
+	stack = calloc(1, sizeof(struct mod_stack_t));
+	if (!stack)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	stack->id = id;
+	stack->mod = mod;
+	stack->addr = addr;
+	stack->ret_event = ret_event;
+	stack->ret_stack = ret_stack;
+
+	/* Return */
+	return stack;
+}
+
+
+void mod_stack_return(struct mod_stack_t *stack)
+{
+	int ret_event = stack->ret_event;
+	void *ret_stack = stack->ret_stack;
+
+	free(stack);
+	esim_schedule_event(ret_event, ret_stack, 0);
+}
 
 
