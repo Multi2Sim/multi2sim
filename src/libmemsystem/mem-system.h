@@ -495,6 +495,11 @@ struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
 	uint32_t addr, int ret_event, void *ret_stack);
 void mod_stack_return(struct mod_stack_t *stack);
 
+void mod_stack_wait_in_mod(struct mod_stack_t *stack, int event);
+void mod_stack_wakeup_mod(struct mod_t *mod);
+
+void mod_stack_wait_in_port(struct mod_stack_t *stack, int event);
+void mod_stack_wakeup_port(struct mod_port_t *port);
 
 void mod_handler_gpu_read(int event, void *data);
 void mod_handler_gpu_write(int event, void *data);

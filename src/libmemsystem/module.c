@@ -172,3 +172,55 @@ void mod_stack_return(struct mod_stack_t *stack)
 }
 
 
+/* Enqueue stack in waiting list of 'stack->mod' */
+void mod_stack_wait_in_mod(struct mod_stack_t *stack, int event)
+{
+	struct mod_t *mod = stack->mod;
+
+	assert(!DOUBLE_LINKED_LIST_MEMBER(mod, waiting, stack));
+	stack->waiting_list_event = event;
+	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, waiting, stack);
+}
+
+
+/* Wake up accesses from 'mod->waiting_list' */
+void mod_stack_wakeup_mod(struct mod_t *mod)
+{
+	struct mod_stack_t *stack;
+	int event;
+
+	while (mod->waiting_list_head)
+	{
+		stack = mod->waiting_list_head;
+		event = stack->waiting_list_event;
+		DOUBLE_LINKED_LIST_REMOVE(mod, waiting, stack);
+		esim_schedule_event(event, stack, 0);
+	}
+}
+
+
+/* Enqueue stack in waiting list of 'stack->port' */
+void mod_stack_wait_in_port(struct mod_stack_t *stack, int event)
+{
+	struct mod_port_t *port = stack->port;
+
+	assert(!DOUBLE_LINKED_LIST_MEMBER(port, waiting, stack));
+	stack->waiting_list_event = event;
+	DOUBLE_LINKED_LIST_INSERT_TAIL(port, waiting, stack);
+}
+
+
+/* Wake up accesses from 'port->waiting_list' */
+void mod_stack_wakeup_port(struct mod_port_t *port)
+{
+	struct mod_stack_t *stack;
+	int event;
+
+	while (port->waiting_list_head)
+	{
+		stack = port->waiting_list_head;
+		event = stack->waiting_list_event;
+		DOUBLE_LINKED_LIST_REMOVE(port, waiting, stack);
+		esim_schedule_event(event, stack, 0);
+	}
+}
