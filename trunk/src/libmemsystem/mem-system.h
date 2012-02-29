@@ -360,7 +360,8 @@ struct mod_stack_t
 	uint32_t tag;
 	uint32_t set;
 	uint32_t way;
-	int status;
+	int state;
+
 	uint32_t block_index;
 	uint32_t bank_index;
 	int read_port_index;
@@ -432,17 +433,30 @@ extern long long moesi_stack_id;
 struct moesi_stack_t
 {
 	long long id;
-	struct mod_t *mod, *target, *except;
-	uint32_t addr, set, way, tag;
-	uint32_t src_set, src_way, src_tag;
+
+	struct mod_t *mod;
+	struct mod_t *target_mod;
+	struct mod_t *except_mod;
+
+	uint32_t addr;
+	uint32_t set;
+	uint32_t way;
+	uint32_t tag;
+	int state;
+
+	uint32_t src_set;
+	uint32_t src_way;
+	uint32_t src_tag;
+
 	struct dir_lock_t *dir_lock;
-	int status, response, pending;
-	int hit;
+	int reply_size;
+	int pending;
 
 	/* Message sent to the network */
 	struct net_msg_t *msg;
 
 	/* Flags */
+	int hit : 1;
 	int err : 1;
 	int shared : 1;
 	int read : 1;
@@ -456,8 +470,8 @@ struct moesi_stack_t
 	struct moesi_stack_t *lock_next;
 
 	/* Return event */
-	int retevent;
-	void *retstack;
+	int ret_event;
+	void *ret_stack;
 };
 
 struct moesi_stack_t *moesi_stack_create(uint64_t id, struct mod_t *mod,
