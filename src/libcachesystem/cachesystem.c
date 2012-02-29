@@ -599,7 +599,6 @@ void cache_system_init(int _cores, int _threads)
 	/* Initializations */
 	cores = _cores;
 	threads = _threads;
-	mmu_init();
 
 	/* Events */
 	EV_CACHE_SYSTEM_ACCESS = esim_register_event(cache_system_handler);
@@ -1167,9 +1166,6 @@ void cache_system_done()
 
 	/* Other */
 	free(node_array);
-	
-	/* Finalizations */
-	mmu_done();
 }
 
 

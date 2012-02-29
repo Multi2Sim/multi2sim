@@ -1,8 +1,6 @@
 lib_LIBRARIES = libcachesystem.a
 libcachesystem_a_SOURCES = cachesystem.h \
 	cachesystem.c \
-	directory.c \
-	mmu.c \
 	moesi.c
 
 INCLUDES = -I$(top_srcdir)/src/libstruct \

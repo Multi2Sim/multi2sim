@@ -3,9 +3,11 @@ lib_LIBRARIES = libmemsystem.a
 libmemsystem_a_SOURCES = \
 	cache.c \
 	config.c \
+	directory.c \
 	gpu-esim.c \
 	mem-system.c \
 	mem-system.h \
+	mmu.c \
 	module.c
 
 # FIXME: remove libgpuarch and libgpukernel

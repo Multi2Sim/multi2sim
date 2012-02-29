@@ -18,16 +18,16 @@
  */
 
 
-#include "cachesystem.h"
+#include <mem-system.h>
 
 
-#define DIR_ENTRY_SHARERS_SIZE ((dir->nodes + 7) / 8)
+#define DIR_ENTRY_SHARERS_SIZE ((dir->num_nodes + 7) / 8)
 #define DIR_ENTRY_SIZE (sizeof(struct dir_entry_t) + DIR_ENTRY_SHARERS_SIZE)
 #define DIR_ENTRY(X, Y, Z) ((struct dir_entry_t *) (((void *) &dir->data) + DIR_ENTRY_SIZE * \
 	((X) * dir->ysize * dir->zsize + (Y) * dir->zsize + (Z))))
 
 
-struct dir_t *dir_create(int xsize, int ysize, int zsize, int nodes)
+struct dir_t *dir_create(int xsize, int ysize, int zsize, int num_nodes)
 {
 	struct dir_t *dir;
 	struct dir_entry_t *dir_entry;
@@ -40,8 +40,8 @@ struct dir_t *dir_create(int xsize, int ysize, int zsize, int nodes)
 	int z;
 	
 	/* Calculate sizes */
-	assert(nodes > 0);
-	dir_entry_size = sizeof(struct dir_entry_t) + (nodes + 7) / 8;
+	assert(num_nodes > 0);
+	dir_entry_size = sizeof(struct dir_entry_t) + (num_nodes + 7) / 8;
 	dir_size = sizeof(struct dir_t) + dir_entry_size * xsize * ysize * zsize;
 
 	/* Create directory */
@@ -55,7 +55,7 @@ struct dir_t *dir_create(int xsize, int ysize, int zsize, int nodes)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	dir->nodes = nodes;
+	dir->num_nodes = num_nodes;
 	dir->xsize = xsize;
 	dir->ysize = ysize;
 	dir->zsize = zsize;
@@ -97,28 +97,29 @@ struct dir_entry_t *dir_entry_get(struct dir_t *dir, int x, int y, int z)
 void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry)
 {
 	int i;
-	cache_debug("  %d sharers: { ", dir_entry->num_sharers);
-	for (i = 0; i < dir->nodes; i++)
+
+	mem_debug("  %d sharers: { ", dir_entry->num_sharers);
+	for (i = 0; i < dir->num_nodes; i++)
 		if (dir_entry_is_sharer(dir, dir_entry, i))
 			printf("%d ", i);
-	cache_debug("}\n");
+	mem_debug("}\n");
 }
 
 
 void dir_entry_set_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node)
 {
-	assert(node > 0 && node < dir->nodes);
+	assert(node > 0 && node < dir->num_nodes);
 	if (dir_entry->sharer[node / 8] & (1 << (node % 8)))
 		return;
 	dir_entry->sharer[node / 8] |= 1 << (node % 8);
 	dir_entry->num_sharers++;
-	assert(dir_entry->num_sharers <= dir->nodes);
+	assert(dir_entry->num_sharers <= dir->num_nodes);
 }
 
 
 void dir_entry_clear_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node)
 {
-	assert(node > 0 && node < dir->nodes);
+	assert(node > 0 && node < dir->num_nodes);
 	if (!(dir_entry->sharer[node / 8] & (1 << (node % 8))))
 		return;
 	dir_entry->sharer[node / 8] &= ~(1 << (node % 8));
@@ -136,7 +137,7 @@ void dir_entry_clear_all_sharers(struct dir_t *dir, volatile struct dir_entry_t 
 
 int dir_entry_is_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node)
 {
-	assert(node >= 0 && node < dir->nodes);
+	assert(node >= 0 && node < dir->num_nodes);
 	return (dir_entry->sharer[node / 8] & (1 << (node % 8))) > 0;
 }
 
@@ -159,14 +160,14 @@ struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y)
 	struct dir_lock_t *dir_lock;
 	assert(x < dir->xsize && y < dir->ysize);
 	dir_lock = &dir->dir_lock[x * dir->ysize + y];
-	cache_debug("  %lld dir_lock retrieve\n", esim_cycle);
+	mem_debug("  %lld dir_lock retrieve\n", esim_cycle);
 	return dir_lock;
 }
 
 
 int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *stack)
 {
-	cache_debug("  dir_lock lock\n");
+	mem_debug("  dir_lock lock\n");
 
 	/* If the entry is already locked, enqueue a new waiter and
 	 * return failure to lock. */
@@ -175,7 +176,7 @@ int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *
 		stack->lock_next = dir_lock->lock_queue;
 		stack->lock_event = event;
 		dir_lock->lock_queue = stack;
-		cache_debug("    0x%x access suspended\n", stack->tag);
+		mem_debug("    0x%x access suspended\n", stack->tag);
 		return 0;
 	}
 
@@ -187,13 +188,13 @@ int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *
 
 void dir_lock_unlock(struct dir_lock_t *dir_lock)
 {
-	cache_debug("  dir_lock unlock\n");
+	mem_debug("  dir_lock unlock\n");
 
 	/* Wake up all waiters */
 	while (dir_lock->lock_queue)
 	{
 		esim_schedule_event(dir_lock->lock_queue->lock_event, dir_lock->lock_queue, 1);
-		cache_debug("    0x%x access resumed\n", dir_lock->lock_queue->tag);
+		mem_debug("    0x%x access resumed\n", dir_lock->lock_queue->tag);
 		dir_lock->lock_queue = dir_lock->lock_queue->lock_next;
 	}
 
