@@ -791,15 +791,6 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 			arg = opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = OPENCL_KERNEL_ARG_KIND_POINTER;
 
-			/* Set number of elements */
-			/* NOTE The kernel metadata lists 32-bit types as being 8-byte 
-			 * aligned, and 4x32-bit types as being 32-byte aligned.  The 
-			 * following code assumes that this holds true for all types */
-			if (atoi(line_ptrs[8]) % 8 != 0) {
-				fatal ("%s: Unexpected alignment in metadata (%d)\n",
-					__FUNCTION__, atoi(line_ptrs[8]));
-			}
-
 			list_add(kernel->arg_list, arg);
 			if (!strcmp(line_ptrs[6], "uav")) {
 				arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;

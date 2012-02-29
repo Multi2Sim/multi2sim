@@ -276,6 +276,68 @@ void amd_inst_LOOP_START_NO_AL_impl()
 #undef W0
 #undef W1
 
+
+#define W0  CF_WORD0
+#define W1  CF_WORD1
+void amd_inst_LOOP_CONTINUE_impl()
+{
+	NOT_IMPL();
+}
+#undef W0
+#undef W1
+
+
+#define W0  CF_WORD0
+#define W1  CF_WORD1
+void amd_inst_LOOP_BREAK_impl()
+{
+	int active_count;
+	int i;
+
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.cond, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.valid_pixel_mode, 0);
+	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
+ 
+	/* W0.addr: jump if all pixels are disabled  */
+
+	/* Dump current loop state */
+	if (debug_status(gpu_isa_debug_category)) {
+		gpu_isa_debug("  %s:act=", gpu_isa_wavefront->name);
+		bit_map_dump(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
+			gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count,
+			debug_file(gpu_isa_debug_category));
+	}
+
+	/* Mark active work items as inactive */
+	active_count = 0;
+	for (i = 0; i < gpu_isa_wavefront->work_item_count; i++) {
+		if (W1.cond)
+			/* Set active bit to 0 for this pixel */
+			bit_map_set(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
+				gpu_isa_wavefront->work_item_count + i, 1, 0);
+	}
+
+	/* If no pixels are active, jump to addr */
+	active_count = bit_map_count_ones(gpu_isa_wavefront->active_stack,
+		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
+	if (active_count == 0) {
+		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
+		return;
+	}
+
+	/* FIXME: pop loop state */
+
+	/* Pop stack */
+	gpu_wavefront_stack_pop(gpu_isa_wavefront, W1.pop_count);
+
+	/* FIXME: Get rid of this once loop state is pushed on the stack */
+	gpu_isa_wavefront->loop_depth -= W1.pop_count;
+}
+#undef W0
+#undef W1
+
+
 #define W0  CF_ALLOC_EXPORT_WORD0_RAT
 #define W1  CF_ALLOC_EXPORT_WORD1_BUF
 void amd_inst_MEM_RAT_impl()
@@ -2609,37 +2671,49 @@ void amd_inst_FETCH_impl()
 			elem_size = 4;
 			num_elem = 4; 
 		}
-		/* Information is in a pre-initialized location (not by us) */
-		else if (W0.buffer_id >= 153 && W0.buffer_id <= 175) {
+		/* Data is a 32-bit type (cached) */
+		else if (W0.buffer_id >= 144 && W0.buffer_id <= 153) {
 
-			switch (W0.buffer_id) {
+			elem_size = 4;
+			num_elem = 1;
+		}
+		/* Data is a 32-bit type (uncached -- though we cache it anyway) */
+		else if ((W0.buffer_id >= 154 && W0.buffer_id <= 164) || W0.buffer_id == 173) {
 
-			case 153: /* float */
-				elem_size = 4;
-				num_elem = 1;
-				break;
-			case 173: /* uint4 */
-				elem_size = 4;
-				num_elem = 4;
-				break;
-			case 175: /* float4 */
-				elem_size = 4;
-				num_elem = 4;
-				break;
-			default:
-				fatal("Fetch instruction has unknown buffer ID (%d)\n", 
-						W0.buffer_id);
-				break;
-			}
+			elem_size = 4;
+			num_elem = 1;
+		}
+		/* Data is a 32-bit type (global return buffer) */
+		else if (W0.buffer_id >= 165 && W0.buffer_id <= 172) {
+
+			elem_size = 4;
+			num_elem = 1;
+		}
+		/* Data is a 64-bit type (cached) */
+		else if (W0.buffer_id == 174) {
+
+			elem_size = 4;
+			num_elem = 2;
+		}
+		/* Data is a 128-bit type (cached) */
+		else if (W0.buffer_id == 175) {
+
+			elem_size = 4;
+			num_elem = 4;
+		}
+		else {
+
+			fatal("Fetch instruction has unknown buffer ID (%d)\n", 
+					W0.buffer_id);
 		}
 
 	} else {
+		/* Format is defined within instruction */
 		data_format = W1.data_format;
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.num_format_all, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.format_comp_all, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.srf_mode_all, 0);
 
-		/* Fetch */
 		switch (data_format) {
 
 		case 35:  /* DATA_FORMAT_32_32_32_32_FLOAT */
@@ -2667,6 +2741,58 @@ void amd_inst_FETCH_impl()
 		case 13:  /* DATA_FORMAT_32 */
 
 			elem_size = 4;
+			num_elem = 1;
+			break;
+
+		case 32:  /* DATA_FORMAT_16_16_16_16_FLOAT */
+		case 31:  /* DATA_FORMAT_16_16_16_16 */
+
+			elem_size = 2;
+			num_elem = 4;
+			break;
+
+		case 46:  /* DATA_FORMAT_16_16_16_FLOAT */
+		case 45:  /* DATA_FORMAT_16_16_16 */
+
+			elem_size = 2;
+			num_elem = 3;
+			break;
+
+		case 16:  /* DATA_FORMAT_16_16_FLOAT */
+		case 15:  /* DATA_FORMAT_16_16 */
+
+			elem_size = 2;
+			num_elem = 2;
+			break;
+
+		case 6:  /* DATA_FORMAT_16_FLOAT */
+		case 5:  /* DATA_FORMAT_16_*/
+
+			elem_size = 2;
+			num_elem = 1;
+			break;
+
+		case 26:  /* DATA_FORMAT_8_8_8_8 */
+
+			elem_size = 1;
+			num_elem = 4;
+			break;
+
+		case 44:  /* DATA_FORMAT_8_8_8 */
+
+			elem_size = 1;
+			num_elem = 3;
+			break;
+
+		case 7:  /* DATA_FORMAT_8_8 */
+
+			elem_size = 1;
+			num_elem = 2;
+			break;
+
+		case 1:  /* DATA_FORMAT_8 */
+
+			elem_size = 1;
 			num_elem = 1;
 			break;
 
@@ -2803,9 +2929,7 @@ void amd_inst_SAMPLE_impl() {
 	int dst_sel[4], dst_sel_elem;
 	struct opencl_mem_t *image;
 
-	/* FIXME Only works for single channel, floating-point data */
-	uint32_t elem_size = sizeof(float);
-	uint32_t num_elems = 1;
+	uint32_t pixel_size;
 
 	/* W0.tex_inst: <unknown> */
 	/* W0.inst_mod: instruction modifier */
@@ -2841,13 +2965,15 @@ void amd_inst_SAMPLE_impl() {
 	if(!image) 
 		fatal("No table entry for read-only UAV %d\n", W0.resource_id);
 
+	pixel_size = image->pixel_size;
+
 	/* Calculate read address */
 	base_addr = image->device_ptr;
 	addr = gpu_isa_read_gpr(W0.src_gpr, 0, 0, 0);  /* FIXME Always reads from X */
 	f_addr = * (float *) &addr;
-	addr = base_addr + (uint32_t)round(f_addr) * elem_size;
+	addr = base_addr + (uint32_t)round(f_addr) * pixel_size;
 
-	mem_read(gk->global_mem, addr, elem_size*num_elems, &value);
+	mem_read(gk->global_mem, addr, pixel_size, &value);
 
 	gpu_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr);
 	gpu_isa_debug("<=(%d,%gf) ", value, * (float *) &value);
@@ -2865,7 +2991,7 @@ void amd_inst_SAMPLE_impl() {
 	/* Record global memory access */
 	gpu_isa_wavefront->global_mem_read = 1;
 	gpu_isa_work_item->global_mem_access_addr = addr;
-	gpu_isa_work_item->global_mem_access_size = num_elems * elem_size;
+	gpu_isa_work_item->global_mem_access_size = pixel_size;
 
 	/* Write to each component of the GPR */
 	for (i = 0; i < 4; i++) {
@@ -2879,7 +3005,7 @@ void amd_inst_SAMPLE_impl() {
 		case 2:  /* SEL_Z */
 		case 3:  /* SEL_W */
 
-			if (dst_sel_elem >= num_elems)
+			if (dst_sel_elem >= image->num_channels_per_pixel)
 				GPU_PARAM_NOT_SUPPORTED(dst_sel_elem);
 			gpu_isa_write_gpr(W1.dst_gpr, W1.dr, i, value);
 			if (debug_status(gpu_isa_debug_category)) {
