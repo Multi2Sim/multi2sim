@@ -22,62 +22,6 @@
 
 
 /*
- * Event stack
- */
-
-
-void mod_stack_wait_in_cache(struct mod_stack_t *stack, int event)
-{
-	struct mod_t *mod = stack->mod;
-
-	assert(!DOUBLE_LINKED_LIST_MEMBER(mod, waiting, stack));
-	stack->waiting_list_event = event;
-	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, waiting, stack);
-}
-
-
-/* Enqueue stack in waiting list of 'stack->port' */
-void mod_stack_wait_in_port(struct mod_stack_t *stack, int event)
-{
-	struct mod_port_t *port = stack->port;
-
-	assert(!DOUBLE_LINKED_LIST_MEMBER(port, waiting, stack));
-	stack->waiting_list_event = event;
-	DOUBLE_LINKED_LIST_INSERT_TAIL(port, waiting, stack);
-}
-
-
-/* Wake up accesses in 'mod->waiting_list' */
-void mod_wakeup(struct mod_t *mod)
-{
-	struct mod_stack_t *stack;
-	int event;
-
-	while (mod->waiting_list_head) {
-		stack = mod->waiting_list_head;
-		event = stack->waiting_list_event;
-		DOUBLE_LINKED_LIST_REMOVE(mod, waiting, stack);
-		esim_schedule_event(event, stack, 0);
-	}
-}
-
-
-/* Wake up accesses in 'port->waiting_list' */
-void mod_port_wakeup(struct mod_port_t *port)
-{
-	struct mod_stack_t *stack;
-	int event;
-
-	while (port->waiting_list_head) {
-		stack = port->waiting_list_head;
-		event = stack->waiting_list_event;
-		DOUBLE_LINKED_LIST_REMOVE(port, waiting, stack);
-		esim_schedule_event(event, stack, 0);
-	}
-}
-
-
-/*
  * Event-Driven Simulation
  */
 
@@ -116,7 +60,7 @@ void mod_handler_gpu_read(int event, void *data)
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"order\"\n",
 				esim_cycle, stack->id);
-			mod_stack_wait_in_cache(stack, EV_MOD_GPU_READ);
+			mod_stack_wait_in_mod(stack, EV_MOD_GPU_READ);
 			return;
 		}
 
@@ -160,7 +104,7 @@ void mod_handler_gpu_read(int event, void *data)
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"in_flight\"\n",
 				esim_cycle, stack->id);
-			mod_stack_wait_in_cache(stack, EV_MOD_GPU_READ);
+			mod_stack_wait_in_mod(stack, EV_MOD_GPU_READ);
 			return;
 		}
 
@@ -179,7 +123,7 @@ void mod_handler_gpu_read(int event, void *data)
 			mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
 				esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index);
 			mem_debug("  %lld %lld wait why=\"no_read_port\"\n", esim_cycle, stack->id);
-			mod_stack_wait_in_cache(stack, EV_MOD_GPU_READ);
+			mod_stack_wait_in_mod(stack, EV_MOD_GPU_READ);
 			return;
 		}
 
@@ -317,8 +261,8 @@ void mod_handler_gpu_read(int event, void *data)
 		mod->locked_read_port_count--;
 
 		/* Wake up accesses in waiting lists */
-		mod_port_wakeup(port);
-		mod_wakeup(mod);
+		mod_stack_wakeup_port(port);
+		mod_stack_wakeup_mod(mod);
 
 		esim_schedule_event(EV_MOD_GPU_READ_FINISH, stack, 0);
 		return;
@@ -359,7 +303,7 @@ void mod_handler_gpu_write(int event, void *data)
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"order\"\n",
 				esim_cycle, stack->id);
-			mod_stack_wait_in_cache(stack, EV_MOD_GPU_WRITE);
+			mod_stack_wait_in_mod(stack, EV_MOD_GPU_WRITE);
 			return;
 		}
 
@@ -372,7 +316,7 @@ void mod_handler_gpu_write(int event, void *data)
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"write_after_read\"\n",
 				esim_cycle, stack->id);
-			mod_stack_wait_in_cache(stack, EV_MOD_GPU_WRITE);
+			mod_stack_wait_in_mod(stack, EV_MOD_GPU_WRITE);
 			return;
 		}
 
@@ -420,7 +364,7 @@ void mod_handler_gpu_write(int event, void *data)
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"in_flight\"\n",
 				esim_cycle, stack->id);
-			mod_stack_wait_in_cache(stack, EV_MOD_GPU_WRITE);
+			mod_stack_wait_in_mod(stack, EV_MOD_GPU_WRITE);
 			return;
 		}
 
@@ -442,7 +386,7 @@ void mod_handler_gpu_write(int event, void *data)
 			mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
 				esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index);
 			mem_debug("  %lld %lld wait why=\"no_write_port\"\n", esim_cycle, stack->id);
-			mod_stack_wait_in_cache(stack, EV_MOD_GPU_WRITE);
+			mod_stack_wait_in_mod(stack, EV_MOD_GPU_WRITE);
 			return;
 		}
 
@@ -584,8 +528,8 @@ void mod_handler_gpu_write(int event, void *data)
 		mod->locked_write_port_count--;
 
 		/* Wake up accesses in waiting lists */
-		mod_port_wakeup(port);
-		mod_wakeup(mod);
+		mod_stack_wakeup_port(port);
+		mod_stack_wakeup_mod(mod);
 
 		/* Finish */
 		esim_schedule_event(EV_MOD_GPU_WRITE_FINISH, stack, 0);
