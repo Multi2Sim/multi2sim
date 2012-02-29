@@ -740,7 +740,7 @@ void moesi_handler_evict(int event, void *data)
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 			dir_entry_clear_sharer(dir, dir_entry, ccache->low_net_node->index);
 			if (dir_entry->owner == ccache->low_net_node->index)
-				dir_entry->owner = 0;
+				dir_entry->owner = DIR_ENTRY_OWNER_NONE;
 		}
 		dir_lock_unlock(stack->dir_lock);
 
@@ -901,13 +901,13 @@ void moesi_handler_read_request(int event, void *data)
 
 				dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 				dir_entry_tag = stack->tag + z * cache_min_block_size;
-				if (!dir_entry->owner) /* no owner */
+				if (!DIR_ENTRY_VALID_OWNER(dir_entry))  /* No owner */
 					continue;
-				if (dir_entry->owner == ccache->low_net_node->index) /* owner is ccache */
+				if (dir_entry->owner == ccache->low_net_node->index)  /* Owner is ccache */
 					continue;
 				node = list_get(target->high_net->node_list, dir_entry->owner);
 				owner = node->user_data;
-				if (dir_entry_tag % owner->block_size) /* not the first owner subblock */
+				if (dir_entry_tag % owner->block_size)  /* Not the first owner subblock */
 					continue;
 
 				/* Send read request */
@@ -974,7 +974,7 @@ void moesi_handler_read_request(int event, void *data)
 		{
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 			if (dir_entry->owner != ccache->low_net_node->index)
-				dir_entry->owner = 0;
+				dir_entry->owner = DIR_ENTRY_OWNER_NONE;
 		}
 
 		/* For each subblock requested by ccache, set ccache as sharer, and
@@ -987,7 +987,7 @@ void moesi_handler_read_request(int event, void *data)
 				continue;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 			dir_entry_set_sharer(dir, dir_entry, ccache->low_net_node->index);
-			if (dir_entry->sharers > 1)
+			if (dir_entry->num_sharers > 1)
 				shared = 1;
 		}
 
@@ -1038,12 +1038,12 @@ void moesi_handler_read_request(int event, void *data)
 
 			dir_entry_tag = stack->tag + z * cache_min_block_size;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			if (!dir_entry->owner)  /* no owner */
+			if (!DIR_ENTRY_VALID_OWNER(dir_entry))  /* No owner */
 				continue;
 
 			node = list_get(target->high_net->node_list, dir_entry->owner);
 			owner = node->user_data;
-			if (dir_entry_tag % owner->block_size)  /* not the first subblock */
+			if (dir_entry_tag % owner->block_size)  /* Not the first subblock */
 				continue;
 
 			stack->pending++;
@@ -1074,7 +1074,7 @@ void moesi_handler_read_request(int event, void *data)
 		{
 			dir_entry_tag = stack->tag + z * cache_min_block_size;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			dir_entry->owner = 0;
+			dir_entry->owner = DIR_ENTRY_OWNER_NONE;
 		}
 
 		/* Set status to S, unlock */
@@ -1273,7 +1273,7 @@ void moesi_handler_write_request(int event, void *data)
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 			dir_entry_set_sharer(dir, dir_entry, ccache->low_net_node->index);
 			dir_entry->owner = ccache->low_net_node->index;
-			assert(dir_entry->sharers == 1);
+			assert(dir_entry->num_sharers == 1);
 		}
 
 		/* Set status: M->M, O/E/S/I->E */
@@ -1392,7 +1392,7 @@ void moesi_handler_invalidate(int event, void *data)
 				/* Clear sharer and owner */
 				dir_entry_clear_sharer(dir, dir_entry, i);
 				if (dir_entry->owner == i)
-					dir_entry->owner = 0;
+					dir_entry->owner = DIR_ENTRY_OWNER_NONE;
 
 				/* Send write request upwards if beginning of block */
 				if (dir_entry_tag % sharer->block_size)
