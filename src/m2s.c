@@ -935,6 +935,7 @@ int main(int argc, char **argv)
 	ke_init();
 	esim_init();
 	net_init();
+	mem_system_init();
 
 	/* Initialization for detailed simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed)
@@ -970,8 +971,9 @@ int main(int argc, char **argv)
 	/* Finalization of detailed GPU simulation */
 	if (gpu_sim_kind == gpu_sim_kind_detailed)
 		gpu_done();
-	
-	/* Finalization of functional simulation */
+
+	/* Finalization */
+	mem_system_done();
 	net_done();
 	esim_done();
 	ke_done();

@@ -159,7 +159,7 @@ struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y)
 	struct dir_lock_t *dir_lock;
 	assert(x < dir->xsize && y < dir->ysize);
 	dir_lock = &dir->dir_lock[x * dir->ysize + y];
-	cache_debug("  %lld dir_lock retrieve\n", (long long) esim_cycle);
+	cache_debug("  %lld dir_lock retrieve\n", esim_cycle);
 	return dir_lock;
 }
 
@@ -170,7 +170,8 @@ int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct moesi_stack_t *
 
 	/* If the entry is already locked, enqueue a new waiter and
 	 * return failure to lock. */
-	if (dir_lock->lock) {
+	if (dir_lock->lock)
+	{
 		stack->lock_next = dir_lock->lock_queue;
 		stack->lock_event = event;
 		dir_lock->lock_queue = stack;
@@ -189,7 +190,8 @@ void dir_lock_unlock(struct dir_lock_t *dir_lock)
 	cache_debug("  dir_lock unlock\n");
 
 	/* Wake up all waiters */
-	while (dir_lock->lock_queue) {
+	while (dir_lock->lock_queue)
+	{
 		esim_schedule_event(dir_lock->lock_queue->lock_event, dir_lock->lock_queue, 1);
 		cache_debug("    0x%x access resumed\n", dir_lock->lock_queue->tag);
 		dir_lock->lock_queue = dir_lock->lock_queue->lock_next;

@@ -346,7 +346,7 @@ void net_sim(void)
 		}
 
 		/* Next cycle */
-		net_debug("___ cycle %lld ___\n", (long long) esim_cycle);
+		net_debug("___ cycle %lld ___\n", esim_cycle);
 		esim_process_events();
 	}
 
