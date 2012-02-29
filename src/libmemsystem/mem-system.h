@@ -339,6 +339,70 @@ void gpu_mod_handler_write(int event, void *data);
 
 
 /*
+ * CPU Event-Driven Simulation
+ */
+
+extern int EV_MOESI_FIND_AND_LOCK;
+extern int EV_MOESI_FIND_AND_LOCK_ACTION;
+extern int EV_MOESI_FIND_AND_LOCK_FINISH;
+
+extern int EV_MOESI_LOAD;
+extern int EV_MOESI_LOAD_ACTION;
+extern int EV_MOESI_LOAD_MISS;
+extern int EV_MOESI_LOAD_FINISH;
+
+extern int EV_MOESI_STORE;
+extern int EV_MOESI_STORE_ACTION;
+extern int EV_MOESI_STORE_FINISH;
+
+extern int EV_MOESI_EVICT;
+extern int EV_MOESI_EVICT_INVALID;
+extern int EV_MOESI_EVICT_ACTION;
+extern int EV_MOESI_EVICT_RECEIVE;
+extern int EV_MOESI_EVICT_WRITEBACK;
+extern int EV_MOESI_EVICT_WRITEBACK_EXCLUSIVE;
+extern int EV_MOESI_EVICT_WRITEBACK_FINISH;
+extern int EV_MOESI_EVICT_PROCESS;
+extern int EV_MOESI_EVICT_REPLY;
+extern int EV_MOESI_EVICT_REPLY_RECEIVE;
+extern int EV_MOESI_EVICT_FINISH;
+
+extern int EV_MOESI_WRITE_REQUEST;
+extern int EV_MOESI_WRITE_REQUEST_RECEIVE;
+extern int EV_MOESI_WRITE_REQUEST_ACTION;
+extern int EV_MOESI_WRITE_REQUEST_EXCLUSIVE;
+extern int EV_MOESI_WRITE_REQUEST_UPDOWN;
+extern int EV_MOESI_WRITE_REQUEST_UPDOWN_FINISH;
+extern int EV_MOESI_WRITE_REQUEST_DOWNUP;
+extern int EV_MOESI_WRITE_REQUEST_REPLY;
+extern int EV_MOESI_WRITE_REQUEST_FINISH;
+
+extern int EV_MOESI_READ_REQUEST;
+extern int EV_MOESI_READ_REQUEST_RECEIVE;
+extern int EV_MOESI_READ_REQUEST_ACTION;
+extern int EV_MOESI_READ_REQUEST_UPDOWN;
+extern int EV_MOESI_READ_REQUEST_UPDOWN_MISS;
+extern int EV_MOESI_READ_REQUEST_UPDOWN_FINISH;
+extern int EV_MOESI_READ_REQUEST_DOWNUP;
+extern int EV_MOESI_READ_REQUEST_DOWNUP_FINISH;
+extern int EV_MOESI_READ_REQUEST_REPLY;
+extern int EV_MOESI_READ_REQUEST_FINISH;
+
+extern int EV_MOESI_INVALIDATE;
+extern int EV_MOESI_INVALIDATE_FINISH;
+
+void moesi_handler_find_and_lock(int event, void *data);
+void moesi_handler_load(int event, void *data);
+void moesi_handler_store(int event, void *data);
+void moesi_handler_evict(int event, void *data);
+void moesi_handler_write_request(int event, void *data);
+void moesi_handler_read_request(int event, void *data);
+void moesi_handler_invalidate(int event, void *data);
+
+
+
+
+/*
  * Memory System
  */
 

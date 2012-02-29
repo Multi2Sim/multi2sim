@@ -51,7 +51,7 @@ void mem_system_init(void)
 	mem_system->net_list = list_create();
 	mem_system->mod_list = list_create();
 
-	/* GPU Event-driven simulation */
+	/* GPU memory event-driven simulation */
 	EV_GPU_MEM_READ = esim_register_event(gpu_mod_handler_read);
 	EV_GPU_MEM_READ_REQUEST = esim_register_event(gpu_mod_handler_read);
 	EV_GPU_MEM_READ_REQUEST_RECEIVE = esim_register_event(gpu_mod_handler_read);
@@ -68,8 +68,58 @@ void mem_system_init(void)
 	EV_GPU_MEM_WRITE_UNLOCK = esim_register_event(gpu_mod_handler_write);
 	EV_GPU_MEM_WRITE_FINISH = esim_register_event(gpu_mod_handler_write);
 
+	/* CPU memory event-driven simulation */
+	EV_MOESI_FIND_AND_LOCK = esim_register_event(moesi_handler_find_and_lock);
+	EV_MOESI_FIND_AND_LOCK_ACTION = esim_register_event(moesi_handler_find_and_lock);
+	EV_MOESI_FIND_AND_LOCK_FINISH = esim_register_event(moesi_handler_find_and_lock);
+
+	EV_MOESI_LOAD = esim_register_event(moesi_handler_load);
+	EV_MOESI_LOAD_ACTION = esim_register_event(moesi_handler_load);
+	EV_MOESI_LOAD_MISS = esim_register_event(moesi_handler_load);
+	EV_MOESI_LOAD_FINISH = esim_register_event(moesi_handler_load);
+
+	EV_MOESI_STORE = esim_register_event(moesi_handler_store);
+	EV_MOESI_STORE_ACTION = esim_register_event(moesi_handler_store);
+	EV_MOESI_STORE_FINISH = esim_register_event(moesi_handler_store);
+
+	EV_MOESI_EVICT = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_INVALID = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_ACTION = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_RECEIVE = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_WRITEBACK = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_WRITEBACK_EXCLUSIVE = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_WRITEBACK_FINISH = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_PROCESS = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_REPLY = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_REPLY_RECEIVE = esim_register_event(moesi_handler_evict);
+	EV_MOESI_EVICT_FINISH = esim_register_event(moesi_handler_evict);
+
+	EV_MOESI_WRITE_REQUEST = esim_register_event(moesi_handler_write_request);
+	EV_MOESI_WRITE_REQUEST_RECEIVE = esim_register_event(moesi_handler_write_request);
+	EV_MOESI_WRITE_REQUEST_ACTION = esim_register_event(moesi_handler_write_request);
+	EV_MOESI_WRITE_REQUEST_EXCLUSIVE = esim_register_event(moesi_handler_write_request);
+	EV_MOESI_WRITE_REQUEST_UPDOWN = esim_register_event(moesi_handler_write_request);
+	EV_MOESI_WRITE_REQUEST_UPDOWN_FINISH = esim_register_event(moesi_handler_write_request);
+	EV_MOESI_WRITE_REQUEST_DOWNUP = esim_register_event(moesi_handler_write_request);
+	EV_MOESI_WRITE_REQUEST_REPLY = esim_register_event(moesi_handler_write_request);
+	EV_MOESI_WRITE_REQUEST_FINISH = esim_register_event(moesi_handler_write_request);
+
+	EV_MOESI_READ_REQUEST = esim_register_event(moesi_handler_read_request);
+	EV_MOESI_READ_REQUEST_RECEIVE = esim_register_event(moesi_handler_read_request);
+	EV_MOESI_READ_REQUEST_ACTION = esim_register_event(moesi_handler_read_request);
+	EV_MOESI_READ_REQUEST_UPDOWN = esim_register_event(moesi_handler_read_request);
+	EV_MOESI_READ_REQUEST_UPDOWN_MISS = esim_register_event(moesi_handler_read_request);
+	EV_MOESI_READ_REQUEST_UPDOWN_FINISH = esim_register_event(moesi_handler_read_request);
+	EV_MOESI_READ_REQUEST_DOWNUP = esim_register_event(moesi_handler_read_request);
+	EV_MOESI_READ_REQUEST_DOWNUP_FINISH = esim_register_event(moesi_handler_read_request);
+	EV_MOESI_READ_REQUEST_REPLY = esim_register_event(moesi_handler_read_request);
+	EV_MOESI_READ_REQUEST_FINISH = esim_register_event(moesi_handler_read_request);
+
+	EV_MOESI_INVALIDATE = esim_register_event(moesi_handler_invalidate);
+	EV_MOESI_INVALIDATE_FINISH = esim_register_event(moesi_handler_invalidate);
+
 	/* Read cache configuration file */
-	mem_system_config_read();
+	//mem_system_config_read();  /* FIXME: not ready for this yet */
 }
 
 

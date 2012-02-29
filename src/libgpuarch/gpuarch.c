@@ -923,9 +923,6 @@ void gpu_init(void)
 	/* Uops */
 	gpu_uop_init();
 	
-	/* Memory hierarchy */
-	mem_system_init();
-
 	/* GPU-REL: read stack faults file */
 	gpu_stack_faults_init();
 }
@@ -938,9 +935,6 @@ void gpu_done()
 
 	/* GPU pipeline report */
 	gpu_dump_report();
-
-	/* Memory hierarchy */
-	mem_system_done();
 
 	/* Free stream cores, compute units, and device */
 	FOREACH_COMPUTE_UNIT(compute_unit_id) {

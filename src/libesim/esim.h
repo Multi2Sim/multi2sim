@@ -23,10 +23,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
-/* Variable to indicate esim cycle */
-extern uint64_t esim_cycle;
+/* Variable to indicate event simulation cycle */
+extern long long esim_cycle;
 
-/* Empty event; when this event is scheduled, it will be ignored */
+/* Empty event. When this event is scheduled, it will be ignored */
 extern int ESIM_EV_NONE;
 
 /* Procedure to handle an event */
@@ -45,7 +45,7 @@ void esim_schedule_event(int event, void *data, int after);
  * after all pending events for current cycle completed */
 void esim_execute_event(int event, void *data);
 
-/* Advance esim cycle and process events of the new cycle */
+/* Advance event simulation cycle and process events of the new cycle */
 void esim_process_events();
 void esim_process_all_events(int max);
 
