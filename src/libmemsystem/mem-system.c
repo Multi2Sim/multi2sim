@@ -120,6 +120,9 @@ void mem_system_init(void)
 
 	/* Read cache configuration file */
 	//mem_system_config_read();  /* FIXME: not ready for this yet */
+
+	/* Initialize MMU */
+	mmu_init();
 }
 
 
@@ -129,6 +132,9 @@ void mem_system_done(void)
 
 	/* Dump report */
 	mem_system_dump_report();
+
+	/* Finalize MMU */
+	mmu_done();
 
 	/* Free memory modules */
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
