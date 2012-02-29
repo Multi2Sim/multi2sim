@@ -130,19 +130,19 @@ char *err_cachesystem_ignored =
 
 static int cores = 0;
 static int threads = 0;
-static int ccache_count = 0;
+static int mod_count = 0;
 static int tlb_count = 0;
 static int net_count = 0;
 static uint64_t access_counter = 0;
 
 struct node_t
 {
-	struct ccache_t *icache;
-	struct ccache_t *dcache;
+	struct mod_t *icache;
+	struct mod_t *dcache;
 };
 
 static struct node_t *node_array;
-static struct ccache_t **ccache_array;
+static struct mod_t **mod_array;
 static struct tlb_t **tlb_array;
 static struct net_t **net_array;
 
@@ -151,64 +151,61 @@ static struct net_t **net_array;
 
 /* Coherent Cache */
 
-static struct repos_t *ccache_access_repos;
-
-
-struct ccache_t *ccache_create(char *name, enum mod_kind_t kind)
+struct mod_t *__mod_create(char *name, enum mod_kind_t kind)
 {
-	struct ccache_t *ccache;
+	struct mod_t *mod;
 
-	ccache = calloc(1, sizeof(struct ccache_t));
-	ccache->kind = kind;
-	ccache->name = strdup(name);
-	ccache->access_list = linked_list_create();
-	ccache->high_mod_list = linked_list_create();
-	ccache->low_mod_list = linked_list_create();
-	return ccache;
+	mod = calloc(1, sizeof(struct mod_t));
+	mod->kind = kind;
+	mod->name = strdup(name);
+	mod->access_list = linked_list_create();
+	mod->high_mod_list = linked_list_create();
+	mod->low_mod_list = linked_list_create();
+	return mod;
 }
 
 
-void ccache_free(struct ccache_t *ccache)
+void __mod_free(struct mod_t *mod)
 {
 	/* Free linked list of pending accesses.
 	 * Each element is in turn a linked list of access aliases. */
-	while (linked_list_count(ccache->access_list))
+	while (linked_list_count(mod->access_list))
 	{
 		struct ccache_access_t *a, *n;
-		linked_list_head(ccache->access_list);
-		for (a = linked_list_get(ccache->access_list); a; a = n)
+		linked_list_head(mod->access_list);
+		for (a = linked_list_get(mod->access_list); a; a = n)
 		{
 			n = a->next;
-			repos_free_object(ccache_access_repos, a);
+			free(a);
 		}
-		linked_list_remove(ccache->access_list);
+		linked_list_remove(mod->access_list);
 	}
-	linked_list_free(ccache->access_list);
+	linked_list_free(mod->access_list);
 
 	/* Free cache */
-	if (ccache->dir)
-		dir_free(ccache->dir);
-	if (ccache->cache)
-		cache_free(ccache->cache);
-	linked_list_free(ccache->high_mod_list);
-	linked_list_free(ccache->low_mod_list);
-	free(ccache->name);
-	free(ccache);
+	if (mod->dir)
+		dir_free(mod->dir);
+	if (mod->cache)
+		cache_free(mod->cache);
+	linked_list_free(mod->high_mod_list);
+	linked_list_free(mod->low_mod_list);
+	free(mod->name);
+	free(mod);
 }
 
 
 /* Look for an in-flight access. If it is found, return the associated
  * ccache_access_t element, and place the linked list pointer into
  * its position within access_list. */
-static struct ccache_access_t *ccache_find_access(struct ccache_t *ccache,
+static struct ccache_access_t *__mod_find_access(struct mod_t *mod,
 	uint32_t addr)
 {
 	struct ccache_access_t *access;
-	addr &= ~(ccache->block_size - 1);
-	for (linked_list_head(ccache->access_list); !linked_list_is_end(ccache->access_list);
-		linked_list_next(ccache->access_list))
+	addr &= ~(mod->block_size - 1);
+	for (linked_list_head(mod->access_list); !linked_list_is_end(mod->access_list);
+		linked_list_next(mod->access_list))
 	{
-		access = linked_list_get(ccache->access_list);
+		access = linked_list_get(mod->access_list);
 		if (access->address == addr)
 			return access;
 	}
@@ -216,22 +213,22 @@ static struct ccache_access_t *ccache_find_access(struct ccache_t *ccache,
 }
 
 
-struct ccache_access_t *ccache_start_access(struct ccache_t *ccache,
+struct ccache_access_t *__mod_start_access(struct mod_t *mod,
 	enum cache_access_kind_t cache_access_kind, uint32_t addr,
 	struct linked_list_t *eventq, void *eventq_item)
 {
 	struct ccache_access_t *access, *alias;
 
 	/* Create access */
-	access = repos_create_object(ccache_access_repos);
+	access = calloc(1, sizeof(struct ccache_access_t));
 	access->cache_access_kind = cache_access_kind;
-	access->address = addr & ~(ccache->block_size - 1);
+	access->address = addr & ~(mod->block_size - 1);
 	access->eventq = eventq;
 	access->eventq_item = eventq_item;
 
 	/* If an alias is found, insert new access at the alias linked list head.
 	 * If no alias found, a new entry and id are created. */
-	alias = ccache_find_access(ccache, addr);
+	alias = __mod_find_access(mod, addr);
 	if (alias) {
 		assert(access->cache_access_kind == cache_access_kind_read);
 		assert(alias->cache_access_kind == cache_access_kind_read);
@@ -239,30 +236,32 @@ struct ccache_access_t *ccache_start_access(struct ccache_t *ccache,
 		alias->next = access;
 		access->id = alias->id;
 	} else {
-		linked_list_out(ccache->access_list);
-		linked_list_insert(ccache->access_list, access);
+		linked_list_out(mod->access_list);
+		linked_list_insert(mod->access_list, access);
 		access->id = ++access_counter;
-		cache_access_kind == cache_access_kind_read ? ccache->pending_reads++
-			: ccache->pending_writes++;
-		assert(ccache->pending_reads <= ccache->read_port_count);
-		assert(ccache->pending_writes <= ccache->write_port_count);
+		cache_access_kind == cache_access_kind_read ? mod->pending_reads++
+			: mod->pending_writes++;
+		assert(mod->pending_reads <= mod->read_port_count);
+		assert(mod->pending_writes <= mod->write_port_count);
 	}
 	return access;
 }
 
 
-void ccache_end_access(struct ccache_t *ccache, uint32_t addr)
+void __mod_end_access(struct mod_t *mod, uint32_t addr)
 {
 	struct ccache_access_t *access, *alias;
 
 	/* Find access */
-	addr &= ~(ccache->block_size - 1);
-	access = ccache_find_access(ccache, addr);
+	addr &= ~(mod->block_size - 1);
+	access = __mod_find_access(mod, addr);
 	assert(access && access->address == addr);
 
 	/* Finish actions - insert eventq_item into eventq for all aliases */
-	for (alias = access; alias; alias = alias->next) {
-		if (alias->eventq) {
+	for (alias = access; alias; alias = alias->next)
+	{
+		if (alias->eventq)
+		{
 			assert(alias->eventq_item);
 			linked_list_head(alias->eventq);
 			linked_list_insert(alias->eventq, alias->eventq_item);
@@ -270,26 +269,27 @@ void ccache_end_access(struct ccache_t *ccache, uint32_t addr)
 	}
 
 	/* Free access and all aliases. */
-	access->cache_access_kind == cache_access_kind_read ? ccache->pending_reads--
-		: ccache->pending_writes--;
-	assert(ccache->pending_reads >= 0);
-	assert(ccache->pending_writes >= 0);
-	while (access) {
+	access->cache_access_kind == cache_access_kind_read ? mod->pending_reads--
+		: mod->pending_writes--;
+	assert(mod->pending_reads >= 0);
+	assert(mod->pending_writes >= 0);
+	while (access)
+	{
 		alias = access->next;
-		repos_free_object(ccache_access_repos, access);
+		free(access);
 		access = alias;
 	}
-	linked_list_remove(ccache->access_list);
+	linked_list_remove(mod->access_list);
 }
 
 
-int ccache_pending_access(struct ccache_t *ccache, uint64_t id)
+int __mod_pending_access(struct mod_t *mod, uint64_t id)
 {
 	struct ccache_access_t *access;
-	for (linked_list_head(ccache->access_list); !linked_list_is_end(ccache->access_list);
-		linked_list_next(ccache->access_list))
+	for (linked_list_head(mod->access_list); !linked_list_is_end(mod->access_list);
+		linked_list_next(mod->access_list))
 	{
-		access = linked_list_get(ccache->access_list);
+		access = linked_list_get(mod->access_list);
 		if (access->id == id)
 			return 1;
 	}
@@ -297,19 +297,19 @@ int ccache_pending_access(struct ccache_t *ccache, uint64_t id)
 }
 
 
-int ccache_pending_address(struct ccache_t *ccache, uint32_t addr)
+int __mod_pending_address(struct mod_t *mod, uint32_t addr)
 {
 	struct ccache_access_t *access;
-	access = ccache_find_access(ccache, addr);
+	access = __mod_find_access(mod, addr);
 	return access != NULL;
 }
 
 
 /* Return {set, way, tag, state} for an address. */
-int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
+int __mod_find_block(struct mod_t *mod, uint32_t addr,
 	uint32_t *pset, uint32_t *pway, uint32_t *ptag, int *pstatus)
 {
-	struct cache_t *cache = ccache->cache;
+	struct cache_t *cache = mod->cache;
 	struct cache_block_t *blk;
 	struct dir_lock_t *dir_lock;
 	uint32_t set, way, tag;
@@ -325,7 +325,7 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 			break;
 		if (blk->transient_tag == tag)
 		{
-			dir_lock = dir_lock_get(ccache->dir, set, way);
+			dir_lock = dir_lock_get(mod->dir, set, way);
 			if (dir_lock->lock)
 				break;
 		}
@@ -350,9 +350,9 @@ int ccache_find_block(struct ccache_t *ccache, uint32_t addr,
 }
 
 
-void ccache_dump(struct ccache_t *ccache, FILE *f)
+void __mod_dump(struct mod_t *mod, FILE *f)
 {
-	struct cache_t *cache = ccache->cache;
+	struct cache_t *cache = mod->cache;
 	struct cache_block_t *blk;
 	struct dir_lock_t *dir_lock;
 	int i, j;
@@ -360,10 +360,12 @@ void ccache_dump(struct ccache_t *ccache, FILE *f)
 	if (!cache)
 		return;
 
-	for (i = 0; i < cache->num_sets; i++) {
+	for (i = 0; i < cache->num_sets; i++)
+	{
 		fprintf(f, "Set %03d:", i);
-		for (j = 0; j < cache->assoc; j++) {
-			dir_lock = dir_lock_get(ccache->dir, i, j);
+		for (j = 0; j < cache->assoc; j++)
+		{
+			dir_lock = dir_lock_get(mod->dir, i, j);
 			blk = &cache->sets[i].blocks[j];
 			if (!blk->state)
 				fprintf(f, " %d:I", j);
@@ -378,10 +380,10 @@ void ccache_dump(struct ccache_t *ccache, FILE *f)
 
 
 /* Get lower node */
-struct ccache_t *ccache_get_low_mod(struct ccache_t *ccache)
+struct mod_t *__mod_get_low_mod(struct mod_t *mod)
 {
-	linked_list_head(ccache->low_mod_list);
-	return linked_list_get(ccache->low_mod_list);
+	linked_list_head(mod->low_mod_list);
+	return linked_list_get(mod->low_mod_list);
 }
 
 
@@ -410,14 +412,11 @@ void tlb_free(struct tlb_t *tlb)
 
 /* Cache System Stack */
 
-struct repos_t *cache_system_stack_repos;
-
-
 struct cache_system_stack_t *cache_system_stack_create(int core, int thread, uint32_t addr,
 	int retevent, void *retstack)
 {
 	struct cache_system_stack_t *stack;
-	stack = repos_create_object(cache_system_stack_repos);
+	stack = calloc(1, sizeof(struct cache_system_stack_t));
 	stack->core = core;
 	stack->thread = thread;
 	stack->addr = addr;
@@ -432,7 +431,7 @@ void cache_system_stack_return(struct cache_system_stack_t *stack)
 	int retevent = stack->retevent;
 	void *retstack = stack->retstack;
 
-	repos_free_object(cache_system_stack_repos, stack);
+	free(stack);
 	esim_schedule_event(retevent, retstack, 0);
 }
 
@@ -582,7 +581,7 @@ void cache_system_init(int _cores, int _threads)
 	int write_ports;
 
 	struct net_t *net = NULL;
-	struct ccache_t *ccache;
+	struct mod_t *mod;
 	struct node_t *node;
 	char buf[200];
 	enum cache_policy_t policy;
@@ -603,12 +602,6 @@ void cache_system_init(int _cores, int _threads)
 	mmu_init();
 	moesi_init();
 
-	/* Repositories */
-	cache_system_stack_repos = repos_create(sizeof(struct cache_system_stack_t),
-		"cache_system_stack_repos");
-	ccache_access_repos = repos_create(sizeof(struct ccache_access_t),
-		"ccache_access_repos");
-	
 	/* Events */
 	EV_CACHE_SYSTEM_ACCESS = esim_register_event(cache_system_handler);
 	EV_CACHE_SYSTEM_ACCESS_CACHE = esim_register_event(cache_system_handler);
@@ -627,17 +620,17 @@ void cache_system_init(int _cores, int _threads)
 		section = config_section_next(cache_config))
 	{
 		if (!strncasecmp(section, "Cache ", 6) || !strcasecmp(section, "MainMemory"))
-			ccache_count++;
+			mod_count++;
 		else if (!strncasecmp(section, "Net ", 4))
 			net_count++;
 	}
-	if (ccache_count < 1)
+	if (mod_count < 1)
 		fatal("%s: no cache", cache_system_config_file_name);
 	if (net_count < 1)
 		fatal("%s: no network", cache_system_config_file_name);
 	if (!config_section_exists(cache_config, "MainMemory"))
 		fatal("%s: section [ MainMemory ] is missing", cache_system_config_file_name);
-	ccache_array = calloc(ccache_count, sizeof(void *));
+	mod_array = calloc(mod_count, sizeof(void *));
 	net_array = calloc(net_count, sizeof(void *));
 
 	/* Create networks */
@@ -663,7 +656,7 @@ void cache_system_init(int _cores, int _threads)
 		config_write_ptr(cache_config, buf, "ptr", net);
 	}
 
-	/* Create ccache_array */
+	/* Create array of modules */
 	curr = 0;
 	for (section = config_section_first(cache_config); section;
 		section = config_section_next(cache_config))
@@ -672,28 +665,28 @@ void cache_system_init(int _cores, int _threads)
 			continue;
 
 		/* Create cache */
-		assert(curr < ccache_count - 1);
-		ccache = ccache_create(section + 6, mod_kind_cache);
-		ccache_array[curr] = ccache;
+		assert(curr < mod_count - 1);
+		mod = __mod_create(section + 6, mod_kind_cache);
+		mod_array[curr] = mod;
 		curr++;
-		if (!strcasecmp(ccache->name, "MainMemory"))
-			fatal("'%s' is not a valid name for a cache", ccache->name);
+		if (!strcasecmp(mod->name, "MainMemory"))
+			fatal("'%s' is not a valid name for a cache", mod->name);
 
 		/* High network */
 		value = config_read_string(cache_config, section, "HiNet", "");
 		sprintf(buf, "net %s", value);
-		ccache->high_net = config_read_ptr(cache_config, buf, "ptr", NULL);
-		if (!ccache->high_net && *value)
-			fatal("%s: network specified in HiNet does not exist", ccache->name);
+		mod->high_net = config_read_ptr(cache_config, buf, "ptr", NULL);
+		if (!mod->high_net && *value)
+			fatal("%s: network specified in HiNet does not exist", mod->name);
 
 		/* Low network */
 		value = config_read_string(cache_config, section, "LoNet", "");
 		sprintf(buf, "net %s", value);
-		ccache->low_net = config_read_ptr(cache_config, buf, "ptr", NULL);
-		if (!ccache->low_net && *value)
-			fatal("%s: network specified in LoNet does not exist", ccache->name);
+		mod->low_net = config_read_ptr(cache_config, buf, "ptr", NULL);
+		if (!mod->low_net && *value)
+			fatal("%s: network specified in LoNet does not exist", mod->name);
 		if (!*value)
-			fatal("%s: cache must be connected to a lower network (use LoNet)", ccache->name);
+			fatal("%s: cache must be connected to a lower network (use LoNet)", mod->name);
 
 		/* Cache parameters */
 		sprintf(buf, "CacheGeometry %s", config_read_string(cache_config, section, "Geometry", ""));
@@ -712,36 +705,36 @@ void cache_system_init(int _cores, int _threads)
 		policy = map_string_case(&cache_policy_map, policy_str);
 		if (policy == cache_policy_invalid)
 			fatal("%s: invalid block replacement policy", policy_str);
-		ccache->latency = config_read_int(cache_config, buf, "Latency", 0);
-		ccache->block_size = bsize;
-		ccache->log_block_size = log_base2(bsize);
-		ccache->read_port_count = read_ports;
-		ccache->write_port_count = write_ports;
-		ccache->cache = cache_create(nsets, bsize, assoc, policy);
+		mod->latency = config_read_int(cache_config, buf, "Latency", 0);
+		mod->block_size = bsize;
+		mod->log_block_size = log_base2(bsize);
+		mod->read_port_count = read_ports;
+		mod->write_port_count = write_ports;
+		mod->cache = cache_create(nsets, bsize, assoc, policy);
 		cache_min_block_size = cache_min_block_size ? MIN(cache_min_block_size, bsize) : bsize;
 		cache_max_block_size = cache_max_block_size ? MAX(cache_max_block_size, bsize) : bsize;
 		if (bsize > mmu_page_size)
-			fatal("%s: cache block size greater than memory page size", ccache->name);
+			fatal("%s: cache block size greater than memory page size", mod->name);
 		if (read_ports < 1 || write_ports < 1)
-			fatal("%s: number of read/write ports must be at least 1", ccache->name);
+			fatal("%s: number of read/write ports must be at least 1", mod->name);
 	}
-	assert(curr == ccache_count - 1);
+	assert(curr == mod_count - 1);
 
-	/* Add ccache pointers to configuration file. This needs to be done separately,
+	/* Add module pointers to configuration file. This needs to be done separately,
 	 * because configuration file writes alter enumeration of sections.
 	 * Do not handle last element (ccache_count - 1), which is MainMemory. */
-	for (curr = 0; curr < ccache_count - 1; curr++)
+	for (curr = 0; curr < mod_count - 1; curr++)
 	{
-		ccache = ccache_array[curr];
-		sprintf(buf, "Cache %s", ccache->name);
+		mod = mod_array[curr];
+		sprintf(buf, "Cache %s", mod->name);
 		assert(config_section_exists(cache_config, buf));
-		config_write_ptr(cache_config, buf, "ptr", ccache);
+		config_write_ptr(cache_config, buf, "ptr", mod);
 	}
 
 	/* Main memory */
 	section = "MainMemory";
-	ccache = ccache_create("mm", mod_kind_main_memory);
-	ccache_array[ccache_count - 1] = ccache;
+	mod = __mod_create("mm", mod_kind_main_memory);
+	mod_array[mod_count - 1] = mod;
 	sprintf(buf, "Net %s", config_read_string(cache_config, section, "HiNet", ""));
 	cache_config_section(section);
 	cache_config_key(section, "Latency");
@@ -750,31 +743,31 @@ void cache_system_init(int _cores, int _threads)
 	read_ports = config_read_int(cache_config, section, "ReadPorts", 2);
 	write_ports = config_read_int(cache_config, section, "WritePorts", 1);
 	if (read_ports < 1 || write_ports < 1)
-		fatal("%s: number of read/write ports must be at least 1", ccache->name);
+		fatal("%s: number of read/write ports must be at least 1", mod->name);
 	bsize = config_read_int(cache_config, section, "BlockSize", 0);
 	if (bsize & (bsize - 1))
 		fatal("block size for main memory is not a power of 2");
 	if (bsize > mmu_page_size)
 		fatal("main memory block size cannot be greater than page size");
-	ccache->block_size = bsize;
-	ccache->log_block_size = log_base2(bsize);
+	mod->block_size = bsize;
+	mod->log_block_size = log_base2(bsize);
 	cache_min_block_size = cache_min_block_size ? MIN(cache_min_block_size, bsize) : bsize;
 
-	ccache->latency = config_read_int(cache_config, section, "Latency", 0);
-	ccache->block_size = config_read_int(cache_config, section, "BlockSize", 0);
-	ccache->read_port_count = read_ports;
-	ccache->write_port_count = write_ports;
-	ccache->high_net = config_read_ptr(cache_config, buf, "ptr", NULL);
+	mod->latency = config_read_int(cache_config, section, "Latency", 0);
+	mod->block_size = config_read_int(cache_config, section, "BlockSize", 0);
+	mod->read_port_count = read_ports;
+	mod->write_port_count = write_ports;
+	mod->high_net = config_read_ptr(cache_config, buf, "ptr", NULL);
 	if (cache_min_block_size < 1)
 		fatal("cache block size must be >= 1");
 	
-	ccache->dir_size = config_read_int(cache_config, section, "DirectorySize", 1024);
-	ccache->dir_assoc = config_read_int(cache_config, section, "DirectoryAssoc", 8);
-	if (ccache->dir_size & (ccache->dir_size - 1))
+	mod->dir_size = config_read_int(cache_config, section, "DirectorySize", 1024);
+	mod->dir_assoc = config_read_int(cache_config, section, "DirectoryAssoc", 8);
+	if (mod->dir_size & (mod->dir_size - 1))
 		fatal("main directory size is not a power of 2");
-	if (ccache->dir_assoc & (ccache->dir_assoc - 1))
+	if (mod->dir_assoc & (mod->dir_assoc - 1))
 		fatal("main directory associativity is not a power of 2");
-	ccache->dir_num_sets = ccache->dir_size / ccache->dir_assoc;
+	mod->dir_num_sets = mod->dir_size / mod->dir_assoc;
 	
 	/* Calculate default network buffer sizes and bandwidth, based on the
 	 * maximum message size (block_size + 8). */
@@ -845,16 +838,16 @@ void cache_system_init(int _cores, int _threads)
 	}
 
 	/* Add lower node_array to networks. */
-	for (curr = 0; curr < ccache_count; curr++)
+	for (curr = 0; curr < mod_count; curr++)
 	{
-		ccache = ccache_array[curr];
-		net = ccache->high_net;
+		mod = mod_array[curr];
+		net = mod->high_net;
 		if (!net)
 			continue;
 		if (net->node_count)
 			fatal("network '%s' has more than one lower node", net->name);
-		ccache->high_net_node = net_add_end_node(net, net_buffer_size, net_buffer_size,
-			ccache->name, ccache);
+		mod->high_net_node = net_add_end_node(net, net_buffer_size, net_buffer_size,
+			mod->name, mod);
 	}
 
 	/* Check that all networks got assigned a lower node. */
@@ -866,43 +859,43 @@ void cache_system_init(int _cores, int _threads)
 			fatal("network '%s' has no lower node leading to main memory", net->name);
 	}
 
-	/* Add upper node_array to networks. Update 'next' attributes for ccache_array. */
-	for (curr = 0; curr < ccache_count; curr++)
+	/* Add upper node_array to networks. Update 'next' attributes for array of modules. */
+	for (curr = 0; curr < mod_count; curr++)
 	{
 		struct net_node_t *lower_node;
-		struct ccache_t *low_ccache;
+		struct mod_t *low_mod;
 
-		ccache = ccache_array[curr];
-		net = ccache->low_net;
+		mod = mod_array[curr];
+		net = mod->low_net;
 		if (!net)
 			continue;
 
 		/* Create node */
-		ccache->low_net_node = net_add_end_node(net, net_buffer_size,
-			net_buffer_size, ccache->name, ccache);
+		mod->low_net_node = net_add_end_node(net, net_buffer_size,
+			net_buffer_size, mod->name, mod);
 
 		/* Associate with lower node */
 		lower_node = list_get(net->node_list, 0);
 		assert(lower_node && lower_node->user_data);
-		low_ccache = lower_node->user_data;
-		assert(!linked_list_count(ccache->low_mod_list));
-		linked_list_add(ccache->low_mod_list, low_ccache);
-		linked_list_add(low_ccache->high_mod_list, ccache);
+		low_mod = lower_node->user_data;
+		assert(!linked_list_count(mod->low_mod_list));
+		linked_list_add(mod->low_mod_list, low_mod);
+		linked_list_add(low_mod->high_mod_list, mod);
 	}
 
 	/* Check that block sizes are equal or larger while we descend through the
 	 * memory hierarchy. */
-	for (curr = 0; curr < ccache_count; curr++)
+	for (curr = 0; curr < mod_count; curr++)
 	{
 		bsize = 0;
-		for (ccache = ccache_array[curr]; ccache; )
+		for (mod = mod_array[curr]; mod; )
 		{
-			if (ccache->block_size < bsize)
+			if (mod->block_size < bsize)
 				fatal("cache %s has a smaller block size than some "
-					"of its upper level caches", ccache->name);
-			bsize = ccache->block_size;
-			linked_list_head(ccache->low_mod_list);
-			ccache = linked_list_get(ccache->low_mod_list);
+					"of its upper level caches", mod->name);
+			bsize = mod->block_size;
+			linked_list_head(mod->low_mod_list);
+			mod = linked_list_get(mod->low_mod_list);
 		}
 	}
 
@@ -936,37 +929,37 @@ void cache_system_init(int _cores, int _threads)
 	}
 
 	/* Directories */
-	for (curr = 0; curr < ccache_count; curr++)
+	for (curr = 0; curr < mod_count; curr++)
 	{
-		ccache = ccache_array[curr];
+		mod = mod_array[curr];
 
 		/* Main memory */
-		if (ccache->kind == mod_kind_main_memory)
+		if (mod->kind == mod_kind_main_memory)
 		{
-			ccache->dir = dir_create(ccache->dir_num_sets, ccache->dir_assoc,
-				ccache->block_size / cache_min_block_size, ccache->high_net->node_count);
-			ccache->cache = cache_create(ccache->dir_num_sets, ccache->block_size,
-				ccache->dir_assoc, cache_policy_lru);
+			mod->dir = dir_create(mod->dir_num_sets, mod->dir_assoc,
+				mod->block_size / cache_min_block_size, mod->high_net->node_count);
+			mod->cache = cache_create(mod->dir_num_sets, mod->block_size,
+				mod->dir_assoc, cache_policy_lru);
 			continue;
 		}
 
 		/* Level 1 cache */
-		if (!ccache->high_net)
+		if (!mod->high_net)
 		{
-			ccache->dir_size = ccache->cache->num_sets * ccache->cache->assoc;
-			ccache->dir_num_sets = ccache->cache->num_sets;
-			ccache->dir_assoc = ccache->cache->assoc;
-			ccache->dir = dir_create(ccache->cache->num_sets, ccache->cache->assoc,
-				ccache->block_size / cache_min_block_size, 1);
+			mod->dir_size = mod->cache->num_sets * mod->cache->assoc;
+			mod->dir_num_sets = mod->cache->num_sets;
+			mod->dir_assoc = mod->cache->assoc;
+			mod->dir = dir_create(mod->cache->num_sets, mod->cache->assoc,
+				mod->block_size / cache_min_block_size, 1);
 			continue;
 		}
 
-		/* Other level ccache_array */
-		ccache->dir_size = ccache->cache->num_sets * ccache->cache->assoc;
-		ccache->dir_num_sets = ccache->cache->num_sets;
-		ccache->dir_assoc = ccache->cache->assoc;
-		ccache->dir = dir_create(ccache->cache->num_sets, ccache->cache->assoc,
-			ccache->block_size / cache_min_block_size, ccache->high_net->node_count);
+		/* Other level array of modules */
+		mod->dir_size = mod->cache->num_sets * mod->cache->assoc;
+		mod->dir_num_sets = mod->cache->num_sets;
+		mod->dir_assoc = mod->cache->assoc;
+		mod->dir = dir_create(mod->cache->num_sets, mod->cache->assoc,
+			mod->block_size / cache_min_block_size, mod->high_net->node_count);
 	}
 
 	/* Create TLBs (one dtlb and one itlb per thread) */
@@ -999,21 +992,23 @@ void cache_system_init(int _cores, int _threads)
 
 void cache_system_print_stats(FILE *f)
 {
-	struct ccache_t *ccache;
+	struct mod_t *mod;
 	struct tlb_t *tlb;
 	int curr;
 
 	fprintf(f, "[ CacheSystemSummary ]\n");
 
 	/* Show hit ratio for each cache */
-	for (curr = 0; curr < ccache_count; curr++) {
-		ccache = ccache_array[curr];
-		fprintf(f, "Cache[%s].HitRatio = %.4g\n", ccache->name, ccache->accesses ?
-			(double) ccache->hits / ccache->accesses : 0.0);
+	for (curr = 0; curr < mod_count; curr++)
+	{
+		mod = mod_array[curr];
+		fprintf(f, "Cache[%s].HitRatio = %.4g\n", mod->name, mod->accesses ?
+			(double) mod->hits / mod->accesses : 0.0);
 	}
 
 	/* Show hit ratio for each TLB */
-	for (curr = 0; curr < tlb_count; curr++) {
+	for (curr = 0; curr < tlb_count; curr++)
+	{
 		tlb = tlb_array[curr];
 		fprintf(f, "Cache[%s].HitRatio = %.4g\n", tlb->name, tlb->accesses ?
 			(double) tlb->hits / tlb->accesses : 0.0);
@@ -1025,7 +1020,7 @@ void cache_system_print_stats(FILE *f)
 
 void cache_system_dump_report()
 {
-	struct ccache_t *ccache;
+	struct mod_t *mod;
 	struct cache_t *cache;
 	struct tlb_t *tlb;
 	FILE *f;
@@ -1055,11 +1050,11 @@ void cache_system_dump_report()
 	fprintf(f, "\n\n");
 	
 	/* Report for each cache */
-	for (curr = 0; curr < ccache_count; curr++)
+	for (curr = 0; curr < mod_count; curr++)
 	{
-		ccache = ccache_array[curr];
-		cache = ccache->cache;
-		fprintf(f, "[ %s ]\n", ccache->name);
+		mod = mod_array[curr];
+		cache = mod->cache;
+		fprintf(f, "[ %s ]\n", mod->name);
 		fprintf(f, "\n");
 
 		/* Configuration */
@@ -1068,49 +1063,49 @@ void cache_system_dump_report()
 			fprintf(f, "Assoc = %d\n", cache->assoc);
 			fprintf(f, "Policy = %s\n", map_value(&cache_policy_map, cache->policy));
 		}
-		fprintf(f, "BlockSize = %d\n", ccache->block_size);
-		fprintf(f, "Latency = %d\n", ccache->latency);
-		fprintf(f, "ReadPorts = %d\n", ccache->read_port_count);
-		fprintf(f, "WritePorts = %d\n", ccache->write_port_count);
+		fprintf(f, "BlockSize = %d\n", mod->block_size);
+		fprintf(f, "Latency = %d\n", mod->latency);
+		fprintf(f, "ReadPorts = %d\n", mod->read_port_count);
+		fprintf(f, "WritePorts = %d\n", mod->write_port_count);
 		fprintf(f, "\n");
 
 		/* Statistics */
-		fprintf(f, "Accesses = %lld\n", (long long) ccache->accesses);
-		fprintf(f, "Hits = %lld\n", (long long) ccache->hits);
-		fprintf(f, "Misses = %lld\n", (long long) (ccache->accesses - ccache->hits));
-		fprintf(f, "HitRatio = %.4g\n", ccache->accesses ?
-			(double) ccache->hits / ccache->accesses : 0.0);
-		fprintf(f, "Evictions = %lld\n", (long long) ccache->evictions);
-		fprintf(f, "Retries = %lld\n", (long long) (ccache->read_retries + ccache->write_retries));
-		fprintf(f, "ReadRetries = %lld\n", (long long) ccache->read_retries);
-		fprintf(f, "WriteRetries = %lld\n", (long long) ccache->write_retries);
+		fprintf(f, "Accesses = %lld\n", (long long) mod->accesses);
+		fprintf(f, "Hits = %lld\n", (long long) mod->hits);
+		fprintf(f, "Misses = %lld\n", (long long) (mod->accesses - mod->hits));
+		fprintf(f, "HitRatio = %.4g\n", mod->accesses ?
+			(double) mod->hits / mod->accesses : 0.0);
+		fprintf(f, "Evictions = %lld\n", (long long) mod->evictions);
+		fprintf(f, "Retries = %lld\n", (long long) (mod->read_retries + mod->write_retries));
+		fprintf(f, "ReadRetries = %lld\n", (long long) mod->read_retries);
+		fprintf(f, "WriteRetries = %lld\n", (long long) mod->write_retries);
 		fprintf(f, "\n");
-		fprintf(f, "NoRetryAccesses = %lld\n", (long long) ccache->no_retry_accesses);
-		fprintf(f, "NoRetryHits = %lld\n", (long long) ccache->no_retry_hits);
-		fprintf(f, "NoRetryMisses = %lld\n", (long long) (ccache->no_retry_accesses -
-			ccache->no_retry_hits));
-		fprintf(f, "NoRetryHitRatio = %.4g\n", ccache->no_retry_accesses ?
-			(double) ccache->no_retry_hits / ccache->no_retry_accesses : 0.0);
-		fprintf(f, "NoRetryReads = %lld\n", (long long) ccache->no_retry_reads);
-		fprintf(f, "NoRetryReadHits = %lld\n", (long long) ccache->no_retry_read_hits);
-		fprintf(f, "NoRetryReadMisses = %lld\n", (long long) (ccache->no_retry_reads -
-			ccache->no_retry_read_hits));
-		fprintf(f, "NoRetryWrites = %lld\n", (long long) ccache->no_retry_writes);
-		fprintf(f, "NoRetryWriteHits = %lld\n", (long long) ccache->no_retry_write_hits);
-		fprintf(f, "NoRetryWriteMisses = %lld\n", (long long) (ccache->no_retry_writes -
-			ccache->no_retry_write_hits));
+		fprintf(f, "NoRetryAccesses = %lld\n", (long long) mod->no_retry_accesses);
+		fprintf(f, "NoRetryHits = %lld\n", (long long) mod->no_retry_hits);
+		fprintf(f, "NoRetryMisses = %lld\n", (long long) (mod->no_retry_accesses -
+			mod->no_retry_hits));
+		fprintf(f, "NoRetryHitRatio = %.4g\n", mod->no_retry_accesses ?
+			(double) mod->no_retry_hits / mod->no_retry_accesses : 0.0);
+		fprintf(f, "NoRetryReads = %lld\n", (long long) mod->no_retry_reads);
+		fprintf(f, "NoRetryReadHits = %lld\n", (long long) mod->no_retry_read_hits);
+		fprintf(f, "NoRetryReadMisses = %lld\n", (long long) (mod->no_retry_reads -
+			mod->no_retry_read_hits));
+		fprintf(f, "NoRetryWrites = %lld\n", (long long) mod->no_retry_writes);
+		fprintf(f, "NoRetryWriteHits = %lld\n", (long long) mod->no_retry_write_hits);
+		fprintf(f, "NoRetryWriteMisses = %lld\n", (long long) (mod->no_retry_writes -
+			mod->no_retry_write_hits));
 		fprintf(f, "\n");
-		fprintf(f, "Reads = %lld\n", (long long) ccache->reads);
-		fprintf(f, "BlockingReads = %lld\n", (long long) ccache->blocking_reads);
-		fprintf(f, "NonBlockingReads = %lld\n", (long long) ccache->non_blocking_reads);
-		fprintf(f, "ReadHits = %lld\n", (long long) ccache->read_hits);
-		fprintf(f, "ReadMisses = %lld\n", (long long) (ccache->reads - ccache->read_hits));
+		fprintf(f, "Reads = %lld\n", (long long) mod->reads);
+		fprintf(f, "BlockingReads = %lld\n", (long long) mod->blocking_reads);
+		fprintf(f, "NonBlockingReads = %lld\n", (long long) mod->non_blocking_reads);
+		fprintf(f, "ReadHits = %lld\n", (long long) mod->read_hits);
+		fprintf(f, "ReadMisses = %lld\n", (long long) (mod->reads - mod->read_hits));
 		fprintf(f, "\n");
-		fprintf(f, "Writes = %lld\n", (long long) ccache->writes);
-		fprintf(f, "BlockingWrites = %lld\n", (long long) ccache->blocking_writes);
-		fprintf(f, "NonBlockingWrites = %lld\n", (long long) ccache->non_blocking_writes);
-		fprintf(f, "WriteHits = %lld\n", (long long) ccache->write_hits);
-		fprintf(f, "WriteMisses = %lld\n", (long long) (ccache->writes - ccache->write_hits));
+		fprintf(f, "Writes = %lld\n", (long long) mod->writes);
+		fprintf(f, "BlockingWrites = %lld\n", (long long) mod->blocking_writes);
+		fprintf(f, "NonBlockingWrites = %lld\n", (long long) mod->non_blocking_writes);
+		fprintf(f, "WriteHits = %lld\n", (long long) mod->write_hits);
+		fprintf(f, "WriteMisses = %lld\n", (long long) (mod->writes - mod->write_hits));
 		fprintf(f, "\n\n");
 	}
 
@@ -1155,11 +1150,11 @@ void cache_system_done()
 	/* Dump report */
 	cache_system_dump_report();
 
-	/* Free ccache_array */
-	for (i = 0; i < ccache_count; i++) {
-		ccache_free(ccache_array[i]);
+	/* Free array of modules */
+	for (i = 0; i < mod_count; i++) {
+		__mod_free(mod_array[i]);
 	}
-	free(ccache_array);
+	free(mod_array);
 
 	/* Free tlbs */
 	for (i = 0; i < tlb_count; i++)
@@ -1173,8 +1168,6 @@ void cache_system_done()
 
 	/* Other */
 	free(node_array);
-	repos_free(cache_system_stack_repos);
-	repos_free(ccache_access_repos);
 	
 	/* Finalizations */
 	moesi_done();
@@ -1184,7 +1177,7 @@ void cache_system_done()
 
 /* Return the entry point in the cache hierarchy depending on the core-thread pair
  * and the type of block accessed (if data=1, data cache, otherwise, instruction cache) */
-static struct ccache_t *cache_system_get_ccache(int core, int thread, enum cache_kind_t cache_kind)
+static struct mod_t *cache_system_get_mod(int core, int thread, enum cache_kind_t cache_kind)
 {
 	int index;
 	assert(core < cores && thread < threads);
@@ -1205,16 +1198,17 @@ static struct tlb_t *cache_system_get_tlb(int core, int thread, enum cache_kind_
 
 static void cache_system_dump_route(int core, int thread, enum cache_kind_t kind, FILE *f)
 {
-	struct ccache_t *ccache;
+	struct mod_t *mod;
 
-	ccache = cache_system_get_ccache(core, thread, kind);
-	while (ccache) {
+	mod = cache_system_get_mod(core, thread, kind);
+	while (mod)
+	{
 		fprintf(f, "    %s loid=%d\n",
-			ccache->name, ccache->low_net_node->index);
-		if (ccache->low_net)
-			fprintf(f, "    %s\n", ccache->low_net->name);
-		linked_list_head(ccache->low_mod_list);
-		ccache = linked_list_get(ccache->low_mod_list);
+			mod->name, mod->low_net_node->index);
+		if (mod->low_net)
+			fprintf(f, "    %s\n", mod->low_net->name);
+		linked_list_head(mod->low_mod_list);
+		mod = linked_list_get(mod->low_mod_list);
 	}
 }
 
@@ -1236,45 +1230,45 @@ void cache_system_dump(FILE *f)
 int cache_system_pending_address(int core, int thread,
 	enum cache_kind_t cache_kind, uint32_t addr)
 {
-	struct ccache_t *ccache;
-	ccache = cache_system_get_ccache(core, thread, cache_kind);
-	return ccache_pending_address(ccache, addr);
+	struct mod_t *mod;
+	mod = cache_system_get_mod(core, thread, cache_kind);
+	return __mod_pending_address(mod, addr);
 }
 
 
 int cache_system_pending_access(int core, int thread,
 	enum cache_kind_t cache_kind, uint64_t access)
 {
-	struct ccache_t *ccache;
-	ccache = cache_system_get_ccache(core, thread, cache_kind);
-	return ccache_pending_access(ccache, access);
+	struct mod_t *mod;
+	mod = cache_system_get_mod(core, thread, cache_kind);
+	return __mod_pending_access(mod, access);
 }
 
 
 int cache_system_block_size(int core, int thread,
 	enum cache_kind_t cache_kind)
 {
-	struct ccache_t *ccache;
-	ccache = cache_system_get_ccache(core, thread, cache_kind);
-	return ccache->block_size;
+	struct mod_t *mod;
+	mod = cache_system_get_mod(core, thread, cache_kind);
+	return mod->block_size;
 }
 
 
 int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
 	enum cache_access_kind_t cache_access_kind, uint32_t addr)
 {
-	struct ccache_t *ccache;
+	struct mod_t *mod;
 	struct ccache_access_t *access;
 
 	/* Find cache and an in-flight access to the same address. */
-	ccache = cache_system_get_ccache(core, thread, cache_kind);
-	access = ccache_find_access(ccache, addr);
+	mod = cache_system_get_mod(core, thread, cache_kind);
+	access = __mod_find_access(mod, addr);
 
 	/* If there is no matching access, we just need a free port. */
 	if (!access)
 		return cache_access_kind == cache_access_kind_read ?
-			ccache->pending_reads < ccache->read_port_count :
-			ccache->pending_writes < ccache->write_port_count;
+			mod->pending_reads < mod->read_port_count :
+			mod->pending_writes < mod->write_port_count;
 	
 	/* If either the matching or the current access is a write,
 	 * concurrency is not allowed. */
@@ -1293,7 +1287,7 @@ static uint64_t cache_system_access(int core, int thread, enum cache_kind_t cach
 	struct linked_list_t *eventq, void *eventq_item)
 {
 	struct cache_system_stack_t *newstack;
-	struct ccache_t *ccache;
+	struct mod_t *mod;
 	struct ccache_access_t *access, *alias;
 
 	/* Check that the physical address is valid for the MMU, i.e.,
@@ -1304,9 +1298,9 @@ static uint64_t cache_system_access(int core, int thread, enum cache_kind_t cach
 	}
 
 	/* Record immediately a new access */
-	ccache = cache_system_get_ccache(core, thread, cache_kind);
-	alias = ccache_find_access(ccache, addr);
-	access = ccache_start_access(ccache, cache_access_kind, addr,
+	mod = cache_system_get_mod(core, thread, cache_kind);
+	alias = __mod_find_access(mod, addr);
+	access = __mod_start_access(mod, cache_access_kind, addr,
 		eventq, eventq_item);
 
 	/* If there was no alias, start cache access */
@@ -1367,12 +1361,12 @@ void cache_system_handler(int event, void *data)
 
 	if (event == EV_CACHE_SYSTEM_ACCESS_CACHE)
 	{
-		struct ccache_t *ccache;
+		struct mod_t *mod;
 		struct moesi_stack_t *newstack;
 
-		ccache = cache_system_get_ccache(stack->core, stack->thread,
+		mod = cache_system_get_mod(stack->core, stack->thread,
 			stack->cache_kind);
-		newstack = moesi_stack_create(moesi_stack_id++, ccache, stack->addr,
+		newstack = moesi_stack_create(moesi_stack_id++, mod, stack->addr,
 			EV_CACHE_SYSTEM_ACCESS_FINISH, stack);
 		esim_schedule_event(stack->cache_access_kind == cache_access_kind_read ?
 			EV_MOESI_LOAD : EV_MOESI_STORE, newstack, 0);
@@ -1410,15 +1404,16 @@ void cache_system_handler(int event, void *data)
 		return;
 	}
 
-	if (event == EV_CACHE_SYSTEM_ACCESS_FINISH) {
-		struct ccache_t *ccache;
+	if (event == EV_CACHE_SYSTEM_ACCESS_FINISH)
+	{
+		struct mod_t *mod;
 
 		stack->pending--;
 		if (stack->pending)
 			return;
 
-		ccache = cache_system_get_ccache(stack->core, stack->thread, stack->cache_kind);
-		ccache_end_access(ccache, stack->addr);
+		mod = cache_system_get_mod(stack->core, stack->thread, stack->cache_kind);
+		__mod_end_access(mod, stack->addr);
 		cache_system_stack_return(stack);
 		return;
 	}
