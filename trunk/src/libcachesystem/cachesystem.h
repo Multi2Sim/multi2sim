@@ -58,11 +58,14 @@ struct dir_lock_t
 	struct moesi_stack_t *lock_queue;
 };
 
+#define DIR_ENTRY_OWNER_NONE  (-1)
+#define DIR_ENTRY_VALID_OWNER(dir_entry)  ((dir_entry)->owner >= 0)
+
 struct dir_entry_t
 {
-	int owner;  /* node owning the block */
-	int sharers;  /* number of 1s in next field */
-	unsigned char sharer[0];  /* bitmap of sharers (must be last field) */
+	int owner;  /* Node owning the block (-1 = No owner)*/
+	int num_sharers;  /* Number of 1s in next field */
+	unsigned char sharer[0];  /* Bitmap of sharers (must be last field) */
 };
 
 struct dir_t
