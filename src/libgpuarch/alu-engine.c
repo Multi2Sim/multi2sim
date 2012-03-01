@@ -108,7 +108,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 			work_item_uop->local_mem_access_count = work_item->local_mem_access_count;
 			for (i = 0; i < work_item->local_mem_access_count; i++)
 			{
-				work_item_uop->local_mem_access_type[i] = work_item->local_mem_access_type[i];
+				work_item_uop->local_mem_access_kind[i] = work_item->local_mem_access_type[i];
 				work_item_uop->local_mem_access_addr[i] = work_item->local_mem_access_addr[i];
 				work_item_uop->local_mem_access_size[i] = work_item->local_mem_access_size[i];
 			}
@@ -249,11 +249,11 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			for (i = 0; i < work_item_uop->local_mem_access_count; i++)
 			{
-				if (work_item_uop->local_mem_access_type[i] != 1)  /* read access */
+				if (work_item_uop->local_mem_access_kind[i] != 1)  /* read access */
 					continue;
 				mod_access(
-					compute_unit->local_memory,
-					1,  /* read access */
+					compute_unit->local_mod,
+					mod_access_read,
 					work_item_uop->local_mem_access_addr[i],
 					work_item_uop->local_mem_access_size[i],
 					&uop->local_mem_witness);
@@ -287,7 +287,7 @@ void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 	
 	/* If instruction writes to local memory, wait till all previous write
 	 * accesses complete, to prevent over-occupancy of write buffers. */
-	if (uop->local_mem_write && compute_unit->local_memory->locked_write_port_count)
+	if (uop->local_mem_write && compute_unit->local_mod->locked_write_port_count)
 		return;
 	
 	/* One more SubWF launched for execution for uop.
@@ -349,9 +349,9 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 				for (i = 0; i < work_item_uop->local_mem_access_count; i++)
 				{
-					if (work_item_uop->local_mem_access_type[i] != 2)  /* write access */
+					if (work_item_uop->local_mem_access_kind[i] != mod_access_write)
 						continue;
-					mod_access(compute_unit->local_memory, 2,
+					mod_access(compute_unit->local_mod, mod_access_write,
 						work_item_uop->local_mem_access_addr[i],
 						work_item_uop->local_mem_access_size[i], NULL);
 				}

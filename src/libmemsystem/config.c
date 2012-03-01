@@ -816,14 +816,19 @@ static void mem_config_read_low_modules(struct config_t *config)
 
 static void mem_config_read_cpu_entries(struct config_t *config)
 {
+	struct mod_t *mod;
+
 	char *section;
 	char *value;
 	char *entry_name;
 
+	char buf[MAX_STRING_SIZE];
+
 	int core;
 	int thread;
 
-	struct entry_t {
+	struct entry_t
+	{
 		char data_mod_name[MAX_STRING_SIZE];
 		char inst_mod_name[MAX_STRING_SIZE];
 	} *entry, *entry_list;
@@ -870,13 +875,20 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 		/* Check bounds */
 		if (core >= cpu_cores || thread >= cpu_threads)
 		{
+			config_var_allow(config, section, "DataModule");
+			config_var_allow(config, section, "InstModule");
 			warning("%s: entry %s ignored.\n%s",
 				mem_config_file_name, entry_name, err_mem_ignored_entry);
 			continue;
 		}
 
-		/* Get entry data module */
+		/* Check that entry was not assigned before */
 		entry = &entry_list[core * cpu_threads + thread];
+		if (entry->data_mod_name[0])
+			fatal("%s: duplicated entry for CPU core %d - thread %d",
+				mem_config_file_name, core, thread);
+
+		/* Get entry data module */
 		value = config_read_string(config, section, "DataModule", "");
 		if (!*value)
 			fatal("%s: entry %s: wrong or missing value for 'DataModule'",
@@ -884,14 +896,15 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 		snprintf(entry->data_mod_name, MAX_STRING_SIZE, "%s", value);
 
 		/* Get entry instruction module */
-		value = config_read_string(config, section, "InstrModule", "");
+		value = config_read_string(config, section, "InstModule", "");
 		if (!*value)
-			fatal("%s: entry %s: wrong of missing value for 'InstrModule'",
+			fatal("%s: entry %s: wrong of missing value for 'InstModule'",
 				mem_config_file_name, entry_name);
 		snprintf(entry->inst_mod_name, MAX_STRING_SIZE, "%s", value);
 	}
 
 	/* Assign entry modules */
+	mem_debug("Assigning CPU entries to memory system:\n");
 	FOREACH_CORE FOREACH_THREAD
 	{
 		/* Check that entry was set */
@@ -899,7 +912,36 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 		if (!*entry->data_mod_name)
 			fatal("%s: no entry given for CPU core %d - thread %d",
 				mem_config_file_name, core, thread);
+
+		/* Look for data module */
+		snprintf(buf, sizeof buf, "Module %s", entry->data_mod_name);
+		if (!config_section_exists(config, buf))
+			fatal("%s: invalid data module for CPU core %d - thread %d",
+				mem_config_file_name, core, thread);
+
+		/* Assign data module */
+		mod = config_read_ptr(config, buf, "ptr", NULL);
+		assert(mod);
+		THREAD.data_mod = mod;
+		mem_debug("\tCPU core %d - thread %d - data -> %s\n",
+			core, thread, mod->name);
+
+		/* Look for instructions module */
+		snprintf(buf, sizeof buf, "Module %s", entry->inst_mod_name);
+		if (!config_section_exists(config, buf))
+			fatal("%s: invalid instructions module for CPU core %d - thread %d",
+				mem_config_file_name, core, thread);
+
+		/* Assign data module */
+		mod = config_read_ptr(config, buf, "ptr", NULL);
+		assert(mod);
+		THREAD.inst_mod = mod;
+		mem_debug("\tCPU core %d - thread %d - instructions -> %s\n",
+			core, thread, mod->name);
 	}
+
+	/* Debug */
+	mem_debug("\n");
 
 	/* Free entry list */
 	free(entry_list);
@@ -908,14 +950,19 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 
 static void mem_config_read_gpu_entries(struct config_t *config)
 {
+	struct mod_t *mod;
+
 	int compute_unit_id;
 
 	char *section;
 	char *value;
 	char *entry_name;
 
-	struct entry_t {
-		char data_mod_name[MAX_STRING_SIZE];
+	char buf[MAX_STRING_SIZE];
+
+	struct entry_t
+	{
+		char mod_name[MAX_STRING_SIZE];
 	} *entry, *entry_list;
 
 	/* Allocate entry list */
@@ -949,29 +996,51 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 		/* Check bounds */
 		if (compute_unit_id >= gpu_num_compute_units)
 		{
+			config_var_allow(config, section, "Module");
 			warning("%s: entry %s ignored.\n%s",
 				mem_config_file_name, entry_name, err_mem_ignored_entry);
 			continue;
 		}
 
-		/* Get entry data module */
+		/* Check that entry was not assigned before */
 		entry = &entry_list[compute_unit_id];
-		value = config_read_string(config, section, "DataModule", "");
+		if (entry->mod_name[0])
+			fatal("%s: duplicated entry for GPU compute unit %d",
+				mem_config_file_name, compute_unit_id);
+
+		/* Get entry data module */
+		value = config_read_string(config, section, "Module", "");
 		if (!*value)
-			fatal("%s: entry %s: wrong or missing value for 'DataModule'",
+			fatal("%s: entry %s: wrong or missing value for 'Module'",
 				mem_config_file_name, entry_name);
-		snprintf(entry->data_mod_name, MAX_STRING_SIZE, "%s", value);
+		snprintf(entry->mod_name, MAX_STRING_SIZE, "%s", value);
 	}
 
 	/* Assign entry modules */
+	mem_debug("Assigning GPU entries to memory system:\n");
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		/* Check that entry was set */
 		entry = &entry_list[compute_unit_id];
-		if (!*entry->data_mod_name)
+		if (!*entry->mod_name)
 			fatal("%s: no entry given for GPU compute unit %d",
 				mem_config_file_name, compute_unit_id);
+
+		/* Look for module */
+		snprintf(buf, sizeof buf, "Module %s", entry->mod_name);
+		if (!config_section_exists(config, buf))
+			fatal("%s: invalid entry for compute unit %d",
+				mem_config_file_name, compute_unit_id);
+
+		/* Assign module */
+		mod = config_read_ptr(config, buf, "ptr", NULL);
+		assert(mod);
+		gpu->compute_units[compute_unit_id]->global_mod = mod;
+		mem_debug("\tGPU compute unit %d -> %s\n", compute_unit_id, mod->name);
 	}
+
+	/* Debug */
+	mem_debug("\n");
 
 	/* Free entry list */
 	free(entry_list);

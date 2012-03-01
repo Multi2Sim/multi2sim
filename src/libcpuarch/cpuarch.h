@@ -63,7 +63,8 @@ extern int cpu_thread_switch_penalty;
 
 /* Recover_kind */
 extern char *cpu_recover_kind_map[];
-extern enum cpu_recover_kind_t {
+extern enum cpu_recover_kind_t
+{
 	cpu_recover_kind_writeback = 0,
 	cpu_recover_kind_commit
 } cpu_recover_kind;
@@ -71,7 +72,8 @@ extern int cpu_recover_penalty;
 
 /* Fetch stage */
 extern char *cpu_fetch_kind_map[];
-extern enum cpu_fetch_kind_t {
+extern enum cpu_fetch_kind_t
+{
 	cpu_fetch_kind_shared = 0,
 	cpu_fetch_kind_timeslice,
 	cpu_fetch_kind_switchonevent
@@ -82,7 +84,8 @@ extern int cpu_decode_width;
 
 /* Dispatch stage */
 extern char *cpu_dispatch_kind_map[];
-extern enum cpu_dispatch_kind_t {
+extern enum cpu_dispatch_kind_t
+{
 	cpu_dispatch_kind_shared = 0,
 	cpu_dispatch_kind_timeslice,
 } cpu_dispatch_kind;
@@ -90,7 +93,8 @@ extern int cpu_dispatch_width;
 
 /* Issue stage */
 extern char *cpu_issue_kind_map[];
-extern enum cpu_issue_kind_t {
+extern enum cpu_issue_kind_t
+{
 	cpu_issue_kind_shared = 0,
 	cpu_issue_kind_timeslice,
 } cpu_issue_kind;
@@ -98,7 +102,8 @@ extern int cpu_issue_width;
 
 /* Commit stage */
 extern char *cpu_commit_kind_map[];
-extern enum cpu_commit_kind_t {
+extern enum cpu_commit_kind_t
+{
 	cpu_commit_kind_shared = 0,
 	cpu_commit_kind_timeslice
 } cpu_commit_kind;
@@ -281,7 +286,8 @@ void uopq_recover(int core, int thread);
  */
 
 extern char *rob_kind_map[];
-extern enum rob_kind_t {
+extern enum rob_kind_t
+{
 	rob_kind_private = 0,
 	rob_kind_shared
 } rob_kind;
@@ -308,7 +314,8 @@ struct uop_t *rob_get(int core, int thread, int index);
  */
 
 extern char *iq_kind_map[];
-extern enum iq_kind_t {
+extern enum iq_kind_t
+{
 	iq_kind_shared = 0,
 	iq_kind_private
 } iq_kind;
@@ -330,7 +337,8 @@ void iq_recover(int core, int thread);
  */
 
 extern char *lsq_kind_map[];
-extern enum lsq_kind_t {
+extern enum lsq_kind_t
+{
 	lsq_kind_shared = 0,
 	lsq_kind_private
 } lsq_kind;
@@ -373,20 +381,22 @@ void eventq_recover(int core, int thread);
 #define RF_MIN_FP_SIZE  (x86_dep_fp_count + X86_UINST_MAX_ODEPS)
 
 extern char *rf_kind_map[];
-extern enum rf_kind_t {
+extern enum rf_kind_t
+{
 	rf_kind_shared = 0,
 	rf_kind_private
 } rf_kind;
 extern int rf_int_size;
 extern int rf_fp_size;
 
-struct phreg_t {
+struct phreg_t
+{
 	int pending;  /* not completed (bit) */
 	int busy;  /* number of mapped logical registers */
 };
 
-struct rf_t {
-
+struct rf_t
+{
 	/* Integer registers */
 	int int_rat[x86_dep_int_count];
 	struct phreg_t *int_phreg;
@@ -427,7 +437,8 @@ void rf_check_integrity(int core, int thread);
  */
 
 extern char *bpred_kind_map[];
-extern enum bpred_kind_t {
+extern enum bpred_kind_t
+{
 	bpred_kind_perfect = 0,
 	bpred_kind_taken,
 	bpred_kind_nottaken,
@@ -471,7 +482,8 @@ uint32_t bpred_btb_next_branch(struct bpred_t *bpred, uint32_t eip, uint32_t bsi
 #define TCACHE_ENTRY_SIZE  (sizeof(struct tcache_entry_t) + sizeof(uint32_t) * tcache_trace_size)
 #define TCACHE_ENTRY(SET, WAY)  ((struct tcache_entry_t *) (((unsigned char *) tcache->entry) + TCACHE_ENTRY_SIZE * ((SET) * tcache_assoc + (WAY))))
 
-struct tcache_entry_t {
+struct tcache_entry_t
+{
 	int counter;  /* lru counter */
 	uint32_t tag;
 	int uop_count, mop_count;
@@ -485,8 +497,8 @@ struct tcache_entry_t {
 	uint32_t mop_array[0];
 };
 
-struct tcache_t {
-	
+struct tcache_t
+{
 	/* Entries (sets * assoc) */
 	struct tcache_entry_t *entry;
 	struct tcache_entry_t *temp;  /* temporary trace */
@@ -616,6 +628,10 @@ struct cpu_thread_t
 	uint32_t fetch_block;  /* Virtual address of last fetched block */
 	uint64_t fetch_access;  /* Cache access id of last instruction cache access */
 	uint64_t fetch_stall_until;  /* Cycle until which fetching is stalled (inclussive) */
+
+	/* Entries to the memory system */
+	struct mod_t *data_mod;  /* Entry for data */
+	struct mod_t *inst_mod;  /* Entry for instructions */
 
 	/* Stats */
 	uint64_t fetched;
