@@ -20,10 +20,7 @@
 #include <mem-system.h>
 #include <config.h>
 #include <misc.h>
-
-
-/* FIXME: remove this dependence, figure out alternative for initialization of compute units.
- * E.g.: pass number of compute units in mem_system_init. Same for CPU cores */
+#include <cpuarch.h>
 #include <gpuarch.h>
 
 
@@ -146,7 +143,7 @@ static char *err_gpu_mem_config_net =
 
 static char *err_gpu_mem_levels =
 	"\tThe path from a cache into main memory exceeds 10 levels of cache.\n"
-	"\tThis might be a symptom of a recursive reference in 'LowCaches'\n"
+	"\tThis might be a symptom of a recursive reference in 'LowModules'\n"
 	"\tlists. If you really intend to have a high number of cache levels,\n"
 	"\tincrease variable GPU_MEM_MAX_LEVELS in '" __FILE__ "'\n";
 
@@ -154,9 +151,9 @@ static char *err_gpu_mem_block_size =
 	"\tBlock size in a cache must be greater or equal than its lower-level\n"
 	"\tcache for correct behavior of directories and coherence protocols.\n";
 
-static char *err_gpu_mem_ignored_node =
-	"\tThis entry in the file will be ignored, because the value for variable\n"
-	"\t'ComputeUnit' refers to a non-existent compute unit.\n";
+static char *err_mem_ignored_entry =
+	"\tThis entry in the file will be ignored, because it refers to a\n"
+	"\tnon-existent CPU core/thread or GPU compute unit.\n";
 
 static char *err_gpu_mem_connect =
 	"\tAn external network is used that does not provide connectivity between\n"
@@ -774,7 +771,7 @@ static void mem_config_read_low_modules(struct config_t *config)
 		assert(config_section_exists(config, buf));
 
 		/* Low module name list */
-		low_mod_name_list = config_read_string(config, buf, "LowCaches", "");
+		low_mod_name_list = config_read_string(config, buf, "LowModules", "");
 		if (!*low_mod_name_list)
 			continue;
 
@@ -791,7 +788,7 @@ static void mem_config_read_low_modules(struct config_t *config)
 			/* Check valid module name */
 			snprintf(buf, sizeof buf, "Module %s", low_mod_name);
 			if (!config_section_exists(config, buf))
-				fatal("%s: %s: invalid module name in 'LowCaches'.\n%s",
+				fatal("%s: %s: invalid module name in 'LowModules'.\n%s",
 					mem_config_file_name, mod->name,
 					err_gpu_mem_config_note);
 
@@ -817,71 +814,167 @@ static void mem_config_read_low_modules(struct config_t *config)
 }
 
 
-static void mem_config_read_nodes(struct config_t *config)
+static void mem_config_read_cpu_entries(struct config_t *config)
 {
 	char *section;
-	int compute_unit_id;
-	struct gpu_compute_unit_t *compute_unit;
-
-	char buf[MAX_STRING_SIZE];
-	char *node_name;
 	char *value;
+	char *entry_name;
 
-	/* Nodes */
-	mem_debug("Creating access points to memory hierarchy:\n");
+	int core;
+	int thread;
+
+	struct entry_t {
+		char data_mod_name[MAX_STRING_SIZE];
+		char inst_mod_name[MAX_STRING_SIZE];
+	} *entry, *entry_list;
+
+	/* Allocate entry list */
+	entry_list = calloc(cpu_cores * cpu_threads, sizeof(struct entry_t));
+	if (!entry_list)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Read memory system entries */
 	for (section = config_section_first(config); section; section = config_section_next(config))
 	{
 		/* Section is a node */
-		if (strncasecmp(section, "Node ", 5))
+		if (strncasecmp(section, "Entry ", 6))
 			continue;
-		node_name = section + 5;
 
-		/* Get compute unit */
-		if (!config_var_exists(config, section, "ComputeUnit"))
-			fatal("%s: node %s: variable 'ComputeUnit' not specified.\n%s",
-				mem_config_file_name, node_name, err_gpu_mem_config_note);
-		compute_unit_id = config_read_int(config, section, "ComputeUnit", 0);
-		if (compute_unit_id < 0)
-			fatal("%s: node %s: invalid value for variable 'ComputeUnit'.\n%s",
-				mem_config_file_name, node_name, err_gpu_mem_config_note);
-		if (compute_unit_id >= gpu_num_compute_units)
+		/* Name for the entry */
+		entry_name = section + 6;
+		if (!*entry_name)
+			fatal("%s: entry %s: bad name", mem_config_file_name, entry_name);
+
+		/* Get type */
+		value = config_read_string(config, section, "Type", "");
+		if (strcasecmp(value, "CPU") && strcasecmp(value, "GPU"))
+			fatal("%s: entry %s: wrong or missing value for 'Type'",
+				mem_config_file_name, entry_name);
+
+		/* Only handle CPU */
+		if (strcasecmp(value, "CPU"))
+			continue;
+
+		/* Read core */
+		core = config_read_int(config, section, "Core", -1);
+		if (core < 0)
+			fatal("%s: entry %s: wrong or missing value for 'Core'",
+				mem_config_file_name, entry_name);
+
+		/* Read thread */
+		thread = config_read_int(config, section, "Thread", -1);
+		if (thread < 0)
+			fatal("%s: entry %s: wrong or missing value for 'Thread'",
+				mem_config_file_name, entry_name);
+
+		/* Check bounds */
+		if (core >= cpu_cores || thread >= cpu_threads)
 		{
-			warning("%s: node %s: section ignored.\n%s",
-				mem_config_file_name, node_name, err_gpu_mem_ignored_node);
-			config_var_allow(config, section, "DataCache");
+			warning("%s: entry %s ignored.\n%s",
+				mem_config_file_name, entry_name, err_mem_ignored_entry);
 			continue;
 		}
-		compute_unit = gpu->compute_units[compute_unit_id];
 
-		/* Entry module for node */
-		value = config_read_string(config, section, "DataCache", "");
+		/* Get entry data module */
+		entry = &entry_list[core * cpu_threads + thread];
+		value = config_read_string(config, section, "DataModule", "");
 		if (!*value)
-			fatal("%s: node '%s': variable 'DataCache' not specified.\n%s",
-				mem_config_file_name, node_name, err_gpu_mem_config_note);
+			fatal("%s: entry %s: wrong or missing value for 'DataModule'",
+				mem_config_file_name, entry_name);
+		snprintf(entry->data_mod_name, MAX_STRING_SIZE, "%s", value);
 
-		/* Get module */
-		snprintf(buf, sizeof buf, "Module %s", value);
-		if (!config_section_exists(config, buf))
-			fatal("%s: node '%s': invalid cache name for variable 'DataCache'.\n%s",
-				mem_config_file_name, node_name, err_gpu_mem_config_note);
-
-		/* Assign entry */
-		compute_unit->data_cache = config_read_ptr(config, buf, "ptr", NULL);
-		assert(compute_unit->data_cache);
-		mem_debug("\tcu[%d] -> %s\n", compute_unit_id,
-			compute_unit->data_cache->name);
+		/* Get entry instruction module */
+		value = config_read_string(config, section, "InstrModule", "");
+		if (!*value)
+			fatal("%s: entry %s: wrong of missing value for 'InstrModule'",
+				mem_config_file_name, entry_name);
+		snprintf(entry->inst_mod_name, MAX_STRING_SIZE, "%s", value);
 	}
-	mem_debug("\n");
 
-	/* Check that all compute units have an entry to the global memory hierarchy */
+	/* Assign entry modules */
+	FOREACH_CORE FOREACH_THREAD
+	{
+		/* Check that entry was set */
+		entry = &entry_list[core * cpu_threads + thread];
+		if (!*entry->data_mod_name)
+			fatal("%s: no entry given for CPU core %d - thread %d",
+				mem_config_file_name, core, thread);
+	}
+
+	/* Free entry list */
+	free(entry_list);
+}
+
+
+static void mem_config_read_gpu_entries(struct config_t *config)
+{
+	int compute_unit_id;
+
+	char *section;
+	char *value;
+	char *entry_name;
+
+	struct entry_t {
+		char data_mod_name[MAX_STRING_SIZE];
+	} *entry, *entry_list;
+
+	/* Allocate entry list */
+	entry_list = calloc(gpu_num_compute_units, sizeof(struct entry_t));
+	if (!entry_list)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Read memory system entries */
+	for (section = config_section_first(config); section; section = config_section_next(config))
+	{
+		/* Section is a node */
+		if (strncasecmp(section, "Entry ", 6))
+			continue;
+
+		/* Name for the entry */
+		entry_name = section + 6;
+		if (!*entry_name)
+			fatal("%s: entry %s: bad name", mem_config_file_name, entry_name);
+
+		/* Only handle GPU */
+		value = config_read_string(config, section, "Type", "");
+		if (strcasecmp(value, "GPU"))
+			continue;
+
+		/* Read compute unit */
+		compute_unit_id = config_read_int(config, section, "ComputeUnit", -1);
+		if (compute_unit_id < 0)
+			fatal("%s: entry %s: wrong or missing value for 'ComputeUnit'",
+				mem_config_file_name, entry_name);
+
+		/* Check bounds */
+		if (compute_unit_id >= gpu_num_compute_units)
+		{
+			warning("%s: entry %s ignored.\n%s",
+				mem_config_file_name, entry_name, err_mem_ignored_entry);
+			continue;
+		}
+
+		/* Get entry data module */
+		entry = &entry_list[compute_unit_id];
+		value = config_read_string(config, section, "DataModule", "");
+		if (!*value)
+			fatal("%s: entry %s: wrong or missing value for 'DataModule'",
+				mem_config_file_name, entry_name);
+		snprintf(entry->data_mod_name, MAX_STRING_SIZE, "%s", value);
+	}
+
+	/* Assign entry modules */
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = gpu->compute_units[compute_unit_id];
-		if (!compute_unit->data_cache)
-			fatal("%s: missing entry point for compute unit %d.\n%s",
-				mem_config_file_name, compute_unit_id,
-				err_gpu_mem_config_note);
+		/* Check that entry was set */
+		entry = &entry_list[compute_unit_id];
+		if (!*entry->data_mod_name)
+			fatal("%s: no entry given for GPU compute unit %d",
+				mem_config_file_name, compute_unit_id);
 	}
+
+	/* Free entry list */
+	free(entry_list);
 }
 
 
@@ -1053,8 +1146,9 @@ void mem_system_config_read(void)
 	/* Read low level caches */
 	mem_config_read_low_modules(config);
 
-	/* Read nodes */
-	mem_config_read_nodes(config);
+	/* Read memory system entries */
+	mem_config_read_cpu_entries(config);
+	mem_config_read_gpu_entries(config);
 
 	/* Create switches in internal networks */
 	mem_config_create_switches(config);

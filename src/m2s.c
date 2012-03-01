@@ -924,13 +924,16 @@ int main(int argc, char **argv)
 	ke_init();
 	esim_init();
 	net_init();
-	mem_system_init();
 
 	/* Initialization for detailed simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed)
 		cpu_init();
 	if (gpu_sim_kind == gpu_sim_kind_detailed)
 		gpu_init();
+
+	/* Memory hierarchy initialization, done after we initialized CPU cores
+	 * and GPU compute units. */
+	mem_system_init();
 
 	/* Load programs */
 	cpu_load_progs(argc, argv, ctxconfig_file_name);
@@ -950,6 +953,9 @@ int main(int argc, char **argv)
 	/* Dump statistics summary */
 	sim_stats_summary();
 
+	/* Finalization of memory system */
+	mem_system_done();
+
 	/* Finalization of detailed CPU simulation */
 	if (cpu_sim_kind == cpu_sim_kind_detailed)
 	{
@@ -962,7 +968,6 @@ int main(int argc, char **argv)
 		gpu_done();
 
 	/* Finalization */
-	mem_system_done();
 	net_done();
 	esim_done();
 	ke_done();
