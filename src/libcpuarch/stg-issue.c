@@ -37,7 +37,7 @@ static int issue_sq(int core, int thread, int quant)
 		if (store->in_rob)
 			break;
 		if (!cache_system_can_access(core, thread, cache_kind_data,
-			mod_access_kind_write, store->physical_address))
+			mod_access_write, store->physical_address))
 			break;
 
 		/* Store can be issued. */
@@ -95,7 +95,7 @@ static int issue_lq(int core, int thread, int quant)
 		}
 		load->ready = 1;
 		if (!cache_system_can_access(core, thread, cache_kind_data,
-			mod_access_kind_read, load->physical_address))
+			mod_access_read, load->physical_address))
 		{
 			linked_list_next(lq);
 			continue;

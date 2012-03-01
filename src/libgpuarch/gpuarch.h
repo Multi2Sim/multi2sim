@@ -110,7 +110,7 @@ struct gpu_work_item_uop_t
 
 	/* Local memory access */
 	int local_mem_access_count;
-	int local_mem_access_type[MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
+	enum mod_access_kind_t local_mem_access_kind[MAX_LOCAL_MEM_ACCESSES_PER_INST];
 	uint32_t local_mem_access_addr[MAX_LOCAL_MEM_ACCESSES_PER_INST];
 	uint32_t local_mem_access_size[MAX_LOCAL_MEM_ACCESSES_PER_INST];
 };
@@ -238,9 +238,9 @@ struct gpu_compute_unit_t
 	struct gpu_compute_unit_t *ready_prev, *ready_next;
 	struct gpu_compute_unit_t *busy_prev, *busy_next;
 
-	/* Memory */
-	struct mod_t *data_cache;  /* Entry point to global memory */
-	struct mod_t *local_memory;  /* Local */
+	/* Entry points to memory hierarchy */
+	struct mod_t *global_mod;  /* Global memory */
+	struct mod_t *local_mod;  /* Local memory */
 
 	/* List of currently mapped work-groups */
 	int work_group_count;

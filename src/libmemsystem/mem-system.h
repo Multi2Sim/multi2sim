@@ -224,10 +224,10 @@ struct mod_bank_t
 /* Access type */
 enum mod_access_kind_t
 {
-	mod_access_kind_invalid = 0,
-	mod_access_kind_read,
-	mod_access_kind_write,
-	mod_access_kind_nc_write
+	mod_access_invalid = 0,
+	mod_access_read,
+	mod_access_write,
+	mod_access_nc_write
 };
 
 /* Module types */
