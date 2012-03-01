@@ -228,8 +228,8 @@ struct ccache_access_t *__mod_start_access(struct mod_t *mod,
 	 * If no alias found, a new entry and id are created. */
 	alias = __mod_find_access(mod, addr);
 	if (alias) {
-		assert(access->access_kind == mod_access_kind_read);
-		assert(alias->access_kind == mod_access_kind_read);
+		assert(access->access_kind == mod_access_read);
+		assert(alias->access_kind == mod_access_read);
 		access->next = alias->next;
 		alias->next = access;
 		access->id = alias->id;
@@ -237,7 +237,7 @@ struct ccache_access_t *__mod_start_access(struct mod_t *mod,
 		linked_list_out(mod->access_list);
 		linked_list_insert(mod->access_list, access);
 		access->id = ++access_counter;
-		access_kind == mod_access_kind_read ? mod->pending_reads++
+		access_kind == mod_access_read ? mod->pending_reads++
 			: mod->pending_writes++;
 		assert(mod->pending_reads <= mod->read_port_count);
 		assert(mod->pending_writes <= mod->write_port_count);
@@ -267,7 +267,7 @@ void __mod_end_access(struct mod_t *mod, uint32_t addr)
 	}
 
 	/* Free access and all aliases. */
-	access->access_kind == mod_access_kind_read ? mod->pending_reads--
+	access->access_kind == mod_access_read ? mod->pending_reads--
 		: mod->pending_writes--;
 	assert(mod->pending_reads >= 0);
 	assert(mod->pending_writes >= 0);
@@ -1159,14 +1159,14 @@ int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
 
 	/* If there is no matching access, we just need a free port. */
 	if (!access)
-		return access_kind == mod_access_kind_read ?
+		return access_kind == mod_access_read ?
 			mod->pending_reads < mod->read_port_count :
 			mod->pending_writes < mod->write_port_count;
 	
 	/* If either the matching or the current access is a write,
 	 * concurrency is not allowed. */
-	if (access_kind == mod_access_kind_write ||
-		access->access_kind == mod_access_kind_write)
+	if (access_kind == mod_access_write ||
+		access->access_kind == mod_access_write)
 		return 0;
 	
 	/* Both current and matching accesses are loads, so the current
@@ -1216,8 +1216,8 @@ uint64_t cache_system_write(int core, int thread, enum cache_kind_t cache_kind,
 {
 	assert(cache_kind == cache_kind_data);
 	assert(cache_system_can_access(core, thread, cache_kind,
-		mod_access_kind_write, addr));
-	return cache_system_access(core, thread, cache_kind, mod_access_kind_write,
+		mod_access_write, addr));
+	return cache_system_access(core, thread, cache_kind, mod_access_write,
 		addr, eventq, eventq_item);
 }
 
@@ -1226,8 +1226,8 @@ uint64_t cache_system_read(int core, int thread, enum cache_kind_t cache_kind,
 	uint32_t addr, struct linked_list_t *eventq, void *eventq_item)
 {
 	assert(cache_system_can_access(core, thread, cache_kind,
-		mod_access_kind_read, addr));
-	return cache_system_access(core, thread, cache_kind, mod_access_kind_read,
+		mod_access_read, addr));
+	return cache_system_access(core, thread, cache_kind, mod_access_read,
 		addr, eventq, eventq_item);
 }
 
@@ -1254,7 +1254,7 @@ void cache_system_handler(int event, void *data)
 			stack->cache_kind);
 		new_stack = mod_stack_create(mod_stack_id, mod, stack->addr,
 			EV_CACHE_SYSTEM_ACCESS_FINISH, stack);
-		esim_schedule_event(stack->access_kind == mod_access_kind_read ?
+		esim_schedule_event(stack->access_kind == mod_access_read ?
 			EV_MOD_LOAD : EV_MOD_STORE, new_stack, 0);
 		return;
 	}
