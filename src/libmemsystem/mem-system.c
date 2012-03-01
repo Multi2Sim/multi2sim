@@ -18,6 +18,8 @@
 
 
 #include <mem-system.h>
+#include <cpuarch.h>
+#include <gpuarch.h>
 
 
 /*
@@ -119,7 +121,7 @@ void mem_system_init(void)
 	EV_MOD_INVALIDATE_FINISH = esim_register_event(mod_handler_invalidate);
 
 	/* Read cache configuration file */
-	//mem_system_config_read();  /* FIXME: not ready for this yet */
+	mem_system_config_read();
 
 	/* Initialize MMU */
 	mmu_init();
