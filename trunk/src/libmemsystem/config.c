@@ -161,15 +161,24 @@ static char *err_gpu_mem_connect =
 	"\tnecessary links in the network configuration file.\n";
 
 
-static void mem_config_default(struct config_t *config)
+static void mem_config_cpu_default(struct config_t *config)
+{
+}
+
+
+static void mem_config_gpu_default(struct config_t *config)
 {
 	char section[MAX_STRING_SIZE];
 	char str[MAX_STRING_SIZE];
 
 	int compute_unit_id;
 
+	/* Do not create GPU memory hierarchy if we doing GPU functional simulation */
+	if (gpu_sim_kind == gpu_sim_kind_functional)
+		return;
+
 	/* Cache geometry for L1 */
-	strcpy(section, "CacheGeometry geo-l1");
+	strcpy(section, "CacheGeometry gpu-geo-l1");
 	config_write_int(config, section, "Sets", 16);
 	config_write_int(config, section, "Assoc", 2);
 	config_write_int(config, section, "BlockSize", 256);
@@ -180,7 +189,7 @@ static void mem_config_default(struct config_t *config)
 	config_write_int(config, section, "WritePorts", 2);
 
 	/* Cache geometry for L2 */
-	strcpy(section, "CacheGeometry geo-l2");
+	strcpy(section, "CacheGeometry gpu-geo-l2");
 	config_write_int(config, section, "Sets", 64);
 	config_write_int(config, section, "Assoc", 4);
 	config_write_int(config, section, "BlockSize", 256);
@@ -191,33 +200,33 @@ static void mem_config_default(struct config_t *config)
 	config_write_int(config, section, "WritePorts", 2);
 
 	/* L1 caches and nodes */
-	/* FIXME: design this without dependence with gpuarch/cpuarch? */
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		snprintf(section, sizeof section, "Module l1-%d", compute_unit_id);
+		snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
 		config_write_string(config, section, "Type", "Cache");
-		config_write_string(config, section, "Geometry", "geo-l1");
-		config_write_string(config, section, "LowNetwork", "net-l1-l2");
-		config_write_string(config, section, "LowCache", "l2");
+		config_write_string(config, section, "Geometry", "gpu-geo-l1");
+		config_write_string(config, section, "LowNetwork", "gpu-net-l1-l2");
+		config_write_string(config, section, "LowModules", "gpu-l2");
 
-		snprintf(section, sizeof section, "Node cu-%d", compute_unit_id);
-		snprintf(str, sizeof str, "l1-%d", compute_unit_id);
+		snprintf(section, sizeof section, "Entry gpu-cu-%d", compute_unit_id);
+		snprintf(str, sizeof str, "gpu-l1-%d", compute_unit_id);
+		config_write_string(config, section, "Type", "GPU");
 		config_write_int(config, section, "ComputeUnit", compute_unit_id);
-		config_write_string(config, section, "DataCache", str);
+		config_write_string(config, section, "Module", str);
 	}
 
 	/* L2 cache */
-	snprintf(section, sizeof section, "Module l2");
+	snprintf(section, sizeof section, "Module gpu-l2");
 	config_write_string(config, section, "Type", "Cache");
-	config_write_string(config, section, "Geometry", "geo-l2");
-	config_write_string(config, section, "HighNetwork", "net-l1-l2");
-	config_write_string(config, section, "LowNetwork", "net-l2-gm");
-	config_write_string(config, section, "LowCache", "GlobalMemory");
+	config_write_string(config, section, "Geometry", "gpu-geo-l2");
+	config_write_string(config, section, "HighNetwork", "gpu-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "gpu-net-l2-gm");
+	config_write_string(config, section, "LowModules", "gpu-gm");
 
 	/* Global memory */
-	snprintf(section, sizeof section, "Module GlobalMemory");
+	snprintf(section, sizeof section, "Module gpu-gm");
 	config_write_string(config, section, "Type", "MainMemory");
-	config_write_string(config, section, "HighNetwork", "net-l2-gm");
+	config_write_string(config, section, "HighNetwork", "gpu-net-l2-gm");
 	config_write_int(config, section, "BlockSize", 256);
 	config_write_int(config, section, "Latency", 100);
 	config_write_int(config, section, "Banks", 8);
@@ -225,13 +234,13 @@ static void mem_config_default(struct config_t *config)
 	config_write_int(config, section, "WritePorts", 2);
 
 	/* Network connecting L1 caches and L2 */
-	snprintf(section, sizeof section, "Network net-l1-l2");
+	snprintf(section, sizeof section, "Network gpu-net-l1-l2");
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);
 
 	/* Network connecting L2 cache and global memory */
-	snprintf(section, sizeof section, "Network net-l2-gm");
+	snprintf(section, sizeof section, "Network gpu-net-l2-gm");
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);
@@ -833,6 +842,10 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 		char inst_mod_name[MAX_STRING_SIZE];
 	} *entry, *entry_list;
 
+	/* Not if we are doing CPU functional simulation */
+	if (cpu_sim_kind == cpu_sim_kind_functional)
+		return;
+
 	/* Allocate entry list */
 	entry_list = calloc(cpu_cores * cpu_threads, sizeof(struct entry_t));
 	if (!entry_list)
@@ -964,6 +977,10 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	{
 		char mod_name[MAX_STRING_SIZE];
 	} *entry, *entry_list;
+
+	/* Not if we are doing GPU functional simulation */
+	if (gpu_sim_kind == gpu_sim_kind_functional)
+		return;
 
 	/* Allocate entry list */
 	entry_list = calloc(gpu_num_compute_units, sizeof(struct entry_t));
@@ -1199,12 +1216,19 @@ void mem_system_config_read(void)
 {
 	struct config_t *config;
 
-	/* Load cache configuration file */
+	/* Load memory system configuration file */
 	config = config_create(mem_config_file_name);
 	if (!*mem_config_file_name)
-		mem_config_default(config);
-	else if (!config_load(config))
-		fatal("%s: cannot read memory system configuration file", mem_config_file_name);
+	{
+		mem_config_cpu_default(config);
+		mem_config_gpu_default(config);
+	}
+	else
+	{
+		if (!config_load(config))
+			fatal("%s: cannot read memory system configuration file",
+				mem_config_file_name);
+	}
 
 	/* Read networks */
 	mem_config_read_networks(config);
