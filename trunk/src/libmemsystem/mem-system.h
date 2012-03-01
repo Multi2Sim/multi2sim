@@ -530,8 +530,9 @@ extern int mem_debug_category;
 
 struct mem_system_t
 {
-	struct list_t *net_list;
+	/* List of modules and networks */
 	struct list_t *mod_list;
+	struct list_t *net_list;
 };
 
 extern struct mem_system_t *mem_system;

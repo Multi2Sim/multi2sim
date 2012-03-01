@@ -286,6 +286,11 @@ void net_done(void)
 
 struct net_t *net_find(char *name)
 {
+	/* No network list */
+	if (!net_list)
+		return NULL;
+
+	/* Find network in list */
 	return hash_table_get(net_list, name);
 }
 
