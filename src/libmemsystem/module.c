@@ -23,16 +23,32 @@
  * Private Functions
  */
 
-#if 0
-static void mod_access_insert(struct mod_t *mod, struct mod_stack_t *stack)
+// FIXME - static
+void mod_access_insert(struct mod_t *mod, struct mod_stack_t *stack)
 {
+	int index;
+
+	/* Insert in access list */
+	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, access, stack);
+
+	/* Insert in access hash table */
+	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
+	DOUBLE_LINKED_LIST_INSERT_TAIL(&mod->access_hash_table[index], bucket, stack);
 }
 
 
-static void mod_access_extract(struct mod_t *mod, struct mod_stack_t *stack)
+// FIXME - static
+void mod_access_extract(struct mod_t *mod, struct mod_stack_t *stack)
 {
+	int index;
+
+	/* Remove from access list */
+	DOUBLE_LINKED_LIST_REMOVE(mod, access, stack);
+
+	/* Remove from hash table */
+	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
+	DOUBLE_LINKED_LIST_REMOVE(&mod->access_hash_table[index], bucket, stack);
 }
-#endif
 
 
 
@@ -118,18 +134,33 @@ void mod_dump(struct mod_t *mod, FILE *f)
 
 /* Access a memory module.
  * Variable 'witness', if specified, will be increased when the access completes. */
-void mod_access(struct mod_t *mod, int access, uint32_t addr, uint32_t size, int *witness_ptr)
+void mod_access(struct mod_t *mod, int mod_type,
+	enum mod_access_kind_t access_kind,
+	uint32_t addr, int *witness_ptr)
 {
 	struct mod_stack_t *stack;
 	int event;
 
+	/* Create module stack with new ID */
 	mod_stack_id++;
 	stack = mod_stack_create(mod_stack_id,
 		mod, addr, ESIM_EV_NONE, NULL);
 	stack->witness_ptr = witness_ptr;
-	assert(access == 1 || access == 2);
-	event = access == 1 ? EV_MOD_GPU_READ : EV_MOD_GPU_WRITE;
-	esim_schedule_event(event, stack, 0);
+
+	/* FIXME - Select CPU/GPU event */
+	if (mod_type == 1)
+	{
+		event = access_kind == mod_access_read ?
+			EV_MOD_LOAD : EV_MOD_STORE;
+	}
+	else if (mod_type == 2)
+	{
+		event = access_kind == mod_access_read ?
+			EV_MOD_GPU_LOAD : EV_MOD_GPU_STORE;
+	}
+
+	/* Schedule */
+	esim_execute_event(event, stack);
 }
 
 
