@@ -54,6 +54,12 @@ void mem_system_init(void)
 	mem_system->mod_list = list_create();
 
 	/* GPU memory event-driven simulation */
+	EV_MOD_GPU_LOAD = esim_register_event(mod_handler_gpu_load);
+	EV_MOD_GPU_LOAD_FINISH = esim_register_event(mod_handler_gpu_load);
+
+	EV_MOD_GPU_STORE = esim_register_event(mod_handler_gpu_store);
+	EV_MOD_GPU_STORE_FINISH = esim_register_event(mod_handler_gpu_store);
+
 	EV_MOD_GPU_READ = esim_register_event(mod_handler_gpu_read);
 	EV_MOD_GPU_READ_REQUEST = esim_register_event(mod_handler_gpu_read);
 	EV_MOD_GPU_READ_REQUEST_RECEIVE = esim_register_event(mod_handler_gpu_read);
@@ -71,10 +77,6 @@ void mem_system_init(void)
 	EV_MOD_GPU_WRITE_FINISH = esim_register_event(mod_handler_gpu_write);
 
 	/* CPU memory event-driven simulation */
-	EV_MOD_FIND_AND_LOCK = esim_register_event(mod_handler_find_and_lock);
-	EV_MOD_FIND_AND_LOCK_ACTION = esim_register_event(mod_handler_find_and_lock);
-	EV_MOD_FIND_AND_LOCK_FINISH = esim_register_event(mod_handler_find_and_lock);
-
 	EV_MOD_LOAD = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_ACTION = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_MISS = esim_register_event(mod_handler_load);
@@ -83,6 +85,10 @@ void mem_system_init(void)
 	EV_MOD_STORE = esim_register_event(mod_handler_store);
 	EV_MOD_STORE_ACTION = esim_register_event(mod_handler_store);
 	EV_MOD_STORE_FINISH = esim_register_event(mod_handler_store);
+
+	EV_MOD_FIND_AND_LOCK = esim_register_event(mod_handler_find_and_lock);
+	EV_MOD_FIND_AND_LOCK_ACTION = esim_register_event(mod_handler_find_and_lock);
+	EV_MOD_FIND_AND_LOCK_FINISH = esim_register_event(mod_handler_find_and_lock);
 
 	EV_MOD_EVICT = esim_register_event(mod_handler_evict);
 	EV_MOD_EVICT_INVALID = esim_register_event(mod_handler_evict);
