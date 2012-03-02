@@ -32,11 +32,13 @@ int EV_MOD_FIND_AND_LOCK_ACTION;
 int EV_MOD_FIND_AND_LOCK_FINISH;
 
 int EV_MOD_LOAD;
+int EV_MOD_LOAD_LOCK;
 int EV_MOD_LOAD_ACTION;
 int EV_MOD_LOAD_MISS;
 int EV_MOD_LOAD_FINISH;
 
 int EV_MOD_STORE;
+int EV_MOD_STORE_LOCK;
 int EV_MOD_STORE_ACTION;
 int EV_MOD_STORE_FINISH;
 
@@ -81,6 +83,219 @@ int EV_MOD_INVALIDATE_FINISH;
 
 
 /* MOESI Protocol */
+
+void mod_handler_load(int event, void *data)
+{
+	struct mod_stack_t *stack = data;
+	struct mod_stack_t *new_stack;
+
+	struct mod_t *mod = stack->mod;
+
+
+	if (event == EV_MOD_LOAD)
+	{
+		mem_debug("%lld %lld 0x%x %s load\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+
+		/* Keep access in module access list */
+		mod_access_insert(mod, stack);
+
+		/* Next event */
+		esim_schedule_event(EV_MOD_LOAD_LOCK, stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_LOAD_LOCK)
+	{
+		mem_debug("  %lld %lld 0x%x %s load lock\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+
+		/* Call find and lock */
+		new_stack = mod_stack_create(stack->id, mod, stack->addr,
+			EV_MOD_LOAD_ACTION, stack);
+		new_stack->blocking = 0;
+		new_stack->read = 1;
+		new_stack->retry = stack->retry;
+		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_LOAD_ACTION)
+	{
+		int retry_lat;
+		mem_debug("  %lld %lld 0x%x %s load action\n", esim_cycle, stack->id,
+			stack->tag, mod->name);
+
+		/* Error locking */
+		if (stack->err)
+		{
+			mod->read_retries++;
+			retry_lat = RETRY_LATENCY;
+			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			stack->retry = 1;
+			esim_schedule_event(EV_MOD_LOAD_LOCK, stack, retry_lat);
+			return;
+		}
+
+		/* Hit */
+		if (stack->state)
+		{
+			esim_schedule_event(EV_MOD_LOAD_FINISH, stack, 0);
+			return;
+		}
+
+		/* Miss */
+		new_stack = mod_stack_create(stack->id, mod, stack->tag,
+			EV_MOD_LOAD_MISS, stack);
+		new_stack->target_mod = __mod_get_low_mod(mod);
+		esim_schedule_event(EV_MOD_READ_REQUEST, new_stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_LOAD_MISS)
+	{
+		int retry_lat;
+		mem_debug("  %lld %lld 0x%x %s load miss\n", esim_cycle, stack->id,
+			stack->tag, mod->name);
+
+		/* Error on read request. Unlock block and retry load. */
+		if (stack->err)
+		{
+			mod->read_retries++;
+			retry_lat = RETRY_LATENCY;
+			dir_lock_unlock(stack->dir_lock);
+			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			stack->retry = 1;
+			esim_schedule_event(EV_MOD_LOAD_LOCK, stack, retry_lat);
+			return;
+		}
+
+		/* Set block state to excl/shared depending on return var 'shared'.
+		 * Also set the tag of the block. */
+		cache_set_block(mod->cache, stack->set, stack->way, stack->tag,
+			stack->shared ? cache_block_shared : cache_block_exclusive);
+
+		/* Continue */
+		esim_schedule_event(EV_MOD_LOAD_FINISH, stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_LOAD_FINISH)
+	{
+		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
+			stack->tag, mod->name);
+
+		/* Unlock, and return. */
+		dir_lock_unlock(stack->dir_lock);
+		mod_access_extract(mod, stack);
+		mod_stack_return(stack);
+		return;
+	}
+
+	abort();
+}
+
+
+void mod_handler_store(int event, void *data)
+{
+	struct mod_stack_t *stack = data;
+	struct mod_stack_t *new_stack;
+
+	struct mod_t *mod = stack->mod;
+
+
+	if (event == EV_MOD_STORE)
+	{
+		mem_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+
+		/* Keep access in module access list */
+		mod_access_insert(mod, stack);
+
+		/* Next event */
+		esim_schedule_event(EV_MOD_STORE_LOCK, stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_STORE_LOCK)
+	{
+		mem_debug("  %lld %lld 0x%x %s store lock\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+
+		/* Call find and lock */
+		new_stack = mod_stack_create(stack->id, mod, stack->addr,
+			EV_MOD_STORE_ACTION, stack);
+		new_stack->blocking = 0;
+		new_stack->read = 0;
+		new_stack->retry = stack->retry;
+		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_STORE_ACTION)
+	{
+		int retry_lat;
+		mem_debug("  %lld %lld 0x%x %s store action\n", esim_cycle, stack->id,
+			stack->tag, mod->name);
+
+		/* Error locking */
+		if (stack->err)
+		{
+			mod->write_retries++;
+			retry_lat = RETRY_LATENCY;
+			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			stack->retry = 1;
+			esim_schedule_event(EV_MOD_STORE, stack, retry_lat);
+			return;
+		}
+
+		/* Hit - state=M/E */
+		if (stack->state == cache_block_modified ||
+			stack->state == cache_block_exclusive)
+		{
+			esim_schedule_event(EV_MOD_STORE_FINISH, stack, 0);
+			return;
+		}
+
+		/* Miss - state=O/S/I */
+		new_stack = mod_stack_create(stack->id, mod, stack->tag,
+			EV_MOD_STORE_FINISH, stack);
+		new_stack->target_mod = __mod_get_low_mod(mod);
+		esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_STORE_FINISH)
+	{
+		int retry_lat;
+		mem_debug("%lld %lld 0x%x %s store finish\n", esim_cycle, stack->id,
+			stack->tag, mod->name);
+
+		/* Error in write request, unlock block and retry store. */
+		if (stack->err)
+		{
+			mod->write_retries++;
+			retry_lat = RETRY_LATENCY;
+			dir_lock_unlock(stack->dir_lock);
+			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
+			stack->retry = 1;
+			esim_schedule_event(EV_MOD_STORE, stack, retry_lat);
+			return;
+		}
+
+		/* Update tag/state, unlock, and return. */
+		if (mod->cache)
+			cache_set_block(mod->cache, stack->set, stack->way,
+				stack->tag, cache_block_modified);
+		dir_lock_unlock(stack->dir_lock);
+		mod_access_extract(mod, stack);
+		mod_stack_return(stack);
+		return;
+	}
+
+	abort();
+}
+
 
 void mod_handler_find_and_lock(int event, void *data)
 {
@@ -248,191 +463,6 @@ void mod_handler_find_and_lock(int event, void *data)
 		ret->state = stack->state;
 		ret->tag = stack->tag;
 		ret->dir_lock = stack->dir_lock;
-		mod_stack_return(stack);
-		return;
-	}
-
-	abort();
-}
-
-
-void mod_handler_load(int event, void *data)
-{
-	struct mod_stack_t *stack = data;
-	struct mod_stack_t *new_stack;
-
-	struct mod_t *mod = stack->mod;
-
-
-	if (event == EV_MOD_LOAD)
-	{
-		mem_debug("%lld %lld 0x%x %s load\n", esim_cycle, stack->id,
-			stack->addr, mod->name);
-
-		/* Call find and lock */
-		new_stack = mod_stack_create(stack->id, mod, stack->addr,
-			EV_MOD_LOAD_ACTION, stack);
-		new_stack->blocking = 0;
-		new_stack->read = 1;
-		new_stack->retry = stack->retry;
-		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
-		return;
-	}
-
-	if (event == EV_MOD_LOAD_ACTION)
-	{
-		int retry_lat;
-		mem_debug("  %lld %lld 0x%x %s load action\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
-
-		/* Error locking */
-		if (stack->err)
-		{
-			mod->read_retries++;
-			retry_lat = RETRY_LATENCY;
-			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
-			stack->retry = 1;
-			esim_schedule_event(EV_MOD_LOAD, stack, retry_lat);
-			return;
-		}
-
-		/* Hit */
-		if (stack->state)
-		{
-			esim_schedule_event(EV_MOD_LOAD_FINISH, stack, 0);
-			return;
-		}
-
-		/* Miss */
-		new_stack = mod_stack_create(stack->id, mod, stack->tag,
-			EV_MOD_LOAD_MISS, stack);
-		new_stack->target_mod = __mod_get_low_mod(mod);
-		esim_schedule_event(EV_MOD_READ_REQUEST, new_stack, 0);
-		return;
-	}
-
-	if (event == EV_MOD_LOAD_MISS)
-	{
-		int retry_lat;
-		mem_debug("  %lld %lld 0x%x %s load miss\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
-
-		/* Error on read request. Unlock block and retry load. */
-		if (stack->err)
-		{
-			mod->read_retries++;
-			retry_lat = RETRY_LATENCY;
-			dir_lock_unlock(stack->dir_lock);
-			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
-			stack->retry = 1;
-			esim_schedule_event(EV_MOD_LOAD, stack, retry_lat);
-			return;
-		}
-
-		/* Set block state to excl/shared depending on return var 'shared'.
-		 * Also set the tag of the block. */
-		cache_set_block(mod->cache, stack->set, stack->way, stack->tag,
-			stack->shared ? cache_block_shared : cache_block_exclusive);
-
-		/* Continue */
-		esim_schedule_event(EV_MOD_LOAD_FINISH, stack, 0);
-		return;
-	}
-
-	if (event == EV_MOD_LOAD_FINISH)
-	{
-		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
-
-		/* Unlock, and return. */
-		dir_lock_unlock(stack->dir_lock);
-		mod_stack_return(stack);
-		return;
-	}
-
-	abort();
-}
-
-
-void mod_handler_store(int event, void *data)
-{
-	struct mod_stack_t *stack = data;
-	struct mod_stack_t *new_stack;
-
-	struct mod_t *mod = stack->mod;
-
-
-	if (event == EV_MOD_STORE)
-	{
-		mem_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
-			stack->addr, mod->name);
-
-		/* Call find and lock */
-		new_stack = mod_stack_create(stack->id, mod, stack->addr,
-			EV_MOD_STORE_ACTION, stack);
-		new_stack->blocking = 0;
-		new_stack->read = 0;
-		new_stack->retry = stack->retry;
-		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
-		return;
-	}
-
-	if (event == EV_MOD_STORE_ACTION)
-	{
-		int retry_lat;
-		mem_debug("  %lld %lld 0x%x %s store action\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
-
-		/* Error locking */
-		if (stack->err)
-		{
-			mod->write_retries++;
-			retry_lat = RETRY_LATENCY;
-			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
-			stack->retry = 1;
-			esim_schedule_event(EV_MOD_STORE, stack, retry_lat);
-			return;
-		}
-
-		/* Hit - state=M/E */
-		if (stack->state == cache_block_modified ||
-			stack->state == cache_block_exclusive)
-		{
-			esim_schedule_event(EV_MOD_STORE_FINISH, stack, 0);
-			return;
-		}
-
-		/* Miss - state=O/S/I */
-		new_stack = mod_stack_create(stack->id, mod, stack->tag,
-			EV_MOD_STORE_FINISH, stack);
-		new_stack->target_mod = __mod_get_low_mod(mod);
-		esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
-		return;
-	}
-
-	if (event == EV_MOD_STORE_FINISH)
-	{
-		int retry_lat;
-		mem_debug("%lld %lld 0x%x %s store finish\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
-
-		/* Error in write request, unlock block and retry store. */
-		if (stack->err)
-		{
-			mod->write_retries++;
-			retry_lat = RETRY_LATENCY;
-			dir_lock_unlock(stack->dir_lock);
-			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
-			stack->retry = 1;
-			esim_schedule_event(EV_MOD_STORE, stack, retry_lat);
-			return;
-		}
-
-		/* Update tag/state, unlock, and return. */
-		if (mod->cache)
-			cache_set_block(mod->cache, stack->set, stack->way,
-				stack->tag, cache_block_modified);
-		dir_lock_unlock(stack->dir_lock);
 		mod_stack_return(stack);
 		return;
 	}
