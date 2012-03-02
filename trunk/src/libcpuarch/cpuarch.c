@@ -206,8 +206,8 @@ struct cpu_t *cpu;
 char *cpu_config_file_name = "";
 char *cpu_report_file_name = "";
 
-int cpu_cores;
-int cpu_threads;
+int cpu_cores = 1;
+int cpu_threads = 1;
 
 uint64_t cpu_fast_forward_count;
 
@@ -266,8 +266,8 @@ void cpu_config_check(void)
 
 	section = "General";
 
-	cpu_cores = config_read_int(cfg, section, "Cores", 1);
-	cpu_threads = config_read_int(cfg, section, "Threads", 1);
+	cpu_cores = config_read_int(cfg, section, "Cores", cpu_cores);
+	cpu_threads = config_read_int(cfg, section, "Threads", cpu_threads);
 
 	cpu_fast_forward_count = config_read_llint(cfg, section, "FastForward", 0);
 
