@@ -19,9 +19,26 @@
 
 #include <mem-system.h>
 
+/*
+ * Private Functions
+ */
+
+#if 0
+static void mod_access_insert(struct mod_t *mod, struct mod_stack_t *stack)
+{
+}
+
+
+static void mod_access_extract(struct mod_t *mod, struct mod_stack_t *stack)
+{
+}
+#endif
+
+
+
 
 /*
- * Memory Module
+ * Public Functions
  */
 
 struct mod_t *mod_create(char *name, enum mod_kind_t kind,
@@ -91,7 +108,7 @@ void mod_dump(struct mod_t *mod, FILE *f)
 
 			/* Waiting list */
 			fprintf(f, "waiting={");
-			for (stack = port->waiting_list_head; stack; stack = stack->waiting_next)
+			for (stack = port->waiting_list_head; stack; stack = stack->waiting_list_next)
 				fprintf(f, " %lld", stack->id);
 			fprintf(f, " }\n");
 		}

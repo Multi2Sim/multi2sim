@@ -478,16 +478,16 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 		cycle++;
 
 		/* Execute an instruction from each work-group */
-		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next) {
-			
+		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next)
+		{
 			/* Save next running work-group */
-			work_group_next = work_group->running_next;
+			work_group_next = work_group->running_list_next;
 
 			/* Run an instruction from each wavefront */
-			for (wavefront = work_group->running_list_head; wavefront; wavefront = wavefront_next) {
-				
+			for (wavefront = work_group->running_list_head; wavefront; wavefront = wavefront_next)
+			{
 				/* Save next running wavefront */
-				wavefront_next = wavefront->running_next;
+				wavefront_next = wavefront->running_list_next;
 
 				/* Execute instruction in wavefront */
 				gpu_wavefront_execute(wavefront);

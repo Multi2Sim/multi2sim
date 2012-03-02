@@ -118,53 +118,53 @@
  * CONT is a pointer to a structure containing the following fields:
  *   struct * CONT->NAME_list_head
  *   struct * CONT->NAME_list_tail
- *   int CONT->NAME_count
- *   int CONT->NAME_max
+ *   int CONT->NAME_list_count
+ *   int CONT->NAME_list_max
  * ELEM is an element of the list containing the following fields:
- *   struct * ELEM->NAME_next
- *   struct * ELEM->NAME_prev
+ *   struct * ELEM->NAME_list_next
+ *   struct * ELEM->NAME_list_prev
  */
 
 #define DOUBLE_LINKED_LIST_INSERT_HEAD(CONT, NAME, ELEM) { \
-	assert(!(ELEM)->NAME##_next && !(ELEM)->NAME##_prev); \
-	(ELEM)->NAME##_next = (CONT)->NAME##_list_head; \
-	if ((ELEM)->NAME##_next) \
-		(ELEM)->NAME##_next->NAME##_prev = (ELEM); \
+	assert(!(ELEM)->NAME##_list_next && !(ELEM)->NAME##_list_prev); \
+	(ELEM)->NAME##_list_next = (CONT)->NAME##_list_head; \
+	if ((ELEM)->NAME##_list_next) \
+		(ELEM)->NAME##_list_next->NAME##_list_prev = (ELEM); \
 	(CONT)->NAME##_list_head = (ELEM); \
 	if (!(CONT)->NAME##_list_tail) \
 		(CONT)->NAME##_list_tail = (ELEM); \
-	(CONT)->NAME##_count++; \
-	(CONT)->NAME##_max = MAX((CONT)->NAME##_max, (CONT)->NAME##_count); \
+	(CONT)->NAME##_list_count++; \
+	(CONT)->NAME##_list_max = MAX((CONT)->NAME##_list_max, (CONT)->NAME##_list_count); \
 }
 
 #define DOUBLE_LINKED_LIST_INSERT_TAIL(CONT, NAME, ELEM) { \
-	assert(!(ELEM)->NAME##_next && !ELEM->NAME##_prev); \
-	(ELEM)->NAME##_prev = (CONT)->NAME##_list_tail; \
-	if ((ELEM)->NAME##_prev) \
-		(ELEM)->NAME##_prev->NAME##_next = (ELEM); \
+	assert(!(ELEM)->NAME##_list_next && !ELEM->NAME##_list_prev); \
+	(ELEM)->NAME##_list_prev = (CONT)->NAME##_list_tail; \
+	if ((ELEM)->NAME##_list_prev) \
+		(ELEM)->NAME##_list_prev->NAME##_list_next = (ELEM); \
 	(CONT)->NAME##_list_tail = (ELEM); \
 	if (!(CONT)->NAME##_list_head) \
 		(CONT)->NAME##_list_head = (ELEM); \
-	(CONT)->NAME##_count++; \
-	(CONT)->NAME##_max = MAX((CONT)->NAME##_max, (CONT)->NAME##_count); \
+	(CONT)->NAME##_list_count++; \
+	(CONT)->NAME##_list_max = MAX((CONT)->NAME##_list_max, (CONT)->NAME##_list_count); \
 }
 
 #define DOUBLE_LINKED_LIST_MEMBER(CONT, NAME, ELEM) \
-	((CONT)->NAME##_list_head == (ELEM) || (ELEM)->NAME##_prev || (ELEM)->NAME##_next)
+	((CONT)->NAME##_list_head == (ELEM) || (ELEM)->NAME##_list_prev || (ELEM)->NAME##_list_next)
 
 #define DOUBLE_LINKED_LIST_REMOVE(CONT, NAME, ELEM) { \
-	assert((CONT)->NAME##_count > 0); \
+	assert((CONT)->NAME##_list_count > 0); \
 	assert(DOUBLE_LINKED_LIST_MEMBER(CONT, NAME, ELEM)); \
 	if ((ELEM) == (CONT)->NAME##_list_head) \
-		(CONT)->NAME##_list_head = (CONT)->NAME##_list_head->NAME##_next; \
+		(CONT)->NAME##_list_head = (CONT)->NAME##_list_head->NAME##_list_next; \
 	if ((ELEM) == (CONT)->NAME##_list_tail) \
-		(CONT)->NAME##_list_tail = (CONT)->NAME##_list_tail->NAME##_prev; \
-	if ((ELEM)->NAME##_prev) \
-		(ELEM)->NAME##_prev->NAME##_next = (ELEM)->NAME##_next; \
-	if ((ELEM)->NAME##_next) \
-		(ELEM)->NAME##_next->NAME##_prev = (ELEM)->NAME##_prev; \
-	(ELEM)->NAME##_prev = (ELEM)->NAME##_next = NULL; \
-	(CONT)->NAME##_count--; \
+		(CONT)->NAME##_list_tail = (CONT)->NAME##_list_tail->NAME##_list_prev; \
+	if ((ELEM)->NAME##_list_prev) \
+		(ELEM)->NAME##_list_prev->NAME##_list_next = (ELEM)->NAME##_list_next; \
+	if ((ELEM)->NAME##_list_next) \
+		(ELEM)->NAME##_list_next->NAME##_list_prev = (ELEM)->NAME##_list_prev; \
+	(ELEM)->NAME##_list_prev = (ELEM)->NAME##_list_next = NULL; \
+	(CONT)->NAME##_list_count--; \
 }
 
 

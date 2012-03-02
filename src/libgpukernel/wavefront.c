@@ -391,14 +391,16 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 	}
 
 	/* Check if wavefront finished kernel execution */
-	if (gpu_isa_wavefront->clause_kind == GPU_CLAUSE_CF && !gpu_isa_wavefront->cf_buf) {
+	if (gpu_isa_wavefront->clause_kind == GPU_CLAUSE_CF && !gpu_isa_wavefront->cf_buf)
+	{
 		assert(DOUBLE_LINKED_LIST_MEMBER(gpu_isa_work_group, running, gpu_isa_wavefront));
 		assert(!DOUBLE_LINKED_LIST_MEMBER(gpu_isa_work_group, finished, gpu_isa_wavefront));
 		DOUBLE_LINKED_LIST_REMOVE(gpu_isa_work_group, running, gpu_isa_wavefront);
 		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_isa_work_group, finished, gpu_isa_wavefront);
 
 		/* Check if work-group finished kernel execution */
-		if (gpu_isa_work_group->finished_count == gpu_isa_work_group->wavefront_count) {
+		if (gpu_isa_work_group->finished_list_count == gpu_isa_work_group->wavefront_count)
+		{
 			assert(DOUBLE_LINKED_LIST_MEMBER(ndrange, running, gpu_isa_work_group));
 			assert(!DOUBLE_LINKED_LIST_MEMBER(ndrange, finished, gpu_isa_work_group));
 			gpu_work_group_clear_status(gpu_isa_work_group, gpu_work_group_running);
