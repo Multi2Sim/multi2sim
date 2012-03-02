@@ -348,7 +348,7 @@ struct ctx_t *ctx_get(int pid)
 
 	ctx = ke->context_list_head;
 	while (ctx && ctx->pid != pid)
-		ctx = ctx->context_next;
+		ctx = ctx->context_list_next;
 	return ctx;
 }
 
@@ -360,7 +360,7 @@ struct ctx_t *ctx_get_zombie(struct ctx_t *parent, int pid)
 {
 	struct ctx_t *ctx;
 
-	for (ctx = ke->zombie_list_head; ctx; ctx = ctx->zombie_next) {
+	for (ctx = ke->zombie_list_head; ctx; ctx = ctx->zombie_list_next) {
 		if (ctx->parent != parent)
 			continue;
 		if (ctx->pid == pid || pid == -1)
@@ -431,7 +431,7 @@ void ctx_finish_group(struct ctx_t *ctx, int status)
 	/* From now on, all children have lost their parent. If a children is
 	 * already zombie, finish it, since its parent won't be able to waitpid it
 	 * anymore. */
-	for (aux = ke->context_list_head; aux; aux = aux->context_next) {
+	for (aux = ke->context_list_head; aux; aux = aux->context_list_next) {
 		if (aux->mem != ctx->mem)
 			continue;
 
@@ -467,7 +467,7 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	/* From now on, all children have lost their parent. If a child is
 	 * already zombie, finish it, since its parent won't be able to waitpid it
 	 * anymore. */
-	for (aux = ke->context_list_head; aux; aux = aux->context_next) {
+	for (aux = ke->context_list_head; aux; aux = aux->context_list_next) {
 		if (aux->parent == ctx) {
 			aux->parent = NULL;
 			if (ctx_get_status(aux, ctx_zombie))
@@ -512,7 +512,7 @@ int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t b
 	/* Look for threads suspended in this futex */
 	while (count) {
 		wakeup_ctx = NULL;
-		for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_next) {
+		for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_list_next) {
 			if (!ctx_get_status(ctx, ctx_futex) || ctx->wakeup_futex != futex)
 				continue;
 			if (!(ctx->wakeup_futex_bitset & bitset))

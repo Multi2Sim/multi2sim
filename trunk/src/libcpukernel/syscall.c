@@ -3264,7 +3264,7 @@ void syscall_do()
 			syscall_debug("  futex at 0x%x: %d processes woken up\n", addr1, retval);
 
 			/* The rest of the threads waiting in futex 'addr1' are requeued into futex 'addr2' */
-			for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_next) {
+			for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_list_next) {
 				if (ctx_get_status(ctx, ctx_futex) && ctx->wakeup_futex == addr1) {
 					ctx->wakeup_futex = addr2;
 					requeued++;

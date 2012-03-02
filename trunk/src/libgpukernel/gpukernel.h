@@ -635,13 +635,23 @@ struct gpu_ndrange_t
 	/* Size of work-groups */
 	int wavefronts_per_work_group;  /* = ceil(local_size / gpu_wavefront_size) */
 
-	/* Double linked lists of work-groups */
-	struct gpu_work_group_t *pending_list_head, *pending_list_tail;
-	struct gpu_work_group_t *running_list_head, *running_list_tail;
-	struct gpu_work_group_t *finished_list_head, *finished_list_tail;
-	int pending_count, pending_max;
-	int running_count, running_max;
-	int finished_count, finished_max;
+	/* List of pending work-groups */
+	struct gpu_work_group_t *pending_list_head;
+	struct gpu_work_group_t *pending_list_tail;
+	int pending_list_count;
+	int pending_list_max;
+
+	/* List of running work-groups */
+	struct gpu_work_group_t *running_list_head;
+	struct gpu_work_group_t *running_list_tail;
+	int running_list_count;
+	int running_list_max;
+
+	/* List of finished work-groups */
+	struct gpu_work_group_t *finished_list_head;
+	struct gpu_work_group_t *finished_list_tail;
+	int finished_list_count;
+	int finished_list_max;
 	
 	/* Local memory top to assign to local arguments.
 	 * Initially it is equal to the size of local variables in kernel function. */
@@ -699,21 +709,34 @@ struct gpu_work_group_t
 	struct gpu_wavefront_t **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
 
 	/* Double linked lists of work-groups */
-	struct gpu_work_group_t *pending_prev, *pending_next;
-	struct gpu_work_group_t *running_prev, *running_next;
-	struct gpu_work_group_t *finished_prev, *finished_next;
+	struct gpu_work_group_t *pending_list_prev;
+	struct gpu_work_group_t *pending_list_next;
+	struct gpu_work_group_t *running_list_prev;
+	struct gpu_work_group_t *running_list_next;
+	struct gpu_work_group_t *finished_list_prev;
+	struct gpu_work_group_t *finished_list_next;
 
-	/* Double linked lists of wavefronts */
-	struct gpu_wavefront_t *running_list_head, *running_list_tail;
-	struct gpu_wavefront_t *barrier_list_head, *barrier_list_tail;
-	struct gpu_wavefront_t *finished_list_head, *finished_list_tail;
-	int running_count, running_max;
-	int barrier_count, barrier_max;
-	int finished_count, finished_max;
+	/* List of running wavefronts */
+	struct gpu_wavefront_t *running_list_head;
+	struct gpu_wavefront_t *running_list_tail;
+	int running_list_count;
+	int running_list_max;
+
+	/* List of wavefronts in barrier */
+	struct gpu_wavefront_t *barrier_list_head;
+	struct gpu_wavefront_t *barrier_list_tail;
+	int barrier_list_count;
+	int barrier_list_max;
+
+	/* List of finished wavefronts */
+	struct gpu_wavefront_t *finished_list_head;
+	struct gpu_wavefront_t *finished_list_tail;
+	int finished_list_count;
+	int finished_list_max;
 	
 	/* Fields introduced for architectural simulation */
 	int id_in_compute_unit;
-	int compute_unit_finished_count;  /* like 'finished_count', but when WF reaches Complete stage */
+	int compute_unit_finished_count;  /* like 'finished_list_count', but when WF reaches Complete stage */
 
 	/* Local memory */
 	struct mem_t *local_mem;
@@ -814,9 +837,12 @@ struct gpu_wavefront_t
 	int active_mask_pop;  /* Number of entries the stack was popped */
 
 	/* Linked lists */
-	struct gpu_wavefront_t *running_next, *running_prev;
-	struct gpu_wavefront_t *barrier_next, *barrier_prev;
-	struct gpu_wavefront_t *finished_next, *finished_prev;
+	struct gpu_wavefront_t *running_list_next;
+	struct gpu_wavefront_t *running_list_prev;
+	struct gpu_wavefront_t *barrier_list_next;
+	struct gpu_wavefront_t *barrier_list_prev;
+	struct gpu_wavefront_t *finished_list_next;
+	struct gpu_wavefront_t *finished_list_prev;
 
 	/* To measure simulation performance */
 	uint64_t emu_inst_count;  /* Total emulated instructions */

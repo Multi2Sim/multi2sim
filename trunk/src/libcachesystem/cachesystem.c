@@ -156,7 +156,7 @@ struct mod_t *__mod_create(char *name, enum mod_kind_t kind)
 	mod = calloc(1, sizeof(struct mod_t));
 	mod->kind = kind;
 	mod->name = strdup(name);
-	mod->access_list = linked_list_create();
+	mod->__access_list = linked_list_create();
 	mod->high_mod_list = linked_list_create();
 	mod->low_mod_list = linked_list_create();
 	return mod;
@@ -167,18 +167,18 @@ void __mod_free(struct mod_t *mod)
 {
 	/* Free linked list of pending accesses.
 	 * Each element is in turn a linked list of access aliases. */
-	while (linked_list_count(mod->access_list))
+	while (linked_list_count(mod->__access_list))
 	{
 		struct ccache_access_t *a, *n;
-		linked_list_head(mod->access_list);
-		for (a = linked_list_get(mod->access_list); a; a = n)
+		linked_list_head(mod->__access_list);
+		for (a = linked_list_get(mod->__access_list); a; a = n)
 		{
 			n = a->next;
 			free(a);
 		}
-		linked_list_remove(mod->access_list);
+		linked_list_remove(mod->__access_list);
 	}
-	linked_list_free(mod->access_list);
+	linked_list_free(mod->__access_list);
 
 	/* Free cache */
 	if (mod->dir)
@@ -200,10 +200,10 @@ static struct ccache_access_t *__mod_find_access(struct mod_t *mod,
 {
 	struct ccache_access_t *access;
 	addr &= ~(mod->block_size - 1);
-	for (linked_list_head(mod->access_list); !linked_list_is_end(mod->access_list);
-		linked_list_next(mod->access_list))
+	for (linked_list_head(mod->__access_list); !linked_list_is_end(mod->__access_list);
+		linked_list_next(mod->__access_list))
 	{
-		access = linked_list_get(mod->access_list);
+		access = linked_list_get(mod->__access_list);
 		if (access->address == addr)
 			return access;
 	}
@@ -234,13 +234,13 @@ struct ccache_access_t *__mod_start_access(struct mod_t *mod,
 		alias->next = access;
 		access->id = alias->id;
 	} else {
-		linked_list_out(mod->access_list);
-		linked_list_insert(mod->access_list, access);
+		linked_list_out(mod->__access_list);
+		linked_list_insert(mod->__access_list, access);
 		access->id = ++access_counter;
-		access_kind == mod_access_read ? mod->pending_reads++
-			: mod->pending_writes++;
-		assert(mod->pending_reads <= mod->read_port_count);
-		assert(mod->pending_writes <= mod->write_port_count);
+		access_kind == mod_access_read ? mod->__pending_reads++
+			: mod->__pending_writes++;
+		assert(mod->__pending_reads <= mod->read_port_count);
+		assert(mod->__pending_writes <= mod->write_port_count);
 	}
 	return access;
 }
@@ -267,27 +267,27 @@ void __mod_end_access(struct mod_t *mod, uint32_t addr)
 	}
 
 	/* Free access and all aliases. */
-	access->access_kind == mod_access_read ? mod->pending_reads--
-		: mod->pending_writes--;
-	assert(mod->pending_reads >= 0);
-	assert(mod->pending_writes >= 0);
+	access->access_kind == mod_access_read ? mod->__pending_reads--
+		: mod->__pending_writes--;
+	assert(mod->__pending_reads >= 0);
+	assert(mod->__pending_writes >= 0);
 	while (access)
 	{
 		alias = access->next;
 		free(access);
 		access = alias;
 	}
-	linked_list_remove(mod->access_list);
+	linked_list_remove(mod->__access_list);
 }
 
 
 int __mod_pending_access(struct mod_t *mod, uint64_t id)
 {
 	struct ccache_access_t *access;
-	for (linked_list_head(mod->access_list); !linked_list_is_end(mod->access_list);
-		linked_list_next(mod->access_list))
+	for (linked_list_head(mod->__access_list); !linked_list_is_end(mod->__access_list);
+		linked_list_next(mod->__access_list))
 	{
-		access = linked_list_get(mod->access_list);
+		access = linked_list_get(mod->__access_list);
 		if (access->id == id)
 			return 1;
 	}
@@ -1160,8 +1160,8 @@ int cache_system_can_access(int core, int thread, enum cache_kind_t cache_kind,
 	/* If there is no matching access, we just need a free port. */
 	if (!access)
 		return access_kind == mod_access_read ?
-			mod->pending_reads < mod->read_port_count :
-			mod->pending_writes < mod->write_port_count;
+			mod->__pending_reads < mod->read_port_count :
+			mod->__pending_writes < mod->write_port_count;
 	
 	/* If either the matching or the current access is a write,
 	 * concurrency is not allowed. */

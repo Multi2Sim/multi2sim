@@ -196,8 +196,10 @@ struct mod_port_t
 	struct mod_stack_t *stack;  /* Current access */
 
 	/* Waiting list */
-	struct mod_stack_t *waiting_list_head, *waiting_list_tail;
-	int waiting_count, waiting_max;
+	struct mod_stack_t *waiting_list_head;
+	struct mod_stack_t *waiting_list_tail;
+	int waiting_list_count;
+	int waiting_list_max;
 
 };
 
@@ -290,8 +292,10 @@ struct mod_t
 	int dir_num_sets;
 
 	/* Waiting list of events */
-	struct mod_stack_t *waiting_list_head, *waiting_list_tail;
-	int waiting_count, waiting_max;
+	struct mod_stack_t *waiting_list_head;
+	struct mod_stack_t *waiting_list_tail;
+	int waiting_list_count;
+	int waiting_list_max;
 
 	/* Cache structure */
 	struct cache_t *cache;
@@ -306,10 +310,16 @@ struct mod_t
 	struct net_node_t *high_net_node;
 	struct net_node_t *low_net_node;
 
+	/* Linked list of accesses */
+	struct mod_stack_t *access_list_head;
+	struct mod_stack_t *access_list_tail;
+	int access_count;
+	int access_max;
+
 	/* FIXME: remove */
-	struct linked_list_t *access_list;  /* Elements of type ccache_access_t */
-	int pending_reads;
-	int pending_writes;
+	struct linked_list_t *__access_list;  /* Elements of type ccache_access_t */
+	int __pending_reads;
+	int __pending_writes;
 
 	/* FIXME: remove */
 	int color;  /* For coloring algorithm */
@@ -482,7 +492,8 @@ struct mod_stack_t
 
 	/* Linked list for waiting events */
 	int waiting_list_event;  /* Event to schedule when stack is waken up */
-	struct mod_stack_t *waiting_prev, *waiting_next;
+	struct mod_stack_t *waiting_list_prev;
+	struct mod_stack_t *waiting_list_next;
 
 	/* Events wiating in directory lock */
 	int dir_lock_event;

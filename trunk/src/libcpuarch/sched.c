@@ -38,10 +38,10 @@ int cpu_context_to_cpu(struct ctx_t *ctx)
 	int node, free_cpu;
 	int core, thread;
 	assert(!ctx_get_status(ctx, ctx_alloc));
-	assert(ke->alloc_count <= cpu_cores * cpu_threads);
+	assert(ke->alloc_list_count <= cpu_cores * cpu_threads);
 
 	/* No free node */
-	if (ke->alloc_count == cpu_cores * cpu_threads)
+	if (ke->alloc_list_count == cpu_cores * cpu_threads)
 		return -1;
 	
 	/* Try to allocate previous node, if the contexts has ever been
@@ -69,7 +69,7 @@ void cpu_map_context(int core, int thread, struct ctx_t *ctx)
 {
 	assert(!THREAD.ctx);
 	assert(!ctx_get_status(ctx, ctx_alloc));
-	assert(ke->alloc_count < cpu_cores * cpu_threads);
+	assert(ke->alloc_list_count < cpu_cores * cpu_threads);
 	assert(!ctx->dealloc_signal);
 
 	THREAD.ctx = ctx;
@@ -148,12 +148,12 @@ void cpu_static_schedule()
 		(long long) cpu->cycle);
 	
 	/* If there is no new unallocated context, exit. */
-	assert(ke->alloc_count <= ke->context_count);
-	if (ke->alloc_count == ke->context_count)
+	assert(ke->alloc_list_count <= ke->context_list_count);
+	if (ke->alloc_list_count == ke->context_list_count)
 		return;
 	
 	/* Allocate all unallocated contexts. */
-	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_next) {
+	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_list_next) {
 		
 		/* Context is allocated. */
 		if (ctx_get_status(ctx, ctx_alloc))
@@ -181,15 +181,15 @@ void cpu_dynamic_schedule()
 		(long long) cpu->cycle);
 	
 	/* Evict non-running contexts */
-	for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
+	for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
 		if (!ctx->dealloc_signal && !ctx_get_status(ctx, ctx_running))
 			cpu_unmap_context_signal(ctx);
 
 	/* If all running contexts are allocated, just update the ctx_alloc_oldest counter,
 	 * and exit. */
-	if (ke->alloc_count == ke->running_count) {
+	if (ke->alloc_list_count == ke->running_list_count) {
 		cpu->ctx_alloc_oldest = cpu->cycle;
-		for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
+		for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
 			ctx->alloc_when = cpu->cycle;
 		return;
 	}
@@ -198,7 +198,7 @@ void cpu_dynamic_schedule()
 	 * send signal to evict the oldest allocated context. */
 	if (!cpu->ctx_dealloc_signals && cpu->ctx_alloc_oldest + cpu_context_quantum <= cpu->cycle) {
 		found_ctx = NULL;
-		for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
+		for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
 			if (!found_ctx || ctx->alloc_when < found_ctx->alloc_when)
 				found_ctx = ctx;
 		if (found_ctx)
@@ -206,11 +206,11 @@ void cpu_dynamic_schedule()
 	}
 	
 	/* Allocate running contexts */
-	while (ke->alloc_count < ke->running_count && ke->alloc_count < cpu_cores * cpu_threads) {
+	while (ke->alloc_list_count < ke->running_list_count && ke->alloc_list_count < cpu_cores * cpu_threads) {
 		
 		/* Find running, non-allocated context with lowest dealloc_when value. */
 		found_ctx = NULL;
-		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
+		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_list_next)
 			if (!ctx_get_status(ctx, ctx_alloc) && (!found_ctx || ctx->dealloc_when < found_ctx->dealloc_when))
 				found_ctx = ctx;
 		if (!found_ctx)
@@ -225,7 +225,7 @@ void cpu_dynamic_schedule()
 
 	/* Calculate the context that was allocated first */
 	cpu->ctx_alloc_oldest = cpu->cycle;
-	for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_next)
+	for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
 		if (!ctx->dealloc_signal && ctx->alloc_when < cpu->ctx_alloc_oldest)
 			cpu->ctx_alloc_oldest = ctx->alloc_when;
 }
