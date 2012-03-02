@@ -163,6 +163,91 @@ static char *err_gpu_mem_connect =
 
 static void mem_config_cpu_default(struct config_t *config)
 {
+	char section[MAX_STRING_SIZE];
+	char str[MAX_STRING_SIZE];
+
+	int core;
+	int thread;
+
+	/* Not if we are doing CPU functional simulation */
+	if (cpu_sim_kind == cpu_sim_kind_functional)
+		return;
+
+	/* Cache geometry for L1 */
+	strcpy(section, "CacheGeometry cpu-geo-l1");
+	config_write_int(config, section, "Sets", 16);
+	config_write_int(config, section, "Assoc", 2);
+	config_write_int(config, section, "BlockSize", 64);
+	config_write_int(config, section, "Latency", 1);
+	config_write_string(config, section, "Policy", "LRU");
+	config_write_int(config, section, "Banks", 1);
+	config_write_int(config, section, "ReadPorts", 2);
+	config_write_int(config, section, "WritePorts", 2);
+
+	/* Cache geometry for L2 */
+	strcpy(section, "CacheGeometry cpu-geo-l2");
+	config_write_int(config, section, "Sets", 64);
+	config_write_int(config, section, "Assoc", 4);
+	config_write_int(config, section, "BlockSize", 64);
+	config_write_int(config, section, "Latency", 10);
+	config_write_string(config, section, "Policy", "LRU");
+	config_write_int(config, section, "Banks", 4);
+	config_write_int(config, section, "ReadPorts", 2);
+	config_write_int(config, section, "WritePorts", 2);
+
+	/* L1 caches and entries */
+	FOREACH_CORE
+	{
+		/* L1 cache */
+		snprintf(section, sizeof section, "Module cpu-l1-%d", core);
+		config_write_string(config, section, "Type", "Cache");
+		config_write_string(config, section, "Geometry", "cpu-geo-l1");
+		config_write_string(config, section, "LowNetwork", "cpu-net-l1-l2");
+		config_write_string(config, section, "LowModules", "cpu-l2");
+
+		/* Entry */
+		snprintf(str, sizeof str, "cpu-l1-%d", core);
+		FOREACH_THREAD
+		{
+			snprintf(section, sizeof section, "Entry cpu-core-%d-thread-%d",
+				core, thread);
+			config_write_string(config, section, "Type", "CPU");
+			config_write_int(config, section, "Core", core);
+			config_write_int(config, section, "Thread", thread);
+			config_write_string(config, section, "DataModule", str);
+			config_write_string(config, section, "InstModule", str);
+		}
+	}
+
+	/* L2 cache */
+	snprintf(section, sizeof section, "Module cpu-l2");
+	config_write_string(config, section, "Type", "Cache");
+	config_write_string(config, section, "Geometry", "cpu-geo-l2");
+	config_write_string(config, section, "HighNetwork", "cpu-net-l1-l2");
+	config_write_string(config, section, "LowNetwork", "cpu-net-l2-mm");
+	config_write_string(config, section, "LowModules", "cpu-mm");
+
+	/* Main memory */
+	snprintf(section, sizeof section, "Module cpu-mm");
+	config_write_string(config, section, "Type", "MainMemory");
+	config_write_string(config, section, "HighNetwork", "cpu-net-l2-mm");
+	config_write_int(config, section, "BlockSize", 64);
+	config_write_int(config, section, "Latency", 100);
+	config_write_int(config, section, "Banks", 8);
+	config_write_int(config, section, "ReadPorts", 2);
+	config_write_int(config, section, "WritePorts", 2);
+
+	/* Network connecting L1 caches and L2 */
+	snprintf(section, sizeof section, "Network cpu-net-l1-l2");
+	config_write_int(config, section, "DefaultInputBufferSize", 144);
+	config_write_int(config, section, "DefaultOutputBufferSize", 144);
+	config_write_int(config, section, "DefaultBandwidth", 72);
+
+	/* Network connecting L2 cache and global memory */
+	snprintf(section, sizeof section, "Network cpu-net-l2-mm");
+	config_write_int(config, section, "DefaultInputBufferSize", 528);
+	config_write_int(config, section, "DefaultOutputBufferSize", 528);
+	config_write_int(config, section, "DefaultBandwidth", 264);
 }
 
 
@@ -173,7 +258,7 @@ static void mem_config_gpu_default(struct config_t *config)
 
 	int compute_unit_id;
 
-	/* Do not create GPU memory hierarchy if we doing GPU functional simulation */
+	/* Not if we doing GPU functional simulation */
 	if (gpu_sim_kind == gpu_sim_kind_functional)
 		return;
 
@@ -199,7 +284,7 @@ static void mem_config_gpu_default(struct config_t *config)
 	config_write_int(config, section, "ReadPorts", 2);
 	config_write_int(config, section, "WritePorts", 2);
 
-	/* L1 caches and nodes */
+	/* L1 caches and entries */
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
@@ -842,10 +927,6 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 		char inst_mod_name[MAX_STRING_SIZE];
 	} *entry, *entry_list;
 
-	/* Not if we are doing CPU functional simulation */
-	if (cpu_sim_kind == cpu_sim_kind_functional)
-		return;
-
 	/* Allocate entry list */
 	entry_list = calloc(cpu_cores * cpu_threads, sizeof(struct entry_t));
 	if (!entry_list)
@@ -916,6 +997,10 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 		snprintf(entry->inst_mod_name, MAX_STRING_SIZE, "%s", value);
 	}
 
+	/* Stop here if we are doing CPU functional simulation */
+	if (cpu_sim_kind == cpu_sim_kind_functional)
+		goto out;
+
 	/* Assign entry modules */
 	mem_debug("Assigning CPU entries to memory system:\n");
 	FOREACH_CORE FOREACH_THREAD
@@ -956,6 +1041,7 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 	/* Debug */
 	mem_debug("\n");
 
+out:
 	/* Free entry list */
 	free(entry_list);
 }
@@ -977,10 +1063,6 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	{
 		char mod_name[MAX_STRING_SIZE];
 	} *entry, *entry_list;
-
-	/* Not if we are doing GPU functional simulation */
-	if (gpu_sim_kind == gpu_sim_kind_functional)
-		return;
 
 	/* Allocate entry list */
 	entry_list = calloc(gpu_num_compute_units, sizeof(struct entry_t));
@@ -1033,6 +1115,10 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 		snprintf(entry->mod_name, MAX_STRING_SIZE, "%s", value);
 	}
 
+	/* Do not continue if we are doing GPU functional simulation */
+	if (gpu_sim_kind == gpu_sim_kind_functional)
+		goto out;
+
 	/* Assign entry modules */
 	mem_debug("Assigning GPU entries to memory system:\n");
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
@@ -1059,6 +1145,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	/* Debug */
 	mem_debug("\n");
 
+out:
 	/* Free entry list */
 	free(entry_list);
 }
