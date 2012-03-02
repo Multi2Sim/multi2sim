@@ -378,9 +378,12 @@ void mod_dump(struct mod_t *mod, FILE *f);
  * FIXME: mod_type: 1 - CPU, 2 - GPU. Remove once the coherence protocol is
  * shared between them. Currently, this determines the first event to
  * schedule (EV_MOD_xxx or EV_GPU_MOD_xxx). */
-void mod_access(struct mod_t *mod, int mod_type,
-	enum mod_access_kind_t access_kind,
+void mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_kind,
 	uint32_t addr, int *witness_ptr);
+int mod_can_access(struct mod_t *mod, uint32_t addr);
+
+void mod_access_insert(struct mod_t *mod, struct mod_stack_t *stack);
+void mod_access_extract(struct mod_t *mod, struct mod_stack_t *stack);
 
 struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
 
@@ -420,11 +423,13 @@ extern int EV_MOD_GPU_WRITE_FINISH;
  */
 
 extern int EV_MOD_LOAD;
+extern int EV_MOD_LOAD_LOCK;
 extern int EV_MOD_LOAD_ACTION;
 extern int EV_MOD_LOAD_MISS;
 extern int EV_MOD_LOAD_FINISH;
 
 extern int EV_MOD_STORE;
+extern int EV_MOD_STORE_LOCK;
 extern int EV_MOD_STORE_ACTION;
 extern int EV_MOD_STORE_FINISH;
 

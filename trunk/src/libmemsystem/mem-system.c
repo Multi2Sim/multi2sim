@@ -78,11 +78,13 @@ void mem_system_init(void)
 
 	/* CPU memory event-driven simulation */
 	EV_MOD_LOAD = esim_register_event(mod_handler_load);
+	EV_MOD_LOAD_LOCK = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_ACTION = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_MISS = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_FINISH = esim_register_event(mod_handler_load);
 
 	EV_MOD_STORE = esim_register_event(mod_handler_store);
+	EV_MOD_STORE_LOCK = esim_register_event(mod_handler_store);
 	EV_MOD_STORE_ACTION = esim_register_event(mod_handler_store);
 	EV_MOD_STORE_FINISH = esim_register_event(mod_handler_store);
 
