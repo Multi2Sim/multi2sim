@@ -19,39 +19,6 @@
 
 #include <mem-system.h>
 
-/*
- * Private Functions
- */
-
-// FIXME - static
-void mod_access_insert(struct mod_t *mod, struct mod_stack_t *stack)
-{
-	int index;
-
-	/* Insert in access list */
-	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, access, stack);
-
-	/* Insert in access hash table */
-	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
-	DOUBLE_LINKED_LIST_INSERT_TAIL(&mod->access_hash_table[index], bucket, stack);
-}
-
-
-// FIXME - static
-void mod_access_extract(struct mod_t *mod, struct mod_stack_t *stack)
-{
-	int index;
-
-	/* Remove from access list */
-	DOUBLE_LINKED_LIST_REMOVE(mod, access, stack);
-
-	/* Remove from hash table */
-	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
-	DOUBLE_LINKED_LIST_REMOVE(&mod->access_hash_table[index], bucket, stack);
-}
-
-
-
 
 /*
  * Public Functions
@@ -134,8 +101,7 @@ void mod_dump(struct mod_t *mod, FILE *f)
 
 /* Access a memory module.
  * Variable 'witness', if specified, will be increased when the access completes. */
-void mod_access(struct mod_t *mod, int mod_type,
-	enum mod_access_kind_t access_kind,
+void mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_kind,
 	uint32_t addr, int *witness_ptr)
 {
 	struct mod_stack_t *stack;
@@ -161,6 +127,14 @@ void mod_access(struct mod_t *mod, int mod_type,
 
 	/* Schedule */
 	esim_execute_event(event, stack);
+}
+
+
+/* Return true if module can be accessed. */
+int mod_can_access(struct mod_t *mod, uint32_t addr)
+{
+	/* FIXME */
+	return mod->access_list_count < 10;
 }
 
 
@@ -271,4 +245,30 @@ void mod_stack_wakeup_port(struct mod_port_t *port)
 		DOUBLE_LINKED_LIST_REMOVE(port, waiting, stack);
 		esim_schedule_event(event, stack, 0);
 	}
+}
+
+
+void mod_access_insert(struct mod_t *mod, struct mod_stack_t *stack)
+{
+	int index;
+
+	/* Insert in access list */
+	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, access, stack);
+
+	/* Insert in access hash table */
+	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
+	DOUBLE_LINKED_LIST_INSERT_TAIL(&mod->access_hash_table[index], bucket, stack);
+}
+
+
+void mod_access_extract(struct mod_t *mod, struct mod_stack_t *stack)
+{
+	int index;
+
+	/* Remove from access list */
+	DOUBLE_LINKED_LIST_REMOVE(mod, access, stack);
+
+	/* Remove from hash table */
+	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
+	DOUBLE_LINKED_LIST_REMOVE(&mod->access_hash_table[index], bucket, stack);
 }
