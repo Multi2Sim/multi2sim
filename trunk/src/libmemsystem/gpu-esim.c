@@ -25,6 +25,12 @@
  * Event-Driven Simulation
  */
 
+int EV_MOD_GPU_LOAD;
+int EV_MOD_GPU_LOAD_FINISH;
+
+int EV_MOD_GPU_STORE;
+int EV_MOD_GPU_STORE_FINISH;
+
 int EV_MOD_GPU_READ;
 int EV_MOD_GPU_READ_REQUEST;
 int EV_MOD_GPU_READ_REQUEST_RECEIVE;
@@ -42,6 +48,76 @@ int EV_MOD_GPU_WRITE_UNLOCK;
 int EV_MOD_GPU_WRITE_FINISH;
 
 
+void mod_handler_gpu_load(int event, void *data)
+{
+	struct mod_stack_t *stack = data;
+	struct mod_stack_t *new_stack;
+
+	struct mod_t *mod = stack->mod;
+
+
+	if (event == EV_MOD_GPU_LOAD)
+	{
+		mem_debug("%lld %lld load mod=\"%s\" addr=%u\n",
+			esim_cycle, stack->id, mod->name, stack->addr);
+
+		/* Call EV_MOD_GPU_READ */
+		new_stack = mod_stack_create(stack->id, mod, stack->addr,
+			EV_MOD_GPU_LOAD_FINISH, stack);
+		new_stack->witness_ptr = stack->witness_ptr;
+		esim_execute_event(EV_MOD_GPU_READ, new_stack);
+		return;
+	}
+
+	if (event == EV_MOD_GPU_LOAD_FINISH)
+	{
+		mem_debug("  %lld %lld load finish\n",
+			esim_cycle, stack->id);
+
+		/* Return */
+		mod_stack_return(stack);
+		return;
+	}
+
+	abort();
+}
+
+
+void mod_handler_gpu_store(int event, void *data)
+{
+	struct mod_stack_t *stack = data;
+	struct mod_stack_t *new_stack;
+
+	struct mod_t *mod = stack->mod;
+
+
+	if (event == EV_MOD_GPU_STORE)
+	{
+		mem_debug("%lld %lld store mod=\"%s\" addr=%u\n",
+			esim_cycle, stack->id, mod->name, stack->addr);
+
+		/* Call EV_MOD_GPU_WRITE */
+		new_stack = mod_stack_create(stack->id, mod, stack->addr,
+			EV_MOD_GPU_STORE_FINISH, stack);
+		new_stack->witness_ptr = stack->witness_ptr;
+		esim_execute_event(EV_MOD_GPU_WRITE, new_stack);
+		return;
+	}
+
+	if (event == EV_MOD_GPU_STORE_FINISH)
+	{
+		mem_debug("  %lld %lld store finish\n",
+			esim_cycle, stack->id);
+
+		/* Return */
+		mod_stack_return(stack);
+		return;
+	}
+
+	abort();
+}
+
+
 void mod_handler_gpu_read(int event, void *data)
 {
 	struct mod_stack_t *stack = data, *newstack;
@@ -55,7 +131,8 @@ void mod_handler_gpu_read(int event, void *data)
 		/* If there is any pending access in the cache, this access should
 		 * be enqueued in the waiting list, since all accesses need to be
 		 * done in order. */
-		if (mod->waiting_list_head) {
+		if (mod->waiting_list_head)
+		{
 			mem_debug("%lld %lld read cache=\"%s\" addr=%u\n",
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"order\"\n",

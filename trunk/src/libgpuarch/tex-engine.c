@@ -193,9 +193,10 @@ void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 		{
 			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
-			mod_access(compute_unit->global_mod, mod_access_read,
+			mod_access(compute_unit->global_mod,
+				2,  /* GPU */
+				mod_access_read,
 				work_item_uop->global_mem_access_addr,
-				work_item_uop->global_mem_access_size,
 				&uop->global_mem_witness);
 			uop->global_mem_witness--;
 		}

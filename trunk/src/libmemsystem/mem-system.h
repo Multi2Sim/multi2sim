@@ -248,6 +248,8 @@ enum mod_range_kind_t
 	mod_range_interleaved
 };
 
+#define MOD_ACCESS_HASH_TABLE_SIZE  7
+
 /* Memory module */
 struct mod_t
 {
@@ -260,15 +262,18 @@ struct mod_t
 
 	/* Address range */
 	enum mod_range_kind_t range_kind;
-	union {
+	union
+	{
 		/* For range_kind = mod_range_bounds */
-		struct {
+		struct
+		{
 			uint32_t low;
 			uint32_t high;
 		} bounds;
 
 		/* For range_kind = mod_range_interleaved */
-		struct {
+		struct
+		{
 			uint32_t mod;
 			uint32_t div;
 			uint32_t eq;
@@ -313,8 +318,17 @@ struct mod_t
 	/* Linked list of accesses */
 	struct mod_stack_t *access_list_head;
 	struct mod_stack_t *access_list_tail;
-	int access_count;
-	int access_max;
+	int access_list_count;
+	int access_list_max;
+
+	/* Hash table of accesses */
+	struct
+	{
+		struct mod_stack_t *bucket_list_head;
+		struct mod_stack_t *bucket_list_tail;
+		int bucket_list_count;
+		int bucket_list_max;
+	} access_hash_table[MOD_ACCESS_HASH_TABLE_SIZE];
 
 	/* FIXME: remove */
 	struct linked_list_t *__access_list;  /* Elements of type ccache_access_t */
@@ -360,7 +374,14 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind,
 void mod_free(struct mod_t *mod);
 void mod_dump(struct mod_t *mod, FILE *f);
 
-void mod_access(struct mod_t *mod, int access, uint32_t addr, uint32_t size, int *witness_ptr);
+/* Access a module.
+ * FIXME: mod_type: 1 - CPU, 2 - GPU. Remove once the coherence protocol is
+ * shared between them. Currently, this determines the first event to
+ * schedule (EV_MOD_xxx or EV_GPU_MOD_xxx). */
+void mod_access(struct mod_t *mod, int mod_type,
+	enum mod_access_kind_t access_kind,
+	uint32_t addr, int *witness_ptr);
+
 struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
 
 
@@ -369,6 +390,12 @@ struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
 /*
  * CPU/GPU Common Event-Driven Simulation
  */
+
+extern int EV_MOD_GPU_LOAD;
+extern int EV_MOD_GPU_LOAD_FINISH;
+
+extern int EV_MOD_GPU_STORE;
+extern int EV_MOD_GPU_STORE_FINISH;
 
 extern int EV_MOD_GPU_READ;
 extern int EV_MOD_GPU_READ_REQUEST;
@@ -392,10 +419,6 @@ extern int EV_MOD_GPU_WRITE_FINISH;
  * CPU Event-Driven Simulation
  */
 
-extern int EV_MOD_FIND_AND_LOCK;
-extern int EV_MOD_FIND_AND_LOCK_ACTION;
-extern int EV_MOD_FIND_AND_LOCK_FINISH;
-
 extern int EV_MOD_LOAD;
 extern int EV_MOD_LOAD_ACTION;
 extern int EV_MOD_LOAD_MISS;
@@ -404,6 +427,10 @@ extern int EV_MOD_LOAD_FINISH;
 extern int EV_MOD_STORE;
 extern int EV_MOD_STORE_ACTION;
 extern int EV_MOD_STORE_FINISH;
+
+extern int EV_MOD_FIND_AND_LOCK;
+extern int EV_MOD_FIND_AND_LOCK_ACTION;
+extern int EV_MOD_FIND_AND_LOCK_FINISH;
 
 extern int EV_MOD_EVICT;
 extern int EV_MOD_EVICT_INVALID;
@@ -477,6 +504,14 @@ struct mod_stack_t
 	int reply_size;
 	int pending;
 
+	/* Linked list of accesses in 'mod' */
+	struct mod_stack_t *access_list_prev;
+	struct mod_stack_t *access_list_next;
+
+	/* Bucket list of accesses in hash table in 'mod' */
+	struct mod_stack_t *bucket_list_prev;
+	struct mod_stack_t *bucket_list_next;
+
 	/* Flags */
 	int hit : 1;
 	int err : 1;
@@ -516,6 +551,8 @@ void mod_stack_wakeup_mod(struct mod_t *mod);
 void mod_stack_wait_in_port(struct mod_stack_t *stack, int event);
 void mod_stack_wakeup_port(struct mod_port_t *port);
 
+void mod_handler_gpu_load(int event, void *data);
+void mod_handler_gpu_store(int event, void *data);
 void mod_handler_gpu_read(int event, void *data);
 void mod_handler_gpu_write(int event, void *data);
 
