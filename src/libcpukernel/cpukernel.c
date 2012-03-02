@@ -92,7 +92,7 @@ void ke_done(void)
 	struct ctx_t *ctx;
 
 	/* Finish all contexts */
-	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_next)
+	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_list_next)
 		if (!ctx_get_status(ctx, ctx_finished))
 			ctx_finish(ctx, 0);
 
@@ -119,7 +119,7 @@ void ke_dump(FILE *f)
 	while (ctx) {
 		fprintf(f, "kernel context #%d:\n", n);
 		ctx_dump(ctx, f);
-		ctx = ctx->context_next;
+		ctx = ctx->context_list_next;
 		n++;
 	}
 }
@@ -128,13 +128,37 @@ void ke_dump(FILE *f)
 void ke_list_insert_head(enum ke_list_kind_t list, struct ctx_t *ctx)
 {
 	assert(!ke_list_member(list, ctx));
-	switch (list) {
-	case ke_list_context: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, context, ctx); break;
-	case ke_list_running: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, running, ctx); break;
-	case ke_list_finished: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, finished, ctx); break;
-	case ke_list_zombie: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, zombie, ctx); break;
-	case ke_list_suspended: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, suspended, ctx); break;
-	case ke_list_alloc: DOUBLE_LINKED_LIST_INSERT_HEAD(ke, alloc, ctx); break;
+	switch (list)
+	{
+	case ke_list_context:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, context, ctx);
+		break;
+
+	case ke_list_running:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, running, ctx);
+		break;
+
+	case ke_list_finished:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, finished, ctx);
+		break;
+
+	case ke_list_zombie:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, zombie, ctx);
+		break;
+
+	case ke_list_suspended:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, suspended, ctx);
+		break;
+
+	case ke_list_alloc:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, alloc, ctx);
+		break;
 	}
 }
 
@@ -352,7 +376,7 @@ void ke_process_events()
 	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
 
 		/* Save next */
-		next = ctx->suspended_next;
+		next = ctx->suspended_list_next;
 
 		/* Context is suspended in 'nanosleep' system call. */
 		if (ctx_get_status(ctx, ctx_nanosleep))
@@ -642,7 +666,7 @@ void ke_process_events()
 	 * LOOP 2
 	 * Check list of all contexts for expired timers.
 	 */
-	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_next)
+	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_list_next)
 	{
 		int sig[3] = { 14, 26, 27 };  /* SIGALRM, SIGVTALRM, SIGPROF */
 		int i;
@@ -697,7 +721,7 @@ void ke_process_events()
 	 * LOOP 3
 	 * Process pending signals in running contexts to launch signal handlers
 	 */
-	for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
+	for (ctx = ke->running_list_head; ctx; ctx = ctx->running_list_next)
 	{
 		signal_handler_check(ctx);
 	}
@@ -752,7 +776,7 @@ void ke_run(void)
 	for (;;) {
 		
 		/* Stop if all contexts finished */
-		if (ke->finished_count >= ke->context_count)
+		if (ke->finished_list_count >= ke->context_list_count)
 			ke_sim_finish = ke_sim_finish_ctx;
 
 		/* Stop if maximum number of CPU instructions exceeded */
@@ -775,7 +799,7 @@ void ke_run(void)
 		cycle++;
 
 		/* Run an instruction from every running process */
-		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
+		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_list_next)
 			ctx_execute_inst(ctx);
 	
 		/* Free finished contexts */

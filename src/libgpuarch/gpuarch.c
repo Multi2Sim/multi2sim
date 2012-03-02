@@ -1298,7 +1298,7 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 
 			/* Store next busy compute unit, since this can change
 			 * during 'gpu_compute_unit_run' */
-			compute_unit_next = compute_unit->busy_next;
+			compute_unit_next = compute_unit->busy_list_next;
 
 			/* Run one cycle */
 			gpu_compute_unit_run(compute_unit);

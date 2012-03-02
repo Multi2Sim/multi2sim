@@ -813,7 +813,7 @@ void sim_stats_summary(void)
 	fprintf(stderr, "Time = %.2f\n", sec_count);
 	fprintf(stderr, "Instructions = %lld\n", (long long) inst_count);
 	fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
-	fprintf(stderr, "Contexts = %d\n", ke->running_max);
+	fprintf(stderr, "Contexts = %d\n", ke->running_list_max);
 	fprintf(stderr, "Memory = %lu\n", mem_max_mapped_space);
 	fprintf(stderr, "SimEnd = %s\n", map_value(&ke_sim_finish_map, ke_sim_finish));
 

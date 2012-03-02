@@ -1576,19 +1576,21 @@ void amd_inst_GROUP_BARRIER_impl()
 	DOUBLE_LINKED_LIST_REMOVE(gpu_isa_work_group, running, gpu_isa_wavefront);
 	DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_isa_work_group, barrier, gpu_isa_wavefront);
 	gpu_isa_debug("%s (gid=%d) reached barrier (%d reached, %d left)\n",
-		gpu_isa_wavefront->name, gpu_isa_work_group->id, gpu_isa_work_group->barrier_count,
-		gpu_isa_work_group->wavefront_count - gpu_isa_work_group->barrier_count);
+		gpu_isa_wavefront->name, gpu_isa_work_group->id, gpu_isa_work_group->barrier_list_count,
+		gpu_isa_work_group->wavefront_count - gpu_isa_work_group->barrier_list_count);
 	
 	/* If all wavefronts in work-group reached the barrier, wake them up */
-	if (gpu_isa_work_group->barrier_count == gpu_isa_work_group->wavefront_count) {
+	if (gpu_isa_work_group->barrier_list_count == gpu_isa_work_group->wavefront_count)
+	{
 		struct gpu_wavefront_t *wavefront;
-		while (gpu_isa_work_group->barrier_list_head) {
+		while (gpu_isa_work_group->barrier_list_head)
+		{
 			wavefront = gpu_isa_work_group->barrier_list_head;
 			DOUBLE_LINKED_LIST_REMOVE(gpu_isa_work_group, barrier, wavefront);
 			DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_isa_work_group, running, wavefront);
 		}
-		assert(gpu_isa_work_group->running_count == gpu_isa_work_group->wavefront_count);
-		assert(gpu_isa_work_group->barrier_count == 0);
+		assert(gpu_isa_work_group->running_list_count == gpu_isa_work_group->wavefront_count);
+		assert(gpu_isa_work_group->barrier_list_count == 0);
 		gpu_isa_debug("%s completed barrier, waking up wavefronts\n",
 			gpu_isa_work_group->name);
 	}

@@ -1082,7 +1082,7 @@ static void cpu_fast_forward(uint64_t max_inst)
 	for (;;) {
 
 		/* Check finished contexts */
-		if (ke->finished_count >= ke->context_count)
+		if (ke->finished_list_count >= ke->context_list_count)
 			ke_sim_finish = ke_sim_finish_ctx;
 		
 		/* Stop if any previous reason met */
@@ -1094,8 +1094,8 @@ static void cpu_fast_forward(uint64_t max_inst)
 			break;
 
 		/* Run an instruction from every running process */
-		inst += ke->running_count;
-		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_next)
+		inst += ke->running_list_count;
+		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_list_next)
 			ctx_execute_inst(ctx);
 	
 		/* Free finished contexts */
@@ -1134,7 +1134,7 @@ void cpu_run()
 	for (;;) {
 
 		/* Stop if all contexts finished */
-		if (ke->finished_count >= ke->context_count)
+		if (ke->finished_list_count >= ke->context_list_count)
 			ke_sim_finish = ke_sim_finish_ctx;
 
 		/* Stop if maximum number of CPU instructions exceeded */

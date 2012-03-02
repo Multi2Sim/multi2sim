@@ -888,12 +888,12 @@ struct ctx_t
 	uint64_t wakeup_futex_sleep;  /* Assignment from ke->futex_sleep_count */
 
 	/* Links to contexts forming a linked list. */
-	struct ctx_t *context_next, *context_prev;
-	struct ctx_t *running_next, *running_prev;
-	struct ctx_t *suspended_next, *suspended_prev;
-	struct ctx_t *finished_next, *finished_prev;
-	struct ctx_t *zombie_next, *zombie_prev;
-	struct ctx_t *alloc_next, *alloc_prev;
+	struct ctx_t *context_list_next, *context_list_prev;
+	struct ctx_t *running_list_next, *running_list_prev;
+	struct ctx_t *suspended_list_next, *suspended_list_prev;
+	struct ctx_t *finished_list_next, *finished_list_prev;
+	struct ctx_t *zombie_list_next, *zombie_list_prev;
+	struct ctx_t *alloc_list_next, *alloc_list_prev;
 
 	/* Substructures */
 	struct loader_t *loader;
@@ -984,19 +984,41 @@ struct kernel_t
 	/* Flag set when any context changes any status other than 'specmode' */
 	int context_reschedule;
 
-	/* Lists of contexts */
-	int context_count, context_max;
-	int running_count, running_max;
-	int suspended_count, suspended_max;
-	int zombie_count, zombie_max;
-	int finished_count, finished_max;
-	int alloc_count, alloc_max;
-	struct ctx_t *context_list_head, *context_list_tail;
-	struct ctx_t *running_list_head, *running_list_tail;
-	struct ctx_t *suspended_list_head, *suspended_list_tail;
-	struct ctx_t *zombie_list_head, *zombie_list_tail;
-	struct ctx_t *finished_list_head, *finished_list_tail;
-	struct ctx_t *alloc_list_head, *alloc_list_tail;
+	/* List of contexts */
+	struct ctx_t *context_list_head;
+	struct ctx_t *context_list_tail;
+	int context_list_count;
+	int context_list_max;
+
+	/* List of running contexts */
+	struct ctx_t *running_list_head;
+	struct ctx_t *running_list_tail;
+	int running_list_count;
+	int running_list_max;
+
+	/* List of suspended contexts */
+	struct ctx_t *suspended_list_head;
+	struct ctx_t *suspended_list_tail;
+	int suspended_list_count;
+	int suspended_list_max;
+
+	/* List of zombie contexts */
+	struct ctx_t *zombie_list_head;
+	struct ctx_t *zombie_list_tail;
+	int zombie_list_count;
+	int zombie_list_max;
+
+	/* List of finished contexts */
+	struct ctx_t *finished_list_head;
+	struct ctx_t *finished_list_tail;
+	int finished_list_count;
+	int finished_list_max;
+
+	/* List of allocated contexts */
+	struct ctx_t *alloc_list_head;
+	struct ctx_t *alloc_list_tail;
+	int alloc_list_count;
+	int alloc_list_max;
 
 	/* Stats */
 	uint64_t inst_count;  /* Number of emulated instructions */

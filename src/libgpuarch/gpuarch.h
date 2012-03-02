@@ -176,9 +176,12 @@ struct gpu_uop_t
 	int odep_count;
 
 	/* Double linked lists of producer-consumers */
-	struct gpu_uop_t *dep_next, *dep_prev;
-	struct gpu_uop_t *dep_list_head, *dep_list_tail;
-	int dep_count, dep_max;
+	struct gpu_uop_t *dep_list_next;
+	struct gpu_uop_t *dep_list_prev;
+	struct gpu_uop_t *dep_list_head;
+	struct gpu_uop_t *dep_list_tail;
+	int dep_list_count;
+	int dep_list_max;
 
 	/* Per stream-core data. This space is dynamically allocated for an uop.
 	 * It should be always the last field of the structure. */
@@ -235,8 +238,10 @@ struct gpu_compute_unit_t
 	uint64_t gpu_uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
 
 	/* Double linked list of compute units */
-	struct gpu_compute_unit_t *ready_prev, *ready_next;
-	struct gpu_compute_unit_t *busy_prev, *busy_next;
+	struct gpu_compute_unit_t *ready_list_prev;
+	struct gpu_compute_unit_t *ready_list_next;
+	struct gpu_compute_unit_t *busy_list_prev;
+	struct gpu_compute_unit_t *busy_list_next;
 
 	/* Entry points to memory hierarchy */
 	struct mod_t *global_mod;  /* Global memory */
@@ -380,10 +385,18 @@ struct gpu_t
 
 	/* Compute units */
 	struct gpu_compute_unit_t **compute_units;
-	struct gpu_compute_unit_t *ready_list_head, *ready_list_tail;  /* CUs accepting work-groups */
-	struct gpu_compute_unit_t *busy_list_head, *busy_list_tail;  /* CUs with at least one work-group */
-	int ready_count, ready_max;
-	int busy_count, busy_max;
+
+	/* List of ready compute units accepting work-groups */
+	struct gpu_compute_unit_t *ready_list_head;
+	struct gpu_compute_unit_t *ready_list_tail;
+	int ready_list_count;
+	int ready_list_max;
+
+	/* List of busy compute units */
+	struct gpu_compute_unit_t *busy_list_head;
+	struct gpu_compute_unit_t *busy_list_tail;
+	int busy_list_count;
+	int busy_list_max;
 };
 
 #define FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
