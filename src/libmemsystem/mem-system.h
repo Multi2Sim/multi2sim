@@ -306,9 +306,13 @@ struct mod_t
 	struct net_node_t *high_net_node;
 	struct net_node_t *low_net_node;
 
+	/* FIXME: remove */
 	struct linked_list_t *access_list;  /* Elements of type ccache_access_t */
 	int pending_reads;
 	int pending_writes;
+
+	/* FIXME: remove */
+	int color;  /* For coloring algorithm */
 
 	/* Stats */
 	long long accesses;
