@@ -312,6 +312,7 @@ struct mod_t
 	/* Smallest block size of high nodes. When there is no high node, the
 	 * sub-block size is equal to the block size. */
 	int sub_block_size;
+	int num_sub_blocks;  /* block_size / sub_block_size */
 
 	/* Interconnects */
 	struct net_t *high_net;
