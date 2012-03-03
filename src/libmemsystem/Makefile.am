@@ -22,7 +22,6 @@ INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libgpukernel \
 	-I$(top_srcdir)/src/libgpudisasm \
 	\
-	-I$(top_srcdir)/src/libcachesystem \
 	-I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libnetwork \
 	-I$(top_srcdir)/src/libopt \

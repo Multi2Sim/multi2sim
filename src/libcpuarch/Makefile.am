@@ -26,7 +26,6 @@ INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libopt \
 	-I$(top_srcdir)/src/libmisc \
 	-I$(top_srcdir)/src/libcpudisasm \
-	-I$(top_srcdir)/src/libcachesystem \
 	-I$(top_srcdir)/src/libmemsystem \
 	-I$(top_srcdir)/src/libnetwork \
 	-I$(top_srcdir)/src/libesim \
