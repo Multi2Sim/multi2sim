@@ -16,7 +16,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <cachesystem.h>
+#include <mem-system.h>
 
 
 /* Events */
@@ -1435,3 +1435,4 @@ void mod_handler_invalidate(int event, void *data)
 
 	abort();
 }
+

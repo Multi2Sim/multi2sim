@@ -3,8 +3,9 @@ lib_LIBRARIES = libmemsystem.a
 libmemsystem_a_SOURCES = \
 	cache.c \
 	config.c \
+	cpu-coherence.c \
 	directory.c \
-	gpu-esim.c \
+	gpu-coherence.c \
 	mem-system.c \
 	mem-system.h \
 	mmu.c \
