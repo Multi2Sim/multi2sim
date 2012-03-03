@@ -27,23 +27,26 @@ static int issue_sq(int core, int thread, int quant)
 
 	/* Process SQ */
 	linked_list_head(sq);
-	while (!linked_list_is_end(sq) && quant) {
-		
+	while (!linked_list_is_end(sq) && quant)
+	{
 		/* Get store */
 		store = linked_list_get(sq);
 		assert(store->uinst->opcode == x86_uinst_store);
 
-		/* Check that it can issue */
+		/* Only committed stores issue */
 		if (store->in_rob)
 			break;
-		if (!cache_system_can_access(core, thread, cache_kind_data,
-			mod_access_write, store->physical_address))
+
+		/* Check that memory system entry is ready */
+		if (!mod_can_access(THREAD.data_mod, store->physical_address))
 			break;
 
-		/* Store can be issued. */
+		/* Remove store from store queue */
 		sq_remove(core, thread);
-		cache_system_write(core, thread, cache_kind_data,
-			store->physical_address, CORE.eventq, store);
+
+		/* Issue store */
+		mod_access(THREAD.data_mod, 1, mod_access_write, store->physical_address,
+			NULL, CORE.eventq, store);
 
 		/* The cache system will place the store at the head of the
 		 * event queue when it is ready. For now, mark "in_eventq" to
@@ -84,29 +87,31 @@ static int issue_lq(int core, int thread, int quant)
 	
 	/* Process lq */
 	linked_list_head(lq);
-	while (!linked_list_is_end(lq) && quant) {
-		
-		/* Get element from LQ.
-		 * If it is not ready, go to the next one */
+	while (!linked_list_is_end(lq) && quant)
+	{
+		/* Get element from load queue. If it is not ready, go to the next one */
 		load = linked_list_get(lq);
-		if (!load->ready && !rf_ready(load)) {
+		if (!load->ready && !rf_ready(load))
+		{
 			linked_list_next(lq);
 			continue;
 		}
 		load->ready = 1;
-		if (!cache_system_can_access(core, thread, cache_kind_data,
-			mod_access_read, load->physical_address))
+
+		/* Check that memory system is accessible */
+		if (!mod_can_access(THREAD.data_mod, load->physical_address))
 		{
 			linked_list_next(lq);
 			continue;
 		}
 
-		/* Load can be issued. Remove it from lq.
-		 * Access data tlb and cache. */
-		lq_remove(core, thread);
+		/* Remove from load queue */
 		assert(load->uinst->opcode == x86_uinst_load);
-		cache_system_read(core, thread, cache_kind_data,
-			load->physical_address, CORE.eventq, load);
+		lq_remove(core, thread);
+
+		/* Access memory system */
+		mod_access(THREAD.data_mod, 1, mod_access_read, load->physical_address,
+			NULL, CORE.eventq, load);
 
 		/* The cache system will place the load at the head of the
 		 * event queue when it is ready. For now, mark "in_eventq" to

@@ -626,7 +626,8 @@ struct cpu_thread_t
 	int tcacheq_occ;  /* Number of uops occupied in the trace cache queue */
 	int fetch_bsize;  /* Block size of instruction cache for this thread */
 	uint32_t fetch_block;  /* Virtual address of last fetched block */
-	uint64_t fetch_access;  /* Cache access id of last instruction cache access */
+	uint32_t fetch_address;  /* Physical address of last instruction fetch */
+	long long fetch_access;  /* Module access ID of last instruction fetch */
 	uint64_t fetch_stall_until;  /* Cycle until which fetching is stalled (inclussive) */
 
 	/* Entries to the memory system */

@@ -67,6 +67,8 @@ void mod_free(struct mod_t *mod)
 	linked_list_free(mod->high_mod_list);
 	if (mod->cache)
 		cache_free(mod->cache);
+	if (mod->dir)
+		dir_free(mod->dir);
 	free(mod->banks);
 	free(mod->name);
 	free(mod);
@@ -100,9 +102,11 @@ void mod_dump(struct mod_t *mod, FILE *f)
 
 
 /* Access a memory module.
- * Variable 'witness', if specified, will be increased when the access completes. */
-void mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_kind,
-	uint32_t addr, int *witness_ptr)
+ * Variable 'witness', if specified, will be increased when the access completes.
+ * The function returns a unique access ID.
+ */
+long long mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_kind,
+	uint32_t addr, int *witness_ptr, struct linked_list_t *event_queue, void *event_queue_item)
 {
 	struct mod_stack_t *stack;
 	int event;
@@ -111,7 +115,11 @@ void mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_k
 	mod_stack_id++;
 	stack = mod_stack_create(mod_stack_id,
 		mod, addr, ESIM_EV_NONE, NULL);
+
+	/* Initialize */
 	stack->witness_ptr = witness_ptr;
+	stack->event_queue = event_queue;
+	stack->event_queue_item = event_queue_item;
 
 	/* FIXME - Select CPU/GPU event */
 	if (mod_type == 1)
@@ -127,6 +135,9 @@ void mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_k
 
 	/* Schedule */
 	esim_execute_event(event, stack);
+
+	/* Return access ID */
+	return stack->id;
 }
 
 
@@ -134,7 +145,7 @@ void mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_k
 int mod_can_access(struct mod_t *mod, uint32_t addr)
 {
 	/* FIXME */
-	return mod->access_list_count < 10;
+	return mod->access_list_count < 4;
 }
 
 
@@ -248,7 +259,7 @@ void mod_stack_wakeup_port(struct mod_port_t *port)
 }
 
 
-void mod_access_insert(struct mod_t *mod, struct mod_stack_t *stack)
+void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack)
 {
 	int index;
 
@@ -261,7 +272,7 @@ void mod_access_insert(struct mod_t *mod, struct mod_stack_t *stack)
 }
 
 
-void mod_access_extract(struct mod_t *mod, struct mod_stack_t *stack)
+void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack)
 {
 	int index;
 
@@ -271,4 +282,24 @@ void mod_access_extract(struct mod_t *mod, struct mod_stack_t *stack)
 	/* Remove from hash table */
 	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
 	DOUBLE_LINKED_LIST_REMOVE(&mod->access_hash_table[index], bucket, stack);
+}
+
+
+/* Return true if the access with identifier 'id' is in flight.
+ * The address of the access is passed as well because this lookup is done on the
+ * access truth table, indexed by the access address.
+ */
+int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr)
+{
+	struct mod_stack_t *stack;
+	int index;
+
+	/* Look for access */
+	index = (addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
+	for (stack = mod->access_hash_table[index].bucket_list_head; stack; stack = stack->bucket_list_next)
+		if (stack->id == id)
+			return 1;
+
+	/* Not found */
+	return 0;
 }

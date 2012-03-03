@@ -41,10 +41,10 @@ static int can_fetch(int core, int thread)
 	/* If the next fetch address belongs to a new block, cache system
 	 * must be accessible to read it. */
 	block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
-	if (block != THREAD.fetch_block) {
+	if (block != THREAD.fetch_block)
+	{
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
-		if (!cache_system_can_access(core, thread, cache_kind_inst,
-			mod_access_read, phaddr))
+		if (!mod_can_access(THREAD.inst_mod, phaddr))
 			return 0;
 	}
 	
@@ -220,8 +220,9 @@ static void fetch_thread(int core, int thread)
 	{
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
 		THREAD.fetch_block = block;
-		THREAD.fetch_access = cache_system_read(core, thread,
-			cache_kind_inst, phaddr, NULL, NULL);
+		THREAD.fetch_address = phaddr;
+		THREAD.fetch_access = mod_access(THREAD.inst_mod, 1, mod_access_read, phaddr,
+			NULL, NULL, NULL);
 		THREAD.btb_reads++;
 	}
 
