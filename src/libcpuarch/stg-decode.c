@@ -52,7 +52,7 @@ static void decode_thread(int core, int thread)
 		/* Decode one macro-instruction coming from a block in the instruction
 		 * cache. If the cache access finished, extract it from the fetch queue. */
 		assert(!uop->mop_index);
-		if (!mod_access_in_flight(THREAD.inst_mod, uop->fetch_address, uop->fetch_access))
+		if (!mod_access_in_flight(THREAD.inst_mod, uop->fetch_access, uop->fetch_address))
 		{
 			do {
 				fetchq_remove(core, thread, 0);
