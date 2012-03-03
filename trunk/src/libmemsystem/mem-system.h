@@ -336,11 +336,6 @@ struct mod_t
 	} access_hash_table[MOD_ACCESS_HASH_TABLE_SIZE];
 
 	/* FIXME: remove */
-	struct linked_list_t *__access_list;  /* Elements of type ccache_access_t */
-	int __pending_reads;
-	int __pending_writes;
-
-	/* FIXME: remove */
 	int color;  /* For coloring algorithm */
 
 	/* Stats */
