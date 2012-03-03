@@ -40,7 +40,7 @@ static int can_fetch(int core, int thread)
 	
 	/* If the next fetch address belongs to a new block, cache system
 	 * must be accessible to read it. */
-	block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
+	block = THREAD.fetch_neip & ~(THREAD.inst_mod->block_size - 1);
 	if (block != THREAD.fetch_block)
 	{
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
@@ -103,6 +103,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 		uop->in_fetchq = 1;
 		uop->fetch_tcache = fetch_tcache;
 		uop->specmode = ctx_get_status(ctx, ctx_specmode);
+		uop->fetch_address = THREAD.fetch_address;
 		uop->fetch_access = THREAD.fetch_access;
 		uop->neip = ctx->regs->eip;
 		uop->pred_neip = THREAD.fetch_neip;
@@ -163,7 +164,7 @@ static int fetch_thread_tcache(int core, int thread)
 	
 	/* Access BTB, branch predictor, and trace cache */
 	eip_branch = bpred_btb_next_branch(THREAD.bpred,
-		THREAD.fetch_neip, THREAD.fetch_bsize);
+		THREAD.fetch_neip, THREAD.inst_mod->block_size);
 	mpred = eip_branch ? bpred_lookup_multiple(THREAD.bpred,
 		eip_branch, tcache_branch_max) : 0;
 	hit = tcache_lookup(THREAD.tcache, THREAD.fetch_neip, mpred,
@@ -215,7 +216,7 @@ static void fetch_thread(int core, int thread)
 	
 	/* If new block to fetch is not the same as the previously fetched (and stored)
 	 * block, access the instruction cache. */
-	block = THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1);
+	block = THREAD.fetch_neip & ~(THREAD.inst_mod->block_size - 1);
 	if (block != THREAD.fetch_block)
 	{
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
@@ -227,7 +228,7 @@ static void fetch_thread(int core, int thread)
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */
-	while ((THREAD.fetch_neip & ~(THREAD.fetch_bsize - 1)) == block)
+	while ((THREAD.fetch_neip & ~(THREAD.inst_mod->block_size - 1)) == block)
 	{
 		/* If instruction caused context to suspend or finish */
 		if (!ctx_get_status(ctx, ctx_running))

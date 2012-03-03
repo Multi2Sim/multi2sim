@@ -387,11 +387,16 @@ long long mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t acc
 	uint32_t addr, int *witness_ptr, struct linked_list_t *event_queue, void *event_queue_item);
 int mod_can_access(struct mod_t *mod, uint32_t addr);
 
+int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
+	uint32_t *way_ptr, uint32_t *tag_ptr, int *state_ptr);
+
 void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack);
 void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack);
 int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr);
 
 struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
+
+int mod_get_retry_latency(struct mod_t *mod);
 
 
 
