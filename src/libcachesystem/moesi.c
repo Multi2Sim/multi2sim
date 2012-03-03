@@ -702,7 +702,8 @@ void mod_handler_evict(int event, void *data)
 		dir = target_mod->dir;
 		for (z = 0; z < dir->zsize; z++)
 		{
-			dir_entry_tag = stack->tag + z * cache_min_block_size;
+			dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+			assert(dir_entry_tag < stack->tag + target_mod->block_size);
 			if (dir_entry_tag < stack->src_tag || dir_entry_tag >= stack->src_tag + mod->block_size)
 				continue;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
@@ -855,33 +856,44 @@ void mod_handler_read_request(int event, void *data)
 		if (stack->state)
 		{
 			/* Status = M/O/E/S
-			 * Check: addr multiple of requester's block_size
-			 * Check: no subblock requested by mod is already owned by mod */
+			 * Check: address is a multiple of requester's block_size
+			 * Check: no sub-block requested by mod is already owned by mod */
 			assert(stack->addr % mod->block_size == 0);
 			dir = target_mod->dir;
 			for (z = 0; z < dir->zsize; z++)
 			{
-				dir_entry_tag = stack->tag + z * cache_min_block_size;
+				dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+				assert(dir_entry_tag < stack->tag + target_mod->block_size);
 				if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + mod->block_size)
 					continue;
 				dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 				assert(dir_entry->owner != mod->low_net_node->index);
 			}
 
-			/* Send read request to owners other than mod for all subblocks. */
+			/* Send read request to owners other than mod for all sub-blocks. */
 			for (z = 0; z < dir->zsize; z++)
 			{
 				struct net_node_t *node;
 
 				dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-				dir_entry_tag = stack->tag + z * cache_min_block_size;
-				if (!DIR_ENTRY_VALID_OWNER(dir_entry))  /* No owner */
+				dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+
+				/* No owner */
+				if (!DIR_ENTRY_VALID_OWNER(dir_entry))
 					continue;
-				if (dir_entry->owner == mod->low_net_node->index)  /* Owner is mod */
+
+				/* Owner is mod */
+				if (dir_entry->owner == mod->low_net_node->index)
 					continue;
+
+				/* Get owner mod */
 				node = list_get(target_mod->high_net->node_list, dir_entry->owner);
+				assert(node->kind == net_node_end);
 				owner = node->user_data;
-				if (dir_entry_tag % owner->block_size)  /* Not the first owner subblock */
+				assert(owner);
+
+				/* Not the first sub-block */
+				if (dir_entry_tag % owner->block_size)
 					continue;
 
 				/* Send read request */
@@ -951,12 +963,12 @@ void mod_handler_read_request(int event, void *data)
 				dir_entry->owner = DIR_ENTRY_OWNER_NONE;
 		}
 
-		/* For each subblock requested by mod, set mod as sharer, and
+		/* For each sub-block requested by mod, set mod as sharer, and
 		 * check whether there is other cache sharing it. */
 		shared = 0;
 		for (z = 0; z < dir->zsize; z++)
 		{
-			dir_entry_tag = stack->tag + z * cache_min_block_size;
+			dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
 			if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + mod->block_size)
 				continue;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
@@ -965,7 +977,7 @@ void mod_handler_read_request(int event, void *data)
 				shared = 1;
 		}
 
-		/* If no subblock requested by mod is shared by other cache, set mod
+		/* If no sub-block requested by mod is shared by other cache, set mod
 		 * as owner of all of them. Otherwise, notify requester that the block is
 		 * shared by setting the 'shared' return value to true. */
 		ret->shared = shared;
@@ -973,7 +985,7 @@ void mod_handler_read_request(int event, void *data)
 		{
 			for (z = 0; z < dir->zsize; z++)
 			{
-				dir_entry_tag = stack->tag + z * cache_min_block_size;
+				dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
 				if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + mod->block_size)
 					continue;
 				dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
@@ -1010,14 +1022,21 @@ void mod_handler_read_request(int event, void *data)
 		{
 			struct net_node_t *node;
 
-			dir_entry_tag = stack->tag + z * cache_min_block_size;
+			dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+			assert(dir_entry_tag < stack->tag + target_mod->block_size);
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			if (!DIR_ENTRY_VALID_OWNER(dir_entry))  /* No owner */
+
+			/* No owner */
+			if (!DIR_ENTRY_VALID_OWNER(dir_entry))
 				continue;
 
+			/* Get owner mod */
 			node = list_get(target_mod->high_net->node_list, dir_entry->owner);
+			assert(node && node->kind == net_node_end);
 			owner = node->user_data;
-			if (dir_entry_tag % owner->block_size)  /* Not the first subblock */
+
+			/* Not the first sub-block */
+			if (dir_entry_tag % owner->block_size)
 				continue;
 
 			stack->pending++;
@@ -1042,11 +1061,12 @@ void mod_handler_read_request(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s read request downup finish\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
-		/* Set owner of subblocks to 0. */
+		/* Set owner of sub-blocks to 0. */
 		dir = target_mod->dir;
 		for (z = 0; z < dir->zsize; z++)
 		{
-			dir_entry_tag = stack->tag + z * cache_min_block_size;
+			dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+			assert(dir_entry_tag < stack->tag + target_mod->block_size);
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 			dir_entry->owner = DIR_ENTRY_OWNER_NONE;
 		}
@@ -1247,7 +1267,8 @@ void mod_handler_write_request(int event, void *data)
 		for (z = 0; z < dir->zsize; z++)
 		{
 			assert(stack->addr % mod->block_size == 0);
-			dir_entry_tag = stack->tag + z * cache_min_block_size;
+			dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+			assert(dir_entry_tag < stack->tag + target_mod->block_size);
 			if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + mod->block_size)
 				continue;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
@@ -1345,8 +1366,8 @@ void mod_handler_invalidate(int event, void *data)
 
 	if (event == EV_MOD_INVALIDATE)
 	{
-		int node_count, i;
 		struct mod_t *sharer;
+		int i;
 
 		/* Get block info */
 		cache_get_block(mod->cache, stack->set, stack->way, &stack->tag, &stack->state);
@@ -1354,14 +1375,14 @@ void mod_handler_invalidate(int event, void *data)
 			stack->tag, mod->name, stack->set, stack->way, stack->state);
 		stack->pending = 1;
 
-		/* Send write request to all upper level sharers but mod */
+		/* Send write request to all upper level sharers except 'except_mod' */
 		dir = mod->dir;
 		for (z = 0; z < dir->zsize; z++)
 		{
-			dir_entry_tag = stack->tag + z * cache_min_block_size;
+			dir_entry_tag = stack->tag + z * mod->sub_block_size;
+			assert(dir_entry_tag < stack->tag + mod->block_size);
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			node_count = mod->high_net ? mod->high_net->end_node_count : 0;
-			for (i = 1; i < node_count; i++)
+			for (i = 0; i < dir->num_nodes; i++)
 			{
 				struct net_node_t *node;
 				
