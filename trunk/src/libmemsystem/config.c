@@ -481,7 +481,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	char buf[MAX_STRING_SIZE];
 	char mod_name[MAX_STRING_SIZE];
 
-	int sets;
+	int num_sets;
 	int assoc;
 	int block_size;
 	int latency;
@@ -512,7 +512,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 
 	/* Read values */
 	str_token(mod_name, sizeof mod_name, section, 1, " ");
-	sets = config_read_int(config, buf, "Sets", 16);
+	num_sets = config_read_int(config, buf, "Sets", 16);
 	assoc = config_read_int(config, buf, "Assoc", 2);
 	block_size = config_read_int(config, buf, "BlockSize", 256);
 	latency = config_read_int(config, buf, "Latency", 1);
@@ -527,7 +527,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 		fatal("%s: cache '%s': %s: invalid block replacement policy.\n%s",
 			mem_config_file_name, mod_name,
 			policy_str, err_mem_config_note);
-	if (sets < 1 || (sets & (sets - 1)))
+	if (num_sets < 1 || (num_sets & (num_sets - 1)))
 		fatal("%s: cache '%s': number of sets must be a power of two greater than 1.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (assoc < 1 || (assoc & (assoc - 1)))
@@ -554,6 +554,11 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 		bank_count, read_port_count, write_port_count,
 		block_size, latency);
 
+	/* Store directory size */
+	mod->dir_assoc = assoc;
+	mod->dir_num_sets = num_sets;
+	mod->dir_size = num_sets * assoc;
+
 	/* High network */
 	net_name = config_read_string(config, section, "HighNetwork", "");
 	net_node_name = config_read_string(config, section, "HighNetworkNode", "");
@@ -571,7 +576,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	mod->low_net_node = net_node;
 
 	/* Create cache */
-	mod->cache = cache_create(sets, block_size, assoc, policy);
+	mod->cache = cache_create(num_sets, block_size, assoc, policy);
 
 	/* Return */
 	return mod;
@@ -587,6 +592,8 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 	int bank_count;
 	int read_port_count;
 	int write_port_count;
+	int dir_size;
+	int dir_assoc;
 
 	char *net_name;
 	char *net_node_name;
@@ -604,6 +611,8 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 	bank_count = config_read_int(config, section, "Banks", 4);
 	read_port_count = config_read_int(config, section, "ReadPorts", 2);
 	write_port_count = config_read_int(config, section, "WritePorts", 2);
+	dir_size = config_read_int(config, section, "DirectorySize", 1024);
+	dir_assoc = config_read_int(config, section, "DirectoryAssoc", 8);
 
 	/* Check parameters */
 	if (block_size < 1 || (block_size & (block_size - 1)))
@@ -621,11 +630,25 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 	if (write_port_count < 1)
 		fatal("%s: global memory: invalid value for variable 'WritePorts'.\n%s",
 			mem_config_file_name, err_mem_config_note);
+	if (dir_size < 1 || (dir_size & (dir_size - 1)))
+		fatal("%s: directory size must be a power of two.\n%s",
+			mem_config_file_name, err_mem_config_note);
+	if (dir_assoc < 1 || (dir_assoc & (dir_assoc - 1)))
+		fatal("%s: directory associativity must be a power of two.\n%s",
+			mem_config_file_name, err_mem_config_note);
+	if (dir_assoc > dir_size)
+		fatal("%s: invalid directory associativity.\n%s",
+			mem_config_file_name, err_mem_config_note);
 
 	/* Create module */
 	mod = mod_create(mod_name, mod_kind_main_memory,
 			bank_count, read_port_count, write_port_count,
 			block_size, latency);
+
+	/* Store directory size */
+	mod->dir_size = dir_size;
+	mod->dir_assoc = dir_assoc;
+	mod->dir_num_sets = dir_size / dir_assoc;
 
 	/* High network */
 	net_name = config_read_string(config, section, "HighNetwork", "");
@@ -634,6 +657,9 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 			&net, &net_node);
 	mod->high_net = net;
 	mod->high_net_node = net_node;
+
+	/* Create cache and directory */
+	mod->cache = cache_create(dir_size / dir_assoc, block_size, dir_assoc, cache_policy_lru);
 
 	/* Return */
 	return mod;
@@ -1363,6 +1389,48 @@ static void mem_config_check_disjoint(void)
 }
 
 
+static void mem_config_read_sub_block_sizes(void)
+{
+	struct mod_t *mod;
+	struct mod_t *high_mod;
+
+	int num_nodes;
+	int i;
+
+	mem_debug("Creating directories:\n");
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+	{
+		/* Get module */
+		mod = list_get(mem_system->mod_list, i);
+
+		/* Calculate sub-block size */
+		mod->sub_block_size = mod->block_size;
+		for (linked_list_head(mod->high_mod_list); !linked_list_is_end(mod->high_mod_list);
+			linked_list_next(mod->high_mod_list))
+		{
+			high_mod = linked_list_get(mod->high_mod_list);
+			mod->sub_block_size = MIN(mod->sub_block_size, high_mod->block_size);
+		}
+
+		/* Get number of nodes for directory */
+		if (mod->high_net && list_count(mod->high_net->node_list))
+			num_nodes = list_count(mod->high_net->node_list);
+		else
+			num_nodes = 1;
+
+		/* Create directory */
+		mod->dir = dir_create(mod->dir_num_sets, mod->dir_assoc, mod->sub_block_size, num_nodes);
+		mem_debug("\t%s - %dx%dx%d (%dx%dx%d effective) - %d entries, %d sub-blocks\n",
+			mod->name, mod->dir_num_sets, mod->dir_assoc, num_nodes,
+			mod->dir_num_sets, mod->dir_assoc, linked_list_count(mod->high_mod_list),
+			mod->dir_size, mod->block_size / mod->sub_block_size);
+	}
+
+	/* Debug */
+	mem_debug("\n");
+}
+
+
 
 
 /*
@@ -1403,13 +1471,16 @@ void mem_system_config_read(void)
 	/* Create switches in internal networks */
 	mem_config_create_switches(config);
 
+	/* Check that all enforced sections and variables were specified */
+	config_check(config);
+	config_free(config);
+
 	/* Check routes to low and high modules */
 	mem_config_check_routes();
 
 	/* Check for disjoint CPU/GPU memory hierarchies */
 	mem_config_check_disjoint();
 
-	/* Check that all enforced sections and variables were specified */
-	config_check(config);
-	config_free(config);
+	/* Compute sub-block sizes, based on high modules */
+	mem_config_read_sub_block_sizes();
 }

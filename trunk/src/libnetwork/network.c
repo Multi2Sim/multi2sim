@@ -545,7 +545,8 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 
 	/* No route to destination */
 	if (!output_buffer)
-		fatal("%s: no route to destination.\n%s", net->name, err_net_no_route);
+		fatal("%s: no route between %s and %s.\n%s",
+			net->name, src_node->name, dst_node->name, err_net_no_route);
 	
 	/* Message is too long */
 	if (size > output_buffer->size)

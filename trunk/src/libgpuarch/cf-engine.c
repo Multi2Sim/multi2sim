@@ -223,11 +223,9 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 			{
 				work_item = ndrange->work_items[work_item_id];
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
-				mod_access(compute_unit->global_mod,
-					2,  /* GPU */
-					mod_access_nc_write,
-					work_item_uop->global_mem_access_addr,
-					&uop->global_mem_witness);
+				mod_access(compute_unit->global_mod, 2,  /* GPU */
+					mod_access_nc_write, work_item_uop->global_mem_access_addr,
+					&uop->global_mem_witness, NULL, NULL);
 				uop->global_mem_witness--;
 			}
 		}
