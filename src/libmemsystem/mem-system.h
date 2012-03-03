@@ -309,6 +309,10 @@ struct mod_t
 	struct linked_list_t *high_mod_list;
 	struct linked_list_t *low_mod_list;
 
+	/* Smallest block size of high nodes. When there is no high node, the
+	 * sub-block size is equal to the block size. */
+	int sub_block_size;
+
 	/* Interconnects */
 	struct net_t *high_net;
 	struct net_t *low_net;
@@ -378,12 +382,13 @@ void mod_dump(struct mod_t *mod, FILE *f);
  * FIXME: mod_type: 1 - CPU, 2 - GPU. Remove once the coherence protocol is
  * shared between them. Currently, this determines the first event to
  * schedule (EV_MOD_xxx or EV_GPU_MOD_xxx). */
-void mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_kind,
-	uint32_t addr, int *witness_ptr);
+long long mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_kind,
+	uint32_t addr, int *witness_ptr, struct linked_list_t *event_queue, void *event_queue_item);
 int mod_can_access(struct mod_t *mod, uint32_t addr);
 
-void mod_access_insert(struct mod_t *mod, struct mod_stack_t *stack);
-void mod_access_extract(struct mod_t *mod, struct mod_stack_t *stack);
+void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack);
+void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack);
+int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr);
 
 struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
 
@@ -483,6 +488,9 @@ struct mod_stack_t
 {
 	long long id;
 	int *witness_ptr;
+
+	struct linked_list_t *event_queue;
+	void *event_queue_item;
 
 	struct mod_t *mod;
 	struct mod_t *target_mod;

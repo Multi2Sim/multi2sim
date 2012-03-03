@@ -108,7 +108,7 @@ void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry)
 
 void dir_entry_set_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node)
 {
-	assert(node > 0 && node < dir->num_nodes);
+	assert(IN_RANGE(node, 0, dir->num_nodes - 1));
 	if (dir_entry->sharer[node / 8] & (1 << (node % 8)))
 		return;
 	dir_entry->sharer[node / 8] |= 1 << (node % 8);
@@ -119,7 +119,7 @@ void dir_entry_set_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int 
 
 void dir_entry_clear_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node)
 {
-	assert(node > 0 && node < dir->num_nodes);
+	assert(IN_RANGE(node, 0, dir->num_nodes - 1));
 	if (!(dir_entry->sharer[node / 8] & (1 << (node % 8))))
 		return;
 	dir_entry->sharer[node / 8] &= ~(1 << (node % 8));
@@ -137,7 +137,7 @@ void dir_entry_clear_all_sharers(struct dir_t *dir, volatile struct dir_entry_t 
 
 int dir_entry_is_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node)
 {
-	assert(node >= 0 && node < dir->num_nodes);
+	assert(IN_RANGE(node, 0, dir->num_nodes - 1));
 	return (dir_entry->sharer[node / 8] & (1 << (node % 8))) > 0;
 }
 
@@ -146,7 +146,8 @@ int dir_entry_group_shared_or_owned(struct dir_t *dir, int x, int y)
 {
 	struct dir_entry_t *dir_entry;
 	int z;
-	for (z = 0; z < dir->zsize; z++) {
+	for (z = 0; z < dir->zsize; z++)
+	{
 		dir_entry = DIR_ENTRY(x, y, z);
 		if (dir_entry->num_sharers || DIR_ENTRY_VALID_OWNER(dir_entry))
 			return 1;

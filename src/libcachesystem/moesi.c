@@ -98,7 +98,7 @@ void mod_handler_load(int event, void *data)
 			stack->addr, mod->name);
 
 		/* Keep access in module access list */
-		mod_access_insert(mod, stack);
+		mod_access_start(mod, stack);
 
 		/* Next event */
 		esim_schedule_event(EV_MOD_LOAD_LOCK, stack, 0);
@@ -185,9 +185,18 @@ void mod_handler_load(int event, void *data)
 		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
-		/* Unlock, and return. */
+		/* Unlock directory entry */
 		dir_lock_unlock(stack->dir_lock);
-		mod_access_extract(mod, stack);
+
+		/* Increase value for witness when fusing with GPU memory hierarchy */
+		/* FIXME - move increase of witness into 'mod_access_finish' */
+
+		/* Return event queue element into event queue */
+		if (stack->event_queue && stack->event_queue_item)
+			linked_list_add(stack->event_queue, stack->event_queue_item);
+
+		/* Finish access and return */
+		mod_access_finish(mod, stack);
 		mod_stack_return(stack);
 		return;
 	}
@@ -209,8 +218,8 @@ void mod_handler_store(int event, void *data)
 		mem_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
-		/* Keep access in module access list */
-		mod_access_insert(mod, stack);
+		/* Record access in module access list */
+		mod_access_start(mod, stack);
 
 		/* Next event */
 		esim_schedule_event(EV_MOD_STORE_LOCK, stack, 0);
@@ -245,7 +254,7 @@ void mod_handler_store(int event, void *data)
 			retry_lat = RETRY_LATENCY;
 			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
 			stack->retry = 1;
-			esim_schedule_event(EV_MOD_STORE, stack, retry_lat);
+			esim_schedule_event(EV_MOD_STORE_LOCK, stack, retry_lat);
 			return;
 		}
 
@@ -279,16 +288,24 @@ void mod_handler_store(int event, void *data)
 			dir_lock_unlock(stack->dir_lock);
 			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
 			stack->retry = 1;
-			esim_schedule_event(EV_MOD_STORE, stack, retry_lat);
+			esim_schedule_event(EV_MOD_STORE_LOCK, stack, retry_lat);
 			return;
 		}
 
-		/* Update tag/state, unlock, and return. */
-		if (mod->cache)
-			cache_set_block(mod->cache, stack->set, stack->way,
-				stack->tag, cache_block_modified);
+		/* Update tag/state and unlock */
+		cache_set_block(mod->cache, stack->set, stack->way,
+			stack->tag, cache_block_modified);
 		dir_lock_unlock(stack->dir_lock);
-		mod_access_extract(mod, stack);
+
+		/* Increase value for witness when fusing with GPU memory hierarchy */
+		/* FIXME - move increase of witness into 'mod_access_finish' */
+
+		/* Return event queue element into event queue */
+		if (stack->event_queue && stack->event_queue_item)
+			linked_list_add(stack->event_queue, stack->event_queue_item);
+
+		/* Finish access and return */
+		mod_access_finish(mod, stack);
 		mod_stack_return(stack);
 		return;
 	}
@@ -537,14 +554,17 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT_ACTION)
 	{
-		struct net_node_t *lower_node;
+		struct mod_t *low_mod;
+		struct net_node_t *low_node;
 
 		mem_debug("  %lld %lld 0x%x %s evict action\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
-		/* Get lower node */
-		lower_node = list_get(mod->low_net->node_list, 0);
-		assert(lower_node && lower_node->user_data);
+		/* Get low node */
+		low_mod = __mod_get_low_mod(mod);
+		low_node = low_mod->high_net_node;
+		assert(low_mod != mod);
+		assert(low_node && low_node->user_data == low_mod);
 		
 		/* State = I */
 		if (stack->state == cache_block_invalid)
@@ -559,7 +579,7 @@ void mod_handler_evict(int event, void *data)
 		{
 			/* Send message */
 			stack->msg = net_try_send_ev(mod->low_net, mod->low_net_node,
-				lower_node, mod->block_size + 8, EV_MOD_EVICT_RECEIVE, stack,
+				low_node, mod->block_size + 8, EV_MOD_EVICT_RECEIVE, stack,
 				event, stack);
 			stack->writeback = 1;
 			return;
@@ -571,7 +591,7 @@ void mod_handler_evict(int event, void *data)
 		{
 			/* Send message */
 			stack->msg = net_try_send_ev(mod->low_net, mod->low_net_node,
-				lower_node, 8, EV_MOD_EVICT_RECEIVE, stack, event, stack);
+				low_node, 8, EV_MOD_EVICT_RECEIVE, stack, event, stack);
 			return;
 		}
 
