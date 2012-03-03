@@ -209,7 +209,7 @@ char *cpu_report_file_name = "";
 int cpu_cores = 1;
 int cpu_threads = 1;
 
-uint64_t cpu_fast_forward_count;
+long long cpu_fast_forward_count;
 
 int cpu_context_quantum;
 int cpu_context_switch;
@@ -281,8 +281,6 @@ void cpu_config_check(void)
 	cpu_recover_penalty = config_read_int(cfg, section, "RecoverPenalty", 0);
 
 	mmu_page_size = config_read_int(cfg, section, "PageSize", 4096);
-	cache_system_iperfect = config_read_bool(cfg, section, "InstructionCachePerfect", 0);
-	cache_system_dperfect = config_read_bool(cfg, section, "DataCachePerfect", 0);
 
 
 	/* Section '[ Pipeline ]' */
@@ -404,7 +402,7 @@ void cpu_config_dump(FILE *f)
 	fprintf(f, "[ Config.General ]\n");
 	fprintf(f, "Cores = %d\n", cpu_cores);
 	fprintf(f, "Threads = %d\n", cpu_threads);
-	fprintf(f, "FastForward = %lld\n", (long long) cpu_fast_forward_count);
+	fprintf(f, "FastForward = %lld\n", cpu_fast_forward_count);
 	fprintf(f, "ContextSwitch = %s\n", cpu_context_switch ? "True" : "False");
 	fprintf(f, "ContextQuantum = %d\n", cpu_context_quantum);
 	fprintf(f, "ThreadQuantum = %d\n", cpu_thread_quantum);
@@ -412,8 +410,6 @@ void cpu_config_dump(FILE *f)
 	fprintf(f, "RecoverKind = %s\n", cpu_recover_kind_map[cpu_recover_kind]);
 	fprintf(f, "RecoverPenalty = %d\n", cpu_recover_penalty);
 	fprintf(f, "PageSize = %d\n", mmu_page_size);
-	fprintf(f, "InstructionCachePerfect = %s\n", cache_system_iperfect ? "True" : "False");
-	fprintf(f, "DataCachePerfect = %s\n", cache_system_dperfect ? "True" : "False");
 	fprintf(f, "\n");
 
 	/* Pipeline */
@@ -790,9 +786,6 @@ void cpu_dump_report()
 
 void cpu_thread_init(int core, int thread)
 {
-	/* Save block size of corresponding instruction cache. */
-	THREAD.fetch_bsize = cache_system_block_size(core, thread,
-		cache_kind_inst);
 }
 
 
@@ -813,9 +806,6 @@ void cpu_init()
 	/* Analyze CPU configuration file */
 	cpu_config_check();
 
-	/* Initialize cache system */
-	cache_system_init(cpu_cores, cpu_threads);
-	
 	/* Create processor structure and allocate cores/threads */
 	cpu = calloc(1, sizeof(struct cpu_t));
 	cpu->core = calloc(cpu_cores, sizeof(struct cpu_core_t));
@@ -851,7 +841,6 @@ void cpu_done()
 	tcache_done();
 	rf_done();
 	fu_done();
-	cache_system_done();
 
 	/* Free processor */
 	FOREACH_CORE

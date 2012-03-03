@@ -84,10 +84,12 @@ void mod_dump(struct mod_t *mod, FILE *f)
 
 	/* Read ports */
 	fprintf(f, "module '%s'\n", mod->name);
-	for (i = 0; i < mod->bank_count; i++) {
+	for (i = 0; i < mod->bank_count; i++)
+	{
 		fprintf(f, "  bank %d:\n", i);
 		bank = MOD_BANK_INDEX(mod, i);
-		for (j = 0; j < mod->read_port_count; j++) {
+		for (j = 0; j < mod->read_port_count; j++)
+		{
 			port = MOD_READ_PORT_INDEX(mod, bank, j);
 			fprintf(f, "  read port %d: ", j);
 
@@ -149,19 +151,124 @@ int mod_can_access(struct mod_t *mod, uint32_t addr)
 }
 
 
+/* Return {set, way, tag, state} for an address.
+ * The function returns TRUE on hit, FALSE on miss. */
+int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
+	uint32_t *way_ptr, uint32_t *tag_ptr, int *state_ptr)
+{
+	struct cache_t *cache = mod->cache;
+	struct cache_block_t *blk;
+	struct dir_lock_t *dir_lock;
+
+	uint32_t set;
+	uint32_t way;
+	uint32_t tag;
+
+	/* A transient tag is considered a hit if the block is
+	 * locked in the corresponding directory. */
+	tag = addr & ~cache->block_mask;
+	set = (tag >> cache->log_block_size) % cache->num_sets;
+	for (way = 0; way < cache->assoc; way++)
+	{
+		blk = &cache->sets[set].blocks[way];
+		if (blk->tag == tag && blk->state)
+			break;
+		if (blk->transient_tag == tag)
+		{
+			dir_lock = dir_lock_get(mod->dir, set, way);
+			if (dir_lock->lock)
+				break;
+		}
+	}
+
+	/* Miss */
+	if (way == cache->assoc)
+	{
+		PTR_ASSIGN(set_ptr, set);
+		PTR_ASSIGN(tag_ptr, tag);
+		PTR_ASSIGN(way_ptr, 0);
+		PTR_ASSIGN(state_ptr, 0);
+		return 0;
+	}
+
+	/* Hit */
+	PTR_ASSIGN(set_ptr, set);
+	PTR_ASSIGN(way_ptr, way);
+	PTR_ASSIGN(tag_ptr, tag);
+	PTR_ASSIGN(state_ptr, cache->sets[set].blocks[way].state);
+	return 1;
+}
+
+
+void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack)
+{
+	int index;
+
+	/* Insert in access list */
+	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, access, stack);
+
+	/* Insert in access hash table */
+	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
+	DOUBLE_LINKED_LIST_INSERT_TAIL(&mod->access_hash_table[index], bucket, stack);
+}
+
+
+void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack)
+{
+	int index;
+
+	/* Remove from access list */
+	DOUBLE_LINKED_LIST_REMOVE(mod, access, stack);
+
+	/* Remove from hash table */
+	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
+	DOUBLE_LINKED_LIST_REMOVE(&mod->access_hash_table[index], bucket, stack);
+}
+
+
+/* Return true if the access with identifier 'id' is in flight.
+ * The address of the access is passed as well because this lookup is done on the
+ * access truth table, indexed by the access address.
+ */
+int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr)
+{
+	struct mod_stack_t *stack;
+	int index;
+
+	/* Look for access */
+	index = (addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
+	for (stack = mod->access_hash_table[index].bucket_list_head; stack; stack = stack->bucket_list_next)
+		if (stack->id == id)
+			return 1;
+
+	/* Not found */
+	return 0;
+}
+
+
 /* Return the low module serving a given address. */
 struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr)
 {
-	/* FIXME - for now, just return first module in list */
-	/* Check that there is at least one lower-level module */
-	if (mod->kind != mod_kind_cache)
-		panic("%s: invalid module kind", __FUNCTION__);
-	if (!mod->low_mod_list->count)
-		fatal("%s: no low memory module", mod->name);
+	/* Main memory does not have a low module */
+	if (mod->kind == mod_kind_main_memory)
+	{
+		assert(!linked_list_count(mod->low_mod_list));
+		return NULL;
+	}
 
-	/* Return first element */
+	/* FIXME - not supported for more than one lower module */
+	if (linked_list_count(mod->low_mod_list) != 1)
+		panic("%s: not supported for more than 1 low node", __FUNCTION__);
+
+	/* FIXME - return the only lower module */
 	linked_list_head(mod->low_mod_list);
 	return linked_list_get(mod->low_mod_list);
+}
+
+
+int mod_get_retry_latency(struct mod_t *mod)
+{
+	return random() % mod->latency + mod->latency;
 }
 
 
@@ -256,50 +363,4 @@ void mod_stack_wakeup_port(struct mod_port_t *port)
 		DOUBLE_LINKED_LIST_REMOVE(port, waiting, stack);
 		esim_schedule_event(event, stack, 0);
 	}
-}
-
-
-void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack)
-{
-	int index;
-
-	/* Insert in access list */
-	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, access, stack);
-
-	/* Insert in access hash table */
-	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
-	DOUBLE_LINKED_LIST_INSERT_TAIL(&mod->access_hash_table[index], bucket, stack);
-}
-
-
-void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack)
-{
-	int index;
-
-	/* Remove from access list */
-	DOUBLE_LINKED_LIST_REMOVE(mod, access, stack);
-
-	/* Remove from hash table */
-	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
-	DOUBLE_LINKED_LIST_REMOVE(&mod->access_hash_table[index], bucket, stack);
-}
-
-
-/* Return true if the access with identifier 'id' is in flight.
- * The address of the access is passed as well because this lookup is done on the
- * access truth table, indexed by the access address.
- */
-int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr)
-{
-	struct mod_stack_t *stack;
-	int index;
-
-	/* Look for access */
-	index = (addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
-	for (stack = mod->access_hash_table[index].bucket_list_head; stack; stack = stack->bucket_list_next)
-		if (stack->id == id)
-			return 1;
-
-	/* Not found */
-	return 0;
 }

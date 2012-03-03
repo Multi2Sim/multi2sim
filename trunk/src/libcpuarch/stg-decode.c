@@ -26,8 +26,8 @@ static void decode_thread(int core, int thread)
 	struct uop_t *uop;
 	int i;
 
-	for (i = 0; i < cpu_decode_width; i++) {
-		
+	for (i = 0; i < cpu_decode_width; i++)
+	{
 		/* Empty fetch queue, full uopq */
 		if (!list_count(fetchq))
 			break;
@@ -49,10 +49,11 @@ static void decode_thread(int core, int thread)
 			break;
 		}
 
-		/* Decode one macroinstruction coming from a block in the instruction
+		/* Decode one macro-instruction coming from a block in the instruction
 		 * cache. If the cache access finished, extract it from the fetch queue. */
 		assert(!uop->mop_index);
-		if (!cache_system_pending_access(core, thread, cache_kind_inst, uop->fetch_access)) {
+		if (!mod_access_in_flight(THREAD.inst_mod, uop->fetch_address, uop->fetch_access))
+		{
 			do {
 				fetchq_remove(core, thread, 0);
 				list_add(uopq, uop);
