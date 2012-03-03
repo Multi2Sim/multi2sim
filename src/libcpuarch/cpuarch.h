@@ -140,7 +140,8 @@ struct uop_t
 	uint32_t pred_neip; /* Address of next predicted x86 macro-instruction (for branches) */
 	uint32_t target_neip;  /* Address of target x86 macro-instruction assuming branch taken (for branches) */
 	int specmode;
-	uint64_t fetch_access;  /* Access identifier to the instruction cache */
+	uint32_t fetch_address;  /* Physical address of memory access to fetch this instruction */
+	long long fetch_access;  /* Access identifier to fetch this instruction */
 
 	/* Fields associated with macroinstruction */
 	char mop_name[40];
@@ -624,7 +625,6 @@ struct cpu_thread_t
 	uint32_t fetch_eip, fetch_neip;  /* eip and next eip */
 	int fetchq_occ;  /* Number of bytes occupied in the fetch queue */
 	int tcacheq_occ;  /* Number of uops occupied in the trace cache queue */
-	int fetch_bsize;  /* Block size of instruction cache for this thread */
 	uint32_t fetch_block;  /* Virtual address of last fetched block */
 	uint32_t fetch_address;  /* Physical address of last instruction fetch */
 	long long fetch_access;  /* Module access ID of last instruction fetch */
