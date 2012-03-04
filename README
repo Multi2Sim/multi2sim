@@ -198,5 +198,142 @@ There are three possibilities to compute the access time T_access, one for each 
 3) Row-conflict. The row buffer contains a different address. T_access = T_precharge + T_activate + T_row_buf_access.
 
 
+===============================================================================
+Help message for memory system configuration
+===============================================================================
 
+Option '--mem-config <file>' is used to configure the memory system. The
+configuration file is a plain-text file in the IniFile format. The memory system
+is formed of a set of cache modules, main memory modules, and interconnects.
+
+Interconnects can be defined in two different configuration files. The first way
+is using option '--net-config <file>' (use option '--help-net-config' for more
+information). Any network defined in the network configuration file can be
+referenced from the memory configuration file. These networks will be referred
+hereafter as external networks.
+
+The second option to define a network straight in the memory system
+configuration. This alternative is provided for convenience and brevity. By
+using sections [Network <name>], networks with a default topology are created,
+which include a single switch, and one bidirectional link from the switch to
+every end node present in the network.
+
+The following sections and variables can be used in the memory system
+configuration file:
+
+Section [Module <name>] defines a generic memory module. This section is used to
+declare both caches and main memory modules accessible from CPU cores or GPU
+compute units.
+
+  Type = {Cache|MainMemory}  (Required)
+      Type of the memory module. From the simulation point of view, the
+      difference between a cache and a main memory module is that the former
+      contains only a subset of the data located at the memory locations it
+      serves.
+  Geometry = <geo>
+      Cache geometry, defined in a separate section of type [Geometry <geo>].
+      This variable is required for cache modules.
+  LowNetwork = <net>
+      Network connecting the module with other lower-level modules, i.e.,
+      modules closer to main memory. This variable is mandatory for caches, and
+      should not appear for main memory modules. Value <net> can refer to an
+      internal network defined in a [Network <net>] section, or to an external
+      network defined in the network configuration file.
+  LowNetworkNode = <node>
+      If 'LowNetwork' points to an external network, node in the network that
+      the module is mapped to. For internal networks, this variable should be
+      omitted.
+  HighNetwork = <net>
+      Network connecting the module with other higher-level modules, i.e.,
+      modules closer to CPU cores or GPU compute units. For highest level
+      modules accessible by CPU/GPU, this variable should be omitted.
+  HighNetworkNode = <node>
+      If 'HighNetwork' points to an external network, node that the module is
+      mapped to.
+  LowModules = <mod1> [<mod2> ...]
+      List of lower-level modules. For a cache module, this variable is rquired.
+      If there is only one lower-level module, it serves the entire address
+      space for the current module. If there are several lower-level modules,
+      each served a disjoint subset of the address space. This variable should
+      be omitted for main memory modules.
+  BlockSize = <size>
+      Block size in bytes. This variable is required for a main memory module.
+      It should be omitted for a cache module (in this case, the block size is
+      specified in the corresponding cache geometry section).
+  Latency = <cycles>
+      Memory access latency. This variable is required for a main memory module,
+      and should be omitted for a cache module (the access latency is specified
+      in the corresponding cache geometry section in this case).
+  Range = { RANGE <low> <high> | ADDR DIV <div> MOD <mod> EQ <eq> }
+      Physical address range served by the module. If not specified, the entire
+      address space is served by the module. There are two possible formats for
+      the value of 'Range':
+      With the first format, the user can specify the lowest and highest byte
+      included in the address range. The value in <low> must be a multiple of
+      the module block size, and the value in <high> must be a multiple of the
+      block size minus 1.
+      With the second format, the address space can be split between different
+      modules in an interleaved manner. If dividing an address by <div> and
+      modulo <mod> makes it equal to <eq>, it is served by this module. The
+      value of <div> must be a multiple of the block size. When a module serves
+      only a subset of the address space, the user must make sure that the rest
+      of the modules at the same level serve the remaining address space.
+
+Section [CacheGeometry <geo>] defines a geometry for a cache. Caches using this
+geometry are instantiated [Module <name>] sections.
+
+  Sets = <num_sets> (Required)
+      Number of sets in the cache.
+  Assoc = <num_ways> (Required)
+      Cache associativity. The total number of blocks contained in the cache
+      is given by the product Sets * Assoc.
+  BlockSize = <size> (Required)
+      Size of a cache block in bytes. The total size of the cache is given by
+      the product Sets * Assoc * BlockSize.
+  Latency = <cycles> (Required)
+      Hit latency for a cache in number of cycles.
+  Policy = {LRU|FIFO|Random} (Default = LRU)
+      Block replacement policy.
+
+Section [Network <net>] defines an internal default interconnect, formed of a
+single switch connecting all modules pointing to the network. For every module
+in the network, a bidirectional link is created automatically between the module
+and the switch, together with the suitable input/output buffers in the switch
+and the module.
+
+  DefaultInputBufferSize = <size>
+      Size of input buffers for end nodes (memory modules) and switch.
+  DefaultOutputBufferSize = <size>
+      Size of output buffers for end nodes and switch. 
+  DefaultBandwidth = <bandwidth>
+      Bandwidth for links and switch crossbar in number of bytes per cycle.
+
+Section [Entry <name>] creates an entry into the memory system. An entry is a
+connection between a CPU core/thread or a GPU compute unit with a module in the
+memory system.
+
+  Type = {CPU | GPU}
+      Type of processing node that this entry refers to.
+  Core = <core>
+      CPU core identifier. This is a value between 0 and the number of cores
+      minus 1, as defined in the CPU configuration file. This variable should be
+      omitted for GPU entries.
+  Thread = <thread>
+      CPU thread identifier. Value between 0 and the number of threads per core
+      minus 1. Omitted for GPU entries.
+  ComputeUnit = <id>
+      GPU compute unit identifier. Value between 0 and the number of compute
+      units minus 1, as defined in the GPU configuration file. This variable
+      should be omitted for CPU entries.
+  DataModule = <mod>
+      Module in the memory system that will serve as an entry to a CPU
+      core/thread when reading/writing program data. The value in <mod>
+      corresponds to a module defined in a section [Module <mod>]. Omitted for
+      GPU entries.
+  InstModule = <mod>
+      Module serving as an entry to a CPU core/thread when fetching program
+      instructions. Omitted for GPU entries.
+  Module = <mod>
+      Module serving as an entry to a GPU compute unit when reading/writing
+      program data in the global memory scope. Omitted for CPU entries.
 
