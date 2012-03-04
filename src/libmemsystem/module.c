@@ -174,8 +174,17 @@ long long mod_access(struct mod_t *mod, enum mod_entry_kind_t entry_kind,
 /* Return true if module can be accessed. */
 int mod_can_access(struct mod_t *mod, uint32_t addr)
 {
-	/* FIXME */
-	return mod->access_list_count < 10;
+	int non_coalesced_accesses;
+
+	/* If no MSHR is given, module can be accessed - FIXME */
+	if (!mod->mshr_size)
+		return 1;
+
+	/* Module can be accessed if number of non-coalesced in-flight
+	 * accesses is smaller than the MSHR size. */
+	non_coalesced_accesses = mod->access_list_count -
+		mod->access_list_coalesced_count;
+	return non_coalesced_accesses < mod->mshr_size;
 }
 
 
@@ -225,6 +234,51 @@ int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
 	PTR_ASSIGN(tag_ptr, tag);
 	PTR_ASSIGN(state_ptr, cache->sets[set].blocks[way].state);
 	return 1;
+}
+
+
+int mod_can_lock_read_port(struct mod_t *mod)
+{
+	assert(IN_RANGE(mod->locked_read_port_count, 0, mod->read_port_count));
+	return mod->locked_read_port_count < mod->read_port_count;
+}
+
+
+void mod_lock_read_port(struct mod_t *mod, struct mod_stack_t *stack)
+{
+	struct mod_port_t *port = NULL;
+	int i;
+
+	/* No free port */
+	if (mod->locked_read_port_count >= mod->read_port_count)
+		panic("%s: no free read port", __FUNCTION__);
+
+	/* Get free port */
+	for (i = 0; i < mod->read_port_count; i++)
+	{
+		port = &mod->read_ports[i];
+		if (!port->stack)
+			break;
+	}
+
+	/* Lock port */
+	assert(port && i < mod->read_port_count);
+	port->stack = stack;
+	stack->port = port;
+	mod->locked_read_port_count++;
+}
+
+
+void mod_unlock_read_port(struct mod_t *mod, struct mod_port_t *port,
+	struct mod_stack_t *stack)
+{
+	assert(mod->locked_read_port_count > 0);
+	assert(stack->port == port && port->stack == stack);
+	assert(stack->mod == mod);
+
+	stack->port = NULL;
+	port->stack = NULL;
+	mod->locked_read_port_count--;
 }
 
 
