@@ -21,6 +21,31 @@
 
 
 /*
+ * Private Functions
+ */
+
+static int mod_serves_address(struct mod_t *mod, uint32_t addr)
+{
+	/* Address bounds */
+	if (mod->range_kind == mod_range_bounds)
+		return addr >= mod->range.bounds.low &&
+			addr <= mod->range.bounds.high;
+
+	/* Interleaved addresses */
+	if (mod->range_kind == mod_range_interleaved)
+		return (addr / mod->range.interleaved.div) %
+			mod->range.interleaved.mod ==
+			mod->range.interleaved.eq;
+
+	/* Invalid */
+	panic("%s: invalid range kind", __FUNCTION__);
+	return 0;
+}
+
+
+
+
+/*
  * Public Functions
  */
 
@@ -252,20 +277,42 @@ int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr)
 /* Return the low module serving a given address. */
 struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr)
 {
+	struct mod_t *low_mod;
+	struct mod_t *server_mod;
+
 	/* Main memory does not have a low module */
+	assert(mod_serves_address(mod, addr));
 	if (mod->kind == mod_kind_main_memory)
 	{
 		assert(!linked_list_count(mod->low_mod_list));
 		return NULL;
 	}
 
-	/* FIXME - not supported for more than one lower module */
-	if (linked_list_count(mod->low_mod_list) != 1)
-		panic("%s: not supported for more than 1 low node", __FUNCTION__);
+	/* Check which low module serves address */
+	server_mod = NULL;
+	LINKED_LIST_FOR_EACH(mod->low_mod_list)
+	{
+		/* Get new low module */
+		low_mod = linked_list_get(mod->low_mod_list);
+		if (!mod_serves_address(low_mod, addr))
+			continue;
 
-	/* FIXME - return the only lower module */
-	linked_list_head(mod->low_mod_list);
-	return linked_list_get(mod->low_mod_list);
+		/* Address served by more than one module */
+		if (server_mod)
+			fatal("%s: low modules %s and %s both serve address 0x%x",
+				mod->name, server_mod->name, low_mod->name, addr);
+
+		/* Assign server */
+		server_mod = low_mod;
+	}
+
+	/* Error if no low module serves address */
+	if (!server_mod)
+		fatal("module %s: no lower module serves address 0x%x",
+			mod->name, addr);
+
+	/* Return server module */
+	return server_mod;
 }
 
 
