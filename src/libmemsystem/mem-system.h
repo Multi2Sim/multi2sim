@@ -99,6 +99,7 @@ void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
 	uint32_t tag, int state);
 void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
 	uint32_t *tag_ptr, int *state_ptr);
+
 void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way);
 uint32_t cache_replace_block(struct cache_t *cache, uint32_t set);
 void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, uint32_t tag);
@@ -152,12 +153,14 @@ struct dir_t *dir_create(int xsize, int ysize, int zsize, int num_nodes);
 void dir_free(struct dir_t *dir);
 
 struct dir_entry_t *dir_entry_get(struct dir_t *dir, int x, int y, int z);
+
 void dir_entry_set_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
 void dir_entry_clear_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
 void dir_entry_clear_all_sharers(struct dir_t *dir, volatile struct dir_entry_t *dir_entry);
 int dir_entry_is_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
-void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry);
 int dir_entry_group_shared_or_owned(struct dir_t *dir, int x, int y);
+
+void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry);
 
 struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y);
 int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct mod_stack_t *stack);
@@ -246,6 +249,14 @@ enum mod_range_kind_t
 	mod_range_invalid = 0,
 	mod_range_bounds,
 	mod_range_interleaved
+};
+
+/* Type of entry memory system */
+enum mod_entry_kind_t
+{
+	mod_entry_invalid = 0,
+	mod_entry_cpu,
+	mod_entry_gpu
 };
 
 #define MOD_ACCESS_HASH_TABLE_SIZE  7
@@ -374,12 +385,9 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind,
 void mod_free(struct mod_t *mod);
 void mod_dump(struct mod_t *mod, FILE *f);
 
-/* Access a module.
- * FIXME: mod_type: 1 - CPU, 2 - GPU. Remove once the coherence protocol is
- * shared between them. Currently, this determines the first event to
- * schedule (EV_MOD_xxx or EV_GPU_MOD_xxx). */
-long long mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_kind,
-	uint32_t addr, int *witness_ptr, struct linked_list_t *event_queue, void *event_queue_item);
+long long mod_access(struct mod_t *mod, enum mod_entry_kind_t entry_kind,
+	enum mod_access_kind_t access_kind, uint32_t addr, int *witness_ptr,
+	struct linked_list_t *event_queue, void *event_queue_item);
 int mod_can_access(struct mod_t *mod, uint32_t addr);
 
 int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,

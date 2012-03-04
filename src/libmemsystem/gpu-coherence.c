@@ -186,7 +186,8 @@ void mod_handler_gpu_read(int event, void *data)
 		}
 
 		/* Look for a free read port */
-		for (i = 0; i < mod->read_port_count; i++) {
+		for (i = 0; i < mod->read_port_count; i++)
+		{
 			port = MOD_READ_PORT_INDEX(mod, stack->bank, i);
 			if (!port->locked) {
 				stack->read_port_index = i;
@@ -196,7 +197,8 @@ void mod_handler_gpu_read(int event, void *data)
 		}
 		
 		/* If there is no free read port, enqueue in cache waiting list. */
-		if (!stack->port) {
+		if (!stack->port)
+		{
 			mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
 				esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index);
 			mem_debug("  %lld %lld wait why=\"no_read_port\"\n", esim_cycle, stack->id);
@@ -217,8 +219,8 @@ void mod_handler_gpu_read(int event, void *data)
 		mod->reads++;
 		mod->effective_reads++;
 
-		/* If there is no cache, assume hit */
-		if (!mod->cache)
+		/* If this is main memory, hit */
+		if (mod->kind == mod_kind_main_memory)
 		{
 			esim_schedule_event(EV_MOD_GPU_READ_UNLOCK, stack, mod->latency);
 
@@ -488,7 +490,7 @@ void mod_handler_gpu_write(int event, void *data)
 		mod->effective_writes++;
 	
 		/* If this is main memory, access block */
-		if (!mod->cache)
+		if (mod->kind == mod_kind_main_memory)
 		{
 			stack->pending++;
 			esim_schedule_event(EV_MOD_GPU_WRITE_UNLOCK, stack, mod->latency);
