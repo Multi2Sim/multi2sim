@@ -269,6 +269,7 @@ struct mod_t
 	int block_size;
 	int log_block_size;
 	int latency;
+	int mshr_size;
 
 	/* Address range served by module */
 	enum mod_range_kind_t range_kind;
@@ -296,7 +297,9 @@ struct mod_t
 	int read_port_count;  /* Number of read ports (per bank) */
 	int write_port_count;  /* Number of write ports (per bank) */
 
-	/* Number of locked read/write ports (adding up all banks) */
+	/* Ports */
+	struct mod_port_t *read_ports;
+	struct mod_port_t *write_ports;
 	int locked_read_port_count;
 	int locked_write_port_count;
 
@@ -335,6 +338,13 @@ struct mod_t
 	struct mod_stack_t *access_list_tail;
 	int access_list_count;
 	int access_list_max;
+
+	/* In-flight accesses */
+	int access_list_write_count;
+	int access_list_read_count;
+	int access_list_coalesced_count;
+	int access_list_coalesced_read_count;
+	int access_list_coalesced_write_count;
 
 	/* Hash table of accesses */
 	struct
@@ -392,6 +402,11 @@ int mod_can_access(struct mod_t *mod, uint32_t addr);
 
 int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
 	uint32_t *way_ptr, uint32_t *tag_ptr, int *state_ptr);
+
+int mod_can_lock_read_port(struct mod_t *mod);
+void mod_lock_read_port(struct mod_t *mod, struct mod_stack_t *stack);
+void mod_unlock_read_port(struct mod_t *mod, struct mod_port_t *port,
+	struct mod_stack_t *stack);
 
 void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack,
 	enum mod_access_kind_t access_kind);
@@ -454,6 +469,7 @@ extern int EV_MOD_LOAD_FINISH;
 extern int EV_MOD_STORE;
 extern int EV_MOD_STORE_LOCK;
 extern int EV_MOD_STORE_ACTION;
+extern int EV_MOD_STORE_UNLOCK;
 extern int EV_MOD_STORE_FINISH;
 
 extern int EV_MOD_FIND_AND_LOCK;
@@ -561,6 +577,7 @@ struct mod_stack_t
 	int writeback : 1;
 	int eviction : 1;
 	int retry : 1;
+	int coalesced : 1;
 
 	/* Message sent through interconnect */
 	struct net_msg_t *msg;
