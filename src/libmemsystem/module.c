@@ -175,7 +175,7 @@ long long mod_access(struct mod_t *mod, enum mod_entry_kind_t entry_kind,
 int mod_can_access(struct mod_t *mod, uint32_t addr)
 {
 	/* FIXME */
-	return mod->access_list_count < 4;
+	return mod->access_list_count < 10;
 }
 
 
@@ -228,9 +228,13 @@ int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
 }
 
 
-void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack)
+void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack,
+	enum mod_access_kind_t access_kind)
 {
 	int index;
+
+	/* Record access kind */
+	stack->access_kind = access_kind;
 
 	/* Insert in access list */
 	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, access, stack);
@@ -267,6 +271,23 @@ int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr)
 	index = (addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
 	for (stack = mod->access_hash_table[index].bucket_list_head; stack; stack = stack->bucket_list_next)
 		if (stack->id == id)
+			return 1;
+
+	/* Not found */
+	return 0;
+}
+
+
+/* Return true if an access to block containing address 'addr' is in flight. */
+int mod_address_in_flight(struct mod_t *mod, uint32_t addr)
+{
+	struct mod_stack_t *stack;
+	int index;
+
+	/* Look for address */
+	index = (addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
+	for (stack = mod->access_hash_table[index].bucket_list_head; stack; stack = stack->bucket_list_next)
+		if (stack->addr >> mod->log_block_size == addr >> mod->log_block_size)
 			return 1;
 
 	/* Not found */
@@ -322,6 +343,53 @@ int mod_get_retry_latency(struct mod_t *mod)
 }
 
 
+/* Check if an access to a module can be coalesced. If it can, return
+ * the access that it would be coalesced with. Otherwise, return NULL. */
+struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
+	enum mod_access_kind_t access_kind, uint32_t addr)
+{
+	struct mod_stack_t *stack;
+
+	/* For efficiency, first check in the hash table of accesses
+	 * whether there is an access in flight to the same address. */
+	assert(access_kind);
+	if (!mod_address_in_flight(mod, addr))
+		return NULL;
+
+	/* Coalesce depending on access kind */
+	switch (access_kind)
+	{
+
+	case mod_access_read:
+	{
+		for (stack = mod->access_list_tail; stack;
+			stack = stack->access_list_prev)
+		{
+			/* Only coalesce with groups of reads at the head */
+			if (stack->access_kind != mod_access_read)
+				return NULL;
+
+			if (stack->addr >> mod->log_block_size ==
+				addr >> mod->log_block_size)
+				return stack;
+		}
+		break;
+	}
+
+	case mod_access_write:
+	{
+		break;
+	}
+
+	default:
+		panic("%s: invalid access type", __FUNCTION__);
+	}
+
+	/* No access found */
+	return NULL;
+}
+
+
 
 
 /*
@@ -362,18 +430,18 @@ void mod_stack_return(struct mod_stack_t *stack)
 }
 
 
-/* Enqueue stack in waiting list of 'stack->mod' */
-void mod_stack_wait_in_mod(struct mod_stack_t *stack, int event)
+/* Enqueue access in module wait list. */
+void mod_stack_wait_in_mod(struct mod_stack_t *stack,
+	struct mod_t *mod, int event)
 {
-	struct mod_t *mod = stack->mod;
-
+	assert(mod == stack->mod);
 	assert(!DOUBLE_LINKED_LIST_MEMBER(mod, waiting, stack));
 	stack->waiting_list_event = event;
 	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, waiting, stack);
 }
 
 
-/* Wake up accesses from 'mod->waiting_list' */
+/* Wake up accesses waiting in module wait list. */
 void mod_stack_wakeup_mod(struct mod_t *mod)
 {
 	struct mod_stack_t *stack;
@@ -389,18 +457,18 @@ void mod_stack_wakeup_mod(struct mod_t *mod)
 }
 
 
-/* Enqueue stack in waiting list of 'stack->port' */
-void mod_stack_wait_in_port(struct mod_stack_t *stack, int event)
+/* Enqueue access in port wait list. */
+void mod_stack_wait_in_port(struct mod_stack_t *stack,
+	struct mod_port_t *port, int event)
 {
-	struct mod_port_t *port = stack->port;
-
+	assert(port == stack->port);
 	assert(!DOUBLE_LINKED_LIST_MEMBER(port, waiting, stack));
 	stack->waiting_list_event = event;
 	DOUBLE_LINKED_LIST_INSERT_TAIL(port, waiting, stack);
 }
 
 
-/* Wake up accesses from 'port->waiting_list' */
+/* Wake up accesses waiting in a port wait list. */
 void mod_stack_wakeup_port(struct mod_port_t *port)
 {
 	struct mod_stack_t *stack;
@@ -411,6 +479,32 @@ void mod_stack_wakeup_port(struct mod_port_t *port)
 		stack = port->waiting_list_head;
 		event = stack->waiting_list_event;
 		DOUBLE_LINKED_LIST_REMOVE(port, waiting, stack);
+		esim_schedule_event(event, stack, 0);
+	}
+}
+
+
+/* Enqueue access in a stack wait list. */
+void mod_stack_wait_in_stack(struct mod_stack_t *stack,
+	struct mod_stack_t *stack_master, int event)
+{
+	assert(!DOUBLE_LINKED_LIST_MEMBER(stack_master, waiting, stack));
+	stack->waiting_list_event = event;
+	DOUBLE_LINKED_LIST_INSERT_TAIL(stack_master, waiting, stack);
+}
+
+
+/* Wake up accesses waiting in a stack wait list. */
+void mod_stack_wakeup_stack(struct mod_stack_t *stack_master)
+{
+	struct mod_stack_t *stack;
+	int event;
+
+	while (stack_master->waiting_list_head)
+	{
+		stack = stack_master->waiting_list_head;
+		event = stack->waiting_list_event;
+		DOUBLE_LINKED_LIST_REMOVE(stack_master, waiting, stack);
 		esim_schedule_event(event, stack, 0);
 	}
 }
