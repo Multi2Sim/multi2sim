@@ -45,8 +45,8 @@ static int issue_sq(int core, int thread, int quant)
 		sq_remove(core, thread);
 
 		/* Issue store */
-		mod_access(THREAD.data_mod, 1, mod_access_write, store->physical_address,
-			NULL, CORE.eventq, store);
+		mod_access(THREAD.data_mod, mod_entry_cpu, mod_access_write,
+			store->physical_address, NULL, CORE.eventq, store);
 
 		/* The cache system will place the store at the head of the
 		 * event queue when it is ready. For now, mark "in_eventq" to
@@ -110,8 +110,8 @@ static int issue_lq(int core, int thread, int quant)
 		lq_remove(core, thread);
 
 		/* Access memory system */
-		mod_access(THREAD.data_mod, 1, mod_access_read, load->physical_address,
-			NULL, CORE.eventq, load);
+		mod_access(THREAD.data_mod, mod_entry_cpu, mod_access_read,
+			load->physical_address, NULL, CORE.eventq, load);
 
 		/* The cache system will place the load at the head of the
 		 * event queue when it is ready. For now, mark "in_eventq" to
