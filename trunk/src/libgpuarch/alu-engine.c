@@ -251,7 +251,7 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 			{
 				if (work_item_uop->local_mem_access_kind[i] != 1)  /* read access */
 					continue;
-				mod_access(compute_unit->local_mod, 2, /* GPU */
+				mod_access(compute_unit->local_mod, mod_entry_gpu,
 					mod_access_read, work_item_uop->local_mem_access_addr[i],
 					&uop->local_mem_witness, NULL, NULL);
 				uop->local_mem_witness--;
@@ -348,7 +348,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 				{
 					if (work_item_uop->local_mem_access_kind[i] != mod_access_write)
 						continue;
-					mod_access(compute_unit->local_mod, 2, /* GPU */
+					mod_access(compute_unit->local_mod, mod_entry_gpu,
 						mod_access_write, work_item_uop->local_mem_access_addr[i],
 						NULL, NULL, NULL);
 				}

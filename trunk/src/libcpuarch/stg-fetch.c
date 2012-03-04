@@ -222,8 +222,8 @@ static void fetch_thread(int core, int thread)
 		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
 		THREAD.fetch_block = block;
 		THREAD.fetch_address = phaddr;
-		THREAD.fetch_access = mod_access(THREAD.inst_mod, 1, mod_access_read, phaddr,
-			NULL, NULL, NULL);
+		THREAD.fetch_access = mod_access(THREAD.inst_mod, mod_entry_cpu,
+			mod_access_read, phaddr, NULL, NULL, NULL);
 		THREAD.btb_reads++;
 	}
 

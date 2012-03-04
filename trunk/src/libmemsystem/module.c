@@ -107,8 +107,9 @@ void mod_dump(struct mod_t *mod, FILE *f)
  * Variable 'witness', if specified, will be increased when the access completes.
  * The function returns a unique access ID.
  */
-long long mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t access_kind,
-	uint32_t addr, int *witness_ptr, struct linked_list_t *event_queue, void *event_queue_item)
+long long mod_access(struct mod_t *mod, enum mod_entry_kind_t entry_kind,
+	enum mod_access_kind_t access_kind, uint32_t addr, int *witness_ptr,
+	struct linked_list_t *event_queue, void *event_queue_item)
 {
 	struct mod_stack_t *stack;
 	int event;
@@ -123,17 +124,19 @@ long long mod_access(struct mod_t *mod, int mod_type, enum mod_access_kind_t acc
 	stack->event_queue = event_queue;
 	stack->event_queue_item = event_queue_item;
 
-	/* FIXME - Select CPU/GPU event */
-	if (mod_type == 1)
+	/* Select initial CPU/GPU event */
+	if (entry_kind == mod_entry_cpu)
 	{
 		event = access_kind == mod_access_read ?
 			EV_MOD_LOAD : EV_MOD_STORE;
 	}
-	else if (mod_type == 2)
+	else if (entry_kind == mod_entry_gpu)
 	{
 		event = access_kind == mod_access_read ?
 			EV_MOD_GPU_LOAD : EV_MOD_GPU_STORE;
 	}
+	else
+		panic("%s: invalid entry kind", __FUNCTION__);
 
 	/* Schedule */
 	esim_execute_event(event, stack);
