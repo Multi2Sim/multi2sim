@@ -51,6 +51,12 @@ char *mem_config_help =
 	"The following sections and variables can be used in the memory system\n"
 	"configuration file:\n"
 	"\n"
+	"Section [General] defines global parameters affecting the entire memory system.\n"
+	"\n"
+	"  PageSize = <size>  (Default = 4096)\n"
+	"      Memory page size. Virtual addresses are translated into new physical\n"
+	"      addresses in ascending order at the granularity of the page size.\n"
+	"\n"
 	"Section [Module <name>] defines a generic memory module. This section is used to\n"
 	"declare both caches and main memory modules accessible from CPU cores or GPU\n"
 	"compute units.\n"
@@ -372,6 +378,21 @@ static void mem_config_gpu_default(struct config_t *config)
 	config_write_int(config, section, "DefaultInputBufferSize", 528);
 	config_write_int(config, section, "DefaultOutputBufferSize", 528);
 	config_write_int(config, section, "DefaultBandwidth", 264);
+}
+
+
+static void mem_config_read_general(struct config_t *config)
+{
+	char *section;
+
+	/* Section with general parameters */
+	section = "General";
+
+	/* Page size */
+	mmu_page_size = config_read_int(config, section, "PageSize", mmu_page_size);
+	if ((mmu_page_size & (mmu_page_size - 1)))
+		fatal("%s: page size must be power of 2.\n%s",
+			mem_config_file_name, err_mem_config_note);
 }
 
 
@@ -1498,6 +1519,9 @@ void mem_system_config_read(void)
 			fatal("%s: cannot read memory system configuration file",
 				mem_config_file_name);
 	}
+
+	/* Read general variables */
+	mem_config_read_general(config);
 
 	/* Read networks */
 	mem_config_read_networks(config);
