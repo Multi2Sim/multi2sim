@@ -137,7 +137,7 @@ void mod_handler_gpu_read(int event, void *data)
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"order\"\n",
 				esim_cycle, stack->id);
-			mod_stack_wait_in_mod(stack, EV_MOD_GPU_READ);
+			mod_stack_wait_in_mod(stack, mod, EV_MOD_GPU_READ);
 			return;
 		}
 
@@ -169,7 +169,7 @@ void mod_handler_gpu_read(int event, void *data)
 				stack->port = port;
 				mem_debug("  %lld %lld coalesce id=%lld bank=%d read_port=%d\n",
 					esim_cycle, stack->id, (long long) port->stack->id, stack->bank_index, stack->read_port_index);
-				mod_stack_wait_in_port(stack, EV_MOD_GPU_READ_FINISH);
+				mod_stack_wait_in_port(stack, port, EV_MOD_GPU_READ_FINISH);
 
 				/* Stats */
 				mod->reads++;
@@ -181,7 +181,7 @@ void mod_handler_gpu_read(int event, void *data)
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"in_flight\"\n",
 				esim_cycle, stack->id);
-			mod_stack_wait_in_mod(stack, EV_MOD_GPU_READ);
+			mod_stack_wait_in_mod(stack, mod, EV_MOD_GPU_READ);
 			return;
 		}
 
@@ -202,7 +202,7 @@ void mod_handler_gpu_read(int event, void *data)
 			mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
 				esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index);
 			mem_debug("  %lld %lld wait why=\"no_read_port\"\n", esim_cycle, stack->id);
-			mod_stack_wait_in_mod(stack, EV_MOD_GPU_READ);
+			mod_stack_wait_in_mod(stack, mod, EV_MOD_GPU_READ);
 			return;
 		}
 
@@ -382,7 +382,7 @@ void mod_handler_gpu_write(int event, void *data)
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"order\"\n",
 				esim_cycle, stack->id);
-			mod_stack_wait_in_mod(stack, EV_MOD_GPU_WRITE);
+			mod_stack_wait_in_mod(stack, mod, EV_MOD_GPU_WRITE);
 			return;
 		}
 
@@ -395,7 +395,7 @@ void mod_handler_gpu_write(int event, void *data)
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"write_after_read\"\n",
 				esim_cycle, stack->id);
-			mod_stack_wait_in_mod(stack, EV_MOD_GPU_WRITE);
+			mod_stack_wait_in_mod(stack, mod, EV_MOD_GPU_WRITE);
 			return;
 		}
 
@@ -427,7 +427,7 @@ void mod_handler_gpu_write(int event, void *data)
 				mem_debug("  %lld %lld coalesce id=%lld bank=%d write_port=%d\n",
 					esim_cycle, stack->id, (long long) port->stack->id, stack->bank_index,
 					stack->write_port_index);
-				mod_stack_wait_in_port(stack, EV_MOD_GPU_WRITE_FINISH);
+				mod_stack_wait_in_port(stack, port, EV_MOD_GPU_WRITE_FINISH);
 
 				/* Increment witness variable as soon as a port was secured */
 				if (stack->witness_ptr)
@@ -443,7 +443,7 @@ void mod_handler_gpu_write(int event, void *data)
 				esim_cycle, stack->id, mod->name, stack->addr);
 			mem_debug("%lld %lld wait why=\"in_flight\"\n",
 				esim_cycle, stack->id);
-			mod_stack_wait_in_mod(stack, EV_MOD_GPU_WRITE);
+			mod_stack_wait_in_mod(stack, mod, EV_MOD_GPU_WRITE);
 			return;
 		}
 
@@ -465,7 +465,7 @@ void mod_handler_gpu_write(int event, void *data)
 			mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
 				esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index);
 			mem_debug("  %lld %lld wait why=\"no_write_port\"\n", esim_cycle, stack->id);
-			mod_stack_wait_in_mod(stack, EV_MOD_GPU_WRITE);
+			mod_stack_wait_in_mod(stack, mod, EV_MOD_GPU_WRITE);
 			return;
 		}
 
