@@ -270,7 +270,7 @@ compute units.
       Memory access latency. This variable is required for a main memory module,
       and should be omitted for a cache module (the access latency is specified
       in the corresponding cache geometry section in this case).
-  Range = { RANGE <low> <high> | ADDR DIV <div> MOD <mod> EQ <eq> }
+  AddressRange = { BOUNDS <low> <high> | ADDR DIV <div> MOD <mod> EQ <eq> }
       Physical address range served by the module. If not specified, the entire
       address space is served by the module. There are two possible formats for
       the value of 'Range':

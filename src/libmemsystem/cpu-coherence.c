@@ -142,6 +142,7 @@ void mod_handler_load(int event, void *data)
 		new_stack = mod_stack_create(stack->id, mod, stack->tag,
 			EV_MOD_LOAD_MISS, stack);
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
+		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_READ_REQUEST, new_stack, 0);
 		return;
 	}
@@ -264,6 +265,7 @@ void mod_handler_store(int event, void *data)
 		new_stack = mod_stack_create(stack->id, mod, stack->tag,
 			EV_MOD_STORE_FINISH, stack);
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
+		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
 		return;
 	}
@@ -499,7 +501,7 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT)
 	{
-		/* Default ret value */
+		/* Default return value */
 		ret->err = 0;
 
 		/* Get block info */
@@ -555,9 +557,10 @@ void mod_handler_evict(int event, void *data)
 			stack->tag, mod->name);
 
 		/* Get low node */
-		low_mod = mod_get_low_mod(mod, stack->tag);
+		low_mod = stack->target_mod;
 		low_node = low_mod->high_net_node;
 		assert(low_mod != mod);
+		assert(low_mod == mod_get_low_mod(mod, stack->tag));
 		assert(low_node && low_node->user_data == low_mod);
 		
 		/* State = I */
@@ -655,6 +658,7 @@ void mod_handler_evict(int event, void *data)
 			new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
 				EV_MOD_EVICT_WRITEBACK_FINISH, stack);
 			new_stack->target_mod = mod_get_low_mod(target_mod, stack->tag);
+			new_stack->request_dir = mod_request_up_down;
 			esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
 			return;
 		}
@@ -782,16 +786,26 @@ void mod_handler_read_request(int event, void *data)
 		ret->shared = 0;
 		ret->err = 0;
 
-		/* Get network to send request */
+		/* Checks */
+		assert(stack->request_dir);
 		assert(mod_get_low_mod(mod, stack->addr) == target_mod ||
-			mod_get_low_mod(target_mod, stack->addr) == mod);
-		net = mod_get_low_mod(mod, stack->addr) == target_mod ? mod->low_net : mod->high_net;
+			stack->request_dir == mod_request_down_up);
+		assert(mod_get_low_mod(target_mod, stack->addr) == mod ||
+			stack->request_dir == mod_request_up_down);
 
 		/* Get source and destination nodes */
-		src_node = mod_get_low_mod(mod, stack->addr) == target_mod ?
-			mod->low_net_node : mod->high_net_node;
-		dst_node = mod_get_low_mod(mod, stack->addr) == target_mod ?
-			target_mod->high_net_node : target_mod->low_net_node;
+		if (stack->request_dir == mod_request_up_down)
+		{
+			net = mod->low_net;
+			src_node = mod->low_net_node;
+			dst_node = target_mod->high_net_node;
+		}
+		else
+		{
+			net = mod->high_net;
+			src_node = mod->high_net_node;
+			dst_node = target_mod->low_net_node;
+		}
 
 		/* Send message */
 		stack->msg = net_try_send_ev(net, src_node, dst_node, 8,
@@ -805,7 +819,7 @@ void mod_handler_read_request(int event, void *data)
 			stack->addr, target_mod->name);
 
 		/* Receive message */
-		if (mod_get_low_mod(mod, stack->addr) == target_mod)
+		if (stack->request_dir == mod_request_up_down)
 			net_receive(target_mod->high_net, target_mod->high_net_node, stack->msg);
 		else
 			net_receive(target_mod->low_net, target_mod->low_net_node, stack->msg);
@@ -813,7 +827,7 @@ void mod_handler_read_request(int event, void *data)
 		/* Find and lock */
 		new_stack = mod_stack_create(stack->id, target_mod, stack->addr,
 			EV_MOD_READ_REQUEST_ACTION, stack);
-		new_stack->blocking = mod_get_low_mod(target_mod, stack->addr) == mod;
+		new_stack->blocking = stack->request_dir == mod_request_down_up;
 		new_stack->read = 1;
 		new_stack->retry = 0;
 		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
@@ -829,15 +843,14 @@ void mod_handler_read_request(int event, void *data)
 		 * have been any error while locking. */
 		if (stack->err)
 		{
-			assert(mod_get_low_mod(mod, stack->tag) == target_mod);
+			assert(stack->request_dir == mod_request_up_down);
 			ret->err = 1;
 			stack->reply_size = 8;
 			esim_schedule_event(EV_MOD_READ_REQUEST_REPLY, stack, 0);
 			return;
 		}
-		esim_schedule_event(mod_get_low_mod(mod, stack->tag) == target_mod ?
-			EV_MOD_READ_REQUEST_UPDOWN :
-			EV_MOD_READ_REQUEST_DOWNUP, stack, 0);
+		esim_schedule_event(stack->request_dir == mod_request_up_down ?
+			EV_MOD_READ_REQUEST_UPDOWN : EV_MOD_READ_REQUEST_DOWNUP, stack, 0);
 		return;
 	}
 
@@ -897,6 +910,7 @@ void mod_handler_read_request(int event, void *data)
 				new_stack = mod_stack_create(stack->id, target_mod, dir_entry_tag,
 					EV_MOD_READ_REQUEST_UPDOWN_FINISH, stack);
 				new_stack->target_mod = owner;
+				new_stack->request_dir = mod_request_down_up;
 				esim_schedule_event(EV_MOD_READ_REQUEST, new_stack, 0);
 			}
 			esim_schedule_event(EV_MOD_READ_REQUEST_UPDOWN_FINISH, stack, 0);
@@ -909,6 +923,7 @@ void mod_handler_read_request(int event, void *data)
 			new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
 				EV_MOD_READ_REQUEST_UPDOWN_MISS, stack);
 			new_stack->target_mod = mod_get_low_mod(target_mod, stack->tag);
+			new_stack->request_dir = mod_request_up_down;
 			esim_schedule_event(EV_MOD_READ_REQUEST, new_stack, 0);
 		}
 		return;
@@ -1040,6 +1055,7 @@ void mod_handler_read_request(int event, void *data)
 			new_stack = mod_stack_create(stack->id, target_mod, dir_entry_tag,
 				EV_MOD_READ_REQUEST_DOWNUP_FINISH, stack);
 			new_stack->target_mod = owner;
+			new_stack->request_dir = mod_request_down_up;
 			esim_schedule_event(EV_MOD_READ_REQUEST, new_stack, 0);
 		}
 
@@ -1084,18 +1100,25 @@ void mod_handler_read_request(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s read request reply\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
-		/* Get network */
+		/* Checks */
 		assert(stack->reply_size);
+		assert(stack->request_dir);
 		assert(mod_get_low_mod(mod, stack->tag) == target_mod ||
 			mod_get_low_mod(target_mod, stack->tag) == mod);
-		net = mod_get_low_mod(mod, stack->tag) == target_mod ?
-			mod->low_net : mod->high_net;
 
-		/* Get source and destination nodes */
-		src_node = mod_get_low_mod(mod, stack->tag) == target_mod ?
-			target_mod->high_net_node : target_mod->low_net_node;
-		dst_node = mod_get_low_mod(mod, stack->tag) == target_mod ?
-			mod->low_net_node : mod->high_net_node;
+		/* Get network and nodes */
+		if (stack->request_dir == mod_request_up_down)
+		{
+			net = mod->low_net;
+			src_node = target_mod->high_net_node;
+			dst_node = mod->low_net_node;
+		}
+		else
+		{
+			net = mod->high_net;
+			src_node = target_mod->low_net_node;
+			dst_node = mod->high_net_node;
+		}
 
 		/* Send message */
 		stack->msg = net_try_send_ev(net, src_node, dst_node, stack->reply_size,
@@ -1109,7 +1132,7 @@ void mod_handler_read_request(int event, void *data)
 			stack->tag, mod->name);
 
 		/* Receive message */
-		if (mod_get_low_mod(mod, stack->tag) == target_mod)
+		if (stack->request_dir == mod_request_up_down)
 			net_receive(mod->low_net, mod->low_net_node, stack->msg);
 		else
 			net_receive(mod->high_net, mod->high_net_node, stack->msg);
@@ -1150,17 +1173,26 @@ void mod_handler_write_request(int event, void *data)
 		/* Default return values */
 		ret->err = 0;
 
-		/* Get network */
+		/* Checks */
+		assert(stack->request_dir);
 		assert(mod_get_low_mod(mod, stack->addr) == target_mod ||
-			mod_get_low_mod(target_mod, stack->addr) == mod);
-		net = mod_get_low_mod(mod, stack->addr) == target_mod ?
-			mod->low_net : mod->high_net;
+			stack->request_dir == mod_request_down_up);
+		assert(mod_get_low_mod(target_mod, stack->addr) == mod ||
+			stack->request_dir == mod_request_up_down);
 
 		/* Get source and destination nodes */
-		src_node = mod_get_low_mod(mod, stack->addr) == target_mod ?
-			mod->low_net_node : mod->high_net_node;
-		dst_node = mod_get_low_mod(mod, stack->addr) == target_mod ?
-			target_mod->high_net_node : target_mod->low_net_node;
+		if (stack->request_dir == mod_request_up_down)
+		{
+			net = mod->low_net;
+			src_node = mod->low_net_node;
+			dst_node = target_mod->high_net_node;
+		}
+		else
+		{
+			net = mod->high_net;
+			src_node = mod->high_net_node;
+			dst_node = target_mod->low_net_node;
+		}
 
 		/* Send message */
 		stack->msg = net_try_send_ev(net, src_node, dst_node, 8,
@@ -1174,7 +1206,7 @@ void mod_handler_write_request(int event, void *data)
 			stack->addr, target_mod->name);
 
 		/* Receive message */
-		if (mod_get_low_mod(mod, stack->addr) == target_mod)
+		if (stack->request_dir == mod_request_up_down)
 			net_receive(target_mod->high_net, target_mod->high_net_node, stack->msg);
 		else
 			net_receive(target_mod->low_net, target_mod->low_net_node, stack->msg);
@@ -1182,7 +1214,7 @@ void mod_handler_write_request(int event, void *data)
 		/* Find and lock */
 		new_stack = mod_stack_create(stack->id, target_mod, stack->addr,
 			EV_MOD_WRITE_REQUEST_ACTION, stack);
-		new_stack->blocking = mod_get_low_mod(target_mod, stack->addr) == mod;
+		new_stack->blocking = stack->request_dir == mod_request_down_up;
 		new_stack->read = 0;
 		new_stack->retry = 0;
 		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
@@ -1198,7 +1230,7 @@ void mod_handler_write_request(int event, void *data)
 		 * have been no error. */
 		if (stack->err)
 		{
-			assert(mod_get_low_mod(mod, stack->tag) == target_mod);
+			assert(stack->request_dir == mod_request_up_down);
 			ret->err = 1;
 			stack->reply_size = 8;
 			esim_schedule_event(EV_MOD_WRITE_REQUEST_REPLY, stack, 0);
@@ -1220,7 +1252,7 @@ void mod_handler_write_request(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s write request exclusive\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
-		if (mod_get_low_mod(mod, stack->tag) == target_mod)
+		if (stack->request_dir == mod_request_up_down)
 			esim_schedule_event(EV_MOD_WRITE_REQUEST_UPDOWN, stack, 0);
 		else
 			esim_schedule_event(EV_MOD_WRITE_REQUEST_DOWNUP, stack, 0);
@@ -1244,6 +1276,7 @@ void mod_handler_write_request(int event, void *data)
 		new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
 			EV_MOD_WRITE_REQUEST_UPDOWN_FINISH, stack);
 		new_stack->target_mod = mod_get_low_mod(target_mod, stack->tag);
+		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
 		return;
 	}
@@ -1316,18 +1349,24 @@ void mod_handler_write_request(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s write request reply\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
-		/* Get network */
+		/* Checks */
 		assert(stack->reply_size);
 		assert(mod_get_low_mod(mod, stack->tag) == target_mod ||
 			mod_get_low_mod(target_mod, stack->tag) == mod);
-		net = mod_get_low_mod(mod, stack->tag) == target_mod ?
-			mod->low_net : mod->high_net;
 
-		/* Get source and destination nodes */
-		src_node = mod_get_low_mod(mod, stack->tag) == target_mod ?
-			target_mod->high_net_node : target_mod->low_net_node;
-		dst_node = mod_get_low_mod(mod, stack->tag) == target_mod ?
-			mod->low_net_node : mod->high_net_node;
+		/* Get network and nodes */
+		if (stack->request_dir == mod_request_up_down)
+		{
+			net = mod->low_net;
+			src_node = target_mod->high_net_node;
+			dst_node = mod->low_net_node;
+		}
+		else
+		{
+			net = mod->high_net;
+			src_node = target_mod->low_net_node;
+			dst_node = mod->high_net_node;
+		}
 
 		/* Send message */
 		stack->msg = net_try_send_ev(net, src_node, dst_node, stack->reply_size,
@@ -1341,7 +1380,7 @@ void mod_handler_write_request(int event, void *data)
 			stack->tag, mod->name);
 
 		/* Receive message */
-		if (mod_get_low_mod(mod, stack->tag) == target_mod)
+		if (stack->request_dir == mod_request_up_down)
 			net_receive(mod->low_net, mod->low_net_node, stack->msg);
 		else
 			net_receive(mod->high_net, mod->high_net_node, stack->msg);
@@ -1411,6 +1450,7 @@ void mod_handler_invalidate(int event, void *data)
 				new_stack = mod_stack_create(stack->id, mod, dir_entry_tag,
 					EV_MOD_INVALIDATE_FINISH, stack);
 				new_stack->target_mod = sharer;
+				new_stack->request_dir = mod_request_down_up;
 				esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
 				stack->pending++;
 			}

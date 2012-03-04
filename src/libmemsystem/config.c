@@ -100,7 +100,7 @@ char *mem_config_help =
 	"      Memory access latency. This variable is required for a main memory module,\n"
 	"      and should be omitted for a cache module (the access latency is specified\n"
 	"      in the corresponding cache geometry section in this case).\n"
-	"  Range = { RANGE <low> <high> | ADDR DIV <div> MOD <mod> EQ <eq> }\n"
+	"  AddressRange = { BOUNDS <low> <high> | ADDR DIV <div> MOD <mod> EQ <eq> }\n"
 	"      Physical address range served by the module. If not specified, the entire\n"
 	"      address space is served by the module. There are two possible formats for\n"
 	"      the value of 'Range':\n"
@@ -768,11 +768,17 @@ static void mem_config_read_module_address_range(struct config_t *config,
 		if (!(token = strtok(NULL, delim)))
 			goto invalid_format;
 		mod->range.bounds.low = str_to_int(token);
+		if (mod->range.bounds.low % mod->block_size)
+			fatal("%s: %s: low address bound must be a multiple of block size.\n%s",
+				mem_config_file_name, mod->name, err_mem_config_note);
 
 		/* High bound */
 		if (!(token = strtok(NULL, delim)))
 			goto invalid_format;
 		mod->range.bounds.high = str_to_int(token);
+		if ((mod->range.bounds.high + 1) % mod->block_size)
+			fatal("%s: %s: high address bound must be a multiple of block size minus 1.\n%s",
+				mem_config_file_name, mod->name, err_mem_config_note);
 
 		/* No more tokens */
 		if ((token = strtok(NULL, delim)))
@@ -793,6 +799,9 @@ static void mem_config_read_module_address_range(struct config_t *config,
 		mod->range.interleaved.div = str_to_int(token);
 		if (mod->range.interleaved.div < 1)
 			goto invalid_format;
+		if (mod->range.interleaved.div % mod->block_size)
+			fatal("%s: %s: value for <div> must be a multiple of block size.\n%s",
+				mem_config_file_name, mod->name, err_mem_config_note);
 
 		/* Token 'MOD' */
 		if (!(token = strtok(NULL, delim)) || strcasecmp(token, "MOD"))

@@ -271,7 +271,7 @@ struct mod_t
 	int log_block_size;
 	int latency;
 
-	/* Address range */
+	/* Address range served by module */
 	enum mod_range_kind_t range_kind;
 	union
 	{
@@ -346,10 +346,11 @@ struct mod_t
 		int bucket_list_max;
 	} access_hash_table[MOD_ACCESS_HASH_TABLE_SIZE];
 
-	/* FIXME: remove */
-	int color;  /* For coloring algorithm */
+	/* For coloring algorithm used to check collisions between CPU and GPU
+	 * memory hierarchies. Remove when fused. */
+	int color;
 
-	/* Stats */
+	/* Statistics */
 	long long accesses;
 	long long hits;
 
@@ -491,6 +492,13 @@ extern int EV_MOD_INVALIDATE_FINISH;
 /* Current identifier for stack */
 extern long long mod_stack_id;
 
+/* Read/write request direction */
+enum mod_request_dir_t
+{
+	mod_request_invalid = 0,
+	mod_request_up_down,
+	mod_request_down_up
+};
 
 /* Stack */
 struct mod_stack_t
@@ -522,6 +530,7 @@ struct mod_stack_t
 	int read_port_index;
 	int write_port_index;
 
+	enum mod_request_dir_t request_dir;
 	struct dir_lock_t *dir_lock;
 	int reply_size;
 	int pending;

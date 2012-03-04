@@ -53,6 +53,16 @@ struct linked_list_t
 };
 
 
+/** Iterate through all element of linked list.
+ *
+ * @param list
+ */
+#define LINKED_LIST_FOR_EACH(list) \
+	for (linked_list_head(list); \
+		!linked_list_is_end(list); \
+		linked_list_next(list))
+
+
 /** Create a linked list.
  *
  * @return
