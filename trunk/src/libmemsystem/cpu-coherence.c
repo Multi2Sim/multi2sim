@@ -35,6 +35,7 @@ int EV_MOD_LOAD_FINISH;
 int EV_MOD_STORE;
 int EV_MOD_STORE_LOCK;
 int EV_MOD_STORE_ACTION;
+int EV_MOD_STORE_UNLOCK;
 int EV_MOD_STORE_FINISH;
 
 int EV_MOD_EVICT;
@@ -100,10 +101,17 @@ void mod_handler_load(int event, void *data)
 
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_read);
+		mod->access_list_read_count++;
+		assert(mod->access_list_read_count <= mod->access_list_count);
 
 		/* Coalesce access */
 		if (stack_master)
 		{
+			stack->coalesced = 1;
+			mod->access_list_coalesced_count++;
+			mod->access_list_coalesced_read_count++;
+			assert(mod->access_list_coalesced_count <= mod->access_list_count);
+			assert(mod->access_list_coalesced_read_count <= mod->access_list_read_count);
 			mod_stack_wait_in_stack(stack, stack_master, EV_MOD_LOAD_FINISH);
 			return;
 		}
@@ -138,7 +146,7 @@ void mod_handler_load(int event, void *data)
 		if (stack->err)
 		{
 			mod->read_retries++;
-			retry_lat = mod_get_retry_latency(mod);;
+			retry_lat = mod_get_retry_latency(mod);
 			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
 			stack->retry = 1;
 			esim_schedule_event(EV_MOD_LOAD_LOCK, stack, retry_lat);
@@ -207,18 +215,26 @@ void mod_handler_load(int event, void *data)
 		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
-		/* Increase value for witness when fusing with GPU memory hierarchy */
-		/* FIXME - move increase of witness into 'mod_access_finish' */
-
-		/* Wake up coalesced accesses */
-		mod_stack_wakeup_stack(stack);
-
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
 			linked_list_add(stack->event_queue, stack->event_queue_item);
 
-		/* Finish access and return */
+		/* Finish access */
 		mod_access_finish(mod, stack);
+		assert(mod->access_list_read_count > 0);
+		mod->access_list_read_count--;
+		if (stack->coalesced)
+		{
+			assert(mod->access_list_coalesced_count > 0);
+			assert(mod->access_list_coalesced_read_count > 0);
+			mod->access_list_coalesced_count--;
+			mod->access_list_coalesced_read_count--;
+		}
+
+		/* Wake up coalesced accesses */
+		mod_stack_wakeup_stack(stack);
+
+		/* Return */
 		mod_stack_return(stack);
 		return;
 	}
@@ -237,16 +253,37 @@ void mod_handler_store(int event, void *data)
 
 	if (event == EV_MOD_STORE)
 	{
+		struct mod_stack_t *stack_master;
+
 		mem_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
-		/* Record access in module access list */
-		mod_access_start(mod, stack, mod_access_write);
+		/* Check if access can be coalesced */
+		stack_master = mod_can_coalesce(mod,
+			mod_access_write, stack->addr);
 
-		/* Next event */
+		/* Record access */
+		mod_access_start(mod, stack, mod_access_write);
+		mod->access_list_write_count++;
+		assert(mod->access_list_write_count <= mod->access_list_count);
+
+		/* Coalesce access */
+		if (stack_master)
+		{
+			stack->coalesced = 1;
+			mod->access_list_coalesced_count++;
+			mod->access_list_coalesced_write_count++;
+			assert(mod->access_list_coalesced_count <= mod->access_list_count);
+			assert(mod->access_list_coalesced_write_count <= mod->access_list_write_count);
+			mod_stack_wait_in_stack(stack, stack_master, EV_MOD_STORE_FINISH);
+			return;
+		}
+
+		/* Continue */
 		esim_schedule_event(EV_MOD_STORE_LOCK, stack, 0);
 		return;
 	}
+
 
 	if (event == EV_MOD_STORE_LOCK)
 	{
@@ -284,23 +321,24 @@ void mod_handler_store(int event, void *data)
 		if (stack->state == cache_block_modified ||
 			stack->state == cache_block_exclusive)
 		{
-			esim_schedule_event(EV_MOD_STORE_FINISH, stack, 0);
+			esim_schedule_event(EV_MOD_STORE_UNLOCK, stack, 0);
 			return;
 		}
 
 		/* Miss - state=O/S/I */
 		new_stack = mod_stack_create(stack->id, mod, stack->tag,
-			EV_MOD_STORE_FINISH, stack);
+			EV_MOD_STORE_UNLOCK, stack);
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
 		return;
 	}
 
-	if (event == EV_MOD_STORE_FINISH)
+	if (event == EV_MOD_STORE_UNLOCK)
 	{
 		int retry_lat;
-		mem_debug("%lld %lld 0x%x %s store finish\n", esim_cycle, stack->id,
+
+		mem_debug("  %lld %lld 0x%x %s store unlock\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
 		/* Error in write request, unlock block and retry store. */
@@ -320,15 +358,33 @@ void mod_handler_store(int event, void *data)
 			stack->tag, cache_block_modified);
 		dir_lock_unlock(stack->dir_lock);
 
-		/* Increase value for witness when fusing with GPU memory hierarchy */
-		/* FIXME - move increase of witness into 'mod_access_finish' */
+		/* Continue */
+		esim_schedule_event(EV_MOD_STORE_FINISH, stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_STORE_FINISH)
+	{
+		mem_debug("%lld %lld 0x%x %s store finish\n", esim_cycle, stack->id,
+			stack->tag, mod->name);
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
 			linked_list_add(stack->event_queue, stack->event_queue_item);
 
-		/* Finish access and return */
+		/* Finish access */
 		mod_access_finish(mod, stack);
+		assert(mod->access_list_write_count > 0);
+		mod->access_list_write_count--;
+		if (stack->coalesced)
+		{
+			assert(mod->access_list_coalesced_count > 0);
+			assert(mod->access_list_coalesced_write_count > 0);
+			mod->access_list_coalesced_count--;
+			mod->access_list_coalesced_write_count--;
+		}
+
+		/* Return */
 		mod_stack_return(stack);
 		return;
 	}

@@ -130,6 +130,11 @@ char *mem_config_help =
 	"      Hit latency for a cache in number of cycles.\n"
 	"  Policy = {LRU|FIFO|Random} (Default = LRU)\n"
 	"      Block replacement policy.\n"
+	"  MSHR = <size> (Default = 16)\n"
+	"      Miss status holding register (MSHR) size in number of entries. This value\n"
+	"      determines the maximum number of accesses that can be in flight for the\n"
+	"      cache, including the time since the access request is received, until a\n"
+	"      potential miss is resolved.\n"
 	"\n"
 	"Section [Network <net>] defines an internal default interconnect, formed of a\n"
 	"single switch connecting all modules pointing to the network. For every module\n"
@@ -556,6 +561,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	int bank_count;
 	int read_port_count;
 	int write_port_count;
+	int mshr_size;
 
 	char *net_name;
 	char *net_node_name;
@@ -584,41 +590,46 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	bank_count = config_read_int(config, buf, "Banks", 1);
 	read_port_count = config_read_int(config, buf, "ReadPorts", 2);
 	write_port_count = config_read_int(config, buf, "WritePorts", 1);
+	mshr_size = config_read_int(config, buf, "MSHR", 16);
 
 	/* Checks */
 	policy = map_string_case(&cache_policy_map, policy_str);
 	if (policy == cache_policy_invalid)
-		fatal("%s: cache '%s': %s: invalid block replacement policy.\n%s",
+		fatal("%s: cache %s: %s: invalid block replacement policy.\n%s",
 			mem_config_file_name, mod_name,
 			policy_str, err_mem_config_note);
 	if (num_sets < 1 || (num_sets & (num_sets - 1)))
-		fatal("%s: cache '%s': number of sets must be a power of two greater than 1.\n%s",
+		fatal("%s: cache %s: number of sets must be a power of two greater than 1.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (assoc < 1 || (assoc & (assoc - 1)))
-		fatal("%s: cache '%s': associativity must be power of two and > 1.\n%s",
+		fatal("%s: cache %s: associativity must be power of two and > 1.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (block_size < 4 || (block_size & (block_size - 1)))
-		fatal("%s: cache '%s': block size must be power of two and at least 4.\n%s",
+		fatal("%s: cache %s: block size must be power of two and at least 4.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (latency < 1)
-		fatal("%s: cache '%s': invalid value for variable 'Latency'.\n%s",
+		fatal("%s: cache %s: invalid value for variable 'Latency'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (bank_count < 1 || (bank_count & (bank_count - 1)))
-		fatal("%s: cache '%s': number of banks must be a power of two greater than 1.\n%s",
+		fatal("%s: cache %s: number of banks must be a power of two greater than 1.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (read_port_count < 1)
-		fatal("%s: cache '%s': invalid value for variable 'ReadPorts'.\n%s",
+		fatal("%s: cache %s: invalid value for variable 'ReadPorts'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 	if (write_port_count < 1)
-		fatal("%s: cache '%s': invalid value for variable 'WritePorts'.\n%s",
+		fatal("%s: cache %s: invalid value for variable 'WritePorts'.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
+	if (mshr_size < 1)
+		fatal("%s: cache %s: invalid value for variable 'MSHR'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
 
 	/* Create module */
 	mod = mod_create(mod_name, mod_kind_cache,
 		bank_count, read_port_count, write_port_count,
 		block_size, latency);
-
-	/* Store directory size */
+	
+	/* Initialize */
+	mod->mshr_size = mshr_size;
 	mod->dir_assoc = assoc;
 	mod->dir_num_sets = num_sets;
 	mod->dir_size = num_sets * assoc;

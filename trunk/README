@@ -300,6 +300,11 @@ geometry are instantiated [Module <name>] sections.
       Hit latency for a cache in number of cycles.
   Policy = {LRU|FIFO|Random} (Default = LRU)
       Block replacement policy.
+  MSHR = <size> (Default = 16)
+      Miss status holding register (MSHR) size in number of entries. This value
+      determines the maximum number of accesses that can be in flight for the
+      cache, including the time since the access request is received, until a
+      potential miss is resolved.
 
 Section [Network <net>] defines an internal default interconnect, formed of a
 single switch connecting all modules pointing to the network. For every module
