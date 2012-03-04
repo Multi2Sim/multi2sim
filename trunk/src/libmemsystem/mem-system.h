@@ -203,7 +203,6 @@ struct mod_port_t
 	struct mod_stack_t *waiting_list_tail;
 	int waiting_list_count;
 	int waiting_list_max;
-
 };
 
 
@@ -394,13 +393,21 @@ int mod_can_access(struct mod_t *mod, uint32_t addr);
 int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
 	uint32_t *way_ptr, uint32_t *tag_ptr, int *state_ptr);
 
-void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack);
+void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack,
+	enum mod_access_kind_t access_kind);
 void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack);
+
 int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr);
+int mod_address_in_flight(struct mod_t *mod, uint32_t addr);
 
 struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
 
 int mod_get_retry_latency(struct mod_t *mod);
+
+struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
+	enum mod_access_kind_t access_kind, uint32_t addr);
+void mod_coalesce(struct mod_stack_t *stack_master,
+	struct mod_stack_t *stack_slave);
 
 
 
@@ -441,6 +448,7 @@ extern int EV_MOD_LOAD;
 extern int EV_MOD_LOAD_LOCK;
 extern int EV_MOD_LOAD_ACTION;
 extern int EV_MOD_LOAD_MISS;
+extern int EV_MOD_LOAD_UNLOCK;
 extern int EV_MOD_LOAD_FINISH;
 
 extern int EV_MOD_STORE;
@@ -504,6 +512,7 @@ enum mod_request_dir_t
 struct mod_stack_t
 {
 	long long id;
+	enum mod_access_kind_t access_kind;
 	int *witness_ptr;
 
 	struct linked_list_t *event_queue;
@@ -561,7 +570,14 @@ struct mod_stack_t
 	struct mod_stack_t *waiting_list_prev;
 	struct mod_stack_t *waiting_list_next;
 
-	/* Events wiating in directory lock */
+	/* Waiting list.
+	 * Contains other stacks waiting for this one to finish. */
+	struct mod_stack_t *waiting_list_head;
+	struct mod_stack_t *waiting_list_tail;
+	int waiting_list_count;
+	int waiting_list_max;
+
+	/* Events waiting in directory lock */
 	int dir_lock_event;
 	struct mod_stack_t *dir_lock_next;
 
@@ -576,11 +592,17 @@ struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
 	uint32_t addr, int ret_event, void *ret_stack);
 void mod_stack_return(struct mod_stack_t *stack);
 
-void mod_stack_wait_in_mod(struct mod_stack_t *stack, int event);
+void mod_stack_wait_in_mod(struct mod_stack_t *stack,
+	struct mod_t *mod, int event);
 void mod_stack_wakeup_mod(struct mod_t *mod);
 
-void mod_stack_wait_in_port(struct mod_stack_t *stack, int event);
+void mod_stack_wait_in_port(struct mod_stack_t *stack,
+	struct mod_port_t *port, int event);
 void mod_stack_wakeup_port(struct mod_port_t *port);
+
+void mod_stack_wait_in_stack(struct mod_stack_t *stack,
+	struct mod_stack_t *stack_master, int event);
+void mod_stack_wakeup_stack(struct mod_stack_t *stack_master);
 
 void mod_handler_gpu_load(int event, void *data);
 void mod_handler_gpu_store(int event, void *data);

@@ -81,6 +81,7 @@ void mem_system_init(void)
 	EV_MOD_LOAD_LOCK = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_ACTION = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_MISS = esim_register_event(mod_handler_load);
+	EV_MOD_LOAD_UNLOCK = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_FINISH = esim_register_event(mod_handler_load);
 
 	EV_MOD_STORE = esim_register_event(mod_handler_store);

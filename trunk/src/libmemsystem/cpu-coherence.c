@@ -29,6 +29,7 @@ int EV_MOD_LOAD;
 int EV_MOD_LOAD_LOCK;
 int EV_MOD_LOAD_ACTION;
 int EV_MOD_LOAD_MISS;
+int EV_MOD_LOAD_UNLOCK;
 int EV_MOD_LOAD_FINISH;
 
 int EV_MOD_STORE;
@@ -88,11 +89,24 @@ void mod_handler_load(int event, void *data)
 
 	if (event == EV_MOD_LOAD)
 	{
+		struct mod_stack_t *stack_master;
+
 		mem_debug("%lld %lld 0x%x %s load\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
-		/* Keep access in module access list */
-		mod_access_start(mod, stack);
+		/* Check if access can be coalesced */
+		stack_master = mod_can_coalesce(mod,
+			mod_access_read, stack->addr);
+
+		/* Record access */
+		mod_access_start(mod, stack, mod_access_read);
+
+		/* Coalesce access */
+		if (stack_master)
+		{
+			mod_stack_wait_in_stack(stack, stack_master, EV_MOD_LOAD_FINISH);
+			return;
+		}
 
 		/* Next event */
 		esim_schedule_event(EV_MOD_LOAD_LOCK, stack, 0);
@@ -134,7 +148,7 @@ void mod_handler_load(int event, void *data)
 		/* Hit */
 		if (stack->state)
 		{
-			esim_schedule_event(EV_MOD_LOAD_FINISH, stack, 0);
+			esim_schedule_event(EV_MOD_LOAD_UNLOCK, stack, 0);
 			return;
 		}
 
@@ -171,6 +185,19 @@ void mod_handler_load(int event, void *data)
 			stack->shared ? cache_block_shared : cache_block_exclusive);
 
 		/* Continue */
+		esim_schedule_event(EV_MOD_LOAD_UNLOCK, stack, 0);
+		return;
+	}
+
+	if (event == EV_MOD_LOAD_UNLOCK)
+	{
+		mem_debug("  %lld %lld 0x%x %s load unlock\n", esim_cycle, stack->id,
+			stack->tag, mod->name);
+
+		/* Unlock directory entry */
+		dir_lock_unlock(stack->dir_lock);
+
+		/* Continue */
 		esim_schedule_event(EV_MOD_LOAD_FINISH, stack, 0);
 		return;
 	}
@@ -180,11 +207,11 @@ void mod_handler_load(int event, void *data)
 		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
 
-		/* Unlock directory entry */
-		dir_lock_unlock(stack->dir_lock);
-
 		/* Increase value for witness when fusing with GPU memory hierarchy */
 		/* FIXME - move increase of witness into 'mod_access_finish' */
+
+		/* Wake up coalesced accesses */
+		mod_stack_wakeup_stack(stack);
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
@@ -214,7 +241,7 @@ void mod_handler_store(int event, void *data)
 			stack->addr, mod->name);
 
 		/* Record access in module access list */
-		mod_access_start(mod, stack);
+		mod_access_start(mod, stack, mod_access_write);
 
 		/* Next event */
 		esim_schedule_event(EV_MOD_STORE_LOCK, stack, 0);
