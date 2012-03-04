@@ -73,9 +73,7 @@ static struct mmu_t *mmu;
 
 void mmu_init()
 {
-	/* Check page size */
-	if ((mmu_page_size & (mmu_page_size - 1)))
-		fatal("memory page size must be power of 2");
+	/* Variables derived from page size */
 	mmu_log_page_size = log_base2(mmu_page_size);
 	mmu_page_mask = mmu_page_size - 1;
 

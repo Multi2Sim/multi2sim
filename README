@@ -221,6 +221,12 @@ every end node present in the network.
 The following sections and variables can be used in the memory system
 configuration file:
 
+Section [General] defines global parameters affecting the entire memory system.
+
+  PageSize = <size>  (Default = 4096)
+      Memory page size. Virtual addresses are translated into new physical
+      addresses in ascending order at the granularity of the page size.
+
 Section [Module <name>] defines a generic memory module. This section is used to
 declare both caches and main memory modules accessible from CPU cores or GPU
 compute units.
