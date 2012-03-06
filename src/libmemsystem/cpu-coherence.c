@@ -90,29 +90,23 @@ void mod_handler_load(int event, void *data)
 
 	if (event == EV_MOD_LOAD)
 	{
-		struct mod_stack_t *stack_master;
+		struct mod_stack_t *master_stack;
 
 		mem_debug("%lld %lld 0x%x %s load\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
-		/* Check if access can be coalesced */
-		stack_master = mod_can_coalesce(mod,
-			mod_access_read, stack->addr);
+		/* Check if access can be coalesced with any currently in-flight access.
+		 * This needs to be done before recording the current access, or else
+		 * access would find itself in the list. */
+		master_stack = mod_can_coalesce(mod, mod_access_read, stack->addr);
 
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_read);
-		mod->access_list_read_count++;
-		assert(mod->access_list_read_count <= mod->access_list_count);
 
 		/* Coalesce access */
-		if (stack_master)
+		if (master_stack)
 		{
-			stack->coalesced = 1;
-			mod->access_list_coalesced_count++;
-			mod->access_list_coalesced_read_count++;
-			assert(mod->access_list_coalesced_count <= mod->access_list_count);
-			assert(mod->access_list_coalesced_read_count <= mod->access_list_read_count);
-			mod_stack_wait_in_stack(stack, stack_master, EV_MOD_LOAD_FINISH);
+			mod_coalesce(mod, master_stack, EV_MOD_LOAD_FINISH, stack);
 			return;
 		}
 
@@ -140,7 +134,7 @@ void mod_handler_load(int event, void *data)
 	{
 		int retry_lat;
 		mem_debug("  %lld %lld 0x%x %s load action\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
+			stack->addr, mod->name);
 
 		/* Error locking */
 		if (stack->err)
@@ -173,7 +167,7 @@ void mod_handler_load(int event, void *data)
 	{
 		int retry_lat;
 		mem_debug("  %lld %lld 0x%x %s load miss\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
+			stack->addr, mod->name);
 
 		/* Error on read request. Unlock block and retry load. */
 		if (stack->err)
@@ -200,7 +194,7 @@ void mod_handler_load(int event, void *data)
 	if (event == EV_MOD_LOAD_UNLOCK)
 	{
 		mem_debug("  %lld %lld 0x%x %s load unlock\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
+			stack->addr, mod->name);
 
 		/* Unlock directory entry */
 		dir_lock_unlock(stack->dir_lock);
@@ -213,7 +207,7 @@ void mod_handler_load(int event, void *data)
 	if (event == EV_MOD_LOAD_FINISH)
 	{
 		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
+			stack->addr, mod->name);
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
@@ -221,18 +215,9 @@ void mod_handler_load(int event, void *data)
 
 		/* Finish access */
 		mod_access_finish(mod, stack);
-		assert(mod->access_list_read_count > 0);
-		mod->access_list_read_count--;
-		if (stack->coalesced)
-		{
-			assert(mod->access_list_coalesced_count > 0);
-			assert(mod->access_list_coalesced_read_count > 0);
-			mod->access_list_coalesced_count--;
-			mod->access_list_coalesced_read_count--;
-		}
 
-		/* Wake up coalesced accesses */
-		mod_stack_wakeup_stack(stack);
+		/* Wake up slave accesses coalesced with the current one */
+		mod_wakeup_coalesced(mod, stack);
 
 		/* Return */
 		mod_stack_return(stack);
@@ -253,29 +238,22 @@ void mod_handler_store(int event, void *data)
 
 	if (event == EV_MOD_STORE)
 	{
-		struct mod_stack_t *stack_master;
+		struct mod_stack_t *master_stack;
 
 		mem_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
-		/* Check if access can be coalesced */
-		stack_master = mod_can_coalesce(mod,
-			mod_access_write, stack->addr);
+		/* Check if access can be coalesced with another in-flight access.
+		 * This needs to be done before recording the current access. */
+		master_stack = mod_can_coalesce(mod, mod_access_write, stack->addr);
 
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_write);
-		mod->access_list_write_count++;
-		assert(mod->access_list_write_count <= mod->access_list_count);
 
 		/* Coalesce access */
-		if (stack_master)
+		if (master_stack)
 		{
-			stack->coalesced = 1;
-			mod->access_list_coalesced_count++;
-			mod->access_list_coalesced_write_count++;
-			assert(mod->access_list_coalesced_count <= mod->access_list_count);
-			assert(mod->access_list_coalesced_write_count <= mod->access_list_write_count);
-			mod_stack_wait_in_stack(stack, stack_master, EV_MOD_STORE_FINISH);
+			mod_coalesce(mod, master_stack, EV_MOD_STORE_FINISH, stack);
 			return;
 		}
 
@@ -304,7 +282,7 @@ void mod_handler_store(int event, void *data)
 	{
 		int retry_lat;
 		mem_debug("  %lld %lld 0x%x %s store action\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
+			stack->addr, mod->name);
 
 		/* Error locking */
 		if (stack->err)
@@ -339,7 +317,7 @@ void mod_handler_store(int event, void *data)
 		int retry_lat;
 
 		mem_debug("  %lld %lld 0x%x %s store unlock\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
+			stack->addr, mod->name);
 
 		/* Error in write request, unlock block and retry store. */
 		if (stack->err)
@@ -366,7 +344,7 @@ void mod_handler_store(int event, void *data)
 	if (event == EV_MOD_STORE_FINISH)
 	{
 		mem_debug("%lld %lld 0x%x %s store finish\n", esim_cycle, stack->id,
-			stack->tag, mod->name);
+			stack->addr, mod->name);
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
@@ -374,15 +352,9 @@ void mod_handler_store(int event, void *data)
 
 		/* Finish access */
 		mod_access_finish(mod, stack);
-		assert(mod->access_list_write_count > 0);
-		mod->access_list_write_count--;
-		if (stack->coalesced)
-		{
-			assert(mod->access_list_coalesced_count > 0);
-			assert(mod->access_list_coalesced_write_count > 0);
-			mod->access_list_coalesced_count--;
-			mod->access_list_coalesced_write_count--;
-		}
+
+		/* Wake up slave accesses coalesced with the current one */
+		mod_wakeup_coalesced(mod, stack);
 
 		/* Return */
 		mod_stack_return(stack);
@@ -418,8 +390,9 @@ void mod_handler_find_and_lock(int event, void *data)
 		stack->hit = mod_find_block(mod, stack->addr, &stack->set,
 			&stack->way, &stack->tag, &stack->state);
 		if (stack->hit)
-			mem_debug("    %lld 0x%x %s hit: set=%d, way=%d, state=%d\n", stack->id,
-				stack->tag, mod->name, stack->set, stack->way, stack->state);
+			mem_debug("    %lld 0x%x %s hit: set=%d, way=%d, state=%s\n", stack->id,
+				stack->tag, mod->name, stack->set, stack->way,
+				map_value(&cache_block_state_map, stack->state));
 
 		/* Stats */
 		mod->accesses++;
@@ -468,8 +441,9 @@ void mod_handler_find_and_lock(int event, void *data)
 			cache_get_block(mod->cache, stack->set, stack->way, NULL, &stack->state);
 			assert(stack->state || !dir_entry_group_shared_or_owned(mod->dir,
 				stack->set, stack->way));
-			mem_debug("    %lld 0x%x %s miss -> lru: set=%d, way=%d, state=%d\n",
-				stack->id, stack->tag, mod->name, stack->set, stack->way, stack->state);
+			mem_debug("    %lld 0x%x %s miss -> lru: set=%d, way=%d, state=%s\n",
+				stack->id, stack->tag, mod->name, stack->set, stack->way,
+				map_value(&cache_block_state_map, stack->state));
 		}
 
 		/* Lock entry */
@@ -591,8 +565,9 @@ void mod_handler_evict(int event, void *data)
 		cache_get_block(mod->cache, stack->set, stack->way, &stack->tag, &stack->state);
 		assert(stack->state || !dir_entry_group_shared_or_owned(mod->dir,
 			stack->set, stack->way));
-		mem_debug("  %lld %lld 0x%x %s evict (set=%d, way=%d, state=%d)\n", esim_cycle, stack->id,
-			stack->tag, mod->name, stack->set, stack->way, stack->state);
+		mem_debug("  %lld %lld 0x%x %s evict (set=%d, way=%d, state=%s)\n", esim_cycle, stack->id,
+			stack->tag, mod->name, stack->set, stack->way,
+			map_value(&cache_block_state_map, stack->state));
 	
 		/* Save some data */
 		stack->src_set = stack->set;
@@ -1498,8 +1473,9 @@ void mod_handler_invalidate(int event, void *data)
 
 		/* Get block info */
 		cache_get_block(mod->cache, stack->set, stack->way, &stack->tag, &stack->state);
-		mem_debug("  %lld %lld 0x%x %s invalidate (set=%d, way=%d, state=%d)\n", esim_cycle, stack->id,
-			stack->tag, mod->name, stack->set, stack->way, stack->state);
+		mem_debug("  %lld %lld 0x%x %s invalidate (set=%d, way=%d, state=%s)\n", esim_cycle, stack->id,
+			stack->tag, mod->name, stack->set, stack->way,
+			map_value(&cache_block_state_map, stack->state));
 		stack->pending = 1;
 
 		/* Send write request to all upper level sharers except 'except_mod' */
