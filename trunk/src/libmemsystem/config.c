@@ -135,6 +135,10 @@ char *mem_config_help =
 	"      determines the maximum number of accesses that can be in flight for the\n"
 	"      cache, including the time since the access request is received, until a\n"
 	"      potential miss is resolved.\n"
+	"  Ports = <num> (Default = 2)\n"
+	"      Number of ports. The number of ports in a cache limits the number of\n"
+	"      concurrent hits. If an access is a miss, it remains in the MSHR while it\n"
+	"      is resolved, but releases the cache port.\n"
 	"\n"
 	"Section [Network <net>] defines an internal default interconnect, formed of a\n"
 	"single switch connecting all modules pointing to the network. For every module\n"
@@ -234,9 +238,6 @@ static void mem_config_cpu_default(struct config_t *config)
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 1);
 	config_write_string(config, section, "Policy", "LRU");
-	config_write_int(config, section, "Banks", 1);
-	config_write_int(config, section, "ReadPorts", 2);
-	config_write_int(config, section, "WritePorts", 2);
 
 	/* Cache geometry for L2 */
 	strcpy(section, "CacheGeometry cpu-geo-l2");
@@ -245,9 +246,6 @@ static void mem_config_cpu_default(struct config_t *config)
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 10);
 	config_write_string(config, section, "Policy", "LRU");
-	config_write_int(config, section, "Banks", 4);
-	config_write_int(config, section, "ReadPorts", 2);
-	config_write_int(config, section, "WritePorts", 2);
 
 	/* L1 caches and entries */
 	FOREACH_CORE
@@ -287,9 +285,6 @@ static void mem_config_cpu_default(struct config_t *config)
 	config_write_string(config, section, "HighNetwork", "cpu-net-l2-mm");
 	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 100);
-	config_write_int(config, section, "Banks", 8);
-	config_write_int(config, section, "ReadPorts", 2);
-	config_write_int(config, section, "WritePorts", 2);
 
 	/* Network connecting L1 caches and L2 */
 	snprintf(section, sizeof section, "Network cpu-net-l1-l2");
@@ -323,9 +318,6 @@ static void mem_config_gpu_default(struct config_t *config)
 	config_write_int(config, section, "BlockSize", 256);
 	config_write_int(config, section, "Latency", 1);
 	config_write_string(config, section, "Policy", "LRU");
-	config_write_int(config, section, "Banks", 1);
-	config_write_int(config, section, "ReadPorts", 2);
-	config_write_int(config, section, "WritePorts", 2);
 
 	/* Cache geometry for L2 */
 	strcpy(section, "CacheGeometry gpu-geo-l2");
@@ -334,9 +326,6 @@ static void mem_config_gpu_default(struct config_t *config)
 	config_write_int(config, section, "BlockSize", 256);
 	config_write_int(config, section, "Latency", 10);
 	config_write_string(config, section, "Policy", "LRU");
-	config_write_int(config, section, "Banks", 4);
-	config_write_int(config, section, "ReadPorts", 2);
-	config_write_int(config, section, "WritePorts", 2);
 
 	/* L1 caches and entries */
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
@@ -368,9 +357,6 @@ static void mem_config_gpu_default(struct config_t *config)
 	config_write_string(config, section, "HighNetwork", "gpu-net-l2-gm");
 	config_write_int(config, section, "BlockSize", 256);
 	config_write_int(config, section, "Latency", 100);
-	config_write_int(config, section, "Banks", 8);
-	config_write_int(config, section, "ReadPorts", 2);
-	config_write_int(config, section, "WritePorts", 2);
 
 	/* Network connecting L1 caches and L2 */
 	snprintf(section, sizeof section, "Network gpu-net-l1-l2");
@@ -562,6 +548,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	int read_port_count;
 	int write_port_count;
 	int mshr_size;
+	int num_ports;
 
 	char *net_name;
 	char *net_node_name;
@@ -587,10 +574,11 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	block_size = config_read_int(config, buf, "BlockSize", 256);
 	latency = config_read_int(config, buf, "Latency", 1);
 	policy_str = config_read_string(config, buf, "Policy", "LRU");
-	bank_count = config_read_int(config, buf, "Banks", 1);
-	read_port_count = config_read_int(config, buf, "ReadPorts", 2);
-	write_port_count = config_read_int(config, buf, "WritePorts", 1);
+	bank_count = config_read_int(config, buf, "Banks", 1);  /* FIXME - remove */
+	read_port_count = config_read_int(config, buf, "ReadPorts", 2);  /* FIXME - remove */
+	write_port_count = config_read_int(config, buf, "WritePorts", 1);  /* FIXME - remove */
 	mshr_size = config_read_int(config, buf, "MSHR", 16);
+	num_ports = config_read_int(config, buf, "Ports", 2);
 
 	/* Checks */
 	policy = map_string_case(&cache_policy_map, policy_str);
@@ -622,9 +610,12 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	if (mshr_size < 1)
 		fatal("%s: cache %s: invalid value for variable 'MSHR'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
+	if (num_ports < 1)
+		fatal("%s: cache %s: invalid value for variable 'Ports'.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
 
 	/* Create module */
-	mod = mod_create(mod_name, mod_kind_cache,
+	mod = mod_create(mod_name, mod_kind_cache, num_ports,
 		bank_count, read_port_count, write_port_count,
 		block_size, latency);
 	
@@ -664,6 +655,7 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 
 	int block_size;
 	int latency;
+	int num_ports;
 	int bank_count;
 	int read_port_count;
 	int write_port_count;
@@ -683,40 +675,44 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 	config_var_enforce(config, section, "BlockSize");
 	block_size = config_read_int(config, section, "BlockSize", 64);
 	latency = config_read_int(config, section, "Latency", 1);
-	bank_count = config_read_int(config, section, "Banks", 4);
-	read_port_count = config_read_int(config, section, "ReadPorts", 2);
-	write_port_count = config_read_int(config, section, "WritePorts", 2);
+	num_ports = config_read_int(config, section, "Ports", 2);
+	bank_count = config_read_int(config, section, "Banks", 4);  /* FIXME - remove */
+	read_port_count = config_read_int(config, section, "ReadPorts", 2);  /* FIXME - remove */
+	write_port_count = config_read_int(config, section, "WritePorts", 2);  /* FIXME - remove */
 	dir_size = config_read_int(config, section, "DirectorySize", 1024);
 	dir_assoc = config_read_int(config, section, "DirectoryAssoc", 8);
 
 	/* Check parameters */
 	if (block_size < 1 || (block_size & (block_size - 1)))
-		fatal("%s: global memory: block size must be power of two and > 1.\n%s",
-			mem_config_file_name, err_mem_config_note);
+		fatal("%s: %s: block size must be power of two.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
 	if (latency < 1)
-		fatal("%s: global memory: invalid value for variable 'Latency'.\n%s",
-			mem_config_file_name, err_mem_config_note);
+		fatal("%s: %s: invalid value for variable 'Latency'.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
+	if (num_ports < 1)
+		fatal("%s: %s: invalid value for variable 'NumPorts'.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
 	if (bank_count < 1 || (bank_count & (bank_count - 1)))
-		fatal("%s: global_memory: number of banks must be a power of two greater than 1.\n%s",
-			mem_config_file_name, err_mem_config_note);
+		fatal("%s: %s: number of banks must be a power of two greater than 1.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
 	if (read_port_count < 1)
-		fatal("%s: global memory: invalid value for variable 'ReadPorts'.\n%s",
-			mem_config_file_name, err_mem_config_note);
+		fatal("%s: %s: invalid value for variable 'ReadPorts'.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
 	if (write_port_count < 1)
-		fatal("%s: global memory: invalid value for variable 'WritePorts'.\n%s",
-			mem_config_file_name, err_mem_config_note);
+		fatal("%s: %s: invalid value for variable 'WritePorts'.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
 	if (dir_size < 1 || (dir_size & (dir_size - 1)))
-		fatal("%s: directory size must be a power of two.\n%s",
-			mem_config_file_name, err_mem_config_note);
+		fatal("%s: %s: directory size must be a power of two.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
 	if (dir_assoc < 1 || (dir_assoc & (dir_assoc - 1)))
-		fatal("%s: directory associativity must be a power of two.\n%s",
-			mem_config_file_name, err_mem_config_note);
+		fatal("%s: %s: directory associativity must be a power of two.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
 	if (dir_assoc > dir_size)
-		fatal("%s: invalid directory associativity.\n%s",
-			mem_config_file_name, err_mem_config_note);
+		fatal("%s: %s: invalid directory associativity.\n%s",
+			mem_config_file_name, mod_name, err_mem_config_note);
 
 	/* Create module */
-	mod = mod_create(mod_name, mod_kind_main_memory,
+	mod = mod_create(mod_name, mod_kind_main_memory, num_ports,
 			bank_count, read_port_count, write_port_count,
 			block_size, latency);
 
