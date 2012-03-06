@@ -133,6 +133,9 @@ struct amd_bin_t
 struct amd_bin_t *amd_bin_create(void *ptr, int size, char *name);
 void amd_bin_free(struct amd_bin_t *amd_bin);
 
+
+
+
 /*
  * AMD OpenGL Binary File (Internal ELF)
  */
@@ -320,11 +323,16 @@ struct opencl_program_t
 
 	/* ELF binary */
 	struct elf_file_t *elf_file;
+
+	/* Constant buffers are shared by all kernels compiled in the
+	 * same binary. This list is comprised of elf_buffers. */
+	struct list_t *constant_buffer_list;
 };
 
 struct opencl_program_t *opencl_program_create(void);
 void opencl_program_free(struct opencl_program_t *program);
 void opencl_program_build(struct opencl_program_t *program);
+void opencl_program_initialize_constant_buffers(struct opencl_program_t *program);
 
 
 
@@ -471,9 +479,9 @@ struct opencl_kernel_t
 	int group_count;
 
 	/* UAV lists */
-	struct list_t *uav_read_table;
-	struct list_t *uav_write_table;
-	struct list_t *constant_table;
+	struct list_t *uav_read_list;
+	struct list_t *uav_write_list;
+	struct list_t *constant_buffer_list;
 
 	/* State of the running kernel */
 	struct gpu_ndrange_t *ndrange;

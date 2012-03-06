@@ -27,6 +27,9 @@
 #include <list.h>
 
 
+#define MAX_STRING_SIZE         1000
+
+
 /*
  * Variables
  */
@@ -563,7 +566,6 @@ struct elf_file_t *elf_file_create_from_path(char *path)
 	elf_file = elf_file_create_from_allocated_buffer(buffer, size, path);
 	return elf_file;
 }
-
 
 void elf_file_free(struct elf_file_t *elf_file)
 {
