@@ -71,6 +71,24 @@ Coding Guidelines
 		err_list_not_fount
 	};
 
+* Memory allocation:
+
+	Dynamic memory allocation should be followed by a check that there was
+	enough virtual memory available. This affects malloc, calloc, strdup,
+	and strndup functions. Failing to allocate memory should cause a
+	standard fatal error, as follows:
+
+	void *buf;
+	char *s;
+
+	buf = malloc(100);
+	if (!buf)
+		fatal("%s: out of memory", __FUNCTION__);
+	
+	s = strdup("hello");
+	if (!s)
+		fatal("%s: out of memory", __FUNCTION__);
+
 * Structure declaration:
 
 	Structure types should be named 'struct <XXX>_t', without using
