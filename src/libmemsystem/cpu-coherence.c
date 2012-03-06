@@ -21,10 +21,6 @@
 
 /* Events */
 
-int EV_MOD_FIND_AND_LOCK;
-int EV_MOD_FIND_AND_LOCK_ACTION;
-int EV_MOD_FIND_AND_LOCK_FINISH;
-
 int EV_MOD_LOAD;
 int EV_MOD_LOAD_LOCK;
 int EV_MOD_LOAD_ACTION;
@@ -37,6 +33,11 @@ int EV_MOD_STORE_LOCK;
 int EV_MOD_STORE_ACTION;
 int EV_MOD_STORE_UNLOCK;
 int EV_MOD_STORE_FINISH;
+
+int EV_MOD_FIND_AND_LOCK;
+int EV_MOD_FIND_AND_LOCK_PORT;
+int EV_MOD_FIND_AND_LOCK_ACTION;
+int EV_MOD_FIND_AND_LOCK_FINISH;
 
 int EV_MOD_EVICT;
 int EV_MOD_EVICT_INVALID;
@@ -386,15 +387,35 @@ void mod_handler_find_and_lock(int event, void *data)
 		ret->state = 0;
 		ret->tag = 0;
 
+		/* Get a port */
+		mod_lock_port(mod, stack, EV_MOD_FIND_AND_LOCK_PORT);
+		return;
+	}
+
+	if (event == EV_MOD_FIND_AND_LOCK_PORT)
+	{
+		struct mod_port_t *port = stack->port;
+
+		assert(stack->port);
+		mem_debug("  %lld %lld 0x%x %s find and lock port\n", esim_cycle, stack->id,
+			stack->addr, mod->name);
+
+		/* Set parent stack flag expressing that port has already been locked.
+		 * This flag is checked by new writes to find out if it is already too
+		 * late to coalesce. */
+		ret->port_locked = 1;
+
 		/* Look for block. */
 		stack->hit = mod_find_block(mod, stack->addr, &stack->set,
 			&stack->way, &stack->tag, &stack->state);
+
+		/* Debug */
 		if (stack->hit)
 			mem_debug("    %lld 0x%x %s hit: set=%d, way=%d, state=%s\n", stack->id,
 				stack->tag, mod->name, stack->set, stack->way,
 				map_value(&cache_block_state_map, stack->state));
 
-		/* Stats */
+		/* Statistics */
 		mod->accesses++;
 		if (stack->hit)
 			mod->hits++;
@@ -434,6 +455,7 @@ void mod_handler_find_and_lock(int event, void *data)
 		/* Miss */
 		if (!stack->hit)
 		{
+			/* Miss should happen only in non-blocking up-down requests */
 			assert(!stack->blocking);
 
 			/* Find victim */
@@ -446,17 +468,23 @@ void mod_handler_find_and_lock(int event, void *data)
 				map_value(&cache_block_state_map, stack->state));
 		}
 
-		/* Lock entry */
+		/* Get directory entry */
 		stack->dir_lock = dir_lock_get(mod->dir, stack->set, stack->way);
+
+		/* If directory entry is locked and the call to FIND_AND_LOCK is not
+		 * blocking, release port and return error. */
 		if (stack->dir_lock->lock && !stack->blocking)
 		{
 			mem_debug("    %lld 0x%x %s block already locked: set=%d, way=%d\n",
 				stack->id, stack->tag, mod->name, stack->set, stack->way);
 			ret->err = 1;
+			mod_unlock_port(mod, port, stack);
 			mod_stack_return(stack);
 			return;
 		}
-		if (!dir_lock_lock(stack->dir_lock, EV_MOD_FIND_AND_LOCK, stack))
+
+		/* Lock directory entry */
+		if (!dir_lock_lock(stack->dir_lock, EV_MOD_FIND_AND_LOCK_PORT, stack))
 			return;
 
 		/* Entry is locked. Record the transient tag so that a subsequent lookup
@@ -472,8 +500,14 @@ void mod_handler_find_and_lock(int event, void *data)
 
 	if (event == EV_MOD_FIND_AND_LOCK_ACTION)
 	{
+		struct mod_port_t *port = stack->port;
+
+		assert(port);
 		mem_debug("  %lld %lld 0x%x %s find and lock action\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
+
+		/* Release port */
+		mod_unlock_port(mod, port, stack);
 
 		/* On miss, evict if victim is a valid block. */
 		if (!stack->hit && stack->state)
@@ -487,7 +521,7 @@ void mod_handler_find_and_lock(int event, void *data)
 			return;
 		}
 
-		/* Access latency */
+		/* Continue */
 		esim_schedule_event(EV_MOD_FIND_AND_LOCK_FINISH, stack, 0);
 		return;
 	}

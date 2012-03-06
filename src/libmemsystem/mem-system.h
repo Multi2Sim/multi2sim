@@ -295,14 +295,23 @@ struct mod_t
 	/* Banks and ports */
 	struct mod_bank_t *banks;
 	int bank_count;
-	int read_port_count;  /* Number of read ports (per bank) */
-	int write_port_count;  /* Number of write ports (per bank) */
+	int read_port_count;  /* Number of read ports (per bank) - FIXME - remove */
+	int write_port_count;  /* Number of write ports (per bank) - FIXME - remove */
 
-	/* Ports */
-	struct mod_port_t *read_ports;
-	struct mod_port_t *write_ports;
+	/* For GPU - FIXME - remove */
 	int locked_read_port_count;
 	int locked_write_port_count;
+
+	/* Ports */
+	struct mod_port_t *ports;
+	int num_ports;
+	int num_locked_ports;
+
+	/* Accesses waiting to get a port */
+	struct mod_stack_t *port_waiting_list_head;
+	struct mod_stack_t *port_waiting_list_tail;
+	int port_waiting_list_count;
+	int port_waiting_list_max;
 
 	/* Directory */
 	struct dir_t *dir;
@@ -387,7 +396,7 @@ struct mod_t
 	long long no_retry_write_hits;
 };
 
-struct mod_t *mod_create(char *name, enum mod_kind_t kind,
+struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 	int bank_count, int read_port_count, int write_port_count,
 	int block_size, int latency);
 void mod_free(struct mod_t *mod);
@@ -401,9 +410,8 @@ int mod_can_access(struct mod_t *mod, uint32_t addr);
 int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
 	uint32_t *way_ptr, uint32_t *tag_ptr, int *state_ptr);
 
-int mod_can_lock_read_port(struct mod_t *mod);
-void mod_lock_read_port(struct mod_t *mod, struct mod_stack_t *stack);
-void mod_unlock_read_port(struct mod_t *mod, struct mod_port_t *port,
+void mod_lock_port(struct mod_t *mod, struct mod_stack_t *stack, int event);
+void mod_unlock_port(struct mod_t *mod, struct mod_port_t *port,
 	struct mod_stack_t *stack);
 
 void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack,
@@ -472,6 +480,7 @@ extern int EV_MOD_STORE_UNLOCK;
 extern int EV_MOD_STORE_FINISH;
 
 extern int EV_MOD_FIND_AND_LOCK;
+extern int EV_MOD_FIND_AND_LOCK_PORT;
 extern int EV_MOD_FIND_AND_LOCK_ACTION;
 extern int EV_MOD_FIND_AND_LOCK_FINISH;
 
@@ -577,6 +586,7 @@ struct mod_stack_t
 	int eviction : 1;
 	int retry : 1;
 	int coalesced : 1;
+	int port_locked : 1;
 
 	/* Message sent through interconnect */
 	struct net_msg_t *msg;
@@ -585,6 +595,11 @@ struct mod_stack_t
 	int waiting_list_event;  /* Event to schedule when stack is waken up */
 	struct mod_stack_t *waiting_list_prev;
 	struct mod_stack_t *waiting_list_next;
+
+	/* Waiting list for locking a port. */
+	int port_waiting_list_event;
+	struct mod_stack_t *port_waiting_list_prev;
+	struct mod_stack_t *port_waiting_list_next;
 
 	/* Waiting list. Contains other stacks waiting for this one to finish.
 	 * Waiting stacks corresponds to slave coalesced accesses waiting for

@@ -91,6 +91,7 @@ void mem_system_init(void)
 	EV_MOD_STORE_FINISH = esim_register_event(mod_handler_store);
 
 	EV_MOD_FIND_AND_LOCK = esim_register_event(mod_handler_find_and_lock);
+	EV_MOD_FIND_AND_LOCK_PORT = esim_register_event(mod_handler_find_and_lock);
 	EV_MOD_FIND_AND_LOCK_ACTION = esim_register_event(mod_handler_find_and_lock);
 	EV_MOD_FIND_AND_LOCK_FINISH = esim_register_event(mod_handler_find_and_lock);
 
