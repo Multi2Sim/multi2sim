@@ -49,7 +49,8 @@ static int mod_serves_address(struct mod_t *mod, uint32_t addr)
  * Public Functions
  */
 
-struct mod_t *mod_create(char *name, enum mod_kind_t kind,
+/* FIXME - remove 'read_port_count', 'write_port_count' */
+struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 	int bank_count, int read_port_count, int write_port_count,
 	int block_size, int latency)
 {
@@ -70,8 +71,19 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind,
 	mod->bank_count = bank_count;
 	mod->read_port_count = read_port_count;
 	mod->write_port_count = write_port_count;
-	mod->banks = calloc(1, mod->bank_count * SIZEOF_MOD_BANK(mod));
 	mod->latency = latency;
+
+	/* Banks - FIXME - remove */
+	mod->banks = calloc(1, mod->bank_count * SIZEOF_MOD_BANK(mod));
+	if (!mod->banks)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Ports */
+	mod->num_ports = num_ports;
+	mod->ports = calloc(num_ports, sizeof(struct mod_port_t));
+	if (!mod->ports)
+		fatal("%s: out of memory", __FUNCTION__);
+
 
 	/* Lists */
 	mod->low_mod_list = linked_list_create();
@@ -95,6 +107,7 @@ void mod_free(struct mod_t *mod)
 	if (mod->dir)
 		dir_free(mod->dir);
 	free(mod->banks);
+	free(mod->ports);
 	free(mod->name);
 	free(mod);
 }
@@ -237,48 +250,77 @@ int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
 }
 
 
-int mod_can_lock_read_port(struct mod_t *mod)
-{
-	assert(IN_RANGE(mod->locked_read_port_count, 0, mod->read_port_count));
-	return mod->locked_read_port_count < mod->read_port_count;
-}
-
-
-void mod_lock_read_port(struct mod_t *mod, struct mod_stack_t *stack)
+/* Lock a port, and schedule event when done.
+ * If there is no free port, the access is enqueued in the port
+ * waiting list, and it will retry once a port becomes available with a
+ * call to 'mod_unlock_port'. */
+void mod_lock_port(struct mod_t *mod, struct mod_stack_t *stack, int event)
 {
 	struct mod_port_t *port = NULL;
 	int i;
 
 	/* No free port */
-	if (mod->locked_read_port_count >= mod->read_port_count)
-		panic("%s: no free read port", __FUNCTION__);
+	if (mod->num_locked_ports >= mod->num_ports)
+	{
+		assert(!DOUBLE_LINKED_LIST_MEMBER(mod, port_waiting, stack));
+		DOUBLE_LINKED_LIST_INSERT_TAIL(mod, port_waiting, stack);
+		stack->port_waiting_list_event = event;
+		return;
+	}
 
 	/* Get free port */
-	for (i = 0; i < mod->read_port_count; i++)
+	for (i = 0; i < mod->num_ports; i++)
 	{
-		port = &mod->read_ports[i];
+		port = &mod->ports[i];
 		if (!port->stack)
 			break;
 	}
 
 	/* Lock port */
-	assert(port && i < mod->read_port_count);
+	assert(port && i < mod->num_ports);
 	port->stack = stack;
 	stack->port = port;
-	mod->locked_read_port_count++;
+	mod->num_locked_ports++;
+
+	/* Debug */
+	mem_debug("  %lld %lld %s port %d locked\n", esim_cycle,
+		stack->id, mod->name, i);
+
+	/* Schedule event */
+	esim_schedule_event(event, stack, 0);
 }
 
 
-void mod_unlock_read_port(struct mod_t *mod, struct mod_port_t *port,
+void mod_unlock_port(struct mod_t *mod, struct mod_port_t *port,
 	struct mod_stack_t *stack)
 {
-	assert(mod->locked_read_port_count > 0);
+	int event;
+
+	/* Checks */
+	assert(mod->num_locked_ports > 0);
 	assert(stack->port == port && port->stack == stack);
 	assert(stack->mod == mod);
 
+	/* Unlock port */
 	stack->port = NULL;
 	port->stack = NULL;
-	mod->locked_read_port_count--;
+	mod->num_locked_ports--;
+
+	/* Debug */
+	mem_debug("  %lld %lld %s port unlocked\n", esim_cycle,
+		stack->id, mod->name);
+
+	/* Check if there was any access waiting for free port */
+	if (!mod->port_waiting_list_count)
+		return;
+
+	/* Wake up one access waiting for a free port */
+	stack = mod->port_waiting_list_head;
+	event = stack->port_waiting_list_event;
+	assert(DOUBLE_LINKED_LIST_MEMBER(mod, port_waiting, stack));
+	DOUBLE_LINKED_LIST_REMOVE(mod, port_waiting, stack);
+	mod_lock_port(mod, stack, event);
+
 }
 
 
@@ -412,7 +454,7 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 	struct mod_stack_t *stack;
 
 	/* For efficiency, first check in the hash table of accesses
-	 * whether there is an access in flight to the same address. */
+	 * whether there is an access in flight to the same block. */
 	assert(access_kind);
 	if (!mod_address_in_flight(mod, addr))
 		return NULL;
@@ -439,7 +481,21 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 
 	case mod_access_write:
 	{
-		break;
+		/* Only coalesce with last write */
+		stack = mod->access_list_tail;
+		if (!stack || stack->access_kind != mod_access_write)
+			return NULL;
+
+		/* Only if it is an access to the same block */
+		if (stack->addr >> mod->log_block_size != addr >> mod->log_block_size)
+			return NULL;
+
+		/* Only if previous write has not started yet */
+		if (stack->port_locked)
+			return NULL;
+
+		/* Coalesce */
+		return stack->master_stack ? stack->master_stack : stack;
 	}
 
 	default:
