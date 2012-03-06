@@ -309,6 +309,13 @@ void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack)
 	/* Remove from hash table */
 	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
 	DOUBLE_LINKED_LIST_REMOVE(&mod->access_hash_table[index], bucket, stack);
+
+	/* If this was a coalesced access, update counter */
+	if (stack->coalesced)
+	{
+		assert(mod->access_list_coalesced_count > 0);
+		mod->access_list_coalesced_count--;
+	}
 }
 
 
@@ -425,7 +432,7 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 
 			if (stack->addr >> mod->log_block_size ==
 				addr >> mod->log_block_size)
-				return stack;
+				return stack->master_stack ? stack->master_stack : stack;
 		}
 		break;
 	}
@@ -441,6 +448,65 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 
 	/* No access found */
 	return NULL;
+}
+
+
+void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
+	int event, struct mod_stack_t *stack)
+{
+	/* Debug */
+	mem_debug("  %lld %lld 0x%x %s coalesce with %lld\n", esim_cycle,
+		stack->id, stack->addr, mod->name, master_stack->id);
+
+	/* Master stack must not have a parent. We only want one level of
+	 * coalesced accesses. */
+	assert(!master_stack->master_stack);
+
+	/* Access must have been recorded already, which sets the access
+	 * kind to a valid value. */
+	assert(stack->access_kind);
+
+	/* Set slave stack as a coalesced access */
+	stack->coalesced = 1;
+	stack->master_stack = master_stack;
+	assert(mod->access_list_coalesced_count <= mod->access_list_count);
+
+	/* Record in-flight coalesced access in module */
+	mod->access_list_coalesced_count++;
+
+	/* Enqueue current access in the waiting list of master access.
+	 * When master access finishes, 'event' is issued for current access. */
+	stack->waiting_list_event = event;
+	assert(!DOUBLE_LINKED_LIST_MEMBER(master_stack, waiting, stack));
+	DOUBLE_LINKED_LIST_INSERT_TAIL(master_stack, waiting, stack);
+}
+
+
+void mod_wakeup_coalesced(struct mod_t *mod, struct mod_stack_t *master_stack)
+{
+	struct mod_stack_t *stack;
+	int event;
+
+	/* No access has been coalesced with this master stack. */
+	if (!master_stack->waiting_list_count)
+		return;
+
+	/* Debug */
+	mem_debug("  %lld %lld 0x%x %s wake up coalesced:", esim_cycle,
+		master_stack->id, master_stack->addr, mod->name);
+
+	/* Wake up all coalesced accesses */
+	while (master_stack->waiting_list_head)
+	{
+		stack = master_stack->waiting_list_head;
+		event = stack->waiting_list_event;
+		DOUBLE_LINKED_LIST_REMOVE(master_stack, waiting, stack);
+		esim_schedule_event(event, stack, 0);
+		mem_debug(" %lld", stack->id);
+	}
+
+	/* Debug */
+	mem_debug("\n");
 }
 
 
@@ -533,32 +599,6 @@ void mod_stack_wakeup_port(struct mod_port_t *port)
 		stack = port->waiting_list_head;
 		event = stack->waiting_list_event;
 		DOUBLE_LINKED_LIST_REMOVE(port, waiting, stack);
-		esim_schedule_event(event, stack, 0);
-	}
-}
-
-
-/* Enqueue access in a stack wait list. */
-void mod_stack_wait_in_stack(struct mod_stack_t *stack,
-	struct mod_stack_t *stack_master, int event)
-{
-	assert(!DOUBLE_LINKED_LIST_MEMBER(stack_master, waiting, stack));
-	stack->waiting_list_event = event;
-	DOUBLE_LINKED_LIST_INSERT_TAIL(stack_master, waiting, stack);
-}
-
-
-/* Wake up accesses waiting in a stack wait list. */
-void mod_stack_wakeup_stack(struct mod_stack_t *stack_master)
-{
-	struct mod_stack_t *stack;
-	int event;
-
-	while (stack_master->waiting_list_head)
-	{
-		stack = stack_master->waiting_list_head;
-		event = stack->waiting_list_event;
-		DOUBLE_LINKED_LIST_REMOVE(stack_master, waiting, stack);
 		esim_schedule_event(event, stack, 0);
 	}
 }
