@@ -36,6 +36,7 @@
  */
 
 extern struct string_map_t cache_policy_map;
+extern struct string_map_t cache_block_state_map;
 
 enum cache_policy_t
 {
@@ -258,7 +259,7 @@ enum mod_entry_kind_t
 	mod_entry_gpu
 };
 
-#define MOD_ACCESS_HASH_TABLE_SIZE  7
+#define MOD_ACCESS_HASH_TABLE_SIZE  17
 
 /* Memory module */
 struct mod_t
@@ -339,12 +340,9 @@ struct mod_t
 	int access_list_count;
 	int access_list_max;
 
-	/* In-flight accesses */
-	int access_list_write_count;
-	int access_list_read_count;
+	/* Number of in-flight coalesced accesses. This is a number
+	 * between 0 and 'access_list_count' at all times. */
 	int access_list_coalesced_count;
-	int access_list_coalesced_read_count;
-	int access_list_coalesced_write_count;
 
 	/* Hash table of accesses */
 	struct
@@ -421,8 +419,9 @@ int mod_get_retry_latency(struct mod_t *mod);
 
 struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 	enum mod_access_kind_t access_kind, uint32_t addr);
-void mod_coalesce(struct mod_stack_t *stack_master,
-	struct mod_stack_t *stack_slave);
+void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
+	int event, struct mod_stack_t *stack);
+void mod_wakeup_coalesced(struct mod_t *mod, struct mod_stack_t *master_stack);
 
 
 
@@ -587,12 +586,17 @@ struct mod_stack_t
 	struct mod_stack_t *waiting_list_prev;
 	struct mod_stack_t *waiting_list_next;
 
-	/* Waiting list.
-	 * Contains other stacks waiting for this one to finish. */
+	/* Waiting list. Contains other stacks waiting for this one to finish.
+	 * Waiting stacks corresponds to slave coalesced accesses waiting for
+	 * the current one to finish. */
 	struct mod_stack_t *waiting_list_head;
 	struct mod_stack_t *waiting_list_tail;
 	int waiting_list_count;
 	int waiting_list_max;
+
+	/* Master stack that the current access has been coalesced with.
+	 * This field has a value other than NULL only if 'coalesced' is TRUE. */
+	struct mod_stack_t *master_stack;
 
 	/* Events waiting in directory lock */
 	int dir_lock_event;
@@ -616,10 +620,6 @@ void mod_stack_wakeup_mod(struct mod_t *mod);
 void mod_stack_wait_in_port(struct mod_stack_t *stack,
 	struct mod_port_t *port, int event);
 void mod_stack_wakeup_port(struct mod_port_t *port);
-
-void mod_stack_wait_in_stack(struct mod_stack_t *stack,
-	struct mod_stack_t *stack_master, int event);
-void mod_stack_wakeup_stack(struct mod_stack_t *stack_master);
 
 void mod_handler_gpu_load(int event, void *data);
 void mod_handler_gpu_store(int event, void *data);

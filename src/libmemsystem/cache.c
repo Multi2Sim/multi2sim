@@ -26,9 +26,21 @@
 struct string_map_t cache_policy_map =
 {
 	3, {
-		{ "LRU",        cache_policy_lru },
-		{ "FIFO",       cache_policy_fifo },
-		{ "Random",     cache_policy_random }
+		{ "LRU", cache_policy_lru },
+		{ "FIFO", cache_policy_fifo },
+		{ "Random", cache_policy_random }
+	}
+};
+
+struct string_map_t cache_block_state_map =
+{
+	6, {
+		{ "N", cache_block_non_coherent },
+		{ "M", cache_block_modified },
+		{ "O", cache_block_owned },
+		{ "E", cache_block_exclusive },
+		{ "S", cache_block_shared },
+		{ "I", cache_block_invalid }
 	}
 };
 
