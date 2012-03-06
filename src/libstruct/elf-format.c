@@ -27,7 +27,6 @@
 #include <list.h>
 
 
-#define MAX_STRING_SIZE         1000
 
 
 /*

@@ -605,7 +605,6 @@ void opencl_program_initialize_constant_buffers(struct opencl_program_t *program
 	struct elf_buffer_t elf_buffer;
 	struct opencl_mem_t *mem;
 	char symbol_name[MAX_STRING_SIZE];
-	void *buf;
 	int i;
 
 	elf_file = program->elf_file;
@@ -642,11 +641,7 @@ void opencl_program_initialize_constant_buffers(struct opencl_program_t *program
 		gk->global_mem_top += mem->size;
 
 		/* Copy constant buffer into device memory */
-		buf = malloc(mem->size);
-		if (!buf)
-			fatal("Failed to create constant buffer (size %d)", mem->size);
 		mem_write(gk->global_mem, mem->device_ptr, mem->size, elf_buffer.ptr);
-		free(buf);
 
 		/* Add the memory object to the constant buffer list */
 		list_set(program->constant_buffer_list, i, mem);
