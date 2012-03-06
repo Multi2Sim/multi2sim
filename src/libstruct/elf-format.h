@@ -104,6 +104,7 @@ struct elf_symbol_t *elf_symbol_get_by_name(struct elf_file_t *elf_file, char *n
 
 struct elf_file_t *elf_file_create_from_buffer(void *ptr, int size, char *name);
 struct elf_file_t *elf_file_create_from_path(char *path);
+struct list_t *elf_file_get_constant_buffers(struct elf_file_t *elf_file);
 void elf_file_free(struct elf_file_t *elf_file);
 
 

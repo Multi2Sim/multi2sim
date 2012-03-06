@@ -397,7 +397,7 @@ void amd_inst_MEM_RAT_impl()
 			uav = W0.rat_id;
 
 			/* Otherwise, we have an image, and we need to provide a base address */
-			mem = list_get(gpu_isa_ndrange->kernel->uav_write_table, uav);
+			mem = list_get(gpu_isa_ndrange->kernel->uav_write_list, uav);
 			base_addr = mem->device_ptr;
 			addr = base_addr + gpu_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
 			gpu_isa_debug("  t%d:write(0x%x)", gpu_isa_work_item->id, addr);
@@ -2662,7 +2662,7 @@ void amd_inst_FETCH_impl()
 		/* Information is in a constant buffer (filled by us) */
 		else if (W0.buffer_id >= 130 && W0.buffer_id < 153) { /* FIXME Verify that 153 is correct */
 
-			mem = list_get(gpu_isa_ndrange->kernel->constant_table, W0.buffer_id-128);
+			mem = list_get(gpu_isa_ndrange->kernel->constant_buffer_list, W0.buffer_id-128);
 			if(!mem) 
 				fatal("No table entry for constant UAV %d\n", W0.buffer_id);
 
@@ -2804,7 +2804,7 @@ void amd_inst_FETCH_impl()
 	}
 
 	/* Address */
-	addr = base_addr + gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * (elem_size*num_elem);
+	addr = base_addr + gpu_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * (num_elem*elem_size);
 	gpu_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr);
 
 	/* FIXME The number of bytes to read is defined by mega_fetch, but we currently
@@ -2963,7 +2963,7 @@ void amd_inst_SAMPLE_impl() {
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W2.ssx, 0); 
 
 	/* Look up the image object based on UAV */
-	image = list_get(gpu_isa_ndrange->kernel->uav_read_table, W0.resource_id);
+	image = list_get(gpu_isa_ndrange->kernel->uav_read_list, W0.resource_id);
 	if(!image) 
 		fatal("No table entry for read-only UAV %d\n", W0.resource_id);
 

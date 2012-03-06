@@ -940,6 +940,10 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Load ELF binary from guest memory */
 		snprintf(name, sizeof(name), "clProgram<%d>.externalELF", program->id);
 		program->elf_file = elf_file_create_from_buffer(buf, length, name);
+
+		/* Search ELF binary to see if there are any constant buffers encoded inside */
+		opencl_program_initialize_constant_buffers(program);
+
 		free(buf);
 
 		/* Return success */
@@ -1016,6 +1020,8 @@ int opencl_func_run(int code, unsigned int *args)
 		char kernel_name_str[MAX_STRING_SIZE];
 		struct opencl_kernel_t *kernel;
 		struct opencl_program_t *program;
+		void *constant_tmp;
+		int i;
 
 		opencl_debug("  program=0x%x, kernel_name=0x%x, errcode_ret=0x%x\n",
 			program_id, kernel_name, errcode_ret);
@@ -1037,6 +1043,16 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Load kernel */
 		opencl_kernel_load(kernel, kernel_name_str);
+
+		/* Add program-wide constant buffers to the kernel-specific list */
+		for(i = 0; i < 25; i++) 
+		{
+			constant_tmp = list_get(program->constant_buffer_list, i);
+			if (constant_tmp != NULL) 
+			{
+				list_set(kernel->constant_buffer_list, i, constant_tmp);
+			}
+		}
 
 		/* Return kernel id */
 		if (errcode_ret)
@@ -1607,7 +1623,7 @@ int opencl_func_run(int code, unsigned int *args)
 		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
 		kernel->work_dim = work_dim;
 
-		/* Build UAV tables */
+		/* Build UAV lists */
 		for (i = 0; i < list_count(kernel->arg_list); i++) 
 		{
 			arg = list_get(kernel->arg_list, i);
@@ -1619,11 +1635,11 @@ int opencl_func_run(int code, unsigned int *args)
 
 				if (arg->access_type == OPENCL_KERNEL_ARG_READ_ONLY) 
 				{
-					list_set(kernel->uav_read_table, arg->uav, mem);
+					list_set(kernel->uav_read_list, arg->uav, mem);
 				} 
 				else if (arg->access_type == OPENCL_KERNEL_ARG_WRITE_ONLY) 
 				{
-					list_set(kernel->uav_write_table, arg->uav, mem);
+					list_set(kernel->uav_write_list, arg->uav, mem);
 				} 
 				else 
 				{
@@ -1638,7 +1654,7 @@ int opencl_func_run(int code, unsigned int *args)
 			if(arg->kind == OPENCL_KERNEL_ARG_KIND_POINTER && arg->uav != 11) 
 			{	
 				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
-				list_set(kernel->constant_table, arg->uav, mem);
+				list_set(kernel->constant_buffer_list, arg->uav, mem);
 			}
 		}
 			

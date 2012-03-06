@@ -508,10 +508,18 @@ void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
 struct opencl_program_t *opencl_program_create()
 {
 	struct opencl_program_t *program;
+	int i;
 
 	program = calloc(1, sizeof(struct opencl_program_t));
 	program->id = opencl_object_new_id(OPENCL_OBJ_PROGRAM);
 	program->ref_count = 1;
+
+	program->constant_buffer_list = list_create_with_size(25);
+	for(i = 0; i < 25; i++) 
+	{
+		list_add(program->constant_buffer_list, NULL);
+	}
+
 	opencl_object_add(program);
 	return program;
 }
@@ -519,6 +527,9 @@ struct opencl_program_t *opencl_program_create()
 
 void opencl_program_free(struct opencl_program_t *program)
 {
+	/* Free lists */
+	list_free(program->constant_buffer_list);
+
 	if (program->elf_file)
 		elf_file_free(program->elf_file);
 	opencl_object_remove(program);
@@ -587,6 +598,60 @@ void opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_n
 	buffer->pos = 0;
 }
 
+void opencl_program_initialize_constant_buffers(struct opencl_program_t *program)
+{
+	struct elf_file_t *elf_file;
+	struct elf_symbol_t *elf_symbol;
+	struct elf_buffer_t elf_buffer;
+	struct opencl_mem_t *mem;
+	char symbol_name[MAX_STRING_SIZE];
+	void *buf;
+	int i;
+
+	elf_file = program->elf_file;
+
+	/* We can't tell how many constant buffers exist in advance, but we
+	 * know they should be enumerated, starting with '2'.  This loop
+	 * searches until a constant buffer matching the format is not found. */
+	for (i = 2; i < 25; i++) 
+	{
+		/* Create string of symbol name */
+		sprintf(symbol_name, "__OpenCL_%d_global", i);
+
+		/* Check to see if symbol exists */
+		elf_symbol = elf_symbol_get_by_name(elf_file, symbol_name);
+                if (elf_symbol == NULL) {
+
+			break;
+		}
+		opencl_debug("  constant buffer '%s' found with size %d\n",
+			elf_symbol->name, elf_symbol->size);
+
+		/* Read the elf symbol into a buffer */
+		opencl_program_read_symbol(program, elf_symbol->name, &elf_buffer);
+
+		/* Create a memory object and copy the constant buffer data to it */
+		mem = opencl_mem_create();
+		mem->type = 0;  /* FIXME */
+		mem->size = elf_buffer.size;
+		mem->flags = 0; /* TODO Change to CL_MEM_READ_ONLY */
+		mem->host_ptr = 0;
+
+		/* Assign position in device global memory */
+		mem->device_ptr = gk->global_mem_top;
+		gk->global_mem_top += mem->size;
+
+		/* Copy constant buffer into device memory */
+		buf = malloc(mem->size);
+		if (!buf)
+			fatal("Failed to create constant buffer (size %d)", mem->size);
+		mem_write(gk->global_mem, mem->device_ptr, mem->size, elf_buffer.ptr);
+		free(buf);
+
+		/* Add the memory object to the constant buffer list */
+		list_set(program->constant_buffer_list, i, mem);
+	}
+} 
 
 
 
@@ -602,19 +667,19 @@ struct opencl_kernel_t *opencl_kernel_create()
 	kernel->ref_count = 1;
 	kernel->arg_list = list_create();
 
-	/* Create the UAV-to-physical-address lookup tables */
-	kernel->uav_read_table = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
-	kernel->uav_write_table = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
-	kernel->constant_table = list_create_with_size(25); /* For constant buffers (128 to 153) */
+	/* Create the UAV-to-physical-address lookup lists */
+	kernel->uav_read_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
+	kernel->uav_write_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
+	kernel->constant_buffer_list = list_create_with_size(25); /* For constant buffers (128 to 153) */
 	/* FIXME Replace with new list functionality */
-	for(i = 0; i < 12; i++) 
+	for (i = 0; i < 12; i++) 
 	{
-		list_add(kernel->uav_read_table, NULL);
-		list_add(kernel->uav_write_table, NULL);
+		list_add(kernel->uav_read_list, NULL);
+		list_add(kernel->uav_write_list, NULL);
 	}
-	for(i = 0; i < 25; i++) 
+	for (i = 0; i < 25; i++) 
 	{
-		list_add(kernel->constant_table, NULL);
+		list_add(kernel->constant_buffer_list, NULL);
 	}
 
 	opencl_object_add(kernel);
@@ -631,10 +696,10 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 		opencl_kernel_arg_free((struct opencl_kernel_arg_t *) list_get(kernel->arg_list, i));
 	list_free(kernel->arg_list);
 
-	/* Free tables */
-	list_free(kernel->uav_read_table);
-	list_free(kernel->uav_write_table);
-	list_free(kernel->constant_table);
+	/* Free lists */
+	list_free(kernel->uav_read_list);
+	list_free(kernel->uav_write_list);
+	list_free(kernel->constant_buffer_list);
 
 	/* AMD Binary (internal ELF) */
 	if (kernel->amd_bin)
@@ -758,8 +823,7 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 				OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 				kernel->func_mem_local = atoi(line_ptrs[2]);
 			} else if (!strcmp(line_ptrs[1], "datareqd")) {
-				OPENCL_KERNEL_METADATA_TOKEN_COUNT(2);
-				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
+				OPENCL_KERNEL_METADATA_TOKEN_COUNT(2); 
 			} else
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
 
