@@ -39,8 +39,8 @@
 
 extern enum gpu_sim_kind_t
 {
-	gpu_sim_kind_functional,
-	gpu_sim_kind_detailed
+	gpu_sim_functional,
+	gpu_sim_detailed
 } gpu_sim_kind;
 
 extern uint64_t gpu_max_cycles;
@@ -1139,7 +1139,7 @@ struct gk_t {
 
 	/* Stats */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
-	uint64_t inst_count;  /* Number of instructions executed by wavefronts */
+	long long inst_count;  /* Number of instructions executed by wavefronts */
 };
 
 extern struct gk_t *gk;
@@ -1149,7 +1149,7 @@ void gk_done(void);
 
 void gk_timer_start(void);
 void gk_timer_stop(void);
-uint64_t gk_timer(void);
+long long gk_timer(void);
 
 void gk_libopencl_redirect(char *path, int size);
 void gk_libopencl_failed(int pid);

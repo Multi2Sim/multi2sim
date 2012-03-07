@@ -19,6 +19,7 @@
 
 #include <network.h>
 #include <math.h>
+#include <debug.h>
 
 
 /*
@@ -295,11 +296,17 @@ struct net_t *net_find(char *name)
 }
 
 
-void net_sim(void)
+void net_sim(char *debug_file_name)
 {
 	struct net_t *net;
 
 	double *inject_time;  /* Next injection time (one per node) */
+
+	/* Initialize */
+	debug_init();
+	esim_init();
+	net_init();
+	net_debug_category = debug_new_category(debug_file_name);
 
 	/* Network to work with */
 	if (!*net_sim_network_name)
@@ -361,4 +368,13 @@ void net_sim(void)
 
 	/* Free */
 	free(inject_time);
+
+	/* Finalize */
+	net_done();
+	esim_done();
+	debug_done();
+
+	/* Finish program */
+	mhandle_done();
+	exit(0);
 }

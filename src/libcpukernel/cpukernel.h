@@ -50,9 +50,10 @@ extern uint64_t ke_max_cycles;
 extern uint64_t ke_max_inst;
 extern uint64_t ke_max_time;
 
-extern enum cpu_sim_kind_t {
-	cpu_sim_kind_functional,
-	cpu_sim_kind_detailed
+extern enum cpu_sim_kind_t
+{
+	cpu_sim_functional,
+	cpu_sim_detailed
 } cpu_sim_kind;
 
 
@@ -540,10 +541,10 @@ void x86_uinst_free(struct x86_uinst_t *uinst);
 /* To prevent performance degradation in functional simulation, do the check before the actual
  * function call. Notice that 'x86_uinst_new' calls are done for every x86 instruction emulation. */
 #define x86_uinst_new(opcode, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
-	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
+	{ if (cpu_sim_kind == cpu_sim_detailed) \
 	__x86_uinst_new(opcode, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
 #define x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
-	{ if (cpu_sim_kind == cpu_sim_kind_detailed) \
+	{ if (cpu_sim_kind == cpu_sim_detailed) \
 	__x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
 
 void __x86_uinst_new(enum x86_uinst_opcode_t opcode,
@@ -1021,7 +1022,7 @@ struct kernel_t
 	int alloc_list_max;
 
 	/* Stats */
-	uint64_t inst_count;  /* Number of emulated instructions */
+	long long inst_count;  /* Number of emulated instructions */
 };
 
 enum ke_list_kind_t
@@ -1050,7 +1051,7 @@ void ke_disasm(char *file_name);
 
 void ke_dump(FILE *f);
 
-uint64_t ke_timer(void);
+long long ke_timer(void);
 void ke_process_events(void);
 void ke_process_events_schedule(void);
 

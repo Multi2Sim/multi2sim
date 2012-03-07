@@ -228,7 +228,7 @@ static void mem_config_cpu_default(struct config_t *config)
 	int thread;
 
 	/* Not if we are doing CPU functional simulation */
-	if (cpu_sim_kind == cpu_sim_kind_functional)
+	if (cpu_sim_kind == cpu_sim_functional)
 		return;
 
 	/* Cache geometry for L1 */
@@ -308,7 +308,7 @@ static void mem_config_gpu_default(struct config_t *config)
 	int compute_unit_id;
 
 	/* Not if we doing GPU functional simulation */
-	if (gpu_sim_kind == gpu_sim_kind_functional)
+	if (gpu_sim_kind == gpu_sim_functional)
 		return;
 
 	/* Cache geometry for L1 */
@@ -1104,7 +1104,7 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 	}
 
 	/* Stop here if we are doing CPU functional simulation */
-	if (cpu_sim_kind == cpu_sim_kind_functional)
+	if (cpu_sim_kind == cpu_sim_functional)
 		goto out;
 
 	/* Assign entry modules */
@@ -1222,7 +1222,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	}
 
 	/* Do not continue if we are doing GPU functional simulation */
-	if (gpu_sim_kind == gpu_sim_kind_functional)
+	if (gpu_sim_kind == gpu_sim_functional)
 		goto out;
 
 	/* Assign entry modules */
@@ -1449,7 +1449,7 @@ static void mem_config_check_disjoint(void)
 	int thread;
 
 	/* No need if we do not have both CPU and GPU detailed simulation */
-	if (cpu_sim_kind == cpu_sim_kind_functional || gpu_sim_kind == gpu_sim_kind_functional)
+	if (cpu_sim_kind == cpu_sim_functional || gpu_sim_kind == gpu_sim_functional)
 		return;
 
 	/* Color CPU modules */

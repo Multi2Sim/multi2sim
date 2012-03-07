@@ -441,7 +441,7 @@ void net_done(void);
 void net_load(char *file_name);
 struct net_t *net_find(char *name);
 
-void net_sim(void);
+void net_sim(char *debug_file_name);
 
 
 #endif

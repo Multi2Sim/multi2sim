@@ -1730,7 +1730,7 @@ int opencl_func_run(int code, unsigned int *args)
 		gpu_ndrange_setup_args(kernel->ndrange);
 
 		/* Launch kernel execution */
-		if (gpu_sim_kind == gpu_sim_kind_functional)
+		if (gpu_sim_kind == gpu_sim_functional)
 			gpu_ndrange_run(kernel->ndrange);
 		else
 		{

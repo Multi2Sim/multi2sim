@@ -28,7 +28,7 @@
 uint64_t ke_max_inst = 0;
 uint64_t ke_max_cycles = 0;
 uint64_t ke_max_time = 0;
-enum cpu_sim_kind_t cpu_sim_kind = cpu_sim_kind_functional;
+enum cpu_sim_kind_t cpu_sim_kind = cpu_sim_functional;
 
 
 /* Reason for simulation end */
@@ -206,11 +206,11 @@ int ke_list_member(enum ke_list_kind_t list, struct ctx_t *ctx)
 
 
 /* Return a counter of microseconds. */
-uint64_t ke_timer()
+long long ke_timer()
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return (uint64_t) tv.tv_sec * 1000000 + tv.tv_usec - ke_init_time;
+	return (long long) tv.tv_sec * 1000000 + tv.tv_usec - ke_init_time;
 }
 
 
