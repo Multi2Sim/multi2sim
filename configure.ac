@@ -100,6 +100,22 @@ AC_ARG_ENABLE(debug,
 	esac
 ],
 [])
+AC_ARG_ENABLE(profile,
+[  --enable-profile    Turn on profiling],
+[
+	case "${enableval}" in
+	yes)
+		debug=true
+		CFLAGS+=" -pg"
+		;;
+	no)
+		;;
+	*)
+		AC_MSG_ERROR(bad value ${enableval} for --enable-profile)
+		;;
+	esac
+],
+[])
 AC_SUBST([CFLAGS])
 
 
