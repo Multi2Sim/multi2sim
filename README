@@ -127,6 +127,78 @@ Coding Guidelines
 		free(my_struct);
 	}
 
+* Forward declarations:
+
+	Forward declarations should be avoided. A source file ".c" in a library
+	should have two sections (if used) declaring private and public
+	functions. Private functions should be declared in the order they are
+	used to avoid forward declarations. Public functions should be included
+	in the ".h" file associated with the ".c" source (or common for the
+	entire library). For example:
+
+	/*
+	 * Private Functions
+	 */
+	
+	static void func1()
+	{
+		...
+	}
+
+	[ 2 line breaks ]
+
+	static void func2()
+	{
+		...
+	}
+
+	[ 4 line breaks ]
+
+	/*
+	 * Public Functions
+	 */
+	
+	void public_func1()
+	{
+		...
+	}
+
+
+* Variables declaration
+
+	Variables should be declared only at the beginning of code blocks (can
+	be primary or secondary code blocks). Variables declared for a code
+	block should be classified in categories, such as type, or location of
+	the code where they will be used. Several variables sharing the same
+	type should be listed in different lines. For example:
+
+	static void mem_config_read_networks(struct config_t *config)
+	{
+		struct net_t *net;
+		int i;
+	
+		char buf[MAX_STRING_SIZE];
+		char *section;
+	
+		/* Create networks */
+		for (section = config_section_first(config); section;
+			section = config_section_next(config))
+		{
+			char *net_name;
+	
+			/* Network section */
+			if (strncasecmp(section, "Network ", 8))
+				continue;
+			net_name = section + 8;
+	
+			/* Create network */
+			net = net_create(net_name);
+			mem_debug("\t%s\n", net_name);
+			list_add(mem_system->net_list, net);
+		}
+
+
+
 * Spaces:
 
 	Conditions and expressions in parenthesis should be have a space on the
@@ -153,6 +225,10 @@ Coding Guidelines
 		a += 2;
 		var1 = a < 3 ? 10 : 20;
 		result = (a + 3) / 5;
+	
+	Type casts should be followed by a space:
+
+		printf("%lld\n", (long long) value);
 
 
 ===============================================================================
