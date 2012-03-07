@@ -38,7 +38,7 @@ static int issue_sq(int core, int thread, int quant)
 			break;
 
 		/* Check that memory system entry is ready */
-		if (!mod_can_access(THREAD.data_mod, store->physical_address))
+		if (!mod_can_access(THREAD.data_mod, store->phy_addr))
 			break;
 
 		/* Remove store from store queue */
@@ -46,7 +46,7 @@ static int issue_sq(int core, int thread, int quant)
 
 		/* Issue store */
 		mod_access(THREAD.data_mod, mod_entry_cpu, mod_access_write,
-			store->physical_address, NULL, CORE.eventq, store);
+			store->phy_addr, NULL, CORE.eventq, store);
 
 		/* The cache system will place the store at the head of the
 		 * event queue when it is ready. For now, mark "in_eventq" to
@@ -67,6 +67,10 @@ static int issue_sq(int core, int thread, int quant)
 		cpu->issued[store->uinst->opcode]++;
 		quant--;
 		
+		/* MMU statistics */
+		if (*mmu_report_file_name)
+			mmu_access_page(store->phy_addr, mmu_access_write);
+
 		/* Debug */
 		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
 			" stg_issue=1, in_lsq=0, issued=1\n",
@@ -99,7 +103,7 @@ static int issue_lq(int core, int thread, int quant)
 		load->ready = 1;
 
 		/* Check that memory system is accessible */
-		if (!mod_can_access(THREAD.data_mod, load->physical_address))
+		if (!mod_can_access(THREAD.data_mod, load->phy_addr))
 		{
 			linked_list_next(lq);
 			continue;
@@ -111,7 +115,7 @@ static int issue_lq(int core, int thread, int quant)
 
 		/* Access memory system */
 		mod_access(THREAD.data_mod, mod_entry_cpu, mod_access_read,
-			load->physical_address, NULL, CORE.eventq, load);
+			load->phy_addr, NULL, CORE.eventq, load);
 
 		/* The cache system will place the load at the head of the
 		 * event queue when it is ready. For now, mark "in_eventq" to
@@ -132,6 +136,10 @@ static int issue_lq(int core, int thread, int quant)
 		cpu->issued[load->uinst->opcode]++;
 		quant--;
 		
+		/* MMU statistics */
+		if (*mmu_report_file_name)
+			mmu_access_page(load->phy_addr, mmu_access_read);
+
 		/* Debug */
 		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
 			" stg_issue=1, in_lsq=0, issued=1\n",

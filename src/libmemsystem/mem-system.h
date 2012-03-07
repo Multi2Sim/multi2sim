@@ -175,14 +175,28 @@ void dir_unlock(struct dir_t *dir, int x, int y);
  * Memory Management Unit
  */
 
+enum mmu_access_t
+{
+	mmu_access_invalid = 0,
+	mmu_access_read,
+	mmu_access_write,
+	mmu_access_execute
+};
+
+extern char *mmu_report_file_name;
+
 extern uint32_t mmu_page_size;
 extern uint32_t mmu_page_mask;
 extern uint32_t mmu_log_page_size;
 
 void mmu_init(void);
 void mmu_done(void);
-uint32_t mmu_translate(int mid, uint32_t vtladdr);
-int mmu_valid_phaddr(uint32_t phaddr);
+void mmu_dump_report(void);
+
+uint32_t mmu_translate(int mid, uint32_t vtl_addr);
+int mmu_valid_phy_addr(uint32_t phy_addr);
+
+void mmu_access_page(uint32_t phy_addr, enum mmu_access_t access);
 
 
 
