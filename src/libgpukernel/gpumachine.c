@@ -181,10 +181,11 @@ void amd_inst_LOOP_END_impl()
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.cond, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.valid_pixel_mode, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
- 
+
 	/* W0.addr: jump if any pixel is active */
 
-	/* FIXME: Update loop state and check if index is 0 */
+	/* Increment the trip count */
+	++gpu_isa_wavefront->loop_trip_count;
 
 	/* Dump current loop state */
 	if (debug_status(gpu_isa_debug_category)) {
@@ -194,18 +195,18 @@ void amd_inst_LOOP_END_impl()
 			debug_file(gpu_isa_debug_category));
 	}
 
-	/* Decrement remaining loop iterations */
-	--gpu_isa_wavefront->loop_iterations_remaining;
+	/* Decrement loop index */
+	gpu_isa_wavefront->loop_index -= gpu_isa_wavefront->loop_step;
 
-	/* If any pixel is active, jump back */
+	/* If any pixel is active and loop index is not zero, jump back */
 	active_count = bit_map_count_ones(gpu_isa_wavefront->active_stack,
 		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
-	if (active_count && gpu_isa_wavefront->loop_iterations_remaining != 0) {
+	if (active_count && (gpu_isa_wavefront->loop_index == 0) && 
+		(gpu_isa_wavefront->loop_trip_count != gpu_isa_wavefront->loop_max_trip_count)) 
+	{
 		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
 		return;
 	}
-
-	/* FIXME: pop loop state */
 
 	/* Pop stack once */
 	gpu_wavefront_stack_pop(gpu_isa_wavefront, 1);
@@ -230,7 +231,18 @@ void amd_inst_LOOP_START_DX10_impl()
 
 	/* W0.addr: jump if all pixels fail. */
 	/* W0.pop_count: pop if all pixels fail. */
-	/* FIXME: W1.cf_const: used to set up initial loop state... but how? */
+
+	/* Initialize the loop state for the wavefront */
+	gpu_isa_wavefront->loop_max_trip_count = 
+	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
+	gpu_isa_wavefront->loop_start = 
+	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][1];
+	gpu_isa_wavefront->loop_step = 
+	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][2];
+
+	gpu_isa_wavefront->loop_index = gpu_isa_wavefront->loop_start;
+	gpu_isa_wavefront->loop_trip_count = 0;
+
 
 	/* FIXME: if initial condition fails, jump to 'addr' */
 
@@ -242,7 +254,7 @@ void amd_inst_LOOP_START_DX10_impl()
 	++gpu_isa_wavefront->loop_depth;
 
 	/* FIXME: Push active mask? */
-	gpu_wavefront_stack_push(gpu_isa_wavefront);///
+	gpu_wavefront_stack_push(gpu_isa_wavefront);
 }
 #undef W0
 #undef W1
@@ -266,10 +278,12 @@ void amd_inst_LOOP_START_NO_AL_impl()
 	gpu_isa_wavefront->loop_max_trip_count = 
 	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
 	gpu_isa_wavefront->loop_start = 
-	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
+	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][1];
 	gpu_isa_wavefront->loop_step = 
-	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
-	gpu_isa_wavefront->loop_iterations_remaining = gpu_isa_wavefront->loop_max_trip_count;
+	   gpu_isa_ndrange->kernel->amd_bin->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][2];
+
+	gpu_isa_wavefront->loop_index = gpu_isa_wavefront->loop_start;
+	gpu_isa_wavefront->loop_trip_count = 0;
 
 	gpu_wavefront_stack_push(gpu_isa_wavefront);
 }
@@ -292,10 +306,11 @@ void amd_inst_LOOP_CONTINUE_impl()
 void amd_inst_LOOP_BREAK_impl()
 {
 	int active_count;
+	int active;
 	int i;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
-	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.cond, 0);
+	GPU_PARAM_NOT_SUPPORTED_OOR(W1.cond, 0, 1);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.valid_pixel_mode, 0);
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
  
@@ -310,12 +325,17 @@ void amd_inst_LOOP_BREAK_impl()
 	}
 
 	/* Mark active work items as inactive */
-	active_count = 0;
 	for (i = 0; i < gpu_isa_wavefront->work_item_count; i++) {
-		if (W1.cond)
-			/* Set active bit to 0 for this pixel */
+
+		active = bit_map_get(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
+			gpu_isa_wavefront->work_item_count + i, 1);
+
+		if (active) 
+		{
+			/* Pixel is active, so mark it as inactive */
 			bit_map_set(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
 				gpu_isa_wavefront->work_item_count + i, 1, 0);
+		}
 	}
 
 	/* If no pixels are active, jump to addr */
@@ -325,8 +345,6 @@ void amd_inst_LOOP_BREAK_impl()
 		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
 		return;
 	}
-
-	/* FIXME: pop loop state */
 
 	/* Pop stack */
 	gpu_wavefront_stack_pop(gpu_isa_wavefront, W1.pop_count);
@@ -2971,7 +2989,7 @@ void amd_inst_SAMPLE_impl() {
 
 	/* Calculate read address */
 	base_addr = image->device_ptr;
-	addr = gpu_isa_read_gpr(W0.src_gpr, 0, 0, 0);  /* FIXME Always reads from X */
+	addr = gpu_isa_read_gpr(W0.src_gpr, 0, 0, 0);  /* FIXME Always reads from X */ 
 	f_addr = * (float *) &addr;
 	addr = base_addr + (uint32_t)round(f_addr) * pixel_size;
 
