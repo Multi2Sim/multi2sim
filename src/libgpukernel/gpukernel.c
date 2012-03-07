@@ -34,7 +34,7 @@ uint64_t gpu_max_cycles = 0;
 uint64_t gpu_max_inst = 0;
 int gpu_max_kernels = 0;
 
-enum gpu_sim_kind_t gpu_sim_kind = gpu_sim_kind_functional;
+enum gpu_sim_kind_t gpu_sim_kind = gpu_sim_functional;
 
 char *gpu_opencl_binary_name = "";
 char *gpu_kernel_report_file_name = "";
@@ -125,7 +125,7 @@ void gk_timer_stop(void)
 /* Return a counter of microseconds relative to the first time the GPU started to run.
  * This counter runs only while the GPU is active, stopping and resuming after calls
  * to 'gk_timer_stop()' and 'gk_timer_start()', respectively. */
-uint64_t gk_timer(void)
+long long gk_timer(void)
 {
 	return gk->timer_running ? ke_timer() - gk->timer_start_time + gk->timer_acc
 		: gk->timer_acc;

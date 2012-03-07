@@ -375,7 +375,7 @@ extern int gpu_pipeline_debug_category;
 struct gpu_t
 {
 	/* Current cycle */
-	uint64_t cycle;
+	long long cycle;
 
 	/* ND-Range running on it */
 	struct gpu_ndrange_t *ndrange;
