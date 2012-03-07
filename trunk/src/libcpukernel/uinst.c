@@ -516,7 +516,7 @@ void __x86_uinst_new_mem(enum x86_uinst_opcode_t opcode, uint32_t address, int s
 	int i;
 
 	/* Do nothing for functional simulation */
-	if (cpu_sim_kind == cpu_sim_kind_functional)
+	if (cpu_sim_kind == cpu_sim_functional)
 		return;
 	
 	/* Create uinst */

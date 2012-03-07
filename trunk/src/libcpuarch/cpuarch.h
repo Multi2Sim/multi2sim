@@ -759,8 +759,8 @@ struct cpu_t
 	struct cpu_core_t *core;
 
 	/* Cycle and instruction counters */
-	uint64_t cycle;
-	uint64_t inst;
+	long long cycle;
+	long long inst;
 
 	/* Some fields */
 	uint64_t seq;  /* Seq num assigned to last instr (with pre-incr) */

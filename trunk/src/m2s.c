@@ -264,8 +264,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--cpu-config"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			cpu_config_file_name = argv[argi];
+			cpu_config_file_name = argv[++argi];
 			continue;
 		}
 
@@ -273,8 +272,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--cpu-disasm"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			cpu_disasm_file_name = argv[argi];
+			cpu_disasm_file_name = argv[++argi];
 			continue;
 		}
 
@@ -285,9 +283,9 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
-				cpu_sim_kind = cpu_sim_kind_functional;
+				cpu_sim_kind = cpu_sim_functional;
 			else if (!strcasecmp(argv[argi], "detailed"))
-				cpu_sim_kind = cpu_sim_kind_detailed;
+				cpu_sim_kind = cpu_sim_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], err_help_note);
@@ -298,8 +296,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--ctx-config") || !strcmp(argv[argi], "-c"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			ctxconfig_file_name = argv[argi];
+			ctxconfig_file_name = argv[++argi];
 			continue;
 		}
 
@@ -307,8 +304,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-call"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			isa_call_debug_file_name = argv[argi];
+			isa_call_debug_file_name = argv[++argi];
 			continue;
 		}
 		
@@ -316,8 +312,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-cpu-isa"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			isa_inst_debug_file_name = argv[argi];
+			isa_inst_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -325,8 +320,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-cpu-pipeline"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			esim_debug_file_name = argv[argi];
+			esim_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -334,8 +328,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-ctx"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			ctx_debug_file_name = argv[argi];
+			ctx_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -343,8 +336,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-elf"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			elf_debug_file_name = argv[argi];
+			elf_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -352,8 +344,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-error"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			error_debug_file_name = argv[argi];
+			error_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -361,8 +352,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-gpu-isa"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_isa_debug_file_name = argv[argi];
+			gpu_isa_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -370,8 +360,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-network"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			net_debug_file_name = argv[argi];
+			net_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -379,8 +368,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-gpu-pipeline"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_pipeline_debug_file_name = argv[argi];
+			gpu_pipeline_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -388,8 +376,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-gpu-stack"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_stack_debug_file_name = argv[argi];
+			gpu_stack_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -397,8 +384,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-gpu-faults"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_faults_debug_file_name = argv[argi];
+			gpu_faults_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -406,8 +392,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-loader"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			loader_debug_file_name = argv[argi];
+			loader_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -415,8 +400,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-mem"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			mem_debug_file_name = argv[argi];
+			mem_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -424,8 +408,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-opencl"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			opencl_debug_file_name = argv[argi];
+			opencl_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -433,8 +416,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-syscall"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			syscall_debug_file_name = argv[argi];
+			syscall_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -442,8 +424,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--gpu-calc"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_calc_file_name = argv[argi];
+			gpu_calc_file_name = argv[++argi];
 			continue;
 		}
 
@@ -451,8 +432,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--gpu-config"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_config_file_name = argv[argi];
+			gpu_config_file_name = argv[++argi];
 			continue;
 		}
 
@@ -460,21 +440,18 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--gpu-disasm"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_disasm_file_name = argv[argi];
+			gpu_disasm_file_name = argv[++argi];
 			continue;
 		}
 
 		/* OpenGL shader binary disassembler */
 		if (!strcmp(argv[argi], "--opengl-disasm"))
 		{
-			if ( argc != 4 )
-				fatal("option '%s' required two argument.\n%s",
+			if (argc != 4)
+				fatal("option '%s' requires two argument.\n%s",
 					argv[argi], err_help_note);			
-			argi++;
-			opengl_disasm_file_name = argv[argi];
-			argi++;
-			opengl_disasm_shader_index = atoi(argv[argi]);
+			opengl_disasm_file_name = argv[++argi];
+			opengl_disasm_shader_index = atoi(argv[++argi]);
 			continue;
 		}
 
@@ -483,8 +460,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--gpu-faults"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_faults_file_name = argv[argi];
+			gpu_faults_file_name = argv[++argi];
 			continue;
 		}
 
@@ -494,9 +470,9 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
-				gpu_sim_kind = gpu_sim_kind_functional;
+				gpu_sim_kind = gpu_sim_functional;
 			else if (!strcasecmp(argv[argi], "detailed"))
-				gpu_sim_kind = gpu_sim_kind_detailed;
+				gpu_sim_kind = gpu_sim_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], err_help_note);
@@ -507,8 +483,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--gpu-visual"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_visual_file_name = argv[argi];
+			gpu_visual_file_name = argv[++argi];
 			continue;
 		}
 
@@ -558,8 +533,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-cpu-cycles"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			ke_max_cycles = atoll(argv[argi]);
+			ke_max_cycles = atoll(argv[++argi]);
 			continue;
 		}
 
@@ -567,8 +541,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-cpu-inst"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			ke_max_inst = atoll(argv[argi]);
+			ke_max_inst = atoll(argv[++argi]);
 			continue;
 		}
 
@@ -576,8 +549,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-gpu-cycles"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_max_cycles = atoll(argv[argi]);
+			gpu_max_cycles = atoll(argv[++argi]);
 			continue;
 		}
 
@@ -585,8 +557,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-gpu-inst"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_max_inst = atoll(argv[argi]);
+			gpu_max_inst = atoll(argv[++argi]);
 			continue;
 		}
 
@@ -594,8 +565,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-gpu-kernels"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_max_kernels = atoi(argv[argi]);
+			gpu_max_kernels = atoi(argv[++argi]);
 			continue;
 		}
 
@@ -603,8 +573,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-time"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			ke_max_time = atoll(argv[argi]);
+			ke_max_time = atoll(argv[++argi]);
 			continue;
 		}
 		
@@ -612,8 +581,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--mem-config"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			mem_config_file_name = argv[argi];
+			mem_config_file_name = argv[++argi];
 			continue;
 		}
 
@@ -621,8 +589,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--net-config"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			net_config_file_name = argv[argi];
+			net_config_file_name = argv[++argi];
 			continue;
 		}
 
@@ -660,8 +627,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--net-sim"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			net_sim_network_name = argv[argi];
+			net_sim_network_name = argv[++argi];
 			continue;
 		}
 
@@ -732,11 +698,12 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		break;
 	}
 
-	/* Check configuration consistency */
-	if (cpu_sim_kind == cpu_sim_kind_functional)
+	/* Options that only make sense for CPU detailed simulation */
+	if (cpu_sim_kind == cpu_sim_functional)
 	{
 		char *msg = "option '%s' not valid for functional CPU simulation.\n"
-			"Please use option '--cpu-sim detailed' as well.\n";
+			"\tPlease use option '--cpu-sim detailed' as well.\n";
+
 		if (*cpu_config_file_name)
 			fatal(msg, "--cpu-config");
 		if (*esim_debug_file_name)
@@ -744,10 +711,13 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (*cpu_report_file_name)
 			fatal(msg, "--report-cpu-pipeline");
 	}
-	if (gpu_sim_kind == gpu_sim_kind_functional)
+
+	/* Options that only make sense for GPU detailed simulation */
+	if (gpu_sim_kind == gpu_sim_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
-			"Please use option '--gpu-sim detailed' as well.\n";
+			"\tPlease use option '--gpu-sim detailed' as well.\n";
+
 		if (*gpu_pipeline_debug_file_name)
 			fatal(msg, "--debug-gpu-pipeline");
 		if (*gpu_stack_debug_file_name)
@@ -759,6 +729,23 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (*gpu_report_file_name)
 			fatal(msg, "--report-gpu-pipeline");
 	}
+
+	/* Options that only make sense one there is either CPU or GPU
+	 * detailed simulation. */
+	if (gpu_sim_kind == gpu_sim_functional && cpu_sim_kind == cpu_sim_functional)
+	{
+		char *msg = "option '%s' needs architectural CPU or GPU simulation.\n"
+			"\tPlease use option '--cpu-sim detailed' or '--gpu-sim detailed' as well.\n";
+
+		if (*mmu_report_file_name)
+			fatal(msg, "--report-mem-access");
+		if (*mem_config_file_name)
+			fatal(msg, "--mem-config");
+		if (*mem_report_file_name)
+			fatal(msg, "--report-mem");
+	}
+
+	/* Other checks */
 	if (*gpu_visual_file_name && argc > 3)
 		fatal("option '--gpu-visual' is incompatible with any other options.");
 	if (*gpu_disasm_file_name && argc > 3)
@@ -782,9 +769,9 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 void sim_stats_summary(void)
 {
-	uint64_t now = ke_timer();
-	uint64_t gpu_now = gk_timer();
-	uint64_t inst_count;
+	long long now = ke_timer();
+	long long gpu_now = gk_timer();
+	long long inst_count;
 
 	double sec_count;
 	double inst_per_sec;
@@ -793,7 +780,7 @@ void sim_stats_summary(void)
 	double cycles_per_sec;
 
 	/* Check if any simulation was actually performed */
-	inst_count = cpu_sim_kind == cpu_sim_kind_functional ? ke->inst_count : cpu->inst;
+	inst_count = cpu_sim_kind == cpu_sim_functional ? ke->inst_count : cpu->inst;
 	if (!inst_count)
 		return;
 
@@ -809,18 +796,19 @@ void sim_stats_summary(void)
 	inst_per_sec = sec_count > 0.0 ? (double) inst_count / sec_count : 0.0;
 	fprintf(stderr, "[ CPU ]\n");
 	fprintf(stderr, "Time = %.2f\n", sec_count);
-	fprintf(stderr, "Instructions = %lld\n", (long long) inst_count);
+	fprintf(stderr, "Instructions = %lld\n", inst_count);
 	fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	fprintf(stderr, "Contexts = %d\n", ke->running_list_max);
 	fprintf(stderr, "Memory = %lu\n", mem_max_mapped_space);
 	fprintf(stderr, "SimEnd = %s\n", map_value(&ke_sim_finish_map, ke_sim_finish));
 
 	/* CPU detailed simulation */
-	if (cpu_sim_kind == cpu_sim_kind_detailed) {
+	if (cpu_sim_kind == cpu_sim_detailed)
+	{
 		inst_per_cycle = cpu->cycle ? (double) cpu->inst / cpu->cycle : 0.0;
 		branch_acc = cpu->branches ? (double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0;
 		cycles_per_sec = sec_count > 0.0 ? (double) cpu->cycle / sec_count : 0.0;
-		fprintf(stderr, "Cycles = %lld\n", (long long) cpu->cycle);
+		fprintf(stderr, "Cycles = %lld\n", cpu->cycle);
 		fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 		fprintf(stderr, "BranchPredictionAccuracy = %.4g\n", branch_acc);
 		fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
@@ -828,21 +816,22 @@ void sim_stats_summary(void)
 	fprintf(stderr, "\n");
 
 	/* GPU functional simulation */
-	if (gk->ndrange_count) {
-		
+	if (gk->ndrange_count)
+	{
 		sec_count = (double) gpu_now / 1e6;
 		inst_per_sec = sec_count > 0.0 ? (double) gk->inst_count / sec_count : 0.0;
 		fprintf(stderr, "[ GPU ]\n");
 		fprintf(stderr, "Time = %.2f\n", sec_count);
 		fprintf(stderr, "NDRangeCount = %d\n", gk->ndrange_count);
-		fprintf(stderr, "Instructions = %lld\n", (long long) gk->inst_count);
+		fprintf(stderr, "Instructions = %lld\n", gk->inst_count);
 		fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	
 		/* GPU detailed simulation */
-		if (gpu_sim_kind == gpu_sim_kind_detailed) {
+		if (gpu_sim_kind == gpu_sim_detailed)
+		{
 			inst_per_cycle = gpu->cycle ? (double) gk->inst_count / gpu->cycle : 0.0;
 			cycles_per_sec = sec_count > 0.0 ? (double) gpu->cycle / sec_count : 0.0;
-			fprintf(stderr, "Cycles = %lld\n", (long long) gpu->cycle);
+			fprintf(stderr, "Cycles = %lld\n", gpu->cycle);
 			fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 			fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 		}
@@ -882,23 +871,7 @@ int main(int argc, char **argv)
 	
 	/* Network simulation tool */
 	if (*net_sim_network_name)
-	{
-		/* Initialize */
-		debug_init();
-		esim_init();
-		net_init();
-		net_debug_category = debug_new_category(net_debug_file_name);
-
-		/* Run */
-		net_sim();
-
-		/* Finalize */
-		net_done();
-		esim_done();
-		debug_done();
-		mhandle_done();
-		return 0;
-	}
+		net_sim(net_debug_file_name);
 
 	/* Debug */
 	debug_init();
@@ -924,9 +897,9 @@ int main(int argc, char **argv)
 	net_init();
 
 	/* Initialization for detailed simulation */
-	if (cpu_sim_kind == cpu_sim_kind_detailed)
+	if (cpu_sim_kind == cpu_sim_detailed)
 		cpu_init();
-	if (gpu_sim_kind == gpu_sim_kind_detailed)
+	if (gpu_sim_kind == gpu_sim_detailed)
 		gpu_init();
 
 	/* Memory hierarchy initialization, done after we initialized CPU cores
@@ -939,7 +912,7 @@ int main(int argc, char **argv)
 	/* Simulation loop */
 	if (ke->running_list_head)
 	{
-		if (cpu_sim_kind == cpu_sim_kind_detailed)
+		if (cpu_sim_kind == cpu_sim_detailed)
 			cpu_run();
 		else
 			ke_run();
@@ -955,14 +928,14 @@ int main(int argc, char **argv)
 	mem_system_done();
 
 	/* Finalization of detailed CPU simulation */
-	if (cpu_sim_kind == cpu_sim_kind_detailed)
+	if (cpu_sim_kind == cpu_sim_detailed)
 	{
 		esim_debug_done();
 		cpu_done();
 	}
 
 	/* Finalization of detailed GPU simulation */
-	if (gpu_sim_kind == gpu_sim_kind_detailed)
+	if (gpu_sim_kind == gpu_sim_detailed)
 		gpu_done();
 
 	/* Finalization */
