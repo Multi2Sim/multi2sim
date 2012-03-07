@@ -176,7 +176,7 @@ struct uop_t
 	int completed;
 
 	/* For memory uops */
-	uint32_t physical_address;  /* ... corresponding to 'uop->uinst->address' */
+	uint32_t phy_addr;  /* ... corresponding to 'uop->uinst->address' */
 
 	/* Cycles */
 	uint64_t when;  /* cycle when ready */

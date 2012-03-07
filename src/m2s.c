@@ -226,6 +226,11 @@ static char *sim_help =
 	"      File for a report on the memory hierarchy, including cache hits, misses,\n"
 	"      evictions, etc. Use together with detailed CPU or GPU simulation.\n"
 	"\n"
+	"  --report-mem-access <file>\n"
+	"      File to dump a report of memory access. The file contains a list of allocated\n"
+	"      memory pages, ordered as per number of accesses. It lists read, write, and\n"
+	"      execution accesses to each physical memory page.\n"
+	"\n"
 	"  --report-net <file>\n"
 	"      File to dump detailed statistics for each network defined in the network\n"
 	"      configuration file (option '--net-config'). The report includes statistics\n"
@@ -664,8 +669,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--opencl-binary"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_opencl_binary_name = argv[argi];
+			gpu_opencl_binary_name = argv[++argi];
 			continue;
 		}
 
@@ -673,8 +677,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--report-cpu-pipeline"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			cpu_report_file_name = argv[argi];
+			cpu_report_file_name = argv[++argi];
 			continue;
 		}
 
@@ -682,8 +685,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--report-gpu-kernel"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_kernel_report_file_name = argv[argi];
+			gpu_kernel_report_file_name = argv[++argi];
 			continue;
 		}
 
@@ -691,8 +693,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--report-gpu-pipeline"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			gpu_report_file_name = argv[argi];
+			gpu_report_file_name = argv[++argi];
 			continue;
 		}
 
@@ -700,8 +701,15 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--report-mem"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			mem_report_file_name = argv[argi];
+			mem_report_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Memory accesses report */
+		if (!strcmp(argv[argi], "--report-mem-access"))
+		{
+			sim_need_argument(argc, argv, argi);
+			mmu_report_file_name = argv[++argi];
 			continue;
 		}
 
@@ -709,8 +717,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--report-net"))
 		{
 			sim_need_argument(argc, argv, argi);
-			argi++;
-			net_report_file_name = argv[argi];
+			net_report_file_name = argv[++argi];
 			continue;
 		}
 

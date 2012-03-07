@@ -22,8 +22,10 @@
 
 static int can_fetch(int core, int thread)
 {
-	uint32_t phaddr, block;
 	struct ctx_t *ctx = THREAD.ctx;
+
+	uint32_t phy_addr;
+	uint32_t block;
 
 	/* Context must be running */
 	if (!ctx || !ctx_get_status(ctx, ctx_running))
@@ -43,8 +45,8 @@ static int can_fetch(int core, int thread)
 	block = THREAD.fetch_neip & ~(THREAD.inst_mod->block_size - 1);
 	if (block != THREAD.fetch_block)
 	{
-		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
-		if (!mod_can_access(THREAD.inst_mod, phaddr))
+		phy_addr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
+		if (!mod_can_access(THREAD.inst_mod, phy_addr))
 			return 0;
 	}
 	
@@ -115,7 +117,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
-			uop->physical_address = mmu_translate(THREAD.ctx->mid,
+			uop->phy_addr = mmu_translate(THREAD.ctx->mid,
 				uinst->address);
 
 		/* Store x86 macro-instruction and uinst names. This is costly,
@@ -211,7 +213,11 @@ static void fetch_thread(int core, int thread)
 {
 	struct ctx_t *ctx = THREAD.ctx;
 	struct uop_t *uop;
-	uint32_t block, phaddr, target;
+
+	uint32_t phy_addr;
+	uint32_t block;
+	uint32_t target;
+
 	int taken;
 
 	/* Try to fetch from trace cache first */
@@ -223,12 +229,16 @@ static void fetch_thread(int core, int thread)
 	block = THREAD.fetch_neip & ~(THREAD.inst_mod->block_size - 1);
 	if (block != THREAD.fetch_block)
 	{
-		phaddr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
+		phy_addr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
 		THREAD.fetch_block = block;
-		THREAD.fetch_address = phaddr;
+		THREAD.fetch_address = phy_addr;
 		THREAD.fetch_access = mod_access(THREAD.inst_mod, mod_entry_cpu,
-			mod_access_read, phaddr, NULL, NULL, NULL);
+			mod_access_read, phy_addr, NULL, NULL, NULL);
 		THREAD.btb_reads++;
+
+		/* MMU statistics */
+		if (*mmu_report_file_name)
+			mmu_access_page(phy_addr, mmu_access_execute);
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */
