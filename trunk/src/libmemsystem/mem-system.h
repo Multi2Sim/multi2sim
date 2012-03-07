@@ -343,11 +343,17 @@ struct mod_t
 	struct net_node_t *high_net_node;
 	struct net_node_t *low_net_node;
 
-	/* Linked list of accesses */
+	/* Access list */
 	struct mod_stack_t *access_list_head;
 	struct mod_stack_t *access_list_tail;
 	int access_list_count;
 	int access_list_max;
+
+	/* Write access list */
+	struct mod_stack_t *write_access_list_head;
+	struct mod_stack_t *write_access_list_tail;
+	int write_access_list_count;
+	int write_access_list_max;
 
 	/* Number of in-flight coalesced accesses. This is a number
 	 * between 0 and 'access_list_count' at all times. */
@@ -418,18 +424,21 @@ void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack,
 	enum mod_access_kind_t access_kind);
 void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack);
 
-int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr);
-int mod_address_in_flight(struct mod_t *mod, uint32_t addr);
+int mod_in_flight_access(struct mod_t *mod, long long id, uint32_t addr);
+struct mod_stack_t *mod_in_flight_address(struct mod_t *mod, uint32_t addr,
+	struct mod_stack_t *older_than_stack);
+struct mod_stack_t *mod_in_flight_write(struct mod_t *mod,
+	struct mod_stack_t *older_than_stack);
 
 struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
 
 int mod_get_retry_latency(struct mod_t *mod);
 
 struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
-	enum mod_access_kind_t access_kind, uint32_t addr);
+	enum mod_access_kind_t access_kind, uint32_t addr,
+	struct mod_stack_t *older_than_stack);
 void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
-	int event, struct mod_stack_t *stack);
-void mod_wakeup_coalesced(struct mod_t *mod, struct mod_stack_t *master_stack);
+	struct mod_stack_t *stack);
 
 
 
@@ -572,6 +581,10 @@ struct mod_stack_t
 	struct mod_stack_t *access_list_prev;
 	struct mod_stack_t *access_list_next;
 
+	/* Linked list of write accesses in 'mod' */
+	struct mod_stack_t *write_access_list_prev;
+	struct mod_stack_t *write_access_list_next;
+
 	/* Bucket list of accesses in hash table in 'mod' */
 	struct mod_stack_t *bucket_list_prev;
 	struct mod_stack_t *bucket_list_next;
@@ -635,6 +648,10 @@ void mod_stack_wakeup_mod(struct mod_t *mod);
 void mod_stack_wait_in_port(struct mod_stack_t *stack,
 	struct mod_port_t *port, int event);
 void mod_stack_wakeup_port(struct mod_port_t *port);
+
+void mod_stack_wait_in_stack(struct mod_stack_t *stack,
+	struct mod_stack_t *master_stack, int event);
+void mod_stack_wakeup_stack(struct mod_stack_t *master_stack);
 
 void mod_handler_gpu_load(int event, void *data);
 void mod_handler_gpu_store(int event, void *data);

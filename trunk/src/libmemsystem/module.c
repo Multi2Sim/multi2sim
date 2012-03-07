@@ -335,6 +335,10 @@ void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack,
 	/* Insert in access list */
 	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, access, stack);
 
+	/* Insert in write access list */
+	if (access_kind == mod_access_write)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(mod, write_access, stack);
+
 	/* Insert in access hash table */
 	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
 	DOUBLE_LINKED_LIST_INSERT_TAIL(&mod->access_hash_table[index], bucket, stack);
@@ -347,6 +351,11 @@ void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack)
 
 	/* Remove from access list */
 	DOUBLE_LINKED_LIST_REMOVE(mod, access, stack);
+
+	/* Remove from write access list */
+	assert(stack->access_kind);
+	if (stack->access_kind == mod_access_write)
+		DOUBLE_LINKED_LIST_REMOVE(mod, write_access, stack);
 
 	/* Remove from hash table */
 	index = (stack->addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
@@ -365,7 +374,7 @@ void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack)
  * The address of the access is passed as well because this lookup is done on the
  * access truth table, indexed by the access address.
  */
-int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr)
+int mod_in_flight_access(struct mod_t *mod, long long id, uint32_t addr)
 {
 	struct mod_stack_t *stack;
 	int index;
@@ -381,20 +390,55 @@ int mod_access_in_flight(struct mod_t *mod, long long id, uint32_t addr)
 }
 
 
-/* Return true if an access to block containing address 'addr' is in flight. */
-int mod_address_in_flight(struct mod_t *mod, uint32_t addr)
+/* Return the youngest in-flight access older than 'older_than_stack' to block containing 'addr'.
+ * If 'older_than_stack' is NULL, return the youngest in-flight access containing 'addr'.
+ * The function returns NULL if there is no in-flight access to block containing 'addr'.
+ */
+struct mod_stack_t *mod_in_flight_address(struct mod_t *mod, uint32_t addr,
+	struct mod_stack_t *older_than_stack)
 {
 	struct mod_stack_t *stack;
 	int index;
 
 	/* Look for address */
 	index = (addr >> mod->log_block_size) % MOD_ACCESS_HASH_TABLE_SIZE;
-	for (stack = mod->access_hash_table[index].bucket_list_head; stack; stack = stack->bucket_list_next)
+	for (stack = mod->access_hash_table[index].bucket_list_head; stack;
+		stack = stack->bucket_list_next)
+	{
+		/* This stack is not older than 'older_than_stack' */
+		if (older_than_stack && stack->id >= older_than_stack->id)
+			continue;
+
+		/* Address matches */
 		if (stack->addr >> mod->log_block_size == addr >> mod->log_block_size)
-			return 1;
+			return stack;
+	}
 
 	/* Not found */
-	return 0;
+	return NULL;
+}
+
+
+/* Return the youngest in-flight write older than 'older_than_stack'. If 'older_than_stack'
+ * is NULL, return the youngest in-flight write. Return NULL if there is no in-flight write.
+ */
+struct mod_stack_t *mod_in_flight_write(struct mod_t *mod,
+	struct mod_stack_t *older_than_stack)
+{
+	struct mod_stack_t *stack;
+
+	/* No 'older_than_stack' given, return youngest write */
+	if (!older_than_stack)
+		return mod->write_access_list_tail;
+
+	/* Search */
+	for (stack = older_than_stack->access_list_prev; stack;
+		stack = stack->access_list_prev)
+		if (stack->access_kind == mod_access_write)
+			return stack;
+
+	/* Not found */
+	return NULL;
 }
 
 
@@ -446,18 +490,27 @@ int mod_get_retry_latency(struct mod_t *mod)
 }
 
 
-/* Check if an access to a module can be coalesced. If it can, return
- * the access that it would be coalesced with. Otherwise, return NULL. */
+/* Check if an access to a module can be coalesced with another access older
+ * than 'older_than_stack'. If 'older_than_stack' is NULL, check if it can
+ * be coalesced with any in-flight access.
+ * If it can, return the access that it would be coalesced with. Otherwise,
+ * return NULL. */
 struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
-	enum mod_access_kind_t access_kind, uint32_t addr)
+	enum mod_access_kind_t access_kind, uint32_t addr,
+	struct mod_stack_t *older_than_stack)
 {
 	struct mod_stack_t *stack;
+	struct mod_stack_t *tail;
 
 	/* For efficiency, first check in the hash table of accesses
 	 * whether there is an access in flight to the same block. */
 	assert(access_kind);
-	if (!mod_address_in_flight(mod, addr))
+	if (!mod_in_flight_address(mod, addr, older_than_stack))
 		return NULL;
+
+	/* Get youngest access older than 'older_than_stack' */
+	tail = older_than_stack ? older_than_stack->access_list_prev :
+		mod->access_list_tail;
 
 	/* Coalesce depending on access kind */
 	switch (access_kind)
@@ -465,10 +518,9 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 
 	case mod_access_read:
 	{
-		for (stack = mod->access_list_tail; stack;
-			stack = stack->access_list_prev)
+		for (stack = tail; stack; stack = stack->access_list_prev)
 		{
-			/* Only coalesce with groups of reads at the head */
+			/* Only coalesce with groups of reads at the tail */
 			if (stack->access_kind != mod_access_read)
 				return NULL;
 
@@ -481,9 +533,13 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 
 	case mod_access_write:
 	{
-		/* Only coalesce with last write */
-		stack = mod->access_list_tail;
-		if (!stack || stack->access_kind != mod_access_write)
+		/* Only coalesce with last access */
+		stack = tail;
+		if (!stack)
+			return NULL;
+
+		/* Only if it is a write */
+		if (stack->access_kind != mod_access_write)
 			return NULL;
 
 		/* Only if it is an access to the same block */
@@ -508,7 +564,7 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 
 
 void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
-	int event, struct mod_stack_t *stack)
+	struct mod_stack_t *stack)
 {
 	/* Debug */
 	mem_debug("  %lld %lld 0x%x %s coalesce with %lld\n", esim_cycle,
@@ -529,40 +585,6 @@ void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
 
 	/* Record in-flight coalesced access in module */
 	mod->access_list_coalesced_count++;
-
-	/* Enqueue current access in the waiting list of master access.
-	 * When master access finishes, 'event' is issued for current access. */
-	stack->waiting_list_event = event;
-	assert(!DOUBLE_LINKED_LIST_MEMBER(master_stack, waiting, stack));
-	DOUBLE_LINKED_LIST_INSERT_TAIL(master_stack, waiting, stack);
-}
-
-
-void mod_wakeup_coalesced(struct mod_t *mod, struct mod_stack_t *master_stack)
-{
-	struct mod_stack_t *stack;
-	int event;
-
-	/* No access has been coalesced with this master stack. */
-	if (!master_stack->waiting_list_count)
-		return;
-
-	/* Debug */
-	mem_debug("  %lld %lld 0x%x %s wake up coalesced:", esim_cycle,
-		master_stack->id, master_stack->addr, mod->name);
-
-	/* Wake up all coalesced accesses */
-	while (master_stack->waiting_list_head)
-	{
-		stack = master_stack->waiting_list_head;
-		event = stack->waiting_list_event;
-		DOUBLE_LINKED_LIST_REMOVE(master_stack, waiting, stack);
-		esim_schedule_event(event, stack, 0);
-		mem_debug(" %lld", stack->id);
-	}
-
-	/* Debug */
-	mem_debug("\n");
 }
 
 
@@ -601,6 +623,10 @@ void mod_stack_return(struct mod_stack_t *stack)
 	int ret_event = stack->ret_event;
 	void *ret_stack = stack->ret_stack;
 
+	/* Wake up dependent accesses */
+	mod_stack_wakeup_stack(stack);
+
+	/* Free */
 	free(stack);
 	esim_schedule_event(ret_event, ret_stack, 0);
 }
@@ -658,3 +684,45 @@ void mod_stack_wakeup_port(struct mod_port_t *port)
 		esim_schedule_event(event, stack, 0);
 	}
 }
+
+
+/* Enqueue access in stack wait list. */
+void mod_stack_wait_in_stack(struct mod_stack_t *stack,
+	struct mod_stack_t *master_stack, int event)
+{
+	assert(master_stack != stack);
+	assert(!DOUBLE_LINKED_LIST_MEMBER(master_stack, waiting, stack));
+
+	stack->waiting_list_event = event;
+	DOUBLE_LINKED_LIST_INSERT_TAIL(master_stack, waiting, stack);
+}
+
+
+/* Wake up access waiting in a stack's wait list. */
+void mod_stack_wakeup_stack(struct mod_stack_t *master_stack)
+{
+	struct mod_stack_t *stack;
+	int event;
+
+	/* No access to wake up */
+	if (!master_stack->waiting_list_count)
+		return;
+
+	/* Debug */
+	mem_debug("  %lld %lld 0x%x wake up accesses:", esim_cycle,
+		master_stack->id, master_stack->addr);
+
+	/* Wake up all coalesced accesses */
+	while (master_stack->waiting_list_head)
+	{
+		stack = master_stack->waiting_list_head;
+		event = stack->waiting_list_event;
+		DOUBLE_LINKED_LIST_REMOVE(master_stack, waiting, stack);
+		esim_schedule_event(event, stack, 0);
+		mem_debug(" %lld", stack->id);
+	}
+
+	/* Debug */
+	mem_debug("\n");
+}
+

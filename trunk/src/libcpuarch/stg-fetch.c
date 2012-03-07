@@ -118,11 +118,15 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 			uop->physical_address = mmu_translate(THREAD.ctx->mid,
 				uinst->address);
 
-		/* Store x86 macro-instruction and uinst names */
-		x86_uinst_dump_buf(uinst, uop->name, sizeof(uop->name));
-		if (!uinst_index)
-			x86_inst_dump_buf(&isa_inst, uop->mop_name,
-				sizeof(uop->mop_name));
+		/* Store x86 macro-instruction and uinst names. This is costly,
+		 * do it only if debug is activated. */
+		if (esim_debug_file)
+		{
+			x86_uinst_dump_buf(uinst, uop->name, sizeof(uop->name));
+			if (!uinst_index)
+				x86_inst_dump_buf(&isa_inst, uop->mop_name,
+						sizeof(uop->mop_name));
+		}
 
 		/* Select as returned uop */
 		if (!ret_uop || (uop->flags & X86_UINST_CTRL))

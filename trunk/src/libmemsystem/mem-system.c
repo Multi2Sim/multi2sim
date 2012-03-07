@@ -164,82 +164,105 @@ void mem_system_done(void)
 }
 
 
-void mem_system_dump_report(void)
+void mem_system_dump_report()
 {
-	FILE *f;
-	int i;
-
+	struct net_t *net;
 	struct mod_t *mod;
 	struct cache_t *cache;
+	FILE *f;
+
+	int i;
 
 	/* Open file */
 	f = open_write(mem_report_file_name);
 	if (!f)
 		return;
-
+	
 	/* Intro */
-	fprintf(f, "; Report for memory hierarchy.\n");
-	fprintf(f, ";    Accesses - Total number of accesses requested\n");
-	fprintf(f, ";    Reads - Number of read requests\n");
-	fprintf(f, ";    Writes - Number of write requests\n");
-	fprintf(f, ";    CoalescedReads - Number of reads that were coalesced with previous accesses (discarded)\n");
-	fprintf(f, ";    CoalescedWrites - Number of writes coalesced with previous accesses\n");
-	fprintf(f, ";    EffectiveReads - Number of reads actually performed (= Reads - CoalescedReads)\n");
-	fprintf(f, ";    EffectiveReadHits - Number of effective reads producing cache hit\n");
-	fprintf(f, ";    EffectiveReadMisses - Number of effective reads missing in the cache\n");
-	fprintf(f, ";    EffectiveWrites - Number of writes actually performed (= Writes - CoalescedWrites)\n");
-	fprintf(f, ";    EffectiveWriteHits - Number of effective writes that found the block in the cache\n");
-	fprintf(f, ";    EffectiveWriteMisses - Number of effective writes missing in the cache\n");
-	fprintf(f, ";    Evictions - Number of valid blocks replaced in the cache\n");
+	fprintf(f, "; Report for caches, TLBs, and main memory\n");
+	fprintf(f, ";    Accesses - Total number of accesses\n");
+	fprintf(f, ";    Hits, Misses - Accesses resulting in hits/misses\n");
+	fprintf(f, ";    HitRatio - Hits divided by accesses\n");
+	fprintf(f, ";    Evictions - Invalidated or replaced cache blocks\n");
+	fprintf(f, ";    Retries - For L1 caches, accesses that were retried\n");
+	fprintf(f, ";    ReadRetries, WriteRetries - Read/Write retried accesses\n");
+	fprintf(f, ";    NoRetryAccesses - Number of accesses that were not retried\n");
+	fprintf(f, ";    NoRetryHits, NoRetryMisses - Hits and misses for not retried accesses\n");
+	fprintf(f, ";    NoRetryHitRatio - NoRetryHits divided by NoRetryAccesses\n");
+	fprintf(f, ";    NoRetryReads, NoRetryWrites - Not retried reads and writes\n");
+	fprintf(f, ";    Reads, Writes - Total read/write accesses\n");
+	fprintf(f, ";    BlockingReads, BlockingWrites - Reads/writes coming from lower-level cache\n");
+	fprintf(f, ";    NonBlockingReads, NonBlockingWrites - Coming from upper-level cache\n");
 	fprintf(f, "\n\n");
-
-	/* Print cache statistics */
+	
+	/* Report for each cache */
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
 	{
-		/* Get cache */
 		mod = list_get(mem_system->mod_list, i);
 		cache = mod->cache;
-		fprintf(f, "[ %s ]\n\n", mod->name);
+		fprintf(f, "[ %s ]\n", mod->name);
+		fprintf(f, "\n");
 
 		/* Configuration */
-		if (cache)
-		{
+		if (cache) {
 			fprintf(f, "Sets = %d\n", cache->num_sets);
 			fprintf(f, "Assoc = %d\n", cache->assoc);
 			fprintf(f, "Policy = %s\n", map_value(&cache_policy_map, cache->policy));
 		}
 		fprintf(f, "BlockSize = %d\n", mod->block_size);
 		fprintf(f, "Latency = %d\n", mod->latency);
-		fprintf(f, "Banks = %d\n", mod->bank_count);
-		fprintf(f, "ReadPorts = %d\n", mod->read_port_count);
-		fprintf(f, "WritePorts = %d\n", mod->write_port_count);
+		fprintf(f, "Ports = %d\n", mod->num_ports);
 		fprintf(f, "\n");
 
 		/* Statistics */
-		fprintf(f, "Accesses = %lld\n", (long long) (mod->reads + mod->writes));
-		fprintf(f, "Reads = %lld\n", (long long) mod->reads);
-		fprintf(f, "Writes = %lld\n", (long long) mod->writes);
-		fprintf(f, "CoalescedReads = %lld\n", (long long) (mod->reads
-			- mod->effective_reads));
-		fprintf(f, "CoalescedWrites = %lld\n", (long long) (mod->writes
-			- mod->effective_writes));
-		fprintf(f, "EffectiveReads = %lld\n", (long long) mod->effective_reads);
-		fprintf(f, "EffectiveReadHits = %lld\n", (long long) mod->effective_read_hits);
-		fprintf(f, "EffectiveReadMisses = %lld\n", (long long) (mod->effective_reads
-			- mod->effective_read_hits));
-		fprintf(f, "EffectiveWrites = %lld\n", (long long) mod->effective_writes);
-		fprintf(f, "EffectiveWriteHits = %lld\n", (long long) mod->effective_write_hits);
-		fprintf(f, "EffectiveWriteMisses = %lld\n", (long long) (mod->effective_writes
-			- mod->effective_write_hits));
+		fprintf(f, "Accesses = %lld\n", (long long) mod->accesses);
+		fprintf(f, "Hits = %lld\n", (long long) mod->hits);
+		fprintf(f, "Misses = %lld\n", (long long) (mod->accesses - mod->hits));
+		fprintf(f, "HitRatio = %.4g\n", mod->accesses ?
+			(double) mod->hits / mod->accesses : 0.0);
 		fprintf(f, "Evictions = %lld\n", (long long) mod->evictions);
+		fprintf(f, "Retries = %lld\n", (long long) (mod->read_retries + mod->write_retries));
+		fprintf(f, "ReadRetries = %lld\n", (long long) mod->read_retries);
+		fprintf(f, "WriteRetries = %lld\n", (long long) mod->write_retries);
+		fprintf(f, "\n");
+		fprintf(f, "NoRetryAccesses = %lld\n", (long long) mod->no_retry_accesses);
+		fprintf(f, "NoRetryHits = %lld\n", (long long) mod->no_retry_hits);
+		fprintf(f, "NoRetryMisses = %lld\n", (long long) (mod->no_retry_accesses -
+			mod->no_retry_hits));
+		fprintf(f, "NoRetryHitRatio = %.4g\n", mod->no_retry_accesses ?
+			(double) mod->no_retry_hits / mod->no_retry_accesses : 0.0);
+		fprintf(f, "NoRetryReads = %lld\n", (long long) mod->no_retry_reads);
+		fprintf(f, "NoRetryReadHits = %lld\n", (long long) mod->no_retry_read_hits);
+		fprintf(f, "NoRetryReadMisses = %lld\n", (long long) (mod->no_retry_reads -
+			mod->no_retry_read_hits));
+		fprintf(f, "NoRetryWrites = %lld\n", (long long) mod->no_retry_writes);
+		fprintf(f, "NoRetryWriteHits = %lld\n", (long long) mod->no_retry_write_hits);
+		fprintf(f, "NoRetryWriteMisses = %lld\n", (long long) (mod->no_retry_writes -
+			mod->no_retry_write_hits));
+		fprintf(f, "\n");
+		fprintf(f, "Reads = %lld\n", (long long) mod->reads);
+		fprintf(f, "BlockingReads = %lld\n", (long long) mod->blocking_reads);
+		fprintf(f, "NonBlockingReads = %lld\n", (long long) mod->non_blocking_reads);
+		fprintf(f, "ReadHits = %lld\n", (long long) mod->read_hits);
+		fprintf(f, "ReadMisses = %lld\n", (long long) (mod->reads - mod->read_hits));
+		fprintf(f, "\n");
+		fprintf(f, "Writes = %lld\n", (long long) mod->writes);
+		fprintf(f, "BlockingWrites = %lld\n", (long long) mod->blocking_writes);
+		fprintf(f, "NonBlockingWrites = %lld\n", (long long) mod->non_blocking_writes);
+		fprintf(f, "WriteHits = %lld\n", (long long) mod->write_hits);
+		fprintf(f, "WriteMisses = %lld\n", (long long) (mod->writes - mod->write_hits));
 		fprintf(f, "\n\n");
 	}
 
-
 	/* Dump report for networks */
 	for (i = 0; i < list_count(mem_system->net_list); i++)
-		net_dump_report(list_get(mem_system->net_list, i), f);
-
-	/* Close */
+	{
+		net = list_get(mem_system->net_list, i);
+		net_dump_report(net, f);
+	}
+	
+	/* Done */
 	fclose(f);
 }
+
+
