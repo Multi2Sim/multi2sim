@@ -829,9 +829,10 @@ struct gpu_wavefront_t
 	/* FIXME: Include this as part of the stack to handle nested loops */
 	int loop_depth;
 	int loop_max_trip_count;
+	int loop_trip_count;
 	int loop_start;
 	int loop_step;
-	int loop_iterations_remaining;
+	int loop_index;
 
 	/* Flags updated during instruction execution */
 	unsigned int global_mem_read : 1;
