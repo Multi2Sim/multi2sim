@@ -96,18 +96,15 @@ void mod_handler_load(int event, void *data)
 		mem_debug("%lld %lld 0x%x %s load\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
-		/* Check if access can be coalesced with any currently in-flight access.
-		 * This needs to be done before recording the current access, or else
-		 * access would find itself in the list. */
-		master_stack = mod_can_coalesce(mod, mod_access_read, stack->addr);
-
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_read);
 
 		/* Coalesce access */
+		master_stack = mod_can_coalesce(mod, mod_access_read, stack->addr, stack);
 		if (master_stack)
 		{
-			mod_coalesce(mod, master_stack, EV_MOD_LOAD_FINISH, stack);
+			mod_coalesce(mod, master_stack, stack);
+			mod_stack_wait_in_stack(stack, master_stack, EV_MOD_LOAD_FINISH);
 			return;
 		}
 
@@ -118,13 +115,25 @@ void mod_handler_load(int event, void *data)
 
 	if (event == EV_MOD_LOAD_LOCK)
 	{
+		struct mod_stack_t *older_stack;
+
 		mem_debug("  %lld %lld 0x%x %s load lock\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+
+		/* If there is any older write, wait for it */
+		older_stack = mod_in_flight_write(mod, stack);
+		if (older_stack)
+		{
+			mem_debug("    %lld wait for write %lld\n",
+				stack->id, older_stack->id);
+			mod_stack_wait_in_stack(stack, older_stack, EV_MOD_LOAD_LOCK);
+			return;
+		}
 
 		/* Call find and lock */
 		new_stack = mod_stack_create(stack->id, mod, stack->addr,
 			EV_MOD_LOAD_ACTION, stack);
-		new_stack->blocking = 0;
+		new_stack->blocking = 1;
 		new_stack->read = 1;
 		new_stack->retry = stack->retry;
 		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
@@ -217,9 +226,6 @@ void mod_handler_load(int event, void *data)
 		/* Finish access */
 		mod_access_finish(mod, stack);
 
-		/* Wake up slave accesses coalesced with the current one */
-		mod_wakeup_coalesced(mod, stack);
-
 		/* Return */
 		mod_stack_return(stack);
 		return;
@@ -244,17 +250,15 @@ void mod_handler_store(int event, void *data)
 		mem_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
 
-		/* Check if access can be coalesced with another in-flight access.
-		 * This needs to be done before recording the current access. */
-		master_stack = mod_can_coalesce(mod, mod_access_write, stack->addr);
-
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_write);
 
 		/* Coalesce access */
+		master_stack = mod_can_coalesce(mod, mod_access_write, stack->addr, stack);
 		if (master_stack)
 		{
-			mod_coalesce(mod, master_stack, EV_MOD_STORE_FINISH, stack);
+			mod_coalesce(mod, master_stack, stack);
+			mod_stack_wait_in_stack(stack, master_stack, EV_MOD_STORE_FINISH);
 			return;
 		}
 
@@ -266,13 +270,25 @@ void mod_handler_store(int event, void *data)
 
 	if (event == EV_MOD_STORE_LOCK)
 	{
+		struct mod_stack_t *older_stack;
+
 		mem_debug("  %lld %lld 0x%x %s store lock\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+
+		/* If there is any older access, wait for it */
+		older_stack = stack->access_list_prev;
+		if (older_stack)
+		{
+			mem_debug("    %lld wait for access %lld\n",
+				stack->id, older_stack->id);
+			mod_stack_wait_in_stack(stack, older_stack, EV_MOD_LOAD_LOCK);
+			return;
+		}
 
 		/* Call find and lock */
 		new_stack = mod_stack_create(stack->id, mod, stack->addr,
 			EV_MOD_STORE_ACTION, stack);
-		new_stack->blocking = 0;
+		new_stack->blocking = 1;
 		new_stack->read = 0;
 		new_stack->retry = stack->retry;
 		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
@@ -353,9 +369,6 @@ void mod_handler_store(int event, void *data)
 
 		/* Finish access */
 		mod_access_finish(mod, stack);
-
-		/* Wake up slave accesses coalesced with the current one */
-		mod_wakeup_coalesced(mod, stack);
 
 		/* Return */
 		mod_stack_return(stack);
@@ -455,9 +468,6 @@ void mod_handler_find_and_lock(int event, void *data)
 		/* Miss */
 		if (!stack->hit)
 		{
-			/* Miss should happen only in non-blocking up-down requests */
-			assert(!stack->blocking);
-
 			/* Find victim */
 			stack->way = cache_replace_block(mod->cache, stack->set);
 			cache_get_block(mod->cache, stack->set, stack->way, NULL, &stack->state);
