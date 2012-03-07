@@ -514,6 +514,7 @@ struct opencl_program_t *opencl_program_create()
 	program->id = opencl_object_new_id(OPENCL_OBJ_PROGRAM);
 	program->ref_count = 1;
 
+	/* Constant buffers encoded in ELF file */
 	program->constant_buffer_list = list_create_with_size(25);
 	for(i = 0; i < 25; i++) 
 	{
