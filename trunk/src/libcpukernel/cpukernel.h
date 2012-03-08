@@ -39,6 +39,7 @@
 #include <poll.h>
 #include <errno.h>
 #include <gpukernel.h>
+#include <esim.h>
 #include <sys/time.h>
 
 
@@ -258,7 +259,12 @@ struct loader_t
 	char *interp;  /* Executable interpreter */
 	char *exe;  /* Executable file name */
 	char *cwd;  /* Current working directory */
-	char *stdin_file, *stdout_file;  /* File names for stdin and stdout */
+	char *stdin_file;  /* File name for stdin */
+	char *stdout_file;  /* File name for stdout */
+
+	/* IPC report (for detailed simulation) */
+	FILE *ipc_report_file;
+	int ipc_report_interval;
 
 	/* Code pointers */
 	uint32_t stack_base, stack_top, stack_size;
@@ -829,6 +835,9 @@ int fdt_get_guest_fd(struct fdt_t *fdt, int host_fd);
 #define ctx_debug(...) debug(ctx_debug_category, __VA_ARGS__)
 extern int ctx_debug_category;
 
+/* Event scheduled periodically to dump IPC statistics for a context */
+extern int EV_CTX_IPC_REPORT;
+
 struct ctx_t
 {
 	/* Context properties */
@@ -905,6 +914,9 @@ struct ctx_t
 	struct regs_t *backup_regs;  /* Backup when entering in speculative mode */
 	struct signal_masks_t *signal_masks;
 	struct signal_handlers_t *signal_handlers;
+
+	/* Statistics */
+	long long inst_count;  /* Executed instructions in non-speculative mode */
 };
 
 enum ctx_status_t
@@ -958,6 +970,9 @@ int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t b
 void ctx_exit_robust_list(struct ctx_t *ctx);
 
 void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path);
+
+void ctx_ipc_report_schedule(struct ctx_t *ctx);
+void ctx_ipc_report_handler(int event, void *data);
 
 
 

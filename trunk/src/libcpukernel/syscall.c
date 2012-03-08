@@ -1023,46 +1023,51 @@ void syscall_do()
 	/* 5 */
 	case syscall_code_open:
 	{
-		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE], temppath[MAX_PATH_SIZE];
-		uint32_t pfilename;
-		int flags, mode;
-		char sflags[MAX_STRING_SIZE];
+		char file_name[MAX_PATH_SIZE];
+		char full_path[MAX_PATH_SIZE];
+		char temp_path[MAX_PATH_SIZE];
+
+		uint32_t file_name_ptr;
+		int flags;
+		int mode;
+		char flags_str[MAX_STRING_SIZE];
 		int length;
+
 		int host_fd;
 		struct fd_t *fd;
 
 		/* Read parameters */
-		pfilename = isa_regs->ebx;
+		file_name_ptr = isa_regs->ebx;
 		flags = isa_regs->ecx;
 		mode = isa_regs->edx;
-		length = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
+		length = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
 		if (length >= MAX_PATH_SIZE)
 			fatal("syscall open: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
+		ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
 		syscall_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
-			filename, flags, mode);
-		syscall_debug("  fullpath='%s'\n", fullpath);
-		map_flags(&open_flags_map, flags, sflags, MAX_STRING_SIZE);
-		syscall_debug("  flags=%s\n", sflags);
+			file_name, flags, mode);
+		syscall_debug("  fullpath='%s'\n", full_path);
+		map_flags(&open_flags_map, flags, flags_str, sizeof flags_str);
+		syscall_debug("  flags=%s\n", flags_str);
 
 		/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
-		gk_libopencl_redirect(fullpath, MAX_PATH_SIZE);
+		gk_libopencl_redirect(full_path, sizeof full_path);
 
 		/* Virtual files */
-		if (!strncmp(fullpath, "/proc/", 6)) {
-			
+		if (!strncmp(full_path, "/proc/", 6))
+		{
 			/* File /proc/self/maps */
-			if (!strcmp(fullpath, "/proc/self/maps")) {
-				
+			if (!strcmp(full_path, "/proc/self/maps"))
+			{
 				/* Create temporary file and open it. */
-				ctx_gen_proc_self_maps(isa_ctx, temppath);
-				host_fd = open(temppath, flags, mode);
+				ctx_gen_proc_self_maps(isa_ctx, temp_path);
+				host_fd = open(temp_path, flags, mode);
 				assert(host_fd > 0);
 
 				/* Add file descriptor table entry. */
-				fd = fdt_entry_new(isa_ctx->fdt, fd_kind_virtual, host_fd, temppath, flags);
+				fd = fdt_entry_new(isa_ctx->fdt, fd_kind_virtual, host_fd, temp_path, flags);
 				syscall_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
-					temppath, fd->guest_fd, fd->host_fd);
+					temp_path, fd->guest_fd, fd->host_fd);
 				retval = fd->guest_fd;
 				break;
 			}
@@ -1073,14 +1078,15 @@ void syscall_do()
 		}
 
 		/* Regular file. */
-		host_fd = open(fullpath, flags, mode);
-		if (host_fd < 0) {
+		host_fd = open(full_path, flags, mode);
+		if (host_fd < 0)
+		{
 			retval = -errno;
 			break;
 		}
 
 		/* File opened, create a new file descriptor. */
-		fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, host_fd, fullpath, flags);
+		fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, host_fd, full_path, flags);
 		syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
 			fd->guest_fd, fd->host_fd);
 		retval = fd->guest_fd;
@@ -1095,7 +1101,7 @@ void syscall_do()
 	{
 		int pid, options;
 		uint32_t pstatus;
-		char soptions[0x100];
+		char options_str[MAX_STRING_SIZE];
 		struct ctx_t *child;
 
 		pid = isa_regs->ebx;
@@ -1103,8 +1109,8 @@ void syscall_do()
 		options = isa_regs->edx;
 		syscall_debug("  pid=%d, pstatus=0x%x, options=0x%x\n",
 			pid, pstatus, options);
-		map_flags(&waitpid_options_map, options, soptions, 0x100);
-		syscall_debug("  options=%s\n", soptions);
+		map_flags(&waitpid_options_map, options, options_str, sizeof options_str);
+		syscall_debug("  options=%s\n", options_str);
 		if (pid != -1 && pid <= 0)
 			fatal("syscall waitpid: only supported for pid=-1 or pid>0");
 
