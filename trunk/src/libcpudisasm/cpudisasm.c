@@ -38,8 +38,8 @@
 /* This struct contains information derived from machine.dat, which
  * is initialized in disasm_init, to form linked lists in the table
  * x86_opcode_info_table and a single list in x86_opcode_info_list. */
-struct x86_opcode_info_t {
-
+struct x86_opcode_info_t
+{
 	/* Obtained from machine.dat */
 	enum x86_opcode_t opcode;
 	uint32_t op1, op2, op3, modrm, imm;
@@ -71,6 +71,10 @@ struct x86_opcode_info_elem_t
  * is indexed by the second byte of its opcode. */
 static struct x86_opcode_info_elem_t *x86_opcode_info_table[0x100];
 static struct x86_opcode_info_elem_t *x86_opcode_info_table_0f[0x100];
+
+/* List of possible prefixes */
+static unsigned char x86_prefixes[] = { 0xf0, 0xf2, 0xf3, 0x66, 0x67, 0x2e, 0x36, 0x3e, 0x26, 0x64, 0x65 };
+static unsigned char x86_byte_is_prefix[256];
 
 
 /* List of instructions. */
@@ -328,44 +332,51 @@ static void x86_memory_address_dump_buf(struct x86_inst_t *inst, char **pbuf, in
  * Public Functions
  */
 
-
 void x86_disasm_init()
 {
 	enum x86_opcode_t op;
 	struct x86_opcode_info_t *info;
+	int i;
+
+	/* Initialize table of prefixes */
+	for (i = 0; i < sizeof(x86_prefixes); i++)
+		x86_byte_is_prefix[x86_prefixes[i]] = 1;
 
 	/* Initialize x86_opcode_info_table. This table contains lists of
 	 * information about machine instructions. To find an instruction
 	 * in the table, it can be indexed by the first byte of its opcode. */
-	for (op = 1; op < x86_opcode_count; op++) {
-		
+	for (op = 1; op < x86_opcode_count; op++)
+	{
 		/* Insert into table */
 		info = &x86_opcode_info_list[op];
 		x86_opcode_info_insert(info);
 
 		/* Compute match_mask and mach_result fields. Start with
 		 * the 'modrm' field in the instruction format definition. */
-		if (!(info->modrm & SKIP)) {
-
+		if (!(info->modrm & SKIP))
+		{
 			info->modrm_size = 1;
 
 			/* If part of the offset is in the 'reg' field of the ModR/M byte,
 			 * it must be matched. */
-			if (!(info->modrm & REG)) {
+			if (!(info->modrm & REG))
+			{
 				info->match_mask = 0x38;
 				info->match_result = (info->modrm & 0x7) << 3;
 			}
 
 			/* If instruction expects a memory operand, the 'mod' field of 
 			 * the ModR/M byte cannot be 11. */
-			if (info->modrm & MEM) {
+			if (info->modrm & MEM)
+			{
 				info->nomatch_mask = 0xc0;
 				info->nomatch_result = 0xc0;
 			}
 		}
 
 		/* Third opcode byte */
-		if (!(info->op3 & SKIP)) {
+		if (!(info->op3 & SKIP))
+		{
 			info->opcode_size++;
 			info->match_mask <<= 8;
 			info->match_result <<= 8;
@@ -377,7 +388,8 @@ void x86_disasm_init()
 		}
 
 		/* Second opcode byte */
-		if (!(info->op2 & SKIP)) {
+		if (!(info->op2 & SKIP))
+		{
 			info->opcode_size++;
 			info->match_mask <<= 8;
 			info->match_result <<= 8;
@@ -401,7 +413,8 @@ void x86_disasm_init()
 		info->nomatch_result <<= 8;
 		info->match_mask |= 0xff;
 		info->match_result |= info->op1 & 0xff;
-		if (info->op1 & INDEX) {
+		if (info->op1 & INDEX)
+		{
 			info->match_mask &= 0xfffffff8;
 			info->opindex_shift = 0;
 		}
@@ -420,7 +433,8 @@ void x86_disasm_init()
 void x86_disasm_done()
 {
 	int i;
-	for (i = 0; i < 0x100; i++) {
+	for (i = 0; i < 0x100; i++)
+	{
 		x86_opcode_info_elem_free_list(x86_opcode_info_table[i]);
 		x86_opcode_info_elem_free_list(x86_opcode_info_table_0f[i]);
 	}
@@ -435,7 +449,6 @@ void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst)
 	int index;
 	uint32_t buf32;
 	struct x86_modrm_table_entry_t *modrm_table_entry;
-	int was_any_prefix;
 
 	/* Initialize instruction */
 	memset((void *) inst, 0, sizeof(struct x86_inst_t));
@@ -444,8 +457,8 @@ void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst)
 	inst->addr_size = 4;
 
 	/* Prefixes */
-	do {
-		was_any_prefix = 1;
+	while (x86_byte_is_prefix[* (unsigned char *) buf])
+	{
 		switch (* (unsigned char *) buf)
 		{
 
@@ -496,22 +509,22 @@ void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst)
 			break;
 
 		default:
-			was_any_prefix = 0;
+			panic("%s: invalid prefix", __FUNCTION__);
+
 		}
 
-		if (was_any_prefix) {
-			buf++;
-			inst->prefix_size++;
-		}
-
-	} while (was_any_prefix);
+		/* One more prefix */
+		buf++;
+		inst->prefix_size++;
+	}
 
 	/* Find instruction */
 	buf32 = * (uint32_t *) buf;
 	inst->opcode = x86_op_none;
 	table = * (unsigned char *) buf == 0x0f ? x86_opcode_info_table_0f : x86_opcode_info_table;
 	index = * (unsigned char *) buf == 0x0f ? * (unsigned char *) (buf + 1): * (unsigned char *) buf;
-	for (elem = table[index]; elem; elem = elem->next) {
+	for (elem = table[index]; elem; elem = elem->next)
+	{
 		info = elem->info;
 		if (info->nomatch_mask && (buf32 & info->nomatch_mask) ==
 			info->nomatch_result)
@@ -534,8 +547,8 @@ void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst)
 	buf += inst->opcode_size;  /* Skip opcode */
 
 	/* Decode the ModR/M field */
-	if (inst->modrm_size) {
-		
+	if (inst->modrm_size)
+	{
 		/* Split modrm into fields */
 		inst->modrm = * (unsigned char *) buf;
 		inst->modrm_mod = (inst->modrm & 0xc0) >> 6;
@@ -552,7 +565,8 @@ void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst)
 		buf += inst->modrm_size;  /* Skip modrm */
 
 		/* Decode SIB */
-		if (inst->sib_size) {
+		if (inst->sib_size)
+		{
 			inst->sib = * (unsigned char *) buf;
 			inst->sib_scale = (inst->sib & 0xc0) >> 6;
 			inst->sib_index = (inst->sib & 0x38) >> 3;
@@ -561,7 +575,8 @@ void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst)
 			inst->ea_index = inst->sib_index == 0x04 ? x86_reg_none :
 				inst->sib_index + x86_reg_eax;
 			inst->ea_base = inst->sib_base + x86_reg_eax;
-			if (inst->sib_base == 0x05 && inst->modrm_mod == 0x00) {
+			if (inst->sib_base == 0x05 && inst->modrm_mod == 0x00)
+			{
 				inst->ea_base = x86_reg_none;
 				inst->disp_size = 4;
 			}
