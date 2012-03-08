@@ -32,33 +32,37 @@ void debug_done(void);
  * 'debug_assign_file' is performed. */
 int debug_new_category(char *filename);
 
-/* Assign a file to a category. The file is opened with "wt" flags. On error,
- * the function returns 0, otherwise, non-0. This file is closed automatically
- * when calling debug_done, in case it's not "stdout" or "stderr". */
-FILE *debug_assign_file(int category, char *filename);
-
 /* Switch the status of a debugging category. By default, the
  * debugging messages are on, while there is an opened file to be dumped into. */
-void debug_on(int category);
-void debug_off(int category);
+#define debug_on(category) ((category) ? __debug_on((category)) : (void) 0)
+#define debug_off(category) ((category) ? __debug_off((category)) : (void) 0)
+void __debug_on(int category);
+void __debug_off(int category);
 
 /* Return true if a message to this debug category would be dumped, that is,
  * if debug is on and the file is not NULL. */
-int debug_status(int category);
+#define debug_status(category) ((category) ? __debug_status((category)) : 0)
+int __debug_status(int category);
 
 /* Return the file associated with a category. */
-FILE *debug_file(int category);
+#define debug_file(category) ((category) ? __debug_file((category)) : 0)
+FILE *__debug_file(int category);
 
 /* Flush associated file */
-void debug_flush(int category);
+#define debug_flush(category) ((category) ? __debug_flush((category)) : (void) 0)
+void __debug_flush(int category);
 
 /* Set spaces for next debug messages */
-void debug_tab(int category, int space_count);
-void debug_tab_inc(int category, int space_count);
-void debug_tab_dec(int category, int space_count);
+#define debug_tab(category) ((category) ? __debug_tab((category)) : (void) 0)
+#define debug_tab_inc(category) ((category) ? __debug_tab_inc((category)) : (void) 0)
+#define debug_tab_dec(category) ((category) ? __debug_tab_dec((category)) : (void) 0)
+void __debug_tab(int category, int space_count);
+void __debug_tab_inc(int category, int space_count);
+void __debug_tab_dec(int category, int space_count);
 
 /* Dump a debugging message. */
-void debug(int category, char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+#define debug(category, ...) ((category) ? __debug((category), __VA_ARGS__) : (void) 0)
+void __debug(int category, char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 /* Other messages */
 void warning(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
