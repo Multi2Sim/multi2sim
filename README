@@ -446,3 +446,31 @@ memory system.
       Module serving as an entry to a GPU compute unit when reading/writing
       program data in the global memory scope. Omitted for CPU entries.
 
+
+===============================================================================
+Help message in IPC report file
+===============================================================================
+
+The IPC (instructions-per-cycle) report file shows performance value for a
+context at specific intervals. If a context spawns child contexts, only IPC
+statistics for the parent context are shown. The following fields are shown in
+each record:
+
+  <cycle>
+      Current simulation cycle. The increment between this value and the value
+      shown in the next record is the interval specified in the context
+      configuration file.
+
+  <inst>
+      Number of non-speculative instructions executed in the current interval.
+
+  <ipc-glob>
+      Global IPC observed so far. This value is equal to the number of executed
+      non-speculative instructions divided by the current cycle.
+
+  <ipc-int>
+      IPC observed in the current interval. This value is equal to the number
+      of instructions executed in the current interval divided by the number of
+      cycles of the interval.
+
+

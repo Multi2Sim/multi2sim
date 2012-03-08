@@ -22,6 +22,32 @@
 
 int ctx_debug_category;
 
+int EV_CTX_IPC_REPORT;
+
+static char *help_ctx_ipc_report =
+	"The IPC (instructions-per-cycle) report file shows performance value for a\n"
+	"context at specific intervals. If a context spawns child contexts, only IPC\n"
+	"statistics for the parent context are shown. The following fields are shown in\n"
+	"each record:\n"
+	"\n"
+	"  <cycle>\n"
+	"      Current simulation cycle. The increment between this value and the value\n"
+	"      shown in the next record is the interval specified in the context\n"
+	"      configuration file.\n"
+	"\n"
+	"  <inst>\n"
+	"      Number of non-speculative instructions executed in the current interval.\n"
+	"\n"
+	"  <ipc-glob>\n"
+	"      Global IPC observed so far. This value is equal to the number of executed\n"
+	"      non-speculative instructions divided by the current cycle.\n"
+	"\n"
+	"  <ipc-int>\n"
+	"      IPC observed in the current interval. This value is equal to the number\n"
+	"      of instructions executed in the current interval divided by the number of\n"
+	"      cycles of the interval.\n"
+	"\n";
+
 
 static struct string_map_t ctx_status_map =
 {
@@ -205,6 +231,8 @@ void ctx_execute_inst(struct ctx_t *ctx)
 	isa_eip = isa_regs->eip;
 	isa_spec_mode = ctx_get_status(isa_ctx, ctx_specmode);
 	isa_inst_count++;
+	if (!isa_spec_mode)
+		ctx->inst_count++;
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
@@ -625,3 +653,68 @@ void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path)
 	fclose(f);
 }
 
+
+struct ctx_ipc_report_stack_t
+{
+	int pid;
+	long long inst_count;
+};
+
+void ctx_ipc_report_schedule(struct ctx_t *ctx)
+{
+	struct ctx_ipc_report_stack_t *stack;
+	FILE *f = ctx->loader->ipc_report_file;
+	int i;
+
+	/* Create new stack */
+	stack = calloc(1, sizeof(struct ctx_ipc_report_stack_t));
+	if (!stack)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	assert(ctx->loader->ipc_report_file);
+	assert(ctx->loader->ipc_report_interval > 0);
+	stack->pid = ctx->pid;
+
+	/* Print header */
+	fprintf(f, "%s", help_ctx_ipc_report);
+	fprintf(f, "%10s %8s %10s %10s\n", "cycle", "inst", "ipc-glob", "ipc-int");
+	for (i = 0; i < 43; i++)
+		fprintf(f, "-");
+	fprintf(f, "\n");
+
+	/* Schedule first event */
+	esim_schedule_event(EV_CTX_IPC_REPORT, stack,
+		ctx->loader->ipc_report_interval);
+}
+
+void ctx_ipc_report_handler(int event, void *data)
+{
+	struct ctx_ipc_report_stack_t *stack = data;
+	struct ctx_t *ctx;
+
+	long long inst_count;
+	double ipc_interval;
+	double ipc_global;
+
+	/* Get context. If it does not exist anymore, no more
+	 * events to schedule. */
+	ctx = ctx_get(stack->pid);
+	if (!ctx || ctx_get_status(ctx, ctx_finished) || ke_sim_finish)
+	{
+		free(stack);
+		return;
+	}
+
+	/* Dump new IPC */
+	assert(ctx->loader->ipc_report_interval);
+	inst_count = ctx->inst_count - stack->inst_count;
+	ipc_global = esim_cycle ? (double) ctx->inst_count / esim_cycle : 0.0;
+	ipc_interval = (double) inst_count / ctx->loader->ipc_report_interval;
+	fprintf(ctx->loader->ipc_report_file, "%10lld %8lld %10.4f %10.4f\n",
+		esim_cycle, inst_count, ipc_global, ipc_interval);
+
+	/* Schedule new event */
+	stack->inst_count = ctx->inst_count;
+	esim_schedule_event(event, stack, ctx->loader->ipc_report_interval);
+}

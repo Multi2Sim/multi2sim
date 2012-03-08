@@ -17,7 +17,7 @@ libgpukernel_a_SOURCES = \
 
 INCLUDES = -I$(top_srcdir)/src/libstruct \
 	-I$(top_srcdir)/src/libmhandle \
-	-I$(top_srcdir)/src/libopt \
+	-I$(top_srcdir)/src/libesim \
 	-I$(top_srcdir)/src/libmisc \
 	-I$(top_srcdir)/src/libcpudisasm \
 	-I$(top_srcdir)/src/libgpudisasm \
