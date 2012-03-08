@@ -892,8 +892,8 @@ int main(int argc, char **argv)
 	esim_debug_init(esim_debug_file_name);
 
 	/* Initialization for functional simulation */
-	ke_init();
 	esim_init();
+	ke_init();
 	net_init();
 
 	/* Initialization for detailed simulation */

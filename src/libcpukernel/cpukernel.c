@@ -72,7 +72,16 @@ void ke_init(void)
 		fatal("cannot run kernel on a big endian machine");
 	
 	isa_init();
+
+	/* Allocate */
 	ke = calloc(1, sizeof(struct kernel_t));
+	if (!ke)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Event for context IPC reports */
+	EV_CTX_IPC_REPORT = esim_register_event(ctx_ipc_report_handler);
+
+	/* Initialize */
 	ke->current_pid = 1000;  /* Initial assigned pid */
 	
 	/* Initialize mutex for variables controlling calls to 'ke_process_events()' */
@@ -742,7 +751,8 @@ void ke_process_events()
 /* Signal handler while functional simulation loop is running */
 static void ke_signal_handler(int signum)
 {
-	switch (signum) {
+	switch (signum)
+	{
 	
 	case SIGINT:
 		if (ke_sim_finish)
@@ -773,8 +783,8 @@ void ke_run(void)
 	signal(SIGABRT, &ke_signal_handler);
 
 	/* Functional simulation loop */
-	for (;;) {
-		
+	for (;;)
+	{
 		/* Stop if all contexts finished */
 		if (ke->finished_list_count >= ke->context_list_count)
 			ke_sim_finish = ke_sim_finish_ctx;
