@@ -28,13 +28,13 @@
 #include "debug.h"
 
 
-struct category_t {
+struct debug_category_t {
 	int status;
 	FILE *f;
-	char *filename;
+	char *file_name;
 };
 
-static struct category_t *category_list = NULL;
+static struct debug_category_t *category_list = NULL;
 static int category_list_size = 0;
 static int category_count = 0;
 
@@ -63,17 +63,17 @@ void debug_done(void)
 
 int debug_new_category(void)
 {
-	struct category_t *c;
+	struct debug_category_t *c;
 	if (category_count == category_list_size) {
 		category_list_size += 10;
-		category_list = realloc(category_list, sizeof(struct category_t) * category_list_size);
+		category_list = realloc(category_list, sizeof(struct debug_category_t) * category_list_size);
 		if (!category_list)
 			abort();
 	}
 	c = &category_list[category_count];
 	c->status = 1;
 	c->f = NULL;
-	c->filename = NULL;
+	c->file_name = NULL;
 	return category_count++;
 }
 
@@ -92,7 +92,7 @@ FILE *debug_assign_file(int category, char *filename)
 	else
 		f = fopen(filename, "wt");
 	category_list[category].f = f;
-	category_list[category].filename = filename;
+	category_list[category].file_name = filename;
 	return f;
 }
 
@@ -115,7 +115,7 @@ void debug_off(int category)
 
 int debug_status(int category)
 {
-	struct category_t *c;
+	struct debug_category_t *c;
 	if (category < 0 || category >= category_count)
 		return 0;
 	c = &category_list[category];
@@ -133,7 +133,7 @@ FILE *debug_file(int category)
 
 void debug_flush(int category)
 {
-	struct category_t *c;
+	struct debug_category_t *c;
 	if (category < 0 || category >= category_count)
 		return;
 	c = &category_list[category];
@@ -144,7 +144,7 @@ void debug_flush(int category)
 
 void debug(int category, char *fmt, ...)
 {
-	struct category_t *c;
+	struct debug_category_t *c;
 	va_list va;
 
 	if (category < 0 || category >= category_count)

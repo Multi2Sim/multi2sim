@@ -34,7 +34,7 @@ int debug_new_category(void);
 /* Assign a file to a category. The file is opened with "wt" flags. On error,
  * the function returns 0, otherwise, non-0. This file is closed automatically
  * when calling debug_done, in case it's not "stdout" or "stderr". */
-FILE *debug_assign_file(int category, char *filename);
+FILE *debug_assign_file(int category, char *file_name);
 
 /* Switch the status of a debugging category. By default, the
  * debugging messages are on, while there is an opened file to be dumped into. */

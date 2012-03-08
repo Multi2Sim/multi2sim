@@ -22,176 +22,213 @@
 #include <string.h>
 #include <stdarg.h>
 #include <mhandle.h>
+#include <debug.h>
+#include <list.h>
+#include <assert.h>
 
-#include "debug.h"
 
-
-struct category_t
+enum debug_status_t
 {
-	int status;
-	int space_count;
-	FILE *f;
-	char *filename;
+	debug_status_invalid = 0,
+	debug_status_on,
+	debug_status_off
 };
 
-static struct category_t *category_list = NULL;
-static int category_list_size = 0;
-static int category_count = 0;
+struct debug_category_t
+{
+	enum debug_status_t status;
+	int space_count;
+
+	/* File name and descriptor */
+	char *file_name;
+	FILE *f;
+};
+
+static struct list_t *debug_category_list;
 
 
 void debug_init(void)
 {
+	struct debug_category_t *c;
+
+	/* Initialize list of categories */
+	debug_category_list = list_create();
+
+	/* Create an invalid category at index 0 */
+	c = calloc(1, sizeof(struct debug_category_t));
+	if (!c)
+		fatal("%s: out of memory", __FUNCTION__);
+	list_add(debug_category_list, c);
 }
 
 
 void debug_done(void)
 {
+	struct debug_category_t *c;
 	int i;
-	FILE *f;
-	for (i = 0; i < category_count; i++)
+
+	/* Close all files */
+	for (i = 0; i < list_count(debug_category_list); i++)
 	{
-		f = category_list[i].f;
-		if (f && f != stdout && f != stderr)
-			fclose(f);
+		c = list_get(debug_category_list, i);
+		if (c->file_name)
+			free(c->file_name);
+		if (c->f && c->f != stdout && c->f != stderr)
+			fclose(c->f);
+		free(c);
 	}
-	if (category_list)
-		free(category_list);
-	category_list = NULL;
-	category_list_size = 0;
-	category_count = 0;
+
+	/* Free list */
+	list_free(debug_category_list);
 }
 
 
-FILE *debug_assign_file(int category, char *filename)
+int debug_new_category(char *file_name)
 {
-	FILE *f;
-	if (category < 0 || category >= category_count)
-		return NULL;
-	if (!filename || !*filename)
-		f = NULL;
-	else if (!strcmp(filename, "stdout"))
-		f = stdout;
-	else if (!strcmp(filename, "stderr"))
-		f = stderr;
-	else
-		f = fopen(filename, "wt");
-	category_list[category].f = f;
-	category_list[category].filename = filename;
-	return f;
-}
+	struct debug_category_t *c;
 
+	/* If file name is empty, return empty category at index 0 */
+	if (!file_name || !*file_name)
+		return 0;
 
-int debug_new_category(char *filename)
-{
-	struct category_t *c;
-	if (category_count == category_list_size)
-	{
-		category_list_size += 10;
-		category_list = realloc(category_list, sizeof(struct category_t) * category_list_size);
-		if (!category_list)
-			abort();
-	}
-	c = &category_list[category_count++];
+	/* Allocate */
+	c = calloc(1, sizeof(struct debug_category_t));
+	if (!c)
+		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	c->status = 1;
-	c->f = NULL;
-	c->filename = NULL;
-	c->space_count = 0;
+	c->status = debug_status_on;
+	c->file_name = strdup(file_name);
+	if (!c->file_name)
+		fatal("%s: out of memory", __FUNCTION__);
 
-	/* Assign file name */
-	if (filename && *filename)
-		debug_assign_file(category_count - 1, filename);
+	/* Assign file */
+	if (!strcmp(file_name, "stdout"))
+	{
+		c->f = stdout;
+	}
+	else if (!strcmp(file_name, "stderr"))
+	{
+		c->f = stderr;
+	}
+	else
+	{
+		c->f = fopen(file_name, "wt");
+		if (!c->f)
+			fatal("%s: cannot open debug file", file_name);
+	}
 
-	/* Return new category index */
-	return category_count - 1;
+	/* Add to list and return index */
+	list_add(debug_category_list, c);
+	return list_count(debug_category_list) - 1;
 }
 
 
-void debug_on(int category)
+void __debug_on(int category)
 {
-	if (category < 0 || category >= category_count)
-		return;
-	category_list[category].status = 1;
+	struct debug_category_t *c;
+
+	assert(category > 0);
+	c = list_get(debug_category_list, category);
+
+	assert(c);
+	c->status = debug_status_on;
 }
 
 
-void debug_off(int category)
+void __debug_off(int category)
 {
-	if (category < 0 || category >= category_count)
-		return;
-	category_list[category].status = 1;
+	struct debug_category_t *c;
+
+	assert(category > 0);
+	c = list_get(debug_category_list, category);
+
+	assert(c);
+	c->status = debug_status_off;
 }
 
 
-int debug_status(int category)
+int __debug_status(int category)
 {
-	struct category_t *c;
-	if (category < 0 || category >= category_count)
-		return 0;
-	c = &category_list[category];
-	return c->status && c->f;
+	struct debug_category_t *c;
+
+	assert(category > 0);
+	c = list_get(debug_category_list, category);
+
+	/* Return TRUE is debug is on */
+	assert(c);
+	return c->status == debug_status_on;
 }
 
 
-FILE *debug_file(int category)
+FILE *__debug_file(int category)
 {
-	if (category < 0 || category >= category_count)
-		return NULL;
-	return category_list[category].f;
+	struct debug_category_t *c;
+
+	assert(category > 0);
+	c = list_get(debug_category_list, category);
+
+	assert(c);
+	return c->f;
 }
 
 
-void debug_flush(int category)
+void __debug_flush(int category)
 {
-	struct category_t *c;
-	if (category < 0 || category >= category_count)
-		return;
-	c = &category_list[category];
-	if (c->status && c->f)
+	struct debug_category_t *c;
+
+	assert(category > 0);
+	c = list_get(debug_category_list, category);
+
+	assert(c);
+	if (c->f)
 		fflush(c->f);
 }
 
 
-void debug_tab(int category, int space_count)
+void __debug_tab(int category, int space_count)
 {
-	struct category_t *c;
-	if (category < 0 || category >= category_count)
-		return;
-	c = &category_list[category];
+	struct debug_category_t *c;
+
+	assert(category > 0);
+	c = list_get(debug_category_list, category);
+
+	assert(c);
 	c->space_count = space_count;
 }
 
 
-void debug_tab_inc(int category, int space_count)
+void __debug_tab_inc(int category, int space_count)
 {
-	struct category_t *c;
-	if (category < 0 || category >= category_count)
-		return;
-	c = &category_list[category];
+	struct debug_category_t *c;
+
+	assert(category > 0);
+	c = list_get(debug_category_list, category);
+
+	assert(c);
 	c->space_count += space_count;
 	if (c->space_count < 0)
 		c->space_count = 0;
 }
 
 
-void debug_tab_dec(int category, int space_count)
+void __debug_tab_dec(int category, int space_count)
 {
-	debug_tab_inc(category, -space_count);
+	__debug_tab_inc(category, -space_count);
 }
 
 
-void debug(int category, char *fmt, ...)
+void __debug(int category, char *fmt, ...)
 {
-	struct category_t *c;
+	struct debug_category_t *c;
 	va_list va;
 	char spc[200];
 
 	/* Get category */
-	if (category < 0 || category >= category_count)
-		return;
-	c = &category_list[category];
-	if (!c->status || !c->f)
+	assert(category > 0);
+	c = list_get(debug_category_list, category);
+	assert(c);
+	if (c->status == debug_status_off)
 		return;
 	
 	/* Print spaces */
@@ -204,7 +241,6 @@ void debug(int category, char *fmt, ...)
 	/* Print message */
 	va_start(va, fmt);
 	vfprintf(c->f, fmt, va);
-	fflush(c->f);
 }
 
 
