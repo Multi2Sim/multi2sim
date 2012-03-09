@@ -156,34 +156,72 @@ struct string_map_t access_mode_map = {
 };
 
 
-/* For clone */
-struct string_map_t clone_flags_map = {
+/* For 'clone' */
+
+#define SIM_CLONE_VM			0x00000100
+#define SIM_CLONE_FS			0x00000200
+#define SIM_CLONE_FILES			0x00000400
+#define SIM_CLONE_SIGHAND		0x00000800
+#define SIM_CLONE_PTRACE		0x00002000
+#define SIM_CLONE_VFORK			0x00004000
+#define SIM_CLONE_PARENT		0x00008000
+#define SIM_CLONE_THREAD		0x00010000
+#define SIM_CLONE_NEWNS			0x00020000
+#define SIM_CLONE_SYSVSEM		0x00040000
+#define SIM_CLONE_SETTLS		0x00080000
+#define SIM_CLONE_PARENT_SETTID		0x00100000
+#define SIM_CLONE_CHILD_CLEARTID	0x00200000
+#define SIM_CLONE_DETACHED		0x00400000
+#define SIM_CLONE_UNTRACED		0x00800000
+#define SIM_CLONE_CHILD_SETTID		0x01000000
+#define SIM_CLONE_STOPPED		0x02000000
+#define SIM_CLONE_NEWUTS		0x04000000
+#define SIM_CLONE_NEWIPC		0x08000000
+#define SIM_CLONE_NEWUSER		0x10000000
+#define SIM_CLONE_NEWPID		0x20000000
+#define SIM_CLONE_NEWNET		0x40000000
+#define SIM_CLONE_IO			0x80000000
+
+struct string_map_t clone_flags_map =
+{
 	23, {
-		{ "CLONE_VM",        0x00000100 },
-		{ "CLONE_FS",        0x00000200 },
-		{ "CLONE_FILES",     0x00000400 },
-		{ "CLONE_SIGHAND",   0x00000800 },
-		{ "CLONE_PTRACE",    0x00002000 },
-		{ "CLONE_VFORK",     0x00004000 },
-		{ "CLONE_PARENT",    0x00008000 },
-		{ "CLONE_THREAD",    0x00010000 },
-		{ "CLONE_NEWNS",     0x00020000 },
-		{ "CLONE_SYSVSEM",   0x00040000 },
-		{ "CLONE_SETTLS",    0x00080000 },
-		{ "CLONE_PARENT_SETTID",     0x00100000 },
-		{ "CLONE_CHILD_CLEARTID",    0x00200000 },
-		{ "CLONE_DETACHED",          0x00400000 },
-		{ "CLONE_UNTRACED",          0x00800000 },
-		{ "CLONE_CHILD_SETTID",      0x01000000 },
-		{ "CLONE_STOPPED",           0x02000000 },
-		{ "CLONE_NEWUTS",            0x04000000 },
-		{ "CLONE_NEWIPC",            0x08000000 },
-		{ "CLONE_NEWUSER",           0x10000000 },
-		{ "CLONE_NEWPID",            0x20000000 },
-		{ "CLONE_NEWNET",            0x40000000 },
-		{ "CLONE_IO",                0x80000000 }
+		{ "CLONE_VM", 0x00000100 },
+		{ "CLONE_FS", 0x00000200 },
+		{ "CLONE_FILES", 0x00000400 },
+		{ "CLONE_SIGHAND", 0x00000800 },
+		{ "CLONE_PTRACE", 0x00002000 },
+		{ "CLONE_VFORK", 0x00004000 },
+		{ "CLONE_PARENT", 0x00008000 },
+		{ "CLONE_THREAD", 0x00010000 },
+		{ "CLONE_NEWNS", 0x00020000 },
+		{ "CLONE_SYSVSEM", 0x00040000 },
+		{ "CLONE_SETTLS", 0x00080000 },
+		{ "CLONE_PARENT_SETTID", 0x00100000 },
+		{ "CLONE_CHILD_CLEARTID", 0x00200000 },
+		{ "CLONE_DETACHED", 0x00400000 },
+		{ "CLONE_UNTRACED", 0x00800000 },
+		{ "CLONE_CHILD_SETTID", 0x01000000 },
+		{ "CLONE_STOPPED", 0x02000000 },
+		{ "CLONE_NEWUTS", 0x04000000 },
+		{ "CLONE_NEWIPC", 0x08000000 },
+		{ "CLONE_NEWUSER", 0x10000000 },
+		{ "CLONE_NEWPID", 0x20000000 },
+		{ "CLONE_NEWNET", 0x40000000 },
+		{ "CLONE_IO", 0x80000000 }
 	}
 };
+
+static const uint32_t clone_supported_flags =
+	SIM_CLONE_VM | 
+	SIM_CLONE_FS |
+	SIM_CLONE_FILES |
+	SIM_CLONE_SIGHAND |
+	SIM_CLONE_THREAD |
+	SIM_CLONE_SYSVSEM |
+	SIM_CLONE_SETTLS |
+	SIM_CLONE_PARENT_SETTID |
+	SIM_CLONE_CHILD_CLEARTID |
+	SIM_CLONE_CHILD_SETTID;
 
 
 /* For utime */
@@ -1970,22 +2008,35 @@ void syscall_do()
 	 * instead of esi. */
 	case syscall_code_clone:
 	{
-		uint32_t flags, newsp, parent_tidptr, child_tidptr;
-		uint32_t supported_flags, mandatory_flags;
+		uint32_t flags;
+		uint32_t new_esp;
+		uint32_t parent_tid_ptr;
+		uint32_t child_tid_ptr;
+
+		int exit_signal;
+
+		char flags_str[MAX_STRING_SIZE];
 		struct ctx_t *new_ctx;
-		char sflags[MAX_STRING_SIZE];
 
+		/* Arguments */
 		flags = isa_regs->ebx;
-		newsp = isa_regs->ecx;
-		parent_tidptr = isa_regs->edx;
-		child_tidptr = isa_regs->edi;
-		syscall_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
-			flags, newsp, parent_tidptr, child_tidptr);
-		map_flags(&clone_flags_map, flags & ~0xff, sflags, MAX_STRING_SIZE);
-		syscall_debug("  flags=%s\n", sflags);
+		new_esp = isa_regs->ecx;
+		parent_tid_ptr = isa_regs->edx;
+		child_tid_ptr = isa_regs->edi;
 
-		if (!newsp)
-			newsp = isa_regs->esp;
+		/* Exit signal is specified in the lower byte of 'flags' */
+		exit_signal = flags & 0xff;
+		flags &= ~0xff;
+
+		/* Debug */
+		syscall_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
+			flags, new_esp, parent_tid_ptr, child_tid_ptr);
+		map_flags(&clone_flags_map, flags, flags_str, MAX_STRING_SIZE);
+		syscall_debug("  flags=%s\n", flags_str);
+
+		/* New stack pointer defaults to current */
+		if (!new_esp)
+			new_esp = isa_regs->esp;
 
 		/* Create new context */
 		new_ctx = ctx_clone(isa_ctx);
@@ -1993,41 +2044,53 @@ void syscall_do()
 		syscall_debug("  context %d created with pid %d\n",
 			new_ctx->pid, retval);
 
-		/* Check not supported and mandatory flags */
-		mandatory_flags = 0x00000f00;
-		supported_flags = 0x013d00ff | mandatory_flags;
-		if ((flags & mandatory_flags) != mandatory_flags) {
-			map_flags(&clone_flags_map, ~flags & mandatory_flags, sflags, MAX_STRING_SIZE);
-			fatal("syscall clone: these mandatory flags are not specified: %s",
-				sflags);
+		/* Check not supported flags */
+		if (flags & ~clone_supported_flags)
+		{
+			map_flags(&clone_flags_map, flags & ~clone_supported_flags,
+				flags_str, MAX_STRING_SIZE);
+			fatal("syscall 'clone': not supported flags: %s", flags_str);
 		}
-		if (flags & ~supported_flags) {
-			map_flags(&clone_flags_map, flags & ~supported_flags, sflags, MAX_STRING_SIZE);
-			fatal("syscall clone: one of these flags is specified and not supported: %s",
-				sflags);
+
+		/* Flag CLONE_VM */
+		if (flags & SIM_CLONE_VM)
+		{
+			/* CLONE_FS, CLONE_FILES, CLONE_SIGHAND must be there, too */
+			if (flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND) !=
+				(SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
+				fatal("syscall 'clone': not supported flags with CLONE_VM");
+		}
+		else
+		{
+			/* CLONE_FS, CLONE_FILES, CLONE_SIGHAND must not be there either */
+			if (flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
+				fatal("syscall 'clone': not supported flags with CLONE_VM");
+
+			/* FIXME - not implemented - needed for programs using fork() */
+			fatal("syscall 'clone': absence of flag CLONE_VM not supported");
 		}
 
 		/* Flag CLONE_THREAD.
 		 * If specified, the exit signal is ignored. Otherwise, it is specified in the
 		 * lower byte of the flags. */
-		if (flags & 0x10000) {
+		if (flags & SIM_CLONE_THREAD)
 			new_ctx->exit_signal = 0;
-		} else {
-			new_ctx->exit_signal = flags & 0xff;
-		}
+		else
+			new_ctx->exit_signal = exit_signal;
 
 		/* Flag CLONE_PARENT_SETTID */
-		if (flags & 0x100000)
-			mem_write(isa_ctx->mem, parent_tidptr, 4, &new_ctx->pid);
+		if (flags & SIM_CLONE_PARENT_SETTID)
+			mem_write(isa_ctx->mem, parent_tid_ptr, 4, &new_ctx->pid);
 
 		/* Flags CLONE_CHILD_SETTID and CLONE_CHILD_CLEARTID */
-		if (flags & 0x1000000)
-			new_ctx->set_child_tid = child_tidptr;
-		if (flags & 0x200000)
-			new_ctx->clear_child_tid = child_tidptr;
+		if (flags & SIM_CLONE_CHILD_SETTID)
+			new_ctx->set_child_tid = child_tid_ptr;
+		if (flags & SIM_CLONE_CHILD_CLEARTID)
+			new_ctx->clear_child_tid = child_tid_ptr;
 
 		/* Flag CLONE_SETTLS */
-		if (flags & 0x80000) {
+		if (flags & SIM_CLONE_SETTLS)
+		{
 			struct sim_user_desc uinfo;
 			uint32_t puinfo;
 
@@ -2048,8 +2111,6 @@ void syscall_do()
 			if (uinfo.limit_in_pages)
 				uinfo.limit <<= 12;
 
-			/*if (uinfo.entry_number != 6)
-				fatal("syscall clone: uinfo.entry_number=0x%x (!= 6)", uinfo.entry_number);*/
 			uinfo.entry_number = 6;
 			mem_write(isa_mem, puinfo, 4, &uinfo.entry_number);
 
@@ -2058,8 +2119,8 @@ void syscall_do()
 		}
 
 		/* New context returns 0. */
-		new_ctx->initial_stack = newsp;
-		new_ctx->regs->esp = newsp;
+		new_ctx->initial_stack = new_esp;
+		new_ctx->regs->esp = new_esp;
 		new_ctx->regs->eax = 0;
 
 		break;
@@ -2273,20 +2334,24 @@ void syscall_do()
 	/* 144 */
 	case syscall_code_msync:
 	{
-		uint32_t start, len, flags;
-		char sflags[MAX_STRING_SIZE];
+		uint32_t start;
+		uint32_t len;
+		uint32_t flags;
+
+		char flags_str[MAX_STRING_SIZE];
 
 		/* Parameters */
 		start = isa_regs->ebx;
 		len = isa_regs->ecx;
 		flags = isa_regs->edx;
-		map_flags(&msync_flags_map, flags, sflags, MAX_STRING_SIZE);
+		map_flags(&msync_flags_map, flags, flags_str, MAX_STRING_SIZE);
+
+		/* Debug */
 		syscall_debug("  start=0x%x, len=0x%x, flags=0x%x\n",
 			start, len, flags);
-		syscall_debug("  flags=%s\n", sflags);
+		syscall_debug("  flags=%s\n", flags_str);
 		
-		/* System call is ignored */
-		warning("syscall 'msync' ignored");
+		/* FIXME: system call is ignored */
 		break;
 	}
 
