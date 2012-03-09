@@ -223,7 +223,8 @@ struct regs_t
 	uint32_t eflags;
 
 	/* Floating-point unit */
-	struct {
+	struct
+	{
 		unsigned char value[10];
 		int valid;
 	} fpu_stack[8];
@@ -680,15 +681,15 @@ void isa_store_float(float value);
 void isa_store_double(double value);
 void isa_store_extended(uint8_t *value);
 
-void isa_dump_xmm(uint8_t *value, FILE *f);
-void isa_load_xmm(uint8_t *value);
-void isa_store_xmm(uint8_t *value);
-void isa_load_xmmm32(uint8_t *value);
-void isa_store_xmmm32(uint8_t *value);
-void isa_load_xmmm64(uint8_t *value);
-void isa_store_xmmm64(uint8_t *value);
-void isa_load_xmmm128(uint8_t *value);
-void isa_store_xmmm128(uint8_t *value);
+void isa_dump_xmm(unsigned char *value, FILE *f);
+void isa_load_xmm(unsigned char *value);
+void isa_store_xmm(unsigned char *value);
+void isa_load_xmmm32(unsigned char *value);
+void isa_store_xmmm32(unsigned char *value);
+void isa_load_xmmm64(unsigned char *value);
+void isa_store_xmmm64(unsigned char *value);
+void isa_load_xmmm128(unsigned char *value);
+void isa_store_xmmm128(unsigned char *value);
 
 void isa_double_to_extended(double f, uint8_t *e);
 double isa_extended_to_double(uint8_t *e);

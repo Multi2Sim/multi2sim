@@ -642,7 +642,7 @@ uint16_t isa_load_fpu_status()
  * XMM Registers
  */
 
-void isa_dump_xmm(uint8_t *value, FILE *f)
+void isa_dump_xmm(unsigned char *value, FILE *f)
 {
 	char *comma;
 	int i;
@@ -658,22 +658,23 @@ void isa_dump_xmm(uint8_t *value, FILE *f)
 }
 
 
-void isa_load_xmm(uint8_t *value)
+void isa_load_xmm(unsigned char *value)
 {
 	memcpy(value, &isa_regs->xmm[isa_inst.modrm_reg], 16);
 }
 
 
-void isa_store_xmm(uint8_t *value)
+void isa_store_xmm(unsigned char *value)
 {
 	memcpy(&isa_regs->xmm[isa_inst.modrm_reg], value, 16);
 }
 
 
 /* Load a 32-bit value into the lower 32 bits of 'value' */
-void isa_load_xmmm32(uint8_t *value)
+void isa_load_xmmm32(unsigned char *value)
 {
-	if (isa_inst.modrm_mod == 3) {
+	if (isa_inst.modrm_mod == 3)
+	{
 		memcpy(value, isa_regs->xmm[isa_inst.modrm_rm], 4);
 		return;
 	}
@@ -682,9 +683,10 @@ void isa_load_xmmm32(uint8_t *value)
 
 
 /* Store the low 32 bits of 'value' into an XMM register or memory */
-void isa_store_xmmm32(uint8_t *value)
+void isa_store_xmmm32(unsigned char *value)
 {
-	if (isa_inst.modrm_mod == 3) {
+	if (isa_inst.modrm_mod == 3)
+	{
 		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 4);
 		return;
 	}
@@ -694,9 +696,10 @@ void isa_store_xmmm32(uint8_t *value)
 
 /* Load a 64-bit value into the LSB of 'value'.
  * If 'value' is a 128-bit array, its upper 64 bits will not be initialized. */
-void isa_load_xmmm64(uint8_t *value)
+void isa_load_xmmm64(unsigned char *value)
 {
-	if (isa_inst.modrm_mod == 0x03) {
+	if (isa_inst.modrm_mod == 0x03)
+	{
 		memcpy(value, &isa_regs->xmm[isa_inst.modrm_rm], 8);
 		return;
 	}
@@ -705,9 +708,10 @@ void isa_load_xmmm64(uint8_t *value)
 
 
 /* Store the low 64 bits of 'value' into an XMM register or memory */
-void isa_store_xmmm64(uint8_t *value)
+void isa_store_xmmm64(unsigned char *value)
 {
-	if (isa_inst.modrm_mod == 0x03) {
+	if (isa_inst.modrm_mod == 0x03)
+	{
 		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 8);
 		return;
 	}
@@ -715,10 +719,11 @@ void isa_store_xmmm64(uint8_t *value)
 }
 
 
-/* Load a 128-bit value into 'value' */
-void isa_load_xmmm128(uint8_t *value)
+/* Load a 128-bit value into XMM register */
+void isa_load_xmmm128(unsigned char *value)
 {
-	if (isa_inst.modrm_mod == 3) {
+	if (isa_inst.modrm_mod == 3)
+	{
 		memcpy(value, isa_regs->xmm[isa_inst.modrm_rm], 16);
 		return;
 	}
@@ -727,9 +732,10 @@ void isa_load_xmmm128(uint8_t *value)
 
 
 /* Store a 128-bit value into an XMM register of 128-bit memory location. */
-void isa_store_xmmm128(uint8_t *value)
+void isa_store_xmmm128(unsigned char *value)
 {
-	if (isa_inst.modrm_mod == 3) {
+	if (isa_inst.modrm_mod == 3)
+	{
 		memcpy(&isa_regs->xmm[isa_inst.modrm_rm], value, 16);
 		return;
 	}

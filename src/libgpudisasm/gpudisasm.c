@@ -706,7 +706,8 @@ void amd_inst_dump_op_src_buf(struct amd_inst_t *inst, int src_idx, char **buf_p
 		str_printf(buf_ptr, size_ptr, "|");
 
 	/* 0..127: Value in GPR */
-	if (IN_RANGE(sel, 0, 127)) {
+	if (IN_RANGE(sel, 0, 127))
+	{
 		int index_mode;
 		index_mode = inst->words[0].alu_word0.index_mode;
 		amd_inst_dump_gpr_buf(sel, rel, chan, index_mode, buf_ptr, size_ptr);
@@ -714,43 +715,45 @@ void amd_inst_dump_op_src_buf(struct amd_inst_t *inst, int src_idx, char **buf_p
 	}
 
 	/* 128..159: Kcache constants in bank 0 */
-	if (IN_RANGE(sel, 128, 159)) {
+	if (IN_RANGE(sel, 128, 159))
+	{
 		str_printf(buf_ptr, size_ptr, "KC0[%d].%s", sel - 128, map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
 	/* 160..191: Kcache constants in bank 1 */
-	if (IN_RANGE(sel, 160, 191)) {
+	if (IN_RANGE(sel, 160, 191))
+	{
 		str_printf(buf_ptr, size_ptr, "KC1[%d].%s", sel - 160, map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
 	/* 256..287: Kcache constants in bank 2 */
-	if (IN_RANGE(sel, 256, 287)) {
+	if (IN_RANGE(sel, 256, 287))
+	{
 		str_printf(buf_ptr, size_ptr, "KC2[%d].%s", sel - 256, map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
 	/* 288..319: Kcache constant in bank 3 */
-	if (IN_RANGE(sel, 288, 319)) {
+	if (IN_RANGE(sel, 288, 319))
+	{
 		str_printf(buf_ptr, size_ptr, "KC3[%d].%s", sel - 288, map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
 	/* ALU_SRC_LITERAL */
-	if (sel == 253) {
-		uint32_t literal_int;
-		float literal_float;
-			
+	if (sel == 253)
+	{
 		assert(inst->alu_group);
-		literal_float = inst->alu_group->literal[chan];
-		literal_int = * (uint32_t *) &literal_float;
-		str_printf(buf_ptr, size_ptr, "(0x%08x, %.9ef).%s", literal_int, literal_float, map_value(&amd_alu_map, AMD_ALU_X + chan));
+		str_printf(buf_ptr, size_ptr, "(0x%08x, %.9ef).%s", inst->alu_group->literal[chan].as_uint,
+			inst->alu_group->literal[chan].as_float, map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}
 
 	/* ALU_SRC_PV */
-	if (sel == 254) {
+	if (sel == 254)
+	{
 		str_printf(buf_ptr, size_ptr, "PV.%s", map_value(&amd_alu_map, AMD_ALU_X + chan));
 		goto end;
 	}

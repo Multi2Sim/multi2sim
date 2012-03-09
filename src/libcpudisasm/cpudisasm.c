@@ -338,6 +338,11 @@ void x86_disasm_init()
 	struct x86_opcode_info_t *info;
 	int i;
 
+	/* Assertions on type sizes */
+	assert(sizeof(union x86_xmm_reg_t) == 16);
+	assert(sizeof(int) == 4);
+	assert(sizeof(long long) == 8);
+
 	/* Initialize table of prefixes */
 	for (i = 0; i < sizeof(x86_prefixes); i++)
 		x86_byte_is_prefix[x86_prefixes[i]] = 1;

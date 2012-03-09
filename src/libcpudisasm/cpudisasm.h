@@ -108,6 +108,19 @@ enum x86_flag_t
 	x86_flag_of = 11
 };
 
+/* XMM register */
+union x86_xmm_reg_t
+{
+	unsigned char as_uchar[16];
+	signed char as_char[16];
+
+	unsigned int as_uint[4];
+	signed int as_int[4];
+
+	unsigned long long as_uint64[2];
+	signed long long as_int64[2];
+};
+
 
 /* x86 Instruction */
 struct x86_inst_t
