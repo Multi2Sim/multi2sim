@@ -26,8 +26,8 @@
 
 
 /* Microcode Formats */
-enum fmt_enum {
-
+enum fmt_enum
+{
 	FMT_NONE = 0,
 
 	/* Control flow instructions */
@@ -84,8 +84,8 @@ enum fmt_enum {
 
 
 /* ALUs */
-enum amd_alu_enum {
-
+enum amd_alu_enum
+{
 	AMD_ALU_X = 0,
 	AMD_ALU_Y,
 	AMD_ALU_Z,
@@ -436,7 +436,8 @@ struct fmt_tex_word2_t
 
 extern struct string_map_t fmt_inst_category_map;
 
-enum amd_category_enum {
+enum amd_category_enum
+{
 	AMD_CAT_NONE = 0,
 
 	AMD_CAT_CF,  /* Control-flow instructions */
@@ -451,7 +452,8 @@ enum amd_category_enum {
 };
 
 
-enum amd_inst_flags_enum {
+enum amd_inst_flags_enum
+{
 	AMD_INST_FLAG_NONE		= 0x0000,
 	AMD_INST_FLAG_TRANS_ONLY	= 0x0001,  /* Only executable in transcendental unit */
 	AMD_INST_FLAG_INC_LOOP_IDX      = 0x0002,  /* CF inst increasing loop depth index */
@@ -468,7 +470,8 @@ enum amd_inst_flags_enum {
 };
 
 
-enum amd_inst_enum {
+enum amd_inst_enum
+{
 	AMD_INST_NONE = 0,
 
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _cf_inst, _flags) \
@@ -481,8 +484,8 @@ enum amd_inst_enum {
 };
 
 
-union amd_inst_word_t {
-
+union amd_inst_word_t
+{
 	char bytes[4];
 
 	struct fmt_cf_word0_t cf_word0;
@@ -532,8 +535,8 @@ struct amd_inst_info_t {
 };
 
 
-struct amd_inst_t {
-	
+struct amd_inst_t
+{
 	/* Basic instruction info */
 	struct amd_inst_info_t *info;  /* Pointer to 'amd_inst_info' table */
 	union amd_inst_word_t words[AMD_INST_MAX_WORDS];
@@ -552,7 +555,13 @@ struct amd_alu_group_t
 	int inst_count;  /* Number of instruction slots (max. 5) */
 	int literal_count;  /* Number of literal constant slots (max. 2) */
 	struct amd_inst_t inst[ALU_GROUP_INST_COUNT_MAX];
-	float literal[ALU_GROUP_LITERAL_COUNT_MAX];  /* Literals for X,Y,Z,W elements */
+
+	/* Literals for X, Y, Z, and W elements */
+	union
+	{
+		uint32_t as_uint;
+		float as_float;
+	} literal[ALU_GROUP_LITERAL_COUNT_MAX];
 };
 
 

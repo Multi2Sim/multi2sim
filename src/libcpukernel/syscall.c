@@ -2056,7 +2056,7 @@ void syscall_do()
 		if (flags & SIM_CLONE_VM)
 		{
 			/* CLONE_FS, CLONE_FILES, CLONE_SIGHAND must be there, too */
-			if (flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND) !=
+			if ((flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND)) !=
 				(SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
 				fatal("syscall 'clone': not supported flags with CLONE_VM");
 		}
