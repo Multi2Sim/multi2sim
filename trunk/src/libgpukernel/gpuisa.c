@@ -235,14 +235,18 @@ void gpu_isa_write_gpr_float(int gpr, int rel, int chan, float value_float)
  * This is a common function for both integer and float formats. */
 static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_ptr)
 {
-	int sel, rel, chan;
+	int sel;
+	int rel;
+	int chan;
+
 	int32_t value = 0;  /* Signed, for negative constants and abs operations */
 
 	/* Get the source operand parameters */
 	amd_inst_get_op_src(gpu_isa_inst, src_idx, &sel, &rel, &chan, neg_ptr, abs_ptr);
 
 	/* 0..127: Value in GPR */
-	if (IN_RANGE(sel, 0, 127)) {
+	if (IN_RANGE(sel, 0, 127))
+	{
 		int index_mode;
 		index_mode = gpu_isa_inst->words[0].alu_word0.index_mode;
 		value = gpu_isa_read_gpr(sel, rel, chan, index_mode);
@@ -250,8 +254,8 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	}
 
 	/* 128..159: Kcache 0 constant */
-	if (IN_RANGE(sel, 128, 159)) {
-
+	if (IN_RANGE(sel, 128, 159))
+	{
 		uint32_t kcache_bank, kcache_mode, kcache_addr;
 
 		assert(gpu_isa_cf_inst->info->fmt[0] == FMT_CF_ALU_WORD0 && gpu_isa_cf_inst->info->fmt[1] == FMT_CF_ALU_WORD1);
@@ -266,7 +270,8 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	}
 
 	/* 160..191: Kcache 1 constant */
-	if (IN_RANGE(sel, 160, 191)) {
+	if (IN_RANGE(sel, 160, 191))
+	{
 
 		uint32_t kcache_bank, kcache_mode, kcache_addr;
 
@@ -282,7 +287,8 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	}
 
 	/* QA and QA.pop */
-	if (sel == 219 || sel == 221) {
+	if (sel == 219 || sel == 221)
+	{
 		uint32_t *pvalue;
 		pvalue = (uint32_t *) list_dequeue(gpu_isa_work_item->lds_oqa);
 		if (!pvalue)
@@ -296,7 +302,8 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	}
 
 	/* QB and QB.pop */
-	if (sel == 220 || sel == 222) {
+	if (sel == 220 || sel == 222)
+	{
 		uint32_t *pvalue;
 		pvalue = (uint32_t *) list_dequeue(gpu_isa_work_item->lds_oqb);
 		if (!pvalue)
@@ -310,54 +317,62 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	}
 
 	/* ALU_SRC_0 */
-	if (sel == 248) {
+	if (sel == 248)
+	{
 		value = 0;
 		return value;
 	}
 
 	/* ALU_SRC_1 */
-	if (sel == 249) {
+	if (sel == 249)
+	{
 		float f = 1.0f;
 		value = * (uint32_t *) &f;
 		return value;
 	}
 
 	/* ALU_SRC_1_INT */
-	if (sel == 250) {
+	if (sel == 250)
+	{
 		value = 1;
 		return value;
 	}
 
 	/* ALU_SRC_M_1_INT */
-	if (sel == 251) {
+	if (sel == 251)
+	{
 		value = -1;
 		return value;
 	}
 
 	/* ALU_SRC_0_5 */
-	if (sel == 252) {
+	if (sel == 252)
+	{
 		float f = 0.5f;
 		value = * (uint32_t *) &f;
 		return value;
 	}
 
 	/* ALU_SRC_LITERAL */
-	if (sel == 253) {
+	if (sel == 253)
+	{
 		assert(gpu_isa_inst->alu_group);
 		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
-		value = * (uint32_t *) &gpu_isa_inst->alu_group->literal[chan];
+		value = gpu_isa_inst->alu_group->literal[chan].as_uint;
 		return value;
 	}
 
 	/* ALU_SRC_PV */
-	if (sel == 254) {
+	if (sel == 254)
+	{
 		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
 		value = gpu_isa_work_item->pv.elem[chan];
 		return value;
 	}
 
 	/* ALU_SRC_PS */
-	if (sel == 255) {
+	if (sel == 255)
+	{
 		value = gpu_isa_work_item->pv.elem[4];
 		return value;
 	}

@@ -103,13 +103,12 @@ void op_movaps_xmmm128_xmm_impl()
 
 void op_movd_xmm_rm32_impl()
 {
-	uint8_t xmm[16];
-	uint32_t value = isa_load_rm32();
+	union x86_xmm_reg_t xmm;
 
-	memset(xmm, 0, 16);
-	* (uint32_t *) xmm = value;
+	memset(xmm.as_uchar, 0, sizeof xmm);
+	xmm.as_uint[0] = isa_load_rm32();
 
-	isa_store_xmm(xmm);
+	isa_store_xmm(xmm.as_uchar);
 
 	x86_uinst_new(x86_uinst_xmm_move, x86_dep_rm32, 0, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -117,13 +116,10 @@ void op_movd_xmm_rm32_impl()
 
 void op_movd_rm32_xmm_impl()
 {
-	uint8_t xmm[16];
-	uint32_t value;
+	union x86_xmm_reg_t xmm;
 
-	isa_load_xmm(xmm);
-	value = * (uint32_t *) xmm;
-
-	isa_store_rm32(value);
+	isa_load_xmm(xmm.as_uchar);
+	isa_store_rm32(xmm.as_uint[0]);
 
 	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_rm32, 0, 0, 0);
 }
@@ -131,7 +127,7 @@ void op_movd_rm32_xmm_impl()
 
 void op_movdqa_xmm_xmmm128_impl()
 {
-	uint8_t xmm[16];
+	unsigned char xmm[16];
 
 	isa_load_xmmm128(xmm);
 	isa_store_xmm(xmm);
@@ -175,13 +171,11 @@ void op_movdqu_xmmm128_xmm_impl()
 
 void op_movhpd_xmm_m64_impl()
 {
-	uint64_t m64;
-	uint8_t xmm[16];
+	union x86_xmm_reg_t xmm;
 
-	isa_load_xmm(xmm);
-	m64 = isa_load_m64();
-	* (uint64_t *) &xmm[8] = m64;
-	isa_store_xmm(xmm);
+	isa_load_xmm(xmm.as_uchar);
+	xmm.as_uint64[1] = isa_load_m64();
+	isa_store_xmm(xmm.as_uchar);
 
 	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -189,12 +183,10 @@ void op_movhpd_xmm_m64_impl()
 
 void op_movhpd_m64_xmm_impl()
 {
-	uint64_t m64;
-	uint8_t xmm[16];
+	union x86_xmm_reg_t xmm;
 
-	isa_load_xmm(xmm);
-	m64 = * (uint64_t *) &xmm[8];
-	isa_store_m64(m64);
+	isa_load_xmm(xmm.as_uchar);
+	isa_store_m64(xmm.as_uint64[1]);
 
 	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm64, 0, 0, 0);
 }
@@ -202,13 +194,11 @@ void op_movhpd_m64_xmm_impl()
 
 void op_movlpd_xmm_m64_impl()
 {
-	uint64_t m64;
-	uint8_t xmm[16];
+	union x86_xmm_reg_t xmm;
 
-	isa_load_xmm(xmm);
-	m64 = isa_load_m64();
-	* (uint64_t *) xmm = m64;
-	isa_store_xmm(xmm);
+	isa_load_xmm(xmm.as_uchar);
+	xmm.as_uint64[0] = isa_load_m64();
+	isa_store_xmm(xmm.as_uchar);
 
 	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmmm64, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
@@ -216,12 +206,10 @@ void op_movlpd_xmm_m64_impl()
 
 void op_movlpd_m64_xmm_impl()
 {
-	uint64_t m64;
-	uint8_t xmm[16];
+	union x86_xmm_reg_t xmm;
 
-	isa_load_xmm(xmm);
-	m64 = * (uint64_t *) xmm;
-	isa_store_m64(m64);
+	isa_load_xmm(xmm.as_uchar);
+	isa_store_m64(xmm.as_uint64[0]);
 
 	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm64, 0, 0, 0);
 }
