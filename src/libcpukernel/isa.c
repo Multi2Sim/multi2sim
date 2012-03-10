@@ -644,14 +644,18 @@ uint16_t isa_load_fpu_status()
 
 void isa_dump_xmm(unsigned char *value, FILE *f)
 {
+	union x86_xmm_reg_t *xmm;
 	char *comma;
 	int i;
+
+	xmm = (union x86_xmm_reg_t *) value;
 	for (i = 0; i < 16; i++)
-		fprintf(f, "%02x ", value[i]);
+		fprintf(f, "%02x ", xmm->as_uchar[i]);
 
 	comma = "(";
-	for (i = 0; i < 4; i++) {
-		fprintf(f, "%s%g", comma, * (float *) (value + i * 4));
+	for (i = 0; i < 4; i++)
+	{
+		fprintf(f, "%s%g", comma, xmm->as_float[i]);
 		comma = ", ";
 	}
 	fprintf(f, ")");

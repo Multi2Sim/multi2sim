@@ -365,10 +365,11 @@ void amd_inst_MEM_RAT_impl()
 	/* STORE_RAW */
 	case 1:
 		/* FIXME Need to support multiple elements (multi-channel images) */
-	case 2: {
-		
-		uint32_t value, addr;
-		float value_float;
+	case 2:
+	{
+		uint32_t addr;
+		union amd_reg_t value;
+
 		int work_item_id;
 		int i;
 		int uav;
@@ -440,15 +441,14 @@ void amd_inst_MEM_RAT_impl()
 				gpu_isa_work_item->global_mem_access_size += 4;
 
 				/* Access */
-				value = gpu_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
-				value_float = * (float *) &value;
+				value.as_uint = gpu_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
 
 				/* FIXME: leave gaps when intermediate 'comp_mask' bits are not set? */
 				mem_write(gk->global_mem, addr + i * 4, 4, &value);
 				gpu_isa_debug(",");
 				if (debug_status(gpu_isa_debug_category))
 					amd_inst_dump_gpr(W0.rw_gpr, W0.rr, i, 0, debug_file(gpu_isa_debug_category));
-				gpu_isa_debug("=(0x%x,%gf)", value, value_float);
+				gpu_isa_debug("=(0x%x,%gf)", value.as_uint, value.as_float);
 			}
 			/* FIXME: array_size: ignored now, because 'burst_count' = 0 */
 			/* FIXME: rat_id */
@@ -469,13 +469,15 @@ void amd_inst_MEM_RAT_impl()
 #define W1  CF_ALLOC_EXPORT_WORD1_BUF
 void amd_inst_MEM_RAT_CACHELESS_impl()
 {
-	switch (W0.rat_inst) {
+	switch (W0.rat_inst)
+	{
 
 	/* STORE_RAW */
-	case 2: {
-		
-		uint32_t value, addr;
-		float value_float;
+	case 2:
+	{
+		union amd_reg_t value;
+		uint32_t addr;
+
 		int work_item_id;
 		int i;
 
@@ -521,8 +523,8 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 			gpu_isa_work_item->global_mem_access_addr = addr;
 			gpu_isa_work_item->global_mem_access_size = 0;
 
-			for (i = 0; i < 4; i++) {
-				
+			for (i = 0; i < 4; i++)
+			{
 				/* If component is masked, skip */
 				if (!(W1.comp_mask & (1 << i)))
 					continue;
@@ -532,15 +534,14 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 				gpu_isa_work_item->global_mem_access_size += 4;
 
 				/* Access */
-				value = gpu_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
-				value_float = * (float *) &value;
+				value.as_uint = gpu_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
 
 				/* FIXME: leave gaps when intermediate 'comp_mask' bits are not set? */
 				mem_write(gk->global_mem, addr + i * 4, 4, &value);
 				gpu_isa_debug(",");
 				if (debug_status(gpu_isa_debug_category))
 					amd_inst_dump_gpr(W0.rw_gpr, W0.rr, i, 0, debug_file(gpu_isa_debug_category));
-				gpu_isa_debug("=(0x%x,%gf)", value, value_float);
+				gpu_isa_debug("=(0x%x,%gf)", value.as_uint, value.as_float);
 			}
 			/* FIXME: array_size: ignored now, because 'burst_count' = 0 */
 			/* FIXME: rat_id */
@@ -987,7 +988,7 @@ void amd_inst_PRED_SETGE_UINT_impl() {
 void amd_inst_PRED_SETE_impl()
 {
 	float src0, src1;
-	float dst;
+	union amd_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -998,8 +999,8 @@ void amd_inst_PRED_SETE_impl()
 	src0 = gpu_isa_read_op_src_float(0);
 	src1 = gpu_isa_read_op_src_float(1);
 	cond = src0 == src1;
-	dst = cond ? 0.0f : 1.0f;
-	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
+	dst.as_float = cond ? 0.0f : 1.0f;
+	gpu_isa_enqueue_write_dest(dst.as_uint);
 
 	/* Active masks */
 	gpu_isa_enqueue_push_before();
@@ -1014,7 +1015,7 @@ void amd_inst_PRED_SETE_impl()
 void amd_inst_PRED_SETGT_impl()
 {
 	float src0, src1;
-	float dst;
+	union amd_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1025,8 +1026,8 @@ void amd_inst_PRED_SETGT_impl()
 	src0 = gpu_isa_read_op_src_float(0);
 	src1 = gpu_isa_read_op_src_float(1);
 	cond = src0 > src1;
-	dst = cond ? 0.0f : 1.0f;
-	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
+	dst.as_float = cond ? 0.0f : 1.0f;
+	gpu_isa_enqueue_write_dest(dst.as_uint);
 
 	/* Active masks */
 	gpu_isa_enqueue_push_before();
@@ -1041,7 +1042,7 @@ void amd_inst_PRED_SETGT_impl()
 void amd_inst_PRED_SETGE_impl()
 {
 	float src0, src1;
-	float dst;
+	union amd_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1052,8 +1053,8 @@ void amd_inst_PRED_SETGE_impl()
 	src0 = gpu_isa_read_op_src_float(0);
 	src1 = gpu_isa_read_op_src_float(1);
 	cond = src0 >= src1;
-	dst = cond ? 0.0f : 1.0f;
-	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
+	dst.as_float = cond ? 0.0f : 1.0f;
+	gpu_isa_enqueue_write_dest(dst.as_uint);
 
 	/* Active masks */
 	gpu_isa_enqueue_push_before();
@@ -1068,7 +1069,7 @@ void amd_inst_PRED_SETGE_impl()
 void amd_inst_PRED_SETNE_impl()
 {
 	float src0, src1;
-	float dst;
+	union amd_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1079,8 +1080,8 @@ void amd_inst_PRED_SETNE_impl()
 	src0 = gpu_isa_read_op_src_float(0);
 	src1 = gpu_isa_read_op_src_float(1);
 	cond = src0 != src1;
-	dst = cond ? 0.0f : 1.0f;
-	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
+	dst.as_float = cond ? 0.0f : 1.0f;
+	gpu_isa_enqueue_write_dest(dst.as_uint);
 
 	/* Active masks */
 	gpu_isa_enqueue_push_before();
@@ -1397,7 +1398,7 @@ void amd_inst_KILLGE_UINT_impl() {
 void amd_inst_PREDE_INT_impl()
 {
 	int32_t src0, src1;
-	float dst;
+	union amd_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1408,8 +1409,8 @@ void amd_inst_PREDE_INT_impl()
 	src0 = gpu_isa_read_op_src_int(0);
 	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 == src1;
-	dst = cond ? 0.0f : 1.0f;
-	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
+	dst.as_float = cond ? 0.0f : 1.0f;
+	gpu_isa_enqueue_write_dest(dst.as_uint);
 
 	/* Active masks */
 	gpu_isa_enqueue_push_before();
@@ -1424,7 +1425,7 @@ void amd_inst_PREDE_INT_impl()
 void amd_inst_PRED_SETGE_INT_impl()
 {
 	int32_t src0, src1;
-	float dst;
+	union amd_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1435,8 +1436,8 @@ void amd_inst_PRED_SETGE_INT_impl()
 	src0 = gpu_isa_read_op_src_int(0);
 	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 >= src1;
-	dst = cond ? 0.0f : 1.0f;
-	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
+	dst.as_float = cond ? 0.0f : 1.0f;
+	gpu_isa_enqueue_write_dest(dst.as_uint);
 
 	/* Active masks */
 	gpu_isa_enqueue_push_before();
@@ -1451,7 +1452,7 @@ void amd_inst_PRED_SETGE_INT_impl()
 void amd_inst_PRED_SETGT_INT_impl()
 {
 	int32_t src0, src1;
-	float dst;
+	union amd_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1462,8 +1463,8 @@ void amd_inst_PRED_SETGT_INT_impl()
 	src0 = gpu_isa_read_op_src_int(0);
 	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 > src1;
-	dst = cond ? 0.0f : 1.0f;
-	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
+	dst.as_float = cond ? 0.0f : 1.0f;
+	gpu_isa_enqueue_write_dest(dst.as_uint);
 
 	/* Active masks */
 	gpu_isa_enqueue_push_before();
@@ -1478,7 +1479,7 @@ void amd_inst_PRED_SETGT_INT_impl()
 void amd_inst_PRED_SETNE_INT_impl()
 {
 	int32_t src0, src1;
-	float dst;
+	union amd_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1489,8 +1490,8 @@ void amd_inst_PRED_SETNE_INT_impl()
 	src0 = gpu_isa_read_op_src_int(0);
 	src1 = gpu_isa_read_op_src_int(1);
 	cond = src0 != src1;
-	dst = cond ? 0.0f : 1.0f;
-	gpu_isa_enqueue_write_dest(* (uint32_t *) &dst);
+	dst.as_float = cond ? 0.0f : 1.0f;
+	gpu_isa_enqueue_write_dest(dst.as_uint);
 
 	/* Active masks */
 	gpu_isa_enqueue_push_before();
@@ -2380,12 +2381,16 @@ void amd_inst_LDS_IDX_OP_impl()
 	/* DS_INST_READ_RET: 1A READ(dst) : OQA = DS(dst) */
 	case 50:
 	{
-		uint32_t *pvalue;
+		union amd_reg_t *value_ptr;
 
-		pvalue = malloc(4);
-		mem_read(local_mem, op0, 4, pvalue);
-		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue);
-		gpu_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA", gpu_isa_work_item->id, op0, *pvalue, * (float *) pvalue);
+		value_ptr = malloc(4);
+		if (!value_ptr)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		mem_read(local_mem, op0, 4, value_ptr);
+		list_enqueue(gpu_isa_work_item->lds_oqa, value_ptr);
+		gpu_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA",
+			gpu_isa_work_item->id, op0, value_ptr->as_uint, value_ptr->as_float);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -2399,16 +2404,23 @@ void amd_inst_LDS_IDX_OP_impl()
 	/* DS_INST_READ2_RET: 2A READ2(dst0,dst1)
 	 *   OQA=DS(dst0)
 	 *   OQB=DS(dst1) */
-	case 52: {
-		uint32_t *pvalue;
+	case 52:
+	{
+		union amd_reg_t *value_ptr;
 
-		pvalue = malloc(4);
-		mem_read(local_mem, op0, 4, pvalue);
-		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue);
+		value_ptr = malloc(4);
+		if (!value_ptr)
+			fatal("%s: out of memory", __FUNCTION__);
 
-		pvalue = malloc(4);
-		mem_read(local_mem, op1, 4, pvalue);
-		list_enqueue(gpu_isa_work_item->lds_oqb, pvalue);
+		mem_read(local_mem, op0, 4, value_ptr);
+		list_enqueue(gpu_isa_work_item->lds_oqa, value_ptr);
+
+		value_ptr = malloc(4);
+		if (!value_ptr)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		mem_read(local_mem, op1, 4, value_ptr);
+		list_enqueue(gpu_isa_work_item->lds_oqb, value_ptr);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 2;
@@ -2430,7 +2442,11 @@ void amd_inst_LDS_IDX_OP_impl()
 		int32_t *pvalue_se; 
 
 		mem_read(local_mem, op0, 1, &value);
+
 		pvalue_se = malloc(4);
+		if (!pvalue_se)
+			fatal("%s: out of memory", __FUNCTION__);
+
 		*pvalue_se = value;
 		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_se);
 
@@ -2451,7 +2467,11 @@ void amd_inst_LDS_IDX_OP_impl()
 		uint32_t *pvalue_24h0;
 
 		mem_read(local_mem, op0, 1, &value);
+
 		pvalue_24h0 = malloc(4);
+		if (!pvalue_24h0)
+			fatal("%s: out of memory", __FUNCTION__);
+
 		*pvalue_24h0 = value;
 		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_24h0);
 
@@ -2471,7 +2491,11 @@ void amd_inst_LDS_IDX_OP_impl()
 		int32_t *pvalue_se;
 
 		mem_read(local_mem, op0, 2, &value);
+
 		pvalue_se = malloc(4);
+		if (!pvalue_se)
+			fatal("%s: out of memory", __FUNCTION__);
+
 		*pvalue_se = value;
 		gpu_isa_debug("  t%d: %d (pvalue = %d)", gpu_isa_work_item->id, value, *pvalue_se);
 		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_se);
@@ -2492,7 +2516,11 @@ void amd_inst_LDS_IDX_OP_impl()
 		uint32_t *pvalue_16h0;
 
 		mem_read(local_mem, op0, 2, &value);
+
 		pvalue_16h0 = malloc(4);
+		if (!pvalue_16h0)
+			fatal("%s: out of memory", __FUNCTION__);
+
 		*pvalue_16h0 = value;
 		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_16h0);
 
@@ -2670,16 +2698,17 @@ void amd_inst_FETCH_impl()
 	base_addr = 0;
 	
 	/* Data type information is either stored in instruction or constant fields */
-	if (W1.use_const_fields) {
-
+	if (W1.use_const_fields)
+	{
 		/* Don't know what these buffers are */
-		if (W0.buffer_id < 130) {
-
+		if (W0.buffer_id < 130)
+		{
 			fatal("Fetch instruction has unknown buffer ID (%d)\n", W0.buffer_id);
 		}
-		/* Information is in a constant buffer (filled by us) */
-		else if (W0.buffer_id >= 130 && W0.buffer_id < 153) { /* FIXME Verify that 153 is correct */
 
+		/* Information is in a constant buffer (filled by us) */
+		else if (W0.buffer_id >= 130 && W0.buffer_id < 153)
+		{ /* FIXME Verify that 153 is correct */
 			mem = list_get(gpu_isa_ndrange->kernel->constant_buffer_list, W0.buffer_id-128);
 			if(!mem) 
 				fatal("No table entry for constant UAV %d\n", W0.buffer_id);
@@ -2691,50 +2720,59 @@ void amd_inst_FETCH_impl()
 			elem_size = 4;
 			num_elem = 4; 
 		}
+
 		/* Data is a 32-bit type (cached) */
-		else if (W0.buffer_id >= 144 && W0.buffer_id <= 153) {
-
+		else if (W0.buffer_id >= 144 && W0.buffer_id <= 153)
+		{
 			elem_size = 4;
 			num_elem = 1;
 		}
+
 		/* Data is a 32-bit type (uncached -- though we cache it anyway) */
-		else if ((W0.buffer_id >= 154 && W0.buffer_id <= 164) || W0.buffer_id == 173) {
-
+		else if ((W0.buffer_id >= 154 && W0.buffer_id <= 164) || W0.buffer_id == 173)
+		{
 			elem_size = 4;
 			num_elem = 1;
 		}
+
 		/* Data is a 32-bit type (global return buffer) */
-		else if (W0.buffer_id >= 165 && W0.buffer_id <= 172) {
-
+		else if (W0.buffer_id >= 165 && W0.buffer_id <= 172)
+		{
 			elem_size = 4;
 			num_elem = 1;
 		}
-		/* Data is a 64-bit type (cached) */
-		else if (W0.buffer_id == 174) {
 
+		/* Data is a 64-bit type (cached) */
+		else if (W0.buffer_id == 174)
+		{
 			elem_size = 4;
 			num_elem = 2;
 		}
+
 		/* Data is a 128-bit type (cached) */
-		else if (W0.buffer_id == 175) {
+		else if (W0.buffer_id == 175)
+		{
 
 			elem_size = 4;
 			num_elem = 4;
 		}
-		else {
+		else
+		{
 
 			fatal("Fetch instruction has unknown buffer ID (%d)\n", 
 					W0.buffer_id);
 		}
-
-	} else {
+	}
+	else
+	{
 		/* Format is defined within instruction */
 		data_format = W1.data_format;
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.num_format_all, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.format_comp_all, 0);
 		GPU_PARAM_NOT_SUPPORTED_NEQ(W1.srf_mode_all, 0);
 
-		switch (data_format) {
+		switch (data_format)
+		{
 
 		case 35:  /* DATA_FORMAT_32_32_32_32_FLOAT */
 		case 34:  /* DATA_FORMAT_32_32_32_32 */
@@ -2835,11 +2873,12 @@ void amd_inst_FETCH_impl()
 	gpu_isa_work_item->global_mem_access_size = num_elem * elem_size;
 
 	/* Write to each component of the GPR */
-	for (i = 0; i < 4; i++) {
-
+	for (i = 0; i < 4; i++)
+	{
 		/* Get index of read word to place in this GPR component */
 		dst_sel_elem = dst_sel[i];
-		switch (dst_sel_elem) {
+		switch (dst_sel_elem)
+		{
 
 		case 0:  /* SEL_X */
 		case 1:  /* SEL_Y */
@@ -2850,10 +2889,13 @@ void amd_inst_FETCH_impl()
 				GPU_PARAM_NOT_SUPPORTED(dst_sel_elem);
 
 			gpu_isa_write_gpr(W1.dst_gpr, W1.dst_rel, i, value[dst_sel_elem]);
-			if (debug_status(gpu_isa_debug_category)) {
+			if (debug_status(gpu_isa_debug_category))
+			{
+				union amd_reg_t reg;
+				reg.as_uint = value[dst_sel_elem];
 				gpu_isa_debug(" ");
 				amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, dst_sel_elem, debug_file(gpu_isa_debug_category));
-				gpu_isa_debug("<=(%d,%gf)", value[dst_sel_elem], * (float *) &value[dst_sel_elem]);
+				gpu_isa_debug("<=(%d,%gf)", reg.as_uint, reg.as_float);
 			}
 			break;
 
@@ -2939,13 +2981,12 @@ void amd_inst_LD_impl() {
 #define W0  TEX_WORD0
 #define W1  TEX_WORD1
 #define W2  TEX_WORD2
-void amd_inst_SAMPLE_impl() {
-
+void amd_inst_SAMPLE_impl()
+{
 	int i;
 	uint32_t base_addr;
-	uint32_t addr;
-	float f_addr; 
-	uint32_t value;
+	union amd_reg_t addr;
+	union amd_reg_t value;
 	int dst_sel[4], dst_sel_elem;
 	struct opencl_mem_t *image;
 
@@ -2989,14 +3030,13 @@ void amd_inst_SAMPLE_impl() {
 
 	/* Calculate read address */
 	base_addr = image->device_ptr;
-	addr = gpu_isa_read_gpr(W0.src_gpr, 0, 0, 0);  /* FIXME Always reads from X */ 
-	f_addr = * (float *) &addr;
-	addr = base_addr + (uint32_t)round(f_addr) * pixel_size;
+	addr.as_uint = gpu_isa_read_gpr(W0.src_gpr, 0, 0, 0);  /* FIXME Always reads from X */ 
+	addr.as_uint = base_addr + (uint32_t) round(addr.as_float) * pixel_size;
 
-	mem_read(gk->global_mem, addr, pixel_size, &value);
+	mem_read(gk->global_mem, addr.as_uint, pixel_size, &value);
 
-	gpu_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr);
-	gpu_isa_debug("<=(%d,%gf) ", value, * (float *) &value);
+	gpu_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr.as_uint);
+	gpu_isa_debug("<=(%d,%gf) ", value.as_int, value.as_float);
 
 	/* Do not fetch for inactive work_items */
 	if (!gpu_work_item_get_active(gpu_isa_work_item))
@@ -3010,7 +3050,7 @@ void amd_inst_SAMPLE_impl() {
 	
 	/* Record global memory access */
 	gpu_isa_wavefront->global_mem_read = 1;
-	gpu_isa_work_item->global_mem_access_addr = addr;
+	gpu_isa_work_item->global_mem_access_addr = addr.as_uint;
 	gpu_isa_work_item->global_mem_access_size = pixel_size;
 
 	/* Write to each component of the GPR */
@@ -3027,11 +3067,12 @@ void amd_inst_SAMPLE_impl() {
 
 			if (dst_sel_elem >= image->num_channels_per_pixel)
 				GPU_PARAM_NOT_SUPPORTED(dst_sel_elem);
-			gpu_isa_write_gpr(W1.dst_gpr, W1.dr, i, value);
-			if (debug_status(gpu_isa_debug_category)) {
+			gpu_isa_write_gpr(W1.dst_gpr, W1.dr, i, value.as_uint);
+			if (debug_status(gpu_isa_debug_category))
+			{
 				gpu_isa_debug(" ");
 				amd_inst_dump_gpr(W1.dst_gpr, W1.dr, i, dst_sel_elem, debug_file(gpu_isa_debug_category));
-				gpu_isa_debug("<=(%d,%gf)", value, * (float *) &value);
+				gpu_isa_debug("<=(%d,%gf)", value.as_int, value.as_float);
 			}
 			break;
 

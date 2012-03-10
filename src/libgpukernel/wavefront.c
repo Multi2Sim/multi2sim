@@ -31,11 +31,18 @@ struct gpu_wavefront_t *gpu_wavefront_create()
 {
 	struct gpu_wavefront_t *wavefront;
 
+	/* Allocate */
 	wavefront = calloc(1, sizeof(struct gpu_wavefront_t));
+	if (!wavefront)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	wavefront->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * gpu_wavefront_size);
 	wavefront->pred = bit_map_create(gpu_wavefront_size);
 	/* FIXME: Remove once loop state is part of stack */
 	wavefront->loop_depth = 0;
+
+	/* Return */
 	return wavefront;
 }
 
@@ -52,8 +59,8 @@ void gpu_wavefront_free(struct gpu_wavefront_t *wavefront)
 /* Comparison function to sort list */
 static int gpu_wavefront_divergence_compare(const void *elem1, const void *elem2)
 {
-	int count1 = * (int *) elem1;
-	int count2 = * (int *) elem2;
+	const int count1 = * (const int *) elem1;
+	const int count2 = * (const int *) elem2;
 	
 	if (count1 < count2)
 		return 1;

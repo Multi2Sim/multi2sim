@@ -119,6 +119,9 @@ union x86_xmm_reg_t
 
 	unsigned long long as_uint64[2];
 	signed long long as_int64[2];
+
+	float as_float[4];
+	double as_double[2];
 };
 
 
