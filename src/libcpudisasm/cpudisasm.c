@@ -339,9 +339,10 @@ void x86_disasm_init()
 	int i;
 
 	/* Assertions on type sizes */
-	assert(sizeof(union x86_xmm_reg_t) == 16);
+	assert(sizeof(short int) == 2);
 	assert(sizeof(int) == 4);
-	assert(sizeof(long long) == 8);
+	assert(sizeof(long long int) == 8);
+	assert(sizeof(union x86_xmm_reg_t) == 16);
 
 	/* Initialize table of prefixes */
 	for (i = 0; i < sizeof(x86_prefixes); i++)

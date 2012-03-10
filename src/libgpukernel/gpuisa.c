@@ -174,19 +174,19 @@ void gpu_isa_tc_clause_end()
 
 /* Dump a destination value depending on the format of the destination operand
  * in the current instruction, as specified by its flags. */
-void gpu_isa_dest_value_dump(void *pvalue, FILE *f)
+void gpu_isa_dest_value_dump(void *value_ptr, FILE *f)
 {
 	if (gpu_isa_inst->info->flags & AMD_INST_FLAG_DST_INT)
-		fprintf(f, "%d", * (int *) pvalue);
+		fprintf(f, "%d", * (int *) value_ptr);
 	
 	else if (gpu_isa_inst->info->flags & AMD_INST_FLAG_DST_UINT)
-		fprintf(f, "0x%x", * (unsigned int *) pvalue);
+		fprintf(f, "0x%x", * (unsigned int *) value_ptr);
 	
 	else if (gpu_isa_inst->info->flags & AMD_INST_FLAG_DST_FLOAT)
-		fprintf(f, "%gf", * (float *) pvalue);
+		fprintf(f, "%gf", * (float *) value_ptr);
 	
 	else
-		fprintf(f, "(0x%x,%gf)", * (unsigned int *) pvalue, * (float *) pvalue);
+		fprintf(f, "(0x%x,%gf)", * (unsigned int *) value_ptr, * (float *) value_ptr);
 }
 
 
@@ -204,12 +204,10 @@ uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im)
 /* Read source GPR in float format */
 float gpu_isa_read_gpr_float(int gpr, int rel, int chan, int im)
 {
-	uint32_t value;
-	float value_float;
+	union amd_reg_t reg;
 
-	value = gpu_isa_read_gpr(gpr, rel, chan, im);
-	value_float = * (float *) &value;
-	return value_float;
+	reg.as_uint = gpu_isa_read_gpr(gpr, rel, chan, im);
+	return reg.as_float;
 }
 
 
@@ -222,12 +220,12 @@ void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value)
 }
 
 
-void gpu_isa_write_gpr_float(int gpr, int rel, int chan, float value_float)
+void gpu_isa_write_gpr_float(int gpr, int rel, int chan, float value)
 {
-	uint32_t value;
+	union amd_reg_t reg;
 
-	value = * (uint32_t *) &value_float;
-	gpu_isa_write_gpr(gpr, rel, chan, value);
+	reg.as_float = value;
+	gpu_isa_write_gpr(gpr, rel, chan, reg.as_uint);
 }
 
 
@@ -326,8 +324,11 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	/* ALU_SRC_1 */
 	if (sel == 249)
 	{
-		float f = 1.0f;
-		value = * (uint32_t *) &f;
+		union amd_reg_t reg;
+
+		reg.as_float = 1.0f;
+		value = reg.as_uint;
+
 		return value;
 	}
 
@@ -348,8 +349,11 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	/* ALU_SRC_0_5 */
 	if (sel == 252)
 	{
-		float f = 0.5f;
-		value = * (uint32_t *) &f;
+		union amd_reg_t reg;
+
+		reg.as_float = 0.5f;
+		value = reg.as_uint;
+
 		return value;
 	}
 
@@ -403,19 +407,21 @@ uint32_t gpu_isa_read_op_src_int(int src_idx)
 
 float gpu_isa_read_op_src_float(int src_idx)
 {
-	uint32_t value;
-	float value_float;
-	int neg, abs;
+	union amd_reg_t reg;
+	int neg;
+	int abs;
 
-	value = gpu_isa_read_op_src_common(src_idx, &neg, &abs);
-	value_float = * (float *) &value;
+	/* Read register */
+	reg.as_uint = gpu_isa_read_op_src_common(src_idx, &neg, &abs);
 
 	/* Absolute value and negation */
-	if (abs && value_float < 0.0)
-		value_float = -value_float;
+	if (abs && reg.as_float < 0.0)
+		reg.as_float = -reg.as_float;
 	if (neg)
-		value_float = -value_float;
-	return value_float;
+		reg.as_float = -reg.as_float;
+	
+	/* Return */
+	return reg.as_float;
 }
 
 
@@ -477,12 +483,12 @@ void gpu_isa_enqueue_write_dest(uint32_t value)
 }
 
 
-void gpu_isa_enqueue_write_dest_float(float value_float)
+void gpu_isa_enqueue_write_dest_float(float value)
 {
-	uint32_t value;
+	union amd_reg_t reg;
 
-	value = * (uint32_t *) &value_float;
-	gpu_isa_enqueue_write_dest(value);
+	reg.as_float = value;
+	gpu_isa_enqueue_write_dest(reg.as_uint);
 }
 
 
@@ -564,13 +570,17 @@ void gpu_isa_write_task_commit(void)
 		case GPU_ISA_WRITE_TASK_WRITE_LDS:
 		{
 			struct mem_t *local_mem;
+			union amd_reg_t lds_value;
 
 			local_mem = gpu_isa_work_group->local_mem;
 			assert(local_mem);
 			assert(wt->lds_value_size);
 			mem_write(local_mem, wt->lds_addr, wt->lds_value_size, &wt->lds_value);
+
+			/* Debug */
+			lds_value.as_uint = wt->lds_value;
 			gpu_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf) (%d bytes)", gpu_isa_work_item->id, wt->lds_addr,
-				wt->lds_value, * (float *) &wt->lds_value, (int)wt->lds_value_size);
+				lds_value.as_uint, lds_value.as_float, (int) wt->lds_value_size);
 			break;
 		}
 
@@ -585,14 +595,15 @@ void gpu_isa_write_task_commit(void)
 	}
 
 	/* Process PUSH_BEFORE, PRED_SET */
-	for (linked_list_head(task_list); !linked_list_is_end(task_list); ) {
-		
+	for (linked_list_head(task_list); !linked_list_is_end(task_list); )
+	{
 		/* Get task */
 		wt = linked_list_get(task_list);
 		gpu_isa_inst = wt->inst;
 
 		/* Process */
-		switch (wt->kind) {
+		switch (wt->kind)
+		{
 
 		case GPU_ISA_WRITE_TASK_PUSH_BEFORE:
 		{

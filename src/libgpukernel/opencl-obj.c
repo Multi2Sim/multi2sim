@@ -55,15 +55,18 @@ void *opencl_object_get(enum opencl_obj_t type, uint32_t id)
 	uint32_t object_id;
 
 	if (id >> 16 != type)
-		fatal("opencl_object_get: requested OpenCL object of incorrect type");
-	for (linked_list_head(opencl_object_list); !linked_list_is_end(opencl_object_list); linked_list_next(opencl_object_list)) {
+		fatal("%s: requested OpenCL object of incorrect type",
+			__FUNCTION__);
+	LINKED_LIST_FOR_EACH(opencl_object_list)
+	{
 		if (!(object = linked_list_get(opencl_object_list)))
-			panic("opencl_object_get: empty object");
+			panic("%s: empty object", __FUNCTION__);
 		object_id = * (uint32_t *) object;
 		if (object_id == id)
 			return object;
 	}
-	fatal("opencl_object_get: requested OpenCL does not exist (id=0x%x)", id);
+	fatal("%s: requested OpenCL does not exist (id=0x%x)",
+		__FUNCTION__, id);
 	return NULL;
 }
 
@@ -75,9 +78,10 @@ void *opencl_object_get_type(enum opencl_obj_t type)
 	uint32_t object_id;
 
 	/* Find object */
-	for (linked_list_head(opencl_object_list); !linked_list_is_end(opencl_object_list); linked_list_next(opencl_object_list)) {
+	LINKED_LIST_FOR_EACH(opencl_object_list)
+	{
 		if (!(object = linked_list_get(opencl_object_list)))
-			panic("opencl_object_get_type: empty object");
+			panic("%s: empty object", __FUNCTION__);
 		object_id = * (uint32_t *) object;
 		if (object_id >> 16 == type)
 			return object;

@@ -200,7 +200,8 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 				prog_info_entry->address), prog_info_entry->value);
 
 			/* Analyze entry */
-			switch (prog_info_entry->address) {
+			switch (prog_info_entry->address)
+			{
 
 			case 0x80000080:  /* AMU_ABI_NUM_GPR_USED */
 				enc_dict_entry->num_gpr_used = prog_info_entry->value;
@@ -223,7 +224,8 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 	{
 		/* FIXME: Analyze program inputs */
 		if (header->descsz) 
-			warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)", note_type_str, __FUNCTION__, * (unsigned int*)desc);
+			warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)",
+				note_type_str, __FUNCTION__, * (unsigned int *) desc);
 
 		break;
 	}
@@ -233,7 +235,8 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 	{
 		/* FIXME: Analyze program inputs */
 		if (header->descsz) 
-			warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)", note_type_str, __FUNCTION__, * (unsigned int*)desc);
+			warning("%s: pt_note '%s' with descsz != 0 ignored (desc value = 0x%x)",
+				note_type_str, __FUNCTION__, * (unsigned int *) desc);
 
 		break;
 	}
