@@ -51,6 +51,9 @@ void amd_disasm_init()
 	struct amd_inst_info_t *info;
 	int i;
 
+	/* Type size assertions */
+	assert(sizeof(union amd_reg_t) == 4);
+
 	/* Read information about all instructions */
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	info = &amd_inst_info[AMD_INST_##_name]; \
@@ -68,7 +71,8 @@ void amd_disasm_init()
 #undef DEFINST
 	
 	/* Tables of pointers to 'amd_inst_info' */
-	for (i = 1; i < AMD_INST_COUNT; i++) {
+	for (i = 1; i < AMD_INST_COUNT; i++)
+	{
 		info = &amd_inst_info[i];
 		if (info->fmt[1] == FMT_CF_WORD1 ||
 			info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF ||

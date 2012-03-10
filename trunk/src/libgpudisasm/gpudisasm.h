@@ -523,7 +523,8 @@ union amd_inst_word_t
 
 #define AMD_INST_MAX_WORDS  3
 
-struct amd_inst_info_t {
+struct amd_inst_info_t
+{
 	enum amd_inst_enum inst;
 	enum amd_category_enum category;
 	char *name;
@@ -534,6 +535,16 @@ struct amd_inst_info_t {
 	int size;  /* Number of words (32-bit) */
 };
 
+union amd_reg_t
+{
+	signed int as_int;
+	unsigned int as_uint;
+
+	signed short int as_short[2];
+	unsigned short int as_ushort[2];
+
+	float as_float;
+};
 
 struct amd_inst_t
 {
