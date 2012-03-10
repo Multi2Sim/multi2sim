@@ -83,7 +83,8 @@ struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr)
 	 * the one with the lowest tag following addr. */
 	mintag = 0xffffffff;
 	minpage = NULL;
-	for (index = 0; index < MEM_PAGE_COUNT; index++) {
+	for (index = 0; index < MEM_PAGE_COUNT; index++)
+	{
 		for (page = mem->pages[index]; page; page = page->next)
 		{
 			if (page->tag > tag && page->tag < mintag)
@@ -357,7 +358,7 @@ struct mem_t *mem_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	mem->sharing = 1;
+	mem->num_links = 1;
 	mem->safe = mem_safe_mode;
 
 	/* Return */
@@ -367,16 +368,42 @@ struct mem_t *mem_create()
 
 void mem_free(struct mem_t *mem)
 {
+	mem_clear(mem);
+	free(mem);
+}
+
+
+struct mem_t *mem_link(struct mem_t *mem)
+{
+	/* Increase number of references */
+	mem->num_links++;
+
+	/* Return the same memory image */
+	return mem;
+}
+
+
+void mem_unlink(struct mem_t *mem)
+{
+	/* Decrease number of references */
+	assert(mem->num_links > 0);
+	mem->num_links--;
+
+	/* If no more references, free */
+	if (!mem->num_links)
+		mem_free(mem);
+}
+
+
+/* Clear memory */
+void mem_clear(struct mem_t *mem)
+{
 	int i;
 	
-	/* Free pages */
 	for (i = 0; i < MEM_PAGE_COUNT; i++)
 		while (mem->pages[i])
 			mem_page_free(mem, mem->pages[i]->tag);
 
-	/* This must have released all host mappings.
-	 * Now, free memory structure. */
-	free(mem);
 }
 
 
@@ -384,20 +411,24 @@ void mem_free(struct mem_t *mem)
  * starting at address 'addr'. */
 uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size)
 {
-	uint32_t tag_start, tag_end;
+	uint32_t tag_start;
+	uint32_t tag_end;
 
 	assert(!(addr & (MEM_PAGE_SIZE - 1)));
 	assert(!(size & (MEM_PAGE_SIZE - 1)));
+
 	tag_start = addr;
 	tag_end = addr;
-	for (;;) {
 
+	for (;;)
+	{
 		/* Address space overflow */
 		if (!tag_end)
 			return (uint32_t) -1;
 		
 		/* Not enough free pages in current region */
-		if (mem_page_get(mem, tag_end)) {
+		if (mem_page_get(mem, tag_end))
+		{
 			tag_end += MEM_PAGE_SIZE;
 			tag_start = tag_end;
 			continue;
@@ -420,20 +451,23 @@ uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size)
 
 uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size)
 {
-	uint32_t tag_start, tag_end;
+	uint32_t tag_start;
+	uint32_t tag_end;
 
 	assert(!(addr & (MEM_PAGE_SIZE - 1)));
 	assert(!(size & (MEM_PAGE_SIZE - 1)));
 	tag_start = addr;
 	tag_end = addr;
-	for (;;) {
 
+	for (;;)
+	{
 		/* Address space overflow */
 		if (!tag_start)
 			return (uint32_t) -1;
 		
 		/* Not enough free pages in current region */
-		if (mem_page_get(mem, tag_start)) {
+		if (mem_page_get(mem, tag_start))
+		{
 			tag_start -= MEM_PAGE_SIZE;
 			tag_end = tag_start;
 			continue;
@@ -536,7 +570,8 @@ void mem_write_string(struct mem_t *mem, uint32_t addr, char *str)
 int mem_read_string(struct mem_t *mem, uint32_t addr, int size, char *str)
 {
 	int i;
-	for (i = 0; i < size; i++) {
+	for (i = 0; i < size; i++)
+	{
 		mem_access(mem, addr + i, 1, str + i, mem_access_read);
 		if (!str[i])
 			break;
@@ -565,7 +600,8 @@ void mem_dump(struct mem_t *mem, char *filename, uint32_t start, uint32_t end)
 	
 	/* Set unsafe mode and dump */
 	mem->safe = 0;
-	while (start < end) {
+	while (start < end)
+	{
 		size = MIN(MEM_PAGE_SIZE, end - start);
 		mem_access(mem, start, size, buf, mem_access_read);
 		fwrite(buf, size, 1, f);
@@ -578,19 +614,20 @@ void mem_dump(struct mem_t *mem, char *filename, uint32_t start, uint32_t end)
 }
 
 
-void mem_load(struct mem_t *mem, char *filename, uint32_t start)
+void mem_load(struct mem_t *mem, char *file_name, uint32_t start)
 {
 	FILE *f;
 	uint32_t size;
 	uint8_t buf[MEM_PAGE_SIZE];
 	
-	f = fopen(filename, "rb");
+	f = fopen(file_name, "rb");
 	if (!f)
-		fatal("mem_load: cannot open file '%s'", filename);
+		fatal("mem_load: cannot open file '%s'", file_name);
 	
 	/* Set unsafe mode and load */
 	mem->safe = 0;
-	for (;;) {
+	for (;;)
+	{
 		size = fread(buf, 1, MEM_PAGE_SIZE, f);
 		if (!size)
 			break;
@@ -603,3 +640,31 @@ void mem_load(struct mem_t *mem, char *filename, uint32_t start)
 	fclose(f);
 }
 
+
+/* Copy the entire content of a memory image into another. Any previously existing
+ * content in the destination memory image is removed. */
+void mem_clone(struct mem_t *dst_mem, struct mem_t *src_mem)
+{
+	struct mem_page_t *page;
+
+	int i;
+
+	/* Clear destination memory */
+	mem_clear(dst_mem);
+
+	/* Copy pages */
+	dst_mem->safe = 0;
+	for (i = 0; i < MEM_PAGE_COUNT; i++)
+	{
+		for (page = src_mem->pages[i]; page; page = page->next)
+		{
+			mem_page_create(dst_mem, page->tag, page->perm);
+			if (page->data)
+				mem_access(dst_mem, page->tag, MEM_PAGE_SIZE,
+					page->data, mem_access_init);
+		}
+	}
+
+	/* Copy safe mode */
+	dst_mem->safe = src_mem->safe;
+}

@@ -1325,7 +1325,7 @@ void syscall_do()
 			fatal("syscall kill: pid %d does not exist", pid);
 
 		/* Send signal */
-		sim_sigset_add(&ctx->signal_masks->pending, sig);
+		sim_sigset_add(&ctx->signal_mask_table->pending, sig);
 		ctx_host_thread_suspend_cancel(ctx);  /* Target ctx might wake up */
 		ke_process_events_schedule();
 		ke_process_events();
@@ -1473,7 +1473,7 @@ void syscall_do()
 		uint32_t oldbrk_rnd, newbrk_rnd;
 
 		newbrk = isa_regs->ebx;
-		oldbrk = isa_ctx->loader->brk;
+		oldbrk = isa_ctx->brk;
 		syscall_debug("  newbrk=0x%x (previous brk was 0x%x)\n",
 			newbrk, oldbrk);
 
@@ -1498,7 +1498,7 @@ void syscall_do()
 				mem_map(isa_mem, oldbrk_rnd, size,
 					mem_access_read | mem_access_write);
 			}
-			isa_ctx->loader->brk = newbrk;
+			isa_ctx->brk = newbrk;
 			retval = newbrk;
 			syscall_debug("  heap grows 0x%x bytes\n", newbrk - oldbrk);
 			break;
@@ -1509,7 +1509,7 @@ void syscall_do()
 			size = oldbrk_rnd - newbrk_rnd;
 			if (size)
 				mem_unmap(isa_mem, newbrk_rnd, size);
-			isa_ctx->loader->brk = newbrk;
+			isa_ctx->brk = newbrk;
 			retval = newbrk;
 			syscall_debug("  heap shrinks 0x%x bytes\n", oldbrk - newbrk);
 			break;
@@ -2038,12 +2038,6 @@ void syscall_do()
 		if (!new_esp)
 			new_esp = isa_regs->esp;
 
-		/* Create new context */
-		new_ctx = ctx_clone(isa_ctx);
-		retval = new_ctx->pid;
-		syscall_debug("  context %d created with pid %d\n",
-			new_ctx->pid, retval);
-
 		/* Check not supported flags */
 		if (flags & ~clone_supported_flags)
 		{
@@ -2059,6 +2053,9 @@ void syscall_do()
 			if ((flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND)) !=
 				(SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
 				fatal("syscall 'clone': not supported flags with CLONE_VM");
+
+			/* Create new context sharing memory image */
+			new_ctx = ctx_clone(isa_ctx);
 		}
 		else
 		{
@@ -2066,8 +2063,8 @@ void syscall_do()
 			if (flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
 				fatal("syscall 'clone': not supported flags with CLONE_VM");
 
-			/* FIXME - not implemented - needed for programs using fork() */
-			fatal("syscall 'clone': absence of flag CLONE_VM not supported");
+			/* Create new context replicating memory image */
+			new_ctx = ctx_fork(isa_ctx);
 		}
 
 		/* Flag CLONE_THREAD.
@@ -2119,10 +2116,13 @@ void syscall_do()
 		}
 
 		/* New context returns 0. */
-		new_ctx->initial_stack = new_esp;
 		new_ctx->regs->esp = new_esp;
 		new_ctx->regs->eax = 0;
 
+		/* Return PID of the new context */
+		retval = new_ctx->pid;
+		syscall_debug("  context %d created with pid %d\n",
+			new_ctx->pid, retval);
 		break;
 	}
 
@@ -2741,12 +2741,12 @@ void syscall_do()
 		/* Store previous sigaction */
 		if (poact) {
 			mem_write(isa_mem, poact, sizeof(struct sim_sigaction),
-				&isa_ctx->signal_handlers->sigaction[sig - 1]);
+				&isa_ctx->signal_handler_table->sigaction[sig - 1]);
 		}
 
 		/* Make new sigaction effective */
 		if (pact)
-			isa_ctx->signal_handlers->sigaction[sig - 1] = act;
+			isa_ctx->signal_handler_table->sigaction[sig - 1] = act;
 
 		break;
 	}
@@ -2767,7 +2767,7 @@ void syscall_do()
 		syscall_debug("  how=%s\n", map_value(&sigprocmask_how_map, how));
 
 		/* Save old set */
-		oset = isa_ctx->signal_masks->blocked;
+		oset = isa_ctx->signal_mask_table->blocked;
 
 		/* New set */
 		if (pset) {
@@ -2783,13 +2783,13 @@ void syscall_do()
 			/* Set new set */
 			switch (how) {
 			case 0:  /* SIG_BLOCK */
-				isa_ctx->signal_masks->blocked |= set;
+				isa_ctx->signal_mask_table->blocked |= set;
 				break;
 			case 1:  /* SIG_UNBLOCK */
-				isa_ctx->signal_masks->blocked &= ~set;
+				isa_ctx->signal_mask_table->blocked &= ~set;
 				break;
 			case 2:  /* SIG_SETMASK */
-				isa_ctx->signal_masks->blocked = set;
+				isa_ctx->signal_mask_table->blocked = set;
 				break;
 			default:
 				fatal("syscall rt_sigprocmask: wrong how value");
@@ -2825,17 +2825,17 @@ void syscall_do()
 		if (debug_status(syscall_debug_category)) {
 			FILE *f = debug_file(syscall_debug_category);
 			syscall_debug("  old mask: ");
-			sim_sigset_dump(isa_ctx->signal_masks->blocked, f);
+			sim_sigset_dump(isa_ctx->signal_mask_table->blocked, f);
 			syscall_debug("\n  new mask: ");
 			sim_sigset_dump(newset, f);
 			syscall_debug("\n  pending:  ");
-			sim_sigset_dump(isa_ctx->signal_masks->pending, f);
+			sim_sigset_dump(isa_ctx->signal_mask_table->pending, f);
 			syscall_debug("\n");
 		}
 
 		/* Save old mask and set new one, then suspend. */
-		isa_ctx->signal_masks->backup = isa_ctx->signal_masks->blocked;
-		isa_ctx->signal_masks->blocked = newset;
+		isa_ctx->signal_mask_table->backup = isa_ctx->signal_mask_table->blocked;
+		isa_ctx->signal_mask_table->blocked = newset;
 		ctx_set_status(isa_ctx, ctx_suspended | ctx_sigsuspend);
 
 		/* New signal mask may cause new events */
@@ -3566,7 +3566,7 @@ void syscall_do()
 			fatal("syscall 'tgkill': pid %d does not exist", pid);
 
 		/* Send signal */
-		sim_sigset_add(&ctx->signal_masks->pending, sig);
+		sim_sigset_add(&ctx->signal_mask_table->pending, sig);
 		ctx_host_thread_suspend_cancel(ctx);  /* Target ctx might wake up */
 		ke_process_events_schedule();
 		ke_process_events();

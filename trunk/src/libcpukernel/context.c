@@ -89,14 +89,14 @@ static struct ctx_t *ctx_do_create()
 	/* Structures */
 	ctx->regs = regs_create();
 	ctx->backup_regs = regs_create();
-	ctx->signal_masks = signal_masks_create();
+	ctx->signal_mask_table = signal_mask_table_create();
 
 	/* Return context */
 	return ctx;
 }
 
 
-struct ctx_t *ctx_create()
+struct ctx_t *ctx_create(void)
 {
 	struct ctx_t *ctx;
 	
@@ -111,7 +111,7 @@ struct ctx_t *ctx_create()
 	ctx->spec_mem = spec_mem_create(ctx->mem);
 
 	/* Signal handlers and file descriptor table */
-	ctx->signal_handlers = signal_handlers_create();
+	ctx->signal_handler_table = signal_handler_table_create();
 	ctx->fdt = fdt_create();
 	
 	return ctx;
@@ -131,22 +131,58 @@ struct ctx_t *ctx_clone(struct ctx_t *ctx)
 	 * The memory structure must be only freed by the parent
 	 * when all its children have been killed.
 	 * The set of signal handlers is the same, too. */
-	new->mem = ctx->mem;
-	new->mem->sharing++;
 	new->mid = ctx->mid;
-	new->spec_mem = spec_mem_create(ctx->mem);
+	new->mem = mem_link(ctx->mem);
+	new->spec_mem = spec_mem_create(new->mem);
+
+	/* Loader */
 	new->loader = ctx->loader;
-	new->signal_handlers = ctx->signal_handlers;
+
+	/* Signal handlers and file descriptor table */
+	new->signal_handler_table = signal_handler_table_link(ctx->signal_handler_table);
 	new->fdt = ctx->fdt;
+
+	/* Libc segment */
 	new->glibc_segment_base = ctx->glibc_segment_base;
 	new->glibc_segment_limit = ctx->glibc_segment_limit;
 
 	/* Update other fields. */
 	new->parent = ctx;
 
-	/* Return new context id */
+	/* Return new context */
 	return new;
 
+}
+
+
+struct ctx_t *ctx_fork(struct ctx_t *ctx)
+{
+	struct ctx_t *new;
+
+	new = ctx_do_create();
+
+	/* Copy registers */
+	regs_copy(new->regs, ctx->regs);
+
+	/* Memory */
+	new->mid = ke->current_mid++;
+	new->mem = mem_create();
+	new->spec_mem = spec_mem_create(new->mem);
+	mem_clone(new->mem, ctx->mem);
+
+	/* Signal handlers and file descriptor table */
+	new->signal_handler_table = signal_handler_table_create();
+	new->fdt = fdt_create();
+
+	/* Libc segment */
+	new->glibc_segment_base = ctx->glibc_segment_base;
+	new->glibc_segment_limit = ctx->glibc_segment_limit;
+
+	/* Set parent */
+	new->parent = ctx;
+
+	/* Return new context */
+	return new;
 }
 
 
@@ -169,18 +205,18 @@ void ctx_free(struct ctx_t *ctx)
 	/* Free private structures */
 	regs_free(ctx->regs);
 	regs_free(ctx->backup_regs);
-	signal_masks_free(ctx->signal_masks);
+	signal_mask_table_free(ctx->signal_mask_table);
 	spec_mem_free(ctx->spec_mem);
 
 	/* Shared structures are only freed if this
 	 * is the last context sharing them. */
-	ctx->mem->sharing--;
-	if (!ctx->mem->sharing) {
+	if (ctx->mem->num_links == 1)
+	{
 		ld_done(ctx);
-		mem_free(ctx->mem);
 		fdt_free(ctx->fdt);
-		signal_handlers_free(ctx->signal_handlers);
 	}
+	signal_handler_table_unlink(ctx->signal_handler_table);
+	mem_unlink(ctx->mem);
 
 	/* Warn about unresolved attempts to access OpenCL library */
 	if (ctx->libopencl_open_attempt)
@@ -205,15 +241,15 @@ void ctx_dump(struct ctx_t *ctx, FILE *f)
 		fprintf(f, "  parent=(null)\n");
 	else
 		fprintf(f, "  parent=%d\n", ctx->parent->pid);
-	fprintf(f, "  heap break: 0x%x\n", ctx->loader->brk);
+	fprintf(f, "  heap break: 0x%x\n", ctx->brk);
 
 	/* Signal masks */
 	fprintf(f, "  blocked signal mask: 0x%llx ",
-		(long long) ctx->signal_masks->blocked);
-	sim_sigset_dump(ctx->signal_masks->blocked, f);
+		(long long) ctx->signal_mask_table->blocked);
+	sim_sigset_dump(ctx->signal_mask_table->blocked, f);
 	fprintf(f, "\n  pending signals: 0x%llx ",
-		(long long) ctx->signal_masks->pending);
-	sim_sigset_dump(ctx->signal_masks->pending, f);
+		(long long) ctx->signal_mask_table->pending);
+	sim_sigset_dump(ctx->signal_mask_table->pending, f);
 	fprintf(f, "\n");
 }
 
@@ -347,7 +383,8 @@ static void ctx_update_status(struct ctx_t *ctx, enum ctx_status_t status)
 		ke_list_insert_head(ke_list_alloc, ctx);
 	
 	/* Dump new status (ignore 'ctx_specmode' status, it's too frequent) */
-	if (debug_status(ctx_debug_category) && (status_diff & ~ctx_specmode)) {
+	if (debug_status(ctx_debug_category) && (status_diff & ~ctx_specmode))
+	{
 		char sstatus[200];
 		map_flags(&ctx_status_map, ctx->status, sstatus, 200);
 		ctx_debug("ctx %d changed status to %s\n",
@@ -388,7 +425,8 @@ struct ctx_t *ctx_get_zombie(struct ctx_t *parent, int pid)
 {
 	struct ctx_t *ctx;
 
-	for (ctx = ke->zombie_list_head; ctx; ctx = ctx->zombie_list_next) {
+	for (ctx = ke->zombie_list_head; ctx; ctx = ctx->zombie_list_next)
+	{
 		if (ctx->parent != parent)
 			continue;
 		if (ctx->pid == pid || pid == -1)
@@ -403,7 +441,8 @@ struct ctx_t *ctx_get_zombie(struct ctx_t *parent, int pid)
 
 void __ctx_host_thread_suspend_cancel(struct ctx_t *ctx)
 {
-	if (ctx->host_thread_suspend_active) {
+	if (ctx->host_thread_suspend_active)
+	{
 		if (pthread_cancel(ctx->host_thread_suspend))
 			fatal("%s: context %d: error canceling host thread",
 				__FUNCTION__, ctx->pid);
@@ -425,7 +464,8 @@ void ctx_host_thread_suspend_cancel(struct ctx_t *ctx)
 
 void __ctx_host_thread_timer_cancel(struct ctx_t *ctx)
 {
-	if (ctx->host_thread_timer_active) {
+	if (ctx->host_thread_timer_active)
+	{
 		if (pthread_cancel(ctx->host_thread_timer))
 			fatal("%s: context %d: error canceling host thread",
 				__FUNCTION__, ctx->pid);
@@ -495,8 +535,10 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	/* From now on, all children have lost their parent. If a child is
 	 * already zombie, finish it, since its parent won't be able to waitpid it
 	 * anymore. */
-	for (aux = ke->context_list_head; aux; aux = aux->context_list_next) {
-		if (aux->parent == ctx) {
+	for (aux = ke->context_list_head; aux; aux = aux->context_list_next)
+	{
+		if (aux->parent == ctx)
+		{
 			aux->parent = NULL;
 			if (ctx_get_status(aux, ctx_zombie))
 				ctx_set_status(aux, ctx_finished);
@@ -504,20 +546,22 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	}
 
 	/* Send finish signal to parent */
-	if (ctx->exit_signal && ctx->parent) {
+	if (ctx->exit_signal && ctx->parent)
+	{
 		syscall_debug("  sending signal %d to pid %d\n",
 			ctx->exit_signal, ctx->parent->pid);
-		sim_sigset_add(&ctx->parent->signal_masks->pending,
+		sim_sigset_add(&ctx->parent->signal_mask_table->pending,
 			ctx->exit_signal);
 		ke_process_events_schedule();
 	}
 
 	/* If clear_child_tid was set, a futex() call must be performed on
 	 * that pointer. Also wake up futexes in the robust list. */
-	if (ctx->clear_child_tid) {
+	if (ctx->clear_child_tid)
+	{
 		uint32_t zero = 0;
 		mem_write(ctx->mem, ctx->clear_child_tid, 4, &zero);
-		ctx_futex_wake(ctx, ctx->clear_child_tid, 1, 0xffffffff);
+		ctx_futex_wake(ctx, ctx->clear_child_tid, 1, -1);
 	}
 	ctx_exit_robust_list(ctx);
 
@@ -538,9 +582,11 @@ int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t b
 	struct ctx_t *wakeup_ctx;
 
 	/* Look for threads suspended in this futex */
-	while (count) {
+	while (count)
+	{
 		wakeup_ctx = NULL;
-		for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_list_next) {
+		for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_list_next)
+		{
 			if (!ctx_get_status(ctx, ctx_futex) || ctx->wakeup_futex != futex)
 				continue;
 			if (!(ctx->wakeup_futex_bitset & bitset))
@@ -548,12 +594,16 @@ int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t b
 			if (!wakeup_ctx || ctx->wakeup_futex_sleep < wakeup_ctx->wakeup_futex_sleep)
 				wakeup_ctx = ctx;
 		}
-		if (wakeup_ctx) {
+
+		if (wakeup_ctx)
+		{
 			ctx_clear_status(wakeup_ctx, ctx_suspended | ctx_futex);
 			syscall_debug("  futex 0x%x: thread %d woken up\n", futex, wakeup_ctx->pid);
 			wakeup_count++;
 			count--;
-		} else {
+		}
+		else
+		{
 			break;
 		}
 	}
@@ -585,7 +635,8 @@ void ctx_exit_robust_list(struct ctx_t *ctx)
 	
 	syscall_debug("ctx %d: processing robust futex list\n",
 		ctx->pid);
-	for (;;) {
+	for (;;)
+	{
 		mem_read(ctx->mem, lock_entry, 4, &next);
 		mem_read(ctx->mem, lock_entry + 4, 4, &offset);
 		mem_read(ctx->mem, lock_entry + offset, 4, &lock_word);
@@ -618,8 +669,8 @@ void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path)
 
 	/* Get the first page */
 	end = 0;
-	for (;;) {
-		
+	for (;;)
+	{
 		/* Get start of next range */
 		page = mem_page_get_next(mem, end);
 		if (!page)
@@ -629,7 +680,8 @@ void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path)
 		perm = page->perm & (mem_access_read | mem_access_write | mem_access_exec);
 
 		/* Get end of range */
-		for (;;) {
+		for (;;)
+		{
 			page = mem_page_get(mem, end + MEM_PAGE_SIZE);
 			if (!page)
 				break;
@@ -653,6 +705,12 @@ void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path)
 	fclose(f);
 }
 
+
+
+
+/*
+ * IPC report
+ */
 
 struct ctx_ipc_report_stack_t
 {
