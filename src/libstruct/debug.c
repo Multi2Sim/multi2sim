@@ -241,6 +241,11 @@ void __debug(int category, char *fmt, ...)
 	/* Print message */
 	va_start(va, fmt);
 	vfprintf(c->f, fmt, va);
+
+	/* Flush */
+#ifndef NDEBUG
+	fflush(c->f);
+#endif
 }
 
 

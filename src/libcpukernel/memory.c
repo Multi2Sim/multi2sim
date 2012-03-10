@@ -358,7 +358,6 @@ struct mem_t *mem_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	mem->num_links = 1;
 	mem->safe = mem_safe_mode;
 
 	/* Return */
@@ -368,6 +367,7 @@ struct mem_t *mem_create()
 
 void mem_free(struct mem_t *mem)
 {
+	assert(!mem->num_links);
 	mem_clear(mem);
 	free(mem);
 }
@@ -375,22 +375,17 @@ void mem_free(struct mem_t *mem)
 
 struct mem_t *mem_link(struct mem_t *mem)
 {
-	/* Increase number of references */
 	mem->num_links++;
-
-	/* Return the same memory image */
 	return mem;
 }
 
 
 void mem_unlink(struct mem_t *mem)
 {
-	/* Decrease number of references */
-	assert(mem->num_links > 0);
-	mem->num_links--;
-
-	/* If no more references, free */
-	if (!mem->num_links)
+	assert(mem->num_links >= 0);
+	if (mem->num_links)
+		mem->num_links--;
+	else
 		mem_free(mem);
 }
 
@@ -665,6 +660,7 @@ void mem_clone(struct mem_t *dst_mem, struct mem_t *src_mem)
 		}
 	}
 
-	/* Copy safe mode */
+	/* Copy other fields */
 	dst_mem->safe = src_mem->safe;
+	dst_mem->heap_break = src_mem->heap_break;
 }

@@ -58,8 +58,12 @@ void fdt_free(struct fdt_t *fdt)
 	int i;
 	struct fd_t *fd;
 
+	/* Check no more links */
+	assert(!fdt->num_links);
+
 	/* Free file descriptors */
-	for (i = 0; i < list_count(fdt->fd_list); i++) {
+	for (i = 0; i < list_count(fdt->fd_list); i++)
+	{
 		fd = list_get(fdt->fd_list, i);
 		if (fd)
 			free(fd);
@@ -76,13 +80,30 @@ void fdt_dump(struct fdt_t *fdt, FILE *f)
 	int i, busy = 0;
 	struct fd_t *fd;
 
-	for (i = 0; i < list_count(fdt->fd_list); i++) {
+	for (i = 0; i < list_count(fdt->fd_list); i++)
+	{
 		fdt_entry_dump(fdt, i, f);
 		fd = list_get(fdt->fd_list, i);
 		if (fd)
 			busy++;
 	}
 	fprintf(f, "  %d table entries, %d busy\n", list_count(fdt->fd_list), busy);
+}
+
+struct fdt_t *fdt_link(struct fdt_t *fdt)
+{
+	fdt->num_links++;
+	return fdt;
+}
+
+
+void fdt_unlink(struct fdt_t *fdt)
+{
+	assert(fdt->num_links >= 0);
+	if (fdt->num_links)
+		fdt->num_links--;
+	else
+		fdt_free(fdt);
 }
 
 

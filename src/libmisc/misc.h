@@ -167,6 +167,9 @@
 	(CONT)->NAME##_list_count--; \
 }
 
+#define DOUBLE_LINKED_LIST_FOR_EACH(CONT, NAME, ELEM) \
+	for ((ELEM) = (CONT)->NAME##_list_head; (ELEM); (ELEM) = (ELEM)->NAME##_list_next)
+
 
 /* Safe pointer assignment for values returned in arguments passed by reference */
 #define PTR_ASSIGN(PTR, VALUE) if (PTR) *(PTR) = (VALUE)
