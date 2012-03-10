@@ -112,7 +112,8 @@ char *err_syscall_note =
 
 /* For 'open' */
 
-struct string_map_t open_flags_map = {
+struct string_map_t open_flags_map =
+{
 	16, {
 		{ "O_RDONLY",        00000000 },
 		{ "O_WRONLY",        00000001 },
@@ -136,7 +137,8 @@ struct string_map_t open_flags_map = {
 
 /* For 'msync' */
 
-struct string_map_t msync_flags_map = {
+struct string_map_t msync_flags_map =
+{
 	3, {
 		{ "MS_ASYNC", 1 },
 		{ "MS_INAVLIAGE", 2 },
@@ -147,7 +149,8 @@ struct string_map_t msync_flags_map = {
 
 /* For 'access' */
 
-struct string_map_t access_mode_map = {
+struct string_map_t access_mode_map =
+{
 	3, {
 		{ "X_OK",  1 },
 		{ "W_OK",  2 },
@@ -226,7 +229,8 @@ static const uint32_t clone_supported_flags =
 
 /* For utime */
 
-struct sim_utimbuf {
+struct sim_utimbuf
+{
 	uint32_t actime;
 	uint32_t modtime;
 } __attribute__((packed));
@@ -240,30 +244,32 @@ static void syscall_utime_sim_to_read(struct utimbuf *real, struct sim_utimbuf *
 
 /* For 'fcntl' */
 
-struct string_map_t fcntl_cmd_map = {
+struct string_map_t fcntl_cmd_map =
+{
 	15, {
-		{ "F_DUPFD",		0 },
-		{ "F_GETFD",		1 },
-		{ "F_SETFD",		2 },
-		{ "F_GETFL",		3 },
-		{ "F_SETFL",		4 },
-		{ "F_GETLK",		5 },
-		{ "F_SETLK",		6 },
-		{ "F_SETLKW",		7 },
-		{ "F_SETOWN",		8 },
-		{ "F_GETOWN",		9 },
-		{ "F_SETSIG",		10 },
-		{ "F_GETSIG",		11 },
-		{ "F_GETLK64",		12 },
-		{ "F_SETLK64",		13 },
-		{ "F_SETLKW64",		14 }
+		{ "F_DUPFD", 0 },
+		{ "F_GETFD", 1 },
+		{ "F_SETFD", 2 },
+		{ "F_GETFL", 3 },
+		{ "F_SETFL", 4 },
+		{ "F_GETLK", 5 },
+		{ "F_SETLK", 6 },
+		{ "F_SETLKW", 7 },
+		{ "F_SETOWN", 8 },
+		{ "F_GETOWN", 9 },
+		{ "F_SETSIG", 10 },
+		{ "F_GETSIG", 11 },
+		{ "F_GETLK64", 12 },
+		{ "F_SETLK64", 13 },
+		{ "F_SETLKW64", 14 }
 	}
 };
 
 
 /* For 'socketcall' */
 
-struct string_map_t socketcall_call_map = {
+struct string_map_t socketcall_call_map =
+{
 	17, {
 		{ "SYS_SOCKET",		1 },
 		{ "SYS_BIND",		2 },
@@ -285,7 +291,8 @@ struct string_map_t socketcall_call_map = {
 	}
 };
 
-struct string_map_t socket_family_map = {
+struct string_map_t socket_family_map =
+{
 	29, {
 		{ "PF_UNSPEC",		0 },
 		{ "PF_UNIX",		1 },
@@ -319,7 +326,8 @@ struct string_map_t socket_family_map = {
 	}
 };
 
-struct string_map_t socket_type_map = {
+struct string_map_t socket_type_map =
+{
 	7, {
 		{ "SOCK_STREAM",	1 },
 		{ "SOCK_DGRAM",		2 },
@@ -334,7 +342,8 @@ struct string_map_t socket_type_map = {
 
 /* For fstat64, lstat64 */
 
-struct sim_stat64 {
+struct sim_stat64
+{
 	uint64_t dev;  /* 0 8 */
 	uint32_t pad1;  /* 8 4 */
 	uint32_t __ino;  /* 12 4 */
@@ -385,7 +394,8 @@ static void syscall_copy_stat64(struct sim_stat64 *sim, struct stat *real)
 
 /* For setitimer */
 
-static struct string_map_t itimer_map = {
+static struct string_map_t itimer_map =
+{
 	3, {
 		{"ITIMER_REAL",		0},
 		{"ITIMER_VIRTUAL",	1},
@@ -393,12 +403,14 @@ static struct string_map_t itimer_map = {
 	}
 };
 
-struct sim_timeval {
+struct sim_timeval
+{
 	uint32_t tv_sec;
 	uint32_t tv_usec;
 } __attribute__((packed));
 
-struct sim_itimerval {
+struct sim_itimerval
+{
 	struct sim_timeval it_interval;
 	struct sim_timeval it_value;
 } __attribute__((packed));
@@ -421,7 +433,8 @@ void sim_itimerval_debug(struct sim_itimerval *sim_itimerval)
 
 /* For uname */
 
-struct sim_utsname {
+struct sim_utsname
+{
 	char sysname[65];
 	char nodename[65];
 	char release[65];
@@ -430,7 +443,8 @@ struct sim_utsname {
 	char domainname[65];
 } __attribute__((packed));
 
-struct sim_utsname sim_utsname = {
+struct sim_utsname sim_utsname =
+{
 	"Linux",
 	"multi2sim",
 	"3.1.9-1.fc16.i686"
@@ -442,7 +456,8 @@ struct sim_utsname sim_utsname = {
 
 /* For getrusage */
 
-struct sim_rusage {
+struct sim_rusage
+{
 	uint32_t utime_sec, utime_usec;
 	uint32_t stime_sec, stime_usec;
 	uint32_t maxrss;
@@ -486,7 +501,8 @@ static void syscall_copy_rusage(struct sim_rusage *sim, struct rusage *real)
 
 /* For relimit */
 
-struct string_map_t rlimit_resource_map = {
+struct string_map_t rlimit_resource_map =
+{
 	16, {
 
 		{ "RLIMIT_CPU",              0 },
@@ -508,7 +524,8 @@ struct string_map_t rlimit_resource_map = {
 	}
 };
 
-struct sim_rlimit {
+struct sim_rlimit
+{
 	uint32_t cur;
 	uint32_t max;
 } __attribute__((packed));
@@ -528,7 +545,8 @@ void syscall_rlimit_sim_to_real(struct rlimit *real, struct sim_rlimit *sim)
 
 /* For times */
 
-struct sim_tms {
+struct sim_tms
+{
 	uint32_t utime;
 	uint32_t stime;
 	uint32_t cutime;
@@ -546,7 +564,8 @@ static void syscall_copy_tms(struct sim_tms *sim, struct tms *real)
 
 /* For 'set_thread_area' */
 
-struct sim_user_desc {
+struct sim_user_desc
+{
 	uint32_t entry_number;
 	uint32_t base_addr;
 	uint32_t limit;
@@ -559,9 +578,10 @@ struct sim_user_desc {
 };
 
 
-/* For rt_sigprocmask */
+/* For 'rt_sigprocmask' */
 
-struct string_map_t sigprocmask_how_map = {
+struct string_map_t sigprocmask_how_map =
+{
 	3, {
 		{ "SIG_BLOCK",     0 },
 		{ "SIG_UNBLOCK",   1 },
@@ -572,7 +592,8 @@ struct string_map_t sigprocmask_how_map = {
 
 /* For 'poll' */
 
-struct string_map_t poll_event_map = {
+struct string_map_t poll_event_map =
+{
 	6, {
 		{ "POLLIN",          0x0001 },
 		{ "POLLPRI",         0x0002 },
@@ -583,7 +604,8 @@ struct string_map_t poll_event_map = {
 	}
 };
 
-struct sim_pollfd {
+struct sim_pollfd
+{
 	uint32_t fd;
 	uint16_t events;
 	uint16_t revents;
@@ -599,7 +621,8 @@ void sim_fd_set_dump(char *fd_set_name, fd_set *fds, int n)
 	char *comma;
 
 	/* Set empty */
-	if (!n || !fds) {
+	if (!n || !fds)
+	{
 		syscall_debug("    %s={}\n", fd_set_name);
 		return;
 	}
@@ -607,7 +630,8 @@ void sim_fd_set_dump(char *fd_set_name, fd_set *fds, int n)
 	/* Dump set */
 	syscall_debug("    %s={", fd_set_name);
 	comma = "";
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < n; i++)
+	{
 		if (!FD_ISSET(i, fds))
 			continue;
 		syscall_debug("%s%d", comma, i);
@@ -625,8 +649,8 @@ int sim_fd_set_read(uint32_t addr, fd_set *fds, int n)
 	unsigned char c;
 
 	FD_ZERO(fds);
-	for (i = 0; i < n; i++) {
-		
+	for (i = 0; i < n; i++)
+	{
 		/* Check if fd is set */
 		nbyte = i >> 3;
 		nbit = i & 7;
@@ -657,8 +681,8 @@ void sim_fd_set_write(uint32_t addr, fd_set *fds, int n)
 
 	/* Write */
 	mem_zero(isa_mem, addr, (n + 7) / 8);
-	for (i = 0; i < n; i++) {
-		
+	for (i = 0; i < n; i++)
+	{
 		/* Check if fd is set */
 		if (!FD_ISSET(i, fds))
 			continue;
@@ -677,7 +701,8 @@ void sim_fd_set_write(uint32_t addr, fd_set *fds, int n)
 
 /* For 'waitpid' */
 
-struct string_map_t waitpid_options_map = {
+struct string_map_t waitpid_options_map =
+{
 	8, {
 		{ "WNOHANG",       0x00000001 },
 		{ "WUNTRACED",     0x00000002 },
@@ -695,7 +720,8 @@ struct string_map_t waitpid_options_map = {
 
 #define MMAP_BASE_ADDRESS 0xb7fb0000
 
-struct string_map_t mmap_prot_map = {
+struct string_map_t mmap_prot_map =
+{
 	6, {
 		{ "PROT_READ",       0x1 },
 		{ "PROT_WRITE",      0x2 },
@@ -706,7 +732,8 @@ struct string_map_t mmap_prot_map = {
 	}
 };
 
-struct string_map_t mmap_flags_map = {
+struct string_map_t mmap_flags_map =
+{
 	11, {
 		{ "MAP_SHARED",      0x01 },
 		{ "MAP_PRIVATE",     0x02 },
@@ -825,7 +852,8 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
 
 /* For 'futex' */
 
-struct string_map_t futex_cmd_map = {
+struct string_map_t futex_cmd_map =
+{
 	13, {
 		{ "FUTEX_WAIT",              0 },
 		{ "FUTEX_WAKE",              1 },
@@ -846,7 +874,8 @@ struct string_map_t futex_cmd_map = {
 
 /* For 'sysctl' */
 
-struct sysctl_args_t {
+struct sysctl_args_t
+{
 	uint32_t pname;
 	uint32_t nlen;
 	uint32_t poldval;
@@ -862,7 +891,8 @@ void syscall_summary()
 {
 	int i;
 	syscall_debug("\nSystem calls summary:\n");
-	for (i = 1; i < 325; i++) {
+	for (i = 1; i < 325; i++)
+	{
 		if (!syscall_freq[i])
 			continue;
 		syscall_debug("%s  %lld\n", syscall_name[i],
@@ -875,7 +905,12 @@ void syscall_summary()
  * 'errno' variable to the appropriate value. However, the ABI with the
  * operating system is different - a return value less than 0 specifies
  * the error code. We use this macro for this kind of system calls. */
-#define RETVAL(X) { retval = (X); if (retval == -1) retval = -errno; }
+#define RETVAL(X) \
+{ \
+	retval = (X); \
+	if (retval == -1) \
+		retval = -errno; \
+}
 
 
 /* Simulation of system calls.
@@ -887,13 +922,14 @@ void syscall_do()
 	int syscode = isa_regs->eax;
 	int retval = 0;
 
-	/* Debug in syscall and call logs */
+	/* Debug */
 	syscall_debug("syscall '%s' (code %d, inst %lld, pid %d)\n",
 		syscode < syscall_code_count ? syscall_name[syscode] : "",
 		syscode, (long long) isa_inst_count, isa_ctx->pid);
 	if (syscode < syscall_code_count)
 		syscall_freq[syscode]++;
-	if (debug_status(isa_call_debug_category)) {
+	if (debug_status(isa_call_debug_category))
+	{
 		int i;
 		for (i = 0; i < isa_function_level; i++)
 			isa_call_debug("| ");
@@ -902,7 +938,9 @@ void syscall_do()
 			syscode, (long long) isa_inst_count, isa_ctx->pid);
 	}
 	
-	switch (syscode) {
+	/* System call emulation */
+	switch (syscode)
+	{
 
 
 	/* 1 */
@@ -1009,21 +1047,27 @@ void syscall_do()
 	/* 4 */
 	case syscall_code_write:
 	{
-		uint32_t pbuf, count;
-		int guest_fd, host_fd;
+		uint32_t buf_ptr;
+		uint32_t count;
+
+		int guest_fd;
+		int host_fd;
+
 		struct fd_t *fd;
 		void *buf;
+
 		struct pollfd fds;
 
 		guest_fd = isa_regs->ebx;
-		pbuf = isa_regs->ecx;
+		buf_ptr = isa_regs->ecx;
 		count = isa_regs->edx;
 		syscall_debug("  guest_fd=%d, pbuf=0x%x, count=0x%x\n",
-			guest_fd, pbuf, count);
+			guest_fd, buf_ptr, count);
 
 		/* Get file descriptor */
 		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
-		if (!fd) {
+		if (!fd)
+		{
 			retval = -EBADF;
 			break;
 		}
@@ -1033,8 +1077,8 @@ void syscall_do()
 		/* Read buffer from memory */
 		buf = malloc(count);
 		if (!buf)
-			fatal("syscall write: out of memory");
-		mem_read(isa_mem, pbuf, count, buf);
+			fatal("%s: out of memory", __FUNCTION__);
+		mem_read(isa_mem, buf_ptr, count, buf);
 		syscall_debug_string("  buf", buf, count, 0);
 
 		/* Poll the file descriptor to check if write is blocking */
@@ -1043,7 +1087,8 @@ void syscall_do()
 		poll(&fds, 1, 0);
 
 		/* Non-blocking write */
-		if (fds.revents) {
+		if (fds.revents)
+		{
 			RETVAL(write(host_fd, buf, count));
 			free(buf);
 			break;
@@ -1193,6 +1238,120 @@ void syscall_do()
 		syscall_debug("  filename=%s, fullpath=%s\n", filename, fullpath);
 
 		RETVAL(unlink(fullpath));
+		break;
+	}
+
+
+	/* 11 */
+	case syscall_code_execve:
+	{
+		uint32_t name_ptr;
+		uint32_t argv;
+		uint32_t envp;
+		uint32_t regs;
+
+		char name[MAX_PATH_SIZE];
+		char full_path[MAX_PATH_SIZE];
+		int length;
+
+		struct list_t *arg_list;
+		char arg_str[MAX_STRING_SIZE];
+		char *arg;
+
+		char env[MAX_LONG_STRING_SIZE];
+		int i;
+
+		/* Arguments */
+		name_ptr = isa_regs->ebx;
+		argv = isa_regs->ecx;
+		envp = isa_regs->edx;
+		regs = isa_regs->esi;
+		syscall_debug("  name_ptr=0x%x, argv=0x%x, envp=0x%x, regs=0x%x\n",
+			name_ptr, argv, envp, regs);
+
+		/* Get command name */
+		length = mem_read_string(isa_mem, name_ptr, sizeof name, name);
+		if (length >= sizeof name)
+			fatal("syscall 'execve': buffer too small");
+		ld_get_full_path(isa_ctx, name, full_path, sizeof full_path);
+		syscall_debug("  name='%s', full_path='%s'\n", name, full_path);
+
+		/* Arguments */
+		arg_list = list_create();
+		for (;;)
+		{
+			unsigned int arg_ptr;
+
+			/* Argument pointer */
+			mem_read(isa_mem, argv + arg_list->count * 4, 4, &arg_ptr);
+			if (!arg_ptr)
+				break;
+
+			/* Argument */
+			length = mem_read_string(isa_mem, arg_ptr, sizeof arg_str, arg_str);
+			if (length >= sizeof arg_str)
+				fatal("syscall 'execve': buffer too small");
+
+			/* Duplicate */
+			arg = strdup(arg_str);
+			if (!arg)
+				fatal("%s: out of memory", __FUNCTION__);
+
+			/* Add to argument list */
+			list_add(arg_list, arg);
+			syscall_debug("    argv[%d]='%s'\n", arg_list->count, arg);
+		}
+
+		/* Environment variables */
+		syscall_debug("\n");
+		for (i = 0; ; i++)
+		{
+			unsigned int env_ptr;
+
+			/* Variable pointer */
+			mem_read(isa_mem, envp + i * 4, 4, &env_ptr);
+			if (!env_ptr)
+				break;
+
+			/* Variable */
+			length = mem_read_string(isa_mem, env_ptr, sizeof env, env);
+			if (length >= sizeof env)
+				fatal("syscall 'execve': buffer too small");
+
+			/* Debug */
+			syscall_debug("    envp[%d]='%s'\n", i, env);
+		}
+
+		/* In the special case that the command line is 'sh -c <...>', this system
+		 * call is the result of a program running the 'system' libc function. The
+		 * host and guest architecture might be different and incompatible, so the
+		 * safest option here is running the system command natively.
+		 */
+		if (!strcmp(full_path, "/bin/sh") && list_count(arg_list) == 3 &&
+			!strcmp(list_get(arg_list, 0), "sh") &&
+			!strcmp(list_get(arg_list, 1), "-c"))
+		{
+			int exit_code;
+
+			/* Execute program natively and finish context */
+			exit_code = system(list_get(arg_list, 2));
+			ctx_finish(isa_ctx, exit_code);
+
+			/* Free arguments and exit */
+			for (i = 0; i < list_count(arg_list); i++)
+				free(list_get(arg_list, i));
+			list_free(arg_list);
+			break;
+		}
+
+
+		/* Free arguments */
+		for (i = 0; i < list_count(arg_list); i++)
+			free(list_get(arg_list, i));
+		list_free(arg_list);
+
+		/* Return */
+		fatal("syscall 'execve': not implemented");
 		break;
 	}
 
@@ -2026,15 +2185,18 @@ void syscall_do()
 		parent_tid_ptr = isa_regs->edx;
 		child_tid_ptr = isa_regs->edi;
 
+		/* Debug */
+		syscall_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
+			flags, new_esp, parent_tid_ptr, child_tid_ptr);
+
 		/* Exit signal is specified in the lower byte of 'flags' */
 		exit_signal = flags & 0xff;
 		flags &= ~0xff;
 
 		/* Debug */
-		syscall_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
-			flags, new_esp, parent_tid_ptr, child_tid_ptr);
 		map_flags(&clone_flags_map, flags, flags_str, MAX_STRING_SIZE);
 		syscall_debug("  flags=%s\n", flags_str);
+		syscall_debug("  exit_signal=%d (%s)\n", exit_signal, sim_signal_name(exit_signal));
 
 		/* New stack pointer defaults to current */
 		if (!new_esp)
