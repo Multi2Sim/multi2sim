@@ -181,8 +181,8 @@ static void bin_config_dump_elem_list(struct hash_table_t *elem_list, int level,
 			break;
 
 		case 8:
-			fprintf(f, "%s%d, 0x%x, %.2g", comma, * (uint16_t *) elem->data,
-				* (uint16_t *) elem->data, * (double *) elem->data);
+			fprintf(f, "%s%lld, 0x%llx, %.2g", comma, * (long long *) elem->data,
+				* (long long *) elem->data, * (double *) elem->data);
 			comma = ", ";
 			break;
 		}

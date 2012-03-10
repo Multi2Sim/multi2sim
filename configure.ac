@@ -83,14 +83,14 @@ AC_SUBST([PKGDATADIR])
 # Debug and profile
 # ---------------------------------------------------------------------
 debug=false
-CFLAGS="-fno-strict-aliasing -O3 -std=gnu99 -DNDEBUG"
+CFLAGS="-O3 -std=gnu99 -DNDEBUG"
 AC_ARG_ENABLE(debug,
 [  --enable-debug    Turn on debugging],
 [
 	case "${enableval}" in
 	yes)
 		debug=true
-		CFLAGS="-Wall -Werror -fno-strict-aliasing -DMHANDLE -g -O0 -std=gnu99"
+		CFLAGS="-Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
 		;;
 	no)
 		;;
@@ -105,13 +105,27 @@ AC_ARG_ENABLE(profile,
 [
 	case "${enableval}" in
 	yes)
-		debug=true
 		CFLAGS+=" -pg"
 		;;
 	no)
 		;;
 	*)
 		AC_MSG_ERROR(bad value ${enableval} for --enable-profile)
+		;;
+	esac
+],
+[])
+AC_ARG_ENABLE(no-strict-aliasing,
+[  --enable-no-strict-aliasing    Allow for no strict aliasing],
+[
+	case "${enableval}" in
+	yes)
+		CFLAGS+=" -fno-strict-aliasing"
+		;;
+	no)
+		;;
+	*)
+		AC_MSG_ERROR(bad value ${enableval} for --enable-no-strict-aliasing)
 		;;
 	esac
 ],
