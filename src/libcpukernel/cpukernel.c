@@ -410,7 +410,7 @@ void ke_process_events()
 			}
 
 			/* Context received a signal */
-			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
+			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked) {
 				if (rmtp) {
 					diff = ctx->wakeup_time - now;
 					sec = diff / 1000000;
@@ -435,9 +435,9 @@ void ke_process_events()
 		if (ctx_get_status(ctx, ctx_sigsuspend))
 		{
 			/* Context received a signal */
-			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
+			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked) {
 				signal_handler_check_intr(ctx);
-				ctx->signal_masks->blocked = ctx->signal_masks->backup;
+				ctx->signal_mask_table->blocked = ctx->signal_mask_table->backup;
 				syscall_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_sigsuspend);
 				continue;
@@ -467,7 +467,7 @@ void ke_process_events()
 				fatal("syscall 'poll': invalid 'wakeup_fd'");
 
 			/* Context received a signal */
-			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
+			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked) {
 				signal_handler_check_intr(ctx);
 				syscall_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
@@ -535,7 +535,7 @@ void ke_process_events()
 				continue;
 
 			/* Context received a signal */
-			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
+			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked) {
 				signal_handler_check_intr(ctx);
 				syscall_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_write);
@@ -595,7 +595,7 @@ void ke_process_events()
 				continue;
 
 			/* Context received a signal */
-			if (ctx->signal_masks->pending & ~ctx->signal_masks->blocked) {
+			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked) {
 				signal_handler_check_intr(ctx);
 				syscall_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_read);
@@ -699,7 +699,7 @@ void ke_process_events()
 			 * already locked, the thread-unsafe version of 'ctx_host_thread_suspend_cancel' is used. */
 			__ctx_host_thread_suspend_cancel(ctx);
 			ke->process_events_force = 1;
-			sim_sigset_add(&ctx->signal_masks->pending, sig[i]);
+			sim_sigset_add(&ctx->signal_mask_table->pending, sig[i]);
 
 			/* Calculate next occurrence */
 			ctx->itimer_value[i] = 0;
