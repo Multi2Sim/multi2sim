@@ -80,80 +80,7 @@ static struct string_map_t elf_section_flags_map =
 };
 
 
-void ld_init(struct ctx_t *ctx)
-{
-	/* Allocate */
-	ctx->loader = calloc(1, sizeof(struct loader_t));
-	if (!ctx->loader)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize */
-	ctx->loader->args = linked_list_create();
-	ctx->loader->env = linked_list_create();
-}
-
-
-void ld_done(struct ctx_t *ctx)
-{
-	struct loader_t *ld = ctx->loader;
-
-	/* Free ELF file  */
-	elf_file_free(ld->elf_file);
-	
-	/* Free arguments */
-	LINKED_LIST_FOR_EACH(ld->args)
-		free(linked_list_get(ld->args));
-	linked_list_free(ld->args);
-
-	/* Free environment variables */
-	LINKED_LIST_FOR_EACH(ld->env)
-		free(linked_list_get(ld->env));
-	linked_list_free(ld->env);
-
-	/* IPC report file */
-	close_file(ld->ipc_report_file);
-
-	/* Free loader */
-	if (ld->interp)
-		free(ld->interp);
-	free(ld->exe);
-	free(ld->cwd);
-	free(ld->stdin_file);
-	free(ld->stdout_file);
-	free(ld);
-
-	/* Reset loader in context */
-	ctx->loader = NULL;
-}
-
-
-void ld_get_full_path(struct ctx_t *ctx, char *file_name, char *full_path, int size)
-{
-	/* File name is NULL or empty */
-	assert(full_path);
-	if (!file_name || !*file_name)
-	{
-		snprintf(full_path, size, "%s", "");
-		return;
-	}
-
-	/* File name is given as an absolute path */
-	if (*file_name == '/')
-	{
-		if (size < strlen(file_name) + 1)
-			fatal("%s: buffer too small", __FUNCTION__);
-		snprintf(full_path, size, "%s", file_name);
-		return;
-	}
-
-	/* Relative path */
-	if (strlen(ctx->loader->cwd) + strlen(file_name) + 2 > size)
-		fatal("%s: buffer too small", __FUNCTION__);
-	snprintf(full_path, size, "%s/%s", ctx->loader->cwd, file_name);
-}
-
-
-void ld_add_args_vector(struct ctx_t *ctx, int argc, char **argv)
+static void ld_add_args_vector(struct ctx_t *ctx, int argc, char **argv)
 {
 	struct loader_t *ld = ctx->loader;
 
@@ -173,7 +100,7 @@ void ld_add_args_vector(struct ctx_t *ctx, int argc, char **argv)
 }
 
 
-void ld_add_args_string(struct ctx_t *ctx, char *args)
+static void ld_add_args_string(struct ctx_t *ctx, char *args)
 {
 	struct loader_t *ld = ctx->loader;
 
@@ -204,7 +131,7 @@ void ld_add_args_string(struct ctx_t *ctx, char *args)
 
 /* Add environment variables from the actual environment plus
  * the list attached in the argument 'env'. */
-void ld_add_environ(struct ctx_t *ctx, char *env)
+static void ld_add_environ(struct ctx_t *ctx, char *env)
 {
 	struct loader_t *ld = ctx->loader;
 	extern char **environ;
@@ -284,7 +211,8 @@ static void ld_load_sections(struct ctx_t *ctx, struct elf_file_t *elf_file)
 
 			/* Load section */
 			mem_map(mem, section->header->sh_addr, section->header->sh_size, perm);
-			ctx->brk = MAX(ctx->brk, section->header->sh_addr + section->header->sh_size);
+			mem->heap_break = MAX(mem->heap_break, section->header->sh_addr
+				+ section->header->sh_size);
 			ld->bottom = MIN(ld->bottom, section->header->sh_addr);
 
 			/* If section type is SHT_NOBITS (sh_type=8), initialize to 0.
@@ -576,6 +504,7 @@ static void ld_load_stack(struct ctx_t *ctx)
 void ld_load_exe(struct ctx_t *ctx, char *exe)
 {
 	struct loader_t *ld = ctx->loader;
+	struct mem_t *mem = ctx->mem;
 	struct fdt_t *fdt = ctx->fdt;
 
 	char stdin_file_full_path[MAX_STRING_SIZE];
@@ -624,7 +553,7 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 
 	/* Set heap break to the highest written address rounded up to
 	 * the memory page boundary. */
-	ctx->brk = ROUND_UP(ctx->brk, MEM_PAGE_SIZE);
+	mem->heap_break = ROUND_UP(mem->heap_break, MEM_PAGE_SIZE);
 
 	/* Load program header table. If we found a PT_INTERP program header,
 	 * we have to load the program interpreter. This means we are dealing with
@@ -642,7 +571,109 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 
 	ld_debug("Program entry is 0x%x\n", ctx->regs->eip);
 	ld_debug("Initial stack pointer is 0x%x\n", ctx->regs->esp);
-	ld_debug("Heap start set to 0x%x\n", ctx->brk);
+	ld_debug("Heap start set to 0x%x\n", mem->heap_break);
+}
+
+
+
+
+/*
+ * Public Functions
+ */
+
+
+struct loader_t *ld_create(void)
+{
+	struct loader_t *ld;
+
+	/* Allocate */
+	ld = calloc(1, sizeof(struct loader_t));
+	if (!ld)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	ld->args = linked_list_create();
+	ld->env = linked_list_create();
+
+	/* Return */
+	return ld;
+}
+
+
+void ld_free(struct loader_t *ld)
+{
+	/* Check no more links */
+	assert(!ld->num_links);
+
+	/* Free ELF file  */
+	elf_file_free(ld->elf_file);
+
+	/* Free arguments */
+	LINKED_LIST_FOR_EACH(ld->args)
+		free(linked_list_get(ld->args));
+	linked_list_free(ld->args);
+
+	/* Free environment variables */
+	LINKED_LIST_FOR_EACH(ld->env)
+		free(linked_list_get(ld->env));
+	linked_list_free(ld->env);
+
+	/* IPC report file */
+	close_file(ld->ipc_report_file);
+
+	/* Free loader */
+	if (ld->interp)
+		free(ld->interp);
+	free(ld->exe);
+	free(ld->cwd);
+	free(ld->stdin_file);
+	free(ld->stdout_file);
+	free(ld);
+}
+
+
+struct loader_t *ld_link(struct loader_t *ld)
+{
+	ld->num_links++;
+	return ld;
+}
+
+
+void ld_unlink(struct loader_t *ld)
+{
+	assert(ld->num_links >= 0);
+	if (ld->num_links)
+		ld->num_links--;
+	else
+		ld_free(ld);
+}
+
+
+void ld_get_full_path(struct ctx_t *ctx, char *file_name, char *full_path, int size)
+{
+	struct loader_t *ld = ctx->loader;
+
+	/* File name is NULL or empty */
+	assert(full_path);
+	if (!file_name || !*file_name)
+	{
+		snprintf(full_path, size, "%s", "");
+		return;
+	}
+
+	/* File name is given as an absolute path */
+	if (*file_name == '/')
+	{
+		if (size < strlen(file_name) + 1)
+			fatal("%s: buffer too small", __FUNCTION__);
+		snprintf(full_path, size, "%s", file_name);
+		return;
+	}
+
+	/* Relative path */
+	if (strlen(ld->cwd) + strlen(file_name) + 2 > size)
+		fatal("%s: buffer too small", __FUNCTION__);
+	snprintf(full_path, size, "%s/%s", ld->cwd, file_name);
 }
 
 

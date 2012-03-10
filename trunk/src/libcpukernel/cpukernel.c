@@ -369,7 +369,8 @@ void ke_process_events()
 	
 	/* Check if events need actually be checked. */
 	pthread_mutex_lock(&ke->process_events_mutex);
-	if (!ke->process_events_force) {
+	if (!ke->process_events_force)
+	{
 		pthread_mutex_unlock(&ke->process_events_mutex);
 		return;
 	}
@@ -380,10 +381,10 @@ void ke_process_events()
 	/*
 	 * LOOP 1
 	 * Look at the list of suspended contexts and try to find
-	 * one that needs to be woken up.
+	 * one that needs to be waken up.
 	 */
-	for (ctx = ke->suspended_list_head; ctx; ctx = next) {
-
+	for (ctx = ke->suspended_list_head; ctx; ctx = next)
+	{
 		/* Save next */
 		next = ctx->suspended_list_next;
 
@@ -400,7 +401,8 @@ void ke_process_events()
 				continue;
 
 			/* Timeout expired */
-			if (ctx->wakeup_time <= now) {
+			if (ctx->wakeup_time <= now)
+			{
 				if (rmtp)
 					mem_write(ctx->mem, rmtp, 8, &zero);
 				syscall_debug("syscall 'nanosleep' - continue (pid %d)\n", ctx->pid);
@@ -410,8 +412,10 @@ void ke_process_events()
 			}
 
 			/* Context received a signal */
-			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked) {
-				if (rmtp) {
+			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
+			{
+				if (rmtp)
+				{
 					diff = ctx->wakeup_time - now;
 					sec = diff / 1000000;
 					usec = diff % 1000000;
@@ -435,7 +439,8 @@ void ke_process_events()
 		if (ctx_get_status(ctx, ctx_sigsuspend))
 		{
 			/* Context received a signal */
-			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked) {
+			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
+			{
 				signal_handler_check_intr(ctx);
 				ctx->signal_mask_table->blocked = ctx->signal_mask_table->backup;
 				syscall_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
@@ -467,7 +472,8 @@ void ke_process_events()
 				fatal("syscall 'poll': invalid 'wakeup_fd'");
 
 			/* Context received a signal */
-			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked) {
+			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
+			{
 				signal_handler_check_intr(ctx);
 				syscall_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
@@ -482,7 +488,8 @@ void ke_process_events()
 				fatal("syscall 'poll': unexpected error in host 'poll'");
 
 			/* POLLOUT event available */
-			if (ctx->wakeup_events & host_fds.revents & POLLOUT) {
+			if (ctx->wakeup_events & host_fds.revents & POLLOUT)
+			{
 				revents = POLLOUT;
 				mem_write(ctx->mem, prevents, 2, &revents);
 				ctx->regs->eax = 1;
@@ -493,7 +500,8 @@ void ke_process_events()
 			}
 
 			/* POLLIN event available */
-			if (ctx->wakeup_events & host_fds.revents & POLLIN) {
+			if (ctx->wakeup_events & host_fds.revents & POLLIN)
+			{
 				revents = POLLIN;
 				mem_write(ctx->mem, prevents, 2, &revents);
 				ctx->regs->eax = 1;
@@ -504,7 +512,8 @@ void ke_process_events()
 			}
 
 			/* Timeout expired */
-			if (ctx->wakeup_time && ctx->wakeup_time < now) {
+			if (ctx->wakeup_time && ctx->wakeup_time < now)
+			{
 				revents = 0;
 				mem_write(ctx->mem, prevents, 2, &revents);
 				syscall_debug("syscall poll - continue (pid %d) - time out\n", ctx->pid);
@@ -535,7 +544,8 @@ void ke_process_events()
 				continue;
 
 			/* Context received a signal */
-			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked) {
+			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
+			{
 				signal_handler_check_intr(ctx);
 				syscall_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_write);
@@ -595,7 +605,8 @@ void ke_process_events()
 				continue;
 
 			/* Context received a signal */
-			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked) {
+			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
+			{
 				signal_handler_check_intr(ctx);
 				syscall_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_read);
@@ -615,7 +626,8 @@ void ke_process_events()
 				fatal("syscall 'read': unexpected error in host 'poll'");
 
 			/* If data is ready, perform host 'read' call and wake up */
-			if (host_fds.revents) {
+			if (host_fds.revents)
+			{
 				pbuf = ctx->regs->ecx;
 				count = ctx->regs->edx;
 				buf = malloc(count);
@@ -649,8 +661,8 @@ void ke_process_events()
 
 			/* A zombie child is available to 'waitpid' it */
 			child = ctx_get_zombie(ctx, ctx->wakeup_pid);
-			if (child) {
-
+			if (child)
+			{
 				/* Continue with 'waitpid' system call */
 				pstatus = ctx->regs->ecx;
 				ctx->regs->eax = child->pid;
@@ -664,7 +676,7 @@ void ke_process_events()
 				continue;
 			}
 
-			/* No event available. Since this context won't awake on its own, no
+			/* No event available. Since this context won't wake up on its own, no
 			 * 'ke_host_thread_suspend' is needed. */
 			continue;
 		}
@@ -687,8 +699,8 @@ void ke_process_events()
 		/* Check for any expired 'itimer': itimer_value < now
 		 * In this case, send corresponding signal to process.
 		 * Then calculate next 'itimer' occurrence: itimer_value = now + itimer_interval */
-		for (i = 0; i < 3; i++ ) {
-			
+		for (i = 0; i < 3; i++ )
+		{
 			/* Timer inactive or not expired yet */
 			if (!ctx->itimer_value[i] || ctx->itimer_value[i] > now)
 				continue;
@@ -709,7 +721,8 @@ void ke_process_events()
 
 		/* Calculate the time when next wakeup occurs. */
 		ctx->host_thread_timer_wakeup = 0;
-		for (i = 0; i < 3; i++) {
+		for (i = 0; i < 3; i++)
+		{
 			if (!ctx->itimer_value[i])
 				continue;
 			assert(ctx->itimer_value[i] >= now);
@@ -717,8 +730,9 @@ void ke_process_events()
 				ctx->host_thread_timer_wakeup = ctx->itimer_value[i];
 		}
 
-		/* If a new timer was set, launch 'ke_host_thread_timer' again */
-		if (ctx->host_thread_timer_wakeup) {
+		/* If a new timer was set, launch ke_host_thread_timer' again */
+		if (ctx->host_thread_timer_wakeup)
+		{
 			ctx->host_thread_timer_active = 1;
 			if (pthread_create(&ctx->host_thread_timer, NULL, ke_host_thread_timer, ctx))
 				fatal("%s: could not create child thread", __FUNCTION__);
@@ -865,16 +879,20 @@ void ke_disasm(char *file_name)
 			/* Read instruction */
 			eip = section->header->sh_addr + buffer->pos;
 			x86_disasm(elf_buffer_tell(buffer), eip, &inst);
-			if (inst.size) {
+			if (inst.size)
+			{
 				elf_buffer_read(buffer, NULL, inst.size);
 				x86_inst_dump_buf(&inst, str, MAX_STRING_SIZE);
-			} else {
+			}
+			else
+			{
 				elf_buffer_read(buffer, NULL, 1);
 				strcpy(str, "???");
 			}
 
 			/* Symbol */
-			while (symbol && symbol->value < eip) {
+			while (symbol && symbol->value < eip)
+			{
 				curr_sym++;
 				symbol = list_get(elf_file->symbol_table, curr_sym);
 			}

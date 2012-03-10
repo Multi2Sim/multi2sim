@@ -103,7 +103,7 @@ struct ctx_t *ctx_create(void)
 	ctx = ctx_do_create();
 
 	/* Loader */
-	ld_init(ctx);
+	ctx->loader = ld_create();
 
 	/* Memory */
 	ctx->mid = ke->current_mid++;
@@ -136,11 +136,11 @@ struct ctx_t *ctx_clone(struct ctx_t *ctx)
 	new->spec_mem = spec_mem_create(new->mem);
 
 	/* Loader */
-	new->loader = ctx->loader;
+	new->loader = ld_link(ctx->loader);
 
 	/* Signal handlers and file descriptor table */
 	new->signal_handler_table = signal_handler_table_link(ctx->signal_handler_table);
-	new->fdt = ctx->fdt;
+	new->fdt = fdt_link(ctx->fdt);
 
 	/* Libc segment */
 	new->glibc_segment_base = ctx->glibc_segment_base;
@@ -169,6 +169,9 @@ struct ctx_t *ctx_fork(struct ctx_t *ctx)
 	new->mem = mem_create();
 	new->spec_mem = spec_mem_create(new->mem);
 	mem_clone(new->mem, ctx->mem);
+
+	/* Loader */
+	new->loader = ld_link(ctx->loader);
 
 	/* Signal handlers and file descriptor table */
 	new->signal_handler_table = signal_handler_table_create();
@@ -208,14 +211,10 @@ void ctx_free(struct ctx_t *ctx)
 	signal_mask_table_free(ctx->signal_mask_table);
 	spec_mem_free(ctx->spec_mem);
 
-	/* Shared structures are only freed if this
-	 * is the last context sharing them. */
-	if (ctx->mem->num_links == 1)
-	{
-		ld_done(ctx);
-		fdt_free(ctx->fdt);
-	}
+	/* Unlink shared structures */
+	ld_unlink(ctx->loader);
 	signal_handler_table_unlink(ctx->signal_handler_table);
+	fdt_unlink(ctx->fdt);
 	mem_unlink(ctx->mem);
 
 	/* Warn about unresolved attempts to access OpenCL library */
@@ -241,7 +240,7 @@ void ctx_dump(struct ctx_t *ctx, FILE *f)
 		fprintf(f, "  parent=(null)\n");
 	else
 		fprintf(f, "  parent=%d\n", ctx->parent->pid);
-	fprintf(f, "  heap break: 0x%x\n", ctx->brk);
+	fprintf(f, "  heap break: 0x%x\n", ctx->mem->heap_break);
 
 	/* Signal masks */
 	fprintf(f, "  blocked signal mask: 0x%llx ",
@@ -488,19 +487,19 @@ void ctx_finish_group(struct ctx_t *ctx, int status)
 {
 	struct ctx_t *aux;
 
-	/* Go to oldest parent. */
-	while (ctx->parent)
-		ctx = ctx->parent;
+	/* Get group parent */
+	if (ctx->group_parent)
+		ctx = ctx->group_parent;
+	assert(!ctx->group_parent);  /* Only one level */
 	
 	/* Context already finished */
 	if (ctx_get_status(ctx, ctx_finished | ctx_zombie))
 		return;
 
-	/* From now on, all children have lost their parent. If a children is
-	 * already zombie, finish it, since its parent won't be able to waitpid it
-	 * anymore. */
-	for (aux = ke->context_list_head; aux; aux = aux->context_list_next) {
-		if (aux->mem != ctx->mem)
+	/* Finish all contexts in the group */
+	DOUBLE_LINKED_LIST_FOR_EACH(ke, context, aux)
+	{
+		if (aux->group_parent != ctx && aux != ctx)
 			continue;
 
 		if (ctx_get_status(aux, ctx_zombie))
@@ -509,9 +508,15 @@ void ctx_finish_group(struct ctx_t *ctx, int status)
 			signal_handler_return(aux);
 		ctx_host_thread_suspend_cancel(aux);
 		ctx_host_thread_timer_cancel(aux);
-		ctx_set_status(aux, ctx_finished);
+
+		/* If context has a parent, set its status to zombie, and let the
+		 * parent 'waitpid' it. */
+		ctx_set_status(aux, aux->parent ? ctx_zombie : ctx_finished);
 		aux->exit_code = status;
 	}
+
+	/* Process events */
+	ke_process_events_schedule();
 }
 
 
@@ -535,7 +540,7 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	/* From now on, all children have lost their parent. If a child is
 	 * already zombie, finish it, since its parent won't be able to waitpid it
 	 * anymore. */
-	for (aux = ke->context_list_head; aux; aux = aux->context_list_next)
+	DOUBLE_LINKED_LIST_FOR_EACH(ke, context, aux)
 	{
 		if (aux->parent == ctx)
 		{
