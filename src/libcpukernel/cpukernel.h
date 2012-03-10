@@ -118,10 +118,17 @@ struct mem_page_t
 
 struct mem_t
 {
+	/* Number of contexts sharing the memory image */
+	int num_links;
+
+	/* Memory pages */
 	struct mem_page_t *pages[MEM_PAGE_COUNT];
-	int sharing;  /* Number of contexts sharing memory map */
-	uint32_t last_address;  /* Address of last access */
-	int safe;  /* Safe mode */
+
+	/* Safe mode */
+	int safe;
+
+	/* Last accessed address */
+	uint32_t last_address;
 };
 
 extern unsigned long mem_mapped_space;
@@ -129,6 +136,11 @@ extern unsigned long mem_max_mapped_space;
 
 struct mem_t *mem_create(void);
 void mem_free(struct mem_t *mem);
+
+struct mem_t *mem_link(struct mem_t *mem);
+void mem_unlink(struct mem_t *mem);
+
+void mem_clear(struct mem_t *mem);
 
 struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr);
 struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr);
@@ -153,6 +165,8 @@ void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size, enum mem_access
 
 void mem_dump(struct mem_t *mem, char *filename, uint32_t start, uint32_t end);
 void mem_load(struct mem_t *mem, char *filename, uint32_t start);
+
+void mem_clone(struct mem_t *dst_mem, struct mem_t *src_mem);
 
 
 
@@ -267,13 +281,24 @@ struct loader_t
 	FILE *ipc_report_file;
 	int ipc_report_interval;
 
-	/* Code pointers */
-	uint32_t stack_base, stack_top, stack_size;
-	uint32_t text_size;
-	uint32_t environ_base, brk, bottom;
-	uint32_t prog_entry, interp_prog_entry;
-	uint32_t phdt_base, phdr_count;
+	/* Stack */
+	uint32_t stack_base;
+	uint32_t stack_top;
+	uint32_t stack_size;
+	uint32_t environ_base;
 
+	/* Lowest address initialized */
+	uint32_t bottom;
+
+	/* Program entries */
+	uint32_t prog_entry;
+	uint32_t interp_prog_entry;
+
+	/* Program headers */
+	uint32_t phdt_base;
+	uint32_t phdr_count;
+
+	/* Random bytes */
 	uint32_t at_random_addr;
 	uint32_t at_random_addr_holder;
 };
@@ -736,7 +761,7 @@ void syscall_summary(void);
 
 
 /* Every contexts (parent and children) has its own masks */
-struct signal_masks_t
+struct signal_mask_table_t
 {
 	uint64_t pending;  /* mask of pending signals */
 	uint64_t blocked;  /* mask of blocked signals */
@@ -745,15 +770,18 @@ struct signal_masks_t
 	uint32_t pretcode;  /* base address of a memory page allocated for retcode execution */
 };
 
-struct signal_masks_t *signal_masks_create(void);
-void signal_masks_free(struct signal_masks_t *signal_masks);
+struct signal_mask_table_t *signal_mask_table_create(void);
+void signal_mask_table_free(struct signal_mask_table_t *table);
 
 
-/* This structure is shared for parent and child contexts. A change
- * in the singal handler by any of them affects all of them. */
-struct signal_handlers_t
+struct signal_handler_table_t
 {
-	struct sim_sigaction {
+	/* Number of contexts sharing the table */
+	int num_links;
+
+	/* Signal handlers */
+	struct sim_sigaction
+	{
 		uint32_t handler;
 		uint32_t flags;
 		uint32_t restorer;
@@ -761,8 +789,11 @@ struct signal_handlers_t
 	} sigaction[64];
 };
 
-struct signal_handlers_t *signal_handlers_create(void);
-void signal_handlers_free(struct signal_handlers_t *signal_handlers);
+struct signal_handler_table_t *signal_handler_table_create(void);
+void signal_handler_table_free(struct signal_handler_table_t *table);
+
+struct signal_handler_table_t *signal_handler_table_link(struct signal_handler_table_t *table);
+void signal_handler_table_unlink(struct signal_handler_table_t *table);
 
 void signal_handler_run(struct ctx_t *ctx, int sig);
 void signal_handler_return(struct ctx_t *ctx);
@@ -843,14 +874,15 @@ struct ctx_t
 {
 	/* Context properties */
 	int status;
-	int pid;  /* Context id */
-	int mid;  /* Memory id - the same for contexts sharing memory map */
+	int pid;  /* Context ID */
+	int mid;  /* Memory map ID */
 	struct ctx_t *parent;
 	int exit_signal;  /* Signal to send parent when finished */
-	int exit_code;  /* For zombie processes */
-	uint32_t set_child_tid, clear_child_tid;
+	int exit_code;  /* For zombie contexts */
+
+	uint32_t set_child_tid;
+	uint32_t clear_child_tid;
 	uint32_t robust_list_head;  /* robust futex list */
-	uint32_t initial_stack;  /* Value of esp when context is cloned */
 
 	/* For emulation of string operations */
 	uint32_t last_eip;  /* Eip of last emulated instruction */
@@ -868,6 +900,9 @@ struct ctx_t
 	/* For segmented memory access in glibc */
 	uint32_t glibc_segment_base;
 	uint32_t glibc_segment_limit;
+
+	/* Heap break */
+	uint32_t brk;
 
 	/* For the OpenCL library access */
 	int libopencl_open_attempt;
@@ -913,8 +948,8 @@ struct ctx_t
 	struct fdt_t *fdt;  /* File descriptor table */
 	struct regs_t *regs;  /* Logical register file */
 	struct regs_t *backup_regs;  /* Backup when entering in speculative mode */
-	struct signal_masks_t *signal_masks;
-	struct signal_handlers_t *signal_handlers;
+	struct signal_mask_table_t *signal_mask_table;
+	struct signal_handler_table_t *signal_handler_table;
 
 	/* Statistics */
 	long long inst_count;  /* Executed instructions in non-speculative mode */
@@ -943,9 +978,12 @@ enum ctx_status_t
 };
 
 struct ctx_t *ctx_create(void);
-struct ctx_t *ctx_clone(struct ctx_t *ctx);
 void ctx_free(struct ctx_t *ctx);
+
 void ctx_dump(struct ctx_t *ctx, FILE *f);
+
+struct ctx_t *ctx_clone(struct ctx_t *ctx);
+struct ctx_t *ctx_fork(struct ctx_t *ctx);
 
 /* Thread safe/unsafe versions */
 void __ctx_host_thread_suspend_cancel(struct ctx_t *ctx);

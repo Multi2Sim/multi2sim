@@ -121,6 +121,9 @@ void ld_done(struct ctx_t *ctx)
 	free(ld->stdin_file);
 	free(ld->stdout_file);
 	free(ld);
+
+	/* Reset loader in context */
+	ctx->loader = NULL;
 }
 
 
@@ -281,7 +284,7 @@ static void ld_load_sections(struct ctx_t *ctx, struct elf_file_t *elf_file)
 
 			/* Load section */
 			mem_map(mem, section->header->sh_addr, section->header->sh_size, perm);
-			ld->brk = MAX(ld->brk, section->header->sh_addr + section->header->sh_size);
+			ctx->brk = MAX(ctx->brk, section->header->sh_addr + section->header->sh_size);
 			ld->bottom = MIN(ld->bottom, section->header->sh_addr);
 
 			/* If section type is SHT_NOBITS (sh_type=8), initialize to 0.
@@ -400,6 +403,8 @@ static void ld_load_program_headers(struct ctx_t *ctx)
 		{
 			mem_read_string(mem, program_header->header->p_vaddr, sizeof(str), str);
 			ld->interp = strdup(str);
+			if (!ld->interp)
+				fatal("%s: out of memory", __FUNCTION__);
 		}
 	}
 
@@ -508,7 +513,7 @@ static void ld_load_stack(struct ctx_t *ctx)
 	ld_debug("mapping region for stack from 0x%x to 0x%x\n",
 		ld->stack_top, ld->stack_base - 1);
 	
-	/* Load arguments and environment vars */
+	/* Load arguments and environment variables */
 	ld->environ_base = LD_STACK_BASE - LD_MAX_ENVIRON;
 	sp = ld->environ_base;
 	argc = linked_list_count(ld->args);
@@ -616,7 +621,10 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 	/* Read sections and program entry */
 	ld_load_sections(ctx, ld->elf_file);
 	ld->prog_entry = ld->elf_file->header->e_entry;
-	ld->brk = ROUND_UP(ld->brk, MEM_PAGE_SIZE);
+
+	/* Set heap break to the highest written address rounded up to
+	 * the memory page boundary. */
+	ctx->brk = ROUND_UP(ctx->brk, MEM_PAGE_SIZE);
 
 	/* Load program header table. If we found a PT_INTERP program header,
 	 * we have to load the program interpreter. This means we are dealing with
@@ -634,7 +642,7 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 
 	ld_debug("Program entry is 0x%x\n", ctx->regs->eip);
 	ld_debug("Initial stack pointer is 0x%x\n", ctx->regs->esp);
-	ld_debug("Heap start set to 0x%x\n", ld->brk);
+	ld_debug("Heap start set to 0x%x\n", ctx->brk);
 }
 
 

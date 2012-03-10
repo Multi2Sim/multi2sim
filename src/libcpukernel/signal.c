@@ -22,7 +22,8 @@
 
 /* Signals */
 
-struct string_map_t signal_map = {
+struct string_map_t signal_map =
+{
 	31, {
 		{ "SIGHUP",           1 },
 		{ "SIGINT",           2 },
@@ -59,7 +60,8 @@ struct string_map_t signal_map = {
 };
 
 
-struct string_map_t sigaction_flags_map = {
+struct string_map_t sigaction_flags_map =
+{
 	9, {
 		{ "SA_NOCLDSTOP",    0x00000001u },
 		{ "SA_NOCLDWAIT",    0x00000002u },
@@ -124,17 +126,23 @@ void sim_sigset_dump(uint64_t sim_sigset, FILE *f)
 {
 	int i;
 	char *comma = "", *name;
-	if (sim_sigset == (uint64_t) -1) {
+	if (sim_sigset == (uint64_t) -1)
+	{
 		fprintf(f, "{<all>}");
 		return;
 	}
 	fprintf(f, "{");
-	for (i = 1; i <= 64; i++) {
-		if (sim_sigset_member(&sim_sigset, i)) {
-			if (i < 32) {
+	for (i = 1; i <= 64; i++)
+	{
+		if (sim_sigset_member(&sim_sigset, i))
+		{
+			if (i < 32)
+			{
 				name = map_value(&signal_map, i);
 				fprintf(f, "%s%s", comma, name);
-			} else {
+			}
+			else
+			{
 				fprintf(f, "%s%d", comma, i);
 			}
 			comma = ",";
@@ -146,33 +154,84 @@ void sim_sigset_dump(uint64_t sim_sigset, FILE *f)
 
 
 
-/* Signal Masks */
+/*
+ * Signal Mask Table
+ */
 
-struct signal_masks_t *signal_masks_create(void)
+struct signal_mask_table_t *signal_mask_table_create(void)
 {
-	return calloc(1, sizeof(struct signal_masks_t));
+	struct signal_mask_table_t *table;
+
+	/* Create */
+	table = calloc(1, sizeof(struct signal_mask_table_t));
+	if (!table)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Return */
+	return table;
 }
 
-void signal_masks_free(struct signal_masks_t *signal_masks)
+void signal_mask_table_free(struct signal_mask_table_t *table)
 {
-	free(signal_masks);
+	free(table);
 }
 
 
-struct signal_handlers_t *signal_handlers_create(void)
+
+
+/*
+ * Signal Handler Table
+ */
+
+struct signal_handler_table_t *signal_handler_table_create(void)
 {
-	return calloc(1, sizeof(struct signal_handlers_t));
+	struct signal_handler_table_t *table;
+
+	/* Allocate */
+	table = calloc(1, sizeof(struct signal_handler_table_t));
+	if (!table)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	table->num_links = 1;
+
+	/* Return */
+	return table;
 }
 
 
-void signal_handlers_free(struct signal_handlers_t *signal_handlers)
+void signal_handler_table_free(struct signal_handler_table_t *table)
 {
-	free(signal_handlers);
+	free(table);
 }
+
+
+struct signal_handler_table_t *signal_handler_table_link(struct signal_handler_table_t *table)
+{
+	table->num_links++;
+	return table;
+}
+
+
+void signal_handler_table_unlink(struct signal_handler_table_t *table)
+{
+	assert(table->num_links > 0);
+	table->num_links--;
+	if (!table->num_links)
+		signal_handler_table_free(table);
+}
+
+
+
+
+/*
+ * Signal Handlers
+ */
 
 
 /* Structure representing the signal stack frame */
-struct sim_sigframe {
+struct sim_sigframe
+{
 	uint32_t pretcode;  /* Pointer to return code */
 	uint32_t sig;  /* Received signal */
 
@@ -209,17 +268,17 @@ void signal_handler_run(struct ctx_t *ctx, int sig)
 		ctx->pid, sig);
 
 	/* Save a copy of the register file */
-	ctx->signal_masks->regs = regs_create();
-	regs_copy(ctx->signal_masks->regs, ctx->regs);
+	ctx->signal_mask_table->regs = regs_create();
+	regs_copy(ctx->signal_mask_table->regs, ctx->regs);
 
 	/* Create a memory page with execution permission, and copy return code on it. */
-	ctx->signal_masks->pretcode = mem_map_space(ctx->mem, MEM_PAGE_SIZE, MEM_PAGE_SIZE);
-	mem_map(ctx->mem, ctx->signal_masks->pretcode, MEM_PAGE_SIZE, mem_access_exec | mem_access_init);
-	syscall_debug("  return code of signal handler allocated at 0x%x\n", ctx->signal_masks->pretcode);
-	mem_access(ctx->mem, ctx->signal_masks->pretcode, sizeof(signal_retcode), signal_retcode, mem_access_init);
+	ctx->signal_mask_table->pretcode = mem_map_space(ctx->mem, MEM_PAGE_SIZE, MEM_PAGE_SIZE);
+	mem_map(ctx->mem, ctx->signal_mask_table->pretcode, MEM_PAGE_SIZE, mem_access_exec | mem_access_init);
+	syscall_debug("  return code of signal handler allocated at 0x%x\n", ctx->signal_mask_table->pretcode);
+	mem_access(ctx->mem, ctx->signal_mask_table->pretcode, sizeof(signal_retcode), signal_retcode, mem_access_init);
 
 	/* Initialize stack frame */
-	sigframe.pretcode = ctx->signal_masks->pretcode;
+	sigframe.pretcode = ctx->signal_mask_table->pretcode;
 	sigframe.sig = sig;
 	sigframe.gs = ctx->regs->gs;
 	sigframe.fs = ctx->regs->fs;
@@ -256,7 +315,7 @@ void signal_handler_run(struct ctx_t *ctx, int sig)
 	ctx_set_status(ctx, ctx_handler);
 
 	/* Set eip to run handler */
-	handler = ctx->signal_handlers->sigaction[sig - 1].handler;
+	handler = ctx->signal_handler_table->sigaction[sig - 1].handler;
 	if (!handler)
 		fatal("signal_handler_run: invalid signal handler");
 	ctx->regs->eip = handler;
@@ -272,13 +331,13 @@ void signal_handler_return(struct ctx_t *ctx)
 	ctx_clear_status(ctx, ctx_handler);
 
 	/* Free signal frame */
-	mem_unmap(ctx->mem, ctx->signal_masks->pretcode, MEM_PAGE_SIZE);
+	mem_unmap(ctx->mem, ctx->signal_mask_table->pretcode, MEM_PAGE_SIZE);
 	syscall_debug("  signal handler return code at 0x%x deallocated\n",
-		ctx->signal_masks->pretcode);
+		ctx->signal_mask_table->pretcode);
 
 	/* Restore saved register file and free backup */
-	regs_copy(ctx->regs, ctx->signal_masks->regs);
-	regs_free(ctx->signal_masks->regs);
+	regs_copy(ctx->regs, ctx->signal_mask_table->regs);
+	regs_free(ctx->signal_mask_table->regs);
 }
 
 
@@ -297,24 +356,27 @@ void signal_handler_check_intr(struct ctx_t *ctx)
 	/* Context cannot be running a signal handler */
 	/* A signal must be pending and unblocked */
 	assert(!ctx_get_status(ctx, ctx_handler));
-	assert(ctx->signal_masks->pending & ~ctx->signal_masks->blocked);
+	assert(ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked);
 
 	/* Get signal number */
 	for (sig = 1; sig <= 64; sig++)
-		if (sim_sigset_member(&ctx->signal_masks->pending, sig) &&
-			!sim_sigset_member(&ctx->signal_masks->blocked, sig))
+		if (sim_sigset_member(&ctx->signal_mask_table->pending, sig) &&
+			!sim_sigset_member(&ctx->signal_mask_table->blocked, sig))
 			break;
 	assert(sig <= 64);
 
 	/* If signal handling uses 'SA_RESTART' flag, set return address to
 	 * system call. */
-	if (ctx->signal_handlers->sigaction[sig - 1].flags & 0x10000000u)
+	if (ctx->signal_handler_table->sigaction[sig - 1].flags & 0x10000000u)
 	{
 		unsigned char buf[2];
+
 		ctx->regs->eip -= 2;
 		mem_read(ctx->mem, ctx->regs->eip, 2, buf);
 		assert(buf[0] == 0xcd && buf[1] == 0x80);  /* 'int 0x80' */
-	} else {
+	}
+	else
+	{
 		
 		/* Otherwise, return -EINTR */
 		ctx->regs->eax = -EINTR;
@@ -322,7 +384,7 @@ void signal_handler_check_intr(struct ctx_t *ctx)
 
 	/* Run the signal handler */
 	signal_handler_run(ctx, sig);
-	sim_sigset_del(&ctx->signal_masks->pending, sig);
+	sim_sigset_del(&ctx->signal_mask_table->pending, sig);
 
 }
 
@@ -336,17 +398,18 @@ void signal_handler_check(struct ctx_t *ctx)
 		return;
 	
 	/* If there is no pending unblocked signal, do nothing. */
-	if (!(ctx->signal_masks->pending & ~ctx->signal_masks->blocked))
+	if (!(ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked))
 		return;
 	
 	/* There is some unblocked pending signal, prepare signal handler to
 	 * be executed. */
-	for (sig = 1; sig <= 64; sig++) {
-		if (sim_sigset_member(&ctx->signal_masks->pending, sig) &&
-			!sim_sigset_member(&ctx->signal_masks->blocked, sig))
+	for (sig = 1; sig <= 64; sig++)
+	{
+		if (sim_sigset_member(&ctx->signal_mask_table->pending, sig) &&
+			!sim_sigset_member(&ctx->signal_mask_table->blocked, sig))
 		{
 			signal_handler_run(ctx, sig);
-			sim_sigset_del(&ctx->signal_masks->pending, sig);
+			sim_sigset_del(&ctx->signal_mask_table->pending, sig);
 			break;
 		}
 	}
