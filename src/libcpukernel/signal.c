@@ -263,8 +263,13 @@ void signal_handler_run(struct ctx_t *ctx, int sig)
 	struct sim_sigframe sigframe;
 
 	/* Debug */
+	assert(IN_RANGE(sig, 1, 64));
 	syscall_debug("context %d executes signal handler for signal %d\n",
 		ctx->pid, sig);
+
+	/* Signal SIGCHLD ignored if no signal handler installed */
+	if (sig == SIGCHLD && !ctx->signal_handler_table->sigaction[sig - 1].handler)
+		return;
 
 	/* Save a copy of the register file */
 	ctx->signal_mask_table->regs = regs_create();
@@ -316,7 +321,7 @@ void signal_handler_run(struct ctx_t *ctx, int sig)
 	/* Set eip to run handler */
 	handler = ctx->signal_handler_table->sigaction[sig - 1].handler;
 	if (!handler)
-		fatal("signal_handler_run: invalid signal handler");
+		fatal("%s: invalid signal handler", __FUNCTION__);
 	ctx->regs->eip = handler;
 }
 
