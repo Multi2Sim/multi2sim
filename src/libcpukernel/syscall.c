@@ -1157,7 +1157,8 @@ void syscall_do()
 
 		/* If there is no child and the flag WNOHANG was not specified,
 		 * we get suspended until the specified child finishes. */
-		if (!child && !(options & 0x1)) {
+		if (!child && !(options & 0x1))
+		{
 			isa_ctx->wakeup_pid = pid;
 			ctx_set_status(isa_ctx, ctx_suspended | ctx_waitpid);
 			break;
@@ -1165,7 +1166,8 @@ void syscall_do()
 
 		/* Context is not suspended. WNOHANG was specified, or some child
 		 * was found in the zombie list. */
-		if (child) {
+		if (child)
+		{
 			retval = child->pid;
 			if (pstatus)
 				mem_write(isa_mem, pstatus, 4, &child->exit_code);
@@ -1473,7 +1475,7 @@ void syscall_do()
 		uint32_t oldbrk_rnd, newbrk_rnd;
 
 		newbrk = isa_regs->ebx;
-		oldbrk = isa_ctx->brk;
+		oldbrk = isa_mem->heap_break;
 		syscall_debug("  newbrk=0x%x (previous brk was 0x%x)\n",
 			newbrk, oldbrk);
 
@@ -1498,7 +1500,7 @@ void syscall_do()
 				mem_map(isa_mem, oldbrk_rnd, size,
 					mem_access_read | mem_access_write);
 			}
-			isa_ctx->brk = newbrk;
+			isa_mem->heap_break = newbrk;
 			retval = newbrk;
 			syscall_debug("  heap grows 0x%x bytes\n", newbrk - oldbrk);
 			break;
@@ -1509,7 +1511,7 @@ void syscall_do()
 			size = oldbrk_rnd - newbrk_rnd;
 			if (size)
 				mem_unmap(isa_mem, newbrk_rnd, size);
-			isa_ctx->brk = newbrk;
+			isa_mem->heap_break = newbrk;
 			retval = newbrk;
 			syscall_debug("  heap shrinks 0x%x bytes\n", oldbrk - newbrk);
 			break;
@@ -2069,19 +2071,29 @@ void syscall_do()
 
 		/* Flag CLONE_THREAD.
 		 * If specified, the exit signal is ignored. Otherwise, it is specified in the
-		 * lower byte of the flags. */
+		 * lower byte of the flags. Also, this determines whether to create a group of
+		 * threads. */
 		if (flags & SIM_CLONE_THREAD)
+		{
 			new_ctx->exit_signal = 0;
+			new_ctx->group_parent = isa_ctx->group_parent ?
+				isa_ctx->group_parent : isa_ctx;
+		}
 		else
+		{
 			new_ctx->exit_signal = exit_signal;
+			new_ctx->group_parent = NULL;
+		}
 
 		/* Flag CLONE_PARENT_SETTID */
 		if (flags & SIM_CLONE_PARENT_SETTID)
 			mem_write(isa_ctx->mem, parent_tid_ptr, 4, &new_ctx->pid);
 
-		/* Flags CLONE_CHILD_SETTID and CLONE_CHILD_CLEARTID */
+		/* Flag CLONE_CHILD_SETTID */
 		if (flags & SIM_CLONE_CHILD_SETTID)
-			new_ctx->set_child_tid = child_tid_ptr;
+			mem_write(new_ctx->mem, child_tid_ptr, 4, &new_ctx->pid);
+
+		/* Flag CLONE_CHILD_CLEARTID */
 		if (flags & SIM_CLONE_CHILD_CLEARTID)
 			new_ctx->clear_child_tid = child_tid_ptr;
 

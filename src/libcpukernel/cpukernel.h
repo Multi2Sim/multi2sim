@@ -118,7 +118,7 @@ struct mem_page_t
 
 struct mem_t
 {
-	/* Number of contexts sharing the memory image */
+	/* Number of extra contexts sharing memory image */
 	int num_links;
 
 	/* Memory pages */
@@ -126,6 +126,9 @@ struct mem_t
 
 	/* Safe mode */
 	int safe;
+
+	/* Heap break for CPU contexts */
+	uint32_t heap_break;
 
 	/* Last accessed address */
 	uint32_t last_address;
@@ -267,6 +270,9 @@ void regs_fpu_stack_dump(struct regs_t *regs, FILE *f);
 
 struct loader_t
 {
+	/* Number of extra contexts using this loader */
+	int num_links;
+
 	/* Program data */
 	struct elf_file_t *elf_file;
 	struct linked_list_t *args;
@@ -309,8 +315,14 @@ extern int ld_debug_category;
 
 extern char *ld_help_ctxconfig;
 
-void ld_init(struct ctx_t *ctx);
-void ld_done(struct ctx_t *ctx);
+struct loader_t *ld_create(void);
+void ld_free(struct loader_t *ld);
+
+struct loader_t *ld_link(struct loader_t *ld);
+void ld_unlink(struct loader_t *ld);
+
+void ld_convert_filename(struct loader_t *ld, char *file_name);
+void ld_get_full_path(struct ctx_t *ctx, char *file_name, char *full_path, int size);
 
 void ld_add_args(struct ctx_t *ctx, int argc, char **argv);
 void ld_add_cmdline(struct ctx_t *ctx, char *cmdline);
@@ -320,9 +332,6 @@ void ld_load_exe(struct ctx_t *ctx, char *exe);
 
 void ld_load_prog_from_ctxconfig(char *ctxconfig);
 void ld_load_prog_from_cmdline(int argc, char **argv);
-
-void ld_convert_filename(struct ctx_t *ctx, char *filename);
-void ld_get_full_path(struct ctx_t *ctx, char *filename, char *fullpath, int size);
 
 
 
@@ -776,7 +785,7 @@ void signal_mask_table_free(struct signal_mask_table_t *table);
 
 struct signal_handler_table_t
 {
-	/* Number of contexts sharing the table */
+	/* Number of extra contexts sharing the table */
 	int num_links;
 
 	/* Signal handlers */
@@ -841,13 +850,20 @@ struct fd_t
 /* File descriptor table */
 struct fdt_t
 {
-	struct list_t *fd_list;  /* List of file descriptors (fd_t elements) */
+	/* Number of extra contexts sharing table */
+	int num_links;
+
+	/* List of descriptors */
+	struct list_t *fd_list;
 };
 
 
 struct fdt_t *fdt_create(void);
 void fdt_free(struct fdt_t *fdt);
 void fdt_dump(struct fdt_t *fdt, FILE *f);
+
+struct fdt_t *fdt_link(struct fdt_t *fdt);
+void fdt_unlink(struct fdt_t *fdt);
 
 struct fd_t *fdt_entry_get(struct fdt_t *fdt, int index);
 struct fd_t *fdt_entry_new(struct fdt_t *fdt, enum fd_kind_t kind, int host_fd, char *path, int flags);
@@ -876,11 +892,17 @@ struct ctx_t
 	int status;
 	int pid;  /* Context ID */
 	int mid;  /* Memory map ID */
+
+	/* Parent context */
 	struct ctx_t *parent;
+
+	/* Context group initiator. There is only one group parent (if not NULL)
+	 * with many group children, no tree organization. */
+	struct ctx_t *group_parent;
+
 	int exit_signal;  /* Signal to send parent when finished */
 	int exit_code;  /* For zombie contexts */
 
-	uint32_t set_child_tid;
 	uint32_t clear_child_tid;
 	uint32_t robust_list_head;  /* robust futex list */
 
@@ -900,9 +922,6 @@ struct ctx_t
 	/* For segmented memory access in glibc */
 	uint32_t glibc_segment_base;
 	uint32_t glibc_segment_limit;
-
-	/* Heap break */
-	uint32_t brk;
 
 	/* For the OpenCL library access */
 	int libopencl_open_attempt;

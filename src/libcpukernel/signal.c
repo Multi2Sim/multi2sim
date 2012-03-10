@@ -192,9 +192,6 @@ struct signal_handler_table_t *signal_handler_table_create(void)
 	if (!table)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	/* Initialize */
-	table->num_links = 1;
-
 	/* Return */
 	return table;
 }
@@ -202,6 +199,7 @@ struct signal_handler_table_t *signal_handler_table_create(void)
 
 void signal_handler_table_free(struct signal_handler_table_t *table)
 {
+	assert(!table->num_links);
 	free(table);
 }
 
@@ -215,9 +213,10 @@ struct signal_handler_table_t *signal_handler_table_link(struct signal_handler_t
 
 void signal_handler_table_unlink(struct signal_handler_table_t *table)
 {
-	assert(table->num_links > 0);
-	table->num_links--;
-	if (!table->num_links)
+	assert(table->num_links >= 0);
+	if (table->num_links)
+		table->num_links--;
+	else
 		signal_handler_table_free(table);
 }
 
