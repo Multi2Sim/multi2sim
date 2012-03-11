@@ -49,9 +49,7 @@ static int mod_serves_address(struct mod_t *mod, uint32_t addr)
  * Public Functions
  */
 
-/* FIXME - remove 'read_port_count', 'write_port_count' */
 struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
-	int bank_count, int read_port_count, int write_port_count,
 	int block_size, int latency)
 {
 	struct mod_t *mod;
@@ -68,15 +66,7 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 
 	/* Initialize */
 	mod->kind = kind;
-	mod->bank_count = bank_count;
-	mod->read_port_count = read_port_count;
-	mod->write_port_count = write_port_count;
 	mod->latency = latency;
-
-	/* Banks - FIXME - remove */
-	mod->banks = calloc(1, mod->bank_count * SIZEOF_MOD_BANK(mod));
-	if (!mod->banks)
-		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Ports */
 	mod->num_ports = num_ports;
@@ -106,7 +96,6 @@ void mod_free(struct mod_t *mod)
 		cache_free(mod->cache);
 	if (mod->dir)
 		dir_free(mod->dir);
-	free(mod->banks);
 	free(mod->ports);
 	free(mod->name);
 	free(mod);
@@ -115,29 +104,6 @@ void mod_free(struct mod_t *mod)
 
 void mod_dump(struct mod_t *mod, FILE *f)
 {
-	struct mod_bank_t *bank;
-	struct mod_port_t *port;
-	struct mod_stack_t *stack;
-	int i, j;
-
-	/* Read ports */
-	fprintf(f, "module '%s'\n", mod->name);
-	for (i = 0; i < mod->bank_count; i++)
-	{
-		fprintf(f, "  bank %d:\n", i);
-		bank = MOD_BANK_INDEX(mod, i);
-		for (j = 0; j < mod->read_port_count; j++)
-		{
-			port = MOD_READ_PORT_INDEX(mod, bank, j);
-			fprintf(f, "  read port %d: ", j);
-
-			/* Waiting list */
-			fprintf(f, "waiting={");
-			for (stack = port->waiting_list_head; stack; stack = stack->waiting_list_next)
-				fprintf(f, " %lld", stack->id);
-			fprintf(f, " }\n");
-		}
-	}
 }
 
 
@@ -189,7 +155,12 @@ int mod_can_access(struct mod_t *mod, uint32_t addr)
 {
 	int non_coalesced_accesses;
 
-	/* If no MSHR is given, module can be accessed - FIXME */
+	/* There must be a free port */
+	assert(mod->num_locked_ports <= mod->num_ports);
+	if (mod->num_locked_ports == mod->num_ports)
+		return 0;
+
+	/* If no MSHR is given, module can be accessed */
 	if (!mod->mshr_size)
 		return 1;
 

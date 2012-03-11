@@ -64,9 +64,7 @@ extern int gpu_local_mem_size;
 extern int gpu_local_mem_alloc_size;
 extern int gpu_local_mem_latency;
 extern int gpu_local_mem_block_size;
-extern int gpu_local_mem_banks;
-extern int gpu_local_mem_read_ports;
-extern int gpu_local_mem_write_ports;
+extern int gpu_local_mem_num_ports;
 
 extern int gpu_cf_engine_inst_mem_latency;
 
@@ -256,8 +254,8 @@ struct gpu_compute_unit_t
 	struct gpu_compute_unit_t *busy_list_next;
 
 	/* Entry points to memory hierarchy */
-	struct mod_t *global_mod;  /* Global memory */
-	struct mod_t *local_mod;  /* Local memory */
+	struct mod_t *global_memory;
+	struct mod_t *local_memory;
 
 	/* List of currently mapped work-groups */
 	int work_group_count;

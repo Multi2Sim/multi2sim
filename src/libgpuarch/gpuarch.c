@@ -82,16 +82,11 @@ char *gpu_config_help =
 	"  AllocSize = <bytes> (Default = 1 KB)\n"
 	"      Minimum amount of local memory allocated at a time for each work-group.\n"
 	"      This parameter impact on the allocation of work-groups to compute units.\n"
-	"  BlockSize = <bytes> (Default = 16)\n"
+	"  BlockSize = <bytes> (Default = 256)\n"
 	"      Access block size, used for access coalescing purposes among work-items.\n"
 	"  Latency = <num_cycles> (Default = 2)\n"
 	"      Hit latency in number of cycles.\n"
-	"  Banks = <num> (Default = 4)\n"
-	"      Number of banks.\n"
-	"  ReadPorts = <num> (Default = 2)\n"
-	"      Number of read ports per bank.\n"
-	"  WritePorts = <num> (Default = 2)\n"
-	"      Number of write ports per bank.\n"
+	"  Ports = <num> (Default = 4)\n"
 	"\n"
 	"Section '[ CFEngine ]': parameters for the CF Engine of the Compute Units.\n"
 	"\n"
@@ -147,10 +142,8 @@ int gpu_max_wavefronts_per_compute_unit = 32;
 int gpu_local_mem_size = 32768;  /* 32 KB */
 int gpu_local_mem_alloc_size = 1024;  /* 1 KB */
 int gpu_local_mem_latency = 2;
-int gpu_local_mem_block_size = 16;
-int gpu_local_mem_banks = 4;
-int gpu_local_mem_read_ports = 2;
-int gpu_local_mem_write_ports = 2;
+int gpu_local_mem_block_size = 256;
+int gpu_local_mem_num_ports = 2;
 
 struct gpu_t *gpu;
 
@@ -248,9 +241,7 @@ void gpu_config_read(void)
 	gpu_local_mem_alloc_size = config_read_int(gpu_config, section, "AllocSize", gpu_local_mem_alloc_size);
 	gpu_local_mem_block_size = config_read_int(gpu_config, section, "BlockSize", gpu_local_mem_block_size);
 	gpu_local_mem_latency = config_read_int(gpu_config, section, "Latency", gpu_local_mem_latency);
-	gpu_local_mem_banks = config_read_int(gpu_config, section, "Banks", gpu_local_mem_banks);
-	gpu_local_mem_read_ports = config_read_int(gpu_config, section, "ReadPorts", gpu_local_mem_read_ports);
-	gpu_local_mem_write_ports = config_read_int(gpu_config, section, "WritePorts", gpu_local_mem_write_ports);
+	gpu_local_mem_num_ports = config_read_int(gpu_config, section, "Ports", gpu_local_mem_num_ports);
 	if ((gpu_local_mem_size & (gpu_local_mem_size - 1)) || gpu_local_mem_size < 4)
 		fatal("%s: %s->Size must be a power of two and at least 4.\n%s",
 			gpu_config_file_name, section, err_note);
@@ -267,13 +258,7 @@ void gpu_config_read(void)
 			section, section, err_note);
 	if (gpu_local_mem_latency < 1)
 		fatal("%s: invalid value for %s->Latency.\n%s", gpu_config_file_name, section, err_note);
-	if (gpu_local_mem_banks < 1 || (gpu_local_mem_banks & (gpu_local_mem_banks - 1)))
-		fatal("%s: %s->Banks must be a power of 2 greater than 1.\n%s", gpu_config_file_name, section, err_note);
-	if (gpu_local_mem_read_ports < 1)
-		fatal("%s: invalid value for %s->ReadPorts.\n%s", gpu_config_file_name, section, err_note);
-	if (gpu_local_mem_write_ports < 1)
-		fatal("%s: invalid value for %s->WritePorts.\n%s", gpu_config_file_name, section, err_note);
-	if (gpu_local_mem_size < gpu_local_mem_block_size * gpu_local_mem_banks)
+	if (gpu_local_mem_size < gpu_local_mem_block_size)
 		fatal("%s: %s->Size cannot be smaller than %s->BlockSize * %s->Banks.\n%s", gpu_config_file_name,
 			section, section, section, err_note);
 	
@@ -347,9 +332,7 @@ void gpu_config_dump(FILE *f)
 	fprintf(f, "AllocSize = %d\n", gpu_local_mem_alloc_size);
 	fprintf(f, "BlockSize = %d\n", gpu_local_mem_block_size);
 	fprintf(f, "Latency = %d\n", gpu_local_mem_latency);
-	fprintf(f, "Banks = %d\n", gpu_local_mem_banks);
-	fprintf(f, "ReadPorts = %d\n", gpu_local_mem_read_ports);
-	fprintf(f, "WritePorts = %d\n", gpu_local_mem_write_ports);
+	fprintf(f, "Ports = %d\n", gpu_local_mem_num_ports);
 	fprintf(f, "\n");
 
 	/* CF Engine */
@@ -465,7 +448,7 @@ void gpu_dump_report(void)
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		compute_unit = gpu->compute_units[compute_unit_id];
-		local_mod = compute_unit->local_mod;
+		local_mod = compute_unit->local_memory;
 
 		inst_per_cycle = compute_unit->cycle ? (double) compute_unit->inst_count
 			/ compute_unit->cycle : 0.0;
