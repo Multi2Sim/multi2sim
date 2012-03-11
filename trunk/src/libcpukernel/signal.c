@@ -86,7 +86,7 @@ void sim_sigaction_dump(struct sim_sigaction *sim, FILE *f)
 {
 	fprintf(f, "handler=0x%x, flags=0x%x, restorer=0x%x, mask=0x%llx",
 		sim->handler, sim->flags,
-		sim->restorer, (long long) sim->mask);
+		sim->restorer, sim->mask);
 }
 
 
@@ -98,7 +98,7 @@ void sim_sigaction_flags_dump(uint32_t flags, FILE *f)
 }
 
 
-int sim_sigset_member(uint64_t *sim_sigset, int sig)
+int sim_sigset_member(unsigned long long *sim_sigset, int sig)
 {
 	if (sig < 1 || sig > 64)
 		return 0;
@@ -106,7 +106,7 @@ int sim_sigset_member(uint64_t *sim_sigset, int sig)
 }
 
 
-void sim_sigset_add(uint64_t *sim_sigset, int sig)
+void sim_sigset_add(unsigned long long *sim_sigset, int sig)
 {
 	if (sig < 1 || sig > 64)
 		return;
@@ -114,7 +114,7 @@ void sim_sigset_add(uint64_t *sim_sigset, int sig)
 }
 
 
-void sim_sigset_del(uint64_t *sim_sigset, int sig)
+void sim_sigset_del(unsigned long long *sim_sigset, int sig)
 {
 	if (sig < 1 || sig > 64)
 		return;
@@ -122,11 +122,11 @@ void sim_sigset_del(uint64_t *sim_sigset, int sig)
 }
 
 
-void sim_sigset_dump(uint64_t sim_sigset, FILE *f)
+void sim_sigset_dump(unsigned long long sim_sigset, FILE *f)
 {
 	int i;
 	char *comma = "", *name;
-	if (sim_sigset == (uint64_t) -1)
+	if (sim_sigset == (unsigned long long) -1)
 	{
 		fprintf(f, "{<all>}");
 		return;

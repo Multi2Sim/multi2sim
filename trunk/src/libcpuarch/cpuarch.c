@@ -514,14 +514,14 @@ void cpu_config_dump(FILE *f)
 }
 
 
-void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ipc)
+void cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix, int peak_ipc)
 {
-	uint64_t uinst_int_count = 0;
-	uint64_t uinst_logic_count = 0;
-	uint64_t uinst_fp_count = 0;
-	uint64_t uinst_mem_count = 0;
-	uint64_t uinst_ctrl_count = 0;
-	uint64_t uinst_total = 0;
+	long long uinst_int_count = 0;
+	long long uinst_logic_count = 0;
+	long long uinst_fp_count = 0;
+	long long uinst_mem_count = 0;
+	long long uinst_ctrl_count = 0;
+	long long uinst_total = 0;
 
 	char *name;
 	enum x86_uinst_flag_t flags;
@@ -532,7 +532,7 @@ void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ip
 		name = x86_uinst_info[i].name;
 		flags = x86_uinst_info[i].flags;
 
-		fprintf(f, "%s.Uop.%s = %lld\n", prefix, name, (long long) uop_stats[i]);
+		fprintf(f, "%s.Uop.%s = %lld\n", prefix, name, uop_stats[i]);
 		if (flags & X86_UINST_INT)
 			uinst_int_count += uop_stats[i];
 		if (flags & X86_UINST_LOGIC)
@@ -545,14 +545,13 @@ void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ip
 			uinst_ctrl_count += uop_stats[i];
 		uinst_total += uop_stats[i];
 	}
-	fprintf(f, "%s.Integer = %lld\n", prefix, (long long) uinst_int_count);
-	fprintf(f, "%s.Logic = %lld\n", prefix, (long long) uinst_logic_count);
-	fprintf(f, "%s.FloatingPoint = %lld\n", prefix, (long long) uinst_fp_count);
-	fprintf(f, "%s.Memory = %lld\n", prefix, (long long) uinst_mem_count);
-	fprintf(f, "%s.Ctrl = %lld\n", prefix, (long long) uinst_ctrl_count);
-	fprintf(f, "%s.WndSwitch = %lld\n", prefix, (long long)
-		(uop_stats[x86_uinst_call] + uop_stats[x86_uinst_ret]));
-	fprintf(f, "%s.Total = %lld\n", prefix, (long long) uinst_total);
+	fprintf(f, "%s.Integer = %lld\n", prefix, uinst_int_count);
+	fprintf(f, "%s.Logic = %lld\n", prefix, uinst_logic_count);
+	fprintf(f, "%s.FloatingPoint = %lld\n", prefix, uinst_fp_count);
+	fprintf(f, "%s.Memory = %lld\n", prefix, uinst_mem_count);
+	fprintf(f, "%s.Ctrl = %lld\n", prefix, uinst_ctrl_count);
+	fprintf(f, "%s.WndSwitch = %lld\n", prefix, uop_stats[x86_uinst_call] + uop_stats[x86_uinst_ret]);
+	fprintf(f, "%s.Total = %lld\n", prefix, uinst_total);
 	fprintf(f, "%s.IPC = %.4g\n", prefix, cpu->cycle ? (double) uinst_total / cpu->cycle : 0.0);
 	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, cpu->cycle && peak_ipc ?
 		(double) uinst_total / cpu->cycle / peak_ipc : 0.0);
@@ -561,32 +560,32 @@ void cpu_dump_uop_report(FILE *f, uint64_t *uop_stats, char *prefix, int peak_ip
 
 
 #define DUMP_FU_STAT(NAME, ITEM) { \
-	fprintf(f, "fu." #NAME ".Accesses = %lld\n", (long long) CORE.fu->accesses[ITEM]); \
-	fprintf(f, "fu." #NAME ".Denied = %lld\n", (long long) CORE.fu->denied[ITEM]); \
+	fprintf(f, "fu." #NAME ".Accesses = %lld\n", CORE.fu->accesses[ITEM]); \
+	fprintf(f, "fu." #NAME ".Denied = %lld\n", CORE.fu->denied[ITEM]); \
 	fprintf(f, "fu." #NAME ".WaitingTime = %.4g\n", CORE.fu->accesses[ITEM] ? \
 		(double) CORE.fu->waiting_time[ITEM] / CORE.fu->accesses[ITEM] : 0.0); \
 }
 
 #define DUMP_DISPATCH_STAT(NAME) { \
-	fprintf(f, "Dispatch.Stall." #NAME " = %lld\n", (long long) CORE.di_stall[di_stall_##NAME]); \
+	fprintf(f, "Dispatch.Stall." #NAME " = %lld\n", CORE.di_stall[di_stall_##NAME]); \
 }
 
 #define DUMP_CORE_STRUCT_STATS(NAME, ITEM) { \
 	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size * cpu_threads); \
 	if (cpu_occupancy_stats) \
 		fprintf(f, #NAME ".Occupancy = %.2f\n", cpu->cycle ? (double) CORE.ITEM##_occupancy / cpu->cycle : 0.0); \
-	fprintf(f, #NAME ".Full = %lld\n", (long long) CORE.ITEM##_full); \
-	fprintf(f, #NAME ".Reads = %lld\n", (long long) CORE.ITEM##_reads); \
-	fprintf(f, #NAME ".Writes = %lld\n", (long long) CORE.ITEM##_writes); \
+	fprintf(f, #NAME ".Full = %lld\n", CORE.ITEM##_full); \
+	fprintf(f, #NAME ".Reads = %lld\n", CORE.ITEM##_reads); \
+	fprintf(f, #NAME ".Writes = %lld\n", CORE.ITEM##_writes); \
 }
 
 #define DUMP_THREAD_STRUCT_STATS(NAME, ITEM) { \
 	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size); \
 	if (cpu_occupancy_stats) \
 		fprintf(f, #NAME ".Occupancy = %.2f\n", cpu->cycle ? (double) THREAD.ITEM##_occupancy / cpu->cycle : 0.0); \
-	fprintf(f, #NAME ".Full = %lld\n", (long long) THREAD.ITEM##_full); \
-	fprintf(f, #NAME ".Reads = %lld\n", (long long) THREAD.ITEM##_reads); \
-	fprintf(f, #NAME ".Writes = %lld\n", (long long) THREAD.ITEM##_writes); \
+	fprintf(f, #NAME ".Full = %lld\n", THREAD.ITEM##_full); \
+	fprintf(f, #NAME ".Reads = %lld\n", THREAD.ITEM##_reads); \
+	fprintf(f, #NAME ".Writes = %lld\n", THREAD.ITEM##_writes); \
 }
 
 void cpu_dump_report()
@@ -608,7 +607,7 @@ void cpu_dump_report()
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
 	fprintf(f, "; Global statistics\n");
 	fprintf(f, "[ Global ]\n\n");
-	fprintf(f, "Cycles = %lld\n", (long long) cpu->cycle);
+	fprintf(f, "Cycles = %lld\n", cpu->cycle);
 	fprintf(f, "Time = %.1f\n", (double) now / 1000000);
 	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) cpu->cycle / now * 1000000 : 0.0);
 	fprintf(f, "MemoryUsed = %lu\n", (long) mem_mapped_space);
@@ -633,9 +632,9 @@ void cpu_dump_report()
 	fprintf(f, ";    Squashed - Number of mispredicted uops squashed from the ROB\n");
 	fprintf(f, ";    Mispred - Number of mispredicted branches in the correct path\n");
 	fprintf(f, ";    PredAcc - Prediction accuracy\n");
-	fprintf(f, "Commit.Branches = %lld\n", (long long) cpu->branches);
-	fprintf(f, "Commit.Squashed = %lld\n", (long long) cpu->squashed);
-	fprintf(f, "Commit.Mispred = %lld\n", (long long) cpu->mispred);
+	fprintf(f, "Commit.Branches = %lld\n", cpu->branches);
+	fprintf(f, "Commit.Squashed = %lld\n", cpu->squashed);
+	fprintf(f, "Commit.Mispred = %lld\n", cpu->mispred);
 	fprintf(f, "Commit.PredAcc = %.4g\n", cpu->branches ?
 		(double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0);
 	fprintf(f, "\n");
@@ -696,9 +695,9 @@ void cpu_dump_report()
 
 		/* Committed branches */
 		fprintf(f, "; Committed branches\n");
-		fprintf(f, "Commit.Branches = %lld\n", (long long) CORE.branches);
-		fprintf(f, "Commit.Squashed = %lld\n", (long long) CORE.squashed);
-		fprintf(f, "Commit.Mispred = %lld\n", (long long) CORE.mispred);
+		fprintf(f, "Commit.Branches = %lld\n", CORE.branches);
+		fprintf(f, "Commit.Squashed = %lld\n", CORE.squashed);
+		fprintf(f, "Commit.Mispred = %lld\n", CORE.mispred);
 		fprintf(f, "Commit.PredAcc = %.4g\n", CORE.branches ?
 			(double) (CORE.branches - CORE.mispred) / CORE.branches : 0.0);
 		fprintf(f, "\n");
@@ -714,7 +713,7 @@ void cpu_dump_report()
 			DUMP_CORE_STRUCT_STATS(ROB, rob);
 		if (iq_kind == iq_kind_shared) {
 			DUMP_CORE_STRUCT_STATS(IQ, iq);
-			fprintf(f, "IQ.WakeupAccesses = %lld\n", (long long) CORE.iq_wakeup_accesses);
+			fprintf(f, "IQ.WakeupAccesses = %lld\n", CORE.iq_wakeup_accesses);
 		}
 		if (lsq_kind == lsq_kind_shared)
 			DUMP_CORE_STRUCT_STATS(LSQ, lsq);
@@ -743,9 +742,9 @@ void cpu_dump_report()
 
 			/* Committed branches */
 			fprintf(f, "; Committed branches\n");
-			fprintf(f, "Commit.Branches = %lld\n", (long long) THREAD.branches);
-			fprintf(f, "Commit.Squashed = %lld\n", (long long) THREAD.squashed);
-			fprintf(f, "Commit.Mispred = %lld\n", (long long) THREAD.mispred);
+			fprintf(f, "Commit.Branches = %lld\n", THREAD.branches);
+			fprintf(f, "Commit.Squashed = %lld\n", THREAD.squashed);
+			fprintf(f, "Commit.Mispred = %lld\n", THREAD.mispred);
 			fprintf(f, "Commit.PredAcc = %.4g\n", THREAD.branches ?
 				(double) (THREAD.branches - THREAD.mispred) / THREAD.branches : 0.0);
 			fprintf(f, "\n");
@@ -757,7 +756,7 @@ void cpu_dump_report()
 				DUMP_THREAD_STRUCT_STATS(ROB, rob);
 			if (iq_kind == iq_kind_private) {
 				DUMP_THREAD_STRUCT_STATS(IQ, iq);
-				fprintf(f, "IQ.WakeupAccesses = %lld\n", (long long) THREAD.iq_wakeup_accesses);
+				fprintf(f, "IQ.WakeupAccesses = %lld\n", THREAD.iq_wakeup_accesses);
 			}
 			if (lsq_kind == lsq_kind_private)
 				DUMP_THREAD_STRUCT_STATS(LSQ, lsq);
@@ -765,12 +764,12 @@ void cpu_dump_report()
 				DUMP_THREAD_STRUCT_STATS(RF_Int, rf_int);
 				DUMP_THREAD_STRUCT_STATS(RF_Fp, rf_fp);
 			}
-			fprintf(f, "RAT.IntReads = %lld\n", (long long) THREAD.rat_int_reads);
-			fprintf(f, "RAT.IntWrites = %lld\n", (long long) THREAD.rat_int_writes);
-			fprintf(f, "RAT.FpReads = %lld\n", (long long) THREAD.rat_fp_reads);
-			fprintf(f, "RAT.FpWrites = %lld\n", (long long) THREAD.rat_fp_writes);
-			fprintf(f, "BTB.Reads = %lld\n", (long long) THREAD.btb_reads);
-			fprintf(f, "BTB.Writes = %lld\n", (long long) THREAD.btb_writes);
+			fprintf(f, "RAT.IntReads = %lld\n", THREAD.rat_int_reads);
+			fprintf(f, "RAT.IntWrites = %lld\n", THREAD.rat_int_writes);
+			fprintf(f, "RAT.FpReads = %lld\n", THREAD.rat_fp_reads);
+			fprintf(f, "RAT.FpWrites = %lld\n", THREAD.rat_fp_writes);
+			fprintf(f, "BTB.Reads = %lld\n", THREAD.btb_reads);
+			fprintf(f, "BTB.Writes = %lld\n", THREAD.btb_writes);
 			fprintf(f, "\n");
 
 			/* Trace cache stats */
@@ -867,7 +866,7 @@ void cpu_dump(FILE *f)
 	
 	/* General information */
 	fprintf(f, "\n");
-	fprintf(f, "sim.last_dump  %lld  # Cycle of last dump\n", (long long) cpu->last_dump);
+	fprintf(f, "sim.last_dump  %lld  # Cycle of last dump\n", cpu->last_dump);
 	fprintf(f, "sim.ipc_last_dump  %.4g  # IPC since last dump\n", cpu->cycle - cpu->last_dump > 0 ?
 		(double) (cpu->inst - cpu->last_committed) / (cpu->cycle - cpu->last_dump) : 0);
 	fprintf(f, "\n");
@@ -1043,7 +1042,7 @@ static void sim_dump_log()
 	char name[100];
 	
 	/* Dump log into file */
-	sprintf(name, "m2s.%d.%lld", (int) getpid(), (long long) cpu->cycle);
+	sprintf(name, "m2s.%d.%lld", (int) getpid(), cpu->cycle);
 	f = fopen(name, "wt");
 	if (f) {
 		cpu_dump(f);
@@ -1056,15 +1055,14 @@ static void sim_dump_log()
 
 
 /* Fast forward simulation */
-static void cpu_fast_forward(uint64_t max_inst)
+static void cpu_fast_forward(long long max_inst)
 {
 	struct ctx_t *ctx;
 	uint64_t inst = 0;
 
 	/* Intro message */
 	fprintf(stderr, "\n");
-	fprintf(stderr, "; Fast-forward simulation (%lld x86 instructions)\n",
-		(long long) max_inst);
+	fprintf(stderr, "; Fast-forward simulation (%lld x86 instructions)\n", max_inst);
 	fprintf(stderr, "\n");
 
 	/* Functional simulation */

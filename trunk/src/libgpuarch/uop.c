@@ -253,7 +253,7 @@ void gpu_uop_debug_active_mask(struct gpu_uop_t *uop)
 	if (uop->active_mask_pop)
 	{
 		gpu_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"pop\" cnt=%d top=%d mask=\"",
-			(long long) gpu->cycle,
+			gpu->cycle,
 			uop->compute_unit->id,
 			wavefront->id_in_compute_unit,
 			wavefront->id,
@@ -267,7 +267,7 @@ void gpu_uop_debug_active_mask(struct gpu_uop_t *uop)
 	if (uop->active_mask_push)
 	{
 		gpu_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"push\" cnt=%d top=%d mask=\"",
-			(long long) gpu->cycle,
+			gpu->cycle,
 			uop->compute_unit->id,
 			wavefront->id_in_compute_unit,
 			wavefront->id,
