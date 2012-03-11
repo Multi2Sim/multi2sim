@@ -4,6 +4,7 @@ libgpuarch_a_SOURCES = \
 	calc.c \
 	cf-engine.c \
 	compute-unit.c \
+	faults.c \
 	gpuarch.h \
 	gpuarch.c \
 	sched.c \
