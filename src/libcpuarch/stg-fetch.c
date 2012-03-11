@@ -58,7 +58,7 @@ static int can_fetch(int core, int thread)
 /* Execute in the simulation kernel a macro-instruction and create uops.
  * If any of the uops is a control uop, this uop will be the return value of
  * the function. Otherwise, the first decoded uop is returned. */
-static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
+static struct uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
 {
 	struct ctx_t *ctx = THREAD.ctx;
 
@@ -103,7 +103,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 
 		uop->eip = THREAD.fetch_eip;
 		uop->in_fetchq = 1;
-		uop->fetch_tcache = fetch_tcache;
+		uop->fetch_trace_cache = fetch_trace_cache;
 		uop->specmode = ctx_get_status(ctx, ctx_specmode);
 		uop->fetch_address = THREAD.fetch_address;
 		uop->fetch_access = THREAD.fetch_access;
@@ -138,8 +138,8 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 		list_add(THREAD.fetchq, uop);
 		cpu->fetched++;
 		THREAD.fetched++;
-		if (fetch_tcache)
-			THREAD.tcacheq_occ++;
+		if (fetch_trace_cache)
+			THREAD.trace_cache_queue_occ++;
 
 		/* Next uinst */
 		uinst_index++;
@@ -147,7 +147,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 
 	/* Increase fetch queue occupancy if instruction does not come from
 	 * trace cache, and return. */
-	if (ret_uop && !fetch_tcache)
+	if (ret_uop && !fetch_trace_cache)
 		THREAD.fetchq_occ += ret_uop->mop_size;
 	return ret_uop;
 }
@@ -155,7 +155,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_tcache)
 
 /* Try to fetch instruction from trace cache.
  * Return true if there was a hit and fetching succeeded. */
-static int fetch_thread_tcache(int core, int thread)
+static int fetch_thread_trace_cache(int core, int thread)
 {
 	struct uop_t *uop;
 	uint32_t eip_branch;  /* next branch address */
@@ -163,17 +163,17 @@ static int fetch_thread_tcache(int core, int thread)
 	uint32_t *mop_array, neip;
 
 	/* No trace cache, no space in the trace cache queue. */
-	if (!tcache_present)
+	if (!trace_cache_present)
 		return 0;
-	if (THREAD.tcacheq_occ >= tcache_queue_size)
+	if (THREAD.trace_cache_queue_occ >= trace_cache_queue_size)
 		return 0;
 	
 	/* Access BTB, branch predictor, and trace cache */
 	eip_branch = bpred_btb_next_branch(THREAD.bpred,
 		THREAD.fetch_neip, THREAD.inst_mod->block_size);
 	mpred = eip_branch ? bpred_lookup_multiple(THREAD.bpred,
-		eip_branch, tcache_branch_max) : 0;
-	hit = tcache_lookup(THREAD.tcache, THREAD.fetch_neip, mpred,
+		eip_branch, trace_cache_branch_max) : 0;
+	hit = trace_cache_lookup(THREAD.trace_cache, THREAD.fetch_neip, mpred,
 		&mop_count, &mop_array, &neip);
 	if (!hit)
 		return 0;
@@ -221,7 +221,7 @@ static void fetch_thread(int core, int thread)
 	int taken;
 
 	/* Try to fetch from trace cache first */
-	if (fetch_thread_tcache(core, thread))
+	if (fetch_thread_trace_cache(core, thread))
 		return;
 	
 	/* If new block to fetch is not the same as the previously fetched (and stored)

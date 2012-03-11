@@ -100,8 +100,8 @@ static void commit_thread(int core, int thread, int quant)
 		}
 
 		/* Trace cache */
-		if (tcache_present)
-			tcache_new_uop(THREAD.tcache, uop);
+		if (trace_cache_present)
+			trace_cache_new_uop(THREAD.trace_cache, uop);
 			
 		/* Stats */
 		THREAD.last_commit_cycle = cpu->cycle;
@@ -109,8 +109,8 @@ static void commit_thread(int core, int thread, int quant)
 		CORE.committed[uop->uinst->opcode]++;
 		cpu->committed[uop->uinst->opcode]++;
 		cpu->inst++;
-		if (uop->fetch_tcache)
-			THREAD.tcache->committed++;
+		if (uop->fetch_trace_cache)
+			THREAD.trace_cache->committed++;
 		if (uop->flags & X86_UINST_CTRL) {
 			THREAD.branches++;
 			CORE.branches++;

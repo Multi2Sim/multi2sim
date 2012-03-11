@@ -22,20 +22,20 @@
 
 /* Parameters */
 
-int tcache_present;  /* Use trace cache */
-int tcache_sets;  /* Number of sets */
-int tcache_assoc;  /* Number of ways */
-int tcache_trace_size;  /* Maximum number of uops in a trace */
-int tcache_branch_max;  /* Maximum number of branches in a trace */
-int tcache_queue_size;  /* Fetch queue for pre-decoded uops */
+int trace_cache_present;  /* Use trace cache */
+int trace_cache_num_sets;  /* Number of sets */
+int trace_cache_assoc;  /* Number of ways */
+int trace_cache_trace_size;  /* Maximum number of uops in a trace */
+int trace_cache_branch_max;  /* Maximum number of branches in a trace */
+int trace_cache_queue_size;  /* Fetch queue for pre-decoded uops */
 
 
-void tcache_init()
+void trace_cache_init()
 {
 	int core, thread;
 
 	/* Trace cache present */
-	if (!tcache_present)
+	if (!trace_cache_present)
 		return;
 
 	/* FIXME: trace cache disabled.
@@ -49,99 +49,113 @@ void tcache_init()
 		"\temail development@multi2sim.org, or use the Multi2Sim forum.\n");
 
 	/* Integrity */
-	if ((tcache_sets & (tcache_sets - 1)) || !tcache_sets)
+	if ((trace_cache_num_sets & (trace_cache_num_sets - 1)) || !trace_cache_num_sets)
 		fatal("trace cache sets must be power of 2 and > 0");
-	if ((tcache_assoc & (tcache_assoc - 1)) || !tcache_assoc)
+	if ((trace_cache_assoc & (trace_cache_assoc - 1)) || !trace_cache_assoc)
 		fatal("trace cache associativity must be power of 2 and > 0");
-	if (!tcache_trace_size || !tcache_branch_max)
-		fatal("trace cache: max number of branches and microinst must be > 0");
-	if (tcache_branch_max > tcache_trace_size)
-		fatal("tcache:branch_max cannot be greater than tcache:trace_size");
-	if (tcache_branch_max > 31)
-		fatal("tcache:branch_max cannot be greater than 31");
+	if (!trace_cache_trace_size || !trace_cache_branch_max)
+		fatal("trace cache: max number of branches and micro-instructions must be > 0");
+	if (trace_cache_branch_max > trace_cache_trace_size)
+		fatal("max branches in trace cache cannot be greater than trace size");
+	if (trace_cache_branch_max > 31)
+		fatal("max branches must be less than 32");
 	
 	/* Initialization */
-	FOREACH_CORE FOREACH_THREAD {
-		THREAD.tcache = tcache_create();
-		sprintf(THREAD.tcache->name, "c%dt%d.tcache", core, thread);
+	FOREACH_CORE FOREACH_THREAD
+	{
+		THREAD.trace_cache = trace_cache_create();
+		sprintf(THREAD.trace_cache->name, "c%dt%d.trace_cache", core, thread);
 	}
 }
 
 
-void tcache_done()
+void trace_cache_done()
 {
 	int core, thread;
 
 	/* Trace cache present */
-	if (!tcache_present)
+	if (!trace_cache_present)
 		return;
 	
 	/* Finalization */
 	FOREACH_CORE FOREACH_THREAD
-		tcache_free(THREAD.tcache);
+		trace_cache_free(THREAD.trace_cache);
 }
 
 
-struct tcache_t *tcache_create()
+struct trace_cache_t *trace_cache_create()
 {
-	struct tcache_t *tcache;
-	struct tcache_entry_t *entry;
+	struct trace_cache_t *trace_cache;
+	struct trace_cache_entry_t *entry;
 	int set, way;
 
-	/* Create tcache */
-	tcache = calloc(1, sizeof(struct tcache_t));
-	tcache->entry = calloc(tcache_sets * tcache_assoc, TCACHE_ENTRY_SIZE);
-	tcache->temp = calloc(1, TCACHE_ENTRY_SIZE);
+	/* Create trace cache */
+	trace_cache = calloc(1, sizeof(struct trace_cache_t));
+	if (!trace_cache)
+		fatal("%s: out of memory", __FUNCTION__);
 
-	/* Init lru counter */
-	for (set = 0; set < tcache_sets; set++) {
-		for (way = 0; way < tcache_assoc; way++) {
-			entry = TCACHE_ENTRY(set, way);
+	/* Entries */
+	trace_cache->entry = calloc(trace_cache_num_sets * trace_cache_assoc, TRACE_CACHE_ENTRY_SIZE);
+	if (!trace_cache->entry)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Temporary trace */
+	trace_cache->temp = calloc(1, TRACE_CACHE_ENTRY_SIZE);
+	if (!trace_cache->temp)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize LRU counter */
+	for (set = 0; set < trace_cache_num_sets; set++)
+	{
+		for (way = 0; way < trace_cache_assoc; way++)
+		{
+			entry = TRACE_CACHE_ENTRY(set, way);
 			entry->counter = way;
 		}
 	}
 
 	/* Return */
-	return tcache;
+	return trace_cache;
 }
 
 
-void tcache_free(struct tcache_t *tcache)
+void trace_cache_free(struct trace_cache_t *trace_cache)
 {
-	free(tcache->entry);
-	free(tcache->temp);
-	free(tcache);
+	free(trace_cache->entry);
+	free(trace_cache->temp);
+	free(trace_cache);
 }
 
 
-void tcache_dump_report(struct tcache_t *tcache, FILE *f)
+void trace_cache_dump_report(struct trace_cache_t *trace_cache, FILE *f)
 {
 	fprintf(f, "# Trace cache - parameters\n");
-	fprintf(f, "TraceCache.Sets = %d\n", tcache_sets);
-	fprintf(f, "TraceCache.Assoc = %d\n", tcache_assoc);
-	fprintf(f, "TraceCache.TraceSize = %d\n", tcache_trace_size);
-	fprintf(f, "TraceCache.BranchMax = %d\n", tcache_branch_max);
-	fprintf(f, "TraceCache.QueueSize = %d\n", tcache_queue_size);
+	fprintf(f, "TraceCache.Sets = %d\n", trace_cache_num_sets);
+	fprintf(f, "TraceCache.Assoc = %d\n", trace_cache_assoc);
+	fprintf(f, "TraceCache.TraceSize = %d\n", trace_cache_trace_size);
+	fprintf(f, "TraceCache.BranchMax = %d\n", trace_cache_branch_max);
+	fprintf(f, "TraceCache.QueueSize = %d\n", trace_cache_queue_size);
 	fprintf(f, "\n");
 
 	fprintf(f, "# Trace cache - statistics\n");
-	fprintf(f, "TraceCache.Accesses = %lld\n", (long long) tcache->accesses);
-	fprintf(f, "TraceCache.Hits = %lld\n", (long long) tcache->hits);
-	fprintf(f, "TraceCache.HitRatio = %.4g\n", tcache->accesses ? (double)
-		tcache->hits / tcache->accesses : 0.0);
-	fprintf(f, "TraceCache.Committed = %lld\n", (long long) tcache->committed);
-	fprintf(f, "TraceCache.Squashed = %lld\n", (long long) tcache->squashed);
+	fprintf(f, "TraceCache.Accesses = %lld\n", trace_cache->accesses);
+	fprintf(f, "TraceCache.Hits = %lld\n", trace_cache->hits);
+	fprintf(f, "TraceCache.HitRatio = %.4g\n", trace_cache->accesses ? (double)
+		trace_cache->hits / trace_cache->accesses : 0.0);
+	fprintf(f, "TraceCache.Committed = %lld\n", trace_cache->committed);
+	fprintf(f, "TraceCache.Squashed = %lld\n", trace_cache->squashed);
 	fprintf(f, "TraceCache.TraceLength = %.2g\n",
-		tcache->trace_length_count ? (double) tcache->trace_length_acc /
-			tcache->trace_length_count : 0);
+		trace_cache->trace_length_count ? (double) trace_cache->trace_length_acc /
+			trace_cache->trace_length_count : 0);
 	fprintf(f, "\n");
 }
 
 
 /* Flush temporary trace of committed instructions back into the trace cache */
-static void tcache_flush_trace(struct tcache_t *tcache)
+static void trace_cache_flush_trace(struct trace_cache_t *trace_cache)
 {
-	struct tcache_entry_t *entry, *found = NULL, *trace = tcache->temp;
+	struct trace_cache_entry_t *entry, *found = NULL;
+	struct trace_cache_entry_t *trace = trace_cache->temp;
 	int set, way;
 
 	/* There must be something to commit */
@@ -152,7 +166,8 @@ static void tcache_flush_trace(struct tcache_t *tcache)
 	/* If last instruction was a branch, remove it from the mask and flags fields,
 	 * since this prediction does not affect the trace. Instead, the 'target'
 	 * field of the trace cache line will be stored. */
-	if (trace->target) {
+	if (trace->target)
+	{
 		assert(trace->branch_count);
 		trace->branch_count--;
 		trace->branch_mask &= ~(1 << trace->branch_count);
@@ -161,9 +176,10 @@ static void tcache_flush_trace(struct tcache_t *tcache)
 
 	/* Allocate new line for the trace. If trace is already in the cache,
 	 * do nothing. If there is any invalid entry, choose it. */
-	set = trace->tag % tcache_sets;
-	for (way = 0; way < tcache_assoc; way++) {
-		entry = TCACHE_ENTRY(set, way);
+	set = trace->tag % trace_cache_num_sets;
+	for (way = 0; way < trace_cache_assoc; way++)
+	{
+		entry = TRACE_CACHE_ENTRY(set, way);
 		if (entry->tag == trace->tag && entry->branch_mask == trace->branch_mask
 			&& entry->branch_flags == trace->branch_flags)
 		{
@@ -177,12 +193,14 @@ static void tcache_flush_trace(struct tcache_t *tcache)
 	}
 
 	/* If no invalid entry found, look for LRU. */
-	if (!found) {
-		for (way = 0; way < tcache_assoc; way++) {
-			entry = TCACHE_ENTRY(set, way);
+	if (!found)
+	{
+		for (way = 0; way < trace_cache_assoc; way++)
+		{
+			entry = TRACE_CACHE_ENTRY(set, way);
 			entry->counter--;
 			if (entry->counter < 0) {
-				entry->counter = tcache_assoc - 1;
+				entry->counter = trace_cache_assoc - 1;
 				found = entry;
 			}
 		}
@@ -191,17 +209,17 @@ static void tcache_flush_trace(struct tcache_t *tcache)
 	/* Flush temporary trace and reset it. When flushing, all fields are
 	 * copied except for LRU counter. */
 	assert(found);
-	tcache->trace_length_acc += trace->uop_count;
-	tcache->trace_length_count++;
+	trace_cache->trace_length_acc += trace->uop_count;
+	trace_cache->trace_length_count++;
 	trace->counter = found->counter;
-	memcpy(found, trace, TCACHE_ENTRY_SIZE);
-	memset(tcache->temp, 0, TCACHE_ENTRY_SIZE);
+	memcpy(found, trace, TRACE_CACHE_ENTRY_SIZE);
+	memset(trace_cache->temp, 0, TRACE_CACHE_ENTRY_SIZE);
 }
 
 
-void tcache_new_uop(struct tcache_t *tcache, struct uop_t *uop)
+void trace_cache_new_uop(struct trace_cache_t *trace_cache, struct uop_t *uop)
 {
-	struct tcache_entry_t *trace = tcache->temp;
+	struct trace_cache_entry_t *trace = trace_cache->temp;
 	int taken;
 
 	/* Only uops heading the macroinst are inserted in the trace for simulation. */
@@ -216,9 +234,9 @@ void tcache_new_uop(struct tcache_t *tcache, struct uop_t *uop)
 	assert(!uop->specmode);
 	assert(uop->eip);
 	assert(uop->seq == uop->mop_seq);
-	if (trace->uop_count + uop->mop_count > tcache_trace_size)
-		tcache_flush_trace(tcache);
-	if (uop->mop_count > tcache_trace_size)
+	if (trace->uop_count + uop->mop_count > trace_cache_trace_size)
+		trace_cache_flush_trace(trace_cache);
+	if (uop->mop_count > trace_cache_trace_size)
 		return;
 
 	/* First instruction. Store trace tag. */
@@ -241,34 +259,36 @@ void tcache_new_uop(struct tcache_t *tcache, struct uop_t *uop)
 		trace->branch_flags |= taken << trace->branch_count;
 		trace->branch_count++;
 		trace->target = uop->target_neip;
-		if (trace->branch_count == tcache_branch_max)
-			tcache_flush_trace(tcache);
+		if (trace->branch_count == trace_cache_branch_max)
+			trace_cache_flush_trace(trace_cache);
 	}
 }
 
 
-int tcache_lookup(struct tcache_t *tcache, uint32_t eip, int pred,
+int trace_cache_lookup(struct trace_cache_t *trace_cache, uint32_t eip, int pred,
 	int *ptr_mop_count, uint32_t **ptr_mop_array, uint32_t *ptr_neip)
 {
-	struct tcache_entry_t *entry = NULL, *found = NULL;
+	struct trace_cache_entry_t *entry = NULL, *found = NULL;
 	int set, way;
 	uint32_t neip;
 
 	/* Look for trace cache line */
-	set = eip % tcache_sets;
-	for (way = 0; way < tcache_assoc; way++) {
-		entry = TCACHE_ENTRY(set, way);
-		if (entry->tag == eip && ((pred & entry->branch_mask) == entry->branch_flags)) {
+	set = eip % trace_cache_num_sets;
+	for (way = 0; way < trace_cache_assoc; way++)
+	{
+		entry = TRACE_CACHE_ENTRY(set, way);
+		if (entry->tag == eip && ((pred & entry->branch_mask) == entry->branch_flags))
+		{
 			found = entry;
 			break;
 		}
 	}
 
 	/* If there was a miss, do nothing else */
-	tcache->accesses++;
+	trace_cache->accesses++;
 	if (!found)
 		return 0;
-	tcache->hits++;
+	trace_cache->hits++;
 	
 	/* Trace cache hit. Return fields. The next address to fetch is 'target' if
 	 * the last instruction in the trace is a branch, and 'pred' tells us it is taken. */

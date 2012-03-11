@@ -52,7 +52,8 @@ int cpu_context_to_cpu(struct ctx_t *ctx)
 	/* Find a node that has not been used before. This is useful in case
 	 * a context was suspended and tries to allocate later the same node. */
 	free_cpu = -1;
-	for (node = 0; node < cpu_cores * cpu_threads; node++) {
+	for (node = 0; node < cpu_cores * cpu_threads; node++)
+	{
 		core = node / cpu_threads;
 		thread = node % cpu_threads;
 		if (!THREAD.ctx && free_cpu < 0)
@@ -82,7 +83,7 @@ void cpu_map_context(int core, int thread, struct ctx_t *ctx)
 	ctx->alloc_when = cpu->cycle;
 
 	ctx_debug("cycle %lld: ctx %d allocated to c%dt%d\n",
-		(long long) cpu->cycle, ctx->pid, core, thread);
+		cpu->cycle, ctx->pid, core, thread);
 }
 
 
@@ -106,7 +107,7 @@ void cpu_unmap_context(int core, int thread)
 	cpu->ctx_dealloc_signals--;
 
 	ctx_debug("cycle %lld: ctx %d evicted from c%dt%d\n",
-		(long long) cpu->cycle, ctx->pid, core, thread);
+		cpu->cycle, ctx->pid, core, thread);
 	
 	/* If context is finished, free it. */
 	if (ctx_get_status(ctx, ctx_finished))
@@ -132,7 +133,7 @@ void cpu_unmap_context_signal(struct ctx_t *ctx)
 	core = ctx->alloc_core;
 	thread = ctx->alloc_thread;
 	ctx_debug("cycle %lld: ctx %d receives eviction signal from c%dt%d\n",
-		(long long) cpu->cycle, ctx->pid, core, thread);
+		cpu->cycle, ctx->pid, core, thread);
 	if (cpu_pipeline_empty(core, thread))
 		cpu_unmap_context(core, thread);
 		
@@ -145,7 +146,7 @@ void cpu_static_schedule()
 	int node;
 
 	ctx_debug("cycle %lld: static scheduler called\n",
-		(long long) cpu->cycle);
+		cpu->cycle);
 	
 	/* If there is no new unallocated context, exit. */
 	assert(ke->alloc_list_count <= ke->context_list_count);
@@ -153,8 +154,8 @@ void cpu_static_schedule()
 		return;
 	
 	/* Allocate all unallocated contexts. */
-	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_list_next) {
-		
+	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_list_next)
+	{
 		/* Context is allocated. */
 		if (ctx_get_status(ctx, ctx_alloc))
 			continue;
@@ -178,7 +179,7 @@ void cpu_dynamic_schedule()
 	int node;
 
 	ctx_debug("cycle %lld: scheduler called\n",
-		(long long) cpu->cycle);
+		cpu->cycle);
 	
 	/* Evict non-running contexts */
 	for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
@@ -187,7 +188,8 @@ void cpu_dynamic_schedule()
 
 	/* If all running contexts are allocated, just update the ctx_alloc_oldest counter,
 	 * and exit. */
-	if (ke->alloc_list_count == ke->running_list_count) {
+	if (ke->alloc_list_count == ke->running_list_count)
+	{
 		cpu->ctx_alloc_oldest = cpu->cycle;
 		for (ctx = ke->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
 			ctx->alloc_when = cpu->cycle;
@@ -206,8 +208,8 @@ void cpu_dynamic_schedule()
 	}
 	
 	/* Allocate running contexts */
-	while (ke->alloc_list_count < ke->running_list_count && ke->alloc_list_count < cpu_cores * cpu_threads) {
-		
+	while (ke->alloc_list_count < ke->running_list_count && ke->alloc_list_count < cpu_cores * cpu_threads)
+	{
 		/* Find running, non-allocated context with lowest dealloc_when value. */
 		found_ctx = NULL;
 		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_list_next)

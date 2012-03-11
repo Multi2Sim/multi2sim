@@ -18,7 +18,7 @@ libcpuarch_a_SOURCES = \
 	rf.c \
 	rob.c \
 	sched.c \
-	tcache.c \
+	trace-cache.c \
 	uop.c
 
 INCLUDES = -I$(top_srcdir)/src/libstruct \
