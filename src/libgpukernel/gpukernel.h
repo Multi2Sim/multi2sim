@@ -43,8 +43,8 @@ extern enum gpu_sim_kind_t
 	gpu_sim_detailed
 } gpu_sim_kind;
 
-extern uint64_t gpu_max_cycles;
-extern uint64_t gpu_max_inst;
+extern long long gpu_max_cycles;
+extern long long gpu_max_inst;
 extern int gpu_max_kernels;
 
 extern char *gpu_opencl_binary_name;
@@ -82,8 +82,8 @@ struct amd_bin_enc_dict_entry_header_t
 struct amd_bin_enc_dict_entry_consts_t
 {
 	float float_consts[256][4];
-	uint32_t int_consts[32][4];
-	uint32_t bool_consts[32];
+	unsigned int int_consts[32][4];
+	unsigned int bool_consts[32];
 };
 
 
@@ -542,10 +542,10 @@ struct opencl_event_t
 	enum opencl_event_kind_t kind;
 	enum opencl_event_status_t status;
 
-	uint64_t time_queued;
-	uint64_t time_submit;
-	uint64_t time_start;
-	uint64_t time_end;
+	long long time_queued;
+	long long time_submit;
+	long long time_start;
+	long long time_end;
 };
 
 struct opencl_event_t *opencl_event_create(enum opencl_event_kind_t kind);
@@ -553,7 +553,7 @@ void opencl_event_free(struct opencl_event_t *event);
 
 uint32_t opencl_event_get_profiling_info(struct opencl_event_t *event, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size);
-uint64_t opencl_event_timer(void);
+long long opencl_event_timer(void);
 
 
 
@@ -854,32 +854,32 @@ struct gpu_wavefront_t
 	struct gpu_wavefront_t *finished_list_prev;
 
 	/* To measure simulation performance */
-	uint64_t emu_inst_count;  /* Total emulated instructions */
-	uint64_t emu_time_start;
-	uint64_t emu_time_end;
+	long long emu_inst_count;  /* Total emulated instructions */
+	long long emu_time_start;
+	long long emu_time_end;
 
 	/* Fields introduced for architectural simulation */
 	int id_in_compute_unit;
 	int alu_engine_in_flight;  /* Number of in-flight uops in ALU engine */
-	uint64_t sched_when;  /* GPU cycle when wavefront was last scheduled */
+	long long sched_when;  /* GPU cycle when wavefront was last scheduled */
 
 	/* Statistics */
-	uint64_t inst_count;  /* Total number of instructions */
-	uint64_t global_mem_inst_count;  /* Instructions (CF or TC) accessing global memory */
-	uint64_t local_mem_inst_count;  /* Instructions (ALU) accessing local memory */
+	long long inst_count;  /* Total number of instructions */
+	long long global_mem_inst_count;  /* Instructions (CF or TC) accessing global memory */
+	long long local_mem_inst_count;  /* Instructions (ALU) accessing local memory */
 
-	uint64_t cf_inst_count;  /* Number of CF inst executed */
-	uint64_t cf_inst_global_mem_write_count;  /* Number of instructions writing to global mem (they are CF inst) */
+	long long cf_inst_count;  /* Number of CF inst executed */
+	long long cf_inst_global_mem_write_count;  /* Number of instructions writing to global mem (they are CF inst) */
 
-	uint64_t alu_clause_count;  /* Number of ALU clauses started */
-	uint64_t alu_group_count;  /* Number of ALU instruction groups (VLIW) */
-	uint64_t alu_group_size[5];  /* Distribution of group sizes (alu_group_size[0] is the number of groups with 1 inst) */
-	uint64_t alu_inst_count;  /* Number of ALU instructions */
-	uint64_t alu_inst_local_mem_count;  /* Instructions accessing local memory (ALU) */
+	long long alu_clause_count;  /* Number of ALU clauses started */
+	long long alu_group_count;  /* Number of ALU instruction groups (VLIW) */
+	long long alu_group_size[5];  /* Distribution of group sizes (alu_group_size[0] is the number of groups with 1 inst) */
+	long long alu_inst_count;  /* Number of ALU instructions */
+	long long alu_inst_local_mem_count;  /* Instructions accessing local memory (ALU) */
 
-	uint64_t tc_clause_count;
-	uint64_t tc_inst_count;
-	uint64_t tc_inst_global_mem_read_count;  /* Number of instructions reading from global mem (they are TC inst) */
+	long long tc_clause_count;
+	long long tc_inst_count;
+	long long tc_inst_global_mem_read_count;  /* Number of instructions reading from global mem (they are TC inst) */
 };
 
 #define FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \
@@ -992,7 +992,7 @@ int gpu_work_item_get_active(struct gpu_work_item_t *work_item);
 void gpu_work_item_set_pred(struct gpu_work_item_t *work_item, int pred);
 int gpu_work_item_get_pred(struct gpu_work_item_t *work_item);
 void gpu_work_item_update_branch_digest(struct gpu_work_item_t *work_item,
-	uint64_t inst_count, uint32_t inst_addr);
+	long long inst_count, uint32_t inst_addr);
 
 
 
@@ -1131,12 +1131,12 @@ struct gk_t {
 
 	/* Global memory */
 	struct mem_t *global_mem;
-	uint32_t global_mem_top;
+	unsigned int global_mem_top;
 
 	/* Timer */
 	int timer_running;  /* Current timer state */
-	uint64_t timer_start_time;  /* Last time (as per ke_timer) when on */
-	uint64_t timer_acc;  /* Accumulated time in previous on-off cycles */
+	long long timer_start_time;  /* Last time (as per ke_timer) when on */
+	long long timer_acc;  /* Accumulated time in previous on-off cycles */
 
 	/* Stats */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
