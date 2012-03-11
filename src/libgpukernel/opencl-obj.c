@@ -1068,7 +1068,7 @@ uint32_t opencl_event_get_profiling_info(struct opencl_event_t *event, uint32_t 
 }
 
 
-uint64_t opencl_event_timer(void)
+long long opencl_event_timer(void)
 {
 	return ke_timer() * 1000;
 }

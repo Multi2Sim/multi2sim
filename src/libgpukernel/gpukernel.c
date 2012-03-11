@@ -30,8 +30,8 @@
 
 struct gk_t *gk;
 
-uint64_t gpu_max_cycles = 0;
-uint64_t gpu_max_inst = 0;
+long long gpu_max_cycles = 0;
+long long gpu_max_inst = 0;
 int gpu_max_kernels = 0;
 
 enum gpu_sim_kind_t gpu_sim_kind = gpu_sim_functional;
