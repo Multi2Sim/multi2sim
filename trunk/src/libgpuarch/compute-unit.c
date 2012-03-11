@@ -32,8 +32,12 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 	struct gpu_compute_unit_t *compute_unit;
 	char buf[MAX_STRING_SIZE];
 
-	/* Create compute unit */
+	/* Create */
 	compute_unit = calloc(1, sizeof(struct gpu_compute_unit_t));
+	if (!compute_unit)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	compute_unit->wavefront_pool = linked_list_create();
 
 	/* Local memory */
@@ -44,9 +48,13 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 		gpu_local_mem_block_size, gpu_local_mem_latency);
 
 	/* Initialize CF Engine */
-	compute_unit->cf_engine.fetch_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));
-	compute_unit->cf_engine.inst_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));
 	compute_unit->cf_engine.complete_queue = linked_list_create();
+	compute_unit->cf_engine.fetch_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));
+	if (!compute_unit->cf_engine.fetch_buffer)
+		fatal("%s: out of memory", __FUNCTION__);
+	compute_unit->cf_engine.inst_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));
+	if (!compute_unit->cf_engine.inst_buffer)
+		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize ALU Engine */
 	compute_unit->alu_engine.pending_queue = linked_list_create();
@@ -62,6 +70,8 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 	/* List of mapped work-groups */
 	compute_unit->work_groups = calloc(gpu_max_work_groups_per_compute_unit, sizeof(void *));
+	if (!compute_unit->work_groups)
+		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Return */
 	return compute_unit;

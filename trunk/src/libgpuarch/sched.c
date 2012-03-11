@@ -20,7 +20,8 @@
 #include <gpukernel.h>
 #include <gpuarch.h>
 
-struct string_map_t gpu_sched_policy_map = {
+struct string_map_t gpu_sched_policy_map =
+{
 		2, {
 			{ "RoundRobin", gpu_sched_round_robin },
 			{ "Greedy", gpu_sched_greedy }
@@ -78,7 +79,7 @@ static struct gpu_wavefront_t *gpu_schedule_greedy(struct gpu_compute_unit_t *co
 
 	/* Check all candidates */
 	temp_wavefront = NULL;
-	for (linked_list_head(wavefront_pool); !linked_list_is_end(wavefront_pool); linked_list_next(wavefront_pool))
+	LINKED_LIST_FOR_EACH(wavefront_pool)
 	{
 		/* Get wavefront from list */
 		wavefront = linked_list_get(wavefront_pool);

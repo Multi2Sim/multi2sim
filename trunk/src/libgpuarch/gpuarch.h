@@ -80,11 +80,23 @@ extern int gpu_tex_engine_load_queue_size;
 
 extern struct gpu_t *gpu;
 
-/* GPU-REL: insertion of faults into stack */
+
+
+/*
+ * GPU-REL
+ */
+
 #define gpu_faults_debug(...) debug(gpu_faults_debug_category, __VA_ARGS__)
 extern int gpu_faults_debug_category;
+
 extern char *gpu_faults_debug_file_name;
 extern char *gpu_faults_file_name;
+
+void gpu_faults_init(void);
+void gpu_faults_done(void);
+
+void gpu_faults_insert(void);
+
 
 
 
@@ -251,10 +263,10 @@ struct gpu_compute_unit_t
 	int work_group_count;
 	struct gpu_work_group_t **work_groups;
 
-	/* Stats */
-	uint64_t mapped_work_groups;
-	uint64_t cycle;
-	uint64_t inst_count;
+	/* Statistics */
+	long long mapped_work_groups;
+	long long cycle;
+	long long inst_count;
 
 	/* Ready wavefront pool.
 	 * It includes suspended wavefronts, but excludes wavefronts in
@@ -275,11 +287,11 @@ struct gpu_compute_unit_t
 		/* Complete queue */
 		struct linked_list_t *complete_queue;  /* Queue of completed instructions */
 
-		/* Stats */
-		uint64_t inst_count;
-		uint64_t alu_clause_trigger_count;
-		uint64_t tex_clause_trigger_count;
-		uint64_t global_mem_write_count;
+		/* Statistics */
+		long long inst_count;
+		long long alu_clause_trigger_count;
+		long long tex_clause_trigger_count;
+		long long global_mem_write_count;
 
 	} cf_engine;
 
@@ -305,13 +317,13 @@ struct gpu_compute_unit_t
 		 * dependence. If the producer is not in flight, the value is NULL. */
 		struct gpu_uop_t *producers[GPU_UOP_DEP_COUNT];
 
-		/* Stats */
-		uint64_t wavefront_count;
-		uint64_t cycle;
-		uint64_t inst_count;
-		uint64_t inst_slot_count;
-		uint64_t local_mem_slot_count;
-		uint64_t vliw_slots[5];
+		/* Statistics */
+		long long wavefront_count;
+		long long cycle;
+		long long inst_count;
+		long long inst_slot_count;
+		long long local_mem_slot_count;
+		long long vliw_slots[5];
 
 	} alu_engine;
 
@@ -328,10 +340,10 @@ struct gpu_compute_unit_t
 		struct gpu_uop_t *inst_buffer;  /* Uop from decode to read stage */
 		struct linked_list_t *load_queue;  /* Uops from read to write stage */
 
-		/* Stats */
-		uint64_t wavefront_count;
-		uint64_t cycle;
-		uint64_t inst_count;
+		/* Statistics */
+		long long wavefront_count;
+		long long cycle;
+		long long inst_count;
 
 	} tex_engine;
 
