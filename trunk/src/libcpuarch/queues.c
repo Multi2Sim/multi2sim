@@ -60,17 +60,17 @@ struct uop_t *fetchq_remove(int core, int thread, int index)
 	assert(index >= 0 && index < list_count(fetchq));
 	uop = list_remove_at(fetchq, index);
 	uop->in_fetchq = 0;
-	if (!uop->fetch_tcache && !uop->mop_index) {
+	if (!uop->fetch_trace_cache && !uop->mop_index) {
 		THREAD.fetchq_occ -= uop->mop_size;
 		assert(THREAD.fetchq_occ >= 0);
 	}
-	if (uop->fetch_tcache) {
-		THREAD.tcacheq_occ--;
-		assert(THREAD.tcacheq_occ >= 0);
+	if (uop->fetch_trace_cache) {
+		THREAD.trace_cache_queue_occ--;
+		assert(THREAD.trace_cache_queue_occ >= 0);
 	}
 	if (!list_count(fetchq)) {
 		assert(!THREAD.fetchq_occ);
-		assert(!THREAD.tcacheq_occ);
+		assert(!THREAD.trace_cache_queue_occ);
 	}
 	return uop;
 }
