@@ -91,7 +91,8 @@ int gpu_work_item_get_pred(struct gpu_work_item_t *work_item)
 
 /* Based on an instruction counter, instruction address, and work_item mask,
  * update (xor) branch_digest with a random number */
-void gpu_work_item_update_branch_digest(struct gpu_work_item_t *work_item, uint64_t inst_count, uint32_t inst_addr)
+void gpu_work_item_update_branch_digest(struct gpu_work_item_t *work_item,
+	long long inst_count, uint32_t inst_addr)
 {
 	struct gpu_wavefront_t *wavefront = work_item->wavefront;
 	uint32_t mask = 0;
