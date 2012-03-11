@@ -142,8 +142,8 @@ struct gpu_work_item_uop_t
 struct gpu_uop_t
 {
 	/* Fields */
-	uint64_t id;
-	uint64_t id_in_compute_unit;
+	long long id;
+	long long id_in_compute_unit;
 	struct gpu_wavefront_t *wavefront;  /* Wavefront it belongs to */
 	struct gpu_work_group_t *work_group;  /* Work-group it belongs to */
 	struct gpu_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
@@ -170,7 +170,7 @@ struct gpu_uop_t
 	int active_mask_stack_top;  /* Top of stack */
 
 	/* Witness memory accesses */
-	uint64_t inst_mem_ready;  /* Cycle when instruction memory access completes */
+	long long inst_mem_ready;  /* Cycle when instruction memory access completes */
 	int global_mem_witness;
 	int local_mem_witness;
 
@@ -245,7 +245,7 @@ struct gpu_compute_unit_t
 {
 	/* IDs */
 	int id;
-	uint64_t gpu_uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
+	long long gpu_uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
 
 	/* Double linked list of compute units */
 	struct gpu_compute_unit_t *ready_list_prev;

@@ -109,7 +109,7 @@ void net_buffer_insert(struct net_buffer_t *buffer, struct net_msg_t *msg)
 		"node=\"%s\" "
 		"buf=\"%s\"\n",
 		net->name,
-		(long long) msg->id,
+		msg->id,
 		node->name,
 		buffer->name);
 }
@@ -140,7 +140,7 @@ void net_buffer_extract(struct net_buffer_t *buffer, struct net_msg_t *msg)
 		"node=\"%s\" "
 		"buf=\"%s\"\n",
 		net->name,
-		(long long) msg->id,
+		msg->id,
 		node->name,
 		buffer->name);
 

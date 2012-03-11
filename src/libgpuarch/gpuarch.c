@@ -732,7 +732,7 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 	{
 		/* Next cycle */
 		gpu->cycle++;
-		gpu_pipeline_debug("clk c=%lld\n", (long long) gpu->cycle);
+		gpu_pipeline_debug("clk c=%lld\n", gpu->cycle);
 
 		/* Allocate work-groups to compute units */
 		while (gpu->ready_list_head && ndrange->pending_list_head)

@@ -613,10 +613,10 @@ extern struct ctx_t *isa_ctx;
 extern struct regs_t *isa_regs;
 extern struct mem_t *isa_mem;
 extern int isa_spec_mode;
-extern uint32_t isa_eip;
-extern uint32_t isa_target;
+extern unsigned int isa_eip;
+extern unsigned int isa_target;
 extern struct x86_inst_t isa_inst;
-extern uint64_t isa_inst_count;
+extern long long isa_inst_count;
 extern int isa_function_level;
 
 #define isa_call_debug(...) debug(isa_call_debug_category, __VA_ARGS__)
@@ -772,11 +772,11 @@ void syscall_summary(void);
 /* Every contexts (parent and children) has its own masks */
 struct signal_mask_table_t
 {
-	uint64_t pending;  /* mask of pending signals */
-	uint64_t blocked;  /* mask of blocked signals */
-	uint64_t backup;  /* backup of blocked signals while suspended */
-	struct regs_t *regs;  /* backup of regs while executing handler */
-	uint32_t pretcode;  /* base address of a memory page allocated for retcode execution */
+	unsigned long long pending;  /* Mask of pending signals */
+	unsigned long long blocked;  /* Mask of blocked signals */
+	unsigned long long backup;  /* Backup of blocked signals while suspended */
+	struct regs_t *regs;  /* Backup of regs while executing handler */
+	unsigned int pretcode;  /* Base address of a memory page allocated for retcode execution */
 };
 
 struct signal_mask_table_t *signal_mask_table_create(void);
@@ -791,10 +791,10 @@ struct signal_handler_table_t
 	/* Signal handlers */
 	struct sim_sigaction
 	{
-		uint32_t handler;
-		uint32_t flags;
-		uint32_t restorer;
-		uint64_t mask;
+		unsigned int handler;
+		unsigned int flags;
+		unsigned int restorer;
+		unsigned long long mask;
 	} sigaction[64];
 };
 
@@ -811,11 +811,11 @@ void signal_handler_check_intr(struct ctx_t *ctx);
 
 char *sim_signal_name(int signum);
 void sim_sigaction_dump(struct sim_sigaction *sim_sigaction, FILE *f);
-void sim_sigaction_flags_dump(uint32_t flags, FILE *f);
-void sim_sigset_dump(uint64_t sim_sigset, FILE *f);
-void sim_sigset_add(uint64_t *sim_sigset, int signal);
-void sim_sigset_del(uint64_t *sim_sigset, int signal);
-int sim_sigset_member(uint64_t *sim_sigset, int signal);
+void sim_sigaction_flags_dump(unsigned int flags, FILE *f);
+void sim_sigset_dump(unsigned long long sim_sigset, FILE *f);
+void sim_sigset_add(unsigned long long *sim_sigset, int signal);
+void sim_sigset_del(unsigned long long *sim_sigset, int signal);
+int sim_sigset_member(unsigned long long *sim_sigset, int signal);
 
 
 

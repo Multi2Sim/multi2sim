@@ -163,28 +163,28 @@ void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 	fprintf(f, "WorkItemCount = %d\n", wavefront->work_item_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "Inst_Count = %lld\n", (long long) wavefront->inst_count);
-	fprintf(f, "Global_Mem_Inst_Count = %lld\n", (long long) wavefront->global_mem_inst_count);
-	fprintf(f, "Local_Mem_Inst_Count = %lld\n", (long long) wavefront->local_mem_inst_count);
+	fprintf(f, "Inst_Count = %lld\n", wavefront->inst_count);
+	fprintf(f, "Global_Mem_Inst_Count = %lld\n", wavefront->global_mem_inst_count);
+	fprintf(f, "Local_Mem_Inst_Count = %lld\n", wavefront->local_mem_inst_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "CF_Inst_Count = %lld\n", (long long) wavefront->cf_inst_count);
-	fprintf(f, "CF_Inst_Global_Mem_Write_Count = %lld\n", (long long) wavefront->cf_inst_global_mem_write_count);
+	fprintf(f, "CF_Inst_Count = %lld\n", wavefront->cf_inst_count);
+	fprintf(f, "CF_Inst_Global_Mem_Write_Count = %lld\n", wavefront->cf_inst_global_mem_write_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "ALU_Clause_Count = %lld\n", (long long) wavefront->alu_clause_count);
-	fprintf(f, "ALU_Group_Count = %lld\n", (long long) wavefront->alu_group_count);
+	fprintf(f, "ALU_Clause_Count = %lld\n", wavefront->alu_clause_count);
+	fprintf(f, "ALU_Group_Count = %lld\n", wavefront->alu_group_count);
 	fprintf(f, "ALU_Group_Size =");
 	for (i = 0; i < 5; i++)
-		fprintf(f, " %lld", (long long) wavefront->alu_group_size[i]);
+		fprintf(f, " %lld", wavefront->alu_group_size[i]);
 	fprintf(f, "\n");
-	fprintf(f, "ALU_Inst_Count = %lld\n", (long long) wavefront->alu_inst_count);
-	fprintf(f, "ALU_Inst_Local_Mem_Count = %lld\n", (long long) wavefront->alu_inst_local_mem_count);
+	fprintf(f, "ALU_Inst_Count = %lld\n", wavefront->alu_inst_count);
+	fprintf(f, "ALU_Inst_Local_Mem_Count = %lld\n", wavefront->alu_inst_local_mem_count);
 	fprintf(f, "\n");
 
-	fprintf(f, "TC_Clause_Count = %lld\n", (long long) wavefront->tc_clause_count);
-	fprintf(f, "TC_Inst_Count = %lld\n", (long long) wavefront->tc_inst_count);
-	fprintf(f, "TC_Inst_Global_Mem_Read_Count = %lld\n", (long long) wavefront->tc_inst_global_mem_read_count);
+	fprintf(f, "TC_Clause_Count = %lld\n", wavefront->tc_clause_count);
+	fprintf(f, "TC_Inst_Count = %lld\n", wavefront->tc_inst_count);
+	fprintf(f, "TC_Inst_Global_Mem_Read_Count = %lld\n", wavefront->tc_inst_global_mem_read_count);
 	fprintf(f, "\n");
 
 	gpu_wavefront_divergence_dump(wavefront, f);

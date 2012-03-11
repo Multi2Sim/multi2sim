@@ -167,7 +167,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 			compute_unit->id,
 			uop->work_group->id,
 			wavefront->id,
-			(long long) uop->id_in_compute_unit);
+			uop->id_in_compute_unit);
 		amd_alu_group_dump_debug(&wavefront->alu_group, -1, -1,
 			debug_file(gpu_pipeline_debug_category));
 		gpu_pipeline_debug(" idep=");
@@ -176,7 +176,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 		gpu_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->odep, uop->odep_count);
 		gpu_pipeline_debug("%s", str);
 		if (producer)
-			gpu_pipeline_debug(" prod=%lld", (long long) producer->id);
+			gpu_pipeline_debug(" prod=%lld", producer->id);
 		gpu_pipeline_debug("\n");
 	}
 }
@@ -217,7 +217,7 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id_in_compute_unit);
+		uop->id_in_compute_unit);
 }
 
 
@@ -264,7 +264,7 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id_in_compute_unit);
+		uop->id_in_compute_unit);
 
 	/* Move uop from instruction buffer into execution buffer */
 	compute_unit->alu_engine.inst_buffer = NULL;
@@ -294,7 +294,7 @@ void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 	assert(uop->exec_subwavefront_count < uop->subwavefront_count);
 	uop->exec_subwavefront_count++;
 	heap_insert(compute_unit->alu_engine.event_queue,
-		(long long) gpu->cycle + gpu_alu_engine_pe_latency,
+		gpu->cycle + gpu_alu_engine_pe_latency,
 		uop);
 	
 	/* Debug */
@@ -303,7 +303,7 @@ void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 		"uop=%lld "
 		"subwf=%d\n",
 		compute_unit->id,
-		(long long) uop->id_in_compute_unit,
+		uop->id_in_compute_unit,
 		uop->exec_subwavefront_count - 1);
 
 	/* If this is the last subwavefront, remove uop from execution buffer */
@@ -363,7 +363,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 			"uop=%lld "
 			"subwf=%d\n",
 			compute_unit->id,
-			(long long) uop->id_in_compute_unit,
+			uop->id_in_compute_unit,
 			uop->write_subwavefront_count - 1);
 
 		/* If this is the first SubWF to write, wake up dependent instructions. */

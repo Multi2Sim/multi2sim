@@ -97,8 +97,9 @@ struct net_msg_t
 
 	long long id;
 	int size;
-	uint64_t send_cycle;  /* Cycle when it was sent */
-	uint64_t busy;  /* In transit until cycle */
+
+	long long send_cycle;  /* Cycle when it was sent */
+	long long busy;  /* In transit until cycle */
 
 	struct net_node_t *src_node;
 	struct net_node_t *dst_node;
@@ -123,8 +124,8 @@ struct net_msg_t *net_msg_create(struct net_t *net, struct net_node_t *src_node,
 void net_msg_free(struct net_msg_t *msg);
 
 void net_msg_table_insert(struct net_t *net, struct net_msg_t *msg);
-struct net_msg_t *net_msg_table_extract(struct net_t *net, uint64_t id);
-struct net_msg_t *net_msg_table_get(struct net_t *net, uint64_t id);
+struct net_msg_t *net_msg_table_extract(struct net_t *net, long long id);
+struct net_msg_t *net_msg_table_get(struct net_t *net, long long id);
 
 
 
@@ -147,7 +148,7 @@ struct net_link_t
 	struct net_buffer_t *dst_buffer;
 
 	int bandwidth;
-	uint64_t busy;  /* Busy until this cycle inclusive */
+	long long busy;  /* Busy until this cycle inclusive */
 
 	/* Stats */
 	long long busy_cycles;
@@ -191,8 +192,8 @@ struct net_buffer_t
 	int count;  /* Occupied buffer size */
 
 	/* Cycle until a read/write operation on buffer lasts */
-	uint64_t read_busy;
-	uint64_t write_busy;
+	long long read_busy;
+	long long write_busy;
 
 	/* Link connected to buffer */
 	struct net_link_t *link;
@@ -261,7 +262,7 @@ struct net_node_t
 
 	/* Switch crossbar or bus*/
 	int bandwidth;
-	uint64_t bus_busy;
+	long long bus_busy;
 	
 	/* Buffers */
 	int input_buffer_size;

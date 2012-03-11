@@ -37,7 +37,7 @@ void net_msg_table_insert(struct net_t *net, struct net_msg_t *msg)
 
 
 /* Return a message from the in-flight messages hash table */
-struct net_msg_t *net_msg_table_get(struct net_t *net, uint64_t id)
+struct net_msg_t *net_msg_table_get(struct net_t *net, long long id)
 {
 	int index;
 	struct net_msg_t *msg;
@@ -51,7 +51,7 @@ struct net_msg_t *net_msg_table_get(struct net_t *net, uint64_t id)
 
 
 /* Extract a message from the in-flight messages hash table */
-struct net_msg_t *net_msg_table_extract(struct net_t *net, uint64_t id)
+struct net_msg_t *net_msg_table_extract(struct net_t *net, long long id)
 {
 	int index;
 	struct net_msg_t *prev, *msg;
@@ -66,7 +66,7 @@ struct net_msg_t *net_msg_table_extract(struct net_t *net, uint64_t id)
 	}
 	if (!msg)
 		panic("%s: message %lld not in hash table",
-			__FUNCTION__, (long long) id);
+			__FUNCTION__, id);
 	if (prev)
 		prev->bucket_next = msg->bucket_next;
 	else

@@ -26,10 +26,10 @@ struct regs_t *isa_regs;
 struct mem_t *isa_mem;
 struct x86_inst_t isa_inst;
 int isa_spec_mode;  /* If true, instructions will not modify memory */
-uint32_t isa_eip;
-uint32_t isa_addr;  /* Address of last memory access */
-uint32_t isa_target;  /* Target address of branch/jmp/call/ret inst, even if it's not taken */
-uint64_t isa_inst_count;
+unsigned int isa_eip;
+unsigned int isa_addr;  /* Address of last memory access */
+unsigned int isa_target;  /* Target address of branch/jmp/call/ret inst, even if it's not taken */
+long long isa_inst_count;
 int isa_function_level;
 
 int isa_call_debug_category;
@@ -99,7 +99,7 @@ void isa_error(char *fmt, ...)
 
 	/* Error */
 	fprintf(stderr, "fatal: context %d at 0x%08x inst %lld: ",
-		isa_ctx->pid, isa_eip, (long long) isa_inst_count);
+		isa_ctx->pid, isa_eip, isa_inst_count);
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 	exit(1);
@@ -130,17 +130,17 @@ void isa_error(char *fmt, ...)
  * Instruction statistics
  */
 
-static uint64_t inst_freq[x86_opcode_count];
+static long long inst_freq[x86_opcode_count];
 
 
 void isa_inst_stat_dump(FILE *f)
 {
 	int i;
-	for (i = 1; i < x86_opcode_count; i++) {
+	for (i = 1; i < x86_opcode_count; i++)
+	{
 		if (!inst_freq[i])
 			continue;
-		fprintf(f, "%s    %lld\n", x86_inst_name(i),
-			(long long) inst_freq[i]);
+		fprintf(f, "%s    %lld\n", x86_inst_name(i), inst_freq[i]);
 	}
 }
 
@@ -780,7 +780,7 @@ void isa_dump(FILE *f)
 	if (!isa_ctx)
 		return;
 	fprintf(f, "isa_ctx: pid=%d\n", isa_ctx->pid);
-	fprintf(f, "isa_inst_count: %lld\n", (long long) isa_inst_count);
+	fprintf(f, "isa_inst_count: %lld\n", isa_inst_count);
 	fprintf(f, "isa_inst:\n");
 	fprintf(f, "  eip=0x%x\n", isa_inst.eip);
 	fprintf(f, "  ");
@@ -797,7 +797,7 @@ void isa_execute_inst(void)
 	if (debug_status(isa_inst_debug_category))
 	{
 		isa_inst_debug("%d %8lld %x: ", isa_ctx->pid,
-			(long long) isa_inst_count, isa_eip);
+			isa_inst_count, isa_eip);
 		x86_inst_dump(&isa_inst, debug_file(isa_inst_debug_category));
 		isa_inst_debug("  (%d bytes)", isa_inst.size);
 	}
