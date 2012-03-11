@@ -42,10 +42,8 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 
 	/* Local memory */
 	snprintf(buf, sizeof buf, "LocalMemory[%d]", compute_unit->id);
-	compute_unit->local_mod = mod_create(buf, mod_kind_main_memory,
-		gpu_local_mem_read_ports + gpu_local_mem_write_ports,  /* FIXME */
-		gpu_local_mem_banks, gpu_local_mem_read_ports, gpu_local_mem_write_ports,
-		gpu_local_mem_block_size, gpu_local_mem_latency);
+	compute_unit->local_memory = mod_create(buf, mod_kind_main_memory,
+		gpu_local_mem_num_ports, gpu_local_mem_block_size, gpu_local_mem_latency);
 
 	/* Initialize CF Engine */
 	compute_unit->cf_engine.complete_queue = linked_list_create();
@@ -136,7 +134,7 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	/* Compute unit */
 	linked_list_free(compute_unit->wavefront_pool);
 	free(compute_unit->work_groups);  /* List of mapped work-groups */
-	mod_free(compute_unit->local_mod);
+	mod_free(compute_unit->local_memory);
 	free(compute_unit);
 }
 
