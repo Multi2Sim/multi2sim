@@ -326,12 +326,12 @@ void cpu_config_check(void)
 
 	/* Section '[ TraceCache ]' */
 	section = "TraceCache";
-	tcache_present = config_read_bool(cfg, section, "Present", 0);
-	tcache_sets = config_read_int(cfg, section, "Sets", 64);
-	tcache_assoc = config_read_int(cfg, section, "Assoc", 4);
-	tcache_trace_size = config_read_int(cfg, section, "TraceSize", 16);
-	tcache_branch_max = config_read_int(cfg, section, "BranchMax", 3);
-	tcache_queue_size = config_read_int(cfg, section, "QueueSize", 32);
+	trace_cache_present = config_read_bool(cfg, section, "Present", 0);
+	trace_cache_num_sets = config_read_int(cfg, section, "Sets", 64);
+	trace_cache_assoc = config_read_int(cfg, section, "Assoc", 4);
+	trace_cache_trace_size = config_read_int(cfg, section, "TraceSize", 16);
+	trace_cache_branch_max = config_read_int(cfg, section, "BranchMax", 3);
+	trace_cache_queue_size = config_read_int(cfg, section, "QueueSize", 32);
 
 	
 	/* Functional Units */
@@ -442,12 +442,12 @@ void cpu_config_dump(FILE *f)
 
 	/* Trace Cache */
 	fprintf(f, "[ Config.TraceCache ]\n");
-	fprintf(f, "Present = %s\n", tcache_present ? "True" : "False");
-	fprintf(f, "Sets = %d\n", tcache_sets);
-	fprintf(f, "Assoc = %d\n", tcache_assoc);
-	fprintf(f, "TraceSize = %d\n", tcache_trace_size);
-	fprintf(f, "BranchMax = %d\n", tcache_branch_max);
-	fprintf(f, "QueueSize = %d\n", tcache_queue_size);
+	fprintf(f, "Present = %s\n", trace_cache_present ? "True" : "False");
+	fprintf(f, "Sets = %d\n", trace_cache_num_sets);
+	fprintf(f, "Assoc = %d\n", trace_cache_assoc);
+	fprintf(f, "TraceSize = %d\n", trace_cache_trace_size);
+	fprintf(f, "BranchMax = %d\n", trace_cache_branch_max);
+	fprintf(f, "QueueSize = %d\n", trace_cache_queue_size);
 	fprintf(f, "\n");
 
 	/* Functional units */
@@ -774,8 +774,8 @@ void cpu_dump_report()
 			fprintf(f, "\n");
 
 			/* Trace cache stats */
-			if (THREAD.tcache)
-				tcache_dump_report(THREAD.tcache, f);
+			if (THREAD.trace_cache)
+				trace_cache_dump_report(THREAD.trace_cache, f);
 		}
 	}
 
@@ -814,7 +814,7 @@ void cpu_init()
 
 	rf_init();
 	bpred_init();
-	tcache_init();
+	trace_cache_init();
 	fetchq_init();
 	uopq_init();
 	rob_init();
@@ -838,7 +838,7 @@ void cpu_done()
 	lsq_done();
 	eventq_done();
 	bpred_done();
-	tcache_done();
+	trace_cache_done();
 	rf_done();
 	fu_done();
 

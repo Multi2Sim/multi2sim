@@ -47,9 +47,9 @@ void cpu_recover(int core, int thread)
 		if (!uop->specmode)
 			break;
 		
-		/* Stats */
-		if (uop->fetch_tcache)
-			THREAD.tcache->squashed++;
+		/* Statistics */
+		if (uop->fetch_trace_cache)
+			THREAD.trace_cache->squashed++;
 		THREAD.squashed++;
 		CORE.squashed++;
 		cpu->squashed++;
@@ -61,7 +61,7 @@ void cpu_recover(int core, int thread)
 
 		/* Debug */
 		esim_debug("uop action=\"squash\", core=%d, seq=%llu\n",
-			uop->core, (long long unsigned) uop->di_seq);
+			uop->core, uop->di_seq);
  
 		/* Remove entry in ROB */
 		rob_remove_tail(core, thread);

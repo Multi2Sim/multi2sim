@@ -39,13 +39,13 @@ static void decode_thread(int core, int thread)
 		/* If instructions come from the trace cache, i.e., are located in
 		 * the trace cache queue, copy all of them
 		 * into the uop queue in one single decode slot. */
-		if (uop->fetch_tcache) {
+		if (uop->fetch_trace_cache) {
 			do {
 				fetchq_remove(core, thread, 0);
 				list_add(uopq, uop);
 				uop->in_uopq = 1;
 				uop = list_get(fetchq, 0);
-			} while (uop && uop->fetch_tcache);
+			} while (uop && uop->fetch_trace_cache);
 			break;
 		}
 

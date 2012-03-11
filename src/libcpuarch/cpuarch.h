@@ -124,9 +124,9 @@ struct uop_t
 
 	/* Name and sequence numbers */
 	char name[40];
-	uint32_t magic;  /* Magic number for debugging */
-	uint64_t seq;  /* Sequence number - unique uop identifier */
-	uint64_t di_seq;  /* Dispatch sequence number - unique per core */
+	long long magic;  /* Magic number for debugging */
+	long long seq;  /* Sequence number - unique uop identifier */
+	long long di_seq;  /* Dispatch sequence number - unique per core */
 
 	/* Context info */
 	struct ctx_t *ctx;
@@ -134,7 +134,7 @@ struct uop_t
 	int thread;
 
 	/* Fetch info */
-	int fetch_tcache;  /* True if uop comes from trace cache */
+	int fetch_trace_cache;  /* True if uop comes from trace cache */
 	uint32_t eip;  /* Address of x86 macro-instruction */
 	uint32_t neip;  /* Address of next non-speculative x86 macro-instruction */
 	uint32_t pred_neip; /* Address of next predicted x86 macro-instruction (for branches) */
@@ -480,10 +480,14 @@ uint32_t bpred_btb_next_branch(struct bpred_t *bpred, uint32_t eip, uint32_t bsi
  * Trace cache
  */
 
-#define TCACHE_ENTRY_SIZE  (sizeof(struct tcache_entry_t) + sizeof(uint32_t) * tcache_trace_size)
-#define TCACHE_ENTRY(SET, WAY)  ((struct tcache_entry_t *) (((unsigned char *) tcache->entry) + TCACHE_ENTRY_SIZE * ((SET) * tcache_assoc + (WAY))))
+#define TRACE_CACHE_ENTRY_SIZE \
+	(sizeof(struct trace_cache_entry_t) + \
+	sizeof(uint32_t) * trace_cache_trace_size)
+#define TRACE_CACHE_ENTRY(SET, WAY) \
+	((struct trace_cache_entry_t *) (((unsigned char *) trace_cache->entry) + \
+	TRACE_CACHE_ENTRY_SIZE * ((SET) * trace_cache_assoc + (WAY))))
 
-struct tcache_entry_t
+struct trace_cache_entry_t
 {
 	int counter;  /* lru counter */
 	uint32_t tag;
@@ -492,46 +496,46 @@ struct tcache_entry_t
 	uint32_t fall_through;
 	uint32_t target;
 
-	/* Last field. This is a list of 'tcache_trace_size' elements containing
+	/* Last field. This is a list of 'trace_cache_trace_size' elements containing
 	 * the addresses of the microinst located in the trace. Only in the case that
 	 * all macroinst are decoded into just one uop can this array be filled up. */
 	uint32_t mop_array[0];
 };
 
-struct tcache_t
+struct trace_cache_t
 {
 	/* Entries (sets * assoc) */
-	struct tcache_entry_t *entry;
-	struct tcache_entry_t *temp;  /* temporary trace */
+	struct trace_cache_entry_t *entry;
+	struct trace_cache_entry_t *temp;  /* Temporary trace */
 
 	/* Stats */
 	char name[20];
-	uint64_t accesses;
-	uint64_t hits;
-	uint64_t committed;
-	uint64_t squashed;
-	uint64_t trace_length_acc;
-	uint64_t trace_length_count;
+	long long accesses;
+	long long hits;
+	long long committed;
+	long long squashed;
+	long long trace_length_acc;
+	long long trace_length_count;
 };
 
 
-extern int tcache_present;
-extern int tcache_sets;
-extern int tcache_assoc;
-extern int tcache_trace_size;
-extern int tcache_branch_max;
-extern int tcache_queue_size;
+extern int trace_cache_present;
+extern int trace_cache_num_sets;
+extern int trace_cache_assoc;
+extern int trace_cache_trace_size;
+extern int trace_cache_branch_max;
+extern int trace_cache_queue_size;
 
-struct tcache_t;
+struct trace_cache_t;
 
-void tcache_init(void);
-void tcache_done(void);
-void tcache_dump_report(struct tcache_t *tcache, FILE *f);
+void trace_cache_init(void);
+void trace_cache_done(void);
+void trace_cache_dump_report(struct trace_cache_t *trace_cache, FILE *f);
 
-struct tcache_t *tcache_create(void);
-void tcache_free(struct tcache_t *tcache);
-void tcache_new_uop(struct tcache_t *tcache, struct uop_t *uop);
-int tcache_lookup(struct tcache_t *tcache, uint32_t eip, int pred,
+struct trace_cache_t *trace_cache_create(void);
+void trace_cache_free(struct trace_cache_t *trace_cache);
+void trace_cache_new_uop(struct trace_cache_t *trace_cache, struct uop_t *uop);
+int trace_cache_lookup(struct trace_cache_t *trace_cache, uint32_t eip, int pred,
 	int *ptr_mop_count, uint32_t **ptr_mop_array, uint32_t *ptr_neip);
 
 
@@ -618,13 +622,13 @@ struct cpu_thread_t
 	struct linked_list_t *lq;
 	struct linked_list_t *sq;
 	struct bpred_t *bpred;  /* branch predictor */
-	struct tcache_t *tcache;  /* trace cache */
+	struct trace_cache_t *trace_cache;  /* trace cache */
 	struct rf_t *rf;  /* physical register file */
 
 	/* Fetch */
 	uint32_t fetch_eip, fetch_neip;  /* eip and next eip */
 	int fetchq_occ;  /* Number of bytes occupied in the fetch queue */
-	int tcacheq_occ;  /* Number of uops occupied in the trace cache queue */
+	int trace_cache_queue_occ;  /* Number of uops occupied in the trace cache queue */
 	uint32_t fetch_block;  /* Virtual address of last fetched block */
 	uint32_t fetch_address;  /* Physical address of last instruction fetch */
 	long long fetch_access;  /* Module access ID of last instruction fetch */
