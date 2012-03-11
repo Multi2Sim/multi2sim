@@ -210,8 +210,8 @@ struct mod_port_t
 {
 	/* Port lock status */
 	int locked;
-	uint64_t lock_when;
-	struct mod_stack_t *stack;  /* Current access */
+	long long lock_when;  /* Cycle when it was locked */
+	struct mod_stack_t *stack;  /* Access locking port */
 
 	/* Waiting list */
 	struct mod_stack_t *waiting_list_head;
@@ -219,26 +219,6 @@ struct mod_port_t
 	int waiting_list_count;
 	int waiting_list_max;
 };
-
-
-/* Bank */
-struct mod_bank_t
-{
-	/* Stats */
-	long long accesses;
-
-	/* Ports */
-	struct mod_port_t ports[0];
-};
-
-
-#define SIZEOF_MOD_BANK(CACHE) (sizeof(struct mod_bank_t) + sizeof(struct mod_port_t) \
-	* ((CACHE)->read_port_count + (CACHE)->write_port_count))
-
-#define MOD_BANK_INDEX(CACHE, I)  ((struct mod_bank_t *) ((void *) (CACHE)->banks + SIZEOF_MOD_BANK(CACHE) * (I)))
-
-#define MOD_READ_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(I)])
-#define MOD_WRITE_PORT_INDEX(CACHE, BANK, I)  (&(BANK)->ports[(CACHE)->read_port_count + (I)])
 
 /* Access type */
 enum mod_access_kind_t
@@ -305,16 +285,6 @@ struct mod_t
 			uint32_t eq;
 		} interleaved;
 	} range;
-
-	/* Banks and ports */
-	struct mod_bank_t *banks;
-	int bank_count;
-	int read_port_count;  /* Number of read ports (per bank) - FIXME - remove */
-	int write_port_count;  /* Number of write ports (per bank) - FIXME - remove */
-
-	/* For GPU - FIXME - remove */
-	int locked_read_port_count;
-	int locked_write_port_count;
 
 	/* Ports */
 	struct mod_port_t *ports;
@@ -417,7 +387,6 @@ struct mod_t
 };
 
 struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
-	int bank_count, int read_port_count, int write_port_count,
 	int block_size, int latency);
 void mod_free(struct mod_t *mod);
 void mod_dump(struct mod_t *mod, FILE *f);
@@ -569,8 +538,8 @@ struct mod_stack_t
 	struct mod_t *target_mod;
 	struct mod_t *except_mod;
 
-	struct mod_bank_t *bank;
 	struct mod_port_t *port;
+
 	uint32_t addr;
 	uint32_t tag;
 	uint32_t set;
@@ -580,11 +549,6 @@ struct mod_stack_t
 	uint32_t src_set;
 	uint32_t src_way;
 	uint32_t src_tag;
-
-	uint32_t block_index;
-	uint32_t bank_index;
-	int read_port_index;
-	int write_port_index;
 
 	enum mod_request_dir_t request_dir;
 	struct dir_lock_t *dir_lock;

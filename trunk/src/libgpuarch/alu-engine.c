@@ -251,7 +251,7 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 			{
 				if (work_item_uop->local_mem_access_kind[i] != 1)  /* read access */
 					continue;
-				mod_access(compute_unit->local_mod, mod_entry_gpu,
+				mod_access(compute_unit->local_memory, mod_entry_gpu,
 					mod_access_read, work_item_uop->local_mem_access_addr[i],
 					&uop->local_mem_witness, NULL, NULL);
 				uop->local_mem_witness--;
@@ -274,6 +274,7 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 {
+	struct mod_t *local_memory = compute_unit->local_memory;
 	struct gpu_uop_t *uop;
 
 	/* Get uop from execution buffer.
@@ -282,9 +283,8 @@ void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 	if (!uop || uop->local_mem_witness)
 		return;
 	
-	/* If instruction writes to local memory, wait till all previous write
-	 * accesses complete, to prevent over-occupancy of write buffers. */
-	if (uop->local_mem_write && compute_unit->local_mod->locked_write_port_count)
+	/* If instruction writes to local memory, check that module is available. */
+	if (uop->local_mem_write && !mod_can_access(local_memory, 0))
 		return;
 	
 	/* One more SubWF launched for execution for uop.
@@ -348,7 +348,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 				{
 					if (work_item_uop->local_mem_access_kind[i] != mod_access_write)
 						continue;
-					mod_access(compute_unit->local_mod, mod_entry_gpu,
+					mod_access(compute_unit->local_memory, mod_entry_gpu,
 						mod_access_write, work_item_uop->local_mem_access_addr[i],
 						NULL, NULL, NULL);
 				}

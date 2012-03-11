@@ -215,42 +215,41 @@ void mem_system_dump_report()
 		fprintf(f, "\n");
 
 		/* Statistics */
-		fprintf(f, "Accesses = %lld\n", (long long) mod->accesses);
-		fprintf(f, "Hits = %lld\n", (long long) mod->hits);
-		fprintf(f, "Misses = %lld\n", (long long) (mod->accesses - mod->hits));
+		fprintf(f, "Accesses = %lld\n", mod->accesses);
+		fprintf(f, "Hits = %lld\n", mod->hits);
+		fprintf(f, "Misses = %lld\n", mod->accesses - mod->hits);
 		fprintf(f, "HitRatio = %.4g\n", mod->accesses ?
 			(double) mod->hits / mod->accesses : 0.0);
-		fprintf(f, "Evictions = %lld\n", (long long) mod->evictions);
-		fprintf(f, "Retries = %lld\n", (long long) (mod->read_retries + mod->write_retries));
-		fprintf(f, "ReadRetries = %lld\n", (long long) mod->read_retries);
-		fprintf(f, "WriteRetries = %lld\n", (long long) mod->write_retries);
+		fprintf(f, "Evictions = %lld\n", mod->evictions);
+		fprintf(f, "Retries = %lld\n", mod->read_retries + mod->write_retries);
+		fprintf(f, "ReadRetries = %lld\n", mod->read_retries);
+		fprintf(f, "WriteRetries = %lld\n", mod->write_retries);
 		fprintf(f, "\n");
-		fprintf(f, "NoRetryAccesses = %lld\n", (long long) mod->no_retry_accesses);
-		fprintf(f, "NoRetryHits = %lld\n", (long long) mod->no_retry_hits);
-		fprintf(f, "NoRetryMisses = %lld\n", (long long) (mod->no_retry_accesses -
-			mod->no_retry_hits));
+		fprintf(f, "NoRetryAccesses = %lld\n", mod->no_retry_accesses);
+		fprintf(f, "NoRetryHits = %lld\n", mod->no_retry_hits);
+		fprintf(f, "NoRetryMisses = %lld\n", mod->no_retry_accesses - mod->no_retry_hits);
 		fprintf(f, "NoRetryHitRatio = %.4g\n", mod->no_retry_accesses ?
 			(double) mod->no_retry_hits / mod->no_retry_accesses : 0.0);
-		fprintf(f, "NoRetryReads = %lld\n", (long long) mod->no_retry_reads);
-		fprintf(f, "NoRetryReadHits = %lld\n", (long long) mod->no_retry_read_hits);
-		fprintf(f, "NoRetryReadMisses = %lld\n", (long long) (mod->no_retry_reads -
+		fprintf(f, "NoRetryReads = %lld\n", mod->no_retry_reads);
+		fprintf(f, "NoRetryReadHits = %lld\n", mod->no_retry_read_hits);
+		fprintf(f, "NoRetryReadMisses = %lld\n", (mod->no_retry_reads -
 			mod->no_retry_read_hits));
-		fprintf(f, "NoRetryWrites = %lld\n", (long long) mod->no_retry_writes);
-		fprintf(f, "NoRetryWriteHits = %lld\n", (long long) mod->no_retry_write_hits);
-		fprintf(f, "NoRetryWriteMisses = %lld\n", (long long) (mod->no_retry_writes -
-			mod->no_retry_write_hits));
+		fprintf(f, "NoRetryWrites = %lld\n", mod->no_retry_writes);
+		fprintf(f, "NoRetryWriteHits = %lld\n", mod->no_retry_write_hits);
+		fprintf(f, "NoRetryWriteMisses = %lld\n", mod->no_retry_writes
+			- mod->no_retry_write_hits);
 		fprintf(f, "\n");
-		fprintf(f, "Reads = %lld\n", (long long) mod->reads);
-		fprintf(f, "BlockingReads = %lld\n", (long long) mod->blocking_reads);
-		fprintf(f, "NonBlockingReads = %lld\n", (long long) mod->non_blocking_reads);
-		fprintf(f, "ReadHits = %lld\n", (long long) mod->read_hits);
-		fprintf(f, "ReadMisses = %lld\n", (long long) (mod->reads - mod->read_hits));
+		fprintf(f, "Reads = %lld\n", mod->reads);
+		fprintf(f, "BlockingReads = %lld\n", mod->blocking_reads);
+		fprintf(f, "NonBlockingReads = %lld\n", mod->non_blocking_reads);
+		fprintf(f, "ReadHits = %lld\n", mod->read_hits);
+		fprintf(f, "ReadMisses = %lld\n", mod->reads - mod->read_hits);
 		fprintf(f, "\n");
-		fprintf(f, "Writes = %lld\n", (long long) mod->writes);
-		fprintf(f, "BlockingWrites = %lld\n", (long long) mod->blocking_writes);
-		fprintf(f, "NonBlockingWrites = %lld\n", (long long) mod->non_blocking_writes);
-		fprintf(f, "WriteHits = %lld\n", (long long) mod->write_hits);
-		fprintf(f, "WriteMisses = %lld\n", (long long) (mod->writes - mod->write_hits));
+		fprintf(f, "Writes = %lld\n", mod->writes);
+		fprintf(f, "BlockingWrites = %lld\n", mod->blocking_writes);
+		fprintf(f, "NonBlockingWrites = %lld\n", mod->non_blocking_writes);
+		fprintf(f, "WriteHits = %lld\n", mod->write_hits);
+		fprintf(f, "WriteMisses = %lld\n", mod->writes - mod->write_hits);
 		fprintf(f, "\n\n");
 	}
 

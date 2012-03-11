@@ -143,32 +143,28 @@ void mod_handler_gpu_read(int event, void *data)
 
 		/* Get bank, set, way, tag, state */
 		stack->tag = stack->addr & ~(mod->block_size - 1);
-		stack->block_index = stack->tag >> mod->log_block_size;
-		stack->bank_index = stack->block_index % mod->bank_count;
-		stack->bank = MOD_BANK_INDEX(mod, stack->bank_index);
 
-		/* If any read port in bank is processing the same tag, there are two options:
+		/* If any port is processing the same tag, there are two options:
 		 *   1) If the previous access started in the same cycle, it will be coalesced with the
-		 *      current access, assuming that they were issued simultaneously.
+		 *      current access, meaning that they were issued simultaneously.
 		 *   2) If the previous access started in a previous cycle, the new access will
 		 *      wait until the previous access finishes, because there might be writes in
 		 *      between. */
-		for (i = 0; i < mod->read_port_count; i++)
+		for (i = 0; i < mod->num_ports; i++)
 		{
 			/* Do something if the port is locked and it is handling the same tag. */
-			port = MOD_READ_PORT_INDEX(mod, stack->bank, i);
+			port = &mod->ports[i];
 			if (!port->locked || port->stack->tag != stack->tag)
 				continue;
 
 			/* If current and previous access are in the same cycle, coalesce. */
 			if (port->lock_when == esim_cycle)
 			{
-				mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
-					esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index);
-				stack->read_port_index = i;
+				mem_debug("%lld %lld read cache=\"%s\" addr=%u\n",
+					esim_cycle, stack->id, mod->name, stack->addr);
 				stack->port = port;
-				mem_debug("  %lld %lld coalesce id=%lld bank=%d read_port=%d\n",
-					esim_cycle, stack->id, (long long) port->stack->id, stack->bank_index, stack->read_port_index);
+				mem_debug("  %lld %lld coalesce id=%lld\n",
+					esim_cycle, stack->id, port->stack->id);
 				mod_stack_wait_in_port(stack, port, EV_MOD_GPU_READ_FINISH);
 
 				/* Stats */
@@ -185,12 +181,12 @@ void mod_handler_gpu_read(int event, void *data)
 			return;
 		}
 
-		/* Look for a free read port */
-		for (i = 0; i < mod->read_port_count; i++)
+		/* Look for a free port */
+		for (i = 0; i < mod->num_ports; i++)
 		{
-			port = MOD_READ_PORT_INDEX(mod, stack->bank, i);
-			if (!port->locked) {
-				stack->read_port_index = i;
+			port = &mod->ports[i];
+			if (!port->locked)
+			{
 				stack->port = port;
 				break;
 			}
@@ -199,9 +195,9 @@ void mod_handler_gpu_read(int event, void *data)
 		/* If there is no free read port, enqueue in cache waiting list. */
 		if (!stack->port)
 		{
-			mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d\n",
-				esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index);
-			mem_debug("  %lld %lld wait why=\"no_read_port\"\n", esim_cycle, stack->id);
+			mem_debug("%lld %lld read cache=\"%s\" addr=%u\n",
+				esim_cycle, stack->id, mod->name, stack->addr);
+			mem_debug("  %lld %lld wait why=\"no_port\"\n", esim_cycle, stack->id);
 			mod_stack_wait_in_mod(stack, mod, EV_MOD_GPU_READ);
 			return;
 		}
@@ -209,13 +205,13 @@ void mod_handler_gpu_read(int event, void *data)
 		/* Lock read port */
 		port = stack->port;
 		assert(!port->locked);
-		assert(mod->locked_read_port_count < mod->read_port_count * mod->bank_count);
+		assert(mod->num_locked_ports < mod->num_ports);
 		port->locked = 1;
 		port->lock_when = esim_cycle;
 		port->stack = stack;
-		mod->locked_read_port_count++;
+		mod->num_locked_ports++;
 	
-		/* Stats */
+		/* Statistics */
 		mod->reads++;
 		mod->effective_reads++;
 
@@ -224,10 +220,10 @@ void mod_handler_gpu_read(int event, void *data)
 		{
 			esim_schedule_event(EV_MOD_GPU_READ_UNLOCK, stack, mod->latency);
 
-			/* Stats */
+			/* Statistics */
 			mod->effective_read_hits++;
-			mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d\n",
-				esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index, stack->read_port_index);
+			mem_debug("%lld %lld read cache=\"%s\" addr=%u\n",
+				esim_cycle, stack->id, mod->name, stack->addr);
 			return;
 		}
 
@@ -249,8 +245,8 @@ void mod_handler_gpu_read(int event, void *data)
 		}
 
 		/* Debug */
-		mem_debug("%lld %lld read cache=\"%s\" addr=%u bank=%d read_port=%d set=%d way=%d\n",
-			esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index, stack->read_port_index,
+		mem_debug("%lld %lld read cache=\"%s\" addr=%u set=%d way=%d\n",
+			esim_cycle, stack->id, mod->name, stack->addr,
 			stack->set, stack->way);
 		return;
 	}
@@ -334,10 +330,10 @@ void mod_handler_gpu_read(int event, void *data)
 
 		/* Unlock port */
 		assert(port->locked);
-		assert(mod->locked_read_port_count > 0);
+		assert(mod->num_locked_ports > 0);
 		port->locked = 0;
 		port->stack = NULL;
-		mod->locked_read_port_count--;
+		mod->num_locked_ports--;
 
 		/* Wake up accesses in waiting lists */
 		mod_stack_wakeup_port(port);
@@ -386,54 +382,36 @@ void mod_handler_gpu_write(int event, void *data)
 			return;
 		}
 
-		/* If there is any locked read port in the cache, the write is stalled.
-		 * The reason is that a write must wait for all reads to be complete, since
-		 * writes could be faster than reads in the memory hierarchy. */
-		if (mod->locked_read_port_count)
-		{
-			mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
-				esim_cycle, stack->id, mod->name, stack->addr);
-			mem_debug("%lld %lld wait why=\"write_after_read\"\n",
-				esim_cycle, stack->id);
-			mod_stack_wait_in_mod(stack, mod, EV_MOD_GPU_WRITE);
-			return;
-		}
-
-		/* Get bank, set, way, tag, state */
+		/* Get tag */
 		stack->tag = stack->addr & ~(mod->block_size - 1);
-		stack->block_index = stack->tag >> mod->log_block_size;
-		stack->bank_index = stack->block_index % mod->bank_count;
-		stack->bank = MOD_BANK_INDEX(mod, stack->bank_index);
 
-		/* If any write port in bank is processing the same tag, there are two options:
+		/* If any port is processing the same tag, there are two options:
 		 *   1) If the previous access started in the same cycle, it will be coalesced with the
 		 *      current access, assuming that they were issued simultaneously.
 		 *   2) If the previous access started in a previous cycle, the new access will
 		 *      wait until the previous access finishes, because there might be writes in
 		 *      between. */
-		for (i = 0; i < mod->write_port_count; i++)
+		for (i = 0; i < mod->num_ports; i++)
 		{
 			/* Do what follows only if the port is locked and it is handling the same tag. */
-			port = MOD_WRITE_PORT_INDEX(mod, stack->bank, i);
+			port = &mod->ports[i];
 			if (!port->locked || port->stack->tag != stack->tag)
 				continue;
 
 			if (port->lock_when == esim_cycle)
 			{
-				mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
-					esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index);
-				stack->write_port_index = i;
+				mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
+					esim_cycle, stack->id, mod->name, stack->addr);
 				stack->port = port;
-				mem_debug("  %lld %lld coalesce id=%lld bank=%d write_port=%d\n",
-					esim_cycle, stack->id, (long long) port->stack->id, stack->bank_index,
-					stack->write_port_index);
+				mem_debug("  %lld %lld coalesce id=%lld\n",
+					esim_cycle, stack->id, port->stack->id);
 				mod_stack_wait_in_port(stack, port, EV_MOD_GPU_WRITE_FINISH);
 
 				/* Increment witness variable as soon as a port was secured */
 				if (stack->witness_ptr)
 					(*stack->witness_ptr)++;
 
-				/* Stats */
+				/* Statistics */
 				mod->writes++;
 				return;
 			}
@@ -448,12 +426,11 @@ void mod_handler_gpu_write(int event, void *data)
 		}
 
 		/* Look for a free write port */
-		for (i = 0; i < mod->write_port_count; i++)
+		for (i = 0; i < mod->num_ports; i++)
 		{
-			port = MOD_WRITE_PORT_INDEX(mod, stack->bank, i);
+			port = &mod->ports[i];
 			if (!port->locked)
 			{
-				stack->write_port_index = i;
 				stack->port = port;
 				break;
 			}
@@ -462,9 +439,9 @@ void mod_handler_gpu_write(int event, void *data)
 		/* If there is no free write port, enqueue in cache waiting list. */
 		if (!stack->port)
 		{
-			mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d\n",
-				esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index);
-			mem_debug("  %lld %lld wait why=\"no_write_port\"\n", esim_cycle, stack->id);
+			mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
+				esim_cycle, stack->id, mod->name, stack->addr);
+			mem_debug("  %lld %lld wait why=\"no_port\"\n", esim_cycle, stack->id);
 			mod_stack_wait_in_mod(stack, mod, EV_MOD_GPU_WRITE);
 			return;
 		}
@@ -472,14 +449,13 @@ void mod_handler_gpu_write(int event, void *data)
 		/* Lock write port */
 		port = stack->port;
 		assert(!port->locked);
-		assert(mod->locked_write_port_count <
-			mod->write_port_count * mod->bank_count);
+		assert(mod->num_locked_ports < mod->num_ports);
 		port->locked = 1;
 		port->lock_when = esim_cycle;
 		port->stack = stack;
-		mod->locked_write_port_count++;
-		mem_debug("%lld %lld write cache=\"%s\" addr=%u bank=%d write_port=%d\n",
-			esim_cycle, stack->id, mod->name, stack->addr, stack->bank_index, stack->write_port_index);
+		mod->num_locked_ports++;
+		mem_debug("%lld %lld write cache=\"%s\" addr=%u\n",
+			esim_cycle, stack->id, mod->name, stack->addr);
 
 		/* Increment witness variable as soon as a port was secured */
 		if (stack->witness_ptr)
@@ -601,10 +577,10 @@ void mod_handler_gpu_write(int event, void *data)
 
 		/* Unlock port */
 		assert(port->locked);
-		assert(mod->locked_write_port_count > 0);
+		assert(mod->num_locked_ports > 0);
 		port->locked = 0;
 		port->stack = NULL;
-		mod->locked_write_port_count--;
+		mod->num_locked_ports--;
 
 		/* Wake up accesses in waiting lists */
 		mod_stack_wakeup_port(port);

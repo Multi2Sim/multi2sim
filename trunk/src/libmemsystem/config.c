@@ -544,9 +544,6 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	char *policy_str;
 	enum cache_policy_t policy;
 
-	int bank_count;
-	int read_port_count;
-	int write_port_count;
 	int mshr_size;
 	int num_ports;
 
@@ -574,9 +571,6 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	block_size = config_read_int(config, buf, "BlockSize", 256);
 	latency = config_read_int(config, buf, "Latency", 1);
 	policy_str = config_read_string(config, buf, "Policy", "LRU");
-	bank_count = config_read_int(config, buf, "Banks", 1);  /* FIXME - remove */
-	read_port_count = config_read_int(config, buf, "ReadPorts", 2);  /* FIXME - remove */
-	write_port_count = config_read_int(config, buf, "WritePorts", 1);  /* FIXME - remove */
 	mshr_size = config_read_int(config, buf, "MSHR", 16);
 	num_ports = config_read_int(config, buf, "Ports", 2);
 
@@ -598,15 +592,6 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	if (latency < 1)
 		fatal("%s: cache %s: invalid value for variable 'Latency'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
-	if (bank_count < 1 || (bank_count & (bank_count - 1)))
-		fatal("%s: cache %s: number of banks must be a power of two greater than 1.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
-	if (read_port_count < 1)
-		fatal("%s: cache %s: invalid value for variable 'ReadPorts'.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
-	if (write_port_count < 1)
-		fatal("%s: cache %s: invalid value for variable 'WritePorts'.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
 	if (mshr_size < 1)
 		fatal("%s: cache %s: invalid value for variable 'MSHR'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
@@ -616,7 +601,6 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 
 	/* Create module */
 	mod = mod_create(mod_name, mod_kind_cache, num_ports,
-		bank_count, read_port_count, write_port_count,
 		block_size, latency);
 	
 	/* Initialize */
@@ -656,9 +640,6 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 	int block_size;
 	int latency;
 	int num_ports;
-	int bank_count;
-	int read_port_count;
-	int write_port_count;
 	int dir_size;
 	int dir_assoc;
 
@@ -676,9 +657,6 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 	block_size = config_read_int(config, section, "BlockSize", 64);
 	latency = config_read_int(config, section, "Latency", 1);
 	num_ports = config_read_int(config, section, "Ports", 2);
-	bank_count = config_read_int(config, section, "Banks", 4);  /* FIXME - remove */
-	read_port_count = config_read_int(config, section, "ReadPorts", 2);  /* FIXME - remove */
-	write_port_count = config_read_int(config, section, "WritePorts", 2);  /* FIXME - remove */
 	dir_size = config_read_int(config, section, "DirectorySize", 1024);
 	dir_assoc = config_read_int(config, section, "DirectoryAssoc", 8);
 
@@ -692,15 +670,6 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 	if (num_ports < 1)
 		fatal("%s: %s: invalid value for variable 'NumPorts'.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
-	if (bank_count < 1 || (bank_count & (bank_count - 1)))
-		fatal("%s: %s: number of banks must be a power of two greater than 1.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
-	if (read_port_count < 1)
-		fatal("%s: %s: invalid value for variable 'ReadPorts'.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
-	if (write_port_count < 1)
-		fatal("%s: %s: invalid value for variable 'WritePorts'.\n%s",
-			mem_config_file_name, mod_name, err_mem_config_note);
 	if (dir_size < 1 || (dir_size & (dir_size - 1)))
 		fatal("%s: %s: directory size must be a power of two.\n%s",
 			mem_config_file_name, mod_name, err_mem_config_note);
@@ -713,7 +682,6 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 
 	/* Create module */
 	mod = mod_create(mod_name, mod_kind_main_memory, num_ports,
-			bank_count, read_port_count, write_port_count,
 			block_size, latency);
 
 	/* Store directory size */
@@ -1244,7 +1212,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 		/* Assign module */
 		mod = config_read_ptr(config, buf, "ptr", NULL);
 		assert(mod);
-		gpu->compute_units[compute_unit_id]->global_mod = mod;
+		gpu->compute_units[compute_unit_id]->global_memory = mod;
 		mem_debug("\tGPU compute unit %d -> %s\n", compute_unit_id, mod->name);
 	}
 
@@ -1462,7 +1430,7 @@ static void mem_config_check_disjoint(void)
 	/* Check color of GPU modules */
 	FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		if (mem_config_check_mod_color(gpu->compute_units[compute_unit_id]->global_mod, 1))
+		if (mem_config_check_mod_color(gpu->compute_units[compute_unit_id]->global_memory, 1))
 			fatal("%s: non-disjoint CPU/GPU memory hierarchies",
 				mem_config_file_name);
 	}
