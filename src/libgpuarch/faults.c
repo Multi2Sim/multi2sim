@@ -300,7 +300,7 @@ void gpu_faults_insert(void)
 
 			/* Initial debug */
 			gpu_faults_debug("fault clk=%lld cu=%d type=\"ams\" stack=%d am=%d bit=%d ",
-				(long long) gpu->cycle,
+				gpu->cycle,
 				fault->compute_unit_id, fault->stack_id,
 				fault->active_mask_id, fault->bit);
 			assert(fault->cycle == gpu->cycle);
@@ -382,7 +382,7 @@ void gpu_faults_insert(void)
 
 			/* Initial debug */
 			gpu_faults_debug("fault clk=%lld cu=%d type=\"reg\" reg=%d bit=%d ",
-				(long long) gpu->cycle,
+				gpu->cycle,
 				fault->compute_unit_id,
 				fault->reg_id,
 				fault->bit);
@@ -510,7 +510,7 @@ void gpu_faults_insert(void)
 
 			/* Initial debug */
 			gpu_faults_debug("fault clk=%lld cu=%d type=\"mem\" byte=%d bit=%d ",
-				(long long) gpu->cycle,
+				gpu->cycle,
 				fault->compute_unit_id,
 				fault->byte,
 				fault->bit);

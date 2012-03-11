@@ -118,7 +118,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 			compute_unit->id,
 			uop->work_group->id,
 			wavefront->id,
-			(long long) uop->id_in_compute_unit,
+			uop->id_in_compute_unit,
 			str2);
 	}
 }
@@ -159,7 +159,7 @@ void gpu_tex_engine_decode(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id_in_compute_unit);
+		uop->id_in_compute_unit);
 }
 
 
@@ -205,7 +205,7 @@ void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id_in_compute_unit);
+		uop->id_in_compute_unit);
 }
 
 
@@ -233,7 +233,7 @@ void gpu_tex_engine_write(struct gpu_compute_unit_t *compute_unit)
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
-		(long long) uop->id_in_compute_unit);
+		uop->id_in_compute_unit);
 
 	/* Last uop in clause */
 	if (uop->last)

@@ -148,7 +148,7 @@ struct uop_t
 	int mop_index;  /* Index of uop within macroinstruction */
 	int mop_count;  /* Number of uops within macroinstruction */
 	int mop_size;  /* Corresponding macroinstruction size */
-	uint64_t mop_seq;  /* Sequence number of macroinstruction */
+	long long mop_seq;  /* Sequence number of macroinstruction */
 
 	/* Logical dependencies */
 	int idep_count;
@@ -179,9 +179,9 @@ struct uop_t
 	uint32_t phy_addr;  /* ... corresponding to 'uop->uinst->address' */
 
 	/* Cycles */
-	uint64_t when;  /* cycle when ready */
-	uint64_t issue_try_when;  /* first cycle when f.u. is tried to be reserved */
-	uint64_t issue_when;  /* cycle when issued */
+	long long when;  /* cycle when ready */
+	long long issue_try_when;  /* first cycle when f.u. is tried to be reserved */
+	long long issue_when;  /* cycle when issued */
 
 	/* Branch prediction */
 	int pred;  /* Global prediction (0=not taken, 1=taken) */
@@ -228,10 +228,10 @@ enum fu_class_t
 
 struct fu_t
 {
-	uint64_t cycle_when_free[fu_count][FU_RES_MAX];
-	uint64_t accesses[fu_count];
-	uint64_t denied[fu_count];
-	uint64_t waiting_time[fu_count];
+	long long cycle_when_free[fu_count][FU_RES_MAX];
+	long long accesses[fu_count];
+	long long denied[fu_count];
+	long long waiting_time[fu_count];
 };
 
 struct fu_res_t
@@ -632,57 +632,57 @@ struct cpu_thread_t
 	uint32_t fetch_block;  /* Virtual address of last fetched block */
 	uint32_t fetch_address;  /* Physical address of last instruction fetch */
 	long long fetch_access;  /* Module access ID of last instruction fetch */
-	uint64_t fetch_stall_until;  /* Cycle until which fetching is stalled (inclussive) */
+	long long fetch_stall_until;  /* Cycle until which fetching is stalled (inclussive) */
 
 	/* Entries to the memory system */
 	struct mod_t *data_mod;  /* Entry for data */
 	struct mod_t *inst_mod;  /* Entry for instructions */
 
-	/* Stats */
-	uint64_t fetched;
-	uint64_t dispatched[x86_uinst_opcode_count];
-	uint64_t issued[x86_uinst_opcode_count];
-	uint64_t committed[x86_uinst_opcode_count];
-	uint64_t squashed;
-	uint64_t branches;
-	uint64_t mispred;
-	uint64_t last_commit_cycle;
+	/* Statistics */
+	long long fetched;
+	long long dispatched[x86_uinst_opcode_count];
+	long long issued[x86_uinst_opcode_count];
+	long long committed[x86_uinst_opcode_count];
+	long long squashed;
+	long long branches;
+	long long mispred;
+	long long last_commit_cycle;
 	
 	/* Statistics for structures */
-	uint64_t rob_occupancy;
-	uint64_t rob_full;
-	uint64_t rob_reads;
-	uint64_t rob_writes;
+	long long rob_occupancy;
+	long long rob_full;
+	long long rob_reads;
+	long long rob_writes;
 
-	uint64_t iq_occupancy;
-	uint64_t iq_full;
-	uint64_t iq_reads;
-	uint64_t iq_writes;
-	uint64_t iq_wakeup_accesses;
+	long long iq_occupancy;
+	long long iq_full;
+	long long iq_reads;
+	long long iq_writes;
+	long long iq_wakeup_accesses;
 
-	uint64_t lsq_occupancy;
-	uint64_t lsq_full;
-	uint64_t lsq_reads;
-	uint64_t lsq_writes;
-	uint64_t lsq_wakeup_accesses;
+	long long lsq_occupancy;
+	long long lsq_full;
+	long long lsq_reads;
+	long long lsq_writes;
+	long long lsq_wakeup_accesses;
 
-	uint64_t rf_int_occupancy;
-	uint64_t rf_int_full;
-	uint64_t rf_int_reads;
-	uint64_t rf_int_writes;
+	long long rf_int_occupancy;
+	long long rf_int_full;
+	long long rf_int_reads;
+	long long rf_int_writes;
 
-	uint64_t rf_fp_occupancy;
-	uint64_t rf_fp_full;
-	uint64_t rf_fp_reads;
-	uint64_t rf_fp_writes;
+	long long rf_fp_occupancy;
+	long long rf_fp_full;
+	long long rf_fp_reads;
+	long long rf_fp_writes;
 
-	uint64_t rat_int_reads;
-	uint64_t rat_int_writes;
-	uint64_t rat_fp_reads;
-	uint64_t rat_fp_writes;
+	long long rat_int_reads;
+	long long rat_int_writes;
+	long long rat_fp_reads;
+	long long rat_fp_writes;
 
-	uint64_t btb_reads;
-	uint64_t btb_writes;
+	long long btb_reads;
+	long long btb_writes;
 };
 
 
@@ -697,7 +697,7 @@ struct cpu_core_t
 	struct fu_t *fu;
 
 	/* Per core counters */
-	uint64_t di_seq;  /* Sequence number for dispatch stage */
+	long long di_seq;  /* Sequence number for dispatch stage */
 	int iq_count;
 	int lsq_count;
 	int rf_int_count;
@@ -711,48 +711,48 @@ struct cpu_core_t
 
 	/* Stages */
 	int fetch_current;  /* Currently fetching thread */
-	uint64_t fetch_switch_when;  /* Cycle for last thread switch (for SwitchOnEvent) */
+	long long fetch_switch_when;  /* Cycle for last thread switch (for SwitchOnEvent) */
 	int decode_current;
 	int dispatch_current;
 	int issue_current;
 	int commit_current;
 
 	/* Stats */
-	uint64_t di_stall[di_stall_max];
-	uint64_t dispatched[x86_uinst_opcode_count];
-	uint64_t issued[x86_uinst_opcode_count];
-	uint64_t committed[x86_uinst_opcode_count];
-	uint64_t squashed;
-	uint64_t branches;
-	uint64_t mispred;
+	long long di_stall[di_stall_max];
+	long long dispatched[x86_uinst_opcode_count];
+	long long issued[x86_uinst_opcode_count];
+	long long committed[x86_uinst_opcode_count];
+	long long squashed;
+	long long branches;
+	long long mispred;
 	
 	/* Statistics for shared structures */
-	uint64_t rob_occupancy;
-	uint64_t rob_full;
-	uint64_t rob_reads;
-	uint64_t rob_writes;
+	long long rob_occupancy;
+	long long rob_full;
+	long long rob_reads;
+	long long rob_writes;
 
-	uint64_t iq_occupancy;
-	uint64_t iq_full;
-	uint64_t iq_reads;
-	uint64_t iq_writes;
-	uint64_t iq_wakeup_accesses;
+	long long iq_occupancy;
+	long long iq_full;
+	long long iq_reads;
+	long long iq_writes;
+	long long iq_wakeup_accesses;
 
-	uint64_t lsq_occupancy;
-	uint64_t lsq_full;
-	uint64_t lsq_reads;
-	uint64_t lsq_writes;
-	uint64_t lsq_wakeup_accesses;
+	long long lsq_occupancy;
+	long long lsq_full;
+	long long lsq_reads;
+	long long lsq_writes;
+	long long lsq_wakeup_accesses;
 
-	uint64_t rf_int_occupancy;
-	uint64_t rf_int_full;
-	uint64_t rf_int_reads;
-	uint64_t rf_int_writes;
+	long long rf_int_occupancy;
+	long long rf_int_full;
+	long long rf_int_reads;
+	long long rf_int_writes;
 
-	uint64_t rf_fp_occupancy;
-	uint64_t rf_fp_full;
-	uint64_t rf_fp_reads;
-	uint64_t rf_fp_writes;
+	long long rf_fp_occupancy;
+	long long rf_fp_full;
+	long long rf_fp_reads;
+	long long rf_fp_writes;
 };
 
 
@@ -767,29 +767,29 @@ struct cpu_t
 	long long inst;
 
 	/* Some fields */
-	uint64_t seq;  /* Seq num assigned to last instr (with pre-incr) */
+	long long seq;  /* Seq num assigned to last instr (with pre-incr) */
 	char *stage;  /* Name of currently simulated stage */
 
 	/* Context allocations */
-	uint64_t ctx_alloc_oldest;  /* Time when oldest context was allocated */
+	long long ctx_alloc_oldest;  /* Time when oldest context was allocated */
 	int ctx_dealloc_signals;  /* Sent deallocation signals */
 	
 	/* Structures */
 	struct mm_t *mm;  /* Memory management unit */
 	
 	/* Statistics */
-	uint64_t fetched;
-	uint64_t dispatched[x86_uinst_opcode_count];
-	uint64_t issued[x86_uinst_opcode_count];
-	uint64_t committed[x86_uinst_opcode_count];
-	uint64_t squashed;
-	uint64_t branches;
-	uint64_t mispred;
+	long long fetched;
+	long long dispatched[x86_uinst_opcode_count];
+	long long issued[x86_uinst_opcode_count];
+	long long committed[x86_uinst_opcode_count];
+	long long squashed;
+	long long branches;
+	long long mispred;
 	double time;
 
 	/* For dumping */
-	uint64_t last_committed;
-	uint64_t last_dump;
+	long long last_committed;
+	long long last_dump;
 };
 
 

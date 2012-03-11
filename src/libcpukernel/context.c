@@ -243,11 +243,9 @@ void ctx_dump(struct ctx_t *ctx, FILE *f)
 	fprintf(f, "  heap break: 0x%x\n", ctx->mem->heap_break);
 
 	/* Signal masks */
-	fprintf(f, "  blocked signal mask: 0x%llx ",
-		(long long) ctx->signal_mask_table->blocked);
+	fprintf(f, "  blocked signal mask: 0x%llx ", ctx->signal_mask_table->blocked);
 	sim_sigset_dump(ctx->signal_mask_table->blocked, f);
-	fprintf(f, "\n  pending signals: 0x%llx ",
-		(long long) ctx->signal_mask_table->pending);
+	fprintf(f, "\n  pending signals: 0x%llx ", ctx->signal_mask_table->pending);
 	sim_sigset_dump(ctx->signal_mask_table->pending, f);
 	fprintf(f, "\n");
 }
