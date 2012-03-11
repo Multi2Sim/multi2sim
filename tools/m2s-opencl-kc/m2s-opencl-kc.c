@@ -23,12 +23,14 @@ static char *syntax =
 	"\t-d <dev>      Select target device for compilation\n"
 	"\t-a            Dump intermediate files\n"
 	"\t-e            ELF verbose\n"
+	"\t-g            No optimizations (flags '-O0 -g' added)\n"
 	"\t-v            Dump debug information\n";
 
 char *output_file_prefix = "kernel";
 char *input_file_name;
 
 int verbose = 0;  /* Dump OpenCL calls results */
+int debug_info = 0;  /* Debug info and no optimizations */
 int action_list_devices = 0;  /* Dump list of devices */
 int dump_intermediate = 0;  /* Dump intermediate files */
 char *kernel_file_name = NULL;  /* Kernel source file */
@@ -226,6 +228,8 @@ void main_compile_kernel()
 	char *program_source;
 	size_t program_source_size;
 
+	char *compiler_flags;
+
 	size_t bin_sizes[MAX_DEVICES];
 	size_t bin_sizes_ret;
 	char *bin_bits[MAX_DEVICES];
@@ -260,12 +264,19 @@ void main_compile_kernel()
 	program = clCreateProgramWithSource(context, 1, (const char **) &program_source, &program_source_size, &err);
 	if (err != CL_SUCCESS)
 		fatal("clCreateProgramWithSource failed");
+	
+	/* Compiler flags */
+	compiler_flags = NULL;
+	if (debug_info)
+		compiler_flags = "-O0 -g";
 
 	/* Compile source */
-	err = clBuildProgram(program, 1, &device, NULL, NULL, NULL);
-	if (err != CL_SUCCESS) {
+	err = clBuildProgram(program, 1, &device, compiler_flags, NULL, NULL);
+	if (err != CL_SUCCESS)
+	{
 		char buf[0x10000];
-		clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, sizeof(buf), buf, NULL);
+
+		clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, sizeof buf, buf, NULL);
 		fprintf(stderr, "\n%s\n", buf);
 		fatal("compilation failed");
 	}
@@ -333,20 +344,31 @@ int main(int argc, char **argv)
 	}
 
 	/* Process options */
-	while ((opt = getopt(argc, argv, "ld:ae")) != -1) {
-		switch (opt) {
+	while ((opt = getopt(argc, argv, "ld:aeg")) != -1)
+	{
+		switch (opt)
+		{
+
 		case 'l':
 			action_list_devices = 1;
 			break;
+
 		case 'd':
 			device_str = optarg;
 			break;
+
 		case 'a':
 			dump_intermediate = 1;
 			break;
+
 		case 'v':
 			verbose = 1;
 			break;
+
+		case 'g':
+			debug_info = 1;
+			break;
+
 		default:
 			fprintf(stderr, syntax, argv[0]);
 			return 1;
