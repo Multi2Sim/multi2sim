@@ -79,7 +79,7 @@ extern enum ke_sim_finish_t
 
 /* Some forward declarations */
 struct ctx_t;
-struct fd_t;
+struct file_desc_t;
 
 
 
@@ -832,53 +832,56 @@ int sim_sigset_member(unsigned long long *sim_sigset, int signal);
  */
 
 
-enum fd_kind_t
+enum file_desc_kind_t
 {
-	fd_kind_regular = 0,  /* Regular file */
-	fd_kind_std,  /* Standard input or output */
-	fd_kind_pipe,  /* A pipe */
-	fd_kind_virtual,  /* A virtual file with artificial contents */
-	fd_kind_gpu,  /* GPU device */
-	fd_kind_socket  /* Network socket */
+	file_desc_invalid = 0,
+	file_desc_regular,  /* Regular file */
+	file_desc_std,  /* Standard input or output */
+	file_desc_pipe,  /* A pipe */
+	file_desc_virtual,  /* A virtual file with artificial contents */
+	file_desc_gpu,  /* GPU device */
+	file_desc_socket  /* Network socket */
 };
 
 
 /* File descriptor */
-struct fd_t
+struct file_desc_t
 {
-	enum fd_kind_t kind;  /* File type */
+	enum file_desc_kind_t kind;  /* File type */
 	int guest_fd;  /* Guest file descriptor id */
 	int host_fd;  /* Equivalent open host file */
-	char path[MAX_PATH_SIZE];  /* Equivalent path if applicable */
 	int flags;  /* O_xxx flags */
+	char *path;  /* Associated path if applicable */
 };
 
 
 /* File descriptor table */
-struct fdt_t
+struct file_desc_table_t
 {
 	/* Number of extra contexts sharing table */
 	int num_links;
 
 	/* List of descriptors */
-	struct list_t *fd_list;
+	struct list_t *file_desc_list;
 };
 
 
-struct fdt_t *fdt_create(void);
-void fdt_free(struct fdt_t *fdt);
-void fdt_dump(struct fdt_t *fdt, FILE *f);
+struct file_desc_table_t *file_desc_table_create(void);
+void file_desc_table_free(struct file_desc_table_t *table);
 
-struct fdt_t *fdt_link(struct fdt_t *fdt);
-void fdt_unlink(struct fdt_t *fdt);
+struct file_desc_table_t *file_desc_table_link(struct file_desc_table_t *table);
+void file_desc_table_unlink(struct file_desc_table_t *table);
 
-struct fd_t *fdt_entry_get(struct fdt_t *fdt, int index);
-struct fd_t *fdt_entry_new(struct fdt_t *fdt, enum fd_kind_t kind, int host_fd, char *path, int flags);
-void fdt_entry_free(struct fdt_t *fdt, int index);
-void fdt_entry_dump(struct fdt_t *fdt, int index, FILE *f);
+void file_desc_table_dump(struct file_desc_table_t *table, FILE *f);
 
-int fdt_get_host_fd(struct fdt_t *fdt, int guest_fd);
-int fdt_get_guest_fd(struct fdt_t *fdt, int host_fd);
+struct file_desc_t *file_desc_table_entry_get(struct file_desc_table_t *table, int index);
+struct file_desc_t *file_desc_table_entry_new(struct file_desc_table_t *table,
+	enum file_desc_kind_t kind, int host_fd, char *path, int flags);
+void file_desc_table_entry_free(struct file_desc_table_t *table, int index);
+void file_desc_table_entry_dump(struct file_desc_table_t *table, int index, FILE *f);
+
+int file_desc_table_get_host_fd(struct file_desc_table_t *table, int guest_fd);
+int file_desc_table_get_guest_fd(struct file_desc_table_t *table, int host_fd);
 
 
 
@@ -971,9 +974,9 @@ struct ctx_t
 	struct loader_t *loader;
 	struct mem_t *mem;  /* Virtual memory image */
 	struct spec_mem_t *spec_mem;  /* Speculative memory */
-	struct fdt_t *fdt;  /* File descriptor table */
 	struct regs_t *regs;  /* Logical register file */
 	struct regs_t *backup_regs;  /* Backup when entering in speculative mode */
+	struct file_desc_table_t *file_desc_table;  /* File descriptor table */
 	struct signal_mask_table_t *signal_mask_table;
 	struct signal_handler_table_t *signal_handler_table;
 

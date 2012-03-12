@@ -5,7 +5,7 @@ libcpukernel_a_SOURCES = \
 	isa.c \
 	context.c \
 	cpukernel.c \
-	fs.c \
+	file.c \
 	loader.c \
 	machine.c \
 	machine-ctrl.c \

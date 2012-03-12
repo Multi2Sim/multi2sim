@@ -659,7 +659,7 @@ int sim_fd_set_read(uint32_t addr, fd_set *fds, int n)
 			continue;
 		
 		/* Obtain 'host_fd' */
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, i);
+		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, i);
 		if (host_fd < 0)
 			return 0;
 		FD_SET(host_fd, fds);
@@ -688,7 +688,7 @@ void sim_fd_set_write(uint32_t addr, fd_set *fds, int n)
 			continue;
 
 		/* Obtain 'guest_fd' and write */
-		guest_fd = fdt_get_guest_fd(isa_ctx->fdt, i);
+		guest_fd = file_desc_table_get_guest_fd(isa_ctx->file_desc_table, i);
 		assert(guest_fd >= 0);
 		nbyte = guest_fd >> 3;
 		nbit = guest_fd & 7;
@@ -753,7 +753,7 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
 	int flags, int guest_fd, uint32_t offset)
 {
 	uint32_t alen;  /* Aligned len */
-	struct fd_t *fd;
+	struct file_desc_t *fd;
 	int perm, host_fd;
 
 	/* Check that protection flags match in guest and host */
@@ -768,7 +768,7 @@ static uint32_t do_mmap(uint32_t addr, uint32_t len, int prot,
 	assert(MAP_ANONYMOUS == 0x20);
 
 	/* Translate file descriptor */
-	fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+	fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 	host_fd = fd ? fd->host_fd : -1;
 	if (guest_fd > 0 && host_fd < 0)
 		fatal("do_mmap: invalid 'guest_fd'");
@@ -987,7 +987,7 @@ void syscall_do()
 		int length;
 
 		int host_fd;
-		struct fd_t *fd;
+		struct file_desc_t *fd;
 
 		/* Read parameters */
 		file_name_ptr = isa_regs->ebx;
@@ -1018,7 +1018,7 @@ void syscall_do()
 				assert(host_fd > 0);
 
 				/* Add file descriptor table entry. */
-				fd = fdt_entry_new(isa_ctx->fdt, fd_kind_virtual, host_fd, temp_path, flags);
+				fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_virtual, host_fd, temp_path, flags);
 				syscall_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
 					temp_path, fd->guest_fd, fd->host_fd);
 				retval = fd->guest_fd;
@@ -1039,7 +1039,7 @@ void syscall_do()
 		}
 
 		/* File opened, create a new file descriptor. */
-		fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, host_fd, full_path, flags);
+		fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_regular, host_fd, full_path, flags);
 		syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
 			fd->guest_fd, fd->host_fd);
 		retval = fd->guest_fd;
@@ -1269,7 +1269,7 @@ void syscall_do()
 		fd = isa_regs->ebx;
 		offset = isa_regs->ecx;
 		origin = isa_regs->edx;
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
 		syscall_debug("  fd=%d, offset=0x%x, origin=0x%x\n",
 			fd, offset, origin);
 		syscall_debug("  host_fd=%d\n", host_fd);
@@ -1415,13 +1415,13 @@ void syscall_do()
 	{
 		int guest_fd, dup_guest_fd;
 		int host_fd, dup_host_fd;
-		struct fd_t *fd, *dup_fd;
+		struct file_desc_t *fd, *dup_fd;
 
 		guest_fd = isa_regs->ebx;
 		syscall_debug("  guest_fd=%d\n", guest_fd);
 
 		/* Check that file descriptor is valid. */
-		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 		if (!fd) {
 			retval = -EBADF;
 			break;
@@ -1437,7 +1437,7 @@ void syscall_do()
 		}
 
 		/* Create a new entry in the file descriptor table. */
-		dup_fd = fdt_entry_new(isa_ctx->fdt, fd_kind_regular, dup_host_fd, fd->path, fd->flags);
+		dup_fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_regular, dup_host_fd, fd->path, fd->flags);
 		dup_guest_fd = dup_fd->guest_fd;
 
 		/* Return new file descriptor. */
@@ -1450,7 +1450,7 @@ void syscall_do()
 	case syscall_code_pipe:
 	{
 		uint32_t pfd;
-		struct fd_t *read_fd, *write_fd;
+		struct file_desc_t *read_fd, *write_fd;
 		uint32_t guest_read_fd, guest_write_fd;
 		int host_fd[2], err;
 
@@ -1465,8 +1465,8 @@ void syscall_do()
 			host_fd[0], host_fd[1]);
 
 		/* Create guest pipe */
-		read_fd = fdt_entry_new(isa_ctx->fdt, fd_kind_pipe, host_fd[0], "", O_RDONLY);
-		write_fd = fdt_entry_new(isa_ctx->fdt, fd_kind_pipe, host_fd[1], "", O_WRONLY);
+		read_fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_pipe, host_fd[0], "", O_RDONLY);
+		write_fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_pipe, host_fd[1], "", O_WRONLY);
 		syscall_debug("  pipe created: fd={%d, %d}\n",
 			read_fd->guest_fd, write_fd->guest_fd);
 		guest_read_fd = read_fd->guest_fd;
@@ -1560,7 +1560,7 @@ void syscall_do()
 	{
 		uint32_t cmd, arg;
 		int guest_fd;
-		struct fd_t *fd;
+		struct file_desc_t *fd;
 
 		guest_fd = isa_regs->ebx;
 		cmd = isa_regs->ecx;
@@ -1569,7 +1569,7 @@ void syscall_do()
 			guest_fd, cmd, arg);
 
 		/* File descriptor */
-		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 		if (!fd) {
 			retval = -EBADF;
 			break;
@@ -1802,7 +1802,7 @@ void syscall_do()
 
 		fd = isa_regs->ebx;
 		mode = isa_regs->ecx;
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
 		syscall_debug("  fd=%d, mode=%d\n",
 			fd, mode);
 		syscall_debug("  host_fd=%d\n", host_fd);
@@ -1831,7 +1831,7 @@ void syscall_do()
 			uint32_t family, type, protocol;
 			char *family_name, *type_name;
 			int host_fd;
-			struct fd_t *fd;
+			struct file_desc_t *fd;
 
 			/* Read parameters */
 			mem_read(isa_mem, args, 4, &family);
@@ -1861,7 +1861,7 @@ void syscall_do()
 			}
 
 			/* Create new file descriptor table entry. */
-			fd = fdt_entry_new(isa_ctx->fdt, fd_kind_socket, host_fd, "", O_RDWR);
+			fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_socket, host_fd, "", O_RDWR);
 			syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
 				fd->guest_fd, fd->host_fd);
 			retval = fd->guest_fd;
@@ -1870,7 +1870,7 @@ void syscall_do()
 		} else if (call == 3) {  /* SYS_CONNECT */
 
 			uint32_t guest_fd, paddr, addrlen;
-			struct fd_t *fd;
+			struct file_desc_t *fd;
 			char buf[MAX_STRING_SIZE];
 			struct sockaddr *addr;
 			
@@ -1891,12 +1891,12 @@ void syscall_do()
 			syscall_debug_string("    sockaddr.data", addr->sa_data, addrlen - 2, 1);
 
 			/* Get file descriptor */
-			fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+			fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 			if (!fd) {
 				retval = -EBADF;
 				break;
 			}
-			if (fd->kind != fd_kind_socket)
+			if (fd->kind != file_desc_socket)
 				fatal("  syscall 'socketcall': SYS_CONNECT: file descriptor is not a socket");
 			syscall_debug("    host_fd=%d\n", fd->host_fd);
 
@@ -1907,7 +1907,7 @@ void syscall_do()
 		} else if (call == 7) {  /* SYS_GETPEERNAME */
 			
 			uint32_t guest_fd, paddr, paddrlen, addrlen;
-			struct fd_t *fd;
+			struct file_desc_t *fd;
 			struct sockaddr *addr;
 			socklen_t host_addrlen;
 
@@ -1918,7 +1918,7 @@ void syscall_do()
 				guest_fd, paddr, paddrlen);
 
 			/* Get file descriptor */
-			fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+			fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 			if (!fd) {
 				retval = -EBADF;
 				break;
@@ -2221,7 +2221,7 @@ void syscall_do()
 		offset = ((int64_t) offset_high << 32) | offset_low;
 		presult = isa_regs->esi;
 		origin = isa_regs->edi;
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
 		syscall_debug("  fd=%d, offset_high=0x%x, offset_low=0x%x, presult=0x%x, origin=0x%x\n",
 			fd, offset_high, offset_low, presult, origin);
 		syscall_debug("  host_fd=%d\n", host_fd);
@@ -2265,7 +2265,7 @@ void syscall_do()
 		fd = isa_regs->ebx;
 		pdirent = isa_regs->ecx;
 		count = isa_regs->edx;
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
 		syscall_debug("  fd=%d, pdirent=0x%x, count=%d\n",
 			fd, pdirent, count);
 		syscall_debug("  host_fd=%d\n", host_fd);
@@ -2404,7 +2404,7 @@ void syscall_do()
 	case syscall_code_writev:
 	{
 		int guest_fd, host_fd;
-		struct fd_t *fd;
+		struct file_desc_t *fd;
 		uint32_t piovec, vlen;
 		uint32_t iov_base, iov_len;
 		void *buf;
@@ -2418,14 +2418,14 @@ void syscall_do()
 		
 		
 		/* Check file descriptor */
-		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 		if (!fd) {
 			errno = -EBADF;
 			break;
 		}
 		host_fd = fd->host_fd;
 		syscall_debug("  host_fd=%d\n", host_fd);
-		if (fd->kind == fd_kind_pipe)
+		if (fd->kind == file_desc_pipe)
 			fatal("syscall writev: not supported for pipes");
 
 		/* Proceed */
@@ -2665,7 +2665,7 @@ void syscall_do()
 		struct sim_pollfd guest_fds;
 		struct pollfd host_fds;
 		char sevents[MAX_STRING_SIZE];
-		struct fd_t *fd;
+		struct file_desc_t *fd;
 
 		pfds = isa_regs->ebx;
 		nfds = isa_regs->ecx;
@@ -2684,7 +2684,7 @@ void syscall_do()
 		syscall_debug("  guest_fd=%d, events=%s\n", guest_fd, sevents);
 
 		/* Get file descriptor */
-		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 		if (!fd) {
 			retval = -EBADF;
 			break;
@@ -2987,7 +2987,7 @@ void syscall_do()
 
 		fd = isa_regs->ebx;
 		length = isa_regs->ecx;
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
 		syscall_debug("  fd=%d, length=0x%x\n", fd, length);
 		syscall_debug("  host_fd=%d\n", host_fd);
 		
@@ -3060,7 +3060,7 @@ void syscall_do()
 
 		fd = isa_regs->ebx;
 		pstatbuf = isa_regs->ecx;
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
 		syscall_debug("  fd=%d, pstatbuf=0x%x\n", fd, pstatbuf);
 		syscall_debug("  host_fd=%d\n", host_fd);
 
@@ -3166,7 +3166,7 @@ void syscall_do()
 		fd = isa_regs->ebx;
 		pdirent = isa_regs->ecx;
 		count = isa_regs->edx;
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, fd);
+		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
 		syscall_debug("  fd=%d, pdirent=0x%x, count=%d\n",
 			fd, pdirent, count);
 		syscall_debug("  host_fd=%d\n", host_fd);
@@ -3226,7 +3226,7 @@ void syscall_do()
 		uint32_t guest_fd, cmd, arg;
 		char *cmd_name;
 		char sflags[MAX_STRING_SIZE];
-		struct fd_t *fd;
+		struct file_desc_t *fd;
 
 		guest_fd = isa_regs->ebx;
 		cmd = isa_regs->ecx;
@@ -3237,7 +3237,7 @@ void syscall_do()
 		syscall_debug("    cmd=%s\n", cmd_name);
 
 		/* Get file descriptor table entry */
-		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 		if (!fd) {
 			retval = -EBADF;
 			break;
