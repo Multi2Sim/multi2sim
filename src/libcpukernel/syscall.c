@@ -113,18 +113,6 @@ struct string_map_t msync_flags_map =
 };
 
 
-/* For 'access' */
-
-struct string_map_t access_mode_map =
-{
-	3, {
-		{ "X_OK",  1 },
-		{ "W_OK",  2 },
-		{ "R_OK",  4 }
-	}
-};
-
-
 /* For 'clone' */
 
 #define SIM_CLONE_VM			0x00000100
@@ -958,23 +946,7 @@ void syscall_do()
 	/* 33 */
 	case syscall_code_access:
 	{
-		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE], smode[MAX_STRING_SIZE];
-		uint32_t pfilename, mode;
-		int len;
-
-		pfilename = isa_regs->ebx;
-		mode = isa_regs->ecx;
-		len = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
-		if (len >= MAX_PATH_SIZE)
-			fatal("syscall access: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		map_flags(&access_mode_map, mode, smode, MAX_STRING_SIZE);
-		syscall_debug("  filename='%s', mode=0x%x\n",
-			filename, mode);
-		syscall_debug("  fullpath='%s'\n", fullpath);
-		syscall_debug("  mode=%s\n", smode);
-
-		RETVAL(access(fullpath, mode));
+		retval = sys_access_impl();
 		break;
 	}
 
@@ -982,25 +954,7 @@ void syscall_do()
 	/* 37 */
 	case syscall_code_kill:
 	{
-		uint32_t pid, sig;
-		struct ctx_t *ctx;
-
-		pid = isa_regs->ebx;
-		sig = isa_regs->ecx;
-		syscall_debug("  pid=%d, sig=%d (%s)\n", pid,
-			sig, sim_signal_name(sig));
-
-		/* Find ctx. If it is not found, assume own fault rather than
-		 * program's, so generate fatal error. */
-		ctx = ctx_get(pid);
-		if (!ctx)
-			fatal("syscall kill: pid %d does not exist", pid);
-
-		/* Send signal */
-		sim_sigset_add(&ctx->signal_mask_table->pending, sig);
-		ctx_host_thread_suspend_cancel(ctx);  /* Target ctx might wake up */
-		ke_process_events_schedule();
-		ke_process_events();
+		retval = sys_kill_impl();
 		break;
 	}
 
@@ -1008,24 +962,7 @@ void syscall_do()
 	/* 38 */
 	case syscall_code_rename:
 	{
-		uint32_t poldpath, pnewpath;
-		char oldpath[MAX_PATH_SIZE], newpath[MAX_PATH_SIZE];
-		char oldfullpath[MAX_PATH_SIZE], newfullpath[MAX_PATH_SIZE];
-		int len1, len2;
-
-		poldpath = isa_regs->ebx;
-		pnewpath = isa_regs->ecx;
-		len1 = mem_read_string(isa_mem, poldpath, MAX_PATH_SIZE, oldpath);
-		len2 = mem_read_string(isa_mem, pnewpath, MAX_PATH_SIZE, newpath);
-		if (len1 >= MAX_PATH_SIZE || len2 >= MAX_PATH_SIZE)
-			fatal("syscall rename: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, oldpath, oldfullpath, MAX_PATH_SIZE);
-		ld_get_full_path(isa_ctx, newpath, newfullpath, MAX_PATH_SIZE);
-		syscall_debug("  poldpath=0x%x, pnewpath=0x%x\n", poldpath, pnewpath);
-		syscall_debug("  oldpath='%s', newpath='%s'\n", oldpath, newpath);
-		syscall_debug("  oldfullpath='%s', newfullpath='%s'\n", oldfullpath, newfullpath);
-
-		RETVAL(rename(oldfullpath, newfullpath));
+		retval = sys_rename_impl();
 		break;
 	}
 
@@ -1033,20 +970,7 @@ void syscall_do()
 	/* 39 */
 	case syscall_code_mkdir:
 	{
-		uint32_t ppath, mode;
-		char path[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
-		int length;
-
-		ppath = isa_regs->ebx;
-		mode = isa_regs->ecx;
-		length = mem_read_string(isa_mem, ppath, MAX_PATH_SIZE, path);
-		if (length >= MAX_PATH_SIZE)
-			fatal("syscall open: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, path, fullpath, MAX_PATH_SIZE);
-		syscall_debug("  ppath=0x%x, mode=0x%x\n", ppath, mode);
-		syscall_debug("  path='%s', fullpath='%s'\n", path, fullpath);
-		
-		RETVAL(mkdir(fullpath, mode));
+		retval = sys_mkdir_impl();
 		break;
 	}
 

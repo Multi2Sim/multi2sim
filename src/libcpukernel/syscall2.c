@@ -797,6 +797,172 @@ int sys_utime_impl(void)
 
 
 /*
+ * System call 'access' (code 33)
+ */
+
+static struct string_map_t sys_access_mode_map =
+{
+	3, {
+		{ "X_OK",  1 },
+		{ "W_OK",  2 },
+		{ "R_OK",  4 }
+	}
+};
+
+int sys_access_impl(void)
+{
+	unsigned int file_name_ptr;
+
+	int mode;
+	int len;
+	int err;
+
+	char file_name[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+	char mode_str[MAX_STRING_SIZE];
+
+	/* Arguments */
+	file_name_ptr = isa_regs->ebx;
+	mode = isa_regs->ecx;
+	len = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
+	if (len >= sizeof file_name)
+		fatal("%s: buffer too small", __FUNCTION__);
+	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
+	map_flags(&sys_access_mode_map, mode, mode_str, sizeof mode_str);
+	syscall_debug("  file_name='%s', mode=0x%x\n",
+		file_name, mode);
+	syscall_debug("  full_path='%s'\n", full_path);
+	syscall_debug("  mode=%s\n", mode_str);
+
+	/* Host call */
+	err = access(full_path, mode);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	return err;
+}
+
+
+
+
+/*
+ * System call 'kill' (code 37)
+ */
+
+int sys_kill_impl(void)
+{
+	int pid;
+	int sig;
+
+	struct ctx_t *ctx;
+
+	/* Arguments */
+	pid = isa_regs->ebx;
+	sig = isa_regs->ecx;
+	syscall_debug("  pid=%d, sig=%d (%s)\n", pid,
+		sig, sim_signal_name(sig));
+
+	/* Find context. We assume program correctness, so fatal if context is
+	 * not found, rather than return error code. */
+	ctx = ctx_get(pid);
+	if (!ctx)
+		fatal("%s: invalid pid %d", __FUNCTION__, pid);
+
+	/* Send signal */
+	sim_sigset_add(&ctx->signal_mask_table->pending, sig);
+	ctx_host_thread_suspend_cancel(ctx);
+	ke_process_events_schedule();
+	ke_process_events();
+
+	/* Success */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'rename' (code 38)
+ */
+
+int sys_rename_impl(void)
+{
+	unsigned int old_path_ptr;
+	unsigned int new_path_ptr;
+
+	char old_path[MAX_PATH_SIZE];
+	char new_path[MAX_PATH_SIZE];
+	char old_full_path[MAX_PATH_SIZE];
+	char new_full_path[MAX_PATH_SIZE];
+
+	int len1;
+	int len2;
+	int err;
+
+	/* Arguments */
+	old_path_ptr = isa_regs->ebx;
+	new_path_ptr = isa_regs->ecx;
+	len1 = mem_read_string(isa_mem, old_path_ptr, sizeof old_path, old_path);
+	len2 = mem_read_string(isa_mem, new_path_ptr, sizeof new_path, new_path);
+	if (len1 >= sizeof old_path || len2 >= sizeof new_path)
+		fatal("%s: buffer too small", __FUNCTION__);
+	ld_get_full_path(isa_ctx, old_path, old_full_path, sizeof old_full_path);
+	ld_get_full_path(isa_ctx, new_path, new_full_path, sizeof new_full_path);
+	syscall_debug("  old_path_ptr=0x%x, new_path_ptr=0x%x\n", old_path_ptr, new_path_ptr);
+	syscall_debug("  old_path='%s', new_path='%s'\n", old_path, new_path);
+	syscall_debug("  old_full_path='%s', new_full_path='%s'\n", old_full_path, new_full_path);
+
+	/* Host call */
+	err = rename(old_full_path, new_full_path);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	return err;
+}
+
+
+
+
+/*
+ * System call 'mkdir' (code 39)
+ */
+
+int sys_mkdir_impl(void)
+{
+	unsigned int path_ptr;
+
+	int mode;
+	int len;
+	int err;
+
+	char path[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+
+	/* Arguments */
+	path_ptr = isa_regs->ebx;
+	mode = isa_regs->ecx;
+	len = mem_read_string(isa_mem, path_ptr, sizeof path, path);
+	if (len >= sizeof path)
+		fatal("%s: buffer too small", __FUNCTION__);
+	ld_get_full_path(isa_ctx, path, full_path, MAX_PATH_SIZE);
+	syscall_debug("  path_ptr=0x%x, mode=0x%x\n", path_ptr, mode);
+	syscall_debug("  path='%s', full_path='%s'\n", path, full_path);
+
+	/* Host call */
+	err = mkdir(full_path, mode);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	return err;
+}
+
+
+
+
+/*
  * System call 'fcntl64' (code 221)
  */
 
