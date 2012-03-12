@@ -18,6 +18,7 @@
  */
 
 #include <sched.h>
+#include <syscall.h>
 #include <time.h>
 #include <utime.h>
 
@@ -30,6 +31,7 @@
 
 #include <cpukernel.h>
 #include <mhandle.h>
+
 
 static char *err_sys_note =
 	"\tThe system calls performed by the executed application are intercepted by\n"
@@ -2506,6 +2508,227 @@ int sys_clone_impl(void)
 
 
 /*
+ * System call 'newuname' (code 122)
+ */
+
+struct sim_utsname
+{
+	char sysname[65];
+	char nodename[65];
+	char release[65];
+	char version[65];
+	char machine[65];
+	char domainname[65];
+} __attribute__((packed));
+
+static struct sim_utsname sim_utsname =
+{
+	"Linux",
+	"Multi2Sim",
+	"3.1.9-1.fc16.i686"
+	"#1 Fri Jan 13 16:37:42 UTC 2012",
+	"i686"
+	""
+};
+
+int sys_newuname_impl(void)
+{
+	unsigned int utsname_ptr;
+
+	/* Arguments */
+	utsname_ptr = isa_regs->ebx;
+	sys_debug("  putsname=0x%x\n", utsname_ptr);
+	sys_debug("  sysname='%s', nodename='%s'\n", sim_utsname.sysname, sim_utsname.nodename);
+	sys_debug("  relaese='%s', version='%s'\n", sim_utsname.release, sim_utsname.version);
+	sys_debug("  machine='%s', domainname='%s'\n", sim_utsname.machine, sim_utsname.domainname);
+
+	/* Return structure */
+	mem_write(isa_mem, utsname_ptr, sizeof sim_utsname, &sim_utsname);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'mprotect' (code 125)
+ */
+
+int sys_mprotect_impl(void)
+{
+	unsigned int start;
+	unsigned int len;
+
+	int prot;
+
+	enum mem_access_t perm = 0;
+
+	/* Arguments */
+	start = isa_regs->ebx;
+	len = isa_regs->ecx;
+	prot = isa_regs->edx;
+	sys_debug("  start=0x%x, len=0x%x, prot=0x%x\n", start, len, prot);
+
+	/* Permissions */
+	perm |= prot & 0x01 ? mem_access_read : 0;
+	perm |= prot & 0x02 ? mem_access_write : 0;
+	perm |= prot & 0x04 ? mem_access_exec : 0;
+	mem_protect(isa_mem, start, len, perm);
+
+	/* Return */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'llseek' (code 140)
+ */
+
+int sys_llseek_impl(void)
+{
+	unsigned int fd;
+	unsigned int result_ptr;
+
+	int origin;
+	int host_fd;
+	int offset_high;
+	int offset_low;
+
+	long long offset;
+
+	/* Arguments */
+	fd = isa_regs->ebx;
+	offset_high = isa_regs->ecx;
+	offset_low = isa_regs->edx;
+	offset = ((long long) offset_high << 32) | offset_low;
+	result_ptr = isa_regs->esi;
+	origin = isa_regs->edi;
+	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
+	sys_debug("  fd=%d, offset_high=0x%x, offset_low=0x%x, result_ptr=0x%x, origin=0x%x\n",
+		fd, offset_high, offset_low, result_ptr, origin);
+	sys_debug("  host_fd=%d\n", host_fd);
+	sys_debug("  offset=0x%llx\n", (long long) offset);
+
+	/* Supported offset */
+	if (offset_high != -1 && offset_high)
+		fatal("%s: only supported for 32-bit files", __FUNCTION__);
+
+	/* Host call */
+	offset = lseek(host_fd, offset_low, origin);
+	if (offset == -1)
+		return -errno;
+
+	/* Copy offset to memory */
+	if (result_ptr)
+		mem_write(isa_mem, result_ptr, 8, &offset);
+
+	/* Return */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'getdents' (code 141)
+ */
+
+struct sys_host_dirent_t
+{
+	long d_ino;
+	off_t d_off;
+	unsigned short d_reclen;
+	char d_name[];
+};
+
+struct sys_guest_dirent_t
+{
+	unsigned int d_ino;
+	unsigned int d_off;
+	unsigned short d_reclen;
+	char d_name[];
+} __attribute__((packed));
+
+int sys_getdents_impl(void)
+{
+	unsigned int pdirent;
+
+	int fd;
+	int count;
+	int host_fd;
+
+	void *buf;
+
+	int nread;
+	int host_offs;
+	int guest_offs;
+
+	char d_type;
+
+	struct sys_host_dirent_t *dirent;
+	struct sys_guest_dirent_t sim_dirent;
+
+	/* Read parameters */
+	fd = isa_regs->ebx;
+	pdirent = isa_regs->ecx;
+	count = isa_regs->edx;
+	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
+	sys_debug("  fd=%d, pdirent=0x%x, count=%d\n",
+		fd, pdirent, count);
+	sys_debug("  host_fd=%d\n", host_fd);
+
+	/* Allocate buffer */
+	buf = calloc(1, count);
+	if (!buf)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Call host getdents */
+	nread = syscall(SYS_getdents, host_fd, buf, count);
+	if (nread == -1)
+		fatal("%s: host call failed", __FUNCTION__);
+
+	/* No more entries */
+	if (!nread)
+		return 0;
+
+	/* Copy to host memory */
+	host_offs = 0;
+	guest_offs = 0;
+	while (host_offs < nread)
+	{
+		dirent = (struct sys_host_dirent_t *) (buf + host_offs);
+		sim_dirent.d_ino = dirent->d_ino;
+		sim_dirent.d_off = dirent->d_off;
+		sim_dirent.d_reclen = (15 + strlen(dirent->d_name)) / 4 * 4;
+		d_type = * (char *) (buf + host_offs + dirent->d_reclen - 1);
+
+		sys_debug("    d_ino=%u ", sim_dirent.d_ino);
+		sys_debug("d_off=%u ", sim_dirent.d_off);
+		sys_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
+		sys_debug("d_name='%s'\n", dirent->d_name);
+
+		mem_write(isa_mem, pdirent + guest_offs, 4, &sim_dirent.d_ino);
+		mem_write(isa_mem, pdirent + guest_offs + 4, 4, &sim_dirent.d_off);
+		mem_write(isa_mem, pdirent + guest_offs + 8, 2, &sim_dirent.d_reclen);
+		mem_write_string(isa_mem, pdirent + guest_offs + 10, dirent->d_name);
+		mem_write(isa_mem, pdirent + guest_offs + sim_dirent.d_reclen - 1, 1, &d_type);
+
+		host_offs += dirent->d_reclen;
+		guest_offs += sim_dirent.d_reclen;
+		if (guest_offs > count)
+			fatal("%s: buffer too small", __FUNCTION__);
+	}
+	sys_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
+	free(buf);
+	return guest_offs;
+}
+
+
+
+
+/*
  * System call 'select' (code 142)
  */
 
@@ -2667,6 +2890,43 @@ int sys_select_impl(void)
 
 	/* Return */
 	return err;
+}
+
+
+
+
+/*
+ * System call 'msync' (code 144)
+ */
+
+static struct string_map_t sys_msync_flags_map =
+{
+	3, {
+		{ "MS_ASYNC", 1 },
+		{ "MS_INAVLIAGE", 2 },
+		{ "MS_SYNC", 4 }
+	}
+};
+
+int sys_msync_impl(void)
+{
+	unsigned int start;
+	unsigned int len;
+
+	int flags;
+
+	char flags_str[MAX_STRING_SIZE];
+
+	/* Arguments */
+	start = isa_regs->ebx;
+	len = isa_regs->ecx;
+	flags = isa_regs->edx;
+	map_flags(&sys_msync_flags_map, flags, flags_str, sizeof flags_str);
+	sys_debug("  start=0x%x, len=0x%x, flags=0x%x\n", start, len, flags);
+	sys_debug("  flags=%s\n", flags_str);
+
+	/* System call ignored */
+	return 0;
 }
 
 
