@@ -101,18 +101,6 @@ void sys_debug_string(char *text, char *s, int len, int force)
 }
 
 
-/* For 'msync' */
-
-struct string_map_t msync_flags_map =
-{
-	3, {
-		{ "MS_ASYNC", 1 },
-		{ "MS_INAVLIAGE", 2 },
-		{ "MS_SYNC", 4 }
-	}
-};
-
-
 /* For fstat64, lstat64 */
 
 struct sim_stat64
@@ -163,29 +151,6 @@ static void syscall_copy_stat64(struct sim_stat64 *sim, struct stat *real)
 	sys_debug("    size=%lld, blksize=%d, blocks=%lld\n",
 		(long long) sim->size, (int) sim->blksize, (long long) sim->blocks);
 }
-
-
-/* For uname */
-
-struct sim_utsname
-{
-	char sysname[65];
-	char nodename[65];
-	char release[65];
-	char version[65];
-	char machine[65];
-	char domainname[65];
-} __attribute__((packed));
-
-struct sim_utsname sim_utsname =
-{
-	"Linux",
-	"multi2sim",
-	"3.1.9-1.fc16.i686"
-	"#1 Fri Jan 13 16:37:42 UTC 2012",
-	"i686"
-	""
-};
 
 
 /* For 'rt_sigprocmask' */
@@ -596,15 +561,7 @@ void syscall_do()
 	/* 122 */
 	case syscall_code_newuname:
 	{
-		uint32_t putsname;
-
-		putsname = isa_regs->ebx;
-		sys_debug("  putsname=0x%x\n", putsname);
-		sys_debug("  sysname='%s', nodename='%s'\n", sim_utsname.sysname, sim_utsname.nodename);
-		sys_debug("  relaese='%s', version='%s'\n", sim_utsname.release, sim_utsname.version);
-		sys_debug("  machine='%s', domainname='%s'\n", sim_utsname.machine, sim_utsname.domainname);
-		
-		mem_write(isa_mem, putsname, sizeof(sim_utsname), &sim_utsname);
+		retval = sys_newuname_impl();
 		break;
 	}
 
@@ -612,20 +569,7 @@ void syscall_do()
 	/* 125 */
 	case syscall_code_mprotect:
 	{
-		uint32_t start, len, prot;
-		enum mem_access_t perm = 0;
-
-		start = isa_regs->ebx;
-		len = isa_regs->ecx;
-		prot = isa_regs->edx;
-		sys_debug("  start=0x%x, len=0x%x, prot=0x%x\n",
-			start, len, prot);
-
-		/* Permissions */
-		perm |= prot & 0x01 ? mem_access_read : 0;
-		perm |= prot & 0x02 ? mem_access_write : 0;
-		perm |= prot & 0x04 ? mem_access_exec : 0;
-		mem_protect(isa_mem, start, len, perm);
+		retval = sys_mprotect_impl();
 		break;
 	}
 
@@ -633,30 +577,7 @@ void syscall_do()
 	/* 140 */
 	case syscall_code_llseek:
 	{
-		uint32_t fd, presult, origin, host_fd;
-		int32_t offset_high, offset_low;
-		int64_t offset;
-
-		fd = isa_regs->ebx;
-		offset_high = isa_regs->ecx;
-		offset_low = isa_regs->edx;
-		offset = ((int64_t) offset_high << 32) | offset_low;
-		presult = isa_regs->esi;
-		origin = isa_regs->edi;
-		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		sys_debug("  fd=%d, offset_high=0x%x, offset_low=0x%x, presult=0x%x, origin=0x%x\n",
-			fd, offset_high, offset_low, presult, origin);
-		sys_debug("  host_fd=%d\n", host_fd);
-		sys_debug("  offset=0x%llx\n", (long long) offset);
-		if (offset_high != -1 && offset_high)
-			fatal("syscall llseek: only supported for 32-bit files");
-
-		offset = lseek(host_fd, offset_low, origin);
-		retval = offset;
-		if (retval >= 0 && presult) {
-			mem_write(isa_mem, presult, 8, &offset);
-			retval = 0;
-		}
+		retval = sys_llseek_impl();
 		break;
 	}
 
@@ -664,77 +585,7 @@ void syscall_do()
 	/* 141 */
 	case syscall_code_getdents:
 	{
-		uint32_t fd, pdirent, count, host_fd;
-		void *buf;
-		int nread, host_offs, guest_offs;
-		char d_type;
-
-		struct linux_dirent {
-			long d_ino;
-			off_t d_off;
-			unsigned short d_reclen;
-			char d_name[];
-		} *dirent;
-
-		struct sim_linux_dirent {
-			uint32_t d_ino;
-			uint32_t d_off;
-			uint16_t d_reclen;
-			char d_name[];
-		} __attribute__((packed)) sim_dirent;
-
-		/* Read parameters */
-		fd = isa_regs->ebx;
-		pdirent = isa_regs->ecx;
-		count = isa_regs->edx;
-		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		sys_debug("  fd=%d, pdirent=0x%x, count=%d\n",
-			fd, pdirent, count);
-		sys_debug("  host_fd=%d\n", host_fd);
-
-		/* Call host getdents */
-		buf = calloc(1, count);
-		if (!buf)
-			fatal("getdents: cannot allocate buffer");
-		nread = syscall(SYS_getdents, host_fd, buf, count);
-
-		/* Error or no more entries */
-		if (nread < 0)
-			fatal("getdents: call to host system call returned error");
-		if (!nread) {
-			retval = 0;
-			break;
-		}
-
-		/* Copy to host memory */
-		host_offs = 0;
-		guest_offs = 0;
-		while (host_offs < nread) {
-			dirent = (struct linux_dirent *) (buf + host_offs);
-			sim_dirent.d_ino = dirent->d_ino;
-			sim_dirent.d_off = dirent->d_off;
-			sim_dirent.d_reclen = (15 + strlen(dirent->d_name)) / 4 * 4;
-			d_type = * (char *) (buf + host_offs + dirent->d_reclen - 1);
-
-			sys_debug("    d_ino=%u ", sim_dirent.d_ino);
-			sys_debug("d_off=%u ", sim_dirent.d_off);
-			sys_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
-			sys_debug("d_name='%s'\n", dirent->d_name);
-
-			mem_write(isa_mem, pdirent + guest_offs, 4, &sim_dirent.d_ino);
-			mem_write(isa_mem, pdirent + guest_offs + 4, 4, &sim_dirent.d_off);
-			mem_write(isa_mem, pdirent + guest_offs + 8, 2, &sim_dirent.d_reclen);
-			mem_write_string(isa_mem, pdirent + guest_offs + 10, dirent->d_name);
-			mem_write(isa_mem, pdirent + guest_offs + sim_dirent.d_reclen - 1, 1, &d_type);
-			
-			host_offs += dirent->d_reclen;
-			guest_offs += sim_dirent.d_reclen;
-			if (guest_offs > count)
-				fatal("getdents: host buffer too small");
-		}
-		sys_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
-		free(buf);
-		retval = guest_offs;
+		retval = sys_getdents_impl();
 		break;
 	}
 
@@ -750,24 +601,7 @@ void syscall_do()
 	/* 144 */
 	case syscall_code_msync:
 	{
-		uint32_t start;
-		uint32_t len;
-		uint32_t flags;
-
-		char flags_str[MAX_STRING_SIZE];
-
-		/* Parameters */
-		start = isa_regs->ebx;
-		len = isa_regs->ecx;
-		flags = isa_regs->edx;
-		map_flags(&msync_flags_map, flags, flags_str, MAX_STRING_SIZE);
-
-		/* Debug */
-		sys_debug("  start=0x%x, len=0x%x, flags=0x%x\n",
-			start, len, flags);
-		sys_debug("  flags=%s\n", flags_str);
-		
-		/* FIXME: system call is ignored */
+		retval = sys_msync_impl();
 		break;
 	}
 
