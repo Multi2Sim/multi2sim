@@ -101,70 +101,6 @@ void sys_debug_string(char *text, char *s, int len, int force)
 }
 
 
-/* For fstat64, lstat64 */
-
-struct sim_stat64
-{
-	uint64_t dev;  /* 0 8 */
-	uint32_t pad1;  /* 8 4 */
-	uint32_t __ino;  /* 12 4 */
-	uint32_t mode;  /* 16 4 */
-	uint32_t nlink;  /* 20 4 */
-	uint32_t uid;  /* 24 4 */
-	uint32_t gid;  /* 28 4 */
-	uint64_t rdev;  /* 32 8 */
-	uint32_t pad2;  /* 40 4 */
-	int64_t size;  /* 44 8 */
-	uint32_t blksize;  /* 52 4 */
-	uint64_t blocks;  /* 56 8 */
-	uint32_t atime;  /* 64 4 */
-	uint32_t atime_nsec;  /* 68 4 */
-	uint32_t mtime;  /* 72 4 */
-	uint32_t mtime_nsec;  /* 76 4 */
-	uint32_t ctime;  /* 80 4 */
-	uint32_t ctime_nsec;  /* 84 4 */
-	uint64_t ino;  /* 88 8 */
-} __attribute__((packed));
-
-static void syscall_copy_stat64(struct sim_stat64 *sim, struct stat *real)
-{
-	bzero(sim, sizeof(struct sim_stat64));
-	sim->dev = real->st_dev;
-	sim->__ino = real->st_ino;
-	sim->mode = real->st_mode;
-	sim->nlink = real->st_nlink;
-	sim->uid = real->st_uid;
-	sim->gid = real->st_gid;
-	sim->rdev = real->st_rdev;
-	sim->size = real->st_size;
-	sim->blksize = real->st_blksize;
-	sim->blocks = real->st_blocks;
-	sim->atime = real->st_atime;
-	sim->mtime = real->st_mtime;
-	sim->ctime = real->st_ctime;
-	sim->ino = real->st_ino;
-	sys_debug("  stat64 structure:\n");
-	sys_debug("    dev=%lld, ino=%d, mode=%d, nlink=%d\n",
-		(long long) sim->dev, (int) sim->ino, (int) sim->mode, (int) sim->nlink);
-	sys_debug("    uid=%d, gid=%d, rdev=%lld\n",
-		(int) sim->uid, (int) sim->gid, (long long) sim->rdev);
-	sys_debug("    size=%lld, blksize=%d, blocks=%lld\n",
-		(long long) sim->size, (int) sim->blksize, (long long) sim->blocks);
-}
-
-
-/* For 'rt_sigprocmask' */
-
-struct string_map_t sigprocmask_how_map =
-{
-	3, {
-		{ "SIG_BLOCK",     0 },
-		{ "SIG_UNBLOCK",   1 },
-		{ "SIG_SETMASK",   2 }
-	}
-};
-
-
 /* For 'futex' */
 
 struct string_map_t futex_cmd_map =
@@ -667,46 +603,7 @@ void syscall_do()
 	/* 174 */
 	case syscall_code_rt_sigaction:
 	{
-		uint32_t sig, pact, poact, sigsetsize;
-		struct sim_sigaction act;
-
-		sig = isa_regs->ebx;
-		pact = isa_regs->ecx;
-		poact = isa_regs->edx;
-		sigsetsize = isa_regs->esi;
-		sys_debug("  sig=%d, pact=0x%x, poact=0x%x, sigsetsize=0x%x\n",
-			sig, pact, poact, sigsetsize);
-		sys_debug("  signal=%s\n", sim_signal_name(sig));
-
-		/* Invalid signal */
-		if (sig < 1 || sig > 64)
-			fatal("syscall rt_sigaction: invalid signal (%d)", sig);
-
-		/* Read new sigaction */
-		if (pact) {
-			mem_read(isa_mem, pact, sizeof(act), &act);
-			if (debug_status(sys_debug_category)) {
-				FILE *f = debug_file(sys_debug_category);
-				sys_debug("  act: ");
-				sim_sigaction_dump(&act, f);
-				sys_debug("\n    flags: ");
-				sim_sigaction_flags_dump(act.flags, f);
-				sys_debug("\n    mask: ");
-				sim_sigset_dump(act.mask, f);
-				sys_debug("\n");
-			}
-		}
-
-		/* Store previous sigaction */
-		if (poact) {
-			mem_write(isa_mem, poact, sizeof(struct sim_sigaction),
-				&isa_ctx->signal_handler_table->sigaction[sig - 1]);
-		}
-
-		/* Make new sigaction effective */
-		if (pact)
-			isa_ctx->signal_handler_table->sigaction[sig - 1] = act;
-
+		retval = sys_rt_sigaction_impl();
 		break;
 	}
 
@@ -714,56 +611,7 @@ void syscall_do()
 	/* 175 */
 	case syscall_code_rt_sigprocmask:
 	{
-		uint32_t how, pset, poset, sigsetsize;
-		uint64_t set, oset;
-
-		how = isa_regs->ebx;
-		pset = isa_regs->ecx;
-		poset = isa_regs->edx;
-		sigsetsize = isa_regs->esi;
-		sys_debug("  how=0x%x, pset=0x%x, poset=0x%x, sigsetsize=0x%x\n",
-			how, pset, poset, sigsetsize);
-		sys_debug("  how=%s\n", map_value(&sigprocmask_how_map, how));
-
-		/* Save old set */
-		oset = isa_ctx->signal_mask_table->blocked;
-
-		/* New set */
-		if (pset) {
-			
-			/* Read it from memory */
-			mem_read(isa_mem, pset, 8, &set);
-			if (debug_status(sys_debug_category)) {
-				sys_debug("  set=0x%llx ", (long long) set);
-				sim_sigset_dump(set, debug_file(sys_debug_category));
-				sys_debug("\n");
-			}
-
-			/* Set new set */
-			switch (how) {
-			case 0:  /* SIG_BLOCK */
-				isa_ctx->signal_mask_table->blocked |= set;
-				break;
-			case 1:  /* SIG_UNBLOCK */
-				isa_ctx->signal_mask_table->blocked &= ~set;
-				break;
-			case 2:  /* SIG_SETMASK */
-				isa_ctx->signal_mask_table->blocked = set;
-				break;
-			default:
-				fatal("syscall rt_sigprocmask: wrong how value");
-			}
-		}
-
-		/* Return old set */
-		if (poset)
-			mem_write(isa_mem, poset, 8, &oset);
-
-		/* A change in the signal mask can cause pending signals to be
-		 * able to execute, so check this. */
-		ke_process_events_schedule();
-		ke_process_events();
-
+		retval = sys_rt_sigprocmask_impl();
 		break;
 	}
 
@@ -771,35 +619,7 @@ void syscall_do()
 	/* 179 */
 	case syscall_code_rt_sigsuspend:
 	{
-		uint32_t pnewset, sigsetsize;
-		uint64_t newset;
-
-		pnewset = isa_regs->ebx;
-		sigsetsize = isa_regs->ecx;
-		sys_debug("  pnewset=0x%x, sigsetsize=0x%x\n",
-			pnewset, sigsetsize);
-
-		/* Read temporary signal mask */
-		mem_read(isa_mem, pnewset, 8, &newset);
-		if (debug_status(sys_debug_category)) {
-			FILE *f = debug_file(sys_debug_category);
-			sys_debug("  old mask: ");
-			sim_sigset_dump(isa_ctx->signal_mask_table->blocked, f);
-			sys_debug("\n  new mask: ");
-			sim_sigset_dump(newset, f);
-			sys_debug("\n  pending:  ");
-			sim_sigset_dump(isa_ctx->signal_mask_table->pending, f);
-			sys_debug("\n");
-		}
-
-		/* Save old mask and set new one, then suspend. */
-		isa_ctx->signal_mask_table->backup = isa_ctx->signal_mask_table->blocked;
-		isa_ctx->signal_mask_table->blocked = newset;
-		ctx_set_status(isa_ctx, ctx_suspended | ctx_sigsuspend);
-
-		/* New signal mask may cause new events */
-		ke_process_events_schedule();
-		ke_process_events();
+		retval = sys_rt_sigsuspend_impl();
 		break;
 	}
 
@@ -807,21 +627,7 @@ void syscall_do()
 	/* 183 */
 	case syscall_code_getcwd:
 	{
-		uint32_t pbuf, size, len;
-		char *cwd;
-
-		pbuf = isa_regs->ebx;
-		size = isa_regs->ecx;
-		sys_debug("  pbuf=0x%x, size=0x%x\n", pbuf, size);
-
-		cwd = isa_ctx->loader->cwd;
-		len = strlen(cwd);
-		if (size <= len)
-			retval = -ERANGE;
-		else {
-			mem_write_string(isa_mem, pbuf, cwd);
-			retval = len + 1;
-		}
+		retval = sys_getcwd_impl();
 		break;
 	}
 
@@ -845,15 +651,7 @@ void syscall_do()
 	/* 194 */
 	case syscall_code_ftruncate64:
 	{
-		uint32_t fd, length, host_fd;
-
-		fd = isa_regs->ebx;
-		length = isa_regs->ecx;
-		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		sys_debug("  fd=%d, length=0x%x\n", fd, length);
-		sys_debug("  host_fd=%d\n", host_fd);
-		
-		RETVAL(ftruncate(host_fd, length));
+		retval = sys_ftruncate64_impl();
 		break;
 	}
 
@@ -861,27 +659,7 @@ void syscall_do()
 	/* 195 */
 	case syscall_code_stat64:
 	{
-		uint32_t pfilename, pstatbuf;
-		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
-		struct stat statbuf;
-		struct sim_stat64 sim_statbuf;
-		int length;
-
-		pfilename = isa_regs->ebx;
-		pstatbuf = isa_regs->ecx;
-		length = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
-		if (length >= MAX_PATH_SIZE)
-			fatal("syscall stat64: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		sys_debug("  pfilename=0x%x, pstatbuf=0x%x\n",
-			pfilename, pstatbuf);
-		sys_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
-
-		RETVAL(stat(fullpath, &statbuf));
-		if (!retval) {
-			syscall_copy_stat64(&sim_statbuf, &statbuf);
-			mem_write(isa_mem, pstatbuf, sizeof(sim_statbuf), &sim_statbuf);
-		}
+		retval = sys_stat64_impl();
 		break;
 	}
 
@@ -889,26 +667,7 @@ void syscall_do()
 	/* 196 */
 	case syscall_code_lstat64:
 	{
-		uint32_t pfilename, pstatbuf;
-		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
-		int length;
-		struct stat statbuf;
-		struct sim_stat64 sim_statbuf;
-		
-		pfilename = isa_regs->ebx;
-		pstatbuf = isa_regs->ecx;
-		length = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
-		if (length >= MAX_PATH_SIZE)
-			fatal("syscall lstat64: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		sys_debug("  pfilename=0x%x, pstatbuf=0x%x\n", pfilename, pstatbuf);
-		sys_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
-
-		RETVAL(lstat(fullpath, &statbuf));
-		if (!retval) {
-			syscall_copy_stat64(&sim_statbuf, &statbuf);
-			mem_write(isa_mem, pstatbuf, sizeof(sim_statbuf), &sim_statbuf);
-		}
+		retval = sys_lstat64_impl();
 		break;
 	}
 		
@@ -916,21 +675,7 @@ void syscall_do()
 	/* 197 */
 	case syscall_code_fstat64:
 	{
-		uint32_t fd, pstatbuf, host_fd;
-		struct stat statbuf;
-		struct sim_stat64 sim_statbuf;
-
-		fd = isa_regs->ebx;
-		pstatbuf = isa_regs->ecx;
-		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		sys_debug("  fd=%d, pstatbuf=0x%x\n", fd, pstatbuf);
-		sys_debug("  host_fd=%d\n", host_fd);
-
-		RETVAL(fstat(host_fd, &statbuf));
-		if (!retval) {
-			syscall_copy_stat64(&sim_statbuf, &statbuf);
-			mem_write(isa_mem, pstatbuf, sizeof(sim_statbuf), &sim_statbuf);
-		}
+		retval = sys_fstat64_impl();
 		break;
 	}
 		
@@ -938,7 +683,7 @@ void syscall_do()
 	/* 199 */
 	case syscall_code_getuid:
 	{
-		RETVAL(getuid());
+		retval = sys_getuid_impl();
 		break;
 	}
 
@@ -946,7 +691,7 @@ void syscall_do()
 	/* 200 */
 	case syscall_code_getgid:
 	{
-		RETVAL(getgid());
+		retval = sys_getgid_impl();
 		break;
 	}
 
@@ -954,7 +699,7 @@ void syscall_do()
 	/* 201 */
 	case syscall_code_geteuid:
 	{
-		RETVAL(geteuid());
+		retval = sys_geteuid_impl();
 		break;
 	}
 
@@ -962,7 +707,7 @@ void syscall_do()
 	/* 202 */
 	case syscall_code_getegid:
 	{
-		RETVAL(getegid());
+		retval = sys_getegid_impl();
 		break;
 	}
 
@@ -970,20 +715,7 @@ void syscall_do()
 	/* 212 */
 	case syscall_code_chown:
 	{
-		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
-		uint32_t pfilename, owner, group;
-		int len;
-
-		pfilename = isa_regs->ebx;
-		owner = isa_regs->ecx;
-		group = isa_regs->edx;
-		len = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
-		if (len >= MAX_PATH_SIZE)
-			fatal("syscall chmod: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		sys_debug("  pfilename=0x%x, owner=%d, group=%d\n", pfilename, owner, group);
-		sys_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
-		RETVAL(chown(fullpath, owner, group));
+		retval = sys_chown_impl();
 		break;
 	}
 
