@@ -2933,6 +2933,325 @@ int sys_msync_impl(void)
 
 
 /*
+ * System call 'writev' (code 146)
+ */
+
+int sys_writev_impl(void)
+{
+	int v;
+	int len;
+	int guest_fd;
+	int host_fd;
+	int total_len;
+
+	struct file_desc_t *desc;
+
+	unsigned int iovec_ptr;
+	unsigned int vlen;
+	unsigned int iov_base;
+	unsigned int iov_len;
+
+	void *buf;
+
+	/* Arguments */
+	guest_fd = isa_regs->ebx;
+	iovec_ptr = isa_regs->ecx;
+	vlen = isa_regs->edx;
+	sys_debug("  guest_fd=%d, iovec_ptr = 0x%x, vlen=0x%x\n",
+		guest_fd, iovec_ptr, vlen);
+
+	/* Check file descriptor */
+	desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
+	if (!desc)
+		return -EBADF;
+	host_fd = desc->host_fd;
+	sys_debug("  host_fd=%d\n", host_fd);
+
+	/* No pipes allowed */
+	if (desc->kind == file_desc_pipe)
+		fatal("%s: not supported for pipes.\n%s",
+			__FUNCTION__, err_sys_note);
+
+	/* Proceed */
+	total_len = 0;
+	for (v = 0; v < vlen; v++)
+	{
+		/* Read io vector element */
+		mem_read(isa_mem, iovec_ptr, 4, &iov_base);
+		mem_read(isa_mem, iovec_ptr + 4, 4, &iov_len);
+		iovec_ptr += 8;
+
+		/* Allocate buffer */
+		buf = malloc(iov_len);
+		if (!buf)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* Read buffer from memory and write it to file */
+		mem_read(isa_mem, iov_base, iov_len, buf);
+		len = write(host_fd, buf, iov_len);
+		if (len == -1)
+		{
+			free(buf);
+			return -errno;
+		}
+
+		/* Accumulate written bytes */
+		total_len += len;
+		free(buf);
+	}
+
+	/* Return total number of bytes written */
+	return total_len;
+}
+
+
+
+
+/*
+ * System call 'sysctl' (code 149)
+ */
+
+struct sys_sysctl_args_t
+{
+	unsigned int pname;
+	unsigned int nlen;
+	unsigned int poldval;
+	unsigned int oldlenp;
+	unsigned int pnewval;
+	unsigned int newlen;
+};
+
+int sys_sysctl_impl(void)
+{
+	int i;
+
+	unsigned int args_ptr;
+	unsigned int aux;
+	unsigned int zero = 0;
+
+	struct sys_sysctl_args_t args;
+
+	/* Arguments */
+	args_ptr = isa_regs->ebx;
+	sys_debug("  pargs=0x%x\n", args_ptr);
+
+	/* Access arguments in memory */
+	mem_read(isa_mem, args_ptr, sizeof args, &args);
+	sys_debug("    pname=0x%x\n", args.pname);
+	sys_debug("    nlen=%d\n      ", args.nlen);
+	for (i = 0; i < args.nlen; i++)
+	{
+		mem_read(isa_mem, args.pname + i * 4, 4, &aux);
+		sys_debug("name[%d]=%d ", i, aux);
+	}
+	sys_debug("\n    poldval=0x%x\n", args.poldval);
+	sys_debug("    oldlenp=0x%x\n", args.oldlenp);
+	sys_debug("    pnewval=0x%x\n", args.pnewval);
+	sys_debug("    newlen=%d\n", args.newlen);
+
+	/* Supported values */
+	if (!args.oldlenp || !args.poldval)
+		fatal("%s: not supported for poldval=0 or oldlenp=0.\n%s",
+			__FUNCTION__, err_sys_note);
+	if (args.pnewval || args.newlen)
+		fatal("%s: not supported for pnewval or newlen other than 0.\n%s",
+			__FUNCTION__, err_sys_note);
+
+	/* Return */
+	mem_write(isa_mem, args.oldlenp, 4, &zero);
+	mem_write(isa_mem, args.poldval, 1, &zero);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'sched_setparam' (code 154)
+ */
+
+int sys_sched_setparam_impl(void)
+{
+	unsigned int param_ptr;
+
+	int sched_priority;
+	int pid;
+
+	pid = isa_regs->ebx;
+	param_ptr = isa_regs->ecx;
+	sys_debug("  pid=%d\n", pid);
+	sys_debug("  param_ptr=0x%x\n", param_ptr);
+	mem_read(isa_mem, param_ptr, 4, &sched_priority);
+	sys_debug("    param.sched_priority=%d\n", sched_priority);
+
+	/* Ignore system call */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'sched_getparam' (code 155)
+ */
+
+int sys_sched_getparam_impl(void)
+{
+	unsigned int param_ptr;
+	unsigned int zero = 0;
+
+	int pid;
+
+	/* Arguments */
+	pid = isa_regs->ebx;
+	param_ptr = isa_regs->ecx;
+	sys_debug("  pid=%d\n", pid);
+	sys_debug("  param_ptr=0x%x\n", param_ptr);
+
+	/* Return 0 in param_ptr->sched_priority */
+	mem_write(isa_mem, param_ptr, 4, &zero);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'sched_getscheduler' (code 157)
+ */
+
+int sys_sched_getscheduler_impl(void)
+{
+	int pid;
+
+	/* Arguments */
+	pid = isa_regs->ebx;
+	sys_debug("  pid=%d\n", pid);
+
+	/* System call ignored */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'sched_get_priority_max' (code 159)
+ */
+
+int sys_sched_get_priority_max_impl(void)
+{
+	int policy;
+
+	/* Arguments */
+	policy = isa_regs->ebx;
+	sys_debug("  policy=%d\n", policy);
+
+	switch (policy)
+	{
+
+	/* SCHED_OTHER */
+	case 0:
+		return 0;
+
+	/* SCHED_FIFO */
+	case 1:
+		return 99;
+
+	/* SCHED_RR */
+	case 2:
+		return 99;
+
+	default:
+		fatal("%s: policy not supported.\n%s",
+			__FUNCTION__, err_sys_note);
+	}
+
+	/* Dead code */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'sched_get_priority_min' (code 160)
+ */
+
+int sys_sched_get_priority_min_impl(void)
+{
+	int policy;
+
+	/* Arguments */
+	policy = isa_regs->ebx;
+	sys_debug("  policy=%d\n", policy);
+
+	switch (policy)
+	{
+
+	/* SCHED_OTHER */
+	case 0:
+		return 0;
+
+	/* SCHED_FIFO */
+	case 1:
+		return 1;
+
+	/* SCHED_RR */
+	case 2:
+		return 1;
+
+	default:
+		fatal("%s: policy not supported.\n%s",
+			__FUNCTION__, err_sys_note);
+	}
+
+	/* Dead code */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'nanosleep' (code 162)
+ */
+
+int sys_nanosleep_impl(void)
+{
+	unsigned int rqtp;
+	unsigned int rmtp;
+	unsigned int sec;
+	unsigned int nsec;
+
+	long long total;
+	long long now;
+
+	/* Arguments */
+	rqtp = isa_regs->ebx;
+	rmtp = isa_regs->ecx;
+	sys_debug("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
+
+	/* Get current time */
+	now = ke_timer();
+
+	/* Read structure */
+	mem_read(isa_mem, rqtp, 4, &sec);
+	mem_read(isa_mem, rqtp + 4, 4, &nsec);
+	total = (long long) sec * 1000000 + (nsec / 1000);
+	sys_debug("  sleep time (us): %llu\n", total);
+
+	/* Suspend process */
+	isa_ctx->wakeup_time = now + total;
+	ctx_set_status(isa_ctx, ctx_suspended | ctx_nanosleep);
+	ke_process_events_schedule();
+	return 0;
+}
+
+
+
+
+/*
  * System call 'mremap' (code 163)
  */
 
@@ -2996,6 +3315,137 @@ int sys_mremap_impl(void)
 
 	/* Return new address */
 	return new_addr;
+}
+
+
+
+
+/*
+ * System call 'poll' (code 168)
+ */
+
+static struct string_map_t sys_poll_event_map =
+{
+	6, {
+		{ "POLLIN",          0x0001 },
+		{ "POLLPRI",         0x0002 },
+		{ "POLLOUT",         0x0004 },
+		{ "POLLERR",         0x0008 },
+		{ "POLLHUP",         0x0010 },
+		{ "POLLNVAL",        0x0020 }
+	}
+};
+
+struct sim_pollfd_t
+{
+	unsigned int fd;
+	unsigned short events;
+	unsigned short revents;
+};
+
+int sys_poll_impl(void)
+{
+	unsigned int pfds;
+	unsigned int nfds;
+
+	int timeout;
+	int guest_fd;
+	int host_fd;
+	int err;
+
+	struct sim_pollfd_t guest_fds;
+	struct pollfd host_fds;
+	struct file_desc_t *desc;
+
+	char events_str[MAX_STRING_SIZE];
+
+	long long now = ke_timer();
+
+	/* Arguments */
+	pfds = isa_regs->ebx;
+	nfds = isa_regs->ecx;
+	timeout = isa_regs->edx;
+	sys_debug("  pfds=0x%x, nfds=%d, timeout=%d\n",
+		pfds, nfds, timeout);
+
+	/* Assumptions on host architecture */
+	M2S_HOST_GUEST_MATCH(sizeof guest_fds, 8);
+	M2S_HOST_GUEST_MATCH(POLLIN, 1);
+	M2S_HOST_GUEST_MATCH(POLLPRI, 2);
+	M2S_HOST_GUEST_MATCH(POLLOUT, 4);
+
+	/* Supported value */
+	if (nfds != 1)
+		fatal("%s: not suported for nfds != 1\n%s", __FUNCTION__, err_sys_note);
+
+	/* Read pollfd */
+	mem_read(isa_mem, pfds, sizeof guest_fds, &guest_fds);
+	guest_fd = guest_fds.fd;
+	map_flags(&sys_poll_event_map, guest_fds.events, events_str, MAX_STRING_SIZE);
+	sys_debug("  guest_fd=%d, events=%s\n", guest_fd, events_str);
+
+	/* Get file descriptor */
+	desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
+	if (!desc)
+		return -EBADF;
+	host_fd = desc->host_fd;
+	sys_debug("  host_fd=%d\n", host_fd);
+
+	/* Only POLLIN (0x1) and POLLOUT (0x4) supported */
+	if (guest_fds.events & ~(POLLIN | POLLOUT))
+		fatal("%s: event not supported.\n%s",
+			__FUNCTION__, err_sys_note);
+
+	/* Not supported file descriptor */
+	if (host_fd < 0)
+		fatal("%s: not supported file descriptor.\n%s",
+			__FUNCTION__, err_sys_note);
+
+	/* Perform host 'poll' system call with a 0 timeout to distinguish
+	 * blocking from non-blocking cases. */
+	host_fds.fd = host_fd;
+	host_fds.events = guest_fds.events;
+	err = poll(&host_fds, 1, 0);
+	if (err == -1)
+		return -errno;
+
+	/* If host 'poll' returned a value greater than 0, the guest call is non-blocking,
+	 * since I/O is ready for the file descriptor. */
+	if (err > 0)
+	{
+		/* Non-blocking POLLOUT on a file. */
+		if (guest_fds.events & host_fds.revents & POLLOUT)
+		{
+			sys_debug("  non-blocking write to file guaranteed\n");
+			guest_fds.revents = POLLOUT;
+			mem_write(isa_mem, pfds, sizeof guest_fds, &guest_fds);
+			return 1;
+		}
+
+		/* Non-blocking POLLIN on a file. */
+		if (guest_fds.events & host_fds.revents & POLLIN)
+		{
+			sys_debug("  non-blocking read from file guaranteed\n");
+			guest_fds.revents = POLLIN;
+			mem_write(isa_mem, pfds, sizeof guest_fds, &guest_fds);
+			return 1;
+		}
+
+		/* Never should get here */
+		panic("%s: unexpected events", __FUNCTION__);
+	}
+
+	/* At this point, host 'poll' returned 0, which means that none of the requested
+	 * events is ready on the file, so we must suspend until they occur. */
+	sys_debug("  process going to sleep waiting for events on file\n");
+	isa_ctx->wakeup_time = 0;
+	if (timeout >= 0)
+		isa_ctx->wakeup_time = now + (long long) timeout * 1000;
+	isa_ctx->wakeup_fd = guest_fd;
+	isa_ctx->wakeup_events = guest_fds.events;
+	ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
+	ke_process_events_schedule();
+	return 0;
 }
 
 
