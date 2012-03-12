@@ -281,7 +281,7 @@ void mod_handler_store(int event, void *data)
 		{
 			mem_debug("    %lld wait for access %lld\n",
 				stack->id, older_stack->id);
-			mod_stack_wait_in_stack(stack, older_stack, EV_MOD_LOAD_LOCK);
+			mod_stack_wait_in_stack(stack, older_stack, EV_MOD_STORE_LOCK);
 			return;
 		}
 
