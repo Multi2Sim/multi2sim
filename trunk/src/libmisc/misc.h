@@ -278,6 +278,21 @@ void free_buffer(void *buf);
 
 
 
+/*
+ * Multi2Sim functions
+ */
+
+#define M2S_HOST_GUEST_MATCH(HOST_EXPR, GUEST_EXPR) \
+	if ((HOST_EXPR) != (GUEST_EXPR)) \
+		m2s_host_guest_match_error(#HOST_EXPR, (HOST_EXPR), (GUEST_EXPR));
+
+void m2s_host_guest_match_error(char *expr, int host_value, int guest_value);
+
+void m2s_dist_file(char *file_name, char *dist_path, char *non_dist_path,
+	char *buffer, int size);
+
+
+
 
 /*
  * Other
@@ -286,8 +301,6 @@ void free_buffer(void *buf);
 void dump_bin(int x, int digits, FILE *f);
 void dump_ptr(void *ptr, int size, FILE *stream);
 int log_base2(int x);
-void search_dist_file(char *file_name, char *dist_path, char *non_dist_path,
-	char *buffer, int size);
 
 
 #endif

@@ -551,7 +551,7 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	/* Send finish signal to parent */
 	if (ctx->exit_signal && ctx->parent)
 	{
-		syscall_debug("  sending signal %d to pid %d\n",
+		sys_debug("  sending signal %d to pid %d\n",
 			ctx->exit_signal, ctx->parent->pid);
 		sim_sigset_add(&ctx->parent->signal_mask_table->pending,
 			ctx->exit_signal);
@@ -601,7 +601,7 @@ int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t b
 		if (wakeup_ctx)
 		{
 			ctx_clear_status(wakeup_ctx, ctx_suspended | ctx_futex);
-			syscall_debug("  futex 0x%x: thread %d woken up\n", futex, wakeup_ctx->pid);
+			sys_debug("  futex 0x%x: thread %d woken up\n", futex, wakeup_ctx->pid);
 			wakeup_count++;
 			count--;
 		}
@@ -636,7 +636,7 @@ void ctx_exit_robust_list(struct ctx_t *ctx)
 	if (!lock_entry)
 		return;
 	
-	syscall_debug("ctx %d: processing robust futex list\n",
+	sys_debug("ctx %d: processing robust futex list\n",
 		ctx->pid);
 	for (;;)
 	{
@@ -644,7 +644,7 @@ void ctx_exit_robust_list(struct ctx_t *ctx)
 		mem_read(ctx->mem, lock_entry + 4, 4, &offset);
 		mem_read(ctx->mem, lock_entry + offset, 4, &lock_word);
 
-		syscall_debug("  lock_entry=0x%x: offset=%d, lock_word=0x%x\n",
+		sys_debug("  lock_entry=0x%x: offset=%d, lock_word=0x%x\n",
 			lock_entry, offset, lock_word);
 
 		/* Stop processing list if 'next' points to robust list */

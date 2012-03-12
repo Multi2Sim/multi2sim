@@ -18,6 +18,7 @@
  */
 
 #include <cpukernel.h>
+#include <misc.h>
 
 
 /*
@@ -25,9 +26,9 @@
  */
 
 /* Configuration parameters */
-uint64_t ke_max_inst = 0;
-uint64_t ke_max_cycles = 0;
-uint64_t ke_max_time = 0;
+long long ke_max_inst = 0;
+long long ke_max_cycles = 0;
+long long ke_max_time = 0;
 enum cpu_sim_kind_t cpu_sim_kind = cpu_sim_functional;
 
 
@@ -64,13 +65,23 @@ static uint64_t ke_init_time = 0;
 
 void ke_init(void)
 {
-	uint32_t endian = 0x44332211;
-	unsigned char *pendian = (unsigned char *) &endian;
+	union {
+		unsigned int as_uint;
+		unsigned char as_uchar[4];
+	} endian;
 
 	/* Endian check */
-	if (pendian[0] != 0x11 || pendian[3] != 0x44)
-		fatal("cannot run kernel on a big endian machine");
-	
+	endian.as_uint = 0x33221100;
+	if (endian.as_uchar[0])
+		fatal("%s: host machine is not little endian", __FUNCTION__);
+
+	/* Host types */
+	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);
+	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
+	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
+
+	/* Initialization */
+	sys_init();
 	isa_init();
 
 	/* Allocate */
@@ -115,6 +126,7 @@ void ke_done(void)
 	/* End */
 	free(ke);
 	isa_done();
+	sys_done();
 	syscall_summary();
 }
 
@@ -405,8 +417,8 @@ void ke_process_events()
 			{
 				if (rmtp)
 					mem_write(ctx->mem, rmtp, 8, &zero);
-				syscall_debug("syscall 'nanosleep' - continue (pid %d)\n", ctx->pid);
-				syscall_debug("  return=0x%x\n", ctx->regs->eax);
+				sys_debug("syscall 'nanosleep' - continue (pid %d)\n", ctx->pid);
+				sys_debug("  return=0x%x\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_nanosleep);
 				continue;
 			}
@@ -423,7 +435,7 @@ void ke_process_events()
 					mem_write(ctx->mem, rmtp + 4, 4, &usec);
 				}
 				ctx->regs->eax = -EINTR;
-				syscall_debug("syscall 'nanosleep' - interrupted by signal (pid %d)\n", ctx->pid);
+				sys_debug("syscall 'nanosleep' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_nanosleep);
 				continue;
 			}
@@ -443,7 +455,7 @@ void ke_process_events()
 			{
 				signal_handler_check_intr(ctx);
 				ctx->signal_mask_table->blocked = ctx->signal_mask_table->backup;
-				syscall_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
+				sys_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_sigsuspend);
 				continue;
 			}
@@ -475,7 +487,7 @@ void ke_process_events()
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
 				signal_handler_check_intr(ctx);
-				syscall_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
+				sys_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
 				continue;
 			}
@@ -493,8 +505,8 @@ void ke_process_events()
 				revents = POLLOUT;
 				mem_write(ctx->mem, prevents, 2, &revents);
 				ctx->regs->eax = 1;
-				syscall_debug("syscall poll - continue (pid %d) - POLLOUT occurred in file\n", ctx->pid);
-				syscall_debug("  retval=%d\n", ctx->regs->eax);
+				sys_debug("syscall poll - continue (pid %d) - POLLOUT occurred in file\n", ctx->pid);
+				sys_debug("  retval=%d\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
 				continue;
 			}
@@ -505,8 +517,8 @@ void ke_process_events()
 				revents = POLLIN;
 				mem_write(ctx->mem, prevents, 2, &revents);
 				ctx->regs->eax = 1;
-				syscall_debug("syscall poll - continue (pid %d) - POLLIN occurred in file\n", ctx->pid);
-				syscall_debug("  retval=%d\n", ctx->regs->eax);
+				sys_debug("syscall poll - continue (pid %d) - POLLIN occurred in file\n", ctx->pid);
+				sys_debug("  retval=%d\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
 				continue;
 			}
@@ -516,8 +528,8 @@ void ke_process_events()
 			{
 				revents = 0;
 				mem_write(ctx->mem, prevents, 2, &revents);
-				syscall_debug("syscall poll - continue (pid %d) - time out\n", ctx->pid);
-				syscall_debug("  return=0x%x\n", ctx->regs->eax);
+				sys_debug("syscall poll - continue (pid %d) - time out\n", ctx->pid);
+				sys_debug("  return=0x%x\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
 				continue;
 			}
@@ -547,7 +559,7 @@ void ke_process_events()
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
 				signal_handler_check_intr(ctx);
-				syscall_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
+				sys_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_write);
 				continue;
 			}
@@ -578,8 +590,8 @@ void ke_process_events()
 				ctx->regs->eax = count;
 				free(buf);
 
-				syscall_debug("syscall write - continue (pid %d)\n", ctx->pid);
-				syscall_debug("  return=0x%x\n", ctx->regs->eax);
+				sys_debug("syscall write - continue (pid %d)\n", ctx->pid);
+				sys_debug("  return=0x%x\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_write);
 				continue;
 			}
@@ -608,7 +620,7 @@ void ke_process_events()
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
 				signal_handler_check_intr(ctx);
-				syscall_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
+				sys_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
 				ctx_clear_status(ctx, ctx_suspended | ctx_read);
 				continue;
 			}
@@ -640,8 +652,8 @@ void ke_process_events()
 				mem_write(ctx->mem, pbuf, count, buf);
 				free(buf);
 
-				syscall_debug("syscall 'read' - continue (pid %d)\n", ctx->pid);
-				syscall_debug("  return=0x%x\n", ctx->regs->eax);
+				sys_debug("syscall 'read' - continue (pid %d)\n", ctx->pid);
+				sys_debug("  return=0x%x\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_read);
 				continue;
 			}
@@ -670,8 +682,8 @@ void ke_process_events()
 					mem_write(ctx->mem, pstatus, 4, &child->exit_code);
 				ctx_set_status(child, ctx_finished);
 
-				syscall_debug("syscall waitpid - continue (pid %d)\n", ctx->pid);
-				syscall_debug("  return=0x%x\n", ctx->regs->eax);
+				sys_debug("syscall waitpid - continue (pid %d)\n", ctx->pid);
+				sys_debug("  return=0x%x\n", ctx->regs->eax);
 				ctx_clear_status(ctx, ctx_suspended | ctx_waitpid);
 				continue;
 			}

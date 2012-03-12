@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <sys/utsname.h>
 #include "misc.h"
 
 
@@ -646,7 +647,7 @@ void dump_bin(int x, int digits, FILE *f)
 #define PACKAGE_DATA_DIR ""
 #endif
 
-void search_dist_file(char *file_name, char *dist_path, char *non_dist_path,
+void m2s_dist_file(char *file_name, char *dist_path, char *non_dist_path,
 	char *buffer, int size)
 {
 	char dist_path_abs[MAX_STRING_SIZE];
@@ -705,3 +706,27 @@ void search_dist_file(char *file_name, char *dist_path, char *non_dist_path,
 	exit(1);
 }
 
+
+/* Check that host and guest expressions match */
+
+static char *err_m2s_host_guest_match =
+	"\tFor the emulation of machine instructions and system calls, Multi2Sim\n"
+	"\tmakes some assumptions about common features of the modeled architecture\n"
+	"\t(guest) and the machine Multi2Sim runs on (host). While most assumptions\n"
+	"\tare not strictly necessary, they simplify the design of the simulator.\n"
+	"\tPlease email 'development@multi2sim.org' to report this issue.\n";
+
+void m2s_host_guest_match_error(char *expr, int host_value, int guest_value)
+{
+	struct utsname utsname;
+
+	uname(&utsname);
+	fprintf(stderr, "expression '%s' differs in host/guest architectures.\n"
+		"\tHost architecture: %s %s %s %s\n"
+		"\tValue in host: %d\n"
+		"\tValue in guest: %d\n"
+		"%s\n",
+		expr, utsname.sysname, utsname.release, utsname.version, utsname.machine,
+		host_value, guest_value, err_m2s_host_guest_match);
+	exit(1);
+}
