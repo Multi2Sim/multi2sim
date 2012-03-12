@@ -24,79 +24,44 @@
  * System call error codes
  */
 
-#define	SIM_EPERM	 1
-#define	SIM_ENOENT	 2
-#define	SIM_ESRCH	 3
-#define	SIM_EINTR	 4
-#define	SIM_EIO		 5
-#define	SIM_ENXIO	 6
-#define	SIM_E2BIG	 7
-#define	SIM_ENOEXEC	 8
-#define	SIM_EBADF	 9
-#define	SIM_ECHILD	10
-#define	SIM_EAGAIN	11
-#define	SIM_ENOMEM	12
-#define	SIM_EACCES	13
-#define	SIM_EFAULT	14
-#define	SIM_ENOTBLK	15
-#define	SIM_EBUSY	16
-#define	SIM_EEXIST	17
-#define	SIM_EXDEV	18
-#define	SIM_ENODEV	19
-#define	SIM_ENOTDIR	20
-#define	SIM_EISDIR	21
-#define	SIM_EINVAL	22
-#define	SIM_ENFILE	23
-#define	SIM_EMFILE	24
-#define	SIM_ENOTTY	25
-#define	SIM_ETXTBSY	26
-#define	SIM_EFBIG	27
-#define	SIM_ENOSPC	28
-#define	SIM_ESPIPE	29
-#define	SIM_EROFS	30
-#define	SIM_EMLINK	31
-#define	SIM_EPIPE	32
-#define	SIM_EDOM	33
-#define	SIM_ERANGE	34
-
 struct string_map_t sys_error_code_map =
 {
 	34,
 	{
-		{ "SIM_EPERM", 1 },
-		{ "SIM_ENOENT", 2 },
-		{ "SIM_ESRCH", 3 },
-		{ "SIM_EINTR", 4 },
-		{ "SIM_EIO", 5 },
-		{ "SIM_ENXIO", 6 },
-		{ "SIM_E2BIG", 7 },
-		{ "SIM_ENOEXEC", 8 },
-		{ "SIM_EBADF", 9 },
-		{ "SIM_ECHILD", 10 },
-		{ "SIM_EAGAIN", 11 },
-		{ "SIM_ENOMEM", 12 },
-		{ "SIM_EACCES", 13 },
-		{ "SIM_EFAULT", 14 },
-		{ "SIM_ENOTBLK", 15 },
-		{ "SIM_EBUSY", 16 },
-		{ "SIM_EEXIST", 17 },
-		{ "SIM_EXDEV", 18 },
-		{ "SIM_ENODEV", 19 },
-		{ "SIM_ENOTDIR", 20 },
-		{ "SIM_EISDIR", 21 },
-		{ "SIM_EINVAL", 22 },
-		{ "SIM_ENFILE", 23 },
-		{ "SIM_EMFILE", 24 },
-		{ "SIM_ENOTTY", 25 },
-		{ "SIM_ETXTBSY", 26 },
-		{ "SIM_EFBIG", 27 },
-		{ "SIM_ENOSPC", 28 },
-		{ "SIM_ESPIPE", 29 },
-		{ "SIM_EROFS", 30 },
-		{ "SIM_EMLINK", 31 },
-		{ "SIM_EPIPE", 32 },
-		{ "SIM_EDOM", 33 },
-		{ "SIM_ERANGE", 34 }
+		{ "EPERM", 1 },
+		{ "ENOENT", 2 },
+		{ "ESRCH", 3 },
+		{ "EINTR", 4 },
+		{ "EIO", 5 },
+		{ "ENXIO", 6 },
+		{ "E2BIG", 7 },
+		{ "ENOEXEC", 8 },
+		{ "EBADF", 9 },
+		{ "ECHILD", 10 },
+		{ "EAGAIN", 11 },
+		{ "ENOMEM", 12 },
+		{ "EACCES", 13 },
+		{ "EFAULT", 14 },
+		{ "ENOTBLK", 15 },
+		{ "EBUSY", 16 },
+		{ "EEXIST", 17 },
+		{ "EXDEV", 18 },
+		{ "ENODEV", 19 },
+		{ "ENOTDIR", 20 },
+		{ "EISDIR", 21 },
+		{ "EINVAL", 22 },
+		{ "ENFILE", 23 },
+		{ "EMFILE", 24 },
+		{ "ENOTTY", 25 },
+		{ "ETXTBSY", 26 },
+		{ "EFBIG", 27 },
+		{ "ENOSPC", 28 },
+		{ "ESPIPE", 29 },
+		{ "EROFS", 30 },
+		{ "EMLINK", 31 },
+		{ "EPIPE", 32 },
+		{ "EDOM", 33 },
+		{ "ERANGE", 34 }
 	}
 };
 
@@ -142,7 +107,7 @@ int sys_close_impl(void)
 	/* Get file descriptor table entry. */
 	fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 	if (!fd)
-		return -SIM_EBADF;
+		return -EBADF;
 
 	/* Close host file descriptor only if it is valid and not stdin/stdout/stderr. */
 	if (host_fd > 2)
@@ -187,7 +152,7 @@ int sys_read_impl(void)
 	/* Get file descriptor */
 	fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 	if (!fd)
-		return -SIM_EBADF;
+		return -EBADF;
 	host_fd = fd->host_fd;
 	syscall_debug("  host_fd=%d\n", host_fd);
 
@@ -255,7 +220,7 @@ int sys_write_impl(void)
 	int host_fd;
 	int err;
 
-	struct file_desc_t *fd;
+	struct file_desc_t *desc;
 	void *buf;
 
 	struct pollfd fds;
@@ -268,10 +233,10 @@ int sys_write_impl(void)
 		guest_fd, buf_ptr, count);
 
 	/* Get file descriptor */
-	fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
-	if (!fd)
-		return -SIM_EBADF;
-	host_fd = fd->host_fd;
+	desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
+	if (!desc)
+		return -EBADF;
+	host_fd = desc->host_fd;
 	syscall_debug("  host_fd=%d\n", host_fd);
 
 	/* Allocate buffer */
@@ -311,4 +276,213 @@ int sys_write_impl(void)
 	 * context wakes up after blocking call. */
 	free(buf);
 	return 0;
+}
+
+
+
+
+/*
+ * System call 'open' (code 5)
+ */
+
+static struct string_map_t sys_open_flags_map =
+{
+	16, {
+		{ "O_RDONLY",        00000000 },
+		{ "O_WRONLY",        00000001 },
+		{ "O_RDWR",          00000002 },
+		{ "O_CREAT",         00000100 },
+		{ "O_EXCL",          00000200 },
+		{ "O_NOCTTY",        00000400 },
+		{ "O_TRUNC",         00001000 },
+		{ "O_APPEND",        00002000 },
+		{ "O_NONBLOCK",      00004000 },
+		{ "O_SYNC",          00010000 },
+		{ "FASYNC",          00020000 },
+		{ "O_DIRECT",        00040000 },
+		{ "O_LARGEFILE",     00100000 },
+		{ "O_DIRECTORY",     00200000 },
+		{ "O_NOFOLLOW",      00400000 },
+		{ "O_NOATIME",       01000000 }
+	}
+};
+
+int sys_open_impl(void)
+{
+	unsigned int file_name_ptr;
+
+	int flags;
+	int mode;
+	int length;
+
+	char file_name[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+	char temp_path[MAX_PATH_SIZE];
+	char flags_str[MAX_STRING_SIZE];
+
+	int host_fd;
+	struct file_desc_t *desc;
+
+	/* Arguments */
+	file_name_ptr = isa_regs->ebx;
+	flags = isa_regs->ecx;
+	mode = isa_regs->edx;
+	length = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
+	if (length >= MAX_PATH_SIZE)
+		fatal("syscall open: maximum path length exceeded");
+	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
+	syscall_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
+		file_name, flags, mode);
+	syscall_debug("  fullpath='%s'\n", full_path);
+	map_flags(&sys_open_flags_map, flags, flags_str, sizeof flags_str);
+	syscall_debug("  flags=%s\n", flags_str);
+
+	/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
+	gk_libopencl_redirect(full_path, sizeof full_path);
+
+	/* Virtual files */
+	if (!strncmp(full_path, "/proc/", 6))
+	{
+		/* File /proc/self/maps */
+		if (!strcmp(full_path, "/proc/self/maps"))
+		{
+			/* Create temporary file and open it. */
+			ctx_gen_proc_self_maps(isa_ctx, temp_path);
+			host_fd = open(temp_path, flags, mode);
+			assert(host_fd > 0);
+
+			/* Add file descriptor table entry. */
+			desc = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_virtual, host_fd, temp_path, flags);
+			syscall_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
+				temp_path, desc->guest_fd, desc->host_fd);
+			return desc->guest_fd;
+		}
+
+		/* Unhandled virtual file. Let the application read the contents of the host
+		 * version of the file as if it was a regular file. */
+		syscall_debug("    warning: unhandled virtual file\n");
+	}
+
+	/* Regular file. */
+	host_fd = open(full_path, flags, mode);
+	if (host_fd == -1)
+		return -errno;
+
+	/* File opened, create a new file descriptor. */
+	desc = file_desc_table_entry_new(isa_ctx->file_desc_table,
+		file_desc_regular, host_fd, full_path, flags);
+	syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
+		desc->guest_fd, desc->host_fd);
+
+	/* Return guest descriptor index */
+	return desc->guest_fd;
+}
+
+
+
+/*
+ * System call 'fcntl64' (code 221)
+ */
+
+static struct string_map_t sys_fcntl_cmp_map =
+{
+	15, {
+		{ "F_DUPFD", 0 },
+		{ "F_GETFD", 1 },
+		{ "F_SETFD", 2 },
+		{ "F_GETFL", 3 },
+		{ "F_SETFL", 4 },
+		{ "F_GETLK", 5 },
+		{ "F_SETLK", 6 },
+		{ "F_SETLKW", 7 },
+		{ "F_SETOWN", 8 },
+		{ "F_GETOWN", 9 },
+		{ "F_SETSIG", 10 },
+		{ "F_GETSIG", 11 },
+		{ "F_GETLK64", 12 },
+		{ "F_SETLK64", 13 },
+		{ "F_SETLKW64", 14 }
+	}
+};
+
+int sys_fcntl64_impl(void)
+{
+	int guest_fd;
+	int cmd;
+	int err;
+
+	unsigned int arg;
+
+	char *cmd_name;
+	char flags_str[MAX_STRING_SIZE];
+
+	struct file_desc_t *desc;
+
+	/* Arguments */
+	guest_fd = isa_regs->ebx;
+	cmd = isa_regs->ecx;
+	arg = isa_regs->edx;
+	syscall_debug("  guest_fd=%d, cmd=%d, arg=0x%x\n",
+		guest_fd, cmd, arg);
+	cmd_name = map_value(&sys_fcntl_cmp_map, cmd);
+	syscall_debug("    cmd=%s\n", cmd_name);
+
+	/* Get file descriptor table entry */
+	desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
+	if (!desc)
+		return -EBADF;
+	if (desc->host_fd < 0)
+		fatal("%s: not supported for this type of file", __FUNCTION__);
+	syscall_debug("    host_fd=%d\n", desc->host_fd);
+
+	/* Process command */
+	switch (cmd)
+	{
+
+	/* F_GETFD */
+	case 1:
+		err = fcntl(desc->host_fd, F_GETFD);
+		if (err == -1)
+			err = -errno;
+		break;
+
+	/* F_SETFD */
+	case 2:
+		err = fcntl(desc->host_fd, F_SETFD, arg);
+		if (err == -1)
+			err = -errno;
+		break;
+
+	/* F_GETFL */
+	case 3:
+		err = fcntl(desc->host_fd, F_GETFL);
+		if (err == -1)
+			err = -errno;
+		else
+		{
+			map_flags(&sys_open_flags_map, err, flags_str, MAX_STRING_SIZE);
+			syscall_debug("    ret=%s\n", flags_str);
+		}
+		break;
+
+	/* F_SETFL */
+	case 4:
+		map_flags(&sys_open_flags_map, arg, flags_str, MAX_STRING_SIZE);
+		syscall_debug("    arg=%s\n", flags_str);
+		desc->flags = arg;
+
+		err = fcntl(desc->host_fd, F_SETFL, arg);
+		if (err == -1)
+			err = -errno;
+		break;
+
+	default:
+
+		err = 0;
+		fatal("%s: command %s not implemented",
+			__FUNCTION__, cmd_name);
+	}
+
+	/* Return */
+	return err;
 }
