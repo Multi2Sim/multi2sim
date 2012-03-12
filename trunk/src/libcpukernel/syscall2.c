@@ -21,6 +21,7 @@
 #include <utime.h>
 
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/times.h>
@@ -1548,6 +1549,255 @@ int sys_readlink_impl(void)
 
 
 /*
+ * System call 'mmap' (code 90)
+ */
+
+#define SYS_MMAP_BASE_ADDRESS  0xb7fb0000
+
+static struct string_map_t sys_mmap_prot_map =
+{
+	6, {
+		{ "PROT_READ",       0x1 },
+		{ "PROT_WRITE",      0x2 },
+		{ "PROT_EXEC",       0x4 },
+		{ "PROT_SEM",        0x8 },
+		{ "PROT_GROWSDOWN",  0x01000000 },
+		{ "PROT_GROWSUP",    0x02000000 }
+	}
+};
+
+static struct string_map_t sys_mmap_flags_map =
+{
+	11, {
+		{ "MAP_SHARED",      0x01 },
+		{ "MAP_PRIVATE",     0x02 },
+		{ "MAP_FIXED",       0x10 },
+		{ "MAP_ANONYMOUS",   0x20 },
+		{ "MAP_GROWSDOWN",   0x00100 },
+		{ "MAP_DENYWRITE",   0x00800 },
+		{ "MAP_EXECUTABLE",  0x01000 },
+		{ "MAP_LOCKED",      0x02000 },
+		{ "MAP_NORESERVE",   0x04000 },
+		{ "MAP_POPULATE",    0x08000 },
+		{ "MAP_NONBLOCK",    0x10000 }
+	}
+};
+
+static int sys_mmap(unsigned int addr, unsigned int len, int prot,
+	int flags, int guest_fd, int offset)
+{
+	unsigned int len_aligned;
+
+	int perm;
+	int host_fd;
+
+	struct file_desc_t *desc;
+
+	/* Check that protection flags match in guest and host */
+	assert(PROT_READ == 1);
+	assert(PROT_WRITE == 2);
+	assert(PROT_EXEC == 4);
+
+	/* Check that mapping flags match */
+	assert(MAP_SHARED == 0x01);
+	assert(MAP_PRIVATE == 0x02);
+	assert(MAP_FIXED == 0x10);
+	assert(MAP_ANONYMOUS == 0x20);
+
+	/* Translate file descriptor */
+	desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
+	host_fd = desc ? desc->host_fd : -1;
+	if (guest_fd > 0 && host_fd < 0)
+		fatal("%s: invalid guest descriptor", __FUNCTION__);
+
+	/* Permissions */
+	perm = mem_access_init;
+	perm |= prot & PROT_READ ? mem_access_read : 0;
+	perm |= prot & PROT_WRITE ? mem_access_write : 0;
+	perm |= prot & PROT_EXEC ? mem_access_exec : 0;
+
+	/* Flag MAP_ANONYMOUS.
+	 * If it is set, the 'fd' parameter is ignored. */
+	if (flags & MAP_ANONYMOUS)
+		host_fd = -1;
+
+	/* 'addr' and 'offset' must be aligned to page size boundaries.
+	 * 'len' is rounded up to page boundary. */
+	if (offset & ~MEM_PAGE_MASK)
+		fatal("%s: unaligned offset", __FUNCTION__);
+	if (addr & ~MEM_PAGE_MASK)
+		fatal("%s: unaligned address", __FUNCTION__);
+	len_aligned = ROUND_UP(len, MEM_PAGE_SIZE);
+
+	/* Find region for allocation */
+	if (flags & MAP_FIXED)
+	{
+		/* If MAP_FIXED is set, the 'addr' parameter must be obeyed, and is not just a
+		 * hint for a possible base address of the allocated range. */
+		if (!addr)
+			fatal("%s: no start specified for fixed mapping", __FUNCTION__);
+
+		/* Any allocated page in the range specified by 'addr' and 'len'
+		 * must be discarded. */
+		mem_unmap(isa_mem, addr, len_aligned);
+	}
+	else
+	{
+		if (!addr || mem_map_space_down(isa_mem, addr, len_aligned) != addr)
+			addr = SYS_MMAP_BASE_ADDRESS;
+		addr = mem_map_space_down(isa_mem, addr, len_aligned);
+		if (addr == -1)
+			fatal("%s: out of guest memory", __FUNCTION__);
+	}
+
+	/* Allocation of memory */
+	mem_map(isa_mem, addr, len_aligned, perm);
+
+	/* Host mapping */
+	if (host_fd >= 0)
+	{
+		char buf[MEM_PAGE_SIZE];
+
+		unsigned int last_pos;
+		unsigned int curr_addr;
+
+		int size;
+		int count;
+
+		/* Save previous position */
+		last_pos = lseek(host_fd, 0, SEEK_CUR);
+		lseek(host_fd, offset, SEEK_SET);
+
+		/* Read pages */
+		assert(len_aligned % MEM_PAGE_SIZE == 0);
+		assert(addr % MEM_PAGE_SIZE == 0);
+		curr_addr = addr;
+		for (size = len_aligned; size > 0; size -= MEM_PAGE_SIZE)
+		{
+			memset(buf, 0, MEM_PAGE_SIZE);
+			count = read(host_fd, buf, MEM_PAGE_SIZE);
+			if (count)
+				mem_access(isa_mem, curr_addr, MEM_PAGE_SIZE, buf, mem_access_init);
+			curr_addr += MEM_PAGE_SIZE;
+		}
+
+		/* Return file to last position */
+		lseek(host_fd, last_pos, SEEK_SET);
+	}
+
+	/* Return mapped address */
+	return addr;
+}
+
+int sys_mmap_impl(void)
+{
+	unsigned int args_ptr;
+	unsigned int addr;
+	unsigned int len;
+
+	int prot;
+	int flags;
+	int offset;
+	int guest_fd;
+
+	char prot_str[MAX_STRING_SIZE];
+	char flags_str[MAX_STRING_SIZE];
+
+	/* This system call takes the arguments from memory, at the address
+	 * pointed by 'ebx'. */
+	args_ptr = isa_regs->ebx;
+	mem_read(isa_mem, args_ptr, 4, &addr);
+	mem_read(isa_mem, args_ptr + 4, 4, &len);
+	mem_read(isa_mem, args_ptr + 8, 4, &prot);
+	mem_read(isa_mem, args_ptr + 12, 4, &flags);
+	mem_read(isa_mem, args_ptr + 16, 4, &guest_fd);
+	mem_read(isa_mem, args_ptr + 20, 4, &offset);
+
+	syscall_debug("  args_ptr=0x%x\n", args_ptr);
+	syscall_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
+		"guest_fd=%d, offset=0x%x\n",
+		addr, len, prot, flags, guest_fd, offset);
+	map_flags(&sys_mmap_prot_map, prot, prot_str, sizeof prot_str);
+	map_flags(&sys_mmap_flags_map, flags, flags_str, sizeof flags_str);
+	syscall_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
+
+	/* Call */
+	return sys_mmap(addr, len, prot, flags, guest_fd, offset);
+}
+
+
+
+
+/*
+ * System call 'mremap' (code 163)
+ */
+
+int sys_mremap_impl(void)
+{
+	unsigned int addr;
+	unsigned int old_len;
+	unsigned int new_len;
+	unsigned int new_addr;
+
+	int flags;
+
+	/* Arguments */
+	addr = isa_regs->ebx;
+	old_len = isa_regs->ecx;
+	new_len = isa_regs->edx;
+	flags = isa_regs->esi;
+	syscall_debug("  addr=0x%x, old_len=0x%x, new_len=0x%x flags=0x%x\n",
+		addr, old_len, new_len, flags);
+
+	/* Restrictions */
+	assert(!(addr & (MEM_PAGE_SIZE-1)));
+	assert(!(old_len & (MEM_PAGE_SIZE-1)));
+	assert(!(new_len & (MEM_PAGE_SIZE-1)));
+	if (!(flags & 0x1))
+		fatal("%s: flags MAP_MAYMOVE must be present", __FUNCTION__);
+	if (!old_len || !new_len)
+		fatal("%s: old_len or new_len cannot be zero", __FUNCTION__);
+
+	/* New size equals to old size means no action. */
+	if (new_len == old_len)
+		return addr;
+
+	/* Shrink region. This is always possible. */
+	if (new_len < old_len)
+	{
+		mem_unmap(isa_mem, addr + new_len, old_len - new_len);
+		return addr;
+	}
+
+	/* Increase region at the same address. This is only possible if
+	 * there is enough free space for the new region. */
+	if (new_len > old_len && mem_map_space(isa_mem, addr + old_len,
+		new_len - old_len) == addr + old_len)
+	{
+		mem_map(isa_mem, addr + old_len, new_len - old_len,
+			mem_access_read | mem_access_write);
+		return addr;
+	}
+
+	/* A new region must be found for the new size. */
+	new_addr = mem_map_space_down(isa_mem, SYS_MMAP_BASE_ADDRESS, new_len);
+	if (new_addr == -1)
+		fatal("%s: out of guest memory", __FUNCTION__);
+
+	/* Map new region and copy old one */
+	mem_map(isa_mem, new_addr, new_len,
+		mem_access_read | mem_access_write);
+	mem_copy(isa_mem, new_addr, addr, MIN(old_len, new_len));
+	mem_unmap(isa_mem, addr, old_len);
+
+	/* Return new address */
+	return new_addr;
+}
+
+
+
+
+/*
  * System call 'getrlimit' (code 191)
  */
 
@@ -1602,6 +1852,46 @@ int sys_getrlimit_impl(void)
 
 	/* Return */
 	return 0;
+}
+
+
+
+
+/*
+ * System call 'mmap2' (code 192)
+ */
+
+int sys_mmap2_impl(void)
+{
+	unsigned int addr;
+	unsigned int len;
+
+	int prot;
+	int flags;
+	int offset;
+	int guest_fd;
+
+	char prot_str[MAX_STRING_SIZE];
+	char flags_str[MAX_STRING_SIZE];
+
+	/* Arguments */
+	addr = isa_regs->ebx;
+	len = isa_regs->ecx;
+	prot = isa_regs->edx;
+	flags = isa_regs->esi;
+	guest_fd = isa_regs->edi;
+	offset = isa_regs->ebp;
+
+	/* Debug */
+	syscall_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, guest_fd=%d, offset=0x%x\n",
+		addr, len, prot, flags, guest_fd, offset);
+	map_flags(&sys_mmap_prot_map, prot, prot_str, MAX_STRING_SIZE);
+	map_flags(&sys_mmap_flags_map, flags, flags_str, MAX_STRING_SIZE);
+	syscall_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
+
+	/* System calls 'mmap' and 'mmap2' only differ in the interpretation of
+	 * argument 'offset'. Here, it is given in memory pages. */
+	return sys_mmap(addr, len, prot, flags, guest_fd, offset << MEM_PAGE_SHIFT);
 }
 
 
