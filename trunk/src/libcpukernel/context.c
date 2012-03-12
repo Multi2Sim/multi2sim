@@ -112,7 +112,7 @@ struct ctx_t *ctx_create(void)
 
 	/* Signal handlers and file descriptor table */
 	ctx->signal_handler_table = signal_handler_table_create();
-	ctx->fdt = fdt_create();
+	ctx->file_desc_table = file_desc_table_create();
 	
 	return ctx;
 }
@@ -140,7 +140,7 @@ struct ctx_t *ctx_clone(struct ctx_t *ctx)
 
 	/* Signal handlers and file descriptor table */
 	new->signal_handler_table = signal_handler_table_link(ctx->signal_handler_table);
-	new->fdt = fdt_link(ctx->fdt);
+	new->file_desc_table = file_desc_table_link(ctx->file_desc_table);
 
 	/* Libc segment */
 	new->glibc_segment_base = ctx->glibc_segment_base;
@@ -175,7 +175,7 @@ struct ctx_t *ctx_fork(struct ctx_t *ctx)
 
 	/* Signal handlers and file descriptor table */
 	new->signal_handler_table = signal_handler_table_create();
-	new->fdt = fdt_create();
+	new->file_desc_table = file_desc_table_create();
 
 	/* Libc segment */
 	new->glibc_segment_base = ctx->glibc_segment_base;
@@ -214,7 +214,7 @@ void ctx_free(struct ctx_t *ctx)
 	/* Unlink shared structures */
 	ld_unlink(ctx->loader);
 	signal_handler_table_unlink(ctx->signal_handler_table);
-	fdt_unlink(ctx->fdt);
+	file_desc_table_unlink(ctx->file_desc_table);
 	mem_unlink(ctx->mem);
 
 	/* Warn about unresolved attempts to access OpenCL library */

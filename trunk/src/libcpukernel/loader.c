@@ -505,7 +505,7 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 {
 	struct loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
-	struct fdt_t *fdt = ctx->fdt;
+	struct file_desc_table_t *fdt = ctx->file_desc_table;
 
 	char stdin_file_full_path[MAX_STRING_SIZE];
 	char stdout_file_full_path[MAX_STRING_SIZE];
@@ -515,8 +515,8 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 	ld_get_full_path(ctx, ld->stdin_file, stdin_file_full_path, MAX_STRING_SIZE);
 	if (*stdin_file_full_path)
 	{
-		struct fd_t *fd;
-		fd = fdt_entry_get(fdt, 0);
+		struct file_desc_t *fd;
+		fd = file_desc_table_entry_get(fdt, 0);
 		assert(fd);
 		fd->host_fd = open(stdin_file_full_path, O_RDONLY);
 		if (fd->host_fd < 0)
@@ -528,9 +528,9 @@ void ld_load_exe(struct ctx_t *ctx, char *exe)
 	ld_get_full_path(ctx, ld->stdout_file, stdout_file_full_path, MAX_STRING_SIZE);
 	if (*stdout_file_full_path)
 	{
-		struct fd_t *fd1, *fd2;
-		fd1 = fdt_entry_get(fdt, 1);
-		fd2 = fdt_entry_get(fdt, 2);
+		struct file_desc_t *fd1, *fd2;
+		fd1 = file_desc_table_entry_get(fdt, 1);
+		fd2 = file_desc_table_entry_get(fdt, 2);
 		assert(fd1 && fd2);
 		fd1->host_fd = fd2->host_fd = open(stdout_file_full_path,
 			O_CREAT | O_APPEND | O_TRUNC | O_WRONLY, 0660);
