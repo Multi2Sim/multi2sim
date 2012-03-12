@@ -338,11 +338,8 @@ void x86_disasm_init()
 	struct x86_opcode_info_t *info;
 	int i;
 
-	/* Assertions on type sizes */
-	assert(sizeof(short int) == 2);
-	assert(sizeof(int) == 4);
-	assert(sizeof(long long int) == 8);
-	assert(sizeof(union x86_xmm_reg_t) == 16);
+	/* Host restrictions */
+	M2S_HOST_GUEST_MATCH(sizeof(union x86_xmm_reg_t), 16);
 
 	/* Initialize table of prefixes */
 	for (i = 0; i < sizeof(x86_prefixes); i++)

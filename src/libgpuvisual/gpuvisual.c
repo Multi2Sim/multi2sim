@@ -409,12 +409,12 @@ void vgpu_run(char *file_name)
 	char *img_folder = "images";
 
 	/* Search for distribution files */
-	search_dist_file("cf_engine.png", img_folder, img_folder, block_dia_cf_engine_image_path, MAX_STRING_SIZE);
-	search_dist_file("alu_engine.png", img_folder, img_folder, block_dia_alu_engine_image_path, MAX_STRING_SIZE);
-	search_dist_file("tex_engine.png", img_folder, img_folder, block_dia_tex_engine_image_path, MAX_STRING_SIZE);
-	search_dist_file("m2s_icon.png", img_folder, img_folder, m2s_icon_path, MAX_STRING_SIZE);
-	search_dist_file("close.png", img_folder, img_folder, img_close_path, sizeof img_close_path);
-	search_dist_file("close-sel.png", img_folder, img_folder, img_close_sel_path, sizeof img_close_sel_path);
+	m2s_dist_file("cf_engine.png", img_folder, img_folder, block_dia_cf_engine_image_path, MAX_STRING_SIZE);
+	m2s_dist_file("alu_engine.png", img_folder, img_folder, block_dia_alu_engine_image_path, MAX_STRING_SIZE);
+	m2s_dist_file("tex_engine.png", img_folder, img_folder, block_dia_tex_engine_image_path, MAX_STRING_SIZE);
+	m2s_dist_file("m2s_icon.png", img_folder, img_folder, m2s_icon_path, MAX_STRING_SIZE);
+	m2s_dist_file("close.png", img_folder, img_folder, img_close_path, sizeof img_close_path);
+	m2s_dist_file("close-sel.png", img_folder, img_folder, img_close_sel_path, sizeof img_close_sel_path);
 
 	/* Load configuration */
 	vgpu_config_load();

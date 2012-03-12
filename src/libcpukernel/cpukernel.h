@@ -47,9 +47,9 @@
  * Global variables
  */
 
-extern uint64_t ke_max_cycles;
-extern uint64_t ke_max_inst;
-extern uint64_t ke_max_time;
+extern long long ke_max_cycles;
+extern long long ke_max_inst;
+extern long long ke_max_time;
 
 extern enum cpu_sim_kind_t
 {
@@ -755,18 +755,21 @@ void isa_inst_stat_reset(void);
  * System calls
  */
 
-#define syscall_debug(...) debug(syscall_debug_category, __VA_ARGS__)
-extern int syscall_debug_category;
+#define sys_debug(...) debug(sys_debug_category, __VA_ARGS__)
+extern int sys_debug_category;
 
 /* FIXME - remove from here - move to 'syscall.c' when ready */
 #define DEFSYSCALL(name,code) int sys_##name##_impl(void);
 #include "syscall.dat"
 #undef DEFSYSCALL
 
+void sys_init(void);
+void sys_done(void);
+
 void syscall_do(void);
 void syscall_summary(void);
 
-void syscall_debug_string(char *text, char *s, int len, int force);
+void sys_debug_string(char *text, char *s, int len, int force);
 
 
 
@@ -924,14 +927,14 @@ struct ctx_t
 	int str_op_count;  /* Number of iterations in string operation */
 
 	/* Allocation to hardware threads */
-	uint64_t alloc_when;  /* esim_cycle of allocation */
-	uint64_t dealloc_when;  /* esim_cycle of deallocation */
+	long long alloc_when;  /* esim_cycle of allocation */
+	long long dealloc_when;  /* esim_cycle of deallocation */
 	int alloc_core, alloc_thread;  /* core/thread id of last allocation */
 	int dealloc_signal;  /* signal to deallocate context */
 
 	/* For segmented memory access in glibc */
-	uint32_t glibc_segment_base;
-	uint32_t glibc_segment_limit;
+	unsigned int glibc_segment_base;
+	unsigned int glibc_segment_limit;
 
 	/* For the OpenCL library access */
 	int libopencl_open_attempt;
@@ -947,7 +950,7 @@ struct ctx_t
 	/* Host thread that lets time elapse and schedules call to 'ke_process_events'. */
 	pthread_t host_thread_timer;  /* Thread */
 	int host_thread_timer_active;  /* Thread-spawned flag */
-	uint64_t host_thread_timer_wakeup;  /* Time when the thread will wake up */
+	long long host_thread_timer_wakeup;  /* Time when the thread will wake up */
 
 	/* Three timers used by 'setitimer' system call - real, virtual, and prof. */
 	uint64_t itimer_value[3];  /* Time when current occurrence of timer expires (0=inactive) */

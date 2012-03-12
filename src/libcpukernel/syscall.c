@@ -38,7 +38,7 @@
 #include <linux/unistd.h>
 
 
-int syscall_debug_category;
+int sys_debug_category;
 
 static char *syscall_name[] = {
 #define DEFSYSCALL(name,code) #name,
@@ -59,11 +59,11 @@ static uint64_t syscall_freq[syscall_code_count + 1];
 
 /* Print a string in debug output.
  * If 'force' is set, keep printing after \0 is found. */
-void syscall_debug_string(char *text, char *s, int len, int force)
+void sys_debug_string(char *text, char *s, int len, int force)
 {
 	char buf[200], *bufptr;
 	int trunc = 0;
-	if (!debug_status(syscall_debug_category))
+	if (!debug_status(sys_debug_category))
 		return;
 
 	memset(buf, 0, 200);
@@ -97,7 +97,7 @@ void syscall_debug_string(char *text, char *s, int len, int force)
 		s++;
 		len--;
 	}
-	syscall_debug("%s=%s\n", text, buf);
+	sys_debug("%s=%s\n", text, buf);
 }
 
 
@@ -181,80 +181,6 @@ static const uint32_t clone_supported_flags =
 	SIM_CLONE_CHILD_SETTID;
 
 
-/* For 'socketcall' */
-
-struct string_map_t socketcall_call_map =
-{
-	17, {
-		{ "SYS_SOCKET",		1 },
-		{ "SYS_BIND",		2 },
-		{ "SYS_CONNECT",	3 },
-		{ "SYS_LISTEN",		4 },
-		{ "SYS_ACCEPT",		5 },
-		{ "SYS_GETSOCKNAME",	6 },
-		{ "SYS_GETPEERNAME",	7 },
-		{ "SYS_SOCKETPAIR",	8 },
-		{ "SYS_SEND",		9 },
-		{ "SYS_RECV",		10 },
-		{ "SYS_SENDTO",		11 },
-		{ "SYS_RECVFROM",	12 },
-		{ "SYS_SHUTDOWN",	13 },
-		{ "SYS_SETSOCKOPT",	14 },
-		{ "SYS_GETSOCKOPT",	15 },
-		{ "SYS_SENDMSG",	16 },
-		{ "SYS_RECVMSG",	17 }
-	}
-};
-
-struct string_map_t socket_family_map =
-{
-	29, {
-		{ "PF_UNSPEC",		0 },
-		{ "PF_UNIX",		1 },
-		{ "PF_INET",		2 },
-		{ "PF_AX25",		3 },
-		{ "PF_IPX",		4 },
-		{ "PF_APPLETALK",	5 },
-		{ "PF_NETROM",		6 },
-		{ "PF_BRIDGE",		7 },
-		{ "PF_ATMPVC",		8 },
-		{ "PF_X25",		9 },
-		{ "PF_INET6",		10 },
-		{ "PF_ROSE",		11 },
-		{ "PF_DECnet",		12 },
-		{ "PF_NETBEUI",		13 },
-		{ "PF_SECURITY",	14 },
-		{ "PF_KEY",		15 },
-		{ "PF_NETLINK",		16 },
-		{ "PF_PACKET",		17 },
-		{ "PF_ASH",		18 },
-		{ "PF_ECONET",		19 },
-		{ "PF_ATMSVC",		20 },
-		{ "PF_SNA",		22 },
-		{ "PF_IRDA",		23 },
-		{ "PF_PPPOX",		24 },
-		{ "PF_WANPIPE",		25 },
-		{ "PF_LLC",		26 },
-		{ "PF_TIPC",		30 },
-		{ "PF_BLUETOOTH",	31 },
-		{ "PF_IUCV",		32 }
-	}
-};
-
-struct string_map_t socket_type_map =
-{
-	7, {
-		{ "SOCK_STREAM",	1 },
-		{ "SOCK_DGRAM",		2 },
-		{ "SOCK_RAW",		3 },
-		{ "SOCK_RDM",		4 },
-		{ "SOCK_SEQPACKET",	5 },
-		{ "SOCK_DCCP",		6 },
-		{ "SOCK_PACKET",	10 }
-	}
-};
-
-
 /* For fstat64, lstat64 */
 
 struct sim_stat64
@@ -297,12 +223,12 @@ static void syscall_copy_stat64(struct sim_stat64 *sim, struct stat *real)
 	sim->mtime = real->st_mtime;
 	sim->ctime = real->st_ctime;
 	sim->ino = real->st_ino;
-	syscall_debug("  stat64 structure:\n");
-	syscall_debug("    dev=%lld, ino=%d, mode=%d, nlink=%d\n",
+	sys_debug("  stat64 structure:\n");
+	sys_debug("    dev=%lld, ino=%d, mode=%d, nlink=%d\n",
 		(long long) sim->dev, (int) sim->ino, (int) sim->mode, (int) sim->nlink);
-	syscall_debug("    uid=%d, gid=%d, rdev=%lld\n",
+	sys_debug("    uid=%d, gid=%d, rdev=%lld\n",
 		(int) sim->uid, (int) sim->gid, (long long) sim->rdev);
-	syscall_debug("    size=%lld, blksize=%d, blocks=%lld\n",
+	sys_debug("    size=%lld, blksize=%d, blocks=%lld\n",
 		(long long) sim->size, (int) sim->blksize, (long long) sim->blocks);
 }
 
@@ -332,15 +258,15 @@ struct sim_itimerval
 
 void sim_timeval_debug(struct sim_timeval *sim_timeval)
 {
-	syscall_debug("    tv_sec=%u, tv_usec=%u\n",
+	sys_debug("    tv_sec=%u, tv_usec=%u\n",
 		sim_timeval->tv_sec, sim_timeval->tv_usec);
 }
 
 void sim_itimerval_debug(struct sim_itimerval *sim_itimerval)
 {
-	syscall_debug("    it_interval: tv_sec=%u, tv_usec=%u\n",
+	sys_debug("    it_interval: tv_sec=%u, tv_usec=%u\n",
 		sim_itimerval->it_interval.tv_sec, sim_itimerval->it_interval.tv_usec);
-	syscall_debug("    it_value: tv_sec=%u, tv_usec=%u\n",
+	sys_debug("    it_value: tv_sec=%u, tv_usec=%u\n",
 		sim_itimerval->it_value.tv_sec, sim_itimerval->it_value.tv_usec);
 }
 
@@ -430,21 +356,21 @@ void sim_fd_set_dump(char *fd_set_name, fd_set *fds, int n)
 	/* Set empty */
 	if (!n || !fds)
 	{
-		syscall_debug("    %s={}\n", fd_set_name);
+		sys_debug("    %s={}\n", fd_set_name);
 		return;
 	}
 
 	/* Dump set */
-	syscall_debug("    %s={", fd_set_name);
+	sys_debug("    %s={", fd_set_name);
 	comma = "";
 	for (i = 0; i < n; i++)
 	{
 		if (!FD_ISSET(i, fds))
 			continue;
-		syscall_debug("%s%d", comma, i);
+		sys_debug("%s%d", comma, i);
 		comma = ",";
 	}
-	syscall_debug("}\n");
+	sys_debug("}\n");
 }
 
 /* Read bitmap of 'guest_fd's from guest memory, and store it into
@@ -546,12 +472,12 @@ struct sysctl_args_t
 void syscall_summary()
 {
 	int i;
-	syscall_debug("\nSystem calls summary:\n");
+	sys_debug("\nSystem calls summary:\n");
 	for (i = 1; i < 325; i++)
 	{
 		if (!syscall_freq[i])
 			continue;
-		syscall_debug("%s  %lld\n", syscall_name[i],
+		sys_debug("%s  %lld\n", syscall_name[i],
 			(long long) syscall_freq[i]);
 	}
 }
@@ -579,7 +505,7 @@ void syscall_do()
 	int retval = 0;
 
 	/* Debug */
-	syscall_debug("syscall '%s' (code %d, inst %lld, pid %d)\n",
+	sys_debug("syscall '%s' (code %d, inst %lld, pid %d)\n",
 		syscode < syscall_code_count ? syscall_name[syscode] : "",
 		syscode, (long long) isa_inst_count, isa_ctx->pid);
 	if (syscode < syscall_code_count)
@@ -824,17 +750,7 @@ void syscall_do()
 	/* 91 */
 	case syscall_code_munmap:
 	{
-		uint32_t addr, size;
-		uint32_t size_align;
-
-		addr = isa_regs->ebx;
-		size = isa_regs->ecx;
-		syscall_debug("  addr=0x%x, size=0x%x\n", addr, size);
-		if (addr & (MEM_PAGE_SIZE - 1))
-			fatal("munmap: size is not a multiple of page size");
-
-		size_align = ROUND_UP(size, MEM_PAGE_SIZE);
-		mem_unmap(isa_mem, addr, size_align);
+		retval = sys_munmap_impl();
 		break;
 	}
 
@@ -842,16 +758,7 @@ void syscall_do()
 	/* 94 */
 	case syscall_code_fchmod:
 	{
-		uint32_t fd, host_fd, mode;
-
-		fd = isa_regs->ebx;
-		mode = isa_regs->ecx;
-		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		syscall_debug("  fd=%d, mode=%d\n",
-			fd, mode);
-		syscall_debug("  host_fd=%d\n", host_fd);
-
-		RETVAL(fchmod(host_fd, mode));
+		retval = sys_fchmod_impl();
 		break;
 	}
 
@@ -859,142 +766,7 @@ void syscall_do()
 	/* 102 */
 	case syscall_code_socketcall:
 	{
-		int call;
-		uint32_t args;
-		char *call_name;
-
-		call = isa_regs->ebx;
-		args = isa_regs->ecx;
-		call_name = map_value(&socketcall_call_map, call);
-		syscall_debug("  call=%d (%s)\n", call, call_name);
-		syscall_debug("  args=0x%x\n", args);
-		
-		/* Process call */
-		if (call == 1) {  /* SYS_SOCKET */
-			
-			uint32_t family, type, protocol;
-			char *family_name, *type_name;
-			int host_fd;
-			struct file_desc_t *fd;
-
-			/* Read parameters */
-			mem_read(isa_mem, args, 4, &family);
-			mem_read(isa_mem, args + 4, 4, &type);
-			mem_read(isa_mem, args + 8, 4, &protocol);
-			family_name = map_value(&socket_family_map, family);
-			type_name = map_value(&socket_type_map, type & 0xff);
-			syscall_debug("  family=0x%x, type=0x%x, protocol=0x%x\n",
-				family, type, protocol);
-			syscall_debug("    family=%s\n", family_name);
-			syscall_debug("    type=%s", type_name);
-			if (type & 0x80000)  /* SOCK_CLOEXEC */
-				syscall_debug("|SOCK_CLOEXEC");
-			if (type & 0x800)  /* SOCK_NONBLOCK */
-				syscall_debug("|SOCK_NONBLOCK");
-			syscall_debug("\n");
-
-			/* Allow only sockets of type SOCK_STREAM */
-			if ((type & 0xff) != 1)
-				fatal("syscall 'socketcall': SYS_SOCKET: only sockets of type SOCK_STREAM allowed");
-
-			/* Create socket */
-			host_fd = socket(family, type, protocol);
-			if (host_fd < 0) {
-				retval = -errno;
-				break;
-			}
-
-			/* Create new file descriptor table entry. */
-			fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_socket, host_fd, "", O_RDWR);
-			syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
-				fd->guest_fd, fd->host_fd);
-			retval = fd->guest_fd;
-			break;
-
-		} else if (call == 3) {  /* SYS_CONNECT */
-
-			uint32_t guest_fd, paddr, addrlen;
-			struct file_desc_t *fd;
-			char buf[MAX_STRING_SIZE];
-			struct sockaddr *addr;
-			
-			mem_read(isa_mem, args, 4, &guest_fd);
-			mem_read(isa_mem, args + 4, 4, &paddr);
-			mem_read(isa_mem, args + 8, 4, &addrlen);
-			syscall_debug("  guest_fd=%d, paddr=0x%x, addrlen=%d\n",
-				guest_fd, paddr, addrlen);
-
-			/* Get sockaddr structure - read family and data */
-			if (addrlen > MAX_STRING_SIZE)
-				fatal("syscall 'socketcall': SYS_CONNECT: maximum string size exceeded");
-			addr = (struct sockaddr *) &buf[0];
-			assert(sizeof(addr->sa_family) == 2);
-			assert((void *) &addr->sa_data - (void *) &addr->sa_family == 2);
-			mem_read(isa_mem, paddr, addrlen, addr);
-			syscall_debug("    sockaddr.family=%s\n", map_value(&socket_family_map, addr->sa_family));
-			syscall_debug_string("    sockaddr.data", addr->sa_data, addrlen - 2, 1);
-
-			/* Get file descriptor */
-			fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
-			if (!fd) {
-				retval = -EBADF;
-				break;
-			}
-			if (fd->kind != file_desc_socket)
-				fatal("  syscall 'socketcall': SYS_CONNECT: file descriptor is not a socket");
-			syscall_debug("    host_fd=%d\n", fd->host_fd);
-
-			/* Connect socket */
-			RETVAL(connect(fd->host_fd, addr, addrlen));
-			break;
-
-		} else if (call == 7) {  /* SYS_GETPEERNAME */
-			
-			uint32_t guest_fd, paddr, paddrlen, addrlen;
-			struct file_desc_t *fd;
-			struct sockaddr *addr;
-			socklen_t host_addrlen;
-
-			mem_read(isa_mem, args, 4, &guest_fd);
-			mem_read(isa_mem, args + 4, 4, &paddr);
-			mem_read(isa_mem, args + 8, 4, &paddrlen);
-			syscall_debug("  guest_fd=%d, paddr=0x%x, paddrlen=0x%x\n",
-				guest_fd, paddr, paddrlen);
-
-			/* Get file descriptor */
-			fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
-			if (!fd) {
-				retval = -EBADF;
-				break;
-			}
-			
-			/* Read current buffer size and allocate buffer. */
-			mem_read(isa_mem, paddrlen, 4, &addrlen);
-			syscall_debug("    addrlen=%d\n", addrlen);
-			host_addrlen = addrlen;
-			addr = malloc(addrlen);
-
-			/* Get peer name */
-			RETVAL(getpeername(fd->host_fd, addr, &host_addrlen));
-			if (retval < 0) {
-				free(addr);
-				break;
-			}
-			addrlen = host_addrlen;
-			syscall_debug("  result:\n");
-			syscall_debug("    addrlen=%d\n", host_addrlen);
-			syscall_debug_string("    sockaddr.data", addr->sa_data, addrlen - 2, 1);
-
-			/* Copy result to guest memory */
-			mem_write(isa_mem, paddrlen, 4, &addrlen);
-			mem_write(isa_mem, paddr, addrlen, addr);
-			free(addr);
-			break;
-
-		} else
-			fatal("syscall 'socketcall': call '%s' not implemented",
-				call_name);
-
+		retval = sys_socketcall_impl();
 		break;
 	}
 
@@ -1009,13 +781,13 @@ void syscall_do()
 		which = isa_regs->ebx;
 		pvalue = isa_regs->ecx;
 		povalue = isa_regs->edx;
-		syscall_debug("  which=%d (%s), pvalue=0x%x, povalue=0x%x\n",
+		sys_debug("  which=%d (%s), pvalue=0x%x, povalue=0x%x\n",
 			which, map_value(&itimer_map, which), pvalue, povalue);
 
 		/* Read value */
 		if (pvalue) {
 			mem_read(isa_mem, pvalue, sizeof(itimerval), &itimerval);
-			syscall_debug("  itimerval at 'pvalue':\n");
+			sys_debug("  itimerval at 'pvalue':\n");
 			sim_itimerval_debug(&itimerval);
 		}
 
@@ -1047,7 +819,7 @@ void syscall_do()
 
 		which = isa_regs->ebx;
 		pvalue = isa_regs->ecx;
-		syscall_debug("  which=%d (%s), pvalue=0x%x\n",
+		sys_debug("  which=%d (%s), pvalue=0x%x\n",
 			which, map_value(&itimer_map, which), pvalue);
 
 		/* Check range of 'which' */
@@ -1100,7 +872,7 @@ void syscall_do()
 		child_tid_ptr = isa_regs->edi;
 
 		/* Debug */
-		syscall_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
+		sys_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
 			flags, new_esp, parent_tid_ptr, child_tid_ptr);
 
 		/* Exit signal is specified in the lower byte of 'flags' */
@@ -1109,8 +881,8 @@ void syscall_do()
 
 		/* Debug */
 		map_flags(&clone_flags_map, flags, flags_str, MAX_STRING_SIZE);
-		syscall_debug("  flags=%s\n", flags_str);
-		syscall_debug("  exit_signal=%d (%s)\n", exit_signal, sim_signal_name(exit_signal));
+		sys_debug("  flags=%s\n", flags_str);
+		sys_debug("  exit_signal=%d (%s)\n", exit_signal, sim_signal_name(exit_signal));
 
 		/* New stack pointer defaults to current */
 		if (!new_esp)
@@ -1180,14 +952,14 @@ void syscall_do()
 			uint32_t puinfo;
 
 			puinfo = isa_regs->esi;
-			syscall_debug("  puinfo=0x%x\n", puinfo);
+			sys_debug("  puinfo=0x%x\n", puinfo);
 
 			mem_read(isa_mem, puinfo, sizeof(struct sim_user_desc), &uinfo);
-			syscall_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
+			sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
 					uinfo.entry_number, uinfo.base_addr, uinfo.limit);
-			syscall_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
+			sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
 					uinfo.seg_32bit, uinfo.contents, uinfo.read_exec_only);
-			syscall_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
+			sys_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
 					uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
 			if (!uinfo.seg_32bit)
 				fatal("syscall set_thread_area: only 32-bit segments supported");
@@ -1209,7 +981,7 @@ void syscall_do()
 
 		/* Return PID of the new context */
 		retval = new_ctx->pid;
-		syscall_debug("  context %d created with pid %d\n",
+		sys_debug("  context %d created with pid %d\n",
 			new_ctx->pid, retval);
 		break;
 	}
@@ -1221,10 +993,10 @@ void syscall_do()
 		uint32_t putsname;
 
 		putsname = isa_regs->ebx;
-		syscall_debug("  putsname=0x%x\n", putsname);
-		syscall_debug("  sysname='%s', nodename='%s'\n", sim_utsname.sysname, sim_utsname.nodename);
-		syscall_debug("  relaese='%s', version='%s'\n", sim_utsname.release, sim_utsname.version);
-		syscall_debug("  machine='%s', domainname='%s'\n", sim_utsname.machine, sim_utsname.domainname);
+		sys_debug("  putsname=0x%x\n", putsname);
+		sys_debug("  sysname='%s', nodename='%s'\n", sim_utsname.sysname, sim_utsname.nodename);
+		sys_debug("  relaese='%s', version='%s'\n", sim_utsname.release, sim_utsname.version);
+		sys_debug("  machine='%s', domainname='%s'\n", sim_utsname.machine, sim_utsname.domainname);
 		
 		mem_write(isa_mem, putsname, sizeof(sim_utsname), &sim_utsname);
 		break;
@@ -1240,7 +1012,7 @@ void syscall_do()
 		start = isa_regs->ebx;
 		len = isa_regs->ecx;
 		prot = isa_regs->edx;
-		syscall_debug("  start=0x%x, len=0x%x, prot=0x%x\n",
+		sys_debug("  start=0x%x, len=0x%x, prot=0x%x\n",
 			start, len, prot);
 
 		/* Permissions */
@@ -1266,10 +1038,10 @@ void syscall_do()
 		presult = isa_regs->esi;
 		origin = isa_regs->edi;
 		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		syscall_debug("  fd=%d, offset_high=0x%x, offset_low=0x%x, presult=0x%x, origin=0x%x\n",
+		sys_debug("  fd=%d, offset_high=0x%x, offset_low=0x%x, presult=0x%x, origin=0x%x\n",
 			fd, offset_high, offset_low, presult, origin);
-		syscall_debug("  host_fd=%d\n", host_fd);
-		syscall_debug("  offset=0x%llx\n", (long long) offset);
+		sys_debug("  host_fd=%d\n", host_fd);
+		sys_debug("  offset=0x%llx\n", (long long) offset);
 		if (offset_high != -1 && offset_high)
 			fatal("syscall llseek: only supported for 32-bit files");
 
@@ -1310,9 +1082,9 @@ void syscall_do()
 		pdirent = isa_regs->ecx;
 		count = isa_regs->edx;
 		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		syscall_debug("  fd=%d, pdirent=0x%x, count=%d\n",
+		sys_debug("  fd=%d, pdirent=0x%x, count=%d\n",
 			fd, pdirent, count);
-		syscall_debug("  host_fd=%d\n", host_fd);
+		sys_debug("  host_fd=%d\n", host_fd);
 
 		/* Call host getdents */
 		buf = calloc(1, count);
@@ -1338,10 +1110,10 @@ void syscall_do()
 			sim_dirent.d_reclen = (15 + strlen(dirent->d_name)) / 4 * 4;
 			d_type = * (char *) (buf + host_offs + dirent->d_reclen - 1);
 
-			syscall_debug("    d_ino=%u ", sim_dirent.d_ino);
-			syscall_debug("d_off=%u ", sim_dirent.d_off);
-			syscall_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
-			syscall_debug("d_name='%s'\n", dirent->d_name);
+			sys_debug("    d_ino=%u ", sim_dirent.d_ino);
+			sys_debug("d_off=%u ", sim_dirent.d_off);
+			sys_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
+			sys_debug("d_name='%s'\n", dirent->d_name);
 
 			mem_write(isa_mem, pdirent + guest_offs, 4, &sim_dirent.d_ino);
 			mem_write(isa_mem, pdirent + guest_offs + 4, 4, &sim_dirent.d_off);
@@ -1354,7 +1126,7 @@ void syscall_do()
 			if (guest_offs > count)
 				fatal("getdents: host buffer too small");
 		}
-		syscall_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
+		sys_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
 		free(buf);
 		retval = guest_offs;
 		break;
@@ -1377,7 +1149,7 @@ void syscall_do()
 		outp = isa_regs->edx;
 		exp = isa_regs->esi;
 		tvp = isa_regs->edi;
-		syscall_debug("  n=%d, inp=0x%x, outp=0x%x, exp=0x%x, tvp=0x%x\n",
+		sys_debug("  n=%d, inp=0x%x, outp=0x%x, exp=0x%x, tvp=0x%x\n",
 			n, inp, outp, exp, tvp);
 
 		/* Read file descriptor bitmaps. If any file descriptor is invalid, return EBADF. */
@@ -1398,7 +1170,7 @@ void syscall_do()
 		memset(&sim_tv, 0, sizeof(sim_tv));
 		if (tvp)
 			mem_read(isa_mem, tvp, sizeof(sim_tv), &sim_tv);
-		syscall_debug("  tv:\n");
+		sys_debug("  tv:\n");
 		sim_timeval_debug(&sim_tv);
 
 		/* Blocking 'select' not supported yet */
@@ -1435,9 +1207,9 @@ void syscall_do()
 		map_flags(&msync_flags_map, flags, flags_str, MAX_STRING_SIZE);
 
 		/* Debug */
-		syscall_debug("  start=0x%x, len=0x%x, flags=0x%x\n",
+		sys_debug("  start=0x%x, len=0x%x, flags=0x%x\n",
 			start, len, flags);
-		syscall_debug("  flags=%s\n", flags_str);
+		sys_debug("  flags=%s\n", flags_str);
 		
 		/* FIXME: system call is ignored */
 		break;
@@ -1457,7 +1229,7 @@ void syscall_do()
 		guest_fd = isa_regs->ebx;
 		piovec = isa_regs->ecx;
 		vlen = isa_regs->edx;
-		syscall_debug("  guest_fd=%d, piovec = 0x%x, vlen=0x%x\n",
+		sys_debug("  guest_fd=%d, piovec = 0x%x, vlen=0x%x\n",
 			guest_fd, piovec, vlen);
 		
 		
@@ -1468,7 +1240,7 @@ void syscall_do()
 			break;
 		}
 		host_fd = fd->host_fd;
-		syscall_debug("  host_fd=%d\n", host_fd);
+		sys_debug("  host_fd=%d\n", host_fd);
 		if (fd->kind == file_desc_pipe)
 			fatal("syscall writev: not supported for pipes");
 
@@ -1514,18 +1286,18 @@ void syscall_do()
 		uint32_t zero = 0;
 
 		pargs = isa_regs->ebx;
-		syscall_debug("  pargs=0x%x\n", pargs);
+		sys_debug("  pargs=0x%x\n", pargs);
 		mem_read(isa_mem, pargs, sizeof(struct sysctl_args_t), &args);
-		syscall_debug("    pname=0x%x\n", args.pname);
-		syscall_debug("    nlen=%d\n      ", args.nlen);
+		sys_debug("    pname=0x%x\n", args.pname);
+		sys_debug("    nlen=%d\n      ", args.nlen);
 		for (i = 0; i < args.nlen; i++) {
 			mem_read(isa_mem, args.pname + i * 4, 4, &aux);
-			syscall_debug("name[%d]=%d ", i, aux);
+			sys_debug("name[%d]=%d ", i, aux);
 		}
-		syscall_debug("\n    poldval=0x%x\n", args.poldval);
-		syscall_debug("    oldlenp=0x%x\n", args.oldlenp);
-		syscall_debug("    pnewval=0x%x\n", args.pnewval);
-		syscall_debug("    newlen=%d\n", args.newlen);
+		sys_debug("\n    poldval=0x%x\n", args.poldval);
+		sys_debug("    oldlenp=0x%x\n", args.oldlenp);
+		sys_debug("    pnewval=0x%x\n", args.pnewval);
+		sys_debug("    newlen=%d\n", args.newlen);
 		warning("syscall sysctl: partially supported and not debugged");
 
 		if (!args.oldlenp || !args.poldval)
@@ -1547,10 +1319,10 @@ void syscall_do()
 		
 		pid = isa_regs->ebx;
 		pparam = isa_regs->ecx;
-		syscall_debug("  pid=%d\n", pid);
-		syscall_debug("  pparam=0x%x\n", pparam);
+		sys_debug("  pid=%d\n", pid);
+		sys_debug("  pparam=0x%x\n", pparam);
 		mem_read(isa_mem, pparam, 4, &sched_priority);
-		syscall_debug("    param.sched_priority=%d\n", sched_priority);
+		sys_debug("    param.sched_priority=%d\n", sched_priority);
 
 		/* Ignore system call */
 		break;
@@ -1565,8 +1337,8 @@ void syscall_do()
 		
 		pid = isa_regs->ebx;
 		pparam = isa_regs->ecx;
-		syscall_debug("  pid=%d\n", pid);
-		syscall_debug("  pparam=0x%x\n", pparam);
+		sys_debug("  pid=%d\n", pid);
+		sys_debug("  pparam=0x%x\n", pparam);
 
 		/* Return 0 in pparam->sched_priority */
 		mem_write(isa_mem, pparam, 4, &zero);
@@ -1580,7 +1352,7 @@ void syscall_do()
 		uint32_t pid;
 
 		pid = isa_regs->ebx;
-		syscall_debug("  pid=%d\n", pid);
+		sys_debug("  pid=%d\n", pid);
 		break;
 	}
 
@@ -1591,7 +1363,7 @@ void syscall_do()
 		uint32_t policy;
 
 		policy = isa_regs->ebx;
-		syscall_debug("  policy=%d\n", policy);
+		sys_debug("  policy=%d\n", policy);
 
 		switch (policy) {
 		case 0: retval = 0; break;  /* SCHED_OTHER */
@@ -1609,7 +1381,7 @@ void syscall_do()
 		uint32_t policy;
 
 		policy = isa_regs->ebx;
-		syscall_debug("  policy=%d\n", policy);
+		sys_debug("  policy=%d\n", policy);
 
 		switch (policy) {
 		case 0: retval = 0; break;  /* SCHED_OTHER */
@@ -1630,12 +1402,12 @@ void syscall_do()
 
 		rqtp = isa_regs->ebx;
 		rmtp = isa_regs->ecx;
-		syscall_debug("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
+		sys_debug("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
 
 		mem_read(isa_mem, rqtp, 4, &sec);
 		mem_read(isa_mem, rqtp + 4, 4, &nsec);
 		total = (uint64_t) sec * 1000000 + (nsec / 1000);
-		syscall_debug("  sleep time (us): %lld\n", (long long) total);
+		sys_debug("  sleep time (us): %lld\n", (long long) total);
 		isa_ctx->wakeup_time = ke_timer() + total;
 
 		/* Suspend process */
@@ -1666,7 +1438,7 @@ void syscall_do()
 		pfds = isa_regs->ebx;
 		nfds = isa_regs->ecx;
 		timeout = isa_regs->edx;
-		syscall_debug("  pfds=0x%x, nfds=%d, timeout=%d\n",
+		sys_debug("  pfds=0x%x, nfds=%d, timeout=%d\n",
 			pfds, nfds, timeout);
 		if (nfds != 1)
 			fatal("syscall poll: not suported for nfds != 1");
@@ -1677,7 +1449,7 @@ void syscall_do()
 		mem_read(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
 		guest_fd = guest_fds.fd;
 		map_flags(&poll_event_map, guest_fds.events, sevents, MAX_STRING_SIZE);
-		syscall_debug("  guest_fd=%d, events=%s\n", guest_fd, sevents);
+		sys_debug("  guest_fd=%d, events=%s\n", guest_fd, sevents);
 
 		/* Get file descriptor */
 		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
@@ -1686,7 +1458,7 @@ void syscall_do()
 			break;
 		}
 		host_fd = fd->host_fd;
-		syscall_debug("  host_fd=%d\n", host_fd);
+		sys_debug("  host_fd=%d\n", host_fd);
 	
 		/* Only POLLIN (0x1) and POLLOUT (0x4) supported */
 		if (guest_fds.events & ~0x5)
@@ -1711,7 +1483,7 @@ void syscall_do()
 				
 			/* Non-blocking POLLOUT on a file. */
 			if (guest_fds.events & host_fds.revents & POLLOUT) {
-				syscall_debug("  non-blocking write to file guaranteed\n");
+				sys_debug("  non-blocking write to file guaranteed\n");
 				guest_fds.revents = POLLOUT;
 				mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
 				retval = 1;
@@ -1720,7 +1492,7 @@ void syscall_do()
 
 			/* Non-blocking POLLIN on a file. */
 			if (guest_fds.events & host_fds.revents & POLLIN) {
-				syscall_debug("  non-blocking read from file guaranteed\n");
+				sys_debug("  non-blocking read from file guaranteed\n");
 				guest_fds.revents = POLLIN;
 				mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
 				retval = 1;
@@ -1733,7 +1505,7 @@ void syscall_do()
 
 		/* At this point, host 'poll' returned 0, which means that none of the requested
 		 * events is ready on the file, so we must suspend until they occur. */
-		syscall_debug("  process going to sleep waiting for events on file\n");
+		sys_debug("  process going to sleep waiting for events on file\n");
 		isa_ctx->wakeup_time = 0;
 		if (timeout >= 0)
 			isa_ctx->wakeup_time = ke_timer() + (uint64_t) timeout * 1000;
@@ -1755,9 +1527,9 @@ void syscall_do()
 		pact = isa_regs->ecx;
 		poact = isa_regs->edx;
 		sigsetsize = isa_regs->esi;
-		syscall_debug("  sig=%d, pact=0x%x, poact=0x%x, sigsetsize=0x%x\n",
+		sys_debug("  sig=%d, pact=0x%x, poact=0x%x, sigsetsize=0x%x\n",
 			sig, pact, poact, sigsetsize);
-		syscall_debug("  signal=%s\n", sim_signal_name(sig));
+		sys_debug("  signal=%s\n", sim_signal_name(sig));
 
 		/* Invalid signal */
 		if (sig < 1 || sig > 64)
@@ -1766,15 +1538,15 @@ void syscall_do()
 		/* Read new sigaction */
 		if (pact) {
 			mem_read(isa_mem, pact, sizeof(act), &act);
-			if (debug_status(syscall_debug_category)) {
-				FILE *f = debug_file(syscall_debug_category);
-				syscall_debug("  act: ");
+			if (debug_status(sys_debug_category)) {
+				FILE *f = debug_file(sys_debug_category);
+				sys_debug("  act: ");
 				sim_sigaction_dump(&act, f);
-				syscall_debug("\n    flags: ");
+				sys_debug("\n    flags: ");
 				sim_sigaction_flags_dump(act.flags, f);
-				syscall_debug("\n    mask: ");
+				sys_debug("\n    mask: ");
 				sim_sigset_dump(act.mask, f);
-				syscall_debug("\n");
+				sys_debug("\n");
 			}
 		}
 
@@ -1802,9 +1574,9 @@ void syscall_do()
 		pset = isa_regs->ecx;
 		poset = isa_regs->edx;
 		sigsetsize = isa_regs->esi;
-		syscall_debug("  how=0x%x, pset=0x%x, poset=0x%x, sigsetsize=0x%x\n",
+		sys_debug("  how=0x%x, pset=0x%x, poset=0x%x, sigsetsize=0x%x\n",
 			how, pset, poset, sigsetsize);
-		syscall_debug("  how=%s\n", map_value(&sigprocmask_how_map, how));
+		sys_debug("  how=%s\n", map_value(&sigprocmask_how_map, how));
 
 		/* Save old set */
 		oset = isa_ctx->signal_mask_table->blocked;
@@ -1814,10 +1586,10 @@ void syscall_do()
 			
 			/* Read it from memory */
 			mem_read(isa_mem, pset, 8, &set);
-			if (debug_status(syscall_debug_category)) {
-				syscall_debug("  set=0x%llx ", (long long) set);
-				sim_sigset_dump(set, debug_file(syscall_debug_category));
-				syscall_debug("\n");
+			if (debug_status(sys_debug_category)) {
+				sys_debug("  set=0x%llx ", (long long) set);
+				sim_sigset_dump(set, debug_file(sys_debug_category));
+				sys_debug("\n");
 			}
 
 			/* Set new set */
@@ -1857,20 +1629,20 @@ void syscall_do()
 
 		pnewset = isa_regs->ebx;
 		sigsetsize = isa_regs->ecx;
-		syscall_debug("  pnewset=0x%x, sigsetsize=0x%x\n",
+		sys_debug("  pnewset=0x%x, sigsetsize=0x%x\n",
 			pnewset, sigsetsize);
 
 		/* Read temporary signal mask */
 		mem_read(isa_mem, pnewset, 8, &newset);
-		if (debug_status(syscall_debug_category)) {
-			FILE *f = debug_file(syscall_debug_category);
-			syscall_debug("  old mask: ");
+		if (debug_status(sys_debug_category)) {
+			FILE *f = debug_file(sys_debug_category);
+			sys_debug("  old mask: ");
 			sim_sigset_dump(isa_ctx->signal_mask_table->blocked, f);
-			syscall_debug("\n  new mask: ");
+			sys_debug("\n  new mask: ");
 			sim_sigset_dump(newset, f);
-			syscall_debug("\n  pending:  ");
+			sys_debug("\n  pending:  ");
 			sim_sigset_dump(isa_ctx->signal_mask_table->pending, f);
-			syscall_debug("\n");
+			sys_debug("\n");
 		}
 
 		/* Save old mask and set new one, then suspend. */
@@ -1893,7 +1665,7 @@ void syscall_do()
 
 		pbuf = isa_regs->ebx;
 		size = isa_regs->ecx;
-		syscall_debug("  pbuf=0x%x, size=0x%x\n", pbuf, size);
+		sys_debug("  pbuf=0x%x, size=0x%x\n", pbuf, size);
 
 		cwd = isa_ctx->loader->cwd;
 		len = strlen(cwd);
@@ -1931,8 +1703,8 @@ void syscall_do()
 		fd = isa_regs->ebx;
 		length = isa_regs->ecx;
 		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		syscall_debug("  fd=%d, length=0x%x\n", fd, length);
-		syscall_debug("  host_fd=%d\n", host_fd);
+		sys_debug("  fd=%d, length=0x%x\n", fd, length);
+		sys_debug("  host_fd=%d\n", host_fd);
 		
 		RETVAL(ftruncate(host_fd, length));
 		break;
@@ -1954,9 +1726,9 @@ void syscall_do()
 		if (length >= MAX_PATH_SIZE)
 			fatal("syscall stat64: maximum path length exceeded");
 		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		syscall_debug("  pfilename=0x%x, pstatbuf=0x%x\n",
+		sys_debug("  pfilename=0x%x, pstatbuf=0x%x\n",
 			pfilename, pstatbuf);
-		syscall_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
+		sys_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
 
 		RETVAL(stat(fullpath, &statbuf));
 		if (!retval) {
@@ -1982,8 +1754,8 @@ void syscall_do()
 		if (length >= MAX_PATH_SIZE)
 			fatal("syscall lstat64: maximum path length exceeded");
 		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		syscall_debug("  pfilename=0x%x, pstatbuf=0x%x\n", pfilename, pstatbuf);
-		syscall_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
+		sys_debug("  pfilename=0x%x, pstatbuf=0x%x\n", pfilename, pstatbuf);
+		sys_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
 
 		RETVAL(lstat(fullpath, &statbuf));
 		if (!retval) {
@@ -2004,8 +1776,8 @@ void syscall_do()
 		fd = isa_regs->ebx;
 		pstatbuf = isa_regs->ecx;
 		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		syscall_debug("  fd=%d, pstatbuf=0x%x\n", fd, pstatbuf);
-		syscall_debug("  host_fd=%d\n", host_fd);
+		sys_debug("  fd=%d, pstatbuf=0x%x\n", fd, pstatbuf);
+		sys_debug("  host_fd=%d\n", host_fd);
 
 		RETVAL(fstat(host_fd, &statbuf));
 		if (!retval) {
@@ -2062,8 +1834,8 @@ void syscall_do()
 		if (len >= MAX_PATH_SIZE)
 			fatal("syscall chmod: maximum path length exceeded");
 		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		syscall_debug("  pfilename=0x%x, owner=%d, group=%d\n", pfilename, owner, group);
-		syscall_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
+		sys_debug("  pfilename=0x%x, owner=%d, group=%d\n", pfilename, owner, group);
+		sys_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
 		RETVAL(chown(fullpath, owner, group));
 		break;
 	}
@@ -2077,7 +1849,7 @@ void syscall_do()
 		start = isa_regs->ebx;
 		len = isa_regs->ecx;
 		advice = isa_regs->edx;
-		syscall_debug("  start=0x%x, len=%d, advice=%d\n",
+		sys_debug("  start=0x%x, len=%d, advice=%d\n",
 			start, len, advice);
 		break;
 	}
@@ -2110,9 +1882,9 @@ void syscall_do()
 		pdirent = isa_regs->ecx;
 		count = isa_regs->edx;
 		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		syscall_debug("  fd=%d, pdirent=0x%x, count=%d\n",
+		sys_debug("  fd=%d, pdirent=0x%x, count=%d\n",
 			fd, pdirent, count);
-		syscall_debug("  host_fd=%d\n", host_fd);
+		sys_debug("  host_fd=%d\n", host_fd);
 
 		/* Call host getdents */
 		buf = calloc(1, count);
@@ -2139,10 +1911,10 @@ void syscall_do()
 			sim_dirent.d_reclen = (27 + strlen(dirent->d_name)) / 8 * 8;
 			sim_dirent.d_type = * (char *) (buf + host_offs + dirent->d_reclen - 1);
 
-			syscall_debug("    d_ino=%lld ", (long long) sim_dirent.d_ino);
-			syscall_debug("d_off=%lld ", (long long) sim_dirent.d_off);
-			syscall_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
-			syscall_debug("d_name='%s'\n", dirent->d_name);
+			sys_debug("    d_ino=%lld ", (long long) sim_dirent.d_ino);
+			sys_debug("d_off=%lld ", (long long) sim_dirent.d_off);
+			sys_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
+			sys_debug("d_name='%s'\n", dirent->d_name);
 
 			mem_write(isa_mem, pdirent + guest_offs, 8, &sim_dirent.d_ino);
 			mem_write(isa_mem, pdirent + guest_offs + 8, 8, &sim_dirent.d_off);
@@ -2155,7 +1927,7 @@ void syscall_do()
 			if (guest_offs > count)
 				fatal("getdents: host buffer too small");
 		}
-		syscall_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
+		sys_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
 		free(buf);
 		retval = guest_offs;
 		break;
@@ -2197,7 +1969,7 @@ void syscall_do()
 		ptimeout = isa_regs->esi;
 		addr2 = isa_regs->edi;
 		val3 = isa_regs->ebp;
-		syscall_debug("  addr1=0x%x, op=%d, val1=%d, ptimeout=0x%x, addr2=0x%x, val3=%d\n",
+		sys_debug("  addr1=0x%x, op=%d, val1=%d, ptimeout=0x%x, addr2=0x%x, val3=%d\n",
 			addr1, op, val1, ptimeout, addr2, val3);
 
 	
@@ -2205,7 +1977,7 @@ void syscall_do()
 		 * 'FUTEX_CLOCK_REALTIME' from 'op'. */
 		cmd = op & ~(256|128);
 		mem_read(isa_mem, addr1, 4, &futex);
-		syscall_debug("  futex=%d, cmd=%d (%s)\n",
+		sys_debug("  futex=%d, cmd=%d (%s)\n",
 			futex, cmd, map_value(&futex_cmd_map, cmd));
 		
 		switch (cmd) {
@@ -2228,7 +2000,7 @@ void syscall_do()
 				fatal("syscall futex: FUTEX_WAIT not supported with timeout");
 				mem_read(isa_mem, ptimeout, 4, &timeout_sec);
 				mem_read(isa_mem, ptimeout + 4, 4, &timeout_usec);
-				syscall_debug("  timeout={sec %d, usec %d}\n",
+				sys_debug("  timeout={sec %d, usec %d}\n",
 					timeout_sec, timeout_usec);
 			} else {
 				timeout_sec = 0;
@@ -2248,7 +2020,7 @@ void syscall_do()
 			/* Default bitset value (all bits set) */
 			bitset = cmd == 10 ? val3 : 0xffffffff;
 			retval = ctx_futex_wake(isa_ctx, addr1, val1, bitset);
-			syscall_debug("  futex at 0x%x: %d processes woken up\n", addr1, retval);
+			sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, retval);
 			break;
 
 		case 4: /* FUTEX_CMP_REQUEUE */
@@ -2270,7 +2042,7 @@ void syscall_do()
 			/* Wake up 'val1' threads from futex at 'addr1'. The number of woken up threads
 			 * is the return value of the system call. */
 			retval = ctx_futex_wake(isa_ctx, addr1, val1, 0xffffffff);
-			syscall_debug("  futex at 0x%x: %d processes woken up\n", addr1, retval);
+			sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, retval);
 
 			/* The rest of the threads waiting in futex 'addr1' are requeued into futex 'addr2' */
 			for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_list_next) {
@@ -2279,7 +2051,7 @@ void syscall_do()
 					requeued++;
 				}
 			}
-			syscall_debug("  futex at 0x%x: %d processes requeued to futex 0x%x\n",
+			sys_debug("  futex at 0x%x: %d processes requeued to futex 0x%x\n",
 				addr1, requeued, addr2);
 			break;
 		}
@@ -2344,8 +2116,8 @@ void syscall_do()
 		pmask = isa_regs->edx;
 
 		mem_read(isa_mem, pmask, 4, &mask);
-		syscall_debug("  pid=%d, len=%d, pmask=0x%x\n", pid, len, pmask);
-		syscall_debug("  mask=0x%x\n", mask);
+		sys_debug("  pid=%d, len=%d, pmask=0x%x\n", pid, len, pmask);
+		sys_debug("  mask=0x%x\n", mask);
 
 		/* FIXME: system call ignored. Return the number of procs. */
 		retval = num_procs;
@@ -2363,7 +2135,7 @@ void syscall_do()
 		pid = isa_regs->ebx;
 		len = isa_regs->ecx;
 		pmask = isa_regs->edx;
-		syscall_debug("  pid=%d, len=%d, pmask=0x%x\n", pid, len, pmask);
+		sys_debug("  pid=%d, len=%d, pmask=0x%x\n", pid, len, pmask);
 
 		/* FIXME: the affinity is set to 1 for num_procs processors and only the 4 LSBytes are set.
 		 * The return value is set to num_procs. This is the behavior on a 4-core processor
@@ -2381,14 +2153,14 @@ void syscall_do()
 		struct sim_user_desc uinfo;
 
 		puinfo = isa_regs->ebx;
-		syscall_debug("  puinfo=0x%x\n", puinfo);
+		sys_debug("  puinfo=0x%x\n", puinfo);
 
 		mem_read(isa_mem, puinfo, sizeof(struct sim_user_desc), &uinfo);
-		syscall_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
+		sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
 			uinfo.entry_number, uinfo.base_addr, uinfo.limit);
-		syscall_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
+		sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
 			uinfo.seg_32bit, uinfo.contents, uinfo.read_exec_only);
-		syscall_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
+		sys_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
 			uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
 		if (!uinfo.seg_32bit)
 			fatal("syscall set_thread_area: only 32-bit segments supported");
@@ -2430,7 +2202,7 @@ void syscall_do()
 		len = isa_regs->esi;
 		advice = isa_regs->edi;
 
-		syscall_debug("  fd=%d, off={0x%x, 0x%x}, len=%d, advice=%d\n",
+		sys_debug("  fd=%d, off={0x%x, 0x%x}, len=%d, advice=%d\n",
 			fd, off_hi, off_lo, len, advice);
 		break;
 	}
@@ -2442,7 +2214,7 @@ void syscall_do()
 		int status;
 
 		status = isa_regs->ebx;
-		syscall_debug("  status=0x%x\n", status);
+		sys_debug("  status=0x%x\n", status);
 
 		ctx_finish_group(isa_ctx, status);
 		break;
@@ -2455,7 +2227,7 @@ void syscall_do()
 		uint32_t tidptr;
 
 		tidptr = isa_regs->ebx;
-		syscall_debug("  tidptr=0x%x\n", tidptr);
+		sys_debug("  tidptr=0x%x\n", tidptr);
 
 		isa_ctx->clear_child_tid = tidptr;
 		retval = isa_ctx->pid;
@@ -2471,8 +2243,8 @@ void syscall_do()
 
 		clk_id = isa_regs->ebx;
 		pres = isa_regs->ecx;
-		syscall_debug("  clk_id=%d\n", clk_id);
-		syscall_debug("  pres=0x%x\n", pres);
+		sys_debug("  clk_id=%d\n", clk_id);
+		sys_debug("  pres=0x%x\n", pres);
 
 		tv_sec = 0;
 		tv_nsec = 1;
@@ -2491,7 +2263,7 @@ void syscall_do()
 		tgid = isa_regs->ebx;
 		pid = isa_regs->ecx;
 		sig = isa_regs->edx;
-		syscall_debug("  tgid=%d, pid=%d, sig=%d (%s)\n",
+		sys_debug("  tgid=%d, pid=%d, sig=%d (%s)\n",
 			tgid, pid, sig, sim_signal_name(sig));
 
 		/* Implementation restrictions. */
@@ -2519,7 +2291,7 @@ void syscall_do()
 
 		head = isa_regs->ebx;
 		len = isa_regs->ecx;
-		syscall_debug("  head=0x%x, len=%d\n", head, len);
+		sys_debug("  head=0x%x, len=%d\n", head, len);
 		if (len != 12)
 			fatal("set_robust_list: only working for len = 12");
 		isa_ctx->robust_list_head = head;
@@ -2547,14 +2319,14 @@ void syscall_do()
 		/* Get function info */
 		func_name = opencl_func_names[func_code - OPENCL_FUNC_FIRST];
 		func_argc = opencl_func_argc[func_code - OPENCL_FUNC_FIRST];
-		syscall_debug("  func_code=%d (%s, %d arguments), pargs=0x%x\n",
+		sys_debug("  func_code=%d (%s, %d arguments), pargs=0x%x\n",
 			func_code, func_name, func_argc, pargs);
 
 		/* Read function args */
 		assert(func_argc <= OPENCL_MAX_ARGS);
 		mem_read(isa_mem, pargs, func_argc * 4, args);
 		for (i = 0; i < func_argc; i++)
-			syscall_debug("    args[%d] = %d (0x%x)\n",
+			sys_debug("    args[%d] = %d (0x%x)\n",
 				i, args[i], args[i]);
 
 		/* Run OpenCL function */

@@ -880,7 +880,7 @@ int main(int argc, char **argv)
 	elf_debug_category = debug_new_category(elf_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
 	ld_debug_category = debug_new_category(loader_debug_file_name);
-	syscall_debug_category = debug_new_category(syscall_debug_file_name);
+	sys_debug_category = debug_new_category(syscall_debug_file_name);
 	ctx_debug_category = debug_new_category(ctx_debug_file_name);
 	mem_debug_category = debug_new_category(mem_debug_file_name);
 	opencl_debug_category = debug_new_category(opencl_debug_file_name);
