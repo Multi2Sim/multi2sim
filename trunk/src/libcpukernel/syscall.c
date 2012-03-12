@@ -165,28 +165,6 @@ struct string_map_t sigprocmask_how_map =
 };
 
 
-/* For 'poll' */
-
-struct string_map_t poll_event_map =
-{
-	6, {
-		{ "POLLIN",          0x0001 },
-		{ "POLLPRI",         0x0002 },
-		{ "POLLOUT",         0x0004 },
-		{ "POLLERR",         0x0008 },
-		{ "POLLHUP",         0x0010 },
-		{ "POLLNVAL",        0x0020 }
-	}
-};
-
-struct sim_pollfd
-{
-	uint32_t fd;
-	uint16_t events;
-	uint16_t revents;
-};
-
-
 /* For 'futex' */
 
 struct string_map_t futex_cmd_map =
@@ -609,52 +587,7 @@ void syscall_do()
 	/* 146 */
 	case syscall_code_writev:
 	{
-		int guest_fd, host_fd;
-		struct file_desc_t *fd;
-		uint32_t piovec, vlen;
-		uint32_t iov_base, iov_len;
-		void *buf;
-		int v, length;
-
-		guest_fd = isa_regs->ebx;
-		piovec = isa_regs->ecx;
-		vlen = isa_regs->edx;
-		sys_debug("  guest_fd=%d, piovec = 0x%x, vlen=0x%x\n",
-			guest_fd, piovec, vlen);
-		
-		
-		/* Check file descriptor */
-		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
-		if (!fd) {
-			errno = -EBADF;
-			break;
-		}
-		host_fd = fd->host_fd;
-		sys_debug("  host_fd=%d\n", host_fd);
-		if (fd->kind == file_desc_pipe)
-			fatal("syscall writev: not supported for pipes");
-
-		/* Proceed */
-		for (v = 0; v < vlen; v++) {
-
-			/* Read io vector element */
-			mem_read(isa_mem, piovec, 4, &iov_base);
-			mem_read(isa_mem, piovec + 4, 4, &iov_len);
-			piovec += 8;
-
-			/* Read buffer from memory and write it to file */
-			buf = malloc(iov_len);
-			mem_read(isa_mem, iov_base, iov_len, buf);
-			length = write(host_fd, buf, iov_len);
-			free(buf);
-
-			/* Check error */
-			retval += length;
-			if (length < 0) {
-				retval = -1;
-				break;
-			}
-		}
+		retval = sys_writev_impl();
 		break;
 	}
 
@@ -662,41 +595,7 @@ void syscall_do()
 	/* 149 */
 	case syscall_code_sysctl:
 	{
-		uint32_t pargs;
-		struct sysctl_args_t {
-			uint32_t pname;
-			uint32_t nlen;
-			uint32_t poldval;
-			uint32_t oldlenp;
-			uint32_t pnewval;
-			uint32_t newlen;
-		} args;
-		int i;
-		uint32_t aux;
-		uint32_t zero = 0;
-
-		pargs = isa_regs->ebx;
-		sys_debug("  pargs=0x%x\n", pargs);
-		mem_read(isa_mem, pargs, sizeof(struct sysctl_args_t), &args);
-		sys_debug("    pname=0x%x\n", args.pname);
-		sys_debug("    nlen=%d\n      ", args.nlen);
-		for (i = 0; i < args.nlen; i++) {
-			mem_read(isa_mem, args.pname + i * 4, 4, &aux);
-			sys_debug("name[%d]=%d ", i, aux);
-		}
-		sys_debug("\n    poldval=0x%x\n", args.poldval);
-		sys_debug("    oldlenp=0x%x\n", args.oldlenp);
-		sys_debug("    pnewval=0x%x\n", args.pnewval);
-		sys_debug("    newlen=%d\n", args.newlen);
-		warning("syscall sysctl: partially supported and not debugged");
-
-		if (!args.oldlenp || !args.poldval)
-			fatal("syscall sysctl: not supported for poldval=0 or oldlenp=0");
-		if (args.pnewval || args.newlen)
-			fatal("syscall sysctl: not supported for pnewval or newlen other than 0");
-
-		mem_write(isa_mem, args.oldlenp, 4, &zero);
-		mem_write(isa_mem, args.poldval, 1, &zero);
+		retval = sys_sysctl_impl();
 		break;
 	}
 
@@ -704,17 +603,7 @@ void syscall_do()
 	/* 154 */
 	case syscall_code_sched_setparam:
 	{
-		uint32_t pid, pparam;
-		uint32_t sched_priority;
-		
-		pid = isa_regs->ebx;
-		pparam = isa_regs->ecx;
-		sys_debug("  pid=%d\n", pid);
-		sys_debug("  pparam=0x%x\n", pparam);
-		mem_read(isa_mem, pparam, 4, &sched_priority);
-		sys_debug("    param.sched_priority=%d\n", sched_priority);
-
-		/* Ignore system call */
+		retval = sys_sched_setparam_impl();
 		break;
 	}
 
@@ -722,16 +611,7 @@ void syscall_do()
 	/* 155 */
 	case syscall_code_sched_getparam:
 	{
-		uint32_t pid, pparam;
-		uint32_t zero = 0;
-		
-		pid = isa_regs->ebx;
-		pparam = isa_regs->ecx;
-		sys_debug("  pid=%d\n", pid);
-		sys_debug("  pparam=0x%x\n", pparam);
-
-		/* Return 0 in pparam->sched_priority */
-		mem_write(isa_mem, pparam, 4, &zero);
+		retval = sys_sched_getparam_impl();
 		break;
 	}
 
@@ -739,10 +619,7 @@ void syscall_do()
 	/* 157 */
 	case syscall_code_sched_getscheduler:
 	{
-		uint32_t pid;
-
-		pid = isa_regs->ebx;
-		sys_debug("  pid=%d\n", pid);
+		retval = sys_sched_getscheduler_impl();
 		break;
 	}
 
@@ -750,17 +627,7 @@ void syscall_do()
 	/* 159 */
 	case syscall_code_sched_get_priority_max:
 	{
-		uint32_t policy;
-
-		policy = isa_regs->ebx;
-		sys_debug("  policy=%d\n", policy);
-
-		switch (policy) {
-		case 0: retval = 0; break;  /* SCHED_OTHER */
-		case 1: retval = 99; break;  /* SCHED_FIFO */
-		case 2: retval = 99; break;  /* SCHED_RR */
-		default: fatal("syscall 'sched_get_priority_max' not implemented for policy=%d", policy);
-		}
+		retval = sys_sched_get_priority_max_impl();
 		break;
 	}
 
@@ -768,17 +635,7 @@ void syscall_do()
 	/* 160 */
 	case syscall_code_sched_get_priority_min:
 	{
-		uint32_t policy;
-
-		policy = isa_regs->ebx;
-		sys_debug("  policy=%d\n", policy);
-
-		switch (policy) {
-		case 0: retval = 0; break;  /* SCHED_OTHER */
-		case 1: retval = 1; break;  /* SCHED_FIFO */
-		case 2: retval = 1; break;  /* SCHED_RR */
-		default: fatal("syscall 'sched_get_priority_min' not implemented for policy=%d", policy);
-		}
+		retval = sys_sched_get_priority_min_impl();
 		break;
 	}
 
@@ -786,23 +643,7 @@ void syscall_do()
 	/* 162 */
 	case syscall_code_nanosleep:
 	{
-		uint32_t rqtp, rmtp;
-		uint32_t sec, nsec;
-		uint64_t total;
-
-		rqtp = isa_regs->ebx;
-		rmtp = isa_regs->ecx;
-		sys_debug("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
-
-		mem_read(isa_mem, rqtp, 4, &sec);
-		mem_read(isa_mem, rqtp + 4, 4, &nsec);
-		total = (uint64_t) sec * 1000000 + (nsec / 1000);
-		sys_debug("  sleep time (us): %lld\n", (long long) total);
-		isa_ctx->wakeup_time = ke_timer() + total;
-
-		/* Suspend process */
-		ctx_set_status(isa_ctx, ctx_suspended | ctx_nanosleep);
-		ke_process_events_schedule();
+		retval = sys_nanosleep_impl();
 		break;
 	}
 
@@ -818,91 +659,7 @@ void syscall_do()
 	/* 168 */
 	case syscall_code_poll:
 	{
-		uint32_t pfds, nfds;
-		int timeout, guest_fd, host_fd;
-		struct sim_pollfd guest_fds;
-		struct pollfd host_fds;
-		char sevents[MAX_STRING_SIZE];
-		struct file_desc_t *fd;
-
-		pfds = isa_regs->ebx;
-		nfds = isa_regs->ecx;
-		timeout = isa_regs->edx;
-		sys_debug("  pfds=0x%x, nfds=%d, timeout=%d\n",
-			pfds, nfds, timeout);
-		if (nfds != 1)
-			fatal("syscall poll: not suported for nfds != 1");
-		assert(sizeof(struct sim_pollfd) == 8);
-		assert(POLLIN == 1 && POLLOUT == 4);
-
-		/* Read pollfd */
-		mem_read(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
-		guest_fd = guest_fds.fd;
-		map_flags(&poll_event_map, guest_fds.events, sevents, MAX_STRING_SIZE);
-		sys_debug("  guest_fd=%d, events=%s\n", guest_fd, sevents);
-
-		/* Get file descriptor */
-		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
-		if (!fd) {
-			retval = -EBADF;
-			break;
-		}
-		host_fd = fd->host_fd;
-		sys_debug("  host_fd=%d\n", host_fd);
-	
-		/* Only POLLIN (0x1) and POLLOUT (0x4) supported */
-		if (guest_fds.events & ~0x5)
-			fatal("syscall poll: only POLLIN and POLLOUT events supported");
-
-		/* Not supported file descriptor */
-		if (fd->host_fd < 0)
-			fatal("syscall 'poll': not supported file descriptor");
-
-		/* Perform host 'poll' system call with a 0 timeout to distinguish
-		 * blocking from non-blocking cases. */
-		host_fds.fd = host_fd;
-		host_fds.events = ((guest_fds.events & 1) ? POLLIN : 0) |
-			((guest_fds.events & 4) ? POLLOUT : 0);
-		RETVAL(poll(&host_fds, 1, 0));
-		if (retval < 0)
-			break;
-
-		/* If host 'poll' returned a value greater than 0, the guest call is non-blocking,
-		 * since I/O is ready for the file descriptor. */
-		if (retval > 0) {
-				
-			/* Non-blocking POLLOUT on a file. */
-			if (guest_fds.events & host_fds.revents & POLLOUT) {
-				sys_debug("  non-blocking write to file guaranteed\n");
-				guest_fds.revents = POLLOUT;
-				mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
-				retval = 1;
-				break;
-			}
-
-			/* Non-blocking POLLIN on a file. */
-			if (guest_fds.events & host_fds.revents & POLLIN) {
-				sys_debug("  non-blocking read from file guaranteed\n");
-				guest_fds.revents = POLLIN;
-				mem_write(isa_mem, pfds, sizeof(struct sim_pollfd), &guest_fds);
-				retval = 1;
-				break;
-			}
-
-			/* Never should get here */
-			abort();
-		}
-
-		/* At this point, host 'poll' returned 0, which means that none of the requested
-		 * events is ready on the file, so we must suspend until they occur. */
-		sys_debug("  process going to sleep waiting for events on file\n");
-		isa_ctx->wakeup_time = 0;
-		if (timeout >= 0)
-			isa_ctx->wakeup_time = ke_timer() + (uint64_t) timeout * 1000;
-		isa_ctx->wakeup_fd = guest_fd;
-		isa_ctx->wakeup_events = guest_fds.events;
-		ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
-		ke_process_events_schedule();
+		retval = sys_poll_impl();
 		break;
 	}
 
