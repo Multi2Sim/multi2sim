@@ -21,6 +21,7 @@
 #include <utime.h>
 
 #include <sys/ioctl.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/times.h>
 
@@ -1246,6 +1247,358 @@ int sys_ioctl_impl(void)
 		fatal("%s: not implement for cmd = 0x%x.\n%s",
 			__FUNCTION__, cmd, err_sys_note);
 	}
+
+	/* Return */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'getppid' (code 64)
+ */
+
+int sys_getppid_impl(void)
+{
+	/* Return 1 if there is no parent */
+	if (!isa_ctx->parent)
+		return 1;
+
+	/* Return parent's ID */
+	return isa_ctx->parent->pid;
+}
+
+
+
+
+/*
+ * System call 'setrlimit' (code 75)
+ */
+
+static struct string_map_t sys_rlimit_res_map =
+{
+	16, {
+
+		{ "RLIMIT_CPU",              0 },
+		{ "RLIMIT_FSIZE",            1 },
+		{ "RLIMIT_DATA",             2 },
+		{ "RLIMIT_STACK",            3 },
+		{ "RLIMIT_CORE",             4 },
+		{ "RLIMIT_RSS",              5 },
+		{ "RLIMIT_NPROC",            6 },
+		{ "RLIMIT_NOFILE",           7 },
+		{ "RLIMIT_MEMLOCK",          8 },
+		{ "RLIMIT_AS",               9 },
+		{ "RLIMIT_LOCKS",            10 },
+		{ "RLIMIT_SIGPENDING",       11 },
+		{ "RLIMIT_MSGQUEUE",         12 },
+		{ "RLIMIT_NICE",             13 },
+		{ "RLIMIT_RTPRIO",           14 },
+		{ "RLIM_NLIMITS",            15 }
+	}
+};
+
+struct sim_rlimit
+{
+	unsigned int cur;
+	unsigned int max;
+};
+
+int sys_setrlimit_impl(void)
+{
+	unsigned int res;
+	unsigned int rlim_ptr;
+
+	char *res_str;
+
+	struct sim_rlimit sim_rlimit;
+
+	/* Arguments */
+	res = isa_regs->ebx;
+	rlim_ptr = isa_regs->ecx;
+	res_str = map_value(&sys_rlimit_res_map, res);
+	syscall_debug("  res=0x%x, rlim_ptr=0x%x\n", res, rlim_ptr);
+	syscall_debug("  res=%s\n", res_str);
+
+	/* Read structure */
+	mem_read(isa_mem, rlim_ptr, sizeof(struct sim_rlimit), &sim_rlimit);
+	syscall_debug("  rlim->cur=0x%x, rlim->max=0x%x\n",
+		sim_rlimit.cur, sim_rlimit.max);
+
+	/* Different actions depending on resource type */
+	switch (res)
+	{
+
+	case RLIMIT_DATA:
+	{
+		/* Default limit is maximum.
+		 * This system call is ignored. */
+		break;
+	}
+
+	case RLIMIT_STACK:
+	{
+		/* A program should allocate its stack with calls to mmap.
+		 * This should be a limit for the stack, which is ignored here. */
+		break;
+	}
+
+	default:
+		fatal("%s: not implemented for res = %s.\n%s",
+			__FUNCTION__, res_str, err_sys_note);
+	}
+
+	/* Return */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'getrusage' (code 77)
+ */
+
+struct sim_rusage
+{
+	unsigned int utime_sec, utime_usec;
+	unsigned int stime_sec, stime_usec;
+	unsigned int maxrss;
+	unsigned int ixrss;
+	unsigned int idrss;
+	unsigned int isrss;
+	unsigned int minflt;
+	unsigned int majflt;
+	unsigned int nswap;
+	unsigned int inblock;
+	unsigned int oublock;
+	unsigned int msgsnd;
+	unsigned int msgrcv;
+	unsigned int nsignals;
+	unsigned int nvcsw;
+	unsigned int nivcsw;
+};
+
+static void sys_rusage_host_to_guest(struct sim_rusage *guest, struct rusage *host)
+{
+	guest->utime_sec = host->ru_utime.tv_sec;
+	guest->utime_usec = host->ru_utime.tv_usec;
+	guest->stime_sec = host->ru_stime.tv_sec;
+	guest->stime_usec = host->ru_stime.tv_usec;
+	guest->maxrss = host->ru_maxrss;
+	guest->ixrss = host->ru_ixrss;
+	guest->idrss = host->ru_idrss;
+	guest->isrss = host->ru_isrss;
+	guest->minflt = host->ru_minflt;
+	guest->majflt = host->ru_majflt;
+	guest->nswap = host->ru_nswap;
+	guest->inblock = host->ru_inblock;
+	guest->oublock = host->ru_oublock;
+	guest->msgsnd = host->ru_msgsnd;
+	guest->msgrcv = host->ru_msgrcv;
+	guest->nsignals = host->ru_nsignals;
+	guest->nvcsw = host->ru_nvcsw;
+	guest->nivcsw = host->ru_nivcsw;
+}
+
+int sys_getrusage_impl(void)
+{
+	unsigned int who;
+	unsigned int u_ptr;
+
+	struct rusage rusage;
+	struct sim_rusage sim_rusage;
+
+	int err;
+
+	/* Arguments */
+	who = isa_regs->ebx;
+	u_ptr = isa_regs->ecx;
+	syscall_debug("  who=0x%x, pru=0x%x\n", who, u_ptr);
+
+	/* Supported values */
+	if (who != 0)  /* RUSAGE_SELF */
+		fatal("%s: not implemented for who != RUSAGE_SELF.\n%s",
+			__FUNCTION__, err_sys_note);
+
+	/* Host call */
+	err = getrusage(RUSAGE_SELF, &rusage);
+	if (err == -1)
+		return -errno;
+
+	/* Return structure */
+	sys_rusage_host_to_guest(&sim_rusage, &rusage);
+	mem_write(isa_mem, u_ptr, sizeof sim_rusage, &sim_rusage);
+
+	/* Application expects this additional values updated:
+	 * ru_maxrss: maximum resident set size
+	 * ru_ixrss: integral shared memory size
+	 * ru_idrss: integral unshared data size
+	 * ru_isrss: integral unshared stack size */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'gettimeofday' (code 78)
+ */
+
+int sys_gettimeofday_impl(void)
+{
+	unsigned int tv_ptr;
+	unsigned int tz_ptr;
+
+	struct timeval tv;
+	struct timezone tz;
+
+	/* Arguments */
+	tv_ptr = isa_regs->ebx;
+	tz_ptr = isa_regs->ecx;
+	syscall_debug("  tv_ptr=0x%x, tz_ptr=0x%x\n", tv_ptr, tz_ptr);
+
+	/* Host call */
+	gettimeofday(&tv, &tz);
+
+	/* Write time value */
+	if (tv_ptr)
+	{
+		mem_write(isa_mem, tv_ptr, 4, &tv.tv_sec);
+		mem_write(isa_mem, tv_ptr + 4, 4, &tv.tv_usec);
+	}
+
+	/* Write time zone */
+	if (tz_ptr)
+	{
+		mem_write(isa_mem, tz_ptr, 4, &tz.tz_minuteswest);
+		mem_write(isa_mem, tz_ptr + 4, 4, &tz.tz_dsttime);
+	}
+
+	/* Return */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'readlink' (code 85)
+ */
+
+int sys_readlink_impl(void)
+{
+	unsigned int path_ptr;
+	unsigned int buf;
+	unsigned int bufsz;
+
+	char path[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+	char dest_path[MAX_PATH_SIZE];
+
+	int dest_size;
+	int len;
+	int err;
+
+	/* Arguments */
+	path_ptr = isa_regs->ebx;
+	buf = isa_regs->ecx;
+	bufsz = isa_regs->edx;
+	syscall_debug("  path_ptr=0x%x, buf=0x%x, bufsz=%d\n", path_ptr, buf, bufsz);
+
+	/* Read path */
+	len = mem_read_string(isa_mem, path_ptr, sizeof path, path);
+	if (len == sizeof path)
+		fatal("%s: buffer too small", __FUNCTION__);
+
+	/* Get full path */
+	ld_get_full_path(isa_ctx, path, full_path, sizeof full_path);
+	syscall_debug("  path='%s', full_path='%s'\n", path, full_path);
+
+	/* Special file '/proc/self/exe' intercepted */
+	if (!strcmp(full_path, "/proc/self/exe"))
+	{
+		/* Return path to simulated executable */
+		if (strlen(isa_ctx->loader->exe) >= sizeof dest_path)
+			fatal("%s: buffer too small", __FUNCTION__);
+		strcpy(dest_path, isa_ctx->loader->exe);
+	}
+	else
+	{
+		/* Host call */
+		memset(dest_path, 0, sizeof dest_path);
+		err = readlink(full_path, dest_path, sizeof dest_path);
+		if (err == sizeof dest_path)
+			fatal("%s: buffer too small", __FUNCTION__);
+		if (err == -1)
+			return -errno;
+	}
+
+	/* Copy name to guest memory. The string is not null-terminated. */
+	dest_size = MAX(strlen(dest_path), bufsz);
+	mem_write(isa_mem, buf, dest_size, dest_path);
+	syscall_debug("  dest_path='%s'\n", dest_path);
+
+	/* Return number of bytes copied */
+	return dest_size;
+}
+
+
+
+
+/*
+ * System call 'getrlimit' (code 191)
+ */
+
+int sys_getrlimit_impl(void)
+{
+	unsigned int res;
+	unsigned int rlim_ptr;
+
+	char *res_str;
+
+	struct sim_rlimit sim_rlimit;
+
+	/* Arguments */
+	res = isa_regs->ebx;
+	rlim_ptr = isa_regs->ecx;
+	res_str = map_value(&sys_rlimit_res_map, res);
+	syscall_debug("  res=0x%x, rlim_ptr=0x%x\n", res, rlim_ptr);
+	syscall_debug("  res=%s\n", res_str);
+
+	switch (res)
+	{
+
+	case 2:  /* RLIMIT_DATA */
+	{
+		sim_rlimit.cur = 0xffffffff;
+		sim_rlimit.max = 0xffffffff;
+		break;
+	}
+
+	case 3:  /* RLIMIT_STACK */
+	{
+		sim_rlimit.cur = isa_ctx->loader->stack_size;
+		sim_rlimit.max = 0xffffffff;
+		break;
+	}
+
+	case 7:  /* RLIMIT_NOFILE */
+	{
+		sim_rlimit.cur = 0x400;
+		sim_rlimit.max = 0x400;
+		break;
+	}
+
+	default:
+		fatal("%s: not implemented for res = %s.\n%s",
+			__FUNCTION__, res_str, err_sys_note);
+	}
+
+	/* Return structure */
+	mem_write(isa_mem, rlim_ptr, sizeof(struct sim_rlimit), &sim_rlimit);
+	syscall_debug("  ret: cur=0x%x, max=0x%x\n", sim_rlimit.cur, sim_rlimit.max);
 
 	/* Return */
 	return 0;
