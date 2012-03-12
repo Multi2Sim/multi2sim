@@ -458,25 +458,6 @@ void syscall_rlimit_sim_to_real(struct rlimit *real, struct sim_rlimit *sim)
 }
 
 
-/* For times */
-
-struct sim_tms
-{
-	uint32_t utime;
-	uint32_t stime;
-	uint32_t cutime;
-	uint32_t cstime;
-} __attribute__((packed));
-
-static void syscall_copy_tms(struct sim_tms *sim, struct tms *real)
-{
-	sim->utime = real->tms_utime;
-	sim->stime = real->tms_stime;
-	sim->cutime = real->tms_cutime;
-	sim->cstime = real->tms_cstime;
-}
-
-
 /* For 'set_thread_area' */
 
 struct sim_user_desc
@@ -978,35 +959,7 @@ void syscall_do()
 	/* 41 */
 	case syscall_code_dup:
 	{
-		int guest_fd, dup_guest_fd;
-		int host_fd, dup_host_fd;
-		struct file_desc_t *fd, *dup_fd;
-
-		guest_fd = isa_regs->ebx;
-		syscall_debug("  guest_fd=%d\n", guest_fd);
-
-		/* Check that file descriptor is valid. */
-		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
-		if (!fd) {
-			retval = -EBADF;
-			break;
-		}
-		host_fd = fd->host_fd;
-		syscall_debug("  host_fd=%d\n", host_fd);
-
-		/* Duplicate host file descriptor. */
-		dup_host_fd = dup(host_fd);
-		if (dup_host_fd < 0) {
-			retval = -errno;
-			break;
-		}
-
-		/* Create a new entry in the file descriptor table. */
-		dup_fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_regular, dup_host_fd, fd->path, fd->flags);
-		dup_guest_fd = dup_fd->guest_fd;
-
-		/* Return new file descriptor. */
-		retval = dup_guest_fd;
+		retval = sys_dup_impl();
 		break;
 	}
 
@@ -1014,32 +967,7 @@ void syscall_do()
 	/* 42 */
 	case syscall_code_pipe:
 	{
-		uint32_t pfd;
-		struct file_desc_t *read_fd, *write_fd;
-		uint32_t guest_read_fd, guest_write_fd;
-		int host_fd[2], err;
-
-		pfd = isa_regs->ebx;
-		syscall_debug("  pfd=0x%x\n", pfd);
-
-		/* Create host pipe */
-		err = pipe(host_fd);
-		if (err < 0)
-			fatal("syscall 'pipe': could not create pipe");
-		syscall_debug("  host pipe created: fd={%d, %d}\n",
-			host_fd[0], host_fd[1]);
-
-		/* Create guest pipe */
-		read_fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_pipe, host_fd[0], "", O_RDONLY);
-		write_fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_pipe, host_fd[1], "", O_WRONLY);
-		syscall_debug("  pipe created: fd={%d, %d}\n",
-			read_fd->guest_fd, write_fd->guest_fd);
-		guest_read_fd = read_fd->guest_fd;
-		guest_write_fd = write_fd->guest_fd;
-
-		/* Return file descriptors. */
-		mem_write(isa_mem, pfd, 4, &guest_read_fd);
-		mem_write(isa_mem, pfd + 4, 4, &guest_write_fd);
+		retval = sys_pipe_impl();
 		break;
 	}
 
@@ -1047,17 +975,7 @@ void syscall_do()
 	/* 43 */
 	case syscall_code_times:
 	{
-		uint32_t ptms;
-		struct tms tms;
-		struct sim_tms sim_tms;
-		
-		ptms = isa_regs->ebx;
-		syscall_debug("  ptms=0x%x\n", ptms);
-
-		retval = times(&tms);
-		syscall_copy_tms(&sim_tms, &tms);
-		if (ptms)
-			mem_write(isa_mem, ptms, sizeof(sim_tms), &sim_tms);
+		retval = sys_times_impl();
 		break;
 	}
 
@@ -1065,98 +983,15 @@ void syscall_do()
 	/* 45 */
 	case syscall_code_brk:
 	{
-		uint32_t oldbrk, newbrk, size;
-		uint32_t oldbrk_rnd, newbrk_rnd;
-
-		newbrk = isa_regs->ebx;
-		oldbrk = isa_mem->heap_break;
-		syscall_debug("  newbrk=0x%x (previous brk was 0x%x)\n",
-			newbrk, oldbrk);
-
-		newbrk_rnd = ROUND_UP(newbrk, MEM_PAGE_SIZE);
-		oldbrk_rnd = ROUND_UP(oldbrk, MEM_PAGE_SIZE);
-
-		/* If argument is zero, the system call is used to
-		 * obtain the current top of the heap. */
-		if (!newbrk) {
-			retval = oldbrk;
-			break;
-		}
-
-		/* If the heap is increased: if some page in the way is
-		 * allocated, do nothing and return old heap top. Otherwise,
-		 * allocate pages and return new heap top. */
-		if (newbrk > oldbrk) {
-			size = newbrk_rnd - oldbrk_rnd;
-			if (size) {
-				if (mem_map_space(isa_mem, oldbrk_rnd, size) != oldbrk_rnd)
-					fatal("syscall brk: out of memory");
-				mem_map(isa_mem, oldbrk_rnd, size,
-					mem_access_read | mem_access_write);
-			}
-			isa_mem->heap_break = newbrk;
-			retval = newbrk;
-			syscall_debug("  heap grows 0x%x bytes\n", newbrk - oldbrk);
-			break;
-		}
-
-		/* Always allow to shrink the heap. */
-		if (newbrk < oldbrk) {
-			size = oldbrk_rnd - newbrk_rnd;
-			if (size)
-				mem_unmap(isa_mem, newbrk_rnd, size);
-			isa_mem->heap_break = newbrk;
-			retval = newbrk;
-			syscall_debug("  heap shrinks 0x%x bytes\n", oldbrk - newbrk);
-			break;
-		}
+		retval = sys_brk_impl();
 		break;
 	}
 
 
 	/* 54 */
-	/* An 'ioctl' code (first argument) is a 32-bit word split into 4 fields:
-	 *   -NR [7..0]: ioctl code number.
-	 *   -TYPE [15..8]: ioctl category.
-	 *   -SIZE [29..16]: size of the structure passed as 2nd argument.
-	 *   -DIR [31..30]: direction (01=Write, 10=Read, 11=R/W).
-	 */
 	case syscall_code_ioctl:
 	{
-		uint32_t cmd, arg;
-		int guest_fd;
-		struct file_desc_t *fd;
-
-		guest_fd = isa_regs->ebx;
-		cmd = isa_regs->ecx;
-		arg = isa_regs->edx;
-		syscall_debug("  guest_fd=%d, cmd=0x%x, arg=0x%x\n",
-			guest_fd, cmd, arg);
-
-		/* File descriptor */
-		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
-		if (!fd) {
-			retval = -EBADF;
-			break;
-		}
-
-		/* Process IOCTL */
-		if (cmd >= 0x5401 || cmd <= 0x5408) {
-			
-			/* 'ioctl' commands using 'struct termios' as the argument.
-			 * This structure is 60 bytes long both for x86 and x86_64
-			 * architectures, so it doesn't vary between guest/host.
-			 * No translation needed, so just use a 60-byte I/O buffer. */
-			unsigned char buf[60];
-
-			mem_read(isa_mem, arg, sizeof(buf), buf);
-			RETVAL(ioctl(fd->host_fd, cmd, &buf));
-			if (!retval)
-				mem_write(isa_mem, arg, sizeof(buf), buf);
-		
-		} else
-			fatal("syscall ioctl: cmd = 0x%x not implemented", cmd);
-
+		retval = sys_ioctl_impl();
 		break;
 	}
 

@@ -19,7 +19,10 @@
 
 #include <time.h>
 #include <utime.h>
+
+#include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/times.h>
 
 #include <cpukernel.h>
 #include <mhandle.h>
@@ -770,13 +773,17 @@ int sys_utime_impl(void)
 	/* Arguments */
 	file_name_ptr = isa_regs->ebx;
 	utimbuf_ptr = isa_regs->ecx;
+	syscall_debug("  file_name_ptr=0x%x, utimbuf_ptr=0x%x\n",
+		file_name_ptr, utimbuf_ptr);
+
+	/* Read file name */
 	len = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
 	if (len >= MAX_PATH_SIZE)
 		fatal("%s: buffer too small", __FUNCTION__);
+
+	/* Get full path */
 	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
-	syscall_debug("  file_name='%s', utimbuf_ptr=0x%x\n",
-		file_name, utimbuf_ptr);
-	syscall_debug("  full_path='%s'\n", full_path);
+	syscall_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
 
 	/* Read time buffer */
 	mem_read(isa_mem, utimbuf_ptr, sizeof(struct sim_utimbuf), &sim_utimbuf);
@@ -824,13 +831,18 @@ int sys_access_impl(void)
 	/* Arguments */
 	file_name_ptr = isa_regs->ebx;
 	mode = isa_regs->ecx;
+
+	/* Read file name */
 	len = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
 	if (len >= sizeof file_name)
 		fatal("%s: buffer too small", __FUNCTION__);
+
+	/* Get full path */
 	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
+
+	/* Debug */
 	map_flags(&sys_access_mode_map, mode, mode_str, sizeof mode_str);
-	syscall_debug("  file_name='%s', mode=0x%x\n",
-		file_name, mode);
+	syscall_debug("  file_name='%s', mode=0x%x\n", file_name, mode);
 	syscall_debug("  full_path='%s'\n", full_path);
 	syscall_debug("  mode=%s\n", mode_str);
 
@@ -896,20 +908,28 @@ int sys_rename_impl(void)
 	char old_full_path[MAX_PATH_SIZE];
 	char new_full_path[MAX_PATH_SIZE];
 
-	int len1;
-	int len2;
+	int len;
 	int err;
 
 	/* Arguments */
 	old_path_ptr = isa_regs->ebx;
 	new_path_ptr = isa_regs->ecx;
-	len1 = mem_read_string(isa_mem, old_path_ptr, sizeof old_path, old_path);
-	len2 = mem_read_string(isa_mem, new_path_ptr, sizeof new_path, new_path);
-	if (len1 >= sizeof old_path || len2 >= sizeof new_path)
+	syscall_debug("  old_path_ptr=0x%x, new_path_ptr=0x%x\n",
+		old_path_ptr, new_path_ptr);
+
+	/* Get old path */
+	len = mem_read_string(isa_mem, old_path_ptr, sizeof old_path, old_path);
+	if (len >= sizeof old_path)
 		fatal("%s: buffer too small", __FUNCTION__);
+
+	/* Get new path */
+	len = mem_read_string(isa_mem, new_path_ptr, sizeof new_path, new_path);
+	if (len >= sizeof new_path)
+		fatal("%s: buffer too small", __FUNCTION__);
+
+	/* Get full paths */
 	ld_get_full_path(isa_ctx, old_path, old_full_path, sizeof old_full_path);
 	ld_get_full_path(isa_ctx, new_path, new_full_path, sizeof new_full_path);
-	syscall_debug("  old_path_ptr=0x%x, new_path_ptr=0x%x\n", old_path_ptr, new_path_ptr);
 	syscall_debug("  old_path='%s', new_path='%s'\n", old_path, new_path);
 	syscall_debug("  old_full_path='%s', new_full_path='%s'\n", old_full_path, new_full_path);
 
@@ -943,11 +963,15 @@ int sys_mkdir_impl(void)
 	/* Arguments */
 	path_ptr = isa_regs->ebx;
 	mode = isa_regs->ecx;
+	syscall_debug("  path_ptr=0x%x, mode=0x%x\n", path_ptr, mode);
+
+	/* Read path */
 	len = mem_read_string(isa_mem, path_ptr, sizeof path, path);
 	if (len >= sizeof path)
 		fatal("%s: buffer too small", __FUNCTION__);
+
+	/* Read full path */
 	ld_get_full_path(isa_ctx, path, full_path, MAX_PATH_SIZE);
-	syscall_debug("  path_ptr=0x%x, mode=0x%x\n", path_ptr, mode);
 	syscall_debug("  path='%s', full_path='%s'\n", path, full_path);
 
 	/* Host call */
@@ -957,6 +981,274 @@ int sys_mkdir_impl(void)
 
 	/* Return */
 	return err;
+}
+
+
+
+
+/*
+ * System call 'dup' (code 41)
+ */
+
+int sys_dup_impl(void)
+{
+	int guest_fd;
+	int dup_guest_fd;
+	int host_fd;
+	int dup_host_fd;
+
+	struct file_desc_t *desc;
+	struct file_desc_t *dup_desc;
+
+	/* Arguments */
+	guest_fd = isa_regs->ebx;
+	syscall_debug("  guest_fd=%d\n", guest_fd);
+
+	/* Check that file descriptor is valid. */
+	desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
+	if (!desc)
+		return -EBADF;
+	host_fd = desc->host_fd;
+	syscall_debug("  host_fd=%d\n", host_fd);
+
+	/* Duplicate host file descriptor. */
+	dup_host_fd = dup(host_fd);
+	if (dup_host_fd == -1)
+		return -errno;
+
+	/* Create a new entry in the file descriptor table. */
+	dup_desc = file_desc_table_entry_new(isa_ctx->file_desc_table,
+		file_desc_regular, dup_host_fd, desc->path, desc->flags);
+	dup_guest_fd = dup_desc->guest_fd;
+
+	/* Return new file descriptor. */
+	return dup_guest_fd;
+}
+
+
+
+
+/*
+ * System call 'pipe' (code 42)
+ */
+
+int sys_pipe_impl(void)
+{
+	unsigned int fd_ptr;
+
+	struct file_desc_t *read_desc;
+	struct file_desc_t *write_desc;
+
+	int guest_read_fd;
+	int guest_write_fd;
+
+	int host_fd[2];
+	int err;
+
+	/* Arguments */
+	fd_ptr = isa_regs->ebx;
+	syscall_debug("  fd_ptr=0x%x\n", fd_ptr);
+
+	/* Create host pipe */
+	err = pipe(host_fd);
+	if (err == -1)
+		fatal("%s: cannot create pipe", __FUNCTION__);
+	syscall_debug("  host pipe created: fd={%d, %d}\n",
+		host_fd[0], host_fd[1]);
+
+	/* Create guest pipe */
+	read_desc = file_desc_table_entry_new(isa_ctx->file_desc_table,
+		file_desc_pipe, host_fd[0], "", O_RDONLY);
+	write_desc = file_desc_table_entry_new(isa_ctx->file_desc_table,
+		file_desc_pipe, host_fd[1], "", O_WRONLY);
+	syscall_debug("  guest pipe created: fd={%d, %d}\n",
+		read_desc->guest_fd, write_desc->guest_fd);
+	guest_read_fd = read_desc->guest_fd;
+	guest_write_fd = write_desc->guest_fd;
+
+	/* Return file descriptors. */
+	mem_write(isa_mem, fd_ptr, 4, &guest_read_fd);
+	mem_write(isa_mem, fd_ptr + 4, 4, &guest_write_fd);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'times' (code 43)
+ */
+
+struct sim_tms
+{
+	unsigned int utime;
+	unsigned int stime;
+	unsigned int cutime;
+	unsigned int cstime;
+};
+
+static void sys_times_host_to_guest(struct sim_tms *guest, struct tms *host)
+{
+	guest->utime = host->tms_utime;
+	guest->stime = host->tms_stime;
+	guest->cutime = host->tms_cutime;
+	guest->cstime = host->tms_cstime;
+}
+
+int sys_times_impl(void)
+{
+	unsigned int tms_ptr;
+
+	struct tms tms;
+	struct sim_tms sim_tms;
+
+	int err;
+
+	/* Arguments */
+	tms_ptr = isa_regs->ebx;
+	syscall_debug("  tms_ptr=0x%x\n", tms_ptr);
+
+	/* Host call */
+	err = times(&tms);
+
+	/* Write result in memory */
+	if (tms_ptr)
+	{
+		sys_times_host_to_guest(&sim_tms, &tms);
+		mem_write(isa_mem, tms_ptr, sizeof(sim_tms), &sim_tms);
+	}
+
+	/* Return */
+	return err;
+}
+
+
+
+
+/*
+ * System call 'brk' (code 45)
+ */
+
+int sys_brk_impl(void)
+{
+	unsigned int old_heap_break;
+	unsigned int new_heap_break;
+	unsigned int size;
+
+	unsigned int old_heap_break_aligned;
+	unsigned int new_heap_break_aligned;
+
+	/* Arguments */
+	new_heap_break = isa_regs->ebx;
+	old_heap_break = isa_mem->heap_break;
+	syscall_debug("  newbrk=0x%x (previous brk was 0x%x)\n",
+		new_heap_break, old_heap_break);
+
+	/* Align */
+	new_heap_break_aligned = ROUND_UP(new_heap_break, MEM_PAGE_SIZE);
+	old_heap_break_aligned = ROUND_UP(old_heap_break, MEM_PAGE_SIZE);
+
+	/* If argument is zero, the system call is used to
+	 * obtain the current top of the heap. */
+	if (!new_heap_break)
+		return old_heap_break;
+
+	/* If the heap is increased: if some page in the way is
+	 * allocated, do nothing and return old heap top. Otherwise,
+	 * allocate pages and return new heap top. */
+	if (new_heap_break > old_heap_break)
+	{
+		size = new_heap_break_aligned - old_heap_break_aligned;
+		if (size)
+		{
+			if (mem_map_space(isa_mem, old_heap_break_aligned, size) != old_heap_break_aligned)
+				fatal("%s: out of memory", __FUNCTION__);
+			mem_map(isa_mem, old_heap_break_aligned, size,
+				mem_access_read | mem_access_write);
+		}
+		isa_mem->heap_break = new_heap_break;
+		syscall_debug("  heap grows %u bytes\n", new_heap_break - old_heap_break);
+		return new_heap_break;
+	}
+
+	/* Always allow to shrink the heap. */
+	if (new_heap_break < old_heap_break)
+	{
+		size = old_heap_break_aligned - new_heap_break_aligned;
+		if (size)
+			mem_unmap(isa_mem, new_heap_break_aligned, size);
+		isa_mem->heap_break = new_heap_break;
+		syscall_debug("  heap shrinks %u bytes\n", old_heap_break - new_heap_break);
+		return new_heap_break;
+	}
+
+	/* Heap stays the same */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'ioctl' (code 54)
+ */
+
+/* An 'ioctl' code (first argument) is a 32-bit word split into 4 fields:
+ *   -NR [7..0]: ioctl code number.
+ *   -TYPE [15..8]: ioctl category.
+ *   -SIZE [29..16]: size of the structure passed as 2nd argument.
+ *   -DIR [31..30]: direction (01=Write, 10=Read, 11=R/W).
+ */
+
+int sys_ioctl_impl(void)
+{
+	unsigned int cmd;
+	unsigned int arg;
+
+	int guest_fd;
+	int err;
+
+	struct file_desc_t *desc;
+
+	/* Arguments */
+	guest_fd = isa_regs->ebx;
+	cmd = isa_regs->ecx;
+	arg = isa_regs->edx;
+	syscall_debug("  guest_fd=%d, cmd=0x%x, arg=0x%x\n",
+		guest_fd, cmd, arg);
+
+	/* File descriptor */
+	desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
+	if (!desc)
+		return -EBADF;
+
+	/* Process IOCTL */
+	if (cmd >= 0x5401 || cmd <= 0x5408)
+	{
+		/* 'ioctl' commands using 'struct termios' as the argument.
+		 * This structure is 60 bytes long both for x86 and x86_64
+		 * architectures, so it doesn't vary between guest/host.
+		 * No translation needed, so just use a 60-byte I/O buffer. */
+		unsigned char buf[60];
+
+		/* Read buffer */
+		mem_read(isa_mem, arg, sizeof buf, buf);
+		err = ioctl(desc->host_fd, cmd, &buf);
+		if (err == -1)
+			return -errno;
+
+		/* Return in memory */
+		mem_write(isa_mem, arg, sizeof buf, buf);
+		return err;
+	}
+	else
+	{
+		fatal("%s: not implement for cmd = 0x%x.\n%s",
+			__FUNCTION__, cmd, err_sys_note);
+	}
+
+	/* Return */
+	return 0;
 }
 
 
