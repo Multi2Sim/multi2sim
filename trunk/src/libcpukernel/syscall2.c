@@ -3452,6 +3452,231 @@ int sys_poll_impl(void)
 
 
 /*
+ * System call 'rt_sigaction' (code 174)
+ */
+
+int sys_rt_sigaction_impl(void)
+{
+	int sig;
+	int sigsetsize;
+
+	unsigned int act_ptr;
+	unsigned int old_act_ptr;
+
+	struct sim_sigaction act;
+
+	/* Arguments */
+	sig = isa_regs->ebx;
+	act_ptr = isa_regs->ecx;
+	old_act_ptr = isa_regs->edx;
+	sigsetsize = isa_regs->esi;
+	sys_debug("  sig=%d, act_ptr=0x%x, old_act_ptr=0x%x, sigsetsize=0x%x\n",
+		sig, act_ptr, old_act_ptr, sigsetsize);
+	sys_debug("  signal=%s\n", sim_signal_name(sig));
+
+	/* Invalid signal */
+	if (sig < 1 || sig > 64)
+		fatal("%s: invalid signal (%d)", __FUNCTION__, sig);
+
+	/* Read new sigaction */
+	if (act_ptr)
+	{
+		mem_read(isa_mem, act_ptr, sizeof act, &act);
+		if (debug_status(sys_debug_category))
+		{
+			FILE *f = debug_file(sys_debug_category);
+			sys_debug("  act: ");
+			sim_sigaction_dump(&act, f);
+			sys_debug("\n    flags: ");
+			sim_sigaction_flags_dump(act.flags, f);
+			sys_debug("\n    mask: ");
+			sim_sigset_dump(act.mask, f);
+			sys_debug("\n");
+		}
+	}
+
+	/* Store previous sigaction */
+	if (old_act_ptr)
+		mem_write(isa_mem, old_act_ptr, sizeof(struct sim_sigaction),
+			&isa_ctx->signal_handler_table->sigaction[sig - 1]);
+
+	/* Make new sigaction effective */
+	if (act_ptr)
+		isa_ctx->signal_handler_table->sigaction[sig - 1] = act;
+
+	/* Return */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'rt_sigprocmask' (code 175)
+ */
+
+static struct string_map_t sys_sigprocmask_how_map =
+{
+	3, {
+		{ "SIG_BLOCK",     0 },
+		{ "SIG_UNBLOCK",   1 },
+		{ "SIG_SETMASK",   2 }
+	}
+};
+
+int sys_rt_sigprocmask_impl(void)
+{
+	unsigned int set_ptr;
+	unsigned int old_set_ptr;
+
+	int how;
+	int sigsetsize;
+
+	unsigned long long set;
+	unsigned long long old_set;
+
+	how = isa_regs->ebx;
+	set_ptr = isa_regs->ecx;
+	old_set_ptr = isa_regs->edx;
+	sigsetsize = isa_regs->esi;
+	sys_debug("  how=0x%x, set_ptr=0x%x, old_set_ptr=0x%x, sigsetsize=0x%x\n",
+		how, set_ptr, old_set_ptr, sigsetsize);
+	sys_debug("  how=%s\n", map_value(&sys_sigprocmask_how_map, how));
+
+	/* Save old set */
+	old_set = isa_ctx->signal_mask_table->blocked;
+
+	/* New set */
+	if (set_ptr)
+	{
+		/* Read it from memory */
+		mem_read(isa_mem, set_ptr, 8, &set);
+		if (debug_status(sys_debug_category))
+		{
+			sys_debug("  set=0x%llx ", set);
+			sim_sigset_dump(set, debug_file(sys_debug_category));
+			sys_debug("\n");
+		}
+
+		/* Set new set */
+		switch (how)
+		{
+
+		/* SIG_BLOCK */
+		case 0:
+			isa_ctx->signal_mask_table->blocked |= set;
+			break;
+
+		/* SIG_UNBLOCK */
+		case 1:
+			isa_ctx->signal_mask_table->blocked &= ~set;
+			break;
+
+		/* SIG_SETMASK */
+		case 2:
+			isa_ctx->signal_mask_table->blocked = set;
+			break;
+
+		default:
+			fatal("%s: invalid value for 'how'", __FUNCTION__);
+		}
+	}
+
+	/* Return old set */
+	if (old_set_ptr)
+		mem_write(isa_mem, old_set_ptr, 8, &old_set);
+
+	/* A change in the signal mask can cause pending signals to be
+	 * able to execute, so check this. */
+	ke_process_events_schedule();
+	ke_process_events();
+
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'rt_sigsuspend' (code 179)
+ */
+
+int sys_rt_sigsuspend_impl(void)
+{
+	unsigned int new_set_ptr;
+
+	int sigsetsize;
+
+	unsigned long long new_set;
+
+	new_set_ptr = isa_regs->ebx;
+	sigsetsize = isa_regs->ecx;
+	sys_debug("  new_set_ptr=0x%x, sigsetsize=%d\n",
+		new_set_ptr, sigsetsize);
+
+	/* Read temporary signal mask */
+	mem_read(isa_mem, new_set_ptr, 8, &new_set);
+	if (debug_status(sys_debug_category))
+	{
+		FILE *f = debug_file(sys_debug_category);
+		sys_debug("  old mask: ");
+		sim_sigset_dump(isa_ctx->signal_mask_table->blocked, f);
+		sys_debug("\n  new mask: ");
+		sim_sigset_dump(new_set, f);
+		sys_debug("\n  pending:  ");
+		sim_sigset_dump(isa_ctx->signal_mask_table->pending, f);
+		sys_debug("\n");
+	}
+
+	/* Save old mask and set new one, then suspend. */
+	isa_ctx->signal_mask_table->backup = isa_ctx->signal_mask_table->blocked;
+	isa_ctx->signal_mask_table->blocked = new_set;
+	ctx_set_status(isa_ctx, ctx_suspended | ctx_sigsuspend);
+
+	/* New signal mask may cause new events */
+	ke_process_events_schedule();
+	ke_process_events();
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'getcwd' (code 183)
+ */
+
+int sys_getcwd_impl(void)
+{
+	unsigned int buf_ptr;
+
+	int size;
+	int len;
+
+	char *cwd;
+
+	/* Arguments */
+	buf_ptr = isa_regs->ebx;
+	size = isa_regs->ecx;
+	sys_debug("  buf_ptr=0x%x, size=0x%x\n", buf_ptr, size);
+
+	/* Get working directory */
+	cwd = isa_ctx->loader->cwd;
+	len = strlen(cwd);
+
+	/* Does not fit */
+	if (size <= len)
+		return -ERANGE;
+
+	/* Return */
+	mem_write_string(isa_mem, buf_ptr, cwd);
+	return len + 1;
+}
+
+
+
+
+/*
  * System call 'getrlimit' (code 191)
  */
 
@@ -3546,6 +3771,312 @@ int sys_mmap2_impl(void)
 	/* System calls 'mmap' and 'mmap2' only differ in the interpretation of
 	 * argument 'offset'. Here, it is given in memory pages. */
 	return sys_mmap(addr, len, prot, flags, guest_fd, offset << MEM_PAGE_SHIFT);
+}
+
+
+
+
+/*
+ * System call 'ftruncate64' (code 194)
+ */
+
+int sys_ftruncate64_impl(void)
+{
+	int fd;
+	int host_fd;
+	int err;
+	
+	unsigned int length;
+
+	/* Arguments */
+	fd = isa_regs->ebx;
+	length = isa_regs->ecx;
+	sys_debug("  fd=%d, length=0x%x\n", fd, length);
+
+	/* Get host descriptor */
+	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
+	sys_debug("  host_fd=%d\n", host_fd);
+
+	err = ftruncate(host_fd, length);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	return err;
+}
+
+
+
+
+/*
+ * System call 'stat64' (code 195)
+ */
+
+struct sim_stat64_t
+{
+	unsigned long long dev;  /* 0 8 */
+	unsigned int pad1;  /* 8 4 */
+	unsigned int __ino;  /* 12 4 */
+	unsigned int mode;  /* 16 4 */
+	unsigned int nlink;  /* 20 4 */
+	unsigned int uid;  /* 24 4 */
+	unsigned int gid;  /* 28 4 */
+	unsigned long long rdev;  /* 32 8 */
+	unsigned int pad2;  /* 40 4 */
+	long long size;  /* 44 8 */
+	unsigned int blksize;  /* 52 4 */
+	unsigned long long blocks;  /* 56 8 */
+	unsigned int atime;  /* 64 4 */
+	unsigned int atime_nsec;  /* 68 4 */
+	unsigned int mtime;  /* 72 4 */
+	unsigned int mtime_nsec;  /* 76 4 */
+	unsigned int ctime;  /* 80 4 */
+	unsigned int ctime_nsec;  /* 84 4 */
+	unsigned long long ino;  /* 88 8 */
+} __attribute__((packed));
+
+static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host)
+{
+	M2S_HOST_GUEST_MATCH(sizeof(struct sim_stat64_t), 96);
+	memset(guest, 0, sizeof(struct sim_stat64_t));
+
+	guest->dev = host->st_dev;
+	guest->__ino = host->st_ino;
+	guest->mode = host->st_mode;
+	guest->nlink = host->st_nlink;
+	guest->uid = host->st_uid;
+	guest->gid = host->st_gid;
+	guest->rdev = host->st_rdev;
+	guest->size = host->st_size;
+	guest->blksize = host->st_blksize;
+	guest->blocks = host->st_blocks;
+	guest->atime = host->st_atime;
+	guest->mtime = host->st_mtime;
+	guest->ctime = host->st_ctime;
+	guest->ino = host->st_ino;
+
+	sys_debug("  stat64 structure:\n");
+	sys_debug("    dev=%lld, ino=%lld, mode=%d, nlink=%d\n",
+		guest->dev, guest->ino, guest->mode, guest->nlink);
+	sys_debug("    uid=%d, gid=%d, rdev=%lld\n",
+		guest->uid, guest->gid, guest->rdev);
+	sys_debug("    size=%lld, blksize=%d, blocks=%lld\n",
+		guest->size, guest->blksize, guest->blocks);
+}
+
+int sys_stat64_impl(void)
+{
+	unsigned int file_name_ptr;
+	unsigned int statbuf_ptr;
+
+	char file_name[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+
+	struct stat statbuf;
+	struct sim_stat64_t sim_statbuf;
+
+	int length;
+	int err;
+
+	/* Arguments */
+	file_name_ptr = isa_regs->ebx;
+	statbuf_ptr = isa_regs->ecx;
+	sys_debug("  file_name_ptr=0x%x, statbuf_ptr=0x%x\n",
+			file_name_ptr, statbuf_ptr);
+
+	/* Read file name */
+	length = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
+	if (length == sizeof file_name)
+		fatal("%s: buffer too small", __FUNCTION__);
+	
+	/* Get full path */
+	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
+	sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
+
+	/* Host call */
+	err = stat(full_path, &statbuf);
+	if (err == -1)
+		return -errno;
+	
+	/* Copy guest structure */
+	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
+	mem_write(isa_mem, statbuf_ptr, sizeof(sim_statbuf), &sim_statbuf);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'lstat64' (code 196)
+ */
+
+int sys_lstat64_impl(void)
+{
+	unsigned int file_name_ptr;
+	unsigned int statbuf_ptr;
+
+	char file_name[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+
+	int length;
+	int err;
+
+	struct stat statbuf;
+	struct sim_stat64_t sim_statbuf;
+
+	/* Arguments */
+	file_name_ptr = isa_regs->ebx;
+	statbuf_ptr = isa_regs->ecx;
+	sys_debug("  file_name_ptr=0x%x, statbuf_ptr=0x%x\n", file_name_ptr, statbuf_ptr);
+
+	/* Read file name */
+	length = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
+	if (length == sizeof file_name)
+		fatal("%s: buffer too small", __FUNCTION__);
+
+	/* Get full path */
+	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
+	sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
+
+	/* Host call */
+	err = lstat(full_path, &statbuf);
+	if (err == -1)
+		return -errno;
+	
+	/* Return */
+	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
+	mem_write(isa_mem, statbuf_ptr, sizeof sim_statbuf, &sim_statbuf);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'fstat64' (code 197)
+ */
+
+int sys_fstat64_impl(void)
+{
+	int fd;
+	int host_fd;
+	int err;
+
+	unsigned int statbuf_ptr;
+
+	struct stat statbuf;
+	struct sim_stat64_t sim_statbuf;
+
+	/* Arguments */
+	fd = isa_regs->ebx;
+	statbuf_ptr = isa_regs->ecx;
+	sys_debug("  fd=%d, statbuf_ptr=0x%x\n", fd, statbuf_ptr);
+
+	/* Get host descriptor */
+	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
+	sys_debug("  host_fd=%d\n", host_fd);
+
+	/* Host call */
+	err = fstat(host_fd, &statbuf);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
+	mem_write(isa_mem, statbuf_ptr, sizeof sim_statbuf, &sim_statbuf);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'getuid' (code 199)
+ */
+
+int sys_getuid_impl(void)
+{
+	return getuid();
+}
+
+
+
+
+/*
+ * System call 'getgid' (code 200)
+ */
+
+int sys_getgid_impl(void)
+{
+	return getgid();
+}
+
+
+
+
+/*
+ * System call 'geteuid' (code 201)
+ */
+
+int sys_geteuid_impl(void)
+{
+	return geteuid();
+}
+
+
+
+
+/*
+ * System call 'getegid' (code 202)
+ */
+
+int sys_getegid_impl(void)
+{
+	return getegid();
+}
+
+
+
+
+/*
+ * System call 'chown' (code 212)
+ */
+
+int sys_chown_impl(void)
+{
+	unsigned int file_name_ptr;
+
+	int owner;
+	int group;
+	int len;
+	int err;
+
+	char file_name[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+
+	/* Arguments */
+	file_name_ptr = isa_regs->ebx;
+	owner = isa_regs->ecx;
+	group = isa_regs->edx;
+	sys_debug("  file_name_ptr=0x%x, owner=%d, group=%d\n", file_name_ptr, owner, group);
+
+	/* Read file name */
+	len = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
+	if (len == sizeof file_name)
+		fatal("%s: buffer too small", __FUNCTION__);
+
+	/* Get full path */
+	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
+	sys_debug("  filename='%s', fullpath='%s'\n", file_name, full_path);
+
+	/* Host call */
+	err = chown(full_path, owner, group);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	return err;
 }
 
 
