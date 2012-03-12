@@ -17,7 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <time.h>
+#include <utime.h>
+#include <sys/stat.h>
+
 #include <cpukernel.h>
+#include <mhandle.h>
+
+
+
+static char *err_sys_note =
+	"\tThe system calls performed by the executed application are intercepted by\n"
+	"\tMulti2Sim and emulated in file 'syscall.c'. The most common system calls are\n"
+	"\tcurrently supported, but your application might perform specific unsupported\n"
+	"\tsystem calls or combinations of parameters. To request support for a given\n"
+	"\tsystem call, please email 'development@multi2sim.org'.\n";
+
 
 
 /*
@@ -380,6 +395,407 @@ int sys_open_impl(void)
 
 
 
+
+/*
+ * System call 'waitpid' (code 7)
+ */
+
+static struct string_map_t sys_waitpid_options_map =
+{
+	8, {
+		{ "WNOHANG",       0x00000001 },
+		{ "WUNTRACED",     0x00000002 },
+		{ "WEXITED",       0x00000004 },
+		{ "WCONTINUED",    0x00000008 },
+		{ "WNOWAIT",       0x01000000 },
+		{ "WNOTHREAD",     0x20000000 },
+		{ "WALL",          0x40000000 },
+		{ "WCLONE",        0x80000000 }
+	}
+};
+
+int sys_waitpid_impl()
+{
+	int pid;
+	int options;
+	unsigned int status_ptr;
+
+	char options_str[MAX_STRING_SIZE];
+
+	struct ctx_t *child;
+
+	/* Arguments */
+	pid = isa_regs->ebx;
+	status_ptr = isa_regs->ecx;
+	options = isa_regs->edx;
+	syscall_debug("  pid=%d, pstatus=0x%x, options=0x%x\n",
+		pid, status_ptr, options);
+	map_flags(&sys_waitpid_options_map, options, options_str, sizeof options_str);
+	syscall_debug("  options=%s\n", options_str);
+
+	/* Supported values for 'pid' */
+	if (pid != -1 && pid <= 0)
+		fatal("%s: only supported for pid=-1 or pid > 0.\n%s",
+			__FUNCTION__, err_sys_note);
+
+	/* Look for a zombie child. */
+	child = ctx_get_zombie(isa_ctx, pid);
+
+	/* If there is no child and the flag WNOHANG was not specified,
+	 * we get suspended until the specified child finishes. */
+	if (!child && !(options & 0x1))
+	{
+		isa_ctx->wakeup_pid = pid;
+		ctx_set_status(isa_ctx, ctx_suspended | ctx_waitpid);
+		return 0;
+	}
+
+	/* Context is not suspended. WNOHANG was specified, or some child
+	 * was found in the zombie list. */
+	if (child)
+	{
+		if (status_ptr)
+			mem_write(isa_mem, status_ptr, 4, &child->exit_code);
+		ctx_set_status(child, ctx_finished);
+		return child->pid;
+	}
+
+	/* Return */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'unlink' (code 10)
+ */
+
+int sys_unlink_impl(void)
+{
+	unsigned int file_name_ptr;
+
+	int length;
+	int err;
+
+	char file_name[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+
+	/* Arguments */
+	file_name_ptr = isa_regs->ebx;
+	length = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
+	if (length >= MAX_PATH_SIZE)
+		fatal("%s: buffer too small", __FUNCTION__);
+	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
+	syscall_debug("  file_name_ptr=0x%x\n", file_name_ptr);
+	syscall_debug("  file_name=%s, full_path=%s\n", file_name, full_path);
+
+	/* Host call */
+	err = unlink(full_path);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'execve' (code 11)
+ */
+
+static char *err_sys_execve_note =
+	"\tA system call 'execve' is trying to run a command prefixed with '/bin/sh -c'.\n"
+	"\tThis is usually the result of the execution of the 'system()' function from\n"
+	"\tthe guest application to run a shell command. Multi2Sim will execute this\n"
+	"\tcommand natively, and then finish the calling context.\n";
+
+int sys_execve_impl(void)
+{
+	unsigned int name_ptr;
+	unsigned int argv;
+	unsigned int envp;
+	unsigned int regs;
+
+	char name[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+	int length;
+
+	struct list_t *arg_list;
+	char arg_str[MAX_STRING_SIZE];
+	char *arg;
+
+	char env[MAX_LONG_STRING_SIZE];
+	int i;
+
+	/* Arguments */
+	name_ptr = isa_regs->ebx;
+	argv = isa_regs->ecx;
+	envp = isa_regs->edx;
+	regs = isa_regs->esi;
+	syscall_debug("  name_ptr=0x%x, argv=0x%x, envp=0x%x, regs=0x%x\n",
+		name_ptr, argv, envp, regs);
+
+	/* Get command name */
+	length = mem_read_string(isa_mem, name_ptr, sizeof name, name);
+	if (length >= sizeof name)
+		fatal("%s: buffer too small", __FUNCTION__);
+	ld_get_full_path(isa_ctx, name, full_path, sizeof full_path);
+	syscall_debug("  name='%s', full_path='%s'\n", name, full_path);
+
+	/* Arguments */
+	arg_list = list_create();
+	for (;;)
+	{
+		unsigned int arg_ptr;
+
+		/* Argument pointer */
+		mem_read(isa_mem, argv + arg_list->count * 4, 4, &arg_ptr);
+		if (!arg_ptr)
+			break;
+
+		/* Argument */
+		length = mem_read_string(isa_mem, arg_ptr, sizeof arg_str, arg_str);
+		if (length >= sizeof arg_str)
+			fatal("%s: buffer too small", __FUNCTION__);
+
+		/* Duplicate */
+		arg = strdup(arg_str);
+		if (!arg)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* Add to argument list */
+		list_add(arg_list, arg);
+		syscall_debug("    argv[%d]='%s'\n", arg_list->count, arg);
+	}
+
+	/* Environment variables */
+	syscall_debug("\n");
+	for (i = 0; ; i++)
+	{
+		unsigned int env_ptr;
+
+		/* Variable pointer */
+		mem_read(isa_mem, envp + i * 4, 4, &env_ptr);
+		if (!env_ptr)
+			break;
+
+		/* Variable */
+		length = mem_read_string(isa_mem, env_ptr, sizeof env, env);
+		if (length >= sizeof env)
+			fatal("%s: buffer too small", __FUNCTION__);
+
+		/* Debug */
+		syscall_debug("    envp[%d]='%s'\n", i, env);
+	}
+
+	/* In the special case that the command line is 'sh -c <...>', this system
+	 * call is the result of a program running the 'system' libc function. The
+	 * host and guest architecture might be different and incompatible, so the
+	 * safest option here is running the system command natively.
+	 */
+	if (!strcmp(full_path, "/bin/sh") && list_count(arg_list) == 3 &&
+		!strcmp(list_get(arg_list, 0), "sh") &&
+		!strcmp(list_get(arg_list, 1), "-c"))
+	{
+		int exit_code;
+
+		/* Execute program natively and finish context */
+		warning("%s: child context executed natively.\n%s",
+			__FUNCTION__, err_sys_execve_note);
+		exit_code = system(list_get(arg_list, 2));
+		ctx_finish(isa_ctx, exit_code);
+
+		/* Free arguments and exit */
+		for (i = 0; i < list_count(arg_list); i++)
+			free(list_get(arg_list, i));
+		list_free(arg_list);
+		return 0;
+	}
+
+	/* Free arguments */
+	for (i = 0; i < list_count(arg_list); i++)
+		free(list_get(arg_list, i));
+	list_free(arg_list);
+
+	/* Return */
+	fatal("%s: not implemented.\n%s", __FUNCTION__, err_sys_note);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'time' (code 13)
+ */
+
+int sys_time_impl(void)
+{
+
+	unsigned int time_ptr;
+	int t;
+
+	/* Arguments */
+	time_ptr = isa_regs->ebx;
+	syscall_debug("  ptime=0x%x\n", time_ptr);
+
+	/* Host call */
+	t = time(NULL);
+	if (time_ptr)
+		mem_write(isa_mem, time_ptr, 4, &t);
+
+	/* Return */
+	return t;
+}
+
+
+
+
+/*
+ * System call 'chmod' (code 15)
+ */
+
+int sys_chmod_impl(void)
+{
+	unsigned int file_name_ptr;
+	unsigned int mode;
+
+	int len;
+	int err;
+
+	char file_name[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+
+	/* Arguments */
+	file_name_ptr = isa_regs->ebx;
+	mode = isa_regs->ecx;
+	len = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
+	if (len >= sizeof file_name)
+		fatal("%s: buffer too small", __FUNCTION__);
+	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
+	syscall_debug("  file_name_ptr=0x%x, mode=0x%x\n", file_name_ptr, mode);
+	syscall_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
+
+	/* Host call */
+	err = chmod(full_path, mode);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	return err;
+}
+
+
+
+
+/*
+ * System call 'lseek' (code 19)
+ */
+
+int sys_lseek_impl(void)
+{
+	unsigned int offset;
+
+	int fd;
+	int origin;
+	int host_fd;
+	int err;
+
+	/* Arguments */
+	fd = isa_regs->ebx;
+	offset = isa_regs->ecx;
+	origin = isa_regs->edx;
+	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
+	syscall_debug("  fd=%d, offset=0x%x, origin=0x%x\n",
+		fd, offset, origin);
+	syscall_debug("  host_fd=%d\n", host_fd);
+
+	/* Host call */
+	err = lseek(host_fd, offset, origin);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	return err;
+}
+
+
+
+
+/*
+ * System call 'getpid' (code 20)
+ */
+
+int sys_getpid_impl(void)
+{
+	return isa_ctx->pid;
+}
+
+
+
+
+/*
+ * System call 'utime' (code 30)
+ */
+
+struct sim_utimbuf
+{
+	unsigned int actime;
+	unsigned int modtime;
+};
+
+static void sys_utime_guest_to_host(struct utimbuf *host, struct sim_utimbuf *guest)
+{
+	host->actime = guest->actime;
+	host->modtime = guest->modtime;
+}
+
+int sys_utime_impl(void)
+{
+	unsigned int file_name_ptr;
+	unsigned int utimbuf_ptr;
+
+	struct utimbuf utimbuf;
+	struct sim_utimbuf sim_utimbuf;
+
+	int len;
+	int err;
+
+	char file_name[MAX_PATH_SIZE];
+	char full_path[MAX_PATH_SIZE];
+
+	/* Arguments */
+	file_name_ptr = isa_regs->ebx;
+	utimbuf_ptr = isa_regs->ecx;
+	len = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
+	if (len >= MAX_PATH_SIZE)
+		fatal("%s: buffer too small", __FUNCTION__);
+	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
+	syscall_debug("  file_name='%s', utimbuf_ptr=0x%x\n",
+		file_name, utimbuf_ptr);
+	syscall_debug("  full_path='%s'\n", full_path);
+
+	/* Read time buffer */
+	mem_read(isa_mem, utimbuf_ptr, sizeof(struct sim_utimbuf), &sim_utimbuf);
+	sys_utime_guest_to_host(&utimbuf, &sim_utimbuf);
+	syscall_debug("  utimbuf.actime = %u, utimbuf.modtime = %u\n",
+		sim_utimbuf.actime, sim_utimbuf.modtime);
+
+	/* Host call */
+	err = utime(full_path, &utimbuf);
+	if (err == -1)
+		return -errno;
+
+	/* Return */
+	return err;
+}
+
+
+
+
 /*
  * System call 'fcntl64' (code 221)
  */
@@ -479,8 +895,8 @@ int sys_fcntl64_impl(void)
 	default:
 
 		err = 0;
-		fatal("%s: command %s not implemented",
-			__FUNCTION__, cmd_name);
+		fatal("%s: command %s not implemented.\n%s",
+			__FUNCTION__, cmd_name, err_sys_note);
 	}
 
 	/* Return */

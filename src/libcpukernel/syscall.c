@@ -101,15 +101,6 @@ void syscall_debug_string(char *text, char *s, int len, int force)
 }
 
 
-/* Error messages */
-char *err_syscall_note = 
-	"\tThe system calls performed by the executed application are intercepted by\n"
-	"\tMulti2Sim and emulated in file 'syscall.c'. The most common system calls are\n"
-	"\tcurrently supported, but your application might perform specific unsupported\n"
-	"\tsystem calls or combinations of parameters. To request support for a given\n"
-	"\tsystem call, please email 'development@multi2sim.org'.\n";
-
-
 /* For 'msync' */
 
 struct string_map_t msync_flags_map =
@@ -200,21 +191,6 @@ static const uint32_t clone_supported_flags =
 	SIM_CLONE_PARENT_SETTID |
 	SIM_CLONE_CHILD_CLEARTID |
 	SIM_CLONE_CHILD_SETTID;
-
-
-/* For utime */
-
-struct sim_utimbuf
-{
-	uint32_t actime;
-	uint32_t modtime;
-} __attribute__((packed));
-
-static void syscall_utime_sim_to_read(struct utimbuf *real, struct sim_utimbuf *sim)
-{
-	real->actime = sim->actime;
-	real->modtime = sim->modtime;
-}
 
 
 /* For 'socketcall' */
@@ -650,23 +626,6 @@ void sim_fd_set_write(uint32_t addr, fd_set *fds, int n)
 }
 
 
-/* For 'waitpid' */
-
-struct string_map_t waitpid_options_map =
-{
-	8, {
-		{ "WNOHANG",       0x00000001 },
-		{ "WUNTRACED",     0x00000002 },
-		{ "WEXITED",       0x00000004 },
-		{ "WCONTINUED",    0x00000008 },
-		{ "WNOWAIT",       0x01000000 },
-		{ "WNOTHREAD",     0x20000000 },
-		{ "WALL",          0x40000000 },
-		{ "WCLONE",        0x80000000 }
-	}
-};
-
-
 /* For 'mmap' */
 
 #define MMAP_BASE_ADDRESS 0xb7fb0000
@@ -935,42 +894,7 @@ void syscall_do()
 	/* 7 */
 	case syscall_code_waitpid:
 	{
-		int pid, options;
-		uint32_t pstatus;
-		char options_str[MAX_STRING_SIZE];
-		struct ctx_t *child;
-
-		pid = isa_regs->ebx;
-		pstatus = isa_regs->ecx;
-		options = isa_regs->edx;
-		syscall_debug("  pid=%d, pstatus=0x%x, options=0x%x\n",
-			pid, pstatus, options);
-		map_flags(&waitpid_options_map, options, options_str, sizeof options_str);
-		syscall_debug("  options=%s\n", options_str);
-		if (pid != -1 && pid <= 0)
-			fatal("syscall waitpid: only supported for pid=-1 or pid>0");
-
-		/* Look for a zombie child. */
-		child = ctx_get_zombie(isa_ctx, pid);
-
-		/* If there is no child and the flag WNOHANG was not specified,
-		 * we get suspended until the specified child finishes. */
-		if (!child && !(options & 0x1))
-		{
-			isa_ctx->wakeup_pid = pid;
-			ctx_set_status(isa_ctx, ctx_suspended | ctx_waitpid);
-			break;
-		}
-
-		/* Context is not suspended. WNOHANG was specified, or some child
-		 * was found in the zombie list. */
-		if (child)
-		{
-			retval = child->pid;
-			if (pstatus)
-				mem_write(isa_mem, pstatus, 4, &child->exit_code);
-			ctx_set_status(child, ctx_finished);
-		}
+		retval = sys_waitpid_impl();
 		break;
 	}
 
@@ -978,19 +902,7 @@ void syscall_do()
 	/* 10 */
 	case syscall_code_unlink:
 	{
-		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
-		uint32_t pfilename;
-		int length;
-
-		pfilename = isa_regs->ebx;
-		length = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
-		if (length >= MAX_PATH_SIZE)
-			fatal("syscall unlink: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		syscall_debug("  pfilename=0x%x\n", pfilename);
-		syscall_debug("  filename=%s, fullpath=%s\n", filename, fullpath);
-
-		RETVAL(unlink(fullpath));
+		retval = sys_unlink_impl();
 		break;
 	}
 
@@ -998,113 +910,7 @@ void syscall_do()
 	/* 11 */
 	case syscall_code_execve:
 	{
-		uint32_t name_ptr;
-		uint32_t argv;
-		uint32_t envp;
-		uint32_t regs;
-
-		char name[MAX_PATH_SIZE];
-		char full_path[MAX_PATH_SIZE];
-		int length;
-
-		struct list_t *arg_list;
-		char arg_str[MAX_STRING_SIZE];
-		char *arg;
-
-		char env[MAX_LONG_STRING_SIZE];
-		int i;
-
-		/* Arguments */
-		name_ptr = isa_regs->ebx;
-		argv = isa_regs->ecx;
-		envp = isa_regs->edx;
-		regs = isa_regs->esi;
-		syscall_debug("  name_ptr=0x%x, argv=0x%x, envp=0x%x, regs=0x%x\n",
-			name_ptr, argv, envp, regs);
-
-		/* Get command name */
-		length = mem_read_string(isa_mem, name_ptr, sizeof name, name);
-		if (length >= sizeof name)
-			fatal("syscall 'execve': buffer too small");
-		ld_get_full_path(isa_ctx, name, full_path, sizeof full_path);
-		syscall_debug("  name='%s', full_path='%s'\n", name, full_path);
-
-		/* Arguments */
-		arg_list = list_create();
-		for (;;)
-		{
-			unsigned int arg_ptr;
-
-			/* Argument pointer */
-			mem_read(isa_mem, argv + arg_list->count * 4, 4, &arg_ptr);
-			if (!arg_ptr)
-				break;
-
-			/* Argument */
-			length = mem_read_string(isa_mem, arg_ptr, sizeof arg_str, arg_str);
-			if (length >= sizeof arg_str)
-				fatal("syscall 'execve': buffer too small");
-
-			/* Duplicate */
-			arg = strdup(arg_str);
-			if (!arg)
-				fatal("%s: out of memory", __FUNCTION__);
-
-			/* Add to argument list */
-			list_add(arg_list, arg);
-			syscall_debug("    argv[%d]='%s'\n", arg_list->count, arg);
-		}
-
-		/* Environment variables */
-		syscall_debug("\n");
-		for (i = 0; ; i++)
-		{
-			unsigned int env_ptr;
-
-			/* Variable pointer */
-			mem_read(isa_mem, envp + i * 4, 4, &env_ptr);
-			if (!env_ptr)
-				break;
-
-			/* Variable */
-			length = mem_read_string(isa_mem, env_ptr, sizeof env, env);
-			if (length >= sizeof env)
-				fatal("syscall 'execve': buffer too small");
-
-			/* Debug */
-			syscall_debug("    envp[%d]='%s'\n", i, env);
-		}
-
-		/* In the special case that the command line is 'sh -c <...>', this system
-		 * call is the result of a program running the 'system' libc function. The
-		 * host and guest architecture might be different and incompatible, so the
-		 * safest option here is running the system command natively.
-		 */
-		if (!strcmp(full_path, "/bin/sh") && list_count(arg_list) == 3 &&
-			!strcmp(list_get(arg_list, 0), "sh") &&
-			!strcmp(list_get(arg_list, 1), "-c"))
-		{
-			int exit_code;
-
-			/* Execute program natively and finish context */
-			exit_code = system(list_get(arg_list, 2));
-			ctx_finish(isa_ctx, exit_code);
-
-			/* Free arguments and exit */
-			for (i = 0; i < list_count(arg_list); i++)
-				free(list_get(arg_list, i));
-			list_free(arg_list);
-			break;
-		}
-
-
-		/* Free arguments */
-		for (i = 0; i < list_count(arg_list); i++)
-			free(list_get(arg_list, i));
-		list_free(arg_list);
-
-		/* Return */
-		fatal("syscall 'execve': not implemented");
+		retval = sys_execve_impl();
 		break;
 	}
 
@@ -1112,14 +918,7 @@ void syscall_do()
 	/* 13 */
 	case syscall_code_time:
 	{
-		uint32_t ptime, t;
-
-		ptime = isa_regs->ebx;
-		syscall_debug("  ptime=0x%x\n", ptime);
-		t = time(NULL);
-		if (ptime)
-			mem_write(isa_mem, ptime, 4, &t);
-		retval = t;
+		retval = sys_time_impl();
 		break;
 	}
 
@@ -1127,19 +926,7 @@ void syscall_do()
 	/* 15 */
 	case syscall_code_chmod:
 	{
-		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
-		uint32_t pfilename, mode;
-		int len;
-
-		pfilename = isa_regs->ebx;
-		mode = isa_regs->ecx;
-		len = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
-		if (len >= MAX_PATH_SIZE)
-			fatal("syscall chmod: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		syscall_debug("  pfilename=0x%x, mode=0x%x\n", pfilename, mode);
-		syscall_debug("  filename='%s', fullpath='%s'\n", filename, fullpath);
-		RETVAL(chmod(fullpath, mode));
+		retval = sys_chmod_impl();
 		break;
 	}
 
@@ -1147,17 +934,7 @@ void syscall_do()
 	/* 19 */
 	case syscall_code_lseek:
 	{
-		uint32_t fd, offset, origin, host_fd;
-
-		fd = isa_regs->ebx;
-		offset = isa_regs->ecx;
-		origin = isa_regs->edx;
-		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		syscall_debug("  fd=%d, offset=0x%x, origin=0x%x\n",
-			fd, offset, origin);
-		syscall_debug("  host_fd=%d\n", host_fd);
-
-		RETVAL(lseek(host_fd, offset, origin));
+		retval = sys_lseek_impl();
 		break;
 	}
 
@@ -1165,7 +942,7 @@ void syscall_do()
 	/* 20 */
 	case syscall_code_getpid:
 	{
-		retval = isa_ctx->pid;
+		retval = sys_getpid_impl();
 		break;
 	}
 
@@ -1173,26 +950,7 @@ void syscall_do()
 	/* 30 */
 	case syscall_code_utime:
 	{
-		char filename[MAX_PATH_SIZE], fullpath[MAX_PATH_SIZE];
-		uint32_t pfilename, putimbuf;
-		struct utimbuf utimbuf;
-		struct sim_utimbuf sim_utimbuf;
-		int len;
-
-		pfilename = isa_regs->ebx;
-		putimbuf = isa_regs->ecx;
-		len = mem_read_string(isa_mem, pfilename, MAX_PATH_SIZE, filename);
-		if (len >= MAX_PATH_SIZE)
-			fatal("syscall utime: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, filename, fullpath, MAX_PATH_SIZE);
-		mem_read(isa_mem, putimbuf, sizeof(struct sim_utimbuf), &sim_utimbuf);
-		syscall_utime_sim_to_read(&utimbuf, &sim_utimbuf);
-		syscall_debug("  filename='%s', putimbuf=0x%x\n",
-			filename, putimbuf);
-		syscall_debug("  fullpath='%s'\n", fullpath);
-		syscall_debug("  utimbuf.actime = %u, utimbuf.modtime = %u\n",
-			sim_utimbuf.actime, sim_utimbuf.modtime);
-		RETVAL(utime(fullpath, &utimbuf));
+		retval = sys_utime_impl();
 		break;
 	}
 
@@ -3516,9 +3274,9 @@ void syscall_do()
 		if (syscode >= syscall_code_count) {
 			retval = -38;
 		} else {
-			fatal("not implemented system call '%s' (code %d) at 0x%x\n%s",
+			fatal("not implemented system call '%s' (code %d) at 0x%x",
 				syscode < syscall_code_count ? syscall_name[syscode] : "",
-				syscode, isa_regs->eip, err_syscall_note);
+				syscode, isa_regs->eip);
 		}
 	}
 
