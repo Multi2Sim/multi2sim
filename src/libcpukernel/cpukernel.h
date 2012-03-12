@@ -758,8 +758,15 @@ void isa_inst_stat_reset(void);
 #define syscall_debug(...) debug(syscall_debug_category, __VA_ARGS__)
 extern int syscall_debug_category;
 
+/* FIXME - remove from here - move to 'syscall.c' when ready */
+#define DEFSYSCALL(name,code) int sys_##name##_impl(void);
+#include "syscall.dat"
+#undef DEFSYSCALL
+
 void syscall_do(void);
 void syscall_summary(void);
+
+void syscall_debug_string(char *text, char *s, int len, int force);
 
 
 
