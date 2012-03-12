@@ -113,74 +113,6 @@ struct string_map_t msync_flags_map =
 };
 
 
-/* For 'clone' */
-
-#define SIM_CLONE_VM			0x00000100
-#define SIM_CLONE_FS			0x00000200
-#define SIM_CLONE_FILES			0x00000400
-#define SIM_CLONE_SIGHAND		0x00000800
-#define SIM_CLONE_PTRACE		0x00002000
-#define SIM_CLONE_VFORK			0x00004000
-#define SIM_CLONE_PARENT		0x00008000
-#define SIM_CLONE_THREAD		0x00010000
-#define SIM_CLONE_NEWNS			0x00020000
-#define SIM_CLONE_SYSVSEM		0x00040000
-#define SIM_CLONE_SETTLS		0x00080000
-#define SIM_CLONE_PARENT_SETTID		0x00100000
-#define SIM_CLONE_CHILD_CLEARTID	0x00200000
-#define SIM_CLONE_DETACHED		0x00400000
-#define SIM_CLONE_UNTRACED		0x00800000
-#define SIM_CLONE_CHILD_SETTID		0x01000000
-#define SIM_CLONE_STOPPED		0x02000000
-#define SIM_CLONE_NEWUTS		0x04000000
-#define SIM_CLONE_NEWIPC		0x08000000
-#define SIM_CLONE_NEWUSER		0x10000000
-#define SIM_CLONE_NEWPID		0x20000000
-#define SIM_CLONE_NEWNET		0x40000000
-#define SIM_CLONE_IO			0x80000000
-
-struct string_map_t clone_flags_map =
-{
-	23, {
-		{ "CLONE_VM", 0x00000100 },
-		{ "CLONE_FS", 0x00000200 },
-		{ "CLONE_FILES", 0x00000400 },
-		{ "CLONE_SIGHAND", 0x00000800 },
-		{ "CLONE_PTRACE", 0x00002000 },
-		{ "CLONE_VFORK", 0x00004000 },
-		{ "CLONE_PARENT", 0x00008000 },
-		{ "CLONE_THREAD", 0x00010000 },
-		{ "CLONE_NEWNS", 0x00020000 },
-		{ "CLONE_SYSVSEM", 0x00040000 },
-		{ "CLONE_SETTLS", 0x00080000 },
-		{ "CLONE_PARENT_SETTID", 0x00100000 },
-		{ "CLONE_CHILD_CLEARTID", 0x00200000 },
-		{ "CLONE_DETACHED", 0x00400000 },
-		{ "CLONE_UNTRACED", 0x00800000 },
-		{ "CLONE_CHILD_SETTID", 0x01000000 },
-		{ "CLONE_STOPPED", 0x02000000 },
-		{ "CLONE_NEWUTS", 0x04000000 },
-		{ "CLONE_NEWIPC", 0x08000000 },
-		{ "CLONE_NEWUSER", 0x10000000 },
-		{ "CLONE_NEWPID", 0x20000000 },
-		{ "CLONE_NEWNET", 0x40000000 },
-		{ "CLONE_IO", 0x80000000 }
-	}
-};
-
-static const uint32_t clone_supported_flags =
-	SIM_CLONE_VM | 
-	SIM_CLONE_FS |
-	SIM_CLONE_FILES |
-	SIM_CLONE_SIGHAND |
-	SIM_CLONE_THREAD |
-	SIM_CLONE_SYSVSEM |
-	SIM_CLONE_SETTLS |
-	SIM_CLONE_PARENT_SETTID |
-	SIM_CLONE_CHILD_CLEARTID |
-	SIM_CLONE_CHILD_SETTID;
-
-
 /* For fstat64, lstat64 */
 
 struct sim_stat64
@@ -233,45 +165,6 @@ static void syscall_copy_stat64(struct sim_stat64 *sim, struct stat *real)
 }
 
 
-/* For setitimer */
-
-static struct string_map_t itimer_map =
-{
-	3, {
-		{"ITIMER_REAL",		0},
-		{"ITIMER_VIRTUAL",	1},
-		{"ITIMER_PROF",		2}
-	}
-};
-
-struct sim_timeval
-{
-	uint32_t tv_sec;
-	uint32_t tv_usec;
-} __attribute__((packed));
-
-struct sim_itimerval
-{
-	struct sim_timeval it_interval;
-	struct sim_timeval it_value;
-} __attribute__((packed));
-
-void sim_timeval_debug(struct sim_timeval *sim_timeval)
-{
-	sys_debug("    tv_sec=%u, tv_usec=%u\n",
-		sim_timeval->tv_sec, sim_timeval->tv_usec);
-}
-
-void sim_itimerval_debug(struct sim_itimerval *sim_itimerval)
-{
-	sys_debug("    it_interval: tv_sec=%u, tv_usec=%u\n",
-		sim_itimerval->it_interval.tv_sec, sim_itimerval->it_interval.tv_usec);
-	sys_debug("    it_value: tv_sec=%u, tv_usec=%u\n",
-		sim_itimerval->it_value.tv_sec, sim_itimerval->it_value.tv_usec);
-}
-
-
-
 /* For uname */
 
 struct sim_utsname
@@ -292,22 +185,6 @@ struct sim_utsname sim_utsname =
 	"#1 Fri Jan 13 16:37:42 UTC 2012",
 	"i686"
 	""
-};
-
-
-/* For 'set_thread_area' */
-
-struct sim_user_desc
-{
-	uint32_t entry_number;
-	uint32_t base_addr;
-	uint32_t limit;
-	uint32_t seg_32bit:1;
-	uint32_t contents:2;
-	uint32_t read_exec_only:1;
-	uint32_t limit_in_pages:1;
-	uint32_t seg_not_present:1;
-	uint32_t useable:1;
 };
 
 
@@ -343,93 +220,6 @@ struct sim_pollfd
 	uint16_t events;
 	uint16_t revents;
 };
-
-
-/* For 'select' */
-
-/* Dump host 'fd_set' structure */
-void sim_fd_set_dump(char *fd_set_name, fd_set *fds, int n)
-{
-	int i;
-	char *comma;
-
-	/* Set empty */
-	if (!n || !fds)
-	{
-		sys_debug("    %s={}\n", fd_set_name);
-		return;
-	}
-
-	/* Dump set */
-	sys_debug("    %s={", fd_set_name);
-	comma = "";
-	for (i = 0; i < n; i++)
-	{
-		if (!FD_ISSET(i, fds))
-			continue;
-		sys_debug("%s%d", comma, i);
-		comma = ",";
-	}
-	sys_debug("}\n");
-}
-
-/* Read bitmap of 'guest_fd's from guest memory, and store it into
- * a bitmap of 'host_fd's into host memory. */
-int sim_fd_set_read(uint32_t addr, fd_set *fds, int n)
-{
-	int nbyte, nbit, i;
-	int host_fd;
-	unsigned char c;
-
-	FD_ZERO(fds);
-	for (i = 0; i < n; i++)
-	{
-		/* Check if fd is set */
-		nbyte = i >> 3;
-		nbit = i & 7;
-		mem_read(isa_mem, addr + nbyte, 1, &c);
-		if (!(c & (1 << nbit)))
-			continue;
-		
-		/* Obtain 'host_fd' */
-		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, i);
-		if (host_fd < 0)
-			return 0;
-		FD_SET(host_fd, fds);
-	}
-	return 1;
-}
-
-/* Read bitmap of 'host_fd's from host memory, and store it into
- * a bitmap of 'guest_fd's into guest memory. */
-void sim_fd_set_write(uint32_t addr, fd_set *fds, int n)
-{
-	int nbyte, nbit, i;
-	int guest_fd;
-	unsigned char c;
-
-	/* No valid address given */
-	if (!addr)
-		return;
-
-	/* Write */
-	mem_zero(isa_mem, addr, (n + 7) / 8);
-	for (i = 0; i < n; i++)
-	{
-		/* Check if fd is set */
-		if (!FD_ISSET(i, fds))
-			continue;
-
-		/* Obtain 'guest_fd' and write */
-		guest_fd = file_desc_table_get_guest_fd(isa_ctx->file_desc_table, i);
-		assert(guest_fd >= 0);
-		nbyte = guest_fd >> 3;
-		nbit = guest_fd & 7;
-		mem_read(isa_mem, addr + nbyte, 1, &c);
-		c |= 1 << nbit;
-		mem_write(isa_mem, addr + nbyte, 1, &c);
-	}
-}
 
 
 /* For 'futex' */
@@ -774,37 +564,7 @@ void syscall_do()
 	/* 104 */
 	case syscall_code_setitimer:
 	{
-		uint32_t which, pvalue, povalue;
-		struct sim_itimerval itimerval;
-		uint64_t now = ke_timer();
-
-		which = isa_regs->ebx;
-		pvalue = isa_regs->ecx;
-		povalue = isa_regs->edx;
-		sys_debug("  which=%d (%s), pvalue=0x%x, povalue=0x%x\n",
-			which, map_value(&itimer_map, which), pvalue, povalue);
-
-		/* Read value */
-		if (pvalue) {
-			mem_read(isa_mem, pvalue, sizeof(itimerval), &itimerval);
-			sys_debug("  itimerval at 'pvalue':\n");
-			sim_itimerval_debug(&itimerval);
-		}
-
-		/* Check range of 'which' */
-		if (which >= 3)
-			fatal("syscall 'setitimer': wrong value for 'which' argument");
-
-		/* Set 'itimer_value' (ke_timer domain) and 'itimer_interval' (usec) */
-		isa_ctx->itimer_value[which] = now + itimerval.it_value.tv_sec * 1000000
-			+ itimerval.it_value.tv_usec;
-		isa_ctx->itimer_interval[which] = itimerval.it_interval.tv_sec * 1000000
-			+ itimerval.it_interval.tv_usec;
-
-		/* New timer inserted, so interrupt current 'ke_host_thread_timer'
-		 * waiting for the next timer expiration. */
-		ctx_host_thread_timer_cancel(isa_ctx);
-		ke_process_events_schedule();
+		retval = sys_setitimer_impl();
 		break;
 	}
 
@@ -812,27 +572,7 @@ void syscall_do()
 	/* 105 */
 	case syscall_code_getitimer:
 	{
-		uint32_t which, pvalue;
-		struct sim_itimerval itimerval;
-		uint64_t now = ke_timer();
-		uint64_t rem;
-
-		which = isa_regs->ebx;
-		pvalue = isa_regs->ecx;
-		sys_debug("  which=%d (%s), pvalue=0x%x\n",
-			which, map_value(&itimer_map, which), pvalue);
-
-		/* Check range of 'which' */
-		if (which >= 3)
-			fatal("syscall 'getitimer': wrong value for 'which' argument");
-
-		/* Return value in structure */
-		rem = now < isa_ctx->itimer_value[which] ? isa_ctx->itimer_value[which] - now : 0;
-		itimerval.it_value.tv_sec = rem / 1000000;
-		itimerval.it_value.tv_usec = rem % 1000000;
-		itimerval.it_interval.tv_sec = isa_ctx->itimer_interval[which] / 1000000;
-		itimerval.it_interval.tv_usec = isa_ctx->itimer_interval[which] % 1000000;
-		mem_write(isa_mem, pvalue, sizeof(itimerval), &itimerval);
+		retval = sys_getitimer_impl();
 		break;
 	}
 
@@ -840,149 +580,15 @@ void syscall_do()
 	/* 119 */
 	case syscall_code_sigreturn:
 	{
-		signal_handler_return(isa_ctx);
-		ke_process_events_schedule();
-		ke_process_events();
+		retval = sys_sigreturn_impl();
 		break;
 	}
 
 
-
 	/* 120 */
-	/* Prototype: long sys_clone(unsigned long clone_flags, unsigned long newsp,
-	 * 	int __user *parent_tid, int unused, int __user *child_tid);
-	 * There is an unused parameter, that's why we read child_tidptr from edi
-	 * instead of esi. */
 	case syscall_code_clone:
 	{
-		uint32_t flags;
-		uint32_t new_esp;
-		uint32_t parent_tid_ptr;
-		uint32_t child_tid_ptr;
-
-		int exit_signal;
-
-		char flags_str[MAX_STRING_SIZE];
-		struct ctx_t *new_ctx;
-
-		/* Arguments */
-		flags = isa_regs->ebx;
-		new_esp = isa_regs->ecx;
-		parent_tid_ptr = isa_regs->edx;
-		child_tid_ptr = isa_regs->edi;
-
-		/* Debug */
-		sys_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
-			flags, new_esp, parent_tid_ptr, child_tid_ptr);
-
-		/* Exit signal is specified in the lower byte of 'flags' */
-		exit_signal = flags & 0xff;
-		flags &= ~0xff;
-
-		/* Debug */
-		map_flags(&clone_flags_map, flags, flags_str, MAX_STRING_SIZE);
-		sys_debug("  flags=%s\n", flags_str);
-		sys_debug("  exit_signal=%d (%s)\n", exit_signal, sim_signal_name(exit_signal));
-
-		/* New stack pointer defaults to current */
-		if (!new_esp)
-			new_esp = isa_regs->esp;
-
-		/* Check not supported flags */
-		if (flags & ~clone_supported_flags)
-		{
-			map_flags(&clone_flags_map, flags & ~clone_supported_flags,
-				flags_str, MAX_STRING_SIZE);
-			fatal("syscall 'clone': not supported flags: %s", flags_str);
-		}
-
-		/* Flag CLONE_VM */
-		if (flags & SIM_CLONE_VM)
-		{
-			/* CLONE_FS, CLONE_FILES, CLONE_SIGHAND must be there, too */
-			if ((flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND)) !=
-				(SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
-				fatal("syscall 'clone': not supported flags with CLONE_VM");
-
-			/* Create new context sharing memory image */
-			new_ctx = ctx_clone(isa_ctx);
-		}
-		else
-		{
-			/* CLONE_FS, CLONE_FILES, CLONE_SIGHAND must not be there either */
-			if (flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
-				fatal("syscall 'clone': not supported flags with CLONE_VM");
-
-			/* Create new context replicating memory image */
-			new_ctx = ctx_fork(isa_ctx);
-		}
-
-		/* Flag CLONE_THREAD.
-		 * If specified, the exit signal is ignored. Otherwise, it is specified in the
-		 * lower byte of the flags. Also, this determines whether to create a group of
-		 * threads. */
-		if (flags & SIM_CLONE_THREAD)
-		{
-			new_ctx->exit_signal = 0;
-			new_ctx->group_parent = isa_ctx->group_parent ?
-				isa_ctx->group_parent : isa_ctx;
-		}
-		else
-		{
-			new_ctx->exit_signal = exit_signal;
-			new_ctx->group_parent = NULL;
-		}
-
-		/* Flag CLONE_PARENT_SETTID */
-		if (flags & SIM_CLONE_PARENT_SETTID)
-			mem_write(isa_ctx->mem, parent_tid_ptr, 4, &new_ctx->pid);
-
-		/* Flag CLONE_CHILD_SETTID */
-		if (flags & SIM_CLONE_CHILD_SETTID)
-			mem_write(new_ctx->mem, child_tid_ptr, 4, &new_ctx->pid);
-
-		/* Flag CLONE_CHILD_CLEARTID */
-		if (flags & SIM_CLONE_CHILD_CLEARTID)
-			new_ctx->clear_child_tid = child_tid_ptr;
-
-		/* Flag CLONE_SETTLS */
-		if (flags & SIM_CLONE_SETTLS)
-		{
-			struct sim_user_desc uinfo;
-			uint32_t puinfo;
-
-			puinfo = isa_regs->esi;
-			sys_debug("  puinfo=0x%x\n", puinfo);
-
-			mem_read(isa_mem, puinfo, sizeof(struct sim_user_desc), &uinfo);
-			sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
-					uinfo.entry_number, uinfo.base_addr, uinfo.limit);
-			sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
-					uinfo.seg_32bit, uinfo.contents, uinfo.read_exec_only);
-			sys_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
-					uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
-			if (!uinfo.seg_32bit)
-				fatal("syscall set_thread_area: only 32-bit segments supported");
-
-			/* Limit given in pages (4KB units) */
-			if (uinfo.limit_in_pages)
-				uinfo.limit <<= 12;
-
-			uinfo.entry_number = 6;
-			mem_write(isa_mem, puinfo, 4, &uinfo.entry_number);
-
-			new_ctx->glibc_segment_base = uinfo.base_addr;
-			new_ctx->glibc_segment_limit = uinfo.limit;
-		}
-
-		/* New context returns 0. */
-		new_ctx->regs->esp = new_esp;
-		new_ctx->regs->eax = 0;
-
-		/* Return PID of the new context */
-		retval = new_ctx->pid;
-		sys_debug("  context %d created with pid %d\n",
-			new_ctx->pid, retval);
+		retval = sys_clone_impl();
 		break;
 	}
 
@@ -1134,59 +740,9 @@ void syscall_do()
 
 
 	/* 142 */
-	/* Prototype:
-	 * int select(int n, fd_set *inp, fd_set *outp, fd_set *exp, struct timeval *tvp);
-	 */
 	case syscall_code_select:
 	{
-		uint32_t n, inp, outp, exp, tvp;
-		fd_set in, out, ex;
-		struct sim_timeval sim_tv;
-		struct timeval tv;
-
-		n = isa_regs->ebx;
-		inp = isa_regs->ecx;
-		outp = isa_regs->edx;
-		exp = isa_regs->esi;
-		tvp = isa_regs->edi;
-		sys_debug("  n=%d, inp=0x%x, outp=0x%x, exp=0x%x, tvp=0x%x\n",
-			n, inp, outp, exp, tvp);
-
-		/* Read file descriptor bitmaps. If any file descriptor is invalid, return EBADF. */
-		if (!sim_fd_set_read(inp, &in, n)
-			|| !sim_fd_set_read(outp, &out, n)
-			|| !sim_fd_set_read(exp, &ex, n))
-		{
-			retval = -EBADF;
-			break;
-		}
-
-		/* Dump file descriptors */
-		sim_fd_set_dump("inp", &in, n);
-		sim_fd_set_dump("outp", &out, n);
-		sim_fd_set_dump("exp", &ex, n);
-
-		/* Read and dump 'sim_tv' */
-		memset(&sim_tv, 0, sizeof(sim_tv));
-		if (tvp)
-			mem_read(isa_mem, tvp, sizeof(sim_tv), &sim_tv);
-		sys_debug("  tv:\n");
-		sim_timeval_debug(&sim_tv);
-
-		/* Blocking 'select' not supported yet */
-		if (sim_tv.tv_sec || sim_tv.tv_usec)
-			fatal("syscall 'select': not supported for 'tv' other than 0");
-
-		/* Host system call */
-		memset(&tv, 0, sizeof(tv));
-		RETVAL(select(n, &in, &out, &ex, &tv));
-		if (retval < 0)
-			break;
-
-		/* Write result */
-		sim_fd_set_write(inp, &in, n);
-		sim_fd_set_write(outp, &out, n);
-		sim_fd_set_write(exp, &ex, n);
+		retval = sys_select_impl();
 		break;
 	}
 
@@ -2149,42 +1705,7 @@ void syscall_do()
 	/* 243 */
 	case syscall_code_set_thread_area:
 	{
-		uint32_t puinfo;
-		struct sim_user_desc uinfo;
-
-		puinfo = isa_regs->ebx;
-		sys_debug("  puinfo=0x%x\n", puinfo);
-
-		mem_read(isa_mem, puinfo, sizeof(struct sim_user_desc), &uinfo);
-		sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
-			uinfo.entry_number, uinfo.base_addr, uinfo.limit);
-		sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
-			uinfo.seg_32bit, uinfo.contents, uinfo.read_exec_only);
-		sys_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
-			uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
-		if (!uinfo.seg_32bit)
-			fatal("syscall set_thread_area: only 32-bit segments supported");
-
-		/* Limit given in pages (4KB units) */
-		if (uinfo.limit_in_pages)
-			uinfo.limit <<= 12;
-
-		if (uinfo.entry_number == (uint32_t) -1) {
-			if (isa_ctx->glibc_segment_base)
-				fatal("set_thread_area: glibc segment already set");
-			isa_ctx->glibc_segment_base = uinfo.base_addr;
-			isa_ctx->glibc_segment_limit = uinfo.limit;
-			uinfo.entry_number = 6;
-			mem_write(isa_mem, puinfo, 4, &uinfo.entry_number);
-		} else {
-			if (uinfo.entry_number != 6)
-				fatal("set_thread_area: erroneous entry_number field");
-			if (!isa_ctx->glibc_segment_base)
-				fatal("set_thread_area: glibc segment was not set");
-			isa_ctx->glibc_segment_base = uinfo.base_addr;
-			isa_ctx->glibc_segment_limit = uinfo.limit;
-		}
-
+		retval = sys_set_thread_area_impl();
 		break;
 	}
 
