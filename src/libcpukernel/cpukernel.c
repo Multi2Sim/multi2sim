@@ -257,12 +257,12 @@ void *ke_host_thread_suspend(void *arg)
 	
 	} else if (ctx_get_status(ctx, ctx_poll)) {
 
-		struct fd_t *fd;
+		struct file_desc_t *fd;
 		struct pollfd host_fds;
 		int err, timeout;
 		
 		/* Get file descriptor */
-		fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
+		fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 		if (!fd)
 			fatal("syscall 'poll': invalid 'wakeup_fd'");
 
@@ -283,12 +283,12 @@ void *ke_host_thread_suspend(void *arg)
 	
 	} else if (ctx_get_status(ctx, ctx_read)) {
 		
-		struct fd_t *fd;
+		struct file_desc_t *fd;
 		struct pollfd host_fds;
 		int err;
 
 		/* Get file descriptor */
-		fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
+		fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 		if (!fd)
 			fatal("syscall 'read': invalid 'wakeup_fd'");
 
@@ -301,12 +301,12 @@ void *ke_host_thread_suspend(void *arg)
 	
 	} else if (ctx_get_status(ctx, ctx_write)) {
 		
-		struct fd_t *fd;
+		struct file_desc_t *fd;
 		struct pollfd host_fds;
 		int err;
 
 		/* Get file descriptor */
-		fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
+		fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 		if (!fd)
 			fatal("syscall 'write': invalid 'wakeup_fd'");
 
@@ -458,7 +458,7 @@ void ke_process_events()
 		{
 			uint32_t prevents = ctx->regs->ebx + 6;
 			uint16_t revents = 0;
-			struct fd_t *fd;
+			struct file_desc_t *fd;
 			struct pollfd host_fds;
 			int err;
 
@@ -467,7 +467,7 @@ void ke_process_events()
 				continue;
 
 			/* Get file descriptor */
-			fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
+			fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 			if (!fd)
 				fatal("syscall 'poll': invalid 'wakeup_fd'");
 
@@ -533,7 +533,7 @@ void ke_process_events()
 		/* Context suspended in a 'write' system call  */
 		if (ctx_get_status(ctx, ctx_write))
 		{
-			struct fd_t *fd;
+			struct file_desc_t *fd;
 			int count, err;
 			uint32_t pbuf;
 			void *buf;
@@ -553,7 +553,7 @@ void ke_process_events()
 			}
 
 			/* Get file descriptor */
-			fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
+			fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 			if (!fd)
 				fatal("syscall 'write': invalid 'wakeup_fd'");
 
@@ -594,7 +594,7 @@ void ke_process_events()
 		/* Context suspended in 'read' system call */
 		if (ctx_get_status(ctx, ctx_read))
 		{
-			struct fd_t *fd;
+			struct file_desc_t *fd;
 			uint32_t pbuf;
 			int count, err;
 			void *buf;
@@ -614,7 +614,7 @@ void ke_process_events()
 			}
 
 			/* Get file descriptor */
-			fd = fdt_entry_get(ctx->fdt, ctx->wakeup_fd);
+			fd = file_desc_table_entry_get(ctx->file_desc_table, ctx->wakeup_fd);
 			if (!fd)
 				fatal("syscall 'read': invalid 'wakeup_fd'");
 

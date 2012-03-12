@@ -131,16 +131,16 @@ int sys_close_impl(void)
 {
 	int guest_fd;
 	int host_fd;
-	struct fd_t *fd;
+	struct file_desc_t *fd;
 
 	/* Arguments */
 	guest_fd = isa_regs->ebx;
 	syscall_debug("  guest_fd=%d\n", guest_fd);
-	host_fd = fdt_get_host_fd(isa_ctx->fdt, guest_fd);
+	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, guest_fd);
 	syscall_debug("  host_fd=%d\n", host_fd);
 
 	/* Get file descriptor table entry. */
-	fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+	fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 	if (!fd)
 		return -SIM_EBADF;
 
@@ -149,9 +149,9 @@ int sys_close_impl(void)
 		close(host_fd);
 
 	/* Free guest file descriptor. This will delete the host file if it's a virtual file. */
-	if (fd->kind == fd_kind_virtual)
+	if (fd->kind == file_desc_virtual)
 		syscall_debug("    host file '%s': temporary file deleted\n", fd->path);
-	fdt_entry_free(isa_ctx->fdt, fd->guest_fd);
+	file_desc_table_entry_free(isa_ctx->file_desc_table, fd->guest_fd);
 
 	/* Success */
 	return 0;
@@ -174,7 +174,7 @@ int sys_read_impl(void)
 
 	void *buf;
 
-	struct fd_t *fd;
+	struct file_desc_t *fd;
 	struct pollfd fds;
 
 	/* Arguments */
@@ -185,7 +185,7 @@ int sys_read_impl(void)
 		guest_fd, buf_ptr, count);
 
 	/* Get file descriptor */
-	fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+	fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 	if (!fd)
 		return -SIM_EBADF;
 	host_fd = fd->host_fd;
@@ -255,7 +255,7 @@ int sys_write_impl(void)
 	int host_fd;
 	int err;
 
-	struct fd_t *fd;
+	struct file_desc_t *fd;
 	void *buf;
 
 	struct pollfd fds;
@@ -268,7 +268,7 @@ int sys_write_impl(void)
 		guest_fd, buf_ptr, count);
 
 	/* Get file descriptor */
-	fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
+	fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 	if (!fd)
 		return -SIM_EBADF;
 	host_fd = fd->host_fd;
