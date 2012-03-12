@@ -946,40 +946,14 @@ void syscall_do()
 	/* 1 */
 	case syscall_code_exit:
 	{
-		int status;
-
-		status = isa_regs->ebx;
-		syscall_debug("  status=0x%x\n", status);
-		ctx_finish(isa_ctx, status);
+		retval = sys_exit_impl();
 		break;
 	}
 
 	/* 2 */
 	case syscall_code_close:
 	{
-		uint32_t guest_fd, host_fd;
-		struct fd_t *fd;
-
-		guest_fd = isa_regs->ebx;
-		syscall_debug("  guest_fd=%d\n", guest_fd);
-		host_fd = fdt_get_host_fd(isa_ctx->fdt, guest_fd);
-		syscall_debug("  host_fd=%d\n", host_fd);
-
-		/* Get file descriptor table entry. */
-		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
-		if (!fd) {
-			retval = -EBADF;
-			break;
-		}
-
-		/* Close host file descriptor only if it is valid and not stdin/stdout/stderr. */
-		if (host_fd > 2)
-			close(host_fd);
-		
-		/* Free guest file descriptor. This will delete the host file if it's a virtual file. */
-		if (fd->kind == fd_kind_virtual)
-			syscall_debug("    host file '%s': temporary file deleted\n", fd->path);
-		fdt_entry_free(isa_ctx->fdt, fd->guest_fd);
+		retval = sys_close_impl();
 		break;
 	}
 
@@ -987,59 +961,7 @@ void syscall_do()
 	/* 3 */
 	case syscall_code_read:
 	{
-		uint32_t pbuf, count;
-		int guest_fd, host_fd, err;
-		void *buf;
-		struct fd_t *fd;
-		struct pollfd fds;
-
-		/* Get parameters */
-		guest_fd = isa_regs->ebx;
-		pbuf = isa_regs->ecx;
-		count = isa_regs->edx;
-		syscall_debug("  guest_fd=%d, pbuf=0x%x, count=0x%x\n",
-			guest_fd, pbuf, count);
-
-		/* Get file descriptor */
-		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
-		if (!fd) {
-			retval = -EBADF;
-			break;
-		}
-		host_fd = fd->host_fd;
-		syscall_debug("  host_fd=%d\n", host_fd);
-
-		/* Allocate buffer */
-		buf = calloc(1, count);
-		if (!buf)
-			fatal("syscall read: cannot allocate buffer");
-
-		/* Poll the file descriptor to check if read is blocking */
-		fds.fd = host_fd;
-		fds.events = POLLIN;
-		err = poll(&fds, 1, 0);
-		if (err < 0)
-			fatal("syscall 'read': error in 'poll'");
-
-		/* Non-blocking read */
-		if (fds.revents || (fd->flags & O_NONBLOCK)) {
-			RETVAL(read(host_fd, buf, count));
-			if (retval > 0) {
-				mem_write(isa_mem, pbuf, retval, buf);
-				syscall_debug_string("  buf", buf, count, 1);
-			}
-			free(buf);
-			break;
-		}
-
-		/* Blocking read - suspend thread */
-		syscall_debug("  blocking read - process suspended\n");
-		isa_ctx->wakeup_fd = guest_fd;
-		isa_ctx->wakeup_events = 1;  /* POLLIN */
-		ctx_set_status(isa_ctx, ctx_suspended | ctx_read);
-		ke_process_events_schedule();
-
-		free(buf);
+		retval = sys_read_impl();
 		break;
 	}
 
@@ -1047,59 +969,7 @@ void syscall_do()
 	/* 4 */
 	case syscall_code_write:
 	{
-		uint32_t buf_ptr;
-		uint32_t count;
-
-		int guest_fd;
-		int host_fd;
-
-		struct fd_t *fd;
-		void *buf;
-
-		struct pollfd fds;
-
-		guest_fd = isa_regs->ebx;
-		buf_ptr = isa_regs->ecx;
-		count = isa_regs->edx;
-		syscall_debug("  guest_fd=%d, pbuf=0x%x, count=0x%x\n",
-			guest_fd, buf_ptr, count);
-
-		/* Get file descriptor */
-		fd = fdt_entry_get(isa_ctx->fdt, guest_fd);
-		if (!fd)
-		{
-			retval = -EBADF;
-			break;
-		}
-		host_fd = fd->host_fd;
-		syscall_debug("  host_fd=%d\n", host_fd);
-
-		/* Read buffer from memory */
-		buf = malloc(count);
-		if (!buf)
-			fatal("%s: out of memory", __FUNCTION__);
-		mem_read(isa_mem, buf_ptr, count, buf);
-		syscall_debug_string("  buf", buf, count, 0);
-
-		/* Poll the file descriptor to check if write is blocking */
-		fds.fd = host_fd;
-		fds.events = POLLOUT;
-		poll(&fds, 1, 0);
-
-		/* Non-blocking write */
-		if (fds.revents)
-		{
-			RETVAL(write(host_fd, buf, count));
-			free(buf);
-			break;
-		}
-
-		/* Blocking write - suspend thread */
-		syscall_debug("  blocking write - process suspended\n");
-		isa_ctx->wakeup_fd = guest_fd;
-		ctx_set_status(isa_ctx, ctx_suspended | ctx_write);
-		ke_process_events_schedule();
-		free(buf);
+		retval = sys_write_impl();
 		break;
 	}
 
