@@ -110,31 +110,6 @@ char *err_syscall_note =
 	"\tsystem call, please email 'development@multi2sim.org'.\n";
 
 
-/* For 'open' */
-
-struct string_map_t open_flags_map =
-{
-	16, {
-		{ "O_RDONLY",        00000000 },
-		{ "O_WRONLY",        00000001 },
-		{ "O_RDWR",          00000002 },
-		{ "O_CREAT",         00000100 },
-		{ "O_EXCL",          00000200 },
-		{ "O_NOCTTY",        00000400 },
-		{ "O_TRUNC",         00001000 },
-		{ "O_APPEND",        00002000 },
-		{ "O_NONBLOCK",      00004000 },
-		{ "O_SYNC",          00010000 },
-		{ "FASYNC",          00020000 },
-		{ "O_DIRECT",        00040000 },
-		{ "O_LARGEFILE",     00100000 },
-		{ "O_DIRECTORY",     00200000 },
-		{ "O_NOFOLLOW",      00400000 },
-		{ "O_NOATIME",       01000000 }
-	}
-};
-
-
 /* For 'msync' */
 
 struct string_map_t msync_flags_map =
@@ -240,30 +215,6 @@ static void syscall_utime_sim_to_read(struct utimbuf *real, struct sim_utimbuf *
 	real->actime = sim->actime;
 	real->modtime = sim->modtime;
 }
-
-
-/* For 'fcntl' */
-
-struct string_map_t fcntl_cmd_map =
-{
-	15, {
-		{ "F_DUPFD", 0 },
-		{ "F_GETFD", 1 },
-		{ "F_SETFD", 2 },
-		{ "F_GETFL", 3 },
-		{ "F_SETFL", 4 },
-		{ "F_GETLK", 5 },
-		{ "F_SETLK", 6 },
-		{ "F_SETLKW", 7 },
-		{ "F_SETOWN", 8 },
-		{ "F_GETOWN", 9 },
-		{ "F_SETSIG", 10 },
-		{ "F_GETSIG", 11 },
-		{ "F_GETLK64", 12 },
-		{ "F_SETLK64", 13 },
-		{ "F_SETLKW64", 14 }
-	}
-};
 
 
 /* For 'socketcall' */
@@ -976,75 +927,7 @@ void syscall_do()
 	/* 5 */
 	case syscall_code_open:
 	{
-		char file_name[MAX_PATH_SIZE];
-		char full_path[MAX_PATH_SIZE];
-		char temp_path[MAX_PATH_SIZE];
-
-		uint32_t file_name_ptr;
-		int flags;
-		int mode;
-		char flags_str[MAX_STRING_SIZE];
-		int length;
-
-		int host_fd;
-		struct file_desc_t *fd;
-
-		/* Read parameters */
-		file_name_ptr = isa_regs->ebx;
-		flags = isa_regs->ecx;
-		mode = isa_regs->edx;
-		length = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
-		if (length >= MAX_PATH_SIZE)
-			fatal("syscall open: maximum path length exceeded");
-		ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
-		syscall_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
-			file_name, flags, mode);
-		syscall_debug("  fullpath='%s'\n", full_path);
-		map_flags(&open_flags_map, flags, flags_str, sizeof flags_str);
-		syscall_debug("  flags=%s\n", flags_str);
-
-		/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
-		gk_libopencl_redirect(full_path, sizeof full_path);
-
-		/* Virtual files */
-		if (!strncmp(full_path, "/proc/", 6))
-		{
-			/* File /proc/self/maps */
-			if (!strcmp(full_path, "/proc/self/maps"))
-			{
-				/* Create temporary file and open it. */
-				ctx_gen_proc_self_maps(isa_ctx, temp_path);
-				host_fd = open(temp_path, flags, mode);
-				assert(host_fd > 0);
-
-				/* Add file descriptor table entry. */
-				fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_virtual, host_fd, temp_path, flags);
-				syscall_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
-					temp_path, fd->guest_fd, fd->host_fd);
-				retval = fd->guest_fd;
-				break;
-			}
-
-			/* Unhandled virtual file. Let the application read the contents of the host
-			 * version of the file as if it was a regular file. */
-			syscall_debug("    warning: unhandled virtual file\n");
-		}
-
-		/* Regular file. */
-		host_fd = open(full_path, flags, mode);
-		if (host_fd < 0)
-		{
-			retval = -errno;
-			break;
-		}
-
-		/* File opened, create a new file descriptor. */
-		fd = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_regular, host_fd, full_path, flags);
-		syscall_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
-			fd->guest_fd, fd->host_fd);
-		retval = fd->guest_fd;
-
-		/* Return */
+		retval = sys_open_impl();
 		break;
 	}
 
@@ -3223,56 +3106,7 @@ void syscall_do()
 	/* 221 */
 	case syscall_code_fcntl64:
 	{
-		uint32_t guest_fd, cmd, arg;
-		char *cmd_name;
-		char sflags[MAX_STRING_SIZE];
-		struct file_desc_t *fd;
-
-		guest_fd = isa_regs->ebx;
-		cmd = isa_regs->ecx;
-		arg = isa_regs->edx;
-		syscall_debug("  guest_fd=%d, cmd=%d, arg=0x%x\n",
-			guest_fd, cmd, arg);
-		cmd_name = map_value(&fcntl_cmd_map, cmd);
-		syscall_debug("    cmd=%s\n", cmd_name);
-
-		/* Get file descriptor table entry */
-		fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
-		if (!fd) {
-			retval = -EBADF;
-			break;
-		}
-		if (fd->host_fd < 0)
-			fatal("syscall 'fcntl64': not suported for this type of files");
-		syscall_debug("    host_fd=%d\n", fd->host_fd);
-
-		/* Process command */
-		switch (cmd) {
-
-		case 1:  /* F_GETFD */
-			RETVAL(fcntl(fd->host_fd, F_GETFD));
-			break;
-
-		case 2:  /* F_SETFD */
-			RETVAL(fcntl(fd->host_fd, F_SETFD, arg));
-			break;
-
-		case 3:  /* F_GETFL */
-			RETVAL(fcntl(fd->host_fd, F_GETFL));
-			map_flags(&open_flags_map, retval, sflags, MAX_STRING_SIZE);
-			syscall_debug("    retval=%s\n", sflags);
-			break;
-
-		case 4:  /* F_SETFL */
-			map_flags(&open_flags_map, arg, sflags, MAX_STRING_SIZE);
-			syscall_debug("    arg=%s\n", sflags);
-			fd->flags = arg;
-			RETVAL(fcntl(fd->host_fd, F_SETFL, arg));
-			break;
-
-		default:
-			fatal("syscall fcntl64: command %s not implemented", cmd_name);
-		}
+		retval = sys_fcntl64_impl();
 		break;
 	}
 
