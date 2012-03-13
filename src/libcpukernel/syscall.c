@@ -742,20 +742,7 @@ void syscall_do()
 	/* 241 */
 	case syscall_code_sched_setaffinity:
 	{
-		uint32_t pid, len, pmask;
-		uint32_t num_procs = 4;
-		uint32_t mask;
-
-		pid = isa_regs->ebx;
-		len = isa_regs->ecx;
-		pmask = isa_regs->edx;
-
-		mem_read(isa_mem, pmask, 4, &mask);
-		sys_debug("  pid=%d, len=%d, pmask=0x%x\n", pid, len, pmask);
-		sys_debug("  mask=0x%x\n", mask);
-
-		/* FIXME: system call ignored. Return the number of procs. */
-		retval = num_procs;
+		retval = sys_sched_setaffinity_impl();
 		break;
 	}
 
@@ -763,20 +750,7 @@ void syscall_do()
 	/* 242 */
 	case syscall_code_sched_getaffinity:
 	{
-		uint32_t pid, len, pmask;
-		uint32_t num_procs = 4;
-		uint32_t mask = (1 << num_procs) - 1;
-
-		pid = isa_regs->ebx;
-		len = isa_regs->ecx;
-		pmask = isa_regs->edx;
-		sys_debug("  pid=%d, len=%d, pmask=0x%x\n", pid, len, pmask);
-
-		/* FIXME: the affinity is set to 1 for num_procs processors and only the 4 LSBytes are set.
-		 * The return value is set to num_procs. This is the behavior on a 4-core processor
-		 * in a real system. */
-		mem_write(isa_mem, pmask, 4, &mask);
-		retval = num_procs;
+		retval = sys_sched_getaffinity_impl();
 		break;
 	}
 
