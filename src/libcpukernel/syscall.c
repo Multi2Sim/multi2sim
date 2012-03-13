@@ -766,18 +766,7 @@ void syscall_do()
 	/* 250 */
 	case syscall_code_fadvise64:
 	{
-		uint32_t fd;
-		uint32_t off_hi, off_lo;
-		uint32_t len, advice;
-
-		fd = isa_regs->ebx;
-		off_lo = isa_regs->ecx;
-		off_hi = isa_regs->edx;
-		len = isa_regs->esi;
-		advice = isa_regs->edi;
-
-		sys_debug("  fd=%d, off={0x%x, 0x%x}, len=%d, advice=%d\n",
-			fd, off_hi, off_lo, len, advice);
+		retval = sys_fadvise64_impl();
 		break;
 	}
 
@@ -785,12 +774,7 @@ void syscall_do()
 	/* 252 */
 	case syscall_code_exit_group:
 	{
-		int status;
-
-		status = isa_regs->ebx;
-		sys_debug("  status=0x%x\n", status);
-
-		ctx_finish_group(isa_ctx, status);
+		retval = sys_exit_group_impl();
 		break;
 	}
 
@@ -798,13 +782,7 @@ void syscall_do()
 	/* 258 */
 	case syscall_code_set_tid_address:
 	{
-		uint32_t tidptr;
-
-		tidptr = isa_regs->ebx;
-		sys_debug("  tidptr=0x%x\n", tidptr);
-
-		isa_ctx->clear_child_tid = tidptr;
-		retval = isa_ctx->pid;
+		retval = sys_set_tid_address_impl();
 		break;
 	}
 
@@ -812,18 +790,7 @@ void syscall_do()
 	/* 266 */
 	case syscall_code_clock_getres:
 	{
-		uint32_t clk_id, pres;
-		uint32_t tv_sec, tv_nsec;
-
-		clk_id = isa_regs->ebx;
-		pres = isa_regs->ecx;
-		sys_debug("  clk_id=%d\n", clk_id);
-		sys_debug("  pres=0x%x\n", pres);
-
-		tv_sec = 0;
-		tv_nsec = 1;
-		mem_write(isa_mem, pres, 4, &tv_sec);
-		mem_write(isa_mem, pres + 4, 4, &tv_nsec);
+		retval = sys_clock_getres_impl();
 		break;
 	}
 
@@ -831,29 +798,7 @@ void syscall_do()
 	/* 270 */
 	case syscall_code_tgkill:
 	{
-		uint32_t tgid, pid, sig;
-		struct ctx_t *ctx;
-
-		tgid = isa_regs->ebx;
-		pid = isa_regs->ecx;
-		sig = isa_regs->edx;
-		sys_debug("  tgid=%d, pid=%d, sig=%d (%s)\n",
-			tgid, pid, sig, sim_signal_name(sig));
-
-		/* Implementation restrictions. */
-		if ((int) tgid == -1)
-			fatal("syscall 'tgkill': not implemented for tgid = -1");
-
-		/* Find context referred by pid. */
-		ctx = ctx_get(pid);
-		if (!ctx)
-			fatal("syscall 'tgkill': pid %d does not exist", pid);
-
-		/* Send signal */
-		sim_sigset_add(&ctx->signal_mask_table->pending, sig);
-		ctx_host_thread_suspend_cancel(ctx);  /* Target ctx might wake up */
-		ke_process_events_schedule();
-		ke_process_events();
+		retval = sys_tgkill_impl();
 		break;
 	}
 
@@ -861,50 +806,15 @@ void syscall_do()
 	/* 311 */
 	case syscall_code_set_robust_list:
 	{
-		uint32_t head, len;
-
-		head = isa_regs->ebx;
-		len = isa_regs->ecx;
-		sys_debug("  head=0x%x, len=%d\n", head, len);
-		if (len != 12)
-			fatal("set_robust_list: only working for len = 12");
-		isa_ctx->robust_list_head = head;
+		retval = sys_set_robust_list_impl();
 		break;
 	}
 
 
 	/* 325 */
-	/* Artificial system call used to implement the OpenCL 1.1 interface. */
 	case syscall_code_opencl:
 	{
-		uint32_t func_code, pargs;
-		uint32_t args[OPENCL_MAX_ARGS];
-		int i;
-		char *func_name;
-		int func_argc;
-
-		func_code = isa_regs->ebx;
-		pargs = isa_regs->ecx;
-
-		/* Check 'func_code' range */
-		if (func_code < OPENCL_FUNC_FIRST || func_code > OPENCL_FUNC_LAST)
-			fatal("syscall 'opencl': func_code out of range");
-		
-		/* Get function info */
-		func_name = opencl_func_names[func_code - OPENCL_FUNC_FIRST];
-		func_argc = opencl_func_argc[func_code - OPENCL_FUNC_FIRST];
-		sys_debug("  func_code=%d (%s, %d arguments), pargs=0x%x\n",
-			func_code, func_name, func_argc, pargs);
-
-		/* Read function args */
-		assert(func_argc <= OPENCL_MAX_ARGS);
-		mem_read(isa_mem, pargs, func_argc * 4, args);
-		for (i = 0; i < func_argc; i++)
-			sys_debug("    args[%d] = %d (0x%x)\n",
-				i, args[i], args[i]);
-
-		/* Run OpenCL function */
-		retval = opencl_func_run(func_code, args);
+		retval = sys_opencl_impl();
 		break;
 	}
 

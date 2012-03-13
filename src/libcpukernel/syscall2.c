@@ -4672,3 +4672,210 @@ int sys_set_thread_area_impl(void)
 	/* Return */
 	return 0;
 }
+
+
+
+
+/*
+ * System call 'fadvise64' (code 250)
+ */
+
+int sys_fadvise64_impl(void)
+{
+	int fd;
+	int advice;
+
+	unsigned int off_hi;
+	unsigned int off_lo;
+	unsigned int len;
+
+	/* Arguments */
+	fd = isa_regs->ebx;
+	off_lo = isa_regs->ecx;
+	off_hi = isa_regs->edx;
+	len = isa_regs->esi;
+	advice = isa_regs->edi;
+	sys_debug("  fd=%d, off={0x%x, 0x%x}, len=%d, advice=%d\n",
+		fd, off_hi, off_lo, len, advice);
+
+	/* System call ignored */
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'exit_group' (code 252)
+ */
+
+int sys_exit_group_impl(void)
+{
+	int status;
+
+	/* Arguments */
+	status = isa_regs->ebx;
+	sys_debug("  status=%d\n", status);
+
+	/* Finish */
+	ctx_finish_group(isa_ctx, status);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'set_tid_address' (code 258)
+ */
+
+int sys_set_tid_address_impl(void)
+{
+	unsigned int tidptr;
+
+	/* Arguments */
+	tidptr = isa_regs->ebx;
+	sys_debug("  tidptr=0x%x\n", tidptr);
+
+	isa_ctx->clear_child_tid = tidptr;
+	return isa_ctx->pid;
+}
+
+
+
+
+/*
+ * System call 'clock_getres' (code 266)
+ */
+
+int sys_clock_getres_impl(void)
+{
+	unsigned int clk_id;
+	unsigned int pres;
+	unsigned int tv_sec;
+	unsigned int tv_nsec;
+
+	/* Arguments */
+	clk_id = isa_regs->ebx;
+	pres = isa_regs->ecx;
+	sys_debug("  clk_id=%d\n", clk_id);
+	sys_debug("  pres=0x%x\n", pres);
+
+	/* Return */
+	tv_sec = 0;
+	tv_nsec = 1;
+	mem_write(isa_mem, pres, 4, &tv_sec);
+	mem_write(isa_mem, pres + 4, 4, &tv_nsec);
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'tgkill' (code 270)
+ */
+
+int sys_tgkill_impl(void)
+{
+	int tgid;
+	int pid;
+	int sig;
+
+	struct ctx_t *ctx;
+
+	/* Arguments */
+	tgid = isa_regs->ebx;
+	pid = isa_regs->ecx;
+	sig = isa_regs->edx;
+	sys_debug("  tgid=%d, pid=%d, sig=%d (%s)\n",
+		tgid, pid, sig, sim_signal_name(sig));
+
+	/* Implementation restrictions. */
+	if (tgid == -1)
+		fatal("%s: not supported for tgid = -1\n%s",
+			__FUNCTION__, err_sys_note);
+
+	/* Find context referred by pid. */
+	ctx = ctx_get(pid);
+	if (!ctx)
+		fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
+
+	/* Send signal */
+	sim_sigset_add(&ctx->signal_mask_table->pending, sig);
+	ctx_host_thread_suspend_cancel(ctx);
+	ke_process_events_schedule();
+	ke_process_events();
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'set_robust_list' (code 311)
+ */
+
+int sys_set_robust_list_impl(void)
+{
+	unsigned int head;
+
+	int len;
+
+	/* Arguments */
+	head = isa_regs->ebx;
+	len = isa_regs->ecx;
+	sys_debug("  head=0x%x, len=%d\n", head, len);
+
+	/* Support */
+	if (len != 12)
+		fatal("%s: not supported for len != 12\n%s",
+			__FUNCTION__, err_sys_note);
+
+	/* Set robust list */
+	isa_ctx->robust_list_head = head;
+	return 0;
+}
+
+
+
+
+/*
+ * System call 'opencl' (code 325)
+ */
+
+int sys_opencl_impl(void)
+{
+	unsigned int func_code;
+	unsigned int args_ptr;
+	unsigned int args[OPENCL_MAX_ARGS];
+
+	int func_argc;
+	int i;
+
+	char *func_name;
+
+	/* Arguments */
+	func_code = isa_regs->ebx;
+	args_ptr = isa_regs->ecx;
+
+	/* Check 'func_code' range */
+	if (func_code < OPENCL_FUNC_FIRST || func_code > OPENCL_FUNC_LAST)
+		fatal("%s: invalid function code", __FUNCTION__);
+
+	/* Get function info */
+	func_name = opencl_func_names[func_code - OPENCL_FUNC_FIRST];
+	func_argc = opencl_func_argc[func_code - OPENCL_FUNC_FIRST];
+	sys_debug("  func_code=%d (%s, %d arguments), pargs=0x%x\n",
+		func_code, func_name, func_argc, args_ptr);
+
+	/* Read function args */
+	assert(func_argc <= OPENCL_MAX_ARGS);
+	mem_read(isa_mem, args_ptr, func_argc * 4, args);
+	for (i = 0; i < func_argc; i++)
+		sys_debug("    args[%d] = %d (0x%x)\n",
+			i, args[i], args[i]);
+
+	/* Run OpenCL function */
+	return opencl_func_run(func_code, args);
+}
