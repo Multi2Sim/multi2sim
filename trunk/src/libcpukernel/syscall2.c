@@ -4367,10 +4367,10 @@ int sys_futex_impl(void)
 	unsigned int addr2;
 	unsigned int timeout_sec;
 	unsigned int timeout_usec;
-	unsigned int bitset;
 
 	unsigned int cmd;
 	unsigned int futex;
+	unsigned int bitset;
 
 	int op;
 	int val1;
@@ -4434,12 +4434,13 @@ int sys_futex_impl(void)
 
 	case 1:  /* FUTEX_WAKE */
 	case 10:  /* FUTEX_WAKE_BITSET */
-
+	{
 		/* Default bitset value (all bits set) */
 		bitset = cmd == 10 ? val3 : 0xffffffff;
 		ret = ctx_futex_wake(isa_ctx, addr1, val1, bitset);
 		sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, ret);
 		return ret;
+	}
 
 	case 4: /* FUTEX_CMP_REQUEUE */
 	{
@@ -4555,6 +4556,65 @@ int sys_futex_impl(void)
 
 	/* Dead code */
 	return 0;
+}
+
+
+
+
+/*
+ * System call 'sched_setaffinity' (code 241)
+ */
+
+int sys_sched_setaffinity_impl(void)
+{
+	int pid;
+	int len;
+	int num_procs = 4;
+
+	unsigned int mask_ptr;
+	unsigned int mask;
+
+	/* Arguments */
+	pid = isa_regs->ebx;
+	len = isa_regs->ecx;
+	mask_ptr = isa_regs->edx;
+	sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
+
+	/* Read mask */
+	mem_read(isa_mem, mask_ptr, 4, &mask);
+	sys_debug("  mask=0x%x\n", mask);
+
+	/* FIXME: system call ignored. Return the number of processors. */
+	return num_procs;
+}
+
+
+
+
+/*
+ * System call 'sched_getaffinity' (code 242)
+ */
+
+int sys_sched_getaffinity_impl(void)
+{
+	int pid;
+	int len;
+	int num_procs = 4;
+
+	unsigned int mask_ptr;
+	unsigned int mask = (1 << num_procs) - 1;
+
+	/* Arguments */
+	pid = isa_regs->ebx;
+	len = isa_regs->ecx;
+	mask_ptr = isa_regs->edx;
+	sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
+
+	/* FIXME: the affinity is set to 1 for num_procs processors and only the 4 LSBytes are set.
+	 * The return value is set to num_procs. This is the behavior on a 4-core processor
+	 * in a real system. */
+	mem_write(isa_mem, mask_ptr, 4, &mask);
+	return num_procs;
 }
 
 
