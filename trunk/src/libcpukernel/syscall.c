@@ -101,28 +101,6 @@ void sys_debug_string(char *text, char *s, int len, int force)
 }
 
 
-/* For 'futex' */
-
-struct string_map_t futex_cmd_map =
-{
-	13, {
-		{ "FUTEX_WAIT",              0 },
-		{ "FUTEX_WAKE",              1 },
-		{ "FUTEX_FD",                2 },
-		{ "FUTEX_REQUEUE",           3 },
-		{ "FUTEX_CMP_REQUEUE",       4 },
-		{ "FUTEX_WAKE_OP",           5 },
-		{ "FUTEX_LOCK_PI",           6 },
-		{ "FUTEX_UNLOCK_PI",         7 },
-		{ "FUTEX_TRYLOCK_PI",        8 },
-		{ "FUTEX_WAIT_BITSET",       9 },
-		{ "FUTEX_WAKE_BITSET",       10 },
-		{ "FUTEX_WAIT_REQUEUE_PI",   11 },
-		{ "FUTEX_CMP_REQUEUE_PI",    12 }
-	}
-};
-
-
 /* For 'sysctl' */
 
 struct sysctl_args_t
@@ -723,13 +701,7 @@ void syscall_do()
 	/* 219 */
 	case syscall_code_madvise:
 	{
-		uint32_t start, len, advice;
-
-		start = isa_regs->ebx;
-		len = isa_regs->ecx;
-		advice = isa_regs->edx;
-		sys_debug("  start=0x%x, len=%d, advice=%d\n",
-			start, len, advice);
+		retval = sys_madvise_impl();
 		break;
 	}
 
@@ -737,78 +709,7 @@ void syscall_do()
 	/* 220 */
 	case syscall_code_getdents64:
 	{
-		uint32_t fd, pdirent, count, host_fd;
-		void *buf;
-		int nread, host_offs, guest_offs;
-
-		struct linux_dirent {
-			long d_ino;
-			off_t d_off;
-			unsigned short d_reclen;
-			char d_name[];
-		} *dirent;
-
-		struct sim_linux_dirent64 {
-			uint64_t d_ino;
-			int64_t d_off;
-			uint16_t d_reclen;
-			unsigned char d_type;
-			char d_name[];
-		} __attribute__((packed)) sim_dirent;
-
-		/* Read parameters */
-		fd = isa_regs->ebx;
-		pdirent = isa_regs->ecx;
-		count = isa_regs->edx;
-		host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-		sys_debug("  fd=%d, pdirent=0x%x, count=%d\n",
-			fd, pdirent, count);
-		sys_debug("  host_fd=%d\n", host_fd);
-
-		/* Call host getdents */
-		buf = calloc(1, count);
-		if (!buf)
-			fatal("getdents: cannot allocate buffer");
-		nread = syscall(SYS_getdents, host_fd, buf, count);
-
-		/* Error or no more entries */
-		if (nread < 0)
-			fatal("getdents: call to host system call returned error");
-		if (!nread) {
-			retval = 0;
-			free(buf);
-			break;
-		}
-
-		/* Copy to host memory */
-		host_offs = 0;
-		guest_offs = 0;
-		while (host_offs < nread) {
-			dirent = (struct linux_dirent *) (buf + host_offs);
-			sim_dirent.d_ino = dirent->d_ino;
-			sim_dirent.d_off = dirent->d_off;
-			sim_dirent.d_reclen = (27 + strlen(dirent->d_name)) / 8 * 8;
-			sim_dirent.d_type = * (char *) (buf + host_offs + dirent->d_reclen - 1);
-
-			sys_debug("    d_ino=%lld ", (long long) sim_dirent.d_ino);
-			sys_debug("d_off=%lld ", (long long) sim_dirent.d_off);
-			sys_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
-			sys_debug("d_name='%s'\n", dirent->d_name);
-
-			mem_write(isa_mem, pdirent + guest_offs, 8, &sim_dirent.d_ino);
-			mem_write(isa_mem, pdirent + guest_offs + 8, 8, &sim_dirent.d_off);
-			mem_write(isa_mem, pdirent + guest_offs + 16, 2, &sim_dirent.d_reclen);
-			mem_write(isa_mem, pdirent + guest_offs + 18, 1, &sim_dirent.d_type);
-			mem_write_string(isa_mem, pdirent + guest_offs + 19, dirent->d_name);
-			
-			host_offs += dirent->d_reclen;
-			guest_offs += sim_dirent.d_reclen;
-			if (guest_offs > count)
-				fatal("getdents: host buffer too small");
-		}
-		sys_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
-		free(buf);
-		retval = guest_offs;
+		retval = sys_getdents64_impl();
 		break;
 	}
 
@@ -825,160 +726,15 @@ void syscall_do()
 	/* 224 */
 	case syscall_code_gettid:
 	{
-		/* FIXME: return different 'tid' for threads, but the system call
-		 * 'getpid' should return the same 'pid' for threads from the same group
-		 * created with CLONE_THREAD flag. */
-		retval = isa_ctx->pid;
+		retval = sys_gettid_impl();
 		break;
 	}
 
 
-	/* 240
-	 * Prototype: sys_futex(void *addr1, int op, int val1, struct timespec *timeout,
-	 *   void *addr2, int val3); */
+	/* 240 */
 	case syscall_code_futex:
 	{
-		uint32_t addr1, op, val1, ptimeout, addr2, val3;
-		uint32_t timeout_sec, timeout_usec;
-		uint32_t futex, cmd, bitset;
-
-		addr1 = isa_regs->ebx;
-		op = isa_regs->ecx;
-		val1 = isa_regs->edx;
-		ptimeout = isa_regs->esi;
-		addr2 = isa_regs->edi;
-		val3 = isa_regs->ebp;
-		sys_debug("  addr1=0x%x, op=%d, val1=%d, ptimeout=0x%x, addr2=0x%x, val3=%d\n",
-			addr1, op, val1, ptimeout, addr2, val3);
-
-	
-		/* Command - 'cmd' is obtained by removing 'FUTEX_PRIVATE_FLAG' (128) and
-		 * 'FUTEX_CLOCK_REALTIME' from 'op'. */
-		cmd = op & ~(256|128);
-		mem_read(isa_mem, addr1, 4, &futex);
-		sys_debug("  futex=%d, cmd=%d (%s)\n",
-			futex, cmd, map_value(&futex_cmd_map, cmd));
-		
-		switch (cmd) {
-
-		case 0:  /* FUTEX_WAIT */
-		case 9:  /* FUTEX_WAIT_BITSET */
-			
-			/* Default bitset value (all bits set) */
-			bitset = cmd == 9 ? val3 : 0xffffffff;
-
-			/* First, we compare the value of the futex with val1. If it's not the
-			 * same, we exit with the error EWOULDBLOCK. */
-			if (futex != val1) {
-				retval = -11;  /* EAGAIN = EWOULDBLOCK */
-				break;
-			}
-
-			/* Read timeout */
-			if (ptimeout) {
-				fatal("syscall futex: FUTEX_WAIT not supported with timeout");
-				mem_read(isa_mem, ptimeout, 4, &timeout_sec);
-				mem_read(isa_mem, ptimeout + 4, 4, &timeout_usec);
-				sys_debug("  timeout={sec %d, usec %d}\n",
-					timeout_sec, timeout_usec);
-			} else {
-				timeout_sec = 0;
-				timeout_usec = 0;
-			}
-			
-			/* Suspend thread in the futex. */
-			isa_ctx->wakeup_futex = addr1;
-			isa_ctx->wakeup_futex_bitset = bitset;
-			isa_ctx->wakeup_futex_sleep = ++ke->futex_sleep_count;
-			ctx_set_status(isa_ctx, ctx_suspended | ctx_futex);
-			break;
-
-		case 1:  /* FUTEX_WAKE */
-		case 10:  /* FUTEX_WAKE_BITSET */
-
-			/* Default bitset value (all bits set) */
-			bitset = cmd == 10 ? val3 : 0xffffffff;
-			retval = ctx_futex_wake(isa_ctx, addr1, val1, bitset);
-			sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, retval);
-			break;
-
-		case 4: /* FUTEX_CMP_REQUEUE */
-		{
-			int requeued = 0;
-			struct ctx_t *ctx;
-			
-			/* 'ptimeout' is interpreted here as an integer; only supported for INTMAX */
-			if (ptimeout != 0x7fffffff)
-				fatal("syscall futex, cmd=FUTEX_CMP_REQUEUE: only supported for ptimeout=INTMAX");
-			
-			/* The value of val3 must be the same as the value of the futex
-			 * at 'addr1' (stored in 'futex') */
-			if (futex != val3) {
-				retval = -11; /* EAGAIN */
-				break;
-			}
-
-			/* Wake up 'val1' threads from futex at 'addr1'. The number of woken up threads
-			 * is the return value of the system call. */
-			retval = ctx_futex_wake(isa_ctx, addr1, val1, 0xffffffff);
-			sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, retval);
-
-			/* The rest of the threads waiting in futex 'addr1' are requeued into futex 'addr2' */
-			for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_list_next) {
-				if (ctx_get_status(ctx, ctx_futex) && ctx->wakeup_futex == addr1) {
-					ctx->wakeup_futex = addr2;
-					requeued++;
-				}
-			}
-			sys_debug("  futex at 0x%x: %d processes requeued to futex 0x%x\n",
-				addr1, requeued, addr2);
-			break;
-		}
-
-		case 5: /* FUTEX_WAKE_OP */
-		{
-			int32_t op, oparg, cmp, cmparg;
-			int32_t val2 = ptimeout;
-			int32_t oldval, newval = 0, cond = 0;
-
-			op = (val3 >> 28) & 0xf;
-			cmp = (val3 >> 24) & 0xf;
-			oparg = (val3 >> 12) & 0xfff;
-			cmparg = val3 & 0xfff;
-
-			mem_read(isa_mem, addr2, 4, &oldval);
-			switch (op) {
-			case 0: newval = oparg; break;  /* FUTEX_OP_SET */
-			case 1: newval = oldval + oparg; break;  /* FUTEX_OP_ADD */
-			case 2: newval = oldval | oparg; break;  /* FUTEX_OP_OR */
-			case 3: newval = oldval & oparg; break;  /* FUTEX_OP_AND */
-			case 4: newval = oldval ^ oparg; break;  /* FOTEX_OP_XOR */
-			default: fatal("FUTEX_WAKE_OP: invalid operation");
-			}
-			mem_write(isa_mem, addr2, 4, &newval);
-
-			retval = ctx_futex_wake(isa_ctx, addr1, val1, 0xffffffff);
-
-			switch (cmp) {
-			case 0: cond = oldval == cmparg; break;  /* FUTEX_OP_CMP_EQ */
-			case 1: cond = oldval != cmparg; break;  /* FUTEX_OP_CMP_NE */
-			case 2: cond = oldval < cmparg; break;  /* FUTEX_OP_CMP_LT */
-			case 3: cond = oldval <= cmparg; break;  /* FUTEX_OP_CMP_LE */
-			case 4: cond = oldval > cmparg; break;  /* FUTEX_OP_CMP_GT */
-			case 5: cond = oldval >= cmparg; break;  /* FUTEX_OP_CMP_GE */
-			default: fatal("FUTEX_WAKE_OP: invalid condition");
-			}
-			if (cond)
-				retval += ctx_futex_wake(isa_ctx, addr2, val2, 0xffffffff);
-			/* FIXME: we are returning the total number of threads woken up
-			 * counting both calls to ctx_futex_wake. Is this correct? */
-			break;
-		}
-
-		default:
-			fatal("syscall futex: not implemented for cmd=%d (%s)",
-				cmd, map_value(&futex_cmd_map, cmd));
-		}
+		retval = sys_futex_impl();
 		break;
 	}
 
