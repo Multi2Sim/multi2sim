@@ -33,12 +33,69 @@
 #include <mhandle.h>
 
 
+
+/*
+ * Public Variables
+ */
+
+
+int sys_debug_category;
+
+
+
+
+/*
+ * Private Variables
+ */
+
+
 static char *err_sys_note =
 	"\tThe system calls performed by the executed application are intercepted by\n"
 	"\tMulti2Sim and emulated in file 'syscall.c'. The most common system calls are\n"
 	"\tcurrently supported, but your application might perform specific unsupported\n"
 	"\tsystem calls or combinations of parameters. To request support for a given\n"
 	"\tsystem call, please email 'development@multi2sim.org'.\n";
+
+
+ /* System call names */
+static char *sys_call_name[] =
+{
+#define DEFSYSCALL(name, code) #name,
+#include "syscall.dat"
+#undef DEFSYSCALL
+	""
+};
+
+
+/* System call codes */
+enum
+{
+#define DEFSYSCALL(name, code) sys_code_##name = code,
+#include "syscall.dat"
+#undef DEFSYSCALL
+	sys_code_count
+};
+
+
+/* Forward declarations of system calls */
+#define DEFSYSCALL(name, code) static int sys_##name##_impl(void);
+#include "syscall.dat"
+#undef DEFSYSCALL
+
+
+/* System call functions */
+static int (*sys_call_func[sys_code_count + 1])(void) =
+{
+#define DEFSYSCALL(name, code) sys_##name##_impl,
+#include "syscall.dat"
+#undef DEFSYSCALL
+	NULL
+};
+
+
+/* Statistics */
+static int sys_call_count[sys_code_count + 1];
+
 
 
 
@@ -80,6 +137,8 @@ static char *err_sys_note =
 #define SIM_EPIPE		32
 #define SIM_EDOM		33
 #define SIM_ERANGE		34
+
+#define SIM_ERRNO_MAX		34
 
 struct string_map_t sys_error_code_map =
 {
@@ -125,7 +184,7 @@ struct string_map_t sys_error_code_map =
 
 void sys_init(void)
 {
-	/* Host constants for 'errno' */
+	/* Host constants for 'errno' must match */
 	M2S_HOST_GUEST_MATCH(EPERM, SIM_EPERM);
 	M2S_HOST_GUEST_MATCH(ENOENT, SIM_ENOENT);
 	M2S_HOST_GUEST_MATCH(ESRCH, SIM_ESRCH);
@@ -165,7 +224,67 @@ void sys_init(void)
 
 void sys_done(void)
 {
+	/* Print summary */
+	if (debug_status(sys_debug_category))
+		sys_dump(debug_file(sys_debug_category));
 }
+
+
+void sys_dump(FILE *f)
+{
+	int i;
+
+	/* Header */
+	fprintf(f, "\n\n**\n** System calls summary:\n**\n\n");
+	fprintf(f, "%-20s %s\n", "System call", "Count");
+	for (i = 0; i < 30; i++)
+		fprintf(f, "-");
+	fprintf(f, "\n");
+
+	/* Summary */
+	for (i = 1; i <= sys_code_count; i++)
+		if (sys_call_count[i])
+			fprintf(f, "%-20s %d\n", sys_call_name[i],
+					sys_call_count[i]);
+	fprintf(f, "\n");
+}
+
+
+void sys_call(void)
+{
+	int code;
+	int err;
+
+	/* System call code */
+	code = isa_regs->eax;
+	if (code < 1 || code >= sys_code_count)
+		fatal("%s: invalid system call code (%d)", __FUNCTION__, code);
+
+	/* Statistics */
+	sys_call_count[code]++;
+
+	/* Debug */
+	sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
+		sys_call_name[code], code, isa_inst_count, isa_ctx->pid);
+	isa_call_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
+		sys_call_name[code], code, isa_inst_count, isa_ctx->pid);
+
+	/* Perform system call */
+	err = sys_call_func[code]();
+
+	/* Set return value in 'eax', except for 'sigreturn' system call. Also, if the
+	 * context got suspended, the wake up routine will set the return value. */
+	if (code != sys_code_sigreturn && !ctx_get_status(isa_ctx, ctx_suspended))
+		isa_regs->eax = err;
+
+	/* Debug */
+	sys_debug("  ret=(%d, 0x%x)", err, err);
+	if (err < 0 && err >= -SIM_ERRNO_MAX)
+		sys_debug(", errno=%s)", map_value(&sys_error_code_map, -err));
+	sys_debug("\n");
+}
+
+
 
 
 
@@ -174,7 +293,7 @@ void sys_done(void)
  * System call 'exit' (code 1)
  */
 
-int sys_exit_impl(void)
+static int sys_exit_impl(void)
 {
 	int status;
 
@@ -194,7 +313,7 @@ int sys_exit_impl(void)
  * System call 'close' (code 2)
  */
 
-int sys_close_impl(void)
+static int sys_close_impl(void)
 {
 	int guest_fd;
 	int host_fd;
@@ -230,7 +349,7 @@ int sys_close_impl(void)
  * System call 'read' (code 3)
  */
 
-int sys_read_impl(void)
+static int sys_read_impl(void)
 {
 	unsigned int buf_ptr;
 	unsigned int count;
@@ -285,7 +404,7 @@ int sys_read_impl(void)
 		if (err > 0)
 		{
 			mem_write(isa_mem, buf_ptr, err, buf);
-			sys_debug_string("  buf", buf, err, 1);
+			sys_debug_buffer("  buf", buf, err);
 		}
 
 		/* Return number of read bytes */
@@ -313,7 +432,7 @@ int sys_read_impl(void)
  * System call 'write' (code 4)
  */
 
-int sys_write_impl(void)
+static int sys_write_impl(void)
 {
 	unsigned int buf_ptr;
 	unsigned int count;
@@ -348,7 +467,7 @@ int sys_write_impl(void)
 
 	/* Read buffer from memory */
 	mem_read(isa_mem, buf_ptr, count, buf);
-	sys_debug_string("  buf", buf, count, 0);
+	sys_debug_buffer("  buf", buf, count);
 
 	/* Poll the file descriptor to check if write is blocking */
 	fds.fd = host_fd;
@@ -409,7 +528,7 @@ static struct string_map_t sys_open_flags_map =
 	}
 };
 
-int sys_open_impl(void)
+static int sys_open_impl(void)
 {
 	unsigned int file_name_ptr;
 
@@ -501,7 +620,7 @@ static struct string_map_t sys_waitpid_options_map =
 	}
 };
 
-int sys_waitpid_impl()
+static int sys_waitpid_impl()
 {
 	int pid;
 	int options;
@@ -558,7 +677,7 @@ int sys_waitpid_impl()
  * System call 'unlink' (code 10)
  */
 
-int sys_unlink_impl(void)
+static int sys_unlink_impl(void)
 {
 	unsigned int file_name_ptr;
 
@@ -599,7 +718,7 @@ static char *err_sys_execve_note =
 	"\tthe guest application to run a shell command. Multi2Sim will execute this\n"
 	"\tcommand natively, and then finish the calling context.\n";
 
-int sys_execve_impl(void)
+static int sys_execve_impl(void)
 {
 	unsigned int name_ptr;
 	unsigned int argv;
@@ -719,7 +838,7 @@ int sys_execve_impl(void)
  * System call 'time' (code 13)
  */
 
-int sys_time_impl(void)
+static int sys_time_impl(void)
 {
 
 	unsigned int time_ptr;
@@ -745,7 +864,7 @@ int sys_time_impl(void)
  * System call 'chmod' (code 15)
  */
 
-int sys_chmod_impl(void)
+static int sys_chmod_impl(void)
 {
 	unsigned int file_name_ptr;
 	unsigned int mode;
@@ -782,7 +901,7 @@ int sys_chmod_impl(void)
  * System call 'lseek' (code 19)
  */
 
-int sys_lseek_impl(void)
+static int sys_lseek_impl(void)
 {
 	unsigned int offset;
 
@@ -816,7 +935,7 @@ int sys_lseek_impl(void)
  * System call 'getpid' (code 20)
  */
 
-int sys_getpid_impl(void)
+static int sys_getpid_impl(void)
 {
 	return isa_ctx->pid;
 }
@@ -840,7 +959,7 @@ static void sys_utime_guest_to_host(struct utimbuf *host, struct sim_utimbuf *gu
 	host->modtime = guest->modtime;
 }
 
-int sys_utime_impl(void)
+static int sys_utime_impl(void)
 {
 	unsigned int file_name_ptr;
 	unsigned int utimbuf_ptr;
@@ -900,7 +1019,7 @@ static struct string_map_t sys_access_mode_map =
 	}
 };
 
-int sys_access_impl(void)
+static int sys_access_impl(void)
 {
 	unsigned int file_name_ptr;
 
@@ -946,7 +1065,7 @@ int sys_access_impl(void)
  * System call 'kill' (code 37)
  */
 
-int sys_kill_impl(void)
+static int sys_kill_impl(void)
 {
 	int pid;
 	int sig;
@@ -982,7 +1101,7 @@ int sys_kill_impl(void)
  * System call 'rename' (code 38)
  */
 
-int sys_rename_impl(void)
+static int sys_rename_impl(void)
 {
 	unsigned int old_path_ptr;
 	unsigned int new_path_ptr;
@@ -1033,7 +1152,7 @@ int sys_rename_impl(void)
  * System call 'mkdir' (code 39)
  */
 
-int sys_mkdir_impl(void)
+static int sys_mkdir_impl(void)
 {
 	unsigned int path_ptr;
 
@@ -1074,7 +1193,7 @@ int sys_mkdir_impl(void)
  * System call 'dup' (code 41)
  */
 
-int sys_dup_impl(void)
+static int sys_dup_impl(void)
 {
 	int guest_fd;
 	int dup_guest_fd;
@@ -1116,7 +1235,7 @@ int sys_dup_impl(void)
  * System call 'pipe' (code 42)
  */
 
-int sys_pipe_impl(void)
+static int sys_pipe_impl(void)
 {
 	unsigned int fd_ptr;
 
@@ -1179,7 +1298,7 @@ static void sys_times_host_to_guest(struct sim_tms *guest, struct tms *host)
 	guest->cstime = host->tms_cstime;
 }
 
-int sys_times_impl(void)
+static int sys_times_impl(void)
 {
 	unsigned int tms_ptr;
 
@@ -1213,7 +1332,7 @@ int sys_times_impl(void)
  * System call 'brk' (code 45)
  */
 
-int sys_brk_impl(void)
+static int sys_brk_impl(void)
 {
 	unsigned int old_heap_break;
 	unsigned int new_heap_break;
@@ -1284,7 +1403,7 @@ int sys_brk_impl(void)
  *   -DIR [31..30]: direction (01=Write, 10=Read, 11=R/W).
  */
 
-int sys_ioctl_impl(void)
+static int sys_ioctl_impl(void)
 {
 	unsigned int cmd;
 	unsigned int arg;
@@ -1342,7 +1461,7 @@ int sys_ioctl_impl(void)
  * System call 'getppid' (code 64)
  */
 
-int sys_getppid_impl(void)
+static int sys_getppid_impl(void)
 {
 	/* Return 1 if there is no parent */
 	if (!isa_ctx->parent)
@@ -1388,7 +1507,7 @@ struct sim_rlimit
 	unsigned int max;
 };
 
-int sys_setrlimit_impl(void)
+static int sys_setrlimit_impl(void)
 {
 	unsigned int res;
 	unsigned int rlim_ptr;
@@ -1485,7 +1604,7 @@ static void sys_rusage_host_to_guest(struct sim_rusage *guest, struct rusage *ho
 	guest->nivcsw = host->ru_nivcsw;
 }
 
-int sys_getrusage_impl(void)
+static int sys_getrusage_impl(void)
 {
 	unsigned int who;
 	unsigned int u_ptr;
@@ -1529,7 +1648,7 @@ int sys_getrusage_impl(void)
  * System call 'gettimeofday' (code 78)
  */
 
-int sys_gettimeofday_impl(void)
+static int sys_gettimeofday_impl(void)
 {
 	unsigned int tv_ptr;
 	unsigned int tz_ptr;
@@ -1570,7 +1689,7 @@ int sys_gettimeofday_impl(void)
  * System call 'readlink' (code 85)
  */
 
-int sys_readlink_impl(void)
+static int sys_readlink_impl(void)
 {
 	unsigned int path_ptr;
 	unsigned int buf;
@@ -1771,7 +1890,7 @@ static int sys_mmap(unsigned int addr, unsigned int len, int prot,
 	return addr;
 }
 
-int sys_mmap_impl(void)
+static int sys_mmap_impl(void)
 {
 	unsigned int args_ptr;
 	unsigned int addr;
@@ -1814,7 +1933,7 @@ int sys_mmap_impl(void)
  * System call 'munmap' (code 91)
  */
 
-int sys_munmap_impl(void)
+static int sys_munmap_impl(void)
 {
 	unsigned int addr;
 	unsigned int size;
@@ -1844,7 +1963,7 @@ int sys_munmap_impl(void)
  * System call 'fchmod' (code 94)
  */
 
-int sys_fchmod_impl(void)
+static int sys_fchmod_impl(void)
 {
 	int fd;
 	int host_fd;
@@ -1947,7 +2066,7 @@ static struct string_map_t sys_socket_type_map =
 	}
 };
 
-int sys_socketcall_impl(void)
+static int sys_socketcall_impl(void)
 {
 	int call;
 	unsigned int args;
@@ -2046,7 +2165,7 @@ int sys_socketcall_impl(void)
 		addr = (struct sockaddr *) &buf[0];
 		mem_read(isa_mem, addr_ptr, addr_len, addr);
 		sys_debug("    sockaddr.family=%s\n", map_value(&sys_socket_family_map, addr->sa_family));
-		sys_debug_string("    sockaddr.data", addr->sa_data, addr_len - 2, 1);
+		sys_debug_buffer("    sockaddr.data", addr->sa_data, addr_len - 2);
 
 		/* Get file descriptor */
 		desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
@@ -2112,7 +2231,7 @@ int sys_socketcall_impl(void)
 		addr_len = host_addr_len;
 		sys_debug("  result:\n");
 		sys_debug("    addrlen=%d\n", host_addr_len);
-		sys_debug_string("    sockaddr.data", addr->sa_data, addr_len - 2, 1);
+		sys_debug_buffer("    sockaddr.data", addr->sa_data, addr_len - 2);
 
 		/* Copy result to guest memory */
 		mem_write(isa_mem, addr_len_ptr, 4, &addr_len);
@@ -2175,7 +2294,7 @@ static void sim_itimerval_dump(struct sim_itimerval *sim_itimerval)
 		sim_itimerval->it_value.tv_sec, sim_itimerval->it_value.tv_usec);
 }
 
-int sys_setitimer_impl(void)
+static int sys_setitimer_impl(void)
 {
 	unsigned int which;
 	unsigned int value_ptr;
@@ -2229,7 +2348,7 @@ int sys_setitimer_impl(void)
  * System call 'getitimer' (code 105)
  */
 
-int sys_getitimer_impl(void)
+static int sys_getitimer_impl(void)
 {
 	unsigned int which;
 	unsigned int value_ptr;
@@ -2271,7 +2390,7 @@ int sys_getitimer_impl(void)
  * System call 'sigreturn' (code 119)
  */
 
-int sys_sigreturn_impl(void)
+static int sys_sigreturn_impl(void)
 {
 	signal_handler_return(isa_ctx);
 
@@ -2366,7 +2485,7 @@ struct sim_user_desc
 	unsigned int useable:1;
 };
 
-int sys_clone_impl(void)
+static int sys_clone_impl(void)
 {
 	/* Prototype: long sys_clone(unsigned long clone_flags, unsigned long newsp,
 	 * 	int __user *parent_tid, int unused, int __user *child_tid);
@@ -2531,7 +2650,7 @@ static struct sim_utsname sim_utsname =
 	""
 };
 
-int sys_newuname_impl(void)
+static int sys_newuname_impl(void)
 {
 	unsigned int utsname_ptr;
 
@@ -2554,7 +2673,7 @@ int sys_newuname_impl(void)
  * System call 'mprotect' (code 125)
  */
 
-int sys_mprotect_impl(void)
+static int sys_mprotect_impl(void)
 {
 	unsigned int start;
 	unsigned int len;
@@ -2586,7 +2705,7 @@ int sys_mprotect_impl(void)
  * System call 'llseek' (code 140)
  */
 
-int sys_llseek_impl(void)
+static int sys_llseek_impl(void)
 {
 	unsigned int fd;
 	unsigned int result_ptr;
@@ -2651,7 +2770,7 @@ struct sys_guest_dirent_t
 	char d_name[];
 } __attribute__((packed));
 
-int sys_getdents_impl(void)
+static int sys_getdents_impl(void)
 {
 	unsigned int pdirent;
 
@@ -2823,7 +2942,7 @@ static void sim_fd_set_write(unsigned int addr, fd_set *fds, int n)
 	}
 }
 
-int sys_select_impl(void)
+static int sys_select_impl(void)
 {
 	/* System call prototype:
 	 * int select(int n, fd_set *inp, fd_set *outp, fd_set *exp, struct timeval *tvp);
@@ -2908,7 +3027,7 @@ static struct string_map_t sys_msync_flags_map =
 	}
 };
 
-int sys_msync_impl(void)
+static int sys_msync_impl(void)
 {
 	unsigned int start;
 	unsigned int len;
@@ -2936,7 +3055,7 @@ int sys_msync_impl(void)
  * System call 'writev' (code 146)
  */
 
-int sys_writev_impl(void)
+static int sys_writev_impl(void)
 {
 	int v;
 	int len;
@@ -3021,7 +3140,7 @@ struct sys_sysctl_args_t
 	unsigned int newlen;
 };
 
-int sys_sysctl_impl(void)
+static int sys_sysctl_impl(void)
 {
 	int i;
 
@@ -3070,7 +3189,7 @@ int sys_sysctl_impl(void)
  * System call 'sched_setparam' (code 154)
  */
 
-int sys_sched_setparam_impl(void)
+static int sys_sched_setparam_impl(void)
 {
 	unsigned int param_ptr;
 
@@ -3095,7 +3214,7 @@ int sys_sched_setparam_impl(void)
  * System call 'sched_getparam' (code 155)
  */
 
-int sys_sched_getparam_impl(void)
+static int sys_sched_getparam_impl(void)
 {
 	unsigned int param_ptr;
 	unsigned int zero = 0;
@@ -3120,7 +3239,7 @@ int sys_sched_getparam_impl(void)
  * System call 'sched_getscheduler' (code 157)
  */
 
-int sys_sched_getscheduler_impl(void)
+static int sys_sched_getscheduler_impl(void)
 {
 	int pid;
 
@@ -3139,7 +3258,7 @@ int sys_sched_getscheduler_impl(void)
  * System call 'sched_get_priority_max' (code 159)
  */
 
-int sys_sched_get_priority_max_impl(void)
+static int sys_sched_get_priority_max_impl(void)
 {
 	int policy;
 
@@ -3178,7 +3297,7 @@ int sys_sched_get_priority_max_impl(void)
  * System call 'sched_get_priority_min' (code 160)
  */
 
-int sys_sched_get_priority_min_impl(void)
+static int sys_sched_get_priority_min_impl(void)
 {
 	int policy;
 
@@ -3217,7 +3336,7 @@ int sys_sched_get_priority_min_impl(void)
  * System call 'nanosleep' (code 162)
  */
 
-int sys_nanosleep_impl(void)
+static int sys_nanosleep_impl(void)
 {
 	unsigned int rqtp;
 	unsigned int rmtp;
@@ -3255,7 +3374,7 @@ int sys_nanosleep_impl(void)
  * System call 'mremap' (code 163)
  */
 
-int sys_mremap_impl(void)
+static int sys_mremap_impl(void)
 {
 	unsigned int addr;
 	unsigned int old_len;
@@ -3343,7 +3462,7 @@ struct sim_pollfd_t
 	unsigned short revents;
 };
 
-int sys_poll_impl(void)
+static int sys_poll_impl(void)
 {
 	unsigned int pfds;
 	unsigned int nfds;
@@ -3455,7 +3574,7 @@ int sys_poll_impl(void)
  * System call 'rt_sigaction' (code 174)
  */
 
-int sys_rt_sigaction_impl(void)
+static int sys_rt_sigaction_impl(void)
 {
 	int sig;
 	int sigsetsize;
@@ -3524,7 +3643,7 @@ static struct string_map_t sys_sigprocmask_how_map =
 	}
 };
 
-int sys_rt_sigprocmask_impl(void)
+static int sys_rt_sigprocmask_impl(void)
 {
 	unsigned int set_ptr;
 	unsigned int old_set_ptr;
@@ -3601,7 +3720,7 @@ int sys_rt_sigprocmask_impl(void)
  * System call 'rt_sigsuspend' (code 179)
  */
 
-int sys_rt_sigsuspend_impl(void)
+static int sys_rt_sigsuspend_impl(void)
 {
 	unsigned int new_set_ptr;
 
@@ -3646,7 +3765,7 @@ int sys_rt_sigsuspend_impl(void)
  * System call 'getcwd' (code 183)
  */
 
-int sys_getcwd_impl(void)
+static int sys_getcwd_impl(void)
 {
 	unsigned int buf_ptr;
 
@@ -3680,7 +3799,7 @@ int sys_getcwd_impl(void)
  * System call 'getrlimit' (code 191)
  */
 
-int sys_getrlimit_impl(void)
+static int sys_getrlimit_impl(void)
 {
 	unsigned int res;
 	unsigned int rlim_ptr;
@@ -3740,7 +3859,7 @@ int sys_getrlimit_impl(void)
  * System call 'mmap2' (code 192)
  */
 
-int sys_mmap2_impl(void)
+static int sys_mmap2_impl(void)
 {
 	unsigned int addr;
 	unsigned int len;
@@ -3780,7 +3899,7 @@ int sys_mmap2_impl(void)
  * System call 'ftruncate64' (code 194)
  */
 
-int sys_ftruncate64_impl(void)
+static int sys_ftruncate64_impl(void)
 {
 	int fd;
 	int host_fd;
@@ -3864,7 +3983,7 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 		guest->size, guest->blksize, guest->blocks);
 }
 
-int sys_stat64_impl(void)
+static int sys_stat64_impl(void)
 {
 	unsigned int file_name_ptr;
 	unsigned int statbuf_ptr;
@@ -3911,7 +4030,7 @@ int sys_stat64_impl(void)
  * System call 'lstat64' (code 196)
  */
 
-int sys_lstat64_impl(void)
+static int sys_lstat64_impl(void)
 {
 	unsigned int file_name_ptr;
 	unsigned int statbuf_ptr;
@@ -3957,7 +4076,7 @@ int sys_lstat64_impl(void)
  * System call 'fstat64' (code 197)
  */
 
-int sys_fstat64_impl(void)
+static int sys_fstat64_impl(void)
 {
 	int fd;
 	int host_fd;
@@ -3995,7 +4114,7 @@ int sys_fstat64_impl(void)
  * System call 'getuid' (code 199)
  */
 
-int sys_getuid_impl(void)
+static int sys_getuid_impl(void)
 {
 	return getuid();
 }
@@ -4007,7 +4126,7 @@ int sys_getuid_impl(void)
  * System call 'getgid' (code 200)
  */
 
-int sys_getgid_impl(void)
+static int sys_getgid_impl(void)
 {
 	return getgid();
 }
@@ -4019,7 +4138,7 @@ int sys_getgid_impl(void)
  * System call 'geteuid' (code 201)
  */
 
-int sys_geteuid_impl(void)
+static int sys_geteuid_impl(void)
 {
 	return geteuid();
 }
@@ -4031,7 +4150,7 @@ int sys_geteuid_impl(void)
  * System call 'getegid' (code 202)
  */
 
-int sys_getegid_impl(void)
+static int sys_getegid_impl(void)
 {
 	return getegid();
 }
@@ -4043,7 +4162,7 @@ int sys_getegid_impl(void)
  * System call 'chown' (code 212)
  */
 
-int sys_chown_impl(void)
+static int sys_chown_impl(void)
 {
 	unsigned int file_name_ptr;
 
@@ -4086,7 +4205,7 @@ int sys_chown_impl(void)
  * System call 'madvise' (219)
  */
 
-int sys_madvise_impl(void)
+static int sys_madvise_impl(void)
 {
 	unsigned int start;
 	unsigned int len;
@@ -4127,7 +4246,7 @@ struct guest_dirent64_t
 	char d_name[];
 } __attribute__((packed));
 
-int sys_getdents64_impl(void)
+static int sys_getdents64_impl(void)
 {
 	unsigned int pdirent;
 	unsigned int count;
@@ -4234,7 +4353,7 @@ static struct string_map_t sys_fcntl_cmp_map =
 	}
 };
 
-int sys_fcntl64_impl(void)
+static int sys_fcntl64_impl(void)
 {
 	int guest_fd;
 	int cmd;
@@ -4323,7 +4442,7 @@ int sys_fcntl64_impl(void)
  * System call 'gettid' (code 224)
  */
 
-int sys_gettid_impl(void)
+static int sys_gettid_impl(void)
 {
 	/* FIXME: return different 'tid' for threads, but the system call
 	 * 'getpid' should return the same 'pid' for threads from the same group
@@ -4357,7 +4476,7 @@ static struct string_map_t sys_futex_cmd_map =
 	}
 };
 
-int sys_futex_impl(void)
+static int sys_futex_impl(void)
 {
 	/* Prototype: sys_futex(void *addr1, int op, int val1, struct timespec *timeout,
 	 *   void *addr2, int val3); */
@@ -4550,7 +4669,7 @@ int sys_futex_impl(void)
 	}
 
 	default:
-		fatal("%s: syscall futex: not implemented for cmd=%d (%s).\n%s",
+		fatal("%s: not implemented for cmd=%d (%s).\n%s",
 			__FUNCTION__, cmd, map_value(&sys_futex_cmd_map, cmd), err_sys_note);
 	}
 
@@ -4565,7 +4684,7 @@ int sys_futex_impl(void)
  * System call 'sched_setaffinity' (code 241)
  */
 
-int sys_sched_setaffinity_impl(void)
+static int sys_sched_setaffinity_impl(void)
 {
 	int pid;
 	int len;
@@ -4595,7 +4714,7 @@ int sys_sched_setaffinity_impl(void)
  * System call 'sched_getaffinity' (code 242)
  */
 
-int sys_sched_getaffinity_impl(void)
+static int sys_sched_getaffinity_impl(void)
 {
 	int pid;
 	int len;
@@ -4624,7 +4743,7 @@ int sys_sched_getaffinity_impl(void)
  * System call 'set_thread_area' (code 243)
  */
 
-int sys_set_thread_area_impl(void)
+static int sys_set_thread_area_impl(void)
 {
 	unsigned int uinfo_ptr;
 
@@ -4680,7 +4799,7 @@ int sys_set_thread_area_impl(void)
  * System call 'fadvise64' (code 250)
  */
 
-int sys_fadvise64_impl(void)
+static int sys_fadvise64_impl(void)
 {
 	int fd;
 	int advice;
@@ -4709,7 +4828,7 @@ int sys_fadvise64_impl(void)
  * System call 'exit_group' (code 252)
  */
 
-int sys_exit_group_impl(void)
+static int sys_exit_group_impl(void)
 {
 	int status;
 
@@ -4729,7 +4848,7 @@ int sys_exit_group_impl(void)
  * System call 'set_tid_address' (code 258)
  */
 
-int sys_set_tid_address_impl(void)
+static int sys_set_tid_address_impl(void)
 {
 	unsigned int tidptr;
 
@@ -4748,7 +4867,7 @@ int sys_set_tid_address_impl(void)
  * System call 'clock_getres' (code 266)
  */
 
-int sys_clock_getres_impl(void)
+static int sys_clock_getres_impl(void)
 {
 	unsigned int clk_id;
 	unsigned int pres;
@@ -4776,7 +4895,7 @@ int sys_clock_getres_impl(void)
  * System call 'tgkill' (code 270)
  */
 
-int sys_tgkill_impl(void)
+static int sys_tgkill_impl(void)
 {
 	int tgid;
 	int pid;
@@ -4816,7 +4935,7 @@ int sys_tgkill_impl(void)
  * System call 'set_robust_list' (code 311)
  */
 
-int sys_set_robust_list_impl(void)
+static int sys_set_robust_list_impl(void)
 {
 	unsigned int head;
 
@@ -4844,7 +4963,7 @@ int sys_set_robust_list_impl(void)
  * System call 'opencl' (code 325)
  */
 
-int sys_opencl_impl(void)
+static int sys_opencl_impl(void)
 {
 	unsigned int func_code;
 	unsigned int args_ptr;
@@ -4879,3 +4998,265 @@ int sys_opencl_impl(void)
 	/* Run OpenCL function */
 	return opencl_func_run(func_code, args);
 }
+
+
+
+
+/*
+ * Not implemented system calls
+ */
+
+#define SYS_NOT_IMPL(NAME) \
+	static int sys_##NAME##_impl(void) \
+	{ \
+		fatal("%s: system call not implemented (code %d, inst %lld, pid %d).\n%s", \
+			__FUNCTION__, isa_regs->eax, isa_inst_count, isa_ctx->pid, \
+			err_sys_note); \
+		return 0; \
+	}
+
+SYS_NOT_IMPL(restart_syscall)
+SYS_NOT_IMPL(fork)
+SYS_NOT_IMPL(creat)
+SYS_NOT_IMPL(link)
+SYS_NOT_IMPL(chdir)
+SYS_NOT_IMPL(mknod)
+SYS_NOT_IMPL(lchown16)
+SYS_NOT_IMPL(ni_syscall_17)
+SYS_NOT_IMPL(stat)
+SYS_NOT_IMPL(mount)
+SYS_NOT_IMPL(oldumount)
+SYS_NOT_IMPL(setuid16)
+SYS_NOT_IMPL(getuid16)
+SYS_NOT_IMPL(stime)
+SYS_NOT_IMPL(ptrace)
+SYS_NOT_IMPL(alarm)
+SYS_NOT_IMPL(fstat)
+SYS_NOT_IMPL(pause)
+SYS_NOT_IMPL(ni_syscall_31)
+SYS_NOT_IMPL(ni_syscall_32)
+SYS_NOT_IMPL(nice)
+SYS_NOT_IMPL(ni_syscall_35)
+SYS_NOT_IMPL(sync)
+SYS_NOT_IMPL(rmdir)
+SYS_NOT_IMPL(ni_syscall_44)
+SYS_NOT_IMPL(setgid16)
+SYS_NOT_IMPL(getgid16)
+SYS_NOT_IMPL(signal)
+SYS_NOT_IMPL(geteuid16)
+SYS_NOT_IMPL(getegid16)
+SYS_NOT_IMPL(acct)
+SYS_NOT_IMPL(umount)
+SYS_NOT_IMPL(ni_syscall_53)
+SYS_NOT_IMPL(fcntl)
+SYS_NOT_IMPL(ni_syscall_56)
+SYS_NOT_IMPL(setpgid)
+SYS_NOT_IMPL(ni_syscall_58)
+SYS_NOT_IMPL(olduname)
+SYS_NOT_IMPL(umask)
+SYS_NOT_IMPL(chroot)
+SYS_NOT_IMPL(ustat)
+SYS_NOT_IMPL(dup2)
+SYS_NOT_IMPL(getpgrp)
+SYS_NOT_IMPL(setsid)
+SYS_NOT_IMPL(sigaction)
+SYS_NOT_IMPL(sgetmask)
+SYS_NOT_IMPL(ssetmask)
+SYS_NOT_IMPL(setreuid16)
+SYS_NOT_IMPL(setregid16)
+SYS_NOT_IMPL(sigsuspend)
+SYS_NOT_IMPL(sigpending)
+SYS_NOT_IMPL(sethostname)
+SYS_NOT_IMPL(old_getrlimit)
+SYS_NOT_IMPL(settimeofday)
+SYS_NOT_IMPL(getgroups16)
+SYS_NOT_IMPL(setgroups16)
+SYS_NOT_IMPL(oldselect)
+SYS_NOT_IMPL(symlink)
+SYS_NOT_IMPL(lstat)
+SYS_NOT_IMPL(uselib)
+SYS_NOT_IMPL(swapon)
+SYS_NOT_IMPL(reboot)
+SYS_NOT_IMPL(readdir)
+SYS_NOT_IMPL(truncate)
+SYS_NOT_IMPL(ftruncate)
+SYS_NOT_IMPL(fchown16)
+SYS_NOT_IMPL(getpriority)
+SYS_NOT_IMPL(setpriority)
+SYS_NOT_IMPL(ni_syscall_98)
+SYS_NOT_IMPL(statfs)
+SYS_NOT_IMPL(fstatfs)
+SYS_NOT_IMPL(ioperm)
+SYS_NOT_IMPL(syslog)
+SYS_NOT_IMPL(newstat)
+SYS_NOT_IMPL(newlstat)
+SYS_NOT_IMPL(newfstat)
+SYS_NOT_IMPL(uname)
+SYS_NOT_IMPL(iopl)
+SYS_NOT_IMPL(vhangup)
+SYS_NOT_IMPL(ni_syscall_112)
+SYS_NOT_IMPL(vm86old)
+SYS_NOT_IMPL(wait4)
+SYS_NOT_IMPL(swapoff)
+SYS_NOT_IMPL(sysinfo)
+SYS_NOT_IMPL(ipc)
+SYS_NOT_IMPL(fsync)
+SYS_NOT_IMPL(setdomainname)
+SYS_NOT_IMPL(modify_ldt)
+SYS_NOT_IMPL(adjtimex)
+SYS_NOT_IMPL(sigprocmask)
+SYS_NOT_IMPL(ni_syscall_127)
+SYS_NOT_IMPL(init_module)
+SYS_NOT_IMPL(delete_module)
+SYS_NOT_IMPL(ni_syscall_130)
+SYS_NOT_IMPL(quotactl)
+SYS_NOT_IMPL(getpgid)
+SYS_NOT_IMPL(fchdir)
+SYS_NOT_IMPL(bdflush)
+SYS_NOT_IMPL(sysfs)
+SYS_NOT_IMPL(personality)
+SYS_NOT_IMPL(ni_syscall_137)
+SYS_NOT_IMPL(setfsuid16)
+SYS_NOT_IMPL(setfsgid16)
+SYS_NOT_IMPL(flock)
+SYS_NOT_IMPL(readv)
+SYS_NOT_IMPL(getsid)
+SYS_NOT_IMPL(fdatasync)
+SYS_NOT_IMPL(mlock)
+SYS_NOT_IMPL(munlock)
+SYS_NOT_IMPL(mlockall)
+SYS_NOT_IMPL(munlockall)
+SYS_NOT_IMPL(sched_setscheduler)
+SYS_NOT_IMPL(sched_yield)
+SYS_NOT_IMPL(sched_rr_get_interval)
+SYS_NOT_IMPL(setresuid16)
+SYS_NOT_IMPL(getresuid16)
+SYS_NOT_IMPL(vm86)
+SYS_NOT_IMPL(ni_syscall_167)
+SYS_NOT_IMPL(nfsservctl)
+SYS_NOT_IMPL(setresgid16)
+SYS_NOT_IMPL(getresgid16)
+SYS_NOT_IMPL(prctl)
+SYS_NOT_IMPL(rt_sigreturn)
+SYS_NOT_IMPL(rt_sigpending)
+SYS_NOT_IMPL(rt_sigtimedwait)
+SYS_NOT_IMPL(rt_sigqueueinfo)
+SYS_NOT_IMPL(pread64)
+SYS_NOT_IMPL(pwrite64)
+SYS_NOT_IMPL(chown16)
+SYS_NOT_IMPL(capget)
+SYS_NOT_IMPL(capset)
+SYS_NOT_IMPL(sigaltstack)
+SYS_NOT_IMPL(sendfile)
+SYS_NOT_IMPL(ni_syscall_188)
+SYS_NOT_IMPL(ni_syscall_189)
+SYS_NOT_IMPL(vfork)
+SYS_NOT_IMPL(truncate64)
+SYS_NOT_IMPL(lchown)
+SYS_NOT_IMPL(setreuid)
+SYS_NOT_IMPL(setregid)
+SYS_NOT_IMPL(getgroups)
+SYS_NOT_IMPL(setgroups)
+SYS_NOT_IMPL(fchown)
+SYS_NOT_IMPL(setresuid)
+SYS_NOT_IMPL(getresuid)
+SYS_NOT_IMPL(setresgid)
+SYS_NOT_IMPL(getresgid)
+SYS_NOT_IMPL(setuid)
+SYS_NOT_IMPL(setgid)
+SYS_NOT_IMPL(setfsuid)
+SYS_NOT_IMPL(setfsgid)
+SYS_NOT_IMPL(pivot_root)
+SYS_NOT_IMPL(mincore)
+SYS_NOT_IMPL(ni_syscall_222)
+SYS_NOT_IMPL(ni_syscall_223)
+SYS_NOT_IMPL(readahead)
+SYS_NOT_IMPL(setxattr)
+SYS_NOT_IMPL(lsetxattr)
+SYS_NOT_IMPL(fsetxattr)
+SYS_NOT_IMPL(getxattr)
+SYS_NOT_IMPL(lgetxattr)
+SYS_NOT_IMPL(fgetxattr)
+SYS_NOT_IMPL(listxattr)
+SYS_NOT_IMPL(llistxattr)
+SYS_NOT_IMPL(flistxattr)
+SYS_NOT_IMPL(removexattr)
+SYS_NOT_IMPL(lremovexattr)
+SYS_NOT_IMPL(fremovexattr)
+SYS_NOT_IMPL(tkill)
+SYS_NOT_IMPL(sendfile64)
+SYS_NOT_IMPL(get_thread_area)
+SYS_NOT_IMPL(io_setup)
+SYS_NOT_IMPL(io_destroy)
+SYS_NOT_IMPL(io_getevents)
+SYS_NOT_IMPL(io_submit)
+SYS_NOT_IMPL(io_cancel)
+SYS_NOT_IMPL(ni_syscall_251)
+SYS_NOT_IMPL(lookup_dcookie)
+SYS_NOT_IMPL(epoll_create)
+SYS_NOT_IMPL(epoll_ctl)
+SYS_NOT_IMPL(epoll_wait)
+SYS_NOT_IMPL(remap_file_pages)
+SYS_NOT_IMPL(timer_create)
+SYS_NOT_IMPL(timer_settime)
+SYS_NOT_IMPL(timer_gettime)
+SYS_NOT_IMPL(timer_getoverrun)
+SYS_NOT_IMPL(timer_delete)
+SYS_NOT_IMPL(clock_settime)
+SYS_NOT_IMPL(clock_gettime)
+SYS_NOT_IMPL(clock_nanosleep)
+SYS_NOT_IMPL(statfs64)
+SYS_NOT_IMPL(fstatfs64)
+SYS_NOT_IMPL(utimes)
+SYS_NOT_IMPL(fadvise64_64)
+SYS_NOT_IMPL(ni_syscall_273)
+SYS_NOT_IMPL(mbind)
+SYS_NOT_IMPL(get_mempolicy)
+SYS_NOT_IMPL(set_mempolicy)
+SYS_NOT_IMPL(mq_open)
+SYS_NOT_IMPL(mq_unlink)
+SYS_NOT_IMPL(mq_timedsend)
+SYS_NOT_IMPL(mq_timedreceive)
+SYS_NOT_IMPL(mq_notify)
+SYS_NOT_IMPL(mq_getsetattr)
+SYS_NOT_IMPL(kexec_load)
+SYS_NOT_IMPL(waitid)
+SYS_NOT_IMPL(ni_syscall_285)
+SYS_NOT_IMPL(add_key)
+SYS_NOT_IMPL(request_key)
+SYS_NOT_IMPL(keyctl)
+SYS_NOT_IMPL(ioprio_set)
+SYS_NOT_IMPL(ioprio_get)
+SYS_NOT_IMPL(inotify_init)
+SYS_NOT_IMPL(inotify_add_watch)
+SYS_NOT_IMPL(inotify_rm_watch)
+SYS_NOT_IMPL(migrate_pages)
+SYS_NOT_IMPL(openat)
+SYS_NOT_IMPL(mkdirat)
+SYS_NOT_IMPL(mknodat)
+SYS_NOT_IMPL(fchownat)
+SYS_NOT_IMPL(futimesat)
+SYS_NOT_IMPL(fstatat64)
+SYS_NOT_IMPL(unlinkat)
+SYS_NOT_IMPL(renameat)
+SYS_NOT_IMPL(linkat)
+SYS_NOT_IMPL(symlinkat)
+SYS_NOT_IMPL(readlinkat)
+SYS_NOT_IMPL(fchmodat)
+SYS_NOT_IMPL(faccessat)
+SYS_NOT_IMPL(pselect6)
+SYS_NOT_IMPL(ppoll)
+SYS_NOT_IMPL(unshare)
+SYS_NOT_IMPL(get_robust_list)
+SYS_NOT_IMPL(splice)
+SYS_NOT_IMPL(sync_file_range)
+SYS_NOT_IMPL(tee)
+SYS_NOT_IMPL(vmsplice)
+SYS_NOT_IMPL(move_pages)
+SYS_NOT_IMPL(getcpu)
+SYS_NOT_IMPL(epoll_pwait)
+SYS_NOT_IMPL(utimensat)
+SYS_NOT_IMPL(signalfd)
+SYS_NOT_IMPL(timerfd)
+SYS_NOT_IMPL(eventfd)
+SYS_NOT_IMPL(fallocate)

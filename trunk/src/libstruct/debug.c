@@ -249,6 +249,76 @@ void __debug(int category, char *fmt, ...)
 }
 
 
+void __debug_buffer(int category, char *buffer_name, void *buffer, int size)
+{
+	char buf[200];
+	char *buf_ptr;
+
+	unsigned char c;
+
+	int trunc = 0;
+
+	/* Clear buffer */
+	memset(buf, 0, sizeof buf);
+	strcpy(buf, "\"");
+	buf_ptr = &buf[1];
+
+	/* Truncate size to */
+	if (size > 40)
+	{
+		size = 40;
+		trunc = 1;
+	}
+
+	/* Dump */
+	for (;;)
+	{
+		c = * (unsigned char *) buffer;
+
+		/* Finish */
+		if (!size)
+		{
+			strcpy(buf_ptr, trunc ? "\"..." : "\"");
+			break;
+		}
+
+		/* Characters */
+		if (c >= 32)
+		{
+			*buf_ptr = c;
+			buf_ptr++;
+		}
+		else if (!c)
+		{
+			strcpy(buf_ptr, "\\0");
+			buf_ptr += 2;
+		}
+		else if (c == '\n')
+		{
+			strcpy(buf_ptr, "\\n");
+			buf_ptr += 2;
+		}
+		else if (c == '\t')
+		{
+			strcpy(buf_ptr, "\\t");
+			buf_ptr += 2;
+		}
+		else
+		{
+			sprintf(buf_ptr, "\\%02x", c);
+			buf_ptr += 3;
+		}
+
+		/* Next byte */
+		buffer++;
+		size--;
+	}
+
+	/* Print buffer */
+	__debug(category, "%s=%s\n", buffer_name, buf);
+}
+
+
 void fatal(char *fmt, ...)
 {
 	va_list va;
