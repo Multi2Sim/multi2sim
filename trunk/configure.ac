@@ -142,6 +142,7 @@ AC_CONFIG_FILES([Makefile
 		 src/libgpudisasm/Makefile
 		 src/libgpuvisual/Makefile
 		 src/libmemsystem/Makefile
+		 src/libmemvisual/Makefile
                  src/libcpukernel/Makefile
 		 src/libcpudisasm/Makefile
 		 src/libesim/Makefile
