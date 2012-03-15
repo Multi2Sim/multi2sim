@@ -1292,7 +1292,7 @@ static void mem_config_create_switches(struct config_t *config)
 }
 
 
-void mem_config_check_routes(void)
+static void mem_config_check_routes(void)
 {
 	struct mod_t *mod;
 	struct net_routing_table_entry_t *entry;
@@ -1437,7 +1437,7 @@ static void mem_config_check_disjoint(void)
 }
 
 
-static void mem_config_read_sub_block_sizes(void)
+static void mem_config_calculate_sub_block_sizes(void)
 {
 	struct mod_t *mod;
 	struct mod_t *high_mod;
@@ -1476,6 +1476,65 @@ static void mem_config_read_sub_block_sizes(void)
 	}
 
 	/* Debug */
+	mem_debug("\n");
+}
+
+
+static void mem_config_set_mod_level(struct mod_t *mod, int level)
+{
+	struct mod_t *low_mod;
+
+	/* If level is already set, do nothing */
+	if (mod->level >= level)
+		return;
+
+	/* Set level of module and lower modules */
+	mod->level = level;
+	LINKED_LIST_FOR_EACH(mod->low_mod_list)
+	{
+		low_mod = linked_list_get(mod->low_mod_list);
+		mem_config_set_mod_level(low_mod, level + 1);
+	}
+}
+
+
+static void mem_config_calculate_mod_levels(void)
+{
+	int compute_unit_id;
+	int core;
+	int thread;
+	int i;
+
+	struct mod_t *mod;
+
+	/* Color CPU modules */
+	if (cpu_sim_kind == cpu_sim_detailed)
+	{
+		FOREACH_CORE FOREACH_THREAD
+		{
+			mem_config_set_mod_level(THREAD.data_mod, 1);
+			mem_config_set_mod_level(THREAD.inst_mod, 1);
+		}
+	}
+
+	/* Check color of GPU modules */
+	if (gpu_sim_kind == gpu_sim_detailed)
+	{
+		FOREACH_COMPUTE_UNIT(compute_unit_id)
+			mem_config_set_mod_level(gpu->compute_units[compute_unit_id]->global_memory, 1);
+	}
+
+	/* Debug */
+	mem_debug("Calculating module levels:\n");
+	for (i = 0; i < list_count(mem_system->mod_list); i++)
+	{
+		mod = list_get(mem_system->mod_list, i);
+		mem_debug("\t%s -> ", mod->name);
+		if (mod->level)
+			mem_debug("level %d\n", mod->level);
+		else
+			mem_debug("not accessible\n");
+	}
 	mem_debug("\n");
 }
 
@@ -1534,5 +1593,8 @@ void mem_system_config_read(void)
 	mem_config_check_disjoint();
 
 	/* Compute sub-block sizes, based on high modules */
-	mem_config_read_sub_block_sizes();
+	mem_config_calculate_sub_block_sizes();
+
+	/* Compute cache levels relative to the CPU/GPU entry points */
+	mem_config_calculate_mod_levels();
 }

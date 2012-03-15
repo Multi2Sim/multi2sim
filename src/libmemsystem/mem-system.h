@@ -266,6 +266,9 @@ struct mod_t
 	int latency;
 	int mshr_size;
 
+	/* Module level starting from entry points */
+	int level;
+
 	/* Address range served by module */
 	enum mod_range_kind_t range_kind;
 	union
