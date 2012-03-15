@@ -7,6 +7,7 @@ SUBDIRS = \
 	libcpuarch \
 	libgpuarch \
 	libmemsystem \
+	libmemvisual \
 	libnetwork \
 	libgpukernel \
 	libmhandle \
@@ -29,9 +30,11 @@ INCLUDES = -I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libgpuarch \
 	-I$(top_srcdir)/src/libgpukernel \
 	-I$(top_srcdir)/src/libgpudisasm \
-	-I$(top_srcdir)/src/libgpuvisual
+	-I$(top_srcdir)/src/libgpuvisual \
+	-I$(top_srcdir)/src/libmemvisual
 
 LDADD = \
+	$(top_builddir)/src/libmemvisual/libmemvisual.a \
 	$(top_builddir)/src/libgpuvisual/libgpuvisual.a \
 	$(top_builddir)/src/libgpukernel/libgpukernel.a \
 	$(top_builddir)/src/libcpukernel/libcpukernel.a \
