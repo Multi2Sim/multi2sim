@@ -64,6 +64,11 @@ void __debug_tab_dec(int category, int space_count);
 #define debug(category, ...) ((category) ? __debug((category), __VA_ARGS__) : (void) 0)
 void __debug(int category, char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
+/* Dump a buffer */
+#define debug_buffer(category, buffer_name, buffer, size) \
+	((category) ? __debug_buffer((category), (buffer_name), (buffer), (size)) : (void) 0)
+void __debug_buffer(int category, char *buffer_name, void *buffer, int size);
+
 /* Other messages */
 void warning(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 void fatal(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));

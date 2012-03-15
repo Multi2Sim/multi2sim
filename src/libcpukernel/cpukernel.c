@@ -34,7 +34,8 @@ enum cpu_sim_kind_t cpu_sim_kind = cpu_sim_functional;
 
 /* Reason for simulation end */
 enum ke_sim_finish_t ke_sim_finish = ke_sim_finish_none;
-struct string_map_t ke_sim_finish_map = {
+struct string_map_t ke_sim_finish_map =
+{
 	9, {
 		{ "ContextsFinished", ke_sim_finish_ctx },
 		{ "MaxCPUInst", ke_sim_finish_max_cpu_inst },
@@ -127,7 +128,6 @@ void ke_done(void)
 	free(ke);
 	isa_done();
 	sys_done();
-	syscall_summary();
 }
 
 

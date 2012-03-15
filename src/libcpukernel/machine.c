@@ -932,7 +932,7 @@ void op_int_imm8_impl()
 
 	/* Do system call if not in speculative mode */
 	if (!isa_spec_mode)
-		syscall_do();
+		sys_call();
 
 	x86_uinst_new(x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);
 }
