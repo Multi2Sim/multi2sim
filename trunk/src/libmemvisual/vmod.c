@@ -17,16 +17,29 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-#ifndef MEMVISUAL_H_
-#define MEMVISUAL_H_
-
-#include <debug.h>
-#include <mhandle.h>
+#include <memvisual-private.h>
 
 
-void vmem_run(char *file_name);
+
+struct vmod_t *vmod_create(void)
+{
+	struct vmod_t *vmod;
+
+	/* Allocate */
+	vmod = calloc(1, sizeof(struct vmod_t));
+	if (!vmod)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Create layout */
+	vmod->layout = gtk_layout_new(NULL, NULL);
+	gtk_widget_set_size_request(vmod->layout, 50, 50);
+
+	/* Return */
+	return vmod;
+}
 
 
-#endif
-
+void vmod_free(struct vmod_t *vmod)
+{
+	free(vmod);
+}

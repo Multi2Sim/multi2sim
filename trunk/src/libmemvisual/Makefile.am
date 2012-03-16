@@ -5,7 +5,10 @@ libmemvisual_a_SOURCES = \
 
 if HAVE_GTK
 libmemvisual_a_SOURCES += \
-	memvisual.c
+	memvisual.c \
+	memvisual-private.h \
+	vmod.c \
+	vmod-panel.c
 
 AM_CFLAGS = @GTK_CFLAGS@
 

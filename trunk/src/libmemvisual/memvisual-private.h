@@ -18,14 +18,42 @@
  */
 
 
-#ifndef MEMVISUAL_H_
-#define MEMVISUAL_H_
+#ifndef MEMVISUAL_PRIVATE_H
+#define MEMVISUAL_PRIVATE_H
 
-#include <debug.h>
-#include <mhandle.h>
+#include <memvisual.h>
+#include <stdlib.h>
+#include <gtk/gtk.h>
 
 
-void vmem_run(char *file_name);
+
+/*
+ * Visual Memory Module
+ */
+
+struct vmod_t
+{
+	GtkWidget *layout;
+};
+
+
+struct vmod_t *vmod_create(void);
+void vmod_free(struct vmod_t *vmod);
+
+
+
+
+/*
+ * Panel with memory modules
+ */
+
+struct vmod_panel_t
+{
+	GtkWidget *layout;
+};
+
+struct vmod_panel_t *vmod_panel_create(void);
+void vmod_panel_free(struct vmod_panel_t *panel);
 
 
 #endif
