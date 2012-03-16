@@ -21,7 +21,7 @@
 
 
 
-struct vmod_t *vmod_create(void)
+struct vmod_t *vmod_create(char *name, int level)
 {
 	struct vmod_t *vmod;
 
@@ -29,6 +29,18 @@ struct vmod_t *vmod_create(void)
 	vmod = calloc(1, sizeof(struct vmod_t));
 	if (!vmod)
 		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Name */
+	vmod->name = strdup(name);
+	if (!name)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	vmod->low_vmod_list = list_create();
+	vmod->high_vmod_list = list_create();
+	vmod->width = 100;
+	vmod->height = 100;
+	vmod->level = level;
 
 	/* Create layout */
 	vmod->layout = gtk_layout_new(NULL, NULL);
@@ -41,5 +53,8 @@ struct vmod_t *vmod_create(void)
 
 void vmod_free(struct vmod_t *vmod)
 {
+	list_free(vmod->low_vmod_list);
+	list_free(vmod->high_vmod_list);
+	free(vmod->name);
 	free(vmod);
 }

@@ -21,9 +21,12 @@
 #ifndef MEMVISUAL_PRIVATE_H
 #define MEMVISUAL_PRIVATE_H
 
+#include <math.h>
+#include <gtk/gtk.h>
+
 #include <memvisual.h>
 #include <stdlib.h>
-#include <gtk/gtk.h>
+#include <list.h>
 
 
 
@@ -33,11 +36,25 @@
 
 struct vmod_t
 {
+	char *name;
+	int level;
+
+	/* GTK layout to draw */
 	GtkWidget *layout;
+
+	/* Position in panel */
+	int x;
+	int y;
+	int width;
+	int height;
+
+	/* List of lower and upper modules */
+	struct list_t *low_vmod_list;
+	struct list_t *high_vmod_list;
 };
 
 
-struct vmod_t *vmod_create(void);
+struct vmod_t *vmod_create(char *name, int level);
 void vmod_free(struct vmod_t *vmod);
 
 
@@ -47,13 +64,31 @@ void vmod_free(struct vmod_t *vmod);
  * Panel with memory modules
  */
 
+/* Connection between to modules */
+struct vmod_conn_t
+{
+	int x, y;
+	int m1, m2, m3;
+
+	struct vmod_t *source;
+	struct vmod_t *dest;
+};
+
 struct vmod_panel_t
 {
 	GtkWidget *layout;
+
+	/* List of modules */
+	struct list_t *vmod_list;
+
+	/* List of module connections */
+	struct list_t *vmod_conn_list;
 };
 
 struct vmod_panel_t *vmod_panel_create(void);
 void vmod_panel_free(struct vmod_panel_t *panel);
+
+void vmod_panel_draw(struct vmod_panel_t *panel);
 
 
 #endif
