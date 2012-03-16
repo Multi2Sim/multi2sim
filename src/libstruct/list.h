@@ -44,6 +44,16 @@ struct list_t
 };
 
 
+/** Iterate through all element of linked list.
+ *
+ * @param list
+ * @param iterator
+ * 	Integer variable used to iterate.
+ */
+#define LIST_FOR_EACH(list, iter) \
+	for ((iter) = 0; (iter) < list_count((list)); (iter)++)
+
+
 /** Create a list based on a vector. Insertion/deletion operations at the head
  * or tail of the list are done in constant time. Insertion/deletion cost in
  * intermediate positions depends on the distance between head/tail to the
