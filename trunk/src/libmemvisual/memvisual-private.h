@@ -45,17 +45,21 @@ struct vmod_t
 	/* Position in panel */
 	int x;
 	int y;
-	int width;
-	int height;
 
-	/* List of lower and upper modules */
+	/* List of low and high modules */
 	struct list_t *low_vmod_list;
 	struct list_t *high_vmod_list;
+
+	/* List of low and high connections */
+	struct list_t *low_vmod_conn_list;
+	struct list_t *high_vmod_conn_list;
 };
 
 
 struct vmod_t *vmod_create(char *name, int level);
 void vmod_free(struct vmod_t *vmod);
+
+gboolean vmod_draw_event(GtkWidget *widget, GdkEventConfigure *event, struct vmod_t *vmod);
 
 
 
@@ -64,32 +68,73 @@ void vmod_free(struct vmod_t *vmod);
  * Panel with memory modules
  */
 
+#define VMOD_PADDING  20
+
+#define VMOD_LEVEL_PADDING  15
+
+#define VMOD_CONN_RADIUS  8
+#define VMOD_CONN_LINE_WIDTH  4
+
+#define VMOD_DEFAULT_WIDTH  100
+#define VMOD_DEFAULT_HEIGHT 100
+
+
+/* One level of the memory hierarchy */
+struct vmod_level_t
+{
+	/* List of modules in this level */
+	struct list_t *vmod_list;
+
+	/* Number of low connections */
+	int num_low_connections;
+
+	/* Width of level */
+	int width;
+};
+
 /* Connection between to modules */
 struct vmod_conn_t
 {
-	int x, y;
-	int m1, m2, m3;
+	int x0;
+	int y0;
+	int y1;
+	int x2;
+	int y3;
 
 	struct vmod_t *source;
 	struct vmod_t *dest;
 };
 
+/* Panel representing memory hierarchy */
 struct vmod_panel_t
 {
 	GtkWidget *layout;
 
-	/* List of modules */
+	/* Dimensions */
+	int width;
+	int height;
+
+	/* List of modules (vmod_t) */
 	struct list_t *vmod_list;
 
-	/* List of module connections */
+	/* List of memory levels (vmod_level_t) */
+	struct list_t *vmod_level_list;
+
+	/* List of module connections (vmod_conn_t) */
 	struct list_t *vmod_conn_list;
+
+	/* Maximum number of modules in a level */
+	int max_modules_in_level;
+
 };
 
 struct vmod_panel_t *vmod_panel_create(void);
 void vmod_panel_free(struct vmod_panel_t *panel);
 
-void vmod_panel_draw(struct vmod_panel_t *panel);
+void vmod_panel_refresh(struct vmod_panel_t *panel);
 
+gboolean vmod_panel_draw_event(GtkWidget *widget, GdkEventConfigure *event,
+	struct vmod_panel_t *panel);
 
 #endif
 
