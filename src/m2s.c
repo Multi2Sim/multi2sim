@@ -20,6 +20,7 @@
 #include <cpuarch.h>
 #include <gpuarch.h>
 #include <gpuvisual.h>
+#include <memvisual.h>
 
 
 /* Multi2Sim version */
@@ -37,6 +38,7 @@ static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
 static char *gpu_pipeline_debug_file_name = "";
 static char *gpu_visual_file_name = "";
+static char *mem_visual_file_name = "";
 static char *mem_debug_file_name = "";
 static char *loader_debug_file_name = "";
 static char *isa_call_debug_file_name = "";
@@ -585,6 +587,13 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Memory hierarchy visualization */
+		if (!strcmp(argv[argi], "--mem-visual"))
+		{
+			sim_need_argument(argc, argv, argi);
+			mem_visual_file_name = argv[++argi];
+			continue;
+		}
 		/* Network configuration file */
 		if (!strcmp(argv[argi], "--net-config"))
 		{
@@ -869,6 +878,10 @@ int main(int argc, char **argv)
 	if (*gpu_visual_file_name)
 		vgpu_run(gpu_visual_file_name);
 	
+	/* Memory hierarchy visualization tool */
+	if (*mem_visual_file_name)
+		vmem_run(mem_visual_file_name);
+
 	/* Network simulation tool */
 	if (*net_sim_network_name)
 		net_sim(net_debug_file_name);
