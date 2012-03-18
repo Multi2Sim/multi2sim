@@ -80,6 +80,11 @@ void amd_inst_ALU_POP_AFTER_impl()
 	amd_inst_ALU_impl();
 }
 
+void amd_inst_ALU_POP2_AFTER_impl()
+{
+	/* Initiates an ALU clause, and pops the stack twice after the clause completes execution. */
+	NOT_IMPL();
+}
 
 void amd_inst_ALU_PUSH_BEFORE_impl()
 {
@@ -87,6 +92,23 @@ void amd_inst_ALU_PUSH_BEFORE_impl()
 	amd_inst_ALU_impl();
 }
 
+void amd_inst_CALL_impl()
+{
+	/* Execute a subroutine call (push call variables onto stack) */
+	NOT_IMPL();
+}
+
+void amd_inst_CALL_FS_impl()
+{
+	/* Call Fetch Subroutine */
+	NOT_IMPL();
+}
+
+void amd_inst_CUT_VERTEX_impl()
+{
+	/* End Primitive Strip, Start New Primitive Strip */
+	NOT_IMPL();
+}
 
 #define W0  CF_WORD0
 #define W1  CF_WORD1
@@ -143,6 +165,65 @@ void amd_inst_ELSE_impl()
 #undef W0
 #undef W1
 
+void amd_inst_EMIT_CUT_VERTEX_impl()
+{
+	/* Emit Vertex, End Primitive Strip */
+	NOT_IMPL();
+}
+
+void amd_inst_EMIT_VERTEX_impl()
+{
+	/* Vertex Exported to Memory */
+	NOT_IMPL();
+}
+
+void amd_inst_EXPORT_impl()
+{
+	/* Export from VS or PS */
+	NOT_IMPL();
+}
+
+void amd_inst_EXPORT_DONE_impl()
+{
+	/* Export Last Data */
+	NOT_IMPL();
+}
+
+void amd_inst_GDS_impl()
+{
+	/* Global Data Share */
+	NOT_IMPL();
+}
+
+void amd_inst_GWS_BARRIER_impl()
+{
+	/* Global Wavefront Barrier */
+	NOT_IMPL();
+}
+
+void amd_inst_GWS_INIT_impl()
+{
+	/* Global Wavefront Resource Initialization */
+	NOT_IMPL();
+}
+
+void amd_inst_GWS_SEMA_P_impl()
+{
+	/* Global Wavefront Sync Semaphore P */
+	NOT_IMPL();
+}
+
+void amd_inst_GWS_SEMA_V_impl()
+{
+	/* Global Wavefront Sync Semaphore V */
+	NOT_IMPL();
+}
+
+void amd_inst_HALT_impl()
+{
+	/* Halt Wavefront Execution */
+	NOT_IMPL();
+}
 
 #define W0  CF_WORD0
 #define W1  CF_WORD1
@@ -169,6 +250,25 @@ void amd_inst_JUMP_impl()
 #undef W0
 #undef W1
 
+#define W0  CF_WORD0
+#define W1  CF_WORD1
+void amd_inst_JUMPTABLE_impl()
+{
+	/* Executes a jump through a jump table. */
+	NOT_IMPL();
+}
+#undef W0
+#undef W1
+
+#define W0  CF_WORD0
+#define W1  CF_WORD1
+void amd_inst_KILL_impl()
+{
+	/* Kill (prevent rendering of) pixels that pass a condition test. */
+	NOT_IMPL();
+}
+#undef W0
+#undef W1
 
 #define W0  CF_WORD0
 #define W1  CF_WORD1
@@ -355,6 +455,17 @@ void amd_inst_LOOP_BREAK_impl()
 #undef W0
 #undef W1
 
+void amd_inst_MEM_EXPORT_impl()
+{
+	/* Performs a memory read or write on the scatter buffer. */
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_EXPORT_COMBINED_impl()
+{
+	/* Performs a memory read or write on the scatter buffer. */
+	NOT_IMPL();
+}
 
 #define W0  CF_ALLOC_EXPORT_WORD0_RAT
 #define W1  CF_ALLOC_EXPORT_WORD1_BUF
@@ -558,6 +669,115 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 #undef W0
 #undef W1
 
+void amd_inst_MEM_RAT_COMBINED_CACHELESS_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_RING_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_RING1_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_RING2_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_RING3_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM0_BUF0_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM0_BUF1_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM0_BUF2_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM0_BUF3_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM1_BUF0_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM1_BUF1_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM1_BUF2_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM1_BUF3_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM2_BUF0_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM2_BUF1_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM2_BUF2_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM2_BUF3_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM3_BUF0_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM3_BUF1_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM3_BUF2_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_STREAM3_BUF3_impl()
+{
+	NOT_IMPL();
+}
+
+void amd_inst_MEM_WR_SCRATCH_impl()
+{
+	NOT_IMPL();
+}
 
 #define W0 gpu_isa_inst->words[0].cf_word0
 #define W1 gpu_isa_inst->words[1].cf_word1
@@ -587,6 +807,25 @@ void amd_inst_POP_impl()
 #undef W0
 #undef W1
 
+#define W0  CF_WORD0
+#define W1  CF_WORD1
+void amd_inst_PUSH_impl()
+{
+	/* Push State To Stack */
+	NOT_IMPL();
+}
+#undef W0
+#undef W1
+
+#define W0  CF_WORD0
+#define W1  CF_WORD1
+void amd_inst_RETURN_impl()
+{
+	/* Return From Subroutine */
+	NOT_IMPL();
+}
+#undef W0
+#undef W1
 
 #define W0  CF_WORD0
 #define W1  CF_WORD1
@@ -621,6 +860,23 @@ void amd_inst_TC_impl()
 #undef W0
 #undef W1
 
+void amd_inst_TC_ACK_impl()
+{
+	/* Fetch Clause Through Texture Cache With ACK */
+	NOT_IMPL();
+}
+
+void amd_inst_VC_impl()
+{
+	/* Initiate Clause of Vertex or Constant Fetches Through Vertex Cache */
+	NOT_IMPL();
+}
+
+void amd_inst_VC_ACK_impl()
+{
+	/* Fetch Clause Through Vertex Cache With ACK */
+	NOT_IMPL();
+}
 
 void amd_inst_WAIT_ACK_impl()
 {

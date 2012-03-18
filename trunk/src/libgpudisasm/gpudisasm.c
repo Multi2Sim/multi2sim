@@ -484,6 +484,14 @@ struct string_map_t dst_sel_map = {
 	}
 };
 
+struct string_map_t export_type_map = {
+	4, {
+		{ "PIX", 0 },
+		{ "POS", 1 },
+		{ "PARAM", 2 },
+		{ "IND_ACK", 3 }
+	}
+};
 
 int amd_inst_is_token(char *fmt_str, char *token_str, int *token_str_len)
 {
@@ -888,6 +896,13 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[1] == FMT_CF_WORD1);
 			str_printf(buf_ptr, size_ptr, "%d", inst->words[1].cf_word1.count + 1);
 		
+		} else if (amd_inst_is_token(fmt_str, "cf_stream_id", &len)) {
+			
+			assert(inst->info->fmt[1] == FMT_CF_WORD1);
+			/* For EMIT, CUT, EMIT_CUT, bit[10] are the stream ID */
+			int stream_id = inst->words[1].cf_word1.count % 2;
+			str_printf(buf_ptr, size_ptr, "%d", stream_id);
+		
 		} else if (amd_inst_is_token(fmt_str, "pop_count", &len)) {
 
 			int pop_count;
@@ -997,6 +1012,75 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				inst->words[1].cf_alu_word1.kcache_mode1,
 				inst->words[1].cf_alu_word1.kcache_addr1,
 				buf_ptr, size_ptr);
+
+		} else if (amd_inst_is_token(fmt_str, "exp_type", &len)) {
+			
+			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0);
+			str_printf(buf_ptr, size_ptr, "%s", map_value(&export_type_map, inst->words[0].cf_alloc_export_word0.type));
+
+		} else if (amd_inst_is_token(fmt_str, "exp_array_base", &len)) {
+			/* FIXME */
+			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0);
+			if (inst->words[0].cf_alloc_export_word0.type == 0)
+			{	
+				int array_base = inst->words[0].cf_alloc_export_word0.array_base % 8;
+				str_printf(buf_ptr, size_ptr, "%d", array_base);
+			} else if (inst->words[0].cf_alloc_export_word0.type == 1){
+				int array_base = inst->words[0].cf_alloc_export_word0.array_base % 4;
+				str_printf(buf_ptr, size_ptr, "%d", array_base);
+			} else if (inst->words[0].cf_alloc_export_word0.type == 2){
+				int array_base = inst->words[0].cf_alloc_export_word0.array_base % 32;
+				str_printf(buf_ptr, size_ptr, "%d", array_base);
+			} else {
+				int array_base = inst->words[0].cf_alloc_export_word0.array_base;
+				str_printf(buf_ptr, size_ptr, "%d", array_base);
+			}
+
+		} else if (amd_inst_is_token(fmt_str, "exp_rw_gpr", &len)) {
+
+			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0);
+			int rw_gpr = inst->words[0].cf_alloc_export_word0.rw_gpr;
+			str_printf(buf_ptr, size_ptr, "R%d", rw_gpr);
+
+		} else if (amd_inst_is_token(fmt_str, "fourcompswizzleopt", &len)) {
+
+			assert(inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
+
+			int src_sel[4];
+			src_sel[0] = inst->words[1].cf_alloc_export_word1_swiz.sel_x;
+			src_sel[1] = inst->words[1].cf_alloc_export_word1_swiz.sel_y;
+			src_sel[2] = inst->words[1].cf_alloc_export_word1_swiz.sel_z;
+			src_sel[3] = inst->words[1].cf_alloc_export_word1_swiz.sel_w;
+
+			char src_sel_chars[4];
+
+			/* Add element selections */
+			int i;
+			for(i = 0; i < 4; i++) {
+				if(src_sel[i] == 0) {
+					src_sel_chars[i] = 'x';
+				} else if(src_sel[i] == 1) {
+					src_sel_chars[i] = 'y';
+				} else if(src_sel[i] == 2) {
+					src_sel_chars[i] = 'z';
+				} else if(src_sel[i] == 3) {
+					src_sel_chars[i] = 'w';
+				} else if(src_sel[i] == 4) {
+					src_sel_chars[i] = '0';
+				} else if(src_sel[i] == 5) {
+					src_sel_chars[i] = '1';
+				} else if(src_sel[i] == 6) {
+					fatal("%s: src_sel value 6 in reserved", fmt_str);
+				} else if(src_sel[i] == 7) {
+					/* FIXME: Mark this element */
+					src_sel_chars[i] = '_';
+				} else {
+					fatal("%s: src_sel value %d is unknown", fmt_str, src_sel[i]);
+				}
+			}
+
+			str_printf(buf_ptr, size_ptr, ".%c%c%c%c", src_sel_chars[0], src_sel_chars[1],
+					src_sel_chars[2], src_sel_chars[3]);
 
 		} else if (amd_inst_is_token(fmt_str, "rat_inst", &len)) {
 			
