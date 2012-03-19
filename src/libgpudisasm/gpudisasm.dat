@@ -489,14 +489,14 @@ DEFINST(MUL_IEEE,
 )
 
 DEFINST(MAX,
-	"%name",
+	"%name %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 3,
 	0
 )
 
 DEFINST(MIN,
-	"%name",
+	"%name %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 4,
 	0
@@ -1126,7 +1126,7 @@ DEFINST(RECIP_FF,
 )
 
 DEFINST(RECIP_IEEE,
-	"RCP_e%omod    %alu_dst,  %alu_src0  %alu_mod",
+	"RCP_e%omod     %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 134,
 	AMD_INST_FLAG_TRANS_ONLY
@@ -1357,7 +1357,7 @@ DEFINST(FLT_TO_UINT4,
 )
 
 DEFINST(DOT_IEEE,
-	"%name %alu_dst,  %alu_src0,  %alu_src1",
+	"%name      %alu_dst,  %alu_src0,  %alu_src1",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 175,
 	0
@@ -1469,14 +1469,14 @@ DEFINST(DOT4,
 )
 
 DEFINST(DOT4_IEEE,
-	"%name %alu_dst,  %alu_src0,  %alu_src1",
+	"DOT4_e      %alu_dst,  %alu_src0,  %alu_src1",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 191,
 	0
 )
 
 DEFINST(CUBE,
-	"%name",
+	"%name %alu_dst,  %alu_src0,  %alu_src1",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 192,
 	0
@@ -1615,29 +1615,33 @@ DEFINST(MULADD_IEEE_PREV,
 	0
 )
 
+/* FIXME: Output of alu_src1 not correct, <Unknown>, should be PARAM_._ */
 DEFINST(INTERP_XY,
-	"%name",
+	"%name %alu_dst,  %alu_src0,  %alu_src1   %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 214,
 	0
 )
 
+/* FIXME: Output of alu_src1 not correct, <Unknown>, should be PARAM_._ */
 DEFINST(INTERP_ZW,
-	"%name",
+	"%name %alu_dst,  %alu_src0,  %alu_src1   %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 215,
 	0
 )
 
+/* FIXME: Output of alu_src1 not correct, <Unknown>, should be PARAM_._ */
 DEFINST(INTERP_X,
-	"%name",
+	"%name %alu_dst,  %alu_src0,  %alu_src1   %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 216,
 	0
 )
 
+/* FIXME: Output of alu_src1 not correct, <Unknown>, should be PARAM_._ */
 DEFINST(INTERP_Z,
-	"%name",
+	"%name %alu_dst,  %alu_src0,  %alu_src1   %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 217,
 	0
@@ -1791,7 +1795,7 @@ DEFINST(LDS_IDX_OP,
 )
 
 DEFINST(MULADD,
-	"%name %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
+	"%name %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod%clamp",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 20,
 	0
