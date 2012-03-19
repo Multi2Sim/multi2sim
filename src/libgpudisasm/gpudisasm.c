@@ -886,6 +886,13 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				case 3: str_printf(buf_ptr, size_ptr, "/2"); break;
 			}
 			
+		} else if (amd_inst_is_token(fmt_str, "clamp", &len)) {
+			
+			assert(inst->info->fmt[1] == FMT_ALU_WORD1_OP2 || inst->info->fmt[1] == FMT_ALU_WORD1_OP3);
+			if (inst->words[1].alu_word1_op2.clamp || inst->words[1].alu_word1_op3.clamp) {
+					str_printf(buf_ptr, size_ptr, "CLAMP");
+			}
+			
 		} else if (amd_inst_is_token(fmt_str, "cf_addr", &len)) {
 
 			assert(inst->info->fmt[0] == FMT_CF_WORD0);
