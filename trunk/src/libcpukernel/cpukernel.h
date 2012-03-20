@@ -345,8 +345,8 @@ void ld_load_prog_from_cmdline(int argc, char **argv);
 /* Micro-instruction dependences.
  * WARNING: update 'x86_uinst_dep_name' if modified (uinst.c).
  * WARNING: also update 'x86_uinst_dep_map' if modified (uinst.c). */
-enum x86_dep_t {
-
+enum x86_dep_t
+{
 	x86_dep_none = 0,
 
 	/** Integer dependences **/
@@ -977,8 +977,12 @@ struct ctx_t
 	struct signal_mask_table_t *signal_mask_table;
 	struct signal_handler_table_t *signal_handler_table;
 
+
 	/* Statistics */
-	long long inst_count;  /* Executed instructions in non-speculative mode */
+
+	/* Number of non-speculate micro-instructions.
+	 * Updated by the architectural simulator at the commit stage. */
+	long long inst_count;
 };
 
 enum ctx_status_t
