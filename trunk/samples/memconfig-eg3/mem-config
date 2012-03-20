@@ -96,7 +96,7 @@ BlockSize = 256
 Latency = 100
 HighNetwork = net-0
 HighNetworkNode = mm-0
-AddressRange = ADDR DIV 1024 MOD 128 EQ 0
+AddressRange = ADDR DIV 256 MOD 4 EQ 0
 
 [Module mod-mm-1]
 Type = MainMemory
@@ -104,7 +104,7 @@ BlockSize = 256
 Latency = 100
 HighNetwork = net-0
 HighNetworkNode = mm-1
-AddressRange = ADDR DIV 1024 MOD 128 EQ 1
+AddressRange = ADDR DIV 256 MOD 4 EQ 1
 
 [Module mod-mm-2]
 Type = MainMemory
@@ -112,7 +112,7 @@ BlockSize = 256
 Latency = 100
 HighNetwork = net-0
 HighNetworkNode = mm-2
-AddressRange = ADDR DIV 1024 MOD 128 EQ 2
+AddressRange = ADDR DIV 256 MOD 4 EQ 2
 
 [Module mod-mm-3]
 Type = MainMemory
@@ -120,7 +120,7 @@ BlockSize = 256
 Latency = 100
 HighNetwork = net-0
 HighNetworkNode = mm-3
-AddressRange = ADDR DIV 1024 MOD 128 EQ 3
+AddressRange = ADDR DIV 256 MOD 4 EQ 3
 
 
 ; Two networks between 2 sets of cores
