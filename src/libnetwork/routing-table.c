@@ -19,9 +19,17 @@
 
 #include <network.h>
 
+
+
 /*
  * Private Functions
  */
+
+static char *err_net_cycle =
+	"\tA cycle has been detected in the graph representing the routing table\n"
+	"\tfor a network. Routing cycles can cause deadlocks in simulations, that\n"
+	"\tcan in turn make the simulation stall with no output.\n";
+
 
 #define NET_NODE_COLOR_WHITE ((void *) 1)
 #define NET_NODE_COLOR_GRAY ((void *) 2)
@@ -30,7 +38,7 @@
 
 /* This algorithm will be recursively called to do the backtracking of DFS algorithm. */
 static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *routing_table,
-	struct list_t *color_list,struct list_t *parent_list,int list_elem)
+	struct list_t *color_list, struct list_t *parent_list, int list_elem)
 {
 	
 	int j ;	
@@ -62,10 +70,11 @@ static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *
 			node_color = list_get(color_list, j);
 			parent_index = list_get(parent_list, list_elem);
 
-			if ((node_color == NET_NODE_COLOR_GRAY) && (parent_index != node_adj))
+			if (node_color == NET_NODE_COLOR_GRAY && parent_index != node_adj)
 			{
-				fprintf(stderr, "*** Warning: There is a cycle in configuration file ***\n");
-				break ;
+				warning("network %s: cycle found in routing table.\n%s",
+					net->name, err_net_cycle);
+				break;
 			} 
 		}
 	}
@@ -113,6 +122,9 @@ static void net_routing_table_cycle_detection(struct net_routing_table_t *routin
 	list_free(color_list);
 	list_free(parent_list);	
 }
+
+
+
 
 /*
  * Public Functions
