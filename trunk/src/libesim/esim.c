@@ -167,16 +167,18 @@ void esim_process_all_events(int max)
 	int count = 0;
 	struct esim_event_t *e;
 	esim_event_handler_t handler;
+	long long cycle;
 	
 	/* Extract all elements from heap */
 	while (!max || count < max)
 	{
 		/* Extract event */
-		esim_cycle = heap_extract(event_heap, (void **) &e);
+		cycle = heap_extract(event_heap, (void **) &e);
 		if (heap_error(event_heap))
 			break;
 		
 		/* Process it */
+		esim_cycle = cycle;
 		count++;
 		handler = list_get(event_handler_list, e->event);
 		assert(handler);
