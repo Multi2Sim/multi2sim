@@ -51,7 +51,8 @@ static int can_commit_thread(int core, int thread)
 
 	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
 	 * if the call to 'rf_ready' shows input registers to be ready. */
-	if (uop->uinst->opcode == x86_uinst_store) {
+	if (uop->uinst->opcode == x86_uinst_store)
+	{
 		if (!uop->ready && rf_ready(uop))
 			uop->ready = 1;
 		return uop->ready;
@@ -74,8 +75,8 @@ static void commit_thread(int core, int thread, int quant)
 	
 	/* Commit stage for thread */
 	assert(ctx);
-	while (quant && can_commit_thread(core, thread)) {
-		
+	while (quant && can_commit_thread(core, thread))
+	{
 		/* Get instruction at the head of the ROB */
 		uop = rob_head(core, thread);
 		assert(uop_exists(uop));
@@ -93,7 +94,8 @@ static void commit_thread(int core, int thread, int quant)
 		rf_commit(uop);
 		
 		/* Branches update branch predictor and btb */
-		if (uop->flags & X86_UINST_CTRL) {
+		if (uop->flags & X86_UINST_CTRL)
+		{
 			bpred_update(THREAD.bpred, uop);
 			bpred_btb_update(THREAD.bpred, uop);
 			THREAD.btb_writes++;
@@ -103,19 +105,22 @@ static void commit_thread(int core, int thread, int quant)
 		if (trace_cache_present)
 			trace_cache_new_uop(THREAD.trace_cache, uop);
 			
-		/* Stats */
+		/* Statistics */
 		THREAD.last_commit_cycle = cpu->cycle;
 		THREAD.committed[uop->uinst->opcode]++;
 		CORE.committed[uop->uinst->opcode]++;
 		cpu->committed[uop->uinst->opcode]++;
 		cpu->inst++;
+		ctx->inst_count++;
 		if (uop->fetch_trace_cache)
 			THREAD.trace_cache->committed++;
-		if (uop->flags & X86_UINST_CTRL) {
+		if (uop->flags & X86_UINST_CTRL)
+		{
 			THREAD.branches++;
 			CORE.branches++;
 			cpu->branches++;
-			if (uop->neip != uop->pred_neip) {
+			if (uop->neip != uop->pred_neip)
+			{
 				THREAD.mispred++;
 				CORE.mispred++;
 				cpu->mispred++;
@@ -136,7 +141,8 @@ static void commit_thread(int core, int thread, int quant)
 
 		/* Recover. Functional units are cleared when processor
 		 * recovers at commit. */
-		if (recover) {
+		if (recover)
+		{
 			cpu_recover(core, thread);
 			fu_release(core);
 		}
@@ -154,18 +160,21 @@ void commit_core(int core)
 	int pass, quant, new;
 
 	/* Commit stage for core */
-	switch (cpu_commit_kind) {
+	switch (cpu_commit_kind)
+	{
 
 	case cpu_commit_kind_shared:
 		pass = cpu_threads;
 		quant = cpu_commit_width;
 		while (quant && pass) {
 			CORE.commit_current = (CORE.commit_current + 1) % cpu_threads;
-			if (can_commit_thread(core, CORE.commit_current)) {
+			if (can_commit_thread(core, CORE.commit_current))
+			{
 				commit_thread(core, CORE.commit_current, 1);
 				quant--;
 				pass = cpu_threads;
-			} else
+			}
+			else
 				pass--;
 		}
 		break;
