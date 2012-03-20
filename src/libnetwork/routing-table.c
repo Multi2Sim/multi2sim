@@ -19,6 +19,104 @@
 
 #include <network.h>
 
+/*
+ * Private Functions
+ */
+
+#define NET_NODE_COLOR_WHITE ((void *) 1)
+#define NET_NODE_COLOR_GRAY ((void *) 2)
+#define NET_NODE_COLOR_BLACK ((void *) 3)
+
+
+/* This algorithm will be recursively called to do the backtracking of DFS algorithm. */
+static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *routing_table,
+	struct list_t *color_list,struct list_t *parent_list,int list_elem)
+{
+	
+	int j ;	
+	struct net_t *net = routing_table->net;
+	struct net_node_t *parent_index ;
+	struct net_node_t *node_color;
+
+	list_set(color_list, list_elem, NET_NODE_COLOR_GRAY);
+
+	for (j = 0; j < routing_table->dim; j++)
+	{
+		struct net_node_t *node_elem;
+		struct net_node_t *node_adj;
+		struct net_routing_table_entry_t *entry;
+
+		node_elem = list_get(net->node_list, list_elem);
+		node_adj = list_get(net->node_list, j);
+		entry = net_routing_table_lookup(routing_table, node_elem, node_adj);	
+
+		if (entry->cost == 1)
+		{
+			node_color = list_get(color_list, j);
+
+			if (node_color == NET_NODE_COLOR_WHITE)
+			{
+				list_set(parent_list, j, node_elem);
+				routing_table_cycle_detection_dfs_visit(routing_table, color_list, parent_list, j);
+			}
+			node_color = list_get(color_list, j);
+			parent_index = list_get(parent_list, list_elem);
+
+			if ((node_color == NET_NODE_COLOR_GRAY) && (parent_index != node_adj))
+			{
+				fprintf(stderr, "*** Warning: There is a cycle in configuration file ***\n");
+				break ;
+			} 
+		}
+	}
+	list_set(color_list, list_elem, NET_NODE_COLOR_BLACK);
+}
+
+
+/* cycle-dectection - This algorithm uses two lists, one for node color and the * 
+ * other for node parent  of all nodes at the beginning are white. Each    	*
+ * node is its own parent. algorithm starts from the first node and runs a      *
+ * depth-first-search and creates the connection between nodes. Every node that *
+ * is checked becomes gray. The breaking condition is when algorithm meet a node*
+ * that is gray but not based on algorithm sequence that is, its parent differs *
+ * from the node that called the algorithm ---Order = O(|E|+|V|) */
+static void net_routing_table_cycle_detection(struct net_routing_table_t *routing_table)
+{
+	
+	int i;
+	struct net_t *net = routing_table->net;
+	struct list_t *color_list;
+	struct list_t *parent_list;
+	struct net_node_t *node_color ;
+
+	color_list = list_create_with_size(routing_table->dim);
+	parent_list = list_create_with_size(routing_table->dim);
+
+	for (i = 0; i < routing_table->dim; i++)
+	{
+		struct net_node_t *node_i;
+		
+		node_i = list_get(net->node_list, i);
+		list_add(color_list, NET_NODE_COLOR_WHITE);
+		list_add(parent_list, node_i);
+	}
+	
+	for (i = 0; i < routing_table->dim; i++)
+	{
+		node_color = list_get(color_list, i);
+
+		if (node_color == NET_NODE_COLOR_WHITE )
+		{
+			routing_table_cycle_detection_dfs_visit(routing_table, color_list, parent_list, i);
+		}
+	}
+	list_free(color_list);
+	list_free(parent_list);	
+}
+
+/*
+ * Public Functions
+ */
 
 struct net_routing_table_t *net_routing_table_create(struct net_t *net)
 {
@@ -98,6 +196,10 @@ void net_routing_table_calculate(struct net_routing_table_t *routing_table)
 		}
 	}
 
+	/*finding cycle in design*/
+	net_routing_table_cycle_detection(routing_table);
+
+	
 	/* Calculate shortest paths Floyd-Warshall algorithm. The 'routing_table_entry->next_node' values do
 	 * not necessarily point to the immediate next hop after this. */
 	for (k = 0; k < net->node_count; k++)
@@ -279,12 +381,9 @@ struct net_routing_table_entry_t *net_routing_table_lookup(struct net_routing_ta
 {
 	struct net_routing_table_entry_t *entry;
 
-	/* Check for valid routing table */
-	if (!routing_table->dim)
-		panic("%s: routing table not initialized\n", __FUNCTION__);
-
 	assert(src_node->index < routing_table->dim);
 	assert(dst_node->index < routing_table->dim);
+	assert(routing_table->dim > 0);
 
 	entry = &routing_table->entries[src_node->index * routing_table->dim + dst_node->index];
 	return entry;
