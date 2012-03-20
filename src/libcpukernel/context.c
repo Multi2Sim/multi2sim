@@ -264,8 +264,6 @@ void ctx_execute_inst(struct ctx_t *ctx)
 	isa_eip = isa_regs->eip;
 	isa_spec_mode = ctx_get_status(isa_ctx, ctx_specmode);
 	isa_inst_count++;
-	if (!isa_spec_mode)
-		ctx->inst_count++;
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
