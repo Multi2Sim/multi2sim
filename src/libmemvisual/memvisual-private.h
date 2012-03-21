@@ -58,6 +58,10 @@ struct vlist_t
 	/* Widget showing list */
 	GtkWidget *widget;
 
+	/* Dimensions after last refresh */
+	int width;
+	int height;
+
 	/* List of elements in the list. These elements can have any external type.
 	 * They are controlled with 'vlist_add', 'vlist_remove', etc. macros. */
 	struct list_t *elem_list;
