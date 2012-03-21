@@ -75,7 +75,15 @@ void vmem_free(struct vmem_t *vmem)
 
 void vmem_run(char *file_name)
 {
+	char *m2s_images_path = "images";
+
 	struct vmem_t *vmem;
+
+	/* Initialization */
+	m2s_dist_file("close.png", m2s_images_path, m2s_images_path,
+		vlist_image_close_path, sizeof vlist_image_close_path);
+	m2s_dist_file("close-sel.png", m2s_images_path, m2s_images_path,
+		vlist_image_close_sel_path, sizeof vlist_image_close_sel_path);
 
 	/* Initialize GTK */
 	gtk_init(NULL, NULL);
