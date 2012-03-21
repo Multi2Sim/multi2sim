@@ -40,15 +40,15 @@ static char *err_net_cycle =
 static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *routing_table,
 	struct list_t *color_list, struct list_t *parent_list, int list_elem)
 {
-	
-	int j ;	
+	int j;
+
 	struct net_t *net = routing_table->net;
-	struct net_node_t *parent_index ;
+	struct net_node_t *parent_index;
 	struct net_node_t *node_color;
 
 	list_set(color_list, list_elem, NET_NODE_COLOR_GRAY);
 
-	for (j = 0; j < routing_table->dim; j++)
+	for (j = 0; j < routing_table->dim && !routing_table->has_cycle; j++)
 	{
 		struct net_node_t *node_elem;
 		struct net_node_t *node_adj;
@@ -74,7 +74,7 @@ static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *
 			{
 				warning("network %s: cycle found in routing table.\n%s",
 					net->name, err_net_cycle);
-				break;
+				routing_table->has_cycle = 1;
 			} 
 		}
 	}
@@ -91,8 +91,8 @@ static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *
  * from the node that called the algorithm ---Order = O(|E|+|V|) */
 static void net_routing_table_cycle_detection(struct net_routing_table_t *routing_table)
 {
-	
 	int i;
+
 	struct net_t *net = routing_table->net;
 	struct list_t *color_list;
 	struct list_t *parent_list;
@@ -110,14 +110,12 @@ static void net_routing_table_cycle_detection(struct net_routing_table_t *routin
 		list_add(parent_list, node_i);
 	}
 	
-	for (i = 0; i < routing_table->dim; i++)
+	for (i = 0; i < routing_table->dim && !routing_table->has_cycle; i++)
 	{
 		node_color = list_get(color_list, i);
 
-		if (node_color == NET_NODE_COLOR_WHITE )
-		{
+		if (node_color == NET_NODE_COLOR_WHITE)
 			routing_table_cycle_detection_dfs_visit(routing_table, color_list, parent_list, i);
-		}
 	}
 	list_free(color_list);
 	list_free(parent_list);	
@@ -198,8 +196,6 @@ void net_routing_table_calculate(struct net_routing_table_t *routing_table)
 		{
 			buffer = list_get(src_node->output_buffer_list, j);
 			link = buffer->link;
-			if (!link)
-				printf("buffer \"%s\" with no link\n", buffer->name); //////
 			assert(link);
 
 			entry = net_routing_table_lookup(routing_table, src_node, link->dst_node);
@@ -208,9 +204,8 @@ void net_routing_table_calculate(struct net_routing_table_t *routing_table)
 		}
 	}
 
-	/*finding cycle in design*/
+	/* Find cycle in routing table */
 	net_routing_table_cycle_detection(routing_table);
-
 	
 	/* Calculate shortest paths Floyd-Warshall algorithm. The 'routing_table_entry->next_node' values do
 	 * not necessarily point to the immediate next hop after this. */
