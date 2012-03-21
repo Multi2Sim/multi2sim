@@ -7,6 +7,7 @@ if HAVE_GTK
 libmemvisual_a_SOURCES += \
 	memvisual.c \
 	memvisual-private.h \
+	vlist.c \
 	vmod.c \
 	vmod-panel.c
 
