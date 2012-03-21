@@ -53,12 +53,6 @@ void vmod_access_free(struct vmod_access_t *access)
  * Module
  */
 
-static void vmod_size_allocate_event(GtkWidget *widget, GdkRectangle *allocation, struct vmod_t *vmod)
-{
-	vlist_refresh(vmod->access_list);
-}
-
-
 struct vmod_t *vmod_create(char *name, int level)
 {
 	struct vmod_t *vmod;
@@ -80,7 +74,6 @@ struct vmod_t *vmod_create(char *name, int level)
 
 	/* Create layout */
 	vmod->widget = gtk_vbox_new(0, 0);
-	g_signal_connect(G_OBJECT(vmod->widget), "size_allocate", G_CALLBACK(vmod_size_allocate_event), vmod);
 
 	/* List of accesses */
 	vmod->access_list = vlist_create();

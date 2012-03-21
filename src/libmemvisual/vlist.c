@@ -29,7 +29,6 @@
 static struct vlist_item_t *vlist_item_create(void)
 {
 	struct vlist_item_t *item;
-
 	/* Allocate */
 	item = calloc(1, sizeof(struct vlist_item_t));
 	if (!item)
@@ -105,21 +104,21 @@ static void vlist_item_list_clear(struct vlist_t *vlist)
 {
 	struct vlist_item_t *item;
 
-/*	while (vlist->item_list->count)
+	while (vlist->item_list->count)
 	{
 		item = list_remove_at(vlist->item_list, 0);
 		gtk_widget_destroy(item->event_box);
 		vlist_item_free(item);
 	}
-*/
-	int i;
-	for (i = 0; i < 4 && vlist->item_list->count; i++)
-	{
-		item = list_remove_at(vlist->item_list, 0);
-		gtk_container_remove(GTK_CONTAINER(vlist->widget), item->event_box);
-		vlist_item_free(item);
-	}
 }
+
+
+static void vlist_size_allocate_event(GtkWidget *widget, GdkRectangle *allocation, struct vlist_t *vlist)
+{
+	if (allocation->width != vlist->width || allocation->height != vlist->height)
+		vlist_refresh(vlist);
+}
+
 
 struct vlist_t *vlist_create(void)
 {
@@ -137,6 +136,7 @@ struct vlist_t *vlist_create(void)
 
 	/* GTK widget */
 	vlist->widget = gtk_layout_new(NULL, NULL);
+	g_signal_connect(G_OBJECT(vlist->widget), "size_allocate", G_CALLBACK(vlist_size_allocate_event), vlist);
 	gtk_widget_set_size_request(vlist->widget, 200, 20);  // FIXME
 
 	/* Return */
@@ -171,16 +171,14 @@ void vlist_refresh(struct vlist_t *vlist)
 
 	GtkStyle *style;
 
+	/* Clear current list */
+	vlist_item_list_clear(vlist);
+
 	/* Get 'vlist' widget size */
 	width = gtk_widget_get_allocated_width(vlist->widget);
 	height = gtk_widget_get_allocated_height(vlist->widget);
-
-	/* Clear current contents */
-	{
-		GList *child;
-		while ((child = gtk_container_get_children(GTK_CONTAINER(vlist->widget))))
-			gtk_container_remove(GTK_CONTAINER(vlist->widget), child->data);
-	}
+	vlist->width = width;
+	vlist->height = height;
 
 	/* Background color */
 	GdkColor color;
@@ -208,6 +206,9 @@ void vlist_refresh(struct vlist_t *vlist)
 		PangoAttribute *size_attr;
 
 		GtkRequisition req;
+
+		/* Create list item */
+		item = vlist_item_create();
 
 		/* Get current element */
 		elem = list_get(vlist->elem_list, i);
@@ -261,18 +262,9 @@ void vlist_refresh(struct vlist_t *vlist)
 
 
 		/* Insert event box in 'vlist' layout */
-		{
-			///////////////
-			static int my_y;
-
-			my_y += 10;
-			y = my_y;
-			x = 0;
-		}
 		gtk_layout_put(GTK_LAYOUT(vlist->widget), event_box, x, y);
 
-		/* Create list item */
-		item = vlist_item_create();
+		/* Initialize item */
 		item->vlist = vlist;
 		item->elem = elem;
 		item->event_box = event_box;
@@ -289,16 +281,5 @@ void vlist_refresh(struct vlist_t *vlist)
 
 	/* Show all new widgets */
 	gtk_widget_show_all(vlist->widget);
-
-
-	{
-		int i;
-		printf("------------\n");
-		for (i = 0; i < vlist->item_list->count; i++)
-		{
-			struct vlist_item_t *item;
-			item = list_get(vlist->item_list, i);
-			printf("item-%d: x=%d, y=%d\n", i, item->x, item->y);
-		}
-	}
+	gtk_container_check_resize(GTK_CONTAINER(vlist->widget));
 }
