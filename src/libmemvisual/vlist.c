@@ -20,7 +20,6 @@
 #include <memvisual-private.h>
 
 
-
 /*
  * Visual List Item
  */
@@ -45,7 +44,8 @@ static void vlist_item_free(struct vlist_item_t *item)
 }
 
 
-gboolean vlist_item_enter_notify_event(GtkWidget *widget, GdkEventCrossing *event, struct vlist_item_t *item)
+static gboolean vlist_item_enter_notify_event(GtkWidget *widget,
+	GdkEventCrossing *event, struct vlist_item_t *item)
 {
 	GdkColor color;
 
@@ -71,7 +71,8 @@ gboolean vlist_item_enter_notify_event(GtkWidget *widget, GdkEventCrossing *even
 }
 
 
-gboolean vlist_item_leave_notify_event(GtkWidget *widget, GdkEventCrossing *event, struct vlist_item_t *item)
+static gboolean vlist_item_leave_notify_event(GtkWidget *widget,
+	GdkEventCrossing *event, struct vlist_item_t *item)
 {
 	PangoAttrList *attrs;
 	PangoAttribute *underline_attr;
@@ -93,6 +94,176 @@ gboolean vlist_item_leave_notify_event(GtkWidget *widget, GdkEventCrossing *even
 }
 
 
+static void vlist_item_destroy_event(GtkWidget *widget, struct vlist_item_t *item)
+{
+	item->event_box = NULL;
+	item->label = NULL;
+}
+
+
+static gboolean vlist_item_button_press_event(GtkWidget *widget,
+	GdkEventButton *event, struct vlist_item_t *item)
+{
+	printf("Button pressed clicked\n");
+	return FALSE;
+}
+
+
+static gboolean vlist_item_more_press_event(GtkWidget *widget,
+	GdkEventButton *event, struct vlist_item_t *item)
+{
+	struct vlist_popup_t *popup;
+
+	popup = vlist_popup_create(item->vlist);
+	gtk_widget_show_now(popup->window);
+	vlist_popup_free(popup);
+	return FALSE;
+}
+
+
+
+
+/*
+ * Visual List Popup
+ */
+
+struct vlist_popup_t *vlist_popup_create(struct vlist_t *vlist)
+{
+	struct vlist_popup_t *popup;
+
+	/* Allocate */
+	popup = calloc(1, sizeof(struct vlist_popup_t));
+	if (!popup)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	popup->vlist = vlist;
+
+	int i;
+	int count;
+
+	/* Create list of 'vlist_item_t'  */
+	popup->item_list = list_create();
+
+	/* Create main window */
+	GtkWidget *window;
+	window = gtk_window_new(GTK_WINDOW_POPUP);
+	popup->window = window;
+	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
+	gtk_widget_set_size_request(window, 200, 250);
+	gtk_window_set_modal(GTK_WINDOW(window), TRUE);
+	//gtk_window_set_transient_for(GTK_WINDOW(popup->window), GTK_WINDOW(list_layout->parent_window)); FIXME
+	//g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(list_layout_popup_destroy_event), list_layout); FIXME
+
+	/* Close button */
+	extern char *img_close_path;  /* FIXME */
+	GtkWidget *img_close = gtk_image_new_from_file(img_close_path);
+	GtkWidget *evbox_close = gtk_event_box_new();
+	gtk_container_add(GTK_CONTAINER(evbox_close), img_close);
+	gtk_widget_add_events(evbox_close, GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
+	/*g_signal_connect(G_OBJECT(evbox_close), "enter-notify-event",
+		G_CALLBACK(vlist_popup_img_close_enter_notify_event), popup);
+	g_signal_connect(G_OBJECT(evbox_close), "leave-notify-event",
+		G_CALLBACK(vlist_popup_img_close_leave_notify_event), popup);
+	g_signal_connect(G_OBJECT(evbox_close), "button-press-event",
+		G_CALLBACK(vlist_popup_img_close_clicked_event), popup);*/
+	popup->img_close = img_close;
+
+	/* Title and separator */
+	GtkWidget *title_label = gtk_label_new(vlist->title);
+	GtkWidget *hsep = gtk_hseparator_new();
+
+	/* Scrolled window */
+	GtkWidget *scrolled_window;
+	scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+		GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+
+	/* Main table */
+	GtkWidget *main_table;
+	main_table = gtk_table_new(3, 2, FALSE);
+	gtk_table_attach(GTK_TABLE(main_table), title_label, 0, 1, 0, 1, GTK_FILL | GTK_EXPAND, GTK_FILL, 0, 0);
+	gtk_table_attach(GTK_TABLE(main_table), evbox_close, 1, 2, 0, 1, GTK_FILL, GTK_FILL, 0, 0);
+	gtk_table_attach(GTK_TABLE(main_table), hsep, 0, 2, 1, 2, GTK_FILL, GTK_FILL, 0, 0);
+	gtk_table_attach_defaults(GTK_TABLE(main_table), scrolled_window, 0, 2, 2, 3);
+	gtk_container_add(GTK_CONTAINER(window), main_table);
+
+	GdkColor color;
+	gdk_color_parse("#ffffa0", &color);
+
+	GtkWidget *table;
+	count = vlist->elem_list->count;
+	table = gtk_table_new(count, 1, FALSE);
+	for (i = 0; i < count; i++)
+	{
+		void *elem;
+		char str[MAX_STRING_SIZE];
+		struct vlist_item_t *item;
+
+		/* Get element */
+		elem = list_get(vlist->elem_list, i);
+
+		/* Create label */
+		GtkWidget *label;
+		if (vlist->get_elem_name)
+			(*vlist->get_elem_name)(elem, str, sizeof str);
+		else
+			snprintf(str, sizeof str, "item-%d", i);
+		label = gtk_label_new(str);
+
+		/* Set label font attributes */
+		PangoAttrList *attrs;
+		attrs = pango_attr_list_new();
+		PangoAttribute *size_attr = pango_attr_size_new_absolute(12 << 10);
+		pango_attr_list_insert(attrs, size_attr);
+		gtk_label_set_attributes(GTK_LABEL(label), attrs);
+
+		/* Event box */
+		GtkWidget *event_box;
+		event_box = gtk_event_box_new();
+		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
+		gtk_container_add(GTK_CONTAINER(event_box), label);
+
+		/* Create list_layout_item */
+		item = vlist_item_create();
+		item->vlist = vlist;
+		item->event_box = event_box;
+		item->label = label;
+		item->elem = elem;
+		list_add(vlist->item_list, item);
+
+		/* Events for event box */
+		gtk_widget_add_events(event_box, GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
+		g_signal_connect(G_OBJECT(event_box), "enter-notify-event",
+			G_CALLBACK(vlist_item_enter_notify_event), item);
+		g_signal_connect(G_OBJECT(event_box), "leave-notify-event",
+			G_CALLBACK(vlist_item_leave_notify_event), item);
+		g_signal_connect(G_OBJECT(event_box), "button-press-event",
+			G_CALLBACK(vlist_item_button_press_event), item);
+
+		gtk_table_attach(GTK_TABLE(table), event_box, 0, 1, i, i + 1, GTK_FILL, GTK_FILL, 0, 0);
+	}
+
+	GtkWidget *viewport;
+	viewport = gtk_viewport_new(NULL, NULL);
+	gtk_widget_modify_bg(window, GTK_STATE_NORMAL, &color);
+	gtk_container_add(GTK_CONTAINER(viewport), table);
+	gtk_widget_modify_bg(viewport, GTK_STATE_NORMAL, &color);
+	gtk_container_add(GTK_CONTAINER(scrolled_window), viewport);
+
+	gtk_widget_show_all(window);
+
+	/* Return */
+	return popup;
+}
+
+
+void vlist_popup_free(struct vlist_popup_t *popup)
+{
+	free(popup);
+}
+
+
 
 
 /*
@@ -107,7 +278,12 @@ static void vlist_item_list_clear(struct vlist_t *vlist)
 	while (vlist->item_list->count)
 	{
 		item = list_remove_at(vlist->item_list, 0);
-		gtk_widget_destroy(item->event_box);
+
+		/* Destroy widget if it still exists */
+		if (item->event_box)
+			gtk_widget_destroy(item->event_box);
+
+		/* Free item */
 		vlist_item_free(item);
 	}
 }
@@ -120,7 +296,9 @@ static void vlist_size_allocate_event(GtkWidget *widget, GdkRectangle *allocatio
 }
 
 
-struct vlist_t *vlist_create(void)
+struct vlist_t *vlist_create(char *title, int width, int height,
+	void (*get_elem_name)(void *elem, char *buf, int size),
+	void (*get_elem_desc)(void *elem, char *buf, int size))
 {
 	struct vlist_t *vlist;
 
@@ -129,15 +307,22 @@ struct vlist_t *vlist_create(void)
 	if (!vlist)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* Title */
+	vlist->title = strdup(title);
+	if (!vlist->title)
+		fatal("%s: out of memory", __FUNCTION__);
+
 	/* Initialize */
 	vlist->elem_list = list_create();
 	vlist->item_list = list_create();
 	vlist->text_size = 12;
+	vlist->get_elem_name = get_elem_name;
+	vlist->get_elem_desc = get_elem_desc;
 
 	/* GTK widget */
 	vlist->widget = gtk_layout_new(NULL, NULL);
 	g_signal_connect(G_OBJECT(vlist->widget), "size_allocate", G_CALLBACK(vlist_size_allocate_event), vlist);
-	gtk_widget_set_size_request(vlist->widget, 200, 20);  // FIXME
+	gtk_widget_set_size_request(vlist->widget, width, height);
 
 	/* Return */
 	return vlist;
@@ -154,6 +339,7 @@ void vlist_free(struct vlist_t *vlist)
 	list_free(vlist->elem_list);
 
 	/* Object */
+	free(vlist->title);
 	free(vlist);
 }
 
@@ -196,7 +382,8 @@ void vlist_refresh(struct vlist_t *vlist)
 		struct vlist_item_t *item;
 		void *elem;
 
-		char str[MAX_STRING_SIZE];
+		char str1[MAX_STRING_SIZE];
+		char str2[MAX_STRING_SIZE];
 		char *comma;
 
 		GtkWidget *label;
@@ -215,11 +402,12 @@ void vlist_refresh(struct vlist_t *vlist)
 
 		/* Create label */
 		comma = i < count - 1 ? "," : "";
-		/*if (list_layout->item_get_name)
-			(*list_layout->item_get_name)(item, temp_str, sizeof temp_str);
-		else*/
-		snprintf(str, sizeof str, "item-%d%s", i, comma);
-		label = gtk_label_new(str);
+		if (vlist->get_elem_name)
+			(*vlist->get_elem_name)(elem, str1, sizeof str1);
+		else
+			snprintf(str1, sizeof str1, "item-%d", i);
+		snprintf(str2, sizeof str2, "%s%s", str1, comma);
+		label = gtk_label_new(str2);
 
 		/* Set label font attributes */
 		attrs = pango_attr_list_new();
@@ -236,8 +424,8 @@ void vlist_refresh(struct vlist_t *vlist)
 			y += req.height;
 			if (y + 2 * req.height >= height && i < count - 1)
 			{
-				snprintf(str, sizeof str, "+ %d more", count - i);
-				gtk_label_set_text(GTK_LABEL(label), str);
+				snprintf(str1, sizeof str1, "+ %d more", count - i);
+				gtk_label_set_text(GTK_LABEL(label), str1);
 				gtk_widget_size_request(label, &req);
 				last = 1;
 			}
@@ -247,19 +435,22 @@ void vlist_refresh(struct vlist_t *vlist)
 		event_box = gtk_event_box_new();
 		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
 		gtk_container_add(GTK_CONTAINER(event_box), label);
-		gtk_widget_add_events(event_box, GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK);
-		g_signal_connect(G_OBJECT(event_box), "enter-notify-event", G_CALLBACK(vlist_item_enter_notify_event), item);
-		g_signal_connect(G_OBJECT(event_box), "leave-notify-event", G_CALLBACK(vlist_item_leave_notify_event), item);
+		gtk_widget_add_events(event_box, GDK_ENTER_NOTIFY_MASK |
+			GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK);
 
 		/* Events for event box */
-		/*if (last) {
-			g_signal_connect(G_OBJECT(ebox), "button-press-event",
-				G_CALLBACK(list_layout_label_more_clicked_event), list_layout);
-		} else {
-			g_signal_connect(G_OBJECT(ebox), "button-press-event",
-				G_CALLBACK(list_layout_label_clicked_event), list_layout_item);
-		}*/
-
+		g_signal_connect(G_OBJECT(event_box), "enter-notify-event",
+			G_CALLBACK(vlist_item_enter_notify_event), item);
+		g_signal_connect(G_OBJECT(event_box), "leave-notify-event",
+			G_CALLBACK(vlist_item_leave_notify_event), item);
+		g_signal_connect(G_OBJECT(event_box), "destroy",
+			G_CALLBACK(vlist_item_destroy_event), item);
+		if (last)
+			g_signal_connect(G_OBJECT(event_box), "button-press-event",
+				G_CALLBACK(vlist_item_more_press_event), item);
+		else
+			g_signal_connect(G_OBJECT(event_box), "button-press-event",
+				G_CALLBACK(vlist_item_button_press_event), item);
 
 		/* Insert event box in 'vlist' layout */
 		gtk_layout_put(GTK_LAYOUT(vlist->widget), event_box, x, y);
@@ -269,8 +460,6 @@ void vlist_refresh(struct vlist_t *vlist)
 		item->elem = elem;
 		item->event_box = event_box;
 		item->label = label;
-		item->x = x;
-		item->y = y;
 		list_add(vlist->item_list, item);
 
 		/* Advance */

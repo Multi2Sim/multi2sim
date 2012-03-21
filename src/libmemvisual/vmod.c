@@ -47,6 +47,19 @@ void vmod_access_free(struct vmod_access_t *access)
 }
 
 
+void vmod_access_get_name(void *elem, char *buf, int size)
+{
+	struct vmod_access_t *access = elem;
+
+	snprintf(buf, size, "access-%lld", access->id);
+}
+
+
+void vmod_access_get_desc(void *access, char *buf, int size)
+{
+}
+
+
 
 
 /*
@@ -76,7 +89,8 @@ struct vmod_t *vmod_create(char *name, int level)
 	vmod->widget = gtk_vbox_new(0, 0);
 
 	/* List of accesses */
-	vmod->access_list = vlist_create();
+	vmod->access_list = vlist_create("Access list", 200, 30,
+		vmod_access_get_name, vmod_access_get_desc);
 	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
 	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
 	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));

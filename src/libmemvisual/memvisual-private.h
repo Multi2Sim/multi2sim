@@ -35,12 +35,22 @@
  * Visual List
  */
 
+struct vlist_popup_t
+{
+	/* GTK widgets */
+	GtkWidget *window;
+	GtkWidget *img_close;
+
+	/* List of 'vlist_item_t' elements */
+	struct list_t *item_list;
+
+	/* Visual list that triggered the pop-up */
+	struct vlist_t *vlist;
+};
+
+
 struct vlist_item_t
 {
-	/* Position */
-	int x;
-	int y;
-
 	/* Associated GTK widgets */
 	GtkWidget *event_box;
 	GtkWidget *label;
@@ -70,13 +80,30 @@ struct vlist_t
 	 * list will synchronize with 'elem_list' upon a call to 'vlist_refresh'. */
 	struct list_t *item_list;
 
+	/* Call-back functions to get element names and descriptions */
+	void (*get_elem_name)(void *elem, char *buf, int size);
+	void (*get_elem_desc)(void *elem, char *buf, int size);
+
 	/* Properties */
+	char *title;
 	int text_size;
 };
 
 
-struct vlist_t *vlist_create(void);
+struct vlist_popup_t *vlist_popup_create(struct vlist_t *vlist);
+void vlist_popup_free(struct vlist_popup_t *popup);
+
+struct vlist_t *vlist_create(char *title, int width, int height,
+	void (*get_elem_name)(void *elem, char *buf, int size),
+	void (*get_elem_desc)(void *elem, char *buf, int size));
 void vlist_free(struct vlist_t *vlist);
+
+#define vlist_count(vlist) list_count((vlist)->elem_list)
+#define vlist_add(vlist, elem) list_add((vlist)->elem_list, (elem))
+#define vlist_get(vlist, index) list_get((vlist)->elem_list, (index))
+#define vlist_set(vlist, index, elem) list_get((vlist)->elem_list, (index), (elem))
+#define vlist_insert(vlist, index, elem) list_insert((vlist)->elem_list, (index), (elem))
+#define vlist_remove_at(vlist, index) list_remove_at((vlist)->elem_list, (index))
 
 void vlist_refresh(struct vlist_t *vlist);
 
@@ -94,6 +121,9 @@ struct vmod_access_t
 
 struct vmod_access_t *vmod_access_create(long long id);
 void vmod_access_free(struct vmod_access_t *access);
+
+void vmod_access_get_name(void *access, char *buf, int size);
+void vmod_access_get_desc(void *access, char *buf, int size);
 
 
 
