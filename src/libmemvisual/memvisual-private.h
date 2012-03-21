@@ -27,6 +27,70 @@
 #include <memvisual.h>
 #include <stdlib.h>
 #include <list.h>
+#include <misc.h>
+
+
+
+/*
+ * Visual List
+ */
+
+struct vlist_item_t
+{
+	/* Position */
+	int x;
+	int y;
+
+	/* Associated GTK widgets */
+	GtkWidget *event_box;
+	GtkWidget *label;
+
+	/* Visual list where it belongs */
+	struct vlist_t *vlist;
+
+	/* Associated data element from 'vlist->elem_list' */
+	void *elem;
+};
+
+
+struct vlist_t
+{
+	/* Widget showing list */
+	GtkWidget *widget;
+
+	/* List of elements in the list. These elements can have any external type.
+	 * They are controlled with 'vlist_add', 'vlist_remove', etc. macros. */
+	struct list_t *elem_list;
+
+	/* List of elements 'vlist_item_t' currently displayed in the list. This
+	 * list will synchronize with 'elem_list' upon a call to 'vlist_refresh'. */
+	struct list_t *item_list;
+
+	/* Properties */
+	int text_size;
+};
+
+
+struct vlist_t *vlist_create(void);
+void vlist_free(struct vlist_t *vlist);
+
+void vlist_refresh(struct vlist_t *vlist);
+
+
+
+
+/*
+ * Access to a memory module
+ */
+
+struct vmod_access_t
+{
+	long long id;
+};
+
+struct vmod_access_t *vmod_access_create(long long id);
+void vmod_access_free(struct vmod_access_t *access);
+
 
 
 
@@ -39,20 +103,15 @@ struct vmod_t
 	char *name;
 	int level;
 
-	/* GTK layout to draw */
-	GtkWidget *layout;
-
-	/* Position in panel */
-	int x;
-	int y;
+	/* Widget representing module */
+	GtkWidget *widget;
 
 	/* List of low and high modules */
 	struct list_t *low_vmod_list;
 	struct list_t *high_vmod_list;
 
-	/* List of low and high connections */
-	struct list_t *low_vmod_conn_list;
-	struct list_t *high_vmod_conn_list;
+	/* Visual list of accesses */
+	struct vlist_t *access_list;
 };
 
 
@@ -68,12 +127,7 @@ gboolean vmod_draw_event(GtkWidget *widget, GdkEventConfigure *event, struct vmo
  * Panel with memory modules
  */
 
-#define VMOD_PADDING  20
-
-#define VMOD_LEVEL_PADDING  15
-
-#define VMOD_CONN_RADIUS  8
-#define VMOD_CONN_LINE_WIDTH  4
+#define VMOD_PADDING  5
 
 #define VMOD_DEFAULT_WIDTH  100
 #define VMOD_DEFAULT_HEIGHT 100
@@ -84,35 +138,14 @@ struct vmod_level_t
 {
 	/* List of modules in this level */
 	struct list_t *vmod_list;
-
-	/* Number of low connections */
-	int num_low_connections;
-
-	/* Width of level */
-	int width;
 };
 
-/* Connection between to modules */
-struct vmod_conn_t
-{
-	int x0;
-	int y0;
-	int y1;
-	int x2;
-	int y3;
-
-	struct vmod_t *source;
-	struct vmod_t *dest;
-};
 
 /* Panel representing memory hierarchy */
 struct vmod_panel_t
 {
-	GtkWidget *layout;
-
-	/* Dimensions */
-	int width;
-	int height;
+	/* Widget representing the panel */
+	GtkWidget *widget;
 
 	/* List of modules (vmod_t) */
 	struct list_t *vmod_list;
@@ -120,13 +153,11 @@ struct vmod_panel_t
 	/* List of memory levels (vmod_level_t) */
 	struct list_t *vmod_level_list;
 
-	/* List of module connections (vmod_conn_t) */
-	struct list_t *vmod_conn_list;
-
 	/* Maximum number of modules in a level */
 	int max_modules_in_level;
 
 };
+
 
 struct vmod_panel_t *vmod_panel_create(void);
 void vmod_panel_free(struct vmod_panel_t *panel);

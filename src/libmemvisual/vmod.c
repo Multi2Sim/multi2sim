@@ -20,6 +20,44 @@
 #include <memvisual-private.h>
 
 
+/*
+ * Module access
+ */
+
+struct vmod_access_t *vmod_access_create(long long id)
+{
+	struct vmod_access_t *access;
+
+	/* Allocate */
+	access = calloc(1, sizeof(struct vmod_access_t));
+	if (!access)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	access->id = id;
+
+	/* Return */
+	return access;
+}
+
+
+void vmod_access_free(struct vmod_access_t *access)
+{
+	free(access);
+}
+
+
+
+
+/*
+ * Module
+ */
+
+static void vmod_size_allocate_event(GtkWidget *widget, GdkRectangle *allocation, struct vmod_t *vmod)
+{
+	vlist_refresh(vmod->access_list);
+}
+
 
 struct vmod_t *vmod_create(char *name, int level)
 {
@@ -38,14 +76,20 @@ struct vmod_t *vmod_create(char *name, int level)
 	/* Initialize */
 	vmod->low_vmod_list = list_create();
 	vmod->high_vmod_list = list_create();
-	vmod->low_vmod_conn_list = list_create();
-	vmod->high_vmod_conn_list = list_create();
 	vmod->level = level;
 
 	/* Create layout */
-	vmod->layout = gtk_layout_new(NULL, NULL);
-	gtk_widget_set_size_request(vmod->layout, VMOD_DEFAULT_WIDTH, VMOD_DEFAULT_HEIGHT);
-	g_signal_connect(G_OBJECT(vmod->layout), "draw", G_CALLBACK(vmod_draw_event), vmod);
+	vmod->widget = gtk_vbox_new(0, 0);
+	g_signal_connect(G_OBJECT(vmod->widget), "size_allocate", G_CALLBACK(vmod_size_allocate_event), vmod);
+
+	/* List of accesses */
+	vmod->access_list = vlist_create();
+	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
+	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
+	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
+	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
+	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
+	gtk_container_add(GTK_CONTAINER(vmod->widget), vmod->access_list->widget);
 
 	/* Return */
 	return vmod;
@@ -56,27 +100,7 @@ void vmod_free(struct vmod_t *vmod)
 {
 	list_free(vmod->low_vmod_list);
 	list_free(vmod->high_vmod_list);
-	list_free(vmod->low_vmod_conn_list);
-	list_free(vmod->high_vmod_conn_list);
+	vlist_free(vmod->access_list);
 	free(vmod->name);
 	free(vmod);
-}
-
-
-gboolean vmod_draw_event(GtkWidget *widget, GdkEventConfigure *event, struct vmod_t *vmod)
-{
-	GdkWindow *window;
-	cairo_t *cr;
-
-	/* Create cairo */
-	window = gtk_layout_get_bin_window(GTK_LAYOUT(widget));
-	cr = gdk_cairo_create(window);
-
-	/* Draw connections */
-	cairo_rectangle(cr, 0, 0, VMOD_DEFAULT_WIDTH, VMOD_DEFAULT_HEIGHT);
-	cairo_stroke(cr);
-
-	/* Destroy cairo */
-	cairo_destroy(cr);
-	return FALSE;
 }

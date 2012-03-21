@@ -51,12 +51,12 @@ struct vmem_t *vmem_create(void)
 	vmem->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_position(GTK_WINDOW(vmem->window), GTK_WIN_POS_CENTER);
 	gtk_window_set_title(GTK_WINDOW(vmem->window), "Multi2Sim Memory Hierarchy Visualization Tool");
-	gtk_container_set_border_width(GTK_CONTAINER(vmem->window), 10);
+	gtk_container_set_border_width(GTK_CONTAINER(vmem->window), 0);
 	g_signal_connect(G_OBJECT(vmem->window), "destroy", G_CALLBACK(vmem_window_destroy_event), G_OBJECT(vmem->window));
 
 	/* Panel */
 	vmem->vmod_panel = vmod_panel_create();
-	gtk_container_add(GTK_CONTAINER(vmem->window), vmem->vmod_panel->layout);
+	gtk_container_add(GTK_CONTAINER(vmem->window), vmem->vmod_panel->widget);
 
 	/* Show window */
 	gtk_widget_show_all(vmem->window);
