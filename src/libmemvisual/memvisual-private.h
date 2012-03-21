@@ -30,23 +30,29 @@
 #include <misc.h>
 
 
+/*
+ * Info Pop-up
+ */
+
+struct info_popup_t
+{
+	GtkWidget *window;
+};
+
+struct info_popup_t *info_popup_create(char *text);
+void info_popup_free(struct info_popup_t *popup);
+
+void info_popup_show(char *text);
+
+
 
 /*
  * Visual List
  */
 
-struct vlist_popup_t
-{
-	/* GTK widgets */
-	GtkWidget *window;
-	GtkWidget *img_close;
 
-	/* List of 'vlist_item_t' elements */
-	struct list_t *item_list;
-
-	/* Visual list that triggered the pop-up */
-	struct vlist_t *vlist;
-};
+extern char vlist_image_close_path[MAX_PATH_SIZE];
+extern char vlist_image_close_sel_path[MAX_PATH_SIZE];
 
 
 struct vlist_item_t
@@ -61,6 +67,25 @@ struct vlist_item_t
 	/* Associated data element from 'vlist->elem_list' */
 	void *elem;
 };
+
+
+struct vlist_popup_t
+{
+	/* GTK widgets */
+	GtkWidget *window;
+	GtkWidget *image_close;
+
+	/* List of 'vlist_item_t' elements */
+	struct list_t *item_list;
+
+	/* Visual list that triggered the pop-up */
+	struct vlist_t *vlist;
+};
+
+struct vlist_popup_t *vlist_popup_create(struct vlist_t *vlist);
+void vlist_popup_free(struct vlist_popup_t *popup);
+
+void vlist_popup_show(struct vlist_t *vlist);
 
 
 struct vlist_t
@@ -89,9 +114,6 @@ struct vlist_t
 	int text_size;
 };
 
-
-struct vlist_popup_t *vlist_popup_create(struct vlist_t *vlist);
-void vlist_popup_free(struct vlist_popup_t *popup);
 
 struct vlist_t *vlist_create(char *title, int width, int height,
 	void (*get_elem_name)(void *elem, char *buf, int size),

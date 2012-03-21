@@ -55,8 +55,11 @@ void vmod_access_get_name(void *elem, char *buf, int size)
 }
 
 
-void vmod_access_get_desc(void *access, char *buf, int size)
+void vmod_access_get_desc(void *elem, char *buf, int size)
 {
+	struct vmod_access_t *access = elem;
+
+	snprintf(buf, size, "Description for access-%lld", access->id);
 }
 
 
