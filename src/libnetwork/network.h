@@ -318,6 +318,9 @@ struct net_routing_table_t
 	/* 2D array containing routing table */
 	int dim;  /* Array dimensions ('dim' x 'dim') */
 	struct net_routing_table_entry_t *entries;
+
+	/* Flag set when a cycle was detected */
+	int has_cycle;
 };
 
 struct net_routing_table_t *net_routing_table_create(struct net_t *net);
