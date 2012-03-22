@@ -155,7 +155,7 @@ int __debug_status(int category)
 	assert(category > 0);
 	c = list_get(debug_category_list, category);
 
-	/* Return TRUE is debug is on */
+	/* Return TRUE if debug is on */
 	assert(c);
 	return c->status == debug_status_on;
 }
