@@ -21,6 +21,7 @@
 #ifndef MEMVISUAL_PRIVATE_H
 #define MEMVISUAL_PRIVATE_H
 
+#include <assert.h>
 #include <math.h>
 #include <gtk/gtk.h>
 
@@ -222,6 +223,62 @@ void vmod_panel_refresh(struct vmod_panel_t *panel);
 
 gboolean vmod_panel_draw_event(GtkWidget *widget, GdkEventConfigure *event,
 	struct vmod_panel_t *panel);
+
+
+
+
+/*
+ * Visual Cache
+ */
+
+struct vcache_dir_entry_t
+{
+	int owner;
+
+	/* Bit map of sharers (last field in variable-size structure) */
+	unsigned char sharers[0];
+};
+
+struct vcache_block_t
+{
+	unsigned int tag;
+	int state;
+
+	struct vcache_dir_entry_t *dir_entries;
+};
+
+struct vcache_t
+{
+	/* GTK */
+	GtkWidget *widget;
+	GtkWidget *layout;
+
+	GtkWidget *hscrollbar;
+	GtkWidget *vscrollbar;
+
+	/* Dimensions for last refresh */
+	int width;
+	int height;
+
+	/* Displayed name */
+	char *name;
+
+	int num_sets;
+	int assoc;
+	int block_size;
+
+	int num_sub_blocks;
+	int sub_block_size;
+
+	int num_sharers;
+
+	struct vcache_block_t *blocks;
+};
+
+struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_size,
+	int sub_block_size, int num_sharers);
+void vcache_free(struct vcache_t *vcache);
+
 
 #endif
 
