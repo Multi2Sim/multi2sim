@@ -101,7 +101,7 @@ void amd_disasm_init()
 			amd_inst_info_alu_short[info->opcode] = info;
 			continue;
 		}
-		if (info->fmt[0] == FMT_TEX_WORD0 || info->fmt[0] == FMT_VTX_WORD0) {
+		if (info->fmt[0] == FMT_TEX_WORD0 || info->fmt[0] == FMT_VTX_WORD0 || info->fmt[0] == FMT_MEM_RD_WORD0) {
 			assert(IN_RANGE(info->opcode, 0, AMD_INST_INFO_TEX_SIZE - 1));
 			amd_inst_info_tex[info->opcode] = info;
 			continue;
@@ -1046,48 +1046,67 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 		} else if (amd_inst_is_token(fmt_str, "exp_rw_gpr", &len)) {
 
 			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0);
+			assert(inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ || inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF);
+
 			int rw_gpr = inst->words[0].cf_alloc_export_word0.rw_gpr;
-			str_printf(buf_ptr, size_ptr, "R%d", rw_gpr);
+			if (inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ)
+			{
+				int src_sel[4];
+				src_sel[0] = inst->words[1].cf_alloc_export_word1_swiz.sel_x;
+				src_sel[1] = inst->words[1].cf_alloc_export_word1_swiz.sel_y;
+				src_sel[2] = inst->words[1].cf_alloc_export_word1_swiz.sel_z;
+				src_sel[3] = inst->words[1].cf_alloc_export_word1_swiz.sel_w;
 
-		} else if (amd_inst_is_token(fmt_str, "fourcompswizzleopt", &len)) {
+				char src_sel_chars[4];
 
-			assert(inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_SWIZ);
-
-			int src_sel[4];
-			src_sel[0] = inst->words[1].cf_alloc_export_word1_swiz.sel_x;
-			src_sel[1] = inst->words[1].cf_alloc_export_word1_swiz.sel_y;
-			src_sel[2] = inst->words[1].cf_alloc_export_word1_swiz.sel_z;
-			src_sel[3] = inst->words[1].cf_alloc_export_word1_swiz.sel_w;
-
-			char src_sel_chars[4];
-
-			/* Add element selections */
-			int i;
-			for(i = 0; i < 4; i++) {
-				if(src_sel[i] == 0) {
-					src_sel_chars[i] = 'x';
-				} else if(src_sel[i] == 1) {
-					src_sel_chars[i] = 'y';
-				} else if(src_sel[i] == 2) {
-					src_sel_chars[i] = 'z';
-				} else if(src_sel[i] == 3) {
-					src_sel_chars[i] = 'w';
-				} else if(src_sel[i] == 4) {
-					src_sel_chars[i] = '0';
-				} else if(src_sel[i] == 5) {
-					src_sel_chars[i] = '1';
-				} else if(src_sel[i] == 6) {
-					fatal("%s: src_sel value 6 in reserved", fmt_str);
-				} else if(src_sel[i] == 7) {
-					/* FIXME: Mark this element */
-					src_sel_chars[i] = '_';
-				} else {
-					fatal("%s: src_sel value %d is unknown", fmt_str, src_sel[i]);
+				/* Add element selections */
+				int i;
+				for(i = 0; i < 4; i++) {
+					if(src_sel[i] == 0) {
+						src_sel_chars[i] = 'x';
+					} else if(src_sel[i] == 1) {
+						src_sel_chars[i] = 'y';
+					} else if(src_sel[i] == 2) {
+						src_sel_chars[i] = 'z';
+					} else if(src_sel[i] == 3) {
+						src_sel_chars[i] = 'w';
+					} else if(src_sel[i] == 4) {
+						src_sel_chars[i] = '0';
+					} else if(src_sel[i] == 5) {
+						src_sel_chars[i] = '1';
+					} else if(src_sel[i] == 6) {
+						fatal("%s: src_sel value 6 in reserved", fmt_str);
+					} else if(src_sel[i] == 7) {
+						/* FIXME: Mark this element */
+						src_sel_chars[i] = '_';
+					} else {
+						fatal("%s: src_sel value %d is unknown", fmt_str, src_sel[i]);
+					}
 				}
+
+				int count = 0;
+				for(i = 0; i < 4; i++) {
+					if (src_sel[i] == i)
+					{
+						count++;
+					}
+				}
+				/* if count == 4, only print R/T instead of R.xyzw */
+				if (count != 4)
+				{
+						str_printf(buf_ptr, size_ptr, "R%d.%c%c%c%c", rw_gpr, src_sel_chars[0], src_sel_chars[1],
+								   src_sel_chars[2], src_sel_chars[3]);			
+				} else {
+						str_printf(buf_ptr, size_ptr, "R%d", rw_gpr);
+				}				
+			} else if (inst->info->fmt[1] == FMT_CF_ALLOC_EXPORT_WORD1_BUF) {
+				str_printf(buf_ptr, size_ptr, "R%d", rw_gpr);
 			}
 
-			str_printf(buf_ptr, size_ptr, ".%c%c%c%c", src_sel_chars[0], src_sel_chars[1],
-					src_sel_chars[2], src_sel_chars[3]);
+		} else if (amd_inst_is_token(fmt_str, "exp_index_gpr", &len)) {
+			
+			assert(inst->info->fmt[0] == FMT_CF_ALLOC_EXPORT_WORD0_RAT);
+			str_printf(buf_ptr, size_ptr, "%s", map_value(&rat_inst_map, inst->words[0].cf_alloc_export_word0_rat.rat_inst));
 
 		} else if (amd_inst_is_token(fmt_str, "rat_inst", &len)) {
 			
@@ -1336,8 +1355,21 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				}
 			}
 
-			str_printf(buf_ptr, size_ptr, "R%d.%c%c%c%c", src_gpr, src_sel_chars[0], src_sel_chars[1],
-					src_sel_chars[2], src_sel_chars[3]);
+			int count = 0;
+			for(i = 0; i < 4; i++) {
+				if (src_sel[i] == i)
+				{
+					count++;
+				}
+			}
+			/* if count == 4, only print R/T instead of R.xyzw */
+			if (count != 4)
+			{
+					str_printf(buf_ptr, size_ptr, "R%d.%c%c%c%c", src_gpr, src_sel_chars[0], src_sel_chars[1],
+							   src_sel_chars[2], src_sel_chars[3]);			
+			} else {
+					str_printf(buf_ptr, size_ptr, "R%d", src_gpr);
+			}
 
 		} else if (amd_inst_is_token(fmt_str, "tex_dst_reg", &len)) {
 
@@ -1377,8 +1409,21 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				}
 			}
 
-			str_printf(buf_ptr, size_ptr, "R%d.%c%c%c%c", dst_gpr, dst_sel_chars[0], dst_sel_chars[1],
-					dst_sel_chars[2], dst_sel_chars[3]);
+			int count = 0;
+			for(i = 0; i < 4; i++) {
+				if (dst_sel[i] == i)
+				{
+					count++;
+				}
+			}
+			/* if count == 4, only print R/T instead of R.xyzw */
+			if (count != 4)
+			{
+					str_printf(buf_ptr, size_ptr, "R%d.%c%c%c%c", dst_gpr, dst_sel_chars[0], dst_sel_chars[1],
+							   dst_sel_chars[2], dst_sel_chars[3]);			
+			} else {
+					str_printf(buf_ptr, size_ptr, "R%d", dst_gpr);
+			}
 
 		} else if (amd_inst_is_token(fmt_str, "tex_res_id", &len)) {
 
@@ -1409,6 +1454,20 @@ void amd_inst_slot_dump_buf(struct amd_inst_t *inst, int count, int loop_idx, in
 				str_printf(buf_ptr, size_ptr, "UNNORM(XYZW)");
 			}
 
+		} else if (amd_inst_is_token(fmt_str, "mem_op_name", &len)) {
+
+			assert(inst->info->fmt[0] == FMT_MEM_RD_WORD0 || inst->info->fmt[0] == FMT_MEM_GDS_WORD0);
+
+			/* MEM_RD instruction has subopcode in MEM_OP field
+			 * main opcode borrows from VTX */
+			if (inst->words[0].mem_rd_word0.mem_op == 0)
+			{
+				str_printf(buf_ptr, size_ptr, "MEM_RD_SCRATCH:");
+			} else if (inst->words[0].mem_rd_word0.mem_op == 2) {
+				str_printf(buf_ptr, size_ptr, "MEM_RD_SCATTER:");
+			}
+			else
+				str_printf(buf_ptr, size_ptr, "UNKNOWN");
 
 		} else
 			fatal("%s: token not recognized", fmt_str);

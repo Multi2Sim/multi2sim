@@ -338,101 +338,182 @@ struct fmt_alu_word1_lds_idx_op_t
 
 
 struct fmt_vtx_word0_t {
-	unsigned int vc_inst : 5;
-	unsigned int fetch_type : 2;
-	unsigned int fetch_whole_quad : 1;
-	unsigned int buffer_id : 8;
-	unsigned int src_gpr : 7;
-	unsigned int src_rel : 1;
-	unsigned int src_sel_x : 2;
-	unsigned int mega_fetch_count : 6;
+	unsigned int vc_inst : 5;  /* [4:0] */
+	unsigned int fetch_type : 2;  /* [5:6] */
+	unsigned int fetch_whole_quad : 1;  /* [7] */
+	unsigned int buffer_id : 8;  /* [15:8] */
+	unsigned int src_gpr : 7;  /* [22:16] */
+	unsigned int src_rel : 1;  /* [23] */
+	unsigned int src_sel_x : 2;  /* [25:24] */
+	unsigned int mega_fetch_count : 6;  /* [31:26] */
 };
 
 
 struct fmt_vtx_word1_gpr_t {
-	unsigned int dst_gpr : 7;
-	unsigned int dst_rel : 1;
-	unsigned int __reserved0 : 1;
-	unsigned int dst_sel_x : 3;
-	unsigned int dst_sel_y : 3;
-	unsigned int dst_sel_z : 3;
-	unsigned int dst_sel_w : 3;
-	unsigned int use_const_fields : 1;
-	unsigned int data_format : 6;
-	unsigned int num_format_all : 2;
-	unsigned int format_comp_all : 1;
-	unsigned int srf_mode_all : 1;
+	unsigned int dst_gpr : 7;  /* [6:0] */
+	unsigned int dst_rel : 1;  /* [7] */
+	unsigned int __reserved0 : 1;  /* [8] */
+	unsigned int dst_sel_x : 3;	 /* [11:9] */
+	unsigned int dst_sel_y : 3;  /* [14:12] */
+	unsigned int dst_sel_z : 3;  /* [17:15] */
+	unsigned int dst_sel_w : 3;  /* [20:17] */
+	unsigned int use_const_fields : 1; /* [21] */
+	unsigned int data_format : 6;  /* [27:22] */
+	unsigned int num_format_all : 2;  /* [29:28] */
+	unsigned int format_comp_all : 1;  /* [30] */
+	unsigned int srf_mode_all : 1;  /* [31] */
 };
 
 
 struct fmt_vtx_word1_sem_t {
-	unsigned int semantic_id : 8;
-	unsigned int __reserved0 : 1;
-	unsigned int dst_sel_x : 3;
-	unsigned int dst_sel_y : 3;
-	unsigned int dst_sel_z : 3;
-	unsigned int dst_sel_w : 3;
-	unsigned int use_const_fields : 1;
-	unsigned int data_format : 6;
-	unsigned int num_format_all : 2;
-	unsigned int format_comp_all : 1;
-	unsigned int srf_mode_all : 1;
+	unsigned int semantic_id : 8;  /* [7:0] */
+	unsigned int __reserved0 : 1;  /* [8] */
+	unsigned int dst_sel_x : 3;  /* [11:9] */
+	unsigned int dst_sel_y : 3;  /* [14:12] */
+	unsigned int dst_sel_z : 3;  /* [17:15] */
+	unsigned int dst_sel_w : 3;  /* [20:18] */
+	unsigned int use_const_fields : 1;  /* [21] */
+	unsigned int data_format : 6;  /* [27:22] */
+	unsigned int num_format_all : 2;  /* [29:28] */
+	unsigned int format_comp_all : 1; /* [30] */
+	unsigned int srf_mode_all : 1;  /* [31] */
 };
 
 
 struct fmt_vtx_word2_t {
-	unsigned int offset : 16;
-	unsigned int endian_swap : 2;
-	unsigned int const_buf_no_stride : 1;
-	unsigned int mega_fetch : 1;
-	unsigned int __reserved0 : 12;
+	unsigned int offset : 16;  /* [15:0] */
+	unsigned int endian_swap : 2;  /* [17:16] */
+	unsigned int const_buf_no_stride : 1;  /* [18] */
+	unsigned int mega_fetch : 1;  /* [19] */
+	/* FIXME : 3 bits are reserved or used ? */
+	// unsigned int alt_const : 1;  /* [20] */
+	// unsigned int bim : 2; /* [22:21] */
+	// unsigned int __reserved0 : 9;  /* [31:23] */	
+	unsigned int __reserved0 : 12;  /* [31:21] */
 };
 
 
 struct fmt_tex_word0_t
 {
-	unsigned int tex_inst : 5;
-	unsigned int inst_mod : 2;
-	unsigned int fwq : 1;
-	unsigned int resource_id : 8;
-	unsigned int src_gpr : 7;
-	unsigned int sr : 1;
-	unsigned int ac : 1;
-	unsigned int rim : 2;
-	unsigned int sim : 2;
-	unsigned int __reserved0 : 3;
+	unsigned int tex_inst : 5;	/* [4:0] */
+	unsigned int inst_mod : 2;  /* [6:5] */
+	unsigned int fwq : 1;  /* [7] */
+	unsigned int resource_id : 8;  /* [15:8] */
+	unsigned int src_gpr : 7;  /* [22:16] */
+	unsigned int sr : 1;  /* [23] */
+	unsigned int ac : 1;  /* [24] */
+	unsigned int rim : 2;  /* [26:25] */
+	unsigned int sim : 2;  /* [28:27] */
+	unsigned int __reserved0 : 3;  /* [31:29] */
 };
 
 
 struct fmt_tex_word1_t
 {
-	unsigned int dst_gpr : 7;
-	unsigned int dr : 1;
-	unsigned int __reserved0 : 1;
-	unsigned int dsx : 3;
-	unsigned int dsy : 3;
-	unsigned int dsz : 3;
-	unsigned int dsw : 3;
-	unsigned int lod_bias : 7;
-	unsigned int ctx : 1;
-	unsigned int cty : 1;
-	unsigned int ctz : 1;
-	unsigned int ctw : 1;
+	unsigned int dst_gpr : 7;  /* [6:0] */
+	unsigned int dr : 1;  /* [7] */
+	unsigned int __reserved0 : 1;  /* [8] */
+	unsigned int dsx : 3;  /* [11:9] */
+	unsigned int dsy : 3;  /* [14:12] */
+	unsigned int dsz : 3;  /* [17:15] */
+	unsigned int dsw : 3;  /* [20:18] */
+	unsigned int lod_bias : 7;  /* [27:21] */
+	unsigned int ctx : 1;  /* [28] */
+	unsigned int cty : 1;  /* [29] */
+	unsigned int ctz : 1;  /* [30] */
+	unsigned int ctw : 1;  /* [31] */
 };
 
 
 struct fmt_tex_word2_t
 {
-	unsigned int offset_x : 5;
-	unsigned int offset_y : 5;
-	unsigned int offset_z : 5;
-	unsigned int sampler_id : 5;
-	unsigned int ssx : 3;
-	unsigned int ssy : 3;
-	unsigned int ssz : 3;
-	unsigned int ssw : 3;
+	unsigned int offset_x : 5;  /* [4:0] */
+	unsigned int offset_y : 5;  /* [9:5] */
+	unsigned int offset_z : 5;  /* [14:10] */
+	unsigned int sampler_id : 5;  /* [19:15] */
+	unsigned int ssx : 3;  /* [22:20] */
+	unsigned int ssy : 3;  /* [25:23] */
+	unsigned int ssz : 3;  /* [28:26] */
+	unsigned int ssw : 3;  /* [31:29] */
 };
 
+/* FIXME: _reserved0 can also be 2 bits mem_req_size and 1 bit _reserved0 ? */
+struct fmt_mem_rd_word0_t
+{
+	unsigned int mem_inst : 5;  /* [4:0] */
+	unsigned int elem_size : 2;  /* [6:5] */
+	unsigned int fwq : 1;  /* [7] */
+	unsigned int mem_op : 3;  /* [10:8] */
+	unsigned int uncached : 1;  /* [11] */
+	unsigned int indexed : 1;  /* [12] */
+	unsigned int __reserved0 : 3;  /* [15:13] */
+	unsigned int src_gpr : 7;  /* [22:16] */
+	unsigned int src_rel : 1;  /* [23] */
+	unsigned int ssx : 2;  /* [25:24] */
+	unsigned int burst_count : 4;  /* [29:26] */
+	unsigned int _reserved1 : 2;  /* [31:30] */
+};
+
+struct fmt_mem_rd_word1_t
+{
+	unsigned int dst_gpr : 7;  /* [6:0] */
+	unsigned int dst_rel : 1;  /* [7] */
+	unsigned int __reserved0 : 1;  /* [8] */
+	unsigned int dsx : 3;  /* [11:9] */
+	unsigned int dsy : 3;  /* [14:12] */
+	unsigned int dsw : 3;  /* [17:15] */
+	unsigned int dsz : 3;  /* [20:18] */
+	unsigned int __reserved1 : 1;  /* [21] */
+	unsigned int data_format : 6;  /* [27:22] */
+	unsigned int num_format_all : 2;  /* [29:28] */
+	unsigned int format_comp_all : 1;  /* [30] */
+	unsigned int srf_mode_all : 1;  /* [31] */
+};
+
+struct fmt_mem_rd_word2_t
+{
+	unsigned int array_base : 13;  /* [12:0] */
+	unsigned int __reserved0 : 3;  /* [15:13] */
+	unsigned int endian_swap : 2;  /* [17:16] */
+	unsigned int __reserved1 : 2;  /* [19:18] */
+	unsigned int array_size : 12;  /* [31:20] */
+};
+
+struct fmt_mem_gds_word0_t
+{
+	unsigned int mem_inst : 5;  /* [4:0] */
+	unsigned int __reserved0 : 3;  /* [7:5] */
+	unsigned int mem_op : 3;  /* [10:8] */
+	unsigned int src_gpr : 7;  /* [17:11] */
+	unsigned int src_rel_mode : 2;  /* [19:18] */
+	unsigned int ssx : 3;  /* [22:20] */
+	unsigned int ssy : 3;  /* [25:23] */
+	unsigned int ssz : 3;  /* [29:26] */
+	unsigned int __reserved1 : 3;  /* [31:29] */
+};
+
+struct fmt_mem_gds_word1_t
+{
+	unsigned int dst_gpr : 7;  /* [6:0] */
+	unsigned int dst_rel_mode : 2;  /* [8:7] */
+	unsigned int gds_op : 6;  /* [14:9] */
+	unsigned int __reserved0 : 1;  /* [15] */
+	unsigned int src_gpr : 7;  /* [22:16] */
+	unsigned int __reserved1 : 1;  /* [23] */
+	unsigned int uim : 2;  /* [25:24] */
+	unsigned int uav_id : 4;  /* [29:26] */
+	unsigned int alloc_consume : 1;  /* [30] */
+	unsigned int bcast_first_req : 1;  /* [31] */
+};
+
+struct fmt_mem_gds_word2_t
+{
+	unsigned int dsx : 3;  /* [2:0] */
+	unsigned int dsy : 3;  /* [5:3] */
+	unsigned int dsz : 3;  /* [8:6] */
+	unsigned int dsw : 3;  /* [11:9] */
+	unsigned int __reserved0 : 20;  /* [31:12] */
+};
 
 extern struct string_map_t fmt_inst_category_map;
 
@@ -454,19 +535,19 @@ enum amd_category_enum
 
 enum amd_inst_flags_enum
 {
-	AMD_INST_FLAG_NONE		= 0x0000,
-	AMD_INST_FLAG_TRANS_ONLY	= 0x0001,  /* Only executable in transcendental unit */
-	AMD_INST_FLAG_INC_LOOP_IDX      = 0x0002,  /* CF inst increasing loop depth index */
-	AMD_INST_FLAG_DEC_LOOP_IDX      = 0x0004,  /* CF inst decreasing loop index */
-	AMD_INST_FLAG_DST_INT           = 0x0008,  /* Inst with integer dest operand */
-	AMD_INST_FLAG_DST_UINT          = 0x0010,  /* Inst with unsigned int dest op */
-	AMD_INST_FLAG_DST_FLOAT         = 0x0020,  /* Inst with float dest op */
-	AMD_INST_FLAG_ACT_MASK		= 0x0040,  /* Inst affects the active mask (control flow) */
-	AMD_INST_FLAG_LDS		= 0x0080,  /* Access to local memory */
-	AMD_INST_FLAG_MEM		= 0x0100,  /* Access to global memory */
-	AMD_INST_FLAG_MEM_READ		= 0x0200,  /* Read to global memory */
-	AMD_INST_FLAG_MEM_WRITE         = 0x0400,  /* Write to global memory */
-	AMD_INST_FLAG_PRED_MASK		= 0x0800   /* Inst affects the predicate mask */
+	AMD_INST_FLAG_NONE         = 0x0000,
+	AMD_INST_FLAG_TRANS_ONLY   = 0x0001,  /* Only executable in transcendental unit */
+	AMD_INST_FLAG_INC_LOOP_IDX = 0x0002,  /* CF inst increasing loop depth index */
+	AMD_INST_FLAG_DEC_LOOP_IDX = 0x0004,  /* CF inst decreasing loop index */
+	AMD_INST_FLAG_DST_INT      = 0x0008,  /* Inst with integer dest operand */
+	AMD_INST_FLAG_DST_UINT     = 0x0010,  /* Inst with unsigned int dest op */
+	AMD_INST_FLAG_DST_FLOAT    = 0x0020,  /* Inst with float dest op */
+	AMD_INST_FLAG_ACT_MASK     = 0x0040,  /* Inst affects the active mask (control flow) */
+	AMD_INST_FLAG_LDS          = 0x0080,  /* Access to local memory */
+	AMD_INST_FLAG_MEM          = 0x0100,  /* Access to global memory */
+	AMD_INST_FLAG_MEM_READ     = 0x0200,  /* Read to global memory */
+	AMD_INST_FLAG_MEM_WRITE    = 0x0400,  /* Write to global memory */
+	AMD_INST_FLAG_PRED_MASK    = 0x0800   /* Inst affects the predicate mask */
 };
 
 
@@ -518,6 +599,15 @@ union amd_inst_word_t
 	struct fmt_tex_word0_t tex_word0;
 	struct fmt_tex_word1_t tex_word1;
 	struct fmt_tex_word2_t tex_word2;
+
+	struct fmt_mem_rd_word0_t mem_rd_word0;
+	struct fmt_mem_rd_word1_t mem_rd_word1;
+	struct fmt_mem_rd_word2_t mem_rd_word2;
+
+	struct fmt_mem_gds_word0_t mem_gds_word0;
+	struct fmt_mem_gds_word1_t mem_gds_word1;
+	struct fmt_mem_gds_word2_t mem_gds_word2;
+
 };
 
 
