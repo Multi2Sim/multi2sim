@@ -172,10 +172,10 @@ void vmod_panel_insert_vmod_layouts(struct vmod_panel_t *panel)
 
 void vmod_panel_refresh(struct vmod_panel_t *panel)
 {
-	struct vmod_t *vmod1;
+	/*struct vmod_t *vmod1;
 
 	vmod1 = vmod_create("l1-0", 0);
-	list_add(panel->vmod_list, vmod1);
+	list_add(panel->vmod_list, vmod1);*/
 
 	/*struct vmod_t *vmod1, *vmod2, *vmod3, *vmod4, *vmod5, *vmod6;
 

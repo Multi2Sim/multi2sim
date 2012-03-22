@@ -26,15 +26,23 @@ struct vmem_t
 	GtkWidget *window;
 
 	struct vmod_panel_t *vmod_panel;
+	struct vcache_t *vcache;
 };
 
 
-static gboolean vmem_window_destroy_event(GtkWidget *widget, GdkEvent *event, gpointer data)
+/*static gboolean vmem_window_destroy_button_event(GtkWidget *widget, GdkEvent *event, struct vmem_t *vmem)
 {
 	//struct vmem_t *vmem = data;
 	gtk_main_quit();
 
 	return TRUE;
+}*/
+
+
+static void vmem_destroy_event(GtkWidget *widget, struct vmem_t *vmem)
+{
+	vcache_free(vmem->vcache);
+	gtk_main_quit();
 }
 
 
@@ -52,11 +60,18 @@ struct vmem_t *vmem_create(void)
 	gtk_window_set_position(GTK_WINDOW(vmem->window), GTK_WIN_POS_CENTER);
 	gtk_window_set_title(GTK_WINDOW(vmem->window), "Multi2Sim Memory Hierarchy Visualization Tool");
 	gtk_container_set_border_width(GTK_CONTAINER(vmem->window), 0);
-	g_signal_connect(G_OBJECT(vmem->window), "destroy", G_CALLBACK(vmem_window_destroy_event), G_OBJECT(vmem->window));
+	g_signal_connect(G_OBJECT(vmem->window), "destroy", G_CALLBACK(vmem_destroy_event), vmem);
 
 	/* Panel */
 	vmem->vmod_panel = vmod_panel_create();
-	gtk_container_add(GTK_CONTAINER(vmem->window), vmem->vmod_panel->widget);
+	//gtk_container_add(GTK_CONTAINER(vmem->window), vmem->vmod_panel->widget);
+
+	{ /////////
+		struct vcache_t *vcache;
+		vcache = vcache_create("Test cache", 32, 8, 64, 32, 5);
+		gtk_container_add(GTK_CONTAINER(vmem->window), vcache->widget);
+		vmem->vcache = vcache;
+	}
 
 	/* Show window */
 	gtk_widget_show_all(vmem->window);
