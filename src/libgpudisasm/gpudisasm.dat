@@ -67,7 +67,7 @@ DEFINST(CALL_FS,
 )
 
 DEFINST(CUT_VERTEX,
-	"CUT_VERTEX FIXME",
+	"CUT %cf_stream_id",
 	CF_WORD0, CF_WORD1, NONE,
 	CF, 23,
 	0
@@ -96,7 +96,7 @@ DEFINST(EMIT_VERTEX,
 
 /* FIXME: CF_ALLOC_EXPORT_WORD1_SWIZ or CF_ALLOC_EXPORT_WORD1_BUF */
 DEFINST(EXPORT,
-	"EXP: %exp_type%exp_array_base, %exp_rw_gpr%fourcompswizzleopt  %no_barrier",
+	"EXP: %exp_type%exp_array_base, %exp_rw_gpr  %no_barrier",
 	CF_ALLOC_EXPORT_WORD0, CF_ALLOC_EXPORT_WORD1_SWIZ, NONE,
 	CF, 83,
 	0
@@ -104,7 +104,7 @@ DEFINST(EXPORT,
 
 /* FIXME: CF_ALLOC_EXPORT_WORD1_SWIZ or CF_ALLOC_EXPORT_WORD1_BUF */
 DEFINST(EXPORT_DONE,
-	"EXP_DONE: %exp_type%exp_array_base, %exp_rw_gpr%fourcompswizzleopt  %no_barrier",
+	"EXP_DONE: %exp_type%exp_array_base, %exp_rw_gpr  %no_barrier",
 	CF_ALLOC_EXPORT_WORD0, CF_ALLOC_EXPORT_WORD1_SWIZ, NONE,
 	CF, 84,
 	0
@@ -125,7 +125,7 @@ DEFINST(GWS_BARRIER,
 )
 
 DEFINST(GWS_INIT,
-	"GWS_BARRIER FIXME",
+	"GWS_INIT FIXME",
 	CF_GWS_WORD0, CF_WORD1, NONE,
 	CF, 30,
 	0
@@ -252,8 +252,9 @@ DEFINST(MEM_RAT_COMBINED_CACHELESS,
 	AMD_INST_FLAG_MEM | AMD_INST_FLAG_MEM_WRITE
 )
 
+/*FIXME: DWORD_PTR[%exp_array_base] is not correct format */
 DEFINST(MEM_RING,
-	"MEM_RING_WRITE: DWORD_PTR[%exp_array_base], %exp_rw_gpr, %array_size, %elem_size",
+	"MEM_RING_WRITE: DWORD_PTR[%exp_array_base], %exp_rw_gpr, %array_size, %elem_size   %no_barrier",
 	CF_ALLOC_EXPORT_WORD0, CF_ALLOC_EXPORT_WORD1_BUF, NONE,
 	CF, 82,
 	0
@@ -401,7 +402,7 @@ DEFINST(MEM_WR_SCRATCH,
 )
 
 DEFINST(NOP_CF,
-	"NOP",
+	"NOP %no_barrier",
 	CF_WORD0, CF_WORD1, NONE,
 	CF, 0,
 	0
@@ -636,7 +637,7 @@ DEFINST(MOV,
 )
 
 DEFINST(NOP_ALU,
-	"NOP",
+	"NOP         %alu_dst",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 26,
 	0
@@ -685,7 +686,7 @@ DEFINST(PRED_SETE,
 )
 
 DEFINST(PRED_SETGT,
-	"%name",
+	"PREDGT%omod    %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 33,
 	AMD_INST_FLAG_PRED_MASK
@@ -776,7 +777,7 @@ DEFINST(KILLGT,
 )
 
 DEFINST(KILLGE,
-	"%name",
+	"%name%omod   %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 46,
 	0
@@ -909,7 +910,7 @@ DEFINST(KILLGT_UINT,
 )
 
 DEFINST(KILLGE_UINT,
-	"%name",
+	"%name%omod   %alu_dst,  %alu_src0,  FIXME",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 65,
 	AMD_INST_FLAG_DST_FLOAT
@@ -1098,7 +1099,7 @@ DEFINST(EXP_IEEE,
 )
 
 DEFINST(LOG_CLAMPED,
-	"%name",
+	"LOG_sat:    %alu_dst,  %alu_src0",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 130,
 	AMD_INST_FLAG_TRANS_ONLY
@@ -1462,14 +1463,14 @@ DEFINST(MAX_64,
 )
 
 DEFINST(DOT4,
-	"%name %alu_dst,  %alu_src0,  %alu_src1",
+	"%name %alu_dst,  %alu_src0,  %alu_src1      %clamp",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 190,
 	0
 )
 
 DEFINST(DOT4_IEEE,
-	"DOT4_e      %alu_dst,  %alu_src0,  %alu_src1",
+	"DOT4_e      %alu_dst,  %alu_src0,  %alu_src1      %clamp",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 191,
 	0
@@ -1998,7 +1999,7 @@ DEFINST(SAMPLE,
 )
 
 DEFINST(SAMPLE_C,
-	"%name",
+	"%name %tex_dst_reg, %tex_src_reg, %tex_res_id, %tex_sampler_id  %tex_props",
 	TEX_WORD0, TEX_WORD1, TEX_WORD2,
 	TEX, 24,
 	0
@@ -2068,7 +2069,7 @@ DEFINST(SAMPLE_LB,
 )
 
 DEFINST(SAMPLE_LZ,
-	"%name",
+	"%name %tex_dst_reg, %tex_src_reg, %tex_res_id, %tex_sampler_id  %tex_props",
 	TEX_WORD0, TEX_WORD1, TEX_WORD2,
 	TEX, 19,
 	0
@@ -2094,5 +2095,26 @@ DEFINST(SET_TEXTURE_OFFSETS,
 	TEX, 9,
 	0
 )
+
+
+/*
+ * MEM_RD Instructions
+ */
+
+/* 
+ * MEM_RD opcode is borrowed from the instruction set for a fetch through a vertex cache
+ * clause. The only legal value is 2: MEM_INST_MEM: memory read/write.
+ */
+
+DEFINST(MEM,
+	"%mem_op_name",
+	MEM_RD_WORD0, MEM_RD_WORD1, MEM_RD_WORD2,
+	VTX, 2,
+	0
+)
+
+
+
+
 
 
