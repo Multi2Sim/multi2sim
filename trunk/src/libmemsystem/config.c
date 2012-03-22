@@ -626,7 +626,7 @@ static struct mod_t *mem_config_read_cache(struct config_t *config, char *sectio
 	mod->low_net_node = net_node;
 
 	/* Create cache */
-	mod->cache = cache_create(num_sets, block_size, assoc, policy);
+	mod->cache = cache_create(mod->name, num_sets, block_size, assoc, policy);
 
 	/* Return */
 	return mod;
@@ -698,7 +698,8 @@ static struct mod_t *mem_config_read_main_memory(struct config_t *config, char *
 	mod->high_net_node = net_node;
 
 	/* Create cache and directory */
-	mod->cache = cache_create(dir_size / dir_assoc, block_size, dir_assoc, cache_policy_lru);
+	mod->cache = cache_create(mod->name, dir_size / dir_assoc, block_size,
+			dir_assoc, cache_policy_lru);
 
 	/* Return */
 	return mod;
@@ -1539,6 +1540,37 @@ static void mem_config_calculate_mod_levels(void)
 }
 
 
+static void mem_config_trace(void)
+{
+	struct mod_t *mod;
+	int i;
+
+	/* No need if not tracing */
+	if (!mem_tracing())
+		return;
+
+	/* Modules */
+	for (i = 0; i < mem_system->mod_list->count; i++)
+	{
+		mod = list_get(mem_system->mod_list, i);
+		mem_trace_header("mem.new_mod "
+				"name=\"%s\" "
+				"num_sets=%d "
+				"assoc=%d "
+				"block_size=%d "
+				"sub_block_size=%d "
+				"dir_num_nodes=%d "
+				"\n",
+				mod->name,
+				mod->cache->num_sets,
+				mod->cache->assoc,
+				mod->cache->block_size,
+				mod->sub_block_size,
+				mod->dir->num_nodes);
+	}
+}
+
+
 
 
 /*
@@ -1597,4 +1629,7 @@ void mem_system_config_read(void)
 
 	/* Compute cache levels relative to the CPU/GPU entry points */
 	mem_config_calculate_mod_levels();
+
+	/* Dump configuration to trace file */
+	mem_config_trace();
 }

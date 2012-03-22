@@ -69,4 +69,27 @@ int esim_debug_init(char *filename);
 void esim_debug_done(void);
 void esim_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
+
+
+
+/*
+ * Simulation Trace
+ */
+
+void trace_init(char *file_name);
+void trace_done(void);
+
+int trace_new_category(void);
+
+#define trace_status(category) ((category) ? __trace_status((category)) : 0)
+int __trace_status(int category);
+
+#define trace(category, ...) ((category) ? \
+	__trace((category), 1, __VA_ARGS__) : (void) 0)
+#define trace_header(category, ...) ((category) ? \
+	__trace((category), 0, __VA_ARGS__) : (void) 0)
+void __trace(int category, int print_cycle, char *fmt, ...)
+	__attribute__ ((format (printf, 3, 4)));
+
+
 #endif

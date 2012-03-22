@@ -48,6 +48,7 @@ static char *error_debug_file_name = "";
 static char *ctxconfig_file_name = "";
 static char *elf_debug_file_name = "";
 static char *net_debug_file_name = "";
+static char *trace_file_name = "";
 
 static int opengl_disasm_shader_index = 1;
 
@@ -696,6 +697,14 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Simulation trace */
+		if (!strcmp(argv[argi], "--trace"))
+		{
+			sim_need_argument(argc, argv, argi);
+			trace_file_name = argv[++argi];
+			continue;
+		}
+
 		/* Invalid option */
 		if (argv[argi][0] == '-')
 		{
@@ -904,6 +913,10 @@ int main(int argc, char **argv)
 	error_debug_category = debug_new_category(error_debug_file_name);
 	esim_debug_init(esim_debug_file_name);
 
+	/* Trace */
+	trace_init(trace_file_name);
+	mem_trace_category = trace_new_category();
+
 	/* Initialization for functional simulation */
 	esim_init();
 	ke_init();
@@ -954,6 +967,7 @@ int main(int argc, char **argv)
 	/* Finalization */
 	net_done();
 	esim_done();
+	trace_done();
 	ke_done();
 	debug_done();
 	mhandle_done();

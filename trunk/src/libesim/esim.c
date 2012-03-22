@@ -17,16 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
 #include <assert.h>
-#include <list.h>
-#include <heap.h>
-#include <mhandle.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <zlib.h>
+
 #include <debug.h>
 #include <esim.h>
+#include <heap.h>
+#include <list.h>
+#include <mhandle.h>
+
 
 static int curr_event = 0;
 static int ESIM_EV_INVALID;
@@ -285,4 +288,3 @@ void esim_debug(char *fmt, ...)
 	vfprintf(esim_debug_file, fmt, va);
 	esim_debug_cycle = esim_cycle + 1;
 }
-

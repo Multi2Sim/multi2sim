@@ -27,6 +27,7 @@
  */
 
 int mem_debug_category;
+int mem_trace_category;
 
 struct mem_system_t *mem_system;
 
