@@ -116,8 +116,8 @@ static void cache_update_waylist(struct cache_set_t *set,
  */
 
 
-struct cache_t *cache_create(uint32_t num_sets, uint32_t block_size, uint32_t assoc,
-	enum cache_policy_t policy)
+struct cache_t *cache_create(char *name, uint32_t num_sets, uint32_t block_size,
+	uint32_t assoc, enum cache_policy_t policy)
 {
 	struct cache_t *cache;
 	struct cache_block_t *block;
@@ -126,6 +126,11 @@ struct cache_t *cache_create(uint32_t num_sets, uint32_t block_size, uint32_t as
 	/* Create cache */
 	cache = calloc(1, sizeof(struct cache_t));
 	if (!cache)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Name */
+	cache->name = strdup(name);
+	if (!cache->name)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
@@ -178,6 +183,7 @@ void cache_free(struct cache_t *cache)
 	for (set = 0; set < cache->num_sets; set++)
 		free(cache->sets[set].blocks);
 	free(cache->sets);
+	free(cache->name);
 	free(cache);
 }
 
@@ -229,6 +235,11 @@ void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
 	assert(set == (tag >> cache->log_block_size) % cache->num_sets || !state);
+
+	mem_trace("mem.blk cache=\"%s\" set=%d way=%d tag=0x%x state=\"%s\"\n",
+			cache->name, set, way, tag,
+			map_value(&cache_block_state_map, state));
+
 	if (cache->policy == cache_policy_fifo
 		&& cache->sets[set].blocks[way].tag != tag)
 		cache_update_waylist(&cache->sets[set],
@@ -298,6 +309,9 @@ uint32_t cache_replace_block(struct cache_t *cache, uint32_t set)
 void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, uint32_t tag)
 {
 	struct cache_block_t *block;
+
+	mem_trace("mem.ttag cache=\"%s\" set=%d way=%d tag=0x%x\n",
+			cache->name, set, way, tag);
 
 	block = &cache->sets[set].blocks[way];
 	block->transient_tag = tag;

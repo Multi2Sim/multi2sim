@@ -77,6 +77,8 @@ struct cache_set_t
 
 struct cache_t
 {
+	char *name;
+
 	uint32_t num_sets;
 	uint32_t block_size;
 	uint32_t assoc;
@@ -88,8 +90,8 @@ struct cache_t
 };
 
 
-struct cache_t *cache_create(uint32_t num_sets, uint32_t block_size, uint32_t assoc,
-	enum cache_policy_t policy);
+struct cache_t *cache_create(char *name, uint32_t num_sets, uint32_t block_size,
+	uint32_t assoc, enum cache_policy_t policy);
 void cache_free(struct cache_t *cache);
 
 void cache_decode_address(struct cache_t *cache, uint32_t addr,
@@ -663,6 +665,11 @@ extern char *mem_report_file_name;
 #define mem_debug(...) debug(mem_debug_category, __VA_ARGS__)
 extern int mem_debug_category;
 
+#define mem_tracing() trace_status(mem_trace_category)
+#define mem_trace(...) trace(mem_trace_category, __VA_ARGS__)
+#define mem_trace_header(...) trace_header(mem_trace_category, __VA_ARGS__)
+extern int mem_trace_category;
+
 struct mem_system_t
 {
 	/* List of modules and networks */
@@ -680,4 +687,3 @@ void mem_system_dump_report(void);
 
 
 #endif
-
