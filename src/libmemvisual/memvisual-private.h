@@ -31,6 +31,17 @@
 #include <misc.h>
 
 
+
+/*
+ * Trace File
+ */
+
+struct trace_file_t;
+
+struct trace_file_t *trace_file_open(char *file_name);
+void trace_file_close(struct trace_file_t *file);
+
+
 /*
  * Info Pop-up
  */

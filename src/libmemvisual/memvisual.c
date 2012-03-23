@@ -30,15 +30,6 @@ struct vmem_t
 };
 
 
-/*static gboolean vmem_window_destroy_button_event(GtkWidget *widget, GdkEvent *event, struct vmem_t *vmem)
-{
-	//struct vmem_t *vmem = data;
-	gtk_main_quit();
-
-	return TRUE;
-}*/
-
-
 static void vmem_destroy_event(GtkWidget *widget, struct vmem_t *vmem)
 {
 	vcache_free(vmem->vcache);
@@ -93,12 +84,16 @@ void vmem_run(char *file_name)
 	char *m2s_images_path = "images";
 
 	struct vmem_t *vmem;
+	struct trace_file_t *trace_file;
 
 	/* Initialization */
 	m2s_dist_file("close.png", m2s_images_path, m2s_images_path,
 		vlist_image_close_path, sizeof vlist_image_close_path);
 	m2s_dist_file("close-sel.png", m2s_images_path, m2s_images_path,
 		vlist_image_close_sel_path, sizeof vlist_image_close_sel_path);
+
+	/* Trace file */
+	trace_file = trace_file_open(file_name);
 
 	/* Initialize GTK */
 	gtk_init(NULL, NULL);
@@ -111,5 +106,6 @@ void vmem_run(char *file_name)
 
 	/* Free main window */
 	vmem_free(vmem);
+	trace_file_close(trace_file);
 }
 
