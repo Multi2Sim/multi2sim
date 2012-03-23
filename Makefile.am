@@ -12,15 +12,6 @@ pkgdata_imagesdir = $(pkgdatadir)/images
 pkgdata_images_DATA = ${images}
 
 EXTRA_DIST = \
-	tools/libm2s-opencl/m2s-opencl.c \
-	tools/libm2s-opencl/Makefile \
-	tools/libm2s-opencl/CL/cl_platform.h \
-	tools/libm2s-opencl/CL/cl_ext.h \
-	tools/libm2s-opencl/CL/opencl.h \
-	tools/libm2s-opencl/CL/cl.h \
-	tools/libm2s-opencl/CL/cl_gl.h \
-	tools/libm2s-opencl/CL/cl_gl_ext.h \
-	\
 	tools/m2s-opencl-kc/debug.c \
 	tools/m2s-opencl-kc/debug.h \
 	tools/m2s-opencl-kc/elfanalyze.c \
@@ -30,6 +21,25 @@ EXTRA_DIST = \
 	tools/m2s-opencl-kc/misc.c \
 	tools/m2s-opencl-kc/misc.h \
 	\
+	tools/libm2s-opencl/CL/cl_platform.h \
+	tools/libm2s-opencl/CL/cl_ext.h \
+	tools/libm2s-opencl/CL/opencl.h \
+	tools/libm2s-opencl/CL/cl.h \
+	tools/libm2s-opencl/CL/cl_gl.h \
+	tools/libm2s-opencl/CL/cl_gl_ext.h \
+	tools/libm2s-opencl/command-queue.c \
+	tools/libm2s-opencl/context.c \
+	tools/libm2s-opencl/device.c \
+	tools/libm2s-opencl/event.c \
+	tools/libm2s-opencl/kernel.c \
+	tools/libm2s-opencl/m2s-opencl.c \
+	tools/libm2s-opencl/m2s-opencl.h \
+	tools/libm2s-opencl/Makefile \
+	tools/libm2s-opencl/mem.c \
+	tools/libm2s-opencl/platform.c \
+	tools/libm2s-opencl/program.c \
+	tools/libm2s-opencl/sampler.c \
+	\
 	tools/barplot/barplot.py \
 	\
 	tools/inifile/inifile.py \
@@ -37,14 +47,27 @@ EXTRA_DIST = \
 	tools/m2s-pipeline/m2s-pipeline.c \
 	tools/m2s-pipeline/Makefile \
 	\
-	samples/cacheconfig.multicore \
-	samples/cacheconfig.superscalar \
 	samples/cpuconfig.args-sort \
 	samples/ctxconfig.args-sort \
 	samples/test-args.c \
 	samples/test-args.i386 \
 	samples/test-sort.c \
 	samples/test-sort.i386 \
+	\
+	samples/memconfig-eg1/cpu-config \
+	samples/memconfig-eg1/mem-config \
+	\
+	samples/memconfig-eg2/cpu-config \
+	samples/memconfig-eg2/mem-config \
+	samples/memconfig-eg2/net-config \
+	\
+	samples/memconfig-eg3/cpu-config \
+	samples/memconfig-eg3/mem-config \
+	samples/memconfig-eg3/net-config \
+	\
+	samples/memconfig-eg4/cpu-config \
+	samples/memconfig-eg4/gpu-config \
+	samples/memconfig-eg4/mem-config \
 	\
 	${images}
 
