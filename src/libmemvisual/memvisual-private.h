@@ -38,8 +38,23 @@
 
 struct trace_file_t;
 
-struct trace_file_t *trace_file_open(char *file_name);
-void trace_file_close(struct trace_file_t *file);
+struct trace_file_t *trace_file_create(char *file_name);
+void trace_file_free(struct trace_file_t *file);
+
+
+struct trace_line_t;
+
+struct trace_line_t *trace_line_create_from_file(FILE *f);
+struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *f);
+void trace_line_free(struct trace_line_t *line);
+
+void trace_line_dump(struct trace_line_t *line, FILE *f);
+void trace_line_dump_plain_text(struct trace_line_t *line, FILE *f);
+
+char *trace_line_get_command(struct trace_line_t *line);
+char *trace_line_get_symbol_value(struct trace_line_t *line, char *symbol_name);
+
+
 
 
 /*

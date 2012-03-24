@@ -93,7 +93,30 @@ void vmem_run(char *file_name)
 		vlist_image_close_sel_path, sizeof vlist_image_close_sel_path);
 
 	/* Trace file */
-	trace_file = trace_file_open(file_name);
+	trace_file = trace_file_create(file_name);
+
+	{
+		struct trace_line_t *trace_line;
+		FILE *f;
+
+		f = fopen("hola", "w");
+		assert(f);
+		while ((trace_line = trace_line_create_from_trace_file(trace_file)))
+		{
+			trace_line_dump(trace_line, f);
+			trace_line_free(trace_line);
+		}
+		fclose(f);
+
+		f = fopen("hola", "r");
+		while ((trace_line = trace_line_create_from_file(f)))
+		{
+			if (!strcmp(trace_line_get_command(trace_line), "c"))
+				printf("%d\n", atoi(trace_line_get_symbol_value(trace_line, "clk")));
+			trace_line_free(trace_line);
+		}
+		fclose(f);
+	}
 
 	/* Initialize GTK */
 	gtk_init(NULL, NULL);
@@ -106,6 +129,6 @@ void vmem_run(char *file_name)
 
 	/* Free main window */
 	vmem_free(vmem);
-	trace_file_close(trace_file);
+	trace_file_free(trace_file);
 }
 
