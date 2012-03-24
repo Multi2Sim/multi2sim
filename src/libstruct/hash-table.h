@@ -22,6 +22,18 @@
 
 struct hash_table_t;
 
+/** Iterate through all elements of the hash table.
+ *
+ * @param ht
+ * @param key
+ * @param data
+ */
+#define HASH_TABLE_FOR_EACH(ht, key, data) \
+	for ((key) = hash_table_find_first((ht), (void **) &(data)); \
+		(key); \
+		(key) = hash_table_find_next((ht), (void **) &(data)))
+
+
 /* Creation and destruction */
 struct hash_table_t *hash_table_create(int size, int case_sensitive);
 void hash_table_free(struct hash_table_t *ht);
