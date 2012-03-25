@@ -44,6 +44,9 @@ struct trace_line_t
 	/* Command and symbols */
 	char *command;
 	struct hash_table_t *symbol_table;
+
+	/* Offset in the file where it was read from */
+	long int offset;
 };
 
 
@@ -112,6 +115,8 @@ struct trace_line_t *trace_line_create_from_file(FILE *f)
 {
 	struct trace_line_t *line;
 
+	long int offset;
+
 	int count;
 	int i;
 
@@ -121,6 +126,7 @@ struct trace_line_t *trace_line_create_from_file(FILE *f)
 	char buf[4096];
 
 	/* Read trace line number */
+	offset = ftell(f);
 	count = fread(&line_num, 1, 4, f);
 	if (!count)
 		return NULL;
@@ -133,6 +139,7 @@ struct trace_line_t *trace_line_create_from_file(FILE *f)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
+	line->offset = offset;
 	line->line_num = line_num;
 	line->symbol_table = hash_table_create(13, FALSE);
 
@@ -173,10 +180,13 @@ struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *file
 {
 	struct trace_line_t *line;
 
+	long int offset;
+
 	char buf[4096];
 	char *buf_ptr;
 
 	/* Read line from trace file */
+	offset = gztell(file->f);
 	buf_ptr = gzgets(file->f, buf, sizeof buf);
 
 	/* Empty line */
@@ -194,6 +204,7 @@ struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *file
 
 	/* Initialize */
 	file->line_num++;
+	line->offset = offset;
 	line->line_num = file->line_num;
 	line->symbol_table = hash_table_create(13, FALSE);
 
@@ -332,6 +343,12 @@ void trace_line_dump_plain_text(struct trace_line_t *line, FILE *f)
 }
 
 
+long int trace_line_get_offset(struct trace_line_t *line)
+{
+	return line->offset;
+}
+
+
 char *trace_line_get_command(struct trace_line_t *line)
 {
 	return line->command;
@@ -343,6 +360,32 @@ char *trace_line_get_symbol_value(struct trace_line_t *line, char *symbol_name)
 	return hash_table_get(line->symbol_table, symbol_name);
 }
 
+
+int trace_line_get_symbol_value_int(struct trace_line_t *line, char *symbol_name)
+{
+	char *value;
+
+	value = hash_table_get(line->symbol_table, symbol_name);
+	return value ? atoi(value) : 0;
+}
+
+
+unsigned int trace_line_get_symbol_value_hex(struct trace_line_t *line, char *symbol_name)
+{
+	char *value;
+	unsigned int hex;
+
+	value = hash_table_get(line->symbol_table, symbol_name);
+	if (value)
+	{
+		if (strlen(value) >= 2 && !strncasecmp(value, "0x", 2))
+			value += 2;
+		sscanf(value, "%x", &hex);
+		return hex;
+	}
+	else
+		return 0;
+}
 
 
 

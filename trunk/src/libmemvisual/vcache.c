@@ -19,6 +19,30 @@
 
 #include <memvisual-private.h>
 
+#define SIZE_OF_VCACHE_DIR_ENTRY(vcache) (sizeof(struct vcache_dir_entry_t) + \
+	((vcache)->num_sharers + 7) / 8)
+
+#define VCACHE_CELL_WIDTH		150
+#define VCACHE_CELL_HEIGHT		20
+
+#define VCACHE_FIRST_ROW_HEIGHT		20
+#define VCACHE_FIRST_COL_WIDTH		100
+
+#define VCACHE_FONT_SIZE		12
+
+
+static struct string_map_t vcache_block_state_map =
+{
+	6, {
+		{ "I", 0 },
+		{ "M", 1 },
+		{ "O", 2 },
+		{ "E", 3 },
+		{ "S", 4 },
+		{ "N", 5 }
+	}
+};
+
 
 static void vcache_refresh(struct vcache_t *vcache)
 {
@@ -52,9 +76,15 @@ static void vcache_refresh(struct vcache_t *vcache)
 	int x;
 	int y;
 
-	/* Remove all widgets from layout */
+	char str[MAX_STRING_SIZE];
+
+	/* Remove all widgets from layouts */
 	while ((child = gtk_container_get_children(GTK_CONTAINER(layout))))
 		gtk_container_remove(GTK_CONTAINER(layout), child->data);
+	while ((child = gtk_container_get_children(GTK_CONTAINER(vcache->first_row_layout))))
+		gtk_container_remove(GTK_CONTAINER(vcache->first_row_layout), child->data);
+	while ((child = gtk_container_get_children(GTK_CONTAINER(vcache->first_col_layout))))
+		gtk_container_remove(GTK_CONTAINER(vcache->first_col_layout), child->data);
 
 	/* Get allocated dimensions */
 	width = gtk_widget_get_allocated_width(layout);
@@ -63,9 +93,9 @@ static void vcache_refresh(struct vcache_t *vcache)
 	vcache->height = height;
 
 	/* Dimensions */
-	cell_width = 150;
-	cell_height = 20;
-	cell_font_size = 12;
+	cell_width = VCACHE_CELL_WIDTH;
+	cell_height = VCACHE_CELL_HEIGHT;
+	cell_font_size = VCACHE_FONT_SIZE;
 
 	table_width = cell_width * vcache->assoc;
 	table_height = cell_height * vcache->num_sets;
@@ -102,6 +132,72 @@ static void vcache_refresh(struct vcache_t *vcache)
 	top_set = top / cell_height;
 	top_set_offset = -(top % cell_height);
 
+	/* First row */
+	way = left_way;
+	x = left_way_offset;
+	while (x < width && way < vcache->assoc)
+	{
+		snprintf(str, sizeof str, "%d", way);
+		GtkWidget *label = gtk_label_new(str);
+		gtk_widget_set_size_request(label, cell_width - 1, VCACHE_FIRST_ROW_HEIGHT - 1);
+		gtk_widget_show(label);
+
+		/* Set label font attributes */
+		PangoAttrList *attrs;
+		attrs = pango_attr_list_new();
+		PangoAttribute *size_attr = pango_attr_size_new_absolute(cell_font_size << 10);
+		pango_attr_list_insert(attrs, size_attr);
+		gtk_label_set_attributes(GTK_LABEL(label), attrs);
+
+		/* Event box */
+		GtkWidget *event_box = gtk_event_box_new();
+		gtk_container_add(GTK_CONTAINER(event_box), label);
+		gtk_layout_put(GTK_LAYOUT(vcache->first_row_layout), event_box, x, 0);
+		gtk_widget_show(event_box);
+
+		/* Color */
+		GdkColor color;
+		gdk_color_parse("#ffffff", &color);
+		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
+
+		/* Next way */
+		x += cell_width;
+		way++;
+	}
+
+	/* First column */
+	set = top_set;
+	y = top_set_offset;
+	while (y < height && set < vcache->num_sets)
+	{
+		snprintf(str, sizeof str, "%d", set);
+		GtkWidget *label = gtk_label_new(str);
+		gtk_widget_set_size_request(label, VCACHE_FIRST_COL_WIDTH - 1, cell_height - 1);
+		gtk_widget_show(label);
+
+		/* Set label font attributes */
+		PangoAttrList *attrs;
+		attrs = pango_attr_list_new();
+		PangoAttribute *size_attr = pango_attr_size_new_absolute(cell_font_size << 10);
+		pango_attr_list_insert(attrs, size_attr);
+		gtk_label_set_attributes(GTK_LABEL(label), attrs);
+
+		/* Event box */
+		GtkWidget *event_box = gtk_event_box_new();
+		gtk_container_add(GTK_CONTAINER(event_box), label);
+		gtk_layout_put(GTK_LAYOUT(vcache->first_col_layout), event_box, 0, y);
+		gtk_widget_show(event_box);
+
+		/* Color */
+		GdkColor color;
+		gdk_color_parse("#ffffff", &color);
+		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
+
+		/* Next set */
+		y += cell_height;
+		set++;
+	}
+
 	/* Blocks */
 	set = top_set;
 	y = top_set_offset;
@@ -112,10 +208,18 @@ static void vcache_refresh(struct vcache_t *vcache)
 		x = left_way_offset;
 		while (x < width && way < vcache->assoc)
 		{
-			char str[MAX_STRING_SIZE];
+			struct vcache_block_t *block;
+
+			char *state_str;
+
+			/* Get block properties */
+			assert(IN_RANGE(set, 0, vcache->num_sets - 1));
+			assert(IN_RANGE(way, 0, vcache->assoc - 1));
+			block = &vcache->blocks[set * vcache->assoc + way];
+			state_str = map_value(&vcache_block_state_map, block->state);
 
 			/* Label */
-			snprintf(str, sizeof str, "%d-%d", set, way);
+			snprintf(str, sizeof str, "0x%x (%s)", block->tag, state_str);
 			GtkWidget *label = gtk_label_new(str);
 			gtk_widget_set_size_request(label, block_width, cell_height - 1);
 			gtk_widget_show(label);
@@ -148,8 +252,9 @@ static void vcache_refresh(struct vcache_t *vcache)
 	}
 
 	/* Repaint if necessary */
-	//gtk_widget_show_all(layout);
 	gtk_container_check_resize(GTK_CONTAINER(vcache->layout));
+	gtk_container_check_resize(GTK_CONTAINER(vcache->first_row_layout));
+	gtk_container_check_resize(GTK_CONTAINER(vcache->first_col_layout));
 }
 
 
@@ -160,13 +265,25 @@ static void vcache_size_allocate_event(GtkWidget *widget, GdkRectangle *allocati
 }
 
 
+static gboolean vcache_scroll_event(GtkWidget *widget, GdkEventScroll *event, struct vcache_t *vcache)
+{
+	int value;
+
+	value = gtk_range_get_value(GTK_RANGE(vcache->vscrollbar));
+	if (event->direction == GDK_SCROLL_UP)
+		value -= 10;
+	else
+		value += 10;
+	gtk_range_set_value(GTK_RANGE(vcache->vscrollbar), value);
+	return FALSE;
+}
+
+
 static void vcache_scroll_bar_value_changed_event(GtkRange *range, struct vcache_t *vcache)
 {
 	vcache_refresh(vcache);
 }
 
-
-#define SIZE_OF_VCACHE_DIR_ENTRY(vcache) (sizeof(struct vcache_dir_entry_t) + ((vcache)->num_sharers + 7) / 8)
 
 struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_size,
 	int sub_block_size, int num_sharers)
@@ -211,24 +328,45 @@ struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_si
 	g_signal_connect(G_OBJECT(hscrollbar), "value-changed", G_CALLBACK(vcache_scroll_bar_value_changed_event), vcache);
 	g_signal_connect(G_OBJECT(vscrollbar), "value-changed", G_CALLBACK(vcache_scroll_bar_value_changed_event), vcache);
 
+	/* Colors */
+	GdkColor color_gray;
+	gdk_color_parse("#aaaaaa", &color_gray);
+
 	/* Layout */
 	GtkWidget *layout = gtk_layout_new(NULL, NULL);
 	gtk_widget_set_size_request(layout, 200, 200);
 	g_signal_connect(G_OBJECT(layout), "size_allocate", G_CALLBACK(vcache_size_allocate_event), vcache);
+	g_signal_connect(G_OBJECT(layout), "scroll-event", G_CALLBACK(vcache_scroll_event), vcache);
+	gtk_widget_modify_bg(layout, GTK_STATE_NORMAL, &color_gray);
 	vcache->layout = layout;
 
-	GdkColor color;
-	gdk_color_parse("#000000", &color);
-	gtk_widget_modify_bg(layout, GTK_STATE_NORMAL, &color);
+	/* First row layout */
+	GtkWidget *first_row_layout = gtk_layout_new(NULL, NULL);
+	gtk_widget_set_size_request(first_row_layout, -1, VCACHE_FIRST_ROW_HEIGHT);
+	gtk_widget_modify_bg(first_row_layout, GTK_STATE_NORMAL, &color_gray);
+	vcache->first_row_layout = first_row_layout;
 
+	/* First column layout */
+	GtkWidget *first_col_layout = gtk_layout_new(NULL, NULL);
+	gtk_widget_set_size_request(first_col_layout, VCACHE_FIRST_COL_WIDTH, -1);
+	gtk_widget_modify_bg(first_col_layout, GTK_STATE_NORMAL, &color_gray);
+	vcache->first_col_layout = first_col_layout;
 
-	/* Create layout */
+	/* Table */
 	GtkWidget *table;
-	table = gtk_table_new(2, 2, FALSE);
-	gtk_table_attach_defaults(GTK_TABLE(table), layout, 0, 1, 0, 1);
-	gtk_table_attach(GTK_TABLE(table), hscrollbar, 0, 1, 1, 2, GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_FILL, 0, 0);
-	gtk_table_attach(GTK_TABLE(table), vscrollbar, 1, 2, 0, 1, GTK_FILL, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
-	vcache->widget = table;
+	table = gtk_table_new(3, 3, FALSE);
+	gtk_table_attach(GTK_TABLE(table), layout, 1, 2, 1, 2,
+		GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
+	gtk_table_attach(GTK_TABLE(table), first_row_layout, 1, 2, 0, 1, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0, 0);
+	gtk_table_attach(GTK_TABLE(table), first_col_layout, 0, 1, 1, 2, 0, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
+	gtk_table_attach(GTK_TABLE(table), hscrollbar, 1, 2, 2, 3, GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_FILL, 0, 0);
+	gtk_table_attach(GTK_TABLE(table), vscrollbar, 2, 3, 1, 2, GTK_FILL, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
+
+	/* Frame */
+	GtkWidget *frame;
+	frame = gtk_frame_new(NULL);
+	gtk_container_add(GTK_CONTAINER(frame), table);
+	vcache->widget = frame;
 
 	/* Return */
 	return vcache;
@@ -265,3 +403,18 @@ struct vcache_dir_entry_t *vcache_get_dir_entry(struct vcache_t *vcache, int set
 	return dir_entry;
 }
 
+
+void vcache_set_block(struct vcache_t *vcache, int set, int way,
+	unsigned int tag, char *state)
+{
+	struct vcache_block_t *block;
+
+	if (!IN_RANGE(set, 0, vcache->num_sets - 1))
+		fatal("%s: invalid set", __FUNCTION__);
+	if (!IN_RANGE(way, 0, vcache->assoc - 1))
+		fatal("%s: invalid way", __FUNCTION__);
+
+	block = &vcache->blocks[set * vcache->assoc + way];
+	block->tag = tag;
+	block->state = map_string(&vcache_block_state_map, state);
+}

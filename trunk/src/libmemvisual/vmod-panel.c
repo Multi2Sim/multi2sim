@@ -19,9 +19,24 @@
 
 #include <memvisual-private.h>
 
+
 /*
  * Module Level
  */
+
+#define VMOD_PADDING  5
+
+#define VMOD_DEFAULT_WIDTH  100
+#define VMOD_DEFAULT_HEIGHT 100
+
+
+/* One level of the memory hierarchy */
+struct vmod_level_t
+{
+	/* List of modules in this level */
+	struct list_t *vmod_list;
+};
+
 
 static struct vmod_level_t *vmod_level_create(void)
 {
@@ -53,51 +68,55 @@ static void vmod_level_free(struct vmod_level_t *level)
  * Visual Module Panel
  */
 
-
-struct vmod_panel_t *vmod_panel_create(void)
+static void vmod_panel_read_config(struct vmod_panel_t *panel)
 {
-	struct vmod_panel_t *panel;
+	struct trace_line_t *trace_line;
 
-	/* Allocate */
-	panel = calloc(1, sizeof(struct vmod_panel_t));
-	if (!panel)
-		fatal("%s: out of memory", __FUNCTION__);
+	for (trace_line = state_file_header_first(visual_state_file);
+		trace_line;
+		trace_line = state_file_header_next(visual_state_file))
+	{
+		char *command;
 
-	/* Initialize */
-	panel->vmod_list = list_create();
-	panel->vmod_level_list = list_create();
+		/* End of header */
+		command = trace_line_get_command(trace_line);
+		if (!strcmp(command, "c"))
+		{
+			trace_line_free(trace_line);
+			break;
+		}
+		else if (!strcmp(command, "mem.new_mod"))
+		{
+			struct vmod_t *vmod;
 
-	/* Create widget */
-	panel->widget = gtk_vbox_new(0, 0);
+			char *name;
 
-	/* Draw */
-	vmod_panel_refresh(panel);
+			int num_sets;
+			int assoc;
+			int block_size;
+			int sub_block_size;
+			int num_sharers;
+			int level;
 
-	/* Return */
-	return panel;
+			/* Get module parameters */
+			name = trace_line_get_symbol_value(trace_line, "name");
+			num_sets = trace_line_get_symbol_value_int(trace_line, "num_sets");
+			assoc = trace_line_get_symbol_value_int(trace_line, "assoc");
+			block_size = trace_line_get_symbol_value_int(trace_line, "block_size");
+			sub_block_size = trace_line_get_symbol_value_int(trace_line, "sub_block_size");
+			num_sharers = trace_line_get_symbol_value_int(trace_line, "num_sharers");
+			level = trace_line_get_symbol_value_int(trace_line, "level");
+
+			/* Create module and add to list */
+			vmod = vmod_create(name, num_sets, assoc, block_size, sub_block_size,
+					num_sharers, level);
+			hash_table_insert(panel->vmod_table, name, vmod);
+		}
+	}
 }
 
 
-void vmod_panel_free(struct vmod_panel_t *panel)
-{
-	int i;
-
-	/* Free modules */
-	LIST_FOR_EACH(panel->vmod_list, i)
-		vmod_free(list_get(panel->vmod_list, i));
-	list_free(panel->vmod_list);
-
-	/* Free levels */
-	LIST_FOR_EACH(panel->vmod_level_list, i)
-		vmod_level_free(list_get(panel->vmod_level_list, i));
-	list_free(panel->vmod_level_list);
-
-	/* Free panel */
-	free(panel);
-}
-
-
-void vmod_panel_populate_vmod_levels(struct vmod_panel_t *panel)
+static void vmod_panel_populate(struct vmod_panel_t *panel)
 {
 	struct vmod_t *vmod;
 	struct vmod_level_t *level;
@@ -105,10 +124,14 @@ void vmod_panel_populate_vmod_levels(struct vmod_panel_t *panel)
 	int num_levels = 0;
 	int i;
 
+	int level_id;
+	int vmod_id;
+
+	char *vmod_name;
+
 	/* Get number of levels */
-	for (i = 0; i < list_count(panel->vmod_list); i++)
+	HASH_TABLE_FOR_EACH(panel->vmod_table, vmod_name, vmod)
 	{
-		vmod = list_get(panel->vmod_list, i);
 		if (vmod->level < 0)
 			fatal("%s: invalid level", __FUNCTION__);
 		num_levels = MAX(num_levels, vmod->level + 1);
@@ -122,27 +145,11 @@ void vmod_panel_populate_vmod_levels(struct vmod_panel_t *panel)
 	}
 
 	/* Add modules to levels */
-	for (i = 0; i < list_count(panel->vmod_list); i++)
+	HASH_TABLE_FOR_EACH(panel->vmod_table, vmod_name, vmod)
 	{
-		vmod = list_get(panel->vmod_list, i);
 		level = list_get(panel->vmod_level_list, vmod->level);
 		list_add(level->vmod_list, vmod);
 	}
-}
-
-
-void vmod_panel_insert_vmod_layouts(struct vmod_panel_t *panel)
-{
-	struct vmod_level_t *level;
-	struct vmod_t *vmod;
-
-	int level_id;
-	int vmod_id;
-
-	GtkWidget *hbox;
-
-	/* Remove all layouts from container */
-	/* FIXME */
 
 	/* Insert levels */
 	LIST_FOR_EACH(panel->vmod_level_list, level_id)
@@ -150,7 +157,7 @@ void vmod_panel_insert_vmod_layouts(struct vmod_panel_t *panel)
 		level = list_get(panel->vmod_level_list, level_id);
 
 		/* Horizontal box for a new level */
-		hbox = gtk_hbox_new(0, VMOD_PADDING);
+		GtkWidget *hbox = gtk_hbox_new(0, VMOD_PADDING);
 		gtk_container_add(GTK_CONTAINER(panel->widget), hbox);
 
 		/* Modules */
@@ -170,47 +177,47 @@ void vmod_panel_insert_vmod_layouts(struct vmod_panel_t *panel)
 }
 
 
-void vmod_panel_refresh(struct vmod_panel_t *panel)
+struct vmod_panel_t *vmod_panel_create(void)
 {
-	/*struct vmod_t *vmod1;
+	struct vmod_panel_t *panel;
 
-	vmod1 = vmod_create("l1-0", 0);
-	list_add(panel->vmod_list, vmod1);*/
+	/* Allocate */
+	panel = calloc(1, sizeof(struct vmod_panel_t));
+	if (!panel)
+		fatal("%s: out of memory", __FUNCTION__);
 
-	/*struct vmod_t *vmod1, *vmod2, *vmod3, *vmod4, *vmod5, *vmod6;
+	/* Initialize */
+	panel->vmod_table = hash_table_create(0, FALSE);
+	panel->vmod_level_list = list_create();
 
-	vmod1 = vmod_create("l1-0", 0);
-	vmod2 = vmod_create("l1-1", 0);
-	vmod3 = vmod_create("l1-2", 0);
-	vmod4 = vmod_create("l1-3", 0);
-	vmod5 = vmod_create("l2-0", 1);
-	vmod6 = vmod_create("l2-1", 1);
+	/* Create widget */
+	panel->widget = gtk_vbox_new(0, 0);
 
-	list_add(vmod1->low_vmod_list, vmod5);
-	list_add(vmod2->low_vmod_list, vmod5);
-	list_add(vmod3->low_vmod_list, vmod5);
-	list_add(vmod4->low_vmod_list, vmod5);
-	list_add(vmod5->high_vmod_list, vmod1);
-	list_add(vmod5->high_vmod_list, vmod2);
-	list_add(vmod5->high_vmod_list, vmod3);
-	list_add(vmod5->high_vmod_list, vmod4);
+	/* Read and add components to the panel */
+	vmod_panel_read_config(panel);
+	vmod_panel_populate(panel);
 
-	list_add(vmod1->low_vmod_list, vmod6);
-	list_add(vmod2->low_vmod_list, vmod6);
-	list_add(vmod3->low_vmod_list, vmod6);
-	list_add(vmod4->low_vmod_list, vmod6);
-	list_add(vmod6->high_vmod_list, vmod1);
-	list_add(vmod6->high_vmod_list, vmod2);
-	list_add(vmod6->high_vmod_list, vmod3);
-	list_add(vmod6->high_vmod_list, vmod4);
+	/* Return */
+	return panel;
+}
 
-	list_add(panel->vmod_list, vmod1);
-	list_add(panel->vmod_list, vmod2);
-	list_add(panel->vmod_list, vmod3);
-	list_add(panel->vmod_list, vmod4);
-	list_add(panel->vmod_list, vmod5);
-	list_add(panel->vmod_list, vmod6);*/
 
-	vmod_panel_populate_vmod_levels(panel);
-	vmod_panel_insert_vmod_layouts(panel);
+void vmod_panel_free(struct vmod_panel_t *panel)
+{
+	struct vmod_t *vmod;
+	char *vmod_name;
+	int i;
+
+	/* Free modules */
+	HASH_TABLE_FOR_EACH(panel->vmod_table, vmod_name, vmod)
+		vmod_free(vmod);
+	hash_table_free(panel->vmod_table);
+
+	/* Free levels */
+	LIST_FOR_EACH(panel->vmod_level_list, i)
+		vmod_level_free(list_get(panel->vmod_level_list, i));
+	list_free(panel->vmod_level_list);
+
+	/* Free panel */
+	free(panel);
 }
