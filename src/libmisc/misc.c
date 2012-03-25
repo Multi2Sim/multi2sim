@@ -141,9 +141,12 @@ FILE *create_temp_file(char *ret_path, int ret_path_size)
 
 	strcpy(path, "/tmp/m2s.XXXXXX");
 	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "w+")) == NULL)
-		return NULL;
+	{
+		fprintf(stderr, "%s: failed to create temporary file", __FUNCTION__);
+		exit(1);
+	}
 	if (ret_path)
-		strncpy(ret_path, path, ret_path_size);
+		snprintf(ret_path, ret_path_size, "%s", path);
 	return f;
 }
 

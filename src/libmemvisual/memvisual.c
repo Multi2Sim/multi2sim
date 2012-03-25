@@ -32,7 +32,7 @@ struct vmem_t
 
 static void vmem_destroy_event(GtkWidget *widget, struct vmem_t *vmem)
 {
-	vcache_free(vmem->vcache);
+	vmem_free(vmem);
 	gtk_main_quit();
 }
 
@@ -46,6 +46,12 @@ struct vmem_t *vmem_create(void)
 	if (!vmem)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* State file */
+	state_file_new_category(visual_state_file, "Memory hierarchy",
+		vmem_write_checkpoint, vmem_read_checkpoint, vmem);
+	state_file_new_command(visual_state_file, "mem.ttag", vmem_process_trace_line, vmem);
+	state_file_new_command(visual_state_file, "mem.blk", vmem_process_trace_line, vmem);
+
 	/* Main window */
 	vmem->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_position(GTK_WINDOW(vmem->window), GTK_WIN_POS_CENTER);
@@ -55,14 +61,7 @@ struct vmem_t *vmem_create(void)
 
 	/* Panel */
 	vmem->vmod_panel = vmod_panel_create();
-	//gtk_container_add(GTK_CONTAINER(vmem->window), vmem->vmod_panel->widget);
-
-	{ /////////
-		struct vcache_t *vcache;
-		vcache = vcache_create("Test cache", 32, 8, 64, 32, 5);
-		gtk_container_add(GTK_CONTAINER(vmem->window), vcache->widget);
-		vmem->vcache = vcache;
-	}
+	gtk_container_add(GTK_CONTAINER(vmem->window), vmem->vmod_panel->widget);
 
 	/* Show window */
 	gtk_widget_show_all(vmem->window);
@@ -79,12 +78,69 @@ void vmem_free(struct vmem_t *vmem)
 }
 
 
+void vmem_read_checkpoint(void *user_data, FILE *f)
+{
+}
+
+
+void vmem_write_checkpoint(void *user_data, FILE *f)
+{
+}
+
+
+void vmem_process_trace_line(void *user_data, struct trace_line_t *trace_line)
+{
+	struct vmem_t *vmem = user_data;
+
+	char *command;
+
+	command = trace_line_get_command(trace_line);
+	if (!strcmp(command, "mem.ttag"))
+	{
+	}
+	else if (!strcmp(command, "mem.blk"))
+	{
+		struct vmod_t *vmod;
+
+		char *vmod_name;
+		char *state;
+
+		int set;
+		int way;
+
+		unsigned int tag;
+
+		/* Get fields */
+		vmod_name = trace_line_get_symbol_value(trace_line, "cache");
+		set = trace_line_get_symbol_value_int(trace_line, "set");
+		way = trace_line_get_symbol_value_int(trace_line, "way");
+		tag = trace_line_get_symbol_value_hex(trace_line, "tag");
+		state = trace_line_get_symbol_value(trace_line, "state");
+
+		/* Get module */
+		vmod = hash_table_get(vmem->vmod_panel->vmod_table, vmod_name);
+		if (!vmod)
+			fatal("%s: invalid module name '%s'", __FUNCTION__, vmod_name);
+
+		/* Set block */
+		vcache_set_block(vmod->vcache, set, way, tag, state);
+	}
+	else
+		fatal("%s: unknown command '%s'", __FUNCTION__, command);
+}
+
+
+
+
+/*
+ * Main Program
+ */
+
+struct state_file_t *visual_state_file;
+
 void vmem_run(char *file_name)
 {
 	char *m2s_images_path = "images";
-
-	struct vmem_t *vmem;
-	struct trace_file_t *trace_file;
 
 	/* Initialization */
 	m2s_dist_file("close.png", m2s_images_path, m2s_images_path,
@@ -92,43 +148,22 @@ void vmem_run(char *file_name)
 	m2s_dist_file("close-sel.png", m2s_images_path, m2s_images_path,
 		vlist_image_close_sel_path, sizeof vlist_image_close_sel_path);
 
-	/* Trace file */
-	trace_file = trace_file_create(file_name);
-
-	{
-		struct trace_line_t *trace_line;
-		FILE *f;
-
-		f = fopen("hola", "w");
-		assert(f);
-		while ((trace_line = trace_line_create_from_trace_file(trace_file)))
-		{
-			trace_line_dump(trace_line, f);
-			trace_line_free(trace_line);
-		}
-		fclose(f);
-
-		f = fopen("hola", "r");
-		while ((trace_line = trace_line_create_from_file(f)))
-		{
-			if (!strcmp(trace_line_get_command(trace_line), "c"))
-				printf("%d\n", atoi(trace_line_get_symbol_value(trace_line, "clk")));
-			trace_line_free(trace_line);
-		}
-		fclose(f);
-	}
+	/* State file */
+	visual_state_file = state_file_create(file_name);
 
 	/* Initialize GTK */
 	gtk_init(NULL, NULL);
 
 	/* Create main window */
-	vmem = vmem_create();
+	vmem_create();
+
+	/* Parse trace file and create checkpoints */
+	state_file_create_checkpoints(visual_state_file);
 
 	/* Run GTK */
 	gtk_main();
 
 	/* Free main window */
-	vmem_free(vmem);
-	trace_file_free(trace_file);
+	state_file_free(visual_state_file);
 }
 

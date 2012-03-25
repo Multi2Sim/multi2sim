@@ -69,7 +69,8 @@ void vmod_access_get_desc(void *elem, char *buf, int size)
  * Module
  */
 
-struct vmod_t *vmod_create(char *name, int level)
+struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
+		int sub_block_size, int num_sharers, int level)
 {
 	struct vmod_t *vmod;
 
@@ -94,12 +95,12 @@ struct vmod_t *vmod_create(char *name, int level)
 	/* List of accesses */
 	vmod->access_list = vlist_create("Access list", 200, 30,
 		vmod_access_get_name, vmod_access_get_desc);
-	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
-	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
-	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
-	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
-	list_add(vmod->access_list->elem_list, vmod_access_create(random() % 100));
 	gtk_container_add(GTK_CONTAINER(vmod->widget), vmod->access_list->widget);
+
+	/* Cache */
+	vmod->vcache = vcache_create(name, num_sets, assoc, block_size,
+			sub_block_size, num_sharers);
+	gtk_container_add(GTK_CONTAINER(vmod->widget), vmod->vcache->widget);
 
 	/* Return */
 	return vmod;
@@ -111,6 +112,7 @@ void vmod_free(struct vmod_t *vmod)
 	list_free(vmod->low_vmod_list);
 	list_free(vmod->high_vmod_list);
 	vlist_free(vmod->access_list);
+	vcache_free(vmod->vcache);
 	free(vmod->name);
 	free(vmod);
 }

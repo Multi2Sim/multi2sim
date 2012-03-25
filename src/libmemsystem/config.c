@@ -1560,13 +1560,15 @@ static void mem_config_trace(void)
 				"block_size=%d "
 				"sub_block_size=%d "
 				"dir_num_nodes=%d "
+				"level=%d "
 				"\n",
 				mod->name,
 				mod->cache->num_sets,
 				mod->cache->assoc,
 				mod->cache->block_size,
 				mod->sub_block_size,
-				mod->dir->num_nodes);
+				mod->dir->num_nodes,
+				mod->level);
 	}
 }
 

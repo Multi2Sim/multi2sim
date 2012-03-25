@@ -212,6 +212,8 @@ int hash_table_insert(struct hash_table_t *ht, char *key, void *data)
 	e->active = 1;
 	e->removed = 0;
 	e->key = strdup(key);
+	if (!e->key)
+		fatal("%s: out of memory", __FUNCTION__);
 	e->data = data;
 	return 1;
 }
