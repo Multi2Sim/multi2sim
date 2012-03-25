@@ -25,10 +25,11 @@
 #include <math.h>
 #include <gtk/gtk.h>
 
+#include <hash-table.h>
 #include <memvisual.h>
-#include <stdlib.h>
 #include <list.h>
 #include <misc.h>
+#include <stdlib.h>
 
 
 
@@ -51,9 +52,44 @@ void trace_line_free(struct trace_line_t *line);
 void trace_line_dump(struct trace_line_t *line, FILE *f);
 void trace_line_dump_plain_text(struct trace_line_t *line, FILE *f);
 
+long int trace_line_get_offset(struct trace_line_t *line);
+
 char *trace_line_get_command(struct trace_line_t *line);
 char *trace_line_get_symbol_value(struct trace_line_t *line, char *symbol_name);
+int trace_line_get_symbol_value_int(struct trace_line_t *line, char *symbol_name);
+unsigned int trace_line_get_symbol_value_hex(struct trace_line_t *line, char *symbol_name);
 
+
+
+
+/*
+ * State File
+ */
+
+struct state_file_t;
+
+typedef void (*state_file_write_checkpoint_func_t)(void *user_data, FILE *f);
+typedef void (*state_file_read_checkpoint_func_t)(void *user_data, FILE *f);
+typedef void (*state_file_process_trace_line_func_t)(void *user_data,
+	struct trace_line_t *trace_line);
+
+extern struct state_file_t *visual_state_file;
+
+struct state_file_t *state_file_create(char *trace_file_name);
+void state_file_free(struct state_file_t *file);
+
+void state_file_create_checkpoints(struct state_file_t *file);
+
+void state_file_new_category(struct state_file_t *file, char *name,
+	state_file_read_checkpoint_func_t read_checkpoint_func,
+	state_file_write_checkpoint_func_t write_checkpoint_func,
+	void *user_data);
+void state_file_new_command(struct state_file_t *file, char *command_name,
+	state_file_process_trace_line_func_t process_trace_line_func,
+	void *user_data);
+
+struct trace_line_t *state_file_header_first(struct state_file_t *file);
+struct trace_line_t *state_file_header_next(struct state_file_t *file);
 
 
 
@@ -193,12 +229,16 @@ struct vmod_t
 	struct list_t *low_vmod_list;
 	struct list_t *high_vmod_list;
 
+	/* Associated cache */
+	struct vcache_t *vcache;
+
 	/* Visual list of accesses */
 	struct vlist_t *access_list;
 };
 
 
-struct vmod_t *vmod_create(char *name, int level);
+struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
+		int sub_block_size, int num_sharers, int level);
 void vmod_free(struct vmod_t *vmod);
 
 gboolean vmod_draw_event(GtkWidget *widget, GdkEventConfigure *event, struct vmod_t *vmod);
@@ -210,28 +250,13 @@ gboolean vmod_draw_event(GtkWidget *widget, GdkEventConfigure *event, struct vmo
  * Panel with memory modules
  */
 
-#define VMOD_PADDING  5
-
-#define VMOD_DEFAULT_WIDTH  100
-#define VMOD_DEFAULT_HEIGHT 100
-
-
-/* One level of the memory hierarchy */
-struct vmod_level_t
-{
-	/* List of modules in this level */
-	struct list_t *vmod_list;
-};
-
-
-/* Panel representing memory hierarchy */
 struct vmod_panel_t
 {
 	/* Widget representing the panel */
 	GtkWidget *widget;
 
-	/* List of modules (vmod_t) */
-	struct list_t *vmod_list;
+	/* Table of 'vmod_t' modules */
+	struct hash_table_t *vmod_table;
 
 	/* List of memory levels (vmod_level_t) */
 	struct list_t *vmod_level_list;
@@ -241,14 +266,10 @@ struct vmod_panel_t
 
 };
 
-
 struct vmod_panel_t *vmod_panel_create(void);
 void vmod_panel_free(struct vmod_panel_t *panel);
 
 void vmod_panel_refresh(struct vmod_panel_t *panel);
-
-gboolean vmod_panel_draw_event(GtkWidget *widget, GdkEventConfigure *event,
-	struct vmod_panel_t *panel);
 
 
 
@@ -278,6 +299,8 @@ struct vcache_t
 	/* GTK */
 	GtkWidget *widget;
 	GtkWidget *layout;
+	GtkWidget *first_row_layout;
+	GtkWidget *first_col_layout;
 
 	GtkWidget *hscrollbar;
 	GtkWidget *vscrollbar;
@@ -304,6 +327,23 @@ struct vcache_t
 struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_size,
 	int sub_block_size, int num_sharers);
 void vcache_free(struct vcache_t *vcache);
+
+void vcache_set_block(struct vcache_t *vcache, int set, int way,
+	unsigned int tag, char *state);
+
+
+
+
+/*
+ * Main Window
+ */
+
+struct vmem_t *vmem_create(void);
+void vmem_free(struct vmem_t *vmem);
+
+void vmem_read_checkpoint(void *user_data, FILE *f);
+void vmem_write_checkpoint(void *user_data, FILE *f);
+void vmem_process_trace_line(void *user_data, struct trace_line_t *trace_line);
 
 
 #endif

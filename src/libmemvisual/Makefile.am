@@ -8,6 +8,7 @@ libmemvisual_a_SOURCES += \
 	info-popup.c \
 	memvisual.c \
 	memvisual-private.h \
+	state-file.c \
 	trace-file.c \
 	vcache.c \
 	vlist.c \
