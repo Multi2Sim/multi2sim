@@ -28,6 +28,8 @@ char cycle_bar_forward_single_path[MAX_PATH_SIZE];
 char cycle_bar_forward_double_path[MAX_PATH_SIZE];
 char cycle_bar_forward_triple_path[MAX_PATH_SIZE];
 
+char cycle_bar_go_path[MAX_PATH_SIZE];
+
 
 struct cycle_bar_t
 {
@@ -83,18 +85,49 @@ struct cycle_bar_t *cycle_bar_create(void)
 	gtk_container_add(GTK_CONTAINER(forward_triple_button), forward_triple_image);
 
 	/* Table */
-	GtkWidget *table = gtk_table_new(1, 7, FALSE);
-	gtk_table_attach(GTK_TABLE(table), back_triple_button, 0, 1, 0, 1, 0, 0, 0, 0);
-	gtk_table_attach(GTK_TABLE(table), back_double_button, 1, 2, 0, 1, 0, 0, 0, 0);
-	gtk_table_attach(GTK_TABLE(table), back_single_button, 2, 3, 0, 1, 0, 0, 0, 0);
-	gtk_table_attach(GTK_TABLE(table), scale, 3, 4, 0, 1, GTK_EXPAND | GTK_FILL, 0, 0, 0);
-	gtk_table_attach(GTK_TABLE(table), forward_single_button, 4, 5, 0, 1, 0, 0, 0, 0);
-	gtk_table_attach(GTK_TABLE(table), forward_double_button, 5, 6, 0, 1, 0, 0, 0, 0);
-	gtk_table_attach(GTK_TABLE(table), forward_triple_button, 6, 7, 0, 1, 0, 0, 0, 0);
+	GtkWidget *navigation_table = gtk_table_new(1, 7, FALSE);
+	gtk_table_attach(GTK_TABLE(navigation_table), back_triple_button, 0, 1, 0, 1, 0, 0, 0, 0);
+	gtk_table_attach(GTK_TABLE(navigation_table), back_double_button, 1, 2, 0, 1, 0, 0, 0, 0);
+	gtk_table_attach(GTK_TABLE(navigation_table), back_single_button, 2, 3, 0, 1, 0, 0, 0, 0);
+	gtk_table_attach(GTK_TABLE(navigation_table), scale, 3, 4, 0, 1, GTK_EXPAND | GTK_FILL, 0, 0, 0);
+	gtk_table_attach(GTK_TABLE(navigation_table), forward_single_button, 4, 5, 0, 1, 0, 0, 0, 0);
+	gtk_table_attach(GTK_TABLE(navigation_table), forward_double_button, 5, 6, 0, 1, 0, 0, 0, 0);
+	gtk_table_attach(GTK_TABLE(navigation_table), forward_triple_button, 6, 7, 0, 1, 0, 0, 0, 0);
+
+	/* Label */
+	GtkWidget *go_to_label = gtk_label_new("Current cycle:");
+	gtk_misc_set_alignment(GTK_MISC(go_to_label), 0, 0.5);
+
+	/* Go-to-cycle button */
+	GtkWidget *go_to_button = gtk_button_new();
+	GtkWidget *go_to_image = gtk_image_new_from_file(cycle_bar_go_path);
+	gtk_container_add(GTK_CONTAINER(go_to_button), go_to_image);
+
+	/* Go-to-cycle text entry */
+	GtkWidget *go_to_entry = gtk_entry_new();
+	gtk_entry_set_text(GTK_ENTRY(go_to_entry), "0");
+	//gtk_widget_set_size_request(go_to_entry, 30, -1);
+	gtk_entry_set_width_chars(GTK_ENTRY(go_to_entry), 10);
+
+	/* Table */
+	GtkWidget *go_to_table = gtk_table_new(2, 2, FALSE);
+	gtk_table_attach(GTK_TABLE(go_to_table), go_to_label, 0, 2, 0, 1, GTK_FILL | GTK_EXPAND, 0, 0, 0);
+	gtk_table_attach(GTK_TABLE(go_to_table), go_to_entry, 0, 1, 1, 2, 0, 0, 0, 0);
+	gtk_table_attach(GTK_TABLE(go_to_table), go_to_button, 1, 2, 1, 2, 0, 0, 0, 0);
+
+	/* Spacer */
+	GtkWidget *spacer = gtk_label_new("");
+	gtk_widget_set_size_request(spacer, 5, -1);
+
+	/* Horizontal box with the two tables */
+	GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(hbox), navigation_table, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(hbox), spacer, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(hbox), go_to_table, FALSE, FALSE, 0);
 
 	/* Frame with everything */
 	GtkWidget *frame = gtk_frame_new(NULL);
-	gtk_container_add(GTK_CONTAINER(frame), table);
+	gtk_container_add(GTK_CONTAINER(frame), hbox);
 
 	/* Main widget */
 	cycle_bar->widget = frame;
