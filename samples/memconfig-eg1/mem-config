@@ -50,12 +50,20 @@ HighNetwork = net-l1-l2
 LowNetwork = net-l2-mm
 LowModules = mod-l2-mm
 
+
+[Module mod-mm]
+Type = MainMemory
+BlockSize = 256
+Latency = 100
+HighNetwork = net-l2-mm
+
+
 [Network net-l2-mm]
 DefaultInputBufferSize = 1024 
 DefaultOutputBufferSize = 1024
 DefaultBandwidth = 256 
 
-[Network net-l1-mm]
+[Network net-l1-l2]
 DefaultInputBufferSize = 1024 
 DefaultOutputBufferSize = 1024
 DefaultBandwidth = 256 
