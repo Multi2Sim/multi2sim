@@ -6,7 +6,14 @@ images = \
 	images/tex_engine.png \
 	images/m2s_icon.png \
 	images/close.png \
-	images/close-sel.png
+	images/close-sel.png \
+	\
+	images/back-single.png \
+	images/back-double.png \
+	images/back-triple.png \
+	images/forward-single.png \
+	images/forward-double.png \
+	images/forward-triple.png
 
 pkgdata_imagesdir = $(pkgdatadir)/images
 pkgdata_images_DATA = ${images}
