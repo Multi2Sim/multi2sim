@@ -114,6 +114,7 @@ struct state_category_t
 
 	state_file_read_checkpoint_func_t read_checkpoint_func;
 	state_file_write_checkpoint_func_t write_checkpoint_func;
+	state_file_refresh_func_t refresh_func;
 
 	/* Argument to pass to the read/write checkpoint functions */
 	void *user_data;
@@ -123,6 +124,7 @@ struct state_category_t
 struct state_category_t *state_category_create(char *name,
 	state_file_read_checkpoint_func_t read_checkpoint_func,
 	state_file_write_checkpoint_func_t write_checkpoint_func,
+	state_file_refresh_func_t refresh_func,
 	void *user_data)
 {
 	struct state_category_t *category;
@@ -140,6 +142,7 @@ struct state_category_t *state_category_create(char *name,
 	/* Initialize */
 	category->read_checkpoint_func = read_checkpoint_func;
 	category->write_checkpoint_func = write_checkpoint_func;
+	category->refresh_func = refresh_func;
 	category->user_data = user_data;
 
 	/* Return */
@@ -169,6 +172,9 @@ struct state_file_t
 	/* Checkpoint file */
 	char *checkpoint_file_name;
 	FILE *checkpoint_file;
+
+	/* Number of cycles */
+	long long num_cycles;
 
 	/* List of categories */
 	struct list_t *category_list;
@@ -236,6 +242,8 @@ struct state_file_t *state_file_create(char *trace_file_name)
 	while ((trace_line = trace_line_create_from_trace_file(trace_file)))
 	{
 		trace_line_dump(trace_line, file->unzipped_trace_file);
+		if (!strcmp(trace_line_get_command(trace_line), "c"))
+			file->num_cycles = trace_line_get_symbol_value_long_long(trace_line, "clk");
 		trace_line_free(trace_line);
 	}
 	trace_file_free(trace_file);
@@ -295,6 +303,12 @@ void state_file_free(struct state_file_t *file)
 }
 
 
+long long state_file_get_num_cycles(struct state_file_t *file)
+{
+	return file->num_cycles;
+}
+
+
 void state_file_create_checkpoints(struct state_file_t *file)
 {
 	struct trace_line_t *trace_line;
@@ -351,12 +365,13 @@ void state_file_create_checkpoints(struct state_file_t *file)
 void state_file_new_category(struct state_file_t *file, char *name,
 	state_file_read_checkpoint_func_t read_checkpoint_func,
 	state_file_write_checkpoint_func_t write_checkpoint_func,
+	state_file_refresh_func_t refresh_func,
 	void *user_data)
 {
 	struct state_category_t *category;
 
 	category = state_category_create(name, read_checkpoint_func,
-		write_checkpoint_func, user_data);
+		write_checkpoint_func, refresh_func, user_data);
 	list_add(file->category_list, category);
 }
 
@@ -416,4 +431,18 @@ struct trace_line_t *state_file_header_next(struct state_file_t *file)
 	file->header_trace_line = trace_line;
 	file->header_trace_line_offset = ftell(file->unzipped_trace_file);
 	return trace_line;
+}
+
+
+/* Invoke the refresh call-back function for every category. */
+void state_file_refresh(struct state_file_t *file)
+{
+	struct state_category_t *category;
+	int i;
+
+	LIST_FOR_EACH(file->category_list, i)
+	{
+		category = list_get(file->category_list, i);
+		category->refresh_func(category->user_data);
+	}
 }

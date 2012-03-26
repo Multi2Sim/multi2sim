@@ -48,9 +48,13 @@ struct vmem_t *vmem_create(void)
 
 	/* State file */
 	state_file_new_category(visual_state_file, "Memory hierarchy",
-		vmem_write_checkpoint, vmem_read_checkpoint, vmem);
-	state_file_new_command(visual_state_file, "mem.ttag", vmem_process_trace_line, vmem);
-	state_file_new_command(visual_state_file, "mem.blk", vmem_process_trace_line, vmem);
+		(state_file_write_checkpoint_func_t) vmem_write_checkpoint,
+		(state_file_read_checkpoint_func_t) vmem_read_checkpoint,
+		(state_file_refresh_func_t) vmem_refresh, vmem);
+	state_file_new_command(visual_state_file, "mem.ttag",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line, vmem);
+	state_file_new_command(visual_state_file, "mem.blk",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line, vmem);
 
 	/* Main window */
 	vmem->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -85,20 +89,23 @@ void vmem_free(struct vmem_t *vmem)
 }
 
 
-void vmem_read_checkpoint(void *user_data, FILE *f)
+void vmem_read_checkpoint(struct vmem_t *vmem, FILE *f)
 {
 }
 
 
-void vmem_write_checkpoint(void *user_data, FILE *f)
+void vmem_write_checkpoint(struct vmem_t *vmem, FILE *f)
 {
 }
 
 
-void vmem_process_trace_line(void *user_data, struct trace_line_t *trace_line)
+void vmem_refresh(struct vmem_t *vmem)
 {
-	struct vmem_t *vmem = user_data;
+}
 
+
+void vmem_process_trace_line(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
 	char *command;
 
 	command = trace_line_get_command(trace_line);

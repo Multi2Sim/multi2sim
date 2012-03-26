@@ -57,6 +57,7 @@ long int trace_line_get_offset(struct trace_line_t *line);
 char *trace_line_get_command(struct trace_line_t *line);
 char *trace_line_get_symbol_value(struct trace_line_t *line, char *symbol_name);
 int trace_line_get_symbol_value_int(struct trace_line_t *line, char *symbol_name);
+long long trace_line_get_symbol_value_long_long(struct trace_line_t *line, char *symbol_name);
 unsigned int trace_line_get_symbol_value_hex(struct trace_line_t *line, char *symbol_name);
 
 
@@ -70,19 +71,22 @@ struct state_file_t;
 
 typedef void (*state_file_write_checkpoint_func_t)(void *user_data, FILE *f);
 typedef void (*state_file_read_checkpoint_func_t)(void *user_data, FILE *f);
-typedef void (*state_file_process_trace_line_func_t)(void *user_data,
-	struct trace_line_t *trace_line);
+typedef void (*state_file_process_trace_line_func_t)(void *user_data, struct trace_line_t *trace_line);
+typedef void (*state_file_refresh_func_t)(void *user_data);
 
 extern struct state_file_t *visual_state_file;
 
 struct state_file_t *state_file_create(char *trace_file_name);
 void state_file_free(struct state_file_t *file);
 
+long long state_file_get_num_cycles(struct state_file_t *file);
+
 void state_file_create_checkpoints(struct state_file_t *file);
 
 void state_file_new_category(struct state_file_t *file, char *name,
 	state_file_read_checkpoint_func_t read_checkpoint_func,
 	state_file_write_checkpoint_func_t write_checkpoint_func,
+	state_file_refresh_func_t refresh_func,
 	void *user_data);
 void state_file_new_command(struct state_file_t *file, char *command_name,
 	state_file_process_trace_line_func_t process_trace_line_func,
@@ -90,6 +94,8 @@ void state_file_new_command(struct state_file_t *file, char *command_name,
 
 struct trace_line_t *state_file_header_first(struct state_file_t *file);
 struct trace_line_t *state_file_header_next(struct state_file_t *file);
+
+void state_file_refresh(struct state_file_t *file);
 
 
 
@@ -354,9 +360,10 @@ GtkWidget *cycle_bar_get_widget(struct cycle_bar_t *cycle_bar);
 struct vmem_t *vmem_create(void);
 void vmem_free(struct vmem_t *vmem);
 
-void vmem_read_checkpoint(void *user_data, FILE *f);
-void vmem_write_checkpoint(void *user_data, FILE *f);
-void vmem_process_trace_line(void *user_data, struct trace_line_t *trace_line);
+void vmem_read_checkpoint(struct vmem_t *vmem, FILE *f);
+void vmem_write_checkpoint(struct vmem_t *vmem, FILE *f);
+void vmem_refresh(struct vmem_t *vmem);
+void vmem_process_trace_line(struct vmem_t *vmem, struct trace_line_t *trace_line);
 
 
 #endif

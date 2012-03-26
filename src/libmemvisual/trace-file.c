@@ -370,6 +370,15 @@ int trace_line_get_symbol_value_int(struct trace_line_t *line, char *symbol_name
 }
 
 
+long long trace_line_get_symbol_value_long_long(struct trace_line_t *line, char *symbol_name)
+{
+	char *value;
+
+	value = hash_table_get(line->symbol_table, symbol_name);
+	return value ? atoll(value) : 0;
+}
+
+
 unsigned int trace_line_get_symbol_value_hex(struct trace_line_t *line, char *symbol_name)
 {
 	char *value;
