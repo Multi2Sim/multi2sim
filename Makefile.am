@@ -13,7 +13,8 @@ images = \
 	images/back-triple.png \
 	images/forward-single.png \
 	images/forward-double.png \
-	images/forward-triple.png
+	images/forward-triple.png \
+	images/go.png
 
 pkgdata_imagesdir = $(pkgdatadir)/images
 pkgdata_images_DATA = ${images}

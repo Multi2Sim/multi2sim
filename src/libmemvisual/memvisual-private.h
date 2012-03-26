@@ -335,6 +335,8 @@ extern char cycle_bar_forward_single_path[MAX_PATH_SIZE];
 extern char cycle_bar_forward_double_path[MAX_PATH_SIZE];
 extern char cycle_bar_forward_triple_path[MAX_PATH_SIZE];
 
+extern char cycle_bar_go_path[MAX_PATH_SIZE];
+
 struct cycle_bar_t;
 
 struct cycle_bar_t *cycle_bar_create(void);

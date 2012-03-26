@@ -166,6 +166,8 @@ void vmem_run(char *file_name)
 		cycle_bar_forward_double_path, sizeof cycle_bar_forward_double_path);
 	m2s_dist_file("forward-triple.png", m2s_images_path, m2s_images_path,
 		cycle_bar_forward_triple_path, sizeof cycle_bar_forward_triple_path);
+	m2s_dist_file("go.png", m2s_images_path, m2s_images_path,
+		cycle_bar_go_path, sizeof cycle_bar_go_path);
 
 	/* State file */
 	visual_state_file = state_file_create(file_name);
