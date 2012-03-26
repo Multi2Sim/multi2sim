@@ -85,8 +85,6 @@ struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	vmod->low_vmod_list = list_create();
-	vmod->high_vmod_list = list_create();
 	vmod->level = level;
 
 	/* Create layout */
@@ -109,8 +107,6 @@ struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
 
 void vmod_free(struct vmod_t *vmod)
 {
-	list_free(vmod->low_vmod_list);
-	list_free(vmod->high_vmod_list);
 	vlist_free(vmod->access_list);
 	vcache_free(vmod->vcache);
 	free(vmod->name);

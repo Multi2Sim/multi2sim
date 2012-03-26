@@ -5,6 +5,7 @@ libmemvisual_a_SOURCES = \
 
 if HAVE_GTK
 libmemvisual_a_SOURCES += \
+	cycle-bar.c \
 	info-popup.c \
 	memvisual.c \
 	memvisual-private.h \
