@@ -97,11 +97,6 @@ struct trace_line_t *state_file_header_next(struct state_file_t *file);
  * Info Pop-up
  */
 
-struct info_popup_t
-{
-	GtkWidget *window;
-};
-
 struct info_popup_t *info_popup_create(char *text);
 void info_popup_free(struct info_popup_t *popup);
 
@@ -225,10 +220,6 @@ struct vmod_t
 	/* Widget representing module */
 	GtkWidget *widget;
 
-	/* List of low and high modules */
-	struct list_t *low_vmod_list;
-	struct list_t *high_vmod_list;
-
 	/* Associated cache */
 	struct vcache_t *vcache;
 
@@ -240,8 +231,6 @@ struct vmod_t
 struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
 		int sub_block_size, int num_sharers, int level);
 void vmod_free(struct vmod_t *vmod);
-
-gboolean vmod_draw_event(GtkWidget *widget, GdkEventConfigure *event, struct vmod_t *vmod);
 
 
 
@@ -330,6 +319,28 @@ void vcache_free(struct vcache_t *vcache);
 
 void vcache_set_block(struct vcache_t *vcache, int set, int way,
 	unsigned int tag, char *state);
+
+
+
+
+/*
+ * Cycle Bar
+ */
+
+extern char cycle_bar_back_single_path[MAX_PATH_SIZE];
+extern char cycle_bar_back_double_path[MAX_PATH_SIZE];
+extern char cycle_bar_back_triple_path[MAX_PATH_SIZE];
+
+extern char cycle_bar_forward_single_path[MAX_PATH_SIZE];
+extern char cycle_bar_forward_double_path[MAX_PATH_SIZE];
+extern char cycle_bar_forward_triple_path[MAX_PATH_SIZE];
+
+struct cycle_bar_t;
+
+struct cycle_bar_t *cycle_bar_create(void);
+void cycle_bar_free(struct cycle_bar_t *cycle_bar);
+
+GtkWidget *cycle_bar_get_widget(struct cycle_bar_t *cycle_bar);
 
 
 

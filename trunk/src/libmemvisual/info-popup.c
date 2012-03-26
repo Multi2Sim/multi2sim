@@ -20,6 +20,12 @@
 #include <memvisual-private.h>
 
 
+struct info_popup_t
+{
+	GtkWidget *window;
+};
+
+
 static gboolean info_popup_button_press_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
 {
 	int width;

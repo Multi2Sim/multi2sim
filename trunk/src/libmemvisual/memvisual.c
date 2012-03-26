@@ -59,11 +59,18 @@ struct vmem_t *vmem_create(void)
 	gtk_container_set_border_width(GTK_CONTAINER(vmem->window), 0);
 	g_signal_connect(G_OBJECT(vmem->window), "destroy", G_CALLBACK(vmem_destroy_event), vmem);
 
+	/* Cycle bar */
+	struct cycle_bar_t *cycle_bar;
+	cycle_bar = cycle_bar_create();
+
 	/* Panel */
 	vmem->vmod_panel = vmod_panel_create();
-	gtk_container_add(GTK_CONTAINER(vmem->window), vmem->vmod_panel->widget);
 
-	/* Show window */
+	/* Vertical box */
+	GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(vbox), cycle_bar_get_widget(cycle_bar));
+	gtk_container_add(GTK_CONTAINER(vbox), vmem->vmod_panel->widget);
+	gtk_container_add(GTK_CONTAINER(vmem->window), vbox);
 	gtk_widget_show_all(vmem->window);
 
 	/* Return */
@@ -147,6 +154,18 @@ void vmem_run(char *file_name)
 		vlist_image_close_path, sizeof vlist_image_close_path);
 	m2s_dist_file("close-sel.png", m2s_images_path, m2s_images_path,
 		vlist_image_close_sel_path, sizeof vlist_image_close_sel_path);
+	m2s_dist_file("back-single.png", m2s_images_path, m2s_images_path,
+		cycle_bar_back_single_path, sizeof cycle_bar_back_single_path);
+	m2s_dist_file("back-double.png", m2s_images_path, m2s_images_path,
+		cycle_bar_back_double_path, sizeof cycle_bar_back_double_path);
+	m2s_dist_file("back-triple.png", m2s_images_path, m2s_images_path,
+		cycle_bar_back_triple_path, sizeof cycle_bar_back_triple_path);
+	m2s_dist_file("forward-single.png", m2s_images_path, m2s_images_path,
+		cycle_bar_forward_single_path, sizeof cycle_bar_forward_single_path);
+	m2s_dist_file("forward-double.png", m2s_images_path, m2s_images_path,
+		cycle_bar_forward_double_path, sizeof cycle_bar_forward_double_path);
+	m2s_dist_file("forward-triple.png", m2s_images_path, m2s_images_path,
+		cycle_bar_forward_triple_path, sizeof cycle_bar_forward_triple_path);
 
 	/* State file */
 	visual_state_file = state_file_create(file_name);
