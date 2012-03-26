@@ -44,6 +44,18 @@ static struct string_map_t vcache_block_state_map =
 };
 
 
+#define VCACHE_NUM_BLOCK_STATE_COLORS  6
+static char *vcache_block_state_color[VCACHE_NUM_BLOCK_STATE_COLORS] =
+{
+	"#eeeeee",	/* light gray */
+	"#33ccff",	/* blue */
+	"#00ff33",	/* green */
+	"#ffff33",	/* yellow */
+	"#ff9900",	/* orange */
+	"#cc99ff"	/* purple */
+};
+
+
 static void vcache_refresh(struct vcache_t *vcache)
 {
 	GtkWidget *layout = vcache->layout;
@@ -237,9 +249,10 @@ static void vcache_refresh(struct vcache_t *vcache)
 			gtk_layout_put(GTK_LAYOUT(layout), event_box, x, y);
 			gtk_widget_show(event_box);
 
-			/*GdkColor color;
-			gdk_color_parse("#ffffa0", &color);
-			gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);*/
+			GdkColor color;
+			assert(IN_RANGE(block->state, 0, VCACHE_NUM_BLOCK_STATE_COLORS - 1));
+			gdk_color_parse(vcache_block_state_color[block->state], &color);
+			gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
 
 			/* Next way */
 			x += cell_width;
@@ -352,11 +365,34 @@ struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_si
 	gtk_widget_modify_bg(first_col_layout, GTK_STATE_NORMAL, &color_gray);
 	vcache->first_col_layout = first_col_layout;
 
+	/* Top-left label */
+	GtkWidget *top_left_label = gtk_label_new(vcache->name);
+	gtk_widget_set_size_request(top_left_label, VCACHE_FIRST_COL_WIDTH - 1, VCACHE_FIRST_ROW_HEIGHT - 1);
+	gtk_widget_show(top_left_label);
+
+	/* Top-left label font attributes */
+	PangoAttrList *attrs;
+	attrs = pango_attr_list_new();
+	pango_attr_list_insert(attrs, pango_attr_size_new_absolute(VCACHE_FONT_SIZE << 10));
+	pango_attr_list_insert(attrs, pango_attr_weight_new(PANGO_WEIGHT_BOLD));
+	gtk_label_set_attributes(GTK_LABEL(top_left_label), attrs);
+
+	/* Top-left event box */
+	GtkWidget *top_left_event_box = gtk_event_box_new();
+	gtk_container_add(GTK_CONTAINER(top_left_event_box), top_left_label);
+	gtk_widget_show(top_left_event_box);
+
+	/* Top-left event box background color */
+	GdkColor color;
+	gdk_color_parse("white", &color);
+	gtk_widget_modify_bg(top_left_event_box, GTK_STATE_NORMAL, &color);
+
 	/* Table */
 	GtkWidget *table;
 	table = gtk_table_new(3, 3, FALSE);
 	gtk_table_attach(GTK_TABLE(table), layout, 1, 2, 1, 2,
 		GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
+	gtk_table_attach(GTK_TABLE(table), top_left_event_box, 0, 1, 0, 1, 0, 0, 0, 0);
 	gtk_table_attach(GTK_TABLE(table), first_row_layout, 1, 2, 0, 1, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0, 0);
 	gtk_table_attach(GTK_TABLE(table), first_col_layout, 0, 1, 1, 2, 0, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
 	gtk_table_attach(GTK_TABLE(table), hscrollbar, 1, 2, 2, 3, GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_FILL, 0, 0);
