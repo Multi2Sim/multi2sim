@@ -244,6 +244,8 @@ void vmod_write_checkpoint(struct vmod_t *vmod, FILE *f);
 
 void vmod_refresh(struct vmod_t *vmod);
 
+GtkWidget *vmod_get_widget(struct vmod_t *vmod);
+
 
 
 
@@ -338,6 +340,8 @@ void vcache_read_checkpoint(struct vcache_t *vcache, FILE *f);
 void vcache_write_checkpoint(struct vcache_t *vcache, FILE *f);
 
 void vcache_refresh(struct vcache_t *vcache);
+
+GtkWidget *vcache_get_widget(struct vcache_t *vcache);
 
 
 

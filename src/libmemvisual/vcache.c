@@ -508,3 +508,9 @@ void vcache_refresh(struct vcache_t *vcache)
 	gtk_container_check_resize(GTK_CONTAINER(vcache->first_row_layout));
 	gtk_container_check_resize(GTK_CONTAINER(vcache->first_col_layout));
 }
+
+
+GtkWidget *vcache_get_widget(struct vcache_t *vcache)
+{
+	return vcache->widget;
+}

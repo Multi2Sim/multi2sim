@@ -217,10 +217,6 @@ static void state_file_read_checkpoint(struct state_file_t *file, int index)
 		category->read_checkpoint_func(category->user_data,
 			file->checkpoint_file);
 	}
-
-	//////////
-	printf("checkpoint %d loaded - cycle %lld\n", index, file->cycle);
-	fflush(stdout);
 }
 
 
