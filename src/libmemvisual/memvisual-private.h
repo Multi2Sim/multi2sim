@@ -96,6 +96,7 @@ struct trace_line_t *state_file_header_first(struct state_file_t *file);
 struct trace_line_t *state_file_header_next(struct state_file_t *file);
 
 void state_file_refresh(struct state_file_t *file);
+void state_file_go_to_cycle(struct state_file_t *file, long long cycle);
 
 
 
@@ -241,6 +242,8 @@ void vmod_free(struct vmod_t *vmod);
 void vmod_read_checkpoint(struct vmod_t *vmod, FILE *f);
 void vmod_write_checkpoint(struct vmod_t *vmod, FILE *f);
 
+void vmod_refresh(struct vmod_t *vmod);
+
 
 
 
@@ -266,6 +269,8 @@ struct vmod_panel_t
 
 struct vmod_panel_t *vmod_panel_create(void);
 void vmod_panel_free(struct vmod_panel_t *panel);
+
+GtkWidget *vmod_panel_get_widget(struct vmod_panel_t *panel);
 
 void vmod_panel_refresh(struct vmod_panel_t *panel);
 
@@ -332,6 +337,8 @@ void vcache_set_block(struct vcache_t *vcache, int set, int way,
 void vcache_read_checkpoint(struct vcache_t *vcache, FILE *f);
 void vcache_write_checkpoint(struct vcache_t *vcache, FILE *f);
 
+void vcache_refresh(struct vcache_t *vcache);
+
 
 
 
@@ -355,6 +362,7 @@ struct cycle_bar_t *cycle_bar_create(void);
 void cycle_bar_free(struct cycle_bar_t *cycle_bar);
 
 GtkWidget *cycle_bar_get_widget(struct cycle_bar_t *cycle_bar);
+long long cycle_bar_get_cycle(struct cycle_bar_t *cycle_bar);
 
 
 
