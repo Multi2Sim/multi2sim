@@ -160,6 +160,10 @@ static void isa_debug_call()
 	struct elf_symbol_t *from, *to;
 	char *action;
 
+	/* Do nothing on speculative mode */
+	if (isa_spec_mode)
+		return;
+
 	/* Call or return. Otherwise, exit */
 	if (!strncmp(isa_inst.format, "call", 4))
 		action = "call";
