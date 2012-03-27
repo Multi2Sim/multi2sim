@@ -93,12 +93,13 @@ struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
 	/* List of accesses */
 	vmod->access_list = vlist_create("Access list", 200, 30,
 		vmod_access_get_name, vmod_access_get_desc);
-	gtk_container_add(GTK_CONTAINER(vmod->widget), vmod->access_list->widget);
+	gtk_box_pack_start(GTK_BOX(vmod->widget), vmod->access_list->widget, FALSE, FALSE, 0);
 
 	/* Cache */
-	vmod->vcache = vcache_create(name, num_sets, assoc, block_size,
-		sub_block_size, num_sharers);
-	gtk_container_add(GTK_CONTAINER(vmod->widget), vmod->vcache->widget);
+	struct vcache_t *vcache;
+	vcache = vcache_create(name, num_sets, assoc, block_size, sub_block_size, num_sharers);
+	gtk_box_pack_start(GTK_BOX(vmod->widget), vcache_get_widget(vcache), TRUE, TRUE, 0);
+	vmod->vcache = vcache;
 
 	/* Return */
 	return vmod;
@@ -129,4 +130,10 @@ void vmod_write_checkpoint(struct vmod_t *vmod, FILE *f)
 void vmod_refresh(struct vmod_t *vmod)
 {
 	vcache_refresh(vmod->vcache);
+}
+
+
+GtkWidget *vmod_get_widget(struct vmod_t *vmod)
+{
+	return vmod->widget;
 }

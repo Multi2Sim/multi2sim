@@ -159,6 +159,10 @@ static void vmod_panel_create_widget(struct vmod_panel_t *panel)
 	{
 		level = list_get(panel->vmod_level_list, level_id);
 
+		/* Empty level */
+		if (!list_count(level->vmod_list))
+			continue;
+
 		/* Horizontal box for a new level */
 		GtkWidget *hbox = gtk_hbox_new(0, VMOD_PADDING);
 		gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
@@ -167,7 +171,7 @@ static void vmod_panel_create_widget(struct vmod_panel_t *panel)
 		LIST_FOR_EACH(level->vmod_list, vmod_id)
 		{
 			vmod = list_get(level->vmod_list, vmod_id);
-			gtk_container_add(GTK_CONTAINER(hbox), vmod->widget);
+			gtk_container_add(GTK_CONTAINER(hbox), vmod_get_widget(vmod));
 
 			if (vmod_id < level->vmod_list->count - 1)
 				gtk_container_add(GTK_CONTAINER(hbox), gtk_vseparator_new());
