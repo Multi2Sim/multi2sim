@@ -454,3 +454,57 @@ void vcache_set_block(struct vcache_t *vcache, int set, int way,
 	block->tag = tag;
 	block->state = map_string(&vcache_block_state_map, state);
 }
+
+
+void vcache_read_checkpoint(struct vcache_t *vcache, FILE *f)
+{
+	int set;
+	int way;
+
+	for (set = 0; set < vcache->num_sets; set++)
+	{
+		for (way = 0; way < vcache->assoc; way++)
+		{
+			struct vcache_block_t *block;
+
+			unsigned char state;
+
+			/* Get block */
+			block = &vcache->blocks[set * vcache->assoc + way];
+
+			/* Read tag */
+			fread(&block->tag, 1, 4, f);
+
+			/* Read state */
+			fread(&state, 1, 1, f);
+			block->state = state;
+		}
+	}
+}
+
+
+void vcache_write_checkpoint(struct vcache_t *vcache, FILE *f)
+{
+	int set;
+	int way;
+
+	for (set = 0; set < vcache->num_sets; set++)
+	{
+		for (way = 0; way < vcache->assoc; way++)
+		{
+			struct vcache_block_t *block;
+
+			unsigned char state;
+
+			/* Get block */
+			block = &vcache->blocks[set * vcache->assoc + way];
+
+			/* Dump tag */
+			fwrite(&block->tag, 1, 4, f);
+
+			/* Dump state */
+			state = block->state;
+			fwrite(&state, 1, 1, f);
+		}
+	}
+}

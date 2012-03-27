@@ -388,6 +388,52 @@ void str_printf(char **pbuf, int *psize, char *fmt, ...)
 }
 
 
+void str_read_from_file(FILE *f, char *buf, int buf_size)
+{
+	int size;
+	int count;
+
+	/* Read size */
+	count = fread(&size, 1, 4, f);
+	if (count != 4)
+	{
+		fprintf(stderr, "%s: invalid file format", __FUNCTION__);
+		exit(1);
+	}
+
+	/* Check buffer size */
+	if (size > buf_size)
+	{
+		fprintf(stderr, "%s: buffer too small", __FUNCTION__);
+		exit(1);
+	}
+
+	/* Read string */
+	count = fread(buf, 1, size, f);
+	if (count != size)
+	{
+		fprintf(stderr, "%s: invalid file format", __FUNCTION__);
+		exit(1);
+	}
+}
+
+
+void str_write_to_file(FILE *f, char *buf)
+{
+	int size;
+	int count;
+
+	size = strlen(buf) + 1;
+	count = fwrite(&size, 1, 4, f);
+	count += fwrite(buf, 1, size, f);
+	if (count != size + 4)
+	{
+		fprintf(stderr, "%s: error writing to file", __FUNCTION__);
+		exit(1);
+	}
+}
+
+
 
 
 /*

@@ -247,6 +247,9 @@ int str_to_int(char *str);
  *   obj_dump(struct obj_t *obj, char *buf, int size); */
 void str_printf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 
+void str_read_from_file(FILE *f, char *buf, int buf_size);
+void str_write_to_file(FILE *f, char *buf);
+
 
 
 
