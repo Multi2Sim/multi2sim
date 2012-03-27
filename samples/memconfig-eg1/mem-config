@@ -41,7 +41,7 @@ Type = Cache
 Geometry = geo-l1
 HighNetwork = net-l1-l2 
 LowNetwork = net-l2-mm
-LowModules = mod-l2-mm
+LowModules = mod-mm
 AddressRange = BOUNDS 0x00000000 0x7FFFFFFF
 
 [Module mod-l2-1]
@@ -49,7 +49,7 @@ Type = Cache
 Geometry = geo-l2
 HighNetwork = net-l1-l2  
 LowNetwork = net-l2-mm
-LowModules = mod-l2-mm
+LowModules = mod-mm
 AddressRange = BOUNDS 0x80000000 0xFFFFFFFF
 
 
