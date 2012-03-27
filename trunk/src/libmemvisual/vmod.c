@@ -125,3 +125,8 @@ void vmod_write_checkpoint(struct vmod_t *vmod, FILE *f)
 	vcache_write_checkpoint(vmod->vcache, f);
 }
 
+
+void vmod_refresh(struct vmod_t *vmod)
+{
+	vcache_refresh(vmod->vcache);
+}

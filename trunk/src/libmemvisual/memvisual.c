@@ -25,6 +25,7 @@ struct vmem_t
 {
 	GtkWidget *window;
 
+	struct cycle_bar_t *cycle_bar;
 	struct vmod_panel_t *vmod_panel;
 };
 
@@ -65,14 +66,19 @@ struct vmem_t *vmem_create(void)
 	/* Cycle bar */
 	struct cycle_bar_t *cycle_bar;
 	cycle_bar = cycle_bar_create();
+	vmem->cycle_bar = cycle_bar;
 
 	/* Panel */
-	vmem->vmod_panel = vmod_panel_create();
+	struct vmod_panel_t *vmod_panel;
+	vmod_panel = vmod_panel_create();
+	vmem->vmod_panel = vmod_panel;
 
 	/* Vertical box */
 	GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
-	gtk_container_add(GTK_CONTAINER(vbox), cycle_bar_get_widget(cycle_bar));
-	gtk_container_add(GTK_CONTAINER(vbox), vmem->vmod_panel->widget);
+	gtk_box_pack_start(GTK_BOX(vbox), cycle_bar_get_widget(cycle_bar), FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(vbox), vmod_panel_get_widget(vmod_panel), TRUE, TRUE, 0);
+
+	/* Show window */
 	gtk_container_add(GTK_CONTAINER(vmem->window), vbox);
 	gtk_widget_show_all(vmem->window);
 
@@ -168,8 +174,11 @@ void vmem_process_trace_line(struct vmem_t *vmem, struct trace_line_t *trace_lin
 
 void vmem_refresh(struct vmem_t *vmem)
 {
-	printf("%s\n", __FUNCTION__);
-	fflush(stdout);
+	long long cycle;
+
+	cycle = cycle_bar_get_cycle(vmem->cycle_bar);
+	state_file_go_to_cycle(visual_state_file, cycle);
+	vmod_panel_refresh(vmem->vmod_panel);
 }
 
 

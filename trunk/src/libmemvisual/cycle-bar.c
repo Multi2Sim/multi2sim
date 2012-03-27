@@ -273,3 +273,12 @@ GtkWidget *cycle_bar_get_widget(struct cycle_bar_t *cycle_bar)
 {
 	return cycle_bar->widget;
 }
+
+
+long long cycle_bar_get_cycle(struct cycle_bar_t *cycle_bar)
+{
+	long long cycle;
+
+	cycle = gtk_range_get_value(GTK_RANGE(cycle_bar->scale));
+	return cycle;
+}
