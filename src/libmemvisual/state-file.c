@@ -174,7 +174,8 @@ struct state_file_t
 	char *checkpoint_file_name;
 	FILE *checkpoint_file;
 
-	/* Number of cycles */
+	/* Cycles */
+	long long cycle;
 	long long num_cycles;
 
 	/* List of categories */
@@ -191,6 +192,36 @@ struct state_file_t
 	struct trace_line_t *header_trace_line;
 	long int header_trace_line_offset;
 };
+
+
+static void state_file_read_checkpoint(struct state_file_t *file, int index)
+{
+	struct state_checkpoint_t *checkpoint;
+	struct state_category_t *category;
+	int i;
+
+	/* Get checkpoint */
+	checkpoint = list_get(file->checkpoint_list, index);
+	if (!checkpoint)
+		panic("%s: invalid checkpoint index", __FUNCTION__);
+
+	/* Set file positions */
+	fseek(file->checkpoint_file, checkpoint->checkpoint_file_offset, SEEK_SET);
+	fseek(file->unzipped_trace_file, checkpoint->unzipped_trace_file_offset, SEEK_SET);
+	file->cycle = checkpoint->cycle;
+
+	/* Read checkpoint for every category */
+	LIST_FOR_EACH(file->category_list, i)
+	{
+		category = list_get(file->category_list, i);
+		category->read_checkpoint_func(category->user_data,
+			file->checkpoint_file);
+	}
+
+	//////////
+	printf("checkpoint %d loaded - cycle %lld\n", index, file->cycle);
+	fflush(stdout);
+}
 
 
 static void state_file_write_checkpoint(struct state_file_t *file)
@@ -403,6 +434,9 @@ void state_file_create_checkpoints(struct state_file_t *file)
 	printf("Creating checkpoints (%.1fMB, 100%%)   \n",
 		ftell(file->checkpoint_file) / 1.048e6);
 	fflush(stdout);
+
+	/* Load first checkpoint */
+	state_file_read_checkpoint(file, 0);
 }
 
 
@@ -489,4 +523,63 @@ void state_file_refresh(struct state_file_t *file)
 		category = list_get(file->category_list, i);
 		category->refresh_func(category->user_data);
 	}
+}
+
+
+void state_file_go_to_cycle(struct state_file_t *file, long long cycle)
+{
+	long long checkpoint_cycle;
+	int checkpoint_index;
+
+	/* If we are already in this cycle, do nothing */
+	if (file->cycle == cycle)
+		return;
+
+	/* Load a checkpoint */
+	checkpoint_index = cycle / STATE_CHECKPOINT_INTERVAL;
+	checkpoint_cycle = checkpoint_index * STATE_CHECKPOINT_INTERVAL;
+	if (cycle < file->cycle || checkpoint_cycle > file->cycle)
+		state_file_read_checkpoint(file, checkpoint_index);
+
+	/* Go to cycle */
+	for (;;)
+	{
+		struct trace_line_t *trace_line;
+		struct state_command_t *state_command;
+		long int unzipped_trace_file_pos;
+		char *command;
+
+		/* Read a trace line */
+		unzipped_trace_file_pos = ftell(file->unzipped_trace_file);
+		trace_line = trace_line_create_from_file(file->unzipped_trace_file);
+		if (!trace_line)
+			break;
+
+		/* New cycle */
+		command = trace_line_get_command(trace_line);
+		if (!strcmp(command, "c"))
+		{
+			/* If we passed the target cycle, done */
+			if (trace_line_get_symbol_value_long_long(trace_line, "clk") > cycle)
+			{
+				fseek(file->unzipped_trace_file, unzipped_trace_file_pos, SEEK_SET);
+				trace_line_free(trace_line);
+				break;
+			}
+		}
+		else
+		{
+			/* Process trace line */
+			state_command = hash_table_get(file->command_table, command);
+			if (!state_command)
+				fatal("%s: unknown command '%s'", __FUNCTION__, command);
+			state_command->process_trace_line_func(state_command->user_data, trace_line);
+		}
+
+		/* Free trace line */
+		trace_line_free(trace_line);
+	}
+
+	/* Cycle reached */
+	file->cycle = cycle;
 }

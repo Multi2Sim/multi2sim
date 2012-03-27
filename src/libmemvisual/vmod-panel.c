@@ -116,7 +116,7 @@ static void vmod_panel_read_config(struct vmod_panel_t *panel)
 }
 
 
-static void vmod_panel_populate(struct vmod_panel_t *panel)
+static void vmod_panel_create_widget(struct vmod_panel_t *panel)
 {
 	struct vmod_t *vmod;
 	struct vmod_level_t *level;
@@ -128,6 +128,8 @@ static void vmod_panel_populate(struct vmod_panel_t *panel)
 	int vmod_id;
 
 	char *vmod_name;
+
+	GtkWidget *vbox;
 
 	/* Get number of levels */
 	HASH_TABLE_FOR_EACH(panel->vmod_table, vmod_name, vmod)
@@ -152,13 +154,14 @@ static void vmod_panel_populate(struct vmod_panel_t *panel)
 	}
 
 	/* Insert levels */
+	vbox = gtk_vbox_new(FALSE, 0);
 	LIST_FOR_EACH(panel->vmod_level_list, level_id)
 	{
 		level = list_get(panel->vmod_level_list, level_id);
 
 		/* Horizontal box for a new level */
 		GtkWidget *hbox = gtk_hbox_new(0, VMOD_PADDING);
-		gtk_container_add(GTK_CONTAINER(panel->widget), hbox);
+		gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
 
 		/* Modules */
 		LIST_FOR_EACH(level->vmod_list, vmod_id)
@@ -172,8 +175,11 @@ static void vmod_panel_populate(struct vmod_panel_t *panel)
 
 		/* Horizontal bar */
 		if (level_id < panel->vmod_level_list->count - 1)
-			gtk_container_add(GTK_CONTAINER(panel->widget), gtk_hseparator_new());
+			gtk_box_pack_start(GTK_BOX(vbox), gtk_hseparator_new(), FALSE, FALSE, 0);
 	}
+
+	/* Assign panel widget */
+	panel->widget = vbox;
 }
 
 
@@ -190,12 +196,9 @@ struct vmod_panel_t *vmod_panel_create(void)
 	panel->vmod_table = hash_table_create(0, FALSE);
 	panel->vmod_level_list = list_create();
 
-	/* Create widget */
-	panel->widget = gtk_vbox_new(0, 0);
-
 	/* Read and add components to the panel */
 	vmod_panel_read_config(panel);
-	vmod_panel_populate(panel);
+	vmod_panel_create_widget(panel);
 
 	/* Return */
 	return panel;
@@ -220,4 +223,21 @@ void vmod_panel_free(struct vmod_panel_t *panel)
 
 	/* Free panel */
 	free(panel);
+}
+
+
+GtkWidget *vmod_panel_get_widget(struct vmod_panel_t *panel)
+{
+	return panel->widget;
+}
+
+
+void vmod_panel_refresh(struct vmod_panel_t *panel)
+{
+	struct vmod_t *vmod;
+
+	char *vmod_name;
+
+	HASH_TABLE_FOR_EACH(panel->vmod_table, vmod_name, vmod)
+		vmod_refresh(vmod);
 }
