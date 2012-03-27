@@ -97,7 +97,7 @@ struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
 
 	/* Cache */
 	vmod->vcache = vcache_create(name, num_sets, assoc, block_size,
-			sub_block_size, num_sharers);
+		sub_block_size, num_sharers);
 	gtk_container_add(GTK_CONTAINER(vmod->widget), vmod->vcache->widget);
 
 	/* Return */
@@ -112,3 +112,16 @@ void vmod_free(struct vmod_t *vmod)
 	free(vmod->name);
 	free(vmod);
 }
+
+
+void vmod_read_checkpoint(struct vmod_t *vmod, FILE *f)
+{
+	vcache_read_checkpoint(vmod->vcache, f);
+}
+
+
+void vmod_write_checkpoint(struct vmod_t *vmod, FILE *f)
+{
+	vcache_write_checkpoint(vmod->vcache, f);
+}
+

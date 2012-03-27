@@ -238,6 +238,9 @@ struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
 		int sub_block_size, int num_sharers, int level);
 void vmod_free(struct vmod_t *vmod);
 
+void vmod_read_checkpoint(struct vmod_t *vmod, FILE *f);
+void vmod_write_checkpoint(struct vmod_t *vmod, FILE *f);
+
 
 
 
@@ -325,6 +328,9 @@ void vcache_free(struct vcache_t *vcache);
 
 void vcache_set_block(struct vcache_t *vcache, int set, int way,
 	unsigned int tag, char *state);
+
+void vcache_read_checkpoint(struct vcache_t *vcache, FILE *f);
+void vcache_write_checkpoint(struct vcache_t *vcache, FILE *f);
 
 
 

@@ -58,39 +58,6 @@ struct trace_line_t
 
 #define isidchar(c) (isalnum((c)) || (c) == '.' || (c) == '_' || (c) =='-')
 
-static void trace_line_read_string(FILE *f, char *buf, int buf_size)
-{
-	int size;
-	int count;
-	
-	/* Read size */
-	count = fread(&size, 1, 4, f);
-	if (count != 4)
-		panic("%s: invalid file format", __FUNCTION__);
-	
-	/* Check buffer size */
-	if (size > buf_size)
-		fatal("%s: buffer too small", __FUNCTION__);
-
-	/* Read string */
-	count = fread(buf, 1, size, f);
-	if (count != size)
-		panic("%s: invalid file format", __FUNCTION__);
-}
-
-
-static void trace_line_write_string(FILE *f, char *buf)
-{
-	int size;
-	int count;
-
-	size = strlen(buf) + 1;
-	count = fwrite(&size, 1, 4, f);
-	count += fwrite(buf, 1, size, f);
-	if (count != size + 4)
-		fatal("%s: error writing to file", __FUNCTION__);
-}
-
 
 /*
 Read trace line from a file with the following format.
@@ -144,7 +111,7 @@ struct trace_line_t *trace_line_create_from_file(FILE *f)
 	line->symbol_table = hash_table_create(13, FALSE);
 
 	/* Read command */
-	trace_line_read_string(f, buf, sizeof buf);
+	str_read_from_file(f, buf, sizeof buf);
 	line->command = strdup(buf);
 	if (!line->command)
 		fatal("%s: out of memory", __FUNCTION__);
@@ -161,8 +128,8 @@ struct trace_line_t *trace_line_create_from_file(FILE *f)
 		char *symbol_value;
 
 		/* Read symbol */
-		trace_line_read_string(f, symbol_name, sizeof symbol_name);
-		trace_line_read_string(f, buf, sizeof buf);
+		str_read_from_file(f, symbol_name, sizeof symbol_name);
+		str_read_from_file(f, buf, sizeof buf);
 		symbol_value = strdup(buf);
 		if (!symbol_value)
 			fatal("%s: out of memory", __FUNCTION__);
@@ -305,7 +272,7 @@ void trace_line_dump(struct trace_line_t *line, FILE *f)
 		fatal("%s: error writing to file", __FUNCTION__);
 	
 	/* Dump command */
-	trace_line_write_string(f, line->command);
+	str_write_to_file(f, line->command);
 
 	/* Dump number of symbols */
 	num_symbols = hash_table_count(line->symbol_table);
@@ -316,8 +283,8 @@ void trace_line_dump(struct trace_line_t *line, FILE *f)
 	/* Dump symbols */
 	HASH_TABLE_FOR_EACH(line->symbol_table, symbol_name, symbol_value)
 	{
-		trace_line_write_string(f, symbol_name);
-		trace_line_write_string(f, symbol_value);
+		str_write_to_file(f, symbol_name);
+		str_write_to_file(f, symbol_value);
 	}
 }
 

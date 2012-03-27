@@ -26,7 +26,6 @@ struct vmem_t
 	GtkWidget *window;
 
 	struct vmod_panel_t *vmod_panel;
-	struct vcache_t *vcache;
 };
 
 
@@ -48,8 +47,8 @@ struct vmem_t *vmem_create(void)
 
 	/* State file */
 	state_file_new_category(visual_state_file, "Memory hierarchy",
-		(state_file_write_checkpoint_func_t) vmem_write_checkpoint,
 		(state_file_read_checkpoint_func_t) vmem_read_checkpoint,
+		(state_file_write_checkpoint_func_t) vmem_write_checkpoint,
 		(state_file_refresh_func_t) vmem_refresh, vmem);
 	state_file_new_command(visual_state_file, "mem.ttag",
 		(state_file_process_trace_line_func_t) vmem_process_trace_line, vmem);
@@ -91,16 +90,39 @@ void vmem_free(struct vmem_t *vmem)
 
 void vmem_read_checkpoint(struct vmem_t *vmem, FILE *f)
 {
+	char vmod_name[MAX_STRING_SIZE];
+
+	struct vmod_t *vmod;
+
+	int i;
+
+	/* Read caches */
+	for (i = 0; i < hash_table_count(vmem->vmod_panel->vmod_table); i++)
+	{
+		/* Get module */
+		str_read_from_file(f, vmod_name, sizeof vmod_name);
+		vmod = hash_table_get(vmem->vmod_panel->vmod_table, vmod_name);
+		if (!vmod)
+			panic("%s: invalid module name", __FUNCTION__);
+
+		/* Read cache checkpoint */
+		vcache_read_checkpoint(vmod->vcache, f);
+	}
 }
 
 
 void vmem_write_checkpoint(struct vmem_t *vmem, FILE *f)
 {
-}
+	struct vmod_t *vmod;
 
+	char *vmod_name;
 
-void vmem_refresh(struct vmem_t *vmem)
-{
+	/* Dump caches */
+	HASH_TABLE_FOR_EACH(vmem->vmod_panel->vmod_table, vmod_name, vmod)
+	{
+		str_write_to_file(f, vmod->name);
+		vmod_write_checkpoint(vmod, f);
+	}
 }
 
 
@@ -142,6 +164,14 @@ void vmem_process_trace_line(struct vmem_t *vmem, struct trace_line_t *trace_lin
 	else
 		fatal("%s: unknown command '%s'", __FUNCTION__, command);
 }
+
+
+void vmem_refresh(struct vmem_t *vmem)
+{
+	printf("%s\n", __FUNCTION__);
+	fflush(stdout);
+}
+
 
 
 
@@ -187,6 +217,7 @@ void vmem_run(char *file_name)
 
 	/* Parse trace file and create checkpoints */
 	state_file_create_checkpoints(visual_state_file);
+	state_file_refresh(visual_state_file);
 
 	/* Run GTK */
 	gtk_main();
