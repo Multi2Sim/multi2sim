@@ -21,6 +21,7 @@
 
 
 #define STATE_CHECKPOINT_INTERVAL  500
+#define STATE_PROGRESS_INTERVAL  100000
 
 
 /*
@@ -213,6 +214,8 @@ struct state_file_t *state_file_create(char *trace_file_name)
 	struct trace_file_t *trace_file;
 	struct trace_line_t *trace_line;
 
+	int num_trace_lines;
+
 	char buf[MAX_STRING_SIZE];
 
 	/* Create */
@@ -238,15 +241,31 @@ struct state_file_t *state_file_create(char *trace_file_name)
 	file->command_table = hash_table_create(0, FALSE);
 
 	/* Unpack trace */
+	num_trace_lines = 0;
 	trace_file = trace_file_create(trace_file_name);
 	while ((trace_line = trace_line_create_from_trace_file(trace_file)))
 	{
+		/* Copy trace */
 		trace_line_dump(trace_line, file->unzipped_trace_file);
 		if (!strcmp(trace_line_get_command(trace_line), "c"))
 			file->num_cycles = trace_line_get_symbol_value_long_long(trace_line, "clk");
 		trace_line_free(trace_line);
+
+		/* Show progress */
+		num_trace_lines++;
+		if (num_trace_lines % STATE_PROGRESS_INTERVAL == 1)
+		{
+			printf("Uncompressing trace (%.1fMB, %lld cycles)   \r",
+				ftell(file->unzipped_trace_file) / 1.048e6, file->num_cycles);
+			fflush(stdout);
+		}
 	}
 	trace_file_free(trace_file);
+
+	/* Final progress */
+	printf("Uncompressing trace (%.1fMB, %lld cycles)   \n",
+		ftell(file->unzipped_trace_file) / 1.048e6, file->num_cycles);
+	fflush(stdout);
 
 	/* Return */
 	return file;
@@ -314,12 +333,20 @@ void state_file_create_checkpoints(struct state_file_t *file)
 	struct trace_line_t *trace_line;
 
 	long long last_checkpoint_cycle;
+	long unzipped_trace_file_size;
+
+	int num_trace_lines;
+
+	/* Get unzipped trace file size */
+	fseek(file->unzipped_trace_file, 0, SEEK_END);
+	unzipped_trace_file_size = ftell(file->unzipped_trace_file);
 
 	/* Initialize */
 	last_checkpoint_cycle = -STATE_CHECKPOINT_INTERVAL;
 	fseek(file->unzipped_trace_file, 0, SEEK_SET);
 
 	/* Parse uncompressed trace file */
+	num_trace_lines = 0;
 	while ((trace_line = trace_line_create_from_file(file->unzipped_trace_file)))
 	{
 		struct state_checkpoint_t *checkpoint;
@@ -356,9 +383,26 @@ void state_file_create_checkpoints(struct state_file_t *file)
 			state_command->process_trace_line_func(state_command->user_data, trace_line);
 		}
 
+		/* Progress */
+		num_trace_lines++;
+		if (num_trace_lines % STATE_PROGRESS_INTERVAL == 1)
+		{
+			printf("Creating checkpoints (%.1fMB, %.1f%%)   \r",
+				ftell(file->checkpoint_file) / 1.048e6,
+				unzipped_trace_file_size ?
+				(double) ftell(file->unzipped_trace_file) * 100.0 /
+				unzipped_trace_file_size : 0.0);
+			fflush(stdout);
+		}
+
 		/* Free trace line */
 		trace_line_free(trace_line);
 	}
+
+	/* Progress */
+	printf("Creating checkpoints (%.1fMB, 100%%)   \n",
+		ftell(file->checkpoint_file) / 1.048e6);
+	fflush(stdout);
 }
 
 
