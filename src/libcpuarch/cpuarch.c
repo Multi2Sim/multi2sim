@@ -251,13 +251,13 @@ int cpu_occupancy_stats;
 /* Check CPU configuration file */
 void cpu_config_check(void)
 {
-	struct config_t *cfg;
+	struct config_t *config;
 	int err;
 	char *section;
 
 	/* Open file */
-	cfg = config_create(cpu_config_file_name);
-	err = config_load(cfg);
+	config = config_create(cpu_config_file_name);
+	err = config_load(config);
 	if (!err && cpu_config_file_name[0])
 		fatal("%s: cannot load CPU configuration file", cpu_config_file_name);
 
@@ -266,132 +266,139 @@ void cpu_config_check(void)
 
 	section = "General";
 
-	cpu_cores = config_read_int(cfg, section, "Cores", cpu_cores);
-	cpu_threads = config_read_int(cfg, section, "Threads", cpu_threads);
+	cpu_cores = config_read_int(config, section, "Cores", cpu_cores);
+	cpu_threads = config_read_int(config, section, "Threads", cpu_threads);
 
-	cpu_fast_forward_count = config_read_llint(cfg, section, "FastForward", 0);
+	cpu_fast_forward_count = config_read_llint(config, section, "FastForward", 0);
 
-	cpu_context_switch = config_read_bool(cfg, section, "ContextSwitch", 1);
-	cpu_context_quantum = config_read_int(cfg, section, "ContextQuantum", 100000);
+	cpu_context_switch = config_read_bool(config, section, "ContextSwitch", 1);
+	cpu_context_quantum = config_read_int(config, section, "ContextQuantum", 100000);
 
-	cpu_thread_quantum = config_read_int(cfg, section, "ThreadQuantum", 1000);
-	cpu_thread_switch_penalty = config_read_int(cfg, section, "ThreadSwitchPenalty", 0);
+	cpu_thread_quantum = config_read_int(config, section, "ThreadQuantum", 1000);
+	cpu_thread_switch_penalty = config_read_int(config, section, "ThreadSwitchPenalty", 0);
 
-	cpu_recover_kind = config_read_enum(cfg, section, "RecoverKind", cpu_recover_kind_writeback, cpu_recover_kind_map, 2);
-	cpu_recover_penalty = config_read_int(cfg, section, "RecoverPenalty", 0);
+	cpu_recover_kind = config_read_enum(config, section, "RecoverKind", cpu_recover_kind_writeback, cpu_recover_kind_map, 2);
+	cpu_recover_penalty = config_read_int(config, section, "RecoverPenalty", 0);
 
-	mmu_page_size = config_read_int(cfg, section, "PageSize", 4096);
+	mmu_page_size = config_read_int(config, section, "PageSize", 4096);
 
 
 	/* Section '[ Pipeline ]' */
 
 	section = "Pipeline";
 
-	cpu_fetch_kind = config_read_enum(cfg, section, "FetchKind", cpu_fetch_kind_timeslice, cpu_fetch_kind_map, 3);
+	cpu_fetch_kind = config_read_enum(config, section, "FetchKind", cpu_fetch_kind_timeslice, cpu_fetch_kind_map, 3);
 
-	cpu_decode_width = config_read_int(cfg, section, "DecodeWidth", 4);
+	cpu_decode_width = config_read_int(config, section, "DecodeWidth", 4);
 
-	cpu_dispatch_kind = config_read_enum(cfg, section, "DispatchKind", cpu_dispatch_kind_timeslice, cpu_dispatch_kind_map, 2);
-	cpu_dispatch_width = config_read_int(cfg, section, "DispatchWidth", 4);
+	cpu_dispatch_kind = config_read_enum(config, section, "DispatchKind", cpu_dispatch_kind_timeslice, cpu_dispatch_kind_map, 2);
+	cpu_dispatch_width = config_read_int(config, section, "DispatchWidth", 4);
 
-	cpu_issue_kind = config_read_enum(cfg, section, "IssueKind", cpu_issue_kind_timeslice, cpu_issue_kind_map, 2);
-	cpu_issue_width = config_read_int(cfg, section, "IssueWidth", 4);
+	cpu_issue_kind = config_read_enum(config, section, "IssueKind", cpu_issue_kind_timeslice, cpu_issue_kind_map, 2);
+	cpu_issue_width = config_read_int(config, section, "IssueWidth", 4);
 
-	cpu_commit_kind = config_read_enum(cfg, section, "CommitKind", cpu_commit_kind_shared, cpu_commit_kind_map, 2);
-	cpu_commit_width = config_read_int(cfg, section, "CommitWidth", 4);
+	cpu_commit_kind = config_read_enum(config, section, "CommitKind", cpu_commit_kind_shared, cpu_commit_kind_map, 2);
+	cpu_commit_width = config_read_int(config, section, "CommitWidth", 4);
 
-	cpu_occupancy_stats = config_read_bool(cfg, section, "OccupancyStats", 0);
+	cpu_occupancy_stats = config_read_bool(config, section, "OccupancyStats", 0);
 
 
 	/* Section '[ Queues ]' */
+
 	section = "Queues";
 
-	fetchq_size = config_read_int(cfg, section, "FetchQueueSize", 64);
+	fetchq_size = config_read_int(config, section, "FetchQueueSize", 64);
 
-	uopq_size = config_read_int(cfg, section, "UopQueueSize", 32);
+	uopq_size = config_read_int(config, section, "UopQueueSize", 32);
 
-	rob_kind = config_read_enum(cfg, section, "RobKind", rob_kind_private, rob_kind_map, 2);
-	rob_size = config_read_int(cfg, section, "RobSize", 64);
+	rob_kind = config_read_enum(config, section, "RobKind", rob_kind_private, rob_kind_map, 2);
+	rob_size = config_read_int(config, section, "RobSize", 64);
 
-	iq_kind = config_read_enum(cfg, section, "IqKind", iq_kind_private, iq_kind_map, 2);
-	iq_size = config_read_int(cfg, section, "IqSize", 40);
+	iq_kind = config_read_enum(config, section, "IqKind", iq_kind_private, iq_kind_map, 2);
+	iq_size = config_read_int(config, section, "IqSize", 40);
 
-	lsq_kind = config_read_enum(cfg, section, "LsqKind", lsq_kind_private, lsq_kind_map, 2);
-	lsq_size = config_read_int(cfg, section, "LsqSize", 20);
+	lsq_kind = config_read_enum(config, section, "LsqKind", lsq_kind_private, lsq_kind_map, 2);
+	lsq_size = config_read_int(config, section, "LsqSize", 20);
 
-	rf_kind = config_read_enum(cfg, section, "RfKind", rf_kind_private, rf_kind_map, 2);
-	rf_int_size = config_read_int(cfg, section, "RfIntSize", 80);
-	rf_fp_size = config_read_int(cfg, section, "RfFpSize", 40);
+	rf_kind = config_read_enum(config, section, "RfKind", rf_kind_private, rf_kind_map, 2);
+	rf_int_size = config_read_int(config, section, "RfIntSize", 80);
+	rf_fp_size = config_read_int(config, section, "RfFpSize", 40);
 
 
 	/* Section '[ TraceCache ]' */
+
 	section = "TraceCache";
-	trace_cache_present = config_read_bool(cfg, section, "Present", 0);
-	trace_cache_num_sets = config_read_int(cfg, section, "Sets", 64);
-	trace_cache_assoc = config_read_int(cfg, section, "Assoc", 4);
-	trace_cache_trace_size = config_read_int(cfg, section, "TraceSize", 16);
-	trace_cache_branch_max = config_read_int(cfg, section, "BranchMax", 3);
-	trace_cache_queue_size = config_read_int(cfg, section, "QueueSize", 32);
+
+	trace_cache_present = config_read_bool(config, section, "Present", 0);
+	trace_cache_num_sets = config_read_int(config, section, "Sets", 64);
+	trace_cache_assoc = config_read_int(config, section, "Assoc", 4);
+	trace_cache_trace_size = config_read_int(config, section, "TraceSize", 16);
+	trace_cache_branch_max = config_read_int(config, section, "BranchMax", 3);
+	trace_cache_queue_size = config_read_int(config, section, "QueueSize", 32);
 
 	
 	/* Functional Units */
+
 	section = "FunctionalUnits";
 
-	fu_res_pool[fu_intadd].count = config_read_int(cfg, section, "IntAdd.Count", 4);
-	fu_res_pool[fu_intadd].oplat = config_read_int(cfg, section, "IntAdd.OpLat", 2);
-	fu_res_pool[fu_intadd].issuelat = config_read_int(cfg, section, "IntAdd.IssueLat", 1);
+	fu_res_pool[fu_intadd].count = config_read_int(config, section, "IntAdd.Count", 4);
+	fu_res_pool[fu_intadd].oplat = config_read_int(config, section, "IntAdd.OpLat", 2);
+	fu_res_pool[fu_intadd].issuelat = config_read_int(config, section, "IntAdd.IssueLat", 1);
 
-	fu_res_pool[fu_intmult].count = config_read_int(cfg, section, "IntMult.Count", 1);
-	fu_res_pool[fu_intmult].oplat = config_read_int(cfg, section, "IntMult.OpLat", 3);
-	fu_res_pool[fu_intmult].issuelat = config_read_int(cfg, section, "IntMult.IssueLat", 3);
+	fu_res_pool[fu_intmult].count = config_read_int(config, section, "IntMult.Count", 1);
+	fu_res_pool[fu_intmult].oplat = config_read_int(config, section, "IntMult.OpLat", 3);
+	fu_res_pool[fu_intmult].issuelat = config_read_int(config, section, "IntMult.IssueLat", 3);
 
-	fu_res_pool[fu_intdiv].count = config_read_int(cfg, section, "IntDiv.Count", 1);
-	fu_res_pool[fu_intdiv].oplat = config_read_int(cfg, section, "IntDiv.OpLat", 20);
-	fu_res_pool[fu_intdiv].issuelat = config_read_int(cfg, section, "IntDiv.IssueLat", 20);
+	fu_res_pool[fu_intdiv].count = config_read_int(config, section, "IntDiv.Count", 1);
+	fu_res_pool[fu_intdiv].oplat = config_read_int(config, section, "IntDiv.OpLat", 20);
+	fu_res_pool[fu_intdiv].issuelat = config_read_int(config, section, "IntDiv.IssueLat", 20);
 
-	fu_res_pool[fu_effaddr].count = config_read_int(cfg, section, "EffAddr.Count", 4);
-	fu_res_pool[fu_effaddr].oplat = config_read_int(cfg, section, "EffAddr.OpLat", 2);
-	fu_res_pool[fu_effaddr].issuelat = config_read_int(cfg, section, "EffAddr.IssueLat", 1);
+	fu_res_pool[fu_effaddr].count = config_read_int(config, section, "EffAddr.Count", 4);
+	fu_res_pool[fu_effaddr].oplat = config_read_int(config, section, "EffAddr.OpLat", 2);
+	fu_res_pool[fu_effaddr].issuelat = config_read_int(config, section, "EffAddr.IssueLat", 1);
 
-	fu_res_pool[fu_logic].count = config_read_int(cfg, section, "Logic.Count", 4);
-	fu_res_pool[fu_logic].oplat = config_read_int(cfg, section, "Logic.OpLat", 1);
-	fu_res_pool[fu_logic].issuelat = config_read_int(cfg, section, "Logic.IssueLat", 1);
+	fu_res_pool[fu_logic].count = config_read_int(config, section, "Logic.Count", 4);
+	fu_res_pool[fu_logic].oplat = config_read_int(config, section, "Logic.OpLat", 1);
+	fu_res_pool[fu_logic].issuelat = config_read_int(config, section, "Logic.IssueLat", 1);
 
-	fu_res_pool[fu_fpsimple].count = config_read_int(cfg, section, "FpSimple.Count", 2);
-	fu_res_pool[fu_fpsimple].oplat = config_read_int(cfg, section, "FpSimple.OpLat", 2);
-	fu_res_pool[fu_fpsimple].issuelat = config_read_int(cfg, section, "FpSimple.IssueLat", 2);
+	fu_res_pool[fu_fpsimple].count = config_read_int(config, section, "FpSimple.Count", 2);
+	fu_res_pool[fu_fpsimple].oplat = config_read_int(config, section, "FpSimple.OpLat", 2);
+	fu_res_pool[fu_fpsimple].issuelat = config_read_int(config, section, "FpSimple.IssueLat", 2);
 
-	fu_res_pool[fu_fpadd].count = config_read_int(cfg, section, "FpAdd.Count", 2);
-	fu_res_pool[fu_fpadd].oplat = config_read_int(cfg, section, "FpAdd.OpLat", 5);
-	fu_res_pool[fu_fpadd].issuelat = config_read_int(cfg, section, "FpAdd.IssueLat", 5);
+	fu_res_pool[fu_fpadd].count = config_read_int(config, section, "FpAdd.Count", 2);
+	fu_res_pool[fu_fpadd].oplat = config_read_int(config, section, "FpAdd.OpLat", 5);
+	fu_res_pool[fu_fpadd].issuelat = config_read_int(config, section, "FpAdd.IssueLat", 5);
 
-	fu_res_pool[fu_fpmult].count = config_read_int(cfg, section, "FpMult.Count", 1);
-	fu_res_pool[fu_fpmult].oplat = config_read_int(cfg, section, "FpMult.OpLat", 10);
-	fu_res_pool[fu_fpmult].issuelat = config_read_int(cfg, section, "FpMult.IssueLat", 10);
+	fu_res_pool[fu_fpmult].count = config_read_int(config, section, "FpMult.Count", 1);
+	fu_res_pool[fu_fpmult].oplat = config_read_int(config, section, "FpMult.OpLat", 10);
+	fu_res_pool[fu_fpmult].issuelat = config_read_int(config, section, "FpMult.IssueLat", 10);
 
-	fu_res_pool[fu_fpdiv].count = config_read_int(cfg, section, "FpDiv.Count", 1);
-	fu_res_pool[fu_fpdiv].oplat = config_read_int(cfg, section, "FpDiv.OpLat", 20);
-	fu_res_pool[fu_fpdiv].issuelat = config_read_int(cfg, section, "FpDiv.IssueLat", 20);
+	fu_res_pool[fu_fpdiv].count = config_read_int(config, section, "FpDiv.Count", 1);
+	fu_res_pool[fu_fpdiv].oplat = config_read_int(config, section, "FpDiv.OpLat", 20);
+	fu_res_pool[fu_fpdiv].issuelat = config_read_int(config, section, "FpDiv.IssueLat", 20);
 
-	fu_res_pool[fu_fpcomplex].count = config_read_int(cfg, section, "FpComplex.Count", 1);
-	fu_res_pool[fu_fpcomplex].oplat = config_read_int(cfg, section, "FpComplex.OpLat", 40);
-	fu_res_pool[fu_fpcomplex].issuelat = config_read_int(cfg, section, "FpComplex.IssueLat", 40);
+	fu_res_pool[fu_fpcomplex].count = config_read_int(config, section, "FpComplex.Count", 1);
+	fu_res_pool[fu_fpcomplex].oplat = config_read_int(config, section, "FpComplex.OpLat", 40);
+	fu_res_pool[fu_fpcomplex].issuelat = config_read_int(config, section, "FpComplex.IssueLat", 40);
 
 
 	/* Branch Predictor */
+
 	section = "BranchPredictor";
-	bpred_kind = config_read_enum(cfg, section, "Kind", bpred_kind_twolevel, bpred_kind_map, 6);
-	bpred_btb_sets = config_read_int(cfg, section, "BTB.Sets", 256);
-	bpred_btb_assoc = config_read_int(cfg, section, "BTB.Assoc", 4);
-	bpred_bimod_size = config_read_int(cfg, section, "Bimod.Size", 1024);
-	bpred_choice_size = config_read_int(cfg, section, "Choice.Size", 1024);
-	bpred_ras_size = config_read_int(cfg, section, "RAS.Size", 32);
-	bpred_twolevel_l1size = config_read_int(cfg, section, "TwoLevel.L1Size", 1);
-	bpred_twolevel_l2size = config_read_int(cfg, section, "TwoLevel.L2Size", 1024);
-	bpred_twolevel_hist_size = config_read_int(cfg, section, "TwoLevel.HistorySize", 8);
+
+	bpred_kind = config_read_enum(config, section, "Kind", bpred_kind_twolevel, bpred_kind_map, 6);
+	bpred_btb_sets = config_read_int(config, section, "BTB.Sets", 256);
+	bpred_btb_assoc = config_read_int(config, section, "BTB.Assoc", 4);
+	bpred_bimod_size = config_read_int(config, section, "Bimod.Size", 1024);
+	bpred_choice_size = config_read_int(config, section, "Choice.Size", 1024);
+	bpred_ras_size = config_read_int(config, section, "RAS.Size", 32);
+	bpred_twolevel_l1size = config_read_int(config, section, "TwoLevel.L1Size", 1);
+	bpred_twolevel_l2size = config_read_int(config, section, "TwoLevel.L2Size", 1024);
+	bpred_twolevel_hist_size = config_read_int(config, section, "TwoLevel.HistorySize", 8);
 
 	/* Close file */
-	config_free(cfg);
+	config_check(config);
+	config_free(config);
 }
 
 
