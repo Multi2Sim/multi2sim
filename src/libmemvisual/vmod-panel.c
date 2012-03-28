@@ -171,10 +171,10 @@ static void vmod_panel_create_widget(struct vmod_panel_t *panel)
 		LIST_FOR_EACH(level->vmod_list, vmod_id)
 		{
 			vmod = list_get(level->vmod_list, vmod_id);
-			gtk_container_add(GTK_CONTAINER(hbox), vmod_get_widget(vmod));
+			gtk_box_pack_start(GTK_BOX(hbox), vmod_get_widget(vmod), TRUE, TRUE, 0);
 
 			if (vmod_id < level->vmod_list->count - 1)
-				gtk_container_add(GTK_CONTAINER(hbox), gtk_vseparator_new());
+				gtk_box_pack_start(GTK_BOX(hbox), gtk_vseparator_new(), FALSE, FALSE, 0);
 		}
 
 		/* Horizontal bar */
