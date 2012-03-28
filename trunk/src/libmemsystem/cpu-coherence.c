@@ -809,7 +809,7 @@ void mod_handler_evict(int event, void *data)
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 			dir_entry_clear_sharer(dir, stack->set, stack->way, z, mod->low_net_node->index);
 			if (dir_entry->owner == mod->low_net_node->index)
-				dir_entry->owner = DIR_ENTRY_OWNER_NONE;
+				dir_entry_set_owner(dir, stack->set, stack->way, z, DIR_ENTRY_OWNER_NONE);
 		}
 		dir_lock_unlock(stack->dir_lock);
 
@@ -1073,7 +1073,7 @@ void mod_handler_read_request(int event, void *data)
 		{
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 			if (dir_entry->owner != mod->low_net_node->index)
-				dir_entry->owner = DIR_ENTRY_OWNER_NONE;
+				dir_entry_set_owner(dir, stack->set, stack->way, z, DIR_ENTRY_OWNER_NONE);
 		}
 
 		/* For each sub-block requested by mod, set mod as sharer, and
@@ -1102,7 +1102,7 @@ void mod_handler_read_request(int event, void *data)
 				if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + mod->block_size)
 					continue;
 				dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-				dir_entry->owner = mod->low_net_node->index;
+				dir_entry_set_owner(dir, stack->set, stack->way, z, mod->low_net_node->index);
 			}
 		}
 
@@ -1182,7 +1182,7 @@ void mod_handler_read_request(int event, void *data)
 			dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
 			assert(dir_entry_tag < stack->tag + target_mod->block_size);
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			dir_entry->owner = DIR_ENTRY_OWNER_NONE;
+			dir_entry_set_owner(dir, stack->set, stack->way, z, DIR_ENTRY_OWNER_NONE);
 		}
 
 		/* Set state to S, unlock */
@@ -1410,7 +1410,7 @@ void mod_handler_write_request(int event, void *data)
 				continue;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 			dir_entry_set_sharer(dir, stack->set, stack->way, z, mod->low_net_node->index);
-			dir_entry->owner = mod->low_net_node->index;
+			dir_entry_set_owner(dir, stack->set, stack->way, z, mod->low_net_node->index);
 			assert(dir_entry->num_sharers == 1);
 		}
 
@@ -1545,7 +1545,7 @@ void mod_handler_invalidate(int event, void *data)
 				/* Clear sharer and owner */
 				dir_entry_clear_sharer(dir, stack->set, stack->way, z, i);
 				if (dir_entry->owner == i)
-					dir_entry->owner = DIR_ENTRY_OWNER_NONE;
+					dir_entry_set_owner(dir, stack->set, stack->way, z, DIR_ENTRY_OWNER_NONE);
 
 				/* Send write request upwards if beginning of block */
 				if (dir_entry_tag % sharer->block_size)

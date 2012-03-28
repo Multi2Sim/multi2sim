@@ -205,9 +205,73 @@ static gboolean vcache_block_sharers_leave_notify_event(GtkWidget *widget,
 
 
 static void vcache_block_sharers_clicked_event(GtkWidget *widget,
-	GdkEventButton *event, struct vlist_popup_t *popup)
+	GdkEventButton *event, struct vcache_block_t *block)
 {
-	info_popup_show("Sharers info");
+	struct vcache_t *vcache = block->vcache;
+	struct vmod_t *vmod = vcache->vmod;
+	struct vmod_t *vmod_sharer;
+	struct vnet_t *vnet = vmod->high_vnet;
+
+	char buf[MAX_LONG_STRING_SIZE];
+	char *buf_ptr;
+	char *comma;
+
+	int size;
+	int sub_block;
+	int sharer;
+
+	/* Initialize */
+	buf_ptr = buf;
+	size = sizeof buf;
+
+	/* Title */
+	str_printf(&buf_ptr, &size, "<b>Module %s - Block at set %d - way %d</b>\n\n",
+		vmod->name, block->set, block->way);
+
+	/* Sub-blocks */
+	for (sub_block = 0; sub_block < vcache->num_sub_blocks; sub_block++)
+	{
+		struct vcache_dir_entry_t *dir_entry;
+
+		/* Start */
+		str_printf(&buf_ptr, &size, "<b>Sub-block %d:</b>\n", sub_block);
+
+		/* Owner */
+		vmod_sharer = NULL;
+		dir_entry = vcache_get_dir_entry(vcache, block->set, block->way, sub_block);
+		if (dir_entry->owner >= 0)
+		{
+			vmod_sharer = vnet_get_vmod(vnet, dir_entry->owner);
+			if (!vmod_sharer)
+				panic("%s: invalid owner", __FUNCTION__);
+		}
+		str_printf(&buf_ptr, &size, "Owner: %s\n", vmod_sharer ? vmod_sharer->name : "-");
+
+		/* Sharers */
+		comma = "";
+		str_printf(&buf_ptr, &size, "Sharers: ");
+		for (sharer = 0; sharer < vcache->num_sharers; sharer++)
+		{
+			/* Sharer not set */
+			if (!vcache_dir_entry_is_sharer(vcache, block->set, block->way, sub_block, sharer))
+				continue;
+
+			/* New sharer */
+			vmod_sharer = vnet_get_vmod(vnet, sharer);
+			if (!vmod_sharer)
+				panic("%s: invalid sharer", __FUNCTION__);
+
+			/* Dump */
+			str_printf(&buf_ptr, &size, "%s%s", comma, vmod_sharer->name);
+			comma = ", ";
+		}
+
+		/* End */
+		str_printf(&buf_ptr, &size, "\n\n");
+	}
+
+	/* Show pop-up */
+	info_popup_show(buf);
 }
 
 
@@ -217,10 +281,11 @@ static void vcache_block_sharers_clicked_event(GtkWidget *widget,
  * Public Functions
  */
 
-struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_size,
-	int sub_block_size, int num_sharers)
+struct vcache_t *vcache_create(struct vmod_t *vmod, char *name, int num_sets, int assoc,
+	int block_size, int sub_block_size, int num_sharers)
 {
-	int i;
+	int set;
+	int way;
 
 	struct vcache_t *vcache;
 	struct vcache_block_t *block;
@@ -236,6 +301,7 @@ struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_si
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
+	vcache->vmod = vmod;
 	vcache->num_sets = num_sets;
 	vcache->assoc = assoc;
 	vcache->block_size = block_size;
@@ -246,11 +312,26 @@ struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_si
 
 	/* Create block array */
 	vcache->blocks = calloc(num_sets * assoc, sizeof(struct vcache_block_t));
-	for (i = 0; i < num_sets * assoc; i++)
+	for (set = 0; set < num_sets; set++)
 	{
-		block = &vcache->blocks[i];
-		block->vcache = vcache;
-		block->dir_entries = calloc(vcache->num_sub_blocks, VCACHE_DIR_ENTRY_SIZE(vcache));
+		for (way = 0; way < assoc; way++)
+		{
+			int sub_block;
+
+			block = &vcache->blocks[set * assoc + way];
+			block->vcache = vcache;
+			block->set = set;
+			block->way = way;
+			block->dir_entries = calloc(vcache->num_sub_blocks, VCACHE_DIR_ENTRY_SIZE(vcache));
+
+			for (sub_block = 0; sub_block < vcache->num_sub_blocks; sub_block++)
+			{
+				struct vcache_dir_entry_t *dir_entry;
+
+				dir_entry = vcache_get_dir_entry(vcache, set, way, sub_block);
+				dir_entry->owner = -1;
+			}
+		}
 	}
 
 	/* Scroll bars */
@@ -412,6 +493,34 @@ void vcache_dir_entry_clear_all_sharers(struct vcache_t *vcache,
 	dir_entry->num_sharers = 0;
 	for (i = 0; i < VCACHE_DIR_ENTRY_SHARERS_SIZE(vcache); i++)
 		dir_entry->sharers[i] = 0;
+}
+
+
+int vcache_dir_entry_is_sharer(struct vcache_t *vcache,
+	int x, int y, int z, int sharer)
+{
+	struct vcache_dir_entry_t *dir_entry;
+
+	/* Get directory entry */
+	assert(IN_RANGE(sharer, 0, vcache->num_sharers - 1));
+	dir_entry = vcache_get_dir_entry(vcache, x, y, z);
+
+	/* Return whether sharer is set */
+	return (dir_entry->sharers[sharer / 8] & (1 << sharer % 8)) > 0;
+}
+
+
+void vcache_dir_entry_set_owner(struct vcache_t *vcache,
+	int x, int y, int z, int owner)
+{
+	struct vcache_dir_entry_t *dir_entry;
+
+	/* Get directory entry */
+	assert(owner == -1 || IN_RANGE(owner, 0, vcache->num_sharers - 1));
+	dir_entry = vcache_get_dir_entry(vcache, x, y, z);
+
+	/* Set new owner */
+	dir_entry->owner = owner;
 }
 
 

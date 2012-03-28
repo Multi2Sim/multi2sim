@@ -14,7 +14,8 @@ libmemvisual_a_SOURCES += \
 	vcache.c \
 	vlist.c \
 	vmod.c \
-	vmod-panel.c
+	vmod-panel.c \
+	vnet.c
 
 AM_CFLAGS = @GTK_CFLAGS@
 

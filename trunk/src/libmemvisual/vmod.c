@@ -24,6 +24,12 @@
  * Module access
  */
 
+struct vmod_access_t
+{
+	long long id;
+};
+
+
 struct vmod_access_t *vmod_access_create(long long id)
 {
 	struct vmod_access_t *access;
@@ -69,8 +75,9 @@ void vmod_access_get_desc(void *elem, char *buf, int size)
  * Module
  */
 
-struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
-		int sub_block_size, int num_sharers, int level)
+struct vmod_t *vmod_create(struct vmod_panel_t *panel, char *name, int num_sets, int assoc,
+	int block_size, int sub_block_size, int num_sharers, int level, struct vnet_t *high_vnet,
+	int high_vnet_node_index, struct vnet_t *low_vnet, int low_vnet_node_index)
 {
 	struct vmod_t *vmod;
 
@@ -85,7 +92,12 @@ struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
+	vmod->panel = panel;
 	vmod->level = level;
+	vmod->high_vnet = high_vnet;
+	vmod->high_vnet_node_index = high_vnet_node_index;
+	vmod->low_vnet = low_vnet;
+	vmod->low_vnet_node_index = low_vnet_node_index;
 
 	/* Create layout */
 	vmod->widget = gtk_vbox_new(0, 0);
@@ -97,7 +109,7 @@ struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
 
 	/* Cache */
 	struct vcache_t *vcache;
-	vcache = vcache_create(name, num_sets, assoc, block_size, sub_block_size, num_sharers);
+	vcache = vcache_create(vmod, name, num_sets, assoc, block_size, sub_block_size, num_sharers);
 	gtk_box_pack_start(GTK_BOX(vmod->widget), vcache_get_widget(vcache), TRUE, TRUE, 0);
 	vmod->vcache = vcache;
 

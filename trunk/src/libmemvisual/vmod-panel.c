@@ -89,6 +89,14 @@ static void vmod_panel_read_config(struct vmod_panel_t *panel)
 		{
 			struct vmod_t *vmod;
 
+			struct vnet_t *high_vnet;
+			struct vnet_t *low_vnet;
+
+			int high_vnet_node_index;
+			int low_vnet_node_index;
+
+			char *high_vnet_name;
+			char *low_vnet_name;
 			char *name;
 
 			int num_sets;
@@ -107,10 +115,43 @@ static void vmod_panel_read_config(struct vmod_panel_t *panel)
 			num_sharers = trace_line_get_symbol_value_int(trace_line, "num_sharers");
 			level = trace_line_get_symbol_value_int(trace_line, "level");
 
+			/* High network */
+			high_vnet_name = trace_line_get_symbol_value(trace_line, "high_net");
+			high_vnet_node_index = trace_line_get_symbol_value_int(trace_line, "high_net_node");
+			high_vnet = hash_table_get(panel->vnet_table, high_vnet_name);
+
+			/* Low network */
+			low_vnet_name = trace_line_get_symbol_value(trace_line, "low_net");
+			low_vnet_node_index = trace_line_get_symbol_value_int(trace_line, "low_net_node");
+			low_vnet = hash_table_get(panel->vnet_table, low_vnet_name);
+
 			/* Create module and add to list */
-			vmod = vmod_create(name, num_sets, assoc, block_size, sub_block_size,
-					num_sharers, level);
+			vmod = vmod_create(panel, name, num_sets, assoc, block_size, sub_block_size,
+				num_sharers, level, high_vnet, high_vnet_node_index,
+				low_vnet, low_vnet_node_index);
 			hash_table_insert(panel->vmod_table, name, vmod);
+
+			/* Attach modules to networks */
+			if (high_vnet)
+				vnet_attach_vmod(high_vnet, vmod, high_vnet_node_index);
+			if (low_vnet)
+				vnet_attach_vmod(low_vnet, vmod, low_vnet_node_index);
+		}
+		else if (!strcmp(command, "mem.new_net"))
+		{
+			struct vnet_t *vnet;
+
+			char *name;
+
+			int num_nodes;
+
+			/* Get network parameters */
+			name = trace_line_get_symbol_value(trace_line, "name");
+			num_nodes = trace_line_get_symbol_value_int(trace_line, "num_nodes");
+
+			/* Create network and add to list */
+			vnet = vnet_create(name, num_nodes);
+			hash_table_insert(panel->vnet_table, name, vnet);
 		}
 	}
 }
@@ -198,6 +239,7 @@ struct vmod_panel_t *vmod_panel_create(void)
 
 	/* Initialize */
 	panel->vmod_table = hash_table_create(0, FALSE);
+	panel->vnet_table = hash_table_create(0, FALSE);
 	panel->vmod_level_list = list_create();
 
 	/* Read and add components to the panel */
@@ -212,13 +254,22 @@ struct vmod_panel_t *vmod_panel_create(void)
 void vmod_panel_free(struct vmod_panel_t *panel)
 {
 	struct vmod_t *vmod;
+	struct vnet_t *vnet;
+
 	char *vmod_name;
+	char *vnet_name;
+
 	int i;
 
 	/* Free modules */
 	HASH_TABLE_FOR_EACH(panel->vmod_table, vmod_name, vmod)
 		vmod_free(vmod);
 	hash_table_free(panel->vmod_table);
+
+	/* Free networks */
+	HASH_TABLE_FOR_EACH(panel->vnet_table, vnet_name, vnet)
+		vnet_free(vnet);
+	hash_table_free(panel->vnet_table);
 
 	/* Free levels */
 	LIST_FOR_EACH(panel->vmod_level_list, i)
@@ -234,6 +285,19 @@ GtkWidget *vmod_panel_get_widget(struct vmod_panel_t *panel)
 {
 	return panel->widget;
 }
+
+
+struct vnet_t *vmod_panel_get_vnet(struct vmod_panel_t *panel, char *name)
+{
+	return hash_table_get(panel->vnet_table, name);
+}
+
+
+struct vmod_t *vmod_panel_get_vmod(struct vmod_panel_t *panel, char *name)
+{
+	return hash_table_get(panel->vmod_table, name);
+}
+
 
 
 void vmod_panel_refresh(struct vmod_panel_t *panel)
