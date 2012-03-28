@@ -146,6 +146,34 @@ static void vmem_process_trace_line_clear_all_sharers(struct vmem_t *vmem, struc
 }
 
 
+static void vmem_process_trace_line_set_owner(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+	char *vmod_name;
+
+	struct vmod_t *vmod;
+
+	int x;
+	int y;
+	int z;
+	int owner;
+
+	/* Get module */
+	vmod_name = trace_line_get_symbol_value(trace_line, "dir");
+	vmod = hash_table_get(vmem->vmod_panel->vmod_table, vmod_name);
+	if (!vmod)
+		panic("%s: invalid module name '%s'", __FUNCTION__, vmod_name);
+
+	/* Directory entry and sharer */
+	x = trace_line_get_symbol_value_int(trace_line, "x");
+	y = trace_line_get_symbol_value_int(trace_line, "y");
+	z = trace_line_get_symbol_value_int(trace_line, "z");
+	owner = trace_line_get_symbol_value_int(trace_line, "owner");
+
+	/* Set sharer */
+	vcache_dir_entry_set_owner(vmod->vcache, x, y, z, owner);
+}
+
+
 static void vmem_destroy_event(GtkWidget *widget, struct vmem_t *vmem)
 {
 	vmem_free(vmem);
@@ -177,6 +205,8 @@ struct vmem_t *vmem_create(void)
 		(state_file_process_trace_line_func_t) vmem_process_trace_line_clear_sharer, vmem);
 	state_file_new_command(visual_state_file, "mem.clear_all_sharers",
 		(state_file_process_trace_line_func_t) vmem_process_trace_line_clear_all_sharers, vmem);
+	state_file_new_command(visual_state_file, "mem.set_owner",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_set_owner, vmem);
 
 	/* Main window */
 	vmem->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);

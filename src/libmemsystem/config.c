@@ -1542,33 +1542,49 @@ static void mem_config_calculate_mod_levels(void)
 
 static void mem_config_trace(void)
 {
-	struct mod_t *mod;
 	int i;
 
 	/* No need if not tracing */
 	if (!mem_tracing())
 		return;
 
-	/* Modules */
-	for (i = 0; i < mem_system->mod_list->count; i++)
+	/* Networks */
+	LIST_FOR_EACH(mem_system->net_list, i)
 	{
+		struct net_t *net;
+
+		net = list_get(mem_system->net_list, i);
+
+		mem_trace_header("mem.new_net name=\"%s\" num_nodes=%d\n",
+			net->name, net->node_list->count);
+	}
+
+	/* Modules */
+	LIST_FOR_EACH(mem_system->mod_list, i)
+	{
+		struct mod_t *mod;
+
+		char *high_net_name;
+		char *low_net_name;
+
+		int high_net_node_index;
+		int low_net_node_index;
+
 		mod = list_get(mem_system->mod_list, i);
-		mem_trace_header("mem.new_mod "
-				"name=\"%s\" "
-				"num_sets=%d "
-				"assoc=%d "
-				"block_size=%d "
-				"sub_block_size=%d "
-				"num_sharers=%d "
-				"level=%d "
-				"\n",
-				mod->name,
-				mod->cache->num_sets,
-				mod->cache->assoc,
-				mod->cache->block_size,
-				mod->sub_block_size,
-				mod->dir->num_nodes,
-				mod->level);
+
+		high_net_name = mod->high_net ? mod->high_net->name : "";
+		high_net_node_index = mod->high_net_node ? mod->high_net_node->index : 0;
+
+		low_net_name = mod->low_net ? mod->low_net->name : "";
+		low_net_node_index = mod->low_net_node ? mod->low_net_node->index : 0;
+
+		mem_trace_header("mem.new_mod name=\"%s\" num_sets=%d assoc=%d "
+			"block_size=%d sub_block_size=%d num_sharers=%d level=%d "
+			"high_net=\"%s\" high_net_node=%d low_net=\"%s\" low_net_node=%d\n",
+			mod->name, mod->cache->num_sets, mod->cache->assoc,
+			mod->cache->block_size, mod->sub_block_size, mod->dir->num_nodes,
+			mod->level, high_net_name, high_net_node_index,
+			low_net_name, low_net_node_index);
 	}
 }
 
