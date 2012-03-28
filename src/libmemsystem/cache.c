@@ -236,7 +236,7 @@ void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
 	assert(way >= 0 && way < cache->assoc);
 	assert(set == (tag >> cache->log_block_size) % cache->num_sets || !state);
 
-	mem_trace("mem.blk cache=\"%s\" set=%d way=%d tag=0x%x state=\"%s\"\n",
+	mem_trace("mem.set_block cache=\"%s\" set=%d way=%d tag=0x%x state=\"%s\"\n",
 			cache->name, set, way, tag,
 			map_value(&cache_block_state_map, state));
 
@@ -310,10 +310,11 @@ void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, 
 {
 	struct cache_block_t *block;
 
-	mem_trace("mem.ttag cache=\"%s\" set=%d way=%d tag=0x%x\n",
-			cache->name, set, way, tag);
-
+	/* Set transient tag */
 	block = &cache->sets[set].blocks[way];
 	block->transient_tag = tag;
-}
 
+	/* Debug */
+	mem_trace("mem.set_transient_tag cache=\"%s\" set=%d way=%d tag=0x%x\n",
+			cache->name, set, way, tag);
+}

@@ -27,7 +27,7 @@
 	((X) * dir->ysize * dir->zsize + (Y) * dir->zsize + (Z))))
 
 
-struct dir_t *dir_create(int xsize, int ysize, int zsize, int num_nodes)
+struct dir_t *dir_create(char *name, int xsize, int ysize, int zsize, int num_nodes)
 {
 	struct dir_t *dir;
 	struct dir_entry_t *dir_entry;
@@ -47,6 +47,11 @@ struct dir_t *dir_create(int xsize, int ysize, int zsize, int num_nodes)
 	/* Create directory */
 	dir = calloc(1, dir_size);
 	if (!dir)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Name */
+	dir->name = strdup(name);
+	if (!dir->name)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Create locks */
@@ -80,6 +85,7 @@ struct dir_t *dir_create(int xsize, int ysize, int zsize, int num_nodes)
 
 void dir_free(struct dir_t *dir)
 {
+	free(dir->name);
 	free(dir->dir_lock);
 	free(dir);
 }
@@ -94,50 +100,85 @@ struct dir_entry_t *dir_entry_get(struct dir_t *dir, int x, int y, int z)
 }
 
 
-void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry)
+void dir_entry_dump_sharers(struct dir_t *dir, int x, int y, int z)
 {
+	struct dir_entry_t *dir_entry;
 	int i;
 
+	dir_entry = dir_entry_get(dir, x, y, z);
 	mem_debug("  %d sharers: { ", dir_entry->num_sharers);
 	for (i = 0; i < dir->num_nodes; i++)
-		if (dir_entry_is_sharer(dir, dir_entry, i))
+		if (dir_entry_is_sharer(dir, x, y, z, i))
 			printf("%d ", i);
 	mem_debug("}\n");
 }
 
 
-void dir_entry_set_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node)
+void dir_entry_set_sharer(struct dir_t *dir, int x, int y, int z, int node)
 {
+	struct dir_entry_t *dir_entry;
+
+	/* Nothing if sharer was already set */
 	assert(IN_RANGE(node, 0, dir->num_nodes - 1));
+	dir_entry = dir_entry_get(dir, x, y, z);
 	if (dir_entry->sharer[node / 8] & (1 << (node % 8)))
 		return;
+
+	/* Set sharer */
 	dir_entry->sharer[node / 8] |= 1 << (node % 8);
 	dir_entry->num_sharers++;
 	assert(dir_entry->num_sharers <= dir->num_nodes);
+
+	/* Debug */
+	mem_trace("mem.set_sharer dir=\"%s\" x=%d y=%d z=%d sharer=%d\n",
+		dir->name, x, y, z, node);
 }
 
 
-void dir_entry_clear_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node)
+void dir_entry_clear_sharer(struct dir_t *dir, int x, int y, int z, int node)
 {
+	struct dir_entry_t *dir_entry;
+
+	/* Nothing if sharer is not set */
+	dir_entry = dir_entry_get(dir, x, y, z);
 	assert(IN_RANGE(node, 0, dir->num_nodes - 1));
 	if (!(dir_entry->sharer[node / 8] & (1 << (node % 8))))
 		return;
+
+	/* Clear sharer */
 	dir_entry->sharer[node / 8] &= ~(1 << (node % 8));
 	assert(dir_entry->num_sharers > 0);
 	dir_entry->num_sharers--;
+
+	/* Debug */
+	mem_trace("mem.clear_sharer dir=\"%s\" x=%d y=%d z=%d sharer=%d\n",
+		dir->name, x, y, z, node);
 }
 
 
-void dir_entry_clear_all_sharers(struct dir_t *dir, volatile struct dir_entry_t *dir_entry)
+void dir_entry_clear_all_sharers(struct dir_t *dir, int x, int y, int z)
 {
-	memset(&dir_entry->sharer, 0, DIR_ENTRY_SHARERS_SIZE);
+	struct dir_entry_t *dir_entry;
+	int i;
+
+	/* Clear sharers */
+	dir_entry = dir_entry_get(dir, x, y, z);
 	dir_entry->num_sharers = 0;
+	for (i = 0; i < DIR_ENTRY_SHARERS_SIZE; i++)
+		dir_entry->sharer[i] = 0;
+
+	/* Debug */
+	mem_trace("mem.clear_all_sharer dir=\"%s\" x=%d y=%d z=%d\n",
+		dir->name, x, y, z);
 }
 
 
-int dir_entry_is_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node)
+int dir_entry_is_sharer(struct dir_t *dir, int x, int y, int z, int node)
 {
+	struct dir_entry_t *dir_entry;
+
 	assert(IN_RANGE(node, 0, dir->num_nodes - 1));
+	dir_entry = dir_entry_get(dir, x, y, z);
 	return (dir_entry->sharer[node / 8] & (1 << (node % 8))) > 0;
 }
 
@@ -202,4 +243,3 @@ void dir_lock_unlock(struct dir_lock_t *dir_lock)
 	/* Unlock entry */
 	dir_lock->lock = 0;
 }
-

@@ -30,6 +30,50 @@ struct vmem_t
 };
 
 
+static void vmem_process_trace_line_set_transient_tag(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+}
+
+
+static void vmem_process_trace_line_set_block(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+	struct vmod_t *vmod;
+
+	char *vmod_name;
+	char *state;
+
+	int set;
+	int way;
+
+	unsigned int tag;
+
+	/* Get fields */
+	vmod_name = trace_line_get_symbol_value(trace_line, "cache");
+	set = trace_line_get_symbol_value_int(trace_line, "set");
+	way = trace_line_get_symbol_value_int(trace_line, "way");
+	tag = trace_line_get_symbol_value_hex(trace_line, "tag");
+	state = trace_line_get_symbol_value(trace_line, "state");
+
+	/* Get module */
+	vmod = hash_table_get(vmem->vmod_panel->vmod_table, vmod_name);
+	if (!vmod)
+		fatal("%s: invalid module name '%s'", __FUNCTION__, vmod_name);
+
+	/* Set block */
+	vcache_set_block(vmod->vcache, set, way, tag, state);
+}
+
+
+static void vmem_process_trace_line_set_sharer(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+}
+
+
+static void vmem_process_trace_line_clear_sharer(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+}
+
+
 static void vmem_destroy_event(GtkWidget *widget, struct vmem_t *vmem)
 {
 	vmem_free(vmem);
@@ -51,10 +95,14 @@ struct vmem_t *vmem_create(void)
 		(state_file_read_checkpoint_func_t) vmem_read_checkpoint,
 		(state_file_write_checkpoint_func_t) vmem_write_checkpoint,
 		(state_file_refresh_func_t) vmem_refresh, vmem);
-	state_file_new_command(visual_state_file, "mem.ttag",
-		(state_file_process_trace_line_func_t) vmem_process_trace_line, vmem);
-	state_file_new_command(visual_state_file, "mem.blk",
-		(state_file_process_trace_line_func_t) vmem_process_trace_line, vmem);
+	state_file_new_command(visual_state_file, "mem.set_transient_tag",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_set_transient_tag, vmem);
+	state_file_new_command(visual_state_file, "mem.set_block",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_set_block, vmem);
+	state_file_new_command(visual_state_file, "mem.set_sharer",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_set_sharer, vmem);
+	state_file_new_command(visual_state_file, "mem.clear_sharer",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_clear_sharer, vmem);
 
 	/* Main window */
 	vmem->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -129,46 +177,6 @@ void vmem_write_checkpoint(struct vmem_t *vmem, FILE *f)
 		str_write_to_file(f, vmod->name);
 		vmod_write_checkpoint(vmod, f);
 	}
-}
-
-
-void vmem_process_trace_line(struct vmem_t *vmem, struct trace_line_t *trace_line)
-{
-	char *command;
-
-	command = trace_line_get_command(trace_line);
-	if (!strcmp(command, "mem.ttag"))
-	{
-	}
-	else if (!strcmp(command, "mem.blk"))
-	{
-		struct vmod_t *vmod;
-
-		char *vmod_name;
-		char *state;
-
-		int set;
-		int way;
-
-		unsigned int tag;
-
-		/* Get fields */
-		vmod_name = trace_line_get_symbol_value(trace_line, "cache");
-		set = trace_line_get_symbol_value_int(trace_line, "set");
-		way = trace_line_get_symbol_value_int(trace_line, "way");
-		tag = trace_line_get_symbol_value_hex(trace_line, "tag");
-		state = trace_line_get_symbol_value(trace_line, "state");
-
-		/* Get module */
-		vmod = hash_table_get(vmem->vmod_panel->vmod_table, vmod_name);
-		if (!vmod)
-			fatal("%s: invalid module name '%s'", __FUNCTION__, vmod_name);
-
-		/* Set block */
-		vcache_set_block(vmod->vcache, set, way, tag, state);
-	}
-	else
-		fatal("%s: unknown command '%s'", __FUNCTION__, command);
 }
 
 

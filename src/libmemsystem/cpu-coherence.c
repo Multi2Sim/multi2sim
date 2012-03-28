@@ -807,7 +807,7 @@ void mod_handler_evict(int event, void *data)
 			if (dir_entry_tag < stack->src_tag || dir_entry_tag >= stack->src_tag + mod->block_size)
 				continue;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			dir_entry_clear_sharer(dir, dir_entry, mod->low_net_node->index);
+			dir_entry_clear_sharer(dir, stack->set, stack->way, z, mod->low_net_node->index);
 			if (dir_entry->owner == mod->low_net_node->index)
 				dir_entry->owner = DIR_ENTRY_OWNER_NONE;
 		}
@@ -1085,7 +1085,7 @@ void mod_handler_read_request(int event, void *data)
 			if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + mod->block_size)
 				continue;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			dir_entry_set_sharer(dir, dir_entry, mod->low_net_node->index);
+			dir_entry_set_sharer(dir, stack->set, stack->way, z, mod->low_net_node->index);
 			if (dir_entry->num_sharers > 1)
 				shared = 1;
 		}
@@ -1409,7 +1409,7 @@ void mod_handler_write_request(int event, void *data)
 			if (dir_entry_tag < stack->addr || dir_entry_tag >= stack->addr + mod->block_size)
 				continue;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			dir_entry_set_sharer(dir, dir_entry, mod->low_net_node->index);
+			dir_entry_set_sharer(dir, stack->set, stack->way, z, mod->low_net_node->index);
 			dir_entry->owner = mod->low_net_node->index;
 			assert(dir_entry->num_sharers == 1);
 		}
@@ -1534,7 +1534,7 @@ void mod_handler_invalidate(int event, void *data)
 				struct net_node_t *node;
 				
 				/* Skip non-sharers and 'except_mod' */
-				if (!dir_entry_is_sharer(dir, dir_entry, i))
+				if (!dir_entry_is_sharer(dir, stack->set, stack->way, z, i))
 					continue;
 
 				node = list_get(mod->high_net->node_list, i);
@@ -1543,7 +1543,7 @@ void mod_handler_invalidate(int event, void *data)
 					continue;
 
 				/* Clear sharer and owner */
-				dir_entry_clear_sharer(dir, dir_entry, i);
+				dir_entry_clear_sharer(dir, stack->set, stack->way, z, i);
 				if (dir_entry->owner == i)
 					dir_entry->owner = DIR_ENTRY_OWNER_NONE;
 

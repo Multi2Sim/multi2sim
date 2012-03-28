@@ -132,6 +132,8 @@ struct dir_entry_t
 
 struct dir_t
 {
+	char *name;
+
 	/* Number of possible sharers for a block. This determines
 	 * the size of the directory entry bitmap. */
 	int num_nodes;
@@ -152,18 +154,18 @@ struct dir_t
 	unsigned char data[0];
 };
 
-struct dir_t *dir_create(int xsize, int ysize, int zsize, int num_nodes);
+struct dir_t *dir_create(char *name, int xsize, int ysize, int zsize, int num_nodes);
 void dir_free(struct dir_t *dir);
 
 struct dir_entry_t *dir_entry_get(struct dir_t *dir, int x, int y, int z);
 
-void dir_entry_set_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
-void dir_entry_clear_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
-void dir_entry_clear_all_sharers(struct dir_t *dir, volatile struct dir_entry_t *dir_entry);
-int dir_entry_is_sharer(struct dir_t *dir, struct dir_entry_t *dir_entry, int node);
+void dir_entry_set_sharer(struct dir_t *dir, int x, int y, int z, int node);
+void dir_entry_clear_sharer(struct dir_t *dir, int x, int y, int z, int node);
+void dir_entry_clear_all_sharers(struct dir_t *dir, int x, int y, int z);
+int dir_entry_is_sharer(struct dir_t *dir, int x, int y, int z, int node);
 int dir_entry_group_shared_or_owned(struct dir_t *dir, int x, int y);
 
-void dir_entry_dump_sharers(struct dir_t *dir, struct dir_entry_t *dir_entry);
+void dir_entry_dump_sharers(struct dir_t *dir, int x, int y, int z);
 
 struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y);
 int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct mod_stack_t *stack);
