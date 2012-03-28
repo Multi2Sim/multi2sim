@@ -19,8 +19,9 @@
 
 #include <memvisual-private.h>
 
-#define SIZE_OF_VCACHE_DIR_ENTRY(vcache) (sizeof(struct vcache_dir_entry_t) + \
-	((vcache)->num_sharers + 7) / 8)
+#define VCACHE_DIR_ENTRY_SHARERS_SIZE(vcache) (((vcache)->num_sharers + 7) / 8)
+#define VCACHE_DIR_ENTRY_SIZE(vcache) (sizeof(struct vcache_dir_entry_t) + \
+	VCACHE_DIR_ENTRY_SHARERS_SIZE((vcache)))
 
 #define VCACHE_CELL_WIDTH		150
 #define VCACHE_CELL_HEIGHT		20
@@ -29,6 +30,12 @@
 #define VCACHE_FIRST_COL_WIDTH		100
 
 #define VCACHE_FONT_SIZE		12
+
+#define VCACHE_LABEL_BLOCK_LEFT		0
+#define VCACHE_LABEL_BLOCK_WIDTH	100
+
+#define VCACHE_LABEL_SHARERS_LEFT	101
+#define VCACHE_LABEL_SHARERS_WIDTH	25
 
 
 static struct string_map_t vcache_block_state_map =
@@ -83,6 +90,133 @@ static void vcache_scroll_bar_value_changed_event(GtkRange *range, struct vcache
 }
 
 
+static struct vcache_dir_entry_t *vcache_get_dir_entry(struct vcache_t *vcache, int set, int way, int sub_block)
+{
+	struct vcache_block_t *block;
+	struct vcache_dir_entry_t *dir_entry;
+
+	assert(IN_RANGE(set, 0, vcache->num_sets - 1));
+	assert(IN_RANGE(way, 0, vcache->assoc - 1));
+	assert(IN_RANGE(sub_block, 0, vcache->num_sub_blocks - 1));
+
+	block = &vcache->blocks[set * vcache->assoc + way];
+	dir_entry = (struct vcache_dir_entry_t *) (((void *) block->dir_entries) + VCACHE_DIR_ENTRY_SIZE(vcache) * sub_block);
+
+	return dir_entry;
+}
+
+
+static void vcache_dir_entry_read_checkpoint(struct vcache_t *vcache,
+	int x, int y, int z, FILE *f)
+{
+	struct vcache_dir_entry_t *dir_entry;
+
+	int count = 0;
+
+	dir_entry = vcache_get_dir_entry(vcache, x, y, z);
+	count += fread(&dir_entry->num_sharers, 1, 4, f);
+	count += fread(&dir_entry->owner, 1, 4, f);
+	count += fread(dir_entry->sharers, 1, VCACHE_DIR_ENTRY_SHARERS_SIZE(vcache), f);
+	if (count != 8 + VCACHE_DIR_ENTRY_SHARERS_SIZE(vcache))
+		panic("%s: corrupted checkpoint", __FUNCTION__);
+}
+
+
+static void vcache_dir_entry_write_checkpoint(struct vcache_t *vcache,
+	int x, int y, int z, FILE *f)
+{
+	struct vcache_dir_entry_t *dir_entry;
+
+	dir_entry = vcache_get_dir_entry(vcache, x, y, z);
+	fwrite(&dir_entry->num_sharers, 1, 4, f);
+	fwrite(&dir_entry->owner, 1, 4, f);
+	fwrite(dir_entry->sharers, 1, VCACHE_DIR_ENTRY_SHARERS_SIZE(vcache), f);
+}
+
+
+/* Get total number of sharers of a block, adding up sharers of each sub-block */
+static int vcache_block_get_num_sharers(struct vcache_t *vcache, int set, int way)
+{
+	struct vcache_dir_entry_t *dir_entry;
+
+	int num_sharers;
+	int i;
+
+	num_sharers = 0;
+	for (i = 0; i < vcache->num_sub_blocks; i++)
+	{
+		dir_entry = vcache_get_dir_entry(vcache, set, way, i);
+		num_sharers += dir_entry->num_sharers;
+	}
+
+	return num_sharers;
+}
+
+
+static gboolean vcache_block_sharers_enter_notify_event(GtkWidget *widget,
+	GdkEventCrossing *event, struct vcache_block_t *block)
+{
+	GdkColor color;
+
+	PangoAttrList *attrs;
+	PangoAttribute *underline_attr;
+
+	GdkWindow *window;
+	GdkCursor *cursor;
+
+	GtkStyle *style;
+
+	style = gtk_widget_get_style(block->sharers_label);
+	block->sharers_label_color = style->fg[GTK_STATE_NORMAL];
+
+	gdk_color_parse("red", &color);
+	gtk_widget_modify_fg(block->sharers_label, GTK_STATE_NORMAL, &color);
+
+	attrs = gtk_label_get_attributes(GTK_LABEL(block->sharers_label));
+	underline_attr = pango_attr_underline_new(PANGO_UNDERLINE_SINGLE);
+	pango_attr_list_change(attrs, underline_attr);
+
+	cursor = gdk_cursor_new(GDK_HAND1);
+	window = gtk_widget_get_parent_window(widget);
+	gdk_window_set_cursor(window, cursor);
+	gdk_cursor_unref(cursor);
+
+	return FALSE;
+}
+
+
+static gboolean vcache_block_sharers_leave_notify_event(GtkWidget *widget,
+	GdkEventCrossing *event, struct vcache_block_t *block)
+{
+	PangoAttrList *attrs;
+	PangoAttribute *underline_attr;
+	GdkWindow *window;
+
+	window = gtk_widget_get_parent_window(widget);
+	gdk_window_set_cursor(window, NULL);
+
+	attrs = gtk_label_get_attributes(GTK_LABEL(block->sharers_label));
+	underline_attr = pango_attr_underline_new(PANGO_UNDERLINE_NONE);
+	pango_attr_list_change(attrs, underline_attr);
+	gtk_widget_modify_fg(block->sharers_label, GTK_STATE_NORMAL, &block->sharers_label_color);
+
+	return FALSE;
+}
+
+
+static void vcache_block_sharers_clicked_event(GtkWidget *widget,
+	GdkEventButton *event, struct vlist_popup_t *popup)
+{
+	info_popup_show("Sharers info");
+}
+
+
+
+
+/*
+ * Public Functions
+ */
+
 struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_size,
 	int sub_block_size, int num_sharers)
 {
@@ -115,7 +249,8 @@ struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_si
 	for (i = 0; i < num_sets * assoc; i++)
 	{
 		block = &vcache->blocks[i];
-		block->dir_entries = calloc(vcache->num_sub_blocks, SIZE_OF_VCACHE_DIR_ENTRY(vcache));
+		block->vcache = vcache;
+		block->dir_entries = calloc(vcache->num_sub_blocks, VCACHE_DIR_ENTRY_SIZE(vcache));
 	}
 
 	/* Scroll bars */
@@ -209,22 +344,6 @@ void vcache_free(struct vcache_t *vcache)
 }
 
 
-struct vcache_dir_entry_t *vcache_get_dir_entry(struct vcache_t *vcache, int set, int way, int sub_block)
-{
-	struct vcache_block_t *block;
-	struct vcache_dir_entry_t *dir_entry;
-
-	assert(IN_RANGE(set, 0, vcache->num_sets - 1));
-	assert(IN_RANGE(way, 0, vcache->assoc - 1));
-	assert(IN_RANGE(sub_block, 0, vcache->num_sub_blocks - 1));
-
-	block = &vcache->blocks[set * vcache->assoc + way];
-	dir_entry = (struct vcache_dir_entry_t *) (((void *) block->dir_entries) + SIZE_OF_VCACHE_DIR_ENTRY(vcache) * sub_block);
-
-	return dir_entry;
-}
-
-
 void vcache_set_block(struct vcache_t *vcache, int set, int way,
 	unsigned int tag, char *state)
 {
@@ -241,10 +360,66 @@ void vcache_set_block(struct vcache_t *vcache, int set, int way,
 }
 
 
+void vcache_dir_entry_set_sharer(struct vcache_t *vcache,
+	int x, int y, int z, int sharer)
+{
+	struct vcache_dir_entry_t *dir_entry;
+
+	/* Get directory entry */
+	assert(IN_RANGE(sharer, 0, vcache->num_sharers - 1));
+	dir_entry = vcache_get_dir_entry(vcache, x, y, z);
+
+	/* In a correct trace, sharer should not be set */
+	if ((dir_entry->sharers[sharer / 8] & (1 << sharer % 8)))
+		panic("%s: sharer already set", __FUNCTION__);
+
+	/* Add sharer */
+	assert(dir_entry->num_sharers < vcache->num_sharers);
+	dir_entry->sharers[sharer / 8] |= 1 << (sharer % 8);
+	dir_entry->num_sharers++;
+}
+
+
+void vcache_dir_entry_clear_sharer(struct vcache_t *vcache,
+	int x, int y, int z, int sharer)
+{
+	struct vcache_dir_entry_t *dir_entry;
+
+	/* Get directory entry */
+	assert(IN_RANGE(sharer, 0, vcache->num_sharers - 1));
+	dir_entry = vcache_get_dir_entry(vcache, x, y, z);
+
+	/* In a correct trace, sharer should not be set */
+	if (!(dir_entry->sharers[sharer / 8] & (1 << sharer % 8)))
+		panic("%s: sharer already clear", __FUNCTION__);
+
+	/* Add sharer */
+	assert(dir_entry->num_sharers > 0);
+	dir_entry->sharers[sharer / 8] &= ~(1 << (sharer % 8));
+	dir_entry->num_sharers--;
+}
+
+
+void vcache_dir_entry_clear_all_sharers(struct vcache_t *vcache,
+	int x, int y, int z)
+{
+	struct vcache_dir_entry_t *dir_entry;
+
+	int i;
+
+	/* Clear sharers */
+	dir_entry = vcache_get_dir_entry(vcache, x, y, z);
+	dir_entry->num_sharers = 0;
+	for (i = 0; i < VCACHE_DIR_ENTRY_SHARERS_SIZE(vcache); i++)
+		dir_entry->sharers[i] = 0;
+}
+
+
 void vcache_read_checkpoint(struct vcache_t *vcache, FILE *f)
 {
 	int set;
 	int way;
+	int i;
 
 	for (set = 0; set < vcache->num_sets; set++)
 	{
@@ -263,6 +438,10 @@ void vcache_read_checkpoint(struct vcache_t *vcache, FILE *f)
 			/* Read state */
 			fread(&state, 1, 1, f);
 			block->state = state;
+
+			/* Read directory entry */
+			for (i = 0; i < vcache->num_sub_blocks; i++)
+				vcache_dir_entry_read_checkpoint(vcache, set, way, i, f);
 		}
 	}
 }
@@ -272,6 +451,7 @@ void vcache_write_checkpoint(struct vcache_t *vcache, FILE *f)
 {
 	int set;
 	int way;
+	int i;
 
 	for (set = 0; set < vcache->num_sets; set++)
 	{
@@ -290,6 +470,10 @@ void vcache_write_checkpoint(struct vcache_t *vcache, FILE *f)
 			/* Dump state */
 			state = block->state;
 			fwrite(&state, 1, 1, f);
+
+			/* Dump directory entry */
+			for (i = 0; i < vcache->num_sub_blocks; i++)
+				vcache_dir_entry_write_checkpoint(vcache, set, way, i, f);
 		}
 	}
 }
@@ -304,14 +488,8 @@ void vcache_refresh(struct vcache_t *vcache)
 	int width;
 	int height;
 
-	int cell_width;
-	int cell_height;
-	int cell_font_size;
-
 	int table_width;
 	int table_height;
-
-	int block_width;
 
 	int left;
 	int left_way;
@@ -344,20 +522,15 @@ void vcache_refresh(struct vcache_t *vcache)
 	vcache->height = height;
 
 	/* Dimensions */
-	cell_width = VCACHE_CELL_WIDTH;
-	cell_height = VCACHE_CELL_HEIGHT;
-	cell_font_size = VCACHE_FONT_SIZE;
-
-	table_width = cell_width * vcache->assoc;
-	table_height = cell_height * vcache->num_sets;
-
-	block_width = 100;
+	table_width = VCACHE_CELL_WIDTH * vcache->assoc;
+	table_height = VCACHE_CELL_HEIGHT * vcache->num_sets;
 
 	/* Horizontal scroll bar */
 	if (table_width > width)
 	{
 		gtk_range_set_range(GTK_RANGE(vcache->hscrollbar), 0, table_width - width);
-		gtk_range_set_increments(GTK_RANGE(vcache->hscrollbar), cell_width / 3, width - cell_width / 3);
+		gtk_range_set_increments(GTK_RANGE(vcache->hscrollbar),
+			VCACHE_CELL_WIDTH / 3, width - VCACHE_CELL_WIDTH / 3);
 		gtk_widget_set_visible(vcache->hscrollbar, TRUE);
 	}
 	else
@@ -367,7 +540,8 @@ void vcache_refresh(struct vcache_t *vcache)
 	if (table_height > height)
 	{
 		gtk_range_set_range(GTK_RANGE(vcache->vscrollbar), 0, table_height - height);
-		gtk_range_set_increments(GTK_RANGE(vcache->vscrollbar), cell_height, height - cell_height);
+		gtk_range_set_increments(GTK_RANGE(vcache->vscrollbar),
+			VCACHE_CELL_HEIGHT, height - VCACHE_CELL_HEIGHT);
 		gtk_widget_set_visible(vcache->vscrollbar, TRUE);
 	}
 	else
@@ -375,13 +549,13 @@ void vcache_refresh(struct vcache_t *vcache)
 
 	/* Get starting X position */
 	left = gtk_range_get_value(GTK_RANGE(vcache->hscrollbar));
-	left_way = left / cell_width;
-	left_way_offset = -(left % cell_width);
+	left_way = left / VCACHE_CELL_WIDTH;
+	left_way_offset = -(left % VCACHE_CELL_WIDTH);
 
 	/* Get starting Y position */
 	top = gtk_range_get_value(GTK_RANGE(vcache->vscrollbar));
-	top_set = top / cell_height;
-	top_set_offset = -(top % cell_height);
+	top_set = top / VCACHE_CELL_HEIGHT;
+	top_set_offset = -(top % VCACHE_CELL_HEIGHT);
 
 	/* First row */
 	way = left_way;
@@ -390,13 +564,13 @@ void vcache_refresh(struct vcache_t *vcache)
 	{
 		snprintf(str, sizeof str, "%d", way);
 		GtkWidget *label = gtk_label_new(str);
-		gtk_widget_set_size_request(label, cell_width - 1, VCACHE_FIRST_ROW_HEIGHT - 1);
+		gtk_widget_set_size_request(label, VCACHE_CELL_WIDTH - 1, VCACHE_FIRST_ROW_HEIGHT - 1);
 		gtk_widget_show(label);
 
 		/* Set label font attributes */
 		PangoAttrList *attrs;
 		attrs = pango_attr_list_new();
-		PangoAttribute *size_attr = pango_attr_size_new_absolute(cell_font_size << 10);
+		PangoAttribute *size_attr = pango_attr_size_new_absolute(VCACHE_FONT_SIZE << 10);
 		pango_attr_list_insert(attrs, size_attr);
 		gtk_label_set_attributes(GTK_LABEL(label), attrs);
 
@@ -412,7 +586,7 @@ void vcache_refresh(struct vcache_t *vcache)
 		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
 
 		/* Next way */
-		x += cell_width;
+		x += VCACHE_CELL_WIDTH;
 		way++;
 	}
 
@@ -423,13 +597,13 @@ void vcache_refresh(struct vcache_t *vcache)
 	{
 		snprintf(str, sizeof str, "%d", set);
 		GtkWidget *label = gtk_label_new(str);
-		gtk_widget_set_size_request(label, VCACHE_FIRST_COL_WIDTH - 1, cell_height - 1);
+		gtk_widget_set_size_request(label, VCACHE_FIRST_COL_WIDTH - 1, VCACHE_CELL_HEIGHT - 1);
 		gtk_widget_show(label);
 
 		/* Set label font attributes */
 		PangoAttrList *attrs;
 		attrs = pango_attr_list_new();
-		PangoAttribute *size_attr = pango_attr_size_new_absolute(cell_font_size << 10);
+		PangoAttribute *size_attr = pango_attr_size_new_absolute(VCACHE_FONT_SIZE << 10);
 		pango_attr_list_insert(attrs, size_attr);
 		gtk_label_set_attributes(GTK_LABEL(label), attrs);
 
@@ -445,7 +619,7 @@ void vcache_refresh(struct vcache_t *vcache)
 		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
 
 		/* Next set */
-		y += cell_height;
+		y += VCACHE_CELL_HEIGHT;
 		set++;
 	}
 
@@ -463,43 +637,86 @@ void vcache_refresh(struct vcache_t *vcache)
 
 			char *state_str;
 
+			int num_sharers;
+
+			GtkWidget *label;
+			GtkWidget *event_box;
+
+			PangoAttrList *attrs;
+			PangoAttribute *size_attr;
+
 			/* Get block properties */
 			assert(IN_RANGE(set, 0, vcache->num_sets - 1));
 			assert(IN_RANGE(way, 0, vcache->assoc - 1));
 			block = &vcache->blocks[set * vcache->assoc + way];
 			state_str = map_value(&vcache_block_state_map, block->state);
 
-			/* Label */
+			/* Tag label */
 			snprintf(str, sizeof str, "0x%x (%s)", block->tag, state_str);
-			GtkWidget *label = gtk_label_new(str);
-			gtk_widget_set_size_request(label, block_width, cell_height - 1);
+			label = gtk_label_new(str);
+			gtk_widget_set_size_request(label, VCACHE_LABEL_BLOCK_WIDTH, VCACHE_CELL_HEIGHT - 1);
 			gtk_widget_show(label);
 
 			/* Set label font attributes */
-			PangoAttrList *attrs;
 			attrs = pango_attr_list_new();
-			PangoAttribute *size_attr = pango_attr_size_new_absolute(cell_font_size << 10);
+			size_attr = pango_attr_size_new_absolute(VCACHE_FONT_SIZE << 10);
 			pango_attr_list_insert(attrs, size_attr);
 			gtk_label_set_attributes(GTK_LABEL(label), attrs);
 
 			/* Event box */
-			GtkWidget *event_box = gtk_event_box_new();
+			event_box = gtk_event_box_new();
 			gtk_container_add(GTK_CONTAINER(event_box), label);
-			gtk_layout_put(GTK_LAYOUT(layout), event_box, x, y);
+			gtk_layout_put(GTK_LAYOUT(layout), event_box, x + VCACHE_LABEL_BLOCK_LEFT, y);
 			gtk_widget_show(event_box);
 
+			/* Background color */
 			GdkColor color;
 			assert(IN_RANGE(block->state, 0, VCACHE_NUM_BLOCK_STATE_COLORS - 1));
 			gdk_color_parse(vcache_block_state_color[block->state], &color);
 			gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
 
+			/* Sharers text */
+			num_sharers = vcache_block_get_num_sharers(vcache, set, way);
+			snprintf(str, sizeof str, "+%d", num_sharers);
+			if (!num_sharers)
+				strcpy(str, "-");
+
+			/* Sharers label */
+			label = gtk_label_new(str);
+			gtk_widget_set_size_request(label, VCACHE_LABEL_SHARERS_WIDTH, VCACHE_CELL_HEIGHT - 1);
+			gtk_widget_show(label);
+			block->sharers_label = label;
+
+			/* Set label font attributes */
+			attrs = pango_attr_list_new();
+			size_attr = pango_attr_size_new_absolute(VCACHE_FONT_SIZE << 10);
+			pango_attr_list_insert(attrs, size_attr);
+			gtk_label_set_attributes(GTK_LABEL(label), attrs);
+
+			/* Event box */
+			event_box = gtk_event_box_new();
+			gtk_container_add(GTK_CONTAINER(event_box), label);
+			gtk_layout_put(GTK_LAYOUT(layout), event_box, x + VCACHE_LABEL_SHARERS_LEFT, y);
+			gtk_widget_show(event_box);
+			gtk_widget_add_events(event_box, GDK_ENTER_NOTIFY_MASK |
+				GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK);
+			if (num_sharers)
+			{
+				g_signal_connect(G_OBJECT(event_box), "enter-notify-event",
+					G_CALLBACK(vcache_block_sharers_enter_notify_event), block);
+				g_signal_connect(G_OBJECT(event_box), "leave-notify-event",
+					G_CALLBACK(vcache_block_sharers_leave_notify_event), block);
+				g_signal_connect(G_OBJECT(event_box), "button-press-event",
+					G_CALLBACK(vcache_block_sharers_clicked_event), block);
+			}
+
 			/* Next way */
-			x += cell_width;
+			x += VCACHE_CELL_WIDTH;
 			way++;
 		}
 
 		/* Next set */
-		y += cell_height;
+		y += VCACHE_CELL_HEIGHT;
 		set++;
 	}
 
