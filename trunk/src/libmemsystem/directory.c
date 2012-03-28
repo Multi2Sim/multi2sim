@@ -168,7 +168,7 @@ void dir_entry_clear_all_sharers(struct dir_t *dir, int x, int y, int z)
 		dir_entry->sharer[i] = 0;
 
 	/* Debug */
-	mem_trace("mem.clear_all_sharer dir=\"%s\" x=%d y=%d z=%d\n",
+	mem_trace("mem.clear_all_sharers dir=\"%s\" x=%d y=%d z=%d\n",
 		dir->name, x, y, z);
 }
 
