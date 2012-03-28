@@ -380,8 +380,8 @@ void vmem_free(struct vmem_t *vmem);
 
 void vmem_read_checkpoint(struct vmem_t *vmem, FILE *f);
 void vmem_write_checkpoint(struct vmem_t *vmem, FILE *f);
+
 void vmem_refresh(struct vmem_t *vmem);
-void vmem_process_trace_line(struct vmem_t *vmem, struct trace_line_t *trace_line);
 
 
 #endif

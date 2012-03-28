@@ -1469,7 +1469,7 @@ static void mem_config_calculate_sub_block_sizes(void)
 
 		/* Create directory */
 		mod->num_sub_blocks = mod->block_size / mod->sub_block_size;
-		mod->dir = dir_create(mod->dir_num_sets, mod->dir_assoc, mod->num_sub_blocks, num_nodes);
+		mod->dir = dir_create(mod->name, mod->dir_num_sets, mod->dir_assoc, mod->num_sub_blocks, num_nodes);
 		mem_debug("\t%s - %dx%dx%d (%dx%dx%d effective) - %d entries, %d sub-blocks\n",
 			mod->name, mod->dir_num_sets, mod->dir_assoc, num_nodes,
 			mod->dir_num_sets, mod->dir_assoc, linked_list_count(mod->high_mod_list),
