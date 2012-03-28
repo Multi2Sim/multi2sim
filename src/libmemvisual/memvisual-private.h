@@ -286,6 +286,7 @@ void vmod_panel_refresh(struct vmod_panel_t *panel);
 struct vcache_dir_entry_t
 {
 	int owner;
+	int num_sharers;
 
 	/* Bit map of sharers (last field in variable-size structure) */
 	unsigned char sharers[0];
@@ -293,6 +294,11 @@ struct vcache_dir_entry_t
 
 struct vcache_block_t
 {
+	struct vcache_t *vcache;
+
+	GdkColor sharers_label_color;
+	GtkWidget *sharers_label;
+
 	unsigned int tag;
 	int state;
 
@@ -335,6 +341,13 @@ void vcache_free(struct vcache_t *vcache);
 
 void vcache_set_block(struct vcache_t *vcache, int set, int way,
 	unsigned int tag, char *state);
+
+void vcache_dir_entry_set_sharer(struct vcache_t *vcache,
+	int x, int y, int z, int sharer);
+void vcache_dir_entry_clear_sharer(struct vcache_t *vcache,
+	int x, int y, int z, int sharer);
+void vcache_dir_entry_clear_all_sharers(struct vcache_t *vcache,
+	int x, int y, int z);
 
 void vcache_read_checkpoint(struct vcache_t *vcache, FILE *f);
 void vcache_write_checkpoint(struct vcache_t *vcache, FILE *f);

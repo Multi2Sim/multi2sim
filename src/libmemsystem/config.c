@@ -1559,7 +1559,7 @@ static void mem_config_trace(void)
 				"assoc=%d "
 				"block_size=%d "
 				"sub_block_size=%d "
-				"dir_num_nodes=%d "
+				"num_sharers=%d "
 				"level=%d "
 				"\n",
 				mod->name,
