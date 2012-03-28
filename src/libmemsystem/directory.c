@@ -114,6 +114,21 @@ void dir_entry_dump_sharers(struct dir_t *dir, int x, int y, int z)
 }
 
 
+void dir_entry_set_owner(struct dir_t *dir, int x, int y, int z, int node)
+{
+	struct dir_entry_t *dir_entry;
+
+	/* Set owner */
+	assert(node == DIR_ENTRY_OWNER_NONE || IN_RANGE(node, 0, dir->num_nodes - 1));
+	dir_entry = dir_entry_get(dir, x, y, z);
+	dir_entry->owner = node;
+
+	/* Trace */
+	mem_trace("mem.set_owner dir=\"%s\" x=%d y=%d z=%d owner=%d\n",
+		dir->name, x, y, z, node);
+}
+
+
 void dir_entry_set_sharer(struct dir_t *dir, int x, int y, int z, int node)
 {
 	struct dir_entry_t *dir_entry;

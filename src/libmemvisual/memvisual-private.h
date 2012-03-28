@@ -201,10 +201,7 @@ void vlist_refresh(struct vlist_t *vlist);
  * Access to a memory module
  */
 
-struct vmod_access_t
-{
-	long long id;
-};
+struct vmod_access_t;
 
 struct vmod_access_t *vmod_access_create(long long id);
 void vmod_access_free(struct vmod_access_t *access);
@@ -221,6 +218,14 @@ void vmod_access_get_desc(void *access, char *buf, int size);
 
 struct vmod_t
 {
+	struct vmod_panel_t *panel;
+
+	struct vnet_t *high_vnet;
+	struct vnet_t *low_vnet;
+
+	int high_vnet_node_index;
+	int low_vnet_node_index;
+
 	char *name;
 	int level;
 
@@ -235,8 +240,9 @@ struct vmod_t
 };
 
 
-struct vmod_t *vmod_create(char *name, int num_sets, int assoc, int block_size,
-		int sub_block_size, int num_sharers, int level);
+struct vmod_t *vmod_create(struct vmod_panel_t *panel, char *name, int num_sets, int assoc,
+	int block_size, int sub_block_size, int num_sharers, int level, struct vnet_t *high_vnet,
+	int high_vnet_node_index, struct vnet_t *low_vnet, int low_vnet_node_index);
 void vmod_free(struct vmod_t *vmod);
 
 void vmod_read_checkpoint(struct vmod_t *vmod, FILE *f);
@@ -245,6 +251,23 @@ void vmod_write_checkpoint(struct vmod_t *vmod, FILE *f);
 void vmod_refresh(struct vmod_t *vmod);
 
 GtkWidget *vmod_get_widget(struct vmod_t *vmod);
+
+
+
+
+/*
+ * Interconnect
+ */
+
+struct vnet_t;
+
+struct vnet_t *vnet_create(char *name, int num_nodes);
+void vnet_free(struct vnet_t *vnet);
+
+char *vnet_get_name(struct vnet_t *vnet);
+
+void vnet_attach_vmod(struct vnet_t *vnet, struct vmod_t *vmod, int node_index);
+struct vmod_t *vnet_get_vmod(struct vnet_t *vnet, int node_index);
 
 
 
@@ -261,6 +284,9 @@ struct vmod_panel_t
 	/* Table of 'vmod_t' modules */
 	struct hash_table_t *vmod_table;
 
+	/* Table of 'vnet_t' networks */
+	struct hash_table_t *vnet_table;
+
 	/* List of memory levels (vmod_level_t) */
 	struct list_t *vmod_level_list;
 
@@ -273,6 +299,8 @@ struct vmod_panel_t *vmod_panel_create(void);
 void vmod_panel_free(struct vmod_panel_t *panel);
 
 GtkWidget *vmod_panel_get_widget(struct vmod_panel_t *panel);
+struct vnet_t *vmod_panel_get_vnet(struct vmod_panel_t *panel, char *name);
+struct vmod_t *vmod_panel_get_vmod(struct vmod_panel_t *panel, char *name);
 
 void vmod_panel_refresh(struct vmod_panel_t *panel);
 
@@ -296,11 +324,14 @@ struct vcache_block_t
 {
 	struct vcache_t *vcache;
 
+	int set;
+	int way;
+	int state;
+
 	GdkColor sharers_label_color;
 	GtkWidget *sharers_label;
 
 	unsigned int tag;
-	int state;
 
 	struct vcache_dir_entry_t *dir_entries;
 };
@@ -320,7 +351,8 @@ struct vcache_t
 	int width;
 	int height;
 
-	/* Displayed name */
+	struct vmod_t *vmod;
+
 	char *name;
 
 	int num_sets;
@@ -335,8 +367,8 @@ struct vcache_t
 	struct vcache_block_t *blocks;
 };
 
-struct vcache_t *vcache_create(char *name, int num_sets, int assoc, int block_size,
-	int sub_block_size, int num_sharers);
+struct vcache_t *vcache_create(struct vmod_t *vmod, char *name, int num_sets, int assoc,
+	int block_size, int sub_block_size, int num_sharers);
 void vcache_free(struct vcache_t *vcache);
 
 void vcache_set_block(struct vcache_t *vcache, int set, int way,
@@ -348,6 +380,10 @@ void vcache_dir_entry_clear_sharer(struct vcache_t *vcache,
 	int x, int y, int z, int sharer);
 void vcache_dir_entry_clear_all_sharers(struct vcache_t *vcache,
 	int x, int y, int z);
+int vcache_dir_entry_is_sharer(struct vcache_t *vcache,
+	int x, int y, int z, int sharer);
+void vcache_dir_entry_set_owner(struct vcache_t *vcache,
+	int x, int y, int z, int owner);
 
 void vcache_read_checkpoint(struct vcache_t *vcache, FILE *f);
 void vcache_write_checkpoint(struct vcache_t *vcache, FILE *f);

@@ -101,7 +101,7 @@ struct info_popup_t *info_popup_create(char *text)
 	PangoAttrList *attrs;
 	attrs = pango_attr_list_new();
 	PangoAttribute *attr_family = pango_attr_family_new("Courier");
-	PangoAttribute *attr_size = pango_attr_size_new(12 << 10);
+	PangoAttribute *attr_size = pango_attr_size_new(10 << 10);
 	pango_attr_list_insert(attrs, attr_family);
 	pango_attr_list_insert(attrs, attr_size);
 	gtk_label_set_attributes(GTK_LABEL(label), attrs);

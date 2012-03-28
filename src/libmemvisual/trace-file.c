@@ -223,8 +223,6 @@ struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *file
 			if (*buf_ptr)
 				*buf_ptr++ = '\0';
 		}
-		if (!*symbol_value)
-			fatal("%s: line %d: invalid format", file->name, file->line_num);
 
 		/* Duplicate value */
 		symbol_value = strdup(symbol_value);
