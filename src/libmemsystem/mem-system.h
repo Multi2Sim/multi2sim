@@ -503,6 +503,7 @@ extern int EV_MOD_WRITE_REQUEST_EXCLUSIVE;
 extern int EV_MOD_WRITE_REQUEST_UPDOWN;
 extern int EV_MOD_WRITE_REQUEST_UPDOWN_FINISH;
 extern int EV_MOD_WRITE_REQUEST_DOWNUP;
+extern int EV_MOD_WRITE_REQUEST_DOWNUP_FINISH;
 extern int EV_MOD_WRITE_REQUEST_REPLY;
 extern int EV_MOD_WRITE_REQUEST_FINISH;
 
@@ -513,12 +514,18 @@ extern int EV_MOD_READ_REQUEST_UPDOWN;
 extern int EV_MOD_READ_REQUEST_UPDOWN_MISS;
 extern int EV_MOD_READ_REQUEST_UPDOWN_FINISH;
 extern int EV_MOD_READ_REQUEST_DOWNUP;
+extern int EV_MOD_READ_REQUEST_DOWNUP_WAIT_FOR_REQS;
 extern int EV_MOD_READ_REQUEST_DOWNUP_FINISH;
 extern int EV_MOD_READ_REQUEST_REPLY;
 extern int EV_MOD_READ_REQUEST_FINISH;
 
 extern int EV_MOD_INVALIDATE;
 extern int EV_MOD_INVALIDATE_FINISH;
+
+extern int EV_MOD_PEER_SEND;
+extern int EV_MOD_PEER_RECEIVE;
+extern int EV_MOD_PEER_REPLY_ACK;
+extern int EV_MOD_PEER_FINISH;
 
 
 /* Current identifier for stack */
@@ -530,6 +537,16 @@ enum mod_request_dir_t
 	mod_request_invalid = 0,
 	mod_request_up_down,
 	mod_request_down_up
+};
+
+/* ACK types */
+enum ack_types
+{
+	reply_NO_REPLY = 0,
+	reply_ACK,
+	reply_ACK_DATA,
+	reply_ACK_DATA_SENT_TO_PEER,
+	reply_ACK_ERROR
 };
 
 /* Stack */
@@ -545,6 +562,7 @@ struct mod_stack_t
 	struct mod_t *mod;
 	struct mod_t *target_mod;
 	struct mod_t *except_mod;
+	struct mod_t *peer;
 
 	struct mod_port_t *port;
 
@@ -561,6 +579,7 @@ struct mod_stack_t
 	enum mod_request_dir_t request_dir;
 	struct dir_lock_t *dir_lock;
 	int reply_size;
+	int reply;
 	int pending;
 
 	/* Linked list of accesses in 'mod' */
@@ -651,6 +670,7 @@ void mod_handler_evict(int event, void *data);
 void mod_handler_write_request(int event, void *data);
 void mod_handler_read_request(int event, void *data);
 void mod_handler_invalidate(int event, void *data);
+void mod_handler_peer(int event, void *data);
 
 
 

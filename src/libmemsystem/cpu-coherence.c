@@ -58,6 +58,7 @@ int EV_MOD_WRITE_REQUEST_EXCLUSIVE;
 int EV_MOD_WRITE_REQUEST_UPDOWN;
 int EV_MOD_WRITE_REQUEST_UPDOWN_FINISH;
 int EV_MOD_WRITE_REQUEST_DOWNUP;
+int EV_MOD_WRITE_REQUEST_DOWNUP_FINISH;
 int EV_MOD_WRITE_REQUEST_REPLY;
 int EV_MOD_WRITE_REQUEST_FINISH;
 
@@ -68,12 +69,18 @@ int EV_MOD_READ_REQUEST_UPDOWN;
 int EV_MOD_READ_REQUEST_UPDOWN_MISS;
 int EV_MOD_READ_REQUEST_UPDOWN_FINISH;
 int EV_MOD_READ_REQUEST_DOWNUP;
+int EV_MOD_READ_REQUEST_DOWNUP_WAIT_FOR_REQS;
 int EV_MOD_READ_REQUEST_DOWNUP_FINISH;
 int EV_MOD_READ_REQUEST_REPLY;
 int EV_MOD_READ_REQUEST_FINISH;
 
 int EV_MOD_INVALIDATE;
 int EV_MOD_INVALIDATE_FINISH;
+
+int EV_MOD_PEER_SEND;
+int EV_MOD_PEER_RECEIVE;
+int EV_MOD_PEER_REPLY_ACK;
+int EV_MOD_PEER_FINISH;
 
 
 
@@ -167,6 +174,7 @@ void mod_handler_load(int event, void *data)
 		/* Miss */
 		new_stack = mod_stack_create(stack->id, mod, stack->tag,
 			EV_MOD_LOAD_MISS, stack);
+		new_stack->peer = mod;
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_READ_REQUEST, new_stack, 0);
@@ -323,6 +331,7 @@ void mod_handler_store(int event, void *data)
 		/* Miss - state=O/S/I */
 		new_stack = mod_stack_create(stack->id, mod, stack->tag,
 			EV_MOD_STORE_UNLOCK, stack);
+		new_stack->peer = mod;
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
@@ -612,7 +621,7 @@ void mod_handler_evict(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s evict (set=%d, way=%d, state=%s)\n", esim_cycle, stack->id,
 			stack->tag, mod->name, stack->set, stack->way,
 			map_value(&cache_block_state_map, stack->state));
-	
+
 		/* Save some data */
 		stack->src_set = stack->set;
 		stack->src_way = stack->way;
@@ -794,7 +803,6 @@ void mod_handler_evict(int event, void *data)
 
 	if (event == EV_MOD_EVICT_PROCESS)
 	{
-
 		mem_debug("  %lld %lld 0x%x %s evict process\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
@@ -947,6 +955,7 @@ void mod_handler_read_request(int event, void *data)
 		{
 			assert(stack->request_dir == mod_request_up_down);
 			ret->err = 1;
+			ret->reply = reply_ACK_ERROR;
 			stack->reply_size = 8;
 			esim_schedule_event(EV_MOD_READ_REQUEST_REPLY, stack, 0);
 			return;
@@ -963,6 +972,11 @@ void mod_handler_read_request(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s read request updown\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 		stack->pending = 1;
+
+		/* Set the initial reply message and size.  This will be adjusted later if
+		 * a transfer occur between peers. */
+		stack->reply_size = mod->block_size + 8;
+		stack->reply = reply_ACK_DATA;
 		
 		if (stack->state)
 		{
@@ -1011,6 +1025,7 @@ void mod_handler_read_request(int event, void *data)
 				stack->pending++;
 				new_stack = mod_stack_create(stack->id, target_mod, dir_entry_tag,
 					EV_MOD_READ_REQUEST_UPDOWN_FINISH, stack);
+				new_stack->peer = stack->mod;
 				new_stack->target_mod = owner;
 				new_stack->request_dir = mod_request_down_up;
 				esim_schedule_event(EV_MOD_READ_REQUEST, new_stack, 0);
@@ -1024,6 +1039,7 @@ void mod_handler_read_request(int event, void *data)
 				stack->set, stack->way));
 			new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
 				EV_MOD_READ_REQUEST_UPDOWN_MISS, stack);
+			/* Peer is NULL since we keep going up-down */
 			new_stack->target_mod = mod_get_low_mod(target_mod, stack->tag);
 			new_stack->request_dir = mod_request_up_down;
 			esim_schedule_event(EV_MOD_READ_REQUEST, new_stack, 0);
@@ -1041,6 +1057,7 @@ void mod_handler_read_request(int event, void *data)
 		{
 			dir_lock_unlock(stack->dir_lock);
 			ret->err = 1;
+			ret->reply = reply_ACK_ERROR;
 			stack->reply_size = 8;
 			esim_schedule_event(EV_MOD_READ_REQUEST_REPLY, stack, 0);
 			return;
@@ -1059,6 +1076,9 @@ void mod_handler_read_request(int event, void *data)
 	{
 		int shared;
 
+		/* Ensure that a reply was received */
+		assert(stack->reply);
+
 		/* Ignore while pending requests */
 		assert(stack->pending > 0);
 		stack->pending--;
@@ -1066,6 +1086,22 @@ void mod_handler_read_request(int event, void *data)
 			return;
 		mem_debug("  %lld %lld 0x%x %s read request updown finish\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+
+		/* If blocks were sent directly to the peer, the reply size would
+		 * have been decreased.  Based on the final size, we can tell whether
+		 * to send more data or simply ACK */
+		if (stack->reply_size == 8) 
+		{
+			ret->reply = reply_ACK;
+		}
+		else if (stack->reply_size > 8)
+		{
+			ret->reply = reply_ACK_DATA;
+		}
+		else 
+		{
+			panic("Invalid reply size\n");
+		}
 
 		/* Set owner to 0 for all directory entries not owned by mod. */
 		dir = target_mod->dir;
@@ -1106,8 +1142,6 @@ void mod_handler_read_request(int event, void *data)
 			}
 		}
 
-		/* Respond with data, unlock */
-		stack->reply_size = mod->block_size + 8;
 		dir_lock_unlock(stack->dir_lock);
 		esim_schedule_event(EV_MOD_READ_REQUEST_REPLY, stack, 0);
 		return;
@@ -1120,14 +1154,12 @@ void mod_handler_read_request(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s read request downup\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
-		/* Check: state must not be invalid.
+		/* Check: state must not be invalid or shared.
 		 * By default, only one pending request.
 		 * Response depends on state */
 		assert(stack->state != cache_block_invalid);
+		assert(stack->state != cache_block_shared);
 		stack->pending = 1;
-		stack->reply_size = stack->state == cache_block_exclusive ||
-			stack->state == cache_block_shared ?
-			8 : target_mod->block_size + 8;
 
 		/* Send a read request to the owner of each subblock. */
 		dir = target_mod->dir;
@@ -1153,7 +1185,6 @@ void mod_handler_read_request(int event, void *data)
 				continue;
 
 			stack->pending++;
-			stack->reply_size = target_mod->block_size + 8;
 			new_stack = mod_stack_create(stack->id, target_mod, dir_entry_tag,
 				EV_MOD_READ_REQUEST_DOWNUP_FINISH, stack);
 			new_stack->target_mod = owner;
@@ -1161,33 +1192,102 @@ void mod_handler_read_request(int event, void *data)
 			esim_schedule_event(EV_MOD_READ_REQUEST, new_stack, 0);
 		}
 
-		esim_schedule_event(EV_MOD_READ_REQUEST_DOWNUP_FINISH, stack, 0);
+		/* Set up the reply that will take place after all read
+		 * requests for blocks have returned */
+		if (stack->state == cache_block_exclusive) 
+		{
+			/* Exclusive state only sends an ACK */
+			stack->reply_size = 8;
+			stack->reply = reply_ACK;
+		}
+		else if (stack->peer == NULL) 
+		{
+			/* State is M/O and no peer exists, so data is returned to mod */
+			stack->reply_size = target_mod->block_size + 8;
+			stack->reply = reply_ACK_DATA;
+		}
+		else 
+		{
+			/* State is M/O and peer exists, so data is sent directly to peer */
+			stack->reply_size = 8;
+			stack->reply = reply_ACK_DATA_SENT_TO_PEER;
+
+			/* Decrease the amount of data that mod will have to send back
+			 * to its higher level cache */
+			ret->reply_size -= target_mod->block_size;
+			assert(ret->reply_size >= 8);
+		}
+
+		esim_schedule_event(EV_MOD_READ_REQUEST_DOWNUP_WAIT_FOR_REQS, stack, 0);
 		return;
 	}
 
-	if (event == EV_MOD_READ_REQUEST_DOWNUP_FINISH)
+	if (event == EV_MOD_READ_REQUEST_DOWNUP_WAIT_FOR_REQS)
 	{
 		/* Ignore while pending requests */
 		assert(stack->pending > 0);
 		stack->pending--;
 		if (stack->pending)
 			return;
-		mem_debug("  %lld %lld 0x%x %s read request downup finish\n", esim_cycle, stack->id,
-			stack->tag, target_mod->name);
 
-		/* Set owner of sub-blocks to 0. */
-		dir = target_mod->dir;
-		for (z = 0; z < dir->zsize; z++)
+		mem_debug("  %lld %lld 0x%x %s read request downup wait for reqs\n", 
+			esim_cycle, stack->id, stack->tag, target_mod->name);
+
+		if (stack->reply == reply_ACK_DATA_SENT_TO_PEER)
 		{
-			dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
-			assert(dir_entry_tag < stack->tag + target_mod->block_size);
-			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			dir_entry_set_owner(dir, stack->set, stack->way, z, DIR_ENTRY_OWNER_NONE);
+			/* Send this block (or subblock) to the peer */
+			new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
+				EV_MOD_READ_REQUEST_DOWNUP_FINISH, stack);
+			new_stack->peer = stack->peer;
+			new_stack->target_mod = stack->target_mod;
+			esim_schedule_event(EV_MOD_PEER_SEND, new_stack, 0);
+		}
+		else 
+		{
+			/* No data to send to peer, so finish */
+			esim_schedule_event(EV_MOD_READ_REQUEST_DOWNUP_FINISH, stack, 0);
 		}
 
-		/* Set state to S, unlock */
-		cache_set_block(target_mod->cache, stack->set, stack->way, stack->tag,
-			cache_block_shared);
+		return;
+	}
+
+	if (event == EV_MOD_READ_REQUEST_DOWNUP_FINISH)
+	{
+		mem_debug("  %lld %lld 0x%x %s read request downup finish\n", 
+			esim_cycle, stack->id, stack->tag, target_mod->name);
+
+		/* Modified states become owned */
+		if (stack->state == cache_block_modified) 
+		{
+			cache_set_block(target_mod->cache, stack->set, stack->way, stack->tag,
+				cache_block_owned);
+		}
+		/* Exclusive states become shared */
+		else if (stack->state == cache_block_exclusive) 
+		{
+			/* If state was changed to shared, set owner of sub-blocks to 0. */
+			dir = target_mod->dir;
+			for (z = 0; z < dir->zsize; z++)
+			{
+				dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+				assert(dir_entry_tag < stack->tag + target_mod->block_size);
+				dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
+				dir_entry_set_owner(dir, stack->set, stack->way, z, DIR_ENTRY_OWNER_NONE);
+			}
+			cache_set_block(target_mod->cache, stack->set, stack->way, stack->tag,
+				cache_block_shared);
+		}	
+		/* Owned states remain owned */
+		else if (stack->state == cache_block_owned) 
+		{
+			/* Nothing to do */
+		}
+		/* No other states are allowed */
+		else 
+		{
+			panic("Invalid cache block state: %d", stack->state);
+		}
+
 		dir_lock_unlock(stack->dir_lock);
 		esim_schedule_event(EV_MOD_READ_REQUEST_REPLY, stack, 0);
 		return;
@@ -1275,6 +1375,13 @@ void mod_handler_write_request(int event, void *data)
 		/* Default return values */
 		ret->err = 0;
 
+		/* For write requests, we need to set the initial reply size because
+		 * in updown, peer transfers must be allowed to decrease this value
+		 * (during invalidate). If the request turns out to be downup, then 
+		 * these values will get overwritten. */
+		stack->reply_size = mod->block_size + 8;
+		stack->reply = reply_ACK_DATA;
+
 		/* Checks */
 		assert(stack->request_dir);
 		assert(mod_get_low_mod(mod, stack->addr) == target_mod ||
@@ -1345,6 +1452,7 @@ void mod_handler_write_request(int event, void *data)
 		new_stack->except_mod = mod;
 		new_stack->set = stack->set;
 		new_stack->way = stack->way;
+		new_stack->peer = stack->peer;
 		esim_schedule_event(EV_MOD_INVALIDATE, new_stack, 0);
 		return;
 	}
@@ -1371,15 +1479,23 @@ void mod_handler_write_request(int event, void *data)
 			stack->state == cache_block_exclusive)
 		{
 			esim_schedule_event(EV_MOD_WRITE_REQUEST_UPDOWN_FINISH, stack, 0);
-			return;
+		}
+		/* state = O/S/I */
+		else if (stack->state == cache_block_owned || stack->state == cache_block_shared ||
+			stack->state == cache_block_invalid)
+		{
+			new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
+				EV_MOD_WRITE_REQUEST_UPDOWN_FINISH, stack);
+			new_stack->peer = mod;
+			new_stack->target_mod = mod_get_low_mod(target_mod, stack->tag);
+			new_stack->request_dir = mod_request_up_down;
+			esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
+		}
+		else 
+		{
+			panic("Unknown cache block state\n");
 		}
 
-		/* state = O/S/I */
-		new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
-			EV_MOD_WRITE_REQUEST_UPDOWN_FINISH, stack);
-		new_stack->target_mod = mod_get_low_mod(target_mod, stack->tag);
-		new_stack->request_dir = mod_request_up_down;
-		esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
 		return;
 	}
 
@@ -1388,10 +1504,14 @@ void mod_handler_write_request(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s write request updown finish\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
+		/* Ensure that a reply was received */
+		assert(stack->reply);
+
 		/* Error in write request to next cache level */
 		if (stack->err)
 		{
 			ret->err = 1;
+			ret->reply = reply_ACK_ERROR;
 			stack->reply_size = 8;
 			dir_lock_unlock(stack->dir_lock);
 			esim_schedule_event(EV_MOD_WRITE_REQUEST_REPLY, stack, 0);
@@ -1421,7 +1541,23 @@ void mod_handler_write_request(int event, void *data)
 
 		/* Unlock, reply_size is the data of the size of the requester's block. */
 		dir_lock_unlock(stack->dir_lock);
-		stack->reply_size = mod->block_size + 8;
+
+		/* If blocks were sent directly to the peer, the reply size would
+		 * have been decreased.  Based on the final size, we can tell whether
+		 * to send more data up or simply ACK */
+		if (stack->reply_size == 8) 
+		{
+			ret->reply = reply_ACK;
+		}
+		else if (stack->reply_size > 8)
+		{
+			ret->reply = reply_ACK_DATA;
+		}
+		else 
+		{
+			panic("Invalid reply size\n");
+		}
+
 		esim_schedule_event(EV_MOD_WRITE_REQUEST_REPLY, stack, 0);
 		return;
 	}
@@ -1431,13 +1567,66 @@ void mod_handler_write_request(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s write request downup\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 
-		/* Compute reply_size, set state to I, unlock */
 		assert(stack->state != cache_block_invalid);
 		assert(!dir_entry_group_shared_or_owned(target_mod->dir, stack->set, stack->way));
-		stack->reply_size = stack->state == cache_block_modified || stack->state
-			== cache_block_owned ? target_mod->block_size + 8 : 8;
+
+		/* Compute reply size */	
+		if (stack->state == cache_block_exclusive || 
+			stack->state == cache_block_shared) 
+		{
+			/* Exclusive and shared states send an ACK */
+			stack->reply_size = 8;
+			stack->reply = reply_ACK;
+		}
+		else if (stack->state == cache_block_modified || 
+			stack->state == cache_block_owned)
+		{
+			if (stack->peer) 
+			{
+				/* Modified or owned entries send data directly to peer if it exists */
+				stack->reply = reply_ACK_DATA_SENT_TO_PEER;
+				stack->reply_size = 8;
+
+				/* This control path uses an intermediate stack that disappears, so 
+				 * we have to update the return stack of the return stack */
+				ret->ret_stack->reply_size -= target_mod->block_size;
+				assert(ret->ret_stack->reply_size >= 8);
+
+				/* Send data to the peer */
+				new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
+					EV_MOD_WRITE_REQUEST_DOWNUP_FINISH, stack);
+				new_stack->peer = stack->peer;
+				new_stack->target_mod = stack->target_mod;
+
+				esim_schedule_event(EV_MOD_PEER_SEND, new_stack, 0);
+				return;
+			}	
+			else 
+			{
+				/* If peer does not exist, data is returned to mod */
+				stack->reply = reply_ACK_DATA;
+				stack->reply_size = target_mod->block_size + 8;
+			}
+		}
+		else 
+		{
+			panic("Invalid cache block state: %d\n", stack->state);
+		}
+
+		esim_schedule_event(EV_MOD_WRITE_REQUEST_DOWNUP_FINISH, stack, 0);
+
+		return;
+	}
+
+	if (event == EV_MOD_WRITE_REQUEST_DOWNUP_FINISH)
+	{
+		mem_debug("  %lld %lld 0x%x %s write request downup complete\n", esim_cycle, stack->id,
+			stack->tag, target_mod->name);
+
+		/* Set state to I, unlock*/
 		cache_set_block(target_mod->cache, stack->set, stack->way, 0, cache_block_invalid);
 		dir_lock_unlock(stack->dir_lock);
+		
 		esim_schedule_event(EV_MOD_WRITE_REQUEST_REPLY, stack, 0);
 		return;
 	}
@@ -1470,7 +1659,6 @@ void mod_handler_write_request(int event, void *data)
 			dst_node = mod->high_net_node;
 		}
 
-		/* Send message */
 		stack->msg = net_try_send_ev(net, src_node, dst_node, stack->reply_size,
 			EV_MOD_WRITE_REQUEST_FINISH, stack, event, stack);
 		return;
@@ -1495,6 +1683,64 @@ void mod_handler_write_request(int event, void *data)
 	abort();
 }
 
+
+void mod_handler_peer(int event, void *data)
+{
+	struct mod_stack_t *stack = data;
+	struct mod_t *src = stack->target_mod;
+	struct mod_t *peer = stack->peer;
+
+	if (event == EV_MOD_PEER_SEND) 
+	{
+		mem_debug("  %lld %lld 0x%x %s %s peer send\n", esim_cycle, stack->id,
+			stack->tag, src->name, peer->name);
+
+		/* Send message from src to peer */
+		stack->msg = net_try_send_ev(src->low_net, src->low_net_node, peer->low_net_node, 
+				src->block_size + 8, EV_MOD_PEER_RECEIVE, stack, event, stack); 
+
+		return;
+	}
+
+	if (event == EV_MOD_PEER_RECEIVE) 
+	{
+		mem_debug("  %lld %lld 0x%x %s %s peer receive\n", esim_cycle, stack->id,
+			stack->tag, src->name, peer->name);
+
+		/* Receive message from src */
+		net_receive(peer->low_net, peer->low_net_node, stack->msg);
+
+		esim_schedule_event(EV_MOD_PEER_REPLY_ACK, stack, 0);
+
+		return;
+	}
+
+	if (event == EV_MOD_PEER_REPLY_ACK) 
+	{
+		mem_debug("  %lld %lld 0x%x %s %s peer reply ack\n", esim_cycle, stack->id,
+			stack->tag, src->name, peer->name);
+
+		/* Send ack from peer to src */
+		stack->msg = net_try_send_ev(peer->low_net, peer->low_net_node, src->low_net_node, 
+				8, EV_MOD_PEER_FINISH, stack, event, stack); 
+
+		return;
+	}
+
+	if (event == EV_MOD_PEER_FINISH) 
+	{
+		mem_debug("  %lld %lld 0x%x %s %s peer finish\n", esim_cycle, stack->id,
+			stack->tag, src->name, peer->name);
+
+		/* Receive message from src */
+		net_receive(src->low_net, src->low_net_node, stack->msg);
+
+		mod_stack_return(stack);
+		return;
+	}
+
+	abort();
+}
 
 
 void mod_handler_invalidate(int event, void *data)
@@ -1521,11 +1767,12 @@ void mod_handler_invalidate(int event, void *data)
 			stack->tag, mod->name, stack->set, stack->way,
 			map_value(&cache_block_state_map, stack->state));
 		stack->pending = 1;
-
+		
 		/* Send write request to all upper level sharers except 'except_mod' */
 		dir = mod->dir;
 		for (z = 0; z < dir->zsize; z++)
 		{
+			int first_sharer = 1;
 			dir_entry_tag = stack->tag + z * mod->sub_block_size;
 			assert(dir_entry_tag < stack->tag + mod->block_size);
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
@@ -1554,6 +1801,15 @@ void mod_handler_invalidate(int event, void *data)
 					EV_MOD_INVALIDATE_FINISH, stack);
 				new_stack->target_mod = sharer;
 				new_stack->request_dir = mod_request_down_up;
+
+				/* If there is a peer and this is a block that he is interested in,
+				 * and this sharer is the first sharer that is capable of 
+				 * sending data, send the data directly to the peer. */
+				if (stack->peer && first_sharer)
+                                {
+					new_stack->peer = stack->peer;
+					first_sharer = 0;
+				}
 				esim_schedule_event(EV_MOD_WRITE_REQUEST, new_stack, 0);
 				stack->pending++;
 			}
