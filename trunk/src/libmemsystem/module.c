@@ -581,8 +581,10 @@ struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
 	stack->id = id;
 	stack->mod = mod;
 	stack->addr = addr;
+	stack->peer = NULL;
 	stack->ret_event = ret_event;
 	stack->ret_stack = ret_stack;
+	stack->reply = reply_NO_REPLY;
 
 	/* Return */
 	return stack;

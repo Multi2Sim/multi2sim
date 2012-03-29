@@ -115,6 +115,7 @@ void mem_system_init(void)
 	EV_MOD_WRITE_REQUEST_UPDOWN = esim_register_event(mod_handler_write_request);
 	EV_MOD_WRITE_REQUEST_UPDOWN_FINISH = esim_register_event(mod_handler_write_request);
 	EV_MOD_WRITE_REQUEST_DOWNUP = esim_register_event(mod_handler_write_request);
+	EV_MOD_WRITE_REQUEST_DOWNUP_FINISH = esim_register_event(mod_handler_write_request);
 	EV_MOD_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_write_request);
 	EV_MOD_WRITE_REQUEST_FINISH = esim_register_event(mod_handler_write_request);
 
@@ -125,12 +126,18 @@ void mem_system_init(void)
 	EV_MOD_READ_REQUEST_UPDOWN_MISS = esim_register_event(mod_handler_read_request);
 	EV_MOD_READ_REQUEST_UPDOWN_FINISH = esim_register_event(mod_handler_read_request);
 	EV_MOD_READ_REQUEST_DOWNUP = esim_register_event(mod_handler_read_request);
+	EV_MOD_READ_REQUEST_DOWNUP_WAIT_FOR_REQS = esim_register_event(mod_handler_read_request);
 	EV_MOD_READ_REQUEST_DOWNUP_FINISH = esim_register_event(mod_handler_read_request);
 	EV_MOD_READ_REQUEST_REPLY = esim_register_event(mod_handler_read_request);
 	EV_MOD_READ_REQUEST_FINISH = esim_register_event(mod_handler_read_request);
 
 	EV_MOD_INVALIDATE = esim_register_event(mod_handler_invalidate);
 	EV_MOD_INVALIDATE_FINISH = esim_register_event(mod_handler_invalidate);
+
+	EV_MOD_PEER_SEND = esim_register_event(mod_handler_peer);
+	EV_MOD_PEER_RECEIVE = esim_register_event(mod_handler_peer);
+	EV_MOD_PEER_REPLY_ACK = esim_register_event(mod_handler_peer);
+	EV_MOD_PEER_FINISH = esim_register_event(mod_handler_peer);
 
 	/* Read cache configuration file */
 	mem_system_config_read();
