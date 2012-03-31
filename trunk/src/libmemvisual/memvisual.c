@@ -30,11 +30,13 @@ struct vmem_t
 };
 
 
+/* Trace command 'set_transient_tag' */
 static void vmem_process_trace_line_set_transient_tag(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
 }
 
 
+/* Trace command 'set_block' */
 static void vmem_process_trace_line_set_block(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
 	struct vmod_t *vmod;
@@ -64,6 +66,7 @@ static void vmem_process_trace_line_set_block(struct vmem_t *vmem, struct trace_
 }
 
 
+/* Trace command 'set_sharer' */
 static void vmem_process_trace_line_set_sharer(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
 	char *vmod_name;
@@ -92,6 +95,7 @@ static void vmem_process_trace_line_set_sharer(struct vmem_t *vmem, struct trace
 }
 
 
+/* Trace command 'clear_sharer' */
 static void vmem_process_trace_line_clear_sharer(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
 	char *vmod_name;
@@ -120,6 +124,7 @@ static void vmem_process_trace_line_clear_sharer(struct vmem_t *vmem, struct tra
 }
 
 
+/* Trace command 'clear_all_sharers' */
 static void vmem_process_trace_line_clear_all_sharers(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
 	char *vmod_name;
@@ -146,6 +151,7 @@ static void vmem_process_trace_line_clear_all_sharers(struct vmem_t *vmem, struc
 }
 
 
+/* Trace command 'set_owner' */
 static void vmem_process_trace_line_set_owner(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
 	char *vmod_name;
@@ -171,6 +177,58 @@ static void vmem_process_trace_line_set_owner(struct vmem_t *vmem, struct trace_
 
 	/* Set sharer */
 	vcache_dir_entry_set_owner(vmod->vcache, x, y, z, owner);
+}
+
+
+/* Trace command 'new_access' */
+static void vmem_process_trace_line_new_access(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+	char *name;
+
+	struct vmod_panel_t *panel = vmem->vmod_panel;
+	struct vlist_t *access_list = panel->vmod_access_list;
+	struct vmod_access_t *access;
+
+	/* Read fields */
+	name = trace_line_get_symbol_value(trace_line, "name");
+
+	/* Create new access */
+	access = vmod_access_create(name);
+
+	/* Add access to list */
+	vlist_add(access_list, access);
+}
+
+
+/* Trace command 'end_access' */
+static void vmem_process_trace_line_end_access(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+	char *name;
+
+	struct vmod_panel_t *panel = vmem->vmod_panel;
+	struct vlist_t *access_list = panel->vmod_access_list;
+
+	struct vmod_access_t *access;
+	int index;
+
+	/* Read fields */
+	name = trace_line_get_symbol_value(trace_line, "name");
+
+	/* Find access */
+	VLIST_FOR_EACH(access_list, index)
+	{
+		access = vlist_get(access_list, index);
+		if (!strcmp(name, vmod_access_get_name(access)))
+			break;
+	}
+
+	/* Access not found */
+	if (index == vlist_count(access_list))
+		panic("%s: access not found", __FUNCTION__);
+
+	/* Remove access from list */
+	access = vlist_remove_at(access_list, index);
+	vmod_access_free(access);
 }
 
 
@@ -207,6 +265,10 @@ struct vmem_t *vmem_create(void)
 		(state_file_process_trace_line_func_t) vmem_process_trace_line_clear_all_sharers, vmem);
 	state_file_new_command(visual_state_file, "mem.set_owner",
 		(state_file_process_trace_line_func_t) vmem_process_trace_line_set_owner, vmem);
+	state_file_new_command(visual_state_file, "mem.new_access",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_new_access, vmem);
+	state_file_new_command(visual_state_file, "mem.end_access",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_end_access, vmem);
 
 	/* Main window */
 	vmem->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -248,39 +310,13 @@ void vmem_free(struct vmem_t *vmem)
 
 void vmem_read_checkpoint(struct vmem_t *vmem, FILE *f)
 {
-	char vmod_name[MAX_STRING_SIZE];
-
-	struct vmod_t *vmod;
-
-	int i;
-
-	/* Read caches */
-	for (i = 0; i < hash_table_count(vmem->vmod_panel->vmod_table); i++)
-	{
-		/* Get module */
-		str_read_from_file(f, vmod_name, sizeof vmod_name);
-		vmod = hash_table_get(vmem->vmod_panel->vmod_table, vmod_name);
-		if (!vmod)
-			panic("%s: invalid module name", __FUNCTION__);
-
-		/* Read cache checkpoint */
-		vcache_read_checkpoint(vmod->vcache, f);
-	}
+	vmod_panel_read_checkpoint(vmem->vmod_panel, f);
 }
 
 
 void vmem_write_checkpoint(struct vmem_t *vmem, FILE *f)
 {
-	struct vmod_t *vmod;
-
-	char *vmod_name;
-
-	/* Dump caches */
-	HASH_TABLE_FOR_EACH(vmem->vmod_panel->vmod_table, vmod_name, vmod)
-	{
-		str_write_to_file(f, vmod->name);
-		vmod_write_checkpoint(vmod, f);
-	}
+	vmod_panel_write_checkpoint(vmem->vmod_panel, f);
 }
 
 

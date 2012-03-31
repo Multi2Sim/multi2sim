@@ -26,11 +26,11 @@
 
 struct vmod_access_t
 {
-	long long id;
+	char *name;
 };
 
 
-struct vmod_access_t *vmod_access_create(long long id)
+struct vmod_access_t *vmod_access_create(char *name)
 {
 	struct vmod_access_t *access;
 
@@ -39,8 +39,10 @@ struct vmod_access_t *vmod_access_create(long long id)
 	if (!access)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	/* Initialize */
-	access->id = id;
+	/* Name */
+	access->name = strdup(name);
+	if (!access->name)
+		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Return */
 	return access;
@@ -49,23 +51,26 @@ struct vmod_access_t *vmod_access_create(long long id)
 
 void vmod_access_free(struct vmod_access_t *access)
 {
+	free(access->name);
 	free(access);
 }
 
 
-void vmod_access_get_name(void *elem, char *buf, int size)
+void vmod_access_get_name_str(struct vmod_access_t *access, char *buf, int size)
 {
-	struct vmod_access_t *access = elem;
-
-	snprintf(buf, size, "access-%lld", access->id);
+	snprintf(buf, size, "%s", access->name);
 }
 
 
-void vmod_access_get_desc(void *elem, char *buf, int size)
+void vmod_access_get_desc_str(struct vmod_access_t *access, char *buf, int size)
 {
-	struct vmod_access_t *access = elem;
+	snprintf(buf, size, "Description for access %s", access->name);
+}
 
-	snprintf(buf, size, "Description for access-%lld", access->id);
+
+char *vmod_access_get_name(struct vmod_access_t *access)
+{
+	return access->name;
 }
 
 
@@ -104,8 +109,9 @@ struct vmod_t *vmod_create(struct vmod_panel_t *panel, char *name, int num_sets,
 
 	/* List of accesses */
 	vmod->access_list = vlist_create("Access list", 200, 30,
-		vmod_access_get_name, vmod_access_get_desc);
-	gtk_box_pack_start(GTK_BOX(vmod->widget), vmod->access_list->widget, FALSE, FALSE, 0);
+		(vlist_get_elem_name_func_t) vmod_access_get_name_str,
+		(vlist_get_elem_desc_func_t) vmod_access_get_desc_str);
+	gtk_box_pack_start(GTK_BOX(vmod->widget), vlist_get_widget(vmod->access_list), FALSE, FALSE, 0);
 
 	/* Cache */
 	struct vcache_t *vcache;
