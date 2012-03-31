@@ -119,80 +119,25 @@ void info_popup_show(char *text);
 extern char vlist_image_close_path[MAX_PATH_SIZE];
 extern char vlist_image_close_sel_path[MAX_PATH_SIZE];
 
+typedef void (*vlist_get_elem_name_func_t)(void *elem, char *buf, int size);
+typedef void (*vlist_get_elem_desc_func_t)(void *elem, char *buf, int size);
 
-struct vlist_item_t
-{
-	/* Associated GTK widgets */
-	GtkWidget *event_box;
-	GtkWidget *label;
-
-	/* Visual list where it belongs */
-	struct vlist_t *vlist;
-
-	/* Associated data element from 'vlist->elem_list' */
-	void *elem;
-};
-
-
-struct vlist_popup_t
-{
-	/* GTK widgets */
-	GtkWidget *window;
-	GtkWidget *image_close;
-
-	/* List of 'vlist_item_t' elements */
-	struct list_t *item_list;
-
-	/* Visual list that triggered the pop-up */
-	struct vlist_t *vlist;
-};
-
-struct vlist_popup_t *vlist_popup_create(struct vlist_t *vlist);
-void vlist_popup_free(struct vlist_popup_t *popup);
-
-void vlist_popup_show(struct vlist_t *vlist);
-
-
-struct vlist_t
-{
-	/* Widget showing list */
-	GtkWidget *widget;
-
-	/* Dimensions after last refresh */
-	int width;
-	int height;
-
-	/* List of elements in the list. These elements can have any external type.
-	 * They are controlled with 'vlist_add', 'vlist_remove', etc. macros. */
-	struct list_t *elem_list;
-
-	/* List of elements 'vlist_item_t' currently displayed in the list. This
-	 * list will synchronize with 'elem_list' upon a call to 'vlist_refresh'. */
-	struct list_t *item_list;
-
-	/* Call-back functions to get element names and descriptions */
-	void (*get_elem_name)(void *elem, char *buf, int size);
-	void (*get_elem_desc)(void *elem, char *buf, int size);
-
-	/* Properties */
-	char *title;
-	int text_size;
-};
-
+#define VLIST_FOR_EACH(list, iter) \
+	for ((iter) = 0; (iter) < vlist_count((list)); (iter)++)
 
 struct vlist_t *vlist_create(char *title, int width, int height,
-	void (*get_elem_name)(void *elem, char *buf, int size),
-	void (*get_elem_desc)(void *elem, char *buf, int size));
+	vlist_get_elem_name_func_t get_elem_name,
+	vlist_get_elem_name_func_t get_elem_desc);
 void vlist_free(struct vlist_t *vlist);
 
-#define vlist_count(vlist) list_count((vlist)->elem_list)
-#define vlist_add(vlist, elem) list_add((vlist)->elem_list, (elem))
-#define vlist_get(vlist, index) list_get((vlist)->elem_list, (index))
-#define vlist_set(vlist, index, elem) list_get((vlist)->elem_list, (index), (elem))
-#define vlist_insert(vlist, index, elem) list_insert((vlist)->elem_list, (index), (elem))
-#define vlist_remove_at(vlist, index) list_remove_at((vlist)->elem_list, (index))
+int vlist_count(struct vlist_t *vlist);
+void vlist_add(struct vlist_t *vlist, void *elem);
+void *vlist_get(struct vlist_t *vlist, int index);
+void *vlist_remove_at(struct vlist_t *vlist, int index);
 
 void vlist_refresh(struct vlist_t *vlist);
+
+GtkWidget *vlist_get_widget(struct vlist_t *vlist);
 
 
 
@@ -203,11 +148,13 @@ void vlist_refresh(struct vlist_t *vlist);
 
 struct vmod_access_t;
 
-struct vmod_access_t *vmod_access_create(long long id);
+struct vmod_access_t *vmod_access_create(char *name);
 void vmod_access_free(struct vmod_access_t *access);
 
-void vmod_access_get_name(void *access, char *buf, int size);
-void vmod_access_get_desc(void *access, char *buf, int size);
+void vmod_access_get_name_str(struct vmod_access_t *access, char *buf, int size);
+void vmod_access_get_desc_str(struct vmod_access_t *access, char *buf, int size);
+
+char *vmod_access_get_name(struct vmod_access_t *access);
 
 
 
@@ -290,6 +237,9 @@ struct vmod_panel_t
 	/* List of memory levels (vmod_level_t) */
 	struct list_t *vmod_level_list;
 
+	/* List of in-flight accesses */
+	struct vlist_t *vmod_access_list;
+
 	/* Maximum number of modules in a level */
 	int max_modules_in_level;
 
@@ -301,6 +251,9 @@ void vmod_panel_free(struct vmod_panel_t *panel);
 GtkWidget *vmod_panel_get_widget(struct vmod_panel_t *panel);
 struct vnet_t *vmod_panel_get_vnet(struct vmod_panel_t *panel, char *name);
 struct vmod_t *vmod_panel_get_vmod(struct vmod_panel_t *panel, char *name);
+
+void vmod_panel_read_checkpoint(struct vmod_panel_t *panel, FILE *f);
+void vmod_panel_write_checkpoint(struct vmod_panel_t *panel, FILE *f);
 
 void vmod_panel_refresh(struct vmod_panel_t *panel);
 

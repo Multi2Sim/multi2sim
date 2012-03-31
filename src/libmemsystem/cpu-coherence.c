@@ -102,6 +102,8 @@ void mod_handler_load(int event, void *data)
 
 		mem_debug("%lld %lld 0x%x %s load\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.new_access name=\"A-%lld\" type=\"load\" addr=0x%x\n",
+			stack->id, stack->addr);
 
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_read);
@@ -226,6 +228,7 @@ void mod_handler_load(int event, void *data)
 	{
 		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.end_access name=\"A-%lld\"\n", stack->id);
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)

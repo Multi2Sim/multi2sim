@@ -19,6 +19,69 @@
 
 #include <memvisual-private.h>
 
+struct vlist_item_t
+{
+	/* Associated GTK widgets */
+	GtkWidget *event_box;
+	GtkWidget *label;
+	GdkColor label_color;
+
+	/* Visual list where it belongs */
+	struct vlist_t *vlist;
+
+	/* Associated data element from 'vlist->elem_list' */
+	void *elem;
+};
+
+
+struct vlist_popup_t
+{
+	/* GTK widgets */
+	GtkWidget *window;
+	GtkWidget *image_close;
+
+	/* List of 'vlist_item_t' elements */
+	struct list_t *item_list;
+
+	/* Visual list that triggered the pop-up */
+	struct vlist_t *vlist;
+};
+
+struct vlist_popup_t *vlist_popup_create(struct vlist_t *vlist);
+void vlist_popup_free(struct vlist_popup_t *popup);
+
+void vlist_popup_show(struct vlist_t *vlist);
+
+
+struct vlist_t
+{
+	/* Widget showing list */
+	GtkWidget *widget;
+
+	/* Dimensions after last refresh */
+	int width;
+	int height;
+
+	/* List of elements in the list. These elements can have any external type.
+	 * They are controlled with 'vlist_add', 'vlist_remove', etc. macros. */
+	struct list_t *elem_list;
+
+	/* List of elements 'vlist_item_t' currently displayed in the list. This
+	 * list will synchronize with 'elem_list' upon a call to 'vlist_refresh'. */
+	struct list_t *item_list;
+
+	/* Call-back functions to get element names and descriptions */
+	void (*get_elem_name)(void *elem, char *buf, int size);
+	void (*get_elem_desc)(void *elem, char *buf, int size);
+
+	/* Properties */
+	char *title;
+	int text_size;
+};
+
+
+
+
 
 /*
  * Visual List Item
@@ -55,6 +118,11 @@ static gboolean vlist_item_enter_notify_event(GtkWidget *widget,
 	GdkWindow *window;
 	GdkCursor *cursor;
 
+	GtkStyle *style;
+
+	style = gtk_widget_get_style(item->label);
+	item->label_color = style->fg[GTK_STATE_NORMAL];
+
 	gdk_color_parse("red", &color);
 	gtk_widget_modify_fg(item->label, GTK_STATE_NORMAL, &color);
 
@@ -77,11 +145,7 @@ static gboolean vlist_item_leave_notify_event(GtkWidget *widget,
 	PangoAttrList *attrs;
 	PangoAttribute *underline_attr;
 
-	GdkColor color;
 	GdkWindow *window;
-
-	gdk_color_parse("black", &color);
-	gtk_widget_modify_fg(item->label, GTK_STATE_NORMAL, &color);
 
 	window = gtk_widget_get_parent_window(widget);
 	gdk_window_set_cursor(window, NULL);
@@ -89,6 +153,7 @@ static gboolean vlist_item_leave_notify_event(GtkWidget *widget,
 	attrs = gtk_label_get_attributes(GTK_LABEL(item->label));
 	underline_attr = pango_attr_underline_new(PANGO_UNDERLINE_NONE);
 	pango_attr_list_change(attrs, underline_attr);
+	gtk_widget_modify_fg(item->label, GTK_STATE_NORMAL, &item->label_color);
 
 	return FALSE;
 }
@@ -328,8 +393,8 @@ static void vlist_size_allocate_event(GtkWidget *widget, GdkRectangle *allocatio
 
 
 struct vlist_t *vlist_create(char *title, int width, int height,
-	void (*get_elem_name)(void *elem, char *buf, int size),
-	void (*get_elem_desc)(void *elem, char *buf, int size))
+	vlist_get_elem_name_func_t get_elem_name,
+	vlist_get_elem_name_func_t get_elem_desc)
 {
 	struct vlist_t *vlist;
 
@@ -373,6 +438,30 @@ void vlist_free(struct vlist_t *vlist)
 	/* Object */
 	free(vlist->title);
 	free(vlist);
+}
+
+
+int vlist_count(struct vlist_t *vlist)
+{
+	return list_count(vlist->elem_list);
+}
+
+
+void vlist_add(struct vlist_t *vlist, void *elem)
+{
+	return list_add(vlist->elem_list, elem);
+}
+
+
+void *vlist_get(struct vlist_t *vlist, int index)
+{
+	return list_get(vlist->elem_list, index);
+}
+
+
+void *vlist_remove_at(struct vlist_t *vlist, int index)
+{
+	return list_remove_at(vlist->elem_list, index);
 }
 
 
@@ -505,4 +594,10 @@ void vlist_refresh(struct vlist_t *vlist)
 	/* Show all new widgets */
 	gtk_widget_show_all(vlist->widget);
 	gtk_container_check_resize(GTK_CONTAINER(vlist->widget));
+}
+
+
+GtkWidget *vlist_get_widget(struct vlist_t *vlist)
+{
+	return vlist->widget;
 }
