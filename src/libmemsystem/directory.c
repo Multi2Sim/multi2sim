@@ -222,9 +222,13 @@ struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y)
 }
 
 
-int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct mod_stack_t *stack)
+int dir_entry_lock(struct dir_t *dir, int x, int y, int event, struct mod_stack_t *stack)
 {
-	mem_debug("  dir_lock lock\n");
+	struct dir_lock_t *dir_lock;
+
+	/* Get lock */
+	assert(x < dir->xsize && y < dir->ysize);
+	dir_lock = &dir->dir_lock[x * dir->ysize + y];
 
 	/* If the entry is already locked, enqueue a new waiter and
 	 * return failure to lock. */
@@ -237,15 +241,24 @@ int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct mod_stack_t *st
 		return 0;
 	}
 
+	/* Trace */
+	mem_trace("mem.new_access_block cache=\"%s\" access=\"A-%lld\" set=%d way=%d\n",
+		dir->name, stack->id, x, y);
+
 	/* Lock entry */
 	dir_lock->lock = 1;
+	dir_lock->stack_id = stack->id;
 	return 1;
 }
 
 
-void dir_lock_unlock(struct dir_lock_t *dir_lock)
+void dir_entry_unlock(struct dir_t *dir, int x, int y)
 {
-	mem_debug("  dir_lock unlock\n");
+	struct dir_lock_t *dir_lock;
+
+	/* Get lock */
+	assert(x < dir->xsize && y < dir->ysize);
+	dir_lock = &dir->dir_lock[x * dir->ysize + y];
 
 	/* Wake up all waiters */
 	while (dir_lock->lock_queue)
@@ -254,6 +267,10 @@ void dir_lock_unlock(struct dir_lock_t *dir_lock)
 		mem_debug("    0x%x access resumed\n", dir_lock->lock_queue->tag);
 		dir_lock->lock_queue = dir_lock->lock_queue->dir_lock_next;
 	}
+
+	/* Trace */
+	mem_trace("mem.end_access_block cache=\"%s\" access=\"A-%lld\" set=%d way=%d\n",
+		dir->name, dir_lock->stack_id, x, y);
 
 	/* Unlock entry */
 	dir_lock->lock = 0;

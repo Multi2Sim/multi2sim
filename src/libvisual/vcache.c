@@ -19,6 +19,7 @@
 
 #include <visual-private.h>
 
+
 #define VCACHE_DIR_ENTRY_SHARERS_SIZE(vcache) (((vcache)->num_sharers + 7) / 8)
 #define VCACHE_DIR_ENTRY_SIZE(vcache) (sizeof(struct vcache_dir_entry_t) + \
 	VCACHE_DIR_ENTRY_SHARERS_SIZE((vcache)))
@@ -322,6 +323,7 @@ struct vcache_t *vcache_create(struct vmod_t *vmod, char *name, int num_sets, in
 			block->vcache = vcache;
 			block->set = set;
 			block->way = way;
+			block->vmod_access_list = linked_list_create();
 			block->dir_entries = calloc(vcache->num_sub_blocks, VCACHE_DIR_ENTRY_SIZE(vcache));
 
 			for (sub_block = 0; sub_block < vcache->num_sub_blocks; sub_block++)
@@ -412,16 +414,113 @@ struct vcache_t *vcache_create(struct vmod_t *vmod, char *name, int num_sets, in
 
 void vcache_free(struct vcache_t *vcache)
 {
+	struct vcache_block_t *block;
+	struct linked_list_t *access_list;
+
 	int i;
 
 	/* Free blocks */
 	for (i = 0; i < vcache->num_sets * vcache->assoc; i++)
+	{
+		/* Get block */
+		block = &vcache->blocks[i];
+		access_list = block->vmod_access_list;
+
+		/* Free accesses */
+		while (linked_list_count(access_list))
+		{
+			linked_list_head(access_list);
+			vmod_access_free(linked_list_get(access_list));
+			linked_list_remove(access_list);
+		}
+		linked_list_free(access_list);
+
+		/* Directory entries */
 		free(vcache->blocks[i].dir_entries);
+	}
 	free(vcache->blocks);
 
 	/* Free object */
 	free(vcache->name);
 	free(vcache);
+}
+
+
+void vcache_add_access(struct vcache_t *vcache, int set, int way, struct vmod_access_t *access)
+{
+	struct vcache_block_t *block;
+	struct linked_list_t *access_list;
+
+	assert(IN_RANGE(set, 0, vcache->num_sets - 1));
+	assert(IN_RANGE(way, 0, vcache->assoc - 1));
+
+	/* Get block */
+	block = &vcache->blocks[set * vcache->assoc + way];
+	access_list = block->vmod_access_list;
+
+	/* Add access */
+	linked_list_add(access_list, access);
+}
+
+
+struct vmod_access_t *vcache_find_access(struct vcache_t *vcache, int set, int way, char *access_name)
+{
+	struct vcache_block_t *block;
+	struct vmod_access_t *access;
+	struct linked_list_t *access_list;
+
+	assert(IN_RANGE(set, 0, vcache->num_sets - 1));
+	assert(IN_RANGE(way, 0, vcache->assoc - 1));
+
+	/* Get block */
+	block = &vcache->blocks[set * vcache->assoc + way];
+	access_list = block->vmod_access_list;
+
+	/* Find access */
+	LINKED_LIST_FOR_EACH(access_list)
+	{
+		access = linked_list_get(access_list);
+		if (!strcmp(vmod_access_get_name(access), access_name))
+			break;
+	}
+
+	/* Not found */
+	if (linked_list_is_end(access_list))
+		return NULL;
+
+	/* Return access */
+	return access;
+}
+
+
+struct vmod_access_t *vcache_remove_access(struct vcache_t *vcache, int set, int way, char *access_name)
+{
+	struct vcache_block_t *block;
+	struct vmod_access_t *access;
+	struct linked_list_t *access_list;
+
+	assert(IN_RANGE(set, 0, vcache->num_sets - 1));
+	assert(IN_RANGE(way, 0, vcache->assoc - 1));
+
+	/* Get block */
+	block = &vcache->blocks[set * vcache->assoc + way];
+	access_list = block->vmod_access_list;
+
+	/* Find access */
+	LINKED_LIST_FOR_EACH(access_list)
+	{
+		access = linked_list_get(access_list);
+		if (!strcmp(vmod_access_get_name(access), access_name))
+			break;
+	}
+
+	/* Not found */
+	if (linked_list_is_end(access_list))
+		return NULL;
+
+	/* Remove access and return */
+	linked_list_remove(access_list);
+	return access;
 }
 
 
@@ -528,15 +627,19 @@ void vcache_read_checkpoint(struct vcache_t *vcache, FILE *f)
 {
 	int set;
 	int way;
-	int i;
 
 	for (set = 0; set < vcache->num_sets; set++)
 	{
 		for (way = 0; way < vcache->assoc; way++)
 		{
 			struct vcache_block_t *block;
+			struct vmod_access_t *access;
 
 			unsigned char state;
+
+			int num_accesses;
+			int count;
+			int i;
 
 			/* Get block */
 			block = &vcache->blocks[set * vcache->assoc + way];
@@ -551,6 +654,27 @@ void vcache_read_checkpoint(struct vcache_t *vcache, FILE *f)
 			/* Read directory entry */
 			for (i = 0; i < vcache->num_sub_blocks; i++)
 				vcache_dir_entry_read_checkpoint(vcache, set, way, i, f);
+
+			/* Free previous accesses */
+			while (linked_list_count(block->vmod_access_list))
+			{
+				linked_list_head(block->vmod_access_list);
+				vmod_access_free(linked_list_get(block->vmod_access_list));
+				linked_list_remove(block->vmod_access_list);
+			}
+
+			/* Read number of accesses */
+			count = fread(&num_accesses, 1, 4, f);
+			if (count != 4)
+				fatal("%s: error reading from checkpoint", __FUNCTION__);
+
+			/* Read accesses */
+			for (i = 0; i < num_accesses; i++)
+			{
+				access = vmod_access_create(NULL);
+				vmod_access_read_checkpoint(access, f);
+				linked_list_add(block->vmod_access_list, access);
+			}
 		}
 	}
 }
@@ -560,15 +684,19 @@ void vcache_write_checkpoint(struct vcache_t *vcache, FILE *f)
 {
 	int set;
 	int way;
-	int i;
 
 	for (set = 0; set < vcache->num_sets; set++)
 	{
 		for (way = 0; way < vcache->assoc; way++)
 		{
 			struct vcache_block_t *block;
+			struct vmod_access_t *access;
 
 			unsigned char state;
+
+			int num_accesses;
+			int count;
+			int i;
 
 			/* Get block */
 			block = &vcache->blocks[set * vcache->assoc + way];
@@ -583,6 +711,19 @@ void vcache_write_checkpoint(struct vcache_t *vcache, FILE *f)
 			/* Dump directory entry */
 			for (i = 0; i < vcache->num_sub_blocks; i++)
 				vcache_dir_entry_write_checkpoint(vcache, set, way, i, f);
+
+			/* Write number of accesses */
+			num_accesses = linked_list_count(block->vmod_access_list);
+			count = fwrite(&num_accesses, 1, 4, f);
+			if (count != 4)
+				fatal("%s: cannot write to checkpoint file", __FUNCTION__);
+
+			/* Write accesses */
+			LINKED_LIST_FOR_EACH(block->vmod_access_list)
+			{
+				access = linked_list_get(block->vmod_access_list);
+				vmod_access_write_checkpoint(access, f);
+			}
 		}
 	}
 }
