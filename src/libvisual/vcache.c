@@ -24,7 +24,7 @@
 #define VCACHE_DIR_ENTRY_SIZE(vcache) (sizeof(struct vcache_dir_entry_t) + \
 	VCACHE_DIR_ENTRY_SHARERS_SIZE((vcache)))
 
-#define VCACHE_CELL_WIDTH		150
+#define VCACHE_CELL_WIDTH		153
 #define VCACHE_CELL_HEIGHT		20
 
 #define VCACHE_FIRST_ROW_HEIGHT		20
@@ -37,6 +37,9 @@
 
 #define VCACHE_LABEL_SHARERS_LEFT	101
 #define VCACHE_LABEL_SHARERS_WIDTH	25
+
+#define VCACHE_LABEL_ACCESSES_LEFT	127
+#define VCACHE_LABEL_ACCESSES_WIDTH	25
 
 
 static struct string_map_t vcache_block_state_map =
@@ -273,6 +276,130 @@ static void vcache_block_sharers_clicked_event(GtkWidget *widget,
 
 	/* Show pop-up */
 	info_popup_show(buf);
+}
+
+
+static gboolean vcache_block_accesses_enter_notify_event(GtkWidget *widget,
+	GdkEventCrossing *event, struct vcache_block_t *block)
+{
+	GdkColor color;
+
+	PangoAttrList *attrs;
+	PangoAttribute *underline_attr;
+
+	GdkWindow *window;
+	GdkCursor *cursor;
+
+	GtkStyle *style;
+
+	style = gtk_widget_get_style(block->accesses_label);
+	block->accesses_label_color = style->fg[GTK_STATE_NORMAL];
+
+	gdk_color_parse("red", &color);
+	gtk_widget_modify_fg(block->accesses_label, GTK_STATE_NORMAL, &color);
+
+	attrs = gtk_label_get_attributes(GTK_LABEL(block->accesses_label));
+	underline_attr = pango_attr_underline_new(PANGO_UNDERLINE_SINGLE);
+	pango_attr_list_change(attrs, underline_attr);
+
+	cursor = gdk_cursor_new(GDK_HAND1);
+	window = gtk_widget_get_parent_window(widget);
+	gdk_window_set_cursor(window, cursor);
+	gdk_cursor_unref(cursor);
+
+	return FALSE;
+}
+
+
+static gboolean vcache_block_accesses_leave_notify_event(GtkWidget *widget,
+	GdkEventCrossing *event, struct vcache_block_t *block)
+{
+	PangoAttrList *attrs;
+	PangoAttribute *underline_attr;
+	GdkWindow *window;
+
+	window = gtk_widget_get_parent_window(widget);
+	gdk_window_set_cursor(window, NULL);
+
+	attrs = gtk_label_get_attributes(GTK_LABEL(block->accesses_label));
+	underline_attr = pango_attr_underline_new(PANGO_UNDERLINE_NONE);
+	pango_attr_list_change(attrs, underline_attr);
+	gtk_widget_modify_fg(block->accesses_label, GTK_STATE_NORMAL, &block->accesses_label_color);
+
+	return FALSE;
+}
+
+
+static void vcache_block_accesses_clicked_event(GtkWidget *widget,
+	GdkEventButton *event, struct vcache_block_t *block)
+{
+#if 0
+	struct vcache_t *vcache = block->vcache;
+	struct vmod_t *vmod = vcache->vmod;
+	struct vmod_t *vmod_sharer;
+	struct vnet_t *vnet = vmod->high_vnet;
+
+	char buf[MAX_LONG_STRING_SIZE];
+	char *buf_ptr;
+	char *comma;
+
+	int size;
+	int sub_block;
+	int sharer;
+
+	/* Initialize */
+	buf_ptr = buf;
+	size = sizeof buf;
+
+	/* Title */
+	str_printf(&buf_ptr, &size, "<b>Module %s - Block at set %d - way %d</b>\n\n",
+		vmod->name, block->set, block->way);
+
+	/* Sub-blocks */
+	for (sub_block = 0; sub_block < vcache->num_sub_blocks; sub_block++)
+	{
+		struct vcache_dir_entry_t *dir_entry;
+
+		/* Start */
+		str_printf(&buf_ptr, &size, "<b>Sub-block %d:</b>\n", sub_block);
+
+		/* Owner */
+		vmod_sharer = NULL;
+		dir_entry = vcache_get_dir_entry(vcache, block->set, block->way, sub_block);
+		if (dir_entry->owner >= 0)
+		{
+			vmod_sharer = vnet_get_vmod(vnet, dir_entry->owner);
+			if (!vmod_sharer)
+				panic("%s: invalid owner", __FUNCTION__);
+		}
+		str_printf(&buf_ptr, &size, "Owner: %s\n", vmod_sharer ? vmod_sharer->name : "-");
+
+		/* Sharers */
+		comma = "";
+		str_printf(&buf_ptr, &size, "Sharers: ");
+		for (sharer = 0; sharer < vcache->num_sharers; sharer++)
+		{
+			/* Sharer not set */
+			if (!vcache_dir_entry_is_sharer(vcache, block->set, block->way, sub_block, sharer))
+				continue;
+
+			/* New sharer */
+			vmod_sharer = vnet_get_vmod(vnet, sharer);
+			if (!vmod_sharer)
+				panic("%s: invalid sharer", __FUNCTION__);
+
+			/* Dump */
+			str_printf(&buf_ptr, &size, "%s%s", comma, vmod_sharer->name);
+			comma = ", ";
+		}
+
+		/* End */
+		str_printf(&buf_ptr, &size, "\n\n");
+	}
+
+	/* Show pop-up */
+	info_popup_show(buf);
+#endif
 }
 
 
@@ -888,6 +1015,7 @@ void vcache_refresh(struct vcache_t *vcache)
 			char *state_str;
 
 			int num_sharers;
+			int num_accesses;
 
 			GtkWidget *label;
 			GtkWidget *event_box;
@@ -958,6 +1086,41 @@ void vcache_refresh(struct vcache_t *vcache)
 					G_CALLBACK(vcache_block_sharers_leave_notify_event), block);
 				g_signal_connect(G_OBJECT(event_box), "button-press-event",
 					G_CALLBACK(vcache_block_sharers_clicked_event), block);
+			}
+
+			/* Accesses text */
+			num_accesses = linked_list_count(block->vmod_access_list);
+			snprintf(str, sizeof str, "+%d", num_accesses);
+			if (!num_accesses)
+				strcpy(str, "-");
+
+			/* Accesses label */
+			label = gtk_label_new(str);
+			gtk_widget_set_size_request(label, VCACHE_LABEL_ACCESSES_WIDTH, VCACHE_CELL_HEIGHT - 1);
+			gtk_widget_show(label);
+			block->accesses_label = label;
+
+			/* Set label font attributes */
+			attrs = pango_attr_list_new();
+			size_attr = pango_attr_size_new_absolute(VCACHE_FONT_SIZE << 10);
+			pango_attr_list_insert(attrs, size_attr);
+			gtk_label_set_attributes(GTK_LABEL(label), attrs);
+
+			/* Event box */
+			event_box = gtk_event_box_new();
+			gtk_container_add(GTK_CONTAINER(event_box), label);
+			gtk_layout_put(GTK_LAYOUT(layout), event_box, x + VCACHE_LABEL_ACCESSES_LEFT, y);
+			gtk_widget_show(event_box);
+			gtk_widget_add_events(event_box, GDK_ENTER_NOTIFY_MASK |
+				GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK);
+			if (num_accesses)
+			{
+				g_signal_connect(G_OBJECT(event_box), "enter-notify-event",
+					G_CALLBACK(vcache_block_accesses_enter_notify_event), block);
+				g_signal_connect(G_OBJECT(event_box), "leave-notify-event",
+					G_CALLBACK(vcache_block_accesses_leave_notify_event), block);
+				g_signal_connect(G_OBJECT(event_box), "button-press-event",
+					G_CALLBACK(vcache_block_accesses_clicked_event), block);
 			}
 
 			/* Next way */
