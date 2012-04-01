@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <memvisual-private.h>
+#include <visual-private.h>
 
 
 
@@ -184,6 +184,7 @@ static void vmem_process_trace_line_set_owner(struct vmem_t *vmem, struct trace_
 static void vmem_process_trace_line_new_access(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
 	char *name;
+	char *state;
 
 	struct vmod_panel_t *panel = vmem->vmod_panel;
 	struct vlist_t *access_list = panel->vmod_access_list;
@@ -191,9 +192,11 @@ static void vmem_process_trace_line_new_access(struct vmem_t *vmem, struct trace
 
 	/* Read fields */
 	name = trace_line_get_symbol_value(trace_line, "name");
+	state = trace_line_get_symbol_value(trace_line, "state");
 
 	/* Create new access */
 	access = vmod_access_create(name);
+	vmod_access_set_state(access, state);
 
 	/* Add access to list */
 	vlist_add(access_list, access);
@@ -203,32 +206,44 @@ static void vmem_process_trace_line_new_access(struct vmem_t *vmem, struct trace
 /* Trace command 'end_access' */
 static void vmem_process_trace_line_end_access(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
-	char *name;
-
 	struct vmod_panel_t *panel = vmem->vmod_panel;
-	struct vlist_t *access_list = panel->vmod_access_list;
-
 	struct vmod_access_t *access;
-	int index;
+
+	char *name;
 
 	/* Read fields */
 	name = trace_line_get_symbol_value(trace_line, "name");
 
 	/* Find access */
-	VLIST_FOR_EACH(access_list, index)
-	{
-		access = vlist_get(access_list, index);
-		if (!strcmp(name, vmod_access_get_name(access)))
-			break;
-	}
-
-	/* Access not found */
-	if (index == vlist_count(access_list))
+	access = vmod_panel_remove_access(panel, name);
+	if (!access)
 		panic("%s: access not found", __FUNCTION__);
 
-	/* Remove access from list */
-	access = vlist_remove_at(access_list, index);
+	/* Free access */
 	vmod_access_free(access);
+}
+
+
+/* Trace command 'access' */
+static void vmem_process_trace_line_access(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+	struct vmod_panel_t *panel = vmem->vmod_panel;
+	struct vmod_access_t *access;
+
+	char *name;
+	char *state;
+
+	/* Read fields */
+	name = trace_line_get_symbol_value(trace_line, "name");
+	state = trace_line_get_symbol_value(trace_line, "state");
+
+	/* Find access */
+	access = vmod_panel_find_access(panel, name);
+	if (!access)
+		panic("%s: access not found", __FUNCTION__);
+
+	/* Update access */
+	vmod_access_set_state(access, state);
 }
 
 
@@ -269,6 +284,8 @@ struct vmem_t *vmem_create(void)
 		(state_file_process_trace_line_func_t) vmem_process_trace_line_new_access, vmem);
 	state_file_new_command(visual_state_file, "mem.end_access",
 		(state_file_process_trace_line_func_t) vmem_process_trace_line_end_access, vmem);
+	state_file_new_command(visual_state_file, "mem.access",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_access, vmem);
 
 	/* Main window */
 	vmem->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <memvisual-private.h>
+#include <visual-private.h>
 
 
 /*
@@ -293,6 +293,52 @@ void vmod_panel_free(struct vmod_panel_t *panel)
 }
 
 
+/* Find an access in the panel access list */
+struct vmod_access_t *vmod_panel_find_access(struct vmod_panel_t *panel, char *name)
+{
+	struct vlist_t *access_list = panel->vmod_access_list;
+	struct vmod_access_t *access;
+
+	int index;
+
+	/* Find access */
+	VLIST_FOR_EACH(access_list, index)
+	{
+		access = vlist_get(access_list, index);
+		if (!strcmp(name, vmod_access_get_name(access)))
+			return access;
+	}
+
+	/* Access not found */
+	return NULL;
+}
+
+
+struct vmod_access_t *vmod_panel_remove_access(struct vmod_panel_t *panel, char *name)
+{
+	struct vlist_t *access_list = panel->vmod_access_list;
+	struct vmod_access_t *access;
+
+	int index;
+
+	/* Find access */
+	VLIST_FOR_EACH(access_list, index)
+	{
+		access = vlist_get(access_list, index);
+		if (!strcmp(name, vmod_access_get_name(access)))
+			break;
+	}
+
+	/* Access not found */
+	if (index == vlist_count(access_list))
+		return NULL;
+
+	/* Remove access */
+	vlist_remove_at(access_list, index);
+	return access;
+}
+
+
 GtkWidget *vmod_panel_get_widget(struct vmod_panel_t *panel)
 {
 	return panel->widget;
@@ -314,7 +360,6 @@ struct vmod_t *vmod_panel_get_vmod(struct vmod_panel_t *panel, char *name)
 void vmod_panel_read_checkpoint(struct vmod_panel_t *panel, FILE *f)
 {
 	char vmod_name[MAX_STRING_SIZE];
-	char access_name[MAX_STRING_SIZE];
 
 	struct vmod_t *vmod;
 	struct vmod_access_t *access;
@@ -338,8 +383,8 @@ void vmod_panel_read_checkpoint(struct vmod_panel_t *panel, FILE *f)
 	/* Read accesses */
 	for (i = 0; i < num_accesses; i++)
 	{
-		str_read_from_file(f, access_name, sizeof access_name);
-		access = vmod_access_create(access_name);
+		access = vmod_access_create(NULL);
+		vmod_access_read_checkpoint(access, f);
 		vlist_add(panel->vmod_access_list, access);
 	}
 
@@ -375,7 +420,7 @@ void vmod_panel_write_checkpoint(struct vmod_panel_t *panel, FILE *f)
 	VLIST_FOR_EACH(panel->vmod_access_list, i)
 	{
 		access = vlist_get(panel->vmod_access_list, i);
-		str_write_to_file(f, vmod_access_get_name(access));
+		vmod_access_write_checkpoint(access, f);
 	}
 	if (count != 4)
 		fatal("%s: cannot write to checkpoint file", __FUNCTION__);

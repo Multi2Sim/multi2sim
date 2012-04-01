@@ -26,10 +26,10 @@
 #include <gtk/gtk.h>
 
 #include <hash-table.h>
-#include <memvisual.h>
 #include <list.h>
 #include <misc.h>
 #include <stdlib.h>
+#include <visual.h>
 
 
 
@@ -80,6 +80,7 @@ struct state_file_t *state_file_create(char *trace_file_name);
 void state_file_free(struct state_file_t *file);
 
 long long state_file_get_num_cycles(struct state_file_t *file);
+long long state_file_get_cycle(struct state_file_t *file);
 
 void state_file_create_checkpoints(struct state_file_t *file);
 
@@ -155,6 +156,11 @@ void vmod_access_get_name_str(struct vmod_access_t *access, char *buf, int size)
 void vmod_access_get_desc_str(struct vmod_access_t *access, char *buf, int size);
 
 char *vmod_access_get_name(struct vmod_access_t *access);
+
+void vmod_access_set_state(struct vmod_access_t *access, char *state);
+
+void vmod_access_read_checkpoint(struct vmod_access_t *access, FILE *f);
+void vmod_access_write_checkpoint(struct vmod_access_t *access, FILE *f);
 
 
 
@@ -247,6 +253,9 @@ struct vmod_panel_t
 
 struct vmod_panel_t *vmod_panel_create(void);
 void vmod_panel_free(struct vmod_panel_t *panel);
+
+struct vmod_access_t *vmod_panel_find_access(struct vmod_panel_t *panel, char *name);
+struct vmod_access_t *vmod_panel_remove_access(struct vmod_panel_t *panel, char *name);
 
 GtkWidget *vmod_panel_get_widget(struct vmod_panel_t *panel);
 struct vnet_t *vmod_panel_get_vnet(struct vmod_panel_t *panel, char *name);

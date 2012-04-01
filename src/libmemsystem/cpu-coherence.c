@@ -77,7 +77,7 @@ int EV_MOD_READ_REQUEST_FINISH;
 int EV_MOD_INVALIDATE;
 int EV_MOD_INVALIDATE_FINISH;
 
-int EV_MOD_PEER_SEND;
+int EV_MOD_PEER;
 int EV_MOD_PEER_RECEIVE;
 int EV_MOD_PEER_REPLY_ACK;
 int EV_MOD_PEER_FINISH;
@@ -102,8 +102,9 @@ void mod_handler_load(int event, void *data)
 
 		mem_debug("%lld %lld 0x%x %s load\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
-		mem_trace("mem.new_access name=\"A-%lld\" type=\"load\" addr=0x%x\n",
-			stack->id, stack->addr);
+		mem_trace("mem.new_access name=\"A-%lld\" type=\"load\" "
+			"state=\"%s:load\" addr=0x%x\n",
+			stack->id, mod->name, stack->addr);
 
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_read);
@@ -128,6 +129,8 @@ void mod_handler_load(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s load lock\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_lock\"\n",
+			stack->id, mod->name);
 
 		/* If there is any older write, wait for it */
 		older_stack = mod_in_flight_write(mod, stack);
@@ -152,8 +155,11 @@ void mod_handler_load(int event, void *data)
 	if (event == EV_MOD_LOAD_ACTION)
 	{
 		int retry_lat;
+
 		mem_debug("  %lld %lld 0x%x %s load action\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_action\"\n",
+			stack->id, mod->name);
 
 		/* Error locking */
 		if (stack->err)
@@ -186,8 +192,11 @@ void mod_handler_load(int event, void *data)
 	if (event == EV_MOD_LOAD_MISS)
 	{
 		int retry_lat;
+
 		mem_debug("  %lld %lld 0x%x %s load miss\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_miss\"\n",
+			stack->id, mod->name);
 
 		/* Error on read request. Unlock block and retry load. */
 		if (stack->err)
@@ -215,6 +224,8 @@ void mod_handler_load(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s load unlock\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_unlock\"\n",
+			stack->id, mod->name);
 
 		/* Unlock directory entry */
 		dir_lock_unlock(stack->dir_lock);
@@ -228,6 +239,8 @@ void mod_handler_load(int event, void *data)
 	{
 		mem_debug("%lld %lld 0x%x %s load finish\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_finish\"\n",
+			stack->id, mod->name);
 		mem_trace("mem.end_access name=\"A-%lld\"\n", stack->id);
 
 		/* Return event queue element into event queue */
@@ -260,6 +273,9 @@ void mod_handler_store(int event, void *data)
 
 		mem_debug("%lld %lld 0x%x %s store\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.new_access name=\"A-%lld\" type=\"store\" "
+			"state=\"%s:store\" addr=0x%x\n",
+			stack->id, mod->name, stack->addr);
 
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_write);
@@ -285,6 +301,8 @@ void mod_handler_store(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s store lock\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:store_lock\"\n",
+			stack->id, mod->name);
 
 		/* If there is any older access, wait for it */
 		older_stack = stack->access_list_prev;
@@ -309,8 +327,11 @@ void mod_handler_store(int event, void *data)
 	if (event == EV_MOD_STORE_ACTION)
 	{
 		int retry_lat;
+
 		mem_debug("  %lld %lld 0x%x %s store action\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:store_action\"\n",
+			stack->id, mod->name);
 
 		/* Error locking */
 		if (stack->err)
@@ -347,6 +368,8 @@ void mod_handler_store(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s store unlock\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:store_unlock\"\n",
+			stack->id, mod->name);
 
 		/* Error in write request, unlock block and retry store. */
 		if (stack->err)
@@ -374,6 +397,9 @@ void mod_handler_store(int event, void *data)
 	{
 		mem_debug("%lld %lld 0x%x %s store finish\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:store_finish\"\n",
+			stack->id, mod->name);
+		mem_trace("mem.end_access name=\"A-%lld\"\n", stack->id);
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
@@ -404,6 +430,8 @@ void mod_handler_find_and_lock(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s find and lock (blocking=%d)\n",
 			esim_cycle, stack->id, stack->addr, mod->name, stack->blocking);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock\"\n",
+			stack->id, mod->name);
 
 		/* Default return values */
 		ret->err = 0;
@@ -424,6 +452,8 @@ void mod_handler_find_and_lock(int event, void *data)
 		assert(stack->port);
 		mem_debug("  %lld %lld 0x%x %s find and lock port\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock_port\"\n",
+			stack->id, mod->name);
 
 		/* Set parent stack flag expressing that port has already been locked.
 		 * This flag is checked by new writes to find out if it is already too
@@ -527,6 +557,8 @@ void mod_handler_find_and_lock(int event, void *data)
 		assert(port);
 		mem_debug("  %lld %lld 0x%x %s find and lock action\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock_action\"\n",
+			stack->id, mod->name);
 
 		/* Release port */
 		mod_unlock_port(mod, port, stack);
@@ -552,6 +584,8 @@ void mod_handler_find_and_lock(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s find and lock finish (err=%d)\n", esim_cycle, stack->id,
 			stack->tag, mod->name, stack->err);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:find_and_lock_finish\"\n",
+			stack->id, mod->name);
 
 		/* If evict produced err, return err */
 		if (stack->err)
@@ -624,6 +658,8 @@ void mod_handler_evict(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s evict (set=%d, way=%d, state=%s)\n", esim_cycle, stack->id,
 			stack->tag, mod->name, stack->set, stack->way,
 			map_value(&cache_block_state_map, stack->state));
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict\"\n",
+			stack->id, mod->name);
 
 		/* Save some data */
 		stack->src_set = stack->set;
@@ -646,6 +682,8 @@ void mod_handler_evict(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s evict invalid\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_invalid\"\n",
+			stack->id, mod->name);
 
 		/* If module is main memory, no writeback.
 		 * We just need to set the block as invalid, and finish. */
@@ -669,6 +707,8 @@ void mod_handler_evict(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s evict action\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_action\"\n",
+			stack->id, mod->name);
 
 		/* Get low node */
 		low_mod = stack->target_mod;
@@ -715,6 +755,8 @@ void mod_handler_evict(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s evict receive\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_receive\"\n",
+			stack->id, target_mod->name);
 
 		/* Receive message */
 		net_receive(target_mod->high_net, target_mod->high_net_node, stack->msg);
@@ -733,6 +775,8 @@ void mod_handler_evict(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s evict writeback\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_writeback\"\n",
+			stack->id, target_mod->name);
 
 		/* Error locking block */
 		if (stack->err)
@@ -763,6 +807,8 @@ void mod_handler_evict(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s evict writeback exclusive\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_writeback_exclusive\"\n",
+			stack->id, target_mod->name);
 
 		/* State = O/S/I */
 		assert(stack->state != cache_block_invalid);
@@ -786,6 +832,8 @@ void mod_handler_evict(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s evict writeback finish\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_writeback_finish\"\n",
+			stack->id, target_mod->name);
 
 		/* Error in write request */
 		if (stack->err)
@@ -808,6 +856,8 @@ void mod_handler_evict(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s evict process\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_process\"\n",
+			stack->id, target_mod->name);
 
 		/* Remove sharer, owner, and unlock */
 		dir = target_mod->dir;
@@ -832,6 +882,8 @@ void mod_handler_evict(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s evict reply\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_reply\"\n",
+			stack->id, target_mod->name);
 
 		/* Send message */
 		stack->msg = net_try_send_ev(target_mod->high_net, target_mod->high_net_node,
@@ -845,6 +897,8 @@ void mod_handler_evict(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s evict reply receive\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_reply_receive\"\n",
+			stack->id, mod->name);
 
 		/* Receive message */
 		net_receive(mod->low_net, mod->low_net_node, stack->msg);
@@ -863,7 +917,9 @@ void mod_handler_evict(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s evict finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
-		
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_finish\"\n",
+			stack->id, mod->name);
+
 		mod_stack_return(stack);
 		return;
 	}
@@ -894,6 +950,8 @@ void mod_handler_read_request(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s read request\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request\"\n",
+			stack->id, mod->name);
 
 		/* Default return values*/
 		ret->shared = 0;
@@ -930,6 +988,8 @@ void mod_handler_read_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s read request receive\n", esim_cycle, stack->id,
 			stack->addr, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_receive\"\n",
+			stack->id, target_mod->name);
 
 		/* Receive message */
 		if (stack->request_dir == mod_request_up_down)
@@ -951,6 +1011,8 @@ void mod_handler_read_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s read request action\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_action\"\n",
+			stack->id, target_mod->name);
 
 		/* Check block locking error. If read request is down-up, there should not
 		 * have been any error while locking. */
@@ -974,6 +1036,9 @@ void mod_handler_read_request(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s read request updown\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_updown\"\n",
+			stack->id, target_mod->name);
+
 		stack->pending = 1;
 
 		/* Set the initial reply message and size.  This will be adjusted later if
@@ -1054,7 +1119,9 @@ void mod_handler_read_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s read request updown miss\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
-		
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_updown_miss\"\n",
+			stack->id, target_mod->name);
+
 		/* Check error */
 		if (stack->err)
 		{
@@ -1087,8 +1154,12 @@ void mod_handler_read_request(int event, void *data)
 		stack->pending--;
 		if (stack->pending)
 			return;
+
+		/* Trace */
 		mem_debug("  %lld %lld 0x%x %s read request updown finish\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_updown_finish\"\n",
+			stack->id, target_mod->name);
 
 		/* If blocks were sent directly to the peer, the reply size would
 		 * have been decreased.  Based on the final size, we can tell whether
@@ -1156,6 +1227,8 @@ void mod_handler_read_request(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s read request downup\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_downup\"\n",
+			stack->id, target_mod->name);
 
 		/* Check: state must not be invalid or shared.
 		 * By default, only one pending request.
@@ -1235,6 +1308,8 @@ void mod_handler_read_request(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s read request downup wait for reqs\n", 
 			esim_cycle, stack->id, stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_downup_wait_for_reqs\"\n",
+			stack->id, target_mod->name);
 
 		if (stack->reply == reply_ACK_DATA_SENT_TO_PEER)
 		{
@@ -1243,7 +1318,7 @@ void mod_handler_read_request(int event, void *data)
 				EV_MOD_READ_REQUEST_DOWNUP_FINISH, stack);
 			new_stack->peer = stack->peer;
 			new_stack->target_mod = stack->target_mod;
-			esim_schedule_event(EV_MOD_PEER_SEND, new_stack, 0);
+			esim_schedule_event(EV_MOD_PEER, new_stack, 0);
 		}
 		else 
 		{
@@ -1258,6 +1333,8 @@ void mod_handler_read_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s read request downup finish\n", 
 			esim_cycle, stack->id, stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_downup_finish\"\n",
+			stack->id, target_mod->name);
 
 		/* Modified states become owned */
 		if (stack->state == cache_block_modified) 
@@ -1304,6 +1381,8 @@ void mod_handler_read_request(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s read request reply\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_reply\"\n",
+			stack->id, target_mod->name);
 
 		/* Checks */
 		assert(stack->reply_size);
@@ -1335,6 +1414,8 @@ void mod_handler_read_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s read request finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_finish\"\n",
+			stack->id, mod->name);
 
 		/* Receive message */
 		if (stack->request_dir == mod_request_up_down)
@@ -1374,6 +1455,8 @@ void mod_handler_write_request(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s write request\n", esim_cycle, stack->id,
 			stack->addr, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request\"\n",
+			stack->id, mod->name);
 
 		/* Default return values */
 		ret->err = 0;
@@ -1416,6 +1499,8 @@ void mod_handler_write_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s write request receive\n", esim_cycle, stack->id,
 			stack->addr, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_receive\"\n",
+			stack->id, target_mod->name);
 
 		/* Receive message */
 		if (stack->request_dir == mod_request_up_down)
@@ -1437,6 +1522,8 @@ void mod_handler_write_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s write request action\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_action\"\n",
+			stack->id, target_mod->name);
 
 		/* Check lock error. If write request is down-up, there should
 		 * have been no error. */
@@ -1464,6 +1551,8 @@ void mod_handler_write_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s write request exclusive\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_exclusive\"\n",
+			stack->id, target_mod->name);
 
 		if (stack->request_dir == mod_request_up_down)
 			esim_schedule_event(EV_MOD_WRITE_REQUEST_UPDOWN, stack, 0);
@@ -1476,6 +1565,8 @@ void mod_handler_write_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s write request updown\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_updown\"\n",
+			stack->id, target_mod->name);
 
 		/* state = M/E */
 		if (stack->state == cache_block_modified ||
@@ -1506,6 +1597,8 @@ void mod_handler_write_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s write request updown finish\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_updown_finish\"\n",
+			stack->id, target_mod->name);
 
 		/* Ensure that a reply was received */
 		assert(stack->reply);
@@ -1569,6 +1662,8 @@ void mod_handler_write_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s write request downup\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_downup\"\n",
+			stack->id, target_mod->name);
 
 		assert(stack->state != cache_block_invalid);
 		assert(!dir_entry_group_shared_or_owned(target_mod->dir, stack->set, stack->way));
@@ -1601,7 +1696,7 @@ void mod_handler_write_request(int event, void *data)
 				new_stack->peer = stack->peer;
 				new_stack->target_mod = stack->target_mod;
 
-				esim_schedule_event(EV_MOD_PEER_SEND, new_stack, 0);
+				esim_schedule_event(EV_MOD_PEER, new_stack, 0);
 				return;
 			}	
 			else 
@@ -1625,6 +1720,8 @@ void mod_handler_write_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s write request downup complete\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_downup_finish\"\n",
+			stack->id, target_mod->name);
 
 		/* Set state to I, unlock*/
 		cache_set_block(target_mod->cache, stack->set, stack->way, 0, cache_block_invalid);
@@ -1642,6 +1739,8 @@ void mod_handler_write_request(int event, void *data)
 
 		mem_debug("  %lld %lld 0x%x %s write request reply\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_reply\"\n",
+			stack->id, target_mod->name);
 
 		/* Checks */
 		assert(stack->reply_size);
@@ -1671,6 +1770,8 @@ void mod_handler_write_request(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s write request finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:write_request_finish\"\n",
+			stack->id, mod->name);
 
 		/* Receive message */
 		if (stack->request_dir == mod_request_up_down)
@@ -1693,14 +1794,16 @@ void mod_handler_peer(int event, void *data)
 	struct mod_t *src = stack->target_mod;
 	struct mod_t *peer = stack->peer;
 
-	if (event == EV_MOD_PEER_SEND) 
+	if (event == EV_MOD_PEER) 
 	{
 		mem_debug("  %lld %lld 0x%x %s %s peer send\n", esim_cycle, stack->id,
 			stack->tag, src->name, peer->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:peer\"\n",
+			stack->id, src->name);
 
 		/* Send message from src to peer */
 		stack->msg = net_try_send_ev(src->low_net, src->low_net_node, peer->low_net_node, 
-				src->block_size + 8, EV_MOD_PEER_RECEIVE, stack, event, stack); 
+			src->block_size + 8, EV_MOD_PEER_RECEIVE, stack, event, stack);
 
 		return;
 	}
@@ -1709,6 +1812,8 @@ void mod_handler_peer(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s %s peer receive\n", esim_cycle, stack->id,
 			stack->tag, src->name, peer->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:peer_receive\"\n",
+			stack->id, peer->name);
 
 		/* Receive message from src */
 		net_receive(peer->low_net, peer->low_net_node, stack->msg);
@@ -1722,6 +1827,8 @@ void mod_handler_peer(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s %s peer reply ack\n", esim_cycle, stack->id,
 			stack->tag, src->name, peer->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:peer_reply_ack\"\n",
+			stack->id, peer->name);
 
 		/* Send ack from peer to src */
 		stack->msg = net_try_send_ev(peer->low_net, peer->low_net_node, src->low_net_node, 
@@ -1734,6 +1841,8 @@ void mod_handler_peer(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s %s peer finish\n", esim_cycle, stack->id,
 			stack->tag, src->name, peer->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:peer_finish\"\n",
+			stack->id, src->name);
 
 		/* Receive message from src */
 		net_receive(src->low_net, src->low_net_node, stack->msg);
@@ -1769,6 +1878,10 @@ void mod_handler_invalidate(int event, void *data)
 		mem_debug("  %lld %lld 0x%x %s invalidate (set=%d, way=%d, state=%s)\n", esim_cycle, stack->id,
 			stack->tag, mod->name, stack->set, stack->way,
 			map_value(&cache_block_state_map, stack->state));
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:invalidate\"\n",
+			stack->id, mod->name);
+
+		/* At least one pending reply */
 		stack->pending = 1;
 		
 		/* Send write request to all upper level sharers except 'except_mod' */
@@ -1825,6 +1938,8 @@ void mod_handler_invalidate(int event, void *data)
 	{
 		mem_debug("  %lld %lld 0x%x %s invalidate finish\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
+		mem_trace("mem.access name=\"A-%lld\" state=\"%s:invalidate_finish\"\n",
+			stack->id, mod->name);
 
 		/* Ignore while pending */
 		assert(stack->pending > 0);
