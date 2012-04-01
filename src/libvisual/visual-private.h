@@ -297,6 +297,9 @@ struct vcache_block_t
 	GdkColor sharers_label_color;
 	GtkWidget *sharers_label;
 
+	GdkColor accesses_label_color;
+	GtkWidget *accesses_label;
+
 	unsigned int tag;
 
 	struct linked_list_t *vmod_access_list;
