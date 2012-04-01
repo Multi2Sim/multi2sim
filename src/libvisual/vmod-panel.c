@@ -388,7 +388,7 @@ void vmod_panel_read_checkpoint(struct vmod_panel_t *panel, FILE *f)
 		vlist_add(panel->vmod_access_list, access);
 	}
 
-	/* Read caches */
+	/* Read modules */
 	for (i = 0; i < hash_table_count(panel->vmod_table); i++)
 	{
 		/* Get module */
@@ -397,8 +397,8 @@ void vmod_panel_read_checkpoint(struct vmod_panel_t *panel, FILE *f)
 		if (!vmod)
 			panic("%s: invalid module name", __FUNCTION__);
 
-		/* Read cache checkpoint */
-		vcache_read_checkpoint(vmod->vcache, f);
+		/* Read module checkpoint */
+		vmod_read_checkpoint(vmod, f);
 	}
 }
 
@@ -425,7 +425,7 @@ void vmod_panel_write_checkpoint(struct vmod_panel_t *panel, FILE *f)
 	if (count != 4)
 		fatal("%s: cannot write to checkpoint file", __FUNCTION__);
 
-	/* Dump caches */
+	/* Write modules */
 	HASH_TABLE_FOR_EACH(panel->vmod_table, vmod_name, vmod)
 	{
 		str_write_to_file(f, vmod->name);

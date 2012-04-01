@@ -14,6 +14,7 @@ libvisual_a_SOURCES += \
 	vcache.c \
 	vlist.c \
 	vmod.c \
+	vmod-access.c \
 	vmod-panel.c \
 	vnet.c
 

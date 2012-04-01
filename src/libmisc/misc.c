@@ -398,14 +398,14 @@ void str_read_from_file(FILE *f, char *buf, int buf_size)
 	if (count != 4)
 	{
 		fprintf(stderr, "%s: invalid file format", __FUNCTION__);
-		exit(1);
+		abort();
 	}
 
 	/* Check buffer size */
 	if (size > buf_size)
 	{
 		fprintf(stderr, "%s: buffer too small", __FUNCTION__);
-		exit(1);
+		abort();
 	}
 
 	/* Read string */
@@ -413,7 +413,7 @@ void str_read_from_file(FILE *f, char *buf, int buf_size)
 	if (count != size)
 	{
 		fprintf(stderr, "%s: invalid file format", __FUNCTION__);
-		exit(1);
+		abort();
 	}
 }
 
