@@ -224,6 +224,72 @@ static void vmem_process_trace_line_end_access(struct vmem_t *vmem, struct trace
 }
 
 
+/* Trace command 'new_access_mod' */
+static void vmem_process_trace_line_new_access_mod(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+	struct vmod_access_t *access;
+	struct vmod_t *vmod;
+
+	char *vmod_name;
+	char *access_name;
+
+	/* Read fields */
+	vmod_name = trace_line_get_symbol_value(trace_line, "mod");
+	access_name = trace_line_get_symbol_value(trace_line, "access");
+
+	/* Module */
+	vmod = hash_table_get(vmem->vmod_panel->vmod_table, vmod_name);
+	if (!vmod)
+		panic("%s: invalid module name '%s'", __FUNCTION__, vmod_name);
+
+	/* Create new access */
+	access = vmod_access_create(access_name);
+
+	/* Add access to list */
+	vlist_add(vmod->vmod_access_list, access);
+}
+
+
+/* Trace command 'end_access_mod' */
+static void vmem_process_trace_line_end_access_mod(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+	struct vmod_access_t *access;
+	struct vmod_t *vmod;
+
+	char *vmod_name;
+	char *access_name;
+
+	/* Read fields */
+	vmod_name = trace_line_get_symbol_value(trace_line, "mod");
+	access_name = trace_line_get_symbol_value(trace_line, "access");
+
+	/* Module */
+	vmod = hash_table_get(vmem->vmod_panel->vmod_table, vmod_name);
+	if (!vmod)
+		panic("%s: invalid module name '%s'", __FUNCTION__, vmod_name);
+
+	/* Remove access */
+	access = vmod_remove_access(vmod, access_name);
+	if (!access)
+		panic("%s: access not found", __FUNCTION__);
+
+	/* Free access */
+	vmod_access_free(access);
+}
+
+
+/* Trace command 'new_access_block' */
+static void vmem_process_trace_line_new_access_block(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+}
+
+
+/* Trace command 'end_access_block' */
+static void vmem_process_trace_line_end_access_block(struct vmem_t *vmem, struct trace_line_t *trace_line)
+{
+}
+
+
 /* Trace command 'access' */
 static void vmem_process_trace_line_access(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
@@ -284,6 +350,14 @@ struct vmem_t *vmem_create(void)
 		(state_file_process_trace_line_func_t) vmem_process_trace_line_new_access, vmem);
 	state_file_new_command(visual_state_file, "mem.end_access",
 		(state_file_process_trace_line_func_t) vmem_process_trace_line_end_access, vmem);
+	state_file_new_command(visual_state_file, "mem.new_access_mod",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_new_access_mod, vmem);
+	state_file_new_command(visual_state_file, "mem.end_access_mod",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_end_access_mod, vmem);
+	state_file_new_command(visual_state_file, "mem.new_access_block",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_new_access_block, vmem);
+	state_file_new_command(visual_state_file, "mem.end_access_block",
+		(state_file_process_trace_line_func_t) vmem_process_trace_line_end_access_block, vmem);
 	state_file_new_command(visual_state_file, "mem.access",
 		(state_file_process_trace_line_func_t) vmem_process_trace_line_access, vmem);
 

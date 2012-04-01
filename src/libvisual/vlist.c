@@ -317,6 +317,7 @@ struct vlist_popup_t *vlist_popup_create(struct vlist_t *vlist)
 		else
 			snprintf(str, sizeof str, "item-%d", i);
 		label = gtk_label_new(str);
+		gtk_misc_set_alignment(GTK_MISC(label), 0, 0);
 		gtk_label_set_use_markup(GTK_LABEL(label), TRUE);
 
 		/* Set label font attributes */
