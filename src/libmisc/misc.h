@@ -250,6 +250,9 @@ void str_printf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format 
 void str_read_from_file(FILE *f, char *buf, int buf_size);
 void str_write_to_file(FILE *f, char *buf);
 
+char *str_set(char *old_str, char *new_str);
+char *str_free(char *str);
+
 
 
 

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <memvisual-private.h>
+#include <visual-private.h>
 
 
 #define STATE_CHECKPOINT_INTERVAL  500
@@ -352,6 +352,12 @@ void state_file_free(struct state_file_t *file)
 long long state_file_get_num_cycles(struct state_file_t *file)
 {
 	return file->num_cycles;
+}
+
+
+long long state_file_get_cycle(struct state_file_t *file)
+{
+	return file->cycle;
 }
 
 

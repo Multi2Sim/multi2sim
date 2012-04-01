@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <memvisual-private.h>
+#include <visual-private.h>
 
 struct vlist_item_t
 {
@@ -317,6 +317,7 @@ struct vlist_popup_t *vlist_popup_create(struct vlist_t *vlist)
 		else
 			snprintf(str, sizeof str, "item-%d", i);
 		label = gtk_label_new(str);
+		gtk_label_set_use_markup(GTK_LABEL(label), TRUE);
 
 		/* Set label font attributes */
 		PangoAttrList *attrs;
@@ -533,6 +534,7 @@ void vlist_refresh(struct vlist_t *vlist)
 			snprintf(str1, sizeof str1, "item-%d", i);
 		snprintf(str2, sizeof str2, "%s%s", str1, comma);
 		label = gtk_label_new(str2);
+		gtk_label_set_use_markup(GTK_LABEL(label), TRUE);
 
 		/* Set label font attributes */
 		attrs = pango_attr_list_new();
