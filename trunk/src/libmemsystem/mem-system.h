@@ -117,6 +117,7 @@ void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, 
 struct dir_lock_t
 {
 	int lock;
+	long long stack_id;
 	struct mod_stack_t *lock_queue;
 };
 
@@ -169,9 +170,8 @@ int dir_entry_group_shared_or_owned(struct dir_t *dir, int x, int y);
 void dir_entry_dump_sharers(struct dir_t *dir, int x, int y, int z);
 
 struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y);
-int dir_lock_lock(struct dir_lock_t *dir_lock, int event, struct mod_stack_t *stack);
-void dir_lock_unlock(struct dir_lock_t *dir_lock);
-void dir_unlock(struct dir_t *dir, int x, int y);
+int dir_entry_lock(struct dir_t *dir, int x, int y, int event, struct mod_stack_t *stack);
+void dir_entry_unlock(struct dir_t *dir, int x, int y);
 
 
 
@@ -577,7 +577,6 @@ struct mod_stack_t
 	uint32_t src_tag;
 
 	enum mod_request_dir_t request_dir;
-	struct dir_lock_t *dir_lock;
 	int reply_size;
 	int reply;
 	int pending;
