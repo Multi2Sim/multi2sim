@@ -189,7 +189,7 @@ struct vmod_t
 	struct vcache_t *vcache;
 
 	/* Visual list of accesses */
-	struct vlist_t *access_list;
+	struct vlist_t *vmod_access_list;
 };
 
 
@@ -197,6 +197,9 @@ struct vmod_t *vmod_create(struct vmod_panel_t *panel, char *name, int num_sets,
 	int block_size, int sub_block_size, int num_sharers, int level, struct vnet_t *high_vnet,
 	int high_vnet_node_index, struct vnet_t *low_vnet, int low_vnet_node_index);
 void vmod_free(struct vmod_t *vmod);
+
+struct vmod_access_t *vmod_find_access(struct vmod_t *vmod, char *access_name);
+struct vmod_access_t *vmod_remove_access(struct vmod_t *vmod, char *access_name);
 
 void vmod_read_checkpoint(struct vmod_t *vmod, FILE *f);
 void vmod_write_checkpoint(struct vmod_t *vmod, FILE *f);

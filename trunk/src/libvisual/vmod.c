@@ -21,111 +21,6 @@
 
 
 /*
- * Module access
- */
-
-struct vmod_access_t
-{
-	char *name;
-	char *state;
-
-	long long state_update_cycle;
-};
-
-
-struct vmod_access_t *vmod_access_create(char *name)
-{
-	struct vmod_access_t *access;
-
-	/* Allocate */
-	access = calloc(1, sizeof(struct vmod_access_t));
-	if (!access)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize */
-	access->name = str_set(access->name, name);
-
-	/* Return */
-	return access;
-}
-
-
-void vmod_access_free(struct vmod_access_t *access)
-{
-	str_free(access->name);
-	str_free(access->state);
-	free(access);
-}
-
-
-void vmod_access_get_name_str(struct vmod_access_t *access, char *buf, int size)
-{
-	snprintf(buf, size, "<b>%s</b> (%s:%lld)", access->name, access->state,
-		state_file_get_cycle(visual_state_file) - access->state_update_cycle);
-}
-
-
-void vmod_access_get_desc_str(struct vmod_access_t *access, char *buf, int size)
-{
-	snprintf(buf, size, "Description for access %s", access->name);
-}
-
-
-char *vmod_access_get_name(struct vmod_access_t *access)
-{
-	return access->name;
-}
-
-
-void vmod_access_set_state(struct vmod_access_t *access, char *state)
-{
-	access->state = str_set(access->state, state);
-	access->state_update_cycle = state_file_get_cycle(visual_state_file);
-}
-
-
-void vmod_access_read_checkpoint(struct vmod_access_t *access, FILE *f)
-{
-	char name[MAX_STRING_SIZE];
-	char state[MAX_STRING_SIZE];
-
-	int count;
-
-	/* Read name */
-	str_read_from_file(f, name, sizeof name);
-	access->name = str_set(access->name, name);
-
-	/* Read state */
-	str_read_from_file(f, state, sizeof state);
-	access->state = str_set(access->state, state);
-
-	/* Read state update cycle */
-	count = fread(&access->state_update_cycle, 1, sizeof access->state_update_cycle, f);
-	if (count != sizeof access->state_update_cycle)
-		panic("%s: cannot read checkpoint", __FUNCTION__);
-}
-
-
-void vmod_access_write_checkpoint(struct vmod_access_t *access, FILE *f)
-{
-	int count;
-
-	/* Write name */
-	str_write_to_file(f, access->name);
-
-	/* Write state */
-	str_write_to_file(f, access->state);
-
-	/* Write state update cycle */
-	count = fwrite(&access->state_update_cycle, 1, sizeof access->state_update_cycle, f);
-	if (count != sizeof access->state_update_cycle)
-		panic("%s: cannot write checkpoint", __FUNCTION__);
-}
-
-
-
-
-/*
  * Module
  */
 
@@ -157,10 +52,10 @@ struct vmod_t *vmod_create(struct vmod_panel_t *panel, char *name, int num_sets,
 	vmod->widget = gtk_vbox_new(0, 0);
 
 	/* List of accesses */
-	vmod->access_list = vlist_create("Access list", 200, 30,
+	vmod->vmod_access_list = vlist_create("Access list", 200, 30,
 		(vlist_get_elem_name_func_t) vmod_access_get_name_str,
 		(vlist_get_elem_desc_func_t) vmod_access_get_desc_str);
-	gtk_box_pack_start(GTK_BOX(vmod->widget), vlist_get_widget(vmod->access_list), FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(vmod->widget), vlist_get_widget(vmod->vmod_access_list), FALSE, FALSE, 0);
 
 	/* Cache */
 	struct vcache_t *vcache;
@@ -175,27 +70,127 @@ struct vmod_t *vmod_create(struct vmod_panel_t *panel, char *name, int num_sets,
 
 void vmod_free(struct vmod_t *vmod)
 {
-	vlist_free(vmod->access_list);
+	int i;
+
+	/* Free accesses */
+	VLIST_FOR_EACH(vmod->vmod_access_list, i)
+		vmod_access_free(vlist_get(vmod->vmod_access_list, i));
+	vlist_free(vmod->vmod_access_list);
+
+	/* Rest */
 	vcache_free(vmod->vcache);
 	free(vmod->name);
 	free(vmod);
 }
 
 
+struct vmod_access_t *vmod_find_access(struct vmod_t *vmod, char *access_name)
+{
+	struct vlist_t *access_list = vmod->vmod_access_list;
+	struct vmod_access_t *access;
+
+	int index;
+
+	/* Find access */
+	VLIST_FOR_EACH(access_list, index)
+	{
+		access = vlist_get(access_list, index);
+		if (!strcmp(access_name, vmod_access_get_name(access)))
+			return access;
+	}
+
+	/* Access not found */
+	return NULL;
+}
+
+
+struct vmod_access_t *vmod_remove_access(struct vmod_t *vmod, char *access_name)
+{
+	struct vlist_t *access_list = vmod->vmod_access_list;
+	struct vmod_access_t *access;
+
+	int index;
+
+	/* Find access */
+	VLIST_FOR_EACH(access_list, index)
+	{
+		access = vlist_get(access_list, index);
+		if (!strcmp(access_name, vmod_access_get_name(access)))
+			break;
+	}
+
+	/* Access not found */
+	if (index == vlist_count(access_list))
+		return NULL;
+
+	/* Remove access */
+	vlist_remove_at(access_list, index);
+	return access;
+}
+
+
 void vmod_read_checkpoint(struct vmod_t *vmod, FILE *f)
 {
+	struct vmod_access_t *access;
+
+	int num_accesses;
+	int count;
+	int i;
+
+	/* Empty access list */
+	while (vlist_count(vmod->vmod_access_list))
+	{
+		access = vlist_remove_at(vmod->vmod_access_list, 0);
+		vmod_access_free(access);
+	}
+
+	/* Read number of accesses */
+	count = fread(&num_accesses, 1, 4, f);
+	if (count != 4)
+		fatal("%s: error reading from checkpoint", __FUNCTION__);
+
+	/* Read accesses */
+	for (i = 0; i < num_accesses; i++)
+	{
+		access = vmod_access_create(NULL);
+		vmod_access_read_checkpoint(access, f);
+		vlist_add(vmod->vmod_access_list, access);
+	}
+
+	/* Cache */
 	vcache_read_checkpoint(vmod->vcache, f);
 }
 
 
 void vmod_write_checkpoint(struct vmod_t *vmod, FILE *f)
 {
+	struct vmod_access_t *access;
+
+	int num_accesses;
+	int count;
+	int i;
+
+	/* Write number of accesses */
+	num_accesses = vlist_count(vmod->vmod_access_list);
+	count = fwrite(&num_accesses, 1, 4, f);
+	if (count != 4)
+		fatal("%s: cannot write to checkpoint file", __FUNCTION__);
+
+	/* Write accesses */
+	for (i = 0; i < num_accesses; i++)
+	{
+		access = vlist_get(vmod->vmod_access_list, i);
+		vmod_access_write_checkpoint(access, f);
+	}
+
+	/* Cache */
 	vcache_write_checkpoint(vmod->vcache, f);
 }
 
 
 void vmod_refresh(struct vmod_t *vmod)
 {
+	vlist_refresh(vmod->vmod_access_list);
 	vcache_refresh(vmod->vcache);
 }
 
