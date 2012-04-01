@@ -522,7 +522,7 @@ extern int EV_MOD_READ_REQUEST_FINISH;
 extern int EV_MOD_INVALIDATE;
 extern int EV_MOD_INVALIDATE_FINISH;
 
-extern int EV_MOD_PEER_SEND;
+extern int EV_MOD_PEER;
 extern int EV_MOD_PEER_RECEIVE;
 extern int EV_MOD_PEER_REPLY_ACK;
 extern int EV_MOD_PEER_FINISH;

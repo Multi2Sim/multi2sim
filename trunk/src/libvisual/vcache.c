@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <memvisual-private.h>
+#include <visual-private.h>
 
 #define VCACHE_DIR_ENTRY_SHARERS_SIZE(vcache) (((vcache)->num_sharers + 7) / 8)
 #define VCACHE_DIR_ENTRY_SIZE(vcache) (sizeof(struct vcache_dir_entry_t) + \

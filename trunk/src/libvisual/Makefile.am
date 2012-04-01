@@ -1,14 +1,14 @@
-lib_LIBRARIES = libmemvisual.a
+lib_LIBRARIES = libvisual.a
 
-libmemvisual_a_SOURCES = \
-	memvisual.h
+libvisual_a_SOURCES = \
+	visual.h
 
 if HAVE_GTK
-libmemvisual_a_SOURCES += \
+libvisual_a_SOURCES += \
 	cycle-bar.c \
 	info-popup.c \
-	memvisual.c \
-	memvisual-private.h \
+	visual.c \
+	visual-private.h \
 	state-file.c \
 	trace-file.c \
 	vcache.c \
@@ -21,14 +21,14 @@ AM_CFLAGS = @GTK_CFLAGS@
 
 else
 
-libmemvisual_a_SOURCES += \
-	memvisual-nogtk.c
+libvisual_a_SOURCES += \
+	visual-nogtk.c
 
 endif
 
 INCLUDES = \
 	-I$(top_srcdir)/src/libmhandle \
 	-I$(top_srcdir)/src/libstruct \
-	-I$(top_srcdir)/src/libmemvisual \
+	-I$(top_srcdir)/src/libvisual \
 	-I$(top_srcdir)/src/libmisc
 

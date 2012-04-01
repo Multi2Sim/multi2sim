@@ -423,6 +423,11 @@ void str_write_to_file(FILE *f, char *buf)
 	int size;
 	int count;
 
+	/* Support NULL strings */
+	if (!buf)
+		buf = "";
+
+	/* Write */
 	size = strlen(buf) + 1;
 	count = fwrite(&size, 1, 4, f);
 	count += fwrite(buf, 1, size, f);
@@ -431,6 +436,39 @@ void str_write_to_file(FILE *f, char *buf)
 		fprintf(stderr, "%s: error writing to file", __FUNCTION__);
 		exit(1);
 	}
+}
+
+
+char *str_set(char *old_str, char *new_str)
+{
+	/* Free old value, only if not NULL */
+	str_free(old_str);
+
+	/* If new value is NULL, create empty string */
+	if (!new_str)
+		new_str = "";
+
+	/* Duplicate */
+	new_str = strdup(new_str);
+	if (!new_str)
+	{
+		fprintf(stderr, "%s: out of memory", __FUNCTION__);
+		exit(1);
+	}
+
+	/* Return new string */
+	return new_str;
+}
+
+
+char *str_free(char *str)
+{
+	/* Free only if not NULL */
+	if (str)
+		free(str);
+
+	/* Return new value for string, always NULL */
+	return NULL;
 }
 
 
