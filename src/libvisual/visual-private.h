@@ -26,6 +26,7 @@
 #include <gtk/gtk.h>
 
 #include <hash-table.h>
+#include <linked-list.h>
 #include <list.h>
 #include <misc.h>
 #include <stdlib.h>
@@ -298,6 +299,8 @@ struct vcache_block_t
 
 	unsigned int tag;
 
+	struct linked_list_t *vmod_access_list;
+
 	struct vcache_dir_entry_t *dir_entries;
 };
 
@@ -335,6 +338,10 @@ struct vcache_t
 struct vcache_t *vcache_create(struct vmod_t *vmod, char *name, int num_sets, int assoc,
 	int block_size, int sub_block_size, int num_sharers);
 void vcache_free(struct vcache_t *vcache);
+
+void vcache_add_access(struct vcache_t *vcache, int set, int way, struct vmod_access_t *access);
+struct vmod_access_t *vcache_find_access(struct vcache_t *vcache, int set, int way, char *access_name);
+struct vmod_access_t *vcache_remove_access(struct vcache_t *vcache, int set, int way, char *access_name);
 
 void vcache_set_block(struct vcache_t *vcache, int set, int way,
 	unsigned int tag, char *state);

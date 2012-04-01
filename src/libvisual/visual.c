@@ -281,12 +281,62 @@ static void vmem_process_trace_line_end_access_mod(struct vmem_t *vmem, struct t
 /* Trace command 'new_access_block' */
 static void vmem_process_trace_line_new_access_block(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
+	struct vmod_access_t *access;
+	struct vmod_t *vmod;
+
+	char *vmod_name;
+	char *access_name;
+
+	int set;
+	int way;
+
+	/* Read fields */
+	vmod_name = trace_line_get_symbol_value(trace_line, "cache");
+	access_name = trace_line_get_symbol_value(trace_line, "access");
+	set = trace_line_get_symbol_value_int(trace_line, "set");
+	way = trace_line_get_symbol_value_int(trace_line, "way");
+
+	/* Cache */
+	vmod = hash_table_get(vmem->vmod_panel->vmod_table, vmod_name);
+	if (!vmod)
+		panic("%s: invalid module", __FUNCTION__);
+
+	/* Create access and add to cache block */
+	access = vmod_access_create(access_name);
+	vcache_add_access(vmod->vcache, set, way, access);
 }
 
 
 /* Trace command 'end_access_block' */
 static void vmem_process_trace_line_end_access_block(struct vmem_t *vmem, struct trace_line_t *trace_line)
 {
+	struct vmod_access_t *access;
+	struct vmod_t *vmod;
+
+	char *vmod_name;
+	char *access_name;
+
+	int set;
+	int way;
+
+	/* Read fields */
+	vmod_name = trace_line_get_symbol_value(trace_line, "cache");
+	access_name = trace_line_get_symbol_value(trace_line, "access");
+	set = trace_line_get_symbol_value_int(trace_line, "set");
+	way = trace_line_get_symbol_value_int(trace_line, "way");
+
+	/* Cache */
+	vmod = hash_table_get(vmem->vmod_panel->vmod_table, vmod_name);
+	if (!vmod)
+		panic("%s: invalid module", __FUNCTION__);
+
+	/* Remove access */
+	access = vcache_remove_access(vmod->vcache, set, way, access_name);
+	if (!access)
+		panic("%s: invalid access", __FUNCTION__);
+
+	/* Free access */
+	vmod_access_free(access);
 }
 
 

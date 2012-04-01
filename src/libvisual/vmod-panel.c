@@ -414,16 +414,18 @@ void vmod_panel_write_checkpoint(struct vmod_panel_t *panel, FILE *f)
 	int count;
 	int i;
 
-	/* Dump access list */
+	/* Write number of accesses */
 	num_accesses = vlist_count(panel->vmod_access_list);
 	count = fwrite(&num_accesses, 1, 4, f);
+	if (count != 4)
+		fatal("%s: cannot write to checkpoint file", __FUNCTION__);
+
+	/* Write accesses */
 	VLIST_FOR_EACH(panel->vmod_access_list, i)
 	{
 		access = vlist_get(panel->vmod_access_list, i);
 		vmod_access_write_checkpoint(access, f);
 	}
-	if (count != 4)
-		fatal("%s: cannot write to checkpoint file", __FUNCTION__);
 
 	/* Write modules */
 	HASH_TABLE_FOR_EACH(panel->vmod_table, vmod_name, vmod)

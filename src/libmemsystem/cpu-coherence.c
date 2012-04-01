@@ -205,7 +205,7 @@ void mod_handler_load(int event, void *data)
 		{
 			mod->read_retries++;
 			retry_lat = mod_get_retry_latency(mod);
-			dir_lock_unlock(stack->dir_lock);
+			dir_entry_unlock(mod->dir, stack->set, stack->way);
 			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
 			stack->retry = 1;
 			esim_schedule_event(EV_MOD_LOAD_LOCK, stack, retry_lat);
@@ -230,7 +230,7 @@ void mod_handler_load(int event, void *data)
 			stack->id, mod->name);
 
 		/* Unlock directory entry */
-		dir_lock_unlock(stack->dir_lock);
+		dir_entry_unlock(mod->dir, stack->set, stack->way);
 
 		/* Continue */
 		esim_schedule_event(EV_MOD_LOAD_FINISH, stack, 0);
@@ -383,7 +383,7 @@ void mod_handler_store(int event, void *data)
 		{
 			mod->write_retries++;
 			retry_lat = mod_get_retry_latency(mod);
-			dir_lock_unlock(stack->dir_lock);
+			dir_entry_unlock(mod->dir, stack->set, stack->way);
 			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
 			stack->retry = 1;
 			esim_schedule_event(EV_MOD_STORE_LOCK, stack, retry_lat);
@@ -393,7 +393,7 @@ void mod_handler_store(int event, void *data)
 		/* Update tag/state and unlock */
 		cache_set_block(mod->cache, stack->set, stack->way,
 			stack->tag, cache_block_modified);
-		dir_lock_unlock(stack->dir_lock);
+		dir_entry_unlock(mod->dir, stack->set, stack->way);
 
 		/* Continue */
 		esim_schedule_event(EV_MOD_STORE_FINISH, stack, 0);
@@ -458,6 +458,7 @@ void mod_handler_find_and_lock(int event, void *data)
 	if (event == EV_MOD_FIND_AND_LOCK_PORT)
 	{
 		struct mod_port_t *port = stack->port;
+		struct dir_lock_t *dir_lock;
 
 		assert(stack->port);
 		mem_debug("  %lld %lld 0x%x %s find and lock port\n", esim_cycle, stack->id,
@@ -530,12 +531,10 @@ void mod_handler_find_and_lock(int event, void *data)
 				map_value(&cache_block_state_map, stack->state));
 		}
 
-		/* Get directory entry */
-		stack->dir_lock = dir_lock_get(mod->dir, stack->set, stack->way);
-
 		/* If directory entry is locked and the call to FIND_AND_LOCK is not
 		 * blocking, release port and return error. */
-		if (stack->dir_lock->lock && !stack->blocking)
+		dir_lock = dir_lock_get(mod->dir, stack->set, stack->way);
+		if (dir_lock->lock && !stack->blocking)
 		{
 			mem_debug("    %lld 0x%x %s block already locked: set=%d, way=%d\n",
 				stack->id, stack->tag, mod->name, stack->set, stack->way);
@@ -546,7 +545,7 @@ void mod_handler_find_and_lock(int event, void *data)
 		}
 
 		/* Lock directory entry */
-		if (!dir_lock_lock(stack->dir_lock, EV_MOD_FIND_AND_LOCK_PORT, stack))
+		if (!dir_entry_lock(mod->dir, stack->set, stack->way, EV_MOD_FIND_AND_LOCK_PORT, stack))
 			return;
 
 		/* Entry is locked. Record the transient tag so that a subsequent lookup
@@ -604,7 +603,7 @@ void mod_handler_find_and_lock(int event, void *data)
 			assert(stack->state);
 			assert(stack->eviction);
 			ret->err = 1;
-			dir_lock_unlock(stack->dir_lock);
+			dir_entry_unlock(mod->dir, stack->set, stack->way);
 			mod_stack_return(stack);
 			return;
 		}
@@ -632,7 +631,6 @@ void mod_handler_find_and_lock(int event, void *data)
 		ret->way = stack->way;
 		ret->state = stack->state;
 		ret->tag = stack->tag;
-		ret->dir_lock = stack->dir_lock;
 		mod_stack_return(stack);
 		return;
 	}
@@ -849,7 +847,7 @@ void mod_handler_evict(int event, void *data)
 		if (stack->err)
 		{
 			ret->err = 1;
-			dir_lock_unlock(stack->dir_lock);
+			dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 			esim_schedule_event(EV_MOD_EVICT_REPLY, stack, 0);
 			return;
 		}
@@ -882,7 +880,7 @@ void mod_handler_evict(int event, void *data)
 			if (dir_entry->owner == mod->low_net_node->index)
 				dir_entry_set_owner(dir, stack->set, stack->way, z, DIR_ENTRY_OWNER_NONE);
 		}
-		dir_lock_unlock(stack->dir_lock);
+		dir_entry_unlock(dir, stack->set, stack->way);
 
 		esim_schedule_event(EV_MOD_EVICT_REPLY, stack, 0);
 		return;
@@ -1135,7 +1133,7 @@ void mod_handler_read_request(int event, void *data)
 		/* Check error */
 		if (stack->err)
 		{
-			dir_lock_unlock(stack->dir_lock);
+			dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 			ret->err = 1;
 			ret->reply = reply_ACK_ERROR;
 			stack->reply_size = 8;
@@ -1226,7 +1224,7 @@ void mod_handler_read_request(int event, void *data)
 			}
 		}
 
-		dir_lock_unlock(stack->dir_lock);
+		dir_entry_unlock(dir, stack->set, stack->way);
 		esim_schedule_event(EV_MOD_READ_REQUEST_REPLY, stack, 0);
 		return;
 	}
@@ -1378,7 +1376,7 @@ void mod_handler_read_request(int event, void *data)
 			panic("Invalid cache block state: %d", stack->state);
 		}
 
-		dir_lock_unlock(stack->dir_lock);
+		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 		esim_schedule_event(EV_MOD_READ_REQUEST_REPLY, stack, 0);
 		return;
 	}
@@ -1619,7 +1617,7 @@ void mod_handler_write_request(int event, void *data)
 			ret->err = 1;
 			ret->reply = reply_ACK_ERROR;
 			stack->reply_size = 8;
-			dir_lock_unlock(stack->dir_lock);
+			dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 			esim_schedule_event(EV_MOD_WRITE_REQUEST_REPLY, stack, 0);
 			return;
 		}
@@ -1646,7 +1644,7 @@ void mod_handler_write_request(int event, void *data)
 				stack->tag, cache_block_exclusive);
 
 		/* Unlock, reply_size is the data of the size of the requester's block. */
-		dir_lock_unlock(stack->dir_lock);
+		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 
 		/* If blocks were sent directly to the peer, the reply size would
 		 * have been decreased.  Based on the final size, we can tell whether
@@ -1735,7 +1733,7 @@ void mod_handler_write_request(int event, void *data)
 
 		/* Set state to I, unlock*/
 		cache_set_block(target_mod->cache, stack->set, stack->way, 0, cache_block_invalid);
-		dir_lock_unlock(stack->dir_lock);
+		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 		
 		esim_schedule_event(EV_MOD_WRITE_REQUEST_REPLY, stack, 0);
 		return;
