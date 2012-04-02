@@ -12,6 +12,12 @@ libvisual_a_SOURCES += \
 	state-file.c \
 	trace-file.c \
 	vcache.c \
+	\
+	visual-mem-system.c \
+	visual-mod.c \
+	visual-mod-access.c \
+	visual-net.c \
+	\
 	vlist.c \
 	vmod.c \
 	vmod-access.c \
