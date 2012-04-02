@@ -380,6 +380,7 @@ void state_file_create_checkpoints(struct state_file_t *file)
 
 	/* Parse uncompressed trace file */
 	num_trace_lines = 0;
+	file->cycle = 0;
 	while ((trace_line = trace_line_create_from_file(file->unzipped_trace_file)))
 	{
 		struct state_checkpoint_t *checkpoint;
@@ -387,16 +388,14 @@ void state_file_create_checkpoints(struct state_file_t *file)
 
 		char *command;
 
-		long long cycle;
-
 		/* Get command */
 		command = trace_line_get_command(trace_line);
 
 		/* New cycle command */
 		if (!strcasecmp(command, "c"))
 		{
-			cycle = atoll(trace_line_get_symbol_value(trace_line, "clk"));
-			while (cycle >= last_checkpoint_cycle + STATE_CHECKPOINT_INTERVAL)
+			file->cycle = atoll(trace_line_get_symbol_value(trace_line, "clk"));
+			while (file->cycle >= last_checkpoint_cycle + STATE_CHECKPOINT_INTERVAL)
 			{
 				last_checkpoint_cycle += STATE_CHECKPOINT_INTERVAL;
 				checkpoint = state_checkpoint_create(last_checkpoint_cycle,
@@ -561,12 +560,21 @@ void state_file_go_to_cycle(struct state_file_t *file, long long cycle)
 		command = trace_line_get_command(trace_line);
 		if (!strcmp(command, "c"))
 		{
+			long long new_cycle;
+
+			/* Get new cycle number */
+			new_cycle = trace_line_get_symbol_value_long_long(trace_line, "clk");
+
 			/* If we passed the target cycle, done */
-			if (trace_line_get_symbol_value_long_long(trace_line, "clk") > cycle)
+			if (new_cycle > cycle)
 			{
 				fseek(file->unzipped_trace_file, unzipped_trace_file_pos, SEEK_SET);
 				trace_line_free(trace_line);
 				break;
+			}
+			else
+			{
+				file->cycle = new_cycle;
 			}
 		}
 		else

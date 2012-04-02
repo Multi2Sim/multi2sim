@@ -511,7 +511,7 @@ void vmem_run(char *file_name)
 	gtk_init(NULL, NULL);
 
 	/* Create main window */
-	vmem_create();
+	vmem = vmem_create();
 
 	/* Parse trace file and create checkpoints */
 	state_file_create_checkpoints(visual_state_file);

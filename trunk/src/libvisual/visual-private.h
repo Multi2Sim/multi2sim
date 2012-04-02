@@ -399,6 +399,8 @@ long long cycle_bar_get_cycle(struct cycle_bar_t *cycle_bar);
  * Main Window
  */
 
+struct vmem_t *vmem;
+
 struct vmem_t *vmem_create(void);
 void vmem_free(struct vmem_t *vmem);
 
