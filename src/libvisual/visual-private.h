@@ -127,6 +127,10 @@ void visual_mem_system_done(void);
  * Memory Module
  */
 
+#define VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod) (((mod)->num_sharers + 7) / 8)
+#define VISUAL_MOD_DIR_ENTRY_SIZE(mod) (sizeof(struct visual_mod_dir_entry_t) + \
+	VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE((mod)))
+
 struct visual_mod_dir_entry_t
 {
 	int owner;
@@ -158,6 +162,7 @@ struct visual_mod_t
 	int assoc;
 	int block_size;
 	int sub_block_size;
+	int num_sub_blocks;
 	int num_sharers;
 	int level;
 
@@ -166,10 +171,15 @@ struct visual_mod_t
 
 	struct visual_net_t *high_net;
 	struct visual_net_t *low_net;
+
+	struct visual_mod_block_t *blocks;
 };
 
 struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line);
 void visual_mod_free(struct visual_mod_t *mod);
+
+void visual_mod_set_block(struct visual_mod_t *mod, int set, int way,
+	unsigned int tag, char *state);
 
 
 

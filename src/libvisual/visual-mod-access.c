@@ -18,3 +18,27 @@
  */
 
 #include <visual-private.h>
+
+
+/*
+ * Public Functions
+ */
+
+struct visual_mod_access_t *visual_mod_access_create(void)
+{
+	struct visual_mod_access_t *access;
+
+	/* Allocate */
+	access = calloc(1, sizeof(struct visual_mod_access_t));
+	if (!access)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Return */
+	return access;
+}
+
+
+void visual_mod_access_free(struct visual_mod_access_t *access)
+{
+	free(access);
+}
