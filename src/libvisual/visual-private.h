@@ -75,6 +75,10 @@ typedef void (*state_file_read_checkpoint_func_t)(void *user_data, FILE *f);
 typedef void (*state_file_process_trace_line_func_t)(void *user_data, struct trace_line_t *trace_line);
 typedef void (*state_file_refresh_func_t)(void *user_data);
 
+#define STATE_FILE_FOR_EACH_HEADER(state_file, trace_line) \
+	for ((trace_line) = state_file_header_first((state_file)); \
+	(trace_line); (trace_line) = state_file_header_next((state_file)))
+
 extern struct state_file_t *visual_state_file;
 
 struct state_file_t *state_file_create(char *trace_file_name);
@@ -99,6 +103,108 @@ struct trace_line_t *state_file_header_next(struct state_file_t *file);
 
 void state_file_refresh(struct state_file_t *file);
 void state_file_go_to_cycle(struct state_file_t *file, long long cycle);
+
+
+
+/*
+ * Memory System
+ */
+
+struct visual_mem_system_t
+{
+	struct hash_table_t *mod_table;
+	struct hash_table_t *net_table;
+};
+
+extern struct visual_mem_system_t *visual_mem_system;
+
+void visual_mem_system_init(void);
+void visual_mem_system_done(void);
+
+
+
+/*
+ * Memory Module
+ */
+
+struct visual_mod_dir_entry_t
+{
+	int owner;
+	int num_sharers;
+
+	/* Bit map of sharers (last field in variable-size structure) */
+	unsigned char sharers[0];
+};
+
+struct visual_mod_block_t
+{
+	struct visual_mod_t *mod;
+
+	int set;
+	int way;
+	int state;
+	unsigned int tag;
+
+	struct linked_list_t *access_list;
+
+	struct visual_mod_dir_entry_t *dir_entries;
+};
+
+struct visual_mod_t
+{
+	char *name;
+
+	int num_sets;
+	int assoc;
+	int block_size;
+	int sub_block_size;
+	int num_sharers;
+	int level;
+
+	int high_net_node_index;
+	int low_net_node_index;
+
+	struct visual_net_t *high_net;
+	struct visual_net_t *low_net;
+};
+
+struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line);
+void visual_mod_free(struct visual_mod_t *mod);
+
+
+
+
+/*
+ * Network
+ */
+
+struct visual_net_t
+{
+	char *name;
+
+	struct list_t *node_list;
+};
+
+struct visual_net_t *visual_net_create(struct trace_line_t *trace_line);
+void visual_net_free(struct visual_net_t *net);
+
+void visual_net_attach_mod(struct visual_net_t *net,
+	struct visual_mod_t *mod, int node_index);
+
+
+
+
+/*
+ * Memory Module Access
+ */
+
+struct visual_mod_access_t
+{
+};
+
+struct visual_mod_access_t *visual_mod_access_create(void);
+void visual_mod_access_free(struct visual_mod_access_t *access);
+
 
 
 
