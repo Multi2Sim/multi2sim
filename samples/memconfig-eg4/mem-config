@@ -1,25 +1,24 @@
 [CacheGeometry geo-cpu-l1]
 Sets = 128
-Assoc = 4
+Assoc = 2
 BlockSize = 256
-Latency = 5
+Latency = 2
 Policy = LRU
-Ports = 4
+Ports = 2
 
 [CacheGeometry geo-gpu-l1]
 Sets = 128
-Assoc = 4
+Assoc = 2
 BlockSize = 256
-Latency = 5
+Latency = 2
 Policy = LRU
-Ports = 4
-
+Ports = 2
 
 [CacheGeometry geo-gpu-l2]
 Sets = 512
 Assoc = 4
 BlockSize = 256
-Latency = 50
+Latency = 20
 Policy = LRU
 Ports = 4
 
@@ -104,8 +103,8 @@ InstModule = mod-cpu-l1-0
 
 [Entry core-1]
 Type = CPU
-Core = 1
-Thread = 0
+Core = 0
+Thread = 1
 DataModule = mod-cpu-l1-1
 InstModule = mod-cpu-l1-1
 

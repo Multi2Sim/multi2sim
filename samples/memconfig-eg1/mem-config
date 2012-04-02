@@ -1,19 +1,16 @@
-
-
-
 [CacheGeometry geo-l1]
 Sets = 128
-Assoc = 4
+Assoc = 2
 BlockSize = 256
-Latency = 5
+Latency = 2
 Policy = LRU
-Ports = 4
+Ports = 2
 
 [CacheGeometry geo-l2]
 Sets = 512
 Assoc = 4
 BlockSize = 256
-Latency = 50
+Latency = 20
 Policy = LRU
 Ports = 4
 
@@ -56,7 +53,7 @@ AddressRange = BOUNDS 0x80000000 0xFFFFFFFF
 [Module mod-mm]
 Type = MainMemory
 BlockSize = 256
-Latency = 100
+Latency = 200
 HighNetwork = net-l2-mm
 
 
