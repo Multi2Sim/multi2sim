@@ -504,9 +504,16 @@ void vmem_run(char *file_name)
 	m2s_dist_file("go.png", m2s_images_path, m2s_images_path,
 		cycle_bar_go_path, sizeof cycle_bar_go_path);
 
-	/* State file */
+	/* Create state file */
 	visual_state_file = state_file_create(file_name);
 
+	/* Initialize visual systems */
+	visual_mem_system_init();
+
+	/* Create checkpoints */
+	state_file_create_checkpoints(visual_state_file);
+
+#if 0
 	/* Initialize GTK */
 	gtk_init(NULL, NULL);
 
@@ -514,13 +521,14 @@ void vmem_run(char *file_name)
 	vmem = vmem_create();
 
 	/* Parse trace file and create checkpoints */
-	state_file_create_checkpoints(visual_state_file);
 	state_file_refresh(visual_state_file);
 
 	/* Run GTK */
 	gtk_main();
+#endif
 
-	/* Free main window */
+	/* Free */
+	visual_mem_system_done();
 	state_file_free(visual_state_file);
 }
 
