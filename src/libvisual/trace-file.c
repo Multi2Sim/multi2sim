@@ -322,7 +322,10 @@ char *trace_line_get_command(struct trace_line_t *line)
 
 char *trace_line_get_symbol_value(struct trace_line_t *line, char *symbol_name)
 {
-	return hash_table_get(line->symbol_table, symbol_name);
+	char *value;
+
+	value = hash_table_get(line->symbol_table, symbol_name);
+	return value ? value : "";
 }
 
 

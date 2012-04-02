@@ -20,6 +20,49 @@
 #include <visual-private.h>
 
 
+static struct string_map_t visual_mod_block_state_map =
+{
+	6, {
+		{ "I", 0 },
+		{ "M", 1 },
+		{ "O", 2 },
+		{ "E", 3 },
+		{ "S", 4 },
+		{ "N", 5 }
+	}
+};
+
+
+/*
+ * Private Functions
+ */
+
+
+static struct visual_mod_dir_entry_t *visual_mod_get_dir_entry(struct visual_mod_t *mod,
+	int set, int way, int sub_block)
+{
+	struct visual_mod_block_t *block;
+	struct visual_mod_dir_entry_t *dir_entry;
+
+	assert(IN_RANGE(set, 0, mod->num_sets - 1));
+	assert(IN_RANGE(way, 0, mod->assoc - 1));
+	assert(IN_RANGE(sub_block, 0, mod->num_sub_blocks - 1));
+
+	block = &mod->blocks[set * mod->assoc + way];
+	dir_entry = (struct visual_mod_dir_entry_t *) (((void *) block->dir_entries)
+		+ VISUAL_MOD_DIR_ENTRY_SIZE(mod) * sub_block);
+
+	return dir_entry;
+}
+
+
+
+
+/*
+ * Public Functions
+ */
+
+
 struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line)
 {
 	struct visual_mod_t *mod;
@@ -27,6 +70,9 @@ struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line)
 	char *high_net_name;
 	char *low_net_name;
 	char *name;
+
+	int set;
+	int way;
 
 	/* Allocate */
 	mod = calloc(1, sizeof(struct visual_mod_t));
@@ -44,6 +90,7 @@ struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line)
 	mod->assoc = trace_line_get_symbol_value_int(trace_line, "assoc");
 	mod->block_size = trace_line_get_symbol_value_int(trace_line, "block_size");
 	mod->sub_block_size = trace_line_get_symbol_value_int(trace_line, "sub_block_size");
+	mod->num_sub_blocks = mod->block_size / mod->sub_block_size;
 	mod->num_sharers = trace_line_get_symbol_value_int(trace_line, "num_sharers");
 	mod->level = trace_line_get_symbol_value_int(trace_line, "level");
 
@@ -63,6 +110,33 @@ struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line)
 	if (mod->low_net)
 		visual_net_attach_mod(mod->low_net, mod, mod->low_net_node_index);
 
+	/* Blocks */
+	mod->blocks = calloc(mod->num_sets * mod->assoc, sizeof(struct visual_mod_block_t));
+	for (set = 0; set < mod->num_sets; set++)
+	{
+		for (way = 0; way < mod->assoc; way++)
+		{
+			struct visual_mod_block_t *block;
+
+			int sub_block;
+
+			block = &mod->blocks[set * mod->assoc + way];
+			block->mod = mod;
+			block->set = set;
+			block->way = way;
+			block->access_list = linked_list_create();
+			block->dir_entries = calloc(mod->num_sub_blocks, VISUAL_MOD_DIR_ENTRY_SIZE(mod));
+
+			for (sub_block = 0; sub_block < mod->num_sub_blocks; sub_block++)
+			{
+				struct visual_mod_dir_entry_t *dir_entry;
+
+				dir_entry = visual_mod_get_dir_entry(mod, set, way, sub_block);
+				dir_entry->owner = -1;
+			}
+		}
+	}
+
 	/* Return */
 	return mod;
 }
@@ -70,6 +144,49 @@ struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line)
 
 void visual_mod_free(struct visual_mod_t *mod)
 {
+	struct visual_mod_block_t *block;
+	struct linked_list_t *access_list;
+
+	int i;
+
+	/* Free blocks */
+	for (i = 0; i < mod->num_sets * mod->assoc; i++)
+	{
+		/* Get block */
+		block = &mod->blocks[i];
+		access_list = block->access_list;
+
+		/* Free accesses */
+		while (linked_list_count(access_list))
+		{
+			linked_list_head(access_list);
+			visual_mod_access_free(linked_list_get(access_list));
+			linked_list_remove(access_list);
+		}
+		linked_list_free(access_list);
+
+		/* Directory entries */
+		free(mod->blocks[i].dir_entries);
+	}
+	free(mod->blocks);
+
+	/* Free module */
 	free(mod->name);
 	free(mod);
+}
+
+
+void visual_mod_set_block(struct visual_mod_t *mod, int set, int way,
+	unsigned int tag, char *state)
+{
+	struct visual_mod_block_t *block;
+
+	if (!IN_RANGE(set, 0, mod->num_sets - 1))
+		fatal("%s: invalid set", __FUNCTION__);
+	if (!IN_RANGE(way, 0, mod->assoc - 1))
+		fatal("%s: invalid way", __FUNCTION__);
+
+	block = &mod->blocks[set * mod->assoc + way];
+	block->tag = tag;
+	block->state = map_string(&visual_mod_block_state_map, state);
 }
