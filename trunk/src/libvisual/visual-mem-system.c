@@ -34,6 +34,30 @@ static void visual_mem_system_set_transient_tag(struct visual_mem_system_t *syst
 static void visual_mem_system_set_block(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	struct visual_mod_t *mod;
+
+	char *mod_name;
+	char *state;
+
+	int set;
+	int way;
+
+	unsigned int tag;
+
+	/* Get fields */
+	mod_name = trace_line_get_symbol_value(trace_line, "cache");
+	set = trace_line_get_symbol_value_int(trace_line, "set");
+	way = trace_line_get_symbol_value_int(trace_line, "way");
+	tag = trace_line_get_symbol_value_hex(trace_line, "tag");
+	state = trace_line_get_symbol_value(trace_line, "state");
+
+	/* Get module */
+	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	if (!mod)
+		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
+
+	/* Set block */
+	visual_mod_set_block(mod, set, way, tag, state);
 }
 
 
