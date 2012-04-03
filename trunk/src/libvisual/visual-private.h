@@ -115,6 +115,7 @@ struct visual_mem_system_t
 	struct hash_table_t *mod_table;
 	struct hash_table_t *net_table;
 	struct hash_table_t *access_table;
+	struct list_t *mod_level_list;
 };
 
 extern struct visual_mem_system_t *visual_mem_system;
@@ -144,6 +145,9 @@ void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state
 
 void visual_mod_access_read_checkpoint(struct visual_mod_access_t *access, FILE *f);
 void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE *f);
+
+void visual_mod_access_get_name_buf(struct visual_mod_access_t *access, char *buf, int size);
+void visual_mod_access_get_desc_buf(struct visual_mod_access_t *access, char *buf, int size);
 
 
 
@@ -265,6 +269,20 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void);
 void visual_mem_system_widget_free(struct visual_mem_system_widget_t *widget);
 
 GtkWidget *visual_mem_system_widget_get_widget(struct visual_mem_system_widget_t *widget);
+
+
+
+
+/*
+ * Visual Module Widget
+ */
+
+struct visual_mod_widget_t;
+
+struct visual_mod_widget_t *visual_mod_widget_create(char *name);
+void visual_mod_widget_free(struct visual_mod_widget_t *widget);
+
+GtkWidget *visual_mod_widget_get_widget(struct visual_mod_widget_t *widget);
 
 
 
