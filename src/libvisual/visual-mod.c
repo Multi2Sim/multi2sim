@@ -190,3 +190,86 @@ void visual_mod_set_block(struct visual_mod_t *mod, int set, int way,
 	block->tag = tag;
 	block->state = map_string(&visual_mod_block_state_map, state);
 }
+
+
+void visual_mod_dir_entry_set_sharer(struct visual_mod_t *mod,
+	int x, int y, int z, int sharer)
+{
+	struct visual_mod_dir_entry_t *dir_entry;
+
+	/* Get directory entry */
+	assert(IN_RANGE(sharer, 0, mod->num_sharers - 1));
+	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+
+	/* In a correct trace, sharer should not be set */
+	if ((dir_entry->sharers[sharer / 8] & (1 << sharer % 8)))
+		panic("%s: sharer already set", __FUNCTION__);
+
+	/* Add sharer */
+	assert(dir_entry->num_sharers < mod->num_sharers);
+	dir_entry->sharers[sharer / 8] |= 1 << (sharer % 8);
+	dir_entry->num_sharers++;
+}
+
+
+void visual_mod_dir_entry_clear_sharer(struct visual_mod_t *mod,
+	int x, int y, int z, int sharer)
+{
+	struct visual_mod_dir_entry_t *dir_entry;
+
+	/* Get directory entry */
+	assert(IN_RANGE(sharer, 0, mod->num_sharers - 1));
+	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+
+	/* In a correct trace, sharer should not be set */
+	if (!(dir_entry->sharers[sharer / 8] & (1 << sharer % 8)))
+		panic("%s: sharer already clear", __FUNCTION__);
+
+	/* Add sharer */
+	assert(dir_entry->num_sharers > 0);
+	dir_entry->sharers[sharer / 8] &= ~(1 << (sharer % 8));
+	dir_entry->num_sharers--;
+}
+
+
+void visual_mod_dir_entry_clear_all_sharers(struct visual_mod_t *mod,
+	int x, int y, int z)
+{
+	struct visual_mod_dir_entry_t *dir_entry;
+
+	int i;
+
+	/* Clear sharers */
+	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+	dir_entry->num_sharers = 0;
+	for (i = 0; i < VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod); i++)
+		dir_entry->sharers[i] = 0;
+}
+
+
+int visual_mod_dir_entry_is_sharer(struct visual_mod_t *mod,
+	int x, int y, int z, int sharer)
+{
+	struct visual_mod_dir_entry_t *dir_entry;
+
+	/* Get directory entry */
+	assert(IN_RANGE(sharer, 0, mod->num_sharers - 1));
+	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+
+	/* Return whether sharer is set */
+	return (dir_entry->sharers[sharer / 8] & (1 << sharer % 8)) > 0;
+}
+
+
+void visual_mod_dir_entry_set_owner(struct visual_mod_t *mod,
+	int x, int y, int z, int owner)
+{
+	struct visual_mod_dir_entry_t *dir_entry;
+
+	/* Get directory entry */
+	assert(owner == -1 || IN_RANGE(owner, 0, mod->num_sharers - 1));
+	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+
+	/* Set new owner */
+	dir_entry->owner = owner;
+}
