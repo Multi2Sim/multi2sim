@@ -17,293 +17,417 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <assert.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <mhandle.h>
+
 #include <debug.h>
 #include <hash-table.h>
+#include <mhandle.h>
 
-#define	MIN_INITIAL_SIZE  5
+
+#define	HASH_TABLE_MIN_INITIAL_SIZE  5
+
+
 
 
 /*
- * Types
+ * Hash Table Element
  */
 
-/* Hash table element */
 struct hash_table_elem_t
 {
-	char active;
-	char removed;
 	char *key;
 	void *data;
+	struct hash_table_elem_t *next;
 };
 
 
-/* Hash table */
+struct hash_table_elem_t *hash_table_elem_create(char *key, void *data)
+{
+	struct hash_table_elem_t *elem;
+
+	/* Allocate */
+	elem = calloc(1, sizeof(struct hash_table_elem_t));
+	if (!elem)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Key */
+	elem->key = strdup(key);
+	if (!elem->key)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Data */
+	elem->data = data;
+
+	/* Return */
+	return elem;
+}
+
+
+void hash_table_elem_free(struct hash_table_elem_t *elem)
+{
+	free(elem->key);
+	free(elem);
+}
+
+
+
+
+/*
+ * Hash Table
+ */
+
 struct hash_table_t
 {
 	int count;
 	int size;
 	int case_sensitive;
-	struct hash_table_elem_t *elem;
-	int (*cmp)(const char *, const char *);
-	int findpos;
-} hash_table_t;
+
+	int find_op;
+	int find_index;
+
+	struct hash_table_elem_t *find_elem;
+
+	struct hash_table_elem_t **elem_vector;
+
+	int (*str_compare_func)(const char *, const char *);
+};
 
 
-
-
-/*
- * PRIVATE FUNCTIONS
- */
-
-static unsigned int hashcode(char *str, int case_sensitive)
+static int hash_table_get_index(struct hash_table_t *table, char *key)
 {
-	unsigned int res = 0;
-	int i, len;
+	int index = 0;
+	int len;
+	int i;
 
-	len = strlen(str);
-	if (case_sensitive)
-		for (i = 0; i < len; i++)
-			res = res * 37 + str[i];
-	else
-		for (i = 0; i < len; i++)
-			res = res * 37 + tolower(str[i]);
-	return res;
-}
-
-
-/* if key exists, return corresponding element;
- * otherwise, return element where it should be placed */
-static struct hash_table_elem_t *hashelem(struct hash_table_t *ht, char *key)
-{
-	int pos, insertpos;
-	struct hash_table_elem_t *e;
-	
-	/* find key of possible insert position */
-	insertpos = -1;
-	pos = hashcode(key, ht->case_sensitive) % ht->size;
-	for (;;)
+	len = strlen(key);
+	if (table->case_sensitive)
 	{
-	
-		/* we run out of collision list */
-		e = &ht->elem[pos];
-		if (!e->active)
-			break;
-			
-		/* the element is in hash table */
-		if (!e->removed && !ht->cmp(e->key, key))
-			return e;
-			
-		/* a possible insert position */
-		if (e->removed && insertpos < 0)
-			insertpos = pos;
-		
-		/* visit next element of collision list */
-		pos = (pos + 1) % ht->size;
+		for (i = 0; i < len; i++)
+			index = (index * 37 + key[i]) % table->size;
 	}
-	
-	/* key is not in hash table; return insert pos */
-	return insertpos < 0 ? &ht->elem[pos] :
-		&ht->elem[insertpos];
+	else
+	{
+		for (i = 0; i < len; i++)
+			index = (index * 37 + tolower(key[i])) % table->size;
+	}
+	return index;
 }
 
 
-/* Rehashing */
-static void rehash(struct hash_table_t *ht)
+static void hash_table_grow(struct hash_table_t *table)
 {
-	int osize, nsize, i;
-	struct hash_table_elem_t *oelem, *oe, *ne;
-	
-	/* Create new elements vector */
-	oelem = ht->elem;
-	osize = ht->size;
-	nsize = osize * 2;
-	ht->size = nsize;
-	ht->elem = calloc(nsize, sizeof(struct hash_table_elem_t));
-	if (!ht->elem)
+	int old_size;
+	int index;
+	int i;
+
+	struct hash_table_elem_t **old_elem_vector;
+	struct hash_table_elem_t *elem;
+
+	/* Save old vector */
+	old_size = table->size;
+	old_elem_vector = table->elem_vector;
+
+	/* Allocate new vector */
+	table->size = old_size * 2;
+	table->elem_vector = calloc(table->size, sizeof(void *));
+	if (!table->elem_vector)
 		fatal("%s: out of memory", __FUNCTION__);
-	
-	/* Assign new elements */
-	for (i = 0; i < osize; i++)
+
+	/* Move elements to new vector */
+	for (i = 0; i < old_size; i++)
 	{
-		oe = &oelem[i];
-		if (oe->active && !oe->removed)
+		while ((elem = old_elem_vector[i]))
 		{
-			ne = hashelem(ht, oe->key);
-			ne->active = 1;
-			ne->key = oe->key;
-			ne->data = oe->data;
+			/* Remove from old vector */
+			old_elem_vector[i] = elem->next;
+
+			/* Insert in new vector */
+			index = hash_table_get_index(table, elem->key);
+			elem->next = table->elem_vector[index];
+			table->elem_vector[index] = elem;
 		}
 	}
-	
+
 	/* Free old vector */
-	free(oelem);
+	free(old_elem_vector);
 }
 
 
+static struct hash_table_elem_t *hash_table_find(struct hash_table_t *table, char *key, int *index_ptr)
+{
+	struct hash_table_elem_t *elem;
 
+	int index;
 
-/*
- * Public Functions
- */
+	/* Get index */
+	index = hash_table_get_index(table, key);
+	if (index_ptr)
+		*index_ptr = index;
+
+	/* Look for element */
+	for (elem = table->elem_vector[index]; elem; elem = elem->next)
+		if (!table->str_compare_func(key, elem->key))
+			return elem;
+
+	/* Not found */
+	return NULL;
+}
+
 
 struct hash_table_t *hash_table_create(int size, int case_sensitive)
 {
-	struct hash_table_t *ht;
-	
+	struct hash_table_t *table;
+
 	/* Create */
-	ht = calloc(1, sizeof(struct hash_table_t));
-	if (!ht)
+	table = calloc(1, sizeof(struct hash_table_t));
+	if (!table)
 		fatal("%s: out of memory", __FUNCTION__);
-	
+
 	/* Assign fields */
-	ht->size = size < MIN_INITIAL_SIZE ? MIN_INITIAL_SIZE : size;
-	ht->case_sensitive = case_sensitive;
-	ht->cmp = case_sensitive ? strcmp : strcasecmp;
-	ht->elem = calloc(ht->size, sizeof(struct hash_table_elem_t));
-	if (!ht->elem)
+	table->size = size < HASH_TABLE_MIN_INITIAL_SIZE ? HASH_TABLE_MIN_INITIAL_SIZE : size;
+	table->case_sensitive = case_sensitive;
+	table->str_compare_func = case_sensitive ? strcmp : strcasecmp;
+
+	/* Vector of elements */
+	table->elem_vector = calloc(table->size, sizeof(void *));
+	if (!table->elem_vector)
 		fatal("%s: out of memory", __FUNCTION__);
-	
+
 	/* Return */
-	return ht;
+	return table;
 }
 
 
-void hash_table_free(struct hash_table_t *ht)
+void hash_table_free(struct hash_table_t *table)
 {
+	struct hash_table_elem_t *elem;
+	struct hash_table_elem_t *elem_next;
+
 	int i;
-	struct hash_table_elem_t *e;
-	
-	/* Free keys */
-	for (i = 0; i < ht->size; i++) {
-		e = &ht->elem[i];
-		if (e->active && !e->removed)
-			free(e->key);
+
+	/* Free elements */
+	for (i = 0; i < table->size; i++)
+	{
+		while ((elem = table->elem_vector[i]))
+		{
+			elem_next = elem->next;
+			hash_table_elem_free(elem);
+			table->elem_vector[i] = elem_next;
+		}
 	}
-	
-	/* Free elems and hash table */
-	free(ht->elem);
-	free(ht);
+
+	/* Free element vector and hash table */
+	free(table->elem_vector);
+	free(table);
 }
 
 
-int hash_table_insert(struct hash_table_t *ht, char *key, void *data)
+int hash_table_insert(struct hash_table_t *table, char *key, void *data)
 {
-	struct hash_table_elem_t *e;
-	
+	struct hash_table_elem_t *elem;
+
+	int index;
+
+	/* No find operation */
+	table->find_op = 0;
+
 	/* Data cannot be null */
 	if (!data)
 		return 0;
-	
+
 	/* Rehashing */
-	if (ht->count >= ht->size / 2)
-		rehash(ht);
-	
+	if (table->count >= table->size / 2)
+		hash_table_grow(table);
+
 	/* Element must not exists */
-	e = hashelem(ht, key);
-	if (e->active && !e->removed)
+	elem = hash_table_find(table, key, &index);
+	if (elem)
 		return 0;
-	
-	/* Insert element */
-	ht->count++;
-	e->active = 1;
-	e->removed = 0;
-	e->key = strdup(key);
-	if (!e->key)
-		fatal("%s: out of memory", __FUNCTION__);
-	e->data = data;
+
+	/* Create element and insert at the head of collision list */
+	elem = hash_table_elem_create(key, data);
+	elem->next = table->elem_vector[index];
+	table->elem_vector[index] = elem;
+
+	/* One more element */
+	table->count++;
+	assert(table->count < table->size);
+
+	/* Success */
 	return 1;
 }
 
 
-int hash_table_set(struct hash_table_t *ht, char *key, void *data)
+int hash_table_set(struct hash_table_t *table, char *key, void *data)
 {
-	struct hash_table_elem_t *e;
-	
+	struct hash_table_elem_t *elem;
+
 	/* Data cannot be null */
 	if (!data)
 		return 0;
-	
-	/* Element must exist */
-	e = hashelem(ht, key);
-	if (!e->active || e->removed)
+
+	/* Find element */
+	elem = hash_table_find(table, key, NULL);
+	if (!elem)
 		return 0;
-	
-	/* Set new data */
-	e->data = data;
+
+	/* Set new data, success */
+	elem->data = data;
 	return 1;
 }
 
 
-int hash_table_count(struct hash_table_t *ht)
+int hash_table_count(struct hash_table_t *table)
 {
-	return ht->count;
+	return table->count;
 }
 
 
-void *hash_table_get(struct hash_table_t *ht, char *key)
+void *hash_table_get(struct hash_table_t *table, char *key)
 {
-	struct hash_table_elem_t *e;
-	
-	/* Element must exist */
-	e = hashelem(ht, key);
-	if (!e->active || e->removed)
+	struct hash_table_elem_t *elem;
+
+	/* Find element */
+	elem = hash_table_find(table, key, NULL);
+	if (!elem)
 		return NULL;
-	
-	/* Return associated data */
-	return e->data;
+
+	/* Return data */
+	return elem->data;
 }
 
 
-void *hash_table_remove(struct hash_table_t *ht, char *key)
+void *hash_table_remove(struct hash_table_t *table, char *key)
 {
-	struct hash_table_elem_t *e;
+	struct hash_table_elem_t *elem;
+	struct hash_table_elem_t *elem_prev;
+
+	int index;
+
 	void *data;
-	
-	/* Element must exist */
-	e = hashelem(ht, key);
-	if (!e->active || e->removed)
+
+	/* No find operation */
+	table->find_op = 0;
+
+	/* Find element */
+	index = hash_table_get_index(table, key);
+	elem_prev = NULL;
+	for (elem = table->elem_vector[index]; elem; elem = elem->next)
+	{
+		/* Check if it is this element */
+		if (!table->str_compare_func(elem->key, key))
+			break;
+
+		/* Record previous element */
+		elem_prev = elem;
+	}
+
+	/* Element not found */
+	if (!elem)
 		return NULL;
-	
-	/* Remove element */
-	free(e->key);
-	data = e->data;
-	e->key = NULL;
-	e->data = NULL;
-	e->removed = 1;
-	ht->count--;
+
+	/* Delete element from collision list */
+	if (elem_prev)
+		elem_prev->next = elem->next;
+	else
+		table->elem_vector[index] = elem->next;
+
+	/* Free element */
+	data = elem->data;
+	hash_table_elem_free(elem);
+
+	/* One less element */
+	assert(table->count > 0);
+	table->count--;
+
+	/* Return associated data */
 	return data;
 }
 
 
-char *hash_table_find_first(struct hash_table_t *ht, void **data_ptr)
+char *hash_table_find_first(struct hash_table_t *table, void **data_ptr)
 {
-	ht->findpos = 0;
-	return hash_table_find_next(ht, data_ptr);
-}
+	struct hash_table_elem_t *elem;
 
+	int index;
 
-char *hash_table_find_next(struct hash_table_t *ht, void **data_ptr)
-{
-	struct hash_table_elem_t *e;
-	while (ht->findpos < ht->size)
+	/* Record find operation */
+	table->find_op = 1;
+	table->find_index = 0;
+	table->find_elem = NULL;
+	if (data_ptr)
+		*data_ptr = NULL;
+
+	/* Table is empty */
+	if (!table->count)
+		return NULL;
+
+	/* Find first element */
+	for (index = 0; index < table->size; index++)
 	{
-		e = &ht->elem[ht->findpos];
-		ht->findpos++;
-		if (e->active && !e->removed)
+		elem = table->elem_vector[index];
+		if (elem)
 		{
+			table->find_index = index;
+			table->find_elem = elem;
 			if (data_ptr)
-				*data_ptr = e->data;
-			return e->key;
+				*data_ptr = elem->data;
+			return elem->key;
 		}
 	}
 
-	/* No more elements found */
+	/* Never get here */
+	panic("%s: inconsistent hash table", __FUNCTION__);
+	return NULL;
+}
+
+
+char *hash_table_find_next(struct hash_table_t *table, void **data_ptr)
+{
+	struct hash_table_elem_t *elem;
+
+	int index;
+
+	/* Not allowed if last operation is not 'hash_table_find_xxx' operation. */
+	if (!table->find_op)
+		panic("%s: hash table enumeration interrupted", __FUNCTION__);
+
+	/* End of enumeration reached in previous calls */
+	if (!table->find_elem)
+		return NULL;
+
+	/* Continue enumeration in collision list */
+	elem = table->find_elem->next;
+	if (elem)
+	{
+		table->find_elem = elem;
+		if (data_ptr)
+			*data_ptr = elem->data;
+		return elem->key;
+	}
+
+	/* Continue enumeration in vector */
+	table->find_index++;
+	for (index = table->find_index; index < table->size; index++)
+	{
+		elem = table->elem_vector[index];
+		if (elem)
+		{
+			table->find_index = index;
+			table->find_elem = elem;
+			if (data_ptr)
+				*data_ptr = elem->data;
+			return elem->key;
+		}
+	}
+
+	/* No element found */
+	table->find_index = 0;
+	table->find_elem = NULL;
 	if (data_ptr)
 		*data_ptr = NULL;
 	return NULL;
 }
-

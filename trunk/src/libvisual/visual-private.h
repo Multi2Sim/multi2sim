@@ -114,6 +114,7 @@ struct visual_mem_system_t
 {
 	struct hash_table_t *mod_table;
 	struct hash_table_t *net_table;
+	struct hash_table_t *access_table;
 };
 
 extern struct visual_mem_system_t *visual_mem_system;
@@ -180,6 +181,16 @@ void visual_mod_free(struct visual_mod_t *mod);
 
 void visual_mod_set_block(struct visual_mod_t *mod, int set, int way,
 	unsigned int tag, char *state);
+void visual_mod_dir_entry_set_sharer(struct visual_mod_t *mod,
+	int x, int y, int z, int sharer);
+void visual_mod_dir_entry_clear_sharer(struct visual_mod_t *mod,
+	int x, int y, int z, int sharer);
+void visual_mod_dir_entry_clear_all_sharers(struct visual_mod_t *mod,
+	int x, int y, int z);
+int visual_mod_dir_entry_is_sharer(struct visual_mod_t *mod,
+	int x, int y, int z, int sharer);
+void visual_mod_dir_entry_set_owner(struct visual_mod_t *mod,
+	int x, int y, int z, int owner);
 
 
 
@@ -210,10 +221,16 @@ void visual_net_attach_mod(struct visual_net_t *net,
 
 struct visual_mod_access_t
 {
+	char *name;
+	char *state;
+
+	long long state_update_cycle;
 };
 
-struct visual_mod_access_t *visual_mod_access_create(void);
+struct visual_mod_access_t *visual_mod_access_create(char *name);
 void visual_mod_access_free(struct visual_mod_access_t *access);
+
+void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state);
 
 
 

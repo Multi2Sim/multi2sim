@@ -40,7 +40,7 @@ void hash_table_free(struct hash_table_t *ht);
 
 /* Insert a new element.
  * The key is strdup'ped, so it can be freely modified by the caller.
- * Return value: 0=success, non-0=key already exists/outofmem/data=NULL
+ * Return value: 0=success, non-0=key already exists/data=NULL
  */
 int hash_table_insert(struct hash_table_t *ht, char *key, void *data);
 
