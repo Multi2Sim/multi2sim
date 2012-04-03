@@ -33,30 +33,6 @@ static struct string_map_t visual_mod_block_state_map =
 };
 
 
-/*
- * Private Functions
- */
-
-
-static struct visual_mod_dir_entry_t *visual_mod_get_dir_entry(struct visual_mod_t *mod,
-	int set, int way, int sub_block)
-{
-	struct visual_mod_block_t *block;
-	struct visual_mod_dir_entry_t *dir_entry;
-
-	assert(IN_RANGE(set, 0, mod->num_sets - 1));
-	assert(IN_RANGE(way, 0, mod->assoc - 1));
-	assert(IN_RANGE(sub_block, 0, mod->num_sub_blocks - 1));
-
-	block = &mod->blocks[set * mod->assoc + way];
-	dir_entry = (struct visual_mod_dir_entry_t *) (((void *) block->dir_entries)
-		+ VISUAL_MOD_DIR_ENTRY_SIZE(mod) * sub_block);
-
-	return dir_entry;
-}
-
-
-
 
 /*
  * Public Functions
@@ -131,7 +107,7 @@ struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line)
 			{
 				struct visual_mod_dir_entry_t *dir_entry;
 
-				dir_entry = visual_mod_get_dir_entry(mod, set, way, sub_block);
+				dir_entry = visual_mod_dir_entry_get(mod, set, way, sub_block);
 				dir_entry->owner = -1;
 			}
 		}
@@ -292,7 +268,7 @@ int visual_mod_block_get_num_sharers(struct visual_mod_t *mod, int set, int way)
 	num_sharers = 0;
 	for (i = 0; i < mod->num_sub_blocks; i++)
 	{
-		dir_entry = visual_mod_get_dir_entry(mod, set, way, i);
+		dir_entry = visual_mod_dir_entry_get(mod, set, way, i);
 		num_sharers += dir_entry->num_sharers;
 	}
 
@@ -449,6 +425,24 @@ void visual_mod_write_checkpoint(struct visual_mod_t *mod, FILE *f)
 }
 
 
+struct visual_mod_dir_entry_t *visual_mod_dir_entry_get(struct visual_mod_t *mod,
+	int set, int way, int sub_block)
+{
+	struct visual_mod_block_t *block;
+	struct visual_mod_dir_entry_t *dir_entry;
+
+	assert(IN_RANGE(set, 0, mod->num_sets - 1));
+	assert(IN_RANGE(way, 0, mod->assoc - 1));
+	assert(IN_RANGE(sub_block, 0, mod->num_sub_blocks - 1));
+
+	block = &mod->blocks[set * mod->assoc + way];
+	dir_entry = (struct visual_mod_dir_entry_t *) (((void *) block->dir_entries)
+		+ VISUAL_MOD_DIR_ENTRY_SIZE(mod) * sub_block);
+
+	return dir_entry;
+}
+
+
 void visual_mod_dir_entry_set_sharer(struct visual_mod_t *mod,
 	int x, int y, int z, int sharer)
 {
@@ -456,7 +450,7 @@ void visual_mod_dir_entry_set_sharer(struct visual_mod_t *mod,
 
 	/* Get directory entry */
 	assert(IN_RANGE(sharer, 0, mod->num_sharers - 1));
-	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
 
 	/* In a correct trace, sharer should not be set */
 	if ((dir_entry->sharers[sharer / 8] & (1 << sharer % 8)))
@@ -476,7 +470,7 @@ void visual_mod_dir_entry_clear_sharer(struct visual_mod_t *mod,
 
 	/* Get directory entry */
 	assert(IN_RANGE(sharer, 0, mod->num_sharers - 1));
-	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
 
 	/* In a correct trace, sharer should not be set */
 	if (!(dir_entry->sharers[sharer / 8] & (1 << sharer % 8)))
@@ -497,7 +491,7 @@ void visual_mod_dir_entry_clear_all_sharers(struct visual_mod_t *mod,
 	int i;
 
 	/* Clear sharers */
-	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
 	dir_entry->num_sharers = 0;
 	for (i = 0; i < VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod); i++)
 		dir_entry->sharers[i] = 0;
@@ -511,7 +505,7 @@ int visual_mod_dir_entry_is_sharer(struct visual_mod_t *mod,
 
 	/* Get directory entry */
 	assert(IN_RANGE(sharer, 0, mod->num_sharers - 1));
-	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
 
 	/* Return whether sharer is set */
 	return (dir_entry->sharers[sharer / 8] & (1 << sharer % 8)) > 0;
@@ -525,7 +519,7 @@ void visual_mod_dir_entry_set_owner(struct visual_mod_t *mod,
 
 	/* Get directory entry */
 	assert(owner == -1 || IN_RANGE(owner, 0, mod->num_sharers - 1));
-	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
 
 	/* Set new owner */
 	dir_entry->owner = owner;
@@ -538,7 +532,7 @@ void visual_mod_dir_entry_read_checkpoint(struct visual_mod_t *mod, int x, int y
 
 	int count = 0;
 
-	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
 	count += fread(&dir_entry->num_sharers, 1, 4, f);
 	count += fread(&dir_entry->owner, 1, 4, f);
 	count += fread(dir_entry->sharers, 1, VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod), f);
@@ -551,7 +545,7 @@ void visual_mod_dir_entry_write_checkpoint(struct visual_mod_t *mod, int x, int 
 {
 	struct visual_mod_dir_entry_t *dir_entry;
 
-	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
 	fwrite(&dir_entry->num_sharers, 1, 4, f);
 	fwrite(&dir_entry->owner, 1, 4, f);
 	fwrite(dir_entry->sharers, 1, VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod), f);
