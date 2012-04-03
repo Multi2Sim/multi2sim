@@ -137,6 +137,9 @@ struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line)
 		}
 	}
 
+	/* Access table */
+	mod->access_table = hash_table_create(0, FALSE);
+
 	/* Return */
 	return mod;
 }
@@ -170,9 +173,90 @@ void visual_mod_free(struct visual_mod_t *mod)
 	}
 	free(mod->blocks);
 
+	/* Access table */
+	hash_table_free(mod->access_table);
+
 	/* Free module */
 	free(mod->name);
 	free(mod);
+}
+
+
+void visual_mod_add_access(struct visual_mod_t *mod, int set, int way, struct visual_mod_access_t *access)
+{
+	struct visual_mod_block_t *block;
+	struct linked_list_t *access_list;
+
+	assert(IN_RANGE(set, 0, mod->num_sets - 1));
+	assert(IN_RANGE(way, 0, mod->assoc - 1));
+
+	/* Get block */
+	block = &mod->blocks[set * mod->assoc + way];
+	access_list = block->access_list;
+
+	/* Add access */
+	linked_list_add(access_list, access);
+}
+
+
+struct visual_mod_access_t *visual_mod_find_access(struct visual_mod_t *mod, int set, int way, char *access_name)
+{
+	struct visual_mod_block_t *block;
+	struct visual_mod_access_t *access;
+	struct linked_list_t *access_list;
+
+	assert(IN_RANGE(set, 0, mod->num_sets - 1));
+	assert(IN_RANGE(way, 0, mod->assoc - 1));
+
+	/* Get block */
+	block = &mod->blocks[set * mod->assoc + way];
+	access_list = block->access_list;
+
+	/* Find access */
+	LINKED_LIST_FOR_EACH(access_list)
+	{
+		access = linked_list_get(access_list);
+		if (!strcmp(access->name, access_name))
+			break;
+	}
+
+	/* Not found */
+	if (linked_list_is_end(access_list))
+		return NULL;
+
+	/* Return access */
+	return access;
+}
+
+
+struct visual_mod_access_t *visual_mod_remove_access(struct visual_mod_t *mod, int set, int way, char *access_name)
+{
+	struct visual_mod_block_t *block;
+	struct visual_mod_access_t *access;
+	struct linked_list_t *access_list;
+
+	assert(IN_RANGE(set, 0, mod->num_sets - 1));
+	assert(IN_RANGE(way, 0, mod->assoc - 1));
+
+	/* Get block */
+	block = &mod->blocks[set * mod->assoc + way];
+	access_list = block->access_list;
+
+	/* Find access */
+	LINKED_LIST_FOR_EACH(access_list)
+	{
+		access = linked_list_get(access_list);
+		if (!strcmp(access->name, access_name))
+			break;
+	}
+
+	/* Not found */
+	if (linked_list_is_end(access_list))
+		return NULL;
+
+	/* Remove access and return */
+	linked_list_remove(access_list);
+	return access;
 }
 
 
