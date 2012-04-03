@@ -36,6 +36,9 @@ struct cycle_bar_t
 	GtkWidget *widget;
 	GtkWidget *scale;
 	GtkWidget *go_to_entry;
+
+	cycle_bar_refresh_func_t refresh_func;
+	void *refresh_func_arg;
 };
 
 
@@ -58,13 +61,14 @@ static void cycle_bar_go_to_cycle(struct cycle_bar_t *cycle_bar, long long cycle
 	gtk_range_set_value(GTK_RANGE(cycle_bar->scale), cycle);
 
 	/* Refresh */
-	state_file_refresh(visual_state_file);
+	if (cycle_bar->refresh_func)
+		cycle_bar->refresh_func(cycle_bar->refresh_func_arg, cycle);
 }
 
 
 static void cycle_bar_destroy_event(GtkWidget *widget, struct cycle_bar_t *cycle_bar)
 {
-	free(cycle_bar);
+	cycle_bar_free(cycle_bar);
 }
 
 
@@ -266,6 +270,14 @@ struct cycle_bar_t *cycle_bar_create(void)
 void cycle_bar_free(struct cycle_bar_t *cycle_bar)
 {
 	free(cycle_bar);
+}
+
+
+void cycle_bar_set_refresh_func(struct cycle_bar_t *cycle_bar,
+	cycle_bar_refresh_func_t refresh_func, void *user_data)
+{
+	cycle_bar->refresh_func = refresh_func;
+	cycle_bar->refresh_func_arg = user_data;
 }
 
 
