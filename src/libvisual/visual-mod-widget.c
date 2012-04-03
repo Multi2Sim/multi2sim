@@ -409,8 +409,8 @@ struct visual_mod_widget_t *visual_mod_widget_create(char *name)
 	/* Access list */
 	struct vlist_t *access_list;
 	access_list = vlist_create("Access list", 200, 30,
-		(vlist_get_elem_name_func_t) visual_mod_access_get_name_buf,
-		(vlist_get_elem_desc_func_t) visual_mod_access_get_desc_buf);
+		(vlist_get_elem_name_func_t) visual_mem_system_get_access_name_short,
+		(vlist_get_elem_desc_func_t) visual_mem_system_get_access_desc);
 	gtk_box_pack_start(GTK_BOX(vbox), vlist_get_widget(access_list), FALSE, FALSE, 0);
 	visual_mod_widget->access_list = access_list;
 
@@ -502,7 +502,10 @@ struct visual_mod_widget_t *visual_mod_widget_create(char *name)
 
 void visual_mod_widget_free(struct visual_mod_widget_t *visual_mod_widget)
 {
+
 	/* Free access list */
+	while (vlist_count(visual_mod_widget->access_list))
+		free(vlist_remove_at(visual_mod_widget->access_list, 0));
 	vlist_free(visual_mod_widget->access_list);
 
 	/* Free sharers label list */
@@ -517,6 +520,7 @@ void visual_mod_widget_free(struct visual_mod_widget_t *visual_mod_widget)
 void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 {
 	struct visual_mod_t *mod;
+	struct visual_mod_access_t *access;
 
 	long long cycle;
 
@@ -545,6 +549,7 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 	int y;
 
 	char str[MAX_STRING_SIZE];
+	char *access_name;
 
 	/* Go to cycle */
 	cycle = cycle_bar_get_cycle(visual_cycle_bar);
@@ -554,6 +559,23 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 	mod = hash_table_get(visual_mem_system->mod_table, visual_mod_widget->name);
 	if (!mod)
 		panic("%s: invalid module", __FUNCTION__);
+
+	/* Remove all accesses from access list */
+	while (vlist_count(visual_mod_widget->access_list))
+		free(vlist_remove_at(visual_mod_widget->access_list, 0));
+
+	/* Add new accesses */
+	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
+	{
+		/* Access name */
+		access_name = strdup(access_name);
+		if (!access_name)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* Insert new access */
+		vlist_add(visual_mod_widget->access_list, access_name);
+	}
+	vlist_refresh(visual_mod_widget->access_list);
 
 	/* Remove all widgets from layouts */
 	layout = visual_mod_widget->layout;
