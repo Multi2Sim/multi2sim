@@ -219,30 +219,136 @@ static void visual_mem_system_end_access(struct visual_mem_system_t *system,
 static void visual_mem_system_new_access_mod(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	struct visual_mod_access_t *access;
+	struct visual_mod_t *mod;
+
+	char *mod_name;
+	char *access_name;
+
+	/* Read fields */
+	mod_name = trace_line_get_symbol_value(trace_line, "mod");
+	access_name = trace_line_get_symbol_value(trace_line, "access");
+
+	/* Module */
+	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	if (!mod)
+		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
+
+	/* Create new access and add to list */
+	access = visual_mod_access_create(access_name);
+	hash_table_insert(mod->access_table, access->name, access);
 }
 
 
 static void visual_mem_system_end_access_mod(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	struct visual_mod_access_t *access;
+	struct visual_mod_t *mod;
+
+	char *mod_name;
+	char *access_name;
+
+	/* Read fields */
+	mod_name = trace_line_get_symbol_value(trace_line, "mod");
+	access_name = trace_line_get_symbol_value(trace_line, "access");
+
+	/* Module */
+	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	if (!mod)
+		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
+
+	/* Remove access */
+	access = hash_table_remove(mod->access_table, access_name);
+	if (!access)
+		panic("%s: %s: access not found", __FUNCTION__, access_name);
+
+	/* Free access */
+	visual_mod_access_free(access);
 }
 
 
 static void visual_mem_system_new_access_block(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	struct visual_mod_access_t *access;
+	struct visual_mod_t *mod;
+
+	char *mod_name;
+	char *access_name;
+
+	int set;
+	int way;
+
+	/* Read fields */
+	mod_name = trace_line_get_symbol_value(trace_line, "cache");
+	access_name = trace_line_get_symbol_value(trace_line, "access");
+	set = trace_line_get_symbol_value_int(trace_line, "set");
+	way = trace_line_get_symbol_value_int(trace_line, "way");
+
+	/* Module */
+	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	if (!mod)
+		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
+
+	/* Create access and add to cache block */
+	access = visual_mod_access_create(access_name);
+	visual_mod_add_access(mod, set, way, access);
 }
 
 
 static void visual_mem_system_end_access_block(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	struct visual_mod_access_t *access;
+	struct visual_mod_t *mod;
+
+	char *mod_name;
+	char *access_name;
+
+	int set;
+	int way;
+
+	/* Read fields */
+	mod_name = trace_line_get_symbol_value(trace_line, "cache");
+	access_name = trace_line_get_symbol_value(trace_line, "access");
+	set = trace_line_get_symbol_value_int(trace_line, "set");
+	way = trace_line_get_symbol_value_int(trace_line, "way");
+
+	/* Cache */
+	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	if (!mod)
+		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
+
+	/* Remove access */
+	access = visual_mod_remove_access(mod, set, way, access_name);
+	if (!access)
+		panic("%s: %s: invalid access", __FUNCTION__, access_name);
+
+	/* Free access */
+	visual_mod_access_free(access);
 }
 
 
 static void visual_mem_system_access(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	struct visual_mod_access_t *access;
+
+	char *name;
+	char *state;
+
+	/* Read fields */
+	name = trace_line_get_symbol_value(trace_line, "name");
+	state = trace_line_get_symbol_value(trace_line, "state");
+
+	/* Find access */
+	access = hash_table_get(visual_mem_system->access_table, name);
+	if (!access)
+		panic("%s: %s: access not found", __FUNCTION__, name);
+
+	/* Update access */
+	visual_mod_access_set_state(access, state);
 }
 
 
