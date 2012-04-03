@@ -255,6 +255,20 @@ void visual_net_attach_mod(struct visual_net_t *net,
 
 
 
+/*
+ * Visual Memory System Widget
+ */
+
+struct visual_mem_system_widget_t;
+
+struct visual_mem_system_widget_t *visual_mem_system_widget_create(void);
+void visual_mem_system_widget_free(struct visual_mem_system_widget_t *widget);
+
+GtkWidget *visual_mem_system_widget_get_widget(struct visual_mem_system_widget_t *widget);
+
+
+
+
 
 /*
  * Info Pop-up
@@ -540,8 +554,13 @@ extern char cycle_bar_go_path[MAX_PATH_SIZE];
 
 struct cycle_bar_t;
 
+typedef void (*cycle_bar_refresh_func_t)(void *user_data, long long cycle);
+
 struct cycle_bar_t *cycle_bar_create(void);
 void cycle_bar_free(struct cycle_bar_t *cycle_bar);
+
+void cycle_bar_set_refresh_func(struct cycle_bar_t *cycle_bar,
+	cycle_bar_refresh_func_t refresh_func, void *user_data);
 
 GtkWidget *cycle_bar_get_widget(struct cycle_bar_t *cycle_bar);
 long long cycle_bar_get_cycle(struct cycle_bar_t *cycle_bar);

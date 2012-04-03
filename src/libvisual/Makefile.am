@@ -18,6 +18,8 @@ libvisual_a_SOURCES += \
 	visual-mod-access.c \
 	visual-net.c \
 	\
+	visual-mem-system-widget.c \
+	\
 	vlist.c \
 	vmod.c \
 	vmod-access.c \
