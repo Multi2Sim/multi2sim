@@ -125,6 +125,26 @@ void visual_mem_system_done(void);
 
 
 /*
+ * Memory Module Access
+ */
+
+struct visual_mod_access_t
+{
+	char *name;
+	char *state;
+
+	long long state_update_cycle;
+};
+
+struct visual_mod_access_t *visual_mod_access_create(char *name);
+void visual_mod_access_free(struct visual_mod_access_t *access);
+
+void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state);
+
+
+
+
+/*
  * Memory Module
  */
 
@@ -174,10 +194,19 @@ struct visual_mod_t
 	struct visual_net_t *low_net;
 
 	struct visual_mod_block_t *blocks;
+
+	struct hash_table_t *access_table;
 };
 
 struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line);
 void visual_mod_free(struct visual_mod_t *mod);
+
+void visual_mod_add_access(struct visual_mod_t *mod, int set, int way,
+	struct visual_mod_access_t *access);
+struct visual_mod_access_t *visual_mod_find_access(struct visual_mod_t *mod,
+	int set, int way, char *access_name);
+struct visual_mod_access_t *visual_mod_remove_access(struct visual_mod_t *mod,
+	int set, int way, char *access_name);
 
 void visual_mod_set_block(struct visual_mod_t *mod, int set, int way,
 	unsigned int tag, char *state);
@@ -212,25 +241,6 @@ void visual_net_free(struct visual_net_t *net);
 void visual_net_attach_mod(struct visual_net_t *net,
 	struct visual_mod_t *mod, int node_index);
 
-
-
-
-/*
- * Memory Module Access
- */
-
-struct visual_mod_access_t
-{
-	char *name;
-	char *state;
-
-	long long state_update_cycle;
-};
-
-struct visual_mod_access_t *visual_mod_access_create(char *name);
-void visual_mod_access_free(struct visual_mod_access_t *access);
-
-void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state);
 
 
 
