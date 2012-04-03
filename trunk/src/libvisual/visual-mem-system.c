@@ -571,3 +571,69 @@ void visual_mem_system_done(void)
 	/* Rest */
 	free(visual_mem_system);
 }
+
+
+/* Return the access name in the current cycle set in the state file */
+void visual_mem_system_get_access_name_long(char *access_name, char *buf, int size)
+{
+	struct visual_mod_access_t *access;
+
+	/* Look for access */
+	access = hash_table_get(visual_mem_system->access_table, access_name);
+	if (!access)
+		panic("%s: %s: invalid access", __FUNCTION__, access_name);
+
+	/* Name */
+	str_printf(&buf, &size, "<b>%s</b>", access->name);
+
+	/* State */
+	if (access->state && *access->state)
+		str_printf(&buf, &size, " (%s:%lld)", access->state,
+			state_file_get_cycle(visual_state_file) - access->state_update_cycle);
+}
+
+
+void visual_mem_system_get_access_name_short(char *access_name, char *buf, int size)
+{
+	struct visual_mod_access_t *access;
+
+	/* Look for access */
+	access = hash_table_get(visual_mem_system->access_table, access_name);
+	if (!access)
+		panic("%s: %s: invalid access", __FUNCTION__, access_name);
+
+	/* Name */
+	str_printf(&buf, &size, "%s", access->name);
+}
+
+
+void visual_mem_system_get_access_desc(char *access_name, char *buf, int size)
+{
+	char *title_format_begin = "<span color=\"blue\"><b>";
+	char *title_format_end = "</b></span>";
+
+	struct visual_mod_access_t *access;
+
+	/* Look for access */
+	access = hash_table_get(visual_mem_system->access_table, access_name);
+	if (!access)
+		panic("%s: %s: invalid access", __FUNCTION__, access_name);
+
+	/* Title */
+	str_printf(&buf, &size, "%sDescription for access %s%s\n\n",
+		title_format_begin, access->name, title_format_end);
+
+	/* Fields */
+	str_printf(&buf, &size, "%sName:%s %s\n", title_format_begin,
+		title_format_end, access->name);
+
+	/* State */
+	if (access->state && *access->state)
+	{
+		str_printf(&buf, &size, "%sState:%s %s\n", title_format_begin,
+			title_format_end, access->state);
+		str_printf(&buf, &size, "%sState update cycle:%s %lld (%lld cycles ago)\n",
+			title_format_begin, title_format_end, access->state_update_cycle,
+			state_file_get_cycle(visual_state_file) - access->state_update_cycle);
+	}
+}

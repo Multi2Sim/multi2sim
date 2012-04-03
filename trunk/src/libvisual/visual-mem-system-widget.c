@@ -67,9 +67,9 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
 
 	/* Access list */
 	struct vlist_t *access_list;
-	access_list = vlist_create("Access list", 0, 0,
-		(vlist_get_elem_name_func_t) visual_mod_access_get_name_buf,
-		(vlist_get_elem_desc_func_t) visual_mod_access_get_desc_buf);
+	access_list = vlist_create("Access list", 200, 30,
+		(vlist_get_elem_name_func_t) visual_mem_system_get_access_name_long,
+		(vlist_get_elem_desc_func_t) visual_mem_system_get_access_desc);
 	gtk_box_pack_start(GTK_BOX(vbox), vlist_get_widget(access_list), FALSE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), gtk_hseparator_new(), FALSE, FALSE, 0);
 	widget->access_list = access_list;
@@ -122,17 +122,49 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
 
 void visual_mem_system_widget_free(struct visual_mem_system_widget_t *widget)
 {
-	list_free(widget->visual_mod_widget_list);
+	/* Free access list */
+	while (vlist_count(widget->access_list))
+		free(vlist_remove_at(widget->access_list, 0));
 	vlist_free(widget->access_list);
+
+	/* Free */
+	list_free(widget->visual_mod_widget_list);
 	free(widget);
 }
 
 
 void visual_mem_system_widget_refresh(struct visual_mem_system_widget_t *widget)
 {
+	struct visual_mod_access_t *access;
+
+	char *access_name;
+
 	int i;
 
+	long long cycle;
+
+	/* Go to cycle */
+	cycle = cycle_bar_get_cycle(visual_cycle_bar);
+	state_file_go_to_cycle(visual_state_file, cycle);
+
+	/* Empty access list */
+	while (vlist_count(widget->access_list))
+		free(vlist_remove_at(widget->access_list, 0));
+
+	/* Refresh access list */
+	HASH_TABLE_FOR_EACH(visual_mem_system->access_table, access_name, access)
+	{
+		/* Duplicate name */
+		access_name = strdup(access_name);
+		if (!access_name)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* Add to list */
+		vlist_add(widget->access_list, access_name);
+	}
 	vlist_refresh(widget->access_list);
+
+	/* Module widgets */
 	LIST_FOR_EACH(widget->visual_mod_widget_list, i)
 		visual_mod_widget_refresh(list_get(widget->visual_mod_widget_list, i));
 }

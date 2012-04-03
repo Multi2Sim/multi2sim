@@ -119,6 +119,11 @@ struct visual_mem_system_t
 void visual_mem_system_init(void);
 void visual_mem_system_done(void);
 
+void visual_mem_system_get_access_name_short(char *access_name, char *buf, int size);
+void visual_mem_system_get_access_name_long(char *access_name, char *buf, int size);
+void visual_mem_system_get_access_desc(char *access_name, char *buf, int size);
+
+
 
 
 
@@ -141,9 +146,6 @@ void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state
 
 void visual_mod_access_read_checkpoint(struct visual_mod_access_t *access, FILE *f);
 void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE *f);
-
-void visual_mod_access_get_name_buf(struct visual_mod_access_t *access, char *buf, int size);
-void visual_mod_access_get_desc_buf(struct visual_mod_access_t *access, char *buf, int size);
 
 
 
