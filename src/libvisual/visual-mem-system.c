@@ -497,6 +497,7 @@ void visual_mem_system_init(void)
 	visual_mem_system->mod_table = hash_table_create(0, FALSE);
 	visual_mem_system->net_table = hash_table_create(0, FALSE);
 	visual_mem_system->access_table = hash_table_create(0, FALSE);
+	visual_mem_system->mod_level_list = list_create();
 
 	/* Parse header in state file */
 	STATE_FILE_FOR_EACH_HEADER(visual_state_file, trace_line)
@@ -510,9 +511,19 @@ void visual_mem_system_init(void)
 		if (!strcmp(command, "mem.new_mod"))
 		{
 			struct visual_mod_t *mod;
+			struct list_t *mod_level;
 
+			/* Create module */
 			mod = visual_mod_create(trace_line);
 			hash_table_insert(visual_mem_system->mod_table, mod->name, mod);
+			if (mod->level < 1)
+				panic("%s: %s: invalid level (%d)", __FUNCTION__, mod->name, mod->level);
+
+			/* Add to level list */
+			while (visual_mem_system->mod_level_list->count < mod->level)
+				list_add(visual_mem_system->mod_level_list, list_create());
+			mod_level = list_get(visual_mem_system->mod_level_list, mod->level - 1);
+			list_add(mod_level, mod);
 		}
 		else if (!strcmp(command, "mem.new_net"))
 		{
@@ -535,6 +546,8 @@ void visual_mem_system_done(void)
 	char *net_name;
 	char *access_name;
 
+	int i;
+
 	/* Free modules */
 	HASH_TABLE_FOR_EACH(visual_mem_system->mod_table, mod_name, mod)
 		visual_mod_free(mod);
@@ -549,6 +562,11 @@ void visual_mem_system_done(void)
 	HASH_TABLE_FOR_EACH(visual_mem_system->access_table, access_name, access)
 		visual_mod_access_free(access);
 	hash_table_free(visual_mem_system->access_table);
+
+	/* Free levels */
+	LIST_FOR_EACH(visual_mem_system->mod_level_list, i)
+		list_free(list_get(visual_mem_system->mod_level_list, i));
+	list_free(visual_mem_system->mod_level_list);
 
 	/* Rest */
 	free(visual_mem_system);
