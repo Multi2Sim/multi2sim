@@ -93,17 +93,3 @@ void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE
 	if (count != sizeof access->state_update_cycle)
 		panic("%s: cannot write checkpoint", __FUNCTION__);
 }
-
-
-void visual_mod_access_get_name_buf(struct visual_mod_access_t *access, char *buf, int size)
-{
-	/* FIXME */
-	printf("%s\n", __FUNCTION__);
-}
-
-
-void visual_mod_access_get_desc_buf(struct visual_mod_access_t *access, char *buf, int size)
-{
-	/* FIXME */
-	printf("%s\n", __FUNCTION__);
-}
