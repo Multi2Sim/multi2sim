@@ -121,3 +121,17 @@ void visual_net_attach_mod(struct visual_net_t *net,
 	assert(node);
 	node->mod = mod;
 }
+
+
+struct visual_mod_t *visual_net_get_mod(struct visual_net_t *net, int node_index)
+{
+	struct visual_net_node_t *node;
+
+	/* Check bounds */
+	if (!IN_RANGE(node_index, 0, net->node_list->count - 1))
+		panic("%s: node index out of bounds", __FUNCTION__);
+
+	/* Return */
+	node = list_get(net->node_list, node_index);
+	return node->mod;
+}

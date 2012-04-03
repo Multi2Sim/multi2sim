@@ -219,6 +219,8 @@ int visual_mod_block_get_num_sharers(struct visual_mod_t *mod, int set, int way)
 void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f);
 void visual_mod_write_checkpoint(struct visual_mod_t *mod, FILE *f);
 
+struct visual_mod_dir_entry_t *visual_mod_dir_entry_get(struct visual_mod_t *mod,
+	int set, int way, int sub_block);
 void visual_mod_dir_entry_set_sharer(struct visual_mod_t *mod,
 	int x, int y, int z, int sharer);
 void visual_mod_dir_entry_clear_sharer(struct visual_mod_t *mod,
@@ -250,8 +252,8 @@ struct visual_net_t
 struct visual_net_t *visual_net_create(struct trace_line_t *trace_line);
 void visual_net_free(struct visual_net_t *net);
 
-void visual_net_attach_mod(struct visual_net_t *net,
-	struct visual_mod_t *mod, int node_index);
+void visual_net_attach_mod(struct visual_net_t *net, struct visual_mod_t *mod, int node_index);
+struct visual_mod_t *visual_net_get_mod(struct visual_net_t *net, int node_index);
 
 
 
