@@ -79,8 +79,6 @@ typedef void (*state_file_refresh_func_t)(void *user_data);
 	for ((trace_line) = state_file_header_first((state_file)); \
 	(trace_line); (trace_line) = state_file_header_next((state_file)))
 
-extern struct state_file_t *visual_state_file;
-
 struct state_file_t *state_file_create(char *trace_file_name);
 void state_file_free(struct state_file_t *file);
 
@@ -117,8 +115,6 @@ struct visual_mem_system_t
 	struct hash_table_t *access_table;
 	struct list_t *mod_level_list;
 };
-
-extern struct visual_mem_system_t *visual_mem_system;
 
 void visual_mem_system_init(void);
 void visual_mem_system_done(void);
@@ -216,8 +212,9 @@ struct visual_mod_access_t *visual_mod_find_access(struct visual_mod_t *mod,
 struct visual_mod_access_t *visual_mod_remove_access(struct visual_mod_t *mod,
 	int set, int way, char *access_name);
 
-void visual_mod_set_block(struct visual_mod_t *mod, int set, int way,
+void visual_mod_block_set(struct visual_mod_t *mod, int set, int way,
 	unsigned int tag, char *state);
+int visual_mod_block_get_num_sharers(struct visual_mod_t *mod, int set, int way);
 
 void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f);
 void visual_mod_write_checkpoint(struct visual_mod_t *mod, FILE *f);
@@ -268,6 +265,8 @@ struct visual_mem_system_widget_t;
 struct visual_mem_system_widget_t *visual_mem_system_widget_create(void);
 void visual_mem_system_widget_free(struct visual_mem_system_widget_t *widget);
 
+void visual_mem_system_widget_refresh(struct visual_mem_system_widget_t *widget);
+
 GtkWidget *visual_mem_system_widget_get_widget(struct visual_mem_system_widget_t *widget);
 
 
@@ -281,6 +280,8 @@ struct visual_mod_widget_t;
 
 struct visual_mod_widget_t *visual_mod_widget_create(char *name);
 void visual_mod_widget_free(struct visual_mod_widget_t *widget);
+
+void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget);
 
 GtkWidget *visual_mod_widget_get_widget(struct visual_mod_widget_t *widget);
 
@@ -599,6 +600,20 @@ void vmem_read_checkpoint(struct vmem_t *vmem, FILE *f);
 void vmem_write_checkpoint(struct vmem_t *vmem, FILE *f);
 
 void vmem_refresh(struct vmem_t *vmem);
+
+
+
+/*
+ * Global Objects
+ */
+
+/* State */
+extern struct state_file_t *visual_state_file;
+extern struct visual_mem_system_t *visual_mem_system;
+
+/* Widgets */
+extern struct cycle_bar_t *visual_cycle_bar;
+extern struct visual_mem_system_widget_t *visual_mem_system_widget;
 
 
 #endif

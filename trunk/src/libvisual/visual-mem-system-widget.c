@@ -30,6 +30,8 @@ struct visual_mem_system_widget_t
 {
 	GtkWidget *widget;
 
+	struct list_t *visual_mod_widget_list;
+
 	struct vlist_t *access_list;
 };
 
@@ -45,16 +47,19 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
 {
 	struct visual_mem_system_widget_t *widget;
 
-	/* Allocate */
-	widget = calloc(1, sizeof(struct visual_mem_system_widget_t));
-	if (!widget)
-		fatal("%s: out of memory", __FUNCTION__);
-
 	struct visual_mod_t *mod;
 	struct list_t *mod_list;
 
 	int level_id;
 	int mod_id;
+
+	/* Allocate */
+	widget = calloc(1, sizeof(struct visual_mem_system_widget_t));
+	if (!widget)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	widget->visual_mod_widget_list = list_create();
 
 	/* Vertical box */
 	GtkWidget *vbox;
@@ -91,6 +96,7 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
 			/* Create module widget */
 			struct visual_mod_widget_t *visual_mod_widget;
 			visual_mod_widget = visual_mod_widget_create(mod->name);
+			list_add(widget->visual_mod_widget_list, visual_mod_widget);
 			gtk_box_pack_start(GTK_BOX(hbox), visual_mod_widget_get_widget(visual_mod_widget),
 				TRUE, TRUE, 0);
 
@@ -116,8 +122,19 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
 
 void visual_mem_system_widget_free(struct visual_mem_system_widget_t *widget)
 {
+	list_free(widget->visual_mod_widget_list);
 	vlist_free(widget->access_list);
 	free(widget);
+}
+
+
+void visual_mem_system_widget_refresh(struct visual_mem_system_widget_t *widget)
+{
+	int i;
+
+	vlist_refresh(widget->access_list);
+	LIST_FOR_EACH(widget->visual_mod_widget_list, i)
+		visual_mod_widget_refresh(list_get(widget->visual_mod_widget_list, i));
 }
 
 

@@ -149,6 +149,9 @@ void visual_mod_free(struct visual_mod_t *mod)
 {
 	struct visual_mod_block_t *block;
 	struct linked_list_t *access_list;
+	struct visual_mod_access_t *access;
+
+	char *access_name;
 
 	int i;
 
@@ -174,6 +177,8 @@ void visual_mod_free(struct visual_mod_t *mod)
 	free(mod->blocks);
 
 	/* Access table */
+	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
+		visual_mod_access_free(access);
 	hash_table_free(mod->access_table);
 
 	/* Free module */
@@ -260,7 +265,7 @@ struct visual_mod_access_t *visual_mod_remove_access(struct visual_mod_t *mod, i
 }
 
 
-void visual_mod_set_block(struct visual_mod_t *mod, int set, int way,
+void visual_mod_block_set(struct visual_mod_t *mod, int set, int way,
 	unsigned int tag, char *state)
 {
 	struct visual_mod_block_t *block;
@@ -273,6 +278,25 @@ void visual_mod_set_block(struct visual_mod_t *mod, int set, int way,
 	block = &mod->blocks[set * mod->assoc + way];
 	block->tag = tag;
 	block->state = map_string(&visual_mod_block_state_map, state);
+}
+
+
+/* Get total number of sharers of a block, adding up sharers of each sub-block */
+int visual_mod_block_get_num_sharers(struct visual_mod_t *mod, int set, int way)
+{
+	struct visual_mod_dir_entry_t *dir_entry;
+
+	int num_sharers;
+	int i;
+
+	num_sharers = 0;
+	for (i = 0; i < mod->num_sub_blocks; i++)
+	{
+		dir_entry = visual_mod_get_dir_entry(mod, set, way, i);
+		num_sharers += dir_entry->num_sharers;
+	}
+
+	return num_sharers;
 }
 
 
