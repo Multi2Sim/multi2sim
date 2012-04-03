@@ -479,11 +479,21 @@ void vmem_refresh(struct vmem_t *vmem)
  */
 
 struct state_file_t *visual_state_file;
+struct cycle_bar_t *visual_cycle_bar;
+struct visual_mem_system_widget_t *visual_mem_system_widget;
+
 
 static void visual_xxx_destroy_event(GtkWidget *widget, gpointer data)
 {
 	gtk_main_quit();
 }
+
+
+static void visual_cycle_bar_refresh(void *user_data, long long cycle)
+{
+	visual_mem_system_widget_refresh(visual_mem_system_widget);
+}
+
 
 void vmem_run(char *file_name)
 {
@@ -532,12 +542,11 @@ void vmem_run(char *file_name)
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 
 	/* Cycle bar */
-	struct cycle_bar_t *cycle_bar;
-	cycle_bar = cycle_bar_create();
-	gtk_box_pack_start(GTK_BOX(vbox), cycle_bar_get_widget(cycle_bar), FALSE, FALSE, 0);
+	visual_cycle_bar = cycle_bar_create();
+	gtk_box_pack_start(GTK_BOX(vbox), cycle_bar_get_widget(visual_cycle_bar), FALSE, FALSE, 0);
+	cycle_bar_set_refresh_func(visual_cycle_bar, visual_cycle_bar_refresh, NULL);
 
 	/* Memory system widget */
-	struct visual_mem_system_widget_t *visual_mem_system_widget;
 	visual_mem_system_widget = visual_mem_system_widget_create();
 	gtk_box_pack_start(GTK_BOX(vbox), visual_mem_system_widget_get_widget(visual_mem_system_widget),
 		TRUE, TRUE, 0);

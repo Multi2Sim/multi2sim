@@ -57,7 +57,7 @@ static void visual_mem_system_set_block(struct visual_mem_system_t *system,
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
 	/* Set block */
-	visual_mod_set_block(mod, set, way, tag, state);
+	visual_mod_block_set(mod, set, way, tag, state);
 }
 
 
