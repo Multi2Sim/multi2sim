@@ -64,36 +64,155 @@ static void visual_mem_system_set_block(struct visual_mem_system_t *system,
 static void visual_mem_system_set_sharer(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	char *mod_name;
+
+	struct visual_mod_t *mod;
+
+	int x;
+	int y;
+	int z;
+	int sharer;
+
+	/* Get module */
+	mod_name = trace_line_get_symbol_value(trace_line, "dir");
+	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	if (!mod)
+		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
+
+	/* Directory entry and sharer */
+	x = trace_line_get_symbol_value_int(trace_line, "x");
+	y = trace_line_get_symbol_value_int(trace_line, "y");
+	z = trace_line_get_symbol_value_int(trace_line, "z");
+	sharer = trace_line_get_symbol_value_int(trace_line, "sharer");
+
+	/* Set sharer */
+	visual_mod_dir_entry_set_sharer(mod, x, y, z, sharer);
 }
 
 
 static void visual_mem_system_clear_sharer(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	char *mod_name;
+
+	struct visual_mod_t *mod;
+
+	int x;
+	int y;
+	int z;
+	int sharer;
+
+	/* Get module */
+	mod_name = trace_line_get_symbol_value(trace_line, "dir");
+	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	if (!mod)
+		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
+
+	/* Directory entry and sharer */
+	x = trace_line_get_symbol_value_int(trace_line, "x");
+	y = trace_line_get_symbol_value_int(trace_line, "y");
+	z = trace_line_get_symbol_value_int(trace_line, "z");
+	sharer = trace_line_get_symbol_value_int(trace_line, "sharer");
+
+	/* Set sharer */
+	visual_mod_dir_entry_clear_sharer(mod, x, y, z, sharer);
 }
 
 
 static void visual_mem_system_clear_all_sharers(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	char *mod_name;
+
+	struct visual_mod_t *mod;
+
+	int x;
+	int y;
+	int z;
+
+	/* Get module */
+	mod_name = trace_line_get_symbol_value(trace_line, "dir");
+	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	if (!mod)
+		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
+
+	/* Directory entry and sharer */
+	x = trace_line_get_symbol_value_int(trace_line, "x");
+	y = trace_line_get_symbol_value_int(trace_line, "y");
+	z = trace_line_get_symbol_value_int(trace_line, "z");
+
+	/* Set sharer */
+	visual_mod_dir_entry_clear_all_sharers(mod, x, y, z);
 }
 
 
 static void visual_mem_system_set_owner(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	char *mod_name;
+
+	struct visual_mod_t *mod;
+
+	int x;
+	int y;
+	int z;
+	int owner;
+
+	/* Get module */
+	mod_name = trace_line_get_symbol_value(trace_line, "dir");
+	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	if (!mod)
+		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
+
+	/* Directory entry and sharer */
+	x = trace_line_get_symbol_value_int(trace_line, "x");
+	y = trace_line_get_symbol_value_int(trace_line, "y");
+	z = trace_line_get_symbol_value_int(trace_line, "z");
+	owner = trace_line_get_symbol_value_int(trace_line, "owner");
+
+	/* Set sharer */
+	visual_mod_dir_entry_set_owner(mod, x, y, z, owner);
 }
 
 
 static void visual_mem_system_new_access(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	char *name;
+	char *state;
+
+	struct visual_mod_access_t *access;
+
+	/* Read fields */
+	name = trace_line_get_symbol_value(trace_line, "name");
+	state = trace_line_get_symbol_value(trace_line, "state");
+
+	/* Create new access */
+	access = visual_mod_access_create(name);
+	visual_mod_access_set_state(access, state);
+
+	/* Add access to list */
+	hash_table_insert(visual_mem_system->access_table, access->name, access);
 }
 
 
 static void visual_mem_system_end_access(struct visual_mem_system_t *system,
 	struct trace_line_t *trace_line)
 {
+	struct visual_mod_access_t *access;
+
+	char *name;
+
+	/* Read fields */
+	name = trace_line_get_symbol_value(trace_line, "name");
+
+	/* Find access */
+	access = hash_table_remove(visual_mem_system->access_table, name);
+	if (!access)
+		panic("%s: access not found", __FUNCTION__);
+
+	/* Free access */
+	visual_mod_access_free(access);
 }
 
 
@@ -205,6 +324,7 @@ void visual_mem_system_init(void)
 	/* Initialize */
 	visual_mem_system->mod_table = hash_table_create(0, FALSE);
 	visual_mem_system->net_table = hash_table_create(0, FALSE);
+	visual_mem_system->access_table = hash_table_create(0, FALSE);
 
 	/* Parse header in state file */
 	STATE_FILE_FOR_EACH_HEADER(visual_state_file, trace_line)
@@ -237,9 +357,11 @@ void visual_mem_system_done(void)
 {
 	struct visual_mod_t *mod;
 	struct visual_net_t *net;
+	struct visual_mod_access_t *access;
 
 	char *mod_name;
 	char *net_name;
+	char *access_name;
 
 	/* Free modules */
 	HASH_TABLE_FOR_EACH(visual_mem_system->mod_table, mod_name, mod)
@@ -250,6 +372,11 @@ void visual_mem_system_done(void)
 	HASH_TABLE_FOR_EACH(visual_mem_system->net_table, net_name, net)
 		visual_net_free(net);
 	hash_table_free(visual_mem_system->net_table);
+
+	/* Free accesses */
+	HASH_TABLE_FOR_EACH(visual_mem_system->access_table, access_name, access)
+		visual_mod_access_free(access);
+	hash_table_free(visual_mem_system->access_table);
 
 	/* Rest */
 	free(visual_mem_system);

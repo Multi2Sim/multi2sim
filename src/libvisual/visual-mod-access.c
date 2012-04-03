@@ -24,7 +24,7 @@
  * Public Functions
  */
 
-struct visual_mod_access_t *visual_mod_access_create(void)
+struct visual_mod_access_t *visual_mod_access_create(char *name)
 {
 	struct visual_mod_access_t *access;
 
@@ -33,6 +33,9 @@ struct visual_mod_access_t *visual_mod_access_create(void)
 	if (!access)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* Initialize */
+	access->name = str_set(access->name, name);
+
 	/* Return */
 	return access;
 }
@@ -40,5 +43,14 @@ struct visual_mod_access_t *visual_mod_access_create(void)
 
 void visual_mod_access_free(struct visual_mod_access_t *access)
 {
+	str_free(access->name);
+	str_free(access->state);
 	free(access);
+}
+
+
+void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state)
+{
+	access->state = str_set(access->state, state);
+	access->state_update_cycle = state_file_get_cycle(visual_state_file);
 }
