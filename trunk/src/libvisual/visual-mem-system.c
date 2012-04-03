@@ -354,11 +354,77 @@ static void visual_mem_system_access(struct visual_mem_system_t *system,
 
 static void visual_mem_system_read_checkpoint(struct visual_mem_system_t *system, FILE *f)
 {
+	char mod_name[MAX_STRING_SIZE];
+
+	struct visual_mod_t *mod;
+	struct visual_mod_access_t *access;
+
+	char *access_name;
+
+	int num_accesses;
+	int count;
+	int i;
+
+	/* Empty access list */
+	HASH_TABLE_FOR_EACH(visual_mem_system->access_table, access_name, access)
+		visual_mod_access_free(access);
+	hash_table_clear(visual_mem_system->access_table);
+
+	/* Read number of accesses */
+	count = fread(&num_accesses, 1, 4, f);
+	if (count != 4)
+		fatal("%s: error reading from checkpoint", __FUNCTION__);
+
+	/* Read accesses */
+	for (i = 0; i < num_accesses; i++)
+	{
+		access = visual_mod_access_create(NULL);
+		visual_mod_access_read_checkpoint(access, f);
+		hash_table_insert(visual_mem_system->access_table, access->name, access);
+	}
+
+	/* Read modules */
+	for (i = 0; i < hash_table_count(visual_mem_system->mod_table); i++)
+	{
+		/* Get module */
+		str_read_from_file(f, mod_name, sizeof mod_name);
+		mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+		if (!mod)
+			panic("%s: %s: invalid module name", __FUNCTION__, mod_name);
+
+		/* Read module checkpoint */
+		visual_mod_read_checkpoint(mod, f);
+	}
 }
 
 
 static void visual_mem_system_write_checkpoint(struct visual_mem_system_t *system, FILE *f)
 {
+	struct visual_mod_t *mod;
+	struct visual_mod_access_t *access;
+
+	char *mod_name;
+	char *access_name;
+
+	int num_accesses;
+	int count;
+
+	/* Write number of accesses */
+	num_accesses = hash_table_count(visual_mem_system->access_table);
+	count = fwrite(&num_accesses, 1, 4, f);
+	if (count != 4)
+		fatal("%s: cannot write to checkpoint file", __FUNCTION__);
+
+	/* Write accesses */
+	HASH_TABLE_FOR_EACH(visual_mem_system->access_table, access_name, access)
+		visual_mod_access_write_checkpoint(access, f);
+
+	/* Write modules */
+	HASH_TABLE_FOR_EACH(visual_mem_system->mod_table, mod_name, mod)
+	{
+		str_write_to_file(f, mod->name);
+		visual_mod_write_checkpoint(mod, f);
+	}
 }
 
 

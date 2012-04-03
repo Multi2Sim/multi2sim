@@ -124,6 +124,7 @@ void visual_mem_system_done(void);
 
 
 
+
 /*
  * Memory Module Access
  */
@@ -140,6 +141,9 @@ struct visual_mod_access_t *visual_mod_access_create(char *name);
 void visual_mod_access_free(struct visual_mod_access_t *access);
 
 void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state);
+
+void visual_mod_access_read_checkpoint(struct visual_mod_access_t *access, FILE *f);
+void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE *f);
 
 
 
@@ -210,6 +214,10 @@ struct visual_mod_access_t *visual_mod_remove_access(struct visual_mod_t *mod,
 
 void visual_mod_set_block(struct visual_mod_t *mod, int set, int way,
 	unsigned int tag, char *state);
+
+void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f);
+void visual_mod_write_checkpoint(struct visual_mod_t *mod, FILE *f);
+
 void visual_mod_dir_entry_set_sharer(struct visual_mod_t *mod,
 	int x, int y, int z, int sharer);
 void visual_mod_dir_entry_clear_sharer(struct visual_mod_t *mod,
@@ -220,6 +228,9 @@ int visual_mod_dir_entry_is_sharer(struct visual_mod_t *mod,
 	int x, int y, int z, int sharer);
 void visual_mod_dir_entry_set_owner(struct visual_mod_t *mod,
 	int x, int y, int z, int owner);
+
+void visual_mod_dir_entry_read_checkpoint(struct visual_mod_t *mod, int x, int y, int z, FILE *f);
+void visual_mod_dir_entry_write_checkpoint(struct visual_mod_t *mod, int x, int y, int z, FILE *f);
 
 
 
