@@ -35,7 +35,7 @@ LowModules = mod-l2-0 mod-l2-1
 
 [Module mod-l2-0]
 Type = Cache
-Geometry = geo-l1
+Geometry = geo-l2
 HighNetwork = net-l1-l2 
 LowNetwork = net-l2-mm
 LowModules = mod-mm
