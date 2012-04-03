@@ -24,47 +24,50 @@ struct hash_table_t;
 
 /** Iterate through all elements of the hash table.
  *
- * @param ht
+ * @param table
  * @param key
  * @param data
  */
-#define HASH_TABLE_FOR_EACH(ht, key, data) \
-	for ((key) = hash_table_find_first((ht), (void **) &(data)); \
+#define HASH_TABLE_FOR_EACH(table, key, data) \
+	for ((key) = hash_table_find_first((table), (void **) &(data)); \
 		(key); \
-		(key) = hash_table_find_next((ht), (void **) &(data)))
+		(key) = hash_table_find_next((table), (void **) &(data)))
 
 
 /* Creation and destruction */
 struct hash_table_t *hash_table_create(int size, int case_sensitive);
-void hash_table_free(struct hash_table_t *ht);
+void hash_table_free(struct hash_table_t *table);
+
+/* Delete all elements */
+void hash_table_clear(struct hash_table_t *table);
 
 /* Insert a new element.
  * The key is strdup'ped, so it can be freely modified by the caller.
  * Return value: 0=success, non-0=key already exists/data=NULL
  */
-int hash_table_insert(struct hash_table_t *ht, char *key, void *data);
+int hash_table_insert(struct hash_table_t *table, char *key, void *data);
 
 /* Change element data.
  * Return value: 0=success, non-0=key does not exist/data=NULL
  */
-int hash_table_set(struct hash_table_t *ht, char *key, void *data);
+int hash_table_set(struct hash_table_t *table, char *key, void *data);
 
 /* Return number of elements in hash_table. */
-int hash_table_count(struct hash_table_t *ht);
+int hash_table_count(struct hash_table_t *table);
 
 /* Get data associated to a key.
  * Return value: NULL=key does not exist, ptr=data */
-void *hash_table_get(struct hash_table_t *ht, char *key);
+void *hash_table_get(struct hash_table_t *table, char *key);
 
 /* Remove data associated to a key; the key is freed.
  * Return value: NULL=key does not exist, ptr=data removed */
-void *hash_table_remove(struct hash_table_t *ht, char *key);
+void *hash_table_remove(struct hash_table_t *table, char *key);
 
 /* Find elements in hash table sequentially.
  * Return value: NULL=no more elements,
  *   non-NULL=key (data returned in 'data' if not NULL) */
-char *hash_table_find_first(struct hash_table_t *ht, void **data);
-char *hash_table_find_next(struct hash_table_t *ht, void **data);
+char *hash_table_find_first(struct hash_table_t *table, void **data);
+char *hash_table_find_next(struct hash_table_t *table, void **data);
 
 #endif
 
