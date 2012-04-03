@@ -276,6 +276,155 @@ void visual_mod_set_block(struct visual_mod_t *mod, int set, int way,
 }
 
 
+void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
+{
+	struct visual_mod_access_t *access;
+
+	char *access_name;
+
+	int num_accesses;
+	int count;
+	int i;
+
+	int set;
+	int way;
+
+	/* Empty access list */
+	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
+		visual_mod_access_free(access);
+	hash_table_clear(mod->access_table);
+
+	/* Read number of accesses */
+	count = fread(&num_accesses, 1, 4, f);
+	if (count != 4)
+		fatal("%s: error reading from checkpoint", __FUNCTION__);
+
+	/* Read accesses */
+	for (i = 0; i < num_accesses; i++)
+	{
+		access = visual_mod_access_create(NULL);
+		visual_mod_access_read_checkpoint(access, f);
+		hash_table_insert(mod->access_table, access->name, access);
+	}
+
+	/* Blocks */
+	for (set = 0; set < mod->num_sets; set++)
+	{
+		for (way = 0; way < mod->assoc; way++)
+		{
+			struct visual_mod_block_t *block;
+
+			unsigned char state;
+
+			int num_accesses;
+			int count;
+			int i;
+
+			/* Get block */
+			block = &mod->blocks[set * mod->assoc + way];
+
+			/* Read tag */
+			fread(&block->tag, 1, 4, f);
+
+			/* Read state */
+			fread(&state, 1, 1, f);
+			block->state = state;
+
+			/* Read directory entry */
+			for (i = 0; i < mod->num_sub_blocks; i++)
+				visual_mod_dir_entry_read_checkpoint(mod, set, way, i, f);
+
+			/* Free previous accesses */
+			while (linked_list_count(block->access_list))
+			{
+				linked_list_head(block->access_list);
+				visual_mod_access_free(linked_list_get(block->access_list));
+				linked_list_remove(block->access_list);
+			}
+
+			/* Read number of accesses */
+			count = fread(&num_accesses, 1, 4, f);
+			if (count != 4)
+				fatal("%s: error reading from checkpoint", __FUNCTION__);
+
+			/* Read accesses */
+			for (i = 0; i < num_accesses; i++)
+			{
+				access = visual_mod_access_create(NULL);
+				visual_mod_access_read_checkpoint(access, f);
+				linked_list_add(block->access_list, access);
+			}
+		}
+	}
+}
+
+
+void visual_mod_write_checkpoint(struct visual_mod_t *mod, FILE *f)
+{
+	struct visual_mod_access_t *access;
+
+	char *access_name;
+
+	int num_accesses;
+	int count;
+
+	int set;
+	int way;
+
+	/* Write number of accesses */
+	num_accesses = hash_table_count(mod->access_table);
+	count = fwrite(&num_accesses, 1, 4, f);
+	if (count != 4)
+		fatal("%s: cannot write to checkpoint file", __FUNCTION__);
+
+	/* Write accesses */
+	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
+		visual_mod_access_write_checkpoint(access, f);
+
+	/* Cache */
+	for (set = 0; set < mod->num_sets; set++)
+	{
+		for (way = 0; way < mod->assoc; way++)
+		{
+			struct visual_mod_block_t *block;
+
+			unsigned char state;
+
+			int num_accesses;
+			int count;
+			int i;
+
+			/* Get block */
+			block = &mod->blocks[set * mod->assoc + way];
+
+			/* Dump tag */
+			fwrite(&block->tag, 1, 4, f);
+
+			/* Dump state */
+			state = block->state;
+			fwrite(&state, 1, 1, f);
+
+			/* Dump directory entry */
+			for (i = 0; i < mod->num_sub_blocks; i++)
+				visual_mod_dir_entry_write_checkpoint(mod, set, way, i, f);
+
+			/* Write number of accesses */
+			num_accesses = linked_list_count(block->access_list);
+			count = fwrite(&num_accesses, 1, 4, f);
+			if (count != 4)
+				fatal("%s: cannot write to checkpoint file", __FUNCTION__);
+
+			/* Write accesses */
+			LINKED_LIST_FOR_EACH(block->access_list)
+			{
+				access = linked_list_get(block->access_list);
+				visual_mod_access_write_checkpoint(access, f);
+			}
+		}
+	}
+}
+
+
 void visual_mod_dir_entry_set_sharer(struct visual_mod_t *mod,
 	int x, int y, int z, int sharer)
 {
@@ -356,4 +505,30 @@ void visual_mod_dir_entry_set_owner(struct visual_mod_t *mod,
 
 	/* Set new owner */
 	dir_entry->owner = owner;
+}
+
+
+void visual_mod_dir_entry_read_checkpoint(struct visual_mod_t *mod, int x, int y, int z, FILE *f)
+{
+	struct visual_mod_dir_entry_t *dir_entry;
+
+	int count = 0;
+
+	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+	count += fread(&dir_entry->num_sharers, 1, 4, f);
+	count += fread(&dir_entry->owner, 1, 4, f);
+	count += fread(dir_entry->sharers, 1, VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod), f);
+	if (count != 8 + VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod))
+		panic("%s: corrupted checkpoint", __FUNCTION__);
+}
+
+
+void visual_mod_dir_entry_write_checkpoint(struct visual_mod_t *mod, int x, int y, int z, FILE *f)
+{
+	struct visual_mod_dir_entry_t *dir_entry;
+
+	dir_entry = visual_mod_get_dir_entry(mod, x, y, z);
+	fwrite(&dir_entry->num_sharers, 1, 4, f);
+	fwrite(&dir_entry->owner, 1, 4, f);
+	fwrite(dir_entry->sharers, 1, VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod), f);
 }

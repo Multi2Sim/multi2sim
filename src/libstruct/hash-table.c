@@ -203,10 +203,24 @@ struct hash_table_t *hash_table_create(int size, int case_sensitive)
 
 void hash_table_free(struct hash_table_t *table)
 {
+	/* Clear table */
+	hash_table_clear(table);
+
+	/* Free element vector and hash table */
+	free(table->elem_vector);
+	free(table);
+}
+
+
+void hash_table_clear(struct hash_table_t *table)
+{
 	struct hash_table_elem_t *elem;
 	struct hash_table_elem_t *elem_next;
 
 	int i;
+
+	/* No find operation */
+	table->find_op = 0;
 
 	/* Free elements */
 	for (i = 0; i < table->size; i++)
@@ -219,9 +233,8 @@ void hash_table_free(struct hash_table_t *table)
 		}
 	}
 
-	/* Free element vector and hash table */
-	free(table->elem_vector);
-	free(table);
+	/* Reset count */
+	table->count = 0;
 }
 
 

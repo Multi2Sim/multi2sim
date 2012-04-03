@@ -54,3 +54,42 @@ void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state
 	access->state = str_set(access->state, state);
 	access->state_update_cycle = state_file_get_cycle(visual_state_file);
 }
+
+
+void visual_mod_access_read_checkpoint(struct visual_mod_access_t *access, FILE *f)
+{
+	char name[MAX_STRING_SIZE];
+	char state[MAX_STRING_SIZE];
+
+	int count;
+
+	/* Read name */
+	str_read_from_file(f, name, sizeof name);
+	access->name = str_set(access->name, name);
+
+	/* Read state */
+	str_read_from_file(f, state, sizeof state);
+	access->state = str_set(access->state, state);
+
+	/* Read state update cycle */
+	count = fread(&access->state_update_cycle, 1, sizeof access->state_update_cycle, f);
+	if (count != sizeof access->state_update_cycle)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+}
+
+
+void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE *f)
+{
+	int count;
+
+	/* Write name */
+	str_write_to_file(f, access->name);
+
+	/* Write state */
+	str_write_to_file(f, access->state);
+
+	/* Write state update cycle */
+	count = fwrite(&access->state_update_cycle, 1, sizeof access->state_update_cycle, f);
+	if (count != sizeof access->state_update_cycle)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
+}
