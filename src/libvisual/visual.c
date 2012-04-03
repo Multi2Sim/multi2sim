@@ -480,6 +480,11 @@ void vmem_refresh(struct vmem_t *vmem)
 
 struct state_file_t *visual_state_file;
 
+static void visual_xxx_destroy_event(GtkWidget *widget, gpointer data)
+{
+	gtk_main_quit();
+}
+
 void vmem_run(char *file_name)
 {
 	char *m2s_images_path = "images";
@@ -513,19 +518,35 @@ void vmem_run(char *file_name)
 	/* Create checkpoints */
 	state_file_create_checkpoints(visual_state_file);
 
-#if 0
 	/* Initialize GTK */
 	gtk_init(NULL, NULL);
 
 	/* Create main window */
-	vmem = vmem_create();
+	GtkWidget *window;
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(visual_xxx_destroy_event), NULL);
 
-	/* Parse trace file and create checkpoints */
-	state_file_refresh(visual_state_file);
+	/* Vertical box */
+	GtkWidget *vbox;
+	vbox = gtk_vbox_new(FALSE, 0);
+	gtk_container_add(GTK_CONTAINER(window), vbox);
+
+	/* Cycle bar */
+	struct cycle_bar_t *cycle_bar;
+	cycle_bar = cycle_bar_create();
+	gtk_box_pack_start(GTK_BOX(vbox), cycle_bar_get_widget(cycle_bar), FALSE, FALSE, 0);
+
+	/* Memory system widget */
+	struct visual_mem_system_widget_t *visual_mem_system_widget;
+	visual_mem_system_widget = visual_mem_system_widget_create();
+	gtk_box_pack_start(GTK_BOX(vbox), visual_mem_system_widget_get_widget(visual_mem_system_widget),
+		TRUE, TRUE, 0);
+
+	/* Show */
+	gtk_widget_show_all(window);
 
 	/* Run GTK */
 	gtk_main();
-#endif
 
 	/* Free */
 	visual_mem_system_done();
