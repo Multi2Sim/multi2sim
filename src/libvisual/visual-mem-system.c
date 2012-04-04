@@ -614,6 +614,10 @@ void visual_mem_system_get_access_desc(char *access_name, char *buf, int size)
 
 	struct visual_mod_access_t *access;
 
+	long long creation_cycle;
+	long long backup_cycle;
+	long long cycle;
+
 	/* Look for access */
 	access = hash_table_get(visual_mem_system->access_table, access_name);
 	if (!access)
@@ -626,6 +630,8 @@ void visual_mem_system_get_access_desc(char *access_name, char *buf, int size)
 	/* Fields */
 	str_printf(&buf, &size, "%sName:%s %s\n", title_format_begin,
 		title_format_end, access->name);
+	str_printf(&buf, &size, "%sCreation cycle:%s %lld\n", title_format_begin,
+		title_format_end, access->creation_cycle);
 
 	/* State */
 	if (access->state && *access->state)
@@ -636,4 +642,27 @@ void visual_mem_system_get_access_desc(char *access_name, char *buf, int size)
 			title_format_begin, title_format_end, access->state_update_cycle,
 			state_file_get_cycle(visual_state_file) - access->state_update_cycle);
 	}
+
+	/* Log */
+	creation_cycle = access->creation_cycle;
+	backup_cycle = state_file_get_cycle(visual_state_file);
+	str_printf(&buf, &size, "\n%sState Log:%s\n", title_format_begin, title_format_end);
+	for (cycle = creation_cycle; cycle < state_file_get_num_cycles(visual_state_file); cycle++)
+	{
+		/* Go to cycle */
+		state_file_go_to_cycle(visual_state_file, cycle);
+
+		/* Get access */
+		access = hash_table_get(visual_mem_system->access_table, access_name);
+		if (!access)
+			break;
+
+		/* Access state update */
+		if (access->state_update_cycle == cycle)
+			str_printf(&buf, &size, "Cycle %lld: state = %s\n",
+				cycle, access->state);
+	}
+
+	/* Return to original cycle */
+	state_file_go_to_cycle(visual_state_file, backup_cycle);
 }

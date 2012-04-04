@@ -38,6 +38,8 @@
 #define VISUAL_MOD_ACCESSES_LABEL_WIDTH		25
 
 
+
+
 /*
  * Sharers label
  */
@@ -137,6 +139,9 @@ static void sharers_label_clicked(GtkWidget *widget,
 
 	long long cycle;
 
+	char *title_format_begin = "<span color=\"blue\"><b>";
+	char *title_format_end = "</b></span>";
+
 	/* Go to current cycle */
 	cycle = cycle_bar_get_cycle(visual_cycle_bar);
 	state_file_go_to_cycle(visual_state_file, cycle);
@@ -152,8 +157,8 @@ static void sharers_label_clicked(GtkWidget *widget,
 	size = sizeof buf;
 
 	/* Title */
-	str_printf(&buf_ptr, &size, "<b>Module %s - Block at set %d - way %d</b>\n\n",
-		mod->name, sharers_label->set, sharers_label->way);
+	str_printf(&buf_ptr, &size, "%sModule %s - Block at set %d / way %d%s\n\n",
+		title_format_begin, mod->name, sharers_label->set, sharers_label->way, title_format_end);
 
 	/* Sub-blocks */
 	for (sub_block = 0; sub_block < mod->num_sub_blocks; sub_block++)
@@ -161,7 +166,8 @@ static void sharers_label_clicked(GtkWidget *widget,
 		struct visual_mod_dir_entry_t *dir_entry;
 
 		/* Start */
-		str_printf(&buf_ptr, &size, "<b>Sub-block %d:</b>\n", sub_block);
+		str_printf(&buf_ptr, &size, "%sSub-block %d:%s\n",
+			title_format_begin, sub_block, title_format_end);
 
 		/* Owner */
 		mod_sharer = NULL;
@@ -295,6 +301,240 @@ static GtkWidget *sharers_label_get_widget(struct sharers_label_t *sharers_label
 
 
 
+
+/*
+ * Accesses label
+ */
+
+struct accesses_label_t
+{
+	GtkWidget *widget;
+	GtkWidget *label;
+
+	GdkColor label_color;
+
+	char *mod_name;
+
+	int set;
+	int way;
+};
+
+
+/* Forwards */
+static struct accesses_label_t *accesses_label_create(char *mod_name, int set, int way);
+static void accesses_label_free(struct accesses_label_t *accesses_label);
+static GtkWidget *accesses_label_get_widget(struct accesses_label_t *accesses_label);
+
+
+static void accesses_label_destroy(GtkWidget *widget,
+	struct accesses_label_t *accesses_label)
+{
+	accesses_label_free(accesses_label);
+}
+
+
+static gboolean accesses_label_enter_notify(GtkWidget *widget,
+	GdkEventCrossing *event, struct sharers_label_t *accesses_label)
+{
+	GdkColor color;
+
+	PangoAttrList *attrs;
+	PangoAttribute *underline_attr;
+
+	GdkWindow *window;
+	GdkCursor *cursor;
+
+	GtkStyle *style;
+
+	style = gtk_widget_get_style(accesses_label->label);
+	accesses_label->label_color = style->fg[GTK_STATE_NORMAL];
+
+	gdk_color_parse("red", &color);
+	gtk_widget_modify_fg(accesses_label->label, GTK_STATE_NORMAL, &color);
+
+	attrs = gtk_label_get_attributes(GTK_LABEL(accesses_label->label));
+	underline_attr = pango_attr_underline_new(PANGO_UNDERLINE_SINGLE);
+	pango_attr_list_change(attrs, underline_attr);
+
+	cursor = gdk_cursor_new(GDK_HAND1);
+	window = gtk_widget_get_parent_window(widget);
+	gdk_window_set_cursor(window, cursor);
+	gdk_cursor_unref(cursor);
+
+	return FALSE;
+}
+
+
+static gboolean accesses_label_leave_notify(GtkWidget *widget,
+	GdkEventCrossing *event, struct accesses_label_t *accesses_label)
+{
+	PangoAttrList *attrs;
+	PangoAttribute *underline_attr;
+	GdkWindow *window;
+
+	window = gtk_widget_get_parent_window(widget);
+	gdk_window_set_cursor(window, NULL);
+
+	attrs = gtk_label_get_attributes(GTK_LABEL(accesses_label->label));
+	underline_attr = pango_attr_underline_new(PANGO_UNDERLINE_NONE);
+	pango_attr_list_change(attrs, underline_attr);
+	gtk_widget_modify_fg(accesses_label->label, GTK_STATE_NORMAL, &accesses_label->label_color);
+
+	return FALSE;
+}
+
+
+static void accesses_label_clicked(GtkWidget *widget,
+	GdkEventButton *event, struct accesses_label_t *accesses_label)
+{
+	long long cycle;
+
+	struct visual_mod_t *mod;
+
+	char buf[MAX_LONG_STRING_SIZE];
+	char *buf_ptr;
+
+	struct linked_list_t *access_list;
+
+	int size;
+	int index;
+
+	char *title_format_begin = "<span color=\"blue\"><b>";
+	char *title_format_end = "</b></span>";
+
+	/* Go to current cycle */
+	cycle = cycle_bar_get_cycle(visual_cycle_bar);
+	state_file_go_to_cycle(visual_state_file, cycle);
+
+	/* Get module */
+	mod = hash_table_get(visual_mem_system->mod_table, accesses_label->mod_name);
+	if (!mod)
+		panic("%s: %s: invalid module", __FUNCTION__, accesses_label->mod_name);
+
+	/* Initialize */
+	buf_ptr = buf;
+	size = sizeof buf;
+
+	/* Title */
+	str_printf(&buf_ptr, &size, "%sModule %s - Accesses at set %d / way %d%s\n\n",
+		title_format_begin, mod->name, accesses_label->set, accesses_label->way, title_format_end);
+
+	/* Number of accesses */
+	access_list = visual_mod_get_access_list(mod, accesses_label->set, accesses_label->way);
+	str_printf(&buf_ptr, &size, "%sNumber of accesses:%s %d\n",
+		title_format_begin, title_format_end, access_list->count);
+
+	/* List of accesses */
+	index = 0;
+	LINKED_LIST_FOR_EACH(access_list)
+	{
+		struct visual_mod_access_t *access;
+
+		access = linked_list_get(access_list);
+		str_printf(&buf_ptr, &size, "%sAccess[%d]%s = %s\n",
+			title_format_begin, index, title_format_end, access->name);
+
+		index++;
+	}
+
+	/* Show pop-up */
+	info_popup_show(buf);
+}
+
+
+static struct accesses_label_t *accesses_label_create(char *mod_name, int set, int way)
+{
+	struct accesses_label_t *accesses_label;
+	struct linked_list_t *access_list;
+	struct visual_mod_t *mod;
+
+	int num_accesses;
+
+	char str[MAX_STRING_SIZE];
+
+	/* Allocate */
+	accesses_label = calloc(1, sizeof(struct accesses_label_t));
+	if (!accesses_label)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Module name */
+	accesses_label->mod_name = strdup(mod_name);
+	if (!accesses_label->mod_name)
+		fatal("%s: out of memroy", __FUNCTION__);
+
+	/* Initialize */
+	accesses_label->set = set;
+	accesses_label->way = way;
+
+	/* Get module */
+	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	if (!mod)
+		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
+
+	/* Accesses text */
+	access_list = visual_mod_get_access_list(mod, set, way);
+	num_accesses = linked_list_count(access_list);
+	snprintf(str, sizeof str, "+%d", num_accesses);
+	if (!num_accesses)
+		strcpy(str, "-");
+
+	/* Accesses label */
+	GtkWidget *label;
+	label = gtk_label_new(str);
+	gtk_widget_set_size_request(label, VISUAL_MOD_ACCESSES_LABEL_WIDTH, VISUAL_MOD_CELL_HEIGHT - 1);
+	gtk_widget_show(label);
+	accesses_label->label = label;
+
+	/* Set label font attributes */
+	PangoAttrList *attrs;
+	PangoAttribute *size_attr;
+	attrs = pango_attr_list_new();
+	size_attr = pango_attr_size_new_absolute(VISUAL_MOD_FONT_SIZE << 10);
+	pango_attr_list_insert(attrs, size_attr);
+	gtk_label_set_attributes(GTK_LABEL(label), attrs);
+
+	/* Event box */
+	GtkWidget *event_box;
+	event_box = gtk_event_box_new();
+	gtk_container_add(GTK_CONTAINER(event_box), label);
+	gtk_widget_show(event_box);
+	gtk_widget_add_events(event_box, GDK_ENTER_NOTIFY_MASK
+		| GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK);
+	if (num_accesses)
+	{
+		g_signal_connect(G_OBJECT(event_box), "enter-notify-event",
+				G_CALLBACK(accesses_label_enter_notify), accesses_label);
+		g_signal_connect(G_OBJECT(event_box), "leave-notify-event",
+				G_CALLBACK(accesses_label_leave_notify), accesses_label);
+		g_signal_connect(G_OBJECT(event_box), "button-press-event",
+				G_CALLBACK(accesses_label_clicked), accesses_label);
+	}
+
+	/* Main widget */
+	accesses_label->widget = event_box;
+	g_signal_connect(G_OBJECT(accesses_label->widget), "destroy",
+		G_CALLBACK(accesses_label_destroy), accesses_label);
+
+	/* Return */
+	return accesses_label;
+}
+
+
+static void accesses_label_free(struct accesses_label_t *accesses_label)
+{
+	free(accesses_label->mod_name);
+	free(accesses_label);
+}
+
+
+static GtkWidget *accesses_label_get_widget(struct accesses_label_t *accesses_label)
+{
+	return accesses_label->widget;
+}
+
+
+
+
 /*
  * Visual Module Widget
  */
@@ -339,8 +579,6 @@ struct visual_mod_widget_t
 	GtkWidget *first_col_layout;
 
 	struct vlist_t *access_list;
-
-	struct linked_list_t *sharers_label_list;
 
 	int width;
 	int height;
@@ -398,9 +636,6 @@ struct visual_mod_widget_t *visual_mod_widget_create(char *name)
 	visual_mod_widget->name = strdup(name);
 	if (!visual_mod_widget->name)
 		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize */
-	visual_mod_widget->sharers_label_list = linked_list_create();
 
 	/* Vertical box */
 	GtkWidget *vbox;
@@ -507,9 +742,6 @@ void visual_mod_widget_free(struct visual_mod_widget_t *visual_mod_widget)
 	while (vlist_count(visual_mod_widget->access_list))
 		free(vlist_remove_at(visual_mod_widget->access_list, 0));
 	vlist_free(visual_mod_widget->access_list);
-
-	/* Free sharers label list */
-	linked_list_free(visual_mod_widget->sharers_label_list);
 
 	/* Free widget */
 	free(visual_mod_widget->name);
@@ -710,9 +942,6 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 
 			char *state_str;
 
-			/*int num_sharers;
-			int num_accesses;*/
-
 			GtkWidget *label;
 			GtkWidget *event_box;
 
@@ -753,46 +982,14 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 			/* Sharers label */
 			struct sharers_label_t *sharers_label;
 			sharers_label = sharers_label_create(mod->name, set, way);
-			linked_list_add(visual_mod_widget->sharers_label_list, sharers_label);
 			gtk_layout_put(GTK_LAYOUT(layout), sharers_label_get_widget(sharers_label),
 				x + VISUAL_MOD_SHARERS_LABEL_LEFT, y);
 
-#if 0
-			/* Accesses text */
-			num_accesses = linked_list_count(block->vmod_access_list);
-			snprintf(str, sizeof str, "+%d", num_accesses);
-			if (!num_accesses)
-				strcpy(str, "-");
-
 			/* Accesses label */
-			label = gtk_label_new(str);
-			gtk_widget_set_size_request(label, VCACHE_LABEL_ACCESSES_WIDTH, VCACHE_CELL_HEIGHT - 1);
-			gtk_widget_show(label);
-			block->accesses_label = label;
-
-			/* Set label font attributes */
-			attrs = pango_attr_list_new();
-			size_attr = pango_attr_size_new_absolute(VCACHE_FONT_SIZE << 10);
-			pango_attr_list_insert(attrs, size_attr);
-			gtk_label_set_attributes(GTK_LABEL(label), attrs);
-
-			/* Event box */
-			event_box = gtk_event_box_new();
-			gtk_container_add(GTK_CONTAINER(event_box), label);
-			gtk_layout_put(GTK_LAYOUT(layout), event_box, x + VCACHE_LABEL_ACCESSES_LEFT, y);
-			gtk_widget_show(event_box);
-			gtk_widget_add_events(event_box, GDK_ENTER_NOTIFY_MASK |
-				GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK);
-			if (num_accesses)
-			{
-				g_signal_connect(G_OBJECT(event_box), "enter-notify-event",
-					G_CALLBACK(vcache_block_accesses_enter_notify_event), block);
-				g_signal_connect(G_OBJECT(event_box), "leave-notify-event",
-					G_CALLBACK(vcache_block_accesses_leave_notify_event), block);
-				g_signal_connect(G_OBJECT(event_box), "button-press-event",
-					G_CALLBACK(vcache_block_accesses_clicked_event), block);
-			}
-#endif
+			struct accesses_label_t *accesses_label;
+			accesses_label = accesses_label_create(mod->name, set, way);
+			gtk_layout_put(GTK_LAYOUT(layout), accesses_label_get_widget(accesses_label),
+				x + VISUAL_MOD_ACCESSES_LABEL_LEFT, y);
 
 			/* Next way */
 			x += VISUAL_MOD_CELL_WIDTH;
