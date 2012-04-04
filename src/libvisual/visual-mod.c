@@ -241,6 +241,20 @@ struct visual_mod_access_t *visual_mod_remove_access(struct visual_mod_t *mod, i
 }
 
 
+struct linked_list_t *visual_mod_get_access_list(struct visual_mod_t *mod,
+	int set, int way)
+{
+	struct visual_mod_block_t *block;
+
+	assert(IN_RANGE(set, 0, mod->num_sets - 1));
+	assert(IN_RANGE(way, 0, mod->assoc - 1));
+
+	/* Get block */
+	block = &mod->blocks[set * mod->assoc + way];
+	return block->access_list;
+}
+
+
 void visual_mod_block_set(struct visual_mod_t *mod, int set, int way,
 	unsigned int tag, char *state)
 {

@@ -136,6 +136,7 @@ struct visual_mod_access_t
 	char *name;
 	char *state;
 
+	long long creation_cycle;
 	long long state_update_cycle;
 };
 
@@ -213,6 +214,8 @@ struct visual_mod_access_t *visual_mod_find_access(struct visual_mod_t *mod,
 	int set, int way, char *access_name);
 struct visual_mod_access_t *visual_mod_remove_access(struct visual_mod_t *mod,
 	int set, int way, char *access_name);
+struct linked_list_t *visual_mod_get_access_list(struct visual_mod_t *mod,
+	int set, int way);
 
 void visual_mod_block_set(struct visual_mod_t *mod, int set, int way,
 	unsigned int tag, char *state);
