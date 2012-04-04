@@ -188,7 +188,20 @@ int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
 	/* A transient tag is considered a hit if the block is
 	 * locked in the corresponding directory. */
 	tag = addr & ~cache->block_mask;
-	set = (tag >> cache->log_block_size) % cache->num_sets;
+	if (mod->range_kind == mod_range_interleaved)
+	{
+		uint32_t num_mods = mod->range.interleaved.mod;
+		set = ((tag >> cache->log_block_size)/num_mods) % cache->num_sets;
+	}
+	else if(mod->range_kind == mod_range_bounds)
+	{
+		set = (tag >> cache->log_block_size) % cache->num_sets;
+	}
+	else 
+	{
+		panic("%s: invalid range kind (%d)", __FUNCTION__, mod->range_kind);
+	}
+
 	for (way = 0; way < cache->assoc; way++)
 	{
 		blk = &cache->sets[set].blocks[way];
