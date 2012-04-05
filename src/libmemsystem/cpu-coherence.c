@@ -77,7 +77,7 @@ int EV_MOD_READ_REQUEST_FINISH;
 int EV_MOD_INVALIDATE;
 int EV_MOD_INVALIDATE_FINISH;
 
-int EV_MOD_PEER;
+int EV_MOD_PEER_SEND;
 int EV_MOD_PEER_RECEIVE;
 int EV_MOD_PEER_REPLY_ACK;
 int EV_MOD_PEER_FINISH;
@@ -1326,7 +1326,7 @@ void mod_handler_read_request(int event, void *data)
 				EV_MOD_READ_REQUEST_DOWNUP_FINISH, stack);
 			new_stack->peer = stack->peer;
 			new_stack->target_mod = stack->target_mod;
-			esim_schedule_event(EV_MOD_PEER, new_stack, 0);
+			esim_schedule_event(EV_MOD_PEER_SEND, new_stack, 0);
 		}
 		else 
 		{
@@ -1704,7 +1704,7 @@ void mod_handler_write_request(int event, void *data)
 				new_stack->peer = stack->peer;
 				new_stack->target_mod = stack->target_mod;
 
-				esim_schedule_event(EV_MOD_PEER, new_stack, 0);
+				esim_schedule_event(EV_MOD_PEER_SEND, new_stack, 0);
 				return;
 			}	
 			else 
@@ -1802,7 +1802,7 @@ void mod_handler_peer(int event, void *data)
 	struct mod_t *src = stack->target_mod;
 	struct mod_t *peer = stack->peer;
 
-	if (event == EV_MOD_PEER) 
+	if (event == EV_MOD_PEER_SEND) 
 	{
 		mem_debug("  %lld %lld 0x%x %s %s peer send\n", esim_cycle, stack->id,
 			stack->tag, src->name, peer->name);

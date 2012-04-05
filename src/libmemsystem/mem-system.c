@@ -134,7 +134,7 @@ void mem_system_init(void)
 	EV_MOD_INVALIDATE = esim_register_event(mod_handler_invalidate);
 	EV_MOD_INVALIDATE_FINISH = esim_register_event(mod_handler_invalidate);
 
-	EV_MOD_PEER = esim_register_event(mod_handler_peer);
+	EV_MOD_PEER_SEND = esim_register_event(mod_handler_peer);
 	EV_MOD_PEER_RECEIVE = esim_register_event(mod_handler_peer);
 	EV_MOD_PEER_REPLY_ACK = esim_register_event(mod_handler_peer);
 	EV_MOD_PEER_FINISH = esim_register_event(mod_handler_peer);
