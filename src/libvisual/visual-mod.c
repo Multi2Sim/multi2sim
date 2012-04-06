@@ -316,7 +316,7 @@ void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
 	/* Read accesses */
 	for (i = 0; i < num_accesses; i++)
 	{
-		access = visual_mod_access_create(NULL);
+		access = visual_mod_access_create(NULL, 0);
 		visual_mod_access_read_checkpoint(access, f);
 		hash_table_insert(mod->access_table, access->name, access);
 	}
@@ -364,7 +364,7 @@ void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
 			/* Read accesses */
 			for (i = 0; i < num_accesses; i++)
 			{
-				access = visual_mod_access_create(NULL);
+				access = visual_mod_access_create(NULL, 0);
 				visual_mod_access_read_checkpoint(access, f);
 				linked_list_add(block->access_list, access);
 			}

@@ -24,7 +24,7 @@
  * Public Functions
  */
 
-struct visual_mod_access_t *visual_mod_access_create(char *name)
+struct visual_mod_access_t *visual_mod_access_create(char *name, unsigned int address)
 {
 	struct visual_mod_access_t *access;
 
@@ -35,6 +35,7 @@ struct visual_mod_access_t *visual_mod_access_create(char *name)
 
 	/* Initialize */
 	access->name = str_set(access->name, name);
+	access->address = address;
 	access->creation_cycle = state_file_get_cycle(visual_state_file);
 
 	/* Return */
@@ -68,6 +69,11 @@ void visual_mod_access_read_checkpoint(struct visual_mod_access_t *access, FILE 
 	str_read_from_file(f, name, sizeof name);
 	access->name = str_set(access->name, name);
 
+	/* Read address */
+	count = fread(&access->address, 1, sizeof access->address, f);
+	if (count != sizeof access->address)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
 	/* Read state */
 	str_read_from_file(f, state, sizeof state);
 	access->state = str_set(access->state, state);
@@ -90,6 +96,11 @@ void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE
 
 	/* Write name */
 	str_write_to_file(f, access->name);
+
+	/* Write address */
+	count = fwrite(&access->address, 1, sizeof access->address, f);
+	if (count != sizeof access->address)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
 
 	/* Write state */
 	str_write_to_file(f, access->state);
@@ -165,6 +176,8 @@ void visual_mod_access_get_desc(char *access_name, char *buf, int size)
 	/* Fields */
 	str_printf(&buf, &size, "%sName:%s %s\n", title_format_begin,
 		title_format_end, access->name);
+	str_printf(&buf, &size, "%sAddress:%s 0x%x\n", title_format_begin,
+		title_format_end, access->address);
 	str_printf(&buf, &size, "%sCreation cycle:%s %lld\n", title_format_begin,
 		title_format_end, access->creation_cycle);
 

@@ -134,11 +134,13 @@ struct visual_mod_access_t
 	char *name;
 	char *state;
 
+	unsigned int address;
+
 	long long creation_cycle;
 	long long state_update_cycle;
 };
 
-struct visual_mod_access_t *visual_mod_access_create(char *name);
+struct visual_mod_access_t *visual_mod_access_create(char *name, unsigned int address);
 void visual_mod_access_free(struct visual_mod_access_t *access);
 
 void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state);
