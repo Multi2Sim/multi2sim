@@ -27,7 +27,7 @@
 
 
 /* Maximum string size */
-#define MAX_LONG_STRING_SIZE 2000
+#define MAX_LONG_STRING_SIZE (1024 * 8)
 #define MAX_STRING_SIZE  200
 #define MAX_PATH_SIZE  200
 
