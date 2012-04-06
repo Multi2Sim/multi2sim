@@ -99,6 +99,9 @@ void state_file_new_command(struct state_file_t *file, char *command_name,
 struct trace_line_t *state_file_header_first(struct state_file_t *file);
 struct trace_line_t *state_file_header_next(struct state_file_t *file);
 
+struct trace_line_t *state_file_trace_line_first(struct state_file_t *file, long long cycle);
+struct trace_line_t *state_file_trace_line_next(struct state_file_t *file);
+
 void state_file_refresh(struct state_file_t *file);
 void state_file_go_to_cycle(struct state_file_t *file, long long cycle);
 
@@ -118,11 +121,6 @@ struct visual_mem_system_t
 
 void visual_mem_system_init(void);
 void visual_mem_system_done(void);
-
-void visual_mem_system_get_access_name_short(char *access_name, char *buf, int size);
-void visual_mem_system_get_access_name_long(char *access_name, char *buf, int size);
-void visual_mem_system_get_access_desc(char *access_name, char *buf, int size);
-
 
 
 
@@ -147,6 +145,10 @@ void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state
 
 void visual_mod_access_read_checkpoint(struct visual_mod_access_t *access, FILE *f);
 void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE *f);
+
+void visual_mod_access_get_name_short(char *access_name, char *buf, int size);
+void visual_mod_access_get_name_long(char *access_name, char *buf, int size);
+void visual_mod_access_get_desc(char *access_name, char *buf, int size);
 
 
 

@@ -68,8 +68,8 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
 	/* Access list */
 	struct vlist_t *access_list;
 	access_list = vlist_create("Access list", 200, 30,
-		(vlist_get_elem_name_func_t) visual_mem_system_get_access_name_long,
-		(vlist_get_elem_desc_func_t) visual_mem_system_get_access_desc);
+		(vlist_get_elem_name_func_t) visual_mod_access_get_name_long,
+		(vlist_get_elem_desc_func_t) visual_mod_access_get_desc);
 	gtk_box_pack_start(GTK_BOX(vbox), vlist_get_widget(access_list), FALSE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), gtk_hseparator_new(), FALSE, FALSE, 0);
 	widget->access_list = access_list;

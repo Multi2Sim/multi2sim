@@ -104,3 +104,116 @@ void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE
 	if (count != sizeof access->state_update_cycle)
 		panic("%s: cannot write checkpoint", __FUNCTION__);
 }
+
+/* Return the access name in the current cycle set in the state file */
+void visual_mod_access_get_name_long(char *access_name, char *buf, int size)
+{
+	struct visual_mod_access_t *access;
+
+	/* Look for access */
+	access = hash_table_get(visual_mem_system->access_table, access_name);
+	if (!access)
+		panic("%s: %s: invalid access", __FUNCTION__, access_name);
+
+	/* Name */
+	str_printf(&buf, &size, "<b>%s</b>", access->name);
+
+	/* State */
+	if (access->state && *access->state)
+		str_printf(&buf, &size, " (%s:%lld)", access->state,
+			state_file_get_cycle(visual_state_file) - access->state_update_cycle);
+}
+
+
+void visual_mod_access_get_name_short(char *access_name, char *buf, int size)
+{
+	struct visual_mod_access_t *access;
+
+	/* Look for access */
+	access = hash_table_get(visual_mem_system->access_table, access_name);
+	if (!access)
+		panic("%s: %s: invalid access", __FUNCTION__, access_name);
+
+	/* Name */
+	str_printf(&buf, &size, "%s", access->name);
+}
+
+
+void visual_mod_access_get_desc(char *access_name, char *buf, int size)
+{
+	char *title_format_begin = "<span color=\"blue\"><b>";
+	char *title_format_end = "</b></span>";
+
+	struct visual_mod_access_t *access;
+
+	struct trace_line_t *trace_line;
+
+	long long cycle;
+	long long current_cycle;
+
+	int i;
+
+	/* Look for access */
+	access = hash_table_get(visual_mem_system->access_table, access_name);
+	if (!access)
+		panic("%s: %s: invalid access", __FUNCTION__, access_name);
+
+	/* Title */
+	str_printf(&buf, &size, "%sDescription for access %s%s\n\n",
+		title_format_begin, access->name, title_format_end);
+
+	/* Fields */
+	str_printf(&buf, &size, "%sName:%s %s\n", title_format_begin,
+		title_format_end, access->name);
+	str_printf(&buf, &size, "%sCreation cycle:%s %lld\n", title_format_begin,
+		title_format_end, access->creation_cycle);
+
+	/* State */
+	current_cycle = state_file_get_cycle(visual_state_file);
+	if (access->state && *access->state)
+	{
+		str_printf(&buf, &size, "%sState:%s %s\n", title_format_begin,
+			title_format_end, access->state);
+		str_printf(&buf, &size, "%sState update cycle:%s %lld (%lld cycles ago)\n",
+			title_format_begin, title_format_end, access->state_update_cycle,
+			current_cycle - access->state_update_cycle);
+	}
+
+	/* Log header */
+	str_printf(&buf, &size, "\n%sState Log:%s\n", title_format_begin, title_format_end);
+	str_printf(&buf, &size, "%10s %6s %s\n", "Cycle", "Rel.", "State");
+	for (i = 0; i < 50; i++)
+		str_printf(&buf, &size, "-");
+	str_printf(&buf, &size, "\n");
+	cycle = access->creation_cycle;
+
+	/* Log */
+	for (trace_line = state_file_trace_line_first(visual_state_file, cycle);
+		trace_line; trace_line = state_file_trace_line_next(visual_state_file))
+	{
+		char *command;
+		char *access_name;
+		char *state;
+
+		/* Get command */
+		command = trace_line_get_command(trace_line);
+		access_name = trace_line_get_symbol_value(trace_line, "name");
+
+		/* Access starts */
+		if ((!strcmp(command, "mem.new_access") && !strcmp(access_name, access->name)) ||
+			(!strcmp(command, "mem.access") && !strcmp(access_name, access->name)))
+		{
+			state = trace_line_get_symbol_value(trace_line, "state");
+			str_printf(&buf, &size, "%10lld %6lld %s\n",
+				cycle, cycle - current_cycle, state);
+		}
+
+		/* Access ends */
+		if (!strcmp(command, "mem.end_access") && !strcmp(access_name, access->name))
+			break;
+
+		/* Cycle */
+		if (!strcmp(command, "c"))
+			cycle = trace_line_get_symbol_value_long_long(trace_line, "clk");
+	}
+}

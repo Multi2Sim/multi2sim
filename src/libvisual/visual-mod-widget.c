@@ -644,8 +644,8 @@ struct visual_mod_widget_t *visual_mod_widget_create(char *name)
 	/* Access list */
 	struct vlist_t *access_list;
 	access_list = vlist_create("Access list", 200, 30,
-		(vlist_get_elem_name_func_t) visual_mem_system_get_access_name_short,
-		(vlist_get_elem_desc_func_t) visual_mem_system_get_access_desc);
+		(vlist_get_elem_name_func_t) visual_mod_access_get_name_short,
+		(vlist_get_elem_desc_func_t) visual_mod_access_get_desc);
 	gtk_box_pack_start(GTK_BOX(vbox), vlist_get_widget(access_list), FALSE, FALSE, 0);
 	visual_mod_widget->access_list = access_list;
 
