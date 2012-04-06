@@ -191,6 +191,10 @@ struct state_file_t
 	/* Enumeration of header trace lines */
 	struct trace_line_t *header_trace_line;
 	long int header_trace_line_offset;
+
+	/* Enumeration of body trace lines */
+	struct trace_line_t *body_trace_line;
+	long int body_trace_line_offset;
 };
 
 
@@ -341,6 +345,10 @@ void state_file_free(struct state_file_t *file)
 	/* Free current header trace line if any */
 	if (file->header_trace_line)
 		trace_line_free(file->header_trace_line);
+
+	/* Free current body trace line if any */
+	if (file->body_trace_line)
+		trace_line_free(file->body_trace_line);
 
 	/* Free */
 	free(file->unzipped_trace_file_name);
@@ -513,6 +521,89 @@ struct trace_line_t *state_file_header_next(struct state_file_t *file)
 }
 
 
+struct trace_line_t *state_file_trace_line_first(struct state_file_t *file, long long cycle)
+{
+	long int trace_file_offset;
+
+	int checkpoint_index;
+
+	long long checkpoint_cycle;
+
+	struct state_checkpoint_t *checkpoint;
+
+	/* Release previous body trace line if any */
+	if (file->body_trace_line)
+	{
+		trace_line_free(file->body_trace_line);
+		file->body_trace_line = NULL;
+	}
+
+	/* Invalid cycle */
+	if (cycle > file->num_cycles)
+		return NULL;
+
+	/* Store current position in trace file */
+	trace_file_offset = ftell(file->unzipped_trace_file);
+
+	/* Get closest checkpoint */
+	checkpoint_index = cycle / STATE_CHECKPOINT_INTERVAL;
+	checkpoint_cycle = (long long) checkpoint_index * STATE_CHECKPOINT_INTERVAL;
+	checkpoint = list_get(file->checkpoint_list, checkpoint_index);
+	if (!checkpoint)
+		panic("%s: invalid checkpoint index", __FUNCTION__);
+
+	/* Set position in trace file */
+	fseek(file->unzipped_trace_file, checkpoint->unzipped_trace_file_offset, SEEK_SET);
+	file->body_trace_line_offset = checkpoint->unzipped_trace_file_offset;
+	for (;;)
+	{
+		/* Read trace line */
+		file->body_trace_line = trace_line_create_from_file(file->unzipped_trace_file);
+		file->body_trace_line_offset = checkpoint->unzipped_trace_file_offset;
+		if (!file->body_trace_line || checkpoint_cycle == cycle)
+			break;
+
+		/* Check if target cycle is exceeded */
+		if (!strcmp(trace_line_get_command(file->body_trace_line), "c") &&
+			trace_line_get_symbol_value_long_long(file->body_trace_line, "clk") >= cycle)
+			break;
+
+		/* Free trace line */
+		trace_line_free(file->body_trace_line);
+		file->body_trace_line = NULL;
+	}
+
+	/* Return to original position in trace file */
+	fseek(file->unzipped_trace_file, trace_file_offset, SEEK_SET);
+	return file->body_trace_line;
+}
+
+
+struct trace_line_t *state_file_trace_line_next(struct state_file_t *file)
+{
+	long long trace_file_offset;
+
+	/* Store current position in trace file */
+	trace_file_offset = ftell(file->unzipped_trace_file);
+
+	/* Release previous body trace line if any */
+	if (file->body_trace_line)
+	{
+		trace_line_free(file->body_trace_line);
+		file->body_trace_line = NULL;
+	}
+
+	/* Get next trace line */
+	fseek(file->unzipped_trace_file, file->body_trace_line_offset, SEEK_SET);
+	file->body_trace_line = trace_line_create_from_file(file->unzipped_trace_file);
+	file->body_trace_line_offset = ftell(file->unzipped_trace_file);
+
+	/* Return to original position in trace file */
+	fseek(file->unzipped_trace_file, trace_file_offset, SEEK_SET);
+	return file->body_trace_line;
+}
+
+
 /* Invoke the refresh call-back function for every category. */
 void state_file_refresh(struct state_file_t *file)
 {
@@ -538,7 +629,7 @@ void state_file_go_to_cycle(struct state_file_t *file, long long cycle)
 
 	/* Load a checkpoint */
 	checkpoint_index = cycle / STATE_CHECKPOINT_INTERVAL;
-	checkpoint_cycle = checkpoint_index * STATE_CHECKPOINT_INTERVAL;
+	checkpoint_cycle = (long long) checkpoint_index * STATE_CHECKPOINT_INTERVAL;
 	if (cycle < file->cycle || checkpoint_cycle > file->cycle)
 		state_file_read_checkpoint(file, checkpoint_index);
 
