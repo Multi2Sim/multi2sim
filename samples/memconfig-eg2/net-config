@@ -1,66 +1,63 @@
-[Network.net-0]
+[Network.net0]
 DefaultInputBufferSize = 1024 
 DefaultOutputBufferSize = 1024
 DefaultBandwidth = 256 
 
 ; Three nodes of switch 0, connected to 3 L1s
-[Network.net-0.Node.sw-0]
+
+[Network.net0.Node.sw0]
 Type = Switch
 
-[Network.net-0.Node.l1-0]
+[Network.net0.Node.n0]
 Type = EndNode
 
-[Network.net-0.Node.l1-1]
+[Network.net0.Node.n1]
 Type = EndNode
 
-[Network.net-0.Node.l1-2]
+[Network.net0.Node.n2]
 Type = EndNode
 
 ; 2nd switch, with 2 L2s
 
-[Network.net-0.Node.sw-1]
+[Network.net0.Node.sw1]
 Type = Switch
 
-[Network.net-0.Node.l2-0]
+[Network.net0.Node.n3]
 Type = EndNode
 
-[Network.net-0.Node.l2-1]
+[Network.net0.Node.n4]
 Type = EndNode
 
 
-[Network.net-0.Link.sw-0-sw-1]
-Source = sw-0
-Dest = sw-1
+[Network.net0.Link.sw0-sw1]
+Source = sw0
+Dest = sw1
 Type = Bidirectional
 
 
-[Network.net-0.Link.sw-0-l1-0]
-Source = sw-0
-Dest = l1-0
+[Network.net0.Link.sw0-n0]
+Source = sw0
+Dest = n0
 Type = Bidirectional
 
 
-[Network.net-0.Link.sw-0-l1-1]
-Source = sw-0
-Dest = l1-1
+[Network.net0.Link.sw0-n1]
+Source = sw0
+Dest = n1
+Type = Bidirectional
+
+[Network.net0.Link.sw0-n2]
+Source = sw0
+Dest = n2
+Type = Bidirectional
+
+[Network.net0.Link.sw1-n3]
+Source = sw1
+Dest = n3
 Type = Bidirectional
 
 
-[Network.net-0.Link.sw-0-l1-2]
-Source = sw-0
-Dest = l1-2
+[Network.net0.Link.sw1-n4]
+Source = sw1
+Dest = n4
 Type = Bidirectional
-
-
-[Network.net-0.Link.sw-1-l2-0]
-Source = sw-1
-Dest = l2-0
-Type = Bidirectional
-
-
-[Network.net-0.Link.sw-1-l2-1]
-Source = sw-1
-Dest = l2-1
-Type = Bidirectional
-
-

@@ -14,7 +14,6 @@ Latency = 2
 Policy = LRU
 Ports = 2
 
-
 [CacheGeometry geo-l2]
 Sets = 512
 Assoc = 4
@@ -75,16 +74,16 @@ LowModules = mod-l2-1
 Type = Cache
 Geometry = geo-l2
 HighNetwork = net-l1-l2-0
-LowNetwork = net-0
-LowNetworkNode = l2-0
+LowNetwork = net0
+LowNetworkNode = n0
 LowModules = mod-mm-0 mod-mm-1 mod-mm-2 mod-mm-3
 
 [Module mod-l2-1]
 Type = Cache
 Geometry = geo-l2
 HighNetwork = net-l1-l2-1
-LowNetwork = net-0
-LowNetworkNode = l2-1
+LowNetwork = net0
+LowNetworkNode = n1
 LowModules = mod-mm-0 mod-mm-1 mod-mm-2 mod-mm-3
 
 
@@ -94,32 +93,32 @@ LowModules = mod-mm-0 mod-mm-1 mod-mm-2 mod-mm-3
 Type = MainMemory
 BlockSize = 256
 Latency = 200
-HighNetwork = net-0
-HighNetworkNode = mm-0
+HighNetwork = net0
+HighNetworkNode = n2
 AddressRange = ADDR DIV 256 MOD 4 EQ 0
 
 [Module mod-mm-1]
 Type = MainMemory
 BlockSize = 256
 Latency = 200
-HighNetwork = net-0
-HighNetworkNode = mm-1
+HighNetwork = net0
+HighNetworkNode = n3
 AddressRange = ADDR DIV 256 MOD 4 EQ 1
 
 [Module mod-mm-2]
 Type = MainMemory
 BlockSize = 256
 Latency = 200
-HighNetwork = net-0
-HighNetworkNode = mm-2
+HighNetwork = net0
+HighNetworkNode = n4
 AddressRange = ADDR DIV 256 MOD 4 EQ 2
 
 [Module mod-mm-3]
 Type = MainMemory
 BlockSize = 256
 Latency = 200
-HighNetwork = net-0
-HighNetworkNode = mm-3
+HighNetwork = net0
+HighNetworkNode = n5
 AddressRange = ADDR DIV 256 MOD 4 EQ 3
 
 
