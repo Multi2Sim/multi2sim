@@ -36,8 +36,11 @@ static int can_commit_thread(int core, int thread)
 	if (!ctx || !ctx_get_status(ctx, ctx_running))
 		THREAD.last_commit_cycle = cpu->cycle;
 	if (cpu->cycle - THREAD.last_commit_cycle > 1000000)
-		panic("core-thread %d-%d: commit stall.\n%s",
+	{
+		fprintf(stderr, "core-thread %d-%d: commit stall.\n%s",
 			core, thread, err_commit_stall);
+		ke_sim_finish = ke_sim_finish_max_time; //////////////
+	}
 
 	/* If there is no instruction in the ROB, or the instruction is not
 	 * located at the ROB head in shared approaches, end. */

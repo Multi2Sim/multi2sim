@@ -183,12 +183,15 @@ static void visual_mem_system_new_access(struct visual_mem_system_t *system,
 
 	struct visual_mod_access_t *access;
 
+	unsigned int address;
+
 	/* Read fields */
 	name = trace_line_get_symbol_value(trace_line, "name");
 	state = trace_line_get_symbol_value(trace_line, "state");
+	address = trace_line_get_symbol_value_hex(trace_line, "addr");
 
 	/* Create new access */
-	access = visual_mod_access_create(name);
+	access = visual_mod_access_create(name, address);
 	visual_mod_access_set_state(access, state);
 
 	/* Add access to list */
@@ -235,7 +238,7 @@ static void visual_mem_system_new_access_mod(struct visual_mem_system_t *system,
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
 	/* Create new access and add to list */
-	access = visual_mod_access_create(access_name);
+	access = visual_mod_access_create(access_name, 0);
 	hash_table_insert(mod->access_table, access->name, access);
 }
 
@@ -292,7 +295,7 @@ static void visual_mem_system_new_access_block(struct visual_mem_system_t *syste
 		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
 
 	/* Create access and add to cache block */
-	access = visual_mod_access_create(access_name);
+	access = visual_mod_access_create(access_name, 0);
 	visual_mod_add_access(mod, set, way, access);
 }
 
@@ -378,7 +381,7 @@ static void visual_mem_system_read_checkpoint(struct visual_mem_system_t *system
 	/* Read accesses */
 	for (i = 0; i < num_accesses; i++)
 	{
-		access = visual_mod_access_create(NULL);
+		access = visual_mod_access_create(NULL, 0);
 		visual_mod_access_read_checkpoint(access, f);
 		hash_table_insert(visual_mem_system->access_table, access->name, access);
 	}

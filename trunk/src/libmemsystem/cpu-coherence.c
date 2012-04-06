@@ -144,10 +144,21 @@ void mod_handler_load(int event, void *data)
 			return;
 		}
 
+		/* If there is any older access to the same address that this access could not
+		 * be coalesced with, wait for it. */
+		older_stack = mod_in_flight_address(mod, stack->addr, stack);
+		if (older_stack)
+		{
+			mem_debug("    %lld wait for access %lld\n",
+				stack->id, older_stack->id);
+			mod_stack_wait_in_stack(stack, older_stack, EV_MOD_LOAD_LOCK);
+			return;
+		}
+
 		/* Call find and lock */
 		new_stack = mod_stack_create(stack->id, mod, stack->addr,
 			EV_MOD_LOAD_ACTION, stack);
-		new_stack->blocking = 1;
+		new_stack->blocking = 0;
 		new_stack->read = 1;
 		new_stack->retry = stack->retry;
 		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
@@ -324,7 +335,7 @@ void mod_handler_store(int event, void *data)
 		/* Call find and lock */
 		new_stack = mod_stack_create(stack->id, mod, stack->addr,
 			EV_MOD_STORE_ACTION, stack);
-		new_stack->blocking = 1;
+		new_stack->blocking = 0;
 		new_stack->read = 0;
 		new_stack->retry = stack->retry;
 		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
