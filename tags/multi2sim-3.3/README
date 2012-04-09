@@ -1,0 +1,476 @@
+===============================================================================
+Coding Guidelines
+===============================================================================
+
+* Indenting:
+	
+	Tabs should be used for indenting. It is recommended to configure your
+	editor with a tab size of 8 spaces for a coherent layout with other
+	developers of Multi2Sim.
+
+* Line wrapping:
+	
+	Lines should have an approximate maximum length of 80 characters,
+	including initial tabs (and assuming a tab counts as 8 characters).
+	Code should continue on the next line with an additional tab
+	otherwise. Example:
+
+	int long_function_with_many_arguments(int argument_1, char *arg2,
+		int arg3)
+	{
+		/* Function body */
+	}
+
+* Comments:
+
+	Comments should not use the double slash '//' notation. They should
+	use instead the '/* */' notation. Multiple-line comments should
+	use a '*' character at the beginning of each new line, respecting
+	the 80-character limit of the lines.
+
+	/* This is an example of a comment that spans multiple lines. When the
+	 * second line starts, an asterisk is used. */
+
+* Code blocks:
+
+	Brackets in code blocks should not share a line with other code, both
+	for opening and closing brackets.
+	The opening parenthesis should have no space on the left for a function
+	declaration, but it should have it for 'if', 'while', and 'for' blocks.
+	Examples:
+
+	void function(int arg1, char *arg2)
+	{
+	}
+
+	if (cond)
+	{
+		/* Block 1 */
+	}
+	else
+	{
+		/* Block 2 */
+	}
+
+	while (1)
+	{
+	}
+
+	for (i = 0; i < 10; i++)
+		only_one_line_example();
+
+* Enumerations:
+
+	Enumeration types should be named 'enum <xxx>_t', without using
+	'typedef' declarations. For example:
+
+	enum my_enum_t
+	{
+		err_list_ok = 0,
+		err_list_bounds,
+		err_list_not_fount
+	};
+
+* Memory allocation:
+
+	Dynamic memory allocation should be followed by a check that there was
+	enough virtual memory available. This affects malloc, calloc, strdup,
+	and strndup functions. Failing to allocate memory should cause a
+	standard fatal error, as follows:
+
+	void *buf;
+	char *s;
+
+	buf = malloc(100);
+	if (!buf)
+		fatal("%s: out of memory", __FUNCTION__);
+	
+	s = strdup("hello");
+	if (!s)
+		fatal("%s: out of memory", __FUNCTION__);
+
+* Structure declaration:
+
+	Structure types should be named 'struct <XXX>_t', without using
+	'typedef' declarations. For example:
+
+	struct my_struct_t
+	{
+		int field1;
+		char *field2;
+	};
+
+	If a structure is used with dynamic allocation simulating a C++
+	object, there should be two functions 'xxx_create' and 'xxx_free'
+	with the following structure:
+
+	struct my_struct_t *my_struct_create(void)
+	{
+		struct my_struct_t *my_struct;
+
+		/* Create object */
+		my_struct = calloc(1, sizeof(struct my_struct_t));
+		if (!my_struct)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* Initialize */
+		my_struct->field1 = ...
+		my_struct->field2 = ...
+
+		/* Return */
+		return my_struct;
+	}
+
+	void my_struct_free(struct my_struct_t *my_struct)
+	{
+		[ ... free fields ... ]
+		free(my_struct);
+	}
+
+* Forward declarations:
+
+	Forward declarations should be avoided. A source file ".c" in a library
+	should have two sections (if used) declaring private and public
+	functions. Private functions should be declared in the order they are
+	used to avoid forward declarations. Public functions should be included
+	in the ".h" file associated with the ".c" source (or common for the
+	entire library). For example:
+
+	/*
+	 * Private Functions
+	 */
+	
+	static void func1()
+	{
+		...
+	}
+
+	[ 2 line breaks ]
+
+	static void func2()
+	{
+		...
+	}
+
+	[ 4 line breaks ]
+
+	/*
+	 * Public Functions
+	 */
+	
+	void public_func1()
+	{
+		...
+	}
+
+
+* Variables declaration
+
+	Variables should be declared only at the beginning of code blocks (can
+	be primary or secondary code blocks). Variables declared for a code
+	block should be classified in categories, such as type, or location of
+	the code where they will be used. Several variables sharing the same
+	type should be listed in different lines. For example:
+
+	static void mem_config_read_networks(struct config_t *config)
+	{
+		struct net_t *net;
+		int i;
+	
+		char buf[MAX_STRING_SIZE];
+		char *section;
+	
+		/* Create networks */
+		for (section = config_section_first(config); section;
+			section = config_section_next(config))
+		{
+			char *net_name;
+	
+			/* Network section */
+			if (strncasecmp(section, "Network ", 8))
+				continue;
+			net_name = section + 8;
+	
+			/* Create network */
+			net = net_create(net_name);
+			mem_debug("\t%s\n", net_name);
+			list_add(mem_system->net_list, net);
+		}
+
+
+
+* Spaces:
+
+	Conditions and expressions in parenthesis should be have a space on the
+	left of the opening parenthesis. Arguments in a function and function
+	calls should not have a space on the left of the opening parenthesis.
+		
+		if (condition)
+		while (condition)
+		for (...)
+		void my_func_declaration(...);
+		my_func_call();
+	
+	No spaces are used after an opening parenthesis or before a closing
+	parenthesis. One space used after commas.
+
+		if (a < b)
+		void my_func_decl(int a, int b);
+	
+	Spaces should be used on both sides of operators, such as assignments or
+	arithmetic:
+
+		var1 = var2;
+		for (x = 0; x < 10; x++)
+		a += 2;
+		var1 = a < 3 ? 10 : 20;
+		result = (a + 3) / 5;
+	
+	Type casts should be followed by a space:
+
+		printf("%lld\n", (long long) value);
+
+
+===============================================================================
+Steps to Release a New Version Release (Administrator):
+===============================================================================
+
+	* svn commit all previous changes
+
+	* Run 'svn update' + 'svn2cl.sh'
+
+	* Update AM_INIT_AUTOMAKE in 'configure.ac'
+
+	* Remake all to update 'Makefiles'
+		~/multi2sim/trunk$ make clean
+		~/multi2sim/trunk$ make
+
+	* Add line in Changelog:
+		"Version X.Y.Z released"
+
+	* Copy 'trunk' directory into 'tags'. For example:
+		~/multi2sim$ svn cp trunk tags/multi2sim-X.Y.Z
+
+	* svn commit
+
+	* In trunk directory, create tar ball.
+		~/multi2sim/trunk$ make distcheck
+
+	* Copy tar ball to Multi2Sim server:
+		scp multi2sim-X.Y.Z.tar.gz $(M2S-SERVER):public_html/files/
+
+	* Update Multi2Sim web site.
+		* Log in.
+		* Click toolbox -> Special Pages -> Uncategorized templates
+		* Update 'Latest Version' and 'Latest Version Date'
+
+	* Send email to multi2sim@multi2sim.org
+
+
+===============================================================================
+Command to update Copyright in all files:
+===============================================================================
+
+sources=$(find | grep \\.c$)
+sed -i "s,^ \*  Copyright.*$, *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)," $sources
+
+
+===============================================================================
+Notes about the memory system
+===============================================================================
+
+When a memory address is accessed in an SRAM bank, the access time is calculated based on the following time components:
+
+* T_precharge: time to store the contents of the row buffer into its corresponding memory location.
+* T_row_buf_access: base access time to the row buffer.
+* T_activate: time to load a memory location into the row buffer.
+
+There are three possibilities to compute the access time T_access, one for each of the following scenarios:
+
+1) Row-closed. The row buffer is empty, and the new row needs to be activated before being accessed. T_access = T_activate + T_row_buf_access.
+2) Row-hit. The row buffer contains the requested address. T_access = T_row_buf_access.
+3) Row-conflict. The row buffer contains a different address. T_access = T_precharge + T_activate + T_row_buf_access.
+
+
+===============================================================================
+Help message for memory system configuration
+===============================================================================
+
+Option '--mem-config <file>' is used to configure the memory system. The
+configuration file is a plain-text file in the IniFile format. The memory system
+is formed of a set of cache modules, main memory modules, and interconnects.
+
+Interconnects can be defined in two different configuration files. The first way
+is using option '--net-config <file>' (use option '--help-net-config' for more
+information). Any network defined in the network configuration file can be
+referenced from the memory configuration file. These networks will be referred
+hereafter as external networks.
+
+The second option to define a network straight in the memory system
+configuration. This alternative is provided for convenience and brevity. By
+using sections [Network <name>], networks with a default topology are created,
+which include a single switch, and one bidirectional link from the switch to
+every end node present in the network.
+
+The following sections and variables can be used in the memory system
+configuration file:
+
+Section [General] defines global parameters affecting the entire memory system.
+
+  PageSize = <size>  (Default = 4096)
+      Memory page size. Virtual addresses are translated into new physical
+      addresses in ascending order at the granularity of the page size.
+
+Section [Module <name>] defines a generic memory module. This section is used to
+declare both caches and main memory modules accessible from CPU cores or GPU
+compute units.
+
+  Type = {Cache|MainMemory}  (Required)
+      Type of the memory module. From the simulation point of view, the
+      difference between a cache and a main memory module is that the former
+      contains only a subset of the data located at the memory locations it
+      serves.
+  Geometry = <geo>
+      Cache geometry, defined in a separate section of type [Geometry <geo>].
+      This variable is required for cache modules.
+  LowNetwork = <net>
+      Network connecting the module with other lower-level modules, i.e.,
+      modules closer to main memory. This variable is mandatory for caches, and
+      should not appear for main memory modules. Value <net> can refer to an
+      internal network defined in a [Network <net>] section, or to an external
+      network defined in the network configuration file.
+  LowNetworkNode = <node>
+      If 'LowNetwork' points to an external network, node in the network that
+      the module is mapped to. For internal networks, this variable should be
+      omitted.
+  HighNetwork = <net>
+      Network connecting the module with other higher-level modules, i.e.,
+      modules closer to CPU cores or GPU compute units. For highest level
+      modules accessible by CPU/GPU, this variable should be omitted.
+  HighNetworkNode = <node>
+      If 'HighNetwork' points to an external network, node that the module is
+      mapped to.
+  LowModules = <mod1> [<mod2> ...]
+      List of lower-level modules. For a cache module, this variable is rquired.
+      If there is only one lower-level module, it serves the entire address
+      space for the current module. If there are several lower-level modules,
+      each served a disjoint subset of the address space. This variable should
+      be omitted for main memory modules.
+  BlockSize = <size>
+      Block size in bytes. This variable is required for a main memory module.
+      It should be omitted for a cache module (in this case, the block size is
+      specified in the corresponding cache geometry section).
+  Latency = <cycles>
+      Memory access latency. This variable is required for a main memory module,
+      and should be omitted for a cache module (the access latency is specified
+      in the corresponding cache geometry section in this case).
+  AddressRange = { BOUNDS <low> <high> | ADDR DIV <div> MOD <mod> EQ <eq> }
+      Physical address range served by the module. If not specified, the entire
+      address space is served by the module. There are two possible formats for
+      the value of 'Range':
+      With the first format, the user can specify the lowest and highest byte
+      included in the address range. The value in <low> must be a multiple of
+      the module block size, and the value in <high> must be a multiple of the
+      block size minus 1.
+      With the second format, the address space can be split between different
+      modules in an interleaved manner. If dividing an address by <div> and
+      modulo <mod> makes it equal to <eq>, it is served by this module. The
+      value of <div> must be a multiple of the block size. When a module serves
+      only a subset of the address space, the user must make sure that the rest
+      of the modules at the same level serve the remaining address space.
+
+Section [CacheGeometry <geo>] defines a geometry for a cache. Caches using this
+geometry are instantiated [Module <name>] sections.
+
+  Sets = <num_sets> (Required)
+      Number of sets in the cache.
+  Assoc = <num_ways> (Required)
+      Cache associativity. The total number of blocks contained in the cache
+      is given by the product Sets * Assoc.
+  BlockSize = <size> (Required)
+      Size of a cache block in bytes. The total size of the cache is given by
+      the product Sets * Assoc * BlockSize.
+  Latency = <cycles> (Required)
+      Hit latency for a cache in number of cycles.
+  Policy = {LRU|FIFO|Random} (Default = LRU)
+      Block replacement policy.
+  MSHR = <size> (Default = 16)
+      Miss status holding register (MSHR) size in number of entries. This value
+      determines the maximum number of accesses that can be in flight for the
+      cache, including the time since the access request is received, until a
+      potential miss is resolved.
+  Ports = <num> (Default = 2)
+      Number of ports. The number of ports in a cache limits the number of
+      concurrent hits. If an access is a miss, it remains in the MSHR while it
+      is resolved, but releases the cache port.
+
+Section [Network <net>] defines an internal default interconnect, formed of a
+single switch connecting all modules pointing to the network. For every module
+in the network, a bidirectional link is created automatically between the module
+and the switch, together with the suitable input/output buffers in the switch
+and the module.
+
+  DefaultInputBufferSize = <size>
+      Size of input buffers for end nodes (memory modules) and switch.
+  DefaultOutputBufferSize = <size>
+      Size of output buffers for end nodes and switch. 
+  DefaultBandwidth = <bandwidth>
+      Bandwidth for links and switch crossbar in number of bytes per cycle.
+
+Section [Entry <name>] creates an entry into the memory system. An entry is a
+connection between a CPU core/thread or a GPU compute unit with a module in the
+memory system.
+
+  Type = {CPU | GPU}
+      Type of processing node that this entry refers to.
+  Core = <core>
+      CPU core identifier. This is a value between 0 and the number of cores
+      minus 1, as defined in the CPU configuration file. This variable should be
+      omitted for GPU entries.
+  Thread = <thread>
+      CPU thread identifier. Value between 0 and the number of threads per core
+      minus 1. Omitted for GPU entries.
+  ComputeUnit = <id>
+      GPU compute unit identifier. Value between 0 and the number of compute
+      units minus 1, as defined in the GPU configuration file. This variable
+      should be omitted for CPU entries.
+  DataModule = <mod>
+      Module in the memory system that will serve as an entry to a CPU
+      core/thread when reading/writing program data. The value in <mod>
+      corresponds to a module defined in a section [Module <mod>]. Omitted for
+      GPU entries.
+  InstModule = <mod>
+      Module serving as an entry to a CPU core/thread when fetching program
+      instructions. Omitted for GPU entries.
+  Module = <mod>
+      Module serving as an entry to a GPU compute unit when reading/writing
+      program data in the global memory scope. Omitted for CPU entries.
+
+
+===============================================================================
+Help message in IPC report file
+===============================================================================
+
+The IPC (instructions-per-cycle) report file shows performance value for a
+context at specific intervals. If a context spawns child contexts, only IPC
+statistics for the parent context are shown. The following fields are shown in
+each record:
+
+  <cycle>
+      Current simulation cycle. The increment between this value and the value
+      shown in the next record is the interval specified in the context
+      configuration file.
+
+  <inst>
+      Number of non-speculative instructions executed in the current interval.
+
+  <ipc-glob>
+      Global IPC observed so far. This value is equal to the number of executed
+      non-speculative instructions divided by the current cycle.
+
+  <ipc-int>
+      IPC observed in the current interval. This value is equal to the number
+      of instructions executed in the current interval divided by the number of
+      cycles of the interval.
+
+
