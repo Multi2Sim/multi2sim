@@ -45,6 +45,7 @@ struct string_map_t ke_sim_finish_map =
 		{ "MaxGPUKernels", ke_sim_finish_max_gpu_kernels },
 		{ "MaxTime", ke_sim_finish_max_time },
 		{ "Signal", ke_sim_finish_signal },
+		{ "Stall", ke_sim_finish_stall },
 		{ "GPUNoFaults", ke_sim_finish_gpu_no_faults }  /* GPU-REL */
 	}
 };
