@@ -11,7 +11,6 @@ libvisual_a_SOURCES += \
 	visual-private.h \
 	state-file.c \
 	trace-file.c \
-	vcache.c \
 	\
 	visual-mem-system.c \
 	visual-mod.c \
@@ -21,11 +20,7 @@ libvisual_a_SOURCES += \
 	visual-mem-system-widget.c \
 	visual-mod-widget.c \
 	\
-	vlist.c \
-	vmod.c \
-	vmod-access.c \
-	vmod-panel.c \
-	vnet.c
+	vlist.c
 
 AM_CFLAGS = @GTK_CFLAGS@
 
