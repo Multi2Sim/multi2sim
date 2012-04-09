@@ -37,9 +37,9 @@ static int can_commit_thread(int core, int thread)
 		THREAD.last_commit_cycle = cpu->cycle;
 	if (cpu->cycle - THREAD.last_commit_cycle > 1000000)
 	{
-		fprintf(stderr, "core-thread %d-%d: commit stall.\n%s",
+		warning("core-thread %d-%d: simulation ended due to commit stall.\n%s",
 			core, thread, err_commit_stall);
-		ke_sim_finish = ke_sim_finish_max_time; //////////////
+		ke_sim_finish = ke_sim_finish_stall;
 	}
 
 	/* If there is no instruction in the ROB, or the instruction is not

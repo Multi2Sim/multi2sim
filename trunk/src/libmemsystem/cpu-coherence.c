@@ -158,7 +158,7 @@ void mod_handler_load(int event, void *data)
 		/* Call find and lock */
 		new_stack = mod_stack_create(stack->id, mod, stack->addr,
 			EV_MOD_LOAD_ACTION, stack);
-		new_stack->blocking = 0;
+		new_stack->blocking = 1;
 		new_stack->read = 1;
 		new_stack->retry = stack->retry;
 		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
@@ -335,7 +335,7 @@ void mod_handler_store(int event, void *data)
 		/* Call find and lock */
 		new_stack = mod_stack_create(stack->id, mod, stack->addr,
 			EV_MOD_STORE_ACTION, stack);
-		new_stack->blocking = 0;
+		new_stack->blocking = 1;
 		new_stack->read = 0;
 		new_stack->retry = stack->retry;
 		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
@@ -555,9 +555,13 @@ void mod_handler_find_and_lock(int event, void *data)
 			return;
 		}
 
-		/* Lock directory entry */
-		if (!dir_entry_lock(mod->dir, stack->set, stack->way, EV_MOD_FIND_AND_LOCK_PORT, stack))
+		/* Lock directory entry. If lock fails, port needs to be released to prevent deadlock.
+		 * When the directory entry is released, locking port and directory entry will be retried. */
+		if (!dir_entry_lock(mod->dir, stack->set, stack->way, EV_MOD_FIND_AND_LOCK, stack))
+		{
+			mod_unlock_port(mod, port, stack);
 			return;
+		}
 
 		/* Entry is locked. Record the transient tag so that a subsequent lookup
 		 * detects that the block is being brought.
