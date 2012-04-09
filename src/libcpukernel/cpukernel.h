@@ -72,6 +72,7 @@ extern enum ke_sim_finish_t
 	ke_sim_finish_max_gpu_kernels,  /* Maximum number of GPU kernels */
 	ke_sim_finish_max_time,  /* Maximum simulation time reached */
 	ke_sim_finish_signal,  /* Signal received */
+	ke_sim_finish_stall,  /* Simulation stalled */
 	ke_sim_finish_gpu_no_faults  /* GPU-REL: no fault in '--gpu-stack-faults' caused error */
 } ke_sim_finish;
 
