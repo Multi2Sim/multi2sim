@@ -38,7 +38,7 @@
 
 
 /* Reset or update iteration counters for string operations. */
-static void op_rep_init(void)
+static void x86_isa_rep_init(void)
 {
 	if (x86_isa_ctx->last_eip == x86_isa_eip)
 	{
@@ -55,18 +55,18 @@ static void op_rep_init(void)
 
 
 #define OP_REP_IMPL(X, SIZE) \
-	void op_rep_##X##_impl() \
+	void x86_isa_rep_##X##_impl() \
 	{ \
-		op_rep_init(); \
+		x86_isa_rep_init(); \
 		\
 		if (x86_isa_regs->ecx) \
 		{ \
-			op_##X##_run(); \
+			x86_isa_##X##_run(); \
 			x86_isa_regs->ecx--; \
 			x86_isa_regs->eip -= x86_isa_inst.size; \
 		} \
 		\
-		op_##X##_uinst( \
+		x86_isa_##X##_uinst( \
 			x86_isa_ctx->str_op_esi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir, \
 			x86_isa_ctx->str_op_edi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir); \
 		x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
@@ -75,19 +75,19 @@ static void op_rep_init(void)
 
 
 #define OP_REPZ_IMPL(X, SIZE) \
-	void op_repz_##X##_impl() \
+	void x86_isa_repz_##X##_impl() \
 	{ \
-		op_rep_init(); \
+		x86_isa_rep_init(); \
 		\
 		if (x86_isa_regs->ecx) \
 		{ \
-			op_##X##_run(); \
+			x86_isa_##X##_run(); \
 			x86_isa_regs->ecx--; \
 			if (x86_isa_get_flag(x86_flag_zf)) \
 				x86_isa_regs->eip -= x86_isa_inst.size; \
 		} \
 		\
-		op_##X##_uinst( \
+		x86_isa_##X##_uinst( \
 			x86_isa_ctx->str_op_esi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir, \
 			x86_isa_ctx->str_op_edi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir); \
 		x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
@@ -96,19 +96,19 @@ static void op_rep_init(void)
 
 
 #define OP_REPNZ_IMPL(X, SIZE) \
-	void op_repnz_##X##_impl() \
+	void x86_isa_repnz_##X##_impl() \
 	{ \
-		op_rep_init(); \
+		x86_isa_rep_init(); \
 		\
 		if (x86_isa_regs->ecx) \
 		{ \
-			op_##X##_run(); \
+			x86_isa_##X##_run(); \
 			x86_isa_regs->ecx--; \
 			if (!x86_isa_get_flag(x86_flag_zf)) \
 				x86_isa_regs->eip -= x86_isa_inst.size; \
 		} \
 		\
-		op_##X##_uinst( \
+		x86_isa_##X##_uinst( \
 			x86_isa_ctx->str_op_esi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir, \
 			x86_isa_ctx->str_op_edi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir); \
 		x86_uinst_new(x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
@@ -122,7 +122,7 @@ static void op_rep_init(void)
  * CMPSB
  */
 
-static void op_cmpsb_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_cmpsb_uinst(uint32_t esi, uint32_t edi)
 {
 	x86_uinst_new_mem(x86_uinst_load, esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(x86_uinst_load, edi, 1, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
@@ -133,7 +133,7 @@ static void op_cmpsb_uinst(uint32_t esi, uint32_t edi)
 }
 
 
-static void op_cmpsb_run(void)
+static void x86_isa_cmpsb_run(void)
 {
 	uint8_t op1, op2;
 	unsigned long flags;
@@ -162,10 +162,10 @@ static void op_cmpsb_run(void)
 }
 
 
-void op_cmpsb_impl()
+void x86_isa_cmpsb_impl()
 {
-	op_cmpsb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_cmpsb_run();
+	x86_isa_cmpsb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_cmpsb_run();
 }
 
 
@@ -175,7 +175,7 @@ void op_cmpsb_impl()
  * CMPSD
  */
 
-static void op_cmpsd_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_cmpsd_uinst(uint32_t esi, uint32_t edi)
 {
 	x86_uinst_new_mem(x86_uinst_load, esi, 4, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(x86_uinst_load, edi, 4, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
@@ -186,7 +186,7 @@ static void op_cmpsd_uinst(uint32_t esi, uint32_t edi)
 }
 
 
-static void op_cmpsd_run(void)
+static void x86_isa_cmpsd_run(void)
 {
 	uint32_t op1, op2;
 	unsigned long flags;
@@ -215,10 +215,10 @@ static void op_cmpsd_run(void)
 }
 
 
-void op_cmpsd_impl()
+void x86_isa_cmpsd_impl()
 {
-	op_cmpsd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_cmpsd_run();
+	x86_isa_cmpsd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_cmpsd_run();
 }
 
 
@@ -228,22 +228,22 @@ void op_cmpsd_impl()
  * INSB
  */
 
-static void op_insb_run(void)
+static void x86_isa_insb_run(void)
 {
 	/* Not implemented */
 }
 
 
-static void op_insb_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_insb_uinst(uint32_t esi, uint32_t edi)
 {
 	/* Not implemented */
 }
 
 
-void op_insb_impl()
+void x86_isa_insb_impl()
 {
-	op_insb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_insb_run();
+	x86_isa_insb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_insb_run();
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
@@ -254,22 +254,22 @@ void op_insb_impl()
  * INSD
  */
 
-static void op_insd_run(void)
+static void x86_isa_insd_run(void)
 {
 	/* Not implemented */
 }
 
 
-static void op_insd_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_insd_uinst(uint32_t esi, uint32_t edi)
 {
 	/* Not implemented */
 }
 
 
-void op_insd_impl()
+void x86_isa_insd_impl()
 {
-	op_insd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_insd_run();
+	x86_isa_insd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_insd_run();
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
@@ -280,22 +280,22 @@ void op_insd_impl()
  * LODSB
  */
 
-static void op_lodsb_run(void)
+static void x86_isa_lodsb_run(void)
 {
 	/* Not implemented */
 }
 
 
-static void op_lodsb_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_lodsb_uinst(uint32_t esi, uint32_t edi)
 {
 	/* Not implemented */
 }
 
 
-void op_lodsb_impl()
+void x86_isa_lodsb_impl()
 {
-	op_lodsb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_lodsb_run();
+	x86_isa_lodsb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_lodsb_run();
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
@@ -306,22 +306,22 @@ void op_lodsb_impl()
  * LODSD
  */
 
-static void op_lodsd_run(void)
+static void x86_isa_lodsd_run(void)
 {
 	/* Not implemented */
 }
 
 
-static void op_lodsd_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_lodsd_uinst(uint32_t esi, uint32_t edi)
 {
 	/* Not implemented */
 }
 
 
-void op_lodsd_impl()
+void x86_isa_lodsd_impl()
 {
-	op_lodsd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_lodsd_run();
+	x86_isa_lodsd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_lodsd_run();
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
@@ -332,7 +332,7 @@ void op_lodsd_impl()
  * MOVSB
  */
 
-static void op_movsb_run(void)
+static void x86_isa_movsb_run(void)
 {
 	uint8_t m8;
 
@@ -344,7 +344,7 @@ static void op_movsb_run(void)
 }
 
 
-static void op_movsb_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_movsb_uinst(uint32_t esi, uint32_t edi)
 {
 	x86_uinst_new_mem(x86_uinst_load, esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(x86_uinst_store, edi, 1, x86_dep_edi, x86_dep_aux, 0, 0, 0, 0, 0);
@@ -354,10 +354,10 @@ static void op_movsb_uinst(uint32_t esi, uint32_t edi)
 }
 
 
-void op_movsb_impl()
+void x86_isa_movsb_impl()
 {
-	op_movsb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_movsb_run();
+	x86_isa_movsb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_movsb_run();
 }
 
 
@@ -367,7 +367,7 @@ void op_movsb_impl()
  * MOVSW
  */
 
-static void op_movsw_run(void)
+static void x86_isa_movsw_run(void)
 {
 	uint16_t m16;
 
@@ -380,7 +380,7 @@ static void op_movsw_run(void)
 }
 
 
-static void op_movsw_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_movsw_uinst(uint32_t esi, uint32_t edi)
 {
 	x86_uinst_new_mem(x86_uinst_load, esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(x86_uinst_store, edi, 1, x86_dep_edi, x86_dep_aux, 0, 0, 0, 0, 0);
@@ -390,10 +390,10 @@ static void op_movsw_uinst(uint32_t esi, uint32_t edi)
 }
 
 
-void op_movsw_impl()
+void x86_isa_movsw_impl()
 {
-	op_movsw_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_movsw_run();
+	x86_isa_movsw_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_movsw_run();
 }
 
 
@@ -402,7 +402,7 @@ void op_movsw_impl()
  * MOVSD
  */
 
-static void op_movsd_run(void)
+static void x86_isa_movsd_run(void)
 {
 	uint32_t m32;
 
@@ -415,7 +415,7 @@ static void op_movsd_run(void)
 }
 
 
-static void op_movsd_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_movsd_uinst(uint32_t esi, uint32_t edi)
 {
 	x86_uinst_new_mem(x86_uinst_load, esi, 4, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(x86_uinst_store, edi, 4, x86_dep_edi, x86_dep_aux, 0, 0, 0, 0, 0);
@@ -425,10 +425,10 @@ static void op_movsd_uinst(uint32_t esi, uint32_t edi)
 }
 
 
-void op_movsd_impl()
+void x86_isa_movsd_impl()
 {
-	op_movsd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_movsd_run();
+	x86_isa_movsd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_movsd_run();
 }
 
 
@@ -438,22 +438,22 @@ void op_movsd_impl()
  * OUTSB
  */
 
-static void op_outsb_run(void)
+static void x86_isa_outsb_run(void)
 {
 	/* Not implemented */
 }
 
 
-static void op_outsb_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_outsb_uinst(uint32_t esi, uint32_t edi)
 {
 	/* Not implemented */
 }
 
 
-void op_outsb_impl()
+void x86_isa_outsb_impl()
 {
-	op_outsb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_outsb_run();
+	x86_isa_outsb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_outsb_run();
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
@@ -464,22 +464,22 @@ void op_outsb_impl()
  * OUTSD
  */
 
-static void op_outsd_run(void)
+static void x86_isa_outsd_run(void)
 {
 	/* Not implemented */
 }
 
 
-static void op_outsd_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_outsd_uinst(uint32_t esi, uint32_t edi)
 {
 	/* Not implemented */
 }
 
 
-void op_outsd_impl()
+void x86_isa_outsd_impl()
 {
-	op_outsd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_outsd_run();
+	x86_isa_outsd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_outsd_run();
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
@@ -490,7 +490,7 @@ void op_outsd_impl()
  * SCAS
  */
 
-static void op_scasb_run(void)
+static void x86_isa_scasb_run(void)
 {
 	uint8_t al = x86_isa_load_reg(x86_reg_al);
 	uint8_t m8;
@@ -518,7 +518,7 @@ static void op_scasb_run(void)
 }
 
 
-static void op_scasb_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_scasb_uinst(uint32_t esi, uint32_t edi)
 {
 	x86_uinst_new_mem(x86_uinst_load, edi, 1, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_eax, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
@@ -526,10 +526,10 @@ static void op_scasb_uinst(uint32_t esi, uint32_t edi)
 }
 
 
-void op_scasb_impl()
+void x86_isa_scasb_impl()
 {
-	op_scasb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_scasb_run();
+	x86_isa_scasb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_scasb_run();
 }
 
 
@@ -538,7 +538,7 @@ void op_scasb_impl()
  * SCASD
  */
 
-static void op_scasd_run(void)
+static void x86_isa_scasd_run(void)
 {
 	uint32_t eax = x86_isa_load_reg(x86_reg_eax);
 	uint32_t m32;
@@ -566,7 +566,7 @@ static void op_scasd_run(void)
 }
 
 
-static void op_scasd_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_scasd_uinst(uint32_t esi, uint32_t edi)
 {
 	x86_uinst_new_mem(x86_uinst_load, edi, 4, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new(x86_uinst_sub, x86_dep_aux, x86_dep_eax, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
@@ -574,10 +574,10 @@ static void op_scasd_uinst(uint32_t esi, uint32_t edi)
 }
 
 
-void op_scasd_impl()
+void x86_isa_scasd_impl()
 {
-	op_scasd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_scasd_run();
+	x86_isa_scasd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_scasd_run();
 }
 
 
@@ -586,7 +586,7 @@ void op_scasd_impl()
  * STOSB
  */
 
-static void op_stosb_run(void)
+static void x86_isa_stosb_run(void)
 {
 	uint8_t m8 = x86_isa_load_reg(x86_reg_al);
 	uint32_t addr = x86_isa_load_reg(x86_reg_edi);
@@ -596,17 +596,17 @@ static void op_stosb_run(void)
 }
 
 
-static void op_stosb_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_stosb_uinst(uint32_t esi, uint32_t edi)
 {
 	x86_uinst_new_mem(x86_uinst_store, edi, 1, x86_dep_edi, x86_dep_eax, 0, 0, 0, 0, 0);
 	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
-void op_stosb_impl()
+void x86_isa_stosb_impl()
 {
-	op_stosb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_stosb_run();
+	x86_isa_stosb_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_stosb_run();
 }
 
 
@@ -616,7 +616,7 @@ void op_stosb_impl()
  * STOSD
  */
 
-static void op_stosd_run(void)
+static void x86_isa_stosd_run(void)
 {
 	uint32_t m32 = x86_isa_load_reg(x86_reg_eax);
 	uint32_t addr = x86_isa_load_reg(x86_reg_edi);
@@ -626,17 +626,17 @@ static void op_stosd_run(void)
 }
 
 
-static void op_stosd_uinst(uint32_t esi, uint32_t edi)
+static void x86_isa_stosd_uinst(uint32_t esi, uint32_t edi)
 {
 	x86_uinst_new_mem(x86_uinst_store, edi, 4, x86_dep_edi, x86_dep_eax, 0, 0, 0, 0, 0);
 	x86_uinst_new(x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
 }
 
 
-void op_stosd_impl()
+void x86_isa_stosd_impl()
 {
-	op_stosd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
-	op_stosd_run();
+	x86_isa_stosd_uinst(x86_isa_regs->esi, x86_isa_regs->edi);
+	x86_isa_stosd_run();
 }
 
 

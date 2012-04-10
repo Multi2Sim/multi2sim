@@ -24,7 +24,7 @@ int x86_ctx_debug_category;
 
 int EV_X86_CTX_IPC_REPORT;
 
-static char *help_ctx_ipc_report =
+static char *help_x86_ctx_ipc_report =
 	"The IPC (instructions-per-cycle) report file shows performance value for a\n"
 	"context at specific intervals. If a context spawns child contexts, only IPC\n"
 	"statistics for the parent context are shown. The following fields are shown in\n"
@@ -49,7 +49,7 @@ static char *help_ctx_ipc_report =
 	"\n";
 
 
-static struct string_map_t ctx_status_map =
+static struct string_map_t x86_ctx_status_map =
 {
 	16, {
 		{ "running",      x86_ctx_running },
@@ -234,7 +234,7 @@ void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 {
 	char sstatus[200];
 	fprintf(f, "  pid=%d\n", ctx->pid);
-	map_flags(&ctx_status_map, ctx->status, sstatus, 200);
+	map_flags(&x86_ctx_status_map, ctx->status, sstatus, 200);
 	fprintf(f, "  status=%s\n", sstatus);
 	if (!ctx->parent)
 		fprintf(f, "  parent=(null)\n");
@@ -328,7 +328,7 @@ int x86_ctx_get_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
 }
 
 
-static void ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
+static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
 {
 	enum x86_ctx_status_t status_diff;
 
@@ -381,7 +381,7 @@ static void ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t statu
 	if (debug_status(x86_ctx_debug_category) && (status_diff & ~x86_ctx_specmode))
 	{
 		char sstatus[200];
-		map_flags(&ctx_status_map, ctx->status, sstatus, 200);
+		map_flags(&x86_ctx_status_map, ctx->status, sstatus, 200);
 		x86_ctx_debug("ctx %d changed status to %s\n",
 			ctx->pid, sstatus);
 	}
@@ -390,13 +390,13 @@ static void ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t statu
 
 void x86_ctx_set_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
 {
-	ctx_update_status(ctx, ctx->status | status);
+	x86_ctx_update_status(ctx, ctx->status | status);
 }
 
 
 void x86_ctx_clear_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
 {
-	ctx_update_status(ctx, ctx->status & ~status);
+	x86_ctx_update_status(ctx, ctx->status & ~status);
 }
 
 
@@ -431,7 +431,7 @@ struct x86_ctx_t *x86_ctx_get_zombie(struct x86_ctx_t *parent, int pid)
 }
 
 
-/* If the context is running a 'ke_host_thread_suspend' thread,
+/* If the context is running a 'x86_emu_host_thread_suspend' thread,
  * cancel it and schedule call to 'x86_emu_process_events' */
 
 void __x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx)
@@ -713,7 +713,7 @@ void x86_ctx_gen_proc_self_maps(struct x86_ctx_t *ctx, char *path)
  * IPC report
  */
 
-struct ctx_ipc_report_stack_t
+struct x86_ctx_ipc_report_stack_t
 {
 	int pid;
 	long long inst_count;
@@ -721,12 +721,12 @@ struct ctx_ipc_report_stack_t
 
 void x86_ctx_ipc_report_schedule(struct x86_ctx_t *ctx)
 {
-	struct ctx_ipc_report_stack_t *stack;
+	struct x86_ctx_ipc_report_stack_t *stack;
 	FILE *f = ctx->loader->ipc_report_file;
 	int i;
 
 	/* Create new stack */
-	stack = calloc(1, sizeof(struct ctx_ipc_report_stack_t));
+	stack = calloc(1, sizeof(struct x86_ctx_ipc_report_stack_t));
 	if (!stack)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -736,7 +736,7 @@ void x86_ctx_ipc_report_schedule(struct x86_ctx_t *ctx)
 	stack->pid = ctx->pid;
 
 	/* Print header */
-	fprintf(f, "%s", help_ctx_ipc_report);
+	fprintf(f, "%s", help_x86_ctx_ipc_report);
 	fprintf(f, "%10s %8s %10s %10s\n", "cycle", "inst", "ipc-glob", "ipc-int");
 	for (i = 0; i < 43; i++)
 		fprintf(f, "-");
@@ -749,7 +749,7 @@ void x86_ctx_ipc_report_schedule(struct x86_ctx_t *ctx)
 
 void x86_ctx_ipc_report_handler(int event, void *data)
 {
-	struct ctx_ipc_report_stack_t *stack = data;
+	struct x86_ctx_ipc_report_stack_t *stack = data;
 	struct x86_ctx_t *ctx;
 
 	long long inst_count;

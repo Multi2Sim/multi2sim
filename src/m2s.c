@@ -286,9 +286,9 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
-				cpu_sim_kind = cpu_sim_functional;
+				x86_emu_kind = x86_emu_kind_functional;
 			else if (!strcasecmp(argv[argi], "detailed"))
-				cpu_sim_kind = cpu_sim_detailed;
+				x86_emu_kind = x86_emu_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], err_help_note);
@@ -718,7 +718,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Options that only make sense for CPU detailed simulation */
-	if (cpu_sim_kind == cpu_sim_functional)
+	if (x86_emu_kind == x86_emu_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional CPU simulation.\n"
 			"\tPlease use option '--cpu-sim detailed' as well.\n";
@@ -751,7 +751,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 	/* Options that only make sense one there is either CPU or GPU
 	 * detailed simulation. */
-	if (gpu_sim_kind == gpu_sim_functional && cpu_sim_kind == cpu_sim_functional)
+	if (gpu_sim_kind == gpu_sim_functional && x86_emu_kind == x86_emu_kind_functional)
 	{
 		char *msg = "option '%s' needs architectural CPU or GPU simulation.\n"
 			"\tPlease use option '--cpu-sim detailed' or '--gpu-sim detailed' as well.\n";
@@ -799,7 +799,7 @@ void sim_stats_summary(void)
 	double cycles_per_sec;
 
 	/* Check if any simulation was actually performed */
-	inst_count = cpu_sim_kind == cpu_sim_functional ? x86_emu->inst_count : cpu->inst;
+	inst_count = x86_emu_kind == x86_emu_kind_functional ? x86_emu->inst_count : cpu->inst;
 	if (!inst_count)
 		return;
 
@@ -822,7 +822,7 @@ void sim_stats_summary(void)
 	fprintf(stderr, "SimEnd = %s\n", map_value(&x86_emu_finish_map, x86_emu_finish));
 
 	/* CPU detailed simulation */
-	if (cpu_sim_kind == cpu_sim_detailed)
+	if (x86_emu_kind == x86_emu_kind_detailed)
 	{
 		inst_per_cycle = cpu->cycle ? (double) cpu->inst / cpu->cycle : 0.0;
 		branch_acc = cpu->branches ? (double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0;
@@ -924,7 +924,7 @@ int main(int argc, char **argv)
 	net_init();
 
 	/* Initialization for detailed simulation */
-	if (cpu_sim_kind == cpu_sim_detailed)
+	if (x86_emu_kind == x86_emu_kind_detailed)
 		cpu_init();
 	if (gpu_sim_kind == gpu_sim_detailed)
 		gpu_init();
@@ -939,7 +939,7 @@ int main(int argc, char **argv)
 	/* Simulation loop */
 	if (x86_emu->running_list_head)
 	{
-		if (cpu_sim_kind == cpu_sim_detailed)
+		if (x86_emu_kind == x86_emu_kind_detailed)
 			cpu_run();
 		else
 			x86_emu_run();
@@ -955,7 +955,7 @@ int main(int argc, char **argv)
 	mem_system_done();
 
 	/* Finalization of detailed CPU simulation */
-	if (cpu_sim_kind == cpu_sim_detailed)
+	if (x86_emu_kind == x86_emu_kind_detailed)
 	{
 		esim_debug_done();
 		cpu_done();

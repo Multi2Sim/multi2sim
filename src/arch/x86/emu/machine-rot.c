@@ -38,7 +38,7 @@
 
 
 #define op_xxx_rm8_1_impl(xxx, idep) \
-void op_##xxx##_rm8_1_impl() \
+void x86_isa_##xxx##_rm8_1_impl() \
 { \
 	uint8_t rm8 = x86_isa_load_rm8(); \
 	uint8_t count = 1; \
@@ -65,7 +65,7 @@ void op_##xxx##_rm8_1_impl() \
 
 
 #define op_xxx_rm8_cl_impl(xxx, idep) \
-void op_##xxx##_rm8_cl_impl() \
+void x86_isa_##xxx##_rm8_cl_impl() \
 { \
 	uint8_t rm8 = x86_isa_load_rm8(); \
 	uint8_t count = x86_isa_load_reg(x86_reg_cl); \
@@ -92,7 +92,7 @@ void op_##xxx##_rm8_cl_impl() \
 
 
 #define op_xxx_rm8_imm8_impl(xxx, idep) \
-void op_##xxx##_rm8_imm8_impl() \
+void x86_isa_##xxx##_rm8_imm8_impl() \
 { \
 	uint8_t rm8 = x86_isa_load_rm8(); \
 	uint8_t count = x86_isa_inst.imm.b; \
@@ -119,7 +119,7 @@ void op_##xxx##_rm8_imm8_impl() \
 
 
 #define op_xxx_rm16_1_impl(xxx, idep) \
-void op_##xxx##_rm16_1_impl() \
+void x86_isa_##xxx##_rm16_1_impl() \
 { \
 	uint16_t rm16 = x86_isa_load_rm16(); \
 	uint8_t count = 1; \
@@ -146,7 +146,7 @@ void op_##xxx##_rm16_1_impl() \
 
 
 #define op_xxx_rm16_cl_impl(xxx, idep) \
-void op_##xxx##_rm16_cl_impl() \
+void x86_isa_##xxx##_rm16_cl_impl() \
 { \
 	uint16_t rm16 = x86_isa_load_rm16(); \
 	uint8_t count = x86_isa_load_reg(x86_reg_cl); \
@@ -173,7 +173,7 @@ void op_##xxx##_rm16_cl_impl() \
 
 
 #define op_xxx_rm16_imm8_impl(xxx, idep) \
-void op_##xxx##_rm16_imm8_impl() \
+void x86_isa_##xxx##_rm16_imm8_impl() \
 { \
 	uint16_t rm16 = x86_isa_load_rm16(); \
 	uint8_t count = x86_isa_inst.imm.b; \
@@ -200,7 +200,7 @@ void op_##xxx##_rm16_imm8_impl() \
 
 
 #define op_xxx_rm32_1_impl(xxx, idep) \
-void op_##xxx##_rm32_1_impl() \
+void x86_isa_##xxx##_rm32_1_impl() \
 { \
 	uint32_t rm32 = x86_isa_load_rm32(); \
 	uint8_t count = 1; \
@@ -227,7 +227,7 @@ void op_##xxx##_rm32_1_impl() \
 
 
 #define op_xxx_rm32_cl_impl(xxx, idep) \
-void op_##xxx##_rm32_cl_impl() \
+void x86_isa_##xxx##_rm32_cl_impl() \
 { \
 	uint32_t rm32 = x86_isa_load_rm32(); \
 	uint8_t count = x86_isa_load_reg(x86_reg_cl); \
@@ -254,7 +254,7 @@ void op_##xxx##_rm32_cl_impl() \
 
 
 #define op_xxx_rm32_imm8_impl(xxx, idep) \
-void op_##xxx##_rm32_imm8_impl() \
+void x86_isa_##xxx##_rm32_imm8_impl() \
 { \
 	uint32_t rm32 = x86_isa_load_rm32(); \
 	uint8_t count = x86_isa_inst.imm.b; \

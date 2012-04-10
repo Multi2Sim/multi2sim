@@ -37,7 +37,7 @@
 #define assert __COMPILATION_ERROR__
 
 
-void op_f2xm1_impl()
+void x86_isa_f2xm1_impl()
 {
 	uint8_t st0[10];
 	uint16_t status;
@@ -64,7 +64,7 @@ void op_f2xm1_impl()
 }
 
 
-void op_fabs_impl()
+void x86_isa_fabs_impl()
 {
 	uint8_t st0[10];
 	uint16_t status;
@@ -91,7 +91,7 @@ void op_fabs_impl()
 }
 
 
-void op_fadd_m32_impl()
+void x86_isa_fadd_m32_impl()
 {
 	uint8_t st0[10];
 	float m32;
@@ -121,7 +121,7 @@ void op_fadd_m32_impl()
 }
 
 
-void op_fadd_m64_impl()
+void x86_isa_fadd_m64_impl()
 {
 	uint8_t st0[10];
 	double m64;
@@ -151,7 +151,7 @@ void op_fadd_m64_impl()
 }
 
 
-void op_fadd_st0_sti_impl()
+void x86_isa_fadd_st0_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -180,7 +180,7 @@ void op_fadd_st0_sti_impl()
 }
 
 
-void op_fadd_sti_st0_impl()
+void x86_isa_fadd_sti_st0_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -209,16 +209,16 @@ void op_fadd_sti_st0_impl()
 }
 
 
-void op_faddp_sti_st0_impl()
+void x86_isa_faddp_sti_st0_impl()
 {
-	op_fadd_sti_st0_impl();
+	x86_isa_fadd_sti_st0_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fchs_impl()
+void x86_isa_fchs_impl()
 {
 	uint8_t st0[10];
 	uint16_t status;
@@ -245,7 +245,7 @@ void op_fchs_impl()
 }
 
 
-void op_fcmovb_st0_sti_impl()
+void x86_isa_fcmovb_st0_sti_impl()
 {
 	uint8_t sti[10];
 	x86_isa_load_fpu(x86_isa_inst.opindex, sti);
@@ -256,7 +256,7 @@ void op_fcmovb_st0_sti_impl()
 }
 
 
-void op_fcmove_st0_sti_impl()
+void x86_isa_fcmove_st0_sti_impl()
 {
 	uint8_t sti[10];
 	x86_isa_load_fpu(x86_isa_inst.opindex, sti);
@@ -267,7 +267,7 @@ void op_fcmove_st0_sti_impl()
 }
 
 
-void op_fcmovbe_st0_sti_impl()
+void x86_isa_fcmovbe_st0_sti_impl()
 {
 	uint8_t sti[10];
 	x86_isa_load_fpu(x86_isa_inst.opindex, sti);
@@ -278,7 +278,7 @@ void op_fcmovbe_st0_sti_impl()
 }
 
 
-void op_fcmovu_st0_sti_impl()
+void x86_isa_fcmovu_st0_sti_impl()
 {
 	uint8_t sti[10];
 	x86_isa_load_fpu(x86_isa_inst.opindex, sti);
@@ -289,7 +289,7 @@ void op_fcmovu_st0_sti_impl()
 }
 
 
-void op_fcmovnb_st0_sti_impl()
+void x86_isa_fcmovnb_st0_sti_impl()
 {
 	uint8_t sti[10];
 	x86_isa_load_fpu(x86_isa_inst.opindex, sti);
@@ -300,7 +300,7 @@ void op_fcmovnb_st0_sti_impl()
 }
 
 
-void op_fcmovne_st0_sti_impl()
+void x86_isa_fcmovne_st0_sti_impl()
 {
 	uint8_t sti[10];
 	x86_isa_load_fpu(x86_isa_inst.opindex, sti);
@@ -311,7 +311,7 @@ void op_fcmovne_st0_sti_impl()
 }
 
 
-void op_fcmovnbe_st0_sti_impl()
+void x86_isa_fcmovnbe_st0_sti_impl()
 {
 	uint8_t sti[10];
 	x86_isa_load_fpu(x86_isa_inst.opindex, sti);
@@ -322,7 +322,7 @@ void op_fcmovnbe_st0_sti_impl()
 }
 
 
-void op_fcmovnu_st0_sti_impl()
+void x86_isa_fcmovnu_st0_sti_impl()
 {
 	uint8_t sti[10];
 	x86_isa_load_fpu(x86_isa_inst.opindex, sti);
@@ -333,7 +333,7 @@ void op_fcmovnu_st0_sti_impl()
 }
 
 
-void op_fcom_m32_impl()
+void x86_isa_fcom_m32_impl()
 {
 	uint8_t st0[10];
 	float m32;
@@ -360,7 +360,7 @@ void op_fcom_m32_impl()
 }
 
 
-void op_fcom_m64_impl()
+void x86_isa_fcom_m64_impl()
 {
 	uint8_t st0[10];
 	double m64;
@@ -387,7 +387,7 @@ void op_fcom_m64_impl()
 }
 
 
-void op_fcom_sti_impl()
+void x86_isa_fcom_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -414,34 +414,34 @@ void op_fcom_sti_impl()
 }
 
 
-void op_fcomp_m32_impl()
+void x86_isa_fcomp_m32_impl()
 {
-	op_fcom_m32_impl();
+	x86_isa_fcom_m32_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fcomp_m64_impl()
+void x86_isa_fcomp_m64_impl()
 {
-	op_fcom_m64_impl();
+	x86_isa_fcom_m64_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fcomp_sti_impl()
+void x86_isa_fcomp_sti_impl()
 {
-	op_fcom_sti_impl();
+	x86_isa_fcom_sti_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fcompp_impl()
+void x86_isa_fcompp_impl()
 {
 	uint8_t st0[10], st1[10];
 	uint16_t status;
@@ -472,7 +472,7 @@ void op_fcompp_impl()
 }
 
 
-void op_fcomi_st0_sti_impl()
+void x86_isa_fcomi_st0_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	unsigned long flags = x86_isa_regs->eflags;
@@ -501,16 +501,16 @@ void op_fcomi_st0_sti_impl()
 }
 
 
-void op_fcomip_st0_sti_impl()
+void x86_isa_fcomip_st0_sti_impl()
 {
-	op_fcomi_st0_sti_impl();
+	x86_isa_fcomi_st0_sti_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fucomi_st0_sti_impl()
+void x86_isa_fucomi_st0_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	unsigned long flags = x86_isa_regs->eflags;
@@ -539,16 +539,16 @@ void op_fucomi_st0_sti_impl()
 }
 
 
-void op_fucomip_st0_sti_impl()
+void x86_isa_fucomip_st0_sti_impl()
 {
-	op_fucomi_st0_sti_impl();
+	x86_isa_fucomi_st0_sti_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fcos_impl()
+void x86_isa_fcos_impl()
 {
 	uint8_t st0[10];
 	uint16_t status;
@@ -575,7 +575,7 @@ void op_fcos_impl()
 }
 
 
-void op_fdiv_m32_impl()
+void x86_isa_fdiv_m32_impl()
 {
 	uint8_t st0[10];
 	float m32;
@@ -605,7 +605,7 @@ void op_fdiv_m32_impl()
 }
 
 
-void op_fdiv_m64_impl()
+void x86_isa_fdiv_m64_impl()
 {
 	uint8_t st0[10];
 	double m64;
@@ -635,7 +635,7 @@ void op_fdiv_m64_impl()
 }
 
 
-void op_fdiv_st0_sti_impl()
+void x86_isa_fdiv_st0_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -664,7 +664,7 @@ void op_fdiv_st0_sti_impl()
 }
 
 
-void op_fdiv_sti_st0_impl()
+void x86_isa_fdiv_sti_st0_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -693,16 +693,16 @@ void op_fdiv_sti_st0_impl()
 }
 
 
-void op_fdivp_sti_st0_impl()
+void x86_isa_fdivp_sti_st0_impl()
 {
-	op_fdiv_sti_st0_impl();
+	x86_isa_fdiv_sti_st0_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fdivr_m32_impl()
+void x86_isa_fdivr_m32_impl()
 {
 	uint8_t st0[10];
 	float m32;
@@ -732,7 +732,7 @@ void op_fdivr_m32_impl()
 }
 
 
-void op_fdivr_m64_impl()
+void x86_isa_fdivr_m64_impl()
 {
 	uint8_t st0[10];
 	double m64;
@@ -762,7 +762,7 @@ void op_fdivr_m64_impl()
 }
 
 
-void op_fdivr_st0_sti_impl()
+void x86_isa_fdivr_st0_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -791,7 +791,7 @@ void op_fdivr_st0_sti_impl()
 }
 
 
-void op_fdivr_sti_st0_impl()
+void x86_isa_fdivr_sti_st0_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -820,16 +820,16 @@ void op_fdivr_sti_st0_impl()
 }
 
 
-void op_fdivrp_sti_st0_impl()
+void x86_isa_fdivrp_sti_st0_impl()
 {
-	op_fdivr_sti_st0_impl();
+	x86_isa_fdivr_sti_st0_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fild_m16_impl()
+void x86_isa_fild_m16_impl()
 {
 	int16_t m16;
 	uint8_t e[10];
@@ -852,7 +852,7 @@ void op_fild_m16_impl()
 }
 
 
-void op_fild_m32_impl()
+void x86_isa_fild_m32_impl()
 {
 	int32_t m32;
 	uint8_t e[10];
@@ -875,7 +875,7 @@ void op_fild_m32_impl()
 }
 
 
-void op_fild_m64_impl()
+void x86_isa_fild_m64_impl()
 {
 	int64_t m64;
 	uint8_t e[10];
@@ -898,7 +898,7 @@ void op_fild_m64_impl()
 }
 
 
-void op_fist_m16_impl()
+void x86_isa_fist_m16_impl()
 {
 	int16_t m16;
 	uint8_t e[10];
@@ -920,7 +920,7 @@ void op_fist_m16_impl()
 }
 
 
-void op_fist_m32_impl()
+void x86_isa_fist_m32_impl()
 {
 	int32_t m32;
 	uint8_t e[10];
@@ -942,7 +942,7 @@ void op_fist_m32_impl()
 }
 
 
-void op_fist_m64_impl()
+void x86_isa_fist_m64_impl()
 {
 	int64_t m64;
 	uint8_t e[10];
@@ -964,34 +964,34 @@ void op_fist_m64_impl()
 }
 
 
-void op_fistp_m16_impl()
+void x86_isa_fistp_m16_impl()
 {
-	op_fist_m16_impl();
+	x86_isa_fist_m16_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fistp_m32_impl()
+void x86_isa_fistp_m32_impl()
 {
-	op_fist_m32_impl();
+	x86_isa_fist_m32_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fistp_m64_impl()
+void x86_isa_fistp_m64_impl()
 {
-	op_fist_m64_impl();
+	x86_isa_fist_m64_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fld1_impl()
+void x86_isa_fld1_impl()
 {
 	uint8_t v[10];
 
@@ -1010,7 +1010,7 @@ void op_fld1_impl()
 }
 
 
-void op_fldl2e_impl()
+void x86_isa_fldl2e_impl()
 {
 	uint8_t v[10];
 
@@ -1029,7 +1029,7 @@ void op_fldl2e_impl()
 }
 
 
-void op_fldl2t_impl()
+void x86_isa_fldl2t_impl()
 {
 	uint8_t v[10];
 
@@ -1048,7 +1048,7 @@ void op_fldl2t_impl()
 }
 
 
-void op_fldpi_impl()
+void x86_isa_fldpi_impl()
 {
 	uint8_t v[10];
 
@@ -1067,7 +1067,7 @@ void op_fldpi_impl()
 }
 
 
-void op_fldlg2_impl()
+void x86_isa_fldlg2_impl()
 {
 	uint8_t v[10];
 
@@ -1086,7 +1086,7 @@ void op_fldlg2_impl()
 }
 
 
-void op_fldln2_impl()
+void x86_isa_fldln2_impl()
 {
 	uint8_t v[10];
 
@@ -1105,7 +1105,7 @@ void op_fldln2_impl()
 }
 
 
-void op_fldz_impl()
+void x86_isa_fldz_impl()
 {
 	uint8_t v[10];
 
@@ -1124,7 +1124,7 @@ void op_fldz_impl()
 }
 
 
-void op_fld_m32_impl()
+void x86_isa_fld_m32_impl()
 {
 	uint8_t e[10];
 	float m32;
@@ -1138,7 +1138,7 @@ void op_fld_m32_impl()
 }
 
 
-void op_fld_m64_impl()
+void x86_isa_fld_m64_impl()
 {
 	uint8_t e[10];
 	double m64;
@@ -1152,7 +1152,7 @@ void op_fld_m64_impl()
 }
 
 
-void op_fld_m80_impl()
+void x86_isa_fld_m80_impl()
 {
 	uint8_t e[10];
 	x86_isa_load_extended(e);
@@ -1163,7 +1163,7 @@ void op_fld_m80_impl()
 }
 
 
-void op_fld_sti_impl()
+void x86_isa_fld_sti_impl()
 {
 	uint8_t sti[10];
 	x86_isa_load_fpu(x86_isa_inst.opindex, sti);
@@ -1175,7 +1175,7 @@ void op_fld_sti_impl()
 }
 
 
-void op_fldcw_m16_impl()
+void x86_isa_fldcw_m16_impl()
 {
 	uint32_t addr = x86_isa_effective_address();
 	uint16_t value;
@@ -1196,7 +1196,7 @@ void op_fldcw_m16_impl()
 }
 
 
-void op_fmul_m32_impl()
+void x86_isa_fmul_m32_impl()
 {
 	uint8_t st0[10];
 	float m32;
@@ -1226,7 +1226,7 @@ void op_fmul_m32_impl()
 }
 
 
-void op_fmul_m64_impl()
+void x86_isa_fmul_m64_impl()
 {
 	uint8_t st0[10];
 	double m64;
@@ -1256,7 +1256,7 @@ void op_fmul_m64_impl()
 }
 
 
-void op_fmul_st0_sti_impl()
+void x86_isa_fmul_st0_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -1285,7 +1285,7 @@ void op_fmul_st0_sti_impl()
 }
 
 
-void op_fmul_sti_st0_impl()
+void x86_isa_fmul_sti_st0_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -1314,22 +1314,22 @@ void op_fmul_sti_st0_impl()
 }
 
 
-void op_fmulp_sti_st0_impl()
+void x86_isa_fmulp_sti_st0_impl()
 {
-	op_fmul_sti_st0_impl();
+	x86_isa_fmul_sti_st0_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fnstcw_m16_impl()
+void x86_isa_fnstcw_m16_impl()
 {
-	op_fstcw_m16_impl();
+	x86_isa_fstcw_m16_impl();
 }
 
 
-void op_fnstsw_ax_impl()
+void x86_isa_fnstsw_ax_impl()
 {
 	uint16_t status = x86_isa_load_fpu_status();
 	x86_isa_store_reg(x86_reg_ax, status);
@@ -1338,7 +1338,7 @@ void op_fnstsw_ax_impl()
 }
 
 
-void op_fpatan_impl()
+void x86_isa_fpatan_impl()
 {
 	uint8_t st0[10], st1[10];
 	uint16_t status;
@@ -1369,7 +1369,7 @@ void op_fpatan_impl()
 }
 
 
-void op_fprem_impl()
+void x86_isa_fprem_impl()
 {
 	uint8_t st0[10], st1[10];
 	uint16_t status;
@@ -1399,7 +1399,7 @@ void op_fprem_impl()
 }
 
 
-void op_fprem1_impl()
+void x86_isa_fprem1_impl()
 {
 	uint8_t st0[10], st1[10];
 	uint16_t status;
@@ -1429,7 +1429,7 @@ void op_fprem1_impl()
 }
 
 
-void op_fptan_impl()
+void x86_isa_fptan_impl()
 {
 	uint8_t st0[10];
 	uint16_t status;
@@ -1454,12 +1454,12 @@ void op_fptan_impl()
 
 	x86_uinst_new(x86_uinst_fp_tan, x86_dep_st0, 0, 0, x86_dep_st0, x86_dep_st1, 0, 0);
 
-	op_fld1_impl();
+	x86_isa_fld1_impl();
 	x86_isa_store_fpu_code(status);
 }
 
 
-void op_frndint_impl()
+void x86_isa_frndint_impl()
 {
 	uint8_t st0[10];
 	uint16_t status;
@@ -1486,7 +1486,7 @@ void op_frndint_impl()
 }
 
 
-void op_fscale_impl()
+void x86_isa_fscale_impl()
 {
 	uint8_t st0[10], st1[10];
 	uint16_t status;
@@ -1516,7 +1516,7 @@ void op_fscale_impl()
 }
 
 
-void op_fsin_impl()
+void x86_isa_fsin_impl()
 {
 	uint8_t st0[10];
 	int16_t status;
@@ -1543,7 +1543,7 @@ void op_fsin_impl()
 }
 
 
-void op_fsincos_impl()
+void x86_isa_fsincos_impl()
 {
 	uint8_t st0[10], vsin[10], vcos[10];
 	uint16_t status;
@@ -1575,7 +1575,7 @@ void op_fsincos_impl()
 }
 
 
-void op_fsqrt_impl()
+void x86_isa_fsqrt_impl()
 {
 	uint8_t st0[10];
 	uint16_t status;
@@ -1602,7 +1602,7 @@ void op_fsqrt_impl()
 }
 
 
-void op_fst_m32_impl()
+void x86_isa_fst_m32_impl()
 {
 	uint8_t st0[10];
 	float m32;
@@ -1615,7 +1615,7 @@ void op_fst_m32_impl()
 }
 
 
-void op_fst_m64_impl()
+void x86_isa_fst_m64_impl()
 {
 	uint8_t st0[10];
 	double m64;
@@ -1628,7 +1628,7 @@ void op_fst_m64_impl()
 }
 
 
-void op_fst_sti_impl()
+void x86_isa_fst_sti_impl()
 {
 	uint8_t st0[10];
 
@@ -1639,25 +1639,25 @@ void op_fst_sti_impl()
 }
 
 
-void op_fstp_m32_impl()
+void x86_isa_fstp_m32_impl()
 {
-	op_fst_m32_impl();
+	x86_isa_fst_m32_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fstp_m64_impl()
+void x86_isa_fstp_m64_impl()
 {
-	op_fst_m64_impl();
+	x86_isa_fst_m64_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fstp_m80_impl()
+void x86_isa_fstp_m80_impl()
 {
 	uint8_t m80[10];
 	x86_isa_pop_fpu(m80);
@@ -1668,16 +1668,16 @@ void op_fstp_m80_impl()
 }
 
 
-void op_fstp_sti_impl()
+void x86_isa_fstp_sti_impl()
 {
-	op_fst_sti_impl();
+	x86_isa_fst_sti_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fstsw_ax_impl()
+void x86_isa_fstsw_ax_impl()
 {
 	uint16_t status = x86_isa_load_fpu_status();
 	x86_isa_store_reg(x86_reg_ax, status);
@@ -1686,7 +1686,7 @@ void op_fstsw_ax_impl()
 }
 
 
-void op_fsub_m32_impl()
+void x86_isa_fsub_m32_impl()
 {
 	uint8_t st0[10];
 	float m32;
@@ -1716,7 +1716,7 @@ void op_fsub_m32_impl()
 }
 
 
-void op_fsub_m64_impl()
+void x86_isa_fsub_m64_impl()
 {
 	uint8_t st0[10];
 	double m64;
@@ -1746,7 +1746,7 @@ void op_fsub_m64_impl()
 }
 
 
-void op_fsub_st0_sti_impl()
+void x86_isa_fsub_st0_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -1775,7 +1775,7 @@ void op_fsub_st0_sti_impl()
 }
 
 
-void op_fsub_sti_st0_impl()
+void x86_isa_fsub_sti_st0_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -1804,16 +1804,16 @@ void op_fsub_sti_st0_impl()
 }
 
 
-void op_fsubp_sti_st0_impl()
+void x86_isa_fsubp_sti_st0_impl()
 {
-	op_fsub_sti_st0_impl();
+	x86_isa_fsub_sti_st0_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fsubr_m32_impl()
+void x86_isa_fsubr_m32_impl()
 {
 	uint8_t st0[10];
 	float m32;
@@ -1843,7 +1843,7 @@ void op_fsubr_m32_impl()
 }
 
 
-void op_fsubr_m64_impl()
+void x86_isa_fsubr_m64_impl()
 {
 	uint8_t st0[10];
 	double m64;
@@ -1873,7 +1873,7 @@ void op_fsubr_m64_impl()
 }
 
 
-void op_fsubr_st0_sti_impl()
+void x86_isa_fsubr_st0_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -1902,7 +1902,7 @@ void op_fsubr_st0_sti_impl()
 }
 
 
-void op_fsubr_sti_st0_impl()
+void x86_isa_fsubr_sti_st0_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -1931,16 +1931,16 @@ void op_fsubr_sti_st0_impl()
 }
 
 
-void op_fsubrp_sti_st0_impl()
+void x86_isa_fsubrp_sti_st0_impl()
 {
-	op_fsubr_sti_st0_impl();
+	x86_isa_fsubr_sti_st0_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fstcw_m16_impl()
+void x86_isa_fstcw_m16_impl()
 {
 	uint16_t value = x86_isa_regs->fpu_ctrl;
 
@@ -1958,7 +1958,7 @@ void op_fstcw_m16_impl()
 }
 
 
-void op_ftst_impl()
+void x86_isa_ftst_impl()
 {
 	uint8_t st0[10];
 	uint16_t status;
@@ -1984,7 +1984,7 @@ void op_ftst_impl()
 }
 
 
-void op_fucom_sti_impl()
+void x86_isa_fucom_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	uint16_t status;
@@ -2011,16 +2011,16 @@ void op_fucom_sti_impl()
 }
 
 
-void op_fucomp_sti_impl()
+void x86_isa_fucomp_sti_impl()
 {
-	op_fucom_sti_impl();
+	x86_isa_fucom_sti_impl();
 	x86_isa_pop_fpu(NULL);
 
 	x86_uinst_new(x86_uinst_fp_pop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
-void op_fucompp_impl()
+void x86_isa_fucompp_impl()
 {
 	uint8_t st0[10], st1[10];
 	uint16_t status;
@@ -2051,7 +2051,7 @@ void op_fucompp_impl()
 }
 
 
-void op_fxam_impl()
+void x86_isa_fxam_impl()
 {
 	uint8_t st0[10];
 	uint16_t status;
@@ -2077,7 +2077,7 @@ void op_fxam_impl()
 }
 
 
-void op_fxch_sti_impl()
+void x86_isa_fxch_sti_impl()
 {
 	uint8_t st0[10], sti[10];
 	x86_isa_load_fpu(0, st0);
@@ -2089,7 +2089,7 @@ void op_fxch_sti_impl()
 }
 
 
-void op_fyl2x_impl()
+void x86_isa_fyl2x_impl()
 {
 	uint8_t st0[10], st1[10];
 	uint16_t status;
@@ -2120,7 +2120,7 @@ void op_fyl2x_impl()
 }
 
 
-void op_fyl2xp1_impl()
+void x86_isa_fyl2xp1_impl()
 {
 	uint8_t st0[10], st1[10];
 	uint16_t status;

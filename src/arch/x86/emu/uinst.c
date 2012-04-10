@@ -28,8 +28,8 @@ struct list_t *x86_uinst_list;
 
 
 /* Direct look-up table for regular dependences */
-char *x86_uinst_dep_name[] = {
-
+char *x86_uinst_dep_name[] =
+{
 	"-",  /* 0 */
 
 	"eax",  /* 1 */
@@ -383,10 +383,11 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
 	if (mem_dep_size)
 	{
 		/* If uinst is 'move', just convert it into a 'store' */
-		if (uinst->opcode == x86_uinst_move) {
-
+		if (uinst->opcode == x86_uinst_move)
+		{
 			/* Try to add 'ea' as input dependence */
-			if (x86_uinst_add_idep(uinst, x86_dep_ea)) {
+			if (x86_uinst_add_idep(uinst, x86_dep_ea))
+			{
 				uinst->opcode = x86_uinst_store;
 				uinst->dep[index] = x86_dep_none;
 				uinst->address = x86_isa_effective_address();
@@ -432,7 +433,8 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index)
 	{
 		/* If uinst is 'move', just convert it into a 'load' */
 		/* Replace 'rmXXX' by 'ea' dependence */
-		if (uinst->opcode == x86_uinst_move) {
+		if (uinst->opcode == x86_uinst_move)
+		{
 			uinst->opcode = x86_uinst_load;
 			uinst->dep[index] = x86_dep_ea;
 			uinst->address = x86_isa_effective_address();
@@ -516,7 +518,7 @@ void __x86_uinst_new_mem(enum x86_uinst_opcode_t opcode, uint32_t address, int s
 	int i;
 
 	/* Do nothing for functional simulation */
-	if (cpu_sim_kind == cpu_sim_functional)
+	if (x86_emu_kind == x86_emu_kind_functional)
 		return;
 	
 	/* Create uinst */
@@ -600,7 +602,8 @@ void x86_uinst_dump_buf(struct x86_uinst_t *uinst, char *buf, int size)
 	/* Input operands */
 	comma = "";
 	dep_count = 0;
-	for (i = 0; i < X86_UINST_MAX_IDEPS; i++) {
+	for (i = 0; i < X86_UINST_MAX_IDEPS; i++)
+	{
 		dep = uinst->idep[i];
 		if (!dep)
 			continue;
@@ -631,7 +634,8 @@ void x86_uinst_list_dump(FILE *f)
 	struct x86_uinst_t *uinst;
 	int i;
 
-	for (i = 0; i < list_count(x86_uinst_list); i++) {
+	for (i = 0; i < list_count(x86_uinst_list); i++)
+	{
 		uinst = list_get(x86_uinst_list, i);
 		fprintf(f, "  ");
 		x86_uinst_dump(uinst, f);
