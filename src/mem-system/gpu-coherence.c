@@ -18,7 +18,7 @@
  */
 
 #include <mem-system.h>
-#include <gpuarch.h>
+#include <evergreen-timing.h>
 
 
 /*
