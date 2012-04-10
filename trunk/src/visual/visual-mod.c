@@ -338,10 +338,14 @@ void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
 			block = &mod->blocks[set * mod->assoc + way];
 
 			/* Read tag */
-			fread(&block->tag, 1, 4, f);
+			count = fread(&block->tag, 1, 4, f);
+			if (count != 4)
+				fatal("%s: error reading from checkpoint", __FUNCTION__);
 
 			/* Read state */
-			fread(&state, 1, 1, f);
+			count = fread(&state, 1, 1, f);
+			if (!count != 1)
+				fatal("%s: error reading from checkpoint", __FUNCTION__);
 			block->state = state;
 
 			/* Read directory entry */
