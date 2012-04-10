@@ -49,7 +49,7 @@ void regs_fpu_stack_dump(struct regs_t *regs, FILE *f)
 	index = (regs->fpu_top + 7) % 8;
 	for (i = 0; i < 8; i++) {
 		if (regs->fpu_stack[index].valid) {
-			value = isa_extended_to_double(regs->fpu_stack[index].value);
+			value = x86_isa_extended_to_double(regs->fpu_stack[index].value);
 			fprintf(f, "%s%g", comma, value);
 			comma = ", ";
 		}

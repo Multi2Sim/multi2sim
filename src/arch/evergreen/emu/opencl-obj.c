@@ -439,10 +439,10 @@ void opencl_context_set_properties(struct opencl_context_t *context, struct mem_
 	while (addr) {
 
 		/* Read property */
-		mem_read(isa_mem, addr, 4, &property);
+		mem_read(x86_isa_mem, addr, 4, &property);
 		if (!property)
 			break;
-		mem_read(isa_mem, addr + 4, 4, &value);
+		mem_read(x86_isa_mem, addr + 4, 4, &value);
 		addr += 8;
 
 		/* Analyze property */
