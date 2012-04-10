@@ -17,10 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <gpukernel.h>
-#include <cpukernel.h>
 #include <assert.h>
 #include <debug.h>
+
+#include <gpukernel.h>
+#include <x86-emu.h>
 
 
 /* Required 'libm2s-opencl.so' version.

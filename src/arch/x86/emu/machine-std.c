@@ -18,7 +18,7 @@
  */
 
 
-#include <cpukernel.h>
+#include <x86-emu.h>
 
 
 /* Macros defined to prevent accidental use of 'mem_<xx>' instructions */

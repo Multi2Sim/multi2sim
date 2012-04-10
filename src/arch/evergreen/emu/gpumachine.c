@@ -18,7 +18,7 @@
  */
 
 #include <gpukernel.h>
-#include <cpukernel.h>
+#include <x86-emu.h>
 #include <math.h>
 
 extern struct gpu_ndrange_t *gpu_isa_ndrange;

@@ -17,8 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <cpukernel.h>
+#include <x86-emu.h>
 #include <sys/mman.h>
+
 
 /* Total space allocated for memory pages */
 unsigned long mem_mapped_space = 0;

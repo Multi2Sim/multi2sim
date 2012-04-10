@@ -17,15 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <cpudisasm.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <misc.h>
 #include <debug.h>
 
+#include <x86-asm.h>
 
-/* Flags used in machine.dat */
+
+/* Flags used in asm.dat */
 #define SKIP  0x0100  /* for op1, op2, modrm, imm */
 #define REG   0x0200  /* for modrm */
 #define MEM   0x0400  /* for modrm */
@@ -35,12 +36,12 @@
 #define ID    0x8000  /* for imm */
 
 
-/* This struct contains information derived from machine.dat, which
+/* This struct contains information derived from asm.dat, which
  * is initialized in disasm_init, to form linked lists in the table
  * x86_opcode_info_table and a single list in x86_opcode_info_list. */
 struct x86_opcode_info_t
 {
-	/* Obtained from machine.dat */
+	/* Obtained from asm.dat */
 	enum x86_opcode_t opcode;
 	uint32_t op1, op2, op3, modrm, imm;
 	int prefixes;  /* Mask of prefixes of type 'enum x86_prefix_enum' */
@@ -84,7 +85,7 @@ static struct x86_opcode_info_t x86_opcode_info_list[x86_opcode_count] =
 
 #define DEFINST(name,op1,op2,op3,modrm,imm,pfx) \
 , { op_##name, op1, op2, op3, modrm, imm, pfx, #name, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-#include <machine.dat>
+#include <x86-asm.dat>
 #undef DEFINST
 
 };
