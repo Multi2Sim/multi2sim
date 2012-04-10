@@ -17,9 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <gpukernel.h>
-#include <x86-emu.h>
 #include <repos.h>
+
+#include <evergreen-emu.h>
+#include <x86-emu.h>
 
 
 /* Some globals */
@@ -57,7 +58,7 @@ void gpu_isa_init()
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	extern void amd_inst_##_name##_impl(); \
 	amd_inst_impl[AMD_INST_##_name] = amd_inst_##_name##_impl;
-#include <gpudisasm.dat>
+#include <evergreen-asm.dat>
 #undef DEFINST
 
 	/* Repository of deferred tasks */

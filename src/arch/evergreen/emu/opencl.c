@@ -20,7 +20,7 @@
 #include <assert.h>
 #include <debug.h>
 
-#include <gpukernel.h>
+#include <evergreen-emu.h>
 #include <x86-emu.h>
 
 
