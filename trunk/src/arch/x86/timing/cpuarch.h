@@ -25,7 +25,8 @@
 #include <list.h>
 #include <linked-list.h>
 #include <repos.h>
-#include <cpukernel.h>
+
+#include <x86-emu.h>
 #include <mem-system.h>
 
 

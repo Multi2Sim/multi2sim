@@ -20,7 +20,7 @@
 #include <gpuarch.h>
 #include <gpukernel.h>
 #include <heap.h>
-#include <cpukernel.h>
+#include <x86-emu.h>
 
 
 char *gpu_faults_file_name = "";

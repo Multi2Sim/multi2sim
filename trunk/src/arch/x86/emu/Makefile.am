@@ -1,10 +1,12 @@
 lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
-	cpukernel.h \
+	\
+	x86-emu.h \
+	\
 	isa.c \
 	context.c \
-	cpukernel.c \
+	emu.c \
 	file.c \
 	loader.c \
 	machine.c \
