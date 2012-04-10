@@ -32,31 +32,35 @@ int x86_rob_size;
 
 /* Private variables */
 
-static int total_rob_size = 0;
+static int x86_rob_total_size = 0;
 
 
 
 
-/* Private Functions */
+/*
+ * Private Functions
+ */
 
-static void rob_trim(int core)
+static void x86_rob_trim(int core)
 {
 	int idx;
 	struct x86_uop_t *uop;
 
 	/* Trim head */
-	while (X86_CORE.rob_count) {
+	while (X86_CORE.rob_count)
+	{
 		uop = list_get(X86_CORE.rob, X86_CORE.rob_head);
 		if (uop)
 			break;
-		X86_CORE.rob_head = X86_CORE.rob_head == total_rob_size - 1 ?
+		X86_CORE.rob_head = X86_CORE.rob_head == x86_rob_total_size - 1 ?
 			0 : X86_CORE.rob_head + 1;
 		X86_CORE.rob_count--;
 	}
 
 	/* Trim tail */
-	while (X86_CORE.rob_count) {
-		idx = X86_CORE.rob_tail ? X86_CORE.rob_tail - 1 : total_rob_size - 1;
+	while (X86_CORE.rob_count)
+	{
+		idx = X86_CORE.rob_tail ? X86_CORE.rob_tail - 1 : x86_rob_total_size - 1;
 		uop = list_get(X86_CORE.rob, idx);
 		if (uop)
 			break;
@@ -68,19 +72,24 @@ static void rob_trim(int core)
 
 
 
-/* Public Functions */
+/*
+ * Public Functions
+ */
 
 void x86_rob_init()
 {
-	int core, thread;
+	int core;
+	int thread;
 	int i;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
 
 	case x86_rob_kind_private:
 
 		/* Initialization */
-		X86_CORE_FOR_EACH X86_THREAD_FOR_EACH {
+		X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+		{
 			X86_THREAD.rob_left_bound = thread * x86_rob_size;
 			X86_THREAD.rob_right_bound = (thread + 1) * x86_rob_size - 1;
 			X86_THREAD.rob_head = X86_THREAD.rob_left_bound;
@@ -94,10 +103,11 @@ void x86_rob_init()
 	}
 
 	/* Create ROBs */
-	total_rob_size = x86_rob_size * x86_cpu_num_threads;
-	X86_CORE_FOR_EACH {
-		X86_CORE.rob = list_create_with_size(total_rob_size);
-		for (i = 0; i < total_rob_size; i++)
+	x86_rob_total_size = x86_rob_size * x86_cpu_num_threads;
+	X86_CORE_FOR_EACH
+	{
+		X86_CORE.rob = list_create_with_size(x86_rob_total_size);
+		for (i = 0; i < x86_rob_total_size; i++)
 			list_add(X86_CORE.rob, NULL);
 	}
 }
@@ -108,7 +118,8 @@ void x86_rob_done()
 	int core, i;
 	struct x86_uop_t *uop;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
 	case x86_rob_kind_private:
 		break;
 	
@@ -116,11 +127,14 @@ void x86_rob_done()
 		break;
 	}
 
-	X86_CORE_FOR_EACH {
-		assert(list_count(X86_CORE.rob) == total_rob_size);
-		for (i = 0; i < total_rob_size; i++) {
+	X86_CORE_FOR_EACH
+	{
+		assert(list_count(X86_CORE.rob) == x86_rob_total_size);
+		for (i = 0; i < x86_rob_total_size; i++)
+		{
 			uop = list_get(X86_CORE.rob, i);
-			if (uop) {
+			if (uop)
+			{
 				uop->in_rob = 0;
 				x86_uop_free_if_not_queued(uop);
 			}
@@ -135,15 +149,16 @@ int x86_rob_can_enqueue(struct x86_uop_t *uop)
 	int core = uop->core;
 	int thread = uop->thread;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
 	case x86_rob_kind_private:
 		if (X86_THREAD.rob_count < x86_rob_size)
 			return 1;
 		break;
 	
 	case x86_rob_kind_shared:
-		rob_trim(core);
-		if (X86_CORE.rob_count < total_rob_size)
+		x86_rob_trim(core);
+		if (X86_CORE.rob_count < x86_rob_total_size)
 			return 1;
 		break;
 	}
@@ -156,7 +171,8 @@ void x86_rob_enqueue(struct x86_uop_t *uop)
 	int core = uop->core;
 	int thread = uop->thread;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
 	case x86_rob_kind_private:
 		assert(X86_THREAD.rob_count < x86_rob_size);
 		assert(!list_get(X86_CORE.rob, X86_THREAD.rob_tail));
@@ -167,11 +183,11 @@ void x86_rob_enqueue(struct x86_uop_t *uop)
 		break;
 	
 	case x86_rob_kind_shared:
-		rob_trim(core);
-		assert(X86_CORE.rob_count < total_rob_size);
+		x86_rob_trim(core);
+		assert(X86_CORE.rob_count < x86_rob_total_size);
 		assert(!list_get(X86_CORE.rob, X86_CORE.rob_tail));
 		list_set(X86_CORE.rob, X86_CORE.rob_tail, uop);
-		X86_CORE.rob_tail = X86_CORE.rob_tail == total_rob_size - 1 ?
+		X86_CORE.rob_tail = X86_CORE.rob_tail == x86_rob_total_size - 1 ?
 			0 : X86_CORE.rob_tail + 1;
 		X86_CORE.rob_count++;
 		X86_THREAD.rob_count++;
@@ -187,14 +203,15 @@ int x86_rob_can_dequeue(int core, int thread)
 {
 	struct x86_uop_t *uop;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
 	case x86_rob_kind_private:
 		if (X86_THREAD.rob_count > 0)
 			return 1;
 		break;
 	
 	case x86_rob_kind_shared:
-		rob_trim(core);
+		x86_rob_trim(core);
 		if (!X86_CORE.rob_count)
 			return 0;
 		uop = list_get(X86_CORE.rob, X86_CORE.rob_head);
@@ -213,25 +230,28 @@ struct x86_uop_t *x86_rob_head(int core, int thread)
 	struct x86_uop_t *uop;
 	int idx, i;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
 	case x86_rob_kind_private:
-		if (X86_THREAD.rob_count > 0) {
+		if (X86_THREAD.rob_count > 0)
+		{
 			uop = list_get(X86_CORE.rob, X86_THREAD.rob_head);
 			return uop;
 		}
 		break;
 	
 	case x86_rob_kind_shared:
-		rob_trim(core);
+		x86_rob_trim(core);
 		if (!X86_THREAD.rob_count)
 			return NULL;
-		for (i = 0; i < X86_CORE.rob_count; i++) {
-			idx = (X86_CORE.rob_head + i) % total_rob_size;
+		for (i = 0; i < X86_CORE.rob_count; i++)
+		{
+			idx = (X86_CORE.rob_head + i) % x86_rob_total_size;
 			uop = list_get(X86_CORE.rob, idx);
 			if (uop && uop->thread == thread)
 				return uop;
 		}
-		panic("rob_head: no head found");
+		panic("%s: no head found", __FUNCTION__);
 		break;
 	}
 	return NULL;
@@ -243,7 +263,8 @@ void x86_rob_remove_head(int core, int thread)
 	struct x86_uop_t *uop = NULL;
 	int idx, i;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
 	case x86_rob_kind_private:
 		assert(X86_THREAD.rob_count > 0);
 		uop = list_get(X86_CORE.rob, X86_THREAD.rob_head);
@@ -256,12 +277,14 @@ void x86_rob_remove_head(int core, int thread)
 		break;
 	
 	case x86_rob_kind_shared:
-		rob_trim(core);
+		x86_rob_trim(core);
 		assert(X86_THREAD.rob_count);
-		for (i = 0; i < X86_CORE.rob_count; i++) {
-			idx = (X86_CORE.rob_head + i) % total_rob_size;
+		for (i = 0; i < X86_CORE.rob_count; i++)
+		{
+			idx = (X86_CORE.rob_head + i) % x86_rob_total_size;
 			uop = list_get(X86_CORE.rob, idx);
-			if (uop && uop->thread == thread) {
+			if (uop && uop->thread == thread)
+			{
 				list_set(X86_CORE.rob, idx, NULL);
 				X86_THREAD.rob_count--;
 				break;
@@ -281,7 +304,8 @@ struct x86_uop_t *x86_rob_tail(int core, int thread)
 	struct x86_uop_t *uop;
 	int idx, i;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
 	case x86_rob_kind_private:
 		if (X86_THREAD.rob_count > 0) {
 			idx = X86_THREAD.rob_tail == X86_THREAD.rob_left_bound ?
@@ -292,11 +316,12 @@ struct x86_uop_t *x86_rob_tail(int core, int thread)
 		break;
 	
 	case x86_rob_kind_shared:
-		rob_trim(core);
+		x86_rob_trim(core);
 		if (!X86_THREAD.rob_count)
 			return NULL;
-		for (i = X86_CORE.rob_count - 1; i >= 0; i--) {
-			idx = (X86_CORE.rob_head + i) % total_rob_size;
+		for (i = X86_CORE.rob_count - 1; i >= 0; i--)
+		{
+			idx = (X86_CORE.rob_head + i) % x86_rob_total_size;
 			uop = list_get(X86_CORE.rob, idx);
 			if (uop && uop->thread == thread)
 				return uop;
@@ -316,7 +341,8 @@ struct x86_uop_t *x86_rob_get(int core, int thread, int index)
 	if (index < 0 || index >= X86_THREAD.rob_count)
 		return NULL;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
 	case x86_rob_kind_private:
 		index += X86_THREAD.rob_head;
 		if (index > X86_THREAD.rob_right_bound)
@@ -326,8 +352,8 @@ struct x86_uop_t *x86_rob_get(int core, int thread, int index)
 		return uop;
 	
 	case x86_rob_kind_shared:
-		rob_trim(core);
-		index = (X86_CORE.rob_head + index) % total_rob_size;
+		x86_rob_trim(core);
+		index = (X86_CORE.rob_head + index) % x86_rob_total_size;
 		uop = list_get(X86_CORE.rob, index);
 		assert(uop);
 		return uop;
@@ -341,7 +367,8 @@ void x86_rob_remove_tail(int core, int thread)
 	struct x86_uop_t *uop = NULL;
 	int idx, i;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
 	case x86_rob_kind_private:
 		assert(X86_THREAD.rob_count > 0);
 		idx = X86_THREAD.rob_tail == X86_THREAD.rob_left_bound ?
@@ -355,12 +382,14 @@ void x86_rob_remove_tail(int core, int thread)
 		break;
 	
 	case x86_rob_kind_shared:
-		rob_trim(core);
+		x86_rob_trim(core);
 		assert(X86_THREAD.rob_count);
-		for (i = X86_CORE.rob_count - 1; i >= 0; i--) {
-			idx = (X86_CORE.rob_head + i) % total_rob_size;
+		for (i = X86_CORE.rob_count - 1; i >= 0; i--)
+		{
+			idx = (X86_CORE.rob_head + i) % x86_rob_total_size;
 			uop = list_get(X86_CORE.rob, idx);
-			if (uop && uop->thread == thread) {
+			if (uop && uop->thread == thread)
+			{
 				list_set(X86_CORE.rob, idx, NULL);
 				X86_THREAD.rob_count--;
 				break;
@@ -380,9 +409,13 @@ void x86_rob_dump(int core, FILE *f)
 	int thread, i;
 	struct x86_uop_t *uop;
 
-	switch (x86_rob_kind) {
+	switch (x86_rob_kind)
+	{
+
 	case x86_rob_kind_private:
-		X86_THREAD_FOR_EACH {
+	{
+		X86_THREAD_FOR_EACH
+		{
 			fprintf(f, "  rob for thread %d (entries %d to %d), count=%d, size=%d\n",
 				thread, X86_THREAD.rob_left_bound, X86_THREAD.rob_right_bound,
 				X86_THREAD.rob_count, x86_rob_size);
@@ -392,31 +425,43 @@ void x86_rob_dump(int core, FILE *f)
 				fprintf(f, "   %c%c ",
 					i == X86_THREAD.rob_head ? 'H' : ' ',
 					i == X86_THREAD.rob_tail ? 'T' : ' ');
-				if (uop) {
+				if (uop)
+				{
 					x86_uinst_dump(uop->uinst, f);
 					fprintf(f, "\n");
-				} else {
+				}
+				else
+				{
 					fprintf(f, "-\n");
 				}
 			}
 		}
 		break;
+	}
 	
 	case x86_rob_kind_shared:
-		rob_trim(core);
-		for (i = 0; i < total_rob_size; i++) {
+	{
+		x86_rob_trim(core);
+		for (i = 0; i < x86_rob_total_size; i++)
+		{
 			uop = list_get(X86_CORE.rob, i);
 			fprintf(f, " %c%c ",
 				i == X86_CORE.rob_head ? 'H' : ' ',
 				i == X86_CORE.rob_tail ? 'T' : ' ');
-			if (uop) {
+			if (uop)
+			{
 				x86_uinst_dump(uop->uinst, f);
 				fprintf(f, "\n");
-			} else {
+			}
+			else
+			{
 				fprintf(f, "-\n");
 			}
 		}
 		break;
 	}
-}
 
+	default:
+		panic("%s: invalid ROB type", __FUNCTION__);
+	}
+}

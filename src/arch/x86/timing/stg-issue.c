@@ -20,7 +20,7 @@
 #include <x86-timing.h>
 
 
-static int issue_sq(int core, int thread, int quant)
+static int x86_cpu_issue_sq(int core, int thread, int quant)
 {
 	struct x86_uop_t *store;
 	struct linked_list_t *sq = X86_THREAD.sq;
@@ -46,12 +46,12 @@ static int issue_sq(int core, int thread, int quant)
 
 		/* Issue store */
 		mod_access(X86_THREAD.data_mod, mod_entry_cpu, mod_access_write,
-			store->phy_addr, NULL, X86_CORE.eventq, store);
+			store->phy_addr, NULL, X86_CORE.event_queue, store);
 
 		/* The cache system will place the store at the head of the
-		 * event queue when it is ready. For now, mark "in_eventq" to
+		 * event queue when it is ready. For now, mark "in_event_queue" to
 		 * prevent the uop from being freed. */
-		store->in_eventq = 1;
+		store->in_event_queue = 1;
 		store->issued = 1;
 		store->issue_when = x86_cpu->cycle;
 	
@@ -80,7 +80,7 @@ static int issue_sq(int core, int thread, int quant)
 }
 
 
-static int issue_lq(int core, int thread, int quant)
+static int x86_cpu_issue_lq(int core, int thread, int quant)
 {
 	struct linked_list_t *lq = X86_THREAD.lq;
 	struct x86_uop_t *load;
@@ -115,12 +115,12 @@ static int issue_lq(int core, int thread, int quant)
 
 		/* Access memory system */
 		mod_access(X86_THREAD.data_mod, mod_entry_cpu, mod_access_read,
-			load->phy_addr, NULL, X86_CORE.eventq, load);
+			load->phy_addr, NULL, X86_CORE.event_queue, load);
 
 		/* The cache system will place the load at the head of the
-		 * event queue when it is ready. For now, mark "in_eventq" to
+		 * event queue when it is ready. For now, mark "in_event_queue" to
 		 * prevent the uop from being freed. */
-		load->in_eventq = 1;
+		load->in_event_queue = 1;
 		load->issued = 1;
 		load->issue_when = x86_cpu->cycle;
 		
@@ -150,7 +150,7 @@ static int issue_lq(int core, int thread, int quant)
 }
 
 
-static int issue_iq(int core, int thread, int quant)
+static int x86_cpu_issue_iq(int core, int thread, int quant)
 {
 	struct linked_list_t *iq = X86_THREAD.iq;
 	struct x86_uop_t *uop;
@@ -162,13 +162,14 @@ static int issue_iq(int core, int thread, int quant)
 	
 	/* Find instruction to issue */
 	linked_list_head(iq);
-	while (!linked_list_is_end(iq) && quant) {
-		
+	while (!linked_list_is_end(iq) && quant)
+	{
 		/* Get element from IQ */
 		uop = linked_list_get(iq);
 		assert(x86_uop_exists(uop));
 		assert(!(uop->flags & X86_UINST_MEM));
-		if (!uop->ready && !x86_reg_file_ready(uop)) {
+		if (!uop->ready && !x86_reg_file_ready(uop))
+		{
 			linked_list_next(iq);
 			continue;
 		}
@@ -179,7 +180,8 @@ static int issue_iq(int core, int thread, int quant)
 		 * returns 1 cycle latency. If there is no functional unit available,
 		 * 'x86_fu_reserve' returns 0. */
 		lat = x86_fu_reserve(uop);
-		if (!lat) {
+		if (!lat)
+		{
 			linked_list_next(iq);
 			continue;
 		}
@@ -189,12 +191,12 @@ static int issue_iq(int core, int thread, int quant)
 		x86_iq_remove(core, thread);
 		
 		/* Schedule inst in Event Queue */
-		assert(!uop->in_eventq);
+		assert(!uop->in_event_queue);
 		assert(lat > 0);
 		uop->issued = 1;
 		uop->issue_when = x86_cpu->cycle;
 		uop->when = x86_cpu->cycle + lat;
-		x86_event_queue_insert(X86_CORE.eventq, uop);
+		x86_event_queue_insert(X86_CORE.event_queue, uop);
 		
 		/* Instruction issued */
 		X86_CORE.issued[uop->uinst->opcode]++;
@@ -218,35 +220,36 @@ static int issue_iq(int core, int thread, int quant)
 }
 
 
-static int issue_thread_lsq(int core, int thread, int quant)
+static int x86_cpu_issue_thread_lsq(int core, int thread, int quant)
 {
-	quant = issue_lq(core, thread, quant);
-	quant = issue_sq(core, thread, quant);
+	quant = x86_cpu_issue_lq(core, thread, quant);
+	quant = x86_cpu_issue_sq(core, thread, quant);
 	return quant;
 }
 
 
-static int issue_thread_iq(int core, int thread, int quant)
+static int x86_cpu_issue_thread_iq(int core, int thread, int quant)
 {
-	quant = issue_iq(core, thread, quant);
+	quant = x86_cpu_issue_iq(core, thread, quant);
 	return quant;
 }
 
 
-void issue_core(int core)
+static void x86_cpu_issue_core(int core)
 {
 	int skip, quant;
 
-	switch (x86_cpu_issue_kind) {
+	switch (x86_cpu_issue_kind)
+	{
 	
 	case x86_cpu_issue_kind_shared:
-		
+	{
 		/* Issue LSQs */
 		quant = x86_cpu_issue_width;
 		skip = x86_cpu_num_threads;
 		do {
 			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
-			quant = issue_thread_lsq(core, X86_CORE.issue_current, quant);
+			quant = x86_cpu_issue_thread_lsq(core, X86_CORE.issue_current, quant);
 			skip--;
 		} while (skip && quant);
 
@@ -255,20 +258,21 @@ void issue_core(int core)
 		skip = x86_cpu_num_threads;
 		do {
 			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
-			quant = issue_thread_iq(core, X86_CORE.issue_current, quant);
+			quant = x86_cpu_issue_thread_iq(core, X86_CORE.issue_current, quant);
 			skip--;
 		} while (skip && quant);
 		
 		break;
+	}
 	
 	case x86_cpu_issue_kind_timeslice:
-		
+	{
 		/* Issue LSQs */
 		quant = x86_cpu_issue_width;
 		skip = x86_cpu_num_threads;
 		do {
 			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
-			quant = issue_thread_lsq(core, X86_CORE.issue_current, quant);
+			quant = x86_cpu_issue_thread_lsq(core, X86_CORE.issue_current, quant);
 			skip--;
 		} while (skip && quant == x86_cpu_issue_width);
 
@@ -277,11 +281,15 @@ void issue_core(int core)
 		skip = x86_cpu_num_threads;
 		do {
 			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
-			quant = issue_thread_iq(core, X86_CORE.issue_current, quant);
+			quant = x86_cpu_issue_thread_iq(core, X86_CORE.issue_current, quant);
 			skip--;
 		} while (skip && quant == x86_cpu_issue_width);
 
 		break;
+	}
+
+	default:
+		panic("%s: invalid issue kind", __FUNCTION__);
 	}
 }
 
@@ -289,8 +297,8 @@ void issue_core(int core)
 void x86_cpu_issue()
 {
 	int core;
+
 	x86_cpu->stage = "issue";
 	X86_CORE_FOR_EACH
-		issue_core(core);
+		x86_cpu_issue_core(core);
 }
-

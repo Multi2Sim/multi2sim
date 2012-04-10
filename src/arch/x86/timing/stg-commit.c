@@ -21,14 +21,14 @@
 #include <x86-timing.h>
 
 
-static char *err_commit_stall =
+static char *err_x86_cpu_commit_stall =
 	"\tThe CPU commit stage has not received any instruction for 1M\n"
 	"\tcycles. Most likely, this means that a deadlock condition\n"
 	"\toccurred in the management of some modeled structure (network,\n"
 	"\tcache system, core queues, etc.).\n";
 
 
-static int can_commit_thread(int core, int thread)
+static int x86_cpu_can_commit_thread(int core, int thread)
 {
 	struct x86_uop_t *uop;
 	struct x86_ctx_t *ctx = X86_THREAD.ctx;
@@ -40,7 +40,7 @@ static int can_commit_thread(int core, int thread)
 	if (x86_cpu->cycle - X86_THREAD.last_commit_cycle > 1000000)
 	{
 		warning("core-thread %d-%d: simulation ended due to commit stall.\n%s",
-			core, thread, err_commit_stall);
+			core, thread, err_x86_cpu_commit_stall);
 		x86_emu_finish = x86_emu_finish_stall;
 	}
 
@@ -68,7 +68,7 @@ static int can_commit_thread(int core, int thread)
 }
 
 
-static void commit_thread(int core, int thread, int quant)
+static void x86_cpu_commit_thread(int core, int thread, int quant)
 {
 	struct x86_ctx_t *ctx = X86_THREAD.ctx;
 	struct x86_uop_t *uop;
@@ -80,7 +80,7 @@ static void commit_thread(int core, int thread, int quant)
 	
 	/* Commit stage for thread */
 	assert(ctx);
-	while (quant && can_commit_thread(core, thread))
+	while (quant && x86_cpu_can_commit_thread(core, thread))
 	{
 		/* Get instruction at the head of the ROB */
 		uop = x86_rob_head(core, thread);
@@ -160,7 +160,7 @@ static void commit_thread(int core, int thread, int quant)
 }
 
 
-void commit_core(int core)
+static void x86_cpu_commit_core(int core)
 {
 	int pass, quant, new;
 
@@ -171,11 +171,12 @@ void commit_core(int core)
 	case x86_cpu_commit_kind_shared:
 		pass = x86_cpu_num_threads;
 		quant = x86_cpu_commit_width;
-		while (quant && pass) {
+		while (quant && pass)
+		{
 			X86_CORE.commit_current = (X86_CORE.commit_current + 1) % x86_cpu_num_threads;
-			if (can_commit_thread(core, X86_CORE.commit_current))
+			if (x86_cpu_can_commit_thread(core, X86_CORE.commit_current))
 			{
-				commit_thread(core, X86_CORE.commit_current, 1);
+				x86_cpu_commit_thread(core, X86_CORE.commit_current, 1);
 				quant--;
 				pass = x86_cpu_num_threads;
 			}
@@ -188,12 +189,12 @@ void commit_core(int core)
 	
 		/* look for a not empty VB */
 		new = (X86_CORE.commit_current + 1) % x86_cpu_num_threads;
-		while (new != X86_CORE.commit_current && !can_commit_thread(core, new))
+		while (new != X86_CORE.commit_current && !x86_cpu_can_commit_thread(core, new))
 			new = (new + 1) % x86_cpu_num_threads;
 		
 		/* commit new thread */
 		X86_CORE.commit_current = new;
-		commit_thread(core, new, x86_cpu_commit_width);
+		x86_cpu_commit_thread(core, new, x86_cpu_commit_width);
 		break;
 	
 	}
@@ -205,5 +206,5 @@ void x86_cpu_commit()
 	int core;
 	x86_cpu->stage = "commit";
 	X86_CORE_FOR_EACH
-		commit_core(core);
+		x86_cpu_commit_core(core);
 }

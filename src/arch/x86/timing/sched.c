@@ -22,8 +22,8 @@
 
 int x86_cpu_pipeline_empty(int core, int thread)
 {
-	return !X86_THREAD.rob_count && !list_count(X86_THREAD.fetchq) &&
-		!list_count(X86_THREAD.uopq);
+	return !X86_THREAD.rob_count && !list_count(X86_THREAD.fetch_queue) &&
+		!list_count(X86_THREAD.uop_queue);
 }
 
 
@@ -33,10 +33,14 @@ int x86_cpu_pipeline_empty(int core, int thread)
  *  3) If there is any free node, return it.
  *  4) Return -1
  */
-int cpu_context_to_cpu(struct x86_ctx_t *ctx)
+static int x86_cpu_context_to_cpu(struct x86_ctx_t *ctx)
 {
-	int node, free_cpu;
-	int core, thread;
+	int node;
+	int free_cpu;
+
+	int core;
+	int thread;
+
 	assert(!x86_ctx_get_status(ctx, x86_ctx_alloc));
 	assert(x86_emu->alloc_list_count <= x86_cpu_num_cores * x86_cpu_num_threads);
 
@@ -162,7 +166,7 @@ void x86_cpu_static_schedule()
 
 		/* Find free node. If none free, static scheduler aborts
 		 * simulation with an error. */
-		node = cpu_context_to_cpu(ctx);
+		node = x86_cpu_context_to_cpu(ctx);
 		if (node < 0)
 			fatal("no core/thread free for context %d; increase number of cores/threads"
 				" or activate the context scheduler.", ctx->pid);
@@ -220,7 +224,7 @@ void x86_cpu_dynamic_schedule()
 		ctx = found_ctx;
 
 		/* Allocate context */
-		node = cpu_context_to_cpu(ctx);
+		node = x86_cpu_context_to_cpu(ctx);
 		assert(node >= 0 && node < x86_cpu_num_cores * x86_cpu_num_threads);
 		x86_cpu_map_context(node / x86_cpu_num_threads, node % x86_cpu_num_threads, ctx);
 	}

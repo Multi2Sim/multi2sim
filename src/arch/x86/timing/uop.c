@@ -27,8 +27,15 @@ struct x86_uop_t *x86_uop_create(void)
 {
 	struct x86_uop_t *uop;
 
+	/* Allocate */
 	uop = calloc(1, sizeof(struct x86_uop_t));
+	if (!uop)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	uop->magic = UOP_MAGIC;
+
+	/* Return */
 	return uop;
 }
 
@@ -36,9 +43,9 @@ struct x86_uop_t *x86_uop_create(void)
 void x86_uop_free_if_not_queued(struct x86_uop_t *uop)
 {
 	/* Do not free if 'uop' is still enqueued */
-	if (uop->in_fetchq || uop->in_uopq || uop->in_iq ||
+	if (uop->in_fetch_queue || uop->in_uop_queue || uop->in_iq ||
 		uop->in_lq || uop->in_sq ||
-		uop->in_rob || uop->in_eventq)
+		uop->in_rob || uop->in_event_queue)
 	{
 		return;
 	}
@@ -96,8 +103,9 @@ void x86_uop_linked_list_dump(struct linked_list_t *uop_list, FILE *f)
 void x86_uop_linked_list_check_if_ready(struct linked_list_t *uop_list)
 {
 	struct x86_uop_t *uop;
-	linked_list_head(uop_list);
-	for (linked_list_head(uop_list); !linked_list_is_end(uop_list); linked_list_next(uop_list)) {
+
+	LINKED_LIST_FOR_EACH(uop_list)
+	{
 		uop = linked_list_get(uop_list);
 		if (uop->ready || !x86_reg_file_ready(uop))
 			continue;

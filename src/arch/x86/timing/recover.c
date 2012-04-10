@@ -24,7 +24,7 @@ void x86_cpu_recover(int core, int thread)
 {
 	struct x86_uop_t *uop;
 
-	/* Remove instructions of this thread in fetchq, uopq, iq, sq, lq and eventq. */
+	/* Remove instructions of this thread in fetch_queue, uop_queue, iq, sq, lq and event_queue. */
 	x86_fetch_queue_recover(core, thread);
 	x86_uop_queue_recover(core, thread);
 	x86_iq_recover(core, thread);
@@ -33,8 +33,8 @@ void x86_cpu_recover(int core, int thread)
 
 	/* Remove instructions from ROB, restoring the state of the
 	 * physical register file. */
-	for (;;) {
-		
+	for (;;)
+	{
 		/* Get instruction */
 		uop = x86_rob_tail(core, thread);
 		if (!uop)
@@ -75,4 +75,3 @@ void x86_cpu_recover(int core, int thread)
 	X86_THREAD.fetch_stall_until = MAX(X86_THREAD.fetch_stall_until, x86_cpu->cycle + x86_cpu_recover_penalty - 1);
 	X86_THREAD.fetch_neip = X86_THREAD.ctx->regs->eip;
 }
-

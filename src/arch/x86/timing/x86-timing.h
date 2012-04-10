@@ -163,12 +163,12 @@ struct x86_uop_t
 	int ph_oodep[X86_UINST_MAX_ODEPS];
 
 	/* Queues where instruction is */
-	int in_fetchq : 1;
-	int in_uopq : 1;
+	int in_fetch_queue : 1;
+	int in_uop_queue : 1;
 	int in_iq : 1;
 	int in_lq : 1;
 	int in_sq : 1;
-	int in_eventq : 1;
+	int in_event_queue : 1;
 	int in_rob : 1;
 
 	/* Instruction status */
@@ -368,8 +368,8 @@ void x86_event_queue_done(void);
 
 int x86_event_queue_long_latency(int core, int thread);
 int x86_event_queue_cache_miss(int core, int thread);
-void x86_event_queue_insert(struct linked_list_t *eventq, struct x86_uop_t *uop);
-struct x86_uop_t *x86_event_queue_extract(struct linked_list_t *eventq);
+void x86_event_queue_insert(struct linked_list_t *event_queue, struct x86_uop_t *uop);
+struct x86_uop_t *x86_event_queue_extract(struct linked_list_t *event_queue);
 void x86_event_queue_recover(int core, int thread);
 
 
@@ -419,7 +419,7 @@ void x86_reg_file_init(void);
 void x86_reg_file_done(void);
 
 struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size);
-void x86_reg_file_free(struct x86_reg_file_t *rf);
+void x86_reg_file_free(struct x86_reg_file_t *reg_file);
 
 void x86_reg_file_dump(int core, int thread, FILE *f);
 void x86_reg_file_count_deps(struct x86_uop_t *uop);
@@ -463,15 +463,15 @@ extern int x86_bpred_twolevel_hist_size;
 void x86_bpred_init(void);
 void x86_bpred_done(void);
 
-struct bpred_t *x86_bpred_create(void);
-void x86_bpred_free(struct bpred_t *bpred);
-int x86_bpred_lookup(struct bpred_t *bpred, struct x86_uop_t *uop);
-int x86_bpred_lookup_multiple(struct bpred_t *bpred, uint32_t eip, int count);
-void x86_bpred_update(struct bpred_t *bpred, struct x86_uop_t *uop);
+struct x86_bpred_t *x86_bpred_create(char *name);
+void x86_bpred_free(struct x86_bpred_t *bpred);
+int x86_bpred_lookup(struct x86_bpred_t *bpred, struct x86_uop_t *uop);
+int x86_bpred_lookup_multiple(struct x86_bpred_t *bpred, uint32_t eip, int count);
+void x86_bpred_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop);
 
-unsigned int x86_bpred_btb_lookup(struct bpred_t *bpred, struct x86_uop_t *uop);
-void x86_bpred_btb_update(struct bpred_t *bpred, struct x86_uop_t *uop);
-unsigned int x86_bpred_btb_next_branch(struct bpred_t *bpred, uint32_t eip, uint32_t bsize);
+unsigned int x86_bpred_btb_lookup(struct x86_bpred_t *bpred, struct x86_uop_t *uop);
+void x86_bpred_btb_update(struct x86_bpred_t *bpred, struct x86_uop_t *uop);
+unsigned int x86_bpred_btb_next_branch(struct x86_bpred_t *bpred, uint32_t eip, uint32_t bsize);
 
 
 
@@ -559,7 +559,7 @@ enum x86_dispatch_stall_t
 {
 	x86_dispatch_stall_used = 0,  /* Dispatch slot was used with a finally committed inst. */
 	x86_dispatch_stall_spec,  /* Used with a speculative inst. */
-	x86_dispatch_stall_uopq,  /* No instruction in the uop queue */
+	x86_dispatch_stall_uop_queue,  /* No instruction in the uop queue */
 	x86_dispatch_stall_rob,  /* No space in the rob */
 	x86_dispatch_stall_iq,  /* No space in the iq */
 	x86_dispatch_stall_lsq,  /* No space in the lsq */
@@ -589,14 +589,14 @@ struct x86_thread_t
 	int reg_file_fp_count;
 
 	/* Private structures */
-	struct list_t *fetchq;
-	struct list_t *uopq;
+	struct list_t *fetch_queue;
+	struct list_t *uop_queue;
 	struct linked_list_t *iq;
 	struct linked_list_t *lq;
 	struct linked_list_t *sq;
-	struct bpred_t *bpred;  /* branch predictor */
+	struct x86_bpred_t *bpred;  /* branch predictor */
 	struct x86_trace_cache_t *trace_cache;  /* trace cache */
-	struct x86_reg_file_t *rf;  /* physical register file */
+	struct x86_reg_file_t *reg_file;  /* physical register file */
 
 	/* Fetch */
 	unsigned int fetch_eip, fetch_neip;  /* eip and next eip */
@@ -666,7 +666,7 @@ struct x86_core_t
 	struct x86_thread_t *thread;
 
 	/* Shared structures */
-	struct linked_list_t *eventq;
+	struct linked_list_t *event_queue;
 	struct x86_fu_t *fu;
 
 	/* Per core counters */
@@ -771,7 +771,6 @@ void x86_cpu_dump(FILE *f);
 void x86_cpu_load_progs(int argc, char **argv, char *ctxfile);
 
 void x86_cpu_update_occupancy_stats(void);
-unsigned int x86_cpu_tlb_address(int ctx, uint32_t vaddr);
 
 int x86_cpu_pipeline_empty(int core, int thread);
 void x86_cpu_map_context(int core, int thread, struct x86_ctx_t *ctx);
