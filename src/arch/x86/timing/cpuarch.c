@@ -599,7 +599,7 @@ void cpu_dump_report()
 {
 	FILE *f;
 	int core, thread;
-	uint64_t now = ke_timer();
+	uint64_t now = x86_emu_timer();
 
 	/* Open file */
 	f = open_write(cpu_report_file_name);
@@ -903,7 +903,7 @@ void cpu_dump(FILE *f)
 			rf_dump(core, thread, f);
 			if (THREAD.ctx) {
 				fprintf(f, "mapped context: %d\n", THREAD.ctx->pid);
-				ctx_dump(THREAD.ctx, f);
+				x86_ctx_dump(THREAD.ctx, f);
 			}
 			
 			fprintf(f, "\n");
@@ -968,18 +968,18 @@ void cpu_update_occupancy_stats()
 void cpu_stages()
 {
 	/* Static scheduler called after any context changed status other than 'sepcmode' */
-	if (!cpu_context_switch && ke->context_reschedule) {
+	if (!cpu_context_switch && x86_emu->context_reschedule) {
 		cpu_static_schedule();
-		ke->context_reschedule = 0;
+		x86_emu->context_reschedule = 0;
 	}
 
 	/* Dynamic scheduler called after any context changed status other than 'specmode',
 	 * or quantum of the oldest context expired, and no context is being evicted. */
 	if (cpu_context_switch && !cpu->ctx_dealloc_signals &&
-		(ke->context_reschedule || cpu->ctx_alloc_oldest + cpu_context_quantum <= cpu->cycle))
+		(x86_emu->context_reschedule || cpu->ctx_alloc_oldest + cpu_context_quantum <= cpu->cycle))
 	{
 		cpu_dynamic_schedule();
-		ke->context_reschedule = 0;
+		x86_emu->context_reschedule = 0;
 	}
 
 	/* Stages */
@@ -1064,7 +1064,7 @@ static void sim_dump_log()
 /* Fast forward simulation */
 static void cpu_fast_forward(long long max_inst)
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 	uint64_t inst = 0;
 
 	/* Intro message */
@@ -1076,7 +1076,7 @@ static void cpu_fast_forward(long long max_inst)
 	for (;;) {
 
 		/* Check finished contexts */
-		if (ke->finished_list_count >= ke->context_list_count)
+		if (x86_emu->finished_list_count >= x86_emu->context_list_count)
 			ke_sim_finish = ke_sim_finish_ctx;
 		
 		/* Stop if any previous reason met */
@@ -1088,16 +1088,16 @@ static void cpu_fast_forward(long long max_inst)
 			break;
 
 		/* Run an instruction from every running process */
-		inst += ke->running_list_count;
-		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_list_next)
-			ctx_execute_inst(ctx);
+		inst += x86_emu->running_list_count;
+		for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
+			x86_ctx_execute_inst(ctx);
 	
 		/* Free finished contexts */
-		while (ke->finished_list_head)
-			ctx_free(ke->finished_list_head);
+		while (x86_emu->finished_list_head)
+			x86_ctx_free(x86_emu->finished_list_head);
 	
 		/* Process list of suspended contexts */
-		ke_process_events();
+		x86_emu_process_events();
 	}
 
 	/* End message */
@@ -1128,7 +1128,7 @@ void cpu_run()
 	for (;;) {
 
 		/* Stop if all contexts finished */
-		if (ke->finished_list_count >= ke->context_list_count)
+		if (x86_emu->finished_list_count >= x86_emu->context_list_count)
 			ke_sim_finish = ke_sim_finish_ctx;
 
 		/* Stop if maximum number of CPU instructions exceeded */
@@ -1140,7 +1140,7 @@ void cpu_run()
 			ke_sim_finish = ke_sim_finish_max_cpu_cycles;
 
 		/* Stop if maximum time exceeded (check only every 10k cycles) */
-		if (ke_max_time && !(cpu->cycle % 10000) && ke_timer() > ke_max_time * 1000000)
+		if (ke_max_time && !(cpu->cycle % 10000) && x86_emu_timer() > ke_max_time * 1000000)
 			ke_sim_finish = ke_sim_finish_max_time;
 
 		/* Stop if any previous reason met */
@@ -1154,7 +1154,7 @@ void cpu_run()
 		cpu_stages();
 
 		/* Process host threads generating events */
-		ke_process_events();
+		x86_emu_process_events();
 
 		/* Event-driven module */
 		esim_process_events();

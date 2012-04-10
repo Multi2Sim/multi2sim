@@ -22,13 +22,13 @@
 
 static int can_fetch(int core, int thread)
 {
-	struct ctx_t *ctx = THREAD.ctx;
+	struct x86_ctx_t *ctx = THREAD.ctx;
 
 	uint32_t phy_addr;
 	uint32_t block;
 
 	/* Context must be running */
-	if (!ctx || !ctx_get_status(ctx, ctx_running))
+	if (!ctx || !x86_ctx_get_status(ctx, x86_ctx_running))
 		return 0;
 	
 	/* Fetch stalled or context evict signal activated */
@@ -60,7 +60,7 @@ static int can_fetch(int core, int thread)
  * the function. Otherwise, the first decoded uop is returned. */
 static struct uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
 {
-	struct ctx_t *ctx = THREAD.ctx;
+	struct x86_ctx_t *ctx = THREAD.ctx;
 
 	struct uop_t *uop;
 	struct uop_t *ret_uop;
@@ -71,8 +71,8 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
 
 	/* Functional simulation */
 	THREAD.fetch_eip = THREAD.fetch_neip;
-	ctx_set_eip(ctx, THREAD.fetch_eip);
-	ctx_execute_inst(ctx);
+	x86_ctx_set_eip(ctx, THREAD.fetch_eip);
+	x86_ctx_execute_inst(ctx);
 	THREAD.fetch_neip = THREAD.fetch_eip + isa_inst.size;
 
 	/* Micro-instructions created by the x86 instructions can be found now
@@ -104,7 +104,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
 		uop->eip = THREAD.fetch_eip;
 		uop->in_fetchq = 1;
 		uop->fetch_trace_cache = fetch_trace_cache;
-		uop->specmode = ctx_get_status(ctx, ctx_specmode);
+		uop->specmode = x86_ctx_get_status(ctx, x86_ctx_specmode);
 		uop->fetch_address = THREAD.fetch_address;
 		uop->fetch_access = THREAD.fetch_access;
 		uop->neip = ctx->regs->eip;
@@ -182,7 +182,7 @@ static int fetch_thread_trace_cache(int core, int thread)
 	for (i = 0; i < mop_count; i++)
 	{
 		/* If instruction caused context to suspend or finish */
-		if (!ctx_get_status(THREAD.ctx, ctx_running))
+		if (!x86_ctx_get_status(THREAD.ctx, x86_ctx_running))
 			break;
 		
 		/* Insert decoded uops into the trace cache queue. In the simulation,
@@ -211,7 +211,7 @@ static int fetch_thread_trace_cache(int core, int thread)
 
 static void fetch_thread(int core, int thread)
 {
-	struct ctx_t *ctx = THREAD.ctx;
+	struct x86_ctx_t *ctx = THREAD.ctx;
 	struct uop_t *uop;
 
 	uint32_t phy_addr;
@@ -245,7 +245,7 @@ static void fetch_thread(int core, int thread)
 	while ((THREAD.fetch_neip & ~(THREAD.inst_mod->block_size - 1)) == block)
 	{
 		/* If instruction caused context to suspend or finish */
-		if (!ctx_get_status(ctx, ctx_running))
+		if (!x86_ctx_get_status(ctx, x86_ctx_running))
 			break;
 	
 		/* If fetch queue full, stop fetching */

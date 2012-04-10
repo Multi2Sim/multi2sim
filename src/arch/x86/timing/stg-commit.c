@@ -29,11 +29,11 @@ static char *err_commit_stall =
 static int can_commit_thread(int core, int thread)
 {
 	struct uop_t *uop;
-	struct ctx_t *ctx = THREAD.ctx;
+	struct x86_ctx_t *ctx = THREAD.ctx;
 
 	/* Sanity check - If the context is running, we assume that something is
 	 * going wrong if more than 1M cycles go by without committing an inst. */
-	if (!ctx || !ctx_get_status(ctx, ctx_running))
+	if (!ctx || !x86_ctx_get_status(ctx, x86_ctx_running))
 		THREAD.last_commit_cycle = cpu->cycle;
 	if (cpu->cycle - THREAD.last_commit_cycle > 1000000)
 	{
@@ -68,7 +68,7 @@ static int can_commit_thread(int core, int thread)
 
 static void commit_thread(int core, int thread, int quant)
 {
-	struct ctx_t *ctx = THREAD.ctx;
+	struct x86_ctx_t *ctx = THREAD.ctx;
 	struct uop_t *uop;
 	int recover = 0;
 

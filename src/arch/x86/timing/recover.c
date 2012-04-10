@@ -68,8 +68,8 @@ void cpu_recover(int core, int thread)
 	}
 
 	/* If we actually fetched wrong instructions, recover kernel */
-	if (ctx_get_status(THREAD.ctx, ctx_specmode))
-		ctx_recover(THREAD.ctx);
+	if (x86_ctx_get_status(THREAD.ctx, x86_ctx_specmode))
+		x86_ctx_recover(THREAD.ctx);
 	
 	/* Stall fetch and set eip to fetch. */
 	THREAD.fetch_stall_until = MAX(THREAD.fetch_stall_until, cpu->cycle + cpu_recover_penalty - 1);
