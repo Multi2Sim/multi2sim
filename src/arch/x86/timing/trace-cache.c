@@ -32,7 +32,8 @@ int x86_trace_cache_queue_size;  /* Fetch queue for pre-decoded uops */
 
 void x86_trace_cache_init()
 {
-	int core, thread;
+	int core;
+	int thread;
 
 	/* Trace cache present */
 	if (!x86_trace_cache_present)
@@ -71,7 +72,8 @@ void x86_trace_cache_init()
 
 void x86_trace_cache_done()
 {
-	int core, thread;
+	int core;
+	int thread;
 
 	/* Trace cache present */
 	if (!x86_trace_cache_present)
@@ -87,7 +89,9 @@ struct x86_trace_cache_t *x86_trace_cache_create()
 {
 	struct x86_trace_cache_t *trace_cache;
 	struct x86_trace_cache_entry_t *entry;
-	int set, way;
+
+	int set;
+	int way;
 
 	/* Create trace cache */
 	trace_cache = calloc(1, sizeof(struct x86_trace_cache_t));
@@ -152,11 +156,13 @@ void x86_trace_cache_dump_report(struct x86_trace_cache_t *trace_cache, FILE *f)
 
 
 /* Flush temporary trace of committed instructions back into the trace cache */
-static void trace_cache_flush_trace(struct x86_trace_cache_t *trace_cache)
+static void x86_trace_cache_flush_trace(struct x86_trace_cache_t *trace_cache)
 {
 	struct x86_trace_cache_entry_t *entry, *found = NULL;
 	struct x86_trace_cache_entry_t *trace = trace_cache->temp;
-	int set, way;
+
+	int set;
+	int way;
 
 	/* There must be something to commit */
 	if (!trace->uop_count)
@@ -235,7 +241,7 @@ void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_u
 	assert(uop->eip);
 	assert(uop->seq == uop->mop_seq);
 	if (trace->uop_count + uop->mop_count > x86_trace_cache_trace_size)
-		trace_cache_flush_trace(trace_cache);
+		x86_trace_cache_flush_trace(trace_cache);
 	if (uop->mop_count > x86_trace_cache_trace_size)
 		return;
 
@@ -260,7 +266,7 @@ void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_u
 		trace->branch_count++;
 		trace->target = uop->target_neip;
 		if (trace->branch_count == x86_trace_cache_branch_max)
-			trace_cache_flush_trace(trace_cache);
+			x86_trace_cache_flush_trace(trace_cache);
 	}
 }
 
@@ -299,4 +305,3 @@ int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, uint32_t eip, 
 	PTR_ASSIGN(ptr_neip, neip);
 	return 1;
 }
-

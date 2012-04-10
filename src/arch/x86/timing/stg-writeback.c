@@ -21,16 +21,18 @@
 #include <x86-timing.h>
 
 
-void writeback_core(int core)
+static void x86_cpu_writeback_core(int core)
 {
 	struct x86_uop_t *uop;
-	int thread, recover = 0;
+
+	int thread;
+	int recover = 0;
 
 	for (;;)
 	{
 		/* Pick element from the head of the event queue */
-		linked_list_head(X86_CORE.eventq);
-		uop = linked_list_get(X86_CORE.eventq);
+		linked_list_head(X86_CORE.event_queue);
+		uop = linked_list_get(X86_CORE.event_queue);
 		if (!uop)
 			break;
 
@@ -49,8 +51,8 @@ void writeback_core(int core)
 		assert(!uop->completed);
 		
 		/* Extract element from event queue. */
-		linked_list_remove(X86_CORE.eventq);
-		uop->in_eventq = 0;
+		linked_list_remove(X86_CORE.event_queue);
+		uop->in_event_queue = 0;
 		thread = uop->thread;
 		
 		/* If a mispredicted branch is solved and recovery is configured to be
@@ -77,7 +79,7 @@ void writeback_core(int core)
 		x86_uop_free_if_not_queued(uop);
 
 		/* Recovery. This must be performed at last, because lots of uops might be
-		 * freed, which interferes with the temporary extraction from the eventq. */
+		 * freed, which interferes with the temporary extraction from the event_queue. */
 		if (recover)
 			x86_cpu_recover(core, thread);
 	}
@@ -87,8 +89,9 @@ void writeback_core(int core)
 void x86_cpu_writeback()
 {
 	int core;
+
 	x86_cpu->stage = "writeback";
 	X86_CORE_FOR_EACH
-		writeback_core(core);
+		x86_cpu_writeback_core(core);
 }
 

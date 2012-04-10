@@ -21,16 +21,16 @@
 #include <x86-timing.h>
 
 
-static void decode_thread(int core, int thread)
+static void x86_cpu_decode_thread(int core, int thread)
 {
-	struct list_t *fetchq = X86_THREAD.fetchq;
-	struct list_t *uopq = X86_THREAD.uopq;
+	struct list_t *fetchq = X86_THREAD.fetch_queue;
+	struct list_t *uopq = X86_THREAD.uop_queue;
 	struct x86_uop_t *uop;
 	int i;
 
 	for (i = 0; i < x86_cpu_decode_width; i++)
 	{
-		/* Empty fetch queue, full uopq */
+		/* Empty fetch queue, full uop_queue */
 		if (!list_count(fetchq))
 			break;
 		if (list_count(uopq) >= x86_uop_queue_size)
@@ -41,11 +41,12 @@ static void decode_thread(int core, int thread)
 		/* If instructions come from the trace cache, i.e., are located in
 		 * the trace cache queue, copy all of them
 		 * into the uop queue in one single decode slot. */
-		if (uop->fetch_trace_cache) {
+		if (uop->fetch_trace_cache)
+		{
 			do {
 				x86_fetch_queue_remove(core, thread, 0);
 				list_add(uopq, uop);
-				uop->in_uopq = 1;
+				uop->in_uop_queue = 1;
 				uop = list_get(fetchq, 0);
 			} while (uop && uop->fetch_trace_cache);
 			break;
@@ -59,7 +60,7 @@ static void decode_thread(int core, int thread)
 			do {
 				x86_fetch_queue_remove(core, thread, 0);
 				list_add(uopq, uop);
-				uop->in_uopq = 1;
+				uop->in_uop_queue = 1;
 				uop = list_get(fetchq, 0);
 			} while (uop && uop->mop_index);
 		}
@@ -67,11 +68,11 @@ static void decode_thread(int core, int thread)
 }
 
 
-static void decode_core(int core)
+static void x86_cpu_decode_core(int core)
 {
 	int thread;
 	X86_THREAD_FOR_EACH
-		decode_thread(core, thread);
+		x86_cpu_decode_thread(core, thread);
 }
 
 
@@ -80,5 +81,5 @@ void x86_cpu_decode()
 	int core;
 	x86_cpu->stage = "decode";
 	X86_CORE_FOR_EACH
-		decode_core(core);
+		x86_cpu_decode_core(core);
 }
