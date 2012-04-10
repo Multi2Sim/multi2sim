@@ -464,14 +464,14 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 	{
 		/* Stop if maximum number of GPU cycles exceeded */
 		if (gpu_max_cycles && cycle >= gpu_max_cycles)
-			ke_sim_finish = ke_sim_finish_max_gpu_cycles;
+			x86_emu_finish = x86_emu_finish_max_gpu_cycles;
 
 		/* Stop if maximum number of GPU instructions exceeded */
 		if (gpu_max_inst && gk->inst_count >= gpu_max_inst)
-			ke_sim_finish = ke_sim_finish_max_gpu_inst;
+			x86_emu_finish = x86_emu_finish_max_gpu_inst;
 
 		/* Stop if any reason met */
-		if (ke_sim_finish)
+		if (x86_emu_finish)
 			break;
 
 		/* Next cycle */
@@ -503,7 +503,7 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 
 	/* Stop if maximum number of kernels reached */
 	if (gpu_max_kernels && gk->ndrange_count >= gpu_max_kernels)
-		ke_sim_finish = ke_sim_finish_max_gpu_kernels;
+		x86_emu_finish = x86_emu_finish_max_gpu_kernels;
 }
 
 

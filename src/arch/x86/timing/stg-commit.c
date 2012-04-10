@@ -39,7 +39,7 @@ static int can_commit_thread(int core, int thread)
 	{
 		warning("core-thread %d-%d: simulation ended due to commit stall.\n%s",
 			core, thread, err_commit_stall);
-		ke_sim_finish = ke_sim_finish_stall;
+		x86_emu_finish = x86_emu_finish_stall;
 	}
 
 	/* If there is no instruction in the ROB, or the instruction is not

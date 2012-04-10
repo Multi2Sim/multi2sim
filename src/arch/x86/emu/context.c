@@ -87,8 +87,8 @@ static struct x86_ctx_t *ctx_do_create()
 	x86_emu_list_insert_head(x86_emu_list_context, ctx);
 
 	/* Structures */
-	ctx->regs = regs_create();
-	ctx->backup_regs = regs_create();
+	ctx->regs = x86_regs_create();
+	ctx->backup_regs = x86_regs_create();
 	ctx->signal_mask_table = signal_mask_table_create();
 
 	/* Return context */
@@ -103,7 +103,7 @@ struct x86_ctx_t *x86_ctx_create(void)
 	ctx = ctx_do_create();
 
 	/* Loader */
-	ctx->loader = ld_create();
+	ctx->loader = x86_loader_create();
 
 	/* Memory */
 	ctx->mid = x86_emu->current_mid++;
@@ -125,7 +125,7 @@ struct x86_ctx_t *x86_ctx_clone(struct x86_ctx_t *ctx)
 	new = ctx_do_create();
 
 	/* Register file contexts are copied from parent. */
-	regs_copy(new->regs, ctx->regs);
+	x86_regs_copy(new->regs, ctx->regs);
 
 	/* The memory image of the cloned context if the same.
 	 * The memory structure must be only freed by the parent
@@ -136,7 +136,7 @@ struct x86_ctx_t *x86_ctx_clone(struct x86_ctx_t *ctx)
 	new->spec_mem = spec_mem_create(new->mem);
 
 	/* Loader */
-	new->loader = ld_link(ctx->loader);
+	new->loader = x86_loader_link(ctx->loader);
 
 	/* Signal handlers and file descriptor table */
 	new->signal_handler_table = signal_handler_table_link(ctx->signal_handler_table);
@@ -162,7 +162,7 @@ struct x86_ctx_t *x86_ctx_fork(struct x86_ctx_t *ctx)
 	new = ctx_do_create();
 
 	/* Copy registers */
-	regs_copy(new->regs, ctx->regs);
+	x86_regs_copy(new->regs, ctx->regs);
 
 	/* Memory */
 	new->mid = x86_emu->current_mid++;
@@ -171,7 +171,7 @@ struct x86_ctx_t *x86_ctx_fork(struct x86_ctx_t *ctx)
 	mem_clone(new->mem, ctx->mem);
 
 	/* Loader */
-	new->loader = ld_link(ctx->loader);
+	new->loader = x86_loader_link(ctx->loader);
 
 	/* Signal handlers and file descriptor table */
 	new->signal_handler_table = signal_handler_table_create();
@@ -206,13 +206,13 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 	x86_emu_list_remove(x86_emu_list_finished, ctx);
 		
 	/* Free private structures */
-	regs_free(ctx->regs);
-	regs_free(ctx->backup_regs);
+	x86_regs_free(ctx->regs);
+	x86_regs_free(ctx->backup_regs);
 	signal_mask_table_free(ctx->signal_mask_table);
 	spec_mem_free(ctx->spec_mem);
 
 	/* Unlink shared structures */
-	ld_unlink(ctx->loader);
+	x86_loader_unlink(ctx->loader);
 	signal_handler_table_unlink(ctx->signal_handler_table);
 	file_desc_table_unlink(ctx->file_desc_table);
 	mem_unlink(ctx->mem);
@@ -304,7 +304,7 @@ void x86_ctx_set_eip(struct x86_ctx_t *ctx, uint32_t eip)
 	if (ctx->regs->eip != eip && !x86_ctx_get_status(ctx, x86_ctx_specmode))
 	{
 		x86_ctx_set_status(ctx, x86_ctx_specmode);
-		regs_copy(ctx->backup_regs, ctx->regs);
+		x86_regs_copy(ctx->backup_regs, ctx->regs);
 		ctx->regs->fpu_ctrl |= 0x3f; /* mask all FP exceptions on wrong path */
 	}
 	
@@ -317,7 +317,7 @@ void x86_ctx_recover(struct x86_ctx_t *ctx)
 {
 	assert(x86_ctx_get_status(ctx, x86_ctx_specmode));
 	x86_ctx_clear_status(ctx, x86_ctx_specmode);
-	regs_copy(ctx->regs, ctx->backup_regs);
+	x86_regs_copy(ctx->regs, ctx->backup_regs);
 	spec_mem_clear(ctx->spec_mem);
 }
 
@@ -759,7 +759,7 @@ void x86_ctx_ipc_report_handler(int event, void *data)
 	/* Get context. If it does not exist anymore, no more
 	 * events to schedule. */
 	ctx = x86_ctx_get(stack->pid);
-	if (!ctx || x86_ctx_get_status(ctx, x86_ctx_finished) || ke_sim_finish)
+	if (!ctx || x86_ctx_get_status(ctx, x86_ctx_finished) || x86_emu_finish)
 	{
 		free(stack);
 		return;

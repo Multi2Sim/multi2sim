@@ -507,7 +507,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		/* Help for context configuration file format */
 		if (!strcmp(argv[argi], "--help-ctx-config"))
 		{
-			fprintf(stderr, "%s", ld_help_ctxconfig);
+			fprintf(stderr, "%s", x86_loader_help_ctxconfig);
 			continue;
 		}
 
@@ -536,7 +536,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-cpu-cycles"))
 		{
 			sim_need_argument(argc, argv, argi);
-			ke_max_cycles = atoll(argv[++argi]);
+			x86_emu_max_cycles = atoll(argv[++argi]);
 			continue;
 		}
 
@@ -544,7 +544,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-cpu-inst"))
 		{
 			sim_need_argument(argc, argv, argi);
-			ke_max_inst = atoll(argv[++argi]);
+			x86_emu_max_inst = atoll(argv[++argi]);
 			continue;
 		}
 
@@ -576,7 +576,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-time"))
 		{
 			sim_need_argument(argc, argv, argi);
-			ke_max_time = atoll(argv[++argi]);
+			x86_emu_max_time = atoll(argv[++argi]);
 			continue;
 		}
 		
@@ -819,7 +819,7 @@ void sim_stats_summary(void)
 	fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	fprintf(stderr, "Contexts = %d\n", x86_emu->running_list_max);
 	fprintf(stderr, "Memory = %lu\n", mem_max_mapped_space);
-	fprintf(stderr, "SimEnd = %s\n", map_value(&ke_sim_finish_map, ke_sim_finish));
+	fprintf(stderr, "SimEnd = %s\n", map_value(&x86_emu_finish_map, x86_emu_finish));
 
 	/* CPU detailed simulation */
 	if (cpu_sim_kind == cpu_sim_detailed)
@@ -902,7 +902,7 @@ int main(int argc, char **argv)
 	x86_isa_call_debug_category = debug_new_category(isa_call_debug_file_name);
 	elf_debug_category = debug_new_category(elf_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
-	ld_debug_category = debug_new_category(loader_debug_file_name);
+	x86_loader_debug_category = debug_new_category(loader_debug_file_name);
 	x86_sys_debug_category = debug_new_category(syscall_debug_file_name);
 	x86_ctx_debug_category = debug_new_category(ctx_debug_file_name);
 	mem_debug_category = debug_new_category(mem_debug_file_name);

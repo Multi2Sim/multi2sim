@@ -26,27 +26,27 @@
  */
 
 /* Configuration parameters */
-long long ke_max_inst = 0;
-long long ke_max_cycles = 0;
-long long ke_max_time = 0;
+long long x86_emu_max_inst = 0;
+long long x86_emu_max_cycles = 0;
+long long x86_emu_max_time = 0;
 enum cpu_sim_kind_t cpu_sim_kind = cpu_sim_functional;
 
 
 /* Reason for simulation end */
-enum ke_sim_finish_t ke_sim_finish = ke_sim_finish_none;
-struct string_map_t ke_sim_finish_map =
+enum x86_emu_finish_t x86_emu_finish = x86_emu_finish_none;
+struct string_map_t x86_emu_finish_map =
 {
 	9, {
-		{ "ContextsFinished", ke_sim_finish_ctx },
-		{ "MaxCPUInst", ke_sim_finish_max_cpu_inst },
-		{ "MaxCPUCycles", ke_sim_finish_max_cpu_cycles },
-		{ "MaxGPUInst", ke_sim_finish_max_gpu_inst },
-		{ "MaxGPUCycles", ke_sim_finish_max_gpu_cycles },
-		{ "MaxGPUKernels", ke_sim_finish_max_gpu_kernels },
-		{ "MaxTime", ke_sim_finish_max_time },
-		{ "Signal", ke_sim_finish_signal },
-		{ "Stall", ke_sim_finish_stall },
-		{ "GPUNoFaults", ke_sim_finish_gpu_no_faults }  /* GPU-REL */
+		{ "ContextsFinished", x86_emu_finish_ctx },
+		{ "MaxCPUInst", x86_emu_finish_max_cpu_inst },
+		{ "MaxCPUCycles", x86_emu_finish_max_cpu_cycles },
+		{ "MaxGPUInst", x86_emu_finish_max_gpu_inst },
+		{ "MaxGPUCycles", x86_emu_finish_max_gpu_cycles },
+		{ "MaxGPUKernels", x86_emu_finish_max_gpu_kernels },
+		{ "MaxTime", x86_emu_finish_max_time },
+		{ "Signal", x86_emu_finish_signal },
+		{ "Stall", x86_emu_finish_stall },
+		{ "GPUNoFaults", x86_emu_finish_gpu_no_faults }  /* GPU-REL */
 	}
 };
 
@@ -782,9 +782,9 @@ static void ke_signal_handler(int signum)
 	{
 	
 	case SIGINT:
-		if (ke_sim_finish)
+		if (x86_emu_finish)
 			abort();
-		ke_sim_finish = ke_sim_finish_signal;
+		x86_emu_finish = x86_emu_finish_signal;
 		fprintf(stderr, "SIGINT received\n");
 		break;
 	
@@ -814,22 +814,22 @@ void x86_emu_run(void)
 	{
 		/* Stop if all contexts finished */
 		if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-			ke_sim_finish = ke_sim_finish_ctx;
+			x86_emu_finish = x86_emu_finish_ctx;
 
 		/* Stop if maximum number of CPU instructions exceeded */
-		if (ke_max_inst && x86_emu->inst_count >= ke_max_inst)
-			ke_sim_finish = ke_sim_finish_max_cpu_inst;
+		if (x86_emu_max_inst && x86_emu->inst_count >= x86_emu_max_inst)
+			x86_emu_finish = x86_emu_finish_max_cpu_inst;
 
 		/* Stop if maximum number of cycles exceeded */
-		if (ke_max_cycles && cycle >= ke_max_cycles)
-			ke_sim_finish = ke_sim_finish_max_cpu_cycles;
+		if (x86_emu_max_cycles && cycle >= x86_emu_max_cycles)
+			x86_emu_finish = x86_emu_finish_max_cpu_cycles;
 
 		/* Stop if maximum time exceeded (check only every 10k cycles) */
-		if (ke_max_time && !(cycle % 10000) && x86_emu_timer() > ke_max_time * 1000000)
-			ke_sim_finish = ke_sim_finish_max_time;
+		if (x86_emu_max_time && !(cycle % 10000) && x86_emu_timer() > x86_emu_max_time * 1000000)
+			x86_emu_finish = x86_emu_finish_max_time;
 
 		/* Stop if any previous reason met */
-		if (ke_sim_finish)
+		if (x86_emu_finish)
 			break;
 
 		/* Next cycle */

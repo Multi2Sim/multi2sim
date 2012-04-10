@@ -19,27 +19,27 @@
 
 #include <cpukernel.h>
 
-struct regs_t *regs_create()
+struct x86_regs_t *x86_regs_create()
 {
-	struct regs_t *regs;
-	regs = calloc(1, sizeof(struct regs_t));
+	struct x86_regs_t *regs;
+	regs = calloc(1, sizeof(struct x86_regs_t));
 	return regs;
 }
 
 
-void regs_free(struct regs_t *regs)
+void x86_regs_free(struct x86_regs_t *regs)
 {
 	free(regs);
 }
 
 
-void regs_copy(struct regs_t *dst, struct regs_t *src)
+void x86_regs_copy(struct x86_regs_t *dst, struct x86_regs_t *src)
 {
-	memcpy(dst, src, sizeof(struct regs_t));
+	memcpy(dst, src, sizeof(struct x86_regs_t));
 }
 
 
-void regs_fpu_stack_dump(struct regs_t *regs, FILE *f)
+void x86_regs_fpu_stack_dump(struct x86_regs_t *regs, FILE *f)
 {
 	int index, i;
 	double value;
@@ -59,7 +59,7 @@ void regs_fpu_stack_dump(struct regs_t *regs, FILE *f)
 }
 
 
-void regs_dump(struct regs_t *regs, FILE *f)
+void x86_regs_dump(struct x86_regs_t *regs, FILE *f)
 {
 	int i, j;
 
@@ -83,7 +83,7 @@ void regs_dump(struct regs_t *regs, FILE *f)
 	
 	/* Floating-point stack */
 	fprintf(f, "  fpu_stack (last=top): ");
-	regs_fpu_stack_dump(regs, f);
+	x86_regs_fpu_stack_dump(regs, f);
 
 	/* Floating point code (part from status register) */
 	fprintf(f, "  fpu_code (C3-C2-C1-C0): %d-%d-%d-%d\n",

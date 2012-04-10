@@ -572,6 +572,6 @@ end_loop:
 
 		/* If all faults were inserted and no error was caused, end simulation */
 		if (!linked_list_count(gpu_fault_list) && !gpu_fault_errors)
-			ke_sim_finish = ke_sim_finish_gpu_no_faults;
+			x86_emu_finish = x86_emu_finish_gpu_no_faults;
 	}
 }
