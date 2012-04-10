@@ -39,12 +39,12 @@ static uint64_t gpu_uop_id_counter = 0;
 static struct repos_t *gpu_uop_repos;
 
 
-static void gpu_uop_add_src_idep(struct gpu_uop_t *uop, struct amd_inst_t *inst, int src_idx)
+static void gpu_uop_add_src_idep(struct gpu_uop_t *uop, struct evg_inst_t *inst, int src_idx)
 {
 	int sel, rel, chan, neg, abs;
 
 	assert(uop->idep_count < GPU_UOP_MAX_IDEP);
-	amd_inst_get_op_src(inst, src_idx, &sel, &rel, &chan, &neg, &abs);
+	evg_inst_get_op_src(inst, src_idx, &sel, &rel, &chan, &neg, &abs);
 
 	/* sel = 0..127: Value in GPR */
 	if (IN_RANGE(sel, 0, 127))
@@ -97,10 +97,10 @@ struct gpu_uop_t *gpu_uop_create()
 }
 
 
-struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_group)
+struct gpu_uop_t *gpu_uop_create_from_alu_group(struct evg_alu_group_t *alu_group)
 {
 	struct gpu_uop_t *uop;
-	struct amd_inst_t *inst;
+	struct evg_inst_t *inst;
 	int i;
 
 	/* Create uop */
@@ -112,7 +112,7 @@ struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_grou
 		inst = &alu_group->inst[i];
 
 		/* Local memory access instruction */
-		if (inst->info->fmt[0] == FMT_ALU_WORD0_LDS_IDX_OP)
+		if (inst->info->fmt[0] == EVG_FMT_ALU_WORD0_LDS_IDX_OP)
 		{
 			/* Assume read and write to local memory */
 			assert(uop->idep_count < GPU_UOP_MAX_IDEP);
@@ -122,16 +122,16 @@ struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_grou
 		}
 
 		/* Arithmetic instruction */
-		else if (inst->info->fmt[0] == FMT_ALU_WORD0)
+		else if (inst->info->fmt[0] == EVG_FMT_ALU_WORD0)
 		{
 			/* Add input dependences */
 			gpu_uop_add_src_idep(uop, inst, 0);
 			gpu_uop_add_src_idep(uop, inst, 1);
-			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP3)
+			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3)
 				gpu_uop_add_src_idep(uop, inst, 2);
 
 			/* Add register output dependence if not masked */
-			if (inst->info->fmt[1] == FMT_ALU_WORD1_OP3 ||
+			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3 ||
 				inst->words[1].alu_word1_op2.write_mask)
 			{
 				assert(uop->odep_count < GPU_UOP_MAX_ODEP);
@@ -142,7 +142,7 @@ struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_grou
 			/* Add PV/PS output dependence */
 			assert(uop->odep_count < GPU_UOP_MAX_ODEP);
 			uop->odep[uop->odep_count++] =
-				inst->alu == AMD_ALU_TRANS ? GPU_UOP_DEP_PS : GPU_UOP_DEP_PV;
+				inst->alu == EVG_ALU_TRANS ? GPU_UOP_DEP_PS : GPU_UOP_DEP_PV;
 		}
 	}
 

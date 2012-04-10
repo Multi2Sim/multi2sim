@@ -202,7 +202,7 @@ void gpu_uop_init(void);
 void gpu_uop_done(void);
 
 struct gpu_uop_t *gpu_uop_create(void);
-struct gpu_uop_t *gpu_uop_create_from_alu_group(struct amd_alu_group_t *alu_group);
+struct gpu_uop_t *gpu_uop_create_from_alu_group(struct evg_alu_group_t *alu_group);
 void gpu_uop_free(struct gpu_uop_t *gpu_uop);
 
 void gpu_uop_list_free(struct linked_list_t *gpu_uop_list);

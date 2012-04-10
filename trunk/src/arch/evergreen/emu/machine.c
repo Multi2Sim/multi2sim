@@ -27,12 +27,12 @@ extern struct gpu_ndrange_t *gpu_isa_ndrange;
 extern struct gpu_work_group_t *gpu_isa_work_group;
 extern struct gpu_wavefront_t *gpu_isa_wavefront;
 extern struct gpu_work_item_t *gpu_isa_work_item;
-extern struct amd_inst_t *gpu_isa_cf_inst;
-extern struct amd_inst_t *gpu_isa_inst;
-extern struct amd_alu_group_t *gpu_isa_alu_group;
+extern struct evg_inst_t *gpu_isa_cf_inst;
+extern struct evg_inst_t *gpu_isa_inst;
+extern struct evg_alu_group_t *gpu_isa_alu_group;
 
-void fmt_cf_alloc_export_word0_rat_dump(void *buf, FILE *f);
-void fmt_cf_alloc_export_word1_buf_dump(void *buf, FILE *f);
+void evg_fmt_cf_alloc_export_word0_rat_dump(void *buf, FILE *f);
+void evg_fmt_cf_alloc_export_word1_buf_dump(void *buf, FILE *f);
 
 char *err_gpu_machine_note =
 	"\tThe AMD Evergreen instruction set is partially supported by Multi2Sim. If\n"
@@ -481,7 +481,7 @@ void amd_inst_MEM_RAT_impl()
 	case 2:
 	{
 		uint32_t addr;
-		union amd_reg_t value;
+		union evg_reg_t value;
 
 		int work_item_id;
 		int i;
@@ -560,7 +560,7 @@ void amd_inst_MEM_RAT_impl()
 				mem_write(gk->global_mem, addr + i * 4, 4, &value);
 				gpu_isa_debug(",");
 				if (debug_status(gpu_isa_debug_category))
-					amd_inst_dump_gpr(W0.rw_gpr, W0.rr, i, 0, debug_file(gpu_isa_debug_category));
+					evg_inst_dump_gpr(W0.rw_gpr, W0.rr, i, 0, debug_file(gpu_isa_debug_category));
 				gpu_isa_debug("=(0x%x,%gf)", value.as_uint, value.as_float);
 			}
 			/* FIXME: array_size: ignored now, because 'burst_count' = 0 */
@@ -588,7 +588,7 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 	/* STORE_RAW */
 	case 2:
 	{
-		union amd_reg_t value;
+		union evg_reg_t value;
 		uint32_t addr;
 
 		int work_item_id;
@@ -653,7 +653,7 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 				mem_write(gk->global_mem, addr + i * 4, 4, &value);
 				gpu_isa_debug(",");
 				if (debug_status(gpu_isa_debug_category))
-					amd_inst_dump_gpr(W0.rw_gpr, W0.rr, i, 0, debug_file(gpu_isa_debug_category));
+					evg_inst_dump_gpr(W0.rw_gpr, W0.rr, i, 0, debug_file(gpu_isa_debug_category));
 				gpu_isa_debug("=(0x%x,%gf)", value.as_uint, value.as_float);
 			}
 			/* FIXME: array_size: ignored now, because 'burst_count' = 0 */
@@ -1246,7 +1246,7 @@ void amd_inst_PRED_SETGE_UINT_impl() {
 void amd_inst_PRED_SETE_impl()
 {
 	float src0, src1;
-	union amd_reg_t dst;
+	union evg_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1273,7 +1273,7 @@ void amd_inst_PRED_SETE_impl()
 void amd_inst_PRED_SETGT_impl()
 {
 	float src0, src1;
-	union amd_reg_t dst;
+	union evg_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1300,7 +1300,7 @@ void amd_inst_PRED_SETGT_impl()
 void amd_inst_PRED_SETGE_impl()
 {
 	float src0, src1;
-	union amd_reg_t dst;
+	union evg_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1327,7 +1327,7 @@ void amd_inst_PRED_SETGE_impl()
 void amd_inst_PRED_SETNE_impl()
 {
 	float src0, src1;
-	union amd_reg_t dst;
+	union evg_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1656,7 +1656,7 @@ void amd_inst_KILLGE_UINT_impl() {
 void amd_inst_PREDE_INT_impl()
 {
 	int32_t src0, src1;
-	union amd_reg_t dst;
+	union evg_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1683,7 +1683,7 @@ void amd_inst_PREDE_INT_impl()
 void amd_inst_PRED_SETGE_INT_impl()
 {
 	int32_t src0, src1;
-	union amd_reg_t dst;
+	union evg_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1710,7 +1710,7 @@ void amd_inst_PRED_SETGE_INT_impl()
 void amd_inst_PRED_SETGT_INT_impl()
 {
 	int32_t src0, src1;
-	union amd_reg_t dst;
+	union evg_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -1737,7 +1737,7 @@ void amd_inst_PRED_SETGT_INT_impl()
 void amd_inst_PRED_SETNE_INT_impl()
 {
 	int32_t src0, src1;
-	union amd_reg_t dst;
+	union evg_reg_t dst;
 	int cond;
 
 	GPU_PARAM_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
@@ -2639,7 +2639,7 @@ void amd_inst_LDS_IDX_OP_impl()
 	/* DS_INST_READ_RET: 1A READ(dst) : OQA = DS(dst) */
 	case 50:
 	{
-		union amd_reg_t *value_ptr;
+		union evg_reg_t *value_ptr;
 
 		value_ptr = malloc(4);
 		if (!value_ptr)
@@ -2664,7 +2664,7 @@ void amd_inst_LDS_IDX_OP_impl()
 	 *   OQB=DS(dst1) */
 	case 52:
 	{
-		union amd_reg_t *value_ptr;
+		union evg_reg_t *value_ptr;
 
 		value_ptr = malloc(4);
 		if (!value_ptr)
@@ -3149,10 +3149,10 @@ void amd_inst_FETCH_impl()
 			gpu_isa_write_gpr(W1.dst_gpr, W1.dst_rel, i, value[dst_sel_elem]);
 			if (debug_status(gpu_isa_debug_category))
 			{
-				union amd_reg_t reg;
+				union evg_reg_t reg;
 				reg.as_uint = value[dst_sel_elem];
 				gpu_isa_debug(" ");
-				amd_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, dst_sel_elem, debug_file(gpu_isa_debug_category));
+				evg_inst_dump_gpr(W1.dst_gpr, W1.dst_rel, i, dst_sel_elem, debug_file(gpu_isa_debug_category));
 				gpu_isa_debug("<=(%d,%gf)", reg.as_uint, reg.as_float);
 			}
 			break;
@@ -3243,8 +3243,8 @@ void amd_inst_SAMPLE_impl()
 {
 	int i;
 	uint32_t base_addr;
-	union amd_reg_t addr;
-	union amd_reg_t value;
+	union evg_reg_t addr;
+	union evg_reg_t value;
 	int dst_sel[4], dst_sel_elem;
 	struct opencl_mem_t *image;
 
@@ -3329,7 +3329,7 @@ void amd_inst_SAMPLE_impl()
 			if (debug_status(gpu_isa_debug_category))
 			{
 				gpu_isa_debug(" ");
-				amd_inst_dump_gpr(W1.dst_gpr, W1.dr, i, dst_sel_elem, debug_file(gpu_isa_debug_category));
+				evg_inst_dump_gpr(W1.dst_gpr, W1.dr, i, dst_sel_elem, debug_file(gpu_isa_debug_category));
 				gpu_isa_debug("<=(%d,%gf)", value.as_int, value.as_float);
 			}
 			break;

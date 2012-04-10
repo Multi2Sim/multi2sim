@@ -27,7 +27,8 @@
  * Common
  */
 
-struct string_map_t fmt_rel_map = {
+static struct string_map_t evg_fmt_rel_map =
+{
 	2, {
 		{ "Absolute", 0 },
 		{ "Relative", 1 }
@@ -35,7 +36,8 @@ struct string_map_t fmt_rel_map = {
 };
 
 
-struct string_map_t fmt_chan_map = {
+static struct string_map_t evg_fmt_chan_map =
+{
 	4, {
 		{ "CHAN_X", 0 },
 		{ "CHAN_Y", 1 },
@@ -45,7 +47,8 @@ struct string_map_t fmt_chan_map = {
 };
 
 
-struct string_map_t fmt_sel_map = {
+static struct string_map_t evg_fmt_sel_map =
+{
 	7, {
 		{ "SEL_X", 0 },
 		{ "SEL_Y", 1 },
@@ -58,7 +61,8 @@ struct string_map_t fmt_sel_map = {
 };
 
 
-struct string_map_t fmt_cf_index_mode_map = {
+static struct string_map_t evg_fmt_cf_index_mode_map =
+{
 	4, {
 		{ "CF_INDEX_NONE", 0 },
 		{ "CF_INDEX_0", 1 },
@@ -68,7 +72,8 @@ struct string_map_t fmt_cf_index_mode_map = {
 };
 
 
-struct string_map_t fmt_kcache_mode_map = {
+static struct string_map_t evg_fmt_kcache_mode_map =
+{
 	4, {
 		{ "CF_KCACHE_NOP", 0 },
 		{ "CF_KCACHE_LOCK_1", 1 },
@@ -78,20 +83,22 @@ struct string_map_t fmt_kcache_mode_map = {
 };
 
 
-struct string_map_t fmt_inst_category_map = {
+struct string_map_t evg_inst_category_map =
+{
 	7, {
-		{ "CF", AMD_CAT_CF },
-		{ "ALU", AMD_CAT_ALU },
-		{ "LDS", AMD_CAT_LDS },
-		{ "VTX", AMD_CAT_VTX },
-		{ "TEX", AMD_CAT_TEX },
-		{ "MEM_RD", AMD_CAT_MEM_RD },
-		{ "MEM_GDS", AMD_CAT_MEM_GDS }
+		{ "CF", EVG_INST_CAT_CF },
+		{ "ALU", EVG_INST_CAT_ALU },
+		{ "LDS", EVG_INST_CAT_LDS },
+		{ "VTX", EVG_INST_CAT_VTX },
+		{ "TEX", EVG_INST_CAT_TEX },
+		{ "MEM_RD", EVG_INST_CAT_MEM_RD },
+		{ "MEM_GDS", EVG_INST_CAT_MEM_GDS }
 	}
 };
 
 
-struct string_map_t fmt_cf_inst_map = {
+struct string_map_t evg_fmt_cf_inst_map =
+{
 	55, {
 		{ "CF_INST_NOP", 0 },
 		{ "CF_INST_TC", 1 },
@@ -158,7 +165,7 @@ struct string_map_t fmt_cf_inst_map = {
  * Invalid/unimplemented Microcode Format
  */
 
-void fmt_invalid_dump(void *buf, FILE *f)
+static void evg_fmt_invalid_dump(void *buf, FILE *f)
 {
 	fprintf(stderr, "dump: unsupported microcode format\n");
 }
@@ -170,7 +177,7 @@ void fmt_invalid_dump(void *buf, FILE *f)
  * CF_WORD0
  */
 
-struct string_map_t fmt_cf_word0_jts_map = {
+struct string_map_t evg_fmt_cf_word0_jts_map = {
 	6, {
 		{ "CF_JUMPTABLE_SEL_CONST_A", 0 },
 		{ "CF_JUMPTABLE_SEL_CONST_B", 1 },
@@ -182,12 +189,12 @@ struct string_map_t fmt_cf_word0_jts_map = {
 };
 
 
-void fmt_cf_word0_dump(void *buf, FILE *f)
+void evg_fmt_cf_word0_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_word0_t *fmt = (struct fmt_cf_word0_t *) buf;
+	struct evg_fmt_cf_word0_t *fmt = (struct evg_fmt_cf_word0_t *) buf;
 	fprintf(f, "CF_WORD0\n");
 	fprintf(f, "  addr = %d\n", fmt->addr);
-	fprintf(f, "  jump_table_sel = %d (%s)\n", fmt->jump_table_sel, map_value(&fmt_cf_word0_jts_map, fmt->jump_table_sel));
+	fprintf(f, "  jump_table_sel = %d (%s)\n", fmt->jump_table_sel, map_value(&evg_fmt_cf_word0_jts_map, fmt->jump_table_sel));
 }
 
 
@@ -197,7 +204,7 @@ void fmt_cf_word0_dump(void *buf, FILE *f)
  * CF_GWS_WORD0
  */
 
-struct string_map_t fmt_cf_gws_word0_val_index_mode_map = {
+struct string_map_t evg_fmt_cf_gws_word0_val_index_mode_map = {
 	4, {
 		{ "GWS_INDEX_NONE", 0 },
 		{ "GWS_INDEX_0", 1 },
@@ -206,7 +213,7 @@ struct string_map_t fmt_cf_gws_word0_val_index_mode_map = {
 	}
 };
 
-struct string_map_t fmt_cf_gws_word0_gws_opcode_map = {
+struct string_map_t evg_fmt_cf_gws_word0_gws_opcode_map = {
 	4, {
 		{ "GWS_SEMA_V", 0 },
 		{ "GWS_SEMA_P", 1 },
@@ -216,18 +223,18 @@ struct string_map_t fmt_cf_gws_word0_gws_opcode_map = {
 };
 
 
-void fmt_cf_gws_word0_dump(void *buf, FILE *f)
+void evg_fmt_cf_gws_word0_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_gws_word0_t *fmt = (struct fmt_cf_gws_word0_t *) buf;
+	struct evg_fmt_cf_gws_word0_t *fmt = (struct evg_fmt_cf_gws_word0_t *) buf;
 	fprintf(f, "CF_GWS_WORD0\n");
 	fprintf(f, "  value = %d\n", fmt->value);
 	fprintf(f, "  resource = %d\n", fmt->resource);
 	fprintf(f, "  sign = %d\n", fmt->s);
 	fprintf(f, "  val_index_mode = %d (%s)\n", fmt->val_index_mode,
-		map_value(&fmt_cf_gws_word0_val_index_mode_map, fmt->val_index_mode));
+		map_value(&evg_fmt_cf_gws_word0_val_index_mode_map, fmt->val_index_mode));
 	fprintf(f, "  rsrc_index_mode = %d (%s)\n", fmt->rsrc_index_mode,
-		map_value(&fmt_cf_index_mode_map, fmt->rsrc_index_mode));
-	fprintf(f, "  gws_opcode = %d (%s)\n", fmt->gws_opcode, map_value(&fmt_cf_gws_word0_gws_opcode_map, fmt->gws_opcode));
+		map_value(&evg_fmt_cf_index_mode_map, fmt->rsrc_index_mode));
+	fprintf(f, "  gws_opcode = %d (%s)\n", fmt->gws_opcode, map_value(&evg_fmt_cf_gws_word0_gws_opcode_map, fmt->gws_opcode));
 }
 
 
@@ -237,7 +244,7 @@ void fmt_cf_gws_word0_dump(void *buf, FILE *f)
  * CF_WORD1
  */
 
-struct string_map_t fmt_cf_word1_cond_map = {
+struct string_map_t evg_fmt_cf_word1_cond_map = {
 	4, {
 		{ "CF_COND_ACTIVE", 0 },
 		{ "CF_COND_FALSE", 1 },
@@ -247,18 +254,18 @@ struct string_map_t fmt_cf_word1_cond_map = {
 };
 
 
-void fmt_cf_word1_dump(void *buf, FILE *f)
+void evg_fmt_cf_word1_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_word1_t *fmt = (struct fmt_cf_word1_t *) buf;
+	struct evg_fmt_cf_word1_t *fmt = (struct evg_fmt_cf_word1_t *) buf;
 
 	fprintf(f, "CF_WORD1\n");
 	fprintf(f, "  pop_count = %d\n", fmt->pop_count);
 	fprintf(f, "  cf_const = %d\n", fmt->cf_const);
-	fprintf(f, "  cond = %d (%s)\n", fmt->cond, map_value(&fmt_cf_word1_cond_map, fmt->cond));
+	fprintf(f, "  cond = %d (%s)\n", fmt->cond, map_value(&evg_fmt_cf_word1_cond_map, fmt->cond));
 	fprintf(f, "  count = %d\n", fmt->count);
 	fprintf(f, "  valix_pixel_mode = %d\n", fmt->valid_pixel_mode);
 	fprintf(f, "  end_of_program = %d\n", fmt->end_of_program);
-	fprintf(f, "  cf_inst = %d (%s)\n", fmt->cf_inst, map_value(&fmt_cf_inst_map, fmt->cf_inst));
+	fprintf(f, "  cf_inst = %d (%s)\n", fmt->cf_inst, map_value(&evg_fmt_cf_inst_map, fmt->cf_inst));
 	fprintf(f, "  whole_quad_mode = %d\n", fmt->whole_quad_mode);
 	fprintf(f, "  barrier = %d\n", fmt->barrier);
 }
@@ -271,15 +278,15 @@ void fmt_cf_word1_dump(void *buf, FILE *f)
  */
 
 
-void fmt_cf_alu_word0_dump(void *buf, FILE *f)
+void evg_fmt_cf_alu_word0_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_alu_word0_t *fmt = (struct fmt_cf_alu_word0_t *) buf;
+	struct evg_fmt_cf_alu_word0_t *fmt = (struct evg_fmt_cf_alu_word0_t *) buf;
 
 	fprintf(f, "CF_ALU_WORD0\n");
 	fprintf(f, "  addr = %d\n", fmt->addr);
 	fprintf(f, "  kcache_bank0 = %d\n", fmt->kcache_bank0);
 	fprintf(f, "  kcache_bank1 = %d\n", fmt->kcache_bank1);
-	fprintf(f, "  kcache_mode0 = %d (%s)\n", fmt->kcache_mode0, map_value(&fmt_kcache_mode_map, fmt->kcache_mode0));
+	fprintf(f, "  kcache_mode0 = %d (%s)\n", fmt->kcache_mode0, map_value(&evg_fmt_kcache_mode_map, fmt->kcache_mode0));
 }
 
 
@@ -289,7 +296,7 @@ void fmt_cf_alu_word0_dump(void *buf, FILE *f)
  * CF_ALU_WORD1
  */
 
-struct string_map_t fmt_cf_alu_inst_map = {
+struct string_map_t evg_fmt_cf_alu_inst_map = {
 	8, {
 		{ "CF_INST_ALU", 8 },
 		{ "CF_INST_ALU_PUSH_BEFORE", 9 },
@@ -303,17 +310,17 @@ struct string_map_t fmt_cf_alu_inst_map = {
 };
 
 
-void fmt_cf_alu_word1_dump(void *buf, FILE *f)
+void evg_fmt_cf_alu_word1_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_alu_word1_t *fmt = (struct fmt_cf_alu_word1_t *) buf;
+	struct evg_fmt_cf_alu_word1_t *fmt = (struct evg_fmt_cf_alu_word1_t *) buf;
 
 	fprintf(f, "CF_ALU_WORD1\n");
-	fprintf(f, "  kcache_mode1 = %d (%s)\n", fmt->kcache_mode1, map_value(&fmt_kcache_mode_map, fmt->kcache_mode1));
+	fprintf(f, "  kcache_mode1 = %d (%s)\n", fmt->kcache_mode1, map_value(&evg_fmt_kcache_mode_map, fmt->kcache_mode1));
 	fprintf(f, "  kcache_addr0 = 0x%x\n", fmt->kcache_addr0);
 	fprintf(f, "  kcache_addr1 = 0x%x\n", fmt->kcache_addr1);
 	fprintf(f, "  count=%d\n", fmt->count);
 	fprintf(f, "  alt_const=%d\n", fmt->alt_const);
-	fprintf(f, "  cf_inst=%d (%s)\n", fmt->cf_inst, map_value(&fmt_cf_alu_inst_map, fmt->cf_inst));
+	fprintf(f, "  cf_inst=%d (%s)\n", fmt->cf_inst, map_value(&evg_fmt_cf_alu_inst_map, fmt->cf_inst));
 	fprintf(f, "  whole_quad_mode=%d\n", fmt->whole_quad_mode);
 	fprintf(f, "  barrier=%d\n", fmt->barrier);
 }
@@ -325,22 +332,22 @@ void fmt_cf_alu_word1_dump(void *buf, FILE *f)
  * CF_ALU_WORD0_EXT
  */
 
-void fmt_cf_alu_word0_ext_dump(void *buf, FILE *f)
+void evg_fmt_cf_alu_word0_ext_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_alu_word0_ext_t *fmt = (struct fmt_cf_alu_word0_ext_t *) buf;
+	struct evg_fmt_cf_alu_word0_ext_t *fmt = (struct evg_fmt_cf_alu_word0_ext_t *) buf;
 
 	fprintf(f, "CF_ALU_WORD0_EXT\n");
 	fprintf(f, "  kcache_bank_index_mode0 = %d (%s)\n", fmt->kcache_bank_index_mode0,
-		map_value(&fmt_cf_index_mode_map, fmt->kcache_bank_index_mode0));
+		map_value(&evg_fmt_cf_index_mode_map, fmt->kcache_bank_index_mode0));
 	fprintf(f, "  kcache_bank_index_mode1 = %d (%s)\n", fmt->kcache_bank_index_mode1,
-		map_value(&fmt_cf_index_mode_map, fmt->kcache_bank_index_mode1));
+		map_value(&evg_fmt_cf_index_mode_map, fmt->kcache_bank_index_mode1));
 	fprintf(f, "  kcache_bank_index_mode2 = %d (%s)\n", fmt->kcache_bank_index_mode2,
-		map_value(&fmt_cf_index_mode_map, fmt->kcache_bank_index_mode2));
+		map_value(&evg_fmt_cf_index_mode_map, fmt->kcache_bank_index_mode2));
 	fprintf(f, "  kcache_bank_index_mode3 = %d (%s)\n", fmt->kcache_bank_index_mode3,
-		map_value(&fmt_cf_index_mode_map, fmt->kcache_bank_index_mode3));
+		map_value(&evg_fmt_cf_index_mode_map, fmt->kcache_bank_index_mode3));
 	fprintf(f, "  kcache_bank2 = %d\n", fmt->kcache_bank2);
 	fprintf(f, "  kcache_bank3 = %d\n", fmt->kcache_bank3);
-	fprintf(f, "  kcache_mode2 = %d (%s)\n", fmt->kcache_mode2, map_value(&fmt_kcache_mode_map, fmt->kcache_mode2));
+	fprintf(f, "  kcache_mode2 = %d (%s)\n", fmt->kcache_mode2, map_value(&evg_fmt_kcache_mode_map, fmt->kcache_mode2));
 }
 
 
@@ -351,15 +358,15 @@ void fmt_cf_alu_word0_ext_dump(void *buf, FILE *f)
  */
 
 
-void fmt_cf_alu_word1_ext_dump(void *buf, FILE *f)
+void evg_fmt_cf_alu_word1_ext_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_alu_word1_ext_t *fmt = (struct fmt_cf_alu_word1_ext_t *) buf;
+	struct evg_fmt_cf_alu_word1_ext_t *fmt = (struct evg_fmt_cf_alu_word1_ext_t *) buf;
 
 	fprintf(f, "CF_ALU_WORD1_EXT\n");
-	fprintf(f, "  kcache_mode3 = %d (%s)\n", fmt->kcache_mode3, map_value(&fmt_kcache_mode_map, fmt->kcache_mode3));
+	fprintf(f, "  kcache_mode3 = %d (%s)\n", fmt->kcache_mode3, map_value(&evg_fmt_kcache_mode_map, fmt->kcache_mode3));
 	fprintf(f, "  kcache_addr2 = 0x%x\n", fmt->kcache_addr2);
 	fprintf(f, "  kcache_addr3 = 0x%x\n", fmt->kcache_addr3);
-	fprintf(f, "  cf_inst = %d (%s)\n", fmt->cf_inst, map_value(&fmt_cf_alu_inst_map, fmt->cf_inst));
+	fprintf(f, "  cf_inst = %d (%s)\n", fmt->cf_inst, map_value(&evg_fmt_cf_alu_inst_map, fmt->cf_inst));
 	fprintf(f, "  barrier = %d\n", fmt->barrier);
 }
 
@@ -370,7 +377,7 @@ void fmt_cf_alu_word1_ext_dump(void *buf, FILE *f)
  * CF_ALLOC_EXPORT_WORD0
  */
 
-struct string_map_t fmt_cf_alloc_export_type_map = {
+struct string_map_t evg_fmt_cf_alloc_export_type_map = {
 	4, {
 		{ "EXPORT_PIXEL/EXPORT_WRITE", 0 },
 		{ "EXPORT_POS/EXPORT_WRITE_IND", 1 },
@@ -380,15 +387,15 @@ struct string_map_t fmt_cf_alloc_export_type_map = {
 };
 
 
-void fmt_cf_alloc_export_word0_dump(void *buf, FILE *f)
+void evg_fmt_cf_alloc_export_word0_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_alloc_export_word0_t *fmt = (struct fmt_cf_alloc_export_word0_t *) buf;
+	struct evg_fmt_cf_alloc_export_word0_t *fmt = (struct evg_fmt_cf_alloc_export_word0_t *) buf;
 
 	fprintf(f, "CF_ALLOC_EXPORT_WORD0\n");
 	fprintf(f, "  array_base = %d\n", fmt->array_base);
-	fprintf(f, "  type = %d (%s)\n", fmt->type, map_value(&fmt_cf_alloc_export_type_map, fmt->type));
+	fprintf(f, "  type = %d (%s)\n", fmt->type, map_value(&evg_fmt_cf_alloc_export_type_map, fmt->type));
 	fprintf(f, "  rw_gpr = %d\n", fmt->rw_gpr);
-	fprintf(f, "  rw_rel = %d (%s)\n", fmt->rr, map_value(&fmt_rel_map, fmt->rr));
+	fprintf(f, "  rw_rel = %d (%s)\n", fmt->rr, map_value(&evg_fmt_rel_map, fmt->rr));
 	fprintf(f, "  index_grp = %d\n", fmt->index_gpr);
 	fprintf(f, "  elem_size = %d\n", fmt->elem_size);
 }
@@ -400,7 +407,7 @@ void fmt_cf_alloc_export_word0_dump(void *buf, FILE *f)
  * CF_ALLOC_EXPORT_WORD0_RAT
  */
 
-struct string_map_t fmt_cf_alloc_export_rat_inst_map = {
+struct string_map_t evg_fmt_cf_alloc_export_rat_inst_map = {
 	39, {
 		{ "EXPORT_RAT_INST_NOP", 0 },
 		{ "EXPORT_RAT_INST_STORE_TYPED", 1 },
@@ -445,17 +452,17 @@ struct string_map_t fmt_cf_alloc_export_rat_inst_map = {
 };
 
 
-void fmt_cf_alloc_export_word0_rat_dump(void *buf, FILE *f)
+void evg_fmt_cf_alloc_export_word0_rat_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_alloc_export_word0_rat_t *fmt = (struct fmt_cf_alloc_export_word0_rat_t *) buf;
+	struct evg_fmt_cf_alloc_export_word0_rat_t *fmt = (struct evg_fmt_cf_alloc_export_word0_rat_t *) buf;
 
 	fprintf(f, "CF_ALLOC_EXPORT_WORD0_RAT\n");
 	fprintf(f, "  rat_id = %d\n", fmt->rat_id);
-	fprintf(f, "  rat_inst = %d (%s)\n", fmt->rat_inst, map_value(&fmt_cf_alloc_export_rat_inst_map, fmt->rat_inst));
-	fprintf(f, "  rat_index_mode = %d (%s)\n", fmt->rat_index_mode, map_value(&fmt_cf_index_mode_map, fmt->rat_index_mode));
-	fprintf(f, "  type = %d (%s)\n", fmt->type, map_value(&fmt_cf_alloc_export_type_map, fmt->type));
+	fprintf(f, "  rat_inst = %d (%s)\n", fmt->rat_inst, map_value(&evg_fmt_cf_alloc_export_rat_inst_map, fmt->rat_inst));
+	fprintf(f, "  rat_index_mode = %d (%s)\n", fmt->rat_index_mode, map_value(&evg_fmt_cf_index_mode_map, fmt->rat_index_mode));
+	fprintf(f, "  type = %d (%s)\n", fmt->type, map_value(&evg_fmt_cf_alloc_export_type_map, fmt->type));
 	fprintf(f, "  rw_gpr = %d\n", fmt->rw_gpr);
-	fprintf(f, "  rw_rel = %d (%s)\n", fmt->rr, map_value(&fmt_rel_map, fmt->rr));
+	fprintf(f, "  rw_rel = %d (%s)\n", fmt->rr, map_value(&evg_fmt_rel_map, fmt->rr));
 	fprintf(f, "  index_gpr = %d\n", fmt->index_gpr);
 	fprintf(f, "  elem_size = %d\n", fmt->elem_size);
 }
@@ -466,9 +473,9 @@ void fmt_cf_alloc_export_word0_rat_dump(void *buf, FILE *f)
  * CF_ALLOC_EXPORT_WORD1_BUF
  */
 
-void fmt_cf_alloc_export_word1_buf_dump(void *buf, FILE *f)
+void evg_fmt_cf_alloc_export_word1_buf_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_alloc_export_word1_buf_t *fmt = (struct fmt_cf_alloc_export_word1_buf_t *) buf;
+	struct evg_fmt_cf_alloc_export_word1_buf_t *fmt = (struct evg_fmt_cf_alloc_export_word1_buf_t *) buf;
 
 	fprintf(f, "CF_ALLOC_EXPORT_WORD1_BUF\n");
 	fprintf(f, "  array_size = %d\n", fmt->array_size);
@@ -476,7 +483,7 @@ void fmt_cf_alloc_export_word1_buf_dump(void *buf, FILE *f)
 	fprintf(f, "  burst_count = %d\n", fmt->burst_count);
 	fprintf(f, "  valid_pixel_mode = %d\n", fmt->valid_pixel_mode);
 	fprintf(f, "  end_of_program = %d\n", fmt->end_of_program);
-	fprintf(f, "  cf_inst = %d (%s)\n", fmt->cf_inst, map_value(&fmt_cf_inst_map, fmt->cf_inst));
+	fprintf(f, "  cf_inst = %d (%s)\n", fmt->cf_inst, map_value(&evg_fmt_cf_inst_map, fmt->cf_inst));
 	fprintf(f, "  mark = %d\n", fmt->mark);
 	fprintf(f, "  barrier = %d\n", fmt->barrier);
 }
@@ -488,19 +495,19 @@ void fmt_cf_alloc_export_word1_buf_dump(void *buf, FILE *f)
  * CF_ALLOC_EXPORT_WORD1_SWIZ 
  */
 
-void fmt_cf_alloc_export_word1_swiz_dump(void *buf, FILE *f)
+void evg_fmt_cf_alloc_export_word1_swiz_dump(void *buf, FILE *f)
 {
-	struct fmt_cf_alloc_export_word1_swiz_t *fmt = (struct fmt_cf_alloc_export_word1_swiz_t *) buf;
+	struct evg_fmt_cf_alloc_export_word1_swiz_t *fmt = (struct evg_fmt_cf_alloc_export_word1_swiz_t *) buf;
 
 	fprintf(f, "CF_ALLOC_EXPORT_WORD1_SWIZ\n");
-	fprintf(f, "  sel_x = %d (%s)\n", fmt->sel_x, map_value(&fmt_sel_map, fmt->sel_x));
-	fprintf(f, "  sel_y = %d (%s)\n", fmt->sel_y, map_value(&fmt_sel_map, fmt->sel_y));
-	fprintf(f, "  sel_z = %d (%s)\n", fmt->sel_z, map_value(&fmt_sel_map, fmt->sel_z));
-	fprintf(f, "  sel_w = %d (%s)\n", fmt->sel_w, map_value(&fmt_sel_map, fmt->sel_w));
+	fprintf(f, "  sel_x = %d (%s)\n", fmt->sel_x, map_value(&evg_fmt_sel_map, fmt->sel_x));
+	fprintf(f, "  sel_y = %d (%s)\n", fmt->sel_y, map_value(&evg_fmt_sel_map, fmt->sel_y));
+	fprintf(f, "  sel_z = %d (%s)\n", fmt->sel_z, map_value(&evg_fmt_sel_map, fmt->sel_z));
+	fprintf(f, "  sel_w = %d (%s)\n", fmt->sel_w, map_value(&evg_fmt_sel_map, fmt->sel_w));
 	fprintf(f, "  burst_count = %d\n", fmt->burst_count);
 	fprintf(f, "  valid_pixel_mode = %d\n", fmt->valid_pixel_mode);
 	fprintf(f, "  end_of_program = %d\n", fmt->end_of_program);
-	fprintf(f, "  cf_inst = %d (%s)\n", fmt->cf_inst, map_value(&fmt_cf_inst_map, fmt->cf_inst));
+	fprintf(f, "  cf_inst = %d (%s)\n", fmt->cf_inst, map_value(&evg_fmt_cf_inst_map, fmt->cf_inst));
 	fprintf(f, "  mark = %d\n", fmt->mark);
 	fprintf(f, "  barrier = %d\n", fmt->barrier);
 }
@@ -512,7 +519,7 @@ void fmt_cf_alloc_export_word1_swiz_dump(void *buf, FILE *f)
  * ALU_WORD0
  */
 
-struct string_map_t fmt_alu_src_sel_map =
+struct string_map_t evg_fmt_alu_src_sel_map =
 {
 	34, {
 		{ "ALU_SRC_LDS_OQ_A", 219 },
@@ -552,7 +559,7 @@ struct string_map_t fmt_alu_src_sel_map =
 	}
 };
 
-struct string_map_t fmt_alu_word0_index_mode_map = {
+struct string_map_t evg_fmt_alu_word0_index_mode_map = {
 	4, {
 		{ "INDEX_AR_X", 0 },
 		{ "INDEX_LOOP", 4 },
@@ -561,7 +568,7 @@ struct string_map_t fmt_alu_word0_index_mode_map = {
 	}
 };
 
-struct string_map_t fmt_alu_word0_pred_sel_map = {
+struct string_map_t evg_fmt_alu_word0_pred_sel_map = {
 	3, {
 		{ "PRED_SEL_OFF", 0 },
 		{ "PRED_SEL_ZERO", 2 },
@@ -569,7 +576,7 @@ struct string_map_t fmt_alu_word0_pred_sel_map = {
 	}
 };
 
-static void fmt_alu_src_sel_dump_buf(uint32_t src_sel, char **pbuf, int *psize)
+static void evg_fmt_alu_src_sel_dump_buf(uint32_t src_sel, char **pbuf, int *psize)
 {
 	if (IN_RANGE(src_sel, 0, 127))
 		str_printf(pbuf, psize, "GPR[%d]", src_sel);
@@ -582,13 +589,13 @@ static void fmt_alu_src_sel_dump_buf(uint32_t src_sel, char **pbuf, int *psize)
 	else if (IN_RANGE(src_sel, 288, 319))
 		str_printf(pbuf, psize, "Kcache constant %d in bank 3", src_sel - 288);
 	else
-		str_printf(pbuf, psize, "%s", map_value(&fmt_alu_src_sel_map, src_sel));
+		str_printf(pbuf, psize, "%s", map_value(&evg_fmt_alu_src_sel_map, src_sel));
 }
 
 
-void fmt_alu_word0_dump(void *buf, FILE *f)
+void evg_fmt_alu_word0_dump(void *buf, FILE *f)
 {
-	struct fmt_alu_word0_t *fmt = (struct fmt_alu_word0_t *) buf;
+	struct evg_fmt_alu_word0_t *fmt = (struct evg_fmt_alu_word0_t *) buf;
 	char src0_sel_str[MAX_STRING_SIZE];
 	char src1_sel_str[MAX_STRING_SIZE];
 	char *str;
@@ -596,23 +603,23 @@ void fmt_alu_word0_dump(void *buf, FILE *f)
 
 	str = src0_sel_str;
 	size = MAX_STRING_SIZE;
-	fmt_alu_src_sel_dump_buf(fmt->src0_sel, &str, &size);
+	evg_fmt_alu_src_sel_dump_buf(fmt->src0_sel, &str, &size);
 
 	str = src1_sel_str;
 	size = MAX_STRING_SIZE;
-	fmt_alu_src_sel_dump_buf(fmt->src1_sel, &str, &size);
+	evg_fmt_alu_src_sel_dump_buf(fmt->src1_sel, &str, &size);
 
 	fprintf(f, "ALU_WORD0\n");
 	fprintf(f, "  src0_sel = %d (%s)\n", fmt->src0_sel, src0_sel_str);
 	fprintf(f, "  src1_sel = %d (%s)\n", fmt->src1_sel, src1_sel_str);
-	fprintf(f, "  src0_rel = %d (%s)\n", fmt->src0_rel, map_value(&fmt_rel_map, fmt->src0_rel));
-	fprintf(f, "  src1_rel = %d (%s)\n", fmt->src1_rel, map_value(&fmt_rel_map, fmt->src1_rel));
-	fprintf(f, "  src0_chan = %d (%s)\n", fmt->src0_chan, map_value(&fmt_chan_map, fmt->src0_chan));
-	fprintf(f, "  src1_chan = %d (%s)\n", fmt->src1_chan, map_value(&fmt_chan_map, fmt->src1_chan));
+	fprintf(f, "  src0_rel = %d (%s)\n", fmt->src0_rel, map_value(&evg_fmt_rel_map, fmt->src0_rel));
+	fprintf(f, "  src1_rel = %d (%s)\n", fmt->src1_rel, map_value(&evg_fmt_rel_map, fmt->src1_rel));
+	fprintf(f, "  src0_chan = %d (%s)\n", fmt->src0_chan, map_value(&evg_fmt_chan_map, fmt->src0_chan));
+	fprintf(f, "  src1_chan = %d (%s)\n", fmt->src1_chan, map_value(&evg_fmt_chan_map, fmt->src1_chan));
 	fprintf(f, "  src0_neg = %d\n", fmt->src0_neg);
 	fprintf(f, "  src1_neg = %d\n", fmt->src1_neg);
-	fprintf(f, "  index_mode = %d (%s)\n", fmt->index_mode, map_value(&fmt_alu_word0_index_mode_map, fmt->index_mode));
-	fprintf(f, "  pred_sel = %d (%s)\n", fmt->pred_sel, map_value(&fmt_alu_word0_pred_sel_map, fmt->pred_sel));
+	fprintf(f, "  index_mode = %d (%s)\n", fmt->index_mode, map_value(&evg_fmt_alu_word0_index_mode_map, fmt->index_mode));
+	fprintf(f, "  pred_sel = %d (%s)\n", fmt->pred_sel, map_value(&evg_fmt_alu_word0_pred_sel_map, fmt->pred_sel));
 	fprintf(f, "  last = %d\n", fmt->last);
 }
 
@@ -623,7 +630,7 @@ void fmt_alu_word0_dump(void *buf, FILE *f)
  * ALU_WORD1_OP2
  */
 
-struct string_map_t fmt_alu_word1_op2_omod_map = {
+struct string_map_t evg_fmt_alu_word1_op2_omod_map = {
 	4, {
 		{ "ALU_OMOD_OFF", 0 },
 		{ "ALU_OMOD_M2", 1 },
@@ -632,7 +639,7 @@ struct string_map_t fmt_alu_word1_op2_omod_map = {
 	}
 };
 
-struct string_map_t fmt_alu_word1_op2_alu_inst_map = {
+struct string_map_t evg_fmt_alu_word1_op2_alu_inst_map = {
 	176, {
 		{ "OP2_INST_ADD", 0 },
 		{ "OP2_INST_MUL", 1 },
@@ -813,7 +820,7 @@ struct string_map_t fmt_alu_word1_op2_alu_inst_map = {
 	}
 };
 
-struct string_map_t fmt_alu_bank_swizzle_map = {
+struct string_map_t evg_fmt_alu_bank_swizzle_map = {
 	6, {
 		{ "ALU_VEC_012, SQ_ALU_SCL_210", 0 },
 		{ "ALU_VEC_021, SQ_ALU_SCL_122", 1 },
@@ -825,9 +832,9 @@ struct string_map_t fmt_alu_bank_swizzle_map = {
 };
 
 
-void fmt_alu_word1_op2_dump(void *buf, FILE *f)
+void evg_fmt_alu_word1_op2_dump(void *buf, FILE *f)
 {
-	struct fmt_alu_word1_op2_t *fmt = (struct fmt_alu_word1_op2_t *) buf;
+	struct evg_fmt_alu_word1_op2_t *fmt = (struct evg_fmt_alu_word1_op2_t *) buf;
 
 	fprintf(f, "ALU_WORD1_OP2\n");
 	fprintf(f, "  src0_abs = %d\n", fmt->src0_abs);
@@ -835,12 +842,12 @@ void fmt_alu_word1_op2_dump(void *buf, FILE *f)
 	fprintf(f, "  update_exec_mask = %d\n", fmt->update_exec_mask);
 	fprintf(f, "  update_pred = %d\n", fmt->update_pred);
 	fprintf(f, "  write_mask = %d\n", fmt->write_mask);
-	fprintf(f, "  omod = %d (%s)\n", fmt->omod, map_value(&fmt_alu_word1_op2_omod_map, fmt->omod));
-	fprintf(f, "  alu_inst = %d (%s)\n", fmt->alu_inst, map_value(&fmt_alu_word1_op2_alu_inst_map, fmt->alu_inst));
-	fprintf(f, "  bank_swizzle = %d (%s)\n", fmt->bank_swizzle, map_value(&fmt_alu_bank_swizzle_map, fmt->bank_swizzle));
+	fprintf(f, "  omod = %d (%s)\n", fmt->omod, map_value(&evg_fmt_alu_word1_op2_omod_map, fmt->omod));
+	fprintf(f, "  alu_inst = %d (%s)\n", fmt->alu_inst, map_value(&evg_fmt_alu_word1_op2_alu_inst_map, fmt->alu_inst));
+	fprintf(f, "  bank_swizzle = %d (%s)\n", fmt->bank_swizzle, map_value(&evg_fmt_alu_bank_swizzle_map, fmt->bank_swizzle));
 	fprintf(f, "  dst_gpr = %d\n", fmt->dst_gpr);
-	fprintf(f, "  dst_rel = %d (%s)\n", fmt->dst_rel, map_value(&fmt_rel_map, fmt->dst_rel));
-	fprintf(f, "  dst_chan = %d (%s)\n", fmt->dst_chan, map_value(&fmt_chan_map, fmt->dst_chan));
+	fprintf(f, "  dst_rel = %d (%s)\n", fmt->dst_rel, map_value(&evg_fmt_rel_map, fmt->dst_rel));
+	fprintf(f, "  dst_chan = %d (%s)\n", fmt->dst_chan, map_value(&evg_fmt_chan_map, fmt->dst_chan));
 	fprintf(f, "  clamp = %d\n", fmt->clamp);
 }
 
@@ -851,7 +858,7 @@ void fmt_alu_word1_op2_dump(void *buf, FILE *f)
  * ALU_WORD1_OP3
  */
 
-struct string_map_t fmt_alu_word1_op3_alu_inst_map = {
+struct string_map_t evg_fmt_alu_word1_op3_alu_inst_map = {
 	25, {
 		{ "OP3_INST_BFE_UINT", 4 },
 		{ "OP3_INST_BFE_INT", 5 },
@@ -882,27 +889,27 @@ struct string_map_t fmt_alu_word1_op3_alu_inst_map = {
 };
 
 
-void fmt_alu_word1_op3_dump(void *buf, FILE *f)
+void evg_fmt_alu_word1_op3_dump(void *buf, FILE *f)
 {
-	struct fmt_alu_word1_op3_t *fmt = (struct fmt_alu_word1_op3_t *) buf;
+	struct evg_fmt_alu_word1_op3_t *fmt = (struct evg_fmt_alu_word1_op3_t *) buf;
 	char src2_sel_str[MAX_STRING_SIZE];
 	char *str;
 	int size;
 
 	str = src2_sel_str;
 	size = MAX_STRING_SIZE;
-	fmt_alu_src_sel_dump_buf(fmt->src2_sel, &str, &size);
+	evg_fmt_alu_src_sel_dump_buf(fmt->src2_sel, &str, &size);
 
 	fprintf(f, "ALU_WORD1_OP3\n");
 	fprintf(f, "  src2_sel = %d (%s)\n", fmt->src2_sel, src2_sel_str);
-	fprintf(f, "  src2_rel = %d (%s)\n", fmt->src2_rel, map_value(&fmt_rel_map, fmt->src2_rel));
-	fprintf(f, "  src2_chan = %d (%s)\n", fmt->src2_chan, map_value(&fmt_chan_map, fmt->src2_chan));
+	fprintf(f, "  src2_rel = %d (%s)\n", fmt->src2_rel, map_value(&evg_fmt_rel_map, fmt->src2_rel));
+	fprintf(f, "  src2_chan = %d (%s)\n", fmt->src2_chan, map_value(&evg_fmt_chan_map, fmt->src2_chan));
 	fprintf(f, "  src2_neg = %d\n", fmt->src2_neg);
-	fprintf(f, "  alu_inst = %d (%s)\n", fmt->alu_inst, map_value(&fmt_alu_word1_op3_alu_inst_map, fmt->alu_inst));
-	fprintf(f, "  bank_swizzle = %d (%s)\n", fmt->bank_swizzle, map_value(&fmt_alu_bank_swizzle_map, fmt->bank_swizzle));
+	fprintf(f, "  alu_inst = %d (%s)\n", fmt->alu_inst, map_value(&evg_fmt_alu_word1_op3_alu_inst_map, fmt->alu_inst));
+	fprintf(f, "  bank_swizzle = %d (%s)\n", fmt->bank_swizzle, map_value(&evg_fmt_alu_bank_swizzle_map, fmt->bank_swizzle));
 	fprintf(f, "  dst_gpr = %d\n", fmt->dst_gpr);
-	fprintf(f, "  dst_rel = %d (%s)\n", fmt->dst_rel, map_value(&fmt_rel_map, fmt->dst_rel));
-	fprintf(f, "  dst_chan = %d (%s)\n", fmt->dst_chan, map_value(&fmt_chan_map, fmt->dst_chan));
+	fprintf(f, "  dst_rel = %d (%s)\n", fmt->dst_rel, map_value(&evg_fmt_rel_map, fmt->dst_rel));
+	fprintf(f, "  dst_chan = %d (%s)\n", fmt->dst_chan, map_value(&evg_fmt_chan_map, fmt->dst_chan));
 	fprintf(f, "  clamp = %d\n", fmt->clamp);
 }
 
@@ -912,9 +919,9 @@ void fmt_alu_word1_op3_dump(void *buf, FILE *f)
  * ALU_WORD0_LDS_IDX_OP
  */
 
-void fmt_alu_word0_lds_idx_op_dump(void *buf, FILE *f)
+void evg_fmt_alu_word0_lds_idx_op_dump(void *buf, FILE *f)
 {
-	struct fmt_alu_word0_lds_idx_op_t *fmt = (struct fmt_alu_word0_lds_idx_op_t *) buf;
+	struct evg_fmt_alu_word0_lds_idx_op_t *fmt = (struct evg_fmt_alu_word0_lds_idx_op_t *) buf;
 	char src0_sel_str[MAX_STRING_SIZE];
 	char src1_sel_str[MAX_STRING_SIZE];
 	char *str;
@@ -922,23 +929,23 @@ void fmt_alu_word0_lds_idx_op_dump(void *buf, FILE *f)
 
 	str = src0_sel_str;
 	size = MAX_STRING_SIZE;
-	fmt_alu_src_sel_dump_buf(fmt->src0_sel, &str, &size);
+	evg_fmt_alu_src_sel_dump_buf(fmt->src0_sel, &str, &size);
 
 	str = src1_sel_str;
 	size = MAX_STRING_SIZE;
-	fmt_alu_src_sel_dump_buf(fmt->src1_sel, &str, &size);
+	evg_fmt_alu_src_sel_dump_buf(fmt->src1_sel, &str, &size);
 
 	fprintf(f, "ALU_WORD0_LDS_IDX_OP\n");
 	fprintf(f, "  src0_sel = %d (%s)\n", fmt->src0_sel, src0_sel_str);
-	fprintf(f, "  src0_rel = %d (%s)\n", fmt->src0_rel, map_value(&fmt_rel_map, fmt->src0_rel));
-	fprintf(f, "  src0_chan = %d (%s)\n", fmt->src0_chan, map_value(&fmt_chan_map, fmt->src0_chan));
+	fprintf(f, "  src0_rel = %d (%s)\n", fmt->src0_rel, map_value(&evg_fmt_rel_map, fmt->src0_rel));
+	fprintf(f, "  src0_chan = %d (%s)\n", fmt->src0_chan, map_value(&evg_fmt_chan_map, fmt->src0_chan));
 	fprintf(f, "  idx_offset_4 = %d\n", fmt->idx_offset_4);
 	fprintf(f, "  src1_sel = %d (%s)\n", fmt->src1_sel, src1_sel_str);
-	fprintf(f, "  src1_rel = %d (%s)\n", fmt->src1_rel, map_value(&fmt_rel_map, fmt->src1_rel));
-	fprintf(f, "  src1_chan = %d (%s)\n", fmt->src1_chan, map_value(&fmt_chan_map, fmt->src1_chan));
+	fprintf(f, "  src1_rel = %d (%s)\n", fmt->src1_rel, map_value(&evg_fmt_rel_map, fmt->src1_rel));
+	fprintf(f, "  src1_chan = %d (%s)\n", fmt->src1_chan, map_value(&evg_fmt_chan_map, fmt->src1_chan));
 	fprintf(f, "  idx_offset_5 = %d\n", fmt->idx_offset_5);
-	fprintf(f, "  index_mode = %d (%s)\n", fmt->index_mode, map_value(&fmt_alu_word0_index_mode_map, fmt->index_mode));
-	fprintf(f, "  pred_sel = %d (%s)\n", fmt->pred_sel, map_value(&fmt_alu_word0_pred_sel_map, fmt->pred_sel));
+	fprintf(f, "  index_mode = %d (%s)\n", fmt->index_mode, map_value(&evg_fmt_alu_word0_index_mode_map, fmt->index_mode));
+	fprintf(f, "  pred_sel = %d (%s)\n", fmt->pred_sel, map_value(&evg_fmt_alu_word0_pred_sel_map, fmt->pred_sel));
 	fprintf(f, "  last = %d\n", fmt->last);
 }
 
@@ -949,7 +956,7 @@ void fmt_alu_word0_lds_idx_op_dump(void *buf, FILE *f)
  * ALU_WORD1_LDS_IDX_OP
  */
 
-struct string_map_t fmt_lds_op_map = {
+struct string_map_t evg_fmt_lds_op_map = {
 	46, {
 		{ "ADD", 0 },
 		{ "SUB", 1 },
@@ -1000,28 +1007,28 @@ struct string_map_t fmt_lds_op_map = {
 	}
 };
 
-void fmt_alu_word1_lds_idx_op_dump(void *buf, FILE *f)
+void evg_fmt_alu_word1_lds_idx_op_dump(void *buf, FILE *f)
 {
-	struct fmt_alu_word1_lds_idx_op_t *fmt = (struct fmt_alu_word1_lds_idx_op_t *) buf;
+	struct evg_fmt_alu_word1_lds_idx_op_t *fmt = (struct evg_fmt_alu_word1_lds_idx_op_t *) buf;
 	char src2_sel_str[MAX_STRING_SIZE];
 	char *str;
 	int size;
 
 	str = src2_sel_str;
 	size = MAX_STRING_SIZE;
-	fmt_alu_src_sel_dump_buf(fmt->src2_sel, &str, &size);
+	evg_fmt_alu_src_sel_dump_buf(fmt->src2_sel, &str, &size);
 	
 	fprintf(f, "ALU_WORD1_LDS_IDX_OP\n");
 	fprintf(f, "  src2_sel = %d (%s)\n", fmt->src2_sel, src2_sel_str);
-	fprintf(f, "  src2_rel = %d (%s)\n", fmt->src2_rel, map_value(&fmt_rel_map, fmt->src2_rel));
-	fprintf(f, "  src2_chan = %d (%s)\n", fmt->src2_chan, map_value(&fmt_chan_map, fmt->src2_chan));
+	fprintf(f, "  src2_rel = %d (%s)\n", fmt->src2_rel, map_value(&evg_fmt_rel_map, fmt->src2_rel));
+	fprintf(f, "  src2_chan = %d (%s)\n", fmt->src2_chan, map_value(&evg_fmt_chan_map, fmt->src2_chan));
 	fprintf(f, "  idx_offset_1 = %d\n", fmt->idx_offset_1);
-	fprintf(f, "  alu_inst = %d (%s)\n", fmt->alu_inst, map_value(&fmt_alu_word1_op3_alu_inst_map, fmt->alu_inst));
-	fprintf(f, "  bank_swizzle = %d (%s)\n", fmt->bank_swizzle, map_value(&fmt_alu_bank_swizzle_map, fmt->bank_swizzle));
-	fprintf(f, "  lds_op = %d (DS_INST_%s)\n", fmt->lds_op, map_value(&fmt_lds_op_map, fmt->lds_op));
+	fprintf(f, "  alu_inst = %d (%s)\n", fmt->alu_inst, map_value(&evg_fmt_alu_word1_op3_alu_inst_map, fmt->alu_inst));
+	fprintf(f, "  bank_swizzle = %d (%s)\n", fmt->bank_swizzle, map_value(&evg_fmt_alu_bank_swizzle_map, fmt->bank_swizzle));
+	fprintf(f, "  lds_op = %d (DS_INST_%s)\n", fmt->lds_op, map_value(&evg_fmt_lds_op_map, fmt->lds_op));
 	fprintf(f, "  idx_offset_0 = %d\n", fmt->idx_offset_0);
 	fprintf(f, "  idx_offset_2 = %d\n", fmt->idx_offset_2);
-	fprintf(f, "  dst_chan = %d (%s)\n", fmt->dst_chan, map_value(&fmt_chan_map, fmt->dst_chan));
+	fprintf(f, "  dst_chan = %d (%s)\n", fmt->dst_chan, map_value(&evg_fmt_chan_map, fmt->dst_chan));
 	fprintf(f, "  index_offset_3 = %d\n", fmt->idx_offset_3);
 }
 
@@ -1031,7 +1038,7 @@ void fmt_alu_word1_lds_idx_op_dump(void *buf, FILE *f)
  * VTX_WORD0
  */
 
-struct string_map_t fmt_vc_inst_map = {
+struct string_map_t evg_fmt_vc_inst_map = {
 	3, {
 		{ "VC_INST_FETCH", 0 },
 		{ "VC_INST_SEMANTIC", 1 },
@@ -1040,7 +1047,7 @@ struct string_map_t fmt_vc_inst_map = {
 };
 
 
-struct string_map_t fmt_vtx_fetch_type_map = {  /* VTX_FETCH prefix omitted */
+struct string_map_t evg_fmt_vtx_fetch_type_map = {  /* VTX_FETCH prefix omitted */
 	3, {
 		{ "VERTEX_DATA", 0 },
 		{ "INSTANCE_DATA", 1 },
@@ -1049,7 +1056,7 @@ struct string_map_t fmt_vtx_fetch_type_map = {  /* VTX_FETCH prefix omitted */
 };
 
 
-struct string_map_t fmt_vtx_src_sel_map = {
+struct string_map_t evg_fmt_vtx_src_sel_map = {
 	3, {
 		{ "SEL_X", 0 },
 		{ "SEL_Y", 1 },
@@ -1059,18 +1066,18 @@ struct string_map_t fmt_vtx_src_sel_map = {
 };
 
 
-void fmt_vtx_word0_dump(void *buf, FILE *f)
+void evg_fmt_vtx_word0_dump(void *buf, FILE *f)
 {
-	struct fmt_vtx_word0_t *fmt = (struct fmt_vtx_word0_t *) buf;
+	struct evg_fmt_vtx_word0_t *fmt = (struct evg_fmt_vtx_word0_t *) buf;
 
 	fprintf(f, "VTX_WORD0\n");
-	fprintf(f, "  vc_inst = %d (%s)\n", fmt->vc_inst, map_value(&fmt_vc_inst_map, fmt->vc_inst));
-	fprintf(f, "  fetch_type = %d (%s)\n", fmt->fetch_type, map_value(&fmt_vtx_fetch_type_map, fmt->fetch_type));
+	fprintf(f, "  vc_inst = %d (%s)\n", fmt->vc_inst, map_value(&evg_fmt_vc_inst_map, fmt->vc_inst));
+	fprintf(f, "  fetch_type = %d (%s)\n", fmt->fetch_type, map_value(&evg_fmt_vtx_fetch_type_map, fmt->fetch_type));
 	fprintf(f, "  fetch_whole_quad = %d\n", fmt->fetch_whole_quad);
 	fprintf(f, "  buffer_id = %d\n", fmt->buffer_id);
 	fprintf(f, "  src_gpr = %d\n", fmt->src_gpr);
 	fprintf(f, "  src_rel = %d\n", fmt->src_rel);
-	fprintf(f, "  src_sel_x = %d (%s)\n", fmt->src_sel_x, map_value(&fmt_vtx_src_sel_map, fmt->src_sel_x));
+	fprintf(f, "  src_sel_x = %d (%s)\n", fmt->src_sel_x, map_value(&evg_fmt_vtx_src_sel_map, fmt->src_sel_x));
 	fprintf(f, "  mega_fetch_count = %d\n", fmt->mega_fetch_count);
 }
 
@@ -1081,7 +1088,7 @@ void fmt_vtx_word0_dump(void *buf, FILE *f)
  * VTX_WORD1_GPR
  */
 
-struct string_map_t fmt_vtx_data_format_map = {
+struct string_map_t evg_fmt_vtx_data_format_map = {
 	64, {
 		{ "UNKNOWN", 0 },
 		{ "8", 1 },
@@ -1151,7 +1158,7 @@ struct string_map_t fmt_vtx_data_format_map = {
 };
 
 
-struct string_map_t fmt_vtx_num_format_map = {  /* Prefix NUM_FORMAT omitted */
+struct string_map_t evg_fmt_vtx_num_format_map = {  /* Prefix NUM_FORMAT omitted */
 	3, {
 		{ "NORM", 0 },
 		{ "INT", 1 },
@@ -1160,7 +1167,7 @@ struct string_map_t fmt_vtx_num_format_map = {  /* Prefix NUM_FORMAT omitted */
 };
 
 
-struct string_map_t fmt_vtx_format_comp_map = {  /* Prefix FORMAT_COMP omitted */
+struct string_map_t evg_fmt_vtx_format_comp_map = {  /* Prefix FORMAT_COMP omitted */
 	2, {
 		{ "UNSIGNED", 0 },
 		{ "SIGNED", 1 }
@@ -1168,7 +1175,7 @@ struct string_map_t fmt_vtx_format_comp_map = {  /* Prefix FORMAT_COMP omitted *
 };
 
 
-struct string_map_t fmt_vtx_srf_mode_map = {  /* Prefix SRF_MODE omitted */
+struct string_map_t evg_fmt_vtx_srf_mode_map = {  /* Prefix SRF_MODE omitted */
 	2, {
 		{ "ZERO_CLAMP_MINUS_ONE", 0 },
 		{ "NO_ZERO", 1 }
@@ -1176,22 +1183,22 @@ struct string_map_t fmt_vtx_srf_mode_map = {  /* Prefix SRF_MODE omitted */
 };
 
 
-void fmt_vtx_word1_gpr_dump(void *buf, FILE *f)
+void evg_fmt_vtx_word1_gpr_dump(void *buf, FILE *f)
 {
-	struct fmt_vtx_word1_gpr_t *fmt = (struct fmt_vtx_word1_gpr_t *) buf;
+	struct evg_fmt_vtx_word1_gpr_t *fmt = (struct evg_fmt_vtx_word1_gpr_t *) buf;
 
 	fprintf(f, "VTX_WORD1_GPR\n");
 	fprintf(f, "  dst_gpr = %d\n", fmt->dst_gpr);
 	fprintf(f, "  dst_rel = %d\n", fmt->dst_rel);
-	fprintf(f, "  dst_sel_x = %d (%s)\n", fmt->dst_sel_x, map_value(&fmt_sel_map, fmt->dst_sel_x));
-	fprintf(f, "  dst_sel_y = %d (%s)\n", fmt->dst_sel_y, map_value(&fmt_sel_map, fmt->dst_sel_y));
-	fprintf(f, "  dst_sel_z = %d (%s)\n", fmt->dst_sel_z, map_value(&fmt_sel_map, fmt->dst_sel_z));
-	fprintf(f, "  dst_sel_w = %d (%s)\n", fmt->dst_sel_w, map_value(&fmt_sel_map, fmt->dst_sel_w));
+	fprintf(f, "  dst_sel_x = %d (%s)\n", fmt->dst_sel_x, map_value(&evg_fmt_sel_map, fmt->dst_sel_x));
+	fprintf(f, "  dst_sel_y = %d (%s)\n", fmt->dst_sel_y, map_value(&evg_fmt_sel_map, fmt->dst_sel_y));
+	fprintf(f, "  dst_sel_z = %d (%s)\n", fmt->dst_sel_z, map_value(&evg_fmt_sel_map, fmt->dst_sel_z));
+	fprintf(f, "  dst_sel_w = %d (%s)\n", fmt->dst_sel_w, map_value(&evg_fmt_sel_map, fmt->dst_sel_w));
 	fprintf(f, "  use_const_fields = %d\n", fmt->use_const_fields);
-	fprintf(f, "  data_format = %d (%s)\n", fmt->data_format, map_value(&fmt_vtx_data_format_map, fmt->data_format));
-	fprintf(f, "  num_format_all = %d (%s)\n", fmt->num_format_all, map_value(&fmt_vtx_num_format_map, fmt->num_format_all));
-	fprintf(f, "  format_comp_all = %d (%s)\n", fmt->format_comp_all, map_value(&fmt_vtx_format_comp_map, fmt->format_comp_all));
-	fprintf(f, "  srf_mode_all = %d (%s)\n", fmt->srf_mode_all, map_value(&fmt_vtx_srf_mode_map, fmt->srf_mode_all));
+	fprintf(f, "  data_format = %d (%s)\n", fmt->data_format, map_value(&evg_fmt_vtx_data_format_map, fmt->data_format));
+	fprintf(f, "  num_format_all = %d (%s)\n", fmt->num_format_all, map_value(&evg_fmt_vtx_num_format_map, fmt->num_format_all));
+	fprintf(f, "  format_comp_all = %d (%s)\n", fmt->format_comp_all, map_value(&evg_fmt_vtx_format_comp_map, fmt->format_comp_all));
+	fprintf(f, "  srf_mode_all = %d (%s)\n", fmt->srf_mode_all, map_value(&evg_fmt_vtx_srf_mode_map, fmt->srf_mode_all));
 }
 
 
@@ -1201,7 +1208,7 @@ void fmt_vtx_word1_gpr_dump(void *buf, FILE *f)
  * VTX_WORD2
  */
 
-struct string_map_t fmt_vtx_endian_swap_map = {  /* Prefix ENDIAN omitted */
+struct string_map_t evg_fmt_vtx_endian_swap_map = {  /* Prefix ENDIAN omitted */
 	3, {
 		{ "NONE", 0 },
 		{ "8IN16", 1 },
@@ -1210,13 +1217,13 @@ struct string_map_t fmt_vtx_endian_swap_map = {  /* Prefix ENDIAN omitted */
 };
 
 
-void fmt_vtx_word2_dump(void *buf, FILE *f)
+void evg_fmt_vtx_word2_dump(void *buf, FILE *f)
 {
-	struct fmt_vtx_word2_t *fmt = (struct fmt_vtx_word2_t *) buf;
+	struct evg_fmt_vtx_word2_t *fmt = (struct evg_fmt_vtx_word2_t *) buf;
 
 	fprintf(f, "VTX_WORD2\n");
 	fprintf(f, "  offset = 0x%x\n", fmt->offset);
-	fprintf(f, "  endian_swap = %d (%s)\n", fmt->endian_swap, map_value(&fmt_vtx_endian_swap_map, fmt->endian_swap));
+	fprintf(f, "  endian_swap = %d (%s)\n", fmt->endian_swap, map_value(&evg_fmt_vtx_endian_swap_map, fmt->endian_swap));
 	fprintf(f, "  const_buf_no_stride = %d\n", fmt->const_buf_no_stride);
 	fprintf(f, "  mega_fetch = %d\n", fmt->mega_fetch);
 	/* FIXME: error in format specification */
@@ -1232,56 +1239,56 @@ void fmt_vtx_word2_dump(void *buf, FILE *f)
  */
 
 /* List of 'dump' functions for each microcode format */
-fmt_dump_func_t fmt_dump_func_list[FMT_COUNT] = {
+evg_fmt_dump_func_t evg_fmt_dump_func_list[EVG_FMT_COUNT] = {
 	
-	fmt_invalid_dump,  /* FMT_INVALID */
+	evg_fmt_invalid_dump,  /* FMT_INVALID */
 
-	fmt_cf_word0_dump,
-	fmt_cf_gws_word0_dump,
-	fmt_cf_word1_dump,
+	evg_fmt_cf_word0_dump,
+	evg_fmt_cf_gws_word0_dump,
+	evg_fmt_cf_word1_dump,
 
-	fmt_cf_alu_word0_dump,
-	fmt_cf_alu_word1_dump,
+	evg_fmt_cf_alu_word0_dump,
+	evg_fmt_cf_alu_word1_dump,
 
-	fmt_cf_alu_word0_ext_dump,
-	fmt_cf_alu_word1_ext_dump,
+	evg_fmt_cf_alu_word0_ext_dump,
+	evg_fmt_cf_alu_word1_ext_dump,
 
-	fmt_cf_alloc_export_word0_dump,
-	fmt_cf_alloc_export_word0_rat_dump,
-	fmt_cf_alloc_export_word1_buf_dump,
-	fmt_cf_alloc_export_word1_swiz_dump,
+	evg_fmt_cf_alloc_export_word0_dump,
+	evg_fmt_cf_alloc_export_word0_rat_dump,
+	evg_fmt_cf_alloc_export_word1_buf_dump,
+	evg_fmt_cf_alloc_export_word1_swiz_dump,
 
-	fmt_alu_word0_dump,
-	fmt_alu_word1_op2_dump,
-	fmt_alu_word1_op3_dump,
+	evg_fmt_alu_word0_dump,
+	evg_fmt_alu_word1_op2_dump,
+	evg_fmt_alu_word1_op3_dump,
 
-	fmt_alu_word0_lds_idx_op_dump,
-	fmt_alu_word1_lds_idx_op_dump,
-	fmt_invalid_dump,  /* FMT_ALU_WORD1_LDS_DIRECT_LITERAL_LO */
-	fmt_invalid_dump,  /* FMT_ALU_WORD1_LDS_DIRECT_LITERAL_HI */
+	evg_fmt_alu_word0_lds_idx_op_dump,
+	evg_fmt_alu_word1_lds_idx_op_dump,
+	evg_fmt_invalid_dump,  /* EVG_FMT_ALU_WORD1_LDS_DIRECT_LITERAL_LO */
+	evg_fmt_invalid_dump,  /* EVG_FMT_ALU_WORD1_LDS_DIRECT_LITERAL_HI */
 	
-	fmt_vtx_word0_dump,
-	fmt_vtx_word1_gpr_dump,
-	fmt_invalid_dump,  /* FMT_VTX_WORD1_SEM */
-	fmt_vtx_word2_dump,
+	evg_fmt_vtx_word0_dump,
+	evg_fmt_vtx_word1_gpr_dump,
+	evg_fmt_invalid_dump,  /* EVG_FMT_VTX_WORD1_SEM */
+	evg_fmt_vtx_word2_dump,
 
-	fmt_invalid_dump,  /* FMT_TEX_WORD0 */
-	fmt_invalid_dump,  /* FMT_TEX_WORD1 */
-	fmt_invalid_dump,  /* FMT_TEX_WORD2 */
+	evg_fmt_invalid_dump,  /* EVG_FMT_TEX_WORD0 */
+	evg_fmt_invalid_dump,  /* EVG_FMT_TEX_WORD1 */
+	evg_fmt_invalid_dump,  /* EVG_FMT_TEX_WORD2 */
 
-	fmt_invalid_dump,  /* FMT_MEM_RD_WORD0 */
-	fmt_invalid_dump,  /* FMT_MEM_RD_WORD1 */
-	fmt_invalid_dump,  /* FMT_MEM_RD_WORD2 */
+	evg_fmt_invalid_dump,  /* EVG_FMT_MEM_RD_WORD0 */
+	evg_fmt_invalid_dump,  /* EVG_FMT_MEM_RD_WORD1 */
+	evg_fmt_invalid_dump,  /* EVG_FMT_MEM_RD_WORD2 */
 
-	fmt_invalid_dump,  /* FMT_MEM_GDS_WORD0 */
-	fmt_invalid_dump,  /* FMT_MEM_GDS_WORD1 */
-	fmt_invalid_dump,  /* FMT_MEM_GDS_WORD2 */
+	evg_fmt_invalid_dump,  /* EVG_FMT_MEM_GDS_WORD0 */
+	evg_fmt_invalid_dump,  /* EVG_FMT_MEM_GDS_WORD1 */
+	evg_fmt_invalid_dump,  /* EVG_FMT_MEM_GDS_WORD2 */
 };
 
 
-void fmt_word_dump(void *buf, enum fmt_enum fmt, FILE *f)
+void evg_inst_word_dump(void *buf, enum evg_fmt_enum fmt, FILE *f)
 {
-	fmt_dump_func_t dump_func;
+	evg_fmt_dump_func_t dump_func;
 	int i;
 
 	/* Hexadecimal dump */
@@ -1290,9 +1297,6 @@ void fmt_word_dump(void *buf, enum fmt_enum fmt, FILE *f)
 		fprintf(f, "%02x ", ((unsigned char *) buf)[i]);
 	fprintf(f, "\n");
 	
-	dump_func = fmt_dump_func_list[fmt];
+	dump_func = evg_fmt_dump_func_list[fmt];
 	dump_func(buf, f);
 }
-
-
-

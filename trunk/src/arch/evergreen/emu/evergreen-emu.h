@@ -577,7 +577,7 @@ struct gpu_isa_write_task_t
 {
 	/* All */
 	enum gpu_isa_write_task_kind_t kind;
-	struct amd_inst_t *inst;
+	struct evg_inst_t *inst;
 	
 	/* When 'kind' == GPU_ISA_WRITE_TASK_WRITE_DEST */
 	int gpr, rel, chan, index_mode, write_mask;
@@ -806,9 +806,9 @@ struct gpu_wavefront_t
 	enum gpu_clause_kind_t clause_kind;
 
 	/* Current instructions */
-	struct amd_inst_t cf_inst;
-	struct amd_alu_group_t alu_group;
-	struct amd_inst_t tex_inst;
+	struct evg_inst_t cf_inst;
+	struct evg_alu_group_t alu_group;
+	struct evg_inst_t tex_inst;
 
 	/* Starting/current CF buffer */
 	void *cf_buf_start;

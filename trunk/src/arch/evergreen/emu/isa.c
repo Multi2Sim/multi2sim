@@ -29,9 +29,9 @@ struct gpu_ndrange_t *gpu_isa_ndrange;  /* Current ND-Range */
 struct gpu_work_group_t *gpu_isa_work_group;  /* Current work-group */
 struct gpu_wavefront_t *gpu_isa_wavefront;  /* Current wavefront */
 struct gpu_work_item_t *gpu_isa_work_item;  /* Current work-item */
-struct amd_inst_t *gpu_isa_cf_inst;  /* Current CF instruction */
-struct amd_inst_t *gpu_isa_inst;  /* Current instruction */
-struct amd_alu_group_t *gpu_isa_alu_group;  /* Current ALU group */
+struct evg_inst_t *gpu_isa_cf_inst;  /* Current CF instruction */
+struct evg_inst_t *gpu_isa_inst;  /* Current instruction */
+struct evg_alu_group_t *gpu_isa_alu_group;  /* Current ALU group */
 
 /* Repository of deferred tasks */
 struct repos_t *gpu_isa_write_task_repos;
@@ -53,11 +53,15 @@ int gpu_isa_debug_category;
 /* Initialization */
 void gpu_isa_init()
 {
-	/* Initialize instruction execution table */
-	amd_inst_impl = calloc(AMD_INST_COUNT, sizeof(amd_inst_impl_t));
+	/* Allocate instruction execution table */
+	amd_inst_impl = calloc(EVG_INST_COUNT, sizeof(amd_inst_impl_t));
+	if (!amd_inst_impl)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	extern void amd_inst_##_name##_impl(); \
-	amd_inst_impl[AMD_INST_##_name] = amd_inst_##_name##_impl;
+	amd_inst_impl[EVG_INST_##_name] = amd_inst_##_name##_impl;
 #include <evergreen-asm.dat>
 #undef DEFINST
 
@@ -142,7 +146,7 @@ void gpu_isa_alu_clause_start()
 void gpu_isa_alu_clause_end()
 {
 	/* If CF inst was ALU_POP_AFTER, pop the stack */
-	if (gpu_isa_cf_inst->info->inst == AMD_INST_ALU_POP_AFTER)
+	if (gpu_isa_cf_inst->info->inst == EVG_INST_ALU_POP_AFTER)
 		gpu_wavefront_stack_pop(gpu_isa_wavefront, 1);
 }
 
@@ -177,13 +181,13 @@ void gpu_isa_tc_clause_end()
  * in the current instruction, as specified by its flags. */
 void gpu_isa_dest_value_dump(void *value_ptr, FILE *f)
 {
-	if (gpu_isa_inst->info->flags & AMD_INST_FLAG_DST_INT)
+	if (gpu_isa_inst->info->flags & EVG_INST_FLAG_DST_INT)
 		fprintf(f, "%d", * (int *) value_ptr);
 	
-	else if (gpu_isa_inst->info->flags & AMD_INST_FLAG_DST_UINT)
+	else if (gpu_isa_inst->info->flags & EVG_INST_FLAG_DST_UINT)
 		fprintf(f, "0x%x", * (unsigned int *) value_ptr);
 	
-	else if (gpu_isa_inst->info->flags & AMD_INST_FLAG_DST_FLOAT)
+	else if (gpu_isa_inst->info->flags & EVG_INST_FLAG_DST_FLOAT)
 		fprintf(f, "%gf", * (float *) value_ptr);
 	
 	else
@@ -205,7 +209,7 @@ uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im)
 /* Read source GPR in float format */
 float gpu_isa_read_gpr_float(int gpr, int rel, int chan, int im)
 {
-	union amd_reg_t reg;
+	union evg_reg_t reg;
 
 	reg.as_uint = gpu_isa_read_gpr(gpr, rel, chan, im);
 	return reg.as_float;
@@ -223,7 +227,7 @@ void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value)
 
 void gpu_isa_write_gpr_float(int gpr, int rel, int chan, float value)
 {
-	union amd_reg_t reg;
+	union evg_reg_t reg;
 
 	reg.as_float = value;
 	gpu_isa_write_gpr(gpr, rel, chan, reg.as_uint);
@@ -241,7 +245,7 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	int32_t value = 0;  /* Signed, for negative constants and abs operations */
 
 	/* Get the source operand parameters */
-	amd_inst_get_op_src(gpu_isa_inst, src_idx, &sel, &rel, &chan, neg_ptr, abs_ptr);
+	evg_inst_get_op_src(gpu_isa_inst, src_idx, &sel, &rel, &chan, neg_ptr, abs_ptr);
 
 	/* 0..127: Value in GPR */
 	if (IN_RANGE(sel, 0, 127))
@@ -257,7 +261,7 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	{
 		uint32_t kcache_bank, kcache_mode, kcache_addr;
 
-		assert(gpu_isa_cf_inst->info->fmt[0] == FMT_CF_ALU_WORD0 && gpu_isa_cf_inst->info->fmt[1] == FMT_CF_ALU_WORD1);
+		assert(gpu_isa_cf_inst->info->fmt[0] == EVG_FMT_CF_ALU_WORD0 && gpu_isa_cf_inst->info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
 		kcache_bank = gpu_isa_cf_inst->words[0].cf_alu_word0.kcache_bank0;
 		kcache_mode = gpu_isa_cf_inst->words[0].cf_alu_word0.kcache_mode0;
 		kcache_addr = gpu_isa_cf_inst->words[1].cf_alu_word1.kcache_addr0;
@@ -274,7 +278,7 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 
 		uint32_t kcache_bank, kcache_mode, kcache_addr;
 
-		assert(gpu_isa_cf_inst->info->fmt[0] == FMT_CF_ALU_WORD0 && gpu_isa_cf_inst->info->fmt[1] == FMT_CF_ALU_WORD1);
+		assert(gpu_isa_cf_inst->info->fmt[0] == EVG_FMT_CF_ALU_WORD0 && gpu_isa_cf_inst->info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
 		kcache_bank = gpu_isa_cf_inst->words[0].cf_alu_word0.kcache_bank1;
 		kcache_mode = gpu_isa_cf_inst->words[1].cf_alu_word1.kcache_mode1;
 		kcache_addr = gpu_isa_cf_inst->words[1].cf_alu_word1.kcache_addr1;
@@ -325,7 +329,7 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	/* ALU_SRC_1 */
 	if (sel == 249)
 	{
-		union amd_reg_t reg;
+		union evg_reg_t reg;
 
 		reg.as_float = 1.0f;
 		value = reg.as_uint;
@@ -350,7 +354,7 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	/* ALU_SRC_0_5 */
 	if (sel == 252)
 	{
-		union amd_reg_t reg;
+		union evg_reg_t reg;
 
 		reg.as_float = 0.5f;
 		value = reg.as_uint;
@@ -408,7 +412,7 @@ uint32_t gpu_isa_read_op_src_int(int src_idx)
 
 float gpu_isa_read_op_src_float(int src_idx)
 {
-	union amd_reg_t reg;
+	union evg_reg_t reg;
 	int neg;
 	int abs;
 
@@ -459,7 +463,7 @@ void gpu_isa_enqueue_write_dest(uint32_t value)
 	struct gpu_isa_write_task_t *wt;
 
 	/* If pixel is inactive, do not enqueue the task */
-	assert(gpu_isa_inst->info->fmt[0] == FMT_ALU_WORD0);
+	assert(gpu_isa_inst->info->fmt[0] == EVG_FMT_ALU_WORD0);
 	if (!gpu_work_item_get_pred(gpu_isa_work_item))
 		return;
 
@@ -476,7 +480,7 @@ void gpu_isa_enqueue_write_dest(uint32_t value)
 
 	/* For ALU_WORD1_OP2, check 'write_mask' field */
 	wt->write_mask = 1;
-	if (gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2 && !ALU_WORD1_OP2.write_mask)
+	if (gpu_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && !ALU_WORD1_OP2.write_mask)
 		wt->write_mask = 0;
 
 	/* Enqueue task */
@@ -486,7 +490,7 @@ void gpu_isa_enqueue_write_dest(uint32_t value)
 
 void gpu_isa_enqueue_write_dest_float(float value)
 {
-	union amd_reg_t reg;
+	union evg_reg_t reg;
 
 	reg.as_float = value;
 	gpu_isa_enqueue_write_dest(reg.as_uint);
@@ -498,7 +502,7 @@ void gpu_isa_enqueue_push_before(void)
 	struct gpu_isa_write_task_t *wt;
 
 	/* Do only if instruction initiating ALU clause is ALU_PUSH_BEFORE */
-	if (gpu_isa_cf_inst->info->inst != AMD_INST_ALU_PUSH_BEFORE)
+	if (gpu_isa_cf_inst->info->inst != EVG_INST_ALU_PUSH_BEFORE)
 		return;
 
 	/* Create and enqueue task */
@@ -514,8 +518,8 @@ void gpu_isa_enqueue_pred_set(int cond)
 	struct gpu_isa_write_task_t *wt;
 
 	/* If pixel is inactive, predicate is not changed */
-	assert(gpu_isa_inst->info->fmt[0] == FMT_ALU_WORD0);
-	assert(gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2);
+	assert(gpu_isa_inst->info->fmt[0] == EVG_FMT_ALU_WORD0);
+	assert(gpu_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
 	if (!gpu_work_item_get_pred(gpu_isa_work_item))
 		return;
 	
@@ -555,10 +559,10 @@ void gpu_isa_write_task_commit(void)
 			/* Debug */
 			if (gpu_isa_debugging()) {
 				gpu_isa_debug("  i%d:%s", gpu_isa_work_item->id,
-					map_value(&amd_pv_map, wt->inst->alu));
+					map_value(&evg_pv_map, wt->inst->alu));
 				if (wt->write_mask) {
 					gpu_isa_debug(",");
-					amd_inst_dump_gpr(wt->gpr, wt->rel, wt->chan, 0,
+					evg_inst_dump_gpr(wt->gpr, wt->rel, wt->chan, 0,
 						debug_file(gpu_isa_debug_category));
 				}
 				gpu_isa_debug("<=");
@@ -571,7 +575,7 @@ void gpu_isa_write_task_commit(void)
 		case GPU_ISA_WRITE_TASK_WRITE_LDS:
 		{
 			struct mem_t *local_mem;
-			union amd_reg_t lds_value;
+			union evg_reg_t lds_value;
 
 			local_mem = gpu_isa_work_group->local_mem;
 			assert(local_mem);
@@ -619,7 +623,7 @@ void gpu_isa_write_task_commit(void)
 			int update_pred = ALU_WORD1_OP2.update_pred;
 			int update_exec_mask = ALU_WORD1_OP2.update_exec_mask;
 
-			assert(gpu_isa_inst->info->fmt[1] == FMT_ALU_WORD1_OP2);
+			assert(gpu_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
 			if (update_pred)
 				gpu_work_item_set_pred(gpu_isa_work_item, wt->cond);
 			if (update_exec_mask)
