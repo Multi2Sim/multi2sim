@@ -1,10 +1,12 @@
 lib_LIBRARIES = libasm.a
 
 libasm_a_SOURCES = \
-	gpudisasm.c \
-	gpudisasm.dat \
-	gpudisasm.h \
-	gpudump.c
+	\
+	evergreen-asm.h \
+	evergreen-asm.dat \
+	\
+	asm.c \
+	dump.c
 
 INCLUDES = @M2S_INCLUDES@
 

@@ -21,7 +21,7 @@
 #include <debug.h>
 #include <stdlib.h>
 
-#include <gpukernel.h>
+#include <evergreen-emu.h>
 #include <x86-emu.h>
 
 

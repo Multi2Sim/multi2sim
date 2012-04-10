@@ -17,7 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <gpukernel.h>
+
+#include <evergreen-emu.h>
+
 
 #define AMD_BIN_NOT_SUPPORTED(__var) \
 	fatal("%s: value 0x%x not supported for parameter '" #__var "'", __FUNCTION__, (__var))

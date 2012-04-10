@@ -23,7 +23,6 @@
 #include <esim.h>
 #include <heap.h>
 
-#include <gpukernel.h>
 #include <gpuarch.h>
 #include <x86-emu.h>
 
