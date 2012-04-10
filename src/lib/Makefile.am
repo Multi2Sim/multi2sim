@@ -2,5 +2,5 @@ SUBDIRS = \
 	esim \
 	mhandle \
 	misc \
-	struct \
+	struct
 

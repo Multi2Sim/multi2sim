@@ -24,3 +24,4 @@ libstruct_a_SOURCES = \
 	debug.c \
 	debug.h
 
+INCLUDES = @M2S_INCLUDES@
