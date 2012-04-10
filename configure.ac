@@ -142,32 +142,29 @@ SRCDIR=$SRCDIR/src
 AC_SUBST(SRCDIR)
 
 M2S_INCLUDES=" \
-	-I$SRCDIR/lib/esim \
-	-I$SRCDIR/lib/mhandle \
-	-I$SRCDIR/lib/misc \
-	-I$SRCDIR/lib/struct \
-	\
-	-I$SRCDIR/arch/x86/asm \
-	-I$SRCDIR/arch/x86/emu \
-	-I$SRCIDR/arch/x86/timing \
-	\
-	-I$SRCDIR/arch/evergreen/asm \
-	-I$SRCDIR/arch/evergreen/emu \
-	-I$SRCDIR/arch/evergreen/timing \
-	\
-	-I$SRCDIR/mem-system \
-	-I$SRCDIR/network \
-	-I$SRCDIR/visual \
-	"
+-I$SRCDIR/lib/esim \
+-I$SRCDIR/lib/mhandle \
+-I$SRCDIR/lib/misc \
+-I$SRCDIR/lib/struct \
+\
+-I$SRCDIR/arch/x86/asm \
+-I$SRCDIR/arch/x86/emu \
+-I$SRCIDR/arch/x86/timing \
+\
+-I$SRCDIR/arch/evergreen/asm \
+-I$SRCDIR/arch/evergreen/emu \
+-I$SRCDIR/arch/evergreen/timing \
+\
+-I$SRCDIR/mem-system \
+-I$SRCDIR/network \
+-I$SRCDIR/visual \
+"
 AC_SUBST(M2S_INCLUDES)
 
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
 		 src/libnetwork/Makefile
-		 src/libgpuarch/Makefile
-		 src/libgpukernel/Makefile
-		 src/libgpudisasm/Makefile
 		 src/libgpuvisual/Makefile
 		 src/libmemsystem/Makefile
 		 src/libvisual/Makefile
@@ -175,6 +172,10 @@ AC_CONFIG_FILES([Makefile
 		 src/arch/x86/asm/Makefile
 		 src/arch/x86/emu/Makefile
 		 src/arch/x86/timing/Makefile
+
+		 src/arch/evergreen/asm/Makefile
+		 src/arch/evergreen/emu/Makefile
+		 src/arch/evergreen/timing/Makefile
 
 		 src/lib/esim/Makefile
                  src/lib/mhandle/Makefile
