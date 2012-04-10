@@ -24,5 +24,3 @@ libstruct_a_SOURCES = \
 	debug.c \
 	debug.h
 
-INCLUDES = -I$(top_srcdir)/src/libmhandle
-
