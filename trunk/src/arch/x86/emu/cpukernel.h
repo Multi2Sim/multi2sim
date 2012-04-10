@@ -47,34 +47,12 @@
  * Global variables
  */
 
-extern long long ke_max_cycles;
-extern long long ke_max_inst;
-extern long long ke_max_time;
-
 extern enum cpu_sim_kind_t
 {
 	cpu_sim_functional,
 	cpu_sim_detailed
 } cpu_sim_kind;
 
-
-/* Reason for simulation end */
-extern struct string_map_t ke_sim_finish_map;
-
-extern enum ke_sim_finish_t
-{
-	ke_sim_finish_none,  /* Simulation not finished */
-	ke_sim_finish_ctx,  /* Contexts finished */
-	ke_sim_finish_max_cpu_inst,  /* Maximum instruction count reached in CPU */
-	ke_sim_finish_max_cpu_cycles,  /* Maximum cycle count reached in CPU */
-	ke_sim_finish_max_gpu_inst,  /* Maximum instruction count reached in GPU */
-	ke_sim_finish_max_gpu_cycles,  /* Maximum cycle count reached in GPU */
-	ke_sim_finish_max_gpu_kernels,  /* Maximum number of GPU kernels */
-	ke_sim_finish_max_time,  /* Maximum simulation time reached */
-	ke_sim_finish_signal,  /* Signal received */
-	ke_sim_finish_stall,  /* Simulation stalled */
-	ke_sim_finish_gpu_no_faults  /* GPU-REL: no fault in '--gpu-stack-faults' caused error */
-} ke_sim_finish;
 
 
 
@@ -231,7 +209,7 @@ void spec_mem_clear(struct spec_mem_t *spec_mem);
  * X86 Registers
  */
 
-struct regs_t
+struct x86_regs_t
 {
 	/* Integer registers */
 	uint32_t eax, ecx, edx, ebx;
@@ -255,12 +233,12 @@ struct regs_t
 
 } __attribute__((packed));
 
-struct regs_t *regs_create(void);
-void regs_free(struct regs_t *regs);
+struct x86_regs_t *x86_regs_create(void);
+void x86_regs_free(struct x86_regs_t *regs);
 
-void regs_copy(struct regs_t *dst, struct regs_t *src);
-void regs_dump(struct regs_t *regs, FILE *f);
-void regs_fpu_stack_dump(struct regs_t *regs, FILE *f);
+void x86_regs_copy(struct x86_regs_t *dst, struct x86_regs_t *src);
+void x86_regs_dump(struct x86_regs_t *regs, FILE *f);
+void x86_regs_fpu_stack_dump(struct x86_regs_t *regs, FILE *f);
 
 
 
@@ -269,7 +247,7 @@ void regs_fpu_stack_dump(struct regs_t *regs, FILE *f);
  * Program loader
  */
 
-struct loader_t
+struct x86_loader_t
 {
 	/* Number of extra contexts using this loader */
 	int num_links;
@@ -289,50 +267,50 @@ struct loader_t
 	int ipc_report_interval;
 
 	/* Stack */
-	uint32_t stack_base;
-	uint32_t stack_top;
-	uint32_t stack_size;
-	uint32_t environ_base;
+	unsigned int stack_base;
+	unsigned int stack_top;
+	unsigned int stack_size;
+	unsigned int environ_base;
 
 	/* Lowest address initialized */
-	uint32_t bottom;
+	unsigned int bottom;
 
 	/* Program entries */
-	uint32_t prog_entry;
-	uint32_t interp_prog_entry;
+	unsigned int prog_entry;
+	unsigned int interp_prog_entry;
 
 	/* Program headers */
-	uint32_t phdt_base;
-	uint32_t phdr_count;
+	unsigned int phdt_base;
+	unsigned int phdr_count;
 
 	/* Random bytes */
-	uint32_t at_random_addr;
-	uint32_t at_random_addr_holder;
+	unsigned int at_random_addr;
+	unsigned int at_random_addr_holder;
 };
 
 
-#define ld_debug(...) debug(ld_debug_category, __VA_ARGS__)
-extern int ld_debug_category;
+#define x86_loader_debug(...) debug(x86_loader_debug_category, __VA_ARGS__)
+extern int x86_loader_debug_category;
 
-extern char *ld_help_ctxconfig;
+extern char *x86_loader_help_ctxconfig;
 
-struct loader_t *ld_create(void);
-void ld_free(struct loader_t *ld);
+struct x86_loader_t *x86_loader_create(void);
+void x86_loader_free(struct x86_loader_t *ld);
 
-struct loader_t *ld_link(struct loader_t *ld);
-void ld_unlink(struct loader_t *ld);
+struct x86_loader_t *x86_loader_link(struct x86_loader_t *ld);
+void x86_loader_unlink(struct x86_loader_t *ld);
 
-void ld_convert_filename(struct loader_t *ld, char *file_name);
-void ld_get_full_path(struct x86_ctx_t *ctx, char *file_name, char *full_path, int size);
+void x86_loader_convert_filename(struct x86_loader_t *ld, char *file_name);
+void x86_loader_get_full_path(struct x86_ctx_t *ctx, char *file_name, char *full_path, int size);
 
-void ld_add_args(struct x86_ctx_t *ctx, int argc, char **argv);
-void ld_add_cmdline(struct x86_ctx_t *ctx, char *cmdline);
-void ld_set_cwd(struct x86_ctx_t *ctx, char *cwd);
-void ld_set_redir(struct x86_ctx_t *ctx, char *stdin, char *stdout);
-void ld_load_exe(struct x86_ctx_t *ctx, char *exe);
+void x86_loader_add_args(struct x86_ctx_t *ctx, int argc, char **argv);
+void x86_loader_add_cmdline(struct x86_ctx_t *ctx, char *cmdline);
+void x86_loader_set_cwd(struct x86_ctx_t *ctx, char *cwd);
+void x86_loader_set_redir(struct x86_ctx_t *ctx, char *stdin, char *stdout);
+void x86_loader_load_exe(struct x86_ctx_t *ctx, char *exe);
 
-void ld_load_prog_from_ctxconfig(char *ctxconfig);
-void ld_load_prog_from_cmdline(int argc, char **argv);
+void x86_loader_load_prog_from_ctxconfig(char *ctxconfig);
+void x86_loader_load_prog_from_cmdline(int argc, char **argv);
 
 
 
@@ -611,7 +589,7 @@ void x86_uinst_list_dump(FILE *f);
  */
 
 extern struct x86_ctx_t *x86_isa_ctx;
-extern struct regs_t *x86_isa_regs;
+extern struct x86_regs_t *x86_isa_regs;
 extern struct mem_t *x86_isa_mem;
 extern int x86_isa_spec_mode;
 extern unsigned int x86_isa_eip;
@@ -780,7 +758,7 @@ struct signal_mask_table_t
 	unsigned long long pending;  /* Mask of pending signals */
 	unsigned long long blocked;  /* Mask of blocked signals */
 	unsigned long long backup;  /* Backup of blocked signals while suspended */
-	struct regs_t *regs;  /* Backup of regs while executing handler */
+	struct x86_regs_t *regs;  /* Backup of regs while executing handler */
 	unsigned int pretcode;  /* Base address of a memory page allocated for retcode execution */
 };
 
@@ -969,11 +947,11 @@ struct x86_ctx_t
 	struct x86_ctx_t *alloc_list_next, *alloc_list_prev;
 
 	/* Substructures */
-	struct loader_t *loader;
+	struct x86_loader_t *loader;
 	struct mem_t *mem;  /* Virtual memory image */
 	struct spec_mem_t *spec_mem;  /* Speculative memory */
-	struct regs_t *regs;  /* Logical register file */
-	struct regs_t *backup_regs;  /* Backup when entering in speculative mode */
+	struct x86_regs_t *regs;  /* Logical register file */
+	struct x86_regs_t *backup_regs;  /* Backup when entering in speculative mode */
 	struct file_desc_table_t *file_desc_table;  /* File descriptor table */
 	struct signal_mask_table_t *signal_mask_table;
 	struct signal_handler_table_t *signal_handler_table;
@@ -1126,8 +1104,31 @@ void x86_emu_list_remove(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
 int x86_emu_list_member(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
 
 
+/* Reason for simulation end */
+extern struct string_map_t x86_emu_finish_map;
+
+extern enum x86_emu_finish_t
+{
+	x86_emu_finish_none,  /* Simulation not finished */
+	x86_emu_finish_ctx,  /* Contexts finished */
+	x86_emu_finish_max_cpu_inst,  /* Maximum instruction count reached in CPU */
+	x86_emu_finish_max_cpu_cycles,  /* Maximum cycle count reached in CPU */
+	x86_emu_finish_max_gpu_inst,  /* Maximum instruction count reached in GPU */
+	x86_emu_finish_max_gpu_cycles,  /* Maximum cycle count reached in GPU */
+	x86_emu_finish_max_gpu_kernels,  /* Maximum number of GPU kernels */
+	x86_emu_finish_max_time,  /* Maximum simulation time reached */
+	x86_emu_finish_signal,  /* Signal received */
+	x86_emu_finish_stall,  /* Simulation stalled */
+	x86_emu_finish_gpu_no_faults  /* GPU-REL: no fault in '--gpu-stack-faults' caused error */
+} x86_emu_finish;
+
+
 /* Global CPU emulator variable */
 extern struct x86_emu_t *x86_emu;
+
+extern long long x86_emu_max_cycles;
+extern long long x86_emu_max_inst;
+extern long long x86_emu_max_time;
 
 void x86_emu_init(void);
 void x86_emu_done(void);

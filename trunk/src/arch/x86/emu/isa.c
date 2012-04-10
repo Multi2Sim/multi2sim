@@ -22,7 +22,7 @@
 
 /* Variables to perform instruction simulation */
 struct x86_ctx_t *x86_isa_ctx;
-struct regs_t *x86_isa_regs;
+struct x86_regs_t *x86_isa_regs;
 struct mem_t *x86_isa_mem;
 struct x86_inst_t x86_isa_inst;
 int x86_isa_spec_mode;  /* If true, instructions will not modify memory */
@@ -200,7 +200,7 @@ static void isa_debug_call()
  */
 
 
-/* Shift and size inside the regs_t structure. This table is indexed by the
+/* Shift and size inside the x86_regs_t structure. This table is indexed by the
  * op->data.reg.id field. */
 static struct {
 	int shift;
@@ -791,7 +791,7 @@ void x86_isa_dump(FILE *f)
 	x86_inst_dump(&x86_isa_inst, f);
 	fprintf(f, "  (%d bytes)\n", x86_isa_inst.size);
 	fprintf(f, "isa_regs:\n");
-	regs_dump(x86_isa_regs, f);
+	x86_regs_dump(x86_isa_regs, f);
 }
 
 

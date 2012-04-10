@@ -551,7 +551,7 @@ static int sys_open_impl(void)
 	length = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
 	if (length >= MAX_PATH_SIZE)
 		fatal("syscall open: maximum path length exceeded");
-	ld_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
+	x86_loader_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
 	x86_sys_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
 		file_name, flags, mode);
 	x86_sys_debug("  fullpath='%s'\n", full_path);
@@ -692,7 +692,7 @@ static int sys_unlink_impl(void)
 	length = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
 	if (length >= MAX_PATH_SIZE)
 		fatal("%s: buffer too small", __FUNCTION__);
-	ld_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
+	x86_loader_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
 	x86_sys_debug("  file_name_ptr=0x%x\n", file_name_ptr);
 	x86_sys_debug("  file_name=%s, full_path=%s\n", file_name, full_path);
 
@@ -748,7 +748,7 @@ static int sys_execve_impl(void)
 	length = mem_read_string(x86_isa_mem, name_ptr, sizeof name, name);
 	if (length >= sizeof name)
 		fatal("%s: buffer too small", __FUNCTION__);
-	ld_get_full_path(x86_isa_ctx, name, full_path, sizeof full_path);
+	x86_loader_get_full_path(x86_isa_ctx, name, full_path, sizeof full_path);
 	x86_sys_debug("  name='%s', full_path='%s'\n", name, full_path);
 
 	/* Arguments */
@@ -881,7 +881,7 @@ static int sys_chmod_impl(void)
 	len = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
 	if (len >= sizeof file_name)
 		fatal("%s: buffer too small", __FUNCTION__);
-	ld_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
+	x86_loader_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
 	x86_sys_debug("  file_name_ptr=0x%x, mode=0x%x\n", file_name_ptr, mode);
 	x86_sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
 
@@ -985,7 +985,7 @@ static int sys_utime_impl(void)
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Get full path */
-	ld_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
+	x86_loader_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
 	x86_sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
 
 	/* Read time buffer */
@@ -1041,7 +1041,7 @@ static int sys_access_impl(void)
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Get full path */
-	ld_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
+	x86_loader_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
 
 	/* Debug */
 	map_flags(&sys_access_mode_map, mode, mode_str, sizeof mode_str);
@@ -1131,8 +1131,8 @@ static int sys_rename_impl(void)
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Get full paths */
-	ld_get_full_path(x86_isa_ctx, old_path, old_full_path, sizeof old_full_path);
-	ld_get_full_path(x86_isa_ctx, new_path, new_full_path, sizeof new_full_path);
+	x86_loader_get_full_path(x86_isa_ctx, old_path, old_full_path, sizeof old_full_path);
+	x86_loader_get_full_path(x86_isa_ctx, new_path, new_full_path, sizeof new_full_path);
 	x86_sys_debug("  old_path='%s', new_path='%s'\n", old_path, new_path);
 	x86_sys_debug("  old_full_path='%s', new_full_path='%s'\n", old_full_path, new_full_path);
 
@@ -1174,7 +1174,7 @@ static int sys_mkdir_impl(void)
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Read full path */
-	ld_get_full_path(x86_isa_ctx, path, full_path, MAX_PATH_SIZE);
+	x86_loader_get_full_path(x86_isa_ctx, path, full_path, MAX_PATH_SIZE);
 	x86_sys_debug("  path='%s', full_path='%s'\n", path, full_path);
 
 	/* Host call */
@@ -1715,7 +1715,7 @@ static int sys_readlink_impl(void)
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Get full path */
-	ld_get_full_path(x86_isa_ctx, path, full_path, sizeof full_path);
+	x86_loader_get_full_path(x86_isa_ctx, path, full_path, sizeof full_path);
 	x86_sys_debug("  path='%s', full_path='%s'\n", path, full_path);
 
 	/* Special file '/proc/self/exe' intercepted */
@@ -4009,7 +4009,7 @@ static int sys_stat64_impl(void)
 		fatal("%s: buffer too small", __FUNCTION__);
 	
 	/* Get full path */
-	ld_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
+	x86_loader_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
 	x86_sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
 
 	/* Host call */
@@ -4055,7 +4055,7 @@ static int sys_lstat64_impl(void)
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Get full path */
-	ld_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
+	x86_loader_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
 	x86_sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
 
 	/* Host call */
@@ -4186,7 +4186,7 @@ static int sys_chown_impl(void)
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Get full path */
-	ld_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
+	x86_loader_get_full_path(x86_isa_ctx, file_name, full_path, sizeof full_path);
 	x86_sys_debug("  filename='%s', fullpath='%s'\n", file_name, full_path);
 
 	/* Host call */
