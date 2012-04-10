@@ -22,7 +22,7 @@
 
 static int can_fetch(int core, int thread)
 {
-	struct x86_ctx_t *ctx = THREAD.ctx;
+	struct x86_ctx_t *ctx = X86_THREAD.ctx;
 
 	uint32_t phy_addr;
 	uint32_t block;
@@ -32,21 +32,21 @@ static int can_fetch(int core, int thread)
 		return 0;
 	
 	/* Fetch stalled or context evict signal activated */
-	if (THREAD.fetch_stall_until >= cpu->cycle || ctx->dealloc_signal)
+	if (X86_THREAD.fetch_stall_until >= x86_cpu->cycle || ctx->dealloc_signal)
 		return 0;
 	
 	/* Fetch queue must have not exceeded the limit of stored bytes
 	 * to be able to store new macro-instructions. */
-	if (THREAD.fetchq_occ >= fetchq_size)
+	if (X86_THREAD.fetchq_occ >= x86_fetch_queue_size)
 		return 0;
 	
 	/* If the next fetch address belongs to a new block, cache system
 	 * must be accessible to read it. */
-	block = THREAD.fetch_neip & ~(THREAD.inst_mod->block_size - 1);
-	if (block != THREAD.fetch_block)
+	block = X86_THREAD.fetch_neip & ~(X86_THREAD.inst_mod->block_size - 1);
+	if (block != X86_THREAD.fetch_block)
 	{
-		phy_addr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
-		if (!mod_can_access(THREAD.inst_mod, phy_addr))
+		phy_addr = mmu_translate(X86_THREAD.ctx->mid, X86_THREAD.fetch_neip);
+		if (!mod_can_access(X86_THREAD.inst_mod, phy_addr))
 			return 0;
 	}
 	
@@ -58,22 +58,22 @@ static int can_fetch(int core, int thread)
 /* Execute in the simulation kernel a macro-instruction and create uops.
  * If any of the uops is a control uop, this uop will be the return value of
  * the function. Otherwise, the first decoded uop is returned. */
-static struct uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
+static struct x86_uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
 {
-	struct x86_ctx_t *ctx = THREAD.ctx;
+	struct x86_ctx_t *ctx = X86_THREAD.ctx;
 
-	struct uop_t *uop;
-	struct uop_t *ret_uop;
+	struct x86_uop_t *uop;
+	struct x86_uop_t *ret_uop;
 
 	struct x86_uinst_t *uinst;
 	int uinst_count;
 	int uinst_index;
 
 	/* Functional simulation */
-	THREAD.fetch_eip = THREAD.fetch_neip;
-	x86_ctx_set_eip(ctx, THREAD.fetch_eip);
+	X86_THREAD.fetch_eip = X86_THREAD.fetch_neip;
+	x86_ctx_set_eip(ctx, X86_THREAD.fetch_eip);
 	x86_ctx_execute_inst(ctx);
-	THREAD.fetch_neip = THREAD.fetch_eip + x86_isa_inst.size;
+	X86_THREAD.fetch_neip = X86_THREAD.fetch_eip + x86_isa_inst.size;
 
 	/* Micro-instructions created by the x86 instructions can be found now
 	 * in 'x86_uinst_list'. */
@@ -86,11 +86,11 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
 		uinst = list_remove_at(x86_uinst_list, 0);
 
 		/* Create uop */
-		uop = uop_create();
+		uop = x86_uop_create();
 		uop->uinst = uinst;
 		assert(uinst->opcode > 0 && uinst->opcode < x86_uinst_opcode_count);
 		uop->flags = x86_uinst_info[uinst->opcode].flags;
-		uop->seq = ++cpu->seq;
+		uop->seq = ++x86_cpu->seq;
 
 		uop->ctx = ctx;
 		uop->core = core;
@@ -101,23 +101,23 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
 		uop->mop_seq = uop->seq - uinst_index;
 		uop->mop_index = uinst_index;
 
-		uop->eip = THREAD.fetch_eip;
+		uop->eip = X86_THREAD.fetch_eip;
 		uop->in_fetchq = 1;
 		uop->fetch_trace_cache = fetch_trace_cache;
 		uop->specmode = x86_ctx_get_status(ctx, x86_ctx_specmode);
-		uop->fetch_address = THREAD.fetch_address;
-		uop->fetch_access = THREAD.fetch_access;
+		uop->fetch_address = X86_THREAD.fetch_address;
+		uop->fetch_access = X86_THREAD.fetch_access;
 		uop->neip = ctx->regs->eip;
-		uop->pred_neip = THREAD.fetch_neip;
+		uop->pred_neip = X86_THREAD.fetch_neip;
 		uop->target_neip = x86_isa_target;
 
 		/* Process uop dependences and classify them in integer, floating-point,
 		 * flags, etc. */
-		rf_count_deps(uop);
+		x86_reg_file_count_deps(uop);
 
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
-			uop->phy_addr = mmu_translate(THREAD.ctx->mid,
+			uop->phy_addr = mmu_translate(X86_THREAD.ctx->mid,
 				uinst->address);
 
 		/* Store x86 macro-instruction and uinst names. This is costly,
@@ -135,11 +135,11 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
 			ret_uop = uop;
 
 		/* Insert into fetch queue */
-		list_add(THREAD.fetchq, uop);
-		cpu->fetched++;
-		THREAD.fetched++;
+		list_add(X86_THREAD.fetchq, uop);
+		x86_cpu->fetched++;
+		X86_THREAD.fetched++;
 		if (fetch_trace_cache)
-			THREAD.trace_cache_queue_occ++;
+			X86_THREAD.trace_cache_queue_occ++;
 
 		/* Next uinst */
 		uinst_index++;
@@ -148,7 +148,7 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
 	/* Increase fetch queue occupancy if instruction does not come from
 	 * trace cache, and return. */
 	if (ret_uop && !fetch_trace_cache)
-		THREAD.fetchq_occ += ret_uop->mop_size;
+		X86_THREAD.fetchq_occ += ret_uop->mop_size;
 	return ret_uop;
 }
 
@@ -157,23 +157,23 @@ static struct uop_t *fetch_inst(int core, int thread, int fetch_trace_cache)
  * Return true if there was a hit and fetching succeeded. */
 static int fetch_thread_trace_cache(int core, int thread)
 {
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 	uint32_t eip_branch;  /* next branch address */
 	int mpred, hit, mop_count, i;
 	uint32_t *mop_array, neip;
 
 	/* No trace cache, no space in the trace cache queue. */
-	if (!trace_cache_present)
+	if (!x86_trace_cache_present)
 		return 0;
-	if (THREAD.trace_cache_queue_occ >= trace_cache_queue_size)
+	if (X86_THREAD.trace_cache_queue_occ >= x86_trace_cache_queue_size)
 		return 0;
 	
 	/* Access BTB, branch predictor, and trace cache */
-	eip_branch = bpred_btb_next_branch(THREAD.bpred,
-		THREAD.fetch_neip, THREAD.inst_mod->block_size);
-	mpred = eip_branch ? bpred_lookup_multiple(THREAD.bpred,
-		eip_branch, trace_cache_branch_max) : 0;
-	hit = trace_cache_lookup(THREAD.trace_cache, THREAD.fetch_neip, mpred,
+	eip_branch = x86_bpred_btb_next_branch(X86_THREAD.bpred,
+		X86_THREAD.fetch_neip, X86_THREAD.inst_mod->block_size);
+	mpred = eip_branch ? x86_bpred_lookup_multiple(X86_THREAD.bpred,
+		eip_branch, x86_trace_cache_branch_max) : 0;
+	hit = x86_trace_cache_lookup(X86_THREAD.trace_cache, X86_THREAD.fetch_neip, mpred,
 		&mop_count, &mop_array, &neip);
 	if (!hit)
 		return 0;
@@ -182,13 +182,13 @@ static int fetch_thread_trace_cache(int core, int thread)
 	for (i = 0; i < mop_count; i++)
 	{
 		/* If instruction caused context to suspend or finish */
-		if (!x86_ctx_get_status(THREAD.ctx, x86_ctx_running))
+		if (!x86_ctx_get_status(X86_THREAD.ctx, x86_ctx_running))
 			break;
 		
 		/* Insert decoded uops into the trace cache queue. In the simulation,
 		 * the uop is inserted into the fetch queue, but its occupancy is not
 		 * increased. */
-		THREAD.fetch_neip = mop_array[i];
+		X86_THREAD.fetch_neip = mop_array[i];
 		uop = fetch_inst(core, thread, 1);
 		if (!uop)  /* no uop was produced by this macroinst */
 			continue;
@@ -197,22 +197,22 @@ static int fetch_thread_trace_cache(int core, int thread)
 		 * to have the necessary information to update it at commit. */
 		if (uop->flags & X86_UINST_CTRL)
 		{
-			bpred_lookup(THREAD.bpred, uop);
+			x86_bpred_lookup(X86_THREAD.bpred, uop);
 			uop->pred_neip = i == mop_count - 1 ? neip :
 				mop_array[i + 1];
 		}
 	}
 
 	/* Set next fetch address as returned by the trace cache, and exit. */
-	THREAD.fetch_neip = neip;
+	X86_THREAD.fetch_neip = neip;
 	return 1;
 }
 
 
 static void fetch_thread(int core, int thread)
 {
-	struct x86_ctx_t *ctx = THREAD.ctx;
-	struct uop_t *uop;
+	struct x86_ctx_t *ctx = X86_THREAD.ctx;
+	struct x86_uop_t *uop;
 
 	uint32_t phy_addr;
 	uint32_t block;
@@ -226,15 +226,15 @@ static void fetch_thread(int core, int thread)
 	
 	/* If new block to fetch is not the same as the previously fetched (and stored)
 	 * block, access the instruction cache. */
-	block = THREAD.fetch_neip & ~(THREAD.inst_mod->block_size - 1);
-	if (block != THREAD.fetch_block)
+	block = X86_THREAD.fetch_neip & ~(X86_THREAD.inst_mod->block_size - 1);
+	if (block != X86_THREAD.fetch_block)
 	{
-		phy_addr = mmu_translate(THREAD.ctx->mid, THREAD.fetch_neip);
-		THREAD.fetch_block = block;
-		THREAD.fetch_address = phy_addr;
-		THREAD.fetch_access = mod_access(THREAD.inst_mod, mod_entry_cpu,
+		phy_addr = mmu_translate(X86_THREAD.ctx->mid, X86_THREAD.fetch_neip);
+		X86_THREAD.fetch_block = block;
+		X86_THREAD.fetch_address = phy_addr;
+		X86_THREAD.fetch_access = mod_access(X86_THREAD.inst_mod, mod_entry_cpu,
 			mod_access_read, phy_addr, NULL, NULL, NULL);
-		THREAD.btb_reads++;
+		X86_THREAD.btb_reads++;
 
 		/* MMU statistics */
 		if (*mmu_report_file_name)
@@ -242,14 +242,14 @@ static void fetch_thread(int core, int thread)
 	}
 
 	/* Fetch all instructions within the block up to the first predict-taken branch. */
-	while ((THREAD.fetch_neip & ~(THREAD.inst_mod->block_size - 1)) == block)
+	while ((X86_THREAD.fetch_neip & ~(X86_THREAD.inst_mod->block_size - 1)) == block)
 	{
 		/* If instruction caused context to suspend or finish */
 		if (!x86_ctx_get_status(ctx, x86_ctx_running))
 			break;
 	
 		/* If fetch queue full, stop fetching */
-		if (THREAD.fetchq_occ >= fetchq_size)
+		if (X86_THREAD.fetchq_occ >= x86_fetch_queue_size)
 			break;
 		
 		/* Insert macro-instruction into the fetch queue. Since the macro-instruction
@@ -267,11 +267,11 @@ static void fetch_thread(int core, int thread)
 		 * stop fetching from this block and set new fetch address. */
 		if (uop->flags & X86_UINST_CTRL)
 		{
-			target = bpred_btb_lookup(THREAD.bpred, uop);
-			taken = target && bpred_lookup(THREAD.bpred, uop);
+			target = x86_bpred_btb_lookup(X86_THREAD.bpred, uop);
+			taken = target && x86_bpred_lookup(X86_THREAD.bpred, uop);
 			if (taken)
 			{
-				THREAD.fetch_neip = target;
+				X86_THREAD.fetch_neip = target;
 				uop->pred_neip = target;
 				break;
 			}
@@ -286,13 +286,13 @@ static void fetch_core(int core)
 {
 	int thread;
 
-	switch (cpu_fetch_kind)
+	switch (x86_cpu_fetch_kind)
 	{
 
-	case cpu_fetch_kind_shared:
+	case x86_cpu_fetch_kind_shared:
 	{
 		/* Fetch from all threads */
-		FOREACH_THREAD
+		X86_THREAD_FOR_EACH
 		{
 			if (can_fetch(core, thread))
 				fetch_thread(core, thread);
@@ -300,47 +300,47 @@ static void fetch_core(int core)
 		break;
 	}
 
-	case cpu_fetch_kind_timeslice:
+	case x86_cpu_fetch_kind_timeslice:
 	{
 		/* Round-robin fetch */
-		FOREACH_THREAD
+		X86_THREAD_FOR_EACH
 		{
-			CORE.fetch_current = (CORE.fetch_current + 1) % cpu_threads;
-			if (can_fetch(core, CORE.fetch_current))
+			X86_CORE.fetch_current = (X86_CORE.fetch_current + 1) % x86_cpu_num_threads;
+			if (can_fetch(core, X86_CORE.fetch_current))
 			{
-				fetch_thread(core, CORE.fetch_current);
+				fetch_thread(core, X86_CORE.fetch_current);
 				break;
 			}
 		}
 		break;
 	}
 	
-	case cpu_fetch_kind_switchonevent:
+	case x86_cpu_fetch_kind_switchonevent:
 	{
 		int must_switch;
 		int new;
 
 		/* If current thread is stalled, it means that we just switched to it.
 		 * No fetching and no switching either. */
-		thread = CORE.fetch_current;
-		if (THREAD.fetch_stall_until >= cpu->cycle)
+		thread = X86_CORE.fetch_current;
+		if (X86_THREAD.fetch_stall_until >= x86_cpu->cycle)
 			break;
 
 		/* Switch thread if:
 		 * - Quantum expired for current thread.
 		 * - Long latency instruction is in progress. */
 		must_switch = !can_fetch(core, thread);
-		must_switch = must_switch || cpu->cycle - CORE.fetch_switch_when >
-			cpu_thread_quantum + cpu_thread_switch_penalty;
+		must_switch = must_switch || x86_cpu->cycle - X86_CORE.fetch_switch_when >
+			x86_cpu_thread_quantum + x86_cpu_thread_switch_penalty;
 		must_switch = must_switch ||
-			eventq_longlat(core, thread);
+			x86_event_queue_long_latency(core, thread);
 
 		/* Switch thread */
 		if (must_switch)
 		{
 			/* Find a new thread to switch to */
-			for (new = (thread + 1) % cpu_threads; new != thread;
-				new = (new + 1) % cpu_threads)
+			for (new = (thread + 1) % x86_cpu_num_threads; new != thread;
+				new = (new + 1) % x86_cpu_num_threads)
 			{
 				/* Do not choose it if it is not eligible for fetching */
 				if (!can_fetch(core, new))
@@ -352,26 +352,26 @@ static void fetch_core(int core)
 
 				/* Do not choose it if it is unfair.
 				 * FIXME: more meaningful fairness policy needed here. */
-				if (ITHREAD(new).committed > THREAD.committed + 100000)
+				if (X86_THREAD_IDX(new).committed > X86_THREAD.committed + 100000)
 					continue;
 
 				/* Choose it if it is not stalled */
-				if (!eventq_longlat(core, new))
+				if (!x86_event_queue_long_latency(core, new))
 					break;
 			}
 				
 			/* Thread switch successful? */
 			if (new != thread)
 			{
-				CORE.fetch_current = new;
-				CORE.fetch_switch_when = cpu->cycle;
-				ITHREAD(new).fetch_stall_until = cpu->cycle + cpu_thread_switch_penalty - 1;
+				X86_CORE.fetch_current = new;
+				X86_CORE.fetch_switch_when = x86_cpu->cycle;
+				X86_THREAD_IDX(new).fetch_stall_until = x86_cpu->cycle + x86_cpu_thread_switch_penalty - 1;
 			}
 		}
 
 		/* Fetch */
-		if (can_fetch(core, CORE.fetch_current))
-			fetch_thread(core, CORE.fetch_current);
+		if (can_fetch(core, X86_CORE.fetch_current))
+			fetch_thread(core, X86_CORE.fetch_current);
 		break;
 	}
 
@@ -382,11 +382,11 @@ static void fetch_core(int core)
 }
 
 
-void cpu_fetch()
+void x86_cpu_fetch()
 {
 	int core;
-	cpu->stage = "fetch";
-	FOREACH_CORE
+	x86_cpu->stage = "fetch";
+	X86_CORE_FOR_EACH
 		fetch_core(core);
 }
 

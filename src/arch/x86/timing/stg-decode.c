@@ -23,27 +23,27 @@
 
 static void decode_thread(int core, int thread)
 {
-	struct list_t *fetchq = THREAD.fetchq;
-	struct list_t *uopq = THREAD.uopq;
-	struct uop_t *uop;
+	struct list_t *fetchq = X86_THREAD.fetchq;
+	struct list_t *uopq = X86_THREAD.uopq;
+	struct x86_uop_t *uop;
 	int i;
 
-	for (i = 0; i < cpu_decode_width; i++)
+	for (i = 0; i < x86_cpu_decode_width; i++)
 	{
 		/* Empty fetch queue, full uopq */
 		if (!list_count(fetchq))
 			break;
-		if (list_count(uopq) >= uopq_size)
+		if (list_count(uopq) >= x86_uop_queue_size)
 			break;
 		uop = list_get(fetchq, 0);
-		assert(uop_exists(uop));
+		assert(x86_uop_exists(uop));
 
 		/* If instructions come from the trace cache, i.e., are located in
 		 * the trace cache queue, copy all of them
 		 * into the uop queue in one single decode slot. */
 		if (uop->fetch_trace_cache) {
 			do {
-				fetchq_remove(core, thread, 0);
+				x86_fetch_queue_remove(core, thread, 0);
 				list_add(uopq, uop);
 				uop->in_uopq = 1;
 				uop = list_get(fetchq, 0);
@@ -54,10 +54,10 @@ static void decode_thread(int core, int thread)
 		/* Decode one macro-instruction coming from a block in the instruction
 		 * cache. If the cache access finished, extract it from the fetch queue. */
 		assert(!uop->mop_index);
-		if (!mod_in_flight_access(THREAD.inst_mod, uop->fetch_access, uop->fetch_address))
+		if (!mod_in_flight_access(X86_THREAD.inst_mod, uop->fetch_access, uop->fetch_address))
 		{
 			do {
-				fetchq_remove(core, thread, 0);
+				x86_fetch_queue_remove(core, thread, 0);
 				list_add(uopq, uop);
 				uop->in_uopq = 1;
 				uop = list_get(fetchq, 0);
@@ -70,15 +70,15 @@ static void decode_thread(int core, int thread)
 static void decode_core(int core)
 {
 	int thread;
-	FOREACH_THREAD
+	X86_THREAD_FOR_EACH
 		decode_thread(core, thread);
 }
 
 
-void cpu_decode()
+void x86_cpu_decode()
 {
 	int core;
-	cpu->stage = "decode";
-	FOREACH_CORE
+	x86_cpu->stage = "decode";
+	X86_CORE_FOR_EACH
 		decode_core(core);
 }

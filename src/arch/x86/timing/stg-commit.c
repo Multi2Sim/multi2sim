@@ -30,14 +30,14 @@ static char *err_commit_stall =
 
 static int can_commit_thread(int core, int thread)
 {
-	struct uop_t *uop;
-	struct x86_ctx_t *ctx = THREAD.ctx;
+	struct x86_uop_t *uop;
+	struct x86_ctx_t *ctx = X86_THREAD.ctx;
 
 	/* Sanity check - If the context is running, we assume that something is
 	 * going wrong if more than 1M cycles go by without committing an inst. */
 	if (!ctx || !x86_ctx_get_status(ctx, x86_ctx_running))
-		THREAD.last_commit_cycle = cpu->cycle;
-	if (cpu->cycle - THREAD.last_commit_cycle > 1000000)
+		X86_THREAD.last_commit_cycle = x86_cpu->cycle;
+	if (x86_cpu->cycle - X86_THREAD.last_commit_cycle > 1000000)
 	{
 		warning("core-thread %d-%d: simulation ended due to commit stall.\n%s",
 			core, thread, err_commit_stall);
@@ -46,19 +46,19 @@ static int can_commit_thread(int core, int thread)
 
 	/* If there is no instruction in the ROB, or the instruction is not
 	 * located at the ROB head in shared approaches, end. */
-	if (!rob_can_dequeue(core, thread))
+	if (!x86_rob_can_dequeue(core, thread))
 		return 0;
 
 	/* Get instruction from ROB head */
-	uop = rob_head(core, thread);
-	assert(uop_exists(uop));
+	uop = x86_rob_head(core, thread);
+	assert(x86_uop_exists(uop));
 	assert(uop->core == core && uop->thread == thread);
 
 	/* Stores must be ready. Update here 'uop->ready' flag for efficiency,
-	 * if the call to 'rf_ready' shows input registers to be ready. */
+	 * if the call to 'x86_reg_file_ready' shows input registers to be ready. */
 	if (uop->uinst->opcode == x86_uinst_store)
 	{
-		if (!uop->ready && rf_ready(uop))
+		if (!uop->ready && x86_reg_file_ready(uop))
 			uop->ready = 1;
 		return uop->ready;
 	}
@@ -70,93 +70,93 @@ static int can_commit_thread(int core, int thread)
 
 static void commit_thread(int core, int thread, int quant)
 {
-	struct x86_ctx_t *ctx = THREAD.ctx;
-	struct uop_t *uop;
+	struct x86_ctx_t *ctx = X86_THREAD.ctx;
+	struct x86_uop_t *uop;
 	int recover = 0;
 
 	/* Update pipeline debugger with ready stores */
 	if (esim_debug_file)
-		uop_lnlist_check_if_ready(THREAD.sq);
+		x86_uop_linked_list_check_if_ready(X86_THREAD.sq);
 	
 	/* Commit stage for thread */
 	assert(ctx);
 	while (quant && can_commit_thread(core, thread))
 	{
 		/* Get instruction at the head of the ROB */
-		uop = rob_head(core, thread);
-		assert(uop_exists(uop));
+		uop = x86_rob_head(core, thread);
+		assert(x86_uop_exists(uop));
 		assert(uop->core == core);
 		assert(uop->thread == thread);
 		assert(!recover);
 		
 		/* Mispredicted branch */
-		if (cpu_recover_kind == cpu_recover_kind_commit &&
+		if (x86_cpu_recover_kind == x86_cpu_recover_kind_commit &&
 			(uop->flags & X86_UINST_CTRL) && uop->neip != uop->pred_neip)
 			recover = 1;
 	
 		/* Free physical registers */
 		assert(!uop->specmode);
-		rf_commit(uop);
+		x86_reg_file_commit(uop);
 		
 		/* Branches update branch predictor and btb */
 		if (uop->flags & X86_UINST_CTRL)
 		{
-			bpred_update(THREAD.bpred, uop);
-			bpred_btb_update(THREAD.bpred, uop);
-			THREAD.btb_writes++;
+			x86_bpred_update(X86_THREAD.bpred, uop);
+			x86_bpred_btb_update(X86_THREAD.bpred, uop);
+			X86_THREAD.btb_writes++;
 		}
 
 		/* Trace cache */
-		if (trace_cache_present)
-			trace_cache_new_uop(THREAD.trace_cache, uop);
+		if (x86_trace_cache_present)
+			x86_trace_cache_new_uop(X86_THREAD.trace_cache, uop);
 			
 		/* Statistics */
-		THREAD.last_commit_cycle = cpu->cycle;
-		THREAD.committed[uop->uinst->opcode]++;
-		CORE.committed[uop->uinst->opcode]++;
-		cpu->committed[uop->uinst->opcode]++;
-		cpu->inst++;
+		X86_THREAD.last_commit_cycle = x86_cpu->cycle;
+		X86_THREAD.committed[uop->uinst->opcode]++;
+		X86_CORE.committed[uop->uinst->opcode]++;
+		x86_cpu->committed[uop->uinst->opcode]++;
+		x86_cpu->inst++;
 		ctx->inst_count++;
 		if (uop->fetch_trace_cache)
-			THREAD.trace_cache->committed++;
+			X86_THREAD.trace_cache->committed++;
 		if (uop->flags & X86_UINST_CTRL)
 		{
-			THREAD.branches++;
-			CORE.branches++;
-			cpu->branches++;
+			X86_THREAD.branches++;
+			X86_CORE.branches++;
+			x86_cpu->branches++;
 			if (uop->neip != uop->pred_neip)
 			{
-				THREAD.mispred++;
-				CORE.mispred++;
-				cpu->mispred++;
+				X86_THREAD.mispred++;
+				X86_CORE.mispred++;
+				x86_cpu->mispred++;
 			}
 		}
 
 		/* Debug */
 		esim_debug("uop action=\"update\", core=%d, seq=%llu, stg_commit=1\n",
-			uop->core, (long long unsigned) uop->di_seq);
+			uop->core, (long long unsigned) uop->dispatch_seq);
 		esim_debug("uop action=\"destroy\", core=%d, seq=%llu\n",
-			uop->core, (long long unsigned) uop->di_seq);
+			uop->core, (long long unsigned) uop->dispatch_seq);
 		
 		/* Retire instruction */
-		rob_remove_head(core, thread);
-		CORE.rob_reads++;
-		THREAD.rob_reads++;
+		x86_rob_remove_head(core, thread);
+		X86_CORE.rob_reads++;
+		X86_THREAD.rob_reads++;
 		quant--;
 
 		/* Recover. Functional units are cleared when processor
 		 * recovers at commit. */
 		if (recover)
 		{
-			cpu_recover(core, thread);
-			fu_release(core);
+			x86_cpu_recover(core, thread);
+			x86_fu_release(core);
 		}
 	}
 
 	/* If context eviction signal is activated and pipeline is empty,
 	 * deallocate context. */
-	if (ctx->dealloc_signal && cpu_pipeline_empty(core, thread))
-		cpu_unmap_context(core, thread);
+	if (ctx->dealloc_signal && x86_cpu_pipeline_empty(core, thread))
+		x86_cpu_unmap_context(core, thread);
 }
 
 
@@ -165,45 +165,45 @@ void commit_core(int core)
 	int pass, quant, new;
 
 	/* Commit stage for core */
-	switch (cpu_commit_kind)
+	switch (x86_cpu_commit_kind)
 	{
 
-	case cpu_commit_kind_shared:
-		pass = cpu_threads;
-		quant = cpu_commit_width;
+	case x86_cpu_commit_kind_shared:
+		pass = x86_cpu_num_threads;
+		quant = x86_cpu_commit_width;
 		while (quant && pass) {
-			CORE.commit_current = (CORE.commit_current + 1) % cpu_threads;
-			if (can_commit_thread(core, CORE.commit_current))
+			X86_CORE.commit_current = (X86_CORE.commit_current + 1) % x86_cpu_num_threads;
+			if (can_commit_thread(core, X86_CORE.commit_current))
 			{
-				commit_thread(core, CORE.commit_current, 1);
+				commit_thread(core, X86_CORE.commit_current, 1);
 				quant--;
-				pass = cpu_threads;
+				pass = x86_cpu_num_threads;
 			}
 			else
 				pass--;
 		}
 		break;
 	
-	case cpu_commit_kind_timeslice:
+	case x86_cpu_commit_kind_timeslice:
 	
 		/* look for a not empty VB */
-		new = (CORE.commit_current + 1) % cpu_threads;
-		while (new != CORE.commit_current && !can_commit_thread(core, new))
-			new = (new + 1) % cpu_threads;
+		new = (X86_CORE.commit_current + 1) % x86_cpu_num_threads;
+		while (new != X86_CORE.commit_current && !can_commit_thread(core, new))
+			new = (new + 1) % x86_cpu_num_threads;
 		
 		/* commit new thread */
-		CORE.commit_current = new;
-		commit_thread(core, new, cpu_commit_width);
+		X86_CORE.commit_current = new;
+		commit_thread(core, new, x86_cpu_commit_width);
 		break;
 	
 	}
 }
 
 
-void cpu_commit()
+void x86_cpu_commit()
 {
 	int core;
-	cpu->stage = "commit";
-	FOREACH_CORE
+	x86_cpu->stage = "commit";
+	X86_CORE_FOR_EACH
 		commit_core(core);
 }

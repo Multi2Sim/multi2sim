@@ -20,10 +20,10 @@
 #include <x86-timing.h>
 
 
-int cpu_pipeline_empty(int core, int thread)
+int x86_cpu_pipeline_empty(int core, int thread)
 {
-	return !THREAD.rob_count && !list_count(THREAD.fetchq) &&
-		!list_count(THREAD.uopq);
+	return !X86_THREAD.rob_count && !list_count(X86_THREAD.fetchq) &&
+		!list_count(X86_THREAD.uopq);
 }
 
 
@@ -38,27 +38,27 @@ int cpu_context_to_cpu(struct x86_ctx_t *ctx)
 	int node, free_cpu;
 	int core, thread;
 	assert(!x86_ctx_get_status(ctx, x86_ctx_alloc));
-	assert(x86_emu->alloc_list_count <= cpu_cores * cpu_threads);
+	assert(x86_emu->alloc_list_count <= x86_cpu_num_cores * x86_cpu_num_threads);
 
 	/* No free node */
-	if (x86_emu->alloc_list_count == cpu_cores * cpu_threads)
+	if (x86_emu->alloc_list_count == x86_cpu_num_cores * x86_cpu_num_threads)
 		return -1;
 	
 	/* Try to allocate previous node, if the contexts has ever been
 	 * allocated before. */
-	if (ctx->alloc_when && !cpu->core[ctx->alloc_core].thread[ctx->alloc_thread].ctx)
-		return ctx->alloc_core * cpu_threads + ctx->alloc_thread;
+	if (ctx->alloc_when && !x86_cpu->core[ctx->alloc_core].thread[ctx->alloc_thread].ctx)
+		return ctx->alloc_core * x86_cpu_num_threads + ctx->alloc_thread;
 	
 	/* Find a node that has not been used before. This is useful in case
 	 * a context was suspended and tries to allocate later the same node. */
 	free_cpu = -1;
-	for (node = 0; node < cpu_cores * cpu_threads; node++)
+	for (node = 0; node < x86_cpu_num_cores * x86_cpu_num_threads; node++)
 	{
-		core = node / cpu_threads;
-		thread = node % cpu_threads;
-		if (!THREAD.ctx && free_cpu < 0)
+		core = node / x86_cpu_num_threads;
+		thread = node % x86_cpu_num_threads;
+		if (!X86_THREAD.ctx && free_cpu < 0)
 			free_cpu = node;
-		if (!THREAD.last_alloc_pid)
+		if (!X86_THREAD.last_alloc_pid)
 			return node;
 	}
 	assert(free_cpu >= 0);
@@ -66,48 +66,48 @@ int cpu_context_to_cpu(struct x86_ctx_t *ctx)
 }
 
 
-void cpu_map_context(int core, int thread, struct x86_ctx_t *ctx)
+void x86_cpu_map_context(int core, int thread, struct x86_ctx_t *ctx)
 {
-	assert(!THREAD.ctx);
+	assert(!X86_THREAD.ctx);
 	assert(!x86_ctx_get_status(ctx, x86_ctx_alloc));
-	assert(x86_emu->alloc_list_count < cpu_cores * cpu_threads);
+	assert(x86_emu->alloc_list_count < x86_cpu_num_cores * x86_cpu_num_threads);
 	assert(!ctx->dealloc_signal);
 
-	THREAD.ctx = ctx;
-	THREAD.last_alloc_pid = ctx->pid;
-	THREAD.fetch_neip = ctx->regs->eip;
+	X86_THREAD.ctx = ctx;
+	X86_THREAD.last_alloc_pid = ctx->pid;
+	X86_THREAD.fetch_neip = ctx->regs->eip;
 
 	x86_ctx_set_status(ctx, x86_ctx_alloc);
 	ctx->alloc_core = core;
 	ctx->alloc_thread = thread;
-	ctx->alloc_when = cpu->cycle;
+	ctx->alloc_when = x86_cpu->cycle;
 
 	x86_ctx_debug("cycle %lld: ctx %d allocated to c%dt%d\n",
-		cpu->cycle, ctx->pid, core, thread);
+		x86_cpu->cycle, ctx->pid, core, thread);
 }
 
 
-void cpu_unmap_context(int core, int thread)
+void x86_cpu_unmap_context(int core, int thread)
 {
-	struct x86_ctx_t *ctx = THREAD.ctx;
+	struct x86_ctx_t *ctx = X86_THREAD.ctx;
 
 	assert(ctx);
 	assert(x86_ctx_get_status(ctx, x86_ctx_alloc));
 	assert(!x86_ctx_get_status(ctx, x86_ctx_specmode));
-	assert(!THREAD.rob_count);
+	assert(!X86_THREAD.rob_count);
 	assert(ctx->dealloc_signal);
-	assert(cpu->ctx_dealloc_signals > 0);
+	assert(x86_cpu->ctx_dealloc_signals > 0);
 
-	THREAD.ctx = NULL;
-	THREAD.fetch_neip = 0;
+	X86_THREAD.ctx = NULL;
+	X86_THREAD.fetch_neip = 0;
 
 	x86_ctx_clear_status(ctx, x86_ctx_alloc);
-	ctx->dealloc_when = cpu->cycle;
+	ctx->dealloc_when = x86_cpu->cycle;
 	ctx->dealloc_signal = 0;
-	cpu->ctx_dealloc_signals--;
+	x86_cpu->ctx_dealloc_signals--;
 
 	x86_ctx_debug("cycle %lld: ctx %d evicted from c%dt%d\n",
-		cpu->cycle, ctx->pid, core, thread);
+		x86_cpu->cycle, ctx->pid, core, thread);
 	
 	/* If context is finished, free it. */
 	if (x86_ctx_get_status(ctx, x86_ctx_finished))
@@ -126,27 +126,27 @@ void cpu_unmap_context_signal(struct x86_ctx_t *ctx)
 	assert(ctx);
 	assert(x86_ctx_get_status(ctx, x86_ctx_alloc));
 	assert(!ctx->dealloc_signal);
-	assert(cpu->ctx_dealloc_signals < cpu_cores * cpu_threads);
+	assert(x86_cpu->ctx_dealloc_signals < x86_cpu_num_cores * x86_cpu_num_threads);
 
 	ctx->dealloc_signal = 1;
-	cpu->ctx_dealloc_signals++;
+	x86_cpu->ctx_dealloc_signals++;
 	core = ctx->alloc_core;
 	thread = ctx->alloc_thread;
 	x86_ctx_debug("cycle %lld: ctx %d receives eviction signal from c%dt%d\n",
-		cpu->cycle, ctx->pid, core, thread);
-	if (cpu_pipeline_empty(core, thread))
-		cpu_unmap_context(core, thread);
+		x86_cpu->cycle, ctx->pid, core, thread);
+	if (x86_cpu_pipeline_empty(core, thread))
+		x86_cpu_unmap_context(core, thread);
 		
 }
 
 
-void cpu_static_schedule()
+void x86_cpu_static_schedule()
 {
 	struct x86_ctx_t *ctx;
 	int node;
 
 	x86_ctx_debug("cycle %lld: static scheduler called\n",
-		cpu->cycle);
+		x86_cpu->cycle);
 	
 	/* If there is no new unallocated context, exit. */
 	assert(x86_emu->alloc_list_count <= x86_emu->context_list_count);
@@ -168,18 +168,18 @@ void cpu_static_schedule()
 				" or activate the context scheduler.", ctx->pid);
 
 		/* Allocate context. */
-		cpu_map_context(node / cpu_threads, node % cpu_threads, ctx);
+		x86_cpu_map_context(node / x86_cpu_num_threads, node % x86_cpu_num_threads, ctx);
 	}
 }
 
 
-void cpu_dynamic_schedule()
+void x86_cpu_dynamic_schedule()
 {
 	struct x86_ctx_t *ctx, *found_ctx;
 	int node;
 
 	x86_ctx_debug("cycle %lld: scheduler called\n",
-		cpu->cycle);
+		x86_cpu->cycle);
 	
 	/* Evict non-running contexts */
 	for (ctx = x86_emu->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
@@ -190,15 +190,15 @@ void cpu_dynamic_schedule()
 	 * and exit. */
 	if (x86_emu->alloc_list_count == x86_emu->running_list_count)
 	{
-		cpu->ctx_alloc_oldest = cpu->cycle;
+		x86_cpu->ctx_alloc_oldest = x86_cpu->cycle;
 		for (ctx = x86_emu->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
-			ctx->alloc_when = cpu->cycle;
+			ctx->alloc_when = x86_cpu->cycle;
 		return;
 	}
 
 	/* If any quantum expired and no context eviction signal is activated,
 	 * send signal to evict the oldest allocated context. */
-	if (!cpu->ctx_dealloc_signals && cpu->ctx_alloc_oldest + cpu_context_quantum <= cpu->cycle) {
+	if (!x86_cpu->ctx_dealloc_signals && x86_cpu->ctx_alloc_oldest + x86_cpu_context_quantum <= x86_cpu->cycle) {
 		found_ctx = NULL;
 		for (ctx = x86_emu->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
 			if (!found_ctx || ctx->alloc_when < found_ctx->alloc_when)
@@ -208,7 +208,7 @@ void cpu_dynamic_schedule()
 	}
 	
 	/* Allocate running contexts */
-	while (x86_emu->alloc_list_count < x86_emu->running_list_count && x86_emu->alloc_list_count < cpu_cores * cpu_threads)
+	while (x86_emu->alloc_list_count < x86_emu->running_list_count && x86_emu->alloc_list_count < x86_cpu_num_cores * x86_cpu_num_threads)
 	{
 		/* Find running, non-allocated context with lowest dealloc_when value. */
 		found_ctx = NULL;
@@ -221,14 +221,14 @@ void cpu_dynamic_schedule()
 
 		/* Allocate context */
 		node = cpu_context_to_cpu(ctx);
-		assert(node >= 0 && node < cpu_cores * cpu_threads);
-		cpu_map_context(node / cpu_threads, node % cpu_threads, ctx);
+		assert(node >= 0 && node < x86_cpu_num_cores * x86_cpu_num_threads);
+		x86_cpu_map_context(node / x86_cpu_num_threads, node % x86_cpu_num_threads, ctx);
 	}
 
 	/* Calculate the context that was allocated first */
-	cpu->ctx_alloc_oldest = cpu->cycle;
+	x86_cpu->ctx_alloc_oldest = x86_cpu->cycle;
 	for (ctx = x86_emu->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
-		if (!ctx->dealloc_signal && ctx->alloc_when < cpu->ctx_alloc_oldest)
-			cpu->ctx_alloc_oldest = ctx->alloc_when;
+		if (!ctx->dealloc_signal && ctx->alloc_when < x86_cpu->ctx_alloc_oldest)
+			x86_cpu->ctx_alloc_oldest = ctx->alloc_when;
 }
 

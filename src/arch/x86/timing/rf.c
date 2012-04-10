@@ -22,10 +22,10 @@
 
 /* Global variables */
 
-char *rf_kind_map[] = { "Shared", "Private" };
-enum rf_kind_t rf_kind = rf_kind_private;  /* Sharing policy for register file */
-int rf_int_size = 80;  /* Per-thread integer register file size */
-int rf_fp_size = 40;  /* Per-thread floating-point register file size */
+char *x86_reg_file_kind_map[] = { "Shared", "Private" };
+enum x86_reg_file_kind_t x86_reg_file_kind = x86_reg_file_kind_private;  /* Sharing policy for register file */
+int x86_reg_file_int_size = 80;  /* Per-thread integer register file size */
+int x86_reg_file_fp_size = 40;  /* Per-thread floating-point register file size */
 
 
 
@@ -40,14 +40,14 @@ static uint32_t rf_fp_local_size;
 static int rf_int_reclaim(int core, int thread)
 {
 	int phreg;
-	struct rf_t *rf = THREAD.rf;
+	struct x86_reg_file_t *rf = X86_THREAD.rf;
 
 	/* Obtain a register from the free list */
 	assert(rf->int_free_phreg_count > 0);
 	phreg = rf->int_free_phreg[rf->int_free_phreg_count - 1];
 	rf->int_free_phreg_count--;
-	CORE.rf_int_count++;
-	THREAD.rf_int_count++;
+	X86_CORE.reg_file_int_count++;
+	X86_THREAD.reg_file_int_count++;
 	assert(!rf->int_phreg[phreg].busy);
 	assert(!rf->int_phreg[phreg].pending);
 	return phreg;
@@ -58,14 +58,14 @@ static int rf_int_reclaim(int core, int thread)
 static int rf_fp_reclaim(int core, int thread)
 {
 	int phreg;
-	struct rf_t *rf = THREAD.rf;
+	struct x86_reg_file_t *rf = X86_THREAD.rf;
 
 	/* Obtain a register from the free list */
 	assert(rf->fp_free_phreg_count > 0);
 	phreg = rf->fp_free_phreg[rf->fp_free_phreg_count - 1];
 	rf->fp_free_phreg_count--;
-	CORE.rf_fp_count++;
-	THREAD.rf_fp_count++;
+	X86_CORE.reg_file_fp_count++;
+	X86_THREAD.reg_file_fp_count++;
 	assert(!rf->fp_phreg[phreg].busy);
 	assert(!rf->fp_phreg[phreg].pending);
 	return phreg;
@@ -80,7 +80,7 @@ static int rf_fp_reclaim(int core, int thread)
 static void rf_init_thread(int core, int thread)
 {
 	int dep, phreg, fphreg;
-	struct rf_t *rf = THREAD.rf;
+	struct x86_reg_file_t *rf = X86_THREAD.rf;
 	
 	/* Initial mapping for the integer register file.
 	 * Map each logical register to a new physical register,
@@ -107,52 +107,52 @@ static void rf_init_thread(int core, int thread)
 }
 
 
-void rf_init(void)
+void x86_reg_file_init(void)
 {
 	int core, thread;
 	
 	/* Register file size restrictions */
-	if (rf_int_size < RF_MIN_INT_SIZE)
-		fatal("rf_int_size must be at least %d", RF_MIN_INT_SIZE);
-	if (rf_fp_size < RF_MIN_FP_SIZE)
-		fatal("rf_fp_size must be at least %d", RF_MIN_FP_SIZE);
+	if (x86_reg_file_int_size < X86_REG_FILE_MIN_INT_SIZE)
+		fatal("rf_int_size must be at least %d", X86_REG_FILE_MIN_INT_SIZE);
+	if (x86_reg_file_fp_size < X86_REG_FILE_MIN_FP_SIZE)
+		fatal("rf_fp_size must be at least %d", X86_REG_FILE_MIN_FP_SIZE);
 	
 	/* Maximum size accessible to threads */
-	if (rf_kind == rf_kind_private) {
-		rf_int_local_size = rf_int_size;
-		rf_fp_local_size = rf_fp_size;
+	if (x86_reg_file_kind == x86_reg_file_kind_private) {
+		rf_int_local_size = x86_reg_file_int_size;
+		rf_fp_local_size = x86_reg_file_fp_size;
 	} else {
-		rf_int_local_size = rf_int_size * cpu_threads;
-		rf_fp_local_size = rf_fp_size * cpu_threads;
+		rf_int_local_size = x86_reg_file_int_size * x86_cpu_num_threads;
+		rf_fp_local_size = x86_reg_file_fp_size * x86_cpu_num_threads;
 	}
 
 	/* Create and initialize register files */
-	FOREACH_CORE FOREACH_THREAD {
-		THREAD.rf = rf_create(rf_int_local_size, rf_fp_local_size);
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH {
+		X86_THREAD.rf = x86_reg_file_create(rf_int_local_size, rf_fp_local_size);
 		rf_init_thread(core, thread);
 	}
 }
 
 
-void rf_done(void)
+void x86_reg_file_done(void)
 {
 	int core, thread;
-	FOREACH_CORE FOREACH_THREAD
-		rf_free(THREAD.rf);
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+		x86_reg_file_free(X86_THREAD.rf);
 }
 
 
-struct rf_t *rf_create(int int_size, int fp_size)
+struct x86_reg_file_t *x86_reg_file_create(int int_size, int fp_size)
 {
-	struct rf_t *rf;
+	struct x86_reg_file_t *rf;
 	int phreg;
 	
 	/* Create structure */
-	rf = calloc(1, sizeof(struct rf_t));
+	rf = calloc(1, sizeof(struct x86_reg_file_t));
 	
 	/* Integer register file and free list */
 	rf->int_phreg_count = int_size;
-	rf->int_phreg = calloc(int_size, sizeof(struct phreg_t));
+	rf->int_phreg = calloc(int_size, sizeof(struct x86_phreg_t));
 	rf->int_free_phreg = calloc(int_size, sizeof(int));
 	rf->int_free_phreg_count = int_size;
 	for (phreg = 0; phreg < int_size; phreg++)
@@ -160,7 +160,7 @@ struct rf_t *rf_create(int int_size, int fp_size)
 
 	/* Floating-point register file and free list */
 	rf->fp_phreg_count = fp_size;
-	rf->fp_phreg = calloc(fp_size, sizeof(struct phreg_t));
+	rf->fp_phreg = calloc(fp_size, sizeof(struct x86_phreg_t));
 	rf->fp_free_phreg = calloc(fp_size, sizeof(int));
 	rf->fp_free_phreg_count = fp_size;
 	for (phreg = 0; phreg < fp_size; phreg++)
@@ -171,7 +171,7 @@ struct rf_t *rf_create(int int_size, int fp_size)
 }
 
 
-void rf_free(struct rf_t *rf)
+void x86_reg_file_free(struct x86_reg_file_t *rf)
 {
 	free(rf->int_phreg);
 	free(rf->int_free_phreg);
@@ -181,7 +181,7 @@ void rf_free(struct rf_t *rf)
 }
 
 
-void rf_dump(int core, int thread, FILE *f)
+void x86_reg_file_dump(int core, int thread, FILE *f)
 {
 	int i;
 
@@ -189,46 +189,46 @@ void rf_dump(int core, int thread, FILE *f)
 	fprintf(f, "Integer register file at core %d, thread %d\n", core, thread);
 	fprintf(f, "Format is [busy, pending], * = free\n");
 	for (i = 0; i < rf_int_local_size; i++) {
-		fprintf(f, "  %3d%c[%d-%d]", i, THREAD.rf->int_phreg[i].busy ? ' ' : '*',
-			THREAD.rf->int_phreg[i].busy,
-			THREAD.rf->int_phreg[i].pending);
+		fprintf(f, "  %3d%c[%d-%d]", i, X86_THREAD.rf->int_phreg[i].busy ? ' ' : '*',
+			X86_THREAD.rf->int_phreg[i].busy,
+			X86_THREAD.rf->int_phreg[i].pending);
 		if (i % 5 == 4 && i != rf_int_local_size - 1)
 			fprintf(f, "\n");
 	}
 
 	fprintf(f, "\nIteger Register Aliasing Table:\n");
 	for (i = x86_dep_int_first; i <= x86_dep_int_last; i++) {
-		fprintf(f, "  %2d->%-3d", i, THREAD.rf->int_rat[i - x86_dep_int_first]);
+		fprintf(f, "  %2d->%-3d", i, X86_THREAD.rf->int_rat[i - x86_dep_int_first]);
 		if ((i - x86_dep_int_first) % 8 == 7)
 			fprintf(f, "\n");
 	}
 
 	fprintf(f, "\n");
 	fprintf(f, "int_free_phreg_count  %d  # Number of free integer registers\n",
-		THREAD.rf->int_free_phreg_count);
+		X86_THREAD.rf->int_free_phreg_count);
 	fprintf(f, "\n");
 
 	/* Floating point register file */
 	fprintf(f, "Floating-point register file at core %d, thread %d\n", core, thread);
 	fprintf(f, "Format is [busy, pending], * = free\n");
 	for (i = 0; i < rf_fp_local_size; i++) {
-		fprintf(f, "  %3d%c[%d-%d]", i, THREAD.rf->fp_phreg[i].busy ? ' ' : '*',
-			THREAD.rf->fp_phreg[i].busy,
-			THREAD.rf->fp_phreg[i].pending);
+		fprintf(f, "  %3d%c[%d-%d]", i, X86_THREAD.rf->fp_phreg[i].busy ? ' ' : '*',
+			X86_THREAD.rf->fp_phreg[i].busy,
+			X86_THREAD.rf->fp_phreg[i].pending);
 		if (i % 5 == 4 && i != rf_fp_local_size - 1)
 			fprintf(f, "\n");
 	}
 
 	fprintf(f, "\nIteger Register Aliasing Table:\n");
 	for (i = x86_dep_fp_first; i <= x86_dep_fp_last; i++) {
-		fprintf(f, "  %2d->%-3d", i, THREAD.rf->fp_rat[i - x86_dep_fp_first]);
+		fprintf(f, "  %2d->%-3d", i, X86_THREAD.rf->fp_rat[i - x86_dep_fp_first]);
 		if ((i - x86_dep_fp_first) % 8 == 7)
 			fprintf(f, "\n");
 	}
 
 	fprintf(f, "\n");
 	fprintf(f, "fp_free_phreg_count  %d  # Number of free floating-point registers\n",
-		THREAD.rf->fp_free_phreg_count);
+		X86_THREAD.rf->fp_free_phreg_count);
 	fprintf(f, "\n");
 }
 
@@ -238,7 +238,7 @@ void rf_dump(int core, int thread, FILE *f)
  * needed. Otherwise, one register per destination operand is needed, and the
  * output flags will be mapped to one of the destination physical registers
  * used for operands. */
-void rf_count_deps(struct uop_t *uop)
+void x86_reg_file_count_deps(struct x86_uop_t *uop)
 {
 	int dep, loreg;
 	int int_count, fp_count, flag_count;
@@ -284,21 +284,21 @@ void rf_count_deps(struct uop_t *uop)
 
 
 
-int rf_can_rename(struct uop_t *uop)
+int x86_reg_file_can_rename(struct x86_uop_t *uop)
 {
 	int core = uop->core;
 	int thread = uop->thread;
 
 	/* Detect negative cases. */
-	if (rf_kind == rf_kind_private) {
-		if (THREAD.rf_int_count + uop->ph_int_odep_count > rf_int_local_size)
+	if (x86_reg_file_kind == x86_reg_file_kind_private) {
+		if (X86_THREAD.reg_file_int_count + uop->ph_int_odep_count > rf_int_local_size)
 			return 0;
-		if (THREAD.rf_fp_count + uop->ph_fp_odep_count > rf_fp_local_size)
+		if (X86_THREAD.reg_file_fp_count + uop->ph_fp_odep_count > rf_fp_local_size)
 			return 0;
 	} else {
-		if (CORE.rf_int_count + uop->ph_int_odep_count > rf_int_local_size)
+		if (X86_CORE.reg_file_int_count + uop->ph_int_odep_count > rf_int_local_size)
 			return 0;
-		if (CORE.rf_fp_count + uop->ph_fp_odep_count > rf_fp_local_size)
+		if (X86_CORE.reg_file_fp_count + uop->ph_fp_odep_count > rf_fp_local_size)
 			return 0;
 	}
 
@@ -307,14 +307,14 @@ int rf_can_rename(struct uop_t *uop)
 }
 
 
-void rf_rename(struct uop_t *uop)
+void x86_reg_file_rename(struct x86_uop_t *uop)
 {
 	int dep;
 	int loreg, streg, phreg, ophreg;
 	int flag_phreg, flag_count;
 	int core = uop->core;
 	int thread = uop->thread;
-	struct rf_t *rf = THREAD.rf;
+	struct x86_reg_file_t *rf = X86_THREAD.rf;
 
 	/* Update floating-point top of stack */
 	if (uop->uinst->opcode == x86_uinst_fp_pop)
@@ -336,7 +336,7 @@ void rf_rename(struct uop_t *uop)
 		{
 			phreg = rf->int_rat[loreg - x86_dep_int_first];
 			uop->ph_idep[dep] = phreg;
-			THREAD.rat_int_reads++;
+			X86_THREAD.rat_int_reads++;
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
 		{
@@ -347,7 +347,7 @@ void rf_rename(struct uop_t *uop)
 			/* Rename it. */
 			phreg = rf->fp_rat[streg - x86_dep_fp_first];
 			uop->ph_idep[dep] = phreg;
-			THREAD.rat_fp_reads++;
+			X86_THREAD.rat_fp_reads++;
 		}
 		else
 		{
@@ -380,7 +380,7 @@ void rf_rename(struct uop_t *uop)
 			uop->ph_odep[dep] = phreg;
 			uop->ph_oodep[dep] = ophreg;
 			rf->int_rat[loreg - x86_dep_int_first] = phreg;
-			THREAD.rat_int_writes++;
+			X86_THREAD.rat_int_writes++;
 
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
@@ -399,7 +399,7 @@ void rf_rename(struct uop_t *uop)
 			uop->ph_odep[dep] = phreg;
 			uop->ph_oodep[dep] = ophreg;
 			rf->fp_rat[streg - x86_dep_fp_first] = phreg;
-			THREAD.rat_fp_writes++;
+			X86_THREAD.rat_fp_writes++;
 		}
 		else
 		{
@@ -429,12 +429,12 @@ void rf_rename(struct uop_t *uop)
 
 
 /* Return 1 if input dependencies are resolved */
-int rf_ready(struct uop_t *uop)
+int x86_reg_file_ready(struct x86_uop_t *uop)
 {
 	int loreg, phreg, dep;
 	int core = uop->core;
 	int thread = uop->thread;
-	struct rf_t *rf = THREAD.rf;
+	struct x86_reg_file_t *rf = X86_THREAD.rf;
 	
 	for (dep = 0; dep < X86_UINST_MAX_IDEPS; dep++) {
 		loreg = uop->uinst->idep[dep];
@@ -448,12 +448,12 @@ int rf_ready(struct uop_t *uop)
 }
 
 
-void rf_write(struct uop_t *uop)
+void x86_reg_file_write(struct x86_uop_t *uop)
 {
 	int dep, loreg, phreg;
 	int core = uop->core;
 	int thread = uop->thread;
-	struct rf_t *rf = THREAD.rf;
+	struct x86_reg_file_t *rf = X86_THREAD.rf;
 	
 	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++) {
 		loreg = uop->uinst->odep[dep];
@@ -466,12 +466,12 @@ void rf_write(struct uop_t *uop)
 }
 
 
-void rf_undo(struct uop_t *uop)
+void x86_reg_file_undo(struct x86_uop_t *uop)
 {
 	int dep, loreg, streg, phreg, ophreg;
 	int core = uop->core;
 	int thread = uop->thread;
-	struct rf_t *rf = THREAD.rf;
+	struct x86_reg_file_t *rf = X86_THREAD.rf;
 
 	/* Undo mappings in reverse order, in case an instruction has a
 	 * duplicated output dependence. */
@@ -490,11 +490,11 @@ void rf_undo(struct uop_t *uop)
 			if (!rf->int_phreg[phreg].busy)
 			{
 				assert(rf->int_free_phreg_count < rf_int_local_size);
-				assert(CORE.rf_int_count > 0 && THREAD.rf_int_count > 0);
+				assert(X86_CORE.reg_file_int_count > 0 && X86_THREAD.reg_file_int_count > 0);
 				rf->int_free_phreg[rf->int_free_phreg_count] = phreg;
 				rf->int_free_phreg_count++;
-				CORE.rf_int_count--;
-				THREAD.rf_int_count--;
+				X86_CORE.reg_file_int_count--;
+				X86_THREAD.reg_file_int_count--;
 			}
 
 			/* Return to previous mapping */
@@ -514,11 +514,11 @@ void rf_undo(struct uop_t *uop)
 			if (!rf->fp_phreg[phreg].busy)
 			{
 				assert(rf->fp_free_phreg_count < rf_fp_local_size);
-				assert(CORE.rf_fp_count > 0 && THREAD.rf_fp_count > 0);
+				assert(X86_CORE.reg_file_fp_count > 0 && X86_THREAD.reg_file_fp_count > 0);
 				rf->fp_free_phreg[rf->fp_free_phreg_count] = phreg;
 				rf->fp_free_phreg_count++;
-				CORE.rf_fp_count--;
-				THREAD.rf_fp_count--;
+				X86_CORE.reg_file_fp_count--;
+				X86_THREAD.reg_file_fp_count--;
 			}
 
 			/* Return to previous mapping */
@@ -547,12 +547,12 @@ void rf_undo(struct uop_t *uop)
 }
 
 
-void rf_commit(struct uop_t *uop)
+void x86_reg_file_commit(struct x86_uop_t *uop)
 {
 	int dep, loreg, phreg, ophreg;
 	int core = uop->core;
 	int thread = uop->thread;
-	struct rf_t *rf = THREAD.rf;
+	struct x86_reg_file_t *rf = X86_THREAD.rf;
 
 	assert(!uop->specmode);
 	for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++)
@@ -570,11 +570,11 @@ void rf_commit(struct uop_t *uop)
 			{
 				assert(!rf->int_phreg[ophreg].pending);
 				assert(rf->int_free_phreg_count < rf_int_local_size);
-				assert(CORE.rf_int_count > 0 && THREAD.rf_int_count > 0);
+				assert(X86_CORE.reg_file_int_count > 0 && X86_THREAD.reg_file_int_count > 0);
 				rf->int_free_phreg[rf->int_free_phreg_count] = ophreg;
 				rf->int_free_phreg_count++;
-				CORE.rf_int_count--;
-				THREAD.rf_int_count--;
+				X86_CORE.reg_file_int_count--;
+				X86_THREAD.reg_file_int_count--;
 			}
 		}
 		else if (X86_DEP_IS_FP_REG(loreg))
@@ -586,11 +586,11 @@ void rf_commit(struct uop_t *uop)
 			{
 				assert(!rf->fp_phreg[ophreg].pending);
 				assert(rf->fp_free_phreg_count < rf_fp_local_size);
-				assert(CORE.rf_fp_count > 0 && THREAD.rf_fp_count > 0);
+				assert(X86_CORE.reg_file_fp_count > 0 && X86_THREAD.reg_file_fp_count > 0);
 				rf->fp_free_phreg[rf->fp_free_phreg_count] = ophreg;
 				rf->fp_free_phreg_count++;
-				CORE.rf_fp_count--;
-				THREAD.rf_fp_count--;
+				X86_CORE.reg_file_fp_count--;
+				X86_THREAD.reg_file_fp_count--;
 			}
 		}
 		else
@@ -603,10 +603,10 @@ void rf_commit(struct uop_t *uop)
 }
 
 
-void rf_check_integrity(int core, int thread)
+void x86_reg_file_check_integrity(int core, int thread)
 {
-	struct rf_t *rf = THREAD.rf;
-	struct uop_t *uop;
+	struct x86_reg_file_t *rf = X86_THREAD.rf;
+	struct x86_uop_t *uop;
 	int loreg, phreg, ophreg, dep, i;
 
 	/* Check that all registers in the free list are actually free. */
@@ -633,8 +633,8 @@ void rf_check_integrity(int core, int thread)
 
 	/* Check that all destination and previous destination
 	 * registers of instructions in the rob are busy */
-	for (i = 0; i < THREAD.rob_count; i++) {
-		uop = rob_get(core, thread, i);
+	for (i = 0; i < X86_THREAD.rob_count; i++) {
+		uop = x86_rob_get(core, thread, i);
 		assert(uop);
 		for (dep = 0; dep < X86_UINST_MAX_ODEPS; dep++) {
 			loreg = uop->uinst->odep[dep];
