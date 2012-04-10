@@ -17,14 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <gpukernel.h>
-#include <gpuarch.h>
-#include <cpukernel.h>
 #include <config.h>
 #include <debug.h>
 #include <repos.h>
 #include <esim.h>
 #include <heap.h>
+
+#include <gpukernel.h>
+#include <gpuarch.h>
+#include <x86-emu.h>
 
 
 

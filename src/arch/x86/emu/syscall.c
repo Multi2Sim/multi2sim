@@ -29,7 +29,7 @@
 #include <sys/stat.h>
 #include <sys/times.h>
 
-#include <cpukernel.h>
+#include <x86-emu.h>
 #include <mhandle.h>
 
 

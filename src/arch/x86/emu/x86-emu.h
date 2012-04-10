@@ -33,7 +33,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <signal.h>
-#include <cpudisasm.h>
+#include <x86-asm.h>
 #include <time.h>
 #include <pthread.h>
 #include <poll.h>
@@ -629,7 +629,7 @@ extern uint16_t x86_isa_guest_fpcw;
 
 /* References to functions emulating x86 instructions */
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) void x86_isa_##name##_impl(void);
-#include "machine.dat"
+#include <x86-asm.dat>
 #undef DEFINST
 
 void x86_isa_error(char *fmt, ...);
