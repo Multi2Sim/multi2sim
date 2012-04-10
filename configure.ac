@@ -145,10 +145,11 @@ AC_CONFIG_FILES([Makefile
 		 src/libvisual/Makefile
                  src/libcpukernel/Makefile
 		 src/libcpudisasm/Makefile
-		 src/libesim/Makefile
-                 src/libmhandle/Makefile
-                 src/libstruct/Makefile
-		 src/libmisc/Makefile
+
+		 src/lib/esim/Makefile
+                 src/lib/mhandle/Makefile
+		 src/lib/misc/Makefile
+                 src/lib/struct/Makefile
 		 ])
 AC_OUTPUT
 
