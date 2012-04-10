@@ -164,7 +164,6 @@ AC_SUBST(M2S_INCLUDES)
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-		 src/libcpuarch/Makefile
 		 src/libnetwork/Makefile
 		 src/libgpuarch/Makefile
 		 src/libgpukernel/Makefile
@@ -172,8 +171,10 @@ AC_CONFIG_FILES([Makefile
 		 src/libgpuvisual/Makefile
 		 src/libmemsystem/Makefile
 		 src/libvisual/Makefile
-                 src/libcpukernel/Makefile
-		 src/libcpudisasm/Makefile
+
+		 src/arch/x86/asm/Makefile
+		 src/arch/x86/emu/Makefile
+		 src/arch/x86/timing/Makefile
 
 		 src/lib/esim/Makefile
                  src/lib/mhandle/Makefile
