@@ -19,9 +19,9 @@
 
 #include <cpukernel.h>
 
-int ld_debug_category;
+int x86_loader_debug_category;
 
-char *ld_help_ctxconfig =
+char *x86_loader_help_ctxconfig =
 	"A context configuration file contains a list of executable programs and\n"
 	"their parameters that will be simulated by Multi2Sim. The context\n"
 	"configuration file is a plain text file in the IniFile format, containing\n"
@@ -82,7 +82,7 @@ static struct string_map_t elf_section_flags_map =
 
 static void ld_add_args_vector(struct x86_ctx_t *ctx, int argc, char **argv)
 {
-	struct loader_t *ld = ctx->loader;
+	struct x86_loader_t *ld = ctx->loader;
 
 	char *arg;
 	int i;
@@ -102,7 +102,7 @@ static void ld_add_args_vector(struct x86_ctx_t *ctx, int argc, char **argv)
 
 static void ld_add_args_string(struct x86_ctx_t *ctx, char *args)
 {
-	struct loader_t *ld = ctx->loader;
+	struct x86_loader_t *ld = ctx->loader;
 
 	char *delim = " ";
 	char *arg;
@@ -133,7 +133,7 @@ static void ld_add_args_string(struct x86_ctx_t *ctx, char *args)
  * the list attached in the argument 'env'. */
 static void ld_add_environ(struct x86_ctx_t *ctx, char *env)
 {
-	struct loader_t *ld = ctx->loader;
+	struct x86_loader_t *ld = ctx->loader;
 	extern char **environ;
 	char *next;
 	int i;
@@ -181,7 +181,7 @@ static void ld_add_environ(struct x86_ctx_t *ctx, char *env)
 static void ld_load_sections(struct x86_ctx_t *ctx, struct elf_file_t *elf_file)
 {
 	struct mem_t *mem = ctx->mem;
-	struct loader_t *ld = ctx->loader;
+	struct x86_loader_t *ld = ctx->loader;
 
 	struct elf_section_t *section;
 	int i;
@@ -189,7 +189,7 @@ static void ld_load_sections(struct x86_ctx_t *ctx, struct elf_file_t *elf_file)
 	enum mem_access_t perm;
 	char flags_str[200];
 
-	ld_debug("\nLoading ELF sections\n");
+	x86_loader_debug("\nLoading ELF sections\n");
 	ld->bottom = 0xffffffff;
 	for (i = 0; i < list_count(elf_file->section_list); i++)
 	{
@@ -197,7 +197,7 @@ static void ld_load_sections(struct x86_ctx_t *ctx, struct elf_file_t *elf_file)
 
 		perm = mem_access_init | mem_access_read;
 		map_flags(&elf_section_flags_map, section->header->sh_flags, flags_str, sizeof(flags_str));
-		ld_debug("  section %d: name='%s', offset=0x%x, addr=0x%x, size=%u, flags=%s\n",
+		x86_loader_debug("  section %d: name='%s', offset=0x%x, addr=0x%x, size=%u, flags=%s\n",
 			i, section->name, section->header->sh_offset, section->header->sh_addr, section->header->sh_size, flags_str);
 
 		/* Process section */
@@ -236,11 +236,11 @@ static void ld_load_sections(struct x86_ctx_t *ctx, struct elf_file_t *elf_file)
 
 static void ld_load_interp(struct x86_ctx_t *ctx)
 {
-	struct loader_t *ld = ctx->loader;
+	struct x86_loader_t *ld = ctx->loader;
 	struct elf_file_t *elf_file;
 
 	/* Open dynamic loader */
-	ld_debug("\nLoading program interpreter '%s'\n", ld->interp);
+	x86_loader_debug("\nLoading program interpreter '%s'\n", ld->interp);
 	elf_file = elf_file_create_from_path(ld->interp);
 	
 	/* Load section from program interpreter */
@@ -248,7 +248,7 @@ static void ld_load_interp(struct x86_ctx_t *ctx)
 
 	/* Change program entry to the one specified by the interpreter */
 	ld->interp_prog_entry = elf_file->header->e_entry;
-	ld_debug("  program interpreter entry: 0x%x\n\n", ld->interp_prog_entry);
+	x86_loader_debug("  program interpreter entry: 0x%x\n\n", ld->interp_prog_entry);
 	elf_file_free(elf_file);
 }
 
@@ -270,7 +270,7 @@ static struct string_map_t elf_program_header_type_map = {
 /* Load program headers table */
 static void ld_load_program_headers(struct x86_ctx_t *ctx)
 {
-	struct loader_t *ld = ctx->loader;
+	struct x86_loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
 
 	struct elf_file_t *elf_file = ld->elf_file;
@@ -285,7 +285,7 @@ static void ld_load_program_headers(struct x86_ctx_t *ctx)
 	int i;
 
 	/* Load program header table from ELF */
-	ld_debug("\nLoading program headers\n");
+	x86_loader_debug("\nLoading program headers\n");
 	phdr_count = elf_file->header->e_phnum;
 	phdr_size = elf_file->header->e_phentsize;
 	phdt_size = phdr_count * phdr_size;
@@ -301,7 +301,7 @@ static void ld_load_program_headers(struct x86_ctx_t *ctx)
 		if (program_header->header->p_type == PT_PHDR)
 			phdt_base = program_header->header->p_vaddr;
 	}
-	ld_debug("  virtual address for program header table: 0x%x\n", phdt_base);
+	x86_loader_debug("  virtual address for program header table: 0x%x\n", phdt_base);
 
 	/* Load program headers */
 	mem_map(mem, phdt_base, phdt_size, mem_access_init | mem_access_read);
@@ -315,12 +315,12 @@ static void ld_load_program_headers(struct x86_ctx_t *ctx)
 		/* Debug */
 		map_value_string(&elf_program_header_type_map, program_header->header->p_type,
 			str, sizeof(str));
-		ld_debug("  header loaded at 0x%x\n", phdt_base + i * phdr_size);
-		ld_debug("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
+		x86_loader_debug("  header loaded at 0x%x\n", phdt_base + i * phdr_size);
+		x86_loader_debug("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
 			str, program_header->header->p_offset,
 			program_header->header->p_vaddr,
 			program_header->header->p_paddr);
-		ld_debug("    filesz=%d, memsz=%d, flags=%d, align=%d\n",
+		x86_loader_debug("    filesz=%d, memsz=%d, flags=%d, align=%d\n",
 			program_header->header->p_filesz,
 			program_header->header->p_memsz,
 			program_header->header->p_flags,
@@ -355,11 +355,11 @@ static void ld_load_program_headers(struct x86_ctx_t *ctx)
 
 static uint32_t ld_load_av(struct x86_ctx_t *ctx, uint32_t where)
 {
-	struct loader_t *ld = ctx->loader;
+	struct x86_loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
 	uint32_t sp = where;
 
-	ld_debug("Loading auxiliary vector at 0x%x\n", where);
+	x86_loader_debug("Loading auxiliary vector at 0x%x\n", where);
 
 	/* Program headers */
 	LD_AV_ENTRY(3, ld->phdt_base);  /* AT_PHDR */
@@ -426,7 +426,7 @@ static uint32_t ld_load_av(struct x86_ctx_t *ctx, uint32_t where)
 
 static void ld_load_stack(struct x86_ctx_t *ctx)
 {
-	struct loader_t *ld = ctx->loader;
+	struct x86_loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
 	uint32_t sp, argc, argvp, envp;
 	uint32_t zero = 0;
@@ -438,14 +438,14 @@ static void ld_load_stack(struct x86_ctx_t *ctx)
 	ld->stack_size = LD_STACK_SIZE;
 	ld->stack_top = LD_STACK_BASE - LD_STACK_SIZE;
 	mem_map(mem, ld->stack_top, ld->stack_size, mem_access_read | mem_access_write);
-	ld_debug("mapping region for stack from 0x%x to 0x%x\n",
+	x86_loader_debug("mapping region for stack from 0x%x to 0x%x\n",
 		ld->stack_top, ld->stack_base - 1);
 	
 	/* Load arguments and environment variables */
 	ld->environ_base = LD_STACK_BASE - LD_MAX_ENVIRON;
 	sp = ld->environ_base;
 	argc = linked_list_count(ld->args);
-	ld_debug("  saved 'argc=%d' at 0x%x\n", argc, sp);
+	x86_loader_debug("  saved 'argc=%d' at 0x%x\n", argc, sp);
 	mem_write(mem, sp, 4, &argc);
 	sp += 4;
 	argvp = sp;
@@ -459,27 +459,27 @@ static void ld_load_stack(struct x86_ctx_t *ctx)
 	sp += ld_load_av(ctx, sp);
 
 	/* Write arguments into stack */
-	ld_debug("\nArguments:\n");
+	x86_loader_debug("\nArguments:\n");
 	for (i = 0; i < argc; i++)
 	{
 		linked_list_goto(ld->args, i);
 		str = linked_list_get(ld->args);
 		mem_write(mem, argvp + i * 4, 4, &sp);
 		mem_write_string(mem, sp, str);
-		ld_debug("  argument %d at 0x%x: '%s'\n", i, sp, str);
+		x86_loader_debug("  argument %d at 0x%x: '%s'\n", i, sp, str);
 		sp += strlen(str) + 1;
 	}
 	mem_write(mem, argvp + i * 4, 4, &zero);
 
 	/* Write environment variables */
-	ld_debug("\nEnvironment variables:\n");
+	x86_loader_debug("\nEnvironment variables:\n");
 	for (i = 0; i < linked_list_count(ld->env); i++)
 	{
 		linked_list_goto(ld->env, i);
 		str = linked_list_get(ld->env);
 		mem_write(mem, envp + i * 4, 4, &sp);
 		mem_write_string(mem, sp, str);
-		ld_debug("  env var %d at 0x%x: '%s'\n", i, sp, str);
+		x86_loader_debug("  env var %d at 0x%x: '%s'\n", i, sp, str);
 		sp += strlen(str) + 1;
 	}
 	mem_write(mem, envp + i * 4, 4, &zero);
@@ -501,9 +501,9 @@ static void ld_load_stack(struct x86_ctx_t *ctx)
 }
 
 
-void ld_load_exe(struct x86_ctx_t *ctx, char *exe)
+void x86_loader_load_exe(struct x86_ctx_t *ctx, char *exe)
 {
-	struct loader_t *ld = ctx->loader;
+	struct x86_loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
 	struct file_desc_table_t *fdt = ctx->file_desc_table;
 
@@ -512,7 +512,7 @@ void ld_load_exe(struct x86_ctx_t *ctx, char *exe)
 	char exe_full_path[MAX_STRING_SIZE];
 
 	/* Alternative stdin */
-	ld_get_full_path(ctx, ld->stdin_file, stdin_file_full_path, MAX_STRING_SIZE);
+	x86_loader_get_full_path(ctx, ld->stdin_file, stdin_file_full_path, MAX_STRING_SIZE);
 	if (*stdin_file_full_path)
 	{
 		struct file_desc_t *fd;
@@ -521,11 +521,11 @@ void ld_load_exe(struct x86_ctx_t *ctx, char *exe)
 		fd->host_fd = open(stdin_file_full_path, O_RDONLY);
 		if (fd->host_fd < 0)
 			fatal("%s: cannot open stdin", ld->stdin_file);
-		ld_debug("%s: stdin redirected\n", stdin_file_full_path);
+		x86_loader_debug("%s: stdin redirected\n", stdin_file_full_path);
 	}
 
 	/* Alternative stdout/stderr */
-	ld_get_full_path(ctx, ld->stdout_file, stdout_file_full_path, MAX_STRING_SIZE);
+	x86_loader_get_full_path(ctx, ld->stdout_file, stdout_file_full_path, MAX_STRING_SIZE);
 	if (*stdout_file_full_path)
 	{
 		struct file_desc_t *fd1, *fd2;
@@ -536,12 +536,12 @@ void ld_load_exe(struct x86_ctx_t *ctx, char *exe)
 			O_CREAT | O_APPEND | O_TRUNC | O_WRONLY, 0660);
 		if (fd1->host_fd < 0)
 			fatal("%s: cannot open stdout/stderr", ld->stdout_file);
-		ld_debug("%s: stdout redirected\n", stdout_file_full_path);
+		x86_loader_debug("%s: stdout redirected\n", stdout_file_full_path);
 	}
 	
 	
 	/* Load program into memory */
-	ld_get_full_path(ctx, exe, exe_full_path, MAX_STRING_SIZE);
+	x86_loader_get_full_path(ctx, exe, exe_full_path, MAX_STRING_SIZE);
 	ld->elf_file = elf_file_create_from_path(exe_full_path);
 	ld->exe = strdup(exe_full_path);
 	if (!ld->exe)
@@ -569,9 +569,9 @@ void ld_load_exe(struct x86_ctx_t *ctx, char *exe)
 	ctx->regs->eip = ld->interp ? ld->interp_prog_entry : ld->prog_entry;
 	ctx->regs->esp = ld->environ_base;
 
-	ld_debug("Program entry is 0x%x\n", ctx->regs->eip);
-	ld_debug("Initial stack pointer is 0x%x\n", ctx->regs->esp);
-	ld_debug("Heap start set to 0x%x\n", mem->heap_break);
+	x86_loader_debug("Program entry is 0x%x\n", ctx->regs->eip);
+	x86_loader_debug("Initial stack pointer is 0x%x\n", ctx->regs->esp);
+	x86_loader_debug("Heap start set to 0x%x\n", mem->heap_break);
 }
 
 
@@ -582,12 +582,12 @@ void ld_load_exe(struct x86_ctx_t *ctx, char *exe)
  */
 
 
-struct loader_t *ld_create(void)
+struct x86_loader_t *x86_loader_create(void)
 {
-	struct loader_t *ld;
+	struct x86_loader_t *ld;
 
 	/* Allocate */
-	ld = calloc(1, sizeof(struct loader_t));
+	ld = calloc(1, sizeof(struct x86_loader_t));
 	if (!ld)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -600,7 +600,7 @@ struct loader_t *ld_create(void)
 }
 
 
-void ld_free(struct loader_t *ld)
+void x86_loader_free(struct x86_loader_t *ld)
 {
 	/* Check no more links */
 	assert(!ld->num_links);
@@ -632,26 +632,26 @@ void ld_free(struct loader_t *ld)
 }
 
 
-struct loader_t *ld_link(struct loader_t *ld)
+struct x86_loader_t *x86_loader_link(struct x86_loader_t *ld)
 {
 	ld->num_links++;
 	return ld;
 }
 
 
-void ld_unlink(struct loader_t *ld)
+void x86_loader_unlink(struct x86_loader_t *ld)
 {
 	assert(ld->num_links >= 0);
 	if (ld->num_links)
 		ld->num_links--;
 	else
-		ld_free(ld);
+		x86_loader_free(ld);
 }
 
 
-void ld_get_full_path(struct x86_ctx_t *ctx, char *file_name, char *full_path, int size)
+void x86_loader_get_full_path(struct x86_ctx_t *ctx, char *file_name, char *full_path, int size)
 {
-	struct loader_t *ld = ctx->loader;
+	struct x86_loader_t *ld = ctx->loader;
 
 	/* File name is NULL or empty */
 	assert(full_path);
@@ -677,11 +677,11 @@ void ld_get_full_path(struct x86_ctx_t *ctx, char *file_name, char *full_path, i
 }
 
 
-void ld_load_prog_from_ctxconfig(char *file_name)
+void x86_loader_load_prog_from_ctxconfig(char *file_name)
 {
 	struct config_t *config;
 	struct x86_ctx_t *ctx;
-	struct loader_t *ld;
+	struct x86_loader_t *ld;
 
 	char section[MAX_STRING_SIZE];
 	char buf[MAX_STRING_SIZE];
@@ -789,16 +789,16 @@ void ld_load_prog_from_ctxconfig(char *file_name)
 		}
 
 		/* Load executable */
-		ld_load_exe(ctx, exe);
+		x86_loader_load_exe(ctx, exe);
 	}
 	config_free(config);
 }
 
 
-void ld_load_prog_from_cmdline(int argc, char **argv)
+void x86_loader_load_prog_from_cmdline(int argc, char **argv)
 {
 	struct x86_ctx_t *ctx;
-	struct loader_t *ld;
+	struct x86_loader_t *ld;
 	
 	char buf[MAX_STRING_SIZE];
 
@@ -828,6 +828,6 @@ void ld_load_prog_from_cmdline(int argc, char **argv)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Load executable */
-	ld_load_exe(ctx, argv[0]);
+	x86_loader_load_exe(ctx, argv[0]);
 }
 

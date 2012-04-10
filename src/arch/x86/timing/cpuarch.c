@@ -861,9 +861,9 @@ void cpu_done()
 void cpu_load_progs(int argc, char **argv, char *ctxfile)
 {
 	if (argc > 1)
-		ld_load_prog_from_cmdline(argc - 1, argv + 1);
+		x86_loader_load_prog_from_cmdline(argc - 1, argv + 1);
 	if (*ctxfile)
-		ld_load_prog_from_ctxconfig(ctxfile);
+		x86_loader_load_prog_from_ctxconfig(ctxfile);
 }
 
 
@@ -1021,9 +1021,9 @@ static void cpu_signal_handler(int signum)
 	switch (signum) {
 	
 	case SIGINT:
-		if (ke_sim_finish)
+		if (x86_emu_finish)
 			abort();
-		ke_sim_finish = ke_sim_finish_signal;
+		x86_emu_finish = x86_emu_finish_signal;
 		cpu_dump(stderr);
 		fprintf(stderr, "SIGINT received\n");
 		break;
@@ -1077,10 +1077,10 @@ static void cpu_fast_forward(long long max_inst)
 
 		/* Check finished contexts */
 		if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-			ke_sim_finish = ke_sim_finish_ctx;
+			x86_emu_finish = x86_emu_finish_ctx;
 		
 		/* Stop if any previous reason met */
-		if (ke_sim_finish)
+		if (x86_emu_finish)
 			break;
 
 		/* Stop if maximum number of fast-forward instructions met */
@@ -1102,7 +1102,7 @@ static void cpu_fast_forward(long long max_inst)
 
 	/* End message */
 	fprintf(stderr, "\n");
-	if (ke_sim_finish)
+	if (x86_emu_finish)
 		fprintf(stderr, "; Simulation finished during fast-forward simulation.\n");
 	else
 		fprintf(stderr, "; Fast-forward simulation complete - continuing detailed simulation.\n");
@@ -1129,22 +1129,22 @@ void cpu_run()
 
 		/* Stop if all contexts finished */
 		if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-			ke_sim_finish = ke_sim_finish_ctx;
+			x86_emu_finish = x86_emu_finish_ctx;
 
 		/* Stop if maximum number of CPU instructions exceeded */
-		if (ke_max_inst && cpu->inst >= ke_max_inst)
-			ke_sim_finish = ke_sim_finish_max_cpu_inst;
+		if (x86_emu_max_inst && cpu->inst >= x86_emu_max_inst)
+			x86_emu_finish = x86_emu_finish_max_cpu_inst;
 
 		/* Stop if maximum number of cycles exceeded */
-		if (ke_max_cycles && cpu->cycle >= ke_max_cycles)
-			ke_sim_finish = ke_sim_finish_max_cpu_cycles;
+		if (x86_emu_max_cycles && cpu->cycle >= x86_emu_max_cycles)
+			x86_emu_finish = x86_emu_finish_max_cpu_cycles;
 
 		/* Stop if maximum time exceeded (check only every 10k cycles) */
-		if (ke_max_time && !(cpu->cycle % 10000) && x86_emu_timer() > ke_max_time * 1000000)
-			ke_sim_finish = ke_sim_finish_max_time;
+		if (x86_emu_max_time && !(cpu->cycle % 10000) && x86_emu_timer() > x86_emu_max_time * 1000000)
+			x86_emu_finish = x86_emu_finish_max_time;
 
 		/* Stop if any previous reason met */
-		if (ke_sim_finish)
+		if (x86_emu_finish)
 			break;
 
 		/* Next cycle */

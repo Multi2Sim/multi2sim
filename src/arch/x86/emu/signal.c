@@ -272,8 +272,8 @@ void signal_handler_run(struct x86_ctx_t *ctx, int sig)
 		return;
 
 	/* Save a copy of the register file */
-	ctx->signal_mask_table->regs = regs_create();
-	regs_copy(ctx->signal_mask_table->regs, ctx->regs);
+	ctx->signal_mask_table->regs = x86_regs_create();
+	x86_regs_copy(ctx->signal_mask_table->regs, ctx->regs);
 
 	/* Create a memory page with execution permission, and copy return code on it. */
 	ctx->signal_mask_table->pretcode = mem_map_space(ctx->mem, MEM_PAGE_SIZE, MEM_PAGE_SIZE);
@@ -340,8 +340,8 @@ void signal_handler_return(struct x86_ctx_t *ctx)
 		ctx->signal_mask_table->pretcode);
 
 	/* Restore saved register file and free backup */
-	regs_copy(ctx->regs, ctx->signal_mask_table->regs);
-	regs_free(ctx->signal_mask_table->regs);
+	x86_regs_copy(ctx->regs, ctx->signal_mask_table->regs);
+	x86_regs_free(ctx->signal_mask_table->regs);
 }
 
 
