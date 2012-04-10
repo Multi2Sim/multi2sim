@@ -64,7 +64,7 @@ char *x86_loader_help_ctxconfig =
 	"examples on how to use the context configuration file.\n"
 	"\n";
 
-static char *err_ctx_ipc_report =
+static char *err_x86_ctx_ipc_report =
 	"\tThe IPC report file has been specified for a context, but the\n"
 	"\tfunctional simulation does not track cycles. Please use option\n"
 	"\t'--cpu-sim detailed' in the command line to activate IPC reports.\n";
@@ -80,7 +80,7 @@ static struct string_map_t elf_section_flags_map =
 };
 
 
-static void ld_add_args_vector(struct x86_ctx_t *ctx, int argc, char **argv)
+static void x86_loader_add_args_vector(struct x86_ctx_t *ctx, int argc, char **argv)
 {
 	struct x86_loader_t *ld = ctx->loader;
 
@@ -100,7 +100,7 @@ static void ld_add_args_vector(struct x86_ctx_t *ctx, int argc, char **argv)
 }
 
 
-static void ld_add_args_string(struct x86_ctx_t *ctx, char *args)
+static void x86_loader_add_args_string(struct x86_ctx_t *ctx, char *args)
 {
 	struct x86_loader_t *ld = ctx->loader;
 
@@ -131,7 +131,7 @@ static void ld_add_args_string(struct x86_ctx_t *ctx, char *args)
 
 /* Add environment variables from the actual environment plus
  * the list attached in the argument 'env'. */
-static void ld_add_environ(struct x86_ctx_t *ctx, char *env)
+static void x86_loader_add_environ(struct x86_ctx_t *ctx, char *env)
 {
 	struct x86_loader_t *ld = ctx->loader;
 	extern char **environ;
@@ -178,7 +178,7 @@ static void ld_add_environ(struct x86_ctx_t *ctx, char *env)
 
 
 /* Load sections from an ELF file */
-static void ld_load_sections(struct x86_ctx_t *ctx, struct elf_file_t *elf_file)
+static void x86_loader_load_sections(struct x86_ctx_t *ctx, struct elf_file_t *elf_file)
 {
 	struct mem_t *mem = ctx->mem;
 	struct x86_loader_t *ld = ctx->loader;
@@ -234,7 +234,7 @@ static void ld_load_sections(struct x86_ctx_t *ctx, struct elf_file_t *elf_file)
 }
 
 
-static void ld_load_interp(struct x86_ctx_t *ctx)
+static void x86_loader_load_interp(struct x86_ctx_t *ctx)
 {
 	struct x86_loader_t *ld = ctx->loader;
 	struct elf_file_t *elf_file;
@@ -244,7 +244,7 @@ static void ld_load_interp(struct x86_ctx_t *ctx)
 	elf_file = elf_file_create_from_path(ld->interp);
 	
 	/* Load section from program interpreter */
-	ld_load_sections(ctx, elf_file);
+	x86_loader_load_sections(ctx, elf_file);
 
 	/* Change program entry to the one specified by the interpreter */
 	ld->interp_prog_entry = elf_file->header->e_entry;
@@ -268,7 +268,7 @@ static struct string_map_t elf_program_header_type_map = {
 
 
 /* Load program headers table */
-static void ld_load_program_headers(struct x86_ctx_t *ctx)
+static void x86_loader_load_program_headers(struct x86_ctx_t *ctx)
 {
 	struct x86_loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
@@ -344,7 +344,7 @@ static void ld_load_program_headers(struct x86_ctx_t *ctx)
 
 /* Load auxiliary vector, and return its size in bytes. */
 
-#define LD_AV_ENTRY(t, v) \
+#define X86_LOADER_AV_ENTRY(t, v) \
 { \
 	uint32_t a_type = t; \
 	uint32_t a_value = v; \
@@ -353,7 +353,7 @@ static void ld_load_program_headers(struct x86_ctx_t *ctx)
 	sp += 8; \
 }
 
-static uint32_t ld_load_av(struct x86_ctx_t *ctx, uint32_t where)
+static uint32_t x86_loader_load_av(struct x86_ctx_t *ctx, uint32_t where)
 {
 	struct x86_loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
@@ -362,37 +362,37 @@ static uint32_t ld_load_av(struct x86_ctx_t *ctx, uint32_t where)
 	x86_loader_debug("Loading auxiliary vector at 0x%x\n", where);
 
 	/* Program headers */
-	LD_AV_ENTRY(3, ld->phdt_base);  /* AT_PHDR */
-	LD_AV_ENTRY(4, 32);  /* AT_PHENT -> program header size of 32 bytes */
-	LD_AV_ENTRY(5, ld->phdr_count);  /* AT_PHNUM */
+	X86_LOADER_AV_ENTRY(3, ld->phdt_base);  /* AT_PHDR */
+	X86_LOADER_AV_ENTRY(4, 32);  /* AT_PHENT -> program header size of 32 bytes */
+	X86_LOADER_AV_ENTRY(5, ld->phdr_count);  /* AT_PHNUM */
 
 	/* Other values */
-	LD_AV_ENTRY(6, MEM_PAGE_SIZE);  /* AT_PAGESZ */
-	LD_AV_ENTRY(7, 0);  /* AT_BASE */
-	LD_AV_ENTRY(8, 0);  /* AT_FLAGS */
-	LD_AV_ENTRY(9, ld->prog_entry);  /* AT_ENTRY */
-	LD_AV_ENTRY(11, getuid());  /* AT_UID */
-	LD_AV_ENTRY(12, geteuid());  /* AT_EUID */
-	LD_AV_ENTRY(13, getgid());  /* AT_GID */
-	LD_AV_ENTRY(14, getegid());  /* AT_EGID */
-	LD_AV_ENTRY(17, 0x64);  /* AT_CLKTCK */
-	LD_AV_ENTRY(23, 0);  /* AT_SECURE */
+	X86_LOADER_AV_ENTRY(6, MEM_PAGE_SIZE);  /* AT_PAGESZ */
+	X86_LOADER_AV_ENTRY(7, 0);  /* AT_BASE */
+	X86_LOADER_AV_ENTRY(8, 0);  /* AT_FLAGS */
+	X86_LOADER_AV_ENTRY(9, ld->prog_entry);  /* AT_ENTRY */
+	X86_LOADER_AV_ENTRY(11, getuid());  /* AT_UID */
+	X86_LOADER_AV_ENTRY(12, geteuid());  /* AT_EUID */
+	X86_LOADER_AV_ENTRY(13, getgid());  /* AT_GID */
+	X86_LOADER_AV_ENTRY(14, getegid());  /* AT_EGID */
+	X86_LOADER_AV_ENTRY(17, 0x64);  /* AT_CLKTCK */
+	X86_LOADER_AV_ENTRY(23, 0);  /* AT_SECURE */
 
 	/* Random bytes */
 	ld->at_random_addr_holder = sp + 4;
-	LD_AV_ENTRY(25, 0);  /* AT_RANDOM */
+	X86_LOADER_AV_ENTRY(25, 0);  /* AT_RANDOM */
 
-	/*LD_AV_ENTRY(32, 0xffffe400);
-	LD_AV_ENTRY(33, 0xffffe000);
-	LD_AV_ENTRY(16, 0xbfebfbff);*/
+	/*X86_LOADER_AV_ENTRY(32, 0xffffe400);
+	X86_LOADER_AV_ENTRY(33, 0xffffe000);
+	X86_LOADER_AV_ENTRY(16, 0xbfebfbff);*/
 
 	/* ??? AT_HWCAP, AT_PLATFORM, 32 and 33 ???*/
 
 	/* Finally, AT_NULL, and return size */
-	LD_AV_ENTRY(0, 0);
+	X86_LOADER_AV_ENTRY(0, 0);
 	return sp - where;
 }
-#undef LD_AV_ENTRY
+#undef X86_LOADER_AV_ENTRY
 
 
 /* Load stack with the following layout.
@@ -424,7 +424,7 @@ static uint32_t ld_load_av(struct x86_ctx_t *ctx, uint32_t where)
  * stack pointer ->	[ argc ]			4	(number of arguments)
  */
 
-static void ld_load_stack(struct x86_ctx_t *ctx)
+static void x86_loader_load_stack(struct x86_ctx_t *ctx)
 {
 	struct x86_loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
@@ -456,7 +456,7 @@ static void ld_load_stack(struct x86_ctx_t *ctx)
 	sp += linked_list_count(ld->env) * 4 + 4;
 
 	/* Load here the auxiliary vector */
-	sp += ld_load_av(ctx, sp);
+	sp += x86_loader_load_av(ctx, sp);
 
 	/* Write arguments into stack */
 	x86_loader_debug("\nArguments:\n");
@@ -548,7 +548,7 @@ void x86_loader_load_exe(struct x86_ctx_t *ctx, char *exe)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Read sections and program entry */
-	ld_load_sections(ctx, ld->elf_file);
+	x86_loader_load_sections(ctx, ld->elf_file);
 	ld->prog_entry = ld->elf_file->header->e_entry;
 
 	/* Set heap break to the highest written address rounded up to
@@ -558,12 +558,12 @@ void x86_loader_load_exe(struct x86_ctx_t *ctx, char *exe)
 	/* Load program header table. If we found a PT_INTERP program header,
 	 * we have to load the program interpreter. This means we are dealing with
 	 * a dynamically linked application. */
-	ld_load_program_headers(ctx);
+	x86_loader_load_program_headers(ctx);
 	if (ld->interp)
-		ld_load_interp(ctx);
+		x86_loader_load_interp(ctx);
 
 	/* Stack */
-	ld_load_stack(ctx);
+	x86_loader_load_stack(ctx);
 
 	/* Register initialization */
 	ctx->regs->eip = ld->interp ? ld->interp_prog_entry : ld->prog_entry;
@@ -726,11 +726,11 @@ void x86_loader_load_prog_from_ctxconfig(char *file_name)
 		/* Arguments */
 		args = config_read_string(config, section, "Args", "");
 		linked_list_add(ld->args, exe);
-		ld_add_args_string(ctx, args);
+		x86_loader_add_args_string(ctx, args);
 
 		/* Environment variables */
 		env = config_read_string(config, section, "Env", "");
-		ld_add_environ(ctx, env);
+		x86_loader_add_environ(ctx, env);
 			
 		/* Current working directory */
 		cwd = config_read_string(config, section, "Cwd", "");
@@ -772,9 +772,9 @@ void x86_loader_load_prog_from_ctxconfig(char *file_name)
 			"IPCReportInterval", 100000);
 		if (*ipc_report_file_name)
 		{
-			if (cpu_sim_kind == cpu_sim_functional)
+			if (x86_emu_kind == x86_emu_kind_functional)
 				warning("%s: ctx-%d: value for 'IPCReport' ignored.\n%s",
-					file_name, ctx_id, err_ctx_ipc_report);
+					file_name, ctx_id, err_x86_ctx_ipc_report);
 			else
 			{
 				ld->ipc_report_file = open_write(ipc_report_file_name);
@@ -807,8 +807,8 @@ void x86_loader_load_prog_from_cmdline(int argc, char **argv)
 	ld = ctx->loader;
 
 	/* Arguments and environment */
-	ld_add_args_vector(ctx, argc, argv);
-	ld_add_environ(ctx, "");
+	x86_loader_add_args_vector(ctx, argc, argv);
+	x86_loader_add_environ(ctx, "");
 
 
 	/* Get current directory */

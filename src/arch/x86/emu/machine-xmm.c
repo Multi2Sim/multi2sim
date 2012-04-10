@@ -37,7 +37,7 @@
 #define assert __COMPILATION_ERROR__
 
 
-void op_cvttsd2si_r32_xmmm64_impl()
+void x86_isa_cvttsd2si_r32_xmmm64_impl()
 {
 	uint8_t xmm[16];
 	uint32_t r32;
@@ -60,7 +60,7 @@ void op_cvttsd2si_r32_xmmm64_impl()
 }
 
 
-void op_cvttss2si_r32_xmmm32_impl()
+void x86_isa_cvttss2si_r32_xmmm32_impl()
 {
 	uint8_t xmm[16];
 	uint32_t r32;
@@ -83,25 +83,25 @@ void op_cvttss2si_r32_xmmm32_impl()
 }
 
 
-void op_ldmxcsr_m32_impl()
+void x86_isa_ldmxcsr_m32_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_movaps_xmm_xmmm128_impl()
+void x86_isa_movaps_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_movaps_xmmm128_xmm_impl()
+void x86_isa_movaps_xmmm128_xmm_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_movd_xmm_rm32_impl()
+void x86_isa_movd_xmm_rm32_impl()
 {
 	union x86_xmm_reg_t xmm;
 
@@ -114,7 +114,7 @@ void op_movd_xmm_rm32_impl()
 }
 
 
-void op_movd_rm32_xmm_impl()
+void x86_isa_movd_rm32_xmm_impl()
 {
 	union x86_xmm_reg_t xmm;
 
@@ -125,7 +125,7 @@ void op_movd_rm32_xmm_impl()
 }
 
 
-void op_movdqa_xmm_xmmm128_impl()
+void x86_isa_movdqa_xmm_xmmm128_impl()
 {
 	unsigned char xmm[16];
 
@@ -136,7 +136,7 @@ void op_movdqa_xmm_xmmm128_impl()
 }
 
 
-void op_movdqa_xmmm128_xmm_impl()
+void x86_isa_movdqa_xmmm128_xmm_impl()
 {
 	uint8_t xmm[16];
 
@@ -147,7 +147,7 @@ void op_movdqa_xmmm128_xmm_impl()
 }
 
 
-void op_movdqu_xmm_xmmm128_impl()
+void x86_isa_movdqu_xmm_xmmm128_impl()
 {
 	uint8_t xmm[16];
 
@@ -158,7 +158,7 @@ void op_movdqu_xmm_xmmm128_impl()
 }
 
 
-void op_movdqu_xmmm128_xmm_impl()
+void x86_isa_movdqu_xmmm128_xmm_impl()
 {
 	uint8_t xmm[16];
 
@@ -169,7 +169,7 @@ void op_movdqu_xmmm128_xmm_impl()
 }
 
 
-void op_movhpd_xmm_m64_impl()
+void x86_isa_movhpd_xmm_m64_impl()
 {
 	union x86_xmm_reg_t xmm;
 
@@ -181,7 +181,7 @@ void op_movhpd_xmm_m64_impl()
 }
 
 
-void op_movhpd_m64_xmm_impl()
+void x86_isa_movhpd_m64_xmm_impl()
 {
 	union x86_xmm_reg_t xmm;
 
@@ -192,7 +192,7 @@ void op_movhpd_m64_xmm_impl()
 }
 
 
-void op_movlpd_xmm_m64_impl()
+void x86_isa_movlpd_xmm_m64_impl()
 {
 	union x86_xmm_reg_t xmm;
 
@@ -204,7 +204,7 @@ void op_movlpd_xmm_m64_impl()
 }
 
 
-void op_movlpd_m64_xmm_impl()
+void x86_isa_movlpd_m64_xmm_impl()
 {
 	union x86_xmm_reg_t xmm;
 
@@ -215,19 +215,19 @@ void op_movlpd_m64_xmm_impl()
 }
 
 
-void op_pmovmskb_r32_xmmm128_impl()
+void x86_isa_pmovmskb_r32_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_movntdq_m128_xmm_impl()
+void x86_isa_movntdq_m128_xmm_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_movq_xmm_xmmm64_impl()
+void x86_isa_movq_xmm_xmmm64_impl()
 {
 	uint8_t value[16];
 
@@ -239,7 +239,7 @@ void op_movq_xmm_xmmm64_impl()
 }
 
 
-void op_movq_xmmm64_xmm_impl()
+void x86_isa_movq_xmmm64_xmm_impl()
 {
 	uint8_t value[16];
 
@@ -253,7 +253,7 @@ void op_movq_xmmm64_xmm_impl()
 }
 
 
-void op_movss_xmm_xmmm32_impl()
+void x86_isa_movss_xmm_xmmm32_impl()
 {
 	uint8_t value[16];
 
@@ -270,7 +270,7 @@ void op_movss_xmm_xmmm32_impl()
 }
 
 
-void op_movss_xmmm32_xmm_impl()
+void x86_isa_movss_xmmm32_xmm_impl()
 {
 	uint8_t value[16];
 
@@ -287,85 +287,85 @@ void op_movss_xmmm32_xmm_impl()
 }
 
 
-void op_palignr_xmm_xmmm128_imm8_impl()
+void x86_isa_palignr_xmm_xmmm128_imm8_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pand_xmm_xmmm128_impl()
+void x86_isa_pand_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pcmpeqb_xmm_xmmm128_impl()
+void x86_isa_pcmpeqb_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pcmpeqw_xmm_xmmm128_impl()
+void x86_isa_pcmpeqw_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pcmpeqd_xmm_xmmm128_impl()
+void x86_isa_pcmpeqd_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pcmpistri_xmm_xmmm128_imm8_impl()
+void x86_isa_pcmpistri_xmm_xmmm128_imm8_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pinsrb_xmm_r32m8_imm8_impl()
+void x86_isa_pinsrb_xmm_r32m8_imm8_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pinsrd_xmm_rm32_imm8_impl()
+void x86_isa_pinsrd_xmm_rm32_imm8_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_punpcklbw_xmm_xmmm128_impl()
+void x86_isa_punpcklbw_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_punpcklwd_xmm_xmmm128_impl()
+void x86_isa_punpcklwd_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_punpckldq_xmm_xmmm128_impl()
+void x86_isa_punpckldq_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_punpcklqdq_xmm_xmmm128_impl()
+void x86_isa_punpcklqdq_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pshufb_xmm_xmmm128_impl()
+void x86_isa_pshufb_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pshufd_xmm_xmmm128_imm8_impl()
+void x86_isa_pshufd_xmm_xmmm128_imm8_impl()
 {
 	uint32_t src[4], dst[4];
 	uint8_t imm = x86_isa_inst.imm.b;
@@ -381,49 +381,49 @@ void op_pshufd_xmm_xmmm128_imm8_impl()
 }
 
 
-void op_pslldq_xmmm128_imm8_impl()
+void x86_isa_pslldq_xmmm128_imm8_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_psrldq_xmmm128_imm8_impl()
+void x86_isa_psrldq_xmmm128_imm8_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_stmxcsr_m32_impl()
+void x86_isa_stmxcsr_m32_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_psubb_xmm_xmmm128_impl()
+void x86_isa_psubb_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_psubw_xmm_xmmm128_impl()
+void x86_isa_psubw_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_psubd_xmm_xmmm128_impl()
+void x86_isa_psubd_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_ptest_xmm_xmmm128_impl()
+void x86_isa_ptest_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pxor_xmm_xmmm128_impl()
+void x86_isa_pxor_xmm_xmmm128_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }

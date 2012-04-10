@@ -29,7 +29,7 @@
 long long x86_emu_max_inst = 0;
 long long x86_emu_max_cycles = 0;
 long long x86_emu_max_time = 0;
-enum cpu_sim_kind_t cpu_sim_kind = cpu_sim_functional;
+enum x86_emu_kind_t x86_emu_kind = x86_emu_kind_functional;
 
 
 /* Reason for simulation end */
@@ -63,7 +63,7 @@ struct x86_emu_t *x86_emu;
 
 /* Initialization */
 
-static uint64_t ke_init_time = 0;
+static long long x86_emu_init_time;
 
 void x86_emu_init(void)
 {
@@ -104,7 +104,7 @@ void x86_emu_init(void)
 	gk_init();
 
 	/* Record start time */
-	ke_init_time = x86_emu_timer();
+	x86_emu_init_time = x86_emu_timer();
 }
 
 
@@ -135,14 +135,16 @@ void x86_emu_done(void)
 void x86_emu_dump(FILE *f)
 {
 	struct x86_ctx_t *ctx;
-	int n = 0;
-	ctx = x86_emu->context_list_head;
+	int index = 0;
+
 	fprintf(f, "List of kernel contexts (arbitrary order):\n");
-	while (ctx) {
-		fprintf(f, "kernel context #%d:\n", n);
+	ctx = x86_emu->context_list_head;
+	while (ctx)
+	{
+		fprintf(f, "kernel context #%d:\n", index);
 		x86_ctx_dump(ctx, f);
 		ctx = ctx->context_list_next;
-		n++;
+		index++;
 	}
 }
 
@@ -232,7 +234,7 @@ long long x86_emu_timer()
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	return (long long) tv.tv_sec * 1000000 + tv.tv_usec - ke_init_time;
+	return (long long) tv.tv_sec * 1000000 + tv.tv_usec - x86_emu_init_time;
 }
 
 
@@ -249,7 +251,7 @@ void x86_emu_process_events_schedule()
  * When the event finally occurs (i.e., before the function finishes, a
  * call to 'x86_emu_process_events' is scheduled.
  * The argument 'arg' is the associated guest context. */
-void *ke_host_thread_suspend(void *arg)
+static void *x86_emu_host_thread_suspend(void *arg)
 {
 	struct x86_ctx_t *ctx = (struct x86_ctx_t *) arg;
 	uint64_t now = x86_emu_timer();
@@ -260,16 +262,17 @@ void *ke_host_thread_suspend(void *arg)
 	pthread_detach(pthread_self());
 
 	/* Context suspended in 'poll' system call */
-	if (x86_ctx_get_status(ctx, x86_ctx_nanosleep)) {
-		
+	if (x86_ctx_get_status(ctx, x86_ctx_nanosleep))
+	{
 		uint64_t timeout;
 		
 		/* Calculate remaining sleep time in microseconds */
 		timeout = ctx->wakeup_time > now ? ctx->wakeup_time - now : 0;
 		usleep(timeout);
 	
-	} else if (x86_ctx_get_status(ctx, x86_ctx_poll)) {
-
+	}
+	else if (x86_ctx_get_status(ctx, x86_ctx_poll))
+	{
 		struct file_desc_t *fd;
 		struct pollfd host_fds;
 		int err, timeout;
@@ -293,9 +296,9 @@ void *ke_host_thread_suspend(void *arg)
 		err = poll(&host_fds, 1, timeout);
 		if (err < 0)
 			fatal("syscall 'poll': unexpected error in host 'poll'");
-	
-	} else if (x86_ctx_get_status(ctx, x86_ctx_read)) {
-		
+	}
+	else if (x86_ctx_get_status(ctx, x86_ctx_read))
+	{
 		struct file_desc_t *fd;
 		struct pollfd host_fds;
 		int err;
@@ -311,9 +314,9 @@ void *ke_host_thread_suspend(void *arg)
 		err = poll(&host_fds, 1, -1);
 		if (err < 0)
 			fatal("syscall 'read': unexpected error in host 'poll'");
-	
-	} else if (x86_ctx_get_status(ctx, x86_ctx_write)) {
-		
+	}
+	else if (x86_ctx_get_status(ctx, x86_ctx_write))
+	{
 		struct file_desc_t *fd;
 		struct pollfd host_fds;
 		int err;
@@ -343,7 +346,7 @@ void *ke_host_thread_suspend(void *arg)
 
 /* Function that suspends the host thread waiting for a timer to expire,
  * and then schedules a call to 'x86_emu_process_events'. */
-void *ke_host_thread_timer(void *arg)
+static void *x86_emu_host_thread_timer(void *arg)
 {
 	struct x86_ctx_t *ctx = (struct x86_ctx_t *) arg;
 	uint64_t now = x86_emu_timer();
@@ -356,7 +359,8 @@ void *ke_host_thread_timer(void *arg)
 	pthread_detach(pthread_self());
 
 	/* Calculate sleep time, and sleep only if it is greater than 0 */
-	if (ctx->host_thread_timer_wakeup > now) {
+	if (ctx->host_thread_timer_wakeup > now)
+	{
 		sleep_time = ctx->host_thread_timer_wakeup - now;
 		ts.tv_sec = sleep_time / 1000000;
 		ts.tv_nsec = (sleep_time % 1000000) * 1000;  /* nsec */
@@ -409,7 +413,7 @@ void x86_emu_process_events()
 			uint32_t sec, usec;
 			uint64_t diff;
 
-			/* If 'ke_host_thread_suspend' is still running for this context, do nothing. */
+			/* If 'x86_emu_host_thread_suspend' is still running for this context, do nothing. */
 			if (ctx->host_thread_suspend_active)
 				continue;
 
@@ -441,9 +445,9 @@ void x86_emu_process_events()
 				continue;
 			}
 
-			/* No event available, launch 'ke_host_thread_suspend' again */
+			/* No event available, launch 'x86_emu_host_thread_suspend' again */
 			ctx->host_thread_suspend_active = 1;
-			if (pthread_create(&ctx->host_thread_suspend, NULL, ke_host_thread_suspend, ctx))
+			if (pthread_create(&ctx->host_thread_suspend, NULL, x86_emu_host_thread_suspend, ctx))
 				fatal("syscall 'poll': could not create child thread");
 			continue;
 		}
@@ -462,7 +466,7 @@ void x86_emu_process_events()
 			}
 
 			/* No event available. The context will never awake on its own, so no
-			 * 'ke_host_thread_suspend' is necessary. */
+			 * 'x86_emu_host_thread_suspend' is necessary. */
 			continue;
 		}
 
@@ -475,7 +479,7 @@ void x86_emu_process_events()
 			struct pollfd host_fds;
 			int err;
 
-			/* If 'ke_host_thread_suspend' is still running for this context, do nothing. */
+			/* If 'x86_emu_host_thread_suspend' is still running for this context, do nothing. */
 			if (ctx->host_thread_suspend_active)
 				continue;
 
@@ -535,9 +539,9 @@ void x86_emu_process_events()
 				continue;
 			}
 
-			/* No event available, launch 'ke_host_thread_suspend' again */
+			/* No event available, launch 'x86_emu_host_thread_suspend' again */
 			ctx->host_thread_suspend_active = 1;
-			if (pthread_create(&ctx->host_thread_suspend, NULL, ke_host_thread_suspend, ctx))
+			if (pthread_create(&ctx->host_thread_suspend, NULL, x86_emu_host_thread_suspend, ctx))
 				fatal("syscall 'poll': could not create child thread");
 			continue;
 		}
@@ -552,7 +556,7 @@ void x86_emu_process_events()
 			void *buf;
 			struct pollfd host_fds;
 
-			/* If 'ke_host_thread_suspend' is still running for this context, do nothing. */
+			/* If 'x86_emu_host_thread_suspend' is still running for this context, do nothing. */
 			if (ctx->host_thread_suspend_active)
 				continue;
 
@@ -597,9 +601,9 @@ void x86_emu_process_events()
 				continue;
 			}
 
-			/* Data is not ready to be written - launch 'ke_host_thread_suspend' again */
+			/* Data is not ready to be written - launch 'x86_emu_host_thread_suspend' again */
 			ctx->host_thread_suspend_active = 1;
-			if (pthread_create(&ctx->host_thread_suspend, NULL, ke_host_thread_suspend, ctx))
+			if (pthread_create(&ctx->host_thread_suspend, NULL, x86_emu_host_thread_suspend, ctx))
 				fatal("syscall 'write': could not create child thread");
 			continue;
 		}
@@ -613,7 +617,7 @@ void x86_emu_process_events()
 			void *buf;
 			struct pollfd host_fds;
 
-			/* If 'ke_host_thread_suspend' is still running for this context, do nothing. */
+			/* If 'x86_emu_host_thread_suspend' is still running for this context, do nothing. */
 			if (ctx->host_thread_suspend_active)
 				continue;
 
@@ -659,9 +663,9 @@ void x86_emu_process_events()
 				continue;
 			}
 
-			/* Data is not ready. Launch 'ke_host_thread_suspend' again */
+			/* Data is not ready. Launch 'x86_emu_host_thread_suspend' again */
 			ctx->host_thread_suspend_active = 1;
-			if (pthread_create(&ctx->host_thread_suspend, NULL, ke_host_thread_suspend, ctx))
+			if (pthread_create(&ctx->host_thread_suspend, NULL, x86_emu_host_thread_suspend, ctx))
 				fatal("syscall 'read': could not create child thread");
 			continue;
 		}
@@ -690,7 +694,7 @@ void x86_emu_process_events()
 			}
 
 			/* No event available. Since this context won't wake up on its own, no
-			 * 'ke_host_thread_suspend' is needed. */
+			 * 'x86_emu_host_thread_suspend' is needed. */
 			continue;
 		}
 	}
@@ -747,7 +751,7 @@ void x86_emu_process_events()
 		if (ctx->host_thread_timer_wakeup)
 		{
 			ctx->host_thread_timer_active = 1;
-			if (pthread_create(&ctx->host_thread_timer, NULL, ke_host_thread_timer, ctx))
+			if (pthread_create(&ctx->host_thread_timer, NULL, x86_emu_host_thread_timer, ctx))
 				fatal("%s: could not create child thread", __FUNCTION__);
 		}
 	}
@@ -776,7 +780,7 @@ void x86_emu_process_events()
 
 
 /* Signal handler while functional simulation loop is running */
-static void ke_signal_handler(int signum)
+static void x86_emu_signal_handler(int signum)
 {
 	switch (signum)
 	{
@@ -806,8 +810,8 @@ void x86_emu_run(void)
 	uint64_t cycle = 0;
 
 	/* Install signal handlers */
-	signal(SIGINT, &ke_signal_handler);
-	signal(SIGABRT, &ke_signal_handler);
+	signal(SIGINT, &x86_emu_signal_handler);
+	signal(SIGABRT, &x86_emu_signal_handler);
 
 	/* Functional simulation loop */
 	for (;;)

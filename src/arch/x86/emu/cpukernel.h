@@ -43,18 +43,6 @@
 #include <sys/time.h>
 
 
-/*
- * Global variables
- */
-
-extern enum cpu_sim_kind_t
-{
-	cpu_sim_functional,
-	cpu_sim_detailed
-} cpu_sim_kind;
-
-
-
 
 /* Some forward declarations */
 struct x86_ctx_t;
@@ -561,10 +549,10 @@ void x86_uinst_free(struct x86_uinst_t *uinst);
 /* To prevent performance degradation in functional simulation, do the check before the actual
  * function call. Notice that 'x86_uinst_new' calls are done for every x86 instruction emulation. */
 #define x86_uinst_new(opcode, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
-	{ if (cpu_sim_kind == cpu_sim_detailed) \
+	{ if (x86_emu_kind == x86_emu_kind_detailed) \
 	__x86_uinst_new(opcode, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
 #define x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3) \
-	{ if (cpu_sim_kind == cpu_sim_detailed) \
+	{ if (x86_emu_kind == x86_emu_kind_detailed) \
 	__x86_uinst_new_mem(opcode, addr, size, idep0, idep1, idep2, odep0, odep1, odep2, odep3); }
 
 void __x86_uinst_new(enum x86_uinst_opcode_t opcode,
@@ -640,7 +628,7 @@ extern uint16_t x86_isa_guest_fpcw;
 
 
 /* References to functions emulating x86 instructions */
-#define DEFINST(name, op1, op2, op3, modrm, imm, pfx) void op_##name##_impl(void);
+#define DEFINST(name, op1, op2, op3, modrm, imm, pfx) void x86_isa_##name##_impl(void);
 #include "machine.dat"
 #undef DEFINST
 
@@ -1129,6 +1117,13 @@ extern struct x86_emu_t *x86_emu;
 extern long long x86_emu_max_cycles;
 extern long long x86_emu_max_inst;
 extern long long x86_emu_max_time;
+
+extern enum x86_emu_kind_t
+{
+	x86_emu_kind_functional,
+	x86_emu_kind_detailed
+} x86_emu_kind;
+
 
 void x86_emu_init(void);
 void x86_emu_done(void);

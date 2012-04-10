@@ -49,7 +49,7 @@ int x86_sys_debug_category;
  */
 
 
-static char *err_sys_note =
+static char *err_x86_sys_note =
 	"\tThe system calls performed by the executed application are intercepted by\n"
 	"\tMulti2Sim and emulated in file 'syscall.c'. The most common system calls are\n"
 	"\tcurrently supported, but your application might perform specific unsupported\n"
@@ -58,7 +58,7 @@ static char *err_sys_note =
 
 
  /* System call names */
-static char *sys_call_name[] =
+static char *x86_sys_call_name[] =
 {
 #define DEFSYSCALL(name, code) #name,
 #include "syscall.dat"
@@ -70,23 +70,23 @@ static char *sys_call_name[] =
 /* System call codes */
 enum
 {
-#define DEFSYSCALL(name, code) sys_code_##name = code,
+#define DEFSYSCALL(name, code) x86_sys_code_##name = code,
 #include "syscall.dat"
 #undef DEFSYSCALL
-	sys_code_count
+	x86_sys_code_count
 };
 
 
 /* Forward declarations of system calls */
-#define DEFSYSCALL(name, code) static int sys_##name##_impl(void);
+#define DEFSYSCALL(name, code) static int x86_sys_##name##_impl(void);
 #include "syscall.dat"
 #undef DEFSYSCALL
 
 
 /* System call functions */
-static int (*sys_call_func[sys_code_count + 1])(void) =
+static int (*x86_sys_call_func[x86_sys_code_count + 1])(void) =
 {
-#define DEFSYSCALL(name, code) sys_##name##_impl,
+#define DEFSYSCALL(name, code) x86_sys_##name##_impl,
 #include "syscall.dat"
 #undef DEFSYSCALL
 	NULL
@@ -94,7 +94,7 @@ static int (*sys_call_func[sys_code_count + 1])(void) =
 
 
 /* Statistics */
-static int sys_call_count[sys_code_count + 1];
+static int x86_sys_call_freq[x86_sys_code_count + 1];
 
 
 
@@ -140,7 +140,7 @@ static int sys_call_count[sys_code_count + 1];
 
 #define SIM_ERRNO_MAX		34
 
-struct string_map_t sys_error_code_map =
+static struct string_map_t x86_sys_error_code_map =
 {
 	34,
 	{
@@ -242,10 +242,10 @@ void x86_sys_dump(FILE *f)
 	fprintf(f, "\n");
 
 	/* Summary */
-	for (i = 1; i <= sys_code_count; i++)
-		if (sys_call_count[i])
-			fprintf(f, "%-20s %d\n", sys_call_name[i],
-					sys_call_count[i]);
+	for (i = 1; i <= x86_sys_code_count; i++)
+		if (x86_sys_call_freq[i])
+			fprintf(f, "%-20s %d\n", x86_sys_call_name[i],
+					x86_sys_call_freq[i]);
 	fprintf(f, "\n");
 }
 
@@ -257,30 +257,30 @@ void x86_sys_call(void)
 
 	/* System call code */
 	code = x86_isa_regs->eax;
-	if (code < 1 || code >= sys_code_count)
+	if (code < 1 || code >= x86_sys_code_count)
 		fatal("%s: invalid system call code (%d)", __FUNCTION__, code);
 
 	/* Statistics */
-	sys_call_count[code]++;
+	x86_sys_call_freq[code]++;
 
 	/* Debug */
 	x86_sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
-		sys_call_name[code], code, x86_isa_inst_count, x86_isa_ctx->pid);
+		x86_sys_call_name[code], code, x86_isa_inst_count, x86_isa_ctx->pid);
 	x86_isa_call_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
-		sys_call_name[code], code, x86_isa_inst_count, x86_isa_ctx->pid);
+		x86_sys_call_name[code], code, x86_isa_inst_count, x86_isa_ctx->pid);
 
 	/* Perform system call */
-	err = sys_call_func[code]();
+	err = x86_sys_call_func[code]();
 
 	/* Set return value in 'eax', except for 'sigreturn' system call. Also, if the
 	 * context got suspended, the wake up routine will set the return value. */
-	if (code != sys_code_sigreturn && !x86_ctx_get_status(x86_isa_ctx, x86_ctx_suspended))
+	if (code != x86_sys_code_sigreturn && !x86_ctx_get_status(x86_isa_ctx, x86_ctx_suspended))
 		x86_isa_regs->eax = err;
 
 	/* Debug */
 	x86_sys_debug("  ret=(%d, 0x%x)", err, err);
 	if (err < 0 && err >= -SIM_ERRNO_MAX)
-		x86_sys_debug(", errno=%s)", map_value(&sys_error_code_map, -err));
+		x86_sys_debug(", errno=%s)", map_value(&x86_sys_error_code_map, -err));
 	x86_sys_debug("\n");
 }
 
@@ -293,7 +293,7 @@ void x86_sys_call(void)
  * System call 'exit' (code 1)
  */
 
-static int sys_exit_impl(void)
+static int x86_sys_exit_impl(void)
 {
 	int status;
 
@@ -313,7 +313,7 @@ static int sys_exit_impl(void)
  * System call 'close' (code 2)
  */
 
-static int sys_close_impl(void)
+static int x86_sys_close_impl(void)
 {
 	int guest_fd;
 	int host_fd;
@@ -349,7 +349,7 @@ static int sys_close_impl(void)
  * System call 'read' (code 3)
  */
 
-static int sys_read_impl(void)
+static int x86_sys_read_impl(void)
 {
 	unsigned int buf_ptr;
 	unsigned int count;
@@ -432,7 +432,7 @@ static int sys_read_impl(void)
  * System call 'write' (code 4)
  */
 
-static int sys_write_impl(void)
+static int x86_sys_write_impl(void)
 {
 	unsigned int buf_ptr;
 	unsigned int count;
@@ -528,7 +528,7 @@ static struct string_map_t sys_open_flags_map =
 	}
 };
 
-static int sys_open_impl(void)
+static int x86_sys_open_impl(void)
 {
 	unsigned int file_name_ptr;
 
@@ -620,7 +620,7 @@ static struct string_map_t sys_waitpid_options_map =
 	}
 };
 
-static int sys_waitpid_impl()
+static int x86_sys_waitpid_impl()
 {
 	int pid;
 	int options;
@@ -642,7 +642,7 @@ static int sys_waitpid_impl()
 	/* Supported values for 'pid' */
 	if (pid != -1 && pid <= 0)
 		fatal("%s: only supported for pid=-1 or pid > 0.\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 
 	/* Look for a zombie child. */
 	child = x86_ctx_get_zombie(x86_isa_ctx, pid);
@@ -677,7 +677,7 @@ static int sys_waitpid_impl()
  * System call 'unlink' (code 10)
  */
 
-static int sys_unlink_impl(void)
+static int x86_sys_unlink_impl(void)
 {
 	unsigned int file_name_ptr;
 
@@ -718,7 +718,7 @@ static char *err_sys_execve_note =
 	"\tthe guest application to run a shell command. Multi2Sim will execute this\n"
 	"\tcommand natively, and then finish the calling context.\n";
 
-static int sys_execve_impl(void)
+static int x86_sys_execve_impl(void)
 {
 	unsigned int name_ptr;
 	unsigned int argv;
@@ -827,7 +827,7 @@ static int sys_execve_impl(void)
 	list_free(arg_list);
 
 	/* Return */
-	fatal("%s: not implemented.\n%s", __FUNCTION__, err_sys_note);
+	fatal("%s: not implemented.\n%s", __FUNCTION__, err_x86_sys_note);
 	return 0;
 }
 
@@ -838,7 +838,7 @@ static int sys_execve_impl(void)
  * System call 'time' (code 13)
  */
 
-static int sys_time_impl(void)
+static int x86_sys_time_impl(void)
 {
 
 	unsigned int time_ptr;
@@ -864,7 +864,7 @@ static int sys_time_impl(void)
  * System call 'chmod' (code 15)
  */
 
-static int sys_chmod_impl(void)
+static int x86_sys_chmod_impl(void)
 {
 	unsigned int file_name_ptr;
 	unsigned int mode;
@@ -901,7 +901,7 @@ static int sys_chmod_impl(void)
  * System call 'lseek' (code 19)
  */
 
-static int sys_lseek_impl(void)
+static int x86_sys_lseek_impl(void)
 {
 	unsigned int offset;
 
@@ -935,7 +935,7 @@ static int sys_lseek_impl(void)
  * System call 'getpid' (code 20)
  */
 
-static int sys_getpid_impl(void)
+static int x86_sys_getpid_impl(void)
 {
 	return x86_isa_ctx->pid;
 }
@@ -959,7 +959,7 @@ static void sys_utime_guest_to_host(struct utimbuf *host, struct sim_utimbuf *gu
 	host->modtime = guest->modtime;
 }
 
-static int sys_utime_impl(void)
+static int x86_sys_utime_impl(void)
 {
 	unsigned int file_name_ptr;
 	unsigned int utimbuf_ptr;
@@ -1019,7 +1019,7 @@ static struct string_map_t sys_access_mode_map =
 	}
 };
 
-static int sys_access_impl(void)
+static int x86_sys_access_impl(void)
 {
 	unsigned int file_name_ptr;
 
@@ -1065,7 +1065,7 @@ static int sys_access_impl(void)
  * System call 'kill' (code 37)
  */
 
-static int sys_kill_impl(void)
+static int x86_sys_kill_impl(void)
 {
 	int pid;
 	int sig;
@@ -1101,7 +1101,7 @@ static int sys_kill_impl(void)
  * System call 'rename' (code 38)
  */
 
-static int sys_rename_impl(void)
+static int x86_sys_rename_impl(void)
 {
 	unsigned int old_path_ptr;
 	unsigned int new_path_ptr;
@@ -1152,7 +1152,7 @@ static int sys_rename_impl(void)
  * System call 'mkdir' (code 39)
  */
 
-static int sys_mkdir_impl(void)
+static int x86_sys_mkdir_impl(void)
 {
 	unsigned int path_ptr;
 
@@ -1193,7 +1193,7 @@ static int sys_mkdir_impl(void)
  * System call 'dup' (code 41)
  */
 
-static int sys_dup_impl(void)
+static int x86_sys_dup_impl(void)
 {
 	int guest_fd;
 	int dup_guest_fd;
@@ -1235,7 +1235,7 @@ static int sys_dup_impl(void)
  * System call 'pipe' (code 42)
  */
 
-static int sys_pipe_impl(void)
+static int x86_sys_pipe_impl(void)
 {
 	unsigned int fd_ptr;
 
@@ -1298,7 +1298,7 @@ static void sys_times_host_to_guest(struct sim_tms *guest, struct tms *host)
 	guest->cstime = host->tms_cstime;
 }
 
-static int sys_times_impl(void)
+static int x86_sys_times_impl(void)
 {
 	unsigned int tms_ptr;
 
@@ -1332,7 +1332,7 @@ static int sys_times_impl(void)
  * System call 'brk' (code 45)
  */
 
-static int sys_brk_impl(void)
+static int x86_sys_brk_impl(void)
 {
 	unsigned int old_heap_break;
 	unsigned int new_heap_break;
@@ -1403,7 +1403,7 @@ static int sys_brk_impl(void)
  *   -DIR [31..30]: direction (01=Write, 10=Read, 11=R/W).
  */
 
-static int sys_ioctl_impl(void)
+static int x86_sys_ioctl_impl(void)
 {
 	unsigned int cmd;
 	unsigned int arg;
@@ -1447,7 +1447,7 @@ static int sys_ioctl_impl(void)
 	else
 	{
 		fatal("%s: not implement for cmd = 0x%x.\n%s",
-			__FUNCTION__, cmd, err_sys_note);
+			__FUNCTION__, cmd, err_x86_sys_note);
 	}
 
 	/* Return */
@@ -1461,7 +1461,7 @@ static int sys_ioctl_impl(void)
  * System call 'getppid' (code 64)
  */
 
-static int sys_getppid_impl(void)
+static int x86_sys_getppid_impl(void)
 {
 	/* Return 1 if there is no parent */
 	if (!x86_isa_ctx->parent)
@@ -1507,7 +1507,7 @@ struct sim_rlimit
 	unsigned int max;
 };
 
-static int sys_setrlimit_impl(void)
+static int x86_sys_setrlimit_impl(void)
 {
 	unsigned int res;
 	unsigned int rlim_ptr;
@@ -1548,7 +1548,7 @@ static int sys_setrlimit_impl(void)
 
 	default:
 		fatal("%s: not implemented for res = %s.\n%s",
-			__FUNCTION__, res_str, err_sys_note);
+			__FUNCTION__, res_str, err_x86_sys_note);
 	}
 
 	/* Return */
@@ -1604,7 +1604,7 @@ static void sys_rusage_host_to_guest(struct sim_rusage *guest, struct rusage *ho
 	guest->nivcsw = host->ru_nivcsw;
 }
 
-static int sys_getrusage_impl(void)
+static int x86_sys_getrusage_impl(void)
 {
 	unsigned int who;
 	unsigned int u_ptr;
@@ -1622,7 +1622,7 @@ static int sys_getrusage_impl(void)
 	/* Supported values */
 	if (who != 0)  /* RUSAGE_SELF */
 		fatal("%s: not implemented for who != RUSAGE_SELF.\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 
 	/* Host call */
 	err = getrusage(RUSAGE_SELF, &rusage);
@@ -1648,7 +1648,7 @@ static int sys_getrusage_impl(void)
  * System call 'gettimeofday' (code 78)
  */
 
-static int sys_gettimeofday_impl(void)
+static int x86_sys_gettimeofday_impl(void)
 {
 	unsigned int tv_ptr;
 	unsigned int tz_ptr;
@@ -1689,7 +1689,7 @@ static int sys_gettimeofday_impl(void)
  * System call 'readlink' (code 85)
  */
 
-static int sys_readlink_impl(void)
+static int x86_sys_readlink_impl(void)
 {
 	unsigned int path_ptr;
 	unsigned int buf;
@@ -1784,7 +1784,7 @@ static struct string_map_t sys_mmap_flags_map =
 	}
 };
 
-static int sys_mmap(unsigned int addr, unsigned int len, int prot,
+static int x86_sys_mmap(unsigned int addr, unsigned int len, int prot,
 	int flags, int guest_fd, int offset)
 {
 	unsigned int len_aligned;
@@ -1890,7 +1890,7 @@ static int sys_mmap(unsigned int addr, unsigned int len, int prot,
 	return addr;
 }
 
-static int sys_mmap_impl(void)
+static int x86_sys_mmap_impl(void)
 {
 	unsigned int args_ptr;
 	unsigned int addr;
@@ -1923,7 +1923,7 @@ static int sys_mmap_impl(void)
 	x86_sys_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
 
 	/* Call */
-	return sys_mmap(addr, len, prot, flags, guest_fd, offset);
+	return x86_sys_mmap(addr, len, prot, flags, guest_fd, offset);
 }
 
 
@@ -1933,7 +1933,7 @@ static int sys_mmap_impl(void)
  * System call 'munmap' (code 91)
  */
 
-static int sys_munmap_impl(void)
+static int x86_sys_munmap_impl(void)
 {
 	unsigned int addr;
 	unsigned int size;
@@ -1963,7 +1963,7 @@ static int sys_munmap_impl(void)
  * System call 'fchmod' (code 94)
  */
 
-static int sys_fchmod_impl(void)
+static int x86_sys_fchmod_impl(void)
 {
 	int fd;
 	int host_fd;
@@ -2066,7 +2066,7 @@ static struct string_map_t sys_socket_type_map =
 	}
 };
 
-static int sys_socketcall_impl(void)
+static int x86_sys_socketcall_impl(void)
 {
 	int call;
 	unsigned int args;
@@ -2294,7 +2294,7 @@ static void sim_itimerval_dump(struct sim_itimerval *sim_itimerval)
 		sim_itimerval->it_value.tv_sec, sim_itimerval->it_value.tv_usec);
 }
 
-static int sys_setitimer_impl(void)
+static int x86_sys_setitimer_impl(void)
 {
 	unsigned int which;
 	unsigned int value_ptr;
@@ -2348,7 +2348,7 @@ static int sys_setitimer_impl(void)
  * System call 'getitimer' (code 105)
  */
 
-static int sys_getitimer_impl(void)
+static int x86_sys_getitimer_impl(void)
 {
 	unsigned int which;
 	unsigned int value_ptr;
@@ -2390,7 +2390,7 @@ static int sys_getitimer_impl(void)
  * System call 'sigreturn' (code 119)
  */
 
-static int sys_sigreturn_impl(void)
+static int x86_sys_sigreturn_impl(void)
 {
 	signal_handler_return(x86_isa_ctx);
 
@@ -2485,7 +2485,7 @@ struct sim_user_desc
 	unsigned int useable:1;
 };
 
-static int sys_clone_impl(void)
+static int x86_sys_clone_impl(void)
 {
 	/* Prototype: long sys_clone(unsigned long clone_flags, unsigned long newsp,
 	 * 	int __user *parent_tid, int unused, int __user *child_tid);
@@ -2530,7 +2530,7 @@ static int sys_clone_impl(void)
 		map_flags(&sys_clone_flags_map, flags & ~sys_clone_supported_flags,
 			flags_str, MAX_STRING_SIZE);
 		fatal("%s: not supported flags: %s\n%s",
-			__FUNCTION__, flags_str, err_sys_note);
+			__FUNCTION__, flags_str, err_x86_sys_note);
 	}
 
 	/* Flag CLONE_VM */
@@ -2540,7 +2540,7 @@ static int sys_clone_impl(void)
 		if ((flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND)) !=
 			(SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
 			fatal("%s: not supported flags with CLONE_VM.\n%s",
-				__FUNCTION__, err_sys_note);
+				__FUNCTION__, err_x86_sys_note);
 
 		/* Create new context sharing memory image */
 		new_ctx = x86_ctx_clone(x86_isa_ctx);
@@ -2550,7 +2550,7 @@ static int sys_clone_impl(void)
 		/* CLONE_FS, CLONE_FILES, CLONE_SIGHAND must not be there either */
 		if (flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
 			fatal("%s: not supported flags with CLONE_VM.\n%s",
-				__FUNCTION__, err_sys_note);
+				__FUNCTION__, err_x86_sys_note);
 
 		/* Create new context replicating memory image */
 		new_ctx = x86_ctx_fork(x86_isa_ctx);
@@ -2650,7 +2650,7 @@ static struct sim_utsname sim_utsname =
 	""
 };
 
-static int sys_newuname_impl(void)
+static int x86_sys_newuname_impl(void)
 {
 	unsigned int utsname_ptr;
 
@@ -2673,7 +2673,7 @@ static int sys_newuname_impl(void)
  * System call 'mprotect' (code 125)
  */
 
-static int sys_mprotect_impl(void)
+static int x86_sys_mprotect_impl(void)
 {
 	unsigned int start;
 	unsigned int len;
@@ -2705,7 +2705,7 @@ static int sys_mprotect_impl(void)
  * System call 'llseek' (code 140)
  */
 
-static int sys_llseek_impl(void)
+static int x86_sys_llseek_impl(void)
 {
 	unsigned int fd;
 	unsigned int result_ptr;
@@ -2770,7 +2770,7 @@ struct sys_guest_dirent_t
 	char d_name[];
 } __attribute__((packed));
 
-static int sys_getdents_impl(void)
+static int x86_sys_getdents_impl(void)
 {
 	unsigned int pdirent;
 
@@ -2942,7 +2942,7 @@ static void sim_fd_set_write(unsigned int addr, fd_set *fds, int n)
 	}
 }
 
-static int sys_select_impl(void)
+static int x86_sys_select_impl(void)
 {
 	/* System call prototype:
 	 * int select(int n, fd_set *inp, fd_set *outp, fd_set *exp, struct timeval *tvp);
@@ -3027,7 +3027,7 @@ static struct string_map_t sys_msync_flags_map =
 	}
 };
 
-static int sys_msync_impl(void)
+static int x86_sys_msync_impl(void)
 {
 	unsigned int start;
 	unsigned int len;
@@ -3055,7 +3055,7 @@ static int sys_msync_impl(void)
  * System call 'writev' (code 146)
  */
 
-static int sys_writev_impl(void)
+static int x86_sys_writev_impl(void)
 {
 	int v;
 	int len;
@@ -3089,7 +3089,7 @@ static int sys_writev_impl(void)
 	/* No pipes allowed */
 	if (desc->kind == file_desc_pipe)
 		fatal("%s: not supported for pipes.\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 
 	/* Proceed */
 	total_len = 0;
@@ -3140,7 +3140,7 @@ struct sys_sysctl_args_t
 	unsigned int newlen;
 };
 
-static int sys_sysctl_impl(void)
+static int x86_sys_sysctl_impl(void)
 {
 	int i;
 
@@ -3171,10 +3171,10 @@ static int sys_sysctl_impl(void)
 	/* Supported values */
 	if (!args.oldlenp || !args.poldval)
 		fatal("%s: not supported for poldval=0 or oldlenp=0.\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 	if (args.pnewval || args.newlen)
 		fatal("%s: not supported for pnewval or newlen other than 0.\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 
 	/* Return */
 	mem_write(x86_isa_mem, args.oldlenp, 4, &zero);
@@ -3189,7 +3189,7 @@ static int sys_sysctl_impl(void)
  * System call 'sched_setparam' (code 154)
  */
 
-static int sys_sched_setparam_impl(void)
+static int x86_sys_sched_setparam_impl(void)
 {
 	unsigned int param_ptr;
 
@@ -3214,7 +3214,7 @@ static int sys_sched_setparam_impl(void)
  * System call 'sched_getparam' (code 155)
  */
 
-static int sys_sched_getparam_impl(void)
+static int x86_sys_sched_getparam_impl(void)
 {
 	unsigned int param_ptr;
 	unsigned int zero = 0;
@@ -3239,7 +3239,7 @@ static int sys_sched_getparam_impl(void)
  * System call 'sched_getscheduler' (code 157)
  */
 
-static int sys_sched_getscheduler_impl(void)
+static int x86_sys_sched_getscheduler_impl(void)
 {
 	int pid;
 
@@ -3258,7 +3258,7 @@ static int sys_sched_getscheduler_impl(void)
  * System call 'sched_get_priority_max' (code 159)
  */
 
-static int sys_sched_get_priority_max_impl(void)
+static int x86_sys_sched_get_priority_max_impl(void)
 {
 	int policy;
 
@@ -3283,7 +3283,7 @@ static int sys_sched_get_priority_max_impl(void)
 
 	default:
 		fatal("%s: policy not supported.\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 	}
 
 	/* Dead code */
@@ -3297,7 +3297,7 @@ static int sys_sched_get_priority_max_impl(void)
  * System call 'sched_get_priority_min' (code 160)
  */
 
-static int sys_sched_get_priority_min_impl(void)
+static int x86_sys_sched_get_priority_min_impl(void)
 {
 	int policy;
 
@@ -3322,7 +3322,7 @@ static int sys_sched_get_priority_min_impl(void)
 
 	default:
 		fatal("%s: policy not supported.\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 	}
 
 	/* Dead code */
@@ -3336,7 +3336,7 @@ static int sys_sched_get_priority_min_impl(void)
  * System call 'nanosleep' (code 162)
  */
 
-static int sys_nanosleep_impl(void)
+static int x86_sys_nanosleep_impl(void)
 {
 	unsigned int rqtp;
 	unsigned int rmtp;
@@ -3374,7 +3374,7 @@ static int sys_nanosleep_impl(void)
  * System call 'mremap' (code 163)
  */
 
-static int sys_mremap_impl(void)
+static int x86_sys_mremap_impl(void)
 {
 	unsigned int addr;
 	unsigned int old_len;
@@ -3462,7 +3462,7 @@ struct sim_pollfd_t
 	unsigned short revents;
 };
 
-static int sys_poll_impl(void)
+static int x86_sys_poll_impl(void)
 {
 	unsigned int pfds;
 	unsigned int nfds;
@@ -3495,7 +3495,7 @@ static int sys_poll_impl(void)
 
 	/* Supported value */
 	if (nfds != 1)
-		fatal("%s: not suported for nfds != 1\n%s", __FUNCTION__, err_sys_note);
+		fatal("%s: not suported for nfds != 1\n%s", __FUNCTION__, err_x86_sys_note);
 
 	/* Read pollfd */
 	mem_read(x86_isa_mem, pfds, sizeof guest_fds, &guest_fds);
@@ -3513,12 +3513,12 @@ static int sys_poll_impl(void)
 	/* Only POLLIN (0x1) and POLLOUT (0x4) supported */
 	if (guest_fds.events & ~(POLLIN | POLLOUT))
 		fatal("%s: event not supported.\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 
 	/* Not supported file descriptor */
 	if (host_fd < 0)
 		fatal("%s: not supported file descriptor.\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 
 	/* Perform host 'poll' system call with a 0 timeout to distinguish
 	 * blocking from non-blocking cases. */
@@ -3574,7 +3574,7 @@ static int sys_poll_impl(void)
  * System call 'rt_sigaction' (code 174)
  */
 
-static int sys_rt_sigaction_impl(void)
+static int x86_sys_rt_sigaction_impl(void)
 {
 	int sig;
 	int sigsetsize;
@@ -3643,7 +3643,7 @@ static struct string_map_t sys_sigprocmask_how_map =
 	}
 };
 
-static int sys_rt_sigprocmask_impl(void)
+static int x86_sys_rt_sigprocmask_impl(void)
 {
 	unsigned int set_ptr;
 	unsigned int old_set_ptr;
@@ -3720,7 +3720,7 @@ static int sys_rt_sigprocmask_impl(void)
  * System call 'rt_sigsuspend' (code 179)
  */
 
-static int sys_rt_sigsuspend_impl(void)
+static int x86_sys_rt_sigsuspend_impl(void)
 {
 	unsigned int new_set_ptr;
 
@@ -3765,7 +3765,7 @@ static int sys_rt_sigsuspend_impl(void)
  * System call 'getcwd' (code 183)
  */
 
-static int sys_getcwd_impl(void)
+static int x86_sys_getcwd_impl(void)
 {
 	unsigned int buf_ptr;
 
@@ -3799,7 +3799,7 @@ static int sys_getcwd_impl(void)
  * System call 'getrlimit' (code 191)
  */
 
-static int sys_getrlimit_impl(void)
+static int x86_sys_getrlimit_impl(void)
 {
 	unsigned int res;
 	unsigned int rlim_ptr;
@@ -3841,7 +3841,7 @@ static int sys_getrlimit_impl(void)
 
 	default:
 		fatal("%s: not implemented for res = %s.\n%s",
-			__FUNCTION__, res_str, err_sys_note);
+			__FUNCTION__, res_str, err_x86_sys_note);
 	}
 
 	/* Return structure */
@@ -3859,7 +3859,7 @@ static int sys_getrlimit_impl(void)
  * System call 'mmap2' (code 192)
  */
 
-static int sys_mmap2_impl(void)
+static int x86_sys_mmap2_impl(void)
 {
 	unsigned int addr;
 	unsigned int len;
@@ -3889,7 +3889,7 @@ static int sys_mmap2_impl(void)
 
 	/* System calls 'mmap' and 'mmap2' only differ in the interpretation of
 	 * argument 'offset'. Here, it is given in memory pages. */
-	return sys_mmap(addr, len, prot, flags, guest_fd, offset << MEM_PAGE_SHIFT);
+	return x86_sys_mmap(addr, len, prot, flags, guest_fd, offset << MEM_PAGE_SHIFT);
 }
 
 
@@ -3899,7 +3899,7 @@ static int sys_mmap2_impl(void)
  * System call 'ftruncate64' (code 194)
  */
 
-static int sys_ftruncate64_impl(void)
+static int x86_sys_ftruncate64_impl(void)
 {
 	int fd;
 	int host_fd;
@@ -3983,7 +3983,7 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 		guest->size, guest->blksize, guest->blocks);
 }
 
-static int sys_stat64_impl(void)
+static int x86_sys_stat64_impl(void)
 {
 	unsigned int file_name_ptr;
 	unsigned int statbuf_ptr;
@@ -4030,7 +4030,7 @@ static int sys_stat64_impl(void)
  * System call 'lstat64' (code 196)
  */
 
-static int sys_lstat64_impl(void)
+static int x86_sys_lstat64_impl(void)
 {
 	unsigned int file_name_ptr;
 	unsigned int statbuf_ptr;
@@ -4076,7 +4076,7 @@ static int sys_lstat64_impl(void)
  * System call 'fstat64' (code 197)
  */
 
-static int sys_fstat64_impl(void)
+static int x86_sys_fstat64_impl(void)
 {
 	int fd;
 	int host_fd;
@@ -4114,7 +4114,7 @@ static int sys_fstat64_impl(void)
  * System call 'getuid' (code 199)
  */
 
-static int sys_getuid_impl(void)
+static int x86_sys_getuid_impl(void)
 {
 	return getuid();
 }
@@ -4126,7 +4126,7 @@ static int sys_getuid_impl(void)
  * System call 'getgid' (code 200)
  */
 
-static int sys_getgid_impl(void)
+static int x86_sys_getgid_impl(void)
 {
 	return getgid();
 }
@@ -4138,7 +4138,7 @@ static int sys_getgid_impl(void)
  * System call 'geteuid' (code 201)
  */
 
-static int sys_geteuid_impl(void)
+static int x86_sys_geteuid_impl(void)
 {
 	return geteuid();
 }
@@ -4150,7 +4150,7 @@ static int sys_geteuid_impl(void)
  * System call 'getegid' (code 202)
  */
 
-static int sys_getegid_impl(void)
+static int x86_sys_getegid_impl(void)
 {
 	return getegid();
 }
@@ -4162,7 +4162,7 @@ static int sys_getegid_impl(void)
  * System call 'chown' (code 212)
  */
 
-static int sys_chown_impl(void)
+static int x86_sys_chown_impl(void)
 {
 	unsigned int file_name_ptr;
 
@@ -4205,7 +4205,7 @@ static int sys_chown_impl(void)
  * System call 'madvise' (219)
  */
 
-static int sys_madvise_impl(void)
+static int x86_sys_madvise_impl(void)
 {
 	unsigned int start;
 	unsigned int len;
@@ -4246,7 +4246,7 @@ struct guest_dirent64_t
 	char d_name[];
 } __attribute__((packed));
 
-static int sys_getdents64_impl(void)
+static int x86_sys_getdents64_impl(void)
 {
 	unsigned int pdirent;
 	unsigned int count;
@@ -4353,7 +4353,7 @@ static struct string_map_t sys_fcntl_cmp_map =
 	}
 };
 
-static int sys_fcntl64_impl(void)
+static int x86_sys_fcntl64_impl(void)
 {
 	int guest_fd;
 	int cmd;
@@ -4428,7 +4428,7 @@ static int sys_fcntl64_impl(void)
 
 		err = 0;
 		fatal("%s: command %s not implemented.\n%s",
-			__FUNCTION__, cmd_name, err_sys_note);
+			__FUNCTION__, cmd_name, err_x86_sys_note);
 	}
 
 	/* Return */
@@ -4442,7 +4442,7 @@ static int sys_fcntl64_impl(void)
  * System call 'gettid' (code 224)
  */
 
-static int sys_gettid_impl(void)
+static int x86_sys_gettid_impl(void)
 {
 	/* FIXME: return different 'tid' for threads, but the system call
 	 * 'getpid' should return the same 'pid' for threads from the same group
@@ -4476,7 +4476,7 @@ static struct string_map_t sys_futex_cmd_map =
 	}
 };
 
-static int sys_futex_impl(void)
+static int x86_sys_futex_impl(void)
 {
 	/* Prototype: sys_futex(void *addr1, int op, int val1, struct timespec *timeout,
 	 *   void *addr2, int val3); */
@@ -4670,7 +4670,7 @@ static int sys_futex_impl(void)
 
 	default:
 		fatal("%s: not implemented for cmd=%d (%s).\n%s",
-			__FUNCTION__, cmd, map_value(&sys_futex_cmd_map, cmd), err_sys_note);
+			__FUNCTION__, cmd, map_value(&sys_futex_cmd_map, cmd), err_x86_sys_note);
 	}
 
 	/* Dead code */
@@ -4684,7 +4684,7 @@ static int sys_futex_impl(void)
  * System call 'sched_setaffinity' (code 241)
  */
 
-static int sys_sched_setaffinity_impl(void)
+static int x86_sys_sched_setaffinity_impl(void)
 {
 	int pid;
 	int len;
@@ -4714,7 +4714,7 @@ static int sys_sched_setaffinity_impl(void)
  * System call 'sched_getaffinity' (code 242)
  */
 
-static int sys_sched_getaffinity_impl(void)
+static int x86_sys_sched_getaffinity_impl(void)
 {
 	int pid;
 	int len;
@@ -4743,7 +4743,7 @@ static int sys_sched_getaffinity_impl(void)
  * System call 'set_thread_area' (code 243)
  */
 
-static int sys_set_thread_area_impl(void)
+static int x86_sys_set_thread_area_impl(void)
 {
 	unsigned int uinfo_ptr;
 
@@ -4799,7 +4799,7 @@ static int sys_set_thread_area_impl(void)
  * System call 'fadvise64' (code 250)
  */
 
-static int sys_fadvise64_impl(void)
+static int x86_sys_fadvise64_impl(void)
 {
 	int fd;
 	int advice;
@@ -4828,7 +4828,7 @@ static int sys_fadvise64_impl(void)
  * System call 'exit_group' (code 252)
  */
 
-static int sys_exit_group_impl(void)
+static int x86_sys_exit_group_impl(void)
 {
 	int status;
 
@@ -4848,7 +4848,7 @@ static int sys_exit_group_impl(void)
  * System call 'set_tid_address' (code 258)
  */
 
-static int sys_set_tid_address_impl(void)
+static int x86_sys_set_tid_address_impl(void)
 {
 	unsigned int tidptr;
 
@@ -4867,7 +4867,7 @@ static int sys_set_tid_address_impl(void)
  * System call 'clock_getres' (code 266)
  */
 
-static int sys_clock_getres_impl(void)
+static int x86_sys_clock_getres_impl(void)
 {
 	unsigned int clk_id;
 	unsigned int pres;
@@ -4895,7 +4895,7 @@ static int sys_clock_getres_impl(void)
  * System call 'tgkill' (code 270)
  */
 
-static int sys_tgkill_impl(void)
+static int x86_sys_tgkill_impl(void)
 {
 	int tgid;
 	int pid;
@@ -4913,7 +4913,7 @@ static int sys_tgkill_impl(void)
 	/* Implementation restrictions. */
 	if (tgid == -1)
 		fatal("%s: not supported for tgid = -1\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 
 	/* Find context referred by pid. */
 	ctx = x86_ctx_get(pid);
@@ -4935,7 +4935,7 @@ static int sys_tgkill_impl(void)
  * System call 'set_robust_list' (code 311)
  */
 
-static int sys_set_robust_list_impl(void)
+static int x86_sys_set_robust_list_impl(void)
 {
 	unsigned int head;
 
@@ -4949,7 +4949,7 @@ static int sys_set_robust_list_impl(void)
 	/* Support */
 	if (len != 12)
 		fatal("%s: not supported for len != 12\n%s",
-			__FUNCTION__, err_sys_note);
+			__FUNCTION__, err_x86_sys_note);
 
 	/* Set robust list */
 	x86_isa_ctx->robust_list_head = head;
@@ -4963,7 +4963,7 @@ static int sys_set_robust_list_impl(void)
  * System call 'opencl' (code 325)
  */
 
-static int sys_opencl_impl(void)
+static int x86_sys_opencl_impl(void)
 {
 	unsigned int func_code;
 	unsigned int args_ptr;
@@ -5007,11 +5007,11 @@ static int sys_opencl_impl(void)
  */
 
 #define SYS_NOT_IMPL(NAME) \
-	static int sys_##NAME##_impl(void) \
+	static int x86_sys_##NAME##_impl(void) \
 	{ \
 		fatal("%s: system call not implemented (code %d, inst %lld, pid %d).\n%s", \
 			__FUNCTION__, x86_isa_regs->eax, x86_isa_inst_count, x86_isa_ctx->pid, \
-			err_sys_note); \
+			err_x86_sys_note); \
 		return 0; \
 	}
 
