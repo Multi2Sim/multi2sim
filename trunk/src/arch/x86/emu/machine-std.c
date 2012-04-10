@@ -39,7 +39,7 @@
 
 
 #define op_stdop_al_imm8(stdop, wb, uinst) \
-void op_##stdop##_al_imm8_impl() \
+void x86_isa_##stdop##_al_imm8_impl() \
 { \
 	uint8_t al = x86_isa_load_reg(x86_reg_al); \
 	uint8_t imm8 = x86_isa_inst.imm.b; \
@@ -69,7 +69,7 @@ void op_##stdop##_al_imm8_impl() \
 
 
 #define op_stdop_ax_imm16(stdop, wb, uinst) \
-void op_##stdop##_ax_imm16_impl() \
+void x86_isa_##stdop##_ax_imm16_impl() \
 { \
 	uint16_t ax = x86_isa_load_reg(x86_reg_ax); \
 	uint16_t imm16 = x86_isa_inst.imm.w; \
@@ -99,7 +99,7 @@ void op_##stdop##_ax_imm16_impl() \
 
 
 #define op_stdop_eax_imm32(stdop, wb, uinst) \
-void op_##stdop##_eax_imm32_impl() \
+void x86_isa_##stdop##_eax_imm32_impl() \
 { \
 	uint32_t eax = x86_isa_load_reg(x86_reg_eax); \
 	uint32_t imm32 = x86_isa_inst.imm.d; \
@@ -129,7 +129,7 @@ void op_##stdop##_eax_imm32_impl() \
 
 
 #define op_stdop_rm8_imm8(stdop, wb, uinst) \
-void op_##stdop##_rm8_imm8_impl() \
+void x86_isa_##stdop##_rm8_imm8_impl() \
 { \
 	uint8_t rm8 = x86_isa_load_rm8(); \
 	uint8_t imm8 = x86_isa_inst.imm.b; \
@@ -159,7 +159,7 @@ void op_##stdop##_rm8_imm8_impl() \
 
 
 #define op_stdop_rm16_imm16(stdop, wb, uinst) \
-void op_##stdop##_rm16_imm16_impl() \
+void x86_isa_##stdop##_rm16_imm16_impl() \
 { \
 	uint16_t rm16 = x86_isa_load_rm16(); \
 	uint16_t imm16 = x86_isa_inst.imm.w; \
@@ -189,7 +189,7 @@ void op_##stdop##_rm16_imm16_impl() \
 
 
 #define op_stdop_rm32_imm32(stdop, wb, uinst) \
-void op_##stdop##_rm32_imm32_impl() \
+void x86_isa_##stdop##_rm32_imm32_impl() \
 { \
 	uint32_t rm32 = x86_isa_load_rm32(); \
 	uint32_t imm32 = x86_isa_inst.imm.d; \
@@ -219,7 +219,7 @@ void op_##stdop##_rm32_imm32_impl() \
 
 
 #define op_stdop_rm16_imm8(stdop, wb, uinst) \
-void op_##stdop##_rm16_imm8_impl() \
+void x86_isa_##stdop##_rm16_imm8_impl() \
 { \
 	uint16_t rm16 = x86_isa_load_rm16(); \
 	uint16_t imm8 = (int8_t) x86_isa_inst.imm.b; \
@@ -249,7 +249,7 @@ void op_##stdop##_rm16_imm8_impl() \
 
 
 #define op_stdop_rm32_imm8(stdop, wb, uinst) \
-void op_##stdop##_rm32_imm8_impl() \
+void x86_isa_##stdop##_rm32_imm8_impl() \
 { \
 	uint32_t rm32 = x86_isa_load_rm32(); \
 	uint32_t imm8 = (int8_t) x86_isa_inst.imm.b; \
@@ -279,7 +279,7 @@ void op_##stdop##_rm32_imm8_impl() \
 
 
 #define op_stdop_rm8_r8(stdop, wb, uinst) \
-void op_##stdop##_rm8_r8_impl() \
+void x86_isa_##stdop##_rm8_r8_impl() \
 { \
 	uint8_t rm8 = x86_isa_load_rm8(); \
 	uint8_t r8 = x86_isa_load_r8(); \
@@ -309,7 +309,7 @@ void op_##stdop##_rm8_r8_impl() \
 
 
 #define op_stdop_rm16_r16(stdop, wb, uinst) \
-void op_##stdop##_rm16_r16_impl() \
+void x86_isa_##stdop##_rm16_r16_impl() \
 { \
 	uint16_t rm16 = x86_isa_load_rm16(); \
 	uint16_t r16 = x86_isa_load_r16(); \
@@ -339,7 +339,7 @@ void op_##stdop##_rm16_r16_impl() \
 
 
 #define op_stdop_rm32_r32(stdop, wb, uinst) \
-void op_##stdop##_rm32_r32_impl() \
+void x86_isa_##stdop##_rm32_r32_impl() \
 { \
 	uint32_t rm32 = x86_isa_load_rm32(); \
 	uint32_t r32 = x86_isa_load_r32(); \
@@ -369,7 +369,7 @@ void op_##stdop##_rm32_r32_impl() \
 
 
 #define op_stdop_r8_rm8(stdop, wb, uinst) \
-void op_##stdop##_r8_rm8_impl() \
+void x86_isa_##stdop##_r8_rm8_impl() \
 { \
 	uint8_t r8 = x86_isa_load_r8(); \
 	uint8_t rm8 = x86_isa_load_rm8(); \
@@ -399,7 +399,7 @@ void op_##stdop##_r8_rm8_impl() \
 
 
 #define op_stdop_r16_rm16(stdop, wb, uinst) \
-void op_##stdop##_r16_rm16_impl() \
+void x86_isa_##stdop##_r16_rm16_impl() \
 { \
 	uint16_t r16 = x86_isa_load_r16(); \
 	uint16_t rm16 = x86_isa_load_rm16(); \
@@ -429,7 +429,7 @@ void op_##stdop##_r16_rm16_impl() \
 
 
 #define op_stdop_r32_rm32(stdop, wb, uinst) \
-void op_##stdop##_r32_rm32_impl() \
+void x86_isa_##stdop##_r32_rm32_impl() \
 { \
 	uint32_t r32 = x86_isa_load_r32(); \
 	uint32_t rm32 = x86_isa_load_rm32(); \

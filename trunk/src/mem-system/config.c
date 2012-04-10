@@ -228,7 +228,7 @@ static void mem_config_cpu_default(struct config_t *config)
 	int thread;
 
 	/* Not if we are doing CPU functional simulation */
-	if (cpu_sim_kind == cpu_sim_functional)
+	if (x86_emu_kind == x86_emu_kind_functional)
 		return;
 
 	/* Cache geometry for L1 */
@@ -1073,7 +1073,7 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 	}
 
 	/* Stop here if we are doing CPU functional simulation */
-	if (cpu_sim_kind == cpu_sim_functional)
+	if (x86_emu_kind == x86_emu_kind_functional)
 		goto out;
 
 	/* Assign entry modules */
@@ -1418,7 +1418,7 @@ static void mem_config_check_disjoint(void)
 	int thread;
 
 	/* No need if we do not have both CPU and GPU detailed simulation */
-	if (cpu_sim_kind == cpu_sim_functional || gpu_sim_kind == gpu_sim_functional)
+	if (x86_emu_kind == x86_emu_kind_functional || gpu_sim_kind == gpu_sim_functional)
 		return;
 
 	/* Color CPU modules */
@@ -1509,7 +1509,7 @@ static void mem_config_calculate_mod_levels(void)
 	struct mod_t *mod;
 
 	/* Color CPU modules */
-	if (cpu_sim_kind == cpu_sim_detailed)
+	if (x86_emu_kind == x86_emu_kind_detailed)
 	{
 		FOREACH_CORE FOREACH_THREAD
 		{

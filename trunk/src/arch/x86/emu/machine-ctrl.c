@@ -63,7 +63,7 @@
 
 
 #define op_setcc(cc, idep1, idep2) \
-void op_set##cc##_rm8_impl() \
+void x86_isa_set##cc##_rm8_impl() \
 { \
 	if (cc_##cc) \
 		x86_isa_store_rm8(1); \
@@ -74,7 +74,7 @@ void op_set##cc##_rm8_impl() \
 
 
 #define op_jcc_rel8(cc, idep1, idep2) \
-void op_j##cc##_rel8_impl() \
+void x86_isa_j##cc##_rel8_impl() \
 { \
 	x86_isa_target = x86_isa_regs->eip + (int8_t) x86_isa_inst.imm.b; \
 	if (cc_##cc) \
@@ -84,7 +84,7 @@ void op_j##cc##_rel8_impl() \
 
 
 #define op_jcc_rel32(cc, idep1, idep2) \
-void op_j##cc##_rel32_impl() \
+void x86_isa_j##cc##_rel32_impl() \
 { \
 	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.d; \
 	if (cc_##cc) \
@@ -94,7 +94,7 @@ void op_j##cc##_rel32_impl() \
 
 
 #define op_cmov_r16_rm16(cc, idep1, idep2) \
-void op_cmov##cc##_r16_rm16_impl() \
+void x86_isa_cmov##cc##_r16_rm16_impl() \
 { \
 	if (cc_##cc) \
 		x86_isa_store_r16(x86_isa_load_rm16()); \
@@ -103,7 +103,7 @@ void op_cmov##cc##_r16_rm16_impl() \
 
 
 #define op_cmov_r32_rm32(cc, idep1, idep2) \
-void op_cmov##cc##_r32_rm32_impl() \
+void x86_isa_cmov##cc##_r32_rm32_impl() \
 { \
 	if (cc_##cc) \
 		x86_isa_store_r32(x86_isa_load_rm32()); \
@@ -137,7 +137,7 @@ op_cc_all(cmov_r16_rm16)
 op_cc_all(cmov_r32_rm32)
 
 
-void op_jecxz_rel8_impl()
+void x86_isa_jecxz_rel8_impl()
 {
 	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.b;
 	if (!x86_isa_load_reg(x86_reg_ecx))
@@ -146,7 +146,7 @@ void op_jecxz_rel8_impl()
 }
 
 
-void op_jcxz_rel8_impl()
+void x86_isa_jcxz_rel8_impl()
 {
 	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.b;
 	if (!x86_isa_load_reg(x86_reg_cx))

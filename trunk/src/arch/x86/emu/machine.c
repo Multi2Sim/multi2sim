@@ -37,19 +37,19 @@
 #define assert __COMPILATION_ERROR__
 
 
-void op_bound_r16_rm32_impl()
+void x86_isa_bound_r16_rm32_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_bound_r32_rm64_impl()
+void x86_isa_bound_r32_rm64_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_bsf_r32_rm32_impl()
+void x86_isa_bsf_r32_rm32_impl()
 {
 	uint32_t r32 = x86_isa_load_r32();
 	uint32_t rm32 = x86_isa_load_rm32();
@@ -77,7 +77,7 @@ void op_bsf_r32_rm32_impl()
 }
 
 
-void op_bsr_r32_rm32_impl()
+void x86_isa_bsr_r32_rm32_impl()
 {
 	uint32_t r32 = x86_isa_load_r32();
 	uint32_t rm32 = x86_isa_load_rm32();
@@ -105,7 +105,7 @@ void op_bsr_r32_rm32_impl()
 }
 
 
-void op_bswap_ir32_impl()
+void x86_isa_bswap_ir32_impl()
 {
 	uint32_t ir32 = x86_isa_load_ir32();
 
@@ -126,7 +126,7 @@ void op_bswap_ir32_impl()
 }
 
 
-void op_bt_rm32_r32_impl()
+void x86_isa_bt_rm32_r32_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	uint32_t r32 = x86_isa_load_r32();
@@ -153,7 +153,7 @@ void op_bt_rm32_r32_impl()
 }
 
 
-void op_bt_rm32_imm8_impl()
+void x86_isa_bt_rm32_imm8_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	uint32_t imm8 = x86_isa_inst.imm.b;
@@ -180,7 +180,7 @@ void op_bt_rm32_imm8_impl()
 }
 
 
-void op_bts_rm32_imm8_impl()
+void x86_isa_bts_rm32_imm8_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	uint32_t imm8 = x86_isa_inst.imm.b;
@@ -209,7 +209,7 @@ void op_bts_rm32_imm8_impl()
 }
 
 
-void op_call_rel32_impl()
+void x86_isa_call_rel32_impl()
 {
 	x86_isa_regs->esp -= 4;
 	x86_isa_mem_write(x86_isa_mem, x86_isa_regs->esp, 4, &x86_isa_regs->eip);
@@ -220,7 +220,7 @@ void op_call_rel32_impl()
 }
 
 
-void op_call_rm32_impl() {
+void x86_isa_call_rm32_impl() {
 	x86_isa_target = x86_isa_load_rm32();
 	x86_isa_regs->esp -= 4;
 	x86_isa_mem_write(x86_isa_mem, x86_isa_regs->esp, 4, &x86_isa_regs->eip);
@@ -230,7 +230,7 @@ void op_call_rm32_impl() {
 }
 
 
-void op_cbw_impl()
+void x86_isa_cbw_impl()
 {
 	uint16_t ax = (int8_t) x86_isa_load_reg(x86_reg_al);
 	x86_isa_store_reg(x86_reg_ax, ax);
@@ -239,7 +239,7 @@ void op_cbw_impl()
 }
 
 
-void op_cdq_impl()
+void x86_isa_cdq_impl()
 {
 	int32_t signed_eax = x86_isa_regs->eax;
 	x86_isa_regs->edx = signed_eax < 0 ? (int32_t) -1 : 0;
@@ -248,7 +248,7 @@ void op_cdq_impl()
 }
 
 
-void op_cld_impl()
+void x86_isa_cld_impl()
 {
 	x86_isa_clear_flag(x86_flag_df);
 
@@ -256,7 +256,7 @@ void op_cld_impl()
 }
 
 
-void op_cmpxchg_rm32_r32_impl()
+void x86_isa_cmpxchg_rm32_r32_impl()
 {
 	uint32_t eax = x86_isa_regs->eax;
 	unsigned long flags = x86_isa_regs->eflags;
@@ -290,7 +290,7 @@ void op_cmpxchg_rm32_r32_impl()
 	x86_uinst_new(x86_uinst_move, x86_dep_cf, x86_dep_rm32, 0, x86_dep_eax, 0, 0, 0);
 }
 
-void op_cmpxchg8b_m64_impl()
+void x86_isa_cmpxchg8b_m64_impl()
 {
 	uint32_t eax, ebx, ecx, edx;
 	uint64_t edx_eax, m64;
@@ -323,7 +323,7 @@ void op_cmpxchg8b_m64_impl()
 }
 
 
-void op_cpuid_impl()
+void x86_isa_cpuid_impl()
 {
 	uint32_t info = 0;
 
@@ -437,7 +437,7 @@ void op_cpuid_impl()
 }
 
 
-void op_cwde_impl()
+void x86_isa_cwde_impl()
 {
 	uint32_t eax = (int16_t) x86_isa_load_reg(x86_reg_ax);
 	x86_isa_store_reg(x86_reg_eax, eax);
@@ -446,7 +446,7 @@ void op_cwde_impl()
 }
 
 
-void op_dec_rm8_impl()
+void x86_isa_dec_rm8_impl()
 {
 	uint8_t rm8 = x86_isa_load_rm8();
 	unsigned long flags = x86_isa_regs->eflags;
@@ -473,7 +473,7 @@ void op_dec_rm8_impl()
 }
 
 
-void op_dec_rm32_impl()
+void x86_isa_dec_rm32_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	unsigned long flags = x86_isa_regs->eflags;
@@ -500,7 +500,7 @@ void op_dec_rm32_impl()
 }
 
 
-void op_dec_ir16_impl()
+void x86_isa_dec_ir16_impl()
 {
 	uint16_t ir16 = x86_isa_load_ir16();
 	unsigned long flags = x86_isa_regs->eflags;
@@ -527,7 +527,7 @@ void op_dec_ir16_impl()
 }
 
 
-void op_dec_ir32_impl()
+void x86_isa_dec_ir32_impl()
 {
 	uint32_t ir32 = x86_isa_load_ir32();
 	unsigned long flags = x86_isa_regs->eflags;
@@ -554,7 +554,7 @@ void op_dec_ir32_impl()
 }
 
 
-void op_div_rm8_impl()
+void x86_isa_div_rm8_impl()
 {
 	int skip_emulation = 0;
 
@@ -593,7 +593,7 @@ void op_div_rm8_impl()
 }
 
 
-void op_div_rm32_impl()
+void x86_isa_div_rm32_impl()
 {
 	int skip_emulation = 0;
 
@@ -636,13 +636,13 @@ void op_div_rm32_impl()
 }
 
 
-void op_hlt_impl()
+void x86_isa_hlt_impl()
 {
 	x86_isa_error("%s: 'hlt' instruction", __FUNCTION__);
 }
 
 
-void op_idiv_rm32_impl()
+void x86_isa_idiv_rm32_impl()
 {
 	int skip_emulation = 0;
 
@@ -686,7 +686,7 @@ void op_idiv_rm32_impl()
 }
 
 
-void op_imul_rm32_impl()
+void x86_isa_imul_rm32_impl()
 {
 	uint32_t eax = x86_isa_load_reg(x86_reg_eax);
 	uint32_t rm32 = x86_isa_load_rm32();
@@ -718,7 +718,7 @@ void op_imul_rm32_impl()
 }
 
 
-void op_imul_r32_rm32_impl()
+void x86_isa_imul_r32_rm32_impl()
 {
 	uint32_t r32 = x86_isa_load_r32();
 	uint32_t rm32 = x86_isa_load_rm32();
@@ -747,7 +747,7 @@ void op_imul_r32_rm32_impl()
 }
 
 
-void op_imul_r32_rm32_imm8_impl()
+void x86_isa_imul_r32_rm32_imm8_impl()
 {
 	uint32_t r32;
 	uint32_t rm32 = x86_isa_load_rm32();
@@ -777,7 +777,7 @@ void op_imul_r32_rm32_imm8_impl()
 }
 
 
-void op_imul_r32_rm32_imm32_impl()
+void x86_isa_imul_r32_rm32_imm32_impl()
 {
 	uint32_t r32;
 	uint32_t rm32 = x86_isa_load_rm32();
@@ -807,7 +807,7 @@ void op_imul_r32_rm32_imm32_impl()
 }
 
 
-void op_inc_rm8_impl()
+void x86_isa_inc_rm8_impl()
 {
 	uint8_t rm8 = x86_isa_load_rm8();
 	unsigned long flags = x86_isa_regs->eflags;
@@ -834,7 +834,7 @@ void op_inc_rm8_impl()
 }
 
 
-void op_inc_rm32_impl()
+void x86_isa_inc_rm32_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	unsigned long flags = x86_isa_regs->eflags;
@@ -861,7 +861,7 @@ void op_inc_rm32_impl()
 }
 
 
-void op_inc_ir16_impl()
+void x86_isa_inc_ir16_impl()
 {
 	uint16_t ir16 = x86_isa_load_ir16();
 	unsigned long flags = x86_isa_regs->eflags;
@@ -888,7 +888,7 @@ void op_inc_ir16_impl()
 }
 
 
-void op_inc_ir32_impl()
+void x86_isa_inc_ir32_impl()
 {
 	uint32_t ir32 = x86_isa_load_ir32();
 	unsigned long flags = x86_isa_regs->eflags;
@@ -915,13 +915,13 @@ void op_inc_ir32_impl()
 }
 
 
-void op_int_3_impl()
+void x86_isa_int_3_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_int_imm8_impl()
+void x86_isa_int_imm8_impl()
 {
 	uint32_t num;
 
@@ -938,14 +938,14 @@ void op_int_imm8_impl()
 }
 
 
-void op_into_impl()
+void x86_isa_into_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
 
-void op_jmp_rel8_impl()
+void x86_isa_jmp_rel8_impl()
 {
 	x86_isa_target = x86_isa_regs->eip + (int8_t) x86_isa_inst.imm.b;
 	x86_isa_regs->eip = x86_isa_target;
@@ -954,7 +954,7 @@ void op_jmp_rel8_impl()
 }
 
 
-void op_jmp_rel32_impl()
+void x86_isa_jmp_rel32_impl()
 {
 	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.d;
 	x86_isa_regs->eip = x86_isa_target;
@@ -963,7 +963,7 @@ void op_jmp_rel32_impl()
 }
 
 
-void op_jmp_rm32_impl()
+void x86_isa_jmp_rm32_impl()
 {
 	x86_isa_target = x86_isa_load_rm32();
 	x86_isa_regs->eip = x86_isa_target;
@@ -972,7 +972,7 @@ void op_jmp_rm32_impl()
 }
 
 
-void op_lea_r32_m_impl()
+void x86_isa_lea_r32_m_impl()
 {
 	uint32_t value = x86_isa_effective_address();
 
@@ -987,7 +987,7 @@ void op_lea_r32_m_impl()
 }
 
 
-void op_leave_impl()
+void x86_isa_leave_impl()
 {
 	uint32_t value;
 	x86_isa_regs->esp = x86_isa_regs->ebp;
@@ -1008,24 +1008,24 @@ void op_leave_impl()
 }
 
 
-void op_lfence_impl()
+void x86_isa_lfence_impl()
 {
 }
 
 
-void op_lock_xadd_rm8_r8_impl()
+void x86_isa_lock_xadd_rm8_r8_impl()
 {
-	op_xadd_rm8_r8_impl();
+	x86_isa_xadd_rm8_r8_impl();
 }
 
 
-void op_lock_xadd_rm32_r32_impl()
+void x86_isa_lock_xadd_rm32_r32_impl()
 {
-	op_xadd_rm32_r32_impl();
+	x86_isa_xadd_rm32_r32_impl();
 }
 
 
-void op_mov_rm8_imm8_impl()
+void x86_isa_mov_rm8_imm8_impl()
 {
 	uint8_t value = x86_isa_inst.imm.b;
 	x86_isa_store_rm8(value);
@@ -1034,7 +1034,7 @@ void op_mov_rm8_imm8_impl()
 }
 
 
-void op_mov_r8_rm8_impl()
+void x86_isa_mov_r8_rm8_impl()
 {
 	uint8_t value = x86_isa_load_rm8();
 	x86_isa_store_r8(value);
@@ -1043,7 +1043,7 @@ void op_mov_r8_rm8_impl()
 }
 
 
-void op_mov_rm8_r8_impl()
+void x86_isa_mov_rm8_r8_impl()
 {
 	uint8_t value = x86_isa_load_r8();
 	x86_isa_store_rm8(value);
@@ -1052,7 +1052,7 @@ void op_mov_rm8_r8_impl()
 }
 
 
-void op_mov_rm16_r16_impl()
+void x86_isa_mov_rm16_r16_impl()
 {
 	uint16_t value = x86_isa_load_r16();
 	x86_isa_store_rm16(value);
@@ -1061,7 +1061,7 @@ void op_mov_rm16_r16_impl()
 }
 
 
-void op_mov_rm32_r32_impl()
+void x86_isa_mov_rm32_r32_impl()
 {
 	uint32_t value = x86_isa_load_r32();
 	x86_isa_store_rm32(value);
@@ -1070,7 +1070,7 @@ void op_mov_rm32_r32_impl()
 }
 
 
-void op_mov_r16_rm16_impl()
+void x86_isa_mov_r16_rm16_impl()
 {
 	uint16_t value = x86_isa_load_rm16();
 	x86_isa_store_r16(value);
@@ -1079,7 +1079,7 @@ void op_mov_r16_rm16_impl()
 }
 
 
-void op_mov_r32_rm32_impl()
+void x86_isa_mov_r32_rm32_impl()
 {
 	uint32_t value = x86_isa_load_rm32();
 	x86_isa_store_r32(value);
@@ -1088,7 +1088,7 @@ void op_mov_r32_rm32_impl()
 }
 
 
-void op_mov_al_moffs8_impl()
+void x86_isa_mov_al_moffs8_impl()
 {
 	uint8_t value;
 
@@ -1100,7 +1100,7 @@ void op_mov_al_moffs8_impl()
 }
 
 
-void op_mov_ax_moffs16_impl()
+void x86_isa_mov_ax_moffs16_impl()
 {
 	uint16_t value;
 
@@ -1112,7 +1112,7 @@ void op_mov_ax_moffs16_impl()
 }
 
 
-void op_mov_eax_moffs32_impl()
+void x86_isa_mov_eax_moffs32_impl()
 {
 	uint32_t value;
 
@@ -1124,7 +1124,7 @@ void op_mov_eax_moffs32_impl()
 }
 
 
-void op_mov_moffs8_al_impl()
+void x86_isa_mov_moffs8_al_impl()
 {
 	uint8_t value = x86_isa_load_reg(x86_reg_al);
 	x86_isa_mem_write(x86_isa_mem, x86_isa_moffs_address(), 1, &value);
@@ -1134,7 +1134,7 @@ void op_mov_moffs8_al_impl()
 }
 
 
-void op_mov_moffs16_ax_impl()
+void x86_isa_mov_moffs16_ax_impl()
 {
 	uint16_t value = x86_isa_load_reg(x86_reg_ax);
 	x86_isa_mem_write(x86_isa_mem, x86_isa_moffs_address(), 2, &value);
@@ -1144,7 +1144,7 @@ void op_mov_moffs16_ax_impl()
 }
 
 
-void op_mov_moffs32_eax_impl()
+void x86_isa_mov_moffs32_eax_impl()
 {
 	uint32_t value = x86_isa_load_reg(x86_reg_eax);
 	x86_isa_mem_write(x86_isa_mem, x86_isa_moffs_address(), 4, &value);
@@ -1154,7 +1154,7 @@ void op_mov_moffs32_eax_impl()
 }
 
 
-void op_mov_ir8_imm8_impl()
+void x86_isa_mov_ir8_imm8_impl()
 {
 	uint8_t value = x86_isa_inst.imm.b;
 	x86_isa_store_ir8(value);
@@ -1163,7 +1163,7 @@ void op_mov_ir8_imm8_impl()
 }
 
 
-void op_mov_ir16_imm16_impl()
+void x86_isa_mov_ir16_imm16_impl()
 {
 	uint16_t value = x86_isa_inst.imm.w;
 	x86_isa_store_ir16(value);
@@ -1172,7 +1172,7 @@ void op_mov_ir16_imm16_impl()
 }
 
 
-void op_mov_ir32_imm32_impl()
+void x86_isa_mov_ir32_imm32_impl()
 {
 	uint32_t value = x86_isa_inst.imm.d;
 	x86_isa_store_ir32(value);
@@ -1181,7 +1181,7 @@ void op_mov_ir32_imm32_impl()
 }
 
 
-void op_mov_rm16_imm16_impl()
+void x86_isa_mov_rm16_imm16_impl()
 {
 	uint16_t value = x86_isa_inst.imm.w;
 	x86_isa_store_rm16(value);
@@ -1190,7 +1190,7 @@ void op_mov_rm16_imm16_impl()
 }
 
 
-void op_mov_rm32_imm32_impl()
+void x86_isa_mov_rm32_imm32_impl()
 {
 	uint32_t value = x86_isa_inst.imm.d;
 	x86_isa_store_rm32(value);
@@ -1199,7 +1199,7 @@ void op_mov_rm32_imm32_impl()
 }
 
 
-void op_mov_rm16_sreg_impl()
+void x86_isa_mov_rm16_sreg_impl()
 {
 	uint16_t value = x86_isa_load_sreg();
 	if (x86_isa_inst.reg != 5)
@@ -1210,13 +1210,13 @@ void op_mov_rm16_sreg_impl()
 }
 
 
-void op_mov_rm32_sreg_impl()
+void x86_isa_mov_rm32_sreg_impl()
 {
-	op_mov_rm16_sreg_impl();
+	x86_isa_mov_rm16_sreg_impl();
 }
 
 
-void op_mov_sreg_rm16_impl()
+void x86_isa_mov_sreg_rm16_impl()
 {
 	uint16_t value = x86_isa_load_rm16();
 	if (x86_isa_inst.reg != 5)
@@ -1227,13 +1227,13 @@ void op_mov_sreg_rm16_impl()
 }
 
 
-void op_mov_sreg_rm32_impl()
+void x86_isa_mov_sreg_rm32_impl()
 {
-	op_mov_sreg_rm16_impl();
+	x86_isa_mov_sreg_rm16_impl();
 }
 
 
-void op_movsx_r16_rm8_impl()
+void x86_isa_movsx_r16_rm8_impl()
 {
 	uint16_t value = (int8_t) x86_isa_load_rm8();
 	x86_isa_store_r16(value);
@@ -1242,7 +1242,7 @@ void op_movsx_r16_rm8_impl()
 }
 
 
-void op_movsx_r32_rm8_impl()
+void x86_isa_movsx_r32_rm8_impl()
 {
 	uint32_t value = (int8_t) x86_isa_load_rm8();
 	x86_isa_store_r32(value);
@@ -1251,7 +1251,7 @@ void op_movsx_r32_rm8_impl()
 }
 
 
-void op_movsx_r32_rm16_impl()
+void x86_isa_movsx_r32_rm16_impl()
 {
 	uint32_t value = (int16_t) x86_isa_load_rm16();
 	x86_isa_store_r32(value);
@@ -1260,7 +1260,7 @@ void op_movsx_r32_rm16_impl()
 }
 
 
-void op_movzx_r16_rm8_impl()
+void x86_isa_movzx_r16_rm8_impl()
 {
 	uint8_t value = x86_isa_load_rm8();
 	x86_isa_store_r16(value);
@@ -1269,7 +1269,7 @@ void op_movzx_r16_rm8_impl()
 }
 
 
-void op_movzx_r32_rm8_impl()
+void x86_isa_movzx_r32_rm8_impl()
 {
 	uint8_t value = x86_isa_load_rm8();
 	x86_isa_store_r32(value);
@@ -1278,7 +1278,7 @@ void op_movzx_r32_rm8_impl()
 }
 
 
-void op_movzx_r32_rm16_impl()
+void x86_isa_movzx_r32_rm16_impl()
 {
 	uint16_t value = x86_isa_load_rm16();
 	x86_isa_store_r32(value);
@@ -1287,7 +1287,7 @@ void op_movzx_r32_rm16_impl()
 }
 
 
-void op_mul_rm32_impl()
+void x86_isa_mul_rm32_impl()
 {
 	uint32_t eax = x86_isa_load_reg(x86_reg_eax);
 	uint32_t rm32 = x86_isa_load_rm32();
@@ -1319,7 +1319,7 @@ void op_mul_rm32_impl()
 }
 
 
-void op_neg_rm8_impl()
+void x86_isa_neg_rm8_impl()
 {
 	uint8_t rm8 = x86_isa_load_rm8();
 	unsigned long flags = x86_isa_regs->eflags;
@@ -1346,7 +1346,7 @@ void op_neg_rm8_impl()
 }
 
 
-void op_neg_rm32_impl()
+void x86_isa_neg_rm32_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	unsigned long flags = x86_isa_regs->eflags;
@@ -1373,19 +1373,19 @@ void op_neg_rm32_impl()
 }
 
 
-void op_nop_impl() {
+void x86_isa_nop_impl() {
 }
 
 
-void op_nop_rm16_impl() {
+void x86_isa_nop_rm16_impl() {
 }
 
 
-void op_nop_rm32_impl() {
+void x86_isa_nop_rm32_impl() {
 }
 
 
-void op_not_rm8_impl()
+void x86_isa_not_rm8_impl()
 {
 	uint8_t value = x86_isa_load_rm8();
 	value = ~value;
@@ -1395,7 +1395,7 @@ void op_not_rm8_impl()
 }
 
 
-void op_not_rm16_impl()
+void x86_isa_not_rm16_impl()
 {
 	uint16_t value = x86_isa_load_rm16();
 	value = ~value;
@@ -1405,7 +1405,7 @@ void op_not_rm16_impl()
 }
 
 
-void op_not_rm32_impl()
+void x86_isa_not_rm32_impl()
 {
 	uint32_t value = x86_isa_load_rm32();
 	value = ~value;
@@ -1415,48 +1415,48 @@ void op_not_rm32_impl()
 }
 
 
-void op_out_imm8_al_impl()
+void x86_isa_out_imm8_al_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_out_imm8_ax_impl()
+void x86_isa_out_imm8_ax_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_out_imm8_eax_impl()
+void x86_isa_out_imm8_eax_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_out_dx_al_impl()
+void x86_isa_out_dx_al_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_out_dx_ax_impl()
+void x86_isa_out_dx_ax_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_out_dx_eax_impl()
+void x86_isa_out_dx_eax_impl()
 {
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
 
-void op_pause_impl()
+void x86_isa_pause_impl()
 {
 }
 
 
-void op_pop_rm32_impl()
+void x86_isa_pop_rm32_impl()
 {
 	uint32_t value;
 
@@ -1470,7 +1470,7 @@ void op_pop_rm32_impl()
 }
 
 
-void op_pop_ir32_impl()
+void x86_isa_pop_ir32_impl()
 {
 	uint32_t value;
 
@@ -1489,7 +1489,7 @@ void op_pop_ir32_impl()
 }
 
 
-void op_popf_impl()
+void x86_isa_popf_impl()
 {
 	x86_isa_mem_read(x86_isa_mem, x86_isa_regs->esp, 4, &x86_isa_regs->eflags);
 	x86_isa_regs->esp += 4;
@@ -1500,23 +1500,23 @@ void op_popf_impl()
 }
 
 
-void op_prefetcht0_impl() {
+void x86_isa_prefetcht0_impl() {
 }
 
 
-void op_prefetcht1_impl() {
+void x86_isa_prefetcht1_impl() {
 }
 
 
-void op_prefetcht2_impl() {
+void x86_isa_prefetcht2_impl() {
 }
 
 
-void op_prefetchnta_impl() {
+void x86_isa_prefetchnta_impl() {
 }
 
 
-void op_push_imm8_impl()
+void x86_isa_push_imm8_impl()
 {
 	uint32_t value = (int8_t) x86_isa_inst.imm.b;
 	x86_isa_store_reg(x86_reg_esp, x86_isa_regs->esp - 4);
@@ -1528,7 +1528,7 @@ void op_push_imm8_impl()
 }
 
 
-void op_push_imm32_impl()
+void x86_isa_push_imm32_impl()
 {
 	uint32_t value = x86_isa_inst.imm.d;
 	x86_isa_store_reg(x86_reg_esp, x86_isa_regs->esp - 4);
@@ -1540,7 +1540,7 @@ void op_push_imm32_impl()
 }
 
 
-void op_push_rm32_impl()
+void x86_isa_push_rm32_impl()
 {
 	uint32_t value = x86_isa_load_rm32();
 	x86_isa_store_reg(x86_reg_esp, x86_isa_regs->esp - 4);
@@ -1552,7 +1552,7 @@ void op_push_rm32_impl()
 }
 
 
-void op_push_ir32_impl()
+void x86_isa_push_ir32_impl()
 {
 	uint32_t value = x86_isa_load_ir32();
 	x86_isa_store_reg(x86_reg_esp, x86_isa_regs->esp - 4);
@@ -1564,7 +1564,7 @@ void op_push_ir32_impl()
 }
 
 
-void op_pushf_impl()
+void x86_isa_pushf_impl()
 {
 	x86_isa_store_reg(x86_reg_esp, x86_isa_regs->esp - 4);
 	x86_isa_mem_write(x86_isa_mem, x86_isa_regs->esp, 4, &x86_isa_regs->eflags);
@@ -1576,7 +1576,7 @@ void op_pushf_impl()
 }
 
 
-void op_rdtsc_impl()
+void x86_isa_rdtsc_impl()
 {
 	uint32_t eax, edx;
 
@@ -1598,7 +1598,7 @@ void op_rdtsc_impl()
 }
 
 
-void op_ret_impl()
+void x86_isa_ret_impl()
 {
 	if (x86_isa_inst.segment) {
 		x86_isa_error("%s: not supported segment", __FUNCTION__);
@@ -1616,13 +1616,13 @@ void op_ret_impl()
 }
 
 
-void op_repz_ret_impl()
+void x86_isa_repz_ret_impl()
 {
-	op_ret_impl();
+	x86_isa_ret_impl();
 }
 
 
-void op_ret_imm16_impl()
+void x86_isa_ret_imm16_impl()
 {
 	uint16_t pop;
 
@@ -1643,7 +1643,7 @@ void op_ret_imm16_impl()
 }
 
 
-void op_sahf_impl()
+void x86_isa_sahf_impl()
 {
 	x86_isa_regs->eflags &= ~0xff;
 	x86_isa_regs->eflags |= x86_isa_load_reg(x86_reg_ah);
@@ -1654,12 +1654,12 @@ void op_sahf_impl()
 }
 
 
-void op_sfence_impl()
+void x86_isa_sfence_impl()
 {
 }
 
 
-void op_shld_rm32_r32_imm8_impl()
+void x86_isa_shld_rm32_r32_imm8_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	uint32_t r32 = x86_isa_load_r32();
@@ -1690,7 +1690,7 @@ void op_shld_rm32_r32_imm8_impl()
 }
 
 
-void op_shld_rm32_r32_cl_impl()
+void x86_isa_shld_rm32_r32_cl_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	uint32_t r32 = x86_isa_load_r32();
@@ -1722,7 +1722,7 @@ void op_shld_rm32_r32_cl_impl()
 }
 
 
-void op_shrd_rm32_r32_imm8_impl()
+void x86_isa_shrd_rm32_r32_imm8_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	uint32_t r32 = x86_isa_load_r32();
@@ -1753,7 +1753,7 @@ void op_shrd_rm32_r32_imm8_impl()
 }
 
 
-void op_shrd_rm32_r32_cl_impl()
+void x86_isa_shrd_rm32_r32_cl_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	uint32_t r32 = x86_isa_load_r32();
@@ -1785,7 +1785,7 @@ void op_shrd_rm32_r32_cl_impl()
 }
 
 
-void op_std_impl()
+void x86_isa_std_impl()
 {
 	x86_isa_set_flag(x86_flag_df);
 
@@ -1793,7 +1793,7 @@ void op_std_impl()
 }
 
 
-void op_xadd_rm8_r8_impl()
+void x86_isa_xadd_rm8_r8_impl()
 {
 	uint8_t rm8 = x86_isa_load_rm8();
 	uint8_t r8 = x86_isa_load_r8();
@@ -1825,7 +1825,7 @@ void op_xadd_rm8_r8_impl()
 }
 
 
-void op_xadd_rm32_r32_impl()
+void x86_isa_xadd_rm32_r32_impl()
 {
 	uint32_t rm32 = x86_isa_load_rm32();
 	uint32_t r32 = x86_isa_load_r32();
@@ -1857,7 +1857,7 @@ void op_xadd_rm32_r32_impl()
 }
 
 
-void op_xchg_ir16_ax_impl()
+void x86_isa_xchg_ir16_ax_impl()
 {
 	uint16_t ax, ir16;
 
@@ -1870,7 +1870,7 @@ void op_xchg_ir16_ax_impl()
 }
 
 
-void op_xchg_ir32_eax_impl()
+void x86_isa_xchg_ir32_eax_impl()
 {
 	uint32_t eax, ir32;
 
@@ -1883,7 +1883,7 @@ void op_xchg_ir32_eax_impl()
 }
 
 
-void op_xchg_rm8_r8_impl()
+void x86_isa_xchg_rm8_r8_impl()
 {
 	uint8_t rm8, r8;
 
@@ -1896,7 +1896,7 @@ void op_xchg_rm8_r8_impl()
 }
 
 
-void op_xchg_rm16_r16_impl()
+void x86_isa_xchg_rm16_r16_impl()
 {
 	uint16_t rm16, r16;
 
@@ -1909,7 +1909,7 @@ void op_xchg_rm16_r16_impl()
 }
 
 
-void op_xchg_rm32_r32_impl()
+void x86_isa_xchg_rm32_r32_impl()
 {
 	uint32_t rm32, r32;
 

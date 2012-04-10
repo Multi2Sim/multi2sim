@@ -43,12 +43,12 @@ uint8_t x86_isa_host_fpenv[28];
 
 /* Table including references to functions in machine.c
  * that implement machine instructions. */
-typedef void (*inst_impl_fn_t)(void);
-static inst_impl_fn_t inst_impl_table[x86_opcode_count] =
+typedef void (*x86_isa_inst_func_t)(void);
+static x86_isa_inst_func_t x86_isa_inst_func[x86_opcode_count] =
 {
 	NULL /* for op_none */
-#define DEFINST(name,op1,op2,op3,modrm,imm,pfx) ,op_##name##_impl
-#include <machine.dat>
+#define DEFINST(name, op1, op2, op3, modrm, imm, pfx) , x86_isa_##name##_impl
+#include "machine.dat"
 #undef DEFINST
 };
 
@@ -130,7 +130,7 @@ void x86_isa_error(char *fmt, ...)
  * Instruction statistics
  */
 
-static long long inst_freq[x86_opcode_count];
+static long long x86_inst_freq[x86_opcode_count];
 
 
 void x86_isa_inst_stat_dump(FILE *f)
@@ -138,9 +138,9 @@ void x86_isa_inst_stat_dump(FILE *f)
 	int i;
 	for (i = 1; i < x86_opcode_count; i++)
 	{
-		if (!inst_freq[i])
+		if (!x86_inst_freq[i])
 			continue;
-		fprintf(f, "%s    %lld\n", x86_inst_name(i), inst_freq[i]);
+		fprintf(f, "%s    %lld\n", x86_inst_name(i), x86_inst_freq[i]);
 	}
 }
 
@@ -149,12 +149,12 @@ void x86_isa_inst_stat_reset(void)
 {
 	int i;
 	for (i = 1; i < x86_opcode_count; i++)
-		inst_freq[i] = 0;
+		x86_inst_freq[i] = 0;
 }
 
 
 /* Trace call debugging */
-static void isa_debug_call()
+static void x86_isa_debug_call()
 {
 	int i;
 	struct elf_symbol_t *from, *to;
@@ -202,10 +202,12 @@ static void isa_debug_call()
 
 /* Shift and size inside the x86_regs_t structure. This table is indexed by the
  * op->data.reg.id field. */
-static struct {
+static struct
+{
 	int shift;
 	int size;
-} isa_reg_info[] = {
+} x86_isa_reg_info[] =
+{
 	{ 0, 0 },
 	{ 0, 4 },	/* 1. eax */
 	{ 4, 4 },	/* 2. ecx */
@@ -263,14 +265,14 @@ int x86_isa_get_flag(enum x86_flag_t flag)
 /* Load/store the value of a register. If the register size is less than 32 bits,
  * it is zero-extended. These functions work for reg = reg_none, too. */
 
-static uint32_t isa_bit_mask[5] = { 0, 0xff, 0xffff, 0, 0xffffffff};
+static uint32_t x86_isa_bit_mask[5] = { 0, 0xff, 0xffff, 0, 0xffffffff};
 
 
 uint32_t x86_isa_load_reg(enum x86_reg_t reg)
 {
 	uint32_t mask, *preg;
-	mask = isa_bit_mask[isa_reg_info[reg].size];
-	preg = (void *) x86_isa_regs + isa_reg_info[reg].shift;
+	mask = x86_isa_bit_mask[x86_isa_reg_info[reg].size];
+	preg = (void *) x86_isa_regs + x86_isa_reg_info[reg].shift;
 	return *preg & mask;
 }
 
@@ -278,8 +280,8 @@ uint32_t x86_isa_load_reg(enum x86_reg_t reg)
 void x86_isa_store_reg(enum x86_reg_t reg, uint32_t value)
 {
 	uint32_t mask, *preg;
-	mask = isa_bit_mask[isa_reg_info[reg].size];
-	preg = (void *) x86_isa_regs + isa_reg_info[reg].shift;
+	mask = x86_isa_bit_mask[x86_isa_reg_info[reg].size];
+	preg = (void *) x86_isa_regs + x86_isa_reg_info[reg].shift;
 	*preg = (*preg & ~mask) | (value & mask);
 	x86_isa_inst_debug("  %s <- 0x%x", x86_reg_name[reg], value);
 }
@@ -293,27 +295,31 @@ void x86_isa_store_reg(enum x86_reg_t reg, uint32_t value)
 
 /* Return the final address obtained from binding address 'addr' inside
  * the corresponding segment. The segment boundaries are checked. */
-uint32_t isa_linear_address(uint32_t offset)
+static uint32_t x86_isa_linear_address(uint32_t offset)
 {
 	/* No segment override */
-	if (!x86_isa_inst.segment) {
+	if (!x86_isa_inst.segment)
+	{
 		isa_addr = offset;
 		return isa_addr;
 	}
 	
 	/* Segment override */
-	if (x86_isa_inst.segment != x86_reg_gs) {
+	if (x86_isa_inst.segment != x86_reg_gs)
+	{
 		x86_isa_error("segment override not supported for other register than gs");
 		return 0;
 	}
 
 	/* GLibc segment at TLS entry 6 */
-	if (x86_isa_load_reg(x86_reg_gs) != 0x33)  {
+	if (x86_isa_load_reg(x86_reg_gs) != 0x33)
+	{
 		x86_isa_error("isa_linear_address: gs = 0x%x", x86_isa_load_reg(x86_reg_gs));
 		return 0;
 	}
 
-	if (!x86_isa_ctx->glibc_segment_base) {
+	if (!x86_isa_ctx->glibc_segment_base)
+	{
 		x86_isa_error("isa_linear_address: glibc segment not set");
 		return 0;
 	}
@@ -330,7 +336,8 @@ uint32_t x86_isa_effective_address()
 	uint32_t addr;
 
 	/* Check 'modrm_mod' field */
-	if (x86_isa_inst.modrm_mod == 3) {
+	if (x86_isa_inst.modrm_mod == 3)
+	{
 		x86_isa_error("%s: wrong value for 'modrm_mod'", __FUNCTION__);
 		return 0;
 	}
@@ -341,7 +348,7 @@ uint32_t x86_isa_effective_address()
 		x86_isa_inst.disp;
 	
 	/* Add segment base */
-	addr = isa_linear_address(addr);
+	addr = x86_isa_linear_address(addr);
 
 	return addr;
 }
@@ -357,7 +364,7 @@ uint32_t x86_isa_moffs_address()
 	addr = x86_isa_inst.imm.d;
 
 	/* Add segment base */
-	addr = isa_linear_address(addr);
+	addr = x86_isa_linear_address(addr);
 
 	return addr;
 }
@@ -627,7 +634,8 @@ uint16_t x86_isa_load_fpu_status()
 {
 	uint16_t status = 0;
 
-	if (x86_isa_regs->fpu_top < 0 || x86_isa_regs->fpu_top >= 8) {
+	if (x86_isa_regs->fpu_top < 0 || x86_isa_regs->fpu_top >= 8)
+	{
 		x86_isa_error("%s: wrong FPU stack top", __FUNCTION__);
 		return 0;
 	}
@@ -815,15 +823,15 @@ void x86_isa_execute_inst(void)
 	x86_isa_target = 0;
 	x86_isa_regs->eip = x86_isa_regs->eip + x86_isa_inst.size;
 	if (x86_isa_inst.opcode)
-		inst_impl_table[x86_isa_inst.opcode]();
+		x86_isa_inst_func[x86_isa_inst.opcode]();
 	x86_isa_ctx->last_eip = x86_isa_eip;
 	
 	/* Stats */
-	inst_freq[x86_isa_inst.opcode]++;
+	x86_inst_freq[x86_isa_inst.opcode]++;
 
 	/* Debug */
 	x86_isa_inst_debug("\n");
 	if (debug_status(x86_isa_call_debug_category))
-		isa_debug_call();
+		x86_isa_debug_call();
 }
 
