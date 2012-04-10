@@ -51,7 +51,7 @@ struct string_map_t ke_sim_finish_map =
 };
 
 /* CPU kernel */
-struct kernel_t *ke;
+struct x86_emu_t *x86_emu;
 
 
 
@@ -65,7 +65,7 @@ struct kernel_t *ke;
 
 static uint64_t ke_init_time = 0;
 
-void ke_init(void)
+void x86_emu_init(void)
 {
 	union {
 		unsigned int as_uint;
@@ -83,152 +83,152 @@ void ke_init(void)
 	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
 
 	/* Initialization */
-	sys_init();
+	x86_sys_init();
 	isa_init();
 
 	/* Allocate */
-	ke = calloc(1, sizeof(struct kernel_t));
-	if (!ke)
+	x86_emu = calloc(1, sizeof(struct x86_emu_t));
+	if (!x86_emu)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Event for context IPC reports */
-	EV_CTX_IPC_REPORT = esim_register_event(ctx_ipc_report_handler);
+	EV_X86_CTX_IPC_REPORT = esim_register_event(x86_ctx_ipc_report_handler);
 
 	/* Initialize */
-	ke->current_pid = 1000;  /* Initial assigned pid */
+	x86_emu->current_pid = 1000;  /* Initial assigned pid */
 	
-	/* Initialize mutex for variables controlling calls to 'ke_process_events()' */
-	pthread_mutex_init(&ke->process_events_mutex, NULL);
+	/* Initialize mutex for variables controlling calls to 'x86_emu_process_events()' */
+	pthread_mutex_init(&x86_emu->process_events_mutex, NULL);
 
 	/* Initialize GPU */
 	gk_init();
 
 	/* Record start time */
-	ke_init_time = ke_timer();
+	ke_init_time = x86_emu_timer();
 }
 
 
 /* Finalization */
-void ke_done(void)
+void x86_emu_done(void)
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 
 	/* Finish all contexts */
-	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_list_next)
-		if (!ctx_get_status(ctx, ctx_finished))
-			ctx_finish(ctx, 0);
+	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next)
+		if (!x86_ctx_get_status(ctx, x86_ctx_finished))
+			x86_ctx_finish(ctx, 0);
 
 	/* Free contexts */
-	while (ke->context_list_head)
-		ctx_free(ke->context_list_head);
+	while (x86_emu->context_list_head)
+		x86_ctx_free(x86_emu->context_list_head);
 	
 	/* Finalize GPU */
 	gk_done();
 
 	/* End */
-	free(ke);
+	free(x86_emu);
 	isa_done();
-	sys_done();
+	x86_sys_done();
 }
 
 
-void ke_dump(FILE *f)
+void x86_emu_dump(FILE *f)
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 	int n = 0;
-	ctx = ke->context_list_head;
+	ctx = x86_emu->context_list_head;
 	fprintf(f, "List of kernel contexts (arbitrary order):\n");
 	while (ctx) {
 		fprintf(f, "kernel context #%d:\n", n);
-		ctx_dump(ctx, f);
+		x86_ctx_dump(ctx, f);
 		ctx = ctx->context_list_next;
 		n++;
 	}
 }
 
 
-void ke_list_insert_head(enum ke_list_kind_t list, struct ctx_t *ctx)
+void x86_emu_list_insert_head(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx)
 {
-	assert(!ke_list_member(list, ctx));
+	assert(!x86_emu_list_member(list, ctx));
 	switch (list)
 	{
-	case ke_list_context:
+	case x86_emu_list_context:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, context, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, context, ctx);
 		break;
 
-	case ke_list_running:
+	case x86_emu_list_running:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, running, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, running, ctx);
 		break;
 
-	case ke_list_finished:
+	case x86_emu_list_finished:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, finished, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, finished, ctx);
 		break;
 
-	case ke_list_zombie:
+	case x86_emu_list_zombie:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, zombie, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, zombie, ctx);
 		break;
 
-	case ke_list_suspended:
+	case x86_emu_list_suspended:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, suspended, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, suspended, ctx);
 		break;
 
-	case ke_list_alloc:
+	case x86_emu_list_alloc:
 
-		DOUBLE_LINKED_LIST_INSERT_HEAD(ke, alloc, ctx);
+		DOUBLE_LINKED_LIST_INSERT_HEAD(x86_emu, alloc, ctx);
 		break;
 	}
 }
 
 
-void ke_list_insert_tail(enum ke_list_kind_t list, struct ctx_t *ctx)
+void x86_emu_list_insert_tail(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx)
 {
-	assert(!ke_list_member(list, ctx));
+	assert(!x86_emu_list_member(list, ctx));
 	switch (list) {
-	case ke_list_context: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, context, ctx); break;
-	case ke_list_running: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, running, ctx); break;
-	case ke_list_finished: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, finished, ctx); break;
-	case ke_list_zombie: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, zombie, ctx); break;
-	case ke_list_suspended: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, suspended, ctx); break;
-	case ke_list_alloc: DOUBLE_LINKED_LIST_INSERT_TAIL(ke, alloc, ctx); break;
+	case x86_emu_list_context: DOUBLE_LINKED_LIST_INSERT_TAIL(x86_emu, context, ctx); break;
+	case x86_emu_list_running: DOUBLE_LINKED_LIST_INSERT_TAIL(x86_emu, running, ctx); break;
+	case x86_emu_list_finished: DOUBLE_LINKED_LIST_INSERT_TAIL(x86_emu, finished, ctx); break;
+	case x86_emu_list_zombie: DOUBLE_LINKED_LIST_INSERT_TAIL(x86_emu, zombie, ctx); break;
+	case x86_emu_list_suspended: DOUBLE_LINKED_LIST_INSERT_TAIL(x86_emu, suspended, ctx); break;
+	case x86_emu_list_alloc: DOUBLE_LINKED_LIST_INSERT_TAIL(x86_emu, alloc, ctx); break;
 	}
 }
 
 
-void ke_list_remove(enum ke_list_kind_t list, struct ctx_t *ctx)
+void x86_emu_list_remove(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx)
 {
-	assert(ke_list_member(list, ctx));
+	assert(x86_emu_list_member(list, ctx));
 	switch (list) {
-	case ke_list_context: DOUBLE_LINKED_LIST_REMOVE(ke, context, ctx); break;
-	case ke_list_running: DOUBLE_LINKED_LIST_REMOVE(ke, running, ctx); break;
-	case ke_list_finished: DOUBLE_LINKED_LIST_REMOVE(ke, finished, ctx); break;
-	case ke_list_zombie: DOUBLE_LINKED_LIST_REMOVE(ke, zombie, ctx); break;
-	case ke_list_suspended: DOUBLE_LINKED_LIST_REMOVE(ke, suspended, ctx); break;
-	case ke_list_alloc: DOUBLE_LINKED_LIST_REMOVE(ke, alloc, ctx); break;
+	case x86_emu_list_context: DOUBLE_LINKED_LIST_REMOVE(x86_emu, context, ctx); break;
+	case x86_emu_list_running: DOUBLE_LINKED_LIST_REMOVE(x86_emu, running, ctx); break;
+	case x86_emu_list_finished: DOUBLE_LINKED_LIST_REMOVE(x86_emu, finished, ctx); break;
+	case x86_emu_list_zombie: DOUBLE_LINKED_LIST_REMOVE(x86_emu, zombie, ctx); break;
+	case x86_emu_list_suspended: DOUBLE_LINKED_LIST_REMOVE(x86_emu, suspended, ctx); break;
+	case x86_emu_list_alloc: DOUBLE_LINKED_LIST_REMOVE(x86_emu, alloc, ctx); break;
 	}
 }
 
 
-int ke_list_member(enum ke_list_kind_t list, struct ctx_t *ctx)
+int x86_emu_list_member(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx)
 {
 	switch (list) {
-	case ke_list_context: return DOUBLE_LINKED_LIST_MEMBER(ke, context, ctx);
-	case ke_list_running: return DOUBLE_LINKED_LIST_MEMBER(ke, running, ctx);
-	case ke_list_finished: return DOUBLE_LINKED_LIST_MEMBER(ke, finished, ctx);
-	case ke_list_zombie: return DOUBLE_LINKED_LIST_MEMBER(ke, zombie, ctx);
-	case ke_list_suspended: return DOUBLE_LINKED_LIST_MEMBER(ke, suspended, ctx);
-	case ke_list_alloc: return DOUBLE_LINKED_LIST_MEMBER(ke, alloc, ctx);
+	case x86_emu_list_context: return DOUBLE_LINKED_LIST_MEMBER(x86_emu, context, ctx);
+	case x86_emu_list_running: return DOUBLE_LINKED_LIST_MEMBER(x86_emu, running, ctx);
+	case x86_emu_list_finished: return DOUBLE_LINKED_LIST_MEMBER(x86_emu, finished, ctx);
+	case x86_emu_list_zombie: return DOUBLE_LINKED_LIST_MEMBER(x86_emu, zombie, ctx);
+	case x86_emu_list_suspended: return DOUBLE_LINKED_LIST_MEMBER(x86_emu, suspended, ctx);
+	case x86_emu_list_alloc: return DOUBLE_LINKED_LIST_MEMBER(x86_emu, alloc, ctx);
 	}
 	return 0;
 }
 
 
 /* Return a counter of microseconds. */
-long long ke_timer()
+long long x86_emu_timer()
 {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
@@ -236,23 +236,23 @@ long long ke_timer()
 }
 
 
-/* Schedule a call to 'ke_process_events' */
-void ke_process_events_schedule()
+/* Schedule a call to 'x86_emu_process_events' */
+void x86_emu_process_events_schedule()
 {
-	pthread_mutex_lock(&ke->process_events_mutex);
-	ke->process_events_force = 1;
-	pthread_mutex_unlock(&ke->process_events_mutex);
+	pthread_mutex_lock(&x86_emu->process_events_mutex);
+	x86_emu->process_events_force = 1;
+	pthread_mutex_unlock(&x86_emu->process_events_mutex);
 }
 
 
 /* Function that suspends the host thread waiting for an event to occur.
  * When the event finally occurs (i.e., before the function finishes, a
- * call to 'ke_process_events' is scheduled.
+ * call to 'x86_emu_process_events' is scheduled.
  * The argument 'arg' is the associated guest context. */
 void *ke_host_thread_suspend(void *arg)
 {
-	struct ctx_t *ctx = (struct ctx_t *) arg;
-	uint64_t now = ke_timer();
+	struct x86_ctx_t *ctx = (struct x86_ctx_t *) arg;
+	uint64_t now = x86_emu_timer();
 
 	/* Detach this thread - we don't want the parent to have to join it to release
 	 * its resources. The thread termination can be observed by atomically checking
@@ -260,7 +260,7 @@ void *ke_host_thread_suspend(void *arg)
 	pthread_detach(pthread_self());
 
 	/* Context suspended in 'poll' system call */
-	if (ctx_get_status(ctx, ctx_nanosleep)) {
+	if (x86_ctx_get_status(ctx, x86_ctx_nanosleep)) {
 		
 		uint64_t timeout;
 		
@@ -268,7 +268,7 @@ void *ke_host_thread_suspend(void *arg)
 		timeout = ctx->wakeup_time > now ? ctx->wakeup_time - now : 0;
 		usleep(timeout);
 	
-	} else if (ctx_get_status(ctx, ctx_poll)) {
+	} else if (x86_ctx_get_status(ctx, x86_ctx_poll)) {
 
 		struct file_desc_t *fd;
 		struct pollfd host_fds;
@@ -294,7 +294,7 @@ void *ke_host_thread_suspend(void *arg)
 		if (err < 0)
 			fatal("syscall 'poll': unexpected error in host 'poll'");
 	
-	} else if (ctx_get_status(ctx, ctx_read)) {
+	} else if (x86_ctx_get_status(ctx, x86_ctx_read)) {
 		
 		struct file_desc_t *fd;
 		struct pollfd host_fds;
@@ -312,7 +312,7 @@ void *ke_host_thread_suspend(void *arg)
 		if (err < 0)
 			fatal("syscall 'read': unexpected error in host 'poll'");
 	
-	} else if (ctx_get_status(ctx, ctx_write)) {
+	} else if (x86_ctx_get_status(ctx, x86_ctx_write)) {
 		
 		struct file_desc_t *fd;
 		struct pollfd host_fds;
@@ -333,20 +333,20 @@ void *ke_host_thread_suspend(void *arg)
 	}
 
 	/* Event occurred - thread finishes */
-	pthread_mutex_lock(&ke->process_events_mutex);
-	ke->process_events_force = 1;
+	pthread_mutex_lock(&x86_emu->process_events_mutex);
+	x86_emu->process_events_force = 1;
 	ctx->host_thread_suspend_active = 0;
-	pthread_mutex_unlock(&ke->process_events_mutex);
+	pthread_mutex_unlock(&x86_emu->process_events_mutex);
 	return NULL;
 }
 
 
 /* Function that suspends the host thread waiting for a timer to expire,
- * and then schedules a call to 'ke_process_events'. */
+ * and then schedules a call to 'x86_emu_process_events'. */
 void *ke_host_thread_timer(void *arg)
 {
-	struct ctx_t *ctx = (struct ctx_t *) arg;
-	uint64_t now = ke_timer();
+	struct x86_ctx_t *ctx = (struct x86_ctx_t *) arg;
+	uint64_t now = x86_emu_timer();
 	struct timespec ts;
 	uint64_t sleep_time;  /* In usec */
 
@@ -363,46 +363,46 @@ void *ke_host_thread_timer(void *arg)
 		nanosleep(&ts, NULL);
 	}
 
-	/* Timer expired, schedule call to 'ke_process_events' */
-	pthread_mutex_lock(&ke->process_events_mutex);
-	ke->process_events_force = 1;
+	/* Timer expired, schedule call to 'x86_emu_process_events' */
+	pthread_mutex_lock(&x86_emu->process_events_mutex);
+	x86_emu->process_events_force = 1;
 	ctx->host_thread_timer_active = 0;
-	pthread_mutex_unlock(&ke->process_events_mutex);
+	pthread_mutex_unlock(&x86_emu->process_events_mutex);
 	return NULL;
 }
 
 
 /* Check for events detected in spawned host threads, like waking up contexts or
  * sending signals.
- * The list is only processed if flag 'ke->process_events_force' is set. */
-void ke_process_events()
+ * The list is only processed if flag 'x86_emu->process_events_force' is set. */
+void x86_emu_process_events()
 {
-	struct ctx_t *ctx, *next;
-	uint64_t now = ke_timer();
+	struct x86_ctx_t *ctx, *next;
+	uint64_t now = x86_emu_timer();
 	
 	/* Check if events need actually be checked. */
-	pthread_mutex_lock(&ke->process_events_mutex);
-	if (!ke->process_events_force)
+	pthread_mutex_lock(&x86_emu->process_events_mutex);
+	if (!x86_emu->process_events_force)
 	{
-		pthread_mutex_unlock(&ke->process_events_mutex);
+		pthread_mutex_unlock(&x86_emu->process_events_mutex);
 		return;
 	}
 	
-	/* By default, no subsequent call to 'ke_process_events' is assumed */
-	ke->process_events_force = 0;
+	/* By default, no subsequent call to 'x86_emu_process_events' is assumed */
+	x86_emu->process_events_force = 0;
 
 	/*
 	 * LOOP 1
 	 * Look at the list of suspended contexts and try to find
 	 * one that needs to be waken up.
 	 */
-	for (ctx = ke->suspended_list_head; ctx; ctx = next)
+	for (ctx = x86_emu->suspended_list_head; ctx; ctx = next)
 	{
 		/* Save next */
 		next = ctx->suspended_list_next;
 
 		/* Context is suspended in 'nanosleep' system call. */
-		if (ctx_get_status(ctx, ctx_nanosleep))
+		if (x86_ctx_get_status(ctx, x86_ctx_nanosleep))
 		{
 			uint32_t rmtp = ctx->regs->ecx;
 			uint64_t zero = 0;
@@ -418,9 +418,9 @@ void ke_process_events()
 			{
 				if (rmtp)
 					mem_write(ctx->mem, rmtp, 8, &zero);
-				sys_debug("syscall 'nanosleep' - continue (pid %d)\n", ctx->pid);
-				sys_debug("  return=0x%x\n", ctx->regs->eax);
-				ctx_clear_status(ctx, ctx_suspended | ctx_nanosleep);
+				x86_sys_debug("syscall 'nanosleep' - continue (pid %d)\n", ctx->pid);
+				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_nanosleep);
 				continue;
 			}
 
@@ -436,8 +436,8 @@ void ke_process_events()
 					mem_write(ctx->mem, rmtp + 4, 4, &usec);
 				}
 				ctx->regs->eax = -EINTR;
-				sys_debug("syscall 'nanosleep' - interrupted by signal (pid %d)\n", ctx->pid);
-				ctx_clear_status(ctx, ctx_suspended | ctx_nanosleep);
+				x86_sys_debug("syscall 'nanosleep' - interrupted by signal (pid %d)\n", ctx->pid);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_nanosleep);
 				continue;
 			}
 
@@ -449,15 +449,15 @@ void ke_process_events()
 		}
 
 		/* Context suspended in 'rt_sigsuspend' system call */
-		if (ctx_get_status(ctx, ctx_sigsuspend))
+		if (x86_ctx_get_status(ctx, x86_ctx_sigsuspend))
 		{
 			/* Context received a signal */
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
 				signal_handler_check_intr(ctx);
 				ctx->signal_mask_table->blocked = ctx->signal_mask_table->backup;
-				sys_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
-				ctx_clear_status(ctx, ctx_suspended | ctx_sigsuspend);
+				x86_sys_debug("syscall 'rt_sigsuspend' - interrupted by signal (pid %d)\n", ctx->pid);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_sigsuspend);
 				continue;
 			}
 
@@ -467,7 +467,7 @@ void ke_process_events()
 		}
 
 		/* Context suspended in 'poll' system call */
-		if (ctx_get_status(ctx, ctx_poll))
+		if (x86_ctx_get_status(ctx, x86_ctx_poll))
 		{
 			uint32_t prevents = ctx->regs->ebx + 6;
 			uint16_t revents = 0;
@@ -488,8 +488,8 @@ void ke_process_events()
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
 				signal_handler_check_intr(ctx);
-				sys_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
-				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
+				x86_sys_debug("syscall 'poll' - interrupted by signal (pid %d)\n", ctx->pid);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_poll);
 				continue;
 			}
 
@@ -506,9 +506,9 @@ void ke_process_events()
 				revents = POLLOUT;
 				mem_write(ctx->mem, prevents, 2, &revents);
 				ctx->regs->eax = 1;
-				sys_debug("syscall poll - continue (pid %d) - POLLOUT occurred in file\n", ctx->pid);
-				sys_debug("  retval=%d\n", ctx->regs->eax);
-				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
+				x86_sys_debug("syscall poll - continue (pid %d) - POLLOUT occurred in file\n", ctx->pid);
+				x86_sys_debug("  retval=%d\n", ctx->regs->eax);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_poll);
 				continue;
 			}
 
@@ -518,9 +518,9 @@ void ke_process_events()
 				revents = POLLIN;
 				mem_write(ctx->mem, prevents, 2, &revents);
 				ctx->regs->eax = 1;
-				sys_debug("syscall poll - continue (pid %d) - POLLIN occurred in file\n", ctx->pid);
-				sys_debug("  retval=%d\n", ctx->regs->eax);
-				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
+				x86_sys_debug("syscall poll - continue (pid %d) - POLLIN occurred in file\n", ctx->pid);
+				x86_sys_debug("  retval=%d\n", ctx->regs->eax);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_poll);
 				continue;
 			}
 
@@ -529,9 +529,9 @@ void ke_process_events()
 			{
 				revents = 0;
 				mem_write(ctx->mem, prevents, 2, &revents);
-				sys_debug("syscall poll - continue (pid %d) - time out\n", ctx->pid);
-				sys_debug("  return=0x%x\n", ctx->regs->eax);
-				ctx_clear_status(ctx, ctx_suspended | ctx_poll);
+				x86_sys_debug("syscall poll - continue (pid %d) - time out\n", ctx->pid);
+				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_poll);
 				continue;
 			}
 
@@ -544,7 +544,7 @@ void ke_process_events()
 
 
 		/* Context suspended in a 'write' system call  */
-		if (ctx_get_status(ctx, ctx_write))
+		if (x86_ctx_get_status(ctx, x86_ctx_write))
 		{
 			struct file_desc_t *fd;
 			int count, err;
@@ -560,8 +560,8 @@ void ke_process_events()
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
 				signal_handler_check_intr(ctx);
-				sys_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
-				ctx_clear_status(ctx, ctx_suspended | ctx_write);
+				x86_sys_debug("syscall 'write' - interrupted by signal (pid %d)\n", ctx->pid);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_write);
 				continue;
 			}
 
@@ -591,9 +591,9 @@ void ke_process_events()
 				ctx->regs->eax = count;
 				free(buf);
 
-				sys_debug("syscall write - continue (pid %d)\n", ctx->pid);
-				sys_debug("  return=0x%x\n", ctx->regs->eax);
-				ctx_clear_status(ctx, ctx_suspended | ctx_write);
+				x86_sys_debug("syscall write - continue (pid %d)\n", ctx->pid);
+				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_write);
 				continue;
 			}
 
@@ -605,7 +605,7 @@ void ke_process_events()
 		}
 
 		/* Context suspended in 'read' system call */
-		if (ctx_get_status(ctx, ctx_read))
+		if (x86_ctx_get_status(ctx, x86_ctx_read))
 		{
 			struct file_desc_t *fd;
 			uint32_t pbuf;
@@ -621,8 +621,8 @@ void ke_process_events()
 			if (ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked)
 			{
 				signal_handler_check_intr(ctx);
-				sys_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
-				ctx_clear_status(ctx, ctx_suspended | ctx_read);
+				x86_sys_debug("syscall 'read' - interrupted by signal (pid %d)\n", ctx->pid);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_read);
 				continue;
 			}
 
@@ -653,9 +653,9 @@ void ke_process_events()
 				mem_write(ctx->mem, pbuf, count, buf);
 				free(buf);
 
-				sys_debug("syscall 'read' - continue (pid %d)\n", ctx->pid);
-				sys_debug("  return=0x%x\n", ctx->regs->eax);
-				ctx_clear_status(ctx, ctx_suspended | ctx_read);
+				x86_sys_debug("syscall 'read' - continue (pid %d)\n", ctx->pid);
+				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_read);
 				continue;
 			}
 
@@ -667,13 +667,13 @@ void ke_process_events()
 		}
 
 		/* Context suspended in a 'waitpid' system call */
-		if (ctx_get_status(ctx, ctx_waitpid))
+		if (x86_ctx_get_status(ctx, x86_ctx_waitpid))
 		{
-			struct ctx_t *child;
+			struct x86_ctx_t *child;
 			uint32_t pstatus;
 
 			/* A zombie child is available to 'waitpid' it */
-			child = ctx_get_zombie(ctx, ctx->wakeup_pid);
+			child = x86_ctx_get_zombie(ctx, ctx->wakeup_pid);
 			if (child)
 			{
 				/* Continue with 'waitpid' system call */
@@ -681,11 +681,11 @@ void ke_process_events()
 				ctx->regs->eax = child->pid;
 				if (pstatus)
 					mem_write(ctx->mem, pstatus, 4, &child->exit_code);
-				ctx_set_status(child, ctx_finished);
+				x86_ctx_set_status(child, x86_ctx_finished);
 
-				sys_debug("syscall waitpid - continue (pid %d)\n", ctx->pid);
-				sys_debug("  return=0x%x\n", ctx->regs->eax);
-				ctx_clear_status(ctx, ctx_suspended | ctx_waitpid);
+				x86_sys_debug("syscall waitpid - continue (pid %d)\n", ctx->pid);
+				x86_sys_debug("  return=0x%x\n", ctx->regs->eax);
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_waitpid);
 				continue;
 			}
 
@@ -700,7 +700,7 @@ void ke_process_events()
 	 * LOOP 2
 	 * Check list of all contexts for expired timers.
 	 */
-	for (ctx = ke->context_list_head; ctx; ctx = ctx->context_list_next)
+	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next)
 	{
 		int sig[3] = { 14, 26, 27 };  /* SIGALRM, SIGVTALRM, SIGPROF */
 		int i;
@@ -720,10 +720,10 @@ void ke_process_events()
 
 			/* Timer expired - send a signal.
 			 * The target process might be suspended, so the host thread is canceled, and a new
-			 * call to 'ke_process_events' is scheduled. Since 'ke_process_events_mutex' is
-			 * already locked, the thread-unsafe version of 'ctx_host_thread_suspend_cancel' is used. */
-			__ctx_host_thread_suspend_cancel(ctx);
-			ke->process_events_force = 1;
+			 * call to 'x86_emu_process_events' is scheduled. Since 'ke_process_events_mutex' is
+			 * already locked, the thread-unsafe version of 'x86_ctx_host_thread_suspend_cancel' is used. */
+			__x86_ctx_host_thread_suspend_cancel(ctx);
+			x86_emu->process_events_force = 1;
 			sim_sigset_add(&ctx->signal_mask_table->pending, sig[i]);
 
 			/* Calculate next occurrence */
@@ -757,14 +757,14 @@ void ke_process_events()
 	 * LOOP 3
 	 * Process pending signals in running contexts to launch signal handlers
 	 */
-	for (ctx = ke->running_list_head; ctx; ctx = ctx->running_list_next)
+	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
 	{
 		signal_handler_check(ctx);
 	}
 
 	
 	/* Unlock */
-	pthread_mutex_unlock(&ke->process_events_mutex);
+	pthread_mutex_unlock(&x86_emu->process_events_mutex);
 }
 
 
@@ -792,7 +792,7 @@ static void ke_signal_handler(int signum)
 		signal(SIGABRT, SIG_DFL);
 		fprintf(stderr, "Aborted\n");
 		isa_dump(stderr);
-		ke_dump(stderr);
+		x86_emu_dump(stderr);
 		exit(1);
 		break;
 	}
@@ -800,9 +800,9 @@ static void ke_signal_handler(int signum)
 
 
 /* CPU Functional simulation loop */
-void ke_run(void)
+void x86_emu_run(void)
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 	uint64_t cycle = 0;
 
 	/* Install signal handlers */
@@ -813,11 +813,11 @@ void ke_run(void)
 	for (;;)
 	{
 		/* Stop if all contexts finished */
-		if (ke->finished_list_count >= ke->context_list_count)
+		if (x86_emu->finished_list_count >= x86_emu->context_list_count)
 			ke_sim_finish = ke_sim_finish_ctx;
 
 		/* Stop if maximum number of CPU instructions exceeded */
-		if (ke_max_inst && ke->inst_count >= ke_max_inst)
+		if (ke_max_inst && x86_emu->inst_count >= ke_max_inst)
 			ke_sim_finish = ke_sim_finish_max_cpu_inst;
 
 		/* Stop if maximum number of cycles exceeded */
@@ -825,7 +825,7 @@ void ke_run(void)
 			ke_sim_finish = ke_sim_finish_max_cpu_cycles;
 
 		/* Stop if maximum time exceeded (check only every 10k cycles) */
-		if (ke_max_time && !(cycle % 10000) && ke_timer() > ke_max_time * 1000000)
+		if (ke_max_time && !(cycle % 10000) && x86_emu_timer() > ke_max_time * 1000000)
 			ke_sim_finish = ke_sim_finish_max_time;
 
 		/* Stop if any previous reason met */
@@ -836,15 +836,15 @@ void ke_run(void)
 		cycle++;
 
 		/* Run an instruction from every running process */
-		for (ctx = ke->running_list_head; ctx; ctx = ctx->running_list_next)
-			ctx_execute_inst(ctx);
+		for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
+			x86_ctx_execute_inst(ctx);
 	
 		/* Free finished contexts */
-		while (ke->finished_list_head)
-			ctx_free(ke->finished_list_head);
+		while (x86_emu->finished_list_head)
+			x86_ctx_free(x86_emu->finished_list_head);
 	
 		/* Process list of suspended contexts */
-		ke_process_events();
+		x86_emu_process_events();
 	}
 
 	/* Restore signal handlers */
@@ -854,7 +854,7 @@ void ke_run(void)
 
 
 /* CPU disassembler */
-void ke_disasm(char *file_name)
+void x86_emu_disasm(char *file_name)
 {
 	struct elf_file_t *elf_file;
 	struct elf_section_t *section;

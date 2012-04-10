@@ -788,7 +788,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 void sim_stats_summary(void)
 {
-	long long now = ke_timer();
+	long long now = x86_emu_timer();
 	long long gpu_now = gk_timer();
 	long long inst_count;
 
@@ -799,7 +799,7 @@ void sim_stats_summary(void)
 	double cycles_per_sec;
 
 	/* Check if any simulation was actually performed */
-	inst_count = cpu_sim_kind == cpu_sim_functional ? ke->inst_count : cpu->inst;
+	inst_count = cpu_sim_kind == cpu_sim_functional ? x86_emu->inst_count : cpu->inst;
 	if (!inst_count)
 		return;
 
@@ -817,7 +817,7 @@ void sim_stats_summary(void)
 	fprintf(stderr, "Time = %.2f\n", sec_count);
 	fprintf(stderr, "Instructions = %lld\n", inst_count);
 	fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
-	fprintf(stderr, "Contexts = %d\n", ke->running_list_max);
+	fprintf(stderr, "Contexts = %d\n", x86_emu->running_list_max);
 	fprintf(stderr, "Memory = %lu\n", mem_max_mapped_space);
 	fprintf(stderr, "SimEnd = %s\n", map_value(&ke_sim_finish_map, ke_sim_finish));
 
@@ -874,7 +874,7 @@ int main(int argc, char **argv)
 
 	/* CPU disassembler tool */
 	if (*cpu_disasm_file_name)
-		ke_disasm(cpu_disasm_file_name);
+		x86_emu_disasm(cpu_disasm_file_name);
 
 	/* GPU disassembler tool */
 	if (*gpu_disasm_file_name)
@@ -903,8 +903,8 @@ int main(int argc, char **argv)
 	elf_debug_category = debug_new_category(elf_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
 	ld_debug_category = debug_new_category(loader_debug_file_name);
-	sys_debug_category = debug_new_category(syscall_debug_file_name);
-	ctx_debug_category = debug_new_category(ctx_debug_file_name);
+	x86_sys_debug_category = debug_new_category(syscall_debug_file_name);
+	x86_ctx_debug_category = debug_new_category(ctx_debug_file_name);
 	mem_debug_category = debug_new_category(mem_debug_file_name);
 	opencl_debug_category = debug_new_category(opencl_debug_file_name);
 	gpu_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
@@ -920,7 +920,7 @@ int main(int argc, char **argv)
 
 	/* Initialization for functional simulation */
 	esim_init();
-	ke_init();
+	x86_emu_init();
 	net_init();
 
 	/* Initialization for detailed simulation */
@@ -937,12 +937,12 @@ int main(int argc, char **argv)
 	cpu_load_progs(argc, argv, ctxconfig_file_name);
 
 	/* Simulation loop */
-	if (ke->running_list_head)
+	if (x86_emu->running_list_head)
 	{
 		if (cpu_sim_kind == cpu_sim_detailed)
 			cpu_run();
 		else
-			ke_run();
+			x86_emu_run();
 	}
 
 	/* Flush event-driven simulation */
@@ -969,7 +969,7 @@ int main(int argc, char **argv)
 	net_done();
 	esim_done();
 	trace_done();
-	ke_done();
+	x86_emu_done();
 	debug_done();
 	mhandle_done();
 

@@ -23,7 +23,7 @@
  * Global Variables
  */
 
-struct ctx_t {
+struct x86_ctx_t {
 	WINDOW *wnd;
 
 	/* Trace and state files */
@@ -49,7 +49,7 @@ struct ctx_t {
 
 WINDOW *mainwnd;
 
-struct ctx_t *ctx_array[MAX_CTX];
+struct x86_ctx_t *ctx_array[MAX_CTX];
 int ctx_count;
 int active_ctx = 0;
 int show_mops = 0;
@@ -138,7 +138,7 @@ struct command_t {
 };
 
 /* Read a line from 'trace_file' and decode it */
-struct command_t *command_read(struct ctx_t *ctx)
+struct command_t *command_read(struct x86_ctx_t *ctx)
 {
 	struct command_t *cmd;
 	struct command_field_t *fld, *prevfld;
@@ -437,7 +437,7 @@ void state_process_command(struct state_t *st, struct command_t *cmd)
 }
 
 /* Advance state one cycle */
-int state_process_cycle(struct ctx_t *ctx, struct state_t *st)
+int state_process_cycle(struct x86_ctx_t *ctx, struct state_t *st)
 {
 	struct command_t *cmd;
 	struct state_uop_t *uop, *puop, *nuop;
@@ -502,7 +502,7 @@ int state_process_cycle(struct ctx_t *ctx, struct state_t *st)
 }
 
 /* Return the state in the given cycle */
-struct state_t *state_goto(struct ctx_t *ctx, long cycle)
+struct state_t *state_goto(struct x86_ctx_t *ctx, long cycle)
 {
 	struct state_t *st;
 	long index;
@@ -547,14 +547,14 @@ struct state_t *state_goto(struct ctx_t *ctx, long cycle)
  * Main Program
  */
 
-struct ctx_t *ctx_create(char *trace_file_name, int height, int width, int y, int x)
+struct x86_ctx_t *x86_ctx_create(char *trace_file_name, int height, int width, int y, int x)
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 	char buf[500];
 	struct state_t *st;
 	clock_t clk;
 
-	ctx = calloc(1, sizeof(struct ctx_t));
+	ctx = calloc(1, sizeof(struct x86_ctx_t));
 
 	/* Files */
 	ctx->trace_file_name = strdup(trace_file_name);
@@ -612,7 +612,7 @@ struct ctx_t *ctx_create(char *trace_file_name, int height, int width, int y, in
 	return ctx;
 }
 
-void ctx_free(struct ctx_t *ctx)
+void x86_ctx_free(struct x86_ctx_t *ctx)
 {
 	fclose(ctx->trace_file);
 	fclose(ctx->state_file);
@@ -624,7 +624,7 @@ void ctx_free(struct ctx_t *ctx)
 	free(ctx);
 }
 
-void ctx_update_topseq(struct ctx_t *ctx)
+void ctx_update_topseq(struct x86_ctx_t *ctx)
 {
 	struct state_t *st;
 	struct state_uop_t *uop;
@@ -644,7 +644,7 @@ void ctx_update_topseq(struct ctx_t *ctx)
 	state_free(st);
 }
 
-void ctx_update_display(struct ctx_t *ctx)
+void ctx_update_display(struct x86_ctx_t *ctx)
 {
 	struct state_t *st;
 	struct state_uop_t *uop;
@@ -814,7 +814,7 @@ void show_help(void)
 #define MAX_CTX 10
 int main(int argc, char **argv)
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 	int done = 0;
 	int i, y;
 
@@ -856,7 +856,7 @@ int main(int argc, char **argv)
 	y = 0;
 	for (i = 0; i < ctx_count; i++) {
 		int height = (LINES - 1) / ctx_count + (i < (LINES - 1) % ctx_count ? 1 : 0);
-		ctx_array[i] = ctx_create(argv[i + 1], height, COLS, y, 0);
+		ctx_array[i] = x86_ctx_create(argv[i + 1], height, COLS, y, 0);
 		y += height;
 	}
 
@@ -1000,7 +1000,7 @@ int main(int argc, char **argv)
 
 	/* Free contexts */
 	for (i = 0; i < ctx_count; i++)
-		ctx_free(ctx_array[i]);
+		x86_ctx_free(ctx_array[i]);
 	endwin();
 	return 0;
 }

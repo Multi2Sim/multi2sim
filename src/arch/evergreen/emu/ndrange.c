@@ -220,7 +220,7 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 		wavefront->cf_buf_start = kernel->amd_bin->enc_dict_entry_evergreen->sec_text_buffer.ptr;
 		wavefront->cf_buf = wavefront->cf_buf_start;
 		wavefront->clause_kind = GPU_CLAUSE_CF;
-		wavefront->emu_time_start = ke_timer();
+		wavefront->emu_time_start = x86_emu_timer();
 	}
 
 	/* Debug */

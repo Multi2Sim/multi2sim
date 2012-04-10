@@ -257,14 +257,14 @@ static char signal_retcode[] = "\x58\xb8\x77\x00\x00\x00\xcd\x80";
 
 
 /* Run a signal handler */
-void signal_handler_run(struct ctx_t *ctx, int sig)
+void signal_handler_run(struct x86_ctx_t *ctx, int sig)
 {
 	uint32_t handler;
 	struct sim_sigframe sigframe;
 
 	/* Debug */
 	assert(IN_RANGE(sig, 1, 64));
-	sys_debug("context %d executes signal handler for signal %d\n",
+	x86_sys_debug("context %d executes signal handler for signal %d\n",
 		ctx->pid, sig);
 
 	/* Signal SIGCHLD ignored if no signal handler installed */
@@ -278,7 +278,7 @@ void signal_handler_run(struct ctx_t *ctx, int sig)
 	/* Create a memory page with execution permission, and copy return code on it. */
 	ctx->signal_mask_table->pretcode = mem_map_space(ctx->mem, MEM_PAGE_SIZE, MEM_PAGE_SIZE);
 	mem_map(ctx->mem, ctx->signal_mask_table->pretcode, MEM_PAGE_SIZE, mem_access_exec | mem_access_init);
-	sys_debug("  return code of signal handler allocated at 0x%x\n", ctx->signal_mask_table->pretcode);
+	x86_sys_debug("  return code of signal handler allocated at 0x%x\n", ctx->signal_mask_table->pretcode);
 	mem_access(ctx->mem, ctx->signal_mask_table->pretcode, sizeof(signal_retcode), signal_retcode, mem_access_init);
 
 	/* Initialize stack frame */
@@ -314,9 +314,9 @@ void signal_handler_run(struct ctx_t *ctx, int sig)
 	/* The program will continue now executing the signal handler.
 	 * In the current implementation, we do not allow other signals to
 	 * interrupt the signal handler, so we notify it in the context status. */
-	if (ctx_get_status(ctx, ctx_handler))
+	if (x86_ctx_get_status(ctx, x86_ctx_handler))
 		fatal("signal_handler_run: already running a handler");
-	ctx_set_status(ctx, ctx_handler);
+	x86_ctx_set_status(ctx, x86_ctx_handler);
 
 	/* Set eip to run handler */
 	handler = ctx->signal_handler_table->sigaction[sig - 1].handler;
@@ -327,16 +327,16 @@ void signal_handler_run(struct ctx_t *ctx, int sig)
 
 
 /* Return from a signal handler */
-void signal_handler_return(struct ctx_t *ctx)
+void signal_handler_return(struct x86_ctx_t *ctx)
 {
 	/* Change context status */
-	if (!ctx_get_status(ctx, ctx_handler))
+	if (!x86_ctx_get_status(ctx, x86_ctx_handler))
 		fatal("signal_handler_return: not handling a signal");
-	ctx_clear_status(ctx, ctx_handler);
+	x86_ctx_clear_status(ctx, x86_ctx_handler);
 
 	/* Free signal frame */
 	mem_unmap(ctx->mem, ctx->signal_mask_table->pretcode, MEM_PAGE_SIZE);
-	sys_debug("  signal handler return code at 0x%x deallocated\n",
+	x86_sys_debug("  signal handler return code at 0x%x deallocated\n",
 		ctx->signal_mask_table->pretcode);
 
 	/* Restore saved register file and free backup */
@@ -353,13 +353,13 @@ void signal_handler_return(struct ctx_t *ctx)
  *    system call itself, which must be repeated.
  *   -If flag 'SA_RESTART' is not set, the return address is the instruction
  *    next to the system call, and register 'eax' is set to -EINTR. */
-void signal_handler_check_intr(struct ctx_t *ctx)
+void signal_handler_check_intr(struct x86_ctx_t *ctx)
 {
 	int sig;
 
 	/* Context cannot be running a signal handler */
 	/* A signal must be pending and unblocked */
-	assert(!ctx_get_status(ctx, ctx_handler));
+	assert(!x86_ctx_get_status(ctx, x86_ctx_handler));
 	assert(ctx->signal_mask_table->pending & ~ctx->signal_mask_table->blocked);
 
 	/* Get signal number */
@@ -393,12 +393,12 @@ void signal_handler_check_intr(struct ctx_t *ctx)
 }
 
 
-void signal_handler_check(struct ctx_t *ctx)
+void signal_handler_check(struct x86_ctx_t *ctx)
 {
 	int sig;
 
 	/* If context is already running a signal handler, do nothing. */
-	if (ctx_get_status(ctx, ctx_handler))
+	if (x86_ctx_get_status(ctx, x86_ctx_handler))
 		return;
 	
 	/* If there is no pending unblocked signal, do nothing. */

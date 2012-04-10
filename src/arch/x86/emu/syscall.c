@@ -39,7 +39,7 @@
  */
 
 
-int sys_debug_category;
+int x86_sys_debug_category;
 
 
 
@@ -182,7 +182,7 @@ struct string_map_t sys_error_code_map =
 };
 
 
-void sys_init(void)
+void x86_sys_init(void)
 {
 	/* Host constants for 'errno' must match */
 	M2S_HOST_GUEST_MATCH(EPERM, SIM_EPERM);
@@ -222,15 +222,15 @@ void sys_init(void)
 }
 
 
-void sys_done(void)
+void x86_sys_done(void)
 {
 	/* Print summary */
-	if (debug_status(sys_debug_category))
-		sys_dump(debug_file(sys_debug_category));
+	if (debug_status(x86_sys_debug_category))
+		x86_sys_dump(debug_file(x86_sys_debug_category));
 }
 
 
-void sys_dump(FILE *f)
+void x86_sys_dump(FILE *f)
 {
 	int i;
 
@@ -250,7 +250,7 @@ void sys_dump(FILE *f)
 }
 
 
-void sys_call(void)
+void x86_sys_call(void)
 {
 	int code;
 	int err;
@@ -264,7 +264,7 @@ void sys_call(void)
 	sys_call_count[code]++;
 
 	/* Debug */
-	sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
+	x86_sys_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
 		sys_call_name[code], code, isa_inst_count, isa_ctx->pid);
 	isa_call_debug("system call '%s' (code %d, inst %lld, pid %d)\n",
 		sys_call_name[code], code, isa_inst_count, isa_ctx->pid);
@@ -274,14 +274,14 @@ void sys_call(void)
 
 	/* Set return value in 'eax', except for 'sigreturn' system call. Also, if the
 	 * context got suspended, the wake up routine will set the return value. */
-	if (code != sys_code_sigreturn && !ctx_get_status(isa_ctx, ctx_suspended))
+	if (code != sys_code_sigreturn && !x86_ctx_get_status(isa_ctx, x86_ctx_suspended))
 		isa_regs->eax = err;
 
 	/* Debug */
-	sys_debug("  ret=(%d, 0x%x)", err, err);
+	x86_sys_debug("  ret=(%d, 0x%x)", err, err);
 	if (err < 0 && err >= -SIM_ERRNO_MAX)
-		sys_debug(", errno=%s)", map_value(&sys_error_code_map, -err));
-	sys_debug("\n");
+		x86_sys_debug(", errno=%s)", map_value(&sys_error_code_map, -err));
+	x86_sys_debug("\n");
 }
 
 
@@ -299,10 +299,10 @@ static int sys_exit_impl(void)
 
 	/* Arguments */
 	status = isa_regs->ebx;
-	sys_debug("  status=0x%x\n", status);
+	x86_sys_debug("  status=0x%x\n", status);
 
 	/* Finish context */
-	ctx_finish(isa_ctx, status);
+	x86_ctx_finish(isa_ctx, status);
 	return 0;
 }
 
@@ -321,9 +321,9 @@ static int sys_close_impl(void)
 
 	/* Arguments */
 	guest_fd = isa_regs->ebx;
-	sys_debug("  guest_fd=%d\n", guest_fd);
+	x86_sys_debug("  guest_fd=%d\n", guest_fd);
 	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, guest_fd);
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Get file descriptor table entry. */
 	fd = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
@@ -336,7 +336,7 @@ static int sys_close_impl(void)
 
 	/* Free guest file descriptor. This will delete the host file if it's a virtual file. */
 	if (fd->kind == file_desc_virtual)
-		sys_debug("    host file '%s': temporary file deleted\n", fd->path);
+		x86_sys_debug("    host file '%s': temporary file deleted\n", fd->path);
 	file_desc_table_entry_free(isa_ctx->file_desc_table, fd->guest_fd);
 
 	/* Success */
@@ -367,7 +367,7 @@ static int sys_read_impl(void)
 	guest_fd = isa_regs->ebx;
 	buf_ptr = isa_regs->ecx;
 	count = isa_regs->edx;
-	sys_debug("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
+	x86_sys_debug("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
 		guest_fd, buf_ptr, count);
 
 	/* Get file descriptor */
@@ -375,7 +375,7 @@ static int sys_read_impl(void)
 	if (!fd)
 		return -EBADF;
 	host_fd = fd->host_fd;
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Allocate buffer */
 	buf = calloc(1, count);
@@ -404,7 +404,7 @@ static int sys_read_impl(void)
 		if (err > 0)
 		{
 			mem_write(isa_mem, buf_ptr, err, buf);
-			sys_debug_buffer("  buf", buf, err);
+			x86_sys_debug_buffer("  buf", buf, err);
 		}
 
 		/* Return number of read bytes */
@@ -413,11 +413,11 @@ static int sys_read_impl(void)
 	}
 
 	/* Blocking read - suspend thread */
-	sys_debug("  blocking read - process suspended\n");
+	x86_sys_debug("  blocking read - process suspended\n");
 	isa_ctx->wakeup_fd = guest_fd;
 	isa_ctx->wakeup_events = 1;  /* POLLIN */
-	ctx_set_status(isa_ctx, ctx_suspended | ctx_read);
-	ke_process_events_schedule();
+	x86_ctx_set_status(isa_ctx, x86_ctx_suspended | x86_ctx_read);
+	x86_emu_process_events_schedule();
 
 	/* Free allocated buffer. Return value doesn't matter,
 	 * it will be overwritten when context wakes up from blocking call. */
@@ -450,7 +450,7 @@ static int sys_write_impl(void)
 	guest_fd = isa_regs->ebx;
 	buf_ptr = isa_regs->ecx;
 	count = isa_regs->edx;
-	sys_debug("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
+	x86_sys_debug("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
 		guest_fd, buf_ptr, count);
 
 	/* Get file descriptor */
@@ -458,7 +458,7 @@ static int sys_write_impl(void)
 	if (!desc)
 		return -EBADF;
 	host_fd = desc->host_fd;
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Allocate buffer */
 	buf = calloc(1, count);
@@ -467,7 +467,7 @@ static int sys_write_impl(void)
 
 	/* Read buffer from memory */
 	mem_read(isa_mem, buf_ptr, count, buf);
-	sys_debug_buffer("  buf", buf, count);
+	x86_sys_debug_buffer("  buf", buf, count);
 
 	/* Poll the file descriptor to check if write is blocking */
 	fds.fd = host_fd;
@@ -488,10 +488,10 @@ static int sys_write_impl(void)
 	}
 
 	/* Blocking write - suspend thread */
-	sys_debug("  blocking write - process suspended\n");
+	x86_sys_debug("  blocking write - process suspended\n");
 	isa_ctx->wakeup_fd = guest_fd;
-	ctx_set_status(isa_ctx, ctx_suspended | ctx_write);
-	ke_process_events_schedule();
+	x86_ctx_set_status(isa_ctx, x86_ctx_suspended | x86_ctx_write);
+	x86_emu_process_events_schedule();
 
 	/* Return value doesn't matter here. It will be overwritten when the
 	 * context wakes up after blocking call. */
@@ -552,11 +552,11 @@ static int sys_open_impl(void)
 	if (length >= MAX_PATH_SIZE)
 		fatal("syscall open: maximum path length exceeded");
 	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
-	sys_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
+	x86_sys_debug("  filename='%s' flags=0x%x, mode=0x%x\n",
 		file_name, flags, mode);
-	sys_debug("  fullpath='%s'\n", full_path);
+	x86_sys_debug("  fullpath='%s'\n", full_path);
 	map_flags(&sys_open_flags_map, flags, flags_str, sizeof flags_str);
-	sys_debug("  flags=%s\n", flags_str);
+	x86_sys_debug("  flags=%s\n", flags_str);
 
 	/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
 	gk_libopencl_redirect(full_path, sizeof full_path);
@@ -568,20 +568,20 @@ static int sys_open_impl(void)
 		if (!strcmp(full_path, "/proc/self/maps"))
 		{
 			/* Create temporary file and open it. */
-			ctx_gen_proc_self_maps(isa_ctx, temp_path);
+			x86_ctx_gen_proc_self_maps(isa_ctx, temp_path);
 			host_fd = open(temp_path, flags, mode);
 			assert(host_fd > 0);
 
 			/* Add file descriptor table entry. */
 			desc = file_desc_table_entry_new(isa_ctx->file_desc_table, file_desc_virtual, host_fd, temp_path, flags);
-			sys_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
+			x86_sys_debug("    host file '%s' opened: guest_fd=%d, host_fd=%d\n",
 				temp_path, desc->guest_fd, desc->host_fd);
 			return desc->guest_fd;
 		}
 
 		/* Unhandled virtual file. Let the application read the contents of the host
 		 * version of the file as if it was a regular file. */
-		sys_debug("    warning: unhandled virtual file\n");
+		x86_sys_debug("    warning: unhandled virtual file\n");
 	}
 
 	/* Regular file. */
@@ -592,7 +592,7 @@ static int sys_open_impl(void)
 	/* File opened, create a new file descriptor. */
 	desc = file_desc_table_entry_new(isa_ctx->file_desc_table,
 		file_desc_regular, host_fd, full_path, flags);
-	sys_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
+	x86_sys_debug("    file descriptor opened: guest_fd=%d, host_fd=%d\n",
 		desc->guest_fd, desc->host_fd);
 
 	/* Return guest descriptor index */
@@ -628,16 +628,16 @@ static int sys_waitpid_impl()
 
 	char options_str[MAX_STRING_SIZE];
 
-	struct ctx_t *child;
+	struct x86_ctx_t *child;
 
 	/* Arguments */
 	pid = isa_regs->ebx;
 	status_ptr = isa_regs->ecx;
 	options = isa_regs->edx;
-	sys_debug("  pid=%d, pstatus=0x%x, options=0x%x\n",
+	x86_sys_debug("  pid=%d, pstatus=0x%x, options=0x%x\n",
 		pid, status_ptr, options);
 	map_flags(&sys_waitpid_options_map, options, options_str, sizeof options_str);
-	sys_debug("  options=%s\n", options_str);
+	x86_sys_debug("  options=%s\n", options_str);
 
 	/* Supported values for 'pid' */
 	if (pid != -1 && pid <= 0)
@@ -645,14 +645,14 @@ static int sys_waitpid_impl()
 			__FUNCTION__, err_sys_note);
 
 	/* Look for a zombie child. */
-	child = ctx_get_zombie(isa_ctx, pid);
+	child = x86_ctx_get_zombie(isa_ctx, pid);
 
 	/* If there is no child and the flag WNOHANG was not specified,
 	 * we get suspended until the specified child finishes. */
 	if (!child && !(options & 0x1))
 	{
 		isa_ctx->wakeup_pid = pid;
-		ctx_set_status(isa_ctx, ctx_suspended | ctx_waitpid);
+		x86_ctx_set_status(isa_ctx, x86_ctx_suspended | x86_ctx_waitpid);
 		return 0;
 	}
 
@@ -662,7 +662,7 @@ static int sys_waitpid_impl()
 	{
 		if (status_ptr)
 			mem_write(isa_mem, status_ptr, 4, &child->exit_code);
-		ctx_set_status(child, ctx_finished);
+		x86_ctx_set_status(child, x86_ctx_finished);
 		return child->pid;
 	}
 
@@ -693,8 +693,8 @@ static int sys_unlink_impl(void)
 	if (length >= MAX_PATH_SIZE)
 		fatal("%s: buffer too small", __FUNCTION__);
 	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
-	sys_debug("  file_name_ptr=0x%x\n", file_name_ptr);
-	sys_debug("  file_name=%s, full_path=%s\n", file_name, full_path);
+	x86_sys_debug("  file_name_ptr=0x%x\n", file_name_ptr);
+	x86_sys_debug("  file_name=%s, full_path=%s\n", file_name, full_path);
 
 	/* Host call */
 	err = unlink(full_path);
@@ -741,7 +741,7 @@ static int sys_execve_impl(void)
 	argv = isa_regs->ecx;
 	envp = isa_regs->edx;
 	regs = isa_regs->esi;
-	sys_debug("  name_ptr=0x%x, argv=0x%x, envp=0x%x, regs=0x%x\n",
+	x86_sys_debug("  name_ptr=0x%x, argv=0x%x, envp=0x%x, regs=0x%x\n",
 		name_ptr, argv, envp, regs);
 
 	/* Get command name */
@@ -749,7 +749,7 @@ static int sys_execve_impl(void)
 	if (length >= sizeof name)
 		fatal("%s: buffer too small", __FUNCTION__);
 	ld_get_full_path(isa_ctx, name, full_path, sizeof full_path);
-	sys_debug("  name='%s', full_path='%s'\n", name, full_path);
+	x86_sys_debug("  name='%s', full_path='%s'\n", name, full_path);
 
 	/* Arguments */
 	arg_list = list_create();
@@ -774,11 +774,11 @@ static int sys_execve_impl(void)
 
 		/* Add to argument list */
 		list_add(arg_list, arg);
-		sys_debug("    argv[%d]='%s'\n", arg_list->count, arg);
+		x86_sys_debug("    argv[%d]='%s'\n", arg_list->count, arg);
 	}
 
 	/* Environment variables */
-	sys_debug("\n");
+	x86_sys_debug("\n");
 	for (i = 0; ; i++)
 	{
 		unsigned int env_ptr;
@@ -794,7 +794,7 @@ static int sys_execve_impl(void)
 			fatal("%s: buffer too small", __FUNCTION__);
 
 		/* Debug */
-		sys_debug("    envp[%d]='%s'\n", i, env);
+		x86_sys_debug("    envp[%d]='%s'\n", i, env);
 	}
 
 	/* In the special case that the command line is 'sh -c <...>', this system
@@ -812,7 +812,7 @@ static int sys_execve_impl(void)
 		warning("%s: child context executed natively.\n%s",
 			__FUNCTION__, err_sys_execve_note);
 		exit_code = system(list_get(arg_list, 2));
-		ctx_finish(isa_ctx, exit_code);
+		x86_ctx_finish(isa_ctx, exit_code);
 
 		/* Free arguments and exit */
 		for (i = 0; i < list_count(arg_list); i++)
@@ -846,7 +846,7 @@ static int sys_time_impl(void)
 
 	/* Arguments */
 	time_ptr = isa_regs->ebx;
-	sys_debug("  ptime=0x%x\n", time_ptr);
+	x86_sys_debug("  ptime=0x%x\n", time_ptr);
 
 	/* Host call */
 	t = time(NULL);
@@ -882,8 +882,8 @@ static int sys_chmod_impl(void)
 	if (len >= sizeof file_name)
 		fatal("%s: buffer too small", __FUNCTION__);
 	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
-	sys_debug("  file_name_ptr=0x%x, mode=0x%x\n", file_name_ptr, mode);
-	sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
+	x86_sys_debug("  file_name_ptr=0x%x, mode=0x%x\n", file_name_ptr, mode);
+	x86_sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
 
 	/* Host call */
 	err = chmod(full_path, mode);
@@ -915,9 +915,9 @@ static int sys_lseek_impl(void)
 	offset = isa_regs->ecx;
 	origin = isa_regs->edx;
 	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-	sys_debug("  fd=%d, offset=0x%x, origin=0x%x\n",
+	x86_sys_debug("  fd=%d, offset=0x%x, origin=0x%x\n",
 		fd, offset, origin);
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Host call */
 	err = lseek(host_fd, offset, origin);
@@ -976,7 +976,7 @@ static int sys_utime_impl(void)
 	/* Arguments */
 	file_name_ptr = isa_regs->ebx;
 	utimbuf_ptr = isa_regs->ecx;
-	sys_debug("  file_name_ptr=0x%x, utimbuf_ptr=0x%x\n",
+	x86_sys_debug("  file_name_ptr=0x%x, utimbuf_ptr=0x%x\n",
 		file_name_ptr, utimbuf_ptr);
 
 	/* Read file name */
@@ -986,12 +986,12 @@ static int sys_utime_impl(void)
 
 	/* Get full path */
 	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
-	sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
+	x86_sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
 
 	/* Read time buffer */
 	mem_read(isa_mem, utimbuf_ptr, sizeof(struct sim_utimbuf), &sim_utimbuf);
 	sys_utime_guest_to_host(&utimbuf, &sim_utimbuf);
-	sys_debug("  utimbuf.actime = %u, utimbuf.modtime = %u\n",
+	x86_sys_debug("  utimbuf.actime = %u, utimbuf.modtime = %u\n",
 		sim_utimbuf.actime, sim_utimbuf.modtime);
 
 	/* Host call */
@@ -1045,9 +1045,9 @@ static int sys_access_impl(void)
 
 	/* Debug */
 	map_flags(&sys_access_mode_map, mode, mode_str, sizeof mode_str);
-	sys_debug("  file_name='%s', mode=0x%x\n", file_name, mode);
-	sys_debug("  full_path='%s'\n", full_path);
-	sys_debug("  mode=%s\n", mode_str);
+	x86_sys_debug("  file_name='%s', mode=0x%x\n", file_name, mode);
+	x86_sys_debug("  full_path='%s'\n", full_path);
+	x86_sys_debug("  mode=%s\n", mode_str);
 
 	/* Host call */
 	err = access(full_path, mode);
@@ -1070,25 +1070,25 @@ static int sys_kill_impl(void)
 	int pid;
 	int sig;
 
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 
 	/* Arguments */
 	pid = isa_regs->ebx;
 	sig = isa_regs->ecx;
-	sys_debug("  pid=%d, sig=%d (%s)\n", pid,
+	x86_sys_debug("  pid=%d, sig=%d (%s)\n", pid,
 		sig, sim_signal_name(sig));
 
 	/* Find context. We assume program correctness, so fatal if context is
 	 * not found, rather than return error code. */
-	ctx = ctx_get(pid);
+	ctx = x86_ctx_get(pid);
 	if (!ctx)
 		fatal("%s: invalid pid %d", __FUNCTION__, pid);
 
 	/* Send signal */
 	sim_sigset_add(&ctx->signal_mask_table->pending, sig);
-	ctx_host_thread_suspend_cancel(ctx);
-	ke_process_events_schedule();
-	ke_process_events();
+	x86_ctx_host_thread_suspend_cancel(ctx);
+	x86_emu_process_events_schedule();
+	x86_emu_process_events();
 
 	/* Success */
 	return 0;
@@ -1117,7 +1117,7 @@ static int sys_rename_impl(void)
 	/* Arguments */
 	old_path_ptr = isa_regs->ebx;
 	new_path_ptr = isa_regs->ecx;
-	sys_debug("  old_path_ptr=0x%x, new_path_ptr=0x%x\n",
+	x86_sys_debug("  old_path_ptr=0x%x, new_path_ptr=0x%x\n",
 		old_path_ptr, new_path_ptr);
 
 	/* Get old path */
@@ -1133,8 +1133,8 @@ static int sys_rename_impl(void)
 	/* Get full paths */
 	ld_get_full_path(isa_ctx, old_path, old_full_path, sizeof old_full_path);
 	ld_get_full_path(isa_ctx, new_path, new_full_path, sizeof new_full_path);
-	sys_debug("  old_path='%s', new_path='%s'\n", old_path, new_path);
-	sys_debug("  old_full_path='%s', new_full_path='%s'\n", old_full_path, new_full_path);
+	x86_sys_debug("  old_path='%s', new_path='%s'\n", old_path, new_path);
+	x86_sys_debug("  old_full_path='%s', new_full_path='%s'\n", old_full_path, new_full_path);
 
 	/* Host call */
 	err = rename(old_full_path, new_full_path);
@@ -1166,7 +1166,7 @@ static int sys_mkdir_impl(void)
 	/* Arguments */
 	path_ptr = isa_regs->ebx;
 	mode = isa_regs->ecx;
-	sys_debug("  path_ptr=0x%x, mode=0x%x\n", path_ptr, mode);
+	x86_sys_debug("  path_ptr=0x%x, mode=0x%x\n", path_ptr, mode);
 
 	/* Read path */
 	len = mem_read_string(isa_mem, path_ptr, sizeof path, path);
@@ -1175,7 +1175,7 @@ static int sys_mkdir_impl(void)
 
 	/* Read full path */
 	ld_get_full_path(isa_ctx, path, full_path, MAX_PATH_SIZE);
-	sys_debug("  path='%s', full_path='%s'\n", path, full_path);
+	x86_sys_debug("  path='%s', full_path='%s'\n", path, full_path);
 
 	/* Host call */
 	err = mkdir(full_path, mode);
@@ -1205,14 +1205,14 @@ static int sys_dup_impl(void)
 
 	/* Arguments */
 	guest_fd = isa_regs->ebx;
-	sys_debug("  guest_fd=%d\n", guest_fd);
+	x86_sys_debug("  guest_fd=%d\n", guest_fd);
 
 	/* Check that file descriptor is valid. */
 	desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 	if (!desc)
 		return -EBADF;
 	host_fd = desc->host_fd;
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Duplicate host file descriptor. */
 	dup_host_fd = dup(host_fd);
@@ -1250,13 +1250,13 @@ static int sys_pipe_impl(void)
 
 	/* Arguments */
 	fd_ptr = isa_regs->ebx;
-	sys_debug("  fd_ptr=0x%x\n", fd_ptr);
+	x86_sys_debug("  fd_ptr=0x%x\n", fd_ptr);
 
 	/* Create host pipe */
 	err = pipe(host_fd);
 	if (err == -1)
 		fatal("%s: cannot create pipe", __FUNCTION__);
-	sys_debug("  host pipe created: fd={%d, %d}\n",
+	x86_sys_debug("  host pipe created: fd={%d, %d}\n",
 		host_fd[0], host_fd[1]);
 
 	/* Create guest pipe */
@@ -1264,7 +1264,7 @@ static int sys_pipe_impl(void)
 		file_desc_pipe, host_fd[0], "", O_RDONLY);
 	write_desc = file_desc_table_entry_new(isa_ctx->file_desc_table,
 		file_desc_pipe, host_fd[1], "", O_WRONLY);
-	sys_debug("  guest pipe created: fd={%d, %d}\n",
+	x86_sys_debug("  guest pipe created: fd={%d, %d}\n",
 		read_desc->guest_fd, write_desc->guest_fd);
 	guest_read_fd = read_desc->guest_fd;
 	guest_write_fd = write_desc->guest_fd;
@@ -1309,7 +1309,7 @@ static int sys_times_impl(void)
 
 	/* Arguments */
 	tms_ptr = isa_regs->ebx;
-	sys_debug("  tms_ptr=0x%x\n", tms_ptr);
+	x86_sys_debug("  tms_ptr=0x%x\n", tms_ptr);
 
 	/* Host call */
 	err = times(&tms);
@@ -1344,7 +1344,7 @@ static int sys_brk_impl(void)
 	/* Arguments */
 	new_heap_break = isa_regs->ebx;
 	old_heap_break = isa_mem->heap_break;
-	sys_debug("  newbrk=0x%x (previous brk was 0x%x)\n",
+	x86_sys_debug("  newbrk=0x%x (previous brk was 0x%x)\n",
 		new_heap_break, old_heap_break);
 
 	/* Align */
@@ -1370,7 +1370,7 @@ static int sys_brk_impl(void)
 				mem_access_read | mem_access_write);
 		}
 		isa_mem->heap_break = new_heap_break;
-		sys_debug("  heap grows %u bytes\n", new_heap_break - old_heap_break);
+		x86_sys_debug("  heap grows %u bytes\n", new_heap_break - old_heap_break);
 		return new_heap_break;
 	}
 
@@ -1381,7 +1381,7 @@ static int sys_brk_impl(void)
 		if (size)
 			mem_unmap(isa_mem, new_heap_break_aligned, size);
 		isa_mem->heap_break = new_heap_break;
-		sys_debug("  heap shrinks %u bytes\n", old_heap_break - new_heap_break);
+		x86_sys_debug("  heap shrinks %u bytes\n", old_heap_break - new_heap_break);
 		return new_heap_break;
 	}
 
@@ -1417,7 +1417,7 @@ static int sys_ioctl_impl(void)
 	guest_fd = isa_regs->ebx;
 	cmd = isa_regs->ecx;
 	arg = isa_regs->edx;
-	sys_debug("  guest_fd=%d, cmd=0x%x, arg=0x%x\n",
+	x86_sys_debug("  guest_fd=%d, cmd=0x%x, arg=0x%x\n",
 		guest_fd, cmd, arg);
 
 	/* File descriptor */
@@ -1520,12 +1520,12 @@ static int sys_setrlimit_impl(void)
 	res = isa_regs->ebx;
 	rlim_ptr = isa_regs->ecx;
 	res_str = map_value(&sys_rlimit_res_map, res);
-	sys_debug("  res=0x%x, rlim_ptr=0x%x\n", res, rlim_ptr);
-	sys_debug("  res=%s\n", res_str);
+	x86_sys_debug("  res=0x%x, rlim_ptr=0x%x\n", res, rlim_ptr);
+	x86_sys_debug("  res=%s\n", res_str);
 
 	/* Read structure */
 	mem_read(isa_mem, rlim_ptr, sizeof(struct sim_rlimit), &sim_rlimit);
-	sys_debug("  rlim->cur=0x%x, rlim->max=0x%x\n",
+	x86_sys_debug("  rlim->cur=0x%x, rlim->max=0x%x\n",
 		sim_rlimit.cur, sim_rlimit.max);
 
 	/* Different actions depending on resource type */
@@ -1617,7 +1617,7 @@ static int sys_getrusage_impl(void)
 	/* Arguments */
 	who = isa_regs->ebx;
 	u_ptr = isa_regs->ecx;
-	sys_debug("  who=0x%x, pru=0x%x\n", who, u_ptr);
+	x86_sys_debug("  who=0x%x, pru=0x%x\n", who, u_ptr);
 
 	/* Supported values */
 	if (who != 0)  /* RUSAGE_SELF */
@@ -1659,7 +1659,7 @@ static int sys_gettimeofday_impl(void)
 	/* Arguments */
 	tv_ptr = isa_regs->ebx;
 	tz_ptr = isa_regs->ecx;
-	sys_debug("  tv_ptr=0x%x, tz_ptr=0x%x\n", tv_ptr, tz_ptr);
+	x86_sys_debug("  tv_ptr=0x%x, tz_ptr=0x%x\n", tv_ptr, tz_ptr);
 
 	/* Host call */
 	gettimeofday(&tv, &tz);
@@ -1707,7 +1707,7 @@ static int sys_readlink_impl(void)
 	path_ptr = isa_regs->ebx;
 	buf = isa_regs->ecx;
 	bufsz = isa_regs->edx;
-	sys_debug("  path_ptr=0x%x, buf=0x%x, bufsz=%d\n", path_ptr, buf, bufsz);
+	x86_sys_debug("  path_ptr=0x%x, buf=0x%x, bufsz=%d\n", path_ptr, buf, bufsz);
 
 	/* Read path */
 	len = mem_read_string(isa_mem, path_ptr, sizeof path, path);
@@ -1716,7 +1716,7 @@ static int sys_readlink_impl(void)
 
 	/* Get full path */
 	ld_get_full_path(isa_ctx, path, full_path, sizeof full_path);
-	sys_debug("  path='%s', full_path='%s'\n", path, full_path);
+	x86_sys_debug("  path='%s', full_path='%s'\n", path, full_path);
 
 	/* Special file '/proc/self/exe' intercepted */
 	if (!strcmp(full_path, "/proc/self/exe"))
@@ -1740,7 +1740,7 @@ static int sys_readlink_impl(void)
 	/* Copy name to guest memory. The string is not null-terminated. */
 	dest_size = MAX(strlen(dest_path), bufsz);
 	mem_write(isa_mem, buf, dest_size, dest_path);
-	sys_debug("  dest_path='%s'\n", dest_path);
+	x86_sys_debug("  dest_path='%s'\n", dest_path);
 
 	/* Return number of bytes copied */
 	return dest_size;
@@ -1914,13 +1914,13 @@ static int sys_mmap_impl(void)
 	mem_read(isa_mem, args_ptr + 16, 4, &guest_fd);
 	mem_read(isa_mem, args_ptr + 20, 4, &offset);
 
-	sys_debug("  args_ptr=0x%x\n", args_ptr);
-	sys_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
+	x86_sys_debug("  args_ptr=0x%x\n", args_ptr);
+	x86_sys_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
 		"guest_fd=%d, offset=0x%x\n",
 		addr, len, prot, flags, guest_fd, offset);
 	map_flags(&sys_mmap_prot_map, prot, prot_str, sizeof prot_str);
 	map_flags(&sys_mmap_flags_map, flags, flags_str, sizeof flags_str);
-	sys_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
+	x86_sys_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
 
 	/* Call */
 	return sys_mmap(addr, len, prot, flags, guest_fd, offset);
@@ -1942,7 +1942,7 @@ static int sys_munmap_impl(void)
 	/* Arguments */
 	addr = isa_regs->ebx;
 	size = isa_regs->ecx;
-	sys_debug("  addr=0x%x, size=0x%x\n", addr, size);
+	x86_sys_debug("  addr=0x%x, size=0x%x\n", addr, size);
 
 	/* Restrictions */
 	if (addr & (MEM_PAGE_SIZE - 1))
@@ -1973,11 +1973,11 @@ static int sys_fchmod_impl(void)
 	/* Arguments */
 	fd = isa_regs->ebx;
 	mode = isa_regs->ecx;
-	sys_debug("  fd=%d, mode=%d\n", fd, mode);
+	x86_sys_debug("  fd=%d, mode=%d\n", fd, mode);
 
 	/* Get host descriptor */
 	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Host call */
 	err = fchmod(host_fd, mode);
@@ -2076,7 +2076,7 @@ static int sys_socketcall_impl(void)
 	call = isa_regs->ebx;
 	args = isa_regs->ecx;
 	call_str = map_value(&sys_socketcall_call_map, call);
-	sys_debug("  call=%d (%s), args=0x%x\n", call, call_str, args);
+	x86_sys_debug("  call=%d (%s), args=0x%x\n", call, call_str, args);
 
 	/* Process call */
 	switch (call)
@@ -2107,9 +2107,9 @@ static int sys_socketcall_impl(void)
 				map_value(&sys_socket_type_map, type & 0xff),
 				type & 0x80000 ? "|SOCK_CLOEXEC" : "",
 				type & 0x800 ? "|SOCK_NONBLOCK" : "");
-		sys_debug("  family=%d (%s)\n", family, family_str);
-		sys_debug("  type=0x%x (%s)\n", type, type_str);
-		sys_debug("  protocol=%d\n", protocol);
+		x86_sys_debug("  family=%d (%s)\n", family, family_str);
+		x86_sys_debug("  type=0x%x (%s)\n", type, type_str);
+		x86_sys_debug("  protocol=%d\n", protocol);
 
 		/* Allow only sockets of type SOCK_STREAM */
 		if ((type & 0xff) != 1)
@@ -2124,7 +2124,7 @@ static int sys_socketcall_impl(void)
 		/* Create new file descriptor table entry. */
 		desc = file_desc_table_entry_new(isa_ctx->file_desc_table,
 				file_desc_socket, host_fd, "", O_RDWR);
-		sys_debug("    socket created: guest_fd=%d, host_fd=%d\n",
+		x86_sys_debug("    socket created: guest_fd=%d, host_fd=%d\n",
 			desc->guest_fd, desc->host_fd);
 
 		/* Return socket */
@@ -2150,7 +2150,7 @@ static int sys_socketcall_impl(void)
 		mem_read(isa_mem, args, 4, &guest_fd);
 		mem_read(isa_mem, args + 4, 4, &addr_ptr);
 		mem_read(isa_mem, args + 8, 4, &addr_len);
-		sys_debug("  guest_fd=%d, paddr=0x%x, addrlen=%d\n",
+		x86_sys_debug("  guest_fd=%d, paddr=0x%x, addrlen=%d\n",
 			guest_fd, addr_ptr, addr_len);
 
 		/* Check buffer size */
@@ -2164,8 +2164,8 @@ static int sys_socketcall_impl(void)
 		/* Get 'sockaddr' structure, read family and data */
 		addr = (struct sockaddr *) &buf[0];
 		mem_read(isa_mem, addr_ptr, addr_len, addr);
-		sys_debug("    sockaddr.family=%s\n", map_value(&sys_socket_family_map, addr->sa_family));
-		sys_debug_buffer("    sockaddr.data", addr->sa_data, addr_len - 2);
+		x86_sys_debug("    sockaddr.family=%s\n", map_value(&sys_socket_family_map, addr->sa_family));
+		x86_sys_debug_buffer("    sockaddr.data", addr->sa_data, addr_len - 2);
 
 		/* Get file descriptor */
 		desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
@@ -2175,7 +2175,7 @@ static int sys_socketcall_impl(void)
 		/* Check that it's a socket */
 		if (desc->kind != file_desc_socket)
 			fatal("%s: SYS_CONNECT: file not a socket", __FUNCTION__);
-		sys_debug("    host_fd=%d\n", desc->host_fd);
+		x86_sys_debug("    host_fd=%d\n", desc->host_fd);
 
 		/* Connect socket */
 		err = connect(desc->host_fd, addr, addr_len);
@@ -2203,7 +2203,7 @@ static int sys_socketcall_impl(void)
 		mem_read(isa_mem, args, 4, &guest_fd);
 		mem_read(isa_mem, args + 4, 4, &addr_ptr);
 		mem_read(isa_mem, args + 8, 4, &addr_len_ptr);
-		sys_debug("  guest_fd=%d, paddr=0x%x, paddrlen=0x%x\n",
+		x86_sys_debug("  guest_fd=%d, paddr=0x%x, paddrlen=0x%x\n",
 			guest_fd, addr_ptr, addr_len_ptr);
 
 		/* Get file descriptor */
@@ -2213,7 +2213,7 @@ static int sys_socketcall_impl(void)
 
 		/* Read current buffer size and allocate buffer. */
 		mem_read(isa_mem, addr_len_ptr, 4, &addr_len);
-		sys_debug("    addrlen=%d\n", addr_len);
+		x86_sys_debug("    addrlen=%d\n", addr_len);
 		host_addr_len = addr_len;
 		addr = malloc(addr_len);
 		if (!addr)
@@ -2229,9 +2229,9 @@ static int sys_socketcall_impl(void)
 
 		/* Address length returned */
 		addr_len = host_addr_len;
-		sys_debug("  result:\n");
-		sys_debug("    addrlen=%d\n", host_addr_len);
-		sys_debug_buffer("    sockaddr.data", addr->sa_data, addr_len - 2);
+		x86_sys_debug("  result:\n");
+		x86_sys_debug("    addrlen=%d\n", host_addr_len);
+		x86_sys_debug_buffer("    sockaddr.data", addr->sa_data, addr_len - 2);
 
 		/* Copy result to guest memory */
 		mem_write(isa_mem, addr_len_ptr, 4, &addr_len);
@@ -2282,15 +2282,15 @@ struct sim_itimerval
 
 static void sim_timeval_dump(struct sim_timeval *sim_timeval)
 {
-	sys_debug("    tv_sec=%u, tv_usec=%u\n",
+	x86_sys_debug("    tv_sec=%u, tv_usec=%u\n",
 		sim_timeval->tv_sec, sim_timeval->tv_usec);
 }
 
 static void sim_itimerval_dump(struct sim_itimerval *sim_itimerval)
 {
-	sys_debug("    it_interval: tv_sec=%u, tv_usec=%u\n",
+	x86_sys_debug("    it_interval: tv_sec=%u, tv_usec=%u\n",
 		sim_itimerval->it_interval.tv_sec, sim_itimerval->it_interval.tv_usec);
-	sys_debug("    it_value: tv_sec=%u, tv_usec=%u\n",
+	x86_sys_debug("    it_value: tv_sec=%u, tv_usec=%u\n",
 		sim_itimerval->it_value.tv_sec, sim_itimerval->it_value.tv_usec);
 }
 
@@ -2308,17 +2308,17 @@ static int sys_setitimer_impl(void)
 	which = isa_regs->ebx;
 	value_ptr = isa_regs->ecx;
 	old_value_ptr = isa_regs->edx;
-	sys_debug("  which=%d (%s), value_ptr=0x%x, old_value_ptr=0x%x\n",
+	x86_sys_debug("  which=%d (%s), value_ptr=0x%x, old_value_ptr=0x%x\n",
 		which, map_value(&sys_itimer_which_map, which), value_ptr, old_value_ptr);
 
 	/* Get current time */
-	now = ke_timer();
+	now = x86_emu_timer();
 
 	/* Read value */
 	if (value_ptr)
 	{
 		mem_read(isa_mem, value_ptr, sizeof itimerval, &itimerval);
-		sys_debug("  itimerval at 'value_ptr':\n");
+		x86_sys_debug("  itimerval at 'value_ptr':\n");
 		sim_itimerval_dump(&itimerval);
 	}
 
@@ -2326,7 +2326,7 @@ static int sys_setitimer_impl(void)
 	if (which >= 3)
 		fatal("%s: invalid value for 'which'", __FUNCTION__);
 
-	/* Set 'itimer_value' (ke_timer domain) and 'itimer_interval' (usec) */
+	/* Set 'itimer_value' (x86_emu_timer domain) and 'itimer_interval' (usec) */
 	isa_ctx->itimer_value[which] = now + itimerval.it_value.tv_sec * 1000000
 		+ itimerval.it_value.tv_usec;
 	isa_ctx->itimer_interval[which] = itimerval.it_interval.tv_sec * 1000000
@@ -2334,8 +2334,8 @@ static int sys_setitimer_impl(void)
 
 	/* New timer inserted, so interrupt current 'ke_host_thread_timer'
 	 * waiting for the next timer expiration. */
-	ctx_host_thread_timer_cancel(isa_ctx);
-	ke_process_events_schedule();
+	x86_ctx_host_thread_timer_cancel(isa_ctx);
+	x86_emu_process_events_schedule();
 
 	/* Return */
 	return 0;
@@ -2361,11 +2361,11 @@ static int sys_getitimer_impl(void)
 	/* Arguments */
 	which = isa_regs->ebx;
 	value_ptr = isa_regs->ecx;
-	sys_debug("  which=%d (%s), value_ptr=0x%x\n",
+	x86_sys_debug("  which=%d (%s), value_ptr=0x%x\n",
 		which, map_value(&sys_itimer_which_map, which), value_ptr);
 
 	/* Get current time */
-	now = ke_timer();
+	now = x86_emu_timer();
 
 	/* Check range of 'which' */
 	if (which >= 3)
@@ -2394,8 +2394,8 @@ static int sys_sigreturn_impl(void)
 {
 	signal_handler_return(isa_ctx);
 
-	ke_process_events_schedule();
-	ke_process_events();
+	x86_emu_process_events_schedule();
+	x86_emu_process_events();
 
 	return 0;
 }
@@ -2501,14 +2501,14 @@ static int sys_clone_impl(void)
 
 	char flags_str[MAX_STRING_SIZE];
 
-	struct ctx_t *new_ctx;
+	struct x86_ctx_t *new_ctx;
 
 	/* Arguments */
 	flags = isa_regs->ebx;
 	new_esp = isa_regs->ecx;
 	parent_tid_ptr = isa_regs->edx;
 	child_tid_ptr = isa_regs->edi;
-	sys_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
+	x86_sys_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
 		flags, new_esp, parent_tid_ptr, child_tid_ptr);
 
 	/* Exit signal is specified in the lower byte of 'flags' */
@@ -2517,8 +2517,8 @@ static int sys_clone_impl(void)
 
 	/* Debug */
 	map_flags(&sys_clone_flags_map, flags, flags_str, MAX_STRING_SIZE);
-	sys_debug("  flags=%s\n", flags_str);
-	sys_debug("  exit_signal=%d (%s)\n", exit_signal, sim_signal_name(exit_signal));
+	x86_sys_debug("  flags=%s\n", flags_str);
+	x86_sys_debug("  exit_signal=%d (%s)\n", exit_signal, sim_signal_name(exit_signal));
 
 	/* New stack pointer defaults to current */
 	if (!new_esp)
@@ -2543,7 +2543,7 @@ static int sys_clone_impl(void)
 				__FUNCTION__, err_sys_note);
 
 		/* Create new context sharing memory image */
-		new_ctx = ctx_clone(isa_ctx);
+		new_ctx = x86_ctx_clone(isa_ctx);
 	}
 	else
 	{
@@ -2553,7 +2553,7 @@ static int sys_clone_impl(void)
 				__FUNCTION__, err_sys_note);
 
 		/* Create new context replicating memory image */
-		new_ctx = ctx_fork(isa_ctx);
+		new_ctx = x86_ctx_fork(isa_ctx);
 	}
 
 	/* Flag CLONE_THREAD.
@@ -2591,14 +2591,14 @@ static int sys_clone_impl(void)
 		unsigned int uinfo_ptr;
 
 		uinfo_ptr = isa_regs->esi;
-		sys_debug("  puinfo=0x%x\n", uinfo_ptr);
+		x86_sys_debug("  puinfo=0x%x\n", uinfo_ptr);
 
 		mem_read(isa_mem, uinfo_ptr, sizeof(struct sim_user_desc), &uinfo);
-		sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
+		x86_sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
 				uinfo.entry_number, uinfo.base_addr, uinfo.limit);
-		sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
+		x86_sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
 				uinfo.seg_32bit, uinfo.contents, uinfo.read_exec_only);
-		sys_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
+		x86_sys_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
 				uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
 		if (!uinfo.seg_32bit)
 			fatal("%s: only 32-bit segments supported", __FUNCTION__);
@@ -2619,7 +2619,7 @@ static int sys_clone_impl(void)
 	new_ctx->regs->eax = 0;
 
 	/* Return PID of the new context */
-	sys_debug("  context created with pid %d\n", new_ctx->pid);
+	x86_sys_debug("  context created with pid %d\n", new_ctx->pid);
 	return new_ctx->pid;
 }
 
@@ -2656,10 +2656,10 @@ static int sys_newuname_impl(void)
 
 	/* Arguments */
 	utsname_ptr = isa_regs->ebx;
-	sys_debug("  putsname=0x%x\n", utsname_ptr);
-	sys_debug("  sysname='%s', nodename='%s'\n", sim_utsname.sysname, sim_utsname.nodename);
-	sys_debug("  relaese='%s', version='%s'\n", sim_utsname.release, sim_utsname.version);
-	sys_debug("  machine='%s', domainname='%s'\n", sim_utsname.machine, sim_utsname.domainname);
+	x86_sys_debug("  putsname=0x%x\n", utsname_ptr);
+	x86_sys_debug("  sysname='%s', nodename='%s'\n", sim_utsname.sysname, sim_utsname.nodename);
+	x86_sys_debug("  relaese='%s', version='%s'\n", sim_utsname.release, sim_utsname.version);
+	x86_sys_debug("  machine='%s', domainname='%s'\n", sim_utsname.machine, sim_utsname.domainname);
 
 	/* Return structure */
 	mem_write(isa_mem, utsname_ptr, sizeof sim_utsname, &sim_utsname);
@@ -2686,7 +2686,7 @@ static int sys_mprotect_impl(void)
 	start = isa_regs->ebx;
 	len = isa_regs->ecx;
 	prot = isa_regs->edx;
-	sys_debug("  start=0x%x, len=0x%x, prot=0x%x\n", start, len, prot);
+	x86_sys_debug("  start=0x%x, len=0x%x, prot=0x%x\n", start, len, prot);
 
 	/* Permissions */
 	perm |= prot & 0x01 ? mem_access_read : 0;
@@ -2725,10 +2725,10 @@ static int sys_llseek_impl(void)
 	result_ptr = isa_regs->esi;
 	origin = isa_regs->edi;
 	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-	sys_debug("  fd=%d, offset_high=0x%x, offset_low=0x%x, result_ptr=0x%x, origin=0x%x\n",
+	x86_sys_debug("  fd=%d, offset_high=0x%x, offset_low=0x%x, result_ptr=0x%x, origin=0x%x\n",
 		fd, offset_high, offset_low, result_ptr, origin);
-	sys_debug("  host_fd=%d\n", host_fd);
-	sys_debug("  offset=0x%llx\n", (long long) offset);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  offset=0x%llx\n", (long long) offset);
 
 	/* Supported offset */
 	if (offset_high != -1 && offset_high)
@@ -2794,9 +2794,9 @@ static int sys_getdents_impl(void)
 	pdirent = isa_regs->ecx;
 	count = isa_regs->edx;
 	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-	sys_debug("  fd=%d, pdirent=0x%x, count=%d\n",
+	x86_sys_debug("  fd=%d, pdirent=0x%x, count=%d\n",
 		fd, pdirent, count);
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Allocate buffer */
 	buf = calloc(1, count);
@@ -2823,10 +2823,10 @@ static int sys_getdents_impl(void)
 		sim_dirent.d_reclen = (15 + strlen(dirent->d_name)) / 4 * 4;
 		d_type = * (char *) (buf + host_offs + dirent->d_reclen - 1);
 
-		sys_debug("    d_ino=%u ", sim_dirent.d_ino);
-		sys_debug("d_off=%u ", sim_dirent.d_off);
-		sys_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
-		sys_debug("d_name='%s'\n", dirent->d_name);
+		x86_sys_debug("    d_ino=%u ", sim_dirent.d_ino);
+		x86_sys_debug("d_off=%u ", sim_dirent.d_off);
+		x86_sys_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
+		x86_sys_debug("d_name='%s'\n", dirent->d_name);
 
 		mem_write(isa_mem, pdirent + guest_offs, 4, &sim_dirent.d_ino);
 		mem_write(isa_mem, pdirent + guest_offs + 4, 4, &sim_dirent.d_off);
@@ -2839,7 +2839,7 @@ static int sys_getdents_impl(void)
 		if (guest_offs > count)
 			fatal("%s: buffer too small", __FUNCTION__);
 	}
-	sys_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
+	x86_sys_debug("  ret=%d(host),%d(guest)\n", host_offs, guest_offs);
 	free(buf);
 	return guest_offs;
 }
@@ -2861,21 +2861,21 @@ static void sim_fd_set_dump(char *fd_set_name, fd_set *fds, int n)
 	/* Set empty */
 	if (!n || !fds)
 	{
-		sys_debug("    %s={}\n", fd_set_name);
+		x86_sys_debug("    %s={}\n", fd_set_name);
 		return;
 	}
 
 	/* Dump set */
-	sys_debug("    %s={", fd_set_name);
+	x86_sys_debug("    %s={", fd_set_name);
 	comma = "";
 	for (i = 0; i < n; i++)
 	{
 		if (!FD_ISSET(i, fds))
 			continue;
-		sys_debug("%s%d", comma, i);
+		x86_sys_debug("%s%d", comma, i);
 		comma = ",";
 	}
-	sys_debug("}\n");
+	x86_sys_debug("}\n");
 }
 
 /* Read bitmap of 'guest_fd's from guest memory, and store it into
@@ -2969,7 +2969,7 @@ static int sys_select_impl(void)
 	outp = isa_regs->edx;
 	exp = isa_regs->esi;
 	tvp = isa_regs->edi;
-	sys_debug("  n=%d, inp=0x%x, outp=0x%x, exp=0x%x, tvp=0x%x\n",
+	x86_sys_debug("  n=%d, inp=0x%x, outp=0x%x, exp=0x%x, tvp=0x%x\n",
 		n, inp, outp, exp, tvp);
 
 	/* Read file descriptor bitmaps. If any file descriptor is invalid, return EBADF. */
@@ -2989,7 +2989,7 @@ static int sys_select_impl(void)
 	memset(&sim_tv, 0, sizeof sim_tv);
 	if (tvp)
 		mem_read(isa_mem, tvp, sizeof sim_tv, &sim_tv);
-	sys_debug("  tv:\n");
+	x86_sys_debug("  tv:\n");
 	sim_timeval_dump(&sim_tv);
 
 	/* Blocking 'select' not supported */
@@ -3041,8 +3041,8 @@ static int sys_msync_impl(void)
 	len = isa_regs->ecx;
 	flags = isa_regs->edx;
 	map_flags(&sys_msync_flags_map, flags, flags_str, sizeof flags_str);
-	sys_debug("  start=0x%x, len=0x%x, flags=0x%x\n", start, len, flags);
-	sys_debug("  flags=%s\n", flags_str);
+	x86_sys_debug("  start=0x%x, len=0x%x, flags=0x%x\n", start, len, flags);
+	x86_sys_debug("  flags=%s\n", flags_str);
 
 	/* System call ignored */
 	return 0;
@@ -3076,7 +3076,7 @@ static int sys_writev_impl(void)
 	guest_fd = isa_regs->ebx;
 	iovec_ptr = isa_regs->ecx;
 	vlen = isa_regs->edx;
-	sys_debug("  guest_fd=%d, iovec_ptr = 0x%x, vlen=0x%x\n",
+	x86_sys_debug("  guest_fd=%d, iovec_ptr = 0x%x, vlen=0x%x\n",
 		guest_fd, iovec_ptr, vlen);
 
 	/* Check file descriptor */
@@ -3084,7 +3084,7 @@ static int sys_writev_impl(void)
 	if (!desc)
 		return -EBADF;
 	host_fd = desc->host_fd;
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* No pipes allowed */
 	if (desc->kind == file_desc_pipe)
@@ -3152,21 +3152,21 @@ static int sys_sysctl_impl(void)
 
 	/* Arguments */
 	args_ptr = isa_regs->ebx;
-	sys_debug("  pargs=0x%x\n", args_ptr);
+	x86_sys_debug("  pargs=0x%x\n", args_ptr);
 
 	/* Access arguments in memory */
 	mem_read(isa_mem, args_ptr, sizeof args, &args);
-	sys_debug("    pname=0x%x\n", args.pname);
-	sys_debug("    nlen=%d\n      ", args.nlen);
+	x86_sys_debug("    pname=0x%x\n", args.pname);
+	x86_sys_debug("    nlen=%d\n      ", args.nlen);
 	for (i = 0; i < args.nlen; i++)
 	{
 		mem_read(isa_mem, args.pname + i * 4, 4, &aux);
-		sys_debug("name[%d]=%d ", i, aux);
+		x86_sys_debug("name[%d]=%d ", i, aux);
 	}
-	sys_debug("\n    poldval=0x%x\n", args.poldval);
-	sys_debug("    oldlenp=0x%x\n", args.oldlenp);
-	sys_debug("    pnewval=0x%x\n", args.pnewval);
-	sys_debug("    newlen=%d\n", args.newlen);
+	x86_sys_debug("\n    poldval=0x%x\n", args.poldval);
+	x86_sys_debug("    oldlenp=0x%x\n", args.oldlenp);
+	x86_sys_debug("    pnewval=0x%x\n", args.pnewval);
+	x86_sys_debug("    newlen=%d\n", args.newlen);
 
 	/* Supported values */
 	if (!args.oldlenp || !args.poldval)
@@ -3198,10 +3198,10 @@ static int sys_sched_setparam_impl(void)
 
 	pid = isa_regs->ebx;
 	param_ptr = isa_regs->ecx;
-	sys_debug("  pid=%d\n", pid);
-	sys_debug("  param_ptr=0x%x\n", param_ptr);
+	x86_sys_debug("  pid=%d\n", pid);
+	x86_sys_debug("  param_ptr=0x%x\n", param_ptr);
 	mem_read(isa_mem, param_ptr, 4, &sched_priority);
-	sys_debug("    param.sched_priority=%d\n", sched_priority);
+	x86_sys_debug("    param.sched_priority=%d\n", sched_priority);
 
 	/* Ignore system call */
 	return 0;
@@ -3224,8 +3224,8 @@ static int sys_sched_getparam_impl(void)
 	/* Arguments */
 	pid = isa_regs->ebx;
 	param_ptr = isa_regs->ecx;
-	sys_debug("  pid=%d\n", pid);
-	sys_debug("  param_ptr=0x%x\n", param_ptr);
+	x86_sys_debug("  pid=%d\n", pid);
+	x86_sys_debug("  param_ptr=0x%x\n", param_ptr);
 
 	/* Return 0 in param_ptr->sched_priority */
 	mem_write(isa_mem, param_ptr, 4, &zero);
@@ -3245,7 +3245,7 @@ static int sys_sched_getscheduler_impl(void)
 
 	/* Arguments */
 	pid = isa_regs->ebx;
-	sys_debug("  pid=%d\n", pid);
+	x86_sys_debug("  pid=%d\n", pid);
 
 	/* System call ignored */
 	return 0;
@@ -3264,7 +3264,7 @@ static int sys_sched_get_priority_max_impl(void)
 
 	/* Arguments */
 	policy = isa_regs->ebx;
-	sys_debug("  policy=%d\n", policy);
+	x86_sys_debug("  policy=%d\n", policy);
 
 	switch (policy)
 	{
@@ -3303,7 +3303,7 @@ static int sys_sched_get_priority_min_impl(void)
 
 	/* Arguments */
 	policy = isa_regs->ebx;
-	sys_debug("  policy=%d\n", policy);
+	x86_sys_debug("  policy=%d\n", policy);
 
 	switch (policy)
 	{
@@ -3349,21 +3349,21 @@ static int sys_nanosleep_impl(void)
 	/* Arguments */
 	rqtp = isa_regs->ebx;
 	rmtp = isa_regs->ecx;
-	sys_debug("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
+	x86_sys_debug("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
 
 	/* Get current time */
-	now = ke_timer();
+	now = x86_emu_timer();
 
 	/* Read structure */
 	mem_read(isa_mem, rqtp, 4, &sec);
 	mem_read(isa_mem, rqtp + 4, 4, &nsec);
 	total = (long long) sec * 1000000 + (nsec / 1000);
-	sys_debug("  sleep time (us): %llu\n", total);
+	x86_sys_debug("  sleep time (us): %llu\n", total);
 
 	/* Suspend process */
 	isa_ctx->wakeup_time = now + total;
-	ctx_set_status(isa_ctx, ctx_suspended | ctx_nanosleep);
-	ke_process_events_schedule();
+	x86_ctx_set_status(isa_ctx, x86_ctx_suspended | x86_ctx_nanosleep);
+	x86_emu_process_events_schedule();
 	return 0;
 }
 
@@ -3388,7 +3388,7 @@ static int sys_mremap_impl(void)
 	old_len = isa_regs->ecx;
 	new_len = isa_regs->edx;
 	flags = isa_regs->esi;
-	sys_debug("  addr=0x%x, old_len=0x%x, new_len=0x%x flags=0x%x\n",
+	x86_sys_debug("  addr=0x%x, old_len=0x%x, new_len=0x%x flags=0x%x\n",
 		addr, old_len, new_len, flags);
 
 	/* Restrictions */
@@ -3478,13 +3478,13 @@ static int sys_poll_impl(void)
 
 	char events_str[MAX_STRING_SIZE];
 
-	long long now = ke_timer();
+	long long now = x86_emu_timer();
 
 	/* Arguments */
 	pfds = isa_regs->ebx;
 	nfds = isa_regs->ecx;
 	timeout = isa_regs->edx;
-	sys_debug("  pfds=0x%x, nfds=%d, timeout=%d\n",
+	x86_sys_debug("  pfds=0x%x, nfds=%d, timeout=%d\n",
 		pfds, nfds, timeout);
 
 	/* Assumptions on host architecture */
@@ -3501,14 +3501,14 @@ static int sys_poll_impl(void)
 	mem_read(isa_mem, pfds, sizeof guest_fds, &guest_fds);
 	guest_fd = guest_fds.fd;
 	map_flags(&sys_poll_event_map, guest_fds.events, events_str, MAX_STRING_SIZE);
-	sys_debug("  guest_fd=%d, events=%s\n", guest_fd, events_str);
+	x86_sys_debug("  guest_fd=%d, events=%s\n", guest_fd, events_str);
 
 	/* Get file descriptor */
 	desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
 	if (!desc)
 		return -EBADF;
 	host_fd = desc->host_fd;
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Only POLLIN (0x1) and POLLOUT (0x4) supported */
 	if (guest_fds.events & ~(POLLIN | POLLOUT))
@@ -3535,7 +3535,7 @@ static int sys_poll_impl(void)
 		/* Non-blocking POLLOUT on a file. */
 		if (guest_fds.events & host_fds.revents & POLLOUT)
 		{
-			sys_debug("  non-blocking write to file guaranteed\n");
+			x86_sys_debug("  non-blocking write to file guaranteed\n");
 			guest_fds.revents = POLLOUT;
 			mem_write(isa_mem, pfds, sizeof guest_fds, &guest_fds);
 			return 1;
@@ -3544,7 +3544,7 @@ static int sys_poll_impl(void)
 		/* Non-blocking POLLIN on a file. */
 		if (guest_fds.events & host_fds.revents & POLLIN)
 		{
-			sys_debug("  non-blocking read from file guaranteed\n");
+			x86_sys_debug("  non-blocking read from file guaranteed\n");
 			guest_fds.revents = POLLIN;
 			mem_write(isa_mem, pfds, sizeof guest_fds, &guest_fds);
 			return 1;
@@ -3556,14 +3556,14 @@ static int sys_poll_impl(void)
 
 	/* At this point, host 'poll' returned 0, which means that none of the requested
 	 * events is ready on the file, so we must suspend until they occur. */
-	sys_debug("  process going to sleep waiting for events on file\n");
+	x86_sys_debug("  process going to sleep waiting for events on file\n");
 	isa_ctx->wakeup_time = 0;
 	if (timeout >= 0)
 		isa_ctx->wakeup_time = now + (long long) timeout * 1000;
 	isa_ctx->wakeup_fd = guest_fd;
 	isa_ctx->wakeup_events = guest_fds.events;
-	ctx_set_status(isa_ctx, ctx_suspended | ctx_poll);
-	ke_process_events_schedule();
+	x86_ctx_set_status(isa_ctx, x86_ctx_suspended | x86_ctx_poll);
+	x86_emu_process_events_schedule();
 	return 0;
 }
 
@@ -3589,9 +3589,9 @@ static int sys_rt_sigaction_impl(void)
 	act_ptr = isa_regs->ecx;
 	old_act_ptr = isa_regs->edx;
 	sigsetsize = isa_regs->esi;
-	sys_debug("  sig=%d, act_ptr=0x%x, old_act_ptr=0x%x, sigsetsize=0x%x\n",
+	x86_sys_debug("  sig=%d, act_ptr=0x%x, old_act_ptr=0x%x, sigsetsize=0x%x\n",
 		sig, act_ptr, old_act_ptr, sigsetsize);
-	sys_debug("  signal=%s\n", sim_signal_name(sig));
+	x86_sys_debug("  signal=%s\n", sim_signal_name(sig));
 
 	/* Invalid signal */
 	if (sig < 1 || sig > 64)
@@ -3601,16 +3601,16 @@ static int sys_rt_sigaction_impl(void)
 	if (act_ptr)
 	{
 		mem_read(isa_mem, act_ptr, sizeof act, &act);
-		if (debug_status(sys_debug_category))
+		if (debug_status(x86_sys_debug_category))
 		{
-			FILE *f = debug_file(sys_debug_category);
-			sys_debug("  act: ");
+			FILE *f = debug_file(x86_sys_debug_category);
+			x86_sys_debug("  act: ");
 			sim_sigaction_dump(&act, f);
-			sys_debug("\n    flags: ");
+			x86_sys_debug("\n    flags: ");
 			sim_sigaction_flags_dump(act.flags, f);
-			sys_debug("\n    mask: ");
+			x86_sys_debug("\n    mask: ");
 			sim_sigset_dump(act.mask, f);
-			sys_debug("\n");
+			x86_sys_debug("\n");
 		}
 	}
 
@@ -3658,9 +3658,9 @@ static int sys_rt_sigprocmask_impl(void)
 	set_ptr = isa_regs->ecx;
 	old_set_ptr = isa_regs->edx;
 	sigsetsize = isa_regs->esi;
-	sys_debug("  how=0x%x, set_ptr=0x%x, old_set_ptr=0x%x, sigsetsize=0x%x\n",
+	x86_sys_debug("  how=0x%x, set_ptr=0x%x, old_set_ptr=0x%x, sigsetsize=0x%x\n",
 		how, set_ptr, old_set_ptr, sigsetsize);
-	sys_debug("  how=%s\n", map_value(&sys_sigprocmask_how_map, how));
+	x86_sys_debug("  how=%s\n", map_value(&sys_sigprocmask_how_map, how));
 
 	/* Save old set */
 	old_set = isa_ctx->signal_mask_table->blocked;
@@ -3670,11 +3670,11 @@ static int sys_rt_sigprocmask_impl(void)
 	{
 		/* Read it from memory */
 		mem_read(isa_mem, set_ptr, 8, &set);
-		if (debug_status(sys_debug_category))
+		if (debug_status(x86_sys_debug_category))
 		{
-			sys_debug("  set=0x%llx ", set);
-			sim_sigset_dump(set, debug_file(sys_debug_category));
-			sys_debug("\n");
+			x86_sys_debug("  set=0x%llx ", set);
+			sim_sigset_dump(set, debug_file(x86_sys_debug_category));
+			x86_sys_debug("\n");
 		}
 
 		/* Set new set */
@@ -3707,8 +3707,8 @@ static int sys_rt_sigprocmask_impl(void)
 
 	/* A change in the signal mask can cause pending signals to be
 	 * able to execute, so check this. */
-	ke_process_events_schedule();
-	ke_process_events();
+	x86_emu_process_events_schedule();
+	x86_emu_process_events();
 
 	return 0;
 }
@@ -3730,31 +3730,31 @@ static int sys_rt_sigsuspend_impl(void)
 
 	new_set_ptr = isa_regs->ebx;
 	sigsetsize = isa_regs->ecx;
-	sys_debug("  new_set_ptr=0x%x, sigsetsize=%d\n",
+	x86_sys_debug("  new_set_ptr=0x%x, sigsetsize=%d\n",
 		new_set_ptr, sigsetsize);
 
 	/* Read temporary signal mask */
 	mem_read(isa_mem, new_set_ptr, 8, &new_set);
-	if (debug_status(sys_debug_category))
+	if (debug_status(x86_sys_debug_category))
 	{
-		FILE *f = debug_file(sys_debug_category);
-		sys_debug("  old mask: ");
+		FILE *f = debug_file(x86_sys_debug_category);
+		x86_sys_debug("  old mask: ");
 		sim_sigset_dump(isa_ctx->signal_mask_table->blocked, f);
-		sys_debug("\n  new mask: ");
+		x86_sys_debug("\n  new mask: ");
 		sim_sigset_dump(new_set, f);
-		sys_debug("\n  pending:  ");
+		x86_sys_debug("\n  pending:  ");
 		sim_sigset_dump(isa_ctx->signal_mask_table->pending, f);
-		sys_debug("\n");
+		x86_sys_debug("\n");
 	}
 
 	/* Save old mask and set new one, then suspend. */
 	isa_ctx->signal_mask_table->backup = isa_ctx->signal_mask_table->blocked;
 	isa_ctx->signal_mask_table->blocked = new_set;
-	ctx_set_status(isa_ctx, ctx_suspended | ctx_sigsuspend);
+	x86_ctx_set_status(isa_ctx, x86_ctx_suspended | x86_ctx_sigsuspend);
 
 	/* New signal mask may cause new events */
-	ke_process_events_schedule();
-	ke_process_events();
+	x86_emu_process_events_schedule();
+	x86_emu_process_events();
 	return 0;
 }
 
@@ -3777,7 +3777,7 @@ static int sys_getcwd_impl(void)
 	/* Arguments */
 	buf_ptr = isa_regs->ebx;
 	size = isa_regs->ecx;
-	sys_debug("  buf_ptr=0x%x, size=0x%x\n", buf_ptr, size);
+	x86_sys_debug("  buf_ptr=0x%x, size=0x%x\n", buf_ptr, size);
 
 	/* Get working directory */
 	cwd = isa_ctx->loader->cwd;
@@ -3812,8 +3812,8 @@ static int sys_getrlimit_impl(void)
 	res = isa_regs->ebx;
 	rlim_ptr = isa_regs->ecx;
 	res_str = map_value(&sys_rlimit_res_map, res);
-	sys_debug("  res=0x%x, rlim_ptr=0x%x\n", res, rlim_ptr);
-	sys_debug("  res=%s\n", res_str);
+	x86_sys_debug("  res=0x%x, rlim_ptr=0x%x\n", res, rlim_ptr);
+	x86_sys_debug("  res=%s\n", res_str);
 
 	switch (res)
 	{
@@ -3846,7 +3846,7 @@ static int sys_getrlimit_impl(void)
 
 	/* Return structure */
 	mem_write(isa_mem, rlim_ptr, sizeof(struct sim_rlimit), &sim_rlimit);
-	sys_debug("  ret: cur=0x%x, max=0x%x\n", sim_rlimit.cur, sim_rlimit.max);
+	x86_sys_debug("  ret: cur=0x%x, max=0x%x\n", sim_rlimit.cur, sim_rlimit.max);
 
 	/* Return */
 	return 0;
@@ -3881,11 +3881,11 @@ static int sys_mmap2_impl(void)
 	offset = isa_regs->ebp;
 
 	/* Debug */
-	sys_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, guest_fd=%d, offset=0x%x\n",
+	x86_sys_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, guest_fd=%d, offset=0x%x\n",
 		addr, len, prot, flags, guest_fd, offset);
 	map_flags(&sys_mmap_prot_map, prot, prot_str, MAX_STRING_SIZE);
 	map_flags(&sys_mmap_flags_map, flags, flags_str, MAX_STRING_SIZE);
-	sys_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
+	x86_sys_debug("  prot=%s, flags=%s\n", prot_str, flags_str);
 
 	/* System calls 'mmap' and 'mmap2' only differ in the interpretation of
 	 * argument 'offset'. Here, it is given in memory pages. */
@@ -3910,11 +3910,11 @@ static int sys_ftruncate64_impl(void)
 	/* Arguments */
 	fd = isa_regs->ebx;
 	length = isa_regs->ecx;
-	sys_debug("  fd=%d, length=0x%x\n", fd, length);
+	x86_sys_debug("  fd=%d, length=0x%x\n", fd, length);
 
 	/* Get host descriptor */
 	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	err = ftruncate(host_fd, length);
 	if (err == -1)
@@ -3974,12 +3974,12 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 	guest->ctime = host->st_ctime;
 	guest->ino = host->st_ino;
 
-	sys_debug("  stat64 structure:\n");
-	sys_debug("    dev=%lld, ino=%lld, mode=%d, nlink=%d\n",
+	x86_sys_debug("  stat64 structure:\n");
+	x86_sys_debug("    dev=%lld, ino=%lld, mode=%d, nlink=%d\n",
 		guest->dev, guest->ino, guest->mode, guest->nlink);
-	sys_debug("    uid=%d, gid=%d, rdev=%lld\n",
+	x86_sys_debug("    uid=%d, gid=%d, rdev=%lld\n",
 		guest->uid, guest->gid, guest->rdev);
-	sys_debug("    size=%lld, blksize=%d, blocks=%lld\n",
+	x86_sys_debug("    size=%lld, blksize=%d, blocks=%lld\n",
 		guest->size, guest->blksize, guest->blocks);
 }
 
@@ -4000,7 +4000,7 @@ static int sys_stat64_impl(void)
 	/* Arguments */
 	file_name_ptr = isa_regs->ebx;
 	statbuf_ptr = isa_regs->ecx;
-	sys_debug("  file_name_ptr=0x%x, statbuf_ptr=0x%x\n",
+	x86_sys_debug("  file_name_ptr=0x%x, statbuf_ptr=0x%x\n",
 			file_name_ptr, statbuf_ptr);
 
 	/* Read file name */
@@ -4010,7 +4010,7 @@ static int sys_stat64_impl(void)
 	
 	/* Get full path */
 	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
-	sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
+	x86_sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
 
 	/* Host call */
 	err = stat(full_path, &statbuf);
@@ -4047,7 +4047,7 @@ static int sys_lstat64_impl(void)
 	/* Arguments */
 	file_name_ptr = isa_regs->ebx;
 	statbuf_ptr = isa_regs->ecx;
-	sys_debug("  file_name_ptr=0x%x, statbuf_ptr=0x%x\n", file_name_ptr, statbuf_ptr);
+	x86_sys_debug("  file_name_ptr=0x%x, statbuf_ptr=0x%x\n", file_name_ptr, statbuf_ptr);
 
 	/* Read file name */
 	length = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
@@ -4056,7 +4056,7 @@ static int sys_lstat64_impl(void)
 
 	/* Get full path */
 	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
-	sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
+	x86_sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
 
 	/* Host call */
 	err = lstat(full_path, &statbuf);
@@ -4090,11 +4090,11 @@ static int sys_fstat64_impl(void)
 	/* Arguments */
 	fd = isa_regs->ebx;
 	statbuf_ptr = isa_regs->ecx;
-	sys_debug("  fd=%d, statbuf_ptr=0x%x\n", fd, statbuf_ptr);
+	x86_sys_debug("  fd=%d, statbuf_ptr=0x%x\n", fd, statbuf_ptr);
 
 	/* Get host descriptor */
 	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 
 	/* Host call */
 	err = fstat(host_fd, &statbuf);
@@ -4178,7 +4178,7 @@ static int sys_chown_impl(void)
 	file_name_ptr = isa_regs->ebx;
 	owner = isa_regs->ecx;
 	group = isa_regs->edx;
-	sys_debug("  file_name_ptr=0x%x, owner=%d, group=%d\n", file_name_ptr, owner, group);
+	x86_sys_debug("  file_name_ptr=0x%x, owner=%d, group=%d\n", file_name_ptr, owner, group);
 
 	/* Read file name */
 	len = mem_read_string(isa_mem, file_name_ptr, sizeof file_name, file_name);
@@ -4187,7 +4187,7 @@ static int sys_chown_impl(void)
 
 	/* Get full path */
 	ld_get_full_path(isa_ctx, file_name, full_path, sizeof full_path);
-	sys_debug("  filename='%s', fullpath='%s'\n", file_name, full_path);
+	x86_sys_debug("  filename='%s', fullpath='%s'\n", file_name, full_path);
 
 	/* Host call */
 	err = chown(full_path, owner, group);
@@ -4216,7 +4216,7 @@ static int sys_madvise_impl(void)
 	start = isa_regs->ebx;
 	len = isa_regs->ecx;
 	advice = isa_regs->edx;
-	sys_debug("  start=0x%x, len=%d, advice=%d\n", start, len, advice);
+	x86_sys_debug("  start=0x%x, len=%d, advice=%d\n", start, len, advice);
 
 	/* System call ignored */
 	return 0;
@@ -4266,11 +4266,11 @@ static int sys_getdents64_impl(void)
 	fd = isa_regs->ebx;
 	pdirent = isa_regs->ecx;
 	count = isa_regs->edx;
-	sys_debug("  fd=%d, pdirent=0x%x, count=%d\n", fd, pdirent, count);
+	x86_sys_debug("  fd=%d, pdirent=0x%x, count=%d\n", fd, pdirent, count);
 
 	/* Get host descriptor */
 	host_fd = file_desc_table_get_host_fd(isa_ctx->file_desc_table, fd);
-	sys_debug("  host_fd=%d\n", host_fd);
+	x86_sys_debug("  host_fd=%d\n", host_fd);
 	if (host_fd < 0)
 		return -EBADF;
 
@@ -4302,10 +4302,10 @@ static int sys_getdents64_impl(void)
 		guest_dirent.d_reclen = (27 + strlen(host_dirent->d_name)) / 8 * 8;
 		guest_dirent.d_type = * (char *) (buf + host_offs + host_dirent->d_reclen - 1);
 
-		sys_debug("    d_ino=%lld ", guest_dirent.d_ino);
-		sys_debug("d_off=%lld ", guest_dirent.d_off);
-		sys_debug("d_reclen=%u(host),%u(guest) ", host_dirent->d_reclen, guest_dirent.d_reclen);
-		sys_debug("d_name='%s'\n", host_dirent->d_name);
+		x86_sys_debug("    d_ino=%lld ", guest_dirent.d_ino);
+		x86_sys_debug("d_off=%lld ", guest_dirent.d_off);
+		x86_sys_debug("d_reclen=%u(host),%u(guest) ", host_dirent->d_reclen, guest_dirent.d_reclen);
+		x86_sys_debug("d_name='%s'\n", host_dirent->d_name);
 
 		mem_write(isa_mem, pdirent + guest_offs, 8, &guest_dirent.d_ino);
 		mem_write(isa_mem, pdirent + guest_offs + 8, 8, &guest_dirent.d_off);
@@ -4321,7 +4321,7 @@ static int sys_getdents64_impl(void)
 
 	/* Return */
 	free(buf);
-	sys_debug("  ret=%d (host), %d (guest)\n", host_offs, guest_offs);
+	x86_sys_debug("  ret=%d (host), %d (guest)\n", host_offs, guest_offs);
 	return guest_offs;
 }
 
@@ -4370,10 +4370,10 @@ static int sys_fcntl64_impl(void)
 	guest_fd = isa_regs->ebx;
 	cmd = isa_regs->ecx;
 	arg = isa_regs->edx;
-	sys_debug("  guest_fd=%d, cmd=%d, arg=0x%x\n",
+	x86_sys_debug("  guest_fd=%d, cmd=%d, arg=0x%x\n",
 		guest_fd, cmd, arg);
 	cmd_name = map_value(&sys_fcntl_cmp_map, cmd);
-	sys_debug("    cmd=%s\n", cmd_name);
+	x86_sys_debug("    cmd=%s\n", cmd_name);
 
 	/* Get file descriptor table entry */
 	desc = file_desc_table_entry_get(isa_ctx->file_desc_table, guest_fd);
@@ -4381,7 +4381,7 @@ static int sys_fcntl64_impl(void)
 		return -EBADF;
 	if (desc->host_fd < 0)
 		fatal("%s: not supported for this type of file", __FUNCTION__);
-	sys_debug("    host_fd=%d\n", desc->host_fd);
+	x86_sys_debug("    host_fd=%d\n", desc->host_fd);
 
 	/* Process command */
 	switch (cmd)
@@ -4409,14 +4409,14 @@ static int sys_fcntl64_impl(void)
 		else
 		{
 			map_flags(&sys_open_flags_map, err, flags_str, MAX_STRING_SIZE);
-			sys_debug("    ret=%s\n", flags_str);
+			x86_sys_debug("    ret=%s\n", flags_str);
 		}
 		break;
 
 	/* F_SETFL */
 	case 4:
 		map_flags(&sys_open_flags_map, arg, flags_str, MAX_STRING_SIZE);
-		sys_debug("    arg=%s\n", flags_str);
+		x86_sys_debug("    arg=%s\n", flags_str);
 		desc->flags = arg;
 
 		err = fcntl(desc->host_fd, F_SETFL, arg);
@@ -4503,7 +4503,7 @@ static int sys_futex_impl(void)
 	timeout_ptr = isa_regs->esi;
 	addr2 = isa_regs->edi;
 	val3 = isa_regs->ebp;
-	sys_debug("  addr1=0x%x, op=%d, val1=%d, ptimeout=0x%x, addr2=0x%x, val3=%d\n",
+	x86_sys_debug("  addr1=0x%x, op=%d, val1=%d, ptimeout=0x%x, addr2=0x%x, val3=%d\n",
 		addr1, op, val1, timeout_ptr, addr2, val3);
 
 
@@ -4511,7 +4511,7 @@ static int sys_futex_impl(void)
 	 * 'FUTEX_CLOCK_REALTIME' from 'op'. */
 	cmd = op & ~(256|128);
 	mem_read(isa_mem, addr1, 4, &futex);
-	sys_debug("  futex=%d, cmd=%d (%s)\n",
+	x86_sys_debug("  futex=%d, cmd=%d (%s)\n",
 		futex, cmd, map_value(&sys_futex_cmd_map, cmd));
 
 	switch (cmd)
@@ -4534,7 +4534,7 @@ static int sys_futex_impl(void)
 			fatal("syscall futex: FUTEX_WAIT not supported with timeout");
 			mem_read(isa_mem, timeout_ptr, 4, &timeout_sec);
 			mem_read(isa_mem, timeout_ptr + 4, 4, &timeout_usec);
-			sys_debug("  timeout={sec %d, usec %d}\n",
+			x86_sys_debug("  timeout={sec %d, usec %d}\n",
 				timeout_sec, timeout_usec);
 		}
 		else
@@ -4546,8 +4546,8 @@ static int sys_futex_impl(void)
 		/* Suspend thread in the futex. */
 		isa_ctx->wakeup_futex = addr1;
 		isa_ctx->wakeup_futex_bitset = bitset;
-		isa_ctx->wakeup_futex_sleep = ++ke->futex_sleep_count;
-		ctx_set_status(isa_ctx, ctx_suspended | ctx_futex);
+		isa_ctx->wakeup_futex_sleep = ++x86_emu->futex_sleep_count;
+		x86_ctx_set_status(isa_ctx, x86_ctx_suspended | x86_ctx_futex);
 		return 0;
 	}
 
@@ -4556,15 +4556,15 @@ static int sys_futex_impl(void)
 	{
 		/* Default bitset value (all bits set) */
 		bitset = cmd == 10 ? val3 : 0xffffffff;
-		ret = ctx_futex_wake(isa_ctx, addr1, val1, bitset);
-		sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, ret);
+		ret = x86_ctx_futex_wake(isa_ctx, addr1, val1, bitset);
+		x86_sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, ret);
 		return ret;
 	}
 
 	case 4: /* FUTEX_CMP_REQUEUE */
 	{
 		int requeued = 0;
-		struct ctx_t *ctx;
+		struct x86_ctx_t *ctx;
 
 		/* 'ptimeout' is interpreted here as an integer; only supported for INTMAX */
 		if (timeout_ptr != 0x7fffffff)
@@ -4577,19 +4577,19 @@ static int sys_futex_impl(void)
 
 		/* Wake up 'val1' threads from futex at 'addr1'. The number of woken up threads
 		 * is the return value of the system call. */
-		ret = ctx_futex_wake(isa_ctx, addr1, val1, 0xffffffff);
-		sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, ret);
+		ret = x86_ctx_futex_wake(isa_ctx, addr1, val1, 0xffffffff);
+		x86_sys_debug("  futex at 0x%x: %d processes woken up\n", addr1, ret);
 
 		/* The rest of the threads waiting in futex 'addr1' are requeued into futex 'addr2' */
-		for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_list_next)
+		for (ctx = x86_emu->suspended_list_head; ctx; ctx = ctx->suspended_list_next)
 		{
-			if (ctx_get_status(ctx, ctx_futex) && ctx->wakeup_futex == addr1)
+			if (x86_ctx_get_status(ctx, x86_ctx_futex) && ctx->wakeup_futex == addr1)
 			{
 				ctx->wakeup_futex = addr2;
 				requeued++;
 			}
 		}
-		sys_debug("  futex at 0x%x: %d processes requeued to futex 0x%x\n",
+		x86_sys_debug("  futex at 0x%x: %d processes requeued to futex 0x%x\n",
 			addr1, requeued, addr2);
 		return ret;
 	}
@@ -4635,7 +4635,7 @@ static int sys_futex_impl(void)
 		}
 		mem_write(isa_mem, addr2, 4, &newval);
 
-		ret = ctx_futex_wake(isa_ctx, addr1, val1, 0xffffffff);
+		ret = x86_ctx_futex_wake(isa_ctx, addr1, val1, 0xffffffff);
 
 		switch (cmp)
 		{
@@ -4661,10 +4661,10 @@ static int sys_futex_impl(void)
 			fatal("%s: FUTEX_WAKE_OP: invalid condition", __FUNCTION__);
 		}
 		if (cond)
-			ret += ctx_futex_wake(isa_ctx, addr2, val2, 0xffffffff);
+			ret += x86_ctx_futex_wake(isa_ctx, addr2, val2, 0xffffffff);
 
 		/* FIXME: we are returning the total number of threads waken up
-		 * counting both calls to ctx_futex_wake. Is this correct? */
+		 * counting both calls to x86_ctx_futex_wake. Is this correct? */
 		return ret;
 	}
 
@@ -4697,11 +4697,11 @@ static int sys_sched_setaffinity_impl(void)
 	pid = isa_regs->ebx;
 	len = isa_regs->ecx;
 	mask_ptr = isa_regs->edx;
-	sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
+	x86_sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
 
 	/* Read mask */
 	mem_read(isa_mem, mask_ptr, 4, &mask);
-	sys_debug("  mask=0x%x\n", mask);
+	x86_sys_debug("  mask=0x%x\n", mask);
 
 	/* FIXME: system call ignored. Return the number of processors. */
 	return num_procs;
@@ -4727,7 +4727,7 @@ static int sys_sched_getaffinity_impl(void)
 	pid = isa_regs->ebx;
 	len = isa_regs->ecx;
 	mask_ptr = isa_regs->edx;
-	sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
+	x86_sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
 
 	/* FIXME: the affinity is set to 1 for num_procs processors and only the 4 LSBytes are set.
 	 * The return value is set to num_procs. This is the behavior on a 4-core processor
@@ -4751,15 +4751,15 @@ static int sys_set_thread_area_impl(void)
 
 	/* Arguments */
 	uinfo_ptr = isa_regs->ebx;
-	sys_debug("  uinfo_ptr=0x%x\n", uinfo_ptr);
+	x86_sys_debug("  uinfo_ptr=0x%x\n", uinfo_ptr);
 
 	/* Read structure */
 	mem_read(isa_mem, uinfo_ptr, sizeof uinfo, &uinfo);
-	sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
+	x86_sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
 		uinfo.entry_number, uinfo.base_addr, uinfo.limit);
-	sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
+	x86_sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
 		uinfo.seg_32bit, uinfo.contents, uinfo.read_exec_only);
-	sys_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
+	x86_sys_debug("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
 		uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
 	if (!uinfo.seg_32bit)
 		fatal("syscall set_thread_area: only 32-bit segments supported");
@@ -4814,7 +4814,7 @@ static int sys_fadvise64_impl(void)
 	off_hi = isa_regs->edx;
 	len = isa_regs->esi;
 	advice = isa_regs->edi;
-	sys_debug("  fd=%d, off={0x%x, 0x%x}, len=%d, advice=%d\n",
+	x86_sys_debug("  fd=%d, off={0x%x, 0x%x}, len=%d, advice=%d\n",
 		fd, off_hi, off_lo, len, advice);
 
 	/* System call ignored */
@@ -4834,10 +4834,10 @@ static int sys_exit_group_impl(void)
 
 	/* Arguments */
 	status = isa_regs->ebx;
-	sys_debug("  status=%d\n", status);
+	x86_sys_debug("  status=%d\n", status);
 
 	/* Finish */
-	ctx_finish_group(isa_ctx, status);
+	x86_ctx_finish_group(isa_ctx, status);
 	return 0;
 }
 
@@ -4854,7 +4854,7 @@ static int sys_set_tid_address_impl(void)
 
 	/* Arguments */
 	tidptr = isa_regs->ebx;
-	sys_debug("  tidptr=0x%x\n", tidptr);
+	x86_sys_debug("  tidptr=0x%x\n", tidptr);
 
 	isa_ctx->clear_child_tid = tidptr;
 	return isa_ctx->pid;
@@ -4877,8 +4877,8 @@ static int sys_clock_getres_impl(void)
 	/* Arguments */
 	clk_id = isa_regs->ebx;
 	pres = isa_regs->ecx;
-	sys_debug("  clk_id=%d\n", clk_id);
-	sys_debug("  pres=0x%x\n", pres);
+	x86_sys_debug("  clk_id=%d\n", clk_id);
+	x86_sys_debug("  pres=0x%x\n", pres);
 
 	/* Return */
 	tv_sec = 0;
@@ -4901,13 +4901,13 @@ static int sys_tgkill_impl(void)
 	int pid;
 	int sig;
 
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 
 	/* Arguments */
 	tgid = isa_regs->ebx;
 	pid = isa_regs->ecx;
 	sig = isa_regs->edx;
-	sys_debug("  tgid=%d, pid=%d, sig=%d (%s)\n",
+	x86_sys_debug("  tgid=%d, pid=%d, sig=%d (%s)\n",
 		tgid, pid, sig, sim_signal_name(sig));
 
 	/* Implementation restrictions. */
@@ -4916,15 +4916,15 @@ static int sys_tgkill_impl(void)
 			__FUNCTION__, err_sys_note);
 
 	/* Find context referred by pid. */
-	ctx = ctx_get(pid);
+	ctx = x86_ctx_get(pid);
 	if (!ctx)
 		fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
 
 	/* Send signal */
 	sim_sigset_add(&ctx->signal_mask_table->pending, sig);
-	ctx_host_thread_suspend_cancel(ctx);
-	ke_process_events_schedule();
-	ke_process_events();
+	x86_ctx_host_thread_suspend_cancel(ctx);
+	x86_emu_process_events_schedule();
+	x86_emu_process_events();
 	return 0;
 }
 
@@ -4944,7 +4944,7 @@ static int sys_set_robust_list_impl(void)
 	/* Arguments */
 	head = isa_regs->ebx;
 	len = isa_regs->ecx;
-	sys_debug("  head=0x%x, len=%d\n", head, len);
+	x86_sys_debug("  head=0x%x, len=%d\n", head, len);
 
 	/* Support */
 	if (len != 12)
@@ -4985,14 +4985,14 @@ static int sys_opencl_impl(void)
 	/* Get function info */
 	func_name = opencl_func_names[func_code - OPENCL_FUNC_FIRST];
 	func_argc = opencl_func_argc[func_code - OPENCL_FUNC_FIRST];
-	sys_debug("  func_code=%d (%s, %d arguments), pargs=0x%x\n",
+	x86_sys_debug("  func_code=%d (%s, %d arguments), pargs=0x%x\n",
 		func_code, func_name, func_argc, args_ptr);
 
 	/* Read function args */
 	assert(func_argc <= OPENCL_MAX_ARGS);
 	mem_read(isa_mem, args_ptr, func_argc * 4, args);
 	for (i = 0; i < func_argc; i++)
-		sys_debug("    args[%d] = %d (0x%x)\n",
+		x86_sys_debug("    args[%d] = %d (0x%x)\n",
 			i, args[i], args[i]);
 
 	/* Run OpenCL function */

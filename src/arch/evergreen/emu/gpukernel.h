@@ -1135,7 +1135,7 @@ struct gk_t {
 
 	/* Timer */
 	int timer_running;  /* Current timer state */
-	long long timer_start_time;  /* Last time (as per ke_timer) when on */
+	long long timer_start_time;  /* Last time (as per x86_emu_timer) when on */
 	long long timer_acc;  /* Accumulated time in previous on-off cycles */
 
 	/* Stats */

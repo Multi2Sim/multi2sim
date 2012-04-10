@@ -129,7 +129,7 @@ struct uop_t
 	long long di_seq;  /* Dispatch sequence number - unique per core */
 
 	/* Context info */
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 	int core;
 	int thread;
 
@@ -599,7 +599,7 @@ enum di_stall_t
 /* Thread */
 struct cpu_thread_t
 {
-	struct ctx_t *ctx;  /* allocated kernel context */
+	struct x86_ctx_t *ctx;  /* allocated kernel context */
 	int last_alloc_pid;  /* pid of last allocated context */
 
 	/* Reorder buffer */
@@ -803,7 +803,7 @@ void cpu_update_occupancy_stats(void);
 uint32_t cpu_tlb_address(int ctx, uint32_t vaddr);
 
 int cpu_pipeline_empty(int core, int thread);
-void cpu_map_context(int core, int thread, struct ctx_t *ctx);
+void cpu_map_context(int core, int thread, struct x86_ctx_t *ctx);
 void cpu_unmap_context(int core, int thread);
 void cpu_static_schedule(void);
 void cpu_dynamic_schedule(void);
