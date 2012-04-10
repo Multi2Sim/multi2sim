@@ -1,10 +1,7 @@
 SUBDIRS = \
-	libgpuarch \
 	libmemsystem \
 	libvisual \
 	libnetwork \
-	libgpukernel \
-	libgpudisasm \
 	libgpuvisual \
 	\
 	arch \
@@ -19,9 +16,6 @@ INCLUDES = @M2S_INCLUDES@
 LDADD = \
 	$(top_builddir)/src/libvisual/libvisual.a \
 	$(top_builddir)/src/libgpuvisual/libgpuvisual.a \
-	$(top_builddir)/src/libgpukernel/libgpukernel.a \
-	$(top_builddir)/src/libgpuarch/libgpuarch.a \
-	$(top_builddir)/src/libgpudisasm/libgpudisasm.a \
 	$(top_builddir)/src/libmemsystem/libmemsystem.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
 	\
