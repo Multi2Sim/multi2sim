@@ -133,6 +133,35 @@ AC_ARG_ENABLE(no-strict-aliasing,
 AC_SUBST([CFLAGS])
 
 
+#
+# Includes
+#
+
+SRCDIR=`pwd`
+SRCDIR=$SRCDIR/src
+AC_SUBST(SRCDIR)
+
+M2S_INCLUDES=" \
+	-I$SRCDIR/lib/esim \
+	-I$SRCDIR/lib/mhandle \
+	-I$SRCDIR/lib/misc \
+	-I$SRCDIR/lib/struct \
+	\
+	-I$SRCDIR/arch/x86/asm \
+	-I$SRCDIR/arch/x86/emu \
+	-I$SRCIDR/arch/x86/timing \
+	\
+	-I$SRCDIR/arch/evergreen/asm \
+	-I$SRCDIR/arch/evergreen/emu \
+	-I$SRCDIR/arch/evergreen/timing \
+	\
+	-I$SRCDIR/mem-system \
+	-I$SRCDIR/network \
+	-I$SRCDIR/visual \
+	"
+AC_SUBST(M2S_INCLUDES)
+
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
 		 src/libcpuarch/Makefile
