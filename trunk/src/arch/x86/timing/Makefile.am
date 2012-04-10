@@ -16,7 +16,7 @@ libtiming_a_SOURCES = \
 	fu.c \
 	queues.c \
 	recover.c \
-	rf.c \
+	reg-file.c \
 	rob.c \
 	sched.c \
 	trace-cache.c \

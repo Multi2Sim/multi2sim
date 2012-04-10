@@ -23,16 +23,16 @@
 
 /* Return the reason why a thread cannot be dispatched. If it can,
  * return x86_dispatch_stall_used. */
-static enum x86_dispatch_stall_t can_dispatch_thread(int core, int thread)
+static enum x86_dispatch_stall_t x86_cpu_can_dispatch_thread(int core, int thread)
 {
-	struct list_t *uopq = X86_THREAD.uopq;
+	struct list_t *uopq = X86_THREAD.uop_queue;
 	struct x86_uop_t *uop;
 
 	/* Uop queue empty. */
 	uop = list_get(uopq, 0);
 	if (!uop)
 		return !X86_THREAD.ctx || !x86_ctx_get_status(X86_THREAD.ctx, x86_ctx_running) ?
-			x86_dispatch_stall_ctx : x86_dispatch_stall_uopq;
+			x86_dispatch_stall_ctx : x86_dispatch_stall_uop_queue;
 
 	/* If iq/lq/sq/rob full, done */
 	if (!x86_rob_can_enqueue(uop))
@@ -48,15 +48,15 @@ static enum x86_dispatch_stall_t can_dispatch_thread(int core, int thread)
 }
 
 
-static int dispatch_thread(int core, int thread, int quant)
+static int x86_cpu_dispatch_thread(int core, int thread, int quant)
 {
 	struct x86_uop_t *uop;
 	enum x86_dispatch_stall_t stall;
 
-	while (quant) {
-		
+	while (quant)
+	{
 		/* Check if we can decode */
-		stall = can_dispatch_thread(core, thread);
+		stall = x86_cpu_can_dispatch_thread(core, thread);
 		if (stall != x86_dispatch_stall_used)
 		{
 			X86_CORE.dispatch_stall[stall] += quant;
@@ -64,9 +64,9 @@ static int dispatch_thread(int core, int thread, int quant)
 		}
 	
 		/* Get entry from uop queue */
-		uop = list_remove_at(X86_THREAD.uopq, 0);
+		uop = list_remove_at(X86_THREAD.uop_queue, 0);
 		assert(x86_uop_exists(uop));
-		uop->in_uopq = 0;
+		uop->in_uop_queue = 0;
 		
 		/* Rename */
 		x86_reg_file_rename(uop);
@@ -77,14 +77,16 @@ static int dispatch_thread(int core, int thread, int quant)
 		X86_THREAD.rob_writes++;
 		
 		/* Non memory instruction into IQ */
-		if (!(uop->flags & X86_UINST_MEM)) {
+		if (!(uop->flags & X86_UINST_MEM))
+		{
 			x86_iq_insert(uop);
 			X86_CORE.iq_writes++;
 			X86_THREAD.iq_writes++;
 		}
 		
 		/* Memory instructions into the LSQ */
-		if (uop->flags & X86_UINST_MEM) {
+		if (uop->flags & X86_UINST_MEM)
+		{
 			x86_lsq_insert(uop);
 			X86_CORE.lsq_writes++;
 			X86_THREAD.lsq_writes++;
@@ -110,19 +112,21 @@ static int dispatch_thread(int core, int thread, int quant)
 	return quant;
 }
 
-void dispatch_core(int core)
+
+static void x86_cpu_dispatch_core(int core)
 {
 	int skip = x86_cpu_num_threads;
 	int quant = x86_cpu_dispatch_width;
 	int remain;
 
-	switch (x86_cpu_dispatch_kind) {
+	switch (x86_cpu_dispatch_kind)
+	{
 
 	case x86_cpu_dispatch_kind_shared:
 		
 		do {
 			X86_CORE.dispatch_current = (X86_CORE.dispatch_current + 1) % x86_cpu_num_threads;
-			remain = dispatch_thread(core, X86_CORE.dispatch_current, 1);
+			remain = x86_cpu_dispatch_thread(core, X86_CORE.dispatch_current, 1);
 			skip = remain ? skip - 1 : x86_cpu_num_threads;
 			quant = remain ? quant : quant - 1;
 		} while (quant && skip);
@@ -133,8 +137,8 @@ void dispatch_core(int core)
 		do {
 			X86_CORE.dispatch_current = (X86_CORE.dispatch_current + 1) % x86_cpu_num_threads;
 			skip--;
-		} while (skip && can_dispatch_thread(core, X86_CORE.dispatch_current) != x86_dispatch_stall_used);
-		dispatch_thread(core, X86_CORE.dispatch_current, quant);
+		} while (skip && x86_cpu_can_dispatch_thread(core, X86_CORE.dispatch_current) != x86_dispatch_stall_used);
+		x86_cpu_dispatch_thread(core, X86_CORE.dispatch_current, quant);
 		break;
 	}
 }
@@ -145,6 +149,5 @@ void x86_cpu_dispatch()
 	int core;
 	x86_cpu->stage = "dispatch";
 	X86_CORE_FOR_EACH
-		dispatch_core(core);
+		x86_cpu_dispatch_core(core);
 }
-
