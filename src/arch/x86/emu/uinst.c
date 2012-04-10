@@ -197,7 +197,7 @@ static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index)
 
 		/* The 'modrm_mod' field indicates whether it's actually a memory dependence
 		 * or a register. */
-		return isa_inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_rm8);
+		return x86_isa_inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_rm8);
 
 	case x86_dep_mem8:
 	case x86_dep_mem16:
@@ -215,7 +215,7 @@ static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index)
 	case x86_dep_xmmm64:
 	case x86_dep_xmmm128:
 
-		return isa_inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_xmmm32 + 2);
+		return x86_isa_inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_xmmm32 + 2);
 
 	default:
 		return 0;
@@ -237,9 +237,9 @@ static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index)
 	/* Emit 'effaddr' */
 	new_uinst = x86_uinst_create();
 	new_uinst->opcode = x86_uinst_effaddr;
-	new_uinst->idep[0] = isa_inst.segment ? isa_inst.segment - x86_reg_es + x86_dep_es : x86_dep_none;
-	new_uinst->idep[1] = isa_inst.ea_base ? isa_inst.ea_base - x86_reg_eax + x86_dep_eax : x86_dep_none;
-	new_uinst->idep[2] = isa_inst.ea_index ? isa_inst.ea_index - x86_reg_eax + x86_dep_eax : x86_dep_none;
+	new_uinst->idep[0] = x86_isa_inst.segment ? x86_isa_inst.segment - x86_reg_es + x86_dep_es : x86_dep_none;
+	new_uinst->idep[1] = x86_isa_inst.ea_base ? x86_isa_inst.ea_base - x86_reg_eax + x86_dep_eax : x86_dep_none;
+	new_uinst->idep[2] = x86_isa_inst.ea_index ? x86_isa_inst.ea_index - x86_reg_eax + x86_dep_eax : x86_dep_none;
 	new_uinst->odep[0] = x86_dep_ea;
 	list_add(x86_uinst_list, new_uinst);
 }
@@ -264,19 +264,19 @@ static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index)
 
 	case x86_dep_easeg:
 
-		uinst->dep[index] = isa_inst.segment ? isa_inst.segment
+		uinst->dep[index] = x86_isa_inst.segment ? x86_isa_inst.segment
 			- x86_reg_es + x86_dep_es : x86_dep_none;
 		break;
 
 	case x86_dep_eabas:
 
-		uinst->dep[index] = isa_inst.ea_base ? isa_inst.ea_base
+		uinst->dep[index] = x86_isa_inst.ea_base ? x86_isa_inst.ea_base
 			- x86_reg_eax + x86_dep_eax : x86_dep_none;
 		break;
 
 	case x86_dep_eaidx:
 
-		uinst->dep[index] = isa_inst.ea_index ? isa_inst.ea_index
+		uinst->dep[index] = x86_isa_inst.ea_index ? x86_isa_inst.ea_index
 			- x86_reg_eax + x86_dep_eax : x86_dep_none;
 		break;
 
@@ -284,63 +284,63 @@ static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index)
 	 * Otherwise, they would have been handled by 'parse_idep'/'parse_odep' functions. */
 	case x86_dep_rm8:
 
-		assert(isa_inst.modrm_mod == 3);
-		uinst->dep[index] = isa_inst.modrm_rm < 4 ? x86_dep_eax + isa_inst.modrm_rm
-			: x86_dep_eax + isa_inst.modrm_rm - 4;
+		assert(x86_isa_inst.modrm_mod == 3);
+		uinst->dep[index] = x86_isa_inst.modrm_rm < 4 ? x86_dep_eax + x86_isa_inst.modrm_rm
+			: x86_dep_eax + x86_isa_inst.modrm_rm - 4;
 		break;
 
 	case x86_dep_rm16:
 	case x86_dep_rm32:
 
-		assert(isa_inst.modrm_mod == 3);
-		uinst->dep[index] = x86_dep_eax + isa_inst.modrm_rm;
+		assert(x86_isa_inst.modrm_mod == 3);
+		uinst->dep[index] = x86_dep_eax + x86_isa_inst.modrm_rm;
 		break;
 
 	case x86_dep_r8:
 
-		uinst->dep[index] = isa_inst.reg < 4 ? x86_dep_eax + isa_inst.reg
-			: x86_dep_eax + isa_inst.reg - 4;
+		uinst->dep[index] = x86_isa_inst.reg < 4 ? x86_dep_eax + x86_isa_inst.reg
+			: x86_dep_eax + x86_isa_inst.reg - 4;
 		break;
 
 	case x86_dep_r16:
 	case x86_dep_r32:
 
-		uinst->dep[index] = x86_dep_eax + isa_inst.reg;
+		uinst->dep[index] = x86_dep_eax + x86_isa_inst.reg;
 		break;
 
 	case x86_dep_ir8:
 
-		uinst->dep[index] = isa_inst.opindex < 4 ? x86_dep_eax + isa_inst.opindex
-			: x86_dep_eax + isa_inst.opindex - 4;
+		uinst->dep[index] = x86_isa_inst.opindex < 4 ? x86_dep_eax + x86_isa_inst.opindex
+			: x86_dep_eax + x86_isa_inst.opindex - 4;
 		break;
 
 	case x86_dep_ir16:
 	case x86_dep_ir32:
 
-		uinst->dep[index] = x86_dep_eax + isa_inst.opindex;
+		uinst->dep[index] = x86_dep_eax + x86_isa_inst.opindex;
 		break;
 
 	case x86_dep_sreg:
 
-		uinst->dep[index] = x86_dep_es + isa_inst.reg;
+		uinst->dep[index] = x86_dep_es + x86_isa_inst.reg;
 		break;
 	
 	case x86_dep_sti:
 
-		uinst->dep[index] = x86_dep_st0 + isa_inst.opindex;
+		uinst->dep[index] = x86_dep_st0 + x86_isa_inst.opindex;
 		break;
 	
 	case x86_dep_xmmm32:
 	case x86_dep_xmmm64:
 	case x86_dep_xmmm128:
 
-		assert(isa_inst.modrm_mod == 3);
-		uinst->dep[index] = x86_dep_xmm0 + isa_inst.modrm_rm;
+		assert(x86_isa_inst.modrm_mod == 3);
+		uinst->dep[index] = x86_dep_xmm0 + x86_isa_inst.modrm_rm;
 		break;
 
 	case x86_dep_xmm:
 
-		uinst->dep[index] = x86_dep_xmm0 + isa_inst.reg;
+		uinst->dep[index] = x86_dep_xmm0 + x86_isa_inst.reg;
 		break;
 
 	default:
@@ -389,7 +389,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
 			if (x86_uinst_add_idep(uinst, x86_dep_ea)) {
 				uinst->opcode = x86_uinst_store;
 				uinst->dep[index] = x86_dep_none;
-				uinst->address = isa_effective_address();
+				uinst->address = x86_isa_effective_address();
 				uinst->size = mem_dep_size;
 				return;
 			}
@@ -400,7 +400,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
 		new_uinst->opcode = x86_uinst_store;
 		new_uinst->idep[0] = x86_dep_ea;
 		new_uinst->idep[1] = x86_dep_data;
-		new_uinst->address = isa_effective_address();
+		new_uinst->address = x86_isa_effective_address();
 		new_uinst->size = mem_dep_size;
 		list_add(x86_uinst_list, new_uinst);
 
@@ -435,7 +435,7 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index)
 		if (uinst->opcode == x86_uinst_move) {
 			uinst->opcode = x86_uinst_load;
 			uinst->dep[index] = x86_dep_ea;
-			uinst->address = isa_effective_address();
+			uinst->address = x86_isa_effective_address();
 			uinst->size = mem_dep_size;
 			return;
 		}
@@ -445,7 +445,7 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index)
 		new_uinst->opcode = x86_uinst_load;
 		new_uinst->idep[0] = x86_dep_ea;
 		new_uinst->odep[0] = x86_dep_data;
-		new_uinst->address = isa_effective_address();
+		new_uinst->address = x86_isa_effective_address();
 		new_uinst->size = mem_dep_size;
 		list_add(x86_uinst_list, new_uinst);
 

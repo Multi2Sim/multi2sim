@@ -610,144 +610,144 @@ void x86_uinst_list_dump(FILE *f);
  * Machine & ISA
  */
 
-extern struct x86_ctx_t *isa_ctx;
-extern struct regs_t *isa_regs;
-extern struct mem_t *isa_mem;
-extern int isa_spec_mode;
-extern unsigned int isa_eip;
-extern unsigned int isa_target;
-extern struct x86_inst_t isa_inst;
-extern long long isa_inst_count;
-extern int isa_function_level;
+extern struct x86_ctx_t *x86_isa_ctx;
+extern struct regs_t *x86_isa_regs;
+extern struct mem_t *x86_isa_mem;
+extern int x86_isa_spec_mode;
+extern unsigned int x86_isa_eip;
+extern unsigned int x86_isa_target;
+extern struct x86_inst_t x86_isa_inst;
+extern long long x86_isa_inst_count;
+extern int x86_isa_function_level;
 
-#define isa_call_debug(...) debug(isa_call_debug_category, __VA_ARGS__)
-#define isa_inst_debug(...) debug(isa_inst_debug_category, __VA_ARGS__)
+#define x86_isa_call_debug(...) debug(x86_isa_call_debug_category, __VA_ARGS__)
+#define x86_isa_inst_debug(...) debug(x86_isa_inst_debug_category, __VA_ARGS__)
 
-extern int isa_call_debug_category;
-extern int isa_inst_debug_category;
+extern int x86_isa_call_debug_category;
+extern int x86_isa_inst_debug_category;
 
 
-extern long isa_host_flags;
+extern long x86_isa_host_flags;
 
-#define __ISA_ASM_START__ asm volatile ( \
+#define __X86_ISA_ASM_START__ asm volatile ( \
 	"pushf\n\t" \
 	"pop %0\n\t" \
-	: "=m" (isa_host_flags));
+	: "=m" (x86_isa_host_flags));
 
-#define __ISA_ASM_END__ asm volatile ( \
+#define __X86_ISA_ASM_END__ asm volatile ( \
 	"push %0\n\t" \
 	"popf\n\t" \
-	: "=m" (isa_host_flags));
+	: "=m" (x86_isa_host_flags));
 
 
-extern uint8_t isa_host_fpenv[28];
-extern uint16_t isa_guest_fpcw;
+extern uint8_t x86_isa_host_fpenv[28];
+extern uint16_t x86_isa_guest_fpcw;
 
-#define __ISA_FP_ASM_START__ asm volatile ( \
+#define __X86_ISA_FP_ASM_START__ asm volatile ( \
 	"pushf\n\t" \
 	"pop %0\n\t" \
 	"fnstenv %1\n\t" /* store host FPU environment */ \
 	"fnclex\n\t" /* clear host FP exceptions */ \
 	"fldcw %2\n\t" \
-	: "=m" (isa_host_flags), "=m" (*isa_host_fpenv) \
-	: "m" (isa_guest_fpcw));
+	: "=m" (x86_isa_host_flags), "=m" (*x86_isa_host_fpenv) \
+	: "m" (x86_isa_guest_fpcw));
 
-#define __ISA_FP_ASM_END__ asm volatile ( \
+#define __X86_ISA_FP_ASM_END__ asm volatile ( \
 	"push %0\n\t" \
 	"popf\n\t" \
 	"fnstcw %1\n\t" \
 	"fldenv %2\n\t" /* restore host FPU environment */ \
-	: "=m" (isa_host_flags), "=m" (isa_guest_fpcw) \
-	: "m" (*isa_host_fpenv));
+	: "=m" (x86_isa_host_flags), "=m" (x86_isa_guest_fpcw) \
+	: "m" (*x86_isa_host_fpenv));
 
 
 /* References to functions emulating x86 instructions */
-#define DEFINST(name,op1,op2,op3,modrm,imm,pfx) void op_##name##_impl(void);
-#include <machine.dat>
+#define DEFINST(name, op1, op2, op3, modrm, imm, pfx) void op_##name##_impl(void);
+#include "machine.dat"
 #undef DEFINST
 
-void isa_error(char *fmt, ...);
+void x86_isa_error(char *fmt, ...);
 
-void isa_mem_read(struct mem_t *mem, uint32_t addr, int size, void *buf);
-void isa_mem_write(struct mem_t *mem, uint32_t addr, int size, void *buf);
+void x86_isa_mem_read(struct mem_t *mem, uint32_t addr, int size, void *buf);
+void x86_isa_mem_write(struct mem_t *mem, uint32_t addr, int size, void *buf);
 
-void isa_dump_flags(FILE *f);
-void isa_set_flag(enum x86_flag_t flag);
-void isa_clear_flag(enum x86_flag_t flag);
-int isa_get_flag(enum x86_flag_t flag);
+void x86_isa_dump_flags(FILE *f);
+void x86_isa_set_flag(enum x86_flag_t flag);
+void x86_isa_clear_flag(enum x86_flag_t flag);
+int x86_isa_get_flag(enum x86_flag_t flag);
 
-uint32_t isa_load_reg(enum x86_reg_t reg);
-void isa_store_reg(enum x86_reg_t reg, uint32_t value);
+uint32_t x86_isa_load_reg(enum x86_reg_t reg);
+void x86_isa_store_reg(enum x86_reg_t reg, uint32_t value);
 
-uint8_t isa_load_rm8(void);
-uint16_t isa_load_rm16(void);
-uint32_t isa_load_rm32(void);
-uint64_t isa_load_m64(void);
-void isa_store_rm8(uint8_t value);
-void isa_store_rm16(uint16_t value);
-void isa_store_rm32(uint32_t value);
-void isa_store_m64(uint64_t value);
+uint8_t x86_isa_load_rm8(void);
+uint16_t x86_isa_load_rm16(void);
+uint32_t x86_isa_load_rm32(void);
+uint64_t x86_isa_load_m64(void);
+void x86_isa_store_rm8(uint8_t value);
+void x86_isa_store_rm16(uint16_t value);
+void x86_isa_store_rm32(uint32_t value);
+void x86_isa_store_m64(uint64_t value);
 
-#define isa_load_r8() isa_load_reg(isa_inst.reg + x86_reg_al)
-#define isa_load_r16() isa_load_reg(isa_inst.reg + x86_reg_ax)
-#define isa_load_r32() isa_load_reg(isa_inst.reg + x86_reg_eax)
-#define isa_load_sreg() isa_load_reg(isa_inst.reg + x86_reg_es)
-#define isa_store_r8(value) isa_store_reg(isa_inst.reg + x86_reg_al, value)
-#define isa_store_r16(value) isa_store_reg(isa_inst.reg + x86_reg_ax, value)
-#define isa_store_r32(value) isa_store_reg(isa_inst.reg + x86_reg_eax, value)
-#define isa_store_sreg(value) isa_store_reg(isa_inst.reg + x86_reg_es, value)
+#define x86_isa_load_r8() x86_isa_load_reg(x86_isa_inst.reg + x86_reg_al)
+#define x86_isa_load_r16() x86_isa_load_reg(x86_isa_inst.reg + x86_reg_ax)
+#define x86_isa_load_r32() x86_isa_load_reg(x86_isa_inst.reg + x86_reg_eax)
+#define x86_isa_load_sreg() x86_isa_load_reg(x86_isa_inst.reg + x86_reg_es)
+#define x86_isa_store_r8(value) x86_isa_store_reg(x86_isa_inst.reg + x86_reg_al, value)
+#define x86_isa_store_r16(value) x86_isa_store_reg(x86_isa_inst.reg + x86_reg_ax, value)
+#define x86_isa_store_r32(value) x86_isa_store_reg(x86_isa_inst.reg + x86_reg_eax, value)
+#define x86_isa_store_sreg(value) x86_isa_store_reg(x86_isa_inst.reg + x86_reg_es, value)
 
-#define isa_load_ir8() isa_load_reg(isa_inst.opindex + x86_reg_al)
-#define isa_load_ir16() isa_load_reg(isa_inst.opindex + x86_reg_ax)
-#define isa_load_ir32() isa_load_reg(isa_inst.opindex + x86_reg_eax)
-#define isa_store_ir8(value) isa_store_reg(isa_inst.opindex + x86_reg_al, value)
-#define isa_store_ir16(value) isa_store_reg(isa_inst.opindex + x86_reg_ax, value)
-#define isa_store_ir32(value) isa_store_reg(isa_inst.opindex + x86_reg_eax, value)
+#define x86_isa_load_ir8() x86_isa_load_reg(x86_isa_inst.opindex + x86_reg_al)
+#define x86_isa_load_ir16() x86_isa_load_reg(x86_isa_inst.opindex + x86_reg_ax)
+#define x86_isa_load_ir32() x86_isa_load_reg(x86_isa_inst.opindex + x86_reg_eax)
+#define x86_isa_store_ir8(value) x86_isa_store_reg(x86_isa_inst.opindex + x86_reg_al, value)
+#define x86_isa_store_ir16(value) x86_isa_store_reg(x86_isa_inst.opindex + x86_reg_ax, value)
+#define x86_isa_store_ir32(value) x86_isa_store_reg(x86_isa_inst.opindex + x86_reg_eax, value)
 
-void isa_load_fpu(int index, uint8_t *value);
-void isa_store_fpu(int index, uint8_t *value);
-void isa_pop_fpu(uint8_t *value);
-void isa_push_fpu(uint8_t *value);
+void x86_isa_load_fpu(int index, uint8_t *value);
+void x86_isa_store_fpu(int index, uint8_t *value);
+void x86_isa_pop_fpu(uint8_t *value);
+void x86_isa_push_fpu(uint8_t *value);
 
-float isa_load_float(void);
-double isa_load_double(void);
-void isa_load_extended(uint8_t *value);
-void isa_store_float(float value);
-void isa_store_double(double value);
-void isa_store_extended(uint8_t *value);
+float x86_isa_load_float(void);
+double x86_isa_load_double(void);
+void x86_isa_load_extended(uint8_t *value);
+void x86_isa_store_float(float value);
+void x86_isa_store_double(double value);
+void x86_isa_store_extended(uint8_t *value);
 
-void isa_dump_xmm(unsigned char *value, FILE *f);
-void isa_load_xmm(unsigned char *value);
-void isa_store_xmm(unsigned char *value);
-void isa_load_xmmm32(unsigned char *value);
-void isa_store_xmmm32(unsigned char *value);
-void isa_load_xmmm64(unsigned char *value);
-void isa_store_xmmm64(unsigned char *value);
-void isa_load_xmmm128(unsigned char *value);
-void isa_store_xmmm128(unsigned char *value);
+void x86_isa_dump_xmm(unsigned char *value, FILE *f);
+void x86_isa_load_xmm(unsigned char *value);
+void x86_isa_store_xmm(unsigned char *value);
+void x86_isa_load_xmmm32(unsigned char *value);
+void x86_isa_store_xmmm32(unsigned char *value);
+void x86_isa_load_xmmm64(unsigned char *value);
+void x86_isa_store_xmmm64(unsigned char *value);
+void x86_isa_load_xmmm128(unsigned char *value);
+void x86_isa_store_xmmm128(unsigned char *value);
 
-void isa_double_to_extended(double f, uint8_t *e);
-double isa_extended_to_double(uint8_t *e);
-void isa_float_to_extended(float f, uint8_t *e);
-float isa_extended_to_float(uint8_t *e);
+void x86_isa_double_to_extended(double f, uint8_t *e);
+double x86_isa_extended_to_double(uint8_t *e);
+void x86_isa_float_to_extended(float f, uint8_t *e);
+float x86_isa_extended_to_float(uint8_t *e);
 
-void isa_store_fpu_code(uint16_t status);
-uint16_t isa_load_fpu_status(void);
+void x86_isa_store_fpu_code(uint16_t status);
+uint16_t x86_isa_load_fpu_status(void);
 
-uint32_t isa_effective_address(void);
-uint32_t isa_moffs_address(void);
+uint32_t x86_isa_effective_address(void);
+uint32_t x86_isa_moffs_address(void);
 
-void isa_init(void);
-void isa_done(void);
-void isa_dump(FILE *f);
+void x86_isa_init(void);
+void x86_isa_done(void);
+void x86_isa_dump(FILE *f);
 
-void isa_execute_inst(void);
+void x86_isa_execute_inst(void);
 
-void isa_trace_call_init(char *filename);
-void isa_trace_call_done(void);
+void x86_isa_trace_call_init(char *filename);
+void x86_isa_trace_call_done(void);
 
-void isa_inst_stat_dump(FILE *f);
-void isa_inst_stat_reset(void);
+void x86_isa_inst_stat_dump(FILE *f);
+void x86_isa_inst_stat_reset(void);
 
 
 

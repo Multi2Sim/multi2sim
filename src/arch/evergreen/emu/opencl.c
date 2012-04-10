@@ -179,9 +179,9 @@ int opencl_func_run(int code, unsigned int *args)
 		opencl_debug("  num_entries=%d, platforms=0x%x, num_platforms=0x%x, version=0x%x\n",
 			num_entries, platforms, num_platforms, opencl_impl_version);
 		if (num_platforms)
-			mem_write(isa_mem, num_platforms, 4, &one);
+			mem_write(x86_isa_mem, num_platforms, 4, &one);
 		if (platforms && num_entries > 0)
-			mem_write(isa_mem, platforms, 4, &opencl_platform->id);
+			mem_write(x86_isa_mem, platforms, 4, &opencl_platform->id);
 		break;
 	}
 
@@ -203,9 +203,9 @@ int opencl_func_run(int code, unsigned int *args)
 			platform_id, param_name, param_value_size, param_value, param_value_size_ret);
 
 		platform = opencl_object_get(OPENCL_OBJ_PLATFORM, platform_id);
-		size_ret = opencl_platform_get_info(platform, param_name, isa_mem, param_value, param_value_size);
+		size_ret = opencl_platform_get_info(platform, param_name, x86_isa_mem, param_value, param_value_size);
 		if (param_value_size_ret)
-			mem_write(isa_mem, param_value_size_ret, 4, &size_ret);
+			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
 		break;
 	}
 
@@ -230,13 +230,13 @@ int opencl_func_run(int code, unsigned int *args)
 		
 		/* Return 1 in 'num_devices' */
 		if (num_devices)
-			mem_write(isa_mem, num_devices, 4, &one);
+			mem_write(x86_isa_mem, num_devices, 4, &one);
 
 		/* Return 'id' of the only existing device */
 		if (devices && num_entries > 0) {
 			if (!(device = (struct opencl_device_t *) opencl_object_get_type(OPENCL_OBJ_DEVICE)))
 				panic("%s: no device", err_prefix);
-			mem_write(isa_mem, devices, 4, &device->id);
+			mem_write(x86_isa_mem, devices, 4, &device->id);
 		}
 		break;
 	}
@@ -259,9 +259,9 @@ int opencl_func_run(int code, unsigned int *args)
 			device_id, param_name, param_value_size, param_value, param_value_size_ret);
 
 		device = opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
-		size_ret = opencl_device_get_info(device, param_name, isa_mem, param_value, param_value_size);
+		size_ret = opencl_device_get_info(device, param_name, x86_isa_mem, param_value, param_value_size);
 		if (param_value_size_ret)
-			mem_write(isa_mem, param_value_size_ret, 4, &size_ret);
+			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
 		break;
 	}
 
@@ -289,20 +289,20 @@ int opencl_func_run(int code, unsigned int *args)
 		OPENCL_PARAM_NOT_SUPPORTED_EQ(devices, 0);
 
 		/* Read device id */
-		mem_read(isa_mem, devices, 4, &device_id);
+		mem_read(x86_isa_mem, devices, 4, &device_id);
 		device = opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
 		if (!device)
 			fatal("%s: invalid device\n%s", err_prefix, err_opencl_param_note);
 
 		/* Create context and return id */
 		context = opencl_context_create();
-		opencl_context_set_properties(context, isa_mem, properties);
+		opencl_context_set_properties(context, x86_isa_mem, properties);
 		context->device_id = device_id;
 		retval = context->id;
 
 		/* Return success */
 		if (errcode_ret)
-			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
+			mem_write(x86_isa_mem, errcode_ret, 4, &opencl_success);
 		break;
 	}
 
@@ -331,12 +331,12 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Create context */
 		context = opencl_context_create();
 		context->device_id = device->id;
-		opencl_context_set_properties(context, isa_mem, properties);
+		opencl_context_set_properties(context, x86_isa_mem, properties);
 		retval = context->id;
 
 		/* Return success */
 		if (errcode_ret)
-			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
+			mem_write(x86_isa_mem, errcode_ret, 4, &opencl_success);
 
 		break;
 	}
@@ -375,9 +375,9 @@ int opencl_func_run(int code, unsigned int *args)
 			context_id, param_name, param_value_size, param_value, param_value_size_ret);
 
 		context = opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
-		size_ret = opencl_context_get_info(context, param_name, isa_mem, param_value, param_value_size);
+		size_ret = opencl_context_get_info(context, param_name, x86_isa_mem, param_value, param_value_size);
 		if (param_value_size_ret)
-			mem_write(isa_mem, param_value_size_ret, 4, &size_ret);
+			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
 		break;
 	}
 
@@ -408,7 +408,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Return success */
 		if (errcode_ret)
-			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
+			mem_write(x86_isa_mem, errcode_ret, 4, &opencl_success);
 		break;
 	}
 
@@ -482,7 +482,7 @@ int opencl_func_run(int code, unsigned int *args)
 			buf = malloc(size);
 			if (!buf)
 				fatal("%s: out of memory", err_prefix);
-			mem_read(isa_mem, host_ptr, size, buf);
+			mem_read(x86_isa_mem, host_ptr, size, buf);
 			mem_write(gk->global_mem, mem->device_ptr, size, buf);
 			free(buf);
 		}
@@ -490,7 +490,7 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Return memory object */
 		retval = mem->id;
 		if (errcode_ret)
-			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
+			mem_write(x86_isa_mem, errcode_ret, 4, &opencl_success);
 		break;
 	}
 
@@ -525,7 +525,7 @@ int opencl_func_run(int code, unsigned int *args)
 			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
 		}};
 
-		mem_read(isa_mem, image_format_ptr, 8, &image_format);
+		mem_read(x86_isa_mem, image_format_ptr, 8, &image_format);
 		channel_order = image_format.image_channel_order;
 		channel_type = image_format.image_channel_data_type;
 
@@ -627,7 +627,7 @@ int opencl_func_run(int code, unsigned int *args)
 			image = malloc(size);
 			if (!image)
 				fatal("%s: out of memory", err_prefix);
-			mem_read(isa_mem, host_ptr, size, image);
+			mem_read(x86_isa_mem, host_ptr, size, image);
 			mem_write(gk->global_mem, mem->device_ptr, size, image);
 			free(image);
 		}
@@ -636,7 +636,7 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Return memory object */
 		retval = mem->id;
 		if (errcode_ret_ptr)
-			mem_write(isa_mem, errcode_ret_ptr, 4, &opencl_success);
+			mem_write(x86_isa_mem, errcode_ret_ptr, 4, &opencl_success);
 		break;
 	}
 
@@ -674,7 +674,7 @@ int opencl_func_run(int code, unsigned int *args)
 			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
 		}};
 
-		mem_read(isa_mem, image_format_ptr, 8, &image_format);
+		mem_read(x86_isa_mem, image_format_ptr, 8, &image_format);
 		channel_order = image_format.image_channel_order;
 		channel_type = image_format.image_channel_data_type;
 
@@ -787,7 +787,7 @@ int opencl_func_run(int code, unsigned int *args)
 			image = malloc(size);
 			if (!image)
 				fatal("%s: out of memory", err_prefix);
-			mem_read(isa_mem, host_ptr, size, image);
+			mem_read(x86_isa_mem, host_ptr, size, image);
 			mem_write(gk->global_mem, mem->device_ptr, size, image);
 			free(image);
 		}
@@ -795,7 +795,7 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Return memory object */
 		retval = mem->id;
 		if (errcode_ret_ptr)
-			mem_write(isa_mem, errcode_ret_ptr, 4, &opencl_success);
+			mem_write(x86_isa_mem, errcode_ret_ptr, 4, &opencl_success);
 		break;
 	}
 
@@ -856,7 +856,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Return success */
 		if (errcode_ret)
-			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
+			mem_write(x86_isa_mem, errcode_ret, 4, &opencl_success);
 		break;
 	}
 
@@ -917,7 +917,7 @@ int opencl_func_run(int code, unsigned int *args)
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_devices, 1);
 
 		/* Get device and context */
-		mem_read(isa_mem, device_list, 4, &device_id);
+		mem_read(x86_isa_mem, device_list, 4, &device_id);
 		opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
 		opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
 
@@ -926,8 +926,8 @@ int opencl_func_run(int code, unsigned int *args)
 		retval = program->id;
 
 		/* Read binary length and pointer */
-		mem_read(isa_mem, lengths, 4, &length);
-		mem_read(isa_mem, binaries, 4, &binary);
+		mem_read(x86_isa_mem, lengths, 4, &length);
+		mem_read(x86_isa_mem, binaries, 4, &binary);
 		opencl_debug("    lengths[0] = %d\n", length);
 		opencl_debug("    binaries[0] = 0x%x\n", binary);
 
@@ -935,7 +935,7 @@ int opencl_func_run(int code, unsigned int *args)
 		buf = malloc(length);
 		if (!buf)
 			fatal("out of memory");
-		mem_read(isa_mem, binary, length, buf);
+		mem_read(x86_isa_mem, binary, length, buf);
 
 		/* Load ELF binary from guest memory */
 		snprintf(name, sizeof(name), "clProgram<%d>.externalELF", program->id);
@@ -948,9 +948,9 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Return success */
 		if (binary_status)
-			mem_write(isa_mem, binary_status, 4, &opencl_success);
+			mem_write(x86_isa_mem, binary_status, 4, &opencl_success);
 		if (errcode_ret)
-			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
+			mem_write(x86_isa_mem, errcode_ret, 4, &opencl_success);
 		break;
 	}
 
@@ -987,7 +987,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		options_str[0] = 0;
 		if (options)
-			mem_read_string(isa_mem, options, MAX_STRING_SIZE, options_str);
+			mem_read_string(x86_isa_mem, options, MAX_STRING_SIZE, options_str);
 
 		opencl_debug("  program=0x%x, num_devices=%d, device_list=0x%x, options=0x%x\n"
 			"  pfn_notify=0x%x, user_data=0x%x, options='%s'\n",
@@ -1025,7 +1025,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		opencl_debug("  program=0x%x, kernel_name=0x%x, errcode_ret=0x%x\n",
 			program_id, kernel_name, errcode_ret);
-		if (mem_read_string(isa_mem, kernel_name, MAX_STRING_SIZE, kernel_name_str) == MAX_STRING_SIZE)
+		if (mem_read_string(x86_isa_mem, kernel_name, MAX_STRING_SIZE, kernel_name_str) == MAX_STRING_SIZE)
 			fatal("%s: 'kernel_name' string is too long", err_prefix);
 		opencl_debug("    kernel_name='%s'\n", kernel_name_str);
 
@@ -1056,7 +1056,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Return kernel id */
 		if (errcode_ret)
-			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
+			mem_write(x86_isa_mem, errcode_ret, 4, &opencl_success);
 		retval = kernel->id;
 		break;
 	}
@@ -1106,7 +1106,7 @@ int opencl_func_run(int code, unsigned int *args)
 		arg->set = 1;
 		arg->size = arg_size;
 		if (arg_value)
-			mem_read(isa_mem, arg_value, 4, &arg->value);
+			mem_read(x86_isa_mem, arg_value, 4, &arg->value);
 
 		/* If OpenCL argument scope is __local, argument value must be NULL */
 		if (arg->mem_scope == OPENCL_MEM_SCOPE_LOCAL && arg_value)
@@ -1138,10 +1138,10 @@ int opencl_func_run(int code, unsigned int *args)
 
 		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
 		opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
-		size_ret = opencl_kernel_get_work_group_info(kernel, param_name, isa_mem,
+		size_ret = opencl_kernel_get_work_group_info(kernel, param_name, x86_isa_mem,
 			param_value, param_value_size);
 		if (param_value_size_ret)
-			mem_write(isa_mem, param_value_size_ret, 4, &size_ret);
+			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
 		break;
 	}
 
@@ -1183,7 +1183,7 @@ int opencl_func_run(int code, unsigned int *args)
 		{
 			warning("clGetEventInfo always returns CL_COMPLETE");
 			int status = 0x0; /* CL_COMPLETE */;
-			mem_write(isa_mem, param_value, 4, &status);
+			mem_write(x86_isa_mem, param_value, 4, &status);
 			break;
 		}
 
@@ -1233,10 +1233,10 @@ int opencl_func_run(int code, unsigned int *args)
 			event_id, param_name, param_value_size, param_value,
 			param_value_size_ret);
 		event = opencl_object_get(OPENCL_OBJ_EVENT, event_id);
-		size_ret = opencl_event_get_profiling_info(event, param_name, isa_mem,
+		size_ret = opencl_event_get_profiling_info(event, param_name, x86_isa_mem,
 			param_value, param_value_size);
 		if (param_value_size_ret)
-			mem_write(isa_mem, param_value_size_ret, 4, &size_ret);
+			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
 		break;
 	}
 
@@ -1301,7 +1301,7 @@ int opencl_func_run(int code, unsigned int *args)
 		if (!buf)
 			fatal("out of memory");
 		mem_read(gk->global_mem, mem->device_ptr + offset, cb, buf);
-		mem_write(isa_mem, ptr, cb, buf);
+		mem_write(x86_isa_mem, ptr, cb, buf);
 		free(buf);
 
 		/* Event */
@@ -1312,7 +1312,7 @@ int opencl_func_run(int code, unsigned int *args)
 			event->time_submit = opencl_event_timer();
 			event->time_start = opencl_event_timer();
 			event->time_end = opencl_event_timer();
-			mem_write(isa_mem, event_ptr, 4, &event->id);
+			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
 			opencl_debug("    event: 0x%x\n", event->id);
 		}
 
@@ -1361,7 +1361,7 @@ int opencl_func_run(int code, unsigned int *args)
 		buf = malloc(cb);
 		if (!buf)
 			fatal("out of memory");
-		mem_read(isa_mem, ptr, cb, buf);
+		mem_read(x86_isa_mem, ptr, cb, buf);
 		mem_write(gk->global_mem, mem->device_ptr + offset, cb, buf);
 		free(buf);
 
@@ -1373,7 +1373,7 @@ int opencl_func_run(int code, unsigned int *args)
 			event->time_submit = opencl_event_timer();
 			event->time_start = opencl_event_timer();
 			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
-			mem_write(isa_mem, event_ptr, 4, &event->id);
+			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
 			opencl_debug("    event: 0x%x\n", event->id);
 		}
 
@@ -1434,7 +1434,7 @@ int opencl_func_run(int code, unsigned int *args)
 			event->time_submit = opencl_event_timer();
 			event->time_start = opencl_event_timer();
 			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
-			mem_write(isa_mem, event_ptr, 4, &event->id);
+			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
 			opencl_debug("    event: 0x%x\n", event->id);
 		}
 
@@ -1482,8 +1482,8 @@ int opencl_func_run(int code, unsigned int *args)
 		 * instead. */
 		uint32_t read_region[3]; 
 		uint32_t read_origin[3];
-		mem_read(isa_mem, region, 12, read_region);
-		mem_read(isa_mem, origin, 12, read_origin);
+		mem_read(x86_isa_mem, region, 12, read_region);
+		mem_read(x86_isa_mem, origin, 12, read_origin);
 
 		if(row_pitch == 0) {
 			row_pitch = mem->width*mem->pixel_size;
@@ -1520,7 +1520,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Read the entire image */
 		mem_read(gk->global_mem, mem->device_ptr, mem->size, img);
-		mem_write(isa_mem, ptr, mem->size, img);
+		mem_write(x86_isa_mem, ptr, mem->size, img);
 		free(img);
 
 		/* Event */
@@ -1531,7 +1531,7 @@ int opencl_func_run(int code, unsigned int *args)
 			event->time_submit = opencl_event_timer();
 			event->time_start = opencl_event_timer();
 			event->time_end = opencl_event_timer();
-			mem_write(isa_mem, event_ptr, 4, &event->id);
+			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
 			opencl_debug("    event: 0x%x\n", event->id);
 		}
 
@@ -1578,13 +1578,13 @@ int opencl_func_run(int code, unsigned int *args)
 			event->time_submit = opencl_event_timer();
 			event->time_start = opencl_event_timer();
 			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
-			mem_write(isa_mem, event_ptr, 4, &event->id);
+			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
 			opencl_debug("    event: 0x%x\n", event->id);
 		}
 
 		/* Return success */
 		if (errcode_ret)
-			mem_write(isa_mem, errcode_ret, 4, &opencl_success);
+			mem_write(x86_isa_mem, errcode_ret, 4, &opencl_success);
 		fatal("clEnqueueMapBuffer: not implemented");
 		break;
 	}
@@ -1663,7 +1663,7 @@ int opencl_func_run(int code, unsigned int *args)
 		kernel->global_size3[1] = 1;
 		kernel->global_size3[2] = 1;
 		for (i = 0; i < work_dim; i++)
-			mem_read(isa_mem, global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
+			mem_read(x86_isa_mem, global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
 		kernel->global_size = kernel->global_size3[0] * kernel->global_size3[1] * kernel->global_size3[2];
 		opencl_debug("    global_work_size=");
 		opencl_debug_array(work_dim, kernel->global_size3);
@@ -1676,7 +1676,7 @@ int opencl_func_run(int code, unsigned int *args)
 		{
 			for (i = 0; i < work_dim; i++)
 			{
-				mem_read(isa_mem, local_work_size_ptr + i * 4, 4, &kernel->local_size3[i]);
+				mem_read(x86_isa_mem, local_work_size_ptr + i * 4, 4, &kernel->local_size3[i]);
 				if (kernel->local_size3[i] < 1)
 					fatal("%s: local work size must be greater than 0.\n%s",
 						err_prefix, err_opencl_param_note);
@@ -1717,7 +1717,7 @@ int opencl_func_run(int code, unsigned int *args)
 			event->time_queued = opencl_event_timer();
 			event->time_submit = opencl_event_timer();
 			event->time_start = opencl_event_timer();  /* FIXME: change for asynchronous exec */
-			mem_write(isa_mem, event_ptr, 4, &event->id);
+			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
 			opencl_debug("    event: 0x%x\n", event->id);
 		}
 

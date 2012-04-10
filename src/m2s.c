@@ -898,8 +898,8 @@ int main(int argc, char **argv)
 
 	/* Debug */
 	debug_init();
-	isa_inst_debug_category = debug_new_category(isa_inst_debug_file_name);
-	isa_call_debug_category = debug_new_category(isa_call_debug_file_name);
+	x86_isa_inst_debug_category = debug_new_category(isa_inst_debug_file_name);
+	x86_isa_call_debug_category = debug_new_category(isa_call_debug_file_name);
 	elf_debug_category = debug_new_category(elf_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
 	ld_debug_category = debug_new_category(loader_debug_file_name);

@@ -37,11 +37,11 @@
 #define assert __COMPILATION_ERROR__
 
 
-#define CF isa_get_flag(x86_flag_cf)
-#define ZF isa_get_flag(x86_flag_zf)
-#define SF isa_get_flag(x86_flag_sf)
-#define OF isa_get_flag(x86_flag_of)
-#define PF isa_get_flag(x86_flag_pf)
+#define CF x86_isa_get_flag(x86_flag_cf)
+#define ZF x86_isa_get_flag(x86_flag_zf)
+#define SF x86_isa_get_flag(x86_flag_sf)
+#define OF x86_isa_get_flag(x86_flag_of)
+#define PF x86_isa_get_flag(x86_flag_pf)
 
 
 #define cc_a	(!CF && !ZF)
@@ -66,9 +66,9 @@
 void op_set##cc##_rm8_impl() \
 { \
 	if (cc_##cc) \
-		isa_store_rm8(1); \
+		x86_isa_store_rm8(1); \
 	else \
-		isa_store_rm8(0); \
+		x86_isa_store_rm8(0); \
 	x86_uinst_new(x86_uinst_move, idep1, idep2, 0, x86_dep_rm8, 0, 0, 0); \
 }
 
@@ -76,9 +76,9 @@ void op_set##cc##_rm8_impl() \
 #define op_jcc_rel8(cc, idep1, idep2) \
 void op_j##cc##_rel8_impl() \
 { \
-	isa_target = isa_regs->eip + (int8_t) isa_inst.imm.b; \
+	x86_isa_target = x86_isa_regs->eip + (int8_t) x86_isa_inst.imm.b; \
 	if (cc_##cc) \
-		isa_regs->eip = isa_target; \
+		x86_isa_regs->eip = x86_isa_target; \
 	x86_uinst_new(x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \
 }
 
@@ -86,9 +86,9 @@ void op_j##cc##_rel8_impl() \
 #define op_jcc_rel32(cc, idep1, idep2) \
 void op_j##cc##_rel32_impl() \
 { \
-	isa_target = isa_regs->eip + isa_inst.imm.d; \
+	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.d; \
 	if (cc_##cc) \
-		isa_regs->eip = isa_target; \
+		x86_isa_regs->eip = x86_isa_target; \
 	x86_uinst_new(x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \
 }
 
@@ -97,7 +97,7 @@ void op_j##cc##_rel32_impl() \
 void op_cmov##cc##_r16_rm16_impl() \
 { \
 	if (cc_##cc) \
-		isa_store_r16(isa_load_rm16()); \
+		x86_isa_store_r16(x86_isa_load_rm16()); \
 	x86_uinst_new(x86_uinst_move, idep1, idep2, x86_dep_rm16, x86_dep_r16, 0, 0, 0); \
 }
 
@@ -106,7 +106,7 @@ void op_cmov##cc##_r16_rm16_impl() \
 void op_cmov##cc##_r32_rm32_impl() \
 { \
 	if (cc_##cc) \
-		isa_store_r32(isa_load_rm32()); \
+		x86_isa_store_r32(x86_isa_load_rm32()); \
 	x86_uinst_new(x86_uinst_move, idep1, idep2, x86_dep_rm32, x86_dep_r32, 0, 0, 0); \
 }
 
@@ -139,18 +139,18 @@ op_cc_all(cmov_r32_rm32)
 
 void op_jecxz_rel8_impl()
 {
-	isa_target = isa_regs->eip + isa_inst.imm.b;
-	if (!isa_load_reg(x86_reg_ecx))
-		isa_regs->eip = isa_target;
+	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.b;
+	if (!x86_isa_load_reg(x86_reg_ecx))
+		x86_isa_regs->eip = x86_isa_target;
 	x86_uinst_new(x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
 
 
 void op_jcxz_rel8_impl()
 {
-	isa_target = isa_regs->eip + isa_inst.imm.b;
-	if (!isa_load_reg(x86_reg_cx))
-		isa_regs->eip = isa_target;
+	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.b;
+	if (!x86_isa_load_reg(x86_reg_cx))
+		x86_isa_regs->eip = x86_isa_target;
 	x86_uinst_new(x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
 

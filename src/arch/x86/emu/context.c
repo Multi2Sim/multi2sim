@@ -223,8 +223,8 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 
 	/* Remove context from contexts list and free */
 	x86_emu_list_remove(x86_emu_list_context, ctx);
-	if (isa_ctx == ctx)
-		isa_ctx = NULL;
+	if (x86_isa_ctx == ctx)
+		x86_isa_ctx = NULL;
 	x86_ctx_debug("context %d freed\n", ctx->pid);
 	free(ctx);
 }
@@ -258,37 +258,37 @@ void x86_ctx_execute_inst(struct x86_ctx_t *ctx)
 
 	/* The isa_xxx functions work on these global
 	 * variables. */
-	isa_ctx = ctx;
-	isa_regs = ctx->regs;
-	isa_mem = ctx->mem;
-	isa_eip = isa_regs->eip;
-	isa_spec_mode = x86_ctx_get_status(isa_ctx, x86_ctx_specmode);
-	isa_inst_count++;
+	x86_isa_ctx = ctx;
+	x86_isa_regs = ctx->regs;
+	x86_isa_mem = ctx->mem;
+	x86_isa_eip = x86_isa_regs->eip;
+	x86_isa_spec_mode = x86_ctx_get_status(x86_isa_ctx, x86_ctx_specmode);
+	x86_isa_inst_count++;
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
-	isa_mem->safe = isa_spec_mode ? 0 : mem_safe_mode;
-	buffer_ptr = mem_get_buffer(isa_mem, isa_regs->eip, 20, mem_access_exec);
+	x86_isa_mem->safe = x86_isa_spec_mode ? 0 : mem_safe_mode;
+	buffer_ptr = mem_get_buffer(x86_isa_mem, x86_isa_regs->eip, 20, mem_access_exec);
 	if (!buffer_ptr)
 	{
 		/* Disable safe mode. If a part of the 20 read bytes does not belong to the
 		 * actual instruction, and they lie on a page with no permissions, this would
 		 * generate an undesired protection fault. */
-		isa_mem->safe = 0;
+		x86_isa_mem->safe = 0;
 		buffer_ptr = buffer;
-		mem_access(isa_mem, isa_regs->eip, 20, buffer_ptr, mem_access_exec);
+		mem_access(x86_isa_mem, x86_isa_regs->eip, 20, buffer_ptr, mem_access_exec);
 	}
-	isa_mem->safe = mem_safe_mode;
+	x86_isa_mem->safe = mem_safe_mode;
 
 	/* Disassemble */
-	x86_disasm(buffer_ptr, isa_eip, &isa_inst);
-	if (isa_inst.opcode == x86_op_none && !isa_spec_mode)
+	x86_disasm(buffer_ptr, x86_isa_eip, &x86_isa_inst);
+	if (x86_isa_inst.opcode == x86_op_none && !x86_isa_spec_mode)
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)",
-			isa_eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
+			x86_isa_eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 
 
 	/* Execute instruction */
-	isa_execute_inst();
+	x86_isa_execute_inst();
 	
 	/* Stats */
 	x86_emu->inst_count++;
