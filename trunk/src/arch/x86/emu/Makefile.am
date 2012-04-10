@@ -1,6 +1,6 @@
-lib_LIBRARIES = libcpukernel.a
+lib_LIBRARIES = libemu.a
 
-libcpukernel_a_SOURCES = \
+libemu_a_SOURCES = \
 	cpukernel.h \
 	isa.c \
 	context.c \

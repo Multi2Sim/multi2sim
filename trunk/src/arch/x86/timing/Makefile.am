@@ -1,6 +1,6 @@
-lib_LIBRARIES = libcpuarch.a
+lib_LIBRARIES = libtiming.a
 
-libcpuarch_a_SOURCES = \
+libtiming_a_SOURCES = \
 	cpuarch.h \
 	\
 	stg-fetch.c \
@@ -21,15 +21,5 @@ libcpuarch_a_SOURCES = \
 	trace-cache.c \
 	uop.c
 
-INCLUDES = -I$(top_srcdir)/src/libstruct \
-	-I$(top_srcdir)/src/libmhandle \
-	-I$(top_srcdir)/src/libopt \
-	-I$(top_srcdir)/src/libmisc \
-	-I$(top_srcdir)/src/libcpudisasm \
-	-I$(top_srcdir)/src/libmemsystem \
-	-I$(top_srcdir)/src/libnetwork \
-	-I$(top_srcdir)/src/libesim \
-	-I$(top_srcdir)/src/libcpukernel \
-	-I$(top_srcdir)/src/libgpukernel \
-	-I$(top_srcdir)/src/libgpudisasm
+INCLUDES = @M2S_INCLUDES@
 

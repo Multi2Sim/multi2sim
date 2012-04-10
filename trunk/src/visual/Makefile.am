@@ -31,9 +31,4 @@ libvisual_a_SOURCES += \
 
 endif
 
-INCLUDES = \
-	-I$(top_srcdir)/src/libmhandle \
-	-I$(top_srcdir)/src/libstruct \
-	-I$(top_srcdir)/src/libvisual \
-	-I$(top_srcdir)/src/libmisc
-
+INCLUDES = @M2S_INCLUDES@

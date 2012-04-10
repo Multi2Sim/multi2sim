@@ -1,5 +1,6 @@
-lib_LIBRARIES = libgpuarch.a
-libgpuarch_a_SOURCES = \
+lib_LIBRARIES = libtiming.a
+
+libtiming_a_SOURCES = \
 	alu-engine.c \
 	calc.c \
 	cf-engine.c \

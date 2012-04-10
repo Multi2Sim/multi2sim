@@ -1,5 +1,6 @@
-lib_LIBRARIES = libgpukernel.a
-libgpukernel_a_SOURCES = \
+lib_LIBRARIES = libemu.a
+
+libemu_a_SOURCES = \
 	amd-bin.c \
 	amd-opengl-bin.c \
 	gpuisa.c \
@@ -15,14 +16,4 @@ libgpukernel_a_SOURCES = \
 	work-group.c \
 	work-item.c
 
-INCLUDES = -I$(top_srcdir)/src/libstruct \
-	-I$(top_srcdir)/src/libmhandle \
-	-I$(top_srcdir)/src/libesim \
-	-I$(top_srcdir)/src/libmisc \
-	-I$(top_srcdir)/src/libcpudisasm \
-	-I$(top_srcdir)/src/libgpudisasm \
-	-I$(top_srcdir)/src/libgpukernel \
-	-I$(top_srcdir)/src/libcpukernel \
-	-I$(top_srcdir)/src/libmemsystem
-
-
+INCLUDES = @M2S_INCLUDES@
