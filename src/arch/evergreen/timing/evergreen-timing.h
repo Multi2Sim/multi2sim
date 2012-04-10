@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef GPUARCH_H
-#define GPUARCH_H
+#ifndef EVERGREEN_TIMING_H
+#define EVERGREEN_TIMING_H
 
 #include <evergreen-emu.h>
 #include <mem-system.h>
