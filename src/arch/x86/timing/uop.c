@@ -23,17 +23,17 @@
 #define UOP_MAGIC  0x10101010U
 
 
-struct uop_t *uop_create(void)
+struct x86_uop_t *x86_uop_create(void)
 {
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 
-	uop = calloc(1, sizeof(struct uop_t));
+	uop = calloc(1, sizeof(struct x86_uop_t));
 	uop->magic = UOP_MAGIC;
 	return uop;
 }
 
 
-void uop_free_if_not_queued(struct uop_t *uop)
+void x86_uop_free_if_not_queued(struct x86_uop_t *uop)
 {
 	/* Do not free if 'uop' is still enqueued */
 	if (uop->in_fetchq || uop->in_uopq || uop->in_iq ||
@@ -52,15 +52,15 @@ void uop_free_if_not_queued(struct uop_t *uop)
 
 /* Check whether this is a valid pointer to an allocated uop by checking
  * the magic number. */
-int uop_exists(struct uop_t *uop)
+int x86_uop_exists(struct x86_uop_t *uop)
 {
 	return uop->magic == UOP_MAGIC;
 }
 
 
-void uop_list_dump(struct list_t *uop_list, FILE *f)
+void x86_uop_list_dump(struct list_t *uop_list, FILE *f)
 {
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 	int i;
 	
 	for (i = 0; i < list_count(uop_list); i++)
@@ -73,9 +73,9 @@ void uop_list_dump(struct list_t *uop_list, FILE *f)
 }
 
 
-void uop_lnlist_dump(struct linked_list_t *uop_list, FILE *f)
+void x86_uop_linked_list_dump(struct linked_list_t *uop_list, FILE *f)
 {
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 	
 	linked_list_head(uop_list);
 	while (!linked_list_is_end(uop_list))
@@ -90,20 +90,20 @@ void uop_lnlist_dump(struct linked_list_t *uop_list, FILE *f)
 
 
 /* Update 'uop->ready' field of all instructions in a list as per the result
- * obtained by 'rf_ready'. The 'uop->ready' field is redundant and should always
- * match the return value of 'rf_ready' while an uop is in the ROB.
+ * obtained by 'x86_reg_file_ready'. The 'uop->ready' field is redundant and should always
+ * match the return value of 'x86_reg_file_ready' while an uop is in the ROB.
  * A debug message is dumped when the uop transitions to ready. */
-void uop_lnlist_check_if_ready(struct linked_list_t *uop_list)
+void x86_uop_linked_list_check_if_ready(struct linked_list_t *uop_list)
 {
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 	linked_list_head(uop_list);
 	for (linked_list_head(uop_list); !linked_list_is_end(uop_list); linked_list_next(uop_list)) {
 		uop = linked_list_get(uop_list);
-		if (uop->ready || !rf_ready(uop))
+		if (uop->ready || !x86_reg_file_ready(uop))
 			continue;
 		uop->ready = 1;
 		esim_debug("uop action=\"update\", core=%d, seq=%lld, ready=1\n",
-			uop->core, uop->di_seq);
+			uop->core, uop->dispatch_seq);
 	}
 }
 

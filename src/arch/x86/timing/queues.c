@@ -24,70 +24,70 @@
 
 /* Instruction Fetch Queue */
 
-int fetchq_size;
+int x86_fetch_queue_size;
 
 
-void fetchq_init()
+void x86_fetch_queue_init()
 {
 	int core, thread;
-	FOREACH_CORE FOREACH_THREAD
-		THREAD.fetchq = list_create_with_size(fetchq_size);
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+		X86_THREAD.fetchq = list_create_with_size(x86_fetch_queue_size);
 }
 
 
-void fetchq_done()
+void x86_fetch_queue_done()
 {
 	int core, thread;
 	struct list_t *fetchq;
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 
-	FOREACH_CORE FOREACH_THREAD {
-		fetchq = THREAD.fetchq;
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH {
+		fetchq = X86_THREAD.fetchq;
 		while (list_count(fetchq)) {
 			uop = list_remove_at(fetchq, 0);
 			uop->in_fetchq = 0;
-			uop_free_if_not_queued(uop);
+			x86_uop_free_if_not_queued(uop);
 		}
 		list_free(fetchq);
 	}
 }
 
 
-struct uop_t *fetchq_remove(int core, int thread, int index)
+struct x86_uop_t *x86_fetch_queue_remove(int core, int thread, int index)
 {
-	struct list_t *fetchq = THREAD.fetchq;
-	struct uop_t *uop;
+	struct list_t *fetchq = X86_THREAD.fetchq;
+	struct x86_uop_t *uop;
 	assert(index >= 0 && index < list_count(fetchq));
 	uop = list_remove_at(fetchq, index);
 	uop->in_fetchq = 0;
 	if (!uop->fetch_trace_cache && !uop->mop_index) {
-		THREAD.fetchq_occ -= uop->mop_size;
-		assert(THREAD.fetchq_occ >= 0);
+		X86_THREAD.fetchq_occ -= uop->mop_size;
+		assert(X86_THREAD.fetchq_occ >= 0);
 	}
 	if (uop->fetch_trace_cache) {
-		THREAD.trace_cache_queue_occ--;
-		assert(THREAD.trace_cache_queue_occ >= 0);
+		X86_THREAD.trace_cache_queue_occ--;
+		assert(X86_THREAD.trace_cache_queue_occ >= 0);
 	}
 	if (!list_count(fetchq)) {
-		assert(!THREAD.fetchq_occ);
-		assert(!THREAD.trace_cache_queue_occ);
+		assert(!X86_THREAD.fetchq_occ);
+		assert(!X86_THREAD.trace_cache_queue_occ);
 	}
 	return uop;
 }
 
 
-void fetchq_recover(int core, int thread)
+void x86_fetch_queue_recover(int core, int thread)
 {
-	struct list_t *fetchq = THREAD.fetchq;
-	struct uop_t *uop;
+	struct list_t *fetchq = X86_THREAD.fetchq;
+	struct x86_uop_t *uop;
 
 	while (list_count(fetchq)) {
 		uop = list_get(fetchq, list_count(fetchq) - 1);
 		assert(uop->thread == thread);
 		if (!uop->specmode)
 			break;
-		uop = fetchq_remove(core, thread, list_count(fetchq) - 1);
-		uop_free_if_not_queued(uop);
+		uop = x86_fetch_queue_remove(core, thread, list_count(fetchq) - 1);
+		x86_uop_free_if_not_queued(uop);
 	}
 }
 
@@ -96,39 +96,39 @@ void fetchq_recover(int core, int thread)
 
 /* Uop Queue */
 
-int uopq_size;
+int x86_uop_queue_size;
 
 
-void uopq_init()
+void x86_uop_queue_init()
 {
 	int core, thread;
-	FOREACH_CORE FOREACH_THREAD
-		THREAD.uopq = list_create_with_size(uopq_size);
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+		X86_THREAD.uopq = list_create_with_size(x86_uop_queue_size);
 }
 
 
-void uopq_done()
+void x86_uop_queue_done()
 {
 	int core, thread;
 	struct list_t *uopq;
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 
-	FOREACH_CORE FOREACH_THREAD {
-		uopq = THREAD.uopq;
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH {
+		uopq = X86_THREAD.uopq;
 		while (list_count(uopq)) {
 			uop = list_remove_at(uopq, 0);
 			uop->in_uopq = 0;
-			uop_free_if_not_queued(uop);
+			x86_uop_free_if_not_queued(uop);
 		}
 		list_free(uopq);
 	}
 }
 
 
-void uopq_recover(int core, int thread)
+void x86_uop_queue_recover(int core, int thread)
 {
-	struct list_t *uopq = THREAD.uopq;
-	struct uop_t *uop;
+	struct list_t *uopq = X86_THREAD.uopq;
+	struct x86_uop_t *uop;
 
 	while (list_count(uopq)) {
 		uop = list_get(uopq, list_count(uopq) - 1);
@@ -137,7 +137,7 @@ void uopq_recover(int core, int thread)
 			break;
 		list_remove_at(uopq, list_count(uopq) - 1);
 		uop->in_uopq = 0;
-		uop_free_if_not_queued(uop);
+		x86_uop_free_if_not_queued(uop);
 	}
 }
 
@@ -146,98 +146,98 @@ void uopq_recover(int core, int thread)
 
 /* Instruction Queue */
 
-char *iq_kind_map[] = { "Shared", "Private" };
-enum iq_kind_t iq_kind;
-int iq_size;
+char *x86_iq_kind_map[] = { "Shared", "Private" };
+enum x86_iq_kind_t x86_iq_kind;
+int x86_iq_size;
 
 
-void iq_init()
+void x86_iq_init()
 {
 	int core, thread;
-	FOREACH_CORE FOREACH_THREAD
-		THREAD.iq = linked_list_create();
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+		X86_THREAD.iq = linked_list_create();
 }
 
 
-void iq_done()
+void x86_iq_done()
 {
 	struct linked_list_t *iq;
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 	int core, thread;
-	FOREACH_CORE FOREACH_THREAD {
-		iq = THREAD.iq;
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH {
+		iq = X86_THREAD.iq;
 		linked_list_head(iq);
 		while (linked_list_count(iq)) {
 			uop = linked_list_get(iq);
 			uop->in_iq = 0;
 			linked_list_remove(iq);
-			uop_free_if_not_queued(uop);
+			x86_uop_free_if_not_queued(uop);
 		}
 		linked_list_free(iq);
 	}
 }
 
 
-int iq_can_insert(struct uop_t *uop)
+int x86_iq_can_insert(struct x86_uop_t *uop)
 {
 	int core = uop->core;
 	int thread = uop->thread;
 	int count, size;
 
-	size = iq_kind == iq_kind_private ? iq_size : iq_size * cpu_threads;
-	count = iq_kind == iq_kind_private ? THREAD.iq_count : CORE.iq_count;
+	size = x86_iq_kind == x86_iq_kind_private ? x86_iq_size : x86_iq_size * x86_cpu_num_threads;
+	count = x86_iq_kind == x86_iq_kind_private ? X86_THREAD.iq_count : X86_CORE.iq_count;
 	return count < size;
 }
 
 
 /* Insert a uop into the corresponding IQ. Since this is a non-FIFO queue,
  * the insertion position doesn't matter. */
-void iq_insert(struct uop_t *uop)
+void x86_iq_insert(struct x86_uop_t *uop)
 {
 	int core = uop->core;
 	int thread = uop->thread;
-	struct linked_list_t *iq = THREAD.iq;
+	struct linked_list_t *iq = X86_THREAD.iq;
 
 	assert(!uop->in_iq);
 	linked_list_out(iq);
 	linked_list_insert(iq, uop);
 	uop->in_iq = 1;
 
-	CORE.iq_count++;
-	THREAD.iq_count++;
+	X86_CORE.iq_count++;
+	X86_THREAD.iq_count++;
 }
 
 
 /* Remove the uop in the current position of the linked list representing
  * the IQ of the specified thread. */
-void iq_remove(int core, int thread)
+void x86_iq_remove(int core, int thread)
 {
-	struct linked_list_t *iq = THREAD.iq;
-	struct uop_t *uop;
+	struct linked_list_t *iq = X86_THREAD.iq;
+	struct x86_uop_t *uop;
 
 	uop = linked_list_get(iq);
-	assert(uop_exists(uop));
+	assert(x86_uop_exists(uop));
 	linked_list_remove(iq);
 	uop->in_iq = 0;
 
-	assert(CORE.iq_count && THREAD.iq_count);
-	CORE.iq_count--;
-	THREAD.iq_count--;
+	assert(X86_CORE.iq_count && X86_THREAD.iq_count);
+	X86_CORE.iq_count--;
+	X86_THREAD.iq_count--;
 }
 
 
 /* Remove all speculative uops from the current thread */
-void iq_recover(int core, int thread)
+void x86_iq_recover(int core, int thread)
 {
-	struct linked_list_t *iq = THREAD.iq;
-	struct uop_t *uop;
+	struct linked_list_t *iq = X86_THREAD.iq;
+	struct x86_uop_t *uop;
 
 	linked_list_head(iq);
 	while (!linked_list_is_end(iq)) {
 		uop = linked_list_get(iq);
 		if (uop->specmode) {
-			iq_remove(core, thread);
-			uop_free_if_not_queued(uop);
+			x86_iq_remove(core, thread);
+			x86_uop_free_if_not_queued(uop);
 			continue;
 		}
 		linked_list_next(iq);
@@ -249,74 +249,74 @@ void iq_recover(int core, int thread)
 
 /* Load/Store Queue */
 
-char *lsq_kind_map[] = { "Shared", "Private" };
-enum lsq_kind_t lsq_kind;
-int lsq_size;
+char *x86_lsq_kind_map[] = { "Shared", "Private" };
+enum x86_lsq_kind_t x86_lsq_kind;
+int x86_lsq_size;
 
 
-void lsq_init()
+void x86_lsq_init()
 {
 	int core, thread;
-	FOREACH_CORE FOREACH_THREAD {
-		THREAD.lq = linked_list_create();
-		THREAD.sq = linked_list_create();
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH {
+		X86_THREAD.lq = linked_list_create();
+		X86_THREAD.sq = linked_list_create();
 	}
 }
 
 
-void lsq_done()
+void x86_lsq_done()
 {
 	struct linked_list_t *lq, *sq;
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 	int core, thread;
 
 	/* Load queue */
-	FOREACH_CORE FOREACH_THREAD {
-		lq = THREAD.lq;
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH {
+		lq = X86_THREAD.lq;
 		linked_list_head(lq);
 		while (linked_list_count(lq)) {
 			uop = linked_list_get(lq);
 			uop->in_lq = 0;
 			linked_list_remove(lq);
-			uop_free_if_not_queued(uop);
+			x86_uop_free_if_not_queued(uop);
 		}
 		linked_list_free(lq);
 	}
 
 	/* Store queue */
-	FOREACH_CORE FOREACH_THREAD {
-		sq = THREAD.sq;
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH {
+		sq = X86_THREAD.sq;
 		linked_list_head(sq);
 		while (linked_list_count(sq)) {
 			uop = linked_list_get(sq);
 			uop->in_sq = 0;
 			linked_list_remove(sq);
-			uop_free_if_not_queued(uop);
+			x86_uop_free_if_not_queued(uop);
 		}
 		linked_list_free(sq);
 	}
 }
 
 
-int lsq_can_insert(struct uop_t *uop)
+int x86_lsq_can_insert(struct x86_uop_t *uop)
 {
 	int core = uop->core;
 	int thread = uop->thread;
 	int count, size;
 
-	size = lsq_kind == lsq_kind_private ? lsq_size : lsq_size * cpu_threads;
-	count = lsq_kind == lsq_kind_private ? THREAD.lsq_count : CORE.lsq_count;
+	size = x86_lsq_kind == x86_lsq_kind_private ? x86_lsq_size : x86_lsq_size * x86_cpu_num_threads;
+	count = x86_lsq_kind == x86_lsq_kind_private ? X86_THREAD.lsq_count : X86_CORE.lsq_count;
 	return count < size;
 }
 
 
 /* Insert uop into corresponding load/store queue */
-void lsq_insert(struct uop_t *uop)
+void x86_lsq_insert(struct x86_uop_t *uop)
 {
 	int core = uop->core;
 	int thread = uop->thread;
-	struct linked_list_t *lq = THREAD.lq;
-	struct linked_list_t *sq = THREAD.sq;
+	struct linked_list_t *lq = X86_THREAD.lq;
+	struct linked_list_t *sq = X86_THREAD.sq;
 
 	assert(!uop->in_lq && !uop->in_sq);
 	assert(uop->uinst->opcode == x86_uinst_load || uop->uinst->opcode == x86_uinst_store);
@@ -332,26 +332,26 @@ void lsq_insert(struct uop_t *uop)
 		linked_list_insert(sq, uop);
 		uop->in_sq = 1;
 	}
-	CORE.lsq_count++;
-	THREAD.lsq_count++;
+	X86_CORE.lsq_count++;
+	X86_THREAD.lsq_count++;
 }
 
 
 /* Remove all speculative uops from a given load/store queue in the
  * given thread. */
-void lsq_recover(int core, int thread)
+void x86_lsq_recover(int core, int thread)
 {
-	struct linked_list_t *lq = THREAD.lq;
-	struct linked_list_t *sq = THREAD.sq;
-	struct uop_t *uop;
+	struct linked_list_t *lq = X86_THREAD.lq;
+	struct linked_list_t *sq = X86_THREAD.sq;
+	struct x86_uop_t *uop;
 
 	/* Recover load queue */
 	linked_list_head(lq);
 	while (!linked_list_is_end(lq)) {
 		uop = linked_list_get(lq);
 		if (uop->specmode) {
-			lq_remove(core, thread);
-			uop_free_if_not_queued(uop);
+			x86_lq_remove(core, thread);
+			x86_uop_free_if_not_queued(uop);
 			continue;
 		}
 		linked_list_next(lq);
@@ -362,8 +362,8 @@ void lsq_recover(int core, int thread)
 	while (!linked_list_is_end(sq)) {
 		uop = linked_list_get(sq);
 		if (uop->specmode) {
-			sq_remove(core, thread);
-			uop_free_if_not_queued(uop);
+			x86_sq_remove(core, thread);
+			x86_uop_free_if_not_queued(uop);
 			continue;
 		}
 		linked_list_next(sq);
@@ -373,37 +373,37 @@ void lsq_recover(int core, int thread)
 
 /* Remove the uop in the current position of the linked list representing
  * the load queue of the specified thread. */
-void lq_remove(int core, int thread)
+void x86_lq_remove(int core, int thread)
 {
-	struct linked_list_t *lq = THREAD.lq;
-	struct uop_t *uop;
+	struct linked_list_t *lq = X86_THREAD.lq;
+	struct x86_uop_t *uop;
 
 	uop = linked_list_get(lq);
-	assert(uop_exists(uop));
+	assert(x86_uop_exists(uop));
 	linked_list_remove(lq);
 	uop->in_lq = 0;
 
-	assert(CORE.lsq_count && THREAD.lsq_count);
-	CORE.lsq_count--;
-	THREAD.lsq_count--;
+	assert(X86_CORE.lsq_count && X86_THREAD.lsq_count);
+	X86_CORE.lsq_count--;
+	X86_THREAD.lsq_count--;
 }
 
 
 /* Remove an uop in the current position of the store queue */
-void sq_remove(int core, int thread)
+void x86_sq_remove(int core, int thread)
 {
-	struct linked_list_t *sq = THREAD.sq;
-	struct uop_t *uop;
+	struct linked_list_t *sq = X86_THREAD.sq;
+	struct x86_uop_t *uop;
 
 	uop = linked_list_get(sq);
-	assert(uop_exists(uop));
+	assert(x86_uop_exists(uop));
 	assert(uop->in_sq);
 	linked_list_remove(sq);
 	uop->in_sq = 0;
 
-	assert(CORE.lsq_count && THREAD.lsq_count);
-	CORE.lsq_count--;
-	THREAD.lsq_count--;
+	assert(X86_CORE.lsq_count && X86_THREAD.lsq_count);
+	X86_CORE.lsq_count--;
+	X86_THREAD.lsq_count--;
 }
 
 
@@ -411,69 +411,69 @@ void sq_remove(int core, int thread)
 
 /* Event Queue */
 
-void eventq_init()
+void x86_event_queue_init()
 {
 	int core;
-	FOREACH_CORE
-		CORE.eventq = linked_list_create();
+	X86_CORE_FOR_EACH
+		X86_CORE.eventq = linked_list_create();
 }
 
 
-void eventq_done()
+void x86_event_queue_done()
 {
 	int core;
-	FOREACH_CORE {
-		while (linked_list_count(CORE.eventq))
-			uop_free_if_not_queued(eventq_extract(CORE.eventq));
-		linked_list_free(CORE.eventq);
+	X86_CORE_FOR_EACH {
+		while (linked_list_count(X86_CORE.eventq))
+			x86_uop_free_if_not_queued(x86_event_queue_extract(X86_CORE.eventq));
+		linked_list_free(X86_CORE.eventq);
 	}
 }
 
 
 static int eventq_compare(const void *item1, const void *item2)
 {
-	const struct uop_t *uop1 = item1;
-	const struct uop_t *uop2 = item2;
+	const struct x86_uop_t *uop1 = item1;
+	const struct x86_uop_t *uop2 = item2;
 	return uop1->when != uop2->when ? uop1->when - uop2->when
 		: uop1->seq - uop2->seq;
 }
 
 
-int eventq_longlat(int core, int thread)
+int x86_event_queue_long_latency(int core, int thread)
 {
-	struct linked_list_t *eventq = CORE.eventq;
-	struct uop_t *uop;
+	struct linked_list_t *eventq = X86_CORE.eventq;
+	struct x86_uop_t *uop;
 	
 	for (linked_list_head(eventq); !linked_list_is_end(eventq); linked_list_next(eventq)) {
 		uop = linked_list_get(eventq);
 		if (uop->thread != thread)
 			continue;
-		if (cpu->cycle - uop->issue_when > 20)
+		if (x86_cpu->cycle - uop->issue_when > 20)
 			return 1;
 	}
 	return 0;
 }
 
 
-int eventq_cachemiss(int core, int thread)
+int x86_event_queue_cache_miss(int core, int thread)
 {
-	struct linked_list_t *eventq = CORE.eventq;
-	struct uop_t *uop;
+	struct linked_list_t *eventq = X86_CORE.eventq;
+	struct x86_uop_t *uop;
 
 	for (linked_list_head(eventq); !linked_list_is_end(eventq); linked_list_next(eventq)) {
 		uop = linked_list_get(eventq);
 		if (uop->thread != thread || uop->uinst->opcode != x86_uinst_load)
 			continue;
-		if (cpu->cycle - uop->issue_when > 5)
+		if (x86_cpu->cycle - uop->issue_when > 5)
 			return 1;
 	}
 	return 0;
 }
 
 
-void eventq_insert(struct linked_list_t *eventq, struct uop_t *uop)
+void x86_event_queue_insert(struct linked_list_t *eventq, struct x86_uop_t *uop)
 {
-	struct uop_t *item;
+	struct x86_uop_t *item;
 	assert(!uop->in_eventq);
 	linked_list_head(eventq);
 	for (;;) {
@@ -487,14 +487,14 @@ void eventq_insert(struct linked_list_t *eventq, struct uop_t *uop)
 }
 
 
-struct uop_t *eventq_extract(struct linked_list_t *eventq)
+struct x86_uop_t *x86_event_queue_extract(struct linked_list_t *eventq)
 {
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 	if (!linked_list_count(eventq))
 		return NULL;
 	linked_list_head(eventq);
 	uop = linked_list_get(eventq);
-	assert(uop_exists(uop));
+	assert(x86_uop_exists(uop));
 	assert(uop->in_eventq);
 	linked_list_remove(eventq);
 	uop->in_eventq = 0;
@@ -502,10 +502,10 @@ struct uop_t *eventq_extract(struct linked_list_t *eventq)
 }
 
 
-void eventq_recover(int core, int thread)
+void x86_event_queue_recover(int core, int thread)
 {
-	struct linked_list_t *eventq = CORE.eventq;
-	struct uop_t *uop;
+	struct linked_list_t *eventq = X86_CORE.eventq;
+	struct x86_uop_t *uop;
 
 	linked_list_head(eventq);
 	while (!linked_list_is_end(eventq)) {
@@ -513,7 +513,7 @@ void eventq_recover(int core, int thread)
 		if (uop->thread == thread && uop->specmode) {
 			linked_list_remove(eventq);
 			uop->in_eventq = 0;
-			uop_free_if_not_queued(uop);
+			x86_uop_free_if_not_queued(uop);
 			continue;
 		}
 		linked_list_next(eventq);

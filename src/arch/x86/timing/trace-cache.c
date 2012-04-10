@@ -22,20 +22,20 @@
 
 /* Parameters */
 
-int trace_cache_present;  /* Use trace cache */
-int trace_cache_num_sets;  /* Number of sets */
-int trace_cache_assoc;  /* Number of ways */
-int trace_cache_trace_size;  /* Maximum number of uops in a trace */
-int trace_cache_branch_max;  /* Maximum number of branches in a trace */
-int trace_cache_queue_size;  /* Fetch queue for pre-decoded uops */
+int x86_trace_cache_present;  /* Use trace cache */
+int x86_trace_cache_num_sets;  /* Number of sets */
+int x86_trace_cache_assoc;  /* Number of ways */
+int x86_trace_cache_trace_size;  /* Maximum number of uops in a trace */
+int x86_trace_cache_branch_max;  /* Maximum number of branches in a trace */
+int x86_trace_cache_queue_size;  /* Fetch queue for pre-decoded uops */
 
 
-void trace_cache_init()
+void x86_trace_cache_init()
 {
 	int core, thread;
 
 	/* Trace cache present */
-	if (!trace_cache_present)
+	if (!x86_trace_cache_present)
 		return;
 
 	/* FIXME: trace cache disabled.
@@ -49,67 +49,67 @@ void trace_cache_init()
 		"\temail development@multi2sim.org, or use the Multi2Sim forum.\n");
 
 	/* Integrity */
-	if ((trace_cache_num_sets & (trace_cache_num_sets - 1)) || !trace_cache_num_sets)
+	if ((x86_trace_cache_num_sets & (x86_trace_cache_num_sets - 1)) || !x86_trace_cache_num_sets)
 		fatal("trace cache sets must be power of 2 and > 0");
-	if ((trace_cache_assoc & (trace_cache_assoc - 1)) || !trace_cache_assoc)
+	if ((x86_trace_cache_assoc & (x86_trace_cache_assoc - 1)) || !x86_trace_cache_assoc)
 		fatal("trace cache associativity must be power of 2 and > 0");
-	if (!trace_cache_trace_size || !trace_cache_branch_max)
+	if (!x86_trace_cache_trace_size || !x86_trace_cache_branch_max)
 		fatal("trace cache: max number of branches and micro-instructions must be > 0");
-	if (trace_cache_branch_max > trace_cache_trace_size)
+	if (x86_trace_cache_branch_max > x86_trace_cache_trace_size)
 		fatal("max branches in trace cache cannot be greater than trace size");
-	if (trace_cache_branch_max > 31)
+	if (x86_trace_cache_branch_max > 31)
 		fatal("max branches must be less than 32");
 	
 	/* Initialization */
-	FOREACH_CORE FOREACH_THREAD
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 	{
-		THREAD.trace_cache = trace_cache_create();
-		sprintf(THREAD.trace_cache->name, "c%dt%d.trace_cache", core, thread);
+		X86_THREAD.trace_cache = x86_trace_cache_create();
+		sprintf(X86_THREAD.trace_cache->name, "c%dt%d.trace_cache", core, thread);
 	}
 }
 
 
-void trace_cache_done()
+void x86_trace_cache_done()
 {
 	int core, thread;
 
 	/* Trace cache present */
-	if (!trace_cache_present)
+	if (!x86_trace_cache_present)
 		return;
 	
 	/* Finalization */
-	FOREACH_CORE FOREACH_THREAD
-		trace_cache_free(THREAD.trace_cache);
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
+		x86_trace_cache_free(X86_THREAD.trace_cache);
 }
 
 
-struct trace_cache_t *trace_cache_create()
+struct x86_trace_cache_t *x86_trace_cache_create()
 {
-	struct trace_cache_t *trace_cache;
-	struct trace_cache_entry_t *entry;
+	struct x86_trace_cache_t *trace_cache;
+	struct x86_trace_cache_entry_t *entry;
 	int set, way;
 
 	/* Create trace cache */
-	trace_cache = calloc(1, sizeof(struct trace_cache_t));
+	trace_cache = calloc(1, sizeof(struct x86_trace_cache_t));
 	if (!trace_cache)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Entries */
-	trace_cache->entry = calloc(trace_cache_num_sets * trace_cache_assoc, TRACE_CACHE_ENTRY_SIZE);
+	trace_cache->entry = calloc(x86_trace_cache_num_sets * x86_trace_cache_assoc, X86_TRACE_CACHE_ENTRY_SIZE);
 	if (!trace_cache->entry)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Temporary trace */
-	trace_cache->temp = calloc(1, TRACE_CACHE_ENTRY_SIZE);
+	trace_cache->temp = calloc(1, X86_TRACE_CACHE_ENTRY_SIZE);
 	if (!trace_cache->temp)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize LRU counter */
-	for (set = 0; set < trace_cache_num_sets; set++)
+	for (set = 0; set < x86_trace_cache_num_sets; set++)
 	{
-		for (way = 0; way < trace_cache_assoc; way++)
+		for (way = 0; way < x86_trace_cache_assoc; way++)
 		{
-			entry = TRACE_CACHE_ENTRY(set, way);
+			entry = X86_TRACE_CACHE_ENTRY(set, way);
 			entry->counter = way;
 		}
 	}
@@ -119,7 +119,7 @@ struct trace_cache_t *trace_cache_create()
 }
 
 
-void trace_cache_free(struct trace_cache_t *trace_cache)
+void x86_trace_cache_free(struct x86_trace_cache_t *trace_cache)
 {
 	free(trace_cache->entry);
 	free(trace_cache->temp);
@@ -127,14 +127,14 @@ void trace_cache_free(struct trace_cache_t *trace_cache)
 }
 
 
-void trace_cache_dump_report(struct trace_cache_t *trace_cache, FILE *f)
+void x86_trace_cache_dump_report(struct x86_trace_cache_t *trace_cache, FILE *f)
 {
 	fprintf(f, "# Trace cache - parameters\n");
-	fprintf(f, "TraceCache.Sets = %d\n", trace_cache_num_sets);
-	fprintf(f, "TraceCache.Assoc = %d\n", trace_cache_assoc);
-	fprintf(f, "TraceCache.TraceSize = %d\n", trace_cache_trace_size);
-	fprintf(f, "TraceCache.BranchMax = %d\n", trace_cache_branch_max);
-	fprintf(f, "TraceCache.QueueSize = %d\n", trace_cache_queue_size);
+	fprintf(f, "TraceCache.Sets = %d\n", x86_trace_cache_num_sets);
+	fprintf(f, "TraceCache.Assoc = %d\n", x86_trace_cache_assoc);
+	fprintf(f, "TraceCache.TraceSize = %d\n", x86_trace_cache_trace_size);
+	fprintf(f, "TraceCache.BranchMax = %d\n", x86_trace_cache_branch_max);
+	fprintf(f, "TraceCache.QueueSize = %d\n", x86_trace_cache_queue_size);
 	fprintf(f, "\n");
 
 	fprintf(f, "# Trace cache - statistics\n");
@@ -152,10 +152,10 @@ void trace_cache_dump_report(struct trace_cache_t *trace_cache, FILE *f)
 
 
 /* Flush temporary trace of committed instructions back into the trace cache */
-static void trace_cache_flush_trace(struct trace_cache_t *trace_cache)
+static void trace_cache_flush_trace(struct x86_trace_cache_t *trace_cache)
 {
-	struct trace_cache_entry_t *entry, *found = NULL;
-	struct trace_cache_entry_t *trace = trace_cache->temp;
+	struct x86_trace_cache_entry_t *entry, *found = NULL;
+	struct x86_trace_cache_entry_t *trace = trace_cache->temp;
 	int set, way;
 
 	/* There must be something to commit */
@@ -176,10 +176,10 @@ static void trace_cache_flush_trace(struct trace_cache_t *trace_cache)
 
 	/* Allocate new line for the trace. If trace is already in the cache,
 	 * do nothing. If there is any invalid entry, choose it. */
-	set = trace->tag % trace_cache_num_sets;
-	for (way = 0; way < trace_cache_assoc; way++)
+	set = trace->tag % x86_trace_cache_num_sets;
+	for (way = 0; way < x86_trace_cache_assoc; way++)
 	{
-		entry = TRACE_CACHE_ENTRY(set, way);
+		entry = X86_TRACE_CACHE_ENTRY(set, way);
 		if (entry->tag == trace->tag && entry->branch_mask == trace->branch_mask
 			&& entry->branch_flags == trace->branch_flags)
 		{
@@ -195,12 +195,12 @@ static void trace_cache_flush_trace(struct trace_cache_t *trace_cache)
 	/* If no invalid entry found, look for LRU. */
 	if (!found)
 	{
-		for (way = 0; way < trace_cache_assoc; way++)
+		for (way = 0; way < x86_trace_cache_assoc; way++)
 		{
-			entry = TRACE_CACHE_ENTRY(set, way);
+			entry = X86_TRACE_CACHE_ENTRY(set, way);
 			entry->counter--;
 			if (entry->counter < 0) {
-				entry->counter = trace_cache_assoc - 1;
+				entry->counter = x86_trace_cache_assoc - 1;
 				found = entry;
 			}
 		}
@@ -212,14 +212,14 @@ static void trace_cache_flush_trace(struct trace_cache_t *trace_cache)
 	trace_cache->trace_length_acc += trace->uop_count;
 	trace_cache->trace_length_count++;
 	trace->counter = found->counter;
-	memcpy(found, trace, TRACE_CACHE_ENTRY_SIZE);
-	memset(trace_cache->temp, 0, TRACE_CACHE_ENTRY_SIZE);
+	memcpy(found, trace, X86_TRACE_CACHE_ENTRY_SIZE);
+	memset(trace_cache->temp, 0, X86_TRACE_CACHE_ENTRY_SIZE);
 }
 
 
-void trace_cache_new_uop(struct trace_cache_t *trace_cache, struct uop_t *uop)
+void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_uop_t *uop)
 {
-	struct trace_cache_entry_t *trace = trace_cache->temp;
+	struct x86_trace_cache_entry_t *trace = trace_cache->temp;
 	int taken;
 
 	/* Only uops heading the macroinst are inserted in the trace for simulation. */
@@ -234,9 +234,9 @@ void trace_cache_new_uop(struct trace_cache_t *trace_cache, struct uop_t *uop)
 	assert(!uop->specmode);
 	assert(uop->eip);
 	assert(uop->seq == uop->mop_seq);
-	if (trace->uop_count + uop->mop_count > trace_cache_trace_size)
+	if (trace->uop_count + uop->mop_count > x86_trace_cache_trace_size)
 		trace_cache_flush_trace(trace_cache);
-	if (uop->mop_count > trace_cache_trace_size)
+	if (uop->mop_count > x86_trace_cache_trace_size)
 		return;
 
 	/* First instruction. Store trace tag. */
@@ -259,24 +259,24 @@ void trace_cache_new_uop(struct trace_cache_t *trace_cache, struct uop_t *uop)
 		trace->branch_flags |= taken << trace->branch_count;
 		trace->branch_count++;
 		trace->target = uop->target_neip;
-		if (trace->branch_count == trace_cache_branch_max)
+		if (trace->branch_count == x86_trace_cache_branch_max)
 			trace_cache_flush_trace(trace_cache);
 	}
 }
 
 
-int trace_cache_lookup(struct trace_cache_t *trace_cache, uint32_t eip, int pred,
+int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, uint32_t eip, int pred,
 	int *ptr_mop_count, uint32_t **ptr_mop_array, uint32_t *ptr_neip)
 {
-	struct trace_cache_entry_t *entry = NULL, *found = NULL;
+	struct x86_trace_cache_entry_t *entry = NULL, *found = NULL;
 	int set, way;
 	uint32_t neip;
 
 	/* Look for trace cache line */
-	set = eip % trace_cache_num_sets;
-	for (way = 0; way < trace_cache_assoc; way++)
+	set = eip % x86_trace_cache_num_sets;
+	for (way = 0; way < x86_trace_cache_assoc; way++)
 	{
-		entry = TRACE_CACHE_ENTRY(set, way);
+		entry = X86_TRACE_CACHE_ENTRY(set, way);
 		if (entry->tag == eip && ((pred & entry->branch_mask) == entry->branch_flags))
 		{
 			found = entry;

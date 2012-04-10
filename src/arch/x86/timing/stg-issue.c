@@ -22,8 +22,8 @@
 
 static int issue_sq(int core, int thread, int quant)
 {
-	struct uop_t *store;
-	struct linked_list_t *sq = THREAD.sq;
+	struct x86_uop_t *store;
+	struct linked_list_t *sq = X86_THREAD.sq;
 
 	/* Process SQ */
 	linked_list_head(sq);
@@ -38,33 +38,33 @@ static int issue_sq(int core, int thread, int quant)
 			break;
 
 		/* Check that memory system entry is ready */
-		if (!mod_can_access(THREAD.data_mod, store->phy_addr))
+		if (!mod_can_access(X86_THREAD.data_mod, store->phy_addr))
 			break;
 
 		/* Remove store from store queue */
-		sq_remove(core, thread);
+		x86_sq_remove(core, thread);
 
 		/* Issue store */
-		mod_access(THREAD.data_mod, mod_entry_cpu, mod_access_write,
-			store->phy_addr, NULL, CORE.eventq, store);
+		mod_access(X86_THREAD.data_mod, mod_entry_cpu, mod_access_write,
+			store->phy_addr, NULL, X86_CORE.eventq, store);
 
 		/* The cache system will place the store at the head of the
 		 * event queue when it is ready. For now, mark "in_eventq" to
 		 * prevent the uop from being freed. */
 		store->in_eventq = 1;
 		store->issued = 1;
-		store->issue_when = cpu->cycle;
+		store->issue_when = x86_cpu->cycle;
 	
 		/* Instruction issued */
-		CORE.issued[store->uinst->opcode]++;
-		CORE.lsq_reads++;
-		CORE.rf_int_reads += store->ph_int_idep_count;
-		CORE.rf_fp_reads += store->ph_fp_idep_count;
-		THREAD.issued[store->uinst->opcode]++;
-		THREAD.lsq_reads++;
-		THREAD.rf_int_reads += store->ph_int_idep_count;
-		THREAD.rf_fp_reads += store->ph_fp_idep_count;
-		cpu->issued[store->uinst->opcode]++;
+		X86_CORE.issued[store->uinst->opcode]++;
+		X86_CORE.lsq_reads++;
+		X86_CORE.reg_file_int_reads += store->ph_int_idep_count;
+		X86_CORE.reg_file_fp_reads += store->ph_fp_idep_count;
+		X86_THREAD.issued[store->uinst->opcode]++;
+		X86_THREAD.lsq_reads++;
+		X86_THREAD.reg_file_int_reads += store->ph_int_idep_count;
+		X86_THREAD.reg_file_fp_reads += store->ph_fp_idep_count;
+		x86_cpu->issued[store->uinst->opcode]++;
 		quant--;
 		
 		/* MMU statistics */
@@ -74,7 +74,7 @@ static int issue_sq(int core, int thread, int quant)
 		/* Debug */
 		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
 			" stg_issue=1, in_lsq=0, issued=1\n",
-			store->core, (long long unsigned) store->di_seq);
+			store->core, (long long unsigned) store->dispatch_seq);
 	}
 	return quant;
 }
@@ -82,12 +82,12 @@ static int issue_sq(int core, int thread, int quant)
 
 static int issue_lq(int core, int thread, int quant)
 {
-	struct linked_list_t *lq = THREAD.lq;
-	struct uop_t *load;
+	struct linked_list_t *lq = X86_THREAD.lq;
+	struct x86_uop_t *load;
 
 	/* Debug */
 	if (esim_debug_file)
-		uop_lnlist_check_if_ready(lq);
+		x86_uop_linked_list_check_if_ready(lq);
 	
 	/* Process lq */
 	linked_list_head(lq);
@@ -95,7 +95,7 @@ static int issue_lq(int core, int thread, int quant)
 	{
 		/* Get element from load queue. If it is not ready, go to the next one */
 		load = linked_list_get(lq);
-		if (!load->ready && !rf_ready(load))
+		if (!load->ready && !x86_reg_file_ready(load))
 		{
 			linked_list_next(lq);
 			continue;
@@ -103,7 +103,7 @@ static int issue_lq(int core, int thread, int quant)
 		load->ready = 1;
 
 		/* Check that memory system is accessible */
-		if (!mod_can_access(THREAD.data_mod, load->phy_addr))
+		if (!mod_can_access(X86_THREAD.data_mod, load->phy_addr))
 		{
 			linked_list_next(lq);
 			continue;
@@ -111,29 +111,29 @@ static int issue_lq(int core, int thread, int quant)
 
 		/* Remove from load queue */
 		assert(load->uinst->opcode == x86_uinst_load);
-		lq_remove(core, thread);
+		x86_lq_remove(core, thread);
 
 		/* Access memory system */
-		mod_access(THREAD.data_mod, mod_entry_cpu, mod_access_read,
-			load->phy_addr, NULL, CORE.eventq, load);
+		mod_access(X86_THREAD.data_mod, mod_entry_cpu, mod_access_read,
+			load->phy_addr, NULL, X86_CORE.eventq, load);
 
 		/* The cache system will place the load at the head of the
 		 * event queue when it is ready. For now, mark "in_eventq" to
 		 * prevent the uop from being freed. */
 		load->in_eventq = 1;
 		load->issued = 1;
-		load->issue_when = cpu->cycle;
+		load->issue_when = x86_cpu->cycle;
 		
 		/* Instruction issued */
-		CORE.issued[load->uinst->opcode]++;
-		CORE.lsq_reads++;
-		CORE.rf_int_reads += load->ph_int_idep_count;
-		CORE.rf_fp_reads += load->ph_fp_idep_count;
-		THREAD.issued[load->uinst->opcode]++;
-		THREAD.lsq_reads++;
-		THREAD.rf_int_reads += load->ph_int_idep_count;
-		THREAD.rf_fp_reads += load->ph_fp_idep_count;
-		cpu->issued[load->uinst->opcode]++;
+		X86_CORE.issued[load->uinst->opcode]++;
+		X86_CORE.lsq_reads++;
+		X86_CORE.reg_file_int_reads += load->ph_int_idep_count;
+		X86_CORE.reg_file_fp_reads += load->ph_fp_idep_count;
+		X86_THREAD.issued[load->uinst->opcode]++;
+		X86_THREAD.lsq_reads++;
+		X86_THREAD.reg_file_int_reads += load->ph_int_idep_count;
+		X86_THREAD.reg_file_fp_reads += load->ph_fp_idep_count;
+		x86_cpu->issued[load->uinst->opcode]++;
 		quant--;
 		
 		/* MMU statistics */
@@ -143,7 +143,7 @@ static int issue_lq(int core, int thread, int quant)
 		/* Debug */
 		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
 			" stg_issue=1, in_lsq=0, issued=1\n",
-			load->core, (long long unsigned) load->di_seq);
+			load->core, (long long unsigned) load->dispatch_seq);
 	}
 	
 	return quant;
@@ -152,13 +152,13 @@ static int issue_lq(int core, int thread, int quant)
 
 static int issue_iq(int core, int thread, int quant)
 {
-	struct linked_list_t *iq = THREAD.iq;
-	struct uop_t *uop;
+	struct linked_list_t *iq = X86_THREAD.iq;
+	struct x86_uop_t *uop;
 	int lat;
 
 	/* Debug */
 	if (esim_debug_file)
-		uop_lnlist_check_if_ready(iq);
+		x86_uop_linked_list_check_if_ready(iq);
 	
 	/* Find instruction to issue */
 	linked_list_head(iq);
@@ -166,19 +166,19 @@ static int issue_iq(int core, int thread, int quant)
 		
 		/* Get element from IQ */
 		uop = linked_list_get(iq);
-		assert(uop_exists(uop));
+		assert(x86_uop_exists(uop));
 		assert(!(uop->flags & X86_UINST_MEM));
-		if (!uop->ready && !rf_ready(uop)) {
+		if (!uop->ready && !x86_reg_file_ready(uop)) {
 			linked_list_next(iq);
 			continue;
 		}
-		uop->ready = 1;  /* avoid next call to 'rf_ready' */
+		uop->ready = 1;  /* avoid next call to 'x86_reg_file_ready' */
 		
 		/* Run the instruction in its corresponding functional unit.
-		 * If the instruction does not require a functional unit, 'fu_reserve'
+		 * If the instruction does not require a functional unit, 'x86_fu_reserve'
 		 * returns 1 cycle latency. If there is no functional unit available,
-		 * 'fu_reserve' returns 0. */
-		lat = fu_reserve(uop);
+		 * 'x86_fu_reserve' returns 0. */
+		lat = x86_fu_reserve(uop);
 		if (!lat) {
 			linked_list_next(iq);
 			continue;
@@ -186,32 +186,32 @@ static int issue_iq(int core, int thread, int quant)
 		
 		/* Instruction was issued to the corresponding fu.
 		 * Remove it from IQ */
-		iq_remove(core, thread);
+		x86_iq_remove(core, thread);
 		
 		/* Schedule inst in Event Queue */
 		assert(!uop->in_eventq);
 		assert(lat > 0);
 		uop->issued = 1;
-		uop->issue_when = cpu->cycle;
-		uop->when = cpu->cycle + lat;
-		eventq_insert(CORE.eventq, uop);
+		uop->issue_when = x86_cpu->cycle;
+		uop->when = x86_cpu->cycle + lat;
+		x86_event_queue_insert(X86_CORE.eventq, uop);
 		
 		/* Instruction issued */
-		CORE.issued[uop->uinst->opcode]++;
-		CORE.iq_reads++;
-		CORE.rf_int_reads += uop->ph_int_idep_count;
-		CORE.rf_fp_reads += uop->ph_fp_idep_count;
-		THREAD.issued[uop->uinst->opcode]++;
-		THREAD.iq_reads++;
-		THREAD.rf_int_reads += uop->ph_int_idep_count;
-		THREAD.rf_fp_reads += uop->ph_fp_idep_count;
-		cpu->issued[uop->uinst->opcode]++;
+		X86_CORE.issued[uop->uinst->opcode]++;
+		X86_CORE.iq_reads++;
+		X86_CORE.reg_file_int_reads += uop->ph_int_idep_count;
+		X86_CORE.reg_file_fp_reads += uop->ph_fp_idep_count;
+		X86_THREAD.issued[uop->uinst->opcode]++;
+		X86_THREAD.iq_reads++;
+		X86_THREAD.reg_file_int_reads += uop->ph_int_idep_count;
+		X86_THREAD.reg_file_fp_reads += uop->ph_fp_idep_count;
+		x86_cpu->issued[uop->uinst->opcode]++;
 		quant--;
 
 		/* Debug */
 		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
 			" stg_issue=1, in_iq=0, issued=1\n",
-			uop->core, (long long unsigned) uop->di_seq);
+			uop->core, (long long unsigned) uop->dispatch_seq);
 	}
 	
 	return quant;
@@ -237,60 +237,60 @@ void issue_core(int core)
 {
 	int skip, quant;
 
-	switch (cpu_issue_kind) {
+	switch (x86_cpu_issue_kind) {
 	
-	case cpu_issue_kind_shared:
+	case x86_cpu_issue_kind_shared:
 		
 		/* Issue LSQs */
-		quant = cpu_issue_width;
-		skip = cpu_threads;
+		quant = x86_cpu_issue_width;
+		skip = x86_cpu_num_threads;
 		do {
-			CORE.issue_current = (CORE.issue_current + 1) % cpu_threads;
-			quant = issue_thread_lsq(core, CORE.issue_current, quant);
+			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
+			quant = issue_thread_lsq(core, X86_CORE.issue_current, quant);
 			skip--;
 		} while (skip && quant);
 
 		/* Issue IQs */
-		quant = cpu_issue_width;
-		skip = cpu_threads;
+		quant = x86_cpu_issue_width;
+		skip = x86_cpu_num_threads;
 		do {
-			CORE.issue_current = (CORE.issue_current + 1) % cpu_threads;
-			quant = issue_thread_iq(core, CORE.issue_current, quant);
+			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
+			quant = issue_thread_iq(core, X86_CORE.issue_current, quant);
 			skip--;
 		} while (skip && quant);
 		
 		break;
 	
-	case cpu_issue_kind_timeslice:
+	case x86_cpu_issue_kind_timeslice:
 		
 		/* Issue LSQs */
-		quant = cpu_issue_width;
-		skip = cpu_threads;
+		quant = x86_cpu_issue_width;
+		skip = x86_cpu_num_threads;
 		do {
-			CORE.issue_current = (CORE.issue_current + 1) % cpu_threads;
-			quant = issue_thread_lsq(core, CORE.issue_current, quant);
+			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
+			quant = issue_thread_lsq(core, X86_CORE.issue_current, quant);
 			skip--;
-		} while (skip && quant == cpu_issue_width);
+		} while (skip && quant == x86_cpu_issue_width);
 
 		/* Issue IQs */
-		quant = cpu_issue_width;
-		skip = cpu_threads;
+		quant = x86_cpu_issue_width;
+		skip = x86_cpu_num_threads;
 		do {
-			CORE.issue_current = (CORE.issue_current + 1) % cpu_threads;
-			quant = issue_thread_iq(core, CORE.issue_current, quant);
+			X86_CORE.issue_current = (X86_CORE.issue_current + 1) % x86_cpu_num_threads;
+			quant = issue_thread_iq(core, X86_CORE.issue_current, quant);
 			skip--;
-		} while (skip && quant == cpu_issue_width);
+		} while (skip && quant == x86_cpu_issue_width);
 
 		break;
 	}
 }
 
 
-void cpu_issue()
+void x86_cpu_issue()
 {
 	int core;
-	cpu->stage = "issue";
-	FOREACH_CORE
+	x86_cpu->stage = "issue";
+	X86_CORE_FOR_EACH
 		issue_core(core);
 }
 

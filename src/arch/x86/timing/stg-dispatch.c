@@ -22,86 +22,87 @@
 
 
 /* Return the reason why a thread cannot be dispatched. If it can,
- * return di_stall_used. */
-static enum di_stall_t can_dispatch_thread(int core, int thread)
+ * return x86_dispatch_stall_used. */
+static enum x86_dispatch_stall_t can_dispatch_thread(int core, int thread)
 {
-	struct list_t *uopq = THREAD.uopq;
-	struct uop_t *uop;
+	struct list_t *uopq = X86_THREAD.uopq;
+	struct x86_uop_t *uop;
 
 	/* Uop queue empty. */
 	uop = list_get(uopq, 0);
 	if (!uop)
-		return !THREAD.ctx || !x86_ctx_get_status(THREAD.ctx, x86_ctx_running) ?
-			di_stall_ctx : di_stall_uopq;
+		return !X86_THREAD.ctx || !x86_ctx_get_status(X86_THREAD.ctx, x86_ctx_running) ?
+			x86_dispatch_stall_ctx : x86_dispatch_stall_uopq;
 
 	/* If iq/lq/sq/rob full, done */
-	if (!rob_can_enqueue(uop))
-		return di_stall_rob;
-	if (!(uop->flags & X86_UINST_MEM) && !iq_can_insert(uop))
-		return di_stall_iq;
-	if ((uop->flags & X86_UINST_MEM) && !lsq_can_insert(uop))
-		return di_stall_lsq;
-	if (!rf_can_rename(uop))
-		return di_stall_rename;
+	if (!x86_rob_can_enqueue(uop))
+		return x86_dispatch_stall_rob;
+	if (!(uop->flags & X86_UINST_MEM) && !x86_iq_can_insert(uop))
+		return x86_dispatch_stall_iq;
+	if ((uop->flags & X86_UINST_MEM) && !x86_lsq_can_insert(uop))
+		return x86_dispatch_stall_lsq;
+	if (!x86_reg_file_can_rename(uop))
+		return x86_dispatch_stall_rename;
 	
-	return di_stall_used;
+	return x86_dispatch_stall_used;
 }
 
 
 static int dispatch_thread(int core, int thread, int quant)
 {
-	struct uop_t *uop;
-	enum di_stall_t stall;
+	struct x86_uop_t *uop;
+	enum x86_dispatch_stall_t stall;
 
 	while (quant) {
 		
 		/* Check if we can decode */
 		stall = can_dispatch_thread(core, thread);
-		if (stall != di_stall_used) {
-			CORE.di_stall[stall] += quant;
+		if (stall != x86_dispatch_stall_used)
+		{
+			X86_CORE.dispatch_stall[stall] += quant;
 			break;
 		}
 	
 		/* Get entry from uop queue */
-		uop = list_remove_at(THREAD.uopq, 0);
-		assert(uop_exists(uop));
+		uop = list_remove_at(X86_THREAD.uopq, 0);
+		assert(x86_uop_exists(uop));
 		uop->in_uopq = 0;
 		
 		/* Rename */
-		rf_rename(uop);
+		x86_reg_file_rename(uop);
 		
 		/* Insert in ROB */
-		rob_enqueue(uop);
-		CORE.rob_writes++;
-		THREAD.rob_writes++;
+		x86_rob_enqueue(uop);
+		X86_CORE.rob_writes++;
+		X86_THREAD.rob_writes++;
 		
 		/* Non memory instruction into IQ */
 		if (!(uop->flags & X86_UINST_MEM)) {
-			iq_insert(uop);
-			CORE.iq_writes++;
-			THREAD.iq_writes++;
+			x86_iq_insert(uop);
+			X86_CORE.iq_writes++;
+			X86_THREAD.iq_writes++;
 		}
 		
 		/* Memory instructions into the LSQ */
 		if (uop->flags & X86_UINST_MEM) {
-			lsq_insert(uop);
-			CORE.lsq_writes++;
-			THREAD.lsq_writes++;
+			x86_lsq_insert(uop);
+			X86_CORE.lsq_writes++;
+			X86_THREAD.lsq_writes++;
 		}
 		
 		/* Another instruction dispatched */
-		uop->di_seq = ++CORE.di_seq;
-		CORE.di_stall[uop->specmode ? di_stall_spec : di_stall_used]++;
-		THREAD.dispatched[uop->uinst->opcode]++;
-		CORE.dispatched[uop->uinst->opcode]++;
-		cpu->dispatched[uop->uinst->opcode]++;
+		uop->dispatch_seq = ++X86_CORE.dispatch_seq;
+		X86_CORE.dispatch_stall[uop->specmode ? x86_dispatch_stall_spec : x86_dispatch_stall_used]++;
+		X86_THREAD.dispatched[uop->uinst->opcode]++;
+		X86_CORE.dispatched[uop->uinst->opcode]++;
+		x86_cpu->dispatched[uop->uinst->opcode]++;
 		quant--;
 
 		/* Pipeline debug */
 		esim_debug("uop action=\"create\", core=%d, seq=%llu, name=\"%s\","
 			" mop_name=\"%s\", mop_count=%d, mop_index=%d, spec=%u,"
 			" stg_dispatch=1, in_rob=%u, in_iq=%u, in_lsq=%u\n",
-			uop->core, (long long unsigned) uop->di_seq, uop->name,
+			uop->core, (long long unsigned) uop->dispatch_seq, uop->name,
 			uop->mop_name, uop->mop_count, uop->mop_index, uop->specmode,
 			!!uop->in_rob, !!uop->in_iq, uop->in_lq || uop->in_sq);
 	}
@@ -111,39 +112,39 @@ static int dispatch_thread(int core, int thread, int quant)
 
 void dispatch_core(int core)
 {
-	int skip = cpu_threads;
-	int quant = cpu_dispatch_width;
+	int skip = x86_cpu_num_threads;
+	int quant = x86_cpu_dispatch_width;
 	int remain;
 
-	switch (cpu_dispatch_kind) {
+	switch (x86_cpu_dispatch_kind) {
 
-	case cpu_dispatch_kind_shared:
+	case x86_cpu_dispatch_kind_shared:
 		
 		do {
-			CORE.dispatch_current = (CORE.dispatch_current + 1) % cpu_threads;
-			remain = dispatch_thread(core, CORE.dispatch_current, 1);
-			skip = remain ? skip - 1 : cpu_threads;
+			X86_CORE.dispatch_current = (X86_CORE.dispatch_current + 1) % x86_cpu_num_threads;
+			remain = dispatch_thread(core, X86_CORE.dispatch_current, 1);
+			skip = remain ? skip - 1 : x86_cpu_num_threads;
 			quant = remain ? quant : quant - 1;
 		} while (quant && skip);
 		break;
 	
-	case cpu_dispatch_kind_timeslice:
+	case x86_cpu_dispatch_kind_timeslice:
 		
 		do {
-			CORE.dispatch_current = (CORE.dispatch_current + 1) % cpu_threads;
+			X86_CORE.dispatch_current = (X86_CORE.dispatch_current + 1) % x86_cpu_num_threads;
 			skip--;
-		} while (skip && can_dispatch_thread(core, CORE.dispatch_current) != di_stall_used);
-		dispatch_thread(core, CORE.dispatch_current, quant);
+		} while (skip && can_dispatch_thread(core, X86_CORE.dispatch_current) != x86_dispatch_stall_used);
+		dispatch_thread(core, X86_CORE.dispatch_current, quant);
 		break;
 	}
 }
 
 
-void cpu_dispatch()
+void x86_cpu_dispatch()
 {
 	int core;
-	cpu->stage = "dispatch";
-	FOREACH_CORE
+	x86_cpu->stage = "dispatch";
+	X86_CORE_FOR_EACH
 		dispatch_core(core);
 }
 
