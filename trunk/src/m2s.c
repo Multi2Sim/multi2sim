@@ -53,7 +53,7 @@ static char *trace_file_name = "";
 static int opengl_disasm_shader_index = 1;
 
 /* Error debug */
-int error_debug_category;
+int x86_cpu_error_debug_category;
 
 
 static char *sim_help =
@@ -267,7 +267,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--cpu-config"))
 		{
 			sim_need_argument(argc, argv, argi);
-			cpu_config_file_name = argv[++argi];
+			x86_cpu_config_file_name = argv[++argi];
 			continue;
 		}
 
@@ -500,7 +500,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		/* Help for CPU configuration file */
 		if (!strcmp(argv[argi], "--help-cpu-config"))
 		{
-			fprintf(stderr, "%s", cpu_config_help);
+			fprintf(stderr, "%s", x86_cpu_config_help);
 			continue;
 		}
 
@@ -646,7 +646,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--report-cpu-pipeline"))
 		{
 			sim_need_argument(argc, argv, argi);
-			cpu_report_file_name = argv[++argi];
+			x86_cpu_report_file_name = argv[++argi];
 			continue;
 		}
 
@@ -723,11 +723,11 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		char *msg = "option '%s' not valid for functional CPU simulation.\n"
 			"\tPlease use option '--cpu-sim detailed' as well.\n";
 
-		if (*cpu_config_file_name)
+		if (*x86_cpu_config_file_name)
 			fatal(msg, "--cpu-config");
 		if (*esim_debug_file_name)
 			fatal(msg, "--debug-cpu-pipeline");
-		if (*cpu_report_file_name)
+		if (*x86_cpu_report_file_name)
 			fatal(msg, "--report-cpu-pipeline");
 	}
 
@@ -799,7 +799,7 @@ void sim_stats_summary(void)
 	double cycles_per_sec;
 
 	/* Check if any simulation was actually performed */
-	inst_count = x86_emu_kind == x86_emu_kind_functional ? x86_emu->inst_count : cpu->inst;
+	inst_count = x86_emu_kind == x86_emu_kind_functional ? x86_emu->inst_count : x86_cpu->inst;
 	if (!inst_count)
 		return;
 
@@ -824,10 +824,10 @@ void sim_stats_summary(void)
 	/* CPU detailed simulation */
 	if (x86_emu_kind == x86_emu_kind_detailed)
 	{
-		inst_per_cycle = cpu->cycle ? (double) cpu->inst / cpu->cycle : 0.0;
-		branch_acc = cpu->branches ? (double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0;
-		cycles_per_sec = sec_count > 0.0 ? (double) cpu->cycle / sec_count : 0.0;
-		fprintf(stderr, "Cycles = %lld\n", cpu->cycle);
+		inst_per_cycle = x86_cpu->cycle ? (double) x86_cpu->inst / x86_cpu->cycle : 0.0;
+		branch_acc = x86_cpu->branches ? (double) (x86_cpu->branches - x86_cpu->mispred) / x86_cpu->branches : 0.0;
+		cycles_per_sec = sec_count > 0.0 ? (double) x86_cpu->cycle / sec_count : 0.0;
+		fprintf(stderr, "Cycles = %lld\n", x86_cpu->cycle);
 		fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 		fprintf(stderr, "BranchPredictionAccuracy = %.4g\n", branch_acc);
 		fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
@@ -911,7 +911,7 @@ int main(int argc, char **argv)
 	gpu_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
 	gpu_faults_debug_category = debug_new_category(gpu_faults_debug_file_name);  /* GPU-REL */
 	gpu_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);
-	error_debug_category = debug_new_category(error_debug_file_name);
+	x86_cpu_error_debug_category = debug_new_category(error_debug_file_name);
 	esim_debug_init(esim_debug_file_name);
 
 	/* Trace */
@@ -925,7 +925,7 @@ int main(int argc, char **argv)
 
 	/* Initialization for detailed simulation */
 	if (x86_emu_kind == x86_emu_kind_detailed)
-		cpu_init();
+		x86_cpu_init();
 	if (gpu_sim_kind == gpu_sim_detailed)
 		gpu_init();
 
@@ -934,13 +934,13 @@ int main(int argc, char **argv)
 	mem_system_init();
 
 	/* Load programs */
-	cpu_load_progs(argc, argv, ctxconfig_file_name);
+	x86_cpu_load_progs(argc, argv, ctxconfig_file_name);
 
 	/* Simulation loop */
 	if (x86_emu->running_list_head)
 	{
 		if (x86_emu_kind == x86_emu_kind_detailed)
-			cpu_run();
+			x86_cpu_run();
 		else
 			x86_emu_run();
 	}
@@ -958,7 +958,7 @@ int main(int argc, char **argv)
 	if (x86_emu_kind == x86_emu_kind_detailed)
 	{
 		esim_debug_done();
-		cpu_done();
+		x86_cpu_done();
 	}
 
 	/* Finalization of detailed GPU simulation */

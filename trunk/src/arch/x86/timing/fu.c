@@ -26,7 +26,7 @@
  */
 
 
-struct fu_res_t fu_res_pool[fu_count];
+struct x86_fu_res_t x86_fu_res_pool[x86_fu_count];
 
 
 
@@ -38,60 +38,60 @@ struct fu_res_t fu_res_pool[fu_count];
 
 /* Table indexed by 'uop->uinst->opcode', providing the functional unit type
  * associated with a given type of micro-instruction. */
-static enum fu_class_t fu_class_table[x86_uinst_opcode_count] =
+static enum x86_fu_class_t fu_class_table[x86_uinst_opcode_count] =
 {
-	fu_none,  /* x86_uinst_nop */
+	x86_fu_none,  /* x86_uinst_nop */
 
-	fu_none,  /* x86_uinst_move */
-	fu_intadd,  /* x86_uinst_add */
-	fu_intadd,  /* x86_uinst_sub */
-	fu_intmult,  /* x86_uinst_mult */
-	fu_intdiv,  /* x86_uinst_div */
-	fu_effaddr,  /* x86_uinst_effaddr */
+	x86_fu_none,  /* x86_uinst_move */
+	x86_fu_intadd,  /* x86_uinst_add */
+	x86_fu_intadd,  /* x86_uinst_sub */
+	x86_fu_intmult,  /* x86_uinst_mult */
+	x86_fu_intdiv,  /* x86_uinst_div */
+	x86_fu_effaddr,  /* x86_uinst_effaddr */
 
-	fu_logic,  /* x86_uinst_and */
-	fu_logic,  /* x86_uinst_or */
-	fu_logic,  /* x86_uinst_xor */
-	fu_logic,  /* x86_uinst_not */
-	fu_logic,  /* x86_uinst_shift */
-	fu_logic,  /* x86_uinst_sign */
+	x86_fu_logic,  /* x86_uinst_and */
+	x86_fu_logic,  /* x86_uinst_or */
+	x86_fu_logic,  /* x86_uinst_xor */
+	x86_fu_logic,  /* x86_uinst_not */
+	x86_fu_logic,  /* x86_uinst_shift */
+	x86_fu_logic,  /* x86_uinst_sign */
 
-	fu_none,  /* x86_uinst_fp_move */
-	fu_fpsimple,  /* x86_uinst_fp_sign */
-	fu_fpsimple,  /* x86_uinst_fp_round */
+	x86_fu_none,  /* x86_uinst_fp_move */
+	x86_fu_fpsimple,  /* x86_uinst_fp_sign */
+	x86_fu_fpsimple,  /* x86_uinst_fp_round */
 
-	fu_fpadd,  /* x86_uinst_fp_add */
-	fu_fpadd,  /* x86_uinst_fp_sub */
-	fu_fpadd,  /* x86_uinst_fp_comp */
-	fu_fpmult,  /* x86_uinst_fp_mult */
-	fu_fpdiv,  /* x86_uinst_fp_div */
+	x86_fu_fpadd,  /* x86_uinst_fp_add */
+	x86_fu_fpadd,  /* x86_uinst_fp_sub */
+	x86_fu_fpadd,  /* x86_uinst_fp_comp */
+	x86_fu_fpmult,  /* x86_uinst_fp_mult */
+	x86_fu_fpdiv,  /* x86_uinst_fp_div */
 
-	fu_fpcomplex,  /* x86_uinst_fp_exp */
-	fu_fpcomplex,  /* x86_uinst_fp_log */
-	fu_fpcomplex,  /* x86_uinst_fp_sin */
-	fu_fpcomplex,  /* x86_uinst_fp_cos */
-	fu_fpcomplex,  /* x86_uinst_fp_sincos */
-	fu_fpcomplex,  /* x86_uinst_fp_tan */
-	fu_fpcomplex,  /* x86_uinst_fp_atan */
-	fu_fpcomplex,  /* x86_uinst_fp_sqrt */
+	x86_fu_fpcomplex,  /* x86_uinst_fp_exp */
+	x86_fu_fpcomplex,  /* x86_uinst_fp_log */
+	x86_fu_fpcomplex,  /* x86_uinst_fp_sin */
+	x86_fu_fpcomplex,  /* x86_uinst_fp_cos */
+	x86_fu_fpcomplex,  /* x86_uinst_fp_sincos */
+	x86_fu_fpcomplex,  /* x86_uinst_fp_tan */
+	x86_fu_fpcomplex,  /* x86_uinst_fp_atan */
+	x86_fu_fpcomplex,  /* x86_uinst_fp_sqrt */
 
-	fu_none,  /* x86_uinst_fp_push */
-	fu_none,  /* x86_uinst_fp_pop */
+	x86_fu_none,  /* x86_uinst_fp_push */
+	x86_fu_none,  /* x86_uinst_fp_pop */
 
-	fu_none,  /* x86_uinst_xmm_move FIXME */
-	fu_none,  /* x86_uinst_xmm_shuf FIXME */
-	fu_none,  /* x86_uinst_xmm_conv FIXME */
+	x86_fu_none,  /* x86_uinst_xmm_move FIXME */
+	x86_fu_none,  /* x86_uinst_xmm_shuf FIXME */
+	x86_fu_none,  /* x86_uinst_xmm_conv FIXME */
 
-	fu_none,  /* x86_uinst_load */
-	fu_none,  /* x86_uinst_store */
+	x86_fu_none,  /* x86_uinst_load */
+	x86_fu_none,  /* x86_uinst_store */
 
-	fu_none,  /* x86_uinst_call */
-	fu_none,  /* x86_uinst_ret */
-	fu_none,  /* x86_uinst_jump */
-	fu_none,  /* x86_uinst_branch */
-	fu_none,  /* x86_uinst_ibranch */
+	x86_fu_none,  /* x86_uinst_call */
+	x86_fu_none,  /* x86_uinst_ret */
+	x86_fu_none,  /* x86_uinst_jump */
+	x86_fu_none,  /* x86_uinst_branch */
+	x86_fu_none,  /* x86_uinst_ibranch */
 
-	fu_none  /* x86_uinst_syscall */
+	x86_fu_none  /* x86_uinst_syscall */
 };
 
 
@@ -101,31 +101,31 @@ static enum fu_class_t fu_class_table[x86_uinst_opcode_count] =
  */
 
 
-void fu_init()
+void x86_fu_init()
 {
 	int core;
-	FOREACH_CORE
-		CORE.fu = calloc(1, sizeof(struct fu_t));
+	X86_CORE_FOR_EACH
+		X86_CORE.fu = calloc(1, sizeof(struct x86_fu_t));
 }
 
 
-void fu_done()
+void x86_fu_done()
 {
 	int core;
-	FOREACH_CORE
-		free(CORE.fu);
+	X86_CORE_FOR_EACH
+		free(X86_CORE.fu);
 }
 
 
 /* Reserve the functional unit required by the uop.
  * The return value is the f.u. latency, or 0 if it could not
  * be reserved. */
-int fu_reserve(struct uop_t *uop)
+int x86_fu_reserve(struct x86_uop_t *uop)
 {
 	int i;
 	int core = uop->core;
-	struct fu_t *fu = CORE.fu;
-	enum fu_class_t fu_class;
+	struct x86_fu_t *fu = X86_CORE.fu;
+	enum x86_fu_class_t fu_class;
 
 	/* Get the functional unit class required by the uop.
 	 * If the uop does not require a functional unit, return
@@ -136,19 +136,19 @@ int fu_reserve(struct uop_t *uop)
 
 	/* First time uop tries to reserve f.u. */
 	if (!uop->issue_try_when)
-		uop->issue_try_when = cpu->cycle;
+		uop->issue_try_when = x86_cpu->cycle;
 
 	/* Find a free f.u. */
-	assert(fu_class > fu_none && fu_class < fu_count);
-	assert(fu_res_pool[fu_class].count <= FU_RES_MAX);
-	for (i = 0; i < fu_res_pool[fu_class].count; i++) {
-		if (fu->cycle_when_free[fu_class][i] <= cpu->cycle) {
-			assert(fu_res_pool[fu_class].issuelat > 0);
-			assert(fu_res_pool[fu_class].oplat > 0);
-			fu->cycle_when_free[fu_class][i] = cpu->cycle + fu_res_pool[fu_class].issuelat;
+	assert(fu_class > x86_fu_none && fu_class < x86_fu_count);
+	assert(x86_fu_res_pool[fu_class].count <= X86_FU_RES_MAX);
+	for (i = 0; i < x86_fu_res_pool[fu_class].count; i++) {
+		if (fu->cycle_when_free[fu_class][i] <= x86_cpu->cycle) {
+			assert(x86_fu_res_pool[fu_class].issuelat > 0);
+			assert(x86_fu_res_pool[fu_class].oplat > 0);
+			fu->cycle_when_free[fu_class][i] = x86_cpu->cycle + x86_fu_res_pool[fu_class].issuelat;
 			fu->accesses[fu_class]++;
-			fu->waiting_time[fu_class] += cpu->cycle - uop->issue_try_when;
-			return fu_res_pool[fu_class].oplat;
+			fu->waiting_time[fu_class] += x86_cpu->cycle - uop->issue_try_when;
+			return x86_fu_res_pool[fu_class].oplat;
 		}
 	}
 
@@ -159,11 +159,11 @@ int fu_reserve(struct uop_t *uop)
 
 
 /* Release all functional units */
-void fu_release(int core)
+void x86_fu_release(int core)
 {
 	int i, j;
-	for (i = 0; i < fu_count; i++)
-		for (j = 0; j < fu_res_pool[i].count; j++)
-			CORE.fu->cycle_when_free[i][j] = 0;
+	for (i = 0; i < x86_fu_count; i++)
+		for (j = 0; j < x86_fu_res_pool[i].count; j++)
+			X86_CORE.fu->cycle_when_free[i][j] = 0;
 }
 

@@ -28,7 +28,7 @@
 
 /* Help message */
 
-char *cpu_config_help =
+char *x86_cpu_config_help =
 	"The CPU configuration file is a plain text file with the IniFile format, defining\n"
 	"the parameters of the CPU model used for a detailed (architectural) simulation.\n"
 	"This configuration file is passed to Multi2Sim with option '--cpu-config <file>,\n"
@@ -198,45 +198,45 @@ char *cpu_config_help =
 
 
 /* Main Processor Global Variable */
-struct cpu_t *cpu;
+struct x86_cpu_t *x86_cpu;
 
 
 /* Configuration file and parameters */
 
-char *cpu_config_file_name = "";
-char *cpu_report_file_name = "";
+char *x86_cpu_config_file_name = "";
+char *x86_cpu_report_file_name = "";
 
-int cpu_cores = 1;
-int cpu_threads = 1;
+int x86_cpu_num_cores = 1;
+int x86_cpu_num_threads = 1;
 
 long long cpu_fast_forward_count;
 
-int cpu_context_quantum;
-int cpu_context_switch;
+int x86_cpu_context_quantum;
+int x86_cpu_context_switch;
 
-int cpu_thread_quantum;
-int cpu_thread_switch_penalty;
+int x86_cpu_thread_quantum;
+int x86_cpu_thread_switch_penalty;
 
-char *cpu_recover_kind_map[] = { "Writeback", "Commit" };
-enum cpu_recover_kind_t cpu_recover_kind;
-int cpu_recover_penalty;
+char *x86_cpu_recover_kind_map[] = { "Writeback", "Commit" };
+enum x86_cpu_recover_kind_t x86_cpu_recover_kind;
+int x86_cpu_recover_penalty;
 
-char *cpu_fetch_kind_map[] = { "Shared", "TimeSlice", "SwitchOnEvent" };
-enum cpu_fetch_kind_t cpu_fetch_kind;
+char *x86_cpu_fetch_kind_map[] = { "Shared", "TimeSlice", "SwitchOnEvent" };
+enum x86_cpu_fetch_kind_t x86_cpu_fetch_kind;
 
-int cpu_decode_width;
+int x86_cpu_decode_width;
 
-char *cpu_dispatch_kind_map[] = { "Shared", "TimeSlice" };
-enum cpu_dispatch_kind_t cpu_dispatch_kind;
-int cpu_dispatch_width;
+char *x86_cpu_dispatch_kind_map[] = { "Shared", "TimeSlice" };
+enum x86_cpu_dispatch_kind_t x86_cpu_dispatch_kind;
+int x86_cpu_dispatch_width;
 
-char *cpu_issue_kind_map[] = { "Shared", "TimeSlice" };
-enum cpu_issue_kind_t cpu_issue_kind;
-int cpu_issue_width;
+char *x86_cpu_issue_kind_map[] = { "Shared", "TimeSlice" };
+enum x86_cpu_issue_kind_t x86_cpu_issue_kind;
+int x86_cpu_issue_width;
 
-char *cpu_commit_kind_map[] = { "Shared", "TimeSlice" };
-enum cpu_commit_kind_t cpu_commit_kind;
-int cpu_commit_width;
+char *x86_cpu_commit_kind_map[] = { "Shared", "TimeSlice" };
+enum x86_cpu_commit_kind_t x86_cpu_commit_kind;
+int x86_cpu_commit_width;
 
 int cpu_occupancy_stats;
 
@@ -256,29 +256,29 @@ void cpu_config_check(void)
 	char *section;
 
 	/* Open file */
-	config = config_create(cpu_config_file_name);
+	config = config_create(x86_cpu_config_file_name);
 	err = config_load(config);
-	if (!err && cpu_config_file_name[0])
-		fatal("%s: cannot load CPU configuration file", cpu_config_file_name);
+	if (!err && x86_cpu_config_file_name[0])
+		fatal("%s: cannot load CPU configuration file", x86_cpu_config_file_name);
 
 	
 	/* General configuration */
 
 	section = "General";
 
-	cpu_cores = config_read_int(config, section, "Cores", cpu_cores);
-	cpu_threads = config_read_int(config, section, "Threads", cpu_threads);
+	x86_cpu_num_cores = config_read_int(config, section, "Cores", x86_cpu_num_cores);
+	x86_cpu_num_threads = config_read_int(config, section, "Threads", x86_cpu_num_threads);
 
 	cpu_fast_forward_count = config_read_llint(config, section, "FastForward", 0);
 
-	cpu_context_switch = config_read_bool(config, section, "ContextSwitch", 1);
-	cpu_context_quantum = config_read_int(config, section, "ContextQuantum", 100000);
+	x86_cpu_context_switch = config_read_bool(config, section, "ContextSwitch", 1);
+	x86_cpu_context_quantum = config_read_int(config, section, "ContextQuantum", 100000);
 
-	cpu_thread_quantum = config_read_int(config, section, "ThreadQuantum", 1000);
-	cpu_thread_switch_penalty = config_read_int(config, section, "ThreadSwitchPenalty", 0);
+	x86_cpu_thread_quantum = config_read_int(config, section, "ThreadQuantum", 1000);
+	x86_cpu_thread_switch_penalty = config_read_int(config, section, "ThreadSwitchPenalty", 0);
 
-	cpu_recover_kind = config_read_enum(config, section, "RecoverKind", cpu_recover_kind_writeback, cpu_recover_kind_map, 2);
-	cpu_recover_penalty = config_read_int(config, section, "RecoverPenalty", 0);
+	x86_cpu_recover_kind = config_read_enum(config, section, "RecoverKind", x86_cpu_recover_kind_writeback, x86_cpu_recover_kind_map, 2);
+	x86_cpu_recover_penalty = config_read_int(config, section, "RecoverPenalty", 0);
 
 	mmu_page_size = config_read_int(config, section, "PageSize", 4096);
 
@@ -287,18 +287,18 @@ void cpu_config_check(void)
 
 	section = "Pipeline";
 
-	cpu_fetch_kind = config_read_enum(config, section, "FetchKind", cpu_fetch_kind_timeslice, cpu_fetch_kind_map, 3);
+	x86_cpu_fetch_kind = config_read_enum(config, section, "FetchKind", x86_cpu_fetch_kind_timeslice, x86_cpu_fetch_kind_map, 3);
 
-	cpu_decode_width = config_read_int(config, section, "DecodeWidth", 4);
+	x86_cpu_decode_width = config_read_int(config, section, "DecodeWidth", 4);
 
-	cpu_dispatch_kind = config_read_enum(config, section, "DispatchKind", cpu_dispatch_kind_timeslice, cpu_dispatch_kind_map, 2);
-	cpu_dispatch_width = config_read_int(config, section, "DispatchWidth", 4);
+	x86_cpu_dispatch_kind = config_read_enum(config, section, "DispatchKind", x86_cpu_dispatch_kind_timeslice, x86_cpu_dispatch_kind_map, 2);
+	x86_cpu_dispatch_width = config_read_int(config, section, "DispatchWidth", 4);
 
-	cpu_issue_kind = config_read_enum(config, section, "IssueKind", cpu_issue_kind_timeslice, cpu_issue_kind_map, 2);
-	cpu_issue_width = config_read_int(config, section, "IssueWidth", 4);
+	x86_cpu_issue_kind = config_read_enum(config, section, "IssueKind", x86_cpu_issue_kind_timeslice, x86_cpu_issue_kind_map, 2);
+	x86_cpu_issue_width = config_read_int(config, section, "IssueWidth", 4);
 
-	cpu_commit_kind = config_read_enum(config, section, "CommitKind", cpu_commit_kind_shared, cpu_commit_kind_map, 2);
-	cpu_commit_width = config_read_int(config, section, "CommitWidth", 4);
+	x86_cpu_commit_kind = config_read_enum(config, section, "CommitKind", x86_cpu_commit_kind_shared, x86_cpu_commit_kind_map, 2);
+	x86_cpu_commit_width = config_read_int(config, section, "CommitWidth", 4);
 
 	cpu_occupancy_stats = config_read_bool(config, section, "OccupancyStats", 0);
 
@@ -307,94 +307,94 @@ void cpu_config_check(void)
 
 	section = "Queues";
 
-	fetchq_size = config_read_int(config, section, "FetchQueueSize", 64);
+	x86_fetch_queue_size = config_read_int(config, section, "FetchQueueSize", 64);
 
-	uopq_size = config_read_int(config, section, "UopQueueSize", 32);
+	x86_uop_queue_size = config_read_int(config, section, "UopQueueSize", 32);
 
-	rob_kind = config_read_enum(config, section, "RobKind", rob_kind_private, rob_kind_map, 2);
-	rob_size = config_read_int(config, section, "RobSize", 64);
+	x86_rob_kind = config_read_enum(config, section, "RobKind", x86_rob_kind_private, x86_rob_kind_map, 2);
+	x86_rob_size = config_read_int(config, section, "RobSize", 64);
 
-	iq_kind = config_read_enum(config, section, "IqKind", iq_kind_private, iq_kind_map, 2);
-	iq_size = config_read_int(config, section, "IqSize", 40);
+	x86_iq_kind = config_read_enum(config, section, "IqKind", x86_iq_kind_private, x86_iq_kind_map, 2);
+	x86_iq_size = config_read_int(config, section, "IqSize", 40);
 
-	lsq_kind = config_read_enum(config, section, "LsqKind", lsq_kind_private, lsq_kind_map, 2);
-	lsq_size = config_read_int(config, section, "LsqSize", 20);
+	x86_lsq_kind = config_read_enum(config, section, "LsqKind", x86_lsq_kind_private, x86_lsq_kind_map, 2);
+	x86_lsq_size = config_read_int(config, section, "LsqSize", 20);
 
-	rf_kind = config_read_enum(config, section, "RfKind", rf_kind_private, rf_kind_map, 2);
-	rf_int_size = config_read_int(config, section, "RfIntSize", 80);
-	rf_fp_size = config_read_int(config, section, "RfFpSize", 40);
+	x86_reg_file_kind = config_read_enum(config, section, "RfKind", x86_reg_file_kind_private, x86_reg_file_kind_map, 2);
+	x86_reg_file_int_size = config_read_int(config, section, "RfIntSize", 80);
+	x86_reg_file_fp_size = config_read_int(config, section, "RfFpSize", 40);
 
 
 	/* Section '[ TraceCache ]' */
 
 	section = "TraceCache";
 
-	trace_cache_present = config_read_bool(config, section, "Present", 0);
-	trace_cache_num_sets = config_read_int(config, section, "Sets", 64);
-	trace_cache_assoc = config_read_int(config, section, "Assoc", 4);
-	trace_cache_trace_size = config_read_int(config, section, "TraceSize", 16);
-	trace_cache_branch_max = config_read_int(config, section, "BranchMax", 3);
-	trace_cache_queue_size = config_read_int(config, section, "QueueSize", 32);
+	x86_trace_cache_present = config_read_bool(config, section, "Present", 0);
+	x86_trace_cache_num_sets = config_read_int(config, section, "Sets", 64);
+	x86_trace_cache_assoc = config_read_int(config, section, "Assoc", 4);
+	x86_trace_cache_trace_size = config_read_int(config, section, "TraceSize", 16);
+	x86_trace_cache_branch_max = config_read_int(config, section, "BranchMax", 3);
+	x86_trace_cache_queue_size = config_read_int(config, section, "QueueSize", 32);
 
 	
 	/* Functional Units */
 
 	section = "FunctionalUnits";
 
-	fu_res_pool[fu_intadd].count = config_read_int(config, section, "IntAdd.Count", 4);
-	fu_res_pool[fu_intadd].oplat = config_read_int(config, section, "IntAdd.OpLat", 2);
-	fu_res_pool[fu_intadd].issuelat = config_read_int(config, section, "IntAdd.IssueLat", 1);
+	x86_fu_res_pool[x86_fu_intadd].count = config_read_int(config, section, "IntAdd.Count", 4);
+	x86_fu_res_pool[x86_fu_intadd].oplat = config_read_int(config, section, "IntAdd.OpLat", 2);
+	x86_fu_res_pool[x86_fu_intadd].issuelat = config_read_int(config, section, "IntAdd.IssueLat", 1);
 
-	fu_res_pool[fu_intmult].count = config_read_int(config, section, "IntMult.Count", 1);
-	fu_res_pool[fu_intmult].oplat = config_read_int(config, section, "IntMult.OpLat", 3);
-	fu_res_pool[fu_intmult].issuelat = config_read_int(config, section, "IntMult.IssueLat", 3);
+	x86_fu_res_pool[x86_fu_intmult].count = config_read_int(config, section, "IntMult.Count", 1);
+	x86_fu_res_pool[x86_fu_intmult].oplat = config_read_int(config, section, "IntMult.OpLat", 3);
+	x86_fu_res_pool[x86_fu_intmult].issuelat = config_read_int(config, section, "IntMult.IssueLat", 3);
 
-	fu_res_pool[fu_intdiv].count = config_read_int(config, section, "IntDiv.Count", 1);
-	fu_res_pool[fu_intdiv].oplat = config_read_int(config, section, "IntDiv.OpLat", 20);
-	fu_res_pool[fu_intdiv].issuelat = config_read_int(config, section, "IntDiv.IssueLat", 20);
+	x86_fu_res_pool[x86_fu_intdiv].count = config_read_int(config, section, "IntDiv.Count", 1);
+	x86_fu_res_pool[x86_fu_intdiv].oplat = config_read_int(config, section, "IntDiv.OpLat", 20);
+	x86_fu_res_pool[x86_fu_intdiv].issuelat = config_read_int(config, section, "IntDiv.IssueLat", 20);
 
-	fu_res_pool[fu_effaddr].count = config_read_int(config, section, "EffAddr.Count", 4);
-	fu_res_pool[fu_effaddr].oplat = config_read_int(config, section, "EffAddr.OpLat", 2);
-	fu_res_pool[fu_effaddr].issuelat = config_read_int(config, section, "EffAddr.IssueLat", 1);
+	x86_fu_res_pool[x86_fu_effaddr].count = config_read_int(config, section, "EffAddr.Count", 4);
+	x86_fu_res_pool[x86_fu_effaddr].oplat = config_read_int(config, section, "EffAddr.OpLat", 2);
+	x86_fu_res_pool[x86_fu_effaddr].issuelat = config_read_int(config, section, "EffAddr.IssueLat", 1);
 
-	fu_res_pool[fu_logic].count = config_read_int(config, section, "Logic.Count", 4);
-	fu_res_pool[fu_logic].oplat = config_read_int(config, section, "Logic.OpLat", 1);
-	fu_res_pool[fu_logic].issuelat = config_read_int(config, section, "Logic.IssueLat", 1);
+	x86_fu_res_pool[x86_fu_logic].count = config_read_int(config, section, "Logic.Count", 4);
+	x86_fu_res_pool[x86_fu_logic].oplat = config_read_int(config, section, "Logic.OpLat", 1);
+	x86_fu_res_pool[x86_fu_logic].issuelat = config_read_int(config, section, "Logic.IssueLat", 1);
 
-	fu_res_pool[fu_fpsimple].count = config_read_int(config, section, "FpSimple.Count", 2);
-	fu_res_pool[fu_fpsimple].oplat = config_read_int(config, section, "FpSimple.OpLat", 2);
-	fu_res_pool[fu_fpsimple].issuelat = config_read_int(config, section, "FpSimple.IssueLat", 2);
+	x86_fu_res_pool[x86_fu_fpsimple].count = config_read_int(config, section, "FpSimple.Count", 2);
+	x86_fu_res_pool[x86_fu_fpsimple].oplat = config_read_int(config, section, "FpSimple.OpLat", 2);
+	x86_fu_res_pool[x86_fu_fpsimple].issuelat = config_read_int(config, section, "FpSimple.IssueLat", 2);
 
-	fu_res_pool[fu_fpadd].count = config_read_int(config, section, "FpAdd.Count", 2);
-	fu_res_pool[fu_fpadd].oplat = config_read_int(config, section, "FpAdd.OpLat", 5);
-	fu_res_pool[fu_fpadd].issuelat = config_read_int(config, section, "FpAdd.IssueLat", 5);
+	x86_fu_res_pool[x86_fu_fpadd].count = config_read_int(config, section, "FpAdd.Count", 2);
+	x86_fu_res_pool[x86_fu_fpadd].oplat = config_read_int(config, section, "FpAdd.OpLat", 5);
+	x86_fu_res_pool[x86_fu_fpadd].issuelat = config_read_int(config, section, "FpAdd.IssueLat", 5);
 
-	fu_res_pool[fu_fpmult].count = config_read_int(config, section, "FpMult.Count", 1);
-	fu_res_pool[fu_fpmult].oplat = config_read_int(config, section, "FpMult.OpLat", 10);
-	fu_res_pool[fu_fpmult].issuelat = config_read_int(config, section, "FpMult.IssueLat", 10);
+	x86_fu_res_pool[x86_fu_fpmult].count = config_read_int(config, section, "FpMult.Count", 1);
+	x86_fu_res_pool[x86_fu_fpmult].oplat = config_read_int(config, section, "FpMult.OpLat", 10);
+	x86_fu_res_pool[x86_fu_fpmult].issuelat = config_read_int(config, section, "FpMult.IssueLat", 10);
 
-	fu_res_pool[fu_fpdiv].count = config_read_int(config, section, "FpDiv.Count", 1);
-	fu_res_pool[fu_fpdiv].oplat = config_read_int(config, section, "FpDiv.OpLat", 20);
-	fu_res_pool[fu_fpdiv].issuelat = config_read_int(config, section, "FpDiv.IssueLat", 20);
+	x86_fu_res_pool[x86_fu_fpdiv].count = config_read_int(config, section, "FpDiv.Count", 1);
+	x86_fu_res_pool[x86_fu_fpdiv].oplat = config_read_int(config, section, "FpDiv.OpLat", 20);
+	x86_fu_res_pool[x86_fu_fpdiv].issuelat = config_read_int(config, section, "FpDiv.IssueLat", 20);
 
-	fu_res_pool[fu_fpcomplex].count = config_read_int(config, section, "FpComplex.Count", 1);
-	fu_res_pool[fu_fpcomplex].oplat = config_read_int(config, section, "FpComplex.OpLat", 40);
-	fu_res_pool[fu_fpcomplex].issuelat = config_read_int(config, section, "FpComplex.IssueLat", 40);
+	x86_fu_res_pool[x86_fu_fpcomplex].count = config_read_int(config, section, "FpComplex.Count", 1);
+	x86_fu_res_pool[x86_fu_fpcomplex].oplat = config_read_int(config, section, "FpComplex.OpLat", 40);
+	x86_fu_res_pool[x86_fu_fpcomplex].issuelat = config_read_int(config, section, "FpComplex.IssueLat", 40);
 
 
 	/* Branch Predictor */
 
 	section = "BranchPredictor";
 
-	bpred_kind = config_read_enum(config, section, "Kind", bpred_kind_twolevel, bpred_kind_map, 6);
-	bpred_btb_sets = config_read_int(config, section, "BTB.Sets", 256);
-	bpred_btb_assoc = config_read_int(config, section, "BTB.Assoc", 4);
-	bpred_bimod_size = config_read_int(config, section, "Bimod.Size", 1024);
-	bpred_choice_size = config_read_int(config, section, "Choice.Size", 1024);
-	bpred_ras_size = config_read_int(config, section, "RAS.Size", 32);
-	bpred_twolevel_l1size = config_read_int(config, section, "TwoLevel.L1Size", 1);
-	bpred_twolevel_l2size = config_read_int(config, section, "TwoLevel.L2Size", 1024);
-	bpred_twolevel_hist_size = config_read_int(config, section, "TwoLevel.HistorySize", 8);
+	x86_bpred_kind = config_read_enum(config, section, "Kind", x86_bpred_kind_twolevel, x86_bpred_kind_map, 6);
+	x86_bpred_btb_sets = config_read_int(config, section, "BTB.Sets", 256);
+	x86_bpred_btb_assoc = config_read_int(config, section, "BTB.Assoc", 4);
+	x86_bpred_bimod_size = config_read_int(config, section, "Bimod.Size", 1024);
+	x86_bpred_choice_size = config_read_int(config, section, "Choice.Size", 1024);
+	x86_bpred_ras_size = config_read_int(config, section, "RAS.Size", 32);
+	x86_bpred_twolevel_l1size = config_read_int(config, section, "TwoLevel.L1Size", 1);
+	x86_bpred_twolevel_l2size = config_read_int(config, section, "TwoLevel.L2Size", 1024);
+	x86_bpred_twolevel_hist_size = config_read_int(config, section, "TwoLevel.HistorySize", 8);
 
 	/* Close file */
 	config_check(config);
@@ -407,112 +407,112 @@ void cpu_config_dump(FILE *f)
 {
 	/* General configuration */
 	fprintf(f, "[ Config.General ]\n");
-	fprintf(f, "Cores = %d\n", cpu_cores);
-	fprintf(f, "Threads = %d\n", cpu_threads);
+	fprintf(f, "Cores = %d\n", x86_cpu_num_cores);
+	fprintf(f, "Threads = %d\n", x86_cpu_num_threads);
 	fprintf(f, "FastForward = %lld\n", cpu_fast_forward_count);
-	fprintf(f, "ContextSwitch = %s\n", cpu_context_switch ? "True" : "False");
-	fprintf(f, "ContextQuantum = %d\n", cpu_context_quantum);
-	fprintf(f, "ThreadQuantum = %d\n", cpu_thread_quantum);
-	fprintf(f, "ThreadSwitchPenalty = %d\n", cpu_thread_switch_penalty);
-	fprintf(f, "RecoverKind = %s\n", cpu_recover_kind_map[cpu_recover_kind]);
-	fprintf(f, "RecoverPenalty = %d\n", cpu_recover_penalty);
+	fprintf(f, "ContextSwitch = %s\n", x86_cpu_context_switch ? "True" : "False");
+	fprintf(f, "ContextQuantum = %d\n", x86_cpu_context_quantum);
+	fprintf(f, "ThreadQuantum = %d\n", x86_cpu_thread_quantum);
+	fprintf(f, "ThreadSwitchPenalty = %d\n", x86_cpu_thread_switch_penalty);
+	fprintf(f, "RecoverKind = %s\n", x86_cpu_recover_kind_map[x86_cpu_recover_kind]);
+	fprintf(f, "RecoverPenalty = %d\n", x86_cpu_recover_penalty);
 	fprintf(f, "PageSize = %d\n", mmu_page_size);
 	fprintf(f, "\n");
 
 	/* Pipeline */
 	fprintf(f, "[ Config.Pipeline ]\n");
-	fprintf(f, "FetchKind = %s\n", cpu_fetch_kind_map[cpu_fetch_kind]);
-	fprintf(f, "DecodeWidth = %d\n", cpu_decode_width);
-	fprintf(f, "DispatchKind = %s\n", cpu_dispatch_kind_map[cpu_dispatch_kind]);
-	fprintf(f, "DispatchWidth = %d\n", cpu_dispatch_width);
-	fprintf(f, "IssueKind = %s\n", cpu_issue_kind_map[cpu_issue_kind]);
-	fprintf(f, "IssueWidth = %d\n", cpu_issue_width);
-	fprintf(f, "CommitKind = %s\n", cpu_commit_kind_map[cpu_commit_kind]);
-	fprintf(f, "CommitWidth = %d\n", cpu_commit_width);
+	fprintf(f, "FetchKind = %s\n", x86_cpu_fetch_kind_map[x86_cpu_fetch_kind]);
+	fprintf(f, "DecodeWidth = %d\n", x86_cpu_decode_width);
+	fprintf(f, "DispatchKind = %s\n", x86_cpu_dispatch_kind_map[x86_cpu_dispatch_kind]);
+	fprintf(f, "DispatchWidth = %d\n", x86_cpu_dispatch_width);
+	fprintf(f, "IssueKind = %s\n", x86_cpu_issue_kind_map[x86_cpu_issue_kind]);
+	fprintf(f, "IssueWidth = %d\n", x86_cpu_issue_width);
+	fprintf(f, "CommitKind = %s\n", x86_cpu_commit_kind_map[x86_cpu_commit_kind]);
+	fprintf(f, "CommitWidth = %d\n", x86_cpu_commit_width);
 	fprintf(f, "OccupancyStats = %s\n", cpu_occupancy_stats ? "True" : "False");
 	fprintf(f, "\n");
 
 	/* Queues */
 	fprintf(f, "[ Config.Queues ]\n");
-	fprintf(f, "FetchQueueSize = %d\n", fetchq_size);
-	fprintf(f, "UopQueueSize = %d\n", uopq_size);
-	fprintf(f, "RobKind = %s\n", rob_kind_map[rob_kind]);
-	fprintf(f, "RobSize = %d\n", rob_size);
-	fprintf(f, "IqKind = %s\n", iq_kind_map[iq_kind]);
-	fprintf(f, "IqSize = %d\n", iq_size);
-	fprintf(f, "LsqKind = %s\n", lsq_kind_map[lsq_kind]);
-	fprintf(f, "LsqSize = %d\n", lsq_size);
-	fprintf(f, "RfKind = %s\n", rf_kind_map[rf_kind]);
-	fprintf(f, "RfIntSize = %d\n", rf_int_size);
-	fprintf(f, "RfFpSize = %d\n", rf_fp_size);
+	fprintf(f, "FetchQueueSize = %d\n", x86_fetch_queue_size);
+	fprintf(f, "UopQueueSize = %d\n", x86_uop_queue_size);
+	fprintf(f, "RobKind = %s\n", x86_rob_kind_map[x86_rob_kind]);
+	fprintf(f, "RobSize = %d\n", x86_rob_size);
+	fprintf(f, "IqKind = %s\n", x86_iq_kind_map[x86_iq_kind]);
+	fprintf(f, "IqSize = %d\n", x86_iq_size);
+	fprintf(f, "LsqKind = %s\n", x86_lsq_kind_map[x86_lsq_kind]);
+	fprintf(f, "LsqSize = %d\n", x86_lsq_size);
+	fprintf(f, "RfKind = %s\n", x86_reg_file_kind_map[x86_reg_file_kind]);
+	fprintf(f, "RfIntSize = %d\n", x86_reg_file_int_size);
+	fprintf(f, "RfFpSize = %d\n", x86_reg_file_fp_size);
 	fprintf(f, "\n");
 
 	/* Trace Cache */
 	fprintf(f, "[ Config.TraceCache ]\n");
-	fprintf(f, "Present = %s\n", trace_cache_present ? "True" : "False");
-	fprintf(f, "Sets = %d\n", trace_cache_num_sets);
-	fprintf(f, "Assoc = %d\n", trace_cache_assoc);
-	fprintf(f, "TraceSize = %d\n", trace_cache_trace_size);
-	fprintf(f, "BranchMax = %d\n", trace_cache_branch_max);
-	fprintf(f, "QueueSize = %d\n", trace_cache_queue_size);
+	fprintf(f, "Present = %s\n", x86_trace_cache_present ? "True" : "False");
+	fprintf(f, "Sets = %d\n", x86_trace_cache_num_sets);
+	fprintf(f, "Assoc = %d\n", x86_trace_cache_assoc);
+	fprintf(f, "TraceSize = %d\n", x86_trace_cache_trace_size);
+	fprintf(f, "BranchMax = %d\n", x86_trace_cache_branch_max);
+	fprintf(f, "QueueSize = %d\n", x86_trace_cache_queue_size);
 	fprintf(f, "\n");
 
 	/* Functional units */
 	fprintf(f, "[ Config.FunctionalUnits ]\n");
 
-	fprintf(f, "IntAdd.Count = %d\n", fu_res_pool[fu_intadd].count);
-	fprintf(f, "IntAdd.OpLat = %d\n", fu_res_pool[fu_intadd].oplat);
-	fprintf(f, "IntAdd.IssueLat = %d\n", fu_res_pool[fu_intadd].issuelat);
+	fprintf(f, "IntAdd.Count = %d\n", x86_fu_res_pool[x86_fu_intadd].count);
+	fprintf(f, "IntAdd.OpLat = %d\n", x86_fu_res_pool[x86_fu_intadd].oplat);
+	fprintf(f, "IntAdd.IssueLat = %d\n", x86_fu_res_pool[x86_fu_intadd].issuelat);
 
-	fprintf(f, "IntMult.Count = %d\n", fu_res_pool[fu_intmult].count);
-	fprintf(f, "IntMult.OpLat = %d\n", fu_res_pool[fu_intmult].oplat);
-	fprintf(f, "IntMult.IssueLat = %d\n", fu_res_pool[fu_intmult].issuelat);
+	fprintf(f, "IntMult.Count = %d\n", x86_fu_res_pool[x86_fu_intmult].count);
+	fprintf(f, "IntMult.OpLat = %d\n", x86_fu_res_pool[x86_fu_intmult].oplat);
+	fprintf(f, "IntMult.IssueLat = %d\n", x86_fu_res_pool[x86_fu_intmult].issuelat);
 
-	fprintf(f, "IntDiv.Count = %d\n", fu_res_pool[fu_intdiv].count);
-	fprintf(f, "IntDiv.OpLat = %d\n", fu_res_pool[fu_intdiv].oplat);
-	fprintf(f, "IntDiv.IssueLat = %d\n", fu_res_pool[fu_intdiv].issuelat);
+	fprintf(f, "IntDiv.Count = %d\n", x86_fu_res_pool[x86_fu_intdiv].count);
+	fprintf(f, "IntDiv.OpLat = %d\n", x86_fu_res_pool[x86_fu_intdiv].oplat);
+	fprintf(f, "IntDiv.IssueLat = %d\n", x86_fu_res_pool[x86_fu_intdiv].issuelat);
 
-	fprintf(f, "EffAddr.Count = %d\n", fu_res_pool[fu_effaddr].count);
-	fprintf(f, "EffAddr.OpLat = %d\n", fu_res_pool[fu_effaddr].oplat);
-	fprintf(f, "EffAddr.IssueLat = %d\n", fu_res_pool[fu_effaddr].issuelat);
+	fprintf(f, "EffAddr.Count = %d\n", x86_fu_res_pool[x86_fu_effaddr].count);
+	fprintf(f, "EffAddr.OpLat = %d\n", x86_fu_res_pool[x86_fu_effaddr].oplat);
+	fprintf(f, "EffAddr.IssueLat = %d\n", x86_fu_res_pool[x86_fu_effaddr].issuelat);
 
-	fprintf(f, "Logic.Count = %d\n", fu_res_pool[fu_logic].count);
-	fprintf(f, "Logic.OpLat = %d\n", fu_res_pool[fu_logic].oplat);
-	fprintf(f, "Logic.IssueLat = %d\n", fu_res_pool[fu_logic].issuelat);
+	fprintf(f, "Logic.Count = %d\n", x86_fu_res_pool[x86_fu_logic].count);
+	fprintf(f, "Logic.OpLat = %d\n", x86_fu_res_pool[x86_fu_logic].oplat);
+	fprintf(f, "Logic.IssueLat = %d\n", x86_fu_res_pool[x86_fu_logic].issuelat);
 
-	fprintf(f, "FpSimple.Count = %d\n", fu_res_pool[fu_fpsimple].count);
-	fprintf(f, "FpSimple.OpLat = %d\n", fu_res_pool[fu_fpsimple].oplat);
-	fprintf(f, "FpSimple.IssueLat = %d\n", fu_res_pool[fu_fpsimple].issuelat);
+	fprintf(f, "FpSimple.Count = %d\n", x86_fu_res_pool[x86_fu_fpsimple].count);
+	fprintf(f, "FpSimple.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpsimple].oplat);
+	fprintf(f, "FpSimple.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpsimple].issuelat);
 
-	fprintf(f, "FpAdd.Count = %d\n", fu_res_pool[fu_fpadd].count);
-	fprintf(f, "FpAdd.OpLat = %d\n", fu_res_pool[fu_fpadd].oplat);
-	fprintf(f, "FpAdd.IssueLat = %d\n", fu_res_pool[fu_fpadd].issuelat);
+	fprintf(f, "FpAdd.Count = %d\n", x86_fu_res_pool[x86_fu_fpadd].count);
+	fprintf(f, "FpAdd.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpadd].oplat);
+	fprintf(f, "FpAdd.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpadd].issuelat);
 
-	fprintf(f, "FpMult.Count = %d\n", fu_res_pool[fu_fpmult].count);
-	fprintf(f, "FpMult.OpLat = %d\n", fu_res_pool[fu_fpmult].oplat);
-	fprintf(f, "FpMult.IssueLat = %d\n", fu_res_pool[fu_fpmult].issuelat);
+	fprintf(f, "FpMult.Count = %d\n", x86_fu_res_pool[x86_fu_fpmult].count);
+	fprintf(f, "FpMult.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpmult].oplat);
+	fprintf(f, "FpMult.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpmult].issuelat);
 
-	fprintf(f, "FpDiv.Count = %d\n", fu_res_pool[fu_fpdiv].count);
-	fprintf(f, "FpDiv.OpLat = %d\n", fu_res_pool[fu_fpdiv].oplat);
-	fprintf(f, "FpDiv.IssueLat = %d\n", fu_res_pool[fu_fpdiv].issuelat);
+	fprintf(f, "FpDiv.Count = %d\n", x86_fu_res_pool[x86_fu_fpdiv].count);
+	fprintf(f, "FpDiv.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpdiv].oplat);
+	fprintf(f, "FpDiv.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpdiv].issuelat);
 
-	fprintf(f, "FpComplex.Count = %d\n", fu_res_pool[fu_fpcomplex].count);
-	fprintf(f, "FpComplex.OpLat = %d\n", fu_res_pool[fu_fpcomplex].oplat);
-	fprintf(f, "FpComplex.IssueLat = %d\n", fu_res_pool[fu_fpcomplex].issuelat);
+	fprintf(f, "FpComplex.Count = %d\n", x86_fu_res_pool[x86_fu_fpcomplex].count);
+	fprintf(f, "FpComplex.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpcomplex].oplat);
+	fprintf(f, "FpComplex.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpcomplex].issuelat);
 
 	fprintf(f, "\n");
 
 	/* Branch Predictor */
 	fprintf(f, "[ Config.BranchPredictor ]\n");
-	fprintf(f, "Kind = %s\n", bpred_kind_map[bpred_kind]);
-	fprintf(f, "BTB.Sets = %d\n", bpred_btb_sets);
-	fprintf(f, "BTB.Assoc = %d\n", bpred_btb_assoc);
-	fprintf(f, "Bimod.Size = %d\n", bpred_bimod_size);
-	fprintf(f, "Choice.Size = %d\n", bpred_choice_size);
-	fprintf(f, "RAS.Size = %d\n", bpred_ras_size);
-	fprintf(f, "TwoLevel.L1Size = %d\n", bpred_twolevel_l1size);
-	fprintf(f, "TwoLevel.L2Size = %d\n", bpred_twolevel_l2size);
-	fprintf(f, "TwoLevel.HistorySize = %d\n", bpred_twolevel_hist_size);
+	fprintf(f, "Kind = %s\n", x86_bpred_kind_map[x86_bpred_kind]);
+	fprintf(f, "BTB.Sets = %d\n", x86_bpred_btb_sets);
+	fprintf(f, "BTB.Assoc = %d\n", x86_bpred_btb_assoc);
+	fprintf(f, "Bimod.Size = %d\n", x86_bpred_bimod_size);
+	fprintf(f, "Choice.Size = %d\n", x86_bpred_choice_size);
+	fprintf(f, "RAS.Size = %d\n", x86_bpred_ras_size);
+	fprintf(f, "TwoLevel.L1Size = %d\n", x86_bpred_twolevel_l1size);
+	fprintf(f, "TwoLevel.L2Size = %d\n", x86_bpred_twolevel_l2size);
+	fprintf(f, "TwoLevel.HistorySize = %d\n", x86_bpred_twolevel_hist_size);
 	fprintf(f, "\n");
 
 	/* End of configuration */
@@ -559,40 +559,40 @@ void cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix, int peak_i
 	fprintf(f, "%s.Ctrl = %lld\n", prefix, uinst_ctrl_count);
 	fprintf(f, "%s.WndSwitch = %lld\n", prefix, uop_stats[x86_uinst_call] + uop_stats[x86_uinst_ret]);
 	fprintf(f, "%s.Total = %lld\n", prefix, uinst_total);
-	fprintf(f, "%s.IPC = %.4g\n", prefix, cpu->cycle ? (double) uinst_total / cpu->cycle : 0.0);
-	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, cpu->cycle && peak_ipc ?
-		(double) uinst_total / cpu->cycle / peak_ipc : 0.0);
+	fprintf(f, "%s.IPC = %.4g\n", prefix, x86_cpu->cycle ? (double) uinst_total / x86_cpu->cycle : 0.0);
+	fprintf(f, "%s.DutyCycle = %.4g\n", prefix, x86_cpu->cycle && peak_ipc ?
+		(double) uinst_total / x86_cpu->cycle / peak_ipc : 0.0);
 	fprintf(f, "\n");
 }
 
 
 #define DUMP_FU_STAT(NAME, ITEM) { \
-	fprintf(f, "fu." #NAME ".Accesses = %lld\n", CORE.fu->accesses[ITEM]); \
-	fprintf(f, "fu." #NAME ".Denied = %lld\n", CORE.fu->denied[ITEM]); \
-	fprintf(f, "fu." #NAME ".WaitingTime = %.4g\n", CORE.fu->accesses[ITEM] ? \
-		(double) CORE.fu->waiting_time[ITEM] / CORE.fu->accesses[ITEM] : 0.0); \
+	fprintf(f, "fu." #NAME ".Accesses = %lld\n", X86_CORE.fu->accesses[ITEM]); \
+	fprintf(f, "fu." #NAME ".Denied = %lld\n", X86_CORE.fu->denied[ITEM]); \
+	fprintf(f, "fu." #NAME ".WaitingTime = %.4g\n", X86_CORE.fu->accesses[ITEM] ? \
+		(double) X86_CORE.fu->waiting_time[ITEM] / X86_CORE.fu->accesses[ITEM] : 0.0); \
 }
 
 #define DUMP_DISPATCH_STAT(NAME) { \
-	fprintf(f, "Dispatch.Stall." #NAME " = %lld\n", CORE.di_stall[di_stall_##NAME]); \
+	fprintf(f, "Dispatch.Stall." #NAME " = %lld\n", X86_CORE.dispatch_stall[x86_dispatch_stall_##NAME]); \
 }
 
 #define DUMP_CORE_STRUCT_STATS(NAME, ITEM) { \
-	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size * cpu_threads); \
+	fprintf(f, #NAME ".Size = %d\n", (int) x86_##ITEM##_size * x86_cpu_num_threads); \
 	if (cpu_occupancy_stats) \
-		fprintf(f, #NAME ".Occupancy = %.2f\n", cpu->cycle ? (double) CORE.ITEM##_occupancy / cpu->cycle : 0.0); \
-	fprintf(f, #NAME ".Full = %lld\n", CORE.ITEM##_full); \
-	fprintf(f, #NAME ".Reads = %lld\n", CORE.ITEM##_reads); \
-	fprintf(f, #NAME ".Writes = %lld\n", CORE.ITEM##_writes); \
+		fprintf(f, #NAME ".Occupancy = %.2f\n", x86_cpu->cycle ? (double) X86_CORE.ITEM##_occupancy / x86_cpu->cycle : 0.0); \
+	fprintf(f, #NAME ".Full = %lld\n", X86_CORE.ITEM##_full); \
+	fprintf(f, #NAME ".Reads = %lld\n", X86_CORE.ITEM##_reads); \
+	fprintf(f, #NAME ".Writes = %lld\n", X86_CORE.ITEM##_writes); \
 }
 
 #define DUMP_THREAD_STRUCT_STATS(NAME, ITEM) { \
-	fprintf(f, #NAME ".Size = %d\n", (int) ITEM##_size); \
+	fprintf(f, #NAME ".Size = %d\n", (int) x86_##ITEM##_size); \
 	if (cpu_occupancy_stats) \
-		fprintf(f, #NAME ".Occupancy = %.2f\n", cpu->cycle ? (double) THREAD.ITEM##_occupancy / cpu->cycle : 0.0); \
-	fprintf(f, #NAME ".Full = %lld\n", THREAD.ITEM##_full); \
-	fprintf(f, #NAME ".Reads = %lld\n", THREAD.ITEM##_reads); \
-	fprintf(f, #NAME ".Writes = %lld\n", THREAD.ITEM##_writes); \
+		fprintf(f, #NAME ".Occupancy = %.2f\n", x86_cpu->cycle ? (double) X86_THREAD.ITEM##_occupancy / x86_cpu->cycle : 0.0); \
+	fprintf(f, #NAME ".Full = %lld\n", X86_THREAD.ITEM##_full); \
+	fprintf(f, #NAME ".Reads = %lld\n", X86_THREAD.ITEM##_reads); \
+	fprintf(f, #NAME ".Writes = %lld\n", X86_THREAD.ITEM##_writes); \
 }
 
 void cpu_dump_report()
@@ -602,7 +602,7 @@ void cpu_dump_report()
 	uint64_t now = x86_emu_timer();
 
 	/* Open file */
-	f = open_write(cpu_report_file_name);
+	f = open_write(x86_cpu_report_file_name);
 	if (!f)
 		return;
 	
@@ -614,24 +614,24 @@ void cpu_dump_report()
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
 	fprintf(f, "; Global statistics\n");
 	fprintf(f, "[ Global ]\n\n");
-	fprintf(f, "Cycles = %lld\n", cpu->cycle);
+	fprintf(f, "Cycles = %lld\n", x86_cpu->cycle);
 	fprintf(f, "Time = %.1f\n", (double) now / 1000000);
-	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) cpu->cycle / now * 1000000 : 0.0);
+	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) x86_cpu->cycle / now * 1000000 : 0.0);
 	fprintf(f, "MemoryUsed = %lu\n", (long) mem_mapped_space);
 	fprintf(f, "MemoryUsedMax = %lu\n", (long) mem_max_mapped_space);
 	fprintf(f, "\n");
 
 	/* Dispatch stage */
 	fprintf(f, "; Dispatch stage\n");
-	cpu_dump_uop_report(f, cpu->dispatched, "Dispatch", cpu_dispatch_width);
+	cpu_dump_uop_report(f, x86_cpu->dispatched, "Dispatch", x86_cpu_dispatch_width);
 
 	/* Issue stage */
 	fprintf(f, "; Issue stage\n");
-	cpu_dump_uop_report(f, cpu->issued, "Issue", cpu_issue_width);
+	cpu_dump_uop_report(f, x86_cpu->issued, "Issue", x86_cpu_issue_width);
 
 	/* Commit stage */
 	fprintf(f, "; Commit stage\n");
-	cpu_dump_uop_report(f, cpu->committed, "Commit", cpu_commit_width);
+	cpu_dump_uop_report(f, x86_cpu->committed, "Commit", x86_cpu_commit_width);
 
 	/* Committed branches */
 	fprintf(f, "; Committed branches\n");
@@ -639,15 +639,15 @@ void cpu_dump_report()
 	fprintf(f, ";    Squashed - Number of mispredicted uops squashed from the ROB\n");
 	fprintf(f, ";    Mispred - Number of mispredicted branches in the correct path\n");
 	fprintf(f, ";    PredAcc - Prediction accuracy\n");
-	fprintf(f, "Commit.Branches = %lld\n", cpu->branches);
-	fprintf(f, "Commit.Squashed = %lld\n", cpu->squashed);
-	fprintf(f, "Commit.Mispred = %lld\n", cpu->mispred);
-	fprintf(f, "Commit.PredAcc = %.4g\n", cpu->branches ?
-		(double) (cpu->branches - cpu->mispred) / cpu->branches : 0.0);
+	fprintf(f, "Commit.Branches = %lld\n", x86_cpu->branches);
+	fprintf(f, "Commit.Squashed = %lld\n", x86_cpu->squashed);
+	fprintf(f, "Commit.Mispred = %lld\n", x86_cpu->mispred);
+	fprintf(f, "Commit.PredAcc = %.4g\n", x86_cpu->branches ?
+		(double) (x86_cpu->branches - x86_cpu->mispred) / x86_cpu->branches : 0.0);
 	fprintf(f, "\n");
 	
 	/* Report for each core */
-	FOREACH_CORE {
+	X86_CORE_FOR_EACH {
 		
 		/* Core */
 		fprintf(f, "\n; Statistics for core %d\n", core);
@@ -658,20 +658,20 @@ void cpu_dump_report()
 		fprintf(f, ";    Accesses - Number of uops issued to a f.u.\n");
 		fprintf(f, ";    Denied - Number of requests denied due to busy f.u.\n");
 		fprintf(f, ";    WaitingTime - Average number of waiting cycles to reserve f.u.\n");
-		DUMP_FU_STAT(IntAdd, fu_intadd);
-		DUMP_FU_STAT(IntMult, fu_intmult);
-		DUMP_FU_STAT(IntDiv, fu_intdiv);
-		DUMP_FU_STAT(Effaddr, fu_effaddr);
-		DUMP_FU_STAT(Logic, fu_logic);
-		DUMP_FU_STAT(FPSimple, fu_fpsimple);
-		DUMP_FU_STAT(FPAdd, fu_fpadd);
-		DUMP_FU_STAT(FPMult, fu_fpmult);
-		DUMP_FU_STAT(FPDiv, fu_fpdiv);
-		DUMP_FU_STAT(FPComplex, fu_fpcomplex);
+		DUMP_FU_STAT(IntAdd, x86_fu_intadd);
+		DUMP_FU_STAT(IntMult, x86_fu_intmult);
+		DUMP_FU_STAT(IntDiv, x86_fu_intdiv);
+		DUMP_FU_STAT(Effaddr, x86_fu_effaddr);
+		DUMP_FU_STAT(Logic, x86_fu_logic);
+		DUMP_FU_STAT(FPSimple, x86_fu_fpsimple);
+		DUMP_FU_STAT(FPAdd, x86_fu_fpadd);
+		DUMP_FU_STAT(FPMult, x86_fu_fpmult);
+		DUMP_FU_STAT(FPDiv, x86_fu_fpdiv);
+		DUMP_FU_STAT(FPComplex, x86_fu_fpcomplex);
 		fprintf(f, "\n");
 
 		/* Dispatch slots */
-		if (cpu_dispatch_kind == cpu_dispatch_kind_timeslice) {
+		if (x86_cpu_dispatch_kind == x86_cpu_dispatch_kind_timeslice) {
 			fprintf(f, "; Dispatch slots usage (sum = cycles * dispatch width)\n");
 			fprintf(f, ";    used - dispatch slot was used by a non-spec uop\n");
 			fprintf(f, ";    spec - used by a mispeculated uop\n");
@@ -690,23 +690,23 @@ void cpu_dump_report()
 
 		/* Dispatch stage */
 		fprintf(f, "; Dispatch stage\n");
-		cpu_dump_uop_report(f, CORE.dispatched, "Dispatch", cpu_dispatch_width);
+		cpu_dump_uop_report(f, X86_CORE.dispatched, "Dispatch", x86_cpu_dispatch_width);
 
 		/* Issue stage */
 		fprintf(f, "; Issue stage\n");
-		cpu_dump_uop_report(f, CORE.issued, "Issue", cpu_issue_width);
+		cpu_dump_uop_report(f, X86_CORE.issued, "Issue", x86_cpu_issue_width);
 
 		/* Commit stage */
 		fprintf(f, "; Commit stage\n");
-		cpu_dump_uop_report(f, CORE.committed, "Commit", cpu_commit_width);
+		cpu_dump_uop_report(f, X86_CORE.committed, "Commit", x86_cpu_commit_width);
 
 		/* Committed branches */
 		fprintf(f, "; Committed branches\n");
-		fprintf(f, "Commit.Branches = %lld\n", CORE.branches);
-		fprintf(f, "Commit.Squashed = %lld\n", CORE.squashed);
-		fprintf(f, "Commit.Mispred = %lld\n", CORE.mispred);
-		fprintf(f, "Commit.PredAcc = %.4g\n", CORE.branches ?
-			(double) (CORE.branches - CORE.mispred) / CORE.branches : 0.0);
+		fprintf(f, "Commit.Branches = %lld\n", X86_CORE.branches);
+		fprintf(f, "Commit.Squashed = %lld\n", X86_CORE.squashed);
+		fprintf(f, "Commit.Mispred = %lld\n", X86_CORE.mispred);
+		fprintf(f, "Commit.PredAcc = %.4g\n", X86_CORE.branches ?
+			(double) (X86_CORE.branches - X86_CORE.mispred) / X86_CORE.branches : 0.0);
 		fprintf(f, "\n");
 
 		/* Occupancy stats */
@@ -716,72 +716,75 @@ void cpu_dump_report()
 		fprintf(f, ";    Occupancy - Average number of occupied entries\n");
 		fprintf(f, ";    Full - Number of cycles when the structure was full\n");
 		fprintf(f, ";    Reads, Writes - Accesses to the structure\n");
-		if (rob_kind == rob_kind_shared)
+		if (x86_rob_kind == x86_rob_kind_shared)
 			DUMP_CORE_STRUCT_STATS(ROB, rob);
-		if (iq_kind == iq_kind_shared) {
+		if (x86_iq_kind == x86_iq_kind_shared)
+		{
 			DUMP_CORE_STRUCT_STATS(IQ, iq);
-			fprintf(f, "IQ.WakeupAccesses = %lld\n", CORE.iq_wakeup_accesses);
+			fprintf(f, "IQ.WakeupAccesses = %lld\n", X86_CORE.iq_wakeup_accesses);
 		}
-		if (lsq_kind == lsq_kind_shared)
+		if (x86_lsq_kind == x86_lsq_kind_shared)
 			DUMP_CORE_STRUCT_STATS(LSQ, lsq);
-		if (rf_kind == rf_kind_shared) {
-			DUMP_CORE_STRUCT_STATS(RF_Int, rf_int);
-			DUMP_CORE_STRUCT_STATS(RF_Fp, rf_fp);
+		if (x86_reg_file_kind == x86_reg_file_kind_shared)
+		{
+			DUMP_CORE_STRUCT_STATS(RF_Int, reg_file_int);
+			DUMP_CORE_STRUCT_STATS(RF_Fp, reg_file_fp);
 		}
 		fprintf(f, "\n");
 
 		/* Report for each thread */
-		FOREACH_THREAD {
+		X86_THREAD_FOR_EACH
+		{
 			fprintf(f, "\n; Statistics for core %d - thread %d\n", core, thread);
 			fprintf(f, "[ c%dt%d ]\n\n", core, thread);
 
 			/* Dispatch stage */
 			fprintf(f, "; Dispatch stage\n");
-			cpu_dump_uop_report(f, THREAD.dispatched, "Dispatch", cpu_dispatch_width);
+			cpu_dump_uop_report(f, X86_THREAD.dispatched, "Dispatch", x86_cpu_dispatch_width);
 
 			/* Issue stage */
 			fprintf(f, "; Issue stage\n");
-			cpu_dump_uop_report(f, THREAD.issued, "Issue", cpu_issue_width);
+			cpu_dump_uop_report(f, X86_THREAD.issued, "Issue", x86_cpu_issue_width);
 
 			/* Commit stage */
 			fprintf(f, "; Commit stage\n");
-			cpu_dump_uop_report(f, THREAD.committed, "Commit", cpu_commit_width);
+			cpu_dump_uop_report(f, X86_THREAD.committed, "Commit", x86_cpu_commit_width);
 
 			/* Committed branches */
 			fprintf(f, "; Committed branches\n");
-			fprintf(f, "Commit.Branches = %lld\n", THREAD.branches);
-			fprintf(f, "Commit.Squashed = %lld\n", THREAD.squashed);
-			fprintf(f, "Commit.Mispred = %lld\n", THREAD.mispred);
-			fprintf(f, "Commit.PredAcc = %.4g\n", THREAD.branches ?
-				(double) (THREAD.branches - THREAD.mispred) / THREAD.branches : 0.0);
+			fprintf(f, "Commit.Branches = %lld\n", X86_THREAD.branches);
+			fprintf(f, "Commit.Squashed = %lld\n", X86_THREAD.squashed);
+			fprintf(f, "Commit.Mispred = %lld\n", X86_THREAD.mispred);
+			fprintf(f, "Commit.PredAcc = %.4g\n", X86_THREAD.branches ?
+				(double) (X86_THREAD.branches - X86_THREAD.mispred) / X86_THREAD.branches : 0.0);
 			fprintf(f, "\n");
 
 			/* Occupancy stats */
 			fprintf(f, "; Structure statistics (reorder buffer, instruction queue, load-store queue,\n");
 			fprintf(f, "; integer/floating-point register file, and renaming table)\n");
-			if (rob_kind == rob_kind_private)
+			if (x86_rob_kind == x86_rob_kind_private)
 				DUMP_THREAD_STRUCT_STATS(ROB, rob);
-			if (iq_kind == iq_kind_private) {
+			if (x86_iq_kind == x86_iq_kind_private) {
 				DUMP_THREAD_STRUCT_STATS(IQ, iq);
-				fprintf(f, "IQ.WakeupAccesses = %lld\n", THREAD.iq_wakeup_accesses);
+				fprintf(f, "IQ.WakeupAccesses = %lld\n", X86_THREAD.iq_wakeup_accesses);
 			}
-			if (lsq_kind == lsq_kind_private)
+			if (x86_lsq_kind == x86_lsq_kind_private)
 				DUMP_THREAD_STRUCT_STATS(LSQ, lsq);
-			if (rf_kind == rf_kind_private) {
-				DUMP_THREAD_STRUCT_STATS(RF_Int, rf_int);
-				DUMP_THREAD_STRUCT_STATS(RF_Fp, rf_fp);
+			if (x86_reg_file_kind == x86_reg_file_kind_private) {
+				DUMP_THREAD_STRUCT_STATS(RF_Int, reg_file_int);
+				DUMP_THREAD_STRUCT_STATS(RF_Fp, reg_file_fp);
 			}
-			fprintf(f, "RAT.IntReads = %lld\n", THREAD.rat_int_reads);
-			fprintf(f, "RAT.IntWrites = %lld\n", THREAD.rat_int_writes);
-			fprintf(f, "RAT.FpReads = %lld\n", THREAD.rat_fp_reads);
-			fprintf(f, "RAT.FpWrites = %lld\n", THREAD.rat_fp_writes);
-			fprintf(f, "BTB.Reads = %lld\n", THREAD.btb_reads);
-			fprintf(f, "BTB.Writes = %lld\n", THREAD.btb_writes);
+			fprintf(f, "RAT.IntReads = %lld\n", X86_THREAD.rat_int_reads);
+			fprintf(f, "RAT.IntWrites = %lld\n", X86_THREAD.rat_int_writes);
+			fprintf(f, "RAT.FpReads = %lld\n", X86_THREAD.rat_fp_reads);
+			fprintf(f, "RAT.FpWrites = %lld\n", X86_THREAD.rat_fp_writes);
+			fprintf(f, "BTB.Reads = %lld\n", X86_THREAD.btb_reads);
+			fprintf(f, "BTB.Writes = %lld\n", X86_THREAD.btb_writes);
 			fprintf(f, "\n");
 
 			/* Trace cache stats */
-			if (THREAD.trace_cache)
-				trace_cache_dump_report(THREAD.trace_cache, f);
+			if (X86_THREAD.trace_cache)
+				x86_trace_cache_dump_report(X86_THREAD.trace_cache, f);
 		}
 	}
 
@@ -798,14 +801,14 @@ void cpu_thread_init(int core, int thread)
 void cpu_core_init(int core)
 {
 	int thread;
-	CORE.thread = calloc(cpu_threads, sizeof(struct cpu_thread_t));
-	FOREACH_THREAD
+	X86_CORE.thread = calloc(x86_cpu_num_threads, sizeof(struct x86_thread_t));
+	X86_THREAD_FOR_EACH
 		cpu_thread_init(core, thread);
 }
 
 
 /* Initialization */
-void cpu_init()
+void x86_cpu_init()
 {
 	int core;
 
@@ -813,52 +816,52 @@ void cpu_init()
 	cpu_config_check();
 
 	/* Create processor structure and allocate cores/threads */
-	cpu = calloc(1, sizeof(struct cpu_t));
-	cpu->core = calloc(cpu_cores, sizeof(struct cpu_core_t));
-	FOREACH_CORE
+	x86_cpu = calloc(1, sizeof(struct x86_cpu_t));
+	x86_cpu->core = calloc(x86_cpu_num_cores, sizeof(struct x86_core_t));
+	X86_CORE_FOR_EACH
 		cpu_core_init(core);
 
-	rf_init();
-	bpred_init();
-	trace_cache_init();
-	fetchq_init();
-	uopq_init();
-	rob_init();
-	iq_init();
-	lsq_init();
-	eventq_init();
-	fu_init();
+	x86_reg_file_init();
+	x86_bpred_init();
+	x86_trace_cache_init();
+	x86_fetch_queue_init();
+	x86_uop_queue_init();
+	x86_rob_init();
+	x86_iq_init();
+	x86_lsq_init();
+	x86_event_queue_init();
+	x86_fu_init();
 }
 
 
 /* Finalization */
-void cpu_done()
+void x86_cpu_done()
 {
 	int core;
 
 	/* Finalize structures */
-	fetchq_done();
-	uopq_done();
-	rob_done();
-	iq_done();
-	lsq_done();
-	eventq_done();
-	bpred_done();
-	trace_cache_done();
-	rf_done();
-	fu_done();
+	x86_fetch_queue_done();
+	x86_uop_queue_done();
+	x86_rob_done();
+	x86_iq_done();
+	x86_lsq_done();
+	x86_event_queue_done();
+	x86_bpred_done();
+	x86_trace_cache_done();
+	x86_reg_file_done();
+	x86_fu_done();
 
 	/* Free processor */
-	FOREACH_CORE
-		free(CORE.thread);
-	free(cpu->core);
-	free(cpu);
+	X86_CORE_FOR_EACH
+		free(X86_CORE.thread);
+	free(x86_cpu->core);
+	free(x86_cpu);
 }
 
 
 /* Load programs to different contexts from a configuration text file or
  * from arguments */
-void cpu_load_progs(int argc, char **argv, char *ctxfile)
+void x86_cpu_load_progs(int argc, char **argv, char *ctxfile)
 {
 	if (argc > 1)
 		x86_loader_load_prog_from_cmdline(argc - 1, argv + 1);
@@ -867,43 +870,43 @@ void cpu_load_progs(int argc, char **argv, char *ctxfile)
 }
 
 
-void cpu_dump(FILE *f)
+void x86_cpu_dump(FILE *f)
 {
 	int core, thread;
 	
 	/* General information */
 	fprintf(f, "\n");
-	fprintf(f, "sim.last_dump  %lld  # Cycle of last dump\n", cpu->last_dump);
-	fprintf(f, "sim.ipc_last_dump  %.4g  # IPC since last dump\n", cpu->cycle - cpu->last_dump > 0 ?
-		(double) (cpu->inst - cpu->last_committed) / (cpu->cycle - cpu->last_dump) : 0);
+	fprintf(f, "sim.last_dump  %lld  # Cycle of last dump\n", x86_cpu->last_dump);
+	fprintf(f, "sim.ipc_last_dump  %.4g  # IPC since last dump\n", x86_cpu->cycle - x86_cpu->last_dump > 0 ?
+		(double) (x86_cpu->inst - x86_cpu->last_committed) / (x86_cpu->cycle - x86_cpu->last_dump) : 0);
 	fprintf(f, "\n");
 
 	/* Cores */
-	FOREACH_CORE {
+	X86_CORE_FOR_EACH {
 		fprintf(f, "Core %d:\n", core);
 		
 		fprintf(f, "eventq:\n");
-		uop_lnlist_dump(CORE.eventq, f);
+		x86_uop_linked_list_dump(X86_CORE.eventq, f);
 		fprintf(f, "rob:\n");
-		rob_dump(core, f);
+		x86_rob_dump(core, f);
 
-		FOREACH_THREAD {
+		X86_THREAD_FOR_EACH {
 			fprintf(f, "Thread %d:\n", thread);
 			
 			fprintf(f, "fetch queue:\n");
-			uop_list_dump(THREAD.fetchq, f);
+			x86_uop_list_dump(X86_THREAD.fetchq, f);
 			fprintf(f, "uop queue:\n");
-			uop_list_dump(THREAD.uopq, f);
+			x86_uop_list_dump(X86_THREAD.uopq, f);
 			fprintf(f, "iq:\n");
-			uop_lnlist_dump(THREAD.iq, f);
+			x86_uop_linked_list_dump(X86_THREAD.iq, f);
 			fprintf(f, "lq:\n");
-			uop_lnlist_dump(THREAD.lq, f);
+			x86_uop_linked_list_dump(X86_THREAD.lq, f);
 			fprintf(f, "sq:\n");
-			uop_lnlist_dump(THREAD.sq, f);
-			rf_dump(core, thread, f);
-			if (THREAD.ctx) {
-				fprintf(f, "mapped context: %d\n", THREAD.ctx->pid);
-				x86_ctx_dump(THREAD.ctx, f);
+			x86_uop_linked_list_dump(X86_THREAD.sq, f);
+			x86_reg_file_dump(core, thread, f);
+			if (X86_THREAD.ctx) {
+				fprintf(f, "mapped context: %d\n", X86_THREAD.ctx->pid);
+				x86_ctx_dump(X86_THREAD.ctx, f);
 			}
 			
 			fprintf(f, "\n");
@@ -911,98 +914,102 @@ void cpu_dump(FILE *f)
 	}
 
 	/* Register last dump */
-	cpu->last_dump = cpu->cycle;
-	cpu->last_committed = cpu->inst;
+	x86_cpu->last_dump = x86_cpu->cycle;
+	x86_cpu->last_committed = x86_cpu->inst;
 }
 
 
 #define UPDATE_THREAD_OCCUPANCY_STATS(ITEM) { \
-	THREAD.ITEM##_occupancy += THREAD.ITEM##_count; \
-	if (THREAD.ITEM##_count == ITEM##_size) \
-		THREAD.ITEM##_full++; \
+	X86_THREAD.ITEM##_occupancy += X86_THREAD.ITEM##_count; \
+	if (X86_THREAD.ITEM##_count == x86_##ITEM##_size) \
+		X86_THREAD.ITEM##_full++; \
 }
 
 
 #define UPDATE_CORE_OCCUPANCY_STATS(ITEM) { \
-	CORE.ITEM##_occupancy += CORE.ITEM##_count; \
-	if (CORE.ITEM##_count == ITEM##_size * cpu_threads) \
-		CORE.ITEM##_full++; \
+	X86_CORE.ITEM##_occupancy += X86_CORE.ITEM##_count; \
+	if (X86_CORE.ITEM##_count == x86_##ITEM##_size * x86_cpu_num_threads) \
+		X86_CORE.ITEM##_full++; \
 }
 
 
-void cpu_update_occupancy_stats()
+void x86_cpu_update_occupancy_stats()
 {
 	int core, thread;
 
-	FOREACH_CORE {
+	X86_CORE_FOR_EACH {
 
 		/* Update occupancy stats for shared structures */
-		if (rob_kind == rob_kind_shared)
+		if (x86_rob_kind == x86_rob_kind_shared)
 			UPDATE_CORE_OCCUPANCY_STATS(rob);
-		if (iq_kind == iq_kind_shared)
+		if (x86_iq_kind == x86_iq_kind_shared)
 			UPDATE_CORE_OCCUPANCY_STATS(iq);
-		if (lsq_kind == lsq_kind_shared)
+		if (x86_lsq_kind == x86_lsq_kind_shared)
 			UPDATE_CORE_OCCUPANCY_STATS(lsq);
-		if (rf_kind == rf_kind_shared) {
-			UPDATE_CORE_OCCUPANCY_STATS(rf_int);
-			UPDATE_CORE_OCCUPANCY_STATS(rf_fp);
+		if (x86_reg_file_kind == x86_reg_file_kind_shared)
+		{
+			UPDATE_CORE_OCCUPANCY_STATS(reg_file_int);
+			UPDATE_CORE_OCCUPANCY_STATS(reg_file_fp);
 		}
 
 		/* Occupancy stats for private structures */
-		FOREACH_THREAD {
-			if (rob_kind == rob_kind_private)
+		X86_THREAD_FOR_EACH
+		{
+			if (x86_rob_kind == x86_rob_kind_private)
 				UPDATE_THREAD_OCCUPANCY_STATS(rob);
-			if (iq_kind == iq_kind_private)
+			if (x86_iq_kind == x86_iq_kind_private)
 				UPDATE_THREAD_OCCUPANCY_STATS(iq);
-			if (lsq_kind == lsq_kind_private)
+			if (x86_lsq_kind == x86_lsq_kind_private)
 				UPDATE_THREAD_OCCUPANCY_STATS(lsq);
-			if (rf_kind == rf_kind_private) {
-				UPDATE_THREAD_OCCUPANCY_STATS(rf_int);
-				UPDATE_THREAD_OCCUPANCY_STATS(rf_fp);
+			if (x86_reg_file_kind == x86_reg_file_kind_private)
+			{
+				UPDATE_THREAD_OCCUPANCY_STATS(reg_file_int);
+				UPDATE_THREAD_OCCUPANCY_STATS(reg_file_fp);
 			}
 		}
 	}
 }
 
 
-void cpu_stages()
+void x86_cpu_run_stages()
 {
 	/* Static scheduler called after any context changed status other than 'sepcmode' */
-	if (!cpu_context_switch && x86_emu->context_reschedule) {
-		cpu_static_schedule();
+	if (!x86_cpu_context_switch && x86_emu->context_reschedule)
+	{
+		x86_cpu_static_schedule();
 		x86_emu->context_reschedule = 0;
 	}
 
 	/* Dynamic scheduler called after any context changed status other than 'specmode',
 	 * or quantum of the oldest context expired, and no context is being evicted. */
-	if (cpu_context_switch && !cpu->ctx_dealloc_signals &&
-		(x86_emu->context_reschedule || cpu->ctx_alloc_oldest + cpu_context_quantum <= cpu->cycle))
+	if (x86_cpu_context_switch && !x86_cpu->ctx_dealloc_signals &&
+		(x86_emu->context_reschedule || x86_cpu->ctx_alloc_oldest + x86_cpu_context_quantum <= x86_cpu->cycle))
 	{
-		cpu_dynamic_schedule();
+		x86_cpu_dynamic_schedule();
 		x86_emu->context_reschedule = 0;
 	}
 
 	/* Stages */
-	cpu_commit();
-	cpu_writeback();
-	cpu_issue();
-	cpu_dispatch();
-	cpu_decode();
-	cpu_fetch();
+	x86_cpu_commit();
+	x86_cpu_writeback();
+	x86_cpu_issue();
+	x86_cpu_dispatch();
+	x86_cpu_decode();
+	x86_cpu_fetch();
 
 	/* Update stats for structures occupancy */
 	if (cpu_occupancy_stats)
-		cpu_update_occupancy_stats();
+		x86_cpu_update_occupancy_stats();
 }
 
 
-/* return an address that combines the context and the virtual address page;
+/* Return an address that combines the context and the virtual address page;
  * this address will be univocal for all generated
  * addresses and is a kind of hash function to index tlbs */
-uint32_t cpu_tlb_address(int ctx, uint32_t vaddr)
+unsigned int x86_cpu_tlb_address(int ctx, uint32_t vaddr)
 {
-	assert(ctx >= 0 && ctx < cpu_cores * cpu_threads);
-	return (vaddr >> MEM_LOG_PAGE_SIZE) * cpu_cores * cpu_threads + ctx;
+	assert(ctx >= 0 && ctx < x86_cpu_num_cores * x86_cpu_num_threads);
+	return (vaddr >> MEM_LOG_PAGE_SIZE) * x86_cpu_num_cores * x86_cpu_num_threads + ctx;
 }
 
 
@@ -1024,14 +1031,14 @@ static void cpu_signal_handler(int signum)
 		if (x86_emu_finish)
 			abort();
 		x86_emu_finish = x86_emu_finish_signal;
-		cpu_dump(stderr);
+		x86_cpu_dump(stderr);
 		fprintf(stderr, "SIGINT received\n");
 		break;
 		
 	case SIGABRT:
 		signal(SIGABRT, SIG_DFL);
-		if (debug_status(error_debug_category))
-			cpu_dump(debug_file(error_debug_category));
+		if (debug_status(x86_cpu_error_debug_category))
+			x86_cpu_dump(debug_file(x86_cpu_error_debug_category));
 		exit(1);
 		break;
 	
@@ -1049,10 +1056,10 @@ static void sim_dump_log()
 	char name[100];
 	
 	/* Dump log into file */
-	sprintf(name, "m2s.%d.%lld", (int) getpid(), cpu->cycle);
+	sprintf(name, "m2s.%d.%lld", (int) getpid(), x86_cpu->cycle);
 	f = fopen(name, "wt");
 	if (f) {
-		cpu_dump(f);
+		x86_cpu_dump(f);
 		fclose(f);
 	}
 
@@ -1111,7 +1118,7 @@ static void cpu_fast_forward(long long max_inst)
 
 
 /* Run simulation loop */
-void cpu_run()
+void x86_cpu_run()
 {
 	
 	/* Install signal handlers */
@@ -1132,15 +1139,15 @@ void cpu_run()
 			x86_emu_finish = x86_emu_finish_ctx;
 
 		/* Stop if maximum number of CPU instructions exceeded */
-		if (x86_emu_max_inst && cpu->inst >= x86_emu_max_inst)
+		if (x86_emu_max_inst && x86_cpu->inst >= x86_emu_max_inst)
 			x86_emu_finish = x86_emu_finish_max_cpu_inst;
 
 		/* Stop if maximum number of cycles exceeded */
-		if (x86_emu_max_cycles && cpu->cycle >= x86_emu_max_cycles)
+		if (x86_emu_max_cycles && x86_cpu->cycle >= x86_emu_max_cycles)
 			x86_emu_finish = x86_emu_finish_max_cpu_cycles;
 
 		/* Stop if maximum time exceeded (check only every 10k cycles) */
-		if (x86_emu_max_time && !(cpu->cycle % 10000) && x86_emu_timer() > x86_emu_max_time * 1000000)
+		if (x86_emu_max_time && !(x86_cpu->cycle % 10000) && x86_emu_timer() > x86_emu_max_time * 1000000)
 			x86_emu_finish = x86_emu_finish_max_time;
 
 		/* Stop if any previous reason met */
@@ -1148,10 +1155,10 @@ void cpu_run()
 			break;
 
 		/* Next cycle */
-		cpu->cycle++;
+		x86_cpu->cycle++;
 
 		/* Processor stages */
-		cpu_stages();
+		x86_cpu_run_stages();
 
 		/* Process host threads generating events */
 		x86_emu_process_events();

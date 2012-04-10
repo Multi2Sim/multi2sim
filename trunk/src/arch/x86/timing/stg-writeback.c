@@ -23,39 +23,39 @@
 
 void writeback_core(int core)
 {
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 	int thread, recover = 0;
 
 	for (;;)
 	{
 		/* Pick element from the head of the event queue */
-		linked_list_head(CORE.eventq);
-		uop = linked_list_get(CORE.eventq);
+		linked_list_head(X86_CORE.eventq);
+		uop = linked_list_get(X86_CORE.eventq);
 		if (!uop)
 			break;
 
 		/* A memory uop placed in the event queue is always complete.
 		 * Other uops are complete when uop->when is equals to current cycle. */
 		if (uop->flags & X86_UINST_MEM)
-			uop->when = cpu->cycle;
-		if (uop->when > cpu->cycle)
+			uop->when = x86_cpu->cycle;
+		if (uop->when > x86_cpu->cycle)
 			break;
 		
 		/* Check element integrity */
-		assert(uop_exists(uop));
-		assert(uop->when == cpu->cycle);
+		assert(x86_uop_exists(uop));
+		assert(uop->when == x86_cpu->cycle);
 		assert(uop->core == core);
 		assert(uop->ready);
 		assert(!uop->completed);
 		
 		/* Extract element from event queue. */
-		linked_list_remove(CORE.eventq);
+		linked_list_remove(X86_CORE.eventq);
 		uop->in_eventq = 0;
 		thread = uop->thread;
 		
 		/* If a mispredicted branch is solved and recovery is configured to be
 		 * performed at writeback, schedule it for the end of the iteration. */
-		if (cpu_recover_kind == cpu_recover_kind_writeback &&
+		if (x86_cpu_recover_kind == x86_cpu_recover_kind_writeback &&
 			(uop->flags & X86_UINST_CTRL) && !uop->specmode &&
 			uop->neip != uop->pred_neip)
 			recover = 1;
@@ -63,32 +63,32 @@ void writeback_core(int core)
 		/* Debug */
 		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
 			" stg_writeback=1, completed=1\n",
-			uop->core, (long long unsigned) uop->di_seq);
+			uop->core, (long long unsigned) uop->dispatch_seq);
 
 		/* Writeback */
 		uop->completed = 1;
-		rf_write(uop);
-		CORE.rf_int_writes += uop->ph_int_odep_count;
-		CORE.rf_fp_writes += uop->ph_fp_odep_count;
-		CORE.iq_wakeup_accesses++;
-		THREAD.rf_int_writes += uop->ph_int_odep_count;
-		THREAD.rf_fp_writes += uop->ph_fp_odep_count;
-		THREAD.iq_wakeup_accesses++;
-		uop_free_if_not_queued(uop);
+		x86_reg_file_write(uop);
+		X86_CORE.reg_file_int_writes += uop->ph_int_odep_count;
+		X86_CORE.reg_file_fp_writes += uop->ph_fp_odep_count;
+		X86_CORE.iq_wakeup_accesses++;
+		X86_THREAD.reg_file_int_writes += uop->ph_int_odep_count;
+		X86_THREAD.reg_file_fp_writes += uop->ph_fp_odep_count;
+		X86_THREAD.iq_wakeup_accesses++;
+		x86_uop_free_if_not_queued(uop);
 
 		/* Recovery. This must be performed at last, because lots of uops might be
 		 * freed, which interferes with the temporary extraction from the eventq. */
 		if (recover)
-			cpu_recover(core, thread);
+			x86_cpu_recover(core, thread);
 	}
 }
 
 
-void cpu_writeback()
+void x86_cpu_writeback()
 {
 	int core;
-	cpu->stage = "writeback";
-	FOREACH_CORE
+	x86_cpu->stage = "writeback";
+	X86_CORE_FOR_EACH
 		writeback_core(core);
 }
 

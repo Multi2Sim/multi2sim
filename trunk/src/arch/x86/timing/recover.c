@@ -20,23 +20,23 @@
 #include <x86-timing.h>
 
 
-void cpu_recover(int core, int thread)
+void x86_cpu_recover(int core, int thread)
 {
-	struct uop_t *uop;
+	struct x86_uop_t *uop;
 
 	/* Remove instructions of this thread in fetchq, uopq, iq, sq, lq and eventq. */
-	fetchq_recover(core, thread);
-	uopq_recover(core, thread);
-	iq_recover(core, thread);
-	lsq_recover(core, thread);
-	eventq_recover(core, thread);
+	x86_fetch_queue_recover(core, thread);
+	x86_uop_queue_recover(core, thread);
+	x86_iq_recover(core, thread);
+	x86_lsq_recover(core, thread);
+	x86_event_queue_recover(core, thread);
 
 	/* Remove instructions from ROB, restoring the state of the
 	 * physical register file. */
 	for (;;) {
 		
 		/* Get instruction */
-		uop = rob_tail(core, thread);
+		uop = x86_rob_tail(core, thread);
 		if (!uop)
 			break;
 
@@ -49,30 +49,30 @@ void cpu_recover(int core, int thread)
 		
 		/* Statistics */
 		if (uop->fetch_trace_cache)
-			THREAD.trace_cache->squashed++;
-		THREAD.squashed++;
-		CORE.squashed++;
-		cpu->squashed++;
+			X86_THREAD.trace_cache->squashed++;
+		X86_THREAD.squashed++;
+		X86_CORE.squashed++;
+		x86_cpu->squashed++;
 		
 		/* Undo map */
 		if (!uop->completed)
-			rf_write(uop);
-		rf_undo(uop);
+			x86_reg_file_write(uop);
+		x86_reg_file_undo(uop);
 
 		/* Debug */
 		esim_debug("uop action=\"squash\", core=%d, seq=%llu\n",
-			uop->core, uop->di_seq);
+			uop->core, uop->dispatch_seq);
  
 		/* Remove entry in ROB */
-		rob_remove_tail(core, thread);
+		x86_rob_remove_tail(core, thread);
 	}
 
 	/* If we actually fetched wrong instructions, recover kernel */
-	if (x86_ctx_get_status(THREAD.ctx, x86_ctx_specmode))
-		x86_ctx_recover(THREAD.ctx);
+	if (x86_ctx_get_status(X86_THREAD.ctx, x86_ctx_specmode))
+		x86_ctx_recover(X86_THREAD.ctx);
 	
 	/* Stall fetch and set eip to fetch. */
-	THREAD.fetch_stall_until = MAX(THREAD.fetch_stall_until, cpu->cycle + cpu_recover_penalty - 1);
-	THREAD.fetch_neip = THREAD.ctx->regs->eip;
+	X86_THREAD.fetch_stall_until = MAX(X86_THREAD.fetch_stall_until, x86_cpu->cycle + x86_cpu_recover_penalty - 1);
+	X86_THREAD.fetch_neip = X86_THREAD.ctx->regs->eip;
 }
 

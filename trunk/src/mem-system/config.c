@@ -248,7 +248,7 @@ static void mem_config_cpu_default(struct config_t *config)
 	config_write_string(config, section, "Policy", "LRU");
 
 	/* L1 caches and entries */
-	FOREACH_CORE
+	X86_CORE_FOR_EACH
 	{
 		/* L1 cache */
 		snprintf(section, sizeof section, "Module cpu-l1-%d", core);
@@ -259,7 +259,7 @@ static void mem_config_cpu_default(struct config_t *config)
 
 		/* Entry */
 		snprintf(str, sizeof str, "cpu-l1-%d", core);
-		FOREACH_THREAD
+		X86_THREAD_FOR_EACH
 		{
 			snprintf(section, sizeof section, "Entry cpu-core-%d-thread-%d",
 				core, thread);
@@ -1003,7 +1003,7 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 	} *entry, *entry_list;
 
 	/* Allocate entry list */
-	entry_list = calloc(cpu_cores * cpu_threads, sizeof(struct entry_t));
+	entry_list = calloc(x86_cpu_num_cores * x86_cpu_num_threads, sizeof(struct entry_t));
 	if (!entry_list)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -1042,7 +1042,7 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 				mem_config_file_name, entry_name);
 
 		/* Check bounds */
-		if (core >= cpu_cores || thread >= cpu_threads)
+		if (core >= x86_cpu_num_cores || thread >= x86_cpu_num_threads)
 		{
 			config_var_allow(config, section, "DataModule");
 			config_var_allow(config, section, "InstModule");
@@ -1052,7 +1052,7 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 		}
 
 		/* Check that entry was not assigned before */
-		entry = &entry_list[core * cpu_threads + thread];
+		entry = &entry_list[core * x86_cpu_num_threads + thread];
 		if (entry->data_mod_name[0])
 			fatal("%s: duplicated entry for CPU core %d - thread %d",
 				mem_config_file_name, core, thread);
@@ -1078,10 +1078,10 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 
 	/* Assign entry modules */
 	mem_debug("Assigning CPU entries to memory system:\n");
-	FOREACH_CORE FOREACH_THREAD
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 	{
 		/* Check that entry was set */
-		entry = &entry_list[core * cpu_threads + thread];
+		entry = &entry_list[core * x86_cpu_num_threads + thread];
 		if (!*entry->data_mod_name)
 			fatal("%s: no entry given for CPU core %d - thread %d",
 				mem_config_file_name, core, thread);
@@ -1095,7 +1095,7 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 		/* Assign data module */
 		mod = config_read_ptr(config, buf, "ptr", NULL);
 		assert(mod);
-		THREAD.data_mod = mod;
+		X86_THREAD.data_mod = mod;
 		mem_debug("\tCPU core %d - thread %d - data -> %s\n",
 			core, thread, mod->name);
 
@@ -1108,7 +1108,7 @@ static void mem_config_read_cpu_entries(struct config_t *config)
 		/* Assign data module */
 		mod = config_read_ptr(config, buf, "ptr", NULL);
 		assert(mod);
-		THREAD.inst_mod = mod;
+		X86_THREAD.inst_mod = mod;
 		mem_debug("\tCPU core %d - thread %d - instructions -> %s\n",
 			core, thread, mod->name);
 	}
@@ -1422,10 +1422,10 @@ static void mem_config_check_disjoint(void)
 		return;
 
 	/* Color CPU modules */
-	FOREACH_CORE FOREACH_THREAD
+	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 	{
-		mem_config_set_mod_color(THREAD.data_mod, 1);
-		mem_config_set_mod_color(THREAD.inst_mod, 1);
+		mem_config_set_mod_color(X86_THREAD.data_mod, 1);
+		mem_config_set_mod_color(X86_THREAD.inst_mod, 1);
 	}
 
 	/* Check color of GPU modules */
@@ -1511,10 +1511,10 @@ static void mem_config_calculate_mod_levels(void)
 	/* Color CPU modules */
 	if (x86_emu_kind == x86_emu_kind_detailed)
 	{
-		FOREACH_CORE FOREACH_THREAD
+		X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
 		{
-			mem_config_set_mod_level(THREAD.data_mod, 1);
-			mem_config_set_mod_level(THREAD.inst_mod, 1);
+			mem_config_set_mod_level(X86_THREAD.data_mod, 1);
+			mem_config_set_mod_level(X86_THREAD.inst_mod, 1);
 		}
 	}
 
