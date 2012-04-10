@@ -1,18 +1,16 @@
 SUBDIRS = \
-	libstruct \
-	libmisc \
 	libcpukernel \
 	libcpudisasm \
-	libesim \
 	libcpuarch \
 	libgpuarch \
 	libmemsystem \
 	libvisual \
 	libnetwork \
 	libgpukernel \
-	libmhandle \
 	libgpudisasm \
-	libgpuvisual
+	libgpuvisual \
+	\
+	lib
 
 bin_PROGRAMS = m2s
 
@@ -44,10 +42,12 @@ LDADD = \
 	$(top_builddir)/src/libcpudisasm/libcpudisasm.a \
 	$(top_builddir)/src/libmemsystem/libmemsystem.a \
 	$(top_builddir)/src/libnetwork/libnetwork.a \
-	$(top_builddir)/src/libesim/libesim.a \
-	$(top_builddir)/src/libstruct/libstruct.a \
-	$(top_builddir)/src/libmhandle/libmhandle.a \
-	$(top_builddir)/src/libmisc/libmisc.a \
+	\
+	$(top_builddir)/src/lib/mhandle/libmhandle.a \
+	$(top_builddir)/src/lib/misc/libmisc.a \
+	$(top_builddir)/src/lib/esim/libesim.a \
+	$(top_builddir)/src/lib/struct/libstruct.a \
+	\
 	-lm -lpthread -lz
 
 if HAVE_GTK
