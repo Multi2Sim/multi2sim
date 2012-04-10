@@ -19,7 +19,7 @@
 
 #include <heap.h>
 
-#include <gpuarch.h>
+#include <evergreen-timing.h>
 #include <x86-emu.h>
 
 

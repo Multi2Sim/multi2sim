@@ -17,11 +17,12 @@
  */
 
 
-#include <mem-system.h>
 #include <config.h>
 #include <misc.h>
+
+#include <mem-system.h>
 #include <x86-timing.h>
-#include <gpuarch.h>
+#include <evergreen-timing.h>
 
 
 /*
