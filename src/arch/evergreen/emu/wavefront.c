@@ -230,9 +230,9 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 	extern struct gpu_work_group_t *gpu_isa_work_group;
 	extern struct gpu_wavefront_t *gpu_isa_wavefront;
 	extern struct gpu_work_item_t *gpu_isa_work_item;
-	extern struct amd_inst_t *gpu_isa_cf_inst;
-	extern struct amd_inst_t *gpu_isa_inst;
-	extern struct amd_alu_group_t *gpu_isa_alu_group;
+	extern struct evg_inst_t *gpu_isa_cf_inst;
+	extern struct evg_inst_t *gpu_isa_inst;
+	extern struct evg_alu_group_t *gpu_isa_alu_group;
 
 	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
 
@@ -266,12 +266,12 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 
 		/* Decode CF instruction */
 		inst_num = (gpu_isa_wavefront->cf_buf - gpu_isa_wavefront->cf_buf_start) / 8;
-		gpu_isa_wavefront->cf_buf = amd_inst_decode_cf(gpu_isa_wavefront->cf_buf, &gpu_isa_wavefront->cf_inst);
+		gpu_isa_wavefront->cf_buf = evg_inst_decode_cf(gpu_isa_wavefront->cf_buf, &gpu_isa_wavefront->cf_inst);
 
 		/* Debug */
 		if (debug_status(gpu_isa_debug_category)) {
 			gpu_isa_debug("\n\n");
-			amd_inst_dump(&gpu_isa_wavefront->cf_inst, inst_num, 0,
+			evg_inst_dump(&gpu_isa_wavefront->cf_inst, inst_num, 0,
 				debug_file(gpu_isa_debug_category));
 		}
 
@@ -281,7 +281,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		(*amd_inst_impl[gpu_isa_inst->info->inst])();
 
 		/* If instruction updates the work_item's active mask, update digests */
-		if (gpu_isa_inst->info->flags & AMD_INST_FLAG_ACT_MASK) {
+		if (gpu_isa_inst->info->flags & EVG_INST_FLAG_ACT_MASK) {
 			FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id) {
 				gpu_isa_work_item = ndrange->work_items[work_item_id];
 				gpu_work_item_update_branch_digest(gpu_isa_work_item, gpu_isa_wavefront->cf_inst_count, inst_num);
@@ -293,7 +293,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		gpu_isa_wavefront->emu_inst_count++;
 		gpu_isa_wavefront->inst_count++;
 		gpu_isa_wavefront->cf_inst_count++;
-		if (gpu_isa_inst->info->flags & AMD_INST_FLAG_MEM) {
+		if (gpu_isa_inst->info->flags & EVG_INST_FLAG_MEM) {
 			gpu_isa_wavefront->global_mem_inst_count++;
 			gpu_isa_wavefront->cf_inst_global_mem_write_count++;  /* CF inst accessing memory is a write */
 		}
@@ -306,13 +306,13 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		int i;
 
 		/* Decode ALU group */
-		gpu_isa_wavefront->clause_buf = amd_inst_decode_alu_group(gpu_isa_wavefront->clause_buf,
+		gpu_isa_wavefront->clause_buf = evg_inst_decode_alu_group(gpu_isa_wavefront->clause_buf,
 			gpu_isa_wavefront->alu_group_count, &gpu_isa_wavefront->alu_group);
 
 		/* Debug */
 		if (debug_status(gpu_isa_debug_category)) {
 			gpu_isa_debug("\n\n");
-			amd_alu_group_dump(&gpu_isa_wavefront->alu_group, 0, debug_file(gpu_isa_debug_category));
+			evg_alu_group_dump(&gpu_isa_wavefront->alu_group, 0, debug_file(gpu_isa_debug_category));
 		}
 
 		/* Execute group for each work_item in wavefront */
@@ -337,7 +337,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		gpu_isa_wavefront->alu_group_size[gpu_isa_alu_group->inst_count - 1]++;
 		for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
 			gpu_isa_inst = &gpu_isa_alu_group->inst[i];
-			if (gpu_isa_inst->info->flags & AMD_INST_FLAG_LDS) {
+			if (gpu_isa_inst->info->flags & EVG_INST_FLAG_LDS) {
 				gpu_isa_wavefront->local_mem_inst_count++;
 				gpu_isa_wavefront->alu_inst_local_mem_count++;
 			}
@@ -356,13 +356,13 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 	case GPU_CLAUSE_TEX:
 	{
 		/* Decode TEX instruction */
-		gpu_isa_wavefront->clause_buf = amd_inst_decode_tc(gpu_isa_wavefront->clause_buf,
+		gpu_isa_wavefront->clause_buf = evg_inst_decode_tc(gpu_isa_wavefront->clause_buf,
 			&gpu_isa_wavefront->tex_inst);
 
 		/* Debug */
 		if (debug_status(gpu_isa_debug_category)) {
 			gpu_isa_debug("\n\n");
-			amd_inst_dump(&gpu_isa_wavefront->tex_inst, 0, 0, debug_file(gpu_isa_debug_category));
+			evg_inst_dump(&gpu_isa_wavefront->tex_inst, 0, 0, debug_file(gpu_isa_debug_category));
 		}
 
 		/* Execute in all work_items */
@@ -378,7 +378,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		gpu_isa_wavefront->emu_inst_count += gpu_isa_wavefront->work_item_count;
 		gpu_isa_wavefront->inst_count++;
 		gpu_isa_wavefront->tc_inst_count++;
-		if (gpu_isa_inst->info->flags & AMD_INST_FLAG_MEM) {
+		if (gpu_isa_inst->info->flags & EVG_INST_FLAG_MEM) {
 			gpu_isa_wavefront->global_mem_inst_count++;
 			gpu_isa_wavefront->tc_inst_global_mem_read_count++;  /* Memory instructions in TC are reads */
 		}

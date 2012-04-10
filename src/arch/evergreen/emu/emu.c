@@ -69,7 +69,7 @@ void gk_init()
 	gk->global_mem->safe = 0;
 
 	/* Initialize disassembler (decoding tables...) */
-	amd_disasm_init();
+	evg_disasm_init();
 
 	/* Initialize ISA (instruction execution tables...) */
 	gpu_isa_init();
@@ -93,7 +93,7 @@ void gk_done()
 	linked_list_free(opencl_object_list);
 
 	/* Finalize disassembler */
-	amd_disasm_done();
+	evg_disasm_done();
 
 	/* Finalize ISA */
 	gpu_isa_done();
@@ -249,7 +249,7 @@ void gk_disasm(char *path)
 	int i;
 
 	/* Initialize disassembler */
-	amd_disasm_init();
+	evg_disasm_init();
 
 	/* Decode external ELF */
 	elf_file = elf_file_create_from_path(path);
@@ -270,7 +270,7 @@ void gk_disasm(char *path)
 
 			/* Get kernel name */
 			printf("**\n** Disassembly for '__kernel %s'\n**\n\n", kernel_name);
-			amd_disasm_buffer(&amd_bin->enc_dict_entry_evergreen->sec_text_buffer, stdout);
+			evg_disasm_buffer(&amd_bin->enc_dict_entry_evergreen->sec_text_buffer, stdout);
 			printf("\n\n\n");
 
 			/* Free internal ELF */
@@ -280,7 +280,7 @@ void gk_disasm(char *path)
 
 	/* Free external ELF */
 	elf_file_free(elf_file);
-	amd_disasm_done();
+	evg_disasm_done();
 
 	/* End */
 	mhandle_done();
@@ -297,7 +297,7 @@ void gl_disasm(char *path, int opengl_shader_index)
 	struct amd_opengl_shader_t *amd_opengl_shader;
 
 	/* Initialize disassembler */
-	amd_disasm_init();
+	evg_disasm_init();
 
 	/* Load file into memory buffer */
 	file_buffer = read_buffer(path, &file_size);
@@ -319,12 +319,12 @@ void gl_disasm(char *path, int opengl_shader_index)
 	/* Disaseemble */
 	amd_opengl_shader = list_get(amd_opengl_bin->shader_list, opengl_shader_index -1 );
 	printf("**\n** Disassembly for shader %d\n**\n\n", opengl_shader_index);
-	amd_disasm_buffer(&amd_opengl_shader->isa_buffer, stdout);
+	evg_disasm_buffer(&amd_opengl_shader->isa_buffer, stdout);
 	printf("\n\n\n");
 
 	/* Free */
 	amd_opengl_bin_free(amd_opengl_bin);
-	amd_disasm_done();
+	evg_disasm_done();
 
 	/* End */
 	mhandle_done();

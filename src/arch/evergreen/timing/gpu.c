@@ -578,37 +578,37 @@ void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
 	/* Disassemble */
 	while (cf_buf)
 	{
-		struct amd_inst_t cf_inst;
+		struct evg_inst_t cf_inst;
 
 		/* CF Instruction */
-		cf_buf = amd_inst_decode_cf(cf_buf, &cf_inst);
-                if (cf_inst.info->flags & AMD_INST_FLAG_DEC_LOOP_IDX)
+		cf_buf = evg_inst_decode_cf(cf_buf, &cf_inst);
+                if (cf_inst.info->flags & EVG_INST_FLAG_DEC_LOOP_IDX)
                 {
                         assert(loop_idx > 0);
                         loop_idx--;
                 }
 
 		fprintf(f, "asm i=%d cl=\"cf\" ", inst_count);
-		amd_inst_dump_debug(&cf_inst, cf_inst_count, loop_idx, f);
+		evg_inst_dump_debug(&cf_inst, cf_inst_count, loop_idx, f);
 		fprintf(f, "\n");
 
 		cf_inst_count++;
 		inst_count++;
 
 		/* ALU Clause */
-		if (cf_inst.info->fmt[0] == FMT_CF_ALU_WORD0)
+		if (cf_inst.info->fmt[0] == EVG_FMT_CF_ALU_WORD0)
 		{
 			void *alu_buf, *alu_buf_end;
-			struct amd_alu_group_t alu_group;
+			struct evg_alu_group_t alu_group;
 
 			alu_buf = text_buffer_ptr + cf_inst.words[0].cf_alu_word0.addr * 8;
 			alu_buf_end = alu_buf + (cf_inst.words[1].cf_alu_word1.count + 1) * 8;
 			while (alu_buf < alu_buf_end)
 			{
-				alu_buf = amd_inst_decode_alu_group(alu_buf, sec_inst_count, &alu_group);
+				alu_buf = evg_inst_decode_alu_group(alu_buf, sec_inst_count, &alu_group);
 
 				fprintf(f, "asm i=%d cl=\"alu\" ", inst_count);
-				amd_alu_group_dump_debug(&alu_group, sec_inst_count, loop_idx, f);
+				evg_alu_group_dump_debug(&alu_group, sec_inst_count, loop_idx, f);
 				fprintf(f, "\n");
 
 				sec_inst_count++;
@@ -617,19 +617,19 @@ void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
 		}
 
 		/* TEX Clause */
-		if (cf_inst.info->inst == AMD_INST_TC)
+		if (cf_inst.info->inst == EVG_INST_TC)
 		{
 			char *tex_buf, *tex_buf_end;
-			struct amd_inst_t inst;
+			struct evg_inst_t inst;
 
 			tex_buf = text_buffer_ptr + cf_inst.words[0].cf_word0.addr * 8;
 			tex_buf_end = tex_buf + (cf_inst.words[1].cf_word1.count + 1) * 16;
 			while (tex_buf < tex_buf_end)
 			{
-				tex_buf = amd_inst_decode_tc(tex_buf, &inst);
+				tex_buf = evg_inst_decode_tc(tex_buf, &inst);
 
 				fprintf(f, "asm i=%d cl=\"tex\" ", inst_count);
-				amd_inst_dump_debug(&inst, sec_inst_count, loop_idx, f);
+				evg_inst_dump_debug(&inst, sec_inst_count, loop_idx, f);
 				fprintf(f, "\n");
 
 				sec_inst_count++;
@@ -638,7 +638,7 @@ void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
 		}
 
 		/* Increase loop depth counter */
-                if (cf_inst.info->flags & AMD_INST_FLAG_INC_LOOP_IDX)
+                if (cf_inst.info->flags & EVG_INST_FLAG_INC_LOOP_IDX)
                         loop_idx++;
 	}
 }

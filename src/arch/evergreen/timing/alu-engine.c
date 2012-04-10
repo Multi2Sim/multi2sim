@@ -33,7 +33,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	struct linked_list_t *finished_queue = compute_unit->alu_engine.finished_queue;
 
 	struct linked_list_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
-	struct amd_alu_group_t *alu_group;
+	struct evg_alu_group_t *alu_group;
 	struct gpu_uop_t *cf_uop, *uop, *producer;
 	struct gpu_work_item_uop_t *work_item_uop;
 	struct gpu_wavefront_t *wavefront;
@@ -168,7 +168,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 			uop->work_group->id,
 			wavefront->id,
 			uop->id_in_compute_unit);
-		amd_alu_group_dump_debug(&wavefront->alu_group, -1, -1,
+		evg_alu_group_dump_debug(&wavefront->alu_group, -1, -1,
 			debug_file(gpu_pipeline_debug_category));
 		gpu_pipeline_debug(" idep=");
 		gpu_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->idep, uop->idep_count);

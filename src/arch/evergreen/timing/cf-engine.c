@@ -31,7 +31,7 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	struct gpu_wavefront_t *wavefront;
 
 	char str1[MAX_STRING_SIZE], str2[MAX_STRING_SIZE];
-	struct amd_inst_t *inst;
+	struct evg_inst_t *inst;
 
 	struct gpu_uop_t *uop;
 	struct gpu_work_item_uop_t *work_item_uop;
@@ -71,7 +71,7 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	/* If instruction is a global memory write, record addresses */
 	if (uop->global_mem_write)
 	{
-		assert((inst->info->flags & AMD_INST_FLAG_MEM_WRITE));
+		assert((inst->info->flags & EVG_INST_FLAG_MEM_WRITE));
 		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
@@ -102,7 +102,7 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	/* Debug */
 	if (debug_status(gpu_pipeline_debug_category))
 	{
-		amd_inst_dump_buf(inst, -1, 0, str1, MAX_STRING_SIZE);
+		evg_inst_dump_buf(inst, -1, 0, str1, MAX_STRING_SIZE);
 		str_single_spaces(str2, str1, MAX_STRING_SIZE);
 		gpu_pipeline_debug("cf a=\"fetch\" "
 			"cu=%d "
