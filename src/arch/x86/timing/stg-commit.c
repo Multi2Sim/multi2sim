@@ -17,7 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <cpuarch.h>
+
+#include <x86-timing.h>
+
 
 static char *err_commit_stall =
 	"\tThe CPU commit stage has not received any instruction for 1M\n"

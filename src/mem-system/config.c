@@ -20,7 +20,7 @@
 #include <mem-system.h>
 #include <config.h>
 #include <misc.h>
-#include <cpuarch.h>
+#include <x86-timing.h>
 #include <gpuarch.h>
 
 

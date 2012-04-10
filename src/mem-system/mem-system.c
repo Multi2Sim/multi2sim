@@ -18,7 +18,7 @@
 
 
 #include <mem-system.h>
-#include <cpuarch.h>
+#include <x86-timing.h>
 #include <gpuarch.h>
 
 
