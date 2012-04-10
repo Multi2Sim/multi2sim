@@ -147,13 +147,21 @@ M2S_INCLUDES=" \
 -I$SRCDIR/lib/misc \
 -I$SRCDIR/lib/struct \
 \
--I$SRCDIR/arch/x86/asm \
--I$SRCDIR/arch/x86/emu \
--I$SRCDIR/arch/x86/timing \
+-I$SRCDIR/arch/arm/asm \
+-I$SRCDIR/arch/arm/emu \
+-I$SRCDIR/arch/arm/timing \
 \
 -I$SRCDIR/arch/evergreen/asm \
 -I$SRCDIR/arch/evergreen/emu \
 -I$SRCDIR/arch/evergreen/timing \
+\
+-I$SRCDIR/arch/fermi/asm \
+-I$SRCDIR/arch/fermi/emu \
+-I$SRCDIR/arch/fermi/timing \
+\
+-I$SRCDIR/arch/x86/asm \
+-I$SRCDIR/arch/x86/emu \
+-I$SRCDIR/arch/x86/timing \
 \
 -I$SRCDIR/mem-system \
 -I$SRCDIR/network \
@@ -173,15 +181,25 @@ AC_CONFIG_FILES([Makefile
 		 src/network/Makefile
 		 src/visual/Makefile
 
-		 src/arch/x86/Makefile
-		 src/arch/x86/asm/Makefile
-		 src/arch/x86/emu/Makefile
-		 src/arch/x86/timing/Makefile
+		 src/arch/arm/Makefile
+		 src/arch/arm/asm/Makefile
+		 src/arch/arm/emu/Makefile
+		 src/arch/arm/timing/Makefile
 
 		 src/arch/evergreen/Makefile
 		 src/arch/evergreen/asm/Makefile
 		 src/arch/evergreen/emu/Makefile
 		 src/arch/evergreen/timing/Makefile
+
+		 src/arch/fermi/Makefile
+		 src/arch/fermi/asm/Makefile
+		 src/arch/fermi/emu/Makefile
+		 src/arch/fermi/timing/Makefile
+
+		 src/arch/x86/Makefile
+		 src/arch/x86/asm/Makefile
+		 src/arch/x86/emu/Makefile
+		 src/arch/x86/timing/Makefile
 
 		 src/lib/Makefile
 		 src/lib/esim/Makefile
