@@ -17,7 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <cpuarch.h>
+
+#include <x86-timing.h>
+
 
 #define BTB_ENTRY(SET, WAY) (&bpred->btb[(SET) * bpred_btb_assoc + (WAY)])
 

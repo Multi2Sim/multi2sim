@@ -1,7 +1,8 @@
 lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
-	cpuarch.h \
+	\
+	x86-timing.h \
 	\
 	stg-fetch.c \
 	stg-decode.c \
@@ -11,7 +12,7 @@ libtiming_a_SOURCES = \
 	stg-commit.c \
 	\
 	bpred.c \
-	cpuarch.c \
+	cpu.c \
 	fu.c \
 	queues.c \
 	recover.c \
