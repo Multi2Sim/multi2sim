@@ -149,7 +149,7 @@ M2S_INCLUDES=" \
 \
 -I$SRCDIR/arch/x86/asm \
 -I$SRCDIR/arch/x86/emu \
--I$SRCIDR/arch/x86/timing \
+-I$SRCDIR/arch/x86/timing \
 \
 -I$SRCDIR/arch/evergreen/asm \
 -I$SRCDIR/arch/evergreen/emu \
@@ -158,25 +158,32 @@ M2S_INCLUDES=" \
 -I$SRCDIR/mem-system \
 -I$SRCDIR/network \
 -I$SRCDIR/visual \
+\
+-I$SRCDIR/libgpuvisual \
 "
 AC_SUBST(M2S_INCLUDES)
 
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-		 src/libnetwork/Makefile
-		 src/libgpuvisual/Makefile
-		 src/libmemsystem/Makefile
-		 src/libvisual/Makefile
 
+		 src/arch/Makefile
+		 src/libgpuvisual/Makefile
+		 src/mem-system/Makefile
+		 src/network/Makefile
+		 src/visual/Makefile
+
+		 src/arch/x86/Makefile
 		 src/arch/x86/asm/Makefile
 		 src/arch/x86/emu/Makefile
 		 src/arch/x86/timing/Makefile
 
+		 src/arch/evergreen/Makefile
 		 src/arch/evergreen/asm/Makefile
 		 src/arch/evergreen/emu/Makefile
 		 src/arch/evergreen/timing/Makefile
 
+		 src/lib/Makefile
 		 src/lib/esim/Makefile
                  src/lib/mhandle/Makefile
 		 src/lib/misc/Makefile

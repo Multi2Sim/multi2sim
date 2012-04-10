@@ -5,5 +5,5 @@ libesim_a_SOURCES = \
 	esim.h \
 	trace.c
 
-INCLUDES = -I$(top_srcdir)/src/libstruct -I$(top_srcdir)/src/libmhandle
+INCLUDES = @M2S_INCLUDES@
 
