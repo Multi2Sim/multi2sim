@@ -1,12 +1,14 @@
 lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
+	\
+	evergreen-emu.h \
+	\
 	amd-bin.c \
 	amd-opengl-bin.c \
-	gpuisa.c \
-	gpukernel.c \
-	gpukernel.h \
-	gpumachine.c \
+	emu.c \
+	isa.c \
+	machine.c \
 	ndrange.c \
 	opencl.dat \
 	opencl.c \

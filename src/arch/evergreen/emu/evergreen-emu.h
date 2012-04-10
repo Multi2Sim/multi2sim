@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef GPUKERNEL_H
-#define GPUKERNEL_H
+#ifndef EVERGREEN_EMU_H
+#define EVERGREEN_EMU_H
 
 #include <mhandle.h>
 #include <debug.h>
@@ -30,7 +30,8 @@
 #include <unistd.h>
 #include <elf-format.h>
 #include <assert.h>
-#include <gpudisasm.h>
+
+#include <evergreen-asm.h>
 
 
 /*

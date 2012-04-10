@@ -17,12 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <gpudisasm.h>
 #include <misc.h>
 #include <assert.h>
 #include <string.h>
 #include <debug.h>
 #include <ctype.h>
+
+#include <evergreen-asm.h>
 
 
 
@@ -67,7 +68,7 @@ void amd_disasm_init()
 	info->opcode = _opcode; \
 	info->flags = _flags; \
 	info->size = (FMT_##_fmt0 ? 1 : 0) + (FMT_##_fmt1 ? 1 : 0) + (FMT_##_fmt2 ? 1 : 0 );
-#include "gpudisasm.dat"
+#include <evergreen-asm.dat>
 #undef DEFINST
 	
 	/* Tables of pointers to 'amd_inst_info' */

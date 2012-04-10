@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef CPUARCH_H
-#define CPUARCH_H
+#ifndef X86_TIMING_H
+#define X86_TIMING_H
 
 #include <time.h>
 #include <signal.h>

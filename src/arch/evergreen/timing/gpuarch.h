@@ -20,7 +20,7 @@
 #ifndef GPUARCH_H
 #define GPUARCH_H
 
-#include <gpukernel.h>
+#include <evergreen-emu.h>
 #include <mem-system.h>
 
 

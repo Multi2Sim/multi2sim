@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef CPUKERNEL_H
-#define CPUKERNEL_H
+#ifndef X86_EMU_H
+#define X86_EMU_H
 
 #include <mhandle.h>
 #include <debug.h>
@@ -38,10 +38,10 @@
 #include <pthread.h>
 #include <poll.h>
 #include <errno.h>
-#include <gpukernel.h>
 #include <esim.h>
 #include <sys/time.h>
 
+#include <evergreen-emu.h>
 
 
 /* Some forward declarations */

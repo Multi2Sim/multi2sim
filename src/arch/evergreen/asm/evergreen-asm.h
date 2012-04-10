@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef GPUDISASM_H
-#define GPUDISASM_H
+#ifndef EVERGREEN_ASM_H
+#define EVERGREEN_ASM_H
 
 #include <stdint.h>
 #include <stdio.h>
@@ -557,7 +557,7 @@ enum amd_inst_enum
 
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _cf_inst, _flags) \
 	AMD_INST_##_name,
-#include "gpudisasm.dat"
+#include <evergreen-asm.dat>
 #undef DEFINST
 	
 	/* Max */
