@@ -84,7 +84,7 @@ void x86_emu_init(void)
 
 	/* Initialization */
 	x86_sys_init();
-	isa_init();
+	x86_isa_init();
 
 	/* Allocate */
 	x86_emu = calloc(1, sizeof(struct x86_emu_t));
@@ -127,7 +127,7 @@ void x86_emu_done(void)
 
 	/* End */
 	free(x86_emu);
-	isa_done();
+	x86_isa_done();
 	x86_sys_done();
 }
 
@@ -791,7 +791,7 @@ static void ke_signal_handler(int signum)
 	case SIGABRT:
 		signal(SIGABRT, SIG_DFL);
 		fprintf(stderr, "Aborted\n");
-		isa_dump(stderr);
+		x86_isa_dump(stderr);
 		x86_emu_dump(stderr);
 		exit(1);
 		break;
