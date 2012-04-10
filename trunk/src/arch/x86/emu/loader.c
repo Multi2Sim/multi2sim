@@ -80,7 +80,7 @@ static struct string_map_t elf_section_flags_map =
 };
 
 
-static void ld_add_args_vector(struct ctx_t *ctx, int argc, char **argv)
+static void ld_add_args_vector(struct x86_ctx_t *ctx, int argc, char **argv)
 {
 	struct loader_t *ld = ctx->loader;
 
@@ -100,7 +100,7 @@ static void ld_add_args_vector(struct ctx_t *ctx, int argc, char **argv)
 }
 
 
-static void ld_add_args_string(struct ctx_t *ctx, char *args)
+static void ld_add_args_string(struct x86_ctx_t *ctx, char *args)
 {
 	struct loader_t *ld = ctx->loader;
 
@@ -131,7 +131,7 @@ static void ld_add_args_string(struct ctx_t *ctx, char *args)
 
 /* Add environment variables from the actual environment plus
  * the list attached in the argument 'env'. */
-static void ld_add_environ(struct ctx_t *ctx, char *env)
+static void ld_add_environ(struct x86_ctx_t *ctx, char *env)
 {
 	struct loader_t *ld = ctx->loader;
 	extern char **environ;
@@ -178,7 +178,7 @@ static void ld_add_environ(struct ctx_t *ctx, char *env)
 
 
 /* Load sections from an ELF file */
-static void ld_load_sections(struct ctx_t *ctx, struct elf_file_t *elf_file)
+static void ld_load_sections(struct x86_ctx_t *ctx, struct elf_file_t *elf_file)
 {
 	struct mem_t *mem = ctx->mem;
 	struct loader_t *ld = ctx->loader;
@@ -234,7 +234,7 @@ static void ld_load_sections(struct ctx_t *ctx, struct elf_file_t *elf_file)
 }
 
 
-static void ld_load_interp(struct ctx_t *ctx)
+static void ld_load_interp(struct x86_ctx_t *ctx)
 {
 	struct loader_t *ld = ctx->loader;
 	struct elf_file_t *elf_file;
@@ -268,7 +268,7 @@ static struct string_map_t elf_program_header_type_map = {
 
 
 /* Load program headers table */
-static void ld_load_program_headers(struct ctx_t *ctx)
+static void ld_load_program_headers(struct x86_ctx_t *ctx)
 {
 	struct loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
@@ -353,7 +353,7 @@ static void ld_load_program_headers(struct ctx_t *ctx)
 	sp += 8; \
 }
 
-static uint32_t ld_load_av(struct ctx_t *ctx, uint32_t where)
+static uint32_t ld_load_av(struct x86_ctx_t *ctx, uint32_t where)
 {
 	struct loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
@@ -424,7 +424,7 @@ static uint32_t ld_load_av(struct ctx_t *ctx, uint32_t where)
  * stack pointer ->	[ argc ]			4	(number of arguments)
  */
 
-static void ld_load_stack(struct ctx_t *ctx)
+static void ld_load_stack(struct x86_ctx_t *ctx)
 {
 	struct loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
@@ -501,7 +501,7 @@ static void ld_load_stack(struct ctx_t *ctx)
 }
 
 
-void ld_load_exe(struct ctx_t *ctx, char *exe)
+void ld_load_exe(struct x86_ctx_t *ctx, char *exe)
 {
 	struct loader_t *ld = ctx->loader;
 	struct mem_t *mem = ctx->mem;
@@ -649,7 +649,7 @@ void ld_unlink(struct loader_t *ld)
 }
 
 
-void ld_get_full_path(struct ctx_t *ctx, char *file_name, char *full_path, int size)
+void ld_get_full_path(struct x86_ctx_t *ctx, char *file_name, char *full_path, int size)
 {
 	struct loader_t *ld = ctx->loader;
 
@@ -680,7 +680,7 @@ void ld_get_full_path(struct ctx_t *ctx, char *file_name, char *full_path, int s
 void ld_load_prog_from_ctxconfig(char *file_name)
 {
 	struct config_t *config;
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 	struct loader_t *ld;
 
 	char section[MAX_STRING_SIZE];
@@ -712,7 +712,7 @@ void ld_load_prog_from_ctxconfig(char *file_name)
 		sprintf(section, "Context %d", ctx_id);
 		if (!config_section_exists(config, section))
 			break;
-		ctx = ctx_create();
+		ctx = x86_ctx_create();
 		ld = ctx->loader;
 		
 		/* Executable */
@@ -784,7 +784,7 @@ void ld_load_prog_from_ctxconfig(char *file_name)
 				if (ld->ipc_report_interval < 1)
 					fatal("%s: invalid value for 'IPCReportInterval'",
 						file_name);
-				ctx_ipc_report_schedule(ctx);
+				x86_ctx_ipc_report_schedule(ctx);
 			}
 		}
 
@@ -797,13 +797,13 @@ void ld_load_prog_from_ctxconfig(char *file_name)
 
 void ld_load_prog_from_cmdline(int argc, char **argv)
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 	struct loader_t *ld;
 	
 	char buf[MAX_STRING_SIZE];
 
 	/* Create context */
-	ctx = ctx_create();
+	ctx = x86_ctx_create();
 	ld = ctx->loader;
 
 	/* Arguments and environment */

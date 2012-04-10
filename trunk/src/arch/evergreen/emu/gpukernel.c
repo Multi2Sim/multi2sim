@@ -109,7 +109,7 @@ void gk_done()
 void gk_timer_start(void)
 {
 	assert(!gk->timer_running);
-	gk->timer_start_time = ke_timer();
+	gk->timer_start_time = x86_emu_timer();
 	gk->timer_running = 1;
 }
 
@@ -117,7 +117,7 @@ void gk_timer_start(void)
 void gk_timer_stop(void)
 {
 	assert(gk->timer_running);
-	gk->timer_acc += ke_timer() - gk->timer_start_time;
+	gk->timer_acc += x86_emu_timer() - gk->timer_start_time;
 	gk->timer_running = 0;
 }
 
@@ -127,7 +127,7 @@ void gk_timer_stop(void)
  * to 'gk_timer_stop()' and 'gk_timer_start()', respectively. */
 long long gk_timer(void)
 {
-	return gk->timer_running ? ke_timer() - gk->timer_start_time + gk->timer_acc
+	return gk->timer_running ? x86_emu_timer() - gk->timer_start_time + gk->timer_acc
 		: gk->timer_acc;
 }
 

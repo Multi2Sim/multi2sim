@@ -30,7 +30,7 @@ static enum di_stall_t can_dispatch_thread(int core, int thread)
 	/* Uop queue empty. */
 	uop = list_get(uopq, 0);
 	if (!uop)
-		return !THREAD.ctx || !ctx_get_status(THREAD.ctx, ctx_running) ?
+		return !THREAD.ctx || !x86_ctx_get_status(THREAD.ctx, x86_ctx_running) ?
 			di_stall_ctx : di_stall_uopq;
 
 	/* If iq/lq/sq/rob full, done */

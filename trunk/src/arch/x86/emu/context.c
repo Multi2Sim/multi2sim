@@ -20,9 +20,9 @@
 #include <cpukernel.h>
 
 
-int ctx_debug_category;
+int x86_ctx_debug_category;
 
-int EV_CTX_IPC_REPORT;
+int EV_X86_CTX_IPC_REPORT;
 
 static char *help_ctx_ipc_report =
 	"The IPC (instructions-per-cycle) report file shows performance value for a\n"
@@ -52,39 +52,39 @@ static char *help_ctx_ipc_report =
 static struct string_map_t ctx_status_map =
 {
 	16, {
-		{ "running",      ctx_running },
-		{ "specmode",     ctx_specmode },
-		{ "suspended",    ctx_suspended },
-		{ "finished",     ctx_finished },
-		{ "exclusive",    ctx_exclusive },
-		{ "locked",       ctx_locked },
-		{ "handler",      ctx_handler },
-		{ "sigsuspend",   ctx_sigsuspend },
-		{ "nanosleep",    ctx_nanosleep },
-		{ "poll",         ctx_poll },
-		{ "read",         ctx_read },
-		{ "write",        ctx_write },
-		{ "waitpid",      ctx_waitpid },
-		{ "zombie",       ctx_zombie },
-		{ "futex",        ctx_futex },
-		{ "alloc",        ctx_alloc }
+		{ "running",      x86_ctx_running },
+		{ "specmode",     x86_ctx_specmode },
+		{ "suspended",    x86_ctx_suspended },
+		{ "finished",     x86_ctx_finished },
+		{ "exclusive",    x86_ctx_exclusive },
+		{ "locked",       x86_ctx_locked },
+		{ "handler",      x86_ctx_handler },
+		{ "sigsuspend",   x86_ctx_sigsuspend },
+		{ "nanosleep",    x86_ctx_nanosleep },
+		{ "poll",         x86_ctx_poll },
+		{ "read",         x86_ctx_read },
+		{ "write",        x86_ctx_write },
+		{ "waitpid",      x86_ctx_waitpid },
+		{ "zombie",       x86_ctx_zombie },
+		{ "futex",        x86_ctx_futex },
+		{ "alloc",        x86_ctx_alloc }
 	}
 };
 
 
-static struct ctx_t *ctx_do_create()
+static struct x86_ctx_t *ctx_do_create()
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 
 	/* Create context and set its status */
-	ctx = calloc(1, sizeof(struct ctx_t));
-	ctx->pid = ke->current_pid++;
+	ctx = calloc(1, sizeof(struct x86_ctx_t));
+	ctx->pid = x86_emu->current_pid++;
 
 	/* Update status so that the context is inserted in the
-	 * corresponding lists. The ctx_running parameter has no
+	 * corresponding lists. The x86_ctx_running parameter has no
 	 * effect, since it will be updated later. */
-	ctx_set_status(ctx, ctx_running);
-	ke_list_insert_head(ke_list_context, ctx);
+	x86_ctx_set_status(ctx, x86_ctx_running);
+	x86_emu_list_insert_head(x86_emu_list_context, ctx);
 
 	/* Structures */
 	ctx->regs = regs_create();
@@ -96,9 +96,9 @@ static struct ctx_t *ctx_do_create()
 }
 
 
-struct ctx_t *ctx_create(void)
+struct x86_ctx_t *x86_ctx_create(void)
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 	
 	ctx = ctx_do_create();
 
@@ -106,7 +106,7 @@ struct ctx_t *ctx_create(void)
 	ctx->loader = ld_create();
 
 	/* Memory */
-	ctx->mid = ke->current_mid++;
+	ctx->mid = x86_emu->current_mid++;
 	ctx->mem = mem_create();
 	ctx->spec_mem = spec_mem_create(ctx->mem);
 
@@ -118,9 +118,9 @@ struct ctx_t *ctx_create(void)
 }
 
 
-struct ctx_t *ctx_clone(struct ctx_t *ctx)
+struct x86_ctx_t *x86_ctx_clone(struct x86_ctx_t *ctx)
 {
-        struct ctx_t *new;
+        struct x86_ctx_t *new;
 
 	new = ctx_do_create();
 
@@ -155,9 +155,9 @@ struct ctx_t *ctx_clone(struct ctx_t *ctx)
 }
 
 
-struct ctx_t *ctx_fork(struct ctx_t *ctx)
+struct x86_ctx_t *x86_ctx_fork(struct x86_ctx_t *ctx)
 {
-	struct ctx_t *new;
+	struct x86_ctx_t *new;
 
 	new = ctx_do_create();
 
@@ -165,7 +165,7 @@ struct ctx_t *ctx_fork(struct ctx_t *ctx)
 	regs_copy(new->regs, ctx->regs);
 
 	/* Memory */
-	new->mid = ke->current_mid++;
+	new->mid = x86_emu->current_mid++;
 	new->mem = mem_create();
 	new->spec_mem = spec_mem_create(new->mem);
 	mem_clone(new->mem, ctx->mem);
@@ -190,20 +190,20 @@ struct ctx_t *ctx_fork(struct ctx_t *ctx)
 
 
 /* Free a context */
-void ctx_free(struct ctx_t *ctx)
+void x86_ctx_free(struct x86_ctx_t *ctx)
 {
 	/* If context is not finished/zombie, finish it first.
 	 * This removes all references to current freed context. */
-	if (!ctx_get_status(ctx, ctx_finished | ctx_zombie))
-		ctx_finish(ctx, 0);
+	if (!x86_ctx_get_status(ctx, x86_ctx_finished | x86_ctx_zombie))
+		x86_ctx_finish(ctx, 0);
 	
 	/* Remove context from finished contexts list. This should
 	 * be the only list the context is in right now. */
-	assert(!ke_list_member(ke_list_running, ctx));
-	assert(!ke_list_member(ke_list_suspended, ctx));
-	assert(!ke_list_member(ke_list_zombie, ctx));
-	assert(ke_list_member(ke_list_finished, ctx));
-	ke_list_remove(ke_list_finished, ctx);
+	assert(!x86_emu_list_member(x86_emu_list_running, ctx));
+	assert(!x86_emu_list_member(x86_emu_list_suspended, ctx));
+	assert(!x86_emu_list_member(x86_emu_list_zombie, ctx));
+	assert(x86_emu_list_member(x86_emu_list_finished, ctx));
+	x86_emu_list_remove(x86_emu_list_finished, ctx);
 		
 	/* Free private structures */
 	regs_free(ctx->regs);
@@ -222,15 +222,15 @@ void ctx_free(struct ctx_t *ctx)
 		gk_libopencl_failed(ctx->pid);
 
 	/* Remove context from contexts list and free */
-	ke_list_remove(ke_list_context, ctx);
+	x86_emu_list_remove(x86_emu_list_context, ctx);
 	if (isa_ctx == ctx)
 		isa_ctx = NULL;
-	ctx_debug("context %d freed\n", ctx->pid);
+	x86_ctx_debug("context %d freed\n", ctx->pid);
 	free(ctx);
 }
 
 
-void ctx_dump(struct ctx_t *ctx, FILE *f)
+void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 {
 	char sstatus[200];
 	fprintf(f, "  pid=%d\n", ctx->pid);
@@ -251,7 +251,7 @@ void ctx_dump(struct ctx_t *ctx, FILE *f)
 }
 
 
-void ctx_execute_inst(struct ctx_t *ctx)
+void x86_ctx_execute_inst(struct x86_ctx_t *ctx)
 {
 	unsigned char buffer[20];
 	unsigned char *buffer_ptr;
@@ -262,7 +262,7 @@ void ctx_execute_inst(struct ctx_t *ctx)
 	isa_regs = ctx->regs;
 	isa_mem = ctx->mem;
 	isa_eip = isa_regs->eip;
-	isa_spec_mode = ctx_get_status(isa_ctx, ctx_specmode);
+	isa_spec_mode = x86_ctx_get_status(isa_ctx, x86_ctx_specmode);
 	isa_inst_count++;
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
@@ -291,19 +291,19 @@ void ctx_execute_inst(struct ctx_t *ctx)
 	isa_execute_inst();
 	
 	/* Stats */
-	ke->inst_count++;
+	x86_emu->inst_count++;
 }
 
 
 /* Force a new 'eip' value for the context. The forced value should be the same as
  * the current 'eip' under normal circumstances. If it is not, speculative execution
- * starts, which will end on the next call to 'ctx_recover'. */
-void ctx_set_eip(struct ctx_t *ctx, uint32_t eip)
+ * starts, which will end on the next call to 'x86_ctx_recover'. */
+void x86_ctx_set_eip(struct x86_ctx_t *ctx, uint32_t eip)
 {
 	/* Entering specmode */
-	if (ctx->regs->eip != eip && !ctx_get_status(ctx, ctx_specmode))
+	if (ctx->regs->eip != eip && !x86_ctx_get_status(ctx, x86_ctx_specmode))
 	{
-		ctx_set_status(ctx, ctx_specmode);
+		x86_ctx_set_status(ctx, x86_ctx_specmode);
 		regs_copy(ctx->backup_regs, ctx->regs);
 		ctx->regs->fpu_ctrl |= 0x3f; /* mask all FP exceptions on wrong path */
 	}
@@ -313,88 +313,88 @@ void ctx_set_eip(struct ctx_t *ctx, uint32_t eip)
 }
 
 
-void ctx_recover(struct ctx_t *ctx)
+void x86_ctx_recover(struct x86_ctx_t *ctx)
 {
-	assert(ctx_get_status(ctx, ctx_specmode));
-	ctx_clear_status(ctx, ctx_specmode);
+	assert(x86_ctx_get_status(ctx, x86_ctx_specmode));
+	x86_ctx_clear_status(ctx, x86_ctx_specmode);
 	regs_copy(ctx->regs, ctx->backup_regs);
 	spec_mem_clear(ctx->spec_mem);
 }
 
 
-int ctx_get_status(struct ctx_t *ctx, enum ctx_status_t status)
+int x86_ctx_get_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
 {
 	return (ctx->status & status) > 0;
 }
 
 
-static void ctx_update_status(struct ctx_t *ctx, enum ctx_status_t status)
+static void ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
 {
-	enum ctx_status_t status_diff;
+	enum x86_ctx_status_t status_diff;
 
 	/* Remove contexts from the following lists:
 	 *   running, suspended, zombie */
-	if (ke_list_member(ke_list_running, ctx))
-		ke_list_remove(ke_list_running, ctx);
-	if (ke_list_member(ke_list_suspended, ctx))
-		ke_list_remove(ke_list_suspended, ctx);
-	if (ke_list_member(ke_list_zombie, ctx))
-		ke_list_remove(ke_list_zombie, ctx);
-	if (ke_list_member(ke_list_finished, ctx))
-		ke_list_remove(ke_list_finished, ctx);
-	if (ke_list_member(ke_list_alloc, ctx))
-		ke_list_remove(ke_list_alloc, ctx);
+	if (x86_emu_list_member(x86_emu_list_running, ctx))
+		x86_emu_list_remove(x86_emu_list_running, ctx);
+	if (x86_emu_list_member(x86_emu_list_suspended, ctx))
+		x86_emu_list_remove(x86_emu_list_suspended, ctx);
+	if (x86_emu_list_member(x86_emu_list_zombie, ctx))
+		x86_emu_list_remove(x86_emu_list_zombie, ctx);
+	if (x86_emu_list_member(x86_emu_list_finished, ctx))
+		x86_emu_list_remove(x86_emu_list_finished, ctx);
+	if (x86_emu_list_member(x86_emu_list_alloc, ctx))
+		x86_emu_list_remove(x86_emu_list_alloc, ctx);
 	
 	/* If the difference between the old and new status lies in other
-	 * states other than 'ctx_specmode', a reschedule is marked. */
+	 * states other than 'x86_ctx_specmode', a reschedule is marked. */
 	status_diff = ctx->status ^ status;
-	if (status_diff & ~ctx_specmode)
-		ke->context_reschedule = 1;
+	if (status_diff & ~x86_ctx_specmode)
+		x86_emu->context_reschedule = 1;
 	
 	/* Update status */
 	ctx->status = status;
-	if (ctx->status & ctx_finished)
-		ctx->status = ctx_finished | (status & ctx_alloc);
-	if (ctx->status & ctx_zombie)
-		ctx->status = ctx_zombie | (status & ctx_alloc);
-	if (!(ctx->status & ctx_suspended) &&
-		!(ctx->status & ctx_finished) &&
-		!(ctx->status & ctx_zombie) &&
-		!(ctx->status & ctx_locked))
-		ctx->status |= ctx_running;
+	if (ctx->status & x86_ctx_finished)
+		ctx->status = x86_ctx_finished | (status & x86_ctx_alloc);
+	if (ctx->status & x86_ctx_zombie)
+		ctx->status = x86_ctx_zombie | (status & x86_ctx_alloc);
+	if (!(ctx->status & x86_ctx_suspended) &&
+		!(ctx->status & x86_ctx_finished) &&
+		!(ctx->status & x86_ctx_zombie) &&
+		!(ctx->status & x86_ctx_locked))
+		ctx->status |= x86_ctx_running;
 	else
-		ctx->status &= ~ctx_running;
+		ctx->status &= ~x86_ctx_running;
 	
 	/* Insert context into the corresponding lists. */
-	if (ctx->status & ctx_running)
-		ke_list_insert_head(ke_list_running, ctx);
-	if (ctx->status & ctx_zombie)
-		ke_list_insert_head(ke_list_zombie, ctx);
-	if (ctx->status & ctx_finished)
-		ke_list_insert_head(ke_list_finished, ctx);
-	if (ctx->status & ctx_suspended)
-		ke_list_insert_head(ke_list_suspended, ctx);
-	if (ctx->status & ctx_alloc)
-		ke_list_insert_head(ke_list_alloc, ctx);
+	if (ctx->status & x86_ctx_running)
+		x86_emu_list_insert_head(x86_emu_list_running, ctx);
+	if (ctx->status & x86_ctx_zombie)
+		x86_emu_list_insert_head(x86_emu_list_zombie, ctx);
+	if (ctx->status & x86_ctx_finished)
+		x86_emu_list_insert_head(x86_emu_list_finished, ctx);
+	if (ctx->status & x86_ctx_suspended)
+		x86_emu_list_insert_head(x86_emu_list_suspended, ctx);
+	if (ctx->status & x86_ctx_alloc)
+		x86_emu_list_insert_head(x86_emu_list_alloc, ctx);
 	
-	/* Dump new status (ignore 'ctx_specmode' status, it's too frequent) */
-	if (debug_status(ctx_debug_category) && (status_diff & ~ctx_specmode))
+	/* Dump new status (ignore 'x86_ctx_specmode' status, it's too frequent) */
+	if (debug_status(x86_ctx_debug_category) && (status_diff & ~x86_ctx_specmode))
 	{
 		char sstatus[200];
 		map_flags(&ctx_status_map, ctx->status, sstatus, 200);
-		ctx_debug("ctx %d changed status to %s\n",
+		x86_ctx_debug("ctx %d changed status to %s\n",
 			ctx->pid, sstatus);
 	}
 }
 
 
-void ctx_set_status(struct ctx_t *ctx, enum ctx_status_t status)
+void x86_ctx_set_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
 {
 	ctx_update_status(ctx, ctx->status | status);
 }
 
 
-void ctx_clear_status(struct ctx_t *ctx, enum ctx_status_t status)
+void x86_ctx_clear_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t status)
 {
 	ctx_update_status(ctx, ctx->status & ~status);
 }
@@ -402,11 +402,11 @@ void ctx_clear_status(struct ctx_t *ctx, enum ctx_status_t status)
 
 /* Look for a context matching pid in the list of existing
  * contexts of the kernel. */
-struct ctx_t *ctx_get(int pid)
+struct x86_ctx_t *x86_ctx_get(int pid)
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 
-	ctx = ke->context_list_head;
+	ctx = x86_emu->context_list_head;
 	while (ctx && ctx->pid != pid)
 		ctx = ctx->context_list_next;
 	return ctx;
@@ -416,11 +416,11 @@ struct ctx_t *ctx_get(int pid)
 /* Look for zombie child. If 'pid' is -1, the first finished child
  * in the zombie contexts list is return. Otherwise, 'pid' is the
  * pid of the child process. If no child has finished, return NULL. */
-struct ctx_t *ctx_get_zombie(struct ctx_t *parent, int pid)
+struct x86_ctx_t *x86_ctx_get_zombie(struct x86_ctx_t *parent, int pid)
 {
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 
-	for (ctx = ke->zombie_list_head; ctx; ctx = ctx->zombie_list_next)
+	for (ctx = x86_emu->zombie_list_head; ctx; ctx = ctx->zombie_list_next)
 	{
 		if (ctx->parent != parent)
 			continue;
@@ -432,9 +432,9 @@ struct ctx_t *ctx_get_zombie(struct ctx_t *parent, int pid)
 
 
 /* If the context is running a 'ke_host_thread_suspend' thread,
- * cancel it and schedule call to 'ke_process_events' */
+ * cancel it and schedule call to 'x86_emu_process_events' */
 
-void __ctx_host_thread_suspend_cancel(struct ctx_t *ctx)
+void __x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx)
 {
 	if (ctx->host_thread_suspend_active)
 	{
@@ -442,22 +442,22 @@ void __ctx_host_thread_suspend_cancel(struct ctx_t *ctx)
 			fatal("%s: context %d: error canceling host thread",
 				__FUNCTION__, ctx->pid);
 		ctx->host_thread_suspend_active = 0;
-		ke->process_events_force = 1;
+		x86_emu->process_events_force = 1;
 	}
 }
 
-void ctx_host_thread_suspend_cancel(struct ctx_t *ctx)
+void x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx)
 {
-	pthread_mutex_lock(&ke->process_events_mutex);
-	__ctx_host_thread_suspend_cancel(ctx);
-	pthread_mutex_unlock(&ke->process_events_mutex);
+	pthread_mutex_lock(&x86_emu->process_events_mutex);
+	__x86_ctx_host_thread_suspend_cancel(ctx);
+	pthread_mutex_unlock(&x86_emu->process_events_mutex);
 }
 
 
 /* If the context is running a 'ke_host_thread_timer' thread,
- * cancel it and schedule call to 'ke_process_events' */
+ * cancel it and schedule call to 'x86_emu_process_events' */
 
-void __ctx_host_thread_timer_cancel(struct ctx_t *ctx)
+void __x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx)
 {
 	if (ctx->host_thread_timer_active)
 	{
@@ -465,23 +465,23 @@ void __ctx_host_thread_timer_cancel(struct ctx_t *ctx)
 			fatal("%s: context %d: error canceling host thread",
 				__FUNCTION__, ctx->pid);
 		ctx->host_thread_timer_active = 0;
-		ke->process_events_force = 1;
+		x86_emu->process_events_force = 1;
 	}
 }
 
-void ctx_host_thread_timer_cancel(struct ctx_t *ctx)
+void x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx)
 {
-	pthread_mutex_lock(&ke->process_events_mutex);
-	__ctx_host_thread_timer_cancel(ctx);
-	pthread_mutex_unlock(&ke->process_events_mutex);
+	pthread_mutex_lock(&x86_emu->process_events_mutex);
+	__x86_ctx_host_thread_timer_cancel(ctx);
+	pthread_mutex_unlock(&x86_emu->process_events_mutex);
 }
 
 
-/* Finish a context group. This call does a subset of action of the 'ctx_finish'
+/* Finish a context group. This call does a subset of action of the 'x86_ctx_finish'
  * call, but for all parent and child contexts sharing a memory map. */
-void ctx_finish_group(struct ctx_t *ctx, int status)
+void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status)
 {
-	struct ctx_t *aux;
+	struct x86_ctx_t *aux;
 
 	/* Get group parent */
 	if (ctx->group_parent)
@@ -489,71 +489,71 @@ void ctx_finish_group(struct ctx_t *ctx, int status)
 	assert(!ctx->group_parent);  /* Only one level */
 	
 	/* Context already finished */
-	if (ctx_get_status(ctx, ctx_finished | ctx_zombie))
+	if (x86_ctx_get_status(ctx, x86_ctx_finished | x86_ctx_zombie))
 		return;
 
 	/* Finish all contexts in the group */
-	DOUBLE_LINKED_LIST_FOR_EACH(ke, context, aux)
+	DOUBLE_LINKED_LIST_FOR_EACH(x86_emu, context, aux)
 	{
 		if (aux->group_parent != ctx && aux != ctx)
 			continue;
 
-		if (ctx_get_status(aux, ctx_zombie))
-			ctx_set_status(aux, ctx_finished);
-		if (ctx_get_status(aux, ctx_handler))
+		if (x86_ctx_get_status(aux, x86_ctx_zombie))
+			x86_ctx_set_status(aux, x86_ctx_finished);
+		if (x86_ctx_get_status(aux, x86_ctx_handler))
 			signal_handler_return(aux);
-		ctx_host_thread_suspend_cancel(aux);
-		ctx_host_thread_timer_cancel(aux);
+		x86_ctx_host_thread_suspend_cancel(aux);
+		x86_ctx_host_thread_timer_cancel(aux);
 
 		/* If context has a parent, set its status to zombie, and let the
 		 * parent 'waitpid' it. */
-		ctx_set_status(aux, aux->parent ? ctx_zombie : ctx_finished);
+		x86_ctx_set_status(aux, aux->parent ? x86_ctx_zombie : x86_ctx_finished);
 		aux->exit_code = status;
 	}
 
 	/* Process events */
-	ke_process_events_schedule();
+	x86_emu_process_events_schedule();
 }
 
 
 /* Finish a context. If the context has no parent, its status will be set
- * to 'ctx_finished'. If it has, its status is set to 'ctx_zombie', waiting for
+ * to 'x86_ctx_finished'. If it has, its status is set to 'x86_ctx_zombie', waiting for
  * a call to 'waitpid'.
  * The children of the finished context will set their 'parent' attribute to NULL.
  * The zombie children will be finished. */
-void ctx_finish(struct ctx_t *ctx, int status)
+void x86_ctx_finish(struct x86_ctx_t *ctx, int status)
 {
-	struct ctx_t *aux;
+	struct x86_ctx_t *aux;
 	
 	/* Context already finished */
-	if (ctx_get_status(ctx, ctx_finished | ctx_zombie))
+	if (x86_ctx_get_status(ctx, x86_ctx_finished | x86_ctx_zombie))
 		return;
 	
 	/* If context is waiting for host events, cancel spawned host threads. */
-	ctx_host_thread_suspend_cancel(ctx);
-	ctx_host_thread_timer_cancel(ctx);
+	x86_ctx_host_thread_suspend_cancel(ctx);
+	x86_ctx_host_thread_timer_cancel(ctx);
 
 	/* From now on, all children have lost their parent. If a child is
 	 * already zombie, finish it, since its parent won't be able to waitpid it
 	 * anymore. */
-	DOUBLE_LINKED_LIST_FOR_EACH(ke, context, aux)
+	DOUBLE_LINKED_LIST_FOR_EACH(x86_emu, context, aux)
 	{
 		if (aux->parent == ctx)
 		{
 			aux->parent = NULL;
-			if (ctx_get_status(aux, ctx_zombie))
-				ctx_set_status(aux, ctx_finished);
+			if (x86_ctx_get_status(aux, x86_ctx_zombie))
+				x86_ctx_set_status(aux, x86_ctx_finished);
 		}
 	}
 
 	/* Send finish signal to parent */
 	if (ctx->exit_signal && ctx->parent)
 	{
-		sys_debug("  sending signal %d to pid %d\n",
+		x86_sys_debug("  sending signal %d to pid %d\n",
 			ctx->exit_signal, ctx->parent->pid);
 		sim_sigset_add(&ctx->parent->signal_mask_table->pending,
 			ctx->exit_signal);
-		ke_process_events_schedule();
+		x86_emu_process_events_schedule();
 	}
 
 	/* If clear_child_tid was set, a futex() call must be performed on
@@ -562,33 +562,33 @@ void ctx_finish(struct ctx_t *ctx, int status)
 	{
 		uint32_t zero = 0;
 		mem_write(ctx->mem, ctx->clear_child_tid, 4, &zero);
-		ctx_futex_wake(ctx, ctx->clear_child_tid, 1, -1);
+		x86_ctx_futex_wake(ctx, ctx->clear_child_tid, 1, -1);
 	}
-	ctx_exit_robust_list(ctx);
+	x86_ctx_exit_robust_list(ctx);
 
 	/* If we are in a signal handler, stop it. */
-	if (ctx_get_status(ctx, ctx_handler))
+	if (x86_ctx_get_status(ctx, x86_ctx_handler))
 		signal_handler_return(ctx);
 
 	/* Finish context */
-	ctx_set_status(ctx, ctx->parent ? ctx_zombie : ctx_finished);
+	x86_ctx_set_status(ctx, ctx->parent ? x86_ctx_zombie : x86_ctx_finished);
 	ctx->exit_code = status;
-	ke_process_events_schedule();
+	x86_emu_process_events_schedule();
 }
 
 
-int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t bitset)
+int x86_ctx_futex_wake(struct x86_ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t bitset)
 {
 	int wakeup_count = 0;
-	struct ctx_t *wakeup_ctx;
+	struct x86_ctx_t *wakeup_ctx;
 
 	/* Look for threads suspended in this futex */
 	while (count)
 	{
 		wakeup_ctx = NULL;
-		for (ctx = ke->suspended_list_head; ctx; ctx = ctx->suspended_list_next)
+		for (ctx = x86_emu->suspended_list_head; ctx; ctx = ctx->suspended_list_next)
 		{
-			if (!ctx_get_status(ctx, ctx_futex) || ctx->wakeup_futex != futex)
+			if (!x86_ctx_get_status(ctx, x86_ctx_futex) || ctx->wakeup_futex != futex)
 				continue;
 			if (!(ctx->wakeup_futex_bitset & bitset))
 				continue;
@@ -598,8 +598,8 @@ int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t b
 
 		if (wakeup_ctx)
 		{
-			ctx_clear_status(wakeup_ctx, ctx_suspended | ctx_futex);
-			sys_debug("  futex 0x%x: thread %d woken up\n", futex, wakeup_ctx->pid);
+			x86_ctx_clear_status(wakeup_ctx, x86_ctx_suspended | x86_ctx_futex);
+			x86_sys_debug("  futex 0x%x: thread %d woken up\n", futex, wakeup_ctx->pid);
 			wakeup_count++;
 			count--;
 		}
@@ -612,7 +612,7 @@ int ctx_futex_wake(struct ctx_t *ctx, uint32_t futex, uint32_t count, uint32_t b
 }
 
 
-void ctx_exit_robust_list(struct ctx_t *ctx)
+void x86_ctx_exit_robust_list(struct x86_ctx_t *ctx)
 {
 	uint32_t next, lock_entry, offset, lock_word;
 
@@ -634,7 +634,7 @@ void ctx_exit_robust_list(struct ctx_t *ctx)
 	if (!lock_entry)
 		return;
 	
-	sys_debug("ctx %d: processing robust futex list\n",
+	x86_sys_debug("ctx %d: processing robust futex list\n",
 		ctx->pid);
 	for (;;)
 	{
@@ -642,7 +642,7 @@ void ctx_exit_robust_list(struct ctx_t *ctx)
 		mem_read(ctx->mem, lock_entry + 4, 4, &offset);
 		mem_read(ctx->mem, lock_entry + offset, 4, &lock_word);
 
-		sys_debug("  lock_entry=0x%x: offset=%d, lock_word=0x%x\n",
+		x86_sys_debug("  lock_entry=0x%x: offset=%d, lock_word=0x%x\n",
 			lock_entry, offset, lock_word);
 
 		/* Stop processing list if 'next' points to robust list */
@@ -654,7 +654,7 @@ void ctx_exit_robust_list(struct ctx_t *ctx)
 
 
 /* Generate virtual file '/proc/self/maps' and return it in 'path'. */
-void ctx_gen_proc_self_maps(struct ctx_t *ctx, char *path)
+void x86_ctx_gen_proc_self_maps(struct x86_ctx_t *ctx, char *path)
 {
 	uint32_t start, end;
 	enum mem_access_t perm, page_perm;
@@ -719,7 +719,7 @@ struct ctx_ipc_report_stack_t
 	long long inst_count;
 };
 
-void ctx_ipc_report_schedule(struct ctx_t *ctx)
+void x86_ctx_ipc_report_schedule(struct x86_ctx_t *ctx)
 {
 	struct ctx_ipc_report_stack_t *stack;
 	FILE *f = ctx->loader->ipc_report_file;
@@ -743,14 +743,14 @@ void ctx_ipc_report_schedule(struct ctx_t *ctx)
 	fprintf(f, "\n");
 
 	/* Schedule first event */
-	esim_schedule_event(EV_CTX_IPC_REPORT, stack,
+	esim_schedule_event(EV_X86_CTX_IPC_REPORT, stack,
 		ctx->loader->ipc_report_interval);
 }
 
-void ctx_ipc_report_handler(int event, void *data)
+void x86_ctx_ipc_report_handler(int event, void *data)
 {
 	struct ctx_ipc_report_stack_t *stack = data;
-	struct ctx_t *ctx;
+	struct x86_ctx_t *ctx;
 
 	long long inst_count;
 	double ipc_interval;
@@ -758,8 +758,8 @@ void ctx_ipc_report_handler(int event, void *data)
 
 	/* Get context. If it does not exist anymore, no more
 	 * events to schedule. */
-	ctx = ctx_get(stack->pid);
-	if (!ctx || ctx_get_status(ctx, ctx_finished) || ke_sim_finish)
+	ctx = x86_ctx_get(stack->pid);
+	if (!ctx || x86_ctx_get_status(ctx, x86_ctx_finished) || ke_sim_finish)
 	{
 		free(stack);
 		return;
