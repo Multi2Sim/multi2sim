@@ -38,13 +38,14 @@
 /* Debug info */
 int evg_opencl_debug_category;
 
-void opencl_debug_array(int nelem, int *array)
+static void evg_opencl_debug_array(int nelem, int *array)
 {
 	char *comma = "";
 	int i;
 
 	evg_opencl_debug("{");
-	for (i = 0; i < nelem; i++) {
+	for (i = 0; i < nelem; i++)
+	{
 		evg_opencl_debug("%s%d", comma, array[i]);
 		comma = ", ";
 	}
@@ -85,7 +86,7 @@ char *err_evg_opencl_param_note =
 	"\terror handling is not provided, and any OpenCL error will cause the\n"
 	"\tsimulation to stop.\n";
 
-char *err_opencl_compiler =
+char *err_evg_opencl_compiler =
 	"\tThe Multi2Sim implementation of the OpenCL interface does not support runtime\n"
 	"\tcompilation of kernel sources. To run OpenCL kernels, you should first compile\n"
 	"\tthem off-line using an Evergreen-compatible target device. Then, you have three\n"
@@ -99,13 +100,13 @@ char *err_opencl_compiler =
 	"\t     (not a simulator argument). This option allows you to specify the path\n"
 	"\t     for the pre-compiled kernel, which is provided in the downloaded package.\n";
 	
-char *err_opencl_binary_note =
+char *err_evg_opencl_binary_note =
 	"\tYou have selected a pre-compiled OpenCL kernel binary to be passed to your\n"
 	"\tOpenCL application when it requests a kernel compilation. It is your\n"
 	"\tresponsibility to check that the chosen binary corresponds to the kernel\n"
 	"\tthat your application is expecting to load.\n";
 
-char *err_opencl_version_note =
+char *err_evg_opencl_version_note =
 	"\tThe version of the Multi2Sim OpenCL library ('libm2s-opencl') that your program\n"
 	"\tis using is too old. You need to re-link your program with a version of the\n"
 	"\tlibrary compatible for this Multi2Sim release. Please see the Multi2Sim Guide\n"
@@ -114,18 +115,18 @@ char *err_opencl_version_note =
 
 /* Error macros */
 
-#define OPENCL_PARAM_NOT_SUPPORTED(p) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED(p) \
 	fatal("%s: not supported for '" #p "' = 0x%x\n%s", err_prefix, p, err_evg_opencl_note);
-#define OPENCL_PARAM_NOT_SUPPORTED_EQ(p, v) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED_EQ(p, v) \
 	{ if ((p) == (v)) fatal("%s: not supported for '" #p "' = 0x%x\n%s", err_prefix, (v), err_evg_opencl_param_note); }
-#define OPENCL_PARAM_NOT_SUPPORTED_NEQ(p, v) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(p, v) \
 	{ if ((p) != (v)) fatal("%s: not supported for '" #p "' != 0x%x\n%s", err_prefix, (v), err_evg_opencl_param_note); }
-#define OPENCL_PARAM_NOT_SUPPORTED_LT(p, v) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED_LT(p, v) \
 	{ if ((p) < (v)) fatal("%s: not supported for '" #p "' < %d\n%s", err_prefix, (v), err_evg_opencl_param_note); }
-#define OPENCL_PARAM_NOT_SUPPORTED_OOR(p, min, max) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: not supported for '" #p "' out of range [%d:%d]\n%s", \
 	err_prefix, (min), (max), err_evg_opencl_param_note); }
-#define OPENCL_PARAM_NOT_SUPPORTED_FLAG(p, flag, name) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED_FLAG(p, flag, name) \
 	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", err_prefix, err_evg_opencl_param_note); }
 
 
@@ -152,7 +153,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 	
 	/* Execute */
 	evg_opencl_debug("%s\n", func_name);
-	switch (func_code) {
+	switch (func_code)
+	{
 
 	/* 1000 */
 	case EVG_OPENCL_FUNC_clGetPlatformIDs:
@@ -172,7 +174,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			fatal("wrong Multi2Sim OpenCL library version (provided=%d.%d.%d, required=%d.%d.%d).\n%s",
 				opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build,
 				SYS_OPENCL_IMPL_VERSION_MAJOR, SYS_OPENCL_IMPL_VERSION_MINOR, SYS_OPENCL_IMPL_VERSION_BUILD,
-				err_opencl_version_note);
+				err_evg_opencl_version_note);
 		evg_opencl_debug("  'libm2s-opencl' version: %d.%d.%d\n",
 				opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build);
 		
@@ -285,9 +287,9 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		evg_opencl_debug("  properties=0x%x, num_devices=%d, devices=0x%x\n"
 			"pfn_notify=0x%x, user_data=0x%x, errcode_ret=0x%x\n",
 			properties, num_devices, devices, pfn_notify, user_data, errcode_ret);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(pfn_notify, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_devices, 1);
-		OPENCL_PARAM_NOT_SUPPORTED_EQ(devices, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(pfn_notify, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_EQ(devices, 0);
 
 		/* Read device id */
 		mem_read(x86_isa_mem, devices, 4, &device_id);
@@ -323,7 +325,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		evg_opencl_debug("  properties=0x%x, device_type=0x%x, pfn_notify=0x%x,\n"
 			"  user_data=0x%x, errcode_ret=0x%x\n",
 			properties, device_type, pfn_notify, user_data, errcode_ret);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(pfn_notify, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(pfn_notify, 0);
 
 		/* Get device */
 		device = (struct evg_opencl_device_t *) evg_opencl_object_get_type(EVG_OPENCL_OBJ_DEVICE);
@@ -441,14 +443,18 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		void *buf;
 
 		char sflags[MAX_STRING_SIZE];
-		static struct string_map_t create_buffer_flags_map = { 4, {
-			{ "CL_MEM_READ_WRITE", 0x1 },
-			{ "CL_MEM_WRITE_ONLY", 0x2 },
-			{ "CL_MEM_READ_ONLY", 0x4 },
-			{ "CL_MEM_USE_HOST_PTR", 0x8 },
-			{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
-			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
-		}};
+		static struct string_map_t create_buffer_flags_map =
+		{
+			4,
+			{
+				{ "CL_MEM_READ_WRITE", 0x1 },
+				{ "CL_MEM_WRITE_ONLY", 0x2 },
+				{ "CL_MEM_READ_ONLY", 0x4 },
+				{ "CL_MEM_USE_HOST_PTR", 0x8 },
+				{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
+				{ "CL_MEM_COPY_HOST_PTR", 0x20 }
+			}
+		};
 
 		struct evg_opencl_mem_t *mem;
 
@@ -517,14 +523,17 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		uint32_t num_channels_per_pixel;
 		uint32_t pixel_size;
 
-		static struct string_map_t create_image_flags_map = { 4, {
-			{ "CL_MEM_READ_WRITE", 0x1 },
-			{ "CL_MEM_WRITE_ONLY", 0x2 },
-			{ "CL_MEM_READ_ONLY", 0x4 },
-			{ "CL_MEM_USE_HOST_PTR", 0x8 },
-			{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
-			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
-		}};
+		static struct string_map_t create_image_flags_map =
+		{
+			4, {
+				{ "CL_MEM_READ_WRITE", 0x1 },
+				{ "CL_MEM_WRITE_ONLY", 0x2 },
+				{ "CL_MEM_READ_ONLY", 0x4 },
+				{ "CL_MEM_USE_HOST_PTR", 0x8 },
+				{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
+				{ "CL_MEM_COPY_HOST_PTR", 0x20 }
+			}
+		};
 
 		mem_read(x86_isa_mem, image_format_ptr, 8, &image_format);
 		channel_order = image_format.image_channel_order;
@@ -546,7 +555,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 				err_prefix, err_evg_opencl_param_note);
 
 		/* Evaluate image channel order */
-		switch(channel_order) {
+		switch(channel_order)
+		{
 
 		case 0x10B0:  /* CL_R */
 		{
@@ -569,7 +579,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		}
 
 		/* Evaluate image channel type */
-		switch(channel_type) {
+		switch(channel_type)
+		{
 
 		case 0x10DA: /* CL_UNSIGNED_INT8 */
 		{
@@ -593,11 +604,12 @@ int evg_opencl_func_run(int code, unsigned int *args)
 
 
 		/* Determine image geometry */
-		if(image_row_pitch == 0) {
+		if (image_row_pitch == 0)
+		{
 			image_row_pitch = image_width*pixel_size;
 		}
-		else if(image_row_pitch < image_width*pixel_size) {
-
+		else if (image_row_pitch < image_width*pixel_size)
+		{
 			fatal("%s: image_row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
 				err_prefix, err_evg_opencl_param_note);
 		}
@@ -624,10 +636,12 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		evg_opencl_debug("  creating device ptr at %u, for %u bytes\n", mem->device_ptr, size);
 
 		/* If 'host_ptr' was specified, copy image into device memory */
-		if (host_ptr) {
+		if (host_ptr)
+		{
 			image = malloc(size);
 			if (!image)
 				fatal("%s: out of memory", err_prefix);
+
 			mem_read(x86_isa_mem, host_ptr, size, image);
 			mem_write(evg_emu->global_mem, mem->device_ptr, size, image);
 			free(image);
@@ -666,14 +680,17 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		uint32_t num_channels_per_pixel;
 		uint32_t pixel_size;
 
-		static struct string_map_t create_image_flags_map = { 4, {
-			{ "CL_MEM_READ_WRITE", 0x1 },
-			{ "CL_MEM_WRITE_ONLY", 0x2 },
-			{ "CL_MEM_READ_ONLY", 0x4 },
-			{ "CL_MEM_USE_HOST_PTR", 0x8 },
-			{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
-			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
-		}};
+		static struct string_map_t create_image_flags_map =
+		{
+			4, {
+				{ "CL_MEM_READ_WRITE", 0x1 },
+				{ "CL_MEM_WRITE_ONLY", 0x2 },
+				{ "CL_MEM_READ_ONLY", 0x4 },
+				{ "CL_MEM_USE_HOST_PTR", 0x8 },
+				{ "CL_MEM_ALLOC_HOST_PTR", 0x10 },
+				{ "CL_MEM_COPY_HOST_PTR", 0x20 }
+			}
+		};
 
 		mem_read(x86_isa_mem, image_format_ptr, 8, &image_format);
 		channel_order = image_format.image_channel_order;
@@ -699,7 +716,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 				err_prefix, err_evg_opencl_param_note);
 
 		/* Evaluate image channel order */
-		switch(channel_order) {
+		switch(channel_order)
+		{
 
 		case 0x10B0:  /* CL_R */
 		{
@@ -722,7 +740,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		}
 
 		/* Evaluate image channel type */
-		switch(channel_type) {
+		switch(channel_type)
+		{
 
 		case 0x10DA: /* CL_UNSIGNED_INT8 */
 		{
@@ -745,20 +764,23 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		}
 
 		/* Determine image geometry */
-		if(image_row_pitch == 0) {
+		if (image_row_pitch == 0)
+		{
 			image_row_pitch = image_width*pixel_size;
 		}
-		else if(image_row_pitch < image_width*pixel_size) {
+		else if (image_row_pitch < image_width*pixel_size)
+		{
 
 			fatal("%s: image_row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
 				err_prefix, err_evg_opencl_param_note);
 		}
 
-		if(image_slice_pitch == 0) {
+		if (image_slice_pitch == 0)
+		{
 			image_slice_pitch = image_row_pitch*image_height;
 		}
-		else if(image_slice_pitch < image_row_pitch*image_height) {
-
+		else if (image_slice_pitch < image_row_pitch*image_height)
+		{
 			fatal("%s: image_slice_pitch must be 0 or >= image_row_pitch * image_height\n%s", 
 				err_prefix, err_evg_opencl_param_note);
 		}
@@ -784,10 +806,12 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		evg_emu->global_mem_top += size;
 
 		/* If 'host_ptr' was specified, copy image into device memory */
-		if (host_ptr) {
+		if (host_ptr)
+		{
 			image = malloc(size);
 			if (!image)
 				fatal("%s: out of memory", err_prefix);
+
 			mem_read(x86_isa_mem, host_ptr, size, image);
 			mem_write(evg_emu->global_mem, mem->device_ptr, size, image);
 			free(image);
@@ -830,17 +854,17 @@ int evg_opencl_func_run(int code, unsigned int *args)
 				" lengths=0x%x, errcode_ret=0x%x\n",
 			context, normalized_coords, addressing_mode, filter_mode, errcode_ret);
 
-		if(normalized_coords != 0) 
+		if (normalized_coords != 0)
 		{
 			fatal("%s: Normalized coordinates are not supported.\n", err_prefix);
 		}
 
-		if(filter_mode != 0x1140)  /* only CL_FILTER_NEAREST supported */
+		if (filter_mode != 0x1140)  /* only CL_FILTER_NEAREST supported */
 		{
 			fatal("%s: filter mode %u not supported.\n", err_prefix, filter_mode);
 		}
 
-		if(addressing_mode != 0x1130) /* only CL_ADDRESS_NONE supported */
+		if (addressing_mode != 0x1130) /* only CL_ADDRESS_NONE supported */
 		{
 			fatal("%s: addressing mode %u not supported.\n", err_prefix, 
 					addressing_mode);
@@ -878,14 +902,14 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		/* Application tries to compile source, and no binary was passed to Multi2Sim */
 		if (!*evg_emu_opencl_binary_name)
 			fatal("%s: kernel source compilation not supported.\n%s",
-				err_prefix, err_opencl_compiler);
+				err_prefix, err_evg_opencl_compiler);
 
 		/* Create program */
 		evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
 		program = evg_opencl_program_create();
 		retval = program->id;
 		warning("%s: binary '%s' used as pre-compiled kernel.\n%s",
-			err_prefix, evg_emu_opencl_binary_name, err_opencl_binary_note);
+			err_prefix, evg_emu_opencl_binary_name, err_evg_opencl_binary_note);
 
 		/* Load OpenCL binary passed to Multi2Sim and make a copy in temporary file */
 		program->elf_file = elf_file_create_from_path(evg_emu_opencl_binary_name);
@@ -915,7 +939,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			"  binaries=0x%x, binary_status=0x%x, errcode_ret=0x%x\n",
 			context_id, num_devices, device_list, lengths, binaries,
 			binary_status, errcode_ret);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_devices, 1);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 
 		/* Get device and context */
 		mem_read(x86_isa_mem, device_list, 4, &device_id);
@@ -993,9 +1017,9 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		evg_opencl_debug("  program=0x%x, num_devices=%d, device_list=0x%x, options=0x%x\n"
 			"  pfn_notify=0x%x, user_data=0x%x, options='%s'\n",
 			program_id, num_devices, device_list, options, pfn_notify, user_data, options_str);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_devices, 1);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(pfn_notify, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(user_data, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(pfn_notify, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(user_data, 0);
 		if (options_str[0])
 			warning("%s: clBuildProgram: option string '%s' ignored\n", __FUNCTION__, options_str);
 
@@ -1096,7 +1120,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		/* Check */
 		kernel = evg_opencl_object_get(EVG_OPENCL_OBJ_KERNEL, kernel_id);
 		if (arg_value)
-			OPENCL_PARAM_NOT_SUPPORTED_NEQ(arg_size, 4);
+			EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(arg_size, 4);
 		if (arg_index >= list_count(kernel->arg_list))
 			fatal("%s: argument index out of bounds.\n%s", err_prefix,
 				err_evg_opencl_param_note);
@@ -1166,7 +1190,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		uint32_t param_name = args[1]; /* cl_event_info param_name */
 		uint32_t param_value = args[3]; /* void *param_value */
 
-		switch(param_name) {
+		switch(param_name)
+		{
 
 		case 0x11d0: /* CL_EVENT_COMMAND_QUEUE */
 			fatal("param_name CL_EVENT_COMMAND_QUEUE not supported for clGetEventInfo"); 
@@ -1287,8 +1312,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			num_events_in_wait_list, event_wait_list, event_ptr);
 
 		/* FIXME: 'blocking_read' ignored */
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory object */
 		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, buffer);
@@ -1306,7 +1331,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		free(buf);
 
 		/* Event */
-		if (event_ptr) {
+		if (event_ptr)
+		{
 			event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
 			event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
 			event->time_queued = evg_opencl_event_timer();
@@ -1348,8 +1374,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			ptr, num_events_in_wait_list, event_wait_list, event_ptr);
 
 		/* FIXME: 'blocking_write' ignored */
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory object */
 		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, buffer);
@@ -1367,7 +1393,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		free(buf);
 
 		/* Event */
-		if (event_ptr) {
+		if (event_ptr)
+		{
 			event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
 			event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
 			event->time_queued = evg_opencl_event_timer();
@@ -1408,8 +1435,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			command_queue, src_buffer, dst_buffer, src_offset, dst_offset, cb,
 			num_events_in_wait_list, event_wait_list, event_ptr);
 
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory objects */
 		src_mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, src_buffer);
@@ -1428,7 +1455,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		free(buf);
 
 		/* Event */
-		if (event_ptr) {
+		if (event_ptr)
+		{
 			event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
 			event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
 			event->time_queued = evg_opencl_event_timer();
@@ -1471,8 +1499,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			slice_pitch, ptr, num_events_in_wait_list, event_wait_list, event_ptr);
 
 		/* FIXME: 'blocking_read' ignored */
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory object */
 		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, image);
@@ -1486,29 +1514,33 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		mem_read(x86_isa_mem, region, 12, read_region);
 		mem_read(x86_isa_mem, origin, 12, read_origin);
 
-		if(row_pitch == 0) {
+		if (row_pitch == 0)
+		{
 			row_pitch = mem->width*mem->pixel_size;
 		}
-		else if(row_pitch < mem->width*mem->pixel_size) {
+		else if (row_pitch < mem->width*mem->pixel_size)
+		{
 
 			fatal("%s: row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
 				err_prefix, err_evg_opencl_param_note);
 		}
 
-		if(slice_pitch == 0) {
+		if (slice_pitch == 0)
+		{
 			slice_pitch = row_pitch*mem->height;
 		}
-		else if(slice_pitch < row_pitch*mem->height) {
-
+		else if (slice_pitch < row_pitch*mem->height)
+		{
 			fatal("%s: slice_pitch must be 0 or >= row_pitch * image_height\n%s", 
 				err_prefix, err_evg_opencl_param_note);
 		}
 
 		/* FIXME Start with origin = {0,0,0}, region = {width, height, depth},
 		 * then add support for subregions */
-		if(read_origin[0] != 0 || read_origin[1] != 0 || read_origin[2] != 0 ||
-		   read_region[0] != mem->width || read_region[1] != mem->height || 
-		   read_region[2] != mem->depth) {
+		if (read_origin[0] != 0 || read_origin[1] != 0 || read_origin[2] != 0 ||
+			read_region[0] != mem->width || read_region[1] != mem->height ||
+			read_region[2] != mem->depth)
+		{
 
 			fatal("%s: Origin/region must match dimensions of image\n%s", 
 				err_prefix, err_evg_opencl_param_note);
@@ -1525,7 +1557,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		free(img);
 
 		/* Event */
-		if (event_ptr) {
+		if (event_ptr)
+		{
 			event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
 			event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
 			event->time_queued = evg_opencl_event_timer();
@@ -1564,15 +1597,16 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			"  event=0x%x, errcode_ret=0x%x\n",
 			command_queue, buffer, blocking_map, map_flags, offset, cb,
 			num_events_in_wait_list, event_wait_list, event_ptr, errcode_ret);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_EQ(blocking_map, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_EQ(blocking_map, 0);
 
 		/* Get memory object */
 		evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, buffer);
 
 		/* Event */
-		if (event_ptr) {
+		if (event_ptr)
+		{
 			event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
 			event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
 			event->time_queued = evg_opencl_event_timer();
@@ -1615,8 +1649,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			"  num_events_in_wait_list=0x%x, event_wait_list=0x%x, event=0x%x\n",
 			command_queue, kernel_id, work_dim, global_work_offset_ptr, global_work_size_ptr,
 			local_work_size_ptr, num_events_in_wait_list, event_wait_list, event_ptr);
-		OPENCL_PARAM_NOT_SUPPORTED_NEQ(global_work_offset_ptr, 0);
-		OPENCL_PARAM_NOT_SUPPORTED_OOR(work_dim, 1, 3);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(global_work_offset_ptr, 0);
+		EVG_OPENCL_ARG_NOT_SUPPORTED_RANGE(work_dim, 1, 3);
 		if (num_events_in_wait_list || event_wait_list)
 			warning("%s: event list arguments ignored", err_prefix);
 
@@ -1667,7 +1701,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			mem_read(x86_isa_mem, global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
 		kernel->global_size = kernel->global_size3[0] * kernel->global_size3[1] * kernel->global_size3[2];
 		evg_opencl_debug("    global_work_size=");
-		opencl_debug_array(work_dim, kernel->global_size3);
+		evg_opencl_debug_array(work_dim, kernel->global_size3);
 		evg_opencl_debug("\n");
 
 		/* Local work sizes.
@@ -1685,7 +1719,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		}
 		kernel->local_size = kernel->local_size3[0] * kernel->local_size3[1] * kernel->local_size3[2];
 		evg_opencl_debug("    local_work_size=");
-		opencl_debug_array(work_dim, kernel->local_size3);
+		evg_opencl_debug_array(work_dim, kernel->local_size3);
 		evg_opencl_debug("\n");
 
 		/* Check valid global/local sizes */
@@ -1708,11 +1742,12 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			kernel->group_count3[i] = kernel->global_size3[i] / kernel->local_size3[i];
 		kernel->group_count = kernel->group_count3[0] * kernel->group_count3[1] * kernel->group_count3[2];
 		evg_opencl_debug("    group_count=");
-		opencl_debug_array(work_dim, kernel->group_count3);
+		evg_opencl_debug_array(work_dim, kernel->group_count3);
 		evg_opencl_debug("\n");
 
 		/* Event */
-		if (event_ptr) {
+		if (event_ptr)
+		{
 			event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
 			event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
 			event->time_queued = evg_opencl_event_timer();
@@ -1748,7 +1783,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		evg_ndrange_free(kernel->ndrange);
 
 		/* Event */
-		if (event_ptr) {
+		if (event_ptr)
+		{
 			event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
 			event->time_end = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
 		}
