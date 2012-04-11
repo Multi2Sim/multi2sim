@@ -20,14 +20,14 @@
 #include <evergreen-timing.h>
 
 
-struct string_map_t gpu_sched_policy_map =
+struct string_map_t evg_sched_policy_map =
 {
 		2, {
-			{ "RoundRobin", gpu_sched_round_robin },
-			{ "Greedy", gpu_sched_greedy }
+			{ "RoundRobin", evg_sched_round_robin },
+			{ "Greedy", evg_sched_greedy }
 		}
 	};
-enum gpu_sched_policy_t gpu_sched_policy;
+enum evg_sched_policy_t evg_sched_policy;
 
 
 
@@ -36,7 +36,7 @@ enum gpu_sched_policy_t gpu_sched_policy;
  * Private Functions
  */
 
-static struct evg_wavefront_t *gpu_schedule_round_robin(struct gpu_compute_unit_t *compute_unit)
+static struct evg_wavefront_t *gpu_schedule_round_robin(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_wavefront_t *wavefront, *temp_wavefront;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
@@ -52,7 +52,7 @@ static struct evg_wavefront_t *gpu_schedule_round_robin(struct gpu_compute_unit_
 	{
 		/* Wavefront must be running,
 		 * and the corresponding slot in fetch buffer must be free. */
-		assert(wavefront->id_in_compute_unit < gpu->wavefronts_per_compute_unit);
+		assert(wavefront->id_in_compute_unit < evg_gpu->wavefronts_per_compute_unit);
 		if (DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, running, wavefront) &&
 			!compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit])
 			break;
@@ -72,7 +72,7 @@ static struct evg_wavefront_t *gpu_schedule_round_robin(struct gpu_compute_unit_
 }
 
 
-static struct evg_wavefront_t *gpu_schedule_greedy(struct gpu_compute_unit_t *compute_unit)
+static struct evg_wavefront_t *gpu_schedule_greedy(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_wavefront_t *wavefront, *temp_wavefront;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
@@ -86,7 +86,7 @@ static struct evg_wavefront_t *gpu_schedule_greedy(struct gpu_compute_unit_t *co
 		
 		/* Wavefront must be running,
 		 * and the corresponding slot in fetch buffer must be free. */
-		assert(wavefront->id_in_compute_unit < gpu->wavefronts_per_compute_unit);
+		assert(wavefront->id_in_compute_unit < evg_gpu->wavefronts_per_compute_unit);
 		if (!DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, running, wavefront) ||
 			compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit])
 			continue;
@@ -106,7 +106,7 @@ static struct evg_wavefront_t *gpu_schedule_greedy(struct gpu_compute_unit_t *co
 	linked_list_find(wavefront_pool, temp_wavefront);
 	assert(!wavefront_pool->error_code);
 	linked_list_remove(wavefront_pool);
-	temp_wavefront->sched_when = gpu->cycle;
+	temp_wavefront->sched_when = evg_gpu->cycle;
 	return temp_wavefront;
 }
 
@@ -120,7 +120,7 @@ static struct evg_wavefront_t *gpu_schedule_greedy(struct gpu_compute_unit_t *co
 /* Return a wavefront from the wavefront pool in the compute unit.
  * If a wavefront was found, it will be extracted from the wavefront pool.
  * If no valid candidate is found in the wavefront pool, the function returns NULL. */
-struct evg_wavefront_t *gpu_schedule(struct gpu_compute_unit_t *compute_unit)
+struct evg_wavefront_t *evg_compute_unit_schedule(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_wavefront_t *wavefront;
 
@@ -129,15 +129,15 @@ struct evg_wavefront_t *gpu_schedule(struct gpu_compute_unit_t *compute_unit)
 		return NULL;
 
 	/* Run different scheduling algorithm depending on configured policy */
-	switch (gpu_sched_policy)
+	switch (evg_sched_policy)
 	{
 
-	case gpu_sched_round_robin:
+	case evg_sched_round_robin:
 
 		wavefront = gpu_schedule_round_robin(compute_unit);
 		break;
 
-	case gpu_sched_greedy:
+	case evg_sched_greedy:
 
 		wavefront = gpu_schedule_greedy(compute_unit);
 		break;

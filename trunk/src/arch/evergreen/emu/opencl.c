@@ -1773,10 +1773,10 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			/* The following function is currently the only
 			 * dependence with 'libgpuarch'. This is not safe, but
 			 * let's just include the external reference here. */
-			void gpu_run(struct evg_ndrange_t *ndrange);
+			void evg_gpu_run(struct evg_ndrange_t *ndrange);
 			/* FIXME!!! - this will be fixed when asynchronous execution is
 			 * implemented. */
-			gpu_run(kernel->ndrange);
+			evg_gpu_run(kernel->ndrange);
 		}
 
 		/* Free NDRange */

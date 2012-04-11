@@ -329,7 +329,7 @@ static void mem_config_gpu_default(struct config_t *config)
 	config_write_string(config, section, "Policy", "LRU");
 
 	/* L1 caches and entries */
-	FOREACH_COMPUTE_UNIT(compute_unit_id)
+	EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
 		config_write_string(config, section, "Type", "Cache");
@@ -1141,7 +1141,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	} *entry, *entry_list;
 
 	/* Allocate entry list */
-	entry_list = calloc(gpu_num_compute_units, sizeof(struct entry_t));
+	entry_list = calloc(evg_num_compute_units, sizeof(struct entry_t));
 	if (!entry_list)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -1169,7 +1169,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 				mem_config_file_name, entry_name);
 
 		/* Check bounds */
-		if (compute_unit_id >= gpu_num_compute_units)
+		if (compute_unit_id >= evg_num_compute_units)
 		{
 			config_var_allow(config, section, "Module");
 			warning("%s: entry %s ignored.\n%s",
@@ -1197,7 +1197,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 
 	/* Assign entry modules */
 	mem_debug("Assigning GPU entries to memory system:\n");
-	FOREACH_COMPUTE_UNIT(compute_unit_id)
+	EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		/* Check that entry was set */
 		entry = &entry_list[compute_unit_id];
@@ -1214,7 +1214,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 		/* Assign module */
 		mod = config_read_ptr(config, buf, "ptr", NULL);
 		assert(mod);
-		gpu->compute_units[compute_unit_id]->global_memory = mod;
+		evg_gpu->compute_units[compute_unit_id]->global_memory = mod;
 		mem_debug("\tGPU compute unit %d -> %s\n", compute_unit_id, mod->name);
 	}
 
@@ -1430,9 +1430,9 @@ static void mem_config_check_disjoint(void)
 	}
 
 	/* Check color of GPU modules */
-	FOREACH_COMPUTE_UNIT(compute_unit_id)
+	EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		if (mem_config_check_mod_color(gpu->compute_units[compute_unit_id]->global_memory, 1))
+		if (mem_config_check_mod_color(evg_gpu->compute_units[compute_unit_id]->global_memory, 1))
 			fatal("%s: non-disjoint CPU/GPU memory hierarchies",
 				mem_config_file_name);
 	}
@@ -1522,8 +1522,8 @@ static void mem_config_calculate_mod_levels(void)
 	/* Check color of GPU modules */
 	if (evg_emu_kind == evg_emu_detailed)
 	{
-		FOREACH_COMPUTE_UNIT(compute_unit_id)
-			mem_config_set_mod_level(gpu->compute_units[compute_unit_id]->global_memory, 1);
+		EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
+			mem_config_set_mod_level(evg_gpu->compute_units[compute_unit_id]->global_memory, 1);
 	}
 
 	/* Debug */
