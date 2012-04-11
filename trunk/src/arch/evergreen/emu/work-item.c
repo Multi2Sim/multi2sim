@@ -22,16 +22,24 @@
 
 
 /*
- * GPU work_item
+ * Public Functions
  */
 
 struct evg_work_item_t *evg_work_item_create()
 {
 	struct evg_work_item_t *work_item;
+
+	/* Allocate */
 	work_item = calloc(1, sizeof(struct evg_work_item_t));
+	if (!work_item)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	work_item->write_task_list = linked_list_create();
 	work_item->lds_oqa = list_create();
 	work_item->lds_oqb = list_create();
+
+	/* Return */
 	return work_item;
 }
 
@@ -56,6 +64,7 @@ void evg_work_item_free(struct evg_work_item_t *work_item)
 void evg_work_item_set_active(struct evg_work_item_t *work_item, int active)
 {
 	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
 	bit_map_set(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
 		+ work_item->id_in_wavefront, 1, !!active);
@@ -66,6 +75,7 @@ void evg_work_item_set_active(struct evg_work_item_t *work_item, int active)
 int evg_work_item_get_active(struct evg_work_item_t *work_item)
 {
 	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
 	return bit_map_get(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
 		+ work_item->id_in_wavefront, 1);
@@ -75,6 +85,7 @@ int evg_work_item_get_active(struct evg_work_item_t *work_item)
 void evg_work_item_set_pred(struct evg_work_item_t *work_item, int pred)
 {
 	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
 	bit_map_set(wavefront->pred, work_item->id_in_wavefront, 1, !!pred);
 	wavefront->pred_mask_update = 1;
@@ -84,6 +95,7 @@ void evg_work_item_set_pred(struct evg_work_item_t *work_item, int pred)
 int evg_work_item_get_pred(struct evg_work_item_t *work_item)
 {
 	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
 	return bit_map_get(wavefront->pred, work_item->id_in_wavefront, 1);
 }
@@ -111,4 +123,3 @@ void evg_work_item_update_branch_digest(struct evg_work_item_t *work_item,
 	/* Update branch digest */
 	work_item->branch_digest ^= mask;
 }
-

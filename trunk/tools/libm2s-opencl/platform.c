@@ -38,7 +38,7 @@ cl_int clGetPlatformIDs(
 	/* An additional argument is added with the version information of this
 	 * OpenCL implementation. If Multi2Sim expects a later version, the
 	 * system call with fail and cause a fatal error. */
-	sys_args[3] = SYS_OPENCL_IMPL_VERSION;
+	sys_args[3] = EVG_SYS_OPENCL_IMPL_VERSION;
 
 	/* Perform system call */
 	ret = syscall(SYS_CODE_OPENCL, OPENCL_FUNC_clGetPlatformIDs, sys_args);

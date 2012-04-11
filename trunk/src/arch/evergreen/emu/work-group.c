@@ -24,7 +24,7 @@
 
 
 /*
- * GPU Work-Group
+ * Public Functions
  */
 
 
@@ -119,7 +119,8 @@ void evg_work_group_dump(struct evg_work_group_t *work_group, FILE *f)
 	fprintf(f, "\n");
 
 	/* Dump wavefronts */
-	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
+	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+	{
 		wavefront = ndrange->wavefronts[wavefront_id];
 		evg_wavefront_dump(wavefront, f);
 	}

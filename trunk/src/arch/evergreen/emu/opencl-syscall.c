@@ -26,17 +26,17 @@
 /* Required 'libm2s-opencl.so' version.
  * Increase this number when the user is required to download an updated release
  * of the Multi2Sim OpenCL implementation. */
-#define SYS_OPENCL_IMPL_VERSION_MAJOR		1
-#define SYS_OPENCL_IMPL_VERSION_MINOR		0
-#define SYS_OPENCL_IMPL_VERSION_BUILD		0
-#define SYS_OPENCL_IMPL_VERSION			((SYS_OPENCL_IMPL_VERSION_MAJOR << 16) | \
-						(SYS_OPENCL_IMPL_VERSION_MINOR << 8) | \
-						SYS_OPENCL_IMPL_VERSION_BUILD)
+#define EVG_SYS_OPENCL_IMPL_VERSION_MAJOR		1
+#define EVG_SYS_OPENCL_IMPL_VERSION_MINOR		0
+#define EVG_SYS_OPENCL_IMPL_VERSION_BUILD		0
+#define EVG_SYS_OPENCL_IMPL_VERSION			((EVG_SYS_OPENCL_IMPL_VERSION_MAJOR << 16) | \
+							(EVG_SYS_OPENCL_IMPL_VERSION_MINOR << 8) | \
+							EVG_SYS_OPENCL_IMPL_VERSION_BUILD)
 
 
 /* OpenCL API Implementation */
 
-int opencl_syscall(int code, unsigned int *args)
+int evg_opencl_syscall(int code, unsigned int *args)
 {
 	char err_prefix[MAX_STRING_SIZE];
 	char *func_name;
@@ -53,7 +53,8 @@ int opencl_syscall(int code, unsigned int *args)
 	
 	/* Execute */
 	evg_opencl_debug("%s\n", func_name);
-	switch (func_code) {
+	switch (func_code)
+	{
 
 	/* 1000 */
 	case EVG_OPENCL_FUNC_clGetPlatformIDs:
