@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <visual-private.h>
+#include <visual-memory.h>
 
 
 static struct string_map_t visual_mod_block_state_map =
@@ -344,7 +344,7 @@ void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
 
 			/* Read state */
 			count = fread(&state, 1, 1, f);
-			if (!count != 1)
+			if (count != 1)
 				fatal("%s: error reading from checkpoint", __FUNCTION__);
 			block->state = state;
 

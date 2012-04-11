@@ -41,7 +41,13 @@ AC_CHECK_LIB([z], [inflate])
 AC_CHECK_LIB([m], [sin])
 AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 
+
+
+
+#
 # Check for GTK
+#
+
 have_gtk=no
 have_gtk_test=yes
 
@@ -68,15 +74,25 @@ AC_MSG_WARN([
 	your system (e.g., package 'libgtk-3-dev' in Debian-based distributions),
 	and run './configure' again.
 ])
+else
+AC_DEFINE(HAVE_GTK, 1)
 fi
 
 AM_CONDITIONAL(HAVE_GTK, test x$have_gtk = xyes)
 
 
+
+
+#
+# Data directory
+#
+
 DATADIR=`eval echo $datadir`
 AC_SUBST([DATADIR])
 PKGDATADIR="$datadir/multi2sim"
 AC_SUBST([PKGDATADIR])
+
+
 
 
 # ---------------------------------------------------------------------
@@ -159,15 +175,24 @@ M2S_INCLUDES=" \
 -I\$(top_srcdir)/src/arch/x86/emu \
 -I\$(top_srcdir)/src/arch/x86/timing \
 \
+-I\$(top_srcdir)/src/visual/common \
+-I\$(top_srcdir)/src/visual/evergreen \
+-I\$(top_srcdir)/src/visual/memory \
+-I\$(top_srcdir)/src/visual/x86 \
+\
 -I\$(top_srcdir)/src/mem-system \
 -I\$(top_srcdir)/src/network \
--I\$(top_srcdir)/src/visual \
 \
 -I\$(top_srcdir)/src/libgpuvisual \
 "
 
 AC_SUBST(M2S_INCLUDES)
 
+
+
+#
+# Makefiles
+#
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
@@ -176,7 +201,6 @@ AC_CONFIG_FILES([Makefile
 		 src/libgpuvisual/Makefile
 		 src/mem-system/Makefile
 		 src/network/Makefile
-		 src/visual/Makefile
 
 		 src/arch/arm/Makefile
 		 src/arch/arm/asm/Makefile
@@ -197,6 +221,12 @@ AC_CONFIG_FILES([Makefile
 		 src/arch/x86/asm/Makefile
 		 src/arch/x86/emu/Makefile
 		 src/arch/x86/timing/Makefile
+
+		 src/visual/Makefile
+		 src/visual/common/Makefile
+		 src/visual/evergreen/Makefile
+		 src/visual/memory/Makefile
+		 src/visual/x86/Makefile
 
 		 src/lib/Makefile
 		 src/lib/esim/Makefile

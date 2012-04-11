@@ -18,15 +18,7 @@
  */
 
 
-#ifndef MEMVISUAL_H_
-#define MEMVISUAL_H_
-
-#include <debug.h>
-#include <mhandle.h>
-
-
-void vmem_run(char *file_name);
-
+#ifndef VISUAL_X86_H
+#define VISUAL_X86_H
 
 #endif
-
