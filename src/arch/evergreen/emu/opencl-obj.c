@@ -643,11 +643,11 @@ void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t 
 		mem->host_ptr = 0;
 
 		/* Assign position in device global memory */
-		mem->device_ptr = gk->global_mem_top;
-		gk->global_mem_top += mem->size;
+		mem->device_ptr = evg_emu->global_mem_top;
+		evg_emu->global_mem_top += mem->size;
 
 		/* Copy constant buffer into device memory */
-		mem_write(gk->global_mem, mem->device_ptr, mem->size, elf_buffer.ptr);
+		mem_write(evg_emu->global_mem, mem->device_ptr, mem->size, elf_buffer.ptr);
 
 		/* Add the memory object to the constant buffer list */
 		list_set(program->constant_buffer_list, i, mem);

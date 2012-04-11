@@ -219,7 +219,7 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 
 	/* Warn about unresolved attempts to access OpenCL library */
 	if (ctx->libopencl_open_attempt)
-		gk_libopencl_failed(ctx->pid);
+		evg_emu_libopencl_failed(ctx->pid);
 
 	/* Remove context from contexts list and free */
 	x86_emu_list_remove(x86_emu_list_context, ctx);

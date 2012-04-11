@@ -27,7 +27,7 @@
  */
 
 
-struct gk_t *gk;
+struct evg_emu_t *evg_emu;
 
 long long evg_emu_max_cycles = 0;
 long long evg_emu_max_inst = 0;
@@ -52,7 +52,7 @@ int evg_emu_wavefront_size = 64;
 
 
 /* Initialize GPU kernel */
-void gk_init()
+void evg_emu_init()
 {
 	/* Open report file */
 	if (evg_emu_report_file_name[0]) {
@@ -62,17 +62,17 @@ void gk_init()
 	}
 
 	/* Initialize kernel */
-	gk = calloc(1, sizeof(struct gk_t));
-	gk->const_mem = mem_create();
-	gk->const_mem->safe = 0;
-	gk->global_mem = mem_create();
-	gk->global_mem->safe = 0;
+	evg_emu = calloc(1, sizeof(struct evg_emu_t));
+	evg_emu->const_mem = mem_create();
+	evg_emu->const_mem->safe = 0;
+	evg_emu->global_mem = mem_create();
+	evg_emu->global_mem->safe = 0;
 
 	/* Initialize disassembler (decoding tables...) */
 	evg_disasm_init();
 
 	/* Initialize ISA (instruction execution tables...) */
-	gpu_isa_init();
+	evg_isa_init();
 
 	/* Create platform and device */
 	evg_opencl_object_list = linked_list_create();
@@ -82,7 +82,7 @@ void gk_init()
 
 
 /* Finalize GPU kernel */
-void gk_done()
+void evg_emu_done()
 {
 	/* GPU report */
 	if (evg_emu_report_file)
@@ -96,44 +96,44 @@ void gk_done()
 	evg_disasm_done();
 
 	/* Finalize ISA */
-	gpu_isa_done();
+	evg_isa_done();
 
 	/* Finalize GPU kernel */
-	mem_free(gk->const_mem);
-	mem_free(gk->global_mem);
-	free(gk);
+	mem_free(evg_emu->const_mem);
+	mem_free(evg_emu->global_mem);
+	free(evg_emu);
 }
 
 
-void gk_timer_start(void)
+void evg_emu_timer_start(void)
 {
-	assert(!gk->timer_running);
-	gk->timer_start_time = x86_emu_timer();
-	gk->timer_running = 1;
+	assert(!evg_emu->timer_running);
+	evg_emu->timer_start_time = x86_emu_timer();
+	evg_emu->timer_running = 1;
 }
 
 
-void gk_timer_stop(void)
+void evg_emu_timer_stop(void)
 {
-	assert(gk->timer_running);
-	gk->timer_acc += x86_emu_timer() - gk->timer_start_time;
-	gk->timer_running = 0;
+	assert(evg_emu->timer_running);
+	evg_emu->timer_acc += x86_emu_timer() - evg_emu->timer_start_time;
+	evg_emu->timer_running = 0;
 }
 
 
 /* Return a counter of microseconds relative to the first time the GPU started to run.
  * This counter runs only while the GPU is active, stopping and resuming after calls
- * to 'gk_timer_stop()' and 'gk_timer_start()', respectively. */
-long long gk_timer(void)
+ * to 'evg_emu_timer_stop()' and 'evg_emu_timer_start()', respectively. */
+long long evg_emu_timer(void)
 {
-	return gk->timer_running ? x86_emu_timer() - gk->timer_start_time + gk->timer_acc
-		: gk->timer_acc;
+	return evg_emu->timer_running ? x86_emu_timer() - evg_emu->timer_start_time + evg_emu->timer_acc
+		: evg_emu->timer_acc;
 }
 
 
 /* If 'fullpath' points to the original OpenCL library, redirect it to 'm2s-opencl.so'
  * in the same path. */
-void gk_libopencl_redirect(char *fullpath, int size)
+void evg_emu_libopencl_redirect(char *fullpath, int size)
 {
 	char fullpath_original[MAX_PATH_SIZE];
 	char buf[MAX_PATH_SIZE];
@@ -223,7 +223,7 @@ void gk_libopencl_redirect(char *fullpath, int size)
 
 
 /* Dump a warning about failed attempts of context to access OpenCL library */
-void gk_libopencl_failed(int pid)
+void evg_emu_libopencl_failed(int pid)
 {
 	warning("context %d finished after failing to access OpenCL library.\n"
 		"\tMulti2Sim has detected several attempts to access 'libm2s-opencl.so' by your\n"
@@ -236,7 +236,7 @@ void gk_libopencl_failed(int pid)
 
 
 /* GPU disassembler tool */
-void gk_disasm(char *path)
+void evg_emu_disasm(char *path)
 {
 	struct elf_file_t *elf_file;
 	struct elf_symbol_t *symbol;
@@ -288,7 +288,7 @@ void gk_disasm(char *path)
 }
 
 /* GPU OpenGL disassembler tool */
-void gl_disasm(char *path, int opengl_shader_index)
+void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 {
 	void *file_buffer;
 	int file_size;

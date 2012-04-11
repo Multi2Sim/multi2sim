@@ -174,7 +174,7 @@ static void evg_fmt_invalid_dump(void *buf, FILE *f)
 
 
 /*
- * CF_WORD0
+ * EVG_CF_WORD0
  */
 
 struct string_map_t evg_fmt_cf_word0_jts_map = {
@@ -201,7 +201,7 @@ void evg_fmt_cf_word0_dump(void *buf, FILE *f)
 
 
 /*
- * CF_GWS_WORD0
+ * EVG_CF_GWS_WORD0
  */
 
 struct string_map_t evg_fmt_cf_gws_word0_val_index_mode_map = {
@@ -241,7 +241,7 @@ void evg_fmt_cf_gws_word0_dump(void *buf, FILE *f)
 
 
 /*
- * CF_WORD1
+ * EVG_CF_WORD1
  */
 
 struct string_map_t evg_fmt_cf_word1_cond_map = {
@@ -274,7 +274,7 @@ void evg_fmt_cf_word1_dump(void *buf, FILE *f)
 
 
 /*
- * CF_ALU_WORD0
+ * EVG_CF_ALU_WORD0
  */
 
 
@@ -293,7 +293,7 @@ void evg_fmt_cf_alu_word0_dump(void *buf, FILE *f)
 
 
 /*
- * CF_ALU_WORD1
+ * EVG_CF_ALU_WORD1
  */
 
 struct string_map_t evg_fmt_cf_alu_inst_map = {
@@ -329,7 +329,7 @@ void evg_fmt_cf_alu_word1_dump(void *buf, FILE *f)
 
 
 /*
- * CF_ALU_WORD0_EXT
+ * EVG_CF_ALU_WORD0_EXT
  */
 
 void evg_fmt_cf_alu_word0_ext_dump(void *buf, FILE *f)
@@ -354,7 +354,7 @@ void evg_fmt_cf_alu_word0_ext_dump(void *buf, FILE *f)
 
 
 /*
- * CF_ALU_WORD1_EXT
+ * EVG_CF_ALU_WORD1_EXT
  */
 
 
@@ -374,7 +374,7 @@ void evg_fmt_cf_alu_word1_ext_dump(void *buf, FILE *f)
 
 
 /*
- * CF_ALLOC_EXPORT_WORD0
+ * EVG_CF_ALLOC_EXPORT_WORD0
  */
 
 struct string_map_t evg_fmt_cf_alloc_export_type_map = {
@@ -404,7 +404,7 @@ void evg_fmt_cf_alloc_export_word0_dump(void *buf, FILE *f)
 
 
 /*
- * CF_ALLOC_EXPORT_WORD0_RAT
+ * EVG_CF_ALLOC_EXPORT_WORD0_RAT
  */
 
 struct string_map_t evg_fmt_cf_alloc_export_rat_inst_map = {
@@ -470,7 +470,7 @@ void evg_fmt_cf_alloc_export_word0_rat_dump(void *buf, FILE *f)
 
 
 /*
- * CF_ALLOC_EXPORT_WORD1_BUF
+ * EVG_CF_ALLOC_EXPORT_WORD1_BUF
  */
 
 void evg_fmt_cf_alloc_export_word1_buf_dump(void *buf, FILE *f)
@@ -492,7 +492,7 @@ void evg_fmt_cf_alloc_export_word1_buf_dump(void *buf, FILE *f)
 
 
 /*
- * CF_ALLOC_EXPORT_WORD1_SWIZ 
+ * EVG_CF_ALLOC_EXPORT_WORD1_SWIZ 
  */
 
 void evg_fmt_cf_alloc_export_word1_swiz_dump(void *buf, FILE *f)
@@ -516,7 +516,7 @@ void evg_fmt_cf_alloc_export_word1_swiz_dump(void *buf, FILE *f)
 
 
 /*
- * ALU_WORD0
+ * EVG_ALU_WORD0
  */
 
 struct string_map_t evg_fmt_alu_src_sel_map =
@@ -627,7 +627,7 @@ void evg_fmt_alu_word0_dump(void *buf, FILE *f)
 
 
 /*
- * ALU_WORD1_OP2
+ * EVG_ALU_WORD1_OP2
  */
 
 struct string_map_t evg_fmt_alu_word1_op2_omod_map = {
@@ -855,7 +855,7 @@ void evg_fmt_alu_word1_op2_dump(void *buf, FILE *f)
 
 
 /*
- * ALU_WORD1_OP3
+ * EVG_ALU_WORD1_OP3
  */
 
 struct string_map_t evg_fmt_alu_word1_op3_alu_inst_map = {
@@ -916,7 +916,7 @@ void evg_fmt_alu_word1_op3_dump(void *buf, FILE *f)
 
 
 /*
- * ALU_WORD0_LDS_IDX_OP
+ * EVG_ALU_WORD0_LDS_IDX_OP
  */
 
 void evg_fmt_alu_word0_lds_idx_op_dump(void *buf, FILE *f)
@@ -953,7 +953,7 @@ void evg_fmt_alu_word0_lds_idx_op_dump(void *buf, FILE *f)
 
 
 /*
- * ALU_WORD1_LDS_IDX_OP
+ * EVG_ALU_WORD1_LDS_IDX_OP
  */
 
 struct string_map_t evg_fmt_lds_op_map = {
@@ -1035,7 +1035,7 @@ void evg_fmt_alu_word1_lds_idx_op_dump(void *buf, FILE *f)
 
 
 /*
- * VTX_WORD0
+ * EVG_VTX_WORD0
  */
 
 struct string_map_t evg_fmt_vc_inst_map = {
@@ -1085,7 +1085,7 @@ void evg_fmt_vtx_word0_dump(void *buf, FILE *f)
 
 
 /*
- * VTX_WORD1_GPR
+ * EVG_VTX_WORD1_GPR
  */
 
 struct string_map_t evg_fmt_vtx_data_format_map = {
@@ -1205,7 +1205,7 @@ void evg_fmt_vtx_word1_gpr_dump(void *buf, FILE *f)
 
 
 /*
- * VTX_WORD2
+ * EVG_VTX_WORD2
  */
 
 struct string_map_t evg_fmt_vtx_endian_swap_map = {  /* Prefix ENDIAN omitted */

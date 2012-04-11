@@ -35,37 +35,9 @@
 #include <evergreen-asm.h>
 
 
-/*
- * Global variables
- */
-
-extern enum evg_emu_kind_t
-{
-	evg_emu_functional,
-	evg_emu_detailed
-} evg_emu_kind;
-
-extern long long evg_emu_max_cycles;
-extern long long evg_emu_max_inst;
-extern int evg_emu_max_kernels;
-
-extern char *evg_emu_opencl_binary_name;
-extern char *evg_emu_report_file_name;
-extern FILE *evg_emu_report_file;
-
-extern int evg_emu_wavefront_size;
-
-
-/* Error messages */
-
-extern char *err_evg_opencl_note;
-extern char *err_evg_opencl_param_note;
-
-
-
 
 /*
- * AMD Binary File (Internal ELF)
+ * AMD Evergreen Binary File (Internal ELF)
  */
 
 
@@ -623,7 +595,7 @@ struct evg_ndrange_t
 {
 	/* ID */
 	char *name;
-	int id;  /* Sequential ndrange ID (given by gk->ndrange_count counter) */
+	int id;  /* Sequential ndrange ID (given by evg_emu->ndrange_count counter) */
 
 	/* OpenCL kernel associated */
 	struct evg_opencl_kernel_t *kernel;
@@ -1014,120 +986,119 @@ void evg_work_item_update_branch_digest(struct evg_work_item_t *work_item,
  */
 
 /* Macros for quick access */
-#define GPU_GPR_ELEM(_gpr, _elem)  (gpu_isa_work_item->gpr[(_gpr)].elem[(_elem)])
-#define GPU_GPR_X(_gpr)  GPU_GPR_ELEM((_gpr), 0)
-#define GPU_GPR_Y(_gpr)  GPU_GPR_ELEM((_gpr), 1)
-#define GPU_GPR_Z(_gpr)  GPU_GPR_ELEM((_gpr), 2)
-#define GPU_GPR_W(_gpr)  GPU_GPR_ELEM((_gpr), 3)
-#define GPU_GPR_T(_gpr)  GPU_GPR_ELEM((_gpr), 4)
+#define EVG_GPR_ELEM(_gpr, _elem)  (gpu_isa_work_item->gpr[(_gpr)].elem[(_elem)])
+#define EVG_GPR_X(_gpr)  EVG_GPR_ELEM((_gpr), 0)
+#define EVG_GPR_Y(_gpr)  EVG_GPR_ELEM((_gpr), 1)
+#define EVG_GPR_Z(_gpr)  EVG_GPR_ELEM((_gpr), 2)
+#define EVG_GPR_W(_gpr)  EVG_GPR_ELEM((_gpr), 3)
+#define EVG_GPR_T(_gpr)  EVG_GPR_ELEM((_gpr), 4)
 
-#define GPU_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &gpu_isa_work_item->gpr[(_gpr)].elem[(_elem)])
-#define GPU_GPR_FLOAT_X(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 0)
-#define GPU_GPR_FLOAT_Y(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 1)
-#define GPU_GPR_FLOAT_Z(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 2)
-#define GPU_GPR_FLOAT_W(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 3)
-#define GPU_GPR_FLOAT_T(_gpr)  GPU_GPR_FLOAT_ELEM((_gpr), 4)
+#define EVG_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &gpu_isa_work_item->gpr[(_gpr)].elem[(_elem)])
+#define EVG_GPR_FLOAT_X(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 0)
+#define EVG_GPR_FLOAT_Y(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 1)
+#define EVG_GPR_FLOAT_Z(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 2)
+#define EVG_GPR_FLOAT_W(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 3)
+#define EVG_GPR_FLOAT_T(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 4)
 
 
 /* Debugging */
-#define gpu_isa_debugging() debug_status(gpu_isa_debug_category)
-#define gpu_isa_debug(...) debug(gpu_isa_debug_category, __VA_ARGS__)
-extern int gpu_isa_debug_category;
+#define evg_isa_debugging() debug_status(evg_isa_debug_category)
+#define evg_isa_debug(...) debug(evg_isa_debug_category, __VA_ARGS__)
+extern int evg_isa_debug_category;
 
 
 /* Macros for unsupported parameters */
-extern char *err_gpu_machine_note;
+extern char *err_evg_isa_note;
 
-#define GPU_PARAM_NOT_SUPPORTED(p) \
+#define EVG_ISA_ARG_NOT_SUPPORTED(p) \
 	fatal("%s: %s: not supported for '" #p "' = 0x%x\n%s", \
-	__FUNCTION__, gpu_isa_inst->info->name, (p), err_gpu_machine_note);
-#define GPU_PARAM_NOT_SUPPORTED_NEQ(p, v) \
+	__FUNCTION__, gpu_isa_inst->info->name, (p), err_evg_isa_note);
+#define EVG_ISA_ARG_NOT_SUPPORTED_NEQ(p, v) \
 	{ if ((p) != (v)) fatal("%s: %s: not supported for '" #p "' != 0x%x\n%s", \
-	__FUNCTION__, gpu_isa_inst->info->name, (v), err_gpu_machine_note); }
-#define GPU_PARAM_NOT_SUPPORTED_OOR(p, min, max) \
+	__FUNCTION__, gpu_isa_inst->info->name, (v), err_evg_isa_note); }
+#define EVG_ISA_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: %s: not supported for '" #p "' out of range [%d:%d]\n%s", \
 	__FUNCTION__, gpu_isa_inst->info->name, (min), (max), err_evg_opencl_param_note); }
 
 
 /* Macros for fast access of instruction words */
-#define CF_WORD0			gpu_isa_inst->words[0].cf_word0
-#define CF_GWS_WORD0			gpu_isa_inst->words[0].cf_gws_word0
-#define CF_WORD1			gpu_isa_inst->words[1].cf_word1
+#define EVG_CF_WORD0			gpu_isa_inst->words[0].cf_word0
+#define EVG_CF_GWS_WORD0		gpu_isa_inst->words[0].cf_gws_word0
+#define EVG_CF_WORD1			gpu_isa_inst->words[1].cf_word1
 
-#define CF_ALU_WORD0			gpu_isa_inst->words[0].cf_alu_word0
-#define CF_ALU_WORD1			gpu_isa_inst->words[1].cf_alu_word1
-#define CF_ALU_WORD0_EXT		gpu_isa_inst->words[0].cf_alu_word0_ext
-#define CF_ALU_WORD1_EXT		gpu_isa_inst->words[1].cf_alu_word1_ext
+#define EVG_CF_ALU_WORD0		gpu_isa_inst->words[0].cf_alu_word0
+#define EVG_CF_ALU_WORD1		gpu_isa_inst->words[1].cf_alu_word1
+#define EVG_CF_ALU_WORD0_EXT		gpu_isa_inst->words[0].cf_alu_word0_ext
+#define EVG_CF_ALU_WORD1_EXT		gpu_isa_inst->words[1].cf_alu_word1_ext
 
-#define CF_ALLOC_EXPORT_WORD0		gpu_isa_inst->words[0].cf_alloc_export_word0
-#define CF_ALLOC_EXPORT_WORD0_RAT	gpu_isa_inst->words[0].cf_alloc_export_word0_rat
-#define CF_ALLOC_EXPORT_WORD1_BUF	gpu_isa_inst->words[1].cf_alloc_export_word1_buf
-#define CF_ALLOC_EXPORT_WORD1_SWIZ	gpu_isa_inst->words[1].cf_alloc_export_word1_swiz
+#define EVG_CF_ALLOC_EXPORT_WORD0	gpu_isa_inst->words[0].cf_alloc_export_word0
+#define EVG_CF_ALLOC_EXPORT_WORD0_RAT	gpu_isa_inst->words[0].cf_alloc_export_word0_rat
+#define EVG_CF_ALLOC_EXPORT_WORD1_BUF	gpu_isa_inst->words[1].cf_alloc_export_word1_buf
+#define EVG_CF_ALLOC_EXPORT_WORD1_SWIZ	gpu_isa_inst->words[1].cf_alloc_export_word1_swiz
 
-#define ALU_WORD0			gpu_isa_inst->words[0].alu_word0
-#define ALU_WORD1_OP2			gpu_isa_inst->words[1].alu_word1_op2
-#define ALU_WORD1_OP3			gpu_isa_inst->words[1].alu_word1_op3
+#define EVG_ALU_WORD0			gpu_isa_inst->words[0].alu_word0
+#define EVG_ALU_WORD1_OP2		gpu_isa_inst->words[1].alu_word1_op2
+#define EVG_ALU_WORD1_OP3		gpu_isa_inst->words[1].alu_word1_op3
 
-#define ALU_WORD0_LDS_IDX_OP		gpu_isa_inst->words[0].alu_word0_lds_idx_op
-#define ALU_WORD1_LDS_IDX_OP		gpu_isa_inst->words[1].alu_word1_lds_idx_op
+#define EVG_ALU_WORD0_LDS_IDX_OP	gpu_isa_inst->words[0].alu_word0_lds_idx_op
+#define EVG_ALU_WORD1_LDS_IDX_OP	gpu_isa_inst->words[1].alu_word1_lds_idx_op
 
-#define VTX_WORD0			gpu_isa_inst->words[0].vtx_word0
-#define VTX_WORD1_GPR			gpu_isa_inst->words[1].vtx_word1_gpr
-#define VTX_WORD1_SEM			gpu_isa_inst->words[1].vtx_word1_sem
-#define VTX_WORD2			gpu_isa_inst->words[2].vtx_word2
+#define EVG_VTX_WORD0			gpu_isa_inst->words[0].vtx_word0
+#define EVG_VTX_WORD1_GPR		gpu_isa_inst->words[1].vtx_word1_gpr
+#define EVG_VTX_WORD1_SEM		gpu_isa_inst->words[1].vtx_word1_sem
+#define EVG_VTX_WORD2			gpu_isa_inst->words[2].vtx_word2
 
-#define TEX_WORD0			gpu_isa_inst->words[0].tex_word0
-#define TEX_WORD1			gpu_isa_inst->words[1].tex_word1
-#define TEX_WORD2			gpu_isa_inst->words[2].tex_word2
+#define EVG_TEX_WORD0			gpu_isa_inst->words[0].tex_word0
+#define EVG_TEX_WORD1			gpu_isa_inst->words[1].tex_word1
+#define EVG_TEX_WORD2			gpu_isa_inst->words[2].tex_word2
 
-#define MEM_RD_WORD0			gpu_isa_inst->words[0].mem_rd_word0
-#define MEM_RD_WORD1			gpu_isa_inst->words[1].mem_rd_word1
-#define MEM_RD_WORD2			gpu_isa_inst->words[2].mem_rd_word2
+#define EVG_MEM_RD_WORD0		gpu_isa_inst->words[0].mem_rd_word0
+#define EVG_MEM_RD_WORD1		gpu_isa_inst->words[1].mem_rd_word1
+#define EVG_MEM_RD_WORD2		gpu_isa_inst->words[2].mem_rd_word2
 
-#define MEM_GDS_WORD0			gpu_isa_inst->words[0].mem_gds_word0
-#define MEM_GDS_WORD1			gpu_isa_inst->words[1].mem_gds_word1
-#define MEM_GDS_WORD2			gpu_isa_inst->words[2].mem_gds_word2
+#define EVG_MEM_GDS_WORD0		gpu_isa_inst->words[0].mem_gds_word0
+#define EVG_MEM_GDS_WORD1		gpu_isa_inst->words[1].mem_gds_word1
+#define EVG_MEM_GDS_WORD2		gpu_isa_inst->words[2].mem_gds_word2
 
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-typedef void (*amd_inst_impl_t)(void);
-extern amd_inst_impl_t *amd_inst_impl;
+typedef void (*evg_isa_inst_func_t)(void);
+extern evg_isa_inst_func_t *evg_isa_inst_func;
 
 /* Access to constant memory */
-void gpu_isa_const_mem_write(int bank, int vector, int elem, void *pvalue);
-void gpu_isa_const_mem_read(int bank, int vector, int elem, void *pvalue);
+void evg_isa_const_mem_write(int bank, int vector, int elem, void *pvalue);
+void evg_isa_const_mem_read(int bank, int vector, int elem, void *pvalue);
 
 /* For ALU clauses */
-void gpu_isa_alu_clause_start(void);
-void gpu_isa_alu_clause_end(void);
+void evg_isa_alu_clause_start(void);
+void evg_isa_alu_clause_end(void);
 
 /* For TC clauses */
-void gpu_isa_tc_clause_start(void);
-void gpu_isa_tc_clause_end(void);
+void evg_isa_tc_clause_start(void);
+void evg_isa_tc_clause_end(void);
 
 /* For functional simulation */
-uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im);
-float gpu_isa_read_gpr_float(int gpr, int rel, int chan, int im);
-void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value);
-void gpu_isa_write_gpr_float(int gpr, int rel, int chan, float value);
+unsigned int evg_isa_read_gpr(int gpr, int rel, int chan, int im);
+float evg_isa_read_gpr_float(int gpr, int rel, int chan, int im);
+void evg_isa_write_gpr(int gpr, int rel, int chan, uint32_t value);
+void evg_isa_write_gpr_float(int gpr, int rel, int chan, float value);
 
-uint32_t gpu_isa_read_op_src_int(int src_idx);
-float gpu_isa_read_op_src_float(int src_idx);
+unsigned int evg_isa_read_op_src_int(int src_idx);
+float evg_isa_read_op_src_float(int src_idx);
 
-void gpu_isa_init(void);
-void gpu_isa_done(void);
+void evg_isa_init(void);
+void evg_isa_done(void);
 
 
 
 
 
 /*
- * GPU Kernel (gk)
- * This refers to the Multi2Sim object representing the GPU.
+ * Evergreen GPU Emulator
  */
 
-struct gk_t {
-	
+struct evg_emu_t
+{
 	/* Constant memory (constant buffers)
 	 * There are 15 constant buffers, referenced as CB0 to CB14.
 	 * Each buffer can hold up to 1024 four-component vectors.
@@ -1155,20 +1126,41 @@ struct gk_t {
 	long long inst_count;  /* Number of instructions executed by wavefronts */
 };
 
-extern struct gk_t *gk;
 
-void gk_init(void);
-void gk_done(void);
+extern enum evg_emu_kind_t
+{
+	evg_emu_functional,
+	evg_emu_detailed
+} evg_emu_kind;
 
-void gk_timer_start(void);
-void gk_timer_stop(void);
-long long gk_timer(void);
+extern long long evg_emu_max_cycles;
+extern long long evg_emu_max_inst;
+extern int evg_emu_max_kernels;
 
-void gk_libopencl_redirect(char *path, int size);
-void gk_libopencl_failed(int pid);
+extern char *evg_emu_opencl_binary_name;
+extern char *evg_emu_report_file_name;
+extern FILE *evg_emu_report_file;
 
-void gk_disasm(char *path);
-void gl_disasm(char *path, int opengl_shader_index);
+extern int evg_emu_wavefront_size;
+
+extern char *err_evg_opencl_note;
+extern char *err_evg_opencl_param_note;
+
+
+extern struct evg_emu_t *evg_emu;
+
+void evg_emu_init(void);
+void evg_emu_done(void);
+
+void evg_emu_timer_start(void);
+void evg_emu_timer_stop(void);
+long long evg_emu_timer(void);
+
+void evg_emu_libopencl_redirect(char *path, int size);
+void evg_emu_libopencl_failed(int pid);
+
+void evg_emu_disasm(char *path);
+void evg_emu_opengl_disasm(char *path, int opengl_shader_index);
 
 #endif
 
