@@ -21,6 +21,7 @@
 #include <debug.h>
 
 #include <evergreen-emu.h>
+#include <mem-system.h>
 #include <x86-emu.h>
 
 

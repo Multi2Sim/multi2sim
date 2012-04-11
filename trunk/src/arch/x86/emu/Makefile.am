@@ -16,10 +16,8 @@ libemu_a_SOURCES = \
 	machine-std.c \
 	machine-str.c \
 	machine-xmm.c \
-	memory.c \
 	regs.c \
 	signal.c \
-	spec-mem.c \
 	syscall.c \
 	syscall.dat \
 	uinst.c
