@@ -475,8 +475,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		mem->host_ptr = host_ptr;
 
 		/* Assign position in device global memory */
-		mem->device_ptr = gk->global_mem_top;
-		gk->global_mem_top += size;
+		mem->device_ptr = evg_emu->global_mem_top;
+		evg_emu->global_mem_top += size;
 
 		/* If 'host_ptr' was specified, copy buffer into device memory */
 		if (host_ptr) {
@@ -484,7 +484,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			if (!buf)
 				fatal("%s: out of memory", err_prefix);
 			mem_read(x86_isa_mem, host_ptr, size, buf);
-			mem_write(gk->global_mem, mem->device_ptr, size, buf);
+			mem_write(evg_emu->global_mem, mem->device_ptr, size, buf);
 			free(buf);
 		}
 
@@ -619,8 +619,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		mem->depth = 1;
 
 		/* Assign position in device global memory */
-		mem->device_ptr = gk->global_mem_top;
-		gk->global_mem_top += size;
+		mem->device_ptr = evg_emu->global_mem_top;
+		evg_emu->global_mem_top += size;
 		evg_opencl_debug("  creating device ptr at %u, for %u bytes\n", mem->device_ptr, size);
 
 		/* If 'host_ptr' was specified, copy image into device memory */
@@ -629,7 +629,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			if (!image)
 				fatal("%s: out of memory", err_prefix);
 			mem_read(x86_isa_mem, host_ptr, size, image);
-			mem_write(gk->global_mem, mem->device_ptr, size, image);
+			mem_write(evg_emu->global_mem, mem->device_ptr, size, image);
 			free(image);
 		}
 		fflush(NULL);
@@ -780,8 +780,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		mem->depth = image_depth;
 
 		/* Assign position in device global memory */
-		mem->device_ptr = gk->global_mem_top;
-		gk->global_mem_top += size;
+		mem->device_ptr = evg_emu->global_mem_top;
+		evg_emu->global_mem_top += size;
 
 		/* If 'host_ptr' was specified, copy image into device memory */
 		if (host_ptr) {
@@ -789,7 +789,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			if (!image)
 				fatal("%s: out of memory", err_prefix);
 			mem_read(x86_isa_mem, host_ptr, size, image);
-			mem_write(gk->global_mem, mem->device_ptr, size, image);
+			mem_write(evg_emu->global_mem, mem->device_ptr, size, image);
 			free(image);
 		}
 
@@ -1301,7 +1301,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		buf = malloc(cb);
 		if (!buf)
 			fatal("out of memory");
-		mem_read(gk->global_mem, mem->device_ptr + offset, cb, buf);
+		mem_read(evg_emu->global_mem, mem->device_ptr + offset, cb, buf);
 		mem_write(x86_isa_mem, ptr, cb, buf);
 		free(buf);
 
@@ -1363,7 +1363,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		if (!buf)
 			fatal("out of memory");
 		mem_read(x86_isa_mem, ptr, cb, buf);
-		mem_write(gk->global_mem, mem->device_ptr + offset, cb, buf);
+		mem_write(evg_emu->global_mem, mem->device_ptr + offset, cb, buf);
 		free(buf);
 
 		/* Event */
@@ -1423,8 +1423,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		buf = malloc(cb);
 		if (!buf)
 			fatal("out of memory");
-		mem_read(gk->global_mem, src_mem->device_ptr + src_offset, cb, buf);
-		mem_write(gk->global_mem, dst_mem->device_ptr + dst_offset, cb, buf);
+		mem_read(evg_emu->global_mem, src_mem->device_ptr + src_offset, cb, buf);
+		mem_write(evg_emu->global_mem, dst_mem->device_ptr + dst_offset, cb, buf);
 		free(buf);
 
 		/* Event */
@@ -1520,7 +1520,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			fatal("out of memory");
 
 		/* Read the entire image */
-		mem_read(gk->global_mem, mem->device_ptr, mem->size, img);
+		mem_read(evg_emu->global_mem, mem->device_ptr, mem->size, img);
 		mem_write(x86_isa_mem, ptr, mem->size, img);
 		free(img);
 
