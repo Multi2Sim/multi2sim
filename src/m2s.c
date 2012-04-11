@@ -474,9 +474,9 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			sim_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
-				gpu_sim_kind = gpu_sim_functional;
+				evg_emu_kind = evg_emu_functional;
 			else if (!strcasecmp(argv[argi], "detailed"))
-				gpu_sim_kind = gpu_sim_detailed;
+				evg_emu_kind = evg_emu_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], err_help_note);
@@ -553,7 +553,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-gpu-cycles"))
 		{
 			sim_need_argument(argc, argv, argi);
-			gpu_max_cycles = atoll(argv[++argi]);
+			evg_emu_max_cycles = atoll(argv[++argi]);
 			continue;
 		}
 
@@ -561,7 +561,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-gpu-inst"))
 		{
 			sim_need_argument(argc, argv, argi);
-			gpu_max_inst = atoll(argv[++argi]);
+			evg_emu_max_inst = atoll(argv[++argi]);
 			continue;
 		}
 
@@ -569,7 +569,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-gpu-kernels"))
 		{
 			sim_need_argument(argc, argv, argi);
-			gpu_max_kernels = atoi(argv[++argi]);
+			evg_emu_max_kernels = atoi(argv[++argi]);
 			continue;
 		}
 
@@ -639,7 +639,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--opencl-binary"))
 		{
 			sim_need_argument(argc, argv, argi);
-			gpu_opencl_binary_name = argv[++argi];
+			evg_emu_opencl_binary_name = argv[++argi];
 			continue;
 		}
 
@@ -655,7 +655,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--report-gpu-kernel"))
 		{
 			sim_need_argument(argc, argv, argi);
-			gpu_kernel_report_file_name = argv[++argi];
+			evg_emu_report_file_name = argv[++argi];
 			continue;
 		}
 
@@ -733,7 +733,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Options that only make sense for GPU detailed simulation */
-	if (gpu_sim_kind == gpu_sim_functional)
+	if (evg_emu_kind == evg_emu_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
 			"\tPlease use option '--gpu-sim detailed' as well.\n";
@@ -752,7 +752,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 	/* Options that only make sense one there is either CPU or GPU
 	 * detailed simulation. */
-	if (gpu_sim_kind == gpu_sim_functional && x86_emu_kind == x86_emu_kind_functional)
+	if (evg_emu_kind == evg_emu_functional && x86_emu_kind == x86_emu_kind_functional)
 	{
 		char *msg = "option '%s' needs architectural CPU or GPU simulation.\n"
 			"\tPlease use option '--cpu-sim detailed' or '--gpu-sim detailed' as well.\n";
@@ -847,7 +847,7 @@ void sim_stats_summary(void)
 		fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	
 		/* GPU detailed simulation */
-		if (gpu_sim_kind == gpu_sim_detailed)
+		if (evg_emu_kind == evg_emu_detailed)
 		{
 			inst_per_cycle = gpu->cycle ? (double) gk->inst_count / gpu->cycle : 0.0;
 			cycles_per_sec = sec_count > 0.0 ? (double) gpu->cycle / sec_count : 0.0;
@@ -907,7 +907,7 @@ int main(int argc, char **argv)
 	x86_sys_debug_category = debug_new_category(syscall_debug_file_name);
 	x86_ctx_debug_category = debug_new_category(ctx_debug_file_name);
 	mem_debug_category = debug_new_category(mem_debug_file_name);
-	opencl_debug_category = debug_new_category(opencl_debug_file_name);
+	evg_opencl_debug_category = debug_new_category(opencl_debug_file_name);
 	gpu_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
 	gpu_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
 	gpu_faults_debug_category = debug_new_category(gpu_faults_debug_file_name);  /* GPU-REL */
@@ -927,7 +927,7 @@ int main(int argc, char **argv)
 	/* Initialization for detailed simulation */
 	if (x86_emu_kind == x86_emu_kind_detailed)
 		x86_cpu_init();
-	if (gpu_sim_kind == gpu_sim_detailed)
+	if (evg_emu_kind == evg_emu_detailed)
 		gpu_init();
 
 	/* Memory hierarchy initialization, done after we initialized CPU cores
@@ -963,7 +963,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Finalization of detailed GPU simulation */
-	if (gpu_sim_kind == gpu_sim_detailed)
+	if (evg_emu_kind == evg_emu_detailed)
 		gpu_done();
 
 	/* Finalization */

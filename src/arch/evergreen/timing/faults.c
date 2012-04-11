@@ -38,7 +38,7 @@ struct gpu_fault_t
 	long long cycle;
 	int compute_unit_id;  /* 0, gpu_num_compute_units - 1 ] */
 	int stack_id;  /* [ 0, gpu_max_wavefronts_per_compute_unit - 1 ] */
-	int active_mask_id;  /* [ 0, GPU_MAX_STACK_SIZE - 1 ] */
+	int active_mask_id;  /* [ 0, EVG_MAX_STACK_SIZE - 1 ] */
 	int bit;
 	int reg_id;
 	int byte;
@@ -59,7 +59,7 @@ char *gpu_faults_debug_file_name = "";
  */
 
 static int gpu_stack_faults_is_odep(struct gpu_uop_t *uop,
-	struct gpu_wavefront_t *wavefront, int lo_reg)
+	struct evg_wavefront_t *wavefront, int lo_reg)
 {
 	int i;
 
@@ -73,7 +73,7 @@ static int gpu_stack_faults_is_odep(struct gpu_uop_t *uop,
 
 
 static int gpu_stack_faults_is_idep(struct gpu_uop_t *uop,
-	struct gpu_wavefront_t *wavefront, int lo_reg)
+	struct evg_wavefront_t *wavefront, int lo_reg)
 {
 	int i;
 
@@ -181,7 +181,7 @@ void gpu_faults_init(void)
 			if (!line_ptr)
 				goto wrong_format;
 			fault->active_mask_id = atoi(line_ptr);
-			if (fault->active_mask_id >= GPU_MAX_STACK_SIZE)
+			if (fault->active_mask_id >= EVG_MAX_STACK_SIZE)
 				fatal("%s: line %d: invalid active mask ID",
 					gpu_faults_file_name, line_num);
 
@@ -190,7 +190,7 @@ void gpu_faults_init(void)
 			if (!line_ptr)
 				goto wrong_format;
 			fault->bit = atoi(line_ptr);
-			if (fault->bit >= gpu_wavefront_size)
+			if (fault->bit >= evg_emu_wavefront_size)
 				fatal("%s: line %d: invalid bit index",
 					gpu_faults_file_name, line_num);
 
@@ -290,9 +290,9 @@ void gpu_faults_insert(void)
 
 		case gpu_fault_ams:
 		{
-			struct gpu_work_group_t *work_group;
-			struct gpu_wavefront_t *wavefront;
-			struct gpu_work_item_t *work_item;
+			struct evg_work_group_t *work_group;
+			struct evg_wavefront_t *wavefront;
+			struct evg_work_item_t *work_item;
 
 			int work_group_id;  /* in compute unit */
 			int wavefront_id;  /* in compute unit */
@@ -360,17 +360,17 @@ void gpu_faults_insert(void)
 
 		case gpu_fault_reg:
 		{
-			struct opencl_kernel_t *kernel = gpu->ndrange->kernel;
+			struct evg_opencl_kernel_t *kernel = gpu->ndrange->kernel;
 
 			int work_group_id_in_compute_unit;
-			struct gpu_work_group_t *work_group;
-			struct gpu_wavefront_t *wavefront;
+			struct evg_work_group_t *work_group;
+			struct evg_wavefront_t *wavefront;
 
 			int num_registers_per_work_group;
 
 			int work_item_id_in_compute_unit;
 			int work_item_id_in_work_group;
-			struct gpu_work_item_t *work_item;
+			struct evg_work_item_t *work_item;
 
 			struct linked_list_t *fetch_queue;
 			struct gpu_uop_t *inst_buffer;
@@ -397,7 +397,7 @@ void gpu_faults_insert(void)
 			}
 
 			/* Get work-group */
-			num_registers_per_work_group = kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used
+			num_registers_per_work_group = kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used
 				* kernel->local_size;
 			work_group_id_in_compute_unit = fault->reg_id / num_registers_per_work_group;
 			if (work_group_id_in_compute_unit >= gpu_max_work_groups_per_compute_unit)
@@ -416,11 +416,11 @@ void gpu_faults_insert(void)
 
 			/* Get affected entities */
 			work_item_id_in_compute_unit = fault->reg_id
-				/ kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
+				/ kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used;
 			work_item_id_in_work_group = work_item_id_in_compute_unit % kernel->local_size;
 			work_item = work_group->work_items[work_item_id_in_work_group];
 			wavefront = work_item->wavefront;
-			lo_reg = fault->reg_id % kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
+			lo_reg = fault->reg_id % kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used;
 
 			/* Fault falling between Fetch and Read stage of an instruction
 			 * consuming register. This case cannot be modeled due to functional
@@ -503,7 +503,7 @@ void gpu_faults_insert(void)
 
 		case gpu_fault_mem:
 		{
-			struct gpu_work_group_t *work_group;
+			struct evg_work_group_t *work_group;
 
 			int work_group_id_in_compute_unit;
 			unsigned char value;

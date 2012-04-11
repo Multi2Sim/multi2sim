@@ -4967,7 +4967,7 @@ static int x86_sys_opencl_impl(void)
 {
 	unsigned int func_code;
 	unsigned int args_ptr;
-	unsigned int args[OPENCL_MAX_ARGS];
+	unsigned int args[EVG_OPENCL_MAX_ARGS];
 
 	int func_argc;
 	int i;
@@ -4979,24 +4979,24 @@ static int x86_sys_opencl_impl(void)
 	args_ptr = x86_isa_regs->ecx;
 
 	/* Check 'func_code' range */
-	if (func_code < OPENCL_FUNC_FIRST || func_code > OPENCL_FUNC_LAST)
+	if (func_code < EVG_OPENCL_FUNC_FIRST || func_code > EVG_OPENCL_FUNC_LAST)
 		fatal("%s: invalid function code", __FUNCTION__);
 
 	/* Get function info */
-	func_name = opencl_func_names[func_code - OPENCL_FUNC_FIRST];
-	func_argc = opencl_func_argc[func_code - OPENCL_FUNC_FIRST];
+	func_name = evg_opencl_func_names[func_code - EVG_OPENCL_FUNC_FIRST];
+	func_argc = evg_opencl_func_argc[func_code - EVG_OPENCL_FUNC_FIRST];
 	x86_sys_debug("  func_code=%d (%s, %d arguments), pargs=0x%x\n",
 		func_code, func_name, func_argc, args_ptr);
 
 	/* Read function args */
-	assert(func_argc <= OPENCL_MAX_ARGS);
+	assert(func_argc <= EVG_OPENCL_MAX_ARGS);
 	mem_read(x86_isa_mem, args_ptr, func_argc * 4, args);
 	for (i = 0; i < func_argc; i++)
 		x86_sys_debug("    args[%d] = %d (0x%x)\n",
 			i, args[i], args[i]);
 
 	/* Run OpenCL function */
-	return opencl_func_run(func_code, args);
+	return evg_opencl_func_run(func_code, args);
 }
 
 

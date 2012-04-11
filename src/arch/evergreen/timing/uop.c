@@ -76,7 +76,7 @@ void gpu_uop_init()
 	 * The size assigned for each 'gpu_uop_t' is equals to the baseline structure size plus the
 	 * size of a 'gpu_work_item_uop_t' element for each work-item in the wavefront. */
 	gpu_uop_repos = repos_create(sizeof(struct gpu_uop_t) + sizeof(struct gpu_work_item_uop_t)
-		* gpu_wavefront_size, "gpu_uop_repos");
+		* evg_emu_wavefront_size, "gpu_uop_repos");
 	
 }
 
@@ -203,19 +203,19 @@ void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 /* Stack debug - store current active mask in each work_item_uop. */
 void gpu_uop_save_active_mask(struct gpu_uop_t *uop)
 {
-	struct gpu_wavefront_t *wavefront = uop->wavefront;
-	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
-	struct gpu_work_item_t *work_item;
+	struct evg_wavefront_t *wavefront = uop->wavefront;
+	struct evg_ndrange_t *ndrange = wavefront->ndrange;
+	struct evg_work_item_t *work_item;
 	struct gpu_work_item_uop_t *work_item_uop;
 	int work_item_id;
 
 	if (debug_status(gpu_stack_debug_category) && wavefront->active_mask_update)
 	{
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
-			work_item_uop->active = gpu_work_item_get_active(work_item);
+			work_item_uop->active = evg_work_item_get_active(work_item);
 		}
 	}
 }
@@ -224,14 +224,14 @@ void gpu_uop_save_active_mask(struct gpu_uop_t *uop)
 /* Stack debug - dump active mask */
 void gpu_uop_dump_active_mask(struct gpu_uop_t *uop, FILE *f)
 {
-	struct gpu_wavefront_t *wavefront = uop->wavefront;
-	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
-	struct gpu_work_item_t *work_item;
+	struct evg_wavefront_t *wavefront = uop->wavefront;
+	struct evg_ndrange_t *ndrange = wavefront->ndrange;
+	struct evg_work_item_t *work_item;
 	struct gpu_work_item_uop_t *work_item_uop;
 	int work_item_id;
 
 	assert(f);
-	FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+	EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 	{
 		work_item = ndrange->work_items[work_item_id];
 		work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
@@ -244,7 +244,7 @@ void gpu_uop_dump_active_mask(struct gpu_uop_t *uop, FILE *f)
 void gpu_uop_debug_active_mask(struct gpu_uop_t *uop)
 {
 	FILE *f;
-	struct gpu_wavefront_t *wavefront = uop->wavefront;
+	struct evg_wavefront_t *wavefront = uop->wavefront;
 
 	/* Get debug file */
 	f = debug_file(gpu_stack_debug_category);

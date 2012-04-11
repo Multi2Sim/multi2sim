@@ -32,13 +32,13 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	struct linked_list_t *pending_queue = compute_unit->tex_engine.pending_queue;
 	struct linked_list_t *finished_queue = compute_unit->tex_engine.finished_queue;
 
-	struct gpu_wavefront_t *wavefront;
+	struct evg_wavefront_t *wavefront;
 	struct gpu_uop_t *cf_uop, *uop;
 	struct gpu_work_item_uop_t *work_item_uop;
 	struct evg_inst_t *inst;
 	int inst_num;
 
-	struct gpu_work_item_t *work_item;
+	struct evg_work_item_t *work_item;
 	int work_item_id;
 
 	char str1[MAX_STRING_SIZE], str2[MAX_STRING_SIZE];
@@ -49,7 +49,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	if (!cf_uop)
 		return;
 	wavefront = cf_uop->wavefront;
-	assert(wavefront->clause_kind == GPU_CLAUSE_TEX);
+	assert(wavefront->clause_kind == EVG_CLAUSE_TEX);
 
 
 	/* If fetch queue is full, cannot fetch until space is made */
@@ -58,7 +58,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	
 	/* Emulate instruction and create uop */
 	inst_num = (wavefront->clause_buf - wavefront->clause_buf_start) / 16;
-	gpu_wavefront_execute(wavefront);
+	evg_wavefront_execute(wavefront);
 	inst = &wavefront->tex_inst;
 	uop = gpu_uop_create();
 	uop->wavefront = wavefront;
@@ -66,7 +66,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->cf_uop = cf_uop;
 	uop->compute_unit = compute_unit;
 	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
-	uop->last = wavefront->clause_kind != GPU_CLAUSE_TEX;
+	uop->last = wavefront->clause_kind != EVG_CLAUSE_TEX;
 	uop->global_mem_read = wavefront->global_mem_read;
 	uop->global_mem_write = wavefront->global_mem_write;
 
@@ -86,7 +86,7 @@ void gpu_tex_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	if (uop->global_mem_read)
 	{
 		assert((inst->info->flags & EVG_INST_FLAG_MEM_READ));
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
@@ -165,7 +165,7 @@ void gpu_tex_engine_decode(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_work_item_t *work_item;
+	struct evg_work_item_t *work_item;
 	int work_item_id;
 
 	struct gpu_uop_t *uop;
@@ -189,7 +189,7 @@ void gpu_tex_engine_read(struct gpu_compute_unit_t *compute_unit)
 	if (uop->global_mem_read)
 	{
 		assert(!uop->global_mem_witness);
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{
 			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];

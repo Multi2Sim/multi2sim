@@ -27,15 +27,15 @@ int gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
 
 void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_ndrange_t *ndrange = gpu->ndrange;
-	struct gpu_wavefront_t *wavefront;
+	struct evg_ndrange_t *ndrange = gpu->ndrange;
+	struct evg_wavefront_t *wavefront;
 
 	char str1[MAX_STRING_SIZE], str2[MAX_STRING_SIZE];
 	struct evg_inst_t *inst;
 
 	struct gpu_uop_t *uop;
 	struct gpu_work_item_uop_t *work_item_uop;
-	struct gpu_work_item_t *work_item;
+	struct evg_work_item_t *work_item;
 	int work_item_id;
 
 	/* Schedule wavefront */
@@ -44,7 +44,7 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 		return;
 
 	/* Emulate CF instruction */
-	gpu_wavefront_execute(wavefront);
+	evg_wavefront_execute(wavefront);
 	inst = &wavefront->cf_inst;
 
 	/* Create uop */
@@ -53,9 +53,9 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->work_group = wavefront->work_group;
 	uop->compute_unit = compute_unit;
 	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
-	uop->alu_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_ALU;
-	uop->tex_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_TEX;
-	uop->no_clause_trigger = wavefront->clause_kind == GPU_CLAUSE_CF;
+	uop->alu_clause_trigger = wavefront->clause_kind == EVG_CLAUSE_ALU;
+	uop->tex_clause_trigger = wavefront->clause_kind == EVG_CLAUSE_TEX;
+	uop->no_clause_trigger = wavefront->clause_kind == EVG_CLAUSE_CF;
 	uop->last = DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, finished, wavefront);
 	uop->global_mem_read = wavefront->global_mem_read;
 	uop->global_mem_write = wavefront->global_mem_write;
@@ -72,7 +72,7 @@ void gpu_cf_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	if (uop->global_mem_write)
 	{
 		assert((inst->info->flags & EVG_INST_FLAG_MEM_WRITE));
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
@@ -160,14 +160,14 @@ void gpu_cf_engine_decode(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_wavefront_t *wavefront;
-	struct gpu_ndrange_t *ndrange;
+	struct evg_wavefront_t *wavefront;
+	struct evg_ndrange_t *ndrange;
 
 	struct gpu_uop_t *uop;
 	int index;
 
 	struct gpu_work_item_uop_t *work_item_uop;
-	struct gpu_work_item_t *work_item;
+	struct evg_work_item_t *work_item;
 	int work_item_id;
 
 	/* Complete queue must be empty. If it is not, it means that a write access is trying to allocate
@@ -219,7 +219,7 @@ void gpu_cf_engine_execute(struct gpu_compute_unit_t *compute_unit)
 		/* Global memory write - execute asynchronously */
 		if (uop->global_mem_write)
 		{
-			FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+			EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 			{
 				work_item = ndrange->work_items[work_item_id];
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
@@ -248,7 +248,7 @@ void gpu_cf_engine_complete(struct gpu_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *complete_queue = compute_unit->cf_engine.complete_queue;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
-	struct gpu_work_group_t *work_group;
+	struct evg_work_group_t *work_group;
 	struct gpu_uop_t *uop;
 
 	/* Process all uops in the complete queue */

@@ -210,23 +210,23 @@ static void internal_elf_file_free(struct elf_file_t *internal_elf_file)
 }
 
 /* Get offset of ISAs based on the type of shader */
-static int get_isa_offset(struct amd_opengl_shader_t *amd_opengl_shader)
+static int get_isa_offset(struct evg_opengl_shader_t *amd_opengl_shader)
 {
 	int isa_offset;
 
 	switch (amd_opengl_shader->shader_kind)
 	{
-		case AMD_OPENGL_SHADER_VERTEX:
+		case EVG_OPENGL_SHADER_VERTEX:
 		{
 			isa_offset = 4204;
 			break;
 		}
-		case AMD_OPENGL_SHADER_FRAGMENT:
+		case EVG_OPENGL_SHADER_FRAGMENT:
 		{
 			isa_offset = 2844;
 			break;
 		}
-		case AMD_OPENGL_SHADER_GEOMETRY:
+		case EVG_OPENGL_SHADER_GEOMETRY:
 		{
 			isa_offset = 3912;
 			break;
@@ -239,7 +239,7 @@ static int get_isa_offset(struct amd_opengl_shader_t *amd_opengl_shader)
 }
 
 /* Set 'isa_buffer' element for a shader object, the shader object must have the 'shader_kind' element set first */
-static int amd_opengl_shader_set_isa_buffer(struct amd_opengl_shader_t *amd_opengl_shader)
+static int amd_opengl_shader_set_isa_buffer(struct evg_opengl_shader_t *amd_opengl_shader)
 {
 	struct elf_section_t *internal_section;
 	int isa_offset;
@@ -277,7 +277,7 @@ static int amd_opengl_shader_set_isa_buffer(struct amd_opengl_shader_t *amd_open
 }
 
 /* FIXME: NEED TO CONFIRM */
-static int amd_opengl_shader_set_shader_kind(struct amd_opengl_shader_t *amd_opengl_shader)
+static int amd_opengl_shader_set_shader_kind(struct evg_opengl_shader_t *amd_opengl_shader)
 {
 	struct elf_file_t *internal_elf_file;
 	struct elf_file_t *external_elf_file;
@@ -287,27 +287,27 @@ static int amd_opengl_shader_set_shader_kind(struct amd_opengl_shader_t *amd_ope
 
 	if (internal_elf_file->header->e_flags == 0x1 && external_elf_file->header->e_flags == 0x1)
 	{
-		amd_opengl_shader->shader_kind = AMD_OPENGL_SHADER_FRAGMENT;
+		amd_opengl_shader->shader_kind = EVG_OPENGL_SHADER_FRAGMENT;
 		return 1;
 	}
 	else if (internal_elf_file->header->e_flags == 0x2 && external_elf_file->header->e_flags == 0x2)
 	{
-		amd_opengl_shader->shader_kind = AMD_OPENGL_SHADER_VERTEX;
+		amd_opengl_shader->shader_kind = EVG_OPENGL_SHADER_VERTEX;
 		return 1;
 	}
 	else if (internal_elf_file->header->e_flags == 0x3 && external_elf_file->header->e_flags == 0x3)
 	{
-		amd_opengl_shader->shader_kind = AMD_OPENGL_SHADER_GEOMETRY;
+		amd_opengl_shader->shader_kind = EVG_OPENGL_SHADER_GEOMETRY;
 		return 1;
 	}
 	else if (internal_elf_file->header->e_flags == 0x5 && external_elf_file->header->e_flags == 0x5)
 	{
-		amd_opengl_shader->shader_kind = AMD_OPENGL_SHADER_CONTROL;
+		amd_opengl_shader->shader_kind = EVG_OPENGL_SHADER_CONTROL;
 		return 1;
 	}
 	else if (internal_elf_file->header->e_flags == 0x6 && external_elf_file->header->e_flags == 0x6)
 	{
-		amd_opengl_shader->shader_kind = AMD_OPENGL_SHADER_EVALUATION;
+		amd_opengl_shader->shader_kind = EVG_OPENGL_SHADER_EVALUATION;
 		return 1;
 	}
 	else
@@ -319,13 +319,13 @@ static int amd_opengl_shader_set_shader_kind(struct amd_opengl_shader_t *amd_ope
 }
 
 /* Given a buffer and buffer size, a list contains all external ELF magic bytes offset and an index, and the file name loaded into the buffer
- * Create an corresponding amd_opengl_shader_t object and return it */
-static struct amd_opengl_shader_t *amd_opengl_shader_create_from_buffer(void *ptr, int size, struct list_t *elf_offset_list, int elf_file_index, char *name)
+ * Create an corresponding evg_opengl_shader_t object and return it */
+static struct evg_opengl_shader_t *amd_opengl_shader_create_from_buffer(void *ptr, int size, struct list_t *elf_offset_list, int elf_file_index, char *name)
 {
-	struct amd_opengl_shader_t *amd_opengl_shader;
+	struct evg_opengl_shader_t *amd_opengl_shader;
 
 	/* Create shader object */
-	amd_opengl_shader = calloc(1,sizeof(struct amd_opengl_shader_t));
+	amd_opengl_shader = calloc(1,sizeof(struct evg_opengl_shader_t));
 	if (!amd_opengl_shader)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -339,7 +339,7 @@ static struct amd_opengl_shader_t *amd_opengl_shader_create_from_buffer(void *pt
 	return amd_opengl_shader;
 }
 
-static void amd_opengl_shader_free(struct amd_opengl_shader_t *amd_opengl_shader)
+static void amd_opengl_shader_free(struct evg_opengl_shader_t *amd_opengl_shader)
 {
 	external_elf_file_free(amd_opengl_shader->external_elf_file);
 	internal_elf_file_free(amd_opengl_shader->internal_elf_file);
@@ -350,18 +350,18 @@ static void amd_opengl_shader_free(struct amd_opengl_shader_t *amd_opengl_shader
  * Public functions
  */
 
-/* Create amd_opengl_bin_t object based on a file buffer, the corresponding buffer size and the name of the file */
-struct amd_opengl_bin_t *amd_opengl_bin_create(void *ptr, int size, char *name)
+/* Create evg_opengl_bin_t object based on a file buffer, the corresponding buffer size and the name of the file */
+struct evg_opengl_bin_t *evg_opengl_bin_create(void *ptr, int size, char *name)
 {
-	struct amd_opengl_bin_t *amd_opengl_bin;
-	struct amd_opengl_shader_t *amd_opengl_shader;
+	struct evg_opengl_bin_t *amd_opengl_bin;
+	struct evg_opengl_shader_t *amd_opengl_shader;
 
 	struct list_t *elf_file_list;
 
 	int i;
 
 	/* Create structure */
-	amd_opengl_bin = calloc(1, sizeof(struct amd_opengl_bin_t));
+	amd_opengl_bin = calloc(1, sizeof(struct evg_opengl_bin_t));
 	if (!amd_opengl_bin)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -391,7 +391,7 @@ struct amd_opengl_bin_t *amd_opengl_bin_create(void *ptr, int size, char *name)
 	return amd_opengl_bin;
 }
 
-void amd_opengl_bin_free(struct amd_opengl_bin_t *amd_opengl_bin)
+void evg_opengl_bin_free(struct evg_opengl_bin_t *amd_opengl_bin)
 {
 	/* Free shader list */
 	while (list_count(amd_opengl_bin->shader_list))
