@@ -161,7 +161,9 @@ void evg_opencl_object_free_all()
 
 
 
-/* OpenCL Platform */
+/*
+ * OpenCL Platform
+ */
 
 struct evg_opencl_platform_t *evg_opencl_platform;
 
@@ -170,8 +172,15 @@ struct evg_opencl_platform_t *evg_opencl_platform_create()
 {
 	struct evg_opencl_platform_t *platform;
 
+	/* Allocate */
 	platform = calloc(1, sizeof(struct evg_opencl_platform_t));
+	if (!platform)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	platform->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_PLATFORM);
+
+	/* Return */
 	evg_opencl_object_add(platform);
 	return platform;
 }
@@ -234,7 +243,9 @@ uint32_t evg_opencl_platform_get_info(struct evg_opencl_platform_t *platform, ui
 
 
 
-/* OpenCL Device */
+/*
+ * OpenCL Device
+ */
 
 
 /* Create a device */
@@ -242,8 +253,15 @@ struct evg_opencl_device_t *evg_opencl_device_create()
 {
 	struct evg_opencl_device_t *device;
 
+	/* Allocate */
 	device = calloc(1, sizeof(struct evg_opencl_device_t));
+	if (!device)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	device->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_DEVICE);
+
+	/* Return */
 	evg_opencl_object_add(device);
 	return device;
 }
@@ -281,7 +299,8 @@ uint32_t evg_opencl_device_get_info(struct evg_opencl_device_t *device, uint32_t
 	uint32_t size_ret = 0;
 	void *info = NULL;
 
-	switch (name) {
+	switch (name)
+	{
 
 	case 0x1002:  /* CL_DEVICE_MAX_COMPUTE_UNITS */
 		size_ret = 4;
@@ -372,7 +391,9 @@ uint32_t evg_opencl_device_get_info(struct evg_opencl_device_t *device, uint32_t
 
 
 
-/* OpenCL Context */
+/*
+ * OpenCL Context
+ */
 
 
 /* Create a context */
@@ -380,9 +401,16 @@ struct evg_opencl_context_t *evg_opencl_context_create()
 {
 	struct evg_opencl_context_t *context;
 
+	/* Allocate */
 	context = calloc(1, sizeof(struct evg_opencl_context_t));
+	if (!context)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	context->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_CONTEXT);
 	context->ref_count = 1;
+
+	/* Return */
 	evg_opencl_object_add(context);
 	return context;
 }
@@ -403,7 +431,8 @@ uint32_t evg_opencl_context_get_info(struct evg_opencl_context_t *context, uint3
 	uint32_t size_ret = 0;
 	void *info = NULL;
 
-	switch (name) {
+	switch (name)
+	{
 
 	case 0x1081:  /* CL_CONTEXT_DEVICES */
 		size_ret = 4;
@@ -437,8 +466,8 @@ void evg_opencl_context_set_properties(struct evg_opencl_context_t *context, str
 	uint32_t property;
 	uint32_t value;
 
-	while (addr) {
-
+	while (addr)
+	{
 		/* Read property */
 		mem_read(x86_isa_mem, addr, 4, &property);
 		if (!property)
@@ -447,7 +476,8 @@ void evg_opencl_context_set_properties(struct evg_opencl_context_t *context, str
 		addr += 8;
 
 		/* Analyze property */
-		switch (property) {
+		switch (property)
+		{
 
 		case 0x1084:  /* CL_CONTEXT_PLATFORM */
 			context->platform_id = value;
@@ -463,14 +493,25 @@ void evg_opencl_context_set_properties(struct evg_opencl_context_t *context, str
 
 
 
-/* OpenCL Sampler */
+
+/*
+ * OpenCL Sampler
+ */
+
 struct evg_opencl_sampler_t *evg_opencl_sampler_create()
 {
 	struct evg_opencl_sampler_t *sampler;
 
+	/* Allocate */
 	sampler = calloc(1, sizeof(struct evg_opencl_sampler_t));
+	if (!sampler)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	sampler->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_SAMPLER);
 	sampler->ref_count = 1;
+
+	/* Return */
 	evg_opencl_object_add(sampler);
 	return sampler;
 }
@@ -483,16 +524,27 @@ void evg_opencl_sampler_free(struct evg_opencl_sampler_t *sampler)
 }
 
 
-/* OpenCL Command Queue */
+
+
+/*
+ * OpenCL Command Queue
+ */
 
 /* Create a command queue */
 struct evg_opencl_command_queue_t *evg_opencl_command_queue_create()
 {
 	struct evg_opencl_command_queue_t *command_queue;
 
+	/* Allocate */
 	command_queue = calloc(1, sizeof(struct evg_opencl_command_queue_t));
+	if (!command_queue)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	command_queue->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_COMMAND_QUEUE);
 	command_queue->ref_count = 1;
+
+	/* Return */
 	evg_opencl_object_add(command_queue);
 	return command_queue;
 }
@@ -508,24 +560,30 @@ void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_qu
 
 
 
-/* OpenCL Program */
+/*
+ * OpenCL Program
+ */
 
 struct evg_opencl_program_t *evg_opencl_program_create()
 {
 	struct evg_opencl_program_t *program;
 	int i;
 
+	/* Allocate */
 	program = calloc(1, sizeof(struct evg_opencl_program_t));
+	if (!program)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	program->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_PROGRAM);
 	program->ref_count = 1;
 
 	/* Constant buffers encoded in ELF file */
 	program->constant_buffer_list = list_create_with_size(25);
 	for(i = 0; i < 25; i++) 
-	{
 		list_add(program->constant_buffer_list, NULL);
-	}
 
+	/* Return */
 	evg_opencl_object_add(program);
 	return program;
 }
@@ -542,7 +600,8 @@ void evg_opencl_program_free(struct evg_opencl_program_t *program)
 	free(program);
 }
 
-char *err_opencl_evergreen_format =
+
+static char *err_evg_opencl_evergreen_format =
 	"\tYour application tried to load a pre-compiled OpenCL kernel binary which\n"
 	"\tdoes not contain code in the Evergreen ISA. Please, check that the off-line\n"
 	"\tcompilation of your kernel targets this GPU architecture supported by\n"
@@ -555,7 +614,7 @@ void evg_opencl_program_build(struct evg_opencl_program_t *program)
 	assert(program->elf_file);
 	if (program->elf_file->header->e_machine != 0x3f1)
 		fatal("%s: invalid binary file.\n%s", __FUNCTION__,
-			err_opencl_evergreen_format);
+			err_evg_opencl_evergreen_format);
 }
 
 
@@ -564,7 +623,7 @@ void evg_opencl_program_build(struct evg_opencl_program_t *program)
  * No allocation happens here, the target buffer will just point to the contents of
  * an existing section. */
 
-char *err_opencl_elf_symbol =
+static char *err_evg_opencl_elf_symbol =
 	"\tThe ELF file analyzer is trying to find a name in the ELF symbol table.\n"
 	"\tIf it is not found, it probably means that your application is requesting\n"
 	"\texecution of a kernel function that is not present in the encoded binary.\n"
@@ -589,20 +648,21 @@ void opencl_program_read_symbol(struct evg_opencl_program_t *program, char *symb
 	symbol = elf_symbol_get_by_name(elf_file, symbol_name);
 	if (!symbol)
 		fatal("%s: ELF symbol '%s' not found.\n%s", __FUNCTION__,
-			symbol_name, err_opencl_elf_symbol);
+			symbol_name, err_evg_opencl_elf_symbol);
 	
 	/* Get section where the symbol is pointing */
 	section = list_get(elf_file->section_list, symbol->section);
 	assert(section);
 	if (symbol->value + symbol->size > section->header->sh_size)
 		fatal("%s: ELF symbol '%s' exceeds section '%s' boundaries.\n%s",
-			__FUNCTION__, symbol->name, section->name, err_opencl_elf_symbol);
+			__FUNCTION__, symbol->name, section->name, err_evg_opencl_elf_symbol);
 
 	/* Update buffer */
 	buffer->ptr = section->buffer.ptr + symbol->value;
 	buffer->size = symbol->size;
 	buffer->pos = 0;
 }
+
 
 void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t *program)
 {
@@ -656,14 +716,22 @@ void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t 
 
 
 
-/* OpenCL Kernel */
+
+/*
+ * OpenCL Kernel
+ */
 
 struct evg_opencl_kernel_t *evg_opencl_kernel_create()
 {
 	struct evg_opencl_kernel_t *kernel;
 	int i;
 
+	/* Allocate */
 	kernel = calloc(1, sizeof(struct evg_opencl_kernel_t));
+	if (!kernel)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	kernel->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_KERNEL);
 	kernel->ref_count = 1;
 	kernel->arg_list = list_create();
@@ -679,10 +747,9 @@ struct evg_opencl_kernel_t *evg_opencl_kernel_create()
 		list_add(kernel->uav_write_list, NULL);
 	}
 	for (i = 0; i < 25; i++) 
-	{
 		list_add(kernel->constant_buffer_list, NULL);
-	}
 
+	/* Return */
 	evg_opencl_object_add(kernel);
 	return kernel;
 }
@@ -715,8 +782,16 @@ void evg_opencl_kernel_free(struct evg_opencl_kernel_t *kernel)
 struct evg_opencl_kernel_arg_t *evg_opencl_kernel_arg_create(char *name)
 {
 	struct evg_opencl_kernel_arg_t *arg;
+
+	/* Allocate */
 	arg = calloc(1, sizeof(struct evg_opencl_kernel_arg_t) + strlen(name) + 1);
+	if (!arg)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	strcpy(arg->name, name);
+
+	/* Return */
 	return arg;
 }
 
@@ -729,25 +804,25 @@ void evg_opencl_kernel_arg_free(struct evg_opencl_kernel_arg_t *arg)
 
 /* Analyze 'metadata' associated with kernel */
 
-#define OPENCL_KERNEL_METADATA_TOKEN_COUNT(_tc) \
+#define EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(_tc) \
 	if (token_count != (_tc)) \
 	fatal("%s: meta data entry '%s' expects %d tokens", \
 	__FUNCTION__, line_ptrs[0], (_tc));
-#define OPENCL_KERNEL_METADATA_NOT_SUPPORTED(_idx) \
+#define EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(_idx) \
 	fatal("%s: meta data entry '%s', token %d: value '%s' not supported.\n%s", \
 	__FUNCTION__, line_ptrs[0], (_idx), line_ptrs[(_idx)], \
-	err_opencl_kernel_metadata_note);
-#define OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(_idx, _str) \
+	err_evg_opencl_kernel_metadata_note);
+#define EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(_idx, _str) \
 	if (strcmp(line_ptrs[(_idx)], (_str))) \
-	OPENCL_KERNEL_METADATA_NOT_SUPPORTED(_idx);
+	EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(_idx);
 
-char *err_opencl_kernel_metadata_note =
+static char *err_evg_opencl_kernel_metadata_note =
 	"\tThe kernel binary loaded by your application is a valid ELF file. In this\n"
 	"\tfile, a '.rodata' section contains specific information about the OpenCL\n"
 	"\tkernel. However, this information is only partially supported by Multi2Sim.\n"
 	"\tTo request support for this error, please email 'development@multi2sim.org'.\n";
 
-void opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
+static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 {
 	char line[MAX_STRING_SIZE];
 	char *line_ptrs[MAX_STRING_SIZE];
@@ -759,8 +834,8 @@ void opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 	buffer = &kernel->metadata_buffer;
 	elf_buffer_seek(buffer, 0);
 	evg_opencl_debug("Kernel Metadata:\n"); 
-	for (;;) {
-
+	for (;;)
+	{
 		/* Read line from buffer */
 		elf_buffer_read_line(buffer, line, MAX_STRING_SIZE);
 		if (!line[0])
@@ -782,25 +857,35 @@ void opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 			continue;
 
 		/* Image */
-		if (!strcmp(line_ptrs[0], "image")) {
-
+		if (!strcmp(line_ptrs[0], "image"))
+		{
 			/* Create input image argument */
 			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_IMAGE;
-			if (!strcmp(line_ptrs[2], "2D")) {
+			if (!strcmp(line_ptrs[2], "2D"))
+			{
 				/* Ignore dimensions for now */
-			} else if (!strcmp(line_ptrs[2], "3D")) {
+			}
+			else if (!strcmp(line_ptrs[2], "3D"))
+			{
 				/* Ignore dimensions for now */
-			} else {
+			}
+			else
+			{
 				fatal("%s: Invalid number of dimensions for OpenCL Image (%s)\n%s",
 					__FUNCTION__, line_ptrs[2], err_evg_opencl_param_note);
 			}
 			
-			if (!strcmp(line_ptrs[3], "RO")) {
+			if (!strcmp(line_ptrs[3], "RO"))
+			{
 				arg->access_type = EVG_OPENCL_KERNEL_ARG_READ_ONLY;
-			} else if (!strcmp(line_ptrs[3], "WO")) {
+			}
+			else if (!strcmp(line_ptrs[3], "WO"))
+			{
 				arg->access_type = EVG_OPENCL_KERNEL_ARG_WRITE_ONLY;
-			} else {
+			}
+			else
+			{
 				fatal("%s: Invalid memory access type for OpenCL Image (%s)\n%s",
 					__FUNCTION__, line_ptrs[3], err_evg_opencl_param_note);
 			}
@@ -814,28 +899,38 @@ void opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		} 
 
 		/* Memory */
-		if (!strcmp(line_ptrs[0], "memory")) {
-			if (!strcmp(line_ptrs[1], "hwprivate")) {
-				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
-			} else if (!strcmp(line_ptrs[1], "hwregion")) {
-				OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
-				OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
-			} else if (!strcmp(line_ptrs[1], "hwlocal")) {
-				OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
+		if (!strcmp(line_ptrs[0], "memory"))
+		{
+			if (!strcmp(line_ptrs[1], "hwprivate"))
+			{
+				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
+			}
+			else if (!strcmp(line_ptrs[1], "hwregion"))
+			{
+				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
+				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
+			}
+			else if (!strcmp(line_ptrs[1], "hwlocal"))
+			{
+				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 				kernel->func_mem_local = atoi(line_ptrs[2]);
-			} else if (!strcmp(line_ptrs[1], "datareqd")) {
-				OPENCL_KERNEL_METADATA_TOKEN_COUNT(2); 
-			} else
-				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
+			}
+			else if (!strcmp(line_ptrs[1], "datareqd"))
+			{
+				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(2); 
+			}
+			else
+				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
 
 			continue;
 		}
 
 		/* Entry 'value'. Format: value:<ArgName>:<DataType>:<Size>:<ConstNum>:<ConstOffset> */
-		if (!strcmp(line_ptrs[0], "value")) {
-			OPENCL_KERNEL_METADATA_TOKEN_COUNT(6);
-			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
-			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
+		if (!strcmp(line_ptrs[0], "value"))
+		{
+			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(6);
+			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
+			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
 			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_VALUE;
 			list_add(kernel->arg_list, arg);
@@ -844,38 +939,46 @@ void opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		}
 
 		/* Entry 'pointer'. Format: pointer:<name>:<type>:?:?:<addr>:?:?:<elem_size> */
-		if (!strcmp(line_ptrs[0], "pointer")) {
-
+		if (!strcmp(line_ptrs[0], "pointer"))
+		{
 			/* APP SDK 2.5 supplies 9 tokens, 2.6 supplies 10 tokens */
-			if(token_count != 9 && token_count != 10) {
-				OPENCL_KERNEL_METADATA_TOKEN_COUNT(10);
+			if(token_count != 9 && token_count != 10)
+			{
+				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(10);
 			}
-			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
-			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
+			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
+			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
 
 			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_POINTER;
 
 			list_add(kernel->arg_list, arg);
-			if (!strcmp(line_ptrs[6], "uav")) {
+			if (!strcmp(line_ptrs[6], "uav"))
+			{
 				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_GLOBAL;
 				arg->uav = atoi(line_ptrs[7]);
-			} else if (!strcmp(line_ptrs[6], "hl")) {
+			}
+			else if (!strcmp(line_ptrs[6], "hl"))
+			{
 				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_LOCAL;
 				arg->uav = atoi(line_ptrs[7]);
-			} else if (!strcmp(line_ptrs[6], "hc")) {
+			}
+			else if (!strcmp(line_ptrs[6], "hc"))
+			{
 				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_GLOBAL;
 				arg->uav = atoi(line_ptrs[7]);
-			} else
-				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(6);
+			}
+			else
+				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(6);
 
 			continue;
 		}
 
 		/* Entry 'function'. Format: function:?:<uniqueid> */
-		if (!strcmp(line_ptrs[0], "function")) {
-			OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
-			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(1, "1");
+		if (!strcmp(line_ptrs[0], "function"))
+		{
+			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
+			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(1, "1");
 			kernel->func_uniqueid = atoi(line_ptrs[2]);
 			continue;
 		}
@@ -883,8 +986,8 @@ void opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		/* Entry 'sampler'. Format: sampler:name:ID:location:value.
 		 * 'location' is 1 for kernel defined samplers, 0 for kernel argument.
 		 * 'value' is bitfield value of sampler (0 if a kernel argument) */
-		if (!strcmp(line_ptrs[0], "sampler")) {
-
+		if (!strcmp(line_ptrs[0], "sampler"))
+		{
 			/* As far as I can tell, the actual sampler data is stored 
 			 * as a value, so adding it to the argument list is not required */
 			continue;
@@ -926,7 +1029,7 @@ void evg_opencl_kernel_load(struct evg_opencl_kernel_t *kernel, char *kernel_nam
 	kernel->bin_file = evg_bin_file_create(kernel->kernel_buffer.ptr, kernel->kernel_buffer.size, name);
 	
 	/* Analyze 'metadata' file */
-	opencl_kernel_load_metadata(kernel);
+	evg_opencl_kernel_load_metadata(kernel);
 }
 
 
@@ -939,7 +1042,8 @@ uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kerne
 	uint64_t local_mem_size = 0;
 	uint32_t max_work_group_size = 256;  /* FIXME */
 
-	switch (name) {
+	switch (name)
+	{
 
 	case 0x11b0:  /* CL_KERNEL_WORK_GROUP_SIZE */
 		info = &max_work_group_size;
@@ -953,7 +1057,8 @@ uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kerne
 
 		/* Compute local memory usage */
 		local_mem_size = kernel->func_mem_local;
-		for (i = 0; i < list_count(kernel->arg_list); i++) {
+		for (i = 0; i < list_count(kernel->arg_list); i++)
+		{
 			arg = list_get(kernel->arg_list, i);
 			if (arg->mem_scope == EVG_OPENCL_MEM_SCOPE_LOCAL)
 				local_mem_size += arg->size;
@@ -983,15 +1088,24 @@ uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kerne
 
 
 
-/* OpenCL Mem */
+/*
+ * OpenCL Mem
+ */
 
 struct evg_opencl_mem_t *evg_opencl_mem_create()
 {
 	struct evg_opencl_mem_t *mem;
 
+	/* Allocate */
 	mem = calloc(1, sizeof(struct evg_opencl_mem_t));
+	if (!mem)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	mem->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_MEM);
 	mem->ref_count = 1;
+
+	/* Return */
 	evg_opencl_object_add(mem);
 	return mem;
 }
@@ -1006,16 +1120,25 @@ void evg_opencl_mem_free(struct evg_opencl_mem_t *mem)
 
 
 
-/* OpenCL Event */
+/*
+ * OpenCL Event
+ */
 
 struct evg_opencl_event_t *evg_opencl_event_create(enum evg_opencl_event_kind_t kind)
 {
 	struct evg_opencl_event_t *event;
 
+	/* Allocate */
 	event = calloc(1, sizeof(struct evg_opencl_event_t));
+	if (!event)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	event->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_EVENT);
 	event->ref_count = 1;
 	event->kind = kind;
+
+	/* Return */
 	evg_opencl_object_add(event);
 	return event;
 }
@@ -1034,7 +1157,8 @@ uint32_t evg_opencl_event_get_profiling_info(struct evg_opencl_event_t *event, u
 	uint32_t size_ret = 0;
 	void *info = NULL;
 
-	switch (name) {
+	switch (name)
+	{
 
 	case 0x1280:  /* CL_PROFILING_COMMAND_QUEUED */
 		size_ret = 8;
@@ -1073,4 +1197,3 @@ long long evg_opencl_event_timer(void)
 {
 	return x86_emu_timer() * 1000;
 }
-

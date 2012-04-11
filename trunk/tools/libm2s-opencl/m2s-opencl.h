@@ -133,18 +133,18 @@
 extern char *err_evg_opencl_note;
 extern char *err_evg_opencl_param_note;
 
-#define OPENCL_PARAM_NOT_SUPPORTED(p) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED(p) \
 	fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, p, err_evg_opencl_note);
-#define OPENCL_PARAM_NOT_SUPPORTED_EQ(p, v) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED_EQ(p, v) \
 	{ if ((p) == (v)) fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, (v), err_evg_opencl_param_note); }
-#define OPENCL_PARAM_NOT_SUPPORTED_NEQ(p, v) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(p, v) \
 	{ if ((p) != (v)) fatal("%s: not supported for '" #p "' != 0x%x\n%s", __FUNCTION__, (v), err_evg_opencl_param_note); }
-#define OPENCL_PARAM_NOT_SUPPORTED_LT(p, v) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED_LT(p, v) \
 	{ if ((p) < (v)) fatal("%s: not supported for '" #p "' < %d\n%s", __FUNCTION__, (v), err_evg_opencl_param_note); }
-#define OPENCL_PARAM_NOT_SUPPORTED_OOR(p, min, max) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: not supported for '" #p "' out of range [%d:%d]\n%s", \
 	__FUNCTION__, (min), (max), err_evg_opencl_param_note); }
-#define OPENCL_PARAM_NOT_SUPPORTED_FLAG(p, flag, name) \
+#define EVG_OPENCL_ARG_NOT_SUPPORTED_FLAG(p, flag, name) \
 	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", __FUNCTION__, err_evg_opencl_param_note); }
 
 

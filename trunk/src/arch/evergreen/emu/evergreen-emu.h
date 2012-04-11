@@ -982,18 +982,29 @@ void evg_work_item_update_branch_digest(struct evg_work_item_t *work_item,
 
 
 /*
- * GPU ISA
+ * Evergreen ISA
  */
 
+/* Global variables referring to the instruction that is currently being emulated.
+ * There variables are set before calling the instruction emulation function in
+ * 'machine.c' to avoid passing pointers. */
+extern struct evg_ndrange_t *evg_isa_ndrange;
+extern struct evg_work_group_t *evg_isa_work_group;
+extern struct evg_wavefront_t *evg_isa_wavefront;
+extern struct evg_work_item_t *evg_isa_work_item;
+extern struct evg_inst_t *evg_isa_cf_inst;
+extern struct evg_inst_t *evg_isa_inst;
+extern struct evg_alu_group_t *evg_isa_alu_group;
+
 /* Macros for quick access */
-#define EVG_GPR_ELEM(_gpr, _elem)  (gpu_isa_work_item->gpr[(_gpr)].elem[(_elem)])
+#define EVG_GPR_ELEM(_gpr, _elem)  (evg_isa_work_item->gpr[(_gpr)].elem[(_elem)])
 #define EVG_GPR_X(_gpr)  EVG_GPR_ELEM((_gpr), 0)
 #define EVG_GPR_Y(_gpr)  EVG_GPR_ELEM((_gpr), 1)
 #define EVG_GPR_Z(_gpr)  EVG_GPR_ELEM((_gpr), 2)
 #define EVG_GPR_W(_gpr)  EVG_GPR_ELEM((_gpr), 3)
 #define EVG_GPR_T(_gpr)  EVG_GPR_ELEM((_gpr), 4)
 
-#define EVG_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &gpu_isa_work_item->gpr[(_gpr)].elem[(_elem)])
+#define EVG_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &evg_isa_work_item->gpr[(_gpr)].elem[(_elem)])
 #define EVG_GPR_FLOAT_X(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 0)
 #define EVG_GPR_FLOAT_Y(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 1)
 #define EVG_GPR_FLOAT_Z(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 2)
@@ -1012,53 +1023,53 @@ extern char *err_evg_isa_note;
 
 #define EVG_ISA_ARG_NOT_SUPPORTED(p) \
 	fatal("%s: %s: not supported for '" #p "' = 0x%x\n%s", \
-	__FUNCTION__, gpu_isa_inst->info->name, (p), err_evg_isa_note);
+	__FUNCTION__, evg_isa_inst->info->name, (p), err_evg_isa_note);
 #define EVG_ISA_ARG_NOT_SUPPORTED_NEQ(p, v) \
 	{ if ((p) != (v)) fatal("%s: %s: not supported for '" #p "' != 0x%x\n%s", \
-	__FUNCTION__, gpu_isa_inst->info->name, (v), err_evg_isa_note); }
+	__FUNCTION__, evg_isa_inst->info->name, (v), err_evg_isa_note); }
 #define EVG_ISA_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: %s: not supported for '" #p "' out of range [%d:%d]\n%s", \
-	__FUNCTION__, gpu_isa_inst->info->name, (min), (max), err_evg_opencl_param_note); }
+	__FUNCTION__, evg_isa_inst->info->name, (min), (max), err_evg_opencl_param_note); }
 
 
 /* Macros for fast access of instruction words */
-#define EVG_CF_WORD0			gpu_isa_inst->words[0].cf_word0
-#define EVG_CF_GWS_WORD0		gpu_isa_inst->words[0].cf_gws_word0
-#define EVG_CF_WORD1			gpu_isa_inst->words[1].cf_word1
+#define EVG_CF_WORD0			evg_isa_inst->words[0].cf_word0
+#define EVG_CF_GWS_WORD0		evg_isa_inst->words[0].cf_gws_word0
+#define EVG_CF_WORD1			evg_isa_inst->words[1].cf_word1
 
-#define EVG_CF_ALU_WORD0		gpu_isa_inst->words[0].cf_alu_word0
-#define EVG_CF_ALU_WORD1		gpu_isa_inst->words[1].cf_alu_word1
-#define EVG_CF_ALU_WORD0_EXT		gpu_isa_inst->words[0].cf_alu_word0_ext
-#define EVG_CF_ALU_WORD1_EXT		gpu_isa_inst->words[1].cf_alu_word1_ext
+#define EVG_CF_ALU_WORD0		evg_isa_inst->words[0].cf_alu_word0
+#define EVG_CF_ALU_WORD1		evg_isa_inst->words[1].cf_alu_word1
+#define EVG_CF_ALU_WORD0_EXT		evg_isa_inst->words[0].cf_alu_word0_ext
+#define EVG_CF_ALU_WORD1_EXT		evg_isa_inst->words[1].cf_alu_word1_ext
 
-#define EVG_CF_ALLOC_EXPORT_WORD0	gpu_isa_inst->words[0].cf_alloc_export_word0
-#define EVG_CF_ALLOC_EXPORT_WORD0_RAT	gpu_isa_inst->words[0].cf_alloc_export_word0_rat
-#define EVG_CF_ALLOC_EXPORT_WORD1_BUF	gpu_isa_inst->words[1].cf_alloc_export_word1_buf
-#define EVG_CF_ALLOC_EXPORT_WORD1_SWIZ	gpu_isa_inst->words[1].cf_alloc_export_word1_swiz
+#define EVG_CF_ALLOC_EXPORT_WORD0	evg_isa_inst->words[0].cf_alloc_export_word0
+#define EVG_CF_ALLOC_EXPORT_WORD0_RAT	evg_isa_inst->words[0].cf_alloc_export_word0_rat
+#define EVG_CF_ALLOC_EXPORT_WORD1_BUF	evg_isa_inst->words[1].cf_alloc_export_word1_buf
+#define EVG_CF_ALLOC_EXPORT_WORD1_SWIZ	evg_isa_inst->words[1].cf_alloc_export_word1_swiz
 
-#define EVG_ALU_WORD0			gpu_isa_inst->words[0].alu_word0
-#define EVG_ALU_WORD1_OP2		gpu_isa_inst->words[1].alu_word1_op2
-#define EVG_ALU_WORD1_OP3		gpu_isa_inst->words[1].alu_word1_op3
+#define EVG_ALU_WORD0			evg_isa_inst->words[0].alu_word0
+#define EVG_ALU_WORD1_OP2		evg_isa_inst->words[1].alu_word1_op2
+#define EVG_ALU_WORD1_OP3		evg_isa_inst->words[1].alu_word1_op3
 
-#define EVG_ALU_WORD0_LDS_IDX_OP	gpu_isa_inst->words[0].alu_word0_lds_idx_op
-#define EVG_ALU_WORD1_LDS_IDX_OP	gpu_isa_inst->words[1].alu_word1_lds_idx_op
+#define EVG_ALU_WORD0_LDS_IDX_OP	evg_isa_inst->words[0].alu_word0_lds_idx_op
+#define EVG_ALU_WORD1_LDS_IDX_OP	evg_isa_inst->words[1].alu_word1_lds_idx_op
 
-#define EVG_VTX_WORD0			gpu_isa_inst->words[0].vtx_word0
-#define EVG_VTX_WORD1_GPR		gpu_isa_inst->words[1].vtx_word1_gpr
-#define EVG_VTX_WORD1_SEM		gpu_isa_inst->words[1].vtx_word1_sem
-#define EVG_VTX_WORD2			gpu_isa_inst->words[2].vtx_word2
+#define EVG_VTX_WORD0			evg_isa_inst->words[0].vtx_word0
+#define EVG_VTX_WORD1_GPR		evg_isa_inst->words[1].vtx_word1_gpr
+#define EVG_VTX_WORD1_SEM		evg_isa_inst->words[1].vtx_word1_sem
+#define EVG_VTX_WORD2			evg_isa_inst->words[2].vtx_word2
 
-#define EVG_TEX_WORD0			gpu_isa_inst->words[0].tex_word0
-#define EVG_TEX_WORD1			gpu_isa_inst->words[1].tex_word1
-#define EVG_TEX_WORD2			gpu_isa_inst->words[2].tex_word2
+#define EVG_TEX_WORD0			evg_isa_inst->words[0].tex_word0
+#define EVG_TEX_WORD1			evg_isa_inst->words[1].tex_word1
+#define EVG_TEX_WORD2			evg_isa_inst->words[2].tex_word2
 
-#define EVG_MEM_RD_WORD0		gpu_isa_inst->words[0].mem_rd_word0
-#define EVG_MEM_RD_WORD1		gpu_isa_inst->words[1].mem_rd_word1
-#define EVG_MEM_RD_WORD2		gpu_isa_inst->words[2].mem_rd_word2
+#define EVG_MEM_RD_WORD0		evg_isa_inst->words[0].mem_rd_word0
+#define EVG_MEM_RD_WORD1		evg_isa_inst->words[1].mem_rd_word1
+#define EVG_MEM_RD_WORD2		evg_isa_inst->words[2].mem_rd_word2
 
-#define EVG_MEM_GDS_WORD0		gpu_isa_inst->words[0].mem_gds_word0
-#define EVG_MEM_GDS_WORD1		gpu_isa_inst->words[1].mem_gds_word1
-#define EVG_MEM_GDS_WORD2		gpu_isa_inst->words[2].mem_gds_word2
+#define EVG_MEM_GDS_WORD0		evg_isa_inst->words[0].mem_gds_word0
+#define EVG_MEM_GDS_WORD1		evg_isa_inst->words[1].mem_gds_word1
+#define EVG_MEM_GDS_WORD2		evg_isa_inst->words[2].mem_gds_word2
 
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */

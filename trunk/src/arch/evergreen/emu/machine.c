@@ -23,24 +23,13 @@
 #include <x86-emu.h>
 
 
-extern struct evg_ndrange_t *gpu_isa_ndrange;
-extern struct evg_work_group_t *gpu_isa_work_group;
-extern struct evg_wavefront_t *gpu_isa_wavefront;
-extern struct evg_work_item_t *gpu_isa_work_item;
-extern struct evg_inst_t *gpu_isa_cf_inst;
-extern struct evg_inst_t *gpu_isa_inst;
-extern struct evg_alu_group_t *gpu_isa_alu_group;
-
-void evg_fmt_cf_alloc_export_word0_rat_dump(void *buf, FILE *f);
-void evg_fmt_cf_alloc_export_word1_buf_dump(void *buf, FILE *f);
-
 char *err_evg_isa_note =
 	"\tThe AMD Evergreen instruction set is partially supported by Multi2Sim. If\n"
 	"\tyour program is using an unimplemented instruction, please email\n"
 	"\t'development@multi2sim.org' to request support for it.\n";
 
 #define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
-	gpu_isa_inst->info->name, err_evg_isa_note)
+	evg_isa_inst->info->name, err_evg_isa_note)
 
 
 /*
@@ -49,7 +38,7 @@ char *err_evg_isa_note =
 
 #define W0  EVG_CF_ALU_WORD0
 #define W1  EVG_CF_ALU_WORD1
-void amd_inst_ALU_impl()
+void evg_isa_ALU_impl()
 {
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.alt_const, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
@@ -58,55 +47,55 @@ void amd_inst_ALU_impl()
 	/* FIXME: barrier */
 
 	/* Start ALU clause */
-	gpu_isa_wavefront->clause_buf_start = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
-	gpu_isa_wavefront->clause_buf_end = gpu_isa_wavefront->clause_buf_start + (W1.count + 1) * 8;
-	gpu_isa_wavefront->clause_buf = gpu_isa_wavefront->clause_buf_start;
-	gpu_isa_wavefront->clause_kind = EVG_CLAUSE_ALU;
+	evg_isa_wavefront->clause_buf_start = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
+	evg_isa_wavefront->clause_buf_end = evg_isa_wavefront->clause_buf_start + (W1.count + 1) * 8;
+	evg_isa_wavefront->clause_buf = evg_isa_wavefront->clause_buf_start;
+	evg_isa_wavefront->clause_kind = EVG_CLAUSE_ALU;
 	evg_isa_alu_clause_start();
 }
 #undef W0
 #undef W1
 
 
-void amd_inst_ALU_BREAK_impl()
+void evg_isa_ALU_BREAK_impl()
 {
 	/* Same behavior as ALU */
 	/* FIXME: what's the difference? */
-	amd_inst_ALU_impl();
+	evg_isa_ALU_impl();
 }
 
 
-void amd_inst_ALU_POP_AFTER_impl()
+void evg_isa_ALU_POP_AFTER_impl()
 {
 	/* Same behavior as ALU */
-	amd_inst_ALU_impl();
+	evg_isa_ALU_impl();
 }
 
-void amd_inst_ALU_POP2_AFTER_impl()
+void evg_isa_ALU_POP2_AFTER_impl()
 {
 	/* Initiates an ALU clause, and pops the stack twice after the clause completes execution. */
 	NOT_IMPL();
 }
 
-void amd_inst_ALU_PUSH_BEFORE_impl()
+void evg_isa_ALU_PUSH_BEFORE_impl()
 {
 	/* Same behavior as ALU inst */
-	amd_inst_ALU_impl();
+	evg_isa_ALU_impl();
 }
 
-void amd_inst_CALL_impl()
+void evg_isa_CALL_impl()
 {
 	/* Execute a subroutine call (push call variables onto stack) */
 	NOT_IMPL();
 }
 
-void amd_inst_CALL_FS_impl()
+void evg_isa_CALL_FS_impl()
 {
 	/* Call Fetch Subroutine */
 	NOT_IMPL();
 }
 
-void amd_inst_CUT_VERTEX_impl()
+void evg_isa_CUT_VERTEX_impl()
 {
 	/* End Primitive Strip, Start New Primitive Strip */
 	NOT_IMPL();
@@ -114,7 +103,7 @@ void amd_inst_CUT_VERTEX_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_ELSE_impl()
+void evg_isa_ELSE_impl()
 {
 	int active, active_last, active_new;
 	int active_count = 0;
@@ -130,98 +119,98 @@ void amd_inst_ELSE_impl()
 
 	/* Debug */
 	if (debug_status(evg_isa_debug_category)) {
-		evg_isa_debug("  %s:act=", gpu_isa_wavefront->name);
-		bit_map_dump(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
-			gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count,
+		evg_isa_debug("  %s:act=", evg_isa_wavefront->name);
+		bit_map_dump(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
+			evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count,
 			debug_file(evg_isa_debug_category));
 	}
 
 	/* Invert active mask */
-	if (!gpu_isa_wavefront->stack_top)
+	if (!evg_isa_wavefront->stack_top)
 		fatal("ELSE: cannot execute for stack_top=0");
-	for (i = 0; i < gpu_isa_wavefront->work_item_count; i++) {
-		active = bit_map_get(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
-			gpu_isa_wavefront->work_item_count + i, 1);
-		active_last = bit_map_get(gpu_isa_wavefront->active_stack, (gpu_isa_wavefront->stack_top - 1) *
-			gpu_isa_wavefront->work_item_count + i, 1);
+	for (i = 0; i < evg_isa_wavefront->work_item_count; i++) {
+		active = bit_map_get(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
+			evg_isa_wavefront->work_item_count + i, 1);
+		active_last = bit_map_get(evg_isa_wavefront->active_stack, (evg_isa_wavefront->stack_top - 1) *
+			evg_isa_wavefront->work_item_count + i, 1);
 		active_new = !active && active_last;
 		active_count += active_new;
-		bit_map_set(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
-			gpu_isa_wavefront->work_item_count + i, 1, active_new);
+		bit_map_set(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
+			evg_isa_wavefront->work_item_count + i, 1, active_new);
 	}
 	
 	/* Debug */
 	if (debug_status(evg_isa_debug_category)) {
-		evg_isa_debug("  %s:invert(act)=", gpu_isa_wavefront->name);
-		bit_map_dump(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
-			gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count,
+		evg_isa_debug("  %s:invert(act)=", evg_isa_wavefront->name);
+		bit_map_dump(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
+			evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count,
 			debug_file(evg_isa_debug_category));
 	}
 
 	/* If all pixels are inactive, pop stack and jump */
 	if (!active_count) {
-		evg_wavefront_stack_pop(gpu_isa_wavefront, W1.pop_count);
-		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
+		evg_wavefront_stack_pop(evg_isa_wavefront, W1.pop_count);
+		evg_isa_wavefront->cf_buf = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
 	}
 }
 #undef W0
 #undef W1
 
-void amd_inst_EMIT_CUT_VERTEX_impl()
+void evg_isa_EMIT_CUT_VERTEX_impl()
 {
 	/* Emit Vertex, End Primitive Strip */
 	NOT_IMPL();
 }
 
-void amd_inst_EMIT_VERTEX_impl()
+void evg_isa_EMIT_VERTEX_impl()
 {
 	/* Vertex Exported to Memory */
 	NOT_IMPL();
 }
 
-void amd_inst_EXPORT_impl()
+void evg_isa_EXPORT_impl()
 {
 	/* Export from VS or PS */
 	NOT_IMPL();
 }
 
-void amd_inst_EXPORT_DONE_impl()
+void evg_isa_EXPORT_DONE_impl()
 {
 	/* Export Last Data */
 	NOT_IMPL();
 }
 
-void amd_inst_GDS_impl()
+void evg_isa_GDS_impl()
 {
 	/* Global Data Share */
 	NOT_IMPL();
 }
 
-void amd_inst_GWS_BARRIER_impl()
+void evg_isa_GWS_BARRIER_impl()
 {
 	/* Global Wavefront Barrier */
 	NOT_IMPL();
 }
 
-void amd_inst_GWS_INIT_impl()
+void evg_isa_GWS_INIT_impl()
 {
 	/* Global Wavefront Resource Initialization */
 	NOT_IMPL();
 }
 
-void amd_inst_GWS_SEMA_P_impl()
+void evg_isa_GWS_SEMA_P_impl()
 {
 	/* Global Wavefront Sync Semaphore P */
 	NOT_IMPL();
 }
 
-void amd_inst_GWS_SEMA_V_impl()
+void evg_isa_GWS_SEMA_V_impl()
 {
 	/* Global Wavefront Sync Semaphore V */
 	NOT_IMPL();
 }
 
-void amd_inst_HALT_impl()
+void evg_isa_HALT_impl()
 {
 	/* Halt Wavefront Execution */
 	NOT_IMPL();
@@ -229,7 +218,7 @@ void amd_inst_HALT_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_JUMP_impl()
+void evg_isa_JUMP_impl()
 {
 	int active_count;
 
@@ -242,11 +231,11 @@ void amd_inst_JUMP_impl()
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.barrier, 1);
 
 	/* If all pixels are inactive, pop stack and jump */
-	active_count = bit_map_count_ones(gpu_isa_wavefront->active_stack,
-		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
+	active_count = bit_map_count_ones(evg_isa_wavefront->active_stack,
+		evg_isa_wavefront->stack_top * evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count);
 	if (!active_count) {
-		evg_wavefront_stack_pop(gpu_isa_wavefront, W1.pop_count);
-		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
+		evg_wavefront_stack_pop(evg_isa_wavefront, W1.pop_count);
+		evg_isa_wavefront->cf_buf = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
 	}
 }
 #undef W0
@@ -254,7 +243,7 @@ void amd_inst_JUMP_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_JUMPTABLE_impl()
+void evg_isa_JUMPTABLE_impl()
 {
 	/* Executes a jump through a jump table. */
 	NOT_IMPL();
@@ -264,7 +253,7 @@ void amd_inst_JUMPTABLE_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_KILL_impl()
+void evg_isa_KILL_impl()
 {
 	/* Kill (prevent rendering of) pixels that pass a condition test. */
 	NOT_IMPL();
@@ -274,7 +263,7 @@ void amd_inst_KILL_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_LOOP_END_impl()
+void evg_isa_LOOP_END_impl()
 {
 	int active_count;
 
@@ -287,34 +276,34 @@ void amd_inst_LOOP_END_impl()
 	/* W0.addr: jump if any pixel is active */
 
 	/* Increment the trip count */
-	++gpu_isa_wavefront->loop_trip_count;
+	++evg_isa_wavefront->loop_trip_count;
 
 	/* Dump current loop state */
 	if (debug_status(evg_isa_debug_category)) {
-		evg_isa_debug("  %s:act=", gpu_isa_wavefront->name);
-		bit_map_dump(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
-			gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count,
+		evg_isa_debug("  %s:act=", evg_isa_wavefront->name);
+		bit_map_dump(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
+			evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count,
 			debug_file(evg_isa_debug_category));
 	}
 
 	/* Decrement loop index */
-	gpu_isa_wavefront->loop_index -= gpu_isa_wavefront->loop_step;
+	evg_isa_wavefront->loop_index -= evg_isa_wavefront->loop_step;
 
 	/* If any pixel is active and loop index is not zero, jump back */
-	active_count = bit_map_count_ones(gpu_isa_wavefront->active_stack,
-		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
-	if (active_count && (gpu_isa_wavefront->loop_index == 0) && 
-		(gpu_isa_wavefront->loop_trip_count != gpu_isa_wavefront->loop_max_trip_count)) 
+	active_count = bit_map_count_ones(evg_isa_wavefront->active_stack,
+		evg_isa_wavefront->stack_top * evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count);
+	if (active_count && (evg_isa_wavefront->loop_index == 0) && 
+		(evg_isa_wavefront->loop_trip_count != evg_isa_wavefront->loop_max_trip_count)) 
 	{
-		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
+		evg_isa_wavefront->cf_buf = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
 		return;
 	}
 
 	/* Pop stack once */
-	evg_wavefront_stack_pop(gpu_isa_wavefront, 1);
+	evg_wavefront_stack_pop(evg_isa_wavefront, 1);
 
 	/* FIXME: Get rid of this once loop state is pushed on the stack */
-	--gpu_isa_wavefront->loop_depth;
+	--evg_isa_wavefront->loop_depth;
 }
 #undef W0
 #undef W1
@@ -322,7 +311,7 @@ void amd_inst_LOOP_END_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_LOOP_START_DX10_impl()
+void evg_isa_LOOP_START_DX10_impl()
 {
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.cf_const, 0);  /* FIXME: what does it refer to? */
@@ -335,15 +324,15 @@ void amd_inst_LOOP_START_DX10_impl()
 	/* W0.pop_count: pop if all pixels fail. */
 
 	/* Initialize the loop state for the wavefront */
-	gpu_isa_wavefront->loop_max_trip_count = 
-	   gpu_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
-	gpu_isa_wavefront->loop_start = 
-	   gpu_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][1];
-	gpu_isa_wavefront->loop_step = 
-	   gpu_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][2];
+	evg_isa_wavefront->loop_max_trip_count = 
+	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
+	evg_isa_wavefront->loop_start = 
+	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][1];
+	evg_isa_wavefront->loop_step = 
+	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][2];
 
-	gpu_isa_wavefront->loop_index = gpu_isa_wavefront->loop_start;
-	gpu_isa_wavefront->loop_trip_count = 0;
+	evg_isa_wavefront->loop_index = evg_isa_wavefront->loop_start;
+	evg_isa_wavefront->loop_trip_count = 0;
 
 
 	/* FIXME: if initial condition fails, jump to 'addr' */
@@ -353,10 +342,10 @@ void amd_inst_LOOP_START_DX10_impl()
 	/* FIXME: Set up new loop state */
 
 	/* FIXME: Remove this once loop state is part of stack */
-	++gpu_isa_wavefront->loop_depth;
+	++evg_isa_wavefront->loop_depth;
 
 	/* FIXME: Push active mask? */
-	evg_wavefront_stack_push(gpu_isa_wavefront);
+	evg_wavefront_stack_push(evg_isa_wavefront);
 }
 #undef W0
 #undef W1
@@ -364,30 +353,30 @@ void amd_inst_LOOP_START_DX10_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_LOOP_START_NO_AL_impl()
+void evg_isa_LOOP_START_NO_AL_impl()
 {
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.valid_pixel_mode, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.pop_count, 0);
 
 	/* FIXME: Remove this once loop state is part of stack */
-	++gpu_isa_wavefront->loop_depth;
-	if(gpu_isa_wavefront->loop_depth > 1) {		
+	++evg_isa_wavefront->loop_depth;
+	if(evg_isa_wavefront->loop_depth > 1) {		
 		fatal("Nested loops not supported");
 	}
 
 	/* Initialize the loop state for the wavefront */
-	gpu_isa_wavefront->loop_max_trip_count = 
-	   gpu_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
-	gpu_isa_wavefront->loop_start = 
-	   gpu_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][1];
-	gpu_isa_wavefront->loop_step = 
-	   gpu_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][2];
+	evg_isa_wavefront->loop_max_trip_count = 
+	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
+	evg_isa_wavefront->loop_start = 
+	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][1];
+	evg_isa_wavefront->loop_step = 
+	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][2];
 
-	gpu_isa_wavefront->loop_index = gpu_isa_wavefront->loop_start;
-	gpu_isa_wavefront->loop_trip_count = 0;
+	evg_isa_wavefront->loop_index = evg_isa_wavefront->loop_start;
+	evg_isa_wavefront->loop_trip_count = 0;
 
-	evg_wavefront_stack_push(gpu_isa_wavefront);
+	evg_wavefront_stack_push(evg_isa_wavefront);
 }
 #undef W0
 #undef W1
@@ -395,7 +384,7 @@ void amd_inst_LOOP_START_NO_AL_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_LOOP_CONTINUE_impl()
+void evg_isa_LOOP_CONTINUE_impl()
 {
 	NOT_IMPL();
 }
@@ -405,7 +394,7 @@ void amd_inst_LOOP_CONTINUE_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_LOOP_BREAK_impl()
+void evg_isa_LOOP_BREAK_impl()
 {
 	int active_count;
 	int active;
@@ -420,50 +409,50 @@ void amd_inst_LOOP_BREAK_impl()
 
 	/* Dump current loop state */
 	if (debug_status(evg_isa_debug_category)) {
-		evg_isa_debug("  %s:act=", gpu_isa_wavefront->name);
-		bit_map_dump(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
-			gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count,
+		evg_isa_debug("  %s:act=", evg_isa_wavefront->name);
+		bit_map_dump(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
+			evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count,
 			debug_file(evg_isa_debug_category));
 	}
 
 	/* Mark active work items as inactive */
-	for (i = 0; i < gpu_isa_wavefront->work_item_count; i++) {
+	for (i = 0; i < evg_isa_wavefront->work_item_count; i++) {
 
-		active = bit_map_get(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
-			gpu_isa_wavefront->work_item_count + i, 1);
+		active = bit_map_get(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
+			evg_isa_wavefront->work_item_count + i, 1);
 
 		if (active) 
 		{
 			/* Pixel is active, so mark it as inactive */
-			bit_map_set(gpu_isa_wavefront->active_stack, gpu_isa_wavefront->stack_top *
-				gpu_isa_wavefront->work_item_count + i, 1, 0);
+			bit_map_set(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
+				evg_isa_wavefront->work_item_count + i, 1, 0);
 		}
 	}
 
 	/* If no pixels are active, jump to addr */
-	active_count = bit_map_count_ones(gpu_isa_wavefront->active_stack,
-		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
+	active_count = bit_map_count_ones(evg_isa_wavefront->active_stack,
+		evg_isa_wavefront->stack_top * evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count);
 	if (active_count == 0) {
-		gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
+		evg_isa_wavefront->cf_buf = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
 		return;
 	}
 
 	/* Pop stack */
-	evg_wavefront_stack_pop(gpu_isa_wavefront, W1.pop_count);
+	evg_wavefront_stack_pop(evg_isa_wavefront, W1.pop_count);
 
 	/* FIXME: Get rid of this once loop state is pushed on the stack */
-	gpu_isa_wavefront->loop_depth -= W1.pop_count;
+	evg_isa_wavefront->loop_depth -= W1.pop_count;
 }
 #undef W0
 #undef W1
 
-void amd_inst_MEM_EXPORT_impl()
+void evg_isa_MEM_EXPORT_impl()
 {
 	/* Performs a memory read or write on the scatter buffer. */
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_EXPORT_COMBINED_impl()
+void evg_isa_MEM_EXPORT_COMBINED_impl()
 {
 	/* Performs a memory read or write on the scatter buffer. */
 	NOT_IMPL();
@@ -471,7 +460,7 @@ void amd_inst_MEM_EXPORT_COMBINED_impl()
 
 #define W0  EVG_CF_ALLOC_EXPORT_WORD0_RAT
 #define W1  EVG_CF_ALLOC_EXPORT_WORD1_BUF
-void amd_inst_MEM_RAT_impl()
+void evg_isa_MEM_RAT_impl()
 {
 	switch (W0.rat_inst) {
 
@@ -509,14 +498,14 @@ void amd_inst_MEM_RAT_impl()
 			EVG_ISA_ARG_NOT_SUPPORTED(W0.type);
 
 		/* Record access */
-		gpu_isa_wavefront->global_mem_write = 1;
+		evg_isa_wavefront->global_mem_write = 1;
 
-		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(evg_isa_wavefront, work_item_id)
 		{
-			gpu_isa_work_item = gpu_isa_ndrange->work_items[work_item_id];
+			evg_isa_work_item = evg_isa_ndrange->work_items[work_item_id];
 
 			/* If VPM is set, do not export for inactive pixels. */
-			if (W1.valid_pixel_mode && !evg_work_item_get_active(gpu_isa_work_item))
+			if (W1.valid_pixel_mode && !evg_work_item_get_active(evg_isa_work_item))
 				continue;
 
 			/* W0.rw_gpr: GPR register from which to read data */
@@ -529,14 +518,14 @@ void amd_inst_MEM_RAT_impl()
 			uav = W0.rat_id;
 
 			/* Otherwise, we have an image, and we need to provide a base address */
-			mem = list_get(gpu_isa_ndrange->kernel->uav_write_list, uav);
+			mem = list_get(evg_isa_ndrange->kernel->uav_write_list, uav);
 			base_addr = mem->device_ptr;
 			addr = base_addr + evg_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
-			evg_isa_debug("  t%d:write(0x%x)", gpu_isa_work_item->id, addr);
+			evg_isa_debug("  t%d:write(0x%x)", evg_isa_work_item->id, addr);
 
 			/* Record access */
-			gpu_isa_work_item->global_mem_access_addr = addr;
-			gpu_isa_work_item->global_mem_access_size = 0;
+			evg_isa_work_item->global_mem_access_addr = addr;
+			evg_isa_work_item->global_mem_access_size = 0;
 
 			for (i = 0; i < 4; i++) {
 				
@@ -551,7 +540,7 @@ void amd_inst_MEM_RAT_impl()
 
 				/* Record size for memory access (warning: this is done inaccurately by assuming a
 				 * baseline access and a contiguous set of accessed elements */
-				gpu_isa_work_item->global_mem_access_size += 4;
+				evg_isa_work_item->global_mem_access_size += 4;
 
 				/* Access */
 				value.as_uint = evg_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
@@ -580,7 +569,7 @@ void amd_inst_MEM_RAT_impl()
 
 #define W0  EVG_CF_ALLOC_EXPORT_WORD0_RAT
 #define W1  EVG_CF_ALLOC_EXPORT_WORD1_BUF
-void amd_inst_MEM_RAT_CACHELESS_impl()
+void evg_isa_MEM_RAT_CACHELESS_impl()
 {
 	switch (W0.rat_inst)
 	{
@@ -613,12 +602,12 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 		if (W0.type != 1 && W0.type != 3)
 			EVG_ISA_ARG_NOT_SUPPORTED(W0.type);
 
-		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(evg_isa_wavefront, work_item_id)
 		{
-			gpu_isa_work_item = gpu_isa_ndrange->work_items[work_item_id];
+			evg_isa_work_item = evg_isa_ndrange->work_items[work_item_id];
 
 			/* If VPM is set, do not export for inactive pixels. */
-			if (W1.valid_pixel_mode && !evg_work_item_get_active(gpu_isa_work_item))
+			if (W1.valid_pixel_mode && !evg_work_item_get_active(evg_isa_work_item))
 				continue;
 
 			/* W0.rw_gpr: GPR register from which to read data */
@@ -629,12 +618,12 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 
 			/* This is a write, so we need to get the correct address based on the UAV number */
 			addr = evg_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
-			evg_isa_debug("  t%d:write(0x%x)", gpu_isa_work_item->id, addr);
+			evg_isa_debug("  t%d:write(0x%x)", evg_isa_work_item->id, addr);
 
 			/* Record access */
-			gpu_isa_wavefront->global_mem_write = 1;
-			gpu_isa_work_item->global_mem_access_addr = addr;
-			gpu_isa_work_item->global_mem_access_size = 0;
+			evg_isa_wavefront->global_mem_write = 1;
+			evg_isa_work_item->global_mem_access_addr = addr;
+			evg_isa_work_item->global_mem_access_size = 0;
 
 			for (i = 0; i < 4; i++)
 			{
@@ -644,7 +633,7 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 
 				/* Record size for memory access (warning: this is done inaccurately by assuming a
 				 * baseline access and a contiguous set of accessed elements */
-				gpu_isa_work_item->global_mem_access_size += 4;
+				evg_isa_work_item->global_mem_access_size += 4;
 
 				/* Access */
 				value.as_uint = evg_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
@@ -671,119 +660,119 @@ void amd_inst_MEM_RAT_CACHELESS_impl()
 #undef W0
 #undef W1
 
-void amd_inst_MEM_RAT_COMBINED_CACHELESS_impl()
+void evg_isa_MEM_RAT_COMBINED_CACHELESS_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_RING_impl()
+void evg_isa_MEM_RING_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_RING1_impl()
+void evg_isa_MEM_RING1_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_RING2_impl()
+void evg_isa_MEM_RING2_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_RING3_impl()
+void evg_isa_MEM_RING3_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM0_BUF0_impl()
+void evg_isa_MEM_STREAM0_BUF0_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM0_BUF1_impl()
+void evg_isa_MEM_STREAM0_BUF1_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM0_BUF2_impl()
+void evg_isa_MEM_STREAM0_BUF2_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM0_BUF3_impl()
+void evg_isa_MEM_STREAM0_BUF3_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM1_BUF0_impl()
+void evg_isa_MEM_STREAM1_BUF0_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM1_BUF1_impl()
+void evg_isa_MEM_STREAM1_BUF1_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM1_BUF2_impl()
+void evg_isa_MEM_STREAM1_BUF2_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM1_BUF3_impl()
+void evg_isa_MEM_STREAM1_BUF3_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM2_BUF0_impl()
+void evg_isa_MEM_STREAM2_BUF0_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM2_BUF1_impl()
+void evg_isa_MEM_STREAM2_BUF1_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM2_BUF2_impl()
+void evg_isa_MEM_STREAM2_BUF2_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM2_BUF3_impl()
+void evg_isa_MEM_STREAM2_BUF3_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM3_BUF0_impl()
+void evg_isa_MEM_STREAM3_BUF0_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM3_BUF1_impl()
+void evg_isa_MEM_STREAM3_BUF1_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM3_BUF2_impl()
+void evg_isa_MEM_STREAM3_BUF2_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_STREAM3_BUF3_impl()
+void evg_isa_MEM_STREAM3_BUF3_impl()
 {
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_WR_SCRATCH_impl()
+void evg_isa_MEM_WR_SCRATCH_impl()
 {
 	NOT_IMPL();
 }
 
-#define W0 gpu_isa_inst->words[0].cf_word0
-#define W1 gpu_isa_inst->words[1].cf_word1
-void amd_inst_NOP_CF_impl()
+#define W0 evg_isa_inst->words[0].cf_word0
+#define W1 evg_isa_inst->words[1].cf_word1
+void evg_isa_NOP_CF_impl()
 {
 }
 #undef W0
@@ -792,7 +781,7 @@ void amd_inst_NOP_CF_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_POP_impl()
+void evg_isa_POP_impl()
 {
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.cf_const, 0);
@@ -803,15 +792,15 @@ void amd_inst_POP_impl()
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.barrier, 1);
 
 	/* Pop 'pop_count' from stack and jump to 'addr' */
-	evg_wavefront_stack_pop(gpu_isa_wavefront, W1.pop_count);
-	gpu_isa_wavefront->cf_buf = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
+	evg_wavefront_stack_pop(evg_isa_wavefront, W1.pop_count);
+	evg_isa_wavefront->cf_buf = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
 }
 #undef W0
 #undef W1
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_PUSH_impl()
+void evg_isa_PUSH_impl()
 {
 	/* Push State To Stack */
 	NOT_IMPL();
@@ -821,7 +810,7 @@ void amd_inst_PUSH_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_RETURN_impl()
+void evg_isa_RETURN_impl()
 {
 	/* Return From Subroutine */
 	NOT_IMPL();
@@ -831,7 +820,7 @@ void amd_inst_RETURN_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void amd_inst_TC_impl()
+void evg_isa_TC_impl()
 {
 	int active;
 	int i;
@@ -844,49 +833,49 @@ void amd_inst_TC_impl()
 	/* FIXME: barrier */
 	
 	/* Start TC clause */
-	gpu_isa_wavefront->clause_buf_start = gpu_isa_wavefront->cf_buf_start + W0.addr * 8;
-	gpu_isa_wavefront->clause_buf_end = gpu_isa_wavefront->clause_buf_start + (W1.count + 1) * 16;
-	gpu_isa_wavefront->clause_buf = gpu_isa_wavefront->clause_buf_start;
-	gpu_isa_wavefront->clause_kind = EVG_CLAUSE_TEX;
+	evg_isa_wavefront->clause_buf_start = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
+	evg_isa_wavefront->clause_buf_end = evg_isa_wavefront->clause_buf_start + (W1.count + 1) * 16;
+	evg_isa_wavefront->clause_buf = evg_isa_wavefront->clause_buf_start;
+	evg_isa_wavefront->clause_kind = EVG_CLAUSE_TEX;
 	evg_isa_tc_clause_start();
 
 	/* If VPM is set, copy 'active' mask at the top of the stack to 'pred' mask.
 	 * This will make all fetches within the clause happen only for active pixels.
 	 * If VPM is clear, copy a mask set to ones. */
-	for (i = 0; i < gpu_isa_wavefront->work_item_count; i++) {
-		active = W1.valid_pixel_mode ? bit_map_get(gpu_isa_wavefront->active_stack,
-			gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count + i, 1) : 1;
-		bit_map_set(gpu_isa_wavefront->pred, i, 1, active);
+	for (i = 0; i < evg_isa_wavefront->work_item_count; i++) {
+		active = W1.valid_pixel_mode ? bit_map_get(evg_isa_wavefront->active_stack,
+			evg_isa_wavefront->stack_top * evg_isa_wavefront->work_item_count + i, 1) : 1;
+		bit_map_set(evg_isa_wavefront->pred, i, 1, active);
 	}
 }
 #undef W0
 #undef W1
 
-void amd_inst_TC_ACK_impl()
+void evg_isa_TC_ACK_impl()
 {
 	/* Fetch Clause Through Texture Cache With ACK */
 	NOT_IMPL();
 }
 
-void amd_inst_VC_impl()
+void evg_isa_VC_impl()
 {
 	/* Initiate Clause of Vertex or Constant Fetches Through Vertex Cache */
 	NOT_IMPL();
 }
 
-void amd_inst_VC_ACK_impl()
+void evg_isa_VC_ACK_impl()
 {
 	/* Fetch Clause Through Vertex Cache With ACK */
 	NOT_IMPL();
 }
 
-void amd_inst_WAIT_ACK_impl()
+void evg_isa_WAIT_ACK_impl()
 {
 	/* FIXME: wait for Write ACKs */
 }
 
 
-void amd_inst_ADD_impl()
+void evg_isa_ADD_impl()
 {
 	float src0, src1, dst;
 
@@ -897,17 +886,7 @@ void amd_inst_ADD_impl()
 }
 
 
-void amd_inst_MUL_impl() {
-	float src0, src1, dst;
-
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
-	dst = src0 * src1;
-	evg_isa_enqueue_write_dest_float(dst);
-}
-
-
-void amd_inst_MUL_IEEE_impl()
+void evg_isa_MUL_impl()
 {
 	float src0, src1, dst;
 
@@ -918,17 +897,30 @@ void amd_inst_MUL_IEEE_impl()
 }
 
 
-void amd_inst_MAX_impl() {
+void evg_isa_MUL_IEEE_impl()
+{
+	float src0, src1, dst;
+
+	src0 = evg_isa_read_op_src_float(0);
+	src1 = evg_isa_read_op_src_float(1);
+	dst = src0 * src1;
+	evg_isa_enqueue_write_dest_float(dst);
+}
+
+
+void evg_isa_MAX_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_MIN_impl() {
+void evg_isa_MIN_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_MAX_DX10_impl()
+void evg_isa_MAX_DX10_impl()
 {
 	float src0, src1, dst;
 
@@ -941,7 +933,7 @@ void amd_inst_MAX_DX10_impl()
 }
 
 
-void amd_inst_MIN_DX10_impl()
+void evg_isa_MIN_DX10_impl()
 {
 	float src0, src1, dst;
 
@@ -954,9 +946,9 @@ void amd_inst_MIN_DX10_impl()
 }
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETE_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETE_impl()
 {
 	float src0, src1;
 	float dst;
@@ -975,9 +967,9 @@ void amd_inst_SETE_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETGT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETGT_impl()
 {
 	float src0, src1;
 	float dst;
@@ -996,9 +988,9 @@ void amd_inst_SETGT_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETGE_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETGE_impl()
 {
 	float src0, src1;
 	float dst;
@@ -1017,9 +1009,9 @@ void amd_inst_SETGE_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETNE_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETNE_impl()
 {
 	float src0, src1;
 	float dst;
@@ -1038,9 +1030,9 @@ void amd_inst_SETNE_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETE_DX10_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETE_DX10_impl()
 {
 	float src0, src1;
 	int32_t dst;
@@ -1059,9 +1051,9 @@ void amd_inst_SETE_DX10_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETGT_DX10_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETGT_DX10_impl()
 {
 	float src0, src1;
 	int32_t dst;
@@ -1080,9 +1072,9 @@ void amd_inst_SETGT_DX10_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETGE_DX10_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETGE_DX10_impl()
 {
 	float src0, src1;
 	int32_t dst;
@@ -1101,9 +1093,9 @@ void amd_inst_SETGE_DX10_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETNE_DX10_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETNE_DX10_impl()
 {
 	float src0, src1;
 	int32_t dst;
@@ -1122,7 +1114,7 @@ void amd_inst_SETNE_DX10_impl()
 #undef W1
 
 
-void amd_inst_FRACT_impl()
+void evg_isa_FRACT_impl()
 {
 	float src, dst;
 
@@ -1132,7 +1124,7 @@ void amd_inst_FRACT_impl()
 }
 
 
-void amd_inst_TRUNC_impl()
+void evg_isa_TRUNC_impl()
 {
 	float src, dst;
 
@@ -1142,17 +1134,19 @@ void amd_inst_TRUNC_impl()
 }
 
 
-void amd_inst_CEIL_impl() {
+void evg_isa_CEIL_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_RNDNE_impl() {
+void evg_isa_RNDNE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_FLOOR_impl() 
+void evg_isa_FLOOR_impl() 
 {
 	float src0, dst;
 
@@ -1166,7 +1160,7 @@ void amd_inst_FLOOR_impl()
 }
 
 
-void amd_inst_ASHR_INT_impl()
+void evg_isa_ASHR_INT_impl()
 {
 	int32_t src0, dst;
 	uint32_t src1;
@@ -1181,7 +1175,7 @@ void amd_inst_ASHR_INT_impl()
 }
 
 
-void amd_inst_LSHR_INT_impl()
+void evg_isa_LSHR_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
@@ -1192,7 +1186,7 @@ void amd_inst_LSHR_INT_impl()
 }
 
 
-void amd_inst_LSHL_INT_impl()
+void evg_isa_LSHL_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
@@ -1203,7 +1197,7 @@ void amd_inst_LSHL_INT_impl()
 }
 
 
-void amd_inst_MOV_impl()
+void evg_isa_MOV_impl()
 {
 	uint32_t value;
 	value = evg_isa_read_op_src_int(0);
@@ -1211,39 +1205,44 @@ void amd_inst_MOV_impl()
 }
 
 
-void amd_inst_NOP_ALU_impl()
+void evg_isa_NOP_ALU_impl()
 {
 }
 
 
-void amd_inst_MUL_64_impl() {
+void evg_isa_MUL_64_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_FLT64_TO_FLT32_impl() {
+void evg_isa_FLT64_TO_FLT32_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_FLT32_TO_FLT64_impl() {
+void evg_isa_FLT32_TO_FLT64_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETGT_UINT_impl() {
+void evg_isa_PRED_SETGT_UINT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETGE_UINT_impl() {
+void evg_isa_PRED_SETGE_UINT_impl()
+{
 	NOT_IMPL();
 }
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_PRED_SETE_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_PRED_SETE_impl()
 {
 	float src0, src1;
 	union evg_reg_t dst;
@@ -1268,9 +1267,9 @@ void amd_inst_PRED_SETE_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_PRED_SETGT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_PRED_SETGT_impl()
 {
 	float src0, src1;
 	union evg_reg_t dst;
@@ -1295,9 +1294,9 @@ void amd_inst_PRED_SETGT_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_PRED_SETGE_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_PRED_SETGE_impl()
 {
 	float src0, src1;
 	union evg_reg_t dst;
@@ -1322,9 +1321,9 @@ void amd_inst_PRED_SETGE_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_PRED_SETNE_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_PRED_SETNE_impl()
 {
 	float src0, src1;
 	union evg_reg_t dst;
@@ -1349,67 +1348,79 @@ void amd_inst_PRED_SETNE_impl()
 #undef W1
 
 
-void amd_inst_PRED_SET_INV_impl() {
+void evg_isa_PRED_SET_INV_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SET_POP_impl() {
+void evg_isa_PRED_SET_POP_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SET_CLR_impl() {
+void evg_isa_PRED_SET_CLR_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SET_RESTORE_impl() {
+void evg_isa_PRED_SET_RESTORE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETE_PUSH_impl() {
+void evg_isa_PRED_SETE_PUSH_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETGT_PUSH_impl() {
+void evg_isa_PRED_SETGT_PUSH_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETGE_PUSH_impl() {
+void evg_isa_PRED_SETGE_PUSH_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETNE_PUSH_impl() {
+void evg_isa_PRED_SETNE_PUSH_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_KILLE_impl() {
+void evg_isa_KILLE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_KILLGT_impl() {
+void evg_isa_KILLGT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_KILLGE_impl() {
+void evg_isa_KILLGE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_KILLNE_impl() {
+void evg_isa_KILLNE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_AND_INT_impl()
+void evg_isa_AND_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
@@ -1420,7 +1431,7 @@ void amd_inst_AND_INT_impl()
 }
 
 
-void amd_inst_OR_INT_impl()
+void evg_isa_OR_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
@@ -1431,7 +1442,7 @@ void amd_inst_OR_INT_impl()
 }
 
 
-void amd_inst_XOR_INT_impl()
+void evg_isa_XOR_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
@@ -1442,12 +1453,13 @@ void amd_inst_XOR_INT_impl()
 }
 
 
-void amd_inst_NOT_INT_impl() {
+void evg_isa_NOT_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_ADD_INT_impl()
+void evg_isa_ADD_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
@@ -1458,7 +1470,7 @@ void amd_inst_ADD_INT_impl()
 }
 
 
-void amd_inst_SUB_INT_impl()
+void evg_isa_SUB_INT_impl()
 {
 	uint32_t src0, src1, dst;
 
@@ -1469,7 +1481,7 @@ void amd_inst_SUB_INT_impl()
 }
 
 
-void amd_inst_MAX_INT_impl()
+void evg_isa_MAX_INT_impl()
 {
 	int32_t src0, src1, dst;
 
@@ -1480,7 +1492,7 @@ void amd_inst_MAX_INT_impl()
 }
 
 
-void amd_inst_MIN_INT_impl()
+void evg_isa_MIN_INT_impl()
 {
 	int32_t src0, src1, dst;
 
@@ -1491,7 +1503,7 @@ void amd_inst_MIN_INT_impl()
 }
 
 
-void amd_inst_MAX_UINT_impl()
+void evg_isa_MAX_UINT_impl()
 {
 	uint32_t src0, src1, dst;
 
@@ -1502,7 +1514,7 @@ void amd_inst_MAX_UINT_impl()
 }
 
 
-void amd_inst_MIN_UINT_impl()
+void evg_isa_MIN_UINT_impl()
 {
 	uint32_t src0, src1, dst;
 
@@ -1513,9 +1525,9 @@ void amd_inst_MIN_UINT_impl()
 }
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETE_INT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETE_INT_impl()
 {
 	uint32_t src0, src1;
 	int32_t dst;
@@ -1534,9 +1546,9 @@ void amd_inst_SETE_INT_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETGT_INT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETGT_INT_impl()
 {
 	int32_t src0, src1;
 	int32_t dst;
@@ -1555,9 +1567,9 @@ void amd_inst_SETGT_INT_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETGE_INT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETGE_INT_impl()
 {
 	int32_t src0, src1;
 	int32_t dst;
@@ -1576,9 +1588,9 @@ void amd_inst_SETGE_INT_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETNE_INT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETNE_INT_impl()
 {
 	int32_t src0, src1;
 	int32_t dst;
@@ -1599,9 +1611,9 @@ void amd_inst_SETNE_INT_impl()
 
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETGT_UINT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETGT_UINT_impl()
 {
 	uint32_t src0, src1;
 	int32_t dst;
@@ -1620,9 +1632,9 @@ void amd_inst_SETGT_UINT_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_SETGE_UINT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_SETGE_UINT_impl()
 {
 	uint32_t src0, src1;
 	int32_t dst;
@@ -1641,19 +1653,21 @@ void amd_inst_SETGE_UINT_impl()
 #undef W1
 
 
-void amd_inst_KILLGT_UINT_impl() {
+void evg_isa_KILLGT_UINT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_KILLGE_UINT_impl() {
+void evg_isa_KILLGE_UINT_impl()
+{
 	NOT_IMPL();
 }
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_PREDE_INT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_PREDE_INT_impl()
 {
 	int32_t src0, src1;
 	union evg_reg_t dst;
@@ -1678,9 +1692,9 @@ void amd_inst_PREDE_INT_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_PRED_SETGE_INT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_PRED_SETGE_INT_impl()
 {
 	int32_t src0, src1;
 	union evg_reg_t dst;
@@ -1705,9 +1719,9 @@ void amd_inst_PRED_SETGE_INT_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_PRED_SETGT_INT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_PRED_SETGT_INT_impl()
 {
 	int32_t src0, src1;
 	union evg_reg_t dst;
@@ -1732,9 +1746,9 @@ void amd_inst_PRED_SETGT_INT_impl()
 #undef W1
 
 
-#define W0 gpu_isa_inst->words[0].alu_word0
-#define W1 gpu_isa_inst->words[1].alu_word1_op2
-void amd_inst_PRED_SETNE_INT_impl()
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
+void evg_isa_PRED_SETNE_INT_impl()
 {
 	int32_t src0, src1;
 	union evg_reg_t dst;
@@ -1759,57 +1773,67 @@ void amd_inst_PRED_SETNE_INT_impl()
 #undef W1
 
 
-void amd_inst_KILLE_INT_impl() {
+void evg_isa_KILLE_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_KILLGT_INT_impl() {
+void evg_isa_KILLGT_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_KILLGE_INT_impl() {
+void evg_isa_KILLGE_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_KILLNE_INT_impl() {
+void evg_isa_KILLNE_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETE_PUSH_INT_impl() {
+void evg_isa_PRED_SETE_PUSH_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETGT_PUSH_INT_impl() {
+void evg_isa_PRED_SETGT_PUSH_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETGE_PUSH_INT_impl() {
+void evg_isa_PRED_SETGE_PUSH_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETNE_PUSH_INT_impl() {
+void evg_isa_PRED_SETNE_PUSH_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETLT_PUSH_INT_impl() {
+void evg_isa_PRED_SETLT_PUSH_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_PRED_SETLE_PUSH_INT_impl() {
+void evg_isa_PRED_SETLE_PUSH_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_FLT_TO_INT_impl()
+void evg_isa_FLT_TO_INT_impl()
 {
 	float src;
 	int32_t dst;
@@ -1827,109 +1851,123 @@ void amd_inst_FLT_TO_INT_impl()
 }
 
 
-void amd_inst_BFREV_INT_impl() {
+void evg_isa_BFREV_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_ADDC_UINT_impl() {
+void evg_isa_ADDC_UINT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SUBB_UINT_impl() {
+void evg_isa_SUBB_UINT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GROUP_BARRIER_impl()
+void evg_isa_GROUP_BARRIER_impl()
 {
 	/* Only the first work-item in a wavefront handles barriers */
-	if (gpu_isa_work_item->id_in_wavefront)
+	if (evg_isa_work_item->id_in_wavefront)
 		return;
 	
 	/* Suspend current wavefront at the barrier */
-	assert(DOUBLE_LINKED_LIST_MEMBER(gpu_isa_work_group, running, gpu_isa_wavefront));
-	DOUBLE_LINKED_LIST_REMOVE(gpu_isa_work_group, running, gpu_isa_wavefront);
-	DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_isa_work_group, barrier, gpu_isa_wavefront);
+	assert(DOUBLE_LINKED_LIST_MEMBER(evg_isa_work_group, running, evg_isa_wavefront));
+	DOUBLE_LINKED_LIST_REMOVE(evg_isa_work_group, running, evg_isa_wavefront);
+	DOUBLE_LINKED_LIST_INSERT_TAIL(evg_isa_work_group, barrier, evg_isa_wavefront);
 	evg_isa_debug("%s (gid=%d) reached barrier (%d reached, %d left)\n",
-		gpu_isa_wavefront->name, gpu_isa_work_group->id, gpu_isa_work_group->barrier_list_count,
-		gpu_isa_work_group->wavefront_count - gpu_isa_work_group->barrier_list_count);
+		evg_isa_wavefront->name, evg_isa_work_group->id, evg_isa_work_group->barrier_list_count,
+		evg_isa_work_group->wavefront_count - evg_isa_work_group->barrier_list_count);
 	
 	/* If all wavefronts in work-group reached the barrier, wake them up */
-	if (gpu_isa_work_group->barrier_list_count == gpu_isa_work_group->wavefront_count)
+	if (evg_isa_work_group->barrier_list_count == evg_isa_work_group->wavefront_count)
 	{
 		struct evg_wavefront_t *wavefront;
-		while (gpu_isa_work_group->barrier_list_head)
+		while (evg_isa_work_group->barrier_list_head)
 		{
-			wavefront = gpu_isa_work_group->barrier_list_head;
-			DOUBLE_LINKED_LIST_REMOVE(gpu_isa_work_group, barrier, wavefront);
-			DOUBLE_LINKED_LIST_INSERT_TAIL(gpu_isa_work_group, running, wavefront);
+			wavefront = evg_isa_work_group->barrier_list_head;
+			DOUBLE_LINKED_LIST_REMOVE(evg_isa_work_group, barrier, wavefront);
+			DOUBLE_LINKED_LIST_INSERT_TAIL(evg_isa_work_group, running, wavefront);
 		}
-		assert(gpu_isa_work_group->running_list_count == gpu_isa_work_group->wavefront_count);
-		assert(gpu_isa_work_group->barrier_list_count == 0);
+		assert(evg_isa_work_group->running_list_count == evg_isa_work_group->wavefront_count);
+		assert(evg_isa_work_group->barrier_list_count == 0);
 		evg_isa_debug("%s completed barrier, waking up wavefronts\n",
-			gpu_isa_work_group->name);
+			evg_isa_work_group->name);
 	}
 }
 
 
-void amd_inst_GROUP_SEQ_BEGIN_impl() {
+void evg_isa_GROUP_SEQ_BEGIN_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GROUP_SEQ_END_impl() {
+void evg_isa_GROUP_SEQ_END_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SET_MODE_impl() {
+void evg_isa_SET_MODE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SET_CF_IDX0_impl() {
+void evg_isa_SET_CF_IDX0_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SET_CF_IDX1_impl() {
+void evg_isa_SET_CF_IDX1_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SET_LDS_SIZE_impl() {
+void evg_isa_SET_LDS_SIZE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_EXP_IEEE_impl() {
+void evg_isa_EXP_IEEE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_LOG_CLAMPED_impl() {
+void evg_isa_LOG_CLAMPED_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_LOG_IEEE_impl() {
+void evg_isa_LOG_IEEE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_RECIP_CLAMPED_impl() {
+void evg_isa_RECIP_CLAMPED_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_RECIP_FF_impl() {
+void evg_isa_RECIP_FF_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_RECIP_IEEE_impl()
+void evg_isa_RECIP_IEEE_impl()
 {
 	float src, dst;
 
@@ -1939,22 +1977,25 @@ void amd_inst_RECIP_IEEE_impl()
 }
 
 
-void amd_inst_RECIPSQRT_CLAMPED_impl() {
+void evg_isa_RECIPSQRT_CLAMPED_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_RECIPSQRT_FF_impl() {
+void evg_isa_RECIPSQRT_FF_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_RECIPSQRT_IEEE_impl() {
+void evg_isa_RECIPSQRT_IEEE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SQRT_IEEE_impl()
+void evg_isa_SQRT_IEEE_impl()
 {
 	float src, dst;
 
@@ -1964,7 +2005,7 @@ void amd_inst_SQRT_IEEE_impl()
 }
 
 
-void amd_inst_SIN_impl()
+void evg_isa_SIN_impl()
 {
 	float src, dst;
 
@@ -1974,7 +2015,7 @@ void amd_inst_SIN_impl()
 }
 
 
-void amd_inst_COS_impl()
+void evg_isa_COS_impl()
 {
 	float src, dst;
 
@@ -1984,7 +2025,7 @@ void amd_inst_COS_impl()
 }
 
 
-void amd_inst_MULLO_INT_impl()
+void evg_isa_MULLO_INT_impl()
 {
 	int64_t src0, src1, dst;
 
@@ -1995,7 +2036,7 @@ void amd_inst_MULLO_INT_impl()
 }
 
 
-void amd_inst_MULHI_INT_impl()
+void evg_isa_MULHI_INT_impl()
 {
 	int64_t src0, src1, dst;
 
@@ -2006,7 +2047,7 @@ void amd_inst_MULHI_INT_impl()
 }
 
 
-void amd_inst_MULLO_UINT_impl()
+void evg_isa_MULLO_UINT_impl()
 {
 	uint64_t src0, src1, dst;
 
@@ -2017,7 +2058,7 @@ void amd_inst_MULLO_UINT_impl()
 }
 
 
-void amd_inst_MULHI_UINT_impl()
+void evg_isa_MULHI_UINT_impl()
 {
 	uint64_t src0, src1, dst;
 
@@ -2028,12 +2069,13 @@ void amd_inst_MULHI_UINT_impl()
 }
 
 
-void amd_inst_RECIP_INT_impl() {
+void evg_isa_RECIP_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_RECIP_UINT_impl()
+void evg_isa_RECIP_UINT_impl()
 {
 	uint32_t src;
 	uint32_t dst;
@@ -2044,32 +2086,37 @@ void amd_inst_RECIP_UINT_impl()
 }
 
 
-void amd_inst_RECIP_64_impl() {
+void evg_isa_RECIP_64_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_RECIP_CLAMPED_64_impl() {
+void evg_isa_RECIP_CLAMPED_64_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_RECIPSQRT_64_impl() {
+void evg_isa_RECIPSQRT_64_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_RECIPSQRT_CLAMPED_64_impl() {
+void evg_isa_RECIPSQRT_CLAMPED_64_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SQRT_64_impl() {
+void evg_isa_SQRT_64_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_FLT_TO_UINT_impl()
+void evg_isa_FLT_TO_UINT_impl()
 {
 	float src;
 	uint32_t dst;
@@ -2085,7 +2132,7 @@ void amd_inst_FLT_TO_UINT_impl()
 }
 
 
-void amd_inst_INT_TO_FLT_impl()
+void evg_isa_INT_TO_FLT_impl()
 {
 	int32_t src0;
 	float dst;
@@ -2096,7 +2143,7 @@ void amd_inst_INT_TO_FLT_impl()
 }
 
 
-void amd_inst_UINT_TO_FLT_impl()
+void evg_isa_UINT_TO_FLT_impl()
 {
 	uint32_t src0;
 	float dst;
@@ -2107,313 +2154,373 @@ void amd_inst_UINT_TO_FLT_impl()
 }
 
 
-void amd_inst_BFM_INT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FLT32_TO_FLT16_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FLT16_TO_FLT32_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_UBYTE0_FLT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_UBYTE1_FLT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_UBYTE2_FLT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_UBYTE3_FLT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_BCNT_INT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FFBH_UINT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FFBL_INT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FFBH_INT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FLT_TO_UINT4_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_DOT_IEEE_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FLT_TO_INT_RPI_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FLT_TO_INT_FLOOR_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MULHI_UINT24_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MBCNT_32HI_INT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_OFFSET_TO_FLT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MUL_UINT24_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_BCNT_ACCUM_PREV_INT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MBCNT_32LO_ACCUM_PREV_INT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_SETE_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_SETNE_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_SETGT_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_SETGE_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MIN_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MAX_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_DOT4_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_DOT4_IEEE_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_CUBE_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MAX4_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FREXP_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_LDEXP_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FRACT_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_PRED_SETGT_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_PRED_SETE_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_PRED_SETGE_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MUL_64_VEC_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_ADD_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MOVA_INT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FLT64_TO_FLT32_VEC_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FLT32_TO_FLT64_VEC_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_SAD_ACCUM_PREV_UINT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_DOT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MUL_PREV_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MUL_IEEE_PREV_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_ADD_PREV_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MULADD_PREV_impl()
+void evg_isa_BFM_INT_impl()
 {
 	NOT_IMPL();
 }
 
 
-void amd_inst_MULADD_IEEE_PREV_impl() {
+void evg_isa_FLT32_TO_FLT16_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_INTERP_XY_impl() {
+void evg_isa_FLT16_TO_FLT32_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_INTERP_ZW_impl() {
+void evg_isa_UBYTE0_FLT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_INTERP_X_impl() {
+void evg_isa_UBYTE1_FLT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_INTERP_Z_impl() {
+void evg_isa_UBYTE2_FLT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_STORE_FLAGS_impl() {
+void evg_isa_UBYTE3_FLT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_LOAD_STORE_FLAGS_impl() {
+void evg_isa_BCNT_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_LDS_1A_impl() {
+void evg_isa_FFBH_UINT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_LDS_1A1D_impl() {
+void evg_isa_FFBL_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_LDS_2A_impl() {
+void evg_isa_FFBH_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_INTERP_LOAD_P0_impl() {
+void evg_isa_FLT_TO_UINT4_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_INTERP_LOAD_P10_impl() {
+void evg_isa_DOT_IEEE_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_INTERP_LOAD_P20_impl() {
+void evg_isa_FLT_TO_INT_RPI_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_BFE_UINT_impl() 
+void evg_isa_FLT_TO_INT_FLOOR_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MULHI_UINT24_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MBCNT_32HI_INT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_OFFSET_TO_FLT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MUL_UINT24_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_BCNT_ACCUM_PREV_INT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MBCNT_32LO_ACCUM_PREV_INT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_SETE_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_SETNE_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_SETGT_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_SETGE_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MIN_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MAX_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_DOT4_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_DOT4_IEEE_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_CUBE_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MAX4_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_FREXP_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_LDEXP_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_FRACT_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_PRED_SETGT_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_PRED_SETE_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_PRED_SETGE_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MUL_64_VEC_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_ADD_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MOVA_INT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_FLT64_TO_FLT32_VEC_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_FLT32_TO_FLT64_VEC_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_SAD_ACCUM_PREV_UINT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_DOT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MUL_PREV_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MUL_IEEE_PREV_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_ADD_PREV_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MULADD_PREV_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MULADD_IEEE_PREV_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_INTERP_XY_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_INTERP_ZW_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_INTERP_X_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_INTERP_Z_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_STORE_FLAGS_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_LOAD_STORE_FLAGS_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_LDS_1A_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_LDS_1A1D_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_LDS_2A_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_INTERP_LOAD_P0_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_INTERP_LOAD_P10_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_INTERP_LOAD_P20_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_BFE_UINT_impl() 
 {
 	uint32_t src0, src1, src2, dst;
 
@@ -2441,7 +2548,8 @@ void amd_inst_BFE_UINT_impl()
 }
 
 
-void amd_inst_BFE_INT_impl() {
+void evg_isa_BFE_INT_impl()
+{
 
         uint32_t src0, src1, src2, dst;
 
@@ -2469,7 +2577,7 @@ void amd_inst_BFE_INT_impl() {
 }
 
 
-void amd_inst_BFI_INT_impl()
+void evg_isa_BFI_INT_impl()
 {
 
 	uint32_t src0, src1, src2, dst;
@@ -2485,58 +2593,67 @@ void amd_inst_BFI_INT_impl()
 }
 
 
-void amd_inst_FMA_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_CNDNE_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_FMA_64_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_LERP_UINT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_BIT_ALIGN_INT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_BYTE_ALIGN_INT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_SAD_ACCUM_UINT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_SAD_ACCUM_HI_UINT_impl() {
-	NOT_IMPL();
-}
-
-
-void amd_inst_MULADD_UINT24_impl() {
-	NOT_IMPL();
-}
-
-
-#define W0 gpu_isa_inst->words[0].alu_word0_lds_idx_op
-#define W1 gpu_isa_inst->words[1].alu_word1_lds_idx_op
-void amd_inst_LDS_IDX_OP_impl()
+void evg_isa_FMA_impl()
 {
-	struct evg_wavefront_t *wavefront = gpu_isa_wavefront;
-	struct evg_work_item_t *work_item = gpu_isa_work_item;
-	struct mem_t *local_mem = gpu_isa_work_group->local_mem;
+	NOT_IMPL();
+}
+
+
+void evg_isa_CNDNE_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_FMA_64_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_LERP_UINT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_BIT_ALIGN_INT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_BYTE_ALIGN_INT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_SAD_ACCUM_UINT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_SAD_ACCUM_HI_UINT_impl()
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_MULADD_UINT24_impl()
+{
+	NOT_IMPL();
+}
+
+
+#define W0 evg_isa_inst->words[0].alu_word0_lds_idx_op
+#define W1 evg_isa_inst->words[1].alu_word1_lds_idx_op
+void evg_isa_LDS_IDX_OP_impl()
+{
+	struct evg_wavefront_t *wavefront = evg_isa_wavefront;
+	struct evg_work_item_t *work_item = evg_isa_work_item;
+	struct mem_t *local_mem = evg_isa_work_group->local_mem;
 	unsigned int idx_offset;
 	uint32_t op0, op1, op2;
 
@@ -2646,9 +2763,9 @@ void amd_inst_LDS_IDX_OP_impl()
 			fatal("%s: out of memory", __FUNCTION__);
 
 		mem_read(local_mem, op0, 4, value_ptr);
-		list_enqueue(gpu_isa_work_item->lds_oqa, value_ptr);
+		list_enqueue(evg_isa_work_item->lds_oqa, value_ptr);
 		evg_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA",
-			gpu_isa_work_item->id, op0, value_ptr->as_uint, value_ptr->as_float);
+			evg_isa_work_item->id, op0, value_ptr->as_uint, value_ptr->as_float);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -2671,14 +2788,14 @@ void amd_inst_LDS_IDX_OP_impl()
 			fatal("%s: out of memory", __FUNCTION__);
 
 		mem_read(local_mem, op0, 4, value_ptr);
-		list_enqueue(gpu_isa_work_item->lds_oqa, value_ptr);
+		list_enqueue(evg_isa_work_item->lds_oqa, value_ptr);
 
 		value_ptr = malloc(4);
 		if (!value_ptr)
 			fatal("%s: out of memory", __FUNCTION__);
 
 		mem_read(local_mem, op1, 4, value_ptr);
-		list_enqueue(gpu_isa_work_item->lds_oqb, value_ptr);
+		list_enqueue(evg_isa_work_item->lds_oqb, value_ptr);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 2;
@@ -2706,7 +2823,7 @@ void amd_inst_LDS_IDX_OP_impl()
 			fatal("%s: out of memory", __FUNCTION__);
 
 		*pvalue_se = value;
-		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_se);
+		list_enqueue(evg_isa_work_item->lds_oqa, pvalue_se);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -2731,7 +2848,7 @@ void amd_inst_LDS_IDX_OP_impl()
 			fatal("%s: out of memory", __FUNCTION__);
 
 		*pvalue_24h0 = value;
-		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_24h0);
+		list_enqueue(evg_isa_work_item->lds_oqa, pvalue_24h0);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -2755,8 +2872,8 @@ void amd_inst_LDS_IDX_OP_impl()
 			fatal("%s: out of memory", __FUNCTION__);
 
 		*pvalue_se = value;
-		evg_isa_debug("  t%d: %d (pvalue = %d)", gpu_isa_work_item->id, value, *pvalue_se);
-		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_se);
+		evg_isa_debug("  t%d: %d (pvalue = %d)", evg_isa_work_item->id, value, *pvalue_se);
+		list_enqueue(evg_isa_work_item->lds_oqa, pvalue_se);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -2780,7 +2897,7 @@ void amd_inst_LDS_IDX_OP_impl()
 			fatal("%s: out of memory", __FUNCTION__);
 
 		*pvalue_16h0 = value;
-		list_enqueue(gpu_isa_work_item->lds_oqa, pvalue_16h0);
+		list_enqueue(evg_isa_work_item->lds_oqa, pvalue_16h0);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -2798,7 +2915,7 @@ void amd_inst_LDS_IDX_OP_impl()
 #undef W1
 
 
-void amd_inst_MULADD_impl()
+void evg_isa_MULADD_impl()
 {
 	float src0, src1, src2, dst;
 
@@ -2810,22 +2927,25 @@ void amd_inst_MULADD_impl()
 }
 
 
-void amd_inst_MULADD_M2_impl() {
+void evg_isa_MULADD_M2_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_MULADD_M4_impl() {
+void evg_isa_MULADD_M4_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_MULADD_D2_impl() {
+void evg_isa_MULADD_D2_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_MULADD_IEEE_impl()
+void evg_isa_MULADD_IEEE_impl()
 {
 	float src0, src1, src2, dst;
 
@@ -2837,7 +2957,7 @@ void amd_inst_MULADD_IEEE_impl()
 }
 
 
-void amd_inst_CNDE_impl()
+void evg_isa_CNDE_impl()
 {
 	float src0, src1, src2, dst;
 
@@ -2849,7 +2969,7 @@ void amd_inst_CNDE_impl()
 }
 
 
-void amd_inst_CNDGT_impl()
+void evg_isa_CNDGT_impl()
 {
 	float src0, src1, src2, dst;
 
@@ -2861,7 +2981,7 @@ void amd_inst_CNDGT_impl()
 }
 
 
-void amd_inst_CNDGE_impl()
+void evg_isa_CNDGE_impl()
 {
 	float src0, src1, src2, dst;
 
@@ -2873,7 +2993,7 @@ void amd_inst_CNDGE_impl()
 }
 
 
-void amd_inst_CNDE_INT_impl()
+void evg_isa_CNDE_INT_impl()
 {
 	uint32_t src0, src1, src2, dst;
 
@@ -2885,17 +3005,20 @@ void amd_inst_CNDE_INT_impl()
 }
 
 
-void amd_inst_CMNDGT_INT_impl() {
+void evg_isa_CMNDGT_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_CMNDGE_INT_impl() {
+void evg_isa_CMNDGE_INT_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_MUL_LIT_impl() {
+void evg_isa_MUL_LIT_impl()
+{
 	NOT_IMPL();
 }
 
@@ -2903,7 +3026,7 @@ void amd_inst_MUL_LIT_impl() {
 #define W0  EVG_VTX_WORD0
 #define W1  EVG_VTX_WORD1_GPR
 #define W2  EVG_VTX_WORD2
-void amd_inst_FETCH_impl()
+void evg_isa_FETCH_impl()
 {
 	uint32_t addr;
 	uint32_t base_addr;
@@ -2944,7 +3067,7 @@ void amd_inst_FETCH_impl()
 	/* W2.mf (mega_fetch) */
 
 	/* Do not fetch for inactive work_items */
-	if (!evg_work_item_get_active(gpu_isa_work_item))
+	if (!evg_work_item_get_active(evg_isa_work_item))
 		return;
 	
 	/* Store 'dst_sel_{x,y,z,w}' in array */
@@ -2967,7 +3090,7 @@ void amd_inst_FETCH_impl()
 		/* Information is in a constant buffer (filled by us) */
 		else if (W0.buffer_id >= 130 && W0.buffer_id < 153)
 		{ /* FIXME Verify that 153 is correct */
-			mem = list_get(gpu_isa_ndrange->kernel->constant_buffer_list, W0.buffer_id-128);
+			mem = list_get(evg_isa_ndrange->kernel->constant_buffer_list, W0.buffer_id-128);
 			if(!mem) 
 				fatal("No table entry for constant UAV %d\n", W0.buffer_id);
 
@@ -3119,16 +3242,16 @@ void amd_inst_FETCH_impl()
 
 	/* Address */
 	addr = base_addr + evg_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * (num_elem*elem_size);
-	evg_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr);
+	evg_isa_debug("  t%d:read(%u)", evg_isa_work_item->id, addr);
 
 	/* FIXME The number of bytes to read is defined by mega_fetch, but we currently
 	 * cannot handle cases where num_elem*elem_size != mega_fetch */
 	mem_read(evg_emu->global_mem, addr + W2.offset, num_elem * elem_size, value);
 
 	/* Record global memory access */
-	gpu_isa_wavefront->global_mem_read = 1;
-	gpu_isa_work_item->global_mem_access_addr = addr;
-	gpu_isa_work_item->global_mem_access_size = num_elem * elem_size;
+	evg_isa_wavefront->global_mem_read = 1;
+	evg_isa_work_item->global_mem_access_addr = addr;
+	evg_isa_work_item->global_mem_access_size = num_elem * elem_size;
 
 	/* Write to each component of the GPR */
 	for (i = 0; i < 4; i++)
@@ -3171,67 +3294,80 @@ void amd_inst_FETCH_impl()
 #undef W2
 
 
-void amd_inst_GET_BUFFER_RESINFO_impl() {
+void evg_isa_GET_BUFFER_RESINFO_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SEMANTIC_impl() {
+void evg_isa_SEMANTIC_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GATHER4_impl() {
+void evg_isa_GATHER4_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GATHER4_C_impl() {
+void evg_isa_GATHER4_C_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GATHER4_C_O_impl() {
+void evg_isa_GATHER4_C_O_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GATHER4_O_impl() {
+void evg_isa_GATHER4_O_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GET_GRADIENTS_H_impl() {
+void evg_isa_GET_GRADIENTS_H_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GET_GRADIENTS_V_impl() {
+void evg_isa_GET_GRADIENTS_V_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GET_LOD_impl() {
+void evg_isa_GET_LOD_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GET_NUMBER_OF_SAMPLES_impl() {
+void evg_isa_GET_NUMBER_OF_SAMPLES_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_GET_TEXTURE_RESINFO_impl() {
+void evg_isa_GET_TEXTURE_RESINFO_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_KEEP_GRADIENTS_impl() {
+void evg_isa_KEEP_GRADIENTS_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_LD_impl() {
+void evg_isa_LD_impl()
+{
 	NOT_IMPL();
 }
 
@@ -3239,7 +3375,7 @@ void amd_inst_LD_impl() {
 #define W0  EVG_TEX_WORD0
 #define W1  EVG_TEX_WORD1
 #define W2  EVG_TEX_WORD2
-void amd_inst_SAMPLE_impl()
+void evg_isa_SAMPLE_impl()
 {
 	int i;
 	uint32_t base_addr;
@@ -3280,7 +3416,7 @@ void amd_inst_SAMPLE_impl()
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W2.ssx, 0); 
 
 	/* Look up the image object based on UAV */
-	image = list_get(gpu_isa_ndrange->kernel->uav_read_list, W0.resource_id);
+	image = list_get(evg_isa_ndrange->kernel->uav_read_list, W0.resource_id);
 	if(!image) 
 		fatal("No table entry for read-only UAV %d\n", W0.resource_id);
 
@@ -3293,11 +3429,11 @@ void amd_inst_SAMPLE_impl()
 
 	mem_read(evg_emu->global_mem, addr.as_uint, pixel_size, &value);
 
-	evg_isa_debug("  t%d:read(%u)", gpu_isa_work_item->id, addr.as_uint);
+	evg_isa_debug("  t%d:read(%u)", evg_isa_work_item->id, addr.as_uint);
 	evg_isa_debug("<=(%d,%gf) ", value.as_int, value.as_float);
 
 	/* Do not fetch for inactive work_items */
-	if (!evg_work_item_get_active(gpu_isa_work_item))
+	if (!evg_work_item_get_active(evg_isa_work_item))
 		return;
 
 	/* Store 'dst_sel_{x,y,z,w}' in array */
@@ -3307,9 +3443,9 @@ void amd_inst_SAMPLE_impl()
 	dst_sel[3] = W1.dsw;
 	
 	/* Record global memory access */
-	gpu_isa_wavefront->global_mem_read = 1;
-	gpu_isa_work_item->global_mem_access_addr = addr.as_uint;
-	gpu_isa_work_item->global_mem_access_size = pixel_size;
+	evg_isa_wavefront->global_mem_read = 1;
+	evg_isa_work_item->global_mem_access_addr = addr.as_uint;
+	evg_isa_work_item->global_mem_access_size = pixel_size;
 
 	/* Write to each component of the GPR */
 	for (i = 0; i < 4; i++) {
@@ -3348,75 +3484,91 @@ void amd_inst_SAMPLE_impl()
 #undef W2
 
 
-void amd_inst_SAMPLE_C_impl() {
+void evg_isa_SAMPLE_C_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SAMPLE_C_G_impl() {
+void evg_isa_SAMPLE_C_G_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SAMPLE_C_G_LB_impl() {
+void evg_isa_SAMPLE_C_G_LB_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SAMPLE_C_L_impl() {
+void evg_isa_SAMPLE_C_L_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SAMPLE_C_LB_impl() {
+void evg_isa_SAMPLE_C_LB_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SAMPLE_C_LZ_impl() {
+void evg_isa_SAMPLE_C_LZ_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SAMPLE_G_impl() {
+void evg_isa_SAMPLE_G_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SAMPLE_G_LB_impl() {
+void evg_isa_SAMPLE_G_LB_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SAMPLE_L_impl() {
+void evg_isa_SAMPLE_L_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SAMPLE_LB_impl() {
+void evg_isa_SAMPLE_LB_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SAMPLE_LZ_impl() {
+void evg_isa_SAMPLE_LZ_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SET_GRADIENTS_H_impl() {
+void evg_isa_SET_GRADIENTS_H_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SET_GRADIENTS_V_impl() {
+void evg_isa_SET_GRADIENTS_V_impl()
+{
 	NOT_IMPL();
 }
 
 
-void amd_inst_SET_TEXTURE_OFFSETS_impl() {
+void evg_isa_SET_TEXTURE_OFFSETS_impl()
+{
 	NOT_IMPL();
 }
 
-void amd_inst_MEM_impl(){
+void evg_isa_MEM_impl()
+{
 	NOT_IMPL();
 }
+
