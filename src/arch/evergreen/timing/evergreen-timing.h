@@ -25,59 +25,6 @@
 
 
 
-/* Public variables */
-
-extern char *evg_config_help;
-extern char *evg_config_file_name;
-extern char *evg_report_file_name;
-
-extern int evg_pipeline_debug_category;
-
-extern int evg_num_stream_cores;
-extern int evg_num_compute_units;
-extern int evg_num_registers;
-extern int evg_register_alloc_size;
-
-extern struct string_map_t evg_register_alloc_granularity_map;
-extern enum evg_register_alloc_granularity_t
-{
-	evg_register_alloc_invalid = 0,  /* For invalid user input */
-	evg_register_alloc_wavefront,
-	evg_register_alloc_work_group
-} evg_register_alloc_granularity;
-
-extern int evg_max_work_groups_per_compute_unit;
-extern int evg_max_wavefronts_per_compute_unit;
-
-extern struct string_map_t evg_sched_policy_map;
-extern enum evg_sched_policy_t
-{
-	evg_sched_invalid = 0,  /* For invalid user input */
-	evg_sched_round_robin,
-	evg_sched_greedy
-} evg_sched_policy;
-
-extern char *evg_calc_file_name;
-
-extern int evg_local_mem_size;
-extern int evg_local_mem_alloc_size;
-extern int evg_local_mem_latency;
-extern int evg_local_mem_block_size;
-extern int evg_local_mem_num_ports;
-
-extern int evg_cf_engine_inst_mem_latency;
-
-extern int evg_alu_engine_inst_mem_latency;
-extern int evg_alu_engine_fetch_queue_size;
-extern int evg_alu_engine_pe_latency;
-
-extern int evg_tex_engine_inst_mem_latency;
-extern int evg_tex_engine_fetch_queue_size;
-extern int evg_tex_engine_load_queue_size;
-
-
-
-
 /*
  * GPU-REL
  */
@@ -372,13 +319,61 @@ void evg_calc_plot(void);
 
 
 /*
- * GPU Device
+ * Evergreen GPU
  */
 
 /* Debugging */
-#define evg_pipeline_debug(...) debug(evg_pipeline_debug_category, __VA_ARGS__)
-#define evg_pipeline_debugging() debug_status(evg_pipeline_debug_category)
-extern int evg_pipeline_debug_category;
+#define evg_gpu_pipeline_debug(...) debug(evg_gpu_pipeline_debug_category, __VA_ARGS__)
+#define evg_gpu_pipeline_debugging() debug_status(evg_gpu_pipeline_debug_category)
+extern int evg_gpu_pipeline_debug_category;
+
+
+extern char *evg_gpu_config_help;
+extern char *evg_gpu_config_file_name;
+extern char *evg_gpu_report_file_name;
+
+extern int evg_gpu_num_stream_cores;
+extern int evg_gpu_num_compute_units;
+extern int evg_gpu_num_registers;
+extern int evg_gpu_register_alloc_size;
+
+extern struct string_map_t evg_gpu_register_alloc_granularity_map;
+extern enum evg_gpu_register_alloc_granularity_t
+{
+	evg_gpu_register_alloc_invalid = 0,  /* For invalid user input */
+	evg_gpu_register_alloc_wavefront,
+	evg_gpu_register_alloc_work_group
+} evg_gpu_register_alloc_granularity;
+
+extern int evg_gpu_max_work_groups_per_compute_unit;
+extern int evg_gpu_max_wavefronts_per_compute_unit;
+
+extern struct string_map_t evg_gpu_sched_policy_map;
+extern enum evg_gpu_sched_policy_t
+{
+	evg_gpu_sched_invalid = 0,  /* For invalid user input */
+	evg_gpu_sched_round_robin,
+	evg_gpu_sched_greedy
+} evg_gpu_sched_policy;
+
+extern char *evg_gpu_calc_file_name;
+
+extern int evg_gpu_local_mem_size;
+extern int evg_gpu_local_mem_alloc_size;
+extern int evg_gpu_local_mem_latency;
+extern int evg_gpu_local_mem_block_size;
+extern int evg_gpu_local_mem_num_ports;
+
+extern int evg_gpu_cf_engine_inst_mem_latency;
+
+extern int evg_gpu_alu_engine_inst_mem_latency;
+extern int evg_gpu_alu_engine_fetch_queue_size;
+extern int evg_gpu_alu_engine_pe_latency;
+
+extern int evg_gpu_tex_engine_inst_mem_latency;
+extern int evg_gpu_tex_engine_fetch_queue_size;
+extern int evg_gpu_tex_engine_load_queue_size;
+
 
 struct evg_gpu_t
 {
@@ -409,13 +404,13 @@ struct evg_gpu_t
 
 extern struct evg_gpu_t *evg_gpu;
 
-#define EVG_FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
-	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < evg_num_compute_units; (COMPUTE_UNIT_ID)++)
+#define EVG_GPU_FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
+	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < evg_gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
 
-#define EVG_FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(WAVEFRONT, SUBWAVEFRONT_ID, WORK_ITEM_ID) \
-	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first + (SUBWAVEFRONT_ID) * evg_num_stream_cores; \
+#define EVG_GPU_FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(WAVEFRONT, SUBWAVEFRONT_ID, WORK_ITEM_ID) \
+	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first + (SUBWAVEFRONT_ID) * evg_gpu_num_stream_cores; \
 		(WORK_ITEM_ID) <= MIN((WAVEFRONT)->work_item_id_first + ((SUBWAVEFRONT_ID) + 1) \
-			* evg_num_stream_cores - 1, (WAVEFRONT)->work_item_id_last); \
+			* evg_gpu_num_stream_cores - 1, (WAVEFRONT)->work_item_id_last); \
 		(WORK_ITEM_ID)++)
 
 void evg_gpu_init(void);

@@ -20,14 +20,14 @@
 #include <evergreen-timing.h>
 
 
-struct string_map_t evg_sched_policy_map =
+struct string_map_t evg_gpu_sched_policy_map =
 {
 		2, {
-			{ "RoundRobin", evg_sched_round_robin },
-			{ "Greedy", evg_sched_greedy }
+			{ "RoundRobin", evg_gpu_sched_round_robin },
+			{ "Greedy", evg_gpu_sched_greedy }
 		}
 	};
-enum evg_sched_policy_t evg_sched_policy;
+enum evg_gpu_sched_policy_t evg_gpu_sched_policy;
 
 
 
@@ -36,7 +36,7 @@ enum evg_sched_policy_t evg_sched_policy;
  * Private Functions
  */
 
-static struct evg_wavefront_t *gpu_schedule_round_robin(struct evg_compute_unit_t *compute_unit)
+static struct evg_wavefront_t *evg_schedule_round_robin(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_wavefront_t *wavefront, *temp_wavefront;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
@@ -72,7 +72,7 @@ static struct evg_wavefront_t *gpu_schedule_round_robin(struct evg_compute_unit_
 }
 
 
-static struct evg_wavefront_t *gpu_schedule_greedy(struct evg_compute_unit_t *compute_unit)
+static struct evg_wavefront_t *evg_schedule_greedy(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_wavefront_t *wavefront, *temp_wavefront;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
@@ -129,17 +129,17 @@ struct evg_wavefront_t *evg_compute_unit_schedule(struct evg_compute_unit_t *com
 		return NULL;
 
 	/* Run different scheduling algorithm depending on configured policy */
-	switch (evg_sched_policy)
+	switch (evg_gpu_sched_policy)
 	{
 
-	case evg_sched_round_robin:
+	case evg_gpu_sched_round_robin:
 
-		wavefront = gpu_schedule_round_robin(compute_unit);
+		wavefront = evg_schedule_round_robin(compute_unit);
 		break;
 
-	case evg_sched_greedy:
+	case evg_gpu_sched_greedy:
 
-		wavefront = gpu_schedule_greedy(compute_unit);
+		wavefront = evg_schedule_greedy(compute_unit);
 		break;
 
 	default:
