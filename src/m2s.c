@@ -428,7 +428,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--gpu-calc"))
 		{
 			sim_need_argument(argc, argv, argi);
-			evg_calc_file_name = argv[++argi];
+			evg_gpu_calc_file_name = argv[++argi];
 			continue;
 		}
 
@@ -436,7 +436,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--gpu-config"))
 		{
 			sim_need_argument(argc, argv, argi);
-			evg_config_file_name = argv[++argi];
+			evg_gpu_config_file_name = argv[++argi];
 			continue;
 		}
 
@@ -515,7 +515,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		/* Help for GPU configuration file */
 		if (!strcmp(argv[argi], "--help-gpu-config"))
 		{
-			fprintf(stderr, "%s", evg_config_help);
+			fprintf(stderr, "%s", evg_gpu_config_help);
 			continue;
 		}
 
@@ -663,7 +663,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--report-gpu-pipeline"))
 		{
 			sim_need_argument(argc, argv, argi);
-			evg_report_file_name = argv[++argi];
+			evg_gpu_report_file_name = argv[++argi];
 			continue;
 		}
 
@@ -744,9 +744,9 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--debug-gpu-stack");
 		if (*evg_faults_debug_file_name)  /* GPU-REL */
 			fatal(msg, "--debug-gpu-faults");
-		if (*evg_config_file_name)
+		if (*evg_gpu_config_file_name)
 			fatal(msg, "--gpu-config");
-		if (*evg_report_file_name)
+		if (*evg_gpu_report_file_name)
 			fatal(msg, "--report-gpu-pipeline");
 	}
 
@@ -911,7 +911,7 @@ int main(int argc, char **argv)
 	evg_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
 	evg_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
-	evg_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);
+	evg_gpu_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);
 	x86_cpu_error_debug_category = debug_new_category(error_debug_file_name);
 	esim_debug_init(esim_debug_file_name);
 

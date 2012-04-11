@@ -25,19 +25,19 @@
 
 char *evg_faults_file_name = "";
 
-enum gpu_fault_type_enum
+enum evg_fault_type_enum
 {
-	gpu_fault_ams,
-	gpu_fault_reg,
-	gpu_fault_mem
+	evg_fault_ams,
+	evg_fault_reg,
+	evg_fault_mem
 };
 
-struct gpu_fault_t
+struct evg_fault_t
 {
-	enum gpu_fault_type_enum type;
+	enum evg_fault_type_enum type;
 	long long cycle;
-	int compute_unit_id;  /* 0, evg_num_compute_units - 1 ] */
-	int stack_id;  /* [ 0, evg_max_wavefronts_per_compute_unit - 1 ] */
+	int compute_unit_id;  /* 0, evg_gpu_num_compute_units - 1 ] */
+	int stack_id;  /* [ 0, evg_gpu_max_wavefronts_per_compute_unit - 1 ] */
 	int active_mask_id;  /* [ 0, EVG_MAX_STACK_SIZE - 1 ] */
 	int bit;
 	int reg_id;
@@ -45,10 +45,10 @@ struct gpu_fault_t
 };
 
 /* Number of faults causing error */
-int gpu_fault_errors;
+static int evg_fault_errors;
 
 /* List of faults read from fault injection file */
-struct linked_list_t *gpu_fault_list;
+static struct linked_list_t *evg_fault_list;
 
 int evg_faults_debug_category;
 char *evg_faults_debug_file_name = "";
@@ -58,7 +58,7 @@ char *evg_faults_debug_file_name = "";
  * Private Functions
  */
 
-static int gpu_stack_faults_is_odep(struct evg_uop_t *uop,
+static int evg_stack_faults_is_odep(struct evg_uop_t *uop,
 	struct evg_wavefront_t *wavefront, int lo_reg)
 {
 	int i;
@@ -72,7 +72,7 @@ static int gpu_stack_faults_is_odep(struct evg_uop_t *uop,
 }
 
 
-static int gpu_stack_faults_is_idep(struct evg_uop_t *uop,
+static int evg_stack_faults_is_idep(struct evg_uop_t *uop,
 	struct evg_wavefront_t *wavefront, int lo_reg)
 {
 	int i;
@@ -97,11 +97,11 @@ void evg_faults_init(void)
 	FILE *f;
 	char line[MAX_STRING_SIZE];
 	char *line_ptr;
-	struct gpu_fault_t *fault;
+	struct evg_fault_t *fault;
 	int line_num;
 	long long last_cycle;
 
-	gpu_fault_list = linked_list_create();
+	evg_fault_list = linked_list_create();
 	if (!*evg_faults_file_name)
 		return;
 
@@ -122,7 +122,7 @@ void evg_faults_init(void)
 			break;
 
 		/* Allocate new fault */
-		fault = calloc(1, sizeof(struct gpu_fault_t));
+		fault = calloc(1, sizeof(struct evg_fault_t));
 		if (!fault)
 			fatal("%s: out of memory", __FUNCTION__);
 
@@ -143,11 +143,11 @@ void evg_faults_init(void)
 		if (!line_ptr)
 			goto wrong_format;
 		if (!strcmp(line_ptr, "ams"))
-			fault->type = gpu_fault_ams;
+			fault->type = evg_fault_ams;
 		else if (!strcmp(line_ptr, "reg"))
-			fault->type = gpu_fault_reg;
+			fault->type = evg_fault_reg;
 		else if (!strcmp(line_ptr, "mem"))
-			fault->type = gpu_fault_mem;
+			fault->type = evg_fault_mem;
 		else
 			fatal("%s: line %d: invalid value for <fault> ('%s')",
 				evg_faults_file_name, line_num, line_ptr);
@@ -157,7 +157,7 @@ void evg_faults_init(void)
 		if (!line_ptr)
 			goto wrong_format;
 		fault->compute_unit_id = atoi(line_ptr);
-		if (fault->compute_unit_id >= evg_num_compute_units || fault->compute_unit_id < 0)
+		if (fault->compute_unit_id >= evg_gpu_num_compute_units || fault->compute_unit_id < 0)
 			fatal("%s: line %d: invalid compute unit ID",
 				evg_faults_file_name, line_num);
 
@@ -165,14 +165,14 @@ void evg_faults_init(void)
 		switch (fault->type)
 		{
 
-		case gpu_fault_ams:
+		case evg_fault_ams:
 
 			/* <stack_id> - Stack ID */
 			line_ptr = strtok(NULL, delim);
 			if (!line_ptr)
 				goto wrong_format;
 			fault->stack_id = atoi(line_ptr);
-			if (fault->stack_id >= evg_max_wavefronts_per_compute_unit)
+			if (fault->stack_id >= evg_gpu_max_wavefronts_per_compute_unit)
 				fatal("%s: line %d: invalid stack ID",
 					evg_faults_file_name, line_num);
 
@@ -201,14 +201,14 @@ void evg_faults_init(void)
 
 			break;
 
-		case gpu_fault_reg:
+		case evg_fault_reg:
 
 			/* <reg_id> - Register ID */
 			line_ptr = strtok(NULL, delim);
 			if (!line_ptr)
 				goto wrong_format;
 			fault->reg_id = atoi(line_ptr);
-			if (fault->reg_id >= evg_num_registers || fault->reg_id < 0)
+			if (fault->reg_id >= evg_gpu_num_registers || fault->reg_id < 0)
 				fatal("%s: line %d: invalid compute unit ID",
 					evg_faults_file_name, line_num);
 
@@ -223,14 +223,14 @@ void evg_faults_init(void)
 
 			break;
 
-		case gpu_fault_mem:
+		case evg_fault_mem:
 
 			/* <byte> - Byte position in local memory */
 			line_ptr = strtok(NULL, delim);
 			if (!line_ptr)
 				goto wrong_format;
 			fault->byte = atoi(line_ptr);
-			if (fault->byte >= evg_local_mem_size || fault->byte < 0)
+			if (fault->byte >= evg_gpu_local_mem_size || fault->byte < 0)
 				fatal("%s: line %d: invalid byte position",
 					evg_faults_file_name, line_num);
 
@@ -247,8 +247,8 @@ void evg_faults_init(void)
 		}
 
 		/* Insert fault in fault list */
-		linked_list_out(gpu_fault_list);
-		linked_list_insert(gpu_fault_list, fault);
+		linked_list_out(evg_fault_list);
+		linked_list_insert(evg_fault_list, fault);
 		last_cycle = fault->cycle;
 		continue;
 
@@ -256,31 +256,31 @@ wrong_format:
 		fatal("%s: line %d: not enough arguments",
 			evg_faults_file_name, line_num);
 	}
-	linked_list_head(gpu_fault_list);
+	linked_list_head(evg_fault_list);
 }
 
 
 void evg_faults_done(void)
 {
-	while (linked_list_count(gpu_fault_list))
+	while (linked_list_count(evg_fault_list))
 	{
-		linked_list_head(gpu_fault_list);
-		free(linked_list_get(gpu_fault_list));
-		linked_list_remove(gpu_fault_list);
+		linked_list_head(evg_fault_list);
+		free(linked_list_get(evg_fault_list));
+		linked_list_remove(evg_fault_list);
 	}
-	linked_list_free(gpu_fault_list);
+	linked_list_free(evg_fault_list);
 }
 
 
 void evg_faults_insert(void)
 {
-	struct gpu_fault_t *fault;
+	struct evg_fault_t *fault;
 	struct evg_compute_unit_t *compute_unit;
 
 	for (;;)
 	{
-		linked_list_head(gpu_fault_list);
-		fault = linked_list_get(gpu_fault_list);
+		linked_list_head(evg_fault_list);
+		fault = linked_list_get(evg_fault_list);
 		if (!fault || fault->cycle > evg_gpu->cycle)
 			break;
 
@@ -288,7 +288,7 @@ void evg_faults_insert(void)
 		switch (fault->type)
 		{
 
-		case gpu_fault_ams:
+		case evg_fault_ams:
 		{
 			struct evg_work_group_t *work_group;
 			struct evg_wavefront_t *wavefront;
@@ -316,7 +316,7 @@ void evg_faults_insert(void)
 			/* Get work-group and wavefront. If wavefront ID exceeds current number, dismiss */
 			work_group_id = fault->stack_id / evg_gpu->ndrange->wavefronts_per_work_group;
 			wavefront_id = fault->stack_id % evg_gpu->ndrange->wavefronts_per_work_group;
-			if (work_group_id >= evg_max_work_groups_per_compute_unit
+			if (work_group_id >= evg_gpu_max_work_groups_per_compute_unit
 				|| !compute_unit->work_groups[work_group_id])
 			{
 				evg_faults_debug("effect=\"wf_idle\"");
@@ -353,12 +353,12 @@ void evg_faults_insert(void)
 			bit_map_set(wavefront->active_stack,
 				fault->active_mask_id * wavefront->work_item_count
 				+ fault->bit, 1, !value);
-			gpu_fault_errors++;
+			evg_fault_errors++;
 
 			break;
 		}
 
-		case gpu_fault_reg:
+		case evg_fault_reg:
 		{
 			struct evg_opencl_kernel_t *kernel = evg_gpu->ndrange->kernel;
 
@@ -400,7 +400,7 @@ void evg_faults_insert(void)
 			num_registers_per_work_group = kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used
 				* kernel->local_size;
 			work_group_id_in_compute_unit = fault->reg_id / num_registers_per_work_group;
-			if (work_group_id_in_compute_unit >= evg_max_work_groups_per_compute_unit)
+			if (work_group_id_in_compute_unit >= evg_gpu_max_work_groups_per_compute_unit)
 			{
 				evg_faults_debug("effect=\"reg_idle\"");
 				goto end_loop;
@@ -431,14 +431,14 @@ void evg_faults_insert(void)
 				linked_list_next(fetch_queue))
 			{
 				uop = linked_list_get(fetch_queue);
-				if (gpu_stack_faults_is_idep(uop, wavefront, lo_reg))
+				if (evg_stack_faults_is_idep(uop, wavefront, lo_reg))
 				{
 					evg_faults_debug("effect=\"reg_read\"");
 					goto end_loop;
 				}
 			}
 			uop = inst_buffer;
-			if (uop && gpu_stack_faults_is_idep(uop, wavefront, lo_reg))
+			if (uop && evg_stack_faults_is_idep(uop, wavefront, lo_reg))
 			{
 				evg_faults_debug("effect=\"reg_read\"");
 				goto end_loop;
@@ -452,20 +452,20 @@ void evg_faults_insert(void)
 				linked_list_next(fetch_queue))
 			{
 				uop = linked_list_get(fetch_queue);
-				if (gpu_stack_faults_is_odep(uop, wavefront, lo_reg))
+				if (evg_stack_faults_is_odep(uop, wavefront, lo_reg))
 				{
 					evg_faults_debug("effect=\"reg_write\"");
 					goto end_loop;
 				}
 			}
 			uop = inst_buffer;
-			if (uop && gpu_stack_faults_is_odep(uop, wavefront, lo_reg))
+			if (uop && evg_stack_faults_is_odep(uop, wavefront, lo_reg))
 			{
 				evg_faults_debug("effect=\"reg_write\"");
 				goto end_loop;
 			}
 			uop = exec_buffer;
-			if (uop && gpu_stack_faults_is_odep(uop, wavefront, lo_reg))
+			if (uop && evg_stack_faults_is_odep(uop, wavefront, lo_reg))
 			{
 				evg_faults_debug("effect=\"reg_write\"");
 				goto end_loop;
@@ -474,7 +474,7 @@ void evg_faults_insert(void)
 			for (heap_first(event_queue, (void **) &uop); uop;
 				heap_next(event_queue, (void **) &uop))
 			{
-				if (gpu_stack_faults_is_odep(uop, wavefront, lo_reg))
+				if (evg_stack_faults_is_odep(uop, wavefront, lo_reg))
 				{
 					evg_faults_debug("effect=\"reg_write\"");
 					goto end_loop;
@@ -495,13 +495,13 @@ void evg_faults_insert(void)
 				work_item->gpr[lo_reg].elem[2] ^= 1 << (fault->bit - 64);
 			else
 				work_item->gpr[lo_reg].elem[3] ^= 1 << (fault->bit - 96);
-			gpu_fault_errors++;
+			evg_fault_errors++;
 
 			break;
 
 		}
 
-		case gpu_fault_mem:
+		case evg_fault_mem:
 		{
 			struct evg_work_group_t *work_group;
 
@@ -533,7 +533,7 @@ void evg_faults_insert(void)
 
 			/* Get work-group */
 			work_group_id_in_compute_unit = fault->byte / evg_gpu->ndrange->local_mem_top;
-			if (work_group_id_in_compute_unit >= evg_max_work_groups_per_compute_unit)
+			if (work_group_id_in_compute_unit >= evg_gpu_max_work_groups_per_compute_unit)
 			{
 				evg_faults_debug("effect=\"mem_idle\"");
 				goto end_loop;
@@ -553,7 +553,7 @@ void evg_faults_insert(void)
 			mem_read(work_group->local_mem, fault->byte, 1, &value);
 			value ^= 1 << fault->bit;
 			mem_write(work_group->local_mem, fault->byte, 1, &value);
-			gpu_fault_errors++;
+			evg_fault_errors++;
 
 			break;
 
@@ -567,11 +567,11 @@ void evg_faults_insert(void)
 end_loop:
 		/* Extract and free */
 		free(fault);
-		linked_list_remove(gpu_fault_list);
+		linked_list_remove(evg_fault_list);
 		evg_faults_debug("\n");
 
 		/* If all faults were inserted and no error was caused, end simulation */
-		if (!linked_list_count(gpu_fault_list) && !gpu_fault_errors)
+		if (!linked_list_count(evg_fault_list) && !evg_fault_errors)
 			x86_emu_finish = x86_emu_finish_gpu_no_faults;
 	}
 }

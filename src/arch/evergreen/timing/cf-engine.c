@@ -22,10 +22,10 @@
 
 
 /* Configuration parameters */
-int evg_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
+int evg_gpu_cf_engine_inst_mem_latency = 2;  /* Instruction memory latency */
 
 
-void gpu_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
+static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_ndrange_t *ndrange = evg_gpu->ndrange;
 	struct evg_wavefront_t *wavefront;
@@ -83,7 +83,7 @@ void gpu_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = evg_gpu->cycle + evg_cf_engine_inst_mem_latency;
+	uop->inst_mem_ready = evg_gpu->cycle + evg_gpu_cf_engine_inst_mem_latency;
 
 	/* Insert uop to fetch buffer */
 	assert(!compute_unit->cf_engine.fetch_buffer[wavefront->id_in_compute_unit]);
@@ -100,11 +100,11 @@ void gpu_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 		compute_unit->cf_engine.tex_clause_trigger_count++;
 
 	/* Debug */
-	if (debug_status(evg_pipeline_debug_category))
+	if (debug_status(evg_gpu_pipeline_debug_category))
 	{
 		evg_inst_dump_buf(inst, -1, 0, str1, MAX_STRING_SIZE);
 		str_single_spaces(str2, str1, MAX_STRING_SIZE);
-		evg_pipeline_debug("cf a=\"fetch\" "
+		evg_gpu_pipeline_debug("cf a=\"fetch\" "
 			"cu=%d "
 			"wg=%d "
 			"wf=%d "
@@ -119,7 +119,7 @@ void gpu_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void gpu_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
+static void evg_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_uop_t *uop;
 	int index;
@@ -150,7 +150,7 @@ void gpu_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
 		% evg_gpu->wavefronts_per_compute_unit;
 
 	/* Debug */
-	evg_pipeline_debug("cf a=\"decode\" "
+	evg_gpu_pipeline_debug("cf a=\"decode\" "
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
@@ -158,7 +158,7 @@ void gpu_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void gpu_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
+static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_wavefront_t *wavefront;
 	struct evg_ndrange_t *ndrange;
@@ -236,7 +236,7 @@ void gpu_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 		% evg_gpu->wavefronts_per_compute_unit;
 	
 	/* Debug */
-	evg_pipeline_debug("cf a=\"execute\" "
+	evg_gpu_pipeline_debug("cf a=\"execute\" "
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
@@ -244,7 +244,7 @@ void gpu_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void gpu_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
+static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *complete_queue = compute_unit->cf_engine.complete_queue;
 	struct linked_list_t *wavefront_pool = compute_unit->wavefront_pool;
@@ -279,7 +279,7 @@ void gpu_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 		}
 
 		/* Debug */
-		evg_pipeline_debug("cf a=\"complete\" "
+		evg_gpu_pipeline_debug("cf a=\"complete\" "
 			"cu=%d "
 			"uop=%lld\n",
 			compute_unit->id,
@@ -301,9 +301,9 @@ void gpu_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 void evg_compute_unit_run_cf_engine(struct evg_compute_unit_t *compute_unit)
 {
 	/* Call CF Engine stages */
-	gpu_cf_engine_complete(compute_unit);
-	gpu_cf_engine_execute(compute_unit);
-	gpu_cf_engine_decode(compute_unit);
-	gpu_cf_engine_fetch(compute_unit);
+	evg_cf_engine_complete(compute_unit);
+	evg_cf_engine_execute(compute_unit);
+	evg_cf_engine_decode(compute_unit);
+	evg_cf_engine_fetch(compute_unit);
 }
 

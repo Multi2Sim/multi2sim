@@ -20,7 +20,7 @@
 #include <evergreen-timing.h>
 
 
-char *evg_calc_file_name = "";
+char *evg_gpu_calc_file_name = "";
 
 static char *err_gnuplot_msg =
 	"\nThe execution of the 'gnuplot' command-line failed. Please check that this\n"
@@ -44,30 +44,30 @@ int evg_calc_get_work_groups_per_compute_unit(int work_items_per_work_group,
 	assert(evg_emu_wavefront_size > 0);
 	wavefronts_per_work_group = (work_items_per_work_group + evg_emu_wavefront_size - 1) /
 		evg_emu_wavefront_size;
-	max_work_groups_limitted_by_max_wavefronts = evg_max_wavefronts_per_compute_unit /
+	max_work_groups_limitted_by_max_wavefronts = evg_gpu_max_wavefronts_per_compute_unit /
 		wavefronts_per_work_group;
 
 	/* Get maximum number of work-groups per compute unit as limited by the number of
 	 * available registers, given the number of registers used per work-item. */
-	if (evg_register_alloc_granularity == evg_register_alloc_wavefront)
+	if (evg_gpu_register_alloc_granularity == evg_gpu_register_alloc_wavefront)
 		registers_per_work_group = ROUND_UP(registers_per_work_item * evg_emu_wavefront_size,
-			evg_register_alloc_size) * wavefronts_per_work_group;
+			evg_gpu_register_alloc_size) * wavefronts_per_work_group;
 	else
 		registers_per_work_group = ROUND_UP(registers_per_work_item *
-			work_items_per_work_group, evg_register_alloc_size);
+			work_items_per_work_group, evg_gpu_register_alloc_size);
 	max_work_groups_limitted_by_num_registers = registers_per_work_group ?
-		evg_num_registers / registers_per_work_group :
-		evg_max_work_groups_per_compute_unit;
+		evg_gpu_num_registers / registers_per_work_group :
+		evg_gpu_max_work_groups_per_compute_unit;
 
 	/* Get maximum number of work-groups per compute unit as limited by the amount of
 	 * available local memory, given the local memory used by each work-group in the NDRange */
-	local_mem_per_work_group = ROUND_UP(local_mem_per_work_group, evg_local_mem_alloc_size);
+	local_mem_per_work_group = ROUND_UP(local_mem_per_work_group, evg_gpu_local_mem_alloc_size);
 	max_work_groups_limitted_by_local_mem = local_mem_per_work_group ?
-		evg_local_mem_size / local_mem_per_work_group :
-		evg_max_work_groups_per_compute_unit;
+		evg_gpu_local_mem_size / local_mem_per_work_group :
+		evg_gpu_max_work_groups_per_compute_unit;
 
 	/* Based on the limits above, calculate the actual limit of work-groups per compute unit. */
-	work_groups_per_compute_unit = evg_max_work_groups_per_compute_unit;
+	work_groups_per_compute_unit = evg_gpu_max_work_groups_per_compute_unit;
 	work_groups_per_compute_unit = MIN(work_groups_per_compute_unit,
 		max_work_groups_limitted_by_max_wavefronts);
 	work_groups_per_compute_unit = MIN(work_groups_per_compute_unit,
@@ -80,7 +80,7 @@ int evg_calc_get_work_groups_per_compute_unit(int work_items_per_work_group,
 }
 
 
-void gpu_calc_plot_work_items_per_work_group(void)
+static void evg_calc_plot_work_items_per_work_group(void)
 {
 	FILE *data_file, *script_file;
 
@@ -101,7 +101,7 @@ void gpu_calc_plot_work_items_per_work_group(void)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.work_items.eps",
-		evg_calc_file_name, evg_gpu->ndrange->id);
+		evg_gpu_calc_file_name, evg_gpu->ndrange->id);
 	if (!can_open_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
@@ -110,7 +110,7 @@ void gpu_calc_plot_work_items_per_work_group(void)
 	local_mem_per_work_group = evg_gpu->ndrange->local_mem_top;
 	registers_per_work_item = evg_gpu->ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used;
 	for (work_items_per_work_group = evg_emu_wavefront_size;
-		work_items_per_work_group < evg_max_wavefronts_per_compute_unit * evg_emu_wavefront_size;
+		work_items_per_work_group < evg_gpu_max_wavefronts_per_compute_unit * evg_emu_wavefront_size;
 		work_items_per_work_group += evg_emu_wavefront_size)
 	{
 		/* Calculate point */
@@ -156,7 +156,7 @@ void gpu_calc_plot_work_items_per_work_group(void)
 }
 
 
-void gpu_calc_plot_registers_per_work_item(void)
+static void evg_calc_plot_registers_per_work_item(void)
 {
 	FILE *data_file, *script_file;
 
@@ -177,7 +177,7 @@ void gpu_calc_plot_registers_per_work_item(void)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.registers.eps",
-		evg_calc_file_name, evg_gpu->ndrange->id);
+		evg_gpu_calc_file_name, evg_gpu->ndrange->id);
 	if (!can_open_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
@@ -232,7 +232,7 @@ void gpu_calc_plot_registers_per_work_item(void)
 }
 
 
-void gpu_calc_plot_local_mem_per_work_group(void)
+static void evg_calc_plot_local_mem_per_work_group(void)
 {
 	FILE *data_file, *script_file;
 
@@ -254,18 +254,18 @@ void gpu_calc_plot_local_mem_per_work_group(void)
 
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.local_mem.eps",
-		evg_calc_file_name, evg_gpu->ndrange->id);
+		evg_gpu_calc_file_name, evg_gpu->ndrange->id);
 	if (!can_open_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
 	/* Generate data file */
 	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
 	registers_per_work_item = evg_gpu->ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used;
-	local_mem_step = MAX(1, evg_local_mem_size / 32);
+	local_mem_step = MAX(1, evg_gpu_local_mem_size / 32);
 	work_items_per_work_group = evg_gpu->ndrange->kernel->local_size;
 	wavefronts_per_work_group = (work_items_per_work_group + evg_emu_wavefront_size - 1) / evg_emu_wavefront_size;
 	for (local_mem_per_work_group = local_mem_step;
-		local_mem_per_work_group <= evg_local_mem_size;
+		local_mem_per_work_group <= evg_gpu_local_mem_size;
 		local_mem_per_work_group += local_mem_step)
 	{
 		/* Calculate point */
@@ -290,7 +290,7 @@ void gpu_calc_plot_local_mem_per_work_group(void)
 	fprintf(script_file, "set nokey\n");
 	fprintf(script_file, "set xlabel 'Local memory used per work-group (KB)'\n");
 	fprintf(script_file, "set ylabel 'Wavefronts per compute-unit'\n");
-	fprintf(script_file, "set xrange [0:%d]\n", evg_local_mem_size / 1024);
+	fprintf(script_file, "set xrange [0:%d]\n", evg_gpu_local_mem_size / 1024);
 	fprintf(script_file, "set yrange [0:]\n");
 	fprintf(script_file, "set size 0.65, 0.5\n");
 	fprintf(script_file, "set grid ytics\n");
@@ -316,7 +316,7 @@ void evg_calc_plot(void)
 	int ret;
 
 	/* If no file specified for plots, done */
-	if (!*evg_calc_file_name)
+	if (!*evg_gpu_calc_file_name)
 		return;
 
 	/* Find 'gnuplot' */
@@ -327,12 +327,12 @@ void evg_calc_plot(void)
 			"\tmake sure that it is installed on your system and retry.\n");
 
 	/* Plot varying work-items per work-group */
-	gpu_calc_plot_work_items_per_work_group();
+	evg_calc_plot_work_items_per_work_group();
 
 	/* Plot varying registers per work-item */
-	gpu_calc_plot_registers_per_work_item();
+	evg_calc_plot_registers_per_work_item();
 
 	/* Plot varying local memory per work-group */
-	gpu_calc_plot_local_mem_per_work_group();
+	evg_calc_plot_local_mem_per_work_group();
 }
 
