@@ -137,38 +137,35 @@ AC_SUBST([CFLAGS])
 # Includes
 #
 
-SRCDIR=`pwd`
-SRCDIR=$SRCDIR/src
-AC_SUBST(SRCDIR)
-
 M2S_INCLUDES=" \
--I$SRCDIR/lib/esim \
--I$SRCDIR/lib/mhandle \
--I$SRCDIR/lib/misc \
--I$SRCDIR/lib/struct \
+-I\$(top_srcdir)/src/lib/esim \
+-I\$(top_srcdir)/src/lib/mhandle \
+-I\$(top_srcdir)/src/lib/misc \
+-I\$(top_srcdir)/src/lib/struct \
 \
--I$SRCDIR/arch/arm/asm \
--I$SRCDIR/arch/arm/emu \
--I$SRCDIR/arch/arm/timing \
+-I\$(top_srcdir)/src/arch/arm/asm \
+-I\$(top_srcdir)/src/arch/arm/emu \
+-I\$(top_srcdir)/src/arch/arm/timing \
 \
--I$SRCDIR/arch/evergreen/asm \
--I$SRCDIR/arch/evergreen/emu \
--I$SRCDIR/arch/evergreen/timing \
+-I\$(top_srcdir)/src/arch/evergreen/asm \
+-I\$(top_srcdir)/src/arch/evergreen/emu \
+-I\$(top_srcdir)/src/arch/evergreen/timing \
 \
--I$SRCDIR/arch/fermi/asm \
--I$SRCDIR/arch/fermi/emu \
--I$SRCDIR/arch/fermi/timing \
+-I\$(top_srcdir)/src/arch/fermi/asm \
+-I\$(top_srcdir)/src/arch/fermi/emu \
+-I\$(top_srcdir)/src/arch/fermi/timing \
 \
--I$SRCDIR/arch/x86/asm \
--I$SRCDIR/arch/x86/emu \
--I$SRCDIR/arch/x86/timing \
+-I\$(top_srcdir)/src/arch/x86/asm \
+-I\$(top_srcdir)/src/arch/x86/emu \
+-I\$(top_srcdir)/src/arch/x86/timing \
 \
--I$SRCDIR/mem-system \
--I$SRCDIR/network \
--I$SRCDIR/visual \
+-I\$(top_srcdir)/src/mem-system \
+-I\$(top_srcdir)/src/network \
+-I\$(top_srcdir)/src/visual \
 \
--I$SRCDIR/libgpuvisual \
+-I\$(top_srcdir)/src/libgpuvisual \
 "
+
 AC_SUBST(M2S_INCLUDES)
 
 
