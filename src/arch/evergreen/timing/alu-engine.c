@@ -22,20 +22,20 @@
 #include <heap.h>
 
 
-int gpu_alu_engine_inst_mem_latency = 2;  /* Latency of instruction memory */
-int gpu_alu_engine_fetch_queue_size = 64;  /* Number of bytes */
-int gpu_alu_engine_pe_latency = 4;  /* Processing element latency */
+int evg_alu_engine_inst_mem_latency = 2;  /* Latency of instruction memory */
+int evg_alu_engine_fetch_queue_size = 64;  /* Number of bytes */
+int evg_alu_engine_pe_latency = 4;  /* Processing element latency */
 
 
-void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
+void gpu_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *pending_queue = compute_unit->alu_engine.pending_queue;
 	struct linked_list_t *finished_queue = compute_unit->alu_engine.finished_queue;
 
 	struct linked_list_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
 	struct evg_alu_group_t *alu_group;
-	struct gpu_uop_t *cf_uop, *uop, *producer;
-	struct gpu_work_item_uop_t *work_item_uop;
+	struct evg_uop_t *cf_uop, *uop, *producer;
+	struct evg_work_item_uop_t *work_item_uop;
 	struct evg_wavefront_t *wavefront;
 
 	struct evg_work_item_t *work_item;
@@ -53,20 +53,20 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	assert(wavefront->clause_kind == EVG_CLAUSE_ALU);
 
 	/* If fetch queue is full, cannot fetch until space is made */
-	if (compute_unit->alu_engine.fetch_queue_length >= gpu_alu_engine_fetch_queue_size)
+	if (compute_unit->alu_engine.fetch_queue_length >= evg_alu_engine_fetch_queue_size)
 		return;
 
 	/* Emulate instruction and create uop */
 	evg_wavefront_execute(wavefront);
 	alu_group = &wavefront->alu_group;
-	uop = gpu_uop_create_from_alu_group(alu_group);
+	uop = evg_uop_create_from_alu_group(alu_group);
 	uop->wavefront = wavefront;
 	uop->work_group = wavefront->work_group;
 	uop->cf_uop = cf_uop;
 	uop->compute_unit = compute_unit;
 	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
-	uop->subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1)
-		/ gpu_num_stream_cores;
+	uop->subwavefront_count = (wavefront->work_item_count + evg_num_stream_cores - 1)
+		/ evg_num_stream_cores;
 	uop->last = wavefront->clause_kind != EVG_CLAUSE_ALU;
 	uop->length = alu_group->inst_count * 8 + alu_group->literal_count * 4;
 	uop->local_mem_read = wavefront->local_mem_read;
@@ -86,8 +86,8 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	}
 
 	/* If debugging active mask, store active state for work-items */
-	if (debug_status(gpu_stack_debug_category))
-		gpu_uop_save_active_mask(uop);
+	if (debug_status(evg_stack_debug_category))
+		evg_uop_save_active_mask(uop);
 
 	/* Stats */
 	compute_unit->inst_count++;
@@ -103,7 +103,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	{
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
-			work_item = gpu->ndrange->work_items[work_item_id];
+			work_item = evg_gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			work_item_uop->local_mem_access_count = work_item->local_mem_access_count;
 			for (i = 0; i < work_item->local_mem_access_count; i++)
@@ -141,13 +141,13 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	for (i = 0; i < uop->odep_count; i++)
 	{
 		odep = uop->odep[i];
-		assert(IN_RANGE(odep, 1, GPU_UOP_DEP_COUNT - 1));
+		assert(IN_RANGE(odep, 1, EVG_UOP_DEP_COUNT - 1));
 		compute_unit->alu_engine.producers[odep] = uop;
 	}
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = gpu->cycle + gpu_alu_engine_inst_mem_latency;
+	uop->inst_mem_ready = evg_gpu->cycle + evg_alu_engine_inst_mem_latency;
 
 	/* Enqueue instruction into fetch queue */
 	linked_list_out(fetch_queue);
@@ -155,11 +155,11 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	compute_unit->alu_engine.fetch_queue_length += uop->length;
 
 	/* Debug */
-	if (debug_status(gpu_pipeline_debug_category))
+	if (debug_status(evg_pipeline_debug_category))
 	{
 		char str[MAX_STRING_SIZE];
 
-		gpu_pipeline_debug("alu a=\"fetch\" "
+		evg_pipeline_debug("alu a=\"fetch\" "
 			"cu=%d "
 			"wg=%d "
 			"wf=%d "
@@ -169,23 +169,23 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 			wavefront->id,
 			uop->id_in_compute_unit);
 		evg_alu_group_dump_debug(&wavefront->alu_group, -1, -1,
-			debug_file(gpu_pipeline_debug_category));
-		gpu_pipeline_debug(" idep=");
-		gpu_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->idep, uop->idep_count);
-		gpu_pipeline_debug("%s odep=", str);
-		gpu_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->odep, uop->odep_count);
-		gpu_pipeline_debug("%s", str);
+			debug_file(evg_pipeline_debug_category));
+		evg_pipeline_debug(" idep=");
+		evg_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->idep, uop->idep_count);
+		evg_pipeline_debug("%s odep=", str);
+		evg_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->odep, uop->odep_count);
+		evg_pipeline_debug("%s", str);
 		if (producer)
-			gpu_pipeline_debug(" prod=%lld", producer->id);
-		gpu_pipeline_debug("\n");
+			evg_pipeline_debug(" prod=%lld", producer->id);
+		evg_pipeline_debug("\n");
 	}
 }
 
 
-void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
+void gpu_alu_engine_decode(struct evg_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *fetch_queue = compute_unit->alu_engine.fetch_queue;
-	struct gpu_uop_t *uop;
+	struct evg_uop_t *uop;
 
 	/* Get instruction at the head of the fetch queue */
 	linked_list_head(fetch_queue);
@@ -196,7 +196,7 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 		return;
 
 	/* If uop is still being fetched from instruction memory, done */
-	if (uop->inst_mem_ready > gpu->cycle)
+	if (uop->inst_mem_ready > evg_gpu->cycle)
 		return;
 
 	/* If instruction buffer is occupied, done */
@@ -213,7 +213,7 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 	compute_unit->alu_engine.inst_buffer = uop;
 
 	/* Debug */
-	gpu_pipeline_debug("alu a=\"decode\" "
+	evg_pipeline_debug("alu a=\"decode\" "
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
@@ -221,13 +221,13 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 }
 
 
-void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
+void gpu_alu_engine_read(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_work_item_t *work_item;
 	int work_item_id;
 
-	struct gpu_uop_t *uop;
-	struct gpu_work_item_uop_t *work_item_uop;
+	struct evg_uop_t *uop;
+	struct evg_work_item_uop_t *work_item_uop;
 	int i;
 
 	/* Get instruction in the instruction buffer.
@@ -245,7 +245,7 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 	{
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{
-			work_item = gpu->ndrange->work_items[work_item_id];
+			work_item = evg_gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			for (i = 0; i < work_item_uop->local_mem_access_count; i++)
 			{
@@ -260,7 +260,7 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 	}
 
 	/* Debug */
-	gpu_pipeline_debug("alu a=\"read\" "
+	evg_pipeline_debug("alu a=\"read\" "
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
@@ -272,10 +272,10 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 }
 
 
-void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
+void gpu_alu_engine_execute(struct evg_compute_unit_t *compute_unit)
 {
 	struct mod_t *local_memory = compute_unit->local_memory;
-	struct gpu_uop_t *uop;
+	struct evg_uop_t *uop;
 
 	/* Get uop from execution buffer.
 	 * If no instruction, or instruction at the head is not ready, done */
@@ -294,11 +294,11 @@ void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 	assert(uop->exec_subwavefront_count < uop->subwavefront_count);
 	uop->exec_subwavefront_count++;
 	heap_insert(compute_unit->alu_engine.event_queue,
-		gpu->cycle + gpu_alu_engine_pe_latency,
+		evg_gpu->cycle + evg_alu_engine_pe_latency,
 		uop);
 	
 	/* Debug */
-	gpu_pipeline_debug("alu a=\"exec\" "
+	evg_pipeline_debug("alu a=\"exec\" "
 		"cu=%d "
 		"uop=%lld "
 		"subwf=%d\n",
@@ -312,7 +312,7 @@ void gpu_alu_engine_execute(struct gpu_compute_unit_t *compute_unit)
 }
 
 
-void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
+void gpu_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *finished_queue = compute_unit->alu_engine.finished_queue;
 
@@ -320,8 +320,8 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 	struct evg_work_item_t *work_item;
 	int work_item_id;
 
-	struct gpu_uop_t *cf_uop, *uop, *consumer;
-	struct gpu_work_item_uop_t *work_item_uop;
+	struct evg_uop_t *cf_uop, *uop, *consumer;
+	struct evg_work_item_uop_t *work_item_uop;
 	uint64_t cycle;
 
 	int odep;
@@ -331,9 +331,9 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 	{
 		/* Extract a new event for this cycle */
 		cycle = heap_peek(compute_unit->alu_engine.event_queue, (void **) &uop);
-		if (!uop || cycle > gpu->cycle)
+		if (!uop || cycle > evg_gpu->cycle)
 			break;
-		assert(cycle == gpu->cycle);
+		assert(cycle == evg_gpu->cycle);
 		wavefront = uop->wavefront;
 		heap_extract(compute_unit->alu_engine.event_queue, NULL);
 
@@ -342,7 +342,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 		{
 			EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 			{
-				work_item = gpu->ndrange->work_items[work_item_id];
+				work_item = evg_gpu->ndrange->work_items[work_item_id];
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 				for (i = 0; i < work_item_uop->local_mem_access_count; i++)
 				{
@@ -358,7 +358,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 		/* One more SubWF writes */
 		assert(uop->write_subwavefront_count < uop->subwavefront_count);
 		uop->write_subwavefront_count++;
-		gpu_pipeline_debug("alu a=\"write\" "
+		evg_pipeline_debug("alu a=\"write\" "
 			"cu=%d "
 			"uop=%lld "
 			"subwf=%d\n",
@@ -390,8 +390,8 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 		if (uop->write_subwavefront_count == uop->subwavefront_count)
 		{
 			/* Debug info for active mask stack */
-			if (debug_status(gpu_stack_debug_category))
-				gpu_uop_debug_active_mask(uop);
+			if (debug_status(evg_stack_debug_category))
+				evg_uop_debug_active_mask(uop);
 
 			/* One less uop in flight */
 			assert(wavefront->alu_engine_in_flight > 0);
@@ -414,13 +414,13 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 			}
 
 			/* Free uop */
-			gpu_uop_free(uop);
+			evg_uop_free(uop);
 		}
 	}
 }
 
 
-void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit)
+void evg_compute_unit_run_alu_engine(struct evg_compute_unit_t *compute_unit)
 {
 	/* If no wavefront to run, avoid entering loop */
 	if (!linked_list_count(compute_unit->alu_engine.pending_queue) &&
