@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <visual-private.h>
+#include <visual-common.h>
 
 
 char cycle_bar_back_single_path[MAX_PATH_SIZE];

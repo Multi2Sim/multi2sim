@@ -22,10 +22,14 @@ LDADD = \
 	$(top_builddir)/src/arch/x86/emu/libemu.a \
 	$(top_builddir)/src/arch/x86/asm/libasm.a \
 	\
-	$(top_builddir)/src/visual/libvisual.a \
 	$(top_builddir)/src/libgpuvisual/libgpuvisual.a \
 	$(top_builddir)/src/mem-system/libmemsystem.a \
 	$(top_builddir)/src/network/libnetwork.a \
+	\
+	$(top_builddir)/src/visual/common/libcommon.a \
+	$(top_builddir)/src/visual/evergreen/libevergreen.a \
+	$(top_builddir)/src/visual/memory/libmemory.a \
+	$(top_builddir)/src/visual/x86/libx86.a \
 	\
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
 	$(top_builddir)/src/lib/misc/libmisc.a \
@@ -35,5 +39,6 @@ LDADD = \
 	-lm -lpthread -lz
 
 if HAVE_GTK
+AM_CFLAGS = @GTK_CFLAGS@
 LDADD += @GTK_LIBS@
 endif
