@@ -203,7 +203,7 @@ void gpu_config_read(void)
 	gpu_num_registers = config_read_int(gpu_config, section, "NumRegisters", gpu_num_registers);
 	gpu_register_alloc_size = config_read_int(gpu_config, section, "RegisterAllocSize", gpu_register_alloc_size);
 	gpu_register_alloc_granularity_str = config_read_string(gpu_config, section, "RegisterAllocGranularity", "WorkGroup");
-	gpu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", gpu_wavefront_size);
+	evg_emu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", evg_emu_wavefront_size);
 	gpu_max_work_groups_per_compute_unit = config_read_int(gpu_config, section, "MaxWorkGroupsPerComputeUnit",
 		gpu_max_work_groups_per_compute_unit);
 	gpu_max_wavefronts_per_compute_unit = config_read_int(gpu_config, section, "MaxWavefrontsPerComputeUnit",
@@ -228,7 +228,7 @@ void gpu_config_read(void)
 	if (gpu_sched_policy == gpu_sched_invalid)
 		fatal("%s: invalid value for 'SchedulingPolicy'.\n%s", gpu_config_file_name, err_note);
 
-	if (gpu_wavefront_size < 1)
+	if (evg_emu_wavefront_size < 1)
 		fatal("%s: invalid value for 'WavefrontSize'.\n%s", gpu_config_file_name, err_note);
 	if (gpu_max_work_groups_per_compute_unit < 1)
 		fatal("%s: invalid value for 'MaxWorkGroupsPerComputeUnit'.\n%s", gpu_config_file_name, err_note);
@@ -320,7 +320,7 @@ void gpu_config_dump(FILE *f)
 	fprintf(f, "NumRegisters = %d\n", gpu_num_registers);
 	fprintf(f, "RegisterAllocSize = %d\n", gpu_register_alloc_size);
 	fprintf(f, "RegisterAllocGranularity = %s\n", map_value(&gpu_register_alloc_granularity_map, gpu_register_alloc_granularity));
-	fprintf(f, "WavefrontSize = %d\n", gpu_wavefront_size);
+	fprintf(f, "WavefrontSize = %d\n", evg_emu_wavefront_size);
 	fprintf(f, "MaxWorkGroupsPerComputeUnit = %d\n", gpu_max_work_groups_per_compute_unit);
 	fprintf(f, "MaxWavefrontsPerComputeUnit = %d\n", gpu_max_wavefronts_per_compute_unit);
 	fprintf(f, "SchedulingPolicy = %s\n", map_value(&gpu_sched_policy_map, gpu_sched_policy));
@@ -509,7 +509,7 @@ void gpu_dump_report(void)
 }
 
 
-void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
+void gpu_map_ndrange(struct evg_ndrange_t *ndrange)
 {
 	struct gpu_compute_unit_t *compute_unit;
 	int compute_unit_id;
@@ -520,7 +520,7 @@ void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 
 	/* Check that at least one work-group can be allocated per compute unit */
 	gpu->work_groups_per_compute_unit = gpu_calc_get_work_groups_per_compute_unit(
-		ndrange->kernel->local_size, ndrange->kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used,
+		ndrange->kernel->local_size, ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used,
 		ndrange->local_mem_top);
 	if (!gpu->work_groups_per_compute_unit)
 		fatal("work-group resources cannot be allocated to a compute unit.\n"
@@ -530,7 +530,7 @@ void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 
 	/* Derived from this, calculate limit of wavefronts and work-items per compute unit. */
 	gpu->wavefronts_per_compute_unit = gpu->work_groups_per_compute_unit * ndrange->wavefronts_per_work_group;
-	gpu->work_items_per_compute_unit = gpu->wavefronts_per_compute_unit * gpu_wavefront_size;
+	gpu->work_items_per_compute_unit = gpu->wavefronts_per_compute_unit * evg_emu_wavefront_size;
 	assert(gpu->work_groups_per_compute_unit <= gpu_max_work_groups_per_compute_unit);
 	assert(gpu->wavefronts_per_compute_unit <= gpu_max_wavefronts_per_compute_unit);
 
@@ -547,16 +547,16 @@ void gpu_map_ndrange(struct gpu_ndrange_t *ndrange)
 void gpu_unmap_ndrange(void)
 {
 	/* Dump stats */
-	gpu_ndrange_dump(gpu->ndrange, gpu_kernel_report_file);
+	evg_ndrange_dump(gpu->ndrange, evg_emu_report_file);
 
 	/* Unmap */
 	gpu->ndrange = NULL;
 }
 
 
-void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
+void gpu_pipeline_debug_disasm(struct evg_ndrange_t *ndrange)
 {
-	struct opencl_kernel_t *kernel = ndrange->kernel;
+	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
 	FILE *f = debug_file(gpu_pipeline_debug_category);
 
 	void *text_buffer_ptr;
@@ -568,7 +568,7 @@ void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
 	int loop_idx;
 
 	/* Initialize */
-	text_buffer_ptr = kernel->amd_bin->enc_dict_entry_evergreen->sec_text_buffer.ptr;
+	text_buffer_ptr = kernel->bin_file->enc_dict_entry_evergreen->sec_text_buffer.ptr;
 	cf_buf = text_buffer_ptr;
 	inst_count = 0;
 	cf_inst_count = 0;
@@ -644,16 +644,16 @@ void gpu_pipeline_debug_disasm(struct gpu_ndrange_t *ndrange)
 }
 
 
-void gpu_pipeline_debug_ndrange(struct gpu_ndrange_t *ndrange)
+void gpu_pipeline_debug_ndrange(struct evg_ndrange_t *ndrange)
 {
 	int work_group_id;
-	struct gpu_work_group_t *work_group;
+	struct evg_work_group_t *work_group;
 
 	int wavefront_id;
-	struct gpu_wavefront_t *wavefront;
+	struct evg_wavefront_t *wavefront;
 
 	/* Work-groups */
-	FOREACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
+	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
 	{
 		work_group = ndrange->work_groups[work_group_id];
 		gpu_pipeline_debug("new item=\"wg\" "
@@ -670,7 +670,7 @@ void gpu_pipeline_debug_ndrange(struct gpu_ndrange_t *ndrange)
 	}
 	
 	/* Wavefronts */
-	FOREACH_WAVEFRONT_IN_NDRANGE(ndrange, wavefront_id)
+	EVG_FOREACH_WAVEFRONT_IN_NDRANGE(ndrange, wavefront_id)
 	{
 		wavefront = ndrange->wavefronts[wavefront_id];
 		gpu_pipeline_debug("new item=\"wf\" "
@@ -686,9 +686,9 @@ void gpu_pipeline_debug_ndrange(struct gpu_ndrange_t *ndrange)
 }
 
 
-void gpu_pipeline_debug_intro(struct gpu_ndrange_t *ndrange)
+void gpu_pipeline_debug_intro(struct evg_ndrange_t *ndrange)
 {
-	struct opencl_kernel_t *kernel = ndrange->kernel;
+	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
 
 	/* Initial */
 	gpu_pipeline_debug("init "
@@ -702,14 +702,14 @@ void gpu_pipeline_debug_intro(struct gpu_ndrange_t *ndrange)
 		kernel->global_size,
 		kernel->local_size,
 		kernel->group_count,
-		gpu_wavefront_size,
+		evg_emu_wavefront_size,
 		ndrange->wavefronts_per_work_group,
 		gpu_num_compute_units);
 	
 }
 
 
-void gpu_run(struct gpu_ndrange_t *ndrange)
+void gpu_run(struct evg_ndrange_t *ndrange)
 {
 	struct gpu_compute_unit_t *compute_unit;
 	struct gpu_compute_unit_t *compute_unit_next;
@@ -744,11 +744,11 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 			break;
 		
 		/* Stop if maximum number of GPU cycles exceeded */
-		if (gpu_max_cycles && gpu->cycle >= gpu_max_cycles)
+		if (evg_emu_max_cycles && gpu->cycle >= evg_emu_max_cycles)
 			x86_emu_finish = x86_emu_finish_max_gpu_cycles;
 
 		/* Stop if maximum number of GPU instructions exceeded */
-		if (gpu_max_inst && gk->inst_count >= gpu_max_inst)
+		if (evg_emu_max_inst && gk->inst_count >= evg_emu_max_inst)
 			x86_emu_finish = x86_emu_finish_max_gpu_inst;
 
 		/* Stop if any reason met */
@@ -779,7 +779,7 @@ void gpu_run(struct gpu_ndrange_t *ndrange)
 	gpu_unmap_ndrange();
 
 	/* Stop if maximum number of kernels reached */
-	if (gpu_max_kernels && gk->ndrange_count >= gpu_max_kernels)
+	if (evg_emu_max_kernels && gk->ndrange_count >= evg_emu_max_kernels)
 		x86_emu_finish = x86_emu_finish_max_gpu_kernels;
 }
 

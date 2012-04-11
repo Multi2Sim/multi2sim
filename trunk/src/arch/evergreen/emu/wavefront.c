@@ -27,18 +27,18 @@
  */
 
 
-struct gpu_wavefront_t *gpu_wavefront_create()
+struct evg_wavefront_t *evg_wavefront_create()
 {
-	struct gpu_wavefront_t *wavefront;
+	struct evg_wavefront_t *wavefront;
 
 	/* Allocate */
-	wavefront = calloc(1, sizeof(struct gpu_wavefront_t));
+	wavefront = calloc(1, sizeof(struct evg_wavefront_t));
 	if (!wavefront)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	wavefront->active_stack = bit_map_create(GPU_MAX_STACK_SIZE * gpu_wavefront_size);
-	wavefront->pred = bit_map_create(gpu_wavefront_size);
+	wavefront->active_stack = bit_map_create(EVG_MAX_STACK_SIZE * evg_emu_wavefront_size);
+	wavefront->pred = bit_map_create(evg_emu_wavefront_size);
 	/* FIXME: Remove once loop state is part of stack */
 	wavefront->loop_depth = 0;
 
@@ -47,7 +47,7 @@ struct gpu_wavefront_t *gpu_wavefront_create()
 }
 
 
-void gpu_wavefront_free(struct gpu_wavefront_t *wavefront)
+void evg_wavefront_free(struct evg_wavefront_t *wavefront)
 {
 	/* Free wavefront */
 	bit_map_free(wavefront->active_stack);
@@ -70,9 +70,9 @@ static int gpu_wavefront_divergence_compare(const void *elem1, const void *elem2
 }
 
 
-void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
+void gpu_wavefront_divergence_dump(struct evg_wavefront_t *wavefront, FILE *f)
 {
-	struct gpu_work_item_t *work_item;
+	struct evg_work_item_t *work_item;
 	struct elem_t {
 		int count;  /* 1st field hardcoded for comparison */
 		int list_index;
@@ -144,10 +144,10 @@ void gpu_wavefront_divergence_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 }
 
 
-void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f)
+void evg_wavefront_dump(struct evg_wavefront_t *wavefront, FILE *f)
 {
-	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
-	struct gpu_work_group_t *work_group = wavefront->work_group;
+	struct evg_ndrange_t *ndrange = wavefront->ndrange;
+	struct evg_work_group_t *work_group = wavefront->work_group;
 	int i;
 
 	if (!f)
@@ -193,9 +193,9 @@ void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f)
 }
 
 
-void gpu_wavefront_stack_push(struct gpu_wavefront_t *wavefront)
+void evg_wavefront_stack_push(struct evg_wavefront_t *wavefront)
 {
-	if (wavefront->stack_top == GPU_MAX_STACK_SIZE - 1)
+	if (wavefront->stack_top == EVG_MAX_STACK_SIZE - 1)
 		fatal("%s: stack overflow", wavefront->cf_inst.info->name);
 	wavefront->stack_top++;
 	wavefront->active_mask_push++;
@@ -206,7 +206,7 @@ void gpu_wavefront_stack_push(struct gpu_wavefront_t *wavefront)
 }
 
 
-void gpu_wavefront_stack_pop(struct gpu_wavefront_t *wavefront, int count)
+void evg_wavefront_stack_pop(struct evg_wavefront_t *wavefront, int count)
 {
 	if (!count)
 		return;
@@ -224,17 +224,17 @@ void gpu_wavefront_stack_pop(struct gpu_wavefront_t *wavefront, int count)
 
 
 /* Execute one instruction in the wavefront */
-void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
+void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 {
-	extern struct gpu_ndrange_t *gpu_isa_ndrange;
-	extern struct gpu_work_group_t *gpu_isa_work_group;
-	extern struct gpu_wavefront_t *gpu_isa_wavefront;
-	extern struct gpu_work_item_t *gpu_isa_work_item;
+	extern struct evg_ndrange_t *gpu_isa_ndrange;
+	extern struct evg_work_group_t *gpu_isa_work_group;
+	extern struct evg_wavefront_t *gpu_isa_wavefront;
+	extern struct evg_work_item_t *gpu_isa_work_item;
 	extern struct evg_inst_t *gpu_isa_cf_inst;
 	extern struct evg_inst_t *gpu_isa_inst;
 	extern struct evg_alu_group_t *gpu_isa_alu_group;
 
-	struct gpu_ndrange_t *ndrange = wavefront->ndrange;
+	struct evg_ndrange_t *ndrange = wavefront->ndrange;
 
 	int work_item_id;
 
@@ -260,7 +260,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 
 	switch (wavefront->clause_kind) {
 
-	case GPU_CLAUSE_CF:
+	case EVG_CLAUSE_CF:
 	{
 		int inst_num;
 
@@ -282,9 +282,9 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 
 		/* If instruction updates the work_item's active mask, update digests */
 		if (gpu_isa_inst->info->flags & EVG_INST_FLAG_ACT_MASK) {
-			FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id) {
+			EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id) {
 				gpu_isa_work_item = ndrange->work_items[work_item_id];
-				gpu_work_item_update_branch_digest(gpu_isa_work_item, gpu_isa_wavefront->cf_inst_count, inst_num);
+				evg_work_item_update_branch_digest(gpu_isa_work_item, gpu_isa_wavefront->cf_inst_count, inst_num);
 			}
 		}
 
@@ -301,7 +301,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		break;
 	}
 
-	case GPU_CLAUSE_ALU:
+	case EVG_CLAUSE_ALU:
 	{
 		int i;
 
@@ -318,13 +318,13 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		/* Execute group for each work_item in wavefront */
 		gpu_isa_cf_inst = &gpu_isa_wavefront->cf_inst;
 		gpu_isa_alu_group = &gpu_isa_wavefront->alu_group;
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id) {
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id) {
 			gpu_isa_work_item = ndrange->work_items[work_item_id];
 			for (i = 0; i < gpu_isa_alu_group->inst_count; i++) {
 				gpu_isa_inst = &gpu_isa_alu_group->inst[i];
 				(*amd_inst_impl[gpu_isa_inst->info->inst])();
 			}
-			gpu_isa_write_task_commit();
+			evg_isa_write_task_commit();
 		}
 		
 		/* Stats */
@@ -347,13 +347,13 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		assert(gpu_isa_wavefront->clause_buf <= gpu_isa_wavefront->clause_buf_end);
 		if (gpu_isa_wavefront->clause_buf >= gpu_isa_wavefront->clause_buf_end) {
 			gpu_isa_alu_clause_end();
-			gpu_isa_wavefront->clause_kind = GPU_CLAUSE_CF;
+			gpu_isa_wavefront->clause_kind = EVG_CLAUSE_CF;
 		}
 
 		break;
 	}
 
-	case GPU_CLAUSE_TEX:
+	case EVG_CLAUSE_TEX:
 	{
 		/* Decode TEX instruction */
 		gpu_isa_wavefront->clause_buf = evg_inst_decode_tc(gpu_isa_wavefront->clause_buf,
@@ -368,7 +368,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		/* Execute in all work_items */
 		gpu_isa_inst = &gpu_isa_wavefront->tex_inst;
 		gpu_isa_cf_inst = &gpu_isa_wavefront->cf_inst;
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id) {
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(gpu_isa_wavefront, work_item_id) {
 			gpu_isa_work_item = ndrange->work_items[work_item_id];
 			(*amd_inst_impl[gpu_isa_inst->info->inst])();
 		}
@@ -387,7 +387,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		assert(gpu_isa_wavefront->clause_buf <= gpu_isa_wavefront->clause_buf_end);
 		if (gpu_isa_wavefront->clause_buf == gpu_isa_wavefront->clause_buf_end) {
 			gpu_isa_tc_clause_end();
-			gpu_isa_wavefront->clause_kind = GPU_CLAUSE_CF;
+			gpu_isa_wavefront->clause_kind = EVG_CLAUSE_CF;
 		}
 
 		break;
@@ -398,7 +398,7 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 	}
 
 	/* Check if wavefront finished kernel execution */
-	if (gpu_isa_wavefront->clause_kind == GPU_CLAUSE_CF && !gpu_isa_wavefront->cf_buf)
+	if (gpu_isa_wavefront->clause_kind == EVG_CLAUSE_CF && !gpu_isa_wavefront->cf_buf)
 	{
 		assert(DOUBLE_LINKED_LIST_MEMBER(gpu_isa_work_group, running, gpu_isa_wavefront));
 		assert(!DOUBLE_LINKED_LIST_MEMBER(gpu_isa_work_group, finished, gpu_isa_wavefront));
@@ -410,8 +410,8 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront)
 		{
 			assert(DOUBLE_LINKED_LIST_MEMBER(ndrange, running, gpu_isa_work_group));
 			assert(!DOUBLE_LINKED_LIST_MEMBER(ndrange, finished, gpu_isa_work_group));
-			gpu_work_group_clear_status(gpu_isa_work_group, gpu_work_group_running);
-			gpu_work_group_set_status(gpu_isa_work_group, gpu_work_group_finished);
+			evg_work_group_clear_status(gpu_isa_work_group, evg_work_group_running);
+			evg_work_group_set_status(gpu_isa_work_group, evg_work_group_finished);
 		}
 	}
 }

@@ -20,16 +20,17 @@
 #ifndef EVERGREEN_EMU_H
 #define EVERGREEN_EMU_H
 
-#include <mhandle.h>
-#include <debug.h>
-#include <config.h>
-#include <list.h>
-#include <linked-list.h>
-#include <misc.h>
+#include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
+
+#include <config.h>
+#include <debug.h>
 #include <elf-format.h>
-#include <assert.h>
+#include <linked-list.h>
+#include <list.h>
+#include <mhandle.h>
+#include <misc.h>
 
 #include <evergreen-asm.h>
 
@@ -38,27 +39,27 @@
  * Global variables
  */
 
-extern enum gpu_sim_kind_t
+extern enum evg_emu_kind_t
 {
-	gpu_sim_functional,
-	gpu_sim_detailed
-} gpu_sim_kind;
+	evg_emu_functional,
+	evg_emu_detailed
+} evg_emu_kind;
 
-extern long long gpu_max_cycles;
-extern long long gpu_max_inst;
-extern int gpu_max_kernels;
+extern long long evg_emu_max_cycles;
+extern long long evg_emu_max_inst;
+extern int evg_emu_max_kernels;
 
-extern char *gpu_opencl_binary_name;
-extern char *gpu_kernel_report_file_name;
-extern FILE *gpu_kernel_report_file;
+extern char *evg_emu_opencl_binary_name;
+extern char *evg_emu_report_file_name;
+extern FILE *evg_emu_report_file;
 
-extern int gpu_wavefront_size;
+extern int evg_emu_wavefront_size;
 
 
 /* Error messages */
 
-extern char *err_opencl_note;
-extern char *err_opencl_param_note;
+extern char *err_evg_opencl_note;
+extern char *err_evg_opencl_param_note;
 
 
 
@@ -69,7 +70,7 @@ extern char *err_opencl_param_note;
 
 
 /* Encoding dictionary entry header (as encoded in ELF file) */
-struct amd_bin_enc_dict_entry_header_t
+struct evg_bin_enc_dict_entry_header_t
 {
 	Elf32_Word d_machine;
 	Elf32_Word d_type;
@@ -80,7 +81,7 @@ struct amd_bin_enc_dict_entry_header_t
 
 
 /* Constats embedded in the '.data' section */
-struct amd_bin_enc_dict_entry_consts_t
+struct evg_bin_enc_dict_entry_consts_t
 {
 	float float_consts[256][4];
 	unsigned int int_consts[32][4];
@@ -89,10 +90,10 @@ struct amd_bin_enc_dict_entry_consts_t
 
 
 /* Encoding dictionary entry */
-struct amd_bin_enc_dict_entry_t
+struct evg_bin_enc_dict_entry_t
 {
 	/* Header (pointer to ELF buffer contents) */
-	struct amd_bin_enc_dict_entry_header_t *header;
+	struct evg_bin_enc_dict_entry_header_t *header;
 
 	/* Buffers containing PT_LOAD and PT_NOTE segments */
 	struct elf_buffer_t pt_load_buffer;
@@ -105,7 +106,7 @@ struct amd_bin_enc_dict_entry_t
 	struct elf_buffer_t sec_strtab_buffer;
 
 	/* Constants extract from '.data' section */
-	struct amd_bin_enc_dict_entry_consts_t *consts;
+	struct evg_bin_enc_dict_entry_consts_t *consts;
 
 	/* Info read from pt_notes */
 	int num_gpr_used;
@@ -115,24 +116,24 @@ struct amd_bin_enc_dict_entry_t
 
 
 /* Binary file */
-struct amd_bin_t
+struct evg_bin_file_t
 {
 	/* Associated ELF file */
 	struct elf_file_t *elf_file;
 
 	/* Encoding dictionary.
-	 * Elements are of type 'struct amd_bin_enc_dict_entry_t'
+	 * Elements are of type 'struct evg_bin_enc_dict_entry_t'
 	 * Each element of the dictionary contains the binary for a different architecture
 	 * (Evergreen, x86, etc.) */
 	struct list_t *enc_dict;
 
 	/* Encoding dictionary entry containing the Evergree kernel.
 	 * This is a member of the 'enc_dict' list. */
-	struct amd_bin_enc_dict_entry_t *enc_dict_entry_evergreen;
+	struct evg_bin_enc_dict_entry_t *enc_dict_entry_evergreen;
 };
 
-struct amd_bin_t *amd_bin_create(void *ptr, int size, char *name);
-void amd_bin_free(struct amd_bin_t *amd_bin);
+struct evg_bin_file_t *evg_bin_file_create(void *ptr, int size, char *name);
+void evg_bin_file_free(struct evg_bin_file_t *bin);
 
 
 
@@ -142,19 +143,20 @@ void amd_bin_free(struct amd_bin_t *amd_bin);
  */
 
 /* Shader types */
-enum amd_opengl_shader_kind_t {
-	AMD_OPENGL_SHADER_VERTEX,
-	AMD_OPENGL_SHADER_FRAGMENT,
-	AMD_OPENGL_SHADER_GEOMETRY,
-	AMD_OPENGL_SHADER_EVALUATION,
-	AMD_OPENGL_SHADER_CONTROL
+enum evg_opengl_shader_kind_t
+{
+	EVG_OPENGL_SHADER_VERTEX,
+	EVG_OPENGL_SHADER_FRAGMENT,
+	EVG_OPENGL_SHADER_GEOMETRY,
+	EVG_OPENGL_SHADER_EVALUATION,
+	EVG_OPENGL_SHADER_CONTROL
 };
 
 /* OpenGL shader binary */
-struct amd_opengl_shader_t
+struct evg_opengl_shader_t
 {
 	/* Shader kind */
-	enum amd_opengl_shader_kind_t shader_kind;
+	enum evg_opengl_shader_kind_t shader_kind;
 
 	/* Associated ELF file */
 	struct elf_file_t *external_elf_file;
@@ -165,21 +167,21 @@ struct amd_opengl_shader_t
 };
 
 /* OpenGL shader binary */
-struct amd_opengl_bin_t
+struct evg_opengl_bin_t
 {
 	/* Name of the associated binary file */
 	char *name;
 	
 	/* List of shaders associated with binary file.
-	 * Elements are of type 'struct amd_opengl_shader_t' */
+	 * Elements are of type 'struct evg_opengl_shader_t' */
 	struct list_t *shader_list;
 
 	/* NEED or NOT ? */
-	// struct amd_opengl_shader_t *amd_opengl_shader;
+	// struct evg_opengl_shader_t *amd_opengl_shader;
 };
 
-struct amd_opengl_bin_t *amd_opengl_bin_create(void *ptr, int size, char *name);
-void amd_opengl_bin_free(struct amd_opengl_bin_t *amd_opengl_bin);
+struct evg_opengl_bin_t *evg_opengl_bin_create(void *ptr, int size, char *name);
+void evg_opengl_bin_free(struct evg_opengl_bin_t *bin);
 
 
 
@@ -190,94 +192,98 @@ void amd_opengl_bin_free(struct amd_opengl_bin_t *amd_opengl_bin);
  */
 
 /* Debugging */
-#define opencl_debug(...) debug(opencl_debug_category, __VA_ARGS__)
-extern int opencl_debug_category;
+#define evg_opencl_debug(...) debug(evg_opencl_debug_category, __VA_ARGS__)
+extern int evg_opencl_debug_category;
 
 /* Some constants */
-#define OPENCL_FUNC_FIRST  1000
-#define OPENCL_FUNC_LAST  1073
-#define OPENCL_MAX_ARGS  14
+#define EVG_OPENCL_FUNC_FIRST  1000
+#define EVG_OPENCL_FUNC_LAST  1073
+#define EVG_OPENCL_MAX_ARGS  14
 
 /* An enumeration of the OpenCL functions */
-enum opencl_func_t
+enum evg_opencl_func_t
 {
-#define DEF_OPENCL_FUNC(_name, _argc) OPENCL_FUNC_##_name,
+#define DEF_OPENCL_FUNC(_name, _argc) EVG_OPENCL_FUNC_##_name,
 #include "opencl.dat"
 #undef DEF_OPENCL_FUNC
-	OPENCL_FUNC_COUNT
+	EVG_OPENCL_FUNC_COUNT
 };
 
 /* List of OpenCL functions and number of arguments */
-extern char *opencl_func_names[];
-extern int opencl_func_argc[];
+extern char *evg_opencl_func_names[];
+extern int evg_opencl_func_argc[];
 
 /* Execute OpenCL call */
-int opencl_func_run(int code, unsigned int *args);
+int evg_opencl_func_run(int code, unsigned int *args);
 
 
 
 /* OpenCL objects */
 
-enum opencl_obj_t
+enum evg_opencl_obj_t
 {
-	OPENCL_OBJ_PLATFORM = 1,
-	OPENCL_OBJ_DEVICE,
-	OPENCL_OBJ_CONTEXT,
-	OPENCL_OBJ_COMMAND_QUEUE,
-	OPENCL_OBJ_PROGRAM,
-	OPENCL_OBJ_KERNEL,
-	OPENCL_OBJ_MEM,
-	OPENCL_OBJ_EVENT,
-	OPENCL_OBJ_SAMPLER
+	EVG_OPENCL_OBJ_PLATFORM = 1,
+	EVG_OPENCL_OBJ_DEVICE,
+	EVG_OPENCL_OBJ_CONTEXT,
+	EVG_OPENCL_OBJ_COMMAND_QUEUE,
+	EVG_OPENCL_OBJ_PROGRAM,
+	EVG_OPENCL_OBJ_KERNEL,
+	EVG_OPENCL_OBJ_MEM,
+	EVG_OPENCL_OBJ_EVENT,
+	EVG_OPENCL_OBJ_SAMPLER
 };
 
-extern struct linked_list_t *opencl_object_list;
+extern struct linked_list_t *evg_opencl_object_list;
 
-void opencl_object_add(void *object);
-void opencl_object_remove(void *object);
-void *opencl_object_get(enum opencl_obj_t type, uint32_t id);
-void *opencl_object_get_type(enum opencl_obj_t type);
-uint32_t opencl_object_new_id(enum opencl_obj_t type);
-void opencl_object_free_all(void);
+void evg_opencl_object_add(void *object);
+void evg_opencl_object_remove(void *object);
+void *evg_opencl_object_get(enum evg_opencl_obj_t type, uint32_t id);
+void *evg_opencl_object_get_type(enum evg_opencl_obj_t type);
+uint32_t evg_opencl_object_new_id(enum evg_opencl_obj_t type);
+void evg_opencl_object_free_all(void);
 
 
 
 
 /* OpenCL platform */
 
-struct opencl_platform_t
+struct evg_opencl_platform_t
 {
 	uint32_t id;
 };
 
 struct mem_t;  /* Forward declaration */
 
-extern struct opencl_platform_t *opencl_platform;
+extern struct evg_opencl_platform_t *evg_opencl_platform;
 
-struct opencl_platform_t *opencl_platform_create(void);
-void opencl_platform_free(struct opencl_platform_t *platform);
-uint32_t opencl_platform_get_info(struct opencl_platform_t *platform, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
+struct evg_opencl_platform_t *evg_opencl_platform_create(void);
+void evg_opencl_platform_free(struct evg_opencl_platform_t *platform);
+
+uint32_t evg_opencl_platform_get_info(struct evg_opencl_platform_t *platform,
+	uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
 
 
 
 
 /* OpenCL devices */
 
-struct opencl_device_t
+struct evg_opencl_device_t
 {
 	uint32_t id;
 };
 
-struct opencl_device_t *opencl_device_create(void);
-void opencl_device_free(struct opencl_device_t *device);
-uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
+struct evg_opencl_device_t *evg_opencl_device_create(void);
+void evg_opencl_device_free(struct evg_opencl_device_t *device);
+
+uint32_t evg_opencl_device_get_info(struct evg_opencl_device_t *device, uint32_t name,
+	struct mem_t *mem, uint32_t addr, uint32_t size);
 
 
 
 
 /* OpenCL contexts */
 
-struct opencl_context_t
+struct evg_opencl_context_t
 {
 	uint32_t id;
 	int ref_count;
@@ -286,17 +292,20 @@ struct opencl_context_t
 	uint32_t device_id;
 };
 
-struct opencl_context_t *opencl_context_create(void);
-void opencl_context_free(struct opencl_context_t *context);
-uint32_t opencl_context_get_info(struct opencl_context_t *context, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
-void opencl_context_set_properties(struct opencl_context_t *context, struct mem_t *mem, uint32_t addr);
+struct evg_opencl_context_t *evg_opencl_context_create(void);
+void evg_opencl_context_free(struct evg_opencl_context_t *context);
+
+uint32_t evg_opencl_context_get_info(struct evg_opencl_context_t *context,
+	uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size);
+void evg_opencl_context_set_properties(struct evg_opencl_context_t *context,
+	struct mem_t *mem, uint32_t addr);
 
 
 
 
 /* OpenCL command queue */
 
-struct opencl_command_queue_t
+struct evg_opencl_command_queue_t
 {
 	uint32_t id;
 	int ref_count;
@@ -306,15 +315,15 @@ struct opencl_command_queue_t
 	uint32_t properties;
 };
 
-struct opencl_command_queue_t *opencl_command_queue_create(void);
-void opencl_command_queue_free(struct opencl_command_queue_t *command_queue);
+struct evg_opencl_command_queue_t *evg_opencl_command_queue_create(void);
+void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_queue);
 
 
 
 
 /* OpenCL program */
 
-struct opencl_program_t
+struct evg_opencl_program_t
 {
 	uint32_t id;
 	int ref_count;
@@ -330,17 +339,18 @@ struct opencl_program_t
 	struct list_t *constant_buffer_list;
 };
 
-struct opencl_program_t *opencl_program_create(void);
-void opencl_program_free(struct opencl_program_t *program);
-void opencl_program_build(struct opencl_program_t *program);
-void opencl_program_initialize_constant_buffers(struct opencl_program_t *program);
+struct evg_opencl_program_t *evg_opencl_program_create(void);
+void evg_opencl_program_free(struct evg_opencl_program_t *program);
+
+void evg_opencl_program_build(struct evg_opencl_program_t *program);
+void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t *program);
 
 
 
 
 /* OpenCL sampler */
 
-struct opencl_sampler_t
+struct evg_opencl_sampler_t
 {
 	uint32_t id;
 	int ref_count;
@@ -350,14 +360,14 @@ struct opencl_sampler_t
 	uint32_t addressing_mode;
 };
 
-struct opencl_sampler_t *opencl_sampler_create(void);
-void opencl_sampler_free(struct opencl_sampler_t *sampler);
+struct evg_opencl_sampler_t *evg_opencl_sampler_create(void);
+void evg_opencl_sampler_free(struct evg_opencl_sampler_t *sampler);
 
 
 
 /* OpenCL mem */
 
-struct opencl_mem_t
+struct evg_opencl_mem_t
 {
 	uint32_t id;
 	int ref_count;
@@ -380,13 +390,13 @@ struct opencl_mem_t
 	uint32_t device_ptr;  /* Position assigned in device global memory */
 };
 
-struct opencl_mem_t *opencl_mem_create(void);
-void opencl_mem_free(struct opencl_mem_t *mem);
+struct evg_opencl_mem_t *evg_opencl_mem_create(void);
+void evg_opencl_mem_free(struct evg_opencl_mem_t *mem);
 
 
 /* OpenCL Image */
 
-struct opencl_image_format_t
+struct evg_opencl_image_format_t
 {
 	uint32_t image_channel_order;
 	uint32_t image_channel_data_type;
@@ -398,38 +408,38 @@ struct opencl_image_format_t
 
 /* OpenCL kernel */
 
-enum opencl_mem_scope_t
+enum evg_opencl_mem_scope_t
 {
-	OPENCL_MEM_SCOPE_NONE = 0,
-	OPENCL_MEM_SCOPE_GLOBAL,
-	OPENCL_MEM_SCOPE_LOCAL,
-	OPENCL_MEM_SCOPE_PRIVATE,
-	OPENCL_MEM_SCOPE_CONSTANT
+	EVG_OPENCL_MEM_SCOPE_NONE = 0,
+	EVG_OPENCL_MEM_SCOPE_GLOBAL,
+	EVG_OPENCL_MEM_SCOPE_LOCAL,
+	EVG_OPENCL_MEM_SCOPE_PRIVATE,
+	EVG_OPENCL_MEM_SCOPE_CONSTANT
 };
 
-enum opencl_kernel_arg_kind_t
+enum evg_opencl_kernel_arg_kind_t
 {
-	OPENCL_KERNEL_ARG_KIND_VALUE = 1,
-	OPENCL_KERNEL_ARG_KIND_POINTER,
-	OPENCL_KERNEL_ARG_KIND_IMAGE,
-	OPENCL_KERNEL_ARG_KIND_SAMPLER
+	EVG_OPENCL_KERNEL_ARG_KIND_VALUE = 1,
+	EVG_OPENCL_KERNEL_ARG_KIND_POINTER,
+	EVG_OPENCL_KERNEL_ARG_KIND_IMAGE,
+	EVG_OPENCL_KERNEL_ARG_KIND_SAMPLER
 };
 
-enum opencl_kernel_arg_access_type_t
+enum evg_opencl_kernel_arg_access_type_t
 {
-	OPENCL_KERNEL_ARG_READ_ONLY = 1,
-	OPENCL_KERNEL_ARG_WRITE_ONLY,
-	OPENCL_KERNEL_ARG_READ_WRITE
+	EVG_OPENCL_KERNEL_ARG_READ_ONLY = 1,
+	EVG_OPENCL_KERNEL_ARG_WRITE_ONLY,
+	EVG_OPENCL_KERNEL_ARG_READ_WRITE
 };
 
 
-struct opencl_kernel_arg_t
+struct evg_opencl_kernel_arg_t
 {
 	/* Argument properties, as described in .rodata */
-	enum opencl_kernel_arg_kind_t kind;
-	enum opencl_mem_scope_t mem_scope;  /* For pointers */
+	enum evg_opencl_kernel_arg_kind_t kind;
+	enum evg_opencl_mem_scope_t mem_scope;  /* For pointers */
 	int uav;  /* For memory objects */
-	enum opencl_kernel_arg_access_type_t access_type;
+	enum evg_opencl_kernel_arg_access_type_t access_type;
 
 	/* Argument fields as set in clSetKernelArg */
 	int set;  /* Set to true when it is assigned */
@@ -440,7 +450,7 @@ struct opencl_kernel_arg_t
 	char name[0];
 };
 
-struct opencl_kernel_t
+struct evg_opencl_kernel_t
 {
 	uint32_t id;
 	int ref_count;
@@ -454,10 +464,7 @@ struct opencl_kernel_t
 	struct elf_buffer_t header_buffer;
 
 	/* AMD Kernel binary (internal ELF) */
-	struct amd_bin_t *amd_bin;
-
-	/* CAL ABI data read from 'kernel_file' */
-	struct cal_abi_t *cal_abi;
+	struct evg_bin_file_t *bin_file;
 
 	/* Kernel function metadata */
 	int func_uniqueid;  /* Id of kernel function */
@@ -485,17 +492,17 @@ struct opencl_kernel_t
 	struct list_t *constant_buffer_list;
 
 	/* State of the running kernel */
-	struct gpu_ndrange_t *ndrange;
+	struct evg_ndrange_t *ndrange;
 };
 
-struct opencl_kernel_t *opencl_kernel_create(void);
-void opencl_kernel_free(struct opencl_kernel_t *kernel);
+struct evg_opencl_kernel_t *evg_opencl_kernel_create(void);
+void evg_opencl_kernel_free(struct evg_opencl_kernel_t *kernel);
 
-struct opencl_kernel_arg_t *opencl_kernel_arg_create(char *name);
-void opencl_kernel_arg_free(struct opencl_kernel_arg_t *arg);
+struct evg_opencl_kernel_arg_t *evg_opencl_kernel_arg_create(char *name);
+void evg_opencl_kernel_arg_free(struct evg_opencl_kernel_arg_t *arg);
 
-void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name);
-uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint32_t name,
+void evg_opencl_kernel_load(struct evg_opencl_kernel_t *kernel, char *kernel_name);
+uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kernel, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size);
 
 
@@ -503,45 +510,45 @@ uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint3
 
 /* OpenCL Event */
 
-enum opencl_event_kind_t
+enum evg_opencl_event_kind_t
 {
-	OPENCL_EVENT_NONE = 0,
-	OPENCL_EVENT_NDRANGE_KERNEL,
-	OPENCL_EVENT_TASK,
-	OPENCL_EVENT_NATIVE_KERNEL,
-	OPENCL_EVENT_READ_BUFFER,
-	OPENCL_EVENT_WRITE_BUFFER,
-	OPENCL_EVENT_MAP_BUFFER,
-	OPENCL_EVENT_UNMAP_MEM_OBJECT,
-	OPENCL_EVENT_READ_BUFFER_RECT,
-	OPENCL_EVENT_WRITE_BUFFER_RECT,
-	OPENCL_EVENT_READ_IMAGE,
-	OPENCL_EVENT_WRITE_IMAGE,
-	OPENCL_EVENT_MAP_IMAGE,
-	OPENCL_EVENT_COPY_BUFFER,
-	OPENCL_EVENT_COPY_IMAGE,
-	OPENCL_EVENT_COPY_BUFFER_RECT,
-	OPENCL_EVENT_COPY_BUFFER_TO_IMAGE,
-	OPENCL_EVENT_COPY_IMAGE_TO_BUFFER,
-	OPENCL_EVENT_MARKER,
-	OPENCL_EVENT_COUNT
+	EVG_OPENCL_EVENT_NONE = 0,
+	EVG_OPENCL_EVENT_NDRANGE_KERNEL,
+	EVG_OPENCL_EVENT_TASK,
+	EVG_OPENCL_EVENT_NATIVE_KERNEL,
+	EVG_OPENCL_EVENT_READ_BUFFER,
+	EVG_OPENCL_EVENT_WRITE_BUFFER,
+	EVG_OPENCL_EVENT_MAP_BUFFER,
+	EVG_OPENCL_EVENT_UNMAP_MEM_OBJECT,
+	EVG_OPENCL_EVENT_READ_BUFFER_RECT,
+	EVG_OPENCL_EVENT_WRITE_BUFFER_RECT,
+	EVG_OPENCL_EVENT_READ_IMAGE,
+	EVG_OPENCL_EVENT_WRITE_IMAGE,
+	EVG_OPENCL_EVENT_MAP_IMAGE,
+	EVG_OPENCL_EVENT_COPY_BUFFER,
+	EVG_OPENCL_EVENT_COPY_IMAGE,
+	EVG_OPENCL_EVENT_COPY_BUFFER_RECT,
+	EVG_OPENCL_EVENT_COPY_BUFFER_TO_IMAGE,
+	EVG_OPENCL_EVENT_COPY_IMAGE_TO_BUFFER,
+	EVG_OPENCL_EVENT_MARKER,
+	EVG_OPENCL_EVENT_COUNT
 };
 
-enum opencl_event_status_t
+enum evg_opencl_event_status_t
 {
-	OPENCL_EVENT_STATUS_NONE = 0,
-	OPENCL_EVENT_STATUS_QUEUED,
-	OPENCL_EVENT_STATUS_SUBMITTED,
-	OPENCL_EVENT_STATUS_RUNNING,
-	OPENCL_EVENT_STATUS_COMPLETE
+	EVG_OPENCL_EVENT_STATUS_NONE = 0,
+	EVG_OPENCL_EVENT_STATUS_QUEUED,
+	EVG_OPENCL_EVENT_STATUS_SUBMITTED,
+	EVG_OPENCL_EVENT_STATUS_RUNNING,
+	EVG_OPENCL_EVENT_STATUS_COMPLETE
 };
 
-struct opencl_event_t
+struct evg_opencl_event_t
 {
 	uint32_t id;
 	int ref_count;
-	enum opencl_event_kind_t kind;
-	enum opencl_event_status_t status;
+	enum evg_opencl_event_kind_t kind;
+	enum evg_opencl_event_status_t status;
 
 	long long time_queued;
 	long long time_submit;
@@ -549,12 +556,12 @@ struct opencl_event_t
 	long long time_end;
 };
 
-struct opencl_event_t *opencl_event_create(enum opencl_event_kind_t kind);
-void opencl_event_free(struct opencl_event_t *event);
+struct evg_opencl_event_t *evg_opencl_event_create(enum evg_opencl_event_kind_t kind);
+void evg_opencl_event_free(struct evg_opencl_event_t *event);
 
-uint32_t opencl_event_get_profiling_info(struct opencl_event_t *event, uint32_t name,
+uint32_t evg_opencl_event_get_profiling_info(struct evg_opencl_event_t *event, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size);
-long long opencl_event_timer(void);
+long long evg_opencl_event_timer(void);
 
 
 
@@ -563,27 +570,27 @@ long long opencl_event_timer(void);
  * GPU Write Tasks
  */
 
-enum gpu_isa_write_task_kind_t
+enum evg_isa_write_task_kind_t
 {
-	GPU_ISA_WRITE_TASK_NONE = 0,
-	GPU_ISA_WRITE_TASK_WRITE_LDS,
-	GPU_ISA_WRITE_TASK_WRITE_DEST,
-	GPU_ISA_WRITE_TASK_PUSH_BEFORE,
-	GPU_ISA_WRITE_TASK_SET_PRED
+	EVG_ISA_WRITE_TASK_NONE = 0,
+	EVG_ISA_WRITE_TASK_WRITE_LDS,
+	EVG_ISA_WRITE_TASK_WRITE_DEST,
+	EVG_ISA_WRITE_TASK_PUSH_BEFORE,
+	EVG_ISA_WRITE_TASK_SET_PRED
 };
 
 
-struct gpu_isa_write_task_t
+struct evg_isa_write_task_t
 {
 	/* All */
-	enum gpu_isa_write_task_kind_t kind;
+	enum evg_isa_write_task_kind_t kind;
 	struct evg_inst_t *inst;
 	
-	/* When 'kind' == GPU_ISA_WRITE_TASK_WRITE_DEST */
+	/* When 'kind' == EVG_ISA_WRITE_TASK_WRITE_DEST */
 	int gpr, rel, chan, index_mode, write_mask;
 	uint32_t value;
 
-	/* When 'kind' == GPU_ISA_WRITE_TASK_WRITE_LDS */
+	/* When 'kind' == EVG_ISA_WRITE_TASK_WRITE_LDS */
 	uint32_t lds_addr;
 	uint32_t lds_value;
         size_t   lds_value_size;
@@ -593,17 +600,17 @@ struct gpu_isa_write_task_t
 };
 
 
-/* Repository for 'struct gpu_isa_write_task_t' objects */
-extern struct repos_t *gpu_isa_write_task_repos;
+/* Repository for 'struct evg_isa_write_task_t' objects */
+extern struct repos_t *evg_isa_write_task_repos;
 
 
 /* Functions to handle deferred tasks */
-void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value, size_t value_size);
-void gpu_isa_enqueue_write_dest(uint32_t value);
-void gpu_isa_enqueue_write_dest_float(float value);
-void gpu_isa_enqueue_push_before(void);
-void gpu_isa_enqueue_pred_set(int cond);
-void gpu_isa_write_task_commit(void);
+void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, size_t value_size);
+void evg_isa_enqueue_write_dest(uint32_t value);
+void evg_isa_enqueue_write_dest_float(float value);
+void evg_isa_enqueue_push_before(void);
+void evg_isa_enqueue_pred_set(int cond);
+void evg_isa_write_task_commit(void);
 
 
 
@@ -612,19 +619,19 @@ void gpu_isa_write_task_commit(void);
  * GPU NDRange (State of running kernel, grid of work_groups)
  */
 
-struct gpu_ndrange_t
+struct evg_ndrange_t
 {
 	/* ID */
-	char name[MAX_STRING_SIZE];
+	char *name;
 	int id;  /* Sequential ndrange ID (given by gk->ndrange_count counter) */
 
 	/* OpenCL kernel associated */
-	struct opencl_kernel_t *kernel;
+	struct evg_opencl_kernel_t *kernel;
 
 	/* Pointers to work-groups, wavefronts, and work_items */
-	struct gpu_work_group_t **work_groups;
-	struct gpu_wavefront_t **wavefronts;
-	struct gpu_work_item_t **work_items;
+	struct evg_work_group_t **work_groups;
+	struct evg_wavefront_t **wavefronts;
+	struct evg_work_item_t **work_items;
 
 	/* IDs of work-items contained */
 	int work_item_id_first;
@@ -642,23 +649,23 @@ struct gpu_ndrange_t
 	int work_group_count;
 	
 	/* Size of work-groups */
-	int wavefronts_per_work_group;  /* = ceil(local_size / gpu_wavefront_size) */
+	int wavefronts_per_work_group;  /* = ceil(local_size / evg_emu_wavefront_size) */
 
 	/* List of pending work-groups */
-	struct gpu_work_group_t *pending_list_head;
-	struct gpu_work_group_t *pending_list_tail;
+	struct evg_work_group_t *pending_list_head;
+	struct evg_work_group_t *pending_list_tail;
 	int pending_list_count;
 	int pending_list_max;
 
 	/* List of running work-groups */
-	struct gpu_work_group_t *running_list_head;
-	struct gpu_work_group_t *running_list_tail;
+	struct evg_work_group_t *running_list_head;
+	struct evg_work_group_t *running_list_tail;
 	int running_list_count;
 	int running_list_max;
 
 	/* List of finished work-groups */
-	struct gpu_work_group_t *finished_list_head;
-	struct gpu_work_group_t *finished_list_tail;
+	struct evg_work_group_t *finished_list_head;
+	struct evg_work_group_t *finished_list_tail;
 	int finished_list_count;
 	int finished_list_max;
 	
@@ -667,14 +674,14 @@ struct gpu_ndrange_t
 	uint32_t local_mem_top;
 };
 
-struct gpu_ndrange_t *gpu_ndrange_create(struct opencl_kernel_t *kernel);
-void gpu_ndrange_free(struct gpu_ndrange_t *ndrange);
-void gpu_ndrange_dump(struct gpu_ndrange_t *ndrange, FILE *f);
+struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel);
+void evg_ndrange_free(struct evg_ndrange_t *ndrange);
+void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f);
 
-void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange);
-void gpu_ndrange_setup_const_mem(struct gpu_ndrange_t *ndrange);
-void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange);
-void gpu_ndrange_run(struct gpu_ndrange_t *ndrange);
+void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange);
+void evg_ndrange_setup_const_mem(struct evg_ndrange_t *ndrange);
+void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange);
+void evg_ndrange_run(struct evg_ndrange_t *ndrange);
 
 
 
@@ -683,25 +690,26 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange);
  * GPU Work-Group
  */
 
-enum gpu_work_group_status_t
+enum evg_work_group_status_t
 {
-	gpu_work_group_pending		= 0x0001,
-	gpu_work_group_running		= 0x0002,
-	gpu_work_group_finished		= 0x0004
+	evg_work_group_pending		= 0x0001,
+	evg_work_group_running		= 0x0002,
+	evg_work_group_finished		= 0x0004
 };
 
-struct gpu_work_group_t
+struct evg_work_group_t
 {
-	/* ID */
 	char name[30];
+
+	/* ID */
 	int id;  /* Group ID */
 	int id_3d[3];  /* 3-dimensional Group ID */
 
 	/* Status */
-	enum gpu_work_group_status_t status;
+	enum evg_work_group_status_t status;
 
 	/* NDRange it belongs to */
-	struct gpu_ndrange_t *ndrange;
+	struct evg_ndrange_t *ndrange;
 
 	/* IDs of work-items contained */
 	int work_item_id_first;
@@ -714,32 +722,32 @@ struct gpu_work_group_t
 	int wavefront_count;
 
 	/* Pointers to wavefronts and work-items */
-	struct gpu_work_item_t **work_items;  /* Pointer to first work_item in 'kernel->work_items' */
-	struct gpu_wavefront_t **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
+	struct evg_work_item_t **work_items;  /* Pointer to first work_item in 'kernel->work_items' */
+	struct evg_wavefront_t **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
 
 	/* Double linked lists of work-groups */
-	struct gpu_work_group_t *pending_list_prev;
-	struct gpu_work_group_t *pending_list_next;
-	struct gpu_work_group_t *running_list_prev;
-	struct gpu_work_group_t *running_list_next;
-	struct gpu_work_group_t *finished_list_prev;
-	struct gpu_work_group_t *finished_list_next;
+	struct evg_work_group_t *pending_list_prev;
+	struct evg_work_group_t *pending_list_next;
+	struct evg_work_group_t *running_list_prev;
+	struct evg_work_group_t *running_list_next;
+	struct evg_work_group_t *finished_list_prev;
+	struct evg_work_group_t *finished_list_next;
 
 	/* List of running wavefronts */
-	struct gpu_wavefront_t *running_list_head;
-	struct gpu_wavefront_t *running_list_tail;
+	struct evg_wavefront_t *running_list_head;
+	struct evg_wavefront_t *running_list_tail;
 	int running_list_count;
 	int running_list_max;
 
 	/* List of wavefronts in barrier */
-	struct gpu_wavefront_t *barrier_list_head;
-	struct gpu_wavefront_t *barrier_list_tail;
+	struct evg_wavefront_t *barrier_list_head;
+	struct evg_wavefront_t *barrier_list_tail;
 	int barrier_list_count;
 	int barrier_list_max;
 
 	/* List of finished wavefronts */
-	struct gpu_wavefront_t *finished_list_head;
-	struct gpu_wavefront_t *finished_list_tail;
+	struct evg_wavefront_t *finished_list_head;
+	struct evg_wavefront_t *finished_list_tail;
 	int finished_list_count;
 	int finished_list_max;
 	
@@ -751,18 +759,18 @@ struct gpu_work_group_t
 	struct mem_t *local_mem;
 };
 
-#define FOREACH_WORK_GROUP_IN_NDRANGE(NDRANGE, WORK_GROUP_ID) \
+#define EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(NDRANGE, WORK_GROUP_ID) \
 	for ((WORK_GROUP_ID) = (NDRANGE)->work_group_id_first; \
 		(WORK_GROUP_ID) <= (NDRANGE)->work_group_id_last; \
 		(WORK_GROUP_ID)++)
 
-struct gpu_work_group_t *gpu_work_group_create();
-void gpu_work_group_free(struct gpu_work_group_t *work_group);
-void gpu_work_group_dump(struct gpu_work_group_t *work_group, FILE *f);
+struct evg_work_group_t *evg_work_group_create();
+void evg_work_group_free(struct evg_work_group_t *work_group);
+void evg_work_group_dump(struct evg_work_group_t *work_group, FILE *f);
 
-int gpu_work_group_get_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status);
-void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status);
-void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status);
+int evg_work_group_get_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status);
+void evg_work_group_set_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status);
+void evg_work_group_clear_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status);
 
 
 
@@ -772,18 +780,20 @@ void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_w
  */
 
 /* Type of clauses */
-enum gpu_clause_kind_t
+enum evg_clause_kind_t
 {
-	GPU_CLAUSE_NONE = 0,
-	GPU_CLAUSE_CF,  /* Control-flow */
-	GPU_CLAUSE_ALU,  /* ALU clause */
-	GPU_CLAUSE_TEX,  /* Fetch trough a Texture Cache Clause */
-	GPU_CLAUSE_VC  /* Fetch through a Vertex Cache Clause */
+	EVG_CLAUSE_NONE = 0,
+	EVG_CLAUSE_CF,  /* Control-flow */
+	EVG_CLAUSE_ALU,  /* ALU clause */
+	EVG_CLAUSE_TEX,  /* Fetch trough a Texture Cache Clause */
+	EVG_CLAUSE_VC  /* Fetch through a Vertex Cache Clause */
 };
 
+
+#define EVG_MAX_STACK_SIZE  32
+
 /* Wavefront */
-#define GPU_MAX_STACK_SIZE  32
-struct gpu_wavefront_t
+struct evg_wavefront_t
 {
 	/* ID */
 	char name[30];
@@ -796,14 +806,14 @@ struct gpu_wavefront_t
 	int work_item_count;
 
 	/* NDRange and Work-group it belongs to */
-	struct gpu_ndrange_t *ndrange;
-	struct gpu_work_group_t *work_group;
+	struct evg_ndrange_t *ndrange;
+	struct evg_work_group_t *work_group;
 
 	/* Pointer to work_items */
-	struct gpu_work_item_t **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
+	struct evg_work_item_t **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
 
 	/* Current clause kind and instruction pointers */
-	enum gpu_clause_kind_t clause_kind;
+	enum evg_clause_kind_t clause_kind;
 
 	/* Current instructions */
 	struct evg_inst_t cf_inst;
@@ -820,7 +830,7 @@ struct gpu_wavefront_t
 	void *clause_buf_end;
 
 	/* Active mask stack */
-	struct bit_map_t *active_stack;  /* GPU_MAX_STACK_SIZE * work_item_count elements */
+	struct bit_map_t *active_stack;  /* EVG_MAX_STACK_SIZE * work_item_count elements */
 	int stack_top;
 
 	/* Predicate mask */
@@ -847,12 +857,12 @@ struct gpu_wavefront_t
 	int active_mask_pop;  /* Number of entries the stack was popped */
 
 	/* Linked lists */
-	struct gpu_wavefront_t *running_list_next;
-	struct gpu_wavefront_t *running_list_prev;
-	struct gpu_wavefront_t *barrier_list_next;
-	struct gpu_wavefront_t *barrier_list_prev;
-	struct gpu_wavefront_t *finished_list_next;
-	struct gpu_wavefront_t *finished_list_prev;
+	struct evg_wavefront_t *running_list_next;
+	struct evg_wavefront_t *running_list_prev;
+	struct evg_wavefront_t *barrier_list_next;
+	struct evg_wavefront_t *barrier_list_prev;
+	struct evg_wavefront_t *finished_list_next;
+	struct evg_wavefront_t *finished_list_prev;
 
 	/* To measure simulation performance */
 	long long emu_inst_count;  /* Total emulated instructions */
@@ -883,23 +893,23 @@ struct gpu_wavefront_t
 	long long tc_inst_global_mem_read_count;  /* Number of instructions reading from global mem (they are TC inst) */
 };
 
-#define FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \
+#define EVG_FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \
 	for ((WAVEFRONT_ID) = (NDRANGE)->wavefront_id_first; \
 		(WAVEFRONT_ID) <= (NDRANGE)->wavefront_id_last; \
 		(WAVEFRONT_ID)++)
 
-#define FOREACH_WAVEFRONT_IN_WORK_GROUP(WORK_GROUP, WAVEFRONT_ID) \
+#define EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(WORK_GROUP, WAVEFRONT_ID) \
 	for ((WAVEFRONT_ID) = (WORK_GROUP)->wavefront_id_first; \
 		(WAVEFRONT_ID) <= (WORK_GROUP)->wavefront_id_last; \
 		(WAVEFRONT_ID)++)
 
-struct gpu_wavefront_t *gpu_wavefront_create();
-void gpu_wavefront_free(struct gpu_wavefront_t *wavefront);
-void gpu_wavefront_dump(struct gpu_wavefront_t *wavefront, FILE *f);
+struct evg_wavefront_t *evg_wavefront_create();
+void evg_wavefront_free(struct evg_wavefront_t *wavefront);
+void evg_wavefront_dump(struct evg_wavefront_t *wavefront, FILE *f);
 
-void gpu_wavefront_stack_push(struct gpu_wavefront_t *wavefront);
-void gpu_wavefront_stack_pop(struct gpu_wavefront_t *wavefront, int count);
-void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront);
+void evg_wavefront_stack_push(struct evg_wavefront_t *wavefront);
+void evg_wavefront_stack_pop(struct evg_wavefront_t *wavefront, int count);
+void evg_wavefront_execute(struct evg_wavefront_t *wavefront);
 
 
 
@@ -908,22 +918,23 @@ void gpu_wavefront_execute(struct gpu_wavefront_t *wavefront);
  * GPU work_item (Pixel)
  */
 
-#define GPU_MAX_GPR_ELEM  5
-#define MAX_LOCAL_MEM_ACCESSES_PER_INST  2
+#define EVG_MAX_GPR_ELEM  5
+#define EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
 
-struct gpu_gpr_t
+struct evg_gpr_t
 {
-	uint32_t elem[GPU_MAX_GPR_ELEM];  /* x, y, z, w, t */
+	uint32_t elem[EVG_MAX_GPR_ELEM];  /* x, y, z, w, t */
 };
 
 /* Structure describing a memory access definition */
-struct gpu_mem_access_t {
+struct evg_mem_access_t
+{
 	int type;  /* 0-none, 1-read, 2-write */
 	uint32_t addr;
 	int size;
 };
 
-struct gpu_work_item_t
+struct evg_work_item_t
 {
 	/* IDs */
 	int id;  /* global ID */
@@ -935,13 +946,13 @@ struct gpu_work_item_t
 	int id_in_work_group_3d[3];  /* local 3D IDs */
 
 	/* Wavefront, work-group, and NDRange where it belongs */
-	struct gpu_wavefront_t *wavefront;
-	struct gpu_work_group_t *work_group;
-	struct gpu_ndrange_t *ndrange;
+	struct evg_wavefront_t *wavefront;
+	struct evg_work_group_t *work_group;
+	struct evg_ndrange_t *ndrange;
 
 	/* Work-item state */
-	struct gpu_gpr_t gpr[128];  /* General purpose registers */
-	struct gpu_gpr_t pv;  /* Result of last computations */
+	struct evg_gpr_t gpr[128];  /* General purpose registers */
+	struct evg_gpr_t pv;  /* Result of last computations */
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
 	 * and executed as a burst at the end of an ALU group. */
@@ -964,35 +975,35 @@ struct gpu_work_item_t
 
 	/* Last local memory access */
 	int local_mem_access_count;  /* Number of local memory access performed by last instruction */
-	uint32_t local_mem_access_addr[MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	uint32_t local_mem_access_size[MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	int local_mem_access_type[MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
+	uint32_t local_mem_access_addr[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	uint32_t local_mem_access_size[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	int local_mem_access_type[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
 };
 
-#define FOREACH_WORK_ITEM_IN_NDRANGE(NDRANGE, WORK_ITEM_ID) \
+#define EVG_FOREACH_WORK_ITEM_IN_NDRANGE(NDRANGE, WORK_ITEM_ID) \
 	for ((WORK_ITEM_ID) = (NDRANGE)->work_item_id_first; \
 		(WORK_ITEM_ID) <= (NDRANGE)->work_item_id_last; \
 		(WORK_ITEM_ID)++)
 
-#define FOREACH_WORK_ITEM_IN_WORK_GROUP(WORK_GROUP, WORK_ITEM_ID) \
+#define EVG_FOREACH_WORK_ITEM_IN_WORK_GROUP(WORK_GROUP, WORK_ITEM_ID) \
 	for ((WORK_ITEM_ID) = (WORK_GROUP)->work_item_id_first; \
 		(WORK_ITEM_ID) <= (WORK_GROUP)->work_item_id_last; \
 		(WORK_ITEM_ID)++)
 
-#define FOREACH_WORK_ITEM_IN_WAVEFRONT(WAVEFRONT, WORK_ITEM_ID) \
+#define EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(WAVEFRONT, WORK_ITEM_ID) \
 	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first; \
 		(WORK_ITEM_ID) <= (WAVEFRONT)->work_item_id_last; \
 		(WORK_ITEM_ID)++)
 
-struct gpu_work_item_t *gpu_work_item_create(void);
-void gpu_work_item_free(struct gpu_work_item_t *work_item);
+struct evg_work_item_t *evg_work_item_create(void);
+void evg_work_item_free(struct evg_work_item_t *work_item);
 
 /* Consult and change active/predicate bits */
-void gpu_work_item_set_active(struct gpu_work_item_t *work_item, int active);
-int gpu_work_item_get_active(struct gpu_work_item_t *work_item);
-void gpu_work_item_set_pred(struct gpu_work_item_t *work_item, int pred);
-int gpu_work_item_get_pred(struct gpu_work_item_t *work_item);
-void gpu_work_item_update_branch_digest(struct gpu_work_item_t *work_item,
+void evg_work_item_set_active(struct evg_work_item_t *work_item, int active);
+int evg_work_item_get_active(struct evg_work_item_t *work_item);
+void evg_work_item_set_pred(struct evg_work_item_t *work_item, int pred);
+int evg_work_item_get_pred(struct evg_work_item_t *work_item);
+void evg_work_item_update_branch_digest(struct evg_work_item_t *work_item,
 	long long inst_count, uint32_t inst_addr);
 
 
@@ -1035,7 +1046,7 @@ extern char *err_gpu_machine_note;
 	__FUNCTION__, gpu_isa_inst->info->name, (v), err_gpu_machine_note); }
 #define GPU_PARAM_NOT_SUPPORTED_OOR(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: %s: not supported for '" #p "' out of range [%d:%d]\n%s", \
-	__FUNCTION__, gpu_isa_inst->info->name, (min), (max), err_opencl_param_note); }
+	__FUNCTION__, gpu_isa_inst->info->name, (min), (max), err_evg_opencl_param_note); }
 
 
 /* Macros for fast access of instruction words */

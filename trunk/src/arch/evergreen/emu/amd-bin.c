@@ -150,7 +150,7 @@ struct pt_note_prog_info_entry_t
 
 
 /* Read next note at the current position of the PT_NOTE segment */
-static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_enc_dict_entry_t *enc_dict_entry)
+static void amd_bin_read_note_header(struct evg_bin_file_t *amd_bin, struct evg_bin_enc_dict_entry_t *enc_dict_entry)
 {
 	struct elf_buffer_t *buffer;
 
@@ -254,7 +254,7 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 		int data_segment_desc_count;
 		struct pt_note_data_segment_desc_t *data_segment_desc;
 
-		struct amd_bin_enc_dict_entry_consts_t *consts;
+		struct evg_bin_enc_dict_entry_consts_t *consts;
 		char const_value[MAX_STRING_SIZE];
 
 		int j;
@@ -374,7 +374,7 @@ static void amd_bin_read_note_header(struct amd_bin_t *amd_bin, struct amd_bin_e
 
 
 /* Decode notes in the PT_NOTE segment of the given encoding dictionary entry */
-static void amd_bin_read_notes(struct amd_bin_t *amd_bin, struct amd_bin_enc_dict_entry_t *enc_dict_entry)
+static void amd_bin_read_notes(struct evg_bin_file_t *amd_bin, struct evg_bin_enc_dict_entry_t *enc_dict_entry)
 {
 	struct elf_buffer_t *buffer;
 
@@ -391,7 +391,7 @@ static void amd_bin_read_notes(struct amd_bin_t *amd_bin, struct amd_bin_enc_dic
 }
 
 
-static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
+static void amd_bin_read_enc_dict(struct evg_bin_file_t *amd_bin)
 {
 	struct elf_file_t *elf_file;
 	struct elf_buffer_t *buffer;
@@ -399,8 +399,8 @@ static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
 
 	struct elf_program_header_t *program_header;
 
-	struct amd_bin_enc_dict_entry_t *enc_dict_entry;
-	struct amd_bin_enc_dict_entry_header_t *enc_dict_entry_header;
+	struct evg_bin_enc_dict_entry_t *enc_dict_entry;
+	struct evg_bin_enc_dict_entry_header_t *enc_dict_entry_header;
 	int enc_dict_entry_count;
 
 	int i;
@@ -435,8 +435,8 @@ static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
 	AMD_BIN_NOT_SUPPORTED_NEQ(program_header->header->p_memsz, 0);
 	AMD_BIN_NOT_SUPPORTED_NEQ(program_header->header->p_flags, 0);
 	AMD_BIN_NOT_SUPPORTED_NEQ(program_header->header->p_align, 0);
-	assert(program_header->header->p_filesz % sizeof(struct amd_bin_enc_dict_entry_header_t) == 0);
-	enc_dict_entry_count = program_header->header->p_filesz / sizeof(struct amd_bin_enc_dict_entry_header_t);
+	assert(program_header->header->p_filesz % sizeof(struct evg_bin_enc_dict_entry_header_t) == 0);
+	enc_dict_entry_count = program_header->header->p_filesz / sizeof(struct evg_bin_enc_dict_entry_header_t);
 	elf_debug("  -> %d entries\n\n", enc_dict_entry_count);
 
 	/* Read encoding dictionary entries */
@@ -445,9 +445,9 @@ static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
 	for (i = 0; i < enc_dict_entry_count; i++) {
 		
 		/* Create entry */
-		enc_dict_entry = calloc(1, sizeof(struct amd_bin_enc_dict_entry_t));
+		enc_dict_entry = calloc(1, sizeof(struct evg_bin_enc_dict_entry_t));
 		enc_dict_entry->header = elf_buffer_tell(buffer);
-		elf_buffer_read(buffer, NULL, sizeof(struct amd_bin_enc_dict_entry_header_t));
+		elf_buffer_read(buffer, NULL, sizeof(struct evg_bin_enc_dict_entry_header_t));
 		list_add(amd_bin->enc_dict, enc_dict_entry);
 
 		/* Store encoding dictionary entry for Evergreen (code 9) */
@@ -481,11 +481,11 @@ static void amd_bin_read_enc_dict(struct amd_bin_t *amd_bin)
 }
 
 
-static void amd_bin_read_segments(struct amd_bin_t *amd_bin)
+static void amd_bin_read_segments(struct evg_bin_file_t *amd_bin)
 {
 	struct elf_file_t *elf_file;
 
-	struct amd_bin_enc_dict_entry_t *enc_dict_entry;
+	struct evg_bin_enc_dict_entry_t *enc_dict_entry;
 	struct elf_program_header_t *program_header;
 
 	int i, j;
@@ -539,12 +539,12 @@ static void amd_bin_read_segments(struct amd_bin_t *amd_bin)
 }
 
 
-static void amd_bin_read_sections(struct amd_bin_t *amd_bin)
+static void amd_bin_read_sections(struct evg_bin_file_t *amd_bin)
 {
 	struct elf_file_t *elf_file;
 	struct elf_buffer_t *buffer;
 
-	struct amd_bin_enc_dict_entry_t *enc_dict_entry;
+	struct evg_bin_enc_dict_entry_t *enc_dict_entry;
 	struct elf_section_t *section;
 
 	int i, j;
@@ -635,12 +635,12 @@ static void amd_bin_read_sections(struct amd_bin_t *amd_bin)
  */
 
 
-struct amd_bin_t *amd_bin_create(void *ptr, int size, char *name)
+struct evg_bin_file_t *evg_bin_file_create(void *ptr, int size, char *name)
 {
-	struct amd_bin_t *amd_bin;
+	struct evg_bin_file_t *amd_bin;
 
 	/* Create structure */
-	amd_bin = calloc(1, sizeof(struct amd_bin_t));
+	amd_bin = calloc(1, sizeof(struct evg_bin_file_t));
 
 	/* Read and parse ELF file */
 	amd_bin->elf_file = elf_file_create_from_buffer(ptr, size, name);
@@ -670,7 +670,7 @@ struct amd_bin_t *amd_bin_create(void *ptr, int size, char *name)
 }
 
 
-void amd_bin_free(struct amd_bin_t *amd_bin)
+void evg_bin_file_free(struct evg_bin_file_t *amd_bin)
 {
 	/* Free encoding dictionary */
 	while (list_count(amd_bin->enc_dict))

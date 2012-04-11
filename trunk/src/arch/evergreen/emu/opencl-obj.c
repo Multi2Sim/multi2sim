@@ -27,30 +27,30 @@
 
 /* OpenCL Objects */
 
-struct linked_list_t *opencl_object_list;
+struct linked_list_t *evg_opencl_object_list;
 
 
 /* Add an OpenCL object to object list */
-void opencl_object_add(void *object)
+void evg_opencl_object_add(void *object)
 {
-	linked_list_find(opencl_object_list, object);
-	assert(opencl_object_list->error_code);
-	linked_list_add(opencl_object_list, object);
+	linked_list_find(evg_opencl_object_list, object);
+	assert(evg_opencl_object_list->error_code);
+	linked_list_add(evg_opencl_object_list, object);
 }
 
 
 /* Remove an OpenCL object from object list */
-void opencl_object_remove(void *object)
+void evg_opencl_object_remove(void *object)
 {
-	linked_list_find(opencl_object_list, object);
-	assert(!opencl_object_list->error_code);
-	linked_list_remove(opencl_object_list);
+	linked_list_find(evg_opencl_object_list, object);
+	assert(!evg_opencl_object_list->error_code);
+	linked_list_remove(evg_opencl_object_list);
 }
 
 
 /* Look for an OpenCL object in the object list. The 'id' is the
  * first field for every object. */
-void *opencl_object_get(enum opencl_obj_t type, uint32_t id)
+void *evg_opencl_object_get(enum evg_opencl_obj_t type, uint32_t id)
 {
 	void *object;
 	uint32_t object_id;
@@ -58,9 +58,9 @@ void *opencl_object_get(enum opencl_obj_t type, uint32_t id)
 	if (id >> 16 != type)
 		fatal("%s: requested OpenCL object of incorrect type",
 			__FUNCTION__);
-	LINKED_LIST_FOR_EACH(opencl_object_list)
+	LINKED_LIST_FOR_EACH(evg_opencl_object_list)
 	{
-		if (!(object = linked_list_get(opencl_object_list)))
+		if (!(object = linked_list_get(evg_opencl_object_list)))
 			panic("%s: empty object", __FUNCTION__);
 		object_id = * (uint32_t *) object;
 		if (object_id == id)
@@ -73,15 +73,15 @@ void *opencl_object_get(enum opencl_obj_t type, uint32_t id)
 
 
 /* Get the oldest created OpenCL object of the specified type */
-void *opencl_object_get_type(enum opencl_obj_t type)
+void *evg_opencl_object_get_type(enum evg_opencl_obj_t type)
 {
 	void *object;
 	uint32_t object_id;
 
 	/* Find object */
-	LINKED_LIST_FOR_EACH(opencl_object_list)
+	LINKED_LIST_FOR_EACH(evg_opencl_object_list)
 	{
-		if (!(object = linked_list_get(opencl_object_list)))
+		if (!(object = linked_list_get(evg_opencl_object_list)))
 			panic("%s: empty object", __FUNCTION__);
 		object_id = * (uint32_t *) object;
 		if (object_id >> 16 == type)
@@ -97,7 +97,7 @@ void *opencl_object_get_type(enum opencl_obj_t type)
 /* Assignment of OpenCL object identifiers
  * An identifier is a 32-bit value, whose 16 most significant bits represent the
  * object type, while the 16 least significant bits represent a unique object ID. */
-uint32_t opencl_object_new_id(enum opencl_obj_t type)
+uint32_t evg_opencl_object_new_id(enum evg_opencl_obj_t type)
 {
 	static uint32_t opencl_current_object_id;
 	uint32_t id;
@@ -112,48 +112,48 @@ uint32_t opencl_object_new_id(enum opencl_obj_t type)
 
 /* Free all OpenCL objects in the object list */
 
-void opencl_object_free_all()
+void evg_opencl_object_free_all()
 {
 	void *object;
 
 	/* Platforms */
-	while ((object = opencl_object_get_type(OPENCL_OBJ_PLATFORM)))
-		opencl_platform_free((struct opencl_platform_t *) object);
+	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_PLATFORM)))
+		evg_opencl_platform_free((struct evg_opencl_platform_t *) object);
 	
 	/* Devices */
-	while ((object = opencl_object_get_type(OPENCL_OBJ_DEVICE)))
-		opencl_device_free((struct opencl_device_t *) object);
+	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_DEVICE)))
+		evg_opencl_device_free((struct evg_opencl_device_t *) object);
 	
 	/* Contexts */
-	while ((object = opencl_object_get_type(OPENCL_OBJ_CONTEXT)))
-		opencl_context_free((struct opencl_context_t *) object);
+	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_CONTEXT)))
+		evg_opencl_context_free((struct evg_opencl_context_t *) object);
 	
 	/* Command queues */
-	while ((object = opencl_object_get_type(OPENCL_OBJ_COMMAND_QUEUE)))
-		opencl_command_queue_free((struct opencl_command_queue_t *) object);
+	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_COMMAND_QUEUE)))
+		evg_opencl_command_queue_free((struct evg_opencl_command_queue_t *) object);
 	
 	/* Programs */
-	while ((object = opencl_object_get_type(OPENCL_OBJ_PROGRAM)))
-		opencl_program_free((struct opencl_program_t *) object);
+	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_PROGRAM)))
+		evg_opencl_program_free((struct evg_opencl_program_t *) object);
 	
 	/* Kernels */
-	while ((object = opencl_object_get_type(OPENCL_OBJ_KERNEL)))
-		opencl_kernel_free((struct opencl_kernel_t *) object);
+	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_KERNEL)))
+		evg_opencl_kernel_free((struct evg_opencl_kernel_t *) object);
 	
 	/* Mems */
-	while ((object = opencl_object_get_type(OPENCL_OBJ_MEM)))
-		opencl_mem_free((struct opencl_mem_t *) object);
+	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_MEM)))
+		evg_opencl_mem_free((struct evg_opencl_mem_t *) object);
 	
 	/* Events */
-	while ((object = opencl_object_get_type(OPENCL_OBJ_EVENT)))
-		opencl_event_free((struct opencl_event_t *) object);
+	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_EVENT)))
+		evg_opencl_event_free((struct evg_opencl_event_t *) object);
 
 	/* Samplers */
-	while ((object = opencl_object_get_type(OPENCL_OBJ_SAMPLER)))
-		opencl_sampler_free((struct opencl_sampler_t *) object);
+	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_SAMPLER)))
+		evg_opencl_sampler_free((struct evg_opencl_sampler_t *) object);
 	
 	/* Any object left */
-	if (linked_list_count(opencl_object_list))
+	if (linked_list_count(evg_opencl_object_list))
 		panic("opencl_object_free_all: objects remaining in the list");
 	
 }
@@ -163,28 +163,28 @@ void opencl_object_free_all()
 
 /* OpenCL Platform */
 
-struct opencl_platform_t *opencl_platform;
+struct evg_opencl_platform_t *evg_opencl_platform;
 
 
-struct opencl_platform_t *opencl_platform_create()
+struct evg_opencl_platform_t *evg_opencl_platform_create()
 {
-	struct opencl_platform_t *platform;
+	struct evg_opencl_platform_t *platform;
 
-	platform = calloc(1, sizeof(struct opencl_platform_t));
-	platform->id = opencl_object_new_id(OPENCL_OBJ_PLATFORM);
-	opencl_object_add(platform);
+	platform = calloc(1, sizeof(struct evg_opencl_platform_t));
+	platform->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_PLATFORM);
+	evg_opencl_object_add(platform);
 	return platform;
 }
 
 
-void opencl_platform_free(struct opencl_platform_t *platform)
+void evg_opencl_platform_free(struct evg_opencl_platform_t *platform)
 {
-	opencl_object_remove(platform);
+	evg_opencl_object_remove(platform);
 	free(platform);
 }
 
 
-uint32_t opencl_platform_get_info(struct opencl_platform_t *platform, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
+uint32_t evg_opencl_platform_get_info(struct evg_opencl_platform_t *platform, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
 {
 	char *platform_profile = "FULL_PROFILE";
 	char *platform_version = "OpenCL 1.1 Multi2Sim-v" VERSION;
@@ -220,7 +220,7 @@ uint32_t opencl_platform_get_info(struct opencl_platform_t *platform, uint32_t n
 	default:
 		info = NULL;
 		fatal("opencl_platform_get_info: invalid value for 'name' (0x%x)\n%s",
-			name, err_opencl_param_note);
+			name, err_evg_opencl_param_note);
 	}
 
 	/* Write to memory and return size */
@@ -238,26 +238,26 @@ uint32_t opencl_platform_get_info(struct opencl_platform_t *platform, uint32_t n
 
 
 /* Create a device */
-struct opencl_device_t *opencl_device_create()
+struct evg_opencl_device_t *evg_opencl_device_create()
 {
-	struct opencl_device_t *device;
+	struct evg_opencl_device_t *device;
 
-	device = calloc(1, sizeof(struct opencl_device_t));
-	device->id = opencl_object_new_id(OPENCL_OBJ_DEVICE);
-	opencl_object_add(device);
+	device = calloc(1, sizeof(struct evg_opencl_device_t));
+	device->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_DEVICE);
+	evg_opencl_object_add(device);
 	return device;
 }
 
 
 /* Free device */
-void opencl_device_free(struct opencl_device_t *device)
+void evg_opencl_device_free(struct evg_opencl_device_t *device)
 {
-	opencl_object_remove(device);
+	evg_opencl_object_remove(device);
 	free(device);
 }
 
 
-uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
+uint32_t evg_opencl_device_get_info(struct evg_opencl_device_t *device, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
 {
 	uint32_t max_compute_units = 1;  /* FIXME */
 	uint32_t max_work_group_size = 256 * 256;  /* FIXME */
@@ -358,7 +358,7 @@ uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, s
 
 	default:
 		fatal("opencl_device_get_info: invalid or not implemented value for 'name' (0x%x)\n%s",
-			name, err_opencl_note);
+			name, err_evg_opencl_note);
 
 	}
 
@@ -376,27 +376,27 @@ uint32_t opencl_device_get_info(struct opencl_device_t *device, uint32_t name, s
 
 
 /* Create a context */
-struct opencl_context_t *opencl_context_create()
+struct evg_opencl_context_t *evg_opencl_context_create()
 {
-	struct opencl_context_t *context;
+	struct evg_opencl_context_t *context;
 
-	context = calloc(1, sizeof(struct opencl_context_t));
-	context->id = opencl_object_new_id(OPENCL_OBJ_CONTEXT);
+	context = calloc(1, sizeof(struct evg_opencl_context_t));
+	context->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_CONTEXT);
 	context->ref_count = 1;
-	opencl_object_add(context);
+	evg_opencl_object_add(context);
 	return context;
 }
 
 
 /* Free context */
-void opencl_context_free(struct opencl_context_t *context)
+void evg_opencl_context_free(struct evg_opencl_context_t *context)
 {
-	opencl_object_remove(context);
+	evg_opencl_object_remove(context);
 	free(context);
 }
 
 
-uint32_t opencl_context_get_info(struct opencl_context_t *context, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
+uint32_t evg_opencl_context_get_info(struct evg_opencl_context_t *context, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
 {
 	uint32_t num_devices = 1;
 
@@ -419,7 +419,7 @@ uint32_t opencl_context_get_info(struct opencl_context_t *context, uint32_t name
 	case 0x1082:  /* CL_CONTEXT_PROPERTIES */
 	default:
 		fatal("opencl_context_get_info: invalid or not implemented value for 'name' (0x%x)\n%s",
-			name, err_opencl_param_note);
+			name, err_evg_opencl_param_note);
 	}
 	
 	/* Write to memory and return size */
@@ -432,7 +432,7 @@ uint32_t opencl_context_get_info(struct opencl_context_t *context, uint32_t name
 
 /* Read context properties from a null-terminated sequence of
  * 'cl_context_properties' elements in guest memory */
-void opencl_context_set_properties(struct opencl_context_t *context, struct mem_t *mem, uint32_t addr)
+void evg_opencl_context_set_properties(struct evg_opencl_context_t *context, struct mem_t *mem, uint32_t addr)
 {
 	uint32_t property;
 	uint32_t value;
@@ -451,8 +451,8 @@ void opencl_context_set_properties(struct opencl_context_t *context, struct mem_
 
 		case 0x1084:  /* CL_CONTEXT_PLATFORM */
 			context->platform_id = value;
-			opencl_object_get(OPENCL_OBJ_PLATFORM, value);
-			opencl_debug("    property CL_CONTEXT_PLATFORM assigned: 0x%x\n", value);
+			evg_opencl_object_get(EVG_OPENCL_OBJ_PLATFORM, value);
+			evg_opencl_debug("    property CL_CONTEXT_PLATFORM assigned: 0x%x\n", value);
 			break;
 
 		default:
@@ -464,21 +464,21 @@ void opencl_context_set_properties(struct opencl_context_t *context, struct mem_
 
 
 /* OpenCL Sampler */
-struct opencl_sampler_t *opencl_sampler_create()
+struct evg_opencl_sampler_t *evg_opencl_sampler_create()
 {
-	struct opencl_sampler_t *sampler;
+	struct evg_opencl_sampler_t *sampler;
 
-	sampler = calloc(1, sizeof(struct opencl_sampler_t));
-	sampler->id = opencl_object_new_id(OPENCL_OBJ_SAMPLER);
+	sampler = calloc(1, sizeof(struct evg_opencl_sampler_t));
+	sampler->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_SAMPLER);
 	sampler->ref_count = 1;
-	opencl_object_add(sampler);
+	evg_opencl_object_add(sampler);
 	return sampler;
 }
 
 /* Free sampler */
-void opencl_sampler_free(struct opencl_sampler_t *sampler)
+void evg_opencl_sampler_free(struct evg_opencl_sampler_t *sampler)
 {
-	opencl_object_remove(sampler);
+	evg_opencl_object_remove(sampler);
 	free(sampler);
 }
 
@@ -486,22 +486,22 @@ void opencl_sampler_free(struct opencl_sampler_t *sampler)
 /* OpenCL Command Queue */
 
 /* Create a command queue */
-struct opencl_command_queue_t *opencl_command_queue_create()
+struct evg_opencl_command_queue_t *evg_opencl_command_queue_create()
 {
-	struct opencl_command_queue_t *command_queue;
+	struct evg_opencl_command_queue_t *command_queue;
 
-	command_queue = calloc(1, sizeof(struct opencl_command_queue_t));
-	command_queue->id = opencl_object_new_id(OPENCL_OBJ_COMMAND_QUEUE);
+	command_queue = calloc(1, sizeof(struct evg_opencl_command_queue_t));
+	command_queue->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_COMMAND_QUEUE);
 	command_queue->ref_count = 1;
-	opencl_object_add(command_queue);
+	evg_opencl_object_add(command_queue);
 	return command_queue;
 }
 
 
 /* Free command queue */
-void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
+void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_queue)
 {
-	opencl_object_remove(command_queue);
+	evg_opencl_object_remove(command_queue);
 	free(command_queue);
 }
 
@@ -510,13 +510,13 @@ void opencl_command_queue_free(struct opencl_command_queue_t *command_queue)
 
 /* OpenCL Program */
 
-struct opencl_program_t *opencl_program_create()
+struct evg_opencl_program_t *evg_opencl_program_create()
 {
-	struct opencl_program_t *program;
+	struct evg_opencl_program_t *program;
 	int i;
 
-	program = calloc(1, sizeof(struct opencl_program_t));
-	program->id = opencl_object_new_id(OPENCL_OBJ_PROGRAM);
+	program = calloc(1, sizeof(struct evg_opencl_program_t));
+	program->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_PROGRAM);
 	program->ref_count = 1;
 
 	/* Constant buffers encoded in ELF file */
@@ -526,19 +526,19 @@ struct opencl_program_t *opencl_program_create()
 		list_add(program->constant_buffer_list, NULL);
 	}
 
-	opencl_object_add(program);
+	evg_opencl_object_add(program);
 	return program;
 }
 
 
-void opencl_program_free(struct opencl_program_t *program)
+void evg_opencl_program_free(struct evg_opencl_program_t *program)
 {
 	/* Free lists */
 	list_free(program->constant_buffer_list);
 
 	if (program->elf_file)
 		elf_file_free(program->elf_file);
-	opencl_object_remove(program);
+	evg_opencl_object_remove(program);
 	free(program);
 }
 
@@ -549,7 +549,7 @@ char *err_opencl_evergreen_format =
 	"\tMulti2Sim.\n";
 
 
-void opencl_program_build(struct opencl_program_t *program)
+void evg_opencl_program_build(struct evg_opencl_program_t *program)
 {
 	/* Open ELF file and check that it corresponds to an Evergreen pre-compiled kernel */
 	assert(program->elf_file);
@@ -576,7 +576,7 @@ char *err_opencl_elf_symbol =
 	"\tthe tool will still compile the kernel into LLVM, but the ISA section will\n"
 	"\tbe missing in the kernel binary.\n";
 
-void opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_name,
+void opencl_program_read_symbol(struct evg_opencl_program_t *program, char *symbol_name,
 	struct elf_buffer_t *buffer)
 {
 	struct elf_file_t *elf_file;
@@ -604,12 +604,12 @@ void opencl_program_read_symbol(struct opencl_program_t *program, char *symbol_n
 	buffer->pos = 0;
 }
 
-void opencl_program_initialize_constant_buffers(struct opencl_program_t *program)
+void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t *program)
 {
 	struct elf_file_t *elf_file;
 	struct elf_symbol_t *elf_symbol;
 	struct elf_buffer_t elf_buffer;
-	struct opencl_mem_t *mem;
+	struct evg_opencl_mem_t *mem;
 	char symbol_name[MAX_STRING_SIZE];
 	int i;
 
@@ -629,14 +629,14 @@ void opencl_program_initialize_constant_buffers(struct opencl_program_t *program
 
 			break;
 		}
-		opencl_debug("  constant buffer '%s' found with size %d\n",
+		evg_opencl_debug("  constant buffer '%s' found with size %d\n",
 			elf_symbol->name, elf_symbol->size);
 
 		/* Read the elf symbol into a buffer */
 		opencl_program_read_symbol(program, elf_symbol->name, &elf_buffer);
 
 		/* Create a memory object and copy the constant buffer data to it */
-		mem = opencl_mem_create();
+		mem = evg_opencl_mem_create();
 		mem->type = 0;  /* FIXME */
 		mem->size = elf_buffer.size;
 		mem->flags = 0; /* TODO Change to CL_MEM_READ_ONLY */
@@ -658,13 +658,13 @@ void opencl_program_initialize_constant_buffers(struct opencl_program_t *program
 
 /* OpenCL Kernel */
 
-struct opencl_kernel_t *opencl_kernel_create()
+struct evg_opencl_kernel_t *evg_opencl_kernel_create()
 {
-	struct opencl_kernel_t *kernel;
+	struct evg_opencl_kernel_t *kernel;
 	int i;
 
-	kernel = calloc(1, sizeof(struct opencl_kernel_t));
-	kernel->id = opencl_object_new_id(OPENCL_OBJ_KERNEL);
+	kernel = calloc(1, sizeof(struct evg_opencl_kernel_t));
+	kernel->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_KERNEL);
 	kernel->ref_count = 1;
 	kernel->arg_list = list_create();
 
@@ -683,18 +683,18 @@ struct opencl_kernel_t *opencl_kernel_create()
 		list_add(kernel->constant_buffer_list, NULL);
 	}
 
-	opencl_object_add(kernel);
+	evg_opencl_object_add(kernel);
 	return kernel;
 }
 
 
-void opencl_kernel_free(struct opencl_kernel_t *kernel)
+void evg_opencl_kernel_free(struct evg_opencl_kernel_t *kernel)
 {
 	int i;
 
 	/* Free arguments */
 	for (i = 0; i < list_count(kernel->arg_list); i++)
-		opencl_kernel_arg_free((struct opencl_kernel_arg_t *) list_get(kernel->arg_list, i));
+		evg_opencl_kernel_arg_free((struct evg_opencl_kernel_arg_t *) list_get(kernel->arg_list, i));
 	list_free(kernel->arg_list);
 
 	/* Free lists */
@@ -703,25 +703,25 @@ void opencl_kernel_free(struct opencl_kernel_t *kernel)
 	list_free(kernel->constant_buffer_list);
 
 	/* AMD Binary (internal ELF) */
-	if (kernel->amd_bin)
-		amd_bin_free(kernel->amd_bin);
+	if (kernel->bin_file)
+		evg_bin_file_free(kernel->bin_file);
 
 	/* Free kernel */
-	opencl_object_remove(kernel);
+	evg_opencl_object_remove(kernel);
 	free(kernel);
 }
 
 
-struct opencl_kernel_arg_t *opencl_kernel_arg_create(char *name)
+struct evg_opencl_kernel_arg_t *evg_opencl_kernel_arg_create(char *name)
 {
-	struct opencl_kernel_arg_t *arg;
-	arg = calloc(1, sizeof(struct opencl_kernel_arg_t) + strlen(name) + 1);
+	struct evg_opencl_kernel_arg_t *arg;
+	arg = calloc(1, sizeof(struct evg_opencl_kernel_arg_t) + strlen(name) + 1);
 	strcpy(arg->name, name);
 	return arg;
 }
 
 
-void opencl_kernel_arg_free(struct opencl_kernel_arg_t *arg)
+void evg_opencl_kernel_arg_free(struct evg_opencl_kernel_arg_t *arg)
 {
 	free(arg);
 }
@@ -747,25 +747,25 @@ char *err_opencl_kernel_metadata_note =
 	"\tkernel. However, this information is only partially supported by Multi2Sim.\n"
 	"\tTo request support for this error, please email 'development@multi2sim.org'.\n";
 
-void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
+void opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 {
 	char line[MAX_STRING_SIZE];
 	char *line_ptrs[MAX_STRING_SIZE];
 	int token_count;
-	struct opencl_kernel_arg_t *arg;
+	struct evg_opencl_kernel_arg_t *arg;
 	struct elf_buffer_t *buffer;
 
 	/* Open as text file */
 	buffer = &kernel->metadata_buffer;
 	elf_buffer_seek(buffer, 0);
-	opencl_debug("Kernel Metadata:\n"); 
+	evg_opencl_debug("Kernel Metadata:\n"); 
 	for (;;) {
 
 		/* Read line from buffer */
 		elf_buffer_read_line(buffer, line, MAX_STRING_SIZE);
 		if (!line[0])
 			break;
-		opencl_debug("\t%s\n", line);
+		evg_opencl_debug("\t%s\n", line);
 
 		/* Split line */
 		line_ptrs[0] = strtok(line, ":;\n");
@@ -785,27 +785,27 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 		if (!strcmp(line_ptrs[0], "image")) {
 
 			/* Create input image argument */
-			arg = opencl_kernel_arg_create(line_ptrs[1]);
-			arg->kind = OPENCL_KERNEL_ARG_KIND_IMAGE;
+			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
+			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_IMAGE;
 			if (!strcmp(line_ptrs[2], "2D")) {
 				/* Ignore dimensions for now */
 			} else if (!strcmp(line_ptrs[2], "3D")) {
 				/* Ignore dimensions for now */
 			} else {
 				fatal("%s: Invalid number of dimensions for OpenCL Image (%s)\n%s",
-					__FUNCTION__, line_ptrs[2], err_opencl_param_note);
+					__FUNCTION__, line_ptrs[2], err_evg_opencl_param_note);
 			}
 			
 			if (!strcmp(line_ptrs[3], "RO")) {
-				arg->access_type = OPENCL_KERNEL_ARG_READ_ONLY;
+				arg->access_type = EVG_OPENCL_KERNEL_ARG_READ_ONLY;
 			} else if (!strcmp(line_ptrs[3], "WO")) {
-				arg->access_type = OPENCL_KERNEL_ARG_WRITE_ONLY;
+				arg->access_type = EVG_OPENCL_KERNEL_ARG_WRITE_ONLY;
 			} else {
 				fatal("%s: Invalid memory access type for OpenCL Image (%s)\n%s",
-					__FUNCTION__, line_ptrs[3], err_opencl_param_note);
+					__FUNCTION__, line_ptrs[3], err_evg_opencl_param_note);
 			}
 			arg->uav = atoi(line_ptrs[4]);
-			arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;
+			arg->mem_scope = EVG_OPENCL_MEM_SCOPE_GLOBAL;
 
 			list_add(kernel->arg_list, arg);
 
@@ -836,8 +836,8 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 			OPENCL_KERNEL_METADATA_TOKEN_COUNT(6);
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
-			arg = opencl_kernel_arg_create(line_ptrs[1]);
-			arg->kind = OPENCL_KERNEL_ARG_KIND_VALUE;
+			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
+			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_VALUE;
 			list_add(kernel->arg_list, arg);
 
 			continue;
@@ -853,18 +853,18 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
 			OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
 
-			arg = opencl_kernel_arg_create(line_ptrs[1]);
-			arg->kind = OPENCL_KERNEL_ARG_KIND_POINTER;
+			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
+			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_POINTER;
 
 			list_add(kernel->arg_list, arg);
 			if (!strcmp(line_ptrs[6], "uav")) {
-				arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;
+				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_GLOBAL;
 				arg->uav = atoi(line_ptrs[7]);
 			} else if (!strcmp(line_ptrs[6], "hl")) {
-				arg->mem_scope = OPENCL_MEM_SCOPE_LOCAL;
+				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_LOCAL;
 				arg->uav = atoi(line_ptrs[7]);
 			} else if (!strcmp(line_ptrs[6], "hc")) {
-				arg->mem_scope = OPENCL_MEM_SCOPE_GLOBAL;
+				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_GLOBAL;
 				arg->uav = atoi(line_ptrs[7]);
 			} else
 				OPENCL_KERNEL_METADATA_NOT_SUPPORTED(6);
@@ -898,15 +898,15 @@ void opencl_kernel_load_metadata(struct opencl_kernel_t *kernel)
 
 
 /* Extract and analyze information from the program binary associated with 'kernel_name' */
-void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name)
+void evg_opencl_kernel_load(struct evg_opencl_kernel_t *kernel, char *kernel_name)
 {
-	struct opencl_program_t *program;
+	struct evg_opencl_program_t *program;
 	char symbol_name[MAX_STRING_SIZE];
 	char name[MAX_STRING_SIZE];
 
 	/* First */
 	strncpy(kernel->name, kernel_name, MAX_STRING_SIZE);
-	program = opencl_object_get(OPENCL_OBJ_PROGRAM, kernel->program_id);
+	program = evg_opencl_object_get(EVG_OPENCL_OBJ_PROGRAM, kernel->program_id);
 
 	/* Read 'metadata' symbol */
 	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_metadata", kernel_name);
@@ -923,14 +923,14 @@ void opencl_kernel_load(struct opencl_kernel_t *kernel, char *kernel_name)
 	/* Create and parse kernel binary (internal ELF).
 	 * The internal ELF is contained in the buffer pointer to by the 'kernel' symbol. */
 	snprintf(name, sizeof(name), "clKernel<%s>.InternalELF", kernel_name);
-	kernel->amd_bin = amd_bin_create(kernel->kernel_buffer.ptr, kernel->kernel_buffer.size, name);
+	kernel->bin_file = evg_bin_file_create(kernel->kernel_buffer.ptr, kernel->kernel_buffer.size, name);
 	
 	/* Analyze 'metadata' file */
 	opencl_kernel_load_metadata(kernel);
 }
 
 
-uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint32_t name,
+uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kernel, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size)
 {
 	uint32_t size_ret = 0;
@@ -949,13 +949,13 @@ uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint3
 	case 0x11b2:  /* CL_KERNEL_LOCAL_MEM_SIZE */
 	{
 		int i;
-		struct opencl_kernel_arg_t *arg;
+		struct evg_opencl_kernel_arg_t *arg;
 
 		/* Compute local memory usage */
 		local_mem_size = kernel->func_mem_local;
 		for (i = 0; i < list_count(kernel->arg_list); i++) {
 			arg = list_get(kernel->arg_list, i);
-			if (arg->mem_scope == OPENCL_MEM_SCOPE_LOCAL)
+			if (arg->mem_scope == EVG_OPENCL_MEM_SCOPE_LOCAL)
 				local_mem_size += arg->size;
 		}
 
@@ -970,7 +970,7 @@ uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint3
 	case 0x11b4:  /* CL_KERNEL_PRIVATE_MEM_SIZE */
 	default:
 		fatal("%s: invalid or not implemented value for 'name' (0x%x)\n%s",
-			__FUNCTION__, name, err_opencl_param_note);
+			__FUNCTION__, name, err_evg_opencl_param_note);
 	}
 	
 	/* Write to memory and return size */
@@ -985,21 +985,21 @@ uint32_t opencl_kernel_get_work_group_info(struct opencl_kernel_t *kernel, uint3
 
 /* OpenCL Mem */
 
-struct opencl_mem_t *opencl_mem_create()
+struct evg_opencl_mem_t *evg_opencl_mem_create()
 {
-	struct opencl_mem_t *mem;
+	struct evg_opencl_mem_t *mem;
 
-	mem = calloc(1, sizeof(struct opencl_mem_t));
-	mem->id = opencl_object_new_id(OPENCL_OBJ_MEM);
+	mem = calloc(1, sizeof(struct evg_opencl_mem_t));
+	mem->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_MEM);
 	mem->ref_count = 1;
-	opencl_object_add(mem);
+	evg_opencl_object_add(mem);
 	return mem;
 }
 
 
-void opencl_mem_free(struct opencl_mem_t *mem)
+void evg_opencl_mem_free(struct evg_opencl_mem_t *mem)
 {
-	opencl_object_remove(mem);
+	evg_opencl_object_remove(mem);
 	free(mem);
 }
 
@@ -1008,27 +1008,27 @@ void opencl_mem_free(struct opencl_mem_t *mem)
 
 /* OpenCL Event */
 
-struct opencl_event_t *opencl_event_create(enum opencl_event_kind_t kind)
+struct evg_opencl_event_t *evg_opencl_event_create(enum evg_opencl_event_kind_t kind)
 {
-	struct opencl_event_t *event;
+	struct evg_opencl_event_t *event;
 
-	event = calloc(1, sizeof(struct opencl_event_t));
-	event->id = opencl_object_new_id(OPENCL_OBJ_EVENT);
+	event = calloc(1, sizeof(struct evg_opencl_event_t));
+	event->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_EVENT);
 	event->ref_count = 1;
 	event->kind = kind;
-	opencl_object_add(event);
+	evg_opencl_object_add(event);
 	return event;
 }
 
 
-void opencl_event_free(struct opencl_event_t *event)
+void evg_opencl_event_free(struct evg_opencl_event_t *event)
 {
-	opencl_object_remove(event);
+	evg_opencl_object_remove(event);
 	free(event);
 }
 
 
-uint32_t opencl_event_get_profiling_info(struct opencl_event_t *event, uint32_t name,
+uint32_t evg_opencl_event_get_profiling_info(struct evg_opencl_event_t *event, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size)
 {
 	uint32_t size_ret = 0;
@@ -1058,7 +1058,7 @@ uint32_t opencl_event_get_profiling_info(struct opencl_event_t *event, uint32_t 
 
 	default:
 		fatal("%s: invalid or not implemented value for 'name' (0x%x)\n%s",
-			__FUNCTION__, name, err_opencl_param_note);
+			__FUNCTION__, name, err_evg_opencl_param_note);
 	}
 	
 	/* Write to memory and return size */
@@ -1069,7 +1069,7 @@ uint32_t opencl_event_get_profiling_info(struct opencl_event_t *event, uint32_t 
 }
 
 
-long long opencl_event_timer(void)
+long long evg_opencl_event_timer(void)
 {
 	return x86_emu_timer() * 1000;
 }

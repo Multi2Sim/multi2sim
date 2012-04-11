@@ -78,7 +78,7 @@ cl_program clCreateProgramWithBinary(
 	program->context = context;
 
 	/* Read binary */
-	//program->amd_bin = amd_bin_create((void *) *binaries, *lengths, "opencl-bin");  /* FIXME: any better name? */
+	//program->bin_file = evg_bin_file_create((void *) *binaries, *lengths, "opencl-bin");  /* FIXME: any better name? */
 
 	/* System call */
 	sys_args[0] = context->id;

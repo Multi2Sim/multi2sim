@@ -36,24 +36,24 @@
 
 
 /* Debug info */
-int opencl_debug_category;
+int evg_opencl_debug_category;
 
 void opencl_debug_array(int nelem, int *array)
 {
 	char *comma = "";
 	int i;
 
-	opencl_debug("{");
+	evg_opencl_debug("{");
 	for (i = 0; i < nelem; i++) {
-		opencl_debug("%s%d", comma, array[i]);
+		evg_opencl_debug("%s%d", comma, array[i]);
 		comma = ", ";
 	}
-	opencl_debug("}");
+	evg_opencl_debug("}");
 }
 
 
 /* List of OpenCL function names */
-char *opencl_func_names[] = {
+char *evg_opencl_func_names[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) #_name,
 #include "opencl.dat"
 #undef DEF_OPENCL_FUNC
@@ -62,7 +62,7 @@ char *opencl_func_names[] = {
 
 
 /* Number of arguments for each OpenCL function */
-int opencl_func_argc[] = {
+int evg_opencl_func_argc[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) _argc,
 #include "opencl.dat"
 #undef DEF_OPENCL_FUNC
@@ -71,14 +71,14 @@ int opencl_func_argc[] = {
 
 
 /* Error messages */
-char *err_opencl_note =
+char *err_evg_opencl_note =
 	"\tThe OpenCL interface is implemented in library 'm2s-opencl.so' as a set of\n"
 	"\tsystem calls, intercepted by Multi2Sim and emulated in 'opencl.c'.\n"
 	"\tHowever, only a subset of this interface is currently implemented in the simulator.\n"
 	"\tTo request the implementation of a specific OpenCL call, please email\n"
 	"\t'development@multi2sim.org'.\n";
 
-char *err_opencl_param_note =
+char *err_evg_opencl_param_note =
 	"\tNote that a real OpenCL implementation would return an error code to the\n"
 	"\tcalling program. However, the purpose of this OpenCL implementation is to\n"
 	"\tsupport correctly written programs. Thus, a detailed implementation of OpenCL\n"
@@ -115,18 +115,18 @@ char *err_opencl_version_note =
 /* Error macros */
 
 #define OPENCL_PARAM_NOT_SUPPORTED(p) \
-	fatal("%s: not supported for '" #p "' = 0x%x\n%s", err_prefix, p, err_opencl_note);
+	fatal("%s: not supported for '" #p "' = 0x%x\n%s", err_prefix, p, err_evg_opencl_note);
 #define OPENCL_PARAM_NOT_SUPPORTED_EQ(p, v) \
-	{ if ((p) == (v)) fatal("%s: not supported for '" #p "' = 0x%x\n%s", err_prefix, (v), err_opencl_param_note); }
+	{ if ((p) == (v)) fatal("%s: not supported for '" #p "' = 0x%x\n%s", err_prefix, (v), err_evg_opencl_param_note); }
 #define OPENCL_PARAM_NOT_SUPPORTED_NEQ(p, v) \
-	{ if ((p) != (v)) fatal("%s: not supported for '" #p "' != 0x%x\n%s", err_prefix, (v), err_opencl_param_note); }
+	{ if ((p) != (v)) fatal("%s: not supported for '" #p "' != 0x%x\n%s", err_prefix, (v), err_evg_opencl_param_note); }
 #define OPENCL_PARAM_NOT_SUPPORTED_LT(p, v) \
-	{ if ((p) < (v)) fatal("%s: not supported for '" #p "' < %d\n%s", err_prefix, (v), err_opencl_param_note); }
+	{ if ((p) < (v)) fatal("%s: not supported for '" #p "' < %d\n%s", err_prefix, (v), err_evg_opencl_param_note); }
 #define OPENCL_PARAM_NOT_SUPPORTED_OOR(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: not supported for '" #p "' out of range [%d:%d]\n%s", \
-	err_prefix, (min), (max), err_opencl_param_note); }
+	err_prefix, (min), (max), err_evg_opencl_param_note); }
 #define OPENCL_PARAM_NOT_SUPPORTED_FLAG(p, flag, name) \
-	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", err_prefix, err_opencl_param_note); }
+	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", err_prefix, err_evg_opencl_param_note); }
 
 
 
@@ -134,7 +134,7 @@ char *err_opencl_version_note =
 
 /* OpenCL API Implementation */
 
-int opencl_func_run(int code, unsigned int *args)
+int evg_opencl_func_run(int code, unsigned int *args)
 {
 	char err_prefix[MAX_STRING_SIZE];
 	char *func_name;
@@ -143,19 +143,19 @@ int opencl_func_run(int code, unsigned int *args)
 	int retval = 0;
 	
 	/* Decode OpenCL function */
-	assert(code >= OPENCL_FUNC_FIRST && code <= OPENCL_FUNC_LAST);
-	func_code = code - OPENCL_FUNC_FIRST;
-	func_name = opencl_func_names[func_code];
-	func_argc = opencl_func_argc[func_code];
-	assert(func_argc <= OPENCL_MAX_ARGS);
+	assert(code >= EVG_OPENCL_FUNC_FIRST && code <= EVG_OPENCL_FUNC_LAST);
+	func_code = code - EVG_OPENCL_FUNC_FIRST;
+	func_name = evg_opencl_func_names[func_code];
+	func_argc = evg_opencl_func_argc[func_code];
+	assert(func_argc <= EVG_OPENCL_MAX_ARGS);
 	snprintf(err_prefix, MAX_STRING_SIZE, "OpenCL call '%s'", func_name);
 	
 	/* Execute */
-	opencl_debug("%s\n", func_name);
+	evg_opencl_debug("%s\n", func_name);
 	switch (func_code) {
 
 	/* 1000 */
-	case OPENCL_FUNC_clGetPlatformIDs:
+	case EVG_OPENCL_FUNC_clGetPlatformIDs:
 	{
 		int num_entries = args[0];  /* cl_uint num_entries */
 		uint32_t platforms = args[1];  /* cl_platform_id *platforms */
@@ -173,22 +173,22 @@ int opencl_func_run(int code, unsigned int *args)
 				opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build,
 				SYS_OPENCL_IMPL_VERSION_MAJOR, SYS_OPENCL_IMPL_VERSION_MINOR, SYS_OPENCL_IMPL_VERSION_BUILD,
 				err_opencl_version_note);
-		opencl_debug("  'libm2s-opencl' version: %d.%d.%d\n",
+		evg_opencl_debug("  'libm2s-opencl' version: %d.%d.%d\n",
 				opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build);
 		
 		/* Get platform id */
-		opencl_debug("  num_entries=%d, platforms=0x%x, num_platforms=0x%x, version=0x%x\n",
+		evg_opencl_debug("  num_entries=%d, platforms=0x%x, num_platforms=0x%x, version=0x%x\n",
 			num_entries, platforms, num_platforms, opencl_impl_version);
 		if (num_platforms)
 			mem_write(x86_isa_mem, num_platforms, 4, &one);
 		if (platforms && num_entries > 0)
-			mem_write(x86_isa_mem, platforms, 4, &opencl_platform->id);
+			mem_write(x86_isa_mem, platforms, 4, &evg_opencl_platform->id);
 		break;
 	}
 
 
 	/* 1001 */
-	case OPENCL_FUNC_clGetPlatformInfo:
+	case EVG_OPENCL_FUNC_clGetPlatformInfo:
 	{
 		uint32_t platform_id = args[0];  /* cl_platform_id platform */
 		uint32_t param_name = args[1];  /* cl_platform_info param_name */
@@ -196,15 +196,15 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t param_value = args[3];  /* void *param_value */
 		uint32_t param_value_size_ret = args[4];  /* size_t *param_value_size_ret */
 
-		struct opencl_platform_t *platform;
+		struct evg_opencl_platform_t *platform;
 		uint32_t size_ret;
 
-		opencl_debug("  platform=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
+		evg_opencl_debug("  platform=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			platform_id, param_name, param_value_size, param_value, param_value_size_ret);
 
-		platform = opencl_object_get(OPENCL_OBJ_PLATFORM, platform_id);
-		size_ret = opencl_platform_get_info(platform, param_name, x86_isa_mem, param_value, param_value_size);
+		platform = evg_opencl_object_get(EVG_OPENCL_OBJ_PLATFORM, platform_id);
+		size_ret = evg_opencl_platform_get_info(platform, param_name, x86_isa_mem, param_value, param_value_size);
 		if (param_value_size_ret)
 			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
 		break;
@@ -212,7 +212,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1002 */
-	case OPENCL_FUNC_clGetDeviceIDs:
+	case EVG_OPENCL_FUNC_clGetDeviceIDs:
 	{
 		uint32_t platform = args[0];  /* cl_platform_id platform */
 		int device_type = args[1];  /* cl_device_type device_type */
@@ -220,14 +220,14 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t devices = args[3];  /* cl_device_id *devices */
 		uint32_t num_devices = args[4];  /* cl_uint *num_devices */
 		uint32_t one = 1;
-		struct opencl_device_t *device;
+		struct evg_opencl_device_t *device;
 
-		opencl_debug("  platform=0x%x, device_type=%d, num_entries=%d\n",
+		evg_opencl_debug("  platform=0x%x, device_type=%d, num_entries=%d\n",
 			platform, device_type, num_entries);
-		opencl_debug("  devices=0x%x, num_devices=%x\n",
+		evg_opencl_debug("  devices=0x%x, num_devices=%x\n",
 			devices, num_devices);
-		if (platform != opencl_platform->id)
-			fatal("%s: invalid platform\n%s", err_prefix, err_opencl_param_note);
+		if (platform != evg_opencl_platform->id)
+			fatal("%s: invalid platform\n%s", err_prefix, err_evg_opencl_param_note);
 		
 		/* Return 1 in 'num_devices' */
 		if (num_devices)
@@ -235,7 +235,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Return 'id' of the only existing device */
 		if (devices && num_entries > 0) {
-			if (!(device = (struct opencl_device_t *) opencl_object_get_type(OPENCL_OBJ_DEVICE)))
+			if (!(device = (struct evg_opencl_device_t *) evg_opencl_object_get_type(EVG_OPENCL_OBJ_DEVICE)))
 				panic("%s: no device", err_prefix);
 			mem_write(x86_isa_mem, devices, 4, &device->id);
 		}
@@ -244,7 +244,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1003 */
-	case OPENCL_FUNC_clGetDeviceInfo:
+	case EVG_OPENCL_FUNC_clGetDeviceInfo:
 	{
 		uint32_t device_id = args[0];  /* cl_device_id device */
 		uint32_t param_name = args[1];  /* cl_device_info param_name */
@@ -252,15 +252,15 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t param_value = args[3];  /* void *param_value */
 		uint32_t param_value_size_ret = args[4];  /* size_t *param_value_size_ret */
 
-		struct opencl_device_t *device;
+		struct evg_opencl_device_t *device;
 		uint32_t size_ret;
 
-		opencl_debug("  device=0x%x, param_name=0x%x, param_value_size=%d\n"
+		evg_opencl_debug("  device=0x%x, param_name=0x%x, param_value_size=%d\n"
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			device_id, param_name, param_value_size, param_value, param_value_size_ret);
 
-		device = opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
-		size_ret = opencl_device_get_info(device, param_name, x86_isa_mem, param_value, param_value_size);
+		device = evg_opencl_object_get(EVG_OPENCL_OBJ_DEVICE, device_id);
+		size_ret = evg_opencl_device_get_info(device, param_name, x86_isa_mem, param_value, param_value_size);
 		if (param_value_size_ret)
 			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
 		break;
@@ -268,7 +268,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1004 */
-	case OPENCL_FUNC_clCreateContext:
+	case EVG_OPENCL_FUNC_clCreateContext:
 	{
 		uint32_t properties = args[0];  /* const cl_context_properties *properties */
 		uint32_t num_devices = args[1];  /* cl_uint num_devices */
@@ -278,11 +278,11 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t user_data = args[4];  /* void *user_data */
 		uint32_t errcode_ret = args[5];  /* cl_int *errcode_ret */
 
-		struct opencl_device_t *device;
+		struct evg_opencl_device_t *device;
 		uint32_t device_id;
-		struct opencl_context_t *context;
+		struct evg_opencl_context_t *context;
 
-		opencl_debug("  properties=0x%x, num_devices=%d, devices=0x%x\n"
+		evg_opencl_debug("  properties=0x%x, num_devices=%d, devices=0x%x\n"
 			"pfn_notify=0x%x, user_data=0x%x, errcode_ret=0x%x\n",
 			properties, num_devices, devices, pfn_notify, user_data, errcode_ret);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(pfn_notify, 0);
@@ -291,13 +291,13 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Read device id */
 		mem_read(x86_isa_mem, devices, 4, &device_id);
-		device = opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
+		device = evg_opencl_object_get(EVG_OPENCL_OBJ_DEVICE, device_id);
 		if (!device)
-			fatal("%s: invalid device\n%s", err_prefix, err_opencl_param_note);
+			fatal("%s: invalid device\n%s", err_prefix, err_evg_opencl_param_note);
 
 		/* Create context and return id */
-		context = opencl_context_create();
-		opencl_context_set_properties(context, x86_isa_mem, properties);
+		context = evg_opencl_context_create();
+		evg_opencl_context_set_properties(context, x86_isa_mem, properties);
 		context->device_id = device_id;
 		retval = context->id;
 
@@ -309,7 +309,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1005 */
-	case OPENCL_FUNC_clCreateContextFromType:
+	case EVG_OPENCL_FUNC_clCreateContextFromType:
 	{
 		uint32_t properties = args[0];  /* const cl_context_properties *properties */
 		uint32_t device_type = args[1];  /* cl_device_type device_type */
@@ -317,22 +317,22 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t user_data = args[3];  /* void *user_data */
 		uint32_t errcode_ret = args[4];  /* cl_int *errcode_ret */
 
-		struct opencl_device_t *device;
-		struct opencl_context_t *context;
+		struct evg_opencl_device_t *device;
+		struct evg_opencl_context_t *context;
 
-		opencl_debug("  properties=0x%x, device_type=0x%x, pfn_notify=0x%x,\n"
+		evg_opencl_debug("  properties=0x%x, device_type=0x%x, pfn_notify=0x%x,\n"
 			"  user_data=0x%x, errcode_ret=0x%x\n",
 			properties, device_type, pfn_notify, user_data, errcode_ret);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(pfn_notify, 0);
 
 		/* Get device */
-		device = (struct opencl_device_t *) opencl_object_get_type(OPENCL_OBJ_DEVICE);
+		device = (struct evg_opencl_device_t *) evg_opencl_object_get_type(EVG_OPENCL_OBJ_DEVICE);
 		assert(device);
 
 		/* Create context */
-		context = opencl_context_create();
+		context = evg_opencl_context_create();
 		context->device_id = device->id;
-		opencl_context_set_properties(context, x86_isa_mem, properties);
+		evg_opencl_context_set_properties(context, x86_isa_mem, properties);
 		retval = context->id;
 
 		/* Return success */
@@ -344,23 +344,23 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1007 */
-	case OPENCL_FUNC_clReleaseContext:
+	case EVG_OPENCL_FUNC_clReleaseContext:
 	{
 		uint32_t context_id = args[0];  /* cl_context context */
 
-		struct opencl_context_t *context;
+		struct evg_opencl_context_t *context;
 
-		opencl_debug("  context=0x%x\n", context_id);
-		context = opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
+		evg_opencl_debug("  context=0x%x\n", context_id);
+		context = evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
 		assert(context->ref_count > 0);
 		if (!--context->ref_count)
-			opencl_context_free(context);
+			evg_opencl_context_free(context);
 		break;
 	}
 
 
 	/* 1008 */
-	case OPENCL_FUNC_clGetContextInfo:
+	case EVG_OPENCL_FUNC_clGetContextInfo:
 	{
 		uint32_t context_id = args[0];  /* cl_context context */
 		uint32_t param_name = args[1];  /* cl_context_info param_name */
@@ -368,15 +368,15 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t param_value = args[3];  /* void *param_value */
 		uint32_t param_value_size_ret = args[4];  /* size_t *param_value_size_ret */
 
-		struct opencl_context_t *context;
+		struct evg_opencl_context_t *context;
 		uint32_t size_ret = 0;
 
-		opencl_debug("  context=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
+		evg_opencl_debug("  context=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			context_id, param_name, param_value_size, param_value, param_value_size_ret);
 
-		context = opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
-		size_ret = opencl_context_get_info(context, param_name, x86_isa_mem, param_value, param_value_size);
+		context = evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
+		size_ret = evg_opencl_context_get_info(context, param_name, x86_isa_mem, param_value, param_value_size);
 		if (param_value_size_ret)
 			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
 		break;
@@ -384,24 +384,24 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1009 */
-	case OPENCL_FUNC_clCreateCommandQueue:
+	case EVG_OPENCL_FUNC_clCreateCommandQueue:
 	{
 		uint32_t context_id = args[0];  /* cl_context context */
 		uint32_t device_id = args[1];  /* cl_device_id device */
 		uint32_t properties = args[2];  /* cl_command_queue_properties properties */
 		uint32_t errcode_ret = args[3];  /* cl_int *errcode_ret */
 
-		struct opencl_command_queue_t *command_queue;
+		struct evg_opencl_command_queue_t *command_queue;
 
-		opencl_debug("  context=0x%x, device=0x%x, properties=0x%x, errcode_ret=0x%x\n",
+		evg_opencl_debug("  context=0x%x, device=0x%x, properties=0x%x, errcode_ret=0x%x\n",
 			context_id, device_id, properties, errcode_ret);
 
 		/* Check that context and device are valid */
-		opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
-		opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
+		evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
+		evg_opencl_object_get(EVG_OPENCL_OBJ_DEVICE, device_id);
 
 		/* Create command queue and return id */
-		command_queue = opencl_command_queue_create();
+		command_queue = evg_opencl_command_queue_create();
 		command_queue->context_id = context_id;
 		command_queue->device_id = device_id;
 		command_queue->properties = properties;
@@ -415,23 +415,23 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1011 */
-	case OPENCL_FUNC_clReleaseCommandQueue:
+	case EVG_OPENCL_FUNC_clReleaseCommandQueue:
 	{
 		uint32_t command_queue_id = args[0];  /* cl_command_queue command_queue */
 
-		struct opencl_command_queue_t *command_queue;
+		struct evg_opencl_command_queue_t *command_queue;
 
-		opencl_debug("  command_queue=0x%x\n", command_queue_id);
-		command_queue = opencl_object_get(OPENCL_OBJ_COMMAND_QUEUE, command_queue_id);
+		evg_opencl_debug("  command_queue=0x%x\n", command_queue_id);
+		command_queue = evg_opencl_object_get(EVG_OPENCL_OBJ_COMMAND_QUEUE, command_queue_id);
 		assert(command_queue->ref_count > 0);
 		if (!--command_queue->ref_count)
-			opencl_command_queue_free(command_queue);
+			evg_opencl_command_queue_free(command_queue);
 		break;
 	}
 
 
 	/* 1014 */
-	case OPENCL_FUNC_clCreateBuffer:
+	case EVG_OPENCL_FUNC_clCreateBuffer:
 	{
 		uint32_t context_id = args[0];  /* cl_context context */
 		uint32_t flags = args[1];  /* cl_mem_flags flags */
@@ -450,25 +450,25 @@ int opencl_func_run(int code, unsigned int *args)
 			{ "CL_MEM_COPY_HOST_PTR", 0x20 }
 		}};
 
-		struct opencl_mem_t *mem;
+		struct evg_opencl_mem_t *mem;
 
 		map_flags(&create_buffer_flags_map, flags, sflags, sizeof(sflags));
-		opencl_debug("  context=0x%x, flags=%s, size=%d, host_ptr=0x%x, errcode_ret=0x%x\n",
+		evg_opencl_debug("  context=0x%x, flags=%s, size=%d, host_ptr=0x%x, errcode_ret=0x%x\n",
 			context_id, sflags, size, host_ptr, errcode_ret);
 
 		/* Check flags */
 		if ((flags & 0x10) && host_ptr)
 			fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with CL_MEM_USE_HOST_PTR\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		if ((flags & 0x8) && !host_ptr)  /* CL_MEM_USE_HOST_PTR */
 			fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		if ((flags & 0x20) && !host_ptr)  /* CL_MEM_COPY_HOST_PTR */
 			fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 
 		/* Create memory object */
-		mem = opencl_mem_create();
+		mem = evg_opencl_mem_create();
 		mem->type = 0;  /* FIXME */
 		mem->size = size;
 		mem->flags = flags;
@@ -496,7 +496,7 @@ int opencl_func_run(int code, unsigned int *args)
 	}
 
 	/* 1016 */
-	case OPENCL_FUNC_clCreateImage2D:
+	case EVG_OPENCL_FUNC_clCreateImage2D:
 	{
 		uint32_t context_id = args[0];  /* cl_context context */
 		uint32_t flags = args[1];  /* cl_mem_flags flags */
@@ -512,7 +512,7 @@ int opencl_func_run(int code, unsigned int *args)
 		void *image;
 		uint32_t channel_order;
 		uint32_t channel_type;
-		struct opencl_image_format_t image_format;
+		struct evg_opencl_image_format_t image_format;
 
 		uint32_t num_channels_per_pixel;
 		uint32_t pixel_size;
@@ -531,19 +531,19 @@ int opencl_func_run(int code, unsigned int *args)
 		channel_type = image_format.image_channel_data_type;
 
 		map_flags(&create_image_flags_map, flags, sflags, sizeof(sflags));
-		opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, channel_type=0x%x, image_width=%u, image_height=%u, image_row_pitch=%u, host_ptr=0x%x, errcode_ret=0x%x\n",
+		evg_opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, channel_type=0x%x, image_width=%u, image_height=%u, image_row_pitch=%u, host_ptr=0x%x, errcode_ret=0x%x\n",
 			context_id, sflags, channel_order, channel_type, image_width, image_height, image_row_pitch, host_ptr, errcode_ret_ptr);
 
 		/* Check flags */
 		if ((flags & 0x10) && host_ptr)
 			fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with CL_MEM_USE_HOST_PTR\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		if ((flags & 0x8) && !host_ptr)  /* CL_MEM_USE_HOST_PTR */
 			fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		if ((flags & 0x20) && !host_ptr)  /* CL_MEM_COPY_HOST_PTR */
 			fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 
 		/* Evaluate image channel order */
 		switch(channel_order) {
@@ -563,7 +563,7 @@ int opencl_func_run(int code, unsigned int *args)
 		default:
 		{
 			fatal("%s: image channel order %u not supported\n%s",
-				err_prefix, channel_order, err_opencl_param_note);
+				err_prefix, channel_order, err_evg_opencl_param_note);
 		}
 
 		}
@@ -586,7 +586,7 @@ int opencl_func_run(int code, unsigned int *args)
 		default:
 		{
 			fatal("%s: image channel type %u not supported\n%s",
-				err_prefix, channel_type, err_opencl_param_note);
+				err_prefix, channel_type, err_evg_opencl_param_note);
 		}
 
 		}
@@ -599,14 +599,14 @@ int opencl_func_run(int code, unsigned int *args)
 		else if(image_row_pitch < image_width*pixel_size) {
 
 			fatal("%s: image_row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		}
 
-		struct opencl_mem_t *mem;
+		struct evg_opencl_mem_t *mem;
 
 		/* Create memory object */
 		uint32_t size = image_row_pitch*image_height;
-		mem = opencl_mem_create();
+		mem = evg_opencl_mem_create();
 		mem->type = 1;  /* FIXME */
 		mem->size = size;
 		mem->flags = flags;
@@ -621,7 +621,7 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Assign position in device global memory */
 		mem->device_ptr = gk->global_mem_top;
 		gk->global_mem_top += size;
-		opencl_debug("  creating device ptr at %u, for %u bytes\n", mem->device_ptr, size);
+		evg_opencl_debug("  creating device ptr at %u, for %u bytes\n", mem->device_ptr, size);
 
 		/* If 'host_ptr' was specified, copy image into device memory */
 		if (host_ptr) {
@@ -642,7 +642,7 @@ int opencl_func_run(int code, unsigned int *args)
 	}
 
 	/* 1017 */
-	case OPENCL_FUNC_clCreateImage3D:
+	case EVG_OPENCL_FUNC_clCreateImage3D:
 	{
 		uint32_t context_id = args[0];  /* cl_context context */
 		uint32_t flags = args[1];  /* cl_mem_flags flags */
@@ -661,7 +661,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 		uint32_t channel_order;
 		uint32_t channel_type;
-		struct opencl_image_format_t image_format;
+		struct evg_opencl_image_format_t image_format;
 
 		uint32_t num_channels_per_pixel;
 		uint32_t pixel_size;
@@ -680,7 +680,7 @@ int opencl_func_run(int code, unsigned int *args)
 		channel_type = image_format.image_channel_data_type;
 
 		map_flags(&create_image_flags_map, flags, sflags, sizeof(sflags));
-		opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, channel_type=0x%x\n" 
+		evg_opencl_debug("  context=0x%x, flags=%s, channel order =0x%x, channel_type=0x%x\n" 
 			     "  image_width=%u, image_height=%u, image_depth=%u\n"
 			     "  image_row_pitch=%u, image_slice_pitch=%u, host_ptr=0x%x\n"
 			     "  errcode_ret=0x%x\n",
@@ -690,13 +690,13 @@ int opencl_func_run(int code, unsigned int *args)
 		/* Check flags */
 		if ((flags & 0x10) && host_ptr)
 			fatal("%s: CL_MEM_ALLOC_HOST_PTR not compatible with CL_MEM_USE_HOST_PTR\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		if ((flags & 0x8) && !host_ptr)  /* CL_MEM_USE_HOST_PTR */
 			fatal("%s: CL_MEM_USE_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		if ((flags & 0x20) && !host_ptr)  /* CL_MEM_COPY_HOST_PTR */
 			fatal("%s: CL_MEM_COPY_HOST_PTR only valid when 'host_ptr' != NULL\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 
 		/* Evaluate image channel order */
 		switch(channel_order) {
@@ -716,7 +716,7 @@ int opencl_func_run(int code, unsigned int *args)
 		default:
 		{
 			fatal("%s: image channel order %u not supported\n%s",
-				err_prefix, channel_order, err_opencl_param_note);
+				err_prefix, channel_order, err_evg_opencl_param_note);
 		}
 
 		}
@@ -739,7 +739,7 @@ int opencl_func_run(int code, unsigned int *args)
 		default:
 		{
 			fatal("%s: image channel type %u not supported\n%s",
-				err_prefix, channel_type, err_opencl_param_note);
+				err_prefix, channel_type, err_evg_opencl_param_note);
 		}
 
 		}
@@ -751,7 +751,7 @@ int opencl_func_run(int code, unsigned int *args)
 		else if(image_row_pitch < image_width*pixel_size) {
 
 			fatal("%s: image_row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		}
 
 		if(image_slice_pitch == 0) {
@@ -760,14 +760,14 @@ int opencl_func_run(int code, unsigned int *args)
 		else if(image_slice_pitch < image_row_pitch*image_height) {
 
 			fatal("%s: image_slice_pitch must be 0 or >= image_row_pitch * image_height\n%s", 
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		}
 
-		struct opencl_mem_t *mem;
+		struct evg_opencl_mem_t *mem;
 
 		/* Create memory object */
 		uint32_t size = image_slice_pitch*image_depth;
-		mem = opencl_mem_create();
+		mem = evg_opencl_mem_create();
 		mem->type = 2; /* FIXME */
 		mem->size = size;
 		mem->flags = flags;
@@ -801,22 +801,22 @@ int opencl_func_run(int code, unsigned int *args)
 	}
 
 	/* 1019 */
-	case OPENCL_FUNC_clReleaseMemObject:
+	case EVG_OPENCL_FUNC_clReleaseMemObject:
 	{
 		uint32_t mem_id = args[0];  /* cl_mem memobj */
 
-		struct opencl_mem_t *mem;
+		struct evg_opencl_mem_t *mem;
 
-		opencl_debug("  memobj=0x%x\n", mem_id);
-		mem = opencl_object_get(OPENCL_OBJ_MEM, mem_id);
+		evg_opencl_debug("  memobj=0x%x\n", mem_id);
+		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, mem_id);
 		assert(mem->ref_count > 0);
 		if (!--mem->ref_count)
-			opencl_mem_free(mem);
+			evg_opencl_mem_free(mem);
 		break;
 	}
 
 	/* 1024 */
-	case OPENCL_FUNC_clCreateSampler:
+	case EVG_OPENCL_FUNC_clCreateSampler:
 	{
 		uint32_t context = args[0];  /* cl_context context */
 		uint32_t normalized_coords = args[1];  /* cl_bool normalized_coords */
@@ -824,9 +824,9 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t filter_mode = args[3];  /* cl_filter_mode filter_mode */
 		uint32_t errcode_ret = args[4];  /* cl_int *errcode_ret */
 
-		struct opencl_sampler_t *sampler;
+		struct evg_opencl_sampler_t *sampler;
 
-		opencl_debug("  context=0x%x, normalized_coords=%d, addressing_mode=0x%x," 
+		evg_opencl_debug("  context=0x%x, normalized_coords=%d, addressing_mode=0x%x," 
 				" lengths=0x%x, errcode_ret=0x%x\n",
 			context, normalized_coords, addressing_mode, filter_mode, errcode_ret);
 
@@ -846,10 +846,10 @@ int opencl_func_run(int code, unsigned int *args)
 					addressing_mode);
 		}
 
-		opencl_object_get(OPENCL_OBJ_CONTEXT, context);
+		evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context);
 
 		/* Create command queue and return id */
-		sampler = opencl_sampler_create();
+		sampler = evg_opencl_sampler_create();
 		sampler->normalized_coords = normalized_coords;
 		sampler->addressing_mode = addressing_mode;
 		sampler->filter_mode = filter_mode;
@@ -862,7 +862,7 @@ int opencl_func_run(int code, unsigned int *args)
 	}
 
 	/* 1028 */
-	case OPENCL_FUNC_clCreateProgramWithSource:
+	case EVG_OPENCL_FUNC_clCreateProgramWithSource:
 	{
 		uint32_t context_id = args[0];  /* cl_context context */
 		uint32_t count = args[1];  /* cl_uint count */
@@ -870,31 +870,31 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t lengths = args[3];  /* const size_t *lengths */
 		uint32_t errcode_ret = args[4];  /* cl_int *errcode_ret */
 
-		struct opencl_program_t *program;
+		struct evg_opencl_program_t *program;
 
-		opencl_debug("  context=0x%x, count=%d, strings=0x%x, lengths=0x%x, errcode_ret=0x%x\n",
+		evg_opencl_debug("  context=0x%x, count=%d, strings=0x%x, lengths=0x%x, errcode_ret=0x%x\n",
 			context_id, count, strings, lengths, errcode_ret);
 
 		/* Application tries to compile source, and no binary was passed to Multi2Sim */
-		if (!*gpu_opencl_binary_name)
+		if (!*evg_emu_opencl_binary_name)
 			fatal("%s: kernel source compilation not supported.\n%s",
 				err_prefix, err_opencl_compiler);
 
 		/* Create program */
-		opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
-		program = opencl_program_create();
+		evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
+		program = evg_opencl_program_create();
 		retval = program->id;
 		warning("%s: binary '%s' used as pre-compiled kernel.\n%s",
-			err_prefix, gpu_opencl_binary_name, err_opencl_binary_note);
+			err_prefix, evg_emu_opencl_binary_name, err_opencl_binary_note);
 
 		/* Load OpenCL binary passed to Multi2Sim and make a copy in temporary file */
-		program->elf_file = elf_file_create_from_path(gpu_opencl_binary_name);
+		program->elf_file = elf_file_create_from_path(evg_emu_opencl_binary_name);
 		break;
 	}
 
 
 	/* 1029 */
-	case OPENCL_FUNC_clCreateProgramWithBinary:
+	case EVG_OPENCL_FUNC_clCreateProgramWithBinary:
 	{
 		uint32_t context_id = args[0];  /* cl_context context */
 		uint32_t num_devices = args[1];  /* cl_uint num_devices */
@@ -906,12 +906,12 @@ int opencl_func_run(int code, unsigned int *args)
 
 		uint32_t length, binary;
 		uint32_t device_id;
-		struct opencl_program_t *program;
+		struct evg_opencl_program_t *program;
 		void *buf;
 
 		char name[MAX_STRING_SIZE];
 
-		opencl_debug("  context=0x%x, num_devices=%d, device_list=0x%x, lengths=0x%x\n"
+		evg_opencl_debug("  context=0x%x, num_devices=%d, device_list=0x%x, lengths=0x%x\n"
 			"  binaries=0x%x, binary_status=0x%x, errcode_ret=0x%x\n",
 			context_id, num_devices, device_list, lengths, binaries,
 			binary_status, errcode_ret);
@@ -919,18 +919,18 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Get device and context */
 		mem_read(x86_isa_mem, device_list, 4, &device_id);
-		opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
-		opencl_object_get(OPENCL_OBJ_CONTEXT, context_id);
+		evg_opencl_object_get(EVG_OPENCL_OBJ_DEVICE, device_id);
+		evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
 
 		/* Create program */
-		program = opencl_program_create();
+		program = evg_opencl_program_create();
 		retval = program->id;
 
 		/* Read binary length and pointer */
 		mem_read(x86_isa_mem, lengths, 4, &length);
 		mem_read(x86_isa_mem, binaries, 4, &binary);
-		opencl_debug("    lengths[0] = %d\n", length);
-		opencl_debug("    binaries[0] = 0x%x\n", binary);
+		evg_opencl_debug("    lengths[0] = %d\n", length);
+		evg_opencl_debug("    binaries[0] = 0x%x\n", binary);
 
 		/* Read binary */
 		buf = malloc(length);
@@ -943,7 +943,7 @@ int opencl_func_run(int code, unsigned int *args)
 		program->elf_file = elf_file_create_from_buffer(buf, length, name);
 
 		/* Search ELF binary to see if there are any constant buffers encoded inside */
-		opencl_program_initialize_constant_buffers(program);
+		evg_opencl_program_initialize_constant_buffers(program);
 
 		free(buf);
 
@@ -957,23 +957,23 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1031 */
-	case OPENCL_FUNC_clReleaseProgram:
+	case EVG_OPENCL_FUNC_clReleaseProgram:
 	{
 		uint32_t program_id = args[0];  /* cl_program program */
 		
-		struct opencl_program_t *program;
+		struct evg_opencl_program_t *program;
 
-		opencl_debug("  program=0x%x\n", program_id);
-		program = opencl_object_get(OPENCL_OBJ_PROGRAM, program_id);
+		evg_opencl_debug("  program=0x%x\n", program_id);
+		program = evg_opencl_object_get(EVG_OPENCL_OBJ_PROGRAM, program_id);
 		assert(program->ref_count > 0);
 		if (!--program->ref_count)
-			opencl_program_free(program);
+			evg_opencl_program_free(program);
 		break;
 	}
 
 
 	/* 1032 */
-	case OPENCL_FUNC_clBuildProgram:
+	case EVG_OPENCL_FUNC_clBuildProgram:
 	{
 		uint32_t program_id = args[0];  /* cl_program program */
 		uint32_t num_devices = args[1];  /* cl_uint num_devices */
@@ -983,14 +983,14 @@ int opencl_func_run(int code, unsigned int *args)
 							void *user_data) */
 		uint32_t user_data = args[5];  /* void *user_data */
 
-		struct opencl_program_t *program;
+		struct evg_opencl_program_t *program;
 		char options_str[MAX_STRING_SIZE];
 
 		options_str[0] = 0;
 		if (options)
 			mem_read_string(x86_isa_mem, options, MAX_STRING_SIZE, options_str);
 
-		opencl_debug("  program=0x%x, num_devices=%d, device_list=0x%x, options=0x%x\n"
+		evg_opencl_debug("  program=0x%x, num_devices=%d, device_list=0x%x, options=0x%x\n"
 			"  pfn_notify=0x%x, user_data=0x%x, options='%s'\n",
 			program_id, num_devices, device_list, options, pfn_notify, user_data, options_str);
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_devices, 1);
@@ -1000,50 +1000,50 @@ int opencl_func_run(int code, unsigned int *args)
 			warning("%s: clBuildProgram: option string '%s' ignored\n", __FUNCTION__, options_str);
 
 		/* Get program */
-		program = opencl_object_get(OPENCL_OBJ_PROGRAM, program_id);
+		program = evg_opencl_object_get(EVG_OPENCL_OBJ_PROGRAM, program_id);
 		if (!program->elf_file)
 			fatal("%s: program binary must be loaded first.\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 
 		/* Build program */
-		opencl_program_build(program);
+		evg_opencl_program_build(program);
 		break;
 	}
 
 
 	/* 1036 */
-	case OPENCL_FUNC_clCreateKernel:
+	case EVG_OPENCL_FUNC_clCreateKernel:
 	{
 		uint32_t program_id = args[0];  /* cl_program program */
 		uint32_t kernel_name = args[1];  /* const char *kernel_name */
 		uint32_t errcode_ret = args[2];  /* cl_int *errcode_ret */
 
 		char kernel_name_str[MAX_STRING_SIZE];
-		struct opencl_kernel_t *kernel;
-		struct opencl_program_t *program;
+		struct evg_opencl_kernel_t *kernel;
+		struct evg_opencl_program_t *program;
 		void *constant_tmp;
 		int i;
 
-		opencl_debug("  program=0x%x, kernel_name=0x%x, errcode_ret=0x%x\n",
+		evg_opencl_debug("  program=0x%x, kernel_name=0x%x, errcode_ret=0x%x\n",
 			program_id, kernel_name, errcode_ret);
 		if (mem_read_string(x86_isa_mem, kernel_name, MAX_STRING_SIZE, kernel_name_str) == MAX_STRING_SIZE)
 			fatal("%s: 'kernel_name' string is too long", err_prefix);
-		opencl_debug("    kernel_name='%s'\n", kernel_name_str);
+		evg_opencl_debug("    kernel_name='%s'\n", kernel_name_str);
 
 		/* Get program */
-		program = opencl_object_get(OPENCL_OBJ_PROGRAM, program_id);
+		program = evg_opencl_object_get(EVG_OPENCL_OBJ_PROGRAM, program_id);
 
 		/* Create the kernel */
-		kernel = opencl_kernel_create();
+		kernel = evg_opencl_kernel_create();
 		kernel->program_id = program_id;
 
 		/* Program must be built */
 		if (!program->elf_file)
 			fatal("%s: program should be first built with clBuildProgram.\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 
 		/* Load kernel */
-		opencl_kernel_load(kernel, kernel_name_str);
+		evg_opencl_kernel_load(kernel, kernel_name_str);
 
 		/* Add program-wide constant buffers to the kernel-specific list */
 		for(i = 0; i < 25; i++) 
@@ -1064,42 +1064,42 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1039 */
-	case OPENCL_FUNC_clReleaseKernel:
+	case EVG_OPENCL_FUNC_clReleaseKernel:
 	{
 		uint32_t kernel_id = args[0];  /* cl_kernel kernel */
 
-		struct opencl_kernel_t *kernel;
+		struct evg_opencl_kernel_t *kernel;
 
-		opencl_debug("  kernel=0x%x\n", kernel_id);
-		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
+		evg_opencl_debug("  kernel=0x%x\n", kernel_id);
+		kernel = evg_opencl_object_get(EVG_OPENCL_OBJ_KERNEL, kernel_id);
 		assert(kernel->ref_count > 0);
 		if (!--kernel->ref_count)
-			opencl_kernel_free(kernel);
+			evg_opencl_kernel_free(kernel);
 		break;
 	}
 
 
 	/* 1040 */
-	case OPENCL_FUNC_clSetKernelArg:
+	case EVG_OPENCL_FUNC_clSetKernelArg:
 	{
 		uint32_t kernel_id = args[0];  /* cl_kernel kernel */
 		uint32_t arg_index = args[1];  /* cl_uint arg_index */
 		uint32_t arg_size = args[2];  /* size_t arg_size */
 		uint32_t arg_value = args[3];  /* const void *arg_value */
 
-		struct opencl_kernel_t *kernel;
-		struct opencl_kernel_arg_t *arg;
+		struct evg_opencl_kernel_t *kernel;
+		struct evg_opencl_kernel_arg_t *arg;
 
-		opencl_debug("  kernel_id=0x%x, arg_index=%d, arg_size=%d, arg_value=0x%x\n",
+		evg_opencl_debug("  kernel_id=0x%x, arg_index=%d, arg_size=%d, arg_value=0x%x\n",
 			kernel_id, arg_index, arg_size, arg_value);
 
 		/* Check */
-		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
+		kernel = evg_opencl_object_get(EVG_OPENCL_OBJ_KERNEL, kernel_id);
 		if (arg_value)
 			OPENCL_PARAM_NOT_SUPPORTED_NEQ(arg_size, 4);
 		if (arg_index >= list_count(kernel->arg_list))
 			fatal("%s: argument index out of bounds.\n%s", err_prefix,
-				err_opencl_param_note);
+				err_evg_opencl_param_note);
 
 		/* Copy to kernel object */
 		arg = list_get(kernel->arg_list, arg_index);
@@ -1110,9 +1110,9 @@ int opencl_func_run(int code, unsigned int *args)
 			mem_read(x86_isa_mem, arg_value, 4, &arg->value);
 
 		/* If OpenCL argument scope is __local, argument value must be NULL */
-		if (arg->mem_scope == OPENCL_MEM_SCOPE_LOCAL && arg_value)
+		if (arg->mem_scope == EVG_OPENCL_MEM_SCOPE_LOCAL && arg_value)
 			fatal("%s: value for local arguments must be NULL.\n%s", err_prefix,
-				err_opencl_param_note);
+				err_evg_opencl_param_note);
 
 		/* Return success */
 		break;
@@ -1120,7 +1120,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1042 */
-	case OPENCL_FUNC_clGetKernelWorkGroupInfo:
+	case EVG_OPENCL_FUNC_clGetKernelWorkGroupInfo:
 	{
 		uint32_t kernel_id = args[0];  /* cl_kernel kernel */
 		uint32_t device_id = args[1];  /* cl_device_id device */
@@ -1129,17 +1129,17 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t param_value = args[4];  /* void *param_value */
 		uint32_t param_value_size_ret = args[5];  /* size_t *param_value_size_ret */
 		
-		struct opencl_kernel_t *kernel;
+		struct evg_opencl_kernel_t *kernel;
 		uint32_t size_ret;
 
-		opencl_debug("  kernel=0x%x, device=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
+		evg_opencl_debug("  kernel=0x%x, device=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			kernel_id, device_id, param_name, param_value_size, param_value,
 			param_value_size_ret);
 
-		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
-		opencl_object_get(OPENCL_OBJ_DEVICE, device_id);
-		size_ret = opencl_kernel_get_work_group_info(kernel, param_name, x86_isa_mem,
+		kernel = evg_opencl_object_get(EVG_OPENCL_OBJ_KERNEL, kernel_id);
+		evg_opencl_object_get(EVG_OPENCL_OBJ_DEVICE, device_id);
+		size_ret = evg_opencl_kernel_get_work_group_info(kernel, param_name, x86_isa_mem,
 			param_value, param_value_size);
 		if (param_value_size_ret)
 			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
@@ -1148,12 +1148,12 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1043 */
-	case OPENCL_FUNC_clWaitForEvents:
+	case EVG_OPENCL_FUNC_clWaitForEvents:
 	{
 		uint32_t num_events = args[0];  /* cl_uint num_events */
 		uint32_t event_list = args[1];  /* const cl_event *event_list */
 
-		opencl_debug("  num_events=0x%x, event_list=0x%x\n",
+		evg_opencl_debug("  num_events=0x%x, event_list=0x%x\n",
 			num_events, event_list);
 		/* FIXME: block until events in list are completed */
 		break;
@@ -1161,7 +1161,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 	
 	/* 1044 */
-	case OPENCL_FUNC_clGetEventInfo:
+	case EVG_OPENCL_FUNC_clGetEventInfo:
 	{
 		uint32_t param_name = args[1]; /* cl_event_info param_name */
 		uint32_t param_value = args[3]; /* void *param_value */
@@ -1202,23 +1202,23 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1047 */
-	case OPENCL_FUNC_clReleaseEvent:
+	case EVG_OPENCL_FUNC_clReleaseEvent:
 	{
 		uint32_t event_id = args[0];  /* cl_event event */
 
-		struct opencl_event_t *event;
+		struct evg_opencl_event_t *event;
 
-		opencl_debug("  event=0x%x\n", event_id);
-		event = opencl_object_get(OPENCL_OBJ_EVENT, event_id);
+		evg_opencl_debug("  event=0x%x\n", event_id);
+		event = evg_opencl_object_get(EVG_OPENCL_OBJ_EVENT, event_id);
 		assert(event->ref_count > 0);
 		if (!--event->ref_count)
-			opencl_event_free(event);
+			evg_opencl_event_free(event);
 		break;
 	}
 
 
 	/* 1050 */
-	case OPENCL_FUNC_clGetEventProfilingInfo:
+	case EVG_OPENCL_FUNC_clGetEventProfilingInfo:
 	{
 		uint32_t event_id = args[0];  /* cl_event event */
 		uint32_t param_name = args[1];  /* cl_profiling_info param_name */
@@ -1226,15 +1226,15 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t param_value = args[3];  /* void *param_value */
 		uint32_t param_value_size_ret = args[4];  /* size_t *param_value_size_ret */
 
-		struct opencl_event_t *event;
+		struct evg_opencl_event_t *event;
 		int size_ret;
 
-		opencl_debug("  event=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
+		evg_opencl_debug("  event=0x%x, param_name=0x%x, param_value_size=0x%x,\n"
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			event_id, param_name, param_value_size, param_value,
 			param_value_size_ret);
-		event = opencl_object_get(OPENCL_OBJ_EVENT, event_id);
-		size_ret = opencl_event_get_profiling_info(event, param_name, x86_isa_mem,
+		event = evg_opencl_object_get(EVG_OPENCL_OBJ_EVENT, event_id);
+		size_ret = evg_opencl_event_get_profiling_info(event, param_name, x86_isa_mem,
 			param_value, param_value_size);
 		if (param_value_size_ret)
 			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
@@ -1243,28 +1243,28 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1051 */
-	case OPENCL_FUNC_clFlush:
+	case EVG_OPENCL_FUNC_clFlush:
 	{
 		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
 
-		opencl_debug("  command_queue=0x%x\n", command_queue);
+		evg_opencl_debug("  command_queue=0x%x\n", command_queue);
 		break;
 	}
 
 
 	/* 1052 */
-	case OPENCL_FUNC_clFinish:
+	case EVG_OPENCL_FUNC_clFinish:
 	{
 		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
 
-		opencl_debug("  command_queue=0x%x\n", command_queue);
+		evg_opencl_debug("  command_queue=0x%x\n", command_queue);
 		/* FIXME: block until command queue empty */
 		break;
 	}
 
 
 	/* 1053 */
-	case OPENCL_FUNC_clEnqueueReadBuffer:
+	case EVG_OPENCL_FUNC_clEnqueueReadBuffer:
 	{
 		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
 		uint32_t buffer = args[1];  /* cl_mem buffer */
@@ -1276,11 +1276,11 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t event_wait_list = args[7];  /* const cl_event *event_wait_list */
 		uint32_t event_ptr = args[8];  /* cl_event *event */
 		
-		struct opencl_mem_t *mem;
-		struct opencl_event_t *event;
+		struct evg_opencl_mem_t *mem;
+		struct evg_opencl_event_t *event;
 		void *buf;
 
-		opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_read=0x%x,\n"
+		evg_opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_read=0x%x,\n"
 			"  offset=0x%x, cb=0x%x, ptr=0x%x, num_events_in_wait_list=0x%x,\n"
 			"  event_wait_list=0x%x, event=0x%x\n",
 			command_queue, buffer, blocking_read, offset, cb, ptr,
@@ -1291,11 +1291,11 @@ int opencl_func_run(int code, unsigned int *args)
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory object */
-		mem = opencl_object_get(OPENCL_OBJ_MEM, buffer);
+		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, buffer);
 
 		/* Check that device buffer storage is not exceeded */
 		if (offset + cb > mem->size)
-			fatal("%s: buffer storage exceeded\n%s", err_prefix, err_opencl_param_note);
+			fatal("%s: buffer storage exceeded\n%s", err_prefix, err_evg_opencl_param_note);
 
 		/* Copy buffer from device memory to host memory */
 		buf = malloc(cb);
@@ -1307,25 +1307,25 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Event */
 		if (event_ptr) {
-			event = opencl_event_create(OPENCL_EVENT_NDRANGE_KERNEL);
-			event->status = OPENCL_EVENT_STATUS_SUBMITTED;
-			event->time_queued = opencl_event_timer();
-			event->time_submit = opencl_event_timer();
-			event->time_start = opencl_event_timer();
-			event->time_end = opencl_event_timer();
+			event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
+			event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
+			event->time_queued = evg_opencl_event_timer();
+			event->time_submit = evg_opencl_event_timer();
+			event->time_start = evg_opencl_event_timer();
+			event->time_end = evg_opencl_event_timer();
 			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
-			opencl_debug("    event: 0x%x\n", event->id);
+			evg_opencl_debug("    event: 0x%x\n", event->id);
 		}
 
 		/* Return success */
-		opencl_debug("    %d bytes copied from device memory (0x%x) to host memory (0x%x)\n",
+		evg_opencl_debug("    %d bytes copied from device memory (0x%x) to host memory (0x%x)\n",
 			cb, mem->device_ptr + offset, ptr);
 		break;
 	}
 
 
 	/* 1055 */
-	case OPENCL_FUNC_clEnqueueWriteBuffer:
+	case EVG_OPENCL_FUNC_clEnqueueWriteBuffer:
 	{
 		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
 		uint32_t buffer = args[1];  /* cl_mem buffer */
@@ -1337,11 +1337,11 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t event_wait_list = args[7];  /* const cl_event *event_wait_list */
 		uint32_t event_ptr = args[8];  /* cl_event *event */
 
-		struct opencl_mem_t *mem;
-		struct opencl_event_t *event;
+		struct evg_opencl_mem_t *mem;
+		struct evg_opencl_event_t *event;
 		void *buf;
 
-		opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_write=0x%x,\n"
+		evg_opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_write=0x%x,\n"
 			"  offset=0x%x, cb=0x%x, ptr=0x%x, num_events_in_wait_list=0x%x,\n"
 			"  event_wait_list=0x%x, event=0x%x\n",
 			command_queue, buffer, blocking_write, offset, cb,
@@ -1352,11 +1352,11 @@ int opencl_func_run(int code, unsigned int *args)
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory object */
-		mem = opencl_object_get(OPENCL_OBJ_MEM, buffer);
+		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, buffer);
 
 		/* Check that device buffer storage is not exceeded */
 		if (offset + cb > mem->size)
-			fatal("%s: buffer storage exceeded\n%s", err_prefix, err_opencl_param_note);
+			fatal("%s: buffer storage exceeded\n%s", err_prefix, err_evg_opencl_param_note);
 
 		/* Copy buffer from host memory to device memory */
 		buf = malloc(cb);
@@ -1368,25 +1368,25 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Event */
 		if (event_ptr) {
-			event = opencl_event_create(OPENCL_EVENT_MAP_BUFFER);
-			event->status = OPENCL_EVENT_STATUS_COMPLETE;
-			event->time_queued = opencl_event_timer();
-			event->time_submit = opencl_event_timer();
-			event->time_start = opencl_event_timer();
-			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
+			event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
+			event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
+			event->time_queued = evg_opencl_event_timer();
+			event->time_submit = evg_opencl_event_timer();
+			event->time_start = evg_opencl_event_timer();
+			event->time_end = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
 			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
-			opencl_debug("    event: 0x%x\n", event->id);
+			evg_opencl_debug("    event: 0x%x\n", event->id);
 		}
 
 		/* Return success */
-		opencl_debug("    %d bytes copied from host memory (0x%x) to device memory (0x%x)\n",
+		evg_opencl_debug("    %d bytes copied from host memory (0x%x) to device memory (0x%x)\n",
 			cb, ptr, mem->device_ptr + offset);
 		break;
 	}
 
 
 	/* 1057 */
-	case OPENCL_FUNC_clEnqueueCopyBuffer:
+	case EVG_OPENCL_FUNC_clEnqueueCopyBuffer:
 	{
 		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
 		uint32_t src_buffer = args[1];  /* cl_mem src_buffer */
@@ -1398,11 +1398,11 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t event_wait_list = args[7];  /* const cl_event *event_wait_list */
 		uint32_t event_ptr = args[8];  /* cl_event *event */
 
-		struct opencl_mem_t *src_mem, *dst_mem;
-		struct opencl_event_t *event;
+		struct evg_opencl_mem_t *src_mem, *dst_mem;
+		struct evg_opencl_event_t *event;
 		void *buf;
 
-		opencl_debug("  command_queue=0x%x, src_buffer=0x%x, dst_buffer=0x%x,\n"
+		evg_opencl_debug("  command_queue=0x%x, src_buffer=0x%x, dst_buffer=0x%x,\n"
 			"  src_offset=0x%x, dst_offset=0x%x, cb=%u, num_events_in_wait_list=0x%x,\n"
 			"  event_wait_list=0x%x, event=0x%x\n",
 			command_queue, src_buffer, dst_buffer, src_offset, dst_offset, cb,
@@ -1412,12 +1412,12 @@ int opencl_func_run(int code, unsigned int *args)
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory objects */
-		src_mem = opencl_object_get(OPENCL_OBJ_MEM, src_buffer);
-		dst_mem = opencl_object_get(OPENCL_OBJ_MEM, dst_buffer);
+		src_mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, src_buffer);
+		dst_mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, dst_buffer);
 
 		/* Check that device buffer storage is not exceeded */
 		if (src_offset + cb > src_mem->size || dst_offset + cb > dst_mem->size)
-			fatal("%s: buffer storage exceeded\n%s", err_prefix, err_opencl_param_note);
+			fatal("%s: buffer storage exceeded\n%s", err_prefix, err_evg_opencl_param_note);
 
 		/* Copy buffers */
 		buf = malloc(cb);
@@ -1429,24 +1429,24 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Event */
 		if (event_ptr) {
-			event = opencl_event_create(OPENCL_EVENT_MAP_BUFFER);
-			event->status = OPENCL_EVENT_STATUS_COMPLETE;
-			event->time_queued = opencl_event_timer();
-			event->time_submit = opencl_event_timer();
-			event->time_start = opencl_event_timer();
-			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
+			event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
+			event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
+			event->time_queued = evg_opencl_event_timer();
+			event->time_submit = evg_opencl_event_timer();
+			event->time_start = evg_opencl_event_timer();
+			event->time_end = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
 			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
-			opencl_debug("    event: 0x%x\n", event->id);
+			evg_opencl_debug("    event: 0x%x\n", event->id);
 		}
 
 		/* Return success */
-		opencl_debug("    %d bytes copied in device memory from 0x%x to 0x%x\n",
+		evg_opencl_debug("    %d bytes copied in device memory from 0x%x to 0x%x\n",
 			cb, src_mem->device_ptr + src_offset, dst_mem->device_ptr + dst_offset);
 		break;
 	}
 
 	/* 1059 */ 
-	case OPENCL_FUNC_clEnqueueReadImage:
+	case EVG_OPENCL_FUNC_clEnqueueReadImage:
 	{
 		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
 		uint32_t image = args[1];  /* cl_mem image*/
@@ -1460,11 +1460,11 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t event_wait_list = args[9];  /* const cl_event *event_wait_list */
 		uint32_t event_ptr = args[10];  /* cl_event *event */
 		
-		struct opencl_mem_t *mem;
-		struct opencl_event_t *event;
+		struct evg_opencl_mem_t *mem;
+		struct evg_opencl_event_t *event;
 		void *img;
 
-		opencl_debug("  command_queue=0x%x, image=0x%x, blocking_read=0x%x,\n"
+		evg_opencl_debug("  command_queue=0x%x, image=0x%x, blocking_read=0x%x,\n"
 			"  origin=0x%x, region=0x%x, row_pitch=0x%x, slice_pitch=0x%x, ptr=0x%x\n"
 			"  num_events_in_wait_list=0x%x, event_wait_list=0x%x, event=0x%x\n",
 			command_queue, image, blocking_read, origin, region, row_pitch, 
@@ -1475,7 +1475,7 @@ int opencl_func_run(int code, unsigned int *args)
 		OPENCL_PARAM_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory object */
-		mem = opencl_object_get(OPENCL_OBJ_MEM, image);
+		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, image);
 
 		/* Determine image geometry */
 		/* NOTE size_t is 32-bits on 32-bit systems, but 64-bits on 64-bit systems.  Since
@@ -1492,7 +1492,7 @@ int opencl_func_run(int code, unsigned int *args)
 		else if(row_pitch < mem->width*mem->pixel_size) {
 
 			fatal("%s: row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		}
 
 		if(slice_pitch == 0) {
@@ -1501,7 +1501,7 @@ int opencl_func_run(int code, unsigned int *args)
 		else if(slice_pitch < row_pitch*mem->height) {
 
 			fatal("%s: slice_pitch must be 0 or >= row_pitch * image_height\n%s", 
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		}
 
 		/* FIXME Start with origin = {0,0,0}, region = {width, height, depth},
@@ -1511,7 +1511,7 @@ int opencl_func_run(int code, unsigned int *args)
 		   read_region[2] != mem->depth) {
 
 			fatal("%s: Origin/region must match dimensions of image\n%s", 
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 		}
 
 		/* Copy image from device memory to host memory */
@@ -1526,25 +1526,25 @@ int opencl_func_run(int code, unsigned int *args)
 
 		/* Event */
 		if (event_ptr) {
-			event = opencl_event_create(OPENCL_EVENT_NDRANGE_KERNEL);
-			event->status = OPENCL_EVENT_STATUS_SUBMITTED;
-			event->time_queued = opencl_event_timer();
-			event->time_submit = opencl_event_timer();
-			event->time_start = opencl_event_timer();
-			event->time_end = opencl_event_timer();
+			event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
+			event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
+			event->time_queued = evg_opencl_event_timer();
+			event->time_submit = evg_opencl_event_timer();
+			event->time_start = evg_opencl_event_timer();
+			event->time_end = evg_opencl_event_timer();
 			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
-			opencl_debug("    event: 0x%x\n", event->id);
+			evg_opencl_debug("    event: 0x%x\n", event->id);
 		}
 
 		/* Return success */
 		/* FIXME Return size of region, not entire image */
-		opencl_debug("    %d bytes copied from device memory (0x%x) to host memory (0x%x)\n",
+		evg_opencl_debug("    %d bytes copied from device memory (0x%x) to host memory (0x%x)\n",
 			mem->size, mem->device_ptr, ptr);
 		break;
 	}
 
 	/* 1064 */
-	case OPENCL_FUNC_clEnqueueMapBuffer:
+	case EVG_OPENCL_FUNC_clEnqueueMapBuffer:
 	{
 		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
 		uint32_t buffer = args[1];  /* cl_mem buffer */
@@ -1557,9 +1557,9 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t event_ptr = args[8];  /* cl_event *event */
 		uint32_t errcode_ret = args[9];  /* cl_int *errcode_ret */
 
-		struct opencl_event_t *event;
+		struct evg_opencl_event_t *event;
 
-		opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_map=0x%x, map_flags=0x%x,\n"
+		evg_opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_map=0x%x, map_flags=0x%x,\n"
 			"  offset=0x%x, cb=0x%x, num_events_in_wait_list=0x%x, event_wait_list=0x%x,\n"
 			"  event=0x%x, errcode_ret=0x%x\n",
 			command_queue, buffer, blocking_map, map_flags, offset, cb,
@@ -1569,18 +1569,18 @@ int opencl_func_run(int code, unsigned int *args)
 		OPENCL_PARAM_NOT_SUPPORTED_EQ(blocking_map, 0);
 
 		/* Get memory object */
-		opencl_object_get(OPENCL_OBJ_MEM, buffer);
+		evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, buffer);
 
 		/* Event */
 		if (event_ptr) {
-			event = opencl_event_create(OPENCL_EVENT_MAP_BUFFER);
-			event->status = OPENCL_EVENT_STATUS_COMPLETE;
-			event->time_queued = opencl_event_timer();
-			event->time_submit = opencl_event_timer();
-			event->time_start = opencl_event_timer();
-			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
+			event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
+			event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
+			event->time_queued = evg_opencl_event_timer();
+			event->time_submit = evg_opencl_event_timer();
+			event->time_start = evg_opencl_event_timer();
+			event->time_end = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
 			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
-			opencl_debug("    event: 0x%x\n", event->id);
+			evg_opencl_debug("    event: 0x%x\n", event->id);
 		}
 
 		/* Return success */
@@ -1592,7 +1592,7 @@ int opencl_func_run(int code, unsigned int *args)
 
 
 	/* 1067 */
-	case OPENCL_FUNC_clEnqueueNDRangeKernel:
+	case EVG_OPENCL_FUNC_clEnqueueNDRangeKernel:
 	{
 		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
 		uint32_t kernel_id = args[1];  /* cl_kernel kernel */
@@ -1604,13 +1604,13 @@ int opencl_func_run(int code, unsigned int *args)
 		uint32_t event_wait_list = args[7];  /* const cl_event *event_wait_list */
 		uint32_t event_ptr = args[8];  /* cl_event *event */
 
-		struct opencl_kernel_t *kernel;
-		struct opencl_event_t *event = NULL;
-		struct opencl_kernel_arg_t *arg;
-		struct opencl_mem_t *mem;
+		struct evg_opencl_kernel_t *kernel;
+		struct evg_opencl_event_t *event = NULL;
+		struct evg_opencl_kernel_arg_t *arg;
+		struct evg_opencl_mem_t *mem;
 		int i;
 
-		opencl_debug("  command_queue=0x%x, kernel=0x%x, work_dim=%d,\n"
+		evg_opencl_debug("  command_queue=0x%x, kernel=0x%x, work_dim=%d,\n"
 			"  global_work_offset=0x%x, global_work_size_ptr=0x%x, local_work_size_ptr=0x%x,\n"
 			"  num_events_in_wait_list=0x%x, event_wait_list=0x%x, event=0x%x\n",
 			command_queue, kernel_id, work_dim, global_work_offset_ptr, global_work_size_ptr,
@@ -1621,7 +1621,7 @@ int opencl_func_run(int code, unsigned int *args)
 			warning("%s: event list arguments ignored", err_prefix);
 
 		/* Get kernel */
-		kernel = opencl_object_get(OPENCL_OBJ_KERNEL, kernel_id);
+		kernel = evg_opencl_object_get(EVG_OPENCL_OBJ_KERNEL, kernel_id);
 		kernel->work_dim = work_dim;
 
 		/* Build UAV lists */
@@ -1630,15 +1630,15 @@ int opencl_func_run(int code, unsigned int *args)
 			arg = list_get(kernel->arg_list, i);
 
 			/* If arg is an image, add it to the appropriate UAV list*/
-			if (arg->kind == OPENCL_KERNEL_ARG_KIND_IMAGE) 
+			if (arg->kind == EVG_OPENCL_KERNEL_ARG_KIND_IMAGE) 
 			{
-				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
 
-				if (arg->access_type == OPENCL_KERNEL_ARG_READ_ONLY) 
+				if (arg->access_type == EVG_OPENCL_KERNEL_ARG_READ_ONLY) 
 				{
 					list_set(kernel->uav_read_list, arg->uav, mem);
 				} 
-				else if (arg->access_type == OPENCL_KERNEL_ARG_WRITE_ONLY) 
+				else if (arg->access_type == EVG_OPENCL_KERNEL_ARG_WRITE_ONLY) 
 				{
 					list_set(kernel->uav_write_list, arg->uav, mem);
 				} 
@@ -1652,9 +1652,9 @@ int opencl_func_run(int code, unsigned int *args)
 			/* If arg is a pointer and not in UAV 11, then it is 
 			   presumably a constant pointer */
 			/* TODO Check if __read_only or __write_only affects uav number */
-			if(arg->kind == OPENCL_KERNEL_ARG_KIND_POINTER && arg->uav != 11) 
+			if(arg->kind == EVG_OPENCL_KERNEL_ARG_KIND_POINTER && arg->uav != 11) 
 			{	
-				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
 				list_set(kernel->constant_buffer_list, arg->uav, mem);
 			}
 		}
@@ -1666,9 +1666,9 @@ int opencl_func_run(int code, unsigned int *args)
 		for (i = 0; i < work_dim; i++)
 			mem_read(x86_isa_mem, global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
 		kernel->global_size = kernel->global_size3[0] * kernel->global_size3[1] * kernel->global_size3[2];
-		opencl_debug("    global_work_size=");
+		evg_opencl_debug("    global_work_size=");
 		opencl_debug_array(work_dim, kernel->global_size3);
-		opencl_debug("\n");
+		evg_opencl_debug("\n");
 
 		/* Local work sizes.
 		 * If no pointer provided, assign the same as global size - FIXME: can be done better. */
@@ -1680,77 +1680,77 @@ int opencl_func_run(int code, unsigned int *args)
 				mem_read(x86_isa_mem, local_work_size_ptr + i * 4, 4, &kernel->local_size3[i]);
 				if (kernel->local_size3[i] < 1)
 					fatal("%s: local work size must be greater than 0.\n%s",
-						err_prefix, err_opencl_param_note);
+						err_prefix, err_evg_opencl_param_note);
 			}
 		}
 		kernel->local_size = kernel->local_size3[0] * kernel->local_size3[1] * kernel->local_size3[2];
-		opencl_debug("    local_work_size=");
+		evg_opencl_debug("    local_work_size=");
 		opencl_debug_array(work_dim, kernel->local_size3);
-		opencl_debug("\n");
+		evg_opencl_debug("\n");
 
 		/* Check valid global/local sizes */
 		if (kernel->global_size3[0] < 1 || kernel->global_size3[1] < 1
 				|| kernel->global_size3[2] < 1)
-			fatal("%s: invalid global size.\n%s", err_prefix, err_opencl_param_note);
+			fatal("%s: invalid global size.\n%s", err_prefix, err_evg_opencl_param_note);
 		if (kernel->local_size3[0] < 1 || kernel->local_size3[1] < 1
 				|| kernel->local_size3[2] < 1)
-			fatal("%s: invalid local size.\n%s", err_prefix, err_opencl_param_note);
+			fatal("%s: invalid local size.\n%s", err_prefix, err_evg_opencl_param_note);
 
 		/* Check divisibility of global by local sizes */
 		if ((kernel->global_size3[0] % kernel->local_size3[0])
 			|| (kernel->global_size3[1] % kernel->local_size3[1])
 			|| (kernel->global_size3[2] % kernel->local_size3[2]))
 			fatal("%s: global work sizes must be multiples of local sizes.\n%s",
-				err_prefix, err_opencl_param_note);
+				err_prefix, err_evg_opencl_param_note);
 
 		/* Calculate number of groups */
 		for (i = 0; i < 3; i++)
 			kernel->group_count3[i] = kernel->global_size3[i] / kernel->local_size3[i];
 		kernel->group_count = kernel->group_count3[0] * kernel->group_count3[1] * kernel->group_count3[2];
-		opencl_debug("    group_count=");
+		evg_opencl_debug("    group_count=");
 		opencl_debug_array(work_dim, kernel->group_count3);
-		opencl_debug("\n");
+		evg_opencl_debug("\n");
 
 		/* Event */
 		if (event_ptr) {
-			event = opencl_event_create(OPENCL_EVENT_NDRANGE_KERNEL);
-			event->status = OPENCL_EVENT_STATUS_SUBMITTED;
-			event->time_queued = opencl_event_timer();
-			event->time_submit = opencl_event_timer();
-			event->time_start = opencl_event_timer();  /* FIXME: change for asynchronous exec */
+			event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
+			event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
+			event->time_queued = evg_opencl_event_timer();
+			event->time_submit = evg_opencl_event_timer();
+			event->time_start = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
 			mem_write(x86_isa_mem, event_ptr, 4, &event->id);
-			opencl_debug("    event: 0x%x\n", event->id);
+			evg_opencl_debug("    event: 0x%x\n", event->id);
 		}
 
 		/* FIXME: asynchronous execution */
 
 		/* Setup NDRange */
-		kernel->ndrange = gpu_ndrange_create(kernel);
-		gpu_ndrange_setup_work_items(kernel->ndrange);
-		gpu_ndrange_setup_const_mem(kernel->ndrange);
-		gpu_ndrange_setup_args(kernel->ndrange);
+		kernel->ndrange = evg_ndrange_create(kernel);
+		evg_ndrange_setup_work_items(kernel->ndrange);
+		evg_ndrange_setup_const_mem(kernel->ndrange);
+		evg_ndrange_setup_args(kernel->ndrange);
 
 		/* Launch kernel execution */
-		if (gpu_sim_kind == gpu_sim_functional)
-			gpu_ndrange_run(kernel->ndrange);
+		if (evg_emu_kind == evg_emu_functional)
+			evg_ndrange_run(kernel->ndrange);
 		else
 		{
 			/* The following function is currently the only
 			 * dependence with 'libgpuarch'. This is not safe, but
 			 * let's just include the external reference here. */
-			void gpu_run(struct gpu_ndrange_t *ndrange);
+			void gpu_run(struct evg_ndrange_t *ndrange);
 			/* FIXME!!! - this will be fixed when asynchronous execution is
 			 * implemented. */
 			gpu_run(kernel->ndrange);
 		}
 
 		/* Free NDRange */
-		gpu_ndrange_free(kernel->ndrange);
+		evg_ndrange_free(kernel->ndrange);
 
 		/* Event */
 		if (event_ptr) {
-			event->status = OPENCL_EVENT_STATUS_COMPLETE;
-			event->time_end = opencl_event_timer();  /* FIXME: change for asynchronous exec */
+			event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
+			event->time_end = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
 		}
 		break;
 	}
@@ -1759,8 +1759,8 @@ int opencl_func_run(int code, unsigned int *args)
 
 	default:
 		
-		fatal("opencl_func_run: function '%s' (code=%d) not implemented.\n%s",
-			func_name, code, err_opencl_note);
+		fatal("EVG_OPENCL_FUNC_run: function '%s' (code=%d) not implemented.\n%s",
+			func_name, code, err_evg_opencl_note);
 	}
 
 	return retval;

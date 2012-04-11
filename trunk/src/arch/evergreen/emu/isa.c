@@ -25,16 +25,16 @@
 
 /* Some globals */
 
-struct gpu_ndrange_t *gpu_isa_ndrange;  /* Current ND-Range */
-struct gpu_work_group_t *gpu_isa_work_group;  /* Current work-group */
-struct gpu_wavefront_t *gpu_isa_wavefront;  /* Current wavefront */
-struct gpu_work_item_t *gpu_isa_work_item;  /* Current work-item */
+struct evg_ndrange_t *gpu_isa_ndrange;  /* Current ND-Range */
+struct evg_work_group_t *gpu_isa_work_group;  /* Current work-group */
+struct evg_wavefront_t *gpu_isa_wavefront;  /* Current wavefront */
+struct evg_work_item_t *gpu_isa_work_item;  /* Current work-item */
 struct evg_inst_t *gpu_isa_cf_inst;  /* Current CF instruction */
 struct evg_inst_t *gpu_isa_inst;  /* Current instruction */
 struct evg_alu_group_t *gpu_isa_alu_group;  /* Current ALU group */
 
 /* Repository of deferred tasks */
-struct repos_t *gpu_isa_write_task_repos;
+struct repos_t *evg_isa_write_task_repos;
 
 /* Instruction execution table */
 amd_inst_impl_t *amd_inst_impl;
@@ -66,7 +66,7 @@ void gpu_isa_init()
 #undef DEFINST
 
 	/* Repository of deferred tasks */
-	gpu_isa_write_task_repos = repos_create(sizeof(struct gpu_isa_write_task_t),
+	evg_isa_write_task_repos = repos_create(sizeof(struct evg_isa_write_task_t),
 		"gpu_isa_write_task_repos");
 }
 
@@ -77,7 +77,7 @@ void gpu_isa_done()
 	free(amd_inst_impl);
 
 	/* Repository of deferred tasks */
-	repos_free(gpu_isa_write_task_repos);
+	repos_free(evg_isa_write_task_repos);
 }
 
 
@@ -147,7 +147,7 @@ void gpu_isa_alu_clause_end()
 {
 	/* If CF inst was ALU_POP_AFTER, pop the stack */
 	if (gpu_isa_cf_inst->info->inst == EVG_INST_ALU_POP_AFTER)
-		gpu_wavefront_stack_pop(gpu_isa_wavefront, 1);
+		evg_wavefront_stack_pop(gpu_isa_wavefront, 1);
 }
 
 
@@ -436,17 +436,17 @@ float gpu_isa_read_op_src_float(int src_idx)
  * Deferred tasks for ALU group
  */
 
-void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value, size_t value_size)
+void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, size_t value_size)
 {
-	struct gpu_isa_write_task_t *wt;
+	struct evg_isa_write_task_t *wt;
 
 	/* Inactive pixel not enqueued */
-	if (!gpu_work_item_get_pred(gpu_isa_work_item))
+	if (!evg_work_item_get_pred(gpu_isa_work_item))
 		return;
 	
 	/* Create task */
-	wt = repos_create_object(gpu_isa_write_task_repos);
-	wt->kind = GPU_ISA_WRITE_TASK_WRITE_LDS;
+	wt = repos_create_object(evg_isa_write_task_repos);
+	wt->kind = EVG_ISA_WRITE_TASK_WRITE_LDS;
 	wt->inst = gpu_isa_inst;
 	wt->lds_addr = addr;
 	wt->lds_value = value;
@@ -458,19 +458,19 @@ void gpu_isa_enqueue_write_lds(uint32_t addr, uint32_t value, size_t value_size)
 
 
 /* Write to destination operand in ALU instruction */
-void gpu_isa_enqueue_write_dest(uint32_t value)
+void evg_isa_enqueue_write_dest(uint32_t value)
 {
-	struct gpu_isa_write_task_t *wt;
+	struct evg_isa_write_task_t *wt;
 
 	/* If pixel is inactive, do not enqueue the task */
 	assert(gpu_isa_inst->info->fmt[0] == EVG_FMT_ALU_WORD0);
-	if (!gpu_work_item_get_pred(gpu_isa_work_item))
+	if (!evg_work_item_get_pred(gpu_isa_work_item))
 		return;
 
 	/* Fields 'dst_gpr', 'dst_rel', and 'dst_chan' are at the same bit positions in both
 	 * ALU_WORD1_OP2 and ALU_WORD1_OP3 formats. */
-	wt = repos_create_object(gpu_isa_write_task_repos);
-	wt->kind = GPU_ISA_WRITE_TASK_WRITE_DEST;
+	wt = repos_create_object(evg_isa_write_task_repos);
+	wt->kind = EVG_ISA_WRITE_TASK_WRITE_DEST;
 	wt->inst = gpu_isa_inst;
 	wt->gpr = ALU_WORD1_OP2.dst_gpr;
 	wt->rel = ALU_WORD1_OP2.dst_rel;
@@ -488,58 +488,58 @@ void gpu_isa_enqueue_write_dest(uint32_t value)
 }
 
 
-void gpu_isa_enqueue_write_dest_float(float value)
+void evg_isa_enqueue_write_dest_float(float value)
 {
 	union evg_reg_t reg;
 
 	reg.as_float = value;
-	gpu_isa_enqueue_write_dest(reg.as_uint);
+	evg_isa_enqueue_write_dest(reg.as_uint);
 }
 
 
-void gpu_isa_enqueue_push_before(void)
+void evg_isa_enqueue_push_before(void)
 {
-	struct gpu_isa_write_task_t *wt;
+	struct evg_isa_write_task_t *wt;
 
 	/* Do only if instruction initiating ALU clause is ALU_PUSH_BEFORE */
 	if (gpu_isa_cf_inst->info->inst != EVG_INST_ALU_PUSH_BEFORE)
 		return;
 
 	/* Create and enqueue task */
-	wt = repos_create_object(gpu_isa_write_task_repos);
-	wt->kind = GPU_ISA_WRITE_TASK_PUSH_BEFORE;
+	wt = repos_create_object(evg_isa_write_task_repos);
+	wt->kind = EVG_ISA_WRITE_TASK_PUSH_BEFORE;
 	wt->inst = gpu_isa_inst;
 	linked_list_add(gpu_isa_work_item->write_task_list, wt);
 }
 
 
-void gpu_isa_enqueue_pred_set(int cond)
+void evg_isa_enqueue_pred_set(int cond)
 {
-	struct gpu_isa_write_task_t *wt;
+	struct evg_isa_write_task_t *wt;
 
 	/* If pixel is inactive, predicate is not changed */
 	assert(gpu_isa_inst->info->fmt[0] == EVG_FMT_ALU_WORD0);
 	assert(gpu_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
-	if (!gpu_work_item_get_pred(gpu_isa_work_item))
+	if (!evg_work_item_get_pred(gpu_isa_work_item))
 		return;
 	
 	/* Create and enqueue task */
-	wt = repos_create_object(gpu_isa_write_task_repos);
-	wt->kind = GPU_ISA_WRITE_TASK_SET_PRED;
+	wt = repos_create_object(evg_isa_write_task_repos);
+	wt->kind = EVG_ISA_WRITE_TASK_SET_PRED;
 	wt->inst = gpu_isa_inst;
 	wt->cond = cond;
 	linked_list_add(gpu_isa_work_item->write_task_list, wt);
 }
 
 
-void gpu_isa_write_task_commit(void)
+void evg_isa_write_task_commit(void)
 {
 	struct linked_list_t *task_list = gpu_isa_work_item->write_task_list;
-	struct gpu_isa_write_task_t *wt;
+	struct evg_isa_write_task_t *wt;
 
 	/* Process first tasks of type:
-	 *  - GPU_ISA_WRITE_TASK_WRITE_DEST
-	 *  - GPU_ISA_WRITE_TASK_WRITE_LDS
+	 *  - EVG_ISA_WRITE_TASK_WRITE_DEST
+	 *  - EVG_ISA_WRITE_TASK_WRITE_LDS
 	 */
 	for (linked_list_head(task_list); !linked_list_is_end(task_list); )
 	{
@@ -550,7 +550,7 @@ void gpu_isa_write_task_commit(void)
 
 		switch (wt->kind) {
 		
-		case GPU_ISA_WRITE_TASK_WRITE_DEST:
+		case EVG_ISA_WRITE_TASK_WRITE_DEST:
 		{
 			if (wt->write_mask)
 				gpu_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
@@ -572,7 +572,7 @@ void gpu_isa_write_task_commit(void)
 			break;
 		}
 
-		case GPU_ISA_WRITE_TASK_WRITE_LDS:
+		case EVG_ISA_WRITE_TASK_WRITE_LDS:
 		{
 			struct mem_t *local_mem;
 			union evg_reg_t lds_value;
@@ -595,7 +595,7 @@ void gpu_isa_write_task_commit(void)
 		}
 
 		/* Done with this task */
-		repos_free_object(gpu_isa_write_task_repos, wt);
+		repos_free_object(evg_isa_write_task_repos, wt);
 		linked_list_remove(task_list);
 	}
 
@@ -610,24 +610,24 @@ void gpu_isa_write_task_commit(void)
 		switch (wt->kind)
 		{
 
-		case GPU_ISA_WRITE_TASK_PUSH_BEFORE:
+		case EVG_ISA_WRITE_TASK_PUSH_BEFORE:
 		{
 			if (!gpu_isa_wavefront->push_before_done)
-				gpu_wavefront_stack_push(gpu_isa_wavefront);
+				evg_wavefront_stack_push(gpu_isa_wavefront);
 			gpu_isa_wavefront->push_before_done = 1;
 			break;
 		}
 
-		case GPU_ISA_WRITE_TASK_SET_PRED:
+		case EVG_ISA_WRITE_TASK_SET_PRED:
 		{
 			int update_pred = ALU_WORD1_OP2.update_pred;
 			int update_exec_mask = ALU_WORD1_OP2.update_exec_mask;
 
 			assert(gpu_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
 			if (update_pred)
-				gpu_work_item_set_pred(gpu_isa_work_item, wt->cond);
+				evg_work_item_set_pred(gpu_isa_work_item, wt->cond);
 			if (update_exec_mask)
-				gpu_work_item_set_active(gpu_isa_work_item, wt->cond);
+				evg_work_item_set_active(gpu_isa_work_item, wt->cond);
 
 			/* Debug */
 			if (debug_status(gpu_isa_debug_category)) {
@@ -646,7 +646,7 @@ void gpu_isa_write_task_commit(void)
 		}
 		
 		/* Done with task */
-		repos_free_object(gpu_isa_write_task_repos, wt);
+		repos_free_object(evg_isa_write_task_repos, wt);
 		linked_list_remove(task_list);
 	}
 

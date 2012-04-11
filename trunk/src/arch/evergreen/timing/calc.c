@@ -41,16 +41,16 @@ int gpu_calc_get_work_groups_per_compute_unit(int work_items_per_work_group,
 
 	/* Get maximum number of work-groups per compute unit as limited by the maximum number of
 	 * wavefronts, given the number of wavefronts per work-group in the NDRange */
-	assert(gpu_wavefront_size > 0);
-	wavefronts_per_work_group = (work_items_per_work_group + gpu_wavefront_size - 1) /
-		gpu_wavefront_size;
+	assert(evg_emu_wavefront_size > 0);
+	wavefronts_per_work_group = (work_items_per_work_group + evg_emu_wavefront_size - 1) /
+		evg_emu_wavefront_size;
 	max_work_groups_limitted_by_max_wavefronts = gpu_max_wavefronts_per_compute_unit /
 		wavefronts_per_work_group;
 
 	/* Get maximum number of work-groups per compute unit as limited by the number of
 	 * available registers, given the number of registers used per work-item. */
 	if (gpu_register_alloc_granularity == gpu_register_alloc_wavefront)
-		registers_per_work_group = ROUND_UP(registers_per_work_item * gpu_wavefront_size,
+		registers_per_work_group = ROUND_UP(registers_per_work_item * evg_emu_wavefront_size,
 			gpu_register_alloc_size) * wavefronts_per_work_group;
 	else
 		registers_per_work_group = ROUND_UP(registers_per_work_item *
@@ -108,15 +108,15 @@ void gpu_calc_plot_work_items_per_work_group(void)
 	/* Generate data file */
 	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
 	local_mem_per_work_group = gpu->ndrange->local_mem_top;
-	registers_per_work_item = gpu->ndrange->kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
-	for (work_items_per_work_group = gpu_wavefront_size;
-		work_items_per_work_group < gpu_max_wavefronts_per_compute_unit * gpu_wavefront_size;
-		work_items_per_work_group += gpu_wavefront_size)
+	registers_per_work_item = gpu->ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used;
+	for (work_items_per_work_group = evg_emu_wavefront_size;
+		work_items_per_work_group < gpu_max_wavefronts_per_compute_unit * evg_emu_wavefront_size;
+		work_items_per_work_group += evg_emu_wavefront_size)
 	{
 		/* Calculate point */
 		work_groups_per_compute_unit = gpu_calc_get_work_groups_per_compute_unit(
 			work_items_per_work_group, registers_per_work_item, local_mem_per_work_group);
-		wavefronts_per_work_group = (work_items_per_work_group + gpu_wavefront_size - 1) / gpu_wavefront_size;
+		wavefronts_per_work_group = (work_items_per_work_group + evg_emu_wavefront_size - 1) / evg_emu_wavefront_size;
 		wavefronts_per_compute_unit = work_groups_per_compute_unit * wavefronts_per_work_group;
 
 		/* Dump line to data file */
@@ -125,10 +125,10 @@ void gpu_calc_plot_work_items_per_work_group(void)
 	fclose(data_file);
 
 	/* Current data point */
-	work_items_per_work_group = ROUND_UP(gpu->ndrange->kernel->local_size, gpu_wavefront_size);
+	work_items_per_work_group = ROUND_UP(gpu->ndrange->kernel->local_size, evg_emu_wavefront_size);
 	work_groups_per_compute_unit = gpu_calc_get_work_groups_per_compute_unit(
 		work_items_per_work_group, registers_per_work_item, local_mem_per_work_group);
-	wavefronts_per_work_group = (work_items_per_work_group + gpu_wavefront_size - 1) / gpu_wavefront_size;
+	wavefronts_per_work_group = (work_items_per_work_group + evg_emu_wavefront_size - 1) / evg_emu_wavefront_size;
 	wavefronts_per_compute_unit = work_groups_per_compute_unit * wavefronts_per_work_group;
 
 	/* Generate gnuplot script */
@@ -185,7 +185,7 @@ void gpu_calc_plot_registers_per_work_item(void)
 	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
 	local_mem_per_work_group = gpu->ndrange->local_mem_top;
 	work_items_per_work_group = gpu->ndrange->kernel->local_size;
-	wavefronts_per_work_group = (work_items_per_work_group + gpu_wavefront_size - 1) / gpu_wavefront_size;
+	wavefronts_per_work_group = (work_items_per_work_group + evg_emu_wavefront_size - 1) / evg_emu_wavefront_size;
 	for (registers_per_work_item = 1; registers_per_work_item <= 128; registers_per_work_item += 4)
 	{
 		/* Calculate point */
@@ -199,7 +199,7 @@ void gpu_calc_plot_registers_per_work_item(void)
 	fclose(data_file);
 
 	/* Current data point */
-	registers_per_work_item = gpu->ndrange->kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
+	registers_per_work_item = gpu->ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used;
 	work_groups_per_compute_unit = gpu_calc_get_work_groups_per_compute_unit(
 		work_items_per_work_group, registers_per_work_item, local_mem_per_work_group);
 	wavefronts_per_compute_unit = work_groups_per_compute_unit * wavefronts_per_work_group;
@@ -260,10 +260,10 @@ void gpu_calc_plot_local_mem_per_work_group(void)
 
 	/* Generate data file */
 	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
-	registers_per_work_item = gpu->ndrange->kernel->amd_bin->enc_dict_entry_evergreen->num_gpr_used;
+	registers_per_work_item = gpu->ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used;
 	local_mem_step = MAX(1, gpu_local_mem_size / 32);
 	work_items_per_work_group = gpu->ndrange->kernel->local_size;
-	wavefronts_per_work_group = (work_items_per_work_group + gpu_wavefront_size - 1) / gpu_wavefront_size;
+	wavefronts_per_work_group = (work_items_per_work_group + evg_emu_wavefront_size - 1) / evg_emu_wavefront_size;
 	for (local_mem_per_work_group = local_mem_step;
 		local_mem_per_work_group <= gpu_local_mem_size;
 		local_mem_per_work_group += local_mem_step)

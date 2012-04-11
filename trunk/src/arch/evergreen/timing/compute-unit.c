@@ -139,10 +139,10 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 }
 
 
-void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group)
+void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, struct evg_work_group_t *work_group)
 {
-	struct gpu_ndrange_t *ndrange = work_group->ndrange;
-	struct gpu_wavefront_t *wavefront;
+	struct evg_ndrange_t *ndrange = work_group->ndrange;
+	struct evg_wavefront_t *wavefront;
 	int wavefront_id;
 
 	/* Map work-group */
@@ -167,18 +167,18 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, busy, compute_unit);
 
 	/* Assign wavefronts identifiers in compute unit */
-	FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
+	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
 		wavefront = ndrange->wavefronts[wavefront_id];
 		wavefront->id_in_compute_unit = work_group->id_in_compute_unit *
 			ndrange->wavefronts_per_work_group + wavefront->id_in_work_group;
 	}
 
 	/* Change work-group status to running */
-	gpu_work_group_clear_status(work_group, gpu_work_group_pending);
-	gpu_work_group_set_status(work_group, gpu_work_group_running);
+	evg_work_group_clear_status(work_group, evg_work_group_pending);
+	evg_work_group_set_status(work_group, evg_work_group_running);
 
 	/* Insert all wavefronts into the CF Engine's wavefront pool */
-	FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
+	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
 		wavefront = ndrange->wavefronts[wavefront_id];
 		linked_list_add(compute_unit->wavefront_pool, wavefront);
 	}
@@ -195,7 +195,7 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 }
 
 
-void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, struct gpu_work_group_t *work_group)
+void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, struct evg_work_group_t *work_group)
 {
 	/* Reset mapped work-group */
 	assert(compute_unit->work_group_count > 0);
