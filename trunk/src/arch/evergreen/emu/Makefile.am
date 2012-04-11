@@ -4,8 +4,7 @@ libemu_a_SOURCES = \
 	\
 	evergreen-emu.h \
 	\
-	amd-bin.c \
-	amd-opengl-bin.c \
+	bin-file.c \
 	emu.c \
 	isa.c \
 	machine.c \
@@ -14,6 +13,7 @@ libemu_a_SOURCES = \
 	opencl.c \
 	opencl-syscall.c \
 	opencl-obj.c \
+	opengl-bin-file.c \
 	wavefront.c \
 	work-group.c \
 	work-item.c
