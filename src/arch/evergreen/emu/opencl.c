@@ -27,12 +27,12 @@
 /* Required 'libm2s-opencl.so' version.
  * Increase this number when the user is required to download an updated release
  * of the Multi2Sim OpenCL implementation. */
-#define SYS_OPENCL_IMPL_VERSION_MAJOR		1
-#define SYS_OPENCL_IMPL_VERSION_MINOR		0
-#define SYS_OPENCL_IMPL_VERSION_BUILD		0
-#define SYS_OPENCL_IMPL_VERSION			((SYS_OPENCL_IMPL_VERSION_MAJOR << 16) | \
-						(SYS_OPENCL_IMPL_VERSION_MINOR << 8) | \
-						SYS_OPENCL_IMPL_VERSION_BUILD)
+#define EVG_SYS_OPENCL_IMPL_VERSION_MAJOR		1
+#define EVG_SYS_OPENCL_IMPL_VERSION_MINOR		0
+#define EVG_SYS_OPENCL_IMPL_VERSION_BUILD		0
+#define EVG_SYS_OPENCL_IMPL_VERSION			((EVG_SYS_OPENCL_IMPL_VERSION_MAJOR << 16) | \
+						(EVG_SYS_OPENCL_IMPL_VERSION_MINOR << 8) | \
+						EVG_SYS_OPENCL_IMPL_VERSION_BUILD)
 
 
 /* Debug info */
@@ -170,10 +170,10 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		int opencl_impl_version_build = opencl_impl_version & 0xff;
 
 		/* Check 'libm2s-opencl' version */
-		if (opencl_impl_version < SYS_OPENCL_IMPL_VERSION)
+		if (opencl_impl_version < EVG_SYS_OPENCL_IMPL_VERSION)
 			fatal("wrong Multi2Sim OpenCL library version (provided=%d.%d.%d, required=%d.%d.%d).\n%s",
 				opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build,
-				SYS_OPENCL_IMPL_VERSION_MAJOR, SYS_OPENCL_IMPL_VERSION_MINOR, SYS_OPENCL_IMPL_VERSION_BUILD,
+				EVG_SYS_OPENCL_IMPL_VERSION_MAJOR, EVG_SYS_OPENCL_IMPL_VERSION_MINOR, EVG_SYS_OPENCL_IMPL_VERSION_BUILD,
 				err_evg_opencl_version_note);
 		evg_opencl_debug("  'libm2s-opencl' version: %d.%d.%d\n",
 				opencl_impl_version_major, opencl_impl_version_minor, opencl_impl_version_build);
