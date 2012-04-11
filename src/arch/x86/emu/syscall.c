@@ -29,8 +29,9 @@
 #include <sys/stat.h>
 #include <sys/times.h>
 
-#include <x86-emu.h>
+#include <mem-system.h>
 #include <mhandle.h>
+#include <x86-emu.h>
 
 
 

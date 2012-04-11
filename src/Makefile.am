@@ -14,11 +14,6 @@ m2s_SOURCES = m2s.c
 INCLUDES = @M2S_INCLUDES@
 
 LDADD = \
-	$(top_builddir)/src/visual/libvisual.a \
-	$(top_builddir)/src/libgpuvisual/libgpuvisual.a \
-	$(top_builddir)/src/mem-system/libmemsystem.a \
-	$(top_builddir)/src/network/libnetwork.a \
-	\
 	$(top_builddir)/src/arch/evergreen/timing/libtiming.a \
 	$(top_builddir)/src/arch/evergreen/emu/libemu.a \
 	$(top_builddir)/src/arch/evergreen/asm/libasm.a \
@@ -26,6 +21,11 @@ LDADD = \
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
 	$(top_builddir)/src/arch/x86/emu/libemu.a \
 	$(top_builddir)/src/arch/x86/asm/libasm.a \
+	\
+	$(top_builddir)/src/visual/libvisual.a \
+	$(top_builddir)/src/libgpuvisual/libgpuvisual.a \
+	$(top_builddir)/src/mem-system/libmemsystem.a \
+	$(top_builddir)/src/network/libnetwork.a \
 	\
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
 	$(top_builddir)/src/lib/misc/libmisc.a \
