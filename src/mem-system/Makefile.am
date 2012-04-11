@@ -8,8 +8,10 @@ libmemsystem_a_SOURCES = \
 	gpu-coherence.c \
 	mem-system.c \
 	mem-system.h \
+	memory.c \
 	mmu.c \
-	module.c
+	module.c \
+	spec-mem.c
 
 INCLUDES = @M2S_INCLUDES@
 
