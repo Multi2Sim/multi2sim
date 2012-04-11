@@ -43,14 +43,14 @@ struct evg_compute_unit_t *evg_compute_unit_create()
 	/* Local memory */
 	snprintf(buf, sizeof buf, "LocalMemory[%d]", compute_unit->id);
 	compute_unit->local_memory = mod_create(buf, mod_kind_main_memory,
-		evg_local_mem_num_ports, evg_local_mem_block_size, evg_local_mem_latency);
+		evg_gpu_local_mem_num_ports, evg_gpu_local_mem_block_size, evg_gpu_local_mem_latency);
 
 	/* Initialize CF Engine */
 	compute_unit->cf_engine.complete_queue = linked_list_create();
-	compute_unit->cf_engine.fetch_buffer = calloc(evg_max_wavefronts_per_compute_unit, sizeof(void *));
+	compute_unit->cf_engine.fetch_buffer = calloc(evg_gpu_max_wavefronts_per_compute_unit, sizeof(void *));
 	if (!compute_unit->cf_engine.fetch_buffer)
 		fatal("%s: out of memory", __FUNCTION__);
-	compute_unit->cf_engine.inst_buffer = calloc(evg_max_wavefronts_per_compute_unit, sizeof(void *));
+	compute_unit->cf_engine.inst_buffer = calloc(evg_gpu_max_wavefronts_per_compute_unit, sizeof(void *));
 	if (!compute_unit->cf_engine.inst_buffer)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -67,7 +67,7 @@ struct evg_compute_unit_t *evg_compute_unit_create()
 	compute_unit->tex_engine.load_queue = linked_list_create();
 
 	/* List of mapped work-groups */
-	compute_unit->work_groups = calloc(evg_max_work_groups_per_compute_unit, sizeof(void *));
+	compute_unit->work_groups = calloc(evg_gpu_max_work_groups_per_compute_unit, sizeof(void *));
 	if (!compute_unit->work_groups)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -83,7 +83,7 @@ void evg_compute_unit_free(struct evg_compute_unit_t *compute_unit)
 	int i;
 
 	/* CF Engine - free uops in fetch buffer, instruction buffer, and complete queue */
-	for (i = 0; i < evg_max_wavefronts_per_compute_unit; i++)
+	for (i = 0; i < evg_gpu_max_wavefronts_per_compute_unit; i++)
 	{
 		evg_uop_free(compute_unit->cf_engine.fetch_buffer[i]);
 		evg_uop_free(compute_unit->cf_engine.inst_buffer[i]);
@@ -97,7 +97,8 @@ void evg_compute_unit_free(struct evg_compute_unit_t *compute_unit)
 
 	/* ALU Engine - free uops in event queue (heap) */
 	event_queue = compute_unit->alu_engine.event_queue;
-	while (heap_count(event_queue)) {
+	while (heap_count(event_queue))
+	{
 		heap_extract(event_queue, (void **) &uop);
 		uop->write_subwavefront_count++;
 		if (uop->write_subwavefront_count == uop->subwavefront_count)
@@ -167,7 +168,8 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_gpu, busy, compute_unit);
 
 	/* Assign wavefronts identifiers in compute unit */
-	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
+	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+	{
 		wavefront = ndrange->wavefronts[wavefront_id];
 		wavefront->id_in_compute_unit = work_group->id_in_compute_unit *
 			ndrange->wavefronts_per_work_group + wavefront->id_in_work_group;
@@ -178,13 +180,14 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 	evg_work_group_set_status(work_group, evg_work_group_running);
 
 	/* Insert all wavefronts into the CF Engine's wavefront pool */
-	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
+	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+	{
 		wavefront = ndrange->wavefronts[wavefront_id];
 		linked_list_add(compute_unit->wavefront_pool, wavefront);
 	}
 
 	/* Debug */
-	evg_pipeline_debug("cu a=\"map\" "
+	evg_gpu_pipeline_debug("cu a=\"map\" "
 		"cu=%d "
 		"wg=%d\n",
 		compute_unit->id,
@@ -212,7 +215,7 @@ void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, 
 		DOUBLE_LINKED_LIST_REMOVE(evg_gpu, busy, compute_unit);
 
 	/* Debug */
-	evg_pipeline_debug("cu a=\"unmap\" "
+	evg_gpu_pipeline_debug("cu a=\"unmap\" "
 		"cu=%d "
 		"wg=%d\n",
 		compute_unit->id,

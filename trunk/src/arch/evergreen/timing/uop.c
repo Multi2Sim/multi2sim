@@ -34,12 +34,12 @@ int evg_stack_debug_category;
  * Private
  */
 
-static uint64_t gpu_uop_id_counter = 0;
+static long long gpu_uop_id_counter = 0;
 
 static struct repos_t *gpu_uop_repos;
 
 
-static void gpu_uop_add_src_idep(struct evg_uop_t *uop, struct evg_inst_t *inst, int src_idx)
+static void evg_uop_add_src_idep(struct evg_uop_t *uop, struct evg_inst_t *inst, int src_idx)
 {
 	int sel, rel, chan, neg, abs;
 
@@ -125,10 +125,10 @@ struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_alu_group_t *alu_grou
 		else if (inst->info->fmt[0] == EVG_FMT_ALU_WORD0)
 		{
 			/* Add input dependences */
-			gpu_uop_add_src_idep(uop, inst, 0);
-			gpu_uop_add_src_idep(uop, inst, 1);
+			evg_uop_add_src_idep(uop, inst, 0);
+			evg_uop_add_src_idep(uop, inst, 1);
 			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3)
-				gpu_uop_add_src_idep(uop, inst, 2);
+				evg_uop_add_src_idep(uop, inst, 2);
 
 			/* Add register output dependence if not masked */
 			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3 ||
@@ -278,4 +278,3 @@ void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 		evg_stack_debug("\"\n");
 	}
 }
-

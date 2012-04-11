@@ -22,12 +22,12 @@
 
 
 /* Configuration parameters */
-int evg_tex_engine_inst_mem_latency = 2;  /* Instruction memory latency */
-int evg_tex_engine_fetch_queue_size = 32;  /* Number of bytes */
-int evg_tex_engine_load_queue_size = 8;  /* Maximum number of in-flight global memory reads */
+int evg_gpu_tex_engine_inst_mem_latency = 2;  /* Instruction memory latency */
+int evg_gpu_tex_engine_fetch_queue_size = 32;  /* Number of bytes */
+int evg_gpu_tex_engine_load_queue_size = 8;  /* Maximum number of in-flight global memory reads */
 
 
-void gpu_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
+static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *pending_queue = compute_unit->tex_engine.pending_queue;
 	struct linked_list_t *finished_queue = compute_unit->tex_engine.finished_queue;
@@ -53,7 +53,7 @@ void gpu_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 
 	/* If fetch queue is full, cannot fetch until space is made */
-	if (compute_unit->tex_engine.fetch_queue_length >= evg_tex_engine_fetch_queue_size)
+	if (compute_unit->tex_engine.fetch_queue_length >= evg_gpu_tex_engine_fetch_queue_size)
 		return;
 	
 	/* Emulate instruction and create uop */
@@ -97,7 +97,7 @@ void gpu_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 
 	/* Access instruction cache. Record the time when the instruction will have been fetched,
 	 * as per the latency of the instruction memory. */
-	uop->inst_mem_ready = evg_gpu->cycle + evg_tex_engine_inst_mem_latency;
+	uop->inst_mem_ready = evg_gpu->cycle + evg_gpu_tex_engine_inst_mem_latency;
 
 	/* Enqueue uop into fetch queue */
 	linked_list_out(compute_unit->tex_engine.fetch_queue);
@@ -105,11 +105,11 @@ void gpu_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	compute_unit->tex_engine.fetch_queue_length += uop->length;
 
 	/* Debug */
-	if (debug_status(evg_pipeline_debug_category))
+	if (debug_status(evg_gpu_pipeline_debug_category))
 	{
 		evg_inst_dump_buf(inst, inst_num, 0, str1, MAX_STRING_SIZE);
 		str_single_spaces(str2, str1, MAX_STRING_SIZE);
-		evg_pipeline_debug("tex a=\"fetch\" "
+		evg_gpu_pipeline_debug("tex a=\"fetch\" "
 			"cu=%d "
 			"wg=%d "
 			"wf=%d "
@@ -124,7 +124,7 @@ void gpu_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void gpu_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
+static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *fetch_queue = compute_unit->tex_engine.fetch_queue;
 	struct evg_uop_t *uop;
@@ -155,7 +155,7 @@ void gpu_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 	compute_unit->tex_engine.inst_buffer = uop;
 
 	/* Debug */
-	evg_pipeline_debug("tex a=\"decode\" "
+	evg_gpu_pipeline_debug("tex a=\"decode\" "
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
@@ -163,7 +163,7 @@ void gpu_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void gpu_tex_engine_read(struct evg_compute_unit_t *compute_unit)
+static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 {
 	struct evg_work_item_t *work_item;
 	int work_item_id;
@@ -177,7 +177,7 @@ void gpu_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 		return;
 
 	/* If there is no space in the load queue, done. */
-	if (linked_list_count(compute_unit->tex_engine.load_queue) >= evg_tex_engine_load_queue_size)
+	if (linked_list_count(compute_unit->tex_engine.load_queue) >= evg_gpu_tex_engine_load_queue_size)
 		return;
 	
 	/* Extract uop from instruction buffer and insert into load queue. */
@@ -201,7 +201,7 @@ void gpu_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 	}
 
 	/* Debug */
-	evg_pipeline_debug("tex a=\"read\" "
+	evg_gpu_pipeline_debug("tex a=\"read\" "
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
@@ -209,7 +209,7 @@ void gpu_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 }
 
 
-void gpu_tex_engine_write(struct evg_compute_unit_t *compute_unit)
+static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *finished_queue = compute_unit->tex_engine.finished_queue;
 
@@ -229,7 +229,7 @@ void gpu_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 	linked_list_remove(compute_unit->tex_engine.load_queue);
 
 	/* Debug */
-	evg_pipeline_debug("tex a=\"write\" "
+	evg_gpu_pipeline_debug("tex a=\"write\" "
 		"cu=%d "
 		"uop=%lld\n",
 		compute_unit->id,
@@ -261,12 +261,11 @@ void evg_compute_unit_run_tex_engine(struct evg_compute_unit_t *compute_unit)
 		return;
 
 	/* TEX Engine stages */
-	gpu_tex_engine_write(compute_unit);
-	gpu_tex_engine_read(compute_unit);
-	gpu_tex_engine_decode(compute_unit);
-	gpu_tex_engine_fetch(compute_unit);
+	evg_tex_engine_write(compute_unit);
+	evg_tex_engine_read(compute_unit);
+	evg_tex_engine_decode(compute_unit);
+	evg_tex_engine_fetch(compute_unit);
 
 	/* Stats */
 	compute_unit->tex_engine.cycle++;
 }
-

@@ -329,7 +329,7 @@ static void mem_config_gpu_default(struct config_t *config)
 	config_write_string(config, section, "Policy", "LRU");
 
 	/* L1 caches and entries */
-	EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
 		config_write_string(config, section, "Type", "Cache");
@@ -1141,7 +1141,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	} *entry, *entry_list;
 
 	/* Allocate entry list */
-	entry_list = calloc(evg_num_compute_units, sizeof(struct entry_t));
+	entry_list = calloc(evg_gpu_num_compute_units, sizeof(struct entry_t));
 	if (!entry_list)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -1169,7 +1169,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 				mem_config_file_name, entry_name);
 
 		/* Check bounds */
-		if (compute_unit_id >= evg_num_compute_units)
+		if (compute_unit_id >= evg_gpu_num_compute_units)
 		{
 			config_var_allow(config, section, "Module");
 			warning("%s: entry %s ignored.\n%s",
@@ -1197,7 +1197,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 
 	/* Assign entry modules */
 	mem_debug("Assigning GPU entries to memory system:\n");
-	EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		/* Check that entry was set */
 		entry = &entry_list[compute_unit_id];
@@ -1430,7 +1430,7 @@ static void mem_config_check_disjoint(void)
 	}
 
 	/* Check color of GPU modules */
-	EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
 		if (mem_config_check_mod_color(evg_gpu->compute_units[compute_unit_id]->global_memory, 1))
 			fatal("%s: non-disjoint CPU/GPU memory hierarchies",
@@ -1522,7 +1522,7 @@ static void mem_config_calculate_mod_levels(void)
 	/* Check color of GPU modules */
 	if (evg_emu_kind == evg_emu_detailed)
 	{
-		EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
+		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 			mem_config_set_mod_level(evg_gpu->compute_units[compute_unit_id]->global_memory, 1);
 	}
 
