@@ -71,7 +71,7 @@ cl_program clCreateProgramWithBinary(
 	unsigned int sys_args[7];
 
 	/* Check arguments */
-	OPENCL_PARAM_NOT_SUPPORTED_NEQ(num_devices, 1);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 
 	/* Create program */
 	program = calloc(1, sizeof(struct _cl_program));

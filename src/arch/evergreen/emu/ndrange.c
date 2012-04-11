@@ -252,7 +252,8 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	evg_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
 	evg_isa_debug("wavefronts_per_work_group = %d\n", ndrange->wavefronts_per_work_group);
 	evg_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   lid lid2 lid1 lid0  wavefront            work-group\n");
-	for (tid = 0; tid < ndrange->work_item_count; tid++) {
+	for (tid = 0; tid < ndrange->work_item_count; tid++)
+	{
 		work_item = ndrange->work_items[tid];
 		wavefront = work_item->wavefront;
 		work_group = work_item->work_group;
@@ -359,8 +360,8 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 	int cb_index = 0;
 
 	/* Kernel arguments */
-	for (i = 0; i < list_count(kernel->arg_list); i++) {
-
+	for (i = 0; i < list_count(kernel->arg_list); i++)
+	{
 		arg = list_get(kernel->arg_list, i);
 		assert(arg);
 
@@ -370,10 +371,11 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 				kernel->name, arg->name);
 
 		/* Process argument depending on its type */
-		switch (arg->kind) {
+		switch (arg->kind)
+		{
 
-		case EVG_OPENCL_KERNEL_ARG_KIND_VALUE: {
-			
+		case EVG_OPENCL_KERNEL_ARG_KIND_VALUE:
+		{
 			/* Value copied directly into device constant memory */
 			evg_isa_const_mem_write(1, cb_index, 0, &arg->value);
 			evg_opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i, 
@@ -412,7 +414,8 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 
 		case EVG_OPENCL_KERNEL_ARG_KIND_POINTER:
 		{
-			switch (arg->mem_scope) {
+			switch (arg->mem_scope)
+			{
 
 			case EVG_OPENCL_MEM_SCOPE_GLOBAL:
 			{
@@ -470,7 +473,8 @@ void evg_ndrange_run(struct evg_ndrange_t *ndrange)
 	uint64_t cycle = 0;
 
 	/* Set all ready work-groups to running */
-	while ((work_group = ndrange->pending_list_head)) {
+	while ((work_group = ndrange->pending_list_head))
+	{
 		evg_work_group_clear_status(work_group, evg_work_group_pending);
 		evg_work_group_set_status(work_group, evg_work_group_running);
 	}
@@ -554,10 +558,13 @@ void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
 	branch_digest_count = 0;
 	last_work_item_id = 0;
 	last_branch_digest = ndrange->work_items[0]->branch_digest;
-	for (work_item_id = 1; work_item_id <= ndrange->work_item_count; work_item_id++) {
+	for (work_item_id = 1; work_item_id <= ndrange->work_item_count; work_item_id++)
+	{
 		branch_digest = work_item_id < ndrange->work_item_count ? ndrange->work_items[work_item_id]->branch_digest : 0;
-		if (work_item_id == ndrange->work_item_count || branch_digest != last_branch_digest) {
-			fprintf(f, "BranchDigest[%d] = %d %d %08x\n", branch_digest_count, last_work_item_id, work_item_id - 1, last_branch_digest);
+		if (work_item_id == ndrange->work_item_count || branch_digest != last_branch_digest)
+		{
+			fprintf(f, "BranchDigest[%d] = %d %d %08x\n", branch_digest_count,
+				last_work_item_id, work_item_id - 1, last_branch_digest);
 			last_work_item_id = work_item_id;
 			last_branch_digest = branch_digest;
 			branch_digest_count++;
@@ -567,7 +574,8 @@ void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
 	fprintf(f, "\n");
 
 	/* Work-groups */
-	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id) {
+	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
+	{
 		work_group = ndrange->work_groups[work_group_id];
 		evg_work_group_dump(work_group, f);
 	}
