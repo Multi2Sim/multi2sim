@@ -578,7 +578,7 @@ struct visual_mod_widget_t
 	GtkWidget *first_row_layout;
 	GtkWidget *first_col_layout;
 
-	struct vlist_t *access_list;
+	struct visual_list_t *access_list;
 
 	int width;
 	int height;
@@ -642,11 +642,11 @@ struct visual_mod_widget_t *visual_mod_widget_create(char *name)
 	vbox = gtk_vbox_new(FALSE, 0);
 
 	/* Access list */
-	struct vlist_t *access_list;
-	access_list = vlist_create("Access list", 200, 30,
-		(vlist_get_elem_name_func_t) visual_mod_access_get_name_short,
-		(vlist_get_elem_desc_func_t) visual_mod_access_get_desc);
-	gtk_box_pack_start(GTK_BOX(vbox), vlist_get_widget(access_list), FALSE, FALSE, 0);
+	struct visual_list_t *access_list;
+	access_list = visual_list_create("Access list", 200, 30,
+		(visual_list_get_elem_name_func_t) visual_mod_access_get_name_short,
+		(visual_list_get_elem_desc_func_t) visual_mod_access_get_desc);
+	gtk_box_pack_start(GTK_BOX(vbox), visual_list_get_widget(access_list), FALSE, FALSE, 0);
 	visual_mod_widget->access_list = access_list;
 
 	/* Scroll bars */
@@ -739,9 +739,9 @@ void visual_mod_widget_free(struct visual_mod_widget_t *visual_mod_widget)
 {
 
 	/* Free access list */
-	while (vlist_count(visual_mod_widget->access_list))
-		free(vlist_remove_at(visual_mod_widget->access_list, 0));
-	vlist_free(visual_mod_widget->access_list);
+	while (visual_list_count(visual_mod_widget->access_list))
+		free(visual_list_remove_at(visual_mod_widget->access_list, 0));
+	visual_list_free(visual_mod_widget->access_list);
 
 	/* Free widget */
 	free(visual_mod_widget->name);
@@ -793,8 +793,8 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 		panic("%s: invalid module", __FUNCTION__);
 
 	/* Remove all accesses from access list */
-	while (vlist_count(visual_mod_widget->access_list))
-		free(vlist_remove_at(visual_mod_widget->access_list, 0));
+	while (visual_list_count(visual_mod_widget->access_list))
+		free(visual_list_remove_at(visual_mod_widget->access_list, 0));
 
 	/* Add new accesses */
 	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
@@ -805,9 +805,9 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 			fatal("%s: out of memory", __FUNCTION__);
 
 		/* Insert new access */
-		vlist_add(visual_mod_widget->access_list, access_name);
+		visual_list_add(visual_mod_widget->access_list, access_name);
 	}
-	vlist_refresh(visual_mod_widget->access_list);
+	visual_list_refresh(visual_mod_widget->access_list);
 
 	/* Remove all widgets from layouts */
 	layout = visual_mod_widget->layout;

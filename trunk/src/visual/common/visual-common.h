@@ -36,9 +36,17 @@
 #include <misc.h>
 
 
+/* Function to invoke visualization tool.
+ * The name of the trace file is passed as the argument. */
+void visual_run(char *file_name);
+
 #ifdef HAVE_GTK
 
+/* Add code for visualization tool only below.*/
+
 #include <gtk/gtk.h>
+
+
 
 
 /*
@@ -123,28 +131,30 @@ void state_file_go_to_cycle(struct state_file_t *file, long long cycle);
  */
 
 
-extern char vlist_image_close_path[MAX_PATH_SIZE];
-extern char vlist_image_close_sel_path[MAX_PATH_SIZE];
+extern char visual_list_image_close_path[MAX_PATH_SIZE];
+extern char visual_list_image_close_sel_path[MAX_PATH_SIZE];
 
-typedef void (*vlist_get_elem_name_func_t)(void *elem, char *buf, int size);
-typedef void (*vlist_get_elem_desc_func_t)(void *elem, char *buf, int size);
+typedef void (*visual_list_get_elem_name_func_t)(void *elem, char *buf, int size);
+typedef void (*visual_list_get_elem_desc_func_t)(void *elem, char *buf, int size);
 
-#define VLIST_FOR_EACH(list, iter) \
-	for ((iter) = 0; (iter) < vlist_count((list)); (iter)++)
+#define VISUAL_LIST_FOR_EACH(list, iter) \
+	for ((iter) = 0; (iter) < visual_list_count((list)); (iter)++)
 
-struct vlist_t *vlist_create(char *title, int width, int height,
-	vlist_get_elem_name_func_t get_elem_name,
-	vlist_get_elem_name_func_t get_elem_desc);
-void vlist_free(struct vlist_t *vlist);
+struct visual_list_t;
 
-int vlist_count(struct vlist_t *vlist);
-void vlist_add(struct vlist_t *vlist, void *elem);
-void *vlist_get(struct vlist_t *vlist, int index);
-void *vlist_remove_at(struct vlist_t *vlist, int index);
+struct visual_list_t *visual_list_create(char *title, int width, int height,
+	visual_list_get_elem_name_func_t get_elem_name,
+	visual_list_get_elem_name_func_t get_elem_desc);
+void visual_list_free(struct visual_list_t *list);
 
-void vlist_refresh(struct vlist_t *vlist);
+int visual_list_count(struct visual_list_t *list);
+void visual_list_add(struct visual_list_t *list, void *elem);
+void *visual_list_get(struct visual_list_t *list, int index);
+void *visual_list_remove_at(struct visual_list_t *list, int index);
 
-GtkWidget *vlist_get_widget(struct vlist_t *vlist);
+void visual_list_refresh(struct visual_list_t *list);
+
+GtkWidget *visual_list_get_widget(struct visual_list_t *list);
 
 
 
@@ -195,13 +205,5 @@ long long cycle_bar_get_cycle(struct cycle_bar_t *cycle_bar);
 
 
 
-/* Only write code for the visualization tool above this '#endif' macro.
- * Below there should only be the function to invoke the tool. */
-
 #endif
-
-/* Function to invoke visualization tool.
- * The name of the trace file is passed as the argument. */
-void visual_run(char *file_name);
-
 #endif
