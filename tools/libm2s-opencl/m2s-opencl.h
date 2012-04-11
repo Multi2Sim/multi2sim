@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <debug.h>
-#include <gpukernel.h>
+#include <evergreen-emu.h>
 #include <CL/cl.h>
 
 #define SYS_OPENCL_IMPL_VERSION_MAJOR		1

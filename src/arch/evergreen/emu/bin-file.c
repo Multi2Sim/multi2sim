@@ -21,11 +21,11 @@
 #include <evergreen-emu.h>
 
 
-#define AMD_BIN_NOT_SUPPORTED(__var) \
+#define EVG_BIN_FILE_NOT_SUPPORTED(__var) \
 	fatal("%s: value 0x%x not supported for parameter '" #__var "'", __FUNCTION__, (__var))
-#define AMD_BIN_NOT_SUPPORTED_NEQ(__var, __val) \
+#define EVG_BIN_FILE_NOT_SUPPORTED_NEQ(__var, __val) \
 	if ((__var) != (__val)) \
-	fatal("%s: parameter '" #__var "' was expected to be 0x%x", __FUNCTION__, (__val))
+		fatal("%s: parameter '" #__var "' was expected to be 0x%x", __FUNCTION__, (__val))
 
 
 /* Note header */
@@ -150,7 +150,7 @@ struct pt_note_prog_info_entry_t
 
 
 /* Read next note at the current position of the PT_NOTE segment */
-static void amd_bin_read_note_header(struct evg_bin_file_t *amd_bin, struct evg_bin_enc_dict_entry_t *enc_dict_entry)
+static void evg_bin_file_read_note_header(struct evg_bin_file_t *bin_file, struct evg_bin_enc_dict_entry_t *enc_dict_entry)
 {
 	struct elf_buffer_t *buffer;
 
@@ -165,13 +165,13 @@ static void amd_bin_read_note_header(struct evg_bin_file_t *amd_bin, struct evg_
 	header = elf_buffer_tell(buffer);
 	count = elf_buffer_read(buffer, NULL, sizeof(struct pt_note_header_t));
 	if (count < sizeof(struct pt_note_header_t))
-		fatal("%s: error decoding note header", amd_bin->elf_file->path);
+		fatal("%s: error decoding note header", bin_file->elf_file->path);
 	
 	/* Read note description (payload) */
 	desc = elf_buffer_tell(buffer);
 	count = elf_buffer_read(buffer, NULL, header->descsz);
 	if (count < header->descsz)
-		fatal("%s: error decoding note description", amd_bin->elf_file->path);
+		fatal("%s: error decoding note description", bin_file->elf_file->path);
 
 	/* Debug */
 	note_type_str = map_value(&pt_note_type_map, header->type);
@@ -179,7 +179,8 @@ static void amd_bin_read_note_header(struct evg_bin_file_t *amd_bin, struct evg_
 		header->type, note_type_str, header->descsz);
 		
 	/* Analyze note */
-	switch (header->type) {
+	switch (header->type)
+	{
 
 	case 1:  /* ELF_NOTE_ATI_PROGINFO */
 	{
@@ -374,7 +375,7 @@ static void amd_bin_read_note_header(struct evg_bin_file_t *amd_bin, struct evg_
 
 
 /* Decode notes in the PT_NOTE segment of the given encoding dictionary entry */
-static void amd_bin_read_notes(struct evg_bin_file_t *amd_bin, struct evg_bin_enc_dict_entry_t *enc_dict_entry)
+static void evg_bin_file_read_notes(struct evg_bin_file_t *bin_file, struct evg_bin_enc_dict_entry_t *enc_dict_entry)
 {
 	struct elf_buffer_t *buffer;
 
@@ -386,12 +387,12 @@ static void amd_bin_read_notes(struct evg_bin_file_t *amd_bin, struct evg_bin_en
 	elf_debug("Reading notes in PT_NOTE segment (enc. dict. for machine=0x%x)\n",
 		enc_dict_entry->header->d_machine);
 	while (buffer->pos < buffer->size)
-		amd_bin_read_note_header(amd_bin, enc_dict_entry);
+		evg_bin_file_read_note_header(bin_file, enc_dict_entry);
 	elf_debug("\n\n\n");
 }
 
 
-static void amd_bin_read_enc_dict(struct evg_bin_file_t *amd_bin)
+static void evg_bin_file_read_enc_dict(struct evg_bin_file_t *bin_file)
 {
 	struct elf_file_t *elf_file;
 	struct elf_buffer_t *buffer;
@@ -406,21 +407,22 @@ static void amd_bin_read_enc_dict(struct evg_bin_file_t *amd_bin)
 	int i;
 
 	/* ELF header */
-	elf_file = amd_bin->elf_file;
+	elf_file = bin_file->elf_file;
 	elf_header = elf_file->header;
 	buffer = &elf_file->buffer;
 	elf_debug("**\n** Parsing AMD Binary (Internal ELF file)\n** %s\n**\n\n", elf_file->path);
-	AMD_BIN_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_CLASS], ELFCLASS32);
-	AMD_BIN_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_DATA], ELFDATA2LSB);
-	AMD_BIN_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_OSABI], 0x64);
-	AMD_BIN_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_ABIVERSION], 1);
-	AMD_BIN_NOT_SUPPORTED_NEQ(elf_header->e_type, ET_EXEC);
-	AMD_BIN_NOT_SUPPORTED_NEQ(elf_header->e_machine, 0x7d);
-	AMD_BIN_NOT_SUPPORTED_NEQ(elf_header->e_entry, 0);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_CLASS], ELFCLASS32);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_DATA], ELFDATA2LSB);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_OSABI], 0x64);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(elf_header->e_ident[EI_ABIVERSION], 1);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(elf_header->e_type, ET_EXEC);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(elf_header->e_machine, 0x7d);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(elf_header->e_entry, 0);
 	
 	/* Look for encoding dictionary (program header with type 'PT_LOPROC+2') */
 	program_header = NULL;
-	for (i = 0; i < list_count(elf_file->program_header_list); i++) {
+	for (i = 0; i < list_count(elf_file->program_header_list); i++)
+	{
 		program_header = list_get(elf_file->program_header_list, i);
 		if (program_header->header->p_type == PT_LOPROC + 2)
 			break;
@@ -430,17 +432,17 @@ static void amd_bin_read_enc_dict(struct evg_bin_file_t *amd_bin)
 	elf_debug("Encoding dictionary found in program header %d\n", i);
 	
 	/* Parse encoding dictionary */
-	AMD_BIN_NOT_SUPPORTED_NEQ(program_header->header->p_vaddr, 0);
-	AMD_BIN_NOT_SUPPORTED_NEQ(program_header->header->p_paddr, 0);
-	AMD_BIN_NOT_SUPPORTED_NEQ(program_header->header->p_memsz, 0);
-	AMD_BIN_NOT_SUPPORTED_NEQ(program_header->header->p_flags, 0);
-	AMD_BIN_NOT_SUPPORTED_NEQ(program_header->header->p_align, 0);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(program_header->header->p_vaddr, 0);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(program_header->header->p_paddr, 0);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(program_header->header->p_memsz, 0);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(program_header->header->p_flags, 0);
+	EVG_BIN_FILE_NOT_SUPPORTED_NEQ(program_header->header->p_align, 0);
 	assert(program_header->header->p_filesz % sizeof(struct evg_bin_enc_dict_entry_header_t) == 0);
 	enc_dict_entry_count = program_header->header->p_filesz / sizeof(struct evg_bin_enc_dict_entry_header_t);
 	elf_debug("  -> %d entries\n\n", enc_dict_entry_count);
 
 	/* Read encoding dictionary entries */
-	amd_bin->enc_dict = list_create();
+	bin_file->enc_dict = list_create();
 	elf_buffer_seek(buffer, program_header->header->p_offset);
 	for (i = 0; i < enc_dict_entry_count; i++) {
 		
@@ -448,11 +450,11 @@ static void amd_bin_read_enc_dict(struct evg_bin_file_t *amd_bin)
 		enc_dict_entry = calloc(1, sizeof(struct evg_bin_enc_dict_entry_t));
 		enc_dict_entry->header = elf_buffer_tell(buffer);
 		elf_buffer_read(buffer, NULL, sizeof(struct evg_bin_enc_dict_entry_header_t));
-		list_add(amd_bin->enc_dict, enc_dict_entry);
+		list_add(bin_file->enc_dict, enc_dict_entry);
 
 		/* Store encoding dictionary entry for Evergreen (code 9) */
 		if (enc_dict_entry->header->d_machine == 9)
-			amd_bin->enc_dict_entry_evergreen = enc_dict_entry;
+			bin_file->enc_dict_entry_evergreen = enc_dict_entry;
 	}
 
 	/* Debug */
@@ -461,11 +463,11 @@ static void amd_bin_read_enc_dict(struct evg_bin_file_t *amd_bin)
 	for (i = 0; i < 80; i++)
 		elf_debug("-");
 	elf_debug("\n");
-	for (i = 0; i < list_count(amd_bin->enc_dict); i++)
+	for (i = 0; i < list_count(bin_file->enc_dict); i++)
 	{
 		char machine_str[MAX_STRING_SIZE];
 
-		enc_dict_entry = list_get(amd_bin->enc_dict, i);
+		enc_dict_entry = list_get(bin_file->enc_dict, i);
 		enc_dict_entry_header = enc_dict_entry->header;
 		snprintf(machine_str, sizeof(machine_str), "%d (%s)",
 			enc_dict_entry_header->d_machine, map_value(&enc_dict_machine_map,
@@ -481,7 +483,7 @@ static void amd_bin_read_enc_dict(struct evg_bin_file_t *amd_bin)
 }
 
 
-static void amd_bin_read_segments(struct evg_bin_file_t *amd_bin)
+static void evg_bin_file_read_segments(struct evg_bin_file_t *bin_file)
 {
 	struct elf_file_t *elf_file;
 
@@ -491,11 +493,11 @@ static void amd_bin_read_segments(struct evg_bin_file_t *amd_bin)
 	int i, j;
 
 	elf_debug("Reading PT_NOTE and PT_LOAD segments:\n");
-	elf_file = amd_bin->elf_file;
-	for (i = 0; i < list_count(amd_bin->enc_dict); i++)
+	elf_file = bin_file->elf_file;
+	for (i = 0; i < list_count(bin_file->enc_dict); i++)
 	{
 		/* Get encoding dictionary entry */
-		enc_dict_entry = list_get(amd_bin->enc_dict, i);
+		enc_dict_entry = list_get(bin_file->enc_dict, i);
 		for (j = 0; j < list_count(elf_file->program_header_list); j++)
 		{
 			/* Get program header. If not in encoding dictionary segment, skip. */
@@ -508,7 +510,8 @@ static void amd_bin_read_segments(struct evg_bin_file_t *amd_bin)
 				enc_dict_entry->header->d_offset + enc_dict_entry->header->d_size);
 
 			/* Segment PT_NOTE */
-			if (program_header->header->p_type == PT_NOTE) {
+			if (program_header->header->p_type == PT_NOTE)
+			{
 				if (enc_dict_entry->pt_note_buffer.size)
 					fatal("%s: more than one PT_NOTE for encoding dictionary entry", __FUNCTION__);
 				enc_dict_entry->pt_note_buffer.ptr = elf_file->buffer.ptr + program_header->header->p_offset;
@@ -517,7 +520,8 @@ static void amd_bin_read_segments(struct evg_bin_file_t *amd_bin)
 			}
 
 			/* Segment PT_LOAD */
-			if (program_header->header->p_type == PT_LOAD) {
+			if (program_header->header->p_type == PT_LOAD)
+			{
 				if (enc_dict_entry->pt_load_buffer.size)
 					fatal("%s: more than one PT_LOAD for encoding dictionary entry", __FUNCTION__);
 				enc_dict_entry->pt_load_buffer.ptr = elf_file->buffer.ptr + program_header->header->p_offset;
@@ -539,7 +543,7 @@ static void amd_bin_read_segments(struct evg_bin_file_t *amd_bin)
 }
 
 
-static void amd_bin_read_sections(struct evg_bin_file_t *amd_bin)
+static void evg_bin_file_read_sections(struct evg_bin_file_t *bin_file)
 {
 	struct elf_file_t *elf_file;
 	struct elf_buffer_t *buffer;
@@ -552,11 +556,11 @@ static void amd_bin_read_sections(struct evg_bin_file_t *amd_bin)
 	int pt_load_offset;
 	int pt_load_size;
 
-	elf_file = amd_bin->elf_file;
-	for (i = 0; i < list_count(amd_bin->enc_dict); i++)
+	elf_file = bin_file->elf_file;
+	for (i = 0; i < list_count(bin_file->enc_dict); i++)
 	{
 		/* Get encoding dictionary entry */
-		enc_dict_entry = list_get(amd_bin->enc_dict, i);
+		enc_dict_entry = list_get(bin_file->enc_dict, i);
 		pt_load_offset = enc_dict_entry->pt_load_buffer.ptr - elf_file->buffer.ptr;
 		pt_load_size = enc_dict_entry->pt_load_buffer.size;
 		for (j = 0; j < list_count(elf_file->section_list); j++)
@@ -637,18 +641,18 @@ static void amd_bin_read_sections(struct evg_bin_file_t *amd_bin)
 
 struct evg_bin_file_t *evg_bin_file_create(void *ptr, int size, char *name)
 {
-	struct evg_bin_file_t *amd_bin;
+	struct evg_bin_file_t *bin_file;
 
 	/* Create structure */
-	amd_bin = calloc(1, sizeof(struct evg_bin_file_t));
+	bin_file = calloc(1, sizeof(struct evg_bin_file_t));
 
 	/* Read and parse ELF file */
-	amd_bin->elf_file = elf_file_create_from_buffer(ptr, size, name);
+	bin_file->elf_file = elf_file_create_from_buffer(ptr, size, name);
 
 	/* Read encoding dictionary.
 	 * Check that an Evergreen dictionary entry is present */
-	amd_bin_read_enc_dict(amd_bin);
-	if (!amd_bin->enc_dict_entry_evergreen)
+	evg_bin_file_read_enc_dict(bin_file);
+	if (!bin_file->enc_dict_entry_evergreen)
 		fatal("%s: no encoding dictionary entry for Evergreen.\n"
 			"\tThe OpenCL kernel binary that your application is trying to load does not\n"
 			"\tcontain Evergreen assembly code. Please make sure that a Cypress device\n"
@@ -656,29 +660,29 @@ struct evg_bin_file_t *evg_bin_file_create(void *ptr, int size, char *name)
 			"\ta proper selection of this architecture causes Evergreen assembly not to\n"
 			"\tbe included if the APP SDK is not correctly installed when compiling your\n"
 			"\town kernel sources.\n",
-			amd_bin->elf_file->path);
+			bin_file->elf_file->path);
 	
 	/* Read segments and sections */
-	amd_bin_read_segments(amd_bin);
-	amd_bin_read_sections(amd_bin);
+	evg_bin_file_read_segments(bin_file);
+	evg_bin_file_read_sections(bin_file);
 
 	/* Read notes in PT_NOTE segment for Evergreen dictionary entry */
-	amd_bin_read_notes(amd_bin, amd_bin->enc_dict_entry_evergreen);
+	evg_bin_file_read_notes(bin_file, bin_file->enc_dict_entry_evergreen);
 
 	/* Return */
-	return amd_bin;
+	return bin_file;
 }
 
 
-void evg_bin_file_free(struct evg_bin_file_t *amd_bin)
+void evg_bin_file_free(struct evg_bin_file_t *bin_file)
 {
 	/* Free encoding dictionary */
-	while (list_count(amd_bin->enc_dict))
-		free(list_remove_at(amd_bin->enc_dict, 0));
-	list_free(amd_bin->enc_dict);
+	while (list_count(bin_file->enc_dict))
+		free(list_remove_at(bin_file->enc_dict, 0));
+	list_free(bin_file->enc_dict);
 
 	/* Free rest */
-	elf_file_free(amd_bin->elf_file);
-	free(amd_bin);
+	elf_file_free(bin_file->elf_file);
+	free(bin_file);
 }
 

@@ -55,14 +55,20 @@ int evg_emu_wavefront_size = 64;
 void evg_emu_init()
 {
 	/* Open report file */
-	if (evg_emu_report_file_name[0]) {
+	if (*evg_emu_report_file_name)
+	{
 		evg_emu_report_file = open_write(evg_emu_report_file_name);
 		if (!evg_emu_report_file)
-			fatal("%s: cannot open GPU report file ", evg_emu_report_file_name);
+			fatal("%s: cannot open report for Evergreen emulator",
+				evg_emu_report_file_name);
 	}
 
-	/* Initialize kernel */
+	/* Allocate */
 	evg_emu = calloc(1, sizeof(struct evg_emu_t));
+	if (!evg_emu)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	evg_emu->const_mem = mem_create();
 	evg_emu->const_mem->safe = 0;
 	evg_emu->global_mem = mem_create();
@@ -142,7 +148,7 @@ void evg_emu_libopencl_redirect(char *fullpath, int size)
 	FILE *f;
 
 	/* Get path length */
-	strncpy(fullpath_original, fullpath, MAX_PATH_SIZE);
+	snprintf(fullpath_original, sizeof fullpath_original, "%s", fullpath);
 	length = strlen(fullpath);
 	relpath = rindex(fullpath, '/');
 	assert(relpath && *relpath == '/');
@@ -293,7 +299,7 @@ void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 	void *file_buffer;
 	int file_size;
 
-	struct evg_opengl_bin_t *amd_opengl_bin;
+	struct evg_opengl_bin_file_t *amd_opengl_bin;
 	struct evg_opengl_shader_t *amd_opengl_shader;
 
 	/* Initialize disassembler */
@@ -305,7 +311,7 @@ void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 		fatal("%s:Invalid file!", path);
 
 	/* Analyze the file and initialize structure */	
-	amd_opengl_bin = evg_opengl_bin_create(file_buffer, file_size, path);
+	amd_opengl_bin = evg_opengl_bin_file_create(file_buffer, file_size, path);
 
 	free_buffer(file_buffer);
 
@@ -323,7 +329,7 @@ void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 	printf("\n\n\n");
 
 	/* Free */
-	evg_opengl_bin_free(amd_opengl_bin);
+	evg_opengl_bin_file_free(amd_opengl_bin);
 	evg_disasm_done();
 
 	/* End */

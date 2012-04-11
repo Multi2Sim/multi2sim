@@ -139,7 +139,7 @@ struct evg_opengl_shader_t
 };
 
 /* OpenGL shader binary */
-struct evg_opengl_bin_t
+struct evg_opengl_bin_file_t
 {
 	/* Name of the associated binary file */
 	char *name;
@@ -152,8 +152,8 @@ struct evg_opengl_bin_t
 	// struct evg_opengl_shader_t *amd_opengl_shader;
 };
 
-struct evg_opengl_bin_t *evg_opengl_bin_create(void *ptr, int size, char *name);
-void evg_opengl_bin_free(struct evg_opengl_bin_t *bin);
+struct evg_opengl_bin_file_t *evg_opengl_bin_file_create(void *ptr, int size, char *name);
+void evg_opengl_bin_file_free(struct evg_opengl_bin_file_t *bin_file);
 
 
 
