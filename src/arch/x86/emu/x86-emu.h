@@ -1107,7 +1107,7 @@ extern enum x86_emu_finish_t
 	x86_emu_finish_max_time,  /* Maximum simulation time reached */
 	x86_emu_finish_signal,  /* Signal received */
 	x86_emu_finish_stall,  /* Simulation stalled */
-	x86_emu_finish_gpu_no_faults  /* GPU-REL: no fault in '--gpu-stack-faults' caused error */
+	x86_emu_finish_gpu_no_faults  /* GPU-REL: no fault in '--evg_gpu-stack-faults' caused error */
 } x86_emu_finish;
 
 

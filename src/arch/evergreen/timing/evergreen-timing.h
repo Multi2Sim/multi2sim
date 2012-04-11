@@ -27,56 +27,54 @@
 
 /* Public variables */
 
-extern char *gpu_config_help;
-extern char *gpu_config_file_name;
-extern char *gpu_report_file_name;
-extern char *mem_report_file_name;
+extern char *evg_config_help;
+extern char *evg_config_file_name;
+extern char *evg_report_file_name;
 
-extern int gpu_pipeline_debug_category;
+extern int evg_pipeline_debug_category;
 
-extern int gpu_num_stream_cores;
-extern int gpu_num_compute_units;
-extern int gpu_num_registers;
-extern int gpu_register_alloc_size;
+extern int evg_num_stream_cores;
+extern int evg_num_compute_units;
+extern int evg_num_registers;
+extern int evg_register_alloc_size;
 
-extern struct string_map_t gpu_register_alloc_granularity_map;
-extern enum gpu_register_alloc_granularity_t
+extern struct string_map_t evg_register_alloc_granularity_map;
+extern enum evg_register_alloc_granularity_t
 {
-	gpu_register_alloc_invalid = 0,  /* For invalid user input */
-	gpu_register_alloc_wavefront,
-	gpu_register_alloc_work_group
-} gpu_register_alloc_granularity;
+	evg_register_alloc_invalid = 0,  /* For invalid user input */
+	evg_register_alloc_wavefront,
+	evg_register_alloc_work_group
+} evg_register_alloc_granularity;
 
-extern int gpu_max_work_groups_per_compute_unit;
-extern int gpu_max_wavefronts_per_compute_unit;
+extern int evg_max_work_groups_per_compute_unit;
+extern int evg_max_wavefronts_per_compute_unit;
 
-extern struct string_map_t gpu_sched_policy_map;
-extern enum gpu_sched_policy_t
+extern struct string_map_t evg_sched_policy_map;
+extern enum evg_sched_policy_t
 {
-	gpu_sched_invalid = 0,  /* For invalid user input */
-	gpu_sched_round_robin,
-	gpu_sched_greedy
-} gpu_sched_policy;
+	evg_sched_invalid = 0,  /* For invalid user input */
+	evg_sched_round_robin,
+	evg_sched_greedy
+} evg_sched_policy;
 
-extern char *gpu_calc_file_name;
+extern char *evg_calc_file_name;
 
-extern int gpu_local_mem_size;
-extern int gpu_local_mem_alloc_size;
-extern int gpu_local_mem_latency;
-extern int gpu_local_mem_block_size;
-extern int gpu_local_mem_num_ports;
+extern int evg_local_mem_size;
+extern int evg_local_mem_alloc_size;
+extern int evg_local_mem_latency;
+extern int evg_local_mem_block_size;
+extern int evg_local_mem_num_ports;
 
-extern int gpu_cf_engine_inst_mem_latency;
+extern int evg_cf_engine_inst_mem_latency;
 
-extern int gpu_alu_engine_inst_mem_latency;
-extern int gpu_alu_engine_fetch_queue_size;
-extern int gpu_alu_engine_pe_latency;
+extern int evg_alu_engine_inst_mem_latency;
+extern int evg_alu_engine_fetch_queue_size;
+extern int evg_alu_engine_pe_latency;
 
-extern int gpu_tex_engine_inst_mem_latency;
-extern int gpu_tex_engine_fetch_queue_size;
-extern int gpu_tex_engine_load_queue_size;
+extern int evg_tex_engine_inst_mem_latency;
+extern int evg_tex_engine_fetch_queue_size;
+extern int evg_tex_engine_load_queue_size;
 
-extern struct gpu_t *gpu;
 
 
 
@@ -84,16 +82,16 @@ extern struct gpu_t *gpu;
  * GPU-REL
  */
 
-#define gpu_faults_debug(...) debug(gpu_faults_debug_category, __VA_ARGS__)
-extern int gpu_faults_debug_category;
+#define evg_faults_debug(...) debug(evg_faults_debug_category, __VA_ARGS__)
+extern int evg_faults_debug_category;
 
-extern char *gpu_faults_debug_file_name;
-extern char *gpu_faults_file_name;
+extern char *evg_faults_debug_file_name;
+extern char *evg_faults_file_name;
 
-void gpu_faults_init(void);
-void gpu_faults_done(void);
+void evg_faults_init(void);
+void evg_faults_done(void);
 
-void gpu_faults_insert(void);
+void evg_faults_insert(void);
 
 
 
@@ -104,12 +102,12 @@ void gpu_faults_insert(void);
  */
 
 /* Debugging */
-#define gpu_stack_debug(...) debug(gpu_stack_debug_category, __VA_ARGS__)
-extern int gpu_stack_debug_category;
+#define evg_stack_debug(...) debug(evg_stack_debug_category, __VA_ARGS__)
+extern int evg_stack_debug_category;
 
 
 /* Part of a GPU instruction specific for each work-item within wavefront. */
-struct gpu_work_item_uop_t
+struct evg_work_item_uop_t
 {
 	/* For global memory accesses */
 	uint32_t global_mem_access_addr;
@@ -125,29 +123,29 @@ struct gpu_work_item_uop_t
 	uint32_t local_mem_access_size[EVG_MAX_LOCAL_MEM_ACCESSES_PER_INST];
 };
 
-#define GPU_UOP_MAX_IDEP      (3 * 5)
-#define GPU_UOP_MAX_ODEP      (3 * 5)
+#define EVG_UOP_MAX_IDEP      (3 * 5)
+#define EVG_UOP_MAX_ODEP      (3 * 5)
 
-#define GPU_UOP_DEP_NONE         0
-#define GPU_UOP_DEP_REG_FIRST    1
-#define GPU_UOP_DEP_REG(X)       ((X) + 1)
-#define GPU_UOP_DEP_REG_LAST     128
-#define GPU_UOP_DEP_PV           129
-#define GPU_UOP_DEP_PS           130
-#define GPU_UOP_DEP_LDS          131
-#define GPU_UOP_DEP_COUNT        132
+#define EVG_UOP_DEP_NONE         0
+#define EVG_UOP_DEP_REG_FIRST    1
+#define EVG_UOP_DEP_REG(X)       ((X) + 1)
+#define EVG_UOP_DEP_REG_LAST     128
+#define EVG_UOP_DEP_PV           129
+#define EVG_UOP_DEP_PS           130
+#define EVG_UOP_DEP_LDS          131
+#define EVG_UOP_DEP_COUNT        132
 
 /* Structure representing a GPU instruction fetched in common for a wavefront.
  * This is the structure passed from stage to stage in the compute unit pipeline. */
-struct gpu_uop_t
+struct evg_uop_t
 {
 	/* Fields */
 	long long id;
 	long long id_in_compute_unit;
 	struct evg_wavefront_t *wavefront;  /* Wavefront it belongs to */
 	struct evg_work_group_t *work_group;  /* Work-group it belongs to */
-	struct gpu_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
-	struct gpu_uop_t *cf_uop;  /* For ALU/TEX uops, CF uop that triggered clause */
+	struct evg_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
+	struct evg_uop_t *cf_uop;  /* For ALU/TEX uops, CF uop that triggered clause */
 	int length;  /* Number of bytes occupied by ALU group */
 
 	/* CF instruction flags */
@@ -180,36 +178,36 @@ struct gpu_uop_t
 	int write_subwavefront_count;
 
 	/* ALU instructions - input/output dependencies */
-	int idep[GPU_UOP_MAX_IDEP];
-	int odep[GPU_UOP_MAX_ODEP];
+	int idep[EVG_UOP_MAX_IDEP];
+	int odep[EVG_UOP_MAX_ODEP];
 	int idep_count;
 	int odep_count;
 
 	/* Double linked lists of producer-consumers */
-	struct gpu_uop_t *dep_list_next;
-	struct gpu_uop_t *dep_list_prev;
-	struct gpu_uop_t *dep_list_head;
-	struct gpu_uop_t *dep_list_tail;
+	struct evg_uop_t *dep_list_next;
+	struct evg_uop_t *dep_list_prev;
+	struct evg_uop_t *dep_list_head;
+	struct evg_uop_t *dep_list_tail;
 	int dep_list_count;
 	int dep_list_max;
 
 	/* Per stream-core data. This space is dynamically allocated for an uop.
 	 * It should be always the last field of the structure. */
-	struct gpu_work_item_uop_t work_item_uop[0];
+	struct evg_work_item_uop_t work_item_uop[0];
 };
 
-void gpu_uop_init(void);
-void gpu_uop_done(void);
+void evg_uop_init(void);
+void evg_uop_done(void);
 
-struct gpu_uop_t *gpu_uop_create(void);
-struct gpu_uop_t *gpu_uop_create_from_alu_group(struct evg_alu_group_t *alu_group);
-void gpu_uop_free(struct gpu_uop_t *gpu_uop);
+struct evg_uop_t *evg_uop_create(void);
+struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_alu_group_t *alu_group);
+void evg_uop_free(struct evg_uop_t *gpu_uop);
 
-void gpu_uop_list_free(struct linked_list_t *gpu_uop_list);
-void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count);
+void evg_uop_list_free(struct linked_list_t *gpu_uop_list);
+void evg_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count);
 
-void gpu_uop_save_active_mask(struct gpu_uop_t *uop);
-void gpu_uop_debug_active_mask(struct gpu_uop_t *uop);
+void evg_uop_save_active_mask(struct evg_uop_t *uop);
+void evg_uop_debug_active_mask(struct evg_uop_t *uop);
 
 
 
@@ -218,19 +216,19 @@ void gpu_uop_debug_active_mask(struct gpu_uop_t *uop);
  * Register file in Compute Unit
  */
 
-struct gpu_reg_file_t;
+struct evg_reg_file_t;
 
-void gpu_reg_file_init(struct gpu_compute_unit_t *compute_unit);
-void gpu_reg_file_done(struct gpu_compute_unit_t *compute_unit);
+void evg_reg_file_init(struct evg_compute_unit_t *compute_unit);
+void evg_reg_file_done(struct evg_compute_unit_t *compute_unit);
 
-void gpu_reg_file_map_work_group(struct gpu_compute_unit_t *compute_unit,
+void evg_reg_file_map_work_group(struct evg_compute_unit_t *compute_unit,
 	struct evg_work_group_t *work_group);
-void gpu_reg_file_unmap_work_group(struct gpu_compute_unit_t *compute_unit,
+void evg_reg_file_unmap_work_group(struct evg_compute_unit_t *compute_unit,
 	struct evg_work_group_t *work_group);
 
-int gpu_reg_file_rename(struct gpu_compute_unit_t *compute_unit,
+int evg_reg_file_rename(struct evg_compute_unit_t *compute_unit,
 	struct evg_work_item_t *work_item, int logical_register);
-void gpu_reg_file_inverse_rename(struct gpu_compute_unit_t *compute_unit,
+void evg_reg_file_inverse_rename(struct evg_compute_unit_t *compute_unit,
 	int physical_register, struct evg_work_item_t **work_item, int *logical_register);
 
 
@@ -241,17 +239,17 @@ void gpu_reg_file_inverse_rename(struct gpu_compute_unit_t *compute_unit,
  * GPU Compute Unit
  */
 
-struct gpu_compute_unit_t
+struct evg_compute_unit_t
 {
 	/* IDs */
 	int id;
 	long long gpu_uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
 
 	/* Double linked list of compute units */
-	struct gpu_compute_unit_t *ready_list_prev;
-	struct gpu_compute_unit_t *ready_list_next;
-	struct gpu_compute_unit_t *busy_list_prev;
-	struct gpu_compute_unit_t *busy_list_next;
+	struct evg_compute_unit_t *ready_list_prev;
+	struct evg_compute_unit_t *ready_list_next;
+	struct evg_compute_unit_t *busy_list_prev;
+	struct evg_compute_unit_t *busy_list_next;
 
 	/* Entry points to memory hierarchy */
 	struct mod_t *global_memory;
@@ -275,8 +273,8 @@ struct gpu_compute_unit_t
 	struct
 	{
 		/* Buffers */
-		struct gpu_uop_t **fetch_buffer;  /* Array of uops (MaxWavefrontsPerComputeUnit elements) */
-		struct gpu_uop_t **inst_buffer;  /* Array of uops (MaxWavefrontsPerComputeUnit elements) */
+		struct evg_uop_t **fetch_buffer;  /* Array of uops (MaxWavefrontsPerComputeUnit elements) */
+		struct evg_uop_t **inst_buffer;  /* Array of uops (MaxWavefrontsPerComputeUnit elements) */
 
 		/* Wavefront selectors */
 		int decode_index;  /* Next uop in 'fetch_buffer' to decode */
@@ -307,13 +305,13 @@ struct gpu_compute_unit_t
 		/* Queues */
 		struct linked_list_t *fetch_queue;  /* Uops from fetch to decode stage */
 		int fetch_queue_length;  /* Number of bytes occupied in fetch queue */
-		struct gpu_uop_t *inst_buffer;  /* Uop from decode to read stage */
-		struct gpu_uop_t *exec_buffer;  /* Uop from read to execute stage */
+		struct evg_uop_t *inst_buffer;  /* Uop from decode to read stage */
+		struct evg_uop_t *exec_buffer;  /* Uop from read to execute stage */
 		struct heap_t *event_queue;  /* Events for instruction execution */
 
 		/* Table storing the in-flight uop that produced an output
 		 * dependence. If the producer is not in flight, the value is NULL. */
-		struct gpu_uop_t *producers[GPU_UOP_DEP_COUNT];
+		struct evg_uop_t *producers[EVG_UOP_DEP_COUNT];
 
 		/* Statistics */
 		long long wavefront_count;
@@ -335,7 +333,7 @@ struct gpu_compute_unit_t
 		/* Queues */
 		struct linked_list_t *fetch_queue;  /* Uops from fetch to decode stage */
 		int fetch_queue_length;  /* Number of bytes occupied in fetch queue */
-		struct gpu_uop_t *inst_buffer;  /* Uop from decode to read stage */
+		struct evg_uop_t *inst_buffer;  /* Uop from decode to read stage */
 		struct linked_list_t *load_queue;  /* Uops from read to write stage */
 
 		/* Statistics */
@@ -347,17 +345,17 @@ struct gpu_compute_unit_t
 
 };
 
-struct gpu_compute_unit_t *gpu_compute_unit_create();
-void gpu_compute_unit_free(struct gpu_compute_unit_t *gpu_compute_unit);
-void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, struct evg_work_group_t *work_group);
-void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, struct evg_work_group_t *work_group);
+struct evg_compute_unit_t *evg_compute_unit_create(void);
+void evg_compute_unit_free(struct evg_compute_unit_t *gpu_compute_unit);
+void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, struct evg_work_group_t *work_group);
+void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, struct evg_work_group_t *work_group);
 
-struct evg_wavefront_t *gpu_schedule(struct gpu_compute_unit_t *compute_unit);
+struct evg_wavefront_t *evg_compute_unit_schedule(struct evg_compute_unit_t *compute_unit);
 
-void gpu_cf_engine_run(struct gpu_compute_unit_t *compute_unit);
-void gpu_alu_engine_run(struct gpu_compute_unit_t *compute_unit);
-void gpu_tex_engine_run(struct gpu_compute_unit_t *compute_unit);
-void gpu_compute_unit_run(struct gpu_compute_unit_t *compute_unit);
+void evg_compute_unit_run_cf_engine(struct evg_compute_unit_t *compute_unit);
+void evg_compute_unit_run_alu_engine(struct evg_compute_unit_t *compute_unit);
+void evg_compute_unit_run_tex_engine(struct evg_compute_unit_t *compute_unit);
+void evg_compute_unit_run(struct evg_compute_unit_t *compute_unit);
 
 
 
@@ -366,9 +364,9 @@ void gpu_compute_unit_run(struct gpu_compute_unit_t *compute_unit);
  * GPU Calculator
  */
 
-int gpu_calc_get_work_groups_per_compute_unit(int work_items_per_work_group,
+int evg_calc_get_work_groups_per_compute_unit(int work_items_per_work_group,
 	int registers_per_work_item, int local_mem_per_work_group);
-void gpu_calc_plot(void);
+void evg_calc_plot(void);
 
 
 
@@ -378,11 +376,11 @@ void gpu_calc_plot(void);
  */
 
 /* Debugging */
-#define gpu_pipeline_debug(...) debug(gpu_pipeline_debug_category, __VA_ARGS__)
-#define gpu_pipeline_debugging() debug_status(gpu_pipeline_debug_category)
-extern int gpu_pipeline_debug_category;
+#define evg_pipeline_debug(...) debug(evg_pipeline_debug_category, __VA_ARGS__)
+#define evg_pipeline_debugging() debug_status(evg_pipeline_debug_category)
+extern int evg_pipeline_debug_category;
 
-struct gpu_t
+struct evg_gpu_t
 {
 	/* Current cycle */
 	long long cycle;
@@ -394,37 +392,38 @@ struct gpu_t
 	int work_items_per_compute_unit;
 
 	/* Compute units */
-	struct gpu_compute_unit_t **compute_units;
+	struct evg_compute_unit_t **compute_units;
 
 	/* List of ready compute units accepting work-groups */
-	struct gpu_compute_unit_t *ready_list_head;
-	struct gpu_compute_unit_t *ready_list_tail;
+	struct evg_compute_unit_t *ready_list_head;
+	struct evg_compute_unit_t *ready_list_tail;
 	int ready_list_count;
 	int ready_list_max;
 
 	/* List of busy compute units */
-	struct gpu_compute_unit_t *busy_list_head;
-	struct gpu_compute_unit_t *busy_list_tail;
+	struct evg_compute_unit_t *busy_list_head;
+	struct evg_compute_unit_t *busy_list_tail;
 	int busy_list_count;
 	int busy_list_max;
 };
 
-#define FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
-	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < gpu_num_compute_units; (COMPUTE_UNIT_ID)++)
+extern struct evg_gpu_t *evg_gpu;
 
-#define FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(WAVEFRONT, SUBWAVEFRONT_ID, WORK_ITEM_ID) \
-	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first + (SUBWAVEFRONT_ID) * gpu_num_stream_cores; \
+#define EVG_FOREACH_COMPUTE_UNIT(COMPUTE_UNIT_ID) \
+	for ((COMPUTE_UNIT_ID) = 0; (COMPUTE_UNIT_ID) < evg_num_compute_units; (COMPUTE_UNIT_ID)++)
+
+#define EVG_FOREACH_WORK_ITEM_IN_SUBWAVEFRONT(WAVEFRONT, SUBWAVEFRONT_ID, WORK_ITEM_ID) \
+	for ((WORK_ITEM_ID) = (WAVEFRONT)->work_item_id_first + (SUBWAVEFRONT_ID) * evg_num_stream_cores; \
 		(WORK_ITEM_ID) <= MIN((WAVEFRONT)->work_item_id_first + ((SUBWAVEFRONT_ID) + 1) \
-			* gpu_num_stream_cores - 1, (WAVEFRONT)->work_item_id_last); \
+			* evg_num_stream_cores - 1, (WAVEFRONT)->work_item_id_last); \
 		(WORK_ITEM_ID)++)
 
-void gpu_init(void);
-void gpu_done(void);
+void evg_gpu_init(void);
+void evg_gpu_done(void);
 
-void gpu_dump_report(void);
+void evg_gpu_dump_report(void);
 
-void gpu_run(struct evg_ndrange_t *ndrange);
+void evg_gpu_run(struct evg_ndrange_t *ndrange);
 
 
 #endif
-

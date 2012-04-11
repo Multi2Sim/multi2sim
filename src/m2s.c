@@ -388,7 +388,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--debug-gpu-faults"))
 		{
 			sim_need_argument(argc, argv, argi);
-			gpu_faults_debug_file_name = argv[++argi];
+			evg_faults_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -428,7 +428,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--gpu-calc"))
 		{
 			sim_need_argument(argc, argv, argi);
-			gpu_calc_file_name = argv[++argi];
+			evg_calc_file_name = argv[++argi];
 			continue;
 		}
 
@@ -436,7 +436,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--gpu-config"))
 		{
 			sim_need_argument(argc, argv, argi);
-			gpu_config_file_name = argv[++argi];
+			evg_config_file_name = argv[++argi];
 			continue;
 		}
 
@@ -464,7 +464,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--gpu-faults"))
 		{
 			sim_need_argument(argc, argv, argi);
-			gpu_faults_file_name = argv[++argi];
+			evg_faults_file_name = argv[++argi];
 			continue;
 		}
 
@@ -515,7 +515,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		/* Help for GPU configuration file */
 		if (!strcmp(argv[argi], "--help-gpu-config"))
 		{
-			fprintf(stderr, "%s", gpu_config_help);
+			fprintf(stderr, "%s", evg_config_help);
 			continue;
 		}
 
@@ -663,7 +663,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--report-gpu-pipeline"))
 		{
 			sim_need_argument(argc, argv, argi);
-			gpu_report_file_name = argv[++argi];
+			evg_report_file_name = argv[++argi];
 			continue;
 		}
 
@@ -742,11 +742,11 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--debug-gpu-pipeline");
 		if (*gpu_stack_debug_file_name)
 			fatal(msg, "--debug-gpu-stack");
-		if (*gpu_faults_debug_file_name)  /* GPU-REL */
+		if (*evg_faults_debug_file_name)  /* GPU-REL */
 			fatal(msg, "--debug-gpu-faults");
-		if (*gpu_config_file_name)
+		if (*evg_config_file_name)
 			fatal(msg, "--gpu-config");
-		if (*gpu_report_file_name)
+		if (*evg_report_file_name)
 			fatal(msg, "--report-gpu-pipeline");
 	}
 
@@ -849,9 +849,9 @@ void sim_stats_summary(void)
 		/* GPU detailed simulation */
 		if (evg_emu_kind == evg_emu_detailed)
 		{
-			inst_per_cycle = gpu->cycle ? (double) evg_emu->inst_count / gpu->cycle : 0.0;
-			cycles_per_sec = sec_count > 0.0 ? (double) gpu->cycle / sec_count : 0.0;
-			fprintf(stderr, "Cycles = %lld\n", gpu->cycle);
+			inst_per_cycle = evg_gpu->cycle ? (double) evg_emu->inst_count / evg_gpu->cycle : 0.0;
+			cycles_per_sec = sec_count > 0.0 ? (double) evg_gpu->cycle / sec_count : 0.0;
+			fprintf(stderr, "Cycles = %lld\n", evg_gpu->cycle);
 			fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 			fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 		}
@@ -909,9 +909,9 @@ int main(int argc, char **argv)
 	mem_debug_category = debug_new_category(mem_debug_file_name);
 	evg_opencl_debug_category = debug_new_category(opencl_debug_file_name);
 	evg_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
-	gpu_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
-	gpu_faults_debug_category = debug_new_category(gpu_faults_debug_file_name);  /* GPU-REL */
-	gpu_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);
+	evg_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
+	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
+	evg_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);
 	x86_cpu_error_debug_category = debug_new_category(error_debug_file_name);
 	esim_debug_init(esim_debug_file_name);
 
@@ -928,7 +928,7 @@ int main(int argc, char **argv)
 	if (x86_emu_kind == x86_emu_kind_detailed)
 		x86_cpu_init();
 	if (evg_emu_kind == evg_emu_detailed)
-		gpu_init();
+		evg_gpu_init();
 
 	/* Memory hierarchy initialization, done after we initialized CPU cores
 	 * and GPU compute units. */
@@ -964,7 +964,7 @@ int main(int argc, char **argv)
 
 	/* Finalization of detailed GPU simulation */
 	if (evg_emu_kind == evg_emu_detailed)
-		gpu_done();
+		evg_gpu_done();
 
 	/* Finalization */
 	net_done();

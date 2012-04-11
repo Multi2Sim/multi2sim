@@ -27,13 +27,13 @@
  * Compute Unit
  */
 
-struct gpu_compute_unit_t *gpu_compute_unit_create()
+struct evg_compute_unit_t *evg_compute_unit_create()
 {
-	struct gpu_compute_unit_t *compute_unit;
+	struct evg_compute_unit_t *compute_unit;
 	char buf[MAX_STRING_SIZE];
 
 	/* Create */
-	compute_unit = calloc(1, sizeof(struct gpu_compute_unit_t));
+	compute_unit = calloc(1, sizeof(struct evg_compute_unit_t));
 	if (!compute_unit)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -43,14 +43,14 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 	/* Local memory */
 	snprintf(buf, sizeof buf, "LocalMemory[%d]", compute_unit->id);
 	compute_unit->local_memory = mod_create(buf, mod_kind_main_memory,
-		gpu_local_mem_num_ports, gpu_local_mem_block_size, gpu_local_mem_latency);
+		evg_local_mem_num_ports, evg_local_mem_block_size, evg_local_mem_latency);
 
 	/* Initialize CF Engine */
 	compute_unit->cf_engine.complete_queue = linked_list_create();
-	compute_unit->cf_engine.fetch_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));
+	compute_unit->cf_engine.fetch_buffer = calloc(evg_max_wavefronts_per_compute_unit, sizeof(void *));
 	if (!compute_unit->cf_engine.fetch_buffer)
 		fatal("%s: out of memory", __FUNCTION__);
-	compute_unit->cf_engine.inst_buffer = calloc(gpu_max_wavefronts_per_compute_unit, sizeof(void *));
+	compute_unit->cf_engine.inst_buffer = calloc(evg_max_wavefronts_per_compute_unit, sizeof(void *));
 	if (!compute_unit->cf_engine.inst_buffer)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -67,7 +67,7 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 	compute_unit->tex_engine.load_queue = linked_list_create();
 
 	/* List of mapped work-groups */
-	compute_unit->work_groups = calloc(gpu_max_work_groups_per_compute_unit, sizeof(void *));
+	compute_unit->work_groups = calloc(evg_max_work_groups_per_compute_unit, sizeof(void *));
 	if (!compute_unit->work_groups)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -76,19 +76,19 @@ struct gpu_compute_unit_t *gpu_compute_unit_create()
 }
 
 
-void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
+void evg_compute_unit_free(struct evg_compute_unit_t *compute_unit)
 {
 	struct heap_t *event_queue;
-	struct gpu_uop_t *uop;
+	struct evg_uop_t *uop;
 	int i;
 
 	/* CF Engine - free uops in fetch buffer, instruction buffer, and complete queue */
-	for (i = 0; i < gpu_max_wavefronts_per_compute_unit; i++)
+	for (i = 0; i < evg_max_wavefronts_per_compute_unit; i++)
 	{
-		gpu_uop_free(compute_unit->cf_engine.fetch_buffer[i]);
-		gpu_uop_free(compute_unit->cf_engine.inst_buffer[i]);
+		evg_uop_free(compute_unit->cf_engine.fetch_buffer[i]);
+		evg_uop_free(compute_unit->cf_engine.inst_buffer[i]);
 	}
-	gpu_uop_list_free(compute_unit->cf_engine.complete_queue);
+	evg_uop_list_free(compute_unit->cf_engine.complete_queue);
 
 	/* CF Engine - free structures */
 	free(compute_unit->cf_engine.fetch_buffer);
@@ -101,16 +101,16 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 		heap_extract(event_queue, (void **) &uop);
 		uop->write_subwavefront_count++;
 		if (uop->write_subwavefront_count == uop->subwavefront_count)
-			gpu_uop_free(uop);
+			evg_uop_free(uop);
 	}
 
 	/* ALU Engine - free uops in fetch queue, instruction buffer, execution buffer,
 	 * and event queue. Also free CF instruction currently running. */
-	gpu_uop_list_free(compute_unit->alu_engine.pending_queue);
-	gpu_uop_list_free(compute_unit->alu_engine.finished_queue);
-	gpu_uop_list_free(compute_unit->alu_engine.fetch_queue);
-	gpu_uop_free(compute_unit->alu_engine.inst_buffer);
-	gpu_uop_free(compute_unit->alu_engine.exec_buffer);
+	evg_uop_list_free(compute_unit->alu_engine.pending_queue);
+	evg_uop_list_free(compute_unit->alu_engine.finished_queue);
+	evg_uop_list_free(compute_unit->alu_engine.fetch_queue);
+	evg_uop_free(compute_unit->alu_engine.inst_buffer);
+	evg_uop_free(compute_unit->alu_engine.exec_buffer);
 
 	/* ALU Engine - structures */
 	linked_list_free(compute_unit->alu_engine.pending_queue);
@@ -119,11 +119,11 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 	heap_free(compute_unit->alu_engine.event_queue);
 
 	/* TEX Engine - free uop in fetch queue, instruction buffer, write buffer. */
-	gpu_uop_list_free(compute_unit->tex_engine.pending_queue);
-	gpu_uop_list_free(compute_unit->tex_engine.finished_queue);
-	gpu_uop_list_free(compute_unit->tex_engine.fetch_queue);
-	gpu_uop_free(compute_unit->tex_engine.inst_buffer);
-	gpu_uop_list_free(compute_unit->tex_engine.load_queue);
+	evg_uop_list_free(compute_unit->tex_engine.pending_queue);
+	evg_uop_list_free(compute_unit->tex_engine.finished_queue);
+	evg_uop_list_free(compute_unit->tex_engine.fetch_queue);
+	evg_uop_free(compute_unit->tex_engine.inst_buffer);
+	evg_uop_list_free(compute_unit->tex_engine.load_queue);
 
 	/* TEX Engine - structures */
 	linked_list_free(compute_unit->tex_engine.pending_queue);
@@ -139,32 +139,32 @@ void gpu_compute_unit_free(struct gpu_compute_unit_t *compute_unit)
 }
 
 
-void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, struct evg_work_group_t *work_group)
+void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, struct evg_work_group_t *work_group)
 {
 	struct evg_ndrange_t *ndrange = work_group->ndrange;
 	struct evg_wavefront_t *wavefront;
 	int wavefront_id;
 
 	/* Map work-group */
-	assert(compute_unit->work_group_count < gpu->work_groups_per_compute_unit);
+	assert(compute_unit->work_group_count < evg_gpu->work_groups_per_compute_unit);
 	assert(!work_group->id_in_compute_unit);
-	while (work_group->id_in_compute_unit < gpu->work_groups_per_compute_unit
+	while (work_group->id_in_compute_unit < evg_gpu->work_groups_per_compute_unit
 		&& compute_unit->work_groups[work_group->id_in_compute_unit])
 		work_group->id_in_compute_unit++;
-	assert(work_group->id_in_compute_unit < gpu->work_groups_per_compute_unit);
+	assert(work_group->id_in_compute_unit < evg_gpu->work_groups_per_compute_unit);
 	compute_unit->work_groups[work_group->id_in_compute_unit] = work_group;
 	compute_unit->work_group_count++;
 
 	/* If compute unit reached its maximum load, remove it from 'ready' list.
 	 * Otherwise, move it to the end of the 'ready' list. */
-	assert(DOUBLE_LINKED_LIST_MEMBER(gpu, ready, compute_unit));
-	DOUBLE_LINKED_LIST_REMOVE(gpu, ready, compute_unit);
-	if (compute_unit->work_group_count < gpu->work_groups_per_compute_unit)
-		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, ready, compute_unit);
+	assert(DOUBLE_LINKED_LIST_MEMBER(evg_gpu, ready, compute_unit));
+	DOUBLE_LINKED_LIST_REMOVE(evg_gpu, ready, compute_unit);
+	if (compute_unit->work_group_count < evg_gpu->work_groups_per_compute_unit)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_gpu, ready, compute_unit);
 	
 	/* If this is the first scheduled work-group, insert to 'busy' list. */
-	if (!DOUBLE_LINKED_LIST_MEMBER(gpu, busy, compute_unit))
-		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, busy, compute_unit);
+	if (!DOUBLE_LINKED_LIST_MEMBER(evg_gpu, busy, compute_unit))
+		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_gpu, busy, compute_unit);
 
 	/* Assign wavefronts identifiers in compute unit */
 	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
@@ -184,7 +184,7 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 	}
 
 	/* Debug */
-	gpu_pipeline_debug("cu a=\"map\" "
+	evg_pipeline_debug("cu a=\"map\" "
 		"cu=%d "
 		"wg=%d\n",
 		compute_unit->id,
@@ -195,7 +195,7 @@ void gpu_compute_unit_map_work_group(struct gpu_compute_unit_t *compute_unit, st
 }
 
 
-void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, struct evg_work_group_t *work_group)
+void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, struct evg_work_group_t *work_group)
 {
 	/* Reset mapped work-group */
 	assert(compute_unit->work_group_count > 0);
@@ -204,15 +204,15 @@ void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, 
 	compute_unit->work_group_count--;
 
 	/* If compute unit accepts work-groups again, insert into 'ready' list */
-	if (!DOUBLE_LINKED_LIST_MEMBER(gpu, ready, compute_unit))
-		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, ready, compute_unit);
+	if (!DOUBLE_LINKED_LIST_MEMBER(evg_gpu, ready, compute_unit))
+		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_gpu, ready, compute_unit);
 	
 	/* If compute unit is not busy anymore, remove it from 'busy' list */
-	if (!compute_unit->work_group_count && DOUBLE_LINKED_LIST_MEMBER(gpu, busy, compute_unit))
-		DOUBLE_LINKED_LIST_REMOVE(gpu, busy, compute_unit);
+	if (!compute_unit->work_group_count && DOUBLE_LINKED_LIST_MEMBER(evg_gpu, busy, compute_unit))
+		DOUBLE_LINKED_LIST_REMOVE(evg_gpu, busy, compute_unit);
 
 	/* Debug */
-	gpu_pipeline_debug("cu a=\"unmap\" "
+	evg_pipeline_debug("cu a=\"unmap\" "
 		"cu=%d "
 		"wg=%d\n",
 		compute_unit->id,
@@ -221,12 +221,12 @@ void gpu_compute_unit_unmap_work_group(struct gpu_compute_unit_t *compute_unit, 
 
 
 /* Advance one cycle in the compute unit by running every stage from last to first */
-void gpu_compute_unit_run(struct gpu_compute_unit_t *compute_unit)
+void evg_compute_unit_run(struct evg_compute_unit_t *compute_unit)
 {
 	/* Run Engines */
-	gpu_alu_engine_run(compute_unit);
-	gpu_tex_engine_run(compute_unit);
-	gpu_cf_engine_run(compute_unit);
+	evg_compute_unit_run_alu_engine(compute_unit);
+	evg_compute_unit_run_tex_engine(compute_unit);
+	evg_compute_unit_run_cf_engine(compute_unit);
 
 	/* Stats */
 	compute_unit->cycle++;

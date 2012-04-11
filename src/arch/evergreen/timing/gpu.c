@@ -32,7 +32,7 @@
  * Global variables
  */
 
-char *gpu_config_help =
+char *evg_config_help =
 	"The GPU configuration file is a plain text file in the IniFile format, defining\n"
 	"the parameters of the GPU model for a detailed (architectural) GPU configuration.\n"
 	"This file is passed to Multi2Sim with the '--gpu-config <file>' option, and\n"
@@ -115,37 +115,37 @@ char *gpu_config_help =
 	"      maximum number of load uops in flight.\n"
 	"\n";
 
-char *gpu_config_file_name = "";
-char *gpu_report_file_name = "";
+char *evg_config_file_name = "";
+char *evg_report_file_name = "";
 
-int gpu_pipeline_debug_category;
+int evg_pipeline_debug_category;
 
 /* Default parameters based on the AMD Radeon HD 5870 */
-int gpu_num_compute_units = 20;
-int gpu_num_stream_cores = 16;
-int gpu_num_registers = 16384;
-int gpu_register_alloc_size = 32;
+int evg_num_compute_units = 20;
+int evg_num_stream_cores = 16;
+int evg_num_registers = 16384;
+int evg_register_alloc_size = 32;
 
-struct string_map_t gpu_register_alloc_granularity_map =
+struct string_map_t evg_register_alloc_granularity_map =
 {
 	2, {
-		{ "Wavefront", gpu_register_alloc_wavefront },
-		{ "WorkGroup", gpu_register_alloc_work_group }
+		{ "Wavefront", evg_register_alloc_wavefront },
+		{ "WorkGroup", evg_register_alloc_work_group }
 	}
 };
-enum gpu_register_alloc_granularity_t gpu_register_alloc_granularity;
+enum evg_register_alloc_granularity_t evg_register_alloc_granularity;
 
-int gpu_max_work_groups_per_compute_unit = 8;
-int gpu_max_wavefronts_per_compute_unit = 32;
+int evg_max_work_groups_per_compute_unit = 8;
+int evg_max_wavefronts_per_compute_unit = 32;
 
 /* Local memory parameters */
-int gpu_local_mem_size = 32768;  /* 32 KB */
-int gpu_local_mem_alloc_size = 1024;  /* 1 KB */
-int gpu_local_mem_latency = 2;
-int gpu_local_mem_block_size = 256;
-int gpu_local_mem_num_ports = 2;
+int evg_local_mem_size = 32768;  /* 32 KB */
+int evg_local_mem_alloc_size = 1024;  /* 1 KB */
+int evg_local_mem_latency = 2;
+int evg_local_mem_block_size = 256;
+int evg_local_mem_num_ports = 2;
 
-struct gpu_t *gpu;
+struct evg_gpu_t *evg_gpu;
 
 
 
@@ -156,26 +156,26 @@ struct gpu_t *gpu;
 
 static void gpu_init_device()
 {
-	struct gpu_compute_unit_t *compute_unit;
+	struct evg_compute_unit_t *compute_unit;
 	int compute_unit_id;
 
 	/* Create device */
-	gpu = calloc(1, sizeof(struct gpu_t));
-	if (!gpu)
+	evg_gpu = calloc(1, sizeof(struct evg_gpu_t));
+	if (!evg_gpu)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Create compute units */
-	gpu->compute_units = calloc(gpu_num_compute_units, sizeof(void *));
-	if (!gpu->compute_units)
+	evg_gpu->compute_units = calloc(evg_num_compute_units, sizeof(void *));
+	if (!evg_gpu->compute_units)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize compute units */
-	FOREACH_COMPUTE_UNIT(compute_unit_id)
+	EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		gpu->compute_units[compute_unit_id] = gpu_compute_unit_create();
-		compute_unit = gpu->compute_units[compute_unit_id];
+		evg_gpu->compute_units[compute_unit_id] = evg_compute_unit_create();
+		compute_unit = evg_gpu->compute_units[compute_unit_id];
 		compute_unit->id = compute_unit_id;
-		DOUBLE_LINKED_LIST_INSERT_TAIL(gpu, ready, compute_unit);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_gpu, ready, compute_unit);
 	}
 }
 
@@ -192,118 +192,118 @@ void gpu_config_read(void)
 	char *gpu_sched_policy_str;
 
 	/* Load GPU configuration file */
-	gpu_config = config_create(gpu_config_file_name);
-	if (*gpu_config_file_name && !config_load(gpu_config))
-		fatal("%s: cannot load GPU configuration file", gpu_config_file_name);
+	gpu_config = config_create(evg_config_file_name);
+	if (*evg_config_file_name && !config_load(gpu_config))
+		fatal("%s: cannot load GPU configuration file", evg_config_file_name);
 	
 	/* Device */
 	section = "Device";
-	gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", gpu_num_compute_units);
-	gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", gpu_num_stream_cores);
-	gpu_num_registers = config_read_int(gpu_config, section, "NumRegisters", gpu_num_registers);
-	gpu_register_alloc_size = config_read_int(gpu_config, section, "RegisterAllocSize", gpu_register_alloc_size);
+	evg_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", evg_num_compute_units);
+	evg_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", evg_num_stream_cores);
+	evg_num_registers = config_read_int(gpu_config, section, "NumRegisters", evg_num_registers);
+	evg_register_alloc_size = config_read_int(gpu_config, section, "RegisterAllocSize", evg_register_alloc_size);
 	gpu_register_alloc_granularity_str = config_read_string(gpu_config, section, "RegisterAllocGranularity", "WorkGroup");
 	evg_emu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", evg_emu_wavefront_size);
-	gpu_max_work_groups_per_compute_unit = config_read_int(gpu_config, section, "MaxWorkGroupsPerComputeUnit",
-		gpu_max_work_groups_per_compute_unit);
-	gpu_max_wavefronts_per_compute_unit = config_read_int(gpu_config, section, "MaxWavefrontsPerComputeUnit",
-		gpu_max_wavefronts_per_compute_unit);
+	evg_max_work_groups_per_compute_unit = config_read_int(gpu_config, section, "MaxWorkGroupsPerComputeUnit",
+		evg_max_work_groups_per_compute_unit);
+	evg_max_wavefronts_per_compute_unit = config_read_int(gpu_config, section, "MaxWavefrontsPerComputeUnit",
+		evg_max_wavefronts_per_compute_unit);
 	gpu_sched_policy_str = config_read_string(gpu_config, section, "SchedulingPolicy", "RoundRobin");
-	if (gpu_num_compute_units < 1)
-		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", gpu_config_file_name, err_note);
-	if (gpu_num_stream_cores < 1)
-		fatal("%s: invalid value for 'NumStreamCores'.\n%s", gpu_config_file_name, err_note);
-	if (gpu_register_alloc_size < 1)
-		fatal("%s: invalid value for 'RegisterAllocSize'.\n%s", gpu_config_file_name, err_note);
-	if (gpu_num_registers < 1)
-		fatal("%s: invalid value for 'NumRegisters'.\n%s", gpu_config_file_name, err_note);
-	if (gpu_num_registers % gpu_register_alloc_size)
-		fatal("%s: 'NumRegisters' must be a multiple of 'RegisterAllocSize'.\n%s", gpu_config_file_name, err_note);
+	if (evg_num_compute_units < 1)
+		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", evg_config_file_name, err_note);
+	if (evg_num_stream_cores < 1)
+		fatal("%s: invalid value for 'NumStreamCores'.\n%s", evg_config_file_name, err_note);
+	if (evg_register_alloc_size < 1)
+		fatal("%s: invalid value for 'RegisterAllocSize'.\n%s", evg_config_file_name, err_note);
+	if (evg_num_registers < 1)
+		fatal("%s: invalid value for 'NumRegisters'.\n%s", evg_config_file_name, err_note);
+	if (evg_num_registers % evg_register_alloc_size)
+		fatal("%s: 'NumRegisters' must be a multiple of 'RegisterAllocSize'.\n%s", evg_config_file_name, err_note);
 
-	gpu_register_alloc_granularity = map_string_case(&gpu_register_alloc_granularity_map, gpu_register_alloc_granularity_str);
-	if (gpu_register_alloc_granularity == gpu_register_alloc_invalid)
-		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s", gpu_config_file_name, err_note);
+	evg_register_alloc_granularity = map_string_case(&evg_register_alloc_granularity_map, gpu_register_alloc_granularity_str);
+	if (evg_register_alloc_granularity == evg_register_alloc_invalid)
+		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s", evg_config_file_name, err_note);
 
-	gpu_sched_policy = map_string_case(&gpu_sched_policy_map, gpu_sched_policy_str);
-	if (gpu_sched_policy == gpu_sched_invalid)
-		fatal("%s: invalid value for 'SchedulingPolicy'.\n%s", gpu_config_file_name, err_note);
+	evg_sched_policy = map_string_case(&evg_sched_policy_map, gpu_sched_policy_str);
+	if (evg_sched_policy == evg_sched_invalid)
+		fatal("%s: invalid value for 'SchedulingPolicy'.\n%s", evg_config_file_name, err_note);
 
 	if (evg_emu_wavefront_size < 1)
-		fatal("%s: invalid value for 'WavefrontSize'.\n%s", gpu_config_file_name, err_note);
-	if (gpu_max_work_groups_per_compute_unit < 1)
-		fatal("%s: invalid value for 'MaxWorkGroupsPerComputeUnit'.\n%s", gpu_config_file_name, err_note);
-	if (gpu_max_wavefronts_per_compute_unit < 1)
-		fatal("%s: invalid value for 'MaxWavefrontsPerComputeUnit'.\n%s", gpu_config_file_name, err_note);
+		fatal("%s: invalid value for 'WavefrontSize'.\n%s", evg_config_file_name, err_note);
+	if (evg_max_work_groups_per_compute_unit < 1)
+		fatal("%s: invalid value for 'MaxWorkGroupsPerComputeUnit'.\n%s", evg_config_file_name, err_note);
+	if (evg_max_wavefronts_per_compute_unit < 1)
+		fatal("%s: invalid value for 'MaxWavefrontsPerComputeUnit'.\n%s", evg_config_file_name, err_note);
 	
 	/* Local memory */
 	section = "LocalMemory";
-	gpu_local_mem_size = config_read_int(gpu_config, section, "Size", gpu_local_mem_size);
-	gpu_local_mem_alloc_size = config_read_int(gpu_config, section, "AllocSize", gpu_local_mem_alloc_size);
-	gpu_local_mem_block_size = config_read_int(gpu_config, section, "BlockSize", gpu_local_mem_block_size);
-	gpu_local_mem_latency = config_read_int(gpu_config, section, "Latency", gpu_local_mem_latency);
-	gpu_local_mem_num_ports = config_read_int(gpu_config, section, "Ports", gpu_local_mem_num_ports);
-	if ((gpu_local_mem_size & (gpu_local_mem_size - 1)) || gpu_local_mem_size < 4)
+	evg_local_mem_size = config_read_int(gpu_config, section, "Size", evg_local_mem_size);
+	evg_local_mem_alloc_size = config_read_int(gpu_config, section, "AllocSize", evg_local_mem_alloc_size);
+	evg_local_mem_block_size = config_read_int(gpu_config, section, "BlockSize", evg_local_mem_block_size);
+	evg_local_mem_latency = config_read_int(gpu_config, section, "Latency", evg_local_mem_latency);
+	evg_local_mem_num_ports = config_read_int(gpu_config, section, "Ports", evg_local_mem_num_ports);
+	if ((evg_local_mem_size & (evg_local_mem_size - 1)) || evg_local_mem_size < 4)
 		fatal("%s: %s->Size must be a power of two and at least 4.\n%s",
-			gpu_config_file_name, section, err_note);
-	if (gpu_local_mem_alloc_size < 1)
-		fatal("%s: invalid value for %s->Allocsize.\n%s", gpu_config_file_name, section, err_note);
-	if (gpu_local_mem_size % gpu_local_mem_alloc_size)
-		fatal("%s: %s->Size must be a multiple of %s->AllocSize.\n%s", gpu_config_file_name,
+			evg_config_file_name, section, err_note);
+	if (evg_local_mem_alloc_size < 1)
+		fatal("%s: invalid value for %s->Allocsize.\n%s", evg_config_file_name, section, err_note);
+	if (evg_local_mem_size % evg_local_mem_alloc_size)
+		fatal("%s: %s->Size must be a multiple of %s->AllocSize.\n%s", evg_config_file_name,
 			section, section, err_note);
-	if ((gpu_local_mem_block_size & (gpu_local_mem_block_size - 1)) || gpu_local_mem_block_size < 4)
+	if ((evg_local_mem_block_size & (evg_local_mem_block_size - 1)) || evg_local_mem_block_size < 4)
 		fatal("%s: %s->BlockSize must be a power of two and at least 4.\n%s",
-			gpu_config_file_name, section, err_note);
-	if (gpu_local_mem_alloc_size % gpu_local_mem_block_size)
-		fatal("%s: %s->AllocSize must be a multiple of %s->BlockSize.\n%s", gpu_config_file_name,
+			evg_config_file_name, section, err_note);
+	if (evg_local_mem_alloc_size % evg_local_mem_block_size)
+		fatal("%s: %s->AllocSize must be a multiple of %s->BlockSize.\n%s", evg_config_file_name,
 			section, section, err_note);
-	if (gpu_local_mem_latency < 1)
-		fatal("%s: invalid value for %s->Latency.\n%s", gpu_config_file_name, section, err_note);
-	if (gpu_local_mem_size < gpu_local_mem_block_size)
-		fatal("%s: %s->Size cannot be smaller than %s->BlockSize * %s->Banks.\n%s", gpu_config_file_name,
+	if (evg_local_mem_latency < 1)
+		fatal("%s: invalid value for %s->Latency.\n%s", evg_config_file_name, section, err_note);
+	if (evg_local_mem_size < evg_local_mem_block_size)
+		fatal("%s: %s->Size cannot be smaller than %s->BlockSize * %s->Banks.\n%s", evg_config_file_name,
 			section, section, section, err_note);
 	
 	/* CF Engine */
 	section = "CFEngine";
-	gpu_cf_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
-		gpu_cf_engine_inst_mem_latency);
-	if (gpu_cf_engine_inst_mem_latency < 1)
-		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
+	evg_cf_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
+		evg_cf_engine_inst_mem_latency);
+	if (evg_cf_engine_inst_mem_latency < 1)
+		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", evg_config_file_name, section, err_note);
 	
 	/* ALU Engine */
 	section = "ALUEngine";
-	gpu_alu_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
-		gpu_alu_engine_inst_mem_latency);
-	gpu_alu_engine_fetch_queue_size = config_read_int(gpu_config, section, "FetchQueueSize",
-		gpu_alu_engine_fetch_queue_size);
-	gpu_alu_engine_pe_latency = config_read_int(gpu_config, section, "ProcessingElementLatency",
-		gpu_alu_engine_pe_latency);
-	if (gpu_alu_engine_inst_mem_latency < 1)
-		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
-	if (gpu_alu_engine_fetch_queue_size < 56)
+	evg_alu_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
+		evg_alu_engine_inst_mem_latency);
+	evg_alu_engine_fetch_queue_size = config_read_int(gpu_config, section, "FetchQueueSize",
+		evg_alu_engine_fetch_queue_size);
+	evg_alu_engine_pe_latency = config_read_int(gpu_config, section, "ProcessingElementLatency",
+		evg_alu_engine_pe_latency);
+	if (evg_alu_engine_inst_mem_latency < 1)
+		fatal("%s: invalid value for %s->InstructionMemoryLatency.\n%s", evg_config_file_name, section, err_note);
+	if (evg_alu_engine_fetch_queue_size < 56)
 		fatal("%s: the minimum value for %s->FetchQueueSize is 56.\n"
 			"This is the maximum size of one VLIW bundle, including 5 ALU instructions\n"
 			"(2 words each), and 4 literal constants (1 word each).\n%s",
-			gpu_config_file_name, section, err_note);
-	if (gpu_alu_engine_pe_latency < 1)
-		fatal("%s: invalud value for %s->ProcessingElementLatency.\n%s", gpu_config_file_name, section, err_note);
+			evg_config_file_name, section, err_note);
+	if (evg_alu_engine_pe_latency < 1)
+		fatal("%s: invalud value for %s->ProcessingElementLatency.\n%s", evg_config_file_name, section, err_note);
 
 	/* TEX Engine */
 	section = "TEXEngine";
-	gpu_tex_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
-		gpu_tex_engine_inst_mem_latency);
-	gpu_tex_engine_fetch_queue_size = config_read_int(gpu_config, section, "FetchQueueSize",
-		gpu_tex_engine_fetch_queue_size);
-	gpu_tex_engine_load_queue_size = config_read_int(gpu_config, section, "LoadQueueSize",
-		gpu_tex_engine_load_queue_size);
-	if (gpu_tex_engine_inst_mem_latency < 1)
-		fatal("%s: invalid value for %s.InstructionMemoryLatency.\n%s", gpu_config_file_name, section, err_note);
-	if (gpu_tex_engine_fetch_queue_size < 16)
+	evg_tex_engine_inst_mem_latency = config_read_int(gpu_config, section, "InstructionMemoryLatency",
+		evg_tex_engine_inst_mem_latency);
+	evg_tex_engine_fetch_queue_size = config_read_int(gpu_config, section, "FetchQueueSize",
+		evg_tex_engine_fetch_queue_size);
+	evg_tex_engine_load_queue_size = config_read_int(gpu_config, section, "LoadQueueSize",
+		evg_tex_engine_load_queue_size);
+	if (evg_tex_engine_inst_mem_latency < 1)
+		fatal("%s: invalid value for %s.InstructionMemoryLatency.\n%s", evg_config_file_name, section, err_note);
+	if (evg_tex_engine_fetch_queue_size < 16)
 		fatal("%s: the minimum value for %s.FetchQueueSize is 16.\n"
 			"This size corresponds to the 4 words comprising a TEX Evergreen instruction.\n%s",
-			gpu_config_file_name, section, err_note);
-	if (gpu_tex_engine_load_queue_size < 1)
+			evg_config_file_name, section, err_note);
+	if (evg_tex_engine_load_queue_size < 1)
 		fatal("%s: the minimum value for %s.LoadQueueSize is 1.\n%s",
-			gpu_config_file_name, section, err_note);
+			evg_config_file_name, section, err_note);
 	
 	/* Close GPU configuration file */
 	config_check(gpu_config);
@@ -315,43 +315,43 @@ void gpu_config_dump(FILE *f)
 {
 	/* Device configuration */
 	fprintf(f, "[ Config.Device ]\n");
-	fprintf(f, "NumComputeUnits = %d\n", gpu_num_compute_units);
-	fprintf(f, "NumStreamCores = %d\n", gpu_num_stream_cores);
-	fprintf(f, "NumRegisters = %d\n", gpu_num_registers);
-	fprintf(f, "RegisterAllocSize = %d\n", gpu_register_alloc_size);
-	fprintf(f, "RegisterAllocGranularity = %s\n", map_value(&gpu_register_alloc_granularity_map, gpu_register_alloc_granularity));
+	fprintf(f, "NumComputeUnits = %d\n", evg_num_compute_units);
+	fprintf(f, "NumStreamCores = %d\n", evg_num_stream_cores);
+	fprintf(f, "NumRegisters = %d\n", evg_num_registers);
+	fprintf(f, "RegisterAllocSize = %d\n", evg_register_alloc_size);
+	fprintf(f, "RegisterAllocGranularity = %s\n", map_value(&evg_register_alloc_granularity_map, evg_register_alloc_granularity));
 	fprintf(f, "WavefrontSize = %d\n", evg_emu_wavefront_size);
-	fprintf(f, "MaxWorkGroupsPerComputeUnit = %d\n", gpu_max_work_groups_per_compute_unit);
-	fprintf(f, "MaxWavefrontsPerComputeUnit = %d\n", gpu_max_wavefronts_per_compute_unit);
-	fprintf(f, "SchedulingPolicy = %s\n", map_value(&gpu_sched_policy_map, gpu_sched_policy));
+	fprintf(f, "MaxWorkGroupsPerComputeUnit = %d\n", evg_max_work_groups_per_compute_unit);
+	fprintf(f, "MaxWavefrontsPerComputeUnit = %d\n", evg_max_wavefronts_per_compute_unit);
+	fprintf(f, "SchedulingPolicy = %s\n", map_value(&evg_sched_policy_map, evg_sched_policy));
 	fprintf(f, "\n");
 
 	/* Local Memory */
 	fprintf(f, "[ Config.LocalMemory ]\n");
-	fprintf(f, "Size = %d\n", gpu_local_mem_size);
-	fprintf(f, "AllocSize = %d\n", gpu_local_mem_alloc_size);
-	fprintf(f, "BlockSize = %d\n", gpu_local_mem_block_size);
-	fprintf(f, "Latency = %d\n", gpu_local_mem_latency);
-	fprintf(f, "Ports = %d\n", gpu_local_mem_num_ports);
+	fprintf(f, "Size = %d\n", evg_local_mem_size);
+	fprintf(f, "AllocSize = %d\n", evg_local_mem_alloc_size);
+	fprintf(f, "BlockSize = %d\n", evg_local_mem_block_size);
+	fprintf(f, "Latency = %d\n", evg_local_mem_latency);
+	fprintf(f, "Ports = %d\n", evg_local_mem_num_ports);
 	fprintf(f, "\n");
 
 	/* CF Engine */
 	fprintf(f, "[ Config.CFEngine ]\n");
-	fprintf(f, "InstructionMemoryLatency = %d\n", gpu_cf_engine_inst_mem_latency);
+	fprintf(f, "InstructionMemoryLatency = %d\n", evg_cf_engine_inst_mem_latency);
 	fprintf(f, "\n");
 
 	/* ALU Engine */
 	fprintf(f, "[ Config.ALUEngine ]\n");
-	fprintf(f, "InstructionMemoryLatency = %d\n", gpu_alu_engine_inst_mem_latency);
-	fprintf(f, "FetchQueueSize = %d\n", gpu_alu_engine_fetch_queue_size);
-	fprintf(f, "ProcessingElementLatency = %d\n", gpu_alu_engine_pe_latency);
+	fprintf(f, "InstructionMemoryLatency = %d\n", evg_alu_engine_inst_mem_latency);
+	fprintf(f, "FetchQueueSize = %d\n", evg_alu_engine_fetch_queue_size);
+	fprintf(f, "ProcessingElementLatency = %d\n", evg_alu_engine_pe_latency);
 	fprintf(f, "\n");
 
 	/* TEX Engine */
 	fprintf(f, "[ Config.TEXEngine ]\n");
-	fprintf(f, "InstructionMemoryLatency = %d\n", gpu_tex_engine_inst_mem_latency);
-	fprintf(f, "FetchQueueSize = %d\n", gpu_tex_engine_fetch_queue_size);
-	fprintf(f, "LoadQueueSize = %d\n", gpu_tex_engine_load_queue_size);
+	fprintf(f, "InstructionMemoryLatency = %d\n", evg_tex_engine_inst_mem_latency);
+	fprintf(f, "FetchQueueSize = %d\n", evg_tex_engine_fetch_queue_size);
+	fprintf(f, "LoadQueueSize = %d\n", evg_tex_engine_load_queue_size);
 	fprintf(f, "\n");
 	
 	/* End of configuration */
@@ -359,12 +359,12 @@ void gpu_config_dump(FILE *f)
 }
 
 
-void gpu_init(void)
+void evg_gpu_init(void)
 {
 	/* Try to open report file */
-	if (gpu_report_file_name[0] && !can_open_write(gpu_report_file_name))
+	if (evg_report_file_name[0] && !can_open_write(evg_report_file_name))
 		fatal("%s: cannot open GPU pipeline report file",
-			gpu_report_file_name);
+			evg_report_file_name);
 
 	/* Read configuration file */
 	gpu_config_read();
@@ -373,43 +373,43 @@ void gpu_init(void)
 	gpu_init_device();
 
 	/* Uops */
-	gpu_uop_init();
+	evg_uop_init();
 	
 	/* GPU-REL: read stack faults file */
-	gpu_faults_init();
+	evg_faults_init();
 }
 
 
-void gpu_done()
+void evg_gpu_done()
 {
-	struct gpu_compute_unit_t *compute_unit;
+	struct evg_compute_unit_t *compute_unit;
 	int compute_unit_id;
 
 	/* GPU pipeline report */
-	gpu_dump_report();
+	evg_gpu_dump_report();
 
 	/* Free stream cores, compute units, and device */
-	FOREACH_COMPUTE_UNIT(compute_unit_id)
+	EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = gpu->compute_units[compute_unit_id];
-		gpu_compute_unit_free(compute_unit);
+		compute_unit = evg_gpu->compute_units[compute_unit_id];
+		evg_compute_unit_free(compute_unit);
 	}
-	free(gpu->compute_units);
+	free(evg_gpu->compute_units);
 
 	/* Free GPU */
-	free(gpu);
+	free(evg_gpu);
 	
 	/* Uops */
-	gpu_uop_done();
+	evg_uop_done();
 
 	/* GPU-REL: read stack faults file */
-	gpu_faults_done();
+	evg_faults_done();
 }
 
 
-void gpu_dump_report(void)
+void evg_gpu_dump_report(void)
 {
-	struct gpu_compute_unit_t *compute_unit;
+	struct evg_compute_unit_t *compute_unit;
 	struct mod_t *local_mod;
 	int compute_unit_id;
 
@@ -426,7 +426,7 @@ void gpu_dump_report(void)
 	char vliw_occupancy[MAX_STRING_SIZE];
 
 	/* Open file */
-	f = open_write(gpu_report_file_name);
+	f = open_write(evg_report_file_name);
 	if (!f)
 		return;
 	
@@ -436,18 +436,18 @@ void gpu_dump_report(void)
 	
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = gpu->cycle ? (double) evg_emu->inst_count / gpu->cycle : 0.0;
+	inst_per_cycle = evg_gpu->cycle ? (double) evg_emu->inst_count / evg_gpu->cycle : 0.0;
 	fprintf(f, "[ Device ]\n\n");
 	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);
 	fprintf(f, "Instructions = %lld\n", evg_emu->inst_count);
-	fprintf(f, "Cycles = %lld\n", gpu->cycle);
+	fprintf(f, "Cycles = %lld\n", evg_gpu->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
 
 	/* Report for compute units */
-	FOREACH_COMPUTE_UNIT(compute_unit_id)
+	EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = gpu->compute_units[compute_unit_id];
+		compute_unit = evg_gpu->compute_units[compute_unit_id];
 		local_mod = compute_unit->local_memory;
 
 		inst_per_cycle = compute_unit->cycle ? (double) compute_unit->inst_count
@@ -511,33 +511,33 @@ void gpu_dump_report(void)
 
 void gpu_map_ndrange(struct evg_ndrange_t *ndrange)
 {
-	struct gpu_compute_unit_t *compute_unit;
+	struct evg_compute_unit_t *compute_unit;
 	int compute_unit_id;
 
 	/* Assign current ND-Range */
-	assert(!gpu->ndrange);
-	gpu->ndrange = ndrange;
+	assert(!evg_gpu->ndrange);
+	evg_gpu->ndrange = ndrange;
 
 	/* Check that at least one work-group can be allocated per compute unit */
-	gpu->work_groups_per_compute_unit = gpu_calc_get_work_groups_per_compute_unit(
+	evg_gpu->work_groups_per_compute_unit = evg_calc_get_work_groups_per_compute_unit(
 		ndrange->kernel->local_size, ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used,
 		ndrange->local_mem_top);
-	if (!gpu->work_groups_per_compute_unit)
+	if (!evg_gpu->work_groups_per_compute_unit)
 		fatal("work-group resources cannot be allocated to a compute unit.\n"
 			"\tA compute unit in the GPU has a limit in number of wavefronts, number\n"
 			"\tof registers, and amount of local memory. If the work-group size\n"
 			"\texceeds any of these limits, the ND-Range cannot be executed.\n");
 
 	/* Derived from this, calculate limit of wavefronts and work-items per compute unit. */
-	gpu->wavefronts_per_compute_unit = gpu->work_groups_per_compute_unit * ndrange->wavefronts_per_work_group;
-	gpu->work_items_per_compute_unit = gpu->wavefronts_per_compute_unit * evg_emu_wavefront_size;
-	assert(gpu->work_groups_per_compute_unit <= gpu_max_work_groups_per_compute_unit);
-	assert(gpu->wavefronts_per_compute_unit <= gpu_max_wavefronts_per_compute_unit);
+	evg_gpu->wavefronts_per_compute_unit = evg_gpu->work_groups_per_compute_unit * ndrange->wavefronts_per_work_group;
+	evg_gpu->work_items_per_compute_unit = evg_gpu->wavefronts_per_compute_unit * evg_emu_wavefront_size;
+	assert(evg_gpu->work_groups_per_compute_unit <= evg_max_work_groups_per_compute_unit);
+	assert(evg_gpu->wavefronts_per_compute_unit <= evg_max_wavefronts_per_compute_unit);
 
 	/* Reset architectural state */
-	FOREACH_COMPUTE_UNIT(compute_unit_id)
+	EVG_FOREACH_COMPUTE_UNIT(compute_unit_id)
 	{
-		compute_unit = gpu->compute_units[compute_unit_id];
+		compute_unit = evg_gpu->compute_units[compute_unit_id];
 		compute_unit->cf_engine.decode_index = 0;
 		compute_unit->cf_engine.execute_index = 0;
 	}
@@ -547,17 +547,17 @@ void gpu_map_ndrange(struct evg_ndrange_t *ndrange)
 void gpu_unmap_ndrange(void)
 {
 	/* Dump stats */
-	evg_ndrange_dump(gpu->ndrange, evg_emu_report_file);
+	evg_ndrange_dump(evg_gpu->ndrange, evg_emu_report_file);
 
 	/* Unmap */
-	gpu->ndrange = NULL;
+	evg_gpu->ndrange = NULL;
 }
 
 
 void gpu_pipeline_debug_disasm(struct evg_ndrange_t *ndrange)
 {
 	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
-	FILE *f = debug_file(gpu_pipeline_debug_category);
+	FILE *f = debug_file(evg_pipeline_debug_category);
 
 	void *text_buffer_ptr;
 
@@ -656,7 +656,7 @@ void gpu_pipeline_debug_ndrange(struct evg_ndrange_t *ndrange)
 	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
 	{
 		work_group = ndrange->work_groups[work_group_id];
-		gpu_pipeline_debug("new item=\"wg\" "
+		evg_pipeline_debug("new item=\"wg\" "
 			"id=%d "
 			"wi_first=%d "
 			"wi_count=%d "
@@ -673,7 +673,7 @@ void gpu_pipeline_debug_ndrange(struct evg_ndrange_t *ndrange)
 	EVG_FOREACH_WAVEFRONT_IN_NDRANGE(ndrange, wavefront_id)
 	{
 		wavefront = ndrange->wavefronts[wavefront_id];
-		gpu_pipeline_debug("new item=\"wf\" "
+		evg_pipeline_debug("new item=\"wf\" "
 			"id=%d "
 			"wg_id=%d "
 			"wi_first=%d "
@@ -691,7 +691,7 @@ void gpu_pipeline_debug_intro(struct evg_ndrange_t *ndrange)
 	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
 
 	/* Initial */
-	gpu_pipeline_debug("init "
+	evg_pipeline_debug("init "
 		"global_size=%d "
 		"local_size=%d "
 		"group_count=%d "
@@ -704,18 +704,18 @@ void gpu_pipeline_debug_intro(struct evg_ndrange_t *ndrange)
 		kernel->group_count,
 		evg_emu_wavefront_size,
 		ndrange->wavefronts_per_work_group,
-		gpu_num_compute_units);
+		evg_num_compute_units);
 	
 }
 
 
-void gpu_run(struct evg_ndrange_t *ndrange)
+void evg_gpu_run(struct evg_ndrange_t *ndrange)
 {
-	struct gpu_compute_unit_t *compute_unit;
-	struct gpu_compute_unit_t *compute_unit_next;
+	struct evg_compute_unit_t *compute_unit;
+	struct evg_compute_unit_t *compute_unit_next;
 
 	/* Debug */
-	if (debug_status(gpu_pipeline_debug_category))
+	if (debug_status(evg_pipeline_debug_category))
 	{
 		gpu_pipeline_debug_intro(ndrange);
 		gpu_pipeline_debug_ndrange(ndrange);
@@ -724,27 +724,27 @@ void gpu_run(struct evg_ndrange_t *ndrange)
 
 	/* Initialize */
 	gpu_map_ndrange(ndrange);
-	gpu_calc_plot();
+	evg_calc_plot();
 	evg_emu_timer_start();
 
 	/* Execution loop */
 	for (;;)
 	{
 		/* Next cycle */
-		gpu->cycle++;
-		gpu_pipeline_debug("clk c=%lld\n", gpu->cycle);
+		evg_gpu->cycle++;
+		evg_pipeline_debug("clk c=%lld\n", evg_gpu->cycle);
 
 		/* Allocate work-groups to compute units */
-		while (gpu->ready_list_head && ndrange->pending_list_head)
-			gpu_compute_unit_map_work_group(gpu->ready_list_head,
+		while (evg_gpu->ready_list_head && ndrange->pending_list_head)
+			evg_compute_unit_map_work_group(evg_gpu->ready_list_head,
 				ndrange->pending_list_head);
 		
 		/* If no compute unit is busy, done */
-		if (!gpu->busy_list_head)
+		if (!evg_gpu->busy_list_head)
 			break;
 		
 		/* Stop if maximum number of GPU cycles exceeded */
-		if (evg_emu_max_cycles && gpu->cycle >= evg_emu_max_cycles)
+		if (evg_emu_max_cycles && evg_gpu->cycle >= evg_emu_max_cycles)
 			x86_emu_finish = x86_emu_finish_max_gpu_cycles;
 
 		/* Stop if maximum number of GPU instructions exceeded */
@@ -756,19 +756,19 @@ void gpu_run(struct evg_ndrange_t *ndrange)
 			break;
 
 		/* Advance one cycle on each busy compute unit */
-		for (compute_unit = gpu->busy_list_head; compute_unit;
+		for (compute_unit = evg_gpu->busy_list_head; compute_unit;
 			compute_unit = compute_unit_next)
 		{
 			/* Store next busy compute unit, since this can change
-			 * during 'gpu_compute_unit_run' */
+			 * during 'evg_compute_unit_run' */
 			compute_unit_next = compute_unit->busy_list_next;
 
 			/* Run one cycle */
-			gpu_compute_unit_run(compute_unit);
+			evg_compute_unit_run(compute_unit);
 		}
 
 		/* GPU-REL: insert stack faults */
-		gpu_faults_insert();
+		evg_faults_insert();
 		
 		/* Event-driven module */
 		esim_process_events();

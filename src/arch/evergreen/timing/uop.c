@@ -26,7 +26,7 @@
  * Public variables
  */
 
-int gpu_stack_debug_category;
+int evg_stack_debug_category;
 
 
 
@@ -39,28 +39,28 @@ static uint64_t gpu_uop_id_counter = 0;
 static struct repos_t *gpu_uop_repos;
 
 
-static void gpu_uop_add_src_idep(struct gpu_uop_t *uop, struct evg_inst_t *inst, int src_idx)
+static void gpu_uop_add_src_idep(struct evg_uop_t *uop, struct evg_inst_t *inst, int src_idx)
 {
 	int sel, rel, chan, neg, abs;
 
-	assert(uop->idep_count < GPU_UOP_MAX_IDEP);
+	assert(uop->idep_count < EVG_UOP_MAX_IDEP);
 	evg_inst_get_op_src(inst, src_idx, &sel, &rel, &chan, &neg, &abs);
 
 	/* sel = 0..127: Value in GPR */
 	if (IN_RANGE(sel, 0, 127))
-		uop->idep[uop->idep_count++] = GPU_UOP_DEP_REG(sel);
+		uop->idep[uop->idep_count++] = EVG_UOP_DEP_REG(sel);
 
 	/* sel = ALU_SRC_PV */
 	else if (sel == 254)
-		uop->idep[uop->idep_count++] = GPU_UOP_DEP_PV;
+		uop->idep[uop->idep_count++] = EVG_UOP_DEP_PV;
 
 	/* sel = ALU_SRC_PS */
 	else if (sel == 255)
-		uop->idep[uop->idep_count++] = GPU_UOP_DEP_PS;
+		uop->idep[uop->idep_count++] = EVG_UOP_DEP_PS;
 
 	/* sel = 219..222: QA, QA.pop, QB, QB.pop */
 	else if (IN_RANGE(sel, 219, 222))
-		uop->idep[uop->idep_count++] = GPU_UOP_DEP_LDS;
+		uop->idep[uop->idep_count++] = EVG_UOP_DEP_LDS;
 }
 
 
@@ -70,26 +70,26 @@ static void gpu_uop_add_src_idep(struct gpu_uop_t *uop, struct evg_inst_t *inst,
  * Public Functions
  */
 
-void gpu_uop_init()
+void evg_uop_init()
 {
 	/* GPU uop repository.
-	 * The size assigned for each 'gpu_uop_t' is equals to the baseline structure size plus the
-	 * size of a 'gpu_work_item_uop_t' element for each work-item in the wavefront. */
-	gpu_uop_repos = repos_create(sizeof(struct gpu_uop_t) + sizeof(struct gpu_work_item_uop_t)
+	 * The size assigned for each 'evg_uop_t' is equals to the baseline structure size plus the
+	 * size of a 'evg_work_item_uop_t' element for each work-item in the wavefront. */
+	gpu_uop_repos = repos_create(sizeof(struct evg_uop_t) + sizeof(struct evg_work_item_uop_t)
 		* evg_emu_wavefront_size, "gpu_uop_repos");
 	
 }
 
 
-void gpu_uop_done()
+void evg_uop_done()
 {
 	repos_free(gpu_uop_repos);
 }
 
 
-struct gpu_uop_t *gpu_uop_create()
+struct evg_uop_t *evg_uop_create()
 {
-	struct gpu_uop_t *uop;
+	struct evg_uop_t *uop;
 
 	uop = repos_create_object(gpu_uop_repos);
 	uop->id = gpu_uop_id_counter++;
@@ -97,14 +97,14 @@ struct gpu_uop_t *gpu_uop_create()
 }
 
 
-struct gpu_uop_t *gpu_uop_create_from_alu_group(struct evg_alu_group_t *alu_group)
+struct evg_uop_t *evg_uop_create_from_alu_group(struct evg_alu_group_t *alu_group)
 {
-	struct gpu_uop_t *uop;
+	struct evg_uop_t *uop;
 	struct evg_inst_t *inst;
 	int i;
 
 	/* Create uop */
-	uop = gpu_uop_create();
+	uop = evg_uop_create();
 
 	/* Update dependences */
 	for (i = 0; i < alu_group->inst_count; i++)
@@ -115,10 +115,10 @@ struct gpu_uop_t *gpu_uop_create_from_alu_group(struct evg_alu_group_t *alu_grou
 		if (inst->info->fmt[0] == EVG_FMT_ALU_WORD0_LDS_IDX_OP)
 		{
 			/* Assume read and write to local memory */
-			assert(uop->idep_count < GPU_UOP_MAX_IDEP);
-			uop->idep[uop->idep_count++] = GPU_UOP_DEP_LDS;
-			assert(uop->odep_count < GPU_UOP_MAX_ODEP);
-			uop->odep[uop->odep_count++] = GPU_UOP_DEP_LDS;
+			assert(uop->idep_count < EVG_UOP_MAX_IDEP);
+			uop->idep[uop->idep_count++] = EVG_UOP_DEP_LDS;
+			assert(uop->odep_count < EVG_UOP_MAX_ODEP);
+			uop->odep[uop->odep_count++] = EVG_UOP_DEP_LDS;
 		}
 
 		/* Arithmetic instruction */
@@ -134,15 +134,15 @@ struct gpu_uop_t *gpu_uop_create_from_alu_group(struct evg_alu_group_t *alu_grou
 			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3 ||
 				inst->words[1].alu_word1_op2.write_mask)
 			{
-				assert(uop->odep_count < GPU_UOP_MAX_ODEP);
+				assert(uop->odep_count < EVG_UOP_MAX_ODEP);
 				uop->odep[uop->odep_count++] =
-					GPU_UOP_DEP_REG(inst->words[1].alu_word1_op2.dst_gpr);
+					EVG_UOP_DEP_REG(inst->words[1].alu_word1_op2.dst_gpr);
 			}
 
 			/* Add PV/PS output dependence */
-			assert(uop->odep_count < GPU_UOP_MAX_ODEP);
+			assert(uop->odep_count < EVG_UOP_MAX_ODEP);
 			uop->odep[uop->odep_count++] =
-				inst->alu == EVG_ALU_TRANS ? GPU_UOP_DEP_PS : GPU_UOP_DEP_PV;
+				inst->alu == EVG_ALU_TRANS ? EVG_UOP_DEP_PS : EVG_UOP_DEP_PV;
 		}
 	}
 
@@ -151,7 +151,7 @@ struct gpu_uop_t *gpu_uop_create_from_alu_group(struct evg_alu_group_t *alu_grou
 }
 
 
-void gpu_uop_free(struct gpu_uop_t *gpu_uop)
+void evg_uop_free(struct evg_uop_t *gpu_uop)
 {
 	if (!gpu_uop)
 		return;
@@ -159,27 +159,27 @@ void gpu_uop_free(struct gpu_uop_t *gpu_uop)
 }
 
 
-void gpu_uop_list_free(struct linked_list_t *gpu_uop_list)
+void evg_uop_list_free(struct linked_list_t *gpu_uop_list)
 {
-	struct gpu_uop_t *uop;
+	struct evg_uop_t *uop;
 	while (linked_list_count(gpu_uop_list))
 	{
 		linked_list_head(gpu_uop_list);
 		uop = linked_list_get(gpu_uop_list);
-		gpu_uop_free(uop);
+		evg_uop_free(uop);
 		linked_list_remove(gpu_uop_list);
 	}
 }
 
 
-void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
+void evg_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 {
 	static struct string_map_t gpu_uop_dep_map = {
 		4, {
-			{ "none", GPU_UOP_DEP_NONE },
-			{ "LDS", GPU_UOP_DEP_LDS },
-			{ "PS", GPU_UOP_DEP_PS },
-			{ "PV", GPU_UOP_DEP_PV }
+			{ "none", EVG_UOP_DEP_NONE },
+			{ "LDS", EVG_UOP_DEP_LDS },
+			{ "PS", EVG_UOP_DEP_PS },
+			{ "PV", EVG_UOP_DEP_PV }
 		}
 	};
 	char *comma = "";
@@ -189,8 +189,8 @@ void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 	str_printf(&buf, &size, "{");
 	for (i = 0; i < dep_count; i++)
 	{
-		if (IN_RANGE(dep_list[i], GPU_UOP_DEP_REG_FIRST, GPU_UOP_DEP_REG_LAST))
-			sprintf(str, "R%d", dep_list[i] - GPU_UOP_DEP_REG_FIRST);
+		if (IN_RANGE(dep_list[i], EVG_UOP_DEP_REG_FIRST, EVG_UOP_DEP_REG_LAST))
+			sprintf(str, "R%d", dep_list[i] - EVG_UOP_DEP_REG_FIRST);
 		else
 			strcpy(str, map_value(&gpu_uop_dep_map, dep_list[i]));
 		str_printf(&buf, &size, "%s%s", comma, str);
@@ -201,15 +201,15 @@ void gpu_uop_dump_dep_list(char *buf, int size, int *dep_list, int dep_count)
 
 
 /* Stack debug - store current active mask in each work_item_uop. */
-void gpu_uop_save_active_mask(struct gpu_uop_t *uop)
+void evg_uop_save_active_mask(struct evg_uop_t *uop)
 {
 	struct evg_wavefront_t *wavefront = uop->wavefront;
 	struct evg_ndrange_t *ndrange = wavefront->ndrange;
 	struct evg_work_item_t *work_item;
-	struct gpu_work_item_uop_t *work_item_uop;
+	struct evg_work_item_uop_t *work_item_uop;
 	int work_item_id;
 
-	if (debug_status(gpu_stack_debug_category) && wavefront->active_mask_update)
+	if (debug_status(evg_stack_debug_category) && wavefront->active_mask_update)
 	{
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
@@ -222,12 +222,12 @@ void gpu_uop_save_active_mask(struct gpu_uop_t *uop)
 
 
 /* Stack debug - dump active mask */
-void gpu_uop_dump_active_mask(struct gpu_uop_t *uop, FILE *f)
+void gpu_uop_dump_active_mask(struct evg_uop_t *uop, FILE *f)
 {
 	struct evg_wavefront_t *wavefront = uop->wavefront;
 	struct evg_ndrange_t *ndrange = wavefront->ndrange;
 	struct evg_work_item_t *work_item;
-	struct gpu_work_item_uop_t *work_item_uop;
+	struct evg_work_item_uop_t *work_item_uop;
 	int work_item_id;
 
 	assert(f);
@@ -241,41 +241,41 @@ void gpu_uop_dump_active_mask(struct gpu_uop_t *uop, FILE *f)
 
 
 /* Stack debug - dump debugging information */
-void gpu_uop_debug_active_mask(struct gpu_uop_t *uop)
+void evg_uop_debug_active_mask(struct evg_uop_t *uop)
 {
 	FILE *f;
 	struct evg_wavefront_t *wavefront = uop->wavefront;
 
 	/* Get debug file */
-	f = debug_file(gpu_stack_debug_category);
+	f = debug_file(evg_stack_debug_category);
 	assert(f);
 
 	/* Pop */
 	if (uop->active_mask_pop)
 	{
-		gpu_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"pop\" cnt=%d top=%d mask=\"",
-			gpu->cycle,
+		evg_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"pop\" cnt=%d top=%d mask=\"",
+			evg_gpu->cycle,
 			uop->compute_unit->id,
 			wavefront->id_in_compute_unit,
 			wavefront->id,
 			uop->active_mask_pop,
 			uop->active_mask_stack_top);
 		gpu_uop_dump_active_mask(uop, f);
-		gpu_stack_debug("\"\n");
+		evg_stack_debug("\"\n");
 	}
 
 	/* Push */
 	if (uop->active_mask_push)
 	{
-		gpu_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"push\" cnt=%d top=%d mask=\"",
-			gpu->cycle,
+		evg_stack_debug("stack clk=%lld cu=%d stack=%d wf=%d a=\"push\" cnt=%d top=%d mask=\"",
+			evg_gpu->cycle,
 			uop->compute_unit->id,
 			wavefront->id_in_compute_unit,
 			wavefront->id,
 			uop->active_mask_push,
 			uop->active_mask_stack_top);
 		gpu_uop_dump_active_mask(uop, f);
-		gpu_stack_debug("\"\n");
+		evg_stack_debug("\"\n");
 	}
 }
 
