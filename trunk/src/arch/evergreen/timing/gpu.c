@@ -436,10 +436,10 @@ void gpu_dump_report(void)
 	
 	/* Report for device */
 	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
-	inst_per_cycle = gpu->cycle ? (double) gk->inst_count / gpu->cycle : 0.0;
+	inst_per_cycle = gpu->cycle ? (double) evg_emu->inst_count / gpu->cycle : 0.0;
 	fprintf(f, "[ Device ]\n\n");
-	fprintf(f, "NDRangeCount = %d\n", gk->ndrange_count);
-	fprintf(f, "Instructions = %lld\n", gk->inst_count);
+	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);
+	fprintf(f, "Instructions = %lld\n", evg_emu->inst_count);
 	fprintf(f, "Cycles = %lld\n", gpu->cycle);
 	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 	fprintf(f, "\n\n");
@@ -725,7 +725,7 @@ void gpu_run(struct evg_ndrange_t *ndrange)
 	/* Initialize */
 	gpu_map_ndrange(ndrange);
 	gpu_calc_plot();
-	gk_timer_start();
+	evg_emu_timer_start();
 
 	/* Execution loop */
 	for (;;)
@@ -748,7 +748,7 @@ void gpu_run(struct evg_ndrange_t *ndrange)
 			x86_emu_finish = x86_emu_finish_max_gpu_cycles;
 
 		/* Stop if maximum number of GPU instructions exceeded */
-		if (evg_emu_max_inst && gk->inst_count >= evg_emu_max_inst)
+		if (evg_emu_max_inst && evg_emu->inst_count >= evg_emu_max_inst)
 			x86_emu_finish = x86_emu_finish_max_gpu_inst;
 
 		/* Stop if any reason met */
@@ -775,11 +775,11 @@ void gpu_run(struct evg_ndrange_t *ndrange)
 	}
 
 	/* Finalize */
-	gk_timer_stop();
+	evg_emu_timer_stop();
 	gpu_unmap_ndrange();
 
 	/* Stop if maximum number of kernels reached */
-	if (evg_emu_max_kernels && gk->ndrange_count >= evg_emu_max_kernels)
+	if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
 		x86_emu_finish = x86_emu_finish_max_gpu_kernels;
 }
 

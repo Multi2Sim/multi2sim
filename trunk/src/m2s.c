@@ -790,7 +790,7 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 void sim_stats_summary(void)
 {
 	long long now = x86_emu_timer();
-	long long gpu_now = gk_timer();
+	long long gpu_now = evg_emu_timer();
 	long long inst_count;
 
 	double sec_count;
@@ -836,20 +836,20 @@ void sim_stats_summary(void)
 	fprintf(stderr, "\n");
 
 	/* GPU functional simulation */
-	if (gk->ndrange_count)
+	if (evg_emu->ndrange_count)
 	{
 		sec_count = (double) gpu_now / 1e6;
-		inst_per_sec = sec_count > 0.0 ? (double) gk->inst_count / sec_count : 0.0;
+		inst_per_sec = sec_count > 0.0 ? (double) evg_emu->inst_count / sec_count : 0.0;
 		fprintf(stderr, "[ GPU ]\n");
 		fprintf(stderr, "Time = %.2f\n", sec_count);
-		fprintf(stderr, "NDRangeCount = %d\n", gk->ndrange_count);
-		fprintf(stderr, "Instructions = %lld\n", gk->inst_count);
+		fprintf(stderr, "NDRangeCount = %d\n", evg_emu->ndrange_count);
+		fprintf(stderr, "Instructions = %lld\n", evg_emu->inst_count);
 		fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	
 		/* GPU detailed simulation */
 		if (evg_emu_kind == evg_emu_detailed)
 		{
-			inst_per_cycle = gpu->cycle ? (double) gk->inst_count / gpu->cycle : 0.0;
+			inst_per_cycle = gpu->cycle ? (double) evg_emu->inst_count / gpu->cycle : 0.0;
 			cycles_per_sec = sec_count > 0.0 ? (double) gpu->cycle / sec_count : 0.0;
 			fprintf(stderr, "Cycles = %lld\n", gpu->cycle);
 			fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
@@ -879,11 +879,11 @@ int main(int argc, char **argv)
 
 	/* GPU disassembler tool */
 	if (*gpu_disasm_file_name)
-		gk_disasm(gpu_disasm_file_name);
+		evg_emu_disasm(gpu_disasm_file_name);
 
 	/* OpenGL disassembler tool */
 	if (*opengl_disasm_file_name)
-		gl_disasm(opengl_disasm_file_name, opengl_disasm_shader_index);	
+		evg_emu_opengl_disasm(opengl_disasm_file_name, opengl_disasm_shader_index);	
 
 	/* GPU visualization tool */
 	if (*gpu_visual_file_name)
@@ -908,7 +908,7 @@ int main(int argc, char **argv)
 	x86_ctx_debug_category = debug_new_category(ctx_debug_file_name);
 	mem_debug_category = debug_new_category(mem_debug_file_name);
 	evg_opencl_debug_category = debug_new_category(opencl_debug_file_name);
-	gpu_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
+	evg_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
 	gpu_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
 	gpu_faults_debug_category = debug_new_category(gpu_faults_debug_file_name);  /* GPU-REL */
 	gpu_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);

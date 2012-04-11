@@ -37,10 +37,10 @@ struct evg_alu_group_t *gpu_isa_alu_group;  /* Current ALU group */
 struct repos_t *evg_isa_write_task_repos;
 
 /* Instruction execution table */
-amd_inst_impl_t *amd_inst_impl;
+evg_isa_inst_func_t *evg_isa_inst_func;
 
 /* Debug */
-int gpu_isa_debug_category;
+int evg_isa_debug_category;
 
 
 
@@ -51,17 +51,17 @@ int gpu_isa_debug_category;
 
 
 /* Initialization */
-void gpu_isa_init()
+void evg_isa_init()
 {
 	/* Allocate instruction execution table */
-	amd_inst_impl = calloc(EVG_INST_COUNT, sizeof(amd_inst_impl_t));
-	if (!amd_inst_impl)
+	evg_isa_inst_func = calloc(EVG_INST_COUNT, sizeof(evg_isa_inst_func_t));
+	if (!evg_isa_inst_func)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
 	extern void amd_inst_##_name##_impl(); \
-	amd_inst_impl[EVG_INST_##_name] = amd_inst_##_name##_impl;
+	evg_isa_inst_func[EVG_INST_##_name] = amd_inst_##_name##_impl;
 #include <evergreen-asm.dat>
 #undef DEFINST
 
@@ -71,10 +71,10 @@ void gpu_isa_init()
 }
 
 
-void gpu_isa_done()
+void evg_isa_done()
 {
 	/* Instruction execution table */
-	free(amd_inst_impl);
+	free(evg_isa_inst_func);
 
 	/* Repository of deferred tasks */
 	repos_free(evg_isa_write_task_repos);
@@ -87,31 +87,31 @@ void gpu_isa_done()
  * Constant Memory
  */
 
-void gpu_isa_const_mem_write(int bank, int vector, int elem, void *pvalue)
+void evg_isa_const_mem_write(int bank, int vector, int elem, void *pvalue)
 {
 	uint32_t addr;
 
 	/* Mark CB0[0..8].{x,y,z,w} positions as initialized */
 	if (!bank && vector < 9)
-		gk->const_mem_cb0_init[vector * 4 + elem] = 1;
+		evg_emu->const_mem_cb0_init[vector * 4 + elem] = 1;
 
 	/* Write */
 	addr = bank * 16384 + vector * 16 + elem * 4;
-	mem_write(gk->const_mem, addr, 4, pvalue);
+	mem_write(evg_emu->const_mem, addr, 4, pvalue);
 }
 
 
-void gpu_isa_const_mem_read(int bank, int vector, int elem, void *pvalue)
+void evg_isa_const_mem_read(int bank, int vector, int elem, void *pvalue)
 {
 	uint32_t addr;
 
 	/* Warn if a position within CB[0..8].{x,y,z,w} is used uninitialized */
-	if (!bank && vector < 9 && !gk->const_mem_cb0_init[vector * 4 + elem])
+	if (!bank && vector < 9 && !evg_emu->const_mem_cb0_init[vector * 4 + elem])
 		warning("CB0[%d].%c is used uninitialized", vector, "xyzw"[elem]);
 	
 	/* Read */
 	addr = bank * 16384 + vector * 16 + elem * 4;
-	mem_read(gk->const_mem, addr, 4, pvalue);
+	mem_read(evg_emu->const_mem, addr, 4, pvalue);
 }
 
 
@@ -123,15 +123,15 @@ void gpu_isa_const_mem_read(int bank, int vector, int elem, void *pvalue)
  */
 
 /* Called before and ALU clause starts in 'gpu_isa_wavefront' */
-void gpu_isa_alu_clause_start()
+void evg_isa_alu_clause_start()
 {
 	/* Copy 'active' mask at the top of the stack to 'pred' mask */
 	bit_map_copy(gpu_isa_wavefront->pred, 0, gpu_isa_wavefront->active_stack,
 		gpu_isa_wavefront->stack_top * gpu_isa_wavefront->work_item_count, gpu_isa_wavefront->work_item_count);
-	if (debug_status(gpu_isa_debug_category)) {
-		gpu_isa_debug("  %s:pred=", gpu_isa_wavefront->name);
+	if (debug_status(evg_isa_debug_category)) {
+		evg_isa_debug("  %s:pred=", gpu_isa_wavefront->name);
 		bit_map_dump(gpu_isa_wavefront->pred, 0, gpu_isa_wavefront->work_item_count,
-			debug_file(gpu_isa_debug_category));
+			debug_file(evg_isa_debug_category));
 	}
 
 	/* Flag 'push_before_done' will be set by the first PRED_SET* inst */
@@ -143,7 +143,7 @@ void gpu_isa_alu_clause_start()
 
 
 /* Called after an ALU clause completed in a wavefront */
-void gpu_isa_alu_clause_end()
+void evg_isa_alu_clause_end()
 {
 	/* If CF inst was ALU_POP_AFTER, pop the stack */
 	if (gpu_isa_cf_inst->info->inst == EVG_INST_ALU_POP_AFTER)
@@ -158,7 +158,7 @@ void gpu_isa_alu_clause_end()
  */
 
 /* Called before and TEX clause starts in wavefront */
-void gpu_isa_tc_clause_start()
+void evg_isa_tc_clause_start()
 {
 	/* Stats */
 	gpu_isa_wavefront->tc_clause_count++;
@@ -166,7 +166,7 @@ void gpu_isa_tc_clause_start()
 
 
 /* Called after a TEX clause completed in a wavefront */
-void gpu_isa_tc_clause_end()
+void evg_isa_tc_clause_end()
 {
 }
 
@@ -196,41 +196,41 @@ void gpu_isa_dest_value_dump(void *value_ptr, FILE *f)
 
 
 /* Read source GPR */
-uint32_t gpu_isa_read_gpr(int gpr, int rel, int chan, int im)
+unsigned int evg_isa_read_gpr(int gpr, int rel, int chan, int im)
 {
-	GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 4);
-	GPU_PARAM_NOT_SUPPORTED_OOR(gpr, 0, 127);
-	GPU_PARAM_NOT_SUPPORTED_NEQ(rel, 0);
-	GPU_PARAM_NOT_SUPPORTED_NEQ(im, 0);
-	return GPU_GPR_ELEM(gpr, chan);
+	EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 4);
+	EVG_ISA_ARG_NOT_SUPPORTED_RANGE(gpr, 0, 127);
+	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(rel, 0);
+	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(im, 0);
+	return EVG_GPR_ELEM(gpr, chan);
 }
 
 
 /* Read source GPR in float format */
-float gpu_isa_read_gpr_float(int gpr, int rel, int chan, int im)
+float evg_isa_read_gpr_float(int gpr, int rel, int chan, int im)
 {
 	union evg_reg_t reg;
 
-	reg.as_uint = gpu_isa_read_gpr(gpr, rel, chan, im);
+	reg.as_uint = evg_isa_read_gpr(gpr, rel, chan, im);
 	return reg.as_float;
 }
 
 
-void gpu_isa_write_gpr(int gpr, int rel, int chan, uint32_t value)
+void evg_isa_write_gpr(int gpr, int rel, int chan, uint32_t value)
 {
-	GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 4);
-	GPU_PARAM_NOT_SUPPORTED_OOR(gpr, 0, 127);
-	GPU_PARAM_NOT_SUPPORTED_NEQ(rel, 0);
-	GPU_GPR_ELEM(gpr, chan) = value;
+	EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 4);
+	EVG_ISA_ARG_NOT_SUPPORTED_RANGE(gpr, 0, 127);
+	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(rel, 0);
+	EVG_GPR_ELEM(gpr, chan) = value;
 }
 
 
-void gpu_isa_write_gpr_float(int gpr, int rel, int chan, float value)
+void evg_isa_write_gpr_float(int gpr, int rel, int chan, float value)
 {
 	union evg_reg_t reg;
 
 	reg.as_float = value;
-	gpu_isa_write_gpr(gpr, rel, chan, reg.as_uint);
+	evg_isa_write_gpr(gpr, rel, chan, reg.as_uint);
 }
 
 
@@ -252,7 +252,7 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	{
 		int index_mode;
 		index_mode = gpu_isa_inst->words[0].alu_word0.index_mode;
-		value = gpu_isa_read_gpr(sel, rel, chan, index_mode);
+		value = evg_isa_read_gpr(sel, rel, chan, index_mode);
 		return value;
 	}
 
@@ -266,9 +266,9 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 		kcache_mode = gpu_isa_cf_inst->words[0].cf_alu_word0.kcache_mode0;
 		kcache_addr = gpu_isa_cf_inst->words[1].cf_alu_word1.kcache_addr0;
 
-		GPU_PARAM_NOT_SUPPORTED_NEQ(kcache_mode, 1);
-		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
-		gpu_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 128, chan, &value);
+		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
+		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
+		evg_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 128, chan, &value);
 		return value;
 	}
 
@@ -283,9 +283,9 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 		kcache_mode = gpu_isa_cf_inst->words[1].cf_alu_word1.kcache_mode1;
 		kcache_addr = gpu_isa_cf_inst->words[1].cf_alu_word1.kcache_addr1;
 
-		GPU_PARAM_NOT_SUPPORTED_NEQ(kcache_mode, 1);
-		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
-		gpu_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 160, chan, &value);
+		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
+		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
+		evg_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 160, chan, &value);
 		return value;
 	}
 
@@ -366,7 +366,7 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	if (sel == 253)
 	{
 		assert(gpu_isa_inst->alu_group);
-		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
+		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
 		value = gpu_isa_inst->alu_group->literal[chan].as_uint;
 		return value;
 	}
@@ -374,7 +374,7 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 	/* ALU_SRC_PV */
 	if (sel == 254)
 	{
-		GPU_PARAM_NOT_SUPPORTED_OOR(chan, 0, 3);
+		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
 		value = gpu_isa_work_item->pv.elem[chan];
 		return value;
 	}
@@ -392,10 +392,10 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 }
 
 
-uint32_t gpu_isa_read_op_src_int(int src_idx)
+unsigned int evg_isa_read_op_src_int(int src_idx)
 {
 	int neg, abs;
-	int32_t value; /* Signed */
+	int value; /* Signed */
 
 	value = gpu_isa_read_op_src_common(src_idx, &neg, &abs);
 
@@ -410,7 +410,7 @@ uint32_t gpu_isa_read_op_src_int(int src_idx)
 }
 
 
-float gpu_isa_read_op_src_float(int src_idx)
+float evg_isa_read_op_src_float(int src_idx)
 {
 	union evg_reg_t reg;
 	int neg;
@@ -468,19 +468,19 @@ void evg_isa_enqueue_write_dest(uint32_t value)
 		return;
 
 	/* Fields 'dst_gpr', 'dst_rel', and 'dst_chan' are at the same bit positions in both
-	 * ALU_WORD1_OP2 and ALU_WORD1_OP3 formats. */
+	 * EVG_ALU_WORD1_OP2 and EVG_ALU_WORD1_OP3 formats. */
 	wt = repos_create_object(evg_isa_write_task_repos);
 	wt->kind = EVG_ISA_WRITE_TASK_WRITE_DEST;
 	wt->inst = gpu_isa_inst;
-	wt->gpr = ALU_WORD1_OP2.dst_gpr;
-	wt->rel = ALU_WORD1_OP2.dst_rel;
-	wt->chan = ALU_WORD1_OP2.dst_chan;
-	wt->index_mode = ALU_WORD0.index_mode;
+	wt->gpr = EVG_ALU_WORD1_OP2.dst_gpr;
+	wt->rel = EVG_ALU_WORD1_OP2.dst_rel;
+	wt->chan = EVG_ALU_WORD1_OP2.dst_chan;
+	wt->index_mode = EVG_ALU_WORD0.index_mode;
 	wt->value = value;
 
-	/* For ALU_WORD1_OP2, check 'write_mask' field */
+	/* For EVG_ALU_WORD1_OP2, check 'write_mask' field */
 	wt->write_mask = 1;
-	if (gpu_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && !ALU_WORD1_OP2.write_mask)
+	if (gpu_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && !EVG_ALU_WORD1_OP2.write_mask)
 		wt->write_mask = 0;
 
 	/* Enqueue task */
@@ -553,20 +553,20 @@ void evg_isa_write_task_commit(void)
 		case EVG_ISA_WRITE_TASK_WRITE_DEST:
 		{
 			if (wt->write_mask)
-				gpu_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
+				evg_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
 			gpu_isa_work_item->pv.elem[wt->inst->alu] = wt->value;
 
 			/* Debug */
-			if (gpu_isa_debugging()) {
-				gpu_isa_debug("  i%d:%s", gpu_isa_work_item->id,
+			if (evg_isa_debugging()) {
+				evg_isa_debug("  i%d:%s", gpu_isa_work_item->id,
 					map_value(&evg_pv_map, wt->inst->alu));
 				if (wt->write_mask) {
-					gpu_isa_debug(",");
+					evg_isa_debug(",");
 					evg_inst_dump_gpr(wt->gpr, wt->rel, wt->chan, 0,
-						debug_file(gpu_isa_debug_category));
+						debug_file(evg_isa_debug_category));
 				}
-				gpu_isa_debug("<=");
-				gpu_isa_dest_value_dump(&wt->value, debug_file(gpu_isa_debug_category));
+				evg_isa_debug("<=");
+				gpu_isa_dest_value_dump(&wt->value, debug_file(evg_isa_debug_category));
 			}
 
 			break;
@@ -584,7 +584,7 @@ void evg_isa_write_task_commit(void)
 
 			/* Debug */
 			lds_value.as_uint = wt->lds_value;
-			gpu_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf) (%d bytes)", gpu_isa_work_item->id, wt->lds_addr,
+			evg_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf) (%d bytes)", gpu_isa_work_item->id, wt->lds_addr,
 				lds_value.as_uint, lds_value.as_float, (int) wt->lds_value_size);
 			break;
 		}
@@ -620,8 +620,8 @@ void evg_isa_write_task_commit(void)
 
 		case EVG_ISA_WRITE_TASK_SET_PRED:
 		{
-			int update_pred = ALU_WORD1_OP2.update_pred;
-			int update_exec_mask = ALU_WORD1_OP2.update_exec_mask;
+			int update_pred = EVG_ALU_WORD1_OP2.update_pred;
+			int update_exec_mask = EVG_ALU_WORD1_OP2.update_exec_mask;
 
 			assert(gpu_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
 			if (update_pred)
@@ -630,13 +630,13 @@ void evg_isa_write_task_commit(void)
 				evg_work_item_set_active(gpu_isa_work_item, wt->cond);
 
 			/* Debug */
-			if (debug_status(gpu_isa_debug_category)) {
+			if (debug_status(evg_isa_debug_category)) {
 				if (update_pred && update_exec_mask)
-					gpu_isa_debug("  i%d:act/pred<=%d", gpu_isa_work_item->id, wt->cond);
+					evg_isa_debug("  i%d:act/pred<=%d", gpu_isa_work_item->id, wt->cond);
 				else if (update_pred)
-					gpu_isa_debug("  i%d:pred=%d", gpu_isa_work_item->id, wt->cond);
+					evg_isa_debug("  i%d:pred=%d", gpu_isa_work_item->id, wt->cond);
 				else if (update_exec_mask)
-					gpu_isa_debug("  i%d:pred=%d", gpu_isa_work_item->id, wt->cond);
+					evg_isa_debug("  i%d:pred=%d", gpu_isa_work_item->id, wt->cond);
 			}
 			break;
 		}

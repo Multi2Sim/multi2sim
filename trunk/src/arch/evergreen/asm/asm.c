@@ -583,7 +583,7 @@ static void evg_inst_dump_op_dest_buf(struct evg_inst_t *inst, char **buf_ptr, i
 	int gpr, rel, chan, index_mode;
 
 	/* Fields 'dst_gpr', 'dst_rel', and 'dst_chan' are at the same bit positions in both
-	 * ALU_WORD1_OP2 and ALU_WORD1_OP3 formats. */
+	 * EVG_ALU_WORD1_OP2 and EVG_ALU_WORD1_OP3 formats. */
 	gpr = inst->words[1].alu_word1_op2.dst_gpr;
 	rel = inst->words[1].alu_word1_op2.dst_rel;
 	chan = inst->words[1].alu_word1_op2.dst_chan;
@@ -637,7 +637,7 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 	case 0:
 		
 		/* Fields:	src0_sel, src0_rel, src_chan
-		 * Present:	ALU_WORD0, ALU_WORD0_LDS_IDX_OP 
+		 * Present:	EVG_ALU_WORD0, EVG_ALU_WORD0_LDS_IDX_OP 
 		 * Absent:	-
 		 */
 		*sel = inst->words[0].alu_word0.src0_sel;
@@ -645,14 +645,14 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 		*chan = inst->words[0].alu_word0.src0_chan;
 
 		/* Fields:	src0_neg
-		 * Present:	ALU_WORD0
-		 * Absent:	ALU_WORD0_LDS_IDX_OP
+		 * Present:	EVG_ALU_WORD0
+		 * Absent:	EVG_ALU_WORD0_LDS_IDX_OP
 		 */
 		*neg = inst->info->fmt[0] == EVG_FMT_ALU_WORD0 ? inst->words[0].alu_word0.src0_neg : 0;
 
 		/* Fields:	src0_abs
-		 * Present:	ALU_WORD1_OP2
-		 * Absent:	ALU_WORD1_OP3, ALU_WORD1_LDS_IDX_OP
+		 * Present:	EVG_ALU_WORD1_OP2
+		 * Absent:	EVG_ALU_WORD1_OP3, EVG_ALU_WORD1_LDS_IDX_OP
 		 */
 		*abs = inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 ? inst->words[1].alu_word1_op2.src0_abs : 0;
 		break;
@@ -660,7 +660,7 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 	case 1:
 		
 		/* Fields:	src1_sel, src1_rel, src1_chan
-		 * Present:	ALU_WORD0, ALU_WORD0_LDS_IDX_OP
+		 * Present:	EVG_ALU_WORD0, EVG_ALU_WORD0_LDS_IDX_OP
 		 * Absent:	-
 		 */
 		*sel = inst->words[0].alu_word0.src1_sel;
@@ -668,14 +668,14 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 		*chan = inst->words[0].alu_word0.src1_chan;
 
 		/* Fields:	src1_neg
-		 * Present:	ALU_WORD0
-		 * Absent:	ALU_WORD0_LDS_IDX_OP
+		 * Present:	EVG_ALU_WORD0
+		 * Absent:	EVG_ALU_WORD0_LDS_IDX_OP
 		 */
 		*neg = inst->info->fmt[0] == EVG_FMT_ALU_WORD0 ? inst->words[0].alu_word0.src1_neg : 0;
 
 		/* Fields:	src_abs
-		 * Present:	ALU_WORD1_OP2
-		 * Absent:	ALU_WORD1_OP3, ALU_WORD1_LDS_IDX_OP
+		 * Present:	EVG_ALU_WORD1_OP2
+		 * Absent:	EVG_ALU_WORD1_OP3, EVG_ALU_WORD1_LDS_IDX_OP
 		 */
 		*abs = inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 ? inst->words[1].alu_word1_op2.src1_abs : 0;
 		break;
@@ -683,8 +683,8 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 	case 2:
 		
 		/* Fields:	src2_sel, src2_rel, src2_chan
-		 * Present:	ALU_WORD1_OP3, ALU_WORD1_LDS_IDX_OP
-		 * Absent:	ALU_WORD1_OP2
+		 * Present:	EVG_ALU_WORD1_OP3, EVG_ALU_WORD1_LDS_IDX_OP
+		 * Absent:	EVG_ALU_WORD1_OP2
 		 */
 		assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3
 			|| inst->info->fmt[1] == EVG_FMT_ALU_WORD1_LDS_IDX_OP);
@@ -693,14 +693,14 @@ void evg_inst_get_op_src(struct evg_inst_t *inst, int src_idx,
 		*chan = inst->words[1].alu_word1_op3.src2_chan;
 
 		/* Fields:	src2_neg
-		 * Present:	ALU_WORD1_OP3
-		 * Absent:	ALU_WORD1_LDS_IDX_OP, ALU_WORD_OP2
+		 * Present:	EVG_ALU_WORD1_OP3
+		 * Absent:	EVG_ALU_WORD1_LDS_IDX_OP, ALU_WORD_OP2
 		 */
 		*neg = inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3 ? inst->words[1].alu_word1_op3.src2_neg : 0;
 
 		/* Fields:	src2_abs
 		 * Present:	-
-		 * Absent:	ALU_WORD1_OP3, ALU_WORD1_LDS_IDX_OP, ALU_WORD_OP2
+		 * Absent:	EVG_ALU_WORD1_OP3, EVG_ALU_WORD1_LDS_IDX_OP, ALU_WORD_OP2
 		 */
 		*abs = 0;
 		break;
@@ -874,21 +874,21 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 			assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 || inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP3);
 			str_printf(buf_ptr, size_ptr, "    ");
 
-			/* ALU_WORD1_OP2 - 'bank_swizzle' field.
-			 * Common for ALU_WORD1_OP2 and ALU_WORD1_OP3 */
+			/* EVG_ALU_WORD1_OP2 - 'bank_swizzle' field.
+			 * Common for EVG_ALU_WORD1_OP2 and EVG_ALU_WORD1_OP3 */
 			str_printf(buf_ptr, size_ptr, "%s", map_value(&evg_bank_swizzle_map, inst->words[1].alu_word1_op2.bank_swizzle));
 			
-			/* ALU_WORD0 - 'pred_sel' field */
+			/* EVG_ALU_WORD0 - 'pred_sel' field */
 			if (inst->words[0].alu_word0.pred_sel == 2)  /* PRED_SEL_ZERO */
 				str_printf(buf_ptr, size_ptr, " (!p)");
 			else if (inst->words[0].alu_word0.pred_sel == 3)  /* PRED_SEL_ONE */
 				str_printf(buf_ptr, size_ptr, " (p)");
 
-			/* ALU_WORD1_OP2 - 'update_exec_mask' field */
+			/* EVG_ALU_WORD1_OP2 - 'update_exec_mask' field */
 			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && inst->words[1].alu_word1_op2.update_exec_mask)
 				str_printf(buf_ptr, size_ptr, " UPDATE_EXEC_MASK");
 
-			/* ALU_WORD1_OP2 - 'update_pred' field */
+			/* EVG_ALU_WORD1_OP2 - 'update_pred' field */
 			if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && inst->words[1].alu_word1_op2.update_pred)
 				str_printf(buf_ptr, size_ptr, " UPDATE_PRED");
 		}

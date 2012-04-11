@@ -42,7 +42,7 @@ struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel)
 	/* Initialize */
 	ndrange->kernel = kernel;
 	ndrange->local_mem_top = kernel->func_mem_local;
-	ndrange->id = gk->ndrange_count++;
+	ndrange->id = evg_emu->ndrange_count++;
 
 	/* Return */
 	return ndrange;
@@ -243,34 +243,34 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	}
 
 	/* Debug */
-	gpu_isa_debug("local_size = %d (%d,%d,%d)\n", kernel->local_size, kernel->local_size3[0],
+	evg_isa_debug("local_size = %d (%d,%d,%d)\n", kernel->local_size, kernel->local_size3[0],
 		kernel->local_size3[1], kernel->local_size3[2]);
-	gpu_isa_debug("global_size = %d (%d,%d,%d)\n", kernel->global_size, kernel->global_size3[0],
+	evg_isa_debug("global_size = %d (%d,%d,%d)\n", kernel->global_size, kernel->global_size3[0],
 		kernel->global_size3[1], kernel->global_size3[2]);
-	gpu_isa_debug("group_count = %d (%d,%d,%d)\n", kernel->group_count, kernel->group_count3[0],
+	evg_isa_debug("group_count = %d (%d,%d,%d)\n", kernel->group_count, kernel->group_count3[0],
 		kernel->group_count3[1], kernel->group_count3[2]);
-	gpu_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
-	gpu_isa_debug("wavefronts_per_work_group = %d\n", ndrange->wavefronts_per_work_group);
-	gpu_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   lid lid2 lid1 lid0  wavefront            work-group\n");
+	evg_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
+	evg_isa_debug("wavefronts_per_work_group = %d\n", ndrange->wavefronts_per_work_group);
+	evg_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   lid lid2 lid1 lid0  wavefront            work-group\n");
 	for (tid = 0; tid < ndrange->work_item_count; tid++) {
 		work_item = ndrange->work_items[tid];
 		wavefront = work_item->wavefront;
 		work_group = work_item->work_group;
-		gpu_isa_debug("%4d %4d %4d %4d  ", work_item->id, work_item->id_3d[2],
+		evg_isa_debug("%4d %4d %4d %4d  ", work_item->id, work_item->id_3d[2],
 			work_item->id_3d[1], work_item->id_3d[0]);
-		gpu_isa_debug("%4d %4d %4d %4d  ", work_group->id, work_group->id_3d[2],
+		evg_isa_debug("%4d %4d %4d %4d  ", work_group->id, work_group->id_3d[2],
 			work_group->id_3d[1], work_group->id_3d[0]);
-		gpu_isa_debug("%4d %4d %4d %4d  ", work_item->id_in_work_group, work_item->id_in_work_group_3d[2],
+		evg_isa_debug("%4d %4d %4d %4d  ", work_item->id_in_work_group, work_item->id_in_work_group_3d[2],
 			work_item->id_in_work_group_3d[1], work_item->id_in_work_group_3d[0]);
-		gpu_isa_debug("%20s.%-4d  ", wavefront->name, work_item->id_in_wavefront);
-		gpu_isa_debug("%20s.%-4d\n", work_group->name, work_item->id_in_work_group);
+		evg_isa_debug("%20s.%-4d  ", wavefront->name, work_item->id_in_wavefront);
+		evg_isa_debug("%20s.%-4d\n", work_group->name, work_item->id_in_work_group);
 	}
 
 }
 
 
 /* Write initial values in constant buffer 0 (CB0) */
-/* FIXME: constant memory should be member of 'gk' or 'ndrange'? */
+/* FIXME: constant memory should be member of 'evg_emu' or 'ndrange'? */
 void evg_ndrange_setup_const_mem(struct evg_ndrange_t *ndrange)
 {
 	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
@@ -280,26 +280,26 @@ void evg_ndrange_setup_const_mem(struct evg_ndrange_t *ndrange)
 	/* CB0[0]
 	 * x,y,z: global work size for the {x,y,z} dimensions.
 	 * w: number of work dimensions.  */
-	gpu_isa_const_mem_write(0, 0, 0, &kernel->global_size3[0]);
-	gpu_isa_const_mem_write(0, 0, 1, &kernel->global_size3[1]);
-	gpu_isa_const_mem_write(0, 0, 2, &kernel->global_size3[2]);
-	gpu_isa_const_mem_write(0, 0, 3, &kernel->work_dim);
+	evg_isa_const_mem_write(0, 0, 0, &kernel->global_size3[0]);
+	evg_isa_const_mem_write(0, 0, 1, &kernel->global_size3[1]);
+	evg_isa_const_mem_write(0, 0, 2, &kernel->global_size3[2]);
+	evg_isa_const_mem_write(0, 0, 3, &kernel->work_dim);
 
 	/* CB0[1]
 	 * x,y,z: local work size for the {x,y,z} dimensions.
 	 * w: 0  */
-	gpu_isa_const_mem_write(0, 1, 0, &kernel->local_size3[0]);
-	gpu_isa_const_mem_write(0, 1, 1, &kernel->local_size3[1]);
-	gpu_isa_const_mem_write(0, 1, 2, &kernel->local_size3[2]);
-	gpu_isa_const_mem_write(0, 1, 3, &zero);
+	evg_isa_const_mem_write(0, 1, 0, &kernel->local_size3[0]);
+	evg_isa_const_mem_write(0, 1, 1, &kernel->local_size3[1]);
+	evg_isa_const_mem_write(0, 1, 2, &kernel->local_size3[2]);
+	evg_isa_const_mem_write(0, 1, 3, &zero);
 
 	/* CB0[2]
 	 * x,y,z: global work size {x,y,z} / local work size {x,y,z}
 	 * w: 0  */
-	gpu_isa_const_mem_write(0, 2, 0, &kernel->group_count3[0]);
-	gpu_isa_const_mem_write(0, 2, 1, &kernel->group_count3[1]);
-	gpu_isa_const_mem_write(0, 2, 2, &kernel->group_count3[2]);
-	gpu_isa_const_mem_write(0, 2, 3, &zero);
+	evg_isa_const_mem_write(0, 2, 0, &kernel->group_count3[0]);
+	evg_isa_const_mem_write(0, 2, 1, &kernel->group_count3[1]);
+	evg_isa_const_mem_write(0, 2, 2, &kernel->group_count3[2]);
+	evg_isa_const_mem_write(0, 2, 3, &zero);
 
 	/* CB0[3]
 	 * x: Offset to private memory ring (0 if private memory is not emulated).
@@ -320,29 +320,29 @@ void evg_ndrange_setup_const_mem(struct evg_ndrange_t *ndrange)
 	 * z: 1.0 as IEEE-32bit float - required for math library.
 	 * w: 2.0 as IEEE-32bit float - required for math library. */
 	f = 0.0f;
-	gpu_isa_const_mem_write(0, 5, 0, &f);
+	evg_isa_const_mem_write(0, 5, 0, &f);
 	f = 0.5f;
-	gpu_isa_const_mem_write(0, 5, 1, &f);
+	evg_isa_const_mem_write(0, 5, 1, &f);
 	f = 1.0f;
-	gpu_isa_const_mem_write(0, 5, 2, &f);
+	evg_isa_const_mem_write(0, 5, 2, &f);
 	f = 2.0f;
-	gpu_isa_const_mem_write(0, 5, 3, &f);
+	evg_isa_const_mem_write(0, 5, 3, &f);
 
 	/* CB0[6]
 	 * x,y,z: Global offset for the {x,y,z} dimension of the work_item spawn.
 	 * z: Global single dimension flat offset: x * y * z. */
-	gpu_isa_const_mem_write(0, 6, 0, &zero);
-	gpu_isa_const_mem_write(0, 6, 1, &zero);
-	gpu_isa_const_mem_write(0, 6, 2, &zero);
-	gpu_isa_const_mem_write(0, 6, 3, &zero);
+	evg_isa_const_mem_write(0, 6, 0, &zero);
+	evg_isa_const_mem_write(0, 6, 1, &zero);
+	evg_isa_const_mem_write(0, 6, 2, &zero);
+	evg_isa_const_mem_write(0, 6, 3, &zero);
 
 	/* CB0[7]
 	 * x,y,z: Group offset for the {x,y,z} dimensions of the work_item spawn.
 	 * w: Group single dimension flat offset, x * y * z.  */
-	gpu_isa_const_mem_write(0, 7, 0, &zero);
-	gpu_isa_const_mem_write(0, 7, 1, &zero);
-	gpu_isa_const_mem_write(0, 7, 2, &zero);
-	gpu_isa_const_mem_write(0, 7, 3, &zero);
+	evg_isa_const_mem_write(0, 7, 0, &zero);
+	evg_isa_const_mem_write(0, 7, 1, &zero);
+	evg_isa_const_mem_write(0, 7, 2, &zero);
+	evg_isa_const_mem_write(0, 7, 3, &zero);
 
 	/* CB0[8]
 	 * x: Offset in the global buffer where data segment exists.
@@ -375,7 +375,7 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 		case EVG_OPENCL_KERNEL_ARG_KIND_VALUE: {
 			
 			/* Value copied directly into device constant memory */
-			gpu_isa_const_mem_write(1, cb_index, 0, &arg->value);
+			evg_isa_const_mem_write(1, cb_index, 0, &arg->value);
 			evg_opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i, 
 					arg->value, cb_index);
 			cb_index++;
@@ -395,11 +395,11 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 				 * Images really take up two slots, but for now we'll
 				 * just copy the pointer into both. */
 				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
-				gpu_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
+				evg_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
 				evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
 						" device_ptr=0x%x\n", i, arg->value, cb_index,
 						mem->device_ptr);
-				gpu_isa_const_mem_write(1, cb_index+1, 0, &mem->device_ptr);
+				evg_isa_const_mem_write(1, cb_index+1, 0, &mem->device_ptr);
 				cb_index += 2;
 				break;
 			}
@@ -422,7 +422,7 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 				 * Argument value is a pointer to an 'opencl_mem' object.
 				 * It is translated first into a device memory pointer. */
 				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
-				gpu_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
+				evg_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
 				evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
 						" device_ptr=0x%x\n", i, arg->value, cb_index,
 						mem->device_ptr);
@@ -434,7 +434,7 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 			{
 				/* Pointer in __local scope.
 				 * Argument value is always NULL, just assign space for it. */
-				gpu_isa_const_mem_write(1, cb_index, 0, &ndrange->local_mem_top);
+				evg_isa_const_mem_write(1, cb_index, 0, &ndrange->local_mem_top);
 				evg_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
 					i, arg->size, ndrange->local_mem_top);
 				ndrange->local_mem_top += arg->size;
@@ -476,7 +476,7 @@ void evg_ndrange_run(struct evg_ndrange_t *ndrange)
 	}
 
 	/* Start GPU timer */
-	gk_timer_start();
+	evg_emu_timer_start();
 
 	/* Execution loop */
 	while (ndrange->running_list_head)
@@ -486,7 +486,7 @@ void evg_ndrange_run(struct evg_ndrange_t *ndrange)
 			x86_emu_finish = x86_emu_finish_max_gpu_cycles;
 
 		/* Stop if maximum number of GPU instructions exceeded */
-		if (evg_emu_max_inst && gk->inst_count >= evg_emu_max_inst)
+		if (evg_emu_max_inst && evg_emu->inst_count >= evg_emu_max_inst)
 			x86_emu_finish = x86_emu_finish_max_gpu_inst;
 
 		/* Stop if any reason met */
@@ -515,13 +515,13 @@ void evg_ndrange_run(struct evg_ndrange_t *ndrange)
 	}
 
 	/* Stop GPU timer */
-	gk_timer_stop();
+	evg_emu_timer_stop();
 
 	/* Dump stats */
 	evg_ndrange_dump(ndrange, evg_emu_report_file);
 
 	/* Stop if maximum number of kernels reached */
-	if (evg_emu_max_kernels && gk->ndrange_count >= evg_emu_max_kernels)
+	if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
 		x86_emu_finish = x86_emu_finish_max_gpu_kernels;
 }
 

@@ -100,7 +100,7 @@ void x86_emu_init(void)
 	pthread_mutex_init(&x86_emu->process_events_mutex, NULL);
 
 	/* Initialize GPU */
-	gk_init();
+	evg_emu_init();
 
 	/* Record start time */
 	x86_emu_init_time = x86_emu_timer();
@@ -122,7 +122,7 @@ void x86_emu_done(void)
 		x86_ctx_free(x86_emu->context_list_head);
 	
 	/* Finalize GPU */
-	gk_done();
+	evg_emu_done();
 
 	/* End */
 	free(x86_emu);

@@ -559,7 +559,7 @@ static int x86_sys_open_impl(void)
 	x86_sys_debug("  flags=%s\n", flags_str);
 
 	/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
-	gk_libopencl_redirect(full_path, sizeof full_path);
+	evg_emu_libopencl_redirect(full_path, sizeof full_path);
 
 	/* Virtual files */
 	if (!strncmp(full_path, "/proc/", 6))
