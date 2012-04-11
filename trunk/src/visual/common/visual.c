@@ -17,7 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <visual-private.h>
+#include <visual-common.h>
+#include <visual-memory.h>
 
 
 
@@ -42,7 +43,7 @@ static void visual_cycle_bar_refresh(void *user_data, long long cycle)
 }
 
 
-void vmem_run(char *file_name)
+void visual_run(char *file_name)
 {
 	char *m2s_images_path = "images";
 

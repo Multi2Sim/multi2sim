@@ -18,10 +18,10 @@
  */
 
 #include <gpuvisual.h>
-#include <visual.h>
 
-#include <x86-timing.h>
 #include <evergreen-timing.h>
+#include <x86-timing.h>
+#include <visual-common.h>
 
 
 /* Multi2Sim version */
@@ -891,7 +891,7 @@ int main(int argc, char **argv)
 	
 	/* Memory hierarchy visualization tool */
 	if (*visual_file_name)
-		vmem_run(visual_file_name);
+		visual_run(visual_file_name);
 
 	/* Network simulation tool */
 	if (*net_sim_network_name)
