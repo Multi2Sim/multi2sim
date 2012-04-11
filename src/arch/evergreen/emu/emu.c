@@ -29,17 +29,17 @@
 
 struct gk_t *gk;
 
-long long gpu_max_cycles = 0;
-long long gpu_max_inst = 0;
-int gpu_max_kernels = 0;
+long long evg_emu_max_cycles = 0;
+long long evg_emu_max_inst = 0;
+int evg_emu_max_kernels = 0;
 
-enum gpu_sim_kind_t gpu_sim_kind = gpu_sim_functional;
+enum evg_emu_kind_t evg_emu_kind = evg_emu_functional;
 
-char *gpu_opencl_binary_name = "";
-char *gpu_kernel_report_file_name = "";
-FILE *gpu_kernel_report_file = NULL;
+char *evg_emu_opencl_binary_name = "";
+char *evg_emu_report_file_name = "";
+FILE *evg_emu_report_file = NULL;
 
-int gpu_wavefront_size = 64;
+int evg_emu_wavefront_size = 64;
 
 
 
@@ -55,10 +55,10 @@ int gpu_wavefront_size = 64;
 void gk_init()
 {
 	/* Open report file */
-	if (gpu_kernel_report_file_name[0]) {
-		gpu_kernel_report_file = open_write(gpu_kernel_report_file_name);
-		if (!gpu_kernel_report_file)
-			fatal("%s: cannot open GPU report file ", gpu_kernel_report_file_name);
+	if (evg_emu_report_file_name[0]) {
+		evg_emu_report_file = open_write(evg_emu_report_file_name);
+		if (!evg_emu_report_file)
+			fatal("%s: cannot open GPU report file ", evg_emu_report_file_name);
 	}
 
 	/* Initialize kernel */
@@ -75,9 +75,9 @@ void gk_init()
 	gpu_isa_init();
 
 	/* Create platform and device */
-	opencl_object_list = linked_list_create();
-	opencl_platform = opencl_platform_create();
-	opencl_device_create();
+	evg_opencl_object_list = linked_list_create();
+	evg_opencl_platform = evg_opencl_platform_create();
+	evg_opencl_device_create();
 }
 
 
@@ -85,12 +85,12 @@ void gk_init()
 void gk_done()
 {
 	/* GPU report */
-	if (gpu_kernel_report_file)
-		fclose(gpu_kernel_report_file);
+	if (evg_emu_report_file)
+		fclose(evg_emu_report_file);
 
 	/* Free OpenCL objects */
-	opencl_object_free_all();
-	linked_list_free(opencl_object_list);
+	evg_opencl_object_free_all();
+	linked_list_free(evg_opencl_object_list);
 
 	/* Finalize disassembler */
 	evg_disasm_done();
@@ -242,7 +242,7 @@ void gk_disasm(char *path)
 	struct elf_symbol_t *symbol;
 	struct elf_section_t *section;
 
-	struct amd_bin_t *amd_bin;
+	struct evg_bin_file_t *amd_bin;
 
 	char kernel_name[MAX_STRING_SIZE];
 
@@ -266,7 +266,7 @@ void gk_disasm(char *path)
 		{
 			/* Decode internal ELF */
 			str_substr(kernel_name, sizeof(kernel_name), symbol->name, 9, strlen(symbol->name) - 16);
-			amd_bin = amd_bin_create(section->buffer.ptr + symbol->value, symbol->size, kernel_name);
+			amd_bin = evg_bin_file_create(section->buffer.ptr + symbol->value, symbol->size, kernel_name);
 
 			/* Get kernel name */
 			printf("**\n** Disassembly for '__kernel %s'\n**\n\n", kernel_name);
@@ -274,7 +274,7 @@ void gk_disasm(char *path)
 			printf("\n\n\n");
 
 			/* Free internal ELF */
-			amd_bin_free(amd_bin);
+			evg_bin_file_free(amd_bin);
 		}
 	}
 
@@ -293,8 +293,8 @@ void gl_disasm(char *path, int opengl_shader_index)
 	void *file_buffer;
 	int file_size;
 
-	struct amd_opengl_bin_t *amd_opengl_bin;
-	struct amd_opengl_shader_t *amd_opengl_shader;
+	struct evg_opengl_bin_t *amd_opengl_bin;
+	struct evg_opengl_shader_t *amd_opengl_shader;
 
 	/* Initialize disassembler */
 	evg_disasm_init();
@@ -305,7 +305,7 @@ void gl_disasm(char *path, int opengl_shader_index)
 		fatal("%s:Invalid file!", path);
 
 	/* Analyze the file and initialize structure */	
-	amd_opengl_bin = amd_opengl_bin_create(file_buffer, file_size, path);
+	amd_opengl_bin = evg_opengl_bin_create(file_buffer, file_size, path);
 
 	free_buffer(file_buffer);
 
@@ -323,7 +323,7 @@ void gl_disasm(char *path, int opengl_shader_index)
 	printf("\n\n\n");
 
 	/* Free */
-	amd_opengl_bin_free(amd_opengl_bin);
+	evg_opengl_bin_free(amd_opengl_bin);
 	evg_disasm_done();
 
 	/* End */

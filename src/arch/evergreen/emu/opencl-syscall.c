@@ -44,19 +44,19 @@ int opencl_syscall(int code, unsigned int *args)
 	int retval = 0;
 	
 	/* Decode OpenCL function */
-	assert(code >= OPENCL_FUNC_FIRST && code <= OPENCL_FUNC_LAST);
-	func_code = code - OPENCL_FUNC_FIRST;
-	func_name = opencl_func_names[func_code];
-	func_argc = opencl_func_argc[func_code];
-	assert(func_argc <= OPENCL_MAX_ARGS);
+	assert(code >= EVG_OPENCL_FUNC_FIRST && code <= EVG_OPENCL_FUNC_LAST);
+	func_code = code - EVG_OPENCL_FUNC_FIRST;
+	func_name = evg_opencl_func_names[func_code];
+	func_argc = evg_opencl_func_argc[func_code];
+	assert(func_argc <= EVG_OPENCL_MAX_ARGS);
 	snprintf(err_prefix, MAX_STRING_SIZE, "OpenCL call '%s'", func_name);
 	
 	/* Execute */
-	opencl_debug("%s\n", func_name);
+	evg_opencl_debug("%s\n", func_name);
 	switch (func_code) {
 
 	/* 1000 */
-	case OPENCL_FUNC_clGetPlatformIDs:
+	case EVG_OPENCL_FUNC_clGetPlatformIDs:
 	{
 		break;
 	}
@@ -64,7 +64,7 @@ int opencl_syscall(int code, unsigned int *args)
 	default:
 		
 		fatal("opencl_syscall: function '%s' (code=%d) not implemented.\n%s",
-			func_name, code, err_opencl_note);
+			func_name, code, err_evg_opencl_note);
 	}
 
 	return retval;

@@ -36,9 +36,9 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	struct evg_alu_group_t *alu_group;
 	struct gpu_uop_t *cf_uop, *uop, *producer;
 	struct gpu_work_item_uop_t *work_item_uop;
-	struct gpu_wavefront_t *wavefront;
+	struct evg_wavefront_t *wavefront;
 
-	struct gpu_work_item_t *work_item;
+	struct evg_work_item_t *work_item;
 	int work_item_id;
 
 	int idep, odep;
@@ -50,14 +50,14 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	if (!cf_uop)
 		return;
 	wavefront = cf_uop->wavefront;
-	assert(wavefront->clause_kind == GPU_CLAUSE_ALU);
+	assert(wavefront->clause_kind == EVG_CLAUSE_ALU);
 
 	/* If fetch queue is full, cannot fetch until space is made */
 	if (compute_unit->alu_engine.fetch_queue_length >= gpu_alu_engine_fetch_queue_size)
 		return;
 
 	/* Emulate instruction and create uop */
-	gpu_wavefront_execute(wavefront);
+	evg_wavefront_execute(wavefront);
 	alu_group = &wavefront->alu_group;
 	uop = gpu_uop_create_from_alu_group(alu_group);
 	uop->wavefront = wavefront;
@@ -67,7 +67,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
 	uop->subwavefront_count = (wavefront->work_item_count + gpu_num_stream_cores - 1)
 		/ gpu_num_stream_cores;
-	uop->last = wavefront->clause_kind != GPU_CLAUSE_ALU;
+	uop->last = wavefront->clause_kind != EVG_CLAUSE_ALU;
 	uop->length = alu_group->inst_count * 8 + alu_group->literal_count * 4;
 	uop->local_mem_read = wavefront->local_mem_read;
 	uop->local_mem_write = wavefront->local_mem_write;
@@ -101,7 +101,7 @@ void gpu_alu_engine_fetch(struct gpu_compute_unit_t *compute_unit)
 	/* If instruction accesses local memory, record addresses. */
 	if (uop->local_mem_read || uop->local_mem_write)
 	{
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
@@ -223,7 +223,7 @@ void gpu_alu_engine_decode(struct gpu_compute_unit_t *compute_unit)
 
 void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 {
-	struct gpu_work_item_t *work_item;
+	struct evg_work_item_t *work_item;
 	int work_item_id;
 
 	struct gpu_uop_t *uop;
@@ -243,7 +243,7 @@ void gpu_alu_engine_read(struct gpu_compute_unit_t *compute_unit)
 	/* If instruction reads from local memory, do it here. */
 	if (uop->local_mem_read)
 	{
-		FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{
 			work_item = gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
@@ -316,8 +316,8 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 {
 	struct linked_list_t *finished_queue = compute_unit->alu_engine.finished_queue;
 
-	struct gpu_wavefront_t *wavefront;
-	struct gpu_work_item_t *work_item;
+	struct evg_wavefront_t *wavefront;
+	struct evg_work_item_t *work_item;
 	int work_item_id;
 
 	struct gpu_uop_t *cf_uop, *uop, *consumer;
@@ -340,7 +340,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 		/* If instruction writes to local memory, do it here. */
 		if (uop->local_mem_write)
 		{
-			FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
+			EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 			{
 				work_item = gpu->ndrange->work_items[work_item_id];
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
@@ -400,7 +400,7 @@ void gpu_alu_engine_write(struct gpu_compute_unit_t *compute_unit)
 			/* Last instruction in clause.
 			 * Since uops might get here out of order, the condition to check if
 			 * instruction is the last cannot be 'uop->last'. */
-			if (wavefront->clause_kind != GPU_CLAUSE_ALU && !wavefront->alu_engine_in_flight)
+			if (wavefront->clause_kind != EVG_CLAUSE_ALU && !wavefront->alu_engine_in_flight)
 			{
 				/* Extract CF uop from finished queue. Since instruction execution may
 				 * vary in latency, finished CF uop may not be the one at the head of the queue. */

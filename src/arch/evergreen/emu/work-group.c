@@ -28,43 +28,50 @@
  */
 
 
-struct gpu_work_group_t *gpu_work_group_create()
+struct evg_work_group_t *evg_work_group_create(char *name)
 {
-	struct gpu_work_group_t *work_group;
+	struct evg_work_group_t *work_group;
 
-	work_group = calloc(1, sizeof(struct gpu_work_group_t));
+	/* Allocate */
+	work_group = calloc(1, sizeof(struct evg_work_group_t));
+	if (!work_group)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	work_group->local_mem = mem_create();
 	work_group->local_mem->safe = 0;
+
+	/* Return */
 	return work_group;
 }
 
 
-void gpu_work_group_free(struct gpu_work_group_t *work_group)
+void evg_work_group_free(struct evg_work_group_t *work_group)
 {
 	mem_free(work_group->local_mem);
 	free(work_group);
 }
 
 
-int gpu_work_group_get_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status)
+int evg_work_group_get_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status)
 {
 	return (work_group->status & status) > 0;
 }
 
 
-void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status)
+void evg_work_group_set_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status)
 {
-	struct gpu_ndrange_t *ndrange = work_group->ndrange;
+	struct evg_ndrange_t *ndrange = work_group->ndrange;
 
 	/* Get only the new bits */
 	status &= ~work_group->status;
 
 	/* Add work-group to lists */
-	if (status & gpu_work_group_pending)
+	if (status & evg_work_group_pending)
 		DOUBLE_LINKED_LIST_INSERT_TAIL(ndrange, pending, work_group);
-	if (status & gpu_work_group_running)
+	if (status & evg_work_group_running)
 		DOUBLE_LINKED_LIST_INSERT_TAIL(ndrange, running, work_group);
-	if (status & gpu_work_group_finished)
+	if (status & evg_work_group_finished)
 		DOUBLE_LINKED_LIST_INSERT_TAIL(ndrange, finished, work_group);
 
 	/* Update it */
@@ -72,19 +79,19 @@ void gpu_work_group_set_status(struct gpu_work_group_t *work_group, enum gpu_wor
 }
 
 
-void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_work_group_status_t status)
+void evg_work_group_clear_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status)
 {
-	struct gpu_ndrange_t *ndrange = work_group->ndrange;
+	struct evg_ndrange_t *ndrange = work_group->ndrange;
 
 	/* Get only the bits that are set */
 	status &= work_group->status;
 
 	/* Remove work-group from lists */
-	if (status & gpu_work_group_pending)
+	if (status & evg_work_group_pending)
 		DOUBLE_LINKED_LIST_REMOVE(ndrange, pending, work_group);
-	if (status & gpu_work_group_running)
+	if (status & evg_work_group_running)
 		DOUBLE_LINKED_LIST_REMOVE(ndrange, running, work_group);
-	if (status & gpu_work_group_finished)
+	if (status & evg_work_group_finished)
 		DOUBLE_LINKED_LIST_REMOVE(ndrange, finished, work_group);
 	
 	/* Update status */
@@ -92,10 +99,10 @@ void gpu_work_group_clear_status(struct gpu_work_group_t *work_group, enum gpu_w
 }
 
 
-void gpu_work_group_dump(struct gpu_work_group_t *work_group, FILE *f)
+void evg_work_group_dump(struct evg_work_group_t *work_group, FILE *f)
 {
-	struct gpu_ndrange_t *ndrange = work_group->ndrange;
-	struct gpu_wavefront_t *wavefront;
+	struct evg_ndrange_t *ndrange = work_group->ndrange;
+	struct evg_wavefront_t *wavefront;
 	int wavefront_id;
 
 	if (!f)
@@ -112,8 +119,8 @@ void gpu_work_group_dump(struct gpu_work_group_t *work_group, FILE *f)
 	fprintf(f, "\n");
 
 	/* Dump wavefronts */
-	FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
+	EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id) {
 		wavefront = ndrange->wavefronts[wavefront_id];
-		gpu_wavefront_dump(wavefront, f);
+		evg_wavefront_dump(wavefront, f);
 	}
 }

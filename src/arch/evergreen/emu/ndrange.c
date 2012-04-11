@@ -25,49 +25,62 @@
  * GPU ND-Range
  */
 
-struct gpu_ndrange_t *gpu_ndrange_create(struct opencl_kernel_t *kernel)
+struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel)
 {
-	struct gpu_ndrange_t *ndrange;
+	struct evg_ndrange_t *ndrange;
 
-	ndrange = calloc(1, sizeof(struct gpu_ndrange_t));
+	/* Allocate */
+	ndrange = calloc(1, sizeof(struct evg_ndrange_t));
+	if (!ndrange)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Name */
+	ndrange->name = strdup(kernel->name);
+	if (!ndrange->name)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	ndrange->kernel = kernel;
 	ndrange->local_mem_top = kernel->func_mem_local;
 	ndrange->id = gk->ndrange_count++;
+
+	/* Return */
 	return ndrange;
 }
 
 
-void gpu_ndrange_free(struct gpu_ndrange_t *ndrange)
+void evg_ndrange_free(struct evg_ndrange_t *ndrange)
 {
 	int i;
 
 	/* Free work-groups */
 	for (i = 0; i < ndrange->work_group_count; i++)
-		gpu_work_group_free(ndrange->work_groups[i]);
+		evg_work_group_free(ndrange->work_groups[i]);
 	free(ndrange->work_groups);
 
 	/* Free wavefronts */
 	for (i = 0; i < ndrange->wavefront_count; i++)
-		gpu_wavefront_free(ndrange->wavefronts[i]);
+		evg_wavefront_free(ndrange->wavefronts[i]);
 	free(ndrange->wavefronts);
 
 	/* Free work-items */
 	for (i = 0; i < ndrange->work_item_count; i++)
-		gpu_work_item_free(ndrange->work_items[i]);
+		evg_work_item_free(ndrange->work_items[i]);
 	free(ndrange->work_items);
 
 	/* Free ndrange */
+	free(ndrange->name);
 	free(ndrange);
 }
 
 
-void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
+void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 {
-	struct opencl_kernel_t *kernel = ndrange->kernel;
+	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
 
-	struct gpu_work_group_t *work_group;
-	struct gpu_wavefront_t *wavefront;
-	struct gpu_work_item_t *work_item;
+	struct evg_work_group_t *work_group;
+	struct evg_wavefront_t *wavefront;
+	struct evg_work_item_t *work_item;
 
 	int gidx, gidy, gidz;  /* 3D work-group ID iterators */
 	int lidx, lidy, lidz;  /* 3D work-item local ID iterators */
@@ -78,26 +91,27 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 	int lid;  /* Local ID iterator */
 
 	/* Array of work-groups */
-	strcpy(ndrange->name, kernel->name);
 	ndrange->work_group_count = kernel->group_count;
 	ndrange->work_group_id_first = 0;
 	ndrange->work_group_id_last = ndrange->work_group_count - 1;
 	ndrange->work_groups = calloc(ndrange->work_group_count, sizeof(void *));
-	for (gid = 0; gid < kernel->group_count; gid++) {
-		ndrange->work_groups[gid] = gpu_work_group_create();
+	for (gid = 0; gid < kernel->group_count; gid++)
+	{
+		ndrange->work_groups[gid] = evg_work_group_create();
 		work_group = ndrange->work_groups[gid];
 	}
 	
 	/* Array of wavefronts */
-	ndrange->wavefronts_per_work_group = (kernel->local_size + gpu_wavefront_size - 1) / gpu_wavefront_size;
+	ndrange->wavefronts_per_work_group = (kernel->local_size + evg_emu_wavefront_size - 1) / evg_emu_wavefront_size;
 	ndrange->wavefront_count = ndrange->wavefronts_per_work_group * ndrange->work_group_count;
 	ndrange->wavefront_id_first = 0;
 	ndrange->wavefront_id_last = ndrange->wavefront_count - 1;
 	assert(ndrange->wavefronts_per_work_group > 0 && ndrange->wavefront_count > 0);
 	ndrange->wavefronts = calloc(ndrange->wavefront_count, sizeof(void *));
-	for (wid = 0; wid < ndrange->wavefront_count; wid++) {
+	for (wid = 0; wid < ndrange->wavefront_count; wid++)
+	{
 		gid = wid / ndrange->wavefronts_per_work_group;
-		ndrange->wavefronts[wid] = gpu_wavefront_create();
+		ndrange->wavefronts[wid] = evg_wavefront_create();
 		wavefront = ndrange->wavefronts[wid];
 		work_group = ndrange->work_groups[gid];
 
@@ -115,10 +129,12 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 	ndrange->work_items = calloc(ndrange->work_item_count, sizeof(void *));
 	tid = 0;
 	gid = 0;
-	for (gidz = 0; gidz < kernel->group_count3[2]; gidz++) {
-		for (gidy = 0; gidy < kernel->group_count3[1]; gidy++) {
-			for (gidx = 0; gidx < kernel->group_count3[0]; gidx++) {
-				
+	for (gidz = 0; gidz < kernel->group_count3[2]; gidz++)
+	{
+		for (gidy = 0; gidy < kernel->group_count3[1]; gidy++)
+		{
+			for (gidx = 0; gidx < kernel->group_count3[0]; gidx++)
+			{
 				/* Assign work-group ID */
 				work_group = ndrange->work_groups[gid];
 				work_group->ndrange = ndrange;
@@ -126,7 +142,7 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 				work_group->id_3d[1] = gidy;
 				work_group->id_3d[2] = gidz;
 				work_group->id = gid;
-				gpu_work_group_set_status(work_group, gpu_work_group_pending);
+				evg_work_group_set_status(work_group, evg_work_group_pending);
 
 				/* First, last, and number of work-items in work-group */
 				work_group->work_item_id_first = tid;
@@ -144,18 +160,20 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 
 				/* Iterate through work-items */
 				lid = 0;
-				for (lidz = 0; lidz < kernel->local_size3[2]; lidz++) {
-					for (lidy = 0; lidy < kernel->local_size3[1]; lidy++) {
-						for (lidx = 0; lidx < kernel->local_size3[0]; lidx++) {
-							
+				for (lidz = 0; lidz < kernel->local_size3[2]; lidz++)
+				{
+					for (lidy = 0; lidy < kernel->local_size3[1]; lidy++)
+					{
+						for (lidx = 0; lidx < kernel->local_size3[0]; lidx++)
+						{
 							/* Wavefront ID */
 							wid = gid * ndrange->wavefronts_per_work_group +
-								lid / gpu_wavefront_size;
+								lid / evg_emu_wavefront_size;
 							assert(wid < ndrange->wavefront_count);
 							wavefront = ndrange->wavefronts[wid];
 							
 							/* Create work-item */
-							ndrange->work_items[tid] = gpu_work_item_create();
+							ndrange->work_items[tid] = evg_work_item_create();
 							work_item = ndrange->work_items[tid];
 							work_item->ndrange = ndrange;
 
@@ -172,7 +190,7 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 							work_item->id_in_work_group = lid;
 
 							/* Other */
-							work_item->id_in_wavefront = work_item->id_in_work_group % gpu_wavefront_size;
+							work_item->id_in_wavefront = work_item->id_in_work_group % evg_emu_wavefront_size;
 							work_item->work_group = ndrange->work_groups[gid];
 							work_item->wavefront = ndrange->wavefronts[wid];
 
@@ -209,17 +227,18 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 	}
 
 	/* Assign names to wavefronts */
-	for (wid = 0; wid < ndrange->wavefront_count; wid++) {
+	for (wid = 0; wid < ndrange->wavefront_count; wid++)
+	{
 		wavefront = ndrange->wavefronts[wid];
 		snprintf(wavefront->name, sizeof(wavefront->name), "wavefront[i%d-i%d]",
 			wavefront->work_item_id_first, wavefront->work_item_id_last);
 
 		/* Initialize wavefront program counter */
-		if (!kernel->amd_bin->enc_dict_entry_evergreen->sec_text_buffer.size)
+		if (!kernel->bin_file->enc_dict_entry_evergreen->sec_text_buffer.size)
 			fatal("%s: cannot load kernel code", __FUNCTION__);
-		wavefront->cf_buf_start = kernel->amd_bin->enc_dict_entry_evergreen->sec_text_buffer.ptr;
+		wavefront->cf_buf_start = kernel->bin_file->enc_dict_entry_evergreen->sec_text_buffer.ptr;
 		wavefront->cf_buf = wavefront->cf_buf_start;
-		wavefront->clause_kind = GPU_CLAUSE_CF;
+		wavefront->clause_kind = EVG_CLAUSE_CF;
 		wavefront->emu_time_start = x86_emu_timer();
 	}
 
@@ -252,9 +271,9 @@ void gpu_ndrange_setup_work_items(struct gpu_ndrange_t *ndrange)
 
 /* Write initial values in constant buffer 0 (CB0) */
 /* FIXME: constant memory should be member of 'gk' or 'ndrange'? */
-void gpu_ndrange_setup_const_mem(struct gpu_ndrange_t *ndrange)
+void evg_ndrange_setup_const_mem(struct evg_ndrange_t *ndrange)
 {
-	struct opencl_kernel_t *kernel = ndrange->kernel;
+	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
 	uint32_t zero = 0;
 	float f;
 
@@ -332,10 +351,10 @@ void gpu_ndrange_setup_const_mem(struct gpu_ndrange_t *ndrange)
 }
 
 
-void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange)
+void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 {
-	struct opencl_kernel_t *kernel = ndrange->kernel;
-	struct opencl_kernel_arg_t *arg;
+	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
+	struct evg_opencl_kernel_arg_t *arg;
 	int i;
 	int cb_index = 0;
 
@@ -353,31 +372,31 @@ void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange)
 		/* Process argument depending on its type */
 		switch (arg->kind) {
 
-		case OPENCL_KERNEL_ARG_KIND_VALUE: {
+		case EVG_OPENCL_KERNEL_ARG_KIND_VALUE: {
 			
 			/* Value copied directly into device constant memory */
 			gpu_isa_const_mem_write(1, cb_index, 0, &arg->value);
-			opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i, 
+			evg_opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i, 
 					arg->value, cb_index);
 			cb_index++;
 			break;
 		}
 
-		case OPENCL_KERNEL_ARG_KIND_IMAGE:
+		case EVG_OPENCL_KERNEL_ARG_KIND_IMAGE:
 
 			switch (arg->mem_scope) 
 			{
 
-			case OPENCL_MEM_SCOPE_GLOBAL:
+			case EVG_OPENCL_MEM_SCOPE_GLOBAL:
 			{
-				struct opencl_mem_t *mem;
+				struct evg_opencl_mem_t *mem;
 
 				/* Image type
 				 * Images really take up two slots, but for now we'll
 				 * just copy the pointer into both. */
-				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
 				gpu_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
-				opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
+				evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
 						" device_ptr=0x%x\n", i, arg->value, cb_index,
 						mem->device_ptr);
 				gpu_isa_const_mem_write(1, cb_index+1, 0, &mem->device_ptr);
@@ -391,32 +410,32 @@ void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange)
 			}
 			break;
 
-		case OPENCL_KERNEL_ARG_KIND_POINTER:
+		case EVG_OPENCL_KERNEL_ARG_KIND_POINTER:
 		{
 			switch (arg->mem_scope) {
 
-			case OPENCL_MEM_SCOPE_GLOBAL:
+			case EVG_OPENCL_MEM_SCOPE_GLOBAL:
 			{
-				struct opencl_mem_t *mem;
+				struct evg_opencl_mem_t *mem;
 
 				/* Pointer in __global scope.
 				 * Argument value is a pointer to an 'opencl_mem' object.
 				 * It is translated first into a device memory pointer. */
-				mem = opencl_object_get(OPENCL_OBJ_MEM, arg->value);
+				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
 				gpu_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
-				opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
+				evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
 						" device_ptr=0x%x\n", i, arg->value, cb_index,
 						mem->device_ptr);
 				cb_index++;
 				break;
 			}
 
-			case OPENCL_MEM_SCOPE_LOCAL:
+			case EVG_OPENCL_MEM_SCOPE_LOCAL:
 			{
 				/* Pointer in __local scope.
 				 * Argument value is always NULL, just assign space for it. */
 				gpu_isa_const_mem_write(1, cb_index, 0, &ndrange->local_mem_top);
-				opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
+				evg_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
 					i, arg->size, ndrange->local_mem_top);
 				ndrange->local_mem_top += arg->size;
 				cb_index++;
@@ -430,9 +449,9 @@ void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange)
 			break;
 		}
 
-		case OPENCL_KERNEL_ARG_KIND_SAMPLER:
+		case EVG_OPENCL_KERNEL_ARG_KIND_SAMPLER:
 		{
-			opencl_debug("    arg %d: sampler at CB1[%d]\n", i, cb_index);
+			evg_opencl_debug("    arg %d: sampler at CB1[%d]\n", i, cb_index);
 			cb_index++;
 			break;
 		}
@@ -444,16 +463,16 @@ void gpu_ndrange_setup_args(struct gpu_ndrange_t *ndrange)
 }
 
 
-void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
+void evg_ndrange_run(struct evg_ndrange_t *ndrange)
 {
-	struct gpu_work_group_t *work_group, *work_group_next;
-	struct gpu_wavefront_t *wavefront, *wavefront_next;
+	struct evg_work_group_t *work_group, *work_group_next;
+	struct evg_wavefront_t *wavefront, *wavefront_next;
 	uint64_t cycle = 0;
 
 	/* Set all ready work-groups to running */
 	while ((work_group = ndrange->pending_list_head)) {
-		gpu_work_group_clear_status(work_group, gpu_work_group_pending);
-		gpu_work_group_set_status(work_group, gpu_work_group_running);
+		evg_work_group_clear_status(work_group, evg_work_group_pending);
+		evg_work_group_set_status(work_group, evg_work_group_running);
 	}
 
 	/* Start GPU timer */
@@ -463,11 +482,11 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 	while (ndrange->running_list_head)
 	{
 		/* Stop if maximum number of GPU cycles exceeded */
-		if (gpu_max_cycles && cycle >= gpu_max_cycles)
+		if (evg_emu_max_cycles && cycle >= evg_emu_max_cycles)
 			x86_emu_finish = x86_emu_finish_max_gpu_cycles;
 
 		/* Stop if maximum number of GPU instructions exceeded */
-		if (gpu_max_inst && gk->inst_count >= gpu_max_inst)
+		if (evg_emu_max_inst && gk->inst_count >= evg_emu_max_inst)
 			x86_emu_finish = x86_emu_finish_max_gpu_inst;
 
 		/* Stop if any reason met */
@@ -490,7 +509,7 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 				wavefront_next = wavefront->running_list_next;
 
 				/* Execute instruction in wavefront */
-				gpu_wavefront_execute(wavefront);
+				evg_wavefront_execute(wavefront);
 			}
 		}
 	}
@@ -499,17 +518,17 @@ void gpu_ndrange_run(struct gpu_ndrange_t *ndrange)
 	gk_timer_stop();
 
 	/* Dump stats */
-	gpu_ndrange_dump(ndrange, gpu_kernel_report_file);
+	evg_ndrange_dump(ndrange, evg_emu_report_file);
 
 	/* Stop if maximum number of kernels reached */
-	if (gpu_max_kernels && gk->ndrange_count >= gpu_max_kernels)
+	if (evg_emu_max_kernels && gk->ndrange_count >= evg_emu_max_kernels)
 		x86_emu_finish = x86_emu_finish_max_gpu_kernels;
 }
 
 
-void gpu_ndrange_dump(struct gpu_ndrange_t *ndrange, FILE *f)
+void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
 {
-	struct gpu_work_group_t *work_group;
+	struct evg_work_group_t *work_group;
 	int work_group_id;
 	int work_item_id, last_work_item_id;
 	uint32_t branch_digest, last_branch_digest;
@@ -548,8 +567,8 @@ void gpu_ndrange_dump(struct gpu_ndrange_t *ndrange, FILE *f)
 	fprintf(f, "\n");
 
 	/* Work-groups */
-	FOREACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id) {
+	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id) {
 		work_group = ndrange->work_groups[work_group_id];
-		gpu_work_group_dump(work_group, f);
+		evg_work_group_dump(work_group, f);
 	}
 }
