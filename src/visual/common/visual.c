@@ -49,9 +49,9 @@ void visual_run(char *file_name)
 
 	/* Initialization */
 	m2s_dist_file("close.png", m2s_images_path, m2s_images_path,
-		vlist_image_close_path, sizeof vlist_image_close_path);
+		visual_list_image_close_path, sizeof visual_list_image_close_path);
 	m2s_dist_file("close-sel.png", m2s_images_path, m2s_images_path,
-		vlist_image_close_sel_path, sizeof vlist_image_close_sel_path);
+		visual_list_image_close_sel_path, sizeof visual_list_image_close_sel_path);
 	m2s_dist_file("back-single.png", m2s_images_path, m2s_images_path,
 		cycle_bar_back_single_path, sizeof cycle_bar_back_single_path);
 	m2s_dist_file("back-double.png", m2s_images_path, m2s_images_path,
