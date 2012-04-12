@@ -83,45 +83,40 @@ unsigned int trace_line_get_symbol_value_hex(struct trace_line_t *line, char *sy
  * State File
  */
 
-struct state_file_t;
+typedef void (*vi_state_write_checkpoint_func_t)(void *user_data, FILE *f);
+typedef void (*vi_state_read_checkpoint_func_t)(void *user_data, FILE *f);
+typedef void (*vi_state_process_trace_line_func_t)(void *user_data, struct trace_line_t *trace_line);
+typedef void (*vi_state_refresh_func_t)(void *user_data);
 
-/* Global state file */
-extern struct state_file_t *visual_state_file;
+#define VI_STATE_FOR_EACH_HEADER(trace_line) \
+	for ((trace_line) = vi_state_header_first(); \
+	(trace_line); (trace_line) = vi_state_header_next())
 
-typedef void (*state_file_write_checkpoint_func_t)(void *user_data, FILE *f);
-typedef void (*state_file_read_checkpoint_func_t)(void *user_data, FILE *f);
-typedef void (*state_file_process_trace_line_func_t)(void *user_data, struct trace_line_t *trace_line);
-typedef void (*state_file_refresh_func_t)(void *user_data);
+void vi_state_init(char *trace_file_name);
+void vi_state_done(void);
 
-#define STATE_FILE_FOR_EACH_HEADER(state_file, trace_line) \
-	for ((trace_line) = state_file_header_first((state_file)); \
-	(trace_line); (trace_line) = state_file_header_next((state_file)))
+long long vi_state_get_num_cycles(void);
+long long vi_state_get_current_cycle(void);
 
-struct state_file_t *state_file_create(char *trace_file_name);
-void state_file_free(struct state_file_t *file);
+void vi_state_create_checkpoints(void);
 
-long long state_file_get_num_cycles(struct state_file_t *file);
-long long state_file_get_cycle(struct state_file_t *file);
-
-void state_file_create_checkpoints(struct state_file_t *file);
-
-void state_file_new_category(struct state_file_t *file, char *name,
-	state_file_read_checkpoint_func_t read_checkpoint_func,
-	state_file_write_checkpoint_func_t write_checkpoint_func,
-	state_file_refresh_func_t refresh_func,
+void vi_state_new_category(char *name,
+	vi_state_read_checkpoint_func_t read_checkpoint_func,
+	vi_state_write_checkpoint_func_t write_checkpoint_func,
+	vi_state_refresh_func_t refresh_func,
 	void *user_data);
-void state_file_new_command(struct state_file_t *file, char *command_name,
-	state_file_process_trace_line_func_t process_trace_line_func,
+void vi_state_new_command(char *command_name,
+	vi_state_process_trace_line_func_t process_trace_line_func,
 	void *user_data);
 
-struct trace_line_t *state_file_header_first(struct state_file_t *file);
-struct trace_line_t *state_file_header_next(struct state_file_t *file);
+struct trace_line_t *vi_state_header_first(void);
+struct trace_line_t *vi_state_header_next(void);
 
-struct trace_line_t *state_file_trace_line_first(struct state_file_t *file, long long cycle);
-struct trace_line_t *state_file_trace_line_next(struct state_file_t *file);
+struct trace_line_t *vi_state_trace_line_first(long long cycle);
+struct trace_line_t *vi_state_trace_line_next(void);
 
-void state_file_refresh(struct state_file_t *file);
-void state_file_go_to_cycle(struct state_file_t *file, long long cycle);
+void vi_state_refresh(void);
+void vi_state_go_to_cycle(long long cycle);
 
 
 
@@ -131,30 +126,30 @@ void state_file_go_to_cycle(struct state_file_t *file, long long cycle);
  */
 
 
-extern char visual_list_image_close_path[MAX_PATH_SIZE];
-extern char visual_list_image_close_sel_path[MAX_PATH_SIZE];
+extern char vi_list_image_close_path[MAX_PATH_SIZE];
+extern char vi_list_image_close_sel_path[MAX_PATH_SIZE];
 
-typedef void (*visual_list_get_elem_name_func_t)(void *elem, char *buf, int size);
-typedef void (*visual_list_get_elem_desc_func_t)(void *elem, char *buf, int size);
+typedef void (*vi_list_get_elem_name_func_t)(void *elem, char *buf, int size);
+typedef void (*vi_list_get_elem_desc_func_t)(void *elem, char *buf, int size);
 
-#define VISUAL_LIST_FOR_EACH(list, iter) \
-	for ((iter) = 0; (iter) < visual_list_count((list)); (iter)++)
+#define VI_LIST_FOR_EACH(list, iter) \
+	for ((iter) = 0; (iter) < vi_list_count((list)); (iter)++)
 
-struct visual_list_t;
+struct vi_list_t;
 
-struct visual_list_t *visual_list_create(char *title, int width, int height,
-	visual_list_get_elem_name_func_t get_elem_name,
-	visual_list_get_elem_name_func_t get_elem_desc);
-void visual_list_free(struct visual_list_t *list);
+struct vi_list_t *vi_list_create(char *title, int width, int height,
+	vi_list_get_elem_name_func_t get_elem_name,
+	vi_list_get_elem_name_func_t get_elem_desc);
+void vi_list_free(struct vi_list_t *list);
 
-int visual_list_count(struct visual_list_t *list);
-void visual_list_add(struct visual_list_t *list, void *elem);
-void *visual_list_get(struct visual_list_t *list, int index);
-void *visual_list_remove_at(struct visual_list_t *list, int index);
+int vi_list_count(struct vi_list_t *list);
+void vi_list_add(struct vi_list_t *list, void *elem);
+void *vi_list_get(struct vi_list_t *list, int index);
+void *vi_list_remove_at(struct vi_list_t *list, int index);
 
-void visual_list_refresh(struct visual_list_t *list);
+void vi_list_refresh(struct vi_list_t *list);
 
-GtkWidget *visual_list_get_widget(struct visual_list_t *list);
+GtkWidget *vi_list_get_widget(struct vi_list_t *list);
 
 
 

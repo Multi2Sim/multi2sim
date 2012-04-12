@@ -7,10 +7,10 @@ if HAVE_GTK
 libcommon_a_SOURCES += \
 	cycle-bar.c \
 	info-popup.c \
-	state-file.c \
 	trace-file.c \
 	visual.c \
-	visual-list.c
+	visual-list.c \
+	visual-state.c
 
 AM_CFLAGS = @GTK_CFLAGS@
 

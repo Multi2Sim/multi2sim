@@ -26,7 +26,6 @@
  * Main Program
  */
 
-struct state_file_t *visual_state_file;
 struct cycle_bar_t *visual_cycle_bar;
 struct visual_mem_system_widget_t *visual_mem_system_widget;
 
@@ -49,9 +48,9 @@ void visual_run(char *file_name)
 
 	/* Initialization */
 	m2s_dist_file("close.png", m2s_images_path, m2s_images_path,
-		visual_list_image_close_path, sizeof visual_list_image_close_path);
+		vi_list_image_close_path, sizeof vi_list_image_close_path);
 	m2s_dist_file("close-sel.png", m2s_images_path, m2s_images_path,
-		visual_list_image_close_sel_path, sizeof visual_list_image_close_sel_path);
+		vi_list_image_close_sel_path, sizeof vi_list_image_close_sel_path);
 	m2s_dist_file("back-single.png", m2s_images_path, m2s_images_path,
 		cycle_bar_back_single_path, sizeof cycle_bar_back_single_path);
 	m2s_dist_file("back-double.png", m2s_images_path, m2s_images_path,
@@ -67,14 +66,14 @@ void visual_run(char *file_name)
 	m2s_dist_file("go.png", m2s_images_path, m2s_images_path,
 		cycle_bar_go_path, sizeof cycle_bar_go_path);
 
-	/* Create state file */
-	visual_state_file = state_file_create(file_name);
+	/* Initialize visual state */
+	vi_state_init(file_name);
 
 	/* Initialize visual systems */
 	visual_mem_system_init();
 
 	/* Create checkpoints */
-	state_file_create_checkpoints(visual_state_file);
+	vi_state_create_checkpoints();
 
 	/* Initialize GTK */
 	gtk_init(NULL, NULL);
@@ -107,5 +106,5 @@ void visual_run(char *file_name)
 
 	/* Free */
 	visual_mem_system_done();
-	state_file_free(visual_state_file);
+	vi_state_done();
 }

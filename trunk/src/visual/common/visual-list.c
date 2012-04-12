@@ -20,7 +20,7 @@
 #include <visual-common.h>
 
 
-struct visual_list_item_t
+struct vi_list_item_t
 {
 	/* Associated GTK widgets */
 	GtkWidget *event_box;
@@ -28,33 +28,33 @@ struct visual_list_item_t
 	GdkColor label_color;
 
 	/* Visual list where it belongs */
-	struct visual_list_t *vlist;
+	struct vi_list_t *vlist;
 
 	/* Associated data element from 'vlist->elem_list' */
 	void *elem;
 };
 
 
-struct visual_list_popup_t
+struct vi_list_popup_t
 {
 	/* GTK widgets */
 	GtkWidget *window;
 	GtkWidget *image_close;
 
-	/* List of 'visual_list_item_t' elements */
+	/* List of 'vi_list_item_t' elements */
 	struct list_t *item_list;
 
 	/* Visual list that triggered the pop-up */
-	struct visual_list_t *vlist;
+	struct vi_list_t *vlist;
 };
 
-struct visual_list_popup_t *visual_list_popup_create(struct visual_list_t *vlist);
-void visual_list_popup_free(struct visual_list_popup_t *popup);
+struct vi_list_popup_t *vi_list_popup_create(struct vi_list_t *vlist);
+void vi_list_popup_free(struct vi_list_popup_t *popup);
 
-void visual_list_popup_show(struct visual_list_t *vlist);
+void vi_list_popup_show(struct vi_list_t *vlist);
 
 
-struct visual_list_t
+struct vi_list_t
 {
 	/* Widget showing list */
 	GtkWidget *widget;
@@ -66,8 +66,8 @@ struct visual_list_t
 	/* List of elements in the list */
 	struct list_t *elem_list;
 
-	/* List of elements 'visual_list_item_t' currently displayed in the list. This
-	 * list will synchronize with 'elem_list' upon a call to 'visual_list_refresh'. */
+	/* List of elements 'vi_list_item_t' currently displayed in the list. This
+	 * list will synchronize with 'elem_list' upon a call to 'vi_list_refresh'. */
 	struct list_t *item_list;
 
 	/* Call-back functions to get element names and descriptions */
@@ -88,11 +88,11 @@ struct visual_list_t
  */
 
 
-static struct visual_list_item_t *visual_list_item_create(void)
+static struct vi_list_item_t *vi_list_item_create(void)
 {
-	struct visual_list_item_t *item;
+	struct vi_list_item_t *item;
 	/* Allocate */
-	item = calloc(1, sizeof(struct visual_list_item_t));
+	item = calloc(1, sizeof(struct vi_list_item_t));
 	if (!item)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -101,14 +101,14 @@ static struct visual_list_item_t *visual_list_item_create(void)
 }
 
 
-static void visual_list_item_free(struct visual_list_item_t *item)
+static void vi_list_item_free(struct vi_list_item_t *item)
 {
 	free(item);
 }
 
 
-static gboolean visual_list_item_enter_notify_event(GtkWidget *widget,
-	GdkEventCrossing *event, struct visual_list_item_t *item)
+static gboolean vi_list_item_enter_notify_event(GtkWidget *widget,
+	GdkEventCrossing *event, struct vi_list_item_t *item)
 {
 	GdkColor color;
 
@@ -139,8 +139,8 @@ static gboolean visual_list_item_enter_notify_event(GtkWidget *widget,
 }
 
 
-static gboolean visual_list_item_leave_notify_event(GtkWidget *widget,
-	GdkEventCrossing *event, struct visual_list_item_t *item)
+static gboolean vi_list_item_leave_notify_event(GtkWidget *widget,
+	GdkEventCrossing *event, struct vi_list_item_t *item)
 {
 	PangoAttrList *attrs;
 	PangoAttribute *underline_attr;
@@ -159,11 +159,11 @@ static gboolean visual_list_item_leave_notify_event(GtkWidget *widget,
 }
 
 
-static gboolean visual_list_item_button_press_event(GtkWidget *widget,
-	GdkEventButton *event, struct visual_list_item_t *item)
+static gboolean vi_list_item_button_press_event(GtkWidget *widget,
+	GdkEventButton *event, struct vi_list_item_t *item)
 {
 	char text[MAX_LONG_STRING_SIZE];
-	struct visual_list_t *vlist = item->vlist;
+	struct vi_list_t *vlist = item->vlist;
 
 	/* Get item description */
 	if (vlist->get_elem_desc)
@@ -177,10 +177,10 @@ static gboolean visual_list_item_button_press_event(GtkWidget *widget,
 }
 
 
-static gboolean visual_list_item_more_press_event(GtkWidget *widget,
-	GdkEventButton *event, struct visual_list_item_t *item)
+static gboolean vi_list_item_more_press_event(GtkWidget *widget,
+	GdkEventButton *event, struct vi_list_item_t *item)
 {
-	visual_list_popup_show(item->vlist);
+	vi_list_popup_show(item->vlist);
 	return FALSE;
 }
 
@@ -193,51 +193,51 @@ static gboolean visual_list_item_more_press_event(GtkWidget *widget,
 
 
 /* Path for 'close' icon */
-char visual_list_image_close_path[MAX_PATH_SIZE];
-char visual_list_image_close_sel_path[MAX_PATH_SIZE];
+char vi_list_image_close_path[MAX_PATH_SIZE];
+char vi_list_image_close_sel_path[MAX_PATH_SIZE];
 
 
-static gboolean visual_list_popup_image_close_enter_notify_event(GtkWidget *widget,
-	GdkEvent *event, struct visual_list_popup_t *popup)
+static gboolean vi_list_popup_image_close_enter_notify_event(GtkWidget *widget,
+	GdkEvent *event, struct vi_list_popup_t *popup)
 {
-	gtk_image_set_from_file(GTK_IMAGE(popup->image_close), visual_list_image_close_sel_path);
+	gtk_image_set_from_file(GTK_IMAGE(popup->image_close), vi_list_image_close_sel_path);
 	return FALSE;
 }
 
 
-static gboolean visual_list_popup_image_close_leave_notify_event(GtkWidget *widget,
-	GdkEvent *event, struct visual_list_popup_t *popup)
+static gboolean vi_list_popup_image_close_leave_notify_event(GtkWidget *widget,
+	GdkEvent *event, struct vi_list_popup_t *popup)
 {
-	gtk_image_set_from_file(GTK_IMAGE(popup->image_close), visual_list_image_close_path);
+	gtk_image_set_from_file(GTK_IMAGE(popup->image_close), vi_list_image_close_path);
 	return FALSE;
 }
 
 
-static void visual_list_popup_image_close_clicked_event(GtkWidget *widget,
-	GdkEventButton *event, struct visual_list_popup_t *popup)
+static void vi_list_popup_image_close_clicked_event(GtkWidget *widget,
+	GdkEventButton *event, struct vi_list_popup_t *popup)
 {
 	gtk_widget_destroy(popup->window);
 }
 
 
-static void visual_list_popup_destroy_event(GtkWidget *widget, struct visual_list_popup_t *popup)
+static void vi_list_popup_destroy_event(GtkWidget *widget, struct vi_list_popup_t *popup)
 {
 	/* Free item list */
 	while (popup->item_list->count)
-		visual_list_item_free(list_remove_at(popup->item_list, 0));
+		vi_list_item_free(list_remove_at(popup->item_list, 0));
 	list_free(popup->item_list);
 
 	/* Free pop-up */
-	visual_list_popup_free(popup);
+	vi_list_popup_free(popup);
 }
 
 
-struct visual_list_popup_t *visual_list_popup_create(struct visual_list_t *vlist)
+struct vi_list_popup_t *vi_list_popup_create(struct vi_list_t *vlist)
 {
-	struct visual_list_popup_t *popup;
+	struct vi_list_popup_t *popup;
 
 	/* Allocate */
-	popup = calloc(1, sizeof(struct visual_list_popup_t));
+	popup = calloc(1, sizeof(struct vi_list_popup_t));
 	if (!popup)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -247,7 +247,7 @@ struct visual_list_popup_t *visual_list_popup_create(struct visual_list_t *vlist
 	int i;
 	int count;
 
-	/* Create list of 'visual_list_item_t'  */
+	/* Create list of 'vi_list_item_t'  */
 	popup->item_list = list_create();
 
 	/* Create main window */
@@ -257,20 +257,20 @@ struct visual_list_popup_t *visual_list_popup_create(struct visual_list_t *vlist
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_MOUSE);
 	gtk_widget_set_size_request(window, 200, 250);
 	gtk_window_set_modal(GTK_WINDOW(window), TRUE);
-	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(visual_list_popup_destroy_event), popup);
+	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(vi_list_popup_destroy_event), popup);
 
 	/* Close button */
-	GtkWidget *image_close = gtk_image_new_from_file(visual_list_image_close_path);
+	GtkWidget *image_close = gtk_image_new_from_file(vi_list_image_close_path);
 	GtkWidget *event_box_close = gtk_event_box_new();
 	popup->image_close = image_close;
 	gtk_container_add(GTK_CONTAINER(event_box_close), image_close);
 	gtk_widget_add_events(event_box_close, GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
 	g_signal_connect(G_OBJECT(event_box_close), "enter-notify-event",
-		G_CALLBACK(visual_list_popup_image_close_enter_notify_event), popup);
+		G_CALLBACK(vi_list_popup_image_close_enter_notify_event), popup);
 	g_signal_connect(G_OBJECT(event_box_close), "leave-notify-event",
-		G_CALLBACK(visual_list_popup_image_close_leave_notify_event), popup);
+		G_CALLBACK(vi_list_popup_image_close_leave_notify_event), popup);
 	g_signal_connect(G_OBJECT(event_box_close), "button-press-event",
-		G_CALLBACK(visual_list_popup_image_close_clicked_event), popup);
+		G_CALLBACK(vi_list_popup_image_close_clicked_event), popup);
 
 	/* Title */
 	GtkWidget *title_label = gtk_label_new(vlist->title);
@@ -305,7 +305,7 @@ struct visual_list_popup_t *visual_list_popup_create(struct visual_list_t *vlist
 	{
 		void *elem;
 		char str[MAX_STRING_SIZE];
-		struct visual_list_item_t *item;
+		struct vi_list_item_t *item;
 
 		/* Get element */
 		elem = list_get(vlist->elem_list, i);
@@ -334,7 +334,7 @@ struct visual_list_popup_t *visual_list_popup_create(struct visual_list_t *vlist
 		gtk_container_add(GTK_CONTAINER(event_box), label);
 
 		/* Create list_layout_item */
-		item = visual_list_item_create();
+		item = vi_list_item_create();
 		item->vlist = vlist;
 		item->event_box = event_box;
 		item->label = label;
@@ -344,11 +344,11 @@ struct visual_list_popup_t *visual_list_popup_create(struct visual_list_t *vlist
 		/* Events for event box */
 		gtk_widget_add_events(event_box, GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
 		g_signal_connect(G_OBJECT(event_box), "enter-notify-event",
-			G_CALLBACK(visual_list_item_enter_notify_event), item);
+			G_CALLBACK(vi_list_item_enter_notify_event), item);
 		g_signal_connect(G_OBJECT(event_box), "leave-notify-event",
-			G_CALLBACK(visual_list_item_leave_notify_event), item);
+			G_CALLBACK(vi_list_item_leave_notify_event), item);
 		g_signal_connect(G_OBJECT(event_box), "button-press-event",
-			G_CALLBACK(visual_list_item_button_press_event), item);
+			G_CALLBACK(vi_list_item_button_press_event), item);
 
 		gtk_table_attach(GTK_TABLE(table), event_box, 0, 1, i, i + 1, GTK_FILL, GTK_FILL, 0, 0);
 	}
@@ -365,17 +365,17 @@ struct visual_list_popup_t *visual_list_popup_create(struct visual_list_t *vlist
 }
 
 
-void visual_list_popup_free(struct visual_list_popup_t *popup)
+void vi_list_popup_free(struct vi_list_popup_t *popup)
 {
 	free(popup);
 }
 
 
-void visual_list_popup_show(struct visual_list_t *vlist)
+void vi_list_popup_show(struct vi_list_t *vlist)
 {
-	struct visual_list_popup_t *popup;
+	struct vi_list_popup_t *popup;
 
-	popup = visual_list_popup_create(vlist);
+	popup = vi_list_popup_create(vlist);
 	gtk_widget_show_all(popup->window);
 }
 
@@ -387,21 +387,21 @@ void visual_list_popup_show(struct visual_list_t *vlist)
  */
 
 
-static void visual_list_size_allocate_event(GtkWidget *widget, GdkRectangle *allocation, struct visual_list_t *vlist)
+static void vi_list_size_allocate_event(GtkWidget *widget, GdkRectangle *allocation, struct vi_list_t *vlist)
 {
 	if (allocation->width != vlist->width || allocation->height != vlist->height)
-		visual_list_refresh(vlist);
+		vi_list_refresh(vlist);
 }
 
 
-struct visual_list_t *visual_list_create(char *title, int width, int height,
-	visual_list_get_elem_name_func_t get_elem_name,
-	visual_list_get_elem_name_func_t get_elem_desc)
+struct vi_list_t *vi_list_create(char *title, int width, int height,
+	vi_list_get_elem_name_func_t get_elem_name,
+	vi_list_get_elem_name_func_t get_elem_desc)
 {
-	struct visual_list_t *vlist;
+	struct vi_list_t *vlist;
 
 	/* Allocate */
-	vlist = calloc(1, sizeof(struct visual_list_t));
+	vlist = calloc(1, sizeof(struct vi_list_t));
 	if (!vlist)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -419,7 +419,7 @@ struct visual_list_t *visual_list_create(char *title, int width, int height,
 
 	/* GTK widget */
 	vlist->widget = gtk_layout_new(NULL, NULL);
-	g_signal_connect(G_OBJECT(vlist->widget), "size_allocate", G_CALLBACK(visual_list_size_allocate_event), vlist);
+	g_signal_connect(G_OBJECT(vlist->widget), "size_allocate", G_CALLBACK(vi_list_size_allocate_event), vlist);
 	gtk_widget_set_size_request(vlist->widget, width, height);
 
 	/* Return */
@@ -427,11 +427,11 @@ struct visual_list_t *visual_list_create(char *title, int width, int height,
 }
 
 
-void visual_list_free(struct visual_list_t *vlist)
+void vi_list_free(struct vi_list_t *vlist)
 {
 	/* Item list */
 	while (vlist->item_list->count)
-		visual_list_item_free(list_remove_at(vlist->item_list, 0));
+		vi_list_item_free(list_remove_at(vlist->item_list, 0));
 	list_free(vlist->item_list);
 
 	/* List of elements */
@@ -443,31 +443,31 @@ void visual_list_free(struct visual_list_t *vlist)
 }
 
 
-int visual_list_count(struct visual_list_t *vlist)
+int vi_list_count(struct vi_list_t *vlist)
 {
 	return list_count(vlist->elem_list);
 }
 
 
-void visual_list_add(struct visual_list_t *vlist, void *elem)
+void vi_list_add(struct vi_list_t *vlist, void *elem)
 {
 	return list_add(vlist->elem_list, elem);
 }
 
 
-void *visual_list_get(struct visual_list_t *vlist, int index)
+void *vi_list_get(struct vi_list_t *vlist, int index)
 {
 	return list_get(vlist->elem_list, index);
 }
 
 
-void *visual_list_remove_at(struct visual_list_t *vlist, int index)
+void *vi_list_remove_at(struct vi_list_t *vlist, int index)
 {
 	return list_remove_at(vlist->elem_list, index);
 }
 
 
-void visual_list_refresh(struct visual_list_t *vlist)
+void vi_list_refresh(struct vi_list_t *vlist)
 {
 	int width;
 	int height;
@@ -483,7 +483,7 @@ void visual_list_refresh(struct visual_list_t *vlist)
 
 	/* Clear current item list and empty layout */
 	while (vlist->item_list->count)
-		visual_list_item_free(list_remove_at(vlist->item_list, 0));
+		vi_list_item_free(list_remove_at(vlist->item_list, 0));
 	while ((child = gtk_container_get_children(GTK_CONTAINER(vlist->widget))))
 		gtk_container_remove(GTK_CONTAINER(vlist->widget), child->data);
 
@@ -506,7 +506,7 @@ void visual_list_refresh(struct visual_list_t *vlist)
 	{
 		int last;
 
-		struct visual_list_item_t *item;
+		struct vi_list_item_t *item;
 		void *elem;
 
 		char str1[MAX_STRING_SIZE];
@@ -522,7 +522,7 @@ void visual_list_refresh(struct visual_list_t *vlist)
 		GtkRequisition req;
 
 		/* Create list item */
-		item = visual_list_item_create();
+		item = vi_list_item_create();
 
 		/* Get current element */
 		elem = list_get(vlist->elem_list, i);
@@ -568,15 +568,15 @@ void visual_list_refresh(struct visual_list_t *vlist)
 
 		/* Events for event box */
 		g_signal_connect(G_OBJECT(event_box), "enter-notify-event",
-			G_CALLBACK(visual_list_item_enter_notify_event), item);
+			G_CALLBACK(vi_list_item_enter_notify_event), item);
 		g_signal_connect(G_OBJECT(event_box), "leave-notify-event",
-			G_CALLBACK(visual_list_item_leave_notify_event), item);
+			G_CALLBACK(vi_list_item_leave_notify_event), item);
 		if (last)
 			g_signal_connect(G_OBJECT(event_box), "button-press-event",
-				G_CALLBACK(visual_list_item_more_press_event), item);
+				G_CALLBACK(vi_list_item_more_press_event), item);
 		else
 			g_signal_connect(G_OBJECT(event_box), "button-press-event",
-				G_CALLBACK(visual_list_item_button_press_event), item);
+				G_CALLBACK(vi_list_item_button_press_event), item);
 
 		/* Insert event box in 'vlist' layout */
 		gtk_layout_put(GTK_LAYOUT(vlist->widget), event_box, x, y);
@@ -600,7 +600,7 @@ void visual_list_refresh(struct visual_list_t *vlist)
 }
 
 
-GtkWidget *visual_list_get_widget(struct visual_list_t *vlist)
+GtkWidget *vi_list_get_widget(struct vi_list_t *vlist)
 {
 	return vlist->widget;
 }

@@ -144,7 +144,7 @@ static void sharers_label_clicked(GtkWidget *widget,
 
 	/* Go to current cycle */
 	cycle = cycle_bar_get_cycle(visual_cycle_bar);
-	state_file_go_to_cycle(visual_state_file, cycle);
+	vi_state_go_to_cycle(cycle);
 
 	/* Get module */
 	mod = hash_table_get(visual_mem_system->mod_table, sharers_label->mod_name);
@@ -404,7 +404,7 @@ static void accesses_label_clicked(GtkWidget *widget,
 
 	/* Go to current cycle */
 	cycle = cycle_bar_get_cycle(visual_cycle_bar);
-	state_file_go_to_cycle(visual_state_file, cycle);
+	vi_state_go_to_cycle(cycle);
 
 	/* Get module */
 	mod = hash_table_get(visual_mem_system->mod_table, accesses_label->mod_name);
@@ -578,7 +578,7 @@ struct visual_mod_widget_t
 	GtkWidget *first_row_layout;
 	GtkWidget *first_col_layout;
 
-	struct visual_list_t *access_list;
+	struct vi_list_t *access_list;
 
 	int width;
 	int height;
@@ -642,11 +642,11 @@ struct visual_mod_widget_t *visual_mod_widget_create(char *name)
 	vbox = gtk_vbox_new(FALSE, 0);
 
 	/* Access list */
-	struct visual_list_t *access_list;
-	access_list = visual_list_create("Access list", 200, 30,
-		(visual_list_get_elem_name_func_t) visual_mod_access_get_name_short,
-		(visual_list_get_elem_desc_func_t) visual_mod_access_get_desc);
-	gtk_box_pack_start(GTK_BOX(vbox), visual_list_get_widget(access_list), FALSE, FALSE, 0);
+	struct vi_list_t *access_list;
+	access_list = vi_list_create("Access list", 200, 30,
+		(vi_list_get_elem_name_func_t) visual_mod_access_get_name_short,
+		(vi_list_get_elem_desc_func_t) visual_mod_access_get_desc);
+	gtk_box_pack_start(GTK_BOX(vbox), vi_list_get_widget(access_list), FALSE, FALSE, 0);
 	visual_mod_widget->access_list = access_list;
 
 	/* Scroll bars */
@@ -739,9 +739,9 @@ void visual_mod_widget_free(struct visual_mod_widget_t *visual_mod_widget)
 {
 
 	/* Free access list */
-	while (visual_list_count(visual_mod_widget->access_list))
-		free(visual_list_remove_at(visual_mod_widget->access_list, 0));
-	visual_list_free(visual_mod_widget->access_list);
+	while (vi_list_count(visual_mod_widget->access_list))
+		free(vi_list_remove_at(visual_mod_widget->access_list, 0));
+	vi_list_free(visual_mod_widget->access_list);
 
 	/* Free widget */
 	free(visual_mod_widget->name);
@@ -785,7 +785,7 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 
 	/* Go to cycle */
 	cycle = cycle_bar_get_cycle(visual_cycle_bar);
-	state_file_go_to_cycle(visual_state_file, cycle);
+	vi_state_go_to_cycle(cycle);
 
 	/* Get associated module */
 	mod = hash_table_get(visual_mem_system->mod_table, visual_mod_widget->name);
@@ -793,8 +793,8 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 		panic("%s: invalid module", __FUNCTION__);
 
 	/* Remove all accesses from access list */
-	while (visual_list_count(visual_mod_widget->access_list))
-		free(visual_list_remove_at(visual_mod_widget->access_list, 0));
+	while (vi_list_count(visual_mod_widget->access_list))
+		free(vi_list_remove_at(visual_mod_widget->access_list, 0));
 
 	/* Add new accesses */
 	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
@@ -805,9 +805,9 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 			fatal("%s: out of memory", __FUNCTION__);
 
 		/* Insert new access */
-		visual_list_add(visual_mod_widget->access_list, access_name);
+		vi_list_add(visual_mod_widget->access_list, access_name);
 	}
-	visual_list_refresh(visual_mod_widget->access_list);
+	vi_list_refresh(visual_mod_widget->access_list);
 
 	/* Remove all widgets from layouts */
 	layout = visual_mod_widget->layout;

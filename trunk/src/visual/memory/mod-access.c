@@ -36,7 +36,7 @@ struct visual_mod_access_t *visual_mod_access_create(char *name, unsigned int ad
 	/* Initialize */
 	access->name = str_set(access->name, name);
 	access->address = address;
-	access->creation_cycle = state_file_get_cycle(visual_state_file);
+	access->creation_cycle = vi_state_get_current_cycle();
 
 	/* Return */
 	return access;
@@ -54,7 +54,7 @@ void visual_mod_access_free(struct visual_mod_access_t *access)
 void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state)
 {
 	access->state = str_set(access->state, state);
-	access->state_update_cycle = state_file_get_cycle(visual_state_file);
+	access->state_update_cycle = vi_state_get_current_cycle();
 }
 
 
@@ -132,7 +132,7 @@ void visual_mod_access_get_name_long(char *access_name, char *buf, int size)
 	/* State */
 	if (access->state && *access->state)
 		str_printf(&buf, &size, " (%s:%lld)", access->state,
-			state_file_get_cycle(visual_state_file) - access->state_update_cycle);
+			vi_state_get_current_cycle() - access->state_update_cycle);
 }
 
 
@@ -182,7 +182,7 @@ void visual_mod_access_get_desc(char *access_name, char *buf, int size)
 		title_format_end, access->creation_cycle);
 
 	/* State */
-	current_cycle = state_file_get_cycle(visual_state_file);
+	current_cycle = vi_state_get_current_cycle();
 	if (access->state && *access->state)
 	{
 		str_printf(&buf, &size, "%sState:%s %s\n", title_format_begin,
@@ -201,8 +201,8 @@ void visual_mod_access_get_desc(char *access_name, char *buf, int size)
 	cycle = access->creation_cycle;
 
 	/* Log */
-	for (trace_line = state_file_trace_line_first(visual_state_file, cycle);
-		trace_line; trace_line = state_file_trace_line_next(visual_state_file))
+	for (trace_line = vi_state_trace_line_first(cycle);
+		trace_line; trace_line = vi_state_trace_line_next())
 	{
 		char *command;
 		char *access_name;
