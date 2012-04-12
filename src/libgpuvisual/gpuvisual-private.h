@@ -385,7 +385,7 @@ void block_dia_window_refresh(struct vgpu_compute_unit_t *compute_unit);
  * Info Pop-up
  */
 
-void info_popup_show(char *text);
+void vi_popup_show(char *text);
 
 
 #endif /* GPUVISUAL_PRIVATE_H_ */

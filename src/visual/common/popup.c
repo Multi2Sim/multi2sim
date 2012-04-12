@@ -20,13 +20,13 @@
 #include <visual-common.h>
 
 
-struct info_popup_t
+struct vi_popup_t
 {
 	GtkWidget *window;
 };
 
 
-static gboolean info_popup_button_press_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
+static gboolean vi_popup_button_press_event(GtkWidget *widget, GdkEventButton *event, gpointer data)
 {
 	int width;
 	int height;
@@ -42,7 +42,7 @@ static gboolean info_popup_button_press_event(GtkWidget *widget, GdkEventButton 
 }
 
 
-static gboolean info_popup_motion_event(GtkWidget *widget, GdkEventMotion *event, gpointer data)
+static gboolean vi_popup_motion_event(GtkWidget *widget, GdkEventMotion *event, gpointer data)
 {
 	int width;
 	int height;
@@ -58,18 +58,18 @@ static gboolean info_popup_motion_event(GtkWidget *widget, GdkEventMotion *event
 }
 
 
-static void info_popup_destroy_event(GtkWidget *widget, struct info_popup_t *popup)
+static void vi_popup_destroy_event(GtkWidget *widget, struct vi_popup_t *popup)
 {
-	info_popup_free(popup);
+	vi_popup_free(popup);
 }
 
 
-struct info_popup_t *info_popup_create(char *text)
+struct vi_popup_t *vi_popup_create(char *text)
 {
-	struct info_popup_t *popup;
+	struct vi_popup_t *popup;
 
 	/* Allocate */
-	popup = calloc(1, sizeof(struct info_popup_t));
+	popup = calloc(1, sizeof(struct vi_popup_t));
 	if (!popup)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -80,11 +80,11 @@ struct info_popup_t *info_popup_create(char *text)
 	gtk_window_set_modal(GTK_WINDOW(window), TRUE);
 	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK);
 	g_signal_connect(G_OBJECT(window), "button-press-event",
-		G_CALLBACK(info_popup_button_press_event), popup);
+		G_CALLBACK(vi_popup_button_press_event), popup);
 	g_signal_connect(G_OBJECT(window), "motion-notify-event",
-		G_CALLBACK(info_popup_motion_event), popup);
+		G_CALLBACK(vi_popup_motion_event), popup);
 	g_signal_connect(G_OBJECT(window), "destroy",
-		G_CALLBACK(info_popup_destroy_event), popup);
+		G_CALLBACK(vi_popup_destroy_event), popup);
 	popup->window = window;
 
 	/* Create label with text */
@@ -127,17 +127,17 @@ struct info_popup_t *info_popup_create(char *text)
 }
 
 
-void info_popup_free(struct info_popup_t *popup)
+void vi_popup_free(struct vi_popup_t *popup)
 {
 	free(popup);
 }
 
 
-void info_popup_show(char *text)
+void vi_popup_show(char *text)
 {
-	struct info_popup_t *popup;
+	struct vi_popup_t *popup;
 
-	popup = info_popup_create(text);
+	popup = vi_popup_create(text);
 	gtk_widget_show_all(popup->window);
 	gdk_pointer_grab(gtk_widget_get_window(popup->window), TRUE,
 		GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK,

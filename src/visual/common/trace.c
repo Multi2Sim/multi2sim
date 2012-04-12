@@ -22,18 +22,18 @@
 
 
 
-struct trace_file_t
+struct vi_trace_t
 {
 	char *name;
 	gzFile *f;
 
 	/* Last line number read from zip file with a call to
-	 * 'trace_line_create_from_trace_file'. */
+	 * 'vi_trace_line_create_from_trace'. */
 	int line_num;
 };
 
 
-struct trace_line_t
+struct vi_trace_line_t
 {
 	/* Line number */
 	int line_num;
@@ -75,9 +75,9 @@ symbol_value_size	char*	symbol_value
 -----------------------------------------------------
 */
 
-struct trace_line_t *trace_line_create_from_file(FILE *f)
+struct vi_trace_line_t *vi_trace_line_create_from_file(FILE *f)
 {
-	struct trace_line_t *line;
+	struct vi_trace_line_t *line;
 
 	long int offset;
 
@@ -98,7 +98,7 @@ struct trace_line_t *trace_line_create_from_file(FILE *f)
 		panic("%s: invalid format", __FUNCTION__);
 
 	/* Allocate */
-	line = calloc(1, sizeof(struct trace_line_t));
+	line = calloc(1, sizeof(struct vi_trace_line_t));
 	if (!line)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -140,9 +140,9 @@ struct trace_line_t *trace_line_create_from_file(FILE *f)
 }
 
 
-struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *file)
+struct vi_trace_line_t *vi_trace_line_create_from_trace(struct vi_trace_t *trace)
 {
-	struct trace_line_t *line;
+	struct vi_trace_line_t *line;
 
 	long int offset;
 
@@ -150,8 +150,8 @@ struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *file
 	char *buf_ptr;
 
 	/* Read line from trace file */
-	offset = gztell(file->f);
-	buf_ptr = gzgets(file->f, buf, sizeof buf);
+	offset = gztell(trace->f);
+	buf_ptr = gzgets(trace->f, buf, sizeof buf);
 
 	/* Empty line */
 	if (!buf_ptr)
@@ -162,14 +162,14 @@ struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *file
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Allocate */
-	line = calloc(1, sizeof(struct trace_line_t));
+	line = calloc(1, sizeof(struct vi_trace_line_t));
 	if (!line)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	file->line_num++;
+	trace->line_num++;
 	line->offset = offset;
-	line->line_num = file->line_num;
+	line->line_num = trace->line_num;
 	line->symbol_table = hash_table_create(13, FALSE);
 
 	/* Read command */
@@ -181,7 +181,7 @@ struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *file
 	if (*buf_ptr)
 		*buf_ptr++ = '\0';
 	if (!strlen(line->command))
-		fatal("%s: line %d: invalid command", file->name, file->line_num);
+		fatal("%s: line %d: invalid command", trace->name, trace->line_num);
 	line->command = strdup(line->command);
 	if (!line->command)
 		fatal("%s: out of memory", __FUNCTION__);
@@ -199,7 +199,7 @@ struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *file
 		while (isidchar(*buf_ptr))
 			buf_ptr++;
 		if (*buf_ptr != '=')
-			fatal("%s: line %d: invalid format", file->name, file->line_num);
+			fatal("%s: line %d: invalid format", trace->name, trace->line_num);
 		*buf_ptr++ = '\0';
 
 		/* Read symbol value */
@@ -209,7 +209,7 @@ struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *file
 			while (*buf_ptr && *buf_ptr != '"')
 				buf_ptr++;
 			if (*buf_ptr != '"')
-				fatal("%s: line %d: invalid format", file->name, file->line_num);
+				fatal("%s: line %d: invalid format", trace->name, trace->line_num);
 			*buf_ptr++ = '\0';
 		}
 		else
@@ -239,7 +239,7 @@ struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *file
 }
 
 
-void trace_line_free(struct trace_line_t *line)
+void vi_trace_line_free(struct vi_trace_line_t *line)
 {
 	char *symbol_name;
 	char *symbol_value;
@@ -253,7 +253,7 @@ void trace_line_free(struct trace_line_t *line)
 
 
 /* Dump in binary format */
-void trace_line_dump(struct trace_line_t *line, FILE *f)
+void vi_trace_line_dump(struct vi_trace_line_t *line, FILE *f)
 {
 	int count;
 	int num_symbols;
@@ -285,7 +285,7 @@ void trace_line_dump(struct trace_line_t *line, FILE *f)
 
 
 /* Dump in human-readable format */
-void trace_line_dump_plain_text(struct trace_line_t *line, FILE *f)
+void vi_trace_line_dump_plain_text(struct vi_trace_line_t *line, FILE *f)
 {
 	char *symbol_name;
 	char *symbol_value;
@@ -305,19 +305,19 @@ void trace_line_dump_plain_text(struct trace_line_t *line, FILE *f)
 }
 
 
-long int trace_line_get_offset(struct trace_line_t *line)
+long int vi_trace_line_get_offset(struct vi_trace_line_t *line)
 {
 	return line->offset;
 }
 
 
-char *trace_line_get_command(struct trace_line_t *line)
+char *vi_trace_line_get_command(struct vi_trace_line_t *line)
 {
 	return line->command;
 }
 
 
-char *trace_line_get_symbol_value(struct trace_line_t *line, char *symbol_name)
+char *vi_trace_line_get_symbol(struct vi_trace_line_t *line, char *symbol_name)
 {
 	char *value;
 
@@ -326,7 +326,7 @@ char *trace_line_get_symbol_value(struct trace_line_t *line, char *symbol_name)
 }
 
 
-int trace_line_get_symbol_value_int(struct trace_line_t *line, char *symbol_name)
+int vi_trace_line_get_symbol_int(struct vi_trace_line_t *line, char *symbol_name)
 {
 	char *value;
 
@@ -335,7 +335,7 @@ int trace_line_get_symbol_value_int(struct trace_line_t *line, char *symbol_name
 }
 
 
-long long trace_line_get_symbol_value_long_long(struct trace_line_t *line, char *symbol_name)
+long long vi_trace_line_get_symbol_long_long(struct vi_trace_line_t *line, char *symbol_name)
 {
 	char *value;
 
@@ -344,7 +344,7 @@ long long trace_line_get_symbol_value_long_long(struct trace_line_t *line, char 
 }
 
 
-unsigned int trace_line_get_symbol_value_hex(struct trace_line_t *line, char *symbol_name)
+unsigned int vi_trace_line_get_symbol_hex(struct vi_trace_line_t *line, char *symbol_name)
 {
 	char *value;
 	unsigned int hex;
@@ -368,34 +368,34 @@ unsigned int trace_line_get_symbol_value_hex(struct trace_line_t *line, char *sy
  */
 
 
-struct trace_file_t *trace_file_create(char *file_name)
+struct vi_trace_t *vi_trace_create(char *file_name)
 {
-	struct trace_file_t *file;
+	struct vi_trace_t *trace;
 
 	/* Allocate */
-	file = calloc(1, sizeof(struct trace_file_t));
-	if (!file)
+	trace = calloc(1, sizeof(struct vi_trace_t));
+	if (!trace)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Name */
-	file->name = strdup(file_name);
-	if (!file->name)
+	trace->name = strdup(file_name);
+	if (!trace->name)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Open */
-	file->f = gzopen(file_name, "r");
-	if (!file->f)
+	trace->f = gzopen(file_name, "r");
+	if (!trace->f)
 		fatal("%s: cannot open trace file or invalid format", file_name);
 
 	/* Return */
-	return file;
+	return trace;
 }
 
 
-void trace_file_free(struct trace_file_t *file)
+void vi_trace_free(struct vi_trace_t *trace)
 {
-	gzclose(file->f);
-	free(file->name);
-	free(file);
+	gzclose(trace->f);
+	free(trace->name);
+	free(trace);
 }
 

@@ -172,7 +172,7 @@ static gboolean vi_list_item_button_press_event(GtkWidget *widget,
 		snprintf(text, sizeof text, "No information.");
 
 	/* Show description pop-up */
-	info_popup_show(text);
+	vi_popup_show(text);
 	return FALSE;
 }
 

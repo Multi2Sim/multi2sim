@@ -157,7 +157,7 @@ void visual_mod_access_get_desc(char *access_name, char *buf, int size)
 
 	struct visual_mod_access_t *access;
 
-	struct trace_line_t *trace_line;
+	struct vi_trace_line_t *trace_line;
 
 	long long cycle;
 	long long current_cycle;
@@ -209,14 +209,14 @@ void visual_mod_access_get_desc(char *access_name, char *buf, int size)
 		char *state;
 
 		/* Get command */
-		command = trace_line_get_command(trace_line);
-		access_name = trace_line_get_symbol_value(trace_line, "name");
+		command = vi_trace_line_get_command(trace_line);
+		access_name = vi_trace_line_get_symbol(trace_line, "name");
 
 		/* Access starts */
 		if ((!strcmp(command, "mem.new_access") && !strcmp(access_name, access->name)) ||
 			(!strcmp(command, "mem.access") && !strcmp(access_name, access->name)))
 		{
-			state = trace_line_get_symbol_value(trace_line, "state");
+			state = vi_trace_line_get_symbol(trace_line, "state");
 			str_printf(&buf, &size, "%10lld %6lld %s\n",
 				cycle, cycle - current_cycle, state);
 		}
@@ -227,6 +227,6 @@ void visual_mod_access_get_desc(char *access_name, char *buf, int size)
 
 		/* Cycle */
 		if (!strcmp(command, "c"))
-			cycle = trace_line_get_symbol_value_long_long(trace_line, "clk");
+			cycle = vi_trace_line_get_symbol_long_long(trace_line, "clk");
 	}
 }

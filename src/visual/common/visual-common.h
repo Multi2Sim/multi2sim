@@ -33,6 +33,7 @@
 #include <hash-table.h>
 #include <linked-list.h>
 #include <list.h>
+#include <mhandle.h>
 #include <misc.h>
 
 
@@ -53,28 +54,28 @@ void visual_run(char *file_name);
  * Trace File
  */
 
-struct trace_file_t;
+struct vi_trace_t;
 
-struct trace_file_t *trace_file_create(char *file_name);
-void trace_file_free(struct trace_file_t *file);
+struct vi_trace_t *vi_trace_create(char *file_name);
+void vi_trace_free(struct vi_trace_t *trace);
 
 
-struct trace_line_t;
+struct vi_trace_line_t;
 
-struct trace_line_t *trace_line_create_from_file(FILE *f);
-struct trace_line_t *trace_line_create_from_trace_file(struct trace_file_t *f);
-void trace_line_free(struct trace_line_t *line);
+struct vi_trace_line_t *vi_trace_line_create_from_file(FILE *f);
+struct vi_trace_line_t *vi_trace_line_create_from_trace(struct vi_trace_t *trace);
+void vi_trace_line_free(struct vi_trace_line_t *line);
 
-void trace_line_dump(struct trace_line_t *line, FILE *f);
-void trace_line_dump_plain_text(struct trace_line_t *line, FILE *f);
+void vi_trace_line_dump(struct vi_trace_line_t *line, FILE *f);
+void vi_trace_line_dump_plain_text(struct vi_trace_line_t *line, FILE *f);
 
-long int trace_line_get_offset(struct trace_line_t *line);
+long int vi_trace_line_get_offset(struct vi_trace_line_t *line);
 
-char *trace_line_get_command(struct trace_line_t *line);
-char *trace_line_get_symbol_value(struct trace_line_t *line, char *symbol_name);
-int trace_line_get_symbol_value_int(struct trace_line_t *line, char *symbol_name);
-long long trace_line_get_symbol_value_long_long(struct trace_line_t *line, char *symbol_name);
-unsigned int trace_line_get_symbol_value_hex(struct trace_line_t *line, char *symbol_name);
+char *vi_trace_line_get_command(struct vi_trace_line_t *line);
+char *vi_trace_line_get_symbol(struct vi_trace_line_t *line, char *symbol_name);
+int vi_trace_line_get_symbol_int(struct vi_trace_line_t *line, char *symbol_name);
+long long vi_trace_line_get_symbol_long_long(struct vi_trace_line_t *line, char *symbol_name);
+unsigned int vi_trace_line_get_symbol_hex(struct vi_trace_line_t *line, char *symbol_name);
 
 
 
@@ -85,7 +86,7 @@ unsigned int trace_line_get_symbol_value_hex(struct trace_line_t *line, char *sy
 
 typedef void (*vi_state_write_checkpoint_func_t)(void *user_data, FILE *f);
 typedef void (*vi_state_read_checkpoint_func_t)(void *user_data, FILE *f);
-typedef void (*vi_state_process_trace_line_func_t)(void *user_data, struct trace_line_t *trace_line);
+typedef void (*vi_state_process_trace_line_func_t)(void *user_data, struct vi_trace_line_t *trace_line);
 typedef void (*vi_state_refresh_func_t)(void *user_data);
 
 #define VI_STATE_FOR_EACH_HEADER(trace_line) \
@@ -109,11 +110,11 @@ void vi_state_new_command(char *command_name,
 	vi_state_process_trace_line_func_t process_trace_line_func,
 	void *user_data);
 
-struct trace_line_t *vi_state_header_first(void);
-struct trace_line_t *vi_state_header_next(void);
+struct vi_trace_line_t *vi_state_header_first(void);
+struct vi_trace_line_t *vi_state_header_next(void);
 
-struct trace_line_t *vi_state_trace_line_first(long long cycle);
-struct trace_line_t *vi_state_trace_line_next(void);
+struct vi_trace_line_t *vi_state_trace_line_first(long long cycle);
+struct vi_trace_line_t *vi_state_trace_line_next(void);
 
 void vi_state_refresh(void);
 void vi_state_go_to_cycle(long long cycle);
@@ -155,13 +156,15 @@ GtkWidget *vi_list_get_widget(struct vi_list_t *list);
 
 
 /*
- * Info Pop-up
+ * Pop-up Window with Text
  */
 
-struct info_popup_t *info_popup_create(char *text);
-void info_popup_free(struct info_popup_t *popup);
+struct vi_popup_t;
 
-void info_popup_show(char *text);
+struct vi_popup_t *vi_popup_create(char *text);
+void vi_popup_free(struct vi_popup_t *popup);
+
+void vi_popup_show(char *text);
 
 
 
@@ -170,31 +173,15 @@ void info_popup_show(char *text);
  * Cycle Bar
  */
 
-extern char cycle_bar_back_single_path[MAX_PATH_SIZE];
-extern char cycle_bar_back_double_path[MAX_PATH_SIZE];
-extern char cycle_bar_back_triple_path[MAX_PATH_SIZE];
+typedef void (*vi_cycle_bar_refresh_func_t)(void *user_data, long long cycle);
 
-extern char cycle_bar_forward_single_path[MAX_PATH_SIZE];
-extern char cycle_bar_forward_double_path[MAX_PATH_SIZE];
-extern char cycle_bar_forward_triple_path[MAX_PATH_SIZE];
+void vi_cycle_bar_init(vi_cycle_bar_refresh_func_t refresh_func, void *user_data);
+void vi_cycle_bar_done(void);
 
-extern char cycle_bar_go_path[MAX_PATH_SIZE];
+void vi_cycle_bar_set_refresh_func(vi_cycle_bar_refresh_func_t refresh_func, void *user_data);
 
-struct cycle_bar_t;
-
-/* Global cycle bar */
-extern struct cycle_bar_t *visual_cycle_bar;
-
-typedef void (*cycle_bar_refresh_func_t)(void *user_data, long long cycle);
-
-struct cycle_bar_t *cycle_bar_create(void);
-void cycle_bar_free(struct cycle_bar_t *cycle_bar);
-
-void cycle_bar_set_refresh_func(struct cycle_bar_t *cycle_bar,
-	cycle_bar_refresh_func_t refresh_func, void *user_data);
-
-GtkWidget *cycle_bar_get_widget(struct cycle_bar_t *cycle_bar);
-long long cycle_bar_get_cycle(struct cycle_bar_t *cycle_bar);
+GtkWidget *vi_cycle_bar_get_widget(void);
+long long vi_cycle_bar_get_cycle(void);
 
 
 

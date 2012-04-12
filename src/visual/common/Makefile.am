@@ -6,11 +6,11 @@ libcommon_a_SOURCES = \
 if HAVE_GTK
 libcommon_a_SOURCES += \
 	cycle-bar.c \
-	info-popup.c \
-	trace-file.c \
-	visual.c \
-	visual-list.c \
-	visual-state.c
+	list.c \
+	popup.c \
+	state.c \
+	trace.c \
+	visual.c
 
 AM_CFLAGS = @GTK_CFLAGS@
 

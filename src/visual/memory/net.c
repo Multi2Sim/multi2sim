@@ -60,7 +60,7 @@ void visual_net_node_free(struct visual_net_node_t *node)
  * Network
  */
 
-struct visual_net_t *visual_net_create(struct trace_line_t *trace_line)
+struct visual_net_t *visual_net_create(struct vi_trace_line_t *trace_line)
 {
 	struct visual_net_t *net;
 
@@ -75,13 +75,13 @@ struct visual_net_t *visual_net_create(struct trace_line_t *trace_line)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Name */
-	name = trace_line_get_symbol_value(trace_line, "name");
+	name = vi_trace_line_get_symbol(trace_line, "name");
 	net->name = strdup(name);
 	if (!net->name)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Node list */
-	num_nodes = trace_line_get_symbol_value_int(trace_line, "num_nodes");
+	num_nodes = vi_trace_line_get_symbol_int(trace_line, "num_nodes");
 	net->node_list = list_create();
 	for (i = 0; i < num_nodes; i++)
 		list_add(net->node_list, visual_net_node_create());

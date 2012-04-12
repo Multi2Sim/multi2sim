@@ -189,11 +189,11 @@ struct vi_state_t
 	struct hash_table_t *command_table;
 
 	/* Enumeration of header trace lines */
-	struct trace_line_t *header_trace_line;
+	struct vi_trace_line_t *header_trace_line;
 	long int header_trace_line_offset;
 
 	/* Enumeration of body trace lines */
-	struct trace_line_t *body_trace_line;
+	struct vi_trace_line_t *body_trace_line;
 	long int body_trace_line_offset;
 };
 
@@ -244,8 +244,8 @@ static void vi_state_write_checkpoint(void)
 
 void vi_state_init(char *trace_file_name)
 {
-	struct trace_file_t *trace_file;
-	struct trace_line_t *trace_line;
+	struct vi_trace_t *trace_file;
+	struct vi_trace_line_t *trace_line;
 
 	int num_trace_lines;
 
@@ -275,14 +275,14 @@ void vi_state_init(char *trace_file_name)
 
 	/* Unpack trace */
 	num_trace_lines = 0;
-	trace_file = trace_file_create(trace_file_name);
-	while ((trace_line = trace_line_create_from_trace_file(trace_file)))
+	trace_file = vi_trace_create(trace_file_name);
+	while ((trace_line = vi_trace_line_create_from_trace(trace_file)))
 	{
 		/* Copy trace */
-		trace_line_dump(trace_line, vi_state->unzipped_trace_file);
-		if (!strcmp(trace_line_get_command(trace_line), "c"))
-			vi_state->num_cycles = trace_line_get_symbol_value_long_long(trace_line, "clk");
-		trace_line_free(trace_line);
+		vi_trace_line_dump(trace_line, vi_state->unzipped_trace_file);
+		if (!strcmp(vi_trace_line_get_command(trace_line), "c"))
+			vi_state->num_cycles = vi_trace_line_get_symbol_long_long(trace_line, "clk");
+		vi_trace_line_free(trace_line);
 
 		/* Show progress */
 		num_trace_lines++;
@@ -293,7 +293,7 @@ void vi_state_init(char *trace_file_name)
 			fflush(stdout);
 		}
 	}
-	trace_file_free(trace_file);
+	vi_trace_free(trace_file);
 
 	/* Final progress */
 	printf("Uncompressing trace (%.1fMB, %lld cycles)   \n",
@@ -343,11 +343,11 @@ void vi_state_done(void)
 
 	/* Free current header trace line if any */
 	if (vi_state->header_trace_line)
-		trace_line_free(vi_state->header_trace_line);
+		vi_trace_line_free(vi_state->header_trace_line);
 
 	/* Free current body trace line if any */
 	if (vi_state->body_trace_line)
-		trace_line_free(vi_state->body_trace_line);
+		vi_trace_line_free(vi_state->body_trace_line);
 
 	/* Free */
 	free(vi_state->unzipped_trace_file_name);
@@ -370,7 +370,7 @@ long long vi_state_get_current_cycle(void)
 
 void vi_state_create_checkpoints(void)
 {
-	struct trace_line_t *trace_line;
+	struct vi_trace_line_t *trace_line;
 
 	long long last_checkpoint_cycle;
 	long unzipped_trace_file_size;
@@ -388,7 +388,7 @@ void vi_state_create_checkpoints(void)
 	/* Parse uncompressed trace file */
 	num_trace_lines = 0;
 	vi_state->cycle = 0;
-	while ((trace_line = trace_line_create_from_file(vi_state->unzipped_trace_file)))
+	while ((trace_line = vi_trace_line_create_from_file(vi_state->unzipped_trace_file)))
 	{
 		struct vi_state_checkpoint_t *checkpoint;
 		struct vi_state_command_t *state_command;
@@ -396,17 +396,17 @@ void vi_state_create_checkpoints(void)
 		char *command;
 
 		/* Get command */
-		command = trace_line_get_command(trace_line);
+		command = vi_trace_line_get_command(trace_line);
 
 		/* New cycle command */
 		if (!strcasecmp(command, "c"))
 		{
-			vi_state->cycle = atoll(trace_line_get_symbol_value(trace_line, "clk"));
+			vi_state->cycle = atoll(vi_trace_line_get_symbol(trace_line, "clk"));
 			while (vi_state->cycle >= last_checkpoint_cycle + VI_STATE_CHECKPOINT_INTERVAL)
 			{
 				last_checkpoint_cycle += VI_STATE_CHECKPOINT_INTERVAL;
 				checkpoint = vi_state_checkpoint_create(last_checkpoint_cycle,
-					trace_line_get_offset(trace_line),
+					vi_trace_line_get_offset(trace_line),
 					ftell(vi_state->checkpoint_file));
 				list_add(vi_state->checkpoint_list, checkpoint);
 				vi_state_write_checkpoint();
@@ -435,7 +435,7 @@ void vi_state_create_checkpoints(void)
 		}
 
 		/* Free trace line */
-		trace_line_free(trace_line);
+		vi_trace_line_free(trace_line);
 	}
 
 	/* Progress */
@@ -474,21 +474,21 @@ void vi_state_new_command(char *command_name,
 }
 
 
-struct trace_line_t *vi_state_header_first(void)
+struct vi_trace_line_t *vi_state_header_first(void)
 {
 	vi_state->header_trace_line_offset = 0;
 	return vi_state_header_next();
 }
 
 
-struct trace_line_t *vi_state_header_next(void)
+struct vi_trace_line_t *vi_state_header_next(void)
 {
-	struct trace_line_t *trace_line;
+	struct vi_trace_line_t *trace_line;
 
 	/* Free current header trace line if any */
 	if (vi_state->header_trace_line)
 	{
-		trace_line_free(vi_state->header_trace_line);
+		vi_trace_line_free(vi_state->header_trace_line);
 		vi_state->header_trace_line = NULL;
 	}
 
@@ -498,7 +498,7 @@ struct trace_line_t *vi_state_header_next(void)
 
 	/* Read trace line */
 	fseek(vi_state->unzipped_trace_file, vi_state->header_trace_line_offset, SEEK_SET);
-	trace_line = trace_line_create_from_file(vi_state->unzipped_trace_file);
+	trace_line = vi_trace_line_create_from_file(vi_state->unzipped_trace_file);
 	if (!trace_line)
 	{
 		vi_state->header_trace_line_offset = -1;
@@ -506,9 +506,9 @@ struct trace_line_t *vi_state_header_next(void)
 	}
 
 	/* Header is over */
-	if (!strcmp(trace_line_get_command(trace_line), "c"))
+	if (!strcmp(vi_trace_line_get_command(trace_line), "c"))
 	{
-		trace_line_free(trace_line);
+		vi_trace_line_free(trace_line);
 		vi_state->header_trace_line_offset = -1;
 		return NULL;
 	}
@@ -520,7 +520,7 @@ struct trace_line_t *vi_state_header_next(void)
 }
 
 
-struct trace_line_t *vi_state_trace_line_first(long long cycle)
+struct vi_trace_line_t *vi_state_trace_line_first(long long cycle)
 {
 	long int trace_file_offset;
 
@@ -533,7 +533,7 @@ struct trace_line_t *vi_state_trace_line_first(long long cycle)
 	/* Release previous body trace line if any */
 	if (vi_state->body_trace_line)
 	{
-		trace_line_free(vi_state->body_trace_line);
+		vi_trace_line_free(vi_state->body_trace_line);
 		vi_state->body_trace_line = NULL;
 	}
 
@@ -557,18 +557,18 @@ struct trace_line_t *vi_state_trace_line_first(long long cycle)
 	for (;;)
 	{
 		/* Read trace line */
-		vi_state->body_trace_line = trace_line_create_from_file(vi_state->unzipped_trace_file);
+		vi_state->body_trace_line = vi_trace_line_create_from_file(vi_state->unzipped_trace_file);
 		vi_state->body_trace_line_offset = checkpoint->unzipped_trace_file_offset;
 		if (!vi_state->body_trace_line || checkpoint_cycle == cycle)
 			break;
 
 		/* Check if target cycle is exceeded */
-		if (!strcmp(trace_line_get_command(vi_state->body_trace_line), "c") &&
-			trace_line_get_symbol_value_long_long(vi_state->body_trace_line, "clk") >= cycle)
+		if (!strcmp(vi_trace_line_get_command(vi_state->body_trace_line), "c") &&
+			vi_trace_line_get_symbol_long_long(vi_state->body_trace_line, "clk") >= cycle)
 			break;
 
 		/* Free trace line */
-		trace_line_free(vi_state->body_trace_line);
+		vi_trace_line_free(vi_state->body_trace_line);
 		vi_state->body_trace_line = NULL;
 	}
 
@@ -578,7 +578,7 @@ struct trace_line_t *vi_state_trace_line_first(long long cycle)
 }
 
 
-struct trace_line_t *vi_state_trace_line_next(void)
+struct vi_trace_line_t *vi_state_trace_line_next(void)
 {
 	long long trace_file_offset;
 
@@ -588,13 +588,13 @@ struct trace_line_t *vi_state_trace_line_next(void)
 	/* Release previous body trace line if any */
 	if (vi_state->body_trace_line)
 	{
-		trace_line_free(vi_state->body_trace_line);
+		vi_trace_line_free(vi_state->body_trace_line);
 		vi_state->body_trace_line = NULL;
 	}
 
 	/* Get next trace line */
 	fseek(vi_state->unzipped_trace_file, vi_state->body_trace_line_offset, SEEK_SET);
-	vi_state->body_trace_line = trace_line_create_from_file(vi_state->unzipped_trace_file);
+	vi_state->body_trace_line = vi_trace_line_create_from_file(vi_state->unzipped_trace_file);
 	vi_state->body_trace_line_offset = ftell(vi_state->unzipped_trace_file);
 
 	/* Return to original position in trace file */
@@ -635,31 +635,31 @@ void vi_state_go_to_cycle(long long cycle)
 	/* Go to cycle */
 	for (;;)
 	{
-		struct trace_line_t *trace_line;
+		struct vi_trace_line_t *trace_line;
 		struct vi_state_command_t *state_command;
 		long int unzipped_trace_file_pos;
 		char *command;
 
 		/* Read a trace line */
 		unzipped_trace_file_pos = ftell(vi_state->unzipped_trace_file);
-		trace_line = trace_line_create_from_file(vi_state->unzipped_trace_file);
+		trace_line = vi_trace_line_create_from_file(vi_state->unzipped_trace_file);
 		if (!trace_line)
 			break;
 
 		/* New cycle */
-		command = trace_line_get_command(trace_line);
+		command = vi_trace_line_get_command(trace_line);
 		if (!strcmp(command, "c"))
 		{
 			long long new_cycle;
 
 			/* Get new cycle number */
-			new_cycle = trace_line_get_symbol_value_long_long(trace_line, "clk");
+			new_cycle = vi_trace_line_get_symbol_long_long(trace_line, "clk");
 
 			/* If we passed the target cycle, done */
 			if (new_cycle > cycle)
 			{
 				fseek(vi_state->unzipped_trace_file, unzipped_trace_file_pos, SEEK_SET);
-				trace_line_free(trace_line);
+				vi_trace_line_free(trace_line);
 				break;
 			}
 			else
@@ -677,7 +677,7 @@ void vi_state_go_to_cycle(long long cycle)
 		}
 
 		/* Free trace line */
-		trace_line_free(trace_line);
+		vi_trace_line_free(trace_line);
 	}
 
 	/* Cycle reached */
