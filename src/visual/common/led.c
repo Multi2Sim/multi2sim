@@ -23,6 +23,8 @@
 struct vi_led_t
 {
 	GtkWidget *widget;
+
+	GdkColor color;
 };
 
 
@@ -47,10 +49,8 @@ static gboolean vi_led_draw(GtkWidget *widget, GdkEventConfigure *event, struct 
 	cr = gdk_cairo_create(window);
 
 	/* Color */
-	if (1)
-		cairo_set_source_rgb(cr, 1, 0, 0);
-	else
-		cairo_set_source_rgb(cr, 0, 1, 0);
+	cairo_set_source_rgb(cr, (double) led->color.red / 0xffff,
+		(double) led->color.green / 0xffff, (double) led->color.blue / 0xffff);
 
 	/* Circle */
 	cairo_set_line_width(cr, 1);
@@ -74,6 +74,9 @@ struct vi_led_t *vi_led_create(int radius)
 	if (!led)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* Initialize */
+	gdk_color_parse("green", &led->color);
+
 	/* Drawing box */
 	GtkWidget *drawing_area = gtk_drawing_area_new();
 	gtk_widget_set_size_request(drawing_area, radius * 2, radius * 2);
@@ -94,7 +97,15 @@ void vi_led_free(struct vi_led_t *led)
 }
 
 
+void vi_led_set_color(struct vi_led_t *led, GdkColor *color)
+{
+	led->color = *color;
+	vi_led_draw(led->widget, NULL, led);
+}
+
+
 GtkWidget *vi_led_get_widget(struct vi_led_t *led)
 {
 	return led->widget;
 }
+

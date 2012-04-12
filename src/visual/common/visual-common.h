@@ -131,6 +131,8 @@ struct vi_led_t;
 struct vi_led_t *vi_led_create(int radius);
 void vi_led_free(struct vi_led_t *led);
 
+void vi_led_set_color(struct vi_led_t *led, GdkColor *color);
+
 GtkWidget *vi_led_get_widget(struct vi_led_t *led);
 
 
