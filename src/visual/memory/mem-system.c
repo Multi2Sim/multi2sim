@@ -25,16 +25,16 @@
  */
 
 
-static void visual_mem_system_set_transient_tag(struct visual_mem_system_t *system,
+static void vi_mem_system_set_transient_tag(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
 }
 
 
-static void visual_mem_system_set_block(struct visual_mem_system_t *system,
+static void vi_mem_system_set_block(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 
 	char *mod_name;
 	char *state;
@@ -52,21 +52,21 @@ static void visual_mem_system_set_block(struct visual_mem_system_t *system,
 	state = vi_trace_line_get_symbol(trace_line, "state");
 
 	/* Get module */
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
 	/* Set block */
-	visual_mod_block_set(mod, set, way, tag, state);
+	vi_mod_block_set(mod, set, way, tag, state);
 }
 
 
-static void visual_mem_system_set_sharer(struct visual_mem_system_t *system,
+static void vi_mem_system_set_sharer(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
 	char *mod_name;
 
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 
 	int x;
 	int y;
@@ -75,7 +75,7 @@ static void visual_mem_system_set_sharer(struct visual_mem_system_t *system,
 
 	/* Get module */
 	mod_name = vi_trace_line_get_symbol(trace_line, "dir");
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
@@ -86,16 +86,16 @@ static void visual_mem_system_set_sharer(struct visual_mem_system_t *system,
 	sharer = vi_trace_line_get_symbol_int(trace_line, "sharer");
 
 	/* Set sharer */
-	visual_mod_dir_entry_set_sharer(mod, x, y, z, sharer);
+	vi_mod_dir_entry_set_sharer(mod, x, y, z, sharer);
 }
 
 
-static void visual_mem_system_clear_sharer(struct visual_mem_system_t *system,
+static void vi_mem_system_clear_sharer(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
 	char *mod_name;
 
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 
 	int x;
 	int y;
@@ -104,7 +104,7 @@ static void visual_mem_system_clear_sharer(struct visual_mem_system_t *system,
 
 	/* Get module */
 	mod_name = vi_trace_line_get_symbol(trace_line, "dir");
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
@@ -115,16 +115,16 @@ static void visual_mem_system_clear_sharer(struct visual_mem_system_t *system,
 	sharer = vi_trace_line_get_symbol_int(trace_line, "sharer");
 
 	/* Set sharer */
-	visual_mod_dir_entry_clear_sharer(mod, x, y, z, sharer);
+	vi_mod_dir_entry_clear_sharer(mod, x, y, z, sharer);
 }
 
 
-static void visual_mem_system_clear_all_sharers(struct visual_mem_system_t *system,
+static void vi_mem_system_clear_all_sharers(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
 	char *mod_name;
 
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 
 	int x;
 	int y;
@@ -132,7 +132,7 @@ static void visual_mem_system_clear_all_sharers(struct visual_mem_system_t *syst
 
 	/* Get module */
 	mod_name = vi_trace_line_get_symbol(trace_line, "dir");
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
@@ -142,16 +142,16 @@ static void visual_mem_system_clear_all_sharers(struct visual_mem_system_t *syst
 	z = vi_trace_line_get_symbol_int(trace_line, "z");
 
 	/* Set sharer */
-	visual_mod_dir_entry_clear_all_sharers(mod, x, y, z);
+	vi_mod_dir_entry_clear_all_sharers(mod, x, y, z);
 }
 
 
-static void visual_mem_system_set_owner(struct visual_mem_system_t *system,
+static void vi_mem_system_set_owner(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
 	char *mod_name;
 
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 
 	int x;
 	int y;
@@ -160,7 +160,7 @@ static void visual_mem_system_set_owner(struct visual_mem_system_t *system,
 
 	/* Get module */
 	mod_name = vi_trace_line_get_symbol(trace_line, "dir");
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
@@ -171,17 +171,17 @@ static void visual_mem_system_set_owner(struct visual_mem_system_t *system,
 	owner = vi_trace_line_get_symbol_int(trace_line, "owner");
 
 	/* Set sharer */
-	visual_mod_dir_entry_set_owner(mod, x, y, z, owner);
+	vi_mod_dir_entry_set_owner(mod, x, y, z, owner);
 }
 
 
-static void visual_mem_system_new_access(struct visual_mem_system_t *system,
+static void vi_mem_system_new_access(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
 	char *name;
 	char *state;
 
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	unsigned int address;
 
@@ -191,18 +191,18 @@ static void visual_mem_system_new_access(struct visual_mem_system_t *system,
 	address = vi_trace_line_get_symbol_hex(trace_line, "addr");
 
 	/* Create new access */
-	access = visual_mod_access_create(name, address);
-	visual_mod_access_set_state(access, state);
+	access = vi_mod_access_create(name, address);
+	vi_mod_access_set_state(access, state);
 
 	/* Add access to list */
-	hash_table_insert(visual_mem_system->access_table, access->name, access);
+	hash_table_insert(vi_mem_system->access_table, access->name, access);
 }
 
 
-static void visual_mem_system_end_access(struct visual_mem_system_t *system,
+static void vi_mem_system_end_access(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	char *name;
 
@@ -210,20 +210,20 @@ static void visual_mem_system_end_access(struct visual_mem_system_t *system,
 	name = vi_trace_line_get_symbol(trace_line, "name");
 
 	/* Find access */
-	access = hash_table_remove(visual_mem_system->access_table, name);
+	access = hash_table_remove(vi_mem_system->access_table, name);
 	if (!access)
 		panic("%s: access not found", __FUNCTION__);
 
 	/* Free access */
-	visual_mod_access_free(access);
+	vi_mod_access_free(access);
 }
 
 
-static void visual_mem_system_new_access_mod(struct visual_mem_system_t *system,
+static void vi_mem_system_new_access_mod(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
-	struct visual_mod_access_t *access;
-	struct visual_mod_t *mod;
+	struct vi_mod_access_t *access;
+	struct vi_mod_t *mod;
 
 	char *mod_name;
 	char *access_name;
@@ -233,21 +233,21 @@ static void visual_mem_system_new_access_mod(struct visual_mem_system_t *system,
 	access_name = vi_trace_line_get_symbol(trace_line, "access");
 
 	/* Module */
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
 	/* Create new access and add to list */
-	access = visual_mod_access_create(access_name, 0);
+	access = vi_mod_access_create(access_name, 0);
 	hash_table_insert(mod->access_table, access->name, access);
 }
 
 
-static void visual_mem_system_end_access_mod(struct visual_mem_system_t *system,
+static void vi_mem_system_end_access_mod(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
-	struct visual_mod_access_t *access;
-	struct visual_mod_t *mod;
+	struct vi_mod_access_t *access;
+	struct vi_mod_t *mod;
 
 	char *mod_name;
 	char *access_name;
@@ -257,7 +257,7 @@ static void visual_mem_system_end_access_mod(struct visual_mem_system_t *system,
 	access_name = vi_trace_line_get_symbol(trace_line, "access");
 
 	/* Module */
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
 
@@ -267,15 +267,15 @@ static void visual_mem_system_end_access_mod(struct visual_mem_system_t *system,
 		panic("%s: %s: access not found", __FUNCTION__, access_name);
 
 	/* Free access */
-	visual_mod_access_free(access);
+	vi_mod_access_free(access);
 }
 
 
-static void visual_mem_system_new_access_block(struct visual_mem_system_t *system,
+static void vi_mem_system_new_access_block(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
-	struct visual_mod_access_t *access;
-	struct visual_mod_t *mod;
+	struct vi_mod_access_t *access;
+	struct vi_mod_t *mod;
 
 	char *mod_name;
 	char *access_name;
@@ -290,21 +290,21 @@ static void visual_mem_system_new_access_block(struct visual_mem_system_t *syste
 	way = vi_trace_line_get_symbol_int(trace_line, "way");
 
 	/* Module */
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
 
 	/* Create access and add to cache block */
-	access = visual_mod_access_create(access_name, 0);
-	visual_mod_add_access(mod, set, way, access);
+	access = vi_mod_access_create(access_name, 0);
+	vi_mod_add_access(mod, set, way, access);
 }
 
 
-static void visual_mem_system_end_access_block(struct visual_mem_system_t *system,
+static void vi_mem_system_end_access_block(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
-	struct visual_mod_access_t *access;
-	struct visual_mod_t *mod;
+	struct vi_mod_access_t *access;
+	struct vi_mod_t *mod;
 
 	char *mod_name;
 	char *access_name;
@@ -319,24 +319,24 @@ static void visual_mem_system_end_access_block(struct visual_mem_system_t *syste
 	way = vi_trace_line_get_symbol_int(trace_line, "way");
 
 	/* Cache */
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
 
 	/* Remove access */
-	access = visual_mod_remove_access(mod, set, way, access_name);
+	access = vi_mod_remove_access(mod, set, way, access_name);
 	if (!access)
 		panic("%s: %s: invalid access", __FUNCTION__, access_name);
 
 	/* Free access */
-	visual_mod_access_free(access);
+	vi_mod_access_free(access);
 }
 
 
-static void visual_mem_system_access(struct visual_mem_system_t *system,
+static void vi_mem_system_access(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	char *name;
 	char *state;
@@ -346,21 +346,21 @@ static void visual_mem_system_access(struct visual_mem_system_t *system,
 	state = vi_trace_line_get_symbol(trace_line, "state");
 
 	/* Find access */
-	access = hash_table_get(visual_mem_system->access_table, name);
+	access = hash_table_get(vi_mem_system->access_table, name);
 	if (!access)
 		panic("%s: %s: access not found", __FUNCTION__, name);
 
 	/* Update access */
-	visual_mod_access_set_state(access, state);
+	vi_mod_access_set_state(access, state);
 }
 
 
-static void visual_mem_system_read_checkpoint(struct visual_mem_system_t *system, FILE *f)
+static void vi_mem_system_read_checkpoint(struct vi_mem_system_t *system, FILE *f)
 {
 	char mod_name[MAX_STRING_SIZE];
 
-	struct visual_mod_t *mod;
-	struct visual_mod_access_t *access;
+	struct vi_mod_t *mod;
+	struct vi_mod_access_t *access;
 
 	char *access_name;
 
@@ -369,9 +369,9 @@ static void visual_mem_system_read_checkpoint(struct visual_mem_system_t *system
 	int i;
 
 	/* Empty access list */
-	HASH_TABLE_FOR_EACH(visual_mem_system->access_table, access_name, access)
-		visual_mod_access_free(access);
-	hash_table_clear(visual_mem_system->access_table);
+	HASH_TABLE_FOR_EACH(vi_mem_system->access_table, access_name, access)
+		vi_mod_access_free(access);
+	hash_table_clear(vi_mem_system->access_table);
 
 	/* Read number of accesses */
 	count = fread(&num_accesses, 1, 4, f);
@@ -381,30 +381,30 @@ static void visual_mem_system_read_checkpoint(struct visual_mem_system_t *system
 	/* Read accesses */
 	for (i = 0; i < num_accesses; i++)
 	{
-		access = visual_mod_access_create(NULL, 0);
-		visual_mod_access_read_checkpoint(access, f);
-		hash_table_insert(visual_mem_system->access_table, access->name, access);
+		access = vi_mod_access_create(NULL, 0);
+		vi_mod_access_read_checkpoint(access, f);
+		hash_table_insert(vi_mem_system->access_table, access->name, access);
 	}
 
 	/* Read modules */
-	for (i = 0; i < hash_table_count(visual_mem_system->mod_table); i++)
+	for (i = 0; i < hash_table_count(vi_mem_system->mod_table); i++)
 	{
 		/* Get module */
 		str_read_from_file(f, mod_name, sizeof mod_name);
-		mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+		mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 		if (!mod)
 			panic("%s: %s: invalid module name", __FUNCTION__, mod_name);
 
 		/* Read module checkpoint */
-		visual_mod_read_checkpoint(mod, f);
+		vi_mod_read_checkpoint(mod, f);
 	}
 }
 
 
-static void visual_mem_system_write_checkpoint(struct visual_mem_system_t *system, FILE *f)
+static void vi_mem_system_write_checkpoint(struct vi_mem_system_t *system, FILE *f)
 {
-	struct visual_mod_t *mod;
-	struct visual_mod_access_t *access;
+	struct vi_mod_t *mod;
+	struct vi_mod_access_t *access;
 
 	char *mod_name;
 	char *access_name;
@@ -413,20 +413,20 @@ static void visual_mem_system_write_checkpoint(struct visual_mem_system_t *syste
 	int count;
 
 	/* Write number of accesses */
-	num_accesses = hash_table_count(visual_mem_system->access_table);
+	num_accesses = hash_table_count(vi_mem_system->access_table);
 	count = fwrite(&num_accesses, 1, 4, f);
 	if (count != 4)
 		fatal("%s: cannot write to checkpoint file", __FUNCTION__);
 
 	/* Write accesses */
-	HASH_TABLE_FOR_EACH(visual_mem_system->access_table, access_name, access)
-		visual_mod_access_write_checkpoint(access, f);
+	HASH_TABLE_FOR_EACH(vi_mem_system->access_table, access_name, access)
+		vi_mod_access_write_checkpoint(access, f);
 
 	/* Write modules */
-	HASH_TABLE_FOR_EACH(visual_mem_system->mod_table, mod_name, mod)
+	HASH_TABLE_FOR_EACH(vi_mem_system->mod_table, mod_name, mod)
 	{
 		str_write_to_file(f, mod->name);
-		visual_mod_write_checkpoint(mod, f);
+		vi_mod_write_checkpoint(mod, f);
 	}
 }
 
@@ -437,70 +437,70 @@ static void visual_mem_system_write_checkpoint(struct visual_mem_system_t *syste
  */
 
 
-struct visual_mem_system_t *visual_mem_system;
+struct vi_mem_system_t *vi_mem_system;
 
 
-void visual_mem_system_init(void)
+void vi_mem_system_init(void)
 {
 	struct vi_trace_line_t *trace_line;
 
 	/* State file */
 	vi_state_new_category("Memory hierarchy",
-		(vi_state_read_checkpoint_func_t) visual_mem_system_read_checkpoint,
-		(vi_state_write_checkpoint_func_t) visual_mem_system_write_checkpoint,
-		NULL, visual_mem_system);
-	/* Replace with (vi_state_refresh_func_t) visual_mem_system_widget_refresh */
+		(vi_state_read_checkpoint_func_t) vi_mem_system_read_checkpoint,
+		(vi_state_write_checkpoint_func_t) vi_mem_system_write_checkpoint,
+		NULL, vi_mem_system);
+	/* Replace with (vi_state_refresh_func_t) vi_mem_panel_refresh */
 
 	vi_state_new_command("mem.set_transient_tag",
-		(vi_state_process_trace_line_func_t) visual_mem_system_set_transient_tag,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_set_transient_tag,
+		vi_mem_system);
 	vi_state_new_command("mem.set_block",
-		(vi_state_process_trace_line_func_t) visual_mem_system_set_block,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_set_block,
+		vi_mem_system);
 	vi_state_new_command("mem.set_sharer",
-		(vi_state_process_trace_line_func_t) visual_mem_system_set_sharer,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_set_sharer,
+		vi_mem_system);
 	vi_state_new_command("mem.clear_sharer",
-		(vi_state_process_trace_line_func_t) visual_mem_system_clear_sharer,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_clear_sharer,
+		vi_mem_system);
 	vi_state_new_command("mem.clear_all_sharers",
-		(vi_state_process_trace_line_func_t) visual_mem_system_clear_all_sharers,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_clear_all_sharers,
+		vi_mem_system);
 	vi_state_new_command("mem.set_owner",
-		(vi_state_process_trace_line_func_t) visual_mem_system_set_owner,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_set_owner,
+		vi_mem_system);
 	vi_state_new_command("mem.new_access",
-		(vi_state_process_trace_line_func_t) visual_mem_system_new_access,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_new_access,
+		vi_mem_system);
 	vi_state_new_command("mem.end_access",
-		(vi_state_process_trace_line_func_t) visual_mem_system_end_access,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_end_access,
+		vi_mem_system);
 	vi_state_new_command("mem.new_access_mod",
-		(vi_state_process_trace_line_func_t) visual_mem_system_new_access_mod,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_new_access_mod,
+		vi_mem_system);
 	vi_state_new_command("mem.end_access_mod",
-		(vi_state_process_trace_line_func_t) visual_mem_system_end_access_mod,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_end_access_mod,
+		vi_mem_system);
 	vi_state_new_command("mem.new_access_block",
-		(vi_state_process_trace_line_func_t) visual_mem_system_new_access_block,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_new_access_block,
+		vi_mem_system);
 	vi_state_new_command("mem.end_access_block",
-		(vi_state_process_trace_line_func_t) visual_mem_system_end_access_block,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_end_access_block,
+		vi_mem_system);
 	vi_state_new_command("mem.access",
-		(vi_state_process_trace_line_func_t) visual_mem_system_access,
-		visual_mem_system);
+		(vi_state_process_trace_line_func_t) vi_mem_system_access,
+		vi_mem_system);
 
 	/* Allocate */
-	visual_mem_system = calloc(1, sizeof(struct visual_mem_system_t));
-	if (!visual_mem_system)
+	vi_mem_system = calloc(1, sizeof(struct vi_mem_system_t));
+	if (!vi_mem_system)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	visual_mem_system->mod_table = hash_table_create(0, FALSE);
-	visual_mem_system->net_table = hash_table_create(0, FALSE);
-	visual_mem_system->access_table = hash_table_create(0, FALSE);
-	visual_mem_system->mod_level_list = list_create();
+	vi_mem_system->mod_table = hash_table_create(0, FALSE);
+	vi_mem_system->net_table = hash_table_create(0, FALSE);
+	vi_mem_system->access_table = hash_table_create(0, FALSE);
+	vi_mem_system->mod_level_list = list_create();
 
 	/* Parse header in state file */
 	VI_STATE_FOR_EACH_HEADER(trace_line)
@@ -513,37 +513,37 @@ void visual_mem_system_init(void)
 
 		if (!strcmp(command, "mem.new_mod"))
 		{
-			struct visual_mod_t *mod;
+			struct vi_mod_t *mod;
 			struct list_t *mod_level;
 
 			/* Create module */
-			mod = visual_mod_create(trace_line);
-			hash_table_insert(visual_mem_system->mod_table, mod->name, mod);
+			mod = vi_mod_create(trace_line);
+			hash_table_insert(vi_mem_system->mod_table, mod->name, mod);
 			if (mod->level < 1)
 				panic("%s: %s: invalid level (%d)", __FUNCTION__, mod->name, mod->level);
 
 			/* Add to level list */
-			while (visual_mem_system->mod_level_list->count < mod->level)
-				list_add(visual_mem_system->mod_level_list, list_create());
-			mod_level = list_get(visual_mem_system->mod_level_list, mod->level - 1);
+			while (vi_mem_system->mod_level_list->count < mod->level)
+				list_add(vi_mem_system->mod_level_list, list_create());
+			mod_level = list_get(vi_mem_system->mod_level_list, mod->level - 1);
 			list_add(mod_level, mod);
 		}
 		else if (!strcmp(command, "mem.new_net"))
 		{
-			struct visual_net_t *net;
+			struct vi_net_t *net;
 
-			net = visual_net_create(trace_line);
-			hash_table_insert(visual_mem_system->net_table, net->name, net);
+			net = vi_net_create(trace_line);
+			hash_table_insert(vi_mem_system->net_table, net->name, net);
 		}
 	}
 }
 
 
-void visual_mem_system_done(void)
+void vi_mem_system_done(void)
 {
-	struct visual_mod_t *mod;
-	struct visual_net_t *net;
-	struct visual_mod_access_t *access;
+	struct vi_mod_t *mod;
+	struct vi_net_t *net;
+	struct vi_mod_access_t *access;
 
 	char *mod_name;
 	char *net_name;
@@ -552,25 +552,25 @@ void visual_mem_system_done(void)
 	int i;
 
 	/* Free modules */
-	HASH_TABLE_FOR_EACH(visual_mem_system->mod_table, mod_name, mod)
-		visual_mod_free(mod);
-	hash_table_free(visual_mem_system->mod_table);
+	HASH_TABLE_FOR_EACH(vi_mem_system->mod_table, mod_name, mod)
+		vi_mod_free(mod);
+	hash_table_free(vi_mem_system->mod_table);
 
 	/* Free networks */
-	HASH_TABLE_FOR_EACH(visual_mem_system->net_table, net_name, net)
-		visual_net_free(net);
-	hash_table_free(visual_mem_system->net_table);
+	HASH_TABLE_FOR_EACH(vi_mem_system->net_table, net_name, net)
+		vi_net_free(net);
+	hash_table_free(vi_mem_system->net_table);
 
 	/* Free accesses */
-	HASH_TABLE_FOR_EACH(visual_mem_system->access_table, access_name, access)
-		visual_mod_access_free(access);
-	hash_table_free(visual_mem_system->access_table);
+	HASH_TABLE_FOR_EACH(vi_mem_system->access_table, access_name, access)
+		vi_mod_access_free(access);
+	hash_table_free(vi_mem_system->access_table);
 
 	/* Free levels */
-	LIST_FOR_EACH(visual_mem_system->mod_level_list, i)
-		list_free(list_get(visual_mem_system->mod_level_list, i));
-	list_free(visual_mem_system->mod_level_list);
+	LIST_FOR_EACH(vi_mem_system->mod_level_list, i)
+		list_free(list_get(vi_mem_system->mod_level_list, i));
+	list_free(vi_mem_system->mod_level_list);
 
 	/* Rest */
-	free(visual_mem_system);
+	free(vi_mem_system);
 }

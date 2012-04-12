@@ -29,7 +29,7 @@
  * Memory System
  */
 
-struct visual_mem_system_t
+struct vi_mem_system_t
 {
 	struct hash_table_t *mod_table;
 	struct hash_table_t *net_table;
@@ -37,8 +37,12 @@ struct visual_mem_system_t
 	struct list_t *mod_level_list;
 };
 
-void visual_mem_system_init(void);
-void visual_mem_system_done(void);
+
+extern struct vi_mem_system_t *vi_mem_system;
+
+
+void vi_mem_system_init(void);
+void vi_mem_system_done(void);
 
 
 
@@ -47,7 +51,7 @@ void visual_mem_system_done(void);
  * Memory Module Access
  */
 
-struct visual_mod_access_t
+struct vi_mod_access_t
 {
 	char *name;
 	char *state;
@@ -58,17 +62,17 @@ struct visual_mod_access_t
 	long long state_update_cycle;
 };
 
-struct visual_mod_access_t *visual_mod_access_create(char *name, unsigned int address);
-void visual_mod_access_free(struct visual_mod_access_t *access);
+struct vi_mod_access_t *vi_mod_access_create(char *name, unsigned int address);
+void vi_mod_access_free(struct vi_mod_access_t *access);
 
-void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state);
+void vi_mod_access_set_state(struct vi_mod_access_t *access, char *state);
 
-void visual_mod_access_read_checkpoint(struct visual_mod_access_t *access, FILE *f);
-void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE *f);
+void vi_mod_access_read_checkpoint(struct vi_mod_access_t *access, FILE *f);
+void vi_mod_access_write_checkpoint(struct vi_mod_access_t *access, FILE *f);
 
-void visual_mod_access_get_name_short(char *access_name, char *buf, int size);
-void visual_mod_access_get_name_long(char *access_name, char *buf, int size);
-void visual_mod_access_get_desc(char *access_name, char *buf, int size);
+void vi_mod_access_get_name_short(char *access_name, char *buf, int size);
+void vi_mod_access_get_name_long(char *access_name, char *buf, int size);
+void vi_mod_access_get_desc(char *access_name, char *buf, int size);
 
 
 
@@ -77,11 +81,11 @@ void visual_mod_access_get_desc(char *access_name, char *buf, int size);
  * Memory Module
  */
 
-#define VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod) (((mod)->num_sharers + 7) / 8)
-#define VISUAL_MOD_DIR_ENTRY_SIZE(mod) (sizeof(struct visual_mod_dir_entry_t) + \
-	VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE((mod)))
+#define VI_MOD_DIR_ENTRY_SHARERS_SIZE(mod) (((mod)->num_sharers + 7) / 8)
+#define VI_MOD_DIR_ENTRY_SIZE(mod) (sizeof(struct vi_mod_dir_entry_t) + \
+	VI_MOD_DIR_ENTRY_SHARERS_SIZE((mod)))
 
-struct visual_mod_dir_entry_t
+struct vi_mod_dir_entry_t
 {
 	int owner;
 	int num_sharers;
@@ -90,9 +94,9 @@ struct visual_mod_dir_entry_t
 	unsigned char sharers[0];
 };
 
-struct visual_mod_block_t
+struct vi_mod_block_t
 {
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 
 	int set;
 	int way;
@@ -101,10 +105,10 @@ struct visual_mod_block_t
 
 	struct linked_list_t *access_list;
 
-	struct visual_mod_dir_entry_t *dir_entries;
+	struct vi_mod_dir_entry_t *dir_entries;
 };
 
-struct visual_mod_t
+struct vi_mod_t
 {
 	char *name;
 
@@ -119,48 +123,48 @@ struct visual_mod_t
 	int high_net_node_index;
 	int low_net_node_index;
 
-	struct visual_net_t *high_net;
-	struct visual_net_t *low_net;
+	struct vi_net_t *high_net;
+	struct vi_net_t *low_net;
 
-	struct visual_mod_block_t *blocks;
+	struct vi_mod_block_t *blocks;
 
 	struct hash_table_t *access_table;
 };
 
-struct visual_mod_t *visual_mod_create(struct vi_trace_line_t *trace_line);
-void visual_mod_free(struct visual_mod_t *mod);
+struct vi_mod_t *vi_mod_create(struct vi_trace_line_t *trace_line);
+void vi_mod_free(struct vi_mod_t *mod);
 
-void visual_mod_add_access(struct visual_mod_t *mod, int set, int way,
-	struct visual_mod_access_t *access);
-struct visual_mod_access_t *visual_mod_find_access(struct visual_mod_t *mod,
+void vi_mod_add_access(struct vi_mod_t *mod, int set, int way,
+	struct vi_mod_access_t *access);
+struct vi_mod_access_t *vi_mod_find_access(struct vi_mod_t *mod,
 	int set, int way, char *access_name);
-struct visual_mod_access_t *visual_mod_remove_access(struct visual_mod_t *mod,
+struct vi_mod_access_t *vi_mod_remove_access(struct vi_mod_t *mod,
 	int set, int way, char *access_name);
-struct linked_list_t *visual_mod_get_access_list(struct visual_mod_t *mod,
+struct linked_list_t *vi_mod_get_access_list(struct vi_mod_t *mod,
 	int set, int way);
 
-void visual_mod_block_set(struct visual_mod_t *mod, int set, int way,
+void vi_mod_block_set(struct vi_mod_t *mod, int set, int way,
 	unsigned int tag, char *state);
-int visual_mod_block_get_num_sharers(struct visual_mod_t *mod, int set, int way);
+int vi_mod_block_get_num_sharers(struct vi_mod_t *mod, int set, int way);
 
-void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f);
-void visual_mod_write_checkpoint(struct visual_mod_t *mod, FILE *f);
+void vi_mod_read_checkpoint(struct vi_mod_t *mod, FILE *f);
+void vi_mod_write_checkpoint(struct vi_mod_t *mod, FILE *f);
 
-struct visual_mod_dir_entry_t *visual_mod_dir_entry_get(struct visual_mod_t *mod,
+struct vi_mod_dir_entry_t *vi_mod_dir_entry_get(struct vi_mod_t *mod,
 	int set, int way, int sub_block);
-void visual_mod_dir_entry_set_sharer(struct visual_mod_t *mod,
+void vi_mod_dir_entry_set_sharer(struct vi_mod_t *mod,
 	int x, int y, int z, int sharer);
-void visual_mod_dir_entry_clear_sharer(struct visual_mod_t *mod,
+void vi_mod_dir_entry_clear_sharer(struct vi_mod_t *mod,
 	int x, int y, int z, int sharer);
-void visual_mod_dir_entry_clear_all_sharers(struct visual_mod_t *mod,
+void vi_mod_dir_entry_clear_all_sharers(struct vi_mod_t *mod,
 	int x, int y, int z);
-int visual_mod_dir_entry_is_sharer(struct visual_mod_t *mod,
+int vi_mod_dir_entry_is_sharer(struct vi_mod_t *mod,
 	int x, int y, int z, int sharer);
-void visual_mod_dir_entry_set_owner(struct visual_mod_t *mod,
+void vi_mod_dir_entry_set_owner(struct vi_mod_t *mod,
 	int x, int y, int z, int owner);
 
-void visual_mod_dir_entry_read_checkpoint(struct visual_mod_t *mod, int x, int y, int z, FILE *f);
-void visual_mod_dir_entry_write_checkpoint(struct visual_mod_t *mod, int x, int y, int z, FILE *f);
+void vi_mod_dir_entry_read_checkpoint(struct vi_mod_t *mod, int x, int y, int z, FILE *f);
+void vi_mod_dir_entry_write_checkpoint(struct vi_mod_t *mod, int x, int y, int z, FILE *f);
 
 
 
@@ -169,34 +173,34 @@ void visual_mod_dir_entry_write_checkpoint(struct visual_mod_t *mod, int x, int 
  * Network
  */
 
-struct visual_net_t
+struct vi_net_t
 {
 	char *name;
 
 	struct list_t *node_list;
 };
 
-struct visual_net_t *visual_net_create(struct vi_trace_line_t *trace_line);
-void visual_net_free(struct visual_net_t *net);
+struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line);
+void vi_net_free(struct vi_net_t *net);
 
-void visual_net_attach_mod(struct visual_net_t *net, struct visual_mod_t *mod, int node_index);
-struct visual_mod_t *visual_net_get_mod(struct visual_net_t *net, int node_index);
+void vi_net_attach_mod(struct vi_net_t *net, struct vi_mod_t *mod, int node_index);
+struct vi_mod_t *vi_net_get_mod(struct vi_net_t *net, int node_index);
 
 
 
 
 /*
- * Visual Memory System Widget
+ * Visual Memory System Panel
  */
 
-struct visual_mem_system_widget_t;
+struct vi_mem_panel_t;
 
-struct visual_mem_system_widget_t *visual_mem_system_widget_create(void);
-void visual_mem_system_widget_free(struct visual_mem_system_widget_t *widget);
+struct vi_mem_panel_t *vi_mem_panel_create(void);
+void vi_mem_panel_free(struct vi_mem_panel_t *widget);
 
-void visual_mem_system_widget_refresh(struct visual_mem_system_widget_t *widget);
+void vi_mem_panel_refresh(struct vi_mem_panel_t *widget);
 
-GtkWidget *visual_mem_system_widget_get_widget(struct visual_mem_system_widget_t *widget);
+GtkWidget *vi_mem_panel_get_widget(struct vi_mem_panel_t *widget);
 
 
 
@@ -214,19 +218,6 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget);
 
 GtkWidget *visual_mod_widget_get_widget(struct visual_mod_widget_t *widget);
 
-
-
-
-
-/*
- * Global Objects
- */
-
-/* State */
-extern struct visual_mem_system_t *visual_mem_system;
-
-/* Widgets */
-extern struct visual_mem_system_widget_t *visual_mem_system_widget;
 
 
 #endif

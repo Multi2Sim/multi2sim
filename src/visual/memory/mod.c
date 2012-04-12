@@ -20,7 +20,7 @@
 #include <visual-memory.h>
 
 
-static struct string_map_t visual_mod_block_state_map =
+static struct string_map_t vi_mod_block_state_map =
 {
 	6, {
 		{ "I", 0 },
@@ -39,9 +39,9 @@ static struct string_map_t visual_mod_block_state_map =
  */
 
 
-struct visual_mod_t *visual_mod_create(struct vi_trace_line_t *trace_line)
+struct vi_mod_t *vi_mod_create(struct vi_trace_line_t *trace_line)
 {
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 
 	char *high_net_name;
 	char *low_net_name;
@@ -51,7 +51,7 @@ struct visual_mod_t *visual_mod_create(struct vi_trace_line_t *trace_line)
 	int way;
 
 	/* Allocate */
-	mod = calloc(1, sizeof(struct visual_mod_t));
+	mod = calloc(1, sizeof(struct vi_mod_t));
 	if (!mod)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -73,26 +73,26 @@ struct visual_mod_t *visual_mod_create(struct vi_trace_line_t *trace_line)
 	/* High network */
 	high_net_name = vi_trace_line_get_symbol(trace_line, "high_net");
 	mod->high_net_node_index = vi_trace_line_get_symbol_int(trace_line, "high_net_node");
-	mod->high_net = hash_table_get(visual_mem_system->net_table, high_net_name);
+	mod->high_net = hash_table_get(vi_mem_system->net_table, high_net_name);
 
 	/* Low network */
 	low_net_name = vi_trace_line_get_symbol(trace_line, "low_net");
 	mod->low_net_node_index = vi_trace_line_get_symbol_int(trace_line, "low_net_node");
-	mod->low_net = hash_table_get(visual_mem_system->net_table, low_net_name);
+	mod->low_net = hash_table_get(vi_mem_system->net_table, low_net_name);
 
 	/* Attach module to networks */
 	if (mod->high_net)
-		visual_net_attach_mod(mod->high_net, mod, mod->high_net_node_index);
+		vi_net_attach_mod(mod->high_net, mod, mod->high_net_node_index);
 	if (mod->low_net)
-		visual_net_attach_mod(mod->low_net, mod, mod->low_net_node_index);
+		vi_net_attach_mod(mod->low_net, mod, mod->low_net_node_index);
 
 	/* Blocks */
-	mod->blocks = calloc(mod->num_sets * mod->assoc, sizeof(struct visual_mod_block_t));
+	mod->blocks = calloc(mod->num_sets * mod->assoc, sizeof(struct vi_mod_block_t));
 	for (set = 0; set < mod->num_sets; set++)
 	{
 		for (way = 0; way < mod->assoc; way++)
 		{
-			struct visual_mod_block_t *block;
+			struct vi_mod_block_t *block;
 
 			int sub_block;
 
@@ -101,13 +101,13 @@ struct visual_mod_t *visual_mod_create(struct vi_trace_line_t *trace_line)
 			block->set = set;
 			block->way = way;
 			block->access_list = linked_list_create();
-			block->dir_entries = calloc(mod->num_sub_blocks, VISUAL_MOD_DIR_ENTRY_SIZE(mod));
+			block->dir_entries = calloc(mod->num_sub_blocks, VI_MOD_DIR_ENTRY_SIZE(mod));
 
 			for (sub_block = 0; sub_block < mod->num_sub_blocks; sub_block++)
 			{
-				struct visual_mod_dir_entry_t *dir_entry;
+				struct vi_mod_dir_entry_t *dir_entry;
 
-				dir_entry = visual_mod_dir_entry_get(mod, set, way, sub_block);
+				dir_entry = vi_mod_dir_entry_get(mod, set, way, sub_block);
 				dir_entry->owner = -1;
 			}
 		}
@@ -121,11 +121,11 @@ struct visual_mod_t *visual_mod_create(struct vi_trace_line_t *trace_line)
 }
 
 
-void visual_mod_free(struct visual_mod_t *mod)
+void vi_mod_free(struct vi_mod_t *mod)
 {
-	struct visual_mod_block_t *block;
+	struct vi_mod_block_t *block;
 	struct linked_list_t *access_list;
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	char *access_name;
 
@@ -142,7 +142,7 @@ void visual_mod_free(struct visual_mod_t *mod)
 		while (linked_list_count(access_list))
 		{
 			linked_list_head(access_list);
-			visual_mod_access_free(linked_list_get(access_list));
+			vi_mod_access_free(linked_list_get(access_list));
 			linked_list_remove(access_list);
 		}
 		linked_list_free(access_list);
@@ -154,7 +154,7 @@ void visual_mod_free(struct visual_mod_t *mod)
 
 	/* Access table */
 	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
-		visual_mod_access_free(access);
+		vi_mod_access_free(access);
 	hash_table_free(mod->access_table);
 
 	/* Free module */
@@ -163,9 +163,9 @@ void visual_mod_free(struct visual_mod_t *mod)
 }
 
 
-void visual_mod_add_access(struct visual_mod_t *mod, int set, int way, struct visual_mod_access_t *access)
+void vi_mod_add_access(struct vi_mod_t *mod, int set, int way, struct vi_mod_access_t *access)
 {
-	struct visual_mod_block_t *block;
+	struct vi_mod_block_t *block;
 	struct linked_list_t *access_list;
 
 	assert(IN_RANGE(set, 0, mod->num_sets - 1));
@@ -180,10 +180,10 @@ void visual_mod_add_access(struct visual_mod_t *mod, int set, int way, struct vi
 }
 
 
-struct visual_mod_access_t *visual_mod_find_access(struct visual_mod_t *mod, int set, int way, char *access_name)
+struct vi_mod_access_t *vi_mod_find_access(struct vi_mod_t *mod, int set, int way, char *access_name)
 {
-	struct visual_mod_block_t *block;
-	struct visual_mod_access_t *access;
+	struct vi_mod_block_t *block;
+	struct vi_mod_access_t *access;
 	struct linked_list_t *access_list;
 
 	assert(IN_RANGE(set, 0, mod->num_sets - 1));
@@ -210,10 +210,10 @@ struct visual_mod_access_t *visual_mod_find_access(struct visual_mod_t *mod, int
 }
 
 
-struct visual_mod_access_t *visual_mod_remove_access(struct visual_mod_t *mod, int set, int way, char *access_name)
+struct vi_mod_access_t *vi_mod_remove_access(struct vi_mod_t *mod, int set, int way, char *access_name)
 {
-	struct visual_mod_block_t *block;
-	struct visual_mod_access_t *access;
+	struct vi_mod_block_t *block;
+	struct vi_mod_access_t *access;
 	struct linked_list_t *access_list;
 
 	assert(IN_RANGE(set, 0, mod->num_sets - 1));
@@ -241,10 +241,10 @@ struct visual_mod_access_t *visual_mod_remove_access(struct visual_mod_t *mod, i
 }
 
 
-struct linked_list_t *visual_mod_get_access_list(struct visual_mod_t *mod,
+struct linked_list_t *vi_mod_get_access_list(struct vi_mod_t *mod,
 	int set, int way)
 {
-	struct visual_mod_block_t *block;
+	struct vi_mod_block_t *block;
 
 	assert(IN_RANGE(set, 0, mod->num_sets - 1));
 	assert(IN_RANGE(way, 0, mod->assoc - 1));
@@ -255,10 +255,10 @@ struct linked_list_t *visual_mod_get_access_list(struct visual_mod_t *mod,
 }
 
 
-void visual_mod_block_set(struct visual_mod_t *mod, int set, int way,
+void vi_mod_block_set(struct vi_mod_t *mod, int set, int way,
 	unsigned int tag, char *state)
 {
-	struct visual_mod_block_t *block;
+	struct vi_mod_block_t *block;
 
 	if (!IN_RANGE(set, 0, mod->num_sets - 1))
 		fatal("%s: invalid set", __FUNCTION__);
@@ -267,14 +267,14 @@ void visual_mod_block_set(struct visual_mod_t *mod, int set, int way,
 
 	block = &mod->blocks[set * mod->assoc + way];
 	block->tag = tag;
-	block->state = map_string(&visual_mod_block_state_map, state);
+	block->state = map_string(&vi_mod_block_state_map, state);
 }
 
 
 /* Get total number of sharers of a block, adding up sharers of each sub-block */
-int visual_mod_block_get_num_sharers(struct visual_mod_t *mod, int set, int way)
+int vi_mod_block_get_num_sharers(struct vi_mod_t *mod, int set, int way)
 {
-	struct visual_mod_dir_entry_t *dir_entry;
+	struct vi_mod_dir_entry_t *dir_entry;
 
 	int num_sharers;
 	int i;
@@ -282,7 +282,7 @@ int visual_mod_block_get_num_sharers(struct visual_mod_t *mod, int set, int way)
 	num_sharers = 0;
 	for (i = 0; i < mod->num_sub_blocks; i++)
 	{
-		dir_entry = visual_mod_dir_entry_get(mod, set, way, i);
+		dir_entry = vi_mod_dir_entry_get(mod, set, way, i);
 		num_sharers += dir_entry->num_sharers;
 	}
 
@@ -290,9 +290,9 @@ int visual_mod_block_get_num_sharers(struct visual_mod_t *mod, int set, int way)
 }
 
 
-void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
+void vi_mod_read_checkpoint(struct vi_mod_t *mod, FILE *f)
 {
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	char *access_name;
 
@@ -305,7 +305,7 @@ void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
 
 	/* Empty access list */
 	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
-		visual_mod_access_free(access);
+		vi_mod_access_free(access);
 	hash_table_clear(mod->access_table);
 
 	/* Read number of accesses */
@@ -316,8 +316,8 @@ void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
 	/* Read accesses */
 	for (i = 0; i < num_accesses; i++)
 	{
-		access = visual_mod_access_create(NULL, 0);
-		visual_mod_access_read_checkpoint(access, f);
+		access = vi_mod_access_create(NULL, 0);
+		vi_mod_access_read_checkpoint(access, f);
 		hash_table_insert(mod->access_table, access->name, access);
 	}
 
@@ -326,7 +326,7 @@ void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
 	{
 		for (way = 0; way < mod->assoc; way++)
 		{
-			struct visual_mod_block_t *block;
+			struct vi_mod_block_t *block;
 
 			unsigned char state;
 
@@ -350,13 +350,13 @@ void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
 
 			/* Read directory entry */
 			for (i = 0; i < mod->num_sub_blocks; i++)
-				visual_mod_dir_entry_read_checkpoint(mod, set, way, i, f);
+				vi_mod_dir_entry_read_checkpoint(mod, set, way, i, f);
 
 			/* Free previous accesses */
 			while (linked_list_count(block->access_list))
 			{
 				linked_list_head(block->access_list);
-				visual_mod_access_free(linked_list_get(block->access_list));
+				vi_mod_access_free(linked_list_get(block->access_list));
 				linked_list_remove(block->access_list);
 			}
 
@@ -368,8 +368,8 @@ void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
 			/* Read accesses */
 			for (i = 0; i < num_accesses; i++)
 			{
-				access = visual_mod_access_create(NULL, 0);
-				visual_mod_access_read_checkpoint(access, f);
+				access = vi_mod_access_create(NULL, 0);
+				vi_mod_access_read_checkpoint(access, f);
 				linked_list_add(block->access_list, access);
 			}
 		}
@@ -377,9 +377,9 @@ void visual_mod_read_checkpoint(struct visual_mod_t *mod, FILE *f)
 }
 
 
-void visual_mod_write_checkpoint(struct visual_mod_t *mod, FILE *f)
+void vi_mod_write_checkpoint(struct vi_mod_t *mod, FILE *f)
 {
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	char *access_name;
 
@@ -397,14 +397,14 @@ void visual_mod_write_checkpoint(struct visual_mod_t *mod, FILE *f)
 
 	/* Write accesses */
 	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
-		visual_mod_access_write_checkpoint(access, f);
+		vi_mod_access_write_checkpoint(access, f);
 
 	/* Cache */
 	for (set = 0; set < mod->num_sets; set++)
 	{
 		for (way = 0; way < mod->assoc; way++)
 		{
-			struct visual_mod_block_t *block;
+			struct vi_mod_block_t *block;
 
 			unsigned char state;
 
@@ -424,7 +424,7 @@ void visual_mod_write_checkpoint(struct visual_mod_t *mod, FILE *f)
 
 			/* Dump directory entry */
 			for (i = 0; i < mod->num_sub_blocks; i++)
-				visual_mod_dir_entry_write_checkpoint(mod, set, way, i, f);
+				vi_mod_dir_entry_write_checkpoint(mod, set, way, i, f);
 
 			/* Write number of accesses */
 			num_accesses = linked_list_count(block->access_list);
@@ -436,39 +436,39 @@ void visual_mod_write_checkpoint(struct visual_mod_t *mod, FILE *f)
 			LINKED_LIST_FOR_EACH(block->access_list)
 			{
 				access = linked_list_get(block->access_list);
-				visual_mod_access_write_checkpoint(access, f);
+				vi_mod_access_write_checkpoint(access, f);
 			}
 		}
 	}
 }
 
 
-struct visual_mod_dir_entry_t *visual_mod_dir_entry_get(struct visual_mod_t *mod,
+struct vi_mod_dir_entry_t *vi_mod_dir_entry_get(struct vi_mod_t *mod,
 	int set, int way, int sub_block)
 {
-	struct visual_mod_block_t *block;
-	struct visual_mod_dir_entry_t *dir_entry;
+	struct vi_mod_block_t *block;
+	struct vi_mod_dir_entry_t *dir_entry;
 
 	assert(IN_RANGE(set, 0, mod->num_sets - 1));
 	assert(IN_RANGE(way, 0, mod->assoc - 1));
 	assert(IN_RANGE(sub_block, 0, mod->num_sub_blocks - 1));
 
 	block = &mod->blocks[set * mod->assoc + way];
-	dir_entry = (struct visual_mod_dir_entry_t *) (((void *) block->dir_entries)
-		+ VISUAL_MOD_DIR_ENTRY_SIZE(mod) * sub_block);
+	dir_entry = (struct vi_mod_dir_entry_t *) (((void *) block->dir_entries)
+		+ VI_MOD_DIR_ENTRY_SIZE(mod) * sub_block);
 
 	return dir_entry;
 }
 
 
-void visual_mod_dir_entry_set_sharer(struct visual_mod_t *mod,
+void vi_mod_dir_entry_set_sharer(struct vi_mod_t *mod,
 	int x, int y, int z, int sharer)
 {
-	struct visual_mod_dir_entry_t *dir_entry;
+	struct vi_mod_dir_entry_t *dir_entry;
 
 	/* Get directory entry */
 	assert(IN_RANGE(sharer, 0, mod->num_sharers - 1));
-	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
+	dir_entry = vi_mod_dir_entry_get(mod, x, y, z);
 
 	/* In a correct trace, sharer should not be set */
 	if ((dir_entry->sharers[sharer / 8] & (1 << sharer % 8)))
@@ -481,14 +481,14 @@ void visual_mod_dir_entry_set_sharer(struct visual_mod_t *mod,
 }
 
 
-void visual_mod_dir_entry_clear_sharer(struct visual_mod_t *mod,
+void vi_mod_dir_entry_clear_sharer(struct vi_mod_t *mod,
 	int x, int y, int z, int sharer)
 {
-	struct visual_mod_dir_entry_t *dir_entry;
+	struct vi_mod_dir_entry_t *dir_entry;
 
 	/* Get directory entry */
 	assert(IN_RANGE(sharer, 0, mod->num_sharers - 1));
-	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
+	dir_entry = vi_mod_dir_entry_get(mod, x, y, z);
 
 	/* In a correct trace, sharer should not be set */
 	if (!(dir_entry->sharers[sharer / 8] & (1 << sharer % 8)))
@@ -501,70 +501,70 @@ void visual_mod_dir_entry_clear_sharer(struct visual_mod_t *mod,
 }
 
 
-void visual_mod_dir_entry_clear_all_sharers(struct visual_mod_t *mod,
+void vi_mod_dir_entry_clear_all_sharers(struct vi_mod_t *mod,
 	int x, int y, int z)
 {
-	struct visual_mod_dir_entry_t *dir_entry;
+	struct vi_mod_dir_entry_t *dir_entry;
 
 	int i;
 
 	/* Clear sharers */
-	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
+	dir_entry = vi_mod_dir_entry_get(mod, x, y, z);
 	dir_entry->num_sharers = 0;
-	for (i = 0; i < VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod); i++)
+	for (i = 0; i < VI_MOD_DIR_ENTRY_SHARERS_SIZE(mod); i++)
 		dir_entry->sharers[i] = 0;
 }
 
 
-int visual_mod_dir_entry_is_sharer(struct visual_mod_t *mod,
+int vi_mod_dir_entry_is_sharer(struct vi_mod_t *mod,
 	int x, int y, int z, int sharer)
 {
-	struct visual_mod_dir_entry_t *dir_entry;
+	struct vi_mod_dir_entry_t *dir_entry;
 
 	/* Get directory entry */
 	assert(IN_RANGE(sharer, 0, mod->num_sharers - 1));
-	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
+	dir_entry = vi_mod_dir_entry_get(mod, x, y, z);
 
 	/* Return whether sharer is set */
 	return (dir_entry->sharers[sharer / 8] & (1 << sharer % 8)) > 0;
 }
 
 
-void visual_mod_dir_entry_set_owner(struct visual_mod_t *mod,
+void vi_mod_dir_entry_set_owner(struct vi_mod_t *mod,
 	int x, int y, int z, int owner)
 {
-	struct visual_mod_dir_entry_t *dir_entry;
+	struct vi_mod_dir_entry_t *dir_entry;
 
 	/* Get directory entry */
 	assert(owner == -1 || IN_RANGE(owner, 0, mod->num_sharers - 1));
-	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
+	dir_entry = vi_mod_dir_entry_get(mod, x, y, z);
 
 	/* Set new owner */
 	dir_entry->owner = owner;
 }
 
 
-void visual_mod_dir_entry_read_checkpoint(struct visual_mod_t *mod, int x, int y, int z, FILE *f)
+void vi_mod_dir_entry_read_checkpoint(struct vi_mod_t *mod, int x, int y, int z, FILE *f)
 {
-	struct visual_mod_dir_entry_t *dir_entry;
+	struct vi_mod_dir_entry_t *dir_entry;
 
 	int count = 0;
 
-	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
+	dir_entry = vi_mod_dir_entry_get(mod, x, y, z);
 	count += fread(&dir_entry->num_sharers, 1, 4, f);
 	count += fread(&dir_entry->owner, 1, 4, f);
-	count += fread(dir_entry->sharers, 1, VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod), f);
-	if (count != 8 + VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod))
+	count += fread(dir_entry->sharers, 1, VI_MOD_DIR_ENTRY_SHARERS_SIZE(mod), f);
+	if (count != 8 + VI_MOD_DIR_ENTRY_SHARERS_SIZE(mod))
 		panic("%s: corrupted checkpoint", __FUNCTION__);
 }
 
 
-void visual_mod_dir_entry_write_checkpoint(struct visual_mod_t *mod, int x, int y, int z, FILE *f)
+void vi_mod_dir_entry_write_checkpoint(struct vi_mod_t *mod, int x, int y, int z, FILE *f)
 {
-	struct visual_mod_dir_entry_t *dir_entry;
+	struct vi_mod_dir_entry_t *dir_entry;
 
-	dir_entry = visual_mod_dir_entry_get(mod, x, y, z);
+	dir_entry = vi_mod_dir_entry_get(mod, x, y, z);
 	fwrite(&dir_entry->num_sharers, 1, 4, f);
 	fwrite(&dir_entry->owner, 1, 4, f);
-	fwrite(dir_entry->sharers, 1, VISUAL_MOD_DIR_ENTRY_SHARERS_SIZE(mod), f);
+	fwrite(dir_entry->sharers, 1, VI_MOD_DIR_ENTRY_SHARERS_SIZE(mod), f);
 }

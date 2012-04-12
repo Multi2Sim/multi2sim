@@ -28,18 +28,18 @@
  * Network Node
  */
 
-struct visual_net_node_t
+struct vi_net_node_t
 {
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 };
 
 
-struct visual_net_node_t *visual_net_node_create(void)
+struct vi_net_node_t *vi_net_node_create(void)
 {
-	struct visual_net_node_t *node;
+	struct vi_net_node_t *node;
 
 	/* Allocate */
-	node = calloc(1, sizeof(struct visual_net_node_t));
+	node = calloc(1, sizeof(struct vi_net_node_t));
 	if (!node)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -48,7 +48,7 @@ struct visual_net_node_t *visual_net_node_create(void)
 }
 
 
-void visual_net_node_free(struct visual_net_node_t *node)
+void vi_net_node_free(struct vi_net_node_t *node)
 {
 	free(node);
 }
@@ -60,9 +60,9 @@ void visual_net_node_free(struct visual_net_node_t *node)
  * Network
  */
 
-struct visual_net_t *visual_net_create(struct vi_trace_line_t *trace_line)
+struct vi_net_t *vi_net_create(struct vi_trace_line_t *trace_line)
 {
-	struct visual_net_t *net;
+	struct vi_net_t *net;
 
 	int num_nodes;
 	int i;
@@ -70,7 +70,7 @@ struct visual_net_t *visual_net_create(struct vi_trace_line_t *trace_line)
 	char *name;
 
 	/* Allocate */
-	net = calloc(1, sizeof(struct visual_net_t));
+	net = calloc(1, sizeof(struct vi_net_t));
 	if (!net)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -84,7 +84,7 @@ struct visual_net_t *visual_net_create(struct vi_trace_line_t *trace_line)
 	num_nodes = vi_trace_line_get_symbol_int(trace_line, "num_nodes");
 	net->node_list = list_create();
 	for (i = 0; i < num_nodes; i++)
-		list_add(net->node_list, visual_net_node_create());
+		list_add(net->node_list, vi_net_node_create());
 
 
 	/* Return */
@@ -92,13 +92,13 @@ struct visual_net_t *visual_net_create(struct vi_trace_line_t *trace_line)
 }
 
 
-void visual_net_free(struct visual_net_t *net)
+void vi_net_free(struct vi_net_t *net)
 {
 	int i;
 
 	/* Free nodes */
 	LIST_FOR_EACH(net->node_list, i)
-		visual_net_node_free(list_get(net->node_list, i));
+		vi_net_node_free(list_get(net->node_list, i));
 	list_free(net->node_list);
 
 	/* Free network */
@@ -107,10 +107,10 @@ void visual_net_free(struct visual_net_t *net)
 }
 
 
-void visual_net_attach_mod(struct visual_net_t *net,
-	struct visual_mod_t *mod, int node_index)
+void vi_net_attach_mod(struct vi_net_t *net,
+	struct vi_mod_t *mod, int node_index)
 {
-	struct visual_net_node_t *node;
+	struct vi_net_node_t *node;
 
 	/* Check bounds */
 	if (!IN_RANGE(node_index, 0, net->node_list->count - 1))
@@ -123,9 +123,9 @@ void visual_net_attach_mod(struct visual_net_t *net,
 }
 
 
-struct visual_mod_t *visual_net_get_mod(struct visual_net_t *net, int node_index)
+struct vi_mod_t *vi_net_get_mod(struct vi_net_t *net, int node_index)
 {
-	struct visual_net_node_t *node;
+	struct vi_net_node_t *node;
 
 	/* Check bounds */
 	if (!IN_RANGE(node_index, 0, net->node_list->count - 1))
