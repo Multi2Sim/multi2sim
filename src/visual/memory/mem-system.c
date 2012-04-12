@@ -445,50 +445,50 @@ void visual_mem_system_init(void)
 	struct trace_line_t *trace_line;
 
 	/* State file */
-	state_file_new_category(visual_state_file, "Memory hierarchy",
-		(state_file_read_checkpoint_func_t) visual_mem_system_read_checkpoint,
-		(state_file_write_checkpoint_func_t) visual_mem_system_write_checkpoint,
+	vi_state_new_category("Memory hierarchy",
+		(vi_state_read_checkpoint_func_t) visual_mem_system_read_checkpoint,
+		(vi_state_write_checkpoint_func_t) visual_mem_system_write_checkpoint,
 		NULL, visual_mem_system);
-	/* Replace with (state_file_refresh_func_t) visual_mem_system_widget_refresh */
+	/* Replace with (vi_state_refresh_func_t) visual_mem_system_widget_refresh */
 
-	state_file_new_command(visual_state_file, "mem.set_transient_tag",
-		(state_file_process_trace_line_func_t) visual_mem_system_set_transient_tag,
+	vi_state_new_command("mem.set_transient_tag",
+		(vi_state_process_trace_line_func_t) visual_mem_system_set_transient_tag,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.set_block",
-		(state_file_process_trace_line_func_t) visual_mem_system_set_block,
+	vi_state_new_command("mem.set_block",
+		(vi_state_process_trace_line_func_t) visual_mem_system_set_block,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.set_sharer",
-		(state_file_process_trace_line_func_t) visual_mem_system_set_sharer,
+	vi_state_new_command("mem.set_sharer",
+		(vi_state_process_trace_line_func_t) visual_mem_system_set_sharer,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.clear_sharer",
-		(state_file_process_trace_line_func_t) visual_mem_system_clear_sharer,
+	vi_state_new_command("mem.clear_sharer",
+		(vi_state_process_trace_line_func_t) visual_mem_system_clear_sharer,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.clear_all_sharers",
-		(state_file_process_trace_line_func_t) visual_mem_system_clear_all_sharers,
+	vi_state_new_command("mem.clear_all_sharers",
+		(vi_state_process_trace_line_func_t) visual_mem_system_clear_all_sharers,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.set_owner",
-		(state_file_process_trace_line_func_t) visual_mem_system_set_owner,
+	vi_state_new_command("mem.set_owner",
+		(vi_state_process_trace_line_func_t) visual_mem_system_set_owner,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.new_access",
-		(state_file_process_trace_line_func_t) visual_mem_system_new_access,
+	vi_state_new_command("mem.new_access",
+		(vi_state_process_trace_line_func_t) visual_mem_system_new_access,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.end_access",
-		(state_file_process_trace_line_func_t) visual_mem_system_end_access,
+	vi_state_new_command("mem.end_access",
+		(vi_state_process_trace_line_func_t) visual_mem_system_end_access,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.new_access_mod",
-		(state_file_process_trace_line_func_t) visual_mem_system_new_access_mod,
+	vi_state_new_command("mem.new_access_mod",
+		(vi_state_process_trace_line_func_t) visual_mem_system_new_access_mod,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.end_access_mod",
-		(state_file_process_trace_line_func_t) visual_mem_system_end_access_mod,
+	vi_state_new_command("mem.end_access_mod",
+		(vi_state_process_trace_line_func_t) visual_mem_system_end_access_mod,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.new_access_block",
-		(state_file_process_trace_line_func_t) visual_mem_system_new_access_block,
+	vi_state_new_command("mem.new_access_block",
+		(vi_state_process_trace_line_func_t) visual_mem_system_new_access_block,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.end_access_block",
-		(state_file_process_trace_line_func_t) visual_mem_system_end_access_block,
+	vi_state_new_command("mem.end_access_block",
+		(vi_state_process_trace_line_func_t) visual_mem_system_end_access_block,
 		visual_mem_system);
-	state_file_new_command(visual_state_file, "mem.access",
-		(state_file_process_trace_line_func_t) visual_mem_system_access,
+	vi_state_new_command("mem.access",
+		(vi_state_process_trace_line_func_t) visual_mem_system_access,
 		visual_mem_system);
 
 	/* Allocate */
@@ -503,7 +503,7 @@ void visual_mem_system_init(void)
 	visual_mem_system->mod_level_list = list_create();
 
 	/* Parse header in state file */
-	STATE_FILE_FOR_EACH_HEADER(visual_state_file, trace_line)
+	VI_STATE_FOR_EACH_HEADER(trace_line)
 	{
 		char *command;
 
