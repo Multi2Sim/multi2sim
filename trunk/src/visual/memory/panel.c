@@ -136,6 +136,7 @@ struct vi_mod_board_t
 
 	struct vi_mod_t *mod;
 	struct vi_list_t *access_list;
+	struct vi_led_t *led;
 };
 
 
@@ -216,6 +217,7 @@ static struct vi_mod_board_t *vi_mod_board_create(struct vi_mod_t *mod)
 	/* LED */
 	struct vi_led_t *led = vi_led_create(13);
 	gtk_box_pack_start(GTK_BOX(hbox), vi_led_get_widget(led), FALSE, TRUE, 0);
+	board->led = led;
 
 	/* Toggle button */
 	GtkWidget *toggle_button = gtk_toggle_button_new_with_label("Detail");
@@ -277,6 +279,14 @@ static void vi_mod_board_refresh(struct vi_mod_board_t *board)
 		vi_list_add(board->access_list, access_name);
 	}
 	vi_list_refresh(board->access_list);
+
+	/* LED */
+	GdkColor color;
+	if (vi_list_count(board->access_list))
+		gdk_color_parse("red", &color);
+	else
+		gdk_color_parse("green", &color);
+	vi_led_set_color(board->led, &color);
 
 	/* Refresh pop-up window */
 	if (board->mod_window)
