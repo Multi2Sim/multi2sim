@@ -8,11 +8,11 @@ libmemory_a_SOURCES += \
 	visual-memory.h	\
 	\
 	mem-system.c \
-	mem-system-widget.c \
 	mod-access.c \
 	mod.c \
 	mod-widget.c \
-	net.c
+	net.c \
+	panel.c
 
 AM_CFLAGS = @GTK_CFLAGS@
 

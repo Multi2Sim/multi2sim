@@ -27,7 +27,7 @@
  */
 
 struct vi_cycle_bar_t *visual_cycle_bar;
-struct visual_mem_system_widget_t *visual_mem_system_widget;
+struct vi_mem_panel_t *visual_mem_system_widget;
 
 
 static void visual_xxx_destroy_event(GtkWidget *widget, gpointer data)
@@ -38,7 +38,7 @@ static void visual_xxx_destroy_event(GtkWidget *widget, gpointer data)
 
 static void visual_cycle_bar_refresh(void *user_data, long long cycle)
 {
-	visual_mem_system_widget_refresh(visual_mem_system_widget);
+	vi_mem_panel_refresh(visual_mem_system_widget);
 }
 
 
@@ -56,7 +56,7 @@ void visual_run(char *file_name)
 	vi_state_init(file_name);
 
 	/* Initialize visual systems */
-	visual_mem_system_init();
+	vi_mem_system_init();
 
 	/* Create checkpoints */
 	vi_state_create_checkpoints();
@@ -79,8 +79,8 @@ void visual_run(char *file_name)
 	gtk_box_pack_start(GTK_BOX(vbox), vi_cycle_bar_get_widget(), FALSE, FALSE, 0);
 
 	/* Memory system widget */
-	visual_mem_system_widget = visual_mem_system_widget_create();
-	gtk_box_pack_start(GTK_BOX(vbox), visual_mem_system_widget_get_widget(visual_mem_system_widget),
+	visual_mem_system_widget = vi_mem_panel_create();
+	gtk_box_pack_start(GTK_BOX(vbox), vi_mem_panel_get_widget(visual_mem_system_widget),
 		TRUE, TRUE, 0);
 
 	/* Show */
@@ -90,7 +90,7 @@ void visual_run(char *file_name)
 	gtk_main();
 
 	/* Free */
-	visual_mem_system_done();
+	vi_mem_system_done();
 	vi_cycle_bar_done();
 	vi_state_done();
 }

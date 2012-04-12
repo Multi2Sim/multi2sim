@@ -24,12 +24,12 @@
  * Public Functions
  */
 
-struct visual_mod_access_t *visual_mod_access_create(char *name, unsigned int address)
+struct vi_mod_access_t *vi_mod_access_create(char *name, unsigned int address)
 {
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	/* Allocate */
-	access = calloc(1, sizeof(struct visual_mod_access_t));
+	access = calloc(1, sizeof(struct vi_mod_access_t));
 	if (!access)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -43,7 +43,7 @@ struct visual_mod_access_t *visual_mod_access_create(char *name, unsigned int ad
 }
 
 
-void visual_mod_access_free(struct visual_mod_access_t *access)
+void vi_mod_access_free(struct vi_mod_access_t *access)
 {
 	str_free(access->name);
 	str_free(access->state);
@@ -51,14 +51,14 @@ void visual_mod_access_free(struct visual_mod_access_t *access)
 }
 
 
-void visual_mod_access_set_state(struct visual_mod_access_t *access, char *state)
+void vi_mod_access_set_state(struct vi_mod_access_t *access, char *state)
 {
 	access->state = str_set(access->state, state);
 	access->state_update_cycle = vi_state_get_current_cycle();
 }
 
 
-void visual_mod_access_read_checkpoint(struct visual_mod_access_t *access, FILE *f)
+void vi_mod_access_read_checkpoint(struct vi_mod_access_t *access, FILE *f)
 {
 	char name[MAX_STRING_SIZE];
 	char state[MAX_STRING_SIZE];
@@ -90,7 +90,7 @@ void visual_mod_access_read_checkpoint(struct visual_mod_access_t *access, FILE 
 }
 
 
-void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE *f)
+void vi_mod_access_write_checkpoint(struct vi_mod_access_t *access, FILE *f)
 {
 	int count;
 
@@ -117,12 +117,12 @@ void visual_mod_access_write_checkpoint(struct visual_mod_access_t *access, FILE
 }
 
 /* Return the access name in the current cycle set in the state file */
-void visual_mod_access_get_name_long(char *access_name, char *buf, int size)
+void vi_mod_access_get_name_long(char *access_name, char *buf, int size)
 {
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	/* Look for access */
-	access = hash_table_get(visual_mem_system->access_table, access_name);
+	access = hash_table_get(vi_mem_system->access_table, access_name);
 	if (!access)
 		panic("%s: %s: invalid access", __FUNCTION__, access_name);
 
@@ -136,12 +136,12 @@ void visual_mod_access_get_name_long(char *access_name, char *buf, int size)
 }
 
 
-void visual_mod_access_get_name_short(char *access_name, char *buf, int size)
+void vi_mod_access_get_name_short(char *access_name, char *buf, int size)
 {
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	/* Look for access */
-	access = hash_table_get(visual_mem_system->access_table, access_name);
+	access = hash_table_get(vi_mem_system->access_table, access_name);
 	if (!access)
 		panic("%s: %s: invalid access", __FUNCTION__, access_name);
 
@@ -150,12 +150,12 @@ void visual_mod_access_get_name_short(char *access_name, char *buf, int size)
 }
 
 
-void visual_mod_access_get_desc(char *access_name, char *buf, int size)
+void vi_mod_access_get_desc(char *access_name, char *buf, int size)
 {
 	char *title_format_begin = "<span color=\"blue\"><b>";
 	char *title_format_end = "</b></span>";
 
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	struct vi_trace_line_t *trace_line;
 
@@ -165,7 +165,7 @@ void visual_mod_access_get_desc(char *access_name, char *buf, int size)
 	int i;
 
 	/* Look for access */
-	access = hash_table_get(visual_mem_system->access_table, access_name);
+	access = hash_table_get(vi_mem_system->access_table, access_name);
 	if (!access)
 		panic("%s: %s: invalid access", __FUNCTION__, access_name);
 
