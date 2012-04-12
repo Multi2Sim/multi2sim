@@ -196,11 +196,11 @@ struct vi_mod_t *vi_net_get_mod(struct vi_net_t *net, int node_index);
 struct vi_mem_panel_t;
 
 struct vi_mem_panel_t *vi_mem_panel_create(void);
-void vi_mem_panel_free(struct vi_mem_panel_t *widget);
+void vi_mem_panel_free(struct vi_mem_panel_t *panel);
 
-void vi_mem_panel_refresh(struct vi_mem_panel_t *widget);
+void vi_mem_panel_refresh(struct vi_mem_panel_t *panel);
 
-GtkWidget *vi_mem_panel_get_widget(struct vi_mem_panel_t *widget);
+GtkWidget *vi_mem_panel_get_widget(struct vi_mem_panel_t *panel);
 
 
 
@@ -209,14 +209,14 @@ GtkWidget *vi_mem_panel_get_widget(struct vi_mem_panel_t *widget);
  * Visual Module Widget
  */
 
-struct visual_mod_widget_t;
+struct vi_mod_widget_t;
 
-struct visual_mod_widget_t *visual_mod_widget_create(char *name);
-void visual_mod_widget_free(struct visual_mod_widget_t *widget);
+struct vi_mod_widget_t *vi_mod_widget_create(char *name);
+void vi_mod_widget_free(struct vi_mod_widget_t *widget);
 
-void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget);
+void vi_mod_widget_refresh(struct vi_mod_widget_t *visual_mod_widget);
 
-GtkWidget *visual_mod_widget_get_widget(struct visual_mod_widget_t *widget);
+GtkWidget *vi_mod_widget_get_widget(struct vi_mod_widget_t *widget);
 
 
 

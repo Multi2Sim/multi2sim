@@ -123,6 +123,20 @@ void vi_state_go_to_cycle(long long cycle);
 
 
 /*
+ * Visual LED
+ */
+
+struct vi_led_t;
+
+struct vi_led_t *vi_led_create(int radius);
+void vi_led_free(struct vi_led_t *led);
+
+GtkWidget *vi_led_get_widget(struct vi_led_t *led);
+
+
+
+
+/*
  * Visual List
  */
 
