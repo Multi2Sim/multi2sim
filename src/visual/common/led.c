@@ -20,3 +20,81 @@
 #include <visual-common.h>
 
 
+struct vi_led_t
+{
+	GtkWidget *widget;
+};
+
+
+static void vi_led_destroy(GtkWidget *widget, struct vi_led_t *led)
+{
+	vi_led_free(led);
+}
+
+
+static gboolean vi_led_draw(GtkWidget *widget, GdkEventConfigure *event, struct vi_led_t *led)
+{
+	GdkWindow *window;
+	cairo_t *cr;
+
+	int width;
+	int height;
+
+	width = gtk_widget_get_allocated_width(widget);
+	height = gtk_widget_get_allocated_height(widget);
+
+	window = gtk_widget_get_window(widget);
+	cr = gdk_cairo_create(window);
+
+	/* Color */
+	if (1)
+		cairo_set_source_rgb(cr, 1, 0, 0);
+	else
+		cairo_set_source_rgb(cr, 0, 1, 0);
+
+	/* Circle */
+	cairo_set_line_width(cr, 1);
+	cairo_arc(cr, width / 2, height / 2.0, MIN(width, height) / 3.0, 0., 2 * M_PI);
+	cairo_fill_preserve(cr);
+	cairo_set_source_rgb(cr, 0, 0, 0);
+
+	/* Finish */
+	cairo_stroke(cr);
+	cairo_destroy(cr);
+	return FALSE;
+}
+
+
+struct vi_led_t *vi_led_create(int radius)
+{
+	struct vi_led_t *led;
+
+	/* Allocate */
+	led = calloc(1, sizeof(struct vi_led_t));
+	if (!led)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Drawing box */
+	GtkWidget *drawing_area = gtk_drawing_area_new();
+	gtk_widget_set_size_request(drawing_area, radius * 2, radius * 2);
+	g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(vi_led_draw), led);
+
+	/* Main widget */
+	led->widget = drawing_area;
+	g_signal_connect(G_OBJECT(led->widget), "destroy", G_CALLBACK(vi_led_destroy), led);
+
+	/* Return */
+	return led;
+}
+
+
+void vi_led_free(struct vi_led_t *led)
+{
+	free(led);
+}
+
+
+GtkWidget *vi_led_get_widget(struct vi_led_t *led)
+{
+	return led->widget;
+}
