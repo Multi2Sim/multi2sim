@@ -26,7 +26,7 @@
  * Main Program
  */
 
-struct cycle_bar_t *visual_cycle_bar;
+struct vi_cycle_bar_t *visual_cycle_bar;
 struct visual_mem_system_widget_t *visual_mem_system_widget;
 
 
@@ -51,20 +51,6 @@ void visual_run(char *file_name)
 		vi_list_image_close_path, sizeof vi_list_image_close_path);
 	m2s_dist_file("close-sel.png", m2s_images_path, m2s_images_path,
 		vi_list_image_close_sel_path, sizeof vi_list_image_close_sel_path);
-	m2s_dist_file("back-single.png", m2s_images_path, m2s_images_path,
-		cycle_bar_back_single_path, sizeof cycle_bar_back_single_path);
-	m2s_dist_file("back-double.png", m2s_images_path, m2s_images_path,
-		cycle_bar_back_double_path, sizeof cycle_bar_back_double_path);
-	m2s_dist_file("back-triple.png", m2s_images_path, m2s_images_path,
-		cycle_bar_back_triple_path, sizeof cycle_bar_back_triple_path);
-	m2s_dist_file("forward-single.png", m2s_images_path, m2s_images_path,
-		cycle_bar_forward_single_path, sizeof cycle_bar_forward_single_path);
-	m2s_dist_file("forward-double.png", m2s_images_path, m2s_images_path,
-		cycle_bar_forward_double_path, sizeof cycle_bar_forward_double_path);
-	m2s_dist_file("forward-triple.png", m2s_images_path, m2s_images_path,
-		cycle_bar_forward_triple_path, sizeof cycle_bar_forward_triple_path);
-	m2s_dist_file("go.png", m2s_images_path, m2s_images_path,
-		cycle_bar_go_path, sizeof cycle_bar_go_path);
 
 	/* Initialize visual state */
 	vi_state_init(file_name);
@@ -89,9 +75,8 @@ void visual_run(char *file_name)
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 
 	/* Cycle bar */
-	visual_cycle_bar = cycle_bar_create();
-	gtk_box_pack_start(GTK_BOX(vbox), cycle_bar_get_widget(visual_cycle_bar), FALSE, FALSE, 0);
-	cycle_bar_set_refresh_func(visual_cycle_bar, visual_cycle_bar_refresh, NULL);
+	vi_cycle_bar_init(visual_cycle_bar_refresh, NULL);
+	gtk_box_pack_start(GTK_BOX(vbox), vi_cycle_bar_get_widget(), FALSE, FALSE, 0);
 
 	/* Memory system widget */
 	visual_mem_system_widget = visual_mem_system_widget_create();
@@ -106,5 +91,6 @@ void visual_run(char *file_name)
 
 	/* Free */
 	visual_mem_system_done();
+	vi_cycle_bar_done();
 	vi_state_done();
 }

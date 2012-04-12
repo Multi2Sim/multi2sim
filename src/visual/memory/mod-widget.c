@@ -143,7 +143,7 @@ static void sharers_label_clicked(GtkWidget *widget,
 	char *title_format_end = "</b></span>";
 
 	/* Go to current cycle */
-	cycle = cycle_bar_get_cycle(visual_cycle_bar);
+	cycle = vi_cycle_bar_get_cycle();
 	vi_state_go_to_cycle(cycle);
 
 	/* Get module */
@@ -206,7 +206,7 @@ static void sharers_label_clicked(GtkWidget *widget,
 	}
 
 	/* Show pop-up */
-	info_popup_show(buf);
+	vi_popup_show(buf);
 }
 
 
@@ -403,7 +403,7 @@ static void accesses_label_clicked(GtkWidget *widget,
 	char *title_format_end = "</b></span>";
 
 	/* Go to current cycle */
-	cycle = cycle_bar_get_cycle(visual_cycle_bar);
+	cycle = vi_cycle_bar_get_cycle();
 	vi_state_go_to_cycle(cycle);
 
 	/* Get module */
@@ -438,7 +438,7 @@ static void accesses_label_clicked(GtkWidget *widget,
 	}
 
 	/* Show pop-up */
-	info_popup_show(buf);
+	vi_popup_show(buf);
 }
 
 
@@ -784,7 +784,7 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 	char *access_name;
 
 	/* Go to cycle */
-	cycle = cycle_bar_get_cycle(visual_cycle_bar);
+	cycle = vi_cycle_bar_get_cycle();
 	vi_state_go_to_cycle(cycle);
 
 	/* Get associated module */

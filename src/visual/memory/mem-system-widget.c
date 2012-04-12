@@ -144,7 +144,7 @@ void visual_mem_system_widget_refresh(struct visual_mem_system_widget_t *widget)
 	long long cycle;
 
 	/* Go to cycle */
-	cycle = cycle_bar_get_cycle(visual_cycle_bar);
+	cycle = vi_cycle_bar_get_cycle();
 	vi_state_go_to_cycle(cycle);
 
 	/* Empty access list */
