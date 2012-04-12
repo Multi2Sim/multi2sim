@@ -125,9 +125,9 @@ static gboolean sharers_label_leave_notify(GtkWidget *widget,
 static void sharers_label_clicked(GtkWidget *widget,
 	GdkEventButton *event, struct sharers_label_t *sharers_label)
 {
-	struct visual_mod_t *mod;
-	struct visual_mod_t *mod_sharer;
-	struct visual_net_t *net;
+	struct vi_mod_t *mod;
+	struct vi_mod_t *mod_sharer;
+	struct vi_net_t *net;
 
 	char buf[MAX_LONG_STRING_SIZE];
 	char *buf_ptr;
@@ -147,7 +147,7 @@ static void sharers_label_clicked(GtkWidget *widget,
 	vi_state_go_to_cycle(cycle);
 
 	/* Get module */
-	mod = hash_table_get(visual_mem_system->mod_table, sharers_label->mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, sharers_label->mod_name);
 	if (!mod)
 		panic("%s: %s: invalid module", __FUNCTION__, sharers_label->mod_name);
 
@@ -163,7 +163,7 @@ static void sharers_label_clicked(GtkWidget *widget,
 	/* Sub-blocks */
 	for (sub_block = 0; sub_block < mod->num_sub_blocks; sub_block++)
 	{
-		struct visual_mod_dir_entry_t *dir_entry;
+		struct vi_mod_dir_entry_t *dir_entry;
 
 		/* Start */
 		str_printf(&buf_ptr, &size, "%sSub-block %d:%s\n",
@@ -171,11 +171,11 @@ static void sharers_label_clicked(GtkWidget *widget,
 
 		/* Owner */
 		mod_sharer = NULL;
-		dir_entry = visual_mod_dir_entry_get(mod, sharers_label->set,
+		dir_entry = vi_mod_dir_entry_get(mod, sharers_label->set,
 			sharers_label->way, sub_block);
 		if (dir_entry->owner >= 0)
 		{
-			mod_sharer = visual_net_get_mod(net, dir_entry->owner);
+			mod_sharer = vi_net_get_mod(net, dir_entry->owner);
 			if (!mod_sharer)
 				panic("%s: invalid owner", __FUNCTION__);
 		}
@@ -187,12 +187,12 @@ static void sharers_label_clicked(GtkWidget *widget,
 		for (sharer = 0; sharer < mod->num_sharers; sharer++)
 		{
 			/* Sharer not set */
-			if (!visual_mod_dir_entry_is_sharer(mod, sharers_label->set,
+			if (!vi_mod_dir_entry_is_sharer(mod, sharers_label->set,
 				sharers_label->way, sub_block, sharer))
 				continue;
 
 			/* New sharer */
-			mod_sharer = visual_net_get_mod(net, sharer);
+			mod_sharer = vi_net_get_mod(net, sharer);
 			if (!mod_sharer)
 				panic("%s: invalid sharer", __FUNCTION__);
 
@@ -213,7 +213,7 @@ static void sharers_label_clicked(GtkWidget *widget,
 static struct sharers_label_t *sharers_label_create(char *mod_name, int set, int way)
 {
 	struct sharers_label_t *sharers_label;
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 
 	int num_sharers;
 
@@ -234,12 +234,12 @@ static struct sharers_label_t *sharers_label_create(char *mod_name, int set, int
 	sharers_label->way = way;
 
 	/* Get module */
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
 
 	/* Sharers text */
-	num_sharers = visual_mod_block_get_num_sharers(mod, set, way);
+	num_sharers = vi_mod_block_get_num_sharers(mod, set, way);
 	snprintf(str, sizeof str, "+%d", num_sharers);
 	if (!num_sharers)
 		strcpy(str, "-");
@@ -389,7 +389,7 @@ static void accesses_label_clicked(GtkWidget *widget,
 {
 	long long cycle;
 
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 
 	char buf[MAX_LONG_STRING_SIZE];
 	char *buf_ptr;
@@ -407,7 +407,7 @@ static void accesses_label_clicked(GtkWidget *widget,
 	vi_state_go_to_cycle(cycle);
 
 	/* Get module */
-	mod = hash_table_get(visual_mem_system->mod_table, accesses_label->mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, accesses_label->mod_name);
 	if (!mod)
 		panic("%s: %s: invalid module", __FUNCTION__, accesses_label->mod_name);
 
@@ -420,7 +420,7 @@ static void accesses_label_clicked(GtkWidget *widget,
 		title_format_begin, mod->name, accesses_label->set, accesses_label->way, title_format_end);
 
 	/* Number of accesses */
-	access_list = visual_mod_get_access_list(mod, accesses_label->set, accesses_label->way);
+	access_list = vi_mod_get_access_list(mod, accesses_label->set, accesses_label->way);
 	str_printf(&buf_ptr, &size, "%sNumber of accesses:%s %d\n",
 		title_format_begin, title_format_end, access_list->count);
 
@@ -428,7 +428,7 @@ static void accesses_label_clicked(GtkWidget *widget,
 	index = 0;
 	LINKED_LIST_FOR_EACH(access_list)
 	{
-		struct visual_mod_access_t *access;
+		struct vi_mod_access_t *access;
 
 		access = linked_list_get(access_list);
 		str_printf(&buf_ptr, &size, "%sAccess[%d]%s = %s\n",
@@ -446,7 +446,7 @@ static struct accesses_label_t *accesses_label_create(char *mod_name, int set, i
 {
 	struct accesses_label_t *accesses_label;
 	struct linked_list_t *access_list;
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 
 	int num_accesses;
 
@@ -467,12 +467,12 @@ static struct accesses_label_t *accesses_label_create(char *mod_name, int set, i
 	accesses_label->way = way;
 
 	/* Get module */
-	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
 
 	/* Accesses text */
-	access_list = visual_mod_get_access_list(mod, set, way);
+	access_list = vi_mod_get_access_list(mod, set, way);
 	num_accesses = linked_list_count(access_list);
 	snprintf(str, sizeof str, "+%d", num_accesses);
 	if (!num_accesses)
@@ -644,8 +644,8 @@ struct visual_mod_widget_t *visual_mod_widget_create(char *name)
 	/* Access list */
 	struct vi_list_t *access_list;
 	access_list = vi_list_create("Access list", 200, 30,
-		(vi_list_get_elem_name_func_t) visual_mod_access_get_name_short,
-		(vi_list_get_elem_desc_func_t) visual_mod_access_get_desc);
+		(vi_list_get_elem_name_func_t) vi_mod_access_get_name_short,
+		(vi_list_get_elem_desc_func_t) vi_mod_access_get_desc);
 	gtk_box_pack_start(GTK_BOX(vbox), vi_list_get_widget(access_list), FALSE, FALSE, 0);
 	visual_mod_widget->access_list = access_list;
 
@@ -751,8 +751,8 @@ void visual_mod_widget_free(struct visual_mod_widget_t *visual_mod_widget)
 
 void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 {
-	struct visual_mod_t *mod;
-	struct visual_mod_access_t *access;
+	struct vi_mod_t *mod;
+	struct vi_mod_access_t *access;
 
 	long long cycle;
 
@@ -788,7 +788,7 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 	vi_state_go_to_cycle(cycle);
 
 	/* Get associated module */
-	mod = hash_table_get(visual_mem_system->mod_table, visual_mod_widget->name);
+	mod = hash_table_get(vi_mem_system->mod_table, visual_mod_widget->name);
 	if (!mod)
 		panic("%s: invalid module", __FUNCTION__);
 
@@ -938,7 +938,7 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 		x = left_way_offset;
 		while (x < width && way < mod->assoc)
 		{
-			struct visual_mod_block_t *block;
+			struct vi_mod_block_t *block;
 
 			char *state_str;
 

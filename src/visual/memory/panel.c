@@ -26,7 +26,7 @@
 #define VISUAL_MOD_DEFAULT_HEIGHT	100
 
 
-struct visual_mem_system_widget_t
+struct vi_mem_panel_t
 {
 	GtkWidget *widget;
 
@@ -36,25 +36,25 @@ struct visual_mem_system_widget_t
 };
 
 
-static void visual_mem_system_widget_destroy(GtkWidget *widget,
-	struct visual_mem_system_widget_t *visual_mem_system_widget)
+static void vi_mem_panel_destroy(GtkWidget *widget,
+	struct vi_mem_panel_t *visual_mem_system_widget)
 {
-	visual_mem_system_widget_free(visual_mem_system_widget);
+	vi_mem_panel_free(visual_mem_system_widget);
 }
 
 
-struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
+struct vi_mem_panel_t *vi_mem_panel_create(void)
 {
-	struct visual_mem_system_widget_t *widget;
+	struct vi_mem_panel_t *widget;
 
-	struct visual_mod_t *mod;
+	struct vi_mod_t *mod;
 	struct list_t *mod_list;
 
 	int level_id;
 	int mod_id;
 
 	/* Allocate */
-	widget = calloc(1, sizeof(struct visual_mem_system_widget_t));
+	widget = calloc(1, sizeof(struct vi_mem_panel_t));
 	if (!widget)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -68,16 +68,16 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
 	/* Access list */
 	struct vi_list_t *access_list;
 	access_list = vi_list_create("Access list", 200, 30,
-		(vi_list_get_elem_name_func_t) visual_mod_access_get_name_long,
-		(vi_list_get_elem_desc_func_t) visual_mod_access_get_desc);
+		(vi_list_get_elem_name_func_t) vi_mod_access_get_name_long,
+		(vi_list_get_elem_desc_func_t) vi_mod_access_get_desc);
 	gtk_box_pack_start(GTK_BOX(vbox), vi_list_get_widget(access_list), FALSE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), gtk_hseparator_new(), FALSE, FALSE, 0);
 	widget->access_list = access_list;
 
 	/* Insert levels */
-	LIST_FOR_EACH(visual_mem_system->mod_level_list, level_id)
+	LIST_FOR_EACH(vi_mem_system->mod_level_list, level_id)
 	{
-		mod_list = list_get(visual_mem_system->mod_level_list, level_id);
+		mod_list = list_get(vi_mem_system->mod_level_list, level_id);
 
 		/* Empty level */
 		if (!list_count(mod_list))
@@ -106,21 +106,21 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
 		}
 
 		/* Horizontal bar */
-		if (level_id < visual_mem_system->mod_level_list->count - 1)
+		if (level_id < vi_mem_system->mod_level_list->count - 1)
 			gtk_box_pack_start(GTK_BOX(vbox), gtk_hseparator_new(), FALSE, FALSE, 0);
 	}
 
 	/* Assign panel widget */
 	widget->widget = vbox;
 	g_signal_connect(G_OBJECT(widget->widget), "destroy",
-		G_CALLBACK(visual_mem_system_widget_destroy), widget);
+		G_CALLBACK(vi_mem_panel_destroy), widget);
 
 	/* Return */
 	return widget;
 }
 
 
-void visual_mem_system_widget_free(struct visual_mem_system_widget_t *widget)
+void vi_mem_panel_free(struct vi_mem_panel_t *widget)
 {
 	/* Free access list */
 	while (vi_list_count(widget->access_list))
@@ -133,9 +133,9 @@ void visual_mem_system_widget_free(struct visual_mem_system_widget_t *widget)
 }
 
 
-void visual_mem_system_widget_refresh(struct visual_mem_system_widget_t *widget)
+void vi_mem_panel_refresh(struct vi_mem_panel_t *widget)
 {
-	struct visual_mod_access_t *access;
+	struct vi_mod_access_t *access;
 
 	char *access_name;
 
@@ -152,7 +152,7 @@ void visual_mem_system_widget_refresh(struct visual_mem_system_widget_t *widget)
 		free(vi_list_remove_at(widget->access_list, 0));
 
 	/* Refresh access list */
-	HASH_TABLE_FOR_EACH(visual_mem_system->access_table, access_name, access)
+	HASH_TABLE_FOR_EACH(vi_mem_system->access_table, access_name, access)
 	{
 		/* Duplicate name */
 		access_name = strdup(access_name);
@@ -170,7 +170,7 @@ void visual_mem_system_widget_refresh(struct visual_mem_system_widget_t *widget)
 }
 
 
-GtkWidget *visual_mem_system_widget_get_widget(struct visual_mem_system_widget_t *widget)
+GtkWidget *vi_mem_panel_get_widget(struct vi_mem_panel_t *widget)
 {
 	return widget->widget;
 }
