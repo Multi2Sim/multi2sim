@@ -30,6 +30,7 @@ LDADD = \
 	$(top_builddir)/src/visual/evergreen/libevergreen.a \
 	$(top_builddir)/src/visual/memory/libmemory.a \
 	$(top_builddir)/src/visual/x86/libx86.a \
+	$(top_builddir)/src/visual/common/libcommon.a \
 	\
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
 	$(top_builddir)/src/lib/misc/libmisc.a \

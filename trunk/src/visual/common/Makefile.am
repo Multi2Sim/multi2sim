@@ -6,6 +6,7 @@ libcommon_a_SOURCES = \
 if HAVE_GTK
 libcommon_a_SOURCES += \
 	cycle-bar.c \
+	led.c \
 	list.c \
 	popup.c \
 	state.c \
