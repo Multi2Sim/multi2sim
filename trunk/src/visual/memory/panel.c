@@ -21,97 +21,95 @@
 
 
 
+/*
+ * Module detailed view
+ */
 
-
-struct vi_led_t
+struct vi_mod_window_t
 {
 	GtkWidget *widget;
+
+	/* Module that window shows */
+	struct vi_mod_t *mod;
+
+	/* Toggle button that causes activation of window */
+	GtkWidget *parent_toggle_button;
+
+	/* Module widget */
+	struct vi_mod_widget_t *mod_widget;
 };
 
 
-static void vi_led_destroy(GtkWidget *widget, struct vi_led_t *led)
+static struct vi_mod_window_t *vi_mod_window_create(struct vi_mod_t *mod, GtkWidget *parent_toggle_button);
+static void vi_mod_window_free(struct vi_mod_window_t *mod_window);
+
+
+static void vi_mod_window_destroy(GtkWidget *widget, struct vi_mod_window_t *mod_window)
 {
-	vi_led_free(led);
+	vi_mod_window_free(mod_window);
 }
 
 
-static gboolean vi_led_draw(GtkWidget *widget, GdkEventConfigure *event, struct vi_led_t *led)
+static gboolean vi_mod_window_delete(GtkWidget *widget, GdkEvent *event, struct vi_mod_window_t *mod_window)
 {
-	GdkWindow *window;
-	cairo_t *cr;
-
-	int width;
-	int height;
-
-	width = gtk_widget_get_allocated_width(widget);
-	height = gtk_widget_get_allocated_height(widget);
-
-	window = gtk_widget_get_window(widget);
-	cr = gdk_cairo_create(window);
-
-	/* Color */
-	if (1)
-		cairo_set_source_rgb(cr, 1, 0, 0);
-	else
-		cairo_set_source_rgb(cr, 0, 1, 0);
-
-	/* Circle */
-	cairo_set_line_width(cr, 1);
-	cairo_arc(cr, width / 2, height / 2.0, MIN(width, height) / 3.0, 0., 2 * M_PI);
-	cairo_fill_preserve(cr);
-	cairo_set_source_rgb(cr, 0, 0, 0);
-
-	/* Finish */
-	cairo_stroke(cr);
-	cairo_destroy(cr);
-	return FALSE;
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mod_window->parent_toggle_button), FALSE);
+	return TRUE;
 }
 
 
-struct vi_led_t *vi_led_create(int radius)
+static struct vi_mod_window_t *vi_mod_window_create(struct vi_mod_t *mod, GtkWidget *parent_toggle_button)
 {
-	struct vi_led_t *led;
+	struct vi_mod_window_t *mod_window;
+
+	char str[MAX_STRING_SIZE];
 
 	/* Allocate */
-	led = calloc(1, sizeof(struct vi_led_t));
-	if (!led)
+	mod_window = calloc(1, sizeof(struct vi_mod_window_t));
+	if (!mod_window)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	/* Drawing box */
-	GtkWidget *drawing_area = gtk_drawing_area_new();
-	gtk_widget_set_size_request(drawing_area, radius * 2, radius * 2);
-	g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(vi_led_draw), led);
+	/* Initialize */
+	mod_window->mod = mod;
+	mod_window->parent_toggle_button = parent_toggle_button;
 
-	/* Main widget */
-	led->widget = drawing_area;
-	g_signal_connect(G_OBJECT(led->widget), "destroy", G_CALLBACK(vi_led_destroy), led);
+	/* Main window */
+	snprintf(str, sizeof str, "Module %s", mod->name);
+	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title(GTK_WINDOW(window), str);
+
+	/* Module widget */
+	struct vi_mod_widget_t *mod_widget;
+	mod_widget = vi_mod_widget_create(mod->name);
+	gtk_container_add(GTK_CONTAINER(window), vi_mod_widget_get_widget(mod_widget));
+	mod_window->mod_widget = mod_widget;
+
+	/* Associate widget */
+	mod_window->widget = window;
+	gtk_widget_show_all(mod_window->widget);
+	g_signal_connect(G_OBJECT(mod_window->widget), "destroy", G_CALLBACK(vi_mod_window_destroy), mod_window);
+	g_signal_connect(G_OBJECT(mod_window->widget), "delete_event", G_CALLBACK(vi_mod_window_delete), mod_window);
 
 	/* Return */
-	return led;
+	return mod_window;
 }
 
 
-void vi_led_free(struct vi_led_t *led)
+static void vi_mod_window_free(struct vi_mod_window_t *mod_window)
 {
-	free(led);
+	free(mod_window);
 }
 
 
-GtkWidget *vi_led_get_widget(struct vi_led_t *led)
+static void vi_mod_window_refresh(struct vi_mod_window_t *mod_window)
 {
-	return led->widget;
+	vi_mod_widget_refresh(mod_window->mod_widget);
 }
 
 
-
-
-
-
-
-
-
-
-
+static GtkWidget *vi_mod_window_get_widget(struct vi_mod_window_t *mod_window)
+{
+	return mod_window->widget;
+}
 
 
 
@@ -127,7 +125,14 @@ GtkWidget *vi_led_get_widget(struct vi_led_t *led)
 
 struct vi_mod_board_t
 {
+	/* Main widget */
 	GtkWidget *widget;
+
+	/* Pop-up window showing detail */
+	struct vi_mod_window_t *mod_window;
+
+	/* Toggle button to activate pop-up window */
+	GtkWidget *toggle_button;
 
 	struct vi_mod_t *mod;
 	struct vi_list_t *access_list;
@@ -143,6 +148,33 @@ static void vi_mod_board_refresh(struct vi_mod_board_t *board);
 static void vi_mod_board_destroy(GtkWidget *widget, struct vi_mod_board_t *board)
 {
 	vi_mod_board_free(board);
+}
+
+
+static gboolean vi_mod_board_toggle_button_toggled(GtkWidget *widget, struct vi_mod_board_t *board)
+{
+	struct vi_mod_window_t *mod_window;
+
+	int active;
+
+	/* Get button state */
+	active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(board->toggle_button));
+
+	/* Show */
+	if (active && !board->mod_window)
+	{
+		mod_window = vi_mod_window_create(board->mod, board->toggle_button);
+		board->mod_window = mod_window;
+	}
+
+	/* Hide */
+	if (!active && board->mod_window)
+	{
+		gtk_widget_destroy(vi_mod_window_get_widget(board->mod_window));
+		board->mod_window = NULL;
+	}
+
+	return FALSE;
 }
 
 
@@ -186,8 +218,11 @@ static struct vi_mod_board_t *vi_mod_board_create(struct vi_mod_t *mod)
 	gtk_box_pack_start(GTK_BOX(hbox), vi_led_get_widget(led), FALSE, TRUE, 0);
 
 	/* Toggle button */
-	GtkWidget *toggle = gtk_toggle_button_new_with_label("Detail");
-	gtk_box_pack_start(GTK_BOX(hbox), toggle, TRUE, TRUE, 0);
+	GtkWidget *toggle_button = gtk_toggle_button_new_with_label("Detail");
+	gtk_box_pack_start(GTK_BOX(hbox), toggle_button, TRUE, TRUE, 0);
+	g_signal_connect(G_OBJECT(toggle_button), "toggled",
+		G_CALLBACK(vi_mod_board_toggle_button_toggled), board);
+	board->toggle_button = toggle_button;
 
 	/* Access list */
 	struct vi_list_t *access_list = vi_list_create("Access list", 10, 10, (vi_list_get_elem_name_func_t)
@@ -206,6 +241,10 @@ static struct vi_mod_board_t *vi_mod_board_create(struct vi_mod_t *mod)
 
 static void vi_mod_board_free(struct vi_mod_board_t *board)
 {
+	/* Destroy pop-up window */
+	if (board->mod_window)
+		gtk_widget_destroy(vi_mod_window_get_widget(board->mod_window));
+
 	/* Free access list */
 	while (vi_list_count(board->access_list))
 		free(vi_list_remove_at(board->access_list, 0));
@@ -238,6 +277,10 @@ static void vi_mod_board_refresh(struct vi_mod_board_t *board)
 		vi_list_add(board->access_list, access_name);
 	}
 	vi_list_refresh(board->access_list);
+
+	/* Refresh pop-up window */
+	if (board->mod_window)
+		vi_mod_window_refresh(board->mod_window);
 }
 
 
