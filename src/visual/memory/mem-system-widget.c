@@ -32,7 +32,7 @@ struct visual_mem_system_widget_t
 
 	struct list_t *visual_mod_widget_list;
 
-	struct visual_list_t *access_list;
+	struct vi_list_t *access_list;
 };
 
 
@@ -66,11 +66,11 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
 	vbox = gtk_vbox_new(FALSE, 0);
 
 	/* Access list */
-	struct visual_list_t *access_list;
-	access_list = visual_list_create("Access list", 200, 30,
-		(visual_list_get_elem_name_func_t) visual_mod_access_get_name_long,
-		(visual_list_get_elem_desc_func_t) visual_mod_access_get_desc);
-	gtk_box_pack_start(GTK_BOX(vbox), visual_list_get_widget(access_list), FALSE, TRUE, 0);
+	struct vi_list_t *access_list;
+	access_list = vi_list_create("Access list", 200, 30,
+		(vi_list_get_elem_name_func_t) visual_mod_access_get_name_long,
+		(vi_list_get_elem_desc_func_t) visual_mod_access_get_desc);
+	gtk_box_pack_start(GTK_BOX(vbox), vi_list_get_widget(access_list), FALSE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), gtk_hseparator_new(), FALSE, FALSE, 0);
 	widget->access_list = access_list;
 
@@ -123,9 +123,9 @@ struct visual_mem_system_widget_t *visual_mem_system_widget_create(void)
 void visual_mem_system_widget_free(struct visual_mem_system_widget_t *widget)
 {
 	/* Free access list */
-	while (visual_list_count(widget->access_list))
-		free(visual_list_remove_at(widget->access_list, 0));
-	visual_list_free(widget->access_list);
+	while (vi_list_count(widget->access_list))
+		free(vi_list_remove_at(widget->access_list, 0));
+	vi_list_free(widget->access_list);
 
 	/* Free */
 	list_free(widget->visual_mod_widget_list);
@@ -145,11 +145,11 @@ void visual_mem_system_widget_refresh(struct visual_mem_system_widget_t *widget)
 
 	/* Go to cycle */
 	cycle = cycle_bar_get_cycle(visual_cycle_bar);
-	state_file_go_to_cycle(visual_state_file, cycle);
+	vi_state_go_to_cycle(cycle);
 
 	/* Empty access list */
-	while (visual_list_count(widget->access_list))
-		free(visual_list_remove_at(widget->access_list, 0));
+	while (vi_list_count(widget->access_list))
+		free(vi_list_remove_at(widget->access_list, 0));
 
 	/* Refresh access list */
 	HASH_TABLE_FOR_EACH(visual_mem_system->access_table, access_name, access)
@@ -160,9 +160,9 @@ void visual_mem_system_widget_refresh(struct visual_mem_system_widget_t *widget)
 			fatal("%s: out of memory", __FUNCTION__);
 
 		/* Add to list */
-		visual_list_add(widget->access_list, access_name);
+		vi_list_add(widget->access_list, access_name);
 	}
-	visual_list_refresh(widget->access_list);
+	vi_list_refresh(widget->access_list);
 
 	/* Module widgets */
 	LIST_FOR_EACH(widget->visual_mod_widget_list, i)

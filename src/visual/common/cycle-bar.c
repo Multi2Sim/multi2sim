@@ -49,7 +49,7 @@ static void cycle_bar_go_to_cycle(struct cycle_bar_t *cycle_bar, long long cycle
 	char str[MAX_STRING_SIZE];
 
 	/* Adjust cycle range */
-	num_cycles = state_file_get_num_cycles(visual_state_file);
+	num_cycles = vi_state_get_num_cycles();
 	cycle = MAX(0, cycle);
 	cycle = MIN(cycle, num_cycles);
 
@@ -188,7 +188,7 @@ struct cycle_bar_t *cycle_bar_create(void)
 	g_signal_connect(G_OBJECT(forward_triple_button), "clicked", G_CALLBACK(cycle_bar_forward_triple_clicked_event), cycle_bar);
 
 	/* Scale */
-	long long num_cycles = state_file_get_num_cycles(visual_state_file);
+	long long num_cycles = vi_state_get_num_cycles();
 	GtkWidget *scale = gtk_hscale_new_with_range(0, num_cycles, 1);
 	gtk_widget_set_size_request(scale, 100, 32);
 	gtk_scale_set_draw_value(GTK_SCALE(scale), FALSE);
