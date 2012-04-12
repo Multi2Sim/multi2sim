@@ -20,22 +20,22 @@
 #include <visual-memory.h>
 
 
-#define VISUAL_MOD_CELL_WIDTH			153
-#define VISUAL_MOD_CELL_HEIGHT			20
+#define VI_MOD_CELL_WIDTH			153
+#define VI_MOD_CELL_HEIGHT			20
 
-#define VISUAL_MOD_FIRST_ROW_HEIGHT		20
-#define VISUAL_MOD_FIRST_COL_WIDTH		100
+#define VI_MOD_FIRST_ROW_HEIGHT			20
+#define VI_MOD_FIRST_COL_WIDTH			100
 
-#define VISUAL_MOD_FONT_SIZE			12
+#define VI_MOD_FONT_SIZE			12
 
-#define VISUAL_MOD_LABEL_BLOCK_LEFT		0
-#define VISUAL_MOD_LABEL_BLOCK_WIDTH		100
+#define VI_MOD_LABEL_BLOCK_LEFT			0
+#define VI_MOD_LABEL_BLOCK_WIDTH		100
 
-#define VISUAL_MOD_SHARERS_LABEL_LEFT		101
-#define VISUAL_MOD_SHARERS_LABEL_WIDTH		25
+#define VI_MOD_SHARERS_LABEL_LEFT		101
+#define VI_MOD_SHARERS_LABEL_WIDTH		25
 
-#define VISUAL_MOD_ACCESSES_LABEL_LEFT		127
-#define VISUAL_MOD_ACCESSES_LABEL_WIDTH		25
+#define VI_MOD_ACCESSES_LABEL_LEFT		127
+#define VI_MOD_ACCESSES_LABEL_WIDTH		25
 
 
 
@@ -247,8 +247,8 @@ static struct sharers_label_t *sharers_label_create(char *mod_name, int set, int
 	/* Sharers label */
 	GtkWidget *label;
 	label = gtk_label_new(str);
-	gtk_widget_set_size_request(label, VISUAL_MOD_SHARERS_LABEL_WIDTH,
-		VISUAL_MOD_CELL_HEIGHT - 1);
+	gtk_widget_set_size_request(label, VI_MOD_SHARERS_LABEL_WIDTH,
+		VI_MOD_CELL_HEIGHT - 1);
 	gtk_widget_show(label);
 	sharers_label->label = label;
 
@@ -256,7 +256,7 @@ static struct sharers_label_t *sharers_label_create(char *mod_name, int set, int
 	PangoAttrList *attrs;
 	PangoAttribute *size_attr;
 	attrs = pango_attr_list_new();
-	size_attr = pango_attr_size_new_absolute(VISUAL_MOD_FONT_SIZE << 10);
+	size_attr = pango_attr_size_new_absolute(VI_MOD_FONT_SIZE << 10);
 	pango_attr_list_insert(attrs, size_attr);
 	gtk_label_set_attributes(GTK_LABEL(label), attrs);
 
@@ -481,7 +481,7 @@ static struct accesses_label_t *accesses_label_create(char *mod_name, int set, i
 	/* Accesses label */
 	GtkWidget *label;
 	label = gtk_label_new(str);
-	gtk_widget_set_size_request(label, VISUAL_MOD_ACCESSES_LABEL_WIDTH, VISUAL_MOD_CELL_HEIGHT - 1);
+	gtk_widget_set_size_request(label, VI_MOD_ACCESSES_LABEL_WIDTH, VI_MOD_CELL_HEIGHT - 1);
 	gtk_widget_show(label);
 	accesses_label->label = label;
 
@@ -489,7 +489,7 @@ static struct accesses_label_t *accesses_label_create(char *mod_name, int set, i
 	PangoAttrList *attrs;
 	PangoAttribute *size_attr;
 	attrs = pango_attr_list_new();
-	size_attr = pango_attr_size_new_absolute(VISUAL_MOD_FONT_SIZE << 10);
+	size_attr = pango_attr_size_new_absolute(VI_MOD_FONT_SIZE << 10);
 	pango_attr_list_insert(attrs, size_attr);
 	gtk_label_set_attributes(GTK_LABEL(label), attrs);
 
@@ -540,7 +540,7 @@ static GtkWidget *accesses_label_get_widget(struct accesses_label_t *accesses_la
  */
 
 
-static struct string_map_t visual_mod_block_state_map =
+static struct string_map_t vi_mod_block_state_map =
 {
 	6, {
 		{ "I", 0 },
@@ -553,9 +553,9 @@ static struct string_map_t visual_mod_block_state_map =
 };
 
 
-#define VISUAL_MOD_NUM_BLOCK_COLORS  6
+#define VI_MOD_NUM_BLOCK_COLORS  6
 
-static char *visual_mod_block_color[VISUAL_MOD_NUM_BLOCK_COLORS] =
+static char *vi_mod_block_color[VI_MOD_NUM_BLOCK_COLORS] =
 {
 	"#eeeeee",	/* light gray */
 	"#33ccff",	/* blue */
@@ -566,7 +566,7 @@ static char *visual_mod_block_color[VISUAL_MOD_NUM_BLOCK_COLORS] =
 };
 
 
-struct visual_mod_widget_t
+struct vi_mod_widget_t
 {
 	char *name;
 
@@ -585,24 +585,24 @@ struct visual_mod_widget_t
 };
 
 
-static void visual_mod_widget_destroy(GtkWidget *widget,
-	struct visual_mod_widget_t *visual_mod_widget)
+static void vi_mod_widget_destroy(GtkWidget *widget,
+	struct vi_mod_widget_t *visual_mod_widget)
 {
-	visual_mod_widget_free(visual_mod_widget);
+	vi_mod_widget_free(visual_mod_widget);
 }
 
 
-static void visual_mod_widget_size_allocate(GtkWidget *widget, GdkRectangle *allocation,
-	struct visual_mod_widget_t *visual_mod_widget)
+static void vi_mod_widget_size_allocate(GtkWidget *widget, GdkRectangle *allocation,
+	struct vi_mod_widget_t *visual_mod_widget)
 {
 	if (allocation->width != visual_mod_widget->width ||
 		allocation->height != visual_mod_widget->height)
-		visual_mod_widget_refresh(visual_mod_widget);
+		vi_mod_widget_refresh(visual_mod_widget);
 }
 
 
-static gboolean visual_mod_widget_scroll(GtkWidget *widget, GdkEventScroll *event,
-	struct visual_mod_widget_t *visual_mod_widget)
+static gboolean vi_mod_widget_scroll(GtkWidget *widget, GdkEventScroll *event,
+	struct vi_mod_widget_t *visual_mod_widget)
 {
 	int value;
 
@@ -616,19 +616,19 @@ static gboolean visual_mod_widget_scroll(GtkWidget *widget, GdkEventScroll *even
 }
 
 
-static void visual_mod_widget_scroll_bar_value_changed(GtkRange *range,
-	struct visual_mod_widget_t *visual_mod_widget)
+static void vi_mod_widget_scroll_bar_value_changed(GtkRange *range,
+	struct vi_mod_widget_t *visual_mod_widget)
 {
-	visual_mod_widget_refresh(visual_mod_widget);
+	vi_mod_widget_refresh(visual_mod_widget);
 }
 
 
-struct visual_mod_widget_t *visual_mod_widget_create(char *name)
+struct vi_mod_widget_t *vi_mod_widget_create(char *name)
 {
-	struct visual_mod_widget_t *visual_mod_widget;
+	struct vi_mod_widget_t *visual_mod_widget;
 
 	/* Allocate */
-	visual_mod_widget = calloc(1, sizeof(struct visual_mod_widget_t));
+	visual_mod_widget = calloc(1, sizeof(struct vi_mod_widget_t));
 	if (!visual_mod_widget)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -655,9 +655,9 @@ struct visual_mod_widget_t *visual_mod_widget_create(char *name)
 	visual_mod_widget->hscrollbar = hscrollbar;
 	visual_mod_widget->vscrollbar = vscrollbar;
 	g_signal_connect(G_OBJECT(hscrollbar), "value-changed",
-		G_CALLBACK(visual_mod_widget_scroll_bar_value_changed), visual_mod_widget);
+		G_CALLBACK(vi_mod_widget_scroll_bar_value_changed), visual_mod_widget);
 	g_signal_connect(G_OBJECT(vscrollbar), "value-changed",
-		G_CALLBACK(visual_mod_widget_scroll_bar_value_changed), visual_mod_widget);
+		G_CALLBACK(vi_mod_widget_scroll_bar_value_changed), visual_mod_widget);
 
 	/* Colors */
 	GdkColor color_gray;
@@ -667,34 +667,34 @@ struct visual_mod_widget_t *visual_mod_widget_create(char *name)
 	GtkWidget *layout = gtk_layout_new(NULL, NULL);
 	gtk_widget_set_size_request(layout, 200, 100);
 	g_signal_connect(G_OBJECT(layout), "size_allocate",
-		G_CALLBACK(visual_mod_widget_size_allocate), visual_mod_widget);
+		G_CALLBACK(vi_mod_widget_size_allocate), visual_mod_widget);
 	g_signal_connect(G_OBJECT(layout), "scroll-event",
-		G_CALLBACK(visual_mod_widget_scroll), visual_mod_widget);
+		G_CALLBACK(vi_mod_widget_scroll), visual_mod_widget);
 	gtk_widget_modify_bg(layout, GTK_STATE_NORMAL, &color_gray);
 	visual_mod_widget->layout = layout;
 
 	/* First row layout */
 	GtkWidget *first_row_layout = gtk_layout_new(NULL, NULL);
-	gtk_widget_set_size_request(first_row_layout, -1, VISUAL_MOD_FIRST_ROW_HEIGHT);
+	gtk_widget_set_size_request(first_row_layout, -1, VI_MOD_FIRST_ROW_HEIGHT);
 	gtk_widget_modify_bg(first_row_layout, GTK_STATE_NORMAL, &color_gray);
 	visual_mod_widget->first_row_layout = first_row_layout;
 
 	/* First column layout */
 	GtkWidget *first_col_layout = gtk_layout_new(NULL, NULL);
-	gtk_widget_set_size_request(first_col_layout, VISUAL_MOD_FIRST_COL_WIDTH, -1);
+	gtk_widget_set_size_request(first_col_layout, VI_MOD_FIRST_COL_WIDTH, -1);
 	gtk_widget_modify_bg(first_col_layout, GTK_STATE_NORMAL, &color_gray);
 	visual_mod_widget->first_col_layout = first_col_layout;
 
 	/* Top-left label */
 	GtkWidget *top_left_label = gtk_label_new(name);
-	gtk_widget_set_size_request(top_left_label, VISUAL_MOD_FIRST_COL_WIDTH - 1,
-		VISUAL_MOD_FIRST_ROW_HEIGHT - 1);
+	gtk_widget_set_size_request(top_left_label, VI_MOD_FIRST_COL_WIDTH - 1,
+		VI_MOD_FIRST_ROW_HEIGHT - 1);
 	gtk_widget_show(top_left_label);
 
 	/* Top-left label font attributes */
 	PangoAttrList *attrs;
 	attrs = pango_attr_list_new();
-	pango_attr_list_insert(attrs, pango_attr_size_new_absolute(VISUAL_MOD_FONT_SIZE << 10));
+	pango_attr_list_insert(attrs, pango_attr_size_new_absolute(VI_MOD_FONT_SIZE << 10));
 	pango_attr_list_insert(attrs, pango_attr_weight_new(PANGO_WEIGHT_BOLD));
 	gtk_label_set_attributes(GTK_LABEL(top_left_label), attrs);
 
@@ -728,14 +728,14 @@ struct visual_mod_widget_t *visual_mod_widget_create(char *name)
 	/* Assign main widget */
 	visual_mod_widget->widget = vbox;
 	g_signal_connect(G_OBJECT(visual_mod_widget->widget), "destroy",
-		G_CALLBACK(visual_mod_widget_destroy), visual_mod_widget);
+		G_CALLBACK(vi_mod_widget_destroy), visual_mod_widget);
 
 	/* Return */
 	return visual_mod_widget;
 }
 
 
-void visual_mod_widget_free(struct visual_mod_widget_t *visual_mod_widget)
+void vi_mod_widget_free(struct vi_mod_widget_t *visual_mod_widget)
 {
 
 	/* Free access list */
@@ -749,7 +749,7 @@ void visual_mod_widget_free(struct visual_mod_widget_t *visual_mod_widget)
 }
 
 
-void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
+void vi_mod_widget_refresh(struct vi_mod_widget_t *visual_mod_widget)
 {
 	struct vi_mod_t *mod;
 	struct vi_mod_access_t *access;
@@ -825,15 +825,15 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 	visual_mod_widget->height = height;
 
 	/* Dimensions */
-	table_width = VISUAL_MOD_CELL_WIDTH * mod->assoc;
-	table_height = VISUAL_MOD_CELL_HEIGHT * mod->num_sets;
+	table_width = VI_MOD_CELL_WIDTH * mod->assoc;
+	table_height = VI_MOD_CELL_HEIGHT * mod->num_sets;
 
 	/* Horizontal scroll bar */
 	if (table_width > width)
 	{
 		gtk_range_set_range(GTK_RANGE(visual_mod_widget->hscrollbar), 0, table_width - width);
 		gtk_range_set_increments(GTK_RANGE(visual_mod_widget->hscrollbar),
-			VISUAL_MOD_CELL_WIDTH / 3, width - VISUAL_MOD_CELL_WIDTH / 3);
+			VI_MOD_CELL_WIDTH / 3, width - VI_MOD_CELL_WIDTH / 3);
 		gtk_widget_set_visible(visual_mod_widget->hscrollbar, TRUE);
 	}
 	else
@@ -844,7 +844,7 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 	{
 		gtk_range_set_range(GTK_RANGE(visual_mod_widget->vscrollbar), 0, table_height - height);
 		gtk_range_set_increments(GTK_RANGE(visual_mod_widget->vscrollbar),
-			VISUAL_MOD_CELL_HEIGHT, height - VISUAL_MOD_CELL_HEIGHT);
+			VI_MOD_CELL_HEIGHT, height - VI_MOD_CELL_HEIGHT);
 		gtk_widget_set_visible(visual_mod_widget->vscrollbar, TRUE);
 	}
 	else
@@ -852,13 +852,13 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 
 	/* Get starting X position */
 	left = gtk_range_get_value(GTK_RANGE(visual_mod_widget->hscrollbar));
-	left_way = left / VISUAL_MOD_CELL_WIDTH;
-	left_way_offset = -(left % VISUAL_MOD_CELL_WIDTH);
+	left_way = left / VI_MOD_CELL_WIDTH;
+	left_way_offset = -(left % VI_MOD_CELL_WIDTH);
 
 	/* Get starting Y position */
 	top = gtk_range_get_value(GTK_RANGE(visual_mod_widget->vscrollbar));
-	top_set = top / VISUAL_MOD_CELL_HEIGHT;
-	top_set_offset = -(top % VISUAL_MOD_CELL_HEIGHT);
+	top_set = top / VI_MOD_CELL_HEIGHT;
+	top_set_offset = -(top % VI_MOD_CELL_HEIGHT);
 
 	/* First row */
 	way = left_way;
@@ -867,14 +867,14 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 	{
 		snprintf(str, sizeof str, "%d", way);
 		GtkWidget *label = gtk_label_new(str);
-		gtk_widget_set_size_request(label, VISUAL_MOD_CELL_WIDTH - 1,
-			VISUAL_MOD_FIRST_ROW_HEIGHT - 1);
+		gtk_widget_set_size_request(label, VI_MOD_CELL_WIDTH - 1,
+			VI_MOD_FIRST_ROW_HEIGHT - 1);
 		gtk_widget_show(label);
 
 		/* Set label font attributes */
 		PangoAttrList *attrs;
 		attrs = pango_attr_list_new();
-		PangoAttribute *size_attr = pango_attr_size_new_absolute(VISUAL_MOD_FONT_SIZE << 10);
+		PangoAttribute *size_attr = pango_attr_size_new_absolute(VI_MOD_FONT_SIZE << 10);
 		pango_attr_list_insert(attrs, size_attr);
 		gtk_label_set_attributes(GTK_LABEL(label), attrs);
 
@@ -890,7 +890,7 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
 
 		/* Next way */
-		x += VISUAL_MOD_CELL_WIDTH;
+		x += VI_MOD_CELL_WIDTH;
 		way++;
 	}
 
@@ -901,14 +901,14 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 	{
 		snprintf(str, sizeof str, "%d", set);
 		GtkWidget *label = gtk_label_new(str);
-		gtk_widget_set_size_request(label, VISUAL_MOD_FIRST_COL_WIDTH - 1,
-			VISUAL_MOD_CELL_HEIGHT - 1);
+		gtk_widget_set_size_request(label, VI_MOD_FIRST_COL_WIDTH - 1,
+			VI_MOD_CELL_HEIGHT - 1);
 		gtk_widget_show(label);
 
 		/* Set label font attributes */
 		PangoAttrList *attrs;
 		attrs = pango_attr_list_new();
-		PangoAttribute *size_attr = pango_attr_size_new_absolute(VISUAL_MOD_FONT_SIZE << 10);
+		PangoAttribute *size_attr = pango_attr_size_new_absolute(VI_MOD_FONT_SIZE << 10);
 		pango_attr_list_insert(attrs, size_attr);
 		gtk_label_set_attributes(GTK_LABEL(label), attrs);
 
@@ -924,7 +924,7 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
 
 		/* Next set */
-		y += VISUAL_MOD_CELL_HEIGHT;
+		y += VI_MOD_CELL_HEIGHT;
 		set++;
 	}
 
@@ -952,52 +952,52 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 			assert(IN_RANGE(set, 0, mod->num_sets - 1));
 			assert(IN_RANGE(way, 0, mod->assoc - 1));
 			block = &mod->blocks[set * mod->assoc + way];
-			state_str = map_value(&visual_mod_block_state_map, block->state);
+			state_str = map_value(&vi_mod_block_state_map, block->state);
 
 			/* Tag label */
 			snprintf(str, sizeof str, "0x%x (%s)", block->tag, state_str);
 			label = gtk_label_new(str);
-			gtk_widget_set_size_request(label, VISUAL_MOD_LABEL_BLOCK_WIDTH,
-				VISUAL_MOD_CELL_HEIGHT - 1);
+			gtk_widget_set_size_request(label, VI_MOD_LABEL_BLOCK_WIDTH,
+				VI_MOD_CELL_HEIGHT - 1);
 			gtk_widget_show(label);
 
 			/* Set label font attributes */
 			attrs = pango_attr_list_new();
-			size_attr = pango_attr_size_new_absolute(VISUAL_MOD_FONT_SIZE << 10);
+			size_attr = pango_attr_size_new_absolute(VI_MOD_FONT_SIZE << 10);
 			pango_attr_list_insert(attrs, size_attr);
 			gtk_label_set_attributes(GTK_LABEL(label), attrs);
 
 			/* Event box */
 			event_box = gtk_event_box_new();
 			gtk_container_add(GTK_CONTAINER(event_box), label);
-			gtk_layout_put(GTK_LAYOUT(layout), event_box, x + VISUAL_MOD_LABEL_BLOCK_LEFT, y);
+			gtk_layout_put(GTK_LAYOUT(layout), event_box, x + VI_MOD_LABEL_BLOCK_LEFT, y);
 			gtk_widget_show(event_box);
 
 			/* Background color */
 			GdkColor color;
-			assert(IN_RANGE(block->state, 0, VISUAL_MOD_NUM_BLOCK_COLORS - 1));
-			gdk_color_parse(visual_mod_block_color[block->state], &color);
+			assert(IN_RANGE(block->state, 0, VI_MOD_NUM_BLOCK_COLORS - 1));
+			gdk_color_parse(vi_mod_block_color[block->state], &color);
 			gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
 
 			/* Sharers label */
 			struct sharers_label_t *sharers_label;
 			sharers_label = sharers_label_create(mod->name, set, way);
 			gtk_layout_put(GTK_LAYOUT(layout), sharers_label_get_widget(sharers_label),
-				x + VISUAL_MOD_SHARERS_LABEL_LEFT, y);
+				x + VI_MOD_SHARERS_LABEL_LEFT, y);
 
 			/* Accesses label */
 			struct accesses_label_t *accesses_label;
 			accesses_label = accesses_label_create(mod->name, set, way);
 			gtk_layout_put(GTK_LAYOUT(layout), accesses_label_get_widget(accesses_label),
-				x + VISUAL_MOD_ACCESSES_LABEL_LEFT, y);
+				x + VI_MOD_ACCESSES_LABEL_LEFT, y);
 
 			/* Next way */
-			x += VISUAL_MOD_CELL_WIDTH;
+			x += VI_MOD_CELL_WIDTH;
 			way++;
 		}
 
 		/* Next set */
-		y += VISUAL_MOD_CELL_HEIGHT;
+		y += VI_MOD_CELL_HEIGHT;
 		set++;
 	}
 
@@ -1008,7 +1008,7 @@ void visual_mod_widget_refresh(struct visual_mod_widget_t *visual_mod_widget)
 }
 
 
-GtkWidget *visual_mod_widget_get_widget(struct visual_mod_widget_t *widget)
+GtkWidget *vi_mod_widget_get_widget(struct vi_mod_widget_t *widget)
 {
 	return widget->widget;
 }
