@@ -20,29 +20,32 @@
 #include <visual-common.h>
 
 
-char cycle_bar_back_single_path[MAX_PATH_SIZE];
-char cycle_bar_back_double_path[MAX_PATH_SIZE];
-char cycle_bar_back_triple_path[MAX_PATH_SIZE];
+static char cycle_bar_back_single_path[MAX_PATH_SIZE];
+static char cycle_bar_back_double_path[MAX_PATH_SIZE];
+static char cycle_bar_back_triple_path[MAX_PATH_SIZE];
 
-char cycle_bar_forward_single_path[MAX_PATH_SIZE];
-char cycle_bar_forward_double_path[MAX_PATH_SIZE];
-char cycle_bar_forward_triple_path[MAX_PATH_SIZE];
+static char cycle_bar_forward_single_path[MAX_PATH_SIZE];
+static char cycle_bar_forward_double_path[MAX_PATH_SIZE];
+static char cycle_bar_forward_triple_path[MAX_PATH_SIZE];
 
-char cycle_bar_go_path[MAX_PATH_SIZE];
+static char cycle_bar_go_path[MAX_PATH_SIZE];
 
 
-struct cycle_bar_t
+struct vi_cycle_bar_t
 {
 	GtkWidget *widget;
 	GtkWidget *scale;
 	GtkWidget *go_to_entry;
 
-	cycle_bar_refresh_func_t refresh_func;
+	vi_cycle_bar_refresh_func_t refresh_func;
 	void *refresh_func_arg;
 };
 
 
-static void cycle_bar_go_to_cycle(struct cycle_bar_t *cycle_bar, long long cycle)
+static struct vi_cycle_bar_t *vi_cycle_bar;
+
+
+static void vi_cycle_bar_go_to_cycle(long long cycle)
 {
 	long long num_cycles;
 
@@ -55,123 +58,137 @@ static void cycle_bar_go_to_cycle(struct cycle_bar_t *cycle_bar, long long cycle
 
 	/* Write new cycle in text entry */
 	snprintf(str, sizeof str, "%lld", cycle);
-	gtk_entry_set_text(GTK_ENTRY(cycle_bar->go_to_entry), str);
+	gtk_entry_set_text(GTK_ENTRY(vi_cycle_bar->go_to_entry), str);
 
 	/* Set value of scale */
-	gtk_range_set_value(GTK_RANGE(cycle_bar->scale), cycle);
+	gtk_range_set_value(GTK_RANGE(vi_cycle_bar->scale), cycle);
 
 	/* Refresh */
-	if (cycle_bar->refresh_func)
-		cycle_bar->refresh_func(cycle_bar->refresh_func_arg, cycle);
+	if (vi_cycle_bar->refresh_func)
+		vi_cycle_bar->refresh_func(vi_cycle_bar->refresh_func_arg, cycle);
 }
 
 
-static void cycle_bar_destroy_event(GtkWidget *widget, struct cycle_bar_t *cycle_bar)
+static gboolean vi_cycle_bar_change_value_event(GtkWidget *widget, GtkScrollType scroll,
+	double value, gpointer data)
 {
-	cycle_bar_free(cycle_bar);
-}
-
-
-static gboolean cycle_bar_change_value_event(GtkWidget *widget, GtkScrollType scroll,
-	double value, struct cycle_bar_t *cycle_bar)
-{
-	cycle_bar_go_to_cycle(cycle_bar, value);
+	vi_cycle_bar_go_to_cycle(value);
 	return FALSE;
 }
 
 
-static gboolean cycle_bar_back_single_clicked_event(GtkWidget *button, struct cycle_bar_t *cycle_bar)
+static gboolean vi_cycle_bar_back_single_clicked_event(GtkWidget *button, gpointer data)
 {
 	long long cycle;
 
-	cycle = gtk_range_get_value(GTK_RANGE(cycle_bar->scale));
-	cycle_bar_go_to_cycle(cycle_bar, cycle - 1);
+	cycle = gtk_range_get_value(GTK_RANGE(vi_cycle_bar->scale));
+	vi_cycle_bar_go_to_cycle(cycle - 1);
 	return FALSE;
 }
 
 
-static gboolean cycle_bar_back_double_clicked_event(GtkWidget *button, struct cycle_bar_t *cycle_bar)
+static gboolean vi_cycle_bar_back_double_clicked_event(GtkWidget *button, gpointer data)
 {
 	long long cycle;
 
-	cycle = gtk_range_get_value(GTK_RANGE(cycle_bar->scale));
-	cycle_bar_go_to_cycle(cycle_bar, cycle - 10);
+	cycle = gtk_range_get_value(GTK_RANGE(vi_cycle_bar->scale));
+	vi_cycle_bar_go_to_cycle(cycle - 10);
 	return FALSE;
 }
 
 
-static gboolean cycle_bar_back_triple_clicked_event(GtkWidget *button, struct cycle_bar_t *cycle_bar)
+static gboolean vi_cycle_bar_back_triple_clicked_event(GtkWidget *button, gpointer data)
 {
 	long long cycle;
 
-	cycle = gtk_range_get_value(GTK_RANGE(cycle_bar->scale));
-	cycle_bar_go_to_cycle(cycle_bar, cycle - 100);
+	cycle = gtk_range_get_value(GTK_RANGE(vi_cycle_bar->scale));
+	vi_cycle_bar_go_to_cycle(cycle - 100);
 	return FALSE;
 }
 
 
-static gboolean cycle_bar_forward_single_clicked_event(GtkWidget *button, struct cycle_bar_t *cycle_bar)
+static gboolean vi_cycle_bar_forward_single_clicked_event(GtkWidget *button, gpointer data)
 {
 	long long cycle;
 
-	cycle = gtk_range_get_value(GTK_RANGE(cycle_bar->scale));
-	cycle_bar_go_to_cycle(cycle_bar, cycle + 1);
+	cycle = gtk_range_get_value(GTK_RANGE(vi_cycle_bar->scale));
+	vi_cycle_bar_go_to_cycle(cycle + 1);
 	return FALSE;
 }
 
 
-static gboolean cycle_bar_forward_double_clicked_event(GtkWidget *button, struct cycle_bar_t *cycle_bar)
+static gboolean vi_cycle_bar_forward_double_clicked_event(GtkWidget *button, gpointer data)
 {
 	long long cycle;
 
-	cycle = gtk_range_get_value(GTK_RANGE(cycle_bar->scale));
-	cycle_bar_go_to_cycle(cycle_bar, cycle + 10);
+	cycle = gtk_range_get_value(GTK_RANGE(vi_cycle_bar->scale));
+	vi_cycle_bar_go_to_cycle(cycle + 10);
 	return FALSE;
 }
 
 
-static gboolean cycle_bar_forward_triple_clicked_event(GtkWidget *button, struct cycle_bar_t *cycle_bar)
+static gboolean vi_cycle_bar_forward_triple_clicked_event(GtkWidget *button, gpointer data)
 {
 	long long cycle;
 
-	cycle = gtk_range_get_value(GTK_RANGE(cycle_bar->scale));
-	cycle_bar_go_to_cycle(cycle_bar, cycle + 100);
+	cycle = gtk_range_get_value(GTK_RANGE(vi_cycle_bar->scale));
+	vi_cycle_bar_go_to_cycle(cycle + 100);
 	return FALSE;
 }
 
 
-static gboolean cycle_bar_go_to_clicked_event(GtkWidget *button, struct cycle_bar_t *cycle_bar)
+static gboolean vi_cycle_bar_go_to_clicked_event(GtkWidget *button, gpointer data)
 {
 	long long cycle;
 
-	cycle = atoll(gtk_entry_get_text(GTK_ENTRY(cycle_bar->go_to_entry)));
-	cycle_bar_go_to_cycle(cycle_bar, cycle);
+	cycle = atoll(gtk_entry_get_text(GTK_ENTRY(vi_cycle_bar->go_to_entry)));
+	vi_cycle_bar_go_to_cycle(cycle);
 	return FALSE;
 }
 
 
-static gboolean cycle_bar_go_to_key_press_event(GtkWidget *entry, GdkEventKey *event, struct cycle_bar_t *cycle_bar)
+static gboolean cycle_bar_go_to_key_press_event(GtkWidget *entry, GdkEventKey *event, gpointer data)
 {
 	long long cycle;
 
 	if (event->type == GDK_KEY_PRESS && (event->keyval == 0xff8d || event->keyval == 0xff0d))
 	{
-		cycle = atoll(gtk_entry_get_text(GTK_ENTRY(cycle_bar->go_to_entry)));
-		cycle_bar_go_to_cycle(cycle_bar, cycle);
-		gtk_editable_select_region(GTK_EDITABLE(cycle_bar->go_to_entry), 0, -1);
+		cycle = atoll(gtk_entry_get_text(GTK_ENTRY(vi_cycle_bar->go_to_entry)));
+		vi_cycle_bar_go_to_cycle(cycle);
+		gtk_editable_select_region(GTK_EDITABLE(vi_cycle_bar->go_to_entry), 0, -1);
 	}
 	return FALSE;
 }
 
 
-struct cycle_bar_t *cycle_bar_create(void)
+void vi_cycle_bar_init(vi_cycle_bar_refresh_func_t refresh_func, void *user_data)
 {
-	struct cycle_bar_t *cycle_bar;
+	char *m2s_images_path = "images";
 
 	/* Allocate */
-	cycle_bar = calloc(1, sizeof(struct cycle_bar_t));
-	if (!cycle_bar)
+	vi_cycle_bar = calloc(1, sizeof(struct vi_cycle_bar_t));
+	if (!vi_cycle_bar)
 		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	vi_cycle_bar->refresh_func = refresh_func;
+	vi_cycle_bar->refresh_func_arg = user_data;
+
+	/* Icons */
+	m2s_dist_file("back-single.png", m2s_images_path, m2s_images_path,
+		cycle_bar_back_single_path, sizeof cycle_bar_back_single_path);
+	m2s_dist_file("back-double.png", m2s_images_path, m2s_images_path,
+		cycle_bar_back_double_path, sizeof cycle_bar_back_double_path);
+	m2s_dist_file("back-triple.png", m2s_images_path, m2s_images_path,
+		cycle_bar_back_triple_path, sizeof cycle_bar_back_triple_path);
+	m2s_dist_file("forward-single.png", m2s_images_path, m2s_images_path,
+		cycle_bar_forward_single_path, sizeof cycle_bar_forward_single_path);
+	m2s_dist_file("forward-double.png", m2s_images_path, m2s_images_path,
+		cycle_bar_forward_double_path, sizeof cycle_bar_forward_double_path);
+	m2s_dist_file("forward-triple.png", m2s_images_path, m2s_images_path,
+		cycle_bar_forward_triple_path, sizeof cycle_bar_forward_triple_path);
+	m2s_dist_file("go.png", m2s_images_path, m2s_images_path,
+		cycle_bar_go_path, sizeof cycle_bar_go_path);
 
 	/* Buttons */
 	GtkWidget *back_single_button = gtk_button_new();
@@ -180,20 +197,20 @@ struct cycle_bar_t *cycle_bar_create(void)
 	GtkWidget *forward_single_button = gtk_button_new();
 	GtkWidget *forward_double_button = gtk_button_new();
 	GtkWidget *forward_triple_button = gtk_button_new();
-	g_signal_connect(G_OBJECT(back_single_button), "clicked", G_CALLBACK(cycle_bar_back_single_clicked_event), cycle_bar);
-	g_signal_connect(G_OBJECT(back_double_button), "clicked", G_CALLBACK(cycle_bar_back_double_clicked_event), cycle_bar);
-	g_signal_connect(G_OBJECT(back_triple_button), "clicked", G_CALLBACK(cycle_bar_back_triple_clicked_event), cycle_bar);
-	g_signal_connect(G_OBJECT(forward_single_button), "clicked", G_CALLBACK(cycle_bar_forward_single_clicked_event), cycle_bar);
-	g_signal_connect(G_OBJECT(forward_double_button), "clicked", G_CALLBACK(cycle_bar_forward_double_clicked_event), cycle_bar);
-	g_signal_connect(G_OBJECT(forward_triple_button), "clicked", G_CALLBACK(cycle_bar_forward_triple_clicked_event), cycle_bar);
+	g_signal_connect(G_OBJECT(back_single_button), "clicked", G_CALLBACK(vi_cycle_bar_back_single_clicked_event), vi_cycle_bar);
+	g_signal_connect(G_OBJECT(back_double_button), "clicked", G_CALLBACK(vi_cycle_bar_back_double_clicked_event), vi_cycle_bar);
+	g_signal_connect(G_OBJECT(back_triple_button), "clicked", G_CALLBACK(vi_cycle_bar_back_triple_clicked_event), vi_cycle_bar);
+	g_signal_connect(G_OBJECT(forward_single_button), "clicked", G_CALLBACK(vi_cycle_bar_forward_single_clicked_event), vi_cycle_bar);
+	g_signal_connect(G_OBJECT(forward_double_button), "clicked", G_CALLBACK(vi_cycle_bar_forward_double_clicked_event), vi_cycle_bar);
+	g_signal_connect(G_OBJECT(forward_triple_button), "clicked", G_CALLBACK(vi_cycle_bar_forward_triple_clicked_event), vi_cycle_bar);
 
 	/* Scale */
 	long long num_cycles = vi_state_get_num_cycles();
 	GtkWidget *scale = gtk_hscale_new_with_range(0, num_cycles, 1);
 	gtk_widget_set_size_request(scale, 100, 32);
 	gtk_scale_set_draw_value(GTK_SCALE(scale), FALSE);
-	g_signal_connect(G_OBJECT(scale), "change-value", G_CALLBACK(cycle_bar_change_value_event), cycle_bar);
-	cycle_bar->scale = scale;
+	g_signal_connect(G_OBJECT(scale), "change-value", G_CALLBACK(vi_cycle_bar_change_value_event), vi_cycle_bar);
+	vi_cycle_bar->scale = scale;
 
 
 	/* Images */
@@ -228,14 +245,14 @@ struct cycle_bar_t *cycle_bar_create(void)
 	GtkWidget *go_to_button = gtk_button_new();
 	GtkWidget *go_to_image = gtk_image_new_from_file(cycle_bar_go_path);
 	gtk_container_add(GTK_CONTAINER(go_to_button), go_to_image);
-	g_signal_connect(G_OBJECT(go_to_button), "clicked", G_CALLBACK(cycle_bar_go_to_clicked_event), cycle_bar);
+	g_signal_connect(G_OBJECT(go_to_button), "clicked", G_CALLBACK(vi_cycle_bar_go_to_clicked_event), vi_cycle_bar);
 
 	/* Go-to-cycle text entry */
 	GtkWidget *go_to_entry = gtk_entry_new();
 	gtk_entry_set_text(GTK_ENTRY(go_to_entry), "0");
 	gtk_entry_set_width_chars(GTK_ENTRY(go_to_entry), 10);
-	g_signal_connect(G_OBJECT(go_to_entry), "key-press-event", G_CALLBACK(cycle_bar_go_to_key_press_event), cycle_bar);
-	cycle_bar->go_to_entry = go_to_entry;
+	g_signal_connect(G_OBJECT(go_to_entry), "key-press-event", G_CALLBACK(cycle_bar_go_to_key_press_event), vi_cycle_bar);
+	vi_cycle_bar->go_to_entry = go_to_entry;
 
 	/* Table */
 	GtkWidget *go_to_table = gtk_table_new(2, 2, FALSE);
@@ -258,39 +275,26 @@ struct cycle_bar_t *cycle_bar_create(void)
 	gtk_container_add(GTK_CONTAINER(frame), hbox);
 
 	/* Main widget */
-	cycle_bar->widget = frame;
-	g_signal_connect(G_OBJECT(cycle_bar->widget), "destroy",
-		G_CALLBACK(cycle_bar_destroy_event), cycle_bar);
-
-	/* Return */
-	return cycle_bar;
+	vi_cycle_bar->widget = frame;
 }
 
 
-void cycle_bar_free(struct cycle_bar_t *cycle_bar)
+void vi_cycle_bar_done(void)
 {
-	free(cycle_bar);
+	free(vi_cycle_bar);
 }
 
 
-void cycle_bar_set_refresh_func(struct cycle_bar_t *cycle_bar,
-	cycle_bar_refresh_func_t refresh_func, void *user_data)
+GtkWidget *vi_cycle_bar_get_widget(void)
 {
-	cycle_bar->refresh_func = refresh_func;
-	cycle_bar->refresh_func_arg = user_data;
+	return vi_cycle_bar->widget;
 }
 
 
-GtkWidget *cycle_bar_get_widget(struct cycle_bar_t *cycle_bar)
-{
-	return cycle_bar->widget;
-}
-
-
-long long cycle_bar_get_cycle(struct cycle_bar_t *cycle_bar)
+long long vi_cycle_bar_get_cycle(void)
 {
 	long long cycle;
 
-	cycle = gtk_range_get_value(GTK_RANGE(cycle_bar->scale));
+	cycle = gtk_range_get_value(GTK_RANGE(vi_cycle_bar->scale));
 	return cycle;
 }

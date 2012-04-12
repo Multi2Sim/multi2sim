@@ -105,7 +105,7 @@ static void show_kernel_source(struct vgpu_t *vgpu)
 	}
 
 	/* Show popup */
-	info_popup_show(buffer);
+	vi_popup_show(buffer);
 	free(buffer);
 }
 #endif

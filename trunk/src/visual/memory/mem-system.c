@@ -26,13 +26,13 @@
 
 
 static void visual_mem_system_set_transient_tag(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 }
 
 
 static void visual_mem_system_set_block(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	struct visual_mod_t *mod;
 
@@ -45,11 +45,11 @@ static void visual_mem_system_set_block(struct visual_mem_system_t *system,
 	unsigned int tag;
 
 	/* Get fields */
-	mod_name = trace_line_get_symbol_value(trace_line, "cache");
-	set = trace_line_get_symbol_value_int(trace_line, "set");
-	way = trace_line_get_symbol_value_int(trace_line, "way");
-	tag = trace_line_get_symbol_value_hex(trace_line, "tag");
-	state = trace_line_get_symbol_value(trace_line, "state");
+	mod_name = vi_trace_line_get_symbol(trace_line, "cache");
+	set = vi_trace_line_get_symbol_int(trace_line, "set");
+	way = vi_trace_line_get_symbol_int(trace_line, "way");
+	tag = vi_trace_line_get_symbol_hex(trace_line, "tag");
+	state = vi_trace_line_get_symbol(trace_line, "state");
 
 	/* Get module */
 	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
@@ -62,7 +62,7 @@ static void visual_mem_system_set_block(struct visual_mem_system_t *system,
 
 
 static void visual_mem_system_set_sharer(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	char *mod_name;
 
@@ -74,16 +74,16 @@ static void visual_mem_system_set_sharer(struct visual_mem_system_t *system,
 	int sharer;
 
 	/* Get module */
-	mod_name = trace_line_get_symbol_value(trace_line, "dir");
+	mod_name = vi_trace_line_get_symbol(trace_line, "dir");
 	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
 	/* Directory entry and sharer */
-	x = trace_line_get_symbol_value_int(trace_line, "x");
-	y = trace_line_get_symbol_value_int(trace_line, "y");
-	z = trace_line_get_symbol_value_int(trace_line, "z");
-	sharer = trace_line_get_symbol_value_int(trace_line, "sharer");
+	x = vi_trace_line_get_symbol_int(trace_line, "x");
+	y = vi_trace_line_get_symbol_int(trace_line, "y");
+	z = vi_trace_line_get_symbol_int(trace_line, "z");
+	sharer = vi_trace_line_get_symbol_int(trace_line, "sharer");
 
 	/* Set sharer */
 	visual_mod_dir_entry_set_sharer(mod, x, y, z, sharer);
@@ -91,7 +91,7 @@ static void visual_mem_system_set_sharer(struct visual_mem_system_t *system,
 
 
 static void visual_mem_system_clear_sharer(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	char *mod_name;
 
@@ -103,16 +103,16 @@ static void visual_mem_system_clear_sharer(struct visual_mem_system_t *system,
 	int sharer;
 
 	/* Get module */
-	mod_name = trace_line_get_symbol_value(trace_line, "dir");
+	mod_name = vi_trace_line_get_symbol(trace_line, "dir");
 	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
 	/* Directory entry and sharer */
-	x = trace_line_get_symbol_value_int(trace_line, "x");
-	y = trace_line_get_symbol_value_int(trace_line, "y");
-	z = trace_line_get_symbol_value_int(trace_line, "z");
-	sharer = trace_line_get_symbol_value_int(trace_line, "sharer");
+	x = vi_trace_line_get_symbol_int(trace_line, "x");
+	y = vi_trace_line_get_symbol_int(trace_line, "y");
+	z = vi_trace_line_get_symbol_int(trace_line, "z");
+	sharer = vi_trace_line_get_symbol_int(trace_line, "sharer");
 
 	/* Set sharer */
 	visual_mod_dir_entry_clear_sharer(mod, x, y, z, sharer);
@@ -120,7 +120,7 @@ static void visual_mem_system_clear_sharer(struct visual_mem_system_t *system,
 
 
 static void visual_mem_system_clear_all_sharers(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	char *mod_name;
 
@@ -131,15 +131,15 @@ static void visual_mem_system_clear_all_sharers(struct visual_mem_system_t *syst
 	int z;
 
 	/* Get module */
-	mod_name = trace_line_get_symbol_value(trace_line, "dir");
+	mod_name = vi_trace_line_get_symbol(trace_line, "dir");
 	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
 	/* Directory entry and sharer */
-	x = trace_line_get_symbol_value_int(trace_line, "x");
-	y = trace_line_get_symbol_value_int(trace_line, "y");
-	z = trace_line_get_symbol_value_int(trace_line, "z");
+	x = vi_trace_line_get_symbol_int(trace_line, "x");
+	y = vi_trace_line_get_symbol_int(trace_line, "y");
+	z = vi_trace_line_get_symbol_int(trace_line, "z");
 
 	/* Set sharer */
 	visual_mod_dir_entry_clear_all_sharers(mod, x, y, z);
@@ -147,7 +147,7 @@ static void visual_mem_system_clear_all_sharers(struct visual_mem_system_t *syst
 
 
 static void visual_mem_system_set_owner(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	char *mod_name;
 
@@ -159,16 +159,16 @@ static void visual_mem_system_set_owner(struct visual_mem_system_t *system,
 	int owner;
 
 	/* Get module */
-	mod_name = trace_line_get_symbol_value(trace_line, "dir");
+	mod_name = vi_trace_line_get_symbol(trace_line, "dir");
 	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
 
 	/* Directory entry and sharer */
-	x = trace_line_get_symbol_value_int(trace_line, "x");
-	y = trace_line_get_symbol_value_int(trace_line, "y");
-	z = trace_line_get_symbol_value_int(trace_line, "z");
-	owner = trace_line_get_symbol_value_int(trace_line, "owner");
+	x = vi_trace_line_get_symbol_int(trace_line, "x");
+	y = vi_trace_line_get_symbol_int(trace_line, "y");
+	z = vi_trace_line_get_symbol_int(trace_line, "z");
+	owner = vi_trace_line_get_symbol_int(trace_line, "owner");
 
 	/* Set sharer */
 	visual_mod_dir_entry_set_owner(mod, x, y, z, owner);
@@ -176,7 +176,7 @@ static void visual_mem_system_set_owner(struct visual_mem_system_t *system,
 
 
 static void visual_mem_system_new_access(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	char *name;
 	char *state;
@@ -186,9 +186,9 @@ static void visual_mem_system_new_access(struct visual_mem_system_t *system,
 	unsigned int address;
 
 	/* Read fields */
-	name = trace_line_get_symbol_value(trace_line, "name");
-	state = trace_line_get_symbol_value(trace_line, "state");
-	address = trace_line_get_symbol_value_hex(trace_line, "addr");
+	name = vi_trace_line_get_symbol(trace_line, "name");
+	state = vi_trace_line_get_symbol(trace_line, "state");
+	address = vi_trace_line_get_symbol_hex(trace_line, "addr");
 
 	/* Create new access */
 	access = visual_mod_access_create(name, address);
@@ -200,14 +200,14 @@ static void visual_mem_system_new_access(struct visual_mem_system_t *system,
 
 
 static void visual_mem_system_end_access(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	struct visual_mod_access_t *access;
 
 	char *name;
 
 	/* Read fields */
-	name = trace_line_get_symbol_value(trace_line, "name");
+	name = vi_trace_line_get_symbol(trace_line, "name");
 
 	/* Find access */
 	access = hash_table_remove(visual_mem_system->access_table, name);
@@ -220,7 +220,7 @@ static void visual_mem_system_end_access(struct visual_mem_system_t *system,
 
 
 static void visual_mem_system_new_access_mod(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	struct visual_mod_access_t *access;
 	struct visual_mod_t *mod;
@@ -229,8 +229,8 @@ static void visual_mem_system_new_access_mod(struct visual_mem_system_t *system,
 	char *access_name;
 
 	/* Read fields */
-	mod_name = trace_line_get_symbol_value(trace_line, "mod");
-	access_name = trace_line_get_symbol_value(trace_line, "access");
+	mod_name = vi_trace_line_get_symbol(trace_line, "mod");
+	access_name = vi_trace_line_get_symbol(trace_line, "access");
 
 	/* Module */
 	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
@@ -244,7 +244,7 @@ static void visual_mem_system_new_access_mod(struct visual_mem_system_t *system,
 
 
 static void visual_mem_system_end_access_mod(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	struct visual_mod_access_t *access;
 	struct visual_mod_t *mod;
@@ -253,8 +253,8 @@ static void visual_mem_system_end_access_mod(struct visual_mem_system_t *system,
 	char *access_name;
 
 	/* Read fields */
-	mod_name = trace_line_get_symbol_value(trace_line, "mod");
-	access_name = trace_line_get_symbol_value(trace_line, "access");
+	mod_name = vi_trace_line_get_symbol(trace_line, "mod");
+	access_name = vi_trace_line_get_symbol(trace_line, "access");
 
 	/* Module */
 	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
@@ -272,7 +272,7 @@ static void visual_mem_system_end_access_mod(struct visual_mem_system_t *system,
 
 
 static void visual_mem_system_new_access_block(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	struct visual_mod_access_t *access;
 	struct visual_mod_t *mod;
@@ -284,10 +284,10 @@ static void visual_mem_system_new_access_block(struct visual_mem_system_t *syste
 	int way;
 
 	/* Read fields */
-	mod_name = trace_line_get_symbol_value(trace_line, "cache");
-	access_name = trace_line_get_symbol_value(trace_line, "access");
-	set = trace_line_get_symbol_value_int(trace_line, "set");
-	way = trace_line_get_symbol_value_int(trace_line, "way");
+	mod_name = vi_trace_line_get_symbol(trace_line, "cache");
+	access_name = vi_trace_line_get_symbol(trace_line, "access");
+	set = vi_trace_line_get_symbol_int(trace_line, "set");
+	way = vi_trace_line_get_symbol_int(trace_line, "way");
 
 	/* Module */
 	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
@@ -301,7 +301,7 @@ static void visual_mem_system_new_access_block(struct visual_mem_system_t *syste
 
 
 static void visual_mem_system_end_access_block(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	struct visual_mod_access_t *access;
 	struct visual_mod_t *mod;
@@ -313,10 +313,10 @@ static void visual_mem_system_end_access_block(struct visual_mem_system_t *syste
 	int way;
 
 	/* Read fields */
-	mod_name = trace_line_get_symbol_value(trace_line, "cache");
-	access_name = trace_line_get_symbol_value(trace_line, "access");
-	set = trace_line_get_symbol_value_int(trace_line, "set");
-	way = trace_line_get_symbol_value_int(trace_line, "way");
+	mod_name = vi_trace_line_get_symbol(trace_line, "cache");
+	access_name = vi_trace_line_get_symbol(trace_line, "access");
+	set = vi_trace_line_get_symbol_int(trace_line, "set");
+	way = vi_trace_line_get_symbol_int(trace_line, "way");
 
 	/* Cache */
 	mod = hash_table_get(visual_mem_system->mod_table, mod_name);
@@ -334,7 +334,7 @@ static void visual_mem_system_end_access_block(struct visual_mem_system_t *syste
 
 
 static void visual_mem_system_access(struct visual_mem_system_t *system,
-	struct trace_line_t *trace_line)
+	struct vi_trace_line_t *trace_line)
 {
 	struct visual_mod_access_t *access;
 
@@ -342,8 +342,8 @@ static void visual_mem_system_access(struct visual_mem_system_t *system,
 	char *state;
 
 	/* Read fields */
-	name = trace_line_get_symbol_value(trace_line, "name");
-	state = trace_line_get_symbol_value(trace_line, "state");
+	name = vi_trace_line_get_symbol(trace_line, "name");
+	state = vi_trace_line_get_symbol(trace_line, "state");
 
 	/* Find access */
 	access = hash_table_get(visual_mem_system->access_table, name);
@@ -442,7 +442,7 @@ struct visual_mem_system_t *visual_mem_system;
 
 void visual_mem_system_init(void)
 {
-	struct trace_line_t *trace_line;
+	struct vi_trace_line_t *trace_line;
 
 	/* State file */
 	vi_state_new_category("Memory hierarchy",
@@ -508,7 +508,7 @@ void visual_mem_system_init(void)
 		char *command;
 
 		/* Get command */
-		command = trace_line_get_command(trace_line);
+		command = vi_trace_line_get_command(trace_line);
 		assert(strcmp(command, "c"));
 
 		if (!strcmp(command, "mem.new_mod"))

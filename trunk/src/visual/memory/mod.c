@@ -39,7 +39,7 @@ static struct string_map_t visual_mod_block_state_map =
  */
 
 
-struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line)
+struct visual_mod_t *visual_mod_create(struct vi_trace_line_t *trace_line)
 {
 	struct visual_mod_t *mod;
 
@@ -56,28 +56,28 @@ struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Name */
-	name = trace_line_get_symbol_value(trace_line, "name");
+	name = vi_trace_line_get_symbol(trace_line, "name");
 	mod->name = strdup(name);
 	if (!mod->name)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Get module parameters */
-	mod->num_sets = trace_line_get_symbol_value_int(trace_line, "num_sets");
-	mod->assoc = trace_line_get_symbol_value_int(trace_line, "assoc");
-	mod->block_size = trace_line_get_symbol_value_int(trace_line, "block_size");
-	mod->sub_block_size = trace_line_get_symbol_value_int(trace_line, "sub_block_size");
+	mod->num_sets = vi_trace_line_get_symbol_int(trace_line, "num_sets");
+	mod->assoc = vi_trace_line_get_symbol_int(trace_line, "assoc");
+	mod->block_size = vi_trace_line_get_symbol_int(trace_line, "block_size");
+	mod->sub_block_size = vi_trace_line_get_symbol_int(trace_line, "sub_block_size");
 	mod->num_sub_blocks = mod->block_size / mod->sub_block_size;
-	mod->num_sharers = trace_line_get_symbol_value_int(trace_line, "num_sharers");
-	mod->level = trace_line_get_symbol_value_int(trace_line, "level");
+	mod->num_sharers = vi_trace_line_get_symbol_int(trace_line, "num_sharers");
+	mod->level = vi_trace_line_get_symbol_int(trace_line, "level");
 
 	/* High network */
-	high_net_name = trace_line_get_symbol_value(trace_line, "high_net");
-	mod->high_net_node_index = trace_line_get_symbol_value_int(trace_line, "high_net_node");
+	high_net_name = vi_trace_line_get_symbol(trace_line, "high_net");
+	mod->high_net_node_index = vi_trace_line_get_symbol_int(trace_line, "high_net_node");
 	mod->high_net = hash_table_get(visual_mem_system->net_table, high_net_name);
 
 	/* Low network */
-	low_net_name = trace_line_get_symbol_value(trace_line, "low_net");
-	mod->low_net_node_index = trace_line_get_symbol_value_int(trace_line, "low_net_node");
+	low_net_name = vi_trace_line_get_symbol(trace_line, "low_net");
+	mod->low_net_node_index = vi_trace_line_get_symbol_int(trace_line, "low_net_node");
 	mod->low_net = hash_table_get(visual_mem_system->net_table, low_net_name);
 
 	/* Attach module to networks */

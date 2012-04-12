@@ -127,7 +127,7 @@ struct visual_mod_t
 	struct hash_table_t *access_table;
 };
 
-struct visual_mod_t *visual_mod_create(struct trace_line_t *trace_line);
+struct visual_mod_t *visual_mod_create(struct vi_trace_line_t *trace_line);
 void visual_mod_free(struct visual_mod_t *mod);
 
 void visual_mod_add_access(struct visual_mod_t *mod, int set, int way,
@@ -176,7 +176,7 @@ struct visual_net_t
 	struct list_t *node_list;
 };
 
-struct visual_net_t *visual_net_create(struct trace_line_t *trace_line);
+struct visual_net_t *visual_net_create(struct vi_trace_line_t *trace_line);
 void visual_net_free(struct visual_net_t *net);
 
 void visual_net_attach_mod(struct visual_net_t *net, struct visual_mod_t *mod, int node_index);
