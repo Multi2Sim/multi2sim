@@ -58,6 +58,12 @@ struct vi_mod_access_t
 
 	unsigned int address;
 
+	/* An access is considered to be in a module as long as the access
+	 * is currently in any block of the module. For an access in a module,
+	 * this field gives the number of accesses (objects with same
+	 * 'name' field) located in different blocks of the module. */
+	int num_links;
+
 	long long creation_cycle;
 	long long state_update_cycle;
 };

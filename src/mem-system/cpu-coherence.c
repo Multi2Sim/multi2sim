@@ -105,8 +105,6 @@ void mod_handler_load(int event, void *data)
 		mem_trace("mem.new_access name=\"A-%lld\" type=\"load\" "
 			"state=\"%s:load\" addr=0x%x\n",
 			stack->id, mod->name, stack->addr);
-		mem_trace("mem.new_access_mod mod=\"%s\" access=\"A-%lld\"\n",
-			mod->name, stack->id);
 
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_read);
@@ -254,8 +252,6 @@ void mod_handler_load(int event, void *data)
 			stack->addr, mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:load_finish\"\n",
 			stack->id, mod->name);
-		mem_trace("mem.end_access_mod mod=\"%s\" access=\"A-%lld\"\n",
-			mod->name, stack->id);
 		mem_trace("mem.end_access name=\"A-%lld\"\n",
 			stack->id);
 
@@ -292,8 +288,6 @@ void mod_handler_store(int event, void *data)
 		mem_trace("mem.new_access name=\"A-%lld\" type=\"store\" "
 			"state=\"%s:store\" addr=0x%x\n",
 			stack->id, mod->name, stack->addr);
-		mem_trace("mem.new_access_mod mod=\"%s\" access=\"A-%lld\"\n",
-			mod->name, stack->id);
 
 		/* Record access */
 		mod_access_start(mod, stack, mod_access_write);
@@ -419,8 +413,6 @@ void mod_handler_store(int event, void *data)
 			stack->id, mod->name);
 		mem_trace("mem.end_access name=\"A-%lld\"\n",
 			stack->id);
-		mem_trace("mem.end_access_mod mod=\"%s\" access=\"A-%lld\"\n",
-			mod->name, stack->id);
 
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)

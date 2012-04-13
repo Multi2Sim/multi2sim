@@ -50,7 +50,7 @@ static gboolean info_popup_motion_event(GtkWidget *widget, GdkEventMotion *event
 }
 
 
-void vi_popup_show(char *text)
+void info_popup_show(char *text)
 {
 	/* Create window */
 	GtkWidget *window;

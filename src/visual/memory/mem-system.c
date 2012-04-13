@@ -219,58 +219,6 @@ static void vi_mem_system_end_access(struct vi_mem_system_t *system,
 }
 
 
-static void vi_mem_system_new_access_mod(struct vi_mem_system_t *system,
-	struct vi_trace_line_t *trace_line)
-{
-	struct vi_mod_access_t *access;
-	struct vi_mod_t *mod;
-
-	char *mod_name;
-	char *access_name;
-
-	/* Read fields */
-	mod_name = vi_trace_line_get_symbol(trace_line, "mod");
-	access_name = vi_trace_line_get_symbol(trace_line, "access");
-
-	/* Module */
-	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
-	if (!mod)
-		panic("%s: invalid module name '%s'", __FUNCTION__, mod_name);
-
-	/* Create new access and add to list */
-	access = vi_mod_access_create(access_name, 0);
-	hash_table_insert(mod->access_table, access->name, access);
-}
-
-
-static void vi_mem_system_end_access_mod(struct vi_mem_system_t *system,
-	struct vi_trace_line_t *trace_line)
-{
-	struct vi_mod_access_t *access;
-	struct vi_mod_t *mod;
-
-	char *mod_name;
-	char *access_name;
-
-	/* Read fields */
-	mod_name = vi_trace_line_get_symbol(trace_line, "mod");
-	access_name = vi_trace_line_get_symbol(trace_line, "access");
-
-	/* Module */
-	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
-	if (!mod)
-		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
-
-	/* Remove access */
-	access = hash_table_remove(mod->access_table, access_name);
-	if (!access)
-		panic("%s: %s: access not found", __FUNCTION__, access_name);
-
-	/* Free access */
-	vi_mod_access_free(access);
-}
-
-
 static void vi_mem_system_new_access_block(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
@@ -294,7 +242,20 @@ static void vi_mem_system_new_access_block(struct vi_mem_system_t *system,
 	if (!mod)
 		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
 
-	/* Create access and add to cache block */
+	/* Check if access is already in module. If it is there, increase
+	 * the number of links. Otherwise, create it. */
+	access = hash_table_get(mod->access_table, access_name);
+	if (access)
+	{
+		access->num_links++;
+	}
+	else
+	{
+		access = vi_mod_access_create(access_name, 0);
+		hash_table_insert(mod->access_table, access_name, access);
+	}
+
+	/* Add access to block */
 	access = vi_mod_access_create(access_name, 0);
 	vi_mod_add_access(mod, set, way, access);
 }
@@ -318,12 +279,29 @@ static void vi_mem_system_end_access_block(struct vi_mem_system_t *system,
 	set = vi_trace_line_get_symbol_int(trace_line, "set");
 	way = vi_trace_line_get_symbol_int(trace_line, "way");
 
-	/* Cache */
+	/* Module */
 	mod = hash_table_get(vi_mem_system->mod_table, mod_name);
 	if (!mod)
 		panic("%s: %s: invalid module", __FUNCTION__, mod_name);
 
-	/* Remove access */
+	/* Find access in module */
+	access = hash_table_get(mod->access_table, access_name);
+	if (!access)
+		panic("%s: module %s: access %s: invalid access",
+			__FUNCTION__, mod_name, access_name);
+
+	/* If access has more than one reference, just decrease it.
+	 * Otherwise, remove it. */
+	assert(access->num_links >= 0);
+	if (access->num_links)
+		access->num_links--;
+	else
+	{
+		access = hash_table_remove(mod->access_table, access_name);
+		vi_mod_access_free(access);
+	}
+
+	/* Remove access from block */
 	access = vi_mod_remove_access(mod, set, way, access_name);
 	if (!access)
 		panic("%s: %s: invalid access", __FUNCTION__, access_name);
@@ -474,12 +452,6 @@ void vi_mem_system_init(void)
 		vi_mem_system);
 	vi_state_new_command("mem.end_access",
 		(vi_state_process_trace_line_func_t) vi_mem_system_end_access,
-		vi_mem_system);
-	vi_state_new_command("mem.new_access_mod",
-		(vi_state_process_trace_line_func_t) vi_mem_system_new_access_mod,
-		vi_mem_system);
-	vi_state_new_command("mem.end_access_mod",
-		(vi_state_process_trace_line_func_t) vi_mem_system_end_access_mod,
 		vi_mem_system);
 	vi_state_new_command("mem.new_access_block",
 		(vi_state_process_trace_line_func_t) vi_mem_system_new_access_block,
