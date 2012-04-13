@@ -4,7 +4,10 @@ libevergreen_a_SOURCES =
 
 if HAVE_GTK
 libevergreen_a_SOURCES += \
-	visual-evergreen.h
+	\
+	visual-evergreen.h \
+	\
+	panel.c
 
 AM_CFLAGS = @GTK_CFLAGS@
 

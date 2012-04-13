@@ -19,6 +19,7 @@
 
 #include <visual-common.h>
 #include <visual-memory.h>
+#include <visual-evergreen.h>
 
 
 
@@ -27,7 +28,8 @@
  */
 
 struct vi_cycle_bar_t *visual_cycle_bar;
-struct vi_mem_panel_t *visual_mem_system_widget;
+struct vi_mem_panel_t *mem_panel;
+struct vi_evg_panel_t *evg_panel;
 
 
 static void visual_xxx_destroy_event(GtkWidget *widget, gpointer data)
@@ -38,7 +40,7 @@ static void visual_xxx_destroy_event(GtkWidget *widget, gpointer data)
 
 static void visual_cycle_bar_refresh(void *user_data, long long cycle)
 {
-	vi_mem_panel_refresh(visual_mem_system_widget);
+	vi_mem_panel_refresh(mem_panel);
 }
 
 
@@ -78,9 +80,14 @@ void visual_run(char *file_name)
 	vi_cycle_bar_init(visual_cycle_bar_refresh, NULL);
 	gtk_box_pack_start(GTK_BOX(vbox), vi_cycle_bar_get_widget(), FALSE, FALSE, 0);
 
-	/* Memory system widget */
-	visual_mem_system_widget = vi_mem_panel_create();
-	gtk_box_pack_start(GTK_BOX(vbox), vi_mem_panel_get_widget(visual_mem_system_widget),
+	/* Evergreen panel */
+	evg_panel = vi_evg_panel_create();
+	gtk_box_pack_start(GTK_BOX(vbox), vi_evg_panel_get_widget(evg_panel),
+		TRUE, TRUE, 0);
+
+	/* Memory system panel */
+	mem_panel = vi_mem_panel_create();
+	gtk_box_pack_start(GTK_BOX(vbox), vi_mem_panel_get_widget(mem_panel),
 		TRUE, TRUE, 0);
 
 	/* Show */
