@@ -1573,6 +1573,11 @@ static void mem_config_trace(void)
 
 		mod = list_get(mem_system->mod_list, i);
 
+		/* If the module is not connected to any CPU/GPU,
+		 * don't include in trace. */
+		if (!mod->level)
+			continue;
+
 		high_net_name = mod->high_net ? mod->high_net->name : "";
 		high_net_node_index = mod->high_net_node ? mod->high_net_node->index : 0;
 
