@@ -78,6 +78,11 @@ void vi_mod_access_read_checkpoint(struct vi_mod_access_t *access, FILE *f)
 	str_read_from_file(f, state, sizeof state);
 	access->state = str_set(access->state, state);
 
+	/* Read number of links */
+	count = fread(&access->num_links, 1, sizeof access->num_links, f);
+	if (count != sizeof access->num_links)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
 	/* Read creation cycle */
 	count = fread(&access->creation_cycle, 1, sizeof access->creation_cycle, f);
 	if (count != sizeof access->creation_cycle)
@@ -104,6 +109,11 @@ void vi_mod_access_write_checkpoint(struct vi_mod_access_t *access, FILE *f)
 
 	/* Write state */
 	str_write_to_file(f, access->state);
+
+	/* Write number of links */
+	count = fwrite(&access->num_links, 1, sizeof access->num_links, f);
+	if (count != sizeof access->num_links)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
 
 	/* Write creation cycle */
 	count = fwrite(&access->creation_cycle, 1, sizeof access->creation_cycle, f);

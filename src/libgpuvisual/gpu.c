@@ -411,7 +411,7 @@ void work_group_info_popup(void *item)
 		work_group->wavefront_id_first, work_group->wavefront_id_last, work_group->wavefront_count);
 	
 	/* Show */
-	vi_popup_show(buf);
+	info_popup_show(buf);
 }
 
 
@@ -644,5 +644,5 @@ void vgpu_uop_info_popup(void *item)
 		uop->wavefront_id);
 
 	/* Show the popup */
-	vi_popup_show(buf);
+	info_popup_show(buf);
 }
