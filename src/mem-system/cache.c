@@ -234,7 +234,6 @@ void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
 {
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
-	assert(set == (tag >> cache->log_block_size) % cache->num_sets || !state);
 
 	mem_trace("mem.set_block cache=\"%s\" set=%d way=%d tag=0x%x state=\"%s\"\n",
 			cache->name, set, way, tag,
