@@ -30,6 +30,10 @@ static char *err_net_cycle =
 	"\tfor a network. Routing cycles can cause deadlocks in simulations, that\n"
 	"\tcan in turn make the simulation stall with no output.\n";
 
+static char *err_net_routing = 
+	"\tA link is not defined between the source node and next node in the \n"
+	"\t configuration file. \n"; 
+
 
 #define NET_NODE_COLOR_WHITE ((void *) 1)
 #define NET_NODE_COLOR_GRAY ((void *) 2)
@@ -58,7 +62,7 @@ static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *
 		node_adj = list_get(net->node_list, j);
 		entry = net_routing_table_lookup(routing_table, node_elem, node_adj);	
 
-		if (entry->cost == 1)
+		if (entry->cost == 1 || entry->next_node != NULL )
 		{
 			node_color = list_get(color_list, j);
 
@@ -154,15 +158,13 @@ void net_routing_table_free(struct net_routing_table_t *routing_table)
 
 
 /* Create contents of routing table */
-void net_routing_table_calculate(struct net_routing_table_t *routing_table)
+void net_routing_table_initiate(struct net_routing_table_t *routing_table)
 {
-	int i, j, k;
+	int i, j;
 
 	struct net_t *net = routing_table->net;
 
-	struct net_node_t *src_node, *dst_node, *next_node;
-	struct net_buffer_t *buffer;
-	struct net_link_t *link;
+	struct net_node_t *src_node, *dst_node;
 
 	struct net_routing_table_entry_t *entry;
 
@@ -185,8 +187,23 @@ void net_routing_table_calculate(struct net_routing_table_t *routing_table)
 			entry = net_routing_table_lookup(routing_table, src_node, dst_node);
 			entry->cost = i == j ? 0 : routing_table->dim;  /* Infinity or 0 */
 			entry->next_node = NULL;
+			entry->output_buffer = NULL;
 		}
 	}
+
+}
+
+/* Calculate shortest paths Floyd-Warshall algorithm.*/
+void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table)
+{
+	int i, j, k ;
+	struct net_t *net = routing_table->net;
+
+	struct net_node_t *src_node, *next_node;
+	struct net_buffer_t *buffer;
+	struct net_link_t *link;
+
+	struct net_routing_table_entry_t *entry;
 
 	/* Set 1-hop connections */
 	for (i = 0; i < net->node_count; i++)
@@ -204,10 +221,8 @@ void net_routing_table_calculate(struct net_routing_table_t *routing_table)
 		}
 	}
 
-	/* Find cycle in routing table */
-	net_routing_table_cycle_detection(routing_table);
-	
-	/* Calculate shortest paths Floyd-Warshall algorithm. The 'routing_table_entry->next_node' values do
+
+	/* The 'routing_table_entry->next_node' values do
 	 * not necessarily point to the immediate next hop after this. */
 	for (k = 0; k < net->node_count; k++)
 	{
@@ -250,6 +265,7 @@ void net_routing_table_calculate(struct net_routing_table_t *routing_table)
 			struct net_routing_table_entry_t *entry_i_j;
 
 			node_i = list_get(net->node_list, i);
+			
 			node_j = list_get(net->node_list, j);
 			entry_i_j = net_routing_table_lookup(routing_table, node_i, node_j);
 			next_node = entry_i_j->next_node;
@@ -308,8 +324,10 @@ void net_routing_table_calculate(struct net_routing_table_t *routing_table)
 			}
 		}
 	}
-}
 
+	/* Find cycle in routing table */
+	net_routing_table_cycle_detection(routing_table);
+}
 
 void net_routing_table_dump(struct net_routing_table_t *routing_table, FILE *f)
 {
@@ -331,7 +349,6 @@ void net_routing_table_dump(struct net_routing_table_t *routing_table, FILE *f)
 			struct net_node_t *node_i;
 			struct net_node_t *node_j;
 			struct net_routing_table_entry_t *entry_i_j;
-
 			node_i = list_get(net->node_list, i);
 			node_j = list_get(net->node_list, j);
 			entry_i_j = net_routing_table_lookup(routing_table, node_i, node_j);
@@ -396,3 +413,43 @@ struct net_routing_table_entry_t *net_routing_table_lookup(struct net_routing_ta
 	return entry;
 }
 
+/* Updating the entries in the routing table based on the routes existing in configuration file*/
+void net_routing_table_route_update(struct net_routing_table_t *routing_table, struct net_node_t *src_node,
+	struct net_node_t *dst_node, struct net_node_t *next_node)
+{
+
+	int k;
+	int route_check = 0 ;
+
+	struct net_buffer_t *buffer;
+	struct net_link_t *link;
+	struct net_routing_table_entry_t *entry;
+
+	entry = net_routing_table_lookup(routing_table, src_node, dst_node);
+	entry->next_node = next_node;
+	entry->output_buffer = NULL ;
+
+	/* Look for output buffer */
+	buffer = NULL;
+	assert(list_count(src_node->output_buffer_list));
+
+	for (k = 0; k < list_count(src_node->output_buffer_list); k++)
+	{
+		buffer = list_get(src_node->output_buffer_list, k);
+		link = buffer->link;
+		assert(link);
+
+		if ((link->dst_node == next_node))
+		{
+			entry->output_buffer = buffer;
+			route_check = 1;					
+		}						
+	}
+
+	if (route_check == 0) fatal("Network %s : following the command %s.to.%s = %s:\n%s ",
+		routing_table->net->name, src_node->name, dst_node->name, next_node->name, err_net_routing);
+
+
+	/* Find cycle in routing table */
+	net_routing_table_cycle_detection(routing_table);
+}

@@ -89,7 +89,7 @@ struct net_t *net_create(char *name)
 	net = calloc(1, sizeof(struct net_t));
 	if (!net)
 		fatal("%s: out of memory", __FUNCTION__);
-	
+
 	/* Initialize */
 	net->name = strdup(name);
 	net->node_list = list_create();
@@ -110,6 +110,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 	int def_input_buffer_size;
 	int def_output_buffer_size;
 	int def_bandwidth;
+	int routing_type = 0;
 
 	/* Create network */
 	net = net_create(name);
@@ -191,6 +192,9 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 				net->name, section, err_net_config);
 	}
 
+	/* initializing the routing table */
+	net_routing_table_initiate(net->routing_table);
+	
 	/* Links */
 	for (section = config_section_first(config); section; section = config_section_next(config))
 	{
@@ -238,6 +242,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		/* Nodes */
 		src_node = net_get_node_by_name(net, src_node_name);
 		dst_node = net_get_node_by_name(net, dst_node_name);
+
 		if (!src_node)
 			fatal("%s: %s: %s: source node does not exist.\n%s",
 				name, section, src_node_name, err_net_config);
@@ -245,13 +250,75 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 			fatal("%s: %s: %s: destination node does not exist.\n%s",
 				name, section, dst_node_name, err_net_config);
 		if (!strcasecmp(link_type, "Unidirectional"))
+		{
 			net_add_link(net, src_node, dst_node, bandwidth);
+		}
 		else if (!strcasecmp(link_type, "Bidirectional"))
+		{
 			net_add_bidirectional_link(net, src_node, dst_node, bandwidth);
+		}
 	}
 
-	/* Calculate routing table */
-	net_routing_table_calculate(net->routing_table);
+	/*Routes*/
+	for (section = config_section_first(config); section; section = config_section_next(config))
+	{
+		char *delim = ".";
+		char *token;
+		char *token_endl;
+
+		/* First token must be 'Network' */
+		snprintf(section_str, sizeof section_str, "%s", section);
+		token = strtok(section_str, delim);
+		if (!token || strcasecmp(token, "Network"))
+			continue;
+
+		/* Second token must be the name of the network */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, name))
+			continue;
+
+		/* Third token must be 'Routes' */
+		token = strtok(NULL, delim);
+		if (!token || strcasecmp(token, "Routes"))
+			continue;
+
+		token_endl = strtok(NULL, delim);
+		if (token_endl)
+			fatal("%s: %s: bad format for route.\n%s",
+				name, section, err_net_config);
+
+		/*Routes*/
+		routing_type = 1;
+
+		for (int i = 0; i < net->node_count; i++)
+		{
+			for (int j = 0; j < net->node_count; j++)
+			{
+				char spr_result_size [MAX_STRING_SIZE] ;
+				char *nxt_node_name;
+				struct net_node_t *src_node_r;
+				struct net_node_t *dst_node_r;
+				struct net_node_t *nxt_node_r;
+
+				src_node_r = list_get(net->node_list, i);
+				dst_node_r = list_get(net->node_list, j);
+
+				snprintf(spr_result_size, sizeof spr_result_size, "%s.to.%s", src_node_r->name,dst_node_r->name);
+				nxt_node_name = config_read_string(config, section, spr_result_size , "" );
+				nxt_node_r = net_get_node_by_name(net, nxt_node_name);
+				if(nxt_node_r)
+				{
+					if (src_node_r == dst_node_r)
+						fatal("%s:%s: A route can not be created between %s with itself.\n", net->name, section, src_node_r->name);
+					else net_routing_table_route_update(net->routing_table, src_node_r, dst_node_r, nxt_node_r);
+				}
+			}
+		}
+	}
+
+	/* If there is no route, Floyd-Warshall calculates the shortest path for all the nodes in the network */
+	if (routing_type == 0) 
+		net_routing_table_floyd_warshall(net->routing_table);
 
 	/* Return */
 	return net;
@@ -512,11 +579,11 @@ int net_can_send(struct net_t *net, struct net_node_t *src_node,
 	/* No route to destination */
 	if (!output_buffer)
 		return 0;
-	
+
 	/* Output buffer is busy */
 	if (output_buffer->write_busy >= esim_cycle)
 		return 0;
-	
+
 	/* Message does not fit in output buffer */
 	if (output_buffer->count + size > output_buffer->size)
 		return 0;
@@ -547,11 +614,11 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 	if (!output_buffer)
 		fatal("%s: no route between %s and %s.\n%s",
 			net->name, src_node->name, dst_node->name, err_net_no_route);
-	
+
 	/* Message is too long */
 	if (size > output_buffer->size)
 		fatal("%s: message too long.\n%s", net->name, err_net_large_message);
-	
+
 	/* Output buffer is busy */
 	if (output_buffer->write_busy >= esim_cycle)
 	{
@@ -559,7 +626,7 @@ int net_can_send_ev(struct net_t *net, struct net_node_t *src_node,
 			output_buffer->write_busy - esim_cycle + 1);
 		return 0;
 	}
-	
+
 	/* Message does not fit in output buffer */
 	if (output_buffer->count + size > output_buffer->size)
 	{
@@ -665,7 +732,7 @@ void net_receive(struct net_t *net, struct net_node_t *node, struct net_msg_t *m
 		panic("%s: empty buffer", __FUNCTION__);
 	if (list_get(buffer->msg_list, 0) != msg)
 		panic("%s: message not at input buffer head", __FUNCTION__);
-	
+
 	/* Extract and free message */
 	net_buffer_extract(buffer, msg);
 	net_msg_table_extract(net, msg->id);
