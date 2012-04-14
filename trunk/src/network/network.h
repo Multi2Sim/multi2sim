@@ -100,7 +100,6 @@ struct net_msg_t
 
 	long long send_cycle;  /* Cycle when it was sent */
 	long long busy;  /* In transit until cycle */
-
 	struct net_node_t *src_node;
 	struct net_node_t *dst_node;
 	void *data;
@@ -326,8 +325,11 @@ struct net_routing_table_t
 struct net_routing_table_t *net_routing_table_create(struct net_t *net);
 void net_routing_table_free(struct net_routing_table_t *routing_table);
 
-void net_routing_table_calculate(struct net_routing_table_t *routing_table);
+void net_routing_table_initiate(struct net_routing_table_t *routing_table);
+void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table);
 void net_routing_table_dump(struct net_routing_table_t *routing_table, FILE *f);
+void net_routing_table_route_update(struct net_routing_table_t *routing_table, struct net_node_t *src_node,
+	struct net_node_t *dst_node, struct net_node_t *nxt_node);
 struct net_routing_table_entry_t *net_routing_table_lookup(struct net_routing_table_t *routing_table,
 	struct net_node_t *src_node, struct net_node_t *dst_node);
 
