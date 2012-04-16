@@ -118,6 +118,8 @@ char *evg_gpu_config_help =
 char *evg_gpu_config_file_name = "";
 char *evg_gpu_report_file_name = "";
 
+int evg_trace_category;
+
 int evg_gpu_pipeline_debug_category;
 
 /* Default parameters based on the AMD Radeon HD 5870 */
@@ -178,6 +180,10 @@ static void evg_gpu_device_init()
 		compute_unit->id = compute_unit_id;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_gpu, ready, compute_unit);
 	}
+
+	/* Trace */
+	evg_trace_header("evg.init num_compute_units=%d\n",
+		evg_gpu_num_compute_units);
 }
 
 
@@ -560,6 +566,57 @@ static void evg_gpu_debug_intro(struct evg_ndrange_t *ndrange)
 }
 
 
+static void evg_gpu_trace_ndrange(struct evg_ndrange_t *ndrange)
+{
+	int work_group_id;
+	struct evg_work_group_t *work_group;
+
+	int wavefront_id;
+	struct evg_wavefront_t *wavefront;
+
+	/* ND-Range */
+	evg_trace("evg.new_ndrange "
+		"id=%d "
+		"wg_first=%d "
+		"wg_count=%d\n",
+		ndrange->id,
+		ndrange->work_group_id_first,
+		ndrange->work_group_count);
+
+	/* Work-groups */
+	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
+	{
+		work_group = ndrange->work_groups[work_group_id];
+		evg_trace("evg.new_wg "
+			"id=%d "
+			"wi_first=%d "
+			"wi_count=%d "
+			"wf_first=%d "
+			"wf_count=%d\n",
+			work_group->id,
+			work_group->work_item_id_first,
+			work_group->work_item_count,
+			work_group->wavefront_id_first,
+			work_group->wavefront_count);
+	}
+
+	/* Wavefronts */
+	EVG_FOREACH_WAVEFRONT_IN_NDRANGE(ndrange, wavefront_id)
+	{
+		wavefront = ndrange->wavefronts[wavefront_id];
+		evg_trace("evg.new_wf "
+			"id=%d "
+			"wg_id=%d "
+			"wi_first=%d "
+			"wi_count=%d\n",
+			wavefront->id,
+			wavefront->work_group->id,
+			wavefront->work_item_id_first,
+			wavefront->work_item_count);
+	}
+}
+
+
 
 
 /*
@@ -728,6 +785,10 @@ void evg_gpu_run(struct evg_ndrange_t *ndrange)
 		evg_gpu_debug_ndrange(ndrange);
 		evg_gpu_debug_disasm(ndrange);
 	}
+
+	/* Trace */
+	if (evg_tracing())
+		evg_gpu_trace_ndrange(ndrange);
 
 	/* Initialize */
 	evg_gpu_map_ndrange(ndrange);

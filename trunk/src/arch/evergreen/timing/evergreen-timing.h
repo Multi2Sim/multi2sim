@@ -322,6 +322,13 @@ void evg_calc_plot(void);
  * Evergreen GPU
  */
 
+/* Trace */
+#define evg_tracing() trace_status(evg_trace_category)
+#define evg_trace(...) trace(evg_trace_category, __VA_ARGS__)
+#define evg_trace_header(...) trace_header(evg_trace_category, __VA_ARGS__)
+extern int evg_trace_category;
+
+
 /* Debugging */
 #define evg_gpu_pipeline_debug(...) debug(evg_gpu_pipeline_debug_category, __VA_ARGS__)
 #define evg_gpu_pipeline_debugging() debug_status(evg_gpu_pipeline_debug_category)

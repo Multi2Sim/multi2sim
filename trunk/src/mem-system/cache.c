@@ -312,8 +312,4 @@ void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, 
 	/* Set transient tag */
 	block = &cache->sets[set].blocks[way];
 	block->transient_tag = tag;
-
-	/* Debug */
-	mem_trace("mem.set_transient_tag cache=\"%s\" set=%d way=%d tag=0x%x\n",
-			cache->name, set, way, tag);
 }

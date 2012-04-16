@@ -7,7 +7,10 @@ libevergreen_a_SOURCES += \
 	\
 	visual-evergreen.h \
 	\
-	panel.c
+	compute-unit.c \
+	gpu.c \
+	panel.c \
+	work-group.c
 
 AM_CFLAGS = @GTK_CFLAGS@
 
