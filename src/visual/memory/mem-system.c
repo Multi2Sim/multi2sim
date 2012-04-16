@@ -25,12 +25,6 @@
  */
 
 
-static void vi_mem_system_set_transient_tag(struct vi_mem_system_t *system,
-	struct vi_trace_line_t *trace_line)
-{
-}
-
-
 static void vi_mem_system_set_block(struct vi_mem_system_t *system,
 	struct vi_trace_line_t *trace_line)
 {
@@ -426,12 +420,9 @@ void vi_mem_system_init(void)
 	vi_state_new_category("Memory hierarchy",
 		(vi_state_read_checkpoint_func_t) vi_mem_system_read_checkpoint,
 		(vi_state_write_checkpoint_func_t) vi_mem_system_write_checkpoint,
-		NULL, vi_mem_system);
-	/* Replace with (vi_state_refresh_func_t) vi_mem_panel_refresh */
-
-	vi_state_new_command("mem.set_transient_tag",
-		(vi_state_process_trace_line_func_t) vi_mem_system_set_transient_tag,
 		vi_mem_system);
+
+	/* Commands */
 	vi_state_new_command("mem.set_block",
 		(vi_state_process_trace_line_func_t) vi_mem_system_set_block,
 		vi_mem_system);

@@ -115,7 +115,6 @@ struct vi_state_category_t
 
 	vi_state_read_checkpoint_func_t read_checkpoint_func;
 	vi_state_write_checkpoint_func_t write_checkpoint_func;
-	vi_state_refresh_func_t refresh_func;
 
 	/* Argument to pass to the read/write checkpoint functions */
 	void *user_data;
@@ -125,7 +124,6 @@ struct vi_state_category_t
 struct vi_state_category_t *vi_state_category_create(char *name,
 	vi_state_read_checkpoint_func_t read_checkpoint_func,
 	vi_state_write_checkpoint_func_t write_checkpoint_func,
-	vi_state_refresh_func_t refresh_func,
 	void *user_data)
 {
 	struct vi_state_category_t *category;
@@ -143,7 +141,6 @@ struct vi_state_category_t *vi_state_category_create(char *name,
 	/* Initialize */
 	category->read_checkpoint_func = read_checkpoint_func;
 	category->write_checkpoint_func = write_checkpoint_func;
-	category->refresh_func = refresh_func;
 	category->user_data = user_data;
 
 	/* Return */
@@ -451,13 +448,12 @@ void vi_state_create_checkpoints(void)
 void vi_state_new_category(char *name,
 	vi_state_read_checkpoint_func_t read_checkpoint_func,
 	vi_state_write_checkpoint_func_t write_checkpoint_func,
-	vi_state_refresh_func_t refresh_func,
 	void *user_data)
 {
 	struct vi_state_category_t *category;
 
 	category = vi_state_category_create(name, read_checkpoint_func,
-		write_checkpoint_func, refresh_func, user_data);
+		write_checkpoint_func, user_data);
 	list_add(vi_state->category_list, category);
 }
 
@@ -600,20 +596,6 @@ struct vi_trace_line_t *vi_state_trace_line_next(void)
 	/* Return to original position in trace file */
 	fseek(vi_state->unzipped_trace_file, trace_file_offset, SEEK_SET);
 	return vi_state->body_trace_line;
-}
-
-
-/* Invoke the refresh call-back function for every category. */
-void vi_state_refresh(void)
-{
-	struct vi_state_category_t *category;
-	int i;
-
-	LIST_FOR_EACH(vi_state->category_list, i)
-	{
-		category = list_get(vi_state->category_list, i);
-		category->refresh_func(category->user_data);
-	}
 }
 
 

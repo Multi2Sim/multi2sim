@@ -59,6 +59,7 @@ void visual_run(char *file_name)
 
 	/* Initialize visual systems */
 	vi_mem_system_init();
+	vi_evg_gpu_init();
 
 	/* Create checkpoints */
 	vi_state_create_checkpoints();
@@ -97,6 +98,7 @@ void visual_run(char *file_name)
 	gtk_main();
 
 	/* Free */
+	vi_evg_gpu_done();
 	vi_mem_system_done();
 	vi_cycle_bar_done();
 	vi_state_done();

@@ -87,7 +87,6 @@ unsigned int vi_trace_line_get_symbol_hex(struct vi_trace_line_t *line, char *sy
 typedef void (*vi_state_write_checkpoint_func_t)(void *user_data, FILE *f);
 typedef void (*vi_state_read_checkpoint_func_t)(void *user_data, FILE *f);
 typedef void (*vi_state_process_trace_line_func_t)(void *user_data, struct vi_trace_line_t *trace_line);
-typedef void (*vi_state_refresh_func_t)(void *user_data);
 
 #define VI_STATE_FOR_EACH_HEADER(trace_line) \
 	for ((trace_line) = vi_state_header_first(); \
@@ -104,7 +103,6 @@ void vi_state_create_checkpoints(void);
 void vi_state_new_category(char *name,
 	vi_state_read_checkpoint_func_t read_checkpoint_func,
 	vi_state_write_checkpoint_func_t write_checkpoint_func,
-	vi_state_refresh_func_t refresh_func,
 	void *user_data);
 void vi_state_new_command(char *command_name,
 	vi_state_process_trace_line_func_t process_trace_line_func,
@@ -116,7 +114,6 @@ struct vi_trace_line_t *vi_state_header_next(void);
 struct vi_trace_line_t *vi_state_trace_line_first(long long cycle);
 struct vi_trace_line_t *vi_state_trace_line_next(void);
 
-void vi_state_refresh(void);
 void vi_state_go_to_cycle(long long cycle);
 
 

@@ -40,4 +40,53 @@ void vi_evg_panel_refresh(struct vi_evg_panel_t *panel);
 GtkWidget *vi_evg_panel_get_widget(struct vi_evg_panel_t *panel);
 
 
+
+
+/*
+ * Work-Group
+ */
+
+struct vi_evg_work_group_t
+{
+	int work_item_id_first;
+	int work_item_count;
+
+	int wavefront_id_first;
+	int wavefront_count;
+};
+
+struct vi_evg_work_group_t *vi_evg_work_group_create(void);
+void vi_evg_work_group_free(struct vi_evg_work_group_t *work_group);
+
+
+
+
+/*
+ * Compute Unit
+ */
+
+struct vi_evg_compute_unit_t
+{
+};
+
+struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(void);
+void vi_evg_compute_unit_free(struct vi_evg_compute_unit_t *compute_unit);
+
+
+
+/*
+ * GPU
+ */
+
+struct vi_evg_gpu_t
+{
+	struct list_t *compute_unit_list;
+	struct list_t *work_group_list;
+};
+
+
+void vi_evg_gpu_init(void);
+void vi_evg_gpu_done(void);
+
+
 #endif
