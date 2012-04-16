@@ -918,6 +918,7 @@ int main(int argc, char **argv)
 	/* Trace */
 	trace_init(trace_file_name);
 	mem_trace_category = trace_new_category();
+	evg_trace_category = trace_new_category();
 
 	/* Initialization for functional simulation */
 	esim_init();
