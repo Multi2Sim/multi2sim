@@ -62,7 +62,7 @@ static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *
 		node_adj = list_get(net->node_list, j);
 		entry = net_routing_table_lookup(routing_table, node_elem, node_adj);	
 
-		if (entry->cost == 1 || entry->next_node != NULL )
+		if (entry->cost == 1)
 		{
 			node_color = list_get(color_list, j);
 
@@ -424,8 +424,10 @@ void net_routing_table_route_update(struct net_routing_table_t *routing_table, s
 	struct net_buffer_t *buffer;
 	struct net_link_t *link;
 	struct net_routing_table_entry_t *entry;
+	struct net_routing_table_entry_t *entry_check;
 
 	entry = net_routing_table_lookup(routing_table, src_node, dst_node);
+	entry_check = net_routing_table_lookup(routing_table, src_node, next_node);
 	entry->next_node = next_node;
 	entry->output_buffer = NULL ;
 
@@ -442,13 +444,14 @@ void net_routing_table_route_update(struct net_routing_table_t *routing_table, s
 		if ((link->dst_node == next_node))
 		{
 			entry->output_buffer = buffer;
+			entry_check->cost = 1;
 			route_check = 1;					
 		}						
 	}
 
+	/*If there is not a route between the source node and next node , error */
 	if (route_check == 0) fatal("Network %s : following the command %s.to.%s = %s:\n%s ",
 		routing_table->net->name, src_node->name, dst_node->name, next_node->name, err_net_routing);
-
 
 	/* Find cycle in routing table */
 	net_routing_table_cycle_detection(routing_table);

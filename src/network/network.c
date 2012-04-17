@@ -292,6 +292,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 
 		for (int i = 0; i < net->node_count; i++)
 		{
+
 			for (int j = 0; j < net->node_count; j++)
 			{
 				char spr_result_size [MAX_STRING_SIZE] ;
@@ -306,6 +307,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 				snprintf(spr_result_size, sizeof spr_result_size, "%s.to.%s", src_node_r->name,dst_node_r->name);
 				nxt_node_name = config_read_string(config, section, spr_result_size , "" );
 				nxt_node_r = net_get_node_by_name(net, nxt_node_name);
+
 				if(nxt_node_r)
 				{
 					if (src_node_r == dst_node_r)
@@ -316,7 +318,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		}
 	}
 
-	/* If there is no route, Floyd-Warshall calculates the shortest path for all the nodes in the network */
+	/* If there is no route section, Floyd-Warshall calculates the shortest path for all the nodes in the network */
 	if (routing_type == 0) 
 		net_routing_table_floyd_warshall(net->routing_table);
 
