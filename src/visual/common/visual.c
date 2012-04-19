@@ -32,7 +32,7 @@ struct vi_mem_panel_t *mem_panel;
 struct vi_evg_panel_t *evg_panel;
 
 
-static void visual_xxx_destroy_event(GtkWidget *widget, gpointer data)
+static void visual_destroy_event(GtkWidget *widget, gpointer data)
 {
 	gtk_main_quit();
 }
@@ -41,6 +41,7 @@ static void visual_xxx_destroy_event(GtkWidget *widget, gpointer data)
 static void visual_cycle_bar_refresh(void *user_data, long long cycle)
 {
 	vi_mem_panel_refresh(mem_panel);
+	vi_evg_panel_refresh(evg_panel);
 }
 
 
@@ -70,7 +71,7 @@ void visual_run(char *file_name)
 	/* Create main window */
 	GtkWidget *window;
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(visual_xxx_destroy_event), NULL);
+	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(visual_destroy_event), NULL);
 
 	/* Vertical box */
 	GtkWidget *vbox;

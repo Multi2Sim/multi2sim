@@ -186,6 +186,10 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 		linked_list_add(compute_unit->wavefront_pool, wavefront);
 	}
 
+	/* Trace */
+	evg_trace("evg.map_wg cu=%d wg=\"wg-%d\"\n",
+		compute_unit->id, work_group->id);
+
 	/* Debug */
 	evg_gpu_pipeline_debug("cu a=\"map\" "
 		"cu=%d "
@@ -213,6 +217,10 @@ void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, 
 	/* If compute unit is not busy anymore, remove it from 'busy' list */
 	if (!compute_unit->work_group_count && DOUBLE_LINKED_LIST_MEMBER(evg_gpu, busy, compute_unit))
 		DOUBLE_LINKED_LIST_REMOVE(evg_gpu, busy, compute_unit);
+
+	/* Trace */
+	evg_trace("evg.unmap_wg cu=%d wg=\"wg-%d\"\n",
+		compute_unit->id, work_group->id);
 
 	/* Debug */
 	evg_gpu_pipeline_debug("cu a=\"unmap\" "
