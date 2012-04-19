@@ -81,11 +81,11 @@ static struct vi_evg_time_dia_window_t *vi_evg_time_dia_window_create(
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(window), str);
 
-	/* Module widget */
-	/*struct vi_mod_widget_t *mod_widget;
-	mod_widget = vi_mod_widget_create(mod->name);
-	gtk_container_add(GTK_CONTAINER(window), vi_mod_widget_get_widget(mod_widget));
-	mod_window->mod_widget = mod_widget;*/
+	/* Time diagram */
+	struct vi_evg_time_dia_t *time_dia;
+	time_dia = vi_evg_time_dia_create(compute_unit);
+	gtk_container_add(GTK_CONTAINER(window), vi_evg_time_dia_get_widget(time_dia));
+	time_dia_window->time_dia = time_dia;
 
 	/* Associate widget */
 	time_dia_window->widget = window;

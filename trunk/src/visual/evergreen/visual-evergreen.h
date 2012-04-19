@@ -27,22 +27,6 @@
 
 
 /*
- * Panel
- */
-
-struct vi_evg_panel_t;
-
-struct vi_evg_panel_t *vi_evg_panel_create(void);
-void vi_evg_panel_free(struct vi_evg_panel_t *panel);
-
-void vi_evg_panel_refresh(struct vi_evg_panel_t *panel);
-
-GtkWidget *vi_evg_panel_get_widget(struct vi_evg_panel_t *panel);
-
-
-
-
-/*
  * Work-Group
  */
 
@@ -104,6 +88,38 @@ extern struct vi_evg_gpu_t *vi_evg_gpu;
 
 void vi_evg_gpu_init(void);
 void vi_evg_gpu_done(void);
+
+
+/*
+ * Panel
+ */
+
+struct vi_evg_panel_t;
+
+struct vi_evg_panel_t *vi_evg_panel_create(void);
+void vi_evg_panel_free(struct vi_evg_panel_t *panel);
+
+void vi_evg_panel_refresh(struct vi_evg_panel_t *panel);
+
+GtkWidget *vi_evg_panel_get_widget(struct vi_evg_panel_t *panel);
+
+
+
+
+/*
+ * Time Diagram
+ */
+
+struct vi_evg_time_dia_t;
+
+struct vi_evg_time_dia_t *vi_evg_time_dia_create(struct vi_evg_compute_unit_t *compute_unit);
+void vi_evg_time_dia_free(struct vi_evg_time_dia_t *time_dia);
+
+void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia);
+
+GtkWidget *vi_evg_time_dia_get_widget(struct vi_evg_time_dia_t *time_dia);
+
+
 
 
 #endif

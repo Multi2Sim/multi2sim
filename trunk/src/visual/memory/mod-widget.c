@@ -586,55 +586,55 @@ struct vi_mod_widget_t
 
 
 static void vi_mod_widget_destroy(GtkWidget *widget,
-	struct vi_mod_widget_t *visual_mod_widget)
+	struct vi_mod_widget_t *mod_widget)
 {
-	vi_mod_widget_free(visual_mod_widget);
+	vi_mod_widget_free(mod_widget);
 }
 
 
 static void vi_mod_widget_size_allocate(GtkWidget *widget, GdkRectangle *allocation,
-	struct vi_mod_widget_t *visual_mod_widget)
+	struct vi_mod_widget_t *mod_widget)
 {
-	if (allocation->width != visual_mod_widget->width ||
-		allocation->height != visual_mod_widget->height)
-		vi_mod_widget_refresh(visual_mod_widget);
+	if (allocation->width != mod_widget->width ||
+		allocation->height != mod_widget->height)
+		vi_mod_widget_refresh(mod_widget);
 }
 
 
 static gboolean vi_mod_widget_scroll(GtkWidget *widget, GdkEventScroll *event,
-	struct vi_mod_widget_t *visual_mod_widget)
+	struct vi_mod_widget_t *mod_widget)
 {
 	int value;
 
-	value = gtk_range_get_value(GTK_RANGE(visual_mod_widget->vscrollbar));
+	value = gtk_range_get_value(GTK_RANGE(mod_widget->vscrollbar));
 	if (event->direction == GDK_SCROLL_UP)
 		value -= 10;
 	else
 		value += 10;
-	gtk_range_set_value(GTK_RANGE(visual_mod_widget->vscrollbar), value);
+	gtk_range_set_value(GTK_RANGE(mod_widget->vscrollbar), value);
 	return FALSE;
 }
 
 
 static void vi_mod_widget_scroll_bar_value_changed(GtkRange *range,
-	struct vi_mod_widget_t *visual_mod_widget)
+	struct vi_mod_widget_t *mod_widget)
 {
-	vi_mod_widget_refresh(visual_mod_widget);
+	vi_mod_widget_refresh(mod_widget);
 }
 
 
 struct vi_mod_widget_t *vi_mod_widget_create(char *name)
 {
-	struct vi_mod_widget_t *visual_mod_widget;
+	struct vi_mod_widget_t *mod_widget;
 
 	/* Allocate */
-	visual_mod_widget = calloc(1, sizeof(struct vi_mod_widget_t));
-	if (!visual_mod_widget)
+	mod_widget = calloc(1, sizeof(struct vi_mod_widget_t));
+	if (!mod_widget)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Name */
-	visual_mod_widget->name = strdup(name);
-	if (!visual_mod_widget->name)
+	mod_widget->name = strdup(name);
+	if (!mod_widget->name)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Vertical box */
@@ -647,17 +647,17 @@ struct vi_mod_widget_t *vi_mod_widget_create(char *name)
 		(vi_list_get_elem_name_func_t) vi_mod_access_get_name_short,
 		(vi_list_get_elem_desc_func_t) vi_mod_access_get_desc);
 	gtk_box_pack_start(GTK_BOX(vbox), vi_list_get_widget(access_list), FALSE, FALSE, 0);
-	visual_mod_widget->access_list = access_list;
+	mod_widget->access_list = access_list;
 
 	/* Scroll bars */
 	GtkWidget *hscrollbar = gtk_hscrollbar_new(NULL);
 	GtkWidget *vscrollbar = gtk_vscrollbar_new(NULL);
-	visual_mod_widget->hscrollbar = hscrollbar;
-	visual_mod_widget->vscrollbar = vscrollbar;
+	mod_widget->hscrollbar = hscrollbar;
+	mod_widget->vscrollbar = vscrollbar;
 	g_signal_connect(G_OBJECT(hscrollbar), "value-changed",
-		G_CALLBACK(vi_mod_widget_scroll_bar_value_changed), visual_mod_widget);
+		G_CALLBACK(vi_mod_widget_scroll_bar_value_changed), mod_widget);
 	g_signal_connect(G_OBJECT(vscrollbar), "value-changed",
-		G_CALLBACK(vi_mod_widget_scroll_bar_value_changed), visual_mod_widget);
+		G_CALLBACK(vi_mod_widget_scroll_bar_value_changed), mod_widget);
 
 	/* Colors */
 	GdkColor color_gray;
@@ -667,23 +667,23 @@ struct vi_mod_widget_t *vi_mod_widget_create(char *name)
 	GtkWidget *layout = gtk_layout_new(NULL, NULL);
 	gtk_widget_set_size_request(layout, 200, 100);
 	g_signal_connect(G_OBJECT(layout), "size_allocate",
-		G_CALLBACK(vi_mod_widget_size_allocate), visual_mod_widget);
+		G_CALLBACK(vi_mod_widget_size_allocate), mod_widget);
 	g_signal_connect(G_OBJECT(layout), "scroll-event",
-		G_CALLBACK(vi_mod_widget_scroll), visual_mod_widget);
+		G_CALLBACK(vi_mod_widget_scroll), mod_widget);
 	gtk_widget_modify_bg(layout, GTK_STATE_NORMAL, &color_gray);
-	visual_mod_widget->layout = layout;
+	mod_widget->layout = layout;
 
 	/* First row layout */
 	GtkWidget *first_row_layout = gtk_layout_new(NULL, NULL);
 	gtk_widget_set_size_request(first_row_layout, -1, VI_MOD_FIRST_ROW_HEIGHT);
 	gtk_widget_modify_bg(first_row_layout, GTK_STATE_NORMAL, &color_gray);
-	visual_mod_widget->first_row_layout = first_row_layout;
+	mod_widget->first_row_layout = first_row_layout;
 
 	/* First column layout */
 	GtkWidget *first_col_layout = gtk_layout_new(NULL, NULL);
 	gtk_widget_set_size_request(first_col_layout, VI_MOD_FIRST_COL_WIDTH, -1);
 	gtk_widget_modify_bg(first_col_layout, GTK_STATE_NORMAL, &color_gray);
-	visual_mod_widget->first_col_layout = first_col_layout;
+	mod_widget->first_col_layout = first_col_layout;
 
 	/* Top-left label */
 	GtkWidget *top_left_label = gtk_label_new(name);
@@ -726,30 +726,30 @@ struct vi_mod_widget_t *vi_mod_widget_create(char *name)
 	gtk_box_pack_start(GTK_BOX(vbox), frame, TRUE, TRUE, 0);
 
 	/* Assign main widget */
-	visual_mod_widget->widget = vbox;
-	g_signal_connect(G_OBJECT(visual_mod_widget->widget), "destroy",
-		G_CALLBACK(vi_mod_widget_destroy), visual_mod_widget);
+	mod_widget->widget = vbox;
+	g_signal_connect(G_OBJECT(mod_widget->widget), "destroy",
+		G_CALLBACK(vi_mod_widget_destroy), mod_widget);
 
 	/* Return */
-	return visual_mod_widget;
+	return mod_widget;
 }
 
 
-void vi_mod_widget_free(struct vi_mod_widget_t *visual_mod_widget)
+void vi_mod_widget_free(struct vi_mod_widget_t *mod_widget)
 {
 
 	/* Free access list */
-	while (vi_list_count(visual_mod_widget->access_list))
-		free(vi_list_remove_at(visual_mod_widget->access_list, 0));
-	vi_list_free(visual_mod_widget->access_list);
+	while (vi_list_count(mod_widget->access_list))
+		free(vi_list_remove_at(mod_widget->access_list, 0));
+	vi_list_free(mod_widget->access_list);
 
 	/* Free widget */
-	free(visual_mod_widget->name);
-	free(visual_mod_widget);
+	free(mod_widget->name);
+	free(mod_widget);
 }
 
 
-void vi_mod_widget_refresh(struct vi_mod_widget_t *visual_mod_widget)
+void vi_mod_widget_refresh(struct vi_mod_widget_t *mod_widget)
 {
 	struct vi_mod_t *mod;
 	struct vi_mod_access_t *access;
@@ -788,13 +788,13 @@ void vi_mod_widget_refresh(struct vi_mod_widget_t *visual_mod_widget)
 	vi_state_go_to_cycle(cycle);
 
 	/* Get associated module */
-	mod = hash_table_get(vi_mem_system->mod_table, visual_mod_widget->name);
+	mod = hash_table_get(vi_mem_system->mod_table, mod_widget->name);
 	if (!mod)
 		panic("%s: invalid module", __FUNCTION__);
 
 	/* Remove all accesses from access list */
-	while (vi_list_count(visual_mod_widget->access_list))
-		free(vi_list_remove_at(visual_mod_widget->access_list, 0));
+	while (vi_list_count(mod_widget->access_list))
+		free(vi_list_remove_at(mod_widget->access_list, 0));
 
 	/* Add new accesses */
 	HASH_TABLE_FOR_EACH(mod->access_table, access_name, access)
@@ -805,24 +805,24 @@ void vi_mod_widget_refresh(struct vi_mod_widget_t *visual_mod_widget)
 			fatal("%s: out of memory", __FUNCTION__);
 
 		/* Insert new access */
-		vi_list_add(visual_mod_widget->access_list, access_name);
+		vi_list_add(mod_widget->access_list, access_name);
 	}
-	vi_list_refresh(visual_mod_widget->access_list);
+	vi_list_refresh(mod_widget->access_list);
 
 	/* Remove all widgets from layouts */
-	layout = visual_mod_widget->layout;
+	layout = mod_widget->layout;
 	while ((child = gtk_container_get_children(GTK_CONTAINER(layout))))
 		gtk_container_remove(GTK_CONTAINER(layout), child->data);
-	while ((child = gtk_container_get_children(GTK_CONTAINER(visual_mod_widget->first_row_layout))))
-		gtk_container_remove(GTK_CONTAINER(visual_mod_widget->first_row_layout), child->data);
-	while ((child = gtk_container_get_children(GTK_CONTAINER(visual_mod_widget->first_col_layout))))
-		gtk_container_remove(GTK_CONTAINER(visual_mod_widget->first_col_layout), child->data);
+	while ((child = gtk_container_get_children(GTK_CONTAINER(mod_widget->first_row_layout))))
+		gtk_container_remove(GTK_CONTAINER(mod_widget->first_row_layout), child->data);
+	while ((child = gtk_container_get_children(GTK_CONTAINER(mod_widget->first_col_layout))))
+		gtk_container_remove(GTK_CONTAINER(mod_widget->first_col_layout), child->data);
 
 	/* Get allocated dimensions */
 	width = gtk_widget_get_allocated_width(layout);
 	height = gtk_widget_get_allocated_height(layout);
-	visual_mod_widget->width = width;
-	visual_mod_widget->height = height;
+	mod_widget->width = width;
+	mod_widget->height = height;
 
 	/* Dimensions */
 	table_width = VI_MOD_CELL_WIDTH * mod->assoc;
@@ -831,32 +831,32 @@ void vi_mod_widget_refresh(struct vi_mod_widget_t *visual_mod_widget)
 	/* Horizontal scroll bar */
 	if (table_width > width)
 	{
-		gtk_range_set_range(GTK_RANGE(visual_mod_widget->hscrollbar), 0, table_width - width);
-		gtk_range_set_increments(GTK_RANGE(visual_mod_widget->hscrollbar),
+		gtk_range_set_range(GTK_RANGE(mod_widget->hscrollbar), 0, table_width - width);
+		gtk_range_set_increments(GTK_RANGE(mod_widget->hscrollbar),
 			VI_MOD_CELL_WIDTH / 3, width - VI_MOD_CELL_WIDTH / 3);
-		gtk_widget_set_visible(visual_mod_widget->hscrollbar, TRUE);
+		gtk_widget_set_visible(mod_widget->hscrollbar, TRUE);
 	}
 	else
-		gtk_widget_set_visible(visual_mod_widget->hscrollbar, FALSE);
+		gtk_widget_set_visible(mod_widget->hscrollbar, FALSE);
 
 	/* Vertical scroll bar */
 	if (table_height > height)
 	{
-		gtk_range_set_range(GTK_RANGE(visual_mod_widget->vscrollbar), 0, table_height - height);
-		gtk_range_set_increments(GTK_RANGE(visual_mod_widget->vscrollbar),
+		gtk_range_set_range(GTK_RANGE(mod_widget->vscrollbar), 0, table_height - height);
+		gtk_range_set_increments(GTK_RANGE(mod_widget->vscrollbar),
 			VI_MOD_CELL_HEIGHT, height - VI_MOD_CELL_HEIGHT);
-		gtk_widget_set_visible(visual_mod_widget->vscrollbar, TRUE);
+		gtk_widget_set_visible(mod_widget->vscrollbar, TRUE);
 	}
 	else
-		gtk_widget_set_visible(visual_mod_widget->vscrollbar, FALSE);
+		gtk_widget_set_visible(mod_widget->vscrollbar, FALSE);
 
 	/* Get starting X position */
-	left = gtk_range_get_value(GTK_RANGE(visual_mod_widget->hscrollbar));
+	left = gtk_range_get_value(GTK_RANGE(mod_widget->hscrollbar));
 	left_way = left / VI_MOD_CELL_WIDTH;
 	left_way_offset = -(left % VI_MOD_CELL_WIDTH);
 
 	/* Get starting Y position */
-	top = gtk_range_get_value(GTK_RANGE(visual_mod_widget->vscrollbar));
+	top = gtk_range_get_value(GTK_RANGE(mod_widget->vscrollbar));
 	top_set = top / VI_MOD_CELL_HEIGHT;
 	top_set_offset = -(top % VI_MOD_CELL_HEIGHT);
 
@@ -881,7 +881,7 @@ void vi_mod_widget_refresh(struct vi_mod_widget_t *visual_mod_widget)
 		/* Event box */
 		GtkWidget *event_box = gtk_event_box_new();
 		gtk_container_add(GTK_CONTAINER(event_box), label);
-		gtk_layout_put(GTK_LAYOUT(visual_mod_widget->first_row_layout), event_box, x, 0);
+		gtk_layout_put(GTK_LAYOUT(mod_widget->first_row_layout), event_box, x, 0);
 		gtk_widget_show(event_box);
 
 		/* Color */
@@ -915,7 +915,7 @@ void vi_mod_widget_refresh(struct vi_mod_widget_t *visual_mod_widget)
 		/* Event box */
 		GtkWidget *event_box = gtk_event_box_new();
 		gtk_container_add(GTK_CONTAINER(event_box), label);
-		gtk_layout_put(GTK_LAYOUT(visual_mod_widget->first_col_layout), event_box, 0, y);
+		gtk_layout_put(GTK_LAYOUT(mod_widget->first_col_layout), event_box, 0, y);
 		gtk_widget_show(event_box);
 
 		/* Color */
@@ -1002,13 +1002,13 @@ void vi_mod_widget_refresh(struct vi_mod_widget_t *visual_mod_widget)
 	}
 
 	/* Repaint if necessary */
-	gtk_container_check_resize(GTK_CONTAINER(visual_mod_widget->layout));
-	gtk_container_check_resize(GTK_CONTAINER(visual_mod_widget->first_row_layout));
-	gtk_container_check_resize(GTK_CONTAINER(visual_mod_widget->first_col_layout));
+	gtk_container_check_resize(GTK_CONTAINER(mod_widget->layout));
+	gtk_container_check_resize(GTK_CONTAINER(mod_widget->first_row_layout));
+	gtk_container_check_resize(GTK_CONTAINER(mod_widget->first_col_layout));
 }
 
 
-GtkWidget *vi_mod_widget_get_widget(struct vi_mod_widget_t *widget)
+GtkWidget *vi_mod_widget_get_widget(struct vi_mod_widget_t *mod_widget)
 {
-	return widget->widget;
+	return mod_widget->widget;
 }

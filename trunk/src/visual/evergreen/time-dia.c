@@ -21,3 +21,59 @@
 
 
 
+struct vi_evg_time_dia_t
+{
+	GtkWidget *widget;
+
+	struct vi_evg_compute_unit_t *compute_unit;
+};
+
+
+static void vi_evg_time_dia_widget_destroy(GtkWidget *widget, struct vi_evg_time_dia_t *time_dia)
+{
+	vi_evg_time_dia_free(time_dia);
+}
+
+
+struct vi_evg_time_dia_t *vi_evg_time_dia_create(struct vi_evg_compute_unit_t *compute_unit)
+{
+	struct vi_evg_time_dia_t *time_dia;
+
+	/* Allocate */
+	time_dia = calloc(1, sizeof(struct vi_evg_time_dia_t));
+	if (!time_dia)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	time_dia->compute_unit = compute_unit;
+
+	/* Layout */
+	GtkWidget *layout;
+	layout = gtk_layout_new(NULL, NULL);
+	gtk_widget_set_size_request(layout, 100, 100);
+
+	/* Widget */
+	time_dia->widget = layout;
+	g_signal_connect(G_OBJECT(time_dia->widget), "destroy",
+		G_CALLBACK(vi_evg_time_dia_widget_destroy), time_dia);
+
+	/* Return */
+	return time_dia;
+}
+
+
+void vi_evg_time_dia_free(struct vi_evg_time_dia_t *time_dia)
+{
+	free(time_dia);
+}
+
+
+void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
+{
+}
+
+
+GtkWidget *vi_evg_time_dia_get_widget(struct vi_evg_time_dia_t *time_dia)
+{
+	return time_dia->widget;
+}
