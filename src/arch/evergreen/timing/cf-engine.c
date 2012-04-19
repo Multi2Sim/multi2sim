@@ -116,6 +116,15 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 			uop->id_in_compute_unit,
 			str2);
 	}
+
+	/* Trace */
+	if (evg_tracing())
+	{
+		evg_inst_dump_buf(inst, -1, 0, str1, MAX_STRING_SIZE);
+		str_single_spaces(str2, str1, MAX_STRING_SIZE);
+		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d asm=\"%s\"\n",
+			uop->id_in_compute_unit, compute_unit->id, uop->work_group->id, wavefront->id, str2);
+	}
 }
 
 
@@ -286,6 +295,10 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 			uop->id_in_compute_unit);
 		if (debug_status(evg_stack_debug_category))
 			evg_uop_debug_active_mask(uop);
+
+		/* Trace */
+		evg_trace("evg.end_inst id=%lld cu=%d\n",
+			uop->id_in_compute_unit, compute_unit->id);
 
 		/* Free uop */
 		evg_uop_free(uop);

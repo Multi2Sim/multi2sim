@@ -20,7 +20,8 @@
 #include <visual-evergreen.h>
 
 
-struct vi_evg_work_group_t *vi_evg_work_group_create(char *name)
+struct vi_evg_work_group_t *vi_evg_work_group_create(char *name, int id,
+	int work_item_id_first, int work_item_count, int wavefront_id_first, int wavefront_count)
 {
 	struct vi_evg_work_group_t *work_group;
 
@@ -31,6 +32,11 @@ struct vi_evg_work_group_t *vi_evg_work_group_create(char *name)
 
 	/* Initialize */
 	work_group->name = str_set(NULL, name);
+	work_group->id = id;
+	work_group->work_item_id_first = work_item_id_first;
+	work_group->work_item_count = work_item_count;
+	work_group->wavefront_id_first = wavefront_id_first;
+	work_group->wavefront_count = wavefront_count;
 
 	/* Return */
 	return work_group;
@@ -53,4 +59,32 @@ void vi_evg_work_group_get_name_short(char *work_group_name, char *buf, int size
 void vi_evg_work_group_get_desc(char *work_group_name, char *buf, int size)
 {
 	snprintf(buf, size, "%s", work_group_name);
+}
+
+
+void vi_evg_work_group_read_checkpoint(struct vi_evg_work_group_t *work_group, FILE *f)
+{
+	int count;
+
+	char name[MAX_STRING_SIZE];
+
+	/* Read work-group id */
+	count = fread(&work_group->id, 1, sizeof work_group->id, f);
+	if (count != sizeof work_group->id)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
+	/* Work-group name */
+	snprintf(name, sizeof name, "wg-%d", work_group->id);
+	work_group->name = str_set(work_group->name, name);
+}
+
+
+void vi_evg_work_group_write_checkpoint(struct vi_evg_work_group_t *work_group, FILE *f)
+{
+	int count;
+
+	/* Write work-group id */
+	count = fwrite(&work_group->id, 1, sizeof work_group->id, f);
+	if (count != sizeof work_group->id)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
 }
