@@ -43,28 +43,44 @@ static void vi_evg_gpu_new_wavefront(struct vi_evg_gpu_t *gpu,
 }
 
 
+/* Command 'evg.map_work_group'
+ * 	wg=<id>		(e.g., 2)
+ * 	wi_first=<id>
+ * 	wi_count=<num>
+ * 	wf_first=<id>
+ * 	wf_count=<num>
+ */
 static void vi_evg_gpu_map_work_group(struct vi_evg_gpu_t *gpu,
 	struct vi_trace_line_t *trace_line)
 {
 	struct vi_evg_work_group_t *work_group;
 	struct vi_evg_compute_unit_t *compute_unit;
 
-	char *work_group_name;
+	char work_group_name[MAX_STRING_SIZE];
 
+	int work_group_id;
 	int compute_unit_id;
 
-	/* Create work-group */
-	work_group_name = vi_trace_line_get_symbol(trace_line, "wg");
-	work_group = vi_evg_work_group_create(work_group_name);
+	int work_item_id_first;
+	int work_item_count;
 
-	/* Initialize */
-	work_group->work_item_id_first = vi_trace_line_get_symbol_int(trace_line, "wi_first");
-	work_group->work_item_count = vi_trace_line_get_symbol_int(trace_line, "wi_count");
-	work_group->wavefront_id_first = vi_trace_line_get_symbol_int(trace_line, "wf_first");
-	work_group->wavefront_count = vi_trace_line_get_symbol_int(trace_line, "wf_count");
+	int wavefront_id_first;
+	int wavefront_count;
+
+	/* Fields */
+	work_group_id = vi_trace_line_get_symbol_int(trace_line, "wg");
+	compute_unit_id = vi_trace_line_get_symbol_int(trace_line, "cu");
+	work_item_id_first = vi_trace_line_get_symbol_int(trace_line, "wi_first");
+	work_item_count = vi_trace_line_get_symbol_int(trace_line, "wi_count");
+	wavefront_id_first = vi_trace_line_get_symbol_int(trace_line, "wf_first");
+	wavefront_count = vi_trace_line_get_symbol_int(trace_line, "wf_count");
+
+	/* Create work-group */
+	snprintf(work_group_name, sizeof work_group_name, "wg-%d", work_group_id);
+	work_group = vi_evg_work_group_create(work_group_name, work_group_id,
+		work_item_id_first, work_item_count, wavefront_id_first, wavefront_count);
 
 	/* Compute unit */
-	compute_unit_id = vi_trace_line_get_symbol_int(trace_line, "cu");
 	compute_unit = list_get(vi_evg_gpu->compute_unit_list, compute_unit_id);
 	if (!compute_unit)
 		panic("%s: invalid compute unit id", __FUNCTION__);
@@ -81,13 +97,14 @@ static void vi_evg_gpu_unmap_work_group(struct vi_evg_gpu_t *gpu,
 	struct vi_evg_compute_unit_t *compute_unit;
 	struct vi_evg_work_group_t *work_group;
 
+	int work_group_id;
 	int compute_unit_id;
 
-	char *work_group_name;
+	char work_group_name[MAX_STRING_SIZE];
 
 	/* Fields */
 	compute_unit_id = vi_trace_line_get_symbol_int(trace_line, "cu");
-	work_group_name = vi_trace_line_get_symbol(trace_line, "wg");
+	work_group_id = vi_trace_line_get_symbol_int(trace_line, "wg");
 
 	/* Compute unit */
 	compute_unit = list_get(vi_evg_gpu->compute_unit_list, compute_unit_id);
@@ -95,10 +112,87 @@ static void vi_evg_gpu_unmap_work_group(struct vi_evg_gpu_t *gpu,
 		panic("%s: invalid compute unit id", __FUNCTION__);
 
 	/* Unmap work-group */
+	snprintf(work_group_name, sizeof work_group_name, "wg-%d", work_group_id);
 	work_group = hash_table_remove(compute_unit->work_group_table, work_group_name);
 	if (!work_group)
 		panic("%s: invalid work-group", __FUNCTION__);
 	vi_evg_work_group_free(work_group);
+}
+
+
+/* Command 'evg.new_inst'.
+ * 	id=<inst-id>	(e.g., 23)
+ * 	cu=<cu-id>	(e.g., 4)
+ * 	wg=<wg-id>	(e.g., 1)
+ * 	wf=<wf-id>	(e.g., 2)
+ * 	asm=<code>	(e.g., "ALU_BREAK")
+ */
+static void vi_evg_gpu_new_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t *trace_line)
+{
+	struct vi_evg_inst_t *inst;
+	struct vi_evg_compute_unit_t *compute_unit;
+
+	char inst_name[MAX_STRING_SIZE];
+	char *asm_code;
+
+	long long inst_id;
+	int compute_unit_id;
+	int wavefront_id;
+	int work_group_id;
+
+	/* Fields */
+	inst_id = vi_trace_line_get_symbol_long_long(trace_line, "id");
+	compute_unit_id = vi_trace_line_get_symbol_int(trace_line, "cu");
+	work_group_id = vi_trace_line_get_symbol_int(trace_line, "wg");
+	wavefront_id = vi_trace_line_get_symbol_int(trace_line, "wf");
+	asm_code = vi_trace_line_get_symbol(trace_line, "asm");
+
+	/* Create */
+	snprintf(inst_name, sizeof inst_name, "i-%lld", inst_id);
+	inst = vi_evg_inst_create(inst_name, inst_id, compute_unit_id, work_group_id,
+		wavefront_id, asm_code);
+
+	/* Get compute unit */
+	compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);
+	if (!compute_unit)
+		panic("%s: invalid compute unit", __FUNCTION__);
+
+	/* Insert in compute unit */
+	if (!hash_table_insert(compute_unit->inst_table, inst_name, inst))
+		panic("%s: invalid instruction", __FUNCTION__);
+}
+
+
+/* Command 'evg.end_inst'
+ * 	id=<inst-id>	(e.g., 23)
+ * 	cu=<cu-id>	(e.g., 4)
+ */
+static void vi_evg_gpu_end_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t *trace_line)
+{
+	char inst_name[MAX_STRING_SIZE];
+
+	long long inst_id;
+
+	struct vi_evg_inst_t *inst;
+	struct vi_evg_compute_unit_t *compute_unit;
+
+	int compute_unit_id;
+
+	/* Fields */
+	inst_id = vi_trace_line_get_symbol_long_long(trace_line, "id");
+	compute_unit_id = vi_trace_line_get_symbol_int(trace_line, "cu");
+
+	/* Get compute unit */
+	compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);
+	if (!compute_unit)
+		panic("%s: invalid compute unit", __FUNCTION__);
+
+	/* Remove */
+	snprintf(inst_name, sizeof inst_name, "i-%lld", inst_id);
+	inst = hash_table_remove(compute_unit->inst_table, inst_name);
+	if (!inst)
+		panic("%s: invalid instruction", __FUNCTION__);
+	vi_evg_inst_free(inst);
 }
 
 
@@ -176,6 +270,12 @@ void vi_evg_gpu_init(void)
 		vi_evg_gpu);
 	vi_state_new_command("evg.unmap_wg",
 		(vi_state_process_trace_line_func_t) vi_evg_gpu_unmap_work_group,
+		vi_evg_gpu);
+	vi_state_new_command("evg.new_inst",
+		(vi_state_process_trace_line_func_t) vi_evg_gpu_new_inst,
+		vi_evg_gpu);
+	vi_state_new_command("evg.end_inst",
+		(vi_state_process_trace_line_func_t) vi_evg_gpu_end_inst,
 		vi_evg_gpu);
 
 	/* Parse header in state file */

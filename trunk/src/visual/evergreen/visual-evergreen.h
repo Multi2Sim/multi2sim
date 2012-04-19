@@ -43,11 +43,41 @@ struct vi_evg_work_group_t
 	int wavefront_count;
 };
 
-struct vi_evg_work_group_t *vi_evg_work_group_create(char *name);
+struct vi_evg_work_group_t *vi_evg_work_group_create(char *name, int id, int work_item_id_first,
+	int work_item_count, int wavefront_id_first, int wavefront_count);
 void vi_evg_work_group_free(struct vi_evg_work_group_t *work_group);
 
 void vi_evg_work_group_get_name_short(char *work_group_name, char *buf, int size);
 void vi_evg_work_group_get_desc(char *work_group_name, char *buf, int size);
+
+void vi_evg_work_group_read_checkpoint(struct vi_evg_work_group_t *work_group, FILE *f);
+void vi_evg_work_group_write_checkpoint(struct vi_evg_work_group_t *work_group, FILE *f);
+
+
+
+
+/*
+ * Instruction
+ */
+
+struct vi_evg_inst_t
+{
+	char *name;
+	char *asm_code;
+
+	long long id;
+
+	int compute_unit_id;
+	int work_group_id;
+	int wavefront_id;
+};
+
+struct vi_evg_inst_t *vi_evg_inst_create(char *name, long long id,
+	int compute_unit_id, int work_group_id, int wavefront_id, char *asm_code);
+void vi_evg_inst_free(struct vi_evg_inst_t *inst);
+
+void vi_evg_inst_read_checkpoint(struct vi_evg_inst_t *inst, FILE *f);
+void vi_evg_inst_write_checkpoint(struct vi_evg_inst_t *inst, FILE *f);
 
 
 
@@ -60,8 +90,8 @@ struct vi_evg_compute_unit_t
 {
 	char *name;
 
-	/* Allocated running work-groups */
 	struct hash_table_t *work_group_table;
+	struct hash_table_t *inst_table;
 };
 
 struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(char *name);

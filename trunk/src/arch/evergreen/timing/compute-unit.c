@@ -187,7 +187,7 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 	}
 
 	/* Trace */
-	evg_trace("evg.map_wg cu=%d wg=\"wg-%d\"\n",
+	evg_trace("evg.map_wg cu=%d wg=%d\n",
 		compute_unit->id, work_group->id);
 
 	/* Debug */
@@ -219,7 +219,7 @@ void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, 
 		DOUBLE_LINKED_LIST_REMOVE(evg_gpu, busy, compute_unit);
 
 	/* Trace */
-	evg_trace("evg.unmap_wg cu=%d wg=\"wg-%d\"\n",
+	evg_trace("evg.unmap_wg cu=%d wg=%d\n",
 		compute_unit->id, work_group->id);
 
 	/* Debug */

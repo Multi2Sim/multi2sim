@@ -9,6 +9,7 @@ libevergreen_a_SOURCES += \
 	\
 	compute-unit.c \
 	gpu.c \
+	inst.c \
 	panel.c \
 	time-dia.c \
 	work-group.c
