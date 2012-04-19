@@ -42,3 +42,15 @@ void vi_evg_work_group_free(struct vi_evg_work_group_t *work_group)
 	str_free(work_group->name);
 	free(work_group);
 }
+
+
+void vi_evg_work_group_get_name_short(char *work_group_name, char *buf, int size)
+{
+	snprintf(buf, size, "%s", work_group_name);
+}
+
+
+void vi_evg_work_group_get_desc(char *work_group_name, char *buf, int size)
+{
+	snprintf(buf, size, "%s", work_group_name);
+}

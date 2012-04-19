@@ -57,3 +57,21 @@ void vi_evg_compute_unit_free(struct vi_evg_compute_unit_t *compute_unit)
 	free(compute_unit->name);
 	free(compute_unit);
 }
+
+
+void vi_evg_compute_unit_read_checkpoint(struct vi_evg_compute_unit_t *compute_unit, FILE *f)
+{
+	char *work_group_name;
+
+	struct vi_evg_work_group_t *work_group;
+
+	/* Empty work-group list */
+	HASH_TABLE_FOR_EACH(compute_unit->work_group_table, work_group_name, work_group)
+		vi_evg_work_group_free(work_group);
+	hash_table_clear(compute_unit->work_group_table);
+}
+
+
+void vi_evg_compute_unit_write_checkpoint(struct vi_evg_compute_unit_t *compute_unit, FILE *f)
+{
+}

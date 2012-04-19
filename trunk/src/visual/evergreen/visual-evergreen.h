@@ -62,6 +62,9 @@ struct vi_evg_work_group_t
 struct vi_evg_work_group_t *vi_evg_work_group_create(char *name);
 void vi_evg_work_group_free(struct vi_evg_work_group_t *work_group);
 
+void vi_evg_work_group_get_name_short(char *work_group_name, char *buf, int size);
+void vi_evg_work_group_get_desc(char *work_group_name, char *buf, int size);
+
 
 
 
@@ -79,6 +82,9 @@ struct vi_evg_compute_unit_t
 
 struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(char *name);
 void vi_evg_compute_unit_free(struct vi_evg_compute_unit_t *compute_unit);
+
+void vi_evg_compute_unit_read_checkpoint(struct vi_evg_compute_unit_t *compute_unit, FILE *f);
+void vi_evg_compute_unit_write_checkpoint(struct vi_evg_compute_unit_t *compute_unit, FILE *f);
 
 
 
