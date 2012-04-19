@@ -115,9 +115,9 @@ struct vi_evg_time_dia_t;
 struct vi_evg_time_dia_t *vi_evg_time_dia_create(struct vi_evg_compute_unit_t *compute_unit);
 void vi_evg_time_dia_free(struct vi_evg_time_dia_t *time_dia);
 
-void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia);
-
 GtkWidget *vi_evg_time_dia_get_widget(struct vi_evg_time_dia_t *time_dia);
+
+void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia);
 
 
 
