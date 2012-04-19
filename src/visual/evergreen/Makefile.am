@@ -10,6 +10,7 @@ libevergreen_a_SOURCES += \
 	compute-unit.c \
 	gpu.c \
 	panel.c \
+	time-dia.c \
 	work-group.c
 
 AM_CFLAGS = @GTK_CFLAGS@

@@ -20,6 +20,105 @@
 #include <visual-evergreen.h>
 
 
+/*
+ * Timing Diagram Window
+ */
+
+struct vi_evg_time_dia_window_t
+{
+	GtkWidget *widget;
+
+	/* Compute unit that window shows */
+	struct vi_evg_compute_unit_t *compute_unit;
+
+	/* Toggle button that causes activation of window */
+	GtkWidget *parent_toggle_button;
+
+	/* Timing diagram */
+	struct vi_evg_time_dia_t *time_dia;
+};
+
+
+static struct vi_evg_time_dia_window_t *vi_evg_time_dia_window_create(
+	struct vi_evg_compute_unit_t *compute_unit,
+	GtkWidget *parent_toggle_button);
+static void vi_evg_time_dia_window_free(struct vi_evg_time_dia_window_t *time_dia_window);
+
+
+static void vi_evg_time_dia_window_destroy(GtkWidget *widget,
+	struct vi_evg_time_dia_window_t *time_dia_window)
+{
+	vi_evg_time_dia_window_free(time_dia_window);
+}
+
+
+static gboolean vi_evg_time_dia_window_delete(GtkWidget *widget,
+	GdkEvent *event, struct vi_evg_time_dia_window_t *time_dia_window)
+{
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(time_dia_window->parent_toggle_button), FALSE);
+	return TRUE;
+}
+
+
+static struct vi_evg_time_dia_window_t *vi_evg_time_dia_window_create(
+	struct vi_evg_compute_unit_t *compute_unit, GtkWidget *parent_toggle_button)
+{
+	struct vi_evg_time_dia_window_t *time_dia_window;
+
+	char str[MAX_STRING_SIZE];
+
+	/* Allocate */
+	time_dia_window = calloc(1, sizeof(struct vi_evg_time_dia_window_t));
+	if (!time_dia_window)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	time_dia_window->compute_unit = compute_unit;
+	time_dia_window->parent_toggle_button = parent_toggle_button;
+
+	/* Main window */
+	snprintf(str, sizeof str, "Compute Unit %s", compute_unit->name);
+	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title(GTK_WINDOW(window), str);
+
+	/* Module widget */
+	/*struct vi_mod_widget_t *mod_widget;
+	mod_widget = vi_mod_widget_create(mod->name);
+	gtk_container_add(GTK_CONTAINER(window), vi_mod_widget_get_widget(mod_widget));
+	mod_window->mod_widget = mod_widget;*/
+
+	/* Associate widget */
+	time_dia_window->widget = window;
+	gtk_widget_show_all(time_dia_window->widget);
+	g_signal_connect(G_OBJECT(time_dia_window->widget), "destroy",
+		G_CALLBACK(vi_evg_time_dia_window_destroy), time_dia_window);
+	g_signal_connect(G_OBJECT(time_dia_window->widget), "delete_event",
+		G_CALLBACK(vi_evg_time_dia_window_delete), time_dia_window);
+
+	/* Return */
+	return time_dia_window;
+}
+
+
+static void vi_evg_time_dia_window_free(struct vi_evg_time_dia_window_t *time_dia_window)
+{
+	free(time_dia_window);
+}
+
+
+static void vi_evg_time_dia_window_refresh(struct vi_evg_time_dia_window_t *time_dia_window)
+{
+	//vi_mod_widget_refresh(mod_window->mod_widget);
+}
+
+
+static GtkWidget *vi_evg_time_dia_window_get_widget(struct vi_evg_time_dia_window_t *time_dia_window)
+{
+	return time_dia_window->widget;
+}
+
+
+
 
 /*
  * Compute Unit Board
@@ -35,8 +134,10 @@ struct vi_cu_board_t
 	/* Main widget */
 	GtkWidget *widget;
 
-	GtkWidget *timing_toggle_button;
-	GtkWidget *block_toggle_button;
+	GtkWidget *time_dia_toggle_button;
+	GtkWidget *block_dia_toggle_button;
+
+	struct vi_evg_time_dia_window_t *time_dia_window;
 
 	struct vi_evg_compute_unit_t *compute_unit;
 	struct vi_led_t *led;
@@ -57,6 +158,34 @@ static void vi_cu_board_refresh(struct vi_cu_board_t *board);
 static void vi_cu_board_destroy(GtkWidget *widget, struct vi_cu_board_t *board)
 {
 	vi_cu_board_free(board);
+}
+
+
+static gboolean vi_cu_board_time_dia_toggled(GtkWidget *widget, struct vi_cu_board_t *board)
+{
+	struct vi_evg_time_dia_window_t *time_dia_window;
+
+	int active;
+
+	/* Get button state */
+	active = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(board->time_dia_toggle_button));
+
+	/* Show */
+	if (active && !board->time_dia_window)
+	{
+		time_dia_window = vi_evg_time_dia_window_create(board->compute_unit,
+			board->time_dia_toggle_button);
+		board->time_dia_window = time_dia_window;
+	}
+
+	/* Hide */
+	if (!active && board->time_dia_window)
+	{
+		gtk_widget_destroy(vi_evg_time_dia_window_get_widget(board->time_dia_window));
+		board->time_dia_window = NULL;
+	}
+
+	return FALSE;
 }
 
 
@@ -100,19 +229,19 @@ static struct vi_cu_board_t *vi_cu_board_create(struct vi_evg_compute_unit_t *co
 	gtk_box_pack_start(GTK_BOX(hbox), vi_led_get_widget(led), FALSE, TRUE, 0);
 	board->led = led;
 
-	/* Timing Diagram Toggle button */
-	GtkWidget *timing_toggle_button = gtk_toggle_button_new_with_label("T");
-	gtk_box_pack_start(GTK_BOX(hbox), timing_toggle_button, TRUE, TRUE, 0);
-	/*g_signal_connect(G_OBJECT(timing_toggle_button), "toggled",
-		G_CALLBACK(vi_evg_board_timing_toggle_button_toggled), board);*/
-	board->timing_toggle_button = timing_toggle_button;
+	/* Time Diagram Toggle button */
+	GtkWidget *time_dia_toggle_button = gtk_toggle_button_new_with_label("T");
+	gtk_box_pack_start(GTK_BOX(hbox), time_dia_toggle_button, TRUE, TRUE, 0);
+	g_signal_connect(G_OBJECT(time_dia_toggle_button), "toggled",
+		G_CALLBACK(vi_cu_board_time_dia_toggled), board);
+	board->time_dia_toggle_button = time_dia_toggle_button;
 
 	/* Block Diagram Toggle button */
-	GtkWidget *block_toggle_button = gtk_toggle_button_new_with_label("B");
-	gtk_box_pack_start(GTK_BOX(hbox), block_toggle_button, TRUE, TRUE, 0);
-	/*g_signal_connect(G_OBJECT(block_toggle_button), "toggled",
+	GtkWidget *block_dia_toggle_button = gtk_toggle_button_new_with_label("B");
+	gtk_box_pack_start(GTK_BOX(hbox), block_dia_toggle_button, TRUE, TRUE, 0);
+	/*g_signal_connect(G_OBJECT(block_dia_toggle_button), "toggled",
 		G_CALLBACK(vi_evg_board_block_toggle_button_toggled), board);*/
-	board->block_toggle_button = block_toggle_button;
+	board->block_dia_toggle_button = block_dia_toggle_button;
 
 	/* Access list */
 	struct vi_list_t *work_group_list = vi_list_create("Work-group list", 10, 10,
@@ -136,6 +265,10 @@ static void vi_cu_board_free(struct vi_cu_board_t *board)
 	while (vi_list_count(board->work_group_list))
 		free(vi_list_remove_at(board->work_group_list, 0));
 	vi_list_free(board->work_group_list);
+
+	/* Destroy time diagram */
+	if (board->time_dia_window)
+		gtk_widget_destroy(vi_evg_time_dia_window_get_widget(board->time_dia_window));
 
 	/* Free */
 	free(board);
@@ -180,6 +313,10 @@ static void vi_cu_board_refresh(struct vi_cu_board_t *board)
 	else
 		gdk_color_parse("green", &color);
 	vi_led_set_color(board->led, &color);
+
+	/* Refresh time diagram */
+	if (board->time_dia_window)
+		vi_evg_time_dia_window_refresh(board->time_dia_window);
 }
 
 
