@@ -79,6 +79,7 @@ static void vi_evg_gpu_unmap_work_group(struct vi_evg_gpu_t *gpu,
 	struct vi_trace_line_t *trace_line)
 {
 	struct vi_evg_compute_unit_t *compute_unit;
+	struct vi_evg_work_group_t *work_group;
 
 	int compute_unit_id;
 
@@ -94,18 +95,40 @@ static void vi_evg_gpu_unmap_work_group(struct vi_evg_gpu_t *gpu,
 		panic("%s: invalid compute unit id", __FUNCTION__);
 
 	/* Unmap work-group */
-	if (!hash_table_remove(compute_unit->work_group_table, work_group_name))
+	work_group = hash_table_remove(compute_unit->work_group_table, work_group_name);
+	if (!work_group)
 		panic("%s: invalid work-group", __FUNCTION__);
+	vi_evg_work_group_free(work_group);
 }
 
 
 static void vi_evg_gpu_read_checkpoint(struct vi_evg_gpu_t *gpu, FILE *f)
 {
+	int compute_unit_id;
+
+	struct vi_evg_compute_unit_t *compute_unit;
+
+	/* Compute units */
+	LIST_FOR_EACH(gpu->compute_unit_list, compute_unit_id)
+	{
+		compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);
+		vi_evg_compute_unit_read_checkpoint(compute_unit, f);
+	}
 }
 
 
 static void vi_evg_gpu_write_checkpoint(struct vi_evg_gpu_t *gpu, FILE *f)
 {
+	int compute_unit_id;
+
+	struct vi_evg_compute_unit_t *compute_unit;
+
+	/* Compute units */
+	LIST_FOR_EACH(gpu->compute_unit_list, compute_unit_id)
+	{
+		compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);
+		vi_evg_compute_unit_write_checkpoint(compute_unit, f);
+	}
 }
 
 
@@ -122,6 +145,15 @@ struct vi_evg_gpu_t *vi_evg_gpu;
 void vi_evg_gpu_init(void)
 {
 	struct vi_trace_line_t *trace_line;
+
+	/* Allocate */
+	vi_evg_gpu = calloc(1, sizeof(struct vi_evg_gpu_t));
+	if (!vi_evg_gpu)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	vi_evg_gpu->work_group_table = hash_table_create(0, FALSE);
+	vi_evg_gpu->compute_unit_list = list_create();
 
 	/* State file */
 	vi_state_new_category("Evergreen GPU",
@@ -145,15 +177,6 @@ void vi_evg_gpu_init(void)
 	vi_state_new_command("evg.unmap_wg",
 		(vi_state_process_trace_line_func_t) vi_evg_gpu_unmap_work_group,
 		vi_evg_gpu);
-
-	/* Allocate */
-	vi_evg_gpu = calloc(1, sizeof(struct vi_evg_gpu_t));
-	if (!vi_evg_gpu)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize */
-	vi_evg_gpu->work_group_table = hash_table_create(0, FALSE);
-	vi_evg_gpu->compute_unit_list = list_create();
 
 	/* Parse header in state file */
 	VI_STATE_FOR_EACH_HEADER(trace_line)

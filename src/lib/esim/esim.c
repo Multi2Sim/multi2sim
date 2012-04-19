@@ -35,7 +35,7 @@ static int curr_event = 0;
 static int ESIM_EV_INVALID;
 static int esim_lock_schedule = 0;
 
-long long esim_cycle;
+long long esim_cycle = 1;
 int ESIM_EV_NONE;
 
 static struct list_t *event_handler_list;
