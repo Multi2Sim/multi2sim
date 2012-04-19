@@ -20,7 +20,7 @@
 #include <visual-evergreen.h>
 
 
-struct vi_evg_work_group_t *vi_evg_work_group_create(void)
+struct vi_evg_work_group_t *vi_evg_work_group_create(char *name)
 {
 	struct vi_evg_work_group_t *work_group;
 
@@ -29,6 +29,9 @@ struct vi_evg_work_group_t *vi_evg_work_group_create(void)
 	if (!work_group)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* Initialize */
+	work_group->name = str_set(NULL, name);
+
 	/* Return */
 	return work_group;
 }
@@ -36,5 +39,6 @@ struct vi_evg_work_group_t *vi_evg_work_group_create(void)
 
 void vi_evg_work_group_free(struct vi_evg_work_group_t *work_group)
 {
+	str_free(work_group->name);
 	free(work_group);
 }

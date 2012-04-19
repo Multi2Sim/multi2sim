@@ -20,7 +20,7 @@
 #include <visual-evergreen.h>
 
 
-struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(void)
+struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(char *name)
 {
 	struct vi_evg_compute_unit_t *compute_unit;
 
@@ -29,6 +29,14 @@ struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(void)
 	if (!compute_unit)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* Name */
+	compute_unit->name = strdup(name);
+	if (!name)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	compute_unit->work_group_table = hash_table_create(0, FALSE);
+
 	/* Return */
 	return compute_unit;
 }
@@ -36,5 +44,16 @@ struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(void)
 
 void vi_evg_compute_unit_free(struct vi_evg_compute_unit_t *compute_unit)
 {
+	struct vi_evg_work_group_t *work_group;
+
+	char *work_group_name;
+
+	/* Free work-groups */
+	HASH_TABLE_FOR_EACH(compute_unit->work_group_table, work_group_name, work_group)
+		vi_evg_work_group_free(work_group);
+	hash_table_free(compute_unit->work_group_table);
+
+	/* Free compute unit */
+	free(compute_unit->name);
 	free(compute_unit);
 }
