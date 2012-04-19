@@ -48,6 +48,10 @@ GtkWidget *vi_evg_panel_get_widget(struct vi_evg_panel_t *panel);
 
 struct vi_evg_work_group_t
 {
+	char *name;
+
+	int id;
+
 	int work_item_id_first;
 	int work_item_count;
 
@@ -55,7 +59,7 @@ struct vi_evg_work_group_t
 	int wavefront_count;
 };
 
-struct vi_evg_work_group_t *vi_evg_work_group_create(void);
+struct vi_evg_work_group_t *vi_evg_work_group_create(char *name);
 void vi_evg_work_group_free(struct vi_evg_work_group_t *work_group);
 
 
@@ -67,9 +71,13 @@ void vi_evg_work_group_free(struct vi_evg_work_group_t *work_group);
 
 struct vi_evg_compute_unit_t
 {
+	char *name;
+
+	/* Allocated running work-groups */
+	struct hash_table_t *work_group_table;
 };
 
-struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(void);
+struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(char *name);
 void vi_evg_compute_unit_free(struct vi_evg_compute_unit_t *compute_unit);
 
 
@@ -81,9 +89,12 @@ void vi_evg_compute_unit_free(struct vi_evg_compute_unit_t *compute_unit);
 struct vi_evg_gpu_t
 {
 	struct list_t *compute_unit_list;
-	struct list_t *work_group_list;
+
+	struct hash_table_t *work_group_table;
 };
 
+
+extern struct vi_evg_gpu_t *vi_evg_gpu;
 
 void vi_evg_gpu_init(void);
 void vi_evg_gpu_done(void);
