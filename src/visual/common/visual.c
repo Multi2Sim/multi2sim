@@ -84,7 +84,7 @@ void visual_run(char *file_name)
 	/* Evergreen panel */
 	evg_panel = vi_evg_panel_create();
 	gtk_box_pack_start(GTK_BOX(vbox), vi_evg_panel_get_widget(evg_panel),
-		TRUE, TRUE, 0);
+		FALSE, FALSE, 0);
 
 	/* Memory system panel */
 	mem_panel = vi_mem_panel_create();

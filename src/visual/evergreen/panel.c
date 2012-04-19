@@ -34,12 +34,18 @@ struct vi_cu_board_t
 {
 	/* Main widget */
 	GtkWidget *widget;
+
+	GtkWidget *timing_toggle_button;
+	GtkWidget *block_toggle_button;
+
+	struct vi_evg_compute_unit_t *compute_unit;
+	struct vi_led_t *led;
 };
 
 
 /* Forward declarations */
 
-static struct vi_cu_board_t *vi_cu_board_create(void);
+static struct vi_cu_board_t *vi_cu_board_create(struct vi_evg_compute_unit_t *compute_unit);
 static void vi_cu_board_free(struct vi_cu_board_t *board);
 
 static void vi_cu_board_refresh(struct vi_cu_board_t *board);
@@ -53,7 +59,7 @@ static void vi_cu_board_destroy(GtkWidget *widget, struct vi_cu_board_t *board)
 }
 
 
-static struct vi_cu_board_t *vi_cu_board_create(void)
+static struct vi_cu_board_t *vi_cu_board_create(struct vi_evg_compute_unit_t *compute_unit)
 {
 	struct vi_cu_board_t *board;
 
@@ -63,6 +69,9 @@ static struct vi_cu_board_t *vi_cu_board_create(void)
 	board = calloc(1, sizeof(struct vi_cu_board_t));
 	if (!board)
 		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	board->compute_unit = compute_unit;
 
 	/* Frame */
 	GtkWidget *frame = gtk_frame_new(NULL);
@@ -75,7 +84,7 @@ static struct vi_cu_board_t *vi_cu_board_create(void)
 	gtk_container_add(GTK_CONTAINER(frame), vbox);
 
 	/* Name */
-	snprintf(str, sizeof str, "CU");
+	snprintf(str, sizeof str, "<b>%s</b>", compute_unit->name);
 	GtkWidget *label = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(label), str);
 	gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 0);
@@ -84,6 +93,25 @@ static struct vi_cu_board_t *vi_cu_board_create(void)
 	/* Horizontal box */
 	GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, TRUE, 0);
+
+	/* LED */
+	struct vi_led_t *led = vi_led_create(13);
+	gtk_box_pack_start(GTK_BOX(hbox), vi_led_get_widget(led), FALSE, TRUE, 0);
+	board->led = led;
+
+	/* Timing Diagram Toggle button */
+	GtkWidget *timing_toggle_button = gtk_toggle_button_new_with_label("T");
+	gtk_box_pack_start(GTK_BOX(hbox), timing_toggle_button, TRUE, TRUE, 0);
+	/*g_signal_connect(G_OBJECT(timing_toggle_button), "toggled",
+		G_CALLBACK(vi_evg_board_timing_toggle_button_toggled), board);*/
+	board->timing_toggle_button = timing_toggle_button;
+
+	/* Block Diagram Toggle button */
+	GtkWidget *block_toggle_button = gtk_toggle_button_new_with_label("B");
+	gtk_box_pack_start(GTK_BOX(hbox), block_toggle_button, TRUE, TRUE, 0);
+	/*g_signal_connect(G_OBJECT(block_toggle_button), "toggled",
+		G_CALLBACK(vi_evg_board_block_toggle_button_toggled), board);*/
+	board->block_toggle_button = block_toggle_button;
 
 	/* Main widget */
 	board->widget = event_box;
@@ -142,12 +170,15 @@ static void vi_evg_panel_destroy(GtkWidget *widget,
 
 struct vi_evg_panel_t *vi_evg_panel_create(void)
 {
+	struct vi_evg_compute_unit_t *compute_unit;
 	struct vi_evg_panel_t *panel;
 
 	struct vi_cu_board_t *board;
 
 	int layout_width;
 	int layout_height;
+
+	int i;
 
 	/* Allocate */
 	panel = calloc(1, sizeof(struct vi_evg_panel_t));
@@ -172,19 +203,28 @@ struct vi_evg_panel_t *vi_evg_panel_create(void)
 	GtkWidget *scrolled_window;
 	scrolled_window = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), layout);
-	gtk_widget_set_size_request(scrolled_window, VI_CU_BOARD_WIDTH * 3 / 2, VI_CU_BOARD_HEIGHT * 3 / 2);
 	gtk_container_add(GTK_CONTAINER(frame), scrolled_window);
 
-	/* One board */
-	board = vi_cu_board_create();
-	gtk_layout_put(GTK_LAYOUT(layout), vi_cu_board_get_widget(board), 10, 10);
+	/* Boards */
+	layout_width = VI_CU_BOARD_PADDING;
+	layout_height = VI_CU_BOARD_HEIGHT + 2 * VI_CU_BOARD_PADDING;
+	LIST_FOR_EACH(vi_evg_gpu->compute_unit_list, i)
+	{
+		/* Create board and insert */
+		compute_unit = list_get(vi_evg_gpu->compute_unit_list, i);
+		board = vi_cu_board_create(compute_unit);
+		gtk_layout_put(GTK_LAYOUT(layout), vi_cu_board_get_widget(board),
+			layout_width, VI_CU_BOARD_PADDING);
 
-	/* Set layout size */
-	layout_width = VI_CU_BOARD_WIDTH + 2 * VI_CU_BOARD_PADDING * 2;
-	layout_height = VI_CU_BOARD_HEIGHT + 2 * VI_CU_BOARD_PADDING * 2;
+		/* Accumulate width */
+		layout_width += VI_CU_BOARD_WIDTH + VI_CU_BOARD_PADDING;
+	}
+
+	/* Sizes of scrolled window */
 	gtk_widget_set_size_request(layout, layout_width, layout_height);
+	gtk_widget_set_size_request(scrolled_window, VI_CU_BOARD_WIDTH * 3 / 2, layout_height);
 
-	/* Assign panel widget */
+	/* Widget */
 	panel->widget = frame;
 	g_signal_connect(G_OBJECT(panel->widget), "destroy",
 		G_CALLBACK(vi_evg_panel_destroy), panel);
