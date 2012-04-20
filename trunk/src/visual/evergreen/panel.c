@@ -108,7 +108,7 @@ static void vi_evg_time_dia_window_free(struct vi_evg_time_dia_window_t *time_di
 
 static void vi_evg_time_dia_window_refresh(struct vi_evg_time_dia_window_t *time_dia_window)
 {
-	//vi_mod_widget_refresh(mod_window->mod_widget);
+	vi_evg_time_dia_refresh(time_dia_window->time_dia);
 }
 
 
