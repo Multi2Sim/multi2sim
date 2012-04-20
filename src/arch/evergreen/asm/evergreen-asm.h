@@ -693,6 +693,7 @@ void evg_inst_dump(struct evg_inst_t *inst, int count, int loop_idx, FILE *f);
 void evg_inst_dump_debug(struct evg_inst_t *inst, int count, int loop_idx, FILE *f);
 void evg_inst_words_dump(struct evg_inst_t *inst, FILE *f);
 void evg_alu_group_dump(struct evg_alu_group_t *group, int shift, FILE *f);
+void evg_alu_group_dump_buf(struct evg_alu_group_t *alu_group, char *buf, int size);
 void evg_alu_group_dump_debug(struct evg_alu_group_t *alu_group, int count, int loop_idx, FILE *f);
 
 /* Copy instruction */

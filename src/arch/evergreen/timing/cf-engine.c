@@ -30,7 +30,9 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	struct evg_ndrange_t *ndrange = evg_gpu->ndrange;
 	struct evg_wavefront_t *wavefront;
 
-	char str1[MAX_STRING_SIZE], str2[MAX_STRING_SIZE];
+	char str[MAX_STRING_SIZE];
+	char str_trimmed[MAX_STRING_SIZE];
+
 	struct evg_inst_t *inst;
 
 	struct evg_uop_t *uop;
@@ -102,8 +104,8 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Debug */
 	if (debug_status(evg_gpu_pipeline_debug_category))
 	{
-		evg_inst_dump_buf(inst, -1, 0, str1, MAX_STRING_SIZE);
-		str_single_spaces(str2, str1, MAX_STRING_SIZE);
+		evg_inst_dump_buf(inst, -1, 0, str, MAX_STRING_SIZE);
+		str_single_spaces(str_trimmed, str, MAX_STRING_SIZE);
 		evg_gpu_pipeline_debug("cf a=\"fetch\" "
 			"cu=%d "
 			"wg=%d "
@@ -114,16 +116,16 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 			uop->work_group->id,
 			wavefront->id,
 			uop->id_in_compute_unit,
-			str2);
+			str_trimmed);
 	}
 
 	/* Trace */
 	if (evg_tracing())
 	{
-		evg_inst_dump_buf(inst, -1, 0, str1, MAX_STRING_SIZE);
-		str_single_spaces(str2, str1, MAX_STRING_SIZE);
-		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d asm=\"%s\"\n",
-			uop->id_in_compute_unit, compute_unit->id, uop->work_group->id, wavefront->id, str2);
+		evg_inst_dump_buf(inst, -1, 0, str, MAX_STRING_SIZE);
+		str_single_spaces(str_trimmed, str, MAX_STRING_SIZE);
+		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"cf\" asm=\"%s\"\n",
+			uop->id_in_compute_unit, compute_unit->id, uop->work_group->id, wavefront->id, str_trimmed);
 	}
 }
 

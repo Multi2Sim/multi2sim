@@ -227,6 +227,7 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 	GList *child;
 
 	struct vi_evg_compute_unit_t *compute_unit;
+	struct vi_evg_inst_t *inst;
 
 	GtkWidget *content_layout;
 	GtkWidget *cycle_layout;
@@ -248,7 +249,12 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 	int x;
 	int y;
 
-	char str[MAX_STRING_SIZE];
+	char str[MAX_LONG_STRING_SIZE];
+
+	char *inst_name;
+	char *inst_label_markup;
+
+	struct hash_table_t *inst_table;
 
 
 	/* Get compute unit */
@@ -317,6 +323,9 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 	top_inst_id = top / VI_EVG_TIME_DIA_CELL_HEIGHT;
 	top_offset = -(top % VI_EVG_TIME_DIA_CELL_HEIGHT);
 
+	/* Create hash table with in-flight instructions */
+	inst_table = hash_table_create(0, FALSE);
+
 	/* Cycle layout */
 	cycle = left_cycle;
 	x = left_offset;
@@ -359,13 +368,26 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 		/* Go to cycle */
 		vi_state_go_to_cycle(cycle);
 
+		/* Add in-flight instructions */
+		HASH_TABLE_FOR_EACH(compute_unit->inst_table, inst_name, inst)
+		{
+			/* Instruction has already been added */
+			if (hash_table_get(inst_table, inst_name))
+				continue;
+
+			/* Add instruction */
+			vi_evg_inst_get_markup(inst, str, sizeof str);
+			inst_label_markup = strdup(str);
+			if (!inst_label_markup)
+				fatal("%s: out of memory", __FUNCTION__);
+			hash_table_insert(inst_table, inst_name, inst_label_markup);
+		}
+
 		/* Rows */
 		inst_id = top_inst_id;
 		y = top_offset;
 		while (y < content_layout_height && inst_id < num_insts)
 		{
-			struct vi_evg_inst_t *inst;
-
 			/* Get instruction */
 			snprintf(str, sizeof str, "i-%lld", inst_id);
 			inst = hash_table_get(compute_unit->inst_table, str);
@@ -411,20 +433,18 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 	y = top_offset;
 	while (y < content_layout_height && inst_id < num_insts)
 	{
-		struct vi_evg_inst_t *inst;
-
 		/* Get instruction */
 		snprintf(str, sizeof str, "i-%lld", inst_id);
-		inst = hash_table_get(compute_unit->inst_table, str);
+		inst_label_markup = hash_table_get(inst_table, str);
 
 		/* Label */
 		GtkWidget *label = gtk_label_new(NULL);
+		if (inst_label_markup)
+			gtk_label_set_markup(GTK_LABEL(label), inst_label_markup);
 		gtk_misc_set_alignment(GTK_MISC(label), 0, .5);
 		gtk_widget_set_size_request(label, inst_layout_width,
 			VI_EVG_TIME_DIA_CELL_HEIGHT - 1);
 		gtk_widget_show(label);
-		if (inst)
-			gtk_label_set_markup(GTK_LABEL(label), inst->asm_code);
 
 		/* Set label font attributes */
 		PangoAttrList *attrs;
@@ -448,6 +468,11 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 		y += VI_EVG_TIME_DIA_CELL_HEIGHT;
 		inst_id++;
 	}
+
+	/* Free hash table of instructions */
+	HASH_TABLE_FOR_EACH(inst_table, inst_name, inst_label_markup)
+		free(inst_label_markup);
+	hash_table_free(inst_table);
 
 	/* Repaint if necessary */
 	gtk_container_check_resize(GTK_CONTAINER(time_dia->legend_layout));
