@@ -106,6 +106,13 @@ static void vi_evg_time_dia_window_free(struct vi_evg_time_dia_window_t *time_di
 }
 
 
+static void vi_evg_time_dia_window_go_to_cycle(struct vi_evg_time_dia_window_t *time_dia_window,
+	long long cycle)
+{
+	vi_evg_time_dia_go_to_cycle(time_dia_window->time_dia, cycle);
+}
+
+
 static void vi_evg_time_dia_window_refresh(struct vi_evg_time_dia_window_t *time_dia_window)
 {
 	vi_evg_time_dia_refresh(time_dia_window->time_dia);
@@ -288,6 +295,8 @@ static void vi_cu_board_refresh(struct vi_cu_board_t *board)
 
 	char *work_group_name;
 
+	long long cycle;
+
 	/* Empty work-group list */
 	while (vi_list_count(board->work_group_list))
 		free(vi_list_remove_at(board->work_group_list, 0));
@@ -316,7 +325,11 @@ static void vi_cu_board_refresh(struct vi_cu_board_t *board)
 
 	/* Refresh time diagram */
 	if (board->time_dia_window)
+	{
+		cycle = vi_cycle_bar_get_cycle();
+		vi_evg_time_dia_window_go_to_cycle(board->time_dia_window, cycle);
 		vi_evg_time_dia_window_refresh(board->time_dia_window);
+	}
 }
 
 

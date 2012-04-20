@@ -78,9 +78,6 @@ static void vi_evg_time_dia_size_allocate(GtkWidget *widget, GdkRectangle *alloc
 	int inst_layout_width;
 	int inst_layout_height;
 
-/*	if (allocation->width != time_dia->width ||
-		allocation->height != time_dia->height)
-		vi_evg_time_dia_refresh(time_dia);*/
 	content_layout_width = gtk_widget_get_allocated_width(time_dia->content_layout);
 	content_layout_height = gtk_widget_get_allocated_height(time_dia->content_layout);
 
@@ -92,6 +89,22 @@ static void vi_evg_time_dia_size_allocate(GtkWidget *widget, GdkRectangle *alloc
 		inst_layout_width != time_dia->inst_layout_width ||
 		inst_layout_height != time_dia->inst_layout_height)
 		vi_evg_time_dia_refresh(time_dia);
+}
+
+
+static gboolean vi_evg_time_dia_scroll(GtkWidget *widget, GdkEventScroll *event,
+	struct vi_evg_time_dia_t *time_dia)
+{
+	long long value;
+
+	value = gtk_range_get_value(GTK_RANGE(time_dia->vscrollbar));
+	if (event->direction == GDK_SCROLL_UP)
+		value -= 10;
+	else
+		value += 10;
+	gtk_range_set_value(GTK_RANGE(time_dia->vscrollbar), value);
+
+	return FALSE;
 }
 
 
@@ -125,8 +138,8 @@ struct vi_evg_time_dia_t *vi_evg_time_dia_create(struct vi_evg_compute_unit_t *c
 		VI_EVG_TIME_DIA_CONTENT_LAYOUT_HEIGHT);
 	g_signal_connect(G_OBJECT(content_layout), "size_allocate",
 		G_CALLBACK(vi_evg_time_dia_size_allocate), time_dia);
-	/*g_signal_connect(G_OBJECT(layout), "scroll-event",
-		G_CALLBACK(vi_mod_widget_scroll), mod_widget);*/
+	g_signal_connect(G_OBJECT(content_layout), "scroll-event",
+		G_CALLBACK(vi_evg_time_dia_scroll), time_dia);
 	gtk_widget_modify_bg(content_layout, GTK_STATE_NORMAL, &color_gray);
 	time_dia->content_layout = content_layout;
 
@@ -210,6 +223,30 @@ void vi_evg_time_dia_free(struct vi_evg_time_dia_t *time_dia)
 GtkWidget *vi_evg_time_dia_get_widget(struct vi_evg_time_dia_t *time_dia)
 {
 	return time_dia->widget;
+}
+
+
+void vi_evg_time_dia_go_to_cycle(struct vi_evg_time_dia_t *time_dia, long long cycle)
+{
+	struct vi_evg_compute_unit_t *compute_unit;
+	struct vi_evg_inst_t *inst;
+
+	char *inst_name;
+
+	long long min_inst_id;
+
+	/* Bring state to cycle */
+	vi_state_go_to_cycle(cycle);
+
+	/* Horizontal scroll bar */
+	gtk_range_set_value(GTK_RANGE(time_dia->hscrollbar), cycle * VI_EVG_TIME_DIA_CELL_WIDTH);
+
+	/* Vertical scroll bar */
+	compute_unit = time_dia->compute_unit;
+	min_inst_id = MAX(0, compute_unit->num_insts - 1);
+	HASH_TABLE_FOR_EACH(compute_unit->inst_table, inst_name, inst)
+		min_inst_id = MIN(min_inst_id, inst->id);
+	gtk_range_set_value(GTK_RANGE(time_dia->vscrollbar), min_inst_id * VI_EVG_TIME_DIA_CELL_HEIGHT);
 }
 
 

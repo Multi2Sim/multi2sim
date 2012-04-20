@@ -604,7 +604,7 @@ static void vi_mod_widget_size_allocate(GtkWidget *widget, GdkRectangle *allocat
 static gboolean vi_mod_widget_scroll(GtkWidget *widget, GdkEventScroll *event,
 	struct vi_mod_widget_t *mod_widget)
 {
-	int value;
+	long long value;
 
 	value = gtk_range_get_value(GTK_RANGE(mod_widget->vscrollbar));
 	if (event->direction == GDK_SCROLL_UP)
