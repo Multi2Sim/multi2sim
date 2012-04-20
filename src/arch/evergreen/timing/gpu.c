@@ -167,6 +167,9 @@ static void evg_gpu_device_init()
 	if (!evg_gpu)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* Initialize */
+	evg_gpu->trash_uop_list = linked_list_create();
+
 	/* Create compute units */
 	evg_gpu->compute_units = calloc(evg_gpu_num_compute_units, sizeof(void *));
 	if (!evg_gpu->compute_units)
@@ -660,6 +663,10 @@ void evg_gpu_done()
 	}
 	free(evg_gpu->compute_units);
 
+	/* List of removed instructions */
+	evg_gpu_uop_trash_empty();
+	linked_list_free(evg_gpu->trash_uop_list);
+
 	/* Free GPU */
 	free(evg_gpu);
 
@@ -773,6 +780,30 @@ void evg_gpu_dump_report(void)
 }
 
 
+void evg_gpu_uop_trash_empty(void)
+{
+	struct evg_uop_t *uop;
+
+	while (evg_gpu->trash_uop_list->count)
+	{
+		linked_list_head(evg_gpu->trash_uop_list);
+		uop = linked_list_get(evg_gpu->trash_uop_list);
+		linked_list_remove(evg_gpu->trash_uop_list);
+
+		evg_trace("evg.end_inst id=%lld cu=%d\n",
+			uop->id_in_compute_unit, uop->compute_unit->id);
+
+		evg_uop_free(uop);
+	}
+}
+
+
+void evg_gpu_uop_trash_add(struct evg_uop_t *uop)
+{
+	linked_list_add(evg_gpu->trash_uop_list, uop);
+}
+
+
 void evg_gpu_run(struct evg_ndrange_t *ndrange)
 {
 	struct evg_compute_unit_t *compute_unit;
@@ -823,6 +854,9 @@ void evg_gpu_run(struct evg_ndrange_t *ndrange)
 		if (x86_emu_finish)
 			break;
 
+		/* Free instructions in trash */
+		evg_gpu_uop_trash_empty();
+
 		/* Advance one cycle on each busy compute unit */
 		for (compute_unit = evg_gpu->busy_list_head; compute_unit;
 			compute_unit = compute_unit_next)
@@ -843,6 +877,7 @@ void evg_gpu_run(struct evg_ndrange_t *ndrange)
 	}
 
 	/* Finalize */
+	evg_gpu_uop_trash_empty();
 	evg_emu_timer_stop();
 	evg_gpu_unmap_ndrange();
 

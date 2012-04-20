@@ -440,11 +440,12 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 			/* Trace */
 			evg_trace("evg.inst id=%lld cu=%d stg=\"alu-wr\"\n",
 				uop->id_in_compute_unit, compute_unit->id);
-			evg_trace("evg.end_inst id=%lld cu=%d\n",
-				uop->id_in_compute_unit, compute_unit->id);
 
 			/* Free uop */
-			evg_uop_free(uop);
+			if (evg_tracing())
+				evg_gpu_uop_trash_add(uop);
+			else
+				evg_uop_free(uop);
 		}
 	}
 }
