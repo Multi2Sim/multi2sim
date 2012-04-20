@@ -92,6 +92,9 @@ struct vi_evg_compute_unit_t
 
 	struct hash_table_t *work_group_table;
 	struct hash_table_t *inst_table;
+
+	/* Number of instructions created */
+	long long num_insts;
 };
 
 struct vi_evg_compute_unit_t *vi_evg_compute_unit_create(char *name);
