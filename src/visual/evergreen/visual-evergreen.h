@@ -60,21 +60,44 @@ void vi_evg_work_group_write_checkpoint(struct vi_evg_work_group_t *work_group, 
  * Instruction
  */
 
+enum vi_evg_inst_cat_t
+{
+	vi_evg_inst_cat_invalid = 0,
+	vi_evg_inst_cat_cf,
+	vi_evg_inst_cat_alu,
+	vi_evg_inst_cat_tex
+};
+
 struct vi_evg_inst_t
 {
 	char *name;
+
 	char *asm_code;
+	char *asm_code_x;
+	char *asm_code_y;
+	char *asm_code_z;
+	char *asm_code_w;
+	char *asm_code_t;
 
 	long long id;
 
 	int compute_unit_id;
 	int work_group_id;
 	int wavefront_id;
+
+	enum vi_evg_inst_cat_t cat;
 };
 
+extern struct string_map_t vi_evg_inst_cat_map;
+
 struct vi_evg_inst_t *vi_evg_inst_create(char *name, long long id,
-	int compute_unit_id, int work_group_id, int wavefront_id, char *asm_code);
+	int compute_unit_id, int work_group_id, int wavefront_id,
+	enum vi_evg_inst_cat_t cat, char *asm_code, char *asm_code_x,
+	char *asm_code_y, char *asm_code_z, char *asm_code_w,
+	char *asm_code_t);
 void vi_evg_inst_free(struct vi_evg_inst_t *inst);
+
+void vi_evg_inst_get_markup(struct vi_evg_inst_t *inst, char *buf, int size);
 
 void vi_evg_inst_read_checkpoint(struct vi_evg_inst_t *inst, FILE *f);
 void vi_evg_inst_write_checkpoint(struct vi_evg_inst_t *inst, FILE *f);

@@ -1678,6 +1678,34 @@ void evg_alu_group_dump(struct evg_alu_group_t *group, int shift, FILE *f)
 }
 
 
+void evg_alu_group_dump_buf(struct evg_alu_group_t *alu_group, char *buf, int size)
+{
+	struct evg_inst_t *inst;
+
+	char str[MAX_STRING_SIZE];
+	char str_trimmed[MAX_STRING_SIZE];
+
+	char *space;
+
+	int i;
+
+	/* Add individual VLIW bundles */
+	space = "";
+	for (i = 0; i < alu_group->inst_count; i++)
+	{
+		/* Get instruction dump */
+		inst = &alu_group->inst[i];
+		evg_inst_dump_buf(inst, -1, 0, str, sizeof str);
+		str_single_spaces(str_trimmed, str, sizeof str_trimmed);
+
+		/* Copy to output buffer */
+		str_printf(&buf, &size, "%s%s=\"%s\"", space,
+			map_value(&evg_alu_map, inst->alu), str_trimmed);
+		space = " ";
+	}
+}
+
+
 void evg_alu_group_dump_debug(struct evg_alu_group_t *alu_group, int count, int loop_idx, FILE *f)
 {
 	struct evg_inst_t *inst;

@@ -125,7 +125,13 @@ static void vi_evg_gpu_unmap_work_group(struct vi_evg_gpu_t *gpu,
  * 	cu=<cu-id>	(e.g., 4)
  * 	wg=<wg-id>	(e.g., 1)
  * 	wf=<wf-id>	(e.g., 2)
+ * 	cat=<category>	(e.g., "cf")
  * 	asm=<code>	(e.g., "ALU_BREAK")
+ * 	x=<code>
+ * 	y=<code>
+ * 	z=<code>
+ * 	w=<code>
+ * 	t=<code>
  */
 static void vi_evg_gpu_new_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t *trace_line)
 {
@@ -133,24 +139,38 @@ static void vi_evg_gpu_new_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t
 	struct vi_evg_compute_unit_t *compute_unit;
 
 	char inst_name[MAX_STRING_SIZE];
+
 	char *asm_code;
+	char *asm_code_x;
+	char *asm_code_y;
+	char *asm_code_z;
+	char *asm_code_w;
+	char *asm_code_t;
 
 	long long inst_id;
 	int compute_unit_id;
 	int wavefront_id;
 	int work_group_id;
+	enum vi_evg_inst_cat_t cat;
 
 	/* Fields */
 	inst_id = vi_trace_line_get_symbol_long_long(trace_line, "id");
 	compute_unit_id = vi_trace_line_get_symbol_int(trace_line, "cu");
 	work_group_id = vi_trace_line_get_symbol_int(trace_line, "wg");
 	wavefront_id = vi_trace_line_get_symbol_int(trace_line, "wf");
+	cat = map_string(&vi_evg_inst_cat_map, vi_trace_line_get_symbol(trace_line, "cat"));
 	asm_code = vi_trace_line_get_symbol(trace_line, "asm");
+	asm_code_x = vi_trace_line_get_symbol(trace_line, "x");
+	asm_code_y = vi_trace_line_get_symbol(trace_line, "y");
+	asm_code_z = vi_trace_line_get_symbol(trace_line, "z");
+	asm_code_w = vi_trace_line_get_symbol(trace_line, "w");
+	asm_code_t = vi_trace_line_get_symbol(trace_line, "t");
 
 	/* Create */
 	snprintf(inst_name, sizeof inst_name, "i-%lld", inst_id);
 	inst = vi_evg_inst_create(inst_name, inst_id, compute_unit_id, work_group_id,
-		wavefront_id, asm_code);
+		wavefront_id, cat, asm_code, asm_code_x, asm_code_y, asm_code_z,
+		asm_code_w, asm_code_t);
 
 	/* Get compute unit */
 	compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);
