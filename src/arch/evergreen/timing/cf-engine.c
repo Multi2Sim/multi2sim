@@ -307,14 +307,15 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 			evg_uop_debug_active_mask(uop);
 
 		/* Trace */
-		/* Trace */
 		evg_trace("evg.inst id=%lld cu=%d stg=\"cf-co\"\n",
 			uop->id_in_compute_unit, compute_unit->id);
-		evg_trace("evg.end_inst id=%lld cu=%d\n",
-			uop->id_in_compute_unit, compute_unit->id);
 
-		/* Free uop */
-		evg_uop_free(uop);
+		/* Free uop. If a trace is being generated, defer the instruction
+		 * release to the next cycle to allow for the last stage to be shown. */
+		if (evg_tracing())
+			evg_gpu_uop_trash_add(uop);
+		else
+			evg_uop_free(uop);
 
 		/* Wavefront finishes a work-group */
 		assert(work_group->compute_unit_finished_count <= work_group->wavefront_count);
