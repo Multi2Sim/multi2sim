@@ -179,6 +179,17 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 			evg_gpu_pipeline_debug(" prod=%lld", producer->id);
 		evg_gpu_pipeline_debug("\n");
 	}
+
+	/* Trace */
+	if (evg_tracing())
+	{
+		char str_inst[MAX_STRING_SIZE];
+
+		evg_alu_group_dump_buf(&wavefront->alu_group, str_inst, sizeof str_inst);
+		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"alu\" %s\n",
+			uop->id_in_compute_unit, compute_unit->id,
+			uop->work_group->id, wavefront->id, str_inst);
+	}
 }
 
 
@@ -412,6 +423,10 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 				/* Enqueue CF uop into complete queue in CF Engine */
 				linked_list_add(compute_unit->cf_engine.complete_queue, cf_uop);
 			}
+
+			/* Trace */
+			evg_trace("evg.end_inst id=%lld cu=%d\n",
+				uop->id_in_compute_unit, compute_unit->id);
 
 			/* Free uop */
 			evg_uop_free(uop);

@@ -41,7 +41,8 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	struct evg_work_item_t *work_item;
 	int work_item_id;
 
-	char str1[MAX_STRING_SIZE], str2[MAX_STRING_SIZE];
+	char str[MAX_STRING_SIZE];
+	char str_trimmed[MAX_STRING_SIZE];
 
 	/* Get wavefront to fetch from */
 	linked_list_head(pending_queue);
@@ -107,8 +108,8 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Debug */
 	if (debug_status(evg_gpu_pipeline_debug_category))
 	{
-		evg_inst_dump_buf(inst, inst_num, 0, str1, MAX_STRING_SIZE);
-		str_single_spaces(str2, str1, MAX_STRING_SIZE);
+		evg_inst_dump_buf(inst, inst_num, 0, str, MAX_STRING_SIZE);
+		str_single_spaces(str_trimmed, str, MAX_STRING_SIZE);
 		evg_gpu_pipeline_debug("tex a=\"fetch\" "
 			"cu=%d "
 			"wg=%d "
@@ -119,7 +120,17 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 			uop->work_group->id,
 			wavefront->id,
 			uop->id_in_compute_unit,
-			str2);
+			str_trimmed);
+	}
+
+	/* Trace */
+	if (evg_tracing())
+	{
+		evg_inst_dump_buf(inst, inst_num, 0, str, MAX_STRING_SIZE);
+		str_single_spaces(str_trimmed, str, MAX_STRING_SIZE);
+		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"tex\" asm=\"%s\"\n",
+			uop->id_in_compute_unit, compute_unit->id, uop->work_group->id,
+			wavefront->id, str_trimmed);
 	}
 }
 
@@ -234,6 +245,10 @@ static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 		"uop=%lld\n",
 		compute_unit->id,
 		uop->id_in_compute_unit);
+
+	/* Trace */
+	evg_trace("evg.end_inst id=%lld cu=%d\n",
+		uop->id_in_compute_unit, compute_unit->id);
 
 	/* Last uop in clause */
 	if (uop->last)
