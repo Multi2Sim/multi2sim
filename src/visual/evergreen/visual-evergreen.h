@@ -68,6 +68,29 @@ enum vi_evg_inst_cat_t
 	vi_evg_inst_cat_tex
 };
 
+enum vi_evg_inst_stage_t
+{
+	vi_evg_inst_stage_invalid = 0,
+
+	vi_evg_inst_stage_cf_fetch,
+	vi_evg_inst_stage_cf_decode,
+	vi_evg_inst_stage_cf_execute,
+	vi_evg_inst_stage_cf_complete,
+
+	vi_evg_inst_stage_alu_fetch,
+	vi_evg_inst_stage_alu_decode,
+	vi_evg_inst_stage_alu_read,
+	vi_evg_inst_stage_alu_execute,
+	vi_evg_inst_stage_alu_write,
+
+	vi_evg_inst_stage_tex_fetch,
+	vi_evg_inst_stage_tex_decode,
+	vi_evg_inst_stage_tex_read,
+	vi_evg_inst_stage_tex_write,
+
+	vi_evg_inst_stage_count
+};
+
 struct vi_evg_inst_t
 {
 	char *name;
@@ -86,15 +109,19 @@ struct vi_evg_inst_t
 	int wavefront_id;
 
 	enum vi_evg_inst_cat_t cat;
+	enum vi_evg_inst_stage_t stage;
 };
 
 extern struct string_map_t vi_evg_inst_cat_map;
+extern struct string_map_t vi_evg_inst_stage_map;
+extern struct string_map_t vi_evg_inst_stage_name_map;
+extern struct string_map_t vi_evg_inst_stage_color_map;
 
 struct vi_evg_inst_t *vi_evg_inst_create(char *name, long long id,
 	int compute_unit_id, int work_group_id, int wavefront_id,
-	enum vi_evg_inst_cat_t cat, char *asm_code, char *asm_code_x,
-	char *asm_code_y, char *asm_code_z, char *asm_code_w,
-	char *asm_code_t);
+	enum vi_evg_inst_cat_t cat, enum vi_evg_inst_stage_t stage,
+	char *asm_code, char *asm_code_x, char *asm_code_y,
+	char *asm_code_z, char *asm_code_w, char *asm_code_t);
 void vi_evg_inst_free(struct vi_evg_inst_t *inst);
 
 void vi_evg_inst_get_markup(struct vi_evg_inst_t *inst, char *buf, int size);

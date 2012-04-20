@@ -186,7 +186,7 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 		char str_inst[MAX_STRING_SIZE];
 
 		evg_alu_group_dump_buf(&wavefront->alu_group, str_inst, sizeof str_inst);
-		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"alu\" %s\n",
+		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"alu\" stg=\"alu-fe\" %s\n",
 			uop->id_in_compute_unit, compute_unit->id,
 			uop->work_group->id, wavefront->id, str_inst);
 	}
@@ -229,6 +229,10 @@ static void evg_alu_engine_decode(struct evg_compute_unit_t *compute_unit)
 		"uop=%lld\n",
 		compute_unit->id,
 		uop->id_in_compute_unit);
+
+	/* Trace */
+	evg_trace("evg.inst id=%lld cu=%d stg=\"alu-de\"\n",
+		uop->id_in_compute_unit, compute_unit->id);
 }
 
 
@@ -277,6 +281,10 @@ static void evg_alu_engine_read(struct evg_compute_unit_t *compute_unit)
 		compute_unit->id,
 		uop->id_in_compute_unit);
 
+	/* Trace */
+	evg_trace("evg.inst id=%lld cu=%d stg=\"alu-rd\"\n",
+		uop->id_in_compute_unit, compute_unit->id);
+
 	/* Move uop from instruction buffer into execution buffer */
 	compute_unit->alu_engine.inst_buffer = NULL;
 	compute_unit->alu_engine.exec_buffer = uop;
@@ -316,6 +324,11 @@ static void evg_alu_engine_execute(struct evg_compute_unit_t *compute_unit)
 		compute_unit->id,
 		uop->id_in_compute_unit,
 		uop->exec_subwavefront_count - 1);
+
+	/* Trace */
+	if (uop->exec_subwavefront_count == 1)
+		evg_trace("evg.inst id=%lld cu=%d stg=\"alu-rd\"\n",
+			uop->id_in_compute_unit, compute_unit->id);
 
 	/* If this is the last subwavefront, remove uop from execution buffer */
 	if (uop->exec_subwavefront_count == uop->subwavefront_count)
@@ -425,6 +438,8 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 			}
 
 			/* Trace */
+			evg_trace("evg.inst id=%lld cu=%d stg=\"alu-wr\"\n",
+				uop->id_in_compute_unit, compute_unit->id);
 			evg_trace("evg.end_inst id=%lld cu=%d\n",
 				uop->id_in_compute_unit, compute_unit->id);
 

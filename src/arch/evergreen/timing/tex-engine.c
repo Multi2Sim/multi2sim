@@ -128,7 +128,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	{
 		evg_inst_dump_buf(inst, inst_num, 0, str, MAX_STRING_SIZE);
 		str_single_spaces(str_trimmed, str, MAX_STRING_SIZE);
-		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"tex\" asm=\"%s\"\n",
+		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"tex\" stg=\"tex-fe\" asm=\"%s\"\n",
 			uop->id_in_compute_unit, compute_unit->id, uop->work_group->id,
 			wavefront->id, str_trimmed);
 	}
@@ -171,6 +171,10 @@ static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 		"uop=%lld\n",
 		compute_unit->id,
 		uop->id_in_compute_unit);
+
+	/* Trace */
+	evg_trace("evg.inst id=%lld cu=%d stg=\"tex-de\"\n",
+		uop->id_in_compute_unit, compute_unit->id);
 }
 
 
@@ -217,6 +221,10 @@ static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 		"uop=%lld\n",
 		compute_unit->id,
 		uop->id_in_compute_unit);
+
+	/* Trace */
+	evg_trace("evg.inst id=%lld cu=%d stg=\"tex-rd\"\n",
+		uop->id_in_compute_unit, compute_unit->id);
 }
 
 
@@ -247,6 +255,8 @@ static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 		uop->id_in_compute_unit);
 
 	/* Trace */
+	evg_trace("evg.inst id=%lld cu=%d stg=\"tex-wr\"\n",
+		uop->id_in_compute_unit, compute_unit->id);
 	evg_trace("evg.end_inst id=%lld cu=%d\n",
 		uop->id_in_compute_unit, compute_unit->id);
 

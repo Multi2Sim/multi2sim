@@ -113,7 +113,7 @@ void vi_evg_compute_unit_read_checkpoint(struct vi_evg_compute_unit_t *compute_u
 	/* Read instructions */
 	for (i = 0; i < num_insts; i++)
 	{
-		inst = vi_evg_inst_create(NULL, 0, 0, 0, 0, 0, NULL, NULL,
+		inst = vi_evg_inst_create(NULL, 0, 0, 0, 0, 0, 0, NULL, NULL,
 			NULL, NULL, NULL, NULL);
 		vi_evg_inst_read_checkpoint(inst, f);
 		if (!hash_table_insert(compute_unit->inst_table, inst->name, inst))

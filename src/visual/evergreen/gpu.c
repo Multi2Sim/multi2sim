@@ -126,6 +126,7 @@ static void vi_evg_gpu_unmap_work_group(struct vi_evg_gpu_t *gpu,
  * 	wg=<wg-id>	(e.g., 1)
  * 	wf=<wf-id>	(e.g., 2)
  * 	cat=<category>	(e.g., "cf")
+ * 	stg=<stage>	(e.g., "cf-fe")
  * 	asm=<code>	(e.g., "ALU_BREAK")
  * 	x=<code>
  * 	y=<code>
@@ -152,6 +153,7 @@ static void vi_evg_gpu_new_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t
 	int wavefront_id;
 	int work_group_id;
 	enum vi_evg_inst_cat_t cat;
+	enum vi_evg_inst_stage_t stage;
 
 	/* Fields */
 	inst_id = vi_trace_line_get_symbol_long_long(trace_line, "id");
@@ -159,6 +161,7 @@ static void vi_evg_gpu_new_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t
 	work_group_id = vi_trace_line_get_symbol_int(trace_line, "wg");
 	wavefront_id = vi_trace_line_get_symbol_int(trace_line, "wf");
 	cat = map_string(&vi_evg_inst_cat_map, vi_trace_line_get_symbol(trace_line, "cat"));
+	stage = map_string(&vi_evg_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
 	asm_code = vi_trace_line_get_symbol(trace_line, "asm");
 	asm_code_x = vi_trace_line_get_symbol(trace_line, "x");
 	asm_code_y = vi_trace_line_get_symbol(trace_line, "y");
@@ -169,7 +172,7 @@ static void vi_evg_gpu_new_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t
 	/* Create */
 	snprintf(inst_name, sizeof inst_name, "i-%lld", inst_id);
 	inst = vi_evg_inst_create(inst_name, inst_id, compute_unit_id, work_group_id,
-		wavefront_id, cat, asm_code, asm_code_x, asm_code_y, asm_code_z,
+		wavefront_id, cat, stage, asm_code, asm_code_x, asm_code_y, asm_code_z,
 		asm_code_w, asm_code_t);
 
 	/* Get compute unit */
@@ -181,6 +184,45 @@ static void vi_evg_gpu_new_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t
 	compute_unit->num_insts = MAX(compute_unit->num_insts, inst_id + 1);
 	if (!hash_table_insert(compute_unit->inst_table, inst_name, inst))
 		panic("%s: invalid instruction", __FUNCTION__);
+}
+
+
+/* Command 'evg.end_inst'
+ * 	id=<inst-id>	(e.g., 23)
+ * 	cu=<cu-id>	(e.g., 4)
+ * 	stg=<stage>	(e.g., "cf-fe")
+ */
+static void vi_evg_gpu_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t *trace_line)
+{
+	char inst_name[MAX_STRING_SIZE];
+
+	long long inst_id;
+
+	struct vi_evg_inst_t *inst;
+	struct vi_evg_compute_unit_t *compute_unit;
+
+	int compute_unit_id;
+
+	enum vi_evg_inst_stage_t stage;
+
+	/* Fields */
+	inst_id = vi_trace_line_get_symbol_long_long(trace_line, "id");
+	compute_unit_id = vi_trace_line_get_symbol_int(trace_line, "cu");
+	stage = map_string(&vi_evg_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+
+	/* Get compute unit */
+	compute_unit = list_get(gpu->compute_unit_list, compute_unit_id);
+	if (!compute_unit)
+		panic("%s: invalid compute unit", __FUNCTION__);
+
+	/* Get instruction */
+	snprintf(inst_name, sizeof inst_name, "i-%lld", inst_id);
+	inst = hash_table_get(compute_unit->inst_table, inst_name);
+	if (!inst)
+		panic("%s: invalid instruction", __FUNCTION__);
+
+	/* Update stage */
+	inst->stage = stage;
 }
 
 
@@ -294,6 +336,9 @@ void vi_evg_gpu_init(void)
 		vi_evg_gpu);
 	vi_state_new_command("evg.new_inst",
 		(vi_state_process_trace_line_func_t) vi_evg_gpu_new_inst,
+		vi_evg_gpu);
+	vi_state_new_command("evg.inst",
+		(vi_state_process_trace_line_func_t) vi_evg_gpu_inst,
 		vi_evg_gpu);
 	vi_state_new_command("evg.end_inst",
 		(vi_state_process_trace_line_func_t) vi_evg_gpu_end_inst,
