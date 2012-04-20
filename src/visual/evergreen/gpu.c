@@ -158,6 +158,7 @@ static void vi_evg_gpu_new_inst(struct vi_evg_gpu_t *gpu, struct vi_trace_line_t
 		panic("%s: invalid compute unit", __FUNCTION__);
 
 	/* Insert in compute unit */
+	compute_unit->num_insts = MAX(compute_unit->num_insts, inst_id + 1);
 	if (!hash_table_insert(compute_unit->inst_table, inst_name, inst))
 		panic("%s: invalid instruction", __FUNCTION__);
 }
