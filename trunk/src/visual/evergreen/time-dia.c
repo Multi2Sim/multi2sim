@@ -398,7 +398,8 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 				VI_EVG_TIME_DIA_CELL_HEIGHT - 1);
 			gtk_widget_show(label);
 			if (inst)
-				gtk_label_set_markup(GTK_LABEL(label), "x");
+				gtk_label_set_markup(GTK_LABEL(label),
+					map_value(&vi_evg_inst_stage_name_map, inst->stage));
 
 			/* Set label font attributes */
 			PangoAttrList *attrs;
@@ -415,7 +416,9 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 
 			/* Color */
 			GdkColor color;
-			gdk_color_parse("#ffffff", &color);
+			char *color_str;
+			color_str = inst ? map_value(&vi_evg_inst_stage_color_map, inst->stage) : "white";
+			gdk_color_parse(color_str, &color);
 			gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
 
 			/* Next instruction */
