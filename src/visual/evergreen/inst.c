@@ -30,11 +30,80 @@ struct string_map_t vi_evg_inst_cat_map =
 };
 
 
+struct string_map_t vi_evg_inst_stage_map =
+{
+	vi_evg_inst_stage_count - 1,
+	{
+		{ "cf-fe", vi_evg_inst_stage_cf_fetch },
+		{ "cf-de", vi_evg_inst_stage_cf_decode },
+		{ "cf-ex", vi_evg_inst_stage_cf_execute },
+		{ "cf-co", vi_evg_inst_stage_cf_complete },
+
+		{ "alu-fe", vi_evg_inst_stage_alu_fetch },
+		{ "alu-de", vi_evg_inst_stage_alu_decode },
+		{ "alu-rd", vi_evg_inst_stage_alu_read },
+		{ "alu-ex", vi_evg_inst_stage_alu_execute },
+		{ "alu-wr", vi_evg_inst_stage_alu_write },
+
+		{ "tex-fe", vi_evg_inst_stage_tex_fetch },
+		{ "tex-de", vi_evg_inst_stage_tex_decode },
+		{ "tex-rd", vi_evg_inst_stage_tex_read },
+		{ "tex-wr", vi_evg_inst_stage_tex_write }
+	}
+};
+
+
+struct string_map_t vi_evg_inst_stage_color_map =
+{
+	vi_evg_inst_stage_count - 1,
+	{
+		{ "#88ff88", vi_evg_inst_stage_cf_fetch },
+		{ "#44ff44", vi_evg_inst_stage_cf_decode },
+		{ "#22ff22", vi_evg_inst_stage_cf_execute },
+		{ "#00ff00", vi_evg_inst_stage_cf_complete },
+
+		{ "#ff8888", vi_evg_inst_stage_alu_fetch },
+		{ "#ff6666", vi_evg_inst_stage_alu_decode },
+		{ "#ff4444", vi_evg_inst_stage_alu_read },
+		{ "#ff2222", vi_evg_inst_stage_alu_execute },
+		{ "#ff0000", vi_evg_inst_stage_alu_write },
+
+		{ "#ddddff", vi_evg_inst_stage_tex_fetch },
+		{ "#bbbbff", vi_evg_inst_stage_tex_decode },
+		{ "#9999ff", vi_evg_inst_stage_tex_read },
+		{ "#7777ff", vi_evg_inst_stage_tex_write }
+	}
+};
+
+
+struct string_map_t vi_evg_inst_stage_name_map =
+{
+	vi_evg_inst_stage_count - 1,
+	{
+		{ "FE", vi_evg_inst_stage_cf_fetch },
+		{ "DE", vi_evg_inst_stage_cf_decode },
+		{ "EX", vi_evg_inst_stage_cf_execute },
+		{ "CO", vi_evg_inst_stage_cf_complete },
+
+		{ "FE", vi_evg_inst_stage_alu_fetch },
+		{ "DE", vi_evg_inst_stage_alu_decode },
+		{ "RD", vi_evg_inst_stage_alu_read },
+		{ "EX", vi_evg_inst_stage_alu_execute },
+		{ "WR", vi_evg_inst_stage_alu_write },
+
+		{ "FE", vi_evg_inst_stage_tex_fetch },
+		{ "DE", vi_evg_inst_stage_tex_decode },
+		{ "RD", vi_evg_inst_stage_tex_read },
+		{ "WR", vi_evg_inst_stage_tex_write }
+	}
+};
+
+
 struct vi_evg_inst_t *vi_evg_inst_create(char *name, long long id,
 	int compute_unit_id, int work_group_id, int wavefront_id,
-	enum vi_evg_inst_cat_t cat, char *asm_code, char *asm_code_x,
-	char *asm_code_y, char *asm_code_z, char *asm_code_w,
-	char *asm_code_t)
+	enum vi_evg_inst_cat_t cat, enum vi_evg_inst_stage_t stage,
+	char *asm_code, char *asm_code_x, char *asm_code_y,
+	char *asm_code_z, char *asm_code_w, char *asm_code_t)
 {
 	struct vi_evg_inst_t *inst;
 
@@ -50,6 +119,7 @@ struct vi_evg_inst_t *vi_evg_inst_create(char *name, long long id,
 	inst->work_group_id = work_group_id;
 	inst->wavefront_id = wavefront_id;
 	inst->cat = cat;
+	inst->stage = stage;
 
 	inst->asm_code = str_set(NULL, asm_code);
 	inst->asm_code_x = str_set(NULL, asm_code_x);
@@ -146,6 +216,11 @@ void vi_evg_inst_read_checkpoint(struct vi_evg_inst_t *inst, FILE *f)
 	if (count != sizeof inst->cat)
 		panic("%s: cannot read checkpoint", __FUNCTION__);
 
+	/* Read stage */
+	count = fread(&inst->stage, 1, sizeof inst->stage, f);
+	if (count != sizeof inst->stage)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
 	/* Read assembly code */
 	str_read_from_file(f, asm_code, sizeof asm_code);
 	str_read_from_file(f, asm_code_x, sizeof asm_code_x);
@@ -175,9 +250,14 @@ void vi_evg_inst_write_checkpoint(struct vi_evg_inst_t *inst, FILE *f)
 	if (count != sizeof inst->id)
 		panic("%s: cannot write checkpoint", __FUNCTION__);
 
-	/* Write instruction id */
+	/* Write category */
 	count = fwrite(&inst->cat, 1, sizeof inst->cat, f);
 	if (count != sizeof inst->cat)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
+
+	/* Write stage */
+	count = fwrite(&inst->stage, 1, sizeof inst->stage, f);
+	if (count != sizeof inst->stage)
 		panic("%s: cannot write checkpoint", __FUNCTION__);
 
 	/* Write assembly code */
