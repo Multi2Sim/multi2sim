@@ -162,7 +162,6 @@ void vi_evg_compute_unit_write_checkpoint(struct vi_evg_compute_unit_t *compute_
 struct vi_evg_gpu_t
 {
 	struct list_t *compute_unit_list;
-
 	struct hash_table_t *work_group_table;
 };
 

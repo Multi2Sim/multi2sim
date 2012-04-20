@@ -407,6 +407,9 @@ struct evg_gpu_t
 	struct evg_compute_unit_t *busy_list_tail;
 	int busy_list_count;
 	int busy_list_max;
+
+	/* List of deleted instructions */
+	struct linked_list_t *trash_uop_list;
 };
 
 extern struct evg_gpu_t *evg_gpu;
@@ -424,6 +427,9 @@ void evg_gpu_init(void);
 void evg_gpu_done(void);
 
 void evg_gpu_dump_report(void);
+
+void evg_gpu_uop_trash_add(struct evg_uop_t *uop);
+void evg_gpu_uop_trash_empty(void);
 
 void evg_gpu_run(struct evg_ndrange_t *ndrange);
 
