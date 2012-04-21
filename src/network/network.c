@@ -192,8 +192,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 				net->name, section, err_net_config);
 	}
 
-	/* initializing the routing table */
-	net_routing_table_initiate(net->routing_table);
+
 	
 	/* Links */
 	for (section = config_section_first(config); section; section = config_section_next(config))
@@ -259,6 +258,9 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		}
 	}
 
+	/* initializing the routing table */
+	net_routing_table_initiate(net->routing_table);
+
 	/*Routes*/
 	for (section = config_section_first(config); section; section = config_section_next(config))
 	{
@@ -304,18 +306,22 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 				src_node_r = list_get(net->node_list, i);
 				dst_node_r = list_get(net->node_list, j);
 
-				snprintf(spr_result_size, sizeof spr_result_size, "%s.to.%s", src_node_r->name,dst_node_r->name);
-				nxt_node_name = config_read_string(config, section, spr_result_size , "" );
-				nxt_node_r = net_get_node_by_name(net, nxt_node_name);
-
-				if(nxt_node_r)
+				if (dst_node_r->kind == net_node_end)
 				{
-					if (src_node_r == dst_node_r)
-						fatal("%s:%s: A route can not be created between %s with itself.\n", net->name, section, src_node_r->name);
-					else net_routing_table_route_update(net->routing_table, src_node_r, dst_node_r, nxt_node_r);
+					snprintf(spr_result_size, sizeof spr_result_size, "%s.to.%s", src_node_r->name,dst_node_r->name);
+					nxt_node_name = config_read_string(config, section, spr_result_size , "" );
+					nxt_node_r = net_get_node_by_name(net, nxt_node_name);
+
+					if (nxt_node_r)
+					{
+						if (src_node_r == dst_node_r)
+							fatal("Network %s:%s: Invalid Routing format.\n %s", net->name, section,err_net_config);
+						else net_routing_table_route_update(net->routing_table, src_node_r, dst_node_r, nxt_node_r);
+					}
 				}
 			}
 		}
+		config_check(config);
 	}
 
 	/* If there is no route section, Floyd-Warshall calculates the shortest path for all the nodes in the network */

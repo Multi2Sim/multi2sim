@@ -31,8 +31,9 @@ static char *err_net_cycle =
 	"\tcan in turn make the simulation stall with no output.\n";
 
 static char *err_net_routing = 
-	"\tA link is not defined between the source node and next node in the \n"
-	"\t configuration file. \n"; 
+	"\t There is a link missing between source node and next node for this  \n"
+	"\t route step. The route between source and destination node should go \n"
+	"\t through existing links that are defined in the configuration file.  \n";
 
 
 #define NET_NODE_COLOR_WHITE ((void *) 1)
@@ -165,6 +166,8 @@ void net_routing_table_initiate(struct net_routing_table_t *routing_table)
 	struct net_t *net = routing_table->net;
 
 	struct net_node_t *src_node, *dst_node;
+	struct net_buffer_t *buffer;
+	struct net_link_t *link;
 
 	struct net_routing_table_entry_t *entry;
 
@@ -191,20 +194,6 @@ void net_routing_table_initiate(struct net_routing_table_t *routing_table)
 		}
 	}
 
-}
-
-/* Calculate shortest paths Floyd-Warshall algorithm.*/
-void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table)
-{
-	int i, j, k ;
-	struct net_t *net = routing_table->net;
-
-	struct net_node_t *src_node, *next_node;
-	struct net_buffer_t *buffer;
-	struct net_link_t *link;
-
-	struct net_routing_table_entry_t *entry;
-
 	/* Set 1-hop connections */
 	for (i = 0; i < net->node_count; i++)
 	{
@@ -214,13 +203,25 @@ void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table)
 			buffer = list_get(src_node->output_buffer_list, j);
 			link = buffer->link;
 			assert(link);
-
 			entry = net_routing_table_lookup(routing_table, src_node, link->dst_node);
 			entry->cost = 1;
 			entry->next_node = link->dst_node;
+			entry->output_buffer = buffer;
 		}
 	}
+}
 
+/* Calculate shortest paths Floyd-Warshall algorithm.*/
+void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table)
+{
+	int i, j, k ;
+	struct net_t *net = routing_table->net;
+
+	struct net_node_t *next_node;
+	struct net_buffer_t *buffer;
+	struct net_link_t *link;
+
+	struct net_routing_table_entry_t *entry;
 
 	/* The 'routing_table_entry->next_node' values do
 	 * not necessarily point to the immediate next hop after this. */
@@ -424,10 +425,8 @@ void net_routing_table_route_update(struct net_routing_table_t *routing_table, s
 	struct net_buffer_t *buffer;
 	struct net_link_t *link;
 	struct net_routing_table_entry_t *entry;
-	struct net_routing_table_entry_t *entry_check;
 
 	entry = net_routing_table_lookup(routing_table, src_node, dst_node);
-	entry_check = net_routing_table_lookup(routing_table, src_node, next_node);
 	entry->next_node = next_node;
 	entry->output_buffer = NULL ;
 
@@ -444,13 +443,12 @@ void net_routing_table_route_update(struct net_routing_table_t *routing_table, s
 		if ((link->dst_node == next_node))
 		{
 			entry->output_buffer = buffer;
-			entry_check->cost = 1;
 			route_check = 1;					
 		}						
 	}
 
 	/*If there is not a route between the source node and next node , error */
-	if (route_check == 0) fatal("Network %s : following the command %s.to.%s = %s:\n%s ",
+	if (route_check == 0) fatal("Network %s : route %s.to.%s = %s : Missing Link \n%s ",
 		routing_table->net->name, src_node->name, dst_node->name, next_node->name, err_net_routing);
 
 	/* Find cycle in routing table */
