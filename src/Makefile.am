@@ -18,6 +18,10 @@ LDADD = \
 	$(top_builddir)/src/arch/evergreen/emu/libemu.a \
 	$(top_builddir)/src/arch/evergreen/asm/libasm.a \
 	\
+	$(top_builddir)/src/arch/fermi/timing/libtiming.a \
+	$(top_builddir)/src/arch/fermi/emu/libemu.a \
+	$(top_builddir)/src/arch/fermi/asm/libasm.a \
+	\
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
 	$(top_builddir)/src/arch/x86/emu/libemu.a \
 	$(top_builddir)/src/arch/x86/asm/libasm.a \
