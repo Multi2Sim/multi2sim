@@ -79,6 +79,10 @@ static struct x86_ctx_t *ctx_do_create()
 
 	/* Create context and set its status */
 	ctx = calloc(1, sizeof(struct x86_ctx_t));
+	if (!ctx)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
 	ctx->pid = x86_emu->current_pid++;
 
 	/* Update status so that the context is inserted in the
@@ -227,16 +231,19 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 	if (x86_isa_ctx == ctx)
 		x86_isa_ctx = NULL;
 	x86_ctx_debug("context %d freed\n", ctx->pid);
+
+	/* Free context */
 	free(ctx);
 }
 
 
 void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 {
-	char sstatus[200];
+	char status_str[MAX_STRING_SIZE];
+
 	fprintf(f, "  pid=%d\n", ctx->pid);
-	map_flags(&x86_ctx_status_map, ctx->status, sstatus, 200);
-	fprintf(f, "  status=%s\n", sstatus);
+	map_flags(&x86_ctx_status_map, ctx->status, status_str, sizeof status_str);
+	fprintf(f, "  status=%s\n", status_str);
 	if (!ctx->parent)
 		fprintf(f, "  parent=(null)\n");
 	else

@@ -200,6 +200,9 @@ char *x86_cpu_config_help =
 /* Main Processor Global Variable */
 struct x86_cpu_t *x86_cpu;
 
+/* Trace */
+int x86_trace_category;
+
 
 /* Configuration file and parameters */
 
@@ -842,6 +845,10 @@ void x86_cpu_init()
 	x86_lsq_init();
 	x86_event_queue_init();
 	x86_fu_init();
+
+	/* Trace */
+	x86_trace_header("x86.init num_cores=%d num_threads=%d\n",
+		x86_cpu_num_cores, x86_cpu_num_threads);
 }
 
 
