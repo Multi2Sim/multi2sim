@@ -372,7 +372,6 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 		GtkWidget *label = gtk_label_new(str);
 		gtk_widget_set_size_request(label, VI_EVG_TIME_DIA_CELL_WIDTH - 1,
 			VI_EVG_TIME_DIA_CYCLE_LAYOUT_HEIGHT - 1);
-		gtk_widget_show(label);
 
 		/* Set label font attributes */
 		PangoAttrList *attrs;
@@ -385,7 +384,6 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 		GtkWidget *event_box = gtk_event_box_new();
 		gtk_container_add(GTK_CONTAINER(event_box), label);
 		gtk_layout_put(GTK_LAYOUT(cycle_layout), event_box, x, 0);
-		gtk_widget_show(event_box);
 
 		/* Color */
 		GdkColor color;
@@ -433,7 +431,6 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 			GtkWidget *label = gtk_label_new(NULL);
 			gtk_widget_set_size_request(label, VI_EVG_TIME_DIA_CELL_WIDTH - 1,
 				VI_EVG_TIME_DIA_CELL_HEIGHT - 1);
-			gtk_widget_show(label);
 			if (inst)
 				gtk_label_set_markup(GTK_LABEL(label),
 					map_value(&vi_evg_inst_stage_name_map, inst->stage));
@@ -449,7 +446,6 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 			GtkWidget *event_box = gtk_event_box_new();
 			gtk_container_add(GTK_CONTAINER(event_box), label);
 			gtk_layout_put(GTK_LAYOUT(content_layout), event_box, x, y);
-			gtk_widget_show(event_box);
 
 			/* Color */
 			GdkColor color;
@@ -484,7 +480,6 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 		gtk_misc_set_alignment(GTK_MISC(label), 0, .5);
 		gtk_widget_set_size_request(label, inst_layout_width,
 			VI_EVG_TIME_DIA_CELL_HEIGHT - 1);
-		gtk_widget_show(label);
 
 		/* Set label font attributes */
 		PangoAttrList *attrs;
@@ -497,7 +492,6 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 		GtkWidget *event_box = gtk_event_box_new();
 		gtk_container_add(GTK_CONTAINER(event_box), label);
 		gtk_layout_put(GTK_LAYOUT(inst_layout), event_box, 0, y);
-		gtk_widget_show(event_box);
 
 		/* Color */
 		GdkColor color;
@@ -515,6 +509,10 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 	hash_table_free(inst_table);
 
 	/* Repaint if necessary */
+	gtk_widget_show_all(time_dia->legend_layout);
+	gtk_widget_show_all(time_dia->content_layout);
+	gtk_widget_show_all(time_dia->cycle_layout);
+	gtk_widget_show_all(time_dia->inst_layout);
 	gtk_container_check_resize(GTK_CONTAINER(time_dia->legend_layout));
 	gtk_container_check_resize(GTK_CONTAINER(time_dia->content_layout));
 	gtk_container_check_resize(GTK_CONTAINER(time_dia->cycle_layout));
