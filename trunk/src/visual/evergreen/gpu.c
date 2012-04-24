@@ -362,7 +362,7 @@ void vi_evg_gpu_init(void)
 
 			char name[MAX_STRING_SIZE];
 
-			/* Create module */
+			/* Create compute units */
 			num_compute_units = vi_trace_line_get_symbol_int(trace_line, "num_compute_units");
 			for (i = 0; i < num_compute_units; i++)
 			{

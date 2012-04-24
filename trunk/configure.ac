@@ -185,6 +185,7 @@ M2S_INCLUDES=" \
 \
 -I\$(top_srcdir)/src/libgpuvisual \
 \
+\
 "
 
 AC_SUBST(M2S_INCLUDES)
