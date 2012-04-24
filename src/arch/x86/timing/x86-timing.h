@@ -544,6 +544,12 @@ int x86_trace_cache_lookup(struct x86_trace_cache_t *trace_cache, uint32_t eip, 
  * Multi-Core Multi-Thread Processor
  */
 
+/* Trace */
+#define x86_tracing() trace_status(x86_trace_category)
+#define x86_trace(...) trace(x86_trace_category, __VA_ARGS__)
+#define x86_trace_header(...) trace_header(x86_trace_category, __VA_ARGS__)
+extern int x86_trace_category;
+
 
 /* Fast access macros */
 #define X86_CORE		(x86_cpu->core[core])

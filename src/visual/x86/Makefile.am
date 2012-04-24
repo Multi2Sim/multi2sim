@@ -6,8 +6,10 @@ if HAVE_GTK
 libx86_a_SOURCES += \
 	visual-x86.h \
 	\
+	context.c \
 	core.c \
-	cpu.c
+	cpu.c \
+	panel.c
 
 AM_CFLAGS = @GTK_CFLAGS@
 

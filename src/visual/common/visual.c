@@ -31,6 +31,7 @@
 struct vi_cycle_bar_t *vi_cycle_bar;
 struct vi_mem_panel_t *vi_mem_panel;
 struct vi_evg_panel_t *vi_evg_panel;
+struct vi_x86_panel_t *vi_x86_panel;
 
 
 static void visual_destroy_event(GtkWidget *widget, gpointer data)
@@ -83,6 +84,11 @@ void visual_run(char *file_name)
 	/* Cycle bar */
 	vi_cycle_bar_init(visual_cycle_bar_refresh, NULL);
 	gtk_box_pack_start(GTK_BOX(vbox), vi_cycle_bar_get_widget(), FALSE, FALSE, 0);
+
+	/* x86 panel */
+	vi_x86_panel = vi_x86_panel_create();
+	gtk_box_pack_start(GTK_BOX(vbox), vi_x86_panel_get_widget(vi_x86_panel),
+		FALSE, FALSE, 0);
 
 	/* Evergreen panel */
 	vi_evg_panel = vi_evg_panel_create();

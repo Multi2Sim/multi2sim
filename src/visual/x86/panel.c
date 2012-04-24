@@ -17,9 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <visual-evergreen.h>
+#include <visual-x86.h>
 
 
+#if 0
 /*
  * Timing Diagram Window
  */
@@ -124,19 +125,19 @@ static GtkWidget *vi_evg_time_dia_window_get_widget(struct vi_evg_time_dia_windo
 	return time_dia_window->widget;
 }
 
-
+#endif
 
 
 /*
- * Compute Unit Board
+ * Core Board
  */
 
-#define VI_CU_BOARD_PADDING		10
-#define VI_CU_BOARD_WIDTH		100
-#define VI_CU_BOARD_HEIGHT		100
+#define VI_X86_CORE_BOARD_PADDING	10
+#define VI_X86_CORE_BOARD_WIDTH		100
+#define VI_X86_CORE_BOARD_HEIGHT	100
 
 
-struct vi_cu_board_t
+struct vi_x86_core_board_t
 {
 	/* Main widget */
 	GtkWidget *widget;
@@ -144,32 +145,33 @@ struct vi_cu_board_t
 	GtkWidget *time_dia_toggle_button;
 	GtkWidget *block_dia_toggle_button;
 
-	struct vi_evg_time_dia_window_t *time_dia_window;
+	//struct vi_x86_time_dia_window_t *time_dia_window;
 
-	struct vi_evg_compute_unit_t *compute_unit;
+	struct vi_x86_core_t *core;
 	struct vi_led_t *led;
-	struct vi_list_t *work_group_list;
+	struct vi_list_t *context_list;
 };
 
 
 /* Forward declarations */
 
-static struct vi_cu_board_t *vi_cu_board_create(struct vi_evg_compute_unit_t *compute_unit);
-static void vi_cu_board_free(struct vi_cu_board_t *board);
+static struct vi_x86_core_board_t *vi_x86_core_board_create(struct vi_x86_core_t *core);
+static void vi_x86_core_board_free(struct vi_x86_core_board_t *board);
 
-static void vi_cu_board_refresh(struct vi_cu_board_t *board);
+static void vi_x86_core_board_refresh(struct vi_x86_core_board_t *board);
 
 
 /* Functions */
 
-static void vi_cu_board_destroy(GtkWidget *widget, struct vi_cu_board_t *board)
+static void vi_x86_core_board_destroy(GtkWidget *widget, struct vi_x86_core_board_t *board)
 {
-	vi_cu_board_free(board);
+	vi_x86_core_board_free(board);
 }
 
 
-static gboolean vi_cu_board_time_dia_toggled(GtkWidget *widget, struct vi_cu_board_t *board)
+static gboolean vi_x86_core_board_time_dia_toggled(GtkWidget *widget, struct vi_x86_core_board_t *board)
 {
+#if 0
 	struct vi_evg_time_dia_window_t *time_dia_window;
 
 	int active;
@@ -191,37 +193,37 @@ static gboolean vi_cu_board_time_dia_toggled(GtkWidget *widget, struct vi_cu_boa
 		gtk_widget_destroy(vi_evg_time_dia_window_get_widget(board->time_dia_window));
 		board->time_dia_window = NULL;
 	}
-
+#endif
 	return FALSE;
 }
 
 
-static struct vi_cu_board_t *vi_cu_board_create(struct vi_evg_compute_unit_t *compute_unit)
+static struct vi_x86_core_board_t *vi_x86_core_board_create(struct vi_x86_core_t *core)
 {
-	struct vi_cu_board_t *board;
+	struct vi_x86_core_board_t *board;
 
 	char str[MAX_STRING_SIZE];
 
 	/* Allocate */
-	board = calloc(1, sizeof(struct vi_cu_board_t));
+	board = calloc(1, sizeof(struct vi_x86_core_board_t));
 	if (!board)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	board->compute_unit = compute_unit;
+	board->core = core;
 
 	/* Frame */
 	GtkWidget *frame = gtk_frame_new(NULL);
 	GtkWidget *event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(event_box), frame);
-	gtk_widget_set_size_request(frame, VI_CU_BOARD_WIDTH, VI_CU_BOARD_HEIGHT);
+	gtk_widget_set_size_request(frame, VI_X86_CORE_BOARD_WIDTH, VI_X86_CORE_BOARD_HEIGHT);
 
 	/* Vertical box */
 	GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(frame), vbox);
 
 	/* Name */
-	snprintf(str, sizeof str, "<b>%s</b>", compute_unit->name);
+	snprintf(str, sizeof str, "<b>%s</b>", core->name);
 	GtkWidget *label = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(label), str);
 	gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 0);
@@ -240,7 +242,7 @@ static struct vi_cu_board_t *vi_cu_board_create(struct vi_evg_compute_unit_t *co
 	GtkWidget *time_dia_toggle_button = gtk_toggle_button_new_with_label("T");
 	gtk_box_pack_start(GTK_BOX(hbox), time_dia_toggle_button, TRUE, TRUE, 0);
 	g_signal_connect(G_OBJECT(time_dia_toggle_button), "toggled",
-		G_CALLBACK(vi_cu_board_time_dia_toggled), board);
+		G_CALLBACK(vi_x86_core_board_time_dia_toggled), board);
 	board->time_dia_toggle_button = time_dia_toggle_button;
 
 	/* Block Diagram Toggle button */
@@ -250,102 +252,104 @@ static struct vi_cu_board_t *vi_cu_board_create(struct vi_evg_compute_unit_t *co
 		G_CALLBACK(vi_evg_board_block_toggle_button_toggled), board);*/
 	board->block_dia_toggle_button = block_dia_toggle_button;
 
-	/* Work-group list */
-	struct vi_list_t *work_group_list = vi_list_create("Work-group list", 10, 10,
-		(vi_list_get_elem_name_func_t) vi_evg_work_group_get_name_short,
-		(vi_list_get_elem_desc_func_t) vi_evg_work_group_get_desc);
-	gtk_box_pack_start(GTK_BOX(vbox), vi_list_get_widget(work_group_list), TRUE, TRUE, 0);
-	board->work_group_list = work_group_list;
+	/* Context list */
+	struct vi_list_t *context_list = vi_list_create("Context list", 10, 10,
+		(vi_list_get_elem_name_func_t) vi_x86_context_get_name_short,
+		(vi_list_get_elem_desc_func_t) vi_x86_context_get_desc);
+	gtk_box_pack_start(GTK_BOX(vbox), vi_list_get_widget(context_list), TRUE, TRUE, 0);
+	board->context_list = context_list;
 
 	/* Main widget */
 	board->widget = event_box;
-	g_signal_connect(G_OBJECT(board->widget), "destroy", G_CALLBACK(vi_cu_board_destroy), board);
+	g_signal_connect(G_OBJECT(board->widget), "destroy", G_CALLBACK(vi_x86_core_board_destroy), board);
 
 	/* Return */
 	return board;
 }
 
 
-static void vi_cu_board_free(struct vi_cu_board_t *board)
+static void vi_x86_core_board_free(struct vi_x86_core_board_t *board)
 {
-	/* Free work-group list */
-	while (vi_list_count(board->work_group_list))
-		free(vi_list_remove_at(board->work_group_list, 0));
-	vi_list_free(board->work_group_list);
+	/* Free context list */
+	while (vi_list_count(board->context_list))
+		free(vi_list_remove_at(board->context_list, 0));
+	vi_list_free(board->context_list);
 
 	/* Destroy time diagram */
+#if 0
 	if (board->time_dia_window)
 		gtk_widget_destroy(vi_evg_time_dia_window_get_widget(board->time_dia_window));
+#endif
 
 	/* Free */
 	free(board);
 }
 
 
-static GtkWidget *vi_cu_board_get_widget(struct vi_cu_board_t *board)
+static GtkWidget *vi_x86_core_board_get_widget(struct vi_x86_core_board_t *board)
 {
 	return board->widget;
 }
 
 
-static void vi_cu_board_refresh(struct vi_cu_board_t *board)
+static void vi_x86_core_board_refresh(struct vi_x86_core_board_t *board)
 {
-	struct hash_table_t *work_group_table;
-	struct vi_evg_work_group_t *work_group;
+	struct hash_table_t *context_table;
+	struct vi_x86_context_t *context;
 
-	char *work_group_name;
+	char *context_name;
 
-	long long cycle;
+	/* Empty context list */
+	while (vi_list_count(board->context_list))
+		free(vi_list_remove_at(board->context_list, 0));
 
-	/* Empty work-group list */
-	while (vi_list_count(board->work_group_list))
-		free(vi_list_remove_at(board->work_group_list, 0));
-
-	/* Refresh work-group list */
-	work_group_table = board->compute_unit->work_group_table;
-	HASH_TABLE_FOR_EACH(work_group_table, work_group_name, work_group)
+	/* Refresh context list */
+	context_table = board->core->context_table;
+	HASH_TABLE_FOR_EACH(context_table, context_name, context)
 	{
 		/* Duplicate name */
-		work_group_name = strdup(work_group_name);
-		if (!work_group_name)
+		context_name = strdup(context_name);
+		if (!context_name)
 			fatal("%s: out of memory", __FUNCTION__);
 
 		/* Add to list */
-		vi_list_add(board->work_group_list, work_group_name);
+		vi_list_add(board->context_list, context_name);
 	}
-	vi_list_refresh(board->work_group_list);
+	vi_list_refresh(board->context_list);
 
 	/* LED */
 	GdkColor color;
-	if (vi_list_count(board->work_group_list))
+	if (vi_list_count(board->context_list))
 		gdk_color_parse("red", &color);
 	else
 		gdk_color_parse("green", &color);
 	vi_led_set_color(board->led, &color);
 
 	/* Refresh time diagram */
+#if 0
 	if (board->time_dia_window)
 	{
 		cycle = vi_cycle_bar_get_cycle();
 		vi_evg_time_dia_window_go_to_cycle(board->time_dia_window, cycle);
 		vi_evg_time_dia_window_refresh(board->time_dia_window);
 	}
+#endif
 }
 
 
 
 
 /*
- * GPU Panel
+ * CPU Panel
  */
 
-#define VI_EVG_PANEL_PADDING	5
+#define VI_X86_PANEL_PADDING	5
 
-#define VI_EVG_PANEL_WIDTH	100
-#define VI_EVG_PANEL_HEIGHT	100
+#define VI_X86_PANEL_WIDTH	100
+#define VI_X86_PANEL_HEIGHT	100
 
 
-struct vi_evg_panel_t
+struct vi_x86_panel_t
 {
 	GtkWidget *widget;
 
@@ -353,20 +357,20 @@ struct vi_evg_panel_t
 };
 
 
-static void vi_evg_panel_destroy(GtkWidget *widget,
-	struct vi_evg_panel_t *panel)
+static void vi_x86_panel_destroy(GtkWidget *widget,
+	struct vi_x86_panel_t *panel)
 {
 	list_free(panel->board_list);
-	vi_evg_panel_free(panel);
+	vi_x86_panel_free(panel);
 }
 
 
-struct vi_evg_panel_t *vi_evg_panel_create(void)
+struct vi_x86_panel_t *vi_x86_panel_create(void)
 {
-	struct vi_evg_compute_unit_t *compute_unit;
-	struct vi_evg_panel_t *panel;
+	struct vi_x86_core_t *core;
+	struct vi_x86_panel_t *panel;
 
-	struct vi_cu_board_t *board;
+	struct vi_x86_core_board_t *board;
 
 	int layout_width;
 	int layout_height;
@@ -374,7 +378,7 @@ struct vi_evg_panel_t *vi_evg_panel_create(void)
 	int i;
 
 	/* Allocate */
-	panel = calloc(1, sizeof(struct vi_evg_panel_t));
+	panel = calloc(1, sizeof(struct vi_x86_panel_t));
 	if (!panel)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -383,7 +387,7 @@ struct vi_evg_panel_t *vi_evg_panel_create(void)
 
 	/* Frame */
 	GtkWidget *frame;
-	frame = gtk_frame_new("Evergreen GPU");
+	frame = gtk_frame_new("x86 GPU");
 
 	/* Layout */
 	GtkWidget *layout;
@@ -399,44 +403,44 @@ struct vi_evg_panel_t *vi_evg_panel_create(void)
 	gtk_container_add(GTK_CONTAINER(frame), scrolled_window);
 
 	/* Boards */
-	layout_width = VI_CU_BOARD_PADDING;
-	layout_height = VI_CU_BOARD_HEIGHT + 2 * VI_CU_BOARD_PADDING;
-	LIST_FOR_EACH(vi_evg_gpu->compute_unit_list, i)
+	layout_width = VI_X86_CORE_BOARD_PADDING;
+	layout_height = VI_X86_CORE_BOARD_HEIGHT + 2 * VI_X86_CORE_BOARD_PADDING;
+	LIST_FOR_EACH(vi_x86_cpu->core_list, i)
 	{
 		/* Create board and insert */
-		compute_unit = list_get(vi_evg_gpu->compute_unit_list, i);
-		board = vi_cu_board_create(compute_unit);
+		core = list_get(vi_x86_cpu->core_list, i);
+		board = vi_x86_core_board_create(core);
 		list_add(panel->board_list, board);
-		gtk_layout_put(GTK_LAYOUT(layout), vi_cu_board_get_widget(board),
-			layout_width, VI_CU_BOARD_PADDING);
+		gtk_layout_put(GTK_LAYOUT(layout), vi_x86_core_board_get_widget(board),
+			layout_width, VI_X86_CORE_BOARD_PADDING);
 
 		/* Accumulate width */
-		layout_width += VI_CU_BOARD_WIDTH + VI_CU_BOARD_PADDING;
+		layout_width += VI_X86_CORE_BOARD_WIDTH + VI_X86_CORE_BOARD_PADDING;
 	}
 
 	/* Sizes of scrolled window */
 	gtk_widget_set_size_request(layout, layout_width, layout_height);
-	gtk_widget_set_size_request(scrolled_window, VI_CU_BOARD_WIDTH * 3 / 2, layout_height);
+	gtk_widget_set_size_request(scrolled_window, VI_X86_CORE_BOARD_WIDTH * 3 / 2, layout_height);
 
 	/* Widget */
 	panel->widget = frame;
 	g_signal_connect(G_OBJECT(panel->widget), "destroy",
-		G_CALLBACK(vi_evg_panel_destroy), panel);
+		G_CALLBACK(vi_x86_panel_destroy), panel);
 
 	/* Return */
 	return panel;
 }
 
 
-void vi_evg_panel_free(struct vi_evg_panel_t *panel)
+void vi_x86_panel_free(struct vi_x86_panel_t *panel)
 {
 	free(panel);
 }
 
 
-void vi_evg_panel_refresh(struct vi_evg_panel_t *panel)
+void vi_x86_panel_refresh(struct vi_x86_panel_t *panel)
 {
-	struct vi_cu_board_t *board;
+	struct vi_x86_core_board_t *board;
 
 	long long cycle;
 
@@ -450,12 +454,12 @@ void vi_evg_panel_refresh(struct vi_evg_panel_t *panel)
 	LIST_FOR_EACH(panel->board_list, board_id)
 	{
 		board = list_get(panel->board_list, board_id);
-		vi_cu_board_refresh(board);
+		vi_x86_core_board_refresh(board);
 	}
 }
 
 
-GtkWidget *vi_evg_panel_get_widget(struct vi_evg_panel_t *panel)
+GtkWidget *vi_x86_panel_get_widget(struct vi_x86_panel_t *panel)
 {
 	return panel->widget;
 }
