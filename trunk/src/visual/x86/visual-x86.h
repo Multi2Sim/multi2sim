@@ -25,12 +25,51 @@
 
 
 /*
+ * X86 Panel
+ */
+
+struct vi_x86_panel_t *vi_x86_panel_create(void);
+void vi_x86_panel_free(struct vi_x86_panel_t *panel);
+
+void vi_x86_panel_refresh(struct vi_x86_panel_t *panel);
+
+GtkWidget *vi_x86_panel_get_widget(struct vi_x86_panel_t *panel);
+
+
+
+
+/*
+ * Context
+ */
+
+struct vi_x86_context_t
+{
+	char *name;
+	int id;
+
+	/* Map */
+	int core_id;
+	int thread_id;
+};
+
+struct vi_x86_context_t *vi_x86_context_create(char *name, int id);
+void vi_x86_context_free(struct vi_x86_context_t *context);
+
+void vi_x86_context_get_name_short(char *context_name, char *buf, int size);
+void vi_x86_context_get_desc(char *context_name, char *buf, int size);
+
+
+
+
+/*
  * Core
  */
 
 struct vi_x86_core_t
 {
 	char *name;
+
+	struct hash_table_t *context_table;
 };
 
 struct vi_x86_core_t *vi_x86_core_create(char *name);
@@ -46,6 +85,7 @@ void vi_x86_core_free(struct vi_x86_core_t *core);
 struct vi_x86_cpu_t
 {
 	struct list_t *core_list;
+	struct hash_table_t *context_table;
 };
 
 

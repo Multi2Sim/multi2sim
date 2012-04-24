@@ -20,40 +20,36 @@
 #include <visual-x86.h>
 
 
-/*
- * Public Functions
- */
-
-struct vi_x86_core_t *vi_x86_core_create(char *name)
-{
-	struct vi_x86_core_t *core;
-
-	/* Allocate */
-	core = calloc(1, sizeof(struct vi_x86_core_t));
-	if (!core)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize */
-	core->name = str_set(NULL, name);
-	core->context_table = hash_table_create(0, FALSE);
-
-	/* Return */
-	return core;
-}
-
-
-void vi_x86_core_free(struct vi_x86_core_t *core)
+struct vi_x86_context_t *vi_x86_context_create(char *name, int id)
 {
 	struct vi_x86_context_t *context;
 
-	char *context_name;
+	/* Allocate */
+	context = calloc(1, sizeof(struct vi_x86_context_t));
+	if (!context)
+		fatal("%s: out of memory", __FUNCTION__);
 
-	/* Free contexts */
-	HASH_TABLE_FOR_EACH(core->context_table, context_name, context)
-		vi_x86_context_free(context);
-	hash_table_free(core->context_table);
+	/* Initialize */
+	context->name = str_set(NULL, name);
+	context->id = id;
 
-	/* Free core */
-	str_free(core->name);
-	free(core);
+	/* Return */
+	return context;
+}
+
+
+void vi_x86_context_free(struct vi_x86_context_t *context)
+{
+}
+
+
+void vi_x86_context_get_name_short(char *context_name, char *buf, int size)
+{
+	snprintf(buf, size, "%s", context_name);
+}
+
+
+void vi_x86_context_get_desc(char *context_name, char *buf, int size)
+{
+	snprintf(buf, size, "%s", context_name);
 }
