@@ -21,6 +21,7 @@
 
 #include <evergreen-timing.h>
 #include <x86-timing.h>
+#include <fermi-timing.h>
 #include <visual-common.h>
 
 
@@ -35,6 +36,7 @@ static char *opencl_debug_file_name = "";
 static char *cpu_disasm_file_name = "";
 static char *gpu_disasm_file_name = "";
 static char *opengl_disasm_file_name = "";
+static char *fermi_disasm_file_name = "";
 static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
 static char *gpu_pipeline_debug_file_name = "";
@@ -459,6 +461,14 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Fermi disassembler */
+		if (!strcmp(argv[argi], "--fermi-disasm"))
+		{
+			sim_need_argument(argc, argv, argi);
+			fermi_disasm_file_name = argv[++argi];
+			continue;
+		}
+
 
 		/* GPU-REL: file to introduce faults  */
 		if (!strcmp(argv[argi], "--gpu-faults"))
@@ -772,6 +782,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		fatal("option '--gpu-disasm' is incompatible with any other options.");
 	if (*opengl_disasm_file_name && argc != 4)
 		fatal("option '--opengl-disasm' is incompatible with any other options.");	
+	if (*fermi_disasm_file_name && argc > 3)
+		fatal("option '--fermi-disasm' is incompatible with any other options.");
 	if (*cpu_disasm_file_name && argc > 3)
 		fatal("option '--cpu-disasm' is incompatible with other options.");
 	if (!*net_sim_network_name && net_sim_last_option)
@@ -884,6 +896,10 @@ int main(int argc, char **argv)
 	/* OpenGL disassembler tool */
 	if (*opengl_disasm_file_name)
 		evg_emu_opengl_disasm(opengl_disasm_file_name, opengl_disasm_shader_index);	
+
+	/* Fermi disassembler tool */
+	if (*fermi_disasm_file_name)
+		frm_emu_disasm(fermi_disasm_file_name);
 
 	/* GPU visualization tool */
 	if (*gpu_visual_file_name)
