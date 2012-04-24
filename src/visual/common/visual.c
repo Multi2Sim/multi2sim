@@ -20,6 +20,7 @@
 #include <visual-common.h>
 #include <visual-memory.h>
 #include <visual-evergreen.h>
+#include <visual-x86.h>
 
 
 
@@ -61,6 +62,7 @@ void visual_run(char *file_name)
 	/* Initialize visual systems */
 	vi_mem_system_init();
 	vi_evg_gpu_init();
+	vi_x86_cpu_init();
 
 	/* Create checkpoints */
 	vi_state_create_checkpoints();
@@ -99,6 +101,7 @@ void visual_run(char *file_name)
 	gtk_main();
 
 	/* Free */
+	vi_x86_cpu_done();
 	vi_evg_gpu_done();
 	vi_mem_system_done();
 	vi_cycle_bar_done();
