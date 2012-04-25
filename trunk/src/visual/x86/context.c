@@ -40,6 +40,8 @@ struct vi_x86_context_t *vi_x86_context_create(char *name, int id)
 
 void vi_x86_context_free(struct vi_x86_context_t *context)
 {
+	str_free(context->name);
+	free(context);
 }
 
 
@@ -52,4 +54,56 @@ void vi_x86_context_get_name_short(char *context_name, char *buf, int size)
 void vi_x86_context_get_desc(char *context_name, char *buf, int size)
 {
 	snprintf(buf, size, "%s", context_name);
+}
+
+
+void vi_x86_context_read_checkpoint(struct vi_x86_context_t *context, FILE *f)
+{
+	int count;
+
+	char name[MAX_STRING_SIZE];
+
+	/* Name */
+	str_read_from_file(f, name, sizeof name);
+	context->name = str_set(context->name, name);
+
+	/* ID */
+	count = fread(&context->id, 1, sizeof context->id, f);
+	if (count != sizeof context->id)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
+	/* Core ID */
+	count = fread(&context->core_id, 1, sizeof context->core_id, f);
+	if (count != sizeof context->id)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
+	/* ID */
+	count = fread(&context->thread_id, 1, sizeof context->thread_id, f);
+	if (count != sizeof context->id)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+}
+
+
+void vi_x86_context_write_checkpoint(struct vi_x86_context_t *context, FILE *f)
+{
+	int count;
+
+	/* Name */
+	assert(context->name);
+	str_write_to_file(f, context->name);
+
+	/* ID */
+	count = fwrite(&context->id, 1, sizeof context->id, f);
+	if (count != sizeof context->id)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
+
+	/* Core ID */
+	count = fwrite(&context->core_id, 1, sizeof context->core_id, f);
+	if (count != sizeof context->core_id)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
+
+	/* Thread ID */
+	count = fwrite(&context->thread_id, 1, sizeof context->thread_id, f);
+	if (count != sizeof context->thread_id)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
 }

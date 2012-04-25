@@ -44,6 +44,7 @@ static void visual_cycle_bar_refresh(void *user_data, long long cycle)
 {
 	vi_mem_panel_refresh(vi_mem_panel);
 	vi_evg_panel_refresh(vi_evg_panel);
+	vi_x86_panel_refresh(vi_x86_panel);
 }
 
 
