@@ -2,7 +2,7 @@ lib_LIBRARIES = libasm.a
 
 libasm_a_SOURCES = \
 	\
-	arm-asm.h \
+	southern-islands-asm.h \
 	\
 	asm.c
 
