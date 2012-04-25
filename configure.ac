@@ -171,6 +171,10 @@ M2S_INCLUDES=" \
 -I\$(top_srcdir)/src/arch/fermi/emu \
 -I\$(top_srcdir)/src/arch/fermi/timing \
 \
+-I\$(top_srcdir)/src/arch/southern-islands/asm \
+-I\$(top_srcdir)/src/arch/southern-islands/emu \
+-I\$(top_srcdir)/src/arch/southern-islands/timing \
+\
 -I\$(top_srcdir)/src/arch/x86/asm \
 -I\$(top_srcdir)/src/arch/x86/emu \
 -I\$(top_srcdir)/src/arch/x86/timing \
@@ -184,8 +188,6 @@ M2S_INCLUDES=" \
 -I\$(top_srcdir)/src/network \
 \
 -I\$(top_srcdir)/src/libgpuvisual \
-\
-\
 "
 
 AC_SUBST(M2S_INCLUDES)
@@ -218,6 +220,11 @@ AC_CONFIG_FILES([Makefile
 		 src/arch/fermi/asm/Makefile
 		 src/arch/fermi/emu/Makefile
 		 src/arch/fermi/timing/Makefile
+
+		 src/arch/southern-islands/Makefile
+		 src/arch/southern-islands/asm/Makefile
+		 src/arch/southern-islands/emu/Makefile
+		 src/arch/southern-islands/timing/Makefile
 
 		 src/arch/x86/Makefile
 		 src/arch/x86/asm/Makefile

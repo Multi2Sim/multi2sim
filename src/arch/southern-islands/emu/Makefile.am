@@ -2,7 +2,7 @@ lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
 	\
-	arm-emu.h \
+	southern-islands-emu.h \
 	\
 	emu.c
 
