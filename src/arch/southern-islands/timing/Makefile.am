@@ -2,9 +2,9 @@ lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
 	\
-	arm-timing.h \
+	southern-islands-timing.h \
 	\
-	cpu.c
+	gpu.c
 
 INCLUDES = @M2S_INCLUDES@
 
