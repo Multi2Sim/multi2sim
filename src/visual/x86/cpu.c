@@ -52,7 +52,8 @@ static void vi_x86_cpu_map_context(struct vi_x86_cpu_t *cpu,
 	if (!context)
 	{
 		context = vi_x86_context_create(context_name, context_id);
-		hash_table_insert(vi_x86_cpu->context_table, context_name, context);
+		if (!hash_table_insert(vi_x86_cpu->context_table, context_name, context))
+			panic("%s: invalid context", __FUNCTION__);
 	}
 
 	/* Set fields */
@@ -65,7 +66,7 @@ static void vi_x86_cpu_map_context(struct vi_x86_cpu_t *cpu,
 		panic("%s: invalid core", __FUNCTION__);
 
 	/* Add to core */
-	if (!hash_table_insert(core->context_table, context_name, context))
+	if (!hash_table_insert(core->context_table, context_name, VI_X86_CONTEXT_EMPTY))
 		panic("%s: invalid context", __FUNCTION__);
 }
 
@@ -78,6 +79,35 @@ static void vi_x86_cpu_map_context(struct vi_x86_cpu_t *cpu,
 static void vi_x86_cpu_unmap_context(struct vi_x86_cpu_t *cpu,
 	struct vi_trace_line_t *trace_line)
 {
+	struct vi_x86_core_t *core;
+	struct vi_x86_context_t *context;
+
+	int context_id;
+	int core_id;
+	int thread_id;
+
+	char context_name[MAX_STRING_SIZE];
+
+	/* Get fields */
+	context_id = vi_trace_line_get_symbol_int(trace_line, "ctx");
+	core_id = vi_trace_line_get_symbol_int(trace_line, "core");
+	thread_id = vi_trace_line_get_symbol_int(trace_line, "thread");
+
+	/* Get core */
+	core = list_get(vi_x86_cpu->core_list, core_id);
+	if (!core)
+		panic("%s: invalid core", __FUNCTION__);
+
+	/* Get context */
+	snprintf(context_name, sizeof context_name, "ctx-%d", context_id);
+	context = hash_table_get(vi_x86_cpu->context_table, context_name);
+	if (!context || context->core_id != core_id || context->thread_id != thread_id)
+		panic("%s: invalid context", __FUNCTION__);
+
+	/* Remove from core */
+	if (!hash_table_remove(core->context_table, context_name))
+		panic("%s: invalid context", __FUNCTION__);
+
 }
 
 
@@ -87,16 +117,91 @@ static void vi_x86_cpu_unmap_context(struct vi_x86_cpu_t *cpu,
 static void vi_x86_cpu_end_context(struct vi_x86_cpu_t *cpu,
 	struct vi_trace_line_t *trace_line)
 {
+	struct vi_x86_context_t *context;
+
+	char context_name[MAX_STRING_SIZE];
+
+	int context_id;
+
+	/* Get fields */
+	context_id = vi_trace_line_get_symbol_int(trace_line, "ctx");
+
+	/* Remove and free context */
+	snprintf(context_name, sizeof context_name, "ctx-%d", context_id);
+	context = hash_table_remove(vi_x86_cpu->context_table, context_name);
+	if (!context)
+		panic("%s: invalid context", __FUNCTION__);
+	vi_x86_context_free(context);
 }
 
 
 static void vi_x86_cpu_read_checkpoint(struct vi_x86_cpu_t *cpu, FILE *f)
 {
+	struct vi_x86_core_t *core;
+	struct vi_x86_context_t *context;
+
+	int core_id;
+	int num_contexts;
+	int count;
+	int i;
+
+	char *context_name;
+
+	/* Clear list of contexts */
+	HASH_TABLE_FOR_EACH(vi_x86_cpu->context_table, context_name, context)
+		vi_x86_context_free(context);
+	hash_table_clear(vi_x86_cpu->context_table);
+
+	/* Number of contexts */
+	count = fread(&num_contexts, 1, 4, f);
+	if (count != 4)
+		fatal("%s: cannot read checkpoint", __FUNCTION__);
+
+	/* Contexts */
+	for (i = 0; i < num_contexts; i++)
+	{
+		context = vi_x86_context_create(NULL, 0);
+		vi_x86_context_read_checkpoint(context, f);
+		if (!hash_table_insert(vi_x86_cpu->context_table, context->name, context))
+			panic("%s: invalid context", __FUNCTION__);
+	}
+
+	/* Cores */
+	LIST_FOR_EACH(vi_x86_cpu->core_list, core_id)
+	{
+		core = list_get(vi_x86_cpu->core_list, core_id);
+		vi_x86_core_read_checkpoint(core, f);
+	}
 }
 
 
 static void vi_x86_cpu_write_checkpoint(struct vi_x86_cpu_t *cpu, FILE *f)
 {
+	struct vi_x86_core_t *core;
+	struct vi_x86_context_t *context;
+
+	int core_id;
+	int count;
+	int num_contexts;
+
+	char *context_name;
+
+	/* Number of contexts */
+	num_contexts = hash_table_count(vi_x86_cpu->context_table);
+	count = fwrite(&num_contexts, 1, 4, f);
+	if (count != 4)
+		fatal("%s: cannot read checkpoint", __FUNCTION__);
+
+	/* Contexts */
+	HASH_TABLE_FOR_EACH(vi_x86_cpu->context_table, context_name, context)
+		vi_x86_context_write_checkpoint(context, f);
+
+	/* Cores */
+	LIST_FOR_EACH(vi_x86_cpu->core_list, core_id)
+	{
+		core = list_get(vi_x86_cpu->core_list, core_id);
+		vi_x86_core_write_checkpoint(core, f);
+	}
 }
 
 

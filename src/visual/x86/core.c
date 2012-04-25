@@ -44,16 +44,57 @@ struct vi_x86_core_t *vi_x86_core_create(char *name)
 
 void vi_x86_core_free(struct vi_x86_core_t *core)
 {
-	struct vi_x86_context_t *context;
-
-	char *context_name;
-
-	/* Free contexts */
-	HASH_TABLE_FOR_EACH(core->context_table, context_name, context)
-		vi_x86_context_free(context);
+	/* Free contexts (elements are VI_X86_CONTEXT_EMPTY). */
 	hash_table_free(core->context_table);
 
 	/* Free core */
 	str_free(core->name);
 	free(core);
+}
+
+
+void vi_x86_core_read_checkpoint(struct vi_x86_core_t *core, FILE *f)
+{
+	int num_contexts;
+	int count;
+	int i;
+
+	char context_name[MAX_STRING_SIZE];
+
+	/* Clear table of contexts */
+	hash_table_clear(core->context_table);
+
+	/* Number of contexts */
+	count = fread(&num_contexts, 1, 4, f);
+	if (count != 4)
+		fatal("%s: cannot read checkpoint", __FUNCTION__);
+
+	/* Read contexts */
+	for (i = 0; i < num_contexts; i++)
+	{
+		str_read_from_file(f, context_name, sizeof context_name);
+		if (!hash_table_insert(core->context_table, context_name, VI_X86_CONTEXT_EMPTY))
+			panic("%s: invalid context", __FUNCTION__);
+	}
+}
+
+
+void vi_x86_core_write_checkpoint(struct vi_x86_core_t *core, FILE *f)
+{
+	struct vi_x86_context_t *context;
+
+	int num_contexts;
+	int count;
+
+	char *context_name;
+
+	/* Number of contexts */
+	num_contexts = hash_table_count(core->context_table);
+	count = fwrite(&num_contexts, 1, 4, f);
+	if (count != 4)
+		fatal("%s: cannot read checkpoint", __FUNCTION__);
+
+	/* Contexts */
+	HASH_TABLE_FOR_EACH(core->context_table, context_name, context)
+		str_write_to_file(f, context_name);
 }
