@@ -67,6 +67,50 @@ void vi_x86_context_write_checkpoint(struct vi_x86_context_t *context, FILE *f);
 
 
 /*
+ * Instruction
+ */
+
+enum vi_x86_inst_stage_t
+{
+	vi_x86_inst_stage_invalid = 0,
+
+	vi_x86_inst_stage_fetch,
+	vi_x86_inst_stage_decode,
+	vi_x86_inst_stage_dispatch,
+	vi_x86_inst_stage_execute,
+	vi_x86_inst_stage_writeback,
+	vi_x86_inst_stage_commit,
+	vi_x86_inst_stage_squash,
+
+	vi_x86_inst_stage_count
+};
+
+extern struct string_map_t vi_x86_inst_stage_map;
+
+struct vi_x86_inst_t
+{
+	long long id;
+
+	char *name;
+
+	char *asm_code;
+	char *asm_micro_code;
+
+	enum vi_x86_inst_stage_t stage;
+};
+
+struct vi_x86_inst_t *vi_x86_inst_create(long long id, char *name,
+	char *asm_code, char *asm_micro_code,
+	enum vi_x86_inst_stage_t stage);
+void vi_x86_inst_free(struct vi_x86_inst_t *inst);
+
+void vi_x86_inst_read_checkpoint(struct vi_x86_inst_t *inst, FILE *f);
+void vi_x86_inst_write_checkpoint(struct vi_x86_inst_t *inst, FILE *f);
+
+
+
+
+/*
  * Core
  */
 
@@ -78,6 +122,10 @@ struct vi_x86_core_t
 	 * Only names are stored. The elements in the table are all
 	 * 'VI_X86_CONTEXT_EMPTY'. */
 	struct hash_table_t *context_table;
+
+	/* Hash table of instructions.
+	 * Each element is of type 'struct vi_x86_inst_t'. */
+	struct hash_table_t *inst_table;
 };
 
 struct vi_x86_core_t *vi_x86_core_create(char *name);

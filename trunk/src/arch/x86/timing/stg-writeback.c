@@ -63,9 +63,9 @@ static void x86_cpu_writeback_core(int core)
 			recover = 1;
 
 		/* Debug */
-		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
+		esim_debug("uop action=\"update\", core=%d, seq=%lld,"
 			" stg_writeback=1, completed=1\n",
-			uop->core, (long long unsigned) uop->dispatch_seq);
+			uop->core, uop->id_in_core);
 
 		/* Writeback */
 		uop->completed = 1;

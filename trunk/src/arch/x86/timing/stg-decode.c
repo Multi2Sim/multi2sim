@@ -58,10 +58,18 @@ static void x86_cpu_decode_thread(int core, int thread)
 		if (!mod_in_flight_access(X86_THREAD.inst_mod, uop->fetch_access, uop->fetch_address))
 		{
 			do {
+				/* Move from fetch queue to uop queue */
 				x86_fetch_queue_remove(core, thread, 0);
 				list_add(uopq, uop);
 				uop->in_uop_queue = 1;
+
+				/* Trace */
+				x86_trace("x86.inst id=%lld core=%d stg=\"de\"\n",
+					uop->id_in_core, uop->core);
+
+				/* Next */
 				uop = list_get(fetchq, 0);
+
 			} while (uop && uop->mop_index);
 		}
 	}
@@ -71,6 +79,7 @@ static void x86_cpu_decode_thread(int core, int thread)
 static void x86_cpu_decode_core(int core)
 {
 	int thread;
+
 	X86_THREAD_FOR_EACH
 		x86_cpu_decode_thread(core, thread);
 }
@@ -79,6 +88,7 @@ static void x86_cpu_decode_core(int core)
 void x86_cpu_decode()
 {
 	int core;
+
 	x86_cpu->stage = "decode";
 	X86_CORE_FOR_EACH
 		x86_cpu_decode_core(core);
