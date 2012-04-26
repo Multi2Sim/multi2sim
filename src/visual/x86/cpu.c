@@ -24,6 +24,7 @@
  * Trace Line Processing Functions
  */
 
+
 /* Command 'x86.map_ctx'
  * 	ctx=<pid>
  * 	core=<core_id>
@@ -135,6 +136,71 @@ static void vi_x86_cpu_end_context(struct vi_x86_cpu_t *cpu,
 }
 
 
+/* Command 'x86.new_inst'
+ *	id=<id>
+ *	core=<core_id>
+ *	asm=<asm_code>
+ *	uasm=<asm_micro_code>
+ *	stg=<stage>
+ */
+static void vi_x86_cpu_new_inst(struct vi_x86_cpu_t *cpu,
+	struct vi_trace_line_t *trace_line)
+{
+	struct vi_x86_core_t *core;
+	struct vi_x86_inst_t *inst;
+
+	long long id;
+
+	int core_id;
+
+	char *asm_code;
+	char *asm_micro_code;
+
+	char name[MAX_STRING_SIZE];
+
+	enum vi_x86_inst_stage_t stage;
+
+	/* Fields */
+	id = vi_trace_line_get_symbol_long_long(trace_line, "id");
+	core_id = vi_trace_line_get_symbol_int(trace_line, "core");
+	asm_code = vi_trace_line_get_symbol(trace_line, "asm");
+	asm_micro_code = vi_trace_line_get_symbol(trace_line, "uasm");
+	stage = map_string(&vi_x86_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+
+	/* Create instruction */
+	snprintf(name, sizeof name, "i-%lld", id);
+	inst = vi_x86_inst_create(id, name, asm_code, asm_micro_code, stage);
+
+	/* Get core */
+	core = list_get(vi_x86_cpu->core_list, core_id);
+	if (!core)
+		panic("%s: invalid core", __FUNCTION__);
+
+	/* Insert in table */
+	if (!hash_table_insert(core->inst_table, name, inst))
+		panic("%s: invalid instruction", __FUNCTION__);
+}
+
+
+/* Command 'x86.inst'
+ *	id=<id>
+ *	stg=<stage>
+ */
+static void vi_x86_cpu_inst(struct vi_x86_cpu_t *cpu,
+	struct vi_trace_line_t *trace_line)
+{
+}
+
+
+/* Command 'x86.end_inst'
+ *	id=<id>
+ */
+static void vi_x86_cpu_end_inst(struct vi_x86_cpu_t *cpu,
+	struct vi_trace_line_t *trace_line)
+{
+}
+
+
 static void vi_x86_cpu_read_checkpoint(struct vi_x86_cpu_t *cpu, FILE *f)
 {
 	struct vi_x86_core_t *core;
@@ -243,6 +309,15 @@ void vi_x86_cpu_init(void)
 		vi_x86_cpu);
 	vi_state_new_command("x86.end_ctx",
 		(vi_state_process_trace_line_func_t) vi_x86_cpu_end_context,
+		vi_x86_cpu);
+	vi_state_new_command("x86.new_inst",
+		(vi_state_process_trace_line_func_t) vi_x86_cpu_new_inst,
+		vi_x86_cpu);
+	vi_state_new_command("x86.inst",
+		(vi_state_process_trace_line_func_t) vi_x86_cpu_inst,
+		vi_x86_cpu);
+	vi_state_new_command("x86.end_inst",
+		(vi_state_process_trace_line_func_t) vi_x86_cpu_end_inst,
 		vi_x86_cpu);
 
 	/* Parse header in state file */

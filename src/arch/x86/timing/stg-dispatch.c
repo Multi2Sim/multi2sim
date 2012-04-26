@@ -93,7 +93,6 @@ static int x86_cpu_dispatch_thread(int core, int thread, int quant)
 		}
 		
 		/* Another instruction dispatched */
-		uop->dispatch_seq = ++X86_CORE.dispatch_seq;
 		X86_CORE.dispatch_stall[uop->specmode ? x86_dispatch_stall_spec : x86_dispatch_stall_used]++;
 		X86_THREAD.dispatched[uop->uinst->opcode]++;
 		X86_CORE.dispatched[uop->uinst->opcode]++;
@@ -104,7 +103,7 @@ static int x86_cpu_dispatch_thread(int core, int thread, int quant)
 		esim_debug("uop action=\"create\", core=%d, seq=%llu, name=\"%s\","
 			" mop_name=\"%s\", mop_count=%d, mop_index=%d, spec=%u,"
 			" stg_dispatch=1, in_rob=%u, in_iq=%u, in_lsq=%u\n",
-			uop->core, (long long unsigned) uop->dispatch_seq, uop->name,
+			uop->core, uop->id_in_core, uop->name,
 			uop->mop_name, uop->mop_count, uop->mop_index, uop->specmode,
 			!!uop->in_rob, !!uop->in_iq, uop->in_lq || uop->in_sq);
 	}

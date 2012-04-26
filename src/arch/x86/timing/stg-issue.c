@@ -72,9 +72,9 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 			mmu_access_page(store->phy_addr, mmu_access_write);
 
 		/* Debug */
-		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
+		esim_debug("uop action=\"update\", core=%d, seq=%lld,"
 			" stg_issue=1, in_lsq=0, issued=1\n",
-			store->core, (long long unsigned) store->dispatch_seq);
+			store->core, store->id_in_core);
 	}
 	return quant;
 }
@@ -141,9 +141,9 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 			mmu_access_page(load->phy_addr, mmu_access_read);
 
 		/* Debug */
-		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
+		esim_debug("uop action=\"update\", core=%d, seq=%lld,"
 			" stg_issue=1, in_lsq=0, issued=1\n",
-			load->core, (long long unsigned) load->dispatch_seq);
+			load->core, load->id_in_core);
 	}
 	
 	return quant;
@@ -211,9 +211,9 @@ static int x86_cpu_issue_iq(int core, int thread, int quant)
 		quant--;
 
 		/* Debug */
-		esim_debug("uop action=\"update\", core=%d, seq=%llu,"
+		esim_debug("uop action=\"update\", core=%d, seq=%lld,"
 			" stg_issue=1, in_iq=0, issued=1\n",
-			uop->core, (long long unsigned) uop->dispatch_seq);
+			uop->core, uop->id_in_core);
 	}
 	
 	return quant;

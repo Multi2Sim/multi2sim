@@ -60,9 +60,13 @@ void x86_cpu_recover(int core, int thread)
 		x86_reg_file_undo(uop);
 
 		/* Debug */
-		esim_debug("uop action=\"squash\", core=%d, seq=%llu\n",
-			uop->core, uop->dispatch_seq);
+		esim_debug("uop action=\"squash\", core=%d, seq=%lld\n",
+			uop->core, uop->id_in_core);
  
+		/* Trace */
+		x86_trace("x86.end_inst id=%lld core=%d\n",
+			uop->id_in_core, uop->core);
+
 		/* Remove entry in ROB */
 		x86_rob_remove_tail(core, thread);
 	}

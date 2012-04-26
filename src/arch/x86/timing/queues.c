@@ -474,7 +474,7 @@ static int eventq_compare(const void *item1, const void *item2)
 	const struct x86_uop_t *uop1 = item1;
 	const struct x86_uop_t *uop2 = item2;
 	return uop1->when != uop2->when ? uop1->when - uop2->when
-		: uop1->seq - uop2->seq;
+		: uop1->id - uop2->id;
 }
 
 

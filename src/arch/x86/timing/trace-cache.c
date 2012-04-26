@@ -239,7 +239,7 @@ void x86_trace_cache_new_uop(struct x86_trace_cache_t *trace_cache, struct x86_u
 	 * If macroinst does not fit in line, it cannot be included in the trace. */
 	assert(!uop->specmode);
 	assert(uop->eip);
-	assert(uop->seq == uop->mop_seq);
+	assert(uop->id == uop->mop_id);
 	if (trace->uop_count + uop->mop_count > x86_trace_cache_trace_size)
 		x86_trace_cache_flush_trace(trace_cache);
 	if (uop->mop_count > x86_trace_cache_trace_size)

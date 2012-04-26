@@ -133,11 +133,15 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 		}
 
 		/* Debug */
-		esim_debug("uop action=\"update\", core=%d, seq=%llu, stg_commit=1\n",
-			uop->core, (long long unsigned) uop->dispatch_seq);
-		esim_debug("uop action=\"destroy\", core=%d, seq=%llu\n",
-			uop->core, (long long unsigned) uop->dispatch_seq);
+		esim_debug("uop action=\"update\", core=%d, seq=%lld, stg_commit=1\n",
+			uop->core, uop->id_in_core);
+		esim_debug("uop action=\"destroy\", core=%d, seq=%lld\n",
+			uop->core, uop->id_in_core);
 		
+		/* Trace */
+		x86_trace("x86.end_inst id=%lld core=%d\n",
+			uop->id_in_core, uop->core);
+
 		/* Retire instruction */
 		x86_rob_remove_head(core, thread);
 		X86_CORE.rob_reads++;
