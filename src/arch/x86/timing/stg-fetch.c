@@ -24,8 +24,8 @@ static int x86_cpu_can_fetch(int core, int thread)
 {
 	struct x86_ctx_t *ctx = X86_THREAD.ctx;
 
-	uint32_t phy_addr;
-	uint32_t block;
+	unsigned int phy_addr;
+	unsigned int block;
 
 	/* Context must be running */
 	if (!ctx || !x86_ctx_get_status(ctx, x86_ctx_running))
@@ -90,7 +90,8 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 		uop->uinst = uinst;
 		assert(uinst->opcode > 0 && uinst->opcode < x86_uinst_opcode_count);
 		uop->flags = x86_uinst_info[uinst->opcode].flags;
-		uop->seq = ++x86_cpu->seq;
+		uop->id = ++x86_cpu->uop_id_counter;
+		uop->id_in_core = ++X86_CORE.uop_id_counter;
 
 		uop->ctx = ctx;
 		uop->core = core;
@@ -98,7 +99,7 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 
 		uop->mop_count = uinst_count;
 		uop->mop_size = x86_isa_inst.size;
-		uop->mop_seq = uop->seq - uinst_index;
+		uop->mop_id = uop->id - uinst_index;
 		uop->mop_index = uinst_index;
 
 		uop->eip = X86_THREAD.fetch_eip;
@@ -130,6 +131,39 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 						sizeof(uop->mop_name));
 		}
 
+		/* Trace */
+		if (x86_tracing())
+		{
+			char str[MAX_STRING_SIZE];
+			char inst_name[MAX_STRING_SIZE];
+			char uinst_name[MAX_STRING_SIZE];
+
+			char *str_ptr;
+
+			int str_size;
+
+			str_ptr = str;
+			str_size = sizeof str;
+
+			/* Command */
+			str_printf(&str_ptr, &str_size, "x86.new_inst id=%lld core=%d",
+				uop->id_in_core, uop->core);
+
+			/* Macro-instruction name */
+			if (!uinst_index)
+			{
+				x86_inst_dump_buf(&x86_isa_inst, inst_name, sizeof inst_name);
+				str_printf(&str_ptr, &str_size, " asm=\"%s\"", inst_name);
+			}
+
+			/* Rest */
+			x86_uinst_dump_buf(uinst, uinst_name, sizeof uinst_name);
+			str_printf(&str_ptr, &str_size, " uasm=\"%s\" stg=\"fe\"", uinst_name);
+
+			/* Dump */
+			x86_trace("%s\n", str);
+		}
+
 		/* Select as returned uop */
 		if (!ret_uop || (uop->flags & X86_UINST_CTRL))
 			ret_uop = uop;
@@ -158,9 +192,15 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 static int x86_cpu_fetch_thread_trace_cache(int core, int thread)
 {
 	struct x86_uop_t *uop;
-	uint32_t eip_branch;  /* next branch address */
-	int mpred, hit, mop_count, i;
-	uint32_t *mop_array, neip;
+
+	int mpred;
+	int hit;
+	int mop_count;
+	int i;
+
+	unsigned int eip_branch;  /* next branch address */
+	unsigned int *mop_array;
+	unsigned int neip;
 
 	/* No trace cache, no space in the trace cache queue. */
 	if (!x86_trace_cache_present)
@@ -214,9 +254,9 @@ static void x86_cpu_fetch_thread(int core, int thread)
 	struct x86_ctx_t *ctx = X86_THREAD.ctx;
 	struct x86_uop_t *uop;
 
-	uint32_t phy_addr;
-	uint32_t block;
-	uint32_t target;
+	unsigned int phy_addr;
+	unsigned int block;
+	unsigned int target;
 
 	int taken;
 
@@ -382,6 +422,7 @@ static void x86_cpu_fetch_core(int core)
 void x86_cpu_fetch()
 {
 	int core;
+
 	x86_cpu->stage = "fetch";
 	X86_CORE_FOR_EACH
 		x86_cpu_fetch_core(core);

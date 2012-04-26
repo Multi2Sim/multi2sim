@@ -126,8 +126,8 @@ struct x86_uop_t
 	/* Name and sequence numbers */
 	char name[40];
 	long long magic;  /* Magic number for debugging */
-	long long seq;  /* Sequence number - unique uop identifier */
-	long long dispatch_seq;  /* Dispatch sequence number - unique per core */
+	long long id;  /* Unique ID */
+	long long id_in_core;  /* Unique ID in core */
 
 	/* Context info */
 	struct x86_ctx_t *ctx;
@@ -149,7 +149,7 @@ struct x86_uop_t
 	int mop_index;  /* Index of uop within macroinstruction */
 	int mop_count;  /* Number of uops within macroinstruction */
 	int mop_size;  /* Corresponding macroinstruction size */
-	long long mop_seq;  /* Sequence number of macroinstruction */
+	long long mop_id;  /* Sequence number of macroinstruction */
 
 	/* Logical dependencies */
 	int idep_count;
@@ -177,7 +177,7 @@ struct x86_uop_t
 	int completed;
 
 	/* For memory uops */
-	uint32_t phy_addr;  /* ... corresponding to 'uop->uinst->address' */
+	unsigned int phy_addr;  /* ... corresponding to 'uop->uinst->address' */
 
 	/* Cycles */
 	long long when;  /* cycle when ready */
@@ -676,7 +676,8 @@ struct x86_core_t
 	struct x86_fu_t *fu;
 
 	/* Per core counters */
-	long long dispatch_seq;  /* Sequence number for dispatch stage */
+	long long uop_id_counter;  /* Counter for uop ID assignment */
+	long long dispatch_seq;  /* Counter for uop ID assignment */
 	int iq_count;
 	int lsq_count;
 	int reg_file_int_count;
@@ -746,7 +747,7 @@ struct x86_cpu_t
 	long long inst;
 
 	/* Some fields */
-	long long seq;  /* Seq num assigned to last instr (with pre-incr) */
+	long long uop_id_counter;  /* Counter of uop ID assignment */
 	char *stage;  /* Name of currently simulated stage */
 
 	/* Context allocations */

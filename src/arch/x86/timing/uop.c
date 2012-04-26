@@ -111,7 +111,7 @@ void x86_uop_linked_list_check_if_ready(struct linked_list_t *uop_list)
 			continue;
 		uop->ready = 1;
 		esim_debug("uop action=\"update\", core=%d, seq=%lld, ready=1\n",
-			uop->core, uop->dispatch_seq);
+			uop->core, uop->id_in_core);
 	}
 }
 
