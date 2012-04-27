@@ -24,19 +24,6 @@
 #include <visual-common.h>
 
 
-/*
- * X86 Panel
- */
-
-struct vi_x86_panel_t *vi_x86_panel_create(void);
-void vi_x86_panel_free(struct vi_x86_panel_t *panel);
-
-void vi_x86_panel_refresh(struct vi_x86_panel_t *panel);
-
-GtkWidget *vi_x86_panel_get_widget(struct vi_x86_panel_t *panel);
-
-
-
 
 /*
  * Context
@@ -155,6 +142,39 @@ extern struct vi_x86_cpu_t *vi_x86_cpu;
 
 void vi_x86_cpu_init(void);
 void vi_x86_cpu_done(void);
+
+
+
+
+/*
+ * Timing Diagram
+ */
+
+struct vi_x86_time_dia_t;
+
+struct vi_x86_time_dia_t *vi_x86_time_dia_create(struct vi_x86_core_t *core);
+void vi_x86_time_dia_free(struct vi_x86_time_dia_t *time_dia);
+
+GtkWidget *vi_x86_time_dia_get_widget(struct vi_x86_time_dia_t *time_dia);
+
+void vi_x86_time_dia_refresh(struct vi_x86_time_dia_t *time_dia);
+void vi_x86_time_dia_go_to_cycle(struct vi_x86_time_dia_t *time_dia, long long cycle);
+
+
+
+
+/*
+ * Panel
+ */
+
+struct vi_x86_panel_t *vi_x86_panel_create(void);
+void vi_x86_panel_free(struct vi_x86_panel_t *panel);
+
+void vi_x86_panel_refresh(struct vi_x86_panel_t *panel);
+
+GtkWidget *vi_x86_panel_get_widget(struct vi_x86_panel_t *panel);
+
+
 
 
 #endif
