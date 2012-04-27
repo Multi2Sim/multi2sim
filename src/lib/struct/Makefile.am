@@ -19,6 +19,8 @@ libstruct_a_SOURCES = \
 	list.h \
 	linked-list.c \
 	linked-list.h \
+	matrix.c \
+	matrix.h \
 	repos.c \
 	repos.h \
 	debug.c \
