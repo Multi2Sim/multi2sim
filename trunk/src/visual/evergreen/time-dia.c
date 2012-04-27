@@ -59,6 +59,12 @@ struct vi_evg_time_dia_t
 	int inst_layout_width;
 	int inst_layout_height;
 
+	long long left_cycle;
+	int left_offset;
+
+	long long top_inst_id;
+	int top_offset;
+
 	struct vi_evg_compute_unit_t *compute_unit;
 };
 
@@ -72,23 +78,7 @@ static void vi_evg_time_dia_widget_destroy(GtkWidget *widget, struct vi_evg_time
 static void vi_evg_time_dia_size_allocate(GtkWidget *widget, GdkRectangle *allocation,
 	struct vi_evg_time_dia_t *time_dia)
 {
-	int content_layout_width;
-	int content_layout_height;
-
-	int inst_layout_width;
-	int inst_layout_height;
-
-	content_layout_width = gtk_widget_get_allocated_width(time_dia->content_layout);
-	content_layout_height = gtk_widget_get_allocated_height(time_dia->content_layout);
-
-	inst_layout_width = gtk_widget_get_allocated_width(time_dia->inst_layout);
-	inst_layout_height = gtk_widget_get_allocated_height(time_dia->inst_layout);
-
-	if (content_layout_width != time_dia->content_layout_width ||
-		content_layout_height != time_dia->content_layout_height ||
-		inst_layout_width != time_dia->inst_layout_width ||
-		inst_layout_height != time_dia->inst_layout_height)
-		vi_evg_time_dia_refresh(time_dia);
+	vi_evg_time_dia_refresh(time_dia);
 }
 
 
@@ -250,16 +240,13 @@ void vi_evg_time_dia_go_to_cycle(struct vi_evg_time_dia_t *time_dia, long long c
 }
 
 
-void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
+static void vi_evg_time_dia_do_refresh(struct vi_evg_time_dia_t *time_dia)
 {
 	long long cycle;
 	long long inst_id;
 
 	long long num_cycles;
 	long long num_insts;
-
-	long long table_width;
-	long long table_height;
 
 	GList *child;
 
@@ -273,13 +260,10 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 	int content_layout_width;
 	int content_layout_height;
 	int inst_layout_width;
-	int inst_layout_height;
 
-	long long left;
 	long long left_cycle;
 	int left_offset;
 
-	long long top;
 	long long top_inst_id;
 	int top_offset;
 
@@ -292,7 +276,6 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 	char *inst_label_markup;
 
 	struct hash_table_t *inst_table;
-
 
 	/* Get compute unit */
 	compute_unit = time_dia->compute_unit;
@@ -309,56 +292,17 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 		gtk_container_remove(GTK_CONTAINER(inst_layout), child->data);
 
 	/* Get allocated dimensions */
-	content_layout_width = gtk_widget_get_allocated_width(content_layout);
-	content_layout_height = gtk_widget_get_allocated_height(content_layout);
-	time_dia->content_layout_width = content_layout_width;
-	time_dia->content_layout_height = content_layout_height;
-	inst_layout_width = gtk_widget_get_allocated_width(inst_layout);
-	inst_layout_height = gtk_widget_get_allocated_height(inst_layout);
-	time_dia->inst_layout_width = inst_layout_width;
-	time_dia->inst_layout_height = inst_layout_height;
-
-	/* Dimensions */
+	content_layout_width = time_dia->content_layout_width;
+	content_layout_height = time_dia->content_layout_height;
+	inst_layout_width = time_dia->inst_layout_width;
 	num_cycles = vi_state_get_num_cycles();
 	num_insts = time_dia->compute_unit->num_insts;
-	table_width = VI_EVG_TIME_DIA_CELL_WIDTH * num_cycles;
-	table_height = VI_EVG_TIME_DIA_CELL_HEIGHT * num_insts;
 
-	/* Horizontal scroll bar */
-	if (table_width > content_layout_width)
-	{
-		gtk_range_set_range(GTK_RANGE(time_dia->hscrollbar), 0,
-			table_width - content_layout_width);
-		gtk_range_set_increments(GTK_RANGE(time_dia->hscrollbar),
-			VI_EVG_TIME_DIA_CELL_WIDTH / 3, content_layout_width
-			- VI_EVG_TIME_DIA_CELL_WIDTH / 3);
-		gtk_widget_set_visible(time_dia->hscrollbar, TRUE);
-	}
-	else
-		gtk_widget_set_visible(time_dia->hscrollbar, FALSE);
-
-	/* Vertical scroll bar */
-	if (table_height > content_layout_height)
-	{
-		gtk_range_set_range(GTK_RANGE(time_dia->vscrollbar), 0,
-			table_height - content_layout_height);
-		gtk_range_set_increments(GTK_RANGE(time_dia->vscrollbar),
-			VI_EVG_TIME_DIA_CELL_HEIGHT, content_layout_height
-			- VI_EVG_TIME_DIA_CELL_HEIGHT);
-		gtk_widget_set_visible(time_dia->vscrollbar, TRUE);
-	}
-	else
-		gtk_widget_set_visible(time_dia->vscrollbar, FALSE);
-
-	/* Get starting X position */
-	left = gtk_range_get_value(GTK_RANGE(time_dia->hscrollbar));
-	left_cycle = left / VI_EVG_TIME_DIA_CELL_WIDTH;
-	left_offset = -(left % VI_EVG_TIME_DIA_CELL_WIDTH);
-
-	/* Get starting Y position */
-	top = gtk_range_get_value(GTK_RANGE(time_dia->vscrollbar));
-	top_inst_id = top / VI_EVG_TIME_DIA_CELL_HEIGHT;
-	top_offset = -(top % VI_EVG_TIME_DIA_CELL_HEIGHT);
+	/* Get starting positions */
+	left_cycle = time_dia->left_cycle;
+	left_offset = time_dia->left_offset;
+	top_inst_id = time_dia->top_inst_id;
+	top_offset = time_dia->top_offset;
 
 	/* Create hash table with in-flight instructions */
 	inst_table = hash_table_create(0, FALSE);
@@ -517,4 +461,123 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 	gtk_container_check_resize(GTK_CONTAINER(time_dia->content_layout));
 	gtk_container_check_resize(GTK_CONTAINER(time_dia->cycle_layout));
 	gtk_container_check_resize(GTK_CONTAINER(time_dia->inst_layout));
+}
+
+
+void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
+{
+	long long num_cycles;
+	long long num_insts;
+
+	long long table_width;
+	long long table_height;
+
+	int content_layout_width;
+	int content_layout_height;
+	int inst_layout_width;
+	int inst_layout_height;
+
+	long long left;
+	long long left_cycle;
+	int left_offset;
+
+	long long top;
+	long long top_inst_id;
+	int top_offset;
+
+	int content_layout_width_changed;
+	int content_layout_height_changed;
+	int inst_layout_width_changed;
+	int inst_layout_height_changed;
+	int left_cycle_changed;
+	int left_offset_changed;
+	int top_inst_id_changed;
+	int top_offset_changed;
+
+	/* Get allocated dimensions */
+	content_layout_width = gtk_widget_get_allocated_width(time_dia->content_layout);
+	content_layout_height = gtk_widget_get_allocated_height(time_dia->content_layout);
+	inst_layout_width = gtk_widget_get_allocated_width(time_dia->inst_layout);
+	inst_layout_height = gtk_widget_get_allocated_height(time_dia->inst_layout);
+	content_layout_width_changed = content_layout_width != time_dia->content_layout_width;
+	content_layout_height_changed = content_layout_height != time_dia->content_layout_height;
+	inst_layout_width_changed = inst_layout_width != time_dia->inst_layout_width;
+	inst_layout_height_changed = inst_layout_height != time_dia->inst_layout_height;
+	time_dia->content_layout_width = content_layout_width;
+	time_dia->content_layout_height = content_layout_height;
+	time_dia->inst_layout_width = inst_layout_width;
+	time_dia->inst_layout_height = inst_layout_height;
+
+	/* Dimensions */
+	num_cycles = vi_state_get_num_cycles();
+	num_insts = time_dia->compute_unit->num_insts;
+	table_width = VI_EVG_TIME_DIA_CELL_WIDTH * num_cycles;
+	table_height = VI_EVG_TIME_DIA_CELL_HEIGHT * num_insts;
+
+	/* If content layout width changed */
+	if (content_layout_width_changed)
+	{
+		if (table_width > content_layout_width)
+		{
+			gtk_range_set_range(GTK_RANGE(time_dia->hscrollbar), 0,
+					table_width - content_layout_width);
+			gtk_range_set_increments(GTK_RANGE(time_dia->hscrollbar),
+					VI_EVG_TIME_DIA_CELL_WIDTH / 3, content_layout_width
+					- VI_EVG_TIME_DIA_CELL_WIDTH / 3);
+			gtk_widget_set_visible(time_dia->hscrollbar, TRUE);
+		}
+		else
+		{
+			gtk_widget_set_visible(time_dia->hscrollbar, FALSE);
+		}
+	}
+
+	/* If content layout height changed */
+	if (content_layout_height_changed)
+	{
+		if (table_height > content_layout_height)
+		{
+			gtk_range_set_range(GTK_RANGE(time_dia->vscrollbar), 0,
+					table_height - content_layout_height);
+			gtk_range_set_increments(GTK_RANGE(time_dia->vscrollbar),
+					VI_EVG_TIME_DIA_CELL_HEIGHT, content_layout_height
+					- VI_EVG_TIME_DIA_CELL_HEIGHT);
+			gtk_widget_set_visible(time_dia->vscrollbar, TRUE);
+		}
+		else
+		{
+			gtk_widget_set_visible(time_dia->vscrollbar, FALSE);
+		}
+	}
+
+	/* Get starting X position */
+	left = gtk_range_get_value(GTK_RANGE(time_dia->hscrollbar));
+	left_cycle = left / VI_EVG_TIME_DIA_CELL_WIDTH;
+	left_offset = -(left % VI_EVG_TIME_DIA_CELL_WIDTH);
+	left_cycle_changed = left_cycle != time_dia->left_cycle;
+	left_offset_changed = left_offset != time_dia->left_offset;
+	time_dia->left_cycle = left_cycle;
+	time_dia->left_offset = left_offset;
+
+	/* Get starting Y position */
+	top = gtk_range_get_value(GTK_RANGE(time_dia->vscrollbar));
+	top_inst_id = top / VI_EVG_TIME_DIA_CELL_HEIGHT;
+	top_offset = -(top % VI_EVG_TIME_DIA_CELL_HEIGHT);
+	top_inst_id_changed = top_inst_id != time_dia->top_inst_id;
+	top_offset_changed = top_offset != time_dia->top_offset;
+	time_dia->top_inst_id = top_inst_id;
+	time_dia->top_offset = top_offset;
+
+	/* Refresh if anything changed */
+	if (content_layout_width_changed
+		|| content_layout_height_changed
+		|| inst_layout_width_changed
+		|| inst_layout_height_changed
+		|| left_cycle_changed
+		|| left_offset_changed
+		|| top_inst_id_changed
+		|| top_offset_changed)
+	{
+		vi_evg_time_dia_do_refresh(time_dia);
+	}
 }
