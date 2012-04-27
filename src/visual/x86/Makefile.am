@@ -10,7 +10,8 @@ libx86_a_SOURCES += \
 	core.c \
 	cpu.c \
 	inst.c \
-	panel.c
+	panel.c \
+	time-dia.c
 
 AM_CFLAGS = @GTK_CFLAGS@
 
