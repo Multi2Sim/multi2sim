@@ -1474,7 +1474,8 @@ void x86_isa_pop_ir32_impl()
 {
 	uint32_t value;
 
-	if (x86_isa_inst.segment) {
+	if (x86_isa_inst.segment)
+	{
 		x86_isa_error("%s: not supported segment", __FUNCTION__);
 		return;
 	}
@@ -1494,25 +1495,35 @@ void x86_isa_popf_impl()
 	x86_isa_mem_read(x86_isa_mem, x86_isa_regs->esp, 4, &x86_isa_regs->eflags);
 	x86_isa_regs->esp += 4;
 
+	/* Prevent TF from being set. A program should never do this, but it could
+	 * happen during speculative execution (case reported by Multi2Sim user).
+	 * The next instruction that is emulated in speculative mode could cause the
+	 * host to push this value of 'eflags', causing a TRAP in the host code. */
+	x86_isa_regs->eflags &= ~(1 << 8);
+
 	x86_uinst_new(x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(x86_uinst_load, x86_isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
 	x86_uinst_new(x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
-void x86_isa_prefetcht0_impl() {
+void x86_isa_prefetcht0_impl()
+{
 }
 
 
-void x86_isa_prefetcht1_impl() {
+void x86_isa_prefetcht1_impl()
+{
 }
 
 
-void x86_isa_prefetcht2_impl() {
+void x86_isa_prefetcht2_impl()
+{
 }
 
 
-void x86_isa_prefetchnta_impl() {
+void x86_isa_prefetchnta_impl()
+{
 }
 
 
