@@ -23,16 +23,27 @@
 
 struct matrix_t;
 
-struct matrix_t *matrix_create(int x_size, int y_size);
+
+#define MATRIX_FOR_EACH(matrix, row, col) \
+	for ((row) = 0; (row) < matrix_get_num_rows((matrix)); (row)++) \
+	for ((col) = 0; (col) < matrix_get_num_cols((matrix)); (col)++)
+
+#define MATRIX_FOR_EACH_ROW(matrix, row) \
+	for ((row) = 0; (row) < matrix_get_num_rows((matrix)); (row)++)
+
+#define MATRIX_FOR_EACH_COLUMN(matrix, col) \
+	for ((col) = 0; (col) < matrix_get_num_cols((matrix)); (col)++)
+
+
+struct matrix_t *matrix_create(int num_rows, int num_cols);
 void matrix_free(struct matrix_t *matrix);
 
-void matrix_set(struct matrix_t *matrix, int x, int y, void *value);
-void *matrix_get(struct matrix_t *matrix, int x, int y);
+void matrix_set(struct matrix_t *matrix, int row, int col, void *value);
+void *matrix_get(struct matrix_t *matrix, int row, int col);
 
 void matrix_clear(struct matrix_t *matrix);
 
-#define MATRIX_FOR_EACH(matrix, x, y) \
-	for ((x) = 0; (x) < matrix_get_x_size((matrix)); (x)++) \
-	for ((y) = 0; (y) < matrix_get_y_size((matrix)); (y)++)
+int matrix_get_num_rows(struct matrix_t *matrix);
+int matrix_get_num_cols(struct matrix_t *matrix);
 
 #endif

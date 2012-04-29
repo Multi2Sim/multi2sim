@@ -26,14 +26,14 @@
 
 struct matrix_t
 {
-	int x_size;
-	int y_size;
+	int num_rows;
+	int num_cols;
 
 	void **elem;
 };
 
 
-struct matrix_t *matrix_create(int x_size, int y_size)
+struct matrix_t *matrix_create(int num_rows, int num_cols)
 {
 	struct matrix_t *matrix;
 
@@ -43,17 +43,17 @@ struct matrix_t *matrix_create(int x_size, int y_size)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Check sizes */
-	if (x_size < 0 || y_size < 0)
+	if (num_rows < 0 || num_cols < 0)
 		fatal("%s: invalid sizes", __FUNCTION__);
 
 	/* Initialize */
-	matrix->x_size = x_size;
-	matrix->y_size = y_size;
+	matrix->num_rows = num_rows;
+	matrix->num_cols = num_cols;
 
 	/* Allocate elements array */
-	if (x_size > 0 && y_size > 0)
+	if (num_rows > 0 && num_cols > 0)
 	{
-		matrix->elem = calloc(x_size * y_size, sizeof(void *));
+		matrix->elem = calloc(num_rows * num_cols, sizeof(void *));
 		if (!matrix->elem)
 			fatal("%s: out of memory", __FUNCTION__);
 	}
@@ -71,34 +71,46 @@ void matrix_free(struct matrix_t *matrix)
 }
 
 
-void matrix_set(struct matrix_t *matrix, int x, int y, void *value)
+void matrix_set(struct matrix_t *matrix, int row, int col, void *value)
 {
 	/* Check range */
-	if (x < 0 || x >= matrix->x_size)
+	if (row < 0 || row >= matrix->num_rows)
 		return;
-	if (y < 0 || y >= matrix->y_size)
+	if (col < 0 || col >= matrix->num_cols)
 		return;
 
 	/* Assign value */
-	matrix->elem[x * matrix->y_size + y] = value;
+	matrix->elem[row * matrix->num_cols + col] = value;
 }
 
 
-void *matrix_get(struct matrix_t *matrix, int x, int y)
+void *matrix_get(struct matrix_t *matrix, int row, int col)
 {
 	/* Check range */
-	if (x < 0 || x >= matrix->x_size)
+	if (row < 0 || row >= matrix->num_rows)
 		return NULL;
-	if (y < 0 || y >= matrix->y_size)
+	if (col < 0 || col >= matrix->num_cols)
 		return NULL;
 
 	/* Return value */
-	return matrix->elem[x * matrix->y_size + y];
+	return matrix->elem[row * matrix->num_cols + col];
 }
 
 
 void matrix_clear(struct matrix_t *matrix)
 {
 	if (matrix->elem)
-		memset(matrix->elem, 0, matrix->x_size * matrix->y_size * sizeof(void *));
+		memset(matrix->elem, 0, matrix->num_rows * matrix->num_cols * sizeof(void *));
+}
+
+
+int matrix_get_num_rows(struct matrix_t *matrix)
+{
+	return matrix->num_rows;
+}
+
+
+int matrix_get_num_cols(struct matrix_t *matrix)
+{
+	return matrix->num_cols;
 }
