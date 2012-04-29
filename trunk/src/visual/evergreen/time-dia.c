@@ -18,6 +18,7 @@
  */
 
 #include <visual-evergreen.h>
+#include <matrix.h>
 
 
 #define VI_EVG_TIME_DIA_CELL_WIDTH			70
@@ -48,10 +49,15 @@ struct vi_evg_time_dia_t
 	GtkWidget *cycle_layout;
 	GtkWidget *inst_layout;
 	GtkWidget *content_layout;
+	GtkWidget *content_viewport;
 	GtkWidget *legend_layout;
 
 	GtkWidget *hscrollbar;
 	GtkWidget *vscrollbar;
+
+	struct matrix_t *content_label_matrix;
+	struct list_t *inst_label_list;
+	struct list_t *cycle_label_list;
 
 	int content_layout_width;
 	int content_layout_height;
@@ -62,7 +68,7 @@ struct vi_evg_time_dia_t
 	long long left_cycle;
 	int left_offset;
 
-	long long top_inst_id;
+	long long top_inst;
 	int top_offset;
 
 	struct vi_evg_compute_unit_t *compute_unit;
@@ -123,15 +129,21 @@ struct vi_evg_time_dia_t *vi_evg_time_dia_create(struct vi_evg_compute_unit_t *c
 
 	/* Content layout */
 	GtkWidget *content_layout;
-	content_layout = gtk_layout_new(NULL, NULL);
+	content_layout = gtk_fixed_new();
 	gtk_widget_set_size_request(content_layout, VI_EVG_TIME_DIA_CONTENT_LAYOUT_WIDTH,
 		VI_EVG_TIME_DIA_CONTENT_LAYOUT_HEIGHT);
-	g_signal_connect(G_OBJECT(content_layout), "size_allocate",
-		G_CALLBACK(vi_evg_time_dia_size_allocate), time_dia);
-	g_signal_connect(G_OBJECT(content_layout), "scroll-event",
-		G_CALLBACK(vi_evg_time_dia_scroll), time_dia);
 	gtk_widget_modify_bg(content_layout, GTK_STATE_NORMAL, &color_gray);
 	time_dia->content_layout = content_layout;
+
+	/* Content view port */
+	GtkWidget *content_viewport;
+	content_viewport = gtk_viewport_new(NULL, NULL);
+	g_signal_connect(G_OBJECT(content_viewport), "size_allocate",
+		G_CALLBACK(vi_evg_time_dia_size_allocate), time_dia);
+	g_signal_connect(G_OBJECT(content_viewport), "scroll-event",
+		G_CALLBACK(vi_evg_time_dia_scroll), time_dia);
+	gtk_container_add(GTK_CONTAINER(content_viewport), content_layout);
+	time_dia->content_viewport = content_viewport;
 
 	/* Instruction layout */
 	GtkWidget *inst_layout;
@@ -168,7 +180,7 @@ struct vi_evg_time_dia_t *vi_evg_time_dia_create(struct vi_evg_compute_unit_t *c
 	GtkWidget *right_vbox;
 	right_vbox = gtk_vbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(right_vbox), cycle_layout, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(right_vbox), content_layout, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(right_vbox), content_viewport, TRUE, TRUE, 0);
 
 	/* Horizontal panel */
 	GtkWidget *hpaned;
@@ -206,6 +218,19 @@ struct vi_evg_time_dia_t *vi_evg_time_dia_create(struct vi_evg_compute_unit_t *c
 
 void vi_evg_time_dia_free(struct vi_evg_time_dia_t *time_dia)
 {
+	/* Content label matrix */
+	if (time_dia->content_label_matrix)
+		matrix_free(time_dia->content_label_matrix);
+
+	/* Instruction label list */
+	if (time_dia->inst_label_list)
+		list_free(time_dia->inst_label_list);
+
+	/* Cycle label list */
+	if (time_dia->cycle_label_list)
+		list_free(time_dia->cycle_label_list);
+
+	/* Time diagram */
 	free(time_dia);
 }
 
@@ -240,189 +265,44 @@ void vi_evg_time_dia_go_to_cycle(struct vi_evg_time_dia_t *time_dia, long long c
 }
 
 
-static void vi_evg_time_dia_do_refresh(struct vi_evg_time_dia_t *time_dia)
+static void vi_evg_time_dia_refresh_content_layout(struct vi_evg_time_dia_t *time_dia)
 {
-	long long cycle;
-	long long inst_id;
+	GtkWidget *content_layout;
+
+	GList *child;
+
+	int num_rows;
+	int num_cols;
+
+	int row;
+	int col;
 
 	long long num_cycles;
 	long long num_insts;
 
-	GList *child;
-
-	struct vi_evg_compute_unit_t *compute_unit;
-	struct vi_evg_inst_t *inst;
-
-	GtkWidget *content_layout;
-	GtkWidget *cycle_layout;
-	GtkWidget *inst_layout;
-
-	int content_layout_width;
-	int content_layout_height;
-	int inst_layout_width;
-
-	long long left_cycle;
-	int left_offset;
-
-	long long top_inst_id;
-	int top_offset;
-
-	int x;
-	int y;
-
-	char str[MAX_LONG_STRING_SIZE];
-
-	char *inst_name;
-	char *inst_label_markup;
-
-	struct hash_table_t *inst_table;
-
-	/* Get compute unit */
-	compute_unit = time_dia->compute_unit;
-
-	/* Remove all objects from layouts */
+	/* Remove all labels */
 	content_layout = time_dia->content_layout;
-	cycle_layout = time_dia->cycle_layout;
-	inst_layout = time_dia->inst_layout;
 	while ((child = gtk_container_get_children(GTK_CONTAINER(content_layout))))
-		gtk_container_remove(GTK_CONTAINER(content_layout), child->data);
-	while ((child = gtk_container_get_children(GTK_CONTAINER(cycle_layout))))
-		gtk_container_remove(GTK_CONTAINER(cycle_layout), child->data);
-	while ((child = gtk_container_get_children(GTK_CONTAINER(inst_layout))))
-		gtk_container_remove(GTK_CONTAINER(inst_layout), child->data);
+		gtk_widget_destroy(child->data);
 
-	/* Get allocated dimensions */
-	content_layout_width = time_dia->content_layout_width;
-	content_layout_height = time_dia->content_layout_height;
-	inst_layout_width = time_dia->inst_layout_width;
+	/* Get new dimensions */
 	num_cycles = vi_state_get_num_cycles();
 	num_insts = time_dia->compute_unit->num_insts;
+	num_rows = MIN(num_insts, time_dia->content_layout_height / VI_EVG_TIME_DIA_CELL_HEIGHT);
+	num_cols = MIN(num_cycles, time_dia->content_layout_width / VI_EVG_TIME_DIA_CELL_WIDTH);
 
-	/* Get starting positions */
-	left_cycle = time_dia->left_cycle;
-	left_offset = time_dia->left_offset;
-	top_inst_id = time_dia->top_inst_id;
-	top_offset = time_dia->top_offset;
+	/* Create new matrix */
+	if (time_dia->content_label_matrix)
+		matrix_free(time_dia->content_label_matrix);
+	time_dia->content_label_matrix = matrix_create(num_rows, num_cols);
 
-	/* Create hash table with in-flight instructions */
-	inst_table = hash_table_create(0, FALSE);
-
-	/* Cycle layout */
-	cycle = left_cycle;
-	x = left_offset;
-	while (x < content_layout_width && cycle < num_cycles)
+	/* Create labels */
+	MATRIX_FOR_EACH(time_dia->content_label_matrix, row, col)
 	{
-		snprintf(str, sizeof str, "%lld", cycle);
-		GtkWidget *label = gtk_label_new(str);
-		gtk_widget_set_size_request(label, VI_EVG_TIME_DIA_CELL_WIDTH - 1,
-			VI_EVG_TIME_DIA_CYCLE_LAYOUT_HEIGHT - 1);
-
-		/* Set label font attributes */
-		PangoAttrList *attrs;
-		attrs = pango_attr_list_new();
-		PangoAttribute *size_attr = pango_attr_size_new_absolute(VI_EVG_TIME_DIA_FONT_SIZE << 10);
-		pango_attr_list_insert(attrs, size_attr);
-		gtk_label_set_attributes(GTK_LABEL(label), attrs);
-
-		/* Event box */
-		GtkWidget *event_box = gtk_event_box_new();
-		gtk_container_add(GTK_CONTAINER(event_box), label);
-		gtk_layout_put(GTK_LAYOUT(cycle_layout), event_box, x, 0);
-
-		/* Color */
-		GdkColor color;
-		gdk_color_parse("#ffffff", &color);
-		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
-
-		/* Next cycle */
-		x += VI_EVG_TIME_DIA_CELL_WIDTH;
-		cycle++;
-	}
-
-	/* Content layout */
-	cycle = left_cycle;
-	x = left_offset;
-	while (x < content_layout_width && cycle < num_cycles)
-	{
-		/* Go to cycle */
-		vi_state_go_to_cycle(cycle);
-
-		/* Add in-flight instructions */
-		HASH_TABLE_FOR_EACH(compute_unit->inst_table, inst_name, inst)
-		{
-			/* Instruction has already been added */
-			if (hash_table_get(inst_table, inst_name))
-				continue;
-
-			/* Add instruction */
-			vi_evg_inst_get_markup(inst, str, sizeof str);
-			inst_label_markup = strdup(str);
-			if (!inst_label_markup)
-				fatal("%s: out of memory", __FUNCTION__);
-			hash_table_insert(inst_table, inst_name, inst_label_markup);
-		}
-
-		/* Rows */
-		inst_id = top_inst_id;
-		y = top_offset;
-		while (y < content_layout_height && inst_id < num_insts)
-		{
-			/* Get instruction */
-			snprintf(str, sizeof str, "i-%lld", inst_id);
-			inst = hash_table_get(compute_unit->inst_table, str);
-
-			/* Label */
-			GtkWidget *label = gtk_label_new(NULL);
-			gtk_widget_set_size_request(label, VI_EVG_TIME_DIA_CELL_WIDTH - 1,
-				VI_EVG_TIME_DIA_CELL_HEIGHT - 1);
-			if (inst)
-				gtk_label_set_markup(GTK_LABEL(label),
-					map_value(&vi_evg_inst_stage_name_map, inst->stage));
-
-			/* Set label font attributes */
-			PangoAttrList *attrs;
-			attrs = pango_attr_list_new();
-			PangoAttribute *size_attr = pango_attr_size_new_absolute(VI_EVG_TIME_DIA_FONT_SIZE << 10);
-			pango_attr_list_insert(attrs, size_attr);
-			gtk_label_set_attributes(GTK_LABEL(label), attrs);
-
-			/* Event box */
-			GtkWidget *event_box = gtk_event_box_new();
-			gtk_container_add(GTK_CONTAINER(event_box), label);
-			gtk_layout_put(GTK_LAYOUT(content_layout), event_box, x, y);
-
-			/* Color */
-			GdkColor color;
-			char *color_str;
-			color_str = inst ? map_value(&vi_evg_inst_stage_color_map, inst->stage) : "white";
-			gdk_color_parse(color_str, &color);
-			gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
-
-			/* Next instruction */
-			y += VI_EVG_TIME_DIA_CELL_HEIGHT;
-			inst_id++;
-		}
-
-		/* Next cycle */
-		x += VI_EVG_TIME_DIA_CELL_WIDTH;
-		cycle++;
-	}
-
-	/* Instruction layout */
-	inst_id = top_inst_id;
-	y = top_offset;
-	while (y < content_layout_height && inst_id < num_insts)
-	{
-		/* Get instruction */
-		snprintf(str, sizeof str, "i-%lld", inst_id);
-		inst_label_markup = hash_table_get(inst_table, str);
-
 		/* Label */
 		GtkWidget *label = gtk_label_new(NULL);
-		if (inst_label_markup)
-			gtk_label_set_markup(GTK_LABEL(label), inst_label_markup);
-		gtk_misc_set_alignment(GTK_MISC(label), 0, .5);
-		gtk_widget_set_size_request(label, inst_layout_width,
+		gtk_misc_set_alignment(GTK_MISC(label), .5, .5);
+		gtk_widget_set_size_request(label, VI_EVG_TIME_DIA_CELL_WIDTH - 1,
 			VI_EVG_TIME_DIA_CELL_HEIGHT - 1);
 
 		/* Set label font attributes */
@@ -435,32 +315,350 @@ static void vi_evg_time_dia_do_refresh(struct vi_evg_time_dia_t *time_dia)
 		/* Event box */
 		GtkWidget *event_box = gtk_event_box_new();
 		gtk_container_add(GTK_CONTAINER(event_box), label);
-		gtk_layout_put(GTK_LAYOUT(inst_layout), event_box, 0, y);
+		gtk_fixed_put(GTK_FIXED(content_layout), event_box,
+			col * VI_EVG_TIME_DIA_CELL_WIDTH,
+			row * VI_EVG_TIME_DIA_CELL_HEIGHT);
+		matrix_set(time_dia->content_label_matrix, row, col, event_box);
 
 		/* Color */
 		GdkColor color;
 		gdk_color_parse("#ffffff", &color);
 		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
-
-		/* Next instruction */
-		y += VI_EVG_TIME_DIA_CELL_HEIGHT;
-		inst_id++;
 	}
 
-	/* Free hash table of instructions */
-	HASH_TABLE_FOR_EACH(inst_table, inst_name, inst_label_markup)
-		free(inst_label_markup);
-	hash_table_free(inst_table);
+	/* Show all widgets */
+	gtk_widget_show_all(time_dia->content_viewport);
+	gtk_container_check_resize(GTK_CONTAINER(time_dia->content_viewport));
+}
+
+
+static void vi_evg_time_dia_refresh_content_layout_position(struct vi_evg_time_dia_t *time_dia)
+{
+#if 0
+	GtkWidget *content_layout;
+
+	int row;
+	int col;
+
+	/* Move labels */
+	content_layout = time_dia->content_layout;
+	MATRIX_FOR_EACH(time_dia->content_label_matrix, row, col)
+	{
+		GtkWidget *widget;
+
+		widget = matrix_get(time_dia->content_label_matrix, row, col);
+		gtk_fixed_move(GTK_FIXED(content_layout), widget,
+			time_dia->left_offset + col * VI_EVG_TIME_DIA_CELL_WIDTH,
+			time_dia->top_offset + row * VI_EVG_TIME_DIA_CELL_HEIGHT);
+	}
+#endif
+}
+
+
+static void vi_evg_time_dia_refresh_inst_layout(struct vi_evg_time_dia_t *time_dia)
+{
+	GtkWidget *inst_layout;
+
+	GList *child;
+
+	int num_rows;
+	int row;
+
+	long long num_insts;
+
+	/* Remove all labels */
+	inst_layout = time_dia->inst_layout;
+	while ((child = gtk_container_get_children(GTK_CONTAINER(inst_layout))))
+		gtk_container_remove(GTK_CONTAINER(inst_layout), child->data);
+
+	/* Get new dimensions */
+	num_insts = time_dia->compute_unit->num_insts;
+	num_rows = MIN(num_insts, time_dia->inst_layout_height / VI_EVG_TIME_DIA_CELL_HEIGHT + 2);
+
+	/* Clear instruction label list */
+	if (!time_dia->inst_label_list)
+		time_dia->inst_label_list = list_create();
+	list_clear(time_dia->inst_label_list);
+
+	/* Create labels */
+	for (row = 0; row < num_rows; row++)
+	{
+		/* Label */
+		GtkWidget *label = gtk_label_new(NULL);
+		gtk_misc_set_alignment(GTK_MISC(label), 0, .5);
+		gtk_widget_set_size_request(label, time_dia->inst_layout_width,
+			VI_EVG_TIME_DIA_CELL_HEIGHT - 1);
+
+		/* Set label font attributes */
+		PangoAttrList *attrs;
+		attrs = pango_attr_list_new();
+		PangoAttribute *size_attr = pango_attr_size_new_absolute(VI_EVG_TIME_DIA_FONT_SIZE << 10);
+		pango_attr_list_insert(attrs, size_attr);
+		gtk_label_set_attributes(GTK_LABEL(label), attrs);
+
+		/* Event box */
+		GtkWidget *event_box = gtk_event_box_new();
+		gtk_container_add(GTK_CONTAINER(event_box), label);
+		gtk_layout_put(GTK_LAYOUT(inst_layout), event_box, 0,
+			time_dia->top_offset + row * VI_EVG_TIME_DIA_CELL_HEIGHT);
+		list_add(time_dia->inst_label_list, event_box);
+
+		/* Color */
+		GdkColor color;
+		gdk_color_parse("#ffffff", &color);
+		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
+	}
+
+	/* Show all widgets */
+	/* FIXME */
+	gtk_widget_show_all(inst_layout);
+}
+
+
+static void vi_evg_time_dia_refresh_inst_layout_position(struct vi_evg_time_dia_t *time_dia)
+{
+	GtkWidget *inst_layout;
+
+	int row;
+
+	/* Move labels */
+	inst_layout = time_dia->inst_layout;
+	LIST_FOR_EACH(time_dia->inst_label_list, row)
+	{
+		GtkWidget *widget;
+
+		widget = list_get(time_dia->inst_label_list, row);
+		gtk_layout_move(GTK_LAYOUT(inst_layout), widget, 0,
+			time_dia->top_offset + row * VI_EVG_TIME_DIA_CELL_HEIGHT);
+	}
+}
+
+
+static void vi_evg_time_dia_refresh_cycle_layout(struct vi_evg_time_dia_t *time_dia)
+{
+	GtkWidget *cycle_layout;
+
+	GList *child;
+
+	int num_cols;
+	int col;
+
+	long long num_cycles;
+
+	/* Remove all labels */
+	cycle_layout = time_dia->cycle_layout;
+	while ((child = gtk_container_get_children(GTK_CONTAINER(cycle_layout))))
+		gtk_container_remove(GTK_CONTAINER(cycle_layout), child->data);
+
+	/* Get new dimensions */
+	num_cycles = vi_state_get_num_cycles();
+	num_cols = MIN(num_cycles, time_dia->content_layout_width / VI_EVG_TIME_DIA_CELL_WIDTH + 2);
+
+	/* Clear cycle label list */
+	if (!time_dia->cycle_label_list)
+		time_dia->cycle_label_list = list_create();
+	list_clear(time_dia->cycle_label_list);
+
+	/* Create labels */
+	for (col = 0; col < num_cols; col++)
+	{
+		/* Label */
+		GtkWidget *label = gtk_label_new(NULL);
+		gtk_misc_set_alignment(GTK_MISC(label), .5, .5);
+		gtk_widget_set_size_request(label, VI_EVG_TIME_DIA_CELL_WIDTH - 1,
+			VI_EVG_TIME_DIA_CELL_HEIGHT - 1);
+
+		/* Set label font attributes */
+		PangoAttrList *attrs;
+		attrs = pango_attr_list_new();
+		PangoAttribute *size_attr = pango_attr_size_new_absolute(VI_EVG_TIME_DIA_FONT_SIZE << 10);
+		pango_attr_list_insert(attrs, size_attr);
+		gtk_label_set_attributes(GTK_LABEL(label), attrs);
+
+		/* Event box */
+		GtkWidget *event_box = gtk_event_box_new();
+		gtk_container_add(GTK_CONTAINER(event_box), label);
+		gtk_layout_put(GTK_LAYOUT(cycle_layout), event_box,
+			time_dia->left_offset + col * VI_EVG_TIME_DIA_CELL_WIDTH, 0);
+		list_add(time_dia->cycle_label_list, event_box);
+
+		/* Color */
+		GdkColor color;
+		gdk_color_parse("#ffffff", &color);
+		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
+	}
+
+	/* Show all widgets */
+	/* FIXME */
+	gtk_widget_show_all(cycle_layout);
+}
+
+
+static void vi_evg_time_dia_refresh_cycle_layout_position(struct vi_evg_time_dia_t *time_dia)
+{
+	GtkWidget *cycle_layout;
+
+	int col;
+
+	/* Move labels */
+	cycle_layout = time_dia->cycle_layout;
+	LIST_FOR_EACH(time_dia->cycle_label_list, col)
+	{
+		GtkWidget *widget;
+
+		widget = list_get(time_dia->cycle_label_list, col);
+		gtk_layout_move(GTK_LAYOUT(cycle_layout), widget,
+			time_dia->left_offset + col * VI_EVG_TIME_DIA_CELL_WIDTH, 0);
+	}
+}
+
+
+static void vi_evg_time_dia_do_refresh(struct vi_evg_time_dia_t *time_dia,
+	int content_layout_width_changed,
+	int content_layout_height_changed,
+	int inst_layout_width_changed,
+	int inst_layout_height_changed,
+	int left_cycle_changed,
+	int left_offset_changed,
+	int top_inst_changed,
+	int top_offset_changed)
+{
+	struct vi_evg_compute_unit_t *compute_unit;
+	struct vi_evg_inst_t *inst;
+
+	long long left_cycle;
+	long long top_inst;
+
+	int row;
+	int col;
+
+	char str[MAX_LONG_STRING_SIZE];
+
+	char *inst_name;
+
+
+	/* Get compute unit */
+	compute_unit = time_dia->compute_unit;
+
+	/* Get starting positions */
+	left_cycle = time_dia->left_cycle;
+	top_inst = time_dia->top_inst;
+
+	/* Content layout dimensions changed */
+	if (content_layout_width_changed || content_layout_height_changed)
+		vi_evg_time_dia_refresh_content_layout(time_dia);
+
+	/* Content layout position changed */
+	if (left_offset_changed || top_offset_changed)
+		vi_evg_time_dia_refresh_content_layout_position(time_dia);
+
+	/* Instruction layout dimensions changed */
+	if (inst_layout_width_changed || inst_layout_height_changed)
+		vi_evg_time_dia_refresh_inst_layout(time_dia);
+
+	/* Instruction layout position changed */
+	if (top_offset_changed)
+		vi_evg_time_dia_refresh_inst_layout_position(time_dia);
+
+	/* Cycle layout dimensions changed */
+	if (content_layout_width_changed)
+		vi_evg_time_dia_refresh_cycle_layout(time_dia);
+
+	/* Cycle layout position changed */
+	if (left_offset_changed)
+		vi_evg_time_dia_refresh_cycle_layout_position(time_dia);
+
+	/* Cycle layout */
+	LIST_FOR_EACH(time_dia->cycle_label_list, col)
+	{
+		/* Event box */
+		GtkWidget *event_box;
+		event_box = list_get(time_dia->cycle_label_list, col);
+
+		/* Label */
+		GtkWidget *label;
+		label = gtk_bin_get_child(GTK_BIN(event_box));
+
+		/* Text */
+		snprintf(str, sizeof str, "%lld", left_cycle + col);
+		gtk_label_set_text(GTK_LABEL(label), str);
+	}
+
+	/* Instruction layout */
+	LIST_FOR_EACH(time_dia->inst_label_list, row)
+	{
+		/* Event box */
+		GtkWidget *event_box;
+		event_box = list_get(time_dia->inst_label_list, row);
+
+		/* Label */
+		GtkWidget *label;
+		label = gtk_bin_get_child(GTK_BIN(event_box));
+		gtk_label_set_text(GTK_LABEL(label), NULL);
+	}
+
+	/* Content layout */
+	MATRIX_FOR_EACH_COLUMN(time_dia->content_label_matrix, col)
+	{
+		/* Go to cycle */
+		vi_state_go_to_cycle(left_cycle + col);
+
+		/* Add in-flight instructions */
+		HASH_TABLE_FOR_EACH(compute_unit->inst_table, inst_name, inst)
+		{
+			int inst_row;
+
+			/* Instruction is in range */
+			inst_row = inst->id - top_inst;
+			if (!IN_RANGE(inst_row, 0, list_count(time_dia->inst_label_list) - 1))
+				continue;
+
+			/* Event box */
+			GtkWidget *event_box;
+			event_box = list_get(time_dia->inst_label_list, inst_row);
+
+			/* Label */
+			GtkWidget *label;
+			label = gtk_bin_get_child(GTK_BIN(event_box));
+
+			/* Instruction */
+			vi_evg_inst_get_markup(inst, str, sizeof str);
+			gtk_label_set_markup(GTK_LABEL(label), str);
+		}
+
+		/* Rows */
+		MATRIX_FOR_EACH_ROW(time_dia->content_label_matrix, row)
+		{
+			/* Get instruction */
+			snprintf(str, sizeof str, "i-%lld", top_inst + row);
+			inst = hash_table_get(compute_unit->inst_table, str);
+
+			/* Event box */
+			GtkWidget *event_box;
+			event_box = matrix_get(time_dia->content_label_matrix, row, col);
+
+			/* Label */
+			GtkWidget *label;
+			label = gtk_bin_get_child(GTK_BIN(event_box));
+			if (inst)
+				gtk_label_set_markup(GTK_LABEL(label),
+					map_value(&vi_evg_inst_stage_name_map, inst->stage));
+			else
+				gtk_label_set_text(GTK_LABEL(label), NULL);
+
+			/* Color */
+			GdkColor color;
+			char *color_str;
+			color_str = inst ? map_value(&vi_evg_inst_stage_color_map, inst->stage) : "white";
+			gdk_color_parse(color_str, &color);
+			gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
+		}
+	}
 
 	/* Repaint if necessary */
+	/* FIXME */
 	gtk_widget_show_all(time_dia->legend_layout);
-	gtk_widget_show_all(time_dia->content_layout);
-	gtk_widget_show_all(time_dia->cycle_layout);
-	gtk_widget_show_all(time_dia->inst_layout);
 	gtk_container_check_resize(GTK_CONTAINER(time_dia->legend_layout));
-	gtk_container_check_resize(GTK_CONTAINER(time_dia->content_layout));
-	gtk_container_check_resize(GTK_CONTAINER(time_dia->cycle_layout));
-	gtk_container_check_resize(GTK_CONTAINER(time_dia->inst_layout));
 }
 
 
@@ -491,12 +689,12 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 	int inst_layout_height_changed;
 	int left_cycle_changed;
 	int left_offset_changed;
-	int top_inst_id_changed;
+	int top_inst_changed;
 	int top_offset_changed;
 
 	/* Get allocated dimensions */
-	content_layout_width = gtk_widget_get_allocated_width(time_dia->content_layout);
-	content_layout_height = gtk_widget_get_allocated_height(time_dia->content_layout);
+	content_layout_width = gtk_widget_get_allocated_width(time_dia->content_viewport);
+	content_layout_height = gtk_widget_get_allocated_height(time_dia->content_viewport);
 	inst_layout_width = gtk_widget_get_allocated_width(time_dia->inst_layout);
 	inst_layout_height = gtk_widget_get_allocated_height(time_dia->inst_layout);
 	content_layout_width_changed = content_layout_width != time_dia->content_layout_width;
@@ -563,9 +761,9 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 	top = gtk_range_get_value(GTK_RANGE(time_dia->vscrollbar));
 	top_inst_id = top / VI_EVG_TIME_DIA_CELL_HEIGHT;
 	top_offset = -(top % VI_EVG_TIME_DIA_CELL_HEIGHT);
-	top_inst_id_changed = top_inst_id != time_dia->top_inst_id;
+	top_inst_changed = top_inst_id != time_dia->top_inst;
 	top_offset_changed = top_offset != time_dia->top_offset;
-	time_dia->top_inst_id = top_inst_id;
+	time_dia->top_inst = top_inst_id;
 	time_dia->top_offset = top_offset;
 
 	/* Refresh if anything changed */
@@ -575,9 +773,17 @@ void vi_evg_time_dia_refresh(struct vi_evg_time_dia_t *time_dia)
 		|| inst_layout_height_changed
 		|| left_cycle_changed
 		|| left_offset_changed
-		|| top_inst_id_changed
+		|| top_inst_changed
 		|| top_offset_changed)
 	{
-		vi_evg_time_dia_do_refresh(time_dia);
+		vi_evg_time_dia_do_refresh(time_dia,
+			content_layout_width_changed,
+			content_layout_height_changed,
+			inst_layout_width_changed,
+			inst_layout_height_changed,
+			left_cycle_changed,
+			left_offset_changed,
+			top_inst_changed,
+			top_offset_changed);
 	}
 }
