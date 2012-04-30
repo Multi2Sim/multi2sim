@@ -90,8 +90,8 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 		uop->uinst = uinst;
 		assert(uinst->opcode > 0 && uinst->opcode < x86_uinst_opcode_count);
 		uop->flags = x86_uinst_info[uinst->opcode].flags;
-		uop->id = ++x86_cpu->uop_id_counter;
-		uop->id_in_core = ++X86_CORE.uop_id_counter;
+		uop->id = x86_cpu->uop_id_counter++;
+		uop->id_in_core = X86_CORE.uop_id_counter++;
 
 		uop->ctx = ctx;
 		uop->core = core;
