@@ -177,6 +177,7 @@ static void vi_x86_cpu_new_inst(struct vi_x86_cpu_t *cpu,
 		panic("%s: invalid core", __FUNCTION__);
 
 	/* Insert in table */
+	core->num_insts = MAX(core->num_insts, id + 1);
 	if (!hash_table_insert(core->inst_table, name, inst))
 		panic("%s: invalid instruction", __FUNCTION__);
 }

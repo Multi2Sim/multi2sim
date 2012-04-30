@@ -35,6 +35,36 @@ struct string_map_t vi_x86_inst_stage_map =
 };
 
 
+struct string_map_t vi_x86_inst_stage_name_map =
+{
+	vi_x86_inst_stage_count - 1,
+	{
+		{ "FE", vi_x86_inst_stage_fetch },
+		{ "DEC", vi_x86_inst_stage_decode },
+		{ "DI", vi_x86_inst_stage_dispatch },
+		{ "EX", vi_x86_inst_stage_execute },
+		{ "WB", vi_x86_inst_stage_writeback },
+		{ "CO", vi_x86_inst_stage_commit },
+		{ "x", vi_x86_inst_stage_squash }
+	}
+};
+
+
+struct string_map_t vi_x86_inst_stage_color_map =
+{
+	vi_x86_inst_stage_count - 1,
+	{
+		{ "#4444ff", vi_x86_inst_stage_fetch },
+		{ "#8888ff", vi_x86_inst_stage_decode },
+		{ "#cccc88", vi_x86_inst_stage_dispatch },
+		{ "#cccc00", vi_x86_inst_stage_execute },
+		{ "#ccff44", vi_x86_inst_stage_writeback },
+		{ "#44ff44", vi_x86_inst_stage_commit },
+		{ "red", vi_x86_inst_stage_squash }
+	}
+};
+
+
 struct vi_x86_inst_t *vi_x86_inst_create(long long id, char *name,
 	char *asm_code, char *asm_micro_code,
 	enum vi_x86_inst_stage_t stage)

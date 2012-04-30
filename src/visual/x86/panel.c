@@ -292,6 +292,10 @@ static void vi_x86_core_board_refresh(struct vi_x86_core_board_t *board)
 
 	long long cycle;
 
+	/* Go to cycle */
+	cycle = vi_cycle_bar_get_cycle();
+	vi_state_go_to_cycle(cycle);
+
 	/* Empty context list */
 	while (vi_list_count(board->context_list))
 		free(vi_list_remove_at(board->context_list, 0));
@@ -321,7 +325,6 @@ static void vi_x86_core_board_refresh(struct vi_x86_core_board_t *board)
 	/* Refresh time diagram */
 	if (board->time_dia_window)
 	{
-		cycle = vi_cycle_bar_get_cycle();
 		vi_x86_time_dia_window_go_to_cycle(board->time_dia_window, cycle);
 		vi_x86_time_dia_window_refresh(board->time_dia_window);
 	}
@@ -433,13 +436,7 @@ void vi_x86_panel_refresh(struct vi_x86_panel_t *panel)
 {
 	struct vi_x86_core_board_t *board;
 
-	long long cycle;
-
 	int board_id;
-
-	/* Go to cycle */
-	cycle = vi_cycle_bar_get_cycle();
-	vi_state_go_to_cycle(cycle);
 
 	/* Refresh all module boards */
 	LIST_FOR_EACH(panel->board_list, board_id)
