@@ -106,6 +106,11 @@ static int x86_cpu_dispatch_thread(int core, int thread, int quant)
 			uop->core, uop->id_in_core, uop->name,
 			uop->mop_name, uop->mop_count, uop->mop_index, uop->specmode,
 			!!uop->in_rob, !!uop->in_iq, uop->in_lq || uop->in_sq);
+
+		/* Trace */
+		x86_trace("x86.inst id=%lld core=%d stg=\"di\"\n",
+			uop->id_in_core, uop->core);
+
 	}
 
 	return quant;

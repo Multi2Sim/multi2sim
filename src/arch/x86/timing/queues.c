@@ -91,6 +91,16 @@ void x86_fetch_queue_recover(int core, int thread)
 		if (!uop->specmode)
 			break;
 		uop = x86_fetch_queue_remove(core, thread, list_count(fetchq) - 1);
+
+		/* Trace */
+		if (x86_tracing())
+		{
+			x86_trace("x86.inst id=%lld core=%d stg=\"sq\"\n",
+				uop->id_in_core, uop->core);
+			x86_cpu_uop_trace_list_add(uop);
+		}
+
+		/* Free */
 		x86_uop_free_if_not_queued(uop);
 	}
 }
@@ -146,6 +156,16 @@ void x86_uop_queue_recover(int core, int thread)
 			break;
 		list_remove_at(uop_queue, list_count(uop_queue) - 1);
 		uop->in_uop_queue = 0;
+
+		/* Trace */
+		if (x86_tracing())
+		{
+			x86_trace("x86.inst id=%lld core=%d stg=\"sq\"\n",
+				uop->id_in_core, uop->core);
+			x86_cpu_uop_trace_list_add(uop);
+		}
+
+		/* Free */
 		x86_uop_free_if_not_queued(uop);
 	}
 }

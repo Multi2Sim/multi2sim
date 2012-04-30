@@ -170,6 +170,7 @@ struct x86_uop_t
 	int in_sq : 1;
 	int in_event_queue : 1;
 	int in_rob : 1;
+	int in_uop_trace_list : 1;
 
 	/* Instruction status */
 	int ready;
@@ -754,6 +755,9 @@ struct x86_cpu_t
 	long long ctx_alloc_oldest;  /* Time when oldest context was allocated */
 	int ctx_dealloc_signals;  /* Sent deallocation signals */
 	
+	/* List containing uops that need to report an 'end_inst' trace event */
+	struct linked_list_t *uop_trace_list;
+
 	/* Statistics */
 	long long fetched;
 	long long dispatched[x86_uinst_opcode_count];
@@ -784,6 +788,9 @@ void x86_cpu_map_context(int core, int thread, struct x86_ctx_t *ctx);
 void x86_cpu_unmap_context(int core, int thread);
 void x86_cpu_static_schedule(void);
 void x86_cpu_dynamic_schedule(void);
+
+void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop);
+void x86_cpu_uop_trace_list_empty(void);
 
 void x86_cpu_run_stages(void);
 void x86_cpu_fetch(void);

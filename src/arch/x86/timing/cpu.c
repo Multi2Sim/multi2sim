@@ -829,9 +829,20 @@ void x86_cpu_init()
 	/* Analyze CPU configuration file */
 	x86_cpu_config_check();
 
-	/* Create processor structure and allocate cores/threads */
+	/* Allocate CPU */
 	x86_cpu = calloc(1, sizeof(struct x86_cpu_t));
+	if (!x86_cpu)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	x86_cpu->uop_trace_list = linked_list_create();
+
+	/* Allocate cores */
 	x86_cpu->core = calloc(x86_cpu_num_cores, sizeof(struct x86_core_t));
+	if (!x86_cpu->core)
+		fatal("%s: out of memroy", __FUNCTION__);
+
+	/* Initialize cores */
 	X86_CORE_FOR_EACH
 		x86_cpu_core_init(core);
 
@@ -856,6 +867,9 @@ void x86_cpu_init()
 void x86_cpu_done()
 {
 	int core;
+
+	/* Uop trace list */
+	linked_list_free(x86_cpu->uop_trace_list);
 
 	/* Finalize structures */
 	x86_fetch_queue_done();
@@ -988,6 +1002,41 @@ void x86_cpu_update_occupancy_stats()
 				UPDATE_THREAD_OCCUPANCY_STATS(reg_file_fp);
 			}
 		}
+	}
+}
+
+
+void x86_cpu_uop_trace_list_add(struct x86_uop_t *uop)
+{
+	assert(x86_tracing());
+	assert(!uop->in_uop_trace_list);
+
+	uop->in_uop_trace_list = 1;
+	linked_list_add(x86_cpu->uop_trace_list, uop);
+}
+
+
+void x86_cpu_uop_trace_list_empty(void)
+{
+	struct linked_list_t *uop_trace_list;
+	struct x86_uop_t *uop;
+
+	uop_trace_list = x86_cpu->uop_trace_list;
+	while (uop_trace_list->count)
+	{
+		/* Remove from list */
+		linked_list_head(uop_trace_list);
+		uop = linked_list_get(uop_trace_list);
+		linked_list_remove(uop_trace_list);
+		assert(uop->in_uop_trace_list);
+
+		/* Trace */
+		x86_trace("x86.end_inst id=%lld core=%d\n",
+			uop->id_in_core, uop->core);
+
+		/* Free uop */
+		uop->in_uop_trace_list = 0;
+		x86_uop_free_if_not_queued(uop);
 	}
 }
 
@@ -1165,6 +1214,10 @@ void x86_cpu_run()
 		/* Next cycle */
 		x86_cpu->cycle++;
 
+		/* Empty uop trace list. This dumps the last trace line for instructions
+		 * that were freed in the previous simulation cycle. */
+		x86_cpu_uop_trace_list_empty();
+
 		/* Processor stages */
 		x86_cpu_run_stages();
 
@@ -1178,6 +1231,9 @@ void x86_cpu_run()
 		if (sigusr_received)
 			x86_cpu_dump_log();
 	}
+
+	/* Empty uop trace list */
+	x86_cpu_uop_trace_list_empty();
 
 	/* Restore signal handlers */
 	signal(SIGINT, SIG_DFL);

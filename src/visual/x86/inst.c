@@ -25,10 +25,10 @@ struct string_map_t vi_x86_inst_stage_map =
 	vi_x86_inst_stage_count - 1,
 	{
 		{ "fe", vi_x86_inst_stage_fetch },
-		{ "de", vi_x86_inst_stage_decode },
+		{ "dec", vi_x86_inst_stage_decode },
 		{ "di", vi_x86_inst_stage_dispatch },
-		{ "ex", vi_x86_inst_stage_execute },
-		{ "wr", vi_x86_inst_stage_writeback },
+		{ "i", vi_x86_inst_stage_issue },
+		{ "wb", vi_x86_inst_stage_writeback },
 		{ "co", vi_x86_inst_stage_commit },
 		{ "sq", vi_x86_inst_stage_squash }
 	}
@@ -42,10 +42,10 @@ struct string_map_t vi_x86_inst_stage_name_map =
 		{ "FE", vi_x86_inst_stage_fetch },
 		{ "DEC", vi_x86_inst_stage_decode },
 		{ "DI", vi_x86_inst_stage_dispatch },
-		{ "EX", vi_x86_inst_stage_execute },
+		{ "I", vi_x86_inst_stage_issue },
 		{ "WB", vi_x86_inst_stage_writeback },
 		{ "CO", vi_x86_inst_stage_commit },
-		{ "x", vi_x86_inst_stage_squash }
+		{ "Squash", vi_x86_inst_stage_squash }
 	}
 };
 
@@ -54,19 +54,19 @@ struct string_map_t vi_x86_inst_stage_color_map =
 {
 	vi_x86_inst_stage_count - 1,
 	{
-		{ "#4444ff", vi_x86_inst_stage_fetch },
-		{ "#8888ff", vi_x86_inst_stage_decode },
-		{ "#cccc88", vi_x86_inst_stage_dispatch },
-		{ "#cccc00", vi_x86_inst_stage_execute },
-		{ "#ccff44", vi_x86_inst_stage_writeback },
-		{ "#44ff44", vi_x86_inst_stage_commit },
-		{ "red", vi_x86_inst_stage_squash }
+		{ "#CCFFFF", vi_x86_inst_stage_fetch },
+		{ "#CCFFCC", vi_x86_inst_stage_decode },
+		{ "#CCFF99", vi_x86_inst_stage_dispatch },
+		{ "#CCFF66", vi_x86_inst_stage_issue },
+		{ "#CCCC66", vi_x86_inst_stage_writeback },
+		{ "#CC9933", vi_x86_inst_stage_commit },
+		{ "#FF0000", vi_x86_inst_stage_squash }
 	}
 };
 
 
 struct vi_x86_inst_t *vi_x86_inst_create(long long id, char *name,
-	char *asm_code, char *asm_micro_code,
+	char *asm_code, char *asm_micro_code, int spec_mode,
 	enum vi_x86_inst_stage_t stage)
 {
 	struct vi_x86_inst_t *inst;
@@ -81,6 +81,7 @@ struct vi_x86_inst_t *vi_x86_inst_create(long long id, char *name,
 	inst->name = str_set(NULL, name);
 	inst->asm_code = str_set(NULL, asm_code);
 	inst->asm_micro_code = str_set(NULL, asm_micro_code);
+	inst->spec_mode = spec_mode;
 	inst->stage = stage;
 
 	/* Return */
@@ -110,6 +111,11 @@ void vi_x86_inst_read_checkpoint(struct vi_x86_inst_t *inst, FILE *f)
 	if (count != sizeof inst->id)
 		panic("%s: cannot read checkpoint", __FUNCTION__);
 
+	/* Speculative mode */
+	count = fread(&inst->spec_mode, 1, sizeof inst->spec_mode, f);
+	if (count != sizeof inst->spec_mode)
+		panic("%s: cannot read checkpoint", __FUNCTION__);
+
 	/* Stage */
 	count = fread(&inst->stage, 1, sizeof inst->stage, f);
 	if (count != sizeof inst->stage)
@@ -134,6 +140,11 @@ void vi_x86_inst_write_checkpoint(struct vi_x86_inst_t *inst, FILE *f)
 	/* ID */
 	count = fwrite(&inst->id, 1, sizeof inst->id, f);
 	if (count != sizeof inst->id)
+		panic("%s: cannot write checkpoint", __FUNCTION__);
+
+	/* Speculative mode */
+	count = fwrite(&inst->spec_mode, 1, sizeof inst->spec_mode, f);
+	if (count != sizeof inst->spec_mode)
 		panic("%s: cannot write checkpoint", __FUNCTION__);
 
 	/* Stage */

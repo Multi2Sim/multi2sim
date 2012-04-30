@@ -106,7 +106,7 @@ void vi_x86_core_read_checkpoint(struct vi_x86_core_t *core, FILE *f)
 	/* Read instructions */
 	for (i = 0; i < num_insts; i++)
 	{
-		inst = vi_x86_inst_create(0, NULL, NULL, NULL, 0);
+		inst = vi_x86_inst_create(0, NULL, NULL, NULL, 0, 0);
 		vi_x86_inst_read_checkpoint(inst, f);
 		if (!hash_table_insert(core->inst_table, inst->name, inst))
 			panic("%s: invalid instruction", __FUNCTION__);
