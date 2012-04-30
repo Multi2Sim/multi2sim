@@ -309,9 +309,14 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 				if (dst_node_r->kind == net_node_end)
 				{
 					snprintf(spr_result_size, sizeof spr_result_size, "%s.to.%s", src_node_r->name,dst_node_r->name);
-					nxt_node_name = config_read_string(config, section, spr_result_size , "" );
+					nxt_node_name = config_read_string(config, section, spr_result_size , "---" );
+					int name_check = strcmp(nxt_node_name, "---");
 					nxt_node_r = net_get_node_by_name(net, nxt_node_name);
 
+					if (!nxt_node_r && name_check != 0)
+					{
+							fatal("Network %s:%s: Invalid node Name.\n %s", net->name, section,err_net_config);
+					}
 					if (nxt_node_r)
 					{
 						if (src_node_r == dst_node_r)
