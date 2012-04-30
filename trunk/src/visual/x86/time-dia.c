@@ -29,11 +29,11 @@
 #define VI_X86_TIME_DIA_CYCLE_LAYOUT_WIDTH		VI_X86_TIME_DIA_CONTENT_LAYOUT_WIDTH
 #define VI_X86_TIME_DIA_CYCLE_LAYOUT_HEIGHT		VI_X86_TIME_DIA_CELL_HEIGHT
 
+#define VI_X86_TIME_DIA_MACRO_INST_LAYOUT_WIDTH		100
+#define VI_X86_TIME_DIA_MACRO_INST_LAYOUT_HEIGHT	VI_X86_TIME_DIA_CONTENT_LAYOUT_HEIGHT
+
 #define VI_X86_TIME_DIA_INST_LAYOUT_WIDTH		150
 #define VI_X86_TIME_DIA_INST_LAYOUT_HEIGHT		VI_X86_TIME_DIA_CONTENT_LAYOUT_HEIGHT
-
-#define VI_X86_TIME_DIA_LEGEND_LAYOUT_WIDTH		VI_X86_TIME_DIA_INST_LAYOUT_WIDTH
-#define VI_X86_TIME_DIA_LEGEND_LAYOUT_HEIGHT		VI_X86_TIME_DIA_CYCLE_LAYOUT_HEIGHT
 
 #define VI_X86_TIME_DIA_FONT_SIZE			12
 
@@ -44,7 +44,8 @@ struct vi_x86_time_dia_t
 
 	GtkWidget *widget;
 
-	GtkWidget *legend_layout;
+	GtkWidget *inst_title_layout;
+	GtkWidget *macro_inst_title_layout;
 
 	GtkWidget *hscrollbar;
 	GtkWidget *vscrollbar;
@@ -52,6 +53,10 @@ struct vi_x86_time_dia_t
 	GtkWidget *content_layout;
 	GtkWidget *content_table;
 	struct matrix_t *content_matrix;
+
+	GtkWidget *macro_inst_layout;
+	GtkWidget *macro_inst_table;
+	struct list_t *macro_inst_list;
 
 	GtkWidget *inst_layout;
 	GtkWidget *inst_table;
@@ -63,6 +68,9 @@ struct vi_x86_time_dia_t
 
 	int content_layout_width;
 	int content_layout_height;
+
+	int macro_inst_layout_width;
+	int macro_inst_layout_height;
 
 	int inst_layout_width;
 	int inst_layout_height;
@@ -230,6 +238,67 @@ static void vi_x86_time_dia_refresh_content_layout(struct vi_x86_time_dia_t *tim
 }
 
 
+static void vi_x86_time_dia_refresh_macro_inst_layout(struct vi_x86_time_dia_t *time_dia)
+{
+	GtkWidget *macro_inst_layout;
+	GtkWidget *macro_inst_table;
+
+	int num_rows;
+	int row;
+
+	long long num_insts;
+
+	/* Get new dimensions */
+	num_insts = time_dia->core->num_insts;
+	num_rows = MIN(num_insts, time_dia->macro_inst_layout_height / VI_X86_TIME_DIA_CELL_HEIGHT + 2);
+
+	/* Create new table */
+	macro_inst_layout = time_dia->macro_inst_layout;
+	if (time_dia->macro_inst_table)
+		gtk_widget_destroy(time_dia->macro_inst_table);
+	macro_inst_table = gtk_table_new(num_rows, 1, TRUE);
+	gtk_layout_put(GTK_LAYOUT(macro_inst_layout), macro_inst_table, 0, time_dia->top_offset);
+	time_dia->macro_inst_table = macro_inst_table;
+
+	/* Clear instruction label list */
+	if (!time_dia->macro_inst_list)
+		time_dia->macro_inst_list = list_create();
+	list_clear(time_dia->macro_inst_list);
+
+	/* Create labels */
+	for (row = 0; row < num_rows; row++)
+	{
+		/* Label */
+		GtkWidget *label = gtk_label_new(NULL);
+		gtk_misc_set_alignment(GTK_MISC(label), 0, .5);
+
+		/* Set label font attributes */
+		PangoAttrList *attrs;
+		attrs = pango_attr_list_new();
+		PangoAttribute *size_attr = pango_attr_size_new_absolute(VI_X86_TIME_DIA_FONT_SIZE << 10);
+		pango_attr_list_insert(attrs, size_attr);
+		gtk_label_set_attributes(GTK_LABEL(label), attrs);
+
+		/* Event box */
+		GtkWidget *event_box = gtk_event_box_new();
+		gtk_widget_set_size_request(event_box, time_dia->macro_inst_layout_width,
+			VI_X86_TIME_DIA_CELL_HEIGHT);
+		gtk_container_add(GTK_CONTAINER(event_box), label);
+		gtk_table_attach_defaults(GTK_TABLE(macro_inst_table), event_box, 0, 1, row, row + 1);
+		list_add(time_dia->macro_inst_list, event_box);
+
+		/* Color */
+		GdkColor color;
+		gdk_color_parse("#ffffff", &color);
+		gtk_widget_modify_bg(event_box, GTK_STATE_NORMAL, &color);
+	}
+
+	/* Show all widgets */
+	gtk_widget_show_all(macro_inst_table);
+	gtk_container_check_resize(GTK_CONTAINER(macro_inst_layout));
+}
+
+
 static void vi_x86_time_dia_refresh_inst_layout(struct vi_x86_time_dia_t *time_dia)
 {
 	GtkWidget *inst_layout;
@@ -388,12 +457,25 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 		gtk_label_set_text(GTK_LABEL(label), str);
 	}
 
-	/* Instruction layout */
+	/* Clear instruction layout */
 	LIST_FOR_EACH(time_dia->inst_list, row)
 	{
 		/* Event box */
 		GtkWidget *event_box;
 		event_box = list_get(time_dia->inst_list, row);
+
+		/* Label */
+		GtkWidget *label;
+		label = gtk_bin_get_child(GTK_BIN(event_box));
+		gtk_label_set_text(GTK_LABEL(label), NULL);
+	}
+
+	/* Clear macro-instruction layout */
+	LIST_FOR_EACH(time_dia->macro_inst_list, row)
+	{
+		/* Event box */
+		GtkWidget *event_box;
+		event_box = list_get(time_dia->macro_inst_list, row);
 
 		/* Label */
 		GtkWidget *label;
@@ -428,6 +510,23 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 			/* Instruction */
 			snprintf(str, sizeof str, "%s", inst->asm_micro_code);
 			gtk_label_set_markup(GTK_LABEL(label), str);
+
+			/* Macro-instruction */
+			if (inst->asm_code && *inst->asm_code)
+			{
+				/* Event box */
+				GtkWidget *event_box;
+				event_box = list_get(time_dia->macro_inst_list, inst_row);
+
+				/* Label */
+				GtkWidget *label;
+				label = gtk_bin_get_child(GTK_BIN(event_box));
+
+				/* Instruction */
+				snprintf(str, sizeof str, "%s", inst->asm_code);
+				gtk_label_set_markup(GTK_LABEL(label), str);
+
+			}
 		}
 
 		/* Rows */
@@ -497,7 +596,20 @@ struct vi_x86_time_dia_t *vi_x86_time_dia_create(struct vi_x86_core_t *core)
 		VI_X86_TIME_DIA_INST_LAYOUT_HEIGHT);
 	g_signal_connect(G_OBJECT(inst_layout), "size_allocate",
 		G_CALLBACK(vi_x86_time_dia_size_allocate), time_dia);
+	g_signal_connect(G_OBJECT(inst_layout), "scroll-event",
+		G_CALLBACK(vi_x86_time_dia_scroll), time_dia);
 	time_dia->inst_layout = inst_layout;
+
+	/* Macro instruction layout */
+	GtkWidget *macro_inst_layout;
+	macro_inst_layout = gtk_layout_new(NULL, NULL);
+	gtk_widget_set_size_request(macro_inst_layout, VI_X86_TIME_DIA_MACRO_INST_LAYOUT_WIDTH,
+		VI_X86_TIME_DIA_MACRO_INST_LAYOUT_HEIGHT);
+	g_signal_connect(G_OBJECT(macro_inst_layout), "size_allocate",
+		G_CALLBACK(vi_x86_time_dia_size_allocate), time_dia);
+	g_signal_connect(G_OBJECT(macro_inst_layout), "scroll-event",
+		G_CALLBACK(vi_x86_time_dia_scroll), time_dia);
+	time_dia->macro_inst_layout = macro_inst_layout;
 
 	/* Cycle layout */
 	GtkWidget *cycle_layout;
@@ -506,18 +618,31 @@ struct vi_x86_time_dia_t *vi_x86_time_dia_create(struct vi_x86_core_t *core)
 		VI_X86_TIME_DIA_CYCLE_LAYOUT_HEIGHT);
 	time_dia->cycle_layout = cycle_layout;
 
-	/* Legend layout */
-	GtkWidget *legend_layout;
-	legend_layout = gtk_layout_new(NULL, NULL);
-	gtk_widget_set_size_request(legend_layout, VI_X86_TIME_DIA_LEGEND_LAYOUT_WIDTH,
-		VI_X86_TIME_DIA_LEGEND_LAYOUT_HEIGHT);
-	time_dia->legend_layout = legend_layout;
+	/* Instruction title layout */
+	GtkWidget *inst_title_layout;
+	inst_title_layout = gtk_layout_new(NULL, NULL);
+	gtk_widget_set_size_request(inst_title_layout, VI_X86_TIME_DIA_INST_LAYOUT_WIDTH,
+		VI_X86_TIME_DIA_CELL_HEIGHT);
+	time_dia->inst_title_layout = inst_title_layout;
+
+	/* Macro instruction title layout */
+	GtkWidget *macro_inst_title_layout;
+	macro_inst_title_layout = gtk_layout_new(NULL, NULL);
+	gtk_widget_set_size_request(macro_inst_title_layout, VI_X86_TIME_DIA_MACRO_INST_LAYOUT_WIDTH,
+		VI_X86_TIME_DIA_CELL_HEIGHT);
+	time_dia->macro_inst_title_layout = macro_inst_title_layout;
 
 	/* Left vertical box */
 	GtkWidget *left_vbox;
 	left_vbox = gtk_vbox_new(FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(left_vbox), legend_layout, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(left_vbox), inst_layout, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(left_vbox), macro_inst_title_layout, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(left_vbox), macro_inst_layout, TRUE, TRUE, 0);
+
+	/* Center vertical box */
+	GtkWidget *center_vbox;
+	center_vbox = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(center_vbox), inst_title_layout, FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(center_vbox), inst_layout, TRUE, TRUE, 0);
 
 	/* Right vertical box */
 	GtkWidget *right_vbox;
@@ -525,11 +650,17 @@ struct vi_x86_time_dia_t *vi_x86_time_dia_create(struct vi_x86_core_t *core)
 	gtk_box_pack_start(GTK_BOX(right_vbox), cycle_layout, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(right_vbox), content_layout, TRUE, TRUE, 0);
 
-	/* Horizontal panel */
-	GtkWidget *hpaned;
-	hpaned = gtk_hpaned_new();
-	gtk_paned_pack1(GTK_PANED(hpaned), left_vbox, TRUE, FALSE);
-	gtk_paned_pack2(GTK_PANED(hpaned), right_vbox, TRUE, TRUE);
+	/* Inner horizontal panel */
+	GtkWidget *inner_hpaned;
+	inner_hpaned = gtk_hpaned_new();
+	gtk_paned_pack1(GTK_PANED(inner_hpaned), center_vbox, TRUE, FALSE);
+	gtk_paned_pack2(GTK_PANED(inner_hpaned), right_vbox, TRUE, TRUE);
+
+	/* Outer horizontal panel */
+	GtkWidget *outer_hpaned;
+	outer_hpaned = gtk_hpaned_new();
+	gtk_paned_pack1(GTK_PANED(outer_hpaned), left_vbox, TRUE, FALSE);
+	gtk_paned_pack2(GTK_PANED(outer_hpaned), inner_hpaned, TRUE, TRUE);
 
 	/* Scroll bars */
 	GtkWidget *hscrollbar = gtk_hscrollbar_new(NULL);
@@ -544,7 +675,7 @@ struct vi_x86_time_dia_t *vi_x86_time_dia_create(struct vi_x86_core_t *core)
 	/* Table */
 	GtkWidget *table;
 	table = gtk_table_new(2, 2, FALSE);
-	gtk_table_attach(GTK_TABLE(table), hpaned, 0, 1, 0, 1,
+	gtk_table_attach(GTK_TABLE(table), outer_hpaned, 0, 1, 0, 1,
 		GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
 	gtk_table_attach(GTK_TABLE(table), hscrollbar, 0, 1, 1, 2, GTK_EXPAND | GTK_FILL | GTK_SHRINK, GTK_FILL, 0, 0);
 	gtk_table_attach(GTK_TABLE(table), vscrollbar, 1, 2, 0, 1, GTK_FILL, GTK_EXPAND | GTK_FILL | GTK_SHRINK, 0, 0);
@@ -566,6 +697,10 @@ void vi_x86_time_dia_free(struct vi_x86_time_dia_t *time_dia)
 	/* Content label matrix */
 	if (time_dia->content_matrix)
 		matrix_free(time_dia->content_matrix);
+
+	/* Macro-instruction label list */
+	if (time_dia->macro_inst_list)
+		list_free(time_dia->macro_inst_list);
 
 	/* Instruction label list */
 	if (time_dia->inst_list)
@@ -590,6 +725,8 @@ void vi_x86_time_dia_refresh(struct vi_x86_time_dia_t *time_dia)
 {
 	int content_layout_width;
 	int content_layout_height;
+	int macro_inst_layout_width;
+	int macro_inst_layout_height;
 	int inst_layout_width;
 	int inst_layout_height;
 
@@ -603,6 +740,8 @@ void vi_x86_time_dia_refresh(struct vi_x86_time_dia_t *time_dia)
 
 	int content_layout_width_changed;
 	int content_layout_height_changed;
+	int macro_inst_layout_width_changed;
+	int macro_inst_layout_height_changed;
 	int inst_layout_width_changed;
 	int inst_layout_height_changed;
 	int left_cycle_changed;
@@ -613,6 +752,8 @@ void vi_x86_time_dia_refresh(struct vi_x86_time_dia_t *time_dia)
 	/* Get new state */
 	content_layout_width = gtk_widget_get_allocated_width(time_dia->content_layout);
 	content_layout_height = gtk_widget_get_allocated_height(time_dia->content_layout);
+	macro_inst_layout_width = gtk_widget_get_allocated_width(time_dia->macro_inst_layout);
+	macro_inst_layout_height = gtk_widget_get_allocated_height(time_dia->macro_inst_layout);
 	inst_layout_width = gtk_widget_get_allocated_width(time_dia->inst_layout);
 	inst_layout_height = gtk_widget_get_allocated_height(time_dia->inst_layout);
 	left = gtk_range_get_value(GTK_RANGE(time_dia->hscrollbar));
@@ -625,6 +766,8 @@ void vi_x86_time_dia_refresh(struct vi_x86_time_dia_t *time_dia)
 	/* Record changes */
 	content_layout_width_changed = content_layout_width != time_dia->content_layout_width;
 	content_layout_height_changed = content_layout_height != time_dia->content_layout_height;
+	macro_inst_layout_width_changed = macro_inst_layout_width != time_dia->macro_inst_layout_width;
+	macro_inst_layout_height_changed = macro_inst_layout_height != time_dia->macro_inst_layout_height;
 	inst_layout_width_changed = inst_layout_width != time_dia->inst_layout_width;
 	inst_layout_height_changed = inst_layout_height != time_dia->inst_layout_height;
 	left_cycle_changed = left_cycle != time_dia->left_cycle;
@@ -635,6 +778,8 @@ void vi_x86_time_dia_refresh(struct vi_x86_time_dia_t *time_dia)
 	/* Save new state */
 	time_dia->content_layout_width = content_layout_width;
 	time_dia->content_layout_height = content_layout_height;
+	time_dia->macro_inst_layout_width = macro_inst_layout_width;
+	time_dia->macro_inst_layout_height = macro_inst_layout_height;
 	time_dia->inst_layout_width = inst_layout_width;
 	time_dia->inst_layout_height = inst_layout_height;
 	time_dia->left_cycle = left_cycle;
@@ -654,6 +799,15 @@ void vi_x86_time_dia_refresh(struct vi_x86_time_dia_t *time_dia)
 	if (left_offset_changed || top_offset_changed)
 		gtk_layout_move(GTK_LAYOUT(time_dia->content_layout), time_dia->content_table,
 			time_dia->left_offset, time_dia->top_offset);
+
+	/* Refresh macro instruction layout */
+	if (macro_inst_layout_width_changed || macro_inst_layout_height_changed)
+		vi_x86_time_dia_refresh_macro_inst_layout(time_dia);
+
+	/* Refresh macro instruction layout position */
+	if (top_offset_changed)
+		gtk_layout_move(GTK_LAYOUT(time_dia->macro_inst_layout), time_dia->macro_inst_table,
+			0, time_dia->top_offset);
 
 	/* Refresh instruction layout */
 	if (inst_layout_width_changed || inst_layout_height_changed)
@@ -677,7 +831,8 @@ void vi_x86_time_dia_refresh(struct vi_x86_time_dia_t *time_dia)
 	if (content_layout_width_changed || content_layout_height_changed
 		|| inst_layout_width_changed || inst_layout_height_changed
 		|| left_cycle_changed || left_offset_changed || top_inst_changed
-		|| top_offset_changed)
+		|| top_offset_changed || macro_inst_layout_width_changed
+		|| macro_inst_layout_height_changed)
 		vi_x86_time_dia_refresh_content(time_dia);
 }
 
