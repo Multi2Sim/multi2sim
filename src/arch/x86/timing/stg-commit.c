@@ -139,8 +139,12 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 			uop->core, uop->id_in_core);
 		
 		/* Trace */
-		x86_trace("x86.end_inst id=%lld core=%d\n",
-			uop->id_in_core, uop->core);
+		if (x86_tracing())
+		{
+			x86_trace("x86.inst id=%lld core=%d stg=\"co\"\n",
+				uop->id_in_core, uop->core);
+			x86_cpu_uop_trace_list_add(uop);
+		}
 
 		/* Retire instruction */
 		x86_rob_remove_head(core, thread);

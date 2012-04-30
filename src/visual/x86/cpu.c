@@ -139,6 +139,7 @@ static void vi_x86_cpu_end_context(struct vi_x86_cpu_t *cpu,
 /* Command 'x86.new_inst'
  *	id=<id>
  *	core=<core_id>
+ *	spec="t" (optional)
  *	asm=<asm_code>
  *	uasm=<asm_micro_code>
  *	stg=<stage>
@@ -152,6 +153,7 @@ static void vi_x86_cpu_new_inst(struct vi_x86_cpu_t *cpu,
 	long long id;
 
 	int core_id;
+	int spec_mode;
 
 	char *asm_code;
 	char *asm_micro_code;
@@ -166,10 +168,11 @@ static void vi_x86_cpu_new_inst(struct vi_x86_cpu_t *cpu,
 	asm_code = vi_trace_line_get_symbol(trace_line, "asm");
 	asm_micro_code = vi_trace_line_get_symbol(trace_line, "uasm");
 	stage = map_string(&vi_x86_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+	spec_mode = !strcmp(vi_trace_line_get_symbol(trace_line, "spec"), "t");
 
 	/* Create instruction */
 	snprintf(name, sizeof name, "i-%lld", id);
-	inst = vi_x86_inst_create(id, name, asm_code, asm_micro_code, stage);
+	inst = vi_x86_inst_create(id, name, asm_code, asm_micro_code, spec_mode, stage);
 
 	/* Get core */
 	core = list_get(vi_x86_cpu->core_list, core_id);
@@ -216,7 +219,7 @@ static void vi_x86_cpu_inst(struct vi_x86_cpu_t *cpu,
 	snprintf(name, sizeof name, "i-%lld", id);
 	inst = hash_table_get(core->inst_table, name);
 	if (!inst)
-		panic("%s: invalid instruction", __FUNCTION__);
+		panic("%s: invalid instruction - %s", __FUNCTION__, name);
 
 	/* Update stage */
 	inst->stage = stage;
@@ -252,7 +255,7 @@ static void vi_x86_cpu_end_inst(struct vi_x86_cpu_t *cpu,
 	snprintf(name, sizeof name, "i-%lld", id);
 	inst = hash_table_remove(core->inst_table, name);
 	if (!inst)
-		panic("%s: invalid instruction", __FUNCTION__);
+		panic("%s: invalid instruction - %s", __FUNCTION__, name);
 	vi_x86_inst_free(inst);
 }
 

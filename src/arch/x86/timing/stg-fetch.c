@@ -149,6 +149,10 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 			str_printf(&str_ptr, &str_size, "x86.new_inst id=%lld core=%d",
 				uop->id_in_core, uop->core);
 
+			/* Speculative mode */
+			if (uop->specmode)
+				str_printf(&str_ptr, &str_size, " spec=\"t\"");
+
 			/* Macro-instruction name */
 			if (!uinst_index)
 			{

@@ -64,8 +64,12 @@ void x86_cpu_recover(int core, int thread)
 			uop->core, uop->id_in_core);
  
 		/* Trace */
-		x86_trace("x86.end_inst id=%lld core=%d\n",
-			uop->id_in_core, uop->core);
+		if (x86_tracing())
+		{
+			x86_trace("x86.inst id=%lld core=%d stg=\"sq\"\n",
+				uop->id_in_core, uop->core);
+			x86_cpu_uop_trace_list_add(uop);
+		}
 
 		/* Remove entry in ROB */
 		x86_rob_remove_tail(core, thread);

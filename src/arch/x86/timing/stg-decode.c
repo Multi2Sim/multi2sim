@@ -64,7 +64,7 @@ static void x86_cpu_decode_thread(int core, int thread)
 				uop->in_uop_queue = 1;
 
 				/* Trace */
-				x86_trace("x86.inst id=%lld core=%d stg=\"de\"\n",
+				x86_trace("x86.inst id=%lld core=%d stg=\"dec\"\n",
 					uop->id_in_core, uop->core);
 
 				/* Next */

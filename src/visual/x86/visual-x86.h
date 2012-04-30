@@ -64,7 +64,7 @@ enum vi_x86_inst_stage_t
 	vi_x86_inst_stage_fetch,
 	vi_x86_inst_stage_decode,
 	vi_x86_inst_stage_dispatch,
-	vi_x86_inst_stage_execute,
+	vi_x86_inst_stage_issue,
 	vi_x86_inst_stage_writeback,
 	vi_x86_inst_stage_commit,
 	vi_x86_inst_stage_squash,
@@ -80,6 +80,8 @@ struct vi_x86_inst_t
 {
 	long long id;
 
+	int spec_mode;
+
 	char *name;
 
 	char *asm_code;
@@ -89,7 +91,7 @@ struct vi_x86_inst_t
 };
 
 struct vi_x86_inst_t *vi_x86_inst_create(long long id, char *name,
-	char *asm_code, char *asm_micro_code,
+	char *asm_code, char *asm_micro_code, int spec_mode,
 	enum vi_x86_inst_stage_t stage);
 void vi_x86_inst_free(struct vi_x86_inst_t *inst);
 

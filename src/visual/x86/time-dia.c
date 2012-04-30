@@ -500,6 +500,9 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 		{
 			int inst_row;
 
+			char *begin_color = "";
+			char *end_color = "";
+
 			/* Instruction is in range */
 			inst_row = inst->id - top_inst;
 			if (!IN_RANGE(inst_row, 0, list_count(time_dia->inst_list) - 1))
@@ -513,8 +516,16 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 			GtkWidget *label;
 			label = gtk_bin_get_child(GTK_BIN(event_box));
 
+			/* Color */
+			if (inst->spec_mode)
+			{
+				begin_color = "<span color=\"red\">";
+				end_color = "</span>";
+			}
+
 			/* Instruction */
-			snprintf(str, sizeof str, "%s", inst->asm_micro_code);
+			snprintf(str, sizeof str, "%s%s%s", begin_color,
+				inst->asm_micro_code, end_color);
 			gtk_label_set_markup(GTK_LABEL(label), str);
 
 			/* Macro-instruction */
@@ -522,7 +533,8 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 			if (inst->asm_code && *inst->asm_code && event_box)
 			{
 				label = gtk_bin_get_child(GTK_BIN(event_box));
-				snprintf(str, sizeof str, "%s", inst->asm_code);
+				snprintf(str, sizeof str, "%s<b>%s</b>%s", begin_color,
+					inst->asm_code, end_color);
 				gtk_label_set_markup(GTK_LABEL(label), str);
 			}
 		}
