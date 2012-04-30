@@ -67,6 +67,13 @@ static void x86_cpu_writeback_core(int core)
 			" stg_writeback=1, completed=1\n",
 			uop->core, uop->id_in_core);
 
+		/* Trace. Prevent instructions that are not in the ROB from tracing.
+		 * These can be either loads that were squashed, or stored that
+		 * committed before issuing. */
+		if (uop->in_rob)
+			x86_trace("x86.inst id=%lld core=%d stg=\"wb\"\n",
+				uop->id_in_core, uop->core);
+
 		/* Writeback */
 		uop->completed = 1;
 		x86_reg_file_write(uop);

@@ -137,7 +137,7 @@ void x86_cpu_unmap_context(int core, int thread)
  * will be deallocated in the commit stage as soon as the pipeline
  * is empty. Also, no newer instructions will be enter the pipeline
  * hereafter. */
-void cpu_unmap_context_signal(struct x86_ctx_t *ctx)
+void x86_cpu_unmap_context_signal(struct x86_ctx_t *ctx)
 {
 	int core, thread;
 
@@ -202,7 +202,7 @@ void x86_cpu_dynamic_schedule()
 	/* Evict non-running contexts */
 	for (ctx = x86_emu->alloc_list_head; ctx; ctx = ctx->alloc_list_next)
 		if (!ctx->dealloc_signal && !x86_ctx_get_status(ctx, x86_ctx_running))
-			cpu_unmap_context_signal(ctx);
+			x86_cpu_unmap_context_signal(ctx);
 
 	/* If all running contexts are allocated, just update the ctx_alloc_oldest counter,
 	 * and exit. */
@@ -223,7 +223,7 @@ void x86_cpu_dynamic_schedule()
 			if (!found_ctx || ctx->alloc_when < found_ctx->alloc_when)
 				found_ctx = ctx;
 		if (found_ctx)
-			cpu_unmap_context_signal(found_ctx);
+			x86_cpu_unmap_context_signal(found_ctx);
 	}
 	
 	/* Allocate running contexts */
