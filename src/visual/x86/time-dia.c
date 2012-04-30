@@ -185,6 +185,11 @@ static void vi_x86_time_dia_refresh_content_layout(struct vi_x86_time_dia_t *tim
 	num_rows = MIN(num_insts, time_dia->content_layout_height / VI_X86_TIME_DIA_CELL_HEIGHT + 2);
 	num_cols = MIN(num_cycles, time_dia->content_layout_width / VI_X86_TIME_DIA_CELL_WIDTH + 2);
 
+	/* Create new matrix */
+	if (time_dia->content_matrix)
+		matrix_free(time_dia->content_matrix);
+	time_dia->content_matrix = matrix_create(num_rows, num_cols);
+
 	/* Create new table */
 	content_layout = time_dia->content_layout;
 	if (time_dia->content_table)
@@ -193,11 +198,6 @@ static void vi_x86_time_dia_refresh_content_layout(struct vi_x86_time_dia_t *tim
 	gtk_layout_put(GTK_LAYOUT(content_layout), content_table,
 		time_dia->left_offset, time_dia->top_offset);
 	time_dia->content_table = content_table;
-
-	/* Create new matrix */
-	if (time_dia->content_matrix)
-		matrix_free(time_dia->content_matrix);
-	time_dia->content_matrix = matrix_create(num_rows, num_cols);
 
 	/* Create labels */
 	MATRIX_FOR_EACH(time_dia->content_matrix, row, col)
@@ -252,6 +252,11 @@ static void vi_x86_time_dia_refresh_macro_inst_layout(struct vi_x86_time_dia_t *
 	num_insts = time_dia->core->num_insts;
 	num_rows = MIN(num_insts, time_dia->macro_inst_layout_height / VI_X86_TIME_DIA_CELL_HEIGHT + 2);
 
+	/* Clear instruction label list */
+	if (!time_dia->macro_inst_list)
+		time_dia->macro_inst_list = list_create();
+	list_clear(time_dia->macro_inst_list);
+
 	/* Create new table */
 	macro_inst_layout = time_dia->macro_inst_layout;
 	if (time_dia->macro_inst_table)
@@ -259,11 +264,6 @@ static void vi_x86_time_dia_refresh_macro_inst_layout(struct vi_x86_time_dia_t *
 	macro_inst_table = gtk_table_new(num_rows, 1, TRUE);
 	gtk_layout_put(GTK_LAYOUT(macro_inst_layout), macro_inst_table, 0, time_dia->top_offset);
 	time_dia->macro_inst_table = macro_inst_table;
-
-	/* Clear instruction label list */
-	if (!time_dia->macro_inst_list)
-		time_dia->macro_inst_list = list_create();
-	list_clear(time_dia->macro_inst_list);
 
 	/* Create labels */
 	for (row = 0; row < num_rows; row++)
@@ -313,6 +313,11 @@ static void vi_x86_time_dia_refresh_inst_layout(struct vi_x86_time_dia_t *time_d
 	num_insts = time_dia->core->num_insts;
 	num_rows = MIN(num_insts, time_dia->inst_layout_height / VI_X86_TIME_DIA_CELL_HEIGHT + 2);
 
+	/* Clear instruction label list */
+	if (!time_dia->inst_list)
+		time_dia->inst_list = list_create();
+	list_clear(time_dia->inst_list);
+
 	/* Create new table */
 	inst_layout = time_dia->inst_layout;
 	if (time_dia->inst_table)
@@ -320,11 +325,6 @@ static void vi_x86_time_dia_refresh_inst_layout(struct vi_x86_time_dia_t *time_d
 	inst_table = gtk_table_new(num_rows, 1, TRUE);
 	gtk_layout_put(GTK_LAYOUT(inst_layout), inst_table, 0, time_dia->top_offset);
 	time_dia->inst_table = inst_table;
-
-	/* Clear instruction label list */
-	if (!time_dia->inst_list)
-		time_dia->inst_list = list_create();
-	list_clear(time_dia->inst_list);
 
 	/* Create labels */
 	for (row = 0; row < num_rows; row++)
@@ -374,6 +374,11 @@ static void vi_x86_time_dia_refresh_cycle_layout(struct vi_x86_time_dia_t *time_
 	num_cycles = vi_state_get_num_cycles();
 	num_cols = MIN(num_cycles, time_dia->content_layout_width / VI_X86_TIME_DIA_CELL_WIDTH + 2);
 
+	/* Clear cycle label list */
+	if (!time_dia->cycle_list)
+		time_dia->cycle_list = list_create();
+	list_clear(time_dia->cycle_list);
+
 	/* Create new table */
 	cycle_layout = time_dia->cycle_layout;
 	if (time_dia->cycle_table)
@@ -381,11 +386,6 @@ static void vi_x86_time_dia_refresh_cycle_layout(struct vi_x86_time_dia_t *time_
 	cycle_table = gtk_table_new(1, num_cols, TRUE);
 	gtk_layout_put(GTK_LAYOUT(cycle_layout), cycle_table, time_dia->left_offset, 0);
 	time_dia->cycle_table = cycle_table;
-
-	/* Clear cycle label list */
-	if (!time_dia->cycle_list)
-		time_dia->cycle_list = list_create();
-	list_clear(time_dia->cycle_list);
 
 	/* Create labels */
 	for (col = 0; col < num_cols; col++)
@@ -447,6 +447,8 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 		/* Event box */
 		GtkWidget *event_box;
 		event_box = list_get(time_dia->cycle_list, col);
+		if (!event_box)
+			continue;
 
 		/* Label */
 		GtkWidget *label;
@@ -463,6 +465,8 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 		/* Event box */
 		GtkWidget *event_box;
 		event_box = list_get(time_dia->inst_list, row);
+		if (!event_box)
+			continue;
 
 		/* Label */
 		GtkWidget *label;
@@ -476,6 +480,8 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 		/* Event box */
 		GtkWidget *event_box;
 		event_box = list_get(time_dia->macro_inst_list, row);
+		if (!event_box)
+			continue;
 
 		/* Label */
 		GtkWidget *label;
@@ -512,20 +518,12 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 			gtk_label_set_markup(GTK_LABEL(label), str);
 
 			/* Macro-instruction */
-			if (inst->asm_code && *inst->asm_code)
+			event_box = list_get(time_dia->macro_inst_list, inst_row);
+			if (inst->asm_code && *inst->asm_code && event_box)
 			{
-				/* Event box */
-				GtkWidget *event_box;
-				event_box = list_get(time_dia->macro_inst_list, inst_row);
-
-				/* Label */
-				GtkWidget *label;
 				label = gtk_bin_get_child(GTK_BIN(event_box));
-
-				/* Instruction */
 				snprintf(str, sizeof str, "%s", inst->asm_code);
 				gtk_label_set_markup(GTK_LABEL(label), str);
-
 			}
 		}
 
@@ -539,6 +537,8 @@ static void vi_x86_time_dia_refresh_content(struct vi_x86_time_dia_t *time_dia)
 			/* Event box */
 			GtkWidget *event_box;
 			event_box = matrix_get(time_dia->content_matrix, row, col);
+			if (!event_box)
+				continue;
 
 			/* Label */
 			GtkWidget *label;

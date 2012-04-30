@@ -185,20 +185,75 @@ static void vi_x86_cpu_new_inst(struct vi_x86_cpu_t *cpu,
 
 /* Command 'x86.inst'
  *	id=<id>
+ *	core=<core_id>
  *	stg=<stage>
  */
 static void vi_x86_cpu_inst(struct vi_x86_cpu_t *cpu,
 	struct vi_trace_line_t *trace_line)
 {
+	struct vi_x86_inst_t *inst;
+	struct vi_x86_core_t *core;
+
+	enum vi_x86_inst_stage_t stage;
+
+	long long id;
+
+	int core_id;
+
+	char name[MAX_STRING_SIZE];
+
+	/* Fields */
+	id = vi_trace_line_get_symbol_long_long(trace_line, "id");
+	core_id = vi_trace_line_get_symbol_int(trace_line, "core");
+	stage = map_string(&vi_x86_inst_stage_map, vi_trace_line_get_symbol(trace_line, "stg"));
+
+	/* Get core */
+	core = list_get(vi_x86_cpu->core_list, core_id);
+	if (!core)
+		panic("%s: invalid core", __FUNCTION__);
+
+	/* Get instruction */
+	snprintf(name, sizeof name, "i-%lld", id);
+	inst = hash_table_get(core->inst_table, name);
+	if (!inst)
+		panic("%s: invalid instruction", __FUNCTION__);
+
+	/* Update stage */
+	inst->stage = stage;
 }
 
 
 /* Command 'x86.end_inst'
  *	id=<id>
+ *	core=<core_id>
  */
 static void vi_x86_cpu_end_inst(struct vi_x86_cpu_t *cpu,
 	struct vi_trace_line_t *trace_line)
 {
+	struct vi_x86_inst_t *inst;
+	struct vi_x86_core_t *core;
+
+	long long id;
+
+	int core_id;
+
+	char name[MAX_STRING_SIZE];
+
+	/* Fields */
+	id = vi_trace_line_get_symbol_long_long(trace_line, "id");
+	core_id = vi_trace_line_get_symbol_int(trace_line, "core");
+
+	/* Get core */
+	core = list_get(vi_x86_cpu->core_list, core_id);
+	if (!core)
+		panic("%s: invalid core", __FUNCTION__);
+
+	/* Free instruction */
+	snprintf(name, sizeof name, "i-%lld", id);
+	inst = hash_table_remove(core->inst_table, name);
+	if (!inst)
+		panic("%s: invalid instruction", __FUNCTION__);
+	vi_x86_inst_free(inst);
 }
 
 
