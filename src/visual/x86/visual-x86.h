@@ -73,6 +73,8 @@ enum vi_x86_inst_stage_t
 };
 
 extern struct string_map_t vi_x86_inst_stage_map;
+extern struct string_map_t vi_x86_inst_stage_name_map;
+extern struct string_map_t vi_x86_inst_stage_color_map;
 
 struct vi_x86_inst_t
 {
@@ -113,6 +115,9 @@ struct vi_x86_core_t
 	/* Hash table of instructions.
 	 * Each element is of type 'struct vi_x86_inst_t'. */
 	struct hash_table_t *inst_table;
+
+	/* Number of instructions */
+	long long num_insts;
 };
 
 struct vi_x86_core_t *vi_x86_core_create(char *name);

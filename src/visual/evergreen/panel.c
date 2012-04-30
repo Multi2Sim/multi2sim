@@ -297,6 +297,10 @@ static void vi_cu_board_refresh(struct vi_cu_board_t *board)
 
 	long long cycle;
 
+	/* Go to cycle */
+	cycle = vi_cycle_bar_get_cycle();
+	vi_state_go_to_cycle(cycle);
+
 	/* Empty work-group list */
 	while (vi_list_count(board->work_group_list))
 		free(vi_list_remove_at(board->work_group_list, 0));
@@ -326,7 +330,6 @@ static void vi_cu_board_refresh(struct vi_cu_board_t *board)
 	/* Refresh time diagram */
 	if (board->time_dia_window)
 	{
-		cycle = vi_cycle_bar_get_cycle();
 		vi_evg_time_dia_window_go_to_cycle(board->time_dia_window, cycle);
 		vi_evg_time_dia_window_refresh(board->time_dia_window);
 	}
@@ -438,13 +441,7 @@ void vi_evg_panel_refresh(struct vi_evg_panel_t *panel)
 {
 	struct vi_cu_board_t *board;
 
-	long long cycle;
-
 	int board_id;
-
-	/* Go to cycle */
-	cycle = vi_cycle_bar_get_cycle();
-	vi_state_go_to_cycle(cycle);
 
 	/* Refresh all module boards */
 	LIST_FOR_EACH(panel->board_list, board_id)

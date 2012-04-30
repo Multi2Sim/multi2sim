@@ -33,6 +33,7 @@
 #include <hash-table.h>
 #include <linked-list.h>
 #include <list.h>
+#include <matrix.h>
 #include <mhandle.h>
 #include <misc.h>
 
