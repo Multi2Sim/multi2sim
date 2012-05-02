@@ -115,21 +115,25 @@ DEFINST(DSETP,
 
 DEFINST(IMAD, 
 	"%p IMAD%e %d, %a, %b, %c", 
-	INT_OP4, 
+	INT_IMAD, 
 	INT, 
 	0x083)
 
-//DEFINST(IMUL
+DEFINST(IMUL, 
+	"%p IMUL%e %d, %a, %b", 
+	INT_IMUL, 
+	INT, 
+	0x143)
 
 DEFINST(IADD, 
 	"%p IADD%e %d, %a, %b", 
-	INT_OP3, 
+	INT_IADD, 
 	INT, 
 	0x123)
 
 DEFINST(ISCADD, 
-	"%p ISCADD%e %d, %a, %b, %c", 
-	INT_OP4_S, 
+	"%p ISCADD%e %d, %a, %b, %s", 
+	INT_ISCADD, 
 	INT, 
 	0x103)
 
@@ -137,29 +141,57 @@ DEFINST(ISCADD,
 
 //DEFINST(IMNMX
 
-//DEFINST(BFE
+DEFINST(BFE, 
+	"%p BFE%e %d, %a, %b", 
+	INT_BFE, 
+	INT, 
+	0x1c3)
 
-//DEFINST(BFI
+DEFINST(BFI, 
+	"%p BFI%e %d, %a, %b, %c", 
+	INT_BFI, 
+	INT, 
+	0x0a3)
 
-//DEFINST(SHR
+DEFINST(SHR, 
+	"%p SHR%e %d, %a, %b", 
+	INT_SHR, 
+	INT, 
+	0x163)
 
-//DEFINST(SHL
+DEFINST(SHL, 
+	"%p SHL%e %d, %a, %b", 
+	INT_SHL, 
+	INT, 
+	0x183)
 
-//DEFINST(LOP
+DEFINST(LOP, 
+	"%p LOP%e %d, %a, %b", 
+	INT_LOP, 
+	INT, 
+	0x1a3)
 
-//DEFINST(LOP32I
+DEFINST(LOP32I, 
+	"%p LOP32I%e %d, %a, %i", 
+	INT_LOP32I, 
+	INT, 
+	0x0e2)
 
 //DEFINST(FLO
 
 //DEFINST(ISET
 
 DEFINST(ISETP, 
-	"%p ISETP%e %P, %Q, %a, %b, %c", 
-	INT_OP3_P, 
+	"%p ISETP%e %P, %Q, %a, %b, %R", 
+	INT_ISETP, 
 	INT, 
 	0x033)
 
-//DEFINST(ICMP
+DEFINST(ICMP, 
+	"%p ICMP%e %d, %a, %b, %c", 
+	INT_ICMP, 
+	INT, 
+	0x0c3)
 
 //DEFINST(POPC
 
