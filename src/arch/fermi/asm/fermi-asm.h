@@ -29,20 +29,10 @@ enum frm_fmt_enum
 {
 	FRM_FMT_NONE = 0, 
 
-	FRM_FMT_FP_OP2, 
-	FRM_FMT_FP_OP3, 
-	FRM_FMT_FP_OP3_I, 
-	FRM_FMT_FP_OP3_P, 
-	FRM_FMT_FP_OP4, 
-	FRM_FMT_INT_OP3, 
-	FRM_FMT_INT_OP3_P, 
-	FRM_FMT_INT_OP4, 
-	FRM_FMT_INT_OP4_S, 
-	FRM_FMT_LDST_OP2, 
-	FRM_FMT_MOV_OP2, 
-	FRM_FMT_CTRL_NONE, 
-	FRM_FMT_CTRL_OP1, 
-	FRM_FMT_MISC_OP2_SREG, 
+#define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
+	FRM_FMT_##_fmt,
+#include <fermi-asm.dat>
+#undef DEFINST
 
 	/* Max */
 	FRM_FMT_COUNT
@@ -114,84 +104,7 @@ enum frm_sr_enum
  * Structure of Microcode Format
  */
 
-struct frm_fmt_fp_op2_t
-{
-	unsigned long long int op0 : 4; /* [3:0] */
-	unsigned long long int __reserved0 : 1; /* [4] */
-	unsigned long long int sat : 1; /* [5] */
-	unsigned long long int __reserved1 : 1; /* [6] */
-	unsigned long long int abs_src1 : 1; /* [7] */
-	unsigned long long int __reserved2 : 1; /* [8] */
-	unsigned long long int neg_src1 : 1; /* [9] */
-	unsigned long long int pred : 4; /* [13:10] */
-	unsigned long long int dst : 6; /* [19:14] */
-	unsigned long long int src1 : 6; /* [25:20] */
-	unsigned long long int op : 4; /* [29:26] */
-	unsigned long long int __reserved3 : 28; /* [57:30] */
-	unsigned long long int op1 : 6; /* [63:58] */
-};
-
-struct frm_fmt_fp_op3_t
-{
-	unsigned long long int op0 : 4; /* [3:0] */
-	unsigned long long int __reserved0 : 1; /* [4] */
-	unsigned long long int ftz : 1; /* [5] */
-	unsigned long long int abs_src2 : 1; /* [6] */
-	unsigned long long int abs_src1 : 1; /* [7] */
-	unsigned long long int neg_src2 : 1; /* [8] */
-	unsigned long long int neg_src1 : 1; /* [9] */
-	unsigned long long int pred : 4; /* [13:10] */
-	unsigned long long int dst : 6; /* [19:14] */
-	unsigned long long int src1 : 6; /* [25:20] */
-	unsigned long long int src2 : 20; /* [45:26] */
-	unsigned long long int sel_src2 : 2; /* [47:46] */
-	unsigned long long int __reserved1 : 1; /* [48] */
-	unsigned long long int sat : 1; /* [49] */
-	unsigned long long int __reserved2 : 5; /* [54:50] */
-	unsigned long long int rnd : 2; /* [56:55] */
-	unsigned long long int fma : 1; /* [57] */
-	unsigned long long int op1 : 6; /* [63:58] */
-};
-
-struct frm_fmt_fp_op3_i_t
-{
-	unsigned long long int op0 : 4; /* [3:0] */
-	unsigned long long int __reserved0 : 1; /* [4] */
-	unsigned long long int ftz : 1; /* [5] */
-	unsigned long long int __reserved1 : 1; /* [6] */
-	unsigned long long int abs_src1 : 1; /* [7] */
-	unsigned long long int __reserved2 : 1; /* [8] */
-	unsigned long long int neg_src1 : 1; /* [9] */
-	unsigned long long int pred : 4; /* [13:10] */
-	unsigned long long int dst : 6; /* [19:14] */
-	unsigned long long int src1 : 6; /* [25:20] */
-	unsigned long long int __reserved3 : 16; /* [41:26] */
-	unsigned long long int imm : 16; /* [57:42] */
-	unsigned long long int op1 : 6; /* [63:58] */
-};
-
-struct frm_fmt_fp_op3_p_t
-{
-	unsigned long long int op0 : 4; /* [3:0] */
-	unsigned long long int __reserved0 : 2; /* [5:4] */
-	unsigned long long int abs_src2 : 1; /* [6] */
-	unsigned long long int abs_src1 : 1; /* [7] */
-	unsigned long long int neg_src2 : 1; /* [8] */
-	unsigned long long int neg_src1 : 1; /* [9] */
-	unsigned long long int pred : 4; /* [13:10] */
-	unsigned long long int p : 3; /* [16:14] */
-	unsigned long long int P : 3; /* [19:17] */
-	unsigned long long int src1 : 6; /* [25:20] */
-	unsigned long long int src2 : 20; /* [45:26] */
-	unsigned long long int sel_src2 : 2; /* [47:46] */
-	unsigned long long int __reserved1 : 1; /* [48] */
-	unsigned long long int src3 : 4; /* [52:49] */
-	unsigned long long int logic_op : 2; /* [54:53] */
-	unsigned long long int comp_op : 4; /* [58:55] */
-	unsigned long long int op1 : 5; /* [63:59] */
-};
-
-struct frm_fmt_fp_op4_t
+struct frm_fmt_fp_ffma_t
 {
 	unsigned long long int op0 : 4; /* [3:0] */
 	unsigned long long int __reserved0 : 1; /* [4] */
@@ -203,12 +116,210 @@ struct frm_fmt_fp_op4_t
 	unsigned long long int dst : 6; /* [19:14] */
 	unsigned long long int src1 : 6; /* [25:20] */
 	unsigned long long int src2 : 20; /* [45:26] */
-	unsigned long long int sel_src2 : 2; /* [47:46] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
 	unsigned long long int __reserved1 : 1; /* [48] */
 	unsigned long long int src3 : 6; /* [54:49] */
 	unsigned long long int rnd : 2; /* [56:55] */
 	unsigned long long int __reserved2 : 1; /* [57] */
 	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_fp_fadd_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 1; /* [4] */
+	unsigned long long int ftz : 1; /* [5] */
+	unsigned long long int abs_src2 : 1; /* [6] */
+	unsigned long long int abs_src1 : 1; /* [7] */
+	unsigned long long int neg_src2 : 1; /* [8] */
+	unsigned long long int neg_src1 : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int __reserved1 : 1; /* [48] */
+	unsigned long long int sat : 1; /* [49] */
+	unsigned long long int __reserved2 : 5; /* [54:50] */
+	unsigned long long int rnd : 2; /* [56:55] */
+	unsigned long long int fma : 1; /* [57] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_fp_fadd32i_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 1; /* [4] */
+	unsigned long long int ftz : 1; /* [5] */
+	unsigned long long int __reserved1 : 1; /* [6] */
+	unsigned long long int abs_src1 : 1; /* [7] */
+	unsigned long long int __reserved2 : 1; /* [8] */
+	unsigned long long int neg_src1 : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int imm32 : 32; /* [57:26] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_fp_fcmp_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 1; /* [4] */
+	unsigned long long int ftz : 1; /* [5] */
+	unsigned long long int __reserved1 : 4; /* [9:6] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int __reserved2 : 1; /* [48] */
+	unsigned long long int src3 : 6; /* [54:49] */
+	unsigned long long int cmp : 4; /* [58:55] */
+	unsigned long long int op1 : 5; /* [63:59] */
+};
+
+struct frm_fmt_fp_fmul_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 1; /* [4] */
+	unsigned long long int sat : 1; /* [5] */
+	unsigned long long int ftzfmz : 2; /* [7:6] */
+	unsigned long long int fma_mode : 2; /* [9:8] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int __reserved1 : 7; /* [54:48] */
+	unsigned long long int rnd : 2; /* [56:55] */
+	unsigned long long int neg_src2 : 1; /* [57] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_fp_fmul32i_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 1; /* [4] */
+	unsigned long long int sat : 1; /* [5] */
+	unsigned long long int ftzfmz : 2; /* [7:6] */
+	unsigned long long int fma_mode : 2; /* [9:8] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int imm32 : 32; /* [57:26] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_fp_fsetp_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 2; /* [5:4] */
+	unsigned long long int abs_src2 : 1; /* [6] */
+	unsigned long long int abs_src1 : 1; /* [7] */
+	unsigned long long int neg_src2 : 1; /* [8] */
+	unsigned long long int neg_src1 : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int Q : 3; /* [16:14] */
+	unsigned long long int P : 3; /* [19:17] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int __reserved1 : 1; /* [48] */
+	unsigned long long int R : 4; /* [52:49] */
+	unsigned long long int logic : 2; /* [54:53] */
+	unsigned long long int cmp : 4; /* [58:55] */
+	unsigned long long int op1 : 5; /* [63:59] */
+};
+
+struct frm_fmt_fp_mufu_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 1; /* [4] */
+	unsigned long long int sat : 1; /* [5] */
+	unsigned long long int __reserved1 : 1; /* [6] */
+	unsigned long long int abs_src1 : 1; /* [7] */
+	unsigned long long int __reserved2 : 1; /* [8] */
+	unsigned long long int neg_src1 : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int op : 3; /* [28:26] */
+	unsigned long long int __reserved3 : 29; /* [57:29] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_fp_dfma_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 4; /* [7:4] */
+	unsigned long long int neg_src3 : 1; /* [8] */
+	unsigned long long int neg_src2 : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int __reserved1 : 1; /* [48] */
+	unsigned long long int src3 : 6; /* [54:49] */
+	unsigned long long int __reserved2 : 3; /* [57:55] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_fp_dadd_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 2; /* [5:4] */
+	unsigned long long int abs_src2 : 1; /* [6] */
+	unsigned long long int abs_src1 : 1; /* [7] */
+	unsigned long long int neg_src2 : 1; /* [8] */
+	unsigned long long int neg_src1 : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int __reserved1 : 7; /* [54:48] */
+	unsigned long long int rnd : 2; /* [56:55] */
+	unsigned long long int __reserved2 : 1; /* [57] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_fp_dmul_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 5; /* [8:4] */
+	unsigned long long int neg_src2 : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int __reserved1 : 7; /* [54:48] */
+	unsigned long long int rnd : 2; /* [56:55] */
+	unsigned long long int __reserved2 : 1; /* [57] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_fp_dsetp_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 2; /* [5:4] */
+	unsigned long long int abs_src2 : 1; /* [6] */
+	unsigned long long int abs_src1 : 1; /* [7] */
+	unsigned long long int neg_src2 : 1; /* [8] */
+	unsigned long long int neg_src1 : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int Q : 3; /* [16:14] */
+	unsigned long long int P : 3; /* [19:17] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int __reserved1 : 1; /* [48] */
+	unsigned long long int R : 4; /* [52:49] */
+	unsigned long long int logic : 2; /* [54:53] */
+	unsigned long long int cmp : 4; /* [58:55] */
+	unsigned long long int op1 : 5; /* [63:59] */
 };
 
 struct frm_fmt_int_op3_t
@@ -272,19 +383,99 @@ struct frm_fmt_int_op4_s_t
 	unsigned long long int op1 : 6; /* [63:58] */
 };
 
-struct frm_fmt_ldst_op2_t
+struct frm_fmt_conv_f2f_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int s : 1; /* [4] */
+	unsigned long long int sat : 1; /* [5] */
+	unsigned long long int abs_src2 : 1; /* [6] */
+	unsigned long long int pass_round : 1; /* [7] */
+	unsigned long long int neg_src2 : 1; /* [8] */
+	unsigned long long int __reserved1 : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int dtype : 2; /* [21:20] */
+	unsigned long long int __reserved2 : 1; /* [22] */
+	unsigned long long int stype : 2; /* [24:23] */
+	unsigned long long int __reserved3 : 1; /* [25] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int sel_src2 : 2; /* [47:46] */
+	unsigned long long int __reserved4 : 1; /* [48] */
+	unsigned long long int rnd : 2; /* [50:49] */
+	unsigned long long int __reserved5 : 4; /* [54:51] */
+	unsigned long long int ftz : 1; /* [55] */
+	unsigned long long int __reserved6 : 2; /* [57:56] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_conv_f2i_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 2; /* [4:5] */
+	unsigned long long int abs_src2 : 1; /* [6] */
+	unsigned long long int dtype_s : 1; /* [7] */
+	unsigned long long int neg_src2 : 1; /* [8] */
+	unsigned long long int __reserved1 : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int dtype_n : 2; /* [21:20] */
+	unsigned long long int __reserved2 : 1; /* [22] */
+	unsigned long long int stype : 2; /* [24:23] */
+	unsigned long long int __reserved3 : 1; /* [25] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int sel_src2 : 2; /* [47:46] */
+	unsigned long long int __reserved4 : 1; /* [48] */
+	unsigned long long int rnd : 2; /* [50:49] */
+	unsigned long long int __reserved5 : 4; /* [54:51] */
+	unsigned long long int ftz : 1; /* [55] */
+	unsigned long long int __reserved6 : 2; /* [57:56] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_conv_i2f_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 2; /* [5:4] */
+	unsigned long long int abs_src2 : 1; /* [6] */
+	unsigned long long int __reserved1 : 1; /* [7] */
+	unsigned long long int neg_src2 : 1; /* [8] */
+	unsigned long long int stype_s : 1; /* [9] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int dtype : 2; /* [21:20] */
+	unsigned long long int __reserved2 : 1; /* [22] */
+	unsigned long long int stype_n : 2; /* [24:23] */
+	unsigned long long int __reserved3 : 1; /* [25] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int sel_src2 : 2; /* [47:46] */
+	unsigned long long int __reserved4 : 1; /* [48] */
+	unsigned long long int rnd : 2; /* [50:49] */
+	unsigned long long int __reserved5 : 7; /* [57:51] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_conv_i2i_t
 {
 	unsigned long long int op0 : 4; /* [3:0] */
 	unsigned long long int __reserved0 : 1; /* [4] */
-	unsigned long long int type : 3; /* [7:5] */
-	unsigned long long int cop : 2; /* [9:8] */
+	unsigned long long int sat : 1; /* [5] */
+	unsigned long long int abs_src2 : 1; /* [6] */
+	unsigned long long int dtype_s : 1; /* [7] */
+	unsigned long long int neg_src2 : 1; /* [8] */
+	unsigned long long int stype_s : 1; /* [9] */
 	unsigned long long int pred : 4; /* [13:10] */
 	unsigned long long int dst : 6; /* [19:14] */
-	unsigned long long int src1 : 6; /* [25:20] */
-	unsigned long long int __reserved1 : 16; /* [41:26] */
-	unsigned long long int imm : 16; /* [57:42] */
-	unsigned long long int e : 1; /* [58] */
-	unsigned long long int op1 : 5; /* [63:59] */
+	unsigned long long int dtype_n : 2; /* [21:20] */
+	unsigned long long int __reserved2 : 1; /* [22] */
+	unsigned long long int stype_n : 2; /* [24:23] */
+	unsigned long long int __reserved3 : 1; /* [25] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int sel_src2 : 2; /* [47:46] */
+	unsigned long long int cc_dst : 1; /* [48] */
+	unsigned long long int __reserved5 : 6; /* [54:49] */
+	unsigned long long int b_src2 : 2; /* [56:55] */
+	unsigned long long int __reserved6 : 1; /* [57] */
+	unsigned long long int op1 : 6; /* [63:58] */
 };
 
 struct frm_fmt_mov_op2_t
@@ -299,6 +490,37 @@ struct frm_fmt_mov_op2_t
 	unsigned long long int __reserved2 : 10; /* [57:48] */
 	unsigned long long int op1 : 6; /* [63:58] */
 };
+
+struct frm_fmt_ldst_ld_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 1; /* [4] */
+	unsigned long long int type : 3; /* [7:5] */
+	unsigned long long int cop : 2; /* [9:8] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int __reserved1 : 16; /* [41:26] */
+	unsigned long long int offset : 16; /* [57:42] */
+	unsigned long long int e : 1; /* [58] */
+	unsigned long long int op1 : 5; /* [63:59] */
+};
+
+struct frm_fmt_ldst_st_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 1; /* [4] */
+	unsigned long long int type : 3; /* [7:5] */
+	unsigned long long int cop : 2; /* [9:8] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int __reserved1 : 16; /* [41:26] */
+	unsigned long long int offset : 16; /* [57:42] */
+	unsigned long long int e : 1; /* [58] */
+	unsigned long long int op1 : 5; /* [63:59] */
+};
+
 
 struct frm_fmt_ctrl_none_t
 {
@@ -371,17 +593,29 @@ union frm_inst_dword_t
 {
 	unsigned char bytes[8];
 
-	struct frm_fmt_fp_op2_t fp_op2;
-	struct frm_fmt_fp_op3_t fp_op3;
-	struct frm_fmt_fp_op3_i_t fp_op3_i;
-	struct frm_fmt_fp_op3_p_t fp_op3_p;
-	struct frm_fmt_fp_op4_t fp_op4;
+	struct frm_fmt_fp_ffma_t fp_ffma;
+	struct frm_fmt_fp_fadd_t fp_fadd;
+	struct frm_fmt_fp_fadd32i_t fp_fadd32i;
+	struct frm_fmt_fp_fcmp_t fp_fcmp;
+	struct frm_fmt_fp_fmul_t fp_fmul;
+	struct frm_fmt_fp_fmul32i_t fp_fmul32i;
+	struct frm_fmt_fp_fsetp_t fp_fsetp;
+	struct frm_fmt_fp_mufu_t fp_mufu;
+	struct frm_fmt_fp_dfma_t fp_dfma;
+	struct frm_fmt_fp_dadd_t fp_dadd;
+	struct frm_fmt_fp_dmul_t fp_dmul;
+	struct frm_fmt_fp_dsetp_t fp_dsetp;
 	struct frm_fmt_int_op3_t int_op3;
 	struct frm_fmt_int_op3_p_t int_op3_p;
 	struct frm_fmt_int_op4_t int_op4;
 	struct frm_fmt_int_op4_s_t int_op4_s;
-	struct frm_fmt_ldst_op2_t ldst_op2;
+	struct frm_fmt_conv_f2f_t conv_f2f;
+	struct frm_fmt_conv_f2i_t conv_f2i;
+	struct frm_fmt_conv_i2f_t conv_i2f;
+	struct frm_fmt_conv_i2i_t conv_i2i;
 	struct frm_fmt_mov_op2_t mov_op2;
+	struct frm_fmt_ldst_ld_t ldst_ld;
+	struct frm_fmt_ldst_st_t ldst_st;
 	struct frm_fmt_ctrl_none_t ctrl_none;
 	struct frm_fmt_ctrl_op1_t ctrl_op1;
 	struct frm_fmt_misc_op2_sreg_t misc_op2_sreg;
@@ -414,12 +648,14 @@ void frm_inst_hex_dump(FILE *f, unsigned char *buf, int inst_index);
 void frm_inst_dump_pred(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
 void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
 void frm_inst_dump_dst(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
-void frm_inst_dump_dst_P(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
-void frm_inst_dump_dst_Q(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
-void frm_inst_dump_src_1(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
-void frm_inst_dump_src_2(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
-void frm_inst_dump_src_3(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
+void frm_inst_dump_P(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
+void frm_inst_dump_Q(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
+void frm_inst_dump_src1(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
+void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
+void frm_inst_dump_src3(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
 void frm_inst_dump_imm(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
+void frm_inst_dump_R(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
+void frm_inst_dump_offset(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
 
 void frm_inst_decode(struct frm_inst_t *inst);
 
