@@ -547,7 +547,7 @@ struct frm_fmt_conv_f2f_t
 	unsigned long long int stype : 2; /* [24:23] */
 	unsigned long long int __reserved3 : 1; /* [25] */
 	unsigned long long int src2 : 20; /* [45:26] */
-	unsigned long long int sel_src2 : 2; /* [47:46] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
 	unsigned long long int __reserved4 : 1; /* [48] */
 	unsigned long long int rnd : 2; /* [50:49] */
 	unsigned long long int __reserved5 : 4; /* [54:51] */
@@ -571,7 +571,7 @@ struct frm_fmt_conv_f2i_t
 	unsigned long long int stype : 2; /* [24:23] */
 	unsigned long long int __reserved3 : 1; /* [25] */
 	unsigned long long int src2 : 20; /* [45:26] */
-	unsigned long long int sel_src2 : 2; /* [47:46] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
 	unsigned long long int __reserved4 : 1; /* [48] */
 	unsigned long long int rnd : 2; /* [50:49] */
 	unsigned long long int __reserved5 : 4; /* [54:51] */
@@ -595,7 +595,7 @@ struct frm_fmt_conv_i2f_t
 	unsigned long long int stype_n : 2; /* [24:23] */
 	unsigned long long int __reserved3 : 1; /* [25] */
 	unsigned long long int src2 : 20; /* [45:26] */
-	unsigned long long int sel_src2 : 2; /* [47:46] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
 	unsigned long long int __reserved4 : 1; /* [48] */
 	unsigned long long int rnd : 2; /* [50:49] */
 	unsigned long long int __reserved5 : 7; /* [57:51] */
@@ -618,8 +618,8 @@ struct frm_fmt_conv_i2i_t
 	unsigned long long int stype_n : 2; /* [24:23] */
 	unsigned long long int __reserved3 : 1; /* [25] */
 	unsigned long long int src2 : 20; /* [45:26] */
-	unsigned long long int sel_src2 : 2; /* [47:46] */
-	unsigned long long int cc_dst : 1; /* [48] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int dst_cc : 1; /* [48] */
 	unsigned long long int __reserved5 : 6; /* [54:49] */
 	unsigned long long int b_src2 : 2; /* [56:55] */
 	unsigned long long int __reserved6 : 1; /* [57] */

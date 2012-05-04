@@ -1732,55 +1732,99 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	}
 	else if (fmt == FRM_FMT_CONV_F2F)
 	{
-		bank_id = inst->dword.conv_f2f.src2 >> 16;
-		offset_in_bank= inst->dword.conv_f2f.src2 & 0xffff;
-		if (bank_id == 0 && offset_in_bank == 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
-		else if (bank_id == 0 && offset_in_bank != 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
-		else if (bank_id != 0 && offset_in_bank == 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+		if (inst->dword.int_icmp.src2_mod == 0)
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_icmp.src2 & 0x3f);
+		else if (inst->dword.int_icmp.src2_mod == 1)
+		{
+			bank_id = inst->dword.int_icmp.src2 >> 16;
+			offset_in_bank= inst->dword.int_icmp.src2 & 0xffff;
+			if (bank_id == 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
+			else if (bank_id == 0 && offset_in_bank != 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
+			else if (bank_id != 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+			else
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+		}
+		else if (inst->dword.int_icmp.src2_mod == 2)
+			;
+		else if (inst->dword.int_icmp.src2_mod == 3)
+			;
 		else
-			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+			fatal("%d: FRM_FMT_CONV_F2F.src2_mod not recognized", inst->dword.conv_f2f.src2_mod);
 	}
 	else if (fmt == FRM_FMT_CONV_F2I)
 	{
-		bank_id = inst->dword.conv_f2i.src2 >> 16;
-		offset_in_bank= inst->dword.conv_f2i.src2 & 0xffff;
-		if (bank_id == 0 && offset_in_bank == 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
-		else if (bank_id == 0 && offset_in_bank != 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
-		else if (bank_id != 0 && offset_in_bank == 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+		if (inst->dword.int_icmp.src2_mod == 0)
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_icmp.src2 & 0x3f);
+		else if (inst->dword.int_icmp.src2_mod == 1)
+		{
+			bank_id = inst->dword.int_icmp.src2 >> 16;
+			offset_in_bank= inst->dword.int_icmp.src2 & 0xffff;
+			if (bank_id == 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
+			else if (bank_id == 0 && offset_in_bank != 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
+			else if (bank_id != 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+			else
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+		}
+		else if (inst->dword.int_icmp.src2_mod == 2)
+			;
+		else if (inst->dword.int_icmp.src2_mod == 3)
+			;
 		else
-			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+			fatal("%d: FRM_FMT_CONV_F2I.src2_mod not recognized", inst->dword.conv_f2i.src2_mod);
 	}
 	else if (fmt == FRM_FMT_CONV_I2F)
 	{
-		bank_id = inst->dword.conv_i2f.src2 >> 16;
-		offset_in_bank= inst->dword.conv_i2f.src2 & 0xffff;
-		if (bank_id == 0 && offset_in_bank == 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
-		else if (bank_id == 0 && offset_in_bank != 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
-		else if (bank_id != 0 && offset_in_bank == 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+		if (inst->dword.int_icmp.src2_mod == 0)
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_icmp.src2 & 0x3f);
+		else if (inst->dword.int_icmp.src2_mod == 1)
+		{
+			bank_id = inst->dword.int_icmp.src2 >> 16;
+			offset_in_bank= inst->dword.int_icmp.src2 & 0xffff;
+			if (bank_id == 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
+			else if (bank_id == 0 && offset_in_bank != 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
+			else if (bank_id != 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+			else
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+		}
+		else if (inst->dword.int_icmp.src2_mod == 2)
+			;
+		else if (inst->dword.int_icmp.src2_mod == 3)
+			;
 		else
-			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+			fatal("%d: FRM_FMT_CONV_I2F.src2_mod not recognized", inst->dword.conv_i2f.src2_mod);
 	}
 	else if (fmt == FRM_FMT_CONV_I2I)
 	{
-		bank_id = inst->dword.conv_i2i.src2 >> 16;
-		offset_in_bank= inst->dword.conv_i2i.src2 & 0xffff;
-		if (bank_id == 0 && offset_in_bank == 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
-		else if (bank_id == 0 && offset_in_bank != 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
-		else if (bank_id != 0 && offset_in_bank == 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+		if (inst->dword.int_icmp.src2_mod == 0)
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_icmp.src2 & 0x3f);
+		else if (inst->dword.int_icmp.src2_mod == 1)
+		{
+			bank_id = inst->dword.int_icmp.src2 >> 16;
+			offset_in_bank= inst->dword.int_icmp.src2 & 0xffff;
+			if (bank_id == 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
+			else if (bank_id == 0 && offset_in_bank != 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
+			else if (bank_id != 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+			else
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+		}
+		else if (inst->dword.int_icmp.src2_mod == 2)
+			;
+		else if (inst->dword.int_icmp.src2_mod == 3)
+			;
 		else
-			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+			fatal("%d: FRM_FMT_CONV_I2I.src2_mod not recognized", inst->dword.conv_i2i.src2_mod);
 	}
 	else if (fmt == FRM_FMT_LDST_LD)
 		;
