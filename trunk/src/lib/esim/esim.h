@@ -23,6 +23,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
+
+
+/*
+ * Event-Driven Simulation
+ */
+
+
 /* Variable to indicate event simulation cycle */
 extern long long esim_cycle;
 
@@ -61,13 +68,6 @@ int esim_pending();
  * when all events are processed, esim heap will be empty;
  * esim_cycle is not incremented */
 void esim_empty();
-
-
-/* Debugging */
-extern FILE *esim_debug_file;
-int esim_debug_init(char *filename);
-void esim_debug_done(void);
-void esim_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 
 
 
