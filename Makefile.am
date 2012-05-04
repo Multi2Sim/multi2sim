@@ -29,6 +29,10 @@ EXTRA_DIST = \
 	tools/m2s-opencl-kc/misc.c \
 	tools/m2s-opencl-kc/misc.h \
 	\
+	tools/libm2s-glut/glut.c \
+	tools/libm2s-glut/Makefile \
+	tools/libm2s-glut/m2s-glut.h \
+	\
 	tools/libm2s-opencl/CL/cl_platform.h \
 	tools/libm2s-opencl/CL/cl_ext.h \
 	tools/libm2s-opencl/CL/opencl.h \
