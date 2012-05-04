@@ -58,7 +58,49 @@ void vi_evg_work_group_get_name_short(char *work_group_name, char *buf, int size
 
 void vi_evg_work_group_get_desc(char *work_group_name, char *buf, int size)
 {
-	snprintf(buf, size, "%s", work_group_name);
+	char *title_begin = "<span color=\"blue\"><b>";
+	char *title_end = "</b></span>";
+
+	long long cycle;
+
+	struct vi_evg_compute_unit_t *compute_unit;
+	struct vi_evg_work_group_t *work_group;
+
+	int compute_unit_id;
+
+	/* Go to current cycle */
+	cycle = vi_cycle_bar_get_cycle();
+	vi_state_go_to_cycle(cycle);
+
+	/* Look for work-group */
+	LIST_FOR_EACH(vi_evg_gpu->compute_unit_list, compute_unit_id)
+	{
+		compute_unit = list_get(vi_evg_gpu->compute_unit_list, compute_unit_id);
+		work_group = hash_table_get(compute_unit->work_group_table, work_group_name);
+		if (work_group)
+			break;
+	}
+	if (!work_group)
+		panic("%s: %s: invalid work-group", __FUNCTION__, work_group_name);
+
+	/* Title */
+	str_printf(&buf, &size, "%sDescription for work-group %s%s\n\n",
+		title_begin, work_group->name, title_end);
+
+	/* Work-items */
+	str_printf(&buf, &size, "<b>Number of work-items:</b> %d\n",
+		work_group->work_item_count);
+	str_printf(&buf, &size, "<b>Work-items:</b> [wi-%d...wi-%d]\n",
+		work_group->work_item_id_first,
+		work_group->work_item_id_first + work_group->work_item_count - 1);
+	str_printf(&buf, &size, "\n");
+
+	/* Wavefronts */
+	str_printf(&buf, &size, "<b>Number of wavefronts:</b> %d\n",
+		work_group->wavefront_count);
+	str_printf(&buf, &size, "<b>Wavefronts:</b> [wf-%d...wf-%d]\n",
+		work_group->wavefront_id_first,
+		work_group->wavefront_id_first + work_group->wavefront_count - 1);
 }
 
 

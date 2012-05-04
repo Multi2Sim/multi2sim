@@ -31,18 +31,6 @@ static void vi_evg_gpu_new_ndrange(struct vi_evg_gpu_t *gpu,
 }
 
 
-static void vi_evg_gpu_new_work_group(struct vi_evg_gpu_t *gpu,
-	struct vi_trace_line_t *trace_line)
-{
-}
-
-
-static void vi_evg_gpu_new_wavefront(struct vi_evg_gpu_t *gpu,
-	struct vi_trace_line_t *trace_line)
-{
-}
-
-
 /* Command 'evg.map_work_group'
  * 	wg=<id>		(e.g., 2)
  * 	wi_first=<id>
@@ -309,7 +297,6 @@ void vi_evg_gpu_init(void)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	vi_evg_gpu->work_group_table = hash_table_create(0, FALSE);
 	vi_evg_gpu->compute_unit_list = list_create();
 
 	/* State file */
@@ -321,12 +308,6 @@ void vi_evg_gpu_init(void)
 	/* Commands */
 	vi_state_new_command("evg.new_ndrange",
 		(vi_state_process_trace_line_func_t) vi_evg_gpu_new_ndrange,
-		vi_evg_gpu);
-	vi_state_new_command("evg.new_wg",
-		(vi_state_process_trace_line_func_t) vi_evg_gpu_new_work_group,
-		vi_evg_gpu);
-	vi_state_new_command("evg.new_wf",
-		(vi_state_process_trace_line_func_t) vi_evg_gpu_new_wavefront,
 		vi_evg_gpu);
 	vi_state_new_command("evg.map_wg",
 		(vi_state_process_trace_line_func_t) vi_evg_gpu_map_work_group,
@@ -377,16 +358,7 @@ void vi_evg_gpu_init(void)
 
 void vi_evg_gpu_done(void)
 {
-	struct vi_evg_work_group_t *work_group;
-
-	char *work_group_name;
-
 	int i;
-
-	/* Free work-groups */
-	HASH_TABLE_FOR_EACH(vi_evg_gpu->work_group_table, work_group_name, work_group)
-		vi_evg_work_group_free(work_group);
-	hash_table_free(vi_evg_gpu->work_group_table);
 
 	/* Free compute units */
 	LIST_FOR_EACH(vi_evg_gpu->compute_unit_list, i)

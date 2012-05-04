@@ -62,6 +62,12 @@ void vi_x86_context_get_desc(char *context_name, char *buf, int size)
 
 	struct vi_x86_context_t *context;
 
+	long long cycle;
+
+	/* Go to current cycle */
+	cycle = vi_cycle_bar_get_cycle();
+	vi_state_go_to_cycle(cycle);
+
 	/* Look for context */
 	context = hash_table_get(vi_x86_cpu->context_table, context_name);
 	if (!context)
@@ -78,12 +84,12 @@ void vi_x86_context_get_desc(char *context_name, char *buf, int size)
 		snprintf(parent_id_str, sizeof parent_id_str, "-");
 
 	/* Fields */
-	str_printf(&buf, &size, "%sContext PID:%s %d\n", title_begin,
-		title_end, context->id);
-	str_printf(&buf, &size, "%sParent PID:%s %s\n", title_begin,
-		title_end, parent_id_str);
-	str_printf(&buf, &size, "%sCreation cycle:%s %lld\n", title_begin,
-		title_end, context->creation_cycle);
+	str_printf(&buf, &size, "<b>Context PID:</b> %d\n",
+		context->id);
+	str_printf(&buf, &size, "<b>Parent PID:</b> %s\n",
+		parent_id_str);
+	str_printf(&buf, &size, "<b>Creation cycle:</b> %lld\n",
+		context->creation_cycle);
 
 }
 
