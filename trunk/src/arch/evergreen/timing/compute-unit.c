@@ -187,8 +187,10 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 	}
 
 	/* Trace */
-	evg_trace("evg.map_wg cu=%d wg=%d\n",
-		compute_unit->id, work_group->id);
+	evg_trace("evg.map_wg cu=%d wg=%d wi_first=%d wi_count=%d wf_first=%d wf_count=%d\n",
+		compute_unit->id, work_group->id, work_group->work_item_id_first,
+		work_group->work_item_count, work_group->wavefront_id_first,
+		work_group->wavefront_count);
 
 	/* Debug */
 	evg_gpu_pipeline_debug("cu a=\"map\" "
