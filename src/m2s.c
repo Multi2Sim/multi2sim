@@ -39,14 +39,12 @@ static char *opengl_disasm_file_name = "";
 static char *fermi_disasm_file_name = "";
 static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
-static char *gpu_pipeline_debug_file_name = "";
 static char *gpu_visual_file_name = "";
 static char *visual_file_name = "";
 static char *mem_debug_file_name = "";
 static char *loader_debug_file_name = "";
 static char *isa_call_debug_file_name = "";
 static char *isa_inst_debug_file_name = "";
-static char *esim_debug_file_name = "";
 static char *error_debug_file_name = "";
 static char *ctxconfig_file_name = "";
 static char *elf_debug_file_name = "";
@@ -102,17 +100,12 @@ static char *sim_help =
 	"            hierarchy. Must be used with '--gpu-sim detailed'.\n"
 	"        --debug-gpu-isa: during the emulation of an OpenCL device kernel, trace\n"
 	"            of executed AMD Evergreen ISA instructions.\n"
-	"        --debug-gpu-pipeline: trace of AMD Evergreen instructions in the GPU\n"
-	"            pipeline. This option requires '--gpu-sim detailed' option.\n"
 	"        --debug-gpu-stack: trace of operations on GPU active mask stacks.\n"
 	"        --debug-loader: information for the x86 ELF binary analysis performed\n"
 	"            by the program loader.\n"
 	"        --debug-network: trace of interconnection networks activity.\n"
 	"        --debug-call: trace of function calls, based on emulated x86 instr.\n"
 	"        --debug-cpu-isa: trace of emulated x86 ISA instructions.\n"
-	"        --debug-cpu-pipeline: trace of x86 microinstructions in the CPU pipeline.\n"
-	"            The output file can be used as an input for the 'm2s-pipeline' tool\n"
-	"            to obtain graphical timing diagrams.\n"
 	"        --debug-error: on simulation crashes, dump of the modeled CPU state.\n"\
 	"\n"
 	"  --gpu-calc <file_prefix>\n"
@@ -322,14 +315,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* CPU pipeline debug */
-		if (!strcmp(argv[argi], "--debug-cpu-pipeline"))
-		{
-			sim_need_argument(argc, argv, argi);
-			esim_debug_file_name = argv[++argi];
-			continue;
-		}
-
 		/* Context debug file */
 		if (!strcmp(argv[argi], "--debug-ctx"))
 		{
@@ -367,14 +352,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		{
 			sim_need_argument(argc, argv, argi);
 			net_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* GPU pipeline debug file */
-		if (!strcmp(argv[argi], "--debug-gpu-pipeline"))
-		{
-			sim_need_argument(argc, argv, argi);
-			gpu_pipeline_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -736,8 +713,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 
 		if (*x86_cpu_config_file_name)
 			fatal(msg, "--cpu-config");
-		if (*esim_debug_file_name)
-			fatal(msg, "--debug-cpu-pipeline");
 		if (*x86_cpu_report_file_name)
 			fatal(msg, "--report-cpu-pipeline");
 	}
@@ -748,8 +723,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
 			"\tPlease use option '--gpu-sim detailed' as well.\n";
 
-		if (*gpu_pipeline_debug_file_name)
-			fatal(msg, "--debug-gpu-pipeline");
 		if (*gpu_stack_debug_file_name)
 			fatal(msg, "--debug-gpu-stack");
 		if (*evg_faults_debug_file_name)  /* GPU-REL */
@@ -927,9 +900,7 @@ int main(int argc, char **argv)
 	evg_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
 	evg_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
-	evg_gpu_pipeline_debug_category = debug_new_category(gpu_pipeline_debug_file_name);
 	x86_cpu_error_debug_category = debug_new_category(error_debug_file_name);
-	esim_debug_init(esim_debug_file_name);
 
 	/* Trace */
 	trace_init(trace_file_name);
@@ -975,10 +946,7 @@ int main(int argc, char **argv)
 
 	/* Finalization of detailed CPU simulation */
 	if (x86_emu_kind == x86_emu_kind_detailed)
-	{
-		esim_debug_done();
 		x86_cpu_done();
-	}
 
 	/* Finalization of detailed GPU simulation */
 	if (evg_emu_kind == evg_emu_detailed)

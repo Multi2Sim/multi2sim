@@ -252,39 +252,3 @@ int esim_pending()
 {
 	return heap_count(event_heap);
 }
-
-
-
-
-/* Debugging */
-
-FILE *esim_debug_file;
-static uint64_t esim_debug_cycle;
-
-int esim_debug_init(char *filename)
-{
-	esim_debug_file = strcmp(filename, "stdout") ?
-		(strcmp(filename, "stderr") ?
-		fopen(filename, "wt") : stderr) : stdout;
-	return esim_debug_file != NULL;
-}
-
-void esim_debug_done()
-{
-	if (esim_debug_file)
-		fclose(esim_debug_file);
-}
-
-void esim_debug(char *fmt, ...)
-{
-	va_list va;
-
-	if (!esim_debug_file)
-		return;
-	if (esim_cycle >= esim_debug_cycle)
-		fprintf(esim_debug_file, "clk c=%llu\n",
-			(unsigned long long) esim_cycle);
-	va_start(va, fmt);
-	vfprintf(esim_debug_file, fmt, va);
-	esim_debug_cycle = esim_cycle + 1;
-}

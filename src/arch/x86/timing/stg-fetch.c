@@ -121,16 +121,6 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 			uop->phy_addr = mmu_translate(X86_THREAD.ctx->mid,
 				uinst->address);
 
-		/* Store x86 macro-instruction and uinst names. This is costly,
-		 * do it only if debug is activated. */
-		if (esim_debug_file)
-		{
-			x86_uinst_dump_buf(uinst, uop->name, sizeof(uop->name));
-			if (!uinst_index)
-				x86_inst_dump_buf(&x86_isa_inst, uop->mop_name,
-						sizeof(uop->mop_name));
-		}
-
 		/* Trace */
 		if (x86_tracing())
 		{

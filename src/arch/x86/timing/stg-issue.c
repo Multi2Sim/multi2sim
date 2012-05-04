@@ -70,11 +70,6 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 		/* MMU statistics */
 		if (*mmu_report_file_name)
 			mmu_access_page(store->phy_addr, mmu_access_write);
-
-		/* Debug */
-		esim_debug("uop action=\"update\", core=%d, seq=%lld,"
-			" stg_issue=1, in_lsq=0, issued=1\n",
-			store->core, store->id_in_core);
 	}
 	return quant;
 }
@@ -85,10 +80,6 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 	struct linked_list_t *lq = X86_THREAD.lq;
 	struct x86_uop_t *load;
 
-	/* Debug */
-	if (esim_debug_file)
-		x86_uop_linked_list_check_if_ready(lq);
-	
 	/* Process lq */
 	linked_list_head(lq);
 	while (!linked_list_is_end(lq) && quant)
@@ -140,11 +131,6 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		if (*mmu_report_file_name)
 			mmu_access_page(load->phy_addr, mmu_access_read);
 
-		/* Debug */
-		esim_debug("uop action=\"update\", core=%d, seq=%lld,"
-			" stg_issue=1, in_lsq=0, issued=1\n",
-			load->core, load->id_in_core);
-
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n",
 			load->id_in_core, load->core);
@@ -160,10 +146,6 @@ static int x86_cpu_issue_iq(int core, int thread, int quant)
 	struct x86_uop_t *uop;
 	int lat;
 
-	/* Debug */
-	if (esim_debug_file)
-		x86_uop_linked_list_check_if_ready(iq);
-	
 	/* Find instruction to issue */
 	linked_list_head(iq);
 	while (!linked_list_is_end(iq) && quant)
@@ -213,11 +195,6 @@ static int x86_cpu_issue_iq(int core, int thread, int quant)
 		X86_THREAD.reg_file_fp_reads += uop->ph_fp_idep_count;
 		x86_cpu->issued[uop->uinst->opcode]++;
 		quant--;
-
-		/* Debug */
-		esim_debug("uop action=\"update\", core=%d, seq=%lld,"
-			" stg_issue=1, in_iq=0, issued=1\n",
-			uop->core, uop->id_in_core);
 
 		/* Trace */
 		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n",
