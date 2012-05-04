@@ -229,13 +229,21 @@ DEFINST(I2I,
 
 DEFINST(MOV, 
 	"%p MOV%e %d, %b", 
-	MOV_OP2, 
+	MOV_MOV, 
 	MOV, 
 	0x0a4)
 
-//DEFINST(MOV32I
+DEFINST(MOV32I, 
+	"%p MOV32I%e %d, %i", 
+	MOV_MOV32I, 
+	MOV, 
+	0x062)
 
-//DEFINST(SEL
+DEFINST(SEL, 
+	"%p SEL%e %d, %a, %b, %R", 
+	MOV_SEL, 
+	MOV, 
+	0x084)
 
 //DEFINST(PRMT
 

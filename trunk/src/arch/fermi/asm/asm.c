@@ -283,12 +283,16 @@ void frm_inst_dump_pred(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		pred = inst->dword.conv_i2f.pred;
 	else if (fmt == FRM_FMT_CONV_I2I)
 		pred = inst->dword.conv_i2i.pred;
+	else if (fmt == FRM_FMT_MOV_MOV)
+		pred = inst->dword.mov_mov.pred;
+	else if (fmt == FRM_FMT_MOV_MOV32I)
+		pred = inst->dword.mov_mov32i.pred;
+	else if (fmt == FRM_FMT_MOV_SEL)
+		pred = inst->dword.mov_sel.pred;
 	else if (fmt == FRM_FMT_LDST_LD)
 		pred = inst->dword.ldst_ld.pred;
 	else if (fmt == FRM_FMT_LDST_ST)
 		pred = inst->dword.ldst_st.pred;
-	else if (fmt == FRM_FMT_MOV_OP2)
-		pred = inst->dword.mov_op2.pred;
 	else if (fmt == FRM_FMT_CTRL_NONE)
 		;
 	else if (fmt == FRM_FMT_CTRL_OP1)
@@ -970,6 +974,26 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		else
 			fatal("%d: FRM_FMT_CONV_I2I.sat not recognized", inst->dword.conv_i2i.sat);
 	}
+	else if (fmt == FRM_FMT_MOV_MOV)
+	{
+		if (inst->dword.mov_mov.s == 0)
+			;
+		else if (inst->dword.mov_mov.s == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S");
+		else
+			fatal("%d: FRM_INST_MOV_MOV.s not recognized", inst->dword.mov_mov.s);
+	}
+	else if (fmt == FRM_FMT_MOV_MOV32I)
+	{
+		if (inst->dword.mov_mov32i.s == 0)
+			;
+		else if (inst->dword.mov_mov32i.s == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S");
+		else
+			fatal("%d: FRM_INST_MOV_MOV32I.s not recognized", inst->dword.mov_mov32i.s);
+	}
+	else if (fmt == FRM_FMT_MOV_SEL)
+		;
 	else if (fmt == FRM_FMT_LDST_LD)
 	{
 		if (inst->dword.ldst_ld.e == 0)
@@ -1044,8 +1068,6 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		else
 			fatal("%d: FRM_FMT_LDST_ST.type not recognized", inst->dword.ldst_st.type);
 	}
-	else if (fmt == FRM_FMT_MOV_OP2)
-		;
 	else if (fmt == FRM_FMT_CTRL_NONE)
 		;
 	else if (fmt == FRM_FMT_CTRL_OP1)
@@ -1125,12 +1147,16 @@ void frm_inst_dump_dst(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		dst = inst->dword.conv_i2f.dst;
 	else if (fmt == FRM_FMT_CONV_I2I)
 		dst = inst->dword.conv_i2i.dst;
+	else if (fmt == FRM_FMT_MOV_MOV)
+		dst = inst->dword.mov_mov.dst;
+	else if (fmt == FRM_FMT_MOV_MOV32I)
+		dst = inst->dword.mov_mov32i.dst;
+	else if (fmt == FRM_FMT_MOV_SEL)
+		dst = inst->dword.mov_sel.dst;
 	else if (fmt == FRM_FMT_LDST_LD)
 		dst = inst->dword.ldst_ld.dst;
 	else if (fmt == FRM_FMT_LDST_ST)
 		dst = inst->dword.ldst_st.dst;
-	else if (fmt == FRM_FMT_MOV_OP2)
-		dst = inst->dword.mov_op2.dst;
 	else if (fmt == FRM_FMT_CTRL_NONE)
 		;
 	else if (fmt == FRM_FMT_CTRL_OP1)
@@ -1232,12 +1258,12 @@ void frm_inst_dump_src1(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		src1 = inst->dword.int_isetp.src1;
 	else if (fmt == FRM_FMT_INT_ICMP)
 		src1 = inst->dword.int_icmp.src1;
+	else if (fmt == FRM_FMT_MOV_SEL)
+		src1 = inst->dword.mov_sel.src1;
 	else if (fmt == FRM_FMT_LDST_LD)
 		src1 = inst->dword.ldst_ld.src1;
 	else if (fmt == FRM_FMT_LDST_ST)
 		src1 = inst->dword.ldst_st.src1;
-	else if (fmt == FRM_FMT_MOV_OP2)
-		;
 	else if (fmt == FRM_FMT_CTRL_NONE)
 		;
 	else if (fmt == FRM_FMT_CTRL_OP1)
@@ -1732,12 +1758,12 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 	}
 	else if (fmt == FRM_FMT_CONV_F2F)
 	{
-		if (inst->dword.int_icmp.src2_mod == 0)
-			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_icmp.src2 & 0x3f);
-		else if (inst->dword.int_icmp.src2_mod == 1)
+		if (inst->dword.conv_f2f.src2_mod == 0)
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.conv_f2f.src2 & 0x3f);
+		else if (inst->dword.conv_f2f.src2_mod == 1)
 		{
-			bank_id = inst->dword.int_icmp.src2 >> 16;
-			offset_in_bank= inst->dword.int_icmp.src2 & 0xffff;
+			bank_id = inst->dword.conv_f2f.src2 >> 16;
+			offset_in_bank= inst->dword.conv_f2f.src2 & 0xffff;
 			if (bank_id == 0 && offset_in_bank == 0)
 				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
 			else if (bank_id == 0 && offset_in_bank != 0)
@@ -1747,21 +1773,21 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 			else
 				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
 		}
-		else if (inst->dword.int_icmp.src2_mod == 2)
+		else if (inst->dword.conv_f2f.src2_mod == 2)
 			;
-		else if (inst->dword.int_icmp.src2_mod == 3)
+		else if (inst->dword.conv_f2f.src2_mod == 3)
 			;
 		else
 			fatal("%d: FRM_FMT_CONV_F2F.src2_mod not recognized", inst->dword.conv_f2f.src2_mod);
 	}
 	else if (fmt == FRM_FMT_CONV_F2I)
 	{
-		if (inst->dword.int_icmp.src2_mod == 0)
-			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_icmp.src2 & 0x3f);
-		else if (inst->dword.int_icmp.src2_mod == 1)
+		if (inst->dword.conv_f2i.src2_mod == 0)
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.conv_f2i.src2 & 0x3f);
+		else if (inst->dword.conv_f2i.src2_mod == 1)
 		{
-			bank_id = inst->dword.int_icmp.src2 >> 16;
-			offset_in_bank= inst->dword.int_icmp.src2 & 0xffff;
+			bank_id = inst->dword.conv_f2i.src2 >> 16;
+			offset_in_bank= inst->dword.conv_f2i.src2 & 0xffff;
 			if (bank_id == 0 && offset_in_bank == 0)
 				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
 			else if (bank_id == 0 && offset_in_bank != 0)
@@ -1771,21 +1797,21 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 			else
 				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
 		}
-		else if (inst->dword.int_icmp.src2_mod == 2)
+		else if (inst->dword.conv_f2i.src2_mod == 2)
 			;
-		else if (inst->dword.int_icmp.src2_mod == 3)
+		else if (inst->dword.conv_f2i.src2_mod == 3)
 			;
 		else
 			fatal("%d: FRM_FMT_CONV_F2I.src2_mod not recognized", inst->dword.conv_f2i.src2_mod);
 	}
 	else if (fmt == FRM_FMT_CONV_I2F)
 	{
-		if (inst->dword.int_icmp.src2_mod == 0)
-			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_icmp.src2 & 0x3f);
-		else if (inst->dword.int_icmp.src2_mod == 1)
+		if (inst->dword.conv_i2f.src2_mod == 0)
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.conv_i2f.src2 & 0x3f);
+		else if (inst->dword.conv_i2f.src2_mod == 1)
 		{
-			bank_id = inst->dword.int_icmp.src2 >> 16;
-			offset_in_bank= inst->dword.int_icmp.src2 & 0xffff;
+			bank_id = inst->dword.conv_i2f.src2 >> 16;
+			offset_in_bank= inst->dword.conv_i2f.src2 & 0xffff;
 			if (bank_id == 0 && offset_in_bank == 0)
 				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
 			else if (bank_id == 0 && offset_in_bank != 0)
@@ -1795,21 +1821,21 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 			else
 				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
 		}
-		else if (inst->dword.int_icmp.src2_mod == 2)
+		else if (inst->dword.conv_i2f.src2_mod == 2)
 			;
-		else if (inst->dword.int_icmp.src2_mod == 3)
+		else if (inst->dword.conv_i2f.src2_mod == 3)
 			;
 		else
 			fatal("%d: FRM_FMT_CONV_I2F.src2_mod not recognized", inst->dword.conv_i2f.src2_mod);
 	}
 	else if (fmt == FRM_FMT_CONV_I2I)
 	{
-		if (inst->dword.int_icmp.src2_mod == 0)
-			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.int_icmp.src2 & 0x3f);
-		else if (inst->dword.int_icmp.src2_mod == 1)
+		if (inst->dword.conv_i2i.src2_mod == 0)
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.conv_i2i.src2 & 0x3f);
+		else if (inst->dword.conv_i2i.src2_mod == 1)
 		{
-			bank_id = inst->dword.int_icmp.src2 >> 16;
-			offset_in_bank= inst->dword.int_icmp.src2 & 0xffff;
+			bank_id = inst->dword.conv_i2i.src2 >> 16;
+			offset_in_bank= inst->dword.conv_i2i.src2 & 0xffff;
 			if (bank_id == 0 && offset_in_bank == 0)
 				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
 			else if (bank_id == 0 && offset_in_bank != 0)
@@ -1819,30 +1845,65 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 			else
 				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
 		}
-		else if (inst->dword.int_icmp.src2_mod == 2)
+		else if (inst->dword.conv_i2i.src2_mod == 2)
 			;
-		else if (inst->dword.int_icmp.src2_mod == 3)
+		else if (inst->dword.conv_i2i.src2_mod == 3)
 			;
 		else
 			fatal("%d: FRM_FMT_CONV_I2I.src2_mod not recognized", inst->dword.conv_i2i.src2_mod);
+	}
+	else if (fmt == FRM_FMT_MOV_MOV)
+	{
+		if (inst->dword.mov_mov.src2_mod == 0)
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.mov_mov.src2 & 0x3f);
+		else if (inst->dword.mov_mov.src2_mod == 1)
+		{
+			bank_id = inst->dword.mov_mov.src2 >> 16;
+			offset_in_bank= inst->dword.mov_mov.src2 & 0xffff;
+			if (bank_id == 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
+			else if (bank_id == 0 && offset_in_bank != 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
+			else if (bank_id != 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+			else
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+		}
+		else if (inst->dword.mov_mov.src2_mod == 2)
+			;
+		else if (inst->dword.mov_mov.src2_mod == 3)
+			;
+		else
+			fatal("%d: FRM_FMT_MOV_MOV.src2_mod not recognized", inst->dword.mov_mov.src2_mod);
+	}
+	else if (fmt == FRM_FMT_MOV_SEL)
+	{
+		if (inst->dword.mov_sel.src2_mod == 0)
+			str_printf(inst_str_ptr, inst_str_size, "R%d", inst->dword.mov_sel.src2 & 0x3f);
+		else if (inst->dword.mov_sel.src2_mod == 1)
+		{
+			bank_id = inst->dword.mov_sel.src2 >> 16;
+			offset_in_bank= inst->dword.mov_sel.src2 & 0xffff;
+			if (bank_id == 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
+			else if (bank_id == 0 && offset_in_bank != 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
+			else if (bank_id != 0 && offset_in_bank == 0)
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+			else
+				str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+		}
+		else if (inst->dword.mov_sel.src2_mod == 2)
+			;
+		else if (inst->dword.mov_sel.src2_mod == 3)
+			;
+		else
+			fatal("%d: FRM_FMT_MOV_SEL.src2_mod not recognized", inst->dword.mov_sel.src2_mod);
 	}
 	else if (fmt == FRM_FMT_LDST_LD)
 		;
 	else if (fmt == FRM_FMT_LDST_ST)
 		;
-	else if (fmt == FRM_FMT_MOV_OP2)
-	{
-		bank_id = inst->dword.mov_op2.src2 >> 16;
-		offset_in_bank= inst->dword.mov_op2.src2 & 0xffff;
-		if (bank_id == 0 && offset_in_bank == 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
-		else if (bank_id == 0 && offset_in_bank != 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
-		else if (bank_id != 0 && offset_in_bank == 0)
-			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
-		else
-			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
-	}
 	else if (fmt == FRM_FMT_CTRL_NONE)
 		;
 	else if (fmt == FRM_FMT_CTRL_OP1)
@@ -1882,6 +1943,8 @@ void frm_inst_dump_imm(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		imm = inst->dword.fp_fmul32i.imm32;
 	else if (fmt == FRM_FMT_INT_LOP32I)
 		imm = inst->dword.int_lop32i.imm32;
+	else if (fmt == FRM_FMT_MOV_MOV32I)
+		imm = inst->dword.mov_mov32i.imm32;
 	else if (fmt == FRM_FMT_CTRL_OP1)
 		imm = inst->addr + 8 + inst->dword.ctrl_op1.imm;
 	else
@@ -1900,6 +1963,8 @@ void frm_inst_dump_R(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t 
 		R = inst->dword.fp_dsetp.R;
 	else if (fmt == FRM_FMT_INT_ISETP)
 		R = inst->dword.int_isetp.R;
+	else if (fmt == FRM_FMT_MOV_SEL)
+		R = inst->dword.mov_sel.R;
 	else
 		fatal("%d: %%R not recognized", fmt);
 
