@@ -224,7 +224,6 @@ M2S_INCLUDES=" \
 -I\$(top_srcdir)/src/mem-system \
 -I\$(top_srcdir)/src/network \
 \
--I\$(top_srcdir)/src/libgpuvisual \
 "
 
 AC_SUBST(M2S_INCLUDES)
@@ -239,7 +238,6 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
 
 		 src/arch/Makefile
-		 src/libgpuvisual/Makefile
 		 src/mem-system/Makefile
 		 src/network/Makefile
 
