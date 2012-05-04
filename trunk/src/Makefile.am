@@ -1,6 +1,4 @@
 SUBDIRS = \
-	libgpuvisual \
-	\
 	arch \
 	lib \
 	mem-system \
@@ -30,7 +28,6 @@ LDADD = \
 	$(top_builddir)/src/arch/x86/emu/libemu.a \
 	$(top_builddir)/src/arch/x86/asm/libasm.a \
 	\
-	$(top_builddir)/src/libgpuvisual/libgpuvisual.a \
 	$(top_builddir)/src/mem-system/libmemsystem.a \
 	$(top_builddir)/src/network/libnetwork.a \
 	\

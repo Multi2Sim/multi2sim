@@ -17,8 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <gpuvisual.h>
-
 #include <evergreen-timing.h>
 #include <x86-timing.h>
 #include <fermi-timing.h>
@@ -39,7 +37,6 @@ static char *opengl_disasm_file_name = "";
 static char *fermi_disasm_file_name = "";
 static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
-static char *gpu_visual_file_name = "";
 static char *visual_file_name = "";
 static char *mem_debug_file_name = "";
 static char *loader_debug_file_name = "";
@@ -131,12 +128,6 @@ static char *sim_help =
 	"  --gpu-sim {functional|detailed}\n"
 	"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
 	"      detailed (architectural) simulation. Functional simulation is default.\n"
-	"\n"
-	"  --gpu-visual <file>\n"
-	"      Run GPU visualization tool. After running a GPU detailed simulation with a\n"
-	"      pipeline trace (option --debug-gpu-pipeline <file>), the generated file can\n"
-	"      be used as an input for the visual tool. To enable this option, the GTK\n"
-	"      library must be installed in your system.\n"
 	"\n"
 	"  --help-<xxx>\n"
 	"      Show help on the format of configuration files for Multi2Sim. <xxx> stands\n"
@@ -470,14 +461,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* GPU visualization */
-		if (!strcmp(argv[argi], "--gpu-visual"))
-		{
-			sim_need_argument(argc, argv, argi);
-			gpu_visual_file_name = argv[++argi];
-			continue;
-		}
-
 		/* Show help */
 		if (!strcmp(argv[argi], "--help") || !strcmp(argv[argi], "-h"))
 		{
@@ -749,8 +732,6 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Other checks */
-	if (*gpu_visual_file_name && argc > 3)
-		fatal("option '--gpu-visual' is incompatible with any other options.");
 	if (*gpu_disasm_file_name && argc > 3)
 		fatal("option '--gpu-disasm' is incompatible with any other options.");
 	if (*opengl_disasm_file_name && argc != 4)
@@ -874,10 +855,6 @@ int main(int argc, char **argv)
 	if (*fermi_disasm_file_name)
 		frm_emu_disasm(fermi_disasm_file_name);
 
-	/* GPU visualization tool */
-	if (*gpu_visual_file_name)
-		vgpu_run(gpu_visual_file_name);
-	
 	/* Memory hierarchy visualization tool */
 	if (*visual_file_name)
 		visual_run(visual_file_name);
