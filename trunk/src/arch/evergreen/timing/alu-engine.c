@@ -154,32 +154,6 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	linked_list_insert(fetch_queue, uop);
 	compute_unit->alu_engine.fetch_queue_length += uop->length;
 
-	/* Debug */
-	if (debug_status(evg_gpu_pipeline_debug_category))
-	{
-		char str[MAX_STRING_SIZE];
-
-		evg_gpu_pipeline_debug("alu a=\"fetch\" "
-			"cu=%d "
-			"wg=%d "
-			"wf=%d "
-			"uop=%lld ",
-			compute_unit->id,
-			uop->work_group->id,
-			wavefront->id,
-			uop->id_in_compute_unit);
-		evg_alu_group_dump_debug(&wavefront->alu_group, -1, -1,
-			debug_file(evg_gpu_pipeline_debug_category));
-		evg_gpu_pipeline_debug(" idep=");
-		evg_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->idep, uop->idep_count);
-		evg_gpu_pipeline_debug("%s odep=", str);
-		evg_uop_dump_dep_list(str, MAX_STRING_SIZE, uop->odep, uop->odep_count);
-		evg_gpu_pipeline_debug("%s", str);
-		if (producer)
-			evg_gpu_pipeline_debug(" prod=%lld", producer->id);
-		evg_gpu_pipeline_debug("\n");
-	}
-
 	/* Trace */
 	if (evg_tracing())
 	{
@@ -222,13 +196,6 @@ static void evg_alu_engine_decode(struct evg_compute_unit_t *compute_unit)
 	/* Insert into instruction buffer */
 	assert(!compute_unit->alu_engine.inst_buffer);
 	compute_unit->alu_engine.inst_buffer = uop;
-
-	/* Debug */
-	evg_gpu_pipeline_debug("alu a=\"decode\" "
-		"cu=%d "
-		"uop=%lld\n",
-		compute_unit->id,
-		uop->id_in_compute_unit);
 
 	/* Trace */
 	evg_trace("evg.inst id=%lld cu=%d stg=\"alu-de\"\n",
@@ -274,13 +241,6 @@ static void evg_alu_engine_read(struct evg_compute_unit_t *compute_unit)
 		}
 	}
 
-	/* Debug */
-	evg_gpu_pipeline_debug("alu a=\"read\" "
-		"cu=%d "
-		"uop=%lld\n",
-		compute_unit->id,
-		uop->id_in_compute_unit);
-
 	/* Trace */
 	evg_trace("evg.inst id=%lld cu=%d stg=\"alu-rd\"\n",
 		uop->id_in_compute_unit, compute_unit->id);
@@ -316,15 +276,6 @@ static void evg_alu_engine_execute(struct evg_compute_unit_t *compute_unit)
 		evg_gpu->cycle + evg_gpu_alu_engine_pe_latency,
 		uop);
 	
-	/* Debug */
-	evg_gpu_pipeline_debug("alu a=\"exec\" "
-		"cu=%d "
-		"uop=%lld "
-		"subwf=%d\n",
-		compute_unit->id,
-		uop->id_in_compute_unit,
-		uop->exec_subwavefront_count - 1);
-
 	/* Trace */
 	if (uop->exec_subwavefront_count == 1)
 		evg_trace("evg.inst id=%lld cu=%d stg=\"alu-rd\"\n",
@@ -382,13 +333,6 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 		/* One more SubWF writes */
 		assert(uop->write_subwavefront_count < uop->subwavefront_count);
 		uop->write_subwavefront_count++;
-		evg_gpu_pipeline_debug("alu a=\"write\" "
-			"cu=%d "
-			"uop=%lld "
-			"subwf=%d\n",
-			compute_unit->id,
-			uop->id_in_compute_unit,
-			uop->write_subwavefront_count - 1);
 
 		/* If this is the first SubWF to write, wake up dependent instructions. */
 		if (uop->write_subwavefront_count == 1)

@@ -101,24 +101,6 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	if (uop->tex_clause_trigger)
 		compute_unit->cf_engine.tex_clause_trigger_count++;
 
-	/* Debug */
-	if (debug_status(evg_gpu_pipeline_debug_category))
-	{
-		evg_inst_dump_buf(inst, -1, 0, str, MAX_STRING_SIZE);
-		str_single_spaces(str_trimmed, str, MAX_STRING_SIZE);
-		evg_gpu_pipeline_debug("cf a=\"fetch\" "
-			"cu=%d "
-			"wg=%d "
-			"wf=%d "
-			"uop=%lld "
-			"inst=\"%s\"\n",
-			compute_unit->id,
-			uop->work_group->id,
-			wavefront->id,
-			uop->id_in_compute_unit,
-			str_trimmed);
-	}
-
 	/* Trace */
 	if (evg_tracing())
 	{
@@ -159,13 +141,6 @@ static void evg_cf_engine_decode(struct evg_compute_unit_t *compute_unit)
 	/* Set next decode candidate */
 	compute_unit->cf_engine.decode_index = (index + 1)
 		% evg_gpu->wavefronts_per_compute_unit;
-
-	/* Debug */
-	evg_gpu_pipeline_debug("cf a=\"decode\" "
-		"cu=%d "
-		"uop=%lld\n",
-		compute_unit->id,
-		uop->id_in_compute_unit);
 
 	/* Trace */
 	evg_trace("evg.inst id=%lld cu=%d stg=\"cf-de\"\n",
@@ -250,13 +225,6 @@ static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 	compute_unit->cf_engine.execute_index = (index + 1)
 		% evg_gpu->wavefronts_per_compute_unit;
 	
-	/* Debug */
-	evg_gpu_pipeline_debug("cf a=\"execute\" "
-		"cu=%d "
-		"uop=%lld\n",
-		compute_unit->id,
-		uop->id_in_compute_unit);
-
 	/* Trace */
 	evg_trace("evg.inst id=%lld cu=%d stg=\"cf-ex\"\n",
 		uop->id_in_compute_unit, compute_unit->id);
@@ -298,11 +266,6 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 		}
 
 		/* Debug */
-		evg_gpu_pipeline_debug("cf a=\"complete\" "
-			"cu=%d "
-			"uop=%lld\n",
-			compute_unit->id,
-			uop->id_in_compute_unit);
 		if (debug_status(evg_stack_debug_category))
 			evg_uop_debug_active_mask(uop);
 

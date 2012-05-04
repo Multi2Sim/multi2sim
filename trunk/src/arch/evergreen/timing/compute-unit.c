@@ -192,13 +192,6 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 		work_group->work_item_count, work_group->wavefront_id_first,
 		work_group->wavefront_count);
 
-	/* Debug */
-	evg_gpu_pipeline_debug("cu a=\"map\" "
-		"cu=%d "
-		"wg=%d\n",
-		compute_unit->id,
-		work_group->id);
-	
 	/* Stats */
 	compute_unit->mapped_work_groups++;
 }
@@ -223,13 +216,6 @@ void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, 
 	/* Trace */
 	evg_trace("evg.unmap_wg cu=%d wg=%d\n",
 		compute_unit->id, work_group->id);
-
-	/* Debug */
-	evg_gpu_pipeline_debug("cu a=\"unmap\" "
-		"cu=%d "
-		"wg=%d\n",
-		compute_unit->id,
-		work_group->id);
 }
 
 
