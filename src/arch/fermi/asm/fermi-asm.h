@@ -626,16 +626,44 @@ struct frm_fmt_conv_i2i_t
 	unsigned long long int op1 : 6; /* [63:58] */
 };
 
-struct frm_fmt_mov_op2_t
+struct frm_fmt_mov_mov_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int s : 1; /* [4] */
+	unsigned long long int __reserved0 : 5; /* [9:5] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int __reserved1 : 6; /* [25:20] */
+	unsigned long long int src2 : 20; /* [45:26] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int __reserved2 : 10; /* [57:48] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_mov_mov32i_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int s : 1; /* [4] */
+	unsigned long long int __reserved0 : 5; /* [9:5] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int __reserved1 : 6; /* [25:20] */
+	unsigned long long int imm32 : 32; /* [57:26] */
+	unsigned long long int op1 : 6; /* [63:58] */
+};
+
+struct frm_fmt_mov_sel_t
 {
 	unsigned long long int op0 : 4; /* [3:0] */
 	unsigned long long int __reserved0 : 6; /* [9:4] */
 	unsigned long long int pred : 4; /* [13:10] */
 	unsigned long long int dst : 6; /* [19:14] */
-	unsigned long long int __reserved1 : 6; /* [25:20] */
+	unsigned long long int src1 : 6; /* [25:20] */
 	unsigned long long int src2 : 20; /* [45:26] */
-	unsigned long long int sel_src2 : 2; /* [47:46] */
-	unsigned long long int __reserved2 : 10; /* [57:48] */
+	unsigned long long int src2_mod : 2; /* [47:46] */
+	unsigned long long int __reserved1 : 1; /* [48] */
+	unsigned long long int R : 4; /* [52:49] */
+	unsigned long long int __reserved2 : 5; /* [57:53] */
 	unsigned long long int op1 : 6; /* [63:58] */
 };
 
@@ -769,7 +797,9 @@ union frm_inst_dword_t
 	struct frm_fmt_conv_f2i_t conv_f2i;
 	struct frm_fmt_conv_i2f_t conv_i2f;
 	struct frm_fmt_conv_i2i_t conv_i2i;
-	struct frm_fmt_mov_op2_t mov_op2;
+	struct frm_fmt_mov_mov_t mov_mov;
+	struct frm_fmt_mov_mov32i_t mov_mov32i;
+	struct frm_fmt_mov_sel_t mov_sel;
 	struct frm_fmt_ldst_ld_t ldst_ld;
 	struct frm_fmt_ldst_st_t ldst_st;
 	struct frm_fmt_ctrl_none_t ctrl_none;
