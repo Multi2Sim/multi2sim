@@ -39,9 +39,12 @@ struct vi_x86_context_t
 	/* Map */
 	int core_id;
 	int thread_id;
+	int parent_id;
+
+	long long creation_cycle;
 };
 
-struct vi_x86_context_t *vi_x86_context_create(char *name, int id);
+struct vi_x86_context_t *vi_x86_context_create(char *name, int id, int parent_id);
 void vi_x86_context_free(struct vi_x86_context_t *context);
 
 void vi_x86_context_get_name_short(char *context_name, char *buf, int size);

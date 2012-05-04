@@ -39,6 +39,7 @@ static void vi_x86_cpu_map_context(struct vi_x86_cpu_t *cpu,
 	int context_id;
 	int core_id;
 	int thread_id;
+	int parent_id;
 
 	char context_name[MAX_STRING_SIZE];
 
@@ -46,13 +47,14 @@ static void vi_x86_cpu_map_context(struct vi_x86_cpu_t *cpu,
 	context_id = vi_trace_line_get_symbol_int(trace_line, "ctx");
 	core_id = vi_trace_line_get_symbol_int(trace_line, "core");
 	thread_id = vi_trace_line_get_symbol_int(trace_line, "thread");
+	parent_id = vi_trace_line_get_symbol_int(trace_line, "ppid");
 
 	/* If context does not exist, create it */
 	snprintf(context_name, sizeof context_name, "ctx-%d", context_id);
 	context = hash_table_get(vi_x86_cpu->context_table, context_name);
 	if (!context)
 	{
-		context = vi_x86_context_create(context_name, context_id);
+		context = vi_x86_context_create(context_name, context_id, parent_id);
 		if (!hash_table_insert(vi_x86_cpu->context_table, context_name, context))
 			panic("%s: invalid context", __FUNCTION__);
 	}
@@ -285,7 +287,7 @@ static void vi_x86_cpu_read_checkpoint(struct vi_x86_cpu_t *cpu, FILE *f)
 	/* Contexts */
 	for (i = 0; i < num_contexts; i++)
 	{
-		context = vi_x86_context_create(NULL, 0);
+		context = vi_x86_context_create(NULL, 0, 0);
 		vi_x86_context_read_checkpoint(context, f);
 		if (!hash_table_insert(vi_x86_cpu->context_table, context->name, context))
 			panic("%s: invalid context", __FUNCTION__);
