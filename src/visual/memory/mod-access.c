@@ -174,6 +174,10 @@ void vi_mod_access_get_desc(char *access_name, char *buf, int size)
 
 	int i;
 
+	/* Go to current cycle */
+	current_cycle = vi_cycle_bar_get_cycle();
+	vi_state_go_to_cycle(current_cycle);
+
 	/* Look for access */
 	access = hash_table_get(vi_mem_system->access_table, access_name);
 	if (!access)
@@ -192,7 +196,6 @@ void vi_mod_access_get_desc(char *access_name, char *buf, int size)
 		title_format_end, access->creation_cycle);
 
 	/* State */
-	current_cycle = vi_state_get_current_cycle();
 	if (access->state && *access->state)
 	{
 		str_printf(&buf, &size, "%sState:%s %s\n", title_format_begin,
