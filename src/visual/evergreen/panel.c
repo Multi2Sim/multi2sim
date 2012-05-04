@@ -142,7 +142,6 @@ struct vi_cu_board_t
 	GtkWidget *widget;
 
 	GtkWidget *time_dia_toggle_button;
-	GtkWidget *block_dia_toggle_button;
 
 	struct vi_evg_time_dia_window_t *time_dia_window;
 
@@ -237,18 +236,11 @@ static struct vi_cu_board_t *vi_cu_board_create(struct vi_evg_compute_unit_t *co
 	board->led = led;
 
 	/* Time Diagram Toggle button */
-	GtkWidget *time_dia_toggle_button = gtk_toggle_button_new_with_label("T");
+	GtkWidget *time_dia_toggle_button = gtk_toggle_button_new_with_label("Detail");
 	gtk_box_pack_start(GTK_BOX(hbox), time_dia_toggle_button, TRUE, TRUE, 0);
 	g_signal_connect(G_OBJECT(time_dia_toggle_button), "toggled",
 		G_CALLBACK(vi_cu_board_time_dia_toggled), board);
 	board->time_dia_toggle_button = time_dia_toggle_button;
-
-	/* Block Diagram Toggle button */
-	GtkWidget *block_dia_toggle_button = gtk_toggle_button_new_with_label("B");
-	gtk_box_pack_start(GTK_BOX(hbox), block_dia_toggle_button, TRUE, TRUE, 0);
-	/*g_signal_connect(G_OBJECT(block_dia_toggle_button), "toggled",
-		G_CALLBACK(vi_evg_board_block_toggle_button_toggled), board);*/
-	board->block_dia_toggle_button = block_dia_toggle_button;
 
 	/* Work-group list */
 	struct vi_list_t *work_group_list = vi_list_create("Work-group list", 10, 10,
