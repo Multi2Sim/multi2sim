@@ -10,7 +10,45 @@ AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS([fcntl.h float.h stddef.h stdint.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h utime.h])
 AC_CHECK_HEADER([elf.h], [AC_DEFINE([HAVE_ELF_H])], [AC_MSG_ERROR([cannot find header elf.h])])
-AC_CHECK_HEADER([zlib.h], [AC_DEFINE([HAVE_ZLIB_H])], [AC_MSG_ERROR([cannot find header zlib.h])])
+
+
+#
+# Check for ZLib
+#
+
+have_zlib=yes
+AC_CHECK_HEADER([zlib.h], [AC_DEFINE([HAVE_ZLIB_H])], [have_zlib=no])
+AC_CHECK_LIB([z], [inflate], [], [have_zlib=no])
+if test x$have_zlib == xno; then
+AC_MSG_ERROR([
+	
+	The 'zlib' library development package is missing in your system.
+	Please install the package and then retry. On Debian-based Linux
+	distributions, you can run the following command:
+
+		sudo apt-get install zlib1g-dev
+])
+fi
+
+
+#
+# Check for GLUT
+#
+
+have_glut=yes
+AC_CHECK_HEADER([GL/glut.h], [AC_DEFINE([HAVE_GLUT_H])], [have_glut=no])
+AC_CHECK_LIB([pthread], [pthread_create], [], [have_glut=no])
+if test x$have_glut == xno; then
+AC_MSG_ERROR([
+	
+	The 'freeglut' library development package is missing in your system.
+	Please install the package and then retry. On Debian-based Linux
+	distributions, you can run the following command:
+
+		sudo apt-get install freeglut3-dev
+])
+fi
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_INT16_T
@@ -37,7 +75,6 @@ AC_FUNC_MMAP
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap select socket strcasecmp strchr strdup strncasecmp strtol utime])
 
-AC_CHECK_LIB([z], [inflate])
 AC_CHECK_LIB([m], [sin])
 AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 

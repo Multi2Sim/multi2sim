@@ -45,7 +45,7 @@ LDADD = \
 	$(top_builddir)/src/lib/esim/libesim.a \
 	$(top_builddir)/src/lib/struct/libstruct.a \
 	\
-	-lm -lpthread -lz
+	-lm -lpthread -lz -lglut
 
 if HAVE_GTK
 AM_CFLAGS = @GTK_CFLAGS@
