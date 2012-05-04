@@ -120,8 +120,6 @@ char *evg_gpu_report_file_name = "";
 
 int evg_trace_category;
 
-int evg_gpu_pipeline_debug_category;
-
 /* Default parameters based on the AMD Radeon HD 5870 */
 int evg_gpu_num_compute_units = 20;
 int evg_gpu_num_stream_cores = 16;
@@ -414,161 +412,6 @@ static void evg_gpu_unmap_ndrange(void)
 }
 
 
-static void evg_gpu_debug_disasm(struct evg_ndrange_t *ndrange)
-{
-	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
-	FILE *f = debug_file(evg_gpu_pipeline_debug_category);
-
-	void *text_buffer_ptr;
-
-	void *cf_buf;
-	int inst_count;
-	int cf_inst_count;
-	int sec_inst_count;
-	int loop_idx;
-
-	/* Initialize */
-	text_buffer_ptr = kernel->bin_file->enc_dict_entry_evergreen->sec_text_buffer.ptr;
-	cf_buf = text_buffer_ptr;
-	inst_count = 0;
-	cf_inst_count = 0;
-	sec_inst_count = 0;
-	loop_idx = 0;
-
-	/* Disassemble */
-	while (cf_buf)
-	{
-		struct evg_inst_t cf_inst;
-
-		/* CF Instruction */
-		cf_buf = evg_inst_decode_cf(cf_buf, &cf_inst);
-                if (cf_inst.info->flags & EVG_INST_FLAG_DEC_LOOP_IDX)
-                {
-                        assert(loop_idx > 0);
-                        loop_idx--;
-                }
-
-		fprintf(f, "asm i=%d cl=\"cf\" ", inst_count);
-		evg_inst_dump_debug(&cf_inst, cf_inst_count, loop_idx, f);
-		fprintf(f, "\n");
-
-		cf_inst_count++;
-		inst_count++;
-
-		/* ALU Clause */
-		if (cf_inst.info->fmt[0] == EVG_FMT_CF_ALU_WORD0)
-		{
-			void *alu_buf, *alu_buf_end;
-			struct evg_alu_group_t alu_group;
-
-			alu_buf = text_buffer_ptr + cf_inst.words[0].cf_alu_word0.addr * 8;
-			alu_buf_end = alu_buf + (cf_inst.words[1].cf_alu_word1.count + 1) * 8;
-			while (alu_buf < alu_buf_end)
-			{
-				alu_buf = evg_inst_decode_alu_group(alu_buf, sec_inst_count, &alu_group);
-
-				fprintf(f, "asm i=%d cl=\"alu\" ", inst_count);
-				evg_alu_group_dump_debug(&alu_group, sec_inst_count, loop_idx, f);
-				fprintf(f, "\n");
-
-				sec_inst_count++;
-				inst_count++;
-			}
-		}
-
-		/* TEX Clause */
-		if (cf_inst.info->inst == EVG_INST_TC)
-		{
-			char *tex_buf, *tex_buf_end;
-			struct evg_inst_t inst;
-
-			tex_buf = text_buffer_ptr + cf_inst.words[0].cf_word0.addr * 8;
-			tex_buf_end = tex_buf + (cf_inst.words[1].cf_word1.count + 1) * 16;
-			while (tex_buf < tex_buf_end)
-			{
-				tex_buf = evg_inst_decode_tc(tex_buf, &inst);
-
-				fprintf(f, "asm i=%d cl=\"tex\" ", inst_count);
-				evg_inst_dump_debug(&inst, sec_inst_count, loop_idx, f);
-				fprintf(f, "\n");
-
-				sec_inst_count++;
-				inst_count++;
-			}
-		}
-
-		/* Increase loop depth counter */
-                if (cf_inst.info->flags & EVG_INST_FLAG_INC_LOOP_IDX)
-                        loop_idx++;
-	}
-}
-
-
-static void evg_gpu_debug_ndrange(struct evg_ndrange_t *ndrange)
-{
-	int work_group_id;
-	struct evg_work_group_t *work_group;
-
-	int wavefront_id;
-	struct evg_wavefront_t *wavefront;
-
-	/* Work-groups */
-	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
-	{
-		work_group = ndrange->work_groups[work_group_id];
-		evg_gpu_pipeline_debug("new item=\"wg\" "
-			"id=%d "
-			"wi_first=%d "
-			"wi_count=%d "
-			"wf_first=%d "
-			"wf_count=%d\n",
-			work_group->id,
-			work_group->work_item_id_first,
-			work_group->work_item_count,
-			work_group->wavefront_id_first,
-			work_group->wavefront_count);
-	}
-	
-	/* Wavefronts */
-	EVG_FOREACH_WAVEFRONT_IN_NDRANGE(ndrange, wavefront_id)
-	{
-		wavefront = ndrange->wavefronts[wavefront_id];
-		evg_gpu_pipeline_debug("new item=\"wf\" "
-			"id=%d "
-			"wg_id=%d "
-			"wi_first=%d "
-			"wi_count=%d\n",
-			wavefront->id,
-			wavefront->work_group->id,
-			wavefront->work_item_id_first,
-			wavefront->work_item_count);
-	}
-}
-
-
-static void evg_gpu_debug_intro(struct evg_ndrange_t *ndrange)
-{
-	struct evg_opencl_kernel_t *kernel = ndrange->kernel;
-
-	/* Initial */
-	evg_gpu_pipeline_debug("init "
-		"global_size=%d "
-		"local_size=%d "
-		"group_count=%d "
-		"wavefront_size=%d "
-		"wavefronts_per_work_group=%d "
-		"compute_units=%d "
-		"\n",
-		kernel->global_size,
-		kernel->local_size,
-		kernel->group_count,
-		evg_emu_wavefront_size,
-		ndrange->wavefronts_per_work_group,
-		evg_gpu_num_compute_units);
-	
-}
-
-
 
 
 /*
@@ -758,14 +601,6 @@ void evg_gpu_run(struct evg_ndrange_t *ndrange)
 	struct evg_compute_unit_t *compute_unit;
 	struct evg_compute_unit_t *compute_unit_next;
 
-	/* Debug */
-	if (debug_status(evg_gpu_pipeline_debug_category))
-	{
-		evg_gpu_debug_intro(ndrange);
-		evg_gpu_debug_ndrange(ndrange);
-		evg_gpu_debug_disasm(ndrange);
-	}
-
 	/* Trace */
 	evg_trace("evg.new_ndrange "
 		"id=%d "
@@ -785,7 +620,6 @@ void evg_gpu_run(struct evg_ndrange_t *ndrange)
 	{
 		/* Next cycle */
 		evg_gpu->cycle++;
-		evg_gpu_pipeline_debug("clk c=%lld\n", evg_gpu->cycle);
 
 		/* Allocate work-groups to compute units */
 		while (evg_gpu->ready_list_head && ndrange->pending_list_head)

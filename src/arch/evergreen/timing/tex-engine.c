@@ -105,24 +105,6 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	linked_list_insert(compute_unit->tex_engine.fetch_queue, uop);
 	compute_unit->tex_engine.fetch_queue_length += uop->length;
 
-	/* Debug */
-	if (debug_status(evg_gpu_pipeline_debug_category))
-	{
-		evg_inst_dump_buf(inst, inst_num, 0, str, MAX_STRING_SIZE);
-		str_single_spaces(str_trimmed, str, MAX_STRING_SIZE);
-		evg_gpu_pipeline_debug("tex a=\"fetch\" "
-			"cu=%d "
-			"wg=%d "
-			"wf=%d "
-			"uop=%lld "
-			"inst=\"%s\"\n",
-			compute_unit->id,
-			uop->work_group->id,
-			wavefront->id,
-			uop->id_in_compute_unit,
-			str_trimmed);
-	}
-
 	/* Trace */
 	if (evg_tracing())
 	{
@@ -164,13 +146,6 @@ static void evg_tex_engine_decode(struct evg_compute_unit_t *compute_unit)
 	/* Insert into instruction buffer */
 	assert(!compute_unit->tex_engine.inst_buffer);
 	compute_unit->tex_engine.inst_buffer = uop;
-
-	/* Debug */
-	evg_gpu_pipeline_debug("tex a=\"decode\" "
-		"cu=%d "
-		"uop=%lld\n",
-		compute_unit->id,
-		uop->id_in_compute_unit);
 
 	/* Trace */
 	evg_trace("evg.inst id=%lld cu=%d stg=\"tex-de\"\n",
@@ -215,13 +190,6 @@ static void evg_tex_engine_read(struct evg_compute_unit_t *compute_unit)
 		}
 	}
 
-	/* Debug */
-	evg_gpu_pipeline_debug("tex a=\"read\" "
-		"cu=%d "
-		"uop=%lld\n",
-		compute_unit->id,
-		uop->id_in_compute_unit);
-
 	/* Trace */
 	evg_trace("evg.inst id=%lld cu=%d stg=\"tex-rd\"\n",
 		uop->id_in_compute_unit, compute_unit->id);
@@ -246,13 +214,6 @@ static void evg_tex_engine_write(struct evg_compute_unit_t *compute_unit)
 
 	/* Extract from load queue. */
 	linked_list_remove(compute_unit->tex_engine.load_queue);
-
-	/* Debug */
-	evg_gpu_pipeline_debug("tex a=\"write\" "
-		"cu=%d "
-		"uop=%lld\n",
-		compute_unit->id,
-		uop->id_in_compute_unit);
 
 	/* Trace */
 	evg_trace("evg.inst id=%lld cu=%d stg=\"tex-wr\"\n",
