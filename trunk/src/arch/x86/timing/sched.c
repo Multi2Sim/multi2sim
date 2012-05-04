@@ -90,8 +90,8 @@ void x86_cpu_map_context(int core, int thread, struct x86_ctx_t *ctx)
 		x86_cpu->cycle, ctx->pid, core, thread);
 
 	/* Trace */
-	x86_trace("x86.map_ctx ctx=%d core=%d thread=%d\n",
-		ctx->pid, core, thread);
+	x86_trace("x86.map_ctx ctx=%d core=%d thread=%d ppid=%d\n",
+		ctx->pid, core, thread, ctx->parent ? ctx->parent->pid : 0);
 }
 
 
