@@ -607,15 +607,33 @@
 #define OPENGL_FUNC_glMultiTexCoord4sARB			1452
 #define OPENGL_FUNC_glMultiTexCoord4svARB			1453
 
-#define OPENGL_FUNC_glCreateDebugObjectMESA 	1454
-#define OPENGL_FUNC_glClearDebugLogMESA 	1455
-#define OPENGL_FUNC_glGetDebugLogMESA 	1456
-#define OPENGL_FUNC_glGetDebugLogLengthMESA 	1457
-#define OPENGL_FUNC_glProgramCallbackMESA	1458
-#define OPENGL_FUNC_glGetProgramRegisterfvMESA	1459
-#define OPENGL_FUNC_glFramebufferTextureLayerEXT	1460
-#define OPENGL_FUNC_glBlendEquationSeparateATI	1461
-#define OPENGL_FUNC_glEGLImageTargetTexture2DOES 	1462
+#define OPENGL_FUNC_glCreateDebugObjectMESA 			1454
+#define OPENGL_FUNC_glClearDebugLogMESA 				1455
+#define OPENGL_FUNC_glGetDebugLogMESA 				1456
+#define OPENGL_FUNC_glGetDebugLogLengthMESA 			1457
+#define OPENGL_FUNC_glProgramCallbackMESA				1458
+#define OPENGL_FUNC_glGetProgramRegisterfvMESA			1459
+#define OPENGL_FUNC_glFramebufferTextureLayerEXT			1460
+#define OPENGL_FUNC_glBlendEquationSeparateATI			1461
+#define OPENGL_FUNC_glEGLImageTargetTexture2DOES 			1462
 #define OPENGL_FUNC_glEGLImageTargetRenderbufferStorageOES 	1463
+
+extern char *err_evg_opengl_note;
+extern char *err_evg_opengl_param_note;
+
+#define EVG_OPENGL_ARG_NOT_SUPPORTED(p) \
+	fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, p, err_evg_opengl_note);
+#define EVG_OPENGL_ARG_NOT_SUPPORTED_EQ(p, v) \
+	{ if ((p) == (v)) fatal("%s: not supported for '" #p "' = 0x%x\n%s", __FUNCTION__, (v), err_evg_opengl_param_note); }
+#define EVG_OPENGL_ARG_NOT_SUPPORTED_NEQ(p, v) \
+	{ if ((p) != (v)) fatal("%s: not supported for '" #p "' != 0x%x\n%s", __FUNCTION__, (v), err_evg_opengl_param_note); }
+#define EVG_OPENGL_ARG_NOT_SUPPORTED_LT(p, v) \
+	{ if ((p) < (v)) fatal("%s: not supported for '" #p "' < %d\n%s", __FUNCTION__, (v), err_evg_opengl_param_note); }
+#define EVG_OPENGL_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
+	{ if ((p) < (min) || (p) > (max)) fatal("%s: not supported for '" #p "' out of range [%d:%d]\n%s", \
+	__FUNCTION__, (min), (max), err_evg_opengl_param_note); }
+#define EVG_OPENGL_ARG_NOT_SUPPORTED_FLAG(p, flag, name) \
+	{ if ((p) & (flag)) fatal("%s: flag '" name "' not supported\n%s", __FUNCTION__, err_evg_opengl_param_note); }
+
 
 #endif
