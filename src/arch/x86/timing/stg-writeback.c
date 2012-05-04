@@ -62,11 +62,6 @@ static void x86_cpu_writeback_core(int core)
 			uop->neip != uop->pred_neip)
 			recover = 1;
 
-		/* Debug */
-		esim_debug("uop action=\"update\", core=%d, seq=%lld,"
-			" stg_writeback=1, completed=1\n",
-			uop->core, uop->id_in_core);
-
 		/* Trace. Prevent instructions that are not in the ROB from tracing.
 		 * These can be either loads that were squashed, or stored that
 		 * committed before issuing. */

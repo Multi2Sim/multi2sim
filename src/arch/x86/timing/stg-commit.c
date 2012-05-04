@@ -74,10 +74,6 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 	struct x86_uop_t *uop;
 	int recover = 0;
 
-	/* Update pipeline debugger with ready stores */
-	if (esim_debug_file)
-		x86_uop_linked_list_check_if_ready(X86_THREAD.sq);
-	
 	/* Commit stage for thread */
 	assert(ctx);
 	while (quant && x86_cpu_can_commit_thread(core, thread))
@@ -132,12 +128,6 @@ static void x86_cpu_commit_thread(int core, int thread, int quant)
 			}
 		}
 
-		/* Debug */
-		esim_debug("uop action=\"update\", core=%d, seq=%lld, stg_commit=1\n",
-			uop->core, uop->id_in_core);
-		esim_debug("uop action=\"destroy\", core=%d, seq=%lld\n",
-			uop->core, uop->id_in_core);
-		
 		/* Trace */
 		if (x86_tracing())
 		{

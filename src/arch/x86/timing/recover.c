@@ -59,10 +59,6 @@ void x86_cpu_recover(int core, int thread)
 			x86_reg_file_write(uop);
 		x86_reg_file_undo(uop);
 
-		/* Debug */
-		esim_debug("uop action=\"squash\", core=%d, seq=%lld\n",
-			uop->core, uop->id_in_core);
- 
 		/* Trace */
 		if (x86_tracing())
 		{
