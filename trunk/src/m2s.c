@@ -225,6 +225,18 @@ static char *sim_help =
 	"      File to dump detailed statistics for each network defined in the network\n"
 	"      configuration file (option '--net-config'). The report includes statistics\n"
 	"      on bandwidth utilization, network traffic, etc.\n"
+	"\n"
+	"  --trace <file>.gz\n"
+	"      Generate a trace file with debug information on the configuration of the\n"
+	"      modeled CPUs, GPUs, and memory system, as well as their dynamic simulation.\n"
+	"      The trace is a compressed plain-text file in format.\n"
+	"      The user should watch the size of the generated trace as simulation runs,\n"
+	"      since the trace file can quickly become extremely large.\n"
+	"\n"
+	"  --visual <file>.gz\n"
+	"      Run the Multi2Sim Visualization Tool. This option consumes a file generated\n"
+	"      with the '--trace' option in a previous simulation. This option is only\n"
+	"      available on systems with support for GTK 3.0 or higher.\n"
 	"\n";
 
 
