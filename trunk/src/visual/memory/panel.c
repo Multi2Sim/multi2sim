@@ -200,7 +200,7 @@ static struct vi_mod_board_t *vi_mod_board_create(struct vi_mod_t *mod)
 	gtk_widget_set_size_request(frame, VI_MOD_BOARD_WIDTH, VI_MOD_BOARD_HEIGHT);
 
 	/* Vertical box */
-	GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
+	GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(frame), vbox);
 
 	/* Name */
@@ -208,10 +208,10 @@ static struct vi_mod_board_t *vi_mod_board_create(struct vi_mod_t *mod)
 	GtkWidget *label = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(label), str);
 	gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(vbox), gtk_hseparator_new(), FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(vbox), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL), FALSE, FALSE, 0);
 
 	/* Horizontal box */
-	GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
+	GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, TRUE, 0);
 
 	/* LED */
