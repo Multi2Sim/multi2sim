@@ -133,7 +133,7 @@ static gboolean vi_list_item_enter_notify_event(GtkWidget *widget,
 	cursor = gdk_cursor_new(GDK_HAND1);
 	window = gtk_widget_get_parent_window(widget);
 	gdk_window_set_cursor(window, cursor);
-	gdk_cursor_unref(cursor);
+	g_object_unref(cursor);
 
 	return FALSE;
 }
@@ -278,7 +278,7 @@ struct vi_list_popup_t *vi_list_popup_create(struct vi_list_t *list)
 	gtk_container_add(GTK_CONTAINER(title_event_box), title_label);
 
 	/* Separator below title */
-	GtkWidget *hsep = gtk_hseparator_new();
+	GtkWidget *hsep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
 
 	/* Scrolled window */
 	GtkWidget *scrolled_window;
@@ -544,7 +544,7 @@ void vi_list_refresh(struct vi_list_t *list)
 		gtk_label_set_attributes(GTK_LABEL(label), attrs);
 
 		/* Get position */
-		gtk_widget_size_request(label, &req);
+		gtk_widget_get_preferred_size(label, &req, NULL);
 		last = 0;
 		if (x > 0 && x + req.width >= width)
 		{
@@ -554,7 +554,7 @@ void vi_list_refresh(struct vi_list_t *list)
 			{
 				snprintf(str1, sizeof str1, "+ %d more", count - i);
 				gtk_label_set_text(GTK_LABEL(label), str1);
-				gtk_widget_size_request(label, &req);
+				gtk_widget_get_preferred_size(label, &req, NULL);
 				last = 1;
 			}
 		}

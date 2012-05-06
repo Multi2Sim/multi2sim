@@ -206,7 +206,7 @@ void vi_cycle_bar_init(vi_cycle_bar_refresh_func_t refresh_func, void *user_data
 
 	/* Scale */
 	long long num_cycles = vi_state_get_num_cycles();
-	GtkWidget *scale = gtk_hscale_new_with_range(0, num_cycles, 1);
+	GtkWidget *scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, num_cycles, 1);
 	gtk_widget_set_size_request(scale, 100, 32);
 	gtk_scale_set_draw_value(GTK_SCALE(scale), FALSE);
 	g_signal_connect(G_OBJECT(scale), "change-value", G_CALLBACK(vi_cycle_bar_change_value_event), vi_cycle_bar);
@@ -265,7 +265,7 @@ void vi_cycle_bar_init(vi_cycle_bar_refresh_func_t refresh_func, void *user_data
 	gtk_widget_set_size_request(spacer, 5, -1);
 
 	/* Horizontal box with the two tables */
-	GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
+	GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(hbox), navigation_table, TRUE, TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(hbox), spacer, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(hbox), go_to_table, FALSE, FALSE, 0);

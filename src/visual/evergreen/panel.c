@@ -24,6 +24,9 @@
  * Timing Diagram Window
  */
 
+#define VI_EVG_TIME_DIA_WINDOW_SIZE_X	600
+#define VI_EVG_TIME_DIA_WINDOW_SIZE_Y	250
+
 struct vi_evg_time_dia_window_t
 {
 	GtkWidget *widget;
@@ -80,6 +83,8 @@ static struct vi_evg_time_dia_window_t *vi_evg_time_dia_window_create(
 	snprintf(str, sizeof str, "Compute Unit %s", compute_unit->name);
 	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(window), str);
+	gtk_window_set_default_size(GTK_WINDOW(window), VI_EVG_TIME_DIA_WINDOW_SIZE_X,
+		VI_EVG_TIME_DIA_WINDOW_SIZE_Y);
 
 	/* Time diagram */
 	struct vi_evg_time_dia_t *time_dia;
@@ -216,7 +221,7 @@ static struct vi_cu_board_t *vi_cu_board_create(struct vi_evg_compute_unit_t *co
 	gtk_widget_set_size_request(frame, VI_CU_BOARD_WIDTH, VI_CU_BOARD_HEIGHT);
 
 	/* Vertical box */
-	GtkWidget *vbox = gtk_vbox_new(FALSE, 0);
+	GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(frame), vbox);
 
 	/* Name */
@@ -224,10 +229,10 @@ static struct vi_cu_board_t *vi_cu_board_create(struct vi_evg_compute_unit_t *co
 	GtkWidget *label = gtk_label_new(NULL);
 	gtk_label_set_markup(GTK_LABEL(label), str);
 	gtk_box_pack_start(GTK_BOX(vbox), label, FALSE, FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(vbox), gtk_hseparator_new(), FALSE, FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(vbox), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL), FALSE, FALSE, 0);
 
 	/* Horizontal box */
-	GtkWidget *hbox = gtk_hbox_new(FALSE, 0);
+	GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, TRUE, 0);
 
 	/* LED */
