@@ -39,7 +39,7 @@ have_glut=yes
 AC_CHECK_HEADER([GL/glut.h], [AC_DEFINE([HAVE_GLUT_H])], [have_glut=no])
 AC_CHECK_LIB([pthread], [pthread_create], [], [have_glut=no])
 if test x$have_glut == xno; then
-AC_MSG_ERROR([
+AC_MSG_WARN([
 	
 	The 'freeglut' library development package is missing in your system.
 	Please install the package and then retry. On Debian-based Linux
@@ -48,6 +48,7 @@ AC_MSG_ERROR([
 		sudo apt-get install freeglut3-dev
 ])
 fi
+AM_CONDITIONAL(HAVE_GLUT_H, test x$have_glut == xyes)
 
 
 # Checks for typedefs, structures, and compiler characteristics.
