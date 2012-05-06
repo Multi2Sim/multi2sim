@@ -521,25 +521,25 @@ struct vi_evg_time_dia_t *vi_evg_time_dia_create(struct vi_evg_compute_unit_t *c
 
 	/* Left vertical box */
 	GtkWidget *left_vbox;
-	left_vbox = gtk_vbox_new(FALSE, 0);
+	left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(left_vbox), legend_layout, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(left_vbox), inst_layout, TRUE, TRUE, 0);
 
 	/* Right vertical box */
 	GtkWidget *right_vbox;
-	right_vbox = gtk_vbox_new(FALSE, 0);
+	right_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_box_pack_start(GTK_BOX(right_vbox), cycle_layout, FALSE, FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(right_vbox), content_layout, TRUE, TRUE, 0);
 
 	/* Horizontal panel */
 	GtkWidget *hpaned;
-	hpaned = gtk_hpaned_new();
+	hpaned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
 	gtk_paned_pack1(GTK_PANED(hpaned), left_vbox, TRUE, FALSE);
 	gtk_paned_pack2(GTK_PANED(hpaned), right_vbox, TRUE, TRUE);
 
 	/* Scroll bars */
-	GtkWidget *hscrollbar = gtk_hscrollbar_new(NULL);
-	GtkWidget *vscrollbar = gtk_vscrollbar_new(NULL);
+	GtkWidget *hscrollbar = gtk_scrollbar_new(GTK_ORIENTATION_HORIZONTAL, NULL);
+	GtkWidget *vscrollbar = gtk_scrollbar_new(GTK_ORIENTATION_VERTICAL, NULL);
 	time_dia->hscrollbar = hscrollbar;
 	time_dia->vscrollbar = vscrollbar;
 	g_signal_connect(G_OBJECT(hscrollbar), "value-changed",

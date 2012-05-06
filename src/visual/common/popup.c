@@ -35,7 +35,7 @@ static gboolean vi_popup_button_press_event(GtkWidget *widget, GdkEventButton *e
 	height = gtk_widget_get_allocated_height(widget);
 	if (event->x < -20 || event->y < -20 || event->x > width + 20 || event->y > height + 20)
 	{
-		gdk_pointer_ungrab(GDK_CURRENT_TIME);
+		gdk_device_ungrab(gtk_get_current_event_device(), GDK_CURRENT_TIME);
 		gtk_widget_destroy(widget);
 	}
 	return TRUE;
@@ -51,7 +51,7 @@ static gboolean vi_popup_motion_event(GtkWidget *widget, GdkEventMotion *event, 
 	height = gtk_widget_get_allocated_height(widget);
 	if (event->x < -20 || event->y < -20 || event->x > width + 20 || event->y > height + 20)
 	{
-		gdk_pointer_ungrab(GDK_CURRENT_TIME);
+		gdk_device_ungrab(gtk_get_current_event_device(), GDK_CURRENT_TIME);
 		gtk_widget_destroy(widget);
 	}
 	return FALSE;
@@ -139,6 +139,6 @@ void vi_popup_show(char *text)
 
 	popup = vi_popup_create(text);
 	gtk_widget_show_all(popup->window);
-	gdk_pointer_grab(gtk_widget_get_window(popup->window), TRUE,
-		GDK_ALL_EVENTS_MASK, NULL, NULL, GDK_CURRENT_TIME);
+	gdk_device_grab(gtk_get_current_event_device(), gtk_widget_get_window(popup->window),
+		GDK_OWNERSHIP_WINDOW, TRUE, GDK_ALL_EVENTS_MASK, NULL, GDK_CURRENT_TIME);
 }

@@ -97,7 +97,7 @@ static gboolean sharers_label_enter_notify(GtkWidget *widget,
 	cursor = gdk_cursor_new(GDK_HAND1);
 	window = gtk_widget_get_parent_window(widget);
 	gdk_window_set_cursor(window, cursor);
-	gdk_cursor_unref(cursor);
+	g_object_unref(cursor);
 
 	return FALSE;
 }
@@ -359,7 +359,7 @@ static gboolean accesses_label_enter_notify(GtkWidget *widget,
 	cursor = gdk_cursor_new(GDK_HAND1);
 	window = gtk_widget_get_parent_window(widget);
 	gdk_window_set_cursor(window, cursor);
-	gdk_cursor_unref(cursor);
+	g_object_unref(cursor);
 
 	return FALSE;
 }
@@ -639,7 +639,7 @@ struct vi_mod_widget_t *vi_mod_widget_create(char *name)
 
 	/* Vertical box */
 	GtkWidget *vbox;
-	vbox = gtk_vbox_new(FALSE, 0);
+	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
 	/* Access list */
 	struct vi_list_t *access_list;
@@ -650,8 +650,8 @@ struct vi_mod_widget_t *vi_mod_widget_create(char *name)
 	mod_widget->access_list = access_list;
 
 	/* Scroll bars */
-	GtkWidget *hscrollbar = gtk_hscrollbar_new(NULL);
-	GtkWidget *vscrollbar = gtk_vscrollbar_new(NULL);
+	GtkWidget *hscrollbar = gtk_scrollbar_new(GTK_ORIENTATION_HORIZONTAL, NULL);
+	GtkWidget *vscrollbar = gtk_scrollbar_new(GTK_ORIENTATION_VERTICAL, NULL);
 	mod_widget->hscrollbar = hscrollbar;
 	mod_widget->vscrollbar = vscrollbar;
 	g_signal_connect(G_OBJECT(hscrollbar), "value-changed",
