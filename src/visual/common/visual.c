@@ -51,12 +51,15 @@ static void visual_cycle_bar_refresh(void *user_data, long long cycle)
 void visual_run(char *file_name)
 {
 	char *m2s_images_path = "images";
+	char vi_icon_path[MAX_STRING_SIZE];
 
 	/* Initialization */
 	m2s_dist_file("close.png", m2s_images_path, m2s_images_path,
 		vi_list_image_close_path, sizeof vi_list_image_close_path);
 	m2s_dist_file("close-sel.png", m2s_images_path, m2s_images_path,
 		vi_list_image_close_sel_path, sizeof vi_list_image_close_sel_path);
+	m2s_dist_file("m2s-icon.png", m2s_images_path, m2s_images_path,
+		vi_icon_path, sizeof vi_icon_path);
 
 	/* Initialize visual state */
 	vi_state_init(file_name);
@@ -75,6 +78,8 @@ void visual_run(char *file_name)
 	/* Create main window */
 	GtkWidget *window;
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title(GTK_WINDOW(window), "M2S-Visual");
+	gtk_window_set_icon_from_file(GTK_WINDOW(window), vi_icon_path, NULL);
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(visual_destroy_event), NULL);
 
 	/* Vertical box */

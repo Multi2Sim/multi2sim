@@ -40,11 +40,14 @@ LDADD = \
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
 	$(top_builddir)/src/lib/misc/libmisc.a \
 	$(top_builddir)/src/lib/esim/libesim.a \
-	$(top_builddir)/src/lib/struct/libstruct.a \
-	\
-	-lm -lpthread -lz -lglut
+	$(top_builddir)/src/lib/struct/libstruct.a
 
 if HAVE_GTK
 AM_CFLAGS = @GTK_CFLAGS@
 LDADD += @GTK_LIBS@
 endif
+
+if HAVE_GLUT_H
+LDADD += -lglut
+endif
+
