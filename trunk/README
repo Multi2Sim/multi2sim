@@ -256,6 +256,13 @@ Steps to Release a New Version Release (Administrator):
 	* In trunk directory, create tar ball.
 		~/multi2sim/trunk$ make distcheck
 
+	* Check that all additional distribution files were included in the
+	  distribution package. Check that:
+	  	* 'libm2s-glut' compiles correctly.
+		* 'libm2s-opengl' compiles correctly.
+		* 'libm2s-opencl' compiles correctly.
+		* 'libm2s-cuda' compiles correctly.
+
 	* Copy tar ball to Multi2Sim server:
 		scp multi2sim-X.Y.Z.tar.gz $(M2S-SERVER):public_html/files/
 
