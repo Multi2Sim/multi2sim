@@ -19,8 +19,15 @@
 
 #include <m2s-glut.h>
 #include <debug.h>
+#include <list.h>
+#include <misc.h>
 #include <unistd.h>
 
+
+
+/*
+ * Error Messages
+ */
 
 #define __X86_GLUT_NOT_IMPL__  fatal("%s: not implemented.\n%s", \
 	__FUNCTION__, err_x86_glut_not_impl);
@@ -36,6 +43,19 @@ static char *err_x86_glut_version =
 	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
 	"\tGLUT runtime library ('libm2s-glut').\n";
+
+
+/*
+ * GLUT Internal State
+ */
+
+unsigned int x86_glut_initial_display_mode;
+
+int x86_glut_initial_window_position_x = -1;
+int x86_glut_initial_window_position_y = -1;
+int x86_glut_initial_window_width = 300;
+int x86_glut_initial_window_height = 300;
+
 
 
 /* Multi2Sim GLUT Runtime required */
@@ -62,12 +82,15 @@ void glutInit(int *argcp, char **argv)
 			"\tGuest library v. %d.%d / Host implementation v. %d.%d.\n"
 			"%s", X86_GLUT_RUNTIME_VERSION_MAJOR, X86_GLUT_RUNTIME_VERSION_MINOR,
 			version.major, version.minor, err_x86_glut_version);
+
+	/* Initialize */
+	x86_glut_window_init();
 }
 
 
 void glutInitDisplayMode(unsigned int mode)
 {
-	__X86_GLUT_NOT_IMPL__
+	x86_glut_initial_display_mode = mode;
 }
 
 
@@ -79,13 +102,15 @@ void glutInitDisplayString(const char *string)
 
 void glutInitWindowPosition(int x, int y)
 {
-	__X86_GLUT_NOT_IMPL__
+	x86_glut_initial_window_position_x = x;
+	x86_glut_initial_window_position_y = y;
 }
 
 
 void glutInitWindowSize(int width, int height)
 {
-	__X86_GLUT_NOT_IMPL__
+	x86_glut_initial_window_width = width;
+	x86_glut_initial_window_height = height;
 }
 
 

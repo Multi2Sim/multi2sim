@@ -40,5 +40,23 @@ enum x86_glut_call_t
 };
 
 
+
+
+/*
+ * GLUT Window
+ */
+
+struct x86_glut_window_t;
+
+void x86_glut_window_init(void);
+void x86_glut_window_done(void);
+
+struct x86_glut_window_t *x86_glut_window_create(char *title);
+void x86_glut_window_free(struct x86_glut_window_t *window);
+
+struct x86_glut_window_t *x86_glut_window_get_by_guest_id(int guest_id);
+struct x86_glut_window_t *x86_glut_window_get_by_host_id(int host_id);
+
+
 #endif
 

@@ -8,7 +8,8 @@ CFLAGS = -Wall -O3 -fPIC -m32 -I. -I$(M2S_ROOT)/src/lib/struct -I$(M2S_ROOT)/src
 OBJECTS = \
 	debug.o \
 	list.o \
-	glut.o
+	glut.o \
+	window.o
 
 all: libm2s-glut.so libm2s-glut.a
 
@@ -47,3 +48,5 @@ list.o: $(M2S_ROOT)/src/lib/struct/list.c $(M2S_ROOT)/src/lib/struct/list.h
 glut.o: glut.c m2s-glut.h
 	$(CC) $(CFLAGS) -c glut.c -o glut.o
 
+window.o: window.c m2s-glut.h
+	$(CC) $(CFLAGS) -c window.c -o window.o
