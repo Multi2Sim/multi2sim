@@ -326,11 +326,7 @@ void fatal(char *fmt, ...)
 	fprintf(stderr, "fatal: ");
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
-#if NDEBUG
 	exit(1);
-#else
-	abort();
-#endif
 }
 
 

@@ -24,5 +24,21 @@
 #include <GL/gl.h>
 #include <GL/glut.h>
 
+
+/* System call for GLUT runtime */
+#define X86_GLUT_SYS_CODE  326
+
+
+/* List of GLUT runtime calls */
+enum x86_glut_call_t
+{
+	x86_glut_call_invalid,
+#define X86_GLUT_DEFINE_CALL(name, code) x86_glut_call_##name = code,
+#include "../../src/arch/x86/emu/glut.dat"
+#undef X86_GLUT_DEFINE_CALL
+	x86_glut_call_count
+};
+
+
 #endif
 

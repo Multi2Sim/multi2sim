@@ -594,6 +594,25 @@ void x86_sys_call(void);
 
 
 /*
+ * GLUT system call interface
+ */
+
+#ifdef HAVE_GLUT_H
+
+#define x86_glut_debug(...) debug(x86_glut_debug_category, __VA_ARGS__)
+extern int x86_glut_debug_category;
+
+void x86_glut_init(void);
+void x86_glut_done(void);
+
+int x86_glut_call(void);
+
+#endif
+
+
+
+
+/*
  * System signals
  */
 

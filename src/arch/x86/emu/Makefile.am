@@ -22,5 +22,13 @@ libemu_a_SOURCES = \
 	syscall.dat \
 	uinst.c
 
+if HAVE_GLUT_H
+
+libemu_a_SOURCES += \
+	glut.c \
+	glut.dat
+
+endif
+
 INCLUDES = @M2S_INCLUDES@
 
