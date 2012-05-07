@@ -289,10 +289,40 @@ void frm_inst_dump_pred(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		pred = inst->dword.mov_mov32i.pred;
 	else if (fmt == FRM_FMT_MOV_SEL)
 		pred = inst->dword.mov_sel.pred;
+	else if (fmt == FRM_FMT_LDST_LDC)
+		pred = inst->dword.ldst_ldc.pred;
 	else if (fmt == FRM_FMT_LDST_LD)
 		pred = inst->dword.ldst_ld.pred;
+	else if (fmt == FRM_FMT_LDST_LDU)
+		pred = inst->dword.ldst_ldu.pred;
+	else if (fmt == FRM_FMT_LDST_LDL)
+		pred = inst->dword.ldst_ldl.pred;
+	else if (fmt == FRM_FMT_LDST_LDS)
+		pred = inst->dword.ldst_lds.pred;
+	else if (fmt == FRM_FMT_LDST_LDLK)
+		pred = inst->dword.ldst_ldlk.pred;
+	else if (fmt == FRM_FMT_LDST_LDSLK)
+		pred = inst->dword.ldst_ldslk.pred;
 	else if (fmt == FRM_FMT_LDST_ST)
 		pred = inst->dword.ldst_st.pred;
+	else if (fmt == FRM_FMT_LDST_STL)
+		pred = inst->dword.ldst_stl.pred;
+	else if (fmt == FRM_FMT_LDST_STUL)
+		pred = inst->dword.ldst_stul.pred;
+	else if (fmt == FRM_FMT_LDST_STS)
+		pred = inst->dword.ldst_sts.pred;
+	else if (fmt == FRM_FMT_LDST_STSUL)
+		pred = inst->dword.ldst_stsul.pred;
+	else if (fmt == FRM_FMT_LDST_ATOM)
+		pred = inst->dword.ldst_atom.pred;
+	else if (fmt == FRM_FMT_LDST_RED)
+		pred = inst->dword.ldst_red.pred;
+	else if (fmt == FRM_FMT_LDST_CCTL)
+		pred = inst->dword.ldst_cctl.pred;
+	else if (fmt == FRM_FMT_LDST_CCTLL)
+		pred = inst->dword.ldst_cctll.pred;
+	else if (fmt == FRM_FMT_LDST_MEMBAR)
+		pred = inst->dword.ldst_membar.pred;
 	else if (fmt == FRM_FMT_CTRL_NONE)
 		;
 	else if (fmt == FRM_FMT_CTRL_OP1)
@@ -994,6 +1024,25 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 	}
 	else if (fmt == FRM_FMT_MOV_SEL)
 		;
+	else if (fmt == FRM_FMT_LDST_LDC)
+	{
+		if (inst->dword.ldst_ldc.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U8");
+		else if (inst->dword.ldst_ldc.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S8");
+		else if (inst->dword.ldst_ldc.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".U16");
+		else if (inst->dword.ldst_ldc.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".S16");
+		else if (inst->dword.ldst_ldc.type == 4)
+			;
+		else if (inst->dword.ldst_ldc.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".64");
+		else if (inst->dword.ldst_ldc.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".128");
+		else
+			fatal("%d: FRM_FMT_LDST_LDC.type not recognized", inst->dword.ldst_ldc.type);
+	}
 	else if (fmt == FRM_FMT_LDST_LD)
 	{
 		if (inst->dword.ldst_ld.e == 0)
@@ -1031,6 +1080,119 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		else
 			fatal("%d: FRM_FMT_LDST_LD.type not recognized", inst->dword.ldst_ld.type);
 	}
+	else if (fmt == FRM_FMT_LDST_LDU)
+	{
+		if (inst->dword.ldst_ldu.e == 0)
+			;
+		else if (inst->dword.ldst_ldu.e == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".E");
+		else
+			fatal("%d: FRM_FMT_LDST_LDU.e not recognized", inst->dword.ldst_ldu.e);
+
+		if (inst->dword.ldst_ldu.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U8");
+		else if (inst->dword.ldst_ldu.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S8");
+		else if (inst->dword.ldst_ldu.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".U16");
+		else if (inst->dword.ldst_ldu.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".S16");
+		else if (inst->dword.ldst_ldu.type == 4)
+			;
+		else if (inst->dword.ldst_ldu.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".64");
+		else if (inst->dword.ldst_ldu.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".128");
+		else
+			fatal("%d: FRM_FMT_LDST_LDU.type not recognized", inst->dword.ldst_ldu.type);
+	}
+	else if (fmt == FRM_FMT_LDST_LDL)
+	{
+		if (inst->dword.ldst_ldl.cop == 0)
+			;
+		else if (inst->dword.ldst_ldl.cop == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".CG");
+		else if (inst->dword.ldst_ldl.cop == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".LU");
+		else if (inst->dword.ldst_ldl.cop == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".CV");
+		else
+			fatal("%d: FRM_FMT_LDST_LDL.cop not recognized", inst->dword.ldst_ldl.cop);
+
+		if (inst->dword.ldst_ldl.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U8");
+		else if (inst->dword.ldst_ldl.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S8");
+		else if (inst->dword.ldst_ldl.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".U16");
+		else if (inst->dword.ldst_ldl.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".S16");
+		else if (inst->dword.ldst_ldl.type == 4)
+			;
+		else if (inst->dword.ldst_ldl.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".64");
+		else if (inst->dword.ldst_ldl.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".128");
+		else
+			fatal("%d: FRM_FMT_LDST_LDL.type not recognized", inst->dword.ldst_ldl.type);
+	}
+	else if (fmt == FRM_FMT_LDST_LDS)
+	{
+		if (inst->dword.ldst_lds.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U8");
+		else if (inst->dword.ldst_lds.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S8");
+		else if (inst->dword.ldst_lds.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".U16");
+		else if (inst->dword.ldst_lds.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".S16");
+		else if (inst->dword.ldst_lds.type == 4)
+			;
+		else if (inst->dword.ldst_lds.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".64");
+		else if (inst->dword.ldst_lds.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".128");
+		else
+			fatal("%d: FRM_FMT_LDST_LDS.type not recognized", inst->dword.ldst_lds.type);
+	}
+	else if (fmt == FRM_FMT_LDST_LDLK)
+	{
+		if (inst->dword.ldst_ldlk.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U8");
+		else if (inst->dword.ldst_ldlk.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S8");
+		else if (inst->dword.ldst_ldlk.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".U16");
+		else if (inst->dword.ldst_ldlk.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".S16");
+		else if (inst->dword.ldst_ldlk.type == 4)
+			;
+		else if (inst->dword.ldst_ldlk.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".64");
+		else if (inst->dword.ldst_ldlk.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".128");
+		else
+			fatal("%d: FRM_FMT_LDST_LDLK.type not recognized", inst->dword.ldst_ldlk.type);
+	}
+	else if (fmt == FRM_FMT_LDST_LDSLK)
+	{
+		if (inst->dword.ldst_ldslk.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U8");
+		else if (inst->dword.ldst_ldslk.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S8");
+		else if (inst->dword.ldst_ldslk.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".U16");
+		else if (inst->dword.ldst_ldslk.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".S16");
+		else if (inst->dword.ldst_ldslk.type == 4)
+			;
+		else if (inst->dword.ldst_ldslk.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".64");
+		else if (inst->dword.ldst_ldslk.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".128");
+		else
+			fatal("%d: FRM_FMT_LDST_LDSLK.type not recognized", inst->dword.ldst_ldslk.type);
+	}
 	else if (fmt == FRM_FMT_LDST_ST)
 	{
 		if (inst->dword.ldst_st.e == 0)
@@ -1038,7 +1200,7 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		else if (inst->dword.ldst_st.e == 1)
 			str_printf(inst_str_ptr, inst_str_size, ".E");
 		else
-			fatal("%d: FRM_FMT_LDST_ST.e not recognized", inst->dword.ldst_ld.e);
+			fatal("%d: FRM_FMT_LDST_ST.e not recognized", inst->dword.ldst_st.e);
 
 		if (inst->dword.ldst_st.cop == 0)
 			;
@@ -1067,6 +1229,248 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 			str_printf(inst_str_ptr, inst_str_size, ".128");
 		else
 			fatal("%d: FRM_FMT_LDST_ST.type not recognized", inst->dword.ldst_st.type);
+	}
+	else if (fmt == FRM_FMT_LDST_STL)
+	{
+		if (inst->dword.ldst_stl.cop == 0)
+			;
+		else if (inst->dword.ldst_stl.cop == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".CG");
+		else if (inst->dword.ldst_stl.cop == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".CS");
+		else if (inst->dword.ldst_stl.cop == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".WT");
+		else
+			fatal("%d: FRM_FMT_LDST_ST.cop not recognized", inst->dword.ldst_stl.cop);
+
+		if (inst->dword.ldst_stl.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U8");
+		else if (inst->dword.ldst_stl.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S8");
+		else if (inst->dword.ldst_stl.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".U16");
+		else if (inst->dword.ldst_stl.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".S16");
+		else if (inst->dword.ldst_stl.type == 4)
+			;
+		else if (inst->dword.ldst_stl.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".64");
+		else if (inst->dword.ldst_stl.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".128");
+		else
+			fatal("%d: FRM_FMT_LDST_STL.type not recognized", inst->dword.ldst_stl.type);
+	}
+	else if (fmt == FRM_FMT_LDST_STUL)
+	{
+		if (inst->dword.ldst_stul.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U8");
+		else if (inst->dword.ldst_stul.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S8");
+		else if (inst->dword.ldst_stul.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".U16");
+		else if (inst->dword.ldst_stul.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".S16");
+		else if (inst->dword.ldst_stul.type == 4)
+			;
+		else if (inst->dword.ldst_stul.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".64");
+		else if (inst->dword.ldst_stul.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".128");
+		else
+			fatal("%d: FRM_FMT_LDST_STUL.type not recognized", inst->dword.ldst_stul.type);
+	}
+	else if (fmt == FRM_FMT_LDST_STS)
+	{
+		if (inst->dword.ldst_sts.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U8");
+		else if (inst->dword.ldst_sts.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S8");
+		else if (inst->dword.ldst_sts.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".U16");
+		else if (inst->dword.ldst_sts.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".S16");
+		else if (inst->dword.ldst_sts.type == 4)
+			;
+		else if (inst->dword.ldst_sts.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".64");
+		else if (inst->dword.ldst_sts.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".128");
+		else
+			fatal("%d: FRM_FMT_LDST_STS.type not recognized", inst->dword.ldst_sts.type);
+	}
+	else if (fmt == FRM_FMT_LDST_STSUL)
+	{
+		if (inst->dword.ldst_stsul.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".U8");
+		else if (inst->dword.ldst_stsul.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".S8");
+		else if (inst->dword.ldst_stsul.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".U16");
+		else if (inst->dword.ldst_stsul.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".S16");
+		else if (inst->dword.ldst_stsul.type == 4)
+			;
+		else if (inst->dword.ldst_stsul.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".64");
+		else if (inst->dword.ldst_stsul.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".128");
+		else
+			fatal("%d: FRM_FMT_LDST_STSUL.type not recognized", inst->dword.ldst_stsul.type);
+	}
+	else if (fmt == FRM_FMT_LDST_ATOM)
+	{
+		if (inst->dword.ldst_atom.e == 0)
+			;
+		else if (inst->dword.ldst_atom.e == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".E");
+		else
+			fatal("%d: FRM_FMT_LDST_ST.e not recognized", inst->dword.ldst_atom.e);
+
+		unsigned long long int op = (inst->dword.ldst_atom.op_3_1 << 1) | (inst->dword.ldst_atom.op_0);
+		if (op == 4)
+			;
+		else if (op == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".U64");
+		else if (op == 7)
+			str_printf(inst_str_ptr, inst_str_size, ".S32");
+		else if (op == 11)
+			str_printf(inst_str_ptr, inst_str_size, ".F32.FTZ.RN");
+		else
+			fatal("%llu: FRM_FMT_LDST_ATOM.op not recognized", op);
+
+		if (inst->dword.ldst_atom.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".ADD");
+		else if (inst->dword.ldst_atom.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".MIN");
+		else if (inst->dword.ldst_atom.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".MAX");
+		else if (inst->dword.ldst_atom.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".INC");
+		else if (inst->dword.ldst_atom.type == 4)
+			str_printf(inst_str_ptr, inst_str_size, ".DEC");
+		else if (inst->dword.ldst_atom.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".AND");
+		else if (inst->dword.ldst_atom.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".OR");
+		else if (inst->dword.ldst_atom.type == 7)
+			str_printf(inst_str_ptr, inst_str_size, ".XOR");
+		else if (inst->dword.ldst_atom.type == 8)
+			str_printf(inst_str_ptr, inst_str_size, ".EXCH");
+		else if (inst->dword.ldst_atom.type == 9)
+			str_printf(inst_str_ptr, inst_str_size, ".CAS");
+		else
+			fatal("%d: FRM_FMT_LDST_ATOM.type not recognized", inst->dword.ldst_atom.type);
+	}
+	else if (fmt == FRM_FMT_LDST_RED)
+	{
+		if (inst->dword.ldst_red.e == 0)
+			;
+		else if (inst->dword.ldst_red.e == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".E");
+		else
+			fatal("%d: FRM_FMT_LDST_ST.e not recognized", inst->dword.ldst_red.e);
+
+		unsigned long long int op = (inst->dword.ldst_red.op_3_1 << 1) | (inst->dword.ldst_red.op_0);
+		if (op == 4)
+			;
+		else if (op == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".U64");
+		else if (op == 7)
+			str_printf(inst_str_ptr, inst_str_size, ".S32");
+		else if (op == 11)
+			str_printf(inst_str_ptr, inst_str_size, ".F32.FTZ.RN");
+		else
+			fatal("%llu: FRM_FMT_LDST_ATOM.op not recognized", op);
+
+		if (inst->dword.ldst_red.type == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".ADD");
+		else if (inst->dword.ldst_red.type == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".MIN");
+		else if (inst->dword.ldst_red.type == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".MAX");
+		else if (inst->dword.ldst_red.type == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".INC");
+		else if (inst->dword.ldst_red.type == 4)
+			str_printf(inst_str_ptr, inst_str_size, ".DEC");
+		else if (inst->dword.ldst_red.type == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".AND");
+		else if (inst->dword.ldst_red.type == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".OR");
+		else if (inst->dword.ldst_red.type == 7)
+			str_printf(inst_str_ptr, inst_str_size, ".XOR");
+		else
+			fatal("%d: FRM_FMT_LDST_ATOM.type not recognized", inst->dword.ldst_red.type);
+	}
+	else if (fmt == FRM_FMT_LDST_CCTL)
+	{
+		if (inst->dword.ldst_cctl.e == 0)
+			;
+		else if (inst->dword.ldst_cctl.e == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".E");
+		else
+			fatal("%d: FRM_FMT_LDST_CCTL.e not recognized", inst->dword.ldst_cctl.e);
+
+		if (inst->dword.ldst_cctl.opa == 0)
+			;
+		else if (inst->dword.ldst_cctl.opa == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".U");
+		else if (inst->dword.ldst_cctl.opa == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".C");
+		else if (inst->dword.ldst_cctl.opa == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".I");
+		else
+			fatal("%d: FRM_FMT_LDST_CCTL.opa not recognized", inst->dword.ldst_cctl.opa);
+
+		if (inst->dword.ldst_cctl.opb == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".QRY1");
+		else if (inst->dword.ldst_cctl.opb == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".PF1");
+		else if (inst->dword.ldst_cctl.opb == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".PF1_5");
+		else if (inst->dword.ldst_cctl.opb == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".PR2");
+		else if (inst->dword.ldst_cctl.opb == 4)
+			str_printf(inst_str_ptr, inst_str_size, ".WB");
+		else if (inst->dword.ldst_cctl.opb == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".IV");
+		else if (inst->dword.ldst_cctl.opb == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".IVALL");
+		else if (inst->dword.ldst_cctl.opb == 7)
+			str_printf(inst_str_ptr, inst_str_size, ".RS");
+		else
+			fatal("%d: FRM_FMT_LDST_CCTL.opb not recognized", inst->dword.ldst_cctl.opb);
+	}
+	else if (fmt == FRM_FMT_LDST_CCTLL)
+	{
+		if (inst->dword.ldst_cctll.op == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".QRY1");
+		else if (inst->dword.ldst_cctll.op == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".PF1");
+		else if (inst->dword.ldst_cctll.op == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".PF1_5");
+		else if (inst->dword.ldst_cctll.op == 3)
+			str_printf(inst_str_ptr, inst_str_size, ".PR2");
+		else if (inst->dword.ldst_cctll.op == 4)
+			str_printf(inst_str_ptr, inst_str_size, ".WB");
+		else if (inst->dword.ldst_cctll.op == 5)
+			str_printf(inst_str_ptr, inst_str_size, ".IV");
+		else if (inst->dword.ldst_cctll.op == 6)
+			str_printf(inst_str_ptr, inst_str_size, ".IVALL");
+		else if (inst->dword.ldst_cctll.op == 7)
+			str_printf(inst_str_ptr, inst_str_size, ".RS");
+		else
+			fatal("%d: FRM_FMT_LDST_CCTLL.op not recognized", inst->dword.ldst_cctll.op);
+	}
+	else if (fmt == FRM_FMT_LDST_MEMBAR)
+	{
+		if (inst->dword.ldst_membar.lvl == 0)
+			str_printf(inst_str_ptr, inst_str_size, ".CTA");
+		else if (inst->dword.ldst_membar.lvl == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".GL");
+		else if (inst->dword.ldst_membar.lvl == 2)
+			str_printf(inst_str_ptr, inst_str_size, ".SYS");
+		else
+			fatal("%d: FRM_FMT_LDST_CCTLL.lvl not recognized", inst->dword.ldst_membar.lvl);
 	}
 	else if (fmt == FRM_FMT_CTRL_NONE)
 		;
@@ -1153,10 +1557,38 @@ void frm_inst_dump_dst(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		dst = inst->dword.mov_mov32i.dst;
 	else if (fmt == FRM_FMT_MOV_SEL)
 		dst = inst->dword.mov_sel.dst;
+	else if (fmt == FRM_FMT_LDST_LDC)
+		dst = inst->dword.ldst_ldc.dst;
 	else if (fmt == FRM_FMT_LDST_LD)
 		dst = inst->dword.ldst_ld.dst;
+	else if (fmt == FRM_FMT_LDST_LDU)
+		dst = inst->dword.ldst_ldu.dst;
+	else if (fmt == FRM_FMT_LDST_LDL)
+		dst = inst->dword.ldst_ldl.dst;
+	else if (fmt == FRM_FMT_LDST_LDS)
+		dst = inst->dword.ldst_lds.dst;
+	else if (fmt == FRM_FMT_LDST_LDLK)
+		dst = inst->dword.ldst_ldlk.dst;
+	else if (fmt == FRM_FMT_LDST_LDSLK)
+		dst = inst->dword.ldst_ldslk.dst;
 	else if (fmt == FRM_FMT_LDST_ST)
 		dst = inst->dword.ldst_st.dst;
+	else if (fmt == FRM_FMT_LDST_STL)
+		dst = inst->dword.ldst_stl.dst;
+	else if (fmt == FRM_FMT_LDST_STUL)
+		dst = inst->dword.ldst_stul.dst;
+	else if (fmt == FRM_FMT_LDST_STS)
+		dst = inst->dword.ldst_sts.dst;
+	else if (fmt == FRM_FMT_LDST_STSUL)
+		dst = inst->dword.ldst_stsul.dst;
+	else if (fmt == FRM_FMT_LDST_ATOM)
+		dst = inst->dword.ldst_atom.dst;
+	else if (fmt == FRM_FMT_LDST_RED)
+		dst = inst->dword.ldst_red.dst;
+	else if (fmt == FRM_FMT_LDST_CCTL)
+		dst = inst->dword.ldst_cctl.dst;
+	else if (fmt == FRM_FMT_LDST_CCTLL)
+		dst = inst->dword.ldst_cctll.dst;
 	else if (fmt == FRM_FMT_CTRL_NONE)
 		;
 	else if (fmt == FRM_FMT_CTRL_OP1)
@@ -1262,8 +1694,34 @@ void frm_inst_dump_src1(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		src1 = inst->dword.mov_sel.src1;
 	else if (fmt == FRM_FMT_LDST_LD)
 		src1 = inst->dword.ldst_ld.src1;
+	else if (fmt == FRM_FMT_LDST_LDU)
+		src1 = inst->dword.ldst_ldu.src1;
+	else if (fmt == FRM_FMT_LDST_LDL)
+		src1 = inst->dword.ldst_ldl.src1;
+	else if (fmt == FRM_FMT_LDST_LDS)
+		src1 = inst->dword.ldst_lds.src1;
+	else if (fmt == FRM_FMT_LDST_LDLK)
+		src1 = inst->dword.ldst_ldlk.src1;
+	else if (fmt == FRM_FMT_LDST_LDSLK)
+		src1 = inst->dword.ldst_ldslk.src1;
 	else if (fmt == FRM_FMT_LDST_ST)
 		src1 = inst->dword.ldst_st.src1;
+	else if (fmt == FRM_FMT_LDST_STL)
+		src1 = inst->dword.ldst_stl.src1;
+	else if (fmt == FRM_FMT_LDST_STUL)
+		src1 = inst->dword.ldst_stul.src1;
+	else if (fmt == FRM_FMT_LDST_STS)
+		src1 = inst->dword.ldst_sts.src1;
+	else if (fmt == FRM_FMT_LDST_STSUL)
+		src1 = inst->dword.ldst_stsul.src1;
+	else if (fmt == FRM_FMT_LDST_ATOM)
+		src1 = inst->dword.ldst_atom.src1;
+	else if (fmt == FRM_FMT_LDST_RED)
+		src1 = inst->dword.ldst_red.src1;
+	else if (fmt == FRM_FMT_LDST_CCTL)
+		src1 = inst->dword.ldst_cctl.src1;
+	else if (fmt == FRM_FMT_LDST_CCTLL)
+		src1 = inst->dword.ldst_cctll.src1;
 	else if (fmt == FRM_FMT_CTRL_NONE)
 		;
 	else if (fmt == FRM_FMT_CTRL_OP1)
@@ -1900,10 +2358,19 @@ void frm_inst_dump_src2(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		else
 			fatal("%d: FRM_FMT_MOV_SEL.src2_mod not recognized", inst->dword.mov_sel.src2_mod);
 	}
-	else if (fmt == FRM_FMT_LDST_LD)
-		;
-	else if (fmt == FRM_FMT_LDST_ST)
-		;
+	else if (fmt == FRM_FMT_LDST_LDC)
+	{
+		bank_id = inst->dword.ldst_ldc.src2 >> 16;
+		offset_in_bank= inst->dword.ldst_ldc.src2 & 0xffff;
+		if (bank_id == 0 && offset_in_bank == 0)
+			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [0x0]");
+		else if (bank_id == 0 && offset_in_bank != 0)
+			str_printf(inst_str_ptr, inst_str_size, "c [0x0] [%#llx]", offset_in_bank);
+		else if (bank_id != 0 && offset_in_bank == 0)
+			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [0x0]", bank_id);
+		else
+			str_printf(inst_str_ptr, inst_str_size, "c [%#llx] [%#llx]", bank_id, offset_in_bank);
+	}
 	else if (fmt == FRM_FMT_CTRL_NONE)
 		;
 	else if (fmt == FRM_FMT_CTRL_OP1)
@@ -1965,6 +2432,10 @@ void frm_inst_dump_R(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t 
 		R = inst->dword.int_isetp.R;
 	else if (fmt == FRM_FMT_MOV_SEL)
 		R = inst->dword.mov_sel.R;
+	else if (fmt == FRM_FMT_LDST_LDLK)
+		R = (inst->dword.ldst_ldlk.R_2 << 2) | (inst->dword.ldst_ldlk.R_1_0);
+	else if (fmt == FRM_FMT_LDST_LDSLK)
+		R = inst->dword.ldst_ldslk.R;
 	else
 		fatal("%d: %%R not recognized", fmt);
 
@@ -1979,9 +2450,37 @@ void frm_inst_dump_offset(char **inst_str_ptr, int *inst_str_size, struct frm_in
 	unsigned long long int offset;
 
 	if (fmt == FRM_FMT_LDST_LD)
-		offset = inst->dword.ldst_ld.offset;
+		offset = inst->dword.ldst_ld.offset16;
+	else if (fmt == FRM_FMT_LDST_LDU)
+		offset = inst->dword.ldst_ldu.offset16;
+	else if (fmt == FRM_FMT_LDST_LDL)
+		offset = inst->dword.ldst_ldl.offset16;
+	else if (fmt == FRM_FMT_LDST_LDS)
+		offset = inst->dword.ldst_lds.offset16;
+	else if (fmt == FRM_FMT_LDST_LDLK)
+		offset = inst->dword.ldst_ldlk.offset16;
+	else if (fmt == FRM_FMT_LDST_LDSLK)
+		offset = inst->dword.ldst_ldslk.offset16;
 	else if (fmt == FRM_FMT_LDST_ST)
-		offset = inst->dword.ldst_st.offset;
+		offset = inst->dword.ldst_st.offset16;
+	else if (fmt == FRM_FMT_LDST_STL)
+		offset = inst->dword.ldst_stl.offset16;
+	else if (fmt == FRM_FMT_LDST_STUL)
+		offset = inst->dword.ldst_stul.offset16;
+	else if (fmt == FRM_FMT_LDST_STS)
+		offset = inst->dword.ldst_sts.offset16;
+	else if (fmt == FRM_FMT_LDST_STSUL)
+		offset = inst->dword.ldst_stsul.offset16;
+	else if (fmt == FRM_FMT_LDST_ATOM)
+		offset = (inst->dword.ldst_atom.offset20_19_17 << 17) | (inst->dword.ldst_atom.offset20_16_0);
+	else if (fmt == FRM_FMT_LDST_RED)
+		offset = (inst->dword.ldst_red.offset20_19_17 << 17) | (inst->dword.ldst_red.offset20_16_0);
+	else if (fmt == FRM_FMT_LDST_CCTL)
+		offset = inst->dword.ldst_cctl.offset16;
+	else if (fmt == FRM_FMT_LDST_CCTLL)
+		offset = inst->dword.ldst_cctll.offset16;
+	else if (fmt == FRM_FMT_CTRL_NONE)
+		;
 	else
 		fatal("%d: %%o not recognized", fmt);
 

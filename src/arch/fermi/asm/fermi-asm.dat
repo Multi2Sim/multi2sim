@@ -260,7 +260,11 @@ DEFINST(SEL,
  * ST, STL, STUL, STS, STSUL, ATOM, RED, CCTL, CCTLL, MEMBAR
  */
 
-//DEFINST(LDC
+DEFINST(LDC, 
+	"%p LDC%e %d, %b", 
+	LDST_LDC, 
+	LDST, 
+	0x056)
 
 DEFINST(LD, 
 	"%p LD%e %d, [%a%o]", 
@@ -268,15 +272,35 @@ DEFINST(LD,
 	LDST, 
 	0x105)
 
-//DEFINST(LDU
+DEFINST(LDU, 
+	"%p LDU%e %d, [%a%o]", 
+	LDST_LDU, 
+	LDST, 
+	0x115)
 
-//DEFINST(LDL
+DEFINST(LDL, 
+	"%p LDL%e %d, [%a%o]", 
+	LDST_LDL, 
+	LDST, 
+	0x305)
 
-//DEFINST(LDS
+DEFINST(LDS, 
+	"%p LDS%e %d, [%a%o]", 
+	LDST_LDS, 
+	LDST, 
+	0x305)
 
-//DEFINST(LDLK
+DEFINST(LDLK, 
+	"%p LDLK%e %R, %d, [%a%o]", 
+	LDST_LDLK, 
+	LDST, 
+	0x145)
 
-//DEFINST(LDSLK
+DEFINST(LDSLK, 
+	"%p LDSLK%e %R, %d, [%a%o]", 
+	LDST_LDSLK, 
+	LDST, 
+	0x295)
 
 //DEFINST(LD_LDU
 
@@ -288,23 +312,59 @@ DEFINST(ST,
 	LDST, 
 	0x125)
 
-//DEFINST(STL
+DEFINST(STL, 
+	"%p STL%e [%a%o], %d", 
+	LDST_STL, 
+	LDST, 
+	0x325)
 
-//DEFINST(STUL
+DEFINST(STUL, 
+	"%p STUL%e [%a%o], %d", 
+	LDST_STUL, 
+	LDST, 
+	0x3a5)
 
-//DEFINST(STS
+DEFINST(STS, 
+	"%p STS%e [%a%o], %d", 
+	LDST_STS, 
+	LDST, 
+	0x325)
 
-//DEFINST(STSUL
+DEFINST(STSUL, 
+	"%p STSUL%e [%a%o], %d", 
+	LDST_STSUL, 
+	LDST, 
+	0x335)
 
-//DEFINST(ATOM
+DEFINST(ATOM, 
+	"%p ATOM%e %c, [%a%o], %d", 
+	LDST_ATOM, 
+	LDST, 
+	0x015)
 
-//DEFINST(RED
+DEFINST(RED, 
+	"%p RED%e [%a%o], %d", 
+	LDST_RED, 
+	LDST, 
+	0x005)
 
-//DEFINST(CCTL
+DEFINST(CCTL, 
+	"%p CCTL%e %d, [%a%o]", 
+	LDST_CCTL, 
+	LDST, 
+	0x135)
 
-//DEFINST(CCTLL
+DEFINST(CCTLL, 
+	"%p CCTLL%e %d, [%a%o]", 
+	LDST_CCTLL, 
+	LDST, 
+	0x345)
 
-//DEFINST(MEMBAR
+DEFINST(MEMBAR, 
+	"%p MEMBAR%e", 
+	LDST_MEMBAR, 
+	LDST, 
+	0x385)
 
 /* SURF catogory instructions: 
  * SULD, SULEA, SUST, SURED, SUQ
