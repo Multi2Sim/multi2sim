@@ -216,6 +216,7 @@ void frm_inst_decode(struct frm_inst_t *inst)
 	if (op == 0x0e0 || op == 0x0f0 || /* FCMP */
 		op == 0x080 || op == 0x090 || /* FSETP */
 		op == 0x061 || op == 0x071 || /* DSETP */
+		op == 0x022 || op == 0x032 || /* IADD32I */
 		op == 0x063 || op == 0x073 || /* ISETP */
 		op == 0x205 || op == 0x215 || /* LD */
 		op == 0x245 || op == 0x255)   /* ST */
@@ -259,6 +260,8 @@ void frm_inst_dump_pred(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		pred = inst->dword.int_imul.pred;
 	else if (fmt == FRM_FMT_INT_IADD)
 		pred = inst->dword.int_iadd.pred;
+	else if (fmt == FRM_FMT_INT_IADD32I)
+		pred = inst->dword.int_iadd32i.pred;
 	else if (fmt == FRM_FMT_INT_ISCADD)
 		pred = inst->dword.int_iscadd.pred;
 	else if (fmt == FRM_FMT_INT_BFE)
@@ -724,6 +727,22 @@ void frm_inst_dump_ext(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 			str_printf(inst_str_ptr, inst_str_size, ".X");
 		else
 			fatal("%d: FRM_FMT_INT_IADD.x not recognized", inst->dword.int_iadd.x);
+	}
+	else if (fmt == FRM_FMT_INT_IADD32I)
+	{
+		if (inst->dword.int_iadd32i.sat == 0)
+			;
+		else if (inst->dword.int_iadd32i.sat == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".SAT");
+		else
+			fatal("%d: FRM_FMT_INT_IADD32I.sat not recognized", inst->dword.int_iadd32i.sat);
+
+		if (inst->dword.int_iadd32i.x == 0)
+			;
+		else if (inst->dword.int_iadd32i.x == 1)
+			str_printf(inst_str_ptr, inst_str_size, ".X");
+		else
+			fatal("%d: FRM_FMT_INT_IADD32I.x not recognized", inst->dword.int_iadd32i.x);
 	}
 	else if (fmt == FRM_FMT_INT_BFE)
 	{
@@ -1677,6 +1696,8 @@ void frm_inst_dump_dst(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		dst = inst->dword.int_imul.dst;
 	else if (fmt == FRM_FMT_INT_IADD)
 		dst = inst->dword.int_iadd.dst;
+	else if (fmt == FRM_FMT_INT_IADD32I)
+		dst = inst->dword.int_iadd32i.dst;
 	else if (fmt == FRM_FMT_INT_ISCADD)
 		dst = inst->dword.int_iscadd.dst;
 	else if (fmt == FRM_FMT_INT_BFE)
@@ -1835,6 +1856,8 @@ void frm_inst_dump_src1(char **inst_str_ptr, int *inst_str_size, struct frm_inst
 		src1 = inst->dword.int_imul.src1;
 	else if (fmt == FRM_FMT_INT_IADD)
 		src1 = inst->dword.int_iadd.src1;
+	else if (fmt == FRM_FMT_INT_IADD32I)
+		src1 = inst->dword.int_iadd32i.src1;
 	else if (fmt == FRM_FMT_INT_ISCADD)
 		src1 = inst->dword.int_iscadd.src1;
 	else if (fmt == FRM_FMT_INT_BFE)
@@ -2567,6 +2590,8 @@ void frm_inst_dump_imm(char **inst_str_ptr, int *inst_str_size, struct frm_inst_
 		imm = inst->dword.fp_fadd32i.imm32;
 	else if (fmt == FRM_FMT_FP_FMUL32I)
 		imm = inst->dword.fp_fmul32i.imm32;
+	else if (fmt == FRM_FMT_INT_IADD32I)
+		imm = inst->dword.int_iadd32i.imm32;
 	else if (fmt == FRM_FMT_INT_LOP32I)
 		imm = inst->dword.int_lop32i.imm32;
 	else if (fmt == FRM_FMT_MOV_MOV32I)
