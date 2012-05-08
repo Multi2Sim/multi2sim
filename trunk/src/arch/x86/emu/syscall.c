@@ -5029,8 +5029,31 @@ static int x86_sys_glut_impl(void)
 #endif
 }
 
+/*
+ * System call 'opengl' (code 327)
+ * Special system call code used by 'libm2s-opengl'
+ */
 
+static int x86_sys_opengl_impl(void)
+{
+#ifdef HAVE_OPENGL_H
 
+	/* Run OPENGL call */
+	return x86_opengl_call();
+
+#else
+
+	fatal("support for OpenGL not available.\n"
+		"\tMulti2Sim requires the OpenGL library to be\n"
+		"\tinstalled in your system to simulate OpenGL programs.\n"
+		"\t  1) Install the development packages for OpenGL. Under Debian-based\n"
+		"\t     Linux distributions, this package is listed as 'mesa-common-dev'.\n"
+		"\t  2) Re-run the './configure' script\n"
+		"\t  3) Recompile the simulator: make clean && make\n");
+	return 0;
+
+#endif
+}
 
 /*
  * Not implemented system calls
