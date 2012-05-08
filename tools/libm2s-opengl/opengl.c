@@ -361,19 +361,24 @@ void glMatrixMode( GLenum mode )
 }
 
 
-void glOrtho( GLdouble left, GLdouble right,                                 GLdouble bottom, GLdouble top,                                 GLdouble near_val, GLdouble far_val )
+void glOrtho( GLdouble left, GLdouble right,
+                                 GLdouble bottom, GLdouble top,
+                                 GLdouble near_val, GLdouble far_val )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glFrustum( GLdouble left, GLdouble right,                                   GLdouble bottom, GLdouble top,                                   GLdouble near_val, GLdouble far_val )
+void glFrustum( GLdouble left, GLdouble right,
+                                   GLdouble bottom, GLdouble top,
+                                   GLdouble near_val, GLdouble far_val )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glViewport( GLint x, GLint y,                                    GLsizei width, GLsizei height )
+void glViewport( GLint x, GLint y,
+                                    GLsizei width, GLsizei height )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -421,13 +426,15 @@ void glMultMatrixf( const GLfloat *m )
 }
 
 
-void glRotated( GLdouble angle,                                   GLdouble x, GLdouble y, GLdouble z )
+void glRotated( GLdouble angle,
+                                   GLdouble x, GLdouble y, GLdouble z )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glRotatef( GLfloat angle,                                   GLfloat x, GLfloat y, GLfloat z )
+void glRotatef( GLfloat angle,
+                                   GLfloat x, GLfloat y, GLfloat z )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -495,7 +502,8 @@ void glCallList( GLuint list )
 }
 
 
-void glCallLists( GLsizei n, GLenum type,                                     const GLvoid *lists )
+void glCallLists( GLsizei n, GLenum type,
+                                     const GLvoid *lists )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -831,49 +839,57 @@ void glColor3us( GLushort red, GLushort green, GLushort blue )
 }
 
 
-void glColor4b( GLbyte red, GLbyte green,                                   GLbyte blue, GLbyte alpha )
+void glColor4b( GLbyte red, GLbyte green,
+                                   GLbyte blue, GLbyte alpha )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColor4d( GLdouble red, GLdouble green,                                   GLdouble blue, GLdouble alpha )
+void glColor4d( GLdouble red, GLdouble green,
+                                   GLdouble blue, GLdouble alpha )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColor4f( GLfloat red, GLfloat green,                                   GLfloat blue, GLfloat alpha )
+void glColor4f( GLfloat red, GLfloat green,
+                                   GLfloat blue, GLfloat alpha )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColor4i( GLint red, GLint green,                                   GLint blue, GLint alpha )
+void glColor4i( GLint red, GLint green,
+                                   GLint blue, GLint alpha )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColor4s( GLshort red, GLshort green,                                   GLshort blue, GLshort alpha )
+void glColor4s( GLshort red, GLshort green,
+                                   GLshort blue, GLshort alpha )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColor4ub( GLubyte red, GLubyte green,                                    GLubyte blue, GLubyte alpha )
+void glColor4ub( GLubyte red, GLubyte green,
+                                    GLubyte blue, GLubyte alpha )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColor4ui( GLuint red, GLuint green,                                    GLuint blue, GLuint alpha )
+void glColor4ui( GLuint red, GLuint green,
+                                    GLuint blue, GLuint alpha )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColor4us( GLushort red, GLushort green,                                    GLushort blue, GLushort alpha )
+void glColor4us( GLushort red, GLushort green,
+                                    GLushort blue, GLushort alpha )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -1359,31 +1375,36 @@ void glRectsv( const GLshort *v1, const GLshort *v2 )
 }
 
 
-void glVertexPointer( GLint size, GLenum type,                                       GLsizei stride, const GLvoid *ptr )
+void glVertexPointer( GLint size, GLenum type,
+                                       GLsizei stride, const GLvoid *ptr )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glNormalPointer( GLenum type, GLsizei stride,                                       const GLvoid *ptr )
+void glNormalPointer( GLenum type, GLsizei stride,
+                                       const GLvoid *ptr )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColorPointer( GLint size, GLenum type,                                      GLsizei stride, const GLvoid *ptr )
+void glColorPointer( GLint size, GLenum type,
+                                      GLsizei stride, const GLvoid *ptr )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glIndexPointer( GLenum type, GLsizei stride,                                      const GLvoid *ptr )
+void glIndexPointer( GLenum type, GLsizei stride,
+                                      const GLvoid *ptr )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glTexCoordPointer( GLint size, GLenum type,                                         GLsizei stride, const GLvoid *ptr )
+void glTexCoordPointer( GLint size, GLenum type,
+                                         GLsizei stride, const GLvoid *ptr )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -1413,13 +1434,15 @@ void glDrawArrays( GLenum mode, GLint first, GLsizei count )
 }
 
 
-void glDrawElements( GLenum mode, GLsizei count,                                      GLenum type, const GLvoid *indices )
+void glDrawElements( GLenum mode, GLsizei count,
+                                      GLenum type, const GLvoid *indices )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glInterleavedArrays( GLenum format, GLsizei stride,                                           const GLvoid *pointer )
+void glInterleavedArrays( GLenum format, GLsizei stride,
+                                           const GLvoid *pointer )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -1443,25 +1466,29 @@ void glLighti( GLenum light, GLenum pname, GLint param )
 }
 
 
-void glLightfv( GLenum light, GLenum pname,                                 const GLfloat *params )
+void glLightfv( GLenum light, GLenum pname,
+                                 const GLfloat *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glLightiv( GLenum light, GLenum pname,                                 const GLint *params )
+void glLightiv( GLenum light, GLenum pname,
+                                 const GLint *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetLightfv( GLenum light, GLenum pname,                                    GLfloat *params )
+void glGetLightfv( GLenum light, GLenum pname,
+                                    GLfloat *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetLightiv( GLenum light, GLenum pname,                                    GLint *params )
+void glGetLightiv( GLenum light, GLenum pname,
+                                    GLint *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -1563,19 +1590,22 @@ void glPixelTransferi( GLenum pname, GLint param )
 }
 
 
-void glPixelMapfv( GLenum map, GLsizei mapsize,                                    const GLfloat *values )
+void glPixelMapfv( GLenum map, GLsizei mapsize,
+                                    const GLfloat *values )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glPixelMapuiv( GLenum map, GLsizei mapsize,                                     const GLuint *values )
+void glPixelMapuiv( GLenum map, GLsizei mapsize,
+                                     const GLuint *values )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glPixelMapusv( GLenum map, GLsizei mapsize,                                     const GLushort *values )
+void glPixelMapusv( GLenum map, GLsizei mapsize,
+                                     const GLushort *values )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -1599,25 +1629,35 @@ void glGetPixelMapusv( GLenum map, GLushort *values )
 }
 
 
-void glBitmap( GLsizei width, GLsizei height,                                GLfloat xorig, GLfloat yorig,                                GLfloat xmove, GLfloat ymove,                                const GLubyte *bitmap )
+void glBitmap( GLsizei width, GLsizei height,
+                                GLfloat xorig, GLfloat yorig,
+                                GLfloat xmove, GLfloat ymove,
+                                const GLubyte *bitmap )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glReadPixels( GLint x, GLint y,                                    GLsizei width, GLsizei height,                                    GLenum format, GLenum type,                                    GLvoid *pixels )
+void glReadPixels( GLint x, GLint y,
+                                    GLsizei width, GLsizei height,
+                                    GLenum format, GLenum type,
+                                    GLvoid *pixels )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glDrawPixels( GLsizei width, GLsizei height,                                    GLenum format, GLenum type,                                    const GLvoid *pixels )
+void glDrawPixels( GLsizei width, GLsizei height,
+                                    GLenum format, GLenum type,
+                                    const GLvoid *pixels )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glCopyPixels( GLint x, GLint y,                                    GLsizei width, GLsizei height,                                    GLenum type )
+void glCopyPixels( GLint x, GLint y,
+                                    GLsizei width, GLsizei height,
+                                    GLenum type )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -1749,55 +1789,71 @@ void glTexParameteri( GLenum target, GLenum pname, GLint param )
 }
 
 
-void glTexParameterfv( GLenum target, GLenum pname,                                          const GLfloat *params )
+void glTexParameterfv( GLenum target, GLenum pname,
+                                          const GLfloat *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glTexParameteriv( GLenum target, GLenum pname,                                          const GLint *params )
+void glTexParameteriv( GLenum target, GLenum pname,
+                                          const GLint *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetTexParameterfv( GLenum target,                                           GLenum pname, GLfloat *params)
+void glGetTexParameterfv( GLenum target,
+                                           GLenum pname, GLfloat *params)
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetTexParameteriv( GLenum target,                                           GLenum pname, GLint *params )
+void glGetTexParameteriv( GLenum target,
+                                           GLenum pname, GLint *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetTexLevelParameterfv( GLenum target, GLint level,                                                GLenum pname, GLfloat *params )
+void glGetTexLevelParameterfv( GLenum target, GLint level,
+                                                GLenum pname, GLfloat *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetTexLevelParameteriv( GLenum target, GLint level,                                                GLenum pname, GLint *params )
+void glGetTexLevelParameteriv( GLenum target, GLint level,
+                                                GLenum pname, GLint *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glTexImage1D( GLenum target, GLint level,                                    GLint internalFormat,                                    GLsizei width, GLint border,                                    GLenum format, GLenum type,                                    const GLvoid *pixels )
+void glTexImage1D( GLenum target, GLint level,
+                                    GLint internalFormat,
+                                    GLsizei width, GLint border,
+                                    GLenum format, GLenum type,
+                                    const GLvoid *pixels )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glTexImage2D( GLenum target, GLint level,                                    GLint internalFormat,                                    GLsizei width, GLsizei height,                                    GLint border, GLenum format, GLenum type,                                    const GLvoid *pixels )
+void glTexImage2D( GLenum target, GLint level,
+                                    GLint internalFormat,
+                                    GLsizei width, GLsizei height,
+                                    GLint border, GLenum format, GLenum type,
+                                    const GLvoid *pixels )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetTexImage( GLenum target, GLint level,                                     GLenum format, GLenum type,                                     GLvoid *pixels )
+void glGetTexImage( GLenum target, GLint level,
+                                     GLenum format, GLenum type,
+                                     GLvoid *pixels )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -1821,13 +1877,17 @@ void glBindTexture( GLenum target, GLuint texture )
 }
 
 
-void glPrioritizeTextures( GLsizei n,                                            const GLuint *textures,                                            const GLclampf *priorities )
+void glPrioritizeTextures( GLsizei n,
+                                            const GLuint *textures,
+                                            const GLclampf *priorities )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-GLboolean glAreTexturesResident( GLsizei n,                                                  const GLuint *textures,                                                  GLboolean *residences )
+GLboolean glAreTexturesResident( GLsizei n,
+                                                  const GLuint *textures,
+                                                  GLboolean *residences )
 {
 	__X86_OPENGL_NOT_IMPL__
 	return 0;
@@ -1841,61 +1901,90 @@ GLboolean glIsTexture( GLuint texture )
 }
 
 
-void glTexSubImage1D( GLenum target, GLint level,                                       GLint xoffset,                                       GLsizei width, GLenum format,                                       GLenum type, const GLvoid *pixels )
+void glTexSubImage1D( GLenum target, GLint level,
+                                       GLint xoffset,
+                                       GLsizei width, GLenum format,
+                                       GLenum type, const GLvoid *pixels )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glTexSubImage2D( GLenum target, GLint level,                                       GLint xoffset, GLint yoffset,                                       GLsizei width, GLsizei height,                                       GLenum format, GLenum type,                                       const GLvoid *pixels )
+void glTexSubImage2D( GLenum target, GLint level,
+                                       GLint xoffset, GLint yoffset,
+                                       GLsizei width, GLsizei height,
+                                       GLenum format, GLenum type,
+                                       const GLvoid *pixels )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glCopyTexImage1D( GLenum target, GLint level,                                        GLenum internalformat,                                        GLint x, GLint y,                                        GLsizei width, GLint border )
+void glCopyTexImage1D( GLenum target, GLint level,
+                                        GLenum internalformat,
+                                        GLint x, GLint y,
+                                        GLsizei width, GLint border )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glCopyTexImage2D( GLenum target, GLint level,                                        GLenum internalformat,                                        GLint x, GLint y,                                        GLsizei width, GLsizei height,                                        GLint border )
+void glCopyTexImage2D( GLenum target, GLint level,
+                                        GLenum internalformat,
+                                        GLint x, GLint y,
+                                        GLsizei width, GLsizei height,
+                                        GLint border )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glCopyTexSubImage1D( GLenum target, GLint level,                                           GLint xoffset, GLint x, GLint y,                                           GLsizei width )
+void glCopyTexSubImage1D( GLenum target, GLint level,
+                                           GLint xoffset, GLint x, GLint y,
+                                           GLsizei width )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glCopyTexSubImage2D( GLenum target, GLint level,                                           GLint xoffset, GLint yoffset,                                           GLint x, GLint y,                                           GLsizei width, GLsizei height )
+void glCopyTexSubImage2D( GLenum target, GLint level,
+                                           GLint xoffset, GLint yoffset,
+                                           GLint x, GLint y,
+                                           GLsizei width, GLsizei height )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glMap1d( GLenum target, GLdouble u1, GLdouble u2,                               GLint stride,                               GLint order, const GLdouble *points )
+void glMap1d( GLenum target, GLdouble u1, GLdouble u2,
+                               GLint stride,
+                               GLint order, const GLdouble *points )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glMap1f( GLenum target, GLfloat u1, GLfloat u2,                               GLint stride,                               GLint order, const GLfloat *points )
+void glMap1f( GLenum target, GLfloat u1, GLfloat u2,
+                               GLint stride,
+                               GLint order, const GLfloat *points )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glMap2d( GLenum target,		     GLdouble u1, GLdouble u2, GLint ustride, GLint uorder,		     GLdouble v1, GLdouble v2, GLint vstride, GLint vorder,		     const GLdouble *points )
+void glMap2d( GLenum target,
+		     GLdouble u1, GLdouble u2, GLint ustride, GLint uorder,
+		     GLdouble v1, GLdouble v2, GLint vstride, GLint vorder,
+		     const GLdouble *points )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glMap2f( GLenum target,		     GLfloat u1, GLfloat u2, GLint ustride, GLint uorder,		     GLfloat v1, GLfloat v2, GLint vstride, GLint vorder,		     const GLfloat *points )
+void glMap2f( GLenum target,
+		     GLfloat u1, GLfloat u2, GLint ustride, GLint uorder,
+		     GLfloat v1, GLfloat v2, GLint vstride, GLint vorder,
+		     const GLfloat *points )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -1979,13 +2068,15 @@ void glMapGrid1f( GLint un, GLfloat u1, GLfloat u2 )
 }
 
 
-void glMapGrid2d( GLint un, GLdouble u1, GLdouble u2,                                   GLint vn, GLdouble v1, GLdouble v2 )
+void glMapGrid2d( GLint un, GLdouble u1, GLdouble u2,
+                                   GLint vn, GLdouble v1, GLdouble v2 )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glMapGrid2f( GLint un, GLfloat u1, GLfloat u2,                                   GLint vn, GLfloat v1, GLfloat v2 )
+void glMapGrid2f( GLint un, GLfloat u1, GLfloat u2,
+                                   GLint vn, GLfloat v1, GLfloat v2 )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -2081,79 +2172,106 @@ void glPopName( void )
 }
 
 
-void glDrawRangeElements( GLenum mode, GLuint start,	GLuint end, GLsizei count, GLenum type, const GLvoid *indices )
+void glDrawRangeElements( GLenum mode, GLuint start,
+	GLuint end, GLsizei count, GLenum type, const GLvoid *indices )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glTexImage3D( GLenum target, GLint level,                                      GLint internalFormat,                                      GLsizei width, GLsizei height,                                      GLsizei depth, GLint border,                                      GLenum format, GLenum type,                                      const GLvoid *pixels )
+void glTexImage3D( GLenum target, GLint level,
+                                      GLint internalFormat,
+                                      GLsizei width, GLsizei height,
+                                      GLsizei depth, GLint border,
+                                      GLenum format, GLenum type,
+                                      const GLvoid *pixels )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glTexSubImage3D( GLenum target, GLint level,                                         GLint xoffset, GLint yoffset,                                         GLint zoffset, GLsizei width,                                         GLsizei height, GLsizei depth,                                         GLenum format,                                         GLenum type, const GLvoid *pixels)
+void glTexSubImage3D( GLenum target, GLint level,
+                                         GLint xoffset, GLint yoffset,
+                                         GLint zoffset, GLsizei width,
+                                         GLsizei height, GLsizei depth,
+                                         GLenum format,
+                                         GLenum type, const GLvoid *pixels)
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glCopyTexSubImage3D( GLenum target, GLint level,                                             GLint xoffset, GLint yoffset,                                             GLint zoffset, GLint x,                                             GLint y, GLsizei width,                                             GLsizei height )
+void glCopyTexSubImage3D( GLenum target, GLint level,
+                                             GLint xoffset, GLint yoffset,
+                                             GLint zoffset, GLint x,
+                                             GLint y, GLsizei width,
+                                             GLsizei height )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColorTable( GLenum target, GLenum internalformat,                                    GLsizei width, GLenum format,                                    GLenum type, const GLvoid *table )
+void glColorTable( GLenum target, GLenum internalformat,
+                                    GLsizei width, GLenum format,
+                                    GLenum type, const GLvoid *table )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColorSubTable( GLenum target,                                       GLsizei start, GLsizei count,                                       GLenum format, GLenum type,                                       const GLvoid *data )
+void glColorSubTable( GLenum target,
+                                       GLsizei start, GLsizei count,
+                                       GLenum format, GLenum type,
+                                       const GLvoid *data )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColorTableParameteriv(GLenum target, GLenum pname,                                              const GLint *params)
+void glColorTableParameteriv(GLenum target, GLenum pname,
+                                              const GLint *params)
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glColorTableParameterfv(GLenum target, GLenum pname,                                              const GLfloat *params)
+void glColorTableParameterfv(GLenum target, GLenum pname,
+                                              const GLfloat *params)
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glCopyColorSubTable( GLenum target, GLsizei start,                                           GLint x, GLint y, GLsizei width )
+void glCopyColorSubTable( GLenum target, GLsizei start,
+                                           GLint x, GLint y, GLsizei width )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glCopyColorTable( GLenum target, GLenum internalformat,                                        GLint x, GLint y, GLsizei width )
+void glCopyColorTable( GLenum target, GLenum internalformat,
+                                        GLint x, GLint y, GLsizei width )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetColorTable( GLenum target, GLenum format,                                       GLenum type, GLvoid *table )
+void glGetColorTable( GLenum target, GLenum format,
+                                       GLenum type, GLvoid *table )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetColorTableParameterfv( GLenum target, GLenum pname,                                                  GLfloat *params )
+void glGetColorTableParameterfv( GLenum target, GLenum pname,
+                                                  GLfloat *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetColorTableParameteriv( GLenum target, GLenum pname,                                                  GLint *params )
+void glGetColorTableParameteriv( GLenum target, GLenum pname,
+                                                  GLint *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -2165,13 +2283,15 @@ void glBlendEquation( GLenum mode )
 }
 
 
-void glBlendColor( GLclampf red, GLclampf green,                                    GLclampf blue, GLclampf alpha )
+void glBlendColor( GLclampf red, GLclampf green,
+                                    GLclampf blue, GLclampf alpha )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glHistogram( GLenum target, GLsizei width,				   GLenum internalformat, GLboolean sink )
+void glHistogram( GLenum target, GLsizei width,
+				   GLenum internalformat, GLboolean sink )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -2183,25 +2303,30 @@ void glResetHistogram( GLenum target )
 }
 
 
-void glGetHistogram( GLenum target, GLboolean reset,				      GLenum format, GLenum type,				      GLvoid *values )
+void glGetHistogram( GLenum target, GLboolean reset,
+				      GLenum format, GLenum type,
+				      GLvoid *values )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetHistogramParameterfv( GLenum target, GLenum pname,						 GLfloat *params )
+void glGetHistogramParameterfv( GLenum target, GLenum pname,
+						 GLfloat *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetHistogramParameteriv( GLenum target, GLenum pname,						 GLint *params )
+void glGetHistogramParameteriv( GLenum target, GLenum pname,
+						 GLint *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glMinmax( GLenum target, GLenum internalformat,				GLboolean sink )
+void glMinmax( GLenum target, GLenum internalformat,
+				GLboolean sink )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -2213,97 +2338,118 @@ void glResetMinmax( GLenum target )
 }
 
 
-void glGetMinmax( GLenum target, GLboolean reset,                                   GLenum format, GLenum types,                                   GLvoid *values )
+void glGetMinmax( GLenum target, GLboolean reset,
+                                   GLenum format, GLenum types,
+                                   GLvoid *values )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetMinmaxParameterfv( GLenum target, GLenum pname,					      GLfloat *params )
+void glGetMinmaxParameterfv( GLenum target, GLenum pname,
+					      GLfloat *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetMinmaxParameteriv( GLenum target, GLenum pname,					      GLint *params )
+void glGetMinmaxParameteriv( GLenum target, GLenum pname,
+					      GLint *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glConvolutionFilter1D( GLenum target,	GLenum internalformat, GLsizei width, GLenum format, GLenum type,	const GLvoid *image )
+void glConvolutionFilter1D( GLenum target,
+	GLenum internalformat, GLsizei width, GLenum format, GLenum type,
+	const GLvoid *image )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glConvolutionFilter2D( GLenum target,	GLenum internalformat, GLsizei width, GLsizei height, GLenum format,	GLenum type, const GLvoid *image )
+void glConvolutionFilter2D( GLenum target,
+	GLenum internalformat, GLsizei width, GLsizei height, GLenum format,
+	GLenum type, const GLvoid *image )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glConvolutionParameterf( GLenum target, GLenum pname,	GLfloat params )
+void glConvolutionParameterf( GLenum target, GLenum pname,
+	GLfloat params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glConvolutionParameterfv( GLenum target, GLenum pname,	const GLfloat *params )
+void glConvolutionParameterfv( GLenum target, GLenum pname,
+	const GLfloat *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glConvolutionParameteri( GLenum target, GLenum pname,	GLint params )
+void glConvolutionParameteri( GLenum target, GLenum pname,
+	GLint params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glConvolutionParameteriv( GLenum target, GLenum pname,	const GLint *params )
+void glConvolutionParameteriv( GLenum target, GLenum pname,
+	const GLint *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glCopyConvolutionFilter1D( GLenum target,	GLenum internalformat, GLint x, GLint y, GLsizei width )
+void glCopyConvolutionFilter1D( GLenum target,
+	GLenum internalformat, GLint x, GLint y, GLsizei width )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glCopyConvolutionFilter2D( GLenum target,	GLenum internalformat, GLint x, GLint y, GLsizei width,	GLsizei height)
+void glCopyConvolutionFilter2D( GLenum target,
+	GLenum internalformat, GLint x, GLint y, GLsizei width,
+	GLsizei height)
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetConvolutionFilter( GLenum target, GLenum format,	GLenum type, GLvoid *image )
+void glGetConvolutionFilter( GLenum target, GLenum format,
+	GLenum type, GLvoid *image )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetConvolutionParameterfv( GLenum target, GLenum pname,	GLfloat *params )
+void glGetConvolutionParameterfv( GLenum target, GLenum pname,
+	GLfloat *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetConvolutionParameteriv( GLenum target, GLenum pname,	GLint *params )
+void glGetConvolutionParameteriv( GLenum target, GLenum pname,
+	GLint *params )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glSeparableFilter2D( GLenum target,	GLenum internalformat, GLsizei width, GLsizei height, GLenum format,	GLenum type, const GLvoid *row, const GLvoid *column )
+void glSeparableFilter2D( GLenum target,
+	GLenum internalformat, GLsizei width, GLsizei height, GLenum format,
+	GLenum type, const GLvoid *row, const GLvoid *column )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
 
 
-void glGetSeparableFilter( GLenum target, GLenum format,	GLenum type, GLvoid *row, GLvoid *column, GLvoid *span )
+void glGetSeparableFilter( GLenum target, GLenum format,
+	GLenum type, GLvoid *row, GLvoid *column, GLvoid *span )
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -2802,7 +2948,8 @@ void glClearDebugLogMESA (GLhandleARB obj, GLenum logType, GLenum shaderType)
 }
 
 
-void glGetDebugLogMESA (GLhandleARB obj, GLenum logType, GLenum shaderType, GLsizei maxLength, GLsizei *length, GLcharARB *debugLog)
+void glGetDebugLogMESA (GLhandleARB obj, GLenum logType, GLenum shaderType, GLsizei maxLength,
+                                         GLsizei *length, GLcharARB *debugLog)
 {
 	__X86_OPENGL_NOT_IMPL__
 }
@@ -2827,7 +2974,8 @@ void glGetProgramRegisterfvMESA(GLenum target, GLsizei len, const GLubyte *name,
 }
 
 
-void *glFramebufferTextureLayerEXT(GLenum target,    GLenum attachment, GLuint texture, GLint level, GLint layer)
+void *glFramebufferTextureLayerEXT(GLenum target,
+    GLenum attachment, GLuint texture, GLint level, GLint layer)
 {
 	__X86_OPENGL_NOT_IMPL__
 	return NULL;
@@ -2852,6 +3000,8 @@ void *glEGLImageTargetRenderbufferStorageOES (GLenum target, GLeglImageOES image
 	__X86_OPENGL_NOT_IMPL__
 	return NULL;
 }
+
+
 
 
 
