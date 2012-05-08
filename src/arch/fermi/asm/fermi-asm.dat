@@ -131,6 +131,12 @@ DEFINST(IADD,
 	INT, 
 	0x123)
 
+DEFINST(IADD32I, 
+	"%p IADD32I%e %d, %a, %i", 
+	INT_IADD32I, 
+	INT, 
+	0x012)
+
 DEFINST(ISCADD, 
 	"%p ISCADD %d, %a, %b, %s", 
 	INT_ISCADD, 
@@ -494,10 +500,10 @@ DEFINST(LEPC,
 	0x222)
 
 DEFINST(BAR, 
-	"%p BAR%e %d, %P, %a, %%, %Q", 
+	"%p BAR%e %d, %P, %a, %b, %Q", 
 	MISC_BAR, 
 	MISC, 
-	0x222)
+	0x144)
 
 DEFINST(VOTE, 
 	"%p VOTE%e %d, %P, %Q", 
