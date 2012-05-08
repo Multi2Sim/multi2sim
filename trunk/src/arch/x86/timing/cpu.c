@@ -820,6 +820,12 @@ static void x86_cpu_core_init(int core)
  * Public Functions
  */
 
+/* Version of x86 trace producer.
+ * See 'src/visual/x86/cpu.c' for x86 trace consumer. */
+
+#define X86_TRACE_VERSION_MAJOR		1
+#define X86_TRACE_VERSION_MINOR		671
+
 
 /* Initialization */
 void x86_cpu_init()
@@ -858,7 +864,8 @@ void x86_cpu_init()
 	x86_fu_init();
 
 	/* Trace */
-	x86_trace_header("x86.init num_cores=%d num_threads=%d\n",
+	x86_trace_header("x86.init version=\"%d.%d\" num_cores=%d num_threads=%d\n",
+		X86_TRACE_VERSION_MAJOR, X86_TRACE_VERSION_MINOR,
 		x86_cpu_num_cores, x86_cpu_num_threads);
 }
 

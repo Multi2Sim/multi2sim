@@ -341,6 +341,19 @@ static void vi_x86_cpu_write_checkpoint(struct vi_x86_cpu_t *cpu, FILE *f)
 
 struct vi_x86_cpu_t *vi_x86_cpu;
 
+/* Version of the x86 trace consumer. The major version must match with the
+ * trace producer, while the minor version should be equal or higher. See
+ * 'glut.c' for the version number assignment, and code modification policies.
+ * See 'src/arch/x86/timing/cpu.c' for x86 trace producer version.
+ */
+
+#define VI_X86_TRACE_VERSION_MAJOR	1
+#define VI_X86_TRACE_VERSION_MINOR	671
+
+static char *err_vi_x86_trace_version =
+	"\tThe x86 trace file has been created with an incompatible version\n"
+	"\tof Multi2Sim. Please rerun the simulation with the same Multi2Sim\n"
+	"\tversion used to visualize the trace.\n";
 
 void vi_x86_cpu_init(void)
 {
@@ -398,6 +411,22 @@ void vi_x86_cpu_init(void)
 			int i;
 
 			char name[MAX_STRING_SIZE];
+
+			char *version;
+
+			int version_major = 0;
+			int version_minor = 0;
+
+			/* Check version compatibility */
+			version = vi_trace_line_get_symbol(trace_line, "version");
+			if (version)
+				sscanf(version, "%d.%d", &version_major, &version_minor);
+			if (version_major != VI_X86_TRACE_VERSION_MAJOR ||
+				version_minor > VI_X86_TRACE_VERSION_MINOR)
+				fatal("incompatible x86 trace version.\n"
+					"\tTrace generation v. %d.%d / Trace consumer v. %d.%d\n%s",
+					version_major, version_minor, VI_X86_TRACE_VERSION_MAJOR,
+					VI_X86_TRACE_VERSION_MINOR, err_vi_x86_trace_version);
 
 			/* Create cores */
 			num_cores = vi_trace_line_get_symbol_int(trace_line, "num_cores");

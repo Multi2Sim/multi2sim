@@ -146,7 +146,7 @@ struct x86_opengl_version_t
 	int minor;
 };
 
-static int x86_opengl_func_init(void)
+int x86_opengl_func_init(void)
 {
 	unsigned int version_ptr;
 

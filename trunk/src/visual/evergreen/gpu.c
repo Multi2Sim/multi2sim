@@ -286,6 +286,19 @@ static void vi_evg_gpu_write_checkpoint(struct vi_evg_gpu_t *gpu, FILE *f)
 
 struct vi_evg_gpu_t *vi_evg_gpu;
 
+/* Version of the Evergreen trace consumer. The major version must match with the
+ * trace producer, while the minor version should be equal or higher. See
+ * 'glut.c' for the version number assignment, and code modification policies.
+ * See 'src/arch/evergreen/timing/gpu.c' for x86 trace producer version.
+ */
+
+#define VI_EVG_TRACE_VERSION_MAJOR	1
+#define VI_EVG_TRACE_VERSION_MINOR	671
+
+static char *err_vi_evg_trace_version =
+	"\tThe Evergreen trace file has been created with an incompatible version\n"
+	"\tof Multi2Sim. Please rerun the simulation with the same Multi2Sim\n"
+	"\tversion used to visualize the trace.\n";
 
 void vi_evg_gpu_init(void)
 {
@@ -342,6 +355,22 @@ void vi_evg_gpu_init(void)
 			int i;
 
 			char name[MAX_STRING_SIZE];
+
+			char *version;
+
+			int version_major = 0;
+			int version_minor = 0;
+
+			/* Check version compatibility */
+			version = vi_trace_line_get_symbol(trace_line, "version");
+			if (version)
+				sscanf(version, "%d.%d", &version_major, &version_minor);
+			if (version_major != VI_EVG_TRACE_VERSION_MAJOR ||
+				version_minor > VI_EVG_TRACE_VERSION_MINOR)
+				fatal("incompatible Evergreen trace version.\n"
+					"\tTrace generation v. %d.%d / Trace consumer v. %d.%d\n%s",
+					version_major, version_minor, VI_EVG_TRACE_VERSION_MAJOR,
+					VI_EVG_TRACE_VERSION_MINOR, err_vi_evg_trace_version);
 
 			/* Create compute units */
 			num_compute_units = vi_trace_line_get_symbol_int(trace_line, "num_compute_units");
