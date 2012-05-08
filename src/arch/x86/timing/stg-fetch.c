@@ -45,7 +45,8 @@ static int x86_cpu_can_fetch(int core, int thread)
 	block = X86_THREAD.fetch_neip & ~(X86_THREAD.inst_mod->block_size - 1);
 	if (block != X86_THREAD.fetch_block)
 	{
-		phy_addr = mmu_translate(X86_THREAD.ctx->mid, X86_THREAD.fetch_neip);
+		phy_addr = mmu_translate(X86_THREAD.ctx->address_space_index,
+			X86_THREAD.fetch_neip);
 		if (!mod_can_access(X86_THREAD.inst_mod, phy_addr))
 			return 0;
 	}
@@ -118,7 +119,7 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 
 		/* Calculate physical address of a memory access */
 		if (uop->flags & X86_UINST_MEM)
-			uop->phy_addr = mmu_translate(X86_THREAD.ctx->mid,
+			uop->phy_addr = mmu_translate(X86_THREAD.ctx->address_space_index,
 				uinst->address);
 
 		/* Trace */
@@ -263,7 +264,7 @@ static void x86_cpu_fetch_thread(int core, int thread)
 	block = X86_THREAD.fetch_neip & ~(X86_THREAD.inst_mod->block_size - 1);
 	if (block != X86_THREAD.fetch_block)
 	{
-		phy_addr = mmu_translate(X86_THREAD.ctx->mid, X86_THREAD.fetch_neip);
+		phy_addr = mmu_translate(X86_THREAD.ctx->address_space_index, X86_THREAD.fetch_neip);
 		X86_THREAD.fetch_block = block;
 		X86_THREAD.fetch_address = phy_addr;
 		X86_THREAD.fetch_access = mod_access(X86_THREAD.inst_mod, mod_entry_cpu,

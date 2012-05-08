@@ -333,18 +333,19 @@ enum mmu_access_t
 
 extern char *mmu_report_file_name;
 
-extern uint32_t mmu_page_size;
-extern uint32_t mmu_page_mask;
-extern uint32_t mmu_log_page_size;
+extern unsigned int mmu_page_size;
+extern unsigned int mmu_page_mask;
+extern unsigned int mmu_log_page_size;
 
 void mmu_init(void);
 void mmu_done(void);
 void mmu_dump_report(void);
 
-uint32_t mmu_translate(int mid, uint32_t vtl_addr);
-int mmu_valid_phy_addr(uint32_t phy_addr);
+int mmu_address_space_new(void);
+unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr);
+int mmu_valid_phy_addr(unsigned int phy_addr);
 
-void mmu_access_page(uint32_t phy_addr, enum mmu_access_t access);
+void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access);
 
 
 
