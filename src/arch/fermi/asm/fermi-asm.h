@@ -379,6 +379,21 @@ struct frm_fmt_int_iadd_t
 	unsigned long long int op1 : 6; /* [63:58] */
 };
 
+struct frm_fmt_int_iadd32i_t
+{
+	unsigned long long int op0 : 4; /* [3:0] */
+	unsigned long long int __reserved0 : 1; /* [4] */
+	unsigned long long int sat : 1; /* [5] */
+	unsigned long long int x : 1; /* [6] */
+	unsigned long long int __reserved1 : 3; /* [9:7] */
+	unsigned long long int pred : 4; /* [13:10] */
+	unsigned long long int dst : 6; /* [19:14] */
+	unsigned long long int src1 : 6; /* [25:20] */
+	unsigned long long int imm32 : 32; /* [57:26] */
+	unsigned long long int dst_cc : 1; /* [58] */
+	unsigned long long int op1 : 5; /* [63:59] */
+};
+
 struct frm_fmt_int_iscadd_t
 {
 	unsigned long long int op0 : 4; /* [3:0] */
@@ -1218,6 +1233,7 @@ union frm_inst_dword_t
 	struct frm_fmt_int_imad_t int_imad;
 	struct frm_fmt_int_imul_t int_imul;
 	struct frm_fmt_int_iadd_t int_iadd;
+	struct frm_fmt_int_iadd32i_t int_iadd32i;
 	struct frm_fmt_int_iscadd_t int_iscadd;
 	struct frm_fmt_int_bfe_t int_bfe;
 	struct frm_fmt_int_bfi_t int_bfi;
