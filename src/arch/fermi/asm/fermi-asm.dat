@@ -80,7 +80,7 @@ DEFINST(MUFU,
 	0x320)
 
 DEFINST(DFMA, 
-	"%p DFMA%e %d, %a, %b, %c", 
+	"%p DFMA %d, %a, %b, %c", 
 	FP_DFMA, 
 	FP, 
 	0x081)
@@ -132,7 +132,7 @@ DEFINST(IADD,
 	0x123)
 
 DEFINST(ISCADD, 
-	"%p ISCADD%e %d, %a, %b, %s", 
+	"%p ISCADD %d, %a, %b, %s", 
 	INT_ISCADD, 
 	INT, 
 	0x103)
@@ -148,7 +148,7 @@ DEFINST(BFE,
 	0x1c3)
 
 DEFINST(BFI, 
-	"%p BFI%e %d, %a, %b, %c", 
+	"%p BFI %d, %a, %b, %c", 
 	INT_BFI, 
 	INT, 
 	0x0a3)
@@ -240,7 +240,7 @@ DEFINST(MOV32I,
 	0x062)
 
 DEFINST(SEL, 
-	"%p SEL%e %d, %a, %b, %R", 
+	"%p SEL %d, %a, %b, %R", 
 	MOV_SEL, 
 	MOV, 
 	0x084)
@@ -376,44 +376,92 @@ DEFINST(MEMBAR,
  */
 
 DEFINST(BRA, 
-	"%p BRA%e %i", 
-	CTRL_OP1, 
+	"%p BRA%e %t", 
+	CTRL_BRA, 
 	CTRL, 
 	0x107)
 
 //DEFINST(BRX
 
-//DEFINST(JMP
+DEFINST(JMP, 
+	"%p JMP%e %t", 
+	CTRL_JMP, 
+	CTRL, 
+	0x007)
 
 //DEFINST(JMX
 
-//DEFINST(CAL
+DEFINST(CAL, 
+	"%p CAL%e %t", 
+	CTRL_CAL, 
+	CTRL, 
+	0x147)
 
-//DEFINST(JCAL
+DEFINST(JCAL, 
+	"%p JCAL%e %t", 
+	CTRL_JCAL, 
+	CTRL, 
+	0x047)
 
-//DEFINST(RET
+DEFINST(RET, 
+	"%p RET", 
+	CTRL_RET, 
+	CTRL, 
+	0x247)
 
-//DEFINST(BRX
+DEFINST(BRK, 
+	"%p BRK", 
+	CTRL_BRK, 
+	CTRL, 
+	0x2a7)
 
-//DEFINST(CONT
+DEFINST(CONT, 
+	"%p CONT", 
+	CTRL_CONT, 
+	CTRL, 
+	0x2c7)
 
-//DEFINST(LONGJMP
+DEFINST(LONGJMP, 
+	"%p LONGJMP", 
+	CTRL_LONGJMP, 
+	CTRL, 
+	0x227)
 
-//DEFINST(SSY
+DEFINST(SSY, 
+	"%p SSY %t", 
+	CTRL_SSY, 
+	CTRL, 
+	0x187)
 
-//DEFINST(PBK
+DEFINST(PBK, 
+	"%p PBK %t", 
+	CTRL_PBK, 
+	CTRL, 
+	0x1a7)
 
-//DEFINST(PCNT
+DEFINST(PCNT, 
+	"%p PCNT %t", 
+	CTRL_PCNT, 
+	CTRL, 
+	0x1c7)
 
-//DEFINST(PRET
+DEFINST(PRET, 
+	"%p PRET%e %t", 
+	CTRL_PRET, 
+	CTRL, 
+	0x1e7)
 
-//DEFINST(PLONGJMP
+DEFINST(PLONGJMP, 
+	"%p PLONGJMP %t", 
+	CTRL_PLONGJMP, 
+	CTRL, 
+	0x167)
 
 //DEFINST(BPT
 
 DEFINST(EXIT, 
-	"EXIT", 
-	CTRL_NONE, 
+	"%p EXIT", 
+	CTRL_EXIT, 
 	CTRL, 
 	0x207)
 
@@ -421,19 +469,39 @@ DEFINST(EXIT,
  * NOP, S2R, B2R, LEPC, BAR, VOTE
  */
 
-//DEFINST(NOP
+DEFINST(NOP, 
+	"%p NOP%e CC, %i", 
+	MISC_NOP, 
+	MISC, 
+	0x104)
 
 DEFINST(S2R, 
-	"%p S2R%e %d, %b", 
-	MISC_OP2_SREG, 
+	"%p S2R %d, %b", 
+	MISC_S2R, 
 	MISC, 
 	0x0b4)
 
-//DEFINST(B2R
+DEFINST(B2R, 
+	"%p B2R%e %d, %i", 
+	MISC_B2R, 
+	MISC, 
+	0x0e4)
 
-//DEFINST(LEPC
+DEFINST(LEPC, 
+	"%p LEPC %d", 
+	MISC_LEPC, 
+	MISC, 
+	0x222)
 
-//DEFINST(BAR
+DEFINST(BAR, 
+	"%p BAR%e %d, %P, %a, %%, %Q", 
+	MISC_BAR, 
+	MISC, 
+	0x222)
 
-//DEFINST(VOTE
+DEFINST(VOTE, 
+	"%p VOTE%e %d, %P, %Q", 
+	MISC_VOTE, 
+	MISC, 
+	0x124)
 
