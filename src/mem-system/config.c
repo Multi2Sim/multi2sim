@@ -1542,6 +1542,12 @@ static void mem_config_calculate_mod_levels(void)
 }
 
 
+/* Version of memory system trace producer.
+ * See 'src/visual/memory/mem-system.c' for the trace consumer. */
+
+#define MEM_SYSTEM_TRACE_VERSION_MAJOR		1
+#define MEM_SYSTEM_TRACE_VERSION_MINOR		678
+
 static void mem_config_trace(void)
 {
 	int i;
@@ -1549,6 +1555,10 @@ static void mem_config_trace(void)
 	/* No need if not tracing */
 	if (!mem_tracing())
 		return;
+
+	/* Initialization */
+	mem_trace_header("mem.init version=\"%d.%d\"\n",
+		MEM_SYSTEM_TRACE_VERSION_MAJOR, MEM_SYSTEM_TRACE_VERSION_MINOR);
 
 	/* Networks */
 	LIST_FOR_EACH(mem_system->net_list, i)
