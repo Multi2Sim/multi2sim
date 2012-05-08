@@ -154,6 +154,12 @@ struct evg_gpu_t *evg_gpu;
  * Private Functions
  */
 
+/* Version of Evergreen trace producer.
+ * See 'src/visual/evergreen/gpu.c' for Evergreen trace consumer. */
+
+#define EVG_TRACE_VERSION_MAJOR		1
+#define EVG_TRACE_VERSION_MINOR		671
+
 
 static void evg_gpu_device_init()
 {
@@ -183,7 +189,8 @@ static void evg_gpu_device_init()
 	}
 
 	/* Trace */
-	evg_trace_header("evg.init num_compute_units=%d\n",
+	evg_trace_header("evg.init version=\"%d.%d\" num_compute_units=%d\n",
+		EVG_TRACE_VERSION_MAJOR, EVG_TRACE_VERSION_MINOR,
 		evg_gpu_num_compute_units);
 }
 
