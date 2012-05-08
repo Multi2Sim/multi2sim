@@ -27,9 +27,9 @@
 
 char *mmu_report_file_name = "";
 
-uint32_t mmu_page_size = 1 << 12;  /* 4KB default page size */
-uint32_t mmu_log_page_size;
-uint32_t mmu_page_mask;
+unsigned int mmu_page_size = 1 << 12;  /* 4KB default page size */
+unsigned int mmu_log_page_size;
+unsigned int mmu_page_mask;
 
 
 
@@ -47,9 +47,9 @@ struct mmu_page_t
 {
 	struct mmu_page_t *next;
 
-	int mid;  /* Memory map ID */
-	uint32_t vtl_addr;  /* Virtual address of page */
-	uint32_t phy_addr;  /* Physical address */
+	int address_space_index;  /* Memory map ID */
+	unsigned int vtl_addr;  /* Virtual address of page */
+	unsigned int phy_addr;  /* Physical address */
 
 	/* Statistics */
 	long long num_read_accesses;
@@ -79,20 +79,20 @@ static struct mmu_t *mmu;
  * Private Functions
  */
 
-static struct mmu_page_t *mmu_get_page(int mid, uint32_t vtladdr)
+static struct mmu_page_t *mmu_get_page(int address_space_index, unsigned int vtladdr)
 {
 	struct mmu_page_t *prev, *page;
-	uint32_t tag;
+	unsigned int tag;
 	int index;
 
 	/* Look for page */
-	index = ((vtladdr >> mmu_log_page_size) + mid * 23) % MMU_PAGE_HASH_SIZE;
+	index = ((vtladdr >> mmu_log_page_size) + address_space_index * 23) % MMU_PAGE_HASH_SIZE;
 	tag = vtladdr & ~mmu_page_mask;
 	prev = NULL;
 	page = mmu->page_hash_table[index];
 	while (page)
 	{
-		if (page->vtl_addr == tag && page->mid == mid)
+		if (page->vtl_addr == tag && page->address_space_index == address_space_index)
 			break;
 		prev = page;
 		page = page->next;
@@ -108,7 +108,7 @@ static struct mmu_page_t *mmu_get_page(int mid, uint32_t vtladdr)
 
 		/* Initialize */
 		page->vtl_addr = tag;
-		page->mid = mid;
+		page->address_space_index = address_space_index;
 		page->phy_addr = list_count(mmu->page_list) << mmu_log_page_size;
 
 		/* Insert in page list */
@@ -233,7 +233,7 @@ void mmu_dump_report(void)
 		num_accesses = page->num_read_accesses + page->num_write_accesses
 			+ page->num_execute_accesses;
 		fprintf(f, "%5d %5d %9x %9x %10lld %10lld %10lld %10lld\n",
-			i + 1, page->mid, page->vtl_addr, page->phy_addr, num_accesses,
+			i + 1, page->address_space_index, page->vtl_addr, page->phy_addr, num_accesses,
 			page->num_read_accesses, page->num_write_accesses,
 			page->num_execute_accesses);
 	}
@@ -241,22 +241,31 @@ void mmu_dump_report(void)
 }
 
 
-uint32_t mmu_translate(int mid, uint32_t vtl_addr)
+/* Obtain an identifier for a new virtual address space */
+int mmu_address_space_new(void)
+{
+	static int mmu_address_space_index;
+
+	return mmu_address_space_index++;
+}
+
+
+unsigned int mmu_translate(int address_space_index, unsigned int vtl_addr)
 {
 	struct mmu_page_t *page;
 
-	uint32_t offset;
-	uint32_t phy_addr;
+	unsigned int offset;
+	unsigned int phy_addr;
 
 	offset = vtl_addr & mmu_page_mask;
-	page = mmu_get_page(mid, vtl_addr);
+	page = mmu_get_page(address_space_index, vtl_addr);
 	assert(page);
 	phy_addr = page->phy_addr | offset;
 	return phy_addr;
 }
 
 
-int mmu_valid_phy_addr(uint32_t phy_addr)
+int mmu_valid_phy_addr(unsigned int phy_addr)
 {
 	int index;
 
@@ -265,7 +274,7 @@ int mmu_valid_phy_addr(uint32_t phy_addr)
 }
 
 
-void mmu_access_page(uint32_t phy_addr, enum mmu_access_t access)
+void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access)
 {
 	struct mmu_page_t *page;
 	int index;

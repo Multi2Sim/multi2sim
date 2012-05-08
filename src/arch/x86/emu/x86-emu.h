@@ -759,7 +759,7 @@ struct x86_ctx_t
 	/* Context properties */
 	int status;
 	int pid;  /* Context ID */
-	int mid;  /* Memory map ID */
+	int address_space_index;  /* Virtual memory address space index */
 
 	/* Parent context */
 	struct x86_ctx_t *parent;
@@ -913,9 +913,8 @@ void x86_ctx_ipc_report_handler(int event, void *data);
 
 struct x86_emu_t
 {
-	/* pid & mid assignment */
+	/* pid & address_space_index assignment */
 	int current_pid;
-	int current_mid;
 
 	/* Schedule next call to 'x86_emu_process_events()'.
 	 * The call will only be effective if 'process_events_force' is set.

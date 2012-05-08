@@ -111,7 +111,7 @@ struct x86_ctx_t *x86_ctx_create(void)
 	ctx->loader = x86_loader_create();
 
 	/* Memory */
-	ctx->mid = x86_emu->current_mid++;
+	ctx->address_space_index = mmu_address_space_new();
 	ctx->mem = mem_create();
 	ctx->spec_mem = spec_mem_create(ctx->mem);
 
@@ -136,7 +136,7 @@ struct x86_ctx_t *x86_ctx_clone(struct x86_ctx_t *ctx)
 	 * The memory structure must be only freed by the parent
 	 * when all its children have been killed.
 	 * The set of signal handlers is the same, too. */
-	new->mid = ctx->mid;
+	new->address_space_index = ctx->address_space_index;
 	new->mem = mem_link(ctx->mem);
 	new->spec_mem = spec_mem_create(new->mem);
 
@@ -170,7 +170,7 @@ struct x86_ctx_t *x86_ctx_fork(struct x86_ctx_t *ctx)
 	x86_regs_copy(new->regs, ctx->regs);
 
 	/* Memory */
-	new->mid = x86_emu->current_mid++;
+	new->address_space_index = mmu_address_space_new();
 	new->mem = mem_create();
 	new->spec_mem = spec_mem_create(new->mem);
 	mem_clone(new->mem, ctx->mem);
