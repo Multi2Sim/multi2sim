@@ -411,6 +411,19 @@ static void vi_mem_system_write_checkpoint(struct vi_mem_system_t *system, FILE 
 
 struct vi_mem_system_t *vi_mem_system;
 
+/* Version of the memory system trace consumer. The major version must match with the
+ * trace producer, while the minor version should be equal or higher. See
+ * 'glut.c' for the version number assignment, and code modification policies.
+ * See 'src/mem-system/config.c' for the trace producer version.
+ */
+
+#define VI_MEM_SYSTEM_TRACE_VERSION_MAJOR	1
+#define VI_MEM_SYSTEM_TRACE_VERSION_MINOR	678
+
+static char *err_vi_mem_system_trace_version =
+	"\tThe memory system trace file has been created with an incompatible version\n"
+	"\tof Multi2Sim. Please rerun the simulation with the same Multi2Sim\n"
+	"\tversion used to visualize the trace.\n";
 
 void vi_mem_system_init(void)
 {
@@ -474,7 +487,25 @@ void vi_mem_system_init(void)
 		command = vi_trace_line_get_command(trace_line);
 		assert(strcmp(command, "c"));
 
-		if (!strcmp(command, "mem.new_mod"))
+		if (!strcmp(command, "mem.init"))
+		{
+			char *version;
+
+			int version_major = 0;
+			int version_minor = 0;
+
+			/* Check version compatibility */
+			version = vi_trace_line_get_symbol(trace_line, "version");
+			if (version)
+				sscanf(version, "%d.%d", &version_major, &version_minor);
+			if (version_major != VI_MEM_SYSTEM_TRACE_VERSION_MAJOR ||
+				version_minor > VI_MEM_SYSTEM_TRACE_VERSION_MINOR)
+				fatal("incompatible memory system trace version.\n"
+					"\tTrace generation v. %d.%d / Trace consumer v. %d.%d\n%s",
+					version_major, version_minor, VI_MEM_SYSTEM_TRACE_VERSION_MAJOR,
+					VI_MEM_SYSTEM_TRACE_VERSION_MINOR, err_vi_mem_system_trace_version);
+		}
+		else if (!strcmp(command, "mem.new_mod"))
 		{
 			struct vi_mod_t *mod;
 			struct list_t *mod_level;
