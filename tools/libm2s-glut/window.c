@@ -25,15 +25,6 @@
 #include <misc.h>
 
 
-struct x86_glut_window_t
-{
-	int guest_id;
-	int host_id;
-
-	char *title;
-};
-
-
 static struct list_t *x86_glut_window_list;
 
 
