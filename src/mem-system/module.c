@@ -111,9 +111,9 @@ void mod_dump(struct mod_t *mod, FILE *f)
  * Variable 'witness', if specified, will be increased when the access completes.
  * The function returns a unique access ID.
  */
-long long mod_access(struct mod_t *mod, enum mod_entry_kind_t entry_kind,
-	enum mod_access_kind_t access_kind, uint32_t addr, int *witness_ptr,
-	struct linked_list_t *event_queue, void *event_queue_item)
+long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind, 
+	uint32_t addr, int *witness_ptr, struct linked_list_t *event_queue, 
+	void *event_queue_item)
 {
 	struct mod_stack_t *stack;
 	int event;
@@ -129,15 +129,18 @@ long long mod_access(struct mod_t *mod, enum mod_entry_kind_t entry_kind,
 	stack->event_queue_item = event_queue_item;
 
 	/* Select initial CPU/GPU event */
-	if (entry_kind == mod_entry_cpu)
+	if (access_kind == mod_access_read)
 	{
-		event = access_kind == mod_access_read ?
-			EV_MOD_LOAD : EV_MOD_STORE;
+		event = EV_MOD_LOAD;
 	}
-	else if (entry_kind == mod_entry_gpu)
+	else if (access_kind == mod_access_write)
 	{
-		event = access_kind == mod_access_read ?
-			EV_MOD_LOAD : EV_MOD_STORE;
+		event = EV_MOD_STORE;
+	}
+	else if (access_kind == mod_access_nc_write)
+	{
+		// TODO Change this to EV_MOD_NC_STORE after updating the protocol
+		event = EV_MOD_STORE;
 	}
 	else
 		panic("%s: invalid entry kind", __FUNCTION__);

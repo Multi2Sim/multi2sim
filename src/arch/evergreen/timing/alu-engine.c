@@ -233,8 +233,8 @@ static void evg_alu_engine_read(struct evg_compute_unit_t *compute_unit)
 			{
 				if (work_item_uop->local_mem_access_kind[i] != 1)  /* read access */
 					continue;
-				mod_access(compute_unit->local_memory, mod_entry_gpu,
-					mod_access_read, work_item_uop->local_mem_access_addr[i],
+				mod_access(compute_unit->local_memory, mod_access_read, 
+					work_item_uop->local_mem_access_addr[i],
 					&uop->local_mem_witness, NULL, NULL);
 				uop->local_mem_witness--;
 			}
@@ -323,8 +323,8 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 				{
 					if (work_item_uop->local_mem_access_kind[i] != mod_access_write)
 						continue;
-					mod_access(compute_unit->local_memory, mod_entry_gpu,
-						mod_access_write, work_item_uop->local_mem_access_addr[i],
+					mod_access(compute_unit->local_memory, mod_access_write,
+						work_item_uop->local_mem_access_addr[i],
 						NULL, NULL, NULL);
 				}
 			}

@@ -394,14 +394,6 @@ enum mod_range_kind_t
 	mod_range_interleaved
 };
 
-/* Type of entry memory system */
-enum mod_entry_kind_t
-{
-	mod_entry_invalid = 0,
-	mod_entry_cpu,
-	mod_entry_gpu
-};
-
 #define MOD_ACCESS_HASH_TABLE_SIZE  17
 
 /* Memory module */
@@ -543,9 +535,9 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 void mod_free(struct mod_t *mod);
 void mod_dump(struct mod_t *mod, FILE *f);
 
-long long mod_access(struct mod_t *mod, enum mod_entry_kind_t entry_kind,
-	enum mod_access_kind_t access_kind, uint32_t addr, int *witness_ptr,
-	struct linked_list_t *event_queue, void *event_queue_item);
+long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind, 
+	uint32_t addr, int *witness_ptr, struct linked_list_t *event_queue, 
+	void *event_queue_item);
 int mod_can_access(struct mod_t *mod, uint32_t addr);
 
 int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
