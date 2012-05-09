@@ -52,8 +52,21 @@ struct x86_glut_window_t
 	int host_id;
 
 	void (*display_func)(void);
-	void (*keyboard_func)(unsigned char key, int x, int y);
+	void (*overlay_display_func)(void);
 	void (*reshape_func)(int width, int height);
+	void (*keyboard_func)(unsigned char key, int x, int y);
+	void (*mouse_func)(int button, int state, int x, int y);
+	void (*motion_func)(int x, int y);
+	void (*passive_motion_func)(int x, int y);
+	void (*visibility_func)(int state);
+	void (*entry_func)(int state);
+	void (*special_func)(int key, int x, int y);
+	void (*spaceball_rotate_func)(int x, int y, int z);
+	void (*spaceball_button_func)(int button, int state);
+	void (*button_box_func)(int button, int state);
+	void (*dials_func)(int dial, int value);
+	void (*tablet_motion_func)(int x, int y);
+	void (*tablet_button_func)(int x, int y);
 
 	char *title;
 };
