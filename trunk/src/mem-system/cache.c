@@ -35,7 +35,7 @@ struct string_map_t cache_policy_map =
 struct string_map_t cache_block_state_map =
 {
 	6, {
-		{ "N", cache_block_non_coherent },
+		{ "N", cache_block_noncoherent },
 		{ "M", cache_block_modified },
 		{ "O", cache_block_owned },
 		{ "E", cache_block_exclusive },
