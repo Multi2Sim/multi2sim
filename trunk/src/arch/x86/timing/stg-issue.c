@@ -45,7 +45,7 @@ static int x86_cpu_issue_sq(int core, int thread, int quant)
 		x86_sq_remove(core, thread);
 
 		/* Issue store */
-		mod_access(X86_THREAD.data_mod, mod_entry_cpu, mod_access_write,
+		mod_access(X86_THREAD.data_mod, mod_access_write,
 			store->phy_addr, NULL, X86_CORE.event_queue, store);
 
 		/* The cache system will place the store at the head of the
@@ -105,7 +105,7 @@ static int x86_cpu_issue_lq(int core, int thread, int quant)
 		x86_lq_remove(core, thread);
 
 		/* Access memory system */
-		mod_access(X86_THREAD.data_mod, mod_entry_cpu, mod_access_read,
+		mod_access(X86_THREAD.data_mod, mod_access_read,
 			load->phy_addr, NULL, X86_CORE.event_queue, load);
 
 		/* The cache system will place the load at the head of the
