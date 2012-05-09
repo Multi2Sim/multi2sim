@@ -56,11 +56,13 @@ int x86_glut_initial_window_position_y = -1;
 int x86_glut_initial_window_width = 300;
 int x86_glut_initial_window_height = 300;
 
+struct x86_glut_window_t *x86_glut_current_window = NULL;
+
 
 
 /* Multi2Sim GLUT Runtime required */
 #define X86_GLUT_RUNTIME_VERSION_MAJOR	0
-#define X86_GLUT_RUNTIME_VERSION_MINOR	669
+#define X86_GLUT_RUNTIME_VERSION_MINOR	680
 
 struct x86_glut_version_t
 {
@@ -114,16 +116,200 @@ void glutInitWindowSize(int width, int height)
 }
 
 
+enum x86_glut_event_type_t
+{
+	x86_glut_event_invalid = 0,
+	x86_glut_event_display,
+	x86_glut_event_overlay_display,
+	x86_glut_event_reshape,
+	x86_glut_event_keyboard,
+	x86_glut_event_mouse,
+	x86_glut_event_motion,
+	x86_glut_event_passive_motion,
+	x86_glut_event_visibility,
+	x86_glut_event_entry,
+	x86_glut_event_special,
+	x86_glut_event_spaceball_motion,
+	x86_glut_event_spaceball_rotate,
+	x86_glut_event_spaceball_button,
+	x86_glut_event_button_box,
+	x86_glut_event_dials,
+	x86_glut_event_tablet_motion,
+	x86_glut_event_tablet_button,
+	x86_glut_event_menu_status,
+	x86_glut_event_idle,
+	x86_glut_event_timer
+};
+
+struct x86_glut_event_t
+{
+	enum x86_glut_event_type_t type;
+
+	union
+	{
+		struct
+		{
+			int win;
+		} display;
+
+		struct
+		{
+			int win;
+			int width;
+			int height;
+		} reshape;
+
+		struct
+		{
+			int win;
+		} overlay_display;
+
+		struct
+		{
+			int win;
+			unsigned char key;
+			int x;
+			int y;
+		} keyboard;
+
+		struct
+		{
+			int win;
+			int button;
+			int state;
+			int x;
+			int y;
+		} mouse;
+
+		struct
+		{
+			int win;
+			int x;
+			int y;
+		} motion;
+
+		struct
+		{
+			int win;
+			int state;
+		} visibility;
+
+		struct
+		{
+			int win;
+			int state;
+		} entry;
+
+		struct
+		{
+			int win;
+			int key;
+			int x;
+			int y;
+		} special;
+
+		struct
+		{
+			int win;
+			int x;
+			int y;
+			int z;
+		} spaceball_motion;
+
+		struct
+		{
+			int win;
+			int x;
+			int y;
+			int z;
+		} spaceball_rotate;
+
+		struct
+		{
+			int win;
+			int button;
+			int state;
+		} spaceball_button;
+
+		struct
+		{
+			int win;
+			int button;
+			int state;
+		} button_box;
+
+		struct
+		{
+			int win;
+			int dial;
+			int value;
+		} dials;
+
+		struct
+		{
+			int win;
+			int x;
+			int y;
+		} tablet_motion;
+
+		struct
+		{
+			int win;
+			int button;
+			int state;
+			int x;
+			int y;
+		} tablet_button;
+
+		struct
+		{
+			int status;
+			int x;
+			int y;
+		} menu_status;
+
+		struct
+		{
+			int value;
+		} timer;
+	} u;
+};
+
 void glutMainLoop(void)
 {
-	__X86_GLUT_NOT_IMPL__
+	struct x86_glut_event_t event;
+
+	for (;;)
+	{
+		/* Get a new event */
+		syscall(X86_GLUT_SYS_CODE, x86_glut_call_get_event, &event);
+
+		/* Process event */
+		switch (event.type)
+		{
+
+		case x86_glut_event_keyboard:
+			
+			printf("keyboard event\n");
+			break;
+
+		case x86_glut_event_idle:
+
+			break;
+
+		default:
+			fatal("GLUT event not supported.\n%s", err_x86_glut_not_impl);
+		}
+	}
 }
 
 
 int glutCreateWindow(const char *title)
 {
-	__X86_GLUT_NOT_IMPL__
-	return 0;
+	struct x86_glut_window_t *window;
+
+	window = x86_glut_window_create((char *) title);
+	return window->guest_id;
 }
 
 
@@ -355,19 +541,22 @@ void glutDetachMenu(int button)
 
 void glutDisplayFunc(void (*func)(void))
 {
-	__X86_GLUT_NOT_IMPL__
+	if (x86_glut_current_window)
+		x86_glut_current_window->display_func = func;
 }
 
 
 void glutReshapeFunc(void (*func)(int width, int height))
 {
-	__X86_GLUT_NOT_IMPL__
+	if (x86_glut_current_window)
+		x86_glut_current_window->reshape_func = func;
 }
 
 
 void glutKeyboardFunc(void (*func)(unsigned char key, int x, int y))
 {
-	__X86_GLUT_NOT_IMPL__
+	if (x86_glut_current_window)
+		x86_glut_current_window->keyboard_func = func;
 }
 
 
