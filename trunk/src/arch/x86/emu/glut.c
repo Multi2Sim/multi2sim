@@ -138,7 +138,7 @@ int x86_glut_call(void)
  */
 
 #define X86_GLUT_RUNTIME_VERSION_MAJOR	0
-#define X86_GLUT_RUNTIME_VERSION_MINOR	669
+#define X86_GLUT_RUNTIME_VERSION_MINOR	680
 
 struct x86_glut_version_t
 {
@@ -160,8 +160,205 @@ static int x86_glut_func_init(void)
 	assert(sizeof(struct x86_glut_version_t) == 8);
 	version.major = X86_GLUT_RUNTIME_VERSION_MAJOR;
 	version.minor = X86_GLUT_RUNTIME_VERSION_MINOR;
-	mem_write(x86_isa_mem, version_ptr, 8, &version);
+	mem_write(x86_isa_mem, version_ptr, sizeof version, &version);
 	x86_glut_debug("\tGLUT Runtime host implementation v. %d.%d\n", version.major, version.minor);
+
+	/* Return success */
+	return 0;
+}
+
+
+
+
+/*
+ * GLUT call #2 - get_event
+ *
+ * The function returns the next available GLUT event.
+ *
+ * @param struct x86_glut_event_t *event
+ *	Pointer to a GLUT event structure where the next available event is
+ *	written. If there is no new event, an event of type
+ *	'x86_glut_event_idle' is returned.
+ *
+ * @return
+ *	The return value is always 0.
+ */
+
+enum x86_glut_event_type_t
+{
+	x86_glut_event_invalid = 0,
+	x86_glut_event_display,
+	x86_glut_event_overlay_display,
+	x86_glut_event_reshape,
+	x86_glut_event_keyboard,
+	x86_glut_event_mouse,
+	x86_glut_event_motion,
+	x86_glut_event_passive_motion,
+	x86_glut_event_visibility,
+	x86_glut_event_entry,
+	x86_glut_event_special,
+	x86_glut_event_spaceball_motion,
+	x86_glut_event_spaceball_rotate,
+	x86_glut_event_spaceball_button,
+	x86_glut_event_button_box,
+	x86_glut_event_dials,
+	x86_glut_event_tablet_motion,
+	x86_glut_event_tablet_button,
+	x86_glut_event_menu_status,
+	x86_glut_event_idle,
+	x86_glut_event_timer
+};
+
+struct x86_glut_event_t
+{
+	enum x86_glut_event_type_t type;
+
+	union
+	{
+		struct
+		{
+			int win;
+		} display;
+
+		struct
+		{
+			int win;
+			int width;
+			int height;
+		} reshape;
+
+		struct
+		{
+			int win;
+		} overlay_display;
+
+		struct
+		{
+			int win;
+			unsigned char key;
+			int x;
+			int y;
+		} keyboard;
+
+		struct
+		{
+			int win;
+			int button;
+			int state;
+			int x;
+			int y;
+		} mouse;
+
+		struct
+		{
+			int win;
+			int x;
+			int y;
+		} motion;
+
+		struct
+		{
+			int win;
+			int state;
+		} visibility;
+
+		struct
+		{
+			int win;
+			int state;
+		} entry;
+
+		struct
+		{
+			int win;
+			int key;
+			int x;
+			int y;
+		} special;
+
+		struct
+		{
+			int win;
+			int x;
+			int y;
+			int z;
+		} spaceball_motion;
+
+		struct
+		{
+			int win;
+			int x;
+			int y;
+			int z;
+		} spaceball_rotate;
+
+		struct
+		{
+			int win;
+			int button;
+			int state;
+		} spaceball_button;
+
+		struct
+		{
+			int win;
+			int button;
+			int state;
+		} button_box;
+
+		struct
+		{
+			int win;
+			int dial;
+			int value;
+		} dials;
+
+		struct
+		{
+			int win;
+			int x;
+			int y;
+		} tablet_motion;
+
+		struct
+		{
+			int win;
+			int button;
+			int state;
+			int x;
+			int y;
+		} tablet_button;
+
+		struct
+		{
+			int status;
+			int x;
+			int y;
+		} menu_status;
+
+		struct
+		{
+			int value;
+		} timer;
+	} u;
+};
+
+static int x86_glut_func_get_event(void)
+{
+	struct x86_glut_event_t event;
+
+	unsigned int event_ptr;
+
+	/* Read arguments */
+	event_ptr = x86_isa_regs->ecx;
+	x86_glut_debug("\tevent_ptr=0x%x\n", event_ptr);
+
+	/* Reset structure */
+	memset(&event, 0, sizeof event);
+
+	/* Return 'idle' event */
+	event.type = x86_glut_event_idle;
+	mem_write(x86_isa_mem, event_ptr, sizeof event, &event);
 
 	/* Return success */
 	return 0;

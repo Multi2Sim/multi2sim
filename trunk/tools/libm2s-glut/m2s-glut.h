@@ -46,7 +46,19 @@ enum x86_glut_call_t
  * GLUT Window
  */
 
-struct x86_glut_window_t;
+struct x86_glut_window_t
+{
+	int guest_id;
+	int host_id;
+
+	void (*display_func)(void);
+	void (*keyboard_func)(unsigned char key, int x, int y);
+	void (*reshape_func)(int width, int height);
+
+	char *title;
+};
+
+
 
 void x86_glut_window_init(void);
 void x86_glut_window_done(void);
