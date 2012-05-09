@@ -103,6 +103,11 @@ void x86_emu_init(void)
 	/* Initialize GPU */
 	evg_emu_init();
 
+#ifdef HAVE_GLUT_H
+	/* GLUT */
+	x86_glut_init();
+#endif
+
 	/* Record start time */
 	x86_emu_init_time = x86_emu_timer();
 }
@@ -112,6 +117,10 @@ void x86_emu_init(void)
 void x86_emu_done(void)
 {
 	struct x86_ctx_t *ctx;
+
+#ifdef HAVE_GLUT_H
+	x86_glut_done();
+#endif
 
 	/* Finish all contexts */
 	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next)

@@ -278,7 +278,12 @@ struct x86_glut_event_t
 void glutMainLoop(void)
 {
 	struct x86_glut_event_t event;
+	struct x86_glut_window_t *window;
 
+	/* Activate GLUT host loop */
+	syscall(X86_GLUT_SYS_CODE, x86_glut_call_main_loop);
+
+	/* GLUT guest loop */
 	for (;;)
 	{
 		/* Get a new event */
@@ -288,27 +293,117 @@ void glutMainLoop(void)
 		switch (event.type)
 		{
 
-		case x86_glut_event_keyboard:
-			
-			printf("keyboard event\n");
+		case x86_glut_event_display:
+		{
+			window = x86_glut_window_get_by_host_id(event.u.display.win);
+			if (!window)
+				panic("libm2s-glut: display event: invalid window");
+			if (window->display_func)
+				window->display_func();
 			break;
+		}
+
+		case x86_glut_event_reshape:
+		{
+			window = x86_glut_window_get_by_host_id(event.u.reshape.win);
+			if (!window)
+				panic("libm2s-glut: reshape event: invalid window");
+			if (window->reshape_func)
+				window->reshape_func(event.u.reshape.width,
+					event.u.reshape.height);
+			break;
+		}
+
+		case x86_glut_event_keyboard:
+		{
+			window = x86_glut_window_get_by_host_id(event.u.keyboard.win);
+			if (!window)
+				panic("libm2s-glut: keyboard event: invalid window");
+			if (window->keyboard_func)
+				window->keyboard_func(event.u.keyboard.key,
+					event.u.keyboard.x, event.u.keyboard.y);
+			break;
+		}
+
+		case x86_glut_event_motion:
+		{
+			window = x86_glut_window_get_by_host_id(event.u.motion.win);
+			if (!window)
+				panic("libm2s-glut: motion event: invalid window");
+			if (window->motion_func)
+				window->motion_func(event.u.motion.x, event.u.motion.y);
+			break;
+		}
+
+		case x86_glut_event_passive_motion:
+		{
+			window = x86_glut_window_get_by_host_id(event.u.motion.win);
+			if (!window)
+				panic("libm2s-glut: passive motion event: invalid window");
+			if (window->passive_motion_func)
+				window->passive_motion_func(event.u.motion.x, event.u.motion.y);
+			break;
+		}
+
+		case x86_glut_event_visibility:
+		{
+			window = x86_glut_window_get_by_host_id(event.u.visibility.win);
+			if (!window)
+				panic("libm2s-glut: visibility event: invalid window");
+			if (window->visibility_func)
+				window->visibility_func(event.u.visibility.state);
+			break;
+		}
+
+		case x86_glut_event_entry:
+		{
+			window = x86_glut_window_get_by_host_id(event.u.entry.win);
+			if (!window)
+				panic("libm2s-glut: entry event: invalid window");
+			if (window->entry_func)
+				window->entry_func(event.u.entry.state);
+			break;
+		}
 
 		case x86_glut_event_idle:
 
 			break;
 
 		default:
-			fatal("GLUT event not supported.\n%s", err_x86_glut_not_impl);
+			fatal("GLUT event not supported (type=%d).\n%s",
+				event.type, err_x86_glut_not_impl);
 		}
 	}
 }
 
 
+struct x86_glut_window_properties_t
+{
+	int x;
+	int y;
+	int width;
+	int height;
+};
+
+
 int glutCreateWindow(const char *title)
 {
 	struct x86_glut_window_t *window;
+	struct x86_glut_window_properties_t properties;
 
+	/* Create window */
 	window = x86_glut_window_create((char *) title);
+	x86_glut_current_window = window;
+
+	/* Create host window */
+	properties.x = x86_glut_initial_window_position_x;
+	properties.y = x86_glut_initial_window_position_y;
+	properties.width = x86_glut_initial_window_width;
+	properties.height = x86_glut_initial_window_height;
+	window->host_id = syscall(X86_GLUT_SYS_CODE, x86_glut_call_new_window,
+		(char *) title, &properties);
+
+	/* Return guest ID */
 	return window->guest_id;
 }
 
