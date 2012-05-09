@@ -192,7 +192,7 @@ enum cache_policy_t
 enum cache_block_state_t
 {
 	cache_block_invalid = 0,
-	cache_block_non_coherent,
+	cache_block_noncoherent,
 	cache_block_modified,
 	cache_block_owned,
 	cache_block_exclusive,
@@ -623,6 +623,12 @@ extern int EV_MOD_STORE_ACTION;
 extern int EV_MOD_STORE_UNLOCK;
 extern int EV_MOD_STORE_FINISH;
 
+extern int EV_MOD_NC_STORE;
+extern int EV_MOD_NC_STORE_LOCK;
+extern int EV_MOD_NC_STORE_ACTION;
+extern int EV_MOD_NC_STORE_UNLOCK;
+extern int EV_MOD_NC_STORE_FINISH;
+
 extern int EV_MOD_FIND_AND_LOCK;
 extern int EV_MOD_FIND_AND_LOCK_PORT;
 extern int EV_MOD_FIND_AND_LOCK_ACTION;
@@ -650,6 +656,17 @@ extern int EV_MOD_WRITE_REQUEST_DOWNUP;
 extern int EV_MOD_WRITE_REQUEST_DOWNUP_FINISH;
 extern int EV_MOD_WRITE_REQUEST_REPLY;
 extern int EV_MOD_WRITE_REQUEST_FINISH;
+
+extern int EV_MOD_NC_WRITE_REQUEST;
+extern int EV_MOD_NC_WRITE_REQUEST_RECEIVE;
+extern int EV_MOD_NC_WRITE_REQUEST_ACTION;
+extern int EV_MOD_NC_WRITE_REQUEST_EXCLUSIVE;
+extern int EV_MOD_NC_WRITE_REQUEST_UPDOWN;
+extern int EV_MOD_NC_WRITE_REQUEST_UPDOWN_FINISH;
+extern int EV_MOD_NC_WRITE_REQUEST_DOWNUP;
+extern int EV_MOD_NC_WRITE_REQUEST_DOWNUP_FINISH;
+extern int EV_MOD_NC_WRITE_REQUEST_REPLY;
+extern int EV_MOD_NC_WRITE_REQUEST_FINISH;
 
 extern int EV_MOD_READ_REQUEST;
 extern int EV_MOD_READ_REQUEST_RECEIVE;
@@ -809,8 +826,10 @@ void mod_handler_gpu_write(int event, void *data);
 void mod_handler_find_and_lock(int event, void *data);
 void mod_handler_load(int event, void *data);
 void mod_handler_store(int event, void *data);
+void mod_handler_nc_store(int event, void *data);
 void mod_handler_evict(int event, void *data);
 void mod_handler_write_request(int event, void *data);
+void mod_handler_nc_write_request(int event, void *data);
 void mod_handler_read_request(int event, void *data);
 void mod_handler_invalidate(int event, void *data);
 void mod_handler_peer(int event, void *data);

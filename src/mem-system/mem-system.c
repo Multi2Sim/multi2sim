@@ -90,6 +90,12 @@ void mem_system_init(void)
 	EV_MOD_STORE_ACTION = esim_register_event(mod_handler_store);
 	EV_MOD_STORE_UNLOCK = esim_register_event(mod_handler_store);
 	EV_MOD_STORE_FINISH = esim_register_event(mod_handler_store);
+	
+	EV_MOD_NC_STORE = esim_register_event(mod_handler_nc_store);
+	EV_MOD_NC_STORE_LOCK = esim_register_event(mod_handler_nc_store);
+	EV_MOD_NC_STORE_ACTION = esim_register_event(mod_handler_nc_store);
+	EV_MOD_NC_STORE_UNLOCK = esim_register_event(mod_handler_nc_store);
+	EV_MOD_NC_STORE_FINISH = esim_register_event(mod_handler_nc_store);
 
 	EV_MOD_FIND_AND_LOCK = esim_register_event(mod_handler_find_and_lock);
 	EV_MOD_FIND_AND_LOCK_PORT = esim_register_event(mod_handler_find_and_lock);
@@ -118,6 +124,17 @@ void mem_system_init(void)
 	EV_MOD_WRITE_REQUEST_DOWNUP_FINISH = esim_register_event(mod_handler_write_request);
 	EV_MOD_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_write_request);
 	EV_MOD_WRITE_REQUEST_FINISH = esim_register_event(mod_handler_write_request);
+
+	EV_MOD_NC_WRITE_REQUEST = esim_register_event(mod_handler_nc_write_request);
+	EV_MOD_NC_WRITE_REQUEST_RECEIVE = esim_register_event(mod_handler_nc_write_request);
+	EV_MOD_NC_WRITE_REQUEST_ACTION = esim_register_event(mod_handler_nc_write_request);
+	EV_MOD_NC_WRITE_REQUEST_EXCLUSIVE = esim_register_event(mod_handler_nc_write_request);
+	EV_MOD_NC_WRITE_REQUEST_UPDOWN = esim_register_event(mod_handler_nc_write_request);
+	EV_MOD_NC_WRITE_REQUEST_UPDOWN_FINISH = esim_register_event(mod_handler_nc_write_request);
+	EV_MOD_NC_WRITE_REQUEST_DOWNUP = esim_register_event(mod_handler_nc_write_request);
+	EV_MOD_NC_WRITE_REQUEST_DOWNUP_FINISH = esim_register_event(mod_handler_nc_write_request);
+	EV_MOD_NC_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_nc_write_request);
+	EV_MOD_NC_WRITE_REQUEST_FINISH = esim_register_event(mod_handler_nc_write_request);
 
 	EV_MOD_READ_REQUEST = esim_register_event(mod_handler_read_request);
 	EV_MOD_READ_REQUEST_RECEIVE = esim_register_event(mod_handler_read_request);
