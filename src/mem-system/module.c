@@ -137,7 +137,7 @@ long long mod_access(struct mod_t *mod, enum mod_entry_kind_t entry_kind,
 	else if (entry_kind == mod_entry_gpu)
 	{
 		event = access_kind == mod_access_read ?
-			EV_MOD_GPU_LOAD : EV_MOD_GPU_STORE;
+			EV_MOD_LOAD : EV_MOD_NC_STORE;
 	}
 	else
 		panic("%s: invalid entry kind", __FUNCTION__);
