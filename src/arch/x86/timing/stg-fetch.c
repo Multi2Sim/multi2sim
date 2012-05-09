@@ -267,7 +267,7 @@ static void x86_cpu_fetch_thread(int core, int thread)
 		phy_addr = mmu_translate(X86_THREAD.ctx->address_space_index, X86_THREAD.fetch_neip);
 		X86_THREAD.fetch_block = block;
 		X86_THREAD.fetch_address = phy_addr;
-		X86_THREAD.fetch_access = mod_access(X86_THREAD.inst_mod, mod_entry_cpu,
+		X86_THREAD.fetch_access = mod_access(X86_THREAD.inst_mod, 
 			mod_access_read, phy_addr, NULL, NULL, NULL);
 		X86_THREAD.btb_reads++;
 

@@ -272,6 +272,11 @@ void mod_handler_load(int event, void *data)
 		mem_trace("mem.end_access name=\"A-%lld\"\n",
 			stack->id);
 
+		/* Increment witness variable */
+                if (stack->witness_ptr) {
+                        (*stack->witness_ptr)++;
+		}
+
 		/* Return event queue element into event queue */
 		if (stack->event_queue && stack->event_queue_item)
 			linked_list_add(stack->event_queue, stack->event_queue_item);
@@ -315,6 +320,11 @@ void mod_handler_store(int event, void *data)
 		{
 			mod_coalesce(mod, master_stack, stack);
 			mod_stack_wait_in_stack(stack, master_stack, EV_MOD_STORE_FINISH);
+
+			/* Increment witness variable */
+			if (stack->witness_ptr)
+				(*stack->witness_ptr)++;
+
 			return;
 		}
 
@@ -349,7 +359,13 @@ void mod_handler_store(int event, void *data)
 		new_stack->blocking = 1;
 		new_stack->read = 0;
 		new_stack->retry = stack->retry;
+		new_stack->witness_ptr = stack->witness_ptr;
 		esim_schedule_event(EV_MOD_FIND_AND_LOCK, new_stack, 0);
+
+		/* Set witness variable to NULL so that retries from the same
+		 * stack do not increment it multiple times */
+		stack->witness_ptr = NULL;
+
 		return;
 	}
 
@@ -473,6 +489,11 @@ void mod_handler_nc_store(int event, void *data)
 		{
 			mod_coalesce(mod, master_stack, stack);
 			mod_stack_wait_in_stack(stack, master_stack, EV_MOD_NC_STORE_FINISH);
+
+			/* Increment witness variable */
+			if (stack->witness_ptr)
+				(*stack->witness_ptr)++;
+
 			return;
 		}
 
@@ -701,6 +722,11 @@ void mod_handler_find_and_lock(int event, void *data)
 		{
 			mod->writes++;
 			stack->blocking ? mod->blocking_writes++ : mod->non_blocking_writes++;
+
+			/* Increment witness variable when port is locked */
+			if (stack->witness_ptr)
+				(*stack->witness_ptr)++;
+
 			if (stack->hit)
 				mod->write_hits++;
 		}
@@ -1849,10 +1875,17 @@ void mod_handler_write_request(int event, void *data)
 		}
 
 		/* Set states O/E/S/I->E */
-		if (target_mod->cache && stack->state != cache_block_modified)
+		if (target_mod->cache && 
+			(stack->state == cache_block_owned || 
+			 stack->state == cache_block_exclusive ||
+			 stack->state == cache_block_shared ||
+			 stack->state == cache_block_invalid))
+		{
 			cache_set_block(target_mod->cache, stack->set, stack->way,
 				stack->tag, cache_block_exclusive);
-		else { /* Set state: M/N->M */
+		}
+		else /* Set state: M/N->M */
+		{ 
 			cache_set_block(target_mod->cache, stack->set, stack->way,
 				stack->tag, cache_block_modified);
 		}
