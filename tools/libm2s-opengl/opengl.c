@@ -71,7 +71,18 @@ void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
 
 void glClear( GLbitfield mask )
 {
-	__X86_OPENGL_NOT_IMPL__
+	if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) {
+    	// Clear color buffer.
+  	}
+	if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) {
+	// Clear depth buffer.
+	}
+	if ((mask & GL_ACCUM_BUFFER_BIT) == GL_ACCUM_BUFFER_BIT) {
+	// Clear accumulation buffer.
+	}
+	if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT) {
+	// Clear stencil buffer.
+	}
 }
 
 
@@ -191,19 +202,19 @@ void glGetClipPlane( GLenum plane, GLdouble *equation )
 
 void glDrawBuffer( GLenum mode )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glDrawBuffer\n");
 }
 
 
 void glReadBuffer( GLenum mode )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glReadBuffer\n");
 }
 
 
 void glEnable( GLenum cap )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glEnable\n");
 }
 
 
@@ -309,7 +320,7 @@ void glFinish( void )
 
 void glFlush( void )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glFlush\n");
 }
 
 
@@ -357,7 +368,7 @@ void glAccum( GLenum op, GLfloat value )
 
 void glMatrixMode( GLenum mode )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glMatrixMode\n");
 }
 
 
@@ -365,7 +376,7 @@ void glOrtho( GLdouble left, GLdouble right,
                                  GLdouble bottom, GLdouble top,
                                  GLdouble near_val, GLdouble far_val )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glOrtho\n");
 }
 
 
@@ -380,7 +391,7 @@ void glFrustum( GLdouble left, GLdouble right,
 void glViewport( GLint x, GLint y,
                                     GLsizei width, GLsizei height )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glViewport\n");
 }
 
 
@@ -398,7 +409,7 @@ void glPopMatrix( void )
 
 void glLoadIdentity( void )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glLoadIdentity\n");
 }
 
 
@@ -517,13 +528,13 @@ void glListBase( GLuint base )
 
 void glBegin( GLenum mode )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glBegin\n");
 }
 
 
 void glEnd( void )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glEnd\n");
 }
 
 
@@ -535,7 +546,7 @@ void glVertex2d( GLdouble x, GLdouble y )
 
 void glVertex2f( GLfloat x, GLfloat y )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glVertex2f\n");
 }
 
 
@@ -559,7 +570,7 @@ void glVertex3d( GLdouble x, GLdouble y, GLdouble z )
 
 void glVertex3f( GLfloat x, GLfloat y, GLfloat z )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glVertex3f\n");
 }
 
 
@@ -805,7 +816,7 @@ void glColor3d( GLdouble red, GLdouble green, GLdouble blue )
 
 void glColor3f( GLfloat red, GLfloat green, GLfloat blue )
 {
-	__X86_OPENGL_NOT_IMPL__
+	printf("glColor3f\n");
 }
 
 
