@@ -725,7 +725,10 @@ void mod_handler_find_and_lock(int event, void *data)
 
 			/* Increment witness variable when port is locked */
 			if (stack->witness_ptr)
+			{
 				(*stack->witness_ptr)++;
+				stack->witness_ptr = NULL;
+			}
 
 			if (stack->hit)
 				mod->write_hits++;
