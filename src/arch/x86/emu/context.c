@@ -513,9 +513,12 @@ void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status)
 		x86_ctx_host_thread_suspend_cancel(aux);
 		x86_ctx_host_thread_timer_cancel(aux);
 
-		/* If context has a parent, set its status to zombie, and let the
-		 * parent 'waitpid' it. */
-		x86_ctx_set_status(aux, aux->parent ? x86_ctx_zombie : x86_ctx_finished);
+		/* Child context of 'ctx' goes to state 'finished'.
+		 * Context 'ctx' goes to state 'zombie' or 'finished' if it has a parent */
+		if (aux == ctx)
+			x86_ctx_set_status(aux, aux->parent ? x86_ctx_zombie : x86_ctx_finished);
+		else
+			x86_ctx_set_status(aux, x86_ctx_finished);
 		aux->exit_code = status;
 	}
 
