@@ -62,7 +62,7 @@ struct x86_glut_window_t *x86_glut_current_window = NULL;
 
 /* Multi2Sim GLUT Runtime required */
 #define X86_GLUT_RUNTIME_VERSION_MAJOR	0
-#define X86_GLUT_RUNTIME_VERSION_MINOR	680
+#define X86_GLUT_RUNTIME_VERSION_MINOR	690
 
 struct x86_glut_version_t
 {
