@@ -51,26 +51,6 @@ fi
 AM_CONDITIONAL(HAVE_GLUT_H, test x$have_glut == xyes)
 
 
-#
-# Check for OpenGL
-#
-
-have_opengl=yes
-AC_CHECK_HEADER([GL/gl.h], [AC_DEFINE([HAVE_OPENGL_H])], [have_opengl=no])
-AC_CHECK_LIB([pthread], [pthread_create], [], [have_opengl=no])
-if test x$have_opengl == xno; then
-AC_MSG_WARN([
-	
-	The 'opengl' library development package is missing in your system.
-	Please install the package and then retry. On Debian-based Linux
-	distributions, you can run the following command:
-
-		sudo apt-get install mesa-common-dev
-])
-fi
-AM_CONDITIONAL(HAVE_OPENGL_H, test x$have_opengl == xyes)
-
-
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_INT16_T
 AC_TYPE_INT32_T
