@@ -312,6 +312,115 @@ struct x86_glut_event_t *x86_glut_event_dequeue(void)
 
 
 /*
+ * GLUT frame buffer
+ */
+
+struct x86_glut_frame_buffer_t
+{
+	int *buffer;
+
+	int width;
+	int height;
+};
+
+
+static struct x86_glut_frame_buffer_t *x86_glut_frame_buffer;
+
+
+void x86_glut_frame_buffer_init(void)
+{
+	/* Allocate */
+	x86_glut_frame_buffer = calloc(1, sizeof(struct x86_glut_frame_buffer_t));
+	if (!x86_glut_frame_buffer)
+		fatal("%s: out of memory", __FUNCTION__);
+}
+
+
+void x86_glut_frame_buffer_done(void)
+{
+	if (x86_glut_frame_buffer->buffer)
+		free(x86_glut_frame_buffer->buffer);
+	free(x86_glut_frame_buffer);
+}
+
+
+void x86_glut_frame_buffer_clear(void)
+{
+	if (x86_glut_frame_buffer->buffer)
+		memset(x86_glut_frame_buffer->buffer, 0, x86_glut_frame_buffer->width *
+			x86_glut_frame_buffer->height * sizeof(int));
+}
+
+
+void x86_glut_frame_buffer_resize(int width, int height)
+{
+	/* If same size, just clear it. */
+	if (x86_glut_frame_buffer->width == width && x86_glut_frame_buffer->height == height)
+	{
+		x86_glut_frame_buffer_clear();
+		return;
+	}
+
+	/* Free previous buffer */
+	if (x86_glut_frame_buffer->buffer)
+		free(x86_glut_frame_buffer->buffer);
+
+	/* Allocate new buffer */
+	x86_glut_frame_buffer->buffer = calloc(width * height, sizeof(int));
+	if (!x86_glut_frame_buffer->buffer)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Store new size */
+	x86_glut_frame_buffer->width = width;
+	x86_glut_frame_buffer->height = height;
+}
+
+
+void x86_glut_frame_buffer_pixel(int x, int y, int color)
+{
+	/* Invalid color */
+	if ((unsigned int) color > 0xffffff)
+	{
+		warning("%s: invalid pixel color", __FUNCTION__);
+		return;
+	}
+
+	/* Invalid X coordinate */
+	if (!IN_RANGE(x, 0, x86_glut_frame_buffer->width - 1))
+	{
+		warning("%s: invalid X coordinate", __FUNCTION__);
+		return;
+	}
+
+	/* Invalid Y coordinate */
+	if (!IN_RANGE(y, 0, x86_glut_frame_buffer->height - 1))
+	{
+		warning("%s: invalid Y coordinate", __FUNCTION__);
+		return;
+	}
+
+	/* Set pixel */
+	x86_glut_frame_buffer->buffer[y * x86_glut_frame_buffer->width + x] = color;
+}
+
+
+void x86_glut_frame_buffer_get_size(int *width, int *height)
+{
+	if (width)
+		*width = x86_glut_frame_buffer->width;
+	if (height)
+		*height = x86_glut_frame_buffer->height;
+}
+
+
+void x86_glut_frame_buffer_refresh(void)
+{
+}
+
+
+
+
+/*
  * GLUT host callback functions
  */
 
@@ -578,6 +687,9 @@ void x86_glut_init(void)
 	/* Initialize GLUT global mutex */
 	pthread_mutex_init(&x86_glut_mutex, NULL);
 
+	/* Frame buffer */
+	x86_glut_frame_buffer_init();
+
 	/* List of events */
 	x86_glut_event_list = linked_list_create();
 
@@ -603,6 +715,9 @@ void x86_glut_done(void)
 		x86_glut_event_free(event);
 	}
 	linked_list_free(x86_glut_event_list);
+
+	/* Free frame buffer */
+	x86_glut_frame_buffer_done();
 }
 
 
