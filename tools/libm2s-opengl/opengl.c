@@ -207,21 +207,21 @@ void glGetClipPlane( GLenum plane, GLdouble *equation )
 void glDrawBuffer( GLenum mode )
 {
 	printf("glDrawBuffer\n");
-	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glDrawBuffer, & mode);
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glDrawBuffer, &mode);
 }
 
 
 void glReadBuffer( GLenum mode )
 {
 	printf("glReadBuffer\n");
-	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glReadBuffer, & mode);
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glReadBuffer, &mode);
 }
 
 
 void glEnable( GLenum cap )
 {
 	printf("glEnable\n");
-	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glEnable, & cap);
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glEnable, &cap);
 }
 
 

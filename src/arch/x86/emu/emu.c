@@ -108,6 +108,9 @@ void x86_emu_init(void)
 	x86_glut_init();
 #endif
 
+	/*OPENGL*/
+	x86_opengl_init();
+
 	/* Record start time */
 	x86_emu_init_time = x86_emu_timer();
 }
@@ -121,6 +124,9 @@ void x86_emu_done(void)
 #ifdef HAVE_GLUT_H
 	x86_glut_done();
 #endif
+
+	/* Finalize Opengl */
+	x86_opengl_done();
 
 	/* Finish all contexts */
 	for (ctx = x86_emu->context_list_head; ctx; ctx = ctx->context_list_next)

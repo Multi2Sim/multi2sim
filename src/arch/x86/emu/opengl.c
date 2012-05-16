@@ -76,92 +76,6 @@ static x86_opengl_func_t x86_opengl_func_table[x86_opengl_call_count + 1] =
  * OpenGL Global variables
  */
 
-
-void x86_opengl_init(void)
-{
-
-}
-
-
-void x86_opengl_done(void)
-{
-
-}
-
-
-int x86_opengl_call(void)
-{
-	int code;
-	int ret;
-
-	/* Function code */
-	code = x86_isa_regs->ebx;
-	if (code <= x86_opengl_call_invalid || code >= x86_opengl_call_count)
-		fatal("%s: invalid OpenGL function (code %d).\n%s",
-			__FUNCTION__, code, err_x86_opengl_code);
-
-	/* Debug */
-	x86_opengl_debug("OpenGL runtime call '%s' (code %d)\n",
-		x86_opengl_call_name[code], code);
-
-	/* Call OPENGL function */
-	assert(x86_opengl_func_table[code]);
-	ret = x86_opengl_func_table[code]();
-
-	/* Return value */
-	return ret;
-}
-
-/*
- * OpenGL call #1 - glDrawBuffer
- *
- * glDrawBuffer - specify which color buffers are to be drawn into
- *
- * @return
- *	The function always returns 0
- */
-
-static int x86_opengl_func_glDrawBuffer(void)
-{
-	unsigned int mode_ptr;
-
-	/* Read arguments */
-	mode_ptr = x86_isa_regs->ecx;
-	x86_opengl_debug("\tmode_ptr=0x%x\n", mode_ptr);
-
-	GLenum mode;
-
-	mem_read(x86_isa_mem, mode_ptr, sizeof(GLenum),&mode);
-
-	/* Return success */
-	return 0;
-}
-
-
-/*
- * OpenGL call #2 - glReadBuffer
- *
- * glReadBuffer - select a color buffer source for pixels
- *
- * @return
- *	The function always returns 0
- */
-
-static int x86_opengl_func_glReadBuffer(void)
-{
-
-	/* Return success */
-	return 0;
-}
-/*
- * OpenGL call #3 - glEnable
- *
- * glEnable - enable server-side GL capabilities
- *
- * @return
- *	The function always returns 0
- */
-
  struct x86_opengl_server_capability
 {
 	GLboolean is_alpha_test;
@@ -259,11 +173,100 @@ static struct x86_opengl_server_capability *x86_opengl_server_capability = NULL;
 	x86_opengl_server_capability->is_multisample = GL_TRUE;
  }
 
-/* FIXME: when to release?  */
 void x86_opengl_server_capability_done(void)
 {
 	free(x86_opengl_server_capability);
 }
+
+
+void x86_opengl_init(void)
+{
+	/* If the server capability not available, set it up */
+	if (x86_opengl_server_capability == NULL)
+	{
+		x86_opengl_server_capability_init();
+	}
+}
+
+
+void x86_opengl_done(void)
+{
+	x86_opengl_server_capability_done();
+}
+
+
+int x86_opengl_call(void)
+{
+	int code;
+	int ret;
+
+	/* Function code */
+	code = x86_isa_regs->ebx;
+	if (code <= x86_opengl_call_invalid || code >= x86_opengl_call_count)
+		fatal("%s: invalid OpenGL function (code %d).\n%s",
+			__FUNCTION__, code, err_x86_opengl_code);
+
+	/* Debug */
+	x86_opengl_debug("OpenGL runtime call '%s' (code %d)\n",
+		x86_opengl_call_name[code], code);
+
+	/* Call OPENGL function */
+	assert(x86_opengl_func_table[code]);
+	ret = x86_opengl_func_table[code]();
+
+	/* Return value */
+	return ret;
+}
+
+/*
+ * OpenGL call #1 - glDrawBuffer
+ *
+ * glDrawBuffer - specify which color buffers are to be drawn into
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glDrawBuffer(void)
+{
+	unsigned int mode_ptr;
+
+	/* Read arguments */
+	mode_ptr = x86_isa_regs->ecx;
+	x86_opengl_debug("\tmode_ptr=0x%x\n", mode_ptr);
+
+	GLenum mode;
+
+	mem_read(x86_isa_mem, mode_ptr, sizeof(GLenum),&mode);
+
+	/* Return success */
+	return 0;
+}
+
+
+/*
+ * OpenGL call #2 - glReadBuffer
+ *
+ * glReadBuffer - select a color buffer source for pixels
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glReadBuffer(void)
+{
+
+	/* Return success */
+	return 0;
+}
+/*
+ * OpenGL call #3 - glEnable
+ *
+ * glEnable - enable server-side GL capabilities
+ *
+ * @return
+ *	The function always returns 0
+ */
 
 static int x86_opengl_func_glEnable(void)
 {
@@ -275,13 +278,7 @@ static int x86_opengl_func_glEnable(void)
 
 	GLenum cap;
 
-	mem_read(x86_isa_mem, cap_ptr, sizeof(GLenum),&cap);
-
-	/* If the server capability not available, set it up */
-	if (x86_opengl_server_capability == NULL)
-	{
-		x86_opengl_server_capability_init();
-	}
+	mem_read(x86_isa_mem, cap_ptr, sizeof(GLenum), &cap);
 
 	switch(cap)
 	{
