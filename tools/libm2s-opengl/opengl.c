@@ -72,16 +72,20 @@ void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
 void glClear( GLbitfield mask )
 {
 	if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) {
-    	// Clear color buffer.
+		printf("Color buffer cleared!\n");
+    		// memset(ColorBuffer, 0, sizeof(uint32_t) * Color_Buf_Height * Color_Buf_Width);
   	}
 	if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) {
-	// Clear depth buffer.
+		printf("Depth buffer cleared!\n");
+    		// memset(DepthBuffer, 0, sizeof(uint32_t) * Depth_Buf_Height * Depth_Buf_Width);
 	}
 	if ((mask & GL_ACCUM_BUFFER_BIT) == GL_ACCUM_BUFFER_BIT) {
-	// Clear accumulation buffer.
+		printf("Accumulation buffer cleared!\n");
+    		// memset(AccumBuffer, 0, sizeof(uint32_t) * Accum_Buf_Height * Accum_Buf_Width);
 	}
 	if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT) {
-	// Clear stencil buffer.
+		printf("Stencil buffer cleared!\n");
+    		// memset(StencilBuffer, 0, sizeof(uint32_t) * Stencil_Buf_Height * Stencil_Buf_Width);
 	}
 }
 
@@ -215,6 +219,8 @@ void glReadBuffer( GLenum mode )
 void glEnable( GLenum cap )
 {
 	printf("glEnable\n");
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glEnable, & cap);
+
 }
 
 
@@ -529,6 +535,7 @@ void glListBase( GLuint base )
 void glBegin( GLenum mode )
 {
 	printf("glBegin\n");
+
 }
 
 

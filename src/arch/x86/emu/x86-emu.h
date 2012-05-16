@@ -589,7 +589,7 @@ void x86_sys_done(void);
 void x86_sys_dump(FILE *f);
 
 void x86_sys_call(void);
-
+ 
 
 
 
@@ -621,8 +621,6 @@ void x86_glut_frame_buffer_refresh(void);
  * OPENGL system call interface
  */
 
-#ifdef HAVE_OPENGL_H
-
 #define x86_opengl_debug(...) debug(x86_opengl_debug_category, __VA_ARGS__)
 extern int x86_opengl_debug_category;
 
@@ -630,8 +628,6 @@ void x86_opengl_init(void);
 void x86_opengl_done(void);
 
 int x86_opengl_call(void);
-
-#endif
 
 
 /*
