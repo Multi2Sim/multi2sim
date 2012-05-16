@@ -1,0 +1,1 @@
+X86_OPENGL_DEFINE_CALL(glEnable, 1)

@@ -30,13 +30,10 @@ libemu_a_SOURCES += \
 
 endif
 
-if HAVE_OPENGL_H
-
 libemu_a_SOURCES += \
 	opengl.c \
 	opengl.dat
 
-endif
 
 INCLUDES = @M2S_INCLUDES@
 
