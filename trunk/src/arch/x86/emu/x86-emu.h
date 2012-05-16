@@ -607,6 +607,11 @@ void x86_glut_done(void);
 
 int x86_glut_call(void);
 
+void x86_glut_frame_buffer_clear(void);
+void x86_glut_frame_buffer_pixel(int x, int y, int color);
+void x86_glut_frame_buffer_get_size(int *width, int *height);
+void x86_glut_frame_buffer_refresh(void);
+
 #endif
 
 
