@@ -112,71 +112,49 @@ int x86_opengl_call(void)
 	return ret;
 }
 
-
-
-
 /*
- * OPENGL call #1 - init
+ * OpenGL call #1 - glDrawBuffer
  *
- * @param struct x86_opengl_version_t *version;
- *	Structure where the version of the OpenGL runtime implementation will be
- *	dumped. To succeed, the major version should match in the runtime
- *	library (guest) and runtime implementation (host), whereas the minor
- *	version should be equal or higher in the implementation (host).
- *
- *	Features should be added to the OpenGL runtime (guest and host) using the
- *	following rules:
- *	1)  If the guest library requires a new feature from the host
- *	    implementation, the feature is added to the host, and the minor
- *	    version is updated to the current Multi2Sim SVN revision both in
- *	    host and guest.
- *          All previous services provided by the host should remain available
- *          and backward-compatible. Executing a newer library on the older
- *          simulator will fail, but an older library on the newer simulator
- *          will succeed.
- *      2)  If a new feature is added that affects older services of the host
- *          implementation breaking backward compatibility, the major version is
- *          increased by 1 in the host and guest code.
- *          Executing a library with a different (lower or higher) major version
- *          than the host implementation will fail.
+ * glDrawBuffer - specify which color buffers are to be drawn into
  *
  * @return
- *	The runtime implementation version is return in argument 'version'.
- *	The return value is always 0.
+ *	The function always returns 0
  */
 
-#define X86_OPENGL_RUNTIME_VERSION_MAJOR	0
-#define X86_OPENGL_RUNTIME_VERSION_MINOR	669
-
-struct x86_opengl_version_t
+static int x86_opengl_func_glDrawBuffer(void)
 {
-	int major;
-	int minor;
-};
+	unsigned int mode_ptr;
 
-static int x86_opengl_func_init(void)
-{
-	unsigned int version_ptr;
+	/* Read arguments */
+	mode_ptr = x86_isa_regs->ecx;
+	x86_opengl_debug("\tmode_ptr=0x%x\n", mode_ptr);
 
-	struct x86_opengl_version_t version;
+	GLenum mode;
 
-	/* Arguments */
-	version_ptr = x86_isa_regs->ecx;
-	x86_opengl_debug("\tversion_ptr=0x%x\n", version_ptr);
-
-	/* Return version */
-	assert(sizeof(struct x86_opengl_version_t) == 8);
-	version.major = X86_OPENGL_RUNTIME_VERSION_MAJOR;
-	version.minor = X86_OPENGL_RUNTIME_VERSION_MINOR;
-	mem_write(x86_isa_mem, version_ptr, 8, &version);
-	x86_opengl_debug("\tOpenGL Runtime host implementation v. %d.%d\n", version.major, version.minor);
+	mem_read(x86_isa_mem, mode_ptr, sizeof(GLenum),&mode);
 
 	/* Return success */
 	return 0;
 }
 
+
 /*
- * GLUT call #1 - glEnable
+ * OpenGL call #2 - glReadBuffer
+ *
+ * glReadBuffer - select a color buffer source for pixels
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glReadBuffer(void)
+{
+
+	/* Return success */
+	return 0;
+}
+/*
+ * OpenGL call #3 - glEnable
  *
  * glEnable - enable server-side GL capabilities
  *
@@ -293,7 +271,7 @@ static int x86_opengl_func_glEnable(void)
 
 	/* Read arguments */
 	cap_ptr = x86_isa_regs->ecx;
-	x86_opengl_debug("\tevent_ptr=0x%x\n", cap_ptr);
+	x86_opengl_debug("\tcap_ptr=0x%x\n", cap_ptr);
 
 	GLenum cap;
 
