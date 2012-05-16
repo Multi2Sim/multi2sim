@@ -48,6 +48,6 @@ LDADD += @GTK_LIBS@
 endif
 
 if HAVE_GLUT_H
-LDADD += -lglut
+LDADD += -lGL -lGLU -lglut
 endif
 
