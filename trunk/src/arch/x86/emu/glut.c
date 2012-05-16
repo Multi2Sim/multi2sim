@@ -354,6 +354,11 @@ void x86_glut_frame_buffer_clear(void)
 
 void x86_glut_frame_buffer_resize(int width, int height)
 {
+	/* Invalid size */
+	if (width < 1 || height < 1)
+		fatal("%s: invalid size (width = %d, height = %d)\n",
+			__FUNCTION__, width, height);
+
 	/* If same size, just clear it. */
 	if (x86_glut_frame_buffer->width == width && x86_glut_frame_buffer->height == height)
 	{
@@ -415,6 +420,43 @@ void x86_glut_frame_buffer_get_size(int *width, int *height)
 
 void x86_glut_frame_buffer_refresh(void)
 {
+	float red;
+	float green;
+	float blue;
+
+	int color;
+
+	int width;
+	int height;
+
+	int x;
+	int y;
+
+	/* Clear host frame buffer */
+	glClear(GL_COLOR_BUFFER_BIT);
+	glPointSize(1.0);
+	glBegin(GL_POINTS);
+
+	/* Copy guest to host frame buffer */
+	width = x86_glut_frame_buffer->width;
+	height = x86_glut_frame_buffer->height;
+	printf("width=%d, height=%d\n", width, height);
+	for (x = 0; x < width; x++)
+	{
+		for (y = 0; y < height; y++)
+		{
+			color = x86_glut_frame_buffer->buffer[y * width + x];
+			red = (float) (color >> 16) / 0xff;
+			green = (float) ((color >> 8) & 0xff) / 0xff;
+			blue = (float) (color & 0xff) / 0xff;
+			glColor3f(red, green, blue);
+			glVertex2i(x, y);
+		}
+	}
+
+	/* Flush host frame buffer */
+	glEnd();
+	glFlush();
 }
 
 
@@ -426,12 +468,28 @@ void x86_glut_frame_buffer_refresh(void)
 
 void x86_glut_display_func(void)
 {
+/*
 	struct x86_glut_event_t *event;
 
 	event = x86_glut_event_create(x86_glut_event_display);
 	event->u.keyboard.win = glutGetWindow();
 
 	x86_glut_event_enqueue(event);
+*/
+
+	//clear window
+	glClear(GL_COLOR_BUFFER_BIT);
+	glPointSize(1.0);
+	glBegin(GL_POINTS);
+	glColor3f(1.0, 1.0, 1.0);
+
+	int i;
+	for (i = 0; i < 400; i++)
+		glVertex2i(i, i);
+
+	glEnd();
+	glFlush();
+	printf("* %d\n", glutGetWindow()); /////////
 }
 
 
@@ -456,6 +514,14 @@ void x86_glut_reshape_func(int width, int height)
 	event->u.reshape.height = height;
 
 	x86_glut_event_enqueue(event);
+	
+	/* Resize guest frame buffer */
+	x86_glut_frame_buffer_resize(width, height);
+
+	/* Set new host OpenGL drawing values */
+	glLoadIdentity();
+	glMatrixMode(GL_PROJECTION);
+	glOrtho(0, width, 0, height, -1, 1);
 }
 
 
@@ -778,7 +844,7 @@ int x86_glut_call(void)
  */
 
 #define X86_GLUT_RUNTIME_VERSION_MAJOR	0
-#define X86_GLUT_RUNTIME_VERSION_MINOR	680
+#define X86_GLUT_RUNTIME_VERSION_MINOR	690
 
 struct x86_glut_version_t
 {
@@ -868,6 +934,14 @@ static int x86_glut_func_get_event(void)
  *	The host ID of the window, as returned by the GLUT host call.
  */
 
+struct x86_glut_window_properties_t
+{
+	int x;
+	int y;
+	int width;
+	int height;
+};
+
 static int x86_glut_func_new_window(void)
 {
 	unsigned int title_ptr;
@@ -875,20 +949,39 @@ static int x86_glut_func_new_window(void)
 
 	char title[MAX_STRING_SIZE];
 
+	struct x86_glut_window_properties_t properties;
+
 	int win;
 
 	/* Read arguments */
 	title_ptr = x86_isa_regs->ecx;
 	properties_ptr = x86_isa_regs->edx;
 	mem_read_string(x86_isa_mem, title_ptr, sizeof title, title);
+	mem_read(x86_isa_mem, properties_ptr, sizeof(struct x86_glut_window_properties_t),
+		&properties);
 
 	/* Debug */
 	x86_glut_debug("\ttitle_ptr=0x%x, properties_ptr=0x%x\n",
 		title_ptr, properties_ptr);
 	x86_glut_debug("\ttitle='%s'\n", title);
+	x86_glut_debug("\tx=%d, y=%d, width=%d, height=%d\n", properties.x,
+		properties.y, properties.width, properties.height);
+	
+	/* Configure host window properties */
+	glutInitWindowPosition(properties.x, properties.y);
+	glutInitWindowSize(properties.width, properties.height);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 
 	/* Create window */
 	win = glutCreateWindow(title);
+
+	/* Initialize OpenGL */
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, properties.width, 0, properties.height, -1.0, 1.0);
+
+	/* Host window callbacks */
 	glutDisplayFunc(x86_glut_display_func);
 	glutOverlayDisplayFunc(x86_glut_overlay_display_func);
 	glutReshapeFunc(x86_glut_reshape_func);
@@ -905,6 +998,9 @@ static int x86_glut_func_new_window(void)
 	glutDialsFunc(x86_glut_dials_func);
 	glutTabletMotionFunc(x86_glut_tablet_motion_func);
 	glutTabletButtonFunc(x86_glut_tablet_button_func);
+	
+	/* Resize guest frame buffer */
+	x86_glut_frame_buffer_resize(properties.width, properties.height);
 
 	/* Return window host ID */
 	x86_glut_debug("\thost GLUT window ID = %d\n", win);
@@ -928,7 +1024,14 @@ static int x86_glut_func_new_window(void)
 
 static void *x86_glut_thread_func(void *arg)
 {
+	/* Detach thread. Parent does not need to 'pthread_join' the child to
+	 * release its resources. */
+	pthread_detach(pthread_self());
+
+	/* Host GLUT main loop */
 	glutMainLoop();
+
+	/* Function never returns */
 	return NULL;
 }
 
@@ -941,6 +1044,49 @@ static int x86_glut_func_main_loop(void)
 	/* Spawn thread with GLUT main loop */
 	if (pthread_create(&x86_glut_thread, NULL, x86_glut_thread_func, NULL))
 		fatal("%s: could not create child thread", __FUNCTION__);
+
+	/* Return */
+	return 0;
+}
+
+
+
+
+/*
+ * GLUT call #5 - test_draw
+ *
+ * Draw a test black-to-white faded pattern horizontally in the frame buffer,
+ * and flush it to the currently active host GLUT window.
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_glut_func_test_draw(void)
+{
+	int width;
+	int height;
+	int color;
+	int gray;
+
+	int i;
+	int j;
+
+	/* Clear frame buffer */
+	x86_glut_frame_buffer_clear();
+
+	/* Draw pattern */
+	x86_glut_frame_buffer_get_size(&width, &height);
+	for (i = 0; i < width; i++)
+	{
+		gray = (double) i / width * 0xff;
+		color = (gray << 16) | (gray << 8) | gray;
+		for (j = 0; j < height; j++)
+			x86_glut_frame_buffer_pixel(i, j, color);
+	}
+
+	/* Refresh host GLUT window */
+	x86_glut_frame_buffer_refresh();
 
 	/* Return */
 	return 0;
