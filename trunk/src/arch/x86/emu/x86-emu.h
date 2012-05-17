@@ -602,15 +602,25 @@ void x86_sys_call(void);
 #define x86_glut_debug(...) debug(x86_glut_debug_category, __VA_ARGS__)
 extern int x86_glut_debug_category;
 
+extern pthread_mutex_t x86_glut_mutex;
+
 void x86_glut_init(void);
 void x86_glut_done(void);
 
 int x86_glut_call(void);
 
+
+void x86_glut_frame_buffer_init(void);
+void x86_glut_frame_buffer_done(void);
+
 void x86_glut_frame_buffer_clear(void);
 void x86_glut_frame_buffer_pixel(int x, int y, int color);
+
+void x86_glut_frame_buffer_resize(int width, int height);
 void x86_glut_frame_buffer_get_size(int *width, int *height);
-void x86_glut_frame_buffer_refresh(void);
+
+void x86_glut_frame_buffer_flush_request(void);
+void x86_glut_frame_buffer_flush_if_requested(void);
 
 #endif
 

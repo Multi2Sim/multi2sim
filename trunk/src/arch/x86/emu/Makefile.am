@@ -26,7 +26,8 @@ if HAVE_GLUT_H
 
 libemu_a_SOURCES += \
 	glut.c \
-	glut.dat
+	glut.dat \
+	glut-frame-buffer.c
 
 endif
 
