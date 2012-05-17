@@ -47,7 +47,3 @@ AM_CFLAGS = @GTK_CFLAGS@
 LDADD += @GTK_LIBS@
 endif
 
-if HAVE_GLUT_H
-LDADD += -lGL -lGLU -lglut
-endif
-

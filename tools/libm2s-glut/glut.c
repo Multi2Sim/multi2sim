@@ -61,7 +61,7 @@ struct x86_glut_window_t *x86_glut_current_window = NULL;
 
 
 /* Multi2Sim GLUT Runtime required */
-#define X86_GLUT_RUNTIME_VERSION_MAJOR	0
+#define X86_GLUT_RUNTIME_VERSION_MAJOR	1
 #define X86_GLUT_RUNTIME_VERSION_MINOR	690
 
 struct x86_glut_version_t
@@ -279,9 +279,6 @@ void glutMainLoop(void)
 {
 	struct x86_glut_event_t event;
 	struct x86_glut_window_t *window;
-
-	/* Activate GLUT host loop */
-	syscall(X86_GLUT_SYS_CODE, x86_glut_call_main_loop);
 
 	/* GLUT guest loop */
 	for (;;)
