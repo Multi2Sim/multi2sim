@@ -28,7 +28,7 @@
  * Error Messages
  */
 
-#define __CUDA_NOT_IMPL__  fatal("%s: not implemented.\n%s", \
+#define __CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", \
 	__FUNCTION__, err_cuda_not_impl);
 
 
@@ -56,6 +56,27 @@ struct cuda_version_t
 };
 
 
+
+/* CUDA driver data structures */
+#define CU_IPC_HANDLE_SIZE 64
+
+typedef struct CUipcEventHandle_st {
+    char reserved[CU_IPC_HANDLE_SIZE];
+} CUipcEventHandle;
+
+typedef struct CUipcMemHandle_st {
+    char reserved[CU_IPC_HANDLE_SIZE];
+} CUipcMemHandle;
+
+typedef enum CUsharedconfig_enum {
+    CU_SHARED_MEM_CONFIG_DEFAULT_BANK_SIZE    = 0x00, /**< set default shared memory bank size */
+    CU_SHARED_MEM_CONFIG_FOUR_BYTE_BANK_SIZE  = 0x01, /**< set shared memory bank width to four bytes */
+    CU_SHARED_MEM_CONFIG_EIGHT_BYTE_BANK_SIZE = 0x02  /**< set shared memory bank width to eight bytes */
+} CUsharedconfig;
+
+
+
+/* CUDA driver API */
 CUresult cuInit(unsigned int Flags)
 {
 	__CUDA_NOT_IMPL__
@@ -1100,341 +1121,4 @@ CUresult cuGetExportTable(const void **ppExportTable, const CUuuid *pExportTable
 	__CUDA_NOT_IMPL__
 	return 0;
 }
-
-
-CUresult cuTexRefSetAddress2D_v2(CUtexref hTexRef, const CUDA_ARRAY_DESCRIPTOR *desc, CUdeviceptr dptr, size_t Pitch)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuDeviceTotalMem(unsigned int *bytes, CUdevice dev)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuModuleGetGlobal(CUdeviceptr *dptr, unsigned int *bytes, CUmodule hmod, const char *name)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemGetInfo(unsigned int *free, unsigned int *total)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemAlloc(CUdeviceptr *dptr, unsigned int bytesize)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemAllocPitch(CUdeviceptr *dptr, unsigned int *pPitch, unsigned int WidthInBytes, unsigned int Height, unsigned int ElementSizeBytes)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemFree(CUdeviceptr dptr)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemGetAddressRange(CUdeviceptr *pbase, unsigned int *psize, CUdeviceptr dptr)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemAllocHost(void **pp, unsigned int bytesize)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemHostGetDevicePointer(CUdeviceptr *pdptr, void *p, unsigned int Flags)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost, unsigned int ByteCount)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyDtoD(CUdeviceptr dstDevice, CUdeviceptr srcDevice, unsigned int ByteCount)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyDtoA(CUarray dstArray, unsigned int dstOffset, CUdeviceptr srcDevice, unsigned int ByteCount)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyAtoD(CUdeviceptr dstDevice, CUarray srcArray, unsigned int srcOffset, unsigned int ByteCount)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyHtoA(CUarray dstArray, unsigned int dstOffset, const void *srcHost, unsigned int ByteCount)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyAtoH(void *dstHost, CUarray srcArray, unsigned int srcOffset, unsigned int ByteCount)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyAtoA(CUarray dstArray, unsigned int dstOffset, CUarray srcArray, unsigned int srcOffset, unsigned int ByteCount)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyHtoAAsync(CUarray dstArray, unsigned int dstOffset, const void *srcHost, unsigned int ByteCount, CUstream hStream)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyAtoHAsync(void *dstHost, CUarray srcArray, unsigned int srcOffset, unsigned int ByteCount, CUstream hStream)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpy2D(const CUDA_MEMCPY2D *pCopy)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpy2DUnaligned(const CUDA_MEMCPY2D *pCopy)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpy3D(const CUDA_MEMCPY3D *pCopy)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyHtoDAsync(CUdeviceptr dstDevice, const void *srcHost, unsigned int ByteCount, CUstream hStream)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpyDtoDAsync(CUdeviceptr dstDevice, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpy2DAsync(const CUDA_MEMCPY2D *pCopy, CUstream hStream)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemcpy3DAsync(const CUDA_MEMCPY3D *pCopy, CUstream hStream)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemsetD8(CUdeviceptr dstDevice, unsigned char uc, unsigned int N)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemsetD16(CUdeviceptr dstDevice, unsigned short us, unsigned int N)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemsetD32(CUdeviceptr dstDevice, unsigned int ui, unsigned int N)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemsetD2D8(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned char uc, unsigned int Width, unsigned int Height)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemsetD2D16(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned short us, unsigned int Width, unsigned int Height)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuMemsetD2D32(CUdeviceptr dstDevice, unsigned int dstPitch, unsigned int ui, unsigned int Width, unsigned int Height)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuArrayCreate(CUarray *pHandle, const CUDA_ARRAY_DESCRIPTOR *pAllocateArray)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuArrayGetDescriptor(CUDA_ARRAY_DESCRIPTOR *pArrayDescriptor, CUarray hArray)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuArray3DCreate(CUarray *pHandle, const CUDA_ARRAY3D_DESCRIPTOR *pAllocateArray)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuArray3DGetDescriptor(CUDA_ARRAY3D_DESCRIPTOR *pArrayDescriptor, CUarray hArray)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuTexRefSetAddress(unsigned int *ByteOffset, CUtexref hTexRef, CUdeviceptr dptr, unsigned int bytes)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuTexRefSetAddress2D(CUtexref hTexRef, const CUDA_ARRAY_DESCRIPTOR *desc, CUdeviceptr dptr, unsigned int Pitch)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuTexRefGetAddress(CUdeviceptr *pdptr, CUtexref hTexRef)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuGraphicsResourceGetMappedPointer(CUdeviceptr *pDevPtr, unsigned int *pSize, CUgraphicsResource resource)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuCtxDestroy(CUcontext ctx)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuCtxPopCurrent(CUcontext *pctx)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuCtxPushCurrent(CUcontext ctx)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuStreamDestroy(CUstream hStream)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
-
-CUresult cuEventDestroy(CUevent hEvent)
-{
-	__CUDA_NOT_IMPL__
-	return 0;
-}
-
 
