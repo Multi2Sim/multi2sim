@@ -37,9 +37,5 @@ enum x86_opengl_call_t
 	x86_opengl_call_count
 };
 
-
-
-
-
 #endif
 
