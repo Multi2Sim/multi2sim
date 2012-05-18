@@ -48,6 +48,7 @@ static char *elf_debug_file_name = "";
 static char *net_debug_file_name = "";
 static char *trace_file_name = "";
 static char *x86_glut_debug_file_name = "";
+static char *x86_opengl_debug_file_name = "";
 
 static int opengl_disasm_shader_index = 1;
 
@@ -95,6 +96,7 @@ static char *sim_help =
 	"        --debug-syscall: detailed system calls trace and arguments.\n"
 	"        --debug-opencl: trace of OpenCL calls and their arguments.\n"
 	"        --debug-x86-glut: trace of GLUT runtime calls (x86).\n"
+	"        --debug-x86-opengl: trace of OpenGL runtime calls (x86).\n"
 	"        --debug-mem: trace of event-driven simulation for memory system\n"
 	"            hierarchy. Must be used with '--gpu-sim detailed'.\n"
 	"        --debug-gpu-isa: during the emulation of an OpenCL device kernel, trace\n"
@@ -416,6 +418,13 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* OpenGL debug file */
+		if (!strcmp(argv[argi], "--debug-x86-opengl"))
+		{
+			sim_need_argument(argc, argv, argi);
+			x86_opengl_debug_file_name = argv[++argi];
+			continue;
+		}
 		/* GPU occupancy calculation plots */
 		if (!strcmp(argv[argi], "--gpu-calc"))
 		{
@@ -901,6 +910,7 @@ int main(int argc, char **argv)
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
 	x86_cpu_error_debug_category = debug_new_category(error_debug_file_name);
 	x86_glut_debug_category = debug_new_category(x86_glut_debug_file_name);
+	x86_opengl_debug_category = debug_new_category(x86_opengl_debug_file_name);
 
 	/* Trace */
 	trace_init(trace_file_name);
