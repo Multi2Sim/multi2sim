@@ -394,11 +394,35 @@ void glFrustum( GLdouble left, GLdouble right,
 	__X86_OPENGL_NOT_IMPL__
 }
 
+/* OpenGL Viewport attribute */
+struct x86_opengl_viewport_attributes_t
+{
+	/* Position */
+	GLint x;
+	GLint y;
+	/* Size */
+	GLsizei width;
+	GLsizei height;
+
+	/* FIXME: also found below in Mesa */
+	/* Depth buffer range */
+	// GLfloat Near;
+	// GLfloat Far;
+
+	/* Mapping transformation as a matrix. */
+	// GLmatrix _WindowMap; 
+};
 
 void glViewport( GLint x, GLint y,
                                     GLsizei width, GLsizei height )
 {
 	printf("glViewport\n");
+	struct x86_opengl_viewport_attributes_t vpt_atr;
+	vpt_atr.x = x;
+	vpt_atr.y = y;
+	vpt_atr.width = width;
+	vpt_atr.height = height;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glViewport, &vpt_atr);
 }
 
 

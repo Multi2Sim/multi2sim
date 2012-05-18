@@ -73,10 +73,11 @@ static x86_opengl_func_t x86_opengl_func_table[x86_opengl_call_count + 1] =
 
 
 /*
- * OpenGL Global variables
+ * OpenGL structures
  */
 
- struct x86_opengl_server_capability
+/* OpenGL context capability */
+struct x86_opengl_context_t_capability_t
 {
 	GLboolean is_alpha_test;
 	GLboolean is_auto_normal;
@@ -159,39 +160,176 @@ static x86_opengl_func_t x86_opengl_func_table[x86_opengl_call_count + 1] =
 	GLboolean is_vertex_program_two_side;
 };
 
-static struct x86_opengl_server_capability *x86_opengl_server_capability = NULL;
+/* OpenGL frame buffer */
+struct x86_opengl_frame_buffer_t
+{
+	GLsizei width;
+	GLsizei height;
 
- void x86_opengl_server_capability_init(void)
- {
- 	x86_opengl_server_capability = calloc(1, sizeof(struct x86_opengl_server_capability));
-	if (!x86_opengl_server_capability)
+	GLuint *buffer;
+};
+
+/* OpenGL Viewport attribute */
+struct x86_opengl_viewport_attributes_t
+{
+	/* Position */
+	GLint x;
+	GLint y;
+	/* Size */
+	GLsizei width;
+	GLsizei height;
+
+	/* FIXME: also found below in Mesa */
+	/* Depth buffer range */
+	// GLfloat Near;
+	// GLfloat Far;
+
+	/* Mapping transformation as a matrix. */
+	// GLmatrix _WindowMap; 
+};
+
+/* OpenGL context*/
+struct x86_opengl_context_t
+{
+	struct x86_opengl_context_t_capability_t *context_cap;		/* context capabilities */
+
+	struct x86_opengl_frame_buffer_t *draw_buffer;			/* buffer for writing */
+	struct x86_opengl_frame_buffer_t *read_buffer;			/* buffer for reading */
+
+	struct x86_opengl_viewport_attributes_t * viewport;			/* viewport attributes */
+};
+
+
+/*
+ * OpenGL global variables
+ */
+
+struct x86_opengl_context_t *x86_opengl_ctx;
+
+/*
+ * OpenGL Initialization
+ */
+
+struct x86_opengl_context_t_capability_t *x86_opengl_context_t_capability_create(void)
+{
+ 	struct x86_opengl_context_t_capability_t* cap;
+ 	cap = calloc(1, sizeof(struct x86_opengl_context_t_capability_t));
+	if (!cap)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Set up initial value for each capability, initial value for each capability is GL_FALSE, except GL_DITHER and GL_MULTISAMPLE */
-	memset(x86_opengl_server_capability, 0, sizeof(struct x86_opengl_server_capability));
-	x86_opengl_server_capability->is_dither = GL_TRUE;
-	x86_opengl_server_capability->is_multisample = GL_TRUE;
- }
+	memset(cap, 0, sizeof(struct x86_opengl_context_t_capability_t));
+	cap->is_dither = GL_TRUE;
+	cap->is_multisample = GL_TRUE;
 
-void x86_opengl_server_capability_done(void)
-{
-	free(x86_opengl_server_capability);
+	/* Return */
+	return cap;
 }
 
+void x86_opengl_context_t_capability_free(struct x86_opengl_context_t_capability_t *cap)
+{
+	free(cap);
+}
+
+struct x86_opengl_frame_buffer_t *x86_opengl_frame_buffer_create(int width, int height)
+{
+	struct x86_opengl_frame_buffer_t *fb;
+
+	/* Allocate */
+	fb = calloc(1, sizeof(struct x86_opengl_frame_buffer_t));
+	if(!fb)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialization */
+	fb->width = width;
+	fb->height = height;
+	fb->buffer = calloc(1, sizeof(GLuint)*width*height);
+
+	/* Return */
+	return fb;
+}
+
+void x86_opengl_frame_buffer_free(struct x86_opengl_frame_buffer_t *fb)
+{
+	free(fb->buffer);
+	free(fb);
+}
+
+struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_attributes_create(void)
+{
+	struct x86_opengl_viewport_attributes_t *vpt;
+
+	/* Allocate */
+	vpt = calloc(1, sizeof(struct x86_opengl_viewport_attributes_t));
+	if(!vpt)
+		fatal("%s: out of memory", __FUNCTION__);
+
+
+	/* Initialize */
+	int width;
+	int height;
+	/* FIXME: CANNOT get the size at init? Always get 0 */
+	x86_glut_frame_buffer_get_size(&width, &height);
+	vpt->x = 0;
+	vpt->y = 0;
+	vpt->width = width;
+	vpt->height = height;
+
+	/* Return */	
+	return vpt;
+}
+
+void x86_opengl_viewport_free(struct x86_opengl_viewport_attributes_t *vpt)
+{
+	free(vpt);
+}
+
+struct x86_opengl_context_t *x86_opengl_context_create(void)
+{
+	/* Allocate */
+	struct x86_opengl_context_t *ctx;
+	ctx = calloc(1, sizeof(struct x86_opengl_context_t));
+	if(!ctx)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+
+	/* Initialize frame buffers */
+	int width;
+	int height;
+	x86_glut_frame_buffer_get_size(&width, &height);
+	ctx->draw_buffer = x86_opengl_frame_buffer_create(width, height);
+	ctx->read_buffer = x86_opengl_frame_buffer_create(width, height);
+	
+	/* Initialize context capabilities */
+	ctx->context_cap = x86_opengl_context_t_capability_create();
+
+	/* Initialize viewport */
+	ctx->viewport = x86_opengl_viewport_attributes_create();
+
+	/* Return */
+	return ctx;
+}
+
+void x86_opengl_context_free(struct x86_opengl_context_t *ctx)
+{
+	x86_opengl_context_t_capability_free(ctx->context_cap);
+	x86_opengl_frame_buffer_free(ctx->draw_buffer);
+	x86_opengl_frame_buffer_free(ctx->read_buffer);
+	x86_opengl_viewport_free(ctx->viewport);
+	free(ctx);
+}
 
 void x86_opengl_init(void)
 {
-	/* If the server capability not available, set it up */
-	if (x86_opengl_server_capability == NULL)
-	{
-		x86_opengl_server_capability_init();
-	}
+	x86_opengl_ctx = x86_opengl_context_create();
 }
 
 
 void x86_opengl_done(void)
 {
-	x86_opengl_server_capability_done();
+	if (x86_opengl_ctx != NULL)
+		x86_opengl_context_free(x86_opengl_ctx);
 }
 
 
@@ -237,7 +375,9 @@ static int x86_opengl_func_glDrawBuffer(void)
 
 	GLenum mode;
 
-	mem_read(x86_isa_mem, mode_ptr, sizeof(GLenum),&mode);
+	mem_read(x86_isa_mem, mode_ptr, sizeof(GLenum), &mode);
+
+	/* Set color buffers */
 
 	/* Return success */
 	return 0;
@@ -255,6 +395,15 @@ static int x86_opengl_func_glDrawBuffer(void)
 
 static int x86_opengl_func_glReadBuffer(void)
 {
+	unsigned int mode_ptr;
+
+	/* Read arguments */
+	mode_ptr = x86_isa_regs->ecx;
+	x86_opengl_debug("\tmode_ptr=0x%x\n", mode_ptr);
+
+	GLenum mode;
+
+	mem_read(x86_isa_mem, mode_ptr, sizeof(GLenum), &mode);
 
 	/* Return success */
 	return 0;
@@ -286,632 +435,632 @@ static int x86_opengl_func_glEnable(void)
 	case GL_ALPHA_TEST:
 
 		{
-			x86_opengl_server_capability->is_alpha_test = GL_TRUE;
-			x86_opengl_debug("GL_ALPHA_TEST enabled!");
+			x86_opengl_ctx->context_cap->is_alpha_test = GL_TRUE;
+			x86_opengl_debug("\tGL_ALPHA_TEST enabled!\n");
 			break;
 		}
 
 	case GL_AUTO_NORMAL:
 
 		{
-			x86_opengl_server_capability->is_auto_normal = GL_TRUE;
-			x86_opengl_debug("GL_AUTO_NORMAL enabled!");
+			x86_opengl_ctx->context_cap->is_auto_normal = GL_TRUE;
+			x86_opengl_debug("\tGL_AUTO_NORMAL enabled!\n");
 			break;
 		}
 
 	case GL_BLEND:
 
 		{
-			x86_opengl_server_capability->is_blend = GL_TRUE;
-			x86_opengl_debug("GL_BLEND enabled!");
+			x86_opengl_ctx->context_cap->is_blend = GL_TRUE;
+			x86_opengl_debug("\tGL_BLEND enabled!\n");
 			break;
 		}
 
 	case GL_CLIP_PLANE0:
 
 		{
-			x86_opengl_server_capability->is_clip_plane0 = GL_TRUE;
-			x86_opengl_debug("GL_CLIP_PLANE0 enabled!");
+			x86_opengl_ctx->context_cap->is_clip_plane0 = GL_TRUE;
+			x86_opengl_debug("\tGL_CLIP_PLANE0 enabled!\n");
 			break;
 		}
 
 	case GL_CLIP_PLANE1:
 
 		{
-			x86_opengl_server_capability->is_clip_plane1 = GL_TRUE;
-			x86_opengl_debug("GL_CLIP_PLANE1 enabled!");
+			x86_opengl_ctx->context_cap->is_clip_plane1 = GL_TRUE;
+			x86_opengl_debug("\tGL_CLIP_PLANE1 enabled!\n");
 			break;
 		}
 
 	case GL_CLIP_PLANE2:
 
 		{
-			x86_opengl_server_capability->is_clip_plane2 = GL_TRUE;
-			x86_opengl_debug("GL_CLIP_PLANE2 enabled!");
+			x86_opengl_ctx->context_cap->is_clip_plane2 = GL_TRUE;
+			x86_opengl_debug("\tGL_CLIP_PLANE2 enabled!\n");
 			break;
 		}
 
 	case GL_CLIP_PLANE3:
 
 		{
-			x86_opengl_server_capability->is_clip_plane3 = GL_TRUE;
-			x86_opengl_debug("GL_CLIP_PLANE3 enabled!");
+			x86_opengl_ctx->context_cap->is_clip_plane3 = GL_TRUE;
+			x86_opengl_debug("\tGL_CLIP_PLANE3 enabled!\n");
 			break;
 		}
 
 	case GL_CLIP_PLANE4:
 
 		{
-			x86_opengl_server_capability->is_clip_plane4 = GL_TRUE;
-			x86_opengl_debug("GL_CLIP_PLANE4 enabled!");
+			x86_opengl_ctx->context_cap->is_clip_plane4 = GL_TRUE;
+			x86_opengl_debug("\tGL_CLIP_PLANE4 enabled!\n");
 			break;
 		}
 
 	case GL_CLIP_PLANE5:
 
 		{
-			x86_opengl_server_capability->is_clip_plane5 = GL_TRUE;
-			x86_opengl_debug("GL_CLIP_PLANE5 enabled!");
+			x86_opengl_ctx->context_cap->is_clip_plane5 = GL_TRUE;
+			x86_opengl_debug("\tGL_CLIP_PLANE5 enabled!\n");
 			break;
 		}
 
 	case GL_COLOR_LOGIC_OP:
 
 		{
-			x86_opengl_server_capability->is_color_logic_op = GL_TRUE;
-			x86_opengl_debug("GL_COLOR_LOGIC_OP enabled!");
+			x86_opengl_ctx->context_cap->is_color_logic_op = GL_TRUE;
+			x86_opengl_debug("\tGL_COLOR_LOGIC_OP enabled!\n");
 			break;
 		}
 
 	case GL_COLOR_MATERIAL:
 
 		{
-			x86_opengl_server_capability->is_color_material = GL_TRUE;
-			x86_opengl_debug("GL_COLOR_MATERIAL enabled!");
+			x86_opengl_ctx->context_cap->is_color_material = GL_TRUE;
+			x86_opengl_debug("\tGL_COLOR_MATERIAL enabled!\n");
 			break;
 		}
 
 	case GL_COLOR_SUM:
 
 		{
-			x86_opengl_server_capability->is_color_sum = GL_TRUE;
-			x86_opengl_debug("GL_COLOR_SUM enabled!");
+			x86_opengl_ctx->context_cap->is_color_sum = GL_TRUE;
+			x86_opengl_debug("\tGL_COLOR_SUM enabled!\n");
 			break;
 		}
 
 	case GL_COLOR_TABLE:
 
 		{
-			x86_opengl_server_capability->is_color_table = GL_TRUE;
-			x86_opengl_debug("GL_COLOR_TABLE enabled!");
+			x86_opengl_ctx->context_cap->is_color_table = GL_TRUE;
+			x86_opengl_debug("\tGL_COLOR_TABLE enabled!\n");
 			break;
 		}
 
 	case GL_CONVOLUTION_1D:
 
 		{
-			x86_opengl_server_capability->is_convolution_1d = GL_TRUE;
-			x86_opengl_debug("GL_CONVOLUTION_1D enabled!");
+			x86_opengl_ctx->context_cap->is_convolution_1d = GL_TRUE;
+			x86_opengl_debug("\tGL_CONVOLUTION_1D enabled!\n");
 			break;
 		}
 
 	case GL_CONVOLUTION_2D:
 
 		{
-			x86_opengl_server_capability->is_convolution_2d = GL_TRUE;
-			x86_opengl_debug("GL_CONVOLUTION_2D enabled!");
+			x86_opengl_ctx->context_cap->is_convolution_2d = GL_TRUE;
+			x86_opengl_debug("\tGL_CONVOLUTION_2D enabled!\n");
 			break;
 		}
 
 	case GL_CULL_FACE:
 
 		{
-			x86_opengl_server_capability->is_cull_face = GL_TRUE;
-			x86_opengl_debug("GL_CULL_FACE enabled!");
+			x86_opengl_ctx->context_cap->is_cull_face = GL_TRUE;
+			x86_opengl_debug("\tGL_CULL_FACE enabled!\n");
 			break;
 		}
 
 	case GL_DEPTH_TEST:
 
 		{
-			x86_opengl_server_capability->is_depth_test = GL_TRUE;
-			x86_opengl_debug("GL_DEPTH_TEST enabled!");
+			x86_opengl_ctx->context_cap->is_depth_test = GL_TRUE;
+			x86_opengl_debug("\tGL_DEPTH_TEST enabled!\n");
 			break;
 		}
 
 	case GL_DITHER:
 
 		{
-			x86_opengl_server_capability->is_dither = GL_TRUE;
-			x86_opengl_debug("GL_DITHER enabled!");
+			x86_opengl_ctx->context_cap->is_dither = GL_TRUE;
+			x86_opengl_debug("\tGL_DITHER enabled!\n");
 			break;
 		}
 
 	case GL_FOG:
 
 		{
-			x86_opengl_server_capability->is_fog = GL_TRUE;
-			x86_opengl_debug("GL_FOG enabled!");
+			x86_opengl_ctx->context_cap->is_fog = GL_TRUE;
+			x86_opengl_debug("\tGL_FOG enabled!\n");
 			break;
 		}
 
 	case GL_HISTOGRAM:
 
 		{
-			x86_opengl_server_capability->is_histogram = GL_TRUE;
-			x86_opengl_debug("GL_HISTOGRAM enabled!");
+			x86_opengl_ctx->context_cap->is_histogram = GL_TRUE;
+			x86_opengl_debug("\tGL_HISTOGRAM enabled!\n");
 			break;
 		}
 
 	case GL_INDEX_LOGIC_OP:
 
 		{
-			x86_opengl_server_capability->is_index_logic_op = GL_TRUE;
-			x86_opengl_debug("GL_INDEX_LOGIC_OP enabled!");
+			x86_opengl_ctx->context_cap->is_index_logic_op = GL_TRUE;
+			x86_opengl_debug("\tGL_INDEX_LOGIC_OP enabled!\n");
 			break;
 		}
 
 	case GL_LIGHT0:
 
 		{
-			x86_opengl_server_capability->is_light0 = GL_TRUE;
-			x86_opengl_debug("GL_LIGHT0 enabled!");
+			x86_opengl_ctx->context_cap->is_light0 = GL_TRUE;
+			x86_opengl_debug("\tGL_LIGHT0 enabled!\n");
 			break;
 		}
 
 	case GL_LIGHT1:
 
 		{
-			x86_opengl_server_capability->is_light1 = GL_TRUE;
-			x86_opengl_debug("GL_LIGHT1 enabled!");
+			x86_opengl_ctx->context_cap->is_light1 = GL_TRUE;
+			x86_opengl_debug("\tGL_LIGHT1 enabled!\n");
 			break;
 		}
 
 	case GL_LIGHT2:
 
 		{
-			x86_opengl_server_capability->is_light2 = GL_TRUE;
-			x86_opengl_debug("GL_LIGHT2 enabled!");
+			x86_opengl_ctx->context_cap->is_light2 = GL_TRUE;
+			x86_opengl_debug("\tGL_LIGHT2 enabled!\n");
 			break;
 		}
 
 	case GL_LIGHT3:
 
 		{
-			x86_opengl_server_capability->is_light3 = GL_TRUE;
-			x86_opengl_debug("GL_LIGHT3 enabled!");
+			x86_opengl_ctx->context_cap->is_light3 = GL_TRUE;
+			x86_opengl_debug("\tGL_LIGHT3 enabled!\n");
 			break;
 		}
 
 	case GL_LIGHT4:
 
 		{
-			x86_opengl_server_capability->is_light4 = GL_TRUE;
-			x86_opengl_debug("GL_LIGHT4 enabled!");
+			x86_opengl_ctx->context_cap->is_light4 = GL_TRUE;
+			x86_opengl_debug("\tGL_LIGHT4 enabled!\n");
 			break;
 		}
 
 	case GL_LIGHT5:
 
 		{
-			x86_opengl_server_capability->is_light5 = GL_TRUE;
-			x86_opengl_debug("GL_LIGHT5 enabled!");
+			x86_opengl_ctx->context_cap->is_light5 = GL_TRUE;
+			x86_opengl_debug("\tGL_LIGHT5 enabled!\n");
 			break;
 		}
 
 	case GL_LIGHT6:
 
 		{
-			x86_opengl_server_capability->is_light6 = GL_TRUE;
-			x86_opengl_debug("GL_LIGHT6 enabled!");
+			x86_opengl_ctx->context_cap->is_light6 = GL_TRUE;
+			x86_opengl_debug("\tGL_LIGHT6 enabled!\n");
 			break;
 		}
 
 	case GL_LIGHT7:
 
 		{
-			x86_opengl_server_capability->is_light7 = GL_TRUE;
-			x86_opengl_debug("GL_LIGHT7 enabled!");
+			x86_opengl_ctx->context_cap->is_light7 = GL_TRUE;
+			x86_opengl_debug("\tGL_LIGHT7 enabled!\n");
 			break;
 		}
 
 	case GL_LIGHTING:
 
 		{
-			x86_opengl_server_capability->is_lighting = GL_TRUE;
-			x86_opengl_debug("GL_LIGHTING enabled!");
+			x86_opengl_ctx->context_cap->is_lighting = GL_TRUE;
+			x86_opengl_debug("\tGL_LIGHTING enabled!\n");
 			break;
 		}
 
 	case GL_LINE_SMOOTH:
 
 		{
-			x86_opengl_server_capability->is_line_smooth = GL_TRUE;
-			x86_opengl_debug("GL_LINE_SMOOTH enabled!");
+			x86_opengl_ctx->context_cap->is_line_smooth = GL_TRUE;
+			x86_opengl_debug("\tGL_LINE_SMOOTH enabled!\n");
 			break;
 		}
 
 	case GL_LINE_STIPPLE:
 
 		{
-			x86_opengl_server_capability->is_line_stipple = GL_TRUE;
-			x86_opengl_debug("GL_LINE_STIPPLE enabled!");
+			x86_opengl_ctx->context_cap->is_line_stipple = GL_TRUE;
+			x86_opengl_debug("\tGL_LINE_STIPPLE enabled!\n");
 			break;
 		}
 
 	case GL_MAP1_COLOR_4:
 
 		{
-			x86_opengl_server_capability->is_map1_color_4 = GL_TRUE;
-			x86_opengl_debug("GL_MAP1_COLOR_4 enabled!");
+			x86_opengl_ctx->context_cap->is_map1_color_4 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP1_COLOR_4 enabled!\n");
 			break;
 		}
 
 	case GL_MAP1_INDEX:
 
 		{
-			x86_opengl_server_capability->is_map1_index = GL_TRUE;
-			x86_opengl_debug("GL_MAP1_INDEX enabled!");
+			x86_opengl_ctx->context_cap->is_map1_index = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP1_INDEX enabled!\n");
 			break;
 		}
 
 	case GL_MAP1_NORMAL:
 
 		{
-			x86_opengl_server_capability->is_map1_normal = GL_TRUE;
-			x86_opengl_debug("GL_MAP1_NORMAL enabled!");
+			x86_opengl_ctx->context_cap->is_map1_normal = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP1_NORMAL enabled!\n");
 			break;
 		}
 
 	case GL_MAP1_TEXTURE_COORD_1:
 
 		{
-			x86_opengl_server_capability->is_map1_texture_coord_1 = GL_TRUE;
-			x86_opengl_debug("GL_MAP1_TEXTURE_COORD_1 enabled!");
+			x86_opengl_ctx->context_cap->is_map1_texture_coord_1 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP1_TEXTURE_COORD_1 enabled!\n");
 			break;
 		}
 
 	case GL_MAP1_TEXTURE_COORD_2:
 
 		{
-			x86_opengl_server_capability->is_map1_texture_coord_2 = GL_TRUE;
-			x86_opengl_debug("GL_MAP1_TEXTURE_COORD_2 enabled!");
+			x86_opengl_ctx->context_cap->is_map1_texture_coord_2 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP1_TEXTURE_COORD_2 enabled!\n");
 			break;
 		}
 
 	case GL_MAP1_TEXTURE_COORD_3:
 
 		{
-			x86_opengl_server_capability->is_map1_texture_coord_3 = GL_TRUE;
-			x86_opengl_debug("GL_MAP1_TEXTURE_COORD_3 enabled!");
+			x86_opengl_ctx->context_cap->is_map1_texture_coord_3 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP1_TEXTURE_COORD_3 enabled!\n");
 			break;
 		}
 
 	case GL_MAP1_TEXTURE_COORD_4:
 
 		{
-			x86_opengl_server_capability->is_map1_texture_coord_4 = GL_TRUE;
-			x86_opengl_debug("GL_MAP1_TEXTURE_COORD_4 enabled!");
+			x86_opengl_ctx->context_cap->is_map1_texture_coord_4 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP1_TEXTURE_COORD_4 enabled!\n");
 			break;
 		}
 
 	case GL_MAP1_VERTEX_3:
 
 		{
-			x86_opengl_server_capability->is_map1_vertex_3 = GL_TRUE;
-			x86_opengl_debug("GL_MAP1_VERTEX_3 enabled!");
+			x86_opengl_ctx->context_cap->is_map1_vertex_3 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP1_VERTEX_3 enabled!\n");
 			break;
 		}
 
 	case GL_MAP1_VERTEX_4:
 
 		{
-			x86_opengl_server_capability->is_map1_vertex_4 = GL_TRUE;
-			x86_opengl_debug("GL_MAP1_VERTEX_4 enabled!");
+			x86_opengl_ctx->context_cap->is_map1_vertex_4 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP1_VERTEX_4 enabled!\n");
 			break;
 		}
 
 	case GL_MAP2_COLOR_4:
 
 		{
-			x86_opengl_server_capability->is_map2_color_4 = GL_TRUE;
-			x86_opengl_debug("GL_MAP2_COLOR_4 enabled!");
+			x86_opengl_ctx->context_cap->is_map2_color_4 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP2_COLOR_4 enabled!\n");
 			break;
 		}
 
 	case GL_MAP2_INDEX:
 
 		{
-			x86_opengl_server_capability->is_map2_index = GL_TRUE;
-			x86_opengl_debug("GL_MAP2_INDEX enabled!");
+			x86_opengl_ctx->context_cap->is_map2_index = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP2_INDEX enabled!\n");
 			break;
 		}
 
 	case GL_MAP2_NORMAL:
 
 		{
-			x86_opengl_server_capability->is_map2_normal = GL_TRUE;
-			x86_opengl_debug("GL_MAP2_NORMAL enabled!");
+			x86_opengl_ctx->context_cap->is_map2_normal = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP2_NORMAL enabled!\n");
 			break;
 		}
 
 	case GL_MAP2_TEXTURE_COORD_1:
 
 		{
-			x86_opengl_server_capability->is_map2_texture_coord_1 = GL_TRUE;
-			x86_opengl_debug("GL_MAP2_TEXTURE_COORD_1 enabled!");
+			x86_opengl_ctx->context_cap->is_map2_texture_coord_1 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP2_TEXTURE_COORD_1 enabled!\n");
 			break;
 		}
 
 	case GL_MAP2_TEXTURE_COORD_2:
 
 		{
-			x86_opengl_server_capability->is_map2_texture_coord_2 = GL_TRUE;
-			x86_opengl_debug("GL_MAP2_TEXTURE_COORD_2 enabled!");
+			x86_opengl_ctx->context_cap->is_map2_texture_coord_2 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP2_TEXTURE_COORD_2 enabled!\n");
 			break;
 		}
 
 	case GL_MAP2_TEXTURE_COORD_3:
 
 		{
-			x86_opengl_server_capability->is_map2_texture_coord_3 = GL_TRUE;
-			x86_opengl_debug("GL_MAP2_TEXTURE_COORD_3 enabled!");
+			x86_opengl_ctx->context_cap->is_map2_texture_coord_3 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP2_TEXTURE_COORD_3 enabled!\n");
 			break;
 		}
 
 	case GL_MAP2_TEXTURE_COORD_4:
 
 		{
-			x86_opengl_server_capability->is_map2_texture_coord_4 = GL_TRUE;
-			x86_opengl_debug("GL_MAP2_TEXTURE_COORD_4 enabled!");
+			x86_opengl_ctx->context_cap->is_map2_texture_coord_4 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP2_TEXTURE_COORD_4 enabled!\n");
 			break;
 		}
 
 	case GL_MAP2_VERTEX_3:
 
 		{
-			x86_opengl_server_capability->is_map2_vertex_3 = GL_TRUE;
-			x86_opengl_debug("GL_MAP2_VERTEX_3 enabled!");
+			x86_opengl_ctx->context_cap->is_map2_vertex_3 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP2_VERTEX_3 enabled!\n");
 			break;
 		}
 
 	case GL_MAP2_VERTEX_4:
 
 		{
-			x86_opengl_server_capability->is_map2_vertex_4 = GL_TRUE;
-			x86_opengl_debug("GL_MAP2_VERTEX_4 enabled!");
+			x86_opengl_ctx->context_cap->is_map2_vertex_4 = GL_TRUE;
+			x86_opengl_debug("\tGL_MAP2_VERTEX_4 enabled!\n");
 			break;
 		}
 
 	case GL_MINMAX:
 
 		{
-			x86_opengl_server_capability->is_minmax = GL_TRUE;
-			x86_opengl_debug("GL_MINMAX enabled!");
+			x86_opengl_ctx->context_cap->is_minmax = GL_TRUE;
+			x86_opengl_debug("\tGL_MINMAX enabled!\n");
 			break;
 		}
 
 	case GL_MULTISAMPLE:
 
 		{
-			x86_opengl_server_capability->is_multisample = GL_TRUE;
-			x86_opengl_debug("GL_MULTISAMPLE enabled!");
+			x86_opengl_ctx->context_cap->is_multisample = GL_TRUE;
+			x86_opengl_debug("\tGL_MULTISAMPLE enabled!\n");
 			break;
 		}
 
 	case GL_NORMALIZE:
 
 		{
-			x86_opengl_server_capability->is_normalize = GL_TRUE;
-			x86_opengl_debug("GL_NORMALIZE enabled!");
+			x86_opengl_ctx->context_cap->is_normalize = GL_TRUE;
+			x86_opengl_debug("\tGL_NORMALIZE enabled!\n");
 			break;
 		}
 
 	case GL_POINT_SMOOTH:
 
 		{
-			x86_opengl_server_capability->is_point_smooth = GL_TRUE;
-			x86_opengl_debug("GL_POINT_SMOOTH enabled!");
+			x86_opengl_ctx->context_cap->is_point_smooth = GL_TRUE;
+			x86_opengl_debug("\tGL_POINT_SMOOTH enabled!\n");
 			break;
 		}
 
 	case GL_POINT_SPRITE:
 
 		{
-			x86_opengl_server_capability->is_point_sprite = GL_TRUE;
-			x86_opengl_debug("GL_POINT_SPRITE enabled!");
+			x86_opengl_ctx->context_cap->is_point_sprite = GL_TRUE;
+			x86_opengl_debug("\tGL_POINT_SPRITE enabled!\n");
 			break;
 		}
 
 	case GL_POLYGON_OFFSET_FILL:
 
 		{
-			x86_opengl_server_capability->is_polygon_offset_fill = GL_TRUE;
-			x86_opengl_debug("GL_POLYGON_OFFSET_FILL enabled!");
+			x86_opengl_ctx->context_cap->is_polygon_offset_fill = GL_TRUE;
+			x86_opengl_debug("\tGL_POLYGON_OFFSET_FILL enabled!\n");
 			break;
 		}
 
 	case GL_POLYGON_OFFSET_LINE:
 
 		{
-			x86_opengl_server_capability->is_polygon_offset_line = GL_TRUE;
-			x86_opengl_debug("GL_POLYGON_OFFSET_LINE enabled!");
+			x86_opengl_ctx->context_cap->is_polygon_offset_line = GL_TRUE;
+			x86_opengl_debug("\tGL_POLYGON_OFFSET_LINE enabled!\n");
 			break;
 		}
 
 	case GL_POLYGON_OFFSET_POINT:
 
 		{
-			x86_opengl_server_capability->is_polygon_offset_point = GL_TRUE;
-			x86_opengl_debug("GL_POLYGON_OFFSET_POINT enabled!");
+			x86_opengl_ctx->context_cap->is_polygon_offset_point = GL_TRUE;
+			x86_opengl_debug("\tGL_POLYGON_OFFSET_POINT enabled!\n");
 			break;
 		}
 
 	case GL_POLYGON_SMOOTH:
 
 		{
-			x86_opengl_server_capability->is_polygon_smooth = GL_TRUE;
-			x86_opengl_debug("GL_POLYGON_SMOOTH enabled!");
+			x86_opengl_ctx->context_cap->is_polygon_smooth = GL_TRUE;
+			x86_opengl_debug("\tGL_POLYGON_SMOOTH enabled!\n");
 			break;
 		}
 
 	case GL_POLYGON_STIPPLE:
 
 		{
-			x86_opengl_server_capability->is_polygon_stipple = GL_TRUE;
-			x86_opengl_debug("GL_POLYGON_STIPPLE enabled!");
+			x86_opengl_ctx->context_cap->is_polygon_stipple = GL_TRUE;
+			x86_opengl_debug("\tGL_POLYGON_STIPPLE enabled!\n");
 			break;
 		}
 
 	case GL_POST_COLOR_MATRIX_COLOR_TABLE:
 
 		{
-			x86_opengl_server_capability->is_post_color_matrix_color_table = GL_TRUE;
-			x86_opengl_debug("GL_POST_COLOR_MATRIX_COLOR_TABLE enabled!");
+			x86_opengl_ctx->context_cap->is_post_color_matrix_color_table = GL_TRUE;
+			x86_opengl_debug("\tGL_POST_COLOR_MATRIX_COLOR_TABLE enabled!\n");
 			break;
 		}
 
 	case GL_POST_CONVOLUTION_COLOR_TABLE:
 
 		{
-			x86_opengl_server_capability->is_post_convolution_color_table = GL_TRUE;
-			x86_opengl_debug("GL_POST_CONVOLUTION_COLOR_TABLE enabled!");
+			x86_opengl_ctx->context_cap->is_post_convolution_color_table = GL_TRUE;
+			x86_opengl_debug("\tGL_POST_CONVOLUTION_COLOR_TABLE enabled!\n");
 			break;
 		}
 
 	case GL_RESCALE_NORMAL:
 
 		{
-			x86_opengl_server_capability->is_rescale_normal = GL_TRUE;
-			x86_opengl_debug("GL_RESCALE_NORMAL enabled!");
+			x86_opengl_ctx->context_cap->is_rescale_normal = GL_TRUE;
+			x86_opengl_debug("\tGL_RESCALE_NORMAL enabled!\n");
 			break;
 		}
 
 	case GL_SAMPLE_ALPHA_TO_COVERAGE:
 
 		{
-			x86_opengl_server_capability->is_sample_alpha_to_coverage = GL_TRUE;
-			x86_opengl_debug("GL_SAMPLE_ALPHA_TO_COVERAGE enabled!");
+			x86_opengl_ctx->context_cap->is_sample_alpha_to_coverage = GL_TRUE;
+			x86_opengl_debug("\tGL_SAMPLE_ALPHA_TO_COVERAGE enabled!\n");
 			break;
 		}
 
 	case GL_SAMPLE_ALPHA_TO_ONE:
 
 		{
-			x86_opengl_server_capability->is_sample_alpha_to_one = GL_TRUE;
-			x86_opengl_debug("GL_SAMPLE_ALPHA_TO_ONE enabled!");
+			x86_opengl_ctx->context_cap->is_sample_alpha_to_one = GL_TRUE;
+			x86_opengl_debug("\tGL_SAMPLE_ALPHA_TO_ONE enabled!\n");
 			break;
 		}
 
 	case GL_SAMPLE_COVERAGE:
 
 		{
-			x86_opengl_server_capability->is_sample_coverage = GL_TRUE;
-			x86_opengl_debug("GL_SAMPLE_COVERAGE enabled!");
+			x86_opengl_ctx->context_cap->is_sample_coverage = GL_TRUE;
+			x86_opengl_debug("\tGL_SAMPLE_COVERAGE enabled!\n");
 			break;
 		}
 
 	case GL_SEPARABLE_2D:
 
 		{
-			x86_opengl_server_capability->is_separable_2d = GL_TRUE;
-			x86_opengl_debug("GL_SEPARABLE_2D enabled!");
+			x86_opengl_ctx->context_cap->is_separable_2d = GL_TRUE;
+			x86_opengl_debug("\tGL_SEPARABLE_2D enabled!\n");
 			break;
 		}
 
 	case GL_SCISSOR_TEST:
 
 		{
-			x86_opengl_server_capability->is_scissor_test = GL_TRUE;
-			x86_opengl_debug("GL_SCISSOR_TEST enabled!");
+			x86_opengl_ctx->context_cap->is_scissor_test = GL_TRUE;
+			x86_opengl_debug("\tGL_SCISSOR_TEST enabled!\n");
 			break;
 		}
 
 	case GL_STENCIL_TEST:
 
 		{
-			x86_opengl_server_capability->is_stencil_test = GL_TRUE;
-			x86_opengl_debug("GL_STENCIL_TEST enabled!");
+			x86_opengl_ctx->context_cap->is_stencil_test = GL_TRUE;
+			x86_opengl_debug("\tGL_STENCIL_TEST enabled!\n");
 			break;
 		}
 
 	case GL_TEXTURE_1D:
 
 		{
-			x86_opengl_server_capability->is_texture_1d = GL_TRUE;
-			x86_opengl_debug("GL_TEXTURE_1D enabled!");
+			x86_opengl_ctx->context_cap->is_texture_1d = GL_TRUE;
+			x86_opengl_debug("\tGL_TEXTURE_1D enabled!\n");
 			break;
 		}
 
 	case GL_TEXTURE_2D:
 
 		{
-			x86_opengl_server_capability->is_texture_2d = GL_TRUE;
-			x86_opengl_debug("GL_TEXTURE_2D enabled!");
+			x86_opengl_ctx->context_cap->is_texture_2d = GL_TRUE;
+			x86_opengl_debug("\tGL_TEXTURE_2D enabled!\n");
 			break;
 		}
 
 	case GL_TEXTURE_3D:
 
 		{
-			x86_opengl_server_capability->is_texture_3d = GL_TRUE;
-			x86_opengl_debug("GL_TEXTURE_3D enabled!");
+			x86_opengl_ctx->context_cap->is_texture_3d = GL_TRUE;
+			x86_opengl_debug("\tGL_TEXTURE_3D enabled!\n");
 			break;
 		}
 
 	case GL_TEXTURE_CUBE_MAP:
 
 		{
-			x86_opengl_server_capability->is_texture_cube_map = GL_TRUE;
-			x86_opengl_debug("GL_TEXTURE_CUBE_MAP enabled!");
+			x86_opengl_ctx->context_cap->is_texture_cube_map = GL_TRUE;
+			x86_opengl_debug("\tGL_TEXTURE_CUBE_MAP enabled!\n");
 			break;
 		}
 
 	case GL_TEXTURE_GEN_Q:
 
 		{
-			x86_opengl_server_capability->is_texture_gen_q = GL_TRUE;
-			x86_opengl_debug("GL_TEXTURE_GEN_Q enabled!");
+			x86_opengl_ctx->context_cap->is_texture_gen_q = GL_TRUE;
+			x86_opengl_debug("\tGL_TEXTURE_GEN_Q enabled!\n");
 			break;
 		}
 
 	case GL_TEXTURE_GEN_R:
 
 		{
-			x86_opengl_server_capability->is_texture_gen_r = GL_TRUE;
-			x86_opengl_debug("GL_TEXTURE_GEN_R enabled!");
+			x86_opengl_ctx->context_cap->is_texture_gen_r = GL_TRUE;
+			x86_opengl_debug("\tGL_TEXTURE_GEN_R enabled!\n");
 			break;
 		}
 
 	case GL_TEXTURE_GEN_S:
 
 		{
-			x86_opengl_server_capability->is_texture_gen_s = GL_TRUE;
-			x86_opengl_debug("GL_TEXTURE_GEN_S enabled!");
+			x86_opengl_ctx->context_cap->is_texture_gen_s = GL_TRUE;
+			x86_opengl_debug("\tGL_TEXTURE_GEN_S enabled!\n");
 			break;
 		}
 
 	case GL_TEXTURE_GEN_T:
 
 		{
-			x86_opengl_server_capability->is_texture_gen_t = GL_TRUE;
-			x86_opengl_debug("GL_TEXTURE_GEN_T enabled!");
+			x86_opengl_ctx->context_cap->is_texture_gen_t = GL_TRUE;
+			x86_opengl_debug("\tGL_TEXTURE_GEN_T enabled!\n");
 			break;
 		}
 
 	case GL_VERTEX_PROGRAM_POINT_SIZE:
 
 		{
-			x86_opengl_server_capability->is_vertex_program_point_size = GL_TRUE;
-			x86_opengl_debug("GL_VERTEX_PROGRAM_POINT_SIZE enabled!");
+			x86_opengl_ctx->context_cap->is_vertex_program_point_size = GL_TRUE;
+			x86_opengl_debug("\tGL_VERTEX_PROGRAM_POINT_SIZE enabled!\n");
 			break;
 		}
 
 	case GL_VERTEX_PROGRAM_TWO_SIDE:
 
 		{
-			x86_opengl_server_capability->is_vertex_program_two_side = GL_TRUE;
-			x86_opengl_debug("GL_VERTEX_PROGRAM_TWO_SIDE enabled!");
+			x86_opengl_ctx->context_cap->is_vertex_program_two_side = GL_TRUE;
+			x86_opengl_debug("\tGL_VERTEX_PROGRAM_TWO_SIDE enabled!\n");
 			break;
 		}
 
@@ -923,3 +1072,31 @@ static int x86_opengl_func_glEnable(void)
 	return 0;
 }
 
+/*
+ * OpenGL call #4 - glViewport
+ *
+ * glViewport - set the viewport
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glViewport(void)
+{
+	unsigned int vpt_ptr;
+
+	/* Read arguments */
+	vpt_ptr = x86_isa_regs->ecx;
+	x86_opengl_debug("\tvpt_ptr=0x%x\n", vpt_ptr);
+
+	mem_read(x86_isa_mem, vpt_ptr, sizeof(struct x86_opengl_viewport_attributes_t), x86_opengl_ctx->viewport);
+
+	/* Initialize */
+
+	x86_opengl_debug("\tviewport: x=%d, y=%d, width=%d, height=%d\n",
+				x86_opengl_ctx->viewport->x, x86_opengl_ctx->viewport->y, 
+				x86_opengl_ctx->viewport->width, x86_opengl_ctx->viewport->height );
+
+	/* Return */
+	return 0;	
+}
