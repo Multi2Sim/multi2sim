@@ -33,21 +33,21 @@
 
 
 static char *err_cuda_not_impl =
-	"\tMulti2Sim provides partial support for CUDA library.\n"
+	"\tMulti2Sim provides partial support for CUDA driver library.\n"
 	"\tTo request the implementation of a certain functionality,\n"
 	"\tplease email development@multi2sim.org.\n";
 
 static char *err_cuda_version =
-	"\tYour guest application is using a version of the CUDA runtime library\n"
+	"\tYour guest application is using a version of the CUDA driver library\n"
 	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
-	"\tCUDA runtime library ('libm2s-cuda').\n";
+	"\tCUDA driver library ('libm2s-cuda').\n";
 
 
 
-/* Multi2Sim CUDA Runtime required */
-#define CUDA_RUNTIME_VERSION_MAJOR	0
-#define CUDA_RUNTIME_VERSION_MINOR	0
+/* Multi2Sim CUDA driver required */
+#define CUDA_VERSION_MAJOR	0
+#define CUDA_VERSION_MINOR	0
 
 struct cuda_version_t
 {
@@ -848,16 +848,16 @@ CUresult cuFuncSetSharedMemConfig(CUfunction hfunc, CUsharedconfig config)
 
 
 CUresult cuLaunchKernel(CUfunction f,
-                                unsigned int gridDimX,
-                                unsigned int gridDimY,
-                                unsigned int gridDimZ,
-                                unsigned int blockDimX,
-                                unsigned int blockDimY,
-                                unsigned int blockDimZ,
-                                unsigned int sharedMemBytes,
-                                CUstream hStream,
-                                void **kernelParams,
-                                void **extra)
+	unsigned int gridDimX,
+	unsigned int gridDimY,
+	unsigned int gridDimZ,
+	unsigned int blockDimX,
+	unsigned int blockDimY,
+	unsigned int blockDimZ,
+	unsigned int sharedMemBytes,
+	CUstream hStream,
+	void **kernelParams,
+	void **extra)
 {
 	__CUDA_NOT_IMPL__
 	return 0;

@@ -55,6 +55,7 @@ EXTRA_DIST = \
 	\
 	tools/libm2s-cuda/m2s-cuda.h \
 	tools/libm2s-cuda/cuda.c \
+	tools/libm2s-cuda/cudart.c \
 	tools/libm2s-cuda/Makefile \
 	\
 	tools/barplot/barplot.py \
