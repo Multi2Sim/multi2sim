@@ -22,6 +22,7 @@
 #define M2S_CUDA_H
 
 #include <cuda.h>
+#include <cuda_runtime_api.h>
 
 /* System call for CUDA runtime */
 #define CUDA_SYS_CODE  328
