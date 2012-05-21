@@ -378,7 +378,7 @@ struct vi_x86_panel_t *vi_x86_panel_create(void)
 
 	/* Frame */
 	GtkWidget *frame;
-	frame = gtk_frame_new("x86 GPU");
+	frame = gtk_frame_new("x86 CPU");
 
 	/* Layout */
 	GtkWidget *layout;
