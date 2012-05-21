@@ -807,13 +807,18 @@ struct x86_glut_window_properties_t
 	int height;
 };
 
+static struct x86_glut_window_properties_t *x86_glut_window_properties;
+static char *x86_glut_window_title;
+
 
 /* GLUT child thread function.
- * The function takes a pointer to a x86_glut_window_properties_t structure, allocated
- * by the thread creator. This structure needs to be freed here. */
+ * The argument of the function is ignored.
+ * The function takes the allocated values for 'x86_glut_window_properties' and
+ * 'x86_glut_window_title' from the thread creator, uses them, and then frees them. */
 static void *x86_glut_thread_func(void *arg)
 {
-	struct x86_glut_window_properties_t *properties = arg;
+	struct x86_glut_window_properties_t *properties = x86_glut_window_properties;
+	char *title = x86_glut_window_title;
 
 	/* Detach thread. Parent does not need to 'pthread_join' the child to
 	 * release its resources. */
@@ -825,7 +830,7 @@ static void *x86_glut_thread_func(void *arg)
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 
 	/* Create window */
-	glutCreateWindow("FIXME");  /* FIXME */
+	glutCreateWindow(title);
 
 	/* Host window callbacks */
 	glutIdleFunc(x86_glut_idle_func);
@@ -849,8 +854,11 @@ static void *x86_glut_thread_func(void *arg)
 	/* Resize guest frame buffer */
 	x86_glut_frame_buffer_resize(properties->width, properties->height);
 
-	/* Host GLUT main loop */
+	/* Free input arguments */
 	free(properties);
+	free(title);
+
+	/* Host GLUT main loop */
 	glutMainLoop();
 
 	/* Function never returns */
@@ -890,9 +898,16 @@ static int x86_glut_func_new_window(void)
 		fatal("%s: only one GLUT window allowed.\n%s",
 			__FUNCTION__, err_x86_glut_one_window);
 
+	/* Store values for 'x86_glut_window_properties' and 'x86_glut_window_title',
+	 * consumed by the secondary thread that creates the window. */
+	x86_glut_window_properties = properties;
+	x86_glut_window_title = strdup(title);
+	if (!x86_glut_window_title)
+		fatal("%s: out of memory", __FUNCTION__);
+
 	/* Launch secondary thread for host GLUT calls. A secondary thread is needed
 	 * to cover the limitations of glutMainLoop, a function that does not return. */
-	if (pthread_create(&x86_glut_thread, NULL, x86_glut_thread_func, properties))
+	if (pthread_create(&x86_glut_thread, NULL, x86_glut_thread_func, NULL))
 		fatal("%s: could not create child thread", __FUNCTION__);
 
 	/* Return host GLUT window ID. */
