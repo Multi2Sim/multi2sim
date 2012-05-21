@@ -44,6 +44,13 @@ static char *err_x86_glut_version =
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
 	"\tGLUT runtime library ('libm2s-glut').\n";
 
+static char *err_x86_glut_native =
+	"\tYou are trying to run natively an application using the Multi2Sim GLUT\n"
+	"\tlibrary implementation ('libm2s-glut'). Please run this program on top of\n"
+	"\tMulti2Sim.\n";
+
+
+
 
 /*
  * GLUT Internal State
@@ -74,8 +81,16 @@ void glutInit(int *argcp, char **argv)
 {
 	struct x86_glut_version_t version;
 
+	int ret;
+
 	/* Runtime function 'init' */
-	syscall(X86_GLUT_SYS_CODE, x86_glut_call_init, &version);
+	ret = syscall(X86_GLUT_SYS_CODE, x86_glut_call_init, &version);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call X86_GLUT_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			err_x86_glut_native);
 
 	/* Check that exact major version matches */
 	if (version.major != X86_GLUT_RUNTIME_VERSION_MAJOR
