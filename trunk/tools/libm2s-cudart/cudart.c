@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <m2s-cuda.h>
+#include <m2s-cudart.h>
 #include <debug.h>
 #include <list.h>
 #include <misc.h>
@@ -66,6 +66,7 @@ struct cudart_version_t
 void** CUDARTAPI __cudaRegisterFatBinary(void *fatCubin)
 {
 	__CUDART_NOT_IMPL__
+	return NULL;
 }
 
 
@@ -111,18 +112,16 @@ void CUDARTAPI __cudaRegisterSurface(void **fatCubinHandle,
 }
 
 
-void CUDARTAPI __cudaRegisterFunction(
-        void   **fatCubinHandle,
-  const char    *hostFun,
-        char    *deviceFun,
-  const char    *deviceName,
-        int      thread_limit,
-        uint3   *tid,
-        uint3   *bid,
-        dim3    *bDim,
-        dim3    *gDim,
-        int     *wSize
-)
+void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
+	const char *hostFun,
+	char *deviceFun,
+	const char *deviceName,
+	int thread_limit,
+	uint3 *tid,
+	uint3 *bid,
+	dim3 *bDim,
+	dim3 *gDim,
+	int *wSize)
 {
 	__CUDART_NOT_IMPL__
 }
