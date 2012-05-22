@@ -1615,6 +1615,98 @@ static void mem_config_trace(void)
 }
 
 
+/* */
+static void mem_config_read_debug_init_blocks(struct config_t *config)
+{
+	struct mod_command_t *command;
+
+	struct mod_t *mod;
+
+	char *section = "Debug.Init";
+	char *value;
+
+	char block_name[MAX_STRING_SIZE];
+	char mod_name[MAX_STRING_SIZE];
+	char buf[MAX_STRING_SIZE];
+
+	int block_id;
+
+	unsigned int set;
+	unsigned int way;
+
+	/* Check if section is present */
+	if (!config_section_exists(config, section))
+		return;
+
+	/* Read blocks */
+	block_id = 0;
+	for (;;)
+	{
+		/* Get block */
+		snprintf(block_name, sizeof block_name, "Block[%d]", block_id);
+		value = config_read_string(config, section, block_name, NULL);
+		if (!value)
+			break;
+
+		/* Split block fields */
+		if (sscanf(value, "%s %u %u", mod_name, &set, &way) != 3)
+			fatal("%s: invalid format for '%s'", __FUNCTION__, block_name);
+
+		/* Get module */
+		snprintf(buf, sizeof buf, "Module %s", mod_name);
+		if (!config_section_exists(config, buf))
+			fatal("%s: %s: invalid module name in '%s'",
+				__FUNCTION__, mod_name, block_name);
+		mod = config_read_ptr(config, buf, "ptr", NULL);
+		assert(mod);
+
+		/* Command to set the tag */
+		snprintf(buf, sizeof buf, "%s.Tag", block_name);
+		value = config_read_string(config, section, buf, NULL);
+		if (value)
+		{
+			unsigned int tag;
+
+			if (sscanf(value, "0x%x", &tag) != 1)
+				fatal("%s: %s: tag should be an hex value",
+					block_name, __FUNCTION__);
+			command = mod_command_create(mod_command_set_block_tag, mod, set, way);
+			command->u.set_block_tag.tag = tag;
+			esim_schedule_event(EV_MOD_COMMAND, command, 1);
+		}
+
+		/* Command to set the state */
+		snprintf(buf, sizeof buf, "%s.State", block_name);
+		value = config_read_string(config, section, buf, NULL);
+		if (value)
+		{
+			int state;
+
+			state = map_string(&cache_block_state_map, value);
+			if (!state)
+				fatal("%s: %s: invalid state", __FUNCTION__, block_name);
+			command = mod_command_create(mod_command_set_block_state, mod, set, way);
+			command->u.set_block_state.state = state;
+			esim_schedule_event(EV_MOD_COMMAND, command, 1);
+		}
+
+		/* Next block */
+		block_id++;
+	}
+
+}
+
+
+static void mem_config_read_debug_init_events(struct config_t *config)
+{
+}
+
+
+static void mem_config_read_debug_check_blocks(struct config_t *config)
+{
+}
+
+
 
 
 /*
@@ -1657,6 +1749,12 @@ void mem_system_config_read(void)
 
 	/* Create switches in internal networks */
 	mem_config_create_switches(config);
+
+	/* Initialization of blocks in memory modules. This option is used for
+	 * debug purposes of the MOESI protocol. */
+	mem_config_read_debug_init_blocks(config);
+	mem_config_read_debug_init_events(config);
+	mem_config_read_debug_check_blocks(config);
 
 	/* Check that all enforced sections and variables were specified */
 	config_check(config);

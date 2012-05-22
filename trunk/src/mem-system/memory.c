@@ -31,9 +31,9 @@ int mem_safe_mode = 1;
 
 
 /* Return mem page corresponding to an address. */
-struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr)
+struct mem_page_t *mem_page_get(struct mem_t *mem, unsigned int addr)
 {
-	uint32_t index, tag;
+	unsigned int index, tag;
 	struct mem_page_t *prev, *page;
 
 	tag = addr & ~(MEM_PAGE_SIZE - 1);
@@ -63,9 +63,9 @@ struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr)
 
 /* Return the memory page following addr in the current memory map. This function
  * is useful to reconstruct consecutive ranges of mapped pages. */
-struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr)
+struct mem_page_t *mem_page_get_next(struct mem_t *mem, unsigned int addr)
 {
-	uint32_t tag, index, mintag;
+	unsigned int tag, index, mintag;
 	struct mem_page_t *page, *minpage;
 
 	/* Get tag of the page just following addr */
@@ -103,9 +103,9 @@ struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr)
 
 
 /* Create new mem page */
-static struct mem_page_t *mem_page_create(struct mem_t *mem, uint32_t addr, int perm)
+static struct mem_page_t *mem_page_create(struct mem_t *mem, unsigned int addr, int perm)
 {
-	uint32_t index, tag;
+	unsigned int index, tag;
 	struct mem_page_t *page;
 
 	/* Create new page */
@@ -131,9 +131,9 @@ static struct mem_page_t *mem_page_create(struct mem_t *mem, uint32_t addr, int 
 
 
 /* Free mem pages */
-static void mem_page_free(struct mem_t *mem, uint32_t addr)
+static void mem_page_free(struct mem_t *mem, unsigned int addr)
 {
-	uint32_t index, tag;
+	unsigned int index, tag;
 	struct mem_page_t *prev, *page;
 	
 	tag = addr & ~(MEM_PAGE_SIZE - 1);
@@ -164,7 +164,7 @@ static void mem_page_free(struct mem_t *mem, uint32_t addr)
 
 /* Copy memory pages. All parameters must be multiple of the page size.
  * The pages in the source and destination interval must exist. */
-void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size)
+void mem_copy(struct mem_t *mem, unsigned int dest, unsigned int src, int size)
 {
 	struct mem_page_t *page_dest, *page_src;
 
@@ -213,11 +213,11 @@ void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size)
 /* Return the buffer corresponding to address 'addr' in the simulated
  * mem. The returned buffer is null if addr+size exceeds the page
  * boundaries. */
-void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size,
+void *mem_get_buffer(struct mem_t *mem, unsigned int addr, int size,
 	enum mem_access_t access)
 {
 	struct mem_page_t *page;
-	uint32_t offset;
+	unsigned int offset;
 
 	/* Get page offset and check page bounds */
 	offset = addr & (MEM_PAGE_SIZE - 1);
@@ -247,11 +247,11 @@ void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size,
 
 
 /* Access memory without exceeding page boundaries. */
-static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
+static void mem_access_page_boundary(struct mem_t *mem, unsigned int addr,
 	int size, void *buf, enum mem_access_t access)
 {
 	struct mem_page_t *page;
-	uint32_t offset;
+	unsigned int offset;
 
 	/* Find memory page and compute offset. */
 	page = mem_page_get(mem, addr);
@@ -317,10 +317,10 @@ static void mem_access_page_boundary(struct mem_t *mem, uint32_t addr,
 
 /* Access mem at address 'addr'.
  * This access can cross page boundaries. */
-void mem_access(struct mem_t *mem, uint32_t addr, int size, void *buf,
+void mem_access(struct mem_t *mem, unsigned int addr, int size, void *buf,
 	enum mem_access_t access)
 {
-	uint32_t offset;
+	unsigned int offset;
 	int chunksize;
 
 	mem->last_address = addr;
@@ -337,13 +337,13 @@ void mem_access(struct mem_t *mem, uint32_t addr, int size, void *buf,
 }
 
 
-void mem_read(struct mem_t *mem, uint32_t addr, int size, void *buf)
+void mem_read(struct mem_t *mem, unsigned int addr, int size, void *buf)
 {
 	mem_access(mem, addr, size, buf, mem_access_read);
 }
 
 
-void mem_write(struct mem_t *mem, uint32_t addr, int size, void *buf)
+void mem_write(struct mem_t *mem, unsigned int addr, int size, void *buf)
 {
 	mem_access(mem, addr, size, buf, mem_access_write);
 }
@@ -406,10 +406,10 @@ void mem_clear(struct mem_t *mem)
 
 /* This function finds a free memory region to allocate 'size' bytes
  * starting at address 'addr'. */
-uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size)
+unsigned int mem_map_space(struct mem_t *mem, unsigned int addr, int size)
 {
-	uint32_t tag_start;
-	uint32_t tag_end;
+	unsigned int tag_start;
+	unsigned int tag_end;
 
 	assert(!(addr & (MEM_PAGE_SIZE - 1)));
 	assert(!(size & (MEM_PAGE_SIZE - 1)));
@@ -421,7 +421,7 @@ uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size)
 	{
 		/* Address space overflow */
 		if (!tag_end)
-			return (uint32_t) -1;
+			return (unsigned int) -1;
 		
 		/* Not enough free pages in current region */
 		if (mem_page_get(mem, tag_end))
@@ -446,10 +446,10 @@ uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size)
 }
 
 
-uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size)
+unsigned int mem_map_space_down(struct mem_t *mem, unsigned int addr, int size)
 {
-	uint32_t tag_start;
-	uint32_t tag_end;
+	unsigned int tag_start;
+	unsigned int tag_end;
 
 	assert(!(addr & (MEM_PAGE_SIZE - 1)));
 	assert(!(size & (MEM_PAGE_SIZE - 1)));
@@ -460,7 +460,7 @@ uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size)
 	{
 		/* Address space overflow */
 		if (!tag_start)
-			return (uint32_t) -1;
+			return (unsigned int) -1;
 		
 		/* Not enough free pages in current region */
 		if (mem_page_get(mem, tag_start))
@@ -488,10 +488,10 @@ uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size)
  * access 'size' bytes at 'addr'. These two fields do not need to be
  * aligned to page boundaries.
  * If some page already exists, add permissions. */
-void mem_map(struct mem_t *mem, uint32_t addr, int size,
+void mem_map(struct mem_t *mem, unsigned int addr, int size,
 	enum mem_access_t perm)
 {
-	uint32_t tag1, tag2, tag;
+	unsigned int tag1, tag2, tag;
 	struct mem_page_t *page;
 
 	/* Calculate page boundaries */
@@ -514,9 +514,9 @@ void mem_map(struct mem_t *mem, uint32_t addr, int size,
  * If some page was not allocated, the corresponding address range is skipped.
  * If a host mapping is caught in the range, it is deallocated with a call
  * to 'mem_unmap_host'. */
-void mem_unmap(struct mem_t *mem, uint32_t addr, int size)
+void mem_unmap(struct mem_t *mem, unsigned int addr, int size)
 {
-	uint32_t tag1, tag2, tag;
+	unsigned int tag1, tag2, tag;
 
 	/* Calculate page boundaries */
 	assert(!(addr & (MEM_PAGE_SIZE - 1)));
@@ -531,9 +531,9 @@ void mem_unmap(struct mem_t *mem, uint32_t addr, int size)
 
 
 /* Assign protection attributes to pages */
-void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t perm)
+void mem_protect(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t perm)
 {
-	uint32_t tag1, tag2, tag;
+	unsigned int tag1, tag2, tag;
 	struct mem_page_t *page;
 
 	/* Calculate page boundaries */
@@ -555,7 +555,7 @@ void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t p
 }
 
 
-void mem_write_string(struct mem_t *mem, uint32_t addr, char *str)
+void mem_write_string(struct mem_t *mem, unsigned int addr, char *str)
 {
 	mem_access(mem, addr, strlen(str) + 1, str, mem_access_write);
 }
@@ -564,7 +564,7 @@ void mem_write_string(struct mem_t *mem, uint32_t addr, char *str)
 /* Read a string from memory and return the length of the read string.
  * If the return length is equal to max_size, it means that the string did not
  * fit in the destination buffer. */
-int mem_read_string(struct mem_t *mem, uint32_t addr, int size, char *str)
+int mem_read_string(struct mem_t *mem, unsigned int addr, int size, char *str)
 {
 	int i;
 	for (i = 0; i < size; i++)
@@ -577,7 +577,7 @@ int mem_read_string(struct mem_t *mem, uint32_t addr, int size, char *str)
 }
 
 
-void mem_zero(struct mem_t *mem, uint32_t addr, int size)
+void mem_zero(struct mem_t *mem, unsigned int addr, int size)
 {
 	unsigned char zero = 0;
 	while (size--)
@@ -585,11 +585,11 @@ void mem_zero(struct mem_t *mem, uint32_t addr, int size)
 }
 
 
-void mem_dump(struct mem_t *mem, char *filename, uint32_t start, uint32_t end)
+void mem_dump(struct mem_t *mem, char *filename, unsigned int start, unsigned int end)
 {
 	FILE *f;
-	uint32_t size;
-	uint8_t buf[MEM_PAGE_SIZE];
+	unsigned int size;
+	unsigned char buf[MEM_PAGE_SIZE];
 
 	f = fopen(filename, "wb");
 	if (!f)
@@ -611,11 +611,11 @@ void mem_dump(struct mem_t *mem, char *filename, uint32_t start, uint32_t end)
 }
 
 
-void mem_load(struct mem_t *mem, char *file_name, uint32_t start)
+void mem_load(struct mem_t *mem, char *file_name, unsigned int start)
 {
 	FILE *f;
-	uint32_t size;
-	uint8_t buf[MEM_PAGE_SIZE];
+	unsigned int size;
+	unsigned char buf[MEM_PAGE_SIZE];
 	
 	f = fopen(file_name, "rb");
 	if (!f)

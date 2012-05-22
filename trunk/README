@@ -230,6 +230,27 @@ Coding Guidelines
 
 		printf("%lld\n", (long long) value);
 
+* Integer types:
+
+	Integer variables should be declared using built-in integer types, i.e.,
+	avoiding types in 'stdint.h' (uint8_t, int8_t, uint16_t, ...). The
+	main motivation is that some non-built-in types require type casts in 'printf'
+	calls to avoid warnings. Since Multi2Sim is assumed to run either on an
+	x86 or an x86_64 machine, the following type sizes should be used:
+
+	Unsigned 8-, 16-, 32-, and 64-bit integers:
+		unsigned char
+		unsigned short
+		unsigned int
+		unsigned long long
+	
+	Signed 8-, 16-, 32-, and 64-bit integers:
+		char
+		short
+		int
+		long long
+
+
 
 ===============================================================================
 Steps to Release a New Version Release (Administrator):
