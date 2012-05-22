@@ -376,6 +376,7 @@ void glAccum( GLenum op, GLfloat value )
 void glMatrixMode( GLenum mode )
 {
 	printf("glMatrixMode\n");
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glMatrixMode, &mode);
 }
 
 
@@ -441,6 +442,7 @@ void glPopMatrix( void )
 void glLoadIdentity( void )
 {
 	printf("glLoadIdentity\n");
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glLoadIdentity);
 }
 
 
