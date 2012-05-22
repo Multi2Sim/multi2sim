@@ -57,7 +57,7 @@ extern int mem_safe_mode;
 /* A 4KB page of memory */
 struct mem_page_t
 {
-	uint32_t tag;
+	unsigned int tag;
 	enum mem_access_t perm;  /* Access permissions; combination of flags */
 	struct mem_page_t *next;
 	unsigned char *data;
@@ -75,10 +75,10 @@ struct mem_t
 	int safe;
 
 	/* Heap break for CPU contexts */
-	uint32_t heap_break;
+	unsigned int heap_break;
 
 	/* Last accessed address */
-	uint32_t last_address;
+	unsigned int last_address;
 };
 
 extern unsigned long mem_mapped_space;
@@ -92,29 +92,29 @@ void mem_unlink(struct mem_t *mem);
 
 void mem_clear(struct mem_t *mem);
 
-struct mem_page_t *mem_page_get(struct mem_t *mem, uint32_t addr);
-struct mem_page_t *mem_page_get_next(struct mem_t *mem, uint32_t addr);
+struct mem_page_t *mem_page_get(struct mem_t *mem, unsigned int addr);
+struct mem_page_t *mem_page_get_next(struct mem_t *mem, unsigned int addr);
 
-uint32_t mem_map_space(struct mem_t *mem, uint32_t addr, int size);
-uint32_t mem_map_space_down(struct mem_t *mem, uint32_t addr, int size);
+unsigned int mem_map_space(struct mem_t *mem, unsigned int addr, int size);
+unsigned int mem_map_space_down(struct mem_t *mem, unsigned int addr, int size);
 
-void mem_map(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t perm);
-void mem_unmap(struct mem_t *mem, uint32_t addr, int size);
+void mem_map(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t perm);
+void mem_unmap(struct mem_t *mem, unsigned int addr, int size);
 
-void mem_protect(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t perm);
-void mem_copy(struct mem_t *mem, uint32_t dest, uint32_t src, int size);
+void mem_protect(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t perm);
+void mem_copy(struct mem_t *mem, unsigned int dest, unsigned int src, int size);
 
-void mem_access(struct mem_t *mem, uint32_t addr, int size, void *buf, enum mem_access_t access);
-void mem_read(struct mem_t *mem, uint32_t addr, int size, void *buf);
-void mem_write(struct mem_t *mem, uint32_t addr, int size, void *buf);
+void mem_access(struct mem_t *mem, unsigned int addr, int size, void *buf, enum mem_access_t access);
+void mem_read(struct mem_t *mem, unsigned int addr, int size, void *buf);
+void mem_write(struct mem_t *mem, unsigned int addr, int size, void *buf);
 
-void mem_zero(struct mem_t *mem, uint32_t addr, int size);
-int mem_read_string(struct mem_t *mem, uint32_t addr, int size, char *str);
-void mem_write_string(struct mem_t *mem, uint32_t addr, char *str);
-void *mem_get_buffer(struct mem_t *mem, uint32_t addr, int size, enum mem_access_t access);
+void mem_zero(struct mem_t *mem, unsigned int addr, int size);
+int mem_read_string(struct mem_t *mem, unsigned int addr, int size, char *str);
+void mem_write_string(struct mem_t *mem, unsigned int addr, char *str);
+void *mem_get_buffer(struct mem_t *mem, unsigned int addr, int size, enum mem_access_t access);
 
-void mem_dump(struct mem_t *mem, char *filename, uint32_t start, uint32_t end);
-void mem_load(struct mem_t *mem, char *filename, uint32_t start);
+void mem_dump(struct mem_t *mem, char *filename, unsigned int start, unsigned int end);
+void mem_load(struct mem_t *mem, char *filename, unsigned int start);
 
 void mem_clone(struct mem_t *dst_mem, struct mem_t *src_mem);
 
@@ -150,7 +150,7 @@ void mem_clone(struct mem_t *dst_mem, struct mem_t *src_mem);
 
 struct spec_mem_page_t
 {
-	uint32_t addr;
+	unsigned int addr;
 	unsigned char data[SPEC_MEM_PAGE_SIZE];
 	struct spec_mem_page_t *next;
 };
@@ -166,8 +166,8 @@ struct spec_mem_t
 struct spec_mem_t *spec_mem_create(struct mem_t *mem);
 void spec_mem_free(struct spec_mem_t *spec_mem);
 
-void spec_mem_read(struct spec_mem_t *spec_mem, uint32_t addr, int size, void *buf);
-void spec_mem_write(struct spec_mem_t *spec_mem, uint32_t addr, int size, void *buf);
+void spec_mem_read(struct spec_mem_t *spec_mem, unsigned int addr, int size, void *buf);
+void spec_mem_write(struct spec_mem_t *spec_mem, unsigned int addr, int size, void *buf);
 
 void spec_mem_clear(struct spec_mem_t *spec_mem);
 
@@ -204,9 +204,9 @@ struct cache_block_t
 	struct cache_block_t *way_next;
 	struct cache_block_t *way_prev;
 
-	uint32_t tag;
-	uint32_t transient_tag;
-	uint32_t way;
+	unsigned int tag;
+	unsigned int transient_tag;
+	unsigned int way;
 
 	enum cache_block_state_t state;
 };
@@ -222,33 +222,34 @@ struct cache_t
 {
 	char *name;
 
-	uint32_t num_sets;
-	uint32_t block_size;
-	uint32_t assoc;
+	unsigned int num_sets;
+	unsigned int block_size;
+	unsigned int assoc;
 	enum cache_policy_t policy;
 
 	struct cache_set_t *sets;
-	uint32_t block_mask;
+	unsigned int block_mask;
 	int log_block_size;
 };
 
 
-struct cache_t *cache_create(char *name, uint32_t num_sets, uint32_t block_size,
-	uint32_t assoc, enum cache_policy_t policy);
+struct cache_t *cache_create(char *name, unsigned int num_sets, unsigned int block_size,
+	unsigned int assoc, enum cache_policy_t policy);
 void cache_free(struct cache_t *cache);
 
-void cache_decode_address(struct cache_t *cache, uint32_t addr,
-	uint32_t *set_ptr, uint32_t *tag_ptr, uint32_t *offset_ptr);
-int cache_find_block(struct cache_t *cache, uint32_t addr,
-	uint32_t *set_ptr, uint32_t *pway, int *state_ptr);
-void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
-	uint32_t tag, int state);
-void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
-	uint32_t *tag_ptr, int *state_ptr);
+void cache_decode_address(struct cache_t *cache, unsigned int addr,
+	unsigned int *set_ptr, unsigned int *tag_ptr, unsigned int *offset_ptr);
+int cache_find_block(struct cache_t *cache, unsigned int addr,
+	unsigned int *set_ptr, unsigned int *pway, int *state_ptr);
+void cache_set_block(struct cache_t *cache, unsigned int set, unsigned int way,
+	unsigned int tag, int state);
+void cache_get_block(struct cache_t *cache, unsigned int set, unsigned int way,
+	unsigned int *tag_ptr, int *state_ptr);
 
-void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way);
-uint32_t cache_replace_block(struct cache_t *cache, uint32_t set);
-void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, uint32_t tag);
+void cache_access_block(struct cache_t *cache, unsigned int set, unsigned int way);
+unsigned int cache_replace_block(struct cache_t *cache, unsigned int set);
+void cache_set_transient_tag(struct cache_t *cache, unsigned int set, unsigned int way, unsigned int tag);
+
 
 
 
@@ -351,6 +352,66 @@ void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access);
 
 
 /*
+ * Command on Memory Module
+ */
+
+/* Command type */
+enum mod_command_kind_t
+{
+	mod_command_invalid = 0,
+	mod_command_set_block_tag,
+	mod_command_set_block_state,
+	mod_command_set_block_owner,
+	mod_command_set_block_sharers
+};
+
+/* Command on a memory module. Used for debugging purposes to assign initial
+ * states to memory blocks, to test correctness in MOESI implementation. */
+struct mod_command_t
+{
+	enum mod_command_kind_t kind;
+
+	/* Module and block identifiers */
+	struct mod_t *mod;
+	unsigned int set;
+	unsigned int way;
+
+	/* Depending on the value of 'kind', the following fields are
+	 * interpreted in the command. */
+	union
+	{
+		struct {
+			unsigned int tag;
+		} set_block_tag;
+
+		struct {
+			int state;
+		} set_block_state;
+
+		struct {
+			int sub_block;
+			int owner;
+		} set_block_owner;
+
+		struct {
+			int sub_block;
+			char *sharers_str;
+		};
+	} u;
+};
+
+extern int EV_MOD_COMMAND;
+
+struct mod_command_t *mod_command_create(enum mod_command_kind_t kind,
+	struct mod_t *mod, unsigned int set, unsigned int way);
+void mod_command_free(struct mod_command_t *command);
+
+void mod_handler_command(int event, void *data);
+
+
+
+
+/*
  * Memory Module
  */
 
@@ -417,16 +478,16 @@ struct mod_t
 		/* For range_kind = mod_range_bounds */
 		struct
 		{
-			uint32_t low;
-			uint32_t high;
+			unsigned int low;
+			unsigned int high;
 		} bounds;
 
 		/* For range_kind = mod_range_interleaved */
 		struct
 		{
-			uint32_t mod;
-			uint32_t div;
-			uint32_t eq;
+			unsigned int mod;
+			unsigned int div;
+			unsigned int eq;
 		} interleaved;
 	} range;
 
@@ -536,12 +597,12 @@ void mod_free(struct mod_t *mod);
 void mod_dump(struct mod_t *mod, FILE *f);
 
 long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind, 
-	uint32_t addr, int *witness_ptr, struct linked_list_t *event_queue, 
+	unsigned int addr, int *witness_ptr, struct linked_list_t *event_queue,
 	void *event_queue_item);
-int mod_can_access(struct mod_t *mod, uint32_t addr);
+int mod_can_access(struct mod_t *mod, unsigned int addr);
 
-int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
-	uint32_t *way_ptr, uint32_t *tag_ptr, int *state_ptr);
+int mod_find_block(struct mod_t *mod, unsigned int addr, unsigned int *set_ptr,
+	unsigned int *way_ptr, unsigned int *tag_ptr, int *state_ptr);
 
 void mod_lock_port(struct mod_t *mod, struct mod_stack_t *stack, int event);
 void mod_unlock_port(struct mod_t *mod, struct mod_port_t *port,
@@ -551,18 +612,18 @@ void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack,
 	enum mod_access_kind_t access_kind);
 void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack);
 
-int mod_in_flight_access(struct mod_t *mod, long long id, uint32_t addr);
-struct mod_stack_t *mod_in_flight_address(struct mod_t *mod, uint32_t addr,
+int mod_in_flight_access(struct mod_t *mod, long long id, unsigned int addr);
+struct mod_stack_t *mod_in_flight_address(struct mod_t *mod, unsigned int addr,
 	struct mod_stack_t *older_than_stack);
 struct mod_stack_t *mod_in_flight_write(struct mod_t *mod,
 	struct mod_stack_t *older_than_stack);
 
-struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr);
+struct mod_t *mod_get_low_mod(struct mod_t *mod, unsigned int addr);
 
 int mod_get_retry_latency(struct mod_t *mod);
 
 struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
-	enum mod_access_kind_t access_kind, uint32_t addr,
+	enum mod_access_kind_t access_kind, unsigned int addr,
 	struct mod_stack_t *older_than_stack);
 void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
 	struct mod_stack_t *stack);
@@ -719,15 +780,15 @@ struct mod_stack_t
 
 	struct mod_port_t *port;
 
-	uint32_t addr;
-	uint32_t tag;
-	uint32_t set;
-	uint32_t way;
+	unsigned int addr;
+	unsigned int tag;
+	unsigned int set;
+	unsigned int way;
 	int state;
 
-	uint32_t src_set;
-	uint32_t src_way;
-	uint32_t src_tag;
+	unsigned int src_set;
+	unsigned int src_way;
+	unsigned int src_tag;
 
 	enum mod_request_dir_t request_dir;
 	int reply_size;
@@ -795,7 +856,7 @@ struct mod_stack_t
 extern long long mod_stack_id;
 
 struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
-	uint32_t addr, int ret_event, void *ret_stack);
+	unsigned int addr, int ret_event, void *ret_stack);
 void mod_stack_return(struct mod_stack_t *stack);
 
 void mod_stack_wait_in_mod(struct mod_stack_t *stack,

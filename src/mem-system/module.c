@@ -24,7 +24,7 @@
  * Private Functions
  */
 
-static int mod_serves_address(struct mod_t *mod, uint32_t addr)
+static int mod_serves_address(struct mod_t *mod, unsigned int addr)
 {
 	/* Address bounds */
 	if (mod->range_kind == mod_range_bounds)
@@ -112,7 +112,7 @@ void mod_dump(struct mod_t *mod, FILE *f)
  * The function returns a unique access ID.
  */
 long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind, 
-	uint32_t addr, int *witness_ptr, struct linked_list_t *event_queue, 
+	unsigned int addr, int *witness_ptr, struct linked_list_t *event_queue,
 	void *event_queue_item)
 {
 	struct mod_stack_t *stack;
@@ -154,7 +154,7 @@ long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind,
 
 
 /* Return true if module can be accessed. */
-int mod_can_access(struct mod_t *mod, uint32_t addr)
+int mod_can_access(struct mod_t *mod, unsigned int addr)
 {
 	int non_coalesced_accesses;
 
@@ -177,26 +177,26 @@ int mod_can_access(struct mod_t *mod, uint32_t addr)
 
 /* Return {set, way, tag, state} for an address.
  * The function returns TRUE on hit, FALSE on miss. */
-int mod_find_block(struct mod_t *mod, uint32_t addr, uint32_t *set_ptr,
-	uint32_t *way_ptr, uint32_t *tag_ptr, int *state_ptr)
+int mod_find_block(struct mod_t *mod, unsigned int addr, unsigned int *set_ptr,
+	unsigned int *way_ptr, unsigned int *tag_ptr, int *state_ptr)
 {
 	struct cache_t *cache = mod->cache;
 	struct cache_block_t *blk;
 	struct dir_lock_t *dir_lock;
 
-	uint32_t set;
-	uint32_t way;
-	uint32_t tag;
+	unsigned int set;
+	unsigned int way;
+	unsigned int tag;
 
 	/* A transient tag is considered a hit if the block is
 	 * locked in the corresponding directory. */
 	tag = addr & ~cache->block_mask;
 	if (mod->range_kind == mod_range_interleaved)
 	{
-		uint32_t num_mods = mod->range.interleaved.mod;
-		set = ((tag >> cache->log_block_size)/num_mods) % cache->num_sets;
+		unsigned int num_mods = mod->range.interleaved.mod;
+		set = ((tag >> cache->log_block_size) / num_mods) % cache->num_sets;
 	}
-	else if(mod->range_kind == mod_range_bounds)
+	else if (mod->range_kind == mod_range_bounds)
 	{
 		set = (tag >> cache->log_block_size) % cache->num_sets;
 	}
@@ -361,7 +361,7 @@ void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack)
  * The address of the access is passed as well because this lookup is done on the
  * access truth table, indexed by the access address.
  */
-int mod_in_flight_access(struct mod_t *mod, long long id, uint32_t addr)
+int mod_in_flight_access(struct mod_t *mod, long long id, unsigned int addr)
 {
 	struct mod_stack_t *stack;
 	int index;
@@ -381,7 +381,7 @@ int mod_in_flight_access(struct mod_t *mod, long long id, uint32_t addr)
  * If 'older_than_stack' is NULL, return the youngest in-flight access containing 'addr'.
  * The function returns NULL if there is no in-flight access to block containing 'addr'.
  */
-struct mod_stack_t *mod_in_flight_address(struct mod_t *mod, uint32_t addr,
+struct mod_stack_t *mod_in_flight_address(struct mod_t *mod, unsigned int addr,
 	struct mod_stack_t *older_than_stack)
 {
 	struct mod_stack_t *stack;
@@ -430,7 +430,7 @@ struct mod_stack_t *mod_in_flight_write(struct mod_t *mod,
 
 
 /* Return the low module serving a given address. */
-struct mod_t *mod_get_low_mod(struct mod_t *mod, uint32_t addr)
+struct mod_t *mod_get_low_mod(struct mod_t *mod, unsigned int addr)
 {
 	struct mod_t *low_mod;
 	struct mod_t *server_mod;
@@ -483,7 +483,7 @@ int mod_get_retry_latency(struct mod_t *mod)
  * If it can, return the access that it would be coalesced with. Otherwise,
  * return NULL. */
 struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
-	enum mod_access_kind_t access_kind, uint32_t addr,
+	enum mod_access_kind_t access_kind, unsigned int addr,
 	struct mod_stack_t *older_than_stack)
 {
 	struct mod_stack_t *stack;
@@ -543,6 +543,7 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 
 	default:
 		panic("%s: invalid access type", __FUNCTION__);
+		break;
 	}
 
 	/* No access found */
@@ -584,7 +585,7 @@ void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
 long long mod_stack_id;
 
 struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
-	uint32_t addr, int ret_event, void *ret_stack)
+	unsigned int addr, int ret_event, void *ret_stack)
 {
 	struct mod_stack_t *stack;
 
@@ -715,3 +716,74 @@ void mod_stack_wakeup_stack(struct mod_stack_t *master_stack)
 	mem_debug("\n");
 }
 
+
+
+
+/*
+ * Module Command
+ */
+
+int EV_MOD_COMMAND;
+
+struct mod_command_t *mod_command_create(enum mod_command_kind_t kind,
+	struct mod_t *mod, unsigned int set, unsigned int way)
+{
+	struct mod_command_t *command;
+
+	/* Allocate */
+	command = calloc(1, sizeof(struct mod_command_t));
+	if (!command)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	command->kind = kind;
+	command->mod = mod;
+	command->set = set;
+	command->way = way;
+
+	/* Return */
+	return command;
+}
+
+
+void mod_command_free(struct mod_command_t *command)
+{
+	free(command);
+}
+
+
+/* Event handler for 'mod_command_t' command processing */
+void mod_handler_command(int event, void *data)
+{
+	struct mod_command_t *command = data;
+
+	struct mod_t *mod = command->mod;
+	struct cache_t *cache = mod->cache;
+
+	unsigned int set = command->set;
+	unsigned int way = command->way;
+
+	/* Process command */
+	assert(event == EV_MOD_COMMAND);
+	switch (command->kind)
+	{
+
+	case mod_command_set_block_tag:
+	{
+		int state;
+
+		cache_get_block(cache, set, way, NULL, &state);
+		cache_set_block(cache, set, way, command->u.set_block_tag.tag, state);
+
+		break;
+	}
+
+	default:
+		panic("%s: invalid command kind (%d)",
+			__FUNCTION__, command->kind);
+		break;
+	}
+
+	/* Free command */
+	mod_command_free(command);
+}

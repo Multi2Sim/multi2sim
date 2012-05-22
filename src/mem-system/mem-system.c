@@ -78,6 +78,9 @@ void mem_system_init(void)
 	EV_MOD_GPU_WRITE_FINISH = esim_register_event(mod_handler_gpu_write);
 
 	/* CPU memory event-driven simulation */
+
+	EV_MOD_COMMAND = esim_register_event(mod_handler_command);
+
 	EV_MOD_LOAD = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_LOCK = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_ACTION = esim_register_event(mod_handler_load);
