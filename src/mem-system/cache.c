@@ -116,12 +116,12 @@ static void cache_update_waylist(struct cache_set_t *set,
  */
 
 
-struct cache_t *cache_create(char *name, uint32_t num_sets, uint32_t block_size,
-	uint32_t assoc, enum cache_policy_t policy)
+struct cache_t *cache_create(char *name, unsigned int num_sets, unsigned int block_size,
+	unsigned int assoc, enum cache_policy_t policy)
 {
 	struct cache_t *cache;
 	struct cache_block_t *block;
-	uint32_t set, way;
+	unsigned int set, way;
 
 	/* Create cache */
 	cache = calloc(1, sizeof(struct cache_t));
@@ -178,7 +178,7 @@ struct cache_t *cache_create(char *name, uint32_t num_sets, uint32_t block_size,
 
 void cache_free(struct cache_t *cache)
 {
-	uint32_t set;
+	unsigned int set;
 
 	for (set = 0; set < cache->num_sets; set++)
 		free(cache->sets[set].blocks);
@@ -189,8 +189,8 @@ void cache_free(struct cache_t *cache)
 
 
 /* Return {set, tag, offset} for a given address */
-void cache_decode_address(struct cache_t *cache, uint32_t addr,
-	uint32_t *set_ptr, uint32_t *tag_ptr, uint32_t *offset_ptr)
+void cache_decode_address(struct cache_t *cache, unsigned int addr,
+	unsigned int *set_ptr, unsigned int *tag_ptr, unsigned int *offset_ptr)
 {
 	PTR_ASSIGN(set_ptr, (addr >> cache->log_block_size) % cache->num_sets);
 	PTR_ASSIGN(tag_ptr, addr & ~cache->block_mask);
@@ -201,10 +201,10 @@ void cache_decode_address(struct cache_t *cache, uint32_t addr,
 /* Look for a block in the cache. If it is found and its state is other than 0,
  * the function returns 1 and the state and way of the block are also returned.
  * The set where the address would belong is returned anyways. */
-int cache_find_block(struct cache_t *cache, uint32_t addr,
-	uint32_t *set_ptr, uint32_t *way_ptr, int *state_ptr)
+int cache_find_block(struct cache_t *cache, unsigned int addr,
+	unsigned int *set_ptr, unsigned int *way_ptr, int *state_ptr)
 {
-	uint32_t set, tag, way;
+	unsigned int set, tag, way;
 
 	/* Locate block */
 	tag = addr & ~cache->block_mask;
@@ -229,8 +229,8 @@ int cache_find_block(struct cache_t *cache, uint32_t addr,
 /* Set the tag and state of a block.
  * If replacement policy is FIFO, update linked list in case a new
  * block is brought to cache, i.e., a new tag is set. */
-void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
-	uint32_t tag, int state)
+void cache_set_block(struct cache_t *cache, unsigned int set, unsigned int way,
+	unsigned int tag, int state)
 {
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
@@ -249,8 +249,8 @@ void cache_set_block(struct cache_t *cache, uint32_t set, uint32_t way,
 }
 
 
-void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
-	uint32_t *tag_ptr, int *state_ptr)
+void cache_get_block(struct cache_t *cache, unsigned int set, unsigned int way,
+	unsigned int *tag_ptr, int *state_ptr)
 {
 	assert(set >= 0 && set < cache->num_sets);
 	assert(way >= 0 && way < cache->assoc);
@@ -261,7 +261,7 @@ void cache_get_block(struct cache_t *cache, uint32_t set, uint32_t way,
 
 /* Update LRU counters, i.e., rearrange linked list in case
  * replacement policy is LRU. */
-void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way)
+void cache_access_block(struct cache_t *cache, unsigned int set, unsigned int way)
 {
 	int move_to_head;
 	
@@ -282,7 +282,7 @@ void cache_access_block(struct cache_t *cache, uint32_t set, uint32_t way)
 
 /* Return the way of the block to be replaced in a specific set,
  * depending on the replacement policy */
-uint32_t cache_replace_block(struct cache_t *cache, uint32_t set)
+unsigned int cache_replace_block(struct cache_t *cache, unsigned int set)
 {
 	struct cache_block_t *block;
 
@@ -305,7 +305,8 @@ uint32_t cache_replace_block(struct cache_t *cache, uint32_t set)
 }
 
 
-void cache_set_transient_tag(struct cache_t *cache, uint32_t set, uint32_t way, uint32_t tag)
+void cache_set_transient_tag(struct cache_t *cache, unsigned int set,
+	unsigned int way, unsigned int tag)
 {
 	struct cache_block_t *block;
 
