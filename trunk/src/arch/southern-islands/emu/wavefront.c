@@ -19,6 +19,7 @@
 
 #include <hash-table.h>
 
+#include <southern-islands-asm.h>
 #include <southern-islands-emu.h>
 
 
@@ -248,5 +249,20 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	wavefront->active_mask_push = 0;
 	wavefront->active_mask_pop = 0;
 	
-	/* FIXME Execute instruction for wavefront here */
+	/* Grab the next instruction and update the pointer */
+	printf("decoding\n");
+	fflush(NULL);
+	si_isa_wavefront->inst_size = si_inst_decode(si_isa_wavefront->inst_buf, &si_isa_wavefront->inst);
+	printf("decoded\n");
+	fflush(NULL);
+
+	/* Increment the instruction pointer */
+	si_isa_wavefront->inst_buf += si_isa_wavefront->inst_size;
+
+	/* If done, set work group to done */
+	if (1) 
+	{
+		si_work_group_clear_status(si_isa_work_group, si_work_group_running);
+		si_work_group_set_status(si_isa_work_group, si_work_group_finished);
+	}
 }

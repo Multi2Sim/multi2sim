@@ -239,7 +239,8 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		/* Initialize wavefront program counter */
 		if (!kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.size)
 			fatal("%s: cannot load kernel code", __FUNCTION__);
-		//wavefront->buf_start = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
+		wavefront->inst_buf_start = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
+		wavefront->inst_buf = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
 		wavefront->emu_time_start = x86_emu_timer();
 	}
 
@@ -320,6 +321,7 @@ void si_ndrange_run(struct si_ndrange_t *ndrange)
 		/* Execute an instruction from each work-group */
 		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next)
 		{
+			printf("work group %d\n", work_group->id); 
 			/* Save next running work-group */
 			work_group_next = work_group->running_list_next;
 
@@ -331,6 +333,7 @@ void si_ndrange_run(struct si_ndrange_t *ndrange)
 
 				/* Execute instruction in wavefront */
 				si_wavefront_execute(wavefront);
+				printf("wavefront id %d\n", wavefront->id); 
 			}
 		}
 	}
