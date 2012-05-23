@@ -660,6 +660,14 @@ struct si_wavefront_t
 	struct si_ndrange_t *ndrange;
 	struct si_work_group_t *work_group;
 
+	/* Instruction buffer */
+	void *inst_buf;	
+	void *inst_buf_start;	
+
+	/* Current instruction */
+	struct si_inst_t inst;
+	uint inst_size;
+
 	/* Pointer to work_items */
 	struct si_work_item_t **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
 
