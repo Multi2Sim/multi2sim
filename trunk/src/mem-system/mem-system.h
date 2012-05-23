@@ -352,66 +352,6 @@ void mmu_access_page(unsigned int phy_addr, enum mmu_access_t access);
 
 
 /*
- * Command on Memory Module
- */
-
-/* Command type */
-enum mod_command_kind_t
-{
-	mod_command_invalid = 0,
-	mod_command_set_block_tag,
-	mod_command_set_block_state,
-	mod_command_set_block_owner,
-	mod_command_set_block_sharers
-};
-
-/* Command on a memory module. Used for debugging purposes to assign initial
- * states to memory blocks, to test correctness in MOESI implementation. */
-struct mod_command_t
-{
-	enum mod_command_kind_t kind;
-
-	/* Module and block identifiers */
-	struct mod_t *mod;
-	unsigned int set;
-	unsigned int way;
-
-	/* Depending on the value of 'kind', the following fields are
-	 * interpreted in the command. */
-	union
-	{
-		struct {
-			unsigned int tag;
-		} set_block_tag;
-
-		struct {
-			int state;
-		} set_block_state;
-
-		struct {
-			int sub_block;
-			int owner;
-		} set_block_owner;
-
-		struct {
-			int sub_block;
-			char *sharers_str;
-		};
-	} u;
-};
-
-extern int EV_MOD_COMMAND;
-
-struct mod_command_t *mod_command_create(enum mod_command_kind_t kind,
-	struct mod_t *mod, unsigned int set, unsigned int way);
-void mod_command_free(struct mod_command_t *command);
-
-void mod_handler_command(int event, void *data);
-
-
-
-
-/*
  * Memory Module
  */
 
@@ -891,6 +831,20 @@ void mod_handler_peer(int event, void *data);
 
 
 /*
+ * Command
+ *
+ * Event to handle memory hierarchy commands that initialize memory modules to a
+ * certain state. These commands are used only for debugging purposes.
+ */
+
+extern int EV_MEM_SYSTEM_COMMAND;
+
+void mem_system_command_handler(int event, void *data);
+
+
+
+
+/*
  * Memory System
  */
 
@@ -922,6 +876,9 @@ void mem_system_done(void);
 
 void mem_system_config_read(void);
 void mem_system_dump_report(void);
+
+struct mod_t *mem_system_get_mod(char *mod_name);
+struct net_t *mem_system_get_net(char *net_name);
 
 
 #endif
