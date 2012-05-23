@@ -2,6 +2,7 @@ lib_LIBRARIES = libmemsystem.a
 
 libmemsystem_a_SOURCES = \
 	cache.c \
+	command.c \
 	config.c \
 	cpu-coherence.c \
 	directory.c \

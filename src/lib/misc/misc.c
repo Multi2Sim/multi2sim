@@ -551,6 +551,17 @@ void str_token_list_shift(struct list_t *token_list)
 }
 
 
+char *str_token_list_first(struct list_t *token_list)
+{
+	/* No token, return empty string */
+	if (!list_count(token_list))
+		return "";
+	
+	/* Return first token */
+	return (char *) list_get(token_list, 0);
+}
+
+
 void str_token_list_dump(struct list_t *token_list, FILE *f)
 {
 	int i;
