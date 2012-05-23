@@ -359,7 +359,7 @@ void str_token(char *dest, int dest_size, char *src, int index, char *delim)
 	token = strtok(buf, delim);
 	for (i = 0; i < index; i++)
 		token = strtok(NULL, delim);
-	snprintf(dest, dest_size, "%s", token);
+	snprintf(dest, dest_size, "%s", token ? token : "");
 }
 
 

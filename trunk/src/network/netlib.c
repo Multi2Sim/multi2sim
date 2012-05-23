@@ -363,7 +363,7 @@ void net_sim(char *debug_file_name)
 	}
 
 	/* Drain events */
-	while (esim_pending())
+	while (esim_event_count())
 		esim_process_events();
 
 	/* Free */
