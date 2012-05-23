@@ -1,0 +1,14 @@
+
+DEFINST(S_BUFFER_LOAD_DWORD,
+        "s_buffer_load_dword",
+        SMRD, 
+	8,
+	4
+)
+
+DEFINST(S_LOAD_DWORDX4,
+        "s_load_dwordx4",
+        SMRD,
+	2,
+	4
+)
