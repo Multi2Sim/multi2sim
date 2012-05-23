@@ -613,7 +613,7 @@ void si_opencl_program_build(struct si_opencl_program_t *program)
 {
 	/* Open ELF file and check that it corresponds to an Southern Islands pre-compiled kernel */
 	assert(program->elf_file);
-	if (program->elf_file->header->e_machine != 0x3f1)
+	if (program->elf_file->header->e_machine != 0x3fd)  /* 3fd is Tahiti magic number */
 		fatal("%s: invalid binary file.\n%s", __FUNCTION__,
 			err_si_opencl_southern_islands_format);
 }
@@ -837,6 +837,7 @@ static void si_opencl_kernel_load_metadata(struct si_opencl_kernel_t *kernel)
 	si_opencl_debug("Kernel Metadata:\n"); 
 	for (;;)
 	{
+		fflush(NULL);
 		/* Read line from buffer */
 		elf_buffer_read_line(buffer, line, MAX_STRING_SIZE);
 		if (!line[0])
@@ -920,6 +921,10 @@ static void si_opencl_kernel_load_metadata(struct si_opencl_kernel_t *kernel)
 			{
 				SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(2); 
 			}
+			else if (!strcmp(line_ptrs[1], "uavprivate"))
+			{
+
+			}
 			else
 				SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
 
@@ -945,7 +950,8 @@ static void si_opencl_kernel_load_metadata(struct si_opencl_kernel_t *kernel)
 			/* APP SDK 2.5 supplies 9 tokens, 2.6 supplies 10 tokens */
 			if(token_count != 9 && token_count != 10)
 			{
-				SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(10);
+				/* FIXME used to be 10 with EVG, now unknown with SI  */
+				//SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(10);
 			}
 			SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
 			SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");

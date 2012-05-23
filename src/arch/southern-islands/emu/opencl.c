@@ -90,12 +90,12 @@ char *err_si_opencl_param_note =
 char *err_si_opencl_compiler =
 	"\tThe Multi2Sim implementation of the OpenCL interface does not support runtime\n"
 	"\tcompilation of kernel sources. To run OpenCL kernels, you should first compile\n"
-	"\tthem off-line using an Evergreen-compatible target device. Then, you have three\n"
+	"\tthem off-line using an Southern-Islands-compatible target device. Then, you have three\n"
 	"\toptions to load them:\n"
 	"\t  1) Replace 'clCreateProgramWithSource' calls by 'clCreateProgramWithBinary'\n"
 	"\t     in your source files, referencing the pre-compiled kernel.\n"
 	"\t  2) Tell Multi2Sim to provide the application with your pre-compiled kernel\n"
-	"\t     using command-line option '-opencl:binary'.\n"
+	"\t     using command-line option '--opencl-binary <binary>'.\n"
 	"\t  3) If you are trying to run one of the OpenCL benchmarks provided in the\n"
 	"\t     simulator website, option '--load' can be used as a program argument\n"
 	"\t     (not a simulator argument). This option allows you to specify the path\n"
@@ -1771,6 +1771,7 @@ int si_opencl_func_run(int code, unsigned int *args)
 			si_ndrange_run(kernel->ndrange);
 		else
 		{
+			assert(0);
 			/* The following function is currently the only
 			 * dependence with 'libgpuarch'. This is not safe, but
 			 * let's just include the external reference here. */

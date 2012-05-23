@@ -530,6 +530,7 @@ struct si_bin_file_t
 struct si_bin_file_t *si_bin_file_create(void *ptr, int size, char *name);
 void si_bin_file_free(struct si_bin_file_t *bin);
 void si_disasm(char* path);
+int si_inst_decode(void *buf, struct si_inst_t *inst);
 
 #endif
 
