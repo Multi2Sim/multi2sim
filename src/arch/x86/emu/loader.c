@@ -792,6 +792,9 @@ void x86_loader_load_prog_from_ctxconfig(char *file_name)
 		/* Load executable */
 		x86_loader_load_exe(ctx, exe);
 	}
+
+	/* Check for not allowed entries, and free */
+	config_check(config);
 	config_free(config);
 }
 
