@@ -595,9 +595,12 @@ void x86_sys_call(void);
 
 /*
  * GLUT system call interface
+ *
+ * NOTE: for every new function or external variable added here, its
+ * implementation should be added in the regular 'glut-xx.c' files and also in
+ * 'glut-missing.c' to allow for correct compilation when the GLUT library is
+ * missing in the user's system.
  */
-
-#ifdef HAVE_GLUT_H
 
 #define x86_glut_debug(...) debug(x86_glut_debug_category, __VA_ARGS__)
 extern int x86_glut_debug_category;
@@ -621,8 +624,6 @@ void x86_glut_frame_buffer_get_size(int *width, int *height);
 
 void x86_glut_frame_buffer_flush_request(void);
 void x86_glut_frame_buffer_flush_if_requested(void);
-
-#endif
 
 
 

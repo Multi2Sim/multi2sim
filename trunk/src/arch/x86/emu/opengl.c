@@ -456,6 +456,9 @@ void x86_opengl_frame_buffer_free(struct x86_opengl_frame_buffer_t *fb)
 
 struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_attributes_create(void)
 {
+	int width;
+	int height;
+	
 	/* Variables */
 	struct x86_opengl_viewport_attributes_t *vpt;
 
@@ -466,9 +469,11 @@ struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_attributes_create(v
 
 
 	/* Initialize */
-	int width;
-	int height;
-	x86_glut_frame_buffer_get_size(&width, &height);
+	width = 0;  // FIXME
+	height = 0;  // FIXME
+	//x86_glut_frame_buffer_get_size(&width, &height);
+	/* RAFA - see related note below */
+
 	vpt->x = 0;
 	vpt->y = 0;
 	vpt->width = width;
@@ -499,8 +504,26 @@ struct x86_opengl_context_t *x86_opengl_context_create(void)
 	/* Initialize */
 
 	/* Initialize frame buffers */
-	/* FIXME: CANNOT get the size? Always get 0 */
-	x86_glut_frame_buffer_get_size(&width, &height);
+	//x86_glut_frame_buffer_get_size(&width, &height);
+	width = 0;  // FIXME
+	height = 0;  // FIXME
+	/* RAFA - Xiang, we shouldn't call any GLUT function in the
+	 * initialization of the simulator. Notice that the user may or may not
+	 * have the GLUT library installed. If he doesn't, the GLUT functions
+	 * defined in 'x86-emu.h' will cause an error message. This should only
+	 * happen when the user is actually trying to run a GLUT application.
+	 * This means that we need to call only frame buffer functions after an
+	 * initialization call to OpenGL. Is this possible?
+	 */
+	/* To test how your code behaves when GLUT is not installed in your
+	 * system, you can add line "have_glut=no" in the 'configure.ac' file,
+	 * right before line
+	 	if test x$have_glut == xno; then
+	 * You don't need to actually keep installing and uninstalling the
+	 * library.
+	 */
+	/* Temporary, I commented out the call to 'x86_glut_frame_buffer_get_size'
+	 * and set width and height to 0. */
 	ctx->draw_buffer = x86_opengl_frame_buffer_create(width, height);
 	ctx->read_buffer = x86_opengl_frame_buffer_create(width, height);
 	
