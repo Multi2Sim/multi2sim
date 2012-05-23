@@ -370,6 +370,9 @@ struct mod_port_t
 	int waiting_list_max;
 };
 
+/* String map for access type */
+extern struct string_map_t mod_access_kind_map;
+
 /* Access type */
 enum mod_access_kind_t
 {
@@ -558,6 +561,7 @@ struct mod_stack_t *mod_in_flight_address(struct mod_t *mod, unsigned int addr,
 struct mod_stack_t *mod_in_flight_write(struct mod_t *mod,
 	struct mod_stack_t *older_than_stack);
 
+int mod_serves_address(struct mod_t *mod, unsigned int addr);
 struct mod_t *mod_get_low_mod(struct mod_t *mod, unsigned int addr);
 
 int mod_get_retry_latency(struct mod_t *mod);

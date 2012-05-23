@@ -29,6 +29,60 @@ int EV_MEM_SYSTEM_COMMAND;
  */
 
 
+static void mem_system_command_expect(struct list_t *token_list, char *command_line)
+{
+	if (!list_count(token_list))
+		fatal("%s: unexpected end of line.\n\t> %s",
+			__FUNCTION__, command_line);
+}
+
+
+static void mem_system_command_end(struct list_t *token_list, char *command_line)
+{
+	if (list_count(token_list))
+		fatal("%s: %s: end of line expected.\n\t> %s",
+			__FUNCTION__, str_token_list_first(token_list), command_line);
+}
+
+
+static unsigned int mem_system_command_get_hex(struct list_t *token_list,
+	char *command_line)
+{
+	unsigned int value;
+
+	/* Get value */
+	mem_system_command_expect(token_list, command_line);
+	if (sscanf(str_token_list_first(token_list), "0x%x", &value) != 1)
+		fatal("%s: %s: invalid hex value.\n\t> %s",
+			__FUNCTION__, str_token_list_first(token_list),
+			command_line);
+	str_token_list_shift(token_list);
+
+	/* Return */
+	return value;
+}
+
+
+#if 0
+static long long mem_system_command_get_long_long(struct list_t *token_list,
+	char *command_line)
+{
+	long long value;
+
+	/* Get value */
+	mem_system_command_expect(token_list, command_line);
+	if (sscanf(str_token_list_first(token_list), "%lld", &value) != 1)
+		fatal("%s: %s: invalid integer value.\n\t> %s",
+			__FUNCTION__, str_token_list_first(token_list),
+			command_line);
+	str_token_list_shift(token_list);
+
+	/* Return */
+	return value;
+}
+#endif
+
+
 static struct mod_t *mem_system_command_get_mod(struct list_t *token_list,
 	char *command_line)
 {
@@ -36,12 +90,8 @@ static struct mod_t *mem_system_command_get_mod(struct list_t *token_list,
 
 	char *mod_name;
 
-	/* No more tokens found */
-	if (!list_count(token_list))
-		fatal("%s: module name expected.\n\t> %s",
-			__FUNCTION__, command_line);
-
 	/* Find module */
+	mem_system_command_expect(token_list, command_line);
 	mod_name = list_get(token_list, 0);
 	mod = mem_system_get_mod(mod_name);
 	if (!mod)
@@ -61,14 +111,13 @@ static void mem_system_command_get_set_way(struct list_t *token_list,
 	unsigned int set;
 	unsigned int way;
 
-	/* Not enough tokens */
-	if (list_count(token_list) < 2)
-		fatal("%s: <set> and <way> tokens expected.\n\t> %s",
-			__FUNCTION__, command_line);
-	
-	/* Decode */
+	/* Get set */
+	mem_system_command_expect(token_list, command_line);
 	set = atoi(str_token_list_first(token_list));
 	str_token_list_shift(token_list);
+
+	/* Get way */
+	mem_system_command_expect(token_list, command_line);
 	way = atoi(str_token_list_first(token_list));
 	str_token_list_shift(token_list);
 
@@ -86,54 +135,43 @@ static void mem_system_command_get_set_way(struct list_t *token_list,
 }
 
 
-static unsigned int mem_system_command_get_tag(struct list_t *token_list,
-	char *command_line)
-{
-	unsigned int tag;
-
-	/* No more tokens found */
-	if (!list_count(token_list))
-		fatal("%s: token <tag> expected.\n\t> %s",
-			__FUNCTION__, command_line);
-
-	/* Get tag */
-	if (sscanf(str_token_list_first(token_list), "0x%x", &tag) != 1)
-		fatal("%s: token <tag> must be a valid hex value.\n\t> %s",
-			__FUNCTION__, command_line);
-	str_token_list_shift(token_list);
-
-	/* Return */
-	return tag;
-}
-
-
 static int mem_system_command_get_state(struct list_t *token_list,
 	char *command_line)
 {
 	int state;
 
-	/* No more tokens found */
-	if (!list_count(token_list))
-		fatal("%s: token <state> expected.\n\t> %s",
-			__FUNCTION__, command_line);
-
 	/* Get state */
-	state = map_string(&cache_block_state_map, str_token_list_first(token_list));
+	mem_system_command_expect(token_list, command_line);
+	state = map_string_case(&cache_block_state_map, str_token_list_first(token_list));
 	if (!state)
 		fatal("%s: invalid value for <state>.\n\t> %s",
 			__FUNCTION__, command_line);
-	str_token_list_shift(token_list);
 
 	/* Return */
+	str_token_list_shift(token_list);
 	return state;
 }
 
 
-static void mem_system_command_end(struct list_t *token_list, char *command_line)
+static enum mod_access_kind_t mem_system_command_get_mod_access(struct list_t *token_list,
+	char *command_line)
 {
-	if (list_count(token_list))
-		fatal("%s: %s: end of line expected.\n\t> %s",
-			__FUNCTION__, str_token_list_first(token_list), command_line);
+	char mod_access_name[MAX_STRING_SIZE];
+	int mod_access;
+
+	/* Get access */
+	mem_system_command_expect(token_list, command_line);
+	snprintf(mod_access_name, sizeof mod_access_name, "%s", str_token_list_first(token_list));
+
+	/* Decode access */
+	mod_access = map_string_case(&mod_access_kind_map, mod_access_name);
+	if (!mod_access)
+		fatal("%s: %s: invalid access.\n\t> %s",
+			__FUNCTION__, mod_access_name, command_line);
+	
+	/* Return */
+	str_token_list_shift(token_list);
+	return mod_access;
 }
 
 
@@ -170,16 +208,48 @@ void mem_system_command_handler(int event, void *data)
 		unsigned int way;
 		unsigned int tag;
 
+		unsigned int set_check;
+		unsigned int tag_check;
+
 		int state;
 
 		mod = mem_system_command_get_mod(token_list, command_line);
 		mem_system_command_get_set_way(token_list, command_line, mod, &set, &way);
-		tag = mem_system_command_get_tag(token_list, command_line);
+		tag = mem_system_command_get_hex(token_list, command_line);
 		state = mem_system_command_get_state(token_list, command_line);
 		mem_system_command_end(token_list, command_line);
 
+		/* Check that module serves address */
+		if (!mod_serves_address(mod, tag))
+			fatal("%s: %s: module does not serve address 0x%x.\n\t> %s",
+				__FUNCTION__, mod->name, tag, command_line);
+
+		/* Check that tag goes to specified set */
+		mod_find_block(mod, tag, &set_check, NULL, &tag_check, NULL);
+		if (set != set_check)
+			fatal("%s: %s: tag 0x%x belongs to set %d.\n\t> %s",
+				__FUNCTION__, mod->name, tag, set_check, command_line);
+		if (tag != tag_check)
+			fatal("%s: %s: tag should be multiple of block size.\n\t> %s",
+				__FUNCTION__, mod->name, command_line);
+
 		/* Set tag */
 		cache_set_block(mod->cache, set, way, tag, state);
+	}
+
+	/* Command 'Access' */
+	else if (!strcasecmp(command, "Access"))
+	{
+		struct mod_t *mod;
+		enum mod_access_kind_t access_kind;
+		unsigned int addr;
+
+		access_kind = mem_system_command_get_mod_access(token_list, command_line);
+		mod = mem_system_command_get_mod(token_list, command_line);
+		addr = mem_system_command_get_hex(token_list, command_line);
+
+		/* Access module */
+		mod_access(mod, access_kind, addr, NULL, NULL, NULL);
 	}
 
 	/* Command not supported */
