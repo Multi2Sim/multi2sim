@@ -763,6 +763,10 @@ void mod_handler_command(int event, void *data)
 	unsigned int set = command->set;
 	unsigned int way = command->way;
 
+	/* Check valid block */
+	if (!IN_RANGE(set, 0, cache->num_sets - 1) || !IN_RANGE(way, 0, cache->assoc - 1))
+		fatal("%s: %s: invalid block (set=%d, way=%d)", __FUNCTION__, mod->name, set, way);
+
 	/* Process command */
 	assert(event == EV_MOD_COMMAND);
 	switch (command->kind)
@@ -774,6 +778,16 @@ void mod_handler_command(int event, void *data)
 
 		cache_get_block(cache, set, way, NULL, &state);
 		cache_set_block(cache, set, way, command->u.set_block_tag.tag, state);
+
+		break;
+	}
+
+	case mod_command_set_block_state:
+	{
+		unsigned int tag;
+
+		cache_get_block(cache, set, way, &tag, NULL);
+		cache_set_block(cache, set, way, tag, command->u.set_block_state.state);
 
 		break;
 	}

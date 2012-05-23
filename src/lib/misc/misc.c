@@ -23,7 +23,10 @@
 #include <string.h>
 #include <time.h>
 #include <sys/utsname.h>
-#include "misc.h"
+
+#include <debug.h>
+#include <mhandle.h>
+#include <misc.h>
 
 
 /*
@@ -469,6 +472,96 @@ char *str_free(char *str)
 
 	/* Return new value for string, always NULL */
 	return NULL;
+}
+
+
+
+
+/*
+ * Token List
+ */
+
+struct list_t *str_token_list_create(char *str, char *delim)
+{
+	struct list_t *token_list;
+
+	char *token;
+
+	/* Create list */
+	token_list = list_create();
+
+	/* Make a copy of 'str' */
+	str = strdup(str);
+	if (!str)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Split string into tokens */
+	token = strtok(str, delim);
+	while (token)
+	{
+		/* Make a copy of token */
+		token = strdup(token);
+		if (!token)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* Insert in token list */
+		list_add(token_list, token);
+
+		/* Next token */
+		token = strtok(NULL, delim);
+	}
+
+	/* Free copy of 'str' */
+	free(str);
+
+	/* Return token list */
+	return token_list;
+}
+
+
+void str_token_list_free(struct list_t *token_list)
+{
+	int i;
+
+	char *token;
+
+	/* Free tokens */
+	LIST_FOR_EACH(token_list, i)
+	{
+		token = list_get(token_list, i);
+		str_free(token);
+	}
+
+	/* Free token list */
+	list_free(token_list);
+}
+
+
+void str_token_list_shift(struct list_t *token_list)
+{
+	char *token;
+
+	/* Nothing is list of tokens is empty */
+	if (!list_count(token_list))
+		return;
+
+	/* Eliminate first token */
+	token = list_remove_at(token_list, 0);
+	str_free(token);
+}
+
+
+void str_token_list_dump(struct list_t *token_list, FILE *f)
+{
+	int i;
+
+	char *token;
+
+	LIST_FOR_EACH(token_list, i)
+	{
+		token = list_get(token_list, i);
+		fprintf(f, "token[%d] = '%s'\n", i, token);
+	}
 }
 
 
