@@ -21,6 +21,7 @@
 
 
 int EV_MEM_SYSTEM_COMMAND;
+int EV_MEM_SYSTEM_END_COMMAND;
 
 
 
@@ -60,6 +61,15 @@ static unsigned int mem_system_command_get_hex(struct list_t *token_list,
 
 	/* Return */
 	return value;
+}
+
+
+static void mem_system_command_get_string(struct list_t *token_list,
+	char *command_line, char *buf, int size)
+{
+	mem_system_command_expect(token_list, command_line);
+	snprintf(buf, size, "%s", str_token_list_first(token_list));
+	str_token_list_shift(token_list);
 }
 
 
@@ -182,6 +192,9 @@ static enum mod_access_kind_t mem_system_command_get_mod_access(struct list_t *t
  */
 
 
+/* Event handler for EV_MEM_SYSTEM_COMMAND.
+ * The event data is a string of type 'char *' that needs to be deallocated
+ * after processing this event. */
 void mem_system_command_handler(int event, void *data)
 {
 	struct list_t *token_list;
@@ -189,14 +202,23 @@ void mem_system_command_handler(int event, void *data)
 	char *command_line = data;
 	char command[MAX_STRING_SIZE];
 
-	/* Split command in tokens */
-	token_list = str_token_list_create(command_line, " ");
-	if (!list_count(token_list))
+	/* Get command */
+	str_token(command, sizeof command, command_line, 0, " ");
+	if (!command[0])
 		fatal("%s: invalid command syntax.\n\t> %s",
 			__FUNCTION__, command_line);
 
-	/* Get command */
-	snprintf(command, sizeof command, "%s", str_token_list_first(token_list));
+	/* Commands that need to be processed at the end of the simulation
+	 * are ignored here. */
+	if (!strcasecmp(command, "CheckBlock"))
+	{
+		esim_schedule_end_event(EV_MEM_SYSTEM_END_COMMAND, data);
+		return;
+	}
+
+	/* Split command in tokens, skip command */
+	token_list = str_token_list_create(command_line, " ");
+	assert(list_count(token_list));
 	str_token_list_shift(token_list);
 
 	/* Command 'SetBlock' */
@@ -244,8 +266,8 @@ void mem_system_command_handler(int event, void *data)
 		enum mod_access_kind_t access_kind;
 		unsigned int addr;
 
-		access_kind = mem_system_command_get_mod_access(token_list, command_line);
 		mod = mem_system_command_get_mod(token_list, command_line);
+		access_kind = mem_system_command_get_mod_access(token_list, command_line);
 		addr = mem_system_command_get_hex(token_list, command_line);
 
 		/* Access module */
@@ -262,3 +284,26 @@ void mem_system_command_handler(int event, void *data)
 	str_token_list_free(token_list);
 }
 
+
+/* Event handler for EV_MEM_SYSTEM_END_COMMAND.
+ * The event data is a string of type 'char *' that needs to be deallocated
+ * after processing this event. */
+void mem_system_end_command_handler(int event, void *data)
+{
+	char *command_line = data;
+	char command[MAX_STRING_SIZE];
+
+	struct list_t *token_list;
+
+	/* Split command in tokens, skip command */
+	token_list = str_token_list_create(command_line, " ");
+	assert(list_count(token_list));
+
+	/* Get command */
+	mem_system_command_get_string(token_list, command_line, command, sizeof command);
+	printf(">>> cycle %lld - run end command '%s'\n", esim_cycle, command); ///////
+
+	/* Free command */
+	free(command_line);
+	str_token_list_free(token_list);
+}

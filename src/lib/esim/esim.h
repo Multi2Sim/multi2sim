@@ -43,26 +43,38 @@ typedef void (*esim_event_handler_t)(int event, void *data);
 void esim_init();
 void esim_done();
 
-/* Events */
+/* Register an events */
 int esim_register_event(esim_event_handler_t handler);
+
+/* Schedule an event in 'after' cycles from now. If several cycles are
+ * scheduled for the same cycle, they will execute in the order they were
+ * scheduled. */
 void esim_schedule_event(int event, void *data, int after);
+
+/* Schedule an event for the end of the simulation. This event will be executed
+ * during the call to 'esim_process_all_events' at the end of the program. */
+void esim_schedule_end_event(int event, void *data);
 
 /* Execute *now* an event handler synchronously; this is not the same as
  * calling esim_schedule_event with after=0, where the event will be processed
  * after all pending events for current cycle completed */
 void esim_execute_event(int event, void *data);
 
-/* Advance event simulation cycle and process events of the new cycle */
-void esim_process_events();
-void esim_process_all_events(int max);
+/* Advance event simulation one cycle and process all events for the new cycle.
+ * This function should be called at the end of the main simulation loop body
+ * of the main program. */
+void esim_process_events(void);
 
-/* Force event extraction; useful to empty event heap before
- * finalization; return false only when heap is empty and
- * extraction failed */
-uint64_t esim_extract_event(int *event, void **data);
+/* Process all events in the heap. When the heap is empty, all finalization
+ * events scheduled with 'esim_schedule_end_event' are processed. Since
+ * these events could schedule new events, the function finally continues
+ * simulation until the heap is empty again.
+ * This function should be called after the main simulation loop finishes
+ * in the main program. */
+void esim_process_all_events(void);
 
 /* Return number of events in the heap */
-int esim_pending();
+int esim_event_count();
 
 /* Process esim events, without enabling the schedule of a new event;
  * when all events are processed, esim heap will be empty;
