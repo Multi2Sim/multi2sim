@@ -25,6 +25,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include <list.h>
+
 
 /* Maximum string size */
 #define MAX_LONG_STRING_SIZE (1024 * 8)
@@ -250,8 +252,24 @@ void str_printf(char **pbuf, int *psize, char *fmt, ...) __attribute__ ((format 
 void str_read_from_file(FILE *f, char *buf, int buf_size);
 void str_write_to_file(FILE *f, char *buf);
 
+/* Dynamic creation and destruction of strings.
+ * Function 'str_set' returns a copy of 'new_str', and frees the old string in
+ * argument 'old_str' if it is not NULL.
+ * Funciton 'str_free' frees the string in 'str' if it is not NULL. */
 char *str_set(char *old_str, char *new_str);
 char *str_free(char *str);
+
+
+
+/*
+ * Token list
+ */
+
+struct list_t *str_token_list_create(char *str, char *delim);
+void str_token_list_free(struct list_t *token_list);
+
+void str_token_list_shift(struct list_t *token_list);
+void str_token_list_dump(struct list_t *token_list, FILE *f);
 
 
 
