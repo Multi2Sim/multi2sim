@@ -5010,23 +5010,8 @@ static int x86_sys_opencl_impl(void)
 
 static int x86_sys_glut_impl(void)
 {
-#ifdef HAVE_GLUT_H
-
 	/* Run GLUT call */
 	return x86_glut_call();
-
-#else
-
-	fatal("support for GLUT not available.\n"
-		"\tMulti2Sim requires the OpenGL Utility Toolkit (GLUT) library to be\n"
-		"\tinstalled in your system to simulate OpenGL programs.\n"
-		"\t  1) Install the development packages for GLUT. Under Debian-based\n"
-		"\t     Linux distributions, this package is listed as 'freeglut3-dev'.\n"
-		"\t  2) Re-run the './configure' script\n"
-		"\t  3) Recompile the simulator: make clean && make\n");
-	return 0;
-
-#endif
 }
 
 /*
