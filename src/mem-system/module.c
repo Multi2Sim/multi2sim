@@ -19,28 +19,15 @@
 
 #include <mem-system.h>
 
-
-/*
- * Private Functions
- */
-
-static int mod_serves_address(struct mod_t *mod, unsigned int addr)
+/* String map for access type */
+struct string_map_t mod_access_kind_map =
 {
-	/* Address bounds */
-	if (mod->range_kind == mod_range_bounds)
-		return addr >= mod->range.bounds.low &&
-			addr <= mod->range.bounds.high;
-
-	/* Interleaved addresses */
-	if (mod->range_kind == mod_range_interleaved)
-		return (addr / mod->range.interleaved.div) %
-			mod->range.interleaved.mod ==
-			mod->range.interleaved.eq;
-
-	/* Invalid */
-	panic("%s: invalid range kind", __FUNCTION__);
-	return 0;
-}
+	3, {
+		{ "Load", mod_access_read },
+		{ "Store", mod_access_write },
+		{ "NCStore", mod_access_nc_write }
+	}
+};
 
 
 
@@ -426,6 +413,25 @@ struct mod_stack_t *mod_in_flight_write(struct mod_t *mod,
 
 	/* Not found */
 	return NULL;
+}
+
+
+int mod_serves_address(struct mod_t *mod, unsigned int addr)
+{
+	/* Address bounds */
+	if (mod->range_kind == mod_range_bounds)
+		return addr >= mod->range.bounds.low &&
+			addr <= mod->range.bounds.high;
+
+	/* Interleaved addresses */
+	if (mod->range_kind == mod_range_interleaved)
+		return (addr / mod->range.interleaved.div) %
+			mod->range.interleaved.mod ==
+			mod->range.interleaved.eq;
+
+	/* Invalid */
+	panic("%s: invalid range kind", __FUNCTION__);
+	return 0;
 }
 
 
