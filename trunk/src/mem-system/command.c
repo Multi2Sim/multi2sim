@@ -73,26 +73,6 @@ static void mem_system_command_get_string(struct list_t *token_list,
 }
 
 
-#if 0
-static long long mem_system_command_get_long_long(struct list_t *token_list,
-	char *command_line)
-{
-	long long value;
-
-	/* Get value */
-	mem_system_command_expect(token_list, command_line);
-	if (sscanf(str_token_list_first(token_list), "%lld", &value) != 1)
-		fatal("%s: %s: invalid integer value.\n\t> %s",
-			__FUNCTION__, str_token_list_first(token_list),
-			command_line);
-	str_token_list_shift(token_list);
-
-	/* Return */
-	return value;
-}
-#endif
-
-
 static struct mod_t *mem_system_command_get_mod(struct list_t *token_list,
 	char *command_line)
 {
@@ -235,8 +215,8 @@ void mem_system_command_handler(int event, void *data)
 			__FUNCTION__, command_line);
 
 	/* Commands that need to be processed at the end of the simulation
-	 * are ignored here. */
-	if (!strcasecmp(command, "CheckBlock"))
+	 * are ignored here. These are command prefixed with 'CheckXXX'. */
+	if (!strncasecmp(command, "Check", 5))
 	{
 		esim_schedule_end_event(EV_MEM_SYSTEM_END_COMMAND, data);
 		return;
@@ -421,6 +401,127 @@ void mem_system_end_command_handler(int event, void *data)
 			fatal("%s: %s: set %d, way %d, state mismatch",
 				__FUNCTION__, mod->name, set, way);
 	}
+
+	/* Command 'CheckOwner' */
+	else if (!strcasecmp(command, "CheckOwner"))
+	{
+		struct mod_t *mod;
+		struct mod_t *owner;
+		struct mod_t *owner_check = NULL;
+
+		struct net_node_t *net_node;
+
+		struct dir_entry_t *dir_entry;
+
+		unsigned int set;
+		unsigned int way;
+
+		int sub_block;
+
+		/* Read fields */
+		mod = mem_system_command_get_mod(token_list, command_line);
+		mem_system_command_get_set_way(token_list, command_line, mod, &set, &way);
+		sub_block = mem_system_command_get_sub_block(token_list, command_line, mod, set, way);
+		owner = mem_system_command_get_mod(token_list, command_line);
+		mem_system_command_end(token_list, command_line);
+
+		/* Get actual owner */
+		owner_check = NULL;
+		if (mod->dir && mod->high_net)
+		{
+			dir_entry = dir_entry_get(mod->dir, set, way, sub_block);
+			net_node = list_get(mod->high_net->node_list, dir_entry->owner);
+			owner_check = net_node->user_data;
+		}
+
+		/* Check match */
+		if (owner != owner_check)
+			fatal("%s: %s: set %d, way %d, sub-block %d: owner mismatch\n"
+				"\t%s expected, but %s found",
+				__FUNCTION__, mod->name, set, way, sub_block,
+				owner_check ? owner_check->name : "None",
+				owner ? owner->name : "None");
+	}
+
+	/* Command 'CheckSharers' */
+	else if (!strcasecmp(command, "CheckSharers"))
+	{
+		struct mod_t *mod;
+		struct mod_t *sharer;
+
+		struct net_node_t *node;
+
+		unsigned int set;
+		unsigned int way;
+
+		int sub_block;
+		int node_index;
+
+		struct linked_list_t *sharers_list;
+		struct linked_list_t *sharers_check_list;
+
+		/* Read fields */
+		mod = mem_system_command_get_mod(token_list, command_line);
+		mem_system_command_get_set_way(token_list, command_line, mod, &set, &way);
+		sub_block = mem_system_command_get_sub_block(token_list, command_line, mod, set, way);
+		mem_system_command_expect(token_list, command_line);
+
+		/* Construct list of expected sharers */
+		sharers_list = linked_list_create();
+		while (list_count(token_list))
+		{
+			sharer = mem_system_command_get_mod(token_list, command_line);
+			linked_list_add(sharers_list, sharer);
+		}
+
+		/* Construct list of actual sharers */
+		sharers_check_list = linked_list_create();
+		assert(mod->high_net);
+		for (node_index = 0; node_index < mod->high_net->node_count; node_index++)
+		{
+			if (!dir_entry_is_sharer(mod->dir, set, way, sub_block, node_index))
+				continue;
+			node = list_get(mod->high_net->node_list, node_index);
+			sharer = node->user_data;
+			linked_list_add(sharers_check_list, sharer);
+		}
+
+		/* Remove in actual sharers everything from expected sharers */
+		LINKED_LIST_FOR_EACH(sharers_list)
+		{
+			/* Get expected sharer */
+			sharer = linked_list_get(sharers_list);
+
+			/* Check that it's an actual sharer */
+			linked_list_find(sharers_check_list, sharer);
+			if (sharers_check_list->error_code)
+				fatal("%s: %s: set %d, way %d, sharers mismatch\n"
+					"\t%s found, but not expected",
+					__FUNCTION__, mod->name, set, way, sharer->name);
+
+			/* Remove from actual sharers */
+			linked_list_remove(sharers_check_list);
+		}
+
+		/* Check that there is no actual sharer left */
+		if (linked_list_count(sharers_check_list))
+		{
+			linked_list_head(sharers_check_list);
+			sharer = linked_list_get(sharers_check_list);
+			fatal("%s: %s, set = %d, way = %d, sharers mismatch\n"
+				"\t%s expected, but not found",
+				__FUNCTION__, mod->name, set, way, sharer->name);
+		}
+
+		/* Free lists */
+		linked_list_free(sharers_list);
+		linked_list_free(sharers_check_list);
+	}
+
+	/* Invalid command */
+	else
+		fatal("%s: %s: invalid command.\n\t> %s",
+			__FUNCTION__, command, command_line);
 
 	/* Free command */
 	free(command_line);
