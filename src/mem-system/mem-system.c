@@ -54,6 +54,9 @@ void mem_system_init(void)
 	mem_system->net_list = list_create();
 	mem_system->mod_list = list_create();
 
+	/* Event handler for memory hierarchy commands */
+	EV_MEM_SYSTEM_COMMAND = esim_register_event(mem_system_command_handler);
+
 	/* GPU memory event-driven simulation */
 	EV_MOD_GPU_LOAD = esim_register_event(mod_handler_gpu_load);
 	EV_MOD_GPU_LOAD_FINISH = esim_register_event(mod_handler_gpu_load);
@@ -78,8 +81,6 @@ void mem_system_init(void)
 	EV_MOD_GPU_WRITE_FINISH = esim_register_event(mod_handler_gpu_write);
 
 	/* CPU memory event-driven simulation */
-
-	EV_MOD_COMMAND = esim_register_event(mod_handler_command);
 
 	EV_MOD_LOAD = esim_register_event(mod_handler_load);
 	EV_MOD_LOAD_LOCK = esim_register_event(mod_handler_load);
@@ -292,4 +293,41 @@ void mem_system_dump_report()
 	fclose(f);
 }
 
+
+struct mod_t *mem_system_get_mod(char *mod_name)
+{
+	struct mod_t *mod;
+
+	int mod_id;
+
+	/* Look for module */
+	LIST_FOR_EACH(mem_system->mod_list, mod_id)
+	{
+		mod = list_get(mem_system->mod_list, mod_id);
+		if (!strcasecmp(mod->name, mod_name))
+			return mod;
+	}
+
+	/* Not found */
+	return NULL;
+}
+
+
+struct net_t *mem_system_get_net(char *net_name)
+{
+	struct net_t *net;
+
+	int net_id;
+
+	/* Look for network */
+	LIST_FOR_EACH(mem_system->net_list, net_id)
+	{
+		net = list_get(mem_system->net_list, net_id);
+		if (!strcasecmp(net->name, net_name))
+			return net;
+	}
+
+	/* Not found */
+	return NULL;
+}
 

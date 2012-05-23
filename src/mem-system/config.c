@@ -1626,35 +1626,35 @@ static void mem_config_trace(void)
 static void mem_config_read_commands(struct config_t *config)
 {
 	char *section = "Commands";
-	char *command_str;
+	char *command_line;
+	char command_var[MAX_STRING_SIZE];
 
-	char command_name[MAX_STRING_SIZE];
-
-	int command_id;
-
-	struct list_t *token_list;
+	int command_var_id;
 
 	/* Check if section is present */
 	if (!config_section_exists(config, section))
 		return;
 
 	/* Read commands */
-	command_id = 0;
+	command_var_id = 0;
 	while (1)
 	{
 		/* Get command */
-		snprintf(command_name, sizeof command_name, "Command[%d]", command_id);
-		command_str = config_read_string(config, section, command_name, NULL);
-		if (!command_str)
+		snprintf(command_var, sizeof command_var, "Command[%d]", command_var_id);
+		command_line = config_read_string(config, section, command_var, NULL);
+		if (!command_line)
 			break;
 
-		/* Show command */
-		token_list = str_token_list_create(command_str, " ");
-		str_token_list_dump(token_list, stdout);
-		str_token_list_free(token_list);
+		/* Duplicate command line to send as event data */
+		command_line = strdup(command_line);
+		if (!command_line)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		/* Schedule event to process command */
+		esim_schedule_event(EV_MEM_SYSTEM_COMMAND, command_line, 1);
 
 		/* Next command */
-		command_id++;
+		command_var_id++;
 	}
 }
 
