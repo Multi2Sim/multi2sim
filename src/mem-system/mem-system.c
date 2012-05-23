@@ -56,6 +56,7 @@ void mem_system_init(void)
 
 	/* Event handler for memory hierarchy commands */
 	EV_MEM_SYSTEM_COMMAND = esim_register_event(mem_system_command_handler);
+	EV_MEM_SYSTEM_END_COMMAND = esim_register_event(mem_system_end_command_handler);
 
 	/* GPU memory event-driven simulation */
 	EV_MOD_GPU_LOAD = esim_register_event(mod_handler_gpu_load);
