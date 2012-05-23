@@ -145,6 +145,32 @@ static void mem_system_command_get_set_way(struct list_t *token_list,
 }
 
 
+static int mem_system_command_get_sub_block(struct list_t *token_list,
+	char *command_line, struct mod_t *mod, unsigned int set,
+	unsigned int way)
+{
+	int sub_block;
+
+	/* Get sub-block */
+	mem_system_command_expect(token_list, command_line);
+	sub_block = atoi(str_token_list_first(token_list));
+	str_token_list_shift(token_list);
+
+	/* Check that module has a directory */
+	if (!mod->dir)
+		fatal("%s: %s: module lacks a directory.\n\t> %s",
+			__FUNCTION__, mod->name, command_line);
+
+	/* Check valid sub-block */
+	if (!IN_RANGE(sub_block, 0, mod->dir->zsize - 1))
+		fatal("%s: %d: invalid sub-block.\n\t> %s",
+			__FUNCTION__, sub_block, command_line);
+
+	/* Return */
+	return sub_block;
+}
+
+
 static int mem_system_command_get_state(struct list_t *token_list,
 	char *command_line)
 {
@@ -153,8 +179,8 @@ static int mem_system_command_get_state(struct list_t *token_list,
 	/* Get state */
 	mem_system_command_expect(token_list, command_line);
 	state = map_string_case(&cache_block_state_map, str_token_list_first(token_list));
-	if (!state)
-		fatal("%s: invalid value for <state>.\n\t> %s",
+	if (!state && strcasecmp(str_token_list_first(token_list), "I"))
+		fatal("%s: invalid state.\n\t> %s",
 			__FUNCTION__, command_line);
 
 	/* Return */
@@ -259,6 +285,66 @@ void mem_system_command_handler(int event, void *data)
 		cache_set_block(mod->cache, set, way, tag, state);
 	}
 
+	/* Command 'SetOwner' */
+	else if (!strcasecmp(command, "SetOwner"))
+	{
+		struct mod_t *mod;
+		struct mod_t *owner;
+
+		unsigned int set;
+		unsigned int way;
+
+		int sub_block;
+
+		/* Get fields */
+		mod = mem_system_command_get_mod(token_list, command_line);
+		mem_system_command_get_set_way(token_list, command_line, mod, &set, &way);
+		sub_block = mem_system_command_get_sub_block(token_list, command_line, mod, set, way);
+		owner = mem_system_command_get_mod(token_list, command_line);
+		mem_system_command_end(token_list, command_line);
+
+		/* Check that owner is an immediate higher-level module */
+		if (owner->low_net != mod->high_net || !owner->low_net)
+			fatal("%s: %s is not a higher-level module of %s.\n\t> %s",
+				__FUNCTION__, owner->name, mod->name, command_line);
+
+		/* Set owner */
+		dir_entry_set_owner(mod->dir, set, way, sub_block, owner->low_net_node->index);
+	}
+
+	/* Command 'SetSharers' */
+	else if (!strcasecmp(command, "SetSharers"))
+	{
+		struct mod_t *mod;
+		struct mod_t *sharer;
+
+		unsigned int set;
+		unsigned int way;
+
+		int sub_block;
+
+		/* Get first fields */
+		mod = mem_system_command_get_mod(token_list, command_line);
+		mem_system_command_get_set_way(token_list, command_line, mod, &set, &way);
+		sub_block = mem_system_command_get_sub_block(token_list, command_line, mod, set, way);
+
+		/* Get sharers */
+		mem_system_command_expect(token_list, command_line);
+		while (list_count(token_list))
+		{
+			/* Get sharer */
+			sharer = mem_system_command_get_mod(token_list, command_line);
+
+			/* Check that sharer is an immediate higher-level module */
+			if (sharer->low_net != mod->high_net || !sharer->low_net)
+				fatal("%s: %s is not a higher-level module of %s.\n\t> %s",
+					__FUNCTION__, sharer->name, mod->name, command_line);
+
+			/* Set sharer */
+			dir_entry_set_sharer(mod->dir, set, way, sub_block, sharer->low_net_node->index);
+		}
+	}
+
 	/* Command 'Access' */
 	else if (!strcasecmp(command, "Access"))
 	{
@@ -301,7 +387,40 @@ void mem_system_end_command_handler(int event, void *data)
 
 	/* Get command */
 	mem_system_command_get_string(token_list, command_line, command, sizeof command);
-	printf(">>> cycle %lld - run end command '%s'\n", esim_cycle, command); ///////
+
+	/* Command 'SetBlock' */
+	if (!strcasecmp(command, "CheckBlock"))
+	{
+		struct mod_t *mod;
+
+		unsigned int set;
+		unsigned int way;
+		unsigned int tag;
+		unsigned int tag_check;
+
+		int state;
+		int state_check;
+
+		mod = mem_system_command_get_mod(token_list, command_line);
+		mem_system_command_get_set_way(token_list, command_line, mod, &set, &way);
+		tag = mem_system_command_get_hex(token_list, command_line);
+		state = mem_system_command_get_state(token_list, command_line);
+		mem_system_command_end(token_list, command_line);
+
+		/* Check that module serves address */
+		if (!mod_serves_address(mod, tag))
+			fatal("%s: %s: module does not serve address 0x%x.\n\t> %s",
+				__FUNCTION__, mod->name, tag, command_line);
+
+		/* Check */
+		cache_get_block(mod->cache, set, way, &tag_check, &state_check);
+		if (tag != tag_check)
+			fatal("%s: %s: set %d, way %d, tag mismatch",
+				__FUNCTION__, mod->name, set, way);
+		if (state != state_check)
+			fatal("%s: %s: set %d, way %d, state mismatch",
+				__FUNCTION__, mod->name, set, way);
+	}
 
 	/* Free command */
 	free(command_line);
