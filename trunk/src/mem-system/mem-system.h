@@ -377,9 +377,9 @@ extern struct string_map_t mod_access_kind_map;
 enum mod_access_kind_t
 {
 	mod_access_invalid = 0,
-	mod_access_read,
-	mod_access_write,
-	mod_access_nc_write
+	mod_access_load,
+	mod_access_store,
+	mod_access_nc_store
 };
 
 /* Module types */
@@ -387,7 +387,8 @@ enum mod_kind_t
 {
 	mod_kind_invalid = 0,
 	mod_kind_cache,
-	mod_kind_main_memory
+	mod_kind_main_memory,
+	mod_kind_local_memory
 };
 
 /* Type of address range */
@@ -579,111 +580,100 @@ void mod_coalesce(struct mod_t *mod, struct mod_stack_t *master_stack,
  * CPU/GPU Common Event-Driven Simulation
  */
 
-extern int EV_MOD_GPU_LOAD;
-extern int EV_MOD_GPU_LOAD_FINISH;
+/* Local Memory */
 
-extern int EV_MOD_GPU_STORE;
-extern int EV_MOD_GPU_STORE_FINISH;
+extern int EV_MOD_LOCAL_MEM_LOAD;
+extern int EV_MOD_LOCAL_MEM_LOAD_LOCK;
+extern int EV_MOD_LOCAL_MEM_LOAD_FINISH;
 
-extern int EV_MOD_GPU_READ;
-extern int EV_MOD_GPU_READ_REQUEST;
-extern int EV_MOD_GPU_READ_REQUEST_RECEIVE;
-extern int EV_MOD_GPU_READ_REQUEST_REPLY;
-extern int EV_MOD_GPU_READ_REQUEST_FINISH;
-extern int EV_MOD_GPU_READ_UNLOCK;
-extern int EV_MOD_GPU_READ_FINISH;
+extern int EV_MOD_LOCAL_MEM_STORE;
+extern int EV_MOD_LOCAL_MEM_STORE_LOCK;
+extern int EV_MOD_LOCAL_MEM_STORE_FINISH;
 
-extern int EV_MOD_GPU_WRITE;
-extern int EV_MOD_GPU_WRITE_REQUEST_SEND;
-extern int EV_MOD_GPU_WRITE_REQUEST_RECEIVE;
-extern int EV_MOD_GPU_WRITE_REQUEST_REPLY;
-extern int EV_MOD_GPU_WRITE_REQUEST_REPLY_RECEIVE;
-extern int EV_MOD_GPU_WRITE_UNLOCK;
-extern int EV_MOD_GPU_WRITE_FINISH;
+extern int EV_MOD_LOCAL_MEM_FIND_AND_LOCK;
+extern int EV_MOD_LOCAL_MEM_FIND_AND_LOCK_PORT;
+extern int EV_MOD_LOCAL_MEM_FIND_AND_LOCK_ACTION;
+extern int EV_MOD_LOCAL_MEM_FIND_AND_LOCK_FINISH;
 
+/* NMOESI Event-Driven Simulation */
 
+extern int EV_MOD_NMOESI_LOAD;
+extern int EV_MOD_NMOESI_LOAD_LOCK;
+extern int EV_MOD_NMOESI_LOAD_ACTION;
+extern int EV_MOD_NMOESI_LOAD_MISS;
+extern int EV_MOD_NMOESI_LOAD_UNLOCK;
+extern int EV_MOD_NMOESI_LOAD_FINISH;
 
-/*
- * CPU Event-Driven Simulation
- */
+extern int EV_MOD_NMOESI_STORE;
+extern int EV_MOD_NMOESI_STORE_LOCK;
+extern int EV_MOD_NMOESI_STORE_ACTION;
+extern int EV_MOD_NMOESI_STORE_UNLOCK;
+extern int EV_MOD_NMOESI_STORE_FINISH;
 
-extern int EV_MOD_LOAD;
-extern int EV_MOD_LOAD_LOCK;
-extern int EV_MOD_LOAD_ACTION;
-extern int EV_MOD_LOAD_MISS;
-extern int EV_MOD_LOAD_UNLOCK;
-extern int EV_MOD_LOAD_FINISH;
+extern int EV_MOD_NMOESI_NC_STORE;
+extern int EV_MOD_NMOESI_NC_STORE_LOCK;
+extern int EV_MOD_NMOESI_NC_STORE_ACTION;
+extern int EV_MOD_NMOESI_NC_STORE_UNLOCK;
+extern int EV_MOD_NMOESI_NC_STORE_FINISH;
 
-extern int EV_MOD_STORE;
-extern int EV_MOD_STORE_LOCK;
-extern int EV_MOD_STORE_ACTION;
-extern int EV_MOD_STORE_UNLOCK;
-extern int EV_MOD_STORE_FINISH;
+extern int EV_MOD_NMOESI_FIND_AND_LOCK;
+extern int EV_MOD_NMOESI_FIND_AND_LOCK_PORT;
+extern int EV_MOD_NMOESI_FIND_AND_LOCK_ACTION;
+extern int EV_MOD_NMOESI_FIND_AND_LOCK_FINISH;
 
-extern int EV_MOD_NC_STORE;
-extern int EV_MOD_NC_STORE_LOCK;
-extern int EV_MOD_NC_STORE_ACTION;
-extern int EV_MOD_NC_STORE_UNLOCK;
-extern int EV_MOD_NC_STORE_FINISH;
+extern int EV_MOD_NMOESI_EVICT;
+extern int EV_MOD_NMOESI_EVICT_INVALID;
+extern int EV_MOD_NMOESI_EVICT_ACTION;
+extern int EV_MOD_NMOESI_EVICT_RECEIVE;
+extern int EV_MOD_NMOESI_EVICT_WRITEBACK;
+extern int EV_MOD_NMOESI_EVICT_WRITEBACK_EXCLUSIVE;
+extern int EV_MOD_NMOESI_EVICT_WRITEBACK_FINISH;
+extern int EV_MOD_NMOESI_EVICT_PROCESS;
+extern int EV_MOD_NMOESI_EVICT_REPLY;
+extern int EV_MOD_NMOESI_EVICT_REPLY_RECEIVE;
+extern int EV_MOD_NMOESI_EVICT_FINISH;
 
-extern int EV_MOD_FIND_AND_LOCK;
-extern int EV_MOD_FIND_AND_LOCK_PORT;
-extern int EV_MOD_FIND_AND_LOCK_ACTION;
-extern int EV_MOD_FIND_AND_LOCK_FINISH;
+extern int EV_MOD_NMOESI_WRITE_REQUEST;
+extern int EV_MOD_NMOESI_WRITE_REQUEST_RECEIVE;
+extern int EV_MOD_NMOESI_WRITE_REQUEST_ACTION;
+extern int EV_MOD_NMOESI_WRITE_REQUEST_EXCLUSIVE;
+extern int EV_MOD_NMOESI_WRITE_REQUEST_UPDOWN;
+extern int EV_MOD_NMOESI_WRITE_REQUEST_UPDOWN_FINISH;
+extern int EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP;
+extern int EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP_FINISH;
+extern int EV_MOD_NMOESI_WRITE_REQUEST_REPLY;
+extern int EV_MOD_NMOESI_WRITE_REQUEST_FINISH;
 
-extern int EV_MOD_EVICT;
-extern int EV_MOD_EVICT_INVALID;
-extern int EV_MOD_EVICT_ACTION;
-extern int EV_MOD_EVICT_RECEIVE;
-extern int EV_MOD_EVICT_WRITEBACK;
-extern int EV_MOD_EVICT_WRITEBACK_EXCLUSIVE;
-extern int EV_MOD_EVICT_WRITEBACK_FINISH;
-extern int EV_MOD_EVICT_PROCESS;
-extern int EV_MOD_EVICT_REPLY;
-extern int EV_MOD_EVICT_REPLY_RECEIVE;
-extern int EV_MOD_EVICT_FINISH;
+extern int EV_MOD_NMOESI_NC_WRITE_REQUEST;
+extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_RECEIVE;
+extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_ACTION;
+extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_EXCLUSIVE;
+extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_UPDOWN;
+extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_UPDOWN_FINISH;
+extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_DOWNUP;
+extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_DOWNUP_FINISH;
+extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_REPLY;
+extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_FINISH;
 
-extern int EV_MOD_WRITE_REQUEST;
-extern int EV_MOD_WRITE_REQUEST_RECEIVE;
-extern int EV_MOD_WRITE_REQUEST_ACTION;
-extern int EV_MOD_WRITE_REQUEST_EXCLUSIVE;
-extern int EV_MOD_WRITE_REQUEST_UPDOWN;
-extern int EV_MOD_WRITE_REQUEST_UPDOWN_FINISH;
-extern int EV_MOD_WRITE_REQUEST_DOWNUP;
-extern int EV_MOD_WRITE_REQUEST_DOWNUP_FINISH;
-extern int EV_MOD_WRITE_REQUEST_REPLY;
-extern int EV_MOD_WRITE_REQUEST_FINISH;
+extern int EV_MOD_NMOESI_READ_REQUEST;
+extern int EV_MOD_NMOESI_READ_REQUEST_RECEIVE;
+extern int EV_MOD_NMOESI_READ_REQUEST_ACTION;
+extern int EV_MOD_NMOESI_READ_REQUEST_UPDOWN;
+extern int EV_MOD_NMOESI_READ_REQUEST_UPDOWN_MISS;
+extern int EV_MOD_NMOESI_READ_REQUEST_UPDOWN_FINISH;
+extern int EV_MOD_NMOESI_READ_REQUEST_DOWNUP;
+extern int EV_MOD_NMOESI_READ_REQUEST_DOWNUP_WAIT_FOR_REQS;
+extern int EV_MOD_NMOESI_READ_REQUEST_DOWNUP_FINISH;
+extern int EV_MOD_NMOESI_READ_REQUEST_REPLY;
+extern int EV_MOD_NMOESI_READ_REQUEST_FINISH;
 
-extern int EV_MOD_NC_WRITE_REQUEST;
-extern int EV_MOD_NC_WRITE_REQUEST_RECEIVE;
-extern int EV_MOD_NC_WRITE_REQUEST_ACTION;
-extern int EV_MOD_NC_WRITE_REQUEST_EXCLUSIVE;
-extern int EV_MOD_NC_WRITE_REQUEST_UPDOWN;
-extern int EV_MOD_NC_WRITE_REQUEST_UPDOWN_FINISH;
-extern int EV_MOD_NC_WRITE_REQUEST_DOWNUP;
-extern int EV_MOD_NC_WRITE_REQUEST_DOWNUP_FINISH;
-extern int EV_MOD_NC_WRITE_REQUEST_REPLY;
-extern int EV_MOD_NC_WRITE_REQUEST_FINISH;
+extern int EV_MOD_NMOESI_INVALIDATE;
+extern int EV_MOD_NMOESI_INVALIDATE_FINISH;
 
-extern int EV_MOD_READ_REQUEST;
-extern int EV_MOD_READ_REQUEST_RECEIVE;
-extern int EV_MOD_READ_REQUEST_ACTION;
-extern int EV_MOD_READ_REQUEST_UPDOWN;
-extern int EV_MOD_READ_REQUEST_UPDOWN_MISS;
-extern int EV_MOD_READ_REQUEST_UPDOWN_FINISH;
-extern int EV_MOD_READ_REQUEST_DOWNUP;
-extern int EV_MOD_READ_REQUEST_DOWNUP_WAIT_FOR_REQS;
-extern int EV_MOD_READ_REQUEST_DOWNUP_FINISH;
-extern int EV_MOD_READ_REQUEST_REPLY;
-extern int EV_MOD_READ_REQUEST_FINISH;
-
-extern int EV_MOD_INVALIDATE;
-extern int EV_MOD_INVALIDATE_FINISH;
-
-extern int EV_MOD_PEER_SEND;
-extern int EV_MOD_PEER_RECEIVE;
-extern int EV_MOD_PEER_REPLY_ACK;
-extern int EV_MOD_PEER_FINISH;
+extern int EV_MOD_NMOESI_PEER_SEND;
+extern int EV_MOD_NMOESI_PEER_RECEIVE;
+extern int EV_MOD_NMOESI_PEER_REPLY_ACK;
+extern int EV_MOD_NMOESI_PEER_FINISH;
 
 
 /* Current identifier for stack */
@@ -815,22 +805,22 @@ void mod_stack_wait_in_stack(struct mod_stack_t *stack,
 	struct mod_stack_t *master_stack, int event);
 void mod_stack_wakeup_stack(struct mod_stack_t *master_stack);
 
-void mod_handler_gpu_load(int event, void *data);
-void mod_handler_gpu_store(int event, void *data);
-void mod_handler_gpu_read(int event, void *data);
-void mod_handler_gpu_write(int event, void *data);
+/* NMOESI */
+void mod_handler_nmoesi_find_and_lock(int event, void *data);
+void mod_handler_nmoesi_load(int event, void *data);
+void mod_handler_nmoesi_store(int event, void *data);
+void mod_handler_nmoesi_nc_store(int event, void *data);
+void mod_handler_nmoesi_evict(int event, void *data);
+void mod_handler_nmoesi_write_request(int event, void *data);
+void mod_handler_nmoesi_nc_write_request(int event, void *data);
+void mod_handler_nmoesi_read_request(int event, void *data);
+void mod_handler_nmoesi_invalidate(int event, void *data);
+void mod_handler_nmoesi_peer(int event, void *data);
 
-void mod_handler_find_and_lock(int event, void *data);
-void mod_handler_load(int event, void *data);
-void mod_handler_store(int event, void *data);
-void mod_handler_nc_store(int event, void *data);
-void mod_handler_evict(int event, void *data);
-void mod_handler_write_request(int event, void *data);
-void mod_handler_nc_write_request(int event, void *data);
-void mod_handler_read_request(int event, void *data);
-void mod_handler_invalidate(int event, void *data);
-void mod_handler_peer(int event, void *data);
-
+/* Local memory */
+void mod_handler_local_mem_load(int event, void *data);
+void mod_handler_local_mem_store(int event, void *data);
+void mod_handler_local_mem_find_and_lock(int event, void *data);
 
 
 

@@ -268,7 +268,7 @@ static void x86_cpu_fetch_thread(int core, int thread)
 		X86_THREAD.fetch_block = block;
 		X86_THREAD.fetch_address = phy_addr;
 		X86_THREAD.fetch_access = mod_access(X86_THREAD.inst_mod, 
-			mod_access_read, phy_addr, NULL, NULL, NULL);
+			mod_access_load, phy_addr, NULL, NULL, NULL);
 		X86_THREAD.btb_reads++;
 
 		/* MMU statistics */

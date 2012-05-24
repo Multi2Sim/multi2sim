@@ -42,7 +42,7 @@ struct evg_compute_unit_t *evg_compute_unit_create()
 
 	/* Local memory */
 	snprintf(buf, sizeof buf, "LocalMemory[%d]", compute_unit->id);
-	compute_unit->local_memory = mod_create(buf, mod_kind_main_memory,
+	compute_unit->local_memory = mod_create(buf, mod_kind_local_memory,
 		evg_gpu_local_mem_num_ports, evg_gpu_local_mem_block_size, evg_gpu_local_mem_latency);
 
 	/* Initialize CF Engine */
