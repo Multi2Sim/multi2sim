@@ -20,10 +20,6 @@ LDADD = \
 	$(top_builddir)/src/arch/evergreen/emu/libemu.a \
 	$(top_builddir)/src/arch/evergreen/asm/libasm.a \
 	\
-	$(top_builddir)/src/arch/fermi/timing/libtiming.a \
-	$(top_builddir)/src/arch/fermi/emu/libemu.a \
-	$(top_builddir)/src/arch/fermi/asm/libasm.a \
-	\
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
 	$(top_builddir)/src/arch/x86/emu/libemu.a \
 	$(top_builddir)/src/arch/x86/asm/libasm.a \
@@ -36,6 +32,10 @@ LDADD = \
 	$(top_builddir)/src/visual/memory/libmemory.a \
 	$(top_builddir)/src/visual/x86/libx86.a \
 	$(top_builddir)/src/visual/common/libcommon.a \
+	\
+	$(top_builddir)/src/arch/fermi/timing/libtiming.a \
+	$(top_builddir)/src/arch/fermi/emu/libemu.a \
+	$(top_builddir)/src/arch/fermi/asm/libasm.a \
 	\
 	$(top_builddir)/src/lib/mhandle/libmhandle.a \
 	$(top_builddir)/src/lib/misc/libmisc.a \

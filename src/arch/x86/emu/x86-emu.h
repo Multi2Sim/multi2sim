@@ -42,6 +42,7 @@
 #include <sys/time.h>
 
 #include <evergreen-emu.h>
+#include <fermi-emu.h>
 
 
 /* Some forward declarations */
@@ -639,6 +640,17 @@ void x86_opengl_init(void);
 void x86_opengl_done(void);
 
 int x86_opengl_call(void);
+
+
+
+
+/*
+ * CUDA system call interface
+ */
+
+int frm_cuda_call(void);
+
+
 
 
 /*

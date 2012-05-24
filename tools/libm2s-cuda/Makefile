@@ -26,7 +26,6 @@ libm2s-cuda.a: $(CUDA_OBJECTS)
 
 clean:
 	rm -f $(CUDA_OBJECTS) libm2s-cuda.so libm2s-cuda.a
-	rm -f $(CUDART_OBJECTS) libm2s-cudart.so libm2s-cudart.a
 
 
 

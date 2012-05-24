@@ -4,7 +4,8 @@ libemu_a_SOURCES = \
 	\
 	fermi-emu.h \
 	\
-	emu.c
+	emu.c \
+	cuda.c
 
 INCLUDES = @M2S_INCLUDES@
 
