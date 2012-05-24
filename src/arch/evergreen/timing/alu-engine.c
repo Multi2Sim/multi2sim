@@ -233,7 +233,7 @@ static void evg_alu_engine_read(struct evg_compute_unit_t *compute_unit)
 			{
 				if (work_item_uop->local_mem_access_kind[i] != 1)  /* read access */
 					continue;
-				mod_access(compute_unit->local_memory, mod_access_read, 
+				mod_access(compute_unit->local_memory, mod_access_load, 
 					work_item_uop->local_mem_access_addr[i],
 					&uop->local_mem_witness, NULL, NULL);
 				uop->local_mem_witness--;
@@ -321,9 +321,10 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 				for (i = 0; i < work_item_uop->local_mem_access_count; i++)
 				{
-					if (work_item_uop->local_mem_access_kind[i] != mod_access_write)
+					if (work_item_uop->local_mem_access_kind[i] != 
+						mod_access_store)
 						continue;
-					mod_access(compute_unit->local_memory, mod_access_write,
+					mod_access(compute_unit->local_memory, mod_access_store,
 						work_item_uop->local_mem_access_addr[i],
 						NULL, NULL, NULL);
 				}

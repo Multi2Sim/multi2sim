@@ -58,108 +58,100 @@ void mem_system_init(void)
 	EV_MEM_SYSTEM_COMMAND = esim_register_event(mem_system_command_handler);
 	EV_MEM_SYSTEM_END_COMMAND = esim_register_event(mem_system_end_command_handler);
 
-	/* GPU memory event-driven simulation */
-	EV_MOD_GPU_LOAD = esim_register_event(mod_handler_gpu_load);
-	EV_MOD_GPU_LOAD_FINISH = esim_register_event(mod_handler_gpu_load);
+	/* NMOESI memory event-driven simulation */
 
-	EV_MOD_GPU_STORE = esim_register_event(mod_handler_gpu_store);
-	EV_MOD_GPU_STORE_FINISH = esim_register_event(mod_handler_gpu_store);
+	EV_MOD_NMOESI_LOAD = esim_register_event(mod_handler_nmoesi_load);
+	EV_MOD_NMOESI_LOAD_LOCK = esim_register_event(mod_handler_nmoesi_load);
+	EV_MOD_NMOESI_LOAD_ACTION = esim_register_event(mod_handler_nmoesi_load);
+	EV_MOD_NMOESI_LOAD_MISS = esim_register_event(mod_handler_nmoesi_load);
+	EV_MOD_NMOESI_LOAD_UNLOCK = esim_register_event(mod_handler_nmoesi_load);
+	EV_MOD_NMOESI_LOAD_FINISH = esim_register_event(mod_handler_nmoesi_load);
 
-	EV_MOD_GPU_READ = esim_register_event(mod_handler_gpu_read);
-	EV_MOD_GPU_READ_REQUEST = esim_register_event(mod_handler_gpu_read);
-	EV_MOD_GPU_READ_REQUEST_RECEIVE = esim_register_event(mod_handler_gpu_read);
-	EV_MOD_GPU_READ_REQUEST_REPLY = esim_register_event(mod_handler_gpu_read);
-	EV_MOD_GPU_READ_REQUEST_FINISH = esim_register_event(mod_handler_gpu_read);
-	EV_MOD_GPU_READ_UNLOCK = esim_register_event(mod_handler_gpu_read);
-	EV_MOD_GPU_READ_FINISH = esim_register_event(mod_handler_gpu_read);
-
-	EV_MOD_GPU_WRITE = esim_register_event(mod_handler_gpu_write);
-	EV_MOD_GPU_WRITE_REQUEST_SEND = esim_register_event(mod_handler_gpu_write);
-	EV_MOD_GPU_WRITE_REQUEST_RECEIVE = esim_register_event(mod_handler_gpu_write);
-	EV_MOD_GPU_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_gpu_write);
-	EV_MOD_GPU_WRITE_REQUEST_REPLY_RECEIVE = esim_register_event(mod_handler_gpu_write);
-	EV_MOD_GPU_WRITE_UNLOCK = esim_register_event(mod_handler_gpu_write);
-	EV_MOD_GPU_WRITE_FINISH = esim_register_event(mod_handler_gpu_write);
-
-	/* CPU memory event-driven simulation */
-
-	EV_MOD_LOAD = esim_register_event(mod_handler_load);
-	EV_MOD_LOAD_LOCK = esim_register_event(mod_handler_load);
-	EV_MOD_LOAD_ACTION = esim_register_event(mod_handler_load);
-	EV_MOD_LOAD_MISS = esim_register_event(mod_handler_load);
-	EV_MOD_LOAD_UNLOCK = esim_register_event(mod_handler_load);
-	EV_MOD_LOAD_FINISH = esim_register_event(mod_handler_load);
-
-	EV_MOD_STORE = esim_register_event(mod_handler_store);
-	EV_MOD_STORE_LOCK = esim_register_event(mod_handler_store);
-	EV_MOD_STORE_ACTION = esim_register_event(mod_handler_store);
-	EV_MOD_STORE_UNLOCK = esim_register_event(mod_handler_store);
-	EV_MOD_STORE_FINISH = esim_register_event(mod_handler_store);
+	EV_MOD_NMOESI_STORE = esim_register_event(mod_handler_nmoesi_store);
+	EV_MOD_NMOESI_STORE_LOCK = esim_register_event(mod_handler_nmoesi_store);
+	EV_MOD_NMOESI_STORE_ACTION = esim_register_event(mod_handler_nmoesi_store);
+	EV_MOD_NMOESI_STORE_UNLOCK = esim_register_event(mod_handler_nmoesi_store);
+	EV_MOD_NMOESI_STORE_FINISH = esim_register_event(mod_handler_nmoesi_store);
 	
-	EV_MOD_NC_STORE = esim_register_event(mod_handler_nc_store);
-	EV_MOD_NC_STORE_LOCK = esim_register_event(mod_handler_nc_store);
-	EV_MOD_NC_STORE_ACTION = esim_register_event(mod_handler_nc_store);
-	EV_MOD_NC_STORE_UNLOCK = esim_register_event(mod_handler_nc_store);
-	EV_MOD_NC_STORE_FINISH = esim_register_event(mod_handler_nc_store);
+	EV_MOD_NMOESI_NC_STORE = esim_register_event(mod_handler_nmoesi_nc_store);
+	EV_MOD_NMOESI_NC_STORE_LOCK = esim_register_event(mod_handler_nmoesi_nc_store);
+	EV_MOD_NMOESI_NC_STORE_ACTION = esim_register_event(mod_handler_nmoesi_nc_store);
+	EV_MOD_NMOESI_NC_STORE_UNLOCK = esim_register_event(mod_handler_nmoesi_nc_store);
+	EV_MOD_NMOESI_NC_STORE_FINISH = esim_register_event(mod_handler_nmoesi_nc_store);
 
-	EV_MOD_FIND_AND_LOCK = esim_register_event(mod_handler_find_and_lock);
-	EV_MOD_FIND_AND_LOCK_PORT = esim_register_event(mod_handler_find_and_lock);
-	EV_MOD_FIND_AND_LOCK_ACTION = esim_register_event(mod_handler_find_and_lock);
-	EV_MOD_FIND_AND_LOCK_FINISH = esim_register_event(mod_handler_find_and_lock);
+	EV_MOD_NMOESI_FIND_AND_LOCK = esim_register_event(mod_handler_nmoesi_find_and_lock);
+	EV_MOD_NMOESI_FIND_AND_LOCK_PORT = esim_register_event(mod_handler_nmoesi_find_and_lock);
+	EV_MOD_NMOESI_FIND_AND_LOCK_ACTION = esim_register_event(mod_handler_nmoesi_find_and_lock);
+	EV_MOD_NMOESI_FIND_AND_LOCK_FINISH = esim_register_event(mod_handler_nmoesi_find_and_lock);
 
-	EV_MOD_EVICT = esim_register_event(mod_handler_evict);
-	EV_MOD_EVICT_INVALID = esim_register_event(mod_handler_evict);
-	EV_MOD_EVICT_ACTION = esim_register_event(mod_handler_evict);
-	EV_MOD_EVICT_RECEIVE = esim_register_event(mod_handler_evict);
-	EV_MOD_EVICT_WRITEBACK = esim_register_event(mod_handler_evict);
-	EV_MOD_EVICT_WRITEBACK_EXCLUSIVE = esim_register_event(mod_handler_evict);
-	EV_MOD_EVICT_WRITEBACK_FINISH = esim_register_event(mod_handler_evict);
-	EV_MOD_EVICT_PROCESS = esim_register_event(mod_handler_evict);
-	EV_MOD_EVICT_REPLY = esim_register_event(mod_handler_evict);
-	EV_MOD_EVICT_REPLY_RECEIVE = esim_register_event(mod_handler_evict);
-	EV_MOD_EVICT_FINISH = esim_register_event(mod_handler_evict);
+	EV_MOD_NMOESI_EVICT = esim_register_event(mod_handler_nmoesi_evict);
+	EV_MOD_NMOESI_EVICT_INVALID = esim_register_event(mod_handler_nmoesi_evict);
+	EV_MOD_NMOESI_EVICT_ACTION = esim_register_event(mod_handler_nmoesi_evict);
+	EV_MOD_NMOESI_EVICT_RECEIVE = esim_register_event(mod_handler_nmoesi_evict);
+	EV_MOD_NMOESI_EVICT_WRITEBACK = esim_register_event(mod_handler_nmoesi_evict);
+	EV_MOD_NMOESI_EVICT_WRITEBACK_EXCLUSIVE = esim_register_event(mod_handler_nmoesi_evict);
+	EV_MOD_NMOESI_EVICT_WRITEBACK_FINISH = esim_register_event(mod_handler_nmoesi_evict);
+	EV_MOD_NMOESI_EVICT_PROCESS = esim_register_event(mod_handler_nmoesi_evict);
+	EV_MOD_NMOESI_EVICT_REPLY = esim_register_event(mod_handler_nmoesi_evict);
+	EV_MOD_NMOESI_EVICT_REPLY_RECEIVE = esim_register_event(mod_handler_nmoesi_evict);
+	EV_MOD_NMOESI_EVICT_FINISH = esim_register_event(mod_handler_nmoesi_evict);
 
-	EV_MOD_WRITE_REQUEST = esim_register_event(mod_handler_write_request);
-	EV_MOD_WRITE_REQUEST_RECEIVE = esim_register_event(mod_handler_write_request);
-	EV_MOD_WRITE_REQUEST_ACTION = esim_register_event(mod_handler_write_request);
-	EV_MOD_WRITE_REQUEST_EXCLUSIVE = esim_register_event(mod_handler_write_request);
-	EV_MOD_WRITE_REQUEST_UPDOWN = esim_register_event(mod_handler_write_request);
-	EV_MOD_WRITE_REQUEST_UPDOWN_FINISH = esim_register_event(mod_handler_write_request);
-	EV_MOD_WRITE_REQUEST_DOWNUP = esim_register_event(mod_handler_write_request);
-	EV_MOD_WRITE_REQUEST_DOWNUP_FINISH = esim_register_event(mod_handler_write_request);
-	EV_MOD_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_write_request);
-	EV_MOD_WRITE_REQUEST_FINISH = esim_register_event(mod_handler_write_request);
+	EV_MOD_NMOESI_WRITE_REQUEST = esim_register_event(mod_handler_nmoesi_write_request);
+	EV_MOD_NMOESI_WRITE_REQUEST_RECEIVE = esim_register_event(mod_handler_nmoesi_write_request);
+	EV_MOD_NMOESI_WRITE_REQUEST_ACTION = esim_register_event(mod_handler_nmoesi_write_request);
+	EV_MOD_NMOESI_WRITE_REQUEST_EXCLUSIVE = esim_register_event(mod_handler_nmoesi_write_request);
+	EV_MOD_NMOESI_WRITE_REQUEST_UPDOWN = esim_register_event(mod_handler_nmoesi_write_request);
+	EV_MOD_NMOESI_WRITE_REQUEST_UPDOWN_FINISH = esim_register_event(mod_handler_nmoesi_write_request);
+	EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP = esim_register_event(mod_handler_nmoesi_write_request);
+	EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP_FINISH = esim_register_event(mod_handler_nmoesi_write_request);
+	EV_MOD_NMOESI_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_nmoesi_write_request);
+	EV_MOD_NMOESI_WRITE_REQUEST_FINISH = esim_register_event(mod_handler_nmoesi_write_request);
 
-	EV_MOD_NC_WRITE_REQUEST = esim_register_event(mod_handler_nc_write_request);
-	EV_MOD_NC_WRITE_REQUEST_RECEIVE = esim_register_event(mod_handler_nc_write_request);
-	EV_MOD_NC_WRITE_REQUEST_ACTION = esim_register_event(mod_handler_nc_write_request);
-	EV_MOD_NC_WRITE_REQUEST_EXCLUSIVE = esim_register_event(mod_handler_nc_write_request);
-	EV_MOD_NC_WRITE_REQUEST_UPDOWN = esim_register_event(mod_handler_nc_write_request);
-	EV_MOD_NC_WRITE_REQUEST_UPDOWN_FINISH = esim_register_event(mod_handler_nc_write_request);
-	EV_MOD_NC_WRITE_REQUEST_DOWNUP = esim_register_event(mod_handler_nc_write_request);
-	EV_MOD_NC_WRITE_REQUEST_DOWNUP_FINISH = esim_register_event(mod_handler_nc_write_request);
-	EV_MOD_NC_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_nc_write_request);
-	EV_MOD_NC_WRITE_REQUEST_FINISH = esim_register_event(mod_handler_nc_write_request);
+	EV_MOD_NMOESI_NC_WRITE_REQUEST = esim_register_event(mod_handler_nmoesi_nc_write_request);
+	EV_MOD_NMOESI_NC_WRITE_REQUEST_RECEIVE = esim_register_event(mod_handler_nmoesi_nc_write_request);
+	EV_MOD_NMOESI_NC_WRITE_REQUEST_ACTION = esim_register_event(mod_handler_nmoesi_nc_write_request);
+	EV_MOD_NMOESI_NC_WRITE_REQUEST_EXCLUSIVE = esim_register_event(mod_handler_nmoesi_nc_write_request);
+	EV_MOD_NMOESI_NC_WRITE_REQUEST_UPDOWN = esim_register_event(mod_handler_nmoesi_nc_write_request);
+	EV_MOD_NMOESI_NC_WRITE_REQUEST_UPDOWN_FINISH = esim_register_event(mod_handler_nmoesi_nc_write_request);
+	EV_MOD_NMOESI_NC_WRITE_REQUEST_DOWNUP = esim_register_event(mod_handler_nmoesi_nc_write_request);
+	EV_MOD_NMOESI_NC_WRITE_REQUEST_DOWNUP_FINISH = esim_register_event(mod_handler_nmoesi_nc_write_request);
+	EV_MOD_NMOESI_NC_WRITE_REQUEST_REPLY = esim_register_event(mod_handler_nmoesi_nc_write_request);
+	EV_MOD_NMOESI_NC_WRITE_REQUEST_FINISH = esim_register_event(mod_handler_nmoesi_nc_write_request);
 
-	EV_MOD_READ_REQUEST = esim_register_event(mod_handler_read_request);
-	EV_MOD_READ_REQUEST_RECEIVE = esim_register_event(mod_handler_read_request);
-	EV_MOD_READ_REQUEST_ACTION = esim_register_event(mod_handler_read_request);
-	EV_MOD_READ_REQUEST_UPDOWN = esim_register_event(mod_handler_read_request);
-	EV_MOD_READ_REQUEST_UPDOWN_MISS = esim_register_event(mod_handler_read_request);
-	EV_MOD_READ_REQUEST_UPDOWN_FINISH = esim_register_event(mod_handler_read_request);
-	EV_MOD_READ_REQUEST_DOWNUP = esim_register_event(mod_handler_read_request);
-	EV_MOD_READ_REQUEST_DOWNUP_WAIT_FOR_REQS = esim_register_event(mod_handler_read_request);
-	EV_MOD_READ_REQUEST_DOWNUP_FINISH = esim_register_event(mod_handler_read_request);
-	EV_MOD_READ_REQUEST_REPLY = esim_register_event(mod_handler_read_request);
-	EV_MOD_READ_REQUEST_FINISH = esim_register_event(mod_handler_read_request);
+	EV_MOD_NMOESI_READ_REQUEST = esim_register_event(mod_handler_nmoesi_read_request);
+	EV_MOD_NMOESI_READ_REQUEST_RECEIVE = esim_register_event(mod_handler_nmoesi_read_request);
+	EV_MOD_NMOESI_READ_REQUEST_ACTION = esim_register_event(mod_handler_nmoesi_read_request);
+	EV_MOD_NMOESI_READ_REQUEST_UPDOWN = esim_register_event(mod_handler_nmoesi_read_request);
+	EV_MOD_NMOESI_READ_REQUEST_UPDOWN_MISS = esim_register_event(mod_handler_nmoesi_read_request);
+	EV_MOD_NMOESI_READ_REQUEST_UPDOWN_FINISH = esim_register_event(mod_handler_nmoesi_read_request);
+	EV_MOD_NMOESI_READ_REQUEST_DOWNUP = esim_register_event(mod_handler_nmoesi_read_request);
+	EV_MOD_NMOESI_READ_REQUEST_DOWNUP_WAIT_FOR_REQS = esim_register_event(mod_handler_nmoesi_read_request);
+	EV_MOD_NMOESI_READ_REQUEST_DOWNUP_FINISH = esim_register_event(mod_handler_nmoesi_read_request);
+	EV_MOD_NMOESI_READ_REQUEST_REPLY = esim_register_event(mod_handler_nmoesi_read_request);
+	EV_MOD_NMOESI_READ_REQUEST_FINISH = esim_register_event(mod_handler_nmoesi_read_request);
 
-	EV_MOD_INVALIDATE = esim_register_event(mod_handler_invalidate);
-	EV_MOD_INVALIDATE_FINISH = esim_register_event(mod_handler_invalidate);
+	EV_MOD_NMOESI_INVALIDATE = esim_register_event(mod_handler_nmoesi_invalidate);
+	EV_MOD_NMOESI_INVALIDATE_FINISH = esim_register_event(mod_handler_nmoesi_invalidate);
 
-	EV_MOD_PEER_SEND = esim_register_event(mod_handler_peer);
-	EV_MOD_PEER_RECEIVE = esim_register_event(mod_handler_peer);
-	EV_MOD_PEER_REPLY_ACK = esim_register_event(mod_handler_peer);
-	EV_MOD_PEER_FINISH = esim_register_event(mod_handler_peer);
+	EV_MOD_NMOESI_PEER_SEND = esim_register_event(mod_handler_nmoesi_peer);
+	EV_MOD_NMOESI_PEER_RECEIVE = esim_register_event(mod_handler_nmoesi_peer);
+	EV_MOD_NMOESI_PEER_REPLY_ACK = esim_register_event(mod_handler_nmoesi_peer);
+	EV_MOD_NMOESI_PEER_FINISH = esim_register_event(mod_handler_nmoesi_peer);
+
+	/* Local memory event driven simulation */
+
+	EV_MOD_LOCAL_MEM_LOAD = esim_register_event(mod_handler_local_mem_load);
+	EV_MOD_LOCAL_MEM_LOAD_LOCK = esim_register_event(mod_handler_local_mem_load);
+	EV_MOD_LOCAL_MEM_LOAD_FINISH = esim_register_event(mod_handler_local_mem_load);
+
+	EV_MOD_LOCAL_MEM_STORE = esim_register_event(mod_handler_local_mem_store);
+	EV_MOD_LOCAL_MEM_STORE_LOCK = esim_register_event(mod_handler_local_mem_store);
+	EV_MOD_LOCAL_MEM_STORE_FINISH = esim_register_event(mod_handler_local_mem_store);
+
+	EV_MOD_LOCAL_MEM_FIND_AND_LOCK = esim_register_event(mod_handler_local_mem_find_and_lock);
+	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_PORT = esim_register_event(mod_handler_local_mem_find_and_lock);
+	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_ACTION = esim_register_event(mod_handler_local_mem_find_and_lock);
+	EV_MOD_LOCAL_MEM_FIND_AND_LOCK_FINISH = esim_register_event(mod_handler_local_mem_find_and_lock);
 
 	/* Read cache configuration file */
 	mem_system_config_read();
