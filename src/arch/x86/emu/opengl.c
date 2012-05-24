@@ -513,8 +513,8 @@ int x86_opengl_matrix_stack_push(struct x86_opengl_matrix_stack_t *mtx_stack, vo
 {
 	if (mtx_stack->depth == mtx_stack->max_depth)
 		fatal("Stack overflow, max depth = %d\n", mtx_stack->max_depth);
-	x86_opengl_debug("\tpush: stack_ptr = 0x%x, curr_depth = %d, max_depth = %d\n", 
-		(unsigned int)mtx_stack,  mtx_stack->depth, mtx_stack->max_depth);
+	x86_opengl_debug("\tpush: curr_depth = %d, max_depth = %d\n", 
+		mtx_stack->depth, mtx_stack->max_depth);
 	mtx_stack->depth += 1;
 	list_push(mtx_stack->stack, mtx);
 	return 0;
@@ -528,8 +528,8 @@ struct x86_opengl_matrix_t *x86_opengl_matrix_stack_pop(struct x86_opengl_matrix
 	/* Pop from stack */
 	if (mtx_stack->depth == 0 )
 		fatal("Stack underflow, max depth = %d\n", mtx_stack->max_depth);
-	x86_opengl_debug("\tpop: stack_ptr = 0x%x, curr_depth = %d, max_depth = %d\n", 
-		(unsigned int)mtx_stack,  mtx_stack->depth, mtx_stack->max_depth);
+	x86_opengl_debug("\tpop: curr_depth = %d, max_depth = %d\n", 
+		mtx_stack->depth, mtx_stack->max_depth);
 
 	mtx_stack->depth -= 1;
 	mtx = list_pop(mtx_stack->stack);
