@@ -53,6 +53,10 @@ EXTRA_DIST = \
 	tools/libm2s-opencl/program.c \
 	tools/libm2s-opencl/sampler.c \
 	\
+	tools/libm2s-opengl/m2s-opengl.h \
+	tools/libm2s-opengl/opengl.c
+	tools/libm2s-opengl/Makefile
+	\
 	tools/libm2s-cuda/m2s-cuda.h \
 	tools/libm2s-cuda/cuda.c \
 	tools/libm2s-cuda/Makefile \

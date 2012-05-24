@@ -27,6 +27,24 @@ static char *err_x86_opengl_code =
 	"\tversion of the Multi2Sim OpenGL runtime library ('libm2s-opengl'). Please\n"
 	"\trecompile your application and try again.\n";
 
+#define X86_OPENGL_MAX_ARGS  14
+
+/* Maximum modelview matrix stack depth */
+#define MAX_MODELVIEW_STACK_DEPTH 32
+
+/* Maximum projection matrix stack depth */
+#define MAX_PROJECTION_STACK_DEPTH 32
+
+/* Maximum texture matrix stack depth */
+#define MAX_TEXTURE_STACK_DEPTH 10
+
+/* FIXME: Maximum color matrix stack depth */ 
+#define MAX_COLOR_STACK_DEPTH 32
+
+/* From config.h in Mesa */
+#define MAX_TEXTURE_COORD_UNITS 8
+#define MAX_TEXTURE_IMAGE_UNITS 16
+#define MAX_TEXTURE_UNITS ((MAX_TEXTURE_COORD_UNITS > MAX_TEXTURE_IMAGE_UNITS) ? MAX_TEXTURE_COORD_UNITS : MAX_TEXTURE_IMAGE_UNITS)
 
 /* Debug */
 int x86_opengl_debug_category;
@@ -77,7 +95,7 @@ static x86_opengl_func_t x86_opengl_func_table[x86_opengl_call_count + 1] =
  */
 
 /* OpenGL context capability */
-struct x86_opengl_context_t_capability_t
+struct x86_opengl_context_capability_t
 {
 	GLboolean is_alpha_test;
 	GLboolean is_auto_normal;
@@ -192,10 +210,10 @@ struct x86_opengl_viewport_attributes_t
 enum x86_opengl_matrix_mode_t {
 	MATRIX_GENERAL,		/* general 4x4 matrix */
 	MATRIX_IDENTITY,		/* identity matrix */
-	MATRIX_3D_NO_ROT,	/* orthogonal projection and others... */
+	MATRIX_3D_NO_ROT,		/* orthogonal projection and others... */
 	MATRIX_PERSPECTIVE,	/* perspective projection matrix */
 	MATRIX_2D,			/* 2-D transformation */
-	MATRIX_2D_NO_ROT,	/* 2-D scale & translate only */
+	MATRIX_2D_NO_ROT,		/* 2-D scale & translate only */
 	MATRIX_3D			/* 3-D transformation */
 } ;
 
@@ -218,10 +236,156 @@ struct x86_opengl_matrix_t
 struct x86_opengl_matrix_stack_t
 {
 	struct list_t *stack;
-	GLuint depth;
-	GLuint max_depth;
+	GLint depth;
+	GLint max_depth;
 };
 
+/* OpenGL context*/
+struct x86_opengl_context_t
+{
+	struct x86_opengl_context_capability_t *context_cap;					/* context capabilities */
+
+	struct x86_opengl_frame_buffer_t *draw_buffer;						/* buffer for writing */
+	struct x86_opengl_frame_buffer_t *read_buffer;						/* buffer for reading */
+
+	struct x86_opengl_viewport_attributes_t *viewport;						/* viewport attributes */
+
+	struct x86_opengl_matrix_stack_t *modelview_matrix_stack;					/* modelview matrix stack */
+	struct x86_opengl_matrix_stack_t *projection_matrix_stack;					/* projection matrix stack */
+	struct x86_opengl_matrix_stack_t *texture_matrix_stack[MAX_TEXTURE_UNITS];		/* texture matrix stacks */
+	struct x86_opengl_matrix_stack_t *color_matrix_stack;					/* color matrix stack */
+	struct x86_opengl_matrix_stack_t *current_matrix_stack;					/* current matrix stack, points to one of above stacks */
+
+};
+
+/*
+ * OpenGL global variables
+ */
+
+/* OpenGL Context */
+struct x86_opengl_context_t *x86_opengl_ctx;
+
+/*
+ * OpenGL Initialization
+ */
+
+struct x86_opengl_context_capability_t *x86_opengl_context_capability_create(void)
+{
+	/* Variables */
+ 	struct x86_opengl_context_capability_t* cap;
+
+ 	cap = calloc(1, sizeof(struct x86_opengl_context_capability_t));
+	if (!cap)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Set up initial value for each capability, initial value for each capability is GL_FALSE, except GL_DITHER and GL_MULTISAMPLE */
+	memset(cap, 0, sizeof(struct x86_opengl_context_capability_t));
+	cap->is_dither = GL_TRUE;
+	cap->is_multisample = GL_TRUE;
+
+	/* Return */
+	return cap;
+}
+
+void x86_opengl_context_capability_free(struct x86_opengl_context_capability_t *cap)
+{
+	free(cap);
+}
+
+struct x86_opengl_frame_buffer_t *x86_opengl_frame_buffer_create(int width, int height)
+{
+	/* Variables */
+	struct x86_opengl_frame_buffer_t *fb;
+
+	/* Allocate */
+	fb = calloc(1, sizeof(struct x86_opengl_frame_buffer_t));
+	if(!fb)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialization */
+	fb->width = width;
+	fb->height = height;
+	fb->buffer = calloc(1, sizeof(GLuint)*width*height);
+
+	/* Return */
+	return fb;
+}
+
+void x86_opengl_frame_buffer_free(struct x86_opengl_frame_buffer_t *fb)
+{
+	free(fb->buffer);
+	free(fb);
+}
+
+void x86_opengl_frame_buffer_clear(struct x86_opengl_frame_buffer_t *fb)
+{
+	/* Clear buffer */
+	if (fb)
+		memset(fb->buffer, 0, fb->width * fb->height * sizeof(int));
+}
+
+int x86_opengl_frame_buffer_resize(struct x86_opengl_frame_buffer_t *fb, int width, int height)
+{
+	/* Invalid size */
+	if (width < 1 || height < 1)
+		fatal("%s: invalid size (width = %d, height = %d)\n",
+			__FUNCTION__, width, height);
+
+	/* If same size, just clear it. */
+	if (fb->width == width && fb->height == height)
+	{
+		x86_opengl_frame_buffer_clear(fb);
+		return 0;
+	}	
+
+	/* Free previous buffer */
+	if (fb->buffer)
+		free(fb->buffer);
+
+	/* Allocate new buffer */
+	fb->buffer = calloc(width * height, sizeof(int));
+	if (!fb->buffer)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Store new size */
+	fb->width = width;
+	fb->height = height;
+
+	/* Return */
+	return 0;
+}
+
+struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_attributes_create(void)
+{
+	int width;
+	int height;
+	
+	/* Variables */
+	struct x86_opengl_viewport_attributes_t *vpt;
+
+	/* Allocate */
+	vpt = calloc(1, sizeof(struct x86_opengl_viewport_attributes_t));
+	if(!vpt)
+		fatal("%s: out of memory", __FUNCTION__);
+
+
+	/* Initialize */
+	width = 0;  // FIXME
+	height = 0;  // FIXME
+
+	vpt->x = 0;
+	vpt->y = 0;
+	vpt->width = width;
+	vpt->height = height;
+
+	/* Return */	
+	return vpt;
+}
+
+void x86_opengl_viewport_free(struct x86_opengl_viewport_attributes_t *vpt)
+{
+	free(vpt);
+}
 
 struct x86_opengl_matrix_t *x86_opengl_matrix_create(enum x86_opengl_matrix_mode_t mode)
 {
@@ -256,17 +420,31 @@ void x86_opengl_matrix_free(struct x86_opengl_matrix_t *mtx)
 	free(mtx);
 }
 
-/* Maximum modelview matrix stack depth */
-#define MAX_MODELVIEW_STACK_DEPTH 32
+#define A(row,col)  a[(col<<2)+row]
+#define B(row,col)  b[(col<<2)+row]
+#define P(row,col)  product[(col<<2)+row]
 
-/* Maximum projection matrix stack depth */
-#define MAX_PROJECTION_STACK_DEPTH 32
+static void x86_opengl_matrix_matmul4( GLfloat *product, const GLfloat *a, const GLfloat *b )
+{
+	GLint i;
+	for (i = 0; i < 4; i++)
+	{
+		const GLfloat ai0=A(i,0),  ai1=A(i,1),  ai2=A(i,2),  ai3=A(i,3);
+		P(i,0) = ai0 * B(0,0) + ai1 * B(1,0) + ai2 * B(2,0) + ai3 * B(3,0);
+		P(i,1) = ai0 * B(0,1) + ai1 * B(1,1) + ai2 * B(2,1) + ai3 * B(3,1);
+		P(i,2) = ai0 * B(0,2) + ai1 * B(1,2) + ai2 * B(2,2) + ai3 * B(3,2);
+		P(i,3) = ai0 * B(0,3) + ai1 * B(1,3) + ai2 * B(2,3) + ai3 * B(3,3);
+	}
+}
 
-/* Maximum texture matrix stack depth */
-#define MAX_TEXTURE_STACK_DEPTH 10
+#undef A
+#undef B
+#undef P
 
-/* FIXME: Maximum color matrix stack depth */ 
-#define MAX_COLOR_STACK_DEPTH 32
+void x86_opengl_matrix_mul_matrix(struct x86_opengl_matrix_t *dst_mtx, struct x86_opengl_matrix_t *mtx_a, struct x86_opengl_matrix_t *mtx_b)
+{
+	x86_opengl_matrix_matmul4(dst_mtx->matrix, mtx_a->matrix, mtx_b->matrix);
+}
 
 struct x86_opengl_matrix_stack_t *x86_opengl_matrix_stack_create(GLenum mode)
 {
@@ -283,7 +461,7 @@ struct x86_opengl_matrix_stack_t *x86_opengl_matrix_stack_create(GLenum mode)
 	/* Initialize */
 	stack->stack = list_create();
 	list_add(stack->stack, mtx);
-	stack->depth = 1;
+	stack->depth = 0;
 
 	switch (mode)
 	{
@@ -333,9 +511,11 @@ void x86_opengl_matrix_stack_free(struct x86_opengl_matrix_stack_t *mtx_stack)
 
 int x86_opengl_matrix_stack_push(struct x86_opengl_matrix_stack_t *mtx_stack, void *mtx)
 {
-	mtx_stack->depth += 1;
-	if (mtx_stack->depth > mtx_stack->max_depth)
+	if (mtx_stack->depth == mtx_stack->max_depth)
 		fatal("Stack overflow, max depth = %d\n", mtx_stack->max_depth);
+	x86_opengl_debug("\tpush: stack_ptr = 0x%x, curr_depth = %d, max_depth = %d\n", 
+		(unsigned int)mtx_stack,  mtx_stack->depth, mtx_stack->max_depth);
+	mtx_stack->depth += 1;
 	list_push(mtx_stack->stack, mtx);
 	return 0;
 }
@@ -344,148 +524,33 @@ struct x86_opengl_matrix_t *x86_opengl_matrix_stack_pop(struct x86_opengl_matrix
 {
 	/* Variables */
 	struct x86_opengl_matrix_t *mtx;
-	/* Pop from stack */
-	mtx_stack->depth -= 1;
-	if (mtx_stack->depth < 0 )
-		fatal("Stack underflow, max depth = %d\n", mtx_stack->max_depth);
-	mtx = list_pop(mtx_stack->stack);
-	if (mtx == NULL)
-		fatal("Empty stack!\n");
-	/* Return */
-	return mtx;
-}
 
-struct x86_opengl_matrix_t *x86_opengl_matrix_stack_pop_and_free(struct x86_opengl_matrix_stack_t *mtx_stack)
-{
-	/* Variables */
-	struct x86_opengl_matrix_t *mtx;
-	/* Pop from stack and free */
-	mtx_stack->depth -= 1;
-	if (mtx_stack->depth < 0)
+	/* Pop from stack */
+	if (mtx_stack->depth == 0 )
 		fatal("Stack underflow, max depth = %d\n", mtx_stack->max_depth);
+	x86_opengl_debug("\tpop: stack_ptr = 0x%x, curr_depth = %d, max_depth = %d\n", 
+		(unsigned int)mtx_stack,  mtx_stack->depth, mtx_stack->max_depth);
+
+	mtx_stack->depth -= 1;
 	mtx = list_pop(mtx_stack->stack);
 	if (mtx == NULL)
 		fatal("Empty stack!\n");
 	x86_opengl_matrix_free(mtx);
+
 	/* Return */
 	return mtx;
 }
 
-/* From config.h in Mesa */
-#define MAX_TEXTURE_COORD_UNITS 8
-#define MAX_TEXTURE_IMAGE_UNITS 16
-#define MAX_TEXTURE_UNITS ((MAX_TEXTURE_COORD_UNITS > MAX_TEXTURE_IMAGE_UNITS) ? MAX_TEXTURE_COORD_UNITS : MAX_TEXTURE_IMAGE_UNITS)
-
-/* OpenGL context*/
-struct x86_opengl_context_t
-{
-	struct x86_opengl_context_t_capability_t *context_cap;					/* context capabilities */
-
-	struct x86_opengl_frame_buffer_t *draw_buffer;						/* buffer for writing */
-	struct x86_opengl_frame_buffer_t *read_buffer;						/* buffer for reading */
-
-	struct x86_opengl_viewport_attributes_t *viewport;						/* viewport attributes */
-
-	struct x86_opengl_matrix_stack_t *modelview_matrix_stack;					/* modelview matrix stack */
-	struct x86_opengl_matrix_stack_t *projection_matrix_stack;					/* projection matrix stack */
-	struct x86_opengl_matrix_stack_t *texture_matrix_stack[MAX_TEXTURE_UNITS];		/* texture matrix stacks */
-	struct x86_opengl_matrix_stack_t *color_matrix_stack;					/* color matrix stack */
-	struct x86_opengl_matrix_stack_t *current_matrix_stack;					/* current matrix stack, points to one of above stacks */
-
-};
-
-
-/*
- * OpenGL global variables
- */
-
-/* OpenGL Context */
-struct x86_opengl_context_t *x86_opengl_ctx;
-
-/*
- * OpenGL Initialization
- */
-
-struct x86_opengl_context_t_capability_t *x86_opengl_context_t_capability_create(void)
+struct x86_opengl_matrix_t *x86_opengl_matrix_stack_get_current_matrix(struct x86_opengl_context_t *ctx)
 {
 	/* Variables */
- 	struct x86_opengl_context_t_capability_t* cap;
+	struct x86_opengl_matrix_t *mtx;
 
- 	cap = calloc(1, sizeof(struct x86_opengl_context_t_capability_t));
-	if (!cap)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Set up initial value for each capability, initial value for each capability is GL_FALSE, except GL_DITHER and GL_MULTISAMPLE */
-	memset(cap, 0, sizeof(struct x86_opengl_context_t_capability_t));
-	cap->is_dither = GL_TRUE;
-	cap->is_multisample = GL_TRUE;
+	/* Get current matrix */
+	mtx = list_get(ctx->current_matrix_stack->stack, ctx->current_matrix_stack->depth);
 
 	/* Return */
-	return cap;
-}
-
-void x86_opengl_context_t_capability_free(struct x86_opengl_context_t_capability_t *cap)
-{
-	free(cap);
-}
-
-struct x86_opengl_frame_buffer_t *x86_opengl_frame_buffer_create(int width, int height)
-{
-	/* Variables */
-	struct x86_opengl_frame_buffer_t *fb;
-
-	/* Allocate */
-	fb = calloc(1, sizeof(struct x86_opengl_frame_buffer_t));
-	if(!fb)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialization */
-	fb->width = width;
-	fb->height = height;
-	fb->buffer = calloc(1, sizeof(GLuint)*width*height);
-
-	/* Return */
-	return fb;
-}
-
-void x86_opengl_frame_buffer_free(struct x86_opengl_frame_buffer_t *fb)
-{
-	free(fb->buffer);
-	free(fb);
-}
-
-struct x86_opengl_viewport_attributes_t *x86_opengl_viewport_attributes_create(void)
-{
-	int width;
-	int height;
-	
-	/* Variables */
-	struct x86_opengl_viewport_attributes_t *vpt;
-
-	/* Allocate */
-	vpt = calloc(1, sizeof(struct x86_opengl_viewport_attributes_t));
-	if(!vpt)
-		fatal("%s: out of memory", __FUNCTION__);
-
-
-	/* Initialize */
-	width = 0;  // FIXME
-	height = 0;  // FIXME
-	//x86_glut_frame_buffer_get_size(&width, &height);
-	/* RAFA - see related note below */
-
-	vpt->x = 0;
-	vpt->y = 0;
-	vpt->width = width;
-	vpt->height = height;
-
-	/* Return */	
-	return vpt;
-}
-
-void x86_opengl_viewport_free(struct x86_opengl_viewport_attributes_t *vpt)
-{
-	free(vpt);
+	return mtx;
 }
 
 struct x86_opengl_context_t *x86_opengl_context_create(void)
@@ -501,34 +566,14 @@ struct x86_opengl_context_t *x86_opengl_context_create(void)
 	if(!ctx)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	/* Initialize */
-
 	/* Initialize frame buffers */
-	//x86_glut_frame_buffer_get_size(&width, &height);
 	width = 0;  // FIXME
 	height = 0;  // FIXME
-	/* RAFA - Xiang, we shouldn't call any GLUT function in the
-	 * initialization of the simulator. Notice that the user may or may not
-	 * have the GLUT library installed. If he doesn't, the GLUT functions
-	 * defined in 'x86-emu.h' will cause an error message. This should only
-	 * happen when the user is actually trying to run a GLUT application.
-	 * This means that we need to call only frame buffer functions after an
-	 * initialization call to OpenGL. Is this possible?
-	 */
-	/* To test how your code behaves when GLUT is not installed in your
-	 * system, you can add line "have_glut=no" in the 'configure.ac' file,
-	 * right before line
-	 	if test x$have_glut == xno; then
-	 * You don't need to actually keep installing and uninstalling the
-	 * library.
-	 */
-	/* Temporary, I commented out the call to 'x86_glut_frame_buffer_get_size'
-	 * and set width and height to 0. */
 	ctx->draw_buffer = x86_opengl_frame_buffer_create(width, height);
 	ctx->read_buffer = x86_opengl_frame_buffer_create(width, height);
 	
 	/* Initialize context capabilities */
-	ctx->context_cap = x86_opengl_context_t_capability_create();
+	ctx->context_cap = x86_opengl_context_capability_create();
 
 	/* Initialize viewport */
 	ctx->viewport = x86_opengl_viewport_attributes_create();
@@ -554,7 +599,7 @@ void x86_opengl_context_free(struct x86_opengl_context_t *ctx)
 	int i;
 
 	/* Free context capabilities*/
-	x86_opengl_context_t_capability_free(ctx->context_cap);
+	x86_opengl_context_capability_free(ctx->context_cap);
 
 	/* Free framebuffers */
 	x86_opengl_frame_buffer_free(ctx->draw_buffer);
@@ -1346,18 +1391,38 @@ static int x86_opengl_func_glEnable(void)
 static int x86_opengl_func_glViewport(void)
 {
 	/* Variables */
-	unsigned int vpt_ptr;
+	unsigned int args_ptr;
+	unsigned int argc_ptr;
+
+	int func_args[X86_OPENGL_MAX_ARGS];
+	int func_argc;
 
 	/* Read arguments */
-	vpt_ptr = x86_isa_regs->ecx;
-	x86_opengl_debug("\tvpt_ptr=0x%x\n", vpt_ptr);
+	args_ptr = x86_isa_regs->ecx;
+	argc_ptr = x86_isa_regs->edx;
 
-	mem_read(x86_isa_mem, vpt_ptr, sizeof(struct x86_opengl_viewport_attributes_t), x86_opengl_ctx->viewport);
+	x86_opengl_debug("\targs_ptr=0x%x\n", args_ptr);
+	x86_opengl_debug("\targc_ptr=0x%x\n", argc_ptr);
+
+	/* Get function info */
+	mem_read(x86_isa_mem, argc_ptr, sizeof(int), &func_argc);
+	mem_read(x86_isa_mem, args_ptr, func_argc * 4, func_args);
+	x86_opengl_ctx->viewport->x = func_args[0];
+	x86_opengl_ctx->viewport->y = func_args[1];
+	x86_opengl_ctx->viewport->width = func_args[2];
+	x86_opengl_ctx->viewport->height = func_args[3];
 
 	/* Initialize */
 	x86_opengl_debug("\tviewport: x=%d, y=%d, width=%d, height=%d\n",
 				x86_opengl_ctx->viewport->x, x86_opengl_ctx->viewport->y, 
-				x86_opengl_ctx->viewport->width, x86_opengl_ctx->viewport->height );
+				x86_opengl_ctx->viewport->width, x86_opengl_ctx->viewport->height);
+
+	/* Update frame buffer */
+	/* FIXME: Viewport size != frame buffer size, it only selects a part of frame buffer */
+	x86_opengl_frame_buffer_resize(x86_opengl_ctx->draw_buffer, 
+		x86_opengl_ctx->viewport->width, x86_opengl_ctx->viewport->height);
+	x86_opengl_frame_buffer_resize(x86_opengl_ctx->read_buffer, 
+		x86_opengl_ctx->viewport->width, x86_opengl_ctx->viewport->height);
 
 	/* Return */
 	return 0;	
@@ -1431,11 +1496,175 @@ static int x86_opengl_func_glMatrixMode(void)
 static int x86_opengl_func_glLoadIdentity(void)
 {
 	/* Pop from current stack and free the matrix */
-	x86_opengl_matrix_stack_pop_and_free(x86_opengl_ctx->current_matrix_stack);
+	if (x86_opengl_ctx->current_matrix_stack->depth > 0)
+		x86_opengl_matrix_stack_pop(x86_opengl_ctx->current_matrix_stack);
 
 	/* Push identity matrix to the current matrix stack */
 	struct x86_opengl_matrix_t *mtx = x86_opengl_matrix_create(MATRIX_IDENTITY);
 	x86_opengl_matrix_stack_push(x86_opengl_ctx->current_matrix_stack, mtx);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #7 - glOrtho
+ *
+ * glOrtho - multiply the current matrix with an orthographic matrix
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glOrtho(void)
+{
+	/* Variables */
+	unsigned int args_ptr;
+	unsigned int argc_ptr;
+
+	GLdouble func_args[X86_OPENGL_MAX_ARGS];
+	int func_argc;
+	int i;
+	int j;
+
+	/* Read arguments */
+	args_ptr = x86_isa_regs->ecx;
+	argc_ptr = x86_isa_regs->edx;
+
+	x86_opengl_debug("\targs_ptr=0x%x\n", args_ptr);
+	x86_opengl_debug("\targc_ptr=0x%x\n", argc_ptr);
+
+	/* Get function info */
+	mem_read(x86_isa_mem, argc_ptr, sizeof(int), &func_argc);
+	mem_read(x86_isa_mem, args_ptr, func_argc * sizeof(GLdouble), func_args);
+	for (i = 0; i < func_argc; i++)
+		x86_opengl_debug("\t\targs[%d] = %f (0x%f)\n",
+			i, func_args[i], func_args[i]);
+
+	/* Current matrix multiplies orthographic matrix */
+	struct x86_opengl_matrix_t *mtx_ortho;
+	struct x86_opengl_matrix_t *mtx_curr;
+
+	/* Calculate orthographic matrix */
+	GLfloat ortho_matrix[16];
+
+	GLfloat left = func_args[0];
+	GLfloat right = func_args[1];
+	GLfloat bottom = func_args[2];
+	GLfloat top = func_args[3];
+	GLfloat nearval = func_args[4];
+	GLfloat farval = func_args[5];
+
+	#define M(row,col)  ortho_matrix[col*4+row]
+	M(0,0) = 2.0F / (right-left);
+	M(0,1) = 0.0F;
+	M(0,2) = 0.0F;
+	M(0,3) = -(right+left) / (right-left);
+
+	M(1,0) = 0.0F;
+	M(1,1) = 2.0F / (top-bottom);
+	M(1,2) = 0.0F;
+	M(1,3) = -(top+bottom) / (top-bottom);
+
+	M(2,0) = 0.0F;
+	M(2,1) = 0.0F;
+	M(2,2) = -2.0F / (farval-nearval);
+	M(2,3) = -(farval+nearval) / (farval-nearval);
+
+	M(3,0) = 0.0F;
+	M(3,1) = 0.0F;
+	M(3,2) = 0.0F;
+	M(3,3) = 1.0F;
+	#undef M
+
+	/* Initialize orthographic matrix */
+	mtx_ortho = x86_opengl_matrix_create(MATRIX_GENERAL);
+	memcpy(mtx_ortho->matrix, ortho_matrix, 16*sizeof(GLfloat));
+
+	x86_opengl_debug("\t\tOrtho:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_ortho->matrix[i*4+j]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	mtx_curr = x86_opengl_matrix_stack_get_current_matrix(x86_opengl_ctx);
+	x86_opengl_debug("\t\tCurr:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_curr->matrix[i*4+j]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	x86_opengl_matrix_mul_matrix(mtx_curr, mtx_curr, mtx_ortho);
+	x86_opengl_debug("\t\tCurr mul Ortho:\n");
+	for (i = 0; i < 4; ++i)
+	{
+		x86_opengl_debug("\t\t");
+		for (j = 0; j < 4; ++j)
+		{
+			x86_opengl_debug("%f\t", mtx_curr->matrix[i*4+j]);
+		}
+		x86_opengl_debug("\n");
+	}
+
+	/* Free */
+	x86_opengl_matrix_free(mtx_ortho);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #8 - glClear
+ *
+ * glClear - clear buffers to present values
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glClear(void)
+{
+	unsigned int mask_ptr;
+	GLbitfield mask;
+
+	/* Read arguments */
+	mask_ptr = x86_isa_regs->ecx;
+	x86_opengl_debug("\tmask_ptr=0x%x\n", mask_ptr);
+	mem_read(x86_isa_mem, mask_ptr, sizeof(GLbitfield), &mask);
+
+
+	/* Clear buffers */
+	if (mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT))
+	{
+		x86_opengl_debug("\tInvalid mask!\n");
+	}
+
+	if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) {
+		x86_opengl_debug("\tColor buffer cleared!\n");
+    		// memset(ColorBuffer, 0, sizeof(uint32_t) * Color_Buf_Height * Color_Buf_Width);
+  	}
+	if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) {
+		x86_opengl_debug("\tDepth buffer cleared!\n");
+    		// memset(DepthBuffer, 0, sizeof(uint32_t) * Depth_Buf_Height * Depth_Buf_Width);
+	}
+	if ((mask & GL_ACCUM_BUFFER_BIT) == GL_ACCUM_BUFFER_BIT) {
+		x86_opengl_debug("\tAccumulation buffer cleared!\n");
+    		// memset(AccumBuffer, 0, sizeof(uint32_t) * Accum_Buf_Height * Accum_Buf_Width);
+	}
+	if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT) {
+		x86_opengl_debug("\tStencil buffer cleared!\n");
+    		// memset(StencilBuffer, 0, sizeof(uint32_t) * Stencil_Buf_Height * Stencil_Buf_Width);
+	}
 
 	/* Return */
 	return 0;	
