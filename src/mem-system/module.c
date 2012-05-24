@@ -23,9 +23,9 @@
 struct string_map_t mod_access_kind_map =
 {
 	3, {
-		{ "Load", mod_access_read },
-		{ "Store", mod_access_write },
-		{ "NCStore", mod_access_nc_write }
+		{ "Load", mod_access_load },
+		{ "Store", mod_access_store },
+		{ "NCStore", mod_access_nc_store }
 	}
 };
 
@@ -116,21 +116,45 @@ long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind,
 	stack->event_queue_item = event_queue_item;
 
 	/* Select initial CPU/GPU event */
-	if (access_kind == mod_access_read)
+	if (mod->kind == mod_kind_cache || mod->kind == mod_kind_main_memory)
 	{
-		event = EV_MOD_LOAD;
+		if (access_kind == mod_access_load)
+		{
+			event = EV_MOD_NMOESI_LOAD;
+		}
+		else if (access_kind == mod_access_store)
+		{
+			event = EV_MOD_NMOESI_STORE;
+		}
+		else if (access_kind == mod_access_nc_store)
+		{
+			// TODO Change this to EV_MOD_NMOESI_NC_STORE after updating the protocol
+			event = EV_MOD_NMOESI_STORE;
+		}
+		else
+		{
+			panic("%s: invalid access kind", __FUNCTION__);
+		}
 	}
-	else if (access_kind == mod_access_write)
+	else if (mod->kind == mod_kind_local_memory)
 	{
-		event = EV_MOD_STORE;
-	}
-	else if (access_kind == mod_access_nc_write)
-	{
-		// TODO Change this to EV_MOD_NC_STORE after updating the protocol
-		event = EV_MOD_STORE;
+		if (access_kind == mod_access_load)
+		{
+			event = EV_MOD_LOCAL_MEM_LOAD;
+		}
+		else if (access_kind == mod_access_store)
+		{
+			event = EV_MOD_LOCAL_MEM_STORE;
+		}
+		else
+		{
+			panic("%s: invalid access kind", __FUNCTION__);
+		}
 	}
 	else
-		panic("%s: invalid entry kind", __FUNCTION__);
+	{
+		panic("%s: invalid mod kind", __FUNCTION__);
+	}
 
 	/* Schedule */
 	esim_execute_event(event, stack);
@@ -310,7 +334,7 @@ void mod_access_start(struct mod_t *mod, struct mod_stack_t *stack,
 	DOUBLE_LINKED_LIST_INSERT_TAIL(mod, access, stack);
 
 	/* Insert in write access list */
-	if (access_kind == mod_access_write)
+	if (access_kind == mod_access_store)
 		DOUBLE_LINKED_LIST_INSERT_TAIL(mod, write_access, stack);
 
 	/* Insert in access hash table */
@@ -328,7 +352,7 @@ void mod_access_finish(struct mod_t *mod, struct mod_stack_t *stack)
 
 	/* Remove from write access list */
 	assert(stack->access_kind);
-	if (stack->access_kind == mod_access_write)
+	if (stack->access_kind == mod_access_store)
 		DOUBLE_LINKED_LIST_REMOVE(mod, write_access, stack);
 
 	/* Remove from hash table */
@@ -408,7 +432,7 @@ struct mod_stack_t *mod_in_flight_write(struct mod_t *mod,
 	/* Search */
 	for (stack = older_than_stack->access_list_prev; stack;
 		stack = stack->access_list_prev)
-		if (stack->access_kind == mod_access_write)
+		if (stack->access_kind == mod_access_store)
 			return stack;
 
 	/* Not found */
@@ -509,12 +533,12 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 	switch (access_kind)
 	{
 
-	case mod_access_read:
+	case mod_access_load:
 	{
 		for (stack = tail; stack; stack = stack->access_list_prev)
 		{
 			/* Only coalesce with groups of reads at the tail */
-			if (stack->access_kind != mod_access_read)
+			if (stack->access_kind != mod_access_load)
 				return NULL;
 
 			if (stack->addr >> mod->log_block_size ==
@@ -524,7 +548,7 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 		break;
 	}
 
-	case mod_access_write:
+	case mod_access_store:
 	{
 		/* Only coalesce with last access */
 		stack = tail;
@@ -532,7 +556,7 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 			return NULL;
 
 		/* Only if it is a write */
-		if (stack->access_kind != mod_access_write)
+		if (stack->access_kind != mod_access_store)
 			return NULL;
 
 		/* Only if it is an access to the same block */
