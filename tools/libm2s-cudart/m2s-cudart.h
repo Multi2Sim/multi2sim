@@ -32,7 +32,7 @@ enum cuda_call_t
 {
 	cuda_call_invalid,
 #define CUDA_DEFINE_CALL(name, code) cuda_call_##name = code,
-#include "../../src/arch/fermi/emu/cuda.dat"
+#include "../../src/arch/fermi/emu/cudart.dat"
 #undef CUDA_DEFINE_CALL
 	cuda_call_count
 };

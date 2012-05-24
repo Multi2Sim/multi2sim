@@ -23,18 +23,18 @@
 
 #include <cuda.h>
 
-/* System call for CUDA runtime */
-#define CUDA_SYS_CODE  328
+/* System call for CUDA driver */
+#define FRM_CUDA_SYS_CODE  328
 
 
-/* List of CUDA runtime calls */
-enum cuda_call_t
+/* List of CUDA driver calls */
+enum frm_cuda_call_t
 {
-	cuda_call_invalid,
-#define CUDA_DEFINE_CALL(name, code) cuda_call_##name = code,
+	frm_cuda_call_invalid,
+#define FRM_CUDA_DEFINE_CALL(name, code) frm_cuda_call_##name = code,
 #include "../../src/arch/fermi/emu/cuda.dat"
-#undef CUDA_DEFINE_CALL
-	cuda_call_count
+#undef FRM_CUDA_DEFINE_CALL
+	frm_cuda_call_count
 };
 
 #endif
