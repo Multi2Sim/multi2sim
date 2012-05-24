@@ -1,0 +1,3 @@
+FRM_CUDA_DEFINE_CALL(version, 1)
+FRM_CUDA_DEFINE_CALL(cuInit, 2)
+FRM_CUDA_DEFINE_CALL(cuDeviceGetCount, 3)

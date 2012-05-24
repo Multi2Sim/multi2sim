@@ -31,6 +31,9 @@
 
 
 
+/* Execute CUDA call */
+int frm_cuda_call();
+
 void frm_emu_disasm(char *path);
 
 #endif

@@ -5026,6 +5026,17 @@ static int x86_sys_opengl_impl(void)
 }
 
 /*
+ * System call 'cuda' (code 328)
+ * Special system call code used by 'libm2s-cuda'
+ */
+
+static int x86_sys_cuda_impl(void)
+{
+	/* Run CUDA call */
+	return frm_cuda_call();
+}
+
+/*
  * Not implemented system calls
  */
 
