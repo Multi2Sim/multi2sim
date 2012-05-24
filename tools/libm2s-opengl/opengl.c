@@ -71,22 +71,8 @@ void glClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha )
 
 void glClear( GLbitfield mask )
 {
-	if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) {
-		printf("Color buffer cleared!\n");
-    		// memset(ColorBuffer, 0, sizeof(uint32_t) * Color_Buf_Height * Color_Buf_Width);
-  	}
-	if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) {
-		printf("Depth buffer cleared!\n");
-    		// memset(DepthBuffer, 0, sizeof(uint32_t) * Depth_Buf_Height * Depth_Buf_Width);
-	}
-	if ((mask & GL_ACCUM_BUFFER_BIT) == GL_ACCUM_BUFFER_BIT) {
-		printf("Accumulation buffer cleared!\n");
-    		// memset(AccumBuffer, 0, sizeof(uint32_t) * Accum_Buf_Height * Accum_Buf_Width);
-	}
-	if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT) {
-		printf("Stencil buffer cleared!\n");
-    		// memset(StencilBuffer, 0, sizeof(uint32_t) * Stencil_Buf_Height * Stencil_Buf_Width);
-	}
+	printf("glClear\n");
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glClear, &mask);
 }
 
 
@@ -385,6 +371,15 @@ void glOrtho( GLdouble left, GLdouble right,
                                  GLdouble near_val, GLdouble far_val )
 {
 	printf("glOrtho\n");
+	unsigned int argc = 6;
+	GLdouble sys_args[6];
+	sys_args[0] = (GLdouble) left;
+	sys_args[1] = (GLdouble) right;
+	sys_args[2] = (GLdouble) bottom;
+	sys_args[3] = (GLdouble) top;
+	sys_args[4] = (GLdouble) near_val;
+	sys_args[5] = (GLdouble) far_val;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glOrtho, &sys_args, &argc);
 }
 
 
@@ -418,12 +413,13 @@ void glViewport( GLint x, GLint y,
                                     GLsizei width, GLsizei height )
 {
 	printf("glViewport\n");
-	struct x86_opengl_viewport_attributes_t vpt_atr;
-	vpt_atr.x = x;
-	vpt_atr.y = y;
-	vpt_atr.width = width;
-	vpt_atr.height = height;
-	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glViewport, &vpt_atr);
+	unsigned int argc = 4;
+	unsigned int sys_args[4];
+	sys_args[0] = (unsigned int) x;
+	sys_args[1] = (unsigned int) y;
+	sys_args[2] = (unsigned int) width;
+	sys_args[3] = (unsigned int) height;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glViewport, &sys_args, &argc);
 }
 
 
