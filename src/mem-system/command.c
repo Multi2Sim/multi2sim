@@ -80,15 +80,22 @@ static struct mod_t *mem_system_command_get_mod(struct list_t *token_list,
 
 	char *mod_name;
 
-	/* Find module */
+	/* Get module name */
 	mem_system_command_expect(token_list, command_line);
-	mod_name = list_get(token_list, 0);
-	mod = mem_system_get_mod(mod_name);
-	if (!mod)
-		fatal("%s: %s: invalid module name.\n\t> %s",
-			__FUNCTION__, mod_name, command_line);
+	mod_name = str_token_list_first(token_list);
 
-	/* Next token */
+	/* Find module */
+	if (!strcasecmp(mod_name, "None"))
+		mod = NULL;
+	else
+	{
+		mod = mem_system_get_mod(mod_name);
+		if (!mod)
+			fatal("%s: %s: invalid module name.\n\t> %s",
+				__FUNCTION__, mod_name, command_line);
+	}
+
+	/* Return module */
 	str_token_list_shift(token_list);
 	return mod;
 }
@@ -100,6 +107,11 @@ static void mem_system_command_get_set_way(struct list_t *token_list,
 {
 	unsigned int set;
 	unsigned int way;
+
+	/* Check valid module */
+	if (!mod)
+		fatal("%s: invalid module.\n\t> %s",
+			__FUNCTION__, command_line);
 
 	/* Get set */
 	mem_system_command_expect(token_list, command_line);
@@ -275,6 +287,7 @@ void mem_system_command_handler(int event, void *data)
 		unsigned int way;
 
 		int sub_block;
+		int owner_index;
 
 		/* Get fields */
 		mod = mem_system_command_get_mod(token_list, command_line);
@@ -284,12 +297,16 @@ void mem_system_command_handler(int event, void *data)
 		mem_system_command_end(token_list, command_line);
 
 		/* Check that owner is an immediate higher-level module */
-		if (owner->low_net != mod->high_net || !owner->low_net)
-			fatal("%s: %s is not a higher-level module of %s.\n\t> %s",
-				__FUNCTION__, owner->name, mod->name, command_line);
+		if (owner)
+		{
+			if (owner->low_net != mod->high_net || !owner->low_net)
+				fatal("%s: %s is not a higher-level module of %s.\n\t> %s",
+					__FUNCTION__, owner->name, mod->name, command_line);
+		}
 
 		/* Set owner */
-		dir_entry_set_owner(mod->dir, set, way, sub_block, owner->low_net_node->index);
+		owner_index = owner ? owner->low_net_node->index : -1;
+		dir_entry_set_owner(mod->dir, set, way, sub_block, owner_index);
 	}
 
 	/* Command 'SetSharers' */
@@ -550,7 +567,7 @@ void mem_system_end_command_handler(int event, void *data)
 			{
 				test_failed = 1;
 				str_printf(&msg_detail_str, &msg_detail_size,
-					"\tsharer %s found, but not expected\n",
+					"\tsharer %s expected, but not found\n",
 					sharer->name);
 			}
 
@@ -564,7 +581,7 @@ void mem_system_end_command_handler(int event, void *data)
 			sharer = linked_list_get(sharers_check_list);
 			test_failed = 1;
 			str_printf(&msg_detail_str, &msg_detail_size,
-				"\tsharer %s expected, but not found\n",
+				"\tsharer %s found, but not expected\n",
 				sharer->name);
 		}
 
