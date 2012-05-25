@@ -186,6 +186,16 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 		linked_list_add(compute_unit->wavefront_pool, wavefront);
 	}
 
+	/* Initialization of periodic report for wavefronts */
+	if (evg_periodic_report_active)
+	{
+		EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+		{
+			wavefront = ndrange->wavefronts[wavefront_id];
+			evg_periodic_report_wavefront_init(wavefront);
+		}
+	}
+
 	/* Trace */
 	evg_trace("evg.map_wg cu=%d wg=%d wi_first=%d wi_count=%d wf_first=%d wf_count=%d\n",
 		compute_unit->id, work_group->id, work_group->work_item_id_first,
@@ -199,6 +209,11 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 
 void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, struct evg_work_group_t *work_group)
 {
+	struct evg_ndrange_t *ndrange = work_group->ndrange;
+	struct evg_wavefront_t *wavefront;
+
+	int wavefront_id;
+
 	/* Reset mapped work-group */
 	assert(compute_unit->work_group_count > 0);
 	assert(compute_unit->work_groups[work_group->id_in_compute_unit]);
@@ -212,6 +227,16 @@ void evg_compute_unit_unmap_work_group(struct evg_compute_unit_t *compute_unit, 
 	/* If compute unit is not busy anymore, remove it from 'busy' list */
 	if (!compute_unit->work_group_count && DOUBLE_LINKED_LIST_MEMBER(evg_gpu, busy, compute_unit))
 		DOUBLE_LINKED_LIST_REMOVE(evg_gpu, busy, compute_unit);
+
+	/* Finalization of periodic events for all wavefronts in the work-group */
+	if (evg_periodic_report_active)
+	{
+		EVG_FOREACH_WAVEFRONT_IN_WORK_GROUP(work_group, wavefront_id)
+		{
+			wavefront = ndrange->wavefronts[wavefront_id];
+			evg_periodic_report_wavefront_done(wavefront);
+		}
+	}
 
 	/* Trace */
 	evg_trace("evg.unmap_wg cu=%d wg=%d\n",

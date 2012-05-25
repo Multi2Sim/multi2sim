@@ -79,10 +79,6 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 		linked_list_add(finished_queue, cf_uop);
 	}
 
-	/* Stats */
-	compute_unit->inst_count++;
-	compute_unit->tex_engine.inst_count++;
-
 	/* If instruction is a global memory read (should be), record addresses */
 	if (uop->global_mem_read)
 	{
@@ -104,6 +100,12 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	linked_list_out(compute_unit->tex_engine.fetch_queue);
 	linked_list_insert(compute_unit->tex_engine.fetch_queue, uop);
 	compute_unit->tex_engine.fetch_queue_length += uop->length;
+
+	/* Stats */
+	compute_unit->inst_count++;
+	compute_unit->tex_engine.inst_count++;
+	if (evg_periodic_report_active)
+		evg_periodic_report_new_inst(uop);
 
 	/* Trace */
 	if (evg_tracing())
