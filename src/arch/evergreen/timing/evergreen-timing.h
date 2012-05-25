@@ -317,6 +317,24 @@ void evg_calc_plot(void);
 
 
 
+/*
+ * Periodic Report
+ */
+
+extern int evg_periodic_report_active;
+
+void evg_periodic_report_init(void);
+void evg_periodic_report_done(void);
+
+void evg_periodic_report_config_read(struct config_t *config);
+
+void evg_periodic_report_wavefront_init(struct evg_wavefront_t *wavefront);
+void evg_periodic_report_wavefront_done(struct evg_wavefront_t *wavefront);
+
+void evg_periodic_report_new_inst(struct evg_uop_t *uop);
+
+
+
 
 /*
  * Evergreen GPU

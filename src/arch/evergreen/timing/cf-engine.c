@@ -100,6 +100,8 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 		compute_unit->cf_engine.alu_clause_trigger_count++;
 	if (uop->tex_clause_trigger)
 		compute_unit->cf_engine.tex_clause_trigger_count++;
+	if (evg_periodic_report_active)
+		evg_periodic_report_new_inst(uop);
 
 	/* Trace */
 	if (evg_tracing())
