@@ -97,6 +97,8 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 		compute_unit->alu_engine.local_mem_slot_count += alu_group->inst_count;
 	assert(IN_RANGE(alu_group->inst_count, 1, 5));
 	compute_unit->alu_engine.vliw_slots[alu_group->inst_count - 1]++;
+	if (evg_periodic_report_active)
+		evg_periodic_report_new_inst(uop);
 
 	/* If instruction accesses local memory, record addresses. */
 	if (uop->local_mem_read || uop->local_mem_write)

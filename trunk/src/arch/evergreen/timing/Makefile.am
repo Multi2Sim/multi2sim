@@ -10,6 +10,7 @@ libtiming_a_SOURCES = \
 	compute-unit.c \
 	faults.c \
 	gpu.c \
+	periodic-report.c \
 	sched.c \
 	tex-engine.c \
 	uop.c

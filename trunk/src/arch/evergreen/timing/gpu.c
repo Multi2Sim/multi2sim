@@ -320,6 +320,9 @@ static void evg_config_read(void)
 		fatal("%s: the minimum value for %s.LoadQueueSize is 1.\n%s",
 			evg_gpu_config_file_name, section, err_note);
 	
+	/* Periodic report */
+	evg_periodic_report_config_read(gpu_config);
+
 	/* Close GPU configuration file */
 	config_check(gpu_config);
 	config_free(gpu_config);
@@ -435,10 +438,9 @@ void evg_gpu_init(void)
 	/* Read configuration file */
 	evg_config_read();
 
-	/* Initialize GPU */
+	/* Initializations */
+	evg_periodic_report_init();
 	evg_gpu_device_init();
-
-	/* Uops */
 	evg_uop_init();
 
 	/* GPU-REL: read stack faults file */
@@ -469,8 +471,9 @@ void evg_gpu_done()
 	/* Free GPU */
 	free(evg_gpu);
 
-	/* Uops */
+	/* Finalizations */
 	evg_uop_done();
+	evg_periodic_report_done();
 
 	/* GPU-REL: read stack faults file */
 	evg_faults_done();
