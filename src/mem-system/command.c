@@ -359,6 +359,17 @@ void mem_system_end_command_handler(int event, void *data)
 	char *command_line = data;
 	char command[MAX_STRING_SIZE];
 
+	char msg[MAX_STRING_SIZE];
+	char msg_detail[MAX_STRING_SIZE];
+
+	char *msg_str = msg;
+	int msg_size = sizeof msg;
+
+	char *msg_detail_str = msg_detail;
+	int msg_detail_size = sizeof msg_detail;
+
+	int test_failed;
+
 	struct list_t *token_list;
 
 	/* Split command in tokens, skip command */
@@ -367,6 +378,11 @@ void mem_system_end_command_handler(int event, void *data)
 
 	/* Get command */
 	mem_system_command_get_string(token_list, command_line, command, sizeof command);
+
+	/* Messages */
+	test_failed = 0;
+	*msg_str = '\0';
+	*msg_detail_str = '\0';
 
 	/* Command 'SetBlock' */
 	if (!strcasecmp(command, "CheckBlock"))
@@ -392,14 +408,28 @@ void mem_system_end_command_handler(int event, void *data)
 			fatal("%s: %s: module does not serve address 0x%x.\n\t> %s",
 				__FUNCTION__, mod->name, tag, command_line);
 
+		/* Output */
+		str_printf(&msg_str, &msg_size,
+			"check module %s, set %d, way %d - state %s, tag 0x%x",
+			mod->name, set, way, map_value(&cache_block_state_map, state), tag);
+
 		/* Check */
 		cache_get_block(mod->cache, set, way, &tag_check, &state_check);
 		if (tag != tag_check)
-			fatal("%s: %s: set %d, way %d, tag mismatch",
-				__FUNCTION__, mod->name, set, way);
+		{
+			test_failed = 1;
+			str_printf(&msg_detail_str, &msg_detail_size,
+				"\ttag 0x%x found, but 0x%x expected\n",
+				tag_check, tag);
+		}
 		if (state != state_check)
-			fatal("%s: %s: set %d, way %d, state mismatch",
-				__FUNCTION__, mod->name, set, way);
+		{
+			test_failed = 1;
+			str_printf(&msg_detail_str, &msg_detail_size,
+				"\tstate %s found, but %s expected\n",
+				map_value(&cache_block_state_map, state_check),
+				map_value(&cache_block_state_map, state));
+		}
 	}
 
 	/* Command 'CheckOwner' */
@@ -427,20 +457,31 @@ void mem_system_end_command_handler(int event, void *data)
 
 		/* Get actual owner */
 		owner_check = NULL;
-		if (mod->dir && mod->high_net)
+		if (mod->dir)
 		{
 			dir_entry = dir_entry_get(mod->dir, set, way, sub_block);
-			net_node = list_get(mod->high_net->node_list, dir_entry->owner);
-			owner_check = net_node->user_data;
+			if (dir_entry->owner >= 0)
+			{
+				assert(mod->high_net);
+				net_node = list_get(mod->high_net->node_list, dir_entry->owner);
+				owner_check = net_node->user_data;
+			}
 		}
+
+		/* Message */
+		str_printf(&msg_str, &msg_size,
+			"check owner at module %s, set %d, way %d, subblock %d - %s",
+			mod->name, set, way, sub_block, owner ? owner->name : "None");
 
 		/* Check match */
 		if (owner != owner_check)
-			fatal("%s: %s: set %d, way %d, sub-block %d: owner mismatch\n"
-				"\t%s expected, but %s found",
-				__FUNCTION__, mod->name, set, way, sub_block,
+		{
+			test_failed = 1;
+			str_printf(&msg_detail_str, &msg_detail_size,
+				"\towner %s found, but %s expected\n",
 				owner_check ? owner_check->name : "None",
 				owner ? owner->name : "None");
+		}
 	}
 
 	/* Command 'CheckSharers' */
@@ -474,6 +515,17 @@ void mem_system_end_command_handler(int event, void *data)
 			linked_list_add(sharers_list, sharer);
 		}
 
+		/* Output */
+		str_printf(&msg_str, &msg_size,
+			"check sharers at module %s, set %d, way %d, subblock %d - { ",
+			mod->name, set, way, sub_block);
+		LINKED_LIST_FOR_EACH(sharers_list)
+		{
+			sharer = linked_list_get(sharers_list);
+			str_printf(&msg_str, &msg_size, "%s ", sharer->name);
+		}
+		str_printf(&msg_str, &msg_size, "}");
+
 		/* Construct list of actual sharers */
 		sharers_check_list = linked_list_create();
 		assert(mod->high_net);
@@ -495,22 +547,25 @@ void mem_system_end_command_handler(int event, void *data)
 			/* Check that it's an actual sharer */
 			linked_list_find(sharers_check_list, sharer);
 			if (sharers_check_list->error_code)
-				fatal("%s: %s: set %d, way %d, sharers mismatch\n"
-					"\t%s found, but not expected",
-					__FUNCTION__, mod->name, set, way, sharer->name);
+			{
+				test_failed = 1;
+				str_printf(&msg_detail_str, &msg_detail_size,
+					"\tsharer %s found, but not expected\n",
+					sharer->name);
+			}
 
 			/* Remove from actual sharers */
 			linked_list_remove(sharers_check_list);
 		}
 
 		/* Check that there is no actual sharer left */
-		if (linked_list_count(sharers_check_list))
+		LINKED_LIST_FOR_EACH(sharers_check_list)
 		{
-			linked_list_head(sharers_check_list);
 			sharer = linked_list_get(sharers_check_list);
-			fatal("%s: %s, set = %d, way = %d, sharers mismatch\n"
-				"\t%s expected, but not found",
-				__FUNCTION__, mod->name, set, way, sharer->name);
+			test_failed = 1;
+			str_printf(&msg_detail_str, &msg_detail_size,
+				"\tsharer %s expected, but not found\n",
+				sharer->name);
 		}
 
 		/* Free lists */
@@ -522,6 +577,10 @@ void mem_system_end_command_handler(int event, void *data)
 	else
 		fatal("%s: %s: invalid command.\n\t> %s",
 			__FUNCTION__, command, command_line);
+
+	/* Output */
+	fprintf(stderr, ">>> %s - %s\n", msg, test_failed ? "failed" : "passed");
+	fprintf(stderr, "%s", msg_detail);
 
 	/* Free command */
 	free(command_line);
