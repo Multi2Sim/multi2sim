@@ -2538,7 +2538,6 @@ void mod_handler_nmoesi_invalidate(int event, void *data)
 		dir = mod->dir;
 		for (z = 0; z < dir->zsize; z++)
 		{
-			int first_sharer = 1;
 			dir_entry_tag = stack->tag + z * mod->sub_block_size;
 			assert(dir_entry_tag < stack->tag + mod->block_size);
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
@@ -2571,11 +2570,14 @@ void mod_handler_nmoesi_invalidate(int event, void *data)
 				/* If there is a peer and this is a block that he is interested in,
 				 * and this sharer is the first sharer that is capable of 
 				 * sending data, send the data directly to the peer. */
+				/*
+				// FIXME Peer is getting propagated incorrectly during invalidation
 				if (stack->peer && first_sharer)
                                 {
 					new_stack->peer = stack->peer;
 					first_sharer = 0;
 				}
+				*/
 				esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST, new_stack, 0);
 				stack->pending++;
 			}
