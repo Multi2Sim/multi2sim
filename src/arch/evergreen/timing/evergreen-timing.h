@@ -94,6 +94,7 @@ struct evg_uop_t
 	struct evg_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
 	struct evg_uop_t *cf_uop;  /* For ALU/TEX uops, CF uop that triggered clause */
 	int length;  /* Number of bytes occupied by ALU group */
+	int vliw_slots;  /* Number of slots for ALU group, or 1 for CF/TEX instructions */
 
 	/* CF instruction flags */
 	unsigned int alu_clause_trigger : 1;  /* Instruction triggers ALU clause */

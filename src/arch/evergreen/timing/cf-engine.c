@@ -65,6 +65,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	uop->active_mask_push = wavefront->active_mask_push;
 	uop->active_mask_pop = wavefront->active_mask_pop;
 	uop->active_mask_stack_top = wavefront->stack_top;
+	uop->vliw_slots = 1;
 
 	/* If debugging active mask, store active state for work-items */
 	if (debug_status(evg_stack_debug_category))

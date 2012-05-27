@@ -60,6 +60,28 @@ static struct string_map_t evg_periodic_report_scope_map =
 
 static char *evg_periodic_report_scope_str = "FirstWavefrontFirstWorkgroup";
 
+static char *evg_periodic_report_intro =
+	"The fields contained in each record are listed next, in the same order of\n"
+	"occurrence:\n"
+	"\n"
+	"<vliw_bundles>\n"
+	"\tTotal number of instructions executed so far, considering a ALU instruction\n"
+	"\tforming a VLIW bundle as one instruction. This value is a multiple of the\n"
+	"\tinterval specified in the periodic report configuration.\n"
+	"\n"
+	"<cycles>\n"
+	"\tNumber of cycles of that the interval took to execute.\n"
+	"\n"
+	"<vliw_slots>\n"
+	"\tNumber of instructions executed in the interval, considering each slot in an\n"
+	"\tALU VLIW bundle as a single instruction. This value should be equal or greater\n"
+	"\tthan the interval specified in the periodic report configuration.\n"
+	"\n"
+	"<local_mem_accesses>\n"
+	"\tNumber of local memory accesses performed in the interval, adding up all\n"
+	"\taccesses performed by all work-items in the wavefront.\n"
+	"\n";
+
 
 
 /*
@@ -163,6 +185,9 @@ void evg_periodic_report_wavefront_init(struct evg_wavefront_t *wavefront)
 	wavefront->periodic_report_file = open_write(file_name);
 	if (!wavefront->periodic_report_file)
 		fatal("%s: could not open periodic report file", file_name);
+
+	/* Record initial cycle */
+	wavefront->periodic_report_cycle = esim_cycle;
 }
 
 
@@ -183,6 +208,41 @@ void evg_periodic_report_wavefront_done(struct evg_wavefront_t *wavefront)
 }
 
 
+void evg_periodic_report_dump_entry(struct evg_wavefront_t *wavefront)
+{
+	FILE *f = wavefront->periodic_report_file;
+
+	int i;
+
+	assert(evg_periodic_report_active);
+	assert(f);
+
+	/* First entry - dump intro */
+	if (wavefront->periodic_report_vliw_bundle_count == evg_periodic_report_interval)
+	{
+		fprintf(f, "Periodic Report for WG-%d/WF-%d (%s)\n\n",
+			wavefront->work_group->id, wavefront->id_in_work_group,
+			wavefront->name);
+		fprintf(f, "%s", evg_periodic_report_intro);
+		for (i = 0; i < 80; i++)
+			fprintf(f, "-");
+		fprintf(f, "\n");
+	}
+
+	/* Dump entry */
+	fprintf(f, "%8lld ", wavefront->periodic_report_vliw_bundle_count);
+	fprintf(f, "%5lld ", esim_cycle - wavefront->periodic_report_cycle);
+	fprintf(f, "%5d ", wavefront->periodic_report_inst_count);
+	fprintf(f, "%5d ", wavefront->periodic_report_local_mem_accesses);
+	fprintf(f, "\n");
+
+	/* Reset statistics */
+	wavefront->periodic_report_cycle = esim_cycle;
+	wavefront->periodic_report_inst_count = 0;
+	wavefront->periodic_report_local_mem_accesses = 0;
+}
+
+
 /* Update periodic interval report statistics. This function is called every time
  * a new instruction is fetched in the CF, ALU, or TEX engines. It should be only
  * called if the periodic report has been activated (evg_periodic_report_active = 1).
@@ -190,19 +250,30 @@ void evg_periodic_report_wavefront_done(struct evg_wavefront_t *wavefront)
 void evg_periodic_report_new_inst(struct evg_uop_t *uop)
 {
 	struct evg_wavefront_t *wavefront = uop->wavefront;
+	struct evg_work_item_t *work_item;
+
+	int work_item_id;
 
 	/* Ignore if this wavefront is not dumping report */
 	assert(evg_periodic_report_active);
 	if (!wavefront->periodic_report_file)
 		return;
 
-	/* Increase number of instructions, and ignore call if counter is not a
-	 * multiple of the current interval. */
-	wavefront->periodic_report_inst_count++;
-	if (wavefront->periodic_report_inst_count % evg_periodic_report_interval)
-		return;
+	/* Track number of VLIW slots (or non-ALU instructions) */
+	wavefront->periodic_report_inst_count += uop->vliw_slots;
 
-	/* Record statistics */
-	wavefront->periodic_report_inst_count = 0;
-	wavefront->periodic_report_cycle = evg_gpu->cycle;
+	/* Number of local memory accesses performed by this uop */
+	if (uop->local_mem_read || uop->local_mem_write)
+	{
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		{
+			work_item = evg_gpu->ndrange->work_items[work_item_id];
+			wavefront->periodic_report_local_mem_accesses += work_item->local_mem_access_count;
+		}
+	}
+
+	/* Dump report entry if interval reached */
+	wavefront->periodic_report_vliw_bundle_count++;
+	if (!(wavefront->periodic_report_vliw_bundle_count % evg_periodic_report_interval))
+		evg_periodic_report_dump_entry(wavefront);
 }
