@@ -75,6 +75,7 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	uop->active_mask_push = wavefront->active_mask_push;
 	uop->active_mask_pop = wavefront->active_mask_pop;
 	uop->active_mask_stack_top = wavefront->stack_top;
+	uop->vliw_slots = alu_group->inst_count;
 	wavefront->alu_engine_in_flight++;
 
 	/* If ALU clause finished, extract wavefront from pending wavefront queue, and
