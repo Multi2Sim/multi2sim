@@ -327,10 +327,13 @@ void mem_system_command_handler(int event, void *data)
 
 		/* Get sharers */
 		mem_system_command_expect(token_list, command_line);
+		dir_entry_clear_all_sharers(mod->dir, set, way, sub_block);
 		while (list_count(token_list))
 		{
 			/* Get sharer */
 			sharer = mem_system_command_get_mod(token_list, command_line);
+			if (!sharer)
+				continue;
 
 			/* Check that sharer is an immediate higher-level module */
 			if (sharer->low_net != mod->high_net || !sharer->low_net)
@@ -539,7 +542,8 @@ void mem_system_end_command_handler(int event, void *data)
 		LINKED_LIST_FOR_EACH(sharers_list)
 		{
 			sharer = linked_list_get(sharers_list);
-			str_printf(&msg_str, &msg_size, "%s ", sharer->name);
+			if (sharer)
+				str_printf(&msg_str, &msg_size, "%s ", sharer->name);
 		}
 		str_printf(&msg_str, &msg_size, "}");
 
@@ -560,6 +564,8 @@ void mem_system_end_command_handler(int event, void *data)
 		{
 			/* Get expected sharer */
 			sharer = linked_list_get(sharers_list);
+			if (!sharer)
+				continue;
 
 			/* Check that it's an actual sharer */
 			linked_list_find(sharers_check_list, sharer);
