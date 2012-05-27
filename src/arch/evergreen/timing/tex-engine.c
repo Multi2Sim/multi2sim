@@ -70,6 +70,7 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	uop->last = wavefront->clause_kind != EVG_CLAUSE_TEX;
 	uop->global_mem_read = wavefront->global_mem_read;
 	uop->global_mem_write = wavefront->global_mem_write;
+	uop->vliw_slots = 1;
 
 	/* If TEX clause finished, extract CF uop from 'pending_queue' and
 	 * insert it into 'finished_queue'. */

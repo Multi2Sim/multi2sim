@@ -846,11 +846,15 @@ struct evg_wavefront_t
 	int alu_engine_in_flight;  /* Number of in-flight uops in ALU engine */
 	long long sched_when;  /* GPU cycle when wavefront was last scheduled */
 
+
 	/* Periodic report - used by architectural simulation */
 
 	FILE *periodic_report_file;  /* File where report is dumped */
+	long long periodic_report_vliw_bundle_count;  /* Number of VLIW bundles (or non-ALU instructions) reported */
 	long long periodic_report_cycle;  /* Last cycle when periodic report was updated */
-	int periodic_report_inst_count;  /* Instructions during current interval */
+	int periodic_report_inst_count;  /* Number of instructions (VLIW slots) in this interval */
+	int periodic_report_local_mem_accesses;  /* Number of local memory accesses in this interval */
+
 
 	/* Statistics */
 
