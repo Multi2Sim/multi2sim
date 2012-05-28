@@ -1669,3 +1669,4 @@ static int x86_opengl_func_glClear(void)
 	/* Return */
 	return 0;	
 }
+
