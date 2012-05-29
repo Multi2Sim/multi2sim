@@ -100,6 +100,11 @@ pthread_t x86_glut_thread;
  * this list. */
 static struct linked_list_t *x86_glut_event_list;
 
+/* Flag specifying whether the host GLUT system has been initialized.
+ * Lazy initialization is used to avoid error messages for X11 when
+ * GLUT is not used at all. */
+static int x86_glut_initialized;
+
 
 
 
@@ -612,9 +617,6 @@ void x86_glut_timer(int value)
 
 void x86_glut_init(void)
 {
-	int argc;
-	char *argv[1];
-
 	/* Initialize GLUT global mutex */
 	pthread_mutex_init(&x86_glut_mutex, NULL);
 
@@ -623,11 +625,6 @@ void x86_glut_init(void)
 
 	/* List of events */
 	x86_glut_event_list = linked_list_create();
-
-	/* Host GLUT initialization */
-	argc = 0;
-	argv[0] = "m2s";
-	glutInit(&argc, argv);
 }
 
 
@@ -656,6 +653,22 @@ int x86_glut_call(void)
 {
 	int code;
 	int ret;
+
+	/* Initialize host GLUT if it has not been done before. It is important
+	 * to do a lazy initialization of the host GLUT environment, as opposed to
+	 * an initialization in 'x86_glut_init'. The reason is that a user might
+	 * run 'm2s' from a remote terminal without support for X11, causing the
+	 * simulator to fail even if GLUT is not used at all. */
+	if (!x86_glut_initialized)
+	{
+		int argc;
+		char *argv[1];
+
+		argc = 0;
+		argv[0] = "m2s";
+		glutInit(&argc, argv);
+		x86_glut_initialized = 1;
+	}
 
 	/* Function code */
 	code = x86_isa_regs->ebx;
