@@ -21,6 +21,7 @@
 #include <debug.h>
 #include <list.h>
 #include <misc.h>
+#include <string.h>
 
 
 
@@ -168,7 +169,7 @@ CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 	if (dev != 0)
 		return CUDA_ERROR_INVALID_VALUE;
 
-	*bytes = 1;
+	*bytes = 1024*1024;
 
 	return CUDA_SUCCESS;
 }
@@ -207,7 +208,10 @@ CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 
 CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 {
-	__FRM_CUDA_NOT_IMPL__
+	*pctx = (CUcontext)malloc(sizeof(struct CUctx_st));
+	if (*pctx == NULL)
+		fatal("cuCtxCreate: cannot create context");
+
 	return CUDA_SUCCESS;
 }
 
@@ -228,7 +232,9 @@ CUresult cuCtxAttach(CUcontext *pctx, unsigned int flags)
 
 CUresult cuCtxDetach(CUcontext ctx)
 {
-	__FRM_CUDA_NOT_IMPL__
+	warning("cuCtxDetach: this function is deprecated");
+	free(ctx);
+
 	return CUDA_SUCCESS;
 }
 
@@ -331,9 +337,10 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
-		fatal("Module cannot be loaded: %s\n", fname);
+		fatal("cuModuleLoad: cannot load module %s", fname);
 
 	fclose(fp);
+	*module = (CUmodule)malloc(sizeof(struct CUmod_st));
 
 	return CUDA_SUCCESS;
 }
@@ -369,7 +376,17 @@ CUresult cuModuleUnload(CUmodule hmod)
 
 CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 {
-	__FRM_CUDA_NOT_IMPL__
+	int i;
+
+	for (i = 0; i < 1024; ++i)
+	{
+		if (!strcmp(name, hmod->func[i].name))
+			break;
+	}
+	if (i == 1024)
+		return CUDA_ERROR_NOT_FOUND;
+	*hfunc = hmod->func + i;
+
 	return CUDA_SUCCESS;
 }
 
@@ -397,14 +414,22 @@ CUresult cuModuleGetSurfRef(CUsurfref *pSurfRef, CUmodule hmod, const char *name
 
 CUresult cuMemGetInfo(size_t *free, size_t *total)
 {
-	__FRM_CUDA_NOT_IMPL__
+	*free = 1024*1024;
+	*total = 1024*1024;
+
 	return CUDA_SUCCESS;
 }
 
 
 CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 {
-	__FRM_CUDA_NOT_IMPL__
+	if (bytesize == 0)
+		return CUDA_ERROR_INVALID_VALUE;
+
+	dptr = (CUdeviceptr*)malloc(bytesize);
+	if (dptr == NULL)
+		fatal("cuMemAlloc: cannot allocate %u bytes", bytesize);
+
 	return CUDA_SUCCESS;
 }
 
@@ -418,7 +443,8 @@ CUresult cuMemAllocPitch(CUdeviceptr *dptr, size_t *pPitch, size_t WidthInBytes,
 
 CUresult cuMemFree(CUdeviceptr dptr)
 {
-	__FRM_CUDA_NOT_IMPL__
+	free(&dptr);
+
 	return CUDA_SUCCESS;
 }
 
@@ -544,14 +570,12 @@ CUresult cuMemcpyPeer(CUdeviceptr dstDevice, CUcontext dstContext, CUdeviceptr s
 
 CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount)
 {
-	__FRM_CUDA_NOT_IMPL__
 	return CUDA_SUCCESS;
 }
 
 
 CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 {
-	__FRM_CUDA_NOT_IMPL__
 	return CUDA_SUCCESS;
 }
 
