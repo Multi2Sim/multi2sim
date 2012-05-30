@@ -46,6 +46,13 @@ static char *err_x86_opengl_code =
 #define MAX_TEXTURE_IMAGE_UNITS 16
 #define MAX_TEXTURE_UNITS ((MAX_TEXTURE_COORD_UNITS > MAX_TEXTURE_IMAGE_UNITS) ? MAX_TEXTURE_COORD_UNITS : MAX_TEXTURE_IMAGE_UNITS)
 
+#define COLOR_BUFFER_COUNT 4
+/* Max number of primitives (number of glBegin/End pairs) per VBO. */
+#define VBO_MAX_PRIM 64
+
+/* Size of the VBO to use for glBegin/glVertex/glEnd-style rendering. */
+#define VBO_VERT_BUFFER_SIZE (1024*64)	/* bytes */
+
 /* Debug */
 int x86_opengl_debug_category;
 
@@ -178,13 +185,29 @@ struct x86_opengl_context_capability_t
 	GLboolean is_vertex_program_two_side;
 };
 
+/* OpenGL render buffer */
+struct x86_opengl_render_buffer_t
+{
+	GLuint width;
+	GLuint height;
+	GLuint *buffer;
+};
+
 /* OpenGL frame buffer */
 struct x86_opengl_frame_buffer_t
 {
 	GLsizei width;
 	GLsizei height;
 
-	GLuint *buffer;
+	/* frame buffer contains a set of render buffers, typically:
+	 * 4 color buffers: front left & front right, back left & back right ( FIXME: why 4? )
+	 * 1 depth buffer
+	 * 1 stencil buffer
+	 * Note that accumulation buffer is not defined here( MESA )
+	 */
+	struct x86_opengl_render_buffer_t *color_buffer[COLOR_BUFFER_COUNT];
+	struct x86_opengl_render_buffer_t *depth_buffer;
+	struct x86_opengl_render_buffer_t *stencil_buffer;
 };
 
 /* OpenGL Viewport attribute */
@@ -292,9 +315,74 @@ void x86_opengl_context_capability_free(struct x86_opengl_context_capability_t *
 	free(cap);
 }
 
+struct x86_opengl_render_buffer_t *x86_opengl_render_buffer_create(int width, int height)
+{
+	struct x86_opengl_render_buffer_t *rb;
+
+	/* Allocate */
+	rb = calloc(1, sizeof(struct x86_opengl_render_buffer_t));
+	if(!rb)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	rb->width = width;
+	rb->height = height;
+	rb->buffer = calloc(1, width * height * sizeof(GLuint));
+
+	/* Return */	
+	return rb;
+}
+
+void x86_opengl_render_buffer_free(struct x86_opengl_render_buffer_t *rb)
+{
+	free(rb->buffer);
+	free(rb);
+}
+
+void x86_opengl_render_buffer_clear(struct x86_opengl_render_buffer_t *rb, int clear_value)
+{
+	if(rb)
+		memset(rb->buffer, clear_value, rb->width * rb->height * sizeof(GLuint));
+}
+
+int x86_opengl_render_buffer_resize(struct x86_opengl_render_buffer_t *rb, int width, int height)
+{
+	/* Invalid size */
+	if (width < 1 || height < 1)
+		fatal("%s: invalid size (width = %d, height = %d)\n",
+			__FUNCTION__, width, height);
+
+	/* If same size, just clear it. */
+	if (rb->width == width && rb->height == height)
+	{
+		/* FIXME, currently set value == 1 */
+		x86_opengl_render_buffer_clear(rb, 0);
+		return 0;
+	}
+
+	x86_opengl_debug("\tBuffer resized, W x H = %d x %d\n", width, height);
+
+	/* Free previous buffer */
+	if (rb->buffer)
+		free(rb->buffer);
+
+	/* Allocate new buffer */
+	rb->buffer = calloc(width * height, sizeof(int));
+	if (!rb->buffer)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Store new size */
+	rb->width = width;
+	rb->height = height;
+
+	/* Return */
+	return 0;	
+}
+
 struct x86_opengl_frame_buffer_t *x86_opengl_frame_buffer_create(int width, int height)
 {
 	/* Variables */
+	int i;
 	struct x86_opengl_frame_buffer_t *fb;
 
 	/* Allocate */
@@ -305,7 +393,12 @@ struct x86_opengl_frame_buffer_t *x86_opengl_frame_buffer_create(int width, int 
 	/* Initialization */
 	fb->width = width;
 	fb->height = height;
-	fb->buffer = calloc(1, sizeof(GLuint)*width*height);
+	for (i = 0; i < COLOR_BUFFER_COUNT; ++i)
+	{
+		fb->color_buffer[i] = x86_opengl_render_buffer_create(width, height);
+	}
+	fb->depth_buffer = x86_opengl_render_buffer_create(width, height);
+	fb->stencil_buffer = x86_opengl_render_buffer_create(width, height);
 
 	/* Return */
 	return fb;
@@ -313,19 +406,54 @@ struct x86_opengl_frame_buffer_t *x86_opengl_frame_buffer_create(int width, int 
 
 void x86_opengl_frame_buffer_free(struct x86_opengl_frame_buffer_t *fb)
 {
-	free(fb->buffer);
+	int i;
+	for (i = 0; i < COLOR_BUFFER_COUNT; ++i)
+	{
+		x86_opengl_render_buffer_free(fb->color_buffer[i]);
+	}
+	x86_opengl_render_buffer_free(fb->depth_buffer);
+	x86_opengl_render_buffer_free(fb->stencil_buffer);
+
 	free(fb);
 }
 
-void x86_opengl_frame_buffer_clear(struct x86_opengl_frame_buffer_t *fb)
+void x86_opengl_frame_buffer_clear(struct x86_opengl_frame_buffer_t *fb, GLbitfield mask)
 {
+	int i;
+	int clear_value;
+
+	/* Get current set value */
+	/* FIXME */
+	clear_value = 0;
 	/* Clear buffer */
 	if (fb)
-		memset(fb->buffer, 0, fb->width * fb->height * sizeof(int));
+		/* Clear buffers */
+		if (mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT))
+			x86_opengl_debug("\tInvalid mask!\n");
+
+		if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) 
+		{
+			x86_opengl_debug("\tColor buffer cleared to %d\n", clear_value);
+	    		for (i = 0; i < COLOR_BUFFER_COUNT; ++i)
+				x86_opengl_render_buffer_clear(fb->color_buffer[i], clear_value);
+	  	}
+
+		if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) 
+		{
+			x86_opengl_debug("\tDepth buffer cleared to %d\n", clear_value);
+	    		x86_opengl_render_buffer_clear(fb->depth_buffer, clear_value);
+		}
+
+		if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT) {
+			x86_opengl_debug("\tStencil buffer cleared to %d\n", clear_value);
+	    		x86_opengl_render_buffer_clear(fb->stencil_buffer, clear_value);
+		}
+	
 }
 
 int x86_opengl_frame_buffer_resize(struct x86_opengl_frame_buffer_t *fb, int width, int height)
 {
+	int i;
 	/* Invalid size */
 	if (width < 1 || height < 1)
 		fatal("%s: invalid size (width = %d, height = %d)\n",
@@ -334,18 +462,18 @@ int x86_opengl_frame_buffer_resize(struct x86_opengl_frame_buffer_t *fb, int wid
 	/* If same size, just clear it. */
 	if (fb->width == width && fb->height == height)
 	{
-		x86_opengl_frame_buffer_clear(fb);
+		/* FIXME */
+		x86_opengl_frame_buffer_clear(fb, 0);
 		return 0;
 	}	
 
-	/* Free previous buffer */
-	if (fb->buffer)
-		free(fb->buffer);
-
-	/* Allocate new buffer */
-	fb->buffer = calloc(width * height, sizeof(int));
-	if (!fb->buffer)
-		fatal("%s: out of memory", __FUNCTION__);
+	/* Resize buffers */
+	for (i = 0; i < COLOR_BUFFER_COUNT; ++i)
+	{
+		x86_opengl_render_buffer_resize(fb->color_buffer[i], width, height);
+	}
+	x86_opengl_render_buffer_resize(fb->depth_buffer, width, height);
+	x86_opengl_render_buffer_resize(fb->stencil_buffer, width, height);
 
 	/* Store new size */
 	fb->width = width;
@@ -1642,29 +1770,9 @@ static int x86_opengl_func_glClear(void)
 	x86_opengl_debug("\tmask_ptr=0x%x\n", mask_ptr);
 	mem_read(x86_isa_mem, mask_ptr, sizeof(GLbitfield), &mask);
 
-
-	/* Clear buffers */
-	if (mask & ~(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_ACCUM_BUFFER_BIT))
-	{
-		x86_opengl_debug("\tInvalid mask!\n");
-	}
-
-	if ((mask & GL_COLOR_BUFFER_BIT) == GL_COLOR_BUFFER_BIT) {
-		x86_opengl_debug("\tColor buffer cleared!\n");
-    		// memset(ColorBuffer, 0, sizeof(uint32_t) * Color_Buf_Height * Color_Buf_Width);
-  	}
-	if ((mask & GL_DEPTH_BUFFER_BIT) == GL_DEPTH_BUFFER_BIT) {
-		x86_opengl_debug("\tDepth buffer cleared!\n");
-    		// memset(DepthBuffer, 0, sizeof(uint32_t) * Depth_Buf_Height * Depth_Buf_Width);
-	}
-	if ((mask & GL_ACCUM_BUFFER_BIT) == GL_ACCUM_BUFFER_BIT) {
-		x86_opengl_debug("\tAccumulation buffer cleared!\n");
-    		// memset(AccumBuffer, 0, sizeof(uint32_t) * Accum_Buf_Height * Accum_Buf_Width);
-	}
-	if ((mask & GL_STENCIL_BUFFER_BIT) == GL_STENCIL_BUFFER_BIT) {
-		x86_opengl_debug("\tStencil buffer cleared!\n");
-    		// memset(StencilBuffer, 0, sizeof(uint32_t) * Stencil_Buf_Height * Stencil_Buf_Width);
-	}
+	/* Clear */
+	x86_opengl_frame_buffer_clear(x86_opengl_ctx->draw_buffer, mask);
+	x86_opengl_frame_buffer_clear(x86_opengl_ctx->read_buffer, mask);
 
 	/* Return */
 	return 0;	
