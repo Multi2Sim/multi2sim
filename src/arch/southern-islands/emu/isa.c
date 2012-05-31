@@ -71,7 +71,6 @@ void si_isa_init()
 		"gpu_isa_write_task_repos");
 }
 
-
 void si_isa_done()
 {
 	/* Instruction execution table */
@@ -79,4 +78,32 @@ void si_isa_done()
 
 	/* Repository of deferred tasks */
 	repos_free(si_isa_write_task_repos);
+}
+
+
+/* Helper functions */
+
+/* Read SGPR */
+unsigned int si_read_sgpr(unsigned int sreg)
+{
+	/* FIXME */
+	/* assert(sreg in range) */
+
+	return SI_SGPR_ELEM(sreg);
+}
+
+/* Initialize a buffer resource descriptor */
+void si_isa_init_buf_res(struct si_buffer_resource_t *buf_desc, unsigned int sreg)
+{
+	assert(buf_desc);
+
+	unsigned int values[4];
+	int i;
+
+	for(i = 0; i < 4; i++)
+	{
+		values[i] = si_read_sgpr(sreg+i);
+	}
+
+	memcpy(buf_desc, values, sizeof(unsigned int)*4);
 }
