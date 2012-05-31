@@ -229,7 +229,9 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	extern struct si_work_item_t *si_isa_work_item;
 	extern struct si_inst_t *si_isa_inst;
 
-	//struct si_ndrange_t *ndrange = wavefront->ndrange;
+	struct si_ndrange_t *ndrange = wavefront->ndrange;
+
+	int work_item_id;
 
 	/* Get current work-group */
 	si_isa_ndrange = wavefront->ndrange;
@@ -250,14 +252,64 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	wavefront->active_mask_pop = 0;
 	
 	/* Grab the next instruction and update the pointer */
-	printf("decoding\n");
-	fflush(NULL);
 	si_isa_wavefront->inst_size = si_inst_decode(si_isa_wavefront->inst_buf, &si_isa_wavefront->inst);
-	printf("decoded\n");
-	fflush(NULL);
 
 	/* Increment the instruction pointer */
 	si_isa_wavefront->inst_buf += si_isa_wavefront->inst_size;
+
+	/* FIXME If instruction updates active mask, update digests */
+	/* XXX What is a digest? */
+
+	/* Stats */
+	si_emu->inst_count++;
+	si_isa_wavefront->emu_inst_count++;
+	si_isa_wavefront->inst_count++;
+
+	/* Set the current instruction */
+	si_isa_inst = &si_isa_wavefront->inst;
+
+	/* Execute the current instruction */
+	switch (si_isa_inst->info->fmt)
+	{
+
+	/* Scalar Memory Instructions */
+	case SI_FMT_SMRD:
+	{
+		/* Stats */
+		si_isa_wavefront->scalar_inst_count++;
+
+		/* Only one work item executes the instruction */
+		si_isa_work_item = ndrange->scalar_work_item;
+		(*si_isa_inst_func[si_isa_inst->info->inst])();
+
+		break;
+	}
+
+	/* Vector ALU Instructions */
+	case SI_FMT_VOP2:
+	case SI_FMT_VOP1:
+	case SI_FMT_VOPC:
+	case SI_FMT_VOP3a:
+	case SI_FMT_VOP3b:
+	{
+		/* Stats */
+		si_isa_wavefront->vector_inst_count++;
+	
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(si_isa_wavefront, work_item_id)
+		{
+			si_isa_work_item = ndrange->work_items[work_item_id];
+			(*si_isa_inst_func[si_isa_inst->info->inst])();
+		}
+
+		break;
+	}
+
+	default:
+	{
+		
+	}
+
+	}
 
 	/* If done, set work group to done */
 	if (1) 

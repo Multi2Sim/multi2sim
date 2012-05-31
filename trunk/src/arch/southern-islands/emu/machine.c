@@ -32,13 +32,20 @@ char *err_si_isa_note =
 #define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
 	si_isa_inst->info->name, err_si_isa_note)
 
+#define INST SI_INST_SMRD
 void si_isa_S_BUFFER_LOAD_DWORD_impl()
 {
-	NOT_IMPL();
+	printf("Running S_BUFFER_LOAD_DWORD\n");
+
+	struct si_buffer_resource_t buf_desc;
+
+	/* sbase holds the first of 4 registers containing the buffer resource descriptor */
+	si_isa_init_buf_res(&buf_desc, INST.sbase);
 }
+#undef INST
 
 void si_isa_S_LOAD_DWORDX4_impl()
 {
-	NOT_IMPL();
+	printf("Running S_LOAD_DWORDX4\n");
 }
 

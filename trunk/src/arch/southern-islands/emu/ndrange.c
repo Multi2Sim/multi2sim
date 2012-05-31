@@ -68,6 +68,9 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 		si_work_item_free(ndrange->work_items[i]);
 	free(ndrange->work_items);
 
+	/* Free scalar work-item */
+	si_work_item_free(ndrange->scalar_work_item);
+
 	/* Free ndrange */
 	free(ndrange->name);
 	free(ndrange);
@@ -121,6 +124,11 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		wavefront->work_group = work_group;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, running, wavefront);
 	}
+
+	/* Initialize the scalar work item */
+	ndrange->scalar_work_item = si_work_item_create();
+	ndrange->scalar_work_item->ndrange = ndrange;
+	ndrange->scalar_work_item->id = -1;
 	
 	/* Array of work-items */
 	ndrange->work_item_count = kernel->global_size;
@@ -157,7 +165,6 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 				work_group->wavefront_id_last = work_group->wavefront_id_first + ndrange->wavefronts_per_work_group - 1;
 				work_group->wavefront_count = ndrange->wavefronts_per_work_group;
 				work_group->wavefronts = &ndrange->wavefronts[work_group->wavefront_id_first];
-
 				/* Iterate through work-items */
 				lid = 0;
 				for (lidz = 0; lidz < kernel->local_size3[2]; lidz++)
@@ -328,12 +335,12 @@ void si_ndrange_run(struct si_ndrange_t *ndrange)
 			/* Run an instruction from each wavefront */
 			for (wavefront = work_group->running_list_head; wavefront; wavefront = wavefront_next)
 			{
+				printf("wavefront id %d\n", wavefront->id); 
 				/* Save next running wavefront */
 				wavefront_next = wavefront->running_list_next;
 
 				/* Execute instruction in wavefront */
 				si_wavefront_execute(wavefront);
-				printf("wavefront id %d\n", wavefront->id); 
 			}
 		}
 	}
