@@ -483,6 +483,7 @@ struct si_ndrange_t
 	struct si_work_group_t **work_groups;
 	struct si_wavefront_t **wavefronts;
 	struct si_work_item_t **work_items;
+	struct si_work_item_t *scalar_work_item;
 
 	/* IDs of work-items contained */
 	int work_item_id_first;
@@ -630,15 +631,20 @@ void si_work_group_clear_status(struct si_work_group_t *work_group, enum si_work
  * GPU Wavefront
  */
 
+#if 0
 /* Type of clauses */
-enum si_clause_kind_t
+enum si_inst_kind_t
 {
-	SI_CLAUSE_NONE = 0,
-	SI_CLAUSE_CF,  /* Control-flow */
-	SI_CLAUSE_ALU,  /* ALU clause */
-	SI_CLAUSE_TEX,  /* Fetch trough a Texture Cache Clause */
-	SI_CLAUSE_VC  /* Fetch through a Vertex Cache Clause */
+	SI_INST_KIND_NONE = 0,
+	SI_INST_KIND_SCALAR_ALU,
+	SI_INST_KIND_SCALAR_MEM,
+	SI_INST_KIND_VECTOR_ALU,
+	SI_INST_KIND_VECTOR_PARAM_INTERP,
+	SI_INST_KIND_VECTOR_MEM_BUF,
+	SI_INST_KIND_VECTOR_MEM_IMG,
+	SI_INST_KIND_EXPORT
 };
+#endif
 
 
 #define SI_MAX_STACK_SIZE  32
@@ -663,6 +669,11 @@ struct si_wavefront_t
 	/* Instruction buffer */
 	void *inst_buf;	
 	void *inst_buf_start;	
+
+#if 0
+	/* Current instruction type */
+	enum si_inst_kind_t inst_kind;
+#endif
 
 	/* Current instruction */
 	struct si_inst_t inst;
@@ -708,8 +719,10 @@ struct si_wavefront_t
 
 	/* Statistics */
 	long long inst_count;  /* Total number of instructions */
-	long long global_mem_inst_count;  /* Instructions (CF or TC) accessing global memory */
-	long long local_mem_inst_count;  /* Instructions (ALU) accessing local memory */
+	long long scalar_inst_count;
+	long long vector_inst_count;
+	long long global_mem_inst_count;  
+	long long local_mem_inst_count;  
 };
 
 #define SI_FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \
@@ -740,10 +753,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront);
 #define SI_MAX_GPR_ELEM  5
 #define SI_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
 
-struct si_gpr_t
-{
-	uint32_t elem[SI_MAX_GPR_ELEM];  /* x, y, z, w, t */
-};
+typedef uint32_t si_gpr_t;
 
 /* Structure describing a memory access definition */
 struct si_mem_access_t
@@ -770,8 +780,8 @@ struct si_work_item_t
 	struct si_ndrange_t *ndrange;
 
 	/* Work-item state */
-	struct si_gpr_t gpr[128];  /* General purpose registers */
-	struct si_gpr_t pv;  /* Result of last computations */
+	si_gpr_t sgpr[128];  /* Scalar general purpose registers */
+	si_gpr_t vgpr[128];  /* Scalar general purpose registers */
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
 	 * and executed as a burst at the end of an ALU group. */
@@ -842,19 +852,8 @@ extern struct si_work_item_t *si_isa_work_item;
 extern struct si_inst_t *si_isa_inst;
 
 /* Macros for quick access */
-#define SI_GPR_ELEM(_gpr, _elem)  (si_isa_work_item->gpr[(_gpr)].elem[(_elem)])
-#define SI_GPR_X(_gpr)  SI_GPR_ELEM((_gpr), 0)
-#define SI_GPR_Y(_gpr)  SI_GPR_ELEM((_gpr), 1)
-#define SI_GPR_Z(_gpr)  SI_GPR_ELEM((_gpr), 2)
-#define SI_GPR_W(_gpr)  SI_GPR_ELEM((_gpr), 3)
-#define SI_GPR_T(_gpr)  SI_GPR_ELEM((_gpr), 4)
-
-#define SI_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &si_isa_work_item->gpr[(_gpr)].elem[(_elem)])
-#define SI_GPR_FLOAT_X(_gpr)  SI_GPR_FLOAT_ELEM((_gpr), 0)
-#define SI_GPR_FLOAT_Y(_gpr)  SI_GPR_FLOAT_ELEM((_gpr), 1)
-#define SI_GPR_FLOAT_Z(_gpr)  SI_GPR_FLOAT_ELEM((_gpr), 2)
-#define SI_GPR_FLOAT_W(_gpr)  SI_GPR_FLOAT_ELEM((_gpr), 3)
-#define SI_GPR_FLOAT_T(_gpr)  SI_GPR_FLOAT_ELEM((_gpr), 4)
+#define SI_SGPR_ELEM(_gpr)  (si_isa_work_item->sgpr[(_gpr)])
+#define SI_SGPR_FLOAT_ELEM(_gpr)  (* (float *) &si_isa_work_item->sgpr[(_gpr)])
 
 
 /* Debugging */
@@ -877,6 +876,9 @@ extern char *err_si_isa_note;
 	__FUNCTION__, si_isa_inst->info->name, (min), (max), err_si_opencl_param_note); }
 
 
+/* Macros for fast access of instruction words */
+#define SI_INST_SMRD		si_isa_inst->micro_inst.smrd
+/* FIXME Finish filling these in */
 
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
@@ -884,6 +886,29 @@ typedef void (*si_isa_inst_func_t)(void);
 extern si_isa_inst_func_t *si_isa_inst_func;
 
 
+/* Table 8.5 in SI documentation */
+struct si_buffer_resource_t
+{
+	unsigned long long base_addr : 48;   /*    [47:0] */
+	unsigned int stride          : 14;   /*   [61:48] */
+	unsigned int cache_swizzle   : 1;    /*       62  */
+	unsigned int swizzle_enable  : 1;    /*       63  */
+	unsigned int num_records     : 32;   /*   [95:64] */
+	unsigned int dst_sel_x       : 3;    /*   [98:96] */
+	unsigned int dst_sel_y       : 3;    /*  [101:99] */
+	unsigned int dst_sel_z       : 3;    /* [104:102] */
+	unsigned int dst_sel_w       : 3;    /* [107:105] */
+	unsigned int num_format      : 3;    /* [110:108] */
+	unsigned int data_format     : 4;    /* [114:111] */
+	unsigned int elem_size       : 2;    /* [116:115] */
+	unsigned int index_stride    : 2;    /* [118:117] */
+	unsigned int add_tid_enable  : 1;    /*      119  */
+	unsigned int reserved        : 1;    /*      120  */
+	unsigned int hash_enable     : 1;    /*      121  */
+	unsigned int heap            : 1;    /*      122  */
+	unsigned int unused          : 3;    /* [125:123] */
+	unsigned int type            : 2;    /* [127:126] */
+};
 
 
 
@@ -945,6 +970,8 @@ extern struct si_emu_t *si_emu;
 
 void si_emu_init(void);
 void si_emu_done(void);
+
+void si_isa_init_buf_res(struct si_buffer_resource_t *buf_desc, unsigned int sreg);
 
 void si_emu_timer_start(void);
 void si_emu_timer_stop(void);
