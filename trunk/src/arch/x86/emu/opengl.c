@@ -27,8 +27,6 @@ static char *err_x86_opengl_code =
 	"\tversion of the Multi2Sim OpenGL runtime library ('libm2s-opengl'). Please\n"
 	"\trecompile your application and try again.\n";
 
-#define X86_OPENGL_MAX_ARGS  14
-
 /* Maximum modelview matrix stack depth */
 #define MAX_MODELVIEW_STACK_DEPTH 32
 
@@ -199,7 +197,8 @@ struct x86_opengl_frame_buffer_t
 	GLsizei width;
 	GLsizei height;
 
-	/* frame buffer contains a set of render buffers, typically:
+	/* 
+	 * a frame buffer contains a set of render buffers, typically:
 	 * 4 color buffers: front left & front right, back left & back right ( FIXME: why 4? )
 	 * 1 depth buffer
 	 * 1 stencil buffer
@@ -1522,7 +1521,6 @@ static int x86_opengl_func_glViewport(void)
 	unsigned int args_ptr;
 	unsigned int argc_ptr;
 
-	int func_args[X86_OPENGL_MAX_ARGS];
 	int func_argc;
 
 	/* Read arguments */
@@ -1534,6 +1532,7 @@ static int x86_opengl_func_glViewport(void)
 
 	/* Get function info */
 	mem_read(x86_isa_mem, argc_ptr, sizeof(int), &func_argc);
+	int func_args[func_argc];
 	mem_read(x86_isa_mem, args_ptr, func_argc * 4, func_args);
 	x86_opengl_ctx->viewport->x = func_args[0];
 	x86_opengl_ctx->viewport->y = func_args[1];
@@ -1650,7 +1649,6 @@ static int x86_opengl_func_glOrtho(void)
 	unsigned int args_ptr;
 	unsigned int argc_ptr;
 
-	GLdouble func_args[X86_OPENGL_MAX_ARGS];
 	int func_argc;
 	int i;
 	int j;
@@ -1664,6 +1662,7 @@ static int x86_opengl_func_glOrtho(void)
 
 	/* Get function info */
 	mem_read(x86_isa_mem, argc_ptr, sizeof(int), &func_argc);
+	GLdouble func_args[func_argc];
 	mem_read(x86_isa_mem, args_ptr, func_argc * sizeof(GLdouble), func_args);
 	for (i = 0; i < func_argc; i++)
 		x86_opengl_debug("\t\targs[%d] = %f (0x%f)\n",
@@ -1767,12 +1766,180 @@ static int x86_opengl_func_glClear(void)
 
 	/* Read arguments */
 	mask_ptr = x86_isa_regs->ecx;
-	x86_opengl_debug("\tmask_ptr=0x%x\n", mask_ptr);
 	mem_read(x86_isa_mem, mask_ptr, sizeof(GLbitfield), &mask);
+	x86_opengl_debug("\tmask_ptr=0x%x\n", mask_ptr);
+	x86_opengl_debug("\tmask=0x%x\n", mask);
 
-	/* Clear */
+	/* Clear frame buffers*/
 	x86_opengl_frame_buffer_clear(x86_opengl_ctx->draw_buffer, mask);
 	x86_opengl_frame_buffer_clear(x86_opengl_ctx->read_buffer, mask);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #9 - glBegin
+ *
+ * glBegin - delimit the vertices of a primitive or a group of like primitives
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glBegin(void)
+{
+	unsigned int mode_ptr;
+	GLenum mode;
+
+	/* Read arguments */
+	mode_ptr = x86_isa_regs->ecx;
+	mem_read(x86_isa_mem, mode_ptr, sizeof(GLenum), & mode);
+	x86_opengl_debug("\tmode_ptr=0x%x\n", mode_ptr);
+	x86_opengl_debug("\tmode=0x%x\n", mode);
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #10 - glEnd
+ *
+ * glEnd - delimit the vertices of a primitive or a group of like primitives
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glEnd(void)
+{
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #11 - glVertex2f
+ *
+ * glVertex2f - specify a vertex
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glVertex2f(void)
+{
+	unsigned int args_ptr;
+	unsigned int argc_ptr;
+	int func_argc;
+	int i;
+
+	/* Read arguments */
+	args_ptr = x86_isa_regs->ecx;
+	argc_ptr = x86_isa_regs->edx;
+
+	x86_opengl_debug("\targs_ptr=0x%x\n", args_ptr);
+	x86_opengl_debug("\targc_ptr=0x%x\n", argc_ptr);
+
+	/* Get function info */
+	mem_read(x86_isa_mem, argc_ptr, sizeof(int), &func_argc);
+	GLfloat func_args[func_argc];
+	mem_read(x86_isa_mem, args_ptr, func_argc * sizeof(GLfloat), func_args);
+	for (i = 0; i < func_argc; i++)
+		x86_opengl_debug("\t\targs[%d] = %f\n",
+			i, func_args[i]);
+
+	/* Add a vertex */
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #12 - glVertex3f
+ *
+ * glVertex3f - specify a vertex
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glVertex3f(void)
+{
+	unsigned int args_ptr;
+	unsigned int argc_ptr;
+	int func_argc;
+	int i;
+
+	/* Read arguments */
+	args_ptr = x86_isa_regs->ecx;
+	argc_ptr = x86_isa_regs->edx;
+
+	x86_opengl_debug("\targs_ptr=0x%x\n", args_ptr);
+	x86_opengl_debug("\targc_ptr=0x%x\n", argc_ptr);
+
+	/* Get function info */
+	mem_read(x86_isa_mem, argc_ptr, sizeof(int), &func_argc);
+	GLfloat func_args[func_argc];
+	mem_read(x86_isa_mem, args_ptr, func_argc * sizeof(GLfloat), func_args);
+	for (i = 0; i < func_argc; i++)
+		x86_opengl_debug("\t\targs[%d] = %f\n",
+			i, func_args[i]);
+
+	/* Add a vertex */
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #13 - glFlush
+ *
+ * glFlush -  force execution of GL commands in finite time
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glFlush(void)
+{
+	/* FIXME: send vertices data to rasterizer ? */
+
+	/* Return */
+	return 0;	
+}
+
+/*
+ * OpenGL call #14 - glColor3f
+ *
+ * glColor3f - set the current color
+ *
+ * @return
+ *	The function always returns 0
+ */
+
+static int x86_opengl_func_glColor3f(void)
+{
+	unsigned int args_ptr;
+	unsigned int argc_ptr;
+	int func_argc;
+	int i;
+
+	/* Read arguments */
+	args_ptr = x86_isa_regs->ecx;
+	argc_ptr = x86_isa_regs->edx;
+
+	x86_opengl_debug("\targs_ptr=0x%x\n", args_ptr);
+	x86_opengl_debug("\targc_ptr=0x%x\n", argc_ptr);
+
+	/* Get function info */
+	mem_read(x86_isa_mem, argc_ptr, sizeof(int), &func_argc);
+	GLfloat func_args[func_argc];
+	mem_read(x86_isa_mem, args_ptr, func_argc * sizeof(GLfloat), func_args);
+	for (i = 0; i < func_argc; i++)
+		x86_opengl_debug("\t\targs[%d] = %f\n",
+			i, func_args[i]);
+
+	/* Set the current color */
 
 	/* Return */
 	return 0;	
