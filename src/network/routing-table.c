@@ -42,45 +42,64 @@ static char *err_net_routing =
 
 
 /* This algorithm will be recursively called to do the backtracking of DFS algorithm. */
-static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *routing_table,
-	struct list_t *color_list, struct list_t *parent_list, int list_elem)
+static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *routing_table, struct list_t *buffer_list,
+	struct list_t *color_list, struct list_t *parent_list, int list_elem, int buffer_count)
 {
 	int j;
 
 	struct net_t *net = routing_table->net;
-	struct net_node_t *parent_index;
-	struct net_node_t *node_color;
+	struct net_buffer_t *parent_index;
+	struct net_node_t *buffer_color;
+	struct net_node_t *node_elem;
+	struct net_buffer_t *buffer_elem;
 
 	list_set(color_list, list_elem, NET_NODE_COLOR_GRAY);
 
+	buffer_elem = list_get(buffer_list, list_elem);
+
+	node_elem = buffer_elem->node;
+
 	for (j = 0; j < routing_table->dim && !routing_table->has_cycle; j++)
 	{
-		struct net_node_t *node_elem;
+
 		struct net_node_t *node_adj;
 		struct net_routing_table_entry_t *entry;
 
-		node_elem = list_get(net->node_list, list_elem);
 		node_adj = list_get(net->node_list, j);
-		entry = net_routing_table_lookup(routing_table, node_elem, node_adj);	
+		entry = net_routing_table_lookup(routing_table, node_elem, node_adj);
 
-		if (entry->cost == 1)
+		if (entry->output_buffer == buffer_elem)
 		{
-			node_color = list_get(color_list, j);
 
-			if (node_color == NET_NODE_COLOR_WHITE)
+			struct net_routing_table_entry_t *entry_adj;
+			entry_adj = net_routing_table_lookup(routing_table, entry->next_node, node_adj);
+
+			for (int i = 0; i < buffer_count; i++)
 			{
-				list_set(parent_list, j, node_elem);
-				routing_table_cycle_detection_dfs_visit(routing_table, color_list, parent_list, j);
+				struct net_buffer_t *buffer_adj;
+				buffer_adj = list_get(buffer_list, i);
+
+				if (buffer_adj == entry_adj->output_buffer)
+				{
+
+					buffer_color = list_get(color_list, i);
+					if(buffer_color == NET_NODE_COLOR_WHITE)
+					{
+						list_set(parent_list, i, buffer_elem);
+						routing_table_cycle_detection_dfs_visit(routing_table, buffer_list, color_list, parent_list, i, buffer_count);
+					}
+
+					buffer_color = list_get(color_list, i);
+					parent_index = list_get(parent_list, i);
+
+					if (buffer_color == NET_NODE_COLOR_GRAY  && parent_index != buffer_elem)
+					{
+						warning("network %s: cycle found in routing table.\n%s",
+							net->name, err_net_cycle);
+						routing_table->has_cycle = 1;
+					}
+				}
 			}
-			node_color = list_get(color_list, j);
-			parent_index = list_get(parent_list, list_elem);
-
-			if (node_color == NET_NODE_COLOR_GRAY && parent_index != node_adj)
-			{
-				warning("network %s: cycle found in routing table.\n%s",
-					net->name, err_net_cycle);
-				routing_table->has_cycle = 1;
-			} 
 		}
 	}
 	list_set(color_list, list_elem, NET_NODE_COLOR_BLACK);
@@ -96,37 +115,51 @@ static void routing_table_cycle_detection_dfs_visit(struct net_routing_table_t *
  * from the node that called the algorithm ---Order = O(|E|+|V|) */
 static void net_routing_table_cycle_detection(struct net_routing_table_t *routing_table)
 {
-	int i;
+	int i, j, buffer_count = 0;
 
 	struct net_t *net = routing_table->net;
 	struct list_t *color_list;
 	struct list_t *parent_list;
-	struct net_node_t *node_color ;
+	struct list_t *buffer_list;
+	struct net_node_t *buffer_color ;
+	struct net_buffer_t *buffer_i;
+	struct net_node_t *node_i;
 
-	color_list = list_create_with_size(routing_table->dim);
-	parent_list = list_create_with_size(routing_table->dim);
+	buffer_list = list_create();
+	color_list = list_create();
+	parent_list = list_create();
 
 	for (i = 0; i < routing_table->dim; i++)
 	{
-		struct net_node_t *node_i;
-		
 		node_i = list_get(net->node_list, i);
-		list_add(color_list, NET_NODE_COLOR_WHITE);
-		list_add(parent_list, node_i);
-	}
-	
-	for (i = 0; i < routing_table->dim && !routing_table->has_cycle; i++)
-	{
-		node_color = list_get(color_list, i);
+		for (j = 0; j < list_count(node_i->output_buffer_list); j++)
+		{
 
-		if (node_color == NET_NODE_COLOR_WHITE)
-			routing_table_cycle_detection_dfs_visit(routing_table, color_list, parent_list, i);
+			buffer_i = list_get(node_i->output_buffer_list,j);
+
+			list_add(color_list, NET_NODE_COLOR_WHITE);
+			list_add(parent_list, buffer_i);
+			list_add(buffer_list, buffer_i);
+		}
+	}
+
+	buffer_count = list_count(color_list);
+
+	for (i = 0; i < buffer_count && !routing_table->has_cycle; i++)
+	{
+		buffer_color = list_get(color_list, i);
+		struct net_buffer_t *buffer_temp;
+		buffer_temp = list_get(buffer_list, i);
+
+		if (buffer_color == NET_NODE_COLOR_WHITE)
+		{
+			routing_table_cycle_detection_dfs_visit(routing_table, buffer_list, color_list, parent_list, i, buffer_count);
+		}
 	}
 	list_free(color_list);
-	list_free(parent_list);	
+	list_free(parent_list);
+	list_free(buffer_list);
 }
-
-
 
 
 /*
