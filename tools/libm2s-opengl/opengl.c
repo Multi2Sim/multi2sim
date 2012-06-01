@@ -314,6 +314,7 @@ void glFinish( void )
 void glFlush( void )
 {
 	printf("glFlush\n");
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glFlush);
 }
 
 
@@ -558,13 +559,15 @@ void glListBase( GLuint base )
 void glBegin( GLenum mode )
 {
 	printf("glBegin\n");
-
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glBegin, &mode);
 }
 
 
 void glEnd( void )
 {
 	printf("glEnd\n");
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glEnd);
+
 }
 
 
@@ -577,6 +580,11 @@ void glVertex2d( GLdouble x, GLdouble y )
 void glVertex2f( GLfloat x, GLfloat y )
 {
 	printf("glVertex2f\n");
+	unsigned int argc = 2;
+	GLfloat sys_args[2];
+	sys_args[0] = (GLfloat) x;
+	sys_args[1] = (GLfloat) y;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glVertex2f, &sys_args, &argc);	
 }
 
 
@@ -601,6 +609,12 @@ void glVertex3d( GLdouble x, GLdouble y, GLdouble z )
 void glVertex3f( GLfloat x, GLfloat y, GLfloat z )
 {
 	printf("glVertex3f\n");
+	unsigned int argc = 3;
+	GLfloat sys_args[3];
+	sys_args[0] = (GLfloat) x;
+	sys_args[1] = (GLfloat) y;
+	sys_args[2] = (GLfloat) z;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glVertex3f, &sys_args, &argc);	
 }
 
 
@@ -847,6 +861,12 @@ void glColor3d( GLdouble red, GLdouble green, GLdouble blue )
 void glColor3f( GLfloat red, GLfloat green, GLfloat blue )
 {
 	printf("glColor3f\n");
+	unsigned int argc = 3;
+	GLfloat sys_args[3];
+	sys_args[0] = (GLfloat) red;
+	sys_args[1] = (GLfloat) green;
+	sys_args[2] = (GLfloat) blue;
+	syscall(X86_OPENGL_SYS_CODE, x86_opengl_call_glColor3f, &sys_args, &argc);	
 }
 
 
