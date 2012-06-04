@@ -32,13 +32,13 @@ static char *err_frm_cuda_code =
 	"\trecompile your application and try again.\n";
 
 
-/* Debug */
-int x86_cuda_debug_category;
-
 
 /*
- * CUDA calls
+ * CUDA Driver API Implementation
  */
+
+/* Debug */
+int x86_cuda_debug_category;
 
 /* List of CUDA driver calls */
 enum frm_cuda_call_t
@@ -49,7 +49,6 @@ enum frm_cuda_call_t
 #undef FRM_CUDA_DEFINE_CALL
 	frm_cuda_call_count
 };
-
 
 /* List of CUDA driver call names */
 char *frm_cuda_call_name[frm_cuda_call_count + 1] =
@@ -153,7 +152,7 @@ int frm_cuda_call(void)
 
 
 /*
- * GLUT call #1 - init
+ * CUDA call #1 - version
  *
  * @param struct x86_glut_version_t *version;
  *	Structure where the version of the GLUT runtime implementation will be
@@ -216,7 +215,7 @@ static int frm_cuda_func_version(void)
 
 
 /*
- * GLUT call #2 - get_event
+ * CUDA call #2 - cuInit
  *
  * The function returns the next available GLUT event.
  *
@@ -237,7 +236,7 @@ static int frm_cuda_func_cuInit(void)
 
 
 /*
- * GLUT call #3 - new_window
+ * CUDA call #3 - cuDeviceGetCount
  *
  * @param char *title
  *	Title of the window.
