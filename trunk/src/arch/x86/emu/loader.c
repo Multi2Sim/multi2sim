@@ -654,6 +654,10 @@ void x86_loader_get_full_path(struct x86_ctx_t *ctx, char *file_name, char *full
 {
 	struct x86_loader_t *ld = ctx->loader;
 
+	/* Remove './' prefix from 'file_name' */
+	while (file_name && !strncmp(file_name, "./", 2))
+		file_name += 2;
+
 	/* File name is NULL or empty */
 	assert(full_path);
 	if (!file_name || !*file_name)
