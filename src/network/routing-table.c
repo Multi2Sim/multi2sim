@@ -148,9 +148,6 @@ static void net_routing_table_cycle_detection(struct net_routing_table_t *routin
 	for (i = 0; i < buffer_count && !routing_table->has_cycle; i++)
 	{
 		buffer_color = list_get(color_list, i);
-		struct net_buffer_t *buffer_temp;
-		buffer_temp = list_get(buffer_list, i);
-
 		if (buffer_color == NET_NODE_COLOR_WHITE)
 		{
 			routing_table_cycle_detection_dfs_visit(routing_table, buffer_list, color_list, parent_list, i, buffer_count);
