@@ -1739,7 +1739,7 @@ static int x86_sys_readlink_impl(void)
 	}
 
 	/* Copy name to guest memory. The string is not null-terminated. */
-	dest_size = MAX(strlen(dest_path), bufsz);
+	dest_size = MIN(strlen(dest_path), bufsz);
 	mem_write(x86_isa_mem, buf, dest_size, dest_path);
 	x86_sys_debug("  dest_path='%s'\n", dest_path);
 
