@@ -24,17 +24,17 @@
 #include <cuda_runtime_api.h>
 
 /* System call for CUDA runtime */
-#define CUDART_SYS_CODE  329
+#define FRM_CUDART_SYS_CODE  329
 
 
 /* List of CUDA runtime calls */
-enum cuda_call_t
+enum frm_cudart_call_t
 {
-	cuda_call_invalid,
-#define CUDA_DEFINE_CALL(name, code) cuda_call_##name = code,
+	frm_cudart_call_invalid,
+#define FRM_CUDART_DEFINE_CALL(name, code) frm_cudart_call_##name = code,
 #include "../../src/arch/fermi/emu/cudart.dat"
-#undef CUDA_DEFINE_CALL
-	cuda_call_count
+#undef FRM_CUDA_DEFINE_CALL
+	frm_cuda_callrt_count
 };
 
 #endif

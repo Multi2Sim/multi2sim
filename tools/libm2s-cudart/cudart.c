@@ -21,6 +21,8 @@
 #include <debug.h>
 #include <list.h>
 #include <misc.h>
+#include <string.h>
+#include <unistd.h>
 
 
 
@@ -29,27 +31,36 @@
  */
 
 #define __CUDART_NOT_IMPL__  warning("%s: not implemented.\n%s", \
-	__FUNCTION__, err_cudart_not_impl);
+	__FUNCTION__, err_frm_cudart_not_impl);
 
 
-static char *err_cudart_not_impl =
+#define cuda_debug(stream, ...) ((!strcmp(getenv("LIBM2S_CUDART_DUMP"), "1")) ? \
+	fprintf((stream), __VA_ARGS__) : (void) 0)
+
+
+static char *err_frm_cudart_not_impl =
 	"\tMulti2Sim provides partial support for CUDA runtime library.\n"
 	"\tTo request the implementation of a certain functionality,\n"
 	"\tplease email development@multi2sim.org.\n";
 
-static char *err_cudart_version =
+static char *err_frm_cudart_version =
 	"\tYour guest application is using a version of the CUDA runtime library\n"
 	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
 	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
 	"\tCUDA runtime library ('libm2s-cudart').\n";
 
+static char *err_frm_cudart_native =
+	"\tYou are trying to run natively an application using the Multi2Sim CUDA runtime\n"
+	"\tlibrary implementation ('libm2s-cudart'). Please run this program on top of\n"
+	"\tMulti2Sim.\n";
+
 
 
 /* Multi2Sim CUDA runtime required */
-#define CUDART_VERSION_MAJOR	0
-#define CUDART_VERSION_MINOR	0
+#define FRM_CUDART_VERSION_MAJOR	1
+#define FRM_CUDART_VERSION_MINOR	700
 
-struct cudart_version_t
+struct frm_cudart_version_t
 {
 	int major;
 	int minor;
@@ -63,6 +74,34 @@ struct cudart_version_t
 
 
 /* CUDA runtime API */
+void cudaVersion(struct frm_cudart_version_t *version)
+{
+	int ret;
+
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: version_ptr=%p\n", version);
+
+	/* Version negotiation */
+	ret = syscall(FRM_CUDART_SYS_CODE, frm_cudart_call_version, version);
+
+	cuda_debug(stdout, "\tOUT: version.major=%d version.minor=%d\n", version->major, version->minor);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call FRM_CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			err_frm_cudart_native);
+
+	/* Check that exact major version matches */
+	if (version->major != FRM_CUDART_VERSION_MAJOR
+			|| version->minor < FRM_CUDART_VERSION_MINOR)
+		fatal("incompatible CUDA versions.\n"
+			"\tGuest library v. %d.%d / Host implementation v. %d.%d.\n"
+			"%s", FRM_CUDART_VERSION_MAJOR, FRM_CUDART_VERSION_MINOR,
+			version->major, version->minor, err_frm_cudart_version);
+}
+
+
 void** CUDARTAPI __cudaRegisterFatBinary(void *fatCubin)
 {
 	__CUDART_NOT_IMPL__
@@ -228,7 +267,7 @@ cudaError_t CUDARTAPI cudaPeekAtLastError(void)
 const char* CUDARTAPI cudaGetErrorString(cudaError_t error)
 {
 	__CUDART_NOT_IMPL__
-	return 0;
+	return NULL;
 }
 
 
@@ -823,7 +862,8 @@ cudaError_t CUDARTAPI cudaGetChannelDesc(struct cudaChannelFormatDesc *desc, con
 struct cudaChannelFormatDesc CUDARTAPI cudaCreateChannelDesc(int x, int y, int z, int w, enum cudaChannelFormatKind f)
 {
 	__CUDART_NOT_IMPL__
-	return;
+	struct cudaChannelFormatDesc cfd;
+	return cfd;
 }
 
 

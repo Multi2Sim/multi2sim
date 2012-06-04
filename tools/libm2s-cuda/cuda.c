@@ -22,6 +22,7 @@
 #include <list.h>
 #include <misc.h>
 #include <string.h>
+#include <unistd.h>
 
 
 
@@ -564,10 +565,6 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	dptr = (CUdeviceptr*)malloc(bytesize);
-	if (dptr == NULL)
-		fatal("cuMemAlloc: cannot allocate %u bytes", bytesize);
-
 	cuda_debug(stdout, "\tOUT: dptr_ptr=%p\n", dptr);
 	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
@@ -584,7 +581,9 @@ CUresult cuMemAllocPitch(CUdeviceptr *dptr, size_t *pPitch, size_t WidthInBytes,
 
 CUresult cuMemFree(CUdeviceptr dptr)
 {
-	free(&dptr);
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: dptr=%u\n", dptr);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
