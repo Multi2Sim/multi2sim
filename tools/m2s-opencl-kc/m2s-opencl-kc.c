@@ -228,7 +228,7 @@ void main_compile_kernel()
 	char *program_source;
 	size_t program_source_size;
 
-	char *compiler_flags;
+	char compiler_flags[MAX_STRING_SIZE];
 
 	size_t bin_sizes[MAX_DEVICES];
 	size_t bin_sizes_ret;
@@ -266,9 +266,22 @@ void main_compile_kernel()
 		fatal("clCreateProgramWithSource failed");
 	
 	/* Compiler flags */
-	compiler_flags = NULL;
+	strcpy(compiler_flags, "");
 	if (debug_info)
-		compiler_flags = "-O0 -g";
+		strcat(compiler_flags, " -O0 -g");
+	
+	/* Intermediate files */
+	if (dump_intermediate)
+	{
+		char dir[MAX_STRING_SIZE];
+		char dir_flag[MAX_STRING_SIZE];
+
+		snprintf(dir, sizeof dir, "%s_AMDAPP_files", kernel_file_prefix);
+		snprintf(dir_flag, sizeof dir_flag, "-save-temps=%s/%s",
+			dir, kernel_file_prefix);
+		mkdir(dir, 0755);
+		strcat(compiler_flags, dir_flag);
+	}
 
 	/* Compile source */
 	err = clBuildProgram(program, 1, &device, compiler_flags, NULL, NULL);
