@@ -33,6 +33,10 @@
 	__FUNCTION__, err_frm_cuda_not_impl);
 
 
+#define cuda_debug(stream, ...) ((!strcmp(getenv("LIBM2S_CUDA_DUMP"), "1")) ? \
+	fprintf((stream), __VA_ARGS__) : (void) 0)
+
+
 static char *err_frm_cuda_not_impl =
 	"\tMulti2Sim provides partial support for CUDA driver library.\n"
 	"\tTo request the implementation of a certain functionality,\n"
@@ -86,8 +90,13 @@ CUresult cuInit(unsigned int Flags)
 
 	int ret;
 
+	cuda_debug(stdout, "\tFUNC: version\n");
+	cuda_debug(stdout, "\tIN: version_ptr=%p\n", &version);
+
 	/* Version negotiation */
 	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_version, &version);
+
+	cuda_debug(stdout, "\tOUT: version.major=%d version.minor=%d\n", version.major, version.minor);
 
 	/* Check that we are running on Multi2Sim. If a program linked with this library
 	 * is running natively, system call FRM_CUDA_SYS_CODE is not supported. */
@@ -103,8 +112,16 @@ CUresult cuInit(unsigned int Flags)
 			"%s", FRM_CUDA_VERSION_MAJOR, FRM_CUDA_VERSION_MINOR,
 			version.major, version.minor, err_frm_cuda_version);
 
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: Flags=%u\n", Flags);
+
 	if (Flags != 0U)
+	{
+		cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
+	}
+
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -112,10 +129,19 @@ CUresult cuInit(unsigned int Flags)
 
 CUresult cuDriverGetVersion(int *driverVersion)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: driverVersion_ptr=%p\n", driverVersion);
+
 	if (driverVersion == NULL)
+	{
+		cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
+	}
 
 	*driverVersion = 123456789;
+
+	cuda_debug(stdout, "\tOUT: driverVersion=%d\n", *driverVersion);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -123,10 +149,20 @@ CUresult cuDriverGetVersion(int *driverVersion)
 
 CUresult cuDeviceGet(CUdevice *device, int ordinal)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: device_ptr=%p\n", device);
+	cuda_debug(stdout, "\tIN: ordinal=%d\n", ordinal);
+
 	if (ordinal >= 1)
+	{
+		cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
+	}
 
 	*device = 0;
+
+	cuda_debug(stdout, "\tOUT: device=%d\n", *device);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -134,7 +170,13 @@ CUresult cuDeviceGet(CUdevice *device, int ordinal)
 
 CUresult cuDeviceGetCount(int *count)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: count_ptr=%p\n", count);
+
 	*count = 1;
+
+	cuda_debug(stdout, "\tOUT: count=%d\n", *count);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -142,11 +184,22 @@ CUresult cuDeviceGetCount(int *count)
 
 CUresult cuDeviceGetName(char *name, int len, CUdevice dev)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: name_ptr=%p\n", name);
+	cuda_debug(stdout, "\tIN: len=%d\n", len);
+	cuda_debug(stdout, "\tIN: dev=%d\n", dev);
+
 	if (dev != 0)
+	{
+		cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
+	}
 
 	sprintf(name, "Multi2Sim Fermi Device");
 	name[len] = '\0';
+
+	cuda_debug(stdout, "\tOUT: name=%s\n", name);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -154,11 +207,23 @@ CUresult cuDeviceGetName(char *name, int len, CUdevice dev)
 
 CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: major_ptr=%p\n", major);
+	cuda_debug(stdout, "\tIN: minor_ptr=%p\n", minor);
+	cuda_debug(stdout, "\tIN: dev=%d\n", dev);
+
 	if (dev != 0)
+	{
+		cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
+	}
 
 	*major = 2;
 	*minor = 0;
+
+	cuda_debug(stdout, "\tOUT: major=%d\n", *major);
+	cuda_debug(stdout, "\tOUT: minor=%d\n", *minor);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -166,10 +231,20 @@ CUresult cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 
 CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: bytes_ptr=%p\n", bytes);
+	cuda_debug(stdout, "\tIN: dev=%d\n", dev);
+
 	if (dev != 0)
+	{
+		cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
+	}
 
 	*bytes = 1024*1024;
+
+	cuda_debug(stdout, "\tOUT: bytes=%zd\n", *bytes);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -177,8 +252,15 @@ CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 
 CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: prop_ptr=%p\n", prop);
+	cuda_debug(stdout, "\tIN: dev=%d\n", dev);
+
 	if (dev != 0)
+	{
+		cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
+	}
 
 	prop->maxThreadsPerBlock = 1;
 	prop->maxThreadsDim[0] = 1;
@@ -195,6 +277,17 @@ CUresult cuDeviceGetProperties(CUdevprop *prop, CUdevice dev)
 	prop->clockRate = 1;
 	prop->textureAlign = 1;
 
+	cuda_debug(stdout, "\tOUT: prop->maxThreadsPerBlock=%d prop->maxThreadsDim[0]=%d \
+		prop->maxThreadsDim[1]=%d prop->maxThreadsDim[2]=%d prop->maxGridSize[0]=%d \
+		prop->maxGridSize[1]=%d prop->maxGridSize[2]=%d prop->sharedMemPerBlock=%d \
+		prop->totalConstantMemory=%d prop->SIMDWidth=%d prop->memPitch=%d \
+		prop->regsPerBlock=%d prop->clockRate=%d prop->textureAlign=%d\n", 
+		prop->maxThreadsPerBlock, prop->maxThreadsDim[0], prop->maxThreadsDim[1], 
+		prop->maxThreadsDim[2], prop->maxGridSize[0], prop->maxGridSize[1], 
+		prop->maxGridSize[2], prop->sharedMemPerBlock, prop->totalConstantMemory, 
+		prop->SIMDWidth, prop->memPitch, prop->regsPerBlock, prop->clockRate, prop->textureAlign);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
+
 	return CUDA_SUCCESS;
 }
 
@@ -208,9 +301,17 @@ CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 
 CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: pctx_ptr=%p\n", pctx);
+	cuda_debug(stdout, "\tIN: flags=%u\n", flags);
+	cuda_debug(stdout, "\tIN: dev=%d\n", dev);
+
 	*pctx = (CUcontext)malloc(sizeof(struct CUctx_st));
 	if (*pctx == NULL)
 		fatal("cuCtxCreate: cannot create context");
+
+	cuda_debug(stdout, "\tOUT: pctx_ptr=%p\n", pctx);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -232,8 +333,12 @@ CUresult cuCtxAttach(CUcontext *pctx, unsigned int flags)
 
 CUresult cuCtxDetach(CUcontext ctx)
 {
-	warning("cuCtxDetach: this function is deprecated");
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: ctx=%p\n", ctx);
+
 	free(ctx);
+
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -269,7 +374,12 @@ CUresult cuCtxGetCurrent(CUcontext *pctx)
 
 CUresult cuCtxGetDevice(CUdevice *device)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+
 	*device = 0;
+
+	cuda_debug(stdout, "\tOUT: device=%d\n", *device);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -335,12 +445,18 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 {
 	FILE *fp;
 
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: fname=%s\n", fname);
+
 	fp = fopen(fname, "r");
 	if (fp == NULL)
 		fatal("cuModuleLoad: cannot load module %s", fname);
 
 	fclose(fp);
 	*module = (CUmodule)malloc(sizeof(struct CUmod_st));
+
+	cuda_debug(stdout, "\tOUT: module_ptr=%p\n", module);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -378,14 +494,24 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 {
 	int i;
 
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: hmod=%p\n", hmod);
+	cuda_debug(stdout, "\tIN: name=%s\n", name);
+
 	for (i = 0; i < 1024; ++i)
 	{
 		if (!strcmp(name, hmod->func[i].name))
 			break;
 	}
 	if (i == 1024)
+	{
+		cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_ERROR_NOT_FOUND);
 		return CUDA_ERROR_NOT_FOUND;
+	}
 	*hfunc = hmod->func + i;
+
+	cuda_debug(stdout, "\tOUT: hfunc_ptr=%p\n", hfunc);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -414,8 +540,14 @@ CUresult cuModuleGetSurfRef(CUsurfref *pSurfRef, CUmodule hmod, const char *name
 
 CUresult cuMemGetInfo(size_t *free, size_t *total)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+
 	*free = 1024*1024;
 	*total = 1024*1024;
+
+	cuda_debug(stdout, "\tOUT: free=%d\n", *free);
+	cuda_debug(stdout, "\tOUT: total=%d\n", *total);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
@@ -423,12 +555,21 @@ CUresult cuMemGetInfo(size_t *free, size_t *total)
 
 CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 {
+	cuda_debug(stdout, "\tFUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: bytesize=%zd\n", bytesize);
+
 	if (bytesize == 0)
+	{
+		cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_ERROR_INVALID_VALUE);
 		return CUDA_ERROR_INVALID_VALUE;
+	}
 
 	dptr = (CUdeviceptr*)malloc(bytesize);
 	if (dptr == NULL)
 		fatal("cuMemAlloc: cannot allocate %u bytes", bytesize);
+
+	cuda_debug(stdout, "\tOUT: dptr_ptr=%p\n", dptr);
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
 }
