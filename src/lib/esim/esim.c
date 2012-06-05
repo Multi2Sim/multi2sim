@@ -32,6 +32,10 @@
 #include <mhandle.h>
 
 
+/* Number of in-flight events before a warning is shown. */
+#define ESIM_OVERLOAD_EVENTS  10000
+
+
 static char *err_esim_finalization =
 	"\tThe finalization process of the event-driven simulation is trying to\n"
 	"\tempty the event heap by scheduling all pending events. If the number of\n"
@@ -40,10 +44,24 @@ static char *err_esim_finalization =
 	"\tfinalization of the simulation. Please contact development@multi2sim.org\n"
 	"\tto report this error.\n";
 
+static char *err_esim_overload =
+	"\tAn excessive number of events are currently in-flight in the event-\n"
+	"\tdriven simulation library. This is probably the result of a timing\n"
+	"\tmodel uncontrollably issuing events (typically a processor pipeline\n"
+	"\tissuing memory accesses without checking for a limit in the number\n"
+	"\tof in-flight accesses).\n"
+	"\tIf you still believe that this is an expected number of in-flight\n"
+	"\tevents, please increase the value of macro ESIM_OVERLOAD_EVENTS to\n"
+	"\tavoid this warning.\n";
+
 
 static int curr_event = 0;
 static int ESIM_EV_INVALID;
 static int esim_lock_schedule = 0;
+
+/* Flag indicating whether the overload warning has been already shown. This
+ * will prevent it to be shown more than once during the execution. */
+static int esim_overload_shown = 0;
 
 long long esim_cycle = 1;
 int ESIM_EV_NONE;
@@ -169,6 +187,14 @@ void esim_schedule_event(int event, void *data, int after)
 	e->event = event;
 	e->data = data;
 	heap_insert(esim_event_heap, when, e);
+
+	/* Warn when heap is overloaded */
+	if (!esim_overload_shown && heap_count(esim_event_heap) >= ESIM_OVERLOAD_EVENTS)
+	{
+		esim_overload_shown = 1;
+		warning("%s: number of in-flight events exceeds %d.\n%s",
+			__FUNCTION__, ESIM_OVERLOAD_EVENTS, err_esim_overload);
+	}
 }
 
 
