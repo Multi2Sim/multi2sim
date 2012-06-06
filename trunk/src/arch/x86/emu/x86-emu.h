@@ -643,6 +643,20 @@ int x86_opengl_call(void);
 
 
 
+/*
+ * OpenCL Runtime Interface
+ */
+
+#define x86_clrt_debug(...) debug(x86_clrt_debug_category, __VA_ARGS__)
+extern int x86_clrt_debug_category;
+
+void x86_clrt_init(void);
+void x86_clrt_done(void);
+
+int x86_clrt_call(void);
+
+
+
 
 /*
  * CUDA system call interface

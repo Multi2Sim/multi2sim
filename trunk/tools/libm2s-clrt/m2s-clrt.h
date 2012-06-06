@@ -27,6 +27,30 @@
 #include <CL/cl.h>
 
 
+/*
+ * Runtime System Calls
+ */
+
+/* Version for the Multi2Sim Runtime library implementation */
+#define M2S_CLRT_VERSION_MAJOR  1
+#define M2S_CLRT_VERSION_MINOR  752
+
+/* System call code to communicate with Multi2Sim */
+#define M2S_CLRT_SYS_CODE  329
+
+/* Function code to pass as a first argument of a system call */
+enum m2s_clrt_call_t
+{
+	m2s_clrt_call_invalid,
+#define X86_CLRT_DEFINE_CALL(name, code) m2s_clrt_call_##name = code,
+#include "../../src/arch/x86/emu/clrt.dat"
+#undef X86_CLRT_DEFINE_CALL
+	m2s_clrt_call_count
+};
+
+/* Executing in native mode (vs. simulation mode on Multi2Sim) */
+extern int m2s_clrt_native_mode;
+
 
 
 

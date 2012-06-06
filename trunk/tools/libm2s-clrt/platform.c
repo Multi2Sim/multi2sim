@@ -23,11 +23,49 @@
 #include <m2s-clrt.h>
 
 
+static char *m2s_clrt_err_version =
+	"\tYour OpenCL program is using a version of the Multi2Sim Runtime library\n"
+	"\tthat is incompatible with this version of Multi2Sim. Please download the\n"
+	"\tlatest Multi2Sim version, and recompile your application with the latest\n"
+	"\tMulti2Sim OpenCL Runtime library ('libm2s-clrt').\n";
+
+
+struct m2s_clrt_version_t
+{
+	int major;
+	int minor;
+};
+
 cl_int clGetPlatformIDs(
 	cl_uint num_entries,
 	cl_platform_id *platforms,
 	cl_uint *num_platforms)
 {
+	struct m2s_clrt_version_t version;
+	int ret;
+
+	/* It can be assumed that this is the first OpenCL function called by
+	 * the host program. It is checked here whether we're running in native
+	 * or simulation mode. If it's simulation mode, Multi2Sim's version is
+	 * checked for compatibility with the runtime library version. */
+	ret = syscall(M2S_CLRT_SYS_CODE, m2s_clrt_call_init, &version);
+
+	/* If the system call returns error, we are in native mode. */
+	if (ret == -1)
+		m2s_clrt_native_mode = 1;
+
+	/* On simulation mode, check Multi2sim version and Multi2Sim OpenCL
+	 * Runtime version compatibility. */
+	if (!m2s_clrt_native_mode)
+		if (version.major != M2S_CLRT_VERSION_MAJOR
+				|| version.minor < M2S_CLRT_VERSION_MINOR)
+			fatal("incompatible Multi2Sim Runtime version.\n"
+				"\tRuntime library v. %d.%d / "
+				"Host implementation v. %d.%d.\n%s",
+				M2S_CLRT_VERSION_MAJOR, M2S_CLRT_VERSION_MINOR,
+				version.major, version.minor, m2s_clrt_err_version);
+
+	/* Implementation */
 	__M2S_CLRT_NOT_IMPL__
 	return 0;
 }
