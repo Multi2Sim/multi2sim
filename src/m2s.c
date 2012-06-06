@@ -21,6 +21,7 @@
 #include <x86-timing.h>
 #include <fermi-timing.h>
 #include <visual-common.h>
+#include <southern-islands-asm.h>
 
 
 /* Multi2Sim version */
@@ -33,6 +34,7 @@ static char *syscall_debug_file_name = "";
 static char *opencl_debug_file_name = "";
 static char *cpu_disasm_file_name = "";
 static char *gpu_disasm_file_name = "";
+static char *si_disasm_file_name = "";
 static char *opengl_disasm_file_name = "";
 static char *fermi_disasm_file_name = "";
 static char *gpu_stack_debug_file_name = "";
@@ -449,6 +451,14 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* SI disassembler */
+		if (!strcmp(argv[argi], "--si-disasm"))
+		{
+			sim_need_argument(argc, argv, argi);
+			si_disasm_file_name = argv[++argi];
+			continue;
+		}
+
 		/* OpenGL shader binary disassembler */
 		if (!strcmp(argv[argi], "--opengl-disasm"))
 		{
@@ -765,6 +775,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 	/* Other checks */
 	if (*gpu_disasm_file_name && argc > 3)
 		fatal("option '--gpu-disasm' is incompatible with any other options.");
+	if (*si_disasm_file_name && argc > 3)
+		fatal("option '--si-disasm' is incompatible with any other options.");
 	if (*opengl_disasm_file_name && argc != 4)
 		fatal("option '--opengl-disasm' is incompatible with any other options.");	
 	if (*fermi_disasm_file_name && argc > 3)
@@ -877,6 +889,10 @@ int main(int argc, char **argv)
 	/* GPU disassembler tool */
 	if (*gpu_disasm_file_name)
 		evg_emu_disasm(gpu_disasm_file_name);
+
+	/* SI disassembler tool */
+	if (*si_disasm_file_name)
+		si_disasm(si_disasm_file_name);
 
 	/* OpenGL disassembler tool */
 	if (*opengl_disasm_file_name)
