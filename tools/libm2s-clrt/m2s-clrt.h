@@ -51,6 +51,9 @@ enum m2s_clrt_call_t
 /* Executing in native mode (vs. simulation mode on Multi2Sim) */
 extern int m2s_clrt_native_mode;
 
+/* Debug */
+void m2s_clrt_debug(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+
 
 
 
