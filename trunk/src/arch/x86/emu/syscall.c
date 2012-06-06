@@ -5003,6 +5003,7 @@ static int x86_sys_opencl_impl(void)
 
 
 
+
 /*
  * System call 'glut' (code 326)
  * Special system call code used by 'libm2s-glut'
@@ -5013,6 +5014,9 @@ static int x86_sys_glut_impl(void)
 	/* Run GLUT call */
 	return x86_glut_call();
 }
+
+
+
 
 /*
  * System call 'opengl' (code 327)
@@ -5025,6 +5029,9 @@ static int x86_sys_opengl_impl(void)
 	return x86_opengl_call();
 }
 
+
+
+
 /*
  * System call 'cuda' (code 328)
  * Special system call code used by 'libm2s-cuda'
@@ -5035,6 +5042,22 @@ static int x86_sys_cuda_impl(void)
 	/* Run CUDA call */
 	return frm_cuda_call();
 }
+
+
+
+/*
+ * System call 'clrt' (code 329)
+ * Special system call code used by 'libm2s-clrt'
+ */
+
+static int x86_sys_clrt_impl(void)
+{
+	/* Run OpenCL Runtime call */
+	return x86_clrt_call();
+}
+
+
+
 
 /*
  * Not implemented system calls
