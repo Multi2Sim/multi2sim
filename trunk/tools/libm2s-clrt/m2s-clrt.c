@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include <m2s-clrt.h>
 
@@ -52,9 +53,48 @@ int m2s_clrt_native_mode;
 
 
 
+/*
+ * Debug
+ *
+ * If environment variable 'M2S_CLRT_DEBUG' is set, the Multi2Sim OpenCL Runtime
+ * library will dump debug information about OpenCL calls, argument values,
+ * intermeidate actions, and return values.
+ */
+
+static int m2s_clrt_debug_initialized;
+static int m2s_clrt_debugging;
+
+void m2s_clrt_debug(char *fmt, ...)
+{
+	va_list va;
+	char *value;
+
+	/* Initialize debug */
+	if (!m2s_clrt_debug_initialized)
+	{
+		m2s_clrt_debug_initialized = 1;
+		value = getenv("M2S_CLRT_DEBUG");
+		if (value && !strcmp(value, "1"))
+			m2s_clrt_debugging = 1;
+	}
+
+	/* Exit if not debugging */
+	if (!m2s_clrt_debugging)
+		return;
+
+	/* Dump debug message */
+	va_start(va, fmt);
+	fprintf(stderr, "m2s-clrt:\t");
+	vfprintf(stderr, fmt, va);
+	fprintf(stderr, "\n");
+}
+
+
+
+
 
 /*
- * Public functions
+ * OpenCL Interface Functions
  */
 
 void *clGetExtensionFunctionAddress(
