@@ -1,0 +1,1 @@
+X86_CLRT_DEFINE_CALL(init, 1)

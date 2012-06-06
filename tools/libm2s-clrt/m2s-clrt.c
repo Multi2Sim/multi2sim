@@ -47,6 +47,10 @@ char *m2s_clrt_err_param_note =
 	"\terror code.\n";
 
 
+/* Native mode */
+int m2s_clrt_native_mode;
+
+
 
 
 /*
