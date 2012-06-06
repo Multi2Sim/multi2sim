@@ -44,6 +44,12 @@ cl_int clGetPlatformIDs(
 	struct m2s_clrt_version_t version;
 	int ret;
 
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tnum_entries = %d", num_entries);
+	m2s_clrt_debug("\tplatforms = %p", platforms);
+	m2s_clrt_debug("\tnum_platforms = %p", num_platforms);
+
 	/* It can be assumed that this is the first OpenCL function called by
 	 * the host program. It is checked here whether we're running in native
 	 * or simulation mode. If it's simulation mode, Multi2Sim's version is
