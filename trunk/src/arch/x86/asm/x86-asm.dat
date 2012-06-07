@@ -28,6 +28,8 @@ DEFINST(add_r8_rm8, 0x02, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(add_r16_rm16, 0x03, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(add_r32_rm32, 0x03, SKIP, SKIP, REG, SKIP, 0)
 
+DEFINST(addss_xmm_xmmm32, 0x0f, 0x58, SKIP, REG, SKIP, x86_prefix_rep)
+
 DEFINST(and_al_imm8, 0x24, SKIP, SKIP, SKIP, IB, 0)
 DEFINST(and_ax_imm16, 0x25, SKIP, SKIP, SKIP, IW, x86_prefix_op)
 DEFINST(and_eax_imm32, 0x25, SKIP, SKIP, SKIP, ID, 0)

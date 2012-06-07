@@ -364,6 +364,12 @@ enum x86_uinst_opcode_t
 	x86_uinst_xmm_mult,
 	x86_uinst_xmm_div,
 
+	x86_uinst_xmm_fp_add,
+	x86_uinst_xmm_fp_sub,
+	x86_uinst_xmm_fp_comp,
+	x86_uinst_xmm_fp_mult,
+	x86_uinst_xmm_fp_div,
+
 	x86_uinst_xmm_move,
 	x86_uinst_xmm_shuf,
 	x86_uinst_xmm_conv,

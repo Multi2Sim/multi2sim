@@ -37,6 +37,33 @@
 #define assert __COMPILATION_ERROR__
 
 
+void x86_isa_addss_xmm_xmmm32_impl()
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	x86_isa_load_xmm(dest.as_uchar);
+	x86_isa_load_xmmm32(src.as_uchar);
+
+	/* FIXME: could cause exceptions in speculative mode */
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"movdqu %1, %%xmm0\n\t"
+		"movdqu %0, %%xmm1\n\t"
+		"addss %%xmm0, %%xmm1\n\t"
+		"movdqu %%xmm1, %0\n\t"
+		: "=m" (dest)
+		: "m" (src)
+		: "xmm0", "xmm1"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_xmm(dest.as_uchar);
+
+	x86_uinst_new(x86_uinst_xmm_fp_add, x86_dep_xmmm32, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_cvttsd2si_r32_xmmm64_impl()
 {
 	uint8_t xmm[16];
