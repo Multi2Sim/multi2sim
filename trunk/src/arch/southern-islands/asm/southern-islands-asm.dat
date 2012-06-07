@@ -1,7 +1,14 @@
 DEFINST(S_MIN_U32,
-	"s_min_u32     %SDST, %SSRC0, %SSRC1",
+	" s_min_u32     %SDST, %SSRC0, %SSRC1",
 	SOP2,
 	7,
+	4
+)
+
+DEFINST(S_ENDPGM,
+	" s_endpgm",
+	SOPP,
+	1,
 	4
 )
 
@@ -12,17 +19,17 @@ DEFINST(S_WAITCNT,
 	4
 )
 
-DEFINST(S_BUFFER_LOAD_DWORD,
-        " s_buffer_load_dword s%GPR_SDST, s[%SBASE:%END_SBASE], 0x%OFFSET",
-        SMRD, 
-	8,
-	4
-)
-
 DEFINST(S_LOAD_DWORDX4,
         " s_load_dwordx4 s[%GPR_SDST:%END_SDST], s[%SBASE:%END_SBASE], 0x%OFFSET",
         SMRD,
 	2,
+	4
+)
+
+DEFINST(S_BUFFER_LOAD_DWORD,
+        " s_buffer_load_dword s%GPR_SDST, s[%SBASE:%END_SBASE], 0x%OFFSET",
+        SMRD, 
+	8,
 	4
 )
 
@@ -33,3 +40,37 @@ DEFINST(S_MOV_B32,
 	4
 )
 
+DEFINST(V_MUL_I32_I24,
+	" v_mul_i32_i24  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	9,
+	4
+)
+
+DEFINST(V_LSHLREV_B32,
+	" v_lshlrev_b32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	26,
+	4
+)
+
+DEFINST(V_ADD_I32,
+	" v_add_i32     %VDST, vcc, %SRC0, %VSRC1",
+	VOP2,
+	37,
+	4
+)
+
+DEFINST(T_BUFFER_LOAD_FORMAT_X,
+	" t_buffer_load_format_x  %VDATA, %VADDR, s[%SRSRC:%END_SRSRC], %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
+	MTBUF,
+	0,
+	8
+)
+
+DEFINST(T_BUFFER_STORE_FORMAT_X,
+	" t_buffer_store_format_x  %VDATA, %VADDR, s[%SRSRC:%END_SRSRC], %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
+	MTBUF,
+	4,
+	8
+)
