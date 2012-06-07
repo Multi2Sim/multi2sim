@@ -33,8 +33,16 @@
 #include <misc.h>
 
 #include "southern-islands-asm.h"
-#include "southern-islands-asm.h"
 
+
+/* 
+ * Memory configuration 
+ */
+
+#define CONSTANT_MEMORY_START 0
+#define CONSTANT_BUFFER_SIZE 1024
+#define CONSTANT_BUFFERS 2
+#define GLOBAL_MEMORY_START (CONSTANT_MEMORY_START + CONSTANT_BUFFERS*CONSTANT_BUFFER_SIZE)
 
 /*
  * OpenCL API Implementation
@@ -338,8 +346,7 @@ struct si_opencl_kernel_t
 	int group_count;
 
 	/* UAV lists */
-	struct list_t *uav_read_list;
-	struct list_t *uav_write_list;
+	struct list_t *uav_list;
 	struct list_t *constant_buffer_list;
 
 	/* State of the running kernel */
@@ -413,7 +420,6 @@ void si_opencl_event_free(struct si_opencl_event_t *event);
 uint32_t si_opencl_event_get_profiling_info(struct si_opencl_event_t *event, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size);
 long long si_opencl_event_timer(void);
-
 
 
 
@@ -535,7 +541,13 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_args(struct si_ndrange_t *ndrange);
 void si_ndrange_run(struct si_ndrange_t *ndrange);
 
+/* Access to constant memory */
+void si_isa_const_mem_write(int buffer, int offset, void *pvalue);
+void si_isa_const_mem_read(int buffer, int offset, void *pvalue);
 
+/* Access to UAV table */ 
+void si_isa_uav_table_write(int bank, int elem, int bytes, void *pvalue);
+void si_isa_uav_table_read(int bank, int elem, int bytes, void *pvalue);
 
 
 /*
@@ -646,6 +658,7 @@ enum si_inst_kind_t
 };
 #endif
 
+typedef uint32_t si_gpr_t;
 
 #define SI_MAX_STACK_SIZE  32
 
@@ -753,8 +766,6 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront);
 #define SI_MAX_GPR_ELEM  5
 #define SI_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
 
-typedef uint32_t si_gpr_t;
-
 /* Structure describing a memory access definition */
 struct si_mem_access_t
 {
@@ -780,8 +791,8 @@ struct si_work_item_t
 	struct si_ndrange_t *ndrange;
 
 	/* Work-item state */
-	si_gpr_t sgpr[128];  /* Scalar general purpose registers */
-	si_gpr_t vgpr[128];  /* Scalar general purpose registers */
+	si_gpr_t vgpr[128];  /* Vector general purpose registers */
+	si_gpr_t sgpr[128];  /* Scalar general purpose registers--used by scalar work item */
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
 	 * and executed as a burst at the end of an ALU group. */
@@ -834,6 +845,8 @@ void si_work_item_set_pred(struct si_work_item_t *work_item, int pred);
 int si_work_item_get_pred(struct si_work_item_t *work_item);
 void si_work_item_update_branch_digest(struct si_work_item_t *work_item,
 	long long inst_count, uint32_t inst_addr);
+void si_work_item_init_sreg_with_cb(struct si_work_item_t *work_item, int first_reg, int num_regs, 
+	int cb);
 
 
 
@@ -851,9 +864,10 @@ extern struct si_wavefront_t *si_isa_wavefront;
 extern struct si_work_item_t *si_isa_work_item;
 extern struct si_inst_t *si_isa_inst;
 
+/* FIXME Add short-cut for scalar work-item */
 /* Macros for quick access */
-#define SI_SGPR_ELEM(_gpr)  (si_isa_work_item->sgpr[(_gpr)])
-#define SI_SGPR_FLOAT_ELEM(_gpr)  (* (float *) &si_isa_work_item->sgpr[(_gpr)])
+#define SI_SGPR_ELEM(_gpr)  (si_isa_ndrange->scalar_work_item->sgpr[(_gpr)])
+#define SI_SGPR_FLOAT_ELEM(_gpr)  (* (float *) &si_isa_ndrange->scalar_work_item->sgpr[(_gpr)])
 
 
 /* Debugging */
@@ -886,29 +900,6 @@ typedef void (*si_isa_inst_func_t)(void);
 extern si_isa_inst_func_t *si_isa_inst_func;
 
 
-/* Table 8.5 in SI documentation */
-struct si_buffer_resource_t
-{
-	unsigned long long base_addr : 48;   /*    [47:0] */
-	unsigned int stride          : 14;   /*   [61:48] */
-	unsigned int cache_swizzle   : 1;    /*       62  */
-	unsigned int swizzle_enable  : 1;    /*       63  */
-	unsigned int num_records     : 32;   /*   [95:64] */
-	unsigned int dst_sel_x       : 3;    /*   [98:96] */
-	unsigned int dst_sel_y       : 3;    /*  [101:99] */
-	unsigned int dst_sel_z       : 3;    /* [104:102] */
-	unsigned int dst_sel_w       : 3;    /* [107:105] */
-	unsigned int num_format      : 3;    /* [110:108] */
-	unsigned int data_format     : 4;    /* [114:111] */
-	unsigned int elem_size       : 2;    /* [116:115] */
-	unsigned int index_stride    : 2;    /* [118:117] */
-	unsigned int add_tid_enable  : 1;    /*      119  */
-	unsigned int reserved        : 1;    /*      120  */
-	unsigned int hash_enable     : 1;    /*      121  */
-	unsigned int heap            : 1;    /*      122  */
-	unsigned int unused          : 3;    /* [125:123] */
-	unsigned int type            : 2;    /* [127:126] */
-};
 
 
 
@@ -918,18 +909,7 @@ struct si_buffer_resource_t
 
 struct si_emu_t
 {
-	/* Constant memory (constant buffers)
-	 * There are 15 constant buffers, referenced as CB0 to CB14.
-	 * Each buffer can hold up to 1024 four-component vectors.
-	 * These buffers will be represented as a memory object indexed as
-	 *   buffer_id * 1024 * 4 * 4 + vector_id * 4 * 4 + elem_id * 4
-	 */
-	struct mem_t *const_mem;
-
-	/* Flags indicating whether the first 9 vector positions of CB0
-	 * are initialized. A warning will be issued by the simulator
-	 * if an uninitialized element is used by the kernel. */
-	int const_mem_cb0_init[9 * 4];
+	struct mem_t *uav_table;
 
 	/* Global memory */
 	struct mem_t *global_mem;
@@ -971,7 +951,9 @@ extern struct si_emu_t *si_emu;
 void si_emu_init(void);
 void si_emu_done(void);
 
-void si_isa_init_buf_res(struct si_buffer_resource_t *buf_desc, unsigned int sreg);
+unsigned int si_isa_read_sgpr(int sreg);
+void si_isa_write_sgpr(int sreg, unsigned int value);
+void si_isa_init_buf_res(struct si_buffer_resource_t *buf_desc, int sreg);
 
 void si_emu_timer_start(void);
 void si_emu_timer_stop(void);

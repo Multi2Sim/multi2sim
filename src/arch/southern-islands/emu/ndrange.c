@@ -129,6 +129,11 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	ndrange->scalar_work_item = si_work_item_create();
 	ndrange->scalar_work_item->ndrange = ndrange;
 	ndrange->scalar_work_item->id = -1;
+
+	/* Initialize SGPRs */
+	/* FIXME These values need to be determined from the binary */
+	si_work_item_init_sreg_with_cb(ndrange->scalar_work_item, 4, 4, 0);
+	si_work_item_init_sreg_with_cb(ndrange->scalar_work_item, 8, 4, 1);
 	
 	/* Array of work-items */
 	ndrange->work_item_count = kernel->global_size;
@@ -210,7 +215,6 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 							wavefront->work_item_id_last = tid;
 							bit_map_set(wavefront->active_stack, work_item->id_in_wavefront, 1, 1);
 
-/* FIXME Update for SI */
 #if 0
 							/* Save local IDs in register R0 */
 							work_item->gpr[0].elem[0] = lidx;  /* R0.x */
@@ -236,9 +240,10 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		}
 	}
 
-	/* Assign names to wavefronts */
+	/* Initialize the wavefronts */
 	for (wid = 0; wid < ndrange->wavefront_count; wid++)
 	{
+		/* Assign names to wavefronts */
 		wavefront = ndrange->wavefronts[wid];
 		snprintf(wavefront->name, sizeof(wavefront->name), "wavefront[i%d-i%d]",
 			wavefront->work_item_id_first, wavefront->work_item_id_last);
@@ -270,8 +275,9 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			work_item->id_3d[1], work_item->id_3d[0]);
 		si_isa_debug("%4d %4d %4d %4d  ", work_group->id, work_group->id_3d[2],
 			work_group->id_3d[1], work_group->id_3d[0]);
-		si_isa_debug("%4d %4d %4d %4d  ", work_item->id_in_work_group, work_item->id_in_work_group_3d[2],
-			work_item->id_in_work_group_3d[1], work_item->id_in_work_group_3d[0]);
+		si_isa_debug("%4d %4d %4d %4d  ", work_item->id_in_work_group, 
+			work_item->id_in_work_group_3d[2], work_item->id_in_work_group_3d[1], 
+			work_item->id_in_work_group_3d[0]);
 		si_isa_debug("%20s.%-4d  ", wavefront->name, work_item->id_in_wavefront);
 		si_isa_debug("%20s.%-4d\n", work_group->name, work_item->id_in_work_group);
 	}
@@ -279,15 +285,180 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 }
 
 
-/* FIXME: constant memory should be member of 'si_emu' or 'ndrange'? */
 void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 {
+	struct si_opencl_kernel_t *kernel = ndrange->kernel;
+	uint32_t zero = 0;
+	float f;
+	
+       	/* CB0 bytes 0:15 */
+        
+	/* Global work size for the {x,y,z} dimensions */
+	si_isa_const_mem_write(0, 0, &kernel->global_size3[0]);
+	si_isa_const_mem_write(0, 4, &kernel->global_size3[1]);
+	si_isa_const_mem_write(0, 8, &kernel->global_size3[2]);
 
+        /* Number of work dimensions */
+	si_isa_const_mem_write(0, 12, &kernel->work_dim);
+
+       	/* CB0 bytes 16:31 */
+
+        /* Local work size for the {x,y,z} dimensions */
+	si_isa_const_mem_write(0, 16, &kernel->local_size3[0]);
+	si_isa_const_mem_write(0, 20, &kernel->local_size3[1]);
+	si_isa_const_mem_write(0, 24, &kernel->local_size3[2]);
+
+	/* 0  */
+	si_isa_const_mem_write(0, 28, &zero);
+
+       	/* CB0 bytes 32:47 */
+
+	/* Global work size {x,y,z} / local work size {x,y,z} */
+	si_isa_const_mem_write(0, 32, &kernel->group_count3[0]);
+	si_isa_const_mem_write(0, 36, &kernel->group_count3[1]);
+	si_isa_const_mem_write(0, 40, &kernel->group_count3[2]);
+
+	/* 0  */
+	si_isa_const_mem_write(0, 44, &zero);
+
+       	/* CB0 bytes 48:63 */
+
+	/* FIXME Offset to private memory ring (0 if private memory is not emulated) */
+
+	/* FIXME Private memory allocated per work_item */
+
+	/* 0  */
+	si_isa_const_mem_write(0, 56, &zero);
+
+	/* 0  */
+	si_isa_const_mem_write(0, 60, &zero);
+
+       	/* CB0 bytes 64:79 */
+
+	/* FIXME Offset to local memory ring (0 if local memory is not emulated) */
+
+	/* FIXME Local memory allocated per group */
+
+	/* 0 */
+	si_isa_const_mem_write(0, 72, &zero);
+
+	/* FIXME Pointer to location in global buffer where math library tables start. */
+        	
+       	/* CB0 bytes 80:95 */
+
+	/* 0.0 as IEEE-32bit float - required for math library. */
+	f = 0.0f;
+	si_isa_const_mem_write(0, 80, &f);
+
+	/* 0.5 as IEEE-32bit float - required for math library. */
+	f = 0.5f;
+	si_isa_const_mem_write(0, 84, &f);
+
+	/* 1.0 as IEEE-32bit float - required for math library. */
+	f = 1.0f;
+	si_isa_const_mem_write(0, 88, &f);
+
+	/* 2.0 as IEEE-32bit float - required for math library. */
+	f = 2.0f;
+	si_isa_const_mem_write(0, 92, &f);
+	
+       	/* CB0 bytes 96:111 */
+
+	/* Global offset for the {x,y,z} dimension of the work_item spawn */
+	si_isa_const_mem_write(0, 96, &zero);
+	si_isa_const_mem_write(0, 100, &zero);
+	si_isa_const_mem_write(0, 104, &zero);
+
+	/* Global single dimension flat offset: x * y * z */
+	si_isa_const_mem_write(0, 108, &zero);
+
+       	/* CB0 bytes 112:127 */
+
+	/* Group offset for the {x,y,z} dimensions of the work_item spawn */
+	si_isa_const_mem_write(0, 112, &zero);
+	si_isa_const_mem_write(0, 116, &zero);
+	si_isa_const_mem_write(0, 120, &zero);
+
+	/* Group single dimension flat offset, x * y * z */
+	si_isa_const_mem_write(0, 124, &zero);
+
+       	/* CB0 bytes 128:143 */
+
+	/* FIXME Offset in the global buffer where data segment exists */
+	/* FIXME Offset in buffer for printf support */
+	/* FIXME Size of the printf buffer */
 }
 
 
 void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 {
+	struct si_opencl_kernel_t *kernel = ndrange->kernel;
+	struct si_opencl_kernel_arg_t *arg;
+	int i;
+	int cb_index = 0;
+
+        /* Kernel arguments */
+        for (i = 0; i < list_count(kernel->arg_list); i++)
+        {
+                arg = list_get(kernel->arg_list, i);
+                assert(arg);
+
+                /* Check that argument was set */
+                if (!arg->set)
+                        fatal("kernel '%s': argument '%s' has not been assigned with 'clKernelSetArg'.",
+                                kernel->name, arg->name);
+
+                /* Process argument depending on its type */
+                switch (arg->kind)
+                {
+
+#if 0
+                case SI_OPENCL_KERNEL_ARG_KIND_VALUE:
+                {
+                        /* Value copied directly into device constant memory */
+                        si_isa_const_mem_write(1, cb_index, 0, &arg->value);
+                        si_opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i,
+                                        arg->value, cb_index);
+                        cb_index++;
+                        break;
+                }
+#endif
+
+		case SI_OPENCL_KERNEL_ARG_KIND_POINTER:
+		{
+                        switch (arg->mem_scope)
+			{
+
+                        case SI_OPENCL_MEM_SCOPE_GLOBAL:
+                        {
+                                struct si_opencl_mem_t *mem;
+				/* Base address is address of CB1 */
+
+                                /* Pointer in __global scope.
+                                 * Argument value is a pointer to an 'opencl_mem' object.
+                                 * It is translated first into a device memory pointer. */
+                                mem = si_opencl_object_get(SI_OPENCL_OBJ_MEM, arg->value);
+                                si_isa_const_mem_write(1, (cb_index*4)*4, &mem->device_ptr);
+                                si_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d],"
+                                                " device_ptr=0x%x\n", i, arg->value, cb_index,
+                                                mem->device_ptr);
+                                cb_index++;
+                                break;
+                        }
+
+                        default:
+                                fatal("%s: argument in memory scope %d not supported",
+                                        __FUNCTION__, arg->mem_scope);
+                        }
+                        break;
+                }
+
+		default:
+		{
+			fatal("%s: argument type not reconized", __FUNCTION__);
+		}
+		}	
+	}	
 }
 
 
@@ -328,14 +499,13 @@ void si_ndrange_run(struct si_ndrange_t *ndrange)
 		/* Execute an instruction from each work-group */
 		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next)
 		{
-			printf("work group %d\n", work_group->id); 
 			/* Save next running work-group */
 			work_group_next = work_group->running_list_next;
 
 			/* Run an instruction from each wavefront */
-			for (wavefront = work_group->running_list_head; wavefront; wavefront = wavefront_next)
+			for (wavefront = work_group->running_list_head; wavefront; 
+				wavefront = wavefront_next)
 			{
-				printf("wavefront id %d\n", wavefront->id); 
 				/* Save next running wavefront */
 				wavefront_next = wavefront->running_list_next;
 

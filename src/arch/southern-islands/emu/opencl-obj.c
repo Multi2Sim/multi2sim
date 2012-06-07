@@ -738,14 +738,12 @@ struct si_opencl_kernel_t *si_opencl_kernel_create()
 	kernel->arg_list = list_create();
 
 	/* Create the UAV-to-physical-address lookup lists */
-	kernel->uav_read_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
-	kernel->uav_write_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
+	kernel->uav_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
 	kernel->constant_buffer_list = list_create_with_size(25); /* For constant buffers (128 to 153) */
 	/* FIXME Replace with new list functionality */
 	for (i = 0; i < 12; i++) 
 	{
-		list_add(kernel->uav_read_list, NULL);
-		list_add(kernel->uav_write_list, NULL);
+		list_add(kernel->uav_list, NULL);
 	}
 	for (i = 0; i < 25; i++) 
 		list_add(kernel->constant_buffer_list, NULL);
@@ -766,8 +764,7 @@ void si_opencl_kernel_free(struct si_opencl_kernel_t *kernel)
 	list_free(kernel->arg_list);
 
 	/* Free lists */
-	list_free(kernel->uav_read_list);
-	list_free(kernel->uav_write_list);
+	list_free(kernel->uav_list);
 	list_free(kernel->constant_buffer_list);
 
 	/* AMD Binary (internal ELF) */

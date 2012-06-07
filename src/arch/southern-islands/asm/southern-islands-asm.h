@@ -535,5 +535,31 @@ void si_bin_file_free(struct si_bin_file_t *bin);
 void si_disasm(char* path);
 int si_inst_decode(void *buf, struct si_inst_t *inst);
 
+
+/* Table 8.5 in SI documentation */
+struct si_buffer_resource_t
+{
+	unsigned long long base_addr : 48;   /*    [47:0] */
+	unsigned int stride          : 14;   /*   [61:48] */
+	unsigned int cache_swizzle   : 1;    /*       62  */
+	unsigned int swizzle_enable  : 1;    /*       63  */
+	unsigned int num_records     : 32;   /*   [95:64] */
+	unsigned int dst_sel_x       : 3;    /*   [98:96] */
+	unsigned int dst_sel_y       : 3;    /*  [101:99] */
+	unsigned int dst_sel_z       : 3;    /* [104:102] */
+	unsigned int dst_sel_w       : 3;    /* [107:105] */
+	unsigned int num_format      : 3;    /* [110:108] */
+	unsigned int data_format     : 4;    /* [114:111] */
+	unsigned int elem_size       : 2;    /* [116:115] */
+	unsigned int index_stride    : 2;    /* [118:117] */
+	unsigned int add_tid_enable  : 1;    /*      119  */
+	unsigned int reserved        : 1;    /*      120  */
+	unsigned int hash_enable     : 1;    /*      121  */
+	unsigned int heap            : 1;    /*      122  */
+	unsigned int unused          : 3;    /* [125:123] */
+	unsigned int type            : 2;    /* [127:126] */
+};
+
+
 #endif
 

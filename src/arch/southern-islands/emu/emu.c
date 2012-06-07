@@ -70,10 +70,11 @@ void si_emu_init()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	si_emu->const_mem = mem_create();
-	si_emu->const_mem->safe = 0;
 	si_emu->global_mem = mem_create();
 	si_emu->global_mem->safe = 0;
+
+	/* CB0 and CB1 are going to map to the beginning of the virtual address space */
+	si_emu->global_mem_top = GLOBAL_MEMORY_START;
 
 	/* Initialize disassembler (decoding tables...) */
 	si_disasm_init();
@@ -106,7 +107,6 @@ void si_emu_done()
 	si_isa_done();
 
 	/* Finalize GPU kernel */
-	mem_free(si_emu->const_mem);
 	mem_free(si_emu->global_mem);
 	free(si_emu);
 }

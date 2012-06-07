@@ -123,3 +123,20 @@ void si_work_item_update_branch_digest(struct si_work_item_t *work_item,
 	/* Update branch digest */
 	work_item->branch_digest ^= mask;
 }
+
+
+void si_work_item_init_sreg_with_cb(struct si_work_item_t *work_item, int first_reg, int num_regs, 
+	int cb)
+{
+	struct si_buffer_resource_t res_desc;
+
+	assert(num_regs == 4);
+	assert(sizeof(struct si_buffer_resource_t) == 16);
+
+	/* FIXME Populate rest of resource descriptor? */
+	res_desc.base_addr = CONSTANT_MEMORY_START + cb*CONSTANT_BUFFER_SIZE;
+
+	memcpy(&work_item->sgpr[first_reg], &res_desc, 16);
+}
+
+
