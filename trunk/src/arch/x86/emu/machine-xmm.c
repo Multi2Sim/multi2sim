@@ -449,7 +449,27 @@ void x86_isa_ptest_xmm_xmmm128_impl()
 
 void x86_isa_pxor_xmm_xmmm128_impl()
 {
-	x86_isa_error("%s: not implemented", __FUNCTION__);
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	x86_isa_load_xmm(dest.as_uchar);
+	x86_isa_load_xmmm128(src.as_uchar);
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"movdqu %1, %%xmm0\n\t"
+		"movdqu %0, %%xmm1\n\t"
+		"pxor %%xmm0, %%xmm1\n\t"
+		"movdqu %%xmm1, %0\n\t"
+		: "=m" (dest)
+		: "m" (src)
+		: "xmm0", "xmm1"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_xmm(dest.as_uchar);
+
+	x86_uinst_new(x86_uinst_xmm_xor, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 

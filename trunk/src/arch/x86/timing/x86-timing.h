@@ -225,6 +225,10 @@ enum x86_fu_class_t
 	x86_fu_fpdiv,
 	x86_fu_fpcomplex,
 
+	x86_fu_xmm_int,
+	x86_fu_xmm_float,
+	x86_fu_xmm_logic,
+
 	x86_fu_count
 };
 
