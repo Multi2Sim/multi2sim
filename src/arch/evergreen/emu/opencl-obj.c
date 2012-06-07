@@ -966,7 +966,7 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 			}
 			else if (!strcmp(line_ptrs[6], "hc"))
 			{
-				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_GLOBAL;
+				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_CONSTANT;
 				arg->uav = atoi(line_ptrs[7]);
 			}
 			else
