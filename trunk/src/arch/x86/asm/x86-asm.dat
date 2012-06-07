@@ -382,7 +382,7 @@ DEFINST(movdqu_xmmm128_xmm, 0x0f, 0x7f, SKIP, REG, SKIP, x86_prefix_rep)
 DEFINST(movhpd_xmm_m64, 0x0f, 0x16, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(movhpd_m64_xmm, 0x0f, 0x17, SKIP, REG, SKIP, x86_prefix_op)
 
-DEFINST(movlhps, 0x0f, 0x16, SKIP, REG, SKIP, 0)
+DEFINST(movlhps_xmm_xmmm128, 0x0f, 0x16, SKIP, REG, SKIP, 0)
 
 DEFINST(movlpd_xmm_m64, 0x0f, 0x12, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(movlpd_m64_xmm, 0x0f, 0x13, SKIP, REG, SKIP, x86_prefix_op)
@@ -631,6 +631,8 @@ DEFINST(sfence, 0x0f, 0xae, SKIP, 7, SKIP, 0)
 
 DEFINST(shld_rm32_r32_imm8, 0x0f, 0xa4, SKIP, REG, IB, 0)
 DEFINST(shld_rm32_r32_cl, 0x0f, 0xa5, SKIP, REG, SKIP, 0)
+
+DEFINST(shufps_xmm_xmmm128_imm8, 0x0f, 0xc6, SKIP, REG, IB, 0)
 
 DEFINST(shrd_rm32_r32_imm8, 0x0f, 0xac, SKIP, REG, IB, 0)
 DEFINST(shrd_rm32_r32_cl, 0x0f, 0xad, SKIP, REG, SKIP, 0)

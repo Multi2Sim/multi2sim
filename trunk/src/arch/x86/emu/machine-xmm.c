@@ -202,7 +202,7 @@ void x86_isa_movhpd_m64_xmm_impl()
 }
 
 
-void x86_isa_movlhps_impl()
+void x86_isa_movlhps_xmm_xmmm128_impl()
 {
 	union x86_xmm_reg_t xmm1;
 	union x86_xmm_reg_t xmm2;
@@ -452,3 +452,23 @@ void x86_isa_pxor_xmm_xmmm128_impl()
 	x86_isa_error("%s: not implemented", __FUNCTION__);
 }
 
+
+void x86_isa_shufps_xmm_xmmm128_imm8_impl()
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+	unsigned char imm;
+
+	x86_isa_load_xmm(dest.as_uchar);
+	x86_isa_load_xmmm128(src.as_uchar);
+	imm = x86_isa_inst.imm.b;
+
+	dest.as_int[0] = dest.as_int[imm & 3];
+	dest.as_int[1] = dest.as_int[(imm >> 2) & 3];
+	dest.as_int[2] = src.as_int[(imm >> 4) & 3];
+	dest.as_int[3] = src.as_int[(imm >> 6) & 3];
+
+	x86_isa_store_xmm(dest.as_uchar);
+
+	x86_uinst_new(x86_uinst_xmm_shuf, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
