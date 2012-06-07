@@ -1667,6 +1667,9 @@ int si_opencl_func_run(int code, unsigned int *args)
 			/* If arg is an image, add it to the appropriate UAV list*/
 			if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_IMAGE) 
 			{
+				/* FIXME */
+				assert(0);
+				/*
 				mem = si_opencl_object_get(SI_OPENCL_OBJ_MEM, arg->value);
 
 				if (arg->access_type == SI_OPENCL_KERNEL_ARG_READ_ONLY) 
@@ -1682,25 +1685,28 @@ int si_opencl_func_run(int code, unsigned int *args)
 					fatal("%s: unsupported image access type (%d)\n", err_prefix, 
 						arg->access_type);
 				}	
+				*/
 			}
 
-			/* If arg is a pointer and not in UAV 11, then it is 
-			   presumably a constant pointer */
-			/* TODO Check if __read_only or __write_only affects uav number */
-			if(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER && arg->uav != 11) 
+			/* Add the uav to the UAV list */
+			if(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER) 
 			{	
 				mem = si_opencl_object_get(SI_OPENCL_OBJ_MEM, arg->value);
-				list_set(kernel->constant_buffer_list, arg->uav, mem);
+				list_set(kernel->uav_list, arg->uav, mem);
 			}
 		}
-			
 
 		/* Global work sizes */
 		kernel->global_size3[1] = 1;
 		kernel->global_size3[2] = 1;
 		for (i = 0; i < work_dim; i++)
-			mem_read(x86_isa_mem, global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
-		kernel->global_size = kernel->global_size3[0] * kernel->global_size3[1] * kernel->global_size3[2];
+		{
+			mem_read(x86_isa_mem, global_work_size_ptr + i * 4, 4, 
+					&kernel->global_size3[i]);
+		}
+
+		kernel->global_size = kernel->global_size3[0] * kernel->global_size3[1] * 
+			kernel->global_size3[2];
 		si_opencl_debug("    global_work_size=");
 		si_opencl_debug_array(work_dim, kernel->global_size3);
 		si_opencl_debug("\n");
@@ -1772,13 +1778,8 @@ int si_opencl_func_run(int code, unsigned int *args)
 		else
 		{
 			assert(0);
-			/* The following function is currently the only
-			 * dependence with 'libgpuarch'. This is not safe, but
-			 * let's just include the external reference here. */
-			void si_gpu_run(struct si_ndrange_t *ndrange);
-			/* FIXME!!! - this will be fixed when asynchronous execution is
-			 * implemented. */
-			// XXX Emulate GPU kernel here
+
+			// FIXME Simulate the GPU kernel here
 			//si_gpu_run(kernel->ndrange);///
 		}
 

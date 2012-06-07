@@ -141,6 +141,14 @@ struct pt_note_constant_buffer_mask_t
 	Elf32_Word size;  /* Size in vec4f constants of the buffer */
 };
 
+struct pt_note_uav_entry_t
+{
+	Elf32_Word id;  /* UAV number */
+	Elf32_Word unknown1;  /* FIXME */
+	Elf32_Word unknown2;  /* FIXME */
+	Elf32_Word unknown3;  /* FIXME */
+};
+
 
 struct pt_note_prog_info_entry_t
 {
@@ -363,8 +371,25 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 		break;
 	
 	case 16:  /* ELF_NOTE_ATI_UAV */
+	{	
+		int uav_entry_count;
+		struct pt_note_uav_entry_t *uav_entry;
+		int i;
+
+		assert(header->descsz % sizeof(struct pt_note_uav_entry_t) == 0);
+		uav_entry_count = header->descsz / sizeof(struct pt_note_uav_entry_t);
+		elf_debug("\tnote (%d entries)\n", uav_entry_count);
+
+		/* Decode entries */
+		for (i = 0; i < uav_entry_count; i++) {
+			uav_entry = desc + i * sizeof(struct pt_note_uav_entry_t);
+			elf_debug("\tuav_entry[%d].uav = %d [%d, %d, %d]\n", i, uav_entry->id,
+				uav_entry->unknown1, uav_entry->unknown2, uav_entry->unknown3);
+		}
 		break;
-	
+	}	
+
+
 	case 17:  /* ELF_NOTE_ATI_UAV_OP_MASK */
 		break;
 
