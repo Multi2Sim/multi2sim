@@ -311,10 +311,13 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 	}
 
+#if 0
 	/* If done, set work group to done */
 	if (1) 
 	{
 		si_work_group_clear_status(si_isa_work_group, si_work_group_running);
 		si_work_group_set_status(si_isa_work_group, si_work_group_finished);
 	}
+#endif
 }
+

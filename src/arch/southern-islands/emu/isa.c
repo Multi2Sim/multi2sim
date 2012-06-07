@@ -84,7 +84,7 @@ void si_isa_done()
 /* Helper functions */
 
 /* Read SGPR */
-unsigned int si_read_sgpr(unsigned int sreg)
+unsigned int si_isa_read_sgpr(int sreg)
 {
 	/* FIXME */
 	/* assert(sreg in range) */
@@ -92,18 +92,64 @@ unsigned int si_read_sgpr(unsigned int sreg)
 	return SI_SGPR_ELEM(sreg);
 }
 
+/* Write SGPR */
+void si_isa_write_sgpr(int sreg, unsigned int value)
+{
+	/* FIXME */
+	/* assert(sreg in range) */
+
+	SI_SGPR_ELEM(sreg) = value;
+}
+
 /* Initialize a buffer resource descriptor */
-void si_isa_init_buf_res(struct si_buffer_resource_t *buf_desc, unsigned int sreg)
+void si_isa_init_buf_res(struct si_buffer_resource_t *buf_desc, int sreg)
 {
 	assert(buf_desc);
 
-	unsigned int values[4];
-	int i;
-
-	for(i = 0; i < 4; i++)
-	{
-		values[i] = si_read_sgpr(sreg+i);
-	}
-
-	memcpy(buf_desc, values, sizeof(unsigned int)*4);
+	memcpy(buf_desc, &si_isa_ndrange->scalar_work_item->sgpr[sreg], sizeof(unsigned int)*4);
 }
+
+
+/*
+ * UAV Table
+ */
+
+void si_isa_uav_table_write(int bank, int elem, int bytes, void *pvalue)
+{
+	
+}
+void si_isa_uav_table_read(int bank, int elem, int bytes, void *pvalue)
+{
+
+}
+
+
+/*
+ * Constant Memory
+ */
+
+void si_isa_const_mem_write(int buffer, int offset, void *pvalue)
+{
+	uint32_t addr; 
+
+	assert(buffer < CONSTANT_BUFFERS);
+
+	addr = CONSTANT_MEMORY_START + buffer*CONSTANT_BUFFER_SIZE + offset;
+
+	/* Write */
+        mem_write(si_emu->global_mem, addr, 4, pvalue);
+}
+
+
+void si_isa_const_mem_read(int buffer, int offset, void *pvalue)
+{
+	uint32_t addr; 
+
+	assert(buffer < CONSTANT_BUFFERS);
+	
+	addr = CONSTANT_MEMORY_START + buffer*CONSTANT_BUFFER_SIZE + offset;
+
+        /* Read */
+        mem_read(si_emu->global_mem, addr, 4, pvalue);
+}
+
