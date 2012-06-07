@@ -88,7 +88,7 @@ char *mem_config_help =
 	"      If 'HighNetwork' points to an external network, node that the module is\n"
 	"      mapped to.\n"
 	"  LowModules = <mod1> [<mod2> ...]\n"
-	"      List of lower-level modules. For a cache module, this variable is rquired.\n"
+	"      List of lower-level modules. For a cache module, this variable is required.\n"
 	"      If there is only one lower-level module, it serves the entire address\n"
 	"      space for the current module. If there are several lower-level modules,\n"
 	"      each served a disjoint subset of the address space. This variable should\n"
@@ -429,15 +429,24 @@ static void mem_config_read_networks(struct config_t *config)
 	mem_debug("\n");
 
 	/* Add network pointers to configuration file. This needs to be done separately,
-	 * because configuration file writes alter enumeration of sections. */
+	 * because configuration file writes alter enumeration of sections.
+	 * Also check integrity of sections. */
 	for (i = 0; i < list_count(mem_system->net_list); i++)
 	{
+		/* Get network section name */
 		net = list_get(mem_system->net_list, i);
 		snprintf(buf, sizeof buf, "Network %s", net->name);
 		assert(config_section_exists(config, buf));
-		config_write_ptr(config, buf, "ptr", net);
-	}
 
+		/* Add pointer */
+		config_write_ptr(config, buf, "ptr", net);
+
+		/* Check section integrity */
+		config_var_enforce(config, buf, "DefaultInputBufferSize");
+		config_var_enforce(config, buf, "DefaultOutputBufferSize");
+		config_var_enforce(config, buf, "DefaultBandwidth");
+		config_section_check(config, buf);
+	}
 }
 
 
@@ -879,9 +888,11 @@ static void mem_config_read_modules(struct config_t *config)
 	mem_debug("\n");
 
 	/* Add module pointers to configuration file. This needs to be done separately,
-	 * because configuration file writes alter enumeration of sections. */
+	 * because configuration file writes alter enumeration of sections.
+	 * Also check integrity of sections. */
 	for (i = 0; i < list_count(mem_system->mod_list); i++)
 	{
+		/* Get module and section */
 		mod = list_get(mem_system->mod_list, i);
 		snprintf(buf, sizeof buf, "Module %s", mod->name);
 		assert(config_section_exists(config, buf));
@@ -957,7 +968,8 @@ static void mem_config_read_low_modules(struct config_t *config)
 		/* Low module name list */
 		low_mod_name_list = config_read_string(config, buf, "LowModules", "");
 		if (!*low_mod_name_list)
-			continue;
+			fatal("%s: [ %s ]: missing or invalid value for 'LowModules'.\n%s",
+				mem_config_file_name, buf, err_mem_config_note);
 
 		/* Create copy of low module name list */
 		low_mod_name_list = strdup(low_mod_name_list);
