@@ -1687,7 +1687,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			/* If arg is a pointer and not in UAV 11, then it is 
 			   presumably a constant pointer */
 			/* TODO Check if __read_only or __write_only affects uav number */
-			if(arg->kind == EVG_OPENCL_KERNEL_ARG_KIND_POINTER && arg->uav != 11) 
+			if(arg->mem_scope == EVG_OPENCL_MEM_SCOPE_CONSTANT) 
 			{	
 				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
 				list_set(kernel->constant_buffer_list, arg->uav, mem);
