@@ -225,7 +225,7 @@ struct si_fmt_ds_t
         unsigned int vdst     : 8;   /* [63:56] */
 };
 
-struct si_fmt_mubuf_t
+struct si_fmt_mtbuf_t
 {
         unsigned int offset   : 12;  /*  [11:0] */
         unsigned int offen    : 1;   /*     12  */
@@ -245,7 +245,7 @@ struct si_fmt_mubuf_t
         unsigned int soffset  : 8;   /* [63:56] */
 };
 
-struct si_fmt_mtbuf_t
+struct si_fmt_mubuf_t
 {
         unsigned int offset    : 12;  /*  [11:0] */
         unsigned int offen     : 1;   /*     12  */
