@@ -417,6 +417,7 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 			switch (arg->mem_scope)
 			{
 
+			case EVG_OPENCL_MEM_SCOPE_CONSTANT:
 			case EVG_OPENCL_MEM_SCOPE_GLOBAL:
 			{
 				struct evg_opencl_mem_t *mem;
