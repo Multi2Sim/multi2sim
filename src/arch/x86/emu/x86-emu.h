@@ -308,8 +308,8 @@ enum x86_uinst_flag_t
 
 /* Micro-instruction opcodes.
  * WARNING: when the set of micro-instructions is modified, also update:
- *   - Variable 'x86_uinst_info' (uinst.c).
- *   - Variable 'fu_class_table' (src/libcpuarch/fu.c). 
+ *   - Variable 'x86_uinst_info' (src/arch/x86/emu/uinst.c).
+ *   - Variable 'fu_class_table' (src/arch/x86/timing/fu.c).
  *   - M2S Guide (CISC instruction decoding) */
 enum x86_uinst_opcode_t
 {
@@ -350,6 +350,19 @@ enum x86_uinst_opcode_t
 
 	x86_uinst_fp_push,
 	x86_uinst_fp_pop,
+
+	x86_uinst_xmm_and,
+	x86_uinst_xmm_or,
+	x86_uinst_xmm_xor,
+	x86_uinst_xmm_not,
+	x86_uinst_xmm_shift,
+	x86_uinst_xmm_sign,
+
+	x86_uinst_xmm_add,
+	x86_uinst_xmm_sub,
+	x86_uinst_xmm_comp,
+	x86_uinst_xmm_mult,
+	x86_uinst_xmm_div,
 
 	x86_uinst_xmm_move,
 	x86_uinst_xmm_shuf,

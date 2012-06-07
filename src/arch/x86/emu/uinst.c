@@ -149,9 +149,22 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "fpush", X86_UINST_FP },
 	{ "fpop", X86_UINST_FP },
 
-	{ "xmove", X86_UINST_XMM },
-	{ "xshuf", X86_UINST_XMM },
-	{ "xconv", X86_UINST_XMM },
+	{ "x-and", X86_UINST_XMM },
+	{ "x-or", X86_UINST_XMM },
+	{ "x-xor", X86_UINST_XMM },
+	{ "x-not", X86_UINST_XMM },
+	{ "x-shift", X86_UINST_XMM },
+	{ "x-sign", X86_UINST_XMM },
+
+	{ "x-add", X86_UINST_XMM },
+	{ "x-sub", X86_UINST_XMM },
+	{ "x-comp", X86_UINST_XMM },
+	{ "x-mult", X86_UINST_XMM },
+	{ "x-div", X86_UINST_XMM },
+
+	{ "x-move", X86_UINST_XMM },
+	{ "x-shuf", X86_UINST_XMM },
+	{ "x-conv", X86_UINST_XMM },
 
 	{ "load", X86_UINST_MEM },
 	{ "store", X86_UINST_MEM },

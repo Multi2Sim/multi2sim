@@ -78,9 +78,22 @@ static enum x86_fu_class_t fu_class_table[x86_uinst_opcode_count] =
 	x86_fu_none,  /* x86_uinst_fp_push */
 	x86_fu_none,  /* x86_uinst_fp_pop */
 
-	x86_fu_none,  /* x86_uinst_xmm_move FIXME */
-	x86_fu_none,  /* x86_uinst_xmm_shuf FIXME */
-	x86_fu_none,  /* x86_uinst_xmm_conv FIXME */
+	x86_fu_xmm_logic,  /* x86_uinst_xmm_and */
+	x86_fu_xmm_logic,  /* x86_uinst_xmm_or */
+	x86_fu_xmm_logic,  /* x86_uinst_xmm_xor */
+	x86_fu_xmm_logic,  /* x86_uinst_xmm_not */
+	x86_fu_xmm_logic,  /* x86_uinst_xmm_shift */
+	x86_fu_xmm_logic,  /* x86_uinst_xmm_sign */
+
+	x86_fu_xmm_int,  /* x86_uinst_xmm_add */
+	x86_fu_xmm_int,  /* x86_uinst_xmm_sub */
+	x86_fu_xmm_int,  /* x86_uinst_xmm_comp */
+	x86_fu_xmm_int,  /* x86_uinst_xmm_mult */
+	x86_fu_xmm_int,  /* x86_uinst_xmm_div */
+
+	x86_fu_xmm_logic,  /* x86_uinst_xmm_move */
+	x86_fu_xmm_logic,  /* x86_uinst_xmm_shuf */
+	x86_fu_xmm_float,  /* x86_uinst_xmm_conv */
 
 	x86_fu_none,  /* x86_uinst_load */
 	x86_fu_none,  /* x86_uinst_store */

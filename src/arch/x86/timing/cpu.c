@@ -167,6 +167,9 @@ char *x86_cpu_config_help =
 	"      FpMult      Floating-point multiplier\n"
 	"      FpDiv       Floating-point divider\n"
 	"      FpComplex   Operator for complex floating-point computations\n"
+	"      XMMInt      XMM integer unit\n"
+	"      XMMFloat    XMM floating-point unit\n"
+	"      XMMLogic    XMM logic unit\n"
 	"  Possible values for <field> are:\n"
 	"      Count       Number of functional units of a given kind.\n"
 	"      OpLat       Latency of the operator.\n"
@@ -384,6 +387,18 @@ static void x86_cpu_config_check(void)
 	x86_fu_res_pool[x86_fu_fpcomplex].oplat = config_read_int(config, section, "FpComplex.OpLat", 40);
 	x86_fu_res_pool[x86_fu_fpcomplex].issuelat = config_read_int(config, section, "FpComplex.IssueLat", 40);
 
+	x86_fu_res_pool[x86_fu_xmm_int].count = config_read_int(config, section, "XMMInt.Count", 1);
+	x86_fu_res_pool[x86_fu_xmm_int].oplat = config_read_int(config, section, "XMMInt.OpLat", 2);
+	x86_fu_res_pool[x86_fu_xmm_int].issuelat = config_read_int(config, section, "XMMInt.IssueLat", 2);
+
+	x86_fu_res_pool[x86_fu_xmm_float].count = config_read_int(config, section, "XMMFloat.Count", 1);
+	x86_fu_res_pool[x86_fu_xmm_float].oplat = config_read_int(config, section, "XMMFloat.OpLat", 10);
+	x86_fu_res_pool[x86_fu_xmm_float].issuelat = config_read_int(config, section, "XMMFloat.IssueLat", 10);
+
+	x86_fu_res_pool[x86_fu_xmm_logic].count = config_read_int(config, section, "XMMLogic.Count", 1);
+	x86_fu_res_pool[x86_fu_xmm_logic].oplat = config_read_int(config, section, "XMMLogic.OpLat", 1);
+	x86_fu_res_pool[x86_fu_xmm_logic].issuelat = config_read_int(config, section, "XMMLogic.IssueLat", 1);
+
 
 	/* Branch Predictor */
 
@@ -502,6 +517,18 @@ static void x86_cpu_config_dump(FILE *f)
 	fprintf(f, "FpComplex.Count = %d\n", x86_fu_res_pool[x86_fu_fpcomplex].count);
 	fprintf(f, "FpComplex.OpLat = %d\n", x86_fu_res_pool[x86_fu_fpcomplex].oplat);
 	fprintf(f, "FpComplex.IssueLat = %d\n", x86_fu_res_pool[x86_fu_fpcomplex].issuelat);
+
+	fprintf(f, "XMMInt.Count = %d\n", x86_fu_res_pool[x86_fu_xmm_int].count);
+	fprintf(f, "XMMInt.OpLat = %d\n", x86_fu_res_pool[x86_fu_xmm_int].oplat);
+	fprintf(f, "XMMInt.IssueLat = %d\n", x86_fu_res_pool[x86_fu_xmm_int].issuelat);
+
+	fprintf(f, "XMMFloat.Count = %d\n", x86_fu_res_pool[x86_fu_xmm_int].count);
+	fprintf(f, "XMMFloat.OpLat = %d\n", x86_fu_res_pool[x86_fu_xmm_int].oplat);
+	fprintf(f, "XMMFloat.IssueLat = %d\n", x86_fu_res_pool[x86_fu_xmm_int].issuelat);
+
+	fprintf(f, "XMMLogic.Count = %d\n", x86_fu_res_pool[x86_fu_xmm_logic].count);
+	fprintf(f, "XMMLogic.OpLat = %d\n", x86_fu_res_pool[x86_fu_xmm_logic].oplat);
+	fprintf(f, "XMMLogic.IssueLat = %d\n", x86_fu_res_pool[x86_fu_xmm_logic].issuelat);
 
 	fprintf(f, "\n");
 
