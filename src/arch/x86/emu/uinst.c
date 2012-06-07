@@ -162,6 +162,12 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "x-mult", X86_UINST_XMM },
 	{ "x-div", X86_UINST_XMM },
 
+	{ "x-fadd", X86_UINST_XMM },
+	{ "x-fsub", X86_UINST_XMM },
+	{ "x-fcomp", X86_UINST_XMM },
+	{ "x-fmult", X86_UINST_XMM },
+	{ "x-fdiv", X86_UINST_XMM },
+
 	{ "x-move", X86_UINST_XMM },
 	{ "x-shuf", X86_UINST_XMM },
 	{ "x-conv", X86_UINST_XMM },
