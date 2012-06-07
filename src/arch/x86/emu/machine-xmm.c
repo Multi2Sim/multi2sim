@@ -202,6 +202,20 @@ void x86_isa_movhpd_m64_xmm_impl()
 }
 
 
+void x86_isa_movlhps_impl()
+{
+	union x86_xmm_reg_t xmm1;
+	union x86_xmm_reg_t xmm2;
+
+	x86_isa_load_xmm(xmm1.as_uchar);
+	x86_isa_load_xmmm128(xmm2.as_uchar);
+	xmm1.as_int64[1] = xmm2.as_uint64[0];
+	x86_isa_store_xmm(xmm1.as_uchar);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_movlpd_xmm_m64_impl()
 {
 	union x86_xmm_reg_t xmm;
