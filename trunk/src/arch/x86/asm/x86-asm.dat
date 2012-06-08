@@ -138,6 +138,8 @@ DEFINST(dec_ir32, 0x48|INDEX, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(div_rm8, 0xf6, SKIP, SKIP, 6, SKIP, 0)
 DEFINST(div_rm32, 0xf7, SKIP, SKIP, 6, SKIP, 0)
 
+DEFINST(divss_xmm_xmmm32, 0x0f, 0x5e, SKIP, REG, SKIP, x86_prefix_rep)
+
 DEFINST(f2xm1, 0xd9, 0xf0, SKIP, SKIP, SKIP, 0)
 
 DEFINST(fabs, 0xd9, 0xe1, SKIP, SKIP, SKIP, 0)
@@ -662,6 +664,8 @@ DEFINST(sub_rm32_r32, 0x29, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(sub_r8_rm8, 0x2a, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(sub_r16_rm16, 0x2b, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(sub_r32_rm32, 0x2b, SKIP, SKIP, REG, SKIP, 0)
+
+DEFINST(subss_xmm_xmmm32, 0x0f, 0x5c, SKIP, REG, SKIP, x86_prefix_rep)
 
 DEFINST(test_al_imm8, 0xa8, SKIP, SKIP, SKIP, IB, 0)
 DEFINST(test_ax_imm16, 0xa9, SKIP, SKIP, SKIP, IW, x86_prefix_op)
