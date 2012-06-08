@@ -73,6 +73,11 @@ void si_isa_S_LOAD_DWORDX4_impl()
 	NOT_IMPL();
 }
 
+void si_isa_S_BUFFER_LOAD_DWORDX2_impl()
+{
+	NOT_IMPL();
+}
+
 void si_isa_S_MIN_U32_impl()
 {
 	NOT_IMPL();
@@ -104,6 +109,11 @@ void si_isa_V_LSHLREV_B32_impl()
 }
 
 void si_isa_V_ADD_I32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_CMP_GT_I32_impl()
 {
 	NOT_IMPL();
 }
