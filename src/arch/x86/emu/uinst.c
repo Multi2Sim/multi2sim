@@ -168,6 +168,8 @@ struct x86_uinst_info_t x86_uinst_info[x86_uinst_opcode_count] =
 	{ "x-fmult", X86_UINST_XMM },
 	{ "x-fdiv", X86_UINST_XMM },
 
+	{ "x-fsqrt", X86_UINST_XMM },
+
 	{ "x-move", X86_UINST_XMM },
 	{ "x-shuf", X86_UINST_XMM },
 	{ "x-conv", X86_UINST_XMM },
