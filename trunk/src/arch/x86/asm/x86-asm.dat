@@ -411,6 +411,8 @@ DEFINST(movzx_r32_rm16, 0x0f, 0xb7, SKIP, REG, SKIP, 0)
 
 DEFINST(mul_rm32, 0xf7, SKIP, SKIP, 4, SKIP, 0)
 
+DEFINST(mulss_xmm_xmmm32, 0x0f, 0x59, SKIP, REG, SKIP, x86_prefix_rep)
+
 DEFINST(neg_rm8, 0xf6, SKIP, SKIP, 3, SKIP, 0)
 DEFINST(neg_rm32, 0xf7, SKIP, SKIP, 3, SKIP, 0)
 
