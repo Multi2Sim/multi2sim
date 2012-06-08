@@ -644,6 +644,37 @@ void x86_isa_shufps_xmm_xmmm128_imm8_impl()
 }
 
 
+void x86_isa_sqrtss_xmm_xmmm32_impl()
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	x86_isa_load_xmm(dest.as_uchar);
+	x86_isa_load_xmmm32(src.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	if (!x86_isa_spec_mode)
+	{
+		__X86_ISA_ASM_START__
+		asm volatile (
+			"movdqu %1, %%xmm0\n\t"
+			"movdqu %0, %%xmm1\n\t"
+			"sqrtss %%xmm0, %%xmm1\n\t"
+			"movdqu %%xmm1, %0\n\t"
+			: "=m" (dest)
+			: "m" (src)
+			: "xmm0", "xmm1"
+		);
+		__X86_ISA_ASM_END__
+	}
+
+	x86_isa_store_xmm(dest.as_uchar);
+
+	x86_uinst_new(x86_uinst_xmm_fp_div, x86_dep_xmmm32, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_subss_xmm_xmmm32_impl()
 {
 	union x86_xmm_reg_t dest;

@@ -97,6 +97,8 @@ static enum x86_fu_class_t fu_class_table[x86_uinst_opcode_count] =
 	x86_fu_xmm_float,  /* x86_uinst_xmm_fp_mult */
 	x86_fu_xmm_float,  /* x86_uinst_xmm_fp_div */
 
+	x86_fu_xmm_float,  /* x86_uinst_xmm_fp_sqrt */
+
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_move */
 	x86_fu_xmm_logic,  /* x86_uinst_xmm_shuf */
 	x86_fu_xmm_float,  /* x86_uinst_xmm_conv */
