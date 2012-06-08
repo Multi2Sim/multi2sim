@@ -68,6 +68,37 @@ void x86_isa_addss_xmm_xmmm32_impl()
 }
 
 
+void x86_isa_cvtsd2ss_xmm_xmmm64_impl()
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	x86_isa_load_xmm(dest.as_uchar);
+	x86_isa_load_xmmm64(src.as_uchar);
+
+	/* Prevent execution of the floating-point computation in speculative
+	 * mode, since it may cause host exceptions for garbage input operands. */
+	if (!x86_isa_spec_mode)
+	{
+		__X86_ISA_ASM_START__
+		asm volatile (
+			"movdqu %1, %%xmm0\n\t"
+			"movdqu %0, %%xmm1\n\t"
+			"cvtsd2ss %%xmm0, %%xmm1\n\t"
+			"movdqu %%xmm1, %0\n\t"
+			: "=m" (dest)
+			: "m" (src)
+			: "xmm0", "xmm1"
+		);
+		__X86_ISA_ASM_END__
+	}
+
+	x86_isa_store_xmm(dest.as_uchar);
+
+	x86_uinst_new(x86_uinst_xmm_conv, x86_dep_xmmm32, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
 void x86_isa_cvttsd2si_r32_xmmm64_impl()
 {
 	uint8_t xmm[16];
@@ -401,6 +432,32 @@ void x86_isa_movss_xmmm32_xmm_impl()
 		x86_isa_store_xmmm32(value);
 
 	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm32, 0, 0, 0);
+}
+
+
+void x86_isa_orpd_xmm_xmmm128_impl()
+{
+	union x86_xmm_reg_t dest;
+	union x86_xmm_reg_t src;
+
+	x86_isa_load_xmm(dest.as_uchar);
+	x86_isa_load_xmmm128(src.as_uchar);
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"movdqu %1, %%xmm0\n\t"
+		"movdqu %0, %%xmm1\n\t"
+		"orpd %%xmm0, %%xmm1\n\t"
+		"movdqu %%xmm1, %0\n\t"
+		: "=m" (dest)
+		: "m" (src)
+		: "xmm0", "xmm1"
+	);
+	__X86_ISA_ASM_END__
+
+	x86_isa_store_xmm(dest.as_uchar);
+
+	x86_uinst_new(x86_uinst_xmm_or, x86_dep_xmmm128, x86_dep_xmm, 0, x86_dep_xmm, 0, 0, 0);
 }
 
 

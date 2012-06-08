@@ -126,6 +126,8 @@ DEFINST(cmpxchg8b_m64, 0x0f, 0xc7, SKIP, MEM|1, SKIP, 0)
 
 DEFINST(cpuid, 0x0f, 0xa2, SKIP, SKIP, SKIP, 0)
 
+DEFINST(cvtsd2ss_xmm_xmmm64, 0x0f, 0x5a, SKIP, REG, SKIP, x86_prefix_repnz)
+
 DEFINST(cvttsd2si_r32_xmmm64, 0x0f, 0x2c, SKIP, REG, SKIP, x86_prefix_repnz)
 
 DEFINST(cvttss2si_r32_xmmm32, 0x0f, 0x2c, SKIP, REG, SKIP, x86_prefix_rep)
@@ -440,6 +442,8 @@ DEFINST(or_rm32_r32, 0x09, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(or_r8_rm8, 0x0a, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(or_r16_rm16, 0x0b, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(or_r32_rm32, 0x0b, SKIP, SKIP, REG, SKIP, 0)
+
+DEFINST(orpd_xmm_xmmm128, 0x0f, 0x56, SKIP, REG, SKIP, x86_prefix_op)
 
 DEFINST(out_imm8_al, 0xe6, SKIP, SKIP, SKIP, IB, 0)
 DEFINST(out_imm8_ax, 0xe7, SKIP, SKIP, SKIP, IB, x86_prefix_op)
