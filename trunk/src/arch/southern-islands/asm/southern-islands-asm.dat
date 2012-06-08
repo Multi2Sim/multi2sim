@@ -5,6 +5,13 @@ DEFINST(S_MIN_U32,
 	4
 )
 
+DEFINST(S_AND_B64,
+	" s_and_b64     s[%GPR_SSRC0:%END_SSRC1], s[%GPR_SSRC1:%END_SSRC1], %SDST",
+	SOP2,
+	15,
+	4
+)
+
 DEFINST(S_ENDPGM,
 	" s_endpgm",
 	SOPP,
@@ -30,6 +37,20 @@ DEFINST(S_BUFFER_LOAD_DWORD,
         " s_buffer_load_dword s%GPR_SDST, s[%SBASE:%END_SBASE], 0x%OFFSET",
         SMRD, 
 	8,
+	4
+)
+
+DEFINST(S_BUFFER_LOAD_DWORDX2,
+        " s_buffer_load_dwordx2 s[%GPR_SDST:%END_SDST], s[%SBASE:%END_SBASE], 0x%OFFSET",
+	SMRD,
+	9,
+	4
+)
+
+DEFINST(V_CMP_GT_I32,
+	" v_cmp_gt_i32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	132,
 	4
 )
 

@@ -170,6 +170,7 @@ struct si_fmt_vopc_t
         unsigned int vsrc1 : 8;   /*  [16:9] */
         unsigned int op    : 8;   /* [24:17] */
         unsigned int enc   : 7;   /* [31:25] */
+	int lit_cnst       : 32;  /* [63:32] */
 };
 
 struct si_fmt_vop3a_t
@@ -370,9 +371,10 @@ enum si_inst_enum
 
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size) \
 	SI_INST_##_name,
+
 #include "southern-islands-asm.dat"
 #undef DEFINST
-	
+
 	/* Max */
 	SI_INST_COUNT
 };
