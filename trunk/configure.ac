@@ -139,14 +139,14 @@ AC_SUBST([PKGDATADIR])
 # Debug and profile
 # ---------------------------------------------------------------------
 debug=false
-CFLAGS="-O3 -std=gnu99 -DNDEBUG"
+CFLAGS="-msse2 -O3 -std=gnu99 -DNDEBUG"
 AC_ARG_ENABLE(debug,
 [  --enable-debug    Turn on debugging],
 [
 	case "${enableval}" in
 	yes)
 		debug=true
-		CFLAGS="-Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
+		CFLAGS="-msse2 -Wall -Werror -DMHANDLE -g -O0 -std=gnu99"
 		;;
 	no)
 		;;
