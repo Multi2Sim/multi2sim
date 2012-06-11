@@ -455,6 +455,8 @@ DEFINST(out_dx_eax, 0xef, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(outsb, 0x6e, SKIP, SKIP, SKIP, SKIP, 0)
 DEFINST(outsd, 0x6f, SKIP, SKIP, SKIP, SKIP, 0)
 
+DEFINST(paddd_xmm_xmmm128, 0x0f, 0xfe, SKIP, REG, SKIP, x86_prefix_op)
+
 DEFINST(palignr_xmm_xmmm128_imm8, 0x0f, 0x3a, 0x0f, REG, IB, x86_prefix_op)
 
 DEFINST(pand_xmm_xmmm128, 0x0f, 0xdb, SKIP, REG, SKIP, x86_prefix_op)
@@ -671,6 +673,8 @@ DEFINST(sub_r8_rm8, 0x2a, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(sub_r16_rm16, 0x2b, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(sub_r32_rm32, 0x2b, SKIP, SKIP, REG, SKIP, 0)
 
+DEFINST(subsd_xmm_xmmm64, 0x0f, 0x5c, SKIP, REG, SKIP, x86_prefix_repnz)
+
 DEFINST(subss_xmm_xmmm32, 0x0f, 0x5c, SKIP, REG, SKIP, x86_prefix_rep)
 
 DEFINST(test_al_imm8, 0xa8, SKIP, SKIP, SKIP, IB, 0)
@@ -682,6 +686,8 @@ DEFINST(test_rm32_imm32, 0xf7, SKIP, SKIP, 0, ID, 0)
 DEFINST(test_rm8_r8, 0x84, SKIP, SKIP, REG, SKIP, 0)
 DEFINST(test_rm16_r16, 0x85, SKIP, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(test_rm32_r32, 0x85, SKIP, SKIP, REG, SKIP, 0)
+
+DEFINST(unpcklps_xmm_xmmm128, 0x0f, 0x14, SKIP, REG, SKIP, 0)
 
 DEFINST(xadd_rm8_r8, 0x0f, 0xc0, SKIP, REG, SKIP, 0)
 DEFINST(xadd_rm32_r32, 0x0f, 0xc1, SKIP, REG, SKIP, 0)
