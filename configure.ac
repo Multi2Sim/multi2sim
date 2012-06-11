@@ -37,6 +37,7 @@ fi
 
 have_glut=yes
 AC_CHECK_HEADER([GL/glut.h], [AC_DEFINE([HAVE_GLUT_H])], [have_glut=no])
+AC_CHECK_HEADER([GL/gl.h], [], [have_glut=no])
 AC_CHECK_LIB([glut], [glutInit], [], [have_glut=no])
 AC_CHECK_LIB([GL], [glBegin], [], [have_glut=no])
 AC_CHECK_LIB([GLU], [gluOrtho2D], [], [have_glut=no])
