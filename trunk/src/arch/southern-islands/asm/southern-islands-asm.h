@@ -96,12 +96,12 @@ extern struct string_map_t si_fmt_lds_op_map;
 
 struct si_fmt_sop2_t
 {
-        unsigned int ssrc0 : 8;  /*   [7:0] */
-        unsigned int ssrc1 : 8;  /*  [15:8] */
-        unsigned int sdst  : 7;  /* [22:16] */
-        unsigned int op    : 7;  /* [29:23] */
-        unsigned int enc   : 2;  /* [31:30] */
-	int lit_cnst	   : 32; /* [63:32] */
+        unsigned int ssrc0    : 8;  /*   [7:0] */
+        unsigned int ssrc1    : 8;  /*  [15:8] */
+        unsigned int sdst     : 7;  /* [22:16] */
+        unsigned int op       : 7;  /* [29:23] */
+        unsigned int enc      : 2;  /* [31:30] */
+	unsigned int lit_cnst : 32; /* [63:32] */
 };
 
 struct si_fmt_sopk_t
@@ -114,10 +114,11 @@ struct si_fmt_sopk_t
 
 struct si_fmt_sop1_t
 {
-        unsigned int ssrc0 : 8;  /*   [7:0] */
-        unsigned int op    : 8;  /*  [15:8] */
-        unsigned int sdst  : 7;  /* [22:16] */
-        unsigned int enc   : 9;  /* [31:23] */
+        unsigned int ssrc0    : 8;  /*   [7:0] */
+        unsigned int op       : 8;  /*  [15:8] */
+        unsigned int sdst     : 7;  /* [22:16] */
+        unsigned int enc      : 9;  /* [31:23] */
+	unsigned int lit_cnst : 32; /* [63:32] */
 };
 
 struct si_fmt_sopc_t
@@ -147,30 +148,30 @@ struct si_fmt_smrd_t
 
 struct si_fmt_vop2_t
 {
-        unsigned int src0  : 9;   /*   [8:0] */
-        unsigned int vsrc1 : 8;   /*  [16:9] */
-        unsigned int vdst  : 8;   /* [24:17] */
-        unsigned int op    : 6;   /* [30:25] */
-        unsigned int enc   : 1;   /*     31  */
-	int lit_cnst       : 32;  /* [63:32] */
+        unsigned int src0     : 9;   /*   [8:0] */
+        unsigned int vsrc1    : 8;   /*  [16:9] */
+        unsigned int vdst     : 8;   /* [24:17] */
+        unsigned int op       : 6;   /* [30:25] */
+        unsigned int enc      : 1;   /*     31  */
+	unsigned int lit_cnst : 32;  /* [63:32] */
 };
 
 struct si_fmt_vop1_t
 {
-        unsigned int src0 : 9;   /*   [8:0] */
-        unsigned int op   : 8;   /*  [16:9] */
-        unsigned int vdst : 8;   /* [24:17] */
-        unsigned int enc  : 7;   /* [31:25] */
-	int lit_cnst      : 32;  /* [63:32] */
+        unsigned int src0     : 9;   /*   [8:0] */
+        unsigned int op       : 8;   /*  [16:9] */
+        unsigned int vdst     : 8;   /* [24:17] */
+        unsigned int enc      : 7;   /* [31:25] */
+	unsigned int lit_cnst : 32;  /* [63:32] */
 };
 
 struct si_fmt_vopc_t
 {
-        unsigned int src0  : 9;   /*   [8:0] */
-        unsigned int vsrc1 : 8;   /*  [16:9] */
-        unsigned int op    : 8;   /* [24:17] */
-        unsigned int enc   : 7;   /* [31:25] */
-	int lit_cnst       : 32;  /* [63:32] */
+        unsigned int src0     : 9;   /*   [8:0] */
+        unsigned int vsrc1    : 8;   /*  [16:9] */
+        unsigned int op       : 8;   /* [24:17] */
+        unsigned int enc      : 7;   /* [31:25] */
+	unsigned int lit_cnst : 32;  /* [63:32] */
 };
 
 struct si_fmt_vop3a_t
