@@ -18,8 +18,6 @@ libemu_a_SOURCES = \
 	machine-std.c \
 	machine-str.c \
 	machine-xmm.c \
-	opengl.c \
-	opengl.dat \
 	regs.c \
 	signal.c \
 	syscall.c \
@@ -30,10 +28,13 @@ if HAVE_GLUT_H
 libemu_a_SOURCES += \
 	glut.c \
 	glut.dat \
-	glut-frame-buffer.c
+	glut-frame-buffer.c \
+	opengl.c \
+	opengl.dat
 else
 libemu_a_SOURCES += \
-	glut-missing.c
+	glut-missing.c \
+	opengl-missing.c
 endif
 
 INCLUDES = @M2S_INCLUDES@
