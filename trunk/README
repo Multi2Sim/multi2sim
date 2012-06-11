@@ -368,6 +368,27 @@ code) need to agree on it.
 
 * Runtime library calls
 
+	The set of calls that define a runtime library interface should be
+	declared in a *.dat file in the Multi2Sim host code. For example, the
+	set of functions for the new OpenCL runtime library is defined in
+
+		src/arch/x86/emu/clrt.dat
+
+	This file contains a list of calls (macro uses), on for each library
+	function. The arguments are the function name, followed by its
+	associated function code. The name of the first function should be
+	'init', devoted for version compatibility control and native/simulated
+	execution control (see below).
+
+	There are several positions in the code where a list of all library
+	functions is required. For example, an enumeration type
+	'enum x86_clrt_call_t' is defined, containing as many enumeration
+	constants as library function calls. This can be done by defining macro
+	'X86_CLRT_DEFINE_CALL' accordingly, and then including the 'clrt.dat'
+	file. This technique allows for the list of library calls to be
+	centralized in a single file, avoiding to update several code locations
+	every time a new call is added to the interface.
+
 * Version control for a Multi2Sim runtime library interface
 
 	The first runtime function call should be called 'init', and should be
@@ -466,9 +487,31 @@ code) need to agree on it.
 		physical GPU device.
 
 
-* Debug information for the Multi2Sim runtime library
+* Debug information for the host implementation of the runtime library interface
 
-* Debug information for the host implementation of the runtime library interace
+	For every runtime library interface, such as the implementation of the
+	new OpenCL runtime interface present in
+
+		src/arch/x86/clrt.c
+
+	there should be a command-line option for the simulator executable (m2s)
+	that provides a trace of all calls performed by the runtime. In this
+	case, the option should be '--debug-x86-clrt <file>'. The steps to
+	include this option are:
+
+		1) Define 'x86_clrt_debug_category' in
+			src/arch/x86/clrt.c
+		   and make it a public variable by including its external
+		   definition in the suitable section of
+		   	src/arch/x86/x86-emu.h
+		2) Define 'x86_clrt_debug' macro in the corresponding section of
+			src/arch/x86/x86-emu.h
+		3) Add all code needed for a new debug category in the main
+		Multi2Sim program, add the new command-line option, and update
+		the help message at
+			src/m2s.c
+
+* Debug information for the Multi2Sim runtime library
 
 	
 	
