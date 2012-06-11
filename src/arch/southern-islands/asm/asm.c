@@ -34,12 +34,13 @@ static struct si_inst_info_t si_inst_info[SI_INST_COUNT];
 
 /* Defnine the number of valid opcodes. */
 #define SI_INST_INFO_SOPP_OPCODE_SIZE 23
+#define SI_INST_INFO_SOP1_OPCODE_SIZE 54
 #define SI_INST_INFO_SOP2_OPCODE_SIZE 45
 #define SI_INST_INFO_SMRD_OPCODE_SIZE 32
+#define SI_INST_INFO_VOP3_OPCODE_SIZE 373
 #define SI_INST_INFO_VOPC_OPCODE_SIZE 184
 #define SI_INST_INFO_VOP1_OPCODE_SIZE 69
 #define SI_INST_INFO_VOP2_OPCODE_SIZE 50
-#define SI_INST_INFO_VOP3b_OPCODE_SIZE 367
 #define SI_INST_INFO_MTBUF_OPCODE_SIZE 8
 
 /* String lengths for printing assembly */
@@ -49,22 +50,24 @@ static struct si_inst_info_t si_inst_info[SI_INST_COUNT];
 
 /* Pointers to 'si_inst_info' table indexed by instruction opcode */
 static struct si_inst_info_t *si_inst_info_sopp[SI_INST_INFO_SOPP_OPCODE_SIZE];
+static struct si_inst_info_t *si_inst_info_sop1[SI_INST_INFO_SOP1_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_sop2[SI_INST_INFO_SOP2_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_smrd[SI_INST_INFO_SMRD_OPCODE_SIZE];
+static struct si_inst_info_t *si_inst_info_vop3[SI_INST_INFO_VOP3_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_vopc[SI_INST_INFO_VOPC_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_vop1[SI_INST_INFO_VOP1_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_vop2[SI_INST_INFO_VOP2_OPCODE_SIZE];
-static struct si_inst_info_t *si_inst_info_vop3b[SI_INST_INFO_VOP3b_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_mtbuf[SI_INST_INFO_MTBUF_OPCODE_SIZE];
 
 /* Helper functions to dump assembly code to a file */
-void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
+void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f, int* new_label);
+void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
+void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_vop3b(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 
 /* String maps for assembly dump. */
@@ -72,11 +75,11 @@ struct string_map_t sdst_map = {
 	24, {
 		{ "reserved", 0 },
 		{ "reserved", 1 },
-		{ "vcc", 2 },
+		{ "vcc_lo", 2 },
 		{ "vcc_hi", 3 },
-		{ "tba", 4 },
+		{ "tba_lo", 4 },
 		{ "tba_hi", 5 },
-		{ "tma", 6 },
+		{ "tma_lo", 6 },
 		{ "tma_hi", 7 },
 		{ "ttmp0", 8 },
 		{ "ttmp1", 9 },
@@ -92,8 +95,29 @@ struct string_map_t sdst_map = {
 		{ "ttmp11", 19 },
 		{ "m0", 20 },
 		{ "reserved", 21 },
-		{ "exec", 22 },
+		{ "exec_lo", 22 },
 		{ "exec_hi", 23 }
+	}
+};
+
+struct string_map_t ssrc_map = {
+	16, {
+		{ "0.5", 0 },
+		{ "-0.5", 1 },
+		{ "1.0", 2 },
+		{ "-1.0", 3 },
+		{ "2.0", 4 },
+		{ "-2.0", 5 },
+		{ "4.0", 6 },
+		{ "-4.0", 7 },
+		{ "reserved", 8 },
+		{ "reserved", 9 },
+		{ "reserved", 10 },
+		{ "vccz", 11 },
+		{ "execz", 12 },
+		{ "scc", 13 },
+		{ "reserved", 14 },
+		{ "literal constant", 15 }
 	}
 };
 
@@ -172,6 +196,12 @@ void si_disasm_init()
 			si_inst_info_sopp[info->opcode] = info;
 			continue;
 		}
+		else if (info->fmt == SI_FMT_SOP1)
+		{
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOP1_OPCODE_SIZE - 1));
+			si_inst_info_sop1[info->opcode] = info;
+			continue;
+		}
 		else if (info->fmt == SI_FMT_SOP2)
 		{
 			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOP2_OPCODE_SIZE - 1));
@@ -182,6 +212,12 @@ void si_disasm_init()
 		{
 			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SMRD_OPCODE_SIZE - 1));
 			si_inst_info_smrd[info->opcode] = info;
+			continue;
+		}
+		else if (info->fmt == SI_FMT_VOP3a || info->fmt == SI_FMT_VOP3b)
+		{
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOP3_OPCODE_SIZE - 1));
+			si_inst_info_vop3[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_VOPC)
@@ -200,12 +236,6 @@ void si_disasm_init()
 		{
 			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOP2_OPCODE_SIZE - 1));
 			si_inst_info_vop2[info->opcode] = info;
-			continue;
-		}
-		else if (info->fmt == SI_FMT_VOP3b)
-		{
-			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_VOP3b_OPCODE_SIZE - 1));
-			si_inst_info_vop3b[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_MTBUF)
@@ -248,6 +278,18 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 		assert(si_inst_info_sopp[inst->micro_inst.sopp.op]);
 		inst->info = si_inst_info_sopp[inst->micro_inst.sopp.op];
 	}
+	else if (inst->micro_inst.sop1.enc == 0x17D)
+	{
+		assert(si_inst_info_sop1[inst->micro_inst.sop1.op]);
+		inst->info = si_inst_info_sop1[inst->micro_inst.sop1.op];
+
+		/* 0xFF indicates the use of a literal constant as a source operand. */
+		if (inst->micro_inst.sop1.ssrc0 == 0xFF)
+		{
+			memcpy(&inst->micro_inst, buf, 8);
+			inst->info->size = 8;
+		}	
+	}
 	else if (inst->micro_inst.sop2.enc == 0x2)
 	{
 		assert(si_inst_info_sop2[inst->micro_inst.sop2.op]);
@@ -265,6 +307,13 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	{
 		assert(si_inst_info_smrd[inst->micro_inst.smrd.op]);
 		inst->info = si_inst_info_smrd[inst->micro_inst.smrd.op];
+	}
+	else if (inst->micro_inst.vop3a.enc == 0x34)
+	{
+		/* 64 bit instruction. */
+		memcpy(&inst->micro_inst, buf, 8);
+		assert(si_inst_info_vop3[inst->micro_inst.vop3a.op]);
+		inst->info = si_inst_info_vop3[inst->micro_inst.vop3a.op];
 	}
 	else if (inst->micro_inst.vopc.enc == 0x3E)
 	{
@@ -302,13 +351,6 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 			inst->info->size = 8;
 		}
 	}
-	else if (inst->micro_inst.vop3b.enc == 0x34)
-	{
-		/* 64 bit instruction. */
-		memcpy(&inst->micro_inst, buf, 8);
-		assert(si_inst_info_vop3b[inst->micro_inst.vop3b.op]);
-		inst->info = si_inst_info_vop3b[inst->micro_inst.vop3b.op];
-	}
 	else if (inst->micro_inst.mtbuf.enc == 0x3A)
 	{
 		/* 64 bit instruction. */
@@ -331,6 +373,10 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 	int inst_count = 0;
 	int rel_addr = 0;
 
+	int label_addr[buffer->size / 4];
+	int* next_label = &label_addr[0];
+	int* new_label = &label_addr[0];
+
 	/* Disassemble */
 	while (inst_buf)
 	{
@@ -341,16 +387,34 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 	       	inst_size = si_inst_decode(inst_buf, &inst);
 
 		inst_count++;
-		rel_addr += inst_size;
+
+		/* Dump a label if necessary. */
+		if (*next_label == rel_addr)
+		{
+			fprintf(f, "label_%04X:\n", rel_addr / 4);
+			next_label++;
+		}
 		
 		/* Dump the instruction */
 		if (inst.info->fmt == SI_FMT_SOPP)
 		{
-			si_inst_dump_sopp(&inst, rel_addr, inst_buf, f);
+			int label;	
+			si_inst_dump_sopp(&inst, rel_addr, inst_buf, f, &label);
+
+			/* Remember new label if created. */
+			if (label > 0)
+			{
+				*new_label = label;
+				new_label++;
+			}
 
 			/* Break at end of program. */
 			if (inst.micro_inst.sopp.op == 1)
 				break;
+		}
+		else if (inst.info->fmt == SI_FMT_SOP1)
+		{
+			si_inst_dump_sop1(&inst, rel_addr, inst_buf, f);
 		}
 		else if (inst.info->fmt == SI_FMT_SOP2)
 		{
@@ -359,6 +423,10 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		else if (inst.info->fmt == SI_FMT_SMRD) 
 		{
 			si_inst_dump_smrd(&inst, rel_addr, inst_buf, f);
+		}
+		else if (inst.info->fmt == SI_FMT_VOP3a || inst.info->fmt == SI_FMT_VOP3b)
+		{
+			si_inst_dump_vop3(&inst, rel_addr, inst_buf, f);
 		}
 		else if (inst.info->fmt == SI_FMT_VOPC)
 		{
@@ -372,10 +440,6 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		{
 			si_inst_dump_vop2(&inst, rel_addr, inst_buf, f);
 		}
-		else if (inst.info->fmt == SI_FMT_VOP3b)
-		{
-			si_inst_dump_vop3b(&inst, rel_addr, inst_buf, f);
-		}
 		else if (inst.info->fmt == SI_FMT_MTBUF)
 		{
 			si_inst_dump_mtbuf(&inst, rel_addr, inst_buf, f);
@@ -388,6 +452,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 
 		/* Increment instruction pointer */
 		inst_buf += inst_size;
+		rel_addr += inst_size;
 	}
 
 }
@@ -433,15 +498,71 @@ void operand_dump(char* str, int operand)
 		/* Negative integer constant */
 		str_printf(&pstr, &str_size, "-%d", operand - 192);
 	}
+	else if (operand <= 239)
+	{
+		fatal("Operand code unused.");
+	}
 	else if (operand <= 255)
 	{
-		/*TODO: Finish operand table. */
-		fatal("Operand unimplemented.");
+		str_printf(&pstr, &str_size, "%s", map_value(&ssrc_map, operand - 240));
 	}
 	else if (operand <= 511)
 	{
 		/* VGPR */
 		str_printf(&pstr, &str_size, "v%d", operand - 256);
+	}
+}
+
+void operand_dump_series(char* str, int operand, int operand_end)
+{
+	assert(operand <= operand_end);
+	if (operand == operand_end)
+	{
+		operand_dump(str, operand);
+	}
+
+	int str_size = MAX_OPERAND_STR_SIZE;
+	char* pstr = str;
+	if (operand <= 103)
+	{
+		str_printf(&pstr, &str_size, "s[%d:%d]", operand, operand_end);
+	}
+	else if (operand <= 127)
+	{
+		if (operand >= 112)
+		{
+			assert(operand_end <= 123);
+			str_printf(&pstr, &str_size, "ttmp[%d:%d]", operand - 112, operand_end - 112);
+		}
+		else
+		{
+			assert(operand_end == operand + 1);
+			switch (operand)
+			{
+				case 106:
+					str_printf(&pstr, &str_size, "vcc");
+					break;
+				case 108:
+					str_printf(&pstr, &str_size, "tba");
+					break;
+				case 110:
+					str_printf(&pstr, &str_size, "tma");
+					break;
+				case 126:
+					str_printf(&pstr, &str_size, "exec");
+					break;
+				default:
+					fatal("Unimplemented operand series: [%d:%d]", operand, operand_end);
+			}
+		}
+	}
+	else if (operand <= 255)
+	{
+		fatal("Illegal operand series: [%d:%d]", operand, operand_end);
+	}
+	else if (operand <= 511)
+	{
+		str_printf(&pstr, &str_size, "v[%d:%d]", operand, operand_end);
 	}
 }
 
@@ -469,9 +590,11 @@ void line_dump(char *inst_str, unsigned int rel_addr, void* buf, FILE *f, int in
 	}
 }
 
-void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f, int* new_label)
 {
 	struct si_fmt_sopp_t *sopp = &inst->micro_inst.sopp;
+
+	*new_label = -1;
 
 	int str_size = MAX_INST_STR_SIZE;
 	char orig_inst_str[MAX_INST_STR_SIZE];
@@ -509,6 +632,61 @@ void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 			{
 				/*TODO: Implement excount field in s_waitcnt. */
 				fatal("Instruction implementation incomplete.");
+			}
+		}
+		else if (is_token(fmt_str, "LABEL", &token_len))
+		{
+			*new_label = rel_addr + (sopp->simm16 * 4) + 4;
+			str_printf(&inst_str, &str_size, "label_%04X", *new_label / 4);
+		}
+		else
+		{
+			fatal("%s: token not recognized.", fmt_str);
+		}
+
+		fmt_str += token_len;
+	}
+	
+	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+}
+
+void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+{
+	struct si_fmt_sop1_t *sop1 = &inst->micro_inst.sop1;
+
+	int str_size = MAX_INST_STR_SIZE;
+	char orig_inst_str[MAX_INST_STR_SIZE];
+	char *inst_str = &orig_inst_str[0];
+	char *fmt_str = inst->info->fmt_str;
+	int token_len;
+	char operand_str[MAX_OPERAND_STR_SIZE];
+	while (*fmt_str)
+	{
+		/* Literal */
+		if (*fmt_str != '%')
+		{
+			str_printf(&inst_str, &str_size, "%c", *fmt_str);
+			fmt_str++;
+			continue;
+		}
+
+		/* Token */
+		fmt_str++;
+		if (is_token(fmt_str, "64_SDST", &token_len))
+		{
+			operand_dump_series(operand_str, sop1->sdst, sop1->sdst + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "64_SSRC0", &token_len))
+		{
+			if (sop1->ssrc0 == 0xFF)
+			{
+				str_printf(&inst_str, &str_size, "%08x", sop1->lit_cnst);
+			}
+			else
+			{
+				operand_dump_series(operand_str, sop1->ssrc0, sop1->ssrc0 + 1);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
 		}
 		else
@@ -551,11 +729,16 @@ void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 			operand_dump(operand_str, sop2->sdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
+		else if (is_token(fmt_str, "64_SDST", &token_len))
+		{
+			operand_dump_series(operand_str, sop2->sdst, sop2->sdst + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
 		else if (is_token(fmt_str, "SSRC0", &token_len))
 		{
 			if (sop2->ssrc0 == 0xFF)
 			{
-				str_printf(&inst_str, &str_size, "%08X", sop2->lit_cnst);
+				str_printf(&inst_str, &str_size, "%08x", sop2->lit_cnst);
 			}
 			else
 			{
@@ -563,15 +746,39 @@ void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
 		}
+		else if (is_token(fmt_str, "64_SSRC0", &token_len))
+		{
+			if (sop2->ssrc0 == 0xFF)
+			{
+				str_printf(&inst_str, &str_size, "%08x", sop2->lit_cnst);
+			}
+			else
+			{
+				operand_dump_series(operand_str, sop2->ssrc0, sop2->ssrc0 + 1);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+		}
 		else if (is_token(fmt_str, "SSRC1", &token_len))
 		{
 			if (sop2->ssrc1 == 0xFF)
 			{
-				str_printf(&inst_str, &str_size, "%08X", sop2->lit_cnst);
+				str_printf(&inst_str, &str_size, "%08x", sop2->lit_cnst);
 			}
 			else
 			{
 				operand_dump(operand_str, sop2->ssrc1);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+		}
+		else if (is_token(fmt_str, "64_SSRC1", &token_len))
+		{
+			if (sop2->ssrc1 == 0xFF)
+			{
+				str_printf(&inst_str, &str_size, "%08x", sop2->lit_cnst);
+			}
+			else
+			{
+				operand_dump_series(operand_str, sop2->ssrc1, sop2->ssrc1 + 1);
 				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
 		}
@@ -673,6 +880,7 @@ void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 	char *inst_str = &orig_inst_str[0];
 	char *fmt_str = inst->info->fmt_str;
 	int token_len;
+	char operand_str[MAX_OPERAND_STR_SIZE];
 	while (*fmt_str)
 	{
 		/* Literal */
@@ -685,27 +893,20 @@ void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 
 		/* Token */
 		fmt_str++;
-		if (is_token(fmt_str, "GPR_SDST", &token_len))
+		if (is_token(fmt_str, "SDST", &token_len))
 		{
-			/* Assume SDST must be a SGPR. */
-			assert(sdst <= 103);
-
-			str_printf(&inst_str, &str_size, "%d", sdst);
+			operand_dump(operand_str, sdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (is_token(fmt_str, "END_SDST", &token_len))
+		else if (is_token(fmt_str, "SERIES_SDST", &token_len))
 		{
-			str_printf(&inst_str, &str_size, "%d", sdst_end);
+			operand_dump_series(operand_str, sdst, sdst_end);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (is_token(fmt_str, "SBASE", &token_len))
+		else if (is_token(fmt_str, "SERIES_SBASE", &token_len))
 		{
-			/* Assume SBASE must be a SGPR. */
-			assert(sbase <= 103);
-
-			str_printf(&inst_str, &str_size, "%d", sbase);
-		}
-		else if (is_token(fmt_str, "END_SBASE", &token_len))
-		{
-			str_printf(&inst_str, &str_size, "%d", sbase_end);
+			operand_dump_series(operand_str, sbase, sbase_end);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "OFFSET", &token_len))
 		{
@@ -716,6 +917,83 @@ void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 			fatal("%s: token not recognized.", fmt_str);
 		}
 		
+		fmt_str += token_len;
+	}
+
+	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+}
+
+void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+{
+	int str_size = MAX_INST_STR_SIZE;
+	char orig_inst_str[MAX_INST_STR_SIZE];
+	char *inst_str = &orig_inst_str[0];
+	char *fmt_str = inst->info->fmt_str;
+	int token_len;
+	char operand_str[MAX_OPERAND_STR_SIZE];
+	while (*fmt_str)
+	{
+		/* Literal */
+		if (*fmt_str != '%')
+		{
+			str_printf(&inst_str, &str_size, "%c", *fmt_str);
+			fmt_str++;
+			continue;
+		}
+
+		/* Token */
+		fmt_str++;
+		if (is_token(fmt_str, "64_SDST", &token_len))
+		{
+			operand_dump_series(operand_str, inst->micro_inst.vop3b.sdst, inst->micro_inst.vop3b.sdst + 1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "VDST", &token_len))
+		{
+			operand_dump(operand_str, inst->micro_inst.vop3a.vdst + 256);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "SRC0", &token_len))
+		{
+			operand_dump(operand_str, inst->micro_inst.vop3a.src0);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "SRC1", &token_len))
+		{
+			operand_dump(operand_str, inst->micro_inst.vop3a.src1);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "SRC2", &token_len))
+		{
+			operand_dump(operand_str, inst->micro_inst.vop3a.src2);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "0NEG", &token_len))
+		{
+			if (inst->micro_inst.vop3a.neg & 1)
+			{
+				str_printf(&inst_str, &str_size, "-");
+			}
+		}
+		else if (is_token(fmt_str, "1NEG", &token_len))
+		{
+			if (inst->micro_inst.vop3a.neg & 2)
+			{
+				str_printf(&inst_str, &str_size, "-");
+			}	
+		}
+		else if (is_token(fmt_str, "2NEG", &token_len))
+		{
+			if (inst->micro_inst.vop3a.neg & 4)
+			{
+				str_printf(&inst_str, &str_size, "-");
+			}
+		}
+		else
+		{
+			fatal("%s: token not recognized.", fmt_str);
+		}
+
 		fmt_str += token_len;
 	}
 
@@ -748,7 +1026,7 @@ void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		{
 			if (vopc->src0 == 0xFF)
 			{
-				str_printf(&inst_str, &str_size, "%08X", vopc->lit_cnst);
+				str_printf(&inst_str, &str_size, "%08x", vopc->lit_cnst);
 			}
 			else
 			{
@@ -803,7 +1081,7 @@ void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		{
 			if (vop1->src0 == 0xFF)
 			{
-				str_printf(&inst_str, &str_size, "%08X", vop1->lit_cnst);
+				str_printf(&inst_str, &str_size, "%08x", vop1->lit_cnst);
 			}
 			else
 			{
@@ -853,7 +1131,7 @@ void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		{
 			if (vop2->src0 == 0xFF)
 			{
-				str_printf(&inst_str, &str_size, "%08X", vop2->lit_cnst);
+				str_printf(&inst_str, &str_size, "%08x", vop2->lit_cnst);
 			}
 			else
 			{
@@ -863,74 +1141,12 @@ void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		}
 		else if (is_token(fmt_str, "VSRC1", &token_len))
 		{
-			operand_dump(operand_str, vop2->vdst + 256);
+			operand_dump(operand_str, vop2->vsrc1 + 256);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else
 		{
 			fatal("%s: token not recognized.", fmt_str);	
-		}
-
-		fmt_str += token_len;
-	}
-
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
-}
-
-void si_inst_dump_vop3b(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
-{
-	struct si_fmt_vop3b_t *vop3b = &inst->micro_inst.vop3b;
-
-	int str_size = MAX_INST_STR_SIZE;
-	char orig_inst_str[MAX_INST_STR_SIZE];
-	char *inst_str = &orig_inst_str[0];
-	char *fmt_str = inst->info->fmt_str;
-	int token_len;
-	char operand_str[MAX_OPERAND_STR_SIZE];
-	while (*fmt_str)
-	{
-		/* Literal */
-		if (*fmt_str != '%')
-		{
-			str_printf(&inst_str, &str_size, "%c", *fmt_str);
-			fmt_str++;
-			continue;
-		}
-
-		/* Token */
-		fmt_str++;
-		if (is_token(fmt_str, "GPR_SDST", &token_len))
-		{
-			/* Assume SDST must be a SGPR. */
-			assert(vop3b->sdst <= 103);
-
-			str_printf(&inst_str, &str_size, "%d", vop3b->sdst);
-		}
-		else if (is_token(fmt_str, "END_SDST", &token_len))
-		{
-			if (vop3b->op < 184)
-			{
-				/* Assume compare functions will always store in 2 words. */
-				str_printf(&inst_str, &str_size, "%d", vop3b->sdst + 1);
-			}
-			else
-			{
-				fatal("END_SDST: token not implemented for vop3b instruction, op(%d)", vop3b->op);
-			}
-		}
-		else if (is_token(fmt_str, "SRC0", &token_len))
-		{
-			operand_dump(operand_str, vop3b->src0);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
-		}
-		else if (is_token(fmt_str, "SRC1", &token_len))
-		{
-			operand_dump(operand_str, vop3b->src1);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
-		}
-		else
-		{
-			fatal("%s: token not recognized.", fmt_str);
 		}
 
 		fmt_str += token_len;
@@ -972,14 +1188,11 @@ void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf
 			operand_dump(operand_str, mtbuf->vaddr + 256);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
-		else if (is_token(fmt_str, "SRSRC", &token_len))
+		else if (is_token(fmt_str, "SERIES_SRSRC", &token_len))
 		{
 			assert((mtbuf->srsrc << 2) % 4 == 0);
-			str_printf(&inst_str, &str_size, "%d", mtbuf->srsrc << 2);
-		}
-		else if (is_token(fmt_str, "END_SRSRC", &token_len))
-		{
-			str_printf(&inst_str, &str_size, "%d", (mtbuf->srsrc << 2) + 3);
+			operand_dump_series(operand_str, mtbuf->srsrc << 2, (mtbuf->srsrc << 2) + 3);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SOFFSET", &token_len))
 		{

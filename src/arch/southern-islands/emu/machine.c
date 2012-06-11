@@ -83,7 +83,22 @@ void si_isa_S_MIN_U32_impl()
 	NOT_IMPL();
 }
 
+void si_isa_S_AND_B64_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_S_AND_SAVEEXEC_B64_impl()
+{
+	NOT_IMPL();
+}
+
 void si_isa_S_ENDPGM_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_S_CBRANCH_EXECZ_impl()
 {
 	NOT_IMPL();
 }
@@ -94,6 +109,11 @@ void si_isa_S_WAITCNT_impl()
 }
 
 void si_isa_S_MOV_B32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_CVT_F32_I32_impl()
 {
 	NOT_IMPL();
 }
@@ -109,6 +129,11 @@ void si_isa_V_LSHLREV_B32_impl()
 }
 
 void si_isa_V_ADD_I32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_MAD_F32_impl()
 {
 	NOT_IMPL();
 }
