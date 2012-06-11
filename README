@@ -55,9 +55,20 @@ Coding Guidelines
 	while (1)
 	{
 	}
+	
+	In the case of conditionals and loops with only one line of code in
+	their body, no brackets need to be used. Examples:
 
 	for (i = 0; i < 10; i++)
 		only_one_line_example();
+
+	if (!x)
+		a = 1;
+	else
+		b = 1;
+
+	while (list_count(my_list))
+		list_remove_at(my_list, 0);
 
 * Enumerations:
 
@@ -88,44 +99,6 @@ Coding Guidelines
 	s = strdup("hello");
 	if (!s)
 		fatal("%s: out of memory", __FUNCTION__);
-
-* Structure declaration:
-
-	Structure types should be named 'struct <XXX>_t', without using
-	'typedef' declarations. For example:
-
-	struct my_struct_t
-	{
-		int field1;
-		char *field2;
-	};
-
-	If a structure is used with dynamic allocation simulating a C++
-	object, there should be two functions 'xxx_create' and 'xxx_free'
-	with the following structure:
-
-	struct my_struct_t *my_struct_create(void)
-	{
-		struct my_struct_t *my_struct;
-
-		/* Create object */
-		my_struct = calloc(1, sizeof(struct my_struct_t));
-		if (!my_struct)
-			fatal("%s: out of memory", __FUNCTION__);
-
-		/* Initialize */
-		my_struct->field1 = ...
-		my_struct->field2 = ...
-
-		/* Return */
-		return my_struct;
-	}
-
-	void my_struct_free(struct my_struct_t *my_struct)
-	{
-		[ ... free fields ... ]
-		free(my_struct);
-	}
 
 * Forward declarations:
 
@@ -251,9 +224,256 @@ Coding Guidelines
 		long long
 
 
+===============================================================================
+Dynamic Structures (Objects)
+===============================================================================
+	
+	Every leaf directory in Multi2Sim's code tree compiles into a library
+	with one single header file exporting both its public and private
+	symbols. Public symbols are those used in *.c files from other
+	directories, while private symbols are used *.c files from within the
+	library.
+	Although Multi2Sim is written in C, its structure is based in a set of
+	dynamically allocated objects (a processor core, a hardware thread, a
+	micro-instruction, etc.), emulating the behavior of an object oriented
+	language.
+	An object is defined with a structure declaration (struct), one or more
+	constructor and destructor functions, and a set of other functions
+	updating or querying the object. The structure definition and function
+	headers are defined as part of the main and unique header file in a
+	directory, while the implementation of these functions (plus other
+	private functions, structures, and variables) is coded in a separate *.c
+	file.
+	As an example, let us consider the object representing an x86
+	micro-instruction, called 'x86_uop_t', and defines in
+
+		/src/arch/x86/timing
+	
+	The structure type and function header declarations are found in
+		
+		/src/arch/x86/timing/x86-timing.h
+
+	in a section headed with a 4-line break and a 3-line comment:
+
+		[ 4 empty lines ]
+
+		/*
+		 * [ Description of object ]
+		 */
+		
+		[ Structure declaration ]
+		[ Header of constructor and destructor ]
+		[ Headers of the rest of the functions ]
+
+	The implementation of the object is given in an independent *.c file,
+	which includes only functions and variables related with the object. In
+	the case of the x86 micro-instruction object, the implementation *.c
+	file is
+
+		/src/arch/x86/timing/uop.c
+	
+	The constructor and destructor of all objects follow the same template.
+	An object constructor returns a pointer to a new allocated object, and
+	takes zero or more arguments, used for the object initialization. The
+	code in the constructor contains three sections: allocation,
+	initialization, and return, as follows:
+	
+		struct my_struct_t *my_struct_create(int field1, int field2)
+		{
+			struct my_struct_t *my_struct;
+	
+			/* Create object */
+			my_struct = calloc(1, sizeof(struct my_struct_t));
+			if (!my_struct)
+				fatal("%s: out of memory", __FUNCTION__);
+	
+			/* Initialize */
+			my_struct->field1 = field1;
+			my_struct->field2 = field2;
+			my_struct->field3 = 100;
+	
+			/* Return */
+			return my_struct;
+		}
+
+	An object destructor takes a pointer to the object as the only argument,
+	and returns no value:
+
+		void my_struct_free(struct my_struct_t *my_struct)
+		{
+			[ ... free fields ... ]
+			free(my_struct);
+		}
+
 
 ===============================================================================
-Steps to Release a New Version Release (Administrator):
+Multi2Sim Runtime Libraries
+===============================================================================
+
+In some cases, Multi2Sim requires a benchmark to be linked with specific runtime
+libraries for correct simulation. Currently, this is the case of GPU simulation,
+requiring OpenCL, CUDA, or OpenGL runtimes. Runtime libraries are linked
+statically or dynamically with the application running on Multi2Sim (guest
+code), and are not part of the source code compiled with the main 'configure'
+and 'make' commands. Runtime libraries are found in directories
+
+		/tools/libm2s-XXX
+
+As guest code, they are compiled targeting a 32-bit x86 architecture. When
+running 'make' on a runtime library directory, two versions of it are generated,
+one for dynamic and another for static linking:
+
+		/tools/libm2s-XXX/libm2s-XXX.a
+		/tools/libm2s-XXX/libm2s-XXX.so
+
+A runtime library communicates with Multi2Sim through a specific system call
+code, associated uniquely with that library, and not part of the standard Linux
+system call codes. For example, the CUDA runtime library is associated with code
+328.
+	
+The first argument of the system call is a function code, and the rest of the
+arguments depend on the prototype defined for that function. The set of possible
+function codes and their arguments define the Multi2Sim runtime library
+interface, and both the runtime library (guest code) and the simulator (host
+code) need to agree on it.
+
+
+* Steps involved in a runtime function call
+
+	Let us assume a CUDA application statically linked with the Multi2Sim
+	CUDA runtime library, and running on Multi2Sim. When the application
+	performs a CUDA call, e.g. cuMalloc, the guest control flow jumps to the
+	implementation of the CUDA runtime library (still guest code).
+
+	Eventually, the runtime library might require a service from the
+	simulator, such as returning the pointer to the next available memory
+	region in GPU simulated memory. For this purpose, a system call with
+	code 328 will be performed, which is captured by the simulator in the
+	code implemented in file
+
+		src/arch/x86/emu/syscall.c
+
+	This file contains the implementation of the most common Linux system
+	calls. However, the implementation of runtime libraries interface should
+	be implemented in a separate file. In the case of the CUDA runtime
+	interface, the system call just calls function 'frm_cuda_call()',
+	implemented in
+
+		src/arch/fermi/emu/cuda.c
+
+		[ It is still to be defined what is the standard directory for
+		the host implementation of the runtime library interface, i.e.,
+		whether its part of the target GPU architecture, or the host x86
+		architecture. ]
+
+* Runtime library calls
+
+* Version control for a Multi2Sim runtime library interface
+
+	The first runtime function call should be called 'init', and should be
+	used both to initialize the host environment, and to carry out a version
+	compatibility check between the guest runtime library and the Multi2Sim
+	implementation of the runtime interface.
+	
+	During the development of the Multi2sim runtime library, its interface
+	with the simulator evolves and changes, causing an older statically
+	pre-compiled application to be incompatible with the newer version of
+	the simulator, or vice versa. If this fact is silently ignored,
+	unexpected behaviors would be observed, and the cause of the errors
+	would be hard for the user to figure out.
+
+	Both the runtime library and the Multi2Sim implementation have a version
+	identifier formed of two numbers (major and minor version). For example,
+	the newer OpenCL runtime library defines
+
+		X86_CLRT_VERSION_MAJOR
+		X86_CLRT_VERSION_MINOR
+
+	in the Multi2Sim implementation at
+		
+		/src/arch/x86/emu/clrt.c
+
+	while it defines
+
+		M2S_CLRT_VERSION_MAJOR
+		M2S_CLRT_VERSION_MINOR
+
+	in the runtime library implementation at
+
+		/tools/libm2s-clrt/m2s-clrt.h
+
+	When the interface between the runtime library and the Multi2sim
+	implementation is modified or extended, the version numbers should be
+	updated with the following criterion:
+
+	1)	If the guest library requires a new feature from the host
+		implementation, the feature is added to the host, and the minor
+		version is updated to the current Multi2Sim SVN revision both in
+		host and guest. All previous services provided by the host
+		should remain available and backward-compatible. Executing a
+		newer library on the older simulator will fail, but an older
+		library on the newer simulator will succeed.
+	
+	2)	If a new feature is added that affects older services of the
+		host implementation breaking backward compatibility, the major
+		version is increased by 1 in the host and guest code. Executing
+		a library with a different (lower or higher) major version than
+		the host implementation will fail.
+
+	The 'init' function call in the runtime library will pass a pointer to a
+	structure of type
+
+		struct m2s_runtime_version_t
+		{
+			int major;
+			int minor;
+		}
+
+	containing the runtime library version. The host implementation reads
+	these values and compares them with the version of the runtime library
+	interface, according to the rules above. The 'init' function should
+	always return 0, or cause the program to exit.
+
+		
+
+* Native vs. simulated execution of the Multi2Sim runtime library
+
+	An application statically linked with a Multi2Sim runtime library is
+	aimed at running on Multi2Sim. However, a user could attempt to run it
+	natively as well. It is up to the Multi2Sim developer whether support
+	for native execution should be given as well in the runtime library. For
+	example, an OpenCL runtime library could use only its x86 OpenCL runtime
+	capabilities when run natively, and exploit Multi2Sim's support for GPU
+	simulation when run on the simulator.
+
+	It is easy for the Multi2Sim runtime library to find out whether it is
+	running natively or on the simulator, by checking the error code of the
+	runtime function call devoted for version control. On Multi2Sim, this
+	function call should always return 0, while on a native execution, the
+	system call will return -1, since it is not part of the Linux system
+	call interface.
+
+	If the runtime library detects native execution, and it is not a feature
+	supported for the library, it should output a clear error message, and
+	finalize the program. For example:
+
+	error: OpenCL program cannot be run natively.
+		This is an error message provided by the Multi2Sim OpenCL
+		library (libm2s-opencl). Apparently, you are attempting to run
+		natively a program that was linked with this library. You should
+		either run it on top of Multi2Sim, or link it with the OpenCL
+		library provided in the ATI Stream SDK if you want to use your
+		physical GPU device.
+
+
+* Debug information for the Multi2Sim runtime library
+
+* Debug information for the host implementation of the runtime library interace
+
+	
+	
+===============================================================================
+Steps to Publish a New Version Release (Administrator):
 ===============================================================================
 
 	* svn commit all previous changes
