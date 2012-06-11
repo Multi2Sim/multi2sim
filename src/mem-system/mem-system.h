@@ -539,6 +539,7 @@ struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
 	int block_size, int latency);
 void mod_free(struct mod_t *mod);
 void mod_dump(struct mod_t *mod, FILE *f);
+void mod_stack_set_reply(struct mod_stack_t *stack, int reply);
 
 long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind, 
 	unsigned int addr, int *witness_ptr, struct linked_list_t *event_queue,
@@ -727,6 +728,7 @@ struct mod_stack_t
 	enum mod_request_dir_t request_dir;
 	int reply_size;
 	int reply;
+	int retain_owner;
 	int pending;
 
 	/* Linked list of accesses in 'mod' */
