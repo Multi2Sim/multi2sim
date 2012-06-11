@@ -1270,7 +1270,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		{
 			assert(stack->request_dir == mod_request_up_down);
 			ret->err = 1;
-			ret->reply = reply_ACK_ERROR;
+			mod_stack_set_reply(ret, reply_ACK_ERROR);
 			stack->reply_size = 8;
 			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, 0);
 			return;
@@ -1294,7 +1294,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		/* Set the initial reply message and size.  This will be adjusted later if
 		 * a transfer occur between peers. */
 		stack->reply_size = mod->block_size + 8;
-		stack->reply = reply_ACK_DATA;
+		mod_stack_set_reply(stack, reply_ACK_DATA);
 		
 		if (stack->state)
 		{
@@ -1377,7 +1377,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		{
 			dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 			ret->err = 1;
-			ret->reply = reply_ACK_ERROR;
+			mod_stack_set_reply(ret, reply_ACK_ERROR);
 			stack->reply_size = 8;
 			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, 0);
 			return;
@@ -1416,29 +1416,45 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		 * to send more data or simply ACK */
 		if (stack->reply_size == 8) 
 		{
-			ret->reply = reply_ACK;
+			mod_stack_set_reply(ret, reply_ACK);
 		}
 		else if (stack->reply_size > 8)
 		{
-			ret->reply = reply_ACK_DATA;
+			mod_stack_set_reply(ret, reply_ACK_DATA);
 		}
 		else 
 		{
 			panic("Invalid reply size\n");
 		}
 
-		/* Set owner to 0 for all directory entries not owned by mod. */
 		dir = target_mod->dir;
-		for (z = 0; z < dir->zsize; z++)
+
+		shared = 0;
+		if (stack->state == cache_block_modified)
 		{
-			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			if (dir_entry->owner != mod->low_net_node->index)
-				dir_entry_set_owner(dir, stack->set, stack->way, z, DIR_ENTRY_OWNER_NONE);
+			/* Set state to owned */
+			cache_set_block(target_mod->cache, stack->set, stack->way, 
+				stack->tag, cache_block_owned);
+
+			stack->retain_owner = 1;
+			shared = 1;
+		}
+
+		/* With the Owned state, the directory entry may remain owned by the sender */
+		if (!stack->retain_owner)
+		{
+			/* Set owner to 0 for all directory entries not owned by mod. */
+			for (z = 0; z < dir->zsize; z++)
+			{
+				dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
+				if (dir_entry->owner != mod->low_net_node->index)
+					dir_entry_set_owner(dir, stack->set, stack->way, z, 
+						DIR_ENTRY_OWNER_NONE);
+			}
 		}
 
 		/* For each sub-block requested by mod, set mod as sharer, and
 		 * check whether there is other cache sharing it. */
-		shared = 0;
 		for (z = 0; z < dir->zsize; z++)
 		{
 			dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
@@ -1446,7 +1462,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 				continue;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 			dir_entry_set_sharer(dir, stack->set, stack->way, z, mod->low_net_node->index);
-			if (dir_entry->num_sharers > 1)
+			if (dir_entry->num_sharers > 1 || stack->shared)
 				shared = 1;
 		}
 
@@ -1513,36 +1529,10 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 
 			stack->pending++;
 			new_stack = mod_stack_create(stack->id, target_mod, dir_entry_tag,
-				EV_MOD_NMOESI_READ_REQUEST_DOWNUP_FINISH, stack);
+				EV_MOD_NMOESI_READ_REQUEST_DOWNUP_WAIT_FOR_REQS, stack);
 			new_stack->target_mod = owner;
 			new_stack->request_dir = mod_request_down_up;
 			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
-		}
-
-		/* Set up the reply that will take place after all read
-		 * requests for blocks have returned */
-		if (stack->state == cache_block_exclusive) 
-		{
-			/* Exclusive state only sends an ACK */
-			stack->reply_size = 8;
-			stack->reply = reply_ACK;
-		}
-		else if (stack->peer == NULL) 
-		{
-			/* State is M/O and no peer exists, so data is returned to mod */
-			stack->reply_size = target_mod->block_size + 8;
-			stack->reply = reply_ACK_DATA;
-		}
-		else 
-		{
-			/* State is M/O and peer exists, so data is sent directly to peer */
-			stack->reply_size = 8;
-			stack->reply = reply_ACK_DATA_SENT_TO_PEER;
-
-			/* Decrease the amount of data that mod will have to send back
-			 * to its higher level cache */
-			ret->reply_size -= target_mod->block_size;
-			assert(ret->reply_size >= 8);
 		}
 
 		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_DOWNUP_WAIT_FOR_REQS, stack, 0);
@@ -1562,7 +1552,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_downup_wait_for_reqs\"\n",
 			stack->id, target_mod->name);
 
-		if (stack->reply == reply_ACK_DATA_SENT_TO_PEER)
+		if (stack->peer)
 		{
 			/* Send this block (or subblock) to the peer */
 			new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
@@ -1587,36 +1577,166 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:read_request_downup_finish\"\n",
 			stack->id, target_mod->name);
 
-		/* Modified states become owned */
-		if (stack->state == cache_block_modified) 
+		if (stack->reply == reply_ACK_DATA)
 		{
-			cache_set_block(target_mod->cache, stack->set, stack->way, stack->tag,
-				cache_block_owned);
+			assert(stack->state == cache_block_exclusive);
+
+			/* If data was received, it was owned or modified by a higher level cache.
+			 * We need to continue to propagate it up until a peer is found */
+
+			if (stack->peer) 
+			{
+				/* Peer was found, so this directory entry should be changed 
+				 * to owned */
+				cache_set_block(target_mod->cache, stack->set, stack->way, 
+					stack->tag, cache_block_owned);
+
+				/* Higher-level cache changed to shared, set owner of 
+				 * sub-blocks to NONE. */
+				dir = target_mod->dir;
+				for (z = 0; z < dir->zsize; z++)
+				{
+					dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+					assert(dir_entry_tag < stack->tag + target_mod->block_size);
+					dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
+					dir_entry_set_owner(dir, stack->set, stack->way, z, 
+						DIR_ENTRY_OWNER_NONE);
+				}
+
+				stack->reply_size = 8;
+				mod_stack_set_reply(ret, reply_ACK_DATA_SENT_TO_PEER);
+
+				/* Decrease the amount of data that mod will have to send back
+				 * to its higher level cache */
+				ret->reply_size -= target_mod->block_size;
+				assert(ret->reply_size >= 8);
+
+				/* Let the lower-level cache know not to delete the owner */
+				ret->retain_owner = 1;
+			}
+			else
+			{
+				/* Set state to shared */
+				cache_set_block(target_mod->cache, stack->set, stack->way, 
+					stack->tag, cache_block_shared);
+
+				/* State is changed to shared, set owner of sub-blocks to 0. */
+				dir = target_mod->dir;
+				for (z = 0; z < dir->zsize; z++)
+				{
+					dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+					assert(dir_entry_tag < stack->tag + target_mod->block_size);
+					dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
+					dir_entry_set_owner(dir, stack->set, stack->way, z, 
+						DIR_ENTRY_OWNER_NONE);
+				}
+
+				stack->reply_size = target_mod->block_size + 8;
+				mod_stack_set_reply(ret, reply_ACK_DATA);
+			}
 		}
-		/* Exclusive states become shared */
-		else if (stack->state == cache_block_exclusive) 
+		else if (stack->reply == reply_ACK)
 		{
-			/* If state was changed to shared, set owner of sub-blocks to 0. */
+			/* This block should only be in exclusive because modified/owned do 
+			 * not receive any ACKs */
+			assert(stack->state == cache_block_exclusive);
+
+			/* Higher-level cache was exclusive with no modifications above it */
+			stack->reply_size = 8;
+
+			/* Set state to shared */
+			cache_set_block(target_mod->cache, stack->set, stack->way, 
+				stack->tag, cache_block_shared);
+
+			/* State is changed to shared, set owner of sub-blocks to 0. */
 			dir = target_mod->dir;
 			for (z = 0; z < dir->zsize; z++)
 			{
 				dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
 				assert(dir_entry_tag < stack->tag + target_mod->block_size);
 				dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-				dir_entry_set_owner(dir, stack->set, stack->way, z, DIR_ENTRY_OWNER_NONE);
+				dir_entry_set_owner(dir, stack->set, stack->way, z, 
+					DIR_ENTRY_OWNER_NONE);
 			}
-			cache_set_block(target_mod->cache, stack->set, stack->way, stack->tag,
-				cache_block_shared);
-		}	
-		/* Owned states remain owned */
-		else if (stack->state == cache_block_owned) 
-		{
-			/* Nothing to do */
+
+			if (stack->peer)
+			{
+				stack->reply_size = 8;
+				mod_stack_set_reply(ret, reply_ACK_DATA_SENT_TO_PEER);
+
+				/* Decrease the amount of data that mod will have to send back
+				 * to its higher level cache */
+				ret->reply_size -= target_mod->sub_block_size;
+				assert(ret->reply_size >= 8);
+			}
+			else
+			{
+				mod_stack_set_reply(ret, reply_ACK);
+				stack->reply_size = 8;
+			}
 		}
-		/* No other states are allowed */
-		else 
+		else if (stack->reply == reply_NO_REPLY)
 		{
-			panic("Invalid cache block state: %d", stack->state);
+			/* This block is modified, owned, or the highest-level exclusive */
+
+			if (stack->state == cache_block_exclusive) 
+			{
+				/* Exclusive state only sends an ACK */
+				mod_stack_set_reply(ret, reply_ACK);
+				stack->reply_size = 8;
+				
+				/* Set block to shared */
+				cache_set_block(target_mod->cache, stack->set, stack->way, 
+					stack->tag, cache_block_shared);
+
+				/* State is changed to shared, set owner of sub-blocks to 0. */
+				dir = target_mod->dir;
+				for (z = 0; z < dir->zsize; z++)
+				{
+					dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+					assert(dir_entry_tag < stack->tag + target_mod->block_size);
+					dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
+					dir_entry_set_owner(dir, stack->set, stack->way, z, 
+						DIR_ENTRY_OWNER_NONE);
+				}
+			}
+			else if (!stack->peer) 
+			{
+				/* State is M/O and no peer exists, so data is returned to mod */
+				stack->reply_size = target_mod->sub_block_size + 8;
+				mod_stack_set_reply(ret, reply_ACK_DATA);
+
+				/* Set block to shared */
+				cache_set_block(target_mod->cache, stack->set, stack->way, 
+					stack->tag, cache_block_shared);
+
+				/* State was changed to shared, set owner of sub-blocks to NONE. */
+				dir = target_mod->dir;
+				for (z = 0; z < dir->zsize; z++)
+				{
+					dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
+					assert(dir_entry_tag < stack->tag + target_mod->block_size);
+					dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
+					dir_entry_set_owner(dir, stack->set, stack->way, z, 
+						DIR_ENTRY_OWNER_NONE);
+				}
+			}
+			else /* State is M/O and peer exists */
+			{
+				stack->reply_size = 8;
+				mod_stack_set_reply(ret, reply_ACK_DATA_SENT_TO_PEER);
+
+				/* Decrease the amount of data that mod will have to send back
+				 * to its higher level cache */
+				ret->reply_size -= target_mod->sub_block_size;
+				assert(ret->reply_size >= 8);
+
+				/* Let the lower-level cache know not to delete the owner */
+				ret->retain_owner = 1;
+
+				cache_set_block(target_mod->cache, stack->set, stack->way, 
+					stack->tag, cache_block_owned);
+			}
 		}
 
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
@@ -1717,7 +1837,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		 * (during invalidate). If the request turns out to be downup, then 
 		 * these values will get overwritten. */
 		stack->reply_size = mod->block_size + 8;
-		stack->reply = reply_ACK_DATA;
+		mod_stack_set_reply(stack, reply_ACK_DATA);
 
 		/* Checks */
 		assert(stack->request_dir);
@@ -1858,7 +1978,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		if (stack->err)
 		{
 			ret->err = 1;
-			ret->reply = reply_ACK_ERROR;
+			mod_stack_set_reply(ret, reply_ACK_ERROR);
 			stack->reply_size = 8;
 			dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 			esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, 0);
@@ -1904,11 +2024,11 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		 * to send more data up or simply ACK */
 		if (stack->reply_size == 8) 
 		{
-			ret->reply = reply_ACK;
+			mod_stack_set_reply(ret, reply_ACK);
 		}
 		else if (stack->reply_size > 8)
 		{
-			ret->reply = reply_ACK_DATA;
+			mod_stack_set_reply(ret, reply_ACK_DATA);
 		}
 		else 
 		{
@@ -1935,21 +2055,22 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		{
 			/* Exclusive and shared states send an ACK */
 			stack->reply_size = 8;
-			stack->reply = reply_ACK;
+			mod_stack_set_reply(stack, reply_ACK);
 		}
 		else if (stack->state == cache_block_noncoherent)
 		{
 			/* Non-coherent state sends data */
 			stack->reply_size = target_mod->block_size + 8;
-			stack->reply = reply_ACK_DATA;
+			mod_stack_set_reply(stack, reply_ACK_DATA);
 		}
 		else if (stack->state == cache_block_modified || 
 			stack->state == cache_block_owned)
 		{
 			if (stack->peer) 
 			{
-				/* Modified or owned entries send data directly to peer if it exists */
-				stack->reply = reply_ACK_DATA_SENT_TO_PEER;
+				/* Modified or owned entries send data directly to peer 
+				 * if it exists */
+				mod_stack_set_reply(stack, reply_ACK_DATA_SENT_TO_PEER);
 				stack->reply_size = 8;
 
 				/* This control path uses an intermediate stack that disappears, so 
@@ -1969,7 +2090,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 			else 
 			{
 				/* If peer does not exist, data is returned to mod */
-				stack->reply = reply_ACK_DATA;
+				mod_stack_set_reply(stack, reply_ACK_DATA);
 				stack->reply_size = target_mod->block_size + 8;
 			}
 		}
@@ -2089,7 +2210,7 @@ void mod_handler_nmoesi_nc_write_request(int event, void *data)
 		 * (during invalidate). If the request turns out to be downup, then 
 		 * these values will get overwritten. */
 		stack->reply_size = mod->block_size + 8;
-		stack->reply = reply_ACK_DATA;
+		mod_stack_set_reply(stack, reply_ACK_DATA);
 
 		/* Checks */
 		assert(stack->request_dir);
@@ -2251,7 +2372,7 @@ void mod_handler_nmoesi_nc_write_request(int event, void *data)
 		if (stack->err)
 		{
 			ret->err = 1;
-			ret->reply = reply_ACK_ERROR;
+			mod_stack_set_reply(ret, reply_ACK_ERROR);
 			stack->reply_size = 8;
 			dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 			esim_schedule_event(EV_MOD_NMOESI_NC_WRITE_REQUEST_REPLY, stack, 0);
@@ -2287,11 +2408,11 @@ void mod_handler_nmoesi_nc_write_request(int event, void *data)
 		 * to send more data up or simply ACK */
 		if (stack->reply_size == 8) 
 		{
-			ret->reply = reply_ACK;
+			mod_stack_set_reply(ret, reply_ACK);
 		}
 		else if (stack->reply_size > 8)
 		{
-			ret->reply = reply_ACK_DATA;
+			mod_stack_set_reply(ret, reply_ACK_DATA);
 		}
 		else 
 		{
@@ -2319,15 +2440,16 @@ void mod_handler_nmoesi_nc_write_request(int event, void *data)
 		{
 			/* Exclusive, shared, and non-coherent states send an ACK */
 			stack->reply_size = 8;
-			stack->reply = reply_ACK;
+			mod_stack_set_reply(stack, reply_ACK);
 		}
 		else if (stack->state == cache_block_modified || 
 			stack->state == cache_block_owned)
 		{
 			if (stack->peer) 
 			{
-				/* Modified or owned entries send data directly to peer if it exists */
-				stack->reply = reply_ACK_DATA_SENT_TO_PEER;
+				/* Modified or owned entries send data directly to peer 
+				 * if it exists */
+				mod_stack_set_reply(stack, reply_ACK_DATA_SENT_TO_PEER);
 				stack->reply_size = 8;
 
 				/* This control path uses an intermediate stack that disappears, so 
@@ -2347,7 +2469,7 @@ void mod_handler_nmoesi_nc_write_request(int event, void *data)
 			else 
 			{
 				/* If peer does not exist, data is returned to mod */
-				stack->reply = reply_ACK_DATA;
+				mod_stack_set_reply(stack, reply_ACK_DATA);
 				stack->reply_size = target_mod->block_size + 8;
 			}
 		}
