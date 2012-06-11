@@ -632,6 +632,7 @@ struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
 	stack->ret_event = ret_event;
 	stack->ret_stack = ret_stack;
 	stack->reply = reply_NO_REPLY;
+	stack->retain_owner = 0;
 
 	/* Return */
 	return stack;
@@ -746,3 +747,13 @@ void mod_stack_wakeup_stack(struct mod_stack_t *master_stack)
 	mem_debug("\n");
 }
 
+/* Set a reply value that has a precedence order.  This is required
+ * when multiple subblocks all return replies.  An alternative would
+ * be to store each reply and scan them all before deciding an action. */
+void mod_stack_set_reply(struct mod_stack_t *stack, int reply)
+{
+	if (reply > stack->reply)
+	{
+		stack->reply = reply;
+	}
+}
