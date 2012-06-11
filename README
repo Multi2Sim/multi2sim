@@ -389,6 +389,18 @@ code) need to agree on it.
 	centralized in a single file, avoiding to update several code locations
 	every time a new call is added to the interface.
 
+	The implementation of each library function call should be part of the
+	simulator code, in the main *.c file associated with the runtime library
+	interface implementation. In the case of the OpenCL runtime, the
+	functions are found at the end of file
+
+		src/arch/x86/emu/clrt.c
+
+	The implementation of each function should be preceding by a multi-line
+	comment clearly specifying the prototype for that function (how many
+	arguments it has, the type of arguments, the definition of structures
+	pointed to by function arguments, etc.).
+
 * Version control for a Multi2Sim runtime library interface
 
 	The first runtime function call should be called 'init', and should be
@@ -512,6 +524,24 @@ code) need to agree on it.
 			src/m2s.c
 
 * Debug information for the Multi2Sim runtime library
+
+	The runtime library itself is guest code, that can potentially run both
+	on Multi2Sim or natively. Thus, it is not possible to use a simulator
+	command-line option to activate debug information in a runtime library.
+	Instead, an environment variable is used for this purpose.
+
+	For example, the new OpenCL runtime library uses environment variable
+	'M2S_CLRT_DEBUG' to activate debug information. If the variable is set
+	to 1, the runtime library should dump information about every library
+	function called by the application, in the same format as the system
+	calls are dumped in
+		
+		src/arch/x86/emu/syscall.c
+	
+	As an example, the OpenCL runtime library uses function 'm2s_clrt_debug'
+	for debugging purposes, implemented in
+
+		tools/libm2s-clrt/m2s-clrt.c
 
 	
 	
