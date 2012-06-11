@@ -652,6 +652,10 @@ void x86_glut_frame_buffer_flush_if_requested(void);
 
 /*
  * OPENGL system call interface
+ *
+ * NOTE: any additional function added to this interface should be implemented
+ * both in 'opengl.c' and 'opengl-missing.c' to allow for correct compilation on
+ * systems lacking the OpenGL and GLUT libraries.
  */
 
 #define x86_opengl_debug(...) debug(x86_opengl_debug_category, __VA_ARGS__)
@@ -661,6 +665,7 @@ void x86_opengl_init(void);
 void x86_opengl_done(void);
 
 int x86_opengl_call(void);
+
 
 
 
