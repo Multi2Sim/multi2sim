@@ -493,7 +493,7 @@ struct si_ndrange_t
 	struct si_work_group_t **work_groups;
 	struct si_wavefront_t **wavefronts;
 	struct si_work_item_t **work_items;
-	struct si_work_item_t *scalar_work_item;
+	struct si_work_item_t **scalar_work_items;
 
 	/* IDs of work-items contained */
 	int work_item_id_first;
@@ -684,21 +684,14 @@ struct si_wavefront_t
 	void *inst_buf;	
 	void *inst_buf_start;	
 
-#if 0
-	/* Current instruction type */
-	enum si_inst_kind_t inst_kind;
-#endif
-
 	/* Current instruction */
 	struct si_inst_t inst;
 	uint inst_size;
 
 	/* Pointer to work_items */
+	struct si_work_item_t *scalar_work_item;  
 	struct si_work_item_t **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
-
-	/* Active mask stack */
-	struct bit_map_t *active_stack;  /* SI_MAX_STACK_SIZE * work_item_count elements */
-	int stack_top;
+	si_gpr_t sgpr[128];  /* Scalar general purpose registers--used by scalar work items */
 
 	/* Predicate mask */
 	struct bit_map_t *pred;  /* work_item_count elements */
@@ -709,10 +702,6 @@ struct si_wavefront_t
 	unsigned int local_mem_read : 1;
 	unsigned int local_mem_write : 1;
 	unsigned int pred_mask_update : 1;
-	unsigned int push_before_done : 1;  /* Indicates whether the stack has been pushed after PRED_SET* instr. */
-	unsigned int active_mask_update : 1;
-	int active_mask_push;  /* Number of entries the stack was pushed */
-	int active_mask_pop;  /* Number of entries the stack was popped */
 
 	/* Linked lists */
 	struct si_wavefront_t *running_list_next;
@@ -737,6 +726,11 @@ struct si_wavefront_t
 	long long vector_inst_count;
 	long long global_mem_inst_count;  
 	long long local_mem_inst_count;  
+
+	/* Condition codes */
+	unsigned long long vcc;
+	unsigned long long scc;
+	unsigned long long exec;
 };
 
 #define SI_FOREACH_WAVEFRONT_IN_NDRANGE(NDRANGE, WAVEFRONT_ID) \
@@ -793,7 +787,6 @@ struct si_work_item_t
 
 	/* Work-item state */
 	si_gpr_t vgpr[128];  /* Vector general purpose registers */
-	si_gpr_t sgpr[128];  /* Scalar general purpose registers--used by scalar work item */
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
 	 * and executed as a burst at the end of an ALU group. */
@@ -802,13 +795,6 @@ struct si_work_item_t
 	/* LDS (Local Data Share) OQs (Output Queues) */
 	struct list_t *lds_oqa;
 	struct list_t *lds_oqb;
-
-	/* This is a digest of the active mask updates for this work_item. Every time
-	 * an instruction updates the active mask of a wavefront, this digest is updated
-	 * for active work_items by XORing a random number common for the wavefront.
-	 * At the end, work_items with different 'branch_digest' numbers can be considered
-	 * divergent work_items. */
-	uint32_t branch_digest;
 
 	/* Last global memory access */
 	uint32_t global_mem_access_addr;
@@ -839,16 +825,13 @@ struct si_work_item_t
 struct si_work_item_t *si_work_item_create(void);
 void si_work_item_free(struct si_work_item_t *work_item);
 
-/* Consult and change active/predicate bits */
-void si_work_item_set_active(struct si_work_item_t *work_item, int active);
-int si_work_item_get_active(struct si_work_item_t *work_item);
+/* Consult and change predicate bits */  /* FIXME Remove */
 void si_work_item_set_pred(struct si_work_item_t *work_item, int pred);
 int si_work_item_get_pred(struct si_work_item_t *work_item);
-void si_work_item_update_branch_digest(struct si_work_item_t *work_item,
-	long long inst_count, uint32_t inst_addr);
-void si_work_item_init_sreg_with_cb(struct si_work_item_t *work_item, int first_reg, int num_regs, 
+
+void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, int first_reg, int num_regs, 
 	int cb);
-void si_work_item_init_sreg_with_uav_table(struct si_work_item_t *work_item, int first_reg, 
+void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, int first_reg, 
 	int num_regs);
 
 
@@ -869,8 +852,10 @@ extern struct si_inst_t *si_isa_inst;
 
 /* FIXME Add short-cut for scalar work-item */
 /* Macros for quick access */
-#define SI_SGPR_ELEM(_gpr)  (si_isa_ndrange->scalar_work_item->sgpr[(_gpr)])
-#define SI_SGPR_FLOAT_ELEM(_gpr)  (* (float *) &si_isa_ndrange->scalar_work_item->sgpr[(_gpr)])
+#define SI_SGPR_ELEM(_gpr)  (si_isa_wavefront->sgpr[(_gpr)])
+#define SI_SGPR_FLOAT_ELEM(_gpr)  (* (float *) &si_isa_wavefront->sgpr[(_gpr)])
+#define SI_VGPR_ELEM(_gpr)  (si_isa_work_item->vgpr[(_gpr)])
+#define SI_VGPR_FLOAT_ELEM(_gpr)  (* (float *) &si_isa_work_item->vgpr[(_gpr)])
 
 
 /* Debugging */
@@ -895,6 +880,8 @@ extern char *err_si_isa_note;
 
 /* Macros for fast access of instruction words */
 #define SI_INST_SMRD		si_isa_inst->micro_inst.smrd
+#define SI_INST_SOP1		si_isa_inst->micro_inst.sop1
+#define SI_INST_VOP1		si_isa_inst->micro_inst.vop1
 /* FIXME Finish filling these in */
 
 
@@ -954,6 +941,8 @@ void si_emu_done(void);
 
 unsigned int si_isa_read_sgpr(int sreg);
 void si_isa_write_sgpr(int sreg, unsigned int value);
+unsigned int si_isa_read_vgpr(int vreg);
+void si_isa_write_vgpr(int vreg, unsigned int value);
 void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg);
 void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg);
 

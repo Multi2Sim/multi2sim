@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <southern-islands-asm.h>
 #include <evergreen-timing.h>
 #include <x86-timing.h>
 #include <fermi-timing.h>
@@ -35,6 +36,7 @@ static char *opencl_debug_file_name = "";
 static char *cpu_disasm_file_name = "";
 static char *gpu_disasm_file_name = "";
 static char *si_disasm_file_name = "";
+static char *si_isa_debug_file_name = "";
 static char *opengl_disasm_file_name = "";
 static char *fermi_disasm_file_name = "";
 static char *gpu_stack_debug_file_name = "";
@@ -54,6 +56,9 @@ static char *x86_opengl_debug_file_name = "";
 static char *x86_clrt_debug_file_name = "";
 
 static int opengl_disasm_shader_index = 1;
+
+/* FIXME We need to fix the initialization and selection of devices */
+static int si_emulator = 0;
 
 /* Error debug */
 int x86_cpu_error_debug_category;
@@ -350,11 +355,19 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* GPU ISA debug file */
+		/* Evergreen ISA debug file */
 		if (!strcmp(argv[argi], "--debug-gpu-isa"))
 		{
 			sim_need_argument(argc, argv, argi);
 			gpu_isa_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Southern Islands ISA debug file */
+		if (!strcmp(argv[argi], "--debug-si-isa"))
+		{
+			sim_need_argument(argc, argv, argi);
+			si_isa_debug_file_name = argv[++argi];
 			continue;
 		}
 
@@ -512,6 +525,22 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Southern Islands simulation accuracy */
+		if (!strcmp(argv[argi], "--si-sim"))
+		{
+			si_emulator = 1;
+			sim_need_argument(argc, argv, argi);
+			argi++;
+			if (!strcasecmp(argv[argi], "functional"))
+				si_emu_kind = evg_emu_functional;
+			else if (!strcasecmp(argv[argi], "detailed"))
+				si_emu_kind = evg_emu_detailed;
+			else
+				fatal("option '%s': invalid argument ('%s').\n%s",
+					argv[argi - 1], argv[argi], err_help_note);
+			continue;
+		}
+
 		/* Show help */
 		if (!strcmp(argv[argi], "--help") || !strcmp(argv[argi], "-h"))
 		{
@@ -656,11 +685,19 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* OpenCL binary */
+		/* Evergreen OpenCL binary */
 		if (!strcmp(argv[argi], "--opencl-binary"))
 		{
 			sim_need_argument(argc, argv, argi);
 			evg_emu_opencl_binary_name = argv[++argi];
+			continue;
+		}
+
+		/* Southern Islands OpenCL binary */
+		if (!strcmp(argv[argi], "--si-opencl-binary"))
+		{
+			sim_need_argument(argc, argv, argi);
+			si_emu_opencl_binary_name = argv[++argi];
 			continue;
 		}
 
@@ -809,7 +846,8 @@ static void sim_read_command_line(int *argc_ptr, char **argv)
 void sim_stats_summary(void)
 {
 	long long now = x86_emu_timer();
-	long long gpu_now = evg_emu_timer();
+	long long evg_now = evg_emu_timer();
+	long long si_now = si_emu_timer();
 	long long inst_count;
 
 	double sec_count;
@@ -854,10 +892,10 @@ void sim_stats_summary(void)
 	}
 	fprintf(stderr, "\n");
 
-	/* GPU functional simulation */
+	/* Evergreen functional simulation */
 	if (evg_emu->ndrange_count)
 	{
-		sec_count = (double) gpu_now / 1e6;
+		sec_count = (double) evg_now / 1e6;
 		inst_per_sec = sec_count > 0.0 ? (double) evg_emu->inst_count / sec_count : 0.0;
 		fprintf(stderr, "[ GPU ]\n");
 		fprintf(stderr, "Time = %.2f\n", sec_count);
@@ -865,9 +903,33 @@ void sim_stats_summary(void)
 		fprintf(stderr, "Instructions = %lld\n", evg_emu->inst_count);
 		fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	
-		/* GPU detailed simulation */
+		/* Evergreen detailed simulation */
 		if (evg_emu_kind == evg_emu_detailed)
 		{
+			inst_per_cycle = evg_gpu->cycle ? (double) evg_emu->inst_count / evg_gpu->cycle : 0.0;
+			cycles_per_sec = sec_count > 0.0 ? (double) evg_gpu->cycle / sec_count : 0.0;
+			fprintf(stderr, "Cycles = %lld\n", evg_gpu->cycle);
+			fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
+			fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
+		}
+		fprintf(stderr, "\n");
+	}
+
+	/* Southern Islands functional simulation */
+	if (si_emu->ndrange_count)
+	{
+		sec_count = (double) si_now / 1e6;
+		inst_per_sec = sec_count > 0.0 ? (double) si_emu->inst_count / sec_count : 0.0;
+		fprintf(stderr, "[ GPU ]\n");
+		fprintf(stderr, "Time = %.2f\n", sec_count);
+		fprintf(stderr, "NDRangeCount = %d\n", si_emu->ndrange_count);
+		fprintf(stderr, "Instructions = %lld\n", si_emu->inst_count);
+		fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
+	
+		/* Southern Islands detailed simulation */
+		if (si_emu_kind == si_emu_detailed)
+		{
+			assert(0);
 			inst_per_cycle = evg_gpu->cycle ? (double) evg_emu->inst_count / evg_gpu->cycle : 0.0;
 			cycles_per_sec = sec_count > 0.0 ? (double) evg_gpu->cycle / sec_count : 0.0;
 			fprintf(stderr, "Cycles = %lld\n", evg_gpu->cycle);
@@ -896,7 +958,7 @@ int main(int argc, char **argv)
 	if (*cpu_disasm_file_name)
 		x86_emu_disasm(cpu_disasm_file_name);
 
-	/* GPU disassembler tool */
+	/* Evergreen disassembler tool */
 	if (*gpu_disasm_file_name)
 		evg_emu_disasm(gpu_disasm_file_name);
 
@@ -934,6 +996,8 @@ int main(int argc, char **argv)
 	evg_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
 	evg_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
+	si_opencl_debug_category = debug_new_category(opencl_debug_file_name);
+	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
 	x86_cpu_error_debug_category = debug_new_category(error_debug_file_name);
 	x86_glut_debug_category = debug_new_category(x86_glut_debug_file_name);
 	x86_clrt_debug_category = debug_new_category(x86_clrt_debug_file_name);
@@ -949,6 +1013,10 @@ int main(int argc, char **argv)
 	esim_init();
 	x86_emu_init();
 	net_init();
+
+	/* Select the GPU emulator */
+	if (si_emulator)
+		x86_emu->gpu_emulator = gpu_emulator_si;
 
 	/* Initialization for detailed simulation */
 	if (x86_emu_kind == x86_emu_kind_detailed)
