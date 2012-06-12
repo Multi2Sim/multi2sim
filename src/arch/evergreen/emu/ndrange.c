@@ -90,11 +90,17 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	int wid;  /* Wavefront ID iterator */
 	int lid;  /* Local ID iterator */
 
-	/* Array of work-groups */
+	char name[MAX_STRING_SIZE];
+
+	/* Create array of work-groups */
 	ndrange->work_group_count = kernel->group_count;
 	ndrange->work_group_id_first = 0;
 	ndrange->work_group_id_last = ndrange->work_group_count - 1;
 	ndrange->work_groups = calloc(ndrange->work_group_count, sizeof(void *));
+	if (!ndrange->work_groups)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Create work-groups */
 	for (gid = 0; gid < kernel->group_count; gid++)
 	{
 		ndrange->work_groups[gid] = evg_work_group_create();
@@ -108,6 +114,8 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	ndrange->wavefront_id_last = ndrange->wavefront_count - 1;
 	assert(ndrange->wavefronts_per_work_group > 0 && ndrange->wavefront_count > 0);
 	ndrange->wavefronts = calloc(ndrange->wavefront_count, sizeof(void *));
+	if (!ndrange->wavefronts)
+		fatal("%s: out of memory", __FUNCTION__);
 	for (wid = 0; wid < ndrange->wavefront_count; wid++)
 	{
 		gid = wid / ndrange->wavefronts_per_work_group;
@@ -127,6 +135,10 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	ndrange->work_item_id_first = 0;
 	ndrange->work_item_id_last = ndrange->work_item_count - 1;
 	ndrange->work_items = calloc(ndrange->work_item_count, sizeof(void *));
+	if (!ndrange->work_items)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Create work-items */
 	tid = 0;
 	gid = 0;
 	for (gidz = 0; gidz < kernel->group_count3[2]; gidz++)
@@ -146,11 +158,12 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 
 				/* First, last, and number of work-items in work-group */
 				work_group->work_item_id_first = tid;
-				work_group->work_item_id_last = tid + kernel->local_size;
+				work_group->work_item_id_last = tid + kernel->local_size - 1;
 				work_group->work_item_count = kernel->local_size;
 				work_group->work_items = &ndrange->work_items[tid];
-				snprintf(work_group->name, sizeof(work_group->name), "work-group[i%d-i%d]",
+				snprintf(name, sizeof name, "work-group[i%d-i%d]",
 					work_group->work_item_id_first, work_group->work_item_id_last);
+				evg_work_group_set_name(work_group, name);
 
 				/* First ,last, and number of wavefronts in work-group */
 				work_group->wavefront_id_first = gid * ndrange->wavefronts_per_work_group;
@@ -229,9 +242,11 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 	/* Assign names to wavefronts */
 	for (wid = 0; wid < ndrange->wavefront_count; wid++)
 	{
+		/* Set name */
 		wavefront = ndrange->wavefronts[wid];
-		snprintf(wavefront->name, sizeof(wavefront->name), "wavefront[i%d-i%d]",
+		snprintf(name, sizeof name, "wavefront[i%d-i%d]",
 			wavefront->work_item_id_first, wavefront->work_item_id_last);
+		evg_wavefront_set_name(wavefront, name);
 
 		/* Initialize wavefront program counter */
 		if (!kernel->bin_file->enc_dict_entry_evergreen->sec_text_buffer.size)

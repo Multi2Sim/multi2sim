@@ -671,9 +671,8 @@ enum evg_work_group_status_t
 
 struct evg_work_group_t
 {
-	char name[30];
-
 	/* ID */
+	char *name;
 	int id;  /* Group ID */
 	int id_3d[3];  /* 3-dimensional Group ID */
 
@@ -736,9 +735,11 @@ struct evg_work_group_t
 		(WORK_GROUP_ID) <= (NDRANGE)->work_group_id_last; \
 		(WORK_GROUP_ID)++)
 
-struct evg_work_group_t *evg_work_group_create();
+struct evg_work_group_t *evg_work_group_create(void);
 void evg_work_group_free(struct evg_work_group_t *work_group);
 void evg_work_group_dump(struct evg_work_group_t *work_group, FILE *f);
+
+void evg_work_group_set_name(struct evg_work_group_t *work_group, char *name);
 
 int evg_work_group_get_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status);
 void evg_work_group_set_status(struct evg_work_group_t *work_group, enum evg_work_group_status_t status);
@@ -768,7 +769,7 @@ enum evg_clause_kind_t
 struct evg_wavefront_t
 {
 	/* ID */
-	char name[30];
+	char *name;
 	int id;
 	int id_in_work_group;
 
@@ -886,9 +887,11 @@ struct evg_wavefront_t
 		(WAVEFRONT_ID) <= (WORK_GROUP)->wavefront_id_last; \
 		(WAVEFRONT_ID)++)
 
-struct evg_wavefront_t *evg_wavefront_create();
+struct evg_wavefront_t *evg_wavefront_create(void);
 void evg_wavefront_free(struct evg_wavefront_t *wavefront);
 void evg_wavefront_dump(struct evg_wavefront_t *wavefront, FILE *f);
+
+void evg_wavefront_set_name(struct evg_wavefront_t *wavefront, char *name);
 
 void evg_wavefront_stack_push(struct evg_wavefront_t *wavefront);
 void evg_wavefront_stack_pop(struct evg_wavefront_t *wavefront, int count);
