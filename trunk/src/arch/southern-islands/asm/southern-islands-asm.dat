@@ -68,11 +68,25 @@ DEFINST(V_MAD_F32,
 	8
 )
 
+DEFINST(V_MUL_LO_I32,
+	" v_mul_lo_i32  %VDST, %0NEG%SRC0, %1NEG%SRC1",
+	VOP3a,
+	363,
+	8
+)
+
 DEFINST(V_CMP_GT_I32_VOP3b,
-	" v_cmp_gt_i32  %64_SDST, %0NEG%SRC0, %1NEG%SRC1",
+	" v_cmp_gt_i32  %64_VDST, %0NEG%SRC0, %1NEG%SRC1",
 	VOP3b,
 	132,
 	8
+)
+
+DEFINST(V_CMP_LT_I32,
+	" v_cmp_lt_i32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	129,
+	4
 )
 
 DEFINST(V_CMP_GT_I32,
@@ -96,6 +110,20 @@ DEFINST(V_CVT_F32_I32,
 	4
 )
 
+DEFINST(V_CVT_I32_F32,
+	" v_cvt_i32_f32  %VDST, %SRC0",
+	VOP1,
+	8,
+	4
+)
+
+DEFINST(V_MUL_F32,
+	" v_mul_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	8,
+	4
+)
+
 DEFINST(V_MUL_I32_I24,
 	" v_mul_i32_i24  %VDST, %SRC0, %VSRC1",
 	VOP2,
@@ -107,6 +135,13 @@ DEFINST(V_LSHLREV_B32,
 	" v_lshlrev_b32  %VDST, %SRC0, %VSRC1",
 	VOP2,
 	26,
+	4
+)
+
+DEFINST(V_MAC_F32,
+	" v_mac_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	31,
 	4
 )
 
