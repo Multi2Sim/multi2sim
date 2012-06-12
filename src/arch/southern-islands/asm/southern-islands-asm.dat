@@ -12,6 +12,20 @@ DEFINST(S_AND_B64,
 	4
 )
 
+DEFINST(S_ANDN2_B64,
+	" s_andn2_b64   %64_SDST, %64_SSRC0, %64_SSRC1",
+	SOP2,
+	21,
+	4
+)
+
+DEFINST(S_MOV_B64,
+	" s_mov_b64     %64_SDST, %64_SSRC0",
+	SOP1,
+	4,
+	4
+)
+
 DEFINST(S_AND_SAVEEXEC_B64,
 	" s_and_saveexec_b64  %64_SDST, %64_SSRC0",
 	SOP1,

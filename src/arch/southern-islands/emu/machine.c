@@ -128,6 +128,16 @@ void si_isa_S_AND_B64_impl()
 	NOT_IMPL();
 }
 
+void si_isa_S_ANDN2N2_B64_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_S_MOV_B64_impl()
+{
+	NOT_IMPL();
+}
+
 void si_isa_S_AND_SAVEEXEC_B64_impl()
 {
 	NOT_IMPL();
