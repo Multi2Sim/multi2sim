@@ -60,8 +60,12 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 
 	/* Free wavefronts */
 	for (i = 0; i < ndrange->wavefront_count; i++)
+	{
 		si_wavefront_free(ndrange->wavefronts[i]);
+		si_work_item_free(ndrange->scalar_work_items[i]);
+	}
 	free(ndrange->wavefronts);
+	free(ndrange->scalar_work_items);
 
 	/* Free work-items */
 	for (i = 0; i < ndrange->work_item_count; i++)
@@ -131,6 +135,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		si_wavefront_init_sreg_with_cb(wavefront, 4, 4, 0);
 		si_wavefront_init_sreg_with_cb(wavefront, 8, 4, 1);
 		si_wavefront_init_sreg_with_uav_table(wavefront, 2, 2);
+		si_wavefront_init_sreg_with_value(wavefront, 12, gid); /* S12 = WGID.x */
 	}
 
 	/* Array of work-items */
@@ -212,16 +217,16 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 							wavefront->work_item_count++;
 							wavefront->work_item_id_last = tid;
 
+							/* Save local IDs in registers */
+							work_item->vgpr[0] = lidx;  /* V0 */
 #if 0
-							/* Save local IDs in register R0 */
-							work_item->gpr[0].elem[0] = lidx;  /* R0.x */
-							work_item->gpr[0].elem[1] = lidy;  /* R0.y */
-							work_item->gpr[0].elem[2] = lidz;  /* R0.z */
+							work_item->vgpr[1] = lidy;  /* V1 */
+							work_item->vgpr[2] = lidz;  /* V2 */
 
-							/* Save work-group IDs in register R1 */
-							work_item->gpr[1].elem[0] = gidx;  /* R1.x */
-							work_item->gpr[1].elem[1] = gidy;  /* R1.y */
-							work_item->gpr[1].elem[2] = gidz;  /* R1.z */
+							/* Save work-group IDs in registers */
+							work_item->vgpr[3] = gidx;  /* V3 */
+							work_item->vgpr[4] = gidy;  /* V4 */
+							work_item->vgpr[5] = gidz;  /* V5 */
 #endif
 
 							/* Next work-item */

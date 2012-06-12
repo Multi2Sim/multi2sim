@@ -50,7 +50,6 @@ void si_wavefront_free(struct si_wavefront_t *wavefront)
 {
 	/* Free wavefront */
 	bit_map_free(wavefront->pred);
-	free(wavefront->scalar_work_item);
 	free(wavefront);
 }
 
@@ -169,6 +168,14 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
+	/* Vector Memory Instructions */
+	case SI_FMT_MTBUF:
+	{
+
+
+		break;
+	}
+
 	default:
 	{
 		panic("Instruction type not implemented");
@@ -177,16 +184,29 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 	}
 
-#if 0
-	/* If done, set work group to done */
-	if (1) 
+	/* Check if wavefront finished kernel execution */
+	if (si_isa_wavefront->finished)
 	{
-		si_work_group_clear_status(si_isa_work_group, si_work_group_running);
-		si_work_group_set_status(si_isa_work_group, si_work_group_finished);
+		assert(DOUBLE_LINKED_LIST_MEMBER(si_isa_work_group, running, si_isa_wavefront));
+		assert(!DOUBLE_LINKED_LIST_MEMBER(si_isa_work_group, finished, si_isa_wavefront));
+		DOUBLE_LINKED_LIST_REMOVE(si_isa_work_group, running, si_isa_wavefront);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(si_isa_work_group, finished, si_isa_wavefront);
+
+		/* Check if work-group finished kernel execution */
+		if (si_isa_work_group->finished_list_count == si_isa_work_group->wavefront_count)
+		{
+			assert(DOUBLE_LINKED_LIST_MEMBER(ndrange, running, si_isa_work_group));
+			assert(!DOUBLE_LINKED_LIST_MEMBER(ndrange, finished, si_isa_work_group));
+			si_work_group_clear_status(si_isa_work_group, si_work_group_running);
+			si_work_group_set_status(si_isa_work_group, si_work_group_finished);
+		}
 	}
-#endif
 }
 
+void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, int sreg, uint32_t value)
+{
+	wavefront->sgpr[sreg] = value;
+}
 
 void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, int first_reg, int num_regs, 
 	int cb)
