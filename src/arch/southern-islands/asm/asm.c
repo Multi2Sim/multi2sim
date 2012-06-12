@@ -34,7 +34,9 @@ static struct si_inst_info_t si_inst_info[SI_INST_COUNT];
 
 /* Defnine the number of valid opcodes. */
 #define SI_INST_INFO_SOPP_OPCODE_SIZE 23
+#define SI_INST_INFO_SOPC_OPCODE_SIZE 17
 #define SI_INST_INFO_SOP1_OPCODE_SIZE 54
+#define SI_INST_INFO_SOPK_OPCODE_SIZE 22
 #define SI_INST_INFO_SOP2_OPCODE_SIZE 45
 #define SI_INST_INFO_SMRD_OPCODE_SIZE 32
 #define SI_INST_INFO_VOP3_OPCODE_SIZE 373
@@ -50,7 +52,9 @@ static struct si_inst_info_t si_inst_info[SI_INST_COUNT];
 
 /* Pointers to 'si_inst_info' table indexed by instruction opcode */
 static struct si_inst_info_t *si_inst_info_sopp[SI_INST_INFO_SOPP_OPCODE_SIZE];
+static struct si_inst_info_t *si_inst_info_sopc[SI_INST_INFO_SOPC_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_sop1[SI_INST_INFO_SOP1_OPCODE_SIZE];
+static struct si_inst_info_t *si_inst_info_sopk[SI_INST_INFO_SOPK_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_sop2[SI_INST_INFO_SOP2_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_smrd[SI_INST_INFO_SMRD_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_vop3[SI_INST_INFO_VOP3_OPCODE_SIZE];
@@ -61,7 +65,9 @@ static struct si_inst_info_t *si_inst_info_mtbuf[SI_INST_INFO_MTBUF_OPCODE_SIZE]
 
 /* Helper functions to dump assembly code to a file */
 void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f, int* new_label);
+void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
+void si_inst_dump_sopk(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
@@ -196,10 +202,22 @@ void si_disasm_init()
 			si_inst_info_sopp[info->opcode] = info;
 			continue;
 		}
+		if (info->fmt == SI_FMT_SOPC)
+		{
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOPC_OPCODE_SIZE - 1));
+			si_inst_info_sopc[info->opcode] = info;
+			continue;
+		}
 		else if (info->fmt == SI_FMT_SOP1)
 		{
 			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOP1_OPCODE_SIZE - 1));
 			si_inst_info_sop1[info->opcode] = info;
+			continue;
+		}
+		else if (info->fmt == SI_FMT_SOPK)
+		{
+			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOPK_OPCODE_SIZE - 1));
+			si_inst_info_sopk[info->opcode] = info;
 			continue;
 		}
 		else if (info->fmt == SI_FMT_SOP2)
@@ -278,6 +296,19 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 		assert(si_inst_info_sopp[inst->micro_inst.sopp.op]);
 		inst->info = si_inst_info_sopp[inst->micro_inst.sopp.op];
 	}
+	else if (inst->micro_inst.sopc.enc == 0x17E)
+	{
+		assert(si_inst_info_sopc[inst->micro_inst.sopc.op]);
+		inst->info = si_inst_info_sopc[inst->micro_inst.sopc.op];
+
+		/* Only one source field may use a literal constant, which is indicated by 0xFF. */
+		assert(!(inst->micro_inst.sopc.ssrc0 == 0xFF && inst->micro_inst.sopc.ssrc1 == 0xFF));
+		if (inst->micro_inst.sopc.ssrc0 == 0xFF || inst->micro_inst.sopc.ssrc1 == 0xFF)
+		{
+			memcpy(&inst->micro_inst, buf, 8);
+			inst->info->size = 8;
+		}
+	}
 	else if (inst->micro_inst.sop1.enc == 0x17D)
 	{
 		assert(si_inst_info_sop1[inst->micro_inst.sop1.op]);
@@ -290,10 +321,15 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 			inst->info->size = 8;
 		}	
 	}
+	else if (inst->micro_inst.sopk.enc == 0xB)
+	{
+		assert(si_inst_info_sopk[inst->micro_inst.sopk.op]);
+		inst->info = si_inst_info_sopk[inst->micro_inst.sopk.op];
+	}
 	else if (inst->micro_inst.sop2.enc == 0x2)
 	{
 		assert(si_inst_info_sop2[inst->micro_inst.sop2.op]);
-		inst->info = si_inst_info_sop2[(inst->micro_inst).sop2.op];
+		inst->info = si_inst_info_sop2[inst->micro_inst.sop2.op];
 
 		/* Only one source field may use a literal constant, which is indicated by 0xFF. */
 		assert(!(inst->micro_inst.sop2.ssrc0 == 0xFF && inst->micro_inst.sop2.ssrc1 == 0xFF));
@@ -427,9 +463,17 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 			if (inst.micro_inst.sopp.op == 1)
 				break;
 		}
+		else if (inst.info->fmt == SI_FMT_SOPC)
+		{
+			si_inst_dump_sopc(&inst, rel_addr, inst_buf, f);
+		}
 		else if (inst.info->fmt == SI_FMT_SOP1)
 		{
 			si_inst_dump_sop1(&inst, rel_addr, inst_buf, f);
+		}
+		else if (inst.info->fmt == SI_FMT_SOPK)
+		{
+			si_inst_dump_sopk(&inst, rel_addr, inst_buf, f);
 		}
 		else if (inst.info->fmt == SI_FMT_SOP2)
 		{
@@ -674,6 +718,63 @@ void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
 }
 
+void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+{
+	struct si_fmt_sopc_t *sopc = &inst->micro_inst.sopc;
+
+	int str_size = MAX_INST_STR_SIZE;
+	char orig_inst_str[MAX_INST_STR_SIZE];
+	char *inst_str = &orig_inst_str[0];
+	char *fmt_str = inst->info->fmt_str;
+	int token_len;
+	char operand_str[MAX_OPERAND_STR_SIZE];
+	while (*fmt_str)
+	{
+		/* Literal */
+		if (*fmt_str != '%')
+		{
+			str_printf(&inst_str, &str_size, "%c", *fmt_str);
+			fmt_str++;
+			continue;
+		}
+
+		/* Token */
+		fmt_str++;
+		if (is_token(fmt_str, "SSRC0", &token_len))
+		{
+			if (sopc->ssrc0 == 0xFF)
+			{
+				str_printf(&inst_str, &str_size, "%08x", sopc->lit_cnst);
+			}
+			else
+			{
+				operand_dump(operand_str, sopc->ssrc0);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+		}
+		else if (is_token(fmt_str, "SSRC1", &token_len))
+		{
+			if (sopc->ssrc1 == 0xFF)
+			{
+				str_printf(&inst_str, &str_size, "%08x", sopc->lit_cnst);
+			}
+			else
+			{
+				operand_dump(operand_str, sopc->ssrc1);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+		}
+		else
+		{
+			fatal("%s: token not recognized.", fmt_str);
+		}
+
+		fmt_str += token_len;
+	}
+	
+	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+}
+
 void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
 {
 	struct si_fmt_sop1_t *sop1 = &inst->micro_inst.sop1;
@@ -712,6 +813,48 @@ void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 				operand_dump_series(operand_str, sop1->ssrc0, sop1->ssrc0 + 1);
 				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
+		}
+		else
+		{
+			fatal("%s: token not recognized.", fmt_str);
+		}
+
+		fmt_str += token_len;
+	}
+	
+	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+}
+
+void si_inst_dump_sopk(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+{
+	struct si_fmt_sopk_t *sopk = &inst->micro_inst.sopk;
+
+	int str_size = MAX_INST_STR_SIZE;
+	char orig_inst_str[MAX_INST_STR_SIZE];
+	char *inst_str = &orig_inst_str[0];
+	char *fmt_str = inst->info->fmt_str;
+	int token_len;
+	char operand_str[MAX_OPERAND_STR_SIZE];
+	while (*fmt_str)
+	{
+		/* Literal */
+		if (*fmt_str != '%')
+		{
+			str_printf(&inst_str, &str_size, "%c", *fmt_str);
+			fmt_str++;
+			continue;
+		}
+
+		/* Token */
+		fmt_str++;
+		if (is_token(fmt_str, "SDST", &token_len))
+		{
+			operand_dump(operand_str, sopk->sdst);
+			str_printf(&inst_str, &str_size, "%s", operand_str);
+		}
+		else if (is_token(fmt_str, "SIMM16", &token_len))
+		{
+			str_printf(&inst_str, &str_size, "0x%04x", sopk->simm16);
 		}
 		else
 		{
