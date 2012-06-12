@@ -102,25 +102,19 @@ void si_isa_write_sgpr(int sreg, unsigned int value)
 }
 
 /* Initialize a buffer resource descriptor */
-void si_isa_init_buf_res(struct si_buffer_resource_t *buf_desc, int sreg)
+void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg)
 {
 	assert(buf_desc);
 
 	memcpy(buf_desc, &si_isa_ndrange->scalar_work_item->sgpr[sreg], sizeof(unsigned int)*4);
 }
 
-
-/*
- * UAV Table
- */
-
-void si_isa_uav_table_write(int bank, int elem, int bytes, void *pvalue)
+/* Initialize a buffer resource descriptor */
+void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg)
 {
-	
-}
-void si_isa_uav_table_read(int bank, int elem, int bytes, void *pvalue)
-{
+	assert(mem_ptr);
 
+	memcpy(mem_ptr, &si_isa_ndrange->scalar_work_item->sgpr[sreg], sizeof(unsigned int)*2);
 }
 
 

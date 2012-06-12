@@ -725,7 +725,6 @@ void si_opencl_program_initialize_constant_buffers(struct si_opencl_program_t *p
 struct si_opencl_kernel_t *si_opencl_kernel_create()
 {
 	struct si_opencl_kernel_t *kernel;
-	int i;
 
 	/* Allocate */
 	kernel = calloc(1, sizeof(struct si_opencl_kernel_t));
@@ -738,15 +737,8 @@ struct si_opencl_kernel_t *si_opencl_kernel_create()
 	kernel->arg_list = list_create();
 
 	/* Create the UAV-to-physical-address lookup lists */
-	kernel->uav_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
-	kernel->constant_buffer_list = list_create_with_size(25); /* For constant buffers (128 to 153) */
-	/* FIXME Replace with new list functionality */
-	for (i = 0; i < 12; i++) 
-	{
-		list_add(kernel->uav_list, NULL);
-	}
-	for (i = 0; i < 25; i++) 
-		list_add(kernel->constant_buffer_list, NULL);
+	kernel->uav_list = list_create();
+	kernel->constant_buffer_list = list_create(); 
 
 	/* Return */
 	si_opencl_object_add(kernel);
@@ -797,6 +789,33 @@ struct si_opencl_kernel_arg_t *si_opencl_kernel_arg_create(char *name)
 void si_opencl_kernel_arg_free(struct si_opencl_kernel_arg_t *arg)
 {
 	free(arg);
+}
+
+void si_opencl_kernel_init_uav_table(struct si_opencl_kernel_t *kernel)
+{
+	int i;
+	uint32_t buffer_addr;
+	struct si_opencl_mem_t *mem_obj;
+	struct si_buffer_resource_t buf_desc;
+
+	/* Zero-out the buffer resource descriptor */
+	memset(&buf_desc, 0, 16);
+
+	for (i = 0; i < list_count(kernel->uav_list); i++)
+	{
+		/* Get the memory object for the buffer */
+		mem_obj = list_get(kernel->uav_list, i);
+
+		/* Get the address of the buffer in global memory */
+		buffer_addr = mem_obj->device_ptr;
+
+		/* Initialize the buffer resource descriptor for this UAV */
+		buf_desc.base_addr = buffer_addr;
+
+		/* Write the buffer resource descriptor into the UAV table at offset 320
+		 * with 32 bytes spacing */
+		mem_write(si_emu->global_mem, UAV_TABLE_START + 320 + i*32, 16, &buf_desc);
+	}
 }
 
 

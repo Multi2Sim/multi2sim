@@ -563,6 +563,12 @@ struct si_buffer_resource_t
 	unsigned int type            : 2;    /* [127:126] */
 };
 
+/* Pointers get stored in 2 consecutive 32-bit registers */
+struct si_mem_ptr_t
+{
+	unsigned long long addr : 48;
+	unsigned int unused     : 16;
+};
 
 #endif
 
