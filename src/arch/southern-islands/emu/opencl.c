@@ -1692,9 +1692,10 @@ int si_opencl_func_run(int code, unsigned int *args)
 			if(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER) 
 			{	
 				mem = si_opencl_object_get(SI_OPENCL_OBJ_MEM, arg->value);
-				list_set(kernel->uav_list, arg->uav, mem);
+				list_add(kernel->uav_list, mem);
 			}
 		}
+		si_opencl_kernel_init_uav_table(kernel);
 
 		/* Global work sizes */
 		kernel->global_size3[1] = 1;

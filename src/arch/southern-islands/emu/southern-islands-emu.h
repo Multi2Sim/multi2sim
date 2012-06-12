@@ -39,7 +39,9 @@
  * Memory configuration 
  */
 
-#define CONSTANT_MEMORY_START 0
+#define UAV_TABLE_START 0
+#define UAV_TABLE_SIZE 1024
+#define CONSTANT_MEMORY_START (UAV_TABLE_START + UAV_TABLE_SIZE)
 #define CONSTANT_BUFFER_SIZE 1024
 #define CONSTANT_BUFFERS 2
 #define GLOBAL_MEMORY_START (CONSTANT_MEMORY_START + CONSTANT_BUFFERS*CONSTANT_BUFFER_SIZE)
@@ -363,6 +365,8 @@ void si_opencl_kernel_load(struct si_opencl_kernel_t *kernel, char *kernel_name)
 uint32_t si_opencl_kernel_get_work_group_info(struct si_opencl_kernel_t *kernel, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size);
 
+void si_opencl_kernel_init_uav_table(struct si_opencl_kernel_t *kernel);
+
 
 
 
@@ -541,13 +545,10 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_args(struct si_ndrange_t *ndrange);
 void si_ndrange_run(struct si_ndrange_t *ndrange);
 
+
 /* Access to constant memory */
 void si_isa_const_mem_write(int buffer, int offset, void *pvalue);
 void si_isa_const_mem_read(int buffer, int offset, void *pvalue);
-
-/* Access to UAV table */ 
-void si_isa_uav_table_write(int bank, int elem, int bytes, void *pvalue);
-void si_isa_uav_table_read(int bank, int elem, int bytes, void *pvalue);
 
 
 /*
@@ -847,6 +848,8 @@ void si_work_item_update_branch_digest(struct si_work_item_t *work_item,
 	long long inst_count, uint32_t inst_addr);
 void si_work_item_init_sreg_with_cb(struct si_work_item_t *work_item, int first_reg, int num_regs, 
 	int cb);
+void si_work_item_init_sreg_with_uav_table(struct si_work_item_t *work_item, int first_reg, 
+	int num_regs);
 
 
 
@@ -909,8 +912,6 @@ extern si_isa_inst_func_t *si_isa_inst_func;
 
 struct si_emu_t
 {
-	struct mem_t *uav_table;
-
 	/* Global memory */
 	struct mem_t *global_mem;
 	unsigned int global_mem_top;
@@ -953,7 +954,8 @@ void si_emu_done(void);
 
 unsigned int si_isa_read_sgpr(int sreg);
 void si_isa_write_sgpr(int sreg, unsigned int value);
-void si_isa_init_buf_res(struct si_buffer_resource_t *buf_desc, int sreg);
+void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg);
+void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg);
 
 void si_emu_timer_start(void);
 void si_emu_timer_stop(void);

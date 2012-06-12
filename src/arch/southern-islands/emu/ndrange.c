@@ -134,6 +134,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	/* FIXME These values need to be determined from the binary */
 	si_work_item_init_sreg_with_cb(ndrange->scalar_work_item, 4, 4, 0);
 	si_work_item_init_sreg_with_cb(ndrange->scalar_work_item, 8, 4, 1);
+	si_work_item_init_sreg_with_uav_table(ndrange->scalar_work_item, 2, 2);
 	
 	/* Array of work-items */
 	ndrange->work_item_count = kernel->global_size;
@@ -283,6 +284,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	}
 
 }
+
 
 
 void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
