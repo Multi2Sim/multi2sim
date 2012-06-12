@@ -373,9 +373,11 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 	int inst_count = 0;
 	int rel_addr = 0;
 
-	int label_addr[buffer->size / 4];
-	int* next_label = &label_addr[0];
-	int* new_label = &label_addr[0];
+	int label_addr[buffer->size / 4]; /* A list of created labels sorted by rel_addr. */
+	int* next_label = &label_addr[0]; /* The next label to dump. */
+	int* end_label = &label_addr[0]; /* The address after the last label. */
+	*next_label = -1;
+	*end_label = -1;
 
 	/* Disassemble */
 	while (inst_buf)
@@ -401,11 +403,24 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 			int label;	
 			si_inst_dump_sopp(&inst, rel_addr, inst_buf, f, &label);
 
-			/* Remember new label if created. */
-			if (label > 0)
+			/* Remember new label if created (keeping label list sorted by rel_addr). */
+			if (label >= 0)
 			{
-				*new_label = label;
-				new_label++;
+				/* Find position to insert label. */
+				int* t_label = next_label;
+				while(label > *t_label && t_label < end_label) t_label++;
+
+				/* Shift labels after position down. */
+				int* t2_label = t_label;
+				while(t2_label < end_label)
+				{
+					*(t2_label + 1) = *t2_label;
+					t2_label++;
+				}
+				end_label++;
+
+				/* Insert the new label. */
+				*t_label = label;
 			}
 
 			/* Break at end of program. */
@@ -529,7 +544,7 @@ void operand_dump_series(char* str, int operand, int operand_end)
 	}
 	else if (operand <= 127)
 	{
-		if (operand >= 112)
+		if (operand >= 112 && operand <= 123)
 		{
 			assert(operand_end <= 123);
 			str_printf(&pstr, &str_size, "ttmp[%d:%d]", operand - 112, operand_end - 112);
@@ -615,16 +630,25 @@ void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str++;
 		if (is_token(fmt_str, "WAIT_CNT", &token_len))
 		{
-			int lgkm_cnt = (sopp->simm16 & 0x1f00) >> 8;
-			if (lgkm_cnt != 0x1f)
-			{
-				str_printf(&inst_str, &str_size, "lgkmcnt(%d)", lgkm_cnt);
-			}
+			unsigned int and = 0;
 
 			int vm_cnt = (sopp->simm16 & 0xF);
 			if (vm_cnt != 0xF)
 			{
 				str_printf(&inst_str, &str_size, "vmcnt(%d)", vm_cnt);
+				and = 1;
+			}
+
+			int lgkm_cnt = (sopp->simm16 & 0x1f00) >> 8;
+			if (lgkm_cnt != 0x1f)
+			{
+				if(and)
+				{
+					str_printf(&inst_str, &str_size, " & ");
+				}
+
+				str_printf(&inst_str, &str_size, "lgkmcnt(%d)", lgkm_cnt);
+				and = 1;
 			}
 				
 			int excount = (sopp->simm16 & 0x70) >> 4;
