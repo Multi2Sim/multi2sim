@@ -29,7 +29,7 @@
  */
 
 
-struct evg_work_group_t *evg_work_group_create(char *name)
+struct evg_work_group_t *evg_work_group_create(void)
 {
 	struct evg_work_group_t *work_group;
 
@@ -50,6 +50,7 @@ struct evg_work_group_t *evg_work_group_create(char *name)
 void evg_work_group_free(struct evg_work_group_t *work_group)
 {
 	mem_free(work_group->local_mem);
+	str_free(work_group->name);
 	free(work_group);
 }
 
@@ -125,4 +126,10 @@ void evg_work_group_dump(struct evg_work_group_t *work_group, FILE *f)
 		wavefront = ndrange->wavefronts[wavefront_id];
 		evg_wavefront_dump(wavefront, f);
 	}
+}
+
+
+void evg_work_group_set_name(struct evg_work_group_t *work_group, char *name)
+{
+	work_group->name = str_set(work_group->name, name);
 }

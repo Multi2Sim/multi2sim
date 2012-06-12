@@ -155,6 +155,7 @@ void evg_wavefront_free(struct evg_wavefront_t *wavefront)
 	/* Free wavefront */
 	bit_map_free(wavefront->active_stack);
 	bit_map_free(wavefront->pred);
+	str_free(wavefront->name);
 	free(wavefront);
 }
 
@@ -205,6 +206,12 @@ void evg_wavefront_dump(struct evg_wavefront_t *wavefront, FILE *f)
 	evg_wavefront_divergence_dump(wavefront, f);
 
 	fprintf(f, "\n");
+}
+
+
+void evg_wavefront_set_name(struct evg_wavefront_t *wavefront, char *name)
+{
+	wavefront->name = str_set(wavefront->name, name);
 }
 
 
