@@ -118,6 +118,16 @@ void si_isa_V_CVT_F32_I32_impl()
 	NOT_IMPL();
 }
 
+void si_isa_V_CVT_I32_F32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_MUL_F32_impl()
+{
+	NOT_IMPL();
+}
+
 void si_isa_V_MUL_I32_I24_impl()
 {
 	NOT_IMPL();
@@ -128,12 +138,27 @@ void si_isa_V_LSHLREV_B32_impl()
 	NOT_IMPL();
 }
 
+void si_isa_V_MAC_F32_impl()
+{
+	NOT_IMPL();
+}
+
 void si_isa_V_ADD_I32_impl()
 {
 	NOT_IMPL();
 }
 
 void si_isa_V_MAD_F32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_MUL_LO_I32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_CMP_LT_I32_impl()
 {
 	NOT_IMPL();
 }
