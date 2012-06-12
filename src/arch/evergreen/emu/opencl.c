@@ -95,7 +95,7 @@ char *err_evg_opencl_compiler =
 	"\t  1) Replace 'clCreateProgramWithSource' calls by 'clCreateProgramWithBinary'\n"
 	"\t     in your source files, referencing the pre-compiled kernel.\n"
 	"\t  2) Tell Multi2Sim to provide the application with your pre-compiled kernel\n"
-	"\t     using command-line option '-opencl:binary'.\n"
+	"\t     using command-line option '--opencl-binary'.\n"
 	"\t  3) If you are trying to run one of the OpenCL benchmarks provided in the\n"
 	"\t     simulator website, option '--load' can be used as a program argument\n"
 	"\t     (not a simulator argument). This option allows you to specify the path\n"
