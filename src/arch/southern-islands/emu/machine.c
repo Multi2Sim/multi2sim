@@ -42,17 +42,18 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl()
 	struct si_buffer_resource_t buf_desc;
 	int sbase;
 
+	assert(INST.imm);
+
 	sbase = INST.sbase << 1;
 
 	/* sbase holds the first of 4 registers containing the buffer resource descriptor */
-	si_isa_init_buf_res(&buf_desc, sbase);
+	si_isa_read_buf_res(&buf_desc, sbase);
 
 	/* sgpr[dst] = read_dword_from_kcache(m_base, m_offset, m_size) */
 	m_base = buf_desc.base_addr;
 	m_offset = INST.offset * 4;
 	//m_size = (buf_desc.stride == 0) ? 1 : buf_desc.num_records;
 	
-	/* Addressing CB0 */
 	mem_read(si_emu->global_mem, m_base+m_offset, 4, &value);
 
 	/* Store the data in the destination register */
@@ -68,10 +69,49 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl()
 }
 #undef INST
 
+#define INST SI_INST_SMRD
 void si_isa_S_LOAD_DWORDX4_impl()
 {
-	NOT_IMPL();
+	uint32_t value[4];
+        uint32_t m_base;
+        uint32_t m_offset;
+        uint32_t m_addr;
+	struct si_mem_ptr_t mem_ptr;
+	int sbase;
+	int i;
+
+        assert(INST.imm);
+
+	sbase = INST.sbase << 1;
+
+	si_isa_read_mem_ptr(&mem_ptr, sbase);
+
+	/* assert(uav_table_ptr.addr < UINT32_MAX) */
+
+	m_base = mem_ptr.addr;
+        m_offset = INST.offset * 4;
+	m_addr = m_base + m_offset; 
+
+	assert(!(m_addr & 0x3));
+
+	for (i = 0; i < 4; i++) 
+	{
+		mem_read(si_emu->global_mem, m_base+m_offset+i*4, 4, &value[i]);
+		si_isa_write_sgpr(INST.sdst+i, value[i]);
+	}	
+
+	if (debug_status(si_isa_debug_category))
+	{
+		for (i = 0; i < 4; i++) 
+		{
+			union si_reg_t reg;
+			reg.as_uint = value[i];
+
+			si_isa_debug("S%u <=(%d,%gf)\n", INST.sdst+i, reg.as_uint, reg.as_float);
+		}
+	}
 }
+#undef INST
 
 void si_isa_S_BUFFER_LOAD_DWORDX2_impl()
 {
@@ -164,6 +204,11 @@ void si_isa_V_CMP_LT_I32_impl()
 }
 
 void si_isa_V_CMP_GT_I32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_CMP_GT_I32_VOP3b_impl()
 {
 	NOT_IMPL();
 }

@@ -139,4 +139,17 @@ void si_work_item_init_sreg_with_cb(struct si_work_item_t *work_item, int first_
 	memcpy(&work_item->sgpr[first_reg], &res_desc, 16);
 }
 
+void si_work_item_init_sreg_with_uav_table(struct si_work_item_t *work_item, int first_reg, 
+	int num_regs)
+{
+	struct si_mem_ptr_t mem_ptr;
+
+	assert(num_regs == 2);
+	assert(sizeof(struct si_mem_ptr_t) == 8);
+
+	mem_ptr.unused = 0;
+	mem_ptr.addr = UAV_TABLE_START;
+
+	memcpy(&work_item->sgpr[first_reg], &mem_ptr, 8);
+}
 
