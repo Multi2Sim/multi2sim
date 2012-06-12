@@ -223,8 +223,20 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 	mem_unlink(ctx->mem);
 
 	/* Warn about unresolved attempts to access OpenCL library */
-	if (ctx->libopencl_open_attempt)
-		evg_emu_libopencl_failed(ctx->pid);
+	if (x86_emu->gpu_emulator == gpu_emulator_evg)
+	{
+		if (ctx->libopencl_open_attempt)
+			evg_emu_libopencl_failed(ctx->pid);
+	}
+	else if (x86_emu->gpu_emulator == gpu_emulator_si)
+	{
+		if (ctx->libopencl_open_attempt)
+			si_emu_libopencl_failed(ctx->pid);
+	}
+	else 
+	{
+		panic("invalid gpu emulator");
+	}
 
 	/* Remove context from contexts list and free */
 	x86_emu_list_remove(x86_emu_list_context, ctx);
