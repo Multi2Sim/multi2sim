@@ -101,12 +101,30 @@ void si_isa_write_sgpr(int sreg, unsigned int value)
 	SI_SGPR_ELEM(sreg) = value;
 }
 
+/* Read VGPR */
+unsigned int si_isa_read_vgpr(int vreg)
+{
+	/* FIXME */
+	/* assert(vreg in range) */
+
+	return SI_VGPR_ELEM(vreg);
+}
+
+/* Write VGPR */
+void si_isa_write_vgpr(int vreg, unsigned int value)
+{
+	/* FIXME */
+	/* assert(vreg in range) */
+
+	SI_VGPR_ELEM(vreg) = value;
+}
+
 /* Initialize a buffer resource descriptor */
 void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg)
 {
 	assert(buf_desc);
 
-	memcpy(buf_desc, &si_isa_ndrange->scalar_work_item->sgpr[sreg], sizeof(unsigned int)*4);
+	memcpy(buf_desc, &si_isa_wavefront->sgpr[sreg], sizeof(unsigned int)*4);
 }
 
 /* Initialize a buffer resource descriptor */
@@ -114,7 +132,7 @@ void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg)
 {
 	assert(mem_ptr);
 
-	memcpy(mem_ptr, &si_isa_ndrange->scalar_work_item->sgpr[sreg], sizeof(unsigned int)*2);
+	memcpy(mem_ptr, &si_isa_wavefront->sgpr[sreg], sizeof(unsigned int)*2);
 }
 
 

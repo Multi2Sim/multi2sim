@@ -110,8 +110,8 @@ DEFINST(V_CMP_GT_I32,
 	4
 )
 
-DEFINST(S_MOV_B32,
-	" s_mov_b32     %VDST, %SRC0",
+DEFINST(V_MOV_B32_VOP1,
+	" v_mov_b32     %VDST, %SRC0",
 	VOP1,
 	1,
 	4

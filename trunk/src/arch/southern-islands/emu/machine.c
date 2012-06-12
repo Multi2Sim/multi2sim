@@ -64,7 +64,7 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl()
 		union si_reg_t reg;
 		reg.as_uint = value;
 
-		si_isa_debug("S%u <=(%d,%gf)\n", INST.sdst, reg.as_uint, reg.as_float);
+		si_isa_debug("S%u<=(%d,%gf)", INST.sdst, reg.as_uint, reg.as_float);
 	}
 }
 #undef INST
@@ -107,7 +107,7 @@ void si_isa_S_LOAD_DWORDX4_impl()
 			union si_reg_t reg;
 			reg.as_uint = value[i];
 
-			si_isa_debug("S%u <=(%d,%gf)\n", INST.sdst+i, reg.as_uint, reg.as_float);
+			si_isa_debug("S%u<=(%d,%gf) ", INST.sdst+i, reg.as_uint, reg.as_float);
 		}
 	}
 }
@@ -155,13 +155,28 @@ void si_isa_S_CBRANCH_EXECZ_impl()
 
 void si_isa_S_WAITCNT_impl()
 {
-	NOT_IMPL();
+	/* Nothing to do in emulation */
 }
 
-void si_isa_S_MOV_B32_impl()
+#define INST SI_INST_VOP1
+void si_isa_V_MOV_B32_VOP1_impl()
 {
-	NOT_IMPL();
+	uint32_t value;
+
+	value = si_isa_read_sgpr(INST.src0);
+
+	si_isa_write_vgpr(INST.vdst, value);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		union si_reg_t reg;
+		reg.as_uint = value;
+
+		si_isa_debug("t%d: V%u<=(%d,%gf) \n", si_isa_work_item->id, INST.vdst, reg.as_uint,
+			reg.as_float);
+	}
 }
+#undef INST
 
 void si_isa_V_CVT_F32_I32_impl()
 {
@@ -229,6 +244,11 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
 }
 
 void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_S_ANDN2_B64_impl()
 {
 	NOT_IMPL();
 }

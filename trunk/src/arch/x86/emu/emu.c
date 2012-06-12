@@ -100,8 +100,10 @@ void x86_emu_init(void)
 	/* Initialize mutex for variables controlling calls to 'x86_emu_process_events()' */
 	pthread_mutex_init(&x86_emu->process_events_mutex, NULL);
 
-	/* Initialize GPU */
+	/* Initialize GPU emulators */
+	x86_emu->gpu_emulator = gpu_emulator_evg;
 	evg_emu_init();
+	si_emu_init();
 
 #ifdef HAVE_GLUT_H
 	/* GLUT */
@@ -139,6 +141,7 @@ void x86_emu_done(void)
 	
 	/* Finalize GPU */
 	evg_emu_done();
+	si_emu_done();
 
 	/* End */
 	free(x86_emu);

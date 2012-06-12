@@ -61,27 +61,6 @@ void si_work_item_free(struct si_work_item_t *work_item)
 
 
 
-void si_work_item_set_active(struct si_work_item_t *work_item, int active)
-{
-	struct si_wavefront_t *wavefront = work_item->wavefront;
-
-	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
-	bit_map_set(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
-		+ work_item->id_in_wavefront, 1, !!active);
-	wavefront->active_mask_update = 1;
-}
-
-
-int si_work_item_get_active(struct si_work_item_t *work_item)
-{
-	struct si_wavefront_t *wavefront = work_item->wavefront;
-
-	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
-	return bit_map_get(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
-		+ work_item->id_in_wavefront, 1);
-}
-
-
 void si_work_item_set_pred(struct si_work_item_t *work_item, int pred)
 {
 	struct si_wavefront_t *wavefront = work_item->wavefront;
@@ -98,58 +77,5 @@ int si_work_item_get_pred(struct si_work_item_t *work_item)
 
 	assert(work_item->id_in_wavefront >= 0 && work_item->id_in_wavefront < wavefront->work_item_count);
 	return bit_map_get(wavefront->pred, work_item->id_in_wavefront, 1);
-}
-
-
-/* Based on an instruction counter, instruction address, and work_item mask,
- * update (xor) branch_digest with a random number */
-void si_work_item_update_branch_digest(struct si_work_item_t *work_item,
-	long long inst_count, uint32_t inst_addr)
-{
-	struct si_wavefront_t *wavefront = work_item->wavefront;
-	uint32_t mask = 0;
-
-	/* Update branch digest only if work_item is active */
-	if (!bit_map_get(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count
-		+ work_item->id_in_wavefront, 1))
-		return;
-
-	/* Update mask with inst_count */
-	mask = (uint32_t) inst_count * 0x4919f71f;  /* Multiply by prime number to generate sparse mask */
-
-	/* Update mask with inst_addr */
-	mask += inst_addr * 0x31f2e73b;
-
-	/* Update branch digest */
-	work_item->branch_digest ^= mask;
-}
-
-
-void si_work_item_init_sreg_with_cb(struct si_work_item_t *work_item, int first_reg, int num_regs, 
-	int cb)
-{
-	struct si_buffer_resource_t res_desc;
-
-	assert(num_regs == 4);
-	assert(sizeof(struct si_buffer_resource_t) == 16);
-
-	/* FIXME Populate rest of resource descriptor? */
-	res_desc.base_addr = CONSTANT_MEMORY_START + cb*CONSTANT_BUFFER_SIZE;
-
-	memcpy(&work_item->sgpr[first_reg], &res_desc, 16);
-}
-
-void si_work_item_init_sreg_with_uav_table(struct si_work_item_t *work_item, int first_reg, 
-	int num_regs)
-{
-	struct si_mem_ptr_t mem_ptr;
-
-	assert(num_regs == 2);
-	assert(sizeof(struct si_mem_ptr_t) == 8);
-
-	mem_ptr.unused = 0;
-	mem_ptr.addr = UAV_TABLE_START;
-
-	memcpy(&work_item->sgpr[first_reg], &mem_ptr, 8);
 }
 

@@ -23,108 +23,6 @@
 #include <southern-islands-emu.h>
 
 
-/*
- * Private Functions
- */
-
-/* Comparison function to sort list */
-static int si_wavefront_divergence_compare(const void *elem1, const void *elem2)
-{
-	const int count1 = * (const int *) elem1;
-	const int count2 = * (const int *) elem2;
-	
-	if (count1 < count2)
-		return 1;
-	else if (count1 > count2)
-		return -1;
-	return 0;
-}
-
-
-static void si_wavefront_divergence_dump(struct si_wavefront_t *wavefront, FILE *f)
-{
-	struct si_work_item_t *work_item;
-	struct elem_t
-	{
-		int count;  /* 1st field hardcoded for comparison */
-		int list_index;
-		uint32_t branch_digest;
-	};
-	struct elem_t *elem;
-	struct list_t *list;
-	struct hash_table_t *ht;
-	char str[10];
-	int i, j;
-
-	/* Create list and hash table */
-	list = list_create();
-	ht = hash_table_create(20, 1);
-
-	/* Create one 'elem' for each work_item with a different branch digest, and
-	 * store it into the hash table and list. */
-	for (i = 0; i < wavefront->work_item_count; i++)
-	{
-		work_item = wavefront->work_items[i];
-		sprintf(str, "%08x", work_item->branch_digest);
-		elem = hash_table_get(ht, str);
-		if (!elem)
-		{
-			elem = calloc(1, sizeof(struct elem_t));
-			if (!elem)
-				fatal("%s: out of memory", __FUNCTION__);
-
-			hash_table_insert(ht, str, elem);
-			elem->list_index = list_count(list);
-			elem->branch_digest = work_item->branch_digest;
-			list_add(list, elem);
-		}
-		elem->count++;
-	}
-
-	/* Sort divergence groups as per size */
-	list_sort(list, si_wavefront_divergence_compare);
-	fprintf(f, "DivergenceGroups = %d\n", list_count(list));
-	
-	/* Dump size of groups with */
-	fprintf(f, "DivergenceGroupsSize =");
-	for (i = 0; i < list_count(list); i++)
-	{
-		elem = list_get(list, i);
-		fprintf(f, " %d", elem->count);
-	}
-	fprintf(f, "\n\n");
-
-	/* Dump work_item ids contained in each work_item divergence group */
-	for (i = 0; i < list_count(list); i++)
-	{
-		elem = list_get(list, i);
-		fprintf(f, "DivergenceGroup[%d] =", i);
-
-		for (j = 0; j < wavefront->work_item_count; j++)
-		{
-			int first, last;
-			first = wavefront->work_items[j]->branch_digest == elem->branch_digest &&
-				(j == 0 || wavefront->work_items[j - 1]->branch_digest != elem->branch_digest);
-			last = wavefront->work_items[j]->branch_digest == elem->branch_digest &&
-				(j == wavefront->work_item_count - 1 || wavefront->work_items[j + 1]->branch_digest != elem->branch_digest);
-			if (first)
-				fprintf(f, " %d", j);
-			else if (last)
-				fprintf(f, "-%d", j);
-		}
-		fprintf(f, "\n");
-	}
-	fprintf(f, "\n");
-
-	/* Free 'elem's and structures */
-	for (i = 0; i < list_count(list); i++)
-		free(list_get(list, i));
-	list_free(list);
-	hash_table_free(ht);
-}
-
-
-
 
 /*
  * Public Functions
@@ -141,7 +39,6 @@ struct si_wavefront_t *si_wavefront_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	wavefront->active_stack = bit_map_create(SI_MAX_STACK_SIZE * si_emu_wavefront_size);
 	wavefront->pred = bit_map_create(si_emu_wavefront_size);
 
 	/* Return */
@@ -152,8 +49,8 @@ struct si_wavefront_t *si_wavefront_create()
 void si_wavefront_free(struct si_wavefront_t *wavefront)
 {
 	/* Free wavefront */
-	bit_map_free(wavefront->active_stack);
 	bit_map_free(wavefront->pred);
+	free(wavefront->scalar_work_item);
 	free(wavefront);
 }
 
@@ -183,40 +80,7 @@ void si_wavefront_dump(struct si_wavefront_t *wavefront, FILE *f)
 
 	/* FIXME Count instruction statistics here */
 
-	si_wavefront_divergence_dump(wavefront, f);
-
 	fprintf(f, "\n");
-}
-
-
-void si_wavefront_stack_push(struct si_wavefront_t *wavefront)
-{
-	if (wavefront->stack_top == SI_MAX_STACK_SIZE - 1)
-		fatal("stack overflow");
-	wavefront->stack_top++;
-	wavefront->active_mask_push++;
-	bit_map_copy(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
-		wavefront->active_stack, (wavefront->stack_top - 1) * wavefront->work_item_count,
-		wavefront->work_item_count);
-	si_isa_debug("  %s:push", wavefront->name);
-}
-
-
-void si_wavefront_stack_pop(struct si_wavefront_t *wavefront, int count)
-{
-	if (!count)
-		return;
-	if (wavefront->stack_top < count)
-		fatal("stack underflow");
-	wavefront->stack_top -= count;
-	wavefront->active_mask_pop += count;
-	wavefront->active_mask_update = 1;
-	if (debug_status(si_isa_debug_category))
-	{
-		si_isa_debug("  %s:pop(%d),act=", wavefront->name, count);
-		bit_map_dump(wavefront->active_stack, wavefront->stack_top * wavefront->work_item_count,
-			wavefront->work_item_count, debug_file(si_isa_debug_category));
-	}
 }
 
 
@@ -247,18 +111,12 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	wavefront->local_mem_write = 0;
 	wavefront->local_mem_read = 0;
 	wavefront->pred_mask_update = 0;
-	wavefront->active_mask_update = 0;
-	wavefront->active_mask_push = 0;
-	wavefront->active_mask_pop = 0;
 	
 	/* Grab the next instruction and update the pointer */
 	si_isa_wavefront->inst_size = si_inst_decode(si_isa_wavefront->inst_buf, &si_isa_wavefront->inst);
 
 	/* Increment the instruction pointer */
 	si_isa_wavefront->inst_buf += si_isa_wavefront->inst_size;
-
-	/* FIXME If instruction updates active mask, update digests */
-	/* XXX What is a digest? */
 
 	/* Stats */
 	si_emu->inst_count++;
@@ -273,14 +131,19 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	{
 
 	/* Scalar Memory Instructions */
+	case SI_FMT_SOP1:
+	case SI_FMT_SOP2:
+	case SI_FMT_SOPP:
 	case SI_FMT_SMRD:
 	{
 		/* Stats */
 		si_isa_wavefront->scalar_inst_count++;
 
 		/* Only one work item executes the instruction */
-		si_isa_work_item = ndrange->scalar_work_item;
+		si_isa_debug("\n");
+		si_isa_work_item = si_isa_wavefront->scalar_work_item;
 		(*si_isa_inst_func[si_isa_inst->info->inst])();
+		si_isa_debug("\n");
 
 		break;
 	}
@@ -295,18 +158,21 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Stats */
 		si_isa_wavefront->vector_inst_count++;
 	
+		si_isa_debug("\n");
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(si_isa_wavefront, work_item_id)
 		{
 			si_isa_work_item = ndrange->work_items[work_item_id];
 			(*si_isa_inst_func[si_isa_inst->info->inst])();
 		}
+		si_isa_debug("\n");
 
 		break;
 	}
 
 	default:
 	{
-		
+		panic("Instruction type not implemented");
+		break;
 	}
 
 	}
@@ -321,3 +187,31 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 #endif
 }
 
+
+void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, int first_reg, int num_regs, 
+	int cb)
+{
+	struct si_buffer_resource_t res_desc;
+
+	assert(num_regs == 4);
+	assert(sizeof(struct si_buffer_resource_t) == 16);
+
+	/* FIXME Populate rest of resource descriptor? */
+	res_desc.base_addr = CONSTANT_MEMORY_START + cb*CONSTANT_BUFFER_SIZE;
+
+	memcpy(&wavefront->sgpr[first_reg], &res_desc, 16);
+}
+
+void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, int first_reg, 
+	int num_regs)
+{
+	struct si_mem_ptr_t mem_ptr;
+
+	assert(num_regs == 2);
+	assert(sizeof(struct si_mem_ptr_t) == 8);
+
+	mem_ptr.unused = 0;
+	mem_ptr.addr = UAV_TABLE_START;
+
+	memcpy(&wavefront->sgpr[first_reg], &mem_ptr, 8);
+}

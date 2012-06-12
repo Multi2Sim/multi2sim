@@ -41,6 +41,7 @@
 #include <esim.h>
 #include <sys/time.h>
 
+#include <southern-islands-emu.h>
 #include <evergreen-emu.h>
 #include <fermi-emu.h>
 
@@ -969,6 +970,11 @@ void x86_ctx_ipc_report_schedule(struct x86_ctx_t *ctx);
 void x86_ctx_ipc_report_handler(int event, void *data);
 
 
+enum gpu_emulator_kind_t 
+{
+	gpu_emulator_evg = 0,
+	gpu_emulator_si
+};
 
 
 /*
@@ -1031,6 +1037,9 @@ struct x86_emu_t
 
 	/* Stats */
 	long long inst_count;  /* Number of emulated instructions */
+
+	/* Determines which GPU emulator will be called */
+	enum gpu_emulator_kind_t gpu_emulator;
 };
 
 enum x86_emu_list_kind_t

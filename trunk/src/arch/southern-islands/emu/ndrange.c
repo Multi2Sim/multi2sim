@@ -68,9 +68,6 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 		si_work_item_free(ndrange->work_items[i]);
 	free(ndrange->work_items);
 
-	/* Free scalar work-item */
-	si_work_item_free(ndrange->scalar_work_item);
-
 	/* Free ndrange */
 	free(ndrange->name);
 	free(ndrange);
@@ -111,6 +108,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 	ndrange->wavefront_id_last = ndrange->wavefront_count - 1;
 	assert(ndrange->wavefronts_per_work_group > 0 && ndrange->wavefront_count > 0);
 	ndrange->wavefronts = calloc(ndrange->wavefront_count, sizeof(void *));
+	ndrange->scalar_work_items = calloc(ndrange->wavefront_count, sizeof(void *));
 	for (wid = 0; wid < ndrange->wavefront_count; wid++)
 	{
 		gid = wid / ndrange->wavefronts_per_work_group;
@@ -123,19 +121,18 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		wavefront->ndrange = ndrange;
 		wavefront->work_group = work_group;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, running, wavefront);
+
+		/* Initialize the scalar work item */
+		ndrange->scalar_work_items[wid] = si_work_item_create();
+		wavefront->scalar_work_item = ndrange->scalar_work_items[wid];
+
+		/* Initialize SGPRs */
+		/* FIXME These values need to be determined from the binary */
+		si_wavefront_init_sreg_with_cb(wavefront, 4, 4, 0);
+		si_wavefront_init_sreg_with_cb(wavefront, 8, 4, 1);
+		si_wavefront_init_sreg_with_uav_table(wavefront, 2, 2);
 	}
 
-	/* Initialize the scalar work item */
-	ndrange->scalar_work_item = si_work_item_create();
-	ndrange->scalar_work_item->ndrange = ndrange;
-	ndrange->scalar_work_item->id = -1;
-
-	/* Initialize SGPRs */
-	/* FIXME These values need to be determined from the binary */
-	si_work_item_init_sreg_with_cb(ndrange->scalar_work_item, 4, 4, 0);
-	si_work_item_init_sreg_with_cb(ndrange->scalar_work_item, 8, 4, 1);
-	si_work_item_init_sreg_with_uav_table(ndrange->scalar_work_item, 2, 2);
-	
 	/* Array of work-items */
 	ndrange->work_item_count = kernel->global_size;
 	ndrange->work_item_id_first = 0;
@@ -214,7 +211,6 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 							}
 							wavefront->work_item_count++;
 							wavefront->work_item_id_last = tid;
-							bit_map_set(wavefront->active_stack, work_item->id_in_wavefront, 1, 1);
 
 #if 0
 							/* Save local IDs in register R0 */
@@ -533,9 +529,6 @@ void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f)
 {
 	struct si_work_group_t *work_group;
 	int work_group_id;
-	int work_item_id, last_work_item_id;
-	uint32_t branch_digest, last_branch_digest;
-	int branch_digest_count;
 
 	if (!f)
 		return;
@@ -551,26 +544,6 @@ void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f)
 	fprintf(f, "WorkItemFirst = %d\n", ndrange->work_item_id_first);
 	fprintf(f, "WorkItemLast = %d\n", ndrange->work_item_id_last);
 	fprintf(f, "WorkItemCount = %d\n", ndrange->work_item_count);
-
-	/* Branch digests */
-	assert(ndrange->work_item_count);
-	branch_digest_count = 0;
-	last_work_item_id = 0;
-	last_branch_digest = ndrange->work_items[0]->branch_digest;
-	for (work_item_id = 1; work_item_id <= ndrange->work_item_count; work_item_id++)
-	{
-		branch_digest = work_item_id < ndrange->work_item_count ? ndrange->work_items[work_item_id]->branch_digest : 0;
-		if (work_item_id == ndrange->work_item_count || branch_digest != last_branch_digest)
-		{
-			fprintf(f, "BranchDigest[%d] = %d %d %08x\n", branch_digest_count,
-				last_work_item_id, work_item_id - 1, last_branch_digest);
-			last_work_item_id = work_item_id;
-			last_branch_digest = branch_digest;
-			branch_digest_count++;
-		}
-	}
-	fprintf(f, "BranchDigestCount = %d\n", branch_digest_count);
-	fprintf(f, "\n");
 
 	/* Work-groups */
 	SI_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
