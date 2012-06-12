@@ -170,7 +170,7 @@ void si_isa_S_CMP_EQ_I32_impl()
 
 void si_isa_S_ENDPGM_impl()
 {
-	NOT_IMPL();
+	si_isa_wavefront->finished = 1;
 }
 
 void si_isa_S_CBRANCH_SCC1_impl()
@@ -186,6 +186,10 @@ void si_isa_S_CBRANCH_EXECZ_impl()
 void si_isa_S_WAITCNT_impl()
 {
 	/* Nothing to do in emulation */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wait");
+	}
 }
 
 #define INST SI_INST_VOP1
@@ -202,7 +206,7 @@ void si_isa_V_MOV_B32_VOP1_impl()
 		union si_reg_t reg;
 		reg.as_uint = value;
 
-		si_isa_debug("t%d: V%u<=(%d,%gf) \n", si_isa_work_item->id, INST.vdst, reg.as_uint,
+		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, reg.as_uint,
 			reg.as_float);
 	}
 }
