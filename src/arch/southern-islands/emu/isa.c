@@ -120,11 +120,23 @@ void si_isa_write_vgpr(int vreg, unsigned int value)
 }
 
 /* Generic register read. */
-unsigned int si_isa_read_reg(int reg)
+int si_isa_read_reg(int reg)
 {
+	int value;
+
+	/* 0-103 are SGPR0 to SGPR103 */
 	if (reg <= 103)
 	{
-		return si_isa_read_sgpr(reg);
+		value = si_isa_read_sgpr(reg);
+	}
+	else if (reg <= 128)
+	{
+		fatal("General register read for reg:%d not implemented.", reg);
+	}
+	/* 129-192 are signed integers 0-64 */
+	else if (reg <= 192)
+	{
+		value = reg - 128;	
 	}
 	else if (reg <= 255)
 	{
@@ -132,11 +144,14 @@ unsigned int si_isa_read_reg(int reg)
 	}
 	else if (reg <= 511)
 	{
-		return si_isa_read_vgpr(reg - 256);
+		value = si_isa_read_vgpr(reg - 256);
 	}
-	
-	fatal("No such register exists:%d.", reg);
-	return 0;
+	else 
+	{	
+		fatal("No such register exists:%d.", reg);
+	}
+
+	return value;
 }
 
 /* Initialize a buffer resource descriptor */
@@ -185,3 +200,92 @@ void si_isa_const_mem_read(int buffer, int offset, void *pvalue)
         mem_read(si_emu->global_mem, addr, 4, pvalue);
 }
 
+int si_isa_get_num_elems(int data_format)
+{
+	int num_elems;
+
+	switch (data_format)
+	{
+
+	case 1:
+	case 2:
+	case 4:
+	{
+		num_elems = 1;
+		break;
+	}
+
+	case 3:
+	case 5:
+	case 11:
+	{
+		num_elems = 2;
+		break;
+	}
+
+	case 13:
+	{
+		num_elems = 3;	
+		break;
+	}
+
+	case 10:
+	case 12:
+	case 14:
+	{
+		num_elems = 4;
+		break;
+	}
+
+	default:
+	{
+		fatal("%s: Invalid or unsupported data format", __FUNCTION__);
+	}
+	}
+
+	return num_elems;
+}
+
+int si_isa_get_elem_size(int data_format)
+{
+	int elem_size;
+
+	switch (data_format)
+	{
+
+	/* 8-bit data */
+	case 1:
+	case 3:
+	case 10:
+	{
+		elem_size = 1;
+		break;
+	}
+
+	/* 16-bit data */
+	case 2:
+	case 5:
+	case 12:
+	{
+		elem_size = 2;
+		break;
+	}
+
+	/* 32-bit data */
+	case 4:
+	case 11:
+	case 13:
+	case 14:
+	{
+		elem_size = 4;	
+		break;
+	}
+
+	default:
+	{
+		fatal("%s: Invalid or unsupported data format", __FUNCTION__);
+	}
+	}
+
+	return elem_size;
+}

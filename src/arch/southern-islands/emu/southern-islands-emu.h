@@ -644,24 +644,7 @@ void si_work_group_clear_status(struct si_work_group_t *work_group, enum si_work
  * GPU Wavefront
  */
 
-#if 0
-/* Type of clauses */
-enum si_inst_kind_t
-{
-	SI_INST_KIND_NONE = 0,
-	SI_INST_KIND_SCALAR_ALU,
-	SI_INST_KIND_SCALAR_MEM,
-	SI_INST_KIND_VECTOR_ALU,
-	SI_INST_KIND_VECTOR_PARAM_INTERP,
-	SI_INST_KIND_VECTOR_MEM_BUF,
-	SI_INST_KIND_VECTOR_MEM_IMG,
-	SI_INST_KIND_EXPORT
-};
-#endif
-
 typedef uint32_t si_gpr_t;
-
-#define SI_MAX_STACK_SIZE  32
 
 /* Wavefront */
 struct si_wavefront_t
@@ -760,7 +743,6 @@ void si_wavefront_bitmask_cc(unsigned long long *cc, int id_in_wavefront, unsign
  * GPU work_item (Pixel)
  */
 
-#define SI_MAX_GPR_ELEM  5
 #define SI_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
 
 /* Structure describing a memory access definition */
@@ -853,7 +835,7 @@ extern struct si_wavefront_t *si_isa_wavefront;
 extern struct si_work_item_t *si_isa_work_item;
 extern struct si_inst_t *si_isa_inst;
 
-/* FIXME Add short-cut for scalar work-item */
+
 /* Macros for quick access */
 #define SI_SGPR_ELEM(_gpr)  (si_isa_wavefront->sgpr[(_gpr)])
 #define SI_SGPR_FLOAT_ELEM(_gpr)  (* (float *) &si_isa_wavefront->sgpr[(_gpr)])
@@ -887,14 +869,13 @@ extern char *err_si_isa_note;
 #define SI_INST_SOP2		si_isa_inst->micro_inst.sop2
 #define SI_INST_VOP1		si_isa_inst->micro_inst.vop1
 #define SI_INST_VOP2		si_isa_inst->micro_inst.vop2
+#define SI_INST_MTBUF		si_isa_inst->micro_inst.mtbuf
 /* FIXME Finish filling these in */
 
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
 typedef void (*si_isa_inst_func_t)(void);
 extern si_isa_inst_func_t *si_isa_inst_func;
-
-
 
 
 
@@ -948,9 +929,11 @@ unsigned int si_isa_read_sgpr(int sreg);
 void si_isa_write_sgpr(int sreg, unsigned int value);
 unsigned int si_isa_read_vgpr(int vreg);
 void si_isa_write_vgpr(int vreg, unsigned int value);
-unsigned int si_isa_read_reg(int reg);
+int si_isa_read_reg(int reg);
 void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg);
 void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg);
+int si_isa_get_num_elems(int data_format);
+int si_isa_get_elem_size(int data_format);
 
 void si_emu_timer_start(void);
 void si_emu_timer_stop(void);
