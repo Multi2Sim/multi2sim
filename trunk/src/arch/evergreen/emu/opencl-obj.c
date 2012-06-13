@@ -943,12 +943,21 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		if (!strcmp(line_ptrs[0], "pointer"))
 		{
 			/* APP SDK 2.5 supplies 9 tokens, 2.6 supplies 10 tokens */
-			if(token_count != 9 && token_count != 10)
+			/* Metadata version 3:1:104 (as specified in entry 'version') uses 12 items. */
+			if (token_count != 9 && token_count != 10 && token_count != 12)
 			{
 				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(10);
 			}
 			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
 			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
+
+			/* We don't know what the two last entries are, so make sure that they are
+			 * set to 0. If they're not 0, it probably means something important. */
+			if (token_count == 12)
+			{
+				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(10, "0");
+				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(11, "0");
+			}
 
 			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_POINTER;
@@ -991,6 +1000,27 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		{
 			/* As far as I can tell, the actual sampler data is stored 
 			 * as a value, so adding it to the argument list is not required */
+			continue;
+		}
+
+		/* Entry 'reflection'. Format: reflection:<arg_id>:<type>
+		 * Observed first in version 3:1:104 of metadata.
+		 * This entry specifies the type of the argument, as specified in the OpenCL
+		 * kernel function header. It is currently ignored, since this information
+		 * is extracted from the argument descriptions in 'value' and 'pointer' entries.
+		 */
+		if (!strcmp(line_ptrs[0], "reflection"))
+		{
+			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
+			continue;
+		}
+
+		/* Entry 'privateid'. Format: privateid:<id>
+		 * Observed first in version 3:1:104 of metadata. Not sure what this entry is for.
+		 */
+		if (!strcmp(line_ptrs[0], "privateid"))
+		{
+			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(2);
 			continue;
 		}
 
