@@ -277,7 +277,8 @@ void si_isa_V_MUL_I32_I24_impl()
 		union si_reg_t reg;
 
 		reg.as_int = dst;
-		si_isa_debug("V%u<=(%d,%gf) ", INST.vdst, reg.as_uint, reg.as_float);
+		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, reg.as_uint, 
+			reg.as_float);
 	}
 }
 #undef INST
@@ -287,7 +288,7 @@ void si_isa_V_LSHLREV_B32_impl()
 {
 	/* D.u = S1.u << S0.u[4:0]. */
 
-	unsigned int s0 = si_isa_read_reg(INST.src0) & 0x1F;
+	int s0 = si_isa_read_reg(INST.src0) & 0x1F;
 	unsigned int s1 = si_isa_read_vgpr(INST.vsrc1);
 
 	unsigned int dst = s1 << s0;
@@ -299,7 +300,8 @@ void si_isa_V_LSHLREV_B32_impl()
 		union si_reg_t reg;
 
 		reg.as_uint = dst;
-		si_isa_debug("V%u<=(%d,%gf) ", INST.vdst, reg.as_uint, reg.as_float);
+		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, reg.as_uint, 
+			reg.as_float);
 	}
 }
 #undef INST
@@ -333,7 +335,8 @@ void si_isa_V_ADD_I32_impl()
 		union si_reg_t reg;
 
 		reg.as_uint = dst;
-		si_isa_debug("V%u<=(%d,%gf) ", INST.vdst, reg.as_uint, reg.as_float);
+		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, reg.as_uint, 
+			reg.as_float);
 		
 		reg.as_uint = vcc;
 		si_isa_debug("vcc<=(%d,%gf) ", reg.as_uint, reg.as_float);
@@ -366,15 +369,109 @@ void si_isa_V_CMP_GT_I32_VOP3b_impl()
 	NOT_IMPL();
 }
 
+#define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
 {
-	NOT_IMPL();
-}
+	assert(!INST.addr64);
+	assert(!INST.index);
 
+	unsigned int offset; 
+	int elem_size;
+	int num_elems;
+	int bytes_to_read;
+	struct si_buffer_resource_t buf_desc;
+	uint32_t buffer_addr;
+	uint32_t value;
+
+	if (INST.offen)
+	{
+		offset = INST.vaddr;
+	}
+	else 
+	{
+		offset = INST.offset;
+	}
+
+	elem_size = si_isa_get_elem_size(INST.dfmt);
+	num_elems = si_isa_get_num_elems(INST.dfmt);
+
+	/* If num_elems is greater than 1, we need to see how 
+	 * the destination register is handled */
+	assert(num_elems == 1);
+
+	bytes_to_read = elem_size * num_elems;
+
+	/* srsrc is in units of 4 registers */
+	si_isa_read_buf_res(&buf_desc, INST.srsrc*4);
+
+	buffer_addr = buf_desc.base_addr + offset;
+
+	mem_read(si_emu->global_mem, buffer_addr, bytes_to_read, &value);
+
+	si_isa_write_vgpr(INST.vdata, value);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		union si_reg_t reg;
+		reg.as_int = value;
+		
+		si_isa_debug("t%d: V%u<=(%u)(%d,%gf) ", si_isa_work_item->id, INST.vdata, 
+			buffer_addr, reg.as_uint, reg.as_float);
+	}
+}
+#undef INST
+
+#define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
 {
-	NOT_IMPL();
+	assert(!INST.addr64);
+	assert(!INST.index);
+
+	unsigned int offset; 
+	int elem_size;
+	int num_elems;
+	int bytes_to_write;
+	struct si_buffer_resource_t buf_desc;
+	uint32_t buffer_addr;
+	uint32_t value;
+
+	if (INST.offen)
+	{
+		offset = INST.vaddr;
+	}
+	else 
+	{
+		offset = INST.offset;
+	}
+
+	elem_size = si_isa_get_elem_size(INST.dfmt);
+	num_elems = si_isa_get_num_elems(INST.dfmt);
+
+	/* If num_elems is greater than 1, we need to see how 
+	 * the destination register is handled */
+	assert(num_elems == 1);
+
+	bytes_to_write = elem_size * num_elems;
+
+	/* srsrc is in units of 4 registers */
+	si_isa_read_buf_res(&buf_desc, INST.srsrc*4);
+
+	buffer_addr = buf_desc.base_addr + offset;
+
+	value = si_isa_read_vgpr(INST.vdata);
+
+	mem_write(si_emu->global_mem, buffer_addr, bytes_to_write, &value);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		union si_reg_t reg;
+		reg.as_int = value;
+		
+		si_isa_debug("t%d: (%u)<=V%u(%d,%gf) ", si_isa_work_item->id, buffer_addr, 
+			INST.vdata, reg.as_uint, reg.as_float);
+	}
 }
+#undef INST
 
 void si_isa_S_ANDN2_B64_impl()
 {

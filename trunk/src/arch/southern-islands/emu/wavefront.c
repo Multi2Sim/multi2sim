@@ -135,7 +135,6 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	case SI_FMT_SOPP:
 	case SI_FMT_SMRD:
 	{
-		/* Stats */
 		si_isa_wavefront->scalar_inst_count++;
 
 		/* Only one work item executes the instruction */
@@ -154,7 +153,6 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	case SI_FMT_VOP3a:
 	case SI_FMT_VOP3b:
 	{
-		/* Stats */
 		si_isa_wavefront->vector_inst_count++;
 	
 		si_isa_debug("\n");
@@ -172,13 +170,22 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	case SI_FMT_MTBUF:
 	{
 
+		si_isa_wavefront->vector_inst_count++;
+	
+		si_isa_debug("\n");
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(si_isa_wavefront, work_item_id)
+		{
+			si_isa_work_item = ndrange->work_items[work_item_id];
+			(*si_isa_inst_func[si_isa_inst->info->inst])();
+		}
+		si_isa_debug("\n");
 
 		break;
 	}
 
 	default:
 	{
-		panic("Instruction type not implemented");
+		fatal("%s: instruction type not implemented", __FUNCTION__);
 		break;
 	}
 
