@@ -17,106 +17,109 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <list.h>
-#include <debug.h>
-#include <misc.h>
-#include <elf-format.h>
-
-#include <fermi-asm.h>
+#include <fermi-emu.h>
 
 
 
 /*
- * CUDA thread (Pixel)
+ * Public Functions
  */
 
-#define FRM_MAX_GPR_ELEM  5
-#define FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
-
-struct frm_gpr_t
+struct frm_thread_t *frm_thread_create()
 {
-	uint32_t elem[FRM_MAX_GPR_ELEM];  /* x, y, z, w, t */
-};
+	struct frm_thread_t *thread;
 
-/* Structure describing a memory access definition */
-struct frm_mem_access_t
+	/* Allocate */
+	thread = calloc(1, sizeof(struct frm_thread_t));
+	if (!thread)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	thread->write_task_list = linked_list_create();
+	thread->lds_oqa = list_create();
+	thread->lds_oqb = list_create();
+
+	/* Return */
+	return thread;
+}
+
+
+void frm_thread_free(struct frm_thread_t *thread)
 {
-	int type;  /* 0-none, 1-read, 2-write */
-	uint32_t addr;
-	int size;
-};
+	/* Empty LDS output queues */
+	while (list_count(thread->lds_oqa))
+		free(list_dequeue(thread->lds_oqa));
+	while (list_count(thread->lds_oqb))
+		free(list_dequeue(thread->lds_oqb));
+	list_free(thread->lds_oqa);
+	list_free(thread->lds_oqb);
+	linked_list_free(thread->write_task_list);
 
-struct frm_thread_t
+	/* Free thread */
+	free(thread);
+}
+
+
+
+void frm_thread_set_active(struct frm_thread_t *thread, int active)
 {
-	/* IDs */
-	int id;  /* global ID */
-	int id_in_warp;
-	int id_in_threadblock;  /* local ID */
+	struct frm_warp_t *warp = thread->warp;
 
-	/* 3-dimensional IDs */
-	int id_3d[3];  /* global 3D IDs */
-	int id_in_threadblock_3d[3];  /* local 3D IDs */
+	assert(thread->id_in_warp >= 0 && thread->id_in_warp < warp->thread_count);
+	bit_map_set(warp->active_stack, warp->stack_top * warp->thread_count
+		+ thread->id_in_warp, 1, !!active);
+	warp->active_mask_update = 1;
+}
 
-	/* Warp, Threadblock, and Grid where it belongs */
-	struct frm_warp_t *warp;
-	struct frm_threadblock_t *threadblock;
-	struct frm_grid_t *grid;
 
-	/* Thread state */
-	struct frm_gpr_t gpr[128];  /* General purpose registers */
-	struct frm_gpr_t pv;  /* Result of last computations */
+int frm_thread_get_active(struct frm_thread_t *thread)
+{
+	struct frm_warp_t *warp = thread->warp;
 
-	/* Linked list of write tasks. They are enqueued by machine instructions
-	 * and executed as a burst at the end of an ALU group. */
-	struct linked_list_t *write_task_list;
+	assert(thread->id_in_warp >= 0 && thread->id_in_warp < warp->thread_count);
+	return bit_map_get(warp->active_stack, warp->stack_top * warp->thread_count
+		+ thread->id_in_warp, 1);
+}
 
-	/* LDS (Local Data Share) OQs (Output Queues) */
-	struct list_t *lds_oqa;
-	struct list_t *lds_oqb;
 
-	/* This is a digest of the active mask updates for this thread. Every time
-	 * an instruction updates the active mask of a warp, this digest is updated
-	 * for active threads by XORing a random number common for the warp.
-	 * At the end, threads with different 'branch_digest' numbers can be considered
-	 * divergent threads. */
-	uint32_t branch_digest;
+void frm_thread_set_pred(struct frm_thread_t *thread, int pred)
+{
+	struct frm_warp_t *warp = thread->warp;
 
-	/* Last global memory access */
-	uint32_t global_mem_access_addr;
-	uint32_t global_mem_access_size;
+	assert(thread->id_in_warp >= 0 && thread->id_in_warp < warp->thread_count);
+	bit_map_set(warp->pred, thread->id_in_warp, 1, !!pred);
+	warp->pred_mask_update = 1;
+}
 
-	/* Last local memory access */
-	int local_mem_access_count;  /* Number of local memory access performed by last instruction */
-	uint32_t local_mem_access_addr[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	uint32_t local_mem_access_size[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	int local_mem_access_type[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
-};
 
-#define FRM_FOREACH_THREAD_IN_GRID(GRID, THREAD_ID) \
-	for ((THREAD_ID) = (GRID)->thread_id_first; \
-		(THREAD_ID) <= (GRID)->thread_id_last; \
-		(THREAD_ID)++)
+int frm_thread_get_pred(struct frm_thread_t *thread)
+{
+	struct frm_warp_t *warp = thread->warp;
 
-#define FRM_FOREACH_THREAD_IN_THREADBLOCK(THREADBLOCK, THREAD_ID) \
-	for ((THREAD_ID) = (THREADBLOCK)->thread_id_first; \
-		(THREAD_ID) <= (THREADBLOCK)->thread_id_last; \
-		(THREAD_ID)++)
+	assert(thread->id_in_warp >= 0 && thread->id_in_warp < warp->thread_count);
+	return bit_map_get(warp->pred, thread->id_in_warp, 1);
+}
 
-#define FRM_FOREACH_THREAD_IN_WARP(WARP, THREAD_ID) \
-	for ((THREAD_ID) = (WARP)->thread_id_first; \
-		(THREAD_ID) <= (WARP)->thread_id_last; \
-		(THREAD_ID)++)
 
-struct frm_thread_t *frm_thread_create(void);
-void frm_thread_free(struct frm_thread_t *thread);
-
-/* Consult and change active/predicate bits */
-void frm_thread_set_active(struct frm_thread_t *thread, int active);
-int frm_thread_get_active(struct frm_thread_t *thread);
-void frm_thread_set_pred(struct frm_thread_t *thread, int pred);
-int frm_thread_get_pred(struct frm_thread_t *thread);
+/* Based on an instruction counter, instruction address, and thread mask,
+ * update (xor) branch_digest with a random number */
 void frm_thread_update_branch_digest(struct frm_thread_t *thread,
-	long long inst_count, uint32_t inst_addr);
+	long long inst_count, uint32_t inst_addr)
+{
+	struct frm_warp_t *warp = thread->warp;
+	uint32_t mask = 0;
 
+	/* Update branch digest only if thread is active */
+	if (!bit_map_get(warp->active_stack, warp->stack_top * warp->thread_count
+		+ thread->id_in_warp, 1))
+		return;
+
+	/* Update mask with inst_count */
+	mask = (uint32_t) inst_count * 0x4919f71f;  /* Multiply by prime number to generate sparse mask */
+
+	/* Update mask with inst_addr */
+	mask += inst_addr * 0x31f2e73b;
+
+	/* Update branch digest */
+	thread->branch_digest ^= mask;
+}

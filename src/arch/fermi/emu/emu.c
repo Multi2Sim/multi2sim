@@ -18,8 +18,39 @@
  */
 
 #include <fermi-emu.h>
+#include <x86-emu.h>
 
 
+
+/*
+ * Global variables
+ */
+
+
+//struct frm_emu_t *frm_emu;
+
+//long long frm_emu_max_cycles = 0;
+//long long frm_emu_max_inst = 0;
+//int frm_emu_max_kernels = 0;
+
+//enum frm_emu_kind_t frm_emu_kind = frm_emu_functional;
+
+//char *frm_emu_opencl_binary_name = "";
+//char *frm_emu_report_file_name = "";
+//FILE *frm_emu_report_file = NULL;
+
+//int frm_emu_wavefront_size = 64;
+
+
+
+
+void frm_emu_init(void)
+{
+}
+
+void frm_emu_done(void)
+{
+}
 
 /* 
  * Fermi disassembler
@@ -58,5 +89,4 @@ void frm_emu_disasm(char *path)
 	/* Free external ELF */
 	elf_file_free(elf_file);
 }
-
 
