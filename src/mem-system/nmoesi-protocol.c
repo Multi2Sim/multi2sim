@@ -1359,23 +1359,6 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		dir = target_mod->dir;
 
 		shared = 0;
-		if (stack->state == cache_block_modified)
-		{
-			/* Set state to owned */
-			cache_set_block(target_mod->cache, stack->set, stack->way, 
-				stack->tag, cache_block_owned);
-
-			stack->retain_owner = 1;
-			shared = 1;
-		}
-		else if (stack->state == cache_block_owned)
-		{
-			/* If block is in the owned state, the it should be 
-			 * returned as shared, not exclusive */
-			shared = 1;
-		}
-
-
 		/* With the Owned state, the directory entry may remain owned by the sender */
 		if (!stack->retain_owner)
 		{
@@ -1571,10 +1554,6 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		}
 		else if (stack->reply == reply_ACK)
 		{
-			/* This block should only be in exclusive because modified/owned do 
-			 * not receive any ACKs */
-			assert(stack->state == cache_block_exclusive);
-
 			/* Higher-level cache was exclusive with no modifications above it */
 			stack->reply_size = 8;
 
