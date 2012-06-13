@@ -119,6 +119,26 @@ void si_isa_write_vgpr(int vreg, unsigned int value)
 	SI_VGPR_ELEM(vreg) = value;
 }
 
+/* Generic register read. */
+unsigned int si_isa_read_reg(int reg)
+{
+	if (reg <= 103)
+	{
+		return si_isa_read_sgpr(reg);
+	}
+	else if (reg <= 255)
+	{
+		fatal("General register read for reg:%d not implemented.", reg);
+	}
+	else if (reg <= 511)
+	{
+		return si_isa_read_vgpr(reg - 256);
+	}
+	
+	fatal("No such register exists:%d.", reg);
+	return 0;
+}
+
 /* Initialize a buffer resource descriptor */
 void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg)
 {

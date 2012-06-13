@@ -753,7 +753,7 @@ void si_wavefront_stack_push(struct si_wavefront_t *wavefront);
 void si_wavefront_stack_pop(struct si_wavefront_t *wavefront, int count);
 void si_wavefront_execute(struct si_wavefront_t *wavefront);
 
-
+void si_wavefront_bitmask_cc(unsigned long long *cc, int id_in_wavefront, unsigned int value);
 
 
 /*
@@ -884,7 +884,9 @@ extern char *err_si_isa_note;
 /* Macros for fast access of instruction words */
 #define SI_INST_SMRD		si_isa_inst->micro_inst.smrd
 #define SI_INST_SOP1		si_isa_inst->micro_inst.sop1
+#define SI_INST_SOP2		si_isa_inst->micro_inst.sop2
 #define SI_INST_VOP1		si_isa_inst->micro_inst.vop1
+#define SI_INST_VOP2		si_isa_inst->micro_inst.vop2
 /* FIXME Finish filling these in */
 
 
@@ -946,6 +948,7 @@ unsigned int si_isa_read_sgpr(int sreg);
 void si_isa_write_sgpr(int sreg, unsigned int value);
 unsigned int si_isa_read_vgpr(int vreg);
 void si_isa_write_vgpr(int vreg, unsigned int value);
+unsigned int si_isa_read_reg(int reg);
 void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg);
 void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg);
 

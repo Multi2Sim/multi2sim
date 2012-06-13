@@ -118,10 +118,43 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl()
 	NOT_IMPL();
 }
 
+#define INST SI_INST_SOP2
 void si_isa_S_MIN_U32_impl()
 {
-	NOT_IMPL();
+	/* D.u = (S0.u < S1.u) ? S0.u : S1.u, scc = 1 if S0 is min. */
+
+	unsigned int s0 = si_isa_read_sgpr(INST.ssrc0);
+	unsigned int s1 = si_isa_read_sgpr(INST.ssrc1);
+
+	unsigned int dst;
+	unsigned int scc;
+
+	if (INST.ssrc0 < INST.ssrc1)
+	{
+		dst = s0;
+		scc = 1;
+	}
+	else
+	{
+		dst = s1;
+		scc = 0;
+	}
+
+	si_isa_write_sgpr(INST.sdst, dst);
+	si_wavefront_bitmask_cc(&si_isa_wavefront->scc, si_isa_work_item->id_in_wavefront, scc);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		union si_reg_t reg;
+
+		reg.as_uint = dst;
+		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, reg.as_uint, reg.as_float);
+		
+		reg.as_uint = scc;
+		si_isa_debug("scc<=(%d,%gf) ", reg.as_uint, reg.as_float);
+	}
 }
+#undef INST
 
 void si_isa_S_AND_B32_impl()
 {
@@ -227,15 +260,49 @@ void si_isa_V_MUL_F32_impl()
 	NOT_IMPL();
 }
 
+#define INST SI_INST_VOP2
 void si_isa_V_MUL_I32_I24_impl()
-{
-	NOT_IMPL();
-}
+{	
+	/* D.i = S0.i[23:0] * S1.i[23:0]. */
+	
+	int s0 = si_isa_read_reg(INST.src0) & 0xFFFFFF;
+	int s1 = si_isa_read_vgpr(INST.vsrc1) &0xFFFFFF;
 
+	int dst = s0 * s1;
+
+	si_isa_write_vgpr(INST.vdst, dst);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		union si_reg_t reg;
+
+		reg.as_int = dst;
+		si_isa_debug("V%u<=(%d,%gf) ", INST.vdst, reg.as_uint, reg.as_float);
+	}
+}
+#undef INST
+
+#define INST SI_INST_VOP2
 void si_isa_V_LSHLREV_B32_impl()
 {
-	NOT_IMPL();
+	/* D.u = S1.u << S0.u[4:0]. */
+
+	unsigned int s0 = si_isa_read_reg(INST.src0) & 0x1F;
+	unsigned int s1 = si_isa_read_vgpr(INST.vsrc1);
+
+	unsigned int dst = s1 << s0;
+
+	si_isa_write_vgpr(INST.vdst, dst);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		union si_reg_t reg;
+
+		reg.as_uint = dst;
+		si_isa_debug("V%u<=(%d,%gf) ", INST.vdst, reg.as_uint, reg.as_float);
+	}
 }
+#undef INST
 
 void si_isa_V_OR_B32_impl()
 {
@@ -247,10 +314,32 @@ void si_isa_V_MAC_F32_impl()
 	NOT_IMPL();
 }
 
+#define INST SI_INST_VOP2
 void si_isa_V_ADD_I32_impl()
 {
-	NOT_IMPL();
+	/* D.u = S0.u + S1.u, vcc = carry-out. */
+
+	unsigned int s0 = si_isa_read_reg(INST.src0);
+	unsigned int s1 = si_isa_read_vgpr(INST.vsrc1);
+
+	unsigned int dst = s0 + s1;
+	unsigned int vcc = (((long)s0 + (long)s1) > 0xFFFFFFFF);
+
+	si_isa_write_vgpr(INST.vdst, dst);
+	si_wavefront_bitmask_cc(&si_isa_wavefront->vcc, si_isa_work_item->id_in_wavefront, vcc);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		union si_reg_t reg;
+
+		reg.as_uint = dst;
+		si_isa_debug("V%u<=(%d,%gf) ", INST.vdst, reg.as_uint, reg.as_float);
+		
+		reg.as_uint = vcc;
+		si_isa_debug("vcc<=(%d,%gf) ", reg.as_uint, reg.as_float);
+	}
 }
+#undef INST
 
 void si_isa_V_MAD_F32_impl()
 {
