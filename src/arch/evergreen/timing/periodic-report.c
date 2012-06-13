@@ -80,6 +80,10 @@ static char *evg_periodic_report_intro =
 	"<local_mem_accesses>\n"
 	"\tNumber of local memory accesses performed in the interval, adding up all\n"
 	"\taccesses performed by all work-items in the wavefront.\n"
+	"<global_mem_accesses>\n"
+	"\tNumber of global memory accesses performed in the interval, adding up all\n"
+	"\taccesses performed by all work-items in the wavefront.\n"
+
 	"\n";
 
 
@@ -234,12 +238,14 @@ void evg_periodic_report_dump_entry(struct evg_wavefront_t *wavefront)
 	fprintf(f, "%5lld ", esim_cycle - wavefront->periodic_report_cycle);
 	fprintf(f, "%5d ", wavefront->periodic_report_inst_count);
 	fprintf(f, "%5d ", wavefront->periodic_report_local_mem_accesses);
+	fprintf(f, "%5d ", wavefront->periodic_report_global_mem_accesses);
 	fprintf(f, "\n");
 
 	/* Reset statistics */
 	wavefront->periodic_report_cycle = esim_cycle;
 	wavefront->periodic_report_inst_count = 0;
 	wavefront->periodic_report_local_mem_accesses = 0;
+	wavefront->periodic_report_global_mem_accesses = 0;
 }
 
 
@@ -262,6 +268,7 @@ void evg_periodic_report_new_inst(struct evg_uop_t *uop)
 	/* Track number of VLIW slots (or non-ALU instructions) */
 	wavefront->periodic_report_inst_count += uop->vliw_slots;
 
+
 	/* Number of local memory accesses performed by this uop */
 	if (uop->local_mem_read || uop->local_mem_write)
 	{
@@ -271,6 +278,17 @@ void evg_periodic_report_new_inst(struct evg_uop_t *uop)
 			wavefront->periodic_report_local_mem_accesses += work_item->local_mem_access_count;
 		}
 	}
+
+	/* FIXME: if we decide to fix the read stage to access global memory only when
+	 * a work-item is active, these counters need to be updated accordingly. */
+	/* Number of Global memory read accesses performed by this uop */
+	if (uop->global_mem_read)
+		wavefront->periodic_report_global_mem_accesses += wavefront->work_item_count;
+
+	/* Number of Global memory write accesses performed by this uop */
+	if (uop->global_mem_write)
+		wavefront->periodic_report_global_mem_accesses += wavefront->work_item_count;
+
 
 	/* Dump report entry if interval reached */
 	wavefront->periodic_report_vliw_bundle_count++;

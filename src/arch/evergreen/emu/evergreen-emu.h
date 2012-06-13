@@ -855,7 +855,7 @@ struct evg_wavefront_t
 	long long periodic_report_cycle;  /* Last cycle when periodic report was updated */
 	int periodic_report_inst_count;  /* Number of instructions (VLIW slots) in this interval */
 	int periodic_report_local_mem_accesses;  /* Number of local memory accesses in this interval */
-
+	int periodic_report_global_mem_accesses;  /* Number of Global memory accesses in this interval */
 
 	/* Statistics */
 
