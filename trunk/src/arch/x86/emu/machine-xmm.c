@@ -435,6 +435,28 @@ void x86_isa_movss_xmmm32_xmm_impl()
 }
 
 
+void x86_isa_movups_xmm_xmmm128_impl()
+{
+	union x86_xmm_reg_t xmm;
+
+	x86_isa_load_xmmm128(xmm.as_uchar);
+	x86_isa_store_xmm(xmm.as_uchar);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmmm128, 0, 0, x86_dep_xmm, 0, 0, 0);
+}
+
+
+void x86_isa_movups_xmmm128_xmm_impl()
+{
+	union x86_xmm_reg_t xmm;
+
+	x86_isa_load_xmm(xmm.as_uchar);
+	x86_isa_store_xmmm128(xmm.as_uchar);
+
+	x86_uinst_new(x86_uinst_xmm_move, x86_dep_xmm, 0, 0, x86_dep_xmmm128, 0, 0, 0);
+}
+
+
 void x86_isa_orpd_xmm_xmmm128_impl()
 {
 	union x86_xmm_reg_t dest;
