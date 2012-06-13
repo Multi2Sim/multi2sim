@@ -64,7 +64,7 @@ static struct si_inst_info_t *si_inst_info_vop2[SI_INST_INFO_VOP2_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_mtbuf[SI_INST_INFO_MTBUF_OPCODE_SIZE];
 
 /* Helper functions to dump assembly code to a file */
-void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f, int* new_label);
+void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 void si_inst_dump_sopk(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
@@ -412,8 +412,56 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 	int label_addr[buffer->size / 4]; /* A list of created labels sorted by rel_addr. */
 	int* next_label = &label_addr[0]; /* The next label to dump. */
 	int* end_label = &label_addr[0]; /* The address after the last label. */
-	*next_label = -1;
-	*end_label = -1;
+	
+	/* Read through instructions to find labels. */
+	while(inst_buf)
+	{
+		struct si_inst_t inst;
+		int inst_size;
+
+		/* Zero-out instruction structure */
+		memset(&inst, 0, sizeof(struct si_inst_t));
+
+		/* All sopp instructions will be 32-bits */
+		inst_size = 4;
+		memcpy(&inst.micro_inst, inst_buf, inst_size);
+
+		/* If ENDPGM, break. */
+		if (inst.micro_inst.sopp.enc == 0x17F &&
+			inst.micro_inst.sopp.op == 1) break;
+
+		/* If the instruction branches, insert the label into the sorted list. */
+		if (inst.micro_inst.sopp.enc == 0x17F && 
+			(inst.micro_inst.sopp.op >= 2 && inst.micro_inst.sopp.op <= 9))
+		{
+			short simm16 = inst.micro_inst.sopp.simm16;
+			int se_simm = simm16;
+			int label = rel_addr + (se_simm * 4) + 4;
+
+			/* Find position to insert label. */
+			int* t_label = &label_addr[0];
+			while(t_label < end_label && label > *t_label) t_label++;
+
+			/* Shift labels after position down. */
+			int* t2_label = t_label;
+			while(t2_label < end_label)
+			{
+				*(t2_label + 1) = *t2_label;
+				t2_label++;
+			}
+			end_label++;
+
+			/* Insert the new label. */
+			*t_label = label;
+		}
+
+		inst_buf += inst_size;
+		rel_addr += inst_size;
+	}
+
+	/* Reset to disassemble. */
+	inst_buf = buffer->ptr;
+	rel_addr = 0;
 
 	/* Disassemble */
 	while (inst_buf)
@@ -436,28 +484,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		/* Dump the instruction */
 		if (inst.info->fmt == SI_FMT_SOPP)
 		{
-			int label;	
-			si_inst_dump_sopp(&inst, rel_addr, inst_buf, f, &label);
-
-			/* Remember new label if created (keeping label list sorted by rel_addr). */
-			if (label >= 0)
-			{
-				/* Find position to insert label. */
-				int* t_label = next_label;
-				while(label > *t_label && t_label < end_label) t_label++;
-
-				/* Shift labels after position down. */
-				int* t2_label = t_label;
-				while(t2_label < end_label)
-				{
-					*(t2_label + 1) = *t2_label;
-					t2_label++;
-				}
-				end_label++;
-
-				/* Insert the new label. */
-				*t_label = label;
-			}
+			si_inst_dump_sopp(&inst, rel_addr, inst_buf, f);
 
 			/* Break at end of program. */
 			if (inst.micro_inst.sopp.op == 1)
@@ -649,11 +676,9 @@ void line_dump(char *inst_str, unsigned int rel_addr, void* buf, FILE *f, int in
 	}
 }
 
-void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f, int* new_label)
+void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
 {
 	struct si_fmt_sopp_t *sopp = &inst->micro_inst.sopp;
-
-	*new_label = -1;
 
 	int str_size = MAX_INST_STR_SIZE;
 	char orig_inst_str[MAX_INST_STR_SIZE];
@@ -704,8 +729,9 @@ void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		}
 		else if (is_token(fmt_str, "LABEL", &token_len))
 		{
-			*new_label = rel_addr + (sopp->simm16 * 4) + 4;
-			str_printf(&inst_str, &str_size, "label_%04X", *new_label / 4);
+			short simm16 = sopp->simm16;
+			int se_simm = simm16;
+			str_printf(&inst_str, &str_size, "label_%04X", (rel_addr + (se_simm * 4) + 4) / 4);
 		}
 		else
 		{

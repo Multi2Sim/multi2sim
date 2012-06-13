@@ -203,6 +203,12 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	}
 }
 
+void si_wavefront_bitmask_cc(unsigned long long *cc, int id_in_wavefront, unsigned int value)
+{
+	unsigned long long mask = 1 << id_in_wavefront;
+	*cc = (value) ? *cc | mask: *cc & ~mask;
+}
+
 void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, int sreg, uint32_t value)
 {
 	wavefront->sgpr[sreg] = value;
