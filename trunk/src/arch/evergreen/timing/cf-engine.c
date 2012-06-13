@@ -224,6 +224,9 @@ static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 		}
 	}
 
+	if (evg_periodic_report_active)
+		evg_periodic_report_new_inst(uop);
+
 	/* Set next execute candidate */
 	compute_unit->cf_engine.execute_index = (index + 1)
 		% evg_gpu->wavefronts_per_compute_unit;
