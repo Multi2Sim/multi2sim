@@ -920,8 +920,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		target_mod = stack->target_mod;
 
 		/* Send write request to all sharers */
-		new_stack = mod_stack_create(stack->id, mod, 0,
-			EV_MOD_NMOESI_EVICT_INVALID, stack);
+		new_stack = mod_stack_create(stack->id, mod, 0, EV_MOD_NMOESI_EVICT_INVALID, stack);
 		new_stack->except_mod = NULL;
 		new_stack->set = stack->set;
 		new_stack->way = stack->way;
@@ -936,8 +935,8 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_invalid\"\n",
 			stack->id, mod->name);
 
-		/* If module is main memory, no writeback.
-		 * We just need to set the block as invalid, and finish. */
+		/* If module is main memory, we just need to set the block as invalid, 
+		 * and finish. */
 		if (mod->kind == mod_kind_main_memory)
 		{
 			cache_set_block(mod->cache, stack->src_set, stack->src_way,
@@ -955,6 +954,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 	{
 		struct mod_t *low_mod;
 		struct net_node_t *low_node;
+		int msg_size = 8;
 
 		mem_debug("  %lld %lld 0x%x %s evict action\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
@@ -975,30 +975,19 @@ void mod_handler_nmoesi_evict(int event, void *data)
 			return;
 		}
 
-		/* State = M/O */
-		if (stack->state == cache_block_modified ||
-			stack->state == cache_block_owned)
+		/* If state is M/O/N, data must be sent to lower level mod */
+		if (stack->state == cache_block_modified || stack->state == cache_block_owned ||
+			stack->state == cache_block_noncoherent)
 		{
-			/* Send message */
-			stack->msg = net_try_send_ev(mod->low_net, mod->low_net_node,
-				low_node, mod->block_size + 8, EV_MOD_NMOESI_EVICT_RECEIVE, stack,
-				event, stack);
-			stack->writeback = 1;
-			return;
+			/* Need to transmit data to low module */
+			msg_size += mod->block_size;
 		}
 
-		/* State = S/E */
-		if (stack->state == cache_block_shared ||
-			stack->state == cache_block_exclusive)
-		{
-			/* Send message */
-			stack->msg = net_try_send_ev(mod->low_net, mod->low_net_node,
-				low_node, 8, EV_MOD_NMOESI_EVICT_RECEIVE, stack, event, stack);
-			return;
-		}
+		/* If state is E/S, just an ACK needs to be sent */
 
-		/* Shouldn't get here */
-		panic("%s: invalid moesi state", __FUNCTION__);
+		/* Send message */
+		stack->msg = net_try_send_ev(mod->low_net, mod->low_net_node,
+			low_node, msg_size, EV_MOD_NMOESI_EVICT_RECEIVE, stack, event, stack);
 		return;
 	}
 
@@ -1011,94 +1000,22 @@ void mod_handler_nmoesi_evict(int event, void *data)
 
 		/* Receive message */
 		net_receive(target_mod->high_net, target_mod->high_net_node, stack->msg);
+
+		if (stack->state == cache_block_modified || stack->state == cache_block_owned ||
+			stack->state == cache_block_noncoherent)
+		{
+			/* If data was received, set block to modified */
+			cache_set_block(target_mod->cache, stack->set, stack->way, stack->tag,
+				cache_block_modified);
+		}
 		
 		/* Find and lock */
 		new_stack = mod_stack_create(stack->id, target_mod, stack->src_tag,
-			EV_MOD_NMOESI_EVICT_WRITEBACK, stack);
+			EV_MOD_NMOESI_EVICT_PROCESS, stack);
 		new_stack->blocking = 0;
 		new_stack->read = 0;
 		new_stack->retry = 0;
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
-		return;
-	}
-
-	if (event == EV_MOD_NMOESI_EVICT_WRITEBACK)
-	{
-		mem_debug("  %lld %lld 0x%x %s evict writeback\n", esim_cycle, stack->id,
-			stack->tag, target_mod->name);
-		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_writeback\"\n",
-			stack->id, target_mod->name);
-
-		/* Error locking block */
-		if (stack->err)
-		{
-			ret->err = 1;
-			esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, 0);
-			return;
-		}
-
-		/* No writeback */
-		if (!stack->writeback)
-		{
-			esim_schedule_event(EV_MOD_NMOESI_EVICT_PROCESS, stack, 0);
-			return;
-		}
-
-		/* Writeback */
-		new_stack = mod_stack_create(stack->id, target_mod, 0,
-			EV_MOD_NMOESI_EVICT_WRITEBACK_EXCLUSIVE, stack);
-		new_stack->except_mod = mod;
-		new_stack->set = stack->set;
-		new_stack->way = stack->way;
-		esim_schedule_event(EV_MOD_NMOESI_INVALIDATE, new_stack, 0);
-		return;
-	}
-
-	if (event == EV_MOD_NMOESI_EVICT_WRITEBACK_EXCLUSIVE)
-	{
-		mem_debug("  %lld %lld 0x%x %s evict writeback exclusive\n", esim_cycle, stack->id,
-			stack->tag, target_mod->name);
-		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_writeback_exclusive\"\n",
-			stack->id, target_mod->name);
-
-		/* State = O/S/I */
-		assert(stack->state != cache_block_invalid);
-		if (stack->state == cache_block_owned || stack->state ==
-			cache_block_shared)
-		{
-			new_stack = mod_stack_create(stack->id, target_mod, stack->tag,
-				EV_MOD_NMOESI_EVICT_WRITEBACK_FINISH, stack);
-			new_stack->target_mod = mod_get_low_mod(target_mod, stack->tag);
-			new_stack->request_dir = mod_request_up_down;
-			esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST, new_stack, 0);
-			return;
-		}
-
-		/* State = M/E */
-		esim_schedule_event(EV_MOD_NMOESI_EVICT_WRITEBACK_FINISH, stack, 0);
-		return;
-	}
-
-	if (event == EV_MOD_NMOESI_EVICT_WRITEBACK_FINISH)
-	{
-		mem_debug("  %lld %lld 0x%x %s evict writeback finish\n", esim_cycle, stack->id,
-			stack->tag, target_mod->name);
-		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_writeback_finish\"\n",
-			stack->id, target_mod->name);
-
-		/* Error in write request */
-		if (stack->err)
-		{
-			ret->err = 1;
-			dir_entry_unlock(target_mod->dir, stack->set, stack->way);
-			esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, 0);
-			return;
-		}
-
-		/* Set tag and state */
-		cache_set_block(target_mod->cache, stack->set, stack->way, stack->tag,
-			cache_block_modified);
-		esim_schedule_event(EV_MOD_NMOESI_EVICT_PROCESS, stack, 0);
 		return;
 	}
 
@@ -1109,7 +1026,16 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_process\"\n",
 			stack->id, target_mod->name);
 
+		/* Error locking block */
+		if (stack->err)
+		{
+			ret->err = 1;
+			esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, 0);
+			return;
+		}
+
 		/* Remove sharer, owner, and unlock */
+		/* TODO Verify that only removing mod as owner/sharer of the one subblock */
 		dir = target_mod->dir;
 		for (z = 0; z < dir->zsize; z++)
 		{
@@ -1157,8 +1083,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		if (!stack->err)
 			cache_set_block(mod->cache, stack->src_set, stack->src_way,
 				0, cache_block_invalid);
-		assert(!dir_entry_group_shared_or_owned(mod->dir,
-			stack->src_set, stack->src_way));
+		assert(!dir_entry_group_shared_or_owned(mod->dir, stack->src_set, stack->src_way));
 		esim_schedule_event(EV_MOD_NMOESI_EVICT_FINISH, stack, 0);
 		return;
 	}
@@ -1439,6 +1364,13 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 			stack->retain_owner = 1;
 			shared = 1;
 		}
+		else if (stack->state == cache_block_owned)
+		{
+			/* If block is in the owned state, the it should be 
+			 * returned as shared, not exclusive */
+			shared = 1;
+		}
+
 
 		/* With the Owned state, the directory entry may remain owned by the sender */
 		if (!stack->retain_owner)
@@ -2002,19 +1934,9 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		}
 
 		/* Set states O/E/S/I->E */
-		if (stack->state == cache_block_owned || 
-			stack->state == cache_block_exclusive ||
-			stack->state == cache_block_shared ||
-			stack->state == cache_block_invalid)
-		{
-			cache_set_block(target_mod->cache, stack->set, stack->way,
-				stack->tag, cache_block_exclusive);
-		}
-		else /* Set state: M/N->M */
-		{ 
-			cache_set_block(target_mod->cache, stack->set, stack->way,
-				stack->tag, cache_block_modified);
-		}
+		/* TODO Verify that block is always set to exclusive */
+		cache_set_block(target_mod->cache, stack->set, stack->way,
+			stack->tag, cache_block_exclusive);
 
 		/* Unlock, reply_size is the data of the size of the requester's block. */
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
