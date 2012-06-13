@@ -409,6 +409,9 @@ DEFINST(movsx_r16_rm8, 0x0f, 0xbe, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(movsx_r32_rm8, 0x0f, 0xbe, SKIP, REG, SKIP, 0)
 DEFINST(movsx_r32_rm16, 0x0f, 0xbf, SKIP, REG, SKIP, 0)
 
+DEFINST(movups_xmm_xmmm128, 0x0f, 0x10, SKIP, REG, SKIP, 0)
+DEFINST(movups_xmmm128_xmm, 0x0f, 0x11, SKIP, REG, SKIP, 0)
+
 DEFINST(movzx_r16_rm8, 0x0f, 0xb6, SKIP, REG, SKIP, x86_prefix_op)
 DEFINST(movzx_r32_rm8, 0x0f, 0xb6, SKIP, REG, SKIP, 0)
 DEFINST(movzx_r32_rm16, 0x0f, 0xb7, SKIP, REG, SKIP, 0)
