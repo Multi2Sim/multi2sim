@@ -17,100 +17,112 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <list.h>
-#include <debug.h>
-#include <misc.h>
-#include <elf-format.h>
+#include <fermi-emu.h>
+#include <mem-system.h>
+#include <x86-emu.h>
 
-#include <fermi-asm.h>
 
 
 
 /*
- * CUDA Threadblock
+ * Public Functions
  */
 
-enum frm_threadblock_status_t
+
+struct frm_threadblock_t *frm_threadblock_create(char *name)
 {
-	frm_threadblock_pending		= 0x0001,
-	frm_threadblock_running		= 0x0002,
-	frm_threadblock_finished	= 0x0004
-};
+	struct frm_threadblock_t *threadblock;
 
-struct frm_threadblock_t
+	/* Allocate */
+	threadblock = calloc(1, sizeof(struct frm_threadblock_t));
+	if (!threadblock)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	threadblock->local_mem = mem_create();
+	threadblock->local_mem->safe = 0;
+
+	/* Return */
+	return threadblock;
+}
+
+
+void frm_threadblock_free(struct frm_threadblock_t *threadblock)
 {
-	char name[30];
+	mem_free(threadblock->local_mem);
+	free(threadblock);
+}
 
-	/* ID */
-	int id;  /* Group ID */
-	int id_3d[3];  /* 3-dimensional Group ID */
 
-	/* Status */
-	enum frm_threadblock_status_t status;
+int frm_threadblock_get_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status)
+{
+	return (threadblock->status & status) > 0;
+}
 
-	/* Grid it belongs to */
-	struct frm_grid_t *grid;
 
-	/* IDs of threads contained */
-	int thread_id_first;
-	int thread_id_last;
-	int thread_count;
+void frm_threadblock_set_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status)
+{
+	struct frm_grid_t *grid = threadblock->grid;
 
-	/* IDs of warps contained */
-	int warp_id_first;
-	int warp_id_last;
-	int warp_count;
+	/* Get only the new bits */
+	status &= ~threadblock->status;
 
-	/* Pointers to warps and threads */
-	struct frm_thread_t **threads;  /* Pointer to first thread in 'kernel->threads' */
-	struct frm_warp_t **warps;  /* Pointer to first warp in 'kernel->warps' */
+	/* Add work-group to lists */
+	if (status & frm_threadblock_pending)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(grid, pending, threadblock);
+	if (status & frm_threadblock_running)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(grid, running, threadblock);
+	if (status & frm_threadblock_finished)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(grid, finished, threadblock);
 
-	/* Double linked lists of threadblocks */
-	struct frm_threadblock_t *pending_list_prev;
-	struct frm_threadblock_t *pending_list_next;
-	struct frm_threadblock_t *running_list_prev;
-	struct frm_threadblock_t *running_list_next;
-	struct frm_threadblock_t *finished_list_prev;
-	struct frm_threadblock_t *finished_list_next;
+	/* Update it */
+	threadblock->status |= status;
+}
 
-	/* List of running warps */
-	struct frm_warp_t *running_list_head;
-	struct frm_warp_t *running_list_tail;
-	int running_list_count;
-	int running_list_max;
 
-	/* List of warps in barrier */
-	struct frm_warp_t *barrier_list_head;
-	struct frm_warp_t *barrier_list_tail;
-	int barrier_list_count;
-	int barrier_list_max;
+void frm_threadblock_clear_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status)
+{
+	struct frm_grid_t *grid = threadblock->grid;
 
-	/* List of finished warps */
-	struct frm_warp_t *finished_list_head;
-	struct frm_warp_t *finished_list_tail;
-	int finished_list_count;
-	int finished_list_max;
+	/* Get only the bits that are set */
+	status &= threadblock->status;
+
+	/* Remove work-group from lists */
+	if (status & frm_threadblock_pending)
+		DOUBLE_LINKED_LIST_REMOVE(grid, pending, threadblock);
+	if (status & frm_threadblock_running)
+		DOUBLE_LINKED_LIST_REMOVE(grid, running, threadblock);
+	if (status & frm_threadblock_finished)
+		DOUBLE_LINKED_LIST_REMOVE(grid, finished, threadblock);
 	
-	/* Fields introduced for architectural simulation */
-	int id_in_compute_unit;
-	int compute_unit_finished_count;  /* like 'finished_list_count', but when WF reaches Complete stage */
+	/* Update status */
+	threadblock->status &= ~status;
+}
 
-	/* Local memory */
-	struct mem_t *local_mem;
-};
 
-#define FRM_FOR_EACH_THREADBLOCK_IN_GRID(GRID, THREADBLOCK_ID) \
-	for ((THREADBLOCK_ID) = (GRID)->threadblock_id_first; \
-		(THREADBLOCK_ID) <= (GRID)->threadblock_id_last; \
-		(THREADBLOCK_ID)++)
+void frm_threadblock_dump(struct frm_threadblock_t *threadblock, FILE *f)
+{
+	struct frm_grid_t *grid = threadblock->grid;
+	struct frm_warp_t *warp;
+	int warp_id;
 
-struct frm_threadblock_t *frm_threadblock_create();
-void frm_threadblock_free(struct frm_threadblock_t *threadblock);
-void frm_threadblock_dump(struct frm_threadblock_t *threadblock, FILE *f);
+	if (!f)
+		return;
+	
+	fprintf(f, "[ NDRange[%d].WorkGroup[%d] ]\n\n", grid->id, threadblock->id);
+	fprintf(f, "Name = %s\n", threadblock->name);
+	fprintf(f, "WaveFrontFirst = %d\n", threadblock->warp_id_first);
+	fprintf(f, "WaveFrontLast = %d\n", threadblock->warp_id_last);
+	fprintf(f, "WaveFrontCount = %d\n", threadblock->warp_count);
+	fprintf(f, "WorkItemFirst = %d\n", threadblock->thread_id_first);
+	fprintf(f, "WorkItemLast = %d\n", threadblock->thread_id_last);
+	fprintf(f, "WorkItemCount = %d\n", threadblock->thread_count);
+	fprintf(f, "\n");
 
-int frm_threadblock_get_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status);
-void frm_threadblock_set_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status);
-void frm_threadblock_clear_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status);
-
+	/* Dump warps */
+	FRM_FOREACH_WAVEFRONT_IN_THREADBLOCK(threadblock, warp_id)
+	{
+		warp = grid->warps[warp_id];
+		frm_warp_dump(warp, f);
+	}
+}

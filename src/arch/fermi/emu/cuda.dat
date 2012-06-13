@@ -1,3 +1,4 @@
 FRM_CUDA_DEFINE_CALL(version, 1)
-FRM_CUDA_DEFINE_CALL(cuInit, 2)
-FRM_CUDA_DEFINE_CALL(cuDeviceGetCount, 3)
+FRM_CUDA_DEFINE_CALL(cuModuleLoad, 2)
+FRM_CUDA_DEFINE_CALL(cuLaunchKernel, 3)
+
