@@ -917,7 +917,6 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		stack->src_way = stack->way;
 		stack->src_tag = stack->tag;
 		stack->target_mod = mod_get_low_mod(mod, stack->tag);
-		target_mod = stack->target_mod;
 
 		/* Send write request to all sharers */
 		new_stack = mod_stack_create(stack->id, mod, 0, EV_MOD_NMOESI_EVICT_INVALID, stack);
@@ -954,7 +953,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 	{
 		struct mod_t *low_mod;
 		struct net_node_t *low_node;
-		int msg_size = 8;
+		int msg_size;
 
 		mem_debug("  %lld %lld 0x%x %s evict action\n", esim_cycle, stack->id,
 			stack->tag, mod->name);
@@ -980,10 +979,15 @@ void mod_handler_nmoesi_evict(int event, void *data)
 			stack->state == cache_block_noncoherent)
 		{
 			/* Need to transmit data to low module */
-			msg_size += mod->block_size;
+			msg_size = 8 + mod->block_size;
+			stack->reply = reply_ACK_DATA;
 		}
-
 		/* If state is E/S, just an ACK needs to be sent */
+		else 
+		{
+			msg_size = 8;
+			stack->reply = reply_ACK;
+		}
 
 		/* Send message */
 		stack->msg = net_try_send_ev(mod->low_net, mod->low_net_node,
@@ -1001,14 +1005,6 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		/* Receive message */
 		net_receive(target_mod->high_net, target_mod->high_net_node, stack->msg);
 
-		if (stack->state == cache_block_modified || stack->state == cache_block_owned ||
-			stack->state == cache_block_noncoherent)
-		{
-			/* If data was received, set block to modified */
-			cache_set_block(target_mod->cache, stack->set, stack->way, stack->tag,
-				cache_block_modified);
-		}
-		
 		/* Find and lock */
 		new_stack = mod_stack_create(stack->id, target_mod, stack->src_tag,
 			EV_MOD_NMOESI_EVICT_PROCESS, stack);
@@ -1032,6 +1028,13 @@ void mod_handler_nmoesi_evict(int event, void *data)
 			ret->err = 1;
 			esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, 0);
 			return;
+		}
+
+		if (stack->reply == reply_ACK_DATA)
+		{
+			/* If data was received, set block to modified */
+			cache_set_block(target_mod->cache, stack->set, stack->way, stack->tag,
+				cache_block_modified);
 		}
 
 		/* Remove sharer, owner, and unlock */
@@ -1083,6 +1086,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		if (!stack->err)
 			cache_set_block(mod->cache, stack->src_set, stack->src_way,
 				0, cache_block_invalid);
+
 		assert(!dir_entry_group_shared_or_owned(mod->dir, stack->src_set, stack->src_way));
 		esim_schedule_event(EV_MOD_NMOESI_EVICT_FINISH, stack, 0);
 		return;
@@ -1511,8 +1515,6 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 
 		if (stack->reply == reply_ACK_DATA)
 		{
-			assert(stack->state == cache_block_exclusive);
-
 			/* If data was received, it was owned or modified by a higher level cache.
 			 * We need to continue to propagate it up until a peer is found */
 
