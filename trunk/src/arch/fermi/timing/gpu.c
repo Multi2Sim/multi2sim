@@ -20,3 +20,12 @@
 #include <fermi-timing.h>
 
 
+
+void frm_gpu_init(void)
+{
+}
+
+
+void frm_gpu_done(void)
+{
+}
