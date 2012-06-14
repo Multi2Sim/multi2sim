@@ -652,6 +652,26 @@ void operand_dump_series(char* str, int operand, int operand_end)
 	}
 }
 
+void operand_dump_scalar(char* str, int operand)
+{
+	operand_dump(str, operand);
+}
+
+void operand_dump_series_scalar(char* str, int operand, int operand_end)
+{
+	operand_dump_series(str, operand, operand_end);
+}
+
+void operand_dump_vector(char* str, int operand)
+{
+	operand_dump(str, operand + 256); 
+}
+
+void operand_dump_series_vector(char* str, int operand, int operand_end)
+{
+	operand_dump_series(str, operand + 256, operand_end + 256);
+}
+
 void line_dump(char *inst_str, unsigned int rel_addr, void* buf, FILE *f, int inst_size)
 {
 	int dat_str_size = MAX_DAT_STR_SIZE;
@@ -774,7 +794,7 @@ void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 			}
 			else
 			{
-				operand_dump(operand_str, sopc->ssrc0);
+				operand_dump_scalar(operand_str, sopc->ssrc0);
 				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
 		}
@@ -786,7 +806,7 @@ void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 			}
 			else
 			{
-				operand_dump(operand_str, sopc->ssrc1);
+				operand_dump_scalar(operand_str, sopc->ssrc1);
 				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
 		}
@@ -825,7 +845,7 @@ void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str++;
 		if (is_token(fmt_str, "64_SDST", &token_len))
 		{
-			operand_dump_series(operand_str, sop1->sdst, sop1->sdst + 1);
+			operand_dump_series_scalar(operand_str, sop1->sdst, sop1->sdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "64_SSRC0", &token_len))
@@ -836,7 +856,7 @@ void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 			}
 			else
 			{
-				operand_dump_series(operand_str, sop1->ssrc0, sop1->ssrc0 + 1);
+				operand_dump_series_scalar(operand_str, sop1->ssrc0, sop1->ssrc0 + 1);
 				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
 		}
@@ -875,7 +895,7 @@ void si_inst_dump_sopk(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str++;
 		if (is_token(fmt_str, "SDST", &token_len))
 		{
-			operand_dump(operand_str, sopk->sdst);
+			operand_dump_scalar(operand_str, sopk->sdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SIMM16", &token_len))
@@ -919,12 +939,12 @@ void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str++;
 		if (is_token(fmt_str, "SDST", &token_len))
 		{
-			operand_dump(operand_str, sop2->sdst);
+			operand_dump_scalar(operand_str, sop2->sdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "64_SDST", &token_len))
 		{
-			operand_dump_series(operand_str, sop2->sdst, sop2->sdst + 1);
+			operand_dump_series_scalar(operand_str, sop2->sdst, sop2->sdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SSRC0", &token_len))
@@ -935,7 +955,7 @@ void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 			}
 			else
 			{
-				operand_dump(operand_str, sop2->ssrc0);
+				operand_dump_scalar(operand_str, sop2->ssrc0);
 				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
 		}
@@ -947,7 +967,7 @@ void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 			}
 			else
 			{
-				operand_dump_series(operand_str, sop2->ssrc0, sop2->ssrc0 + 1);
+				operand_dump_series_scalar(operand_str, sop2->ssrc0, sop2->ssrc0 + 1);
 				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
 		}
@@ -959,7 +979,7 @@ void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 			}
 			else
 			{
-				operand_dump(operand_str, sop2->ssrc1);
+				operand_dump_scalar(operand_str, sop2->ssrc1);
 				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
 		}
@@ -971,7 +991,7 @@ void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 			}
 			else
 			{
-				operand_dump_series(operand_str, sop2->ssrc1, sop2->ssrc1 + 1);
+				operand_dump_series_scalar(operand_str, sop2->ssrc1, sop2->ssrc1 + 1);
 				str_printf(&inst_str, &str_size, "%s", operand_str);
 			}
 		}
@@ -1088,17 +1108,17 @@ void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str++;
 		if (is_token(fmt_str, "SDST", &token_len))
 		{
-			operand_dump(operand_str, sdst);
+			operand_dump_scalar(operand_str, sdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SERIES_SDST", &token_len))
 		{
-			operand_dump_series(operand_str, sdst, sdst_end);
+			operand_dump_series_scalar(operand_str, sdst, sdst_end);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SERIES_SBASE", &token_len))
 		{
-			operand_dump_series(operand_str, sbase, sbase_end);
+			operand_dump_series_scalar(operand_str, sbase, sbase_end);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "OFFSET", &token_len))
@@ -1138,12 +1158,12 @@ void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str++;
 		if (is_token(fmt_str, "64_SDST", &token_len))
 		{
-			operand_dump_series(operand_str, inst->micro_inst.vop3b.sdst, inst->micro_inst.vop3b.sdst + 1);
+			operand_dump_series_scalar(operand_str, inst->micro_inst.vop3b.sdst, inst->micro_inst.vop3b.sdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VDST", &token_len))
 		{
-			operand_dump(operand_str, inst->micro_inst.vop3a.vdst + 256);
+			operand_dump_vector(operand_str, inst->micro_inst.vop3a.vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SRC0", &token_len))
@@ -1229,7 +1249,7 @@ void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		}
 		else if (is_token(fmt_str, "VSRC1", &token_len))
 		{
-			operand_dump(operand_str, vopc->vsrc1 + 256);
+			operand_dump_vector(operand_str, vopc->vsrc1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else
@@ -1267,7 +1287,7 @@ void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str++;
 		if (is_token(fmt_str, "VDST", &token_len))
 		{
-			operand_dump(operand_str, vop1->vdst + 256);
+			operand_dump_vector(operand_str, vop1->vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SRC0", &token_len))
@@ -1317,7 +1337,7 @@ void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str++;
 		if (is_token(fmt_str, "VDST", &token_len))
 		{
-			operand_dump(operand_str, vop2->vdst + 256);
+			operand_dump_vector(operand_str, vop2->vdst);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SRC0", &token_len))
@@ -1334,7 +1354,7 @@ void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		}
 		else if (is_token(fmt_str, "VSRC1", &token_len))
 		{
-			operand_dump(operand_str, vop2->vsrc1 + 256);
+			operand_dump_vector(operand_str, vop2->vsrc1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else
@@ -1373,18 +1393,18 @@ void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf
 		fmt_str++;
 		if (is_token(fmt_str, "VDATA", &token_len))
 		{
-			operand_dump(operand_str, mtbuf->vdata + 256);
+			operand_dump_vector(operand_str, mtbuf->vdata);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VADDR", &token_len))
 		{
-			operand_dump(operand_str, mtbuf->vaddr + 256);
+			operand_dump_vector(operand_str, mtbuf->vaddr);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SERIES_SRSRC", &token_len))
 		{
 			assert((mtbuf->srsrc << 2) % 4 == 0);
-			operand_dump_series(operand_str, mtbuf->srsrc << 2, (mtbuf->srsrc << 2) + 3);
+			operand_dump_series_scalar(operand_str, mtbuf->srsrc << 2, (mtbuf->srsrc << 2) + 3);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "SOFFSET", &token_len))
@@ -1392,7 +1412,7 @@ void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf
 			assert(mtbuf->soffset <= 103 ||
 				mtbuf->soffset == 124 || 
 				(mtbuf->soffset >= 128 && mtbuf->soffset <= 208));
-			operand_dump(operand_str, mtbuf->soffset);
+			operand_dump_scalar(operand_str, mtbuf->soffset);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "INDEX", &token_len))

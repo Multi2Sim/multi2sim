@@ -57,7 +57,7 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl()
 	mem_read(si_emu->global_mem, m_base+m_offset, 4, &value);
 
 	/* Store the data in the destination register */
-	si_isa_write_sgpr(INST.sdst, value);
+	si_isa_write_sreg(INST.sdst, value);
 
 	if (debug_status(si_isa_debug_category))
 	{
@@ -97,7 +97,7 @@ void si_isa_S_LOAD_DWORDX4_impl()
 	for (i = 0; i < 4; i++) 
 	{
 		mem_read(si_emu->global_mem, m_base+m_offset+i*4, 4, &value[i]);
-		si_isa_write_sgpr(INST.sdst+i, value[i]);
+		si_isa_write_sreg(INST.sdst+i, value[i]);
 	}	
 
 	if (debug_status(si_isa_debug_category))
@@ -123,35 +123,35 @@ void si_isa_S_MIN_U32_impl()
 {
 	/* D.u = (S0.u < S1.u) ? S0.u : S1.u, scc = 1 if S0 is min. */
 
-	unsigned int s0 = si_isa_read_sgpr(INST.ssrc0);
-	unsigned int s1 = si_isa_read_sgpr(INST.ssrc1);
+	unsigned int s0 = si_isa_read_sreg(INST.ssrc0);
+	unsigned int s1 = si_isa_read_sreg(INST.ssrc1);
 
-	unsigned int dst;
-	unsigned int scc;
+	unsigned int min;
+	unsigned int s0_min;
 
 	if (INST.ssrc0 < INST.ssrc1)
 	{
-		dst = s0;
-		scc = 1;
+		min = s0;
+		s0_min = 1;
 	}
 	else
 	{
-		dst = s1;
-		scc = 0;
+		min = s1;
+		s0_min = 0;
 	}
 
-	si_isa_write_sgpr(INST.sdst, dst);
-	si_wavefront_bitmask_cc(&si_isa_wavefront->scc, si_isa_work_item->id_in_wavefront, scc);
+	si_isa_write_sreg(INST.sdst, min);
+	si_isa_write_sreg(SI_SCC, s0_min);
 
 	if (debug_status(si_isa_debug_category))
 	{
 		union si_reg_t reg;
 
-		reg.as_uint = dst;
+		reg.as_uint = min;
 		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, reg.as_uint, reg.as_float);
 		
-		reg.as_uint = scc;
-		si_isa_debug("scc<=(%d,%gf) ", reg.as_uint, reg.as_float);
+		reg.as_uint = s0_min;
+		si_isa_debug("wf_id%d: scc<=(%d,%gf) ", si_isa_work_item->id_in_wavefront, reg.as_uint, reg.as_float);
 	}
 }
 #undef INST
@@ -161,10 +161,39 @@ void si_isa_S_AND_B32_impl()
 	NOT_IMPL();
 }
 
+#define INST SI_INST_SOP2
 void si_isa_S_AND_B64_impl()
 {
-	NOT_IMPL();
+	/* D.u = S0.u & S1.u. scc = 1 if result is non-zero. */
+
+	unsigned int s0_lo = si_isa_read_sreg(INST.ssrc0);
+	unsigned int s0_hi = si_isa_read_sreg(INST.ssrc0 + 1);
+	unsigned int s1_lo = si_isa_read_sreg(INST.ssrc1);
+	unsigned int s1_hi = si_isa_read_sreg(INST.ssrc1 + 1);
+
+	unsigned int result_lo = s0_lo & s1_lo;
+	unsigned int result_hi = s0_hi & s1_hi;
+	unsigned int nonzero = (result_lo & result_hi);
+
+	si_isa_write_sreg(INST.sdst, result_lo);
+	si_isa_write_sreg(INST.sdst + 1, result_hi);
+	si_isa_write_sreg(SI_SCC, nonzero);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		union si_reg_t reg;
+
+		reg.as_uint = result_lo;
+		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, reg.as_uint, reg.as_float);
+		
+		reg.as_uint = result_hi;
+		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst + 1, reg.as_uint, reg.as_float);
+		
+		reg.as_uint = nonzero;
+		si_isa_debug("wf_id%d: scc<=(%d,%gf) ", si_isa_work_item->id_in_wavefront, reg.as_uint, reg.as_float);
+	}
 }
+#undef INST
 
 void si_isa_S_ANDN2N2_B64_impl()
 {
@@ -230,9 +259,9 @@ void si_isa_V_MOV_B32_VOP1_impl()
 {
 	uint32_t value;
 
-	value = si_isa_read_sgpr(INST.src0);
+	value = si_isa_read_sreg(INST.src0);
 
-	si_isa_write_vgpr(INST.vdst, value);
+	si_isa_write_vreg(INST.vdst, value);
 
 	if (debug_status(si_isa_debug_category))
 	{
@@ -266,17 +295,17 @@ void si_isa_V_MUL_I32_I24_impl()
 	/* D.i = S0.i[23:0] * S1.i[23:0]. */
 	
 	int s0 = si_isa_read_reg(INST.src0) & 0xFFFFFF;
-	int s1 = si_isa_read_vgpr(INST.vsrc1) &0xFFFFFF;
+	int s1 = si_isa_read_vreg(INST.vsrc1) &0xFFFFFF;
 
-	int dst = s0 * s1;
+	int product = s0 * s1;
 
-	si_isa_write_vgpr(INST.vdst, dst);
+	si_isa_write_vreg(INST.vdst, product);
 
 	if (debug_status(si_isa_debug_category))
 	{
 		union si_reg_t reg;
 
-		reg.as_int = dst;
+		reg.as_int = product;
 		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, reg.as_uint, 
 			reg.as_float);
 	}
@@ -288,18 +317,18 @@ void si_isa_V_LSHLREV_B32_impl()
 {
 	/* D.u = S1.u << S0.u[4:0]. */
 
-	int s0 = si_isa_read_reg(INST.src0) & 0x1F;
-	unsigned int s1 = si_isa_read_vgpr(INST.vsrc1);
+	unsigned int s0 = si_isa_read_reg(INST.src0) & 0x1F;
+	unsigned int s1 = si_isa_read_vreg(INST.vsrc1);
 
-	unsigned int dst = s1 << s0;
+	unsigned int result = s1 << s0;
 
-	si_isa_write_vgpr(INST.vdst, dst);
+	si_isa_write_vreg(INST.vdst, result);
 
 	if (debug_status(si_isa_debug_category))
 	{
 		union si_reg_t reg;
 
-		reg.as_uint = dst;
+		reg.as_uint = result;
 		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, reg.as_uint, 
 			reg.as_float);
 	}
@@ -322,24 +351,24 @@ void si_isa_V_ADD_I32_impl()
 	/* D.u = S0.u + S1.u, vcc = carry-out. */
 
 	unsigned int s0 = si_isa_read_reg(INST.src0);
-	unsigned int s1 = si_isa_read_vgpr(INST.vsrc1);
+	unsigned int s1 = si_isa_read_vreg(INST.vsrc1);
 
-	unsigned int dst = s0 + s1;
-	unsigned int vcc = (((long)s0 + (long)s1) > 0xFFFFFFFF);
+	unsigned int sum  = s0 + s1;
+	unsigned int carry = (((long)s0 + (long)s1) > 0xFFFFFFFF);
 
-	si_isa_write_vgpr(INST.vdst, dst);
-	si_wavefront_bitmask_cc(&si_isa_wavefront->vcc, si_isa_work_item->id_in_wavefront, vcc);
+	si_isa_write_vreg(INST.vdst, sum);
+	si_wavefront_bitmask_sreg(SI_VCC, si_isa_work_item->id_in_wavefront, carry);
 
 	if (debug_status(si_isa_debug_category))
 	{
 		union si_reg_t reg;
 
-		reg.as_uint = dst;
+		reg.as_uint = sum;
 		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, reg.as_uint, 
 			reg.as_float);
 		
-		reg.as_uint = vcc;
-		si_isa_debug("vcc<=(%d,%gf) ", reg.as_uint, reg.as_float);
+		reg.as_uint = carry;
+		si_isa_debug("wf_id%d: vcc<=(%d,%gf) ", si_isa_work_item->id_in_wavefront, reg.as_uint, reg.as_float);
 	}
 }
 #undef INST
@@ -359,23 +388,48 @@ void si_isa_V_CMP_LT_I32_impl()
 	NOT_IMPL();
 }
 
+#define INST SI_INST_VOPC
 void si_isa_V_CMP_GT_I32_impl()
 {
-	NOT_IMPL();
+	/* vcc = (S0 > S1). */
+
+	int s0 = si_isa_read_reg(INST.src0);
+	int s1 = si_isa_read_reg(INST.vsrc1);
+
+	unsigned int result = (s0 > s1);
+
+	si_wavefront_bitmask_sreg(SI_VCC, si_isa_work_item->id_in_wavefront, result);
+	
+	if (debug_status(si_isa_debug_category))
+	{
+		union si_reg_t reg;
+
+		reg.as_uint = result;
+		si_isa_debug("wf_id%d: vcc<=(%d,%gf) ", si_isa_work_item->id_in_wavefront, reg.as_uint, reg.as_float);
+	}
+
 }
+#undef INST
 
 #define INST SI_INST_VOP3b
 void si_isa_V_CMP_GT_I32_VOP3b_impl()
 {
-	NOT_IMPL();
 	/* D.u = (S0 > S1). */
 
-	/* int s0 = si_isa_read_reg(INST.src0);
+	int s0 = si_isa_read_reg(INST.src0);
 	int s1 = si_isa_read_reg(INST.src1);
 
-	unsigned int value = (s0 > s1); */
+	unsigned int result = (s0 > s1);
 
-	/* Bitmask  [sdst:sdst + 1] */
+	si_wavefront_bitmask_sreg(INST.sdst, si_isa_work_item->id_in_wavefront, result);
+	
+	if (debug_status(si_isa_debug_category))
+	{
+		union si_reg_t reg;
+
+		reg.as_uint = result;
+		si_isa_debug("wf_id%d: S[%d:+1]<=(%d,%gf) ", si_isa_work_item->id_in_wavefront, INST.sdst, reg.as_uint, reg.as_float);
+	}
 }
 #undef INST
 
@@ -395,7 +449,7 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
 
 	if (INST.offen)
 	{
-		offset = si_isa_read_vgpr(INST.vaddr);
+		offset = si_isa_read_vreg(INST.vaddr);
 	}
 	else 
 	{
@@ -418,7 +472,7 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
 
 	mem_read(si_emu->global_mem, buffer_addr, bytes_to_read, &value);
 
-	si_isa_write_vgpr(INST.vdata, value);
+	si_isa_write_vreg(INST.vdata, value);
 
 	if (debug_status(si_isa_debug_category))
 	{
@@ -447,7 +501,7 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
 
 	if (INST.offen)
 	{
-		offset = si_isa_read_vgpr(INST.vaddr);
+		offset = si_isa_read_vreg(INST.vaddr);
 	}
 	else 
 	{
@@ -468,7 +522,7 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
 
 	buffer_addr = offset;
 
-	value = si_isa_read_vgpr(INST.vdata);
+	value = si_isa_read_vreg(INST.vdata);
 
 	mem_write(si_emu->global_mem, buffer_addr, bytes_to_write, &value);
 
