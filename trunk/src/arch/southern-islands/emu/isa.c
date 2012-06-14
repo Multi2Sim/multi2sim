@@ -83,75 +83,53 @@ void si_isa_done()
 
 /* Helper functions */
 
-/* Read SGPR */
-unsigned int si_isa_read_sgpr(int sreg)
+/* Read SREG */
+unsigned int si_isa_read_sreg(int sreg)
 {
 	/* FIXME */
 	/* assert(sreg in range) */
 
-	return SI_SGPR_ELEM(sreg);
+	return SI_SREG_ELEM(sreg);
 }
 
-/* Write SGPR */
-void si_isa_write_sgpr(int sreg, unsigned int value)
+/* Write SREG */
+void si_isa_write_sreg(int sreg, unsigned int value)
 {
 	/* FIXME */
 	/* assert(sreg in range) */
 
-	SI_SGPR_ELEM(sreg) = value;
+	SI_SREG_ELEM(sreg) = value;
 }
 
 /* Read VGPR */
-unsigned int si_isa_read_vgpr(int vreg)
+unsigned int si_isa_read_vreg(int vreg)
 {
 	/* FIXME */
 	/* assert(vreg in range) */
 
-	return SI_VGPR_ELEM(vreg);
+	return SI_VREG_ELEM(vreg);
 }
 
 /* Write VGPR */
-void si_isa_write_vgpr(int vreg, unsigned int value)
+void si_isa_write_vreg(int vreg, unsigned int value)
 {
 	/* FIXME */
 	/* assert(vreg in range) */
 
-	SI_VGPR_ELEM(vreg) = value;
+	SI_VREG_ELEM(vreg) = value;
 }
 
 /* Generic register read. */
-int si_isa_read_reg(int reg)
+unsigned int si_isa_read_reg(int reg)
 {
-	int value;
-
-	/* 0-103 are SGPR0 to SGPR103 */
-	if (reg <= 103)
+	if (reg < 256)
 	{
-		value = si_isa_read_sgpr(reg);
+		return si_isa_read_sreg(reg);
 	}
-	else if (reg <= 128)
+	else
 	{
-		fatal("General register read for reg:%d not implemented.", reg);
+		return si_isa_read_vreg(reg - 256);
 	}
-	/* 129-192 are signed integers 0-64 */
-	else if (reg <= 192)
-	{
-		value = reg - 128;	
-	}
-	else if (reg <= 255)
-	{
-		fatal("General register read for reg:%d not implemented.", reg);
-	}
-	else if (reg <= 511)
-	{
-		value = si_isa_read_vgpr(reg - 256);
-	}
-	else 
-	{	
-		fatal("No such register exists:%d.", reg);
-	}
-
-	return value;
 }
 
 /* Initialize a buffer resource descriptor */
@@ -159,7 +137,7 @@ void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg)
 {
 	assert(buf_desc);
 
-	memcpy(buf_desc, &si_isa_wavefront->sgpr[sreg], sizeof(unsigned int)*4);
+	memcpy(buf_desc, &si_isa_wavefront->sreg[sreg], sizeof(unsigned int)*4);
 }
 
 /* Initialize a buffer resource descriptor */
@@ -167,7 +145,7 @@ void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg)
 {
 	assert(mem_ptr);
 
-	memcpy(mem_ptr, &si_isa_wavefront->sgpr[sreg], sizeof(unsigned int)*2);
+	memcpy(mem_ptr, &si_isa_wavefront->sreg[sreg], sizeof(unsigned int)*2);
 }
 
 

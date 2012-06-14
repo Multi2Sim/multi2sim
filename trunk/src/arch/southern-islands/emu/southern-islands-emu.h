@@ -644,7 +644,7 @@ void si_work_group_clear_status(struct si_work_group_t *work_group, enum si_work
  * GPU Wavefront
  */
 
-typedef uint32_t si_gpr_t;
+typedef uint32_t si_reg_t;
 
 /* Wavefront */
 struct si_wavefront_t
@@ -674,7 +674,7 @@ struct si_wavefront_t
 	/* Pointer to work_items */
 	struct si_work_item_t *scalar_work_item;  
 	struct si_work_item_t **work_items;  /* Pointer to first work-items in 'kernel->work_items' */
-	si_gpr_t sgpr[128];  /* Scalar general purpose registers--used by scalar work items */
+	si_reg_t sreg[256];  /* Scalar registers--used by scalar work items */
 
 	/* Predicate mask */
 	struct bit_map_t *pred;  /* work_item_count elements */
@@ -710,11 +710,6 @@ struct si_wavefront_t
 	long long global_mem_inst_count;  
 	long long local_mem_inst_count;  
 
-	/* Condition codes */
-	unsigned long long vcc;
-	unsigned long long scc;
-	unsigned long long exec;
-
 	int finished;
 };
 
@@ -729,6 +724,7 @@ struct si_wavefront_t
 		(WAVEFRONT_ID)++)
 
 struct si_wavefront_t *si_wavefront_create();
+void si_wavefront_sreg_init(struct si_wavefront_t *wavefront);
 void si_wavefront_free(struct si_wavefront_t *wavefront);
 void si_wavefront_dump(struct si_wavefront_t *wavefront, FILE *f);
 
@@ -736,7 +732,7 @@ void si_wavefront_stack_push(struct si_wavefront_t *wavefront);
 void si_wavefront_stack_pop(struct si_wavefront_t *wavefront, int count);
 void si_wavefront_execute(struct si_wavefront_t *wavefront);
 
-void si_wavefront_bitmask_cc(unsigned long long *cc, int id_in_wavefront, unsigned int value);
+void si_wavefront_bitmask_sreg(int sreg, int id_in_wavefront, unsigned int value);
 
 
 /*
@@ -770,7 +766,7 @@ struct si_work_item_t
 	struct si_ndrange_t *ndrange;
 
 	/* Work-item state */
-	si_gpr_t vgpr[128];  /* Vector general purpose registers */
+	si_reg_t vreg[256];  /* Vector general purpose registers */
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
 	 * and executed as a burst at the end of an ALU group. */
@@ -837,10 +833,14 @@ extern struct si_inst_t *si_isa_inst;
 
 
 /* Macros for quick access */
-#define SI_SGPR_ELEM(_gpr)  (si_isa_wavefront->sgpr[(_gpr)])
-#define SI_SGPR_FLOAT_ELEM(_gpr)  (* (float *) &si_isa_wavefront->sgpr[(_gpr)])
-#define SI_VGPR_ELEM(_gpr)  (si_isa_work_item->vgpr[(_gpr)])
-#define SI_VGPR_FLOAT_ELEM(_gpr)  (* (float *) &si_isa_work_item->vgpr[(_gpr)])
+#define SI_SREG_ELEM(_sreg)  (si_isa_wavefront->sreg[(_sreg)])
+#define SI_SREG_FLOAT_ELEM(_sreg)  (* (float *) &si_isa_wavefront->sreg[(_sreg)])
+#define SI_VREG_ELEM(_vreg)  (si_isa_work_item->vreg[(_vreg)])
+#define SI_VREG_FLOAT_ELEM(_vreg)  (* (float *) &si_isa_work_item->vreg[(_vreg)])
+#define SI_VCC 106
+#define SI_EXEC 126
+#define SI_SCC 253
+
 
 
 /* Debugging */
@@ -869,6 +869,7 @@ extern char *err_si_isa_note;
 #define SI_INST_SOP2		si_isa_inst->micro_inst.sop2
 #define SI_INST_VOP1		si_isa_inst->micro_inst.vop1
 #define SI_INST_VOP2		si_isa_inst->micro_inst.vop2
+#define SI_INST_VOPC		si_isa_inst->micro_inst.vopc
 #define SI_INST_VOP3b		si_isa_inst->micro_inst.vop3b
 #define SI_INST_MTBUF		si_isa_inst->micro_inst.mtbuf
 /* FIXME Finish filling these in */
@@ -928,11 +929,12 @@ extern struct si_emu_t *si_emu;
 void si_emu_init(void);
 void si_emu_done(void);
 
-unsigned int si_isa_read_sgpr(int sreg);
-void si_isa_write_sgpr(int sreg, unsigned int value);
-unsigned int si_isa_read_vgpr(int vreg);
-void si_isa_write_vgpr(int vreg, unsigned int value);
-int si_isa_read_reg(int reg);
+unsigned int si_isa_read_sreg(int sreg);
+void si_isa_write_sreg(int sreg, unsigned int value);
+unsigned int si_isa_read_vreg(int vreg);
+void si_isa_write_vreg(int vreg, unsigned int value);
+unsigned int si_isa_read_reg(int reg);
+
 void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg);
 void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg);
 int si_isa_get_num_elems(int data_format);

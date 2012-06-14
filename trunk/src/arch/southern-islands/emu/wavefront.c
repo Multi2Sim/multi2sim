@@ -40,10 +40,34 @@ struct si_wavefront_t *si_wavefront_create()
 
 	/* Initialize */
 	wavefront->pred = bit_map_create(si_emu_wavefront_size);
+	si_wavefront_sreg_init(wavefront);
 
 	/* Return */
 	return wavefront;
 }
+
+/* Helper function for initializing the wavefront. */
+void si_wavefront_sreg_init(struct si_wavefront_t *wavefront)
+{
+	si_reg_t *sreg = &wavefront->sreg[0];
+
+	/* Integer inline constants. */
+	for(int i = 128; i < 193; i++)
+		sreg[i] = i - 128;
+	for(int i = 193; i < 209; i++)
+		sreg[i] = -(i - 192);
+
+	/* Inline floats. */
+	((float *)sreg)[240] = 0.5;
+	((float *)sreg)[241] = -0.5;
+	((float *)sreg)[242] = 1.0;
+	((float *)sreg)[243] = -1.0;
+	((float *)sreg)[244] = 2.0;
+	((float *)sreg)[245] = -2.0;
+	((float *)sreg)[246] = 4.0;
+	((float *)sreg)[247] = -4.0;
+}
+
 
 
 void si_wavefront_free(struct si_wavefront_t *wavefront)
@@ -212,15 +236,26 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	}
 }
 
-void si_wavefront_bitmask_cc(unsigned long long *cc, int id_in_wavefront, unsigned int value)
+void si_wavefront_bitmask_sreg(int sreg, int id_in_wavefront, unsigned int value)
 {
-	unsigned long long mask = 1 << id_in_wavefront;
-	*cc = (value) ? *cc | mask: *cc & ~mask;
+	unsigned long long mask = 1;
+	if (id_in_wavefront < 32)
+	{
+		mask <<= id_in_wavefront;
+		si_isa_wavefront->sreg[sreg] = (value) ? si_isa_wavefront->sreg[sreg] | mask:
+							si_isa_wavefront->sreg[sreg] & ~mask;
+	}
+	else
+	{
+		mask <<= (id_in_wavefront - 32);
+		si_isa_wavefront->sreg[sreg + 1] = (value) ? si_isa_wavefront->sreg[sreg + 1] | mask:
+							si_isa_wavefront->sreg[sreg + 1] & ~mask;
+	}
 }
 
 void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, int sreg, uint32_t value)
 {
-	wavefront->sgpr[sreg] = value;
+	wavefront->sreg[sreg] = value;
 }
 
 void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, int first_reg, int num_regs, 
@@ -234,7 +269,7 @@ void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, int first_
 	/* FIXME Populate rest of resource descriptor? */
 	res_desc.base_addr = CONSTANT_MEMORY_START + cb*CONSTANT_BUFFER_SIZE;
 
-	memcpy(&wavefront->sgpr[first_reg], &res_desc, 16);
+	memcpy(&wavefront->sreg[first_reg], &res_desc, 16);
 }
 
 void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, int first_reg, 
@@ -248,5 +283,5 @@ void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, int
 	mem_ptr.unused = 0;
 	mem_ptr.addr = UAV_TABLE_START;
 
-	memcpy(&wavefront->sgpr[first_reg], &mem_ptr, 8);
+	memcpy(&wavefront->sreg[first_reg], &mem_ptr, 8);
 }
