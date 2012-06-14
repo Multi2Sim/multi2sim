@@ -83,44 +83,33 @@ void si_isa_done()
 
 /* Helper functions */
 
-/* Read SREG */
-unsigned int si_isa_read_sreg(int sreg)
+union si_reg_t si_isa_read_sreg(int sreg)
 {
-	/* FIXME */
-	/* assert(sreg in range) */
-
-	return SI_SREG_ELEM(sreg);
+	return si_isa_wavefront->sreg[sreg];
 }
 
-/* Write SREG */
-void si_isa_write_sreg(int sreg, unsigned int value)
+void si_isa_write_sreg(int sreg, union si_reg_t value)
 {
-	/* FIXME */
-	/* assert(sreg in range) */
+	si_isa_wavefront->sreg[sreg] = value;
 
-	SI_SREG_ELEM(sreg) = value;
+	/* Update VCCZ and EXECZ if necessary. */
+	if (sreg == SI_VCC || sreg == SI_VCC + 1)
+		si_isa_wavefront->sreg[SI_VCCZ].as_uint = !si_isa_wavefront->sreg[SI_VCC].as_uint & !si_isa_wavefront->sreg[SI_VCC + 1].as_uint;
+	if (sreg == SI_EXEC || sreg == SI_EXEC + 1)
+		si_isa_wavefront->sreg[SI_EXECZ].as_uint = !si_isa_wavefront->sreg[SI_EXEC].as_uint & !si_isa_wavefront->sreg[SI_EXEC + 1].as_uint;
 }
 
-/* Read VGPR */
-unsigned int si_isa_read_vreg(int vreg)
+union si_reg_t si_isa_read_vreg(int vreg)
 {
-	/* FIXME */
-	/* assert(vreg in range) */
-
-	return SI_VREG_ELEM(vreg);
+	return si_isa_work_item->vreg[vreg];
 }
 
-/* Write VGPR */
-void si_isa_write_vreg(int vreg, unsigned int value)
+void si_isa_write_vreg(int vreg, union si_reg_t value)
 {
-	/* FIXME */
-	/* assert(vreg in range) */
-
-	SI_VREG_ELEM(vreg) = value;
+	si_isa_work_item->vreg[vreg] = value;
 }
 
-/* Generic register read. */
-unsigned int si_isa_read_reg(int reg)
+union si_reg_t si_isa_read_reg(int reg)
 {
 	if (reg < 256)
 	{

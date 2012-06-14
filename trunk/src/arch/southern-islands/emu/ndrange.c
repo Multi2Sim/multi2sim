@@ -218,7 +218,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 							wavefront->work_item_id_last = tid;
 
 							/* Save local IDs in registers */
-							work_item->vreg[0] = lidx;  /* V0 */
+							work_item->vreg[0].as_int = lidx;  /* V0 */
 #if 0
 							work_item->vgpr[1] = lidy;  /* V1 */
 							work_item->vgpr[2] = lidz;  /* V2 */
