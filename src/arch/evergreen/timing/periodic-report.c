@@ -80,10 +80,14 @@ static char *evg_periodic_report_intro =
 	"<local_mem_accesses>\n"
 	"\tNumber of local memory accesses performed in the interval, adding up all\n"
 	"\taccesses performed by all work-items in the wavefront.\n"
-	"<global_mem_accesses>\n"
-	"\tNumber of global memory accesses performed in the interval, adding up all\n"
+	"\n"
+	"<global_mem_reads>\n"
+	"\tNumber of global memory reads performed in the interval, adding up all\n"
 	"\taccesses performed by all work-items in the wavefront.\n"
-
+	"\n"
+	"<global_mem_writes>\n"
+	"\tNumber of global memory writes performed in the interval, adding up all\n"
+	"\taccesses performed by all work-items in the wavefront.\n"
 	"\n";
 
 
@@ -180,6 +184,7 @@ void evg_periodic_report_wavefront_init(struct evg_wavefront_t *wavefront)
 
 	default:
 		panic("%s: invalid scope", __FUNCTION__);
+		break;
 	}
 
 	/* Create file for report */
@@ -238,14 +243,16 @@ void evg_periodic_report_dump_entry(struct evg_wavefront_t *wavefront)
 	fprintf(f, "%5lld ", esim_cycle - wavefront->periodic_report_cycle);
 	fprintf(f, "%5d ", wavefront->periodic_report_inst_count);
 	fprintf(f, "%5d ", wavefront->periodic_report_local_mem_accesses);
-	fprintf(f, "%5d ", wavefront->periodic_report_global_mem_accesses);
+	fprintf(f, "%5d ", wavefront->periodic_report_global_mem_reads);
+	fprintf(f, "%5d ", wavefront->periodic_report_global_mem_writes);
 	fprintf(f, "\n");
 
 	/* Reset statistics */
 	wavefront->periodic_report_cycle = esim_cycle;
 	wavefront->periodic_report_inst_count = 0;
 	wavefront->periodic_report_local_mem_accesses = 0;
-	wavefront->periodic_report_global_mem_accesses = 0;
+	wavefront->periodic_report_global_mem_reads = 0;
+	wavefront->periodic_report_global_mem_writes = 0;
 }
 
 
@@ -283,15 +290,14 @@ void evg_periodic_report_new_inst(struct evg_uop_t *uop)
 	 * a work-item is active, these counters need to be updated accordingly. */
 	/* Number of Global memory read accesses performed by this uop */
 	if (uop->global_mem_read)
-		wavefront->periodic_report_global_mem_accesses += wavefront->work_item_count;
+		wavefront->periodic_report_global_mem_reads += wavefront->work_item_count;
 
 	/* Number of Global memory write accesses performed by this uop */
 	if (uop->global_mem_write)
-		wavefront->periodic_report_global_mem_accesses += wavefront->work_item_count;
-
+		wavefront->periodic_report_global_mem_writes += wavefront->work_item_count;
 
 	/* Dump report entry if interval reached */
 	wavefront->periodic_report_vliw_bundle_count++;
-	if (!(wavefront->periodic_report_vliw_bundle_count % evg_periodic_report_interval))
+	if (!(wavefront->periodic_report_vliw_bundle_count % evg_periodic_report_interval) || uop->wavefront_last)
 		evg_periodic_report_dump_entry(wavefront);
 }

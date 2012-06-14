@@ -106,6 +106,7 @@ struct evg_uop_t
 
 	/* Flags */
 	unsigned int last : 1;  /* Last instruction in the clause */
+	unsigned int wavefront_last : 1;  /* Last instruction in the wavefront */
 	unsigned int global_mem_read : 1;
 	unsigned int global_mem_write : 1;
 	unsigned int local_mem_read : 1;

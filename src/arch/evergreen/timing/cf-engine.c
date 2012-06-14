@@ -59,6 +59,7 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	uop->tex_clause_trigger = wavefront->clause_kind == EVG_CLAUSE_TEX;
 	uop->no_clause_trigger = wavefront->clause_kind == EVG_CLAUSE_CF;
 	uop->last = DOUBLE_LINKED_LIST_MEMBER(wavefront->work_group, finished, wavefront);
+	uop->wavefront_last = uop->last && uop->no_clause_trigger;
 	uop->global_mem_read = wavefront->global_mem_read;
 	uop->global_mem_write = wavefront->global_mem_write;
 	uop->active_mask_update = wavefront->active_mask_update;
@@ -223,9 +224,6 @@ static void evg_cf_engine_execute(struct evg_compute_unit_t *compute_unit)
 			}
 		}
 	}
-
-	if (evg_periodic_report_active)
-		evg_periodic_report_new_inst(uop);
 
 	/* Set next execute candidate */
 	compute_unit->cf_engine.execute_index = (index + 1)
