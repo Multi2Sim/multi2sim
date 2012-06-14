@@ -1024,6 +1024,15 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 			continue;
 		}
 
+		/* Entry 'constarg'. Format: constarg:<arg_id>:<arg_name>
+		 * Observed first in version 3:1:104 of metadata. It shows up when an argument
+		 * is declared as '__global const'. Entry ignored here. */
+		if (!strcmp(line_ptrs[0], "constarg"))
+		{
+			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
+			continue;
+		}
+
 		/* Warn about uninterpreted entries */
 		warning("kernel '%s': unknown meta data entry '%s'",
 			kernel->name, line_ptrs[0]);
