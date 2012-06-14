@@ -1,4 +1,6 @@
 FRM_CUDA_DEFINE_CALL(version, 1)
-FRM_CUDA_DEFINE_CALL(cuModuleLoad, 2)
-FRM_CUDA_DEFINE_CALL(cuLaunchKernel, 3)
+FRM_CUDA_DEFINE_CALL(cuCtxCreate, 2)
+FRM_CUDA_DEFINE_CALL(cuModuleLoad, 3)
+FRM_CUDA_DEFINE_CALL(cuModuleGetFunction, 4)
+FRM_CUDA_DEFINE_CALL(cuLaunchKernel, 5)
 
