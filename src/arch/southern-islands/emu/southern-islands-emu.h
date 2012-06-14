@@ -898,6 +898,8 @@ struct si_emu_t
 	/* Stats */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
 	long long inst_count;  /* Number of instructions executed by wavefronts */
+	long long scalar_inst_count;  /* Number of scalar instructions executed by wavefronts */
+	long long vector_inst_count;  /* Number of vector instructions executed by wavefronts */
 };
 
 

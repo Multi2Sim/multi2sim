@@ -135,6 +135,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	case SI_FMT_SOPP:
 	case SI_FMT_SMRD:
 	{
+		si_emu->scalar_inst_count++;
 		si_isa_wavefront->scalar_inst_count++;
 
 		/* Only one work item executes the instruction */
@@ -153,6 +154,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	case SI_FMT_VOP3a:
 	case SI_FMT_VOP3b:
 	{
+		si_emu->vector_inst_count++;
 		si_isa_wavefront->vector_inst_count++;
 	
 		si_isa_debug("\n");
@@ -169,7 +171,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	/* Vector Memory Instructions */
 	case SI_FMT_MTBUF:
 	{
-
+		si_emu->vector_inst_count++;
 		si_isa_wavefront->vector_inst_count++;
 	
 		si_isa_debug("\n");
