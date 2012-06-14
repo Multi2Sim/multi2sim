@@ -818,7 +818,7 @@ void evg_inst_slot_dump_buf(struct evg_inst_t *inst, int count, int loop_idx, in
 	else
 	{
 		if (count >= 0)
-			str_printf(buf_ptr, size_ptr, "     %2d  ", count);
+			str_printf(buf_ptr, size_ptr, "   %4d  ", count);
 		else
 			str_printf(buf_ptr, size_ptr, "         ");
 	}

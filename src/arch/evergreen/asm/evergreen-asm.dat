@@ -1858,15 +1858,15 @@ DEFINST(CNDE_INT,
 	0
 )
 
-DEFINST(CMNDGT_INT,
-	"%name",
+DEFINST(CNDGT_INT,
+	"CNDGT_INT   %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 29,
 	0
 )
 
-DEFINST(CMNDGE_INT,
-	"%name",
+DEFINST(CNDGE_INT,
+	"CNDGE_INT   %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 30,
 	0
