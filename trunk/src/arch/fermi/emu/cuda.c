@@ -178,19 +178,72 @@ static int frm_cuda_func_version(void)
 	return 0;
 }
 
+static int frm_cuda_func_cuCtxCreate(void)
+{
+	unsigned int args[2];
+	unsigned int pctx;
+	unsigned int dev;
+	struct frm_cuda_context_t *context;
+
+        mem_read(x86_isa_mem, x86_isa_regs->ecx, 2*sizeof(unsigned int), args);
+	pctx = args[0];
+	dev = args[1];
+
+	/* Create context */
+	context = frm_cuda_context_create();
+        context->device_id = dev;
+        mem_write(x86_isa_mem, pctx, sizeof(unsigned int), &context->id);
+
+	return 0;
+}
+
 static int frm_cuda_func_cuModuleLoad(void)
 {
-	unsigned int args[1];
-	struct frm_cuda_module_t *module;
+	unsigned int args[2];
+	unsigned int pmod;
 	char file_name[MAX_STRING_SIZE];
+	struct frm_cuda_module_t *module;
 
-        mem_read(x86_isa_mem, x86_isa_regs->ecx, sizeof(unsigned int), args);
-        mem_read(x86_isa_mem, args[0], sizeof(file_name), file_name);
-
+        mem_read(x86_isa_mem, x86_isa_regs->ecx, 2*sizeof(unsigned int), args);
+        pmod = args[0];
+	cuda_debug(stdout, "\tpmod=%#8x\n", pmod);
+        mem_read(x86_isa_mem, args[1], sizeof(file_name), file_name);
 	cuda_debug(stdout, "\tfile_name=%s\n", file_name);
 
         module = frm_cuda_module_create();
 	module->elf_file = elf_file_create_from_path(file_name);
+        mem_write(x86_isa_mem, pmod, sizeof(unsigned int), &module->id);
+
+	return 0;
+}
+
+static int frm_cuda_func_cuModuleGetFunction(void)
+{
+	unsigned int args[3];
+	unsigned int pfunc;
+	unsigned int mod_id;
+	char function_name[MAX_STRING_SIZE];
+	struct frm_cuda_module_t *module;
+	struct frm_cuda_function_t *function;
+
+        mem_read(x86_isa_mem, x86_isa_regs->ecx, 3*sizeof(unsigned int), args);
+	pfunc = args[0];
+        mem_read(x86_isa_mem, args[1], sizeof(unsigned int), &mod_id);
+        mem_read(x86_isa_mem, args[2], sizeof(function_name), function_name);
+
+	cuda_debug(stdout, "\tfunction_name=%s\n", function_name);
+
+        /* Get module */
+        module = frm_cuda_object_get(FRM_CUDA_OBJ_MODULE, mod_id);
+
+        /* Create function */
+        function = frm_cuda_function_create();
+	function->module_id = module->id;
+
+        /* Load function */
+//        evg_opencl_kernel_load(kernel, kernel_name_str);
+
+        mem_write(x86_isa_mem, pfunc, sizeof(unsigned int), &function->id);
 
 	return 0;
 }
