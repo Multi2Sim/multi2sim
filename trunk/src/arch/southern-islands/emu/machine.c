@@ -364,10 +364,20 @@ void si_isa_V_CMP_GT_I32_impl()
 	NOT_IMPL();
 }
 
+#define INST SI_INST_VOP3b
 void si_isa_V_CMP_GT_I32_VOP3b_impl()
 {
 	NOT_IMPL();
+	/* D.u = (S0 > S1). */
+
+	/* int s0 = si_isa_read_reg(INST.src0);
+	int s1 = si_isa_read_reg(INST.src1);
+
+	unsigned int value = (s0 > s1); */
+
+	/* Bitmask  [sdst:sdst + 1] */
 }
+#undef INST
 
 #define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()

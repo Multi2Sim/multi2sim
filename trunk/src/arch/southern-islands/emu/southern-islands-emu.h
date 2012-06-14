@@ -869,6 +869,7 @@ extern char *err_si_isa_note;
 #define SI_INST_SOP2		si_isa_inst->micro_inst.sop2
 #define SI_INST_VOP1		si_isa_inst->micro_inst.vop1
 #define SI_INST_VOP2		si_isa_inst->micro_inst.vop2
+#define SI_INST_VOP3b		si_isa_inst->micro_inst.vop3b
 #define SI_INST_MTBUF		si_isa_inst->micro_inst.mtbuf
 /* FIXME Finish filling these in */
 

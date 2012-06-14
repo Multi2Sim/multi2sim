@@ -1136,9 +1136,9 @@ void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 
 		/* Token */
 		fmt_str++;
-		if (is_token(fmt_str, "64_VDST", &token_len))
+		if (is_token(fmt_str, "64_SDST", &token_len))
 		{
-			operand_dump_series(operand_str, inst->micro_inst.vop3a.vdst, inst->micro_inst.vop3a.vdst + 1);
+			operand_dump_series(operand_str, inst->micro_inst.vop3b.sdst, inst->micro_inst.vop3b.sdst + 1);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VDST", &token_len))
