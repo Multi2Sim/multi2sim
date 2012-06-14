@@ -3006,15 +3006,27 @@ void evg_isa_CNDE_INT_impl()
 }
 
 
-void evg_isa_CMNDGT_INT_impl()
+void evg_isa_CNDGE_INT_impl()
 {
-	NOT_IMPL();
+	int src0, src1, src2, dst;
+	
+	src0 = evg_isa_read_op_src_int(0);
+	src1 = evg_isa_read_op_src_int(1);
+	src2 = evg_isa_read_op_src_int(2);
+	dst = src0 >= 0 ? src1 : src2;
+	evg_isa_enqueue_write_dest(dst);
 }
 
 
-void evg_isa_CMNDGE_INT_impl()
+void evg_isa_CNDGT_INT_impl()
 {
-	NOT_IMPL();
+	int src0, src1, src2, dst;
+	
+	src0 = evg_isa_read_op_src_int(0);
+	src1 = evg_isa_read_op_src_int(1);
+	src2 = evg_isa_read_op_src_int(2);
+	dst = src0 > 0 ? src1 : src2;
+	evg_isa_enqueue_write_dest(dst);
 }
 
 
