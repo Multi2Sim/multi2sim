@@ -132,7 +132,7 @@ DEFINST(V_MUL_LO_I32,
 )
 
 DEFINST(V_CMP_GT_I32_VOP3b,
-	" v_cmp_gt_i32  %64_VDST, %0NEG%SRC0, %1NEG%SRC1",
+	" v_cmp_gt_i32  %64_SDST, %0NEG%SRC0, %1NEG%SRC1",
 	VOP3b,
 	132,
 	8
