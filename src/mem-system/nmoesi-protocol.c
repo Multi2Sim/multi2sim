@@ -1222,7 +1222,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 
 		/* Set the initial reply message and size.  This will be adjusted later if
 		 * a transfer occur between peers. */
-		stack->reply_size = mod->block_size + 8;
+		stack->reply_size = target_mod->block_size + 8;
 		mod_stack_set_reply(stack, reply_ACK_DATA);
 		
 		if (stack->state)
