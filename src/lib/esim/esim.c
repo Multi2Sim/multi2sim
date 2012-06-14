@@ -32,8 +32,13 @@
 #include <mhandle.h>
 
 
-/* Number of in-flight events before a warning is shown. */
+/* Number of in-flight events before a warning is shown (10k events) */
 #define ESIM_OVERLOAD_EVENTS  10000
+
+/* Number of events to process in 'esim_drain_heap' to empty the event heap at
+ * the end of the simulation before it is assumed that there is a recursive
+ * queuing of events that will cause an infinite loop (1M events). */
+#define ESIM_MAX_FINALIZATION_EVENTS  10000000
 
 
 static char *err_esim_finalization =
@@ -111,12 +116,14 @@ static void esim_drain_heap(void)
 		/* Free event */
 		free(event);
 
-		/* Issue a warning if more than 10k events are processed. This could
-		 * mean that the simulator is recursively issuing events, incurring
-		 * an infinite loop execution in this code. */
-		if (count == 10000)
-			warning("%s: too many finalization events.\n%s",
-				__FUNCTION__, err_esim_finalization);
+		/* Interrupt heap draining after exceeding a given number of
+		 * events. This can happen if the event handlers of processed
+		 * events keep scheduling new events, causing the heap to never
+		 * finish draining. */
+		if (count == ESIM_MAX_FINALIZATION_EVENTS)
+			fatal("%s: number of finalization events exceeds %d.\n%s",
+				__FUNCTION__, ESIM_MAX_FINALIZATION_EVENTS,
+				err_esim_finalization);
 	}
 }
 
