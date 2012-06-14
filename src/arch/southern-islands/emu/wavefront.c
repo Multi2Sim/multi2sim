@@ -49,23 +49,23 @@ struct si_wavefront_t *si_wavefront_create()
 /* Helper function for initializing the wavefront. */
 void si_wavefront_sreg_init(struct si_wavefront_t *wavefront)
 {
-	si_reg_t *sreg = &wavefront->sreg[0];
+	union si_reg_t *sreg = &wavefront->sreg[0];
 
 	/* Integer inline constants. */
 	for(int i = 128; i < 193; i++)
-		sreg[i] = i - 128;
+		sreg[i].as_int = i - 128;
 	for(int i = 193; i < 209; i++)
-		sreg[i] = -(i - 192);
+		sreg[i].as_int = -(i - 192);
 
 	/* Inline floats. */
-	((float *)sreg)[240] = 0.5;
-	((float *)sreg)[241] = -0.5;
-	((float *)sreg)[242] = 1.0;
-	((float *)sreg)[243] = -1.0;
-	((float *)sreg)[244] = 2.0;
-	((float *)sreg)[245] = -2.0;
-	((float *)sreg)[246] = 4.0;
-	((float *)sreg)[247] = -4.0;
+	sreg[240].as_float = 0.5;
+	sreg[241].as_float = -0.5;
+	sreg[242].as_float = 1.0;
+	sreg[243].as_float = -1.0;
+	sreg[244].as_float = 2.0;
+	sreg[245].as_float = -2.0;
+	sreg[246].as_float = 4.0;
+	sreg[247].as_float = -4.0;
 }
 
 
@@ -236,26 +236,26 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	}
 }
 
-void si_wavefront_bitmask_sreg(int sreg, int id_in_wavefront, unsigned int value)
+void si_wavefront_bitmask_sreg(int sreg, int id_in_wavefront, union si_reg_t value)
 {
-	unsigned long long mask = 1;
+	unsigned int mask = 1;
 	if (id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;
-		si_isa_wavefront->sreg[sreg] = (value) ? si_isa_wavefront->sreg[sreg] | mask:
-							si_isa_wavefront->sreg[sreg] & ~mask;
+		si_isa_wavefront->sreg[sreg].as_uint = (value.as_uint) ? si_isa_wavefront->sreg[sreg].as_uint | mask:
+								 si_isa_wavefront->sreg[sreg].as_uint & ~mask;
 	}
 	else
 	{
 		mask <<= (id_in_wavefront - 32);
-		si_isa_wavefront->sreg[sreg + 1] = (value) ? si_isa_wavefront->sreg[sreg + 1] | mask:
-							si_isa_wavefront->sreg[sreg + 1] & ~mask;
+		si_isa_wavefront->sreg[sreg + 1].as_uint = (value.as_uint) ? si_isa_wavefront->sreg[sreg + 1].as_uint | mask:
+								     si_isa_wavefront->sreg[sreg + 1].as_uint & ~mask;
 	}
 }
 
-void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, int sreg, uint32_t value)
+void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, int sreg, unsigned int value)
 {
-	wavefront->sreg[sreg] = value;
+	wavefront->sreg[sreg].as_uint = value;
 }
 
 void si_wavefront_init_sreg_with_cb(struct si_wavefront_t *wavefront, int first_reg, int num_regs, 
