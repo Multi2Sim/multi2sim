@@ -45,17 +45,15 @@ struct CUctx_st
 };
 
 
-struct CUfunc_st
-{
-	unsigned int id;
-	char name[1024];
-};
-
-
 struct CUmod_st
 {
 	unsigned int id;
-	struct CUfunc_st func[1024];
+};
+
+
+struct CUfunc_st
+{
+	unsigned int id;
 };
 
 

@@ -113,6 +113,9 @@ void x86_emu_init(void)
 	/*OPENGL*/
 	x86_opengl_init();
 
+	/* CUDA */
+	frm_emu_init();
+
 	/* Record start time */
 	x86_emu_init_time = x86_emu_timer();
 }

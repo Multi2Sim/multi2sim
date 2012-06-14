@@ -74,7 +74,6 @@ struct frm_cuda_context_t
 	unsigned int id;
 	int ref_count;
 
-	unsigned int platform_id;
 	unsigned int device_id;
 };
 
@@ -207,6 +206,8 @@ void frm_cuda_function_load(struct frm_cuda_function_t *function, char *function
 
 
 
+void frm_emu_init(void);
+void frm_emu_done(void);
 void frm_emu_disasm(char *path);
 
 #endif

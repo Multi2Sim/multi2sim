@@ -301,14 +301,30 @@ CUresult cuDeviceGetAttribute(int *pi, CUdevice_attribute attrib, CUdevice dev)
 
 CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 {
+	unsigned int sys_args[2];
+	int ret;
+
 	cuda_debug(stdout, "FUNC: %s\n", __FUNCTION__);
 	cuda_debug(stdout, "\tIN: pctx_ptr=%p\n", pctx);
 	cuda_debug(stdout, "\tIN: flags=%u\n", flags);
 	cuda_debug(stdout, "\tIN: dev=%d\n", dev);
 
+	/* Create context */
 	*pctx = (CUcontext)malloc(sizeof(struct CUctx_st));
 	if (*pctx == NULL)
 		fatal("cuCtxCreate: cannot create context");
+
+	/* Syscall */
+	sys_args[0] = (unsigned int)pctx;
+	sys_args[1] = (unsigned int)dev;
+
+	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_cuCtxCreate, sys_args);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call FRM_CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			err_frm_cuda_native);
 
 	cuda_debug(stdout, "\tOUT: pctx_ptr=%p\n", pctx);
 	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
@@ -443,18 +459,21 @@ CUresult cuCtxGetApiVersion(CUcontext ctx, unsigned int *version)
 
 CUresult cuModuleLoad(CUmodule *module, const char *fname)
 {
-	unsigned int sys_args[1];
+	unsigned int sys_args[2];
 	int ret;
 	FILE *fp;
 
 	cuda_debug(stdout, "FUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: %p\n", module);
+	cuda_debug(stdout, "\tIN: %s\n", fname);
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
 		fatal("%s: cannot load module %s", __FUNCTION__, fname);
 	fclose(fp);
 
-        sys_args[0] = (unsigned int)fname;
+        sys_args[0] = (unsigned int)(*module);
+        sys_args[1] = (unsigned int)fname;
 
 	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_cuModuleLoad, sys_args);
 
@@ -498,9 +517,25 @@ CUresult cuModuleUnload(CUmodule hmod)
 
 CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 {
+	unsigned int sys_args[3];
+	int ret;
+
 	cuda_debug(stdout, "FUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: hfunc=%p\n", hfunc);
 	cuda_debug(stdout, "\tIN: hmod=%p\n", hmod);
 	cuda_debug(stdout, "\tIN: name=%s\n", name);
+
+	sys_args[0] = (unsigned int)hfunc;
+	sys_args[1] = (unsigned int)hmod;
+	sys_args[2] = (unsigned int)name;
+
+	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_cuModuleGetFunction, sys_args);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call FRM_CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			err_frm_cuda_native);
 
 	cuda_debug(stdout, "\tOUT: hfunc_ptr=%p\n", hfunc);
 	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);

@@ -46,6 +46,27 @@
 
 void frm_emu_init(void)
 {
+//        /* Allocate */
+//        evg_emu = calloc(1, sizeof(struct evg_emu_t));
+//        if (!evg_emu)
+//                fatal("%s: out of memory", __FUNCTION__);
+//
+//        /* Initialize */
+//        evg_emu->const_mem = mem_create();
+//        evg_emu->const_mem->safe = 0;
+//        evg_emu->global_mem = mem_create();
+//        evg_emu->global_mem->safe = 0;
+//
+//        /* Initialize disassembler (decoding tables...) */
+//        evg_disasm_init();
+//
+//        /* Initialize ISA (instruction execution tables...) */
+//        evg_isa_init();
+//
+//        /* Create platform and device */
+        frm_cuda_object_list = linked_list_create();
+//        evg_opencl_platform = evg_opencl_platform_create();
+//        evg_opencl_device_create();
 }
 
 void frm_emu_done(void)
