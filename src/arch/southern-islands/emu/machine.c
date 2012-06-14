@@ -395,7 +395,7 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
 
 	if (INST.offen)
 	{
-		offset = INST.vaddr;
+		offset = si_isa_read_vgpr(INST.vaddr);
 	}
 	else 
 	{
@@ -414,7 +414,7 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
 	/* srsrc is in units of 4 registers */
 	si_isa_read_buf_res(&buf_desc, INST.srsrc*4);
 
-	buffer_addr = buf_desc.base_addr + offset;
+	buffer_addr = offset;
 
 	mem_read(si_emu->global_mem, buffer_addr, bytes_to_read, &value);
 
@@ -447,7 +447,7 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
 
 	if (INST.offen)
 	{
-		offset = INST.vaddr;
+		offset = si_isa_read_vgpr(INST.vaddr);
 	}
 	else 
 	{
@@ -466,7 +466,7 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
 	/* srsrc is in units of 4 registers */
 	si_isa_read_buf_res(&buf_desc, INST.srsrc*4);
 
-	buffer_addr = buf_desc.base_addr + offset;
+	buffer_addr = offset;
 
 	value = si_isa_read_vgpr(INST.vdata);
 
