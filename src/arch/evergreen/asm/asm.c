@@ -32,7 +32,7 @@
  */
 
 /* Table containing information of all instructions */
-static struct evg_inst_info_t evg_inst_info[EVG_INST_COUNT];
+struct evg_inst_info_t evg_inst_info[EVG_INST_COUNT];
 
 /* Pointers to 'amd_inst_info' table indexed by instruction opcode */
 #define EVG_INST_INFO_CF_LONG_SIZE  256

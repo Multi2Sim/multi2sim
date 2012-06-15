@@ -44,6 +44,10 @@ struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel)
 	ndrange->local_mem_top = kernel->func_mem_local;
 	ndrange->id = evg_emu->ndrange_count++;
 
+	/* Instruction histogram */
+	if (evg_emu_report_file)
+		ndrange->inst_histogram = calloc(EVG_INST_COUNT, sizeof(unsigned int));
+
 	/* Return */
 	return ndrange;
 }
@@ -67,6 +71,10 @@ void evg_ndrange_free(struct evg_ndrange_t *ndrange)
 	for (i = 0; i < ndrange->work_item_count; i++)
 		evg_work_item_free(ndrange->work_items[i]);
 	free(ndrange->work_items);
+
+	/* Free instruction histogram */
+	if (ndrange->inst_histogram)
+		free(ndrange->inst_histogram);
 
 	/* Free ndrange */
 	free(ndrange->name);
@@ -553,6 +561,7 @@ void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
 	int work_item_id, last_work_item_id;
 	uint32_t branch_digest, last_branch_digest;
 	int branch_digest_count;
+	int i;
 
 	if (!f)
 		return;
@@ -588,6 +597,17 @@ void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
 	}
 	fprintf(f, "BranchDigestCount = %d\n", branch_digest_count);
 	fprintf(f, "\n");
+
+	/* Instruction histogram */
+	if (ndrange->inst_histogram)
+	{
+		for (i = 0; i < EVG_INST_COUNT; i++)
+			if (ndrange->inst_histogram[i])
+				fprintf(f, "InstHistogram[%s] = %u\n",
+					evg_inst_info[i].name,
+					ndrange->inst_histogram[i]);
+		fprintf(f, "\n");
+	}
 
 	/* Work-groups */
 	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)

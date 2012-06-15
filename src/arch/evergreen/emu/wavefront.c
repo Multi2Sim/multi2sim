@@ -258,8 +258,10 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 	extern struct evg_alu_group_t *evg_isa_alu_group;
 
 	struct evg_ndrange_t *ndrange = wavefront->ndrange;
+	enum evg_inst_enum inst_opcode;
 
 	int work_item_id;
+
 
 	/* Get current work-group */
 	evg_isa_ndrange = wavefront->ndrange;
@@ -325,6 +327,12 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 			evg_isa_wavefront->global_mem_inst_count++;
 			evg_isa_wavefront->cf_inst_global_mem_write_count++;  /* CF inst accessing memory is a write */
 		}
+		if (ndrange->inst_histogram)
+		{
+			inst_opcode = evg_isa_wavefront->cf_inst.info->inst;
+			assert(inst_opcode < EVG_INST_COUNT);
+			ndrange->inst_histogram[inst_opcode]++;
+		}
 
 		break;
 	}
@@ -358,7 +366,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 			evg_isa_write_task_commit();
 		}
 		
-		/* Stats */
+		/* Statistics */
 		evg_emu->inst_count++;
 		evg_isa_wavefront->inst_count += evg_isa_alu_group->inst_count;
 		evg_isa_wavefront->alu_inst_count += evg_isa_alu_group->inst_count;
@@ -373,6 +381,12 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 			{
 				evg_isa_wavefront->local_mem_inst_count++;
 				evg_isa_wavefront->alu_inst_local_mem_count++;
+			}
+			if (ndrange->inst_histogram)
+			{
+				inst_opcode = evg_isa_inst->info->inst;
+				assert(inst_opcode < EVG_INST_COUNT);
+				ndrange->inst_histogram[inst_opcode]++;
 			}
 		}
 
@@ -409,7 +423,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 			(*evg_isa_inst_func[evg_isa_inst->info->inst])();
 		}
 
-		/* Stats */
+		/* Statistics */
 		evg_emu->inst_count++;
 		evg_isa_wavefront->emu_inst_count += evg_isa_wavefront->work_item_count;
 		evg_isa_wavefront->inst_count++;
@@ -418,6 +432,12 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		{
 			evg_isa_wavefront->global_mem_inst_count++;
 			evg_isa_wavefront->tc_inst_global_mem_read_count++;  /* Memory instructions in TC are reads */
+		}
+		if (ndrange->inst_histogram)
+		{
+			inst_opcode = evg_isa_inst->info->inst;
+			assert(inst_opcode < EVG_INST_COUNT);
+			ndrange->inst_histogram[inst_opcode]++;
 		}
 
 		/* End of clause reached */

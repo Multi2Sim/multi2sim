@@ -643,7 +643,14 @@ struct evg_ndrange_t
 	
 	/* Local memory top to assign to local arguments.
 	 * Initially it is equal to the size of local variables in kernel function. */
-	uint32_t local_mem_top;
+	unsigned int local_mem_top;
+
+
+	/* Statistics */
+
+	/* Histogram of executed instructions. Only allocated if the kernel report
+	 * option is active. */
+	unsigned int *inst_histogram;
 };
 
 struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel);
