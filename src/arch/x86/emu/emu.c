@@ -145,6 +145,7 @@ void x86_emu_done(void)
 	/* Finalize GPU */
 	evg_emu_done();
 	si_emu_done();
+	frm_emu_done();
 
 	/* End */
 	free(x86_emu);
