@@ -236,23 +236,6 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	}
 }
 
-void si_wavefront_bitmask_sreg(int sreg, int id_in_wavefront, union si_reg_t value)
-{
-	unsigned int mask = 1;
-	if (id_in_wavefront < 32)
-	{
-		mask <<= id_in_wavefront;
-		si_isa_wavefront->sreg[sreg].as_uint = (value.as_uint) ? si_isa_wavefront->sreg[sreg].as_uint | mask:
-								 si_isa_wavefront->sreg[sreg].as_uint & ~mask;
-	}
-	else
-	{
-		mask <<= (id_in_wavefront - 32);
-		si_isa_wavefront->sreg[sreg + 1].as_uint = (value.as_uint) ? si_isa_wavefront->sreg[sreg + 1].as_uint | mask:
-								     si_isa_wavefront->sreg[sreg + 1].as_uint & ~mask;
-	}
-}
-
 void si_wavefront_init_sreg_with_value(struct si_wavefront_t *wavefront, int sreg, unsigned int value)
 {
 	wavefront->sreg[sreg].as_uint = value;
