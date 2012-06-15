@@ -2587,9 +2587,10 @@ void evg_isa_BFI_INT_impl()
 	src1 = evg_isa_read_op_src_int(1);
 	src2 = evg_isa_read_op_src_int(2);
 
-	/* Documentation says: dst = (src1 & src0) | (src2 & -src0)
-	 * Though probably it means '~src0'. */
-	dst = (src1 & src0) | (src2 & ~src0);
+	/* Documentation says: dst = (src1 & src0) | (src2 & -src0) */
+	/* NOTE: it's not '~', it's actually '-'. Though it doesn't make any
+	 * sense that an instruction is specified with this behavior... */
+	dst = (src1 & src0) | (src2 & -src0);
 	evg_isa_enqueue_write_dest(dst);
 }
 

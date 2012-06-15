@@ -676,6 +676,9 @@ struct evg_alu_group_t
 	} literal[EVG_ALU_GROUP_MAX_LITERALS];
 };
 
+/* Table containing information of all instructions */
+extern struct evg_inst_info_t evg_inst_info[EVG_INST_COUNT];
+
 
 typedef void (*evg_fmt_dump_func_t)(void *buf, FILE *);
 
