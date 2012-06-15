@@ -1719,7 +1719,7 @@ DEFINST(BFE_INT,
 )
 
 DEFINST(BFI_INT,
-	"%name",
+	"BFI_INT     %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 6,
 	0
