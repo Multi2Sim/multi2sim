@@ -594,7 +594,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		}
 		else 
 		{
-			panic("Invalid cache state");
+			fatal("Invalid cache block state: %d", stack->state);
 		}
 
 		return;
@@ -1353,7 +1353,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		}
 		else 
 		{
-			panic("Invalid reply size\n");
+			fatal("Invalid reply size: %d", stack->reply_size);
 		}
 
 		dir = target_mod->dir;
@@ -1590,51 +1590,9 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		}
 		else if (stack->reply == reply_NO_REPLY)
 		{
-			/* This block is modified, owned, or the highest-level exclusive */
+			/* This block is not present in any higher level caches */
 
-			if (stack->state == cache_block_exclusive) 
-			{
-				/* Exclusive state only sends an ACK */
-				mod_stack_set_reply(ret, reply_ACK);
-				stack->reply_size = 8;
-				
-				/* Set block to shared */
-				cache_set_block(target_mod->cache, stack->set, stack->way, 
-					stack->tag, cache_block_shared);
-
-				/* State is changed to shared, set owner of sub-blocks to 0. */
-				dir = target_mod->dir;
-				for (z = 0; z < dir->zsize; z++)
-				{
-					dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
-					assert(dir_entry_tag < stack->tag + target_mod->block_size);
-					dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-					dir_entry_set_owner(dir, stack->set, stack->way, z, 
-						DIR_ENTRY_OWNER_NONE);
-				}
-			}
-			else if (!stack->peer) 
-			{
-				/* State is M/O and no peer exists, so data is returned to mod */
-				stack->reply_size = target_mod->sub_block_size + 8;
-				mod_stack_set_reply(ret, reply_ACK_DATA);
-
-				/* Set block to shared */
-				cache_set_block(target_mod->cache, stack->set, stack->way, 
-					stack->tag, cache_block_shared);
-
-				/* State was changed to shared, set owner of sub-blocks to NONE. */
-				dir = target_mod->dir;
-				for (z = 0; z < dir->zsize; z++)
-				{
-					dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
-					assert(dir_entry_tag < stack->tag + target_mod->block_size);
-					dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-					dir_entry_set_owner(dir, stack->set, stack->way, z, 
-						DIR_ENTRY_OWNER_NONE);
-				}
-			}
-			else /* State is M/O and peer exists */
+			if (stack->peer) 
 			{
 				stack->reply_size = 8;
 				mod_stack_set_reply(ret, reply_ACK_DATA_SENT_TO_PEER);
@@ -1644,11 +1602,48 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 				ret->reply_size -= target_mod->sub_block_size;
 				assert(ret->reply_size >= 8);
 
-				/* Let the lower-level cache know not to delete the owner */
-				ret->retain_owner = 1;
+				if (stack->state == cache_block_modified || 
+					stack->state == cache_block_owned)
+				{
+					/* Let the lower-level cache know not to delete the owner */
+					ret->retain_owner = 1;
 
+					/* Set block to owned */
+					cache_set_block(target_mod->cache, stack->set, stack->way, 
+						stack->tag, cache_block_owned);
+				}
+				else 
+				{
+					/* Set block to shared */
+					cache_set_block(target_mod->cache, stack->set, stack->way, 
+						stack->tag, cache_block_shared);
+				}
+			}
+			else 
+			{
+				if (stack->state == cache_block_exclusive || 
+					stack->state == cache_block_shared)
+				{
+					stack->reply_size = 8;
+					mod_stack_set_reply(ret, reply_ACK);
+
+				}
+				else if (stack->state == cache_block_owned ||
+					stack->state == cache_block_modified || 
+					stack->state == cache_block_noncoherent)
+				{
+					/* No peer exists, so data is returned to mod */
+					stack->reply_size = target_mod->sub_block_size + 8;
+					mod_stack_set_reply(ret, reply_ACK_DATA);
+				}
+				else 
+				{
+					fatal("Invalid cache block state: %d\n", stack->state);
+				}
+
+				/* Set block to shared */
 				cache_set_block(target_mod->cache, stack->set, stack->way, 
-					stack->tag, cache_block_owned);
+					stack->tag, cache_block_shared);
 			}
 		}
 
@@ -1871,7 +1866,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		}
 		else 
 		{
-			panic("Unknown cache block state\n");
+			fatal("Invalid cache block state: %d\n", stack->state);
 		}
 
 		return;
@@ -1935,7 +1930,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		}
 		else 
 		{
-			panic("Invalid reply size\n");
+			fatal("Invalid reply size: %d", stack->reply_size);
 		}
 
 		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, 0);
@@ -1999,7 +1994,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		}
 		else 
 		{
-			panic("Invalid cache block state: %d\n", stack->state);
+			fatal("Invalid cache block state: %d\n", stack->state);
 		}
 
 		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP_FINISH, stack, 0);
@@ -2255,7 +2250,7 @@ void mod_handler_nmoesi_nc_write_request(int event, void *data)
 		}
 		else 
 		{
-			panic("Unknown cache block state\n");
+			fatal("Invalid cache block state: %d\n", stack->state);
 		}
 
 		return;
@@ -2319,7 +2314,7 @@ void mod_handler_nmoesi_nc_write_request(int event, void *data)
 		}
 		else 
 		{
-			panic("Invalid reply size\n");
+			fatal("Invalid reply size: %d", stack->reply_size);
 		}
 
 		esim_schedule_event(EV_MOD_NMOESI_NC_WRITE_REQUEST_REPLY, stack, 0);
@@ -2378,7 +2373,7 @@ void mod_handler_nmoesi_nc_write_request(int event, void *data)
 		}
 		else 
 		{
-			panic("Invalid cache block state: %d\n", stack->state);
+			fatal("Invalid cache block state: %d", stack->state);
 		}
 
 		esim_schedule_event(EV_MOD_NMOESI_NC_WRITE_REQUEST_DOWNUP_FINISH, stack, 0);
