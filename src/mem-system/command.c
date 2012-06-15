@@ -72,6 +72,63 @@ static void mem_system_command_get_string(struct list_t *token_list,
 	str_token_list_shift(token_list);
 }
 
+int mem_system_command_get_high_low(struct list_t *token_list, char *command_line)
+{
+	char *direction;
+	int high_net;
+
+	/* Get direction string */
+	mem_system_command_expect(token_list, command_line);
+	direction = str_token_list_first(token_list);
+
+	/* Determine direction */
+	if (!strcasecmp(direction, "High"))
+	{
+		high_net = 1;
+	}
+	else if (!strcasecmp(direction, "Low"))
+	{
+		high_net = 0;
+	}
+	else 
+	{
+		fatal("%s: %s: invalid network direction.\n\t> %s",
+			__FUNCTION__, direction, command_line);
+	}
+
+	str_token_list_shift(token_list);
+	return high_net;
+}
+
+
+int mem_system_command_get_in_out(struct list_t *token_list, char *command_line)
+{
+	char *direction;
+	int incoming;
+
+	/* Get direction string */
+	mem_system_command_expect(token_list, command_line);
+	direction = str_token_list_first(token_list);
+
+	/* Determine direction */
+	if (!strcasecmp(direction, "In"))
+	{
+		incoming = 1;
+	}
+	else if (!strcasecmp(direction, "Out"))
+	{
+		incoming = 0;
+	}
+	else 
+	{
+		fatal("%s: %s: invalid network direction.\n\t> %s",
+			__FUNCTION__, direction, command_line);
+	}
+
+	str_token_list_shift(token_list);
+	return incoming;
+}
+
 
 static struct mod_t *mem_system_command_get_mod(struct list_t *token_list,
 	char *command_line)
@@ -594,6 +651,66 @@ void mem_system_end_command_handler(int event, void *data)
 		/* Free lists */
 		linked_list_free(sharers_list);
 		linked_list_free(sharers_check_list);
+	}
+
+	/* Command 'CheckLink' */
+	else if (!strcasecmp(command, "CheckLink"))
+	{
+		struct mod_t *mod;
+		struct net_node_t *node;
+		struct net_buffer_t *buffer;
+		struct list_t *buffer_list;
+		struct net_link_t *link;
+		char expected_bytes_str[MAX_STRING_SIZE];
+		unsigned long long expected_bytes;
+		int high;
+		int in;
+
+		/* Get module */
+		mod = mem_system_command_get_mod(token_list, command_line);
+
+		/* Get network information */
+		high = mem_system_command_get_high_low(token_list, command_line);
+		in = mem_system_command_get_in_out(token_list, command_line);
+
+		/* Get expected transfer information */
+		mem_system_command_get_string(token_list, command_line, expected_bytes_str, 
+			sizeof expected_bytes_str);
+		expected_bytes = (unsigned long long)atoll(expected_bytes_str);
+
+		if (high)
+		{
+			node = mod->high_net_node;
+		}
+		else 
+		{
+			node = mod->low_net_node;
+		}
+
+		if (in)
+		{
+			buffer_list = node->input_buffer_list;
+		}
+		else 
+		{
+			buffer_list = node->output_buffer_list;
+		}
+
+		assert(list_count(buffer_list) == 1);
+
+		buffer = list_get(buffer_list, 0);
+		link = buffer->link;
+
+		/* Output */
+		str_printf(&msg_str, &msg_size, "check bytes on %s", link->name);
+
+		if (expected_bytes != link-> transferred_bytes)
+		{
+			test_failed = 1;
+			str_printf(&msg_detail_str, &msg_detail_size,
+				"\t%s expected %llu bytes transferred, but %llu found\n",
+				link->name, expected_bytes, link->transferred_bytes);
+		}
 	}
 
 	/* Invalid command */
