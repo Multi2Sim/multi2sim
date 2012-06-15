@@ -71,6 +71,9 @@ void frm_emu_init(void)
 
 void frm_emu_done(void)
 {
+	/* Free CUDA object list */
+	frm_cuda_object_free_all();
+	linked_list_free(frm_cuda_object_list);
 }
 
 /* 
