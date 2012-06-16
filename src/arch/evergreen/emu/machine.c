@@ -2028,10 +2028,10 @@ void evg_isa_COS_impl()
 
 void evg_isa_MULLO_INT_impl()
 {
-	int64_t src0, src1, dst;
+	int src0, src1, dst;
 
-	src0 = (int32_t) evg_isa_read_op_src_int(0);
-	src1 = (int32_t) evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(0);
+	src1 = evg_isa_read_op_src_int(1);
 	dst = src0 * src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -2050,7 +2050,7 @@ void evg_isa_MULHI_INT_impl()
 
 void evg_isa_MULLO_UINT_impl()
 {
-	uint64_t src0, src1, dst;
+	unsigned int src0, src1, dst;
 
 	src0 = evg_isa_read_op_src_int(0);
 	src1 = evg_isa_read_op_src_int(1);
@@ -2523,11 +2523,11 @@ void evg_isa_INTERP_LOAD_P20_impl()
 
 void evg_isa_BFE_UINT_impl() 
 {
-	uint32_t src0, src1, src2, dst;
+	unsigned int src0, src1, src2, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
-	src2 = evg_isa_read_op_src_int(2);
+	src0 = evg_isa_read_op_src_int(0);  /* Input data */
+	src1 = evg_isa_read_op_src_int(1);  /* Offset */
+	src2 = evg_isa_read_op_src_int(2);  /* Width */
 
 	src1 = (src1 & 0x1F);
 	src2 = (src2 & 0x1F);
@@ -2538,7 +2538,7 @@ void evg_isa_BFE_UINT_impl()
 	}
 	else if (src2 + src1 < 32) 
 	{
-		dst = (src0 << (32-src1-src2)) >> (32-src2);
+		dst = (src0 << (32 - src1 - src2)) >> (32 - src2);
 	}
 	else 
 	{
@@ -2552,7 +2552,7 @@ void evg_isa_BFE_UINT_impl()
 void evg_isa_BFE_INT_impl()
 {
 
-        uint32_t src0, src1, src2, dst;
+        int src0, src1, src2, dst;
 
         src0 = evg_isa_read_op_src_int(0);
         src1 = evg_isa_read_op_src_int(1);
