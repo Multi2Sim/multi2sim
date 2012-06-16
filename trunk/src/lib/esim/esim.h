@@ -43,8 +43,13 @@ typedef void (*esim_event_handler_t)(int event, void *data);
 void esim_init();
 void esim_done();
 
+/* Dump information in event heap, to a maximum of 'max' events. If 'max' is 0,
+ * all events in the heap are dumped. */
+void esim_dump(FILE *f, int max);
+
 /* Register an events */
 int esim_register_event(esim_event_handler_t handler);
+int esim_register_event_with_name(esim_event_handler_t handler, char *name);
 
 /* Schedule an event in 'after' cycles from now. If several cycles are
  * scheduled for the same cycle, they will execute in the order they were
