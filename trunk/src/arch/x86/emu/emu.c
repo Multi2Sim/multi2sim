@@ -92,7 +92,7 @@ void x86_emu_init(void)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Event for context IPC reports */
-	EV_X86_CTX_IPC_REPORT = esim_register_event(x86_ctx_ipc_report_handler);
+	EV_X86_CTX_IPC_REPORT = esim_register_event_with_name(x86_ctx_ipc_report_handler, "x86_ctx_ipc_report");
 
 	/* Initialize */
 	x86_emu->current_pid = 1000;  /* Initial assigned pid */

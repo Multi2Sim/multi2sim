@@ -224,8 +224,8 @@ void esim_init()
 	esim_end_event_list = linked_list_create();
 
 	/* Register special events */
-	ESIM_EV_INVALID = esim_register_event(NULL);
-	ESIM_EV_NONE = esim_register_event(NULL);
+	ESIM_EV_INVALID = esim_register_event_with_name(NULL, "esim_invalid");
+	ESIM_EV_NONE = esim_register_event_with_name(NULL, "esim_none");
 }
 
 

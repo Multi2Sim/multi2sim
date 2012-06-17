@@ -241,10 +241,10 @@ void net_config_load(void)
 void net_init(void)
 {
 	/* Register events */
-	EV_NET_SEND = esim_register_event(net_event_handler);
-	EV_NET_OUTPUT_BUFFER = esim_register_event(net_event_handler);
-	EV_NET_INPUT_BUFFER = esim_register_event(net_event_handler);
-	EV_NET_RECEIVE = esim_register_event(net_event_handler);
+	EV_NET_SEND = esim_register_event_with_name(net_event_handler, "net_send");
+	EV_NET_OUTPUT_BUFFER = esim_register_event_with_name(net_event_handler, "net_output_buffer");
+	EV_NET_INPUT_BUFFER = esim_register_event_with_name(net_event_handler, "net_input_buffer");
+	EV_NET_RECEIVE = esim_register_event_with_name(net_event_handler, "net_receive");
 
 	/* Load network configuration file */
 	net_config_load();
