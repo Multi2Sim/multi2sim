@@ -61,7 +61,11 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("S%u<=(%d,%gf)", INST.sdst, value.as_uint, value.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_smrd(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("S%u<=(%d,%gf)\n", INST.sdst, value.as_uint, value.as_float);
 	}
 }
 #undef INST
@@ -98,10 +102,14 @@ void si_isa_S_LOAD_DWORDX4_impl()
 	}	
 
 	if (debug_status(si_isa_debug_category))
-	{
+	{	
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_smrd(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
 		for (i = 0; i < 4; i++) 
 		{
-			si_isa_debug("S%u<=(%d,%gf) ", INST.sdst+i, value[i].as_uint, value[i].as_float);
+			si_isa_debug("S%u<=(%d,%gf)\n", INST.sdst+i, value[i].as_uint, value[i].as_float);
 		}
 	}
 }
@@ -141,9 +149,13 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_smrd(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
 		for (i = 0; i < 2; i++) 
 		{
-			si_isa_debug("S%u<=(%d,%gf) ", INST.sdst+i, value[i].as_uint, value[i].as_float);
+			si_isa_debug("S%u<=(%d,%gf)\n", INST.sdst+i, value[i].as_uint, value[i].as_float);
 		}
 	}
 }
@@ -176,8 +188,12 @@ void si_isa_S_MIN_U32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, min.as_uint, min.as_float);
-		si_isa_debug("scc<=(%d,%gf) ", s0_min.as_uint, s0_min.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst, min.as_uint);
+		si_isa_debug("scc<=(%d)\n", s0_min.as_uint);
 	}
 }
 #undef INST
@@ -200,8 +216,12 @@ void si_isa_S_AND_B32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, result.as_uint, result.as_float);
-		si_isa_debug("scc<=(%d,%gf) ", nonzero.as_uint, nonzero.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst, result.as_uint);
+		si_isa_debug("scc<=(%d)\n", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -229,9 +249,13 @@ void si_isa_S_AND_B64_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, result_lo.as_uint, result_lo.as_float);
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst + 1, result_hi.as_uint, result_hi.as_float);
-		si_isa_debug("scc<=(%d,%gf) ", nonzero.as_uint, nonzero.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst, result_lo.as_uint);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst + 1, result_hi.as_uint);
+		si_isa_debug("scc<=(%d)\n", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -259,9 +283,13 @@ void si_isa_S_ANDN2_B64_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, result_lo.as_uint, result_lo.as_float);
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst + 1, result_hi.as_uint, result_hi.as_float);
-		si_isa_debug("scc<=(%d,%gf) ", nonzero.as_uint, nonzero.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst, result_lo.as_uint);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst + 1, result_hi.as_uint);
+		si_isa_debug("scc<=(%d)\n", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -284,8 +312,12 @@ void si_isa_S_LSHL_B32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, result.as_uint, result.as_float);
-		si_isa_debug("scc<=(%d,%gf) ", nonzero.as_uint, nonzero.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst, result.as_uint);
+		si_isa_debug("scc<=(%d)\n", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -308,8 +340,12 @@ void si_isa_S_LSHR_B32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, result.as_uint, result.as_float);
-		si_isa_debug("scc<=(%d,%gf) ", nonzero.as_uint, nonzero.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst, result.as_uint);
+		si_isa_debug("scc<=(%d)\n", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -327,7 +363,11 @@ void si_isa_S_MOVK_I32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, result.as_uint, result.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sopk(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst, result.as_int);
 	}
 }
 #undef INST
@@ -347,8 +387,12 @@ void si_isa_S_MOV_B64_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: S%u<=(%d,%gf) ", si_isa_work_item->id, INST.sdst, s0_lo.as_uint, s0_lo.as_float);
-		si_isa_debug("t%d: S%u<=(%d,%gf) ", si_isa_work_item->id, INST.sdst + 1, s0_hi.as_uint, s0_hi.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sop1(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: S%u<=(%d)\n", si_isa_work_item->id, INST.sdst, s0_lo.as_int);
+		si_isa_debug("t%d: S%u<=(%d)\n", si_isa_work_item->id, INST.sdst + 1, s0_hi.as_int);
 	}
 }
 #undef INST
@@ -378,11 +422,15 @@ void si_isa_S_AND_SAVEEXEC_B64_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst, exec_lo.as_uint, exec_lo.as_float);
-		si_isa_debug("S%u<=(%d,%gf) ", INST.sdst + 1, exec_hi.as_uint, exec_hi.as_float);
-		si_isa_debug("S%u<=(%d,%gf) ", SI_EXEC, exec_new_lo.as_uint, exec_new_lo.as_float);
-		si_isa_debug("S%u<=(%d,%gf) ", SI_EXEC + 1, exec_new_hi.as_uint, exec_new_hi.as_float);
-		si_isa_debug("scc<=(%d,%gf) ", nonzero.as_uint, nonzero.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sop1(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst, exec_lo.as_uint);
+		si_isa_debug("S%u<=(%d)\n", INST.sdst + 1, exec_hi.as_uint);
+		si_isa_debug("exec_lo<=(%d)\n", exec_new_lo.as_uint);
+		si_isa_debug("exec_hi<=(%d)\n", exec_new_hi.as_uint);
+		si_isa_debug("scc<=(%d)\n", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -403,7 +451,11 @@ void si_isa_S_CMP_EQ_I32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("scc<=(%d,%gf) ", equal.as_uint, equal.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sopc(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("scc<=(%d)\n", equal.as_uint);
 	}
 }
 #undef INST
@@ -411,6 +463,14 @@ void si_isa_S_CMP_EQ_I32_impl()
 void si_isa_S_ENDPGM_impl()
 {
 	si_isa_wavefront->finished = 1;
+
+	if (debug_status(si_isa_debug_category))
+	{
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sopp(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+	}
 }
 
 #define INST SI_INST_SOPP
@@ -428,6 +488,14 @@ void si_isa_S_CBRANCH_SCC1_impl()
 		pc = pc + (se_simm16 * 4) + 4;
 
 		si_isa_wavefront->inst_buf = si_isa_wavefront->inst_buf_start + pc;
+	}
+
+	if (debug_status(si_isa_debug_category))
+	{
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sopp(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
 	}
 }
 #undef INST
@@ -447,6 +515,14 @@ void si_isa_S_CBRANCH_EXECZ_impl()
 
 		si_isa_wavefront->inst_buf = si_isa_wavefront->inst_buf_start + pc;
 	}
+
+	if (debug_status(si_isa_debug_category))
+	{
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sopp(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+	}
 }
 #undef INST
 
@@ -455,7 +531,10 @@ void si_isa_S_WAITCNT_impl()
 	/* Nothing to do in emulation */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wait");
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_sopp(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
 	}
 }
 
@@ -470,7 +549,11 @@ void si_isa_V_MOV_B32_VOP1_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, value.as_uint, value.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop1(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%d)\n", si_isa_work_item->id, INST.vdst, value.as_int);
 	}
 }
 #undef INST
@@ -487,7 +570,11 @@ void si_isa_V_CVT_F32_I32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, value.as_uint, value.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop1(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%gf)\n", si_isa_work_item->id, INST.vdst, value.as_float);
 	}
 }
 #undef INST
@@ -504,7 +591,11 @@ void si_isa_V_CVT_I32_F32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, value.as_uint, value.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop1(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%d)\n", si_isa_work_item->id, INST.vdst, value.as_int);
 	}
 }
 #undef INST
@@ -524,7 +615,11 @@ void si_isa_V_MUL_F32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, product.as_uint, product.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%gf)\n", si_isa_work_item->id, INST.vdst, product.as_float);
 	}
 }
 #undef INST
@@ -544,7 +639,11 @@ void si_isa_V_MUL_I32_I24_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, product.as_uint, product.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%d)\n", si_isa_work_item->id, INST.vdst, product.as_int);
 	}
 }
 #undef INST
@@ -564,7 +663,11 @@ void si_isa_V_LSHLREV_B32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, result.as_uint, result.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%d)\n", si_isa_work_item->id, INST.vdst, result.as_uint);
 	}
 }
 #undef INST
@@ -584,7 +687,11 @@ void si_isa_V_OR_B32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, result.as_uint, result.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%d)\n", si_isa_work_item->id, INST.vdst, result.as_uint);
 	}
 }
 #undef INST
@@ -605,7 +712,11 @@ void si_isa_V_MAC_F32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, result.as_uint, result.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%gf)\n", si_isa_work_item->id, INST.vdst, result.as_float);
 	}
 }
 #undef INST
@@ -628,8 +739,12 @@ void si_isa_V_ADD_I32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, sum.as_uint, sum.as_float);
-		si_isa_debug("wf_id%d: vcc<=(%d,%gf) ", si_isa_work_item->id_in_wavefront, carry.as_uint, sum.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop2(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%d)\n", si_isa_work_item->id, INST.vdst, sum.as_uint);
+		si_isa_debug("wf_id%d: vcc<=(%d)\n", si_isa_work_item->id_in_wavefront, carry.as_uint);
 	}
 }
 #undef INST
@@ -650,7 +765,11 @@ void si_isa_V_MAD_F32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, result.as_uint, result.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop3(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%gf)\n", si_isa_work_item->id, INST.vdst, result.as_float);
 	}
 }
 #undef INST
@@ -670,7 +789,11 @@ void si_isa_V_MUL_LO_I32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d,%gf) ", si_isa_work_item->id, INST.vdst, result.as_uint, result.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop3(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%d)\n", si_isa_work_item->id, INST.vdst, result.as_int);
 	}
 }
 #undef INST
@@ -690,7 +813,11 @@ void si_isa_V_CMP_LT_I32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%d,%gf) ", si_isa_work_item->id_in_wavefront, result.as_uint, result.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vopc(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("wf_id%d: vcc<=(%d)\n", si_isa_work_item->id_in_wavefront, result.as_uint);
 	}
 }
 #undef INST
@@ -710,7 +837,11 @@ void si_isa_V_CMP_GT_I32_impl()
 	
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: vcc<=(%d,%gf) ", si_isa_work_item->id_in_wavefront, result.as_uint, result.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vopc(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("wf_id%d: vcc<=(%d)\n", si_isa_work_item->id_in_wavefront, result.as_uint);
 	}
 }
 #undef INST
@@ -730,7 +861,11 @@ void si_isa_V_CMP_GT_I32_VOP3b_impl()
 	
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("wf_id%d: S[%d:+1]<=(%d,%gf) ", si_isa_work_item->id_in_wavefront, INST.sdst, result.as_uint, result.as_float);
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_vop3(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("wf_id%d: S[%d:+1]<=(%d)\n", si_isa_work_item->id_in_wavefront, INST.sdst, result.as_uint);
 	}
 }
 #undef INST
@@ -778,7 +913,11 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%u)(%d,%gf) ", si_isa_work_item->id, INST.vdata, 
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_mtbuf(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: V%u<=(%u)(%d,%gf)\n", si_isa_work_item->id, INST.vdata, 
 			buffer_addr, value.as_uint, value.as_float);
 	}
 }
@@ -827,7 +966,11 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: (%u)<=V%u(%d,%gf) ", si_isa_work_item->id, buffer_addr, 
+		int line_size = MAX_INST_STR_SIZE;
+		char inst_dump[line_size];
+		si_inst_dump_mtbuf(si_isa_inst, si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start, si_isa_wavefront->inst_buf, inst_dump, line_size);
+		si_isa_debug("%s", inst_dump);
+		si_isa_debug("t%d: (%u)<=V%u(%d,%gf)\n", si_isa_work_item->id, buffer_addr, 
 			INST.vdata, value.as_uint, value.as_float);
 	}
 }
