@@ -27,19 +27,19 @@
  */
 
 
-//struct frm_emu_t *frm_emu;
+struct frm_emu_t *frm_emu;
 
-//long long frm_emu_max_cycles = 0;
-//long long frm_emu_max_inst = 0;
-//int frm_emu_max_kernels = 0;
+long long frm_emu_max_cycles = 0;
+long long frm_emu_max_inst = 0;
+int frm_emu_max_functions = 0;
 
-//enum frm_emu_kind_t frm_emu_kind = frm_emu_functional;
+enum frm_emu_kind_t frm_emu_kind = frm_emu_functional;
 
-//char *frm_emu_opencl_binary_name = "";
-//char *frm_emu_report_file_name = "";
-//FILE *frm_emu_report_file = NULL;
+char *frm_emu_cuda_binary_name = "";
+char *frm_emu_report_file_name = "";
+FILE *frm_emu_report_file = NULL;
 
-//int frm_emu_wavefront_size = 64;
+int frm_emu_warp_size = 32;
 
 
 
@@ -75,6 +75,27 @@ void frm_emu_done(void)
 	frm_cuda_object_free_all();
 	linked_list_free(frm_cuda_object_list);
 }
+
+
+void frm_emu_timer_start(void)
+{
+	assert(!frm_emu->timer_running);
+	frm_emu->timer_start_time = x86_emu_timer();
+	frm_emu->timer_running = 1;
+}
+
+
+void frm_emu_timer_stop(void)
+{
+	assert(frm_emu->timer_running);
+	frm_emu->timer_acc += x86_emu_timer() - frm_emu->timer_start_time;
+	frm_emu->timer_running = 0;
+}
+
+
+
+
+
 
 /* 
  * Fermi disassembler
@@ -113,4 +134,7 @@ void frm_emu_disasm(char *path)
 	/* Free external ELF */
 	elf_file_free(elf_file);
 }
+
+
+
 
