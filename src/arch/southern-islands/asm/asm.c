@@ -46,7 +46,6 @@ static struct si_inst_info_t si_inst_info[SI_INST_COUNT];
 #define SI_INST_INFO_MTBUF_OPCODE_SIZE 8
 
 /* String lengths for printing assembly */
-#define MAX_INST_STR_SIZE 150
 #define MAX_OPERAND_STR_SIZE 10
 #define MAX_DAT_STR_SIZE 31
 
@@ -62,19 +61,6 @@ static struct si_inst_info_t *si_inst_info_vopc[SI_INST_INFO_VOPC_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_vop1[SI_INST_INFO_VOP1_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_vop2[SI_INST_INFO_VOP2_OPCODE_SIZE];
 static struct si_inst_info_t *si_inst_info_mtbuf[SI_INST_INFO_MTBUF_OPCODE_SIZE];
-
-/* Helper functions to dump assembly code to a file */
-void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_sopk(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
-void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f);
 
 /* String maps for assembly dump. */
 struct string_map_t sdst_map = {
@@ -482,59 +468,63 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		}
 		
 		/* Dump the instruction */
+		int line_size = MAX_INST_STR_SIZE;
+		char line[line_size];
 		if (inst.info->fmt == SI_FMT_SOPP)
 		{
-			si_inst_dump_sopp(&inst, rel_addr, inst_buf, f);
-
-			/* Break at end of program. */
-			if (inst.micro_inst.sopp.op == 1)
-				break;
+			si_inst_dump_sopp(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_SOPC)
 		{
-			si_inst_dump_sopc(&inst, rel_addr, inst_buf, f);
+			si_inst_dump_sopc(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_SOP1)
 		{
-			si_inst_dump_sop1(&inst, rel_addr, inst_buf, f);
+			si_inst_dump_sop1(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_SOPK)
 		{
-			si_inst_dump_sopk(&inst, rel_addr, inst_buf, f);
+			si_inst_dump_sopk(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_SOP2)
 		{
-			si_inst_dump_sop2(&inst, rel_addr, inst_buf, f);
+			si_inst_dump_sop2(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_SMRD) 
 		{
-			si_inst_dump_smrd(&inst, rel_addr, inst_buf, f);
+			si_inst_dump_smrd(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_VOP3a || inst.info->fmt == SI_FMT_VOP3b)
 		{
-			si_inst_dump_vop3(&inst, rel_addr, inst_buf, f);
+			si_inst_dump_vop3(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_VOPC)
 		{
-			si_inst_dump_vopc(&inst, rel_addr, inst_buf, f);
+			si_inst_dump_vopc(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_VOP1)
 		{
-			si_inst_dump_vop1(&inst, rel_addr, inst_buf, f);
+			si_inst_dump_vop1(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_VOP2)
 		{
-			si_inst_dump_vop2(&inst, rel_addr, inst_buf, f);
+			si_inst_dump_vop2(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		else if (inst.info->fmt == SI_FMT_MTBUF)
 		{
-			si_inst_dump_mtbuf(&inst, rel_addr, inst_buf, f);
+			si_inst_dump_mtbuf(&inst, rel_addr, inst_buf, line, line_size);
 		}
 		/* TODO FILL IN REMAINING FORMATS */
 		else 
 		{
 			fatal("Unknown instruction: %08X\n", ((unsigned int*)inst_buf)[0]);
 		}
+		fprintf(f, "%s", line);
+
+
+		/* Break at end of program. */
+		if (inst.info->fmt == SI_FMT_SOPP && inst.micro_inst.sopp.op == 1)
+			break;
 
 		/* Increment instruction pointer */
 		inst_buf += inst_size;
@@ -672,7 +662,7 @@ void operand_dump_series_vector(char* str, int operand, int operand_end)
 	operand_dump_series(str, operand + 256, operand_end + 256);
 }
 
-void line_dump(char *inst_str, unsigned int rel_addr, void* buf, FILE *f, int inst_size)
+void line_dump(char *inst_str, unsigned int rel_addr, void* buf, char* line, int line_size, int inst_size)
 {
 	int dat_str_size = MAX_DAT_STR_SIZE;
 	char inst_dat_str[MAX_DAT_STR_SIZE];
@@ -688,15 +678,15 @@ void line_dump(char *inst_str, unsigned int rel_addr, void* buf, FILE *f, int in
 
 	if(strlen(inst_str) <= 60)
 	{
-		fprintf(f, "%-60s%s\n", inst_str, inst_dat_str);
+		str_printf(&line, &line_size, "%-60s%s\n", inst_str, inst_dat_str);
 	}
 	else
 	{
-		fprintf(f, "%s %s\n", inst_str, inst_dat_str);
+		str_printf(&line, &line_size, "%s %s\n", inst_str, inst_dat_str);
 	}
 }
 
-void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	struct si_fmt_sopp_t *sopp = &inst->micro_inst.sopp;
 
@@ -761,10 +751,10 @@ void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str += token_len;
 	}
 	
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
-void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	struct si_fmt_sopc_t *sopc = &inst->micro_inst.sopc;
 
@@ -818,10 +808,10 @@ void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str += token_len;
 	}
 	
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
-void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	struct si_fmt_sop1_t *sop1 = &inst->micro_inst.sop1;
 
@@ -868,10 +858,10 @@ void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str += token_len;
 	}
 	
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
-void si_inst_dump_sopk(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_sopk(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	struct si_fmt_sopk_t *sopk = &inst->micro_inst.sopk;
 
@@ -910,10 +900,10 @@ void si_inst_dump_sopk(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str += token_len;
 	}
 	
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
-void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	struct si_fmt_sop2_t *sop2 = &inst->micro_inst.sop2;
 	
@@ -1003,10 +993,10 @@ void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str += token_len;
 	}
 
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
-void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	struct si_fmt_smrd_t *smrd = &inst->micro_inst.smrd;
 
@@ -1133,10 +1123,10 @@ void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str += token_len;
 	}
 
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
-void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	int str_size = MAX_INST_STR_SIZE;
 	char orig_inst_str[MAX_INST_STR_SIZE];
@@ -1210,10 +1200,10 @@ void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str += token_len;
 	}
 
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
-void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	struct si_fmt_vopc_t *vopc = &inst->micro_inst.vopc;
 	
@@ -1260,10 +1250,10 @@ void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str += token_len;
 	}
 	
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
-void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	struct si_fmt_vop1_t *vop1 = &inst->micro_inst.vop1;
 	
@@ -1310,10 +1300,10 @@ void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str += token_len;
 	}
 	
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
-void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	struct si_fmt_vop2_t *vop2 = &inst->micro_inst.vop2;
 
@@ -1365,10 +1355,10 @@ void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf,
 		fmt_str += token_len;
 	}
 
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
-void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf, FILE *f)
+void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size)
 {
 	
 	struct si_fmt_mtbuf_t *mtbuf = &inst->micro_inst.mtbuf;
@@ -1445,7 +1435,7 @@ void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf
 		fmt_str += token_len;
 	}
 
-	line_dump(orig_inst_str, rel_addr, buf, f, inst->info->size);
+	line_dump(orig_inst_str, rel_addr, buf, line, line_size, inst->info->size);
 }
 
 /* GPU disassembler tool */
