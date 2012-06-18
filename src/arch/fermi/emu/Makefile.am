@@ -7,6 +7,10 @@ libemu_a_SOURCES = \
 	emu.c \
 	cuda-obj.c \
 	cuda.c \
+	grid.c \
+	threadblock.c \
+	warp.c \
+	thread.c \
 	\
 	cuda.dat \
 	cudart.dat

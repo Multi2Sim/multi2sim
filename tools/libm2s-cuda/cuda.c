@@ -326,7 +326,7 @@ CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 		fatal("native execution not supported.\n%s",
 			err_frm_cuda_native);
 
-	cuda_debug(stdout, "\tOUT: pctx_ptr=%p\n", pctx);
+	cuda_debug(stdout, "\tOUT: pctx_ptr=%#x\n", (*pctx)->id);
 	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -464,15 +464,15 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 	FILE *fp;
 
 	cuda_debug(stdout, "FUNC: %s\n", __FUNCTION__);
-	cuda_debug(stdout, "\tIN: %p\n", module);
-	cuda_debug(stdout, "\tIN: %s\n", fname);
+	cuda_debug(stdout, "\tIN: fname=%s\n", fname);
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
 		fatal("%s: cannot load module %s", __FUNCTION__, fname);
 	fclose(fp);
 
-        sys_args[0] = (unsigned int)(*module);
+	*module = (CUmodule)malloc(sizeof(struct CUmod_st));
+        sys_args[0] = (unsigned int)module;
         sys_args[1] = (unsigned int)fname;
 
 	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_cuModuleLoad, sys_args);
@@ -482,6 +482,8 @@ CUresult cuModuleLoad(CUmodule *module, const char *fname)
 	if (ret)
 		fatal("native execution not supported.\n%s",
 			err_frm_cuda_native);
+
+	cuda_debug(stdout, "\tOUT: ppmodule=%p\n", module);
 
 	return CUDA_SUCCESS;
 }
@@ -521,10 +523,10 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 	int ret;
 
 	cuda_debug(stdout, "FUNC: %s\n", __FUNCTION__);
-	cuda_debug(stdout, "\tIN: hfunc=%p\n", hfunc);
-	cuda_debug(stdout, "\tIN: hmod=%p\n", hmod);
+	cuda_debug(stdout, "\tIN: pmodule=%p\n", hmod);
 	cuda_debug(stdout, "\tIN: name=%s\n", name);
 
+	*hfunc = (CUfunction)malloc(sizeof(struct CUfunc_st));
 	sys_args[0] = (unsigned int)hfunc;
 	sys_args[1] = (unsigned int)hmod;
 	sys_args[2] = (unsigned int)name;
@@ -537,7 +539,7 @@ CUresult cuModuleGetFunction(CUfunction *hfunc, CUmodule hmod, const char *name)
 		fatal("native execution not supported.\n%s",
 			err_frm_cuda_native);
 
-	cuda_debug(stdout, "\tOUT: hfunc_ptr=%p\n", hfunc);
+	cuda_debug(stdout, "\tOUT: ppfunction=%p\n", hfunc);
 	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -1126,7 +1128,7 @@ CUresult cuLaunchKernel(CUfunction f,
 	int ret;
 
 	cuda_debug(stdout, "FUNC: %s\n", __FUNCTION__);
-	cuda_debug(stdout, "\tIN: f=%p\n", f);
+	cuda_debug(stdout, "\tIN: pfunction=%p\n", f);
 	cuda_debug(stdout, "\tIN: gridDimX=%u\n", gridDimX);
 	cuda_debug(stdout, "\tIN: gridDimY=%u\n", gridDimY);
 	cuda_debug(stdout, "\tIN: gridDimZ=%u\n", gridDimZ);
@@ -1134,7 +1136,7 @@ CUresult cuLaunchKernel(CUfunction f,
 	cuda_debug(stdout, "\tIN: blockDimY=%u\n", blockDimY);
 	cuda_debug(stdout, "\tIN: blockDimZ=%u\n", blockDimZ);
 	cuda_debug(stdout, "\tIN: sharedMemBytes=%u\n", sharedMemBytes);
-	cuda_debug(stdout, "\tIN: hStream=%p\n", hStream);
+	cuda_debug(stdout, "\tIN: pstream=%p\n", hStream);
 	cuda_debug(stdout, "\tIN: kernelParams=%p\n", kernelParams);
 	cuda_debug(stdout, "\tIN: extra=%p\n", extra);
 

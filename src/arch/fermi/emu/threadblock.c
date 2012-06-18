@@ -29,7 +29,7 @@
  */
 
 
-struct frm_threadblock_t *frm_threadblock_create(char *name)
+struct frm_threadblock_t *frm_threadblock_create()
 {
 	struct frm_threadblock_t *threadblock;
 
@@ -120,7 +120,7 @@ void frm_threadblock_dump(struct frm_threadblock_t *threadblock, FILE *f)
 	fprintf(f, "\n");
 
 	/* Dump warps */
-	FRM_FOREACH_WAVEFRONT_IN_THREADBLOCK(threadblock, warp_id)
+	FRM_FOREACH_WARP_IN_THREADBLOCK(threadblock, warp_id)
 	{
 		warp = grid->warps[warp_id];
 		frm_warp_dump(warp, f);

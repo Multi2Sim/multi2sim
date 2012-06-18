@@ -44,13 +44,6 @@ static char *err_frm_cuda_code =
 	"\tversion of the Multi2Sim CUDA driver library ('libm2s-cuda'). Please\n"
 	"\trecompile your application and try again.\n";
 
-//static char *err_frm_cuda_param_note =
-//	"\tNote that a real CUDA implementation would return an error code to the\n"
-//	"\tcalling program. However, the purpose of this CUDA implementation is to\n"
-//	"\tsupport correctly written programs. Thus, a detailed implementation of CUDA\n"
-//	"\terror handling is not provided, and any CUDA error will cause the\n"
-//	"\tsimulation to stop.\n";
-
 
 
 /*
@@ -178,6 +171,21 @@ static int frm_cuda_func_version(void)
 	return 0;
 }
 
+
+
+/*
+ * CUDA call #2 - cuCtxCreate
+ *
+ * @param CUcontext *pctx;
+ *      Returned context handle of the new context.
+ *
+ * @param CUdevice dev;
+ *      Device to create context on.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
 static int frm_cuda_func_cuCtxCreate(void)
 {
 	unsigned int args[2];
@@ -186,7 +194,7 @@ static int frm_cuda_func_cuCtxCreate(void)
 	struct frm_cuda_context_t *context;
 
         mem_read(x86_isa_mem, x86_isa_regs->ecx, 2*sizeof(unsigned int), args);
-	pctx = args[0];
+        mem_read(x86_isa_mem, args[0], sizeof(unsigned int), &pctx);
 	dev = args[1];
 
 	/* Create context */
@@ -197,25 +205,59 @@ static int frm_cuda_func_cuCtxCreate(void)
 	return 0;
 }
 
+
+
+/*
+ * CUDA call #3 - cuModuleLoad
+ *
+ * @param CUmodule *pmod;
+ *      Returned module.
+ *
+ * @param const char *fname;
+ *      Filename of module to load.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
 static int frm_cuda_func_cuModuleLoad(void)
 {
 	unsigned int args[2];
 	unsigned int pmod;
-	char file_name[MAX_STRING_SIZE];
+	char fname[MAX_STRING_SIZE];
 	struct frm_cuda_module_t *module;
 
         mem_read(x86_isa_mem, x86_isa_regs->ecx, 2*sizeof(unsigned int), args);
-        pmod = args[0];
+        mem_read(x86_isa_mem, args[0], sizeof(unsigned int), &pmod);
 	cuda_debug(stdout, "\tpmod=%#8x\n", pmod);
-        mem_read(x86_isa_mem, args[1], sizeof(file_name), file_name);
-	cuda_debug(stdout, "\tfile_name=%s\n", file_name);
+        mem_read(x86_isa_mem, args[1], sizeof(fname), fname);
+	cuda_debug(stdout, "\tfname=%s\n", fname);
 
         module = frm_cuda_module_create();
-	module->elf_file = elf_file_create_from_path(file_name);
+	module->elf_file = elf_file_create_from_path(fname);
+	cuda_debug(stdout, "\tmodule_id=%#x\n", module->id);
         mem_write(x86_isa_mem, pmod, sizeof(unsigned int), &module->id);
 
 	return 0;
 }
+
+
+
+/*
+ * CUDA call #4 - cuModuleGetFunction
+ *
+ * @param CUfunction *pfunc;
+ *      Returned function handle.
+ *
+ * @param CUmodule mod;
+ *      Module to retrieve function from.
+ *
+ * @param const char *name;
+ *      Name of function to retrieve.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
 
 static int frm_cuda_func_cuModuleGetFunction(void)
 {
@@ -225,9 +267,11 @@ static int frm_cuda_func_cuModuleGetFunction(void)
 	char function_name[MAX_STRING_SIZE];
 	struct frm_cuda_module_t *module;
 	struct frm_cuda_function_t *function;
+	int i;
+	struct elf_section_t *section;
 
         mem_read(x86_isa_mem, x86_isa_regs->ecx, 3*sizeof(unsigned int), args);
-	pfunc = args[0];
+        mem_read(x86_isa_mem, args[0], sizeof(unsigned int), &pfunc);
         mem_read(x86_isa_mem, args[1], sizeof(unsigned int), &mod_id);
         mem_read(x86_isa_mem, args[2], sizeof(function_name), function_name);
 
@@ -239,14 +283,68 @@ static int frm_cuda_func_cuModuleGetFunction(void)
         /* Create function */
         function = frm_cuda_function_create();
 	function->module_id = module->id;
+	strncpy(function->name, function_name, MAX_STRING_SIZE);
 
         /* Load function */
-//        evg_opencl_kernel_load(kernel, kernel_name_str);
+	for (i = 0; i < list_count(module->elf_file->section_list); ++i)
+	{
+		section = (struct elf_section_t *)list_get(module->elf_file->section_list, i);
+		if (!strncmp(section->name, ".text", 5))
+			break;
+	}
+	if (i == list_count(module->elf_file->section_list))
+		fatal(".text section not found!\n");
 
         mem_write(x86_isa_mem, pfunc, sizeof(unsigned int), &function->id);
+	function->function_buffer.ptr = section->buffer.ptr;
+	function->function_buffer.size = section->buffer.size;
+	function->function_buffer.pos = 0;
 
 	return 0;
 }
+
+
+
+/*
+ * CUDA call #5 - cuLaunchKernel
+ *
+ * @param CUfunction f;
+ *      Kernel to launch.
+ *
+ * @param unsigned int gridDimX;
+ *      Width of grid in blocks.
+ *
+ * @param unsigned int gridDimY;
+ *      Height of grid in blocks.
+ *
+ * @param unsigned int gridDimZ;
+ *      Depth of grid in blocks.
+ *
+ * @param unsigned int blockDimX;
+ *      X dimension of each thread block.
+ *
+ * @param unsigned int blockDimY;
+ *      Y dimension of each thread block.
+ *
+ * @param unsigned int blockDimZ;
+ *      Z dimension of each thread block.
+ *
+ * @param unsigned int sharedMemBytes;
+ *      Dynamic shared-memory size per thread block in bytes.
+ *
+ * @param CUstream hStream;
+ *      Stream identifier.
+ *
+ * @param void **kernelParams;
+ *      Array of pointers to kernel parameters.
+ *
+ * @param void **extra;
+ *      Extra options.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
 
 static int frm_cuda_func_cuLaunchKernel(void)
 {
@@ -262,10 +360,10 @@ static int frm_cuda_func_cuLaunchKernel(void)
         unsigned int hStream;
         unsigned int kernelParams;
         unsigned int extra;
-	//struct frm_cuda_kernel_t *kernel;
+	struct frm_cuda_function_t *function;
 
         mem_read(x86_isa_mem, x86_isa_regs->ecx, 11*sizeof(unsigned int), args);
-	f = args[0];
+        mem_read(x86_isa_mem, args[0], sizeof(unsigned int), &f);
         gridDimX = args[1];
         gridDimY = args[2];
         gridDimZ = args[3];
@@ -277,7 +375,7 @@ static int frm_cuda_func_cuLaunchKernel(void)
         kernelParams = args[9];
         extra = args[10];
 
-	cuda_debug(stdout, "\tf=%u\n", f);
+	cuda_debug(stdout, "\tf=%#x\n", f);
 	cuda_debug(stdout, "\tgridDimX=%u\n", gridDimX);
 	cuda_debug(stdout, "\tgridDimY=%u\n", gridDimY);
 	cuda_debug(stdout, "\tgridDimZ=%u\n", gridDimZ);
@@ -289,12 +387,27 @@ static int frm_cuda_func_cuLaunchKernel(void)
 	cuda_debug(stdout, "\tkernelParams=%u\n", kernelParams);
 	cuda_debug(stdout, "\textra=%u\n", extra);
 
-//	kernel = frm_cuda_object_get(FRM_CUDA_OBJ_KERNEL, f);
-//	kernel->work_dim = 1;
+	function = frm_cuda_object_get(FRM_CUDA_OBJ_FUNCTION, f);
+	cuda_debug(stdout, "\tfunction_id=%#x\n", function->id);
+	cuda_debug(stdout, "\tfunction_name=%s\n", function->name);
 
-//	frm_grid_run(kernel->grid);
+	function->grid = frm_grid_create(function);
+	function->global_size3[0] = gridDimX*blockDimX;
+	function->global_size3[1] = gridDimY*blockDimY;
+	function->global_size3[2] = gridDimZ*blockDimZ;
+	function->global_size = function->global_size3[0]*function->global_size3[1]*function->global_size3[2];
+	function->local_size3[0] = blockDimX;
+	function->local_size3[1] = blockDimY;
+	function->local_size3[2] = blockDimZ;
+	function->local_size = function->local_size3[0]*function->local_size3[1]*function->local_size3[2];
+	function->group_count3[0] = gridDimX;
+	function->group_count3[1] = gridDimY;
+	function->group_count3[2] = gridDimZ;
+	function->group_count = function->group_count3[0]*function->group_count3[1]*function->group_count3[2];
+        frm_grid_setup_threads(function->grid);
+        frm_grid_setup_args(function->grid);
 
-//	frm_grid_free(kernel->grid);
+	//frm_grid_run(function->grid);
 
 	return 0;
 }

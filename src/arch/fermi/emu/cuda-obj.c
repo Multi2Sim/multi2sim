@@ -342,9 +342,3 @@ void frm_cuda_function_arg_free(struct frm_cuda_function_arg_t *arg)
 	free(arg);
 }
 
-
-/* Extract and analyze information from the program binary associated with 'function_name' */
-void frm_cuda_function_load(struct frm_cuda_function_t *function, char *function_name)
-{
-}
-
