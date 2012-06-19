@@ -91,7 +91,7 @@ uint32_t evg_opencl_platform_get_info(struct evg_opencl_platform_t *platform, ui
 	default:
 		info = NULL;
 		fatal("opencl_platform_get_info: invalid value for 'name' (0x%x)\n%s",
-			name, err_evg_opencl_param_note);
+			name, evg_err_opencl_param_note);
 	}
 
 	/* Write to memory and return size */

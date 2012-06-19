@@ -4992,7 +4992,7 @@ static int x86_sys_opencl_impl(void)
 
 	if (x86_emu->gpu_emulator == gpu_emulator_evg)
 	{
-		unsigned int evg_args[EVG_OPENCL_MAX_ARGS];
+		int evg_argv[EVG_OPENCL_MAX_ARGS];
 
 		/* Check 'func_code' range */
 		if (func_code < EVG_OPENCL_FUNC_FIRST || func_code > EVG_OPENCL_FUNC_LAST)
@@ -5006,13 +5006,13 @@ static int x86_sys_opencl_impl(void)
 
 		/* Read function args */
 		assert(func_argc <= EVG_OPENCL_MAX_ARGS);
-		mem_read(x86_isa_mem, args_ptr, func_argc * 4, evg_args);
+		mem_read(x86_isa_mem, args_ptr, func_argc * 4, evg_argv);
 		for (i = 0; i < func_argc; i++)
-			x86_sys_debug("    args[%d] = %d (0x%x)\n",
-				i, evg_args[i], evg_args[i]);
+			x86_sys_debug("    argv[%d] = %d (0x%x)\n",
+				i, evg_argv[i], evg_argv[i]);
 
 		/* Run OpenCL function */
-		return evg_opencl_func_run(func_code, evg_args);
+		return evg_opencl_func_run(func_code, evg_argv);
 	}
 	else if (x86_emu->gpu_emulator == gpu_emulator_si)
 	{

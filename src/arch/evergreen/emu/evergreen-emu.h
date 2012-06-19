@@ -171,23 +171,12 @@ extern int evg_opencl_debug_category;
 /* Some constants */
 #define EVG_OPENCL_FUNC_FIRST  1000
 #define EVG_OPENCL_FUNC_LAST  1073
+#define EVG_OPENCL_FUNC_COUNT  (EVG_OPENCL_FUNC_LAST - EVG_OPENCL_FUNC_FIRST + 1)
 #define EVG_OPENCL_MAX_ARGS  14
 
-/* An enumeration of the OpenCL functions */
-enum evg_opencl_func_t
-{
-#define DEF_OPENCL_FUNC(_name, _argc) EVG_OPENCL_FUNC_##_name,
-#include "opencl.dat"
-#undef DEF_OPENCL_FUNC
-	EVG_OPENCL_FUNC_COUNT
-};
-
-/* List of OpenCL functions and number of arguments */
-extern char *evg_opencl_func_names[];
-extern int evg_opencl_func_argc[];
-
 /* Execute OpenCL call */
-int evg_opencl_func_run(int code, unsigned int *args);
+int evg_opencl_func_run(int code, int *argv);
+
 
 
 
@@ -1155,17 +1144,17 @@ extern int evg_isa_debug_category;
 
 
 /* Macros for unsupported parameters */
-extern char *err_evg_isa_note;
+extern char *evg_err_isa_note;
 
 #define EVG_ISA_ARG_NOT_SUPPORTED(p) \
 	fatal("%s: %s: not supported for '" #p "' = 0x%x\n%s", \
-	__FUNCTION__, evg_isa_inst->info->name, (p), err_evg_isa_note);
+	__FUNCTION__, evg_isa_inst->info->name, (p), evg_err_isa_note);
 #define EVG_ISA_ARG_NOT_SUPPORTED_NEQ(p, v) \
 	{ if ((p) != (v)) fatal("%s: %s: not supported for '" #p "' != 0x%x\n%s", \
-	__FUNCTION__, evg_isa_inst->info->name, (v), err_evg_isa_note); }
+	__FUNCTION__, evg_isa_inst->info->name, (v), evg_err_isa_note); }
 #define EVG_ISA_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: %s: not supported for '" #p "' out of range [%d:%d]\n%s", \
-	__FUNCTION__, evg_isa_inst->info->name, (min), (max), err_evg_opencl_param_note); }
+	__FUNCTION__, evg_isa_inst->info->name, (min), (max), evg_err_opencl_param_note); }
 
 
 /* Macros for fast access of instruction words */
@@ -1313,8 +1302,8 @@ extern FILE *evg_emu_report_file;
 
 extern int evg_emu_wavefront_size;
 
-extern char *err_evg_opencl_note;
-extern char *err_evg_opencl_param_note;
+extern char *evg_err_opencl_note;
+extern char *evg_err_opencl_param_note;
 
 
 extern struct evg_emu_t *evg_emu;

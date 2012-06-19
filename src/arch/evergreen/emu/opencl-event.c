@@ -85,7 +85,7 @@ uint32_t evg_opencl_event_get_profiling_info(struct evg_opencl_event_t *event, u
 
 	default:
 		fatal("%s: invalid or not implemented value for 'name' (0x%x)\n%s",
-			__FUNCTION__, name, err_evg_opencl_param_note);
+			__FUNCTION__, name, evg_err_opencl_param_note);
 	}
 	
 	/* Write to memory and return size */
