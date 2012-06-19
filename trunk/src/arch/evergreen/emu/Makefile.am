@@ -13,6 +13,17 @@ libemu_a_SOURCES = \
 	opencl.c \
 	opencl-syscall.c \
 	opencl-obj.c \
+	\
+	opencl-command-queue.c \
+	opencl-context.c \
+	opencl-device.c \
+	opencl-event.c \
+	opencl-kernel.c \
+	opencl-mem.c \
+	opencl-platform.c \
+	opencl-program.c \
+	opencl-sampler.c \
+	\
 	opengl-bin-file.c \
 	wavefront.c \
 	work-group.c \
