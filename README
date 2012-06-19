@@ -592,8 +592,17 @@ Steps to Publish a New Version Release (Administrator):
 Command to update Copyright in all files:
 ===============================================================================
 
-sources=$(find | grep \\.c$)
-sed -i "s,^ \*  Copyright.*$, *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)," $sources
+In the Multi2Sim trunk directory, run:
+$ sources=`find -regex '.*/.*\.\(c\|cpp\|h\|dat\)$'`
+$ sed -i "s,^ \*  Copyright.*$, *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)," $sources
+
+
+===============================================================================
+Command to count lines of code
+===============================================================================
+
+In the Multi2Sim trunk directory, run:
+$ wc -l `find -regex '.*/.*\.\(c\|cpp\|h\|dat\)$'`
 
 
 ===============================================================================
