@@ -229,8 +229,6 @@ struct evg_opencl_platform_t
 	uint32_t id;
 };
 
-extern struct evg_opencl_platform_t *evg_opencl_platform;
-
 struct evg_opencl_platform_t *evg_opencl_platform_create(void);
 void evg_opencl_platform_free(struct evg_opencl_platform_t *platform);
 
@@ -1235,8 +1233,10 @@ void evg_isa_done(void);
 
 struct evg_emu_t
 {
-	/* Repository of OpenCL objects */
+	/* OpenCL objects */
 	struct evg_opencl_repo_t *opencl_repo;
+	struct evg_opencl_platform_t *opencl_platform;
+	struct evg_opencl_device_t *opencl_device;
 
 	/* List of ND-Ranges */
 	struct evg_ndrange_t *ndrange_list_head;

@@ -10,8 +10,7 @@ libemu_a_SOURCES = \
 	machine.c \
 	ndrange.c \
 	opencl.dat \
-	opencl.c \
-	\
+	opencl-api.c \
 	opencl-command-queue.c \
 	opencl-context.c \
 	opencl-device.c \
@@ -22,7 +21,6 @@ libemu_a_SOURCES = \
 	opencl-program.c \
 	opencl-repo.c \
 	opencl-sampler.c \
-	\
 	opengl-bin-file.c \
 	wavefront.c \
 	work-group.c \
