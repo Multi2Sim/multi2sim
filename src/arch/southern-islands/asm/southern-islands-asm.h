@@ -406,8 +406,6 @@ union si_inst_microcode_t
 };
 
 
-#define SI_INST_MAX_WORDS  2
-
 struct si_inst_info_t
 {
 	enum si_inst_enum inst;

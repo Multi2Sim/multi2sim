@@ -703,8 +703,10 @@ struct si_wavefront_t
 
 	/* Statistics */
 	long long inst_count;  /* Total number of instructions */
-	long long scalar_inst_count;
-	long long vector_inst_count;
+	long long scalar_mem_inst_count;
+	long long scalar_alu_inst_count;
+	long long vector_mem_inst_count;
+	long long vector_alu_inst_count;
 	long long global_mem_inst_count;  
 	long long local_mem_inst_count;  
 
@@ -898,8 +900,10 @@ struct si_emu_t
 	/* Stats */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
 	long long inst_count;  /* Number of instructions executed by wavefronts */
-	long long scalar_inst_count;  /* Number of scalar instructions executed by wavefronts */
-	long long vector_inst_count;  /* Number of vector instructions executed by wavefronts */
+	long long scalar_alu_inst_count;  /* Number of scalar ALU instructions executed */
+	long long scalar_mem_inst_count;  /* Number of scalar memory instructions executed */
+	long long vector_alu_inst_count;  /* Number of vector ALU instructions executed */
+	long long vector_mem_inst_count;  /* Number of scalar memory instructions executed */
 };
 
 

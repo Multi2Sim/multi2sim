@@ -871,6 +871,8 @@ static void si_opencl_kernel_load_metadata(struct si_opencl_kernel_t *kernel)
 			!strcmp(line_ptrs[0], "device") ||
 			!strcmp(line_ptrs[0], "uniqueid") ||
 			!strcmp(line_ptrs[0], "uavid") ||
+			!strcmp(line_ptrs[0], "privateid") ||
+			!strcmp(line_ptrs[0], "reflection") ||
 			!strcmp(line_ptrs[0], "ARGEND"))
 			continue;
 
