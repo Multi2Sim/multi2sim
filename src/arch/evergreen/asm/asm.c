@@ -1639,11 +1639,11 @@ void evg_inst_dump(struct evg_inst_t *inst, int count, int loop_idx, FILE *f)
 
 void evg_inst_dump_debug(struct evg_inst_t *inst, int count, int loop_idx, FILE *f)
 {
-	char buf[MAX_STRING_SIZE];
-	char buf_no_spc[MAX_STRING_SIZE];
+	char buf[MAX_LONG_STRING_SIZE];
+	char buf_no_spc[MAX_LONG_STRING_SIZE];
 
-	evg_inst_dump_buf(inst, -1, 0, buf, MAX_STRING_SIZE);
-	str_single_spaces(buf_no_spc, buf, sizeof(buf_no_spc));
+	evg_inst_dump_buf(inst, -1, 0, buf, sizeof buf);
+	str_single_spaces(buf_no_spc, buf, sizeof buf_no_spc);
 	if (count >= 0)
 		fprintf(f, "cnt=%d ", count);
 	if (loop_idx >= 0)
@@ -1682,8 +1682,8 @@ void evg_alu_group_dump_buf(struct evg_alu_group_t *alu_group, char *buf, int si
 {
 	struct evg_inst_t *inst;
 
-	char str[MAX_STRING_SIZE];
-	char str_trimmed[MAX_STRING_SIZE];
+	char str[MAX_LONG_STRING_SIZE];
+	char str_trimmed[MAX_LONG_STRING_SIZE];
 
 	char *space;
 
@@ -1709,7 +1709,10 @@ void evg_alu_group_dump_buf(struct evg_alu_group_t *alu_group, char *buf, int si
 void evg_alu_group_dump_debug(struct evg_alu_group_t *alu_group, int count, int loop_idx, FILE *f)
 {
 	struct evg_inst_t *inst;
-	char buf[MAX_STRING_SIZE], no_spc_buf[MAX_STRING_SIZE];
+
+	char buf[MAX_LONG_STRING_SIZE];
+	char no_spc_buf[MAX_LONG_STRING_SIZE];
+
 	char *spc;
 	int i;
 
@@ -1724,8 +1727,8 @@ void evg_alu_group_dump_debug(struct evg_alu_group_t *alu_group, int count, int 
 	for (i = 0; i < alu_group->inst_count; i++)
 	{
 		inst = &alu_group->inst[i];
-		evg_inst_dump_buf(inst, -1, 0, buf, sizeof(buf));
-		str_single_spaces(no_spc_buf, buf, sizeof(no_spc_buf));
+		evg_inst_dump_buf(inst, -1, 0, buf, sizeof buf);
+		str_single_spaces(no_spc_buf, buf, sizeof no_spc_buf);
 		fprintf(f, "%sinst.%s=\"%s\"", spc, map_value(&evg_alu_map, inst->alu), no_spc_buf);
 		spc = " ";
 	}
