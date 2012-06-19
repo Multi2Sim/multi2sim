@@ -922,8 +922,10 @@ void m2s_stats_summary(void)
 		fprintf(stderr, "[ GPU ]\n");
 		fprintf(stderr, "Time = %.2f\n", sec_count);
 		fprintf(stderr, "NDRangeCount = %d\n", si_emu->ndrange_count);
-		fprintf(stderr, "Scalar Instructions = %lld\n", si_emu->scalar_inst_count);
-		fprintf(stderr, "Vector Instructions = %lld\n", si_emu->vector_inst_count);
+		fprintf(stderr, "Scalar ALU Instructions = %lld\n", si_emu->scalar_alu_inst_count);
+		fprintf(stderr, "Scalar Memory Instructions = %lld\n", si_emu->scalar_mem_inst_count);
+		fprintf(stderr, "Vector ALU Instructions = %lld\n", si_emu->vector_alu_inst_count);
+		fprintf(stderr, "Vector Memory Instructions = %lld\n", si_emu->vector_mem_inst_count);
 		fprintf(stderr, "Total Instructions = %lld\n", si_emu->inst_count);
 		fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	
