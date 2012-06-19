@@ -595,6 +595,7 @@ void operand_dump_series(char* str, int operand, int operand_end)
 	if (operand == operand_end)
 	{
 		operand_dump(str, operand);
+		return;
 	}
 
 	int str_size = MAX_OPERAND_STR_SIZE;
@@ -638,7 +639,7 @@ void operand_dump_series(char* str, int operand, int operand_end)
 	}
 	else if (operand <= 511)
 	{
-		str_printf(&pstr, &str_size, "v[%d:%d]", operand, operand_end);
+		str_printf(&pstr, &str_size, "v[%d:%d]", operand - 256, operand_end - 256);
 	}
 }
 
@@ -1362,6 +1363,29 @@ void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf
 {
 	
 	struct si_fmt_mtbuf_t *mtbuf = &inst->micro_inst.mtbuf;
+
+	int vdata_end;
+	switch(mtbuf->op)
+	{
+		case 0:
+		case 4:
+			vdata_end = mtbuf->vdata + 0;
+			break;
+		case 1:
+		case 5:
+			vdata_end = mtbuf->vdata + 1;
+			break;
+		case 2:
+		case 6:
+			vdata_end = mtbuf->vdata + 2;
+			break;
+		case 3:
+		case 7:
+			vdata_end = mtbuf->vdata + 3;
+			break;
+		default:
+			fatal("mtbuf opcode not recognized.");
+	}
 	
 	int str_size = MAX_INST_STR_SIZE;
 	char orig_inst_str[MAX_INST_STR_SIZE];
@@ -1381,9 +1405,9 @@ void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf
 
 		/* Token */
 		fmt_str++;
-		if (is_token(fmt_str, "VDATA", &token_len))
+		if (is_token(fmt_str, "SERIES_VDATA", &token_len))
 		{
-			operand_dump_vector(operand_str, mtbuf->vdata);
+			operand_dump_series_vector(operand_str, mtbuf->vdata, vdata_end);
 			str_printf(&inst_str, &str_size, "%s", operand_str);
 		}
 		else if (is_token(fmt_str, "VADDR", &token_len))
