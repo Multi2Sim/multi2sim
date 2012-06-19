@@ -34,6 +34,9 @@ struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel)
 	if (!ndrange)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* Insert in ND-Range list of Evergreen emulator */
+	DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, ndrange, ndrange);
+
 	/* Name */
 	ndrange->name = strdup(kernel->name);
 	if (!ndrange->name)
@@ -46,7 +49,11 @@ struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel)
 
 	/* Instruction histogram */
 	if (evg_emu_report_file)
+	{
 		ndrange->inst_histogram = calloc(EVG_INST_COUNT, sizeof(unsigned int));
+		if (!ndrange->inst_histogram)
+			fatal("%s: out of memory", __FUNCTION__);
+	}
 
 	/* Return */
 	return ndrange;
@@ -56,6 +63,23 @@ struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel)
 void evg_ndrange_free(struct evg_ndrange_t *ndrange)
 {
 	int i;
+
+	/* Clear task from command queue */
+	if (ndrange->command_queue && ndrange->command_queue_task)
+	{
+		evg_opencl_command_queue_complete(ndrange->command_queue,
+			ndrange->command_queue_task);
+		evg_opencl_command_queue_task_free(ndrange->command_queue_task);
+	}
+
+	/* Clear all states that affect lists. */
+	evg_ndrange_clear_status(ndrange, evg_ndrange_pending);
+	evg_ndrange_clear_status(ndrange, evg_ndrange_running);
+	evg_ndrange_clear_status(ndrange, evg_ndrange_finished);
+
+	/* Extract from ND-Range list in Evergreen emulator */
+	assert(DOUBLE_LINKED_LIST_MEMBER(evg_emu, ndrange, ndrange));
+	DOUBLE_LINKED_LIST_REMOVE(evg_emu, ndrange, ndrange);
 
 	/* Free work-groups */
 	for (i = 0; i < ndrange->work_group_count; i++)
@@ -79,6 +103,112 @@ void evg_ndrange_free(struct evg_ndrange_t *ndrange)
 	/* Free ndrange */
 	free(ndrange->name);
 	free(ndrange);
+}
+
+
+void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
+{
+	struct evg_work_group_t *work_group;
+	int work_group_id;
+	int work_item_id, last_work_item_id;
+	uint32_t branch_digest, last_branch_digest;
+	int branch_digest_count;
+	int i;
+
+	if (!f)
+		return;
+	
+	fprintf(f, "[ NDRange[%d] ]\n\n", ndrange->id);
+	fprintf(f, "Name = %s\n", ndrange->name);
+	fprintf(f, "WorkGroupFirst = %d\n", ndrange->work_group_id_first);
+	fprintf(f, "WorkGroupLast = %d\n", ndrange->work_group_id_last);
+	fprintf(f, "WorkGroupCount = %d\n", ndrange->work_group_count);
+	fprintf(f, "WaveFrontFirst = %d\n", ndrange->wavefront_id_first);
+	fprintf(f, "WaveFrontLast = %d\n", ndrange->wavefront_id_last);
+	fprintf(f, "WaveFrontCount = %d\n", ndrange->wavefront_count);
+	fprintf(f, "WorkItemFirst = %d\n", ndrange->work_item_id_first);
+	fprintf(f, "WorkItemLast = %d\n", ndrange->work_item_id_last);
+	fprintf(f, "WorkItemCount = %d\n", ndrange->work_item_count);
+
+	/* Branch digests */
+	assert(ndrange->work_item_count);
+	branch_digest_count = 0;
+	last_work_item_id = 0;
+	last_branch_digest = ndrange->work_items[0]->branch_digest;
+	for (work_item_id = 1; work_item_id <= ndrange->work_item_count; work_item_id++)
+	{
+		branch_digest = work_item_id < ndrange->work_item_count ? ndrange->work_items[work_item_id]->branch_digest : 0;
+		if (work_item_id == ndrange->work_item_count || branch_digest != last_branch_digest)
+		{
+			fprintf(f, "BranchDigest[%d] = %d %d %08x\n", branch_digest_count,
+				last_work_item_id, work_item_id - 1, last_branch_digest);
+			last_work_item_id = work_item_id;
+			last_branch_digest = branch_digest;
+			branch_digest_count++;
+		}
+	}
+	fprintf(f, "BranchDigestCount = %d\n", branch_digest_count);
+	fprintf(f, "\n");
+
+	/* Instruction histogram */
+	if (ndrange->inst_histogram)
+	{
+		for (i = 0; i < EVG_INST_COUNT; i++)
+			if (ndrange->inst_histogram[i])
+				fprintf(f, "InstHistogram[%s] = %u\n",
+					evg_inst_info[i].name,
+					ndrange->inst_histogram[i]);
+		fprintf(f, "\n");
+	}
+
+	/* Work-groups */
+	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
+	{
+		work_group = ndrange->work_groups[work_group_id];
+		evg_work_group_dump(work_group, f);
+	}
+}
+
+
+int evg_ndrange_get_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_status_t status)
+{
+	return (ndrange->status & status) > 0;
+}
+
+
+void evg_ndrange_set_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_status_t status)
+{
+	/* Get only the new bits */
+	status &= ~ndrange->status;
+
+	/* Add ND-Range to lists */
+	if (status & evg_ndrange_pending)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, pending_ndrange, ndrange);
+	if (status & evg_ndrange_running)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, running_ndrange, ndrange);
+	if (status & evg_ndrange_finished)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, finished_ndrange, ndrange);
+
+	/* Update it */
+	ndrange->status |= status;
+}
+
+
+void evg_ndrange_clear_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_status_t status)
+{
+	/* Get only the bits that are set */
+	status &= ndrange->status;
+
+	/* Remove ND-Range from lists */
+	if (status & evg_ndrange_pending)
+		DOUBLE_LINKED_LIST_REMOVE(evg_emu, pending_ndrange, ndrange);
+	if (status & evg_ndrange_running)
+		DOUBLE_LINKED_LIST_REMOVE(evg_emu, running_ndrange, ndrange);
+	if (status & evg_ndrange_finished)
+		DOUBLE_LINKED_LIST_REMOVE(evg_emu, finished_ndrange, ndrange);
+
+	/* Update status */
+	ndrange->status &= ~status;
 }
 
 
@@ -489,130 +619,3 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 	}
 }
 
-
-void evg_ndrange_run(struct evg_ndrange_t *ndrange)
-{
-	struct evg_work_group_t *work_group, *work_group_next;
-	struct evg_wavefront_t *wavefront, *wavefront_next;
-	uint64_t cycle = 0;
-
-	/* Set all ready work-groups to running */
-	while ((work_group = ndrange->pending_list_head))
-	{
-		evg_work_group_clear_status(work_group, evg_work_group_pending);
-		evg_work_group_set_status(work_group, evg_work_group_running);
-	}
-
-	/* Start GPU timer */
-	evg_emu_timer_start();
-
-	/* Execution loop */
-	while (ndrange->running_list_head)
-	{
-		/* Stop if maximum number of GPU cycles exceeded */
-		if (evg_emu_max_cycles && cycle >= evg_emu_max_cycles)
-			x86_emu_finish = x86_emu_finish_max_gpu_cycles;
-
-		/* Stop if maximum number of GPU instructions exceeded */
-		if (evg_emu_max_inst && evg_emu->inst_count >= evg_emu_max_inst)
-			x86_emu_finish = x86_emu_finish_max_gpu_inst;
-
-		/* Stop if any reason met */
-		if (x86_emu_finish)
-			break;
-
-		/* Next cycle */
-		cycle++;
-
-		/* Execute an instruction from each work-group */
-		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next)
-		{
-			/* Save next running work-group */
-			work_group_next = work_group->running_list_next;
-
-			/* Run an instruction from each wavefront */
-			for (wavefront = work_group->running_list_head; wavefront; wavefront = wavefront_next)
-			{
-				/* Save next running wavefront */
-				wavefront_next = wavefront->running_list_next;
-
-				/* Execute instruction in wavefront */
-				evg_wavefront_execute(wavefront);
-			}
-		}
-	}
-
-	/* Stop GPU timer */
-	evg_emu_timer_stop();
-
-	/* Dump stats */
-	evg_ndrange_dump(ndrange, evg_emu_report_file);
-
-	/* Stop if maximum number of kernels reached */
-	if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
-		x86_emu_finish = x86_emu_finish_max_gpu_kernels;
-}
-
-
-void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f)
-{
-	struct evg_work_group_t *work_group;
-	int work_group_id;
-	int work_item_id, last_work_item_id;
-	uint32_t branch_digest, last_branch_digest;
-	int branch_digest_count;
-	int i;
-
-	if (!f)
-		return;
-	
-	fprintf(f, "[ NDRange[%d] ]\n\n", ndrange->id);
-	fprintf(f, "Name = %s\n", ndrange->name);
-	fprintf(f, "WorkGroupFirst = %d\n", ndrange->work_group_id_first);
-	fprintf(f, "WorkGroupLast = %d\n", ndrange->work_group_id_last);
-	fprintf(f, "WorkGroupCount = %d\n", ndrange->work_group_count);
-	fprintf(f, "WaveFrontFirst = %d\n", ndrange->wavefront_id_first);
-	fprintf(f, "WaveFrontLast = %d\n", ndrange->wavefront_id_last);
-	fprintf(f, "WaveFrontCount = %d\n", ndrange->wavefront_count);
-	fprintf(f, "WorkItemFirst = %d\n", ndrange->work_item_id_first);
-	fprintf(f, "WorkItemLast = %d\n", ndrange->work_item_id_last);
-	fprintf(f, "WorkItemCount = %d\n", ndrange->work_item_count);
-
-	/* Branch digests */
-	assert(ndrange->work_item_count);
-	branch_digest_count = 0;
-	last_work_item_id = 0;
-	last_branch_digest = ndrange->work_items[0]->branch_digest;
-	for (work_item_id = 1; work_item_id <= ndrange->work_item_count; work_item_id++)
-	{
-		branch_digest = work_item_id < ndrange->work_item_count ? ndrange->work_items[work_item_id]->branch_digest : 0;
-		if (work_item_id == ndrange->work_item_count || branch_digest != last_branch_digest)
-		{
-			fprintf(f, "BranchDigest[%d] = %d %d %08x\n", branch_digest_count,
-				last_work_item_id, work_item_id - 1, last_branch_digest);
-			last_work_item_id = work_item_id;
-			last_branch_digest = branch_digest;
-			branch_digest_count++;
-		}
-	}
-	fprintf(f, "BranchDigestCount = %d\n", branch_digest_count);
-	fprintf(f, "\n");
-
-	/* Instruction histogram */
-	if (ndrange->inst_histogram)
-	{
-		for (i = 0; i < EVG_INST_COUNT; i++)
-			if (ndrange->inst_histogram[i])
-				fprintf(f, "InstHistogram[%s] = %u\n",
-					evg_inst_info[i].name,
-					ndrange->inst_histogram[i]);
-		fprintf(f, "\n");
-	}
-
-	/* Work-groups */
-	EVG_FOR_EACH_WORK_GROUP_IN_NDRANGE(ndrange, work_group_id)
-	{
-		work_group = ndrange->work_groups[work_group_id];
-		evg_work_group_dump(work_group, f);
-	}
-}

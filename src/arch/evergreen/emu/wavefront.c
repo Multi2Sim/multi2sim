@@ -470,6 +470,15 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 			assert(!DOUBLE_LINKED_LIST_MEMBER(ndrange, finished, evg_isa_work_group));
 			evg_work_group_clear_status(evg_isa_work_group, evg_work_group_running);
 			evg_work_group_set_status(evg_isa_work_group, evg_work_group_finished);
+
+			/* Check if ND-Range finished kernel execution */
+			if (evg_isa_ndrange->finished_list_count == evg_isa_ndrange->work_group_count)
+			{
+				assert(DOUBLE_LINKED_LIST_MEMBER(evg_emu, running_ndrange, evg_isa_ndrange));
+				assert(!DOUBLE_LINKED_LIST_MEMBER(evg_emu, finished_ndrange, evg_isa_ndrange));
+				evg_ndrange_clear_status(evg_isa_ndrange, evg_ndrange_running);
+				evg_ndrange_set_status(evg_isa_ndrange, evg_ndrange_finished);
+			}
 		}
 	}
 }

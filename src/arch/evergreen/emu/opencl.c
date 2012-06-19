@@ -1281,10 +1281,26 @@ int evg_opencl_func_run(int code, unsigned int *args)
 	/* 1052 */
 	case EVG_OPENCL_FUNC_clFinish:
 	{
-		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
+		struct evg_opencl_command_queue_t *command_queue;
+		struct linked_list_t *task_list;
 
-		evg_opencl_debug("  command_queue=0x%x\n", command_queue);
-		/* FIXME: block until command queue empty */
+		uint32_t command_queue_id = args[0];  /* cl_command_queue command_queue */
+
+		evg_opencl_debug("  command_queue=0x%x\n", command_queue_id);
+
+		/* Get list of tasks in command queue */
+		command_queue = evg_opencl_object_get(EVG_OPENCL_OBJ_COMMAND_QUEUE, command_queue_id);
+		task_list = command_queue->task_list;
+		evg_opencl_debug("\t%d task(s) enqueued\n", task_list->count);
+
+		/* If there are enqueued tasks, suspend context until command queue is empty */
+		if (task_list->count)
+		{
+			evg_opencl_debug("\tcycle %lld - context suspended\n", esim_cycle);
+			x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup,
+				command_queue);
+		}
+
 		break;
 	}
 
@@ -1629,7 +1645,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 	/* 1067 */
 	case EVG_OPENCL_FUNC_clEnqueueNDRangeKernel:
 	{
-		uint32_t command_queue = args[0];  /* cl_command_queue command_queue */
+		uint32_t command_queue_id = args[0];  /* cl_command_queue command_queue */
 		uint32_t kernel_id = args[1];  /* cl_kernel kernel */
 		uint32_t work_dim = args[2];  /* cl_uint work_dim */
 		uint32_t global_work_offset_ptr = args[3];  /* const size_t *global_work_offset */
@@ -1643,12 +1659,18 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		struct evg_opencl_event_t *event = NULL;
 		struct evg_opencl_kernel_arg_t *arg;
 		struct evg_opencl_mem_t *mem;
+
+		struct evg_opencl_command_queue_t *command_queue;
+		struct evg_opencl_command_queue_task_t *task;
+
+		struct evg_ndrange_t *ndrange;
+
 		int i;
 
 		evg_opencl_debug("  command_queue=0x%x, kernel=0x%x, work_dim=%d,\n"
 			"  global_work_offset=0x%x, global_work_size_ptr=0x%x, local_work_size_ptr=0x%x,\n"
 			"  num_events_in_wait_list=0x%x, event_wait_list=0x%x, event=0x%x\n",
-			command_queue, kernel_id, work_dim, global_work_offset_ptr, global_work_size_ptr,
+			command_queue_id, kernel_id, work_dim, global_work_offset_ptr, global_work_size_ptr,
 			local_work_size_ptr, num_events_in_wait_list, event_wait_list, event_ptr);
 		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(global_work_offset_ptr, 0);
 		EVG_OPENCL_ARG_NOT_SUPPORTED_RANGE(work_dim, 1, 3);
@@ -1758,37 +1780,30 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			evg_opencl_debug("    event: 0x%x\n", event->id);
 		}
 
-		/* FIXME: asynchronous execution */
-
 		/* Setup NDRange */
-		kernel->ndrange = evg_ndrange_create(kernel);
-		evg_ndrange_setup_work_items(kernel->ndrange);
-		evg_ndrange_setup_const_mem(kernel->ndrange);
-		evg_ndrange_setup_args(kernel->ndrange);
+		ndrange = evg_ndrange_create(kernel);
+		evg_ndrange_setup_work_items(ndrange);
+		evg_ndrange_setup_const_mem(ndrange);
+		evg_ndrange_setup_args(ndrange);
 
-		/* Launch kernel execution */
-		if (evg_emu_kind == evg_emu_functional)
-			evg_ndrange_run(kernel->ndrange);
-		else
-		{
-			/* The following function is currently the only
-			 * dependence with 'libgpuarch'. This is not safe, but
-			 * let's just include the external reference here. */
-			void evg_gpu_run(struct evg_ndrange_t *ndrange);
-			/* FIXME!!! - this will be fixed when asynchronous execution is
-			 * implemented. */
-			evg_gpu_run(kernel->ndrange);
-		}
+		/* Save in kernel */
+		kernel->ndrange = ndrange;
 
-		/* Free NDRange */
-		evg_ndrange_free(kernel->ndrange);
+		/* Set ND-Range status to 'pending'. This makes it immediately a candidate for
+		 * execution, whether we have functional or detailed simulation. */
+		evg_ndrange_set_status(ndrange, evg_ndrange_pending);
 
-		/* Event */
-		if (event_ptr)
-		{
-			event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
-			event->time_end = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
-		}
+		/* Create command queue task */
+		task = evg_opencl_command_queue_task_create(evg_opencl_command_queue_task_ndrange_kernel);
+		task->u.ndrange_kernel.ndrange = ndrange;
+
+		/* Enqueue task */
+		command_queue = evg_opencl_object_get(EVG_OPENCL_OBJ_COMMAND_QUEUE, command_queue_id);
+		evg_opencl_command_queue_submit(command_queue, task);
+		ndrange->command_queue = command_queue;
+		ndrange->command_queue_task = task;
+
+		/* Done */
 		break;
 	}
 

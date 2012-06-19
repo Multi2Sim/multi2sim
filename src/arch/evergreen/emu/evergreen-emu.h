@@ -33,6 +33,7 @@
 #include <misc.h>
 
 #include <evergreen-asm.h>
+#include <mem-system.h>
 
 
 
@@ -190,7 +191,9 @@ int evg_opencl_func_run(int code, unsigned int *args);
 
 
 
-/* OpenCL objects */
+/*
+ * OpenCL objects
+ */
 
 enum evg_opencl_obj_t
 {
@@ -217,14 +220,14 @@ void evg_opencl_object_free_all(void);
 
 
 
-/* OpenCL platform */
+/*
+ * OpenCL Platform
+ */
 
 struct evg_opencl_platform_t
 {
 	uint32_t id;
 };
-
-struct mem_t;  /* Forward declaration */
 
 extern struct evg_opencl_platform_t *evg_opencl_platform;
 
@@ -237,7 +240,9 @@ uint32_t evg_opencl_platform_get_info(struct evg_opencl_platform_t *platform,
 
 
 
-/* OpenCL devices */
+/*
+ * OpenCL Device
+ */
 
 struct evg_opencl_device_t
 {
@@ -253,7 +258,9 @@ uint32_t evg_opencl_device_get_info(struct evg_opencl_device_t *device, uint32_t
 
 
 
-/* OpenCL contexts */
+/*
+ * OpenCL Context
+ */
 
 struct evg_opencl_context_t
 {
@@ -275,7 +282,37 @@ void evg_opencl_context_set_properties(struct evg_opencl_context_t *context,
 
 
 
-/* OpenCL command queue */
+
+
+
+/*
+ * OpenCL Command Queue
+ */
+
+/* Forward declaration of x86 context used below in callback function. This
+ * dependence would be removed if OpenCL API implementation was in 'arch/x86/emu'
+ * instead. Is this a better option? */
+struct x86_ctx_t;
+
+enum evg_opencl_command_queue_task_type_t
+{
+	evg_opencl_command_queue_task_invalid,
+	evg_opencl_command_queue_task_read_buffer,
+	evg_opencl_command_queue_task_write_buffer,
+	evg_opencl_command_queue_task_ndrange_kernel
+};
+
+struct evg_opencl_command_queue_task_t
+{
+	enum evg_opencl_command_queue_task_type_t type;
+	union
+	{
+		struct
+		{
+			struct evg_ndrange_t *ndrange;
+		} ndrange_kernel;
+	} u;
+};
 
 struct evg_opencl_command_queue_t
 {
@@ -285,15 +322,31 @@ struct evg_opencl_command_queue_t
 	uint32_t device_id;
 	uint32_t context_id;
 	uint32_t properties;
+
+	struct linked_list_t *task_list;
 };
 
 struct evg_opencl_command_queue_t *evg_opencl_command_queue_create(void);
 void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_queue);
 
+struct evg_opencl_command_queue_task_t *evg_opencl_command_queue_task_create(enum
+	evg_opencl_command_queue_task_type_t type);
+void evg_opencl_command_queue_task_free(struct evg_opencl_command_queue_task_t *task);
+
+void evg_opencl_command_queue_submit(struct evg_opencl_command_queue_t *command_queue,
+	struct evg_opencl_command_queue_task_t *task);
+void evg_opencl_command_queue_complete(struct evg_opencl_command_queue_t *command_queue,
+	struct evg_opencl_command_queue_task_t *task);
+
+/* Callback function of type 'x86_ctx_wakeup_callback_func_t'.
+ * Argument 'data' is type-casted to 'struct evg_opencl_command_queue_t' */
+int evg_opencl_command_queue_can_wakeup(struct x86_ctx_t *ctx, void *data);
 
 
 
-/* OpenCL program */
+/*
+ * OpenCL Program
+ */
 
 struct evg_opencl_program_t
 {
@@ -320,7 +373,9 @@ void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t 
 
 
 
-/* OpenCL sampler */
+/*
+ * OpenCL Sampler
+ */
 
 struct evg_opencl_sampler_t
 {
@@ -337,7 +392,10 @@ void evg_opencl_sampler_free(struct evg_opencl_sampler_t *sampler);
 
 
 
-/* OpenCL mem */
+
+/*
+ * OpenCL Memory Object
+ */
 
 struct evg_opencl_mem_t
 {
@@ -366,7 +424,11 @@ struct evg_opencl_mem_t *evg_opencl_mem_create(void);
 void evg_opencl_mem_free(struct evg_opencl_mem_t *mem);
 
 
-/* OpenCL Image */
+
+
+/*
+ * OpenCL Image
+ */
 
 struct evg_opencl_image_format_t
 {
@@ -378,7 +440,9 @@ struct evg_opencl_image_format_t
 
 
 
-/* OpenCL kernel */
+/*
+ * OpenCL kernel
+ */
 
 enum evg_opencl_mem_scope_t
 {
@@ -480,7 +544,9 @@ uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kerne
 
 
 
-/* OpenCL Event */
+/*
+ * OpenCL Event
+ */
 
 enum evg_opencl_event_kind_t
 {
@@ -560,12 +626,12 @@ struct evg_isa_write_task_t
 	
 	/* When 'kind' == EVG_ISA_WRITE_TASK_WRITE_DEST */
 	int gpr, rel, chan, index_mode, write_mask;
-	uint32_t value;
+	unsigned int value;
 
 	/* When 'kind' == EVG_ISA_WRITE_TASK_WRITE_LDS */
-	uint32_t lds_addr;
-	uint32_t lds_value;
-        size_t   lds_value_size;
+	unsigned int lds_addr;
+	unsigned int lds_value;
+        int lds_value_size;
 
 	/* When 'kind' == GPU_ISA_WRITE_TASK_PRED_SET */
 	int cond;
@@ -577,7 +643,7 @@ extern struct repos_t *evg_isa_write_task_repos;
 
 
 /* Functions to handle deferred tasks */
-void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, size_t value_size);
+void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, int value_size);
 void evg_isa_enqueue_write_dest(uint32_t value);
 void evg_isa_enqueue_write_dest_float(float value);
 void evg_isa_enqueue_push_before(void);
@@ -588,8 +654,15 @@ void evg_isa_write_task_commit(void);
 
 
 /*
- * GPU NDRange (State of running kernel, grid of work_groups)
+ * ND-Range
  */
+
+enum evg_ndrange_status_t
+{
+	evg_ndrange_pending		= 0x0001,
+	evg_ndrange_running		= 0x0002,
+	evg_ndrange_finished		= 0x0004
+};
 
 struct evg_ndrange_t
 {
@@ -597,8 +670,18 @@ struct evg_ndrange_t
 	char *name;
 	int id;  /* Sequential ndrange ID (given by evg_emu->ndrange_count counter) */
 
+	/* Status */
+	enum evg_ndrange_status_t status;
+
+	/* Start emulation or timing simulation time (u-sec since simulation start) */
+	long long start_time;
+
 	/* OpenCL kernel associated */
 	struct evg_opencl_kernel_t *kernel;
+
+	/* Command queue and command queue task associated */
+	struct evg_opencl_command_queue_t *command_queue;
+	struct evg_opencl_command_queue_task_t *command_queue_task;
 
 	/* Pointers to work-groups, wavefronts, and work_items */
 	struct evg_work_group_t **work_groups;
@@ -622,6 +705,16 @@ struct evg_ndrange_t
 	
 	/* Size of work-groups */
 	int wavefronts_per_work_group;  /* = ceil(local_size / evg_emu_wavefront_size) */
+
+	/* List of ND-Ranges */
+	struct evg_ndrange_t *ndrange_list_prev;
+	struct evg_ndrange_t *ndrange_list_next;
+	struct evg_ndrange_t *pending_ndrange_list_prev;
+	struct evg_ndrange_t *pending_ndrange_list_next;
+	struct evg_ndrange_t *running_ndrange_list_prev;
+	struct evg_ndrange_t *running_ndrange_list_next;
+	struct evg_ndrange_t *finished_ndrange_list_prev;
+	struct evg_ndrange_t *finished_ndrange_list_next;
 
 	/* List of pending work-groups */
 	struct evg_work_group_t *pending_list_head;
@@ -657,10 +750,15 @@ struct evg_ndrange_t *evg_ndrange_create(struct evg_opencl_kernel_t *kernel);
 void evg_ndrange_free(struct evg_ndrange_t *ndrange);
 void evg_ndrange_dump(struct evg_ndrange_t *ndrange, FILE *f);
 
+int evg_ndrange_get_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_status_t status);
+void evg_ndrange_set_status(struct evg_ndrange_t *work_group, enum evg_ndrange_status_t status);
+void evg_ndrange_clear_status(struct evg_ndrange_t *work_group, enum evg_ndrange_status_t status);
+
 void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange);
 void evg_ndrange_setup_const_mem(struct evg_ndrange_t *ndrange);
 void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange);
-void evg_ndrange_run(struct evg_ndrange_t *ndrange);
+
+void evg_ndrange_finish(struct evg_ndrange_t *ndrange);
 
 
 
@@ -1133,6 +1231,30 @@ void evg_isa_done(void);
 
 struct evg_emu_t
 {
+	/* List of ND-Ranges */
+	struct evg_ndrange_t *ndrange_list_head;
+	struct evg_ndrange_t *ndrange_list_tail;
+	int ndrange_list_count;
+	int ndrange_list_max;
+
+	/* List of pending ND-Ranges */
+	struct evg_ndrange_t *pending_ndrange_list_head;
+	struct evg_ndrange_t *pending_ndrange_list_tail;
+	int pending_ndrange_list_count;
+	int pending_ndrange_list_max;
+
+	/* List of running ND-Ranges */
+	struct evg_ndrange_t *running_ndrange_list_head;
+	struct evg_ndrange_t *running_ndrange_list_tail;
+	int running_ndrange_list_count;
+	int running_ndrange_list_max;
+
+	/* List of finished ND-Ranges */
+	struct evg_ndrange_t *finished_ndrange_list_head;
+	struct evg_ndrange_t *finished_ndrange_list_tail;
+	int finished_ndrange_list_count;
+	int finished_ndrange_list_max;
+
 	/* Constant memory (constant buffers)
 	 * There are 15 constant buffers, referenced as CB0 to CB14.
 	 * Each buffer can hold up to 1024 four-component vectors.
@@ -1150,21 +1272,17 @@ struct evg_emu_t
 	struct mem_t *global_mem;
 	unsigned int global_mem_top;
 
-	/* Timer */
-	int timer_running;  /* Current timer state */
-	long long timer_start_time;  /* Last time (as per x86_emu_timer) when on */
-	long long timer_acc;  /* Accumulated time in previous on-off cycles */
-
 	/* Stats */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
 	long long inst_count;  /* Number of instructions executed by wavefronts */
+	long long ndrange_time;  /* Accumulated time in u-sec of ND-Range execution */
 };
 
 
 extern enum evg_emu_kind_t
 {
-	evg_emu_functional,
-	evg_emu_detailed
+	evg_emu_kind_functional,
+	evg_emu_kind_detailed
 } evg_emu_kind;
 
 extern long long evg_emu_max_cycles;
@@ -1186,9 +1304,7 @@ extern struct evg_emu_t *evg_emu;
 void evg_emu_init(void);
 void evg_emu_done(void);
 
-void evg_emu_timer_start(void);
-void evg_emu_timer_stop(void);
-long long evg_emu_timer(void);
+void evg_emu_run(void);
 
 void evg_emu_libopencl_redirect(char *path, int size);
 void evg_emu_libopencl_failed(int pid);

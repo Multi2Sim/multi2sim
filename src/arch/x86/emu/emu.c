@@ -32,8 +32,10 @@ long long x86_emu_max_time = 0;
 enum x86_emu_kind_t x86_emu_kind = x86_emu_kind_functional;
 
 
-/* Reason for simulation end */
-enum x86_emu_finish_t x86_emu_finish = x86_emu_finish_none;
+/* Reason for simulation end. Declared as volatile, since it is modified by
+ * a signal handler. This makes sure the variable resides in a memory location. */
+volatile enum x86_emu_finish_t x86_emu_finish = x86_emu_finish_none;
+
 struct string_map_t x86_emu_finish_map =
 {
 	9, {
@@ -719,6 +721,23 @@ void x86_emu_process_events()
 			 * 'x86_emu_host_thread_suspend' is needed. */
 			continue;
 		}
+
+		/* Context suspended in a system call using a custom wakeup check callback
+		 * function. NOTE: this is a new mechanism. It'd be nice if all other system
+		 * calls started using it. It is nicer, since it allows for a check of wakeup
+		 * conditions together with the system call itself, without having distributed
+		 * code for the implementation of a system call (e.g. 'read'). */
+		if (x86_ctx_get_status(ctx, x86_ctx_callback))
+		{
+			assert(ctx->wakeup_callback_func);
+			if (ctx->wakeup_callback_func(ctx, ctx->wakeup_callback_data))
+			{
+				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_callback);
+				ctx->wakeup_callback_func = NULL;
+				ctx->wakeup_callback_data = NULL;
+			}
+			continue;
+		}
 	}
 
 
@@ -801,81 +820,42 @@ void x86_emu_process_events()
  */
 
 
-/* Signal handler while functional simulation loop is running */
-static void x86_emu_signal_handler(int signum)
-{
-	switch (signum)
-	{
-	
-	case SIGINT:
-		if (x86_emu_finish)
-			abort();
-		x86_emu_finish = x86_emu_finish_signal;
-		fprintf(stderr, "SIGINT received\n");
-		break;
-	
-	case SIGABRT:
-		signal(SIGABRT, SIG_DFL);
-		fprintf(stderr, "Aborted\n");
-		x86_isa_dump(stderr);
-		x86_emu_dump(stderr);
-		exit(1);
-		break;
-	}
-}
-
-
-/* CPU Functional simulation loop */
+/* Run one iteration of the x86 emulation loop */
 void x86_emu_run(void)
 {
 	struct x86_ctx_t *ctx;
-	uint64_t cycle = 0;
 
-	/* Install signal handlers */
-	signal(SIGINT, &x86_emu_signal_handler);
-	signal(SIGABRT, &x86_emu_signal_handler);
+	/* Stop if all contexts finished */
+	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
+		x86_emu_finish = x86_emu_finish_ctx;
 
-	/* Functional simulation loop */
-	for (;;)
-	{
-		/* Stop if all contexts finished */
-		if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-			x86_emu_finish = x86_emu_finish_ctx;
+	/* Stop if maximum number of CPU instructions exceeded */
+	if (x86_emu_max_inst && x86_emu->inst_count >= x86_emu_max_inst)
+		x86_emu_finish = x86_emu_finish_max_cpu_inst;
 
-		/* Stop if maximum number of CPU instructions exceeded */
-		if (x86_emu_max_inst && x86_emu->inst_count >= x86_emu_max_inst)
-			x86_emu_finish = x86_emu_finish_max_cpu_inst;
+	/* Stop if maximum number of cycles exceeded */
+	if (x86_emu_max_cycles && esim_cycle >= x86_emu_max_cycles)
+		x86_emu_finish = x86_emu_finish_max_cpu_cycles;
 
-		/* Stop if maximum number of cycles exceeded */
-		if (x86_emu_max_cycles && cycle >= x86_emu_max_cycles)
-			x86_emu_finish = x86_emu_finish_max_cpu_cycles;
+	/* Stop if maximum time exceeded (check only every 8k cycles) */
+	if (x86_emu_max_time && !(esim_cycle & ((1 << 13) - 1))
+		&& x86_emu_timer() > x86_emu_max_time * 1000000)
+		x86_emu_finish = x86_emu_finish_max_time;
 
-		/* Stop if maximum time exceeded (check only every 10k cycles) */
-		if (x86_emu_max_time && !(cycle % 10000) && x86_emu_timer() > x86_emu_max_time * 1000000)
-			x86_emu_finish = x86_emu_finish_max_time;
+	/* Stop if any previous reason met */
+	if (x86_emu_finish)
+		return;
 
-		/* Stop if any previous reason met */
-		if (x86_emu_finish)
-			break;
+	/* Run an instruction from every running process */
+	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
+		x86_ctx_execute_inst(ctx);
 
-		/* Next cycle */
-		cycle++;
+	/* Free finished contexts */
+	while (x86_emu->finished_list_head)
+		x86_ctx_free(x86_emu->finished_list_head);
 
-		/* Run an instruction from every running process */
-		for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
-			x86_ctx_execute_inst(ctx);
-	
-		/* Free finished contexts */
-		while (x86_emu->finished_list_head)
-			x86_ctx_free(x86_emu->finished_list_head);
-	
-		/* Process list of suspended contexts */
-		x86_emu_process_events();
-	}
-
-	/* Restore signal handlers */
-	signal(SIGABRT, SIG_DFL);
-	signal(SIGINT, SIG_DFL);
+	/* Process list of suspended contexts */
+	x86_emu_process_events();
 }
 
 

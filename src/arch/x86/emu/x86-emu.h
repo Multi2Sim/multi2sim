@@ -819,6 +819,9 @@ extern int x86_ctx_debug_category;
 /* Event scheduled periodically to dump IPC statistics for a context */
 extern int EV_X86_CTX_IPC_REPORT;
 
+typedef int (*x86_ctx_wakeup_callback_func_t)(struct x86_ctx_t *ctx,
+	void *data);
+
 struct x86_ctx_t
 {
 	/* Context properties */
@@ -885,6 +888,11 @@ struct x86_ctx_t
 	unsigned int wakeup_futex_bitset;  /* Bit mask for selective futex wakeup */
 	long long wakeup_futex_sleep;  /* Assignment from x86_emu->futex_sleep_count */
 
+	/* Generic callback function (and data to pass to it) to call when a
+	 * context gets suspended in a system call. */
+	x86_ctx_wakeup_callback_func_t wakeup_callback_func;
+	void *wakeup_callback_data;
+
 	/* Links to contexts forming a linked list. */
 	struct x86_ctx_t *context_list_next, *context_list_prev;
 	struct x86_ctx_t *running_list_next, *running_list_prev;
@@ -929,7 +937,7 @@ enum x86_ctx_status_t
 	x86_ctx_zombie       = 0x02000,  /* zombie context */
 	x86_ctx_futex        = 0x04000,  /* suspended in a futex */
 	x86_ctx_alloc        = 0x08000,  /* allocated to a core/thread */
-	x86_ctx_gpu          = 0x10000,  /* running a GPU kernel */
+	x86_ctx_callback     = 0x10000,  /* suspended after syscall with callback */
 	x86_ctx_none         = 0x00000
 };
 
@@ -946,6 +954,9 @@ void __x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx);
 void x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx);
 void __x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx);
 void x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx);
+
+void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_wakeup_callback_func_t wakeup_callback_func,
+	void *wakeup_callback_data);
 
 void x86_ctx_finish(struct x86_ctx_t *ctx, int status);
 void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status);
@@ -1061,7 +1072,7 @@ int x86_emu_list_member(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
 /* Reason for simulation end */
 extern struct string_map_t x86_emu_finish_map;
 
-extern enum x86_emu_finish_t
+extern volatile enum x86_emu_finish_t
 {
 	x86_emu_finish_none,  /* Simulation not finished */
 	x86_emu_finish_ctx,  /* Contexts finished */
