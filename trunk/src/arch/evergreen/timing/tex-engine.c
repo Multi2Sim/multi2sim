@@ -41,8 +41,8 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	struct evg_work_item_t *work_item;
 	int work_item_id;
 
-	char str[MAX_STRING_SIZE];
-	char str_trimmed[MAX_STRING_SIZE];
+	char str[MAX_LONG_STRING_SIZE];
+	char str_trimmed[MAX_LONG_STRING_SIZE];
 
 	/* Get wavefront to fetch from */
 	linked_list_head(pending_queue);
@@ -111,8 +111,8 @@ static void evg_tex_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Trace */
 	if (evg_tracing())
 	{
-		evg_inst_dump_buf(inst, inst_num, 0, str, MAX_STRING_SIZE);
-		str_single_spaces(str_trimmed, str, MAX_STRING_SIZE);
+		evg_inst_dump_buf(inst, inst_num, 0, str, sizeof str);
+		str_single_spaces(str_trimmed, str, sizeof str_trimmed);
 		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"tex\" stg=\"tex-fe\" asm=\"%s\"\n",
 			uop->id_in_compute_unit, compute_unit->id, uop->work_group->id,
 			wavefront->id, str_trimmed);

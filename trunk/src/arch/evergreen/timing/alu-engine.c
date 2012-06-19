@@ -136,9 +136,7 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 		DOUBLE_LINKED_LIST_INSERT_TAIL(producer, dep, uop);
 	}
 	else
-	{
 		uop->ready = 1;
-	}
 
 	/* Record output dependences of current instruction in 'producers' array. */
 	for (i = 0; i < uop->odep_count; i++)
@@ -160,7 +158,7 @@ static void evg_alu_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Trace */
 	if (evg_tracing())
 	{
-		char str_inst[MAX_STRING_SIZE];
+		char str_inst[MAX_LONG_STRING_SIZE];
 
 		evg_alu_group_dump_buf(&wavefront->alu_group, str_inst, sizeof str_inst);
 		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"alu\" stg=\"alu-fe\" %s\n",
