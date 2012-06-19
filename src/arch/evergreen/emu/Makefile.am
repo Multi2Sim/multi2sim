@@ -11,7 +11,6 @@ libemu_a_SOURCES = \
 	ndrange.c \
 	opencl.dat \
 	opencl.c \
-	opencl-syscall.c \
 	\
 	opencl-command-queue.c \
 	opencl-context.c \

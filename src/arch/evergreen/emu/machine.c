@@ -24,13 +24,13 @@
 #include <x86-emu.h>
 
 
-char *err_evg_isa_note =
+char *evg_err_isa_note =
 	"\tThe AMD Evergreen instruction set is partially supported by Multi2Sim. If\n"
 	"\tyour program is using an unimplemented instruction, please email\n"
 	"\t'development@multi2sim.org' to request support for it.\n";
 
 #define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
-	evg_isa_inst->info->name, err_evg_isa_note)
+	evg_isa_inst->info->name, evg_err_isa_note)
 
 
 /*
