@@ -30,8 +30,8 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	struct evg_ndrange_t *ndrange = evg_gpu->ndrange;
 	struct evg_wavefront_t *wavefront;
 
-	char str[MAX_STRING_SIZE];
-	char str_trimmed[MAX_STRING_SIZE];
+	char str[MAX_LONG_STRING_SIZE];
+	char str_trimmed[MAX_LONG_STRING_SIZE];
 
 	struct evg_inst_t *inst;
 
@@ -108,8 +108,8 @@ static void evg_cf_engine_fetch(struct evg_compute_unit_t *compute_unit)
 	/* Trace */
 	if (evg_tracing())
 	{
-		evg_inst_dump_buf(inst, -1, 0, str, MAX_STRING_SIZE);
-		str_single_spaces(str_trimmed, str, MAX_STRING_SIZE);
+		evg_inst_dump_buf(inst, -1, 0, str, sizeof str);
+		str_single_spaces(str_trimmed, str, sizeof str_trimmed);
 		evg_trace("evg.new_inst id=%lld cu=%d wg=%d wf=%d cat=\"cf\" stg=\"cf-fe\" asm=\"%s\"\n",
 			uop->id_in_compute_unit, compute_unit->id, uop->work_group->id, wavefront->id, str_trimmed);
 	}
