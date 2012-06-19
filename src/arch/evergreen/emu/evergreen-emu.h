@@ -195,27 +195,38 @@ int evg_opencl_func_run(int code, unsigned int *args);
  * OpenCL objects
  */
 
-enum evg_opencl_obj_t
+enum evg_opencl_object_type_t
 {
-	EVG_OPENCL_OBJ_PLATFORM = 1,
-	EVG_OPENCL_OBJ_DEVICE,
-	EVG_OPENCL_OBJ_CONTEXT,
-	EVG_OPENCL_OBJ_COMMAND_QUEUE,
-	EVG_OPENCL_OBJ_PROGRAM,
-	EVG_OPENCL_OBJ_KERNEL,
-	EVG_OPENCL_OBJ_MEM,
-	EVG_OPENCL_OBJ_EVENT,
-	EVG_OPENCL_OBJ_SAMPLER
+	evg_opencl_object_invalid,
+	evg_opencl_object_platform,
+	evg_opencl_object_device,
+	evg_opencl_object_context,
+	evg_opencl_object_command_queue,
+	evg_opencl_object_program,
+	evg_opencl_object_kernel,
+	evg_opencl_object_mem,
+	evg_opencl_object_event,
+	evg_opencl_object_sampler
 };
 
-extern struct linked_list_t *evg_opencl_object_list;
+struct evg_opencl_repo_t;
 
-void evg_opencl_object_add(void *object);
-void evg_opencl_object_remove(void *object);
-void *evg_opencl_object_get(enum evg_opencl_obj_t type, uint32_t id);
-void *evg_opencl_object_get_type(enum evg_opencl_obj_t type);
-uint32_t evg_opencl_object_new_id(enum evg_opencl_obj_t type);
-void evg_opencl_object_free_all(void);
+struct evg_opencl_repo_t *evg_opencl_repo_create(void);
+void evg_opencl_repo_free(struct evg_opencl_repo_t *repo);
+
+void evg_opencl_repo_add_object(struct evg_opencl_repo_t *repo,
+	void *object);
+void evg_opencl_repo_remove_object(struct evg_opencl_repo_t *repo,
+	void *object);
+void *evg_opencl_repo_get_object(struct evg_opencl_repo_t *repo,
+	enum evg_opencl_object_type_t type, unsigned int object_id);
+
+void *evg_opencl_repo_get_object_of_type(struct evg_opencl_repo_t *repo,
+	enum evg_opencl_object_type_t type);
+unsigned int evg_opencl_repo_new_object_id(struct evg_opencl_repo_t *repo,
+	enum evg_opencl_object_type_t type);
+
+void evg_opencl_repo_free_all_objects(struct evg_opencl_repo_t *repo);
 
 
 
@@ -1235,6 +1246,9 @@ void evg_isa_done(void);
 
 struct evg_emu_t
 {
+	/* Repository of OpenCL objects */
+	struct evg_opencl_repo_t *opencl_repo;
+
 	/* List of ND-Ranges */
 	struct evg_ndrange_t *ndrange_list_head;
 	struct evg_ndrange_t *ndrange_list_tail;

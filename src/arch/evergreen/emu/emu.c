@@ -81,8 +81,8 @@ void evg_emu_init()
 	/* Initialize ISA (instruction execution tables...) */
 	evg_isa_init();
 
-	/* Create platform and device */
-	evg_opencl_object_list = linked_list_create();
+	/* Initialize OpenCL objects */
+	evg_emu->opencl_repo = evg_opencl_repo_create();
 	evg_opencl_platform = evg_opencl_platform_create();
 	evg_opencl_device_create();
 }
@@ -100,8 +100,8 @@ void evg_emu_done()
 		evg_ndrange_free(evg_emu->ndrange_list_head);
 
 	/* Free OpenCL objects */
-	evg_opencl_object_free_all();
-	linked_list_free(evg_opencl_object_list);
+	evg_opencl_repo_free_all_objects(evg_emu->opencl_repo);
+	evg_opencl_repo_free(evg_emu->opencl_repo);
 
 	/* Finalize disassembler */
 	evg_disasm_done();

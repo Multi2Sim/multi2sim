@@ -206,7 +206,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			platform_id, param_name, param_value_size, param_value, param_value_size_ret);
 
-		platform = evg_opencl_object_get(EVG_OPENCL_OBJ_PLATFORM, platform_id);
+		platform = evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_platform, platform_id);
 		size_ret = evg_opencl_platform_get_info(platform, param_name, x86_isa_mem, param_value, param_value_size);
 		if (param_value_size_ret)
 			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
@@ -237,8 +237,11 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			mem_write(x86_isa_mem, num_devices, 4, &one);
 
 		/* Return 'id' of the only existing device */
-		if (devices && num_entries > 0) {
-			if (!(device = (struct evg_opencl_device_t *) evg_opencl_object_get_type(EVG_OPENCL_OBJ_DEVICE)))
+		if (devices && num_entries > 0)
+		{
+			device = evg_opencl_repo_get_object_of_type(evg_emu->opencl_repo,
+				evg_opencl_object_device);
+			if (!device)
 				panic("%s: no device", err_prefix);
 			mem_write(x86_isa_mem, devices, 4, &device->id);
 		}
@@ -262,7 +265,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			device_id, param_name, param_value_size, param_value, param_value_size_ret);
 
-		device = evg_opencl_object_get(EVG_OPENCL_OBJ_DEVICE, device_id);
+		device = evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_device, device_id);
 		size_ret = evg_opencl_device_get_info(device, param_name, x86_isa_mem, param_value, param_value_size);
 		if (param_value_size_ret)
 			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
@@ -294,7 +297,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 
 		/* Read device id */
 		mem_read(x86_isa_mem, devices, 4, &device_id);
-		device = evg_opencl_object_get(EVG_OPENCL_OBJ_DEVICE, device_id);
+		device = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_device, device_id);
 		if (!device)
 			fatal("%s: invalid device\n%s", err_prefix, err_evg_opencl_param_note);
 
@@ -329,7 +333,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(pfn_notify, 0);
 
 		/* Get device */
-		device = (struct evg_opencl_device_t *) evg_opencl_object_get_type(EVG_OPENCL_OBJ_DEVICE);
+		device = evg_opencl_repo_get_object_of_type(evg_emu->opencl_repo,
+			evg_opencl_object_device);
 		assert(device);
 
 		/* Create context */
@@ -354,7 +359,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		struct evg_opencl_context_t *context;
 
 		evg_opencl_debug("  context=0x%x\n", context_id);
-		context = evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
+		context = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_context, context_id);
 		assert(context->ref_count > 0);
 		if (!--context->ref_count)
 			evg_opencl_context_free(context);
@@ -378,7 +384,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			context_id, param_name, param_value_size, param_value, param_value_size_ret);
 
-		context = evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
+		context = evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_context, context_id);
 		size_ret = evg_opencl_context_get_info(context, param_name, x86_isa_mem, param_value, param_value_size);
 		if (param_value_size_ret)
 			mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
@@ -400,8 +406,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			context_id, device_id, properties, errcode_ret);
 
 		/* Check that context and device are valid */
-		evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
-		evg_opencl_object_get(EVG_OPENCL_OBJ_DEVICE, device_id);
+		evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_context, context_id);
+		evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_device, device_id);
 
 		/* Create command queue and return id */
 		command_queue = evg_opencl_command_queue_create();
@@ -425,7 +431,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		struct evg_opencl_command_queue_t *command_queue;
 
 		evg_opencl_debug("  command_queue=0x%x\n", command_queue_id);
-		command_queue = evg_opencl_object_get(EVG_OPENCL_OBJ_COMMAND_QUEUE, command_queue_id);
+		command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_command_queue, command_queue_id);
 		assert(command_queue->ref_count > 0);
 		if (!--command_queue->ref_count)
 			evg_opencl_command_queue_free(command_queue);
@@ -833,7 +840,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		struct evg_opencl_mem_t *mem;
 
 		evg_opencl_debug("  memobj=0x%x\n", mem_id);
-		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, mem_id);
+		mem = evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_mem, mem_id);
 		assert(mem->ref_count > 0);
 		if (!--mem->ref_count)
 			evg_opencl_mem_free(mem);
@@ -871,7 +878,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 					addressing_mode);
 		}
 
-		evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context);
+		evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_context, context);
 
 		/* Create command queue and return id */
 		sampler = evg_opencl_sampler_create();
@@ -906,7 +914,7 @@ int evg_opencl_func_run(int code, unsigned int *args)
 				err_prefix, err_evg_opencl_compiler);
 
 		/* Create program */
-		evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
+		evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_context, context_id);
 		program = evg_opencl_program_create();
 		retval = program->id;
 		warning("%s: binary '%s' used as pre-compiled kernel.\n%s",
@@ -944,8 +952,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 
 		/* Get device and context */
 		mem_read(x86_isa_mem, device_list, 4, &device_id);
-		evg_opencl_object_get(EVG_OPENCL_OBJ_DEVICE, device_id);
-		evg_opencl_object_get(EVG_OPENCL_OBJ_CONTEXT, context_id);
+		evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_device, device_id);
+		evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_context, context_id);
 
 		/* Create program */
 		program = evg_opencl_program_create();
@@ -989,7 +997,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		struct evg_opencl_program_t *program;
 
 		evg_opencl_debug("  program=0x%x\n", program_id);
-		program = evg_opencl_object_get(EVG_OPENCL_OBJ_PROGRAM, program_id);
+		program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_program, program_id);
 		assert(program->ref_count > 0);
 		if (!--program->ref_count)
 			evg_opencl_program_free(program);
@@ -1025,7 +1034,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			warning("%s: clBuildProgram: option string '%s' ignored\n", __FUNCTION__, options_str);
 
 		/* Get program */
-		program = evg_opencl_object_get(EVG_OPENCL_OBJ_PROGRAM, program_id);
+		program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_program, program_id);
 		if (!program->elf_file)
 			fatal("%s: program binary must be loaded first.\n%s",
 				err_prefix, err_evg_opencl_param_note);
@@ -1056,7 +1066,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		evg_opencl_debug("    kernel_name='%s'\n", kernel_name_str);
 
 		/* Get program */
-		program = evg_opencl_object_get(EVG_OPENCL_OBJ_PROGRAM, program_id);
+		program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_program, program_id);
 
 		/* Create the kernel */
 		kernel = evg_opencl_kernel_create();
@@ -1096,7 +1107,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		struct evg_opencl_kernel_t *kernel;
 
 		evg_opencl_debug("  kernel=0x%x\n", kernel_id);
-		kernel = evg_opencl_object_get(EVG_OPENCL_OBJ_KERNEL, kernel_id);
+		kernel = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_kernel, kernel_id);
 		assert(kernel->ref_count > 0);
 		if (!--kernel->ref_count)
 			evg_opencl_kernel_free(kernel);
@@ -1119,7 +1131,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			kernel_id, arg_index, arg_size, arg_value);
 
 		/* Check */
-		kernel = evg_opencl_object_get(EVG_OPENCL_OBJ_KERNEL, kernel_id);
+		kernel = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_kernel, kernel_id);
 		if (arg_value)
 			EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(arg_size, 4);
 		if (arg_index >= list_count(kernel->arg_list))
@@ -1162,8 +1175,10 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			kernel_id, device_id, param_name, param_value_size, param_value,
 			param_value_size_ret);
 
-		kernel = evg_opencl_object_get(EVG_OPENCL_OBJ_KERNEL, kernel_id);
-		evg_opencl_object_get(EVG_OPENCL_OBJ_DEVICE, device_id);
+		kernel = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_kernel, kernel_id);
+		evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_device, device_id);
 		size_ret = evg_opencl_kernel_get_work_group_info(kernel, param_name, x86_isa_mem,
 			param_value, param_value_size);
 		if (param_value_size_ret)
@@ -1235,7 +1250,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		struct evg_opencl_event_t *event;
 
 		evg_opencl_debug("  event=0x%x\n", event_id);
-		event = evg_opencl_object_get(EVG_OPENCL_OBJ_EVENT, event_id);
+		event = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_event, event_id);
 		assert(event->ref_count > 0);
 		if (!--event->ref_count)
 			evg_opencl_event_free(event);
@@ -1259,7 +1275,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			"  param_value=0x%x, param_value_size_ret=0x%x\n",
 			event_id, param_name, param_value_size, param_value,
 			param_value_size_ret);
-		event = evg_opencl_object_get(EVG_OPENCL_OBJ_EVENT, event_id);
+		event = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_event, event_id);
 		size_ret = evg_opencl_event_get_profiling_info(event, param_name, x86_isa_mem,
 			param_value, param_value_size);
 		if (param_value_size_ret)
@@ -1289,7 +1306,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		evg_opencl_debug("  command_queue=0x%x\n", command_queue_id);
 
 		/* Get list of tasks in command queue */
-		command_queue = evg_opencl_object_get(EVG_OPENCL_OBJ_COMMAND_QUEUE, command_queue_id);
+		command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_command_queue, command_queue_id);
 		task_list = command_queue->task_list;
 		evg_opencl_debug("\t%d task(s) enqueued\n", task_list->count);
 
@@ -1333,7 +1351,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory object */
-		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, buffer);
+		mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_mem, buffer);
 
 		/* Check that device buffer storage is not exceeded */
 		if (offset + cb > mem->size)
@@ -1395,7 +1414,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory object */
-		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, buffer);
+		mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_mem, buffer);
 
 		/* Check that device buffer storage is not exceeded */
 		if (offset + cb > mem->size)
@@ -1456,8 +1476,10 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory objects */
-		src_mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, src_buffer);
-		dst_mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, dst_buffer);
+		src_mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_mem, src_buffer);
+		dst_mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_mem, dst_buffer);
 
 		/* Check that device buffer storage is not exceeded */
 		if (src_offset + cb > src_mem->size || dst_offset + cb > dst_mem->size)
@@ -1520,7 +1542,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
 
 		/* Get memory object */
-		mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, image);
+		mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_mem, image);
 
 		/* Determine image geometry */
 		/* NOTE size_t is 32-bits on 32-bit systems, but 64-bits on 64-bit systems.  Since
@@ -1619,7 +1642,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		EVG_OPENCL_ARG_NOT_SUPPORTED_EQ(blocking_map, 0);
 
 		/* Get memory object */
-		evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, buffer);
+		evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_mem, buffer);
 
 		/* Event */
 		if (event_ptr)
@@ -1678,7 +1702,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			warning("%s: event list arguments ignored", err_prefix);
 
 		/* Get kernel */
-		kernel = evg_opencl_object_get(EVG_OPENCL_OBJ_KERNEL, kernel_id);
+		kernel = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_kernel, kernel_id);
 		kernel->work_dim = work_dim;
 
 		/* Build UAV lists */
@@ -1689,7 +1714,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			/* If arg is an image, add it to the appropriate UAV list*/
 			if (arg->kind == EVG_OPENCL_KERNEL_ARG_KIND_IMAGE) 
 			{
-				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
+				mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+					evg_opencl_object_mem, arg->value);
 
 				if (arg->access_type == EVG_OPENCL_KERNEL_ARG_READ_ONLY) 
 				{
@@ -1711,7 +1737,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 			/* TODO Check if __read_only or __write_only affects uav number */
 			if(arg->mem_scope == EVG_OPENCL_MEM_SCOPE_CONSTANT) 
 			{	
-				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
+				mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+					evg_opencl_object_mem, arg->value);
 				list_set(kernel->constant_buffer_list, arg->uav, mem);
 			}
 		}
@@ -1798,7 +1825,8 @@ int evg_opencl_func_run(int code, unsigned int *args)
 		task->u.ndrange_kernel.ndrange = ndrange;
 
 		/* Enqueue task */
-		command_queue = evg_opencl_object_get(EVG_OPENCL_OBJ_COMMAND_QUEUE, command_queue_id);
+		command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_command_queue, command_queue_id);
 		evg_opencl_command_queue_submit(command_queue, task);
 		ndrange->command_queue = command_queue;
 		ndrange->command_queue_task = task;

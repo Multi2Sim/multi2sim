@@ -37,7 +37,8 @@ struct evg_opencl_kernel_t *evg_opencl_kernel_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	kernel->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_KERNEL);
+	kernel->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+		evg_opencl_object_kernel);
 	kernel->ref_count = 1;
 	kernel->arg_list = list_create();
 
@@ -55,7 +56,7 @@ struct evg_opencl_kernel_t *evg_opencl_kernel_create()
 		list_add(kernel->constant_buffer_list, NULL);
 
 	/* Return */
-	evg_opencl_object_add(kernel);
+	evg_opencl_repo_add_object(evg_emu->opencl_repo, kernel);
 	return kernel;
 }
 
@@ -79,7 +80,7 @@ void evg_opencl_kernel_free(struct evg_opencl_kernel_t *kernel)
 		evg_bin_file_free(kernel->bin_file);
 
 	/* Free kernel */
-	evg_opencl_object_remove(kernel);
+	evg_opencl_repo_remove_object(evg_emu->opencl_repo, kernel);
 	free(kernel);
 }
 
@@ -353,7 +354,8 @@ void evg_opencl_kernel_load(struct evg_opencl_kernel_t *kernel, char *kernel_nam
 
 	/* First */
 	strncpy(kernel->name, kernel_name, MAX_STRING_SIZE);
-	program = evg_opencl_object_get(EVG_OPENCL_OBJ_PROGRAM, kernel->program_id);
+	program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+		evg_opencl_object_program, kernel->program_id);
 
 	/* Read 'metadata' symbol */
 	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_metadata", kernel_name);

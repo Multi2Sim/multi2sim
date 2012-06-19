@@ -39,17 +39,18 @@ struct evg_opencl_platform_t *evg_opencl_platform_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	platform->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_PLATFORM);
+	platform->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+		evg_opencl_object_platform);
 
 	/* Return */
-	evg_opencl_object_add(platform);
+	evg_opencl_repo_add_object(evg_emu->opencl_repo, platform);
 	return platform;
 }
 
 
 void evg_opencl_platform_free(struct evg_opencl_platform_t *platform)
 {
-	evg_opencl_object_remove(platform);
+	evg_opencl_repo_remove_object(evg_emu->opencl_repo, platform);
 	free(platform);
 }
 
