@@ -497,6 +497,25 @@ void x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx)
 }
 
 
+/* Suspend a context, using the specified callback function and data to decide
+ * whether the process can wake up every time the x86 emulation events are
+ * processed. */
+void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_wakeup_callback_func_t wakeup_callback_func,
+	void *wakeup_callback_data)
+{
+	/* Checks */
+	assert(!x86_ctx_get_status(ctx, x86_ctx_suspended));
+	assert(!ctx->wakeup_callback_func);
+	assert(!ctx->wakeup_callback_data);
+
+	/* Suspend context */
+	ctx->wakeup_callback_func = wakeup_callback_func;
+	ctx->wakeup_callback_data = wakeup_callback_data;
+	x86_ctx_set_status(x86_isa_ctx, x86_ctx_suspended | x86_ctx_callback);
+	x86_emu_process_events_schedule();
+}
+
+
 /* Finish a context group. This call does a subset of action of the 'x86_ctx_finish'
  * call, but for all parent and child contexts sharing a memory map. */
 void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status)

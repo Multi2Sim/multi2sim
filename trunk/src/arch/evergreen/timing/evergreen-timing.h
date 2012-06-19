@@ -444,7 +444,7 @@ void evg_gpu_dump_report(void);
 void evg_gpu_uop_trash_add(struct evg_uop_t *uop);
 void evg_gpu_uop_trash_empty(void);
 
-void evg_gpu_run(struct evg_ndrange_t *ndrange);
+void evg_gpu_run(void);
 
 
 #endif

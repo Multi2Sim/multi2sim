@@ -606,81 +606,108 @@ void evg_gpu_uop_trash_add(struct evg_uop_t *uop)
 }
 
 
-void evg_gpu_run(struct evg_ndrange_t *ndrange)
+/* Run one iteration of the Evergreen GPU timing simulation loop. */
+void evg_gpu_run(void)
 {
+	struct evg_ndrange_t *ndrange;
+
 	struct evg_compute_unit_t *compute_unit;
 	struct evg_compute_unit_t *compute_unit_next;
 
-	/* Trace */
-	evg_trace("evg.new_ndrange "
-		"id=%d "
-		"wg_first=%d "
-		"wg_count=%d\n",
-		ndrange->id,
-		ndrange->work_group_id_first,
-		ndrange->work_group_count);
+	/* For efficiency when no Evergreen emulation is selected, exit here
+	 * if the list of existing ND-Ranges is empty. */
+	if (!evg_emu->ndrange_list_count)
+		return;
 
-	/* Initialize */
-	evg_gpu_map_ndrange(ndrange);
-	evg_calc_plot();
-	evg_emu_timer_start();
-
-	/* Execution loop */
-	for (;;)
+	/* Start one ND-Range in state 'pending' */
+	while ((ndrange = evg_emu->pending_ndrange_list_head))
 	{
-		/* Next cycle */
-		evg_gpu->cycle++;
+		/* Currently not supported for more than 1 ND-Range */
+		if (evg_gpu->ndrange)
+			fatal("%s: Evergreen GPU timing simulation not supported for multiple ND-Ranges",
+				__FUNCTION__);
 
-		/* Allocate work-groups to compute units */
-		while (evg_gpu->ready_list_head && ndrange->pending_list_head)
-			evg_compute_unit_map_work_group(evg_gpu->ready_list_head,
-				ndrange->pending_list_head);
-		
-		/* If no compute unit is busy, done */
-		if (!evg_gpu->busy_list_head)
-			break;
-		
-		/* Stop if maximum number of GPU cycles exceeded */
-		if (evg_emu_max_cycles && evg_gpu->cycle >= evg_emu_max_cycles)
-			x86_emu_finish = x86_emu_finish_max_gpu_cycles;
+		/* Set ND-Range status to 'running' */
+		evg_ndrange_clear_status(ndrange, evg_ndrange_pending);
+		evg_ndrange_set_status(ndrange, evg_ndrange_running);
 
-		/* Stop if maximum number of GPU instructions exceeded */
-		if (evg_emu_max_inst && evg_emu->inst_count >= evg_emu_max_inst)
-			x86_emu_finish = x86_emu_finish_max_gpu_inst;
+		/* Record ND-Range start time */
+		ndrange->start_time = x86_emu_timer();
 
-		/* Stop if any reason met */
-		if (x86_emu_finish)
-			break;
+		/* Trace */
+		evg_trace("evg.new_ndrange "
+			"id=%d "
+			"wg_first=%d "
+			"wg_count=%d\n",
+			ndrange->id,
+			ndrange->work_group_id_first,
+			ndrange->work_group_count);
 
-		/* Free instructions in trash */
-		evg_gpu_uop_trash_empty();
-
-		/* Advance one cycle on each busy compute unit */
-		for (compute_unit = evg_gpu->busy_list_head; compute_unit;
-			compute_unit = compute_unit_next)
-		{
-			/* Store next busy compute unit, since this can change
-			 * during 'evg_compute_unit_run' */
-			compute_unit_next = compute_unit->busy_list_next;
-
-			/* Run one cycle */
-			evg_compute_unit_run(compute_unit);
-		}
-
-		/* GPU-REL: insert stack faults */
-		evg_faults_insert();
-		
-		/* Event-driven module */
-		esim_process_events();
+		/* Map ND-Range to GPU */
+		evg_gpu_map_ndrange(ndrange);
+		evg_calc_plot();
 	}
 
-	/* Finalize */
+	/* Mapped ND-Range */
+	ndrange = evg_gpu->ndrange;
+	assert(ndrange);
+
+	/* Allocate work-groups to compute units */
+	while (evg_gpu->ready_list_head && ndrange->pending_list_head)
+		evg_compute_unit_map_work_group(evg_gpu->ready_list_head,
+			ndrange->pending_list_head);
+
+	/* One more cycle */
+	evg_gpu->cycle++;
+
+	/* Stop if maximum number of GPU cycles exceeded */
+	if (evg_emu_max_cycles && evg_gpu->cycle >= evg_emu_max_cycles)
+		x86_emu_finish = x86_emu_finish_max_gpu_cycles;
+
+	/* Stop if maximum number of GPU instructions exceeded */
+	if (evg_emu_max_inst && evg_emu->inst_count >= evg_emu_max_inst)
+		x86_emu_finish = x86_emu_finish_max_gpu_inst;
+
+	/* Stop if any reason met */
+	if (x86_emu_finish)
+		return;
+
+	/* Free instructions in trash */
 	evg_gpu_uop_trash_empty();
-	evg_emu_timer_stop();
-	evg_gpu_unmap_ndrange();
 
-	/* Stop if maximum number of kernels reached */
-	if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
-		x86_emu_finish = x86_emu_finish_max_gpu_kernels;
+	/* Run one loop iteration on each busy compute unit */
+	for (compute_unit = evg_gpu->busy_list_head; compute_unit;
+		compute_unit = compute_unit_next)
+	{
+		/* Store next busy compute unit, since this can change
+		 * during the compute unit simulation loop iteration. */
+		compute_unit_next = compute_unit->busy_list_next;
+
+		/* Run one cycle */
+		evg_compute_unit_run(compute_unit);
+	}
+
+	/* GPU-REL: insert stack faults */
+	evg_faults_insert();
+
+	/* If ND-Range finished execution in all compute units, free it. */
+	if (!evg_gpu->busy_list_count)
+	{
+		/* Dump ND-Range report */
+		evg_ndrange_dump(ndrange, evg_emu_report_file);
+
+		/* Stop if maximum number of kernels reached */
+		if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
+			x86_emu_finish = x86_emu_finish_max_gpu_kernels;
+
+		/* Accumulate ND-Range execution time */
+		/* FIXME: doesn't work for several ND-Ranges. Replace with new timer system */
+		evg_emu->ndrange_time += x86_emu_timer() - ndrange->start_time;
+
+		/* Finalize and free ND-Range */
+		assert(evg_ndrange_get_status(ndrange, evg_ndrange_finished));
+		evg_gpu_uop_trash_empty();
+		evg_gpu_unmap_ndrange();
+		evg_ndrange_free(ndrange);
+	}
 }
-
