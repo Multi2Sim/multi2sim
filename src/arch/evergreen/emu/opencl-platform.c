@@ -26,9 +26,6 @@
 #include <x86-emu.h>
 
 
-struct evg_opencl_platform_t *evg_opencl_platform;
-
-
 struct evg_opencl_platform_t *evg_opencl_platform_create()
 {
 	struct evg_opencl_platform_t *platform;

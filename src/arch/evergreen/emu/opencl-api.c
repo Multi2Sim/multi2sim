@@ -209,7 +209,7 @@ int evg_opencl_clGetPlatformIDs_impl(int *argv)
 	if (num_platforms)
 		mem_write(x86_isa_mem, num_platforms, 4, &one);
 	if (platforms && num_entries > 0)
-		mem_write(x86_isa_mem, platforms, 4, &evg_opencl_platform->id);
+		mem_write(x86_isa_mem, platforms, 4, &evg_emu->opencl_platform->id);
 	
 	/* Return success */
 	return 0;
@@ -270,7 +270,7 @@ int evg_opencl_clGetDeviceIDs_impl(int *argv)
 		platform, device_type, num_entries);
 	evg_opencl_debug("  devices=0x%x, num_devices=%x\n",
 		devices, num_devices);
-	if (platform != evg_opencl_platform->id)
+	if (platform != evg_emu->opencl_platform->id)
 		fatal("%s: invalid platform\n%s", __FUNCTION__,
 			evg_err_opencl_param_note);
 
