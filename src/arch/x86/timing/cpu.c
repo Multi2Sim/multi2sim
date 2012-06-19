@@ -626,11 +626,11 @@ static void x86_cpu_dump_uop_report(FILE *f, long long *uop_stats, char *prefix,
 }
 
 
-static void x86_cpu_dump_report()
+static void x86_cpu_dump_report(void)
 {
 	FILE *f;
 	int core, thread;
-	uint64_t now = x86_emu_timer();
+	long long now = x86_emu_timer();
 
 	/* Open file */
 	f = open_write(x86_cpu_report_file_name);
@@ -902,7 +902,11 @@ void x86_cpu_done()
 {
 	int core;
 
+	/* Dump CPU report */
+	x86_cpu_dump_report();
+
 	/* Uop trace list */
+	x86_cpu_uop_trace_list_empty();
 	linked_list_free(x86_cpu->uop_trace_list);
 
 	/* Finalize structures */
@@ -1107,175 +1111,39 @@ void x86_cpu_run_stages()
 }
 
 
-
-static int sigusr_received;
-
-
-/* Signal handlers */
-static void x86_cpu_signal_handler(int signum)
+/* Run one iteration of the x86 timing simulation loop */
+void x86_cpu_run(void)
 {
-	switch (signum)
-	{
-	
-	case SIGINT:
-		if (x86_emu_finish)
-			abort();
-		x86_emu_finish = x86_emu_finish_signal;
-		x86_cpu_dump(stderr);
-		fprintf(stderr, "SIGINT received\n");
-		break;
-		
-	case SIGABRT:
-		signal(SIGABRT, SIG_DFL);
-		if (debug_status(x86_cpu_error_debug_category))
-			x86_cpu_dump(debug_file(x86_cpu_error_debug_category));
-		exit(1);
-		break;
-	
-	case SIGUSR2:
-		sigusr_received = 1;
-	
-	}
-}
+	/* Stop if all contexts finished */
+	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
+		x86_emu_finish = x86_emu_finish_ctx;
 
+	/* Stop if maximum number of CPU instructions exceeded */
+	if (x86_emu_max_inst && x86_cpu->inst >= x86_emu_max_inst)
+		x86_emu_finish = x86_emu_finish_max_cpu_inst;
 
-/* Dump a log of current status in a file */
-static void x86_cpu_dump_log()
-{
-	FILE *f;
-	char name[100];
-	
-	/* Dump log into file */
-	sprintf(name, "m2s.%d.%lld", (int) getpid(), x86_cpu->cycle);
-	f = fopen(name, "wt");
-	if (f)
-	{
-		x86_cpu_dump(f);
-		fclose(f);
-	}
+	/* Stop if maximum number of cycles exceeded */
+	if (x86_emu_max_cycles && x86_cpu->cycle >= x86_emu_max_cycles)
+		x86_emu_finish = x86_emu_finish_max_cpu_cycles;
 
-	/* Ready to receive new SIGUSR signals */
-	sigusr_received = 0;
-}
+	/* Stop if maximum time exceeded (check only every 10k cycles) */
+	if (x86_emu_max_time && !(x86_cpu->cycle % 10000) && x86_emu_timer() > x86_emu_max_time * 1000000)
+		x86_emu_finish = x86_emu_finish_max_time;
 
-
-/* Fast forward simulation */
-static void x86_cpu_fast_forward(long long max_inst)
-{
-	struct x86_ctx_t *ctx;
-	uint64_t inst = 0;
-
-	/* Intro message */
-	fprintf(stderr, "\n");
-	fprintf(stderr, "; Fast-forward simulation (%lld x86 instructions)\n", max_inst);
-	fprintf(stderr, "\n");
-
-	/* Functional simulation */
-	for (;;) {
-
-		/* Check finished contexts */
-		if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-			x86_emu_finish = x86_emu_finish_ctx;
-		
-		/* Stop if any previous reason met */
-		if (x86_emu_finish)
-			break;
-
-		/* Stop if maximum number of fast-forward instructions met */
-		if (inst >= max_inst)
-			break;
-
-		/* Run an instruction from every running process */
-		inst += x86_emu->running_list_count;
-		for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
-			x86_ctx_execute_inst(ctx);
-	
-		/* Free finished contexts */
-		while (x86_emu->finished_list_head)
-			x86_ctx_free(x86_emu->finished_list_head);
-	
-		/* Process list of suspended contexts */
-		x86_emu_process_events();
-	}
-
-	/* End message */
-	fprintf(stderr, "\n");
+	/* Stop if any previous reason met */
 	if (x86_emu_finish)
-		fprintf(stderr, "; Simulation finished during fast-forward simulation.\n");
-	else
-		fprintf(stderr, "; Fast-forward simulation complete - continuing detailed simulation.\n");
-	fprintf(stderr, "\n");
-}
+		return;
 
+	/* One more cycle of x86 timing simulation */
+	x86_cpu->cycle++;
 
-/* Run simulation loop */
-void x86_cpu_run()
-{
-	
-	/* Install signal handlers */
-	signal(SIGINT, &x86_cpu_signal_handler);
-	signal(SIGABRT, &x86_cpu_signal_handler);
-	signal(SIGUSR1, &x86_cpu_signal_handler);
-	signal(SIGUSR2, &x86_cpu_signal_handler);
-
-	/* Fast forward instructions */
-	if (x86_cpu_fast_forward_count)
-		x86_cpu_fast_forward(x86_cpu_fast_forward_count);
-	
-	/* Detailed simulation loop */
-	for (;;)
-	{
-		/* Stop if all contexts finished */
-		if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-			x86_emu_finish = x86_emu_finish_ctx;
-
-		/* Stop if maximum number of CPU instructions exceeded */
-		if (x86_emu_max_inst && x86_cpu->inst >= x86_emu_max_inst)
-			x86_emu_finish = x86_emu_finish_max_cpu_inst;
-
-		/* Stop if maximum number of cycles exceeded */
-		if (x86_emu_max_cycles && x86_cpu->cycle >= x86_emu_max_cycles)
-			x86_emu_finish = x86_emu_finish_max_cpu_cycles;
-
-		/* Stop if maximum time exceeded (check only every 10k cycles) */
-		if (x86_emu_max_time && !(x86_cpu->cycle % 10000) && x86_emu_timer() > x86_emu_max_time * 1000000)
-			x86_emu_finish = x86_emu_finish_max_time;
-
-		/* Stop if any previous reason met */
-		if (x86_emu_finish)
-			break;
-
-		/* Next cycle */
-		x86_cpu->cycle++;
-
-		/* Empty uop trace list. This dumps the last trace line for instructions
-		 * that were freed in the previous simulation cycle. */
-		x86_cpu_uop_trace_list_empty();
-
-		/* Processor stages */
-		x86_cpu_run_stages();
-
-		/* Process host threads generating events */
-		x86_emu_process_events();
-
-		/* Event-driven module */
-		esim_process_events();
-		
-		/* Dump log */
-		if (sigusr_received)
-			x86_cpu_dump_log();
-	}
-
-	/* Empty uop trace list */
+	/* Empty uop trace list. This dumps the last trace line for instructions
+	 * that were freed in the previous simulation cycle. */
 	x86_cpu_uop_trace_list_empty();
 
-	/* Restore signal handlers */
-	signal(SIGINT, SIG_DFL);
-	signal(SIGABRT, SIG_DFL);
-	signal(SIGUSR1, SIG_IGN);
-	signal(SIGUSR2, SIG_IGN);
-	signal(SIGALRM, SIG_IGN);
+	/* Processor stages */
+	x86_cpu_run_stages();
 
-	/* CPU report */
-	x86_cpu_dump_report();
+	/* Process host threads generating events */
+	x86_emu_process_events();
 }

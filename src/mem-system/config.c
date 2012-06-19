@@ -323,7 +323,7 @@ static void mem_config_gpu_default(struct config_t *config)
 	int compute_unit_id;
 
 	/* Not if we doing GPU functional simulation */
-	if (evg_emu_kind == evg_emu_functional)
+	if (evg_emu_kind == evg_emu_kind_functional)
 		return;
 
 	/* Cache geometry for L1 */
@@ -1218,7 +1218,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	}
 
 	/* Do not continue if we are doing GPU functional simulation */
-	if (evg_emu_kind == evg_emu_functional)
+	if (evg_emu_kind == evg_emu_kind_functional)
 		goto out;
 
 	/* Assign entry modules */
@@ -1446,7 +1446,7 @@ static void mem_config_check_disjoint(void)
 	int thread;
 
 	/* No need if we do not have both CPU and GPU detailed simulation */
-	if (x86_emu_kind == x86_emu_kind_functional || evg_emu_kind == evg_emu_functional)
+	if (x86_emu_kind == x86_emu_kind_functional || evg_emu_kind == evg_emu_kind_functional)
 		return;
 
 	/* Color CPU modules */
@@ -1547,7 +1547,7 @@ static void mem_config_calculate_mod_levels(void)
 	}
 
 	/* Check color of GPU modules */
-	if (evg_emu_kind == evg_emu_detailed)
+	if (evg_emu_kind == evg_emu_kind_detailed)
 	{
 		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
 			mem_config_set_mod_level(evg_gpu->compute_units[compute_unit_id]->global_memory, 1);

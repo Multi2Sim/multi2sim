@@ -438,7 +438,7 @@ float evg_isa_read_op_src_float(int src_idx)
  * Deferred tasks for ALU group
  */
 
-void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, size_t value_size)
+void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, int value_size)
 {
 	struct evg_isa_write_task_t *wt;
 

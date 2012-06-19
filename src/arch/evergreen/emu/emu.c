@@ -34,7 +34,7 @@ long long evg_emu_max_cycles = 0;
 long long evg_emu_max_inst = 0;
 int evg_emu_max_kernels = 0;
 
-enum evg_emu_kind_t evg_emu_kind = evg_emu_functional;
+enum evg_emu_kind_t evg_emu_kind = evg_emu_kind_functional;
 
 char *evg_emu_opencl_binary_name = "";
 char *evg_emu_report_file_name = "";
@@ -95,6 +95,10 @@ void evg_emu_done()
 	if (evg_emu_report_file)
 		fclose(evg_emu_report_file);
 
+	/* Free ND-Ranges */
+	while (evg_emu->ndrange_list_count)
+		evg_ndrange_free(evg_emu->ndrange_list_head);
+
 	/* Free OpenCL objects */
 	evg_opencl_object_free_all();
 	linked_list_free(evg_opencl_object_list);
@@ -109,32 +113,6 @@ void evg_emu_done()
 	mem_free(evg_emu->const_mem);
 	mem_free(evg_emu->global_mem);
 	free(evg_emu);
-}
-
-
-void evg_emu_timer_start(void)
-{
-	assert(!evg_emu->timer_running);
-	evg_emu->timer_start_time = x86_emu_timer();
-	evg_emu->timer_running = 1;
-}
-
-
-void evg_emu_timer_stop(void)
-{
-	assert(evg_emu->timer_running);
-	evg_emu->timer_acc += x86_emu_timer() - evg_emu->timer_start_time;
-	evg_emu->timer_running = 0;
-}
-
-
-/* Return a counter of microseconds relative to the first time the GPU started to run.
- * This counter runs only while the GPU is active, stopping and resuming after calls
- * to 'evg_emu_timer_stop()' and 'evg_emu_timer_start()', respectively. */
-long long evg_emu_timer(void)
-{
-	return evg_emu->timer_running ? x86_emu_timer() - evg_emu->timer_start_time + evg_emu->timer_acc
-		: evg_emu->timer_acc;
 }
 
 
@@ -336,4 +314,85 @@ void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 	/* End */
 	mhandle_done();
 	exit(0);
+}
+
+
+/* Run one iteration of the Evergreen GPU emulation loop */
+void evg_emu_run(void)
+{
+	struct evg_ndrange_t *ndrange;
+	struct evg_ndrange_t *ndrange_next;
+
+	struct evg_work_group_t *work_group;
+	struct evg_work_group_t *work_group_next;
+
+	struct evg_wavefront_t *wavefront;
+	struct evg_wavefront_t *wavefront_next;
+
+	/* For efficiency when no Evergreen emulation is selected, exit here
+	 * if the list of existing ND-Ranges is empty. */
+	if (!evg_emu->ndrange_list_count)
+		return;
+
+	/* Start any ND-Range in state 'pending' */
+	while ((ndrange = evg_emu->pending_ndrange_list_head))
+	{
+		/* Set all ready work-groups to running */
+		while ((work_group = ndrange->pending_list_head))
+		{
+			evg_work_group_clear_status(work_group, evg_work_group_pending);
+			evg_work_group_set_status(work_group, evg_work_group_running);
+		}
+
+		/* Set is in state 'running' */
+		evg_ndrange_clear_status(ndrange, evg_ndrange_pending);
+		evg_ndrange_set_status(ndrange, evg_ndrange_running);
+
+		/* Record starting time */
+		ndrange->start_time = x86_emu_timer();
+	}
+
+	/* Run one instruction of each wavefront in each work-group of each
+	 * ND-Range that is in status 'running'. */
+	for (ndrange = evg_emu->running_ndrange_list_head; ndrange; ndrange = ndrange_next)
+	{
+		/* Save next ND-Range in state 'running'. This is done because the state
+		 * might change during the execution of the ND-Range. */
+		ndrange_next = ndrange->running_ndrange_list_next;
+
+		/* Execute an instruction from each work-group */
+		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next)
+		{
+			/* Save next running work-group */
+			work_group_next = work_group->running_list_next;
+
+			/* Run an instruction from each wavefront */
+			for (wavefront = work_group->running_list_head; wavefront; wavefront = wavefront_next)
+			{
+				/* Save next running wavefront */
+				wavefront_next = wavefront->running_list_next;
+
+				/* Execute instruction in wavefront */
+				evg_wavefront_execute(wavefront);
+			}
+		}
+	}
+
+	/* Free ND-Ranges that finished */
+	while ((ndrange = evg_emu->finished_ndrange_list_head))
+	{
+		/* Dump ND-Range report */
+		evg_ndrange_dump(ndrange, evg_emu_report_file);
+
+		/* Stop if maximum number of kernels reached */
+		if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
+			x86_emu_finish = x86_emu_finish_max_gpu_kernels;
+
+		/* Accumulate ND-Range execution time */
+		/* FIXME: doesn't work for several ND-Ranges. Replace with new timer system */
+		evg_emu->ndrange_time += x86_emu_timer() - ndrange->start_time;
+
+		/* Extract from list of finished ND-Ranges and free */
+		evg_ndrange_free(ndrange);
+	}
 }
