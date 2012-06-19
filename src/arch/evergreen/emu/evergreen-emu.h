@@ -344,6 +344,7 @@ int evg_opencl_command_queue_can_wakeup(struct x86_ctx_t *ctx, void *data);
 
 
 
+
 /*
  * OpenCL Program
  */
@@ -369,6 +370,9 @@ void evg_opencl_program_free(struct evg_opencl_program_t *program);
 
 void evg_opencl_program_build(struct evg_opencl_program_t *program);
 void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t *program);
+
+void opencl_program_read_symbol(struct evg_opencl_program_t *program, char *symbol_name,
+	struct elf_buffer_t *buffer);
 
 
 
