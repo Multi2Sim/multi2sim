@@ -36,19 +36,20 @@ struct evg_opencl_event_t *evg_opencl_event_create(enum evg_opencl_event_kind_t 
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	event->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_EVENT);
+	event->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+		evg_opencl_object_event);
 	event->ref_count = 1;
 	event->kind = kind;
 
 	/* Return */
-	evg_opencl_object_add(event);
+	evg_opencl_repo_add_object(evg_emu->opencl_repo, event);
 	return event;
 }
 
 
 void evg_opencl_event_free(struct evg_opencl_event_t *event)
 {
-	evg_opencl_object_remove(event);
+	evg_opencl_repo_remove_object(evg_emu->opencl_repo, event);
 	free(event);
 }
 

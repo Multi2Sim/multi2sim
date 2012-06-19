@@ -4,7 +4,8 @@ AR = ar
 CC = gcc
 CFLAGS = -Wall -O3 -fPIC -m32 -I. -I$(M2S_ROOT)/src/lib/struct -I$(M2S_ROOT)/src/lib/mhandle \
 	-I$(M2S_ROOT)/src/arch/evergreen/emu -I$(M2S_ROOT)/src/lib/misc \
-	-I$(M2S_ROOT)/src/arch/evergreen/asm
+	-I$(M2S_ROOT)/src/arch/evergreen/asm -I$(M2S_ROOT)/src/mem-system \
+	-I$(M2S_ROOT)/src/network -I$(M2S_ROOT)/src/lib/esim
 
 OBJECTS = \
 	bin-file.o \

@@ -38,12 +38,13 @@ struct evg_opencl_command_queue_t *evg_opencl_command_queue_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	command_queue->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_COMMAND_QUEUE);
+	command_queue->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+		evg_opencl_object_command_queue);
 	command_queue->ref_count = 1;
 	command_queue->task_list = linked_list_create();
 
 	/* Return */
-	evg_opencl_object_add(command_queue);
+	evg_opencl_repo_add_object(evg_emu->opencl_repo, command_queue);
 	return command_queue;
 }
 
@@ -56,7 +57,7 @@ void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_qu
 		fatal("%s: freed command queue is not empty", __FUNCTION__);
 	
 	/* Free */
-	evg_opencl_object_remove(command_queue);
+	evg_opencl_repo_remove_object(evg_emu->opencl_repo, command_queue);
 	linked_list_free(command_queue->task_list);
 	free(command_queue);
 }
