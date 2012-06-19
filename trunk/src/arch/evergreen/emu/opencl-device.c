@@ -156,7 +156,7 @@ uint32_t evg_opencl_device_get_info(struct evg_opencl_device_t *device, uint32_t
 
 	default:
 		fatal("opencl_device_get_info: invalid or not implemented value for 'name' (0x%x)\n%s",
-			name, err_evg_opencl_note);
+			name, evg_err_opencl_note);
 
 	}
 

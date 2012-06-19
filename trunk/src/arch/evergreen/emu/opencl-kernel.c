@@ -117,12 +117,12 @@ void evg_opencl_kernel_arg_free(struct evg_opencl_kernel_arg_t *arg)
 #define EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(_idx) \
 	fatal("%s: meta data entry '%s', token %d: value '%s' not supported.\n%s", \
 	__FUNCTION__, line_ptrs[0], (_idx), line_ptrs[(_idx)], \
-	err_evg_opencl_kernel_metadata_note);
+	evg_err_opencl_kernel_metadata_note);
 #define EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(_idx, _str) \
 	if (strcmp(line_ptrs[(_idx)], (_str))) \
 	EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(_idx);
 
-static char *err_evg_opencl_kernel_metadata_note =
+static char *evg_err_opencl_kernel_metadata_note =
 	"\tThe kernel binary loaded by your application is a valid ELF file. In this\n"
 	"\tfile, a '.rodata' section contains specific information about the OpenCL\n"
 	"\tkernel. However, this information is only partially supported by Multi2Sim.\n"
@@ -179,7 +179,7 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 			else
 			{
 				fatal("%s: Invalid number of dimensions for OpenCL Image (%s)\n%s",
-					__FUNCTION__, line_ptrs[2], err_evg_opencl_param_note);
+					__FUNCTION__, line_ptrs[2], evg_err_opencl_param_note);
 			}
 			
 			if (!strcmp(line_ptrs[3], "RO"))
@@ -193,7 +193,7 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 			else
 			{
 				fatal("%s: Invalid memory access type for OpenCL Image (%s)\n%s",
-					__FUNCTION__, line_ptrs[3], err_evg_opencl_param_note);
+					__FUNCTION__, line_ptrs[3], evg_err_opencl_param_note);
 			}
 			arg->uav = atoi(line_ptrs[4]);
 			arg->mem_scope = EVG_OPENCL_MEM_SCOPE_GLOBAL;
@@ -421,7 +421,7 @@ uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kerne
 	case 0x11b4:  /* CL_KERNEL_PRIVATE_MEM_SIZE */
 	default:
 		fatal("%s: invalid or not implemented value for 'name' (0x%x)\n%s",
-			__FUNCTION__, name, err_evg_opencl_param_note);
+			__FUNCTION__, name, evg_err_opencl_param_note);
 	}
 	
 	/* Write to memory and return size */
