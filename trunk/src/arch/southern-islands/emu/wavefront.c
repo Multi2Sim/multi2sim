@@ -116,6 +116,9 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	extern struct si_work_item_t *si_isa_work_item;
 	extern struct si_inst_t *si_isa_inst;
 
+	char inst_dump[MAX_INST_STR_SIZE];
+	unsigned int pc;
+
 	struct si_ndrange_t *ndrange = wavefront->ndrange;
 
 	int work_item_id;
@@ -148,46 +151,260 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 
 	/* Set the current instruction */
 	si_isa_inst = &si_isa_wavefront->inst;
+	pc = si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start;
 
 	/* Execute the current instruction */
 	switch (si_isa_inst->info->fmt)
 	{
 
-	/* Scalar Memory Instructions */
+	/* Scalar ALU Instructions */
 	case SI_FMT_SOP1:
-	case SI_FMT_SOP2:
-	case SI_FMT_SOPP:
-	case SI_FMT_SMRD:
 	{
-		si_emu->scalar_inst_count++;
-		si_isa_wavefront->scalar_inst_count++;
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_sop1(si_isa_inst, pc, si_isa_wavefront->inst_buf, inst_dump, 
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->scalar_alu_inst_count++;
+		si_isa_wavefront->scalar_alu_inst_count++;
 
 		/* Only one work item executes the instruction */
-		si_isa_debug("\n");
 		si_isa_work_item = si_isa_wavefront->scalar_work_item;
 		(*si_isa_inst_func[si_isa_inst->info->inst])();
-		si_isa_debug("\n");
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+
+	case SI_FMT_SOP2:
+	{
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_sop2(si_isa_inst, pc, si_isa_wavefront->inst_buf, inst_dump, 
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->scalar_alu_inst_count++;
+		si_isa_wavefront->scalar_alu_inst_count++;
+
+		/* Only one work item executes the instruction */
+		si_isa_work_item = si_isa_wavefront->scalar_work_item;
+		(*si_isa_inst_func[si_isa_inst->info->inst])();
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+
+	case SI_FMT_SOPP:
+	{
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_sopp(si_isa_inst, pc, si_isa_wavefront->inst_buf, inst_dump, 
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->scalar_alu_inst_count++;
+		si_isa_wavefront->scalar_alu_inst_count++;
+
+		/* Only one work item executes the instruction */
+		si_isa_work_item = si_isa_wavefront->scalar_work_item;
+		(*si_isa_inst_func[si_isa_inst->info->inst])();
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+
+	/* Scalar Memory Instructions */
+	case SI_FMT_SMRD:
+	{
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_smrd(si_isa_inst, pc, si_isa_wavefront->inst_buf, inst_dump, 
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->scalar_mem_inst_count++;
+		si_isa_wavefront->scalar_mem_inst_count++;
+
+		/* Only one work item executes the instruction */
+		si_isa_work_item = si_isa_wavefront->scalar_work_item;
+		(*si_isa_inst_func[si_isa_inst->info->inst])();
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
 
 		break;
 	}
 
 	/* Vector ALU Instructions */
 	case SI_FMT_VOP2:
-	case SI_FMT_VOP1:
-	case SI_FMT_VOPC:
-	case SI_FMT_VOP3a:
-	case SI_FMT_VOP3b:
 	{
-		si_emu->vector_inst_count++;
-		si_isa_wavefront->vector_inst_count++;
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_vop2(si_isa_inst, pc, si_isa_wavefront->inst_buf, inst_dump, 
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->vector_alu_inst_count++;
+		si_isa_wavefront->vector_alu_inst_count++;
 	
-		si_isa_debug("\n");
+		/* Execute the instruction */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(si_isa_wavefront, work_item_id)
 		{
 			si_isa_work_item = ndrange->work_items[work_item_id];
 			(*si_isa_inst_func[si_isa_inst->info->inst])();
 		}
-		si_isa_debug("\n");
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+
+	case SI_FMT_VOP1:
+	{
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_vop1(si_isa_inst, pc, si_isa_wavefront->inst_buf, inst_dump, 
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->vector_alu_inst_count++;
+		si_isa_wavefront->vector_alu_inst_count++;
+	
+		/* Execute the instruction */
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(si_isa_wavefront, work_item_id)
+		{
+			si_isa_work_item = ndrange->work_items[work_item_id];
+			(*si_isa_inst_func[si_isa_inst->info->inst])();
+		}
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+
+	case SI_FMT_VOPC:
+	{
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_vopc(si_isa_inst, pc, si_isa_wavefront->inst_buf, inst_dump, 
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->vector_alu_inst_count++;
+		si_isa_wavefront->vector_alu_inst_count++;
+	
+		/* Execute the instruction */
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(si_isa_wavefront, work_item_id)
+		{
+			si_isa_work_item = ndrange->work_items[work_item_id];
+			(*si_isa_inst_func[si_isa_inst->info->inst])();
+		}
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+	
+	case SI_FMT_VOP3a:
+	{
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_vop3(si_isa_inst, pc, si_isa_wavefront->inst_buf, inst_dump, 
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->vector_alu_inst_count++;
+		si_isa_wavefront->vector_alu_inst_count++;
+	
+		/* Execute the instruction */
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(si_isa_wavefront, work_item_id)
+		{
+			si_isa_work_item = ndrange->work_items[work_item_id];
+			(*si_isa_inst_func[si_isa_inst->info->inst])();
+		}
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+
+	case SI_FMT_VOP3b:
+	{
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_vop3(si_isa_inst, pc, si_isa_wavefront->inst_buf, inst_dump, 
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->vector_alu_inst_count++;
+		si_isa_wavefront->vector_alu_inst_count++;
+	
+		/* Execute the instruction */
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(si_isa_wavefront, work_item_id)
+		{
+			si_isa_work_item = ndrange->work_items[work_item_id];
+			(*si_isa_inst_func[si_isa_inst->info->inst])();
+		}
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
 
 		break;
 	}
@@ -195,16 +412,29 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 	/* Vector Memory Instructions */
 	case SI_FMT_MTBUF:
 	{
-		si_emu->vector_inst_count++;
-		si_isa_wavefront->vector_inst_count++;
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_mtbuf(si_isa_inst, pc, si_isa_wavefront->inst_buf, inst_dump, 
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->vector_mem_inst_count++;
+		si_isa_wavefront->vector_mem_inst_count++;
 	
-		si_isa_debug("\n");
+		/* Execute the instruction */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(si_isa_wavefront, work_item_id)
 		{
 			si_isa_work_item = ndrange->work_items[work_item_id];
 			(*si_isa_inst_func[si_isa_inst->info->inst])();
 		}
-		si_isa_debug("\n");
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
 
 		break;
 	}
