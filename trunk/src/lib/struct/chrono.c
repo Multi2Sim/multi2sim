@@ -1,6 +1,6 @@
 /*
  *  Libstruct
- *  Copyright (C) 2011  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
