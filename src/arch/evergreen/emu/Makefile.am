@@ -12,7 +12,6 @@ libemu_a_SOURCES = \
 	opencl.dat \
 	opencl.c \
 	opencl-syscall.c \
-	opencl-obj.c \
 	\
 	opencl-command-queue.c \
 	opencl-context.c \
@@ -22,6 +21,7 @@ libemu_a_SOURCES = \
 	opencl-mem.c \
 	opencl-platform.c \
 	opencl-program.c \
+	opencl-repo.c \
 	opencl-sampler.c \
 	\
 	opengl-bin-file.c \
