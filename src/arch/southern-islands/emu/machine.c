@@ -151,6 +151,11 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl()
 }
 #undef INST
 
+void si_isa_S_ADD_I32_impl()
+{
+	NOT_IMPL();
+}
+
 #define INST SI_INST_SOP2
 void si_isa_S_MIN_U32_impl()
 {
@@ -316,6 +321,16 @@ void si_isa_S_LSHR_B32_impl()
 }
 #undef INST
 
+void si_isa_S_ASHR_I32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_S_MUL_I32_impl()
+{
+	NOT_IMPL();
+}
+
 #define INST SI_INST_SOPK
 void si_isa_S_MOVK_I32_impl()
 {
@@ -333,6 +348,11 @@ void si_isa_S_MOVK_I32_impl()
 	}
 }
 #undef INST
+
+void si_isa_S_ADDK_I32_impl()
+{
+	NOT_IMPL();
+}
 
 #define INST SI_INST_SOP1
 void si_isa_S_MOV_B64_impl()
@@ -410,9 +430,24 @@ void si_isa_S_CMP_EQ_I32_impl()
 }
 #undef INST
 
+void si_isa_S_CMP_LE_U32_impl()
+{
+	NOT_IMPL();
+}
+
 void si_isa_S_ENDPGM_impl()
 {
 	si_isa_wavefront->finished = 1;
+}
+
+void si_isa_S_BRANCH_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_S_CBRANCH_SCC0_impl()
+{
+	NOT_IMPL();
 }
 
 #define INST SI_INST_SOPP
@@ -506,6 +541,11 @@ void si_isa_V_CVT_I32_F32_impl()
 	}
 }
 #undef INST
+
+void si_isa_V_ADD_F32_impl()
+{
+	NOT_IMPL();
+}
 
 #define INST SI_INST_VOP2
 void si_isa_V_MUL_F32_impl()
@@ -785,6 +825,11 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
 }
 #undef INST
 
+void si_isa_T_BUFFER_LOAD_FORMAT_XYZW_impl()
+{
+	NOT_IMPL();
+}
+
 #define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
 {
@@ -833,3 +878,8 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
 	}
 }
 #undef INST
+
+void si_isa_T_BUFFER_STORE_FORMAT_XYZW_impl()
+{
+	NOT_IMPL();
+}

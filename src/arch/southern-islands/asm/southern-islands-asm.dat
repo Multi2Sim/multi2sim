@@ -1,3 +1,10 @@
+DEFINST(S_ADD_I32,
+	" s_add_i32     %SDST, %SSRC0, %SSRC1",
+	SOP2,
+	2,
+	4
+)
+
 DEFINST(S_MIN_U32,
 	" s_min_u32     %SDST, %SSRC0, %SSRC1",
 	SOP2,
@@ -40,10 +47,31 @@ DEFINST(S_LSHR_B32,
 	4
 )
 
+DEFINST(S_ASHR_I32,
+	" s_ashr_i32    %SDST, %SSRC0, %SSRC1",
+	SOP2,
+	34,
+	4
+)
+
+DEFINST(S_MUL_I32,
+	" s_mul_i32     %SDST, %SSRC0, %SSRC1",
+	SOP2,
+	38,
+	4
+)
+
 DEFINST(S_MOVK_I32,
 	" s_movk_i32    %SDST, %SIMM16",
 	SOPK,
 	0,
+	4
+)
+
+DEFINST(S_ADDK_I32,
+	" s_addk_i32    %SDST, %SIMM16",
+	SOPK,
+	15,
 	4
 )
 
@@ -68,10 +96,31 @@ DEFINST(S_CMP_EQ_I32,
 	4
 )
 
+DEFINST(S_CMP_LE_U32,
+	" s_cmp_le_u32  %SSRC0, %SSRC1",
+	SOPC,
+	11,
+	4
+)
+
 DEFINST(S_ENDPGM,
 	" s_endpgm",
 	SOPP,
 	1,
+	4
+)
+
+DEFINST(S_BRANCH,
+	" s_branch      %LABEL",
+	SOPP,
+	2,
+	4
+)
+
+DEFINST(S_CBRANCH_SCC0,
+	" s_cbranch_scc0  %LABEL",
+	SOPP,
+	4,
 	4
 )
 
@@ -173,6 +222,13 @@ DEFINST(V_CVT_I32_F32,
 	4
 )
 
+DEFINST(V_ADD_F32,
+	" v_add_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	3,
+	4
+)
+
 DEFINST(V_MUL_F32,
 	" v_mul_f32     %VDST, %SRC0, %VSRC1",
 	VOP2,
@@ -216,15 +272,29 @@ DEFINST(V_ADD_I32,
 )
 
 DEFINST(T_BUFFER_LOAD_FORMAT_X,
-	" t_buffer_load_format_x  %VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
+	" t_buffer_load_format_x  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
 	MTBUF,
 	0,
 	8
 )
 
+DEFINST(T_BUFFER_LOAD_FORMAT_XYZW,
+	" t_buffer_load_format_xyzw  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
+	MTBUF,
+	3,
+	8
+)
+
 DEFINST(T_BUFFER_STORE_FORMAT_X,
-	" t_buffer_store_format_x  %VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
+	" t_buffer_store_format_x  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
 	MTBUF,
 	4,
+	8
+)
+
+DEFINST(T_BUFFER_STORE_FORMAT_XYZW,
+	" t_buffer_store_format_xyzw  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
+	MTBUF,
+	7,
 	8
 )
