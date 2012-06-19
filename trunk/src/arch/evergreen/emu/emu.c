@@ -83,8 +83,8 @@ void evg_emu_init()
 
 	/* Initialize OpenCL objects */
 	evg_emu->opencl_repo = evg_opencl_repo_create();
-	evg_opencl_platform = evg_opencl_platform_create();
-	evg_opencl_device_create();
+	evg_emu->opencl_platform = evg_opencl_platform_create();
+	evg_emu->opencl_device = evg_opencl_device_create();
 }
 
 
