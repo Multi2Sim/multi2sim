@@ -36,18 +36,19 @@ struct evg_opencl_mem_t *evg_opencl_mem_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	mem->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_MEM);
+	mem->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+		evg_opencl_object_mem);
 	mem->ref_count = 1;
 
 	/* Return */
-	evg_opencl_object_add(mem);
+	evg_opencl_repo_add_object(evg_emu->opencl_repo, mem);
 	return mem;
 }
 
 
 void evg_opencl_mem_free(struct evg_opencl_mem_t *mem)
 {
-	evg_opencl_object_remove(mem);
+	evg_opencl_repo_remove_object(evg_emu->opencl_repo, mem);
 	free(mem);
 }
 

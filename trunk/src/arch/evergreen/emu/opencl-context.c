@@ -37,11 +37,12 @@ struct evg_opencl_context_t *evg_opencl_context_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	context->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_CONTEXT);
+	context->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+		evg_opencl_object_context);
 	context->ref_count = 1;
 
 	/* Return */
-	evg_opencl_object_add(context);
+	evg_opencl_repo_add_object(evg_emu->opencl_repo, context);
 	return context;
 }
 
@@ -49,7 +50,7 @@ struct evg_opencl_context_t *evg_opencl_context_create()
 /* Free context */
 void evg_opencl_context_free(struct evg_opencl_context_t *context)
 {
-	evg_opencl_object_remove(context);
+	evg_opencl_repo_remove_object(evg_emu->opencl_repo, context);
 	free(context);
 }
 
@@ -111,7 +112,7 @@ void evg_opencl_context_set_properties(struct evg_opencl_context_t *context, str
 
 		case 0x1084:  /* CL_CONTEXT_PLATFORM */
 			context->platform_id = value;
-			evg_opencl_object_get(EVG_OPENCL_OBJ_PLATFORM, value);
+			evg_opencl_repo_get_object(evg_emu->opencl_repo, evg_opencl_object_platform, value);
 			evg_opencl_debug("    property CL_CONTEXT_PLATFORM assigned: 0x%x\n", value);
 			break;
 

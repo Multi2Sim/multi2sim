@@ -37,10 +37,11 @@ struct evg_opencl_device_t *evg_opencl_device_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	device->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_DEVICE);
+	device->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+		evg_opencl_object_device);
 
 	/* Return */
-	evg_opencl_object_add(device);
+	evg_opencl_repo_add_object(evg_emu->opencl_repo, device);
 	return device;
 }
 
@@ -48,7 +49,7 @@ struct evg_opencl_device_t *evg_opencl_device_create()
 /* Free device */
 void evg_opencl_device_free(struct evg_opencl_device_t *device)
 {
-	evg_opencl_object_remove(device);
+	evg_opencl_repo_remove_object(evg_emu->opencl_repo, device);
 	free(device);
 }
 

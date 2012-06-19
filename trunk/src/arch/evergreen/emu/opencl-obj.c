@@ -26,65 +26,111 @@
 #include <x86-emu.h>
 
 
-/* OpenCL Objects */
-
-struct linked_list_t *evg_opencl_object_list;
-
-
-/* Add an OpenCL object to object list */
-void evg_opencl_object_add(void *object)
+struct evg_opencl_repo_t
 {
-	linked_list_find(evg_opencl_object_list, object);
-	assert(evg_opencl_object_list->error_code);
-	linked_list_add(evg_opencl_object_list, object);
+	struct linked_list_t *object_list;
+};
+
+
+struct evg_opencl_repo_t *evg_opencl_repo_create(void)
+{
+	struct evg_opencl_repo_t *repo;
+
+	/* Allocate */
+	repo = calloc(1, sizeof(struct evg_opencl_repo_t));
+	if (!repo)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	repo->object_list = linked_list_create();
+
+	/* Return */
+	return repo;
 }
 
 
-/* Remove an OpenCL object from object list */
-void evg_opencl_object_remove(void *object)
+void evg_opencl_repo_free(struct evg_opencl_repo_t *repo)
 {
-	linked_list_find(evg_opencl_object_list, object);
-	assert(!evg_opencl_object_list->error_code);
-	linked_list_remove(evg_opencl_object_list);
+	linked_list_free(repo->object_list);
+	free(repo);
 }
 
 
-/* Look for an OpenCL object in the object list. The 'id' is the
- * first field for every object. */
-void *evg_opencl_object_get(enum evg_opencl_obj_t type, uint32_t id)
+void evg_opencl_repo_add_object(struct evg_opencl_repo_t *repo,
+	void *object)
 {
+	struct linked_list_t *object_list = repo->object_list;
+
+	/* Check that object does not exist */
+	linked_list_find(object_list, object);
+	if (!object_list->error_code)
+		fatal("%s: object already exists", __FUNCTION__);
+	
+	/* Insert */
+	linked_list_add(object_list, object);
+}
+
+
+void evg_opencl_repo_remove_object(struct evg_opencl_repo_t *repo,
+	void *object)
+{
+	struct linked_list_t *object_list = repo->object_list;
+
+	/* Check that object exists */
+	linked_list_find(object_list, object);
+	if (object_list->error_code)
+		fatal("%s: object does not exist", __FUNCTION__);
+	
+	/* Remove */
+	linked_list_remove(object_list);
+}
+
+
+/* Look for an object in the repository. The first field of every OpenCL object
+ * is its identifier. */
+void *evg_opencl_repo_get_object(struct evg_opencl_repo_t *repo,
+	enum evg_opencl_object_type_t type, unsigned int object_id)
+{
+	struct linked_list_t *object_list = repo->object_list;
 	void *object;
-	uint32_t object_id;
+	unsigned int current_object_id;
 
-	if (id >> 16 != type)
+	/* Upper 16-bits represent the type of the object */
+	if (object_id >> 16 != type)
 		fatal("%s: requested OpenCL object of incorrect type",
 			__FUNCTION__);
-	LINKED_LIST_FOR_EACH(evg_opencl_object_list)
+
+	/* Search object */
+	LINKED_LIST_FOR_EACH(object_list)
 	{
-		if (!(object = linked_list_get(evg_opencl_object_list)))
-			panic("%s: empty object", __FUNCTION__);
-		object_id = * (uint32_t *) object;
-		if (object_id == id)
+		object = linked_list_get(object_list);
+		assert(object);
+		current_object_id = * (unsigned int *) object;
+		if (current_object_id == object_id)
 			return object;
 	}
+
+	/* Not found */
 	fatal("%s: requested OpenCL does not exist (id=0x%x)",
-		__FUNCTION__, id);
+		__FUNCTION__, object_id);
 	return NULL;
 }
 
 
 /* Get the oldest created OpenCL object of the specified type */
-void *evg_opencl_object_get_type(enum evg_opencl_obj_t type)
+void *evg_opencl_repo_get_object_of_type(struct evg_opencl_repo_t *repo,
+	enum evg_opencl_object_type_t type)
 {
+	struct linked_list_t *object_list = repo->object_list;
 	void *object;
 	uint32_t object_id;
 
-	/* Find object */
-	LINKED_LIST_FOR_EACH(evg_opencl_object_list)
+	/* Find object. Upper 16-bits of identifier contain its type. */
+	LINKED_LIST_FOR_EACH(object_list)
 	{
-		if (!(object = linked_list_get(evg_opencl_object_list)))
-			panic("%s: empty object", __FUNCTION__);
-		object_id = * (uint32_t *) object;
+		object = linked_list_get(object_list);
+		assert(object);
+		object_id = * (unsigned int *) object;
 		if (object_id >> 16 == type)
 			return object;
 
@@ -98,64 +144,63 @@ void *evg_opencl_object_get_type(enum evg_opencl_obj_t type)
 /* Assignment of OpenCL object identifiers
  * An identifier is a 32-bit value, whose 16 most significant bits represent the
  * object type, while the 16 least significant bits represent a unique object ID. */
-uint32_t evg_opencl_object_new_id(enum evg_opencl_obj_t type)
+unsigned int evg_opencl_repo_new_object_id(struct evg_opencl_repo_t *repo,
+	enum evg_opencl_object_type_t type)
 {
-	static uint32_t opencl_current_object_id;
-	uint32_t id;
+	static unsigned int evg_opencl_object_id_counter;
+	unsigned int object_id;
 
-	id = (type << 16) | opencl_current_object_id;
-	opencl_current_object_id++;
-	if (opencl_current_object_id > 0xffff)
-		fatal("opencl_object_new_id: too many OpenCL objects");
-	return id;
+	object_id = (type << 16) | evg_opencl_object_id_counter;
+	evg_opencl_object_id_counter++;
+	if (evg_opencl_object_id_counter > 0xffff)
+		fatal("%s: limit of OpenCL objects exceeded\n", __FUNCTION__);
+	return object_id;
 }
 
 
-/* Free all OpenCL objects in the object list */
-
-void evg_opencl_object_free_all()
+void evg_opencl_repo_free_all_objects(struct evg_opencl_repo_t *repo)
 {
 	void *object;
 
 	/* Platforms */
-	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_PLATFORM)))
+	while ((object = evg_opencl_repo_get_object_of_type(repo, evg_opencl_object_platform)))
 		evg_opencl_platform_free((struct evg_opencl_platform_t *) object);
 	
 	/* Devices */
-	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_DEVICE)))
+	while ((object = evg_opencl_repo_get_object_of_type(repo, evg_opencl_object_device)))
 		evg_opencl_device_free((struct evg_opencl_device_t *) object);
 	
 	/* Contexts */
-	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_CONTEXT)))
+	while ((object = evg_opencl_repo_get_object_of_type(repo, evg_opencl_object_context)))
 		evg_opencl_context_free((struct evg_opencl_context_t *) object);
 	
 	/* Command queues */
-	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_COMMAND_QUEUE)))
+	while ((object = evg_opencl_repo_get_object_of_type(repo, evg_opencl_object_command_queue)))
 		evg_opencl_command_queue_free((struct evg_opencl_command_queue_t *) object);
 	
 	/* Programs */
-	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_PROGRAM)))
+	while ((object = evg_opencl_repo_get_object_of_type(repo, evg_opencl_object_program)))
 		evg_opencl_program_free((struct evg_opencl_program_t *) object);
 	
 	/* Kernels */
-	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_KERNEL)))
+	while ((object = evg_opencl_repo_get_object_of_type(repo, evg_opencl_object_kernel)))
 		evg_opencl_kernel_free((struct evg_opencl_kernel_t *) object);
 	
 	/* Mems */
-	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_MEM)))
+	while ((object = evg_opencl_repo_get_object_of_type(repo, evg_opencl_object_mem)))
 		evg_opencl_mem_free((struct evg_opencl_mem_t *) object);
 	
 	/* Events */
-	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_EVENT)))
+	while ((object = evg_opencl_repo_get_object_of_type(repo, evg_opencl_object_event)))
 		evg_opencl_event_free((struct evg_opencl_event_t *) object);
 
 	/* Samplers */
-	while ((object = evg_opencl_object_get_type(EVG_OPENCL_OBJ_SAMPLER)))
+	while ((object = evg_opencl_repo_get_object_of_type(repo, evg_opencl_object_sampler)))
 		evg_opencl_sampler_free((struct evg_opencl_sampler_t *) object);
 	
 	/* Any object left */
-	if (linked_list_count(evg_opencl_object_list))
-		panic("opencl_object_free_all: objects remaining in the list");
+	if (linked_list_count(repo->object_list))
+		panic("%s: not all objects were freed", __FUNCTION__);
 	
 }
 

@@ -37,7 +37,8 @@ struct evg_opencl_program_t *evg_opencl_program_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	program->id = evg_opencl_object_new_id(EVG_OPENCL_OBJ_PROGRAM);
+	program->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
+		evg_opencl_object_program);
 	program->ref_count = 1;
 
 	/* Constant buffers encoded in ELF file */
@@ -46,7 +47,7 @@ struct evg_opencl_program_t *evg_opencl_program_create()
 		list_add(program->constant_buffer_list, NULL);
 
 	/* Return */
-	evg_opencl_object_add(program);
+	evg_opencl_repo_add_object(evg_emu->opencl_repo, program);
 	return program;
 }
 
@@ -58,7 +59,7 @@ void evg_opencl_program_free(struct evg_opencl_program_t *program)
 
 	if (program->elf_file)
 		elf_file_free(program->elf_file);
-	evg_opencl_object_remove(program);
+	evg_opencl_repo_remove_object(evg_emu->opencl_repo, program);
 	free(program);
 }
 

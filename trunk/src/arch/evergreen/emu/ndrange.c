@@ -549,7 +549,8 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 				/* Image type
 				 * Images really take up two slots, but for now we'll
 				 * just copy the pointer into both. */
-				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
+				mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+					evg_opencl_object_mem, arg->value);
 				evg_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
 				evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
 						" device_ptr=0x%x\n", i, arg->value, cb_index,
@@ -578,7 +579,8 @@ void evg_ndrange_setup_args(struct evg_ndrange_t *ndrange)
 				/* Pointer in __global scope.
 				 * Argument value is a pointer to an 'opencl_mem' object.
 				 * It is translated first into a device memory pointer. */
-				mem = evg_opencl_object_get(EVG_OPENCL_OBJ_MEM, arg->value);
+				mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+					evg_opencl_object_mem, arg->value);
 				evg_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
 				evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d]," 
 						" device_ptr=0x%x\n", i, arg->value, cb_index,
