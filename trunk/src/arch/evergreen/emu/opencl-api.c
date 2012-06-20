@@ -1558,31 +1558,46 @@ int evg_opencl_clFlush_impl(int *argv)
  * OpenCL call 'clFinish' (code 1052)
  */
 
-int evg_opencl_clFinish_impl(int *argv)
+struct evg_opencl_clFinish_args_t
 {
-	struct evg_opencl_command_queue_t *command_queue;
-	struct linked_list_t *task_list;
+	unsigned int command_queue_id;  /* cl_command_queue command_queue */
+};
 
-	unsigned int command_queue_id = argv[0];  /* cl_command_queue command_queue */
+void evg_opencl_clFinish_wakeup(struct x86_ctx_t *ctx, void *data)
+{
+	struct evg_opencl_clFinish_args_t argv;
 
-	evg_opencl_debug("  command_queue=0x%x\n", command_queue_id);
+	int code;
 
-	/* Get list of tasks in command queue */
-	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-			evg_opencl_object_command_queue, command_queue_id);
-	task_list = command_queue->command_list;
-	evg_opencl_debug("\t%d task(s) enqueued\n", task_list->count);
-
-	/* If there are enqueued tasks, suspend context until command queue is empty */
-	if (task_list->count)
-	{
-		evg_opencl_debug("\tcycle %lld - context suspended\n", esim_cycle);
-		x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup,
-				command_queue, NULL, NULL);
-	}
+	/* Read function arguments again */
+	code = evg_opencl_api_read_args(ctx, NULL, &argv, sizeof argv);
+	assert(code == 1052);
 
 	/* Return success */
+	evg_opencl_api_return(ctx, 0);
+}
+
+int evg_opencl_clFinish_impl(int *argv_ptr)
+{
+	struct evg_opencl_clFinish_args_t *argv;
+	struct evg_opencl_command_queue_t *command_queue;
+
+	/* Debug arguments */
+	argv = (struct evg_opencl_clFinish_args_t *) argv_ptr;
+	evg_opencl_debug("  command_queue=0x%x\n", argv->command_queue_id);
+
+	/* Get command queue */
+	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_command_queue, argv->command_queue_id);
+
+	/* Suspend context until command queue is empty */
+	x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+			evg_opencl_clFinish_wakeup, NULL);
+
+	/* Return value ignored by caller, since context is getting suspended.
+	 * It will be explicitly set by the wake-up call-back routine. */
 	return 0;
+
 }
 
 
