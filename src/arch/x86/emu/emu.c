@@ -722,19 +722,28 @@ void x86_emu_process_events()
 			continue;
 		}
 
-		/* Context suspended in a system call using a custom wakeup check callback
+		/* Context suspended in a system call using a custom wake up check call-back
 		 * function. NOTE: this is a new mechanism. It'd be nice if all other system
-		 * calls started using it. It is nicer, since it allows for a check of wakeup
+		 * calls started using it. It is nicer, since it allows for a check of wake up
 		 * conditions together with the system call itself, without having distributed
 		 * code for the implementation of a system call (e.g. 'read'). */
 		if (x86_ctx_get_status(ctx, x86_ctx_callback))
 		{
-			assert(ctx->wakeup_callback_func);
-			if (ctx->wakeup_callback_func(ctx, ctx->wakeup_callback_data))
+			assert(ctx->can_wakeup_callback_func);
+			if (ctx->can_wakeup_callback_func(ctx, ctx->can_wakeup_callback_data))
 			{
+				/* Set context status to 'running' again. */
 				x86_ctx_clear_status(ctx, x86_ctx_suspended | x86_ctx_callback);
+
+				/* Call wake up function */
+				if (ctx->wakeup_callback_func)
+					ctx->wakeup_callback_func(ctx, ctx->wakeup_callback_data);
+
+				/* Reset call-back info */
 				ctx->wakeup_callback_func = NULL;
 				ctx->wakeup_callback_data = NULL;
+				ctx->can_wakeup_callback_func = NULL;
+				ctx->can_wakeup_callback_data = NULL;
 			}
 			continue;
 		}
