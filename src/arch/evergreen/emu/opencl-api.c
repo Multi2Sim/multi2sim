@@ -28,10 +28,10 @@
 /* Required 'libm2s-opencl.so' version.
  * Increase this number when the user is required to download an updated release
  * of the Multi2Sim OpenCL implementation. */
-#define EVG_SYS_OPENCL_IMPL_VERSION_MAJOR		1
-#define EVG_SYS_OPENCL_IMPL_VERSION_MINOR		0
-#define EVG_SYS_OPENCL_IMPL_VERSION_BUILD		0
-#define EVG_SYS_OPENCL_IMPL_VERSION			((EVG_SYS_OPENCL_IMPL_VERSION_MAJOR << 16) | \
+#define EVG_SYS_OPENCL_IMPL_VERSION_MAJOR	1
+#define EVG_SYS_OPENCL_IMPL_VERSION_MINOR	0
+#define EVG_SYS_OPENCL_IMPL_VERSION_BUILD	0
+#define EVG_SYS_OPENCL_IMPL_VERSION		((EVG_SYS_OPENCL_IMPL_VERSION_MAJOR << 16) | \
 						(EVG_SYS_OPENCL_IMPL_VERSION_MINOR << 8) | \
 						EVG_SYS_OPENCL_IMPL_VERSION_BUILD)
 
@@ -158,22 +158,58 @@ char *evg_err_opencl_version_note =
  * Entry point for OpenCL API
  */
 
-int evg_opencl_func_run(int code, int *argv)
+int evg_opencl_api_run(void)
 {
+	int argv[EVG_OPENCL_MAX_ARGS];
+	int code;
 	int ret;
 
-	/* Check valid function code */
-	if (code < EVG_OPENCL_FUNC_FIRST || code > EVG_OPENCL_FUNC_LAST)
-		fatal("%s: invalid OpenCL function code - %d\n",
-			__FUNCTION__, code);
+	/* Get function code and arguments */
+	code = evg_opencl_api_read_args(x86_isa_ctx, NULL, argv, sizeof argv);
+	assert(IN_RANGE(code, EVG_OPENCL_FUNC_FIRST, EVG_OPENCL_FUNC_LAST));
 	
-	/* Debug */
-	code -= EVG_OPENCL_FUNC_FIRST;
-	evg_opencl_debug("%s\n", evg_opencl_func_name[code]);
-
 	/* Call function */
-	ret = evg_opencl_func_impl[code](argv);
+	evg_opencl_debug("%s\n", evg_opencl_func_name[code - EVG_OPENCL_FUNC_FIRST]);
+	ret = evg_opencl_func_impl[code - EVG_OPENCL_FUNC_FIRST](argv);
+
+	/* Return OpencL result */
 	return ret;
+}
+
+
+/* Return OpenCL function arguments, as identified in the current state
+ * of the x86 context stack and registers. The value returned by the function
+ * is the OpenCL function code identified by register 'ebx'. */
+int evg_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
+		void *argv_ptr, int argv_size)
+{
+	struct mem_t *mem = ctx->mem;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int argv_guest_ptr;
+
+	int func_code;
+	int argc;
+
+	/* Read function code */
+	func_code = regs->ebx;
+	if (func_code < EVG_OPENCL_FUNC_FIRST || func_code > EVG_OPENCL_FUNC_LAST)
+		fatal("%s: invalid OpenCL function code - %d\n",
+			__FUNCTION__, func_code);
+
+	/* Get number of arguments */
+	argc = evg_opencl_func_argc[func_code - EVG_OPENCL_FUNC_FIRST];
+	if (argc_ptr)
+		*argc_ptr = argc;
+	if (argv_size < argc * sizeof(int))
+		fatal("%s: insufficient space for arguments", __FUNCTION__);
+
+	/* Read arguments */
+	argv_guest_ptr = regs->ecx;
+	mem_read(mem, argv_guest_ptr, argc * 4, argv_ptr);
+
+	/* Return the function code */
+	return func_code;
 }
 
 
@@ -1525,7 +1561,7 @@ int evg_opencl_clFinish_impl(int *argv)
 	/* Get list of tasks in command queue */
 	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
 			evg_opencl_object_command_queue, command_queue_id);
-	task_list = command_queue->task_list;
+	task_list = command_queue->command_list;
 	evg_opencl_debug("\t%d task(s) enqueued\n", task_list->count);
 
 	/* If there are enqueued tasks, suspend context until command queue is empty */
@@ -1547,50 +1583,59 @@ int evg_opencl_clFinish_impl(int *argv)
  * OpenCL call 'clEnqueueReadBuffer' (code 1053)
  */
 
-int evg_opencl_clEnqueueReadBuffer_impl(int *argv)
+struct evg_opencl_clEnqueueReadBuffer_args_t
 {
-	unsigned int command_queue = argv[0];  /* cl_command_queue command_queue */
-	unsigned int buffer = argv[1];  /* cl_mem buffer */
-	unsigned int blocking_read = argv[2];  /* cl_bool blocking_read */
-	unsigned int offset = argv[3];  /* size_t offset */
-	unsigned int cb = argv[4];  /* size_t cb */
-	unsigned int ptr = argv[5];  /* void *ptr */
-	unsigned int num_events_in_wait_list = argv[6];  /* cl_uint num_events_in_wait_list */
-	unsigned int event_wait_list = argv[7];  /* const cl_event *event_wait_list */
-	unsigned int event_ptr = argv[8];  /* cl_event *event */
+	unsigned int command_queue;  /* cl_command_queue command_queue */
+	unsigned int buffer;  /* cl_mem buffer */
+	unsigned int blocking_read;  /* cl_bool blocking_read */
+	unsigned int offset;  /* size_t offset */
+	unsigned int cb;  /* size_t cb */
+	unsigned int ptr;  /* void *ptr */
+	unsigned int num_events_in_wait_list;  /* cl_uint num_events_in_wait_list */
+	unsigned int event_wait_list;  /* const cl_event *event_wait_list */
+	unsigned int event_ptr;  /* cl_event *event */
+};
+
+int evg_opencl_clEnqueueReadBuffer_impl(int *argv_ptr)
+{
+	struct evg_opencl_clEnqueueReadBuffer_args_t *argv;
 
 	struct evg_opencl_mem_t *mem;
 	struct evg_opencl_event_t *event;
+
 	void *buf;
 
+	/* Debug arguments */
+	argv = (struct evg_opencl_clEnqueueReadBuffer_args_t *) argv_ptr;
 	evg_opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_read=0x%x,\n"
 			"  offset=0x%x, cb=0x%x, ptr=0x%x, num_events_in_wait_list=0x%x,\n"
 			"  event_wait_list=0x%x, event=0x%x\n",
-			command_queue, buffer, blocking_read, offset, cb, ptr,
-			num_events_in_wait_list, event_wait_list, event_ptr);
+			argv->command_queue, argv->buffer, argv->blocking_read, argv->offset,
+			argv->cb, argv->ptr, argv->num_events_in_wait_list, argv->event_wait_list,
+			argv->event_ptr);
 
-	/* FIXME: 'blocking_read' ignored */
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->num_events_in_wait_list, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
 
 	/* Get memory object */
 	mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-			evg_opencl_object_mem, buffer);
+			evg_opencl_object_mem, argv->buffer);
 
 	/* Check that device buffer storage is not exceeded */
-	if (offset + cb > mem->size)
-		fatal("%s: buffer storage exceeded\n%s", __FUNCTION__, evg_err_opencl_param_note);
+	if (argv->offset + argv->cb > mem->size)
+		fatal("%s: buffer storage exceeded\n%s", __FUNCTION__,
+				evg_err_opencl_param_note);
 
 	/* Copy buffer from device memory to host memory */
-	buf = malloc(cb);
+	buf = malloc(argv->cb);
 	if (!buf)
 		fatal("out of memory");
-	mem_read(evg_emu->global_mem, mem->device_ptr + offset, cb, buf);
-	mem_write(x86_isa_mem, ptr, cb, buf);
+	mem_read(evg_emu->global_mem, mem->device_ptr + argv->offset, argv->cb, buf);
+	mem_write(x86_isa_mem, argv->ptr, argv->cb, buf);
 	free(buf);
 
 	/* Event */
-	if (event_ptr)
+	if (argv->event_ptr)
 	{
 		event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
 		event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
@@ -1598,13 +1643,13 @@ int evg_opencl_clEnqueueReadBuffer_impl(int *argv)
 		event->time_submit = evg_opencl_event_timer();
 		event->time_start = evg_opencl_event_timer();
 		event->time_end = evg_opencl_event_timer();
-		mem_write(x86_isa_mem, event_ptr, 4, &event->id);
+		mem_write(x86_isa_mem, argv->event_ptr, 4, &event->id);
 		evg_opencl_debug("    event: 0x%x\n", event->id);
 	}
 
 	/* Debug */
 	evg_opencl_debug("\t%d bytes copied from device (0x%x) to host(0x%x)\n",
-			cb, mem->device_ptr + offset, ptr);
+			argv->cb, mem->device_ptr + argv->offset, argv->ptr);
 	
 	/* Return success */
 	return 0;
@@ -1617,51 +1662,60 @@ int evg_opencl_clEnqueueReadBuffer_impl(int *argv)
  * OpenCL call 'clEnqueueWriteBuffer' (code 1055)
  */
 
-int evg_opencl_clEnqueueWriteBuffer_impl(int *argv)
+struct evg_opencl_clEnqueueWriteBuffer_args_t
 {
-	unsigned int command_queue = argv[0];  /* cl_command_queue command_queue */
-	unsigned int buffer = argv[1];  /* cl_mem buffer */
-	unsigned int blocking_write = argv[2];  /* cl_bool blocking_write */
-	unsigned int offset = argv[3];  /* size_t offset */
-	unsigned int cb = argv[4];  /* size_t cb */
-	unsigned int ptr = argv[5];  /* const void *ptr */
-	unsigned int num_events_in_wait_list = argv[6];  /* cl_uint num_events_in_wait_list */
-	unsigned int event_wait_list = argv[7];  /* const cl_event *event_wait_list */
-	unsigned int event_ptr = argv[8];  /* cl_event *event */
+	unsigned int command_queue_ptr;  /* cl_command_queue command_queue */
+	unsigned int buffer;  /* cl_mem buffer */
+	unsigned int blocking_write;  /* cl_bool blocking_write */
+	unsigned int offset;  /* size_t offset */
+	unsigned int cb;  /* size_t cb */
+	unsigned int ptr;  /* const void *ptr */
+	unsigned int num_events_in_wait_list;  /* cl_uint num_events_in_wait_list */
+	unsigned int event_wait_list;  /* const cl_event *event_wait_list */
+	unsigned int event_ptr;  /* cl_event *event */
+};
+
+int evg_opencl_clEnqueueWriteBuffer_impl(int *argv_ptr)
+{
+	struct evg_opencl_clEnqueueWriteBuffer_args_t *argv;
 
 	struct evg_opencl_mem_t *mem;
 	struct evg_opencl_event_t *event;
 
 	void *buf;
 
+	/* Debug arguments */
+	argv = (struct evg_opencl_clEnqueueWriteBuffer_args_t *) argv_ptr;
 	evg_opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_write=0x%x,\n"
 			"  offset=0x%x, cb=0x%x, ptr=0x%x, num_events_in_wait_list=0x%x,\n"
 			"  event_wait_list=0x%x, event=0x%x\n",
-			command_queue, buffer, blocking_write, offset, cb,
-			ptr, num_events_in_wait_list, event_wait_list, event_ptr);
+			argv->command_queue_ptr, argv->buffer, argv->blocking_write,
+			argv->offset, argv->cb, argv->ptr, argv->num_events_in_wait_list,
+			argv->event_wait_list, argv->event_ptr);
 
-	/* FIXME: 'blocking_write' ignored */
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+	/* Not supported arguments */
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->num_events_in_wait_list, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
 
 	/* Get memory object */
 	mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-			evg_opencl_object_mem, buffer);
+			evg_opencl_object_mem, argv->buffer);
 
 	/* Check that device buffer storage is not exceeded */
-	if (offset + cb > mem->size)
-		fatal("%s: buffer storage exceeded\n%s", __FUNCTION__, evg_err_opencl_param_note);
+	if (argv->offset + argv->cb > mem->size)
+		fatal("%s: buffer storage exceeded.\n%s", __FUNCTION__,
+				evg_err_opencl_param_note);
 
 	/* Copy buffer from host memory to device memory */
-	buf = malloc(cb);
+	buf = malloc(argv->cb);
 	if (!buf)
-		fatal("out of memory");
-	mem_read(x86_isa_mem, ptr, cb, buf);
-	mem_write(evg_emu->global_mem, mem->device_ptr + offset, cb, buf);
+		fatal("%s: out of memory", __FUNCTION__);
+	mem_read(x86_isa_mem, argv->ptr, argv->cb, buf);
+	mem_write(evg_emu->global_mem, mem->device_ptr + argv->offset, argv->cb, buf);
 	free(buf);
 
 	/* Event */
-	if (event_ptr)
+	if (argv->event_ptr)
 	{
 		event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
 		event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
@@ -1669,13 +1723,13 @@ int evg_opencl_clEnqueueWriteBuffer_impl(int *argv)
 		event->time_submit = evg_opencl_event_timer();
 		event->time_start = evg_opencl_event_timer();
 		event->time_end = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
-		mem_write(x86_isa_mem, event_ptr, 4, &event->id);
+		mem_write(x86_isa_mem, argv->event_ptr, 4, &event->id);
 		evg_opencl_debug("    event: 0x%x\n", event->id);
 	}
 
 	/* Debug */
 	evg_opencl_debug("\t%d bytes copied from host (0x%x) to device (0x%x)\n",
-			cb, ptr, mem->device_ptr + offset);
+			argv->cb, argv->ptr, mem->device_ptr + argv->offset);
 
 	/* Return success */
 	return 0;
@@ -1688,52 +1742,60 @@ int evg_opencl_clEnqueueWriteBuffer_impl(int *argv)
  * OpenCL call 'clEnqueueCopyBuffer' (code 1057)
  */
 
-int evg_opencl_clEnqueueCopyBuffer_impl(int *argv)
+struct evg_opencl_clEnqueueCopyBuffer_args_t
 {
-	unsigned int command_queue = argv[0];  /* cl_command_queue command_queue */
-	unsigned int src_buffer = argv[1];  /* cl_mem src_buffer */
-	unsigned int dst_buffer = argv[2];  /* cl_mem dst_buffer */
-	unsigned int src_offset = argv[3];  /* size_t src_offset */
-	unsigned int dst_offset = argv[4];  /* size_t dst_offset */
-	unsigned int cb = argv[5];  /* size_t cb */
-	unsigned int num_events_in_wait_list = argv[6];  /* cl_uint num_events_in_wait_list */
-	unsigned int event_wait_list = argv[7];  /* const cl_event *event_wait_list */
-	unsigned int event_ptr = argv[8];  /* cl_event *event */
+	unsigned int command_queue;  /* cl_command_queue command_queue */
+	unsigned int src_buffer;  /* cl_mem src_buffer */
+	unsigned int dst_buffer;  /* cl_mem dst_buffer */
+	unsigned int src_offset;  /* size_t src_offset */
+	unsigned int dst_offset;  /* size_t dst_offset */
+	unsigned int cb;  /* size_t cb */
+	unsigned int num_events_in_wait_list;  /* cl_uint num_events_in_wait_list */
+	unsigned int event_wait_list;  /* const cl_event *event_wait_list */
+	unsigned int event_ptr;  /* cl_event *event */
+};
+
+int evg_opencl_clEnqueueCopyBuffer_impl(int *argv_ptr)
+{
+	struct evg_opencl_clEnqueueCopyBuffer_args_t *argv;
 
 	struct evg_opencl_mem_t *src_mem, *dst_mem;
 	struct evg_opencl_event_t *event;
 
 	void *buf;
 
+	/* Debug arguments */
+	argv = (struct evg_opencl_clEnqueueCopyBuffer_args_t *) argv_ptr;
 	evg_opencl_debug("  command_queue=0x%x, src_buffer=0x%x, dst_buffer=0x%x,\n"
 			"  src_offset=0x%x, dst_offset=0x%x, cb=%u, num_events_in_wait_list=0x%x,\n"
 			"  event_wait_list=0x%x, event=0x%x\n",
-			command_queue, src_buffer, dst_buffer, src_offset, dst_offset, cb,
-			num_events_in_wait_list, event_wait_list, event_ptr);
+			argv->command_queue, argv->src_buffer, argv->dst_buffer, argv->src_offset,
+			argv->dst_offset, argv->cb, argv->num_events_in_wait_list,
+			argv->event_wait_list, argv->event_ptr);
 
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->num_events_in_wait_list, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
 
 	/* Get memory objects */
 	src_mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-			evg_opencl_object_mem, src_buffer);
+			evg_opencl_object_mem, argv->src_buffer);
 	dst_mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-			evg_opencl_object_mem, dst_buffer);
+			evg_opencl_object_mem, argv->dst_buffer);
 
 	/* Check that device buffer storage is not exceeded */
-	if (src_offset + cb > src_mem->size || dst_offset + cb > dst_mem->size)
+	if (argv->src_offset + argv->cb > src_mem->size || argv->dst_offset + argv->cb > dst_mem->size)
 		fatal("%s: buffer storage exceeded\n%s", __FUNCTION__, evg_err_opencl_param_note);
 
 	/* Copy buffers */
-	buf = malloc(cb);
+	buf = malloc(argv->cb);
 	if (!buf)
-		fatal("out of memory");
-	mem_read(evg_emu->global_mem, src_mem->device_ptr + src_offset, cb, buf);
-	mem_write(evg_emu->global_mem, dst_mem->device_ptr + dst_offset, cb, buf);
+		fatal("%s: out of memory", __FUNCTION__);
+	mem_read(evg_emu->global_mem, src_mem->device_ptr + argv->src_offset, argv->cb, buf);
+	mem_write(evg_emu->global_mem, dst_mem->device_ptr + argv->dst_offset, argv->cb, buf);
 	free(buf);
 
 	/* Event */
-	if (event_ptr)
+	if (argv->event_ptr)
 	{
 		event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
 		event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
@@ -1741,13 +1803,14 @@ int evg_opencl_clEnqueueCopyBuffer_impl(int *argv)
 		event->time_submit = evg_opencl_event_timer();
 		event->time_start = evg_opencl_event_timer();
 		event->time_end = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
-		mem_write(x86_isa_mem, event_ptr, 4, &event->id);
+		mem_write(x86_isa_mem, argv->event_ptr, 4, &event->id);
 		evg_opencl_debug("    event: 0x%x\n", event->id);
 	}
 
 	/* Debug */
 	evg_opencl_debug("\t%d bytes copied in device memory (0x%x -> 0x%x)\n",
-			cb, src_mem->device_ptr + src_offset, dst_mem->device_ptr + dst_offset);
+			argv->cb, src_mem->device_ptr + argv->src_offset,
+			dst_mem->device_ptr + argv->dst_offset);
 
 	/* Return success */
 	return 0;
@@ -1760,38 +1823,46 @@ int evg_opencl_clEnqueueCopyBuffer_impl(int *argv)
  * OpenCL call 'clEnqueueReadImage' (code 1059)
  */
 
-int evg_opencl_clEnqueueReadImage_impl(int *argv)
+struct evg_opencl_clEnqueueReadImage_args_t
 {
-	unsigned int command_queue = argv[0];  /* cl_command_queue command_queue */
-	unsigned int image = argv[1];  /* cl_mem image*/
-	unsigned int blocking_read = argv[2];  /* cl_bool blocking_read */
-	unsigned int origin = argv[3];  /* size_t origin[3] */
-	unsigned int region = argv[4];  /* size_t region[3] */
-	unsigned int row_pitch = argv[5];  /* size_t row_pitch */
-	unsigned int slice_pitch = argv[6];  /* size_t slice_pitch */
-	unsigned int ptr = argv[7];  /* void *ptr */
-	unsigned int num_events_in_wait_list = argv[8];  /* cl_uint num_events_in_wait_list */
-	unsigned int event_wait_list = argv[9];  /* const cl_event *event_wait_list */
-	unsigned int event_ptr = argv[10];  /* cl_event *event */
+	unsigned int command_queue;  /* cl_command_queue command_queue */
+	unsigned int image;  /* cl_mem image*/
+	unsigned int blocking_read;  /* cl_bool blocking_read */
+	unsigned int origin;  /* size_t origin[3] */
+	unsigned int region;  /* size_t region[3] */
+	unsigned int row_pitch;  /* size_t row_pitch */
+	unsigned int slice_pitch;  /* size_t slice_pitch */
+	unsigned int ptr;  /* void *ptr */
+	unsigned int num_events_in_wait_list;  /* cl_uint num_events_in_wait_list */
+	unsigned int event_wait_list;  /* const cl_event *event_wait_list */
+	unsigned int event_ptr;  /* cl_event *event */
+};
+
+int evg_opencl_clEnqueueReadImage_impl(int *argv_ptr)
+{
+	struct evg_opencl_clEnqueueReadImage_args_t *argv;
 
 	struct evg_opencl_mem_t *mem;
 	struct evg_opencl_event_t *event;
 
 	void *img;
 
+	/* Debug arguments */
+	argv = (struct evg_opencl_clEnqueueReadImage_args_t *) argv_ptr;
 	evg_opencl_debug("  command_queue=0x%x, image=0x%x, blocking_read=0x%x,\n"
 			"  origin=0x%x, region=0x%x, row_pitch=0x%x, slice_pitch=0x%x, ptr=0x%x\n"
 			"  num_events_in_wait_list=0x%x, event_wait_list=0x%x, event=0x%x\n",
-			command_queue, image, blocking_read, origin, region, row_pitch, 
-			slice_pitch, ptr, num_events_in_wait_list, event_wait_list, event_ptr);
+			argv->command_queue, argv->image, argv->blocking_read, argv->origin,
+			argv->region, argv->row_pitch, argv->slice_pitch, argv->ptr,
+			argv->num_events_in_wait_list, argv->event_wait_list, argv->event_ptr);
 
 	/* FIXME: 'blocking_read' ignored */
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->num_events_in_wait_list, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
 
 	/* Get memory object */
 	mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-			evg_opencl_object_mem, image);
+			evg_opencl_object_mem, argv->image);
 
 	/* Determine image geometry */
 	/* NOTE size_t is 32-bits on 32-bit systems, but 64-bits on 64-bit systems.  Since
@@ -1799,18 +1870,18 @@ int evg_opencl_clEnqueueReadImage_impl(int *argv)
 	 * instead. */
 	unsigned int read_region[3]; 
 	unsigned int read_origin[3];
-	mem_read(x86_isa_mem, region, 12, read_region);
-	mem_read(x86_isa_mem, origin, 12, read_origin);
+	mem_read(x86_isa_mem, argv->region, 12, read_region);
+	mem_read(x86_isa_mem, argv->origin, 12, read_origin);
 
-	if (!row_pitch)
-		row_pitch = mem->width*mem->pixel_size;
-	else if (row_pitch < mem->width*mem->pixel_size)
+	if (!argv->row_pitch)
+		argv->row_pitch = mem->width*mem->pixel_size;
+	else if (argv->row_pitch < mem->width*mem->pixel_size)
 		fatal("%s: row_pitch must be 0 or >= image_width * size of element in bytes\n%s", 
 				__FUNCTION__, evg_err_opencl_param_note);
 
-	if (!slice_pitch)
-		slice_pitch = row_pitch*mem->height;
-	else if (slice_pitch < row_pitch*mem->height)
+	if (!argv->slice_pitch)
+		argv->slice_pitch = argv->row_pitch * mem->height;
+	else if (argv->slice_pitch < argv->row_pitch * mem->height)
 		fatal("%s: slice_pitch must be 0 or >= row_pitch * image_height\n%s", 
 				__FUNCTION__, evg_err_opencl_param_note);
 
@@ -1829,11 +1900,11 @@ int evg_opencl_clEnqueueReadImage_impl(int *argv)
 
 	/* Read the entire image */
 	mem_read(evg_emu->global_mem, mem->device_ptr, mem->size, img);
-	mem_write(x86_isa_mem, ptr, mem->size, img);
+	mem_write(x86_isa_mem, argv->ptr, mem->size, img);
 	free(img);
 
 	/* Event */
-	if (event_ptr)
+	if (argv->event_ptr)
 	{
 		event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
 		event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
@@ -1841,14 +1912,14 @@ int evg_opencl_clEnqueueReadImage_impl(int *argv)
 		event->time_submit = evg_opencl_event_timer();
 		event->time_start = evg_opencl_event_timer();
 		event->time_end = evg_opencl_event_timer();
-		mem_write(x86_isa_mem, event_ptr, 4, &event->id);
+		mem_write(x86_isa_mem, argv->event_ptr, 4, &event->id);
 		evg_opencl_debug("    event: 0x%x\n", event->id);
 	}
 
 	/* Debug */
 	/* FIXME Return size of region, not entire image */
 	evg_opencl_debug("\t%d bytes copied from device (0x%x) to host (0x%x)\n",
-			mem->size, mem->device_ptr, ptr);
+			mem->size, mem->device_ptr, argv->ptr);
 
 	/* Return success */
 	return 0;
@@ -1861,38 +1932,47 @@ int evg_opencl_clEnqueueReadImage_impl(int *argv)
  * OpenCL call 'clEnqueueMapBuffer' (code 1064)
  */
 
-int evg_opencl_clEnqueueMapBuffer_impl(int *argv)
+struct evg_opencl_clEnqueueMapBuffer_args_t
 {
-	unsigned int command_queue = argv[0];  /* cl_command_queue command_queue */
-	unsigned int buffer = argv[1];  /* cl_mem buffer */
-	unsigned int blocking_map = argv[2];  /* cl_bool blocking_map */
-	unsigned int map_flags = argv[3];  /* cl_map_flags map_flags */
-	unsigned int offset = argv[4];  /* size_t offset */
-	unsigned int cb = argv[5];  /* size_t cb */
-	unsigned int num_events_in_wait_list = argv[6];  /* cl_uint num_events_in_wait_list */
-	unsigned int event_wait_list = argv[7];  /* const cl_event *event_wait_list */
-	unsigned int event_ptr = argv[8];  /* cl_event *event */
-	unsigned int errcode_ret = argv[9];  /* cl_int *errcode_ret */
+	unsigned int command_queue;  /* cl_command_queue command_queue */
+	unsigned int buffer;  /* cl_mem buffer */
+	unsigned int blocking_map;  /* cl_bool blocking_map */
+	unsigned int map_flags;  /* cl_map_flags map_flags */
+	unsigned int offset;  /* size_t offset */
+	unsigned int cb;  /* size_t cb */
+	unsigned int num_events_in_wait_list;  /* cl_uint num_events_in_wait_list */
+	unsigned int event_wait_list;  /* const cl_event *event_wait_list */
+	unsigned int event_ptr;  /* cl_event *event */
+	unsigned int errcode_ret;  /* cl_int *errcode_ret */
+};
 
+int evg_opencl_clEnqueueMapBuffer_impl(int *argv_ptr)
+{
+	struct evg_opencl_clEnqueueMapBuffer_args_t *argv;
 	struct evg_opencl_event_t *event;
 
 	int zero = 0;
 
+	/* Debug arguments */
+	argv = (struct evg_opencl_clEnqueueMapBuffer_args_t *) argv_ptr;
 	evg_opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_map=0x%x, map_flags=0x%x,\n"
 			"  offset=0x%x, cb=0x%x, num_events_in_wait_list=0x%x, event_wait_list=0x%x,\n"
 			"  event=0x%x, errcode_ret=0x%x\n",
-			command_queue, buffer, blocking_map, map_flags, offset, cb,
-			num_events_in_wait_list, event_wait_list, event_ptr, errcode_ret);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_events_in_wait_list, 0);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(event_wait_list, 0);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_EQ(blocking_map, 0);
+			argv->command_queue, argv->buffer, argv->blocking_map, argv->map_flags,
+			argv->offset, argv->cb, argv->num_events_in_wait_list, argv->event_wait_list,
+			argv->event_ptr, argv->errcode_ret);
+
+	/* Not supported arguments */
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->num_events_in_wait_list, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_EQ(argv->blocking_map, 0);
 
 	/* Get memory object */
 	evg_opencl_repo_get_object(evg_emu->opencl_repo,
-			evg_opencl_object_mem, buffer);
+			evg_opencl_object_mem, argv->buffer);
 
 	/* Event */
-	if (event_ptr)
+	if (argv->event_ptr)
 	{
 		event = evg_opencl_event_create(EVG_OPENCL_EVENT_MAP_BUFFER);
 		event->status = EVG_OPENCL_EVENT_STATUS_COMPLETE;
@@ -1900,13 +1980,13 @@ int evg_opencl_clEnqueueMapBuffer_impl(int *argv)
 		event->time_submit = evg_opencl_event_timer();
 		event->time_start = evg_opencl_event_timer();
 		event->time_end = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
-		mem_write(x86_isa_mem, event_ptr, 4, &event->id);
+		mem_write(x86_isa_mem, argv->event_ptr, 4, &event->id);
 		evg_opencl_debug("    event: 0x%x\n", event->id);
 	}
 
 	/* Return success */
-	if (errcode_ret)
-		mem_write(x86_isa_mem, errcode_ret, 4, &zero);
+	if (argv->errcode_ret)
+		mem_write(x86_isa_mem, argv->errcode_ret, 4, &zero);
 	
 	/* Not ready yet */
 	fatal("%s: not implemented", __FUNCTION__);
@@ -1920,17 +2000,22 @@ int evg_opencl_clEnqueueMapBuffer_impl(int *argv)
  * OpenCL call 'clEnqueueNDRangeKernel' (code 1067)
  */
 
-int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv)
+struct evg_opencl_clEnqueueNDRangeKernel_args_t
 {
-	unsigned int command_queue_id = argv[0];  /* cl_command_queue command_queue */
-	unsigned int kernel_id = argv[1];  /* cl_kernel kernel */
-	unsigned int work_dim = argv[2];  /* cl_uint work_dim */
-	unsigned int global_work_offset_ptr = argv[3];  /* const size_t *global_work_offset */
-	unsigned int global_work_size_ptr = argv[4];  /* const size_t *global_work_size */
-	unsigned int local_work_size_ptr = argv[5];  /* const size_t *local_work_size */
-	unsigned int num_events_in_wait_list = argv[6];  /* cl_uint num_events_in_wait_list */
-	unsigned int event_wait_list = argv[7];  /* const cl_event *event_wait_list */
-	unsigned int event_ptr = argv[8];  /* cl_event *event */
+	unsigned int command_queue_id;  /* cl_command_queue command_queue */
+	unsigned int kernel_id;  /* cl_kernel kernel */
+	unsigned int work_dim;  /* cl_uint work_dim */
+	unsigned int global_work_offset_ptr;  /* const size_t *global_work_offset */
+	unsigned int global_work_size_ptr;  /* const size_t *global_work_size */
+	unsigned int local_work_size_ptr;  /* const size_t *local_work_size */
+	unsigned int num_events_in_wait_list;  /* cl_uint num_events_in_wait_list */
+	unsigned int event_wait_list;  /* const cl_event *event_wait_list */
+	unsigned int event_ptr;  /* cl_event *event */
+};
+
+int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv_ptr)
+{
+	struct evg_opencl_clEnqueueNDRangeKernel_args_t *argv;
 
 	struct evg_opencl_kernel_t *kernel;
 	struct evg_opencl_event_t *event = NULL;
@@ -1938,33 +2023,39 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv)
 	struct evg_opencl_mem_t *mem;
 
 	struct evg_opencl_command_queue_t *command_queue;
-	struct evg_opencl_command_queue_task_t *task;
+	struct evg_opencl_command_t *task;
 
 	struct evg_ndrange_t *ndrange;
 
 	int i;
 
+	/* Debug arguments */
+	argv = (struct evg_opencl_clEnqueueNDRangeKernel_args_t *) argv_ptr;
 	evg_opencl_debug("  command_queue=0x%x, kernel=0x%x, work_dim=%d,\n"
 			"  global_work_offset=0x%x, global_work_size_ptr=0x%x, local_work_size_ptr=0x%x,\n"
 			"  num_events_in_wait_list=0x%x, event_wait_list=0x%x, event=0x%x\n",
-			command_queue_id, kernel_id, work_dim, global_work_offset_ptr, global_work_size_ptr,
-			local_work_size_ptr, num_events_in_wait_list, event_wait_list, event_ptr);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(global_work_offset_ptr, 0);
-	EVG_OPENCL_ARG_NOT_SUPPORTED_RANGE(work_dim, 1, 3);
-	if (num_events_in_wait_list || event_wait_list)
+			argv->command_queue_id, argv->kernel_id, argv->work_dim,
+			argv->global_work_offset_ptr, argv->global_work_size_ptr,
+			argv->local_work_size_ptr, argv->num_events_in_wait_list,
+			argv->event_wait_list, argv->event_ptr);
+
+	/* Not supported arguments */
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->global_work_offset_ptr, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_RANGE(argv->work_dim, 1, 3);
+	if (argv->num_events_in_wait_list || argv->event_wait_list)
 		warning("%s: event list arguments ignored", __FUNCTION__);
 
 	/* Get kernel */
 	kernel = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-			evg_opencl_object_kernel, kernel_id);
-	kernel->work_dim = work_dim;
+			evg_opencl_object_kernel, argv->kernel_id);
+	kernel->work_dim = argv->work_dim;
 
 	/* Build UAV lists */
 	for (i = 0; i < list_count(kernel->arg_list); i++) 
 	{
 		arg = list_get(kernel->arg_list, i);
 
-		/* If arg is an image, add it to the appropriate UAV list*/
+		/* If argument is an image, add it to the appropriate UAV list */
 		if (arg->kind == EVG_OPENCL_KERNEL_ARG_KIND_IMAGE) 
 		{
 			mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
@@ -1979,7 +2070,7 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv)
 						arg->access_type);
 		}
 
-		/* If arg is a pointer and not in UAV 11, then it is 
+		/* If argument is a pointer and not in UAV 11, then it is
 		   presumably a constant pointer */
 		/* TODO Check if __read_only or __write_only affects uav number */
 		if(arg->mem_scope == EVG_OPENCL_MEM_SCOPE_CONSTANT) 
@@ -1994,21 +2085,21 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv)
 	/* Global work sizes */
 	kernel->global_size3[1] = 1;
 	kernel->global_size3[2] = 1;
-	for (i = 0; i < work_dim; i++)
-		mem_read(x86_isa_mem, global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
+	for (i = 0; i < argv->work_dim; i++)
+		mem_read(x86_isa_mem, argv->global_work_size_ptr + i * 4, 4, &kernel->global_size3[i]);
 	kernel->global_size = kernel->global_size3[0] * kernel->global_size3[1] * kernel->global_size3[2];
 	evg_opencl_debug("    global_work_size=");
-	evg_opencl_debug_array(work_dim, kernel->global_size3);
+	evg_opencl_debug_array(argv->work_dim, kernel->global_size3);
 	evg_opencl_debug("\n");
 
 	/* Local work sizes.
 	 * If no pointer provided, assign the same as global size - FIXME: can be done better. */
 	memcpy(kernel->local_size3, kernel->global_size3, 12);
-	if (local_work_size_ptr)
+	if (argv->local_work_size_ptr)
 	{
-		for (i = 0; i < work_dim; i++)
+		for (i = 0; i < argv->work_dim; i++)
 		{
-			mem_read(x86_isa_mem, local_work_size_ptr + i * 4, 4, &kernel->local_size3[i]);
+			mem_read(x86_isa_mem, argv->local_work_size_ptr + i * 4, 4, &kernel->local_size3[i]);
 			if (kernel->local_size3[i] < 1)
 				fatal("%s: local work size must be greater than 0.\n%s",
 						__FUNCTION__, evg_err_opencl_param_note);
@@ -2016,7 +2107,7 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv)
 	}
 	kernel->local_size = kernel->local_size3[0] * kernel->local_size3[1] * kernel->local_size3[2];
 	evg_opencl_debug("    local_work_size=");
-	evg_opencl_debug_array(work_dim, kernel->local_size3);
+	evg_opencl_debug_array(argv->work_dim, kernel->local_size3);
 	evg_opencl_debug("\n");
 
 	/* Check valid global/local sizes */
@@ -2039,18 +2130,18 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv)
 		kernel->group_count3[i] = kernel->global_size3[i] / kernel->local_size3[i];
 	kernel->group_count = kernel->group_count3[0] * kernel->group_count3[1] * kernel->group_count3[2];
 	evg_opencl_debug("    group_count=");
-	evg_opencl_debug_array(work_dim, kernel->group_count3);
+	evg_opencl_debug_array(argv->work_dim, kernel->group_count3);
 	evg_opencl_debug("\n");
 
 	/* Event */
-	if (event_ptr)
+	if (argv->event_ptr)
 	{
 		event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
 		event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
 		event->time_queued = evg_opencl_event_timer();
 		event->time_submit = evg_opencl_event_timer();
 		event->time_start = evg_opencl_event_timer();  /* FIXME: change for asynchronous exec */
-		mem_write(x86_isa_mem, event_ptr, 4, &event->id);
+		mem_write(x86_isa_mem, argv->event_ptr, 4, &event->id);
 		evg_opencl_debug("    event: 0x%x\n", event->id);
 	}
 
@@ -2068,15 +2159,15 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv)
 	evg_ndrange_set_status(ndrange, evg_ndrange_pending);
 
 	/* Create command queue task */
-	task = evg_opencl_command_queue_task_create(evg_opencl_command_queue_task_ndrange_kernel);
+	task = evg_opencl_command_create(evg_opencl_command_queue_task_ndrange_kernel);
 	task->u.ndrange_kernel.ndrange = ndrange;
 
 	/* Enqueue task */
 	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-			evg_opencl_object_command_queue, command_queue_id);
+			evg_opencl_object_command_queue, argv->command_queue_id);
 	evg_opencl_command_queue_submit(command_queue, task);
 	ndrange->command_queue = command_queue;
-	ndrange->command_queue_task = task;
+	ndrange->command = task;
 
 	/* Return success */
 	return 0;

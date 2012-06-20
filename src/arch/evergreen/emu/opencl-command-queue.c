@@ -41,7 +41,7 @@ struct evg_opencl_command_queue_t *evg_opencl_command_queue_create()
 	command_queue->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
 		evg_opencl_object_command_queue);
 	command_queue->ref_count = 1;
-	command_queue->task_list = linked_list_create();
+	command_queue->command_list = linked_list_create();
 
 	/* Return */
 	evg_opencl_repo_add_object(evg_emu->opencl_repo, command_queue);
@@ -52,71 +52,71 @@ struct evg_opencl_command_queue_t *evg_opencl_command_queue_create()
 /* Free command queue */
 void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_queue)
 {
-	/* Check that task list is empty */
-	if (linked_list_count(command_queue->task_list))
+	/* Check that command list is empty */
+	if (linked_list_count(command_queue->command_list))
 		fatal("%s: freed command queue is not empty", __FUNCTION__);
 	
 	/* Free */
 	evg_opencl_repo_remove_object(evg_emu->opencl_repo, command_queue);
-	linked_list_free(command_queue->task_list);
+	linked_list_free(command_queue->command_list);
 	free(command_queue);
 }
 
 
-/* Create a command queue task */
-struct evg_opencl_command_queue_task_t *evg_opencl_command_queue_task_create(enum
-	evg_opencl_command_queue_task_type_t type)
+/* Create a command */
+struct evg_opencl_command_t *evg_opencl_command_create(enum
+	evg_opencl_command_type_t type)
 {
-	struct evg_opencl_command_queue_task_t *task;
+	struct evg_opencl_command_t *command;
 
 	/* Allocate */
-	task = calloc(1, sizeof(struct evg_opencl_command_queue_t));
-	if (!task)
+	command = calloc(1, sizeof(struct evg_opencl_command_t));
+	if (!command)
 		fatal("%s: out of memory", __FUNCTION__);
 	
 	/* Initialize */
-	task->type = type;
+	command->type = type;
 
 	/* Return */
-	return task;
+	return command;
 }
 
 
-void evg_opencl_command_queue_task_free(struct evg_opencl_command_queue_task_t *task)
+void evg_opencl_command_free(struct evg_opencl_command_t *command)
 {
-	free(task);
+	free(command);
 }
 
 
 void evg_opencl_command_queue_submit(struct evg_opencl_command_queue_t *command_queue,
-	struct evg_opencl_command_queue_task_t *task)
+	struct evg_opencl_command_t *command)
 {
-	struct linked_list_t *task_list;
+	struct linked_list_t *command_list;
 
-	/* Check that task is not enqueued */
-	task_list = command_queue->task_list;
-	linked_list_find(task_list, task);
-	if (!task_list->error_code)
-		fatal("%s: task already enqueued", __FUNCTION__);
+	/* Check that command is not enqueued */
+	command_list = command_queue->command_list;
+	linked_list_find(command_list, command);
+	if (!command_list->error_code)
+		fatal("%s: command already enqueued", __FUNCTION__);
 	
-	/* Enqueue task */
-	linked_list_add(task_list, task);
+	/* Enqueue command */
+	linked_list_add(command_list, command);
 }
 
 
 void evg_opencl_command_queue_complete(struct evg_opencl_command_queue_t *command_queue,
-	struct evg_opencl_command_queue_task_t *task)
+	struct evg_opencl_command_t *command)
 {
-	struct linked_list_t *task_list;
+	struct linked_list_t *command_list;
 
-	/* Check that task is in command queue */
-	task_list = command_queue->task_list;
-	linked_list_find(task_list, task);
-	if (task_list->error_code)
-		fatal("%s: task is not in command queue", __FUNCTION__);
+	/* Check that command is in command queue */
+	command_list = command_queue->command_list;
+	linked_list_find(command_list, command);
+	if (command_list->error_code)
+		fatal("%s: command is not in command queue", __FUNCTION__);
 	
-	/* Remove task */
-	linked_list_remove(task_list);
+	/* Remove command */
+	linked_list_remove(command_list);
 
 	/* x86 contexts might be waiting for the command queue to get empty
 	 * (e.g., suspended in a 'clFinish' call. Check events. */
@@ -127,14 +127,14 @@ void evg_opencl_command_queue_complete(struct evg_opencl_command_queue_t *comman
 int evg_opencl_command_queue_can_wakeup(struct x86_ctx_t *ctx, void *data)
 {
 	struct evg_opencl_command_queue_t *command_queue;
-	struct linked_list_t *task_list;
+	struct linked_list_t *command_list;
 
 	int can_wakeup;
 
-	/* x86 context can wakeup if task list is empty */
+	/* x86 context can wakeup if command list is empty */
 	command_queue = data;
-	task_list = command_queue->task_list;
-	can_wakeup = !task_list->count;
+	command_list = command_queue->command_list;
+	can_wakeup = !command_list->count;
 
 	/* Debug */
 	if (can_wakeup)
