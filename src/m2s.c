@@ -847,7 +847,9 @@ void m2s_stats_summary(void)
 {
 	long long now = x86_emu_timer();
 	long long si_now = si_emu_timer();
+
 	long long inst_count;
+	long long fast_forward_inst_count;
 
 	double sec_count;
 	double inst_per_sec;
@@ -855,9 +857,20 @@ void m2s_stats_summary(void)
 	double branch_acc;
 	double cycles_per_sec;
 
-	/* Check if any simulation was actually performed */
-	inst_count = x86_emu_kind == x86_emu_kind_functional ? x86_emu->inst_count : x86_cpu->inst;
-	if (!inst_count)
+	/* Get x86 CPU instruction count */
+	if (x86_emu_kind == x86_emu_kind_functional)
+	{
+		inst_count = x86_emu->inst_count;
+		fast_forward_inst_count = 0;
+	}
+	else
+	{
+		inst_count = x86_cpu->inst;
+		fast_forward_inst_count = x86_cpu->fast_forward_inst_count;
+	}
+
+	/* No statistic dump if no x86 instruction was executed (i.e., no simulation) */
+	if (!inst_count && !fast_forward_inst_count)
 		return;
 
 	/* Statistics */
@@ -873,6 +886,7 @@ void m2s_stats_summary(void)
 	fprintf(stderr, "[ CPU ]\n");
 	fprintf(stderr, "Time = %.2f\n", sec_count);
 	fprintf(stderr, "Instructions = %lld\n", inst_count);
+	fprintf(stderr, "FastForwardInstructions = %lld\n", fast_forward_inst_count);
 	fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	fprintf(stderr, "Contexts = %d\n", x86_emu->running_list_max);
 	fprintf(stderr, "Memory = %lu\n", mem_max_mapped_space);
