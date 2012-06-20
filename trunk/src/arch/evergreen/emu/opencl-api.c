@@ -213,6 +213,15 @@ int evg_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
 }
 
 
+/* Set return value of an OpenCL API call. This needs to be done explicitly when
+ * a context gets suspended during the execution of the OpenCL call, and later the
+ * wake-up call-back routine finishes the OpenCL call execution. */
+void evg_opencl_api_return(struct x86_ctx_t *ctx, int value)
+{
+	ctx->regs->eax = value;
+}
+
+
 
 /*
  * OpenCL call 'clGetPlatformIDs' (code 1000)
@@ -1569,7 +1578,7 @@ int evg_opencl_clFinish_impl(int *argv)
 	{
 		evg_opencl_debug("\tcycle %lld - context suspended\n", esim_cycle);
 		x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup,
-				command_queue);
+				command_queue, NULL, NULL);
 	}
 
 	/* Return success */
@@ -1596,14 +1605,70 @@ struct evg_opencl_clEnqueueReadBuffer_args_t
 	unsigned int event_ptr;  /* cl_event *event */
 };
 
-int evg_opencl_clEnqueueReadBuffer_impl(int *argv_ptr)
+void evg_opencl_clEnqueueReadBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 {
-	struct evg_opencl_clEnqueueReadBuffer_args_t *argv;
+	struct evg_opencl_clEnqueueReadBuffer_args_t argv;
 
 	struct evg_opencl_mem_t *mem;
 	struct evg_opencl_event_t *event;
 
 	void *buf;
+
+	int code;
+
+	/* Read function arguments again */
+	code = evg_opencl_api_read_args(ctx, NULL, &argv, sizeof argv);
+	assert(code == 1053);
+	evg_opencl_debug("  command_queue=0x%x, buffer=0x%x, blocking_read=0x%x,\n"
+			"  offset=0x%x, cb=0x%x, ptr=0x%x, num_events_in_wait_list=0x%x,\n"
+			"  event_wait_list=0x%x, event=0x%x\n",
+			argv.command_queue, argv.buffer, argv.blocking_read, argv.offset,
+			argv.cb, argv.ptr, argv.num_events_in_wait_list, argv.event_wait_list,
+			argv.event_ptr);
+
+	/* Get memory object */
+	mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_mem, argv.buffer);
+
+	/* Check that device buffer storage is not exceeded */
+	if (argv.offset + argv.cb > mem->size)
+		fatal("%s: buffer storage exceeded\n%s", __FUNCTION__,
+				evg_err_opencl_param_note);
+
+	/* Copy buffer from device memory to host memory */
+	buf = malloc(argv.cb);
+	if (!buf)
+		fatal("out of memory");
+	mem_read(evg_emu->global_mem, mem->device_ptr + argv.offset, argv.cb, buf);
+	mem_write(ctx->mem, argv.ptr, argv.cb, buf);
+	free(buf);
+
+	/* Event */
+	if (argv.event_ptr)
+	{
+		event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
+		event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
+		event->time_queued = evg_opencl_event_timer();
+		event->time_submit = evg_opencl_event_timer();
+		event->time_start = evg_opencl_event_timer();
+		event->time_end = evg_opencl_event_timer();
+		mem_write(ctx->mem, argv.event_ptr, 4, &event->id);
+		evg_opencl_debug("    event: 0x%x\n", event->id);
+	}
+
+	/* Debug */
+	evg_opencl_debug("\t%d bytes copied from device (0x%x) to host(0x%x)\n",
+			argv.cb, mem->device_ptr + argv.offset, argv.ptr);
+
+	/* Return success */
+	evg_opencl_api_return(ctx, 0);
+}
+
+int evg_opencl_clEnqueueReadBuffer_impl(int *argv_ptr)
+{
+	struct evg_opencl_clEnqueueReadBuffer_args_t *argv;
+
+	struct evg_opencl_command_queue_t *command_queue;
 
 	/* Debug arguments */
 	argv = (struct evg_opencl_clEnqueueReadBuffer_args_t *) argv_ptr;
@@ -1614,44 +1679,20 @@ int evg_opencl_clEnqueueReadBuffer_impl(int *argv_ptr)
 			argv->cb, argv->ptr, argv->num_events_in_wait_list, argv->event_wait_list,
 			argv->event_ptr);
 
+	/* Not supported arguments */
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->num_events_in_wait_list, 0);
 	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
 
-	/* Get memory object */
-	mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-			evg_opencl_object_mem, argv->buffer);
-
-	/* Check that device buffer storage is not exceeded */
-	if (argv->offset + argv->cb > mem->size)
-		fatal("%s: buffer storage exceeded\n%s", __FUNCTION__,
-				evg_err_opencl_param_note);
-
-	/* Copy buffer from device memory to host memory */
-	buf = malloc(argv->cb);
-	if (!buf)
-		fatal("out of memory");
-	mem_read(evg_emu->global_mem, mem->device_ptr + argv->offset, argv->cb, buf);
-	mem_write(x86_isa_mem, argv->ptr, argv->cb, buf);
-	free(buf);
-
-	/* Event */
-	if (argv->event_ptr)
-	{
-		event = evg_opencl_event_create(EVG_OPENCL_EVENT_NDRANGE_KERNEL);
-		event->status = EVG_OPENCL_EVENT_STATUS_SUBMITTED;
-		event->time_queued = evg_opencl_event_timer();
-		event->time_submit = evg_opencl_event_timer();
-		event->time_start = evg_opencl_event_timer();
-		event->time_end = evg_opencl_event_timer();
-		mem_write(x86_isa_mem, argv->event_ptr, 4, &event->id);
-		evg_opencl_debug("    event: 0x%x\n", event->id);
-	}
-
-	/* Debug */
-	evg_opencl_debug("\t%d bytes copied from device (0x%x) to host(0x%x)\n",
-			argv->cb, mem->device_ptr + argv->offset, argv->ptr);
+	/* Get command queue */
+	command_queue = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+			evg_opencl_object_command_queue, argv->command_queue);
 	
-	/* Return success */
+	/* Suspend context until command queue is empty */
+	x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+			evg_opencl_clEnqueueReadBuffer_wakeup, NULL);
+
+	/* Return value ignored by caller, since context is getting suspended.
+	 * It will be explicitly set by the wake-up call-back routine. */
 	return 0;
 }
 

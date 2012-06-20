@@ -819,8 +819,8 @@ extern int x86_ctx_debug_category;
 /* Event scheduled periodically to dump IPC statistics for a context */
 extern int EV_X86_CTX_IPC_REPORT;
 
-typedef int (*x86_ctx_wakeup_callback_func_t)(struct x86_ctx_t *ctx,
-	void *data);
+typedef int (*x86_ctx_can_wakeup_callback_func_t)(struct x86_ctx_t *ctx, void *data);
+typedef void (*x86_ctx_wakeup_callback_func_t)(struct x86_ctx_t *ctx, void *data);
 
 struct x86_ctx_t
 {
@@ -889,8 +889,11 @@ struct x86_ctx_t
 	long long wakeup_futex_sleep;  /* Assignment from x86_emu->futex_sleep_count */
 
 	/* Generic callback function (and data to pass to it) to call when a
-	 * context gets suspended in a system call. */
+	 * context gets suspended in a system call to check whether it should be
+	 * waken up, and once it is waken up, respectively */
+	x86_ctx_can_wakeup_callback_func_t can_wakeup_callback_func;
 	x86_ctx_wakeup_callback_func_t wakeup_callback_func;
+	void *can_wakeup_callback_data;
 	void *wakeup_callback_data;
 
 	/* Links to contexts forming a linked list. */
@@ -955,7 +958,8 @@ void x86_ctx_host_thread_suspend_cancel(struct x86_ctx_t *ctx);
 void __x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx);
 void x86_ctx_host_thread_timer_cancel(struct x86_ctx_t *ctx);
 
-void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_wakeup_callback_func_t wakeup_callback_func,
+void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_can_wakeup_callback_func_t can_wakeup_callback_func,
+	void *can_wakeup_callback_data, x86_ctx_wakeup_callback_func_t wakeup_callback_func,
 	void *wakeup_callback_data);
 
 void x86_ctx_finish(struct x86_ctx_t *ctx, int status);
