@@ -1301,6 +1301,17 @@ struct frm_inst_info_t
 	int size;
 };
 
+union frm_reg_t
+{
+        signed int as_int;
+        unsigned int as_uint;
+
+        signed short int as_short[2];
+        unsigned short int as_ushort[2];
+        
+        float as_float;
+};      
+
 struct frm_inst_t
 {
 	unsigned int addr;
@@ -1326,6 +1337,13 @@ void frm_inst_dump_R(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t 
 void frm_inst_dump_offset(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
 void frm_inst_dump_shamt(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
 void frm_inst_dump_target(char **inst_str_ptr, int *inst_str_size, struct frm_inst_t *inst, enum frm_fmt_enum fmt);
+
+/* Copy instruction */
+void frm_inst_copy(struct frm_inst_t *dest, struct frm_inst_t *src);
+
+/* Obtaining source operand fields for ALU instructions */
+void frm_inst_get_op_src(struct frm_inst_t *inst, int src_idx,
+        int *sel, int *rel, int *chan, int *neg, int *abs);
 
 void frm_inst_decode(struct frm_inst_t *inst);
 

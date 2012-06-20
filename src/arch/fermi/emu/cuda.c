@@ -404,10 +404,40 @@ static int frm_cuda_func_cuLaunchKernel(void)
 	function->group_count3[1] = gridDimY;
 	function->group_count3[2] = gridDimZ;
 	function->group_count = function->group_count3[0]*function->group_count3[1]*function->group_count3[2];
+
         frm_grid_setup_threads(function->grid);
         frm_grid_setup_args(function->grid);
 
-	//frm_grid_run(function->grid);
+        frm_grid_set_status(function->grid, frm_grid_pending);
+
+	frm_grid_run(function->grid);
+	frm_grid_free(function->grid);
+
+	return 0;
+}
+
+static int frm_cuda_func_cuMemAlloc(void)
+{
+
+	return 0;
+}
+static int frm_cuda_func_cuMemcpyHtoD(void)
+{
+
+	return 0;
+}
+static int frm_cuda_func_cuMemcpyDtoH(void)
+{
+
+	return 0;
+}
+static int frm_cuda_func_cuMemFree(void)
+{
+
+	return 0;
+}
+static int frm_cuda_func_cuCtxDetach(void)
+{
 
 	return 0;
 }
