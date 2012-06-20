@@ -253,6 +253,12 @@ int x86_cpu_occupancy_stats;
  * Private Functions
  */
 
+static char *x86_cpu_err_fast_forward =
+	"\tThe number of instructions specified in the x86 CPU configuration file\n"
+	"\tfor fast-forward (functional) execution has caused all contexts to end\n"
+	"\tbefore the timing simulation could start. Please decrease the number\n"
+	"\tof fast-forward instructions and retry.\n";
+
 
 /* Check CPU configuration file */
 static void x86_cpu_config_check(void)
@@ -1111,9 +1117,31 @@ void x86_cpu_run_stages()
 }
 
 
+/* Run fast-forward simulation */
+void x86_cpu_run_fast_forward(void)
+{
+	/* Fast-forward simulation. Run 'x86_cpu_fast_forward' iterations of the x86
+	 * emulation loop until any simulation end reason is detected. */
+	while (x86_emu->inst_count < x86_cpu_fast_forward_count && !x86_emu_finish)
+		x86_emu_run();
+
+	/* Record number of instructions in fast-forward execution. */
+	x86_cpu->fast_forward_inst_count = x86_emu->inst_count;
+
+	/* Output warning if simulation finished during fast-forward execution. */
+	if (x86_emu_finish)
+		warning("x86 fast-forwarding finished simulation.\n%s",
+				x86_cpu_err_fast_forward);
+}
+
+
 /* Run one iteration of the x86 timing simulation loop */
 void x86_cpu_run(void)
 {
+	/* Fast-forward simulation */
+	if (x86_cpu_fast_forward_count && x86_emu->inst_count < x86_cpu_fast_forward_count)
+		x86_cpu_run_fast_forward();
+
 	/* Stop if all contexts finished */
 	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
 		x86_emu_finish = x86_emu_finish_ctx;

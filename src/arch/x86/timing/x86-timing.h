@@ -763,6 +763,7 @@ struct x86_cpu_t
 	struct linked_list_t *uop_trace_list;
 
 	/* Statistics */
+	long long fast_forward_inst_count;
 	long long fetched;
 	long long dispatched[x86_uinst_opcode_count];
 	long long issued[x86_uinst_opcode_count];
