@@ -65,11 +65,10 @@ void evg_ndrange_free(struct evg_ndrange_t *ndrange)
 	int i;
 
 	/* Clear task from command queue */
-	if (ndrange->command_queue && ndrange->command_queue_task)
+	if (ndrange->command_queue && ndrange->command)
 	{
-		evg_opencl_command_queue_complete(ndrange->command_queue,
-			ndrange->command_queue_task);
-		evg_opencl_command_queue_task_free(ndrange->command_queue_task);
+		evg_opencl_command_queue_complete(ndrange->command_queue, ndrange->command);
+		evg_opencl_command_free(ndrange->command);
 	}
 
 	/* Clear all states that affect lists. */
@@ -100,7 +99,7 @@ void evg_ndrange_free(struct evg_ndrange_t *ndrange)
 	if (ndrange->inst_histogram)
 		free(ndrange->inst_histogram);
 
-	/* Free ndrange */
+	/* Free ND-Range */
 	free(ndrange->name);
 	free(ndrange);
 }
