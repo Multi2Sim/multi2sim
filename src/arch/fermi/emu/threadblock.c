@@ -23,7 +23,6 @@
 
 
 
-
 /*
  * Public Functions
  */
@@ -67,7 +66,7 @@ void frm_threadblock_set_status(struct frm_threadblock_t *threadblock, enum frm_
 	/* Get only the new bits */
 	status &= ~threadblock->status;
 
-	/* Add work-group to lists */
+	/* Add threadblock to lists */
 	if (status & frm_threadblock_pending)
 		DOUBLE_LINKED_LIST_INSERT_TAIL(grid, pending, threadblock);
 	if (status & frm_threadblock_running)
@@ -87,7 +86,7 @@ void frm_threadblock_clear_status(struct frm_threadblock_t *threadblock, enum fr
 	/* Get only the bits that are set */
 	status &= threadblock->status;
 
-	/* Remove work-group from lists */
+	/* Remove threadblock from lists */
 	if (status & frm_threadblock_pending)
 		DOUBLE_LINKED_LIST_REMOVE(grid, pending, threadblock);
 	if (status & frm_threadblock_running)
@@ -109,14 +108,14 @@ void frm_threadblock_dump(struct frm_threadblock_t *threadblock, FILE *f)
 	if (!f)
 		return;
 	
-	fprintf(f, "[ NDRange[%d].WorkGroup[%d] ]\n\n", grid->id, threadblock->id);
+	fprintf(f, "[ Grid[%d].ThreadBlock[%d] ]\n\n", grid->id, threadblock->id);
 	fprintf(f, "Name = %s\n", threadblock->name);
-	fprintf(f, "WaveFrontFirst = %d\n", threadblock->warp_id_first);
-	fprintf(f, "WaveFrontLast = %d\n", threadblock->warp_id_last);
-	fprintf(f, "WaveFrontCount = %d\n", threadblock->warp_count);
-	fprintf(f, "WorkItemFirst = %d\n", threadblock->thread_id_first);
-	fprintf(f, "WorkItemLast = %d\n", threadblock->thread_id_last);
-	fprintf(f, "WorkItemCount = %d\n", threadblock->thread_count);
+	fprintf(f, "WarpFirst = %d\n", threadblock->warp_id_first);
+	fprintf(f, "WarpLast = %d\n", threadblock->warp_id_last);
+	fprintf(f, "WarpCount = %d\n", threadblock->warp_count);
+	fprintf(f, "ThreadFirst = %d\n", threadblock->thread_id_first);
+	fprintf(f, "ThreadLast = %d\n", threadblock->thread_id_last);
+	fprintf(f, "ThreadCount = %d\n", threadblock->thread_count);
 	fprintf(f, "\n");
 
 	/* Dump warps */
@@ -126,3 +125,4 @@ void frm_threadblock_dump(struct frm_threadblock_t *threadblock, FILE *f)
 		frm_warp_dump(warp, f);
 	}
 }
+

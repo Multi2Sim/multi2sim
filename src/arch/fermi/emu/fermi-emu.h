@@ -23,8 +23,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <list.h>
 #include <linked-list.h>
+#include <list.h>
 #include <debug.h>
 #include <misc.h>
 #include <elf-format.h>
@@ -37,16 +37,17 @@
  * CUDA Data Structures
  */
 
-/* CUDA objects */
+
+/* Objects */
 
 enum frm_cuda_obj_t
 {
         FRM_CUDA_OBJ_DEVICE = 1,
         FRM_CUDA_OBJ_CONTEXT,
-        FRM_CUDA_OBJ_STREAM,
         FRM_CUDA_OBJ_MODULE,
         FRM_CUDA_OBJ_FUNCTION,
-        FRM_CUDA_OBJ_MEMORY
+        FRM_CUDA_OBJ_MEMORY,
+        FRM_CUDA_OBJ_STREAM
 };
 
 extern struct linked_list_t *frm_cuda_object_list;
@@ -84,22 +85,6 @@ struct frm_cuda_context_t *frm_cuda_context_create(void);
 void frm_cuda_context_free(struct frm_cuda_context_t *context);
 
 
-/* Stream */
-
-struct frm_cuda_stream_t
-{
-	unsigned int id;
-	int ref_count;
-
-	unsigned int device_id;
-	unsigned int context_id;
-	unsigned int properties;
-};
-
-struct frm_cuda_stream_t *frm_cuda_stream_create(void);
-void frm_cuda_stream_free(struct frm_cuda_stream_t *stream);
-
-
 /* Module */
 
 struct frm_cuda_module_t
@@ -117,8 +102,6 @@ struct frm_cuda_module_t
 struct frm_cuda_module_t *frm_cuda_module_create(void);
 void frm_cuda_module_free(struct frm_cuda_module_t *module);
 
-void frm_cuda_module_build(struct frm_cuda_module_t *module);
-
 
 /* Function argument */
 
@@ -134,9 +117,7 @@ enum frm_cuda_mem_scope_t
 enum frm_cuda_function_arg_kind_t
 {
 	FRM_CUDA_FUNCTION_ARG_KIND_VALUE = 1,
-	FRM_CUDA_FUNCTION_ARG_KIND_POINTER,
-	FRM_CUDA_FUNCTION_ARG_KIND_IMAGE,
-	FRM_CUDA_FUNCTION_ARG_KIND_SAMPLER
+	FRM_CUDA_FUNCTION_ARG_KIND_POINTER
 };
 
 enum frm_cuda_function_arg_access_type_t
@@ -148,20 +129,18 @@ enum frm_cuda_function_arg_access_type_t
 
 struct frm_cuda_function_arg_t
 {
-	/* Argument properties, as described in .rodata */
+	int id;
+	char name[MAX_STRING_SIZE];
+
 	enum frm_cuda_function_arg_kind_t kind;
-	enum frm_cuda_mem_scope_t mem_scope;  /* For pointers */
-	int uav;  /* For memory objects */
+	enum frm_cuda_mem_scope_t mem_scope;
 	enum frm_cuda_function_arg_access_type_t access_type;
 
-	/* Argument fields as set in clSetKernelArg */
 	int set;  /* Set to true when it is assigned */
-	uint32_t value;  /* 32-bit arguments supported */
-	uint32_t size;
-
-	/* Last field - memory assigned variably */
-	char name[0];
 };
+
+struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name);
+void frm_cuda_function_arg_free(struct frm_cuda_function_arg_t *arg);
 
 
 /* Function */
@@ -169,19 +148,14 @@ struct frm_cuda_function_arg_t
 struct frm_cuda_function_t
 {
 	int id;
-	int ref_count;
-	unsigned int module_id;
 	char name[MAX_STRING_SIZE];
+	int ref_count;
+
+	unsigned int module_id;
 	struct list_t *arg_list;
 
-	/* Excerpts of module ELF binary */
+	/* FIXME */
 	struct elf_buffer_t function_buffer;
-
-	/* Kernel function metadata */
-	int func_uniqueid;  /* Id of function function */
-	int func_mem_local;  /* Local memory usage */
-	FILE *func_file;
-	char func_file_name[MAX_PATH_SIZE];
 
 	/* Number of work dimensions */
 	int work_dim;
@@ -203,9 +177,40 @@ struct frm_cuda_function_t
 
 struct frm_cuda_function_t *frm_cuda_function_create(void);
 void frm_cuda_function_free(struct frm_cuda_function_t *function);
-struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name);
-void frm_cuda_function_arg_free(struct frm_cuda_function_arg_t *arg);
 void frm_cuda_function_load(struct frm_cuda_function_t *function, char *function_name);
+
+
+/* CUDA memory */
+
+struct frm_cuda_memory_t
+{
+        unsigned int id;
+        int ref_count;
+
+        unsigned int type;  /* 0 buffer */
+        unsigned int size;
+        unsigned int flags;
+        unsigned int host_ptr;
+        unsigned int device_ptr;  /* Position assigned in device global memory */
+};
+
+struct frm_cuda_memory_t *frm_cuda_memory_create(void);
+void frm_cuda_memory_free(struct frm_cuda_memory_t *mem);
+
+
+/* Stream */
+
+struct frm_cuda_stream_t
+{
+	unsigned int id;
+	int ref_count;
+
+	unsigned int device_id;
+	unsigned int context_id;
+};
+
+struct frm_cuda_stream_t *frm_cuda_stream_create(void);
+void frm_cuda_stream_free(struct frm_cuda_stream_t *stream);
 
 
 
@@ -213,51 +218,72 @@ void frm_cuda_function_load(struct frm_cuda_function_t *function, char *function
  * CUDA Grid 
  */
 
+
+enum frm_grid_status_t
+{
+        frm_grid_pending             = 0x0001,
+        frm_grid_running             = 0x0002,
+        frm_grid_finished            = 0x0004
+};
+
 struct frm_grid_t
 {
 	/* ID */
-	char name[MAX_STRING_SIZE];
 	int id;  /* Sequential grid ID (given by frm_emu->grid_count counter) */
+	char name[MAX_STRING_SIZE];
 
-	/* OpenCL function associated */
+        /* Status */
+        enum frm_grid_status_t status;
+
+	/* CUDA function associated */
 	struct frm_cuda_function_t *function;
 
-	/* Pointers to work-groups, warps, and threads */
+	/* Pointers to threadblocks, warps, and threads */
 	struct frm_threadblock_t **threadblocks;
 	struct frm_warp_t **warps;
 	struct frm_thread_t **threads;
 
-	/* IDs of work-items contained */
-	int thread_id_first;
-	int thread_id_last;
-	int thread_count;
-
+	/* IDs of threadblocks contained */
+	int threadblock_id_first;
+	int threadblock_id_last;
+	int threadblock_count;
+	
 	/* IDs of warps contained */
 	int warp_id_first;
 	int warp_id_last;
 	int warp_count;
 
-	/* IDs of work-groups contained */
-	int threadblock_id_first;
-	int threadblock_id_last;
-	int threadblock_count;
-	
-	/* Size of work-groups */
+	/* IDs of threads contained */
+	int thread_id_first;
+	int thread_id_last;
+	int thread_count;
+
+	/* Size of threadblocks */
 	int warps_per_threadblock;  /* = ceil(local_size / frm_emu_warp_size) */
 
-	/* List of pending work-groups */
+        /* List of Grid */
+        struct frm_grid_t *grid_list_prev;
+        struct frm_grid_t *grid_list_next;
+        struct frm_grid_t *pending_grid_list_prev;
+        struct frm_grid_t *pending_grid_list_next;
+        struct frm_grid_t *running_grid_list_prev;
+        struct frm_grid_t *running_grid_list_next;
+        struct frm_grid_t *finished_grid_list_prev;
+        struct frm_grid_t *finished_grid_list_next;
+
+	/* List of pending threadblocks */
 	struct frm_threadblock_t *pending_list_head;
 	struct frm_threadblock_t *pending_list_tail;
 	int pending_list_count;
 	int pending_list_max;
 
-	/* List of running work-groups */
+	/* List of running threadblocks */
 	struct frm_threadblock_t *running_list_head;
 	struct frm_threadblock_t *running_list_tail;
 	int running_list_count;
 	int running_list_max;
 
-	/* List of finished work-groups */
+	/* List of finished threadblocks */
 	struct frm_threadblock_t *finished_list_head;
 	struct frm_threadblock_t *finished_list_tail;
 	int finished_list_count;
@@ -266,8 +292,10 @@ struct frm_grid_t
 
 struct frm_grid_t *frm_grid_create(struct frm_cuda_function_t *function);
 void frm_grid_free(struct frm_grid_t *grid);
+int frm_grid_get_status(struct frm_grid_t *grid, enum frm_grid_status_t status);
+void frm_grid_set_status(struct frm_grid_t *grid, enum frm_grid_status_t status);
+void frm_grid_clear_status(struct frm_grid_t *grid, enum frm_grid_status_t status);
 void frm_grid_dump(struct frm_grid_t *grid, FILE *f);
-
 void frm_grid_setup_threads(struct frm_grid_t *grid);
 void frm_grid_setup_const_mem(struct frm_grid_t *grid);
 void frm_grid_setup_args(struct frm_grid_t *grid);
@@ -275,32 +303,32 @@ void frm_grid_run(struct frm_grid_t *grid);
 
 
 
-
 /*
- * GPU Work-Group
+ * CUDA Threadblock
  */
+
 
 enum frm_threadblock_status_t
 {
 	frm_threadblock_pending		= 0x0001,
 	frm_threadblock_running		= 0x0002,
-	frm_threadblock_finished		= 0x0004
+	frm_threadblock_finished	= 0x0004
 };
 
 struct frm_threadblock_t
 {
 	/* ID */
+	int id;
 	char name[MAX_STRING_SIZE];
-	int id;  /* Group ID */
-	int id_3d[3];  /* 3-dimensional Group ID */
+	int id_3d[3];
 
 	/* Status */
 	enum frm_threadblock_status_t status;
 
-	/* NDRange it belongs to */
+	/* Grid it belongs to */
 	struct frm_grid_t *grid;
 
-	/* IDs of work-items contained */
+	/* IDs of threads contained */
 	int thread_id_first;
 	int thread_id_last;
 	int thread_count;
@@ -310,11 +338,11 @@ struct frm_threadblock_t
 	int warp_id_last;
 	int warp_count;
 
-	/* Pointers to warps and work-items */
+	/* Pointers to warps and threads */
 	struct frm_thread_t **threads;  /* Pointer to first thread in 'function->threads' */
 	struct frm_warp_t **warps;  /* Pointer to first warp in 'function->warps' */
 
-	/* Double linked lists of work-groups */
+	/* Double linked lists of threadblocks */
 	struct frm_threadblock_t *pending_list_prev;
 	struct frm_threadblock_t *pending_list_next;
 	struct frm_threadblock_t *running_list_prev;
@@ -341,8 +369,8 @@ struct frm_threadblock_t
 	int finished_list_max;
 	
 	/* Fields introduced for architectural simulation */
-	int id_in_compute_unit;
-	int compute_unit_finished_count;  /* like 'finished_list_count', but when WF reaches Complete stage */
+	int id_in_sm;
+	int sm_finished_count;  /* like 'finished_list_count', but when warp reaches Complete stage */
 
 	/* Local memory */
 	struct mem_t *local_mem;
@@ -356,64 +384,45 @@ struct frm_threadblock_t
 struct frm_threadblock_t *frm_threadblock_create(void);
 void frm_threadblock_free(struct frm_threadblock_t *threadblock);
 void frm_threadblock_dump(struct frm_threadblock_t *threadblock, FILE *f);
-
-void frm_threadblock_set_name(struct frm_threadblock_t *threadblock, char *name);
-
 int frm_threadblock_get_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status);
 void frm_threadblock_set_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status);
 void frm_threadblock_clear_status(struct frm_threadblock_t *threadblock, enum frm_threadblock_status_t status);
 
 
 
-
 /*
- * GPU Wavefront
+ * CUDA Warp
  */
-
-/* Type of clauses */
-enum frm_clause_kind_t
-{
-	FRM_CLAUSE_NONE = 0,
-	FRM_CLAUSE_CF,  /* Control-flow */
-	FRM_CLAUSE_ALU,  /* ALU clause */
-	FRM_CLAUSE_TEX,  /* Fetch trough a Texture Cache Clause */
-	FRM_CLAUSE_VC  /* Fetch through a Vertex Cache Clause */
-};
 
 
 #define FRM_MAX_STACK_SIZE  32
 
-/* Wavefront */
 struct frm_warp_t
 {
 	/* ID */
-	char name[MAX_STRING_SIZE];
 	int id;
+	char name[MAX_STRING_SIZE];
 	int id_in_threadblock;
 
-	/* IDs of work-items it contains */
+	/* IDs of threads it contains */
 	int thread_id_first;
 	int thread_id_last;
 	int thread_count;
 
-	/* NDRange and Work-group it belongs to */
+	/* Grid and threadblock it belongs to */
 	struct frm_grid_t *grid;
 	struct frm_threadblock_t *threadblock;
 
 	/* Pointer to threads */
-	struct frm_thread_t **threads;  /* Pointer to first work-items in 'function->threads' */
+	struct frm_thread_t **threads;  /* Pointer to first threads in 'function->threads' */
 
 	/* Current instructions */
 	struct frm_inst_t inst;
 
-	/* Starting/current CF buffer */
+	/* Starting/current position in buffer */
 	void *buf_start;
 	void *buf;
-
-	/* Secondary clause boundaries and current position */
-	void *clause_buf;
-	void *clause_buf_start;
-	void *clause_buf_end;
+	int buf_size;
 
 	/* Active mask stack */
 	struct bit_map_t *active_stack;  /* FRM_MAX_STACK_SIZE * thread_count elements */
@@ -456,82 +465,60 @@ struct frm_warp_t
 	long long emu_time_end;
 
 	/* Fields introduced for architectural simulation */
-	int id_in_compute_unit;
+	int id_in_sm;
 	int alu_engine_in_flight;  /* Number of in-flight uops in ALU engine */
 	long long sched_when;  /* GPU cycle when warp was last scheduled */
 
 
 	/* Periodic report - used by architectural simulation */
-
 	FILE *periodic_report_file;  /* File where report is dumped */
-	long long periodic_report_vliw_bundle_count;  /* Number of VLIW bundles (or non-ALU instructions) reported */
 	long long periodic_report_cycle;  /* Last cycle when periodic report was updated */
-	int periodic_report_inst_count;  /* Number of instructions (VLIW slots) in this interval */
+	int periodic_report_inst_count;  /* Number of instructions in this interval */
 	int periodic_report_local_mem_accesses;  /* Number of local memory accesses in this interval */
-	int periodic_report_global_mem_writes;  /* Number of Global memory writes in this interval */
-	int periodic_report_global_mem_reads;  /* Number of Global memory reads in this interval */
+	int periodic_report_global_mem_writes;  /* Number of global memory writes in this interval */
+	int periodic_report_global_mem_reads;  /* Number of global memory reads in this interval */
 
 
 	/* Statistics */
-
 	long long inst_count;  /* Total number of instructions */
-	long long global_mem_inst_count;  /* Instructions (CF or TC) accessing global memory */
-	long long local_mem_inst_count;  /* Instructions (ALU) accessing local memory */
-
-	long long cf_inst_count;  /* Number of CF inst executed */
-	long long cf_inst_global_mem_write_count;  /* Number of instructions writing to global mem (they are CF inst) */
-
-	long long alu_clause_count;  /* Number of ALU clauses started */
-	long long alu_group_count;  /* Number of ALU instruction groups (VLIW) */
-	long long alu_group_size[5];  /* Distribution of group sizes (alu_group_size[0] is the number of groups with 1 inst) */
-	long long alu_inst_count;  /* Number of ALU instructions */
-	long long alu_inst_local_mem_count;  /* Instructions accessing local memory (ALU) */
-
-	long long tc_clause_count;
-	long long tc_inst_count;
-	long long tc_inst_global_mem_read_count;  /* Number of instructions reading from global mem (they are TC inst) */
+	long long global_mem_inst_count;  /* Instructions accessing global memory */
+	long long local_mem_inst_count;  /* Instructions accessing local memory */
 };
 
 #define FRM_FOREACH_WARP_IN_GRID(GRID, WARP_ID) \
 	for ((WARP_ID) = (GRID)->warp_id_first; \
 		(WARP_ID) <= (GRID)->warp_id_last; \
 		(WARP_ID)++)
-
 #define FRM_FOREACH_WARP_IN_THREADBLOCK(THREADBLOCK, WARP_ID) \
 	for ((WARP_ID) = (THREADBLOCK)->warp_id_first; \
 		(WARP_ID) <= (THREADBLOCK)->warp_id_last; \
 		(WARP_ID)++)
-
 struct frm_warp_t *frm_warp_create(void);
 void frm_warp_free(struct frm_warp_t *warp);
 void frm_warp_dump(struct frm_warp_t *warp, FILE *f);
-
 void frm_warp_set_name(struct frm_warp_t *warp, char *name);
-
 void frm_warp_stack_push(struct frm_warp_t *warp);
 void frm_warp_stack_pop(struct frm_warp_t *warp, int count);
 void frm_warp_execute(struct frm_warp_t *warp);
 
 
 
-
 /*
- * GPU thread (Pixel)
+ * GPU Thread
  */
 
-#define FRM_MAX_GPR_ELEM  5
+
 #define FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
 
 struct frm_gpr_t
 {
-	uint32_t elem[FRM_MAX_GPR_ELEM];  /* x, y, z, w, t */
+	unsigned int elem;
 };
 
-/* Structure describing a memory access definition */
 struct frm_mem_access_t
 {
 	int type;  /* 0-none, 1-read, 2-write */
-	uint32_t addr;
+	unsigned int addr;
 	int size;
 };
 
@@ -546,12 +533,12 @@ struct frm_thread_t
 	int id_3d[3];  /* global 3D IDs */
 	int id_in_threadblock_3d[3];  /* local 3D IDs */
 
-	/* Wavefront, work-group, and NDRange where it belongs */
+	/* Warp, threadblock, and grid where it belongs */
 	struct frm_warp_t *warp;
 	struct frm_threadblock_t *threadblock;
 	struct frm_grid_t *grid;
 
-	/* Work-item state */
+	/* Thread state */
 	struct frm_gpr_t gpr[128];  /* General purpose registers */
 	struct frm_gpr_t pv;  /* Result of last computations */
 
@@ -559,7 +546,7 @@ struct frm_thread_t
 	 * and executed as a burst at the end of an ALU group. */
 	struct linked_list_t *write_task_list;
 
-	/* LDS (Local Data Share) OQs (Output Queues) */
+	/* FIXME: LDS (Local Data Share) OQs (Output Queues) */
 	struct list_t *lds_oqa;
 	struct list_t *lds_oqb;
 
@@ -568,16 +555,16 @@ struct frm_thread_t
 	 * for active threads by XORing a random number common for the warp.
 	 * At the end, threads with different 'branch_digest' numbers can be considered
 	 * divergent threads. */
-	uint32_t branch_digest;
+	unsigned int branch_digest;
 
 	/* Last global memory access */
-	uint32_t global_mem_access_addr;
-	uint32_t global_mem_access_size;
+	unsigned int global_mem_access_addr;
+	unsigned int global_mem_access_size;
 
 	/* Last local memory access */
 	int local_mem_access_count;  /* Number of local memory access performed by last instruction */
-	uint32_t local_mem_access_addr[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
-	uint32_t local_mem_access_size[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	unsigned int local_mem_access_addr[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
+	unsigned int local_mem_access_size[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];
 	int local_mem_access_type[FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST];  /* 0-none, 1-read, 2-write */
 };
 
@@ -585,27 +572,22 @@ struct frm_thread_t
 	for ((THREAD_ID) = (GRID)->thread_id_first; \
 		(THREAD_ID) <= (GRID)->thread_id_last; \
 		(THREAD_ID)++)
-
 #define FRM_FOREACH_THREAD_IN_THREADBLOCK(THREADBLOCK, THREAD_ID) \
 	for ((THREAD_ID) = (THREADBLOCK)->thread_id_first; \
 		(THREAD_ID) <= (THREADBLOCK)->thread_id_last; \
 		(THREAD_ID)++)
-
 #define FRM_FOREACH_THREAD_IN_WARP(WARP, THREAD_ID) \
 	for ((THREAD_ID) = (WARP)->thread_id_first; \
 		(THREAD_ID) <= (WARP)->thread_id_last; \
 		(THREAD_ID)++)
-
 struct frm_thread_t *frm_thread_create(void);
 void frm_thread_free(struct frm_thread_t *thread);
-
-/* Consult and change active/predicate bits */
-void frm_thread_set_active(struct frm_thread_t *thread, int active);
 int frm_thread_get_active(struct frm_thread_t *thread);
-void frm_thread_set_pred(struct frm_thread_t *thread, int pred);
+void frm_thread_set_active(struct frm_thread_t *thread, int active);
 int frm_thread_get_pred(struct frm_thread_t *thread);
+void frm_thread_set_pred(struct frm_thread_t *thread, int pred);
 void frm_thread_update_branch_digest(struct frm_thread_t *thread,
-	long long inst_count, uint32_t inst_addr);
+	long long inst_count, unsigned int inst_addr);
 
 
 
@@ -613,147 +595,146 @@ void frm_thread_update_branch_digest(struct frm_thread_t *thread,
  * Fermi ISA
  */
 
-///* Global variables referring to the instruction that is currently being emulated.
-// * There variables are set before calling the instruction emulation function in
-// * 'machine.c' to avoid passing pointers. */
-//extern struct frm_ndrange_t *frm_isa_ndrange;
-//extern struct frm_work_group_t *frm_isa_work_group;
-//extern struct frm_wavefront_t *frm_isa_wavefront;
-//extern struct frm_work_item_t *frm_isa_work_item;
-//extern struct frm_inst_t *frm_isa_cf_inst;
-//extern struct frm_inst_t *frm_isa_inst;
-//extern struct frm_alu_group_t *frm_isa_alu_group;
-//
-///* Macros for quick access */
-//#define EVG_GPR_ELEM(_gpr, _elem)  (frm_isa_work_item->gpr[(_gpr)].elem[(_elem)])
-//#define EVG_GPR_X(_gpr)  EVG_GPR_ELEM((_gpr), 0)
-//#define EVG_GPR_Y(_gpr)  EVG_GPR_ELEM((_gpr), 1)
-//#define EVG_GPR_Z(_gpr)  EVG_GPR_ELEM((_gpr), 2)
-//#define EVG_GPR_W(_gpr)  EVG_GPR_ELEM((_gpr), 3)
-//#define EVG_GPR_T(_gpr)  EVG_GPR_ELEM((_gpr), 4)
-//
-//#define EVG_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &frm_isa_work_item->gpr[(_gpr)].elem[(_elem)])
-//#define EVG_GPR_FLOAT_X(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 0)
-//#define EVG_GPR_FLOAT_Y(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 1)
-//#define EVG_GPR_FLOAT_Z(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 2)
-//#define EVG_GPR_FLOAT_W(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 3)
-//#define EVG_GPR_FLOAT_T(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 4)
-//
-//
-///* Debugging */
-//#define frm_isa_debugging() debug_status(frm_isa_debug_category)
-//#define frm_isa_debug(...) debug(frm_isa_debug_category, __VA_ARGS__)
-//extern int frm_isa_debug_category;
-//
-//
-///* Macros for unsupported parameters */
-//extern char *err_frm_isa_note;
-/*
-#define EVG_ISA_ARG_NOT_SUPPORTED(p) \
+/* Global variables referring to the instruction that is currently being emulated.
+ * There variables are set before calling the instruction emulation function in
+ * 'machine.c' to avoid passing pointers. */
+extern struct frm_ndrange_t *frm_isa_ndrange;
+extern struct frm_work_group_t *frm_isa_work_group;
+extern struct frm_wavefront_t *frm_isa_wavefront;
+extern struct frm_work_item_t *frm_isa_work_item;
+extern struct frm_inst_t *frm_isa_cf_inst;
+extern struct frm_inst_t *frm_isa_inst;
+extern struct frm_alu_group_t *frm_isa_alu_group;
+
+/* Macros for quick access */
+#define FRM_GPR_ELEM(_gpr, _elem)  (frm_isa_work_item->gpr[(_gpr)].elem[(_elem)])
+#define FRM_GPR_X(_gpr)  FRM_GPR_ELEM((_gpr), 0)
+#define FRM_GPR_Y(_gpr)  FRM_GPR_ELEM((_gpr), 1)
+#define FRM_GPR_Z(_gpr)  FRM_GPR_ELEM((_gpr), 2)
+#define FRM_GPR_W(_gpr)  FRM_GPR_ELEM((_gpr), 3)
+#define FRM_GPR_T(_gpr)  FRM_GPR_ELEM((_gpr), 4)
+
+#define FRM_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &frm_isa_work_item->gpr[(_gpr)].elem[(_elem)])
+#define FRM_GPR_FLOAT_X(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 0)
+#define FRM_GPR_FLOAT_Y(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 1)
+#define FRM_GPR_FLOAT_Z(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 2)
+#define FRM_GPR_FLOAT_W(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 3)
+#define FRM_GPR_FLOAT_T(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 4)
+
+
+/* Debugging */
+#define frm_isa_debugging() debug_status(frm_isa_debug_category)
+#define frm_isa_debug(...) debug(frm_isa_debug_category, __VA_ARGS__)
+extern int frm_isa_debug_category;
+
+
+/* Macros for unsupported parameters */
+extern char *err_frm_isa_note;
+#define FRM_ISA_ARG_NOT_SUPPORTED(p) \
 	fatal("%s: %s: not supported for '" #p "' = 0x%x\n%s", \
 	__FUNCTION__, frm_isa_inst->info->name, (p), err_frm_isa_note);
-#define EVG_ISA_ARG_NOT_SUPPORTED_NEQ(p, v) \
+#define FRM_ISA_ARG_NOT_SUPPORTED_NEQ(p, v) \
 	{ if ((p) != (v)) fatal("%s: %s: not supported for '" #p "' != 0x%x\n%s", \
 	__FUNCTION__, frm_isa_inst->info->name, (v), err_frm_isa_note); }
-#define EVG_ISA_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
+#define FRM_ISA_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: %s: not supported for '" #p "' out of range [%d:%d]\n%s", \
 	__FUNCTION__, frm_isa_inst->info->name, (min), (max), err_frm_opencl_param_note); }
-*/
-//
-///* Macros for fast access of instruction words */
-//#define EVG_CF_WORD0			frm_isa_inst->words[0].cf_word0
-//#define EVG_CF_GWS_WORD0		frm_isa_inst->words[0].cf_gws_word0
-//#define EVG_CF_WORD1			frm_isa_inst->words[1].cf_word1
-//
-//#define EVG_CF_ALU_WORD0		frm_isa_inst->words[0].cf_alu_word0
-//#define EVG_CF_ALU_WORD1		frm_isa_inst->words[1].cf_alu_word1
-//#define EVG_CF_ALU_WORD0_EXT		frm_isa_inst->words[0].cf_alu_word0_ext
-//#define EVG_CF_ALU_WORD1_EXT		frm_isa_inst->words[1].cf_alu_word1_ext
-//
-//#define EVG_CF_ALLOC_EXPORT_WORD0	frm_isa_inst->words[0].cf_alloc_export_word0
-//#define EVG_CF_ALLOC_EXPORT_WORD0_RAT	frm_isa_inst->words[0].cf_alloc_export_word0_rat
-//#define EVG_CF_ALLOC_EXPORT_WORD1_BUF	frm_isa_inst->words[1].cf_alloc_export_word1_buf
-//#define EVG_CF_ALLOC_EXPORT_WORD1_SWIZ	frm_isa_inst->words[1].cf_alloc_export_word1_swiz
-//
-//#define EVG_ALU_WORD0			frm_isa_inst->words[0].alu_word0
-//#define EVG_ALU_WORD1_OP2		frm_isa_inst->words[1].alu_word1_op2
-//#define EVG_ALU_WORD1_OP3		frm_isa_inst->words[1].alu_word1_op3
-//
-//#define EVG_ALU_WORD0_LDS_IDX_OP	frm_isa_inst->words[0].alu_word0_lds_idx_op
-//#define EVG_ALU_WORD1_LDS_IDX_OP	frm_isa_inst->words[1].alu_word1_lds_idx_op
-//
-//#define EVG_VTX_WORD0			frm_isa_inst->words[0].vtx_word0
-//#define EVG_VTX_WORD1_GPR		frm_isa_inst->words[1].vtx_word1_gpr
-//#define EVG_VTX_WORD1_SEM		frm_isa_inst->words[1].vtx_word1_sem
-//#define EVG_VTX_WORD2			frm_isa_inst->words[2].vtx_word2
-//
-//#define EVG_TEX_WORD0			frm_isa_inst->words[0].tex_word0
-//#define EVG_TEX_WORD1			frm_isa_inst->words[1].tex_word1
-//#define EVG_TEX_WORD2			frm_isa_inst->words[2].tex_word2
-//
-//#define EVG_MEM_RD_WORD0		frm_isa_inst->words[0].mem_rd_word0
-//#define EVG_MEM_RD_WORD1		frm_isa_inst->words[1].mem_rd_word1
-//#define EVG_MEM_RD_WORD2		frm_isa_inst->words[2].mem_rd_word2
-//
-//#define EVG_MEM_GDS_WORD0		frm_isa_inst->words[0].mem_gds_word0
-//#define EVG_MEM_GDS_WORD1		frm_isa_inst->words[1].mem_gds_word1
-//#define EVG_MEM_GDS_WORD2		frm_isa_inst->words[2].mem_gds_word2
-//
-//
-///* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-//typedef void (*frm_isa_inst_func_t)(void);
-//extern frm_isa_inst_func_t *frm_isa_inst_func;
-//
+
+/* Macros for fast access of instruction words */
+#define FRM_ALU_WORD0			frm_isa_inst->words[0].alu_word0
+#define FRM_ALU_WORD1_OP2		frm_isa_inst->words[1].alu_word1_op2
+#define FRM_ALU_WORD1_OP3		frm_isa_inst->words[1].alu_word1_op3
+
+#define FRM_ALU_WORD0_LDS_IDX_OP	frm_isa_inst->words[0].alu_word0_lds_idx_op
+#define FRM_ALU_WORD1_LDS_IDX_OP	frm_isa_inst->words[1].alu_word1_lds_idx_op
+
+#define FRM_VTX_WORD0			frm_isa_inst->words[0].vtx_word0
+#define FRM_VTX_WORD1_GPR		frm_isa_inst->words[1].vtx_word1_gpr
+#define FRM_VTX_WORD1_SEM		frm_isa_inst->words[1].vtx_word1_sem
+#define FRM_VTX_WORD2			frm_isa_inst->words[2].vtx_word2
+
+#define FRM_TEX_WORD0			frm_isa_inst->words[0].tex_word0
+#define FRM_TEX_WORD1			frm_isa_inst->words[1].tex_word1
+#define FRM_TEX_WORD2			frm_isa_inst->words[2].tex_word2
+
+#define FRM_MEM_RD_WORD0		frm_isa_inst->words[0].mem_rd_word0
+#define FRM_MEM_RD_WORD1		frm_isa_inst->words[1].mem_rd_word1
+#define FRM_MEM_RD_WORD2		frm_isa_inst->words[2].mem_rd_word2
+
+#define FRM_MEM_GDS_WORD0		frm_isa_inst->words[0].mem_gds_word0
+#define FRM_MEM_GDS_WORD1		frm_isa_inst->words[1].mem_gds_word1
+#define FRM_MEM_GDS_WORD2		frm_isa_inst->words[2].mem_gds_word2
+
+
+/* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
+typedef void (*frm_isa_inst_func_t)(void);
+extern frm_isa_inst_func_t *frm_isa_inst_func;
+
 /* Access to constant memory */
 void frm_isa_const_mem_write(int bank, int vector, int elem, void *pvalue);
 void frm_isa_const_mem_read(int bank, int vector, int elem, void *pvalue);
-//
-///* For ALU clauses */
-//void frm_isa_alu_clause_start(void);
-//void frm_isa_alu_clause_end(void);
-//
-///* For TC clauses */
-//void frm_isa_tc_clause_start(void);
-//void frm_isa_tc_clause_end(void);
-//
-///* For functional simulation */
-//unsigned int frm_isa_read_gpr(int gpr, int rel, int chan, int im);
-//float frm_isa_read_gpr_float(int gpr, int rel, int chan, int im);
-//void frm_isa_write_gpr(int gpr, int rel, int chan, uint32_t value);
-//void frm_isa_write_gpr_float(int gpr, int rel, int chan, float value);
-//
-//unsigned int frm_isa_read_op_src_int(int src_idx);
-//float frm_isa_read_op_src_float(int src_idx);
-//
-//void frm_isa_init(void);
-//void frm_isa_done(void);
 
+/* For ALU clauses */
+void frm_isa_alu_clause_start(void);
+void frm_isa_alu_clause_end(void);
 
+/* For TC clauses */
+void frm_isa_tc_clause_start(void);
+void frm_isa_tc_clause_end(void);
 
+/* For functional simulation */
+unsigned int frm_isa_read_gpr(int gpr, int rel, int chan, int im);
+float frm_isa_read_gpr_float(int gpr, int rel, int chan, int im);
+void frm_isa_write_gpr(int gpr, int rel, int chan, unsigned int value);
+void frm_isa_write_gpr_float(int gpr, int rel, int chan, float value);
 
+unsigned int frm_isa_read_op_src_int(int src_idx);
+float frm_isa_read_op_src_float(int src_idx);
 
-
-
-
-
-
-
-
+void frm_isa_init(void);
+void frm_isa_done(void);
 
 
 
 /*
- * Evergreen GPU Emulator
+ * Fermi GPU Emulator
  */
+
 
 struct frm_emu_t
 {
+        /* Repository of OpenCL objects */
+        struct frm_cuda_repo_t *cuda_repo;
+
+        /* List of ND-Ranges */
+        struct frm_grid_t *grid_list_head;
+        struct frm_grid_t *grid_list_tail;
+        int grid_list_count;
+        int grid_list_max;
+
+        /* List of pending ND-Ranges */
+        struct frm_grid_t *pending_grid_list_head;
+        struct frm_grid_t *pending_grid_list_tail;
+        int pending_grid_list_count;
+        int pending_grid_list_max;
+
+        /* List of running ND-Ranges */
+        struct frm_grid_t *running_grid_list_head;
+        struct frm_grid_t *running_grid_list_tail;
+        int running_grid_list_count;
+        int running_grid_list_max;
+
+        /* List of finished ND-Ranges */
+        struct frm_grid_t *finished_grid_list_head;
+        struct frm_grid_t *finished_grid_list_tail;
+        int finished_grid_list_count;
+        int finished_grid_list_max;
+
 	/* Constant memory (constant buffers)
 	 * There are 15 constant buffers, referenced as CB0 to CB14.
 	 * Each buffer can hold up to 1024 four-component vectors.
 	 * These buffers will be represented as a memory object indexed as
-	 *   buffer_id * 1024 * 4 * 4 + vector_id * 4 * 4 + elem_id * 4
-	 */
+	 * buffer_id * 1024 * 4 * 4 + vector_id * 4 * 4 + elem_id * 4 */
 	struct mem_t *const_mem;
 
 	/* Flags indicating whether the first 9 vector positions of CB0
@@ -771,43 +752,32 @@ struct frm_emu_t
 	long long timer_acc;  /* Accumulated time in previous on-off cycles */
 
 	/* Stats */
-	int grid_count;  /* Number of OpenCL kernels executed */
+	int grid_count;  /* Number of CUDA functions executed */
 	long long inst_count;  /* Number of instructions executed by warps */
 };
-
 
 extern enum frm_emu_kind_t
 {
 	frm_emu_functional,
 	frm_emu_detailed
 } frm_emu_kind;
-
 extern long long frm_emu_max_cycles;
 extern long long frm_emu_max_inst;
 extern int frm_emu_max_kernels;
-
 extern char *frm_emu_cuda_binary_name;
 extern char *frm_emu_report_file_name;
 extern FILE *frm_emu_report_file;
-
 extern int frm_emu_warp_size;
-
 extern char *err_frm_cuda_note;
-extern char *err_frm_cuda_param_note;
-
-
 extern struct frm_emu_t *frm_emu;
 
 void frm_emu_init(void);
 void frm_emu_done(void);
-
 void frm_emu_timer_start(void);
 void frm_emu_timer_stop(void);
 long long frm_emu_timer(void);
-
 void frm_emu_libcuda_redirect(char *path, int size);
 void frm_emu_libcuda_failed(int pid);
-
 void frm_emu_disasm(char *path);
 
 #endif

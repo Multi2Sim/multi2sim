@@ -43,37 +43,33 @@ int frm_emu_warp_size = 32;
 
 
 
+/*
+ * Fermi Emulator
+ */
+
 
 void frm_emu_init(void)
 {
-//        /* Allocate */
-//        evg_emu = calloc(1, sizeof(struct evg_emu_t));
-//        if (!evg_emu)
-//                fatal("%s: out of memory", __FUNCTION__);
-//
-//        /* Initialize */
-//        evg_emu->const_mem = mem_create();
-//        evg_emu->const_mem->safe = 0;
-//        evg_emu->global_mem = mem_create();
-//        evg_emu->global_mem->safe = 0;
-//
-//        /* Initialize disassembler (decoding tables...) */
-//        evg_disasm_init();
-//
-//        /* Initialize ISA (instruction execution tables...) */
-//        evg_isa_init();
-//
-//        /* Create platform and device */
+        /* Allocate */
+        frm_emu = calloc(1, sizeof(struct frm_emu_t));
+        if (!frm_emu)
+                fatal("%s: out of memory", __FUNCTION__);
+
+	frm_disasm_init();
+
+        /* Create device */
         frm_cuda_object_list = linked_list_create();
-//        evg_opencl_platform = evg_opencl_platform_create();
-//        evg_opencl_device_create();
+        frm_cuda_device_create();
 }
+
 
 void frm_emu_done(void)
 {
 	/* Free CUDA object list */
 	frm_cuda_object_free_all();
 	linked_list_free(frm_cuda_object_list);
+
+        free(frm_emu);
 }
 
 
@@ -94,12 +90,10 @@ void frm_emu_timer_stop(void)
 
 
 
-
-
-
 /* 
  * Fermi disassembler
  */
+
 
 void frm_emu_disasm(char *path)
 {
@@ -134,7 +128,4 @@ void frm_emu_disasm(char *path)
 	/* Free external ELF */
 	elf_file_free(elf_file);
 }
-
-
-
 

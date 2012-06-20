@@ -17,21 +17,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
 #include <assert.h>
 #include <debug.h>
-#include <stdlib.h>
 
 #include <fermi-emu.h>
-#include <mem-system.h>
 #include <x86-emu.h>
+#include <mem-system.h>
 
 
-/* CUDA Objects */
+
+/*
+ * Objects
+ */
 
 struct linked_list_t *frm_cuda_object_list;
 
 
 /* Add an CUDA object to object list */
+
 void frm_cuda_object_add(void *object)
 {
 	linked_list_find(frm_cuda_object_list, object);
@@ -41,6 +45,7 @@ void frm_cuda_object_add(void *object)
 
 
 /* Remove an CUDA object from object list */
+
 void frm_cuda_object_remove(void *object)
 {
 	linked_list_find(frm_cuda_object_list, object);
@@ -51,6 +56,7 @@ void frm_cuda_object_remove(void *object)
 
 /* Look for an CUDA object in the object list. The 'id' is the
  * first field for every object. */
+
 void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id)
 {
 	void *object;
@@ -74,29 +80,31 @@ void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id)
 
 
 /* Get the oldest created CUDA object of the specified type */
+
 void *frm_cuda_object_get_type(enum frm_cuda_obj_t type)
 {
-	void *object;
-	unsigned int object_id;
+        void *object;
+        unsigned int object_id;
 
-	/* Find object */
-	LINKED_LIST_FOR_EACH(frm_cuda_object_list)
-	{
-		if (!(object = linked_list_get(frm_cuda_object_list)))
-			panic("%s: empty object", __FUNCTION__);
-		object_id = * (unsigned int *) object;
-		if (object_id >> 16 == type)
-			return object;
-	}
+        /* Find object */
+        LINKED_LIST_FOR_EACH(frm_cuda_object_list)
+        {
+                if (!(object = linked_list_get(frm_cuda_object_list)))
+                        panic("%s: empty object", __FUNCTION__);
+                object_id = * (unsigned int *) object;
+                if (object_id >> 16 == type)
+                        return object;
+        }
 
-	/* No object found */
-	return NULL;
+        /* No object found */
+        return NULL;
 }
 
 
 /* Assignment of CUDA object identifiers
  * An identifier is a 32-bit value, whose 16 most significant bits represent the
  * object type, while the 16 least significant bits represent a unique object ID. */
+
 unsigned int frm_cuda_object_new_id(enum frm_cuda_obj_t type)
 {
 	static unsigned int cuda_current_object_id;
@@ -111,6 +119,7 @@ unsigned int frm_cuda_object_new_id(enum frm_cuda_obj_t type)
 
 
 /* Free all CUDA objects in the object list */
+
 void frm_cuda_object_free_all()
 {
 	void *object;
@@ -118,23 +127,27 @@ void frm_cuda_object_free_all()
 	/* Devices */
 	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_DEVICE)))
 		frm_cuda_device_free((struct frm_cuda_device_t *) object);
-	
+
 	/* Contexts */
 	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_CONTEXT)))
 		frm_cuda_context_free((struct frm_cuda_context_t *) object);
-	
-	/* Streams */
-	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_STREAM)))
-		frm_cuda_stream_free((struct frm_cuda_stream_t *) object);
-	
+
 	/* Modules */
 	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_MODULE)))
 		frm_cuda_module_free((struct frm_cuda_module_t *) object);
-	
+
 	/* Functions */
 	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_FUNCTION)))
 		frm_cuda_function_free((struct frm_cuda_function_t *) object);
-	
+
+        /* Mems */
+        while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_MEMORY)))
+                frm_cuda_memory_free((struct frm_cuda_memory_t *) object);
+
+	/* Streams */
+	while ((object = frm_cuda_object_get_type(FRM_CUDA_OBJ_STREAM)))
+		frm_cuda_stream_free((struct frm_cuda_stream_t *) object);
+
 	/* Any object left */
 	if (linked_list_count(frm_cuda_object_list))
 		panic("cuda_object_free_all: objects remaining in the list");
@@ -148,6 +161,7 @@ void frm_cuda_object_free_all()
 
 
 /* Create a device */
+
 struct frm_cuda_device_t *frm_cuda_device_create()
 {
 	struct frm_cuda_device_t *device;
@@ -167,6 +181,7 @@ struct frm_cuda_device_t *frm_cuda_device_create()
 
 
 /* Free device */
+
 void frm_cuda_device_free(struct frm_cuda_device_t *device)
 {
 	frm_cuda_object_remove(device);
@@ -181,6 +196,7 @@ void frm_cuda_device_free(struct frm_cuda_device_t *device)
 
 
 /* Create a context */
+
 struct frm_cuda_context_t *frm_cuda_context_create()
 {
 	struct frm_cuda_context_t *context;
@@ -201,44 +217,11 @@ struct frm_cuda_context_t *frm_cuda_context_create()
 
 
 /* Free context */
+
 void frm_cuda_context_free(struct frm_cuda_context_t *context)
 {
 	frm_cuda_object_remove(context);
 	free(context);
-}
-
-
-
-/*
- * CUDA Stream
- */
-
-
-/* Create a stream */
-struct frm_cuda_stream_t *frm_cuda_stream_create()
-{
-	struct frm_cuda_stream_t *stream;
-
-	/* Allocate */
-	stream = calloc(1, sizeof(struct frm_cuda_stream_t));
-	if (!stream)
-		fatal("%s: out of memory", __FUNCTION__);
-
-	/* Initialize */
-	stream->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_STREAM);
-	stream->ref_count = 1;
-
-	/* Return */
-	frm_cuda_object_add(stream);
-	return stream;
-}
-
-
-/* Free stream */
-void frm_cuda_stream_free(struct frm_cuda_stream_t *stream)
-{
-	frm_cuda_object_remove(stream);
-	free(stream);
 }
 
 
@@ -249,6 +232,7 @@ void frm_cuda_stream_free(struct frm_cuda_stream_t *stream)
 
 
 /* Create a module */
+
 struct frm_cuda_module_t *frm_cuda_module_create()
 {
 	struct frm_cuda_module_t *module;
@@ -269,6 +253,7 @@ struct frm_cuda_module_t *frm_cuda_module_create()
 
 
 /* Free module */
+
 void frm_cuda_module_free(struct frm_cuda_module_t *module)
 {
 	if (module->elf_file)
@@ -280,8 +265,38 @@ void frm_cuda_module_free(struct frm_cuda_module_t *module)
 
 
 /*
+ * CUDA Function Argument 
+ */
+
+
+struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name)
+{
+	struct frm_cuda_function_arg_t *arg;
+
+	/* Allocate */
+	arg = calloc(1, sizeof(struct frm_cuda_function_arg_t) + strlen(name) + 1);
+	if (!arg)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	strncpy(arg->name, name, MAX_STRING_SIZE);
+
+	/* Return */
+	return arg;
+}
+
+
+void frm_cuda_function_arg_free(struct frm_cuda_function_arg_t *arg)
+{
+	free(arg);
+}
+
+
+
+/*
  * CUDA Function
  */
+
 
 struct frm_cuda_function_t *frm_cuda_function_create()
 {
@@ -309,7 +324,7 @@ void frm_cuda_function_free(struct frm_cuda_function_t *function)
 
 	/* Free arguments */
 	for (i = 0; i < list_count(function->arg_list); i++)
-		frm_cuda_function_arg_free((struct frm_cuda_function_arg_t *) list_get(function->arg_list, i));
+		frm_cuda_function_arg_free((struct frm_cuda_function_arg_t *)list_get(function->arg_list, i));
 	list_free(function->arg_list);
 
 	/* FIXME: free ELF file */
@@ -320,25 +335,70 @@ void frm_cuda_function_free(struct frm_cuda_function_t *function)
 }
 
 
-struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name)
+
+/*
+ * CUDA Memory
+ */
+
+
+struct frm_cuda_memory_t *frm_cuda_memory_create()
 {
-	struct frm_cuda_function_arg_t *arg;
+        struct frm_cuda_memory_t *mem;
 
-	/* Allocate */
-	arg = calloc(1, sizeof(struct frm_cuda_function_arg_t) + strlen(name) + 1);
-	if (!arg)
-		fatal("%s: out of memory", __FUNCTION__);
+        /* Allocate */
+        mem = calloc(1, sizeof(struct frm_cuda_memory_t));
+        if (!mem)
+                fatal("%s: out of memory", __FUNCTION__);
 
-	/* Initialize */
-	strcpy(arg->name, name);
+        /* Initialize */
+        mem->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_MEMORY);
+        mem->ref_count = 1;
 
-	/* Return */
-	return arg;
+        /* Return */
+        frm_cuda_object_add(mem);
+        return mem;
 }
 
 
-void frm_cuda_function_arg_free(struct frm_cuda_function_arg_t *arg)
+void frm_cuda_memory_free(struct frm_cuda_memory_t *mem)
 {
-	free(arg);
+        frm_cuda_object_remove(mem);
+        free(mem);
+}
+
+
+
+/*
+ * CUDA Stream
+ */
+
+
+/* Create a stream */
+
+struct frm_cuda_stream_t *frm_cuda_stream_create()
+{
+	struct frm_cuda_stream_t *stream;
+
+	/* Allocate */
+	stream = calloc(1, sizeof(struct frm_cuda_stream_t));
+	if (!stream)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	stream->id = frm_cuda_object_new_id(FRM_CUDA_OBJ_STREAM);
+	stream->ref_count = 1;
+
+	/* Return */
+	frm_cuda_object_add(stream);
+	return stream;
+}
+
+
+/* Free stream */
+
+void frm_cuda_stream_free(struct frm_cuda_stream_t *stream)
+{
+	frm_cuda_object_remove(stream);
+	free(stream);
 }
 

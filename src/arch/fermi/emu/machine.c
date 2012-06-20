@@ -24,578 +24,519 @@
 #include <x86-emu.h>
 
 
-char *err_frm_sass_note =
-	"\tThe NVIDIA Fermi instruction set is partially supported by Multi2Sim. If\n"
+
+char *frm_err_isa_note =
+	"\tThe NVIDIA Fermi SASS instruction set is partially supported by Multi2Sim. If\n"
 	"\tyour program is using an unimplemented instruction, please email\n"
 	"\t'development@multi2sim.org' to request support for it.\n";
 
-#define NOT_IMPL() fatal("Fermi instruction '%s' not implemented\n%s", \
-	frm_sass_inst->info->name, err_frm_sass_note)
+#define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
+	frm_isa_inst->info->name, frm_err_isa_note)
 
 
 
-/*
- * Floating Point Instructions
- */
-
-void frm_sass_FFMA_impl()
+void frm_isa_FFMA_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_FADD_impl()
+void frm_isa_FADD_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_FADD32I_impl()
+void frm_isa_FADD32I_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_FCMP_impl()
+void frm_isa_FCMP_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_FMUL_impl()
+void frm_isa_FMUL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_FMUL32I_impl()
+void frm_isa_FMUL32I_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_FMNMX_impl()
+void frm_isa_FMNMX_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_FSWZ_impl()
+void frm_isa_FSWZ_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_FSET_impl()
+void frm_isa_FSET_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_FSETP_impl()
+void frm_isa_FSETP_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_RRO_impl()
+void frm_isa_RRO_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_MUFU_impl()
+void frm_isa_MUFU_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_DFMA_impl()
+void frm_isa_DFMA_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_DADD_impl()
+void frm_isa_DADD_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_DMUL_impl()
+void frm_isa_DMUL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_DMNMX_impl()
+void frm_isa_DMNMX_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_DSET_impl()
+void frm_isa_DSET_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_DSETP_impl()
+void frm_isa_DSETP_impl()
 {
 	NOT_IMPL();
 }
-
-
 
-/*
- * Integer Instructions
- */
-
-void frm_sass_IMAD_impl()
+void frm_isa_IMAD_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_IMUL_impl()
+void frm_isa_IMUL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_IADD_impl()
+void frm_isa_IADD_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_IADD32I_impl()
+void frm_isa_IADD32I_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_ISCADD_impl()
+void frm_isa_ISCADD_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_ISAD_impl()
+void frm_isa_ISAD_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_IMNMX_impl()
+void frm_isa_IMNMX_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_BFE_impl()
+void frm_isa_BFE_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_BFI_impl()
+void frm_isa_BFI_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_SHR_impl()
+void frm_isa_SHR_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_SHL_impl()
+void frm_isa_SHL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LOP_impl()
+void frm_isa_LOP_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LOP32I_impl()
+void frm_isa_LOP32I_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_FLO_impl()
+void frm_isa_FLO_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_ISET_impl()
+void frm_isa_ISET_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_ISETP_impl()
+void frm_isa_ISETP_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_ICMP_impl()
+void frm_isa_ICMP_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_POPC_impl()
+void frm_isa_POPC_impl()
 {
 	NOT_IMPL();
 }
-
-
-
-/*
- * Conversion Instructions
- */
 
-void frm_sass_F2F_impl()
+void frm_isa_F2F_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_F2I_impl()
+void frm_isa_F2I_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_I2F_impl()
+void frm_isa_I2F_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_I2I_impl()
+void frm_isa_I2I_impl()
 {
 	NOT_IMPL();
 }
 
-
-
-/*
- * Movement Instructions
- */
-
-void frm_sass_MOV_impl()
+void frm_isa_MOV_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_MOV32I_impl()
+void frm_isa_MOV32I_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_SEL_impl()
+void frm_isa_SEL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_PRMT_impl()
+void frm_isa_PRMT_impl()
 {
 	NOT_IMPL();
 }
-
 
-
-/*
- * Predicate/CC Instructions 
- */
-
-void frm_sass_P2R_impl()
+void frm_isa_P2R_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_R2P_impl()
+void frm_isa_R2P_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_CSET_impl()
+void frm_isa_CSET_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_CSETP_impl()
+void frm_isa_CSETP_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_PSET_impl()
+void frm_isa_PSET_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_PSETP_impl()
+void frm_isa_PSETP_impl()
 {
 	NOT_IMPL();
 }
-
-
 
-/*
- * Texture Instructions
- */
-
-void frm_sass_TEX_impl()
+void frm_isa_TEX_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_TLD_impl()
+void frm_isa_TLD_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_TLD4_impl()
+void frm_isa_TLD4_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_TXQ_impl()
+void frm_isa_TXQ_impl()
 {
 	NOT_IMPL();
 }
-
-
 
-/*
- * Compute Load/Store Instructions
- */
-
-void frm_sass_LDC_impl()
+void frm_isa_LDC_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LD_impl()
+void frm_isa_LD_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LDU_impl()
+void frm_isa_LDU_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LDL_impl()
+void frm_isa_LDL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LDS_impl()
+void frm_isa_LDS_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LDLK_impl()
+void frm_isa_LDLK_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LDSLK_impl()
+void frm_isa_LDSLK_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LD_LDU_impl()
+void frm_isa_LD_LDU_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LDS_LDU_impl()
+void frm_isa_LDS_LDU_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_ST_impl()
+void frm_isa_ST_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_STL_impl()
+void frm_isa_STL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_STUL_impl()
+void frm_isa_STUL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_STS_impl()
+void frm_isa_STS_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_STSUL_impl()
+void frm_isa_STSUL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_ATOM_impl()
+void frm_isa_ATOM_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_RED_impl()
+void frm_isa_RED_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_CCTL_impl()
+void frm_isa_CCTL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_CCTLL_impl()
+void frm_isa_CCTLL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_MEMBAR_impl()
+void frm_isa_MEMBAR_impl()
 {
 	NOT_IMPL();
 }
-
-
-
-/*
- * Surface Memory Instructions
- */
 
-void frm_sass_SULD_impl()
+void frm_isa_SULD_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_SULEA_impl()
+void frm_isa_SULEA_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_SUST_impl()
+void frm_isa_SUST_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_SURED_impl()
+void frm_isa_SURED_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_SUQ_impl()
+void frm_isa_SUQ_impl()
 {
 	NOT_IMPL();
 }
 
-
-
-/*
- * Control Instructions
- */
-
-void frm_sass_BRA_impl()
+void frm_isa_BRA_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_BRX_impl()
+void frm_isa_BRX_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_JMP_impl()
+void frm_isa_JMP_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_JMX_impl()
+void frm_isa_JMX_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_CAL_impl()
+void frm_isa_CAL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_JCAL_impl()
+void frm_isa_JCAL_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_RET_impl()
+void frm_isa_RET_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_BRK_impl()
+void frm_isa_BRK_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_CONT_impl()
+void frm_isa_CONT_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LONGJMP_impl()
+void frm_isa_LONGJMP_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_SSY_impl()
+void frm_isa_SSY_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_PBK_impl()
+void frm_isa_PBK_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_PCNT_impl()
+void frm_isa_PCNT_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_PRET_impl()
+void frm_isa_PRET_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_PLONGJMP_impl()
+void frm_isa_PLONGJMP_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_BPT_impl()
+void frm_isa_BPT_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_EXIT_impl()
+void frm_isa_EXIT_impl()
 {
 	NOT_IMPL();
 }
-
 
-
-/*
- * Miscellaneous Instructions
- */
-
-void frm_sass_NOP_impl()
+void frm_isa_NOP_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_S2R_impl()
+void frm_isa_S2R_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_B2R_impl()
+void frm_isa_B2R_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_LEPC_impl()
+void frm_isa_LEPC_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_BAR_impl()
+void frm_isa_BAR_impl()
 {
 	NOT_IMPL();
 }
 
-void frm_sass_VOTE_impl()
+void frm_isa_VOTE_impl()
 {
 	NOT_IMPL();
 }
-
-
 
