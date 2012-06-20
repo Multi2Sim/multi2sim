@@ -18,15 +18,17 @@
  */
 
 #include <hash-table.h>
-
 #include <fermi-emu.h>
+
 
 
 /*
  * Private Functions
  */
 
+
 /* Comparison function to sort list */
+
 static int frm_warp_divergence_compare(const void *elem1, const void *elem2)
 {
 	const int count1 = * (const int *) elem1;
@@ -124,7 +126,6 @@ static void frm_warp_divergence_dump(struct frm_warp_t *warp, FILE *f)
 
 
 
-
 /*
  * Public Functions
  */
@@ -195,7 +196,6 @@ void frm_warp_stack_push(struct frm_warp_t *warp)
 	bit_map_copy(warp->active_stack, warp->stack_top * warp->thread_count,
 		warp->active_stack, (warp->stack_top - 1) * warp->thread_count,
 		warp->thread_count);
-	//printf("  %s:push", warp->name);
 }
 
 
@@ -206,22 +206,17 @@ void frm_warp_stack_pop(struct frm_warp_t *warp, int count)
 	warp->stack_top -= count;
 	warp->active_mask_pop += count;
 	warp->active_mask_update = 1;
-	{
-		printf("  %s:pop(%d),act=", warp->name, count);
-	}
 }
 
 
 /* Execute one instruction in the warp */
 void frm_warp_execute(struct frm_warp_t *warp)
 {
-//	struct frm_grid_t *frm_isa_grid;
 	struct frm_threadblock_t *frm_isa_threadblock;
 	struct frm_warp_t *frm_isa_warp;
-//	struct frm_thread_t *frm_isa_thread;
-//	struct frm_inst_t *frm_isa_inst;
+	struct frm_inst_t *frm_isa_inst;
 
-//	struct frm_grid_t *grid = warp->grid;
+	int i;
 
 
 	/* Get current work-group */
@@ -242,13 +237,27 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	warp->active_mask_push = 0;
 	warp->active_mask_pop = 0;
 
-	int inst_num;
 
-	/* Decode CF instruction */
-	inst_num = (frm_isa_warp->buf - frm_isa_warp->buf_start) / 8;
-	printf("inst_num = %d\n", inst_num);
+	/* Decode instruction */
+	int inst_index;
+	char inst_str[MAX_STRING_SIZE];
+	for (inst_index = 0; inst_index < warp->buf_size/8; ++inst_index)
+	{
+		frm_inst_hex_dump(stdout, (unsigned char*)(warp->buf), inst_index);
+		frm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, (unsigned char*)(warp->buf), inst_index);
+	}
 
 	/* Execute once in warp */
+	int thread_id;
+                FRM_FOREACH_THREAD_IN_WARP(frm_isa_warp, thread_id)
+                {
+                        for (i = 0; i < 10; i++)
+                        {
+				frm_isa_inst = 0;
+                                (*frm_isa_inst_func[frm_isa_inst->info->inst])();
+                        }
+                        //frm_isa_write_task_commit();
+                }
 
 	/* If instruction updates the thread's active mask, update digests */
 
