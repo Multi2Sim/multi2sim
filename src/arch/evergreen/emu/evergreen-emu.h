@@ -164,6 +164,13 @@ void evg_opengl_bin_file_free(struct evg_opengl_bin_file_t *bin_file);
  * OpenCL API Implementation
  */
 
+/* Forward declaration */
+struct x86_ctx_t;
+
+/* Function tables */
+extern char *evg_opencl_func_name[];
+extern int evg_opencl_func_argc[];
+
 /* Debugging */
 #define evg_opencl_debug(...) debug(evg_opencl_debug_category, __VA_ARGS__)
 extern int evg_opencl_debug_category;
@@ -174,8 +181,9 @@ extern int evg_opencl_debug_category;
 #define EVG_OPENCL_FUNC_COUNT  (EVG_OPENCL_FUNC_LAST - EVG_OPENCL_FUNC_FIRST + 1)
 #define EVG_OPENCL_MAX_ARGS  14
 
-/* Execute OpenCL call */
-int evg_opencl_func_run(int code, int *argv);
+int evg_opencl_api_run(void);
+int evg_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
+		void *argv_ptr, int argv_size);
 
 
 
@@ -292,7 +300,7 @@ void evg_opencl_context_set_properties(struct evg_opencl_context_t *context,
  * instead. Is this a better option? */
 struct x86_ctx_t;
 
-enum evg_opencl_command_queue_task_type_t
+enum evg_opencl_command_type_t
 {
 	evg_opencl_command_queue_task_invalid,
 	evg_opencl_command_queue_task_read_buffer,
@@ -300,9 +308,9 @@ enum evg_opencl_command_queue_task_type_t
 	evg_opencl_command_queue_task_ndrange_kernel
 };
 
-struct evg_opencl_command_queue_task_t
+struct evg_opencl_command_t
 {
-	enum evg_opencl_command_queue_task_type_t type;
+	enum evg_opencl_command_type_t type;
 	union
 	{
 		struct
@@ -314,27 +322,27 @@ struct evg_opencl_command_queue_task_t
 
 struct evg_opencl_command_queue_t
 {
-	uint32_t id;
+	unsigned int id;
 	int ref_count;
 
-	uint32_t device_id;
-	uint32_t context_id;
-	uint32_t properties;
+	unsigned int device_id;
+	unsigned int context_id;
+	unsigned int properties;
 
-	struct linked_list_t *task_list;
+	struct linked_list_t *command_list;
 };
 
 struct evg_opencl_command_queue_t *evg_opencl_command_queue_create(void);
 void evg_opencl_command_queue_free(struct evg_opencl_command_queue_t *command_queue);
 
-struct evg_opencl_command_queue_task_t *evg_opencl_command_queue_task_create(enum
-	evg_opencl_command_queue_task_type_t type);
-void evg_opencl_command_queue_task_free(struct evg_opencl_command_queue_task_t *task);
+struct evg_opencl_command_t *evg_opencl_command_create(enum
+	evg_opencl_command_type_t type);
+void evg_opencl_command_free(struct evg_opencl_command_t *command);
 
 void evg_opencl_command_queue_submit(struct evg_opencl_command_queue_t *command_queue,
-	struct evg_opencl_command_queue_task_t *task);
+	struct evg_opencl_command_t *command);
 void evg_opencl_command_queue_complete(struct evg_opencl_command_queue_t *command_queue,
-	struct evg_opencl_command_queue_task_t *task);
+	struct evg_opencl_command_t *command);
 
 /* Callback function of type 'x86_ctx_wakeup_callback_func_t'.
  * Argument 'data' is type-casted to 'struct evg_opencl_command_queue_t' */
@@ -683,7 +691,7 @@ struct evg_ndrange_t
 
 	/* Command queue and command queue task associated */
 	struct evg_opencl_command_queue_t *command_queue;
-	struct evg_opencl_command_queue_task_t *command_queue_task;
+	struct evg_opencl_command_t *command;
 
 	/* Pointers to work-groups, wavefronts, and work_items */
 	struct evg_work_group_t **work_groups;
