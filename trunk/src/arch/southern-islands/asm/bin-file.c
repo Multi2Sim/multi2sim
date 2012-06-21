@@ -123,7 +123,17 @@ static struct string_map_t prog_info_entry_map = {
 		{ "AMU_ABI_LDS_SIZE_AVAIL",		0x80000081 },
 		{ "AMU_ABI_LDS_SIZE_USED",		0x80000082 },
 		{ "AMU_ABI_STACK_SIZE_AVAIL",		0x80000083 },
-		{ "AMU_ABI_STACK_SIZE_USED",		0x80000084 }
+		{ "AMU_ABI_STACK_SIZE_USED",		0x80000084 },
+
+		/* Southern Islands Related Fields */
+
+		{ "AMU_ABI_USER_ELEMENT_COUNT",     0x80001000 },
+		{ "AMU_ABI_USER_ELEMENTS_0_DWORD0", 0x80001001 },
+		{ "AMU_ABI_USER_ELEMENTS_0_DWORD1", 0x80001002 },
+		{ "AMU_ABI_USER_ELEMENTS_0_DWORD2", 0x80001003 },
+		{ "AMU_ABI_USER_ELEMENTS_0_DWORD3", 0x80001004 }
+		/*... 16 sets of user elements ...  0x80001040*/
+
 	}
 };
 
@@ -224,6 +234,36 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 
 			case 0x80000084:  /* AMU_ABI_STACK_SIZE_USED */
 				enc_dict_entry->stack_size_used = prog_info_entry->value;
+				break;
+			case 0x80001000:  /* AMU_ABI_USER_ELEMENT_COUNT */
+				enc_dict_entry->userElementCount = prog_info_entry->value;
+				i++;
+
+				/* Analyze user elements */
+				for(int j = 0; j < 4 * enc_dict_entry->userElementCount; j++)
+				{
+					prog_info_entry = desc + i * sizeof(struct pt_note_prog_info_entry_t);
+								elf_debug("\tprog_info_entry: addr=0x%x (%s), value=%u\n",
+									prog_info_entry->address, map_value(&prog_info_entry_map,
+									prog_info_entry->address), prog_info_entry->value);
+					switch(j % 4)
+					{
+					case 0:
+						enc_dict_entry->userElements[j / 4].dataClass = prog_info_entry->value;
+						break;
+					case 1:
+						enc_dict_entry->userElements[j / 4].apiSlot = prog_info_entry->value;
+						break;
+					case 2:
+						enc_dict_entry->userElements[j / 4].startUserReg = prog_info_entry->value;
+						break;
+					case 3:
+						enc_dict_entry->userElements[j / 4].userRegCount = prog_info_entry->value;
+						break;
+					}
+
+					i++;
+				}
 				break;
 			}
 		}
