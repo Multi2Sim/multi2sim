@@ -132,9 +132,26 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 
 		/* Initialize SGPRs */
 		/* FIXME These values need to be determined from the binary */
-		si_wavefront_init_sreg_with_cb(wavefront, 4, 4, 0);
-		si_wavefront_init_sreg_with_cb(wavefront, 8, 4, 1);
-		si_wavefront_init_sreg_with_uav_table(wavefront, 2, 2);
+
+		/* Initialize Constant Buffers */
+		unsigned int userElementCount = kernel->bin_file->enc_dict_entry_southern_islands->userElementCount;
+		struct si_bin_enc_user_element_t* userElements = kernel->bin_file->enc_dict_entry_southern_islands->userElements;
+		for (int i = 0; i < userElementCount; i++)
+		{
+			if (userElements[i].dataClass == IMM_CONST_BUFFER)
+			{
+				si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
+			}
+			else if (userElements[i].dataClass == PTR_UAV_TABLE)
+			{
+				si_wavefront_init_sreg_with_uav_table(wavefront, userElements[i].startUserReg, userElements[i].userRegCount);
+			}
+			else
+			{
+				fatal("Unimplemented User Element: dataClass:%d", userElements[i].dataClass);
+			}
+		}
+
 		si_wavefront_init_sreg_with_value(wavefront, 12, gid); /* S12 = WGID.x */
 	}
 
