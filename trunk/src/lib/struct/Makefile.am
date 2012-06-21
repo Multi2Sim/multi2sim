@@ -5,8 +5,6 @@ libstruct_a_SOURCES = \
 	bin-config.h \
 	buffer.c \
 	buffer.h \
-	chrono.c \
-	chrono.h \
 	config.c \
 	config.h \
 	elf-format.c \
@@ -24,6 +22,8 @@ libstruct_a_SOURCES = \
 	repos.c \
 	repos.h \
 	debug.c \
-	debug.h
+	debug.h \
+	timer.c \
+	timer.h
 
 INCLUDES = @M2S_INCLUDES@
