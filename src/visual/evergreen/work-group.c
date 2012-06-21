@@ -110,9 +110,14 @@ void vi_evg_work_group_read_checkpoint(struct vi_evg_work_group_t *work_group, F
 
 	char name[MAX_STRING_SIZE];
 
-	/* Read work-group id */
-	count = fread(&work_group->id, 1, sizeof work_group->id, f);
-	if (count != sizeof work_group->id)
+	/* Read work-group id, WF first/count, WI first/count */
+	count = 0;
+	count += fread(&work_group->id, 1, sizeof(int), f);
+	count += fread(&work_group->wavefront_id_first, 1, sizeof(int), f);
+	count += fread(&work_group->wavefront_count, 1, sizeof(int), f);
+	count += fread(&work_group->work_item_id_first, 1, sizeof(int), f);
+	count += fread(&work_group->work_item_count, 1, sizeof(int), f);
+	if (count != 20)
 		panic("%s: cannot read checkpoint", __FUNCTION__);
 
 	/* Work-group name */
@@ -125,8 +130,13 @@ void vi_evg_work_group_write_checkpoint(struct vi_evg_work_group_t *work_group, 
 {
 	int count;
 
-	/* Write work-group id */
-	count = fwrite(&work_group->id, 1, sizeof work_group->id, f);
-	if (count != sizeof work_group->id)
+	/* Write work-group id, WF first/count, WI first/count */
+	count = 0;
+	count += fwrite(&work_group->id, 1, sizeof(int), f);
+	count += fwrite(&work_group->wavefront_id_first, 1, sizeof(int), f);
+	count += fwrite(&work_group->wavefront_count, 1, sizeof(int), f);
+	count += fwrite(&work_group->work_item_id_first, 1, sizeof(int), f);
+	count += fwrite(&work_group->work_item_count, 1, sizeof(int), f);
+	if (count != 20)
 		panic("%s: cannot write checkpoint", __FUNCTION__);
 }
