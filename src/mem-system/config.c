@@ -1576,6 +1576,7 @@ static void mem_config_calculate_mod_levels(void)
 
 static void mem_config_trace(void)
 {
+	struct net_t *net;
 	int i;
 
 	/* No need if not tracing */
@@ -1586,13 +1587,17 @@ static void mem_config_trace(void)
 	mem_trace_header("mem.init version=\"%d.%d\"\n",
 		MEM_SYSTEM_TRACE_VERSION_MAJOR, MEM_SYSTEM_TRACE_VERSION_MINOR);
 
-	/* Networks */
+	/* Internal networks */
 	LIST_FOR_EACH(mem_system->net_list, i)
 	{
-		struct net_t *net;
-
 		net = list_get(mem_system->net_list, i);
+		mem_trace_header("mem.new_net name=\"%s\" num_nodes=%d\n",
+			net->name, net->node_list->count);
+	}
 
+	/* External networks */
+	for (net = net_find_first(); net; net = net_find_next())
+	{
 		mem_trace_header("mem.new_net name=\"%s\" num_nodes=%d\n",
 			net->name, net->node_list->count);
 	}

@@ -445,7 +445,10 @@ void net_init(void);
 void net_done(void);
 
 void net_load(char *file_name);
+
 struct net_t *net_find(char *name);
+struct net_t *net_find_first(void);
+struct net_t *net_find_next(void);
 
 void net_sim(char *debug_file_name);
 

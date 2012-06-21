@@ -124,7 +124,7 @@ int EV_NET_INPUT_BUFFER;
 int EV_NET_RECEIVE;
 
 /* List of networks */
-static struct hash_table_t *net_list;
+static struct hash_table_t *net_table;
 
 /* Configuration parameters */
 char *net_config_file_name = "";
@@ -218,7 +218,7 @@ void net_config_load(void)
 	net_debug("\n");
 
 	/* Load networks */
-	net_list = hash_table_create(0, 0);
+	net_table = hash_table_create(0, 0);
 	for (i = 0; i < net_name_list->count; i++)
 	{
 		struct net_t *network;
@@ -227,7 +227,7 @@ void net_config_load(void)
 		net_name = list_get(net_name_list, i);
 		network = net_create_from_config(config, net_name);
 
-		hash_table_insert(net_list, net_name, network);
+		hash_table_insert(net_table, net_name, network);
 	}
 
 	/* Free list of network names and configuration file */
@@ -265,10 +265,10 @@ void net_done(void)
 	struct net_t *net;
 
 	/* Free list of networks */
-	if (net_list)
+	if (net_table)
 	{
-		for (hash_table_find_first(net_list, (void **) &net); net;
-			hash_table_find_next(net_list, (void **) &net))
+		for (hash_table_find_first(net_table, (void **) &net); net;
+			hash_table_find_next(net_table, (void **) &net))
 		{
 			/* Dump report for network */
 			if (net_report_file)
@@ -277,7 +277,7 @@ void net_done(void)
 			/* Free network */
 			net_free(net);
 		}
-		hash_table_free(net_list);
+		hash_table_free(net_table);
 	}
 
 	/* Close report file */
@@ -288,11 +288,39 @@ void net_done(void)
 struct net_t *net_find(char *name)
 {
 	/* No network list */
-	if (!net_list)
+	if (!net_table)
 		return NULL;
 
 	/* Find network in list */
-	return hash_table_get(net_list, name);
+	return hash_table_get(net_table, name);
+}
+
+
+struct net_t *net_find_first(void)
+{
+	struct net_t *net;
+
+	/* No network loaded */
+	if (!net_table)
+		return NULL;
+
+	/* Return first network */
+	hash_table_find_first(net_table, (void **) &net);
+	return net;
+}
+
+
+struct net_t *net_find_next(void)
+{
+	struct net_t *net;
+
+	/* No network loaded */
+	if (!net_table)
+		return NULL;
+
+	/* Return next network */
+	hash_table_find_next(net_table, (void **) &net);
+	return net;
 }
 
 
