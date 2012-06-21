@@ -354,6 +354,11 @@ void si_isa_S_ADDK_I32_impl()
 	NOT_IMPL();
 }
 
+void si_isa_S_MULK_I32_impl()
+{
+	NOT_IMPL();
+}
+
 #define INST SI_INST_SOP1
 void si_isa_S_MOV_B64_impl()
 {
@@ -374,6 +379,11 @@ void si_isa_S_MOV_B64_impl()
 	}
 }
 #undef INST
+
+void si_isa_S_MOV_B32_impl()
+{
+	NOT_IMPL();
+}
 
 #define INST SI_INST_SOP1
 void si_isa_S_AND_SAVEEXEC_B64_impl()
@@ -469,6 +479,11 @@ void si_isa_S_CBRANCH_SCC1_impl()
 }
 #undef INST
 
+void si_isa_S_CBRANCH_VCCZ_impl()
+{
+	NOT_IMPL();
+}
+
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_EXECZ_impl()
 {
@@ -486,6 +501,11 @@ void si_isa_S_CBRANCH_EXECZ_impl()
 	}
 }
 #undef INST
+
+void si_isa_S_BARRIER_impl()
+{
+	NOT_IMPL();
+}
 
 void si_isa_S_WAITCNT_impl()
 {
@@ -525,6 +545,16 @@ void si_isa_V_CVT_F32_I32_impl()
 }
 #undef INST
 
+void si_isa_V_CVT_F32_U32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_CVT_U32_F32_impl()
+{
+	NOT_IMPL();
+}
+
 #define INST SI_INST_VOP1
 void si_isa_V_CVT_I32_F32_impl()
 {
@@ -541,6 +571,11 @@ void si_isa_V_CVT_I32_F32_impl()
 	}
 }
 #undef INST
+
+void si_isa_V_RCP_F32_impl()
+{
+	NOT_IMPL();
+}
 
 void si_isa_V_ADD_F32_impl()
 {
@@ -672,6 +707,16 @@ void si_isa_V_ADD_I32_impl()
 }
 #undef INST
 
+void si_isa_V_SUB_I32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_CNDMASK_B32_VOP3a_impl()
+{
+	NOT_IMPL();
+}
+
 #define INST SI_INST_VOP3a
 void si_isa_V_MAD_F32_impl()
 {
@@ -692,6 +737,16 @@ void si_isa_V_MAD_F32_impl()
 	}
 }
 #undef INST
+
+void si_isa_V_MUL_LO_U32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_MUL_HI_U32_impl()
+{
+	NOT_IMPL();
+}
 
 #define INST SI_INST_VOP3a
 void si_isa_V_MUL_LO_I32_impl()
@@ -755,6 +810,16 @@ void si_isa_V_CMP_GT_I32_impl()
 }
 #undef INST
 
+void si_isa_V_CMP_NE_I32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_CMP_LE_U32_impl()
+{
+	NOT_IMPL();
+}
+
 #define INST SI_INST_VOP3b
 void si_isa_V_CMP_GT_I32_VOP3b_impl()
 {
@@ -775,6 +840,31 @@ void si_isa_V_CMP_GT_I32_VOP3b_impl()
 	}
 }
 #undef INST
+
+void si_isa_V_CMP_NE_I32_VOP3b_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_CMP_GE_U32_VOP3b_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_V_ADDC_U32_VOP3b_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_DS_WRITE_B32_impl()
+{
+	NOT_IMPL();
+}
+
+void si_isa_DS_READ_B32_impl()
+{
+	NOT_IMPL();
+}
 
 #define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
