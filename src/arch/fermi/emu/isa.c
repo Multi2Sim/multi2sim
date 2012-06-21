@@ -30,7 +30,6 @@ struct frm_grid_t *frm_isa_grid;  /* Current ND-Range */
 struct frm_threadblock_t *frm_isa_threadblock;  /* Current work-group */
 struct frm_warp_t *frm_isa_warp;  /* Current warp */
 struct frm_thread_t *frm_isa_thread;  /* Current work-item */
-struct frm_inst_t *frm_isa_cf_inst;  /* Current CF instruction */
 struct frm_inst_t *frm_isa_inst;  /* Current instruction */
 struct frm_alu_group_t *frm_isa_alu_group;  /* Current ALU group */
 
