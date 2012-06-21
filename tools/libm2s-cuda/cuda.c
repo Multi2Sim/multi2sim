@@ -584,8 +584,8 @@ CUresult cuMemGetInfo(size_t *free, size_t *total)
 
 CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 {
-	cuda_debug(stdout, "FUNC: %s\n", __FUNCTION__);
-	cuda_debug(stdout, "\tIN: bytesize=%zd\n", bytesize);
+	unsigned int sys_args[2];
+	int ret;
 
 	if (bytesize == 0)
 	{
@@ -593,7 +593,21 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	cuda_debug(stdout, "\tOUT: dptr_ptr=%p\n", dptr);
+	cuda_debug(stdout, "FUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: bytesize=%zd\n", bytesize);
+
+	sys_args[0] = (unsigned int)dptr;
+	sys_args[1] = (unsigned int)bytesize;
+
+	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_cuMemAlloc, sys_args);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call FRM_CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			err_frm_cuda_native);
+
+	cuda_debug(stdout, "\tOUT: dptr=%0#10x\n", *dptr);
 	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -738,12 +752,56 @@ CUresult cuMemcpyPeer(CUdeviceptr dstDevice, CUcontext dstContext, CUdeviceptr s
 
 CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount)
 {
+	unsigned int sys_args[3];
+	int ret;
+
+	cuda_debug(stdout, "FUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: dstDevice=%0#10x\n", dstDevice);
+	cuda_debug(stdout, "\tIN: srcHost=%p\n", srcHost);
+	cuda_debug(stdout, "\tIN: ByteCount=%zd\n", ByteCount);
+
+	sys_args[0] = (unsigned int)dstDevice;
+	sys_args[1] = (unsigned int)srcHost;
+	sys_args[2] = (unsigned int)ByteCount;
+
+	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_cuMemcpyHtoD, sys_args);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call FRM_CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			err_frm_cuda_native);
+
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
+
 	return CUDA_SUCCESS;
 }
 
 
 CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 {
+	unsigned int sys_args[3];
+	int ret;
+
+	cuda_debug(stdout, "FUNC: %s\n", __FUNCTION__);
+	cuda_debug(stdout, "\tIN: dstHost=%p\n", dstHost);
+	cuda_debug(stdout, "\tIN: srcDevice=%0#10x\n", srcDevice);
+	cuda_debug(stdout, "\tIN: ByteCount=%zd\n", ByteCount);
+
+	sys_args[0] = (unsigned int)dstHost;
+	sys_args[1] = (unsigned int)srcDevice;
+	sys_args[2] = (unsigned int)ByteCount;
+
+	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_cuMemcpyDtoH, sys_args);
+
+	/* Check that we are running on Multi2Sim. If a program linked with this library
+	 * is running natively, system call FRM_CUDA_SYS_CODE is not supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s",
+			err_frm_cuda_native);
+
+	cuda_debug(stdout, "\tOUT: return=%d\n", CUDA_SUCCESS);
+
 	return CUDA_SUCCESS;
 }
 

@@ -30,7 +30,7 @@ char *frm_err_isa_note =
 	"\tyour program is using an unimplemented instruction, please email\n"
 	"\t'development@multi2sim.org' to request support for it.\n";
 
-#define NOT_IMPL() fatal("GPU instruction '%s' not implemented\n%s", \
+#define NOT_IMPL() warning("GPU instruction '%s' not implemented\n%s", \
 	frm_isa_inst->info->name, frm_err_isa_note)
 
 
@@ -507,7 +507,7 @@ void frm_isa_BPT_impl()
 
 void frm_isa_EXIT_impl()
 {
-	NOT_IMPL();
+	frm_isa_warp->finished = 1;
 }
 
 void frm_isa_NOP_impl()

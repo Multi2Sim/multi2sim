@@ -212,19 +212,18 @@ void frm_warp_stack_pop(struct frm_warp_t *warp, int count)
 /* Execute one instruction in the warp */
 void frm_warp_execute(struct frm_warp_t *warp)
 {
-	struct frm_threadblock_t *frm_isa_threadblock;
-	struct frm_warp_t *frm_isa_warp;
-	struct frm_inst_t *frm_isa_inst;
+	extern struct frm_threadblock_t *frm_isa_threadblock;
+	extern struct frm_warp_t *frm_isa_warp;
+	extern struct frm_inst_t *frm_isa_inst;
 
-	int i;
 
 
 	/* Get current work-group */
-//	frm_isa_grid = warp->grid;
+	struct frm_grid_t *grid = warp->grid;
 	frm_isa_warp = warp;
 	frm_isa_threadblock = warp->threadblock;
 //	frm_isa_thread = NULL;
-//	frm_isa_inst = NULL;
+	frm_isa_inst = NULL;
 	assert(!DOUBLE_LINKED_LIST_MEMBER(frm_isa_threadblock, finished, frm_isa_warp));
 
 	/* Reset instruction flags */
@@ -239,25 +238,48 @@ void frm_warp_execute(struct frm_warp_t *warp)
 
 
 	/* Decode instruction */
-	int inst_index;
-	char inst_str[MAX_STRING_SIZE];
-	for (inst_index = 0; inst_index < warp->buf_size/8; ++inst_index)
+
+	int byte_index;
+
+	frm_isa_inst = &(warp->inst);
+	printf("Instruction Hex: ");
+	/* Print most significant byte first */
+	for (byte_index = 7; byte_index >= 0; --byte_index)
 	{
-		frm_inst_hex_dump(stdout, (unsigned char*)(warp->buf), inst_index);
-		frm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, (unsigned char*)(warp->buf), inst_index);
+		printf("%02x", *((unsigned char*)(warp->buf)+byte_index));
+		frm_isa_inst->dword.bytes[byte_index] = *((unsigned char*)(warp->buf)+byte_index);
 	}
+	printf("\n");
+	for (byte_index = 7; byte_index >= 0; --byte_index)
+	{
+		printf("%02x", frm_isa_inst->dword.bytes[byte_index]);
+	}
+	printf("\n");
+
+	frm_inst_decode(frm_isa_inst);
+
+        (*frm_isa_inst_func[frm_isa_inst->info->inst])();
+
+	warp->buf += 8;
+
+
+
+	//frm_isa_inst = &(frm_isa_warp->inst);
+
+
+	//int inst_index;
+	//char inst_str[MAX_STRING_SIZE];
+	//for (inst_index = 0; inst_index < warp->buf_size/8; ++inst_index)
+	//{
+	//}
 
 	/* Execute once in warp */
-	int thread_id;
-                FRM_FOREACH_THREAD_IN_WARP(frm_isa_warp, thread_id)
-                {
-                        for (i = 0; i < 10; i++)
-                        {
-				frm_isa_inst = 0;
-                                (*frm_isa_inst_func[frm_isa_inst->info->inst])();
-                        }
-                        //frm_isa_write_task_commit();
-                }
+	//int thread_id;
+        //        FRM_FOREACH_THREAD_IN_WARP(frm_isa_warp, thread_id)
+        //        {
+        //                (*frm_isa_inst_func[frm_isa_inst->info->inst])();
+        //                //frm_isa_write_task_commit();
+        //        }
 
 	/* If instruction updates the thread's active mask, update digests */
 
@@ -270,18 +292,21 @@ void frm_warp_execute(struct frm_warp_t *warp)
 //	}
 //
 //
-//	/* Check if warp finished kernel execution */
-//	assert(DOUBLE_LINKED_LIST_MEMBER(frm_isa_threadblock, running, frm_isa_warp));
-//	assert(!DOUBLE_LINKED_LIST_MEMBER(frm_isa_threadblock, finished, frm_isa_warp));
-//	DOUBLE_LINKED_LIST_REMOVE(frm_isa_threadblock, running, frm_isa_warp);
-//	DOUBLE_LINKED_LIST_INSERT_TAIL(frm_isa_threadblock, finished, frm_isa_warp);
-//
-//	/* Check if work-group finished kernel execution */
-//	if (frm_isa_threadblock->finished_list_count == frm_isa_threadblock->warp_count)
-//	{
-//		assert(DOUBLE_LINKED_LIST_MEMBER(grid, running, frm_isa_threadblock));
-//		assert(!DOUBLE_LINKED_LIST_MEMBER(grid, finished, frm_isa_threadblock));
-//		frm_threadblock_clear_status(frm_isa_threadblock, frm_threadblock_running);
-//		frm_threadblock_set_status(frm_isa_threadblock, frm_threadblock_finished);
-//	}
+	if (frm_isa_warp->finished)
+	{
+		/* Check if warp finished kernel execution */
+		assert(DOUBLE_LINKED_LIST_MEMBER(frm_isa_threadblock, running, frm_isa_warp));
+		assert(!DOUBLE_LINKED_LIST_MEMBER(frm_isa_threadblock, finished, frm_isa_warp));
+		DOUBLE_LINKED_LIST_REMOVE(frm_isa_threadblock, running, frm_isa_warp);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_isa_threadblock, finished, frm_isa_warp);
+
+		/* Check if work-group finished kernel execution */
+		if (frm_isa_threadblock->finished_list_count == frm_isa_threadblock->warp_count)
+		{
+			assert(DOUBLE_LINKED_LIST_MEMBER(grid, running, frm_isa_threadblock));
+			assert(!DOUBLE_LINKED_LIST_MEMBER(grid, finished, frm_isa_threadblock));
+			frm_threadblock_clear_status(frm_isa_threadblock, frm_threadblock_running);
+			frm_threadblock_set_status(frm_isa_threadblock, frm_threadblock_finished);
+		}
+	}
 }
