@@ -151,8 +151,13 @@ static void sharers_label_clicked(GtkWidget *widget,
 	if (!mod)
 		panic("%s: %s: invalid module", __FUNCTION__, sharers_label->mod_name);
 
-	/* Initialize */
+	/* Get high network - must exist if there are sharers */
 	net = mod->high_net;
+	if (!net)
+		panic("%s: %s: sharers but no high network", __FUNCTION__,
+				sharers_label->mod_name);
+
+	/* Initialize */
 	buf_ptr = buf;
 	size = sizeof buf;
 
