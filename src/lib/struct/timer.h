@@ -17,31 +17,29 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef CHRONO_H
-#define CHRONO_H
+#ifndef TIMER_H
+#define TIMER_H
 
-#include <stdio.h>
+enum timer_state_t
+{
+	timer_state_invalid,
+	timer_state_stopped,
+	timer_state_running
+};
 
-struct chrono_t;
+struct timer_t;
 
-struct chrono_t *chrono_create();
-void chrono_free(struct chrono_t *chrono);
+struct timer_t *timer_create(char *name);
+void timer_free(struct timer_t *timer);
 
-void chrono_start(struct chrono_t *chrono);
-void chrono_stop(struct chrono_t *chrono);
-void chrono_reset(struct chrono_t *chrono);
-double chrono_ellapsed(struct chrono_t *chrono);
-char *chrono_name(struct chrono_t *chrono);
+void timer_start(struct timer_t *timer);
+void timer_stop(struct timer_t *timer);
+void timer_reset(struct timer_t *timer);
+
+long long timer_get_value(struct timer_t *timer);
+enum timer_state_t timer_get_state(struct timer_t *timer);
+char *timer_get_name(struct timer_t *timer);
 
 
-struct chrono_list_t;
-
-struct chrono_list_t *chrono_list_create();
-void chrono_list_free(struct chrono_list_t *chrono_list);
-
-int chrono_list_new(struct chrono_list_t *chrono_list, char *name);
-void chrono_list_start(struct chrono_list_t *chrono_list, int idx);
-void chrono_list_stop(struct chrono_list_t *chrono_list, int idx);
-void chrono_list_dump(struct chrono_list_t *chrono_list, FILE *f);
 
 #endif
