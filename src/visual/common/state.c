@@ -440,6 +440,10 @@ void vi_state_create_checkpoints(void)
 		ftell(vi_state->checkpoint_file) / 1.048e6);
 	fflush(stdout);
 
+	/* No checkpoint created - assume trace file empty */
+	if (!list_count(vi_state->checkpoint_list))
+		fatal("empty trace");
+
 	/* Load first checkpoint */
 	vi_state_read_checkpoint(0);
 }
