@@ -129,7 +129,7 @@ long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind,
 		else if (access_kind == mod_access_nc_store)
 		{
 			// TODO Change this to EV_MOD_NMOESI_NC_STORE after updating the protocol
-			event = EV_MOD_NMOESI_STORE;
+			event = EV_MOD_NMOESI_NC_STORE;
 		}
 		else
 		{
