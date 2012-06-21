@@ -613,7 +613,9 @@ extern int EV_MOD_NMOESI_STORE_FINISH;
 
 extern int EV_MOD_NMOESI_NC_STORE;
 extern int EV_MOD_NMOESI_NC_STORE_LOCK;
+extern int EV_MOD_NMOESI_NC_STORE_WRITEBACK;
 extern int EV_MOD_NMOESI_NC_STORE_ACTION;
+extern int EV_MOD_NMOESI_NC_STORE_MISS;
 extern int EV_MOD_NMOESI_NC_STORE_UNLOCK;
 extern int EV_MOD_NMOESI_NC_STORE_FINISH;
 
@@ -630,6 +632,8 @@ extern int EV_MOD_NMOESI_EVICT_WRITEBACK;
 extern int EV_MOD_NMOESI_EVICT_WRITEBACK_EXCLUSIVE;
 extern int EV_MOD_NMOESI_EVICT_WRITEBACK_FINISH;
 extern int EV_MOD_NMOESI_EVICT_PROCESS;
+extern int EV_MOD_NMOESI_EVICT_PROCESS_NONCOHERENT;
+extern int EV_MOD_NMOESI_EVICT_WAIT_FOR_REQS;
 extern int EV_MOD_NMOESI_EVICT_REPLY;
 extern int EV_MOD_NMOESI_EVICT_REPLY_RECEIVE;
 extern int EV_MOD_NMOESI_EVICT_FINISH;
@@ -644,17 +648,6 @@ extern int EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP;
 extern int EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP_FINISH;
 extern int EV_MOD_NMOESI_WRITE_REQUEST_REPLY;
 extern int EV_MOD_NMOESI_WRITE_REQUEST_FINISH;
-
-extern int EV_MOD_NMOESI_NC_WRITE_REQUEST;
-extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_RECEIVE;
-extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_ACTION;
-extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_EXCLUSIVE;
-extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_UPDOWN;
-extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_UPDOWN_FINISH;
-extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_DOWNUP;
-extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_DOWNUP_FINISH;
-extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_REPLY;
-extern int EV_MOD_NMOESI_NC_WRITE_REQUEST_FINISH;
 
 extern int EV_MOD_NMOESI_READ_REQUEST;
 extern int EV_MOD_NMOESI_READ_REQUEST_RECEIVE;
@@ -814,7 +807,6 @@ void mod_handler_nmoesi_store(int event, void *data);
 void mod_handler_nmoesi_nc_store(int event, void *data);
 void mod_handler_nmoesi_evict(int event, void *data);
 void mod_handler_nmoesi_write_request(int event, void *data);
-void mod_handler_nmoesi_nc_write_request(int event, void *data);
 void mod_handler_nmoesi_read_request(int event, void *data);
 void mod_handler_nmoesi_invalidate(int event, void *data);
 void mod_handler_nmoesi_peer(int event, void *data);

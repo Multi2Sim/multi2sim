@@ -75,7 +75,9 @@ void mem_system_init(void)
 	
 	EV_MOD_NMOESI_NC_STORE = esim_register_event_with_name(mod_handler_nmoesi_nc_store, "mod_nmoesi_nc_store");
 	EV_MOD_NMOESI_NC_STORE_LOCK = esim_register_event_with_name(mod_handler_nmoesi_nc_store, "mod_nmoesi_nc_store_lock");
+	EV_MOD_NMOESI_NC_STORE_WRITEBACK = esim_register_event_with_name(mod_handler_nmoesi_nc_store, "mod_nmoesi_nc_store_writeback");
 	EV_MOD_NMOESI_NC_STORE_ACTION = esim_register_event_with_name(mod_handler_nmoesi_nc_store, "mod_nmoesi_nc_store_action");
+	EV_MOD_NMOESI_NC_STORE_MISS= esim_register_event_with_name(mod_handler_nmoesi_nc_store, "mod_nmoesi_nc_store_miss");
 	EV_MOD_NMOESI_NC_STORE_UNLOCK = esim_register_event_with_name(mod_handler_nmoesi_nc_store, "mod_nmoesi_nc_store_unlock");
 	EV_MOD_NMOESI_NC_STORE_FINISH = esim_register_event_with_name(mod_handler_nmoesi_nc_store, "mod_nmoesi_nc_store_finish");
 
@@ -92,6 +94,9 @@ void mem_system_init(void)
 	EV_MOD_NMOESI_EVICT_WRITEBACK_EXCLUSIVE = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_writeback_exclusive");
 	EV_MOD_NMOESI_EVICT_WRITEBACK_FINISH = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_writeback_finish");
 	EV_MOD_NMOESI_EVICT_PROCESS = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_process");
+	EV_MOD_NMOESI_EVICT_PROCESS_NONCOHERENT = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_process_noncoherent");
+	EV_MOD_NMOESI_EVICT_WAIT_FOR_REQS= esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_wait_for_reqs");
+	EV_MOD_NMOESI_EVICT_REPLY = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_reply");
 	EV_MOD_NMOESI_EVICT_REPLY = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_reply");
 	EV_MOD_NMOESI_EVICT_REPLY_RECEIVE = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_reply_receive");
 	EV_MOD_NMOESI_EVICT_FINISH = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_finish");
@@ -106,17 +111,6 @@ void mem_system_init(void)
 	EV_MOD_NMOESI_WRITE_REQUEST_DOWNUP_FINISH = esim_register_event_with_name(mod_handler_nmoesi_write_request, "mod_nmoesi_write_request_downup_finish");
 	EV_MOD_NMOESI_WRITE_REQUEST_REPLY = esim_register_event_with_name(mod_handler_nmoesi_write_request, "mod_nmoesi_write_request_reply");
 	EV_MOD_NMOESI_WRITE_REQUEST_FINISH = esim_register_event_with_name(mod_handler_nmoesi_write_request, "mod_nmoesi_write_request_finish");
-
-	EV_MOD_NMOESI_NC_WRITE_REQUEST = esim_register_event_with_name(mod_handler_nmoesi_nc_write_request, "mod_nmoesi_nc_write_request");
-	EV_MOD_NMOESI_NC_WRITE_REQUEST_RECEIVE = esim_register_event_with_name(mod_handler_nmoesi_nc_write_request, "mod_nmoesi_nc_write_request_receive");
-	EV_MOD_NMOESI_NC_WRITE_REQUEST_ACTION = esim_register_event_with_name(mod_handler_nmoesi_nc_write_request, "mod_nmoesi_nc_write_request_action");
-	EV_MOD_NMOESI_NC_WRITE_REQUEST_EXCLUSIVE = esim_register_event_with_name(mod_handler_nmoesi_nc_write_request, "mod_nmoesi_nc_write_request_exclusive");
-	EV_MOD_NMOESI_NC_WRITE_REQUEST_UPDOWN = esim_register_event_with_name(mod_handler_nmoesi_nc_write_request, "mod_nmoesi_nc_write_request_updown");
-	EV_MOD_NMOESI_NC_WRITE_REQUEST_UPDOWN_FINISH = esim_register_event_with_name(mod_handler_nmoesi_nc_write_request, "mod_nmoesi_nc_write_request_updown_finish");
-	EV_MOD_NMOESI_NC_WRITE_REQUEST_DOWNUP = esim_register_event_with_name(mod_handler_nmoesi_nc_write_request, "mod_nmoesi_nc_write_request_downup");
-	EV_MOD_NMOESI_NC_WRITE_REQUEST_DOWNUP_FINISH = esim_register_event_with_name(mod_handler_nmoesi_nc_write_request, "mod_nmoesi_nc_write_request_downup_finish");
-	EV_MOD_NMOESI_NC_WRITE_REQUEST_REPLY = esim_register_event_with_name(mod_handler_nmoesi_nc_write_request, "mod_nmoesi_nc_write_request_reply");
-	EV_MOD_NMOESI_NC_WRITE_REQUEST_FINISH = esim_register_event_with_name(mod_handler_nmoesi_nc_write_request, "mod_nmoesi_nc_write_request_finish");
 
 	EV_MOD_NMOESI_READ_REQUEST = esim_register_event_with_name(mod_handler_nmoesi_read_request, "mod_nmoesi_read_request");
 	EV_MOD_NMOESI_READ_REQUEST_RECEIVE = esim_register_event_with_name(mod_handler_nmoesi_read_request, "mod_nmoesi_read_request_receive");
