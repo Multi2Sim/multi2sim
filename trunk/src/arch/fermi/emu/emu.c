@@ -55,7 +55,13 @@ void frm_emu_init(void)
         if (!frm_emu)
                 fatal("%s: out of memory", __FUNCTION__);
 
+        frm_emu->const_mem = mem_create();
+        frm_emu->const_mem->safe = 0;
+        frm_emu->global_mem = mem_create();
+        frm_emu->global_mem->safe = 0;
+
 	frm_disasm_init();
+	frm_isa_init();
 
         /* Create device */
         frm_cuda_object_list = linked_list_create();
@@ -69,6 +75,10 @@ void frm_emu_done(void)
 	frm_cuda_object_free_all();
 	linked_list_free(frm_cuda_object_list);
 
+	frm_isa_done();
+
+        mem_free(frm_emu->const_mem);
+        mem_free(frm_emu->global_mem);
         free(frm_emu);
 }
 

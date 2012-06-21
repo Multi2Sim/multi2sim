@@ -359,7 +359,7 @@ void frm_grid_run(struct frm_grid_t *grid)
 	frm_emu_timer_start();
 
 	/* Execution loop */
-//	while (grid->running_list_head)
+	while (grid->running_list_head)
 	{
 		/* Stop if maximum number of GPU cycles exceeded */
 		if (frm_emu_max_cycles && cycle >= frm_emu_max_cycles)
@@ -370,8 +370,8 @@ void frm_grid_run(struct frm_grid_t *grid)
 			x86_emu_finish = x86_emu_finish_max_gpu_inst;
 
 		/* Stop if any reason met */
-		//if (x86_emu_finish)
-		//	break;
+		if (x86_emu_finish)
+			break;
 
 		/* Next cycle */
 		cycle++;

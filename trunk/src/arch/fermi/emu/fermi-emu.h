@@ -180,7 +180,7 @@ void frm_cuda_function_free(struct frm_cuda_function_t *function);
 void frm_cuda_function_load(struct frm_cuda_function_t *function, char *function_name);
 
 
-/* CUDA memory */
+/* Memory */
 
 struct frm_cuda_memory_t
 {
@@ -483,6 +483,8 @@ struct frm_warp_t
 	long long inst_count;  /* Total number of instructions */
 	long long global_mem_inst_count;  /* Instructions accessing global memory */
 	long long local_mem_inst_count;  /* Instructions accessing local memory */
+
+	int finished;
 };
 
 #define FRM_FOREACH_WARP_IN_GRID(GRID, WARP_ID) \
@@ -598,23 +600,21 @@ void frm_thread_update_branch_digest(struct frm_thread_t *thread,
 /* Global variables referring to the instruction that is currently being emulated.
  * There variables are set before calling the instruction emulation function in
  * 'machine.c' to avoid passing pointers. */
-extern struct frm_ndrange_t *frm_isa_ndrange;
-extern struct frm_work_group_t *frm_isa_work_group;
-extern struct frm_wavefront_t *frm_isa_wavefront;
-extern struct frm_work_item_t *frm_isa_work_item;
-extern struct frm_inst_t *frm_isa_cf_inst;
+extern struct frm_grid_t *frm_isa_grid;
+extern struct frm_threadblock_t *frm_isa_threadblock;
+extern struct frm_warp_t *frm_isa_warp;
+extern struct frm_thread_t *frm_isa_thread;
 extern struct frm_inst_t *frm_isa_inst;
-extern struct frm_alu_group_t *frm_isa_alu_group;
 
 /* Macros for quick access */
-#define FRM_GPR_ELEM(_gpr, _elem)  (frm_isa_work_item->gpr[(_gpr)].elem[(_elem)])
+#define FRM_GPR_ELEM(_gpr, _elem)  (frm_isa_thread->gpr[(_gpr)].elem[(_elem)])
 #define FRM_GPR_X(_gpr)  FRM_GPR_ELEM((_gpr), 0)
 #define FRM_GPR_Y(_gpr)  FRM_GPR_ELEM((_gpr), 1)
 #define FRM_GPR_Z(_gpr)  FRM_GPR_ELEM((_gpr), 2)
 #define FRM_GPR_W(_gpr)  FRM_GPR_ELEM((_gpr), 3)
 #define FRM_GPR_T(_gpr)  FRM_GPR_ELEM((_gpr), 4)
 
-#define FRM_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &frm_isa_work_item->gpr[(_gpr)].elem[(_elem)])
+#define FRM_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &frm_isa_thread->gpr[(_gpr)].elem[(_elem)])
 #define FRM_GPR_FLOAT_X(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 0)
 #define FRM_GPR_FLOAT_Y(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 1)
 #define FRM_GPR_FLOAT_Z(_gpr)  FRM_GPR_FLOAT_ELEM((_gpr), 2)
