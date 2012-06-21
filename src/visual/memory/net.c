@@ -24,10 +24,6 @@
  * Network Node
  */
 
-/*
- * Network Node
- */
-
 struct vi_net_node_t
 {
 	struct vi_mod_t *mod;
