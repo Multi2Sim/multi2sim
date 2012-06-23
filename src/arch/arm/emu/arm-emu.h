@@ -22,18 +22,6 @@
 
 
 
-#include <stdio.h>
-#include <string.h>
-#include <list.h>
-#include <debug.h>
-#include <misc.h>
-#include <elf-format.h>
-
-#include <arm-asm.h>
-
-
-
-void arm_emu_disasm(char *path);
 
 #endif
 
