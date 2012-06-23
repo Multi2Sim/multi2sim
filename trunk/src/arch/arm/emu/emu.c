@@ -19,41 +19,4 @@
 
 #include <arm-emu.h>
 
-/*
- * Arm disassembler
- */
-
-void arm_emu_disasm(char *path)
-{
-	struct elf_file_t *elf_file;
-	struct elf_section_t *section;
-	int inst_index;
-	char inst_str[MAX_STRING_SIZE];
-	int i;
-
-	/* Initialization */
-	arm_disasm_init();
-
-	/* Find .text section which saves instruction bits */
-	elf_file = elf_file_create_from_path(path);
-
-	for (i = 0; i < list_count(elf_file->section_list); ++i)
-	{
-		section = (struct elf_section_t *)list_get(elf_file->section_list, i);
-		if (!strncmp(section->name, ".text", 5))
-			break;
-	}
-	if (i == list_count(elf_file->section_list))
-		fatal(".text section not found!\n");
-
-	/* Decode and dump instructions */
-	for (inst_index = 0; inst_index < section->buffer.size/4; ++inst_index)
-	{
-		arm_inst_hex_dump(stdout, (unsigned char*)(section->buffer.ptr), inst_index);
-		arm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, (unsigned char*)(section->buffer.ptr), inst_index);
-	}
-
-	/* Free external ELF */
-	elf_file_free(elf_file);
-}
 
