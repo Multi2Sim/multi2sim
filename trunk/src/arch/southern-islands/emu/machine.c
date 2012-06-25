@@ -111,7 +111,6 @@ void si_isa_S_LOAD_DWORDX4_impl()
 #define INST SI_INST_SMRD
 void si_isa_S_BUFFER_LOAD_DWORDX2_impl()
 {
-	NOT_IMPL();
 	union si_reg_t value[2];
         uint32_t m_base;
         uint32_t m_offset;
@@ -608,7 +607,7 @@ void si_isa_V_MUL_I32_I24_impl()
 	/* D.i = S0.i[23:0] * S1.i[23:0]. */
 	
 	int s0 = si_isa_read_reg(INST.src0).as_int & 0xFFFFFF;
-	int s1 = si_isa_read_vreg(INST.vsrc1).as_int &0xFFFFFF;
+	int s1 = si_isa_read_vreg(INST.vsrc1).as_int & 0xFFFFFF;
 
 	union si_reg_t product;
 	product.as_int = s0 * s1;
@@ -617,7 +616,7 @@ void si_isa_V_MUL_I32_I24_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("t%d: V%u<=(%d) ", si_isa_work_item->id, INST.vdst, product.as_int);
+		si_isa_debug("t%d: V%u<=(%d)", si_isa_work_item->id, INST.vdst, product.as_int);
 	}
 }
 #undef INST
