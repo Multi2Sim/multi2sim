@@ -2377,16 +2377,134 @@ void evg_isa_PRED_SETGE_64_impl()
 }
 
 
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
 void evg_isa_MUL_64_VEC_impl()
 {
-	NOT_IMPL();
+	struct evg_inst_t *inst_slot_original;
+	struct evg_inst_t *inst_slot[4];
+
+	enum evg_alu_enum alu;
+
+	int i;
+
+	union
+	{
+		double as_double;
+		unsigned int as_uint[2];
+	} src0, src1, dst;
+
+	/* Only slot X runs this instruction */
+	alu = evg_isa_inst->alu;
+	if (alu % 4)
+		return;
+
+	/* Save original instruction */
+	inst_slot_original = evg_isa_inst;
+
+	/* Get multi-slot instruction */
+	for (i = 0; i < 4; i++)
+	{
+		inst_slot[i] = evg_isa_get_alu_inst(i);
+		if (!inst_slot[i])
+			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
+		if (inst_slot[i]->info->inst != inst_slot_original->info->inst)
+			fatal("%s: invalid multi-slot instruction", __FUNCTION__);
+	}
+
+	/* Get low-order operand from slot 2 */
+	evg_isa_inst = inst_slot[2];
+	src0.as_uint[0] = evg_isa_read_op_src_int(0);
+	src1.as_uint[0] = evg_isa_read_op_src_int(1);
+
+	/* Get high-order operand from slot 3 */
+	evg_isa_inst = inst_slot[3];
+	src0.as_uint[1] = evg_isa_read_op_src_int(0);
+	src1.as_uint[1] = evg_isa_read_op_src_int(1);
+
+	/* Operation */
+	dst.as_double = src0.as_double * src1.as_double;
+
+	/* Store low-order result to slots 0 and 2 */
+	evg_isa_inst = inst_slot[0];
+	evg_isa_enqueue_write_dest(dst.as_uint[0]);
+	evg_isa_inst = inst_slot[2];
+	evg_isa_enqueue_write_dest(dst.as_uint[0]);
+
+	/* Store high-order result to slots 1 and 3 */
+	evg_isa_inst = inst_slot[1];
+	evg_isa_enqueue_write_dest(dst.as_uint[1]);
+	evg_isa_inst = inst_slot[3];
+	evg_isa_enqueue_write_dest(dst.as_uint[1]);
+
+	/* Restore original instruction */
+	evg_isa_inst = inst_slot_original;
 }
+#undef W0
+#undef W1
 
 
+#define W0 evg_isa_inst->words[0].alu_word0
+#define W1 evg_isa_inst->words[1].alu_word1_op2
 void evg_isa_ADD_64_impl()
 {
-	NOT_IMPL();
+	struct evg_inst_t *inst_slot_original;
+	struct evg_inst_t *inst_slot[2];
+
+	enum evg_alu_enum alu;
+
+	union
+	{
+		double as_double;
+		unsigned int as_uint[2];
+	} src0, src1, dst;
+
+	int i;
+
+	/* Only slots X or Z run this instruction */
+	alu = evg_isa_inst->alu;
+	if (alu % 2)
+		return;
+
+	/* Save original instruction */
+	inst_slot_original = evg_isa_inst;
+
+	/* Get multi-slot instruction */
+	for (i = 0; i < 2; i++)
+	{
+		inst_slot[i] = evg_isa_get_alu_inst(alu / 2 * 2 + i);
+		if (!inst_slot[i])
+			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
+		if (inst_slot[i]->info->inst != inst_slot_original->info->inst)
+			fatal("%s: invalid multi-slot instruction", __FUNCTION__);
+	}
+	
+	/* Get low-order operands from slot 0 */
+	evg_isa_inst = inst_slot[0];
+	src0.as_uint[0] = evg_isa_read_op_src_int(0);
+	src1.as_uint[0] = evg_isa_read_op_src_int(1);
+
+	/* Get high-order operands from slot 1 */
+	evg_isa_inst = inst_slot[1];
+	src0.as_uint[1] = evg_isa_read_op_src_int(0);
+	src1.as_uint[1] = evg_isa_read_op_src_int(1);
+
+	/* Operation */
+	dst.as_double = src0.as_double + src1.as_double;
+
+	/* Store low-order operand to slot 0 */
+	evg_isa_inst = inst_slot[0];
+	evg_isa_enqueue_write_dest(dst.as_uint[0]);
+
+	/* Store high-order operand to slot 1 */
+	evg_isa_inst = inst_slot[1];
+	evg_isa_enqueue_write_dest(dst.as_uint[1]);
+
+	/* Restore original instruction */
+	evg_isa_inst = inst_slot_original;
 }
+#undef W0
+#undef W1
 
 
 void evg_isa_MOVA_INT_impl()
@@ -2397,13 +2515,115 @@ void evg_isa_MOVA_INT_impl()
 
 void evg_isa_FLT64_TO_FLT32_VEC_impl()
 {
-	NOT_IMPL();
+	struct evg_inst_t *inst_slot_original;
+	struct evg_inst_t *inst_slot[2];
+
+	enum evg_alu_enum alu;
+
+	union
+	{
+		double as_double;
+		unsigned int as_uint[2];
+		float as_float[2];
+	} src, dst;
+
+	int i;
+
+	/* Only slots X or Z run this instruction */
+	alu = evg_isa_inst->alu;
+	if (alu % 2)
+		return;
+
+	/* Save original instruction */
+	inst_slot_original = evg_isa_inst;
+
+	/* Get multi-slot instruction */
+	for (i = 0; i < 2; i++)
+	{
+		inst_slot[i] = evg_isa_get_alu_inst(alu / 2 * 2 + i);
+		if (!inst_slot[i])
+			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
+		if (inst_slot[i]->info->inst != inst_slot_original->info->inst)
+			fatal("%s: invalid multi-slot instruction", __FUNCTION__);
+	}
+	
+	/* Get low-order operand from slot 0 */
+	evg_isa_inst = inst_slot[0];
+	src.as_uint[0] = evg_isa_read_op_src_int(0);
+
+	/* Get high-order operand from slot 1 */
+	evg_isa_inst = inst_slot[1];
+	src.as_uint[1] = evg_isa_read_op_src_int(0);
+
+	/* Operation */
+	dst.as_float[0] = src.as_double;
+	dst.as_uint[1] = 0;
+
+	/* Store low-order operand to slot 0 */
+	evg_isa_inst = inst_slot[0];
+	evg_isa_enqueue_write_dest(dst.as_uint[0]);
+
+	/* Store high-order operand to slot 1 */
+	evg_isa_inst = inst_slot[1];
+	evg_isa_enqueue_write_dest(dst.as_uint[1]);
+
+	/* Restore original instruction */
+	evg_isa_inst = inst_slot_original;
 }
 
 
 void evg_isa_FLT32_TO_FLT64_VEC_impl()
 {
-	NOT_IMPL();
+	struct evg_inst_t *inst_slot_original;
+	struct evg_inst_t *inst_slot[2];
+
+	enum evg_alu_enum alu;
+
+	union
+	{
+		double as_double;
+		unsigned int as_uint[2];
+		float as_float[2];
+	} src, dst;
+
+	int i;
+
+	/* Only slots X or Z run this instruction */
+	alu = evg_isa_inst->alu;
+	if (alu % 2)
+		return;
+
+	/* Save original instruction */
+	inst_slot_original = evg_isa_inst;
+
+	/* Get multi-slot instruction */
+	for (i = 0; i < 2; i++)
+	{
+		inst_slot[i] = evg_isa_get_alu_inst(alu / 2 * 2 + i);
+		if (!inst_slot[i])
+			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
+		if (inst_slot[i]->info->inst != inst_slot_original->info->inst)
+			fatal("%s: invalid multi-slot instruction", __FUNCTION__);
+	}
+	
+	/* Get low-order operand from slot 0.
+	 * There is no high-order operand in this case. */
+	evg_isa_inst = inst_slot[0];
+	src.as_uint[0] = evg_isa_read_op_src_int(0);
+
+	/* Operation */
+	dst.as_double = src.as_float[0];
+
+	/* Store low-order operand to slot 0 */
+	evg_isa_inst = inst_slot[0];
+	evg_isa_enqueue_write_dest(dst.as_uint[0]);
+
+	/* Store high-order operand to slot 1 */
+	evg_isa_inst = inst_slot[1];
+	evg_isa_enqueue_write_dest(dst.as_uint[1]);
+
+	/* Restore original instruction */
+	evg_isa_inst = inst_slot_original;
 }
 
 

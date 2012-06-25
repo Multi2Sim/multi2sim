@@ -432,6 +432,27 @@ float evg_isa_read_op_src_float(int src_idx)
 }
 
 
+/* Return the instruction in slot 'alu' of the VLIW bundle in 'evg_isa_alu_group'.
+ * If 'evg_isa_alu_group' is NULL, or the VLIW slot requested is not present,
+ * this function returns NULL. */
+struct evg_inst_t *evg_isa_get_alu_inst(enum evg_alu_enum alu)
+{
+	int i;
+
+	/* Not a VLIW bundle */
+	if (!evg_isa_alu_group)
+		return NULL;
+
+	/* Loop for slot 'alu' */
+	for (i = 0; i < evg_isa_alu_group->inst_count; i++)
+		if (evg_isa_alu_group->inst[i].alu == alu)
+			return &evg_isa_alu_group->inst[i];
+
+	/* VLIW slot not present */
+	return NULL;
+}
+
+
 
 
 /*

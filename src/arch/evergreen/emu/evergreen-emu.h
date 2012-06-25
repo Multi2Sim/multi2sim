@@ -1230,6 +1230,8 @@ void evg_isa_write_gpr_float(int gpr, int rel, int chan, float value);
 unsigned int evg_isa_read_op_src_int(int src_idx);
 float evg_isa_read_op_src_float(int src_idx);
 
+struct evg_inst_t *evg_isa_get_alu_inst(enum evg_alu_enum alu);
+
 void evg_isa_init(void);
 void evg_isa_done(void);
 
