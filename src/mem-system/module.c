@@ -571,6 +571,29 @@ struct mod_stack_t *mod_can_coalesce(struct mod_t *mod,
 		return stack->master_stack ? stack->master_stack : stack;
 	}
 
+	case mod_access_nc_store:
+	{
+		/* Only coalesce with last access */
+		stack = tail;
+		if (!stack)
+			return NULL;
+
+		/* Only if it is a non-coherent write */
+		if (stack->access_kind != mod_access_nc_store)
+			return NULL;
+
+		/* Only if it is an access to the same block */
+		if (stack->addr >> mod->log_block_size != addr >> mod->log_block_size)
+			return NULL;
+
+		/* Only if previous write has not started yet */
+		if (stack->port_locked)
+			return NULL;
+
+		/* Coalesce */
+		return stack->master_stack ? stack->master_stack : stack;
+	}
+
 	default:
 		panic("%s: invalid access type", __FUNCTION__);
 		break;
