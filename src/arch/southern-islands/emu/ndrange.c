@@ -152,6 +152,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			}
 		}
 
+		/*FIXME doesn't load wgid correctly */
 		si_wavefront_init_sreg_with_value(wavefront, 12, gid); /* S12 = WGID.x */
 	}
 
@@ -432,17 +433,17 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
                 switch (arg->kind)
                 {
 
-#if 0
+
                 case SI_OPENCL_KERNEL_ARG_KIND_VALUE:
                 {
                         /* Value copied directly into device constant memory */
-                        si_isa_const_mem_write(1, cb_index, 0, &arg->value);
+                	si_isa_const_mem_write(1, (cb_index*4)*4, &arg->value);
                         si_opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i,
                                         arg->value, cb_index);
                         cb_index++;
                         break;
                 }
-#endif
+
 
 		case SI_OPENCL_KERNEL_ARG_KIND_POINTER:
 		{
