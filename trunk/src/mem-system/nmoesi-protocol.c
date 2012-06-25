@@ -606,6 +606,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		new_stack = mod_stack_create(stack->id, mod, stack->tag,
 			EV_MOD_NMOESI_NC_STORE_MISS, stack);
 		new_stack->peer = mod;
+		new_stack->nc_store = 1;
 		new_stack->target_mod = mod_get_low_mod(mod, stack->tag);
 		new_stack->request_dir = mod_request_up_down;
 		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
@@ -1559,7 +1560,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 				continue;
 			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
 			dir_entry_set_sharer(dir, stack->set, stack->way, z, mod->low_net_node->index);
-			if (dir_entry->num_sharers > 1 || stack->shared)
+			if (dir_entry->num_sharers > 1 || stack->nc_store || stack->shared)
 				shared = 1;
 		}
 

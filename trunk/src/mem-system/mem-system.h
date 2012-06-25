@@ -741,6 +741,7 @@ struct mod_stack_t
 	int err : 1;
 	int shared : 1;
 	int read : 1;
+	int nc_store : 1;
 	int blocking : 1;
 	int writeback : 1;
 	int eviction : 1;
