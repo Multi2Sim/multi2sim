@@ -1533,14 +1533,14 @@ DEFINST(PRED_SETGE_64,
 )
 
 DEFINST(MUL_64_VEC,
-	"%name",
+	"MUL_64%omod    %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 202,
 	0
 )
 
 DEFINST(ADD_64,
-	"%name",
+	"ADD_64%omod    %alu_dst,  %alu_src0,  %alu_src1  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 203,
 	0
@@ -1554,14 +1554,14 @@ DEFINST(MOVA_INT,
 )
 
 DEFINST(FLT64_TO_FLT32_VEC,
-	"%name",
+	"F64_TO_F32  %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 205,
 	0
 )
 
 DEFINST(FLT32_TO_FLT64_VEC,
-	"%name",
+	"F32_TO_F64  %alu_dst,  %alu_src0  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP2, NONE,
 	ALU, 206,
 	0
@@ -1705,14 +1705,14 @@ DEFINST(INTERP_LOAD_P20,
 )
 
 DEFINST(BFE_UINT,
-	"%name",
+	"BFE_UINT    %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 4,
 	0
 )
 
 DEFINST(BFE_INT,
-	"%name",
+	"BFE_INT     %alu_dst,  %alu_src0,  %alu_src1,  %alu_src2  %alu_mod",
 	ALU_WORD0, ALU_WORD1_OP3, NONE,
 	ALU, 5,
 	0
