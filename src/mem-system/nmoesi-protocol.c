@@ -481,6 +481,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		master_stack = mod_can_coalesce(mod, mod_access_nc_store, stack->addr, stack);
 		if (master_stack)
 		{
+			/* FIXME change to NC writes */
 			mod->reads++;
 			mod_coalesce(mod, master_stack, stack);
 			mod_stack_wait_in_stack(stack, master_stack, EV_MOD_NMOESI_NC_STORE_FINISH);
@@ -526,6 +527,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		new_stack = mod_stack_create(stack->id, mod, stack->addr,
 			EV_MOD_NMOESI_NC_STORE_WRITEBACK, stack);
 		new_stack->blocking = 1;
+		/* FIXME */
 		new_stack->read = 1;
 		new_stack->retry = stack->retry;
 		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK, new_stack, 0);
@@ -544,6 +546,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		/* Error locking */
 		if (stack->err)
 		{
+			/* FIXME */
 			mod->read_retries++;
 			retry_lat = mod_get_retry_latency(mod);
 			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
@@ -581,6 +584,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		/* Error locking */
 		if (stack->err)
 		{
+			/* FIXME */
 			mod->read_retries++;
 			retry_lat = mod_get_retry_latency(mod);
 			mem_debug("    lock error, retrying in %d cycles\n", retry_lat);
@@ -621,6 +625,7 @@ void mod_handler_nmoesi_nc_store(int event, void *data)
 		/* Error on read request. Unlock block and retry nc store. */
 		if (stack->err)
 		{
+			/* FIXME */
 			mod->read_retries++;
 			retry_lat = mod_get_retry_latency(mod);
 			dir_entry_unlock(mod->dir, stack->set, stack->way);
