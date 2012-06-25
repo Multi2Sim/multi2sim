@@ -423,16 +423,15 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		/* Zero-out instruction structure */
 		memset(&inst, 0, sizeof(struct si_inst_t));
 
-		/* All sopp instructions will be 32-bits */
-		inst_size = 4;
-		memcpy(&inst.micro_inst, inst_buf, inst_size);
+		/* Decode instruction */
+		inst_size = si_inst_decode(inst_buf, &inst);
 
 		/* If ENDPGM, break. */
-		if (inst.micro_inst.sopp.enc == 0x17F &&
+		if (inst.info->fmt == SI_FMT_SOPP &&
 			inst.micro_inst.sopp.op == 1) break;
 
 		/* If the instruction branches, insert the label into the sorted list. */
-		if (inst.micro_inst.sopp.enc == 0x17F && 
+		if (inst.info->fmt == SI_FMT_SOPP &&
 			(inst.micro_inst.sopp.op >= 2 && inst.micro_inst.sopp.op <= 9))
 		{
 			short simm16 = inst.micro_inst.sopp.simm16;
@@ -441,14 +440,14 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 
 			/* Find position to insert label. */
 			int* t_label = &label_addr[0];
-			while(t_label < end_label && label > *t_label) t_label++;
+			while(t_label < end_label && *t_label < label) t_label++;
 
 			/* Shift labels after position down. */
-			int* t2_label = t_label;
-			while(t2_label < end_label)
+			int* t2_label = end_label;
+			while(t2_label > t_label)
 			{
-				*(t2_label + 1) = *t2_label;
-				t2_label++;
+				*t2_label = *(t2_label - 1);
+				t2_label--;
 			}
 			end_label++;
 
@@ -471,7 +470,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		int inst_size;
 
 		/* Parse the instruction */
-	       	inst_size = si_inst_decode(inst_buf, &inst);
+	    inst_size = si_inst_decode(inst_buf, &inst);
 
 		inst_count++;
 
