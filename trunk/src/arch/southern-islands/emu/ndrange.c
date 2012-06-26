@@ -104,7 +104,7 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		ndrange->work_groups[gid] = si_work_group_create();
 		work_group = ndrange->work_groups[gid];
 	}
-	
+
 	/* Array of wavefronts */
 	ndrange->wavefronts_per_work_group = (kernel->local_size + si_emu_wavefront_size - 1) / si_emu_wavefront_size;
 	ndrange->wavefront_count = ndrange->wavefronts_per_work_group * ndrange->work_group_count;
@@ -129,31 +129,6 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		/* Initialize the scalar work item */
 		ndrange->scalar_work_items[wid] = si_work_item_create();
 		wavefront->scalar_work_item = ndrange->scalar_work_items[wid];
-
-		/* Initialize SGPRs */
-		/* FIXME These values need to be determined from the binary */
-
-		/* Initialize Constant Buffers */
-		unsigned int userElementCount = kernel->bin_file->enc_dict_entry_southern_islands->userElementCount;
-		struct si_bin_enc_user_element_t* userElements = kernel->bin_file->enc_dict_entry_southern_islands->userElements;
-		for (int i = 0; i < userElementCount; i++)
-		{
-			if (userElements[i].dataClass == IMM_CONST_BUFFER)
-			{
-				si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
-			}
-			else if (userElements[i].dataClass == PTR_UAV_TABLE)
-			{
-				si_wavefront_init_sreg_with_uav_table(wavefront, userElements[i].startUserReg, userElements[i].userRegCount);
-			}
-			else
-			{
-				fatal("Unimplemented User Element: dataClass:%d", userElements[i].dataClass);
-			}
-		}
-
-		/*FIXME doesn't load wgid correctly */
-		si_wavefront_init_sreg_with_value(wavefront, 12, gid); /* S12 = WGID.x */
 	}
 
 	/* Array of work-items */
@@ -237,15 +212,40 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 
 							/* Save local IDs in registers */
 							work_item->vreg[0].as_int = lidx;  /* V0 */
-#if 0
-							work_item->vgpr[1] = lidy;  /* V1 */
-							work_item->vgpr[2] = lidz;  /* V2 */
+							work_item->vreg[1].as_int = lidy;  /* V1 */
+							work_item->vreg[2].as_int = lidz;  /* V2 */
+
+							/* FIXME initialize wavefront registers in a separate loop to avoid redundant execution. */
 
 							/* Save work-group IDs in registers */
-							work_item->vgpr[3] = gidx;  /* V3 */
-							work_item->vgpr[4] = gidy;  /* V4 */
-							work_item->vgpr[5] = gidz;  /* V5 */
-#endif
+							wavefront->sreg[12].as_int = gidx;  /* S12 */
+							wavefront->sreg[13].as_int = gidy;  /* S13 */
+							wavefront->sreg[14].as_int = gidz;  /* S14 */
+
+							/* Initialize Constant Buffers */
+							unsigned int userElementCount = kernel->bin_file->enc_dict_entry_southern_islands->userElementCount;
+							struct si_bin_enc_user_element_t* userElements = kernel->bin_file->enc_dict_entry_southern_islands->userElements;
+							for (int i = 0; i < userElementCount; i++)
+							{
+								if (userElements[i].dataClass == IMM_CONST_BUFFER)
+								{
+									si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
+								}
+								else if (userElements[i].dataClass == PTR_UAV_TABLE)
+								{
+									si_wavefront_init_sreg_with_uav_table(wavefront, userElements[i].startUserReg, userElements[i].userRegCount);
+								}
+								else
+								{
+									fatal("Unimplemented User Element: dataClass:%d", userElements[i].dataClass);
+								}
+							}
+
+							/* Initialize the execution mask */
+							wavefront->sreg[SI_EXEC].as_int = 0xFFFFFFFF;
+							wavefront->sreg[SI_EXEC + 1].as_int = 0xFFFFFFFF;
+							wavefront->sreg[SI_EXECZ].as_int = 0;
+
 
 							/* Next work-item */
 							tid++;
