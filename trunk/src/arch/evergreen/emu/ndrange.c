@@ -188,6 +188,12 @@ void evg_ndrange_set_status(struct evg_ndrange_t *ndrange, enum evg_ndrange_stat
 	if (status & evg_ndrange_finished)
 		DOUBLE_LINKED_LIST_INSERT_TAIL(evg_emu, finished_ndrange, ndrange);
 
+	/* Start/stop Evergreen timer depending on ND-Range states */
+	if (evg_emu->running_ndrange_list_count)
+		m2s_timer_start(evg_emu->timer);
+	else
+		m2s_timer_stop(evg_emu->timer);
+
 	/* Update it */
 	ndrange->status |= status;
 }
@@ -402,7 +408,8 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 		kernel->group_count3[1], kernel->group_count3[2]);
 	evg_isa_debug("wavefront_count = %d\n", ndrange->wavefront_count);
 	evg_isa_debug("wavefronts_per_work_group = %d\n", ndrange->wavefronts_per_work_group);
-	evg_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   lid lid2 lid1 lid0  wavefront            work-group\n");
+	evg_isa_debug(" tid tid2 tid1 tid0   gid gid2 gid1 gid0   "
+			"lid lid2 lid1 lid0  wavefront            work-group\n");
 	for (tid = 0; tid < ndrange->work_item_count; tid++)
 	{
 		work_item = ndrange->work_items[tid];
