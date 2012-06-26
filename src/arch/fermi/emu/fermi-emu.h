@@ -137,6 +137,7 @@ struct frm_cuda_function_arg_t
 	enum frm_cuda_function_arg_access_type_t access_type;
 
 	int set;  /* Set to true when it is assigned */
+	unsigned int value;
 };
 
 struct frm_cuda_function_arg_t *frm_cuda_function_arg_create(char *name);
@@ -211,6 +212,11 @@ struct frm_cuda_stream_t
 
 struct frm_cuda_stream_t *frm_cuda_stream_create(void);
 void frm_cuda_stream_free(struct frm_cuda_stream_t *stream);
+
+
+
+/* Write */
+void frm_isa_enqueue_write_dest(unsigned int value);
 
 
 
@@ -671,8 +677,8 @@ typedef void (*frm_isa_inst_func_t)(void);
 extern frm_isa_inst_func_t *frm_isa_inst_func;
 
 /* Access to constant memory */
-void frm_isa_const_mem_write(int bank, int vector, int elem, void *pvalue);
-void frm_isa_const_mem_read(int bank, int vector, int elem, void *pvalue);
+void frm_isa_const_mem_write(int bank, int offset, void *pvalue);
+void frm_isa_const_mem_read(int bank, int offset, void *pvalue);
 
 /* For ALU clauses */
 void frm_isa_alu_clause_start(void);
@@ -740,7 +746,7 @@ struct frm_emu_t
 	/* Flags indicating whether the first 9 vector positions of CB0
 	 * are initialized. A warning will be issued by the simulator
 	 * if an uninitialized element is used by the kernel. */
-	int const_mem_cb0_init[9 * 4];
+	int const_mem_cb0_init[0x20];
 
 	/* Global memory */
 	struct mem_t *global_mem;

@@ -373,6 +373,10 @@ static int frm_cuda_func_cuLaunchKernel(void)
         unsigned int kernelParams;
         unsigned int extra;
 	struct frm_cuda_function_t *function;
+	struct frm_cuda_function_arg_t *arg;
+	char arg_name[MAX_STRING_SIZE];
+	int i;
+	int pv, v;
 
         mem_read(x86_isa_mem, x86_isa_regs->ecx, 11*sizeof(unsigned int), args);
         mem_read(x86_isa_mem, args[0], sizeof(unsigned int), &f);
@@ -396,7 +400,7 @@ static int frm_cuda_func_cuLaunchKernel(void)
 	cuda_debug(stdout, "\tblockDimZ=%u\n", blockDimZ);
 	cuda_debug(stdout, "\tsharedMemBytes=%u\n", sharedMemBytes);
 	cuda_debug(stdout, "\thStream=%u\n", hStream);
-	cuda_debug(stdout, "\tkernelParams=%u\n", kernelParams);
+	cuda_debug(stdout, "\tkernelParams=%0#10x\n", kernelParams);
 	cuda_debug(stdout, "\textra=%u\n", extra);
 
 	function = frm_cuda_object_get(FRM_CUDA_OBJ_FUNCTION, f);
@@ -417,7 +421,22 @@ static int frm_cuda_func_cuLaunchKernel(void)
 	function->group_count3[2] = gridDimZ;
 	function->group_count = function->group_count3[0]*function->group_count3[1]*function->group_count3[2];
 
+	for (i = 0; i < sizeof(kernelParams); ++i)
+	{
+        	mem_read(x86_isa_mem, kernelParams+i*4, sizeof(unsigned int), &pv);
+        	mem_read(x86_isa_mem, pv, sizeof(int), &v);
+
+		snprintf(arg_name, MAX_STRING_SIZE, "arg_%d", i);
+		arg = frm_cuda_function_arg_create(arg_name);
+		arg->kind = FRM_CUDA_FUNCTION_ARG_KIND_POINTER;
+		arg->mem_scope = FRM_CUDA_MEM_SCOPE_GLOBAL;
+		arg->access_type = FRM_CUDA_FUNCTION_ARG_READ_WRITE;
+		arg->value = v;
+		list_add(function->arg_list, arg);
+	}
+	
         frm_grid_setup_threads(function->grid);
+        frm_grid_setup_const_mem(function->grid);
         frm_grid_setup_args(function->grid);
 
         frm_grid_set_status(function->grid, frm_grid_pending);
