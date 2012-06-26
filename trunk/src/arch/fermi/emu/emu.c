@@ -83,21 +83,6 @@ void frm_emu_done(void)
 }
 
 
-void frm_emu_timer_start(void)
-{
-	assert(!frm_emu->timer_running);
-	frm_emu->timer_start_time = x86_emu_timer();
-	frm_emu->timer_running = 1;
-}
-
-
-void frm_emu_timer_stop(void)
-{
-	assert(frm_emu->timer_running);
-	frm_emu->timer_acc += x86_emu_timer() - frm_emu->timer_start_time;
-	frm_emu->timer_running = 0;
-}
-
 
 
 /* 

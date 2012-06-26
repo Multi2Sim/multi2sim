@@ -29,6 +29,7 @@
 #include <linked-list.h>
 #include <list.h>
 #include <mhandle.h>
+#include <timer.h>
 
 
 /* Number of in-flight events before a warning is shown (10k events) */
@@ -81,6 +82,9 @@ static struct heap_t *esim_event_heap;
  * 'esim_process_all_events' is called. Each element in this list is of type
  * 'struct esim_event_t'. */
 static struct linked_list_t *esim_end_event_list;
+
+/* Global timer */
+static struct m2s_timer_t *esim_timer;
 
 
 
@@ -223,6 +227,10 @@ void esim_init()
 	esim_event_heap = heap_create(20);
 	esim_end_event_list = linked_list_create();
 
+	/* Initialize global timer */
+	esim_timer = m2s_timer_create(NULL);
+	m2s_timer_start(esim_timer);
+
 	/* Register special events */
 	ESIM_EV_INVALID = esim_register_event_with_name(NULL, "esim_invalid");
 	ESIM_EV_NONE = esim_register_event_with_name(NULL, "esim_none");
@@ -241,6 +249,9 @@ void esim_done()
 	/* Free lists of events */
 	heap_free(esim_event_heap);
 	linked_list_free(esim_end_event_list);
+
+	/* Free global timer */
+	m2s_timer_free(esim_timer);
 }
 
 
@@ -476,7 +487,7 @@ void esim_process_all_events(void)
 }
 
 
-void esim_empty()
+void esim_empty(void)
 {
 	struct esim_event_t *event;
 	struct esim_event_info_t *event_info;
@@ -505,8 +516,13 @@ void esim_empty()
 }
 
 
-int esim_event_count()
+int esim_event_count(void)
 {
 	return heap_count(esim_event_heap);
 }
 
+
+long long esim_real_time(void)
+{
+	return m2s_timer_get_value(esim_timer);
+}

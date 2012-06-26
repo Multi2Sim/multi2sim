@@ -845,8 +845,10 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 
 void m2s_stats_summary(void)
 {
-	long long now = x86_emu_timer();
-	long long si_now = si_emu_timer();
+	long long now = esim_real_time();
+
+	long long evg_now;
+	long long si_now;
 
 	long long inst_count;
 	long long fast_forward_inst_count;
@@ -908,7 +910,8 @@ void m2s_stats_summary(void)
 	/* Evergreen functional simulation */
 	if (evg_emu->ndrange_count)
 	{
-		sec_count = (double) evg_emu->ndrange_time / 1e6;
+		evg_now = m2s_timer_get_value(evg_emu->timer);
+		sec_count = (double) evg_now / 1e6;
 		inst_per_sec = sec_count > 0.0 ? (double) evg_emu->inst_count / sec_count : 0.0;
 		fprintf(stderr, "[ GPU ]\n");
 		fprintf(stderr, "Time = %.2f\n", sec_count);
@@ -931,6 +934,7 @@ void m2s_stats_summary(void)
 	/* Southern Islands functional simulation */
 	if (si_emu->ndrange_count)
 	{
+		si_now = m2s_timer_get_value(si_emu->timer);
 		sec_count = (double) si_now / 1e6;
 		inst_per_sec = sec_count > 0.0 ? (double) si_emu->inst_count / sec_count : 0.0;
 		fprintf(stderr, "[ GPU ]\n");

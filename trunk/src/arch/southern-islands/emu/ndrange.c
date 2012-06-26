@@ -273,7 +273,6 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			fatal("%s: cannot load kernel code", __FUNCTION__);
 		wavefront->inst_buf_start = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
 		wavefront->inst_buf = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
-		wavefront->emu_time_start = x86_emu_timer();
 	}
 
 	/* Debug */
@@ -496,9 +495,6 @@ void si_ndrange_run(struct si_ndrange_t *ndrange)
 		si_work_group_set_status(work_group, si_work_group_running);
 	}
 
-	/* Start GPU timer */
-	si_emu_timer_start();
-
 	/* Execution loop */
 	while (ndrange->running_list_head)
 	{
@@ -535,9 +531,6 @@ void si_ndrange_run(struct si_ndrange_t *ndrange)
 			}
 		}
 	}
-
-	/* Stop GPU timer */
-	si_emu_timer_stop();
 
 	/* Dump stats */
 	si_ndrange_dump(ndrange, si_emu_report_file);

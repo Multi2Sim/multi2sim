@@ -65,11 +65,10 @@ struct x86_emu_t *x86_emu;
 
 /* Initialization */
 
-static long long x86_emu_init_time;
-
 void x86_emu_init(void)
 {
-	union {
+	union
+	{
 		unsigned int as_uint;
 		unsigned char as_uchar[4];
 	} endian;
@@ -98,6 +97,7 @@ void x86_emu_init(void)
 
 	/* Initialize */
 	x86_emu->current_pid = 1000;  /* Initial assigned pid */
+	x86_emu->timer = m2s_timer_create("x86 emulation timer");
 	
 	/* Initialize mutex for variables controlling calls to 'x86_emu_process_events()' */
 	pthread_mutex_init(&x86_emu->process_events_mutex, NULL);
@@ -117,9 +117,6 @@ void x86_emu_init(void)
 
 	/* CUDA */
 	frm_emu_init();
-
-	/* Record start time */
-	x86_emu_init_time = x86_emu_timer();
 }
 
 
@@ -149,8 +146,11 @@ void x86_emu_done(void)
 	si_emu_done();
 	frm_emu_done();
 
-	/* End */
+	/* Free */
+	m2s_timer_free(x86_emu->timer);
 	free(x86_emu);
+
+	/* End */
 	x86_isa_done();
 	x86_sys_done();
 }
@@ -253,15 +253,6 @@ int x86_emu_list_member(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx)
 }
 
 
-/* Return a counter of microseconds. */
-long long x86_emu_timer()
-{
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return (long long) tv.tv_sec * 1000000 + tv.tv_usec - x86_emu_init_time;
-}
-
-
 /* Schedule a call to 'x86_emu_process_events' */
 void x86_emu_process_events_schedule()
 {
@@ -278,7 +269,7 @@ void x86_emu_process_events_schedule()
 static void *x86_emu_host_thread_suspend(void *arg)
 {
 	struct x86_ctx_t *ctx = (struct x86_ctx_t *) arg;
-	uint64_t now = x86_emu_timer();
+	long long now = esim_real_time();
 
 	/* Detach this thread - we don't want the parent to have to join it to release
 	 * its resources. The thread termination can be observed by atomically checking
@@ -288,7 +279,7 @@ static void *x86_emu_host_thread_suspend(void *arg)
 	/* Context suspended in 'poll' system call */
 	if (x86_ctx_get_status(ctx, x86_ctx_nanosleep))
 	{
-		uint64_t timeout;
+		long long timeout;
 		
 		/* Calculate remaining sleep time in microseconds */
 		timeout = ctx->wakeup_time > now ? ctx->wakeup_time - now : 0;
@@ -373,9 +364,9 @@ static void *x86_emu_host_thread_suspend(void *arg)
 static void *x86_emu_host_thread_timer(void *arg)
 {
 	struct x86_ctx_t *ctx = (struct x86_ctx_t *) arg;
-	uint64_t now = x86_emu_timer();
+	long long now = esim_real_time();
 	struct timespec ts;
-	uint64_t sleep_time;  /* In usec */
+	long long sleep_time;  /* In usec */
 
 	/* Detach this thread - we don't want the parent to have to join it to release
 	 * its resources. The thread termination can be observed by thread-safely checking
@@ -406,7 +397,7 @@ static void *x86_emu_host_thread_timer(void *arg)
 void x86_emu_process_events()
 {
 	struct x86_ctx_t *ctx, *next;
-	uint64_t now = x86_emu_timer();
+	long long now = esim_real_time();
 	
 	/* Check if events need actually be checked. */
 	pthread_mutex_lock(&x86_emu->process_events_mutex);
@@ -848,7 +839,7 @@ void x86_emu_run(void)
 
 	/* Stop if maximum time exceeded (check only every 8k cycles) */
 	if (x86_emu_max_time && !(esim_cycle & ((1 << 13) - 1))
-		&& x86_emu_timer() > x86_emu_max_time * 1000000)
+		&& m2s_timer_get_value(x86_emu->timer) > x86_emu_max_time * 1000000)
 		x86_emu_finish = x86_emu_finish_max_time;
 
 	/* Stop if any previous reason met */
@@ -943,4 +934,3 @@ void x86_emu_disasm(char *file_name)
 	mhandle_done();
 	exit(0);
 }
-

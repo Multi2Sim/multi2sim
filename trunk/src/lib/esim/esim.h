@@ -40,8 +40,8 @@ extern int ESIM_EV_NONE;
 typedef void (*esim_event_handler_t)(int event, void *data);
 
 /* Initialization and finalization */
-void esim_init();
-void esim_done();
+void esim_init(void);
+void esim_done(void);
 
 /* Dump information in event heap, to a maximum of 'max' events. If 'max' is 0,
  * all events in the heap are dumped. */
@@ -79,12 +79,16 @@ void esim_process_events(void);
 void esim_process_all_events(void);
 
 /* Return number of events in the heap */
-int esim_event_count();
+int esim_event_count(void);
 
 /* Process esim events, without enabling the schedule of a new event;
  * when all events are processed, esim heap will be empty;
  * esim_cycle is not incremented */
-void esim_empty();
+void esim_empty(void);
+
+/* Return the number of micro-seconds ellapsed since the beginning of the
+ * simulation. */
+long long esim_real_time(void);
 
 
 
