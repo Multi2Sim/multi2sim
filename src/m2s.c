@@ -23,6 +23,7 @@
 #include <fermi-timing.h>
 #include <visual-common.h>
 #include <southern-islands-asm.h>
+#include <arm-emu.h>
 
 
 /* Multi2Sim version */
@@ -39,6 +40,7 @@ static char *si_disasm_file_name = "";
 static char *si_isa_debug_file_name = "";
 static char *opengl_disasm_file_name = "";
 static char *fermi_disasm_file_name = "";
+static char *arm_disasm_file_name = "";
 static char *gpu_stack_debug_file_name = "";
 static char *gpu_isa_debug_file_name = "";
 static char *visual_file_name = "";
@@ -498,6 +500,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			fermi_disasm_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Arm disassembler */
+		if (!strcmp(argv[argi], "--arm-disasm"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			arm_disasm_file_name = argv[++argi];
 			continue;
 		}
 
@@ -1019,6 +1029,10 @@ int main(int argc, char **argv)
 	/* Fermi disassembler tool */
 	if (*fermi_disasm_file_name)
 		frm_emu_disasm(fermi_disasm_file_name);
+
+	/* Arm disassembler tool */
+	if (*arm_disasm_file_name)
+		arm_emu_disasm(arm_disasm_file_name);
 
 	/* Memory hierarchy visualization tool */
 	if (*visual_file_name)
