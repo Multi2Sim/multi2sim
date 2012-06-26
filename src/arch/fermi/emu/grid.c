@@ -292,6 +292,10 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 /* FIXME: constant memory should be member of 'frm_emu' or 'grid'? */
 void frm_grid_setup_const_mem(struct frm_grid_t *grid)
 {
+        struct frm_cuda_function_t *function = grid->function;
+
+	/* FIXME: built-in consts */
+        frm_isa_const_mem_write(0, 0x8, &function->local_size3[0]);
 }
 
 
@@ -300,7 +304,7 @@ void frm_grid_setup_args(struct frm_grid_t *grid)
 	struct frm_cuda_function_t *function = grid->function;
 	struct frm_cuda_function_arg_t *arg;
 	int i;
-	int cb_index = 0;
+	int offset = 0x20;
 
 	/* Kernel arguments */
 	for (i = 0; i < list_count(function->arg_list); i++)
@@ -309,23 +313,24 @@ void frm_grid_setup_args(struct frm_grid_t *grid)
 		assert(arg);
 
 		/* Check that argument was set */
-		if (!arg->set)
-			fatal("function '%s': argument '%s' has not been assigned.",
-				function->name, arg->name);
+		//if (!arg->set)
+		//	fatal("function '%s': argument '%s' has not been assigned.",
+		//		function->name, arg->name);
 
 		/* Process argument depending on its type */
 		if (arg->kind == FRM_CUDA_FUNCTION_ARG_KIND_POINTER)
 		{
 			if (arg->mem_scope == FRM_CUDA_MEM_SCOPE_GLOBAL)
 			{
-				cb_index++;
-				break;
+				printf("arg->value = 0x%08x\n", arg->value);
+                                frm_isa_const_mem_write(0, offset, &arg->value);
+				offset += 0x4;
+				continue;
 			}
-
 			else if (arg->mem_scope == FRM_CUDA_MEM_SCOPE_LOCAL)
 			{
-				cb_index++;
-				break;
+				offset += 0x4;
+				continue;
 			}
 			else
 				fatal("%s: argument in memory scope %d not supported",
