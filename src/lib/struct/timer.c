@@ -27,12 +27,12 @@
 #include "timer.h"
 
 
-struct timer_t
+struct m2s_timer_t
 {
 	char *name;
 
 	/* Timer running or stopped */
-	enum timer_state_t state;
+	enum m2s_timer_state_t state;
 
 	/* Timer value for last instant when timer started/resumed */
 	long long start_value;
@@ -49,7 +49,7 @@ struct timer_t
  */
 
 /* Return the current time in micro-seconds */
-static long long timer_now(void)
+static long long m2s_timer_now(void)
 {
 	struct timeval tv;
 	long long value;
@@ -66,17 +66,17 @@ static long long timer_now(void)
  * Public Functions
  */
 
-struct timer_t *timer_create(char *name)
+struct m2s_timer_t *m2s_timer_create(char *name)
 {
-	struct timer_t *timer;
+	struct m2s_timer_t *timer;
 
 	/* Allocate */
-	timer = calloc(1, sizeof(struct timer_t));
+	timer = calloc(1, sizeof(struct m2s_timer_t));
 	if (!timer)
 		fatal("%s: out of memory", __FUNCTION__);
 	
 	/* Initialize */
-	timer->state = timer_state_stopped;
+	timer->state = m2s_timer_state_stopped;
 	timer->name = strdup(name ? name : "");
 	if (!timer->name)
 		fatal("%s: out of memory", __FUNCTION__);
@@ -86,68 +86,68 @@ struct timer_t *timer_create(char *name)
 }
 
 
-void timer_free(struct timer_t *timer)
+void m2s_timer_free(struct m2s_timer_t *timer)
 {
 	free(timer->name);
 	free(timer);
 }
 
 
-void timer_start(struct timer_t *timer)
+void m2s_timer_start(struct m2s_timer_t *timer)
 {
 	/* Timer already running */
-	if (timer->state == timer_state_running)
+	if (timer->state == m2s_timer_state_running)
 		return;
 	
 	/* Start timer */
-	timer->state = timer_state_running;
-	timer->start_value = timer_now();
+	timer->state = m2s_timer_state_running;
+	timer->start_value = m2s_timer_now();
 }
 
 
-void timer_stop(struct timer_t *timer)
+void m2s_timer_stop(struct m2s_timer_t *timer)
 {
 	long long ellapsed;
 
 	/* Timer already stopped */
-	if (timer->state == timer_state_stopped)
+	if (timer->state == m2s_timer_state_stopped)
 		return;
 
 	/* Stop timer */
-	ellapsed = timer_now() - timer->start_value;
-	timer->state = timer_state_stopped;
+	ellapsed = m2s_timer_now() - timer->start_value;
+	timer->state = m2s_timer_state_stopped;
 	timer->total_value += ellapsed;
 }
 
 
-void timer_reset(struct timer_t *timer)
+void m2s_timer_reset(struct m2s_timer_t *timer)
 {
 	timer->total_value = 0;
-	timer->start_value = timer_now();
+	timer->start_value = m2s_timer_now();
 }
 
 
-long long timer_get_value(struct timer_t *timer)
+long long m2s_timer_get_value(struct m2s_timer_t *timer)
 {
 	long long ellapsed;
 
 	/* Timer is stopped */
-	if (timer->state == timer_state_stopped)
+	if (timer->state == m2s_timer_state_stopped)
 		return timer->total_value;
 
 	/* Timer is running */
-	ellapsed = timer_now() - timer->start_value;
+	ellapsed = m2s_timer_now() - timer->start_value;
 	return timer->total_value + ellapsed;
 }
 
 
-enum timer_state_t timer_get_state(struct timer_t *timer)
+enum m2s_timer_state_t m2s_timer_get_state(struct m2s_timer_t *timer)
 {
 	return timer->state;
 }
 
 
-char *timer_get_name(struct timer_t *timer)
+char *m2s_timer_get_name(struct m2s_timer_t *timer)
 {
 	return timer->name;
 }

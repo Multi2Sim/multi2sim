@@ -35,6 +35,7 @@
 #include <signal.h>
 #include <x86-asm.h>
 #include <time.h>
+#include <timer.h>
 #include <pthread.h>
 #include <poll.h>
 #include <errno.h>
@@ -1001,6 +1002,9 @@ struct x86_emu_t
 	/* pid & address_space_index assignment */
 	int current_pid;
 
+	/* Timer for emulator activity */
+	struct m2s_timer_t *timer;
+
 	/* Schedule next call to 'x86_emu_process_events()'.
 	 * The call will only be effective if 'process_events_force' is set.
 	 * This flag should be accessed thread-safely locking 'process_events_mutex'. */
@@ -1009,7 +1013,7 @@ struct x86_emu_t
 
 	/* Counter of times that a context has been suspended in a
 	 * futex. Used for FIFO wakeups. */
-	uint64_t futex_sleep_count;
+	long long futex_sleep_count;
 	
 	/* Flag set when any context changes any status other than 'specmode' */
 	int context_reschedule;
@@ -1113,7 +1117,6 @@ void x86_emu_disasm(char *file_name);
 
 void x86_emu_dump(FILE *f);
 
-long long x86_emu_timer(void);
 void x86_emu_process_events(void);
 void x86_emu_process_events_schedule(void);
 

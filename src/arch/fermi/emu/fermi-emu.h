@@ -746,11 +746,6 @@ struct frm_emu_t
 	struct mem_t *global_mem;
 	unsigned int global_mem_top;
 
-	/* Timer */
-	int timer_running;  /* Current timer state */
-	long long timer_start_time;  /* Last time (as per x86_emu_timer) when on */
-	long long timer_acc;  /* Accumulated time in previous on-off cycles */
-
 	/* Stats */
 	int grid_count;  /* Number of CUDA functions executed */
 	long long inst_count;  /* Number of instructions executed by warps */
@@ -773,11 +768,10 @@ extern struct frm_emu_t *frm_emu;
 
 void frm_emu_init(void);
 void frm_emu_done(void);
-void frm_emu_timer_start(void);
-void frm_emu_timer_stop(void);
-long long frm_emu_timer(void);
+
 void frm_emu_libcuda_redirect(char *path, int size);
 void frm_emu_libcuda_failed(int pid);
+
 void frm_emu_disasm(char *path);
 
 #endif

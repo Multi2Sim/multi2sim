@@ -685,9 +685,6 @@ struct evg_ndrange_t
 	/* Status */
 	enum evg_ndrange_status_t status;
 
-	/* Start emulation or timing simulation time (u-sec since simulation start) */
-	long long start_time;
-
 	/* OpenCL kernel associated */
 	struct evg_opencl_kernel_t *kernel;
 
@@ -953,11 +950,6 @@ struct evg_wavefront_t
 	struct evg_wavefront_t *barrier_list_prev;
 	struct evg_wavefront_t *finished_list_next;
 	struct evg_wavefront_t *finished_list_prev;
-
-	/* To measure simulation performance */
-	long long emu_inst_count;  /* Total emulated instructions */
-	long long emu_time_start;
-	long long emu_time_end;
 
 	/* Fields introduced for architectural simulation */
 	int id_in_compute_unit;
@@ -1245,6 +1237,9 @@ void evg_isa_done(void);
 
 struct evg_emu_t
 {
+	/* Timer */
+	struct m2s_timer_t *timer;
+
 	/* OpenCL objects */
 	struct evg_opencl_repo_t *opencl_repo;
 	struct evg_opencl_platform_t *opencl_platform;
@@ -1294,7 +1289,6 @@ struct evg_emu_t
 	/* Stats */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
 	long long inst_count;  /* Number of instructions executed by wavefronts */
-	long long ndrange_time;  /* Accumulated time in u-sec of ND-Range execution */
 };
 
 

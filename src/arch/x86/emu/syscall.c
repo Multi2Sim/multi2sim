@@ -2324,7 +2324,7 @@ static int x86_sys_setitimer_impl(void)
 		which, map_value(&sys_itimer_which_map, which), value_ptr, old_value_ptr);
 
 	/* Get current time */
-	now = x86_emu_timer();
+	now = esim_real_time();
 
 	/* Read value */
 	if (value_ptr)
@@ -2377,7 +2377,7 @@ static int x86_sys_getitimer_impl(void)
 		which, map_value(&sys_itimer_which_map, which), value_ptr);
 
 	/* Get current time */
-	now = x86_emu_timer();
+	now = esim_real_time();
 
 	/* Check range of 'which' */
 	if (which >= 3)
@@ -3364,7 +3364,7 @@ static int x86_sys_nanosleep_impl(void)
 	x86_sys_debug("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
 
 	/* Get current time */
-	now = x86_emu_timer();
+	now = esim_real_time();
 
 	/* Read structure */
 	mem_read(x86_isa_mem, rqtp, 4, &sec);
@@ -3490,7 +3490,7 @@ static int x86_sys_poll_impl(void)
 
 	char events_str[MAX_STRING_SIZE];
 
-	long long now = x86_emu_timer();
+	long long now = esim_real_time();
 
 	/* Arguments */
 	pfds = x86_isa_regs->ebx;

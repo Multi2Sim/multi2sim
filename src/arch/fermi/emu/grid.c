@@ -258,7 +258,6 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
                 warp->buf_start = function->function_buffer.ptr;
                 warp->buf = warp->buf_start;
                 warp->buf_size = function->function_buffer.size;
-		warp->emu_time_start = x86_emu_timer();
 	}
 
 	/* Debug */
@@ -355,9 +354,6 @@ void frm_grid_run(struct frm_grid_t *grid)
                 frm_grid_set_status(grid, frm_grid_running);
 
 
-	/* Start GPU timer */
-	frm_emu_timer_start();
-
 	/* Execution loop */
 	while (grid->running_list_head)
 	{
@@ -393,9 +389,6 @@ void frm_grid_run(struct frm_grid_t *grid)
 			}
 		}
 	}
-
-	/* Stop GPU timer */
-	frm_emu_timer_stop();
 
 	/* Dump stats */
 	frm_grid_dump(grid, stdout);

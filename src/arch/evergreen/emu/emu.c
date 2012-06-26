@@ -70,6 +70,7 @@ void evg_emu_init()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
+	evg_emu->timer = m2s_timer_create("Evergreen GPU timer");
 	evg_emu->const_mem = mem_create();
 	evg_emu->const_mem->safe = 0;
 	evg_emu->global_mem = mem_create();
@@ -112,6 +113,7 @@ void evg_emu_done()
 	/* Finalize GPU kernel */
 	mem_free(evg_emu->const_mem);
 	mem_free(evg_emu->global_mem);
+	m2s_timer_free(evg_emu->timer);
 	free(evg_emu);
 }
 
@@ -347,9 +349,6 @@ void evg_emu_run(void)
 		/* Set is in state 'running' */
 		evg_ndrange_clear_status(ndrange, evg_ndrange_pending);
 		evg_ndrange_set_status(ndrange, evg_ndrange_running);
-
-		/* Record starting time */
-		ndrange->start_time = x86_emu_timer();
 	}
 
 	/* Run one instruction of each wavefront in each work-group of each
@@ -387,10 +386,6 @@ void evg_emu_run(void)
 		/* Stop if maximum number of kernels reached */
 		if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
 			x86_emu_finish = x86_emu_finish_max_gpu_kernels;
-
-		/* Accumulate ND-Range execution time */
-		/* FIXME: doesn't work for several ND-Ranges. Replace with new timer system */
-		evg_emu->ndrange_time += x86_emu_timer() - ndrange->start_time;
 
 		/* Extract from list of finished ND-Ranges and free */
 		evg_ndrange_free(ndrange);

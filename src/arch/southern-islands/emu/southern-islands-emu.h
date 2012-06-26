@@ -888,16 +888,14 @@ extern si_isa_inst_func_t *si_isa_inst_func;
 
 struct si_emu_t
 {
+	/* Timer */
+	struct m2s_timer_t *timer;
+
 	/* Global memory */
 	struct mem_t *global_mem;
 	unsigned int global_mem_top;
 
-	/* Timer */
-	int timer_running;  /* Current timer state */
-	long long timer_start_time;  /* Last time (as per x86_emu_timer) when on */
-	long long timer_acc;  /* Accumulated time in previous on-off cycles */
-
-	/* Stats */
+	/* Statistics */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
 	long long inst_count;  /* Number of instructions executed by wavefronts */
 	long long scalar_alu_inst_count;  /* Number of scalar ALU instructions executed */
@@ -943,10 +941,6 @@ void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg);
 void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg);
 int si_isa_get_num_elems(int data_format);
 int si_isa_get_elem_size(int data_format);
-
-void si_emu_timer_start(void);
-void si_emu_timer_stop(void);
-long long si_emu_timer(void);
 
 void si_emu_libopencl_redirect(char *path, int size);
 void si_emu_libopencl_failed(int pid);
