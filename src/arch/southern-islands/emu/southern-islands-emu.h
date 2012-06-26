@@ -732,6 +732,8 @@ void si_wavefront_stack_push(struct si_wavefront_t *wavefront);
 void si_wavefront_stack_pop(struct si_wavefront_t *wavefront, int count);
 void si_wavefront_execute(struct si_wavefront_t *wavefront);
 
+int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, int id_in_wavefront);
+
 
 
 /*
