@@ -84,30 +84,30 @@ void frm_isa_done()
  * Constant Memory
  */
 
-void frm_isa_const_mem_write(int bank, int vector, int elem, void *pvalue)
+void frm_isa_const_mem_write(int bank, int offset, void *pvalue)
 {
 	unsigned int addr;
 
 	/* Mark CB0[0..8].{x,y,z,w} positions as initialized */
-	if (!bank && vector < 9)
-		frm_emu->const_mem_cb0_init[vector * 4 + elem] = 1;
+	if (!bank && offset < 0x20)
+		frm_emu->const_mem_cb0_init[offset] = 1;
 
 	/* Write */
-	addr = bank * 16384 + vector * 16 + elem * 4;
+	addr = (bank << 16) + offset;
 	mem_write(frm_emu->const_mem, addr, 4, pvalue);
 }
 
 
-void frm_isa_const_mem_read(int bank, int vector, int elem, void *pvalue)
+void frm_isa_const_mem_read(int bank, int offset, void *pvalue)
 {
 	unsigned int addr;
 
 	/* Warn if a position within CB[0..8].{x,y,z,w} is used uninitialized */
-	if (!bank && vector < 9 && !frm_emu->const_mem_cb0_init[vector * 4 + elem])
-		warning("CB0[%d].%c is used uninitialized", vector, "xyzw"[elem]);
+	if (!bank && offset < 0x20 && !frm_emu->const_mem_cb0_init[offset])
+		warning("CB0[%0#2x] is used uninitialized", offset);
 	
 	/* Read */
-	addr = bank * 16384 + vector * 16 + elem * 4;
+	addr = (bank << 16) + offset;
 	mem_read(frm_emu->const_mem, addr, 4, pvalue);
 }
 

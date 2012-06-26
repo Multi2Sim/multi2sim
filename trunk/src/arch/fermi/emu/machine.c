@@ -237,7 +237,10 @@ void frm_isa_I2I_impl()
 
 void frm_isa_MOV_impl()
 {
-	NOT_IMPL();
+        unsigned int value;
+        value = frm_isa_read_op_src_int(0);
+	printf("value = %u\n", value);
+        //frm_isa_enqueue_write_dest(value);
 }
 
 void frm_isa_MOV32I_impl()

@@ -62,6 +62,7 @@ void frm_emu_init(void)
 
 	frm_disasm_init();
 	frm_isa_init();
+	frm_emu_disasm("data/vectorAdd_kernel.cubin");
 
         /* Create device */
         frm_cuda_object_list = linked_list_create();
@@ -104,6 +105,20 @@ void frm_emu_disasm(char *path)
 	/* Find .text section which saves instruction bits */
 	elf_file = elf_file_create_from_path(path);
 
+	for (i = 0; i < list_count(elf_file->section_list); ++i)
+	{
+		section = (struct elf_section_t *)list_get(elf_file->section_list, i);
+		//FILE *fp = fopen(section->name, "w");
+		fprintf(stdout, "sec: %s\n", section->name);
+		int j;
+		for (j = 0; j < section->buffer.size; ++j) {
+			if (j != 0 && j%8 == 0)
+				fprintf(stdout, "\n");
+			fprintf(stdout, "%02x", *((unsigned char *)(section->buffer.ptr)+j));
+		}
+		fprintf(stdout, "\n");
+		//fclose(fp);
+	}
 	for (i = 0; i < list_count(elf_file->section_list); ++i)
 	{
 		section = (struct elf_section_t *)list_get(elf_file->section_list, i);
