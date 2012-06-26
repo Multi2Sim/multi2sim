@@ -3452,6 +3452,85 @@ static int x86_sys_mremap_impl(void)
 
 
 /*
+ * System call 'clock_gettime' (code 165)
+ */
+
+static struct string_map_t x86_sys_clock_gettime_clk_id_map =
+{
+	7, {
+		{ "CLOCK_REALTIME", 0 },
+		{ "CLOCK_MONOTONIC", 1 },
+		{ "CLOCK_PROCESS_CPUTIME_ID", 2 },
+		{ "CLOCK_THREAD_CPUTIME_ID", 3 },
+		{ "CLOCK_MONOTONIC_RAW", 4 },
+		{ "CLOCK_REALTIME_COARSE", 5 },
+		{ "CLOCK_MONOTONIC_COARSE", 6 }
+	}
+};
+
+static int x86_sys_clock_gettime_impl(void)
+{
+	unsigned int clk_id;
+	unsigned int ts_ptr;
+
+	char *clk_id_str;
+
+	struct timespec ts;
+
+	struct {
+		unsigned int sec;
+		unsigned int nsec;
+	} sim_ts;
+
+	/* Arguments */
+	clk_id = x86_isa_regs->ebx;
+	ts_ptr = x86_isa_regs->ecx;
+	clk_id_str = map_value(&x86_sys_clock_gettime_clk_id_map, clk_id);
+	x86_sys_debug("  clk_id=0x%x (%s), ts_ptr=0x%x\n",
+		clk_id, clk_id_str, ts_ptr);
+
+	/* Clock type */
+	switch (clk_id)
+	{
+	case CLOCK_REALTIME:
+	case CLOCK_MONOTONIC:
+	case CLOCK_MONOTONIC_RAW:
+
+		/* Native call */
+		clock_gettime(clk_id, &ts);
+		sim_ts.sec = ts.tv_sec;
+		sim_ts.nsec = ts.tv_nsec;
+
+		/* Debug */
+		x86_sys_debug("\tts.tv_sec = %u\n", sim_ts.sec);
+		x86_sys_debug("\tts.tv_nsec = %u\n", sim_ts.nsec);
+
+		/* Write to guest memory */
+		mem_write(x86_isa_mem, ts_ptr, sizeof sim_ts, &sim_ts);
+		break;
+
+	case CLOCK_PROCESS_CPUTIME_ID:
+	case CLOCK_THREAD_CPUTIME_ID:
+	case CLOCK_REALTIME_COARSE:
+	case CLOCK_MONOTONIC_COARSE:
+
+		fatal("%s: not implemented for 'clk_id' = %d",
+			__FUNCTION__, clk_id);
+		break;
+	
+	default:
+		fatal("%s: invalid value for 'clk_id' (%d)",
+			__FUNCTION__, clk_id);
+	}
+
+	/* Success */
+	return 0;
+}
+
+
+
+
+/*
  * System call 'poll' (code 168)
  */
 
@@ -5281,7 +5360,6 @@ SYS_NOT_IMPL(timer_gettime)
 SYS_NOT_IMPL(timer_getoverrun)
 SYS_NOT_IMPL(timer_delete)
 SYS_NOT_IMPL(clock_settime)
-SYS_NOT_IMPL(clock_gettime)
 SYS_NOT_IMPL(clock_nanosleep)
 SYS_NOT_IMPL(statfs64)
 SYS_NOT_IMPL(fstatfs64)
