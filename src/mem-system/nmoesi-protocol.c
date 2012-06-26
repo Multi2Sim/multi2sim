@@ -1202,6 +1202,8 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_wait_for_reqs\"\n",
 			stack->id, target_mod->name);
 
+		/* FIXME We need to consider stack->err here */
+
 		dir = target_mod->dir;
 
 		/* Set owner to NONE for all directory entries */
@@ -1845,8 +1847,8 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		/* Checks */
 		assert(stack->reply_size);
 		assert(stack->request_dir);
-		assert(mod_get_low_mod(mod, stack->tag) == target_mod ||
-			mod_get_low_mod(target_mod, stack->tag) == mod);
+		assert(mod_get_low_mod(mod, stack->addr) == target_mod ||
+			mod_get_low_mod(target_mod, stack->addr) == mod);
 
 		/* Get network and nodes */
 		if (stack->request_dir == mod_request_up_down)
@@ -2208,8 +2210,8 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 
 		/* Checks */
 		assert(stack->reply_size);
-		assert(mod_get_low_mod(mod, stack->tag) == target_mod ||
-			mod_get_low_mod(target_mod, stack->tag) == mod);
+		assert(mod_get_low_mod(mod, stack->addr) == target_mod ||
+			mod_get_low_mod(target_mod, stack->addr) == mod);
 
 		/* Get network and nodes */
 		if (stack->request_dir == mod_request_up_down)
