@@ -326,6 +326,7 @@ void fatal(char *fmt, ...)
 	fprintf(stderr, "fatal: ");
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
+	fflush(NULL);
 	exit(1);
 }
 
@@ -337,6 +338,7 @@ void panic(char *fmt, ...)
 	fprintf(stderr, "panic: ");
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
+	fflush(NULL);
 	abort();
 }
 

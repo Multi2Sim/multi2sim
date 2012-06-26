@@ -1,0 +1,623 @@
+/*
+ * DEFINST format
+ *      name: Instruction name
+ *      fmt_str: String representing the format for disassembly
+ *      fmt: Instruction category
+ *		mask: Opcode Mask
+ *		DPR: Data Processing instructions
+ *		DPR_SAT: Saturation instructions
+ *		MUL: Multiply instructions
+ *		MULTLN: Long Multiply instructions
+ *		SDSWP: Single Data Swap instructions
+ *		BAX: Branch and exchange instructions
+ *		HWTRREG: Halfword data transfer register offset instructions
+ *		HWTRIMM: Halfword data transfer immediate offset instructions
+ *		SDTR: Single Data Transfer instructions
+ *		BDTR: Block Data Transfer instructions
+ *      BRNCH: Branch instructions 
+ *		CPRDTR : Coprocessor Data transfer instructions
+ *		CPRDOP : Coprocessor Data operation instructions
+ *		CPRREGTR: Coprocessor Register transfer instructions
+ *		SWISVC : Software Interrupt instructions
+ */
+ 
+/* DPR category instructions:
+ * AND , EOR, SUB, RSB, ADD, ADC, SBC , RSC, TST, TEQ,
+ * CMP, CMN, ORR, MOV, BIC, MVN
+ */
+
+ DEFINST(AND_reg, 
+	"AND%cond %rd, %rn, %op2", 
+	DPR_REG, 
+	0x00,
+	0x0)
+	 
+DEFINST(ANDS_reg, 
+	"AND%condS %rd, %rn, %op2", 
+	DPR_REG, 
+	0x01,
+	0x0)
+
+DEFINST(EOR_reg, 
+	"EOR%cond %rd, %rn, %op2", 
+	DPR_REG, 
+	0x02,
+	0x0)
+
+DEFINST(EORS_reg, 
+	"EOR%condS %rd, %rn, %op2", 
+	DPR_REG, 
+	0x03,
+	0x0)
+	
+DEFINST(SUB_reg, 
+	"SUB%cond %rd, %rn, %op2", 
+	DPR_REG, 
+	0x04,
+	0x0)
+
+DEFINST(SUBS_reg, 
+	"SUB%condS %rd, %rn, %op2", 
+	DPR_REG, 
+	0x05,
+	0x0)
+
+DEFINST(RSB_reg, 
+	"RSB%cond %rd, %rn, %op2", 
+	DPR_REG, 
+	0x06,
+	0x0)
+
+DEFINST(RSBS_reg, 
+	"RSB%condS %rd, %rn, %op2", 
+	DPR_REG, 
+	0x07,
+	0x0)
+
+DEFINST(ADD_reg, 
+	"ADD%cond %rd, %rn, %op2", 
+	DPR_REG, 
+	0x08,
+	0x0)
+
+DEFINST(ADDS_reg, 
+	"ADD%condS %rd, %rn, %op2", 
+	DPR_REG, 
+	0x09,
+	0x0)
+
+DEFINST(ADC_reg, 
+	"ADC%cond %rd, %rn, %op2", 
+	DPR_REG, 
+	0x0a,
+	0x0)
+
+DEFINST(ADCS_reg, 
+	"ADC%condS %rd, %rn, %op2", 
+	DPR_REG, 
+	0x0b,
+	0x0)
+
+DEFINST(SBC_reg, 
+	"SBC%cond %rd, %rn, %op2", 
+	DPR_REG, 
+	0x0c,
+	0x0)
+
+DEFINST(SBCS_reg, 
+	"SBC%condS %rd, %rn, %op2", 
+	DPR_REG, 
+	0x0d,
+	0x0)
+
+DEFINST(RSC_reg, 
+	"RSC%cond %rd, %rn, %op2", 
+	DPR_REG, 
+	0x0e,
+	0x0)
+
+DEFINST(RSCS_reg, 
+	"RSC%condS %rd, %rn, %op2", 
+	DPR_REG, 
+	0x0f,
+	0x0)
+
+DEFINST(TSTS_reg, 
+	"TST%cond %rn, %op2", 
+	DPR_REG, 
+	0x11,
+	0x0)
+
+DEFINST(TEQS_reg, 
+	"TEQ%cond %rn, %op2", 
+	DPR_REG, 
+	0x13,
+	0x0)
+
+DEFINST(CMPS_reg, 
+	"CMP%cond %rn, %op2", 
+	DPR_REG, 
+	0x15,
+	0x0)
+	
+DEFINST(CMNS_reg, 
+	"CMN%cond %rn, %op2", 
+	DPR_REG, 
+	0x17,
+	0x0)
+
+DEFINST(ORR_reg, 
+	"ORR%cond %rd, %rn, %op2", 
+	DPR_REG, 
+	0x18,
+	0x0)
+
+DEFINST(ORRS_reg, 
+	"ORR%condS %rd, %rn, %op2", 
+	DPR_REG, 
+	0x19,
+	0x0)
+
+DEFINST(MOV_reg, 
+	"MOV%cond %rd, %op2", 
+	DPR_REG, 
+	0x1a,
+	0x0)
+
+DEFINST(MOVS_reg, 
+	"MOV%condS %rd, %op2", 
+	DPR_REG, 
+	0x1b,
+	0x0)
+	
+DEFINST(BIC_reg, 
+	"BIC%cond %rd, %rn, %op2", 
+	DPR_REG, 
+	0x1c,
+	0x0)
+
+DEFINST(BICS_reg, 
+	"BIC%condS %rd, %rn, %op2", 
+	DPR_REG, 
+	0x1d,
+	0x0)
+
+DEFINST(MVN_reg, 
+	"MVN%cond %rd, %op2", 
+	DPR_REG, 
+	0x1e,
+	0x0)
+	
+DEFINST(MVNS_reg, 
+	"MVN%condS %rd, %op2", 
+	DPR_REG, 
+	0x1f,
+	0x0)
+
+DEFINST(AND_imm, 
+	"AND%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x20,
+	0x0)
+
+DEFINST(ANDS_imm, 
+	"AND%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x21,
+	0x0)
+
+DEFINST(EOR_imm, 
+	"EOR%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x22,
+	0x0)
+
+DEFINST(EORS_imm, 
+	"EOR%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x23,
+	0x0)
+
+DEFINST(SUB_imm, 
+	"SUB%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x24,
+	0x0)
+	
+DEFINST(SUBS_imm, 
+	"SUB%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x25,
+	0x0)
+	
+DEFINST(RSB_imm, 
+	"RSB%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x26,
+	0x0)
+
+DEFINST(RSBS_imm, 
+	"RSB%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x27,
+	0x0)
+	
+DEFINST(ADD_imm, 
+	"ADD%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x28,
+	0x0)
+
+DEFINST(ADDS_imm, 
+	"ADD%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x29,
+	0x0)
+	
+DEFINST(ADC_imm, 
+	"ADC%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x2a,
+	0x0)
+
+DEFINST(ADCS_imm, 
+	"ADC%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x2b,
+	0x0)
+	
+DEFINST(SBC_imm, 
+	"SBC%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x2c,
+	0x0)
+
+DEFINST(SBCS_imm, 
+	"SBC%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x2d,
+	0x0)
+	
+DEFINST(RSC_imm, 
+	"RSC%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x2e,
+	0x0)
+
+DEFINST(RSCS_imm, 
+	"RSC%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x2f,
+	0x0)
+	
+DEFINST(TSTS_imm, 
+	"TST%cond %rn, %op2", 
+	DPR_IMM, 
+	0x31,
+	0x0)
+
+DEFINST(TEQS_imm, 
+	"TEQ%cond %rn, %op2", 
+	DPR_IMM, 
+	0x33,
+	0x0)
+
+DEFINST(CMPS_imm, 
+	"CMP%cond %rn, %op2", 
+	DPR_IMM, 
+	0x35,
+	0x0)
+
+DEFINST(CMNS_imm, 
+	"CMN%cond %rn, %op2", 
+	DPR_IMM, 
+	0x37,
+	0x0)
+	
+DEFINST(ORR_imm, 
+	"ORR%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x38,
+	0x0)
+	
+DEFINST(ORRS_imm, 
+	"ORR%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x39,
+	0x0)
+
+DEFINST(MOV_imm, 
+	"MOV%cond %rd, %op2", 
+	DPR_IMM, 
+	0x3a,
+	0x0)
+
+DEFINST(MOVS_imm, 
+	"MOV%condS %rd, %op2", 
+	DPR_IMM, 
+	0x3b,
+	0x0)
+
+DEFINST(BIC_imm, 
+	"BIC%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x3c,
+	0x0)
+
+DEFINST(BICS_imm, 
+	"BIC%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x3d,
+	0x0)
+
+DEFINST(MVN_imm, 
+	"MVN%cond %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x3e,
+	0x0)
+
+DEFINST(MVNS_imm, 
+	"MVN%condS %rd, %rn, %op2", 
+	DPR_IMM, 
+	0x3f,
+	0x0)
+	
+/* DPR_SAT category instructions:
+ * QADD, QDADD, QSUB, QDSUB
+ */
+
+DEFINST(QADD, 
+	"QADD%cond %rd, %rm, %rn", 
+	DPR_SAT, 
+	0x10,
+	0x5)
+
+DEFINST(QSUB, 
+	"QSUB%cond %rd, %rm, %rn", 
+	DPR_SAT, 
+	0x12,
+	0x5)
+
+DEFINST(QDADD, 
+	"QDADD%cond %rd, %rm, %rn", 
+	DPR_SAT, 
+	0x14,
+	0x5)
+
+DEFINST(QDSUB, 
+	"QDSUB%cond %rd, %rm, %rn", 
+	DPR_SAT, 
+	0x16,
+	0x5)
+
+/* PSR category instructions:
+ * MRS, MSR
+ */
+	
+DEFINST(MRS_reg, 
+	"MRS%cond %rd, %psr", 
+	PSR, 
+	0x10,
+	0x0)
+
+DEFINST(MSR_reg, 
+	"MSR%cond %rd, %psr", 
+	PSR, 
+	0x12,
+	0x0)
+
+DEFINST(MSR_imm, 
+	"MSR%cond %psr_%fld, %rm", 
+	PSR, 
+	0x32,
+	0x0)
+
+/* MULT category instructions:
+ * MUL, MLA
+ */
+
+DEFINST(MUL, 
+	"MUL%cond %rd, %rm, %rs", 
+	MULT, 
+	0x00,
+	0x9)
+
+DEFINST(MULS, 
+	"MUL%condS %rd, %rm, %rs", 
+	MULT, 
+	0x01,
+	0x9)
+
+DEFINST(MLA, 
+	"MLA%cond %rd, %rm, %rs, %rn", 
+	MULT, 
+	0x02,
+	0x9)
+
+DEFINST(MLAS, 
+	"MLA%condS %rd, %rm, %rs, %rn", 
+	MULT, 
+	0x03,
+	0x9)
+
+/* MUL_SIGN category instructions:
+ * SMUL,SMLA
+ */
+
+DEFINST(SMLA, 
+	"SMLA%x%y%cond %rd, %rm, %rs, %rn", 
+	MULT_SIGN, 
+	0x10,
+	0x8)
+
+DEFINST(SMLAW, 
+	"SMLAW%y%cond %rd, %rm, %rs", 
+	MULT_SIGN, 
+	0x12,
+	0x8)
+
+DEFINST(SMULW, 
+	"SMULW%y%cond %rd, %rm, %rs", 
+	MULT_SIGN, 
+	0x12,
+	0xa)
+
+DEFINST(SMUL, 
+	"SMUL%x%y%cond %rd, %rm, %rs", 
+	MULT_SIGN, 
+	0x16,
+	0x8)
+
+/* MULT_LN category instructions:
+ * MULL, MLAL
+ */
+
+DEFINST(UMULL, 
+	"UMULL%cond %rdlo, %rdhi, %rm, %rs", 
+	MULT_LN, 
+	0x08,
+	0x9)
+
+DEFINST(UMULLS, 
+	"UMULL%condS %rdlo, %rdhi, %rm, %rs", 
+	MULT_LN, 
+	0x09,
+	0x9)
+
+DEFINST(UMLAL, 
+	"UMLAL%cond %rdlo, %rdhi, %rm, %rs", 
+	MULT_LN, 
+	0x0a,
+	0x9)
+
+DEFINST(UMLALS, 
+	"UMLAL%condS %rdlo, %rdhi, %rm, %rs", 
+	MULT_LN, 
+	0x0b,
+	0x9)
+	
+DEFINST(SMULL, 
+	"SMULL%cond %rdlo, %rdhi, %rm, %rs", 
+	MULT_LN, 
+	0x0c,
+	0x9)
+
+DEFINST(SMULLS, 
+	"SMULL%condS %rdlo, %rdhi, %rm, %rs", 
+	MULT_LN, 
+	0x0d,
+	0x9)
+
+DEFINST(SMLAL, 
+	"SMLAL%cond %rdlo, %rdhi, %rm, %rs", 
+	MULT_LN, 
+	0x0e,
+	0x9)
+
+DEFINST(SMLALS, 
+	"SMLAL%condS %rdlo, %rdhi, %rm, %rs", 
+	MULT_LN, 
+	0x0f,
+	0x9)
+
+/* MULTLN_SIGN category instructions:
+ * MULL, SMLAL
+ */
+
+DEFINST(SMLALXX, 
+	"SMLAL%x%y%cond %rdlo, %rdhi, %rm, %rs", 
+	MULT_LN_SIGN, 
+	0x14,
+	0x8)
+
+/* SDSWP category instructions:
+ * SWP, SWPB
+ */
+
+DEFINST(SWP, 
+	"SWP%cond %rd, %rm, %rn", 
+	SDSWP, 
+	0x10,
+	0x9)
+
+DEFINST(SWPB, 
+	"SWP%condB %rd, %rm, %rn", 
+	SDSWP, 
+	0x14,
+	0x9)
+
+/* BAX category instructions:
+ * BX, BLX
+ */
+
+DEFINST(BX, 
+	"BX%cond %rm", 
+	BAX, 
+	0x12,
+	0x1)
+
+DEFINST(BLX, 
+	"BLX%cond %rm", 
+	BAX, 
+	0x12,
+	0x3)
+
+
+
+/* HFWRD_REG category instructions:
+ * LDRH, LDRSB, STRH, LDRSH 
+ */
+
+DEFINST(LDRH_ptrm, 
+	"LDR%condH %rd, %rn, %rm", 
+	HFWRD_REG, 
+	0x02,
+	0xb)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+	
+
+
+
+
+	
