@@ -405,6 +405,13 @@ static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t s
 		x86_ctx_debug("ctx %d changed status to %s\n",
 			ctx->pid, sstatus);
 	}
+
+	/* Start/stop x86 timer depending on whether there are any contexts
+	 * currently running. */
+	if (x86_emu->running_list_count)
+		m2s_timer_start(x86_emu->timer);
+	else
+		m2s_timer_stop(x86_emu->timer);
 }
 
 

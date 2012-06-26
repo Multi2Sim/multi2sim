@@ -656,7 +656,7 @@ static void x86_cpu_dump_report(void)
 	fprintf(f, "; Global statistics\n");
 	fprintf(f, "[ Global ]\n\n");
 	fprintf(f, "Cycles = %lld\n", x86_cpu->cycle);
-	fprintf(f, "Time = %.1f\n", (double) now / 1000000);
+	fprintf(f, "Time = %.2f\n", (double) now / 1000000);
 	fprintf(f, "CyclesPerSecond = %.0f\n", now ? (double) x86_cpu->cycle / now * 1000000 : 0.0);
 	fprintf(f, "MemoryUsed = %lu\n", (long) mem_mapped_space);
 	fprintf(f, "MemoryUsedMax = %lu\n", (long) mem_max_mapped_space);
