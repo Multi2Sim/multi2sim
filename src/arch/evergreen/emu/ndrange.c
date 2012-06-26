@@ -391,7 +391,6 @@ void evg_ndrange_setup_work_items(struct evg_ndrange_t *ndrange)
 		wavefront->cf_buf_start = kernel->bin_file->enc_dict_entry_evergreen->sec_text_buffer.ptr;
 		wavefront->cf_buf = wavefront->cf_buf_start;
 		wavefront->clause_kind = EVG_CLAUSE_CF;
-		wavefront->emu_time_start = x86_emu_timer();
 	}
 
 	/* Debug */

@@ -636,13 +636,17 @@ static void x86_cpu_dump_report(void)
 {
 	FILE *f;
 	int core, thread;
-	long long now = x86_emu_timer();
+
+	long long now;
 
 	/* Open file */
 	f = open_write(x86_cpu_report_file_name);
 	if (!f)
 		return;
 	
+	/* Get CPU timer value */
+	now = m2s_timer_get_value(x86_emu->timer);
+
 	/* Dump CPU configuration */
 	fprintf(f, ";\n; CPU Configuration\n;\n\n");
 	x86_cpu_config_dump(f);
@@ -1155,7 +1159,8 @@ void x86_cpu_run(void)
 		x86_emu_finish = x86_emu_finish_max_cpu_cycles;
 
 	/* Stop if maximum time exceeded (check only every 10k cycles) */
-	if (x86_emu_max_time && !(x86_cpu->cycle % 10000) && x86_emu_timer() > x86_emu_max_time * 1000000)
+	if (x86_emu_max_time && !(x86_cpu->cycle % 10000) &&
+			m2s_timer_get_value(x86_emu->timer) > x86_emu_max_time * 1000000)
 		x86_emu_finish = x86_emu_finish_max_time;
 
 	/* Stop if any previous reason met */

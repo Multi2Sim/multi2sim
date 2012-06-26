@@ -20,25 +20,25 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-enum timer_state_t
+enum m2s_timer_state_t
 {
-	timer_state_invalid,
-	timer_state_stopped,
-	timer_state_running
+	m2s_timer_state_invalid,
+	m2s_timer_state_stopped,
+	m2s_timer_state_running
 };
 
-struct timer_t;
+struct m2s_timer_t;
 
-struct timer_t *timer_create(char *name);
-void timer_free(struct timer_t *timer);
+struct m2s_timer_t *m2s_timer_create(char *name);
+void m2s_timer_free(struct m2s_timer_t *timer);
 
-void timer_start(struct timer_t *timer);
-void timer_stop(struct timer_t *timer);
-void timer_reset(struct timer_t *timer);
+void m2s_timer_start(struct m2s_timer_t *timer);
+void m2s_timer_stop(struct m2s_timer_t *timer);
+void m2s_timer_reset(struct m2s_timer_t *timer);
 
-long long timer_get_value(struct timer_t *timer);
-enum timer_state_t timer_get_state(struct timer_t *timer);
-char *timer_get_name(struct timer_t *timer);
+long long m2s_timer_get_value(struct m2s_timer_t *timer);
+enum m2s_timer_state_t m2s_timer_get_state(struct m2s_timer_t *timer);
+char *m2s_timer_get_name(struct m2s_timer_t *timer);
 
 
 

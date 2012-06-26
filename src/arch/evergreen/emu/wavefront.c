@@ -319,7 +319,6 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 
 		/* Stats */
 		evg_emu->inst_count++;
-		evg_isa_wavefront->emu_inst_count++;
 		evg_isa_wavefront->inst_count++;
 		evg_isa_wavefront->cf_inst_count++;
 		if (evg_isa_inst->info->flags & EVG_INST_FLAG_MEM)
@@ -371,7 +370,6 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		evg_isa_wavefront->inst_count += evg_isa_alu_group->inst_count;
 		evg_isa_wavefront->alu_inst_count += evg_isa_alu_group->inst_count;
 		evg_isa_wavefront->alu_group_count++;
-		evg_isa_wavefront->emu_inst_count += evg_isa_alu_group->inst_count * evg_isa_wavefront->work_item_count;
 		assert(evg_isa_alu_group->inst_count > 0 && evg_isa_alu_group->inst_count < 6);
 		evg_isa_wavefront->alu_group_size[evg_isa_alu_group->inst_count - 1]++;
 		for (i = 0; i < evg_isa_alu_group->inst_count; i++)
@@ -425,7 +423,6 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 
 		/* Statistics */
 		evg_emu->inst_count++;
-		evg_isa_wavefront->emu_inst_count += evg_isa_wavefront->work_item_count;
 		evg_isa_wavefront->inst_count++;
 		evg_isa_wavefront->tc_inst_count++;
 		if (evg_isa_inst->info->flags & EVG_INST_FLAG_MEM)

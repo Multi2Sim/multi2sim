@@ -98,6 +98,6 @@ uint32_t evg_opencl_event_get_profiling_info(struct evg_opencl_event_t *event, u
 
 long long evg_opencl_event_timer(void)
 {
-	return x86_emu_timer() * 1000;
+	return esim_real_time() * 1000;
 }
 

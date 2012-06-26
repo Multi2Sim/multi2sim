@@ -1220,5 +1220,5 @@ uint32_t si_opencl_event_get_profiling_info(struct si_opencl_event_t *event, uin
 
 long long si_opencl_event_timer(void)
 {
-	return x86_emu_timer() * 1000;
+	return esim_real_time() * 1000;
 }

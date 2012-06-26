@@ -631,9 +631,6 @@ void evg_gpu_run(void)
 		evg_ndrange_clear_status(ndrange, evg_ndrange_pending);
 		evg_ndrange_set_status(ndrange, evg_ndrange_running);
 
-		/* Record ND-Range start time */
-		ndrange->start_time = x86_emu_timer();
-
 		/* Trace */
 		evg_trace("evg.new_ndrange "
 			"id=%d "
@@ -699,10 +696,6 @@ void evg_gpu_run(void)
 		/* Stop if maximum number of kernels reached */
 		if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
 			x86_emu_finish = x86_emu_finish_max_gpu_kernels;
-
-		/* Accumulate ND-Range execution time */
-		/* FIXME: doesn't work for several ND-Ranges. Replace with new timer system */
-		evg_emu->ndrange_time += x86_emu_timer() - ndrange->start_time;
 
 		/* Finalize and free ND-Range */
 		assert(evg_ndrange_get_status(ndrange, evg_ndrange_finished));

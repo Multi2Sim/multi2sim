@@ -70,6 +70,7 @@ void si_emu_init()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
+	si_emu->timer = m2s_timer_create("Southern Islands GPU Timer");
 	si_emu->global_mem = mem_create();
 	si_emu->global_mem->safe = 0;
 
@@ -108,33 +109,8 @@ void si_emu_done()
 
 	/* Finalize GPU kernel */
 	mem_free(si_emu->global_mem);
+	m2s_timer_free(si_emu->timer);
 	free(si_emu);
-}
-
-
-void si_emu_timer_start(void)
-{
-	assert(!si_emu->timer_running);
-	si_emu->timer_start_time = x86_emu_timer();
-	si_emu->timer_running = 1;
-}
-
-
-void si_emu_timer_stop(void)
-{
-	assert(si_emu->timer_running);
-	si_emu->timer_acc += x86_emu_timer() - si_emu->timer_start_time;
-	si_emu->timer_running = 0;
-}
-
-
-/* Return a counter of microseconds relative to the first time the GPU started to run.
- * This counter runs only while the GPU is active, stopping and resuming after calls
- * to 'si_emu_timer_stop()' and 'si_emu_timer_start()', respectively. */
-long long si_emu_timer(void)
-{
-	return si_emu->timer_running ? x86_emu_timer() - si_emu->timer_start_time + si_emu->timer_acc
-		: si_emu->timer_acc;
 }
 
 
