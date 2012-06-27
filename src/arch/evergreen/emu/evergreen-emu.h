@@ -1197,13 +1197,21 @@ extern char *evg_err_isa_note;
 #define EVG_MEM_GDS_WORD2		evg_isa_inst->words[2].mem_gds_word2
 
 
-/* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-typedef void (*evg_isa_inst_func_t)(void);
+/* Table of functions implementing implementing the Evergreen ISA */
+typedef void (*evg_isa_inst_func_t)(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst);
 extern evg_isa_inst_func_t *evg_isa_inst_func;
 
+/* Declarations of function prototypes implementing Evergreen ISA */
+#define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
+	extern void evg_isa_##_name##_impl(struct evg_work_item_t *work_item, \
+			struct evg_inst_t *inst);
+#include <evergreen-asm.dat>
+#undef DEFINST
+
 /* Access to constant memory */
-void evg_isa_const_mem_write(int bank, int vector, int elem, void *pvalue);
-void evg_isa_const_mem_read(int bank, int vector, int elem, void *pvalue);
+void evg_isa_const_mem_write(int bank, int vector, int elem, void *value_ptr);
+void evg_isa_const_mem_read(int bank, int vector, int elem, void *value_ptr);
 
 /* For ALU clauses */
 void evg_isa_alu_clause_start(void);
