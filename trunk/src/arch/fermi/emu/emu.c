@@ -62,7 +62,7 @@ void frm_emu_init(void)
 
 	frm_disasm_init();
 	frm_isa_init();
-	frm_emu_disasm("data/vectorAdd_kernel.cubin");
+	//frm_emu_disasm("data/vectorAdd_kernel.cubin");
 
         /* Create device */
         frm_cuda_object_list = linked_list_create();
