@@ -280,6 +280,8 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 
 	case EVG_CLAUSE_CF:
 	{
+		struct evg_work_item_t *work_item;
+
 		int inst_num;
 
 		/* Decode CF instruction */
@@ -294,10 +296,14 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 				debug_file(evg_isa_debug_category));
 		}
 
+		/* Get first work-item in wavefront */
+		work_item = wavefront->work_items[0];
+		assert(work_item);
+
 		/* Execute once in wavefront */
 		evg_isa_cf_inst = &evg_isa_wavefront->cf_inst;
 		evg_isa_inst = &evg_isa_wavefront->cf_inst;
-		(*evg_isa_inst_func[evg_isa_inst->info->inst])();
+		(*evg_isa_inst_func[evg_isa_inst->info->inst])(work_item, &evg_isa_wavefront->cf_inst);
 
 		/* If instruction updates the work_item's active mask, update digests */
 		if (evg_isa_inst->info->flags & EVG_INST_FLAG_ACT_MASK)
@@ -352,7 +358,8 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 			for (i = 0; i < evg_isa_alu_group->inst_count; i++)
 			{
 				evg_isa_inst = &evg_isa_alu_group->inst[i];
-				(*evg_isa_inst_func[evg_isa_inst->info->inst])();
+				(*evg_isa_inst_func[evg_isa_inst->info->inst])(evg_isa_work_item,
+					&evg_isa_alu_group->inst[i]);
 			}
 			evg_isa_write_task_commit();
 		}
@@ -410,7 +417,8 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(evg_isa_wavefront, work_item_id)
 		{
 			evg_isa_work_item = ndrange->work_items[work_item_id];
-			(*evg_isa_inst_func[evg_isa_inst->info->inst])();
+			(*evg_isa_inst_func[evg_isa_inst->info->inst])(evg_isa_work_item,
+				&evg_isa_wavefront->tex_inst);
 		}
 
 		/* Statistics */

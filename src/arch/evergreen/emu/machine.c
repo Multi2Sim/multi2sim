@@ -23,6 +23,8 @@
 #include <mem-system.h>
 #include <x86-emu.h>
 
+#define evg_isa_wavefront __COMPILATION_ERROR__
+
 
 char *evg_err_isa_note =
 	"\tThe AMD Evergreen instruction set is partially supported by Multi2Sim. If\n"
@@ -39,8 +41,10 @@ char *evg_err_isa_note =
 
 #define W0  EVG_CF_ALU_WORD0
 #define W1  EVG_CF_ALU_WORD1
-void evg_isa_ALU_impl()
+void evg_isa_ALU_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.alt_const, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
 	/* FIXME: block constant cache sets */
@@ -48,55 +52,55 @@ void evg_isa_ALU_impl()
 	/* FIXME: barrier */
 
 	/* Start ALU clause */
-	evg_isa_wavefront->clause_buf_start = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
-	evg_isa_wavefront->clause_buf_end = evg_isa_wavefront->clause_buf_start + (W1.count + 1) * 8;
-	evg_isa_wavefront->clause_buf = evg_isa_wavefront->clause_buf_start;
-	evg_isa_wavefront->clause_kind = EVG_CLAUSE_ALU;
+	wavefront->clause_buf_start = wavefront->cf_buf_start + W0.addr * 8;
+	wavefront->clause_buf_end = wavefront->clause_buf_start + (W1.count + 1) * 8;
+	wavefront->clause_buf = wavefront->clause_buf_start;
+	wavefront->clause_kind = EVG_CLAUSE_ALU;
 	evg_isa_alu_clause_start();
 }
 #undef W0
 #undef W1
 
 
-void evg_isa_ALU_BREAK_impl()
+void evg_isa_ALU_BREAK_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Same behavior as ALU */
 	/* FIXME: what's the difference? */
-	evg_isa_ALU_impl();
+	evg_isa_ALU_impl(work_item, inst);
 }
 
 
-void evg_isa_ALU_POP_AFTER_impl()
+void evg_isa_ALU_POP_AFTER_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Same behavior as ALU */
-	evg_isa_ALU_impl();
+	evg_isa_ALU_impl(work_item, inst);
 }
 
-void evg_isa_ALU_POP2_AFTER_impl()
+void evg_isa_ALU_POP2_AFTER_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Initiates an ALU clause, and pops the stack twice after the clause completes execution. */
 	NOT_IMPL();
 }
 
-void evg_isa_ALU_PUSH_BEFORE_impl()
+void evg_isa_ALU_PUSH_BEFORE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Same behavior as ALU inst */
-	evg_isa_ALU_impl();
+	evg_isa_ALU_impl(work_item, inst);
 }
 
-void evg_isa_CALL_impl()
+void evg_isa_CALL_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Execute a subroutine call (push call variables onto stack) */
 	NOT_IMPL();
 }
 
-void evg_isa_CALL_FS_impl()
+void evg_isa_CALL_FS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Call Fetch Subroutine */
 	NOT_IMPL();
 }
 
-void evg_isa_CUT_VERTEX_impl()
+void evg_isa_CUT_VERTEX_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* End Primitive Strip, Start New Primitive Strip */
 	NOT_IMPL();
@@ -104,10 +108,15 @@ void evg_isa_CUT_VERTEX_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_ELSE_impl()
+void evg_isa_ELSE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
-	int active, active_last, active_new;
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
+	int active;
+	int active_last;
+	int active_new;
 	int active_count = 0;
+
 	int i;
 
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
@@ -119,108 +128,118 @@ void evg_isa_ELSE_impl()
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.barrier, 1);
 
 	/* Debug */
-	if (debug_status(evg_isa_debug_category)) {
-		evg_isa_debug("  %s:act=", evg_isa_wavefront->name);
-		bit_map_dump(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
-			evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count,
+	if (debug_status(evg_isa_debug_category))
+	{
+		evg_isa_debug("  %s:act=", wavefront->name);
+		bit_map_dump(wavefront->active_stack, wavefront->stack_top *
+			wavefront->work_item_count, wavefront->work_item_count,
 			debug_file(evg_isa_debug_category));
 	}
 
 	/* Invert active mask */
-	if (!evg_isa_wavefront->stack_top)
+	if (!wavefront->stack_top)
 		fatal("ELSE: cannot execute for stack_top=0");
-	for (i = 0; i < evg_isa_wavefront->work_item_count; i++) {
-		active = bit_map_get(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
-			evg_isa_wavefront->work_item_count + i, 1);
-		active_last = bit_map_get(evg_isa_wavefront->active_stack, (evg_isa_wavefront->stack_top - 1) *
-			evg_isa_wavefront->work_item_count + i, 1);
+	for (i = 0; i < wavefront->work_item_count; i++)
+	{
+		active = bit_map_get(wavefront->active_stack, wavefront->stack_top *
+			wavefront->work_item_count + i, 1);
+		active_last = bit_map_get(wavefront->active_stack, (wavefront->stack_top - 1) *
+			wavefront->work_item_count + i, 1);
 		active_new = !active && active_last;
 		active_count += active_new;
-		bit_map_set(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
-			evg_isa_wavefront->work_item_count + i, 1, active_new);
+		bit_map_set(wavefront->active_stack, wavefront->stack_top *
+			wavefront->work_item_count + i, 1, active_new);
 	}
 	
 	/* Debug */
-	if (debug_status(evg_isa_debug_category)) {
-		evg_isa_debug("  %s:invert(act)=", evg_isa_wavefront->name);
-		bit_map_dump(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
-			evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count,
+	if (debug_status(evg_isa_debug_category))
+	{
+		evg_isa_debug("  %s:invert(act)=", wavefront->name);
+		bit_map_dump(wavefront->active_stack, wavefront->stack_top *
+			wavefront->work_item_count, wavefront->work_item_count,
 			debug_file(evg_isa_debug_category));
 	}
 
 	/* If all pixels are inactive, pop stack and jump */
-	if (!active_count) {
-		evg_wavefront_stack_pop(evg_isa_wavefront, W1.pop_count);
-		evg_isa_wavefront->cf_buf = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
+	if (!active_count)
+	{
+		evg_wavefront_stack_pop(wavefront, W1.pop_count);
+		wavefront->cf_buf = wavefront->cf_buf_start + W0.addr * 8;
 	}
 }
 #undef W0
 #undef W1
 
-void evg_isa_EMIT_CUT_VERTEX_impl()
+
+void evg_isa_EMIT_CUT_VERTEX_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Emit Vertex, End Primitive Strip */
 	NOT_IMPL();
 }
 
-void evg_isa_EMIT_VERTEX_impl()
+
+void evg_isa_EMIT_VERTEX_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Vertex Exported to Memory */
 	NOT_IMPL();
 }
 
-void evg_isa_EXPORT_impl()
+
+void evg_isa_EXPORT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Export from VS or PS */
 	NOT_IMPL();
 }
 
-void evg_isa_EXPORT_DONE_impl()
+void evg_isa_EXPORT_DONE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Export Last Data */
 	NOT_IMPL();
 }
 
-void evg_isa_GDS_impl()
+void evg_isa_GDS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Global Data Share */
 	NOT_IMPL();
 }
 
-void evg_isa_GWS_BARRIER_impl()
+void evg_isa_GWS_BARRIER_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Global Wavefront Barrier */
 	NOT_IMPL();
 }
 
-void evg_isa_GWS_INIT_impl()
+void evg_isa_GWS_INIT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Global Wavefront Resource Initialization */
 	NOT_IMPL();
 }
 
-void evg_isa_GWS_SEMA_P_impl()
+void evg_isa_GWS_SEMA_P_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Global Wavefront Sync Semaphore P */
 	NOT_IMPL();
 }
 
-void evg_isa_GWS_SEMA_V_impl()
+void evg_isa_GWS_SEMA_V_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Global Wavefront Sync Semaphore V */
 	NOT_IMPL();
 }
 
-void evg_isa_HALT_impl()
+void evg_isa_HALT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Halt Wavefront Execution */
 	NOT_IMPL();
 }
 
+
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_JUMP_impl()
+void evg_isa_JUMP_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	int active_count;
 
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
@@ -232,19 +251,21 @@ void evg_isa_JUMP_impl()
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.barrier, 1);
 
 	/* If all pixels are inactive, pop stack and jump */
-	active_count = bit_map_count_ones(evg_isa_wavefront->active_stack,
-		evg_isa_wavefront->stack_top * evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count);
-	if (!active_count) {
-		evg_wavefront_stack_pop(evg_isa_wavefront, W1.pop_count);
-		evg_isa_wavefront->cf_buf = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
+	active_count = bit_map_count_ones(wavefront->active_stack,
+		wavefront->stack_top * wavefront->work_item_count, wavefront->work_item_count);
+	if (!active_count)
+	{
+		evg_wavefront_stack_pop(wavefront, W1.pop_count);
+		wavefront->cf_buf = wavefront->cf_buf_start + W0.addr * 8;
 	}
 }
 #undef W0
 #undef W1
 
+
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_JUMPTABLE_impl()
+void evg_isa_JUMPTABLE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Executes a jump through a jump table. */
 	NOT_IMPL();
@@ -252,9 +273,10 @@ void evg_isa_JUMPTABLE_impl()
 #undef W0
 #undef W1
 
+
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_KILL_impl()
+void evg_isa_KILL_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Kill (prevent rendering of) pixels that pass a condition test. */
 	NOT_IMPL();
@@ -262,10 +284,13 @@ void evg_isa_KILL_impl()
 #undef W0
 #undef W1
 
+
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_LOOP_END_impl()
+void evg_isa_LOOP_END_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	int active_count;
 
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
@@ -277,34 +302,34 @@ void evg_isa_LOOP_END_impl()
 	/* W0.addr: jump if any pixel is active */
 
 	/* Increment the trip count */
-	++evg_isa_wavefront->loop_trip_count;
+	++wavefront->loop_trip_count;
 
 	/* Dump current loop state */
 	if (debug_status(evg_isa_debug_category)) {
-		evg_isa_debug("  %s:act=", evg_isa_wavefront->name);
-		bit_map_dump(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
-			evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count,
+		evg_isa_debug("  %s:act=", wavefront->name);
+		bit_map_dump(wavefront->active_stack, wavefront->stack_top *
+			wavefront->work_item_count, wavefront->work_item_count,
 			debug_file(evg_isa_debug_category));
 	}
 
 	/* Decrement loop index */
-	evg_isa_wavefront->loop_index -= evg_isa_wavefront->loop_step;
+	wavefront->loop_index -= wavefront->loop_step;
 
 	/* If any pixel is active and loop index is not zero, jump back */
-	active_count = bit_map_count_ones(evg_isa_wavefront->active_stack,
-		evg_isa_wavefront->stack_top * evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count);
-	if (active_count && (evg_isa_wavefront->loop_index == 0) && 
-		(evg_isa_wavefront->loop_trip_count != evg_isa_wavefront->loop_max_trip_count)) 
+	active_count = bit_map_count_ones(wavefront->active_stack,
+		wavefront->stack_top * wavefront->work_item_count, wavefront->work_item_count);
+	if (active_count && (wavefront->loop_index == 0) && 
+		(wavefront->loop_trip_count != wavefront->loop_max_trip_count)) 
 	{
-		evg_isa_wavefront->cf_buf = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
+		wavefront->cf_buf = wavefront->cf_buf_start + W0.addr * 8;
 		return;
 	}
 
 	/* Pop stack once */
-	evg_wavefront_stack_pop(evg_isa_wavefront, 1);
+	evg_wavefront_stack_pop(wavefront, 1);
 
 	/* FIXME: Get rid of this once loop state is pushed on the stack */
-	--evg_isa_wavefront->loop_depth;
+	--wavefront->loop_depth;
 }
 #undef W0
 #undef W1
@@ -312,8 +337,10 @@ void evg_isa_LOOP_END_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_LOOP_START_DX10_impl()
+void evg_isa_LOOP_START_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.cf_const, 0);  /* FIXME: what does it refer to? */
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.cond, 0);
@@ -325,15 +352,15 @@ void evg_isa_LOOP_START_DX10_impl()
 	/* W0.pop_count: pop if all pixels fail. */
 
 	/* Initialize the loop state for the wavefront */
-	evg_isa_wavefront->loop_max_trip_count = 
+	wavefront->loop_max_trip_count = 
 	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
-	evg_isa_wavefront->loop_start = 
+	wavefront->loop_start = 
 	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][1];
-	evg_isa_wavefront->loop_step = 
+	wavefront->loop_step = 
 	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][2];
 
-	evg_isa_wavefront->loop_index = evg_isa_wavefront->loop_start;
-	evg_isa_wavefront->loop_trip_count = 0;
+	wavefront->loop_index = wavefront->loop_start;
+	wavefront->loop_trip_count = 0;
 
 
 	/* FIXME: if initial condition fails, jump to 'addr' */
@@ -343,10 +370,10 @@ void evg_isa_LOOP_START_DX10_impl()
 	/* FIXME: Set up new loop state */
 
 	/* FIXME: Remove this once loop state is part of stack */
-	++evg_isa_wavefront->loop_depth;
+	++wavefront->loop_depth;
 
 	/* FIXME: Push active mask? */
-	evg_wavefront_stack_push(evg_isa_wavefront);
+	evg_wavefront_stack_push(wavefront);
 }
 #undef W0
 #undef W1
@@ -354,30 +381,31 @@ void evg_isa_LOOP_START_DX10_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_LOOP_START_NO_AL_impl()
+void evg_isa_LOOP_START_NO_AL_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.valid_pixel_mode, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.whole_quad_mode, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.pop_count, 0);
 
 	/* FIXME: Remove this once loop state is part of stack */
-	++evg_isa_wavefront->loop_depth;
-	if(evg_isa_wavefront->loop_depth > 1) {		
-		fatal("Nested loops not supported");
-	}
+	++wavefront->loop_depth;
+	if (wavefront->loop_depth > 1)
+		fatal("%s: nested loops not supported", __FUNCTION__);
 
 	/* Initialize the loop state for the wavefront */
-	evg_isa_wavefront->loop_max_trip_count = 
+	wavefront->loop_max_trip_count = 
 	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][0];
-	evg_isa_wavefront->loop_start = 
+	wavefront->loop_start = 
 	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][1];
-	evg_isa_wavefront->loop_step = 
+	wavefront->loop_step = 
 	   evg_isa_ndrange->kernel->bin_file->enc_dict_entry_evergreen->consts->int_consts[W1.cf_const][2];
 
-	evg_isa_wavefront->loop_index = evg_isa_wavefront->loop_start;
-	evg_isa_wavefront->loop_trip_count = 0;
+	wavefront->loop_index = wavefront->loop_start;
+	wavefront->loop_trip_count = 0;
 
-	evg_wavefront_stack_push(evg_isa_wavefront);
+	evg_wavefront_stack_push(wavefront);
 }
 #undef W0
 #undef W1
@@ -385,7 +413,7 @@ void evg_isa_LOOP_START_NO_AL_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_LOOP_CONTINUE_impl()
+void evg_isa_LOOP_CONTINUE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
@@ -395,8 +423,10 @@ void evg_isa_LOOP_CONTINUE_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_LOOP_BREAK_impl()
+void evg_isa_LOOP_BREAK_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	int active_count;
 	int active;
 	int i;
@@ -409,51 +439,53 @@ void evg_isa_LOOP_BREAK_impl()
 	/* W0.addr: jump if all pixels are disabled  */
 
 	/* Dump current loop state */
-	if (debug_status(evg_isa_debug_category)) {
-		evg_isa_debug("  %s:act=", evg_isa_wavefront->name);
-		bit_map_dump(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
-			evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count,
+	if (debug_status(evg_isa_debug_category))
+	{
+		evg_isa_debug("  %s:act=", wavefront->name);
+		bit_map_dump(wavefront->active_stack, wavefront->stack_top *
+			wavefront->work_item_count, wavefront->work_item_count,
 			debug_file(evg_isa_debug_category));
 	}
 
 	/* Mark active work items as inactive */
-	for (i = 0; i < evg_isa_wavefront->work_item_count; i++) {
-
-		active = bit_map_get(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
-			evg_isa_wavefront->work_item_count + i, 1);
+	for (i = 0; i < wavefront->work_item_count; i++)
+	{
+		active = bit_map_get(wavefront->active_stack, wavefront->stack_top *
+			wavefront->work_item_count + i, 1);
 
 		if (active) 
 		{
 			/* Pixel is active, so mark it as inactive */
-			bit_map_set(evg_isa_wavefront->active_stack, evg_isa_wavefront->stack_top *
-				evg_isa_wavefront->work_item_count + i, 1, 0);
+			bit_map_set(wavefront->active_stack, wavefront->stack_top *
+				wavefront->work_item_count + i, 1, 0);
 		}
 	}
 
 	/* If no pixels are active, jump to addr */
-	active_count = bit_map_count_ones(evg_isa_wavefront->active_stack,
-		evg_isa_wavefront->stack_top * evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count);
-	if (active_count == 0) {
-		evg_isa_wavefront->cf_buf = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
+	active_count = bit_map_count_ones(wavefront->active_stack,
+		wavefront->stack_top * wavefront->work_item_count, wavefront->work_item_count);
+	if (!active_count)
+	{
+		wavefront->cf_buf = wavefront->cf_buf_start + W0.addr * 8;
 		return;
 	}
 
 	/* Pop stack */
-	evg_wavefront_stack_pop(evg_isa_wavefront, W1.pop_count);
+	evg_wavefront_stack_pop(wavefront, W1.pop_count);
 
 	/* FIXME: Get rid of this once loop state is pushed on the stack */
-	evg_isa_wavefront->loop_depth -= W1.pop_count;
+	wavefront->loop_depth -= W1.pop_count;
 }
 #undef W0
 #undef W1
 
-void evg_isa_MEM_EXPORT_impl()
+void evg_isa_MEM_EXPORT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Performs a memory read or write on the scatter buffer. */
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_EXPORT_COMBINED_impl()
+void evg_isa_MEM_EXPORT_COMBINED_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Performs a memory read or write on the scatter buffer. */
 	NOT_IMPL();
@@ -461,9 +493,12 @@ void evg_isa_MEM_EXPORT_COMBINED_impl()
 
 #define W0  EVG_CF_ALLOC_EXPORT_WORD0_RAT
 #define W1  EVG_CF_ALLOC_EXPORT_WORD1_BUF
-void evg_isa_MEM_RAT_impl()
+void evg_isa_MEM_RAT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
-	switch (W0.rat_inst) {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
+	switch (W0.rat_inst)
+	{
 
 	/* STORE_RAW */
 	case 1:
@@ -499,9 +534,9 @@ void evg_isa_MEM_RAT_impl()
 			EVG_ISA_ARG_NOT_SUPPORTED(W0.type);
 
 		/* Record access */
-		evg_isa_wavefront->global_mem_write = 1;
+		wavefront->global_mem_write = 1;
 
-		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(evg_isa_wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			evg_isa_work_item = evg_isa_ndrange->work_items[work_item_id];
 
@@ -570,8 +605,10 @@ void evg_isa_MEM_RAT_impl()
 
 #define W0  EVG_CF_ALLOC_EXPORT_WORD0_RAT
 #define W1  EVG_CF_ALLOC_EXPORT_WORD1_BUF
-void evg_isa_MEM_RAT_CACHELESS_impl()
+void evg_isa_MEM_RAT_CACHELESS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	switch (W0.rat_inst)
 	{
 
@@ -603,7 +640,7 @@ void evg_isa_MEM_RAT_CACHELESS_impl()
 		if (W0.type != 1 && W0.type != 3)
 			EVG_ISA_ARG_NOT_SUPPORTED(W0.type);
 
-		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(evg_isa_wavefront, work_item_id)
+		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
 			evg_isa_work_item = evg_isa_ndrange->work_items[work_item_id];
 
@@ -622,7 +659,7 @@ void evg_isa_MEM_RAT_CACHELESS_impl()
 			evg_isa_debug("  t%d:write(0x%x)", evg_isa_work_item->id, addr);
 
 			/* Record access */
-			evg_isa_wavefront->global_mem_write = 1;
+			wavefront->global_mem_write = 1;
 			evg_isa_work_item->global_mem_access_addr = addr;
 			evg_isa_work_item->global_mem_access_size = 0;
 
@@ -661,119 +698,119 @@ void evg_isa_MEM_RAT_CACHELESS_impl()
 #undef W0
 #undef W1
 
-void evg_isa_MEM_RAT_COMBINED_CACHELESS_impl()
+void evg_isa_MEM_RAT_COMBINED_CACHELESS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_RING_impl()
+void evg_isa_MEM_RING_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_RING1_impl()
+void evg_isa_MEM_RING1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_RING2_impl()
+void evg_isa_MEM_RING2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_RING3_impl()
+void evg_isa_MEM_RING3_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM0_BUF0_impl()
+void evg_isa_MEM_STREAM0_BUF0_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM0_BUF1_impl()
+void evg_isa_MEM_STREAM0_BUF1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM0_BUF2_impl()
+void evg_isa_MEM_STREAM0_BUF2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM0_BUF3_impl()
+void evg_isa_MEM_STREAM0_BUF3_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM1_BUF0_impl()
+void evg_isa_MEM_STREAM1_BUF0_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM1_BUF1_impl()
+void evg_isa_MEM_STREAM1_BUF1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM1_BUF2_impl()
+void evg_isa_MEM_STREAM1_BUF2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM1_BUF3_impl()
+void evg_isa_MEM_STREAM1_BUF3_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM2_BUF0_impl()
+void evg_isa_MEM_STREAM2_BUF0_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM2_BUF1_impl()
+void evg_isa_MEM_STREAM2_BUF1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM2_BUF2_impl()
+void evg_isa_MEM_STREAM2_BUF2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM2_BUF3_impl()
+void evg_isa_MEM_STREAM2_BUF3_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM3_BUF0_impl()
+void evg_isa_MEM_STREAM3_BUF0_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM3_BUF1_impl()
+void evg_isa_MEM_STREAM3_BUF1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM3_BUF2_impl()
+void evg_isa_MEM_STREAM3_BUF2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_STREAM3_BUF3_impl()
+void evg_isa_MEM_STREAM3_BUF3_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_WR_SCRATCH_impl()
+void evg_isa_MEM_WR_SCRATCH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 #define W0 evg_isa_inst->words[0].cf_word0
 #define W1 evg_isa_inst->words[1].cf_word1
-void evg_isa_NOP_CF_impl()
+void evg_isa_NOP_CF_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 }
 #undef W0
@@ -782,8 +819,10 @@ void evg_isa_NOP_CF_impl()
 
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_POP_impl()
+void evg_isa_POP_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.jump_table_sel, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.cf_const, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.cond, 0);
@@ -793,15 +832,16 @@ void evg_isa_POP_impl()
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.barrier, 1);
 
 	/* Pop 'pop_count' from stack and jump to 'addr' */
-	evg_wavefront_stack_pop(evg_isa_wavefront, W1.pop_count);
-	evg_isa_wavefront->cf_buf = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
+	evg_wavefront_stack_pop(wavefront, W1.pop_count);
+	wavefront->cf_buf = wavefront->cf_buf_start + W0.addr * 8;
 }
 #undef W0
 #undef W1
 
+
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_PUSH_impl()
+void evg_isa_PUSH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Push State To Stack */
 	NOT_IMPL();
@@ -809,9 +849,10 @@ void evg_isa_PUSH_impl()
 #undef W0
 #undef W1
 
+
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_RETURN_impl()
+void evg_isa_RETURN_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Return From Subroutine */
 	NOT_IMPL();
@@ -819,10 +860,13 @@ void evg_isa_RETURN_impl()
 #undef W0
 #undef W1
 
+
 #define W0  EVG_CF_WORD0
 #define W1  EVG_CF_WORD1
-void evg_isa_TC_impl()
+void evg_isa_TC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	int active;
 	int i;
 
@@ -834,49 +878,53 @@ void evg_isa_TC_impl()
 	/* FIXME: barrier */
 	
 	/* Start TC clause */
-	evg_isa_wavefront->clause_buf_start = evg_isa_wavefront->cf_buf_start + W0.addr * 8;
-	evg_isa_wavefront->clause_buf_end = evg_isa_wavefront->clause_buf_start + (W1.count + 1) * 16;
-	evg_isa_wavefront->clause_buf = evg_isa_wavefront->clause_buf_start;
-	evg_isa_wavefront->clause_kind = EVG_CLAUSE_TEX;
+	wavefront->clause_buf_start = wavefront->cf_buf_start + W0.addr * 8;
+	wavefront->clause_buf_end = wavefront->clause_buf_start + (W1.count + 1) * 16;
+	wavefront->clause_buf = wavefront->clause_buf_start;
+	wavefront->clause_kind = EVG_CLAUSE_TEX;
 	evg_isa_tc_clause_start();
 
 	/* If VPM is set, copy 'active' mask at the top of the stack to 'pred' mask.
 	 * This will make all fetches within the clause happen only for active pixels.
 	 * If VPM is clear, copy a mask set to ones. */
-	for (i = 0; i < evg_isa_wavefront->work_item_count; i++) {
-		active = W1.valid_pixel_mode ? bit_map_get(evg_isa_wavefront->active_stack,
-			evg_isa_wavefront->stack_top * evg_isa_wavefront->work_item_count + i, 1) : 1;
-		bit_map_set(evg_isa_wavefront->pred, i, 1, active);
+	for (i = 0; i < wavefront->work_item_count; i++)
+	{
+		active = W1.valid_pixel_mode ? bit_map_get(wavefront->active_stack,
+			wavefront->stack_top * wavefront->work_item_count + i, 1) : 1;
+		bit_map_set(wavefront->pred, i, 1, active);
 	}
 }
 #undef W0
 #undef W1
 
-void evg_isa_TC_ACK_impl()
+
+void evg_isa_TC_ACK_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Fetch Clause Through Texture Cache With ACK */
 	NOT_IMPL();
 }
 
-void evg_isa_VC_impl()
+
+void evg_isa_VC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Initiate Clause of Vertex or Constant Fetches Through Vertex Cache */
 	NOT_IMPL();
 }
 
-void evg_isa_VC_ACK_impl()
+
+void evg_isa_VC_ACK_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Fetch Clause Through Vertex Cache With ACK */
 	NOT_IMPL();
 }
 
-void evg_isa_WAIT_ACK_impl()
+void evg_isa_WAIT_ACK_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* FIXME: wait for Write ACKs */
 }
 
 
-void evg_isa_ADD_impl()
+void evg_isa_ADD_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1, dst;
 
@@ -887,7 +935,7 @@ void evg_isa_ADD_impl()
 }
 
 
-void evg_isa_MUL_impl()
+void evg_isa_MUL_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1, dst;
 
@@ -898,7 +946,7 @@ void evg_isa_MUL_impl()
 }
 
 
-void evg_isa_MUL_IEEE_impl()
+void evg_isa_MUL_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1, dst;
 
@@ -909,19 +957,19 @@ void evg_isa_MUL_IEEE_impl()
 }
 
 
-void evg_isa_MAX_impl()
+void evg_isa_MAX_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MIN_impl()
+void evg_isa_MIN_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MAX_DX10_impl()
+void evg_isa_MAX_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1, dst;
 
@@ -934,7 +982,7 @@ void evg_isa_MAX_DX10_impl()
 }
 
 
-void evg_isa_MIN_DX10_impl()
+void evg_isa_MIN_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1, dst;
 
@@ -949,7 +997,7 @@ void evg_isa_MIN_DX10_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETE_impl()
+void evg_isa_SETE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	float dst;
@@ -970,7 +1018,7 @@ void evg_isa_SETE_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETGT_impl()
+void evg_isa_SETGT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	float dst;
@@ -991,7 +1039,7 @@ void evg_isa_SETGT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETGE_impl()
+void evg_isa_SETGE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	float dst;
@@ -1012,7 +1060,7 @@ void evg_isa_SETGE_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETNE_impl()
+void evg_isa_SETNE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	float dst;
@@ -1033,7 +1081,7 @@ void evg_isa_SETNE_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETE_DX10_impl()
+void evg_isa_SETE_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	int32_t dst;
@@ -1054,7 +1102,7 @@ void evg_isa_SETE_DX10_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETGT_DX10_impl()
+void evg_isa_SETGT_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	int32_t dst;
@@ -1075,7 +1123,7 @@ void evg_isa_SETGT_DX10_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETGE_DX10_impl()
+void evg_isa_SETGE_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	int32_t dst;
@@ -1096,7 +1144,7 @@ void evg_isa_SETGE_DX10_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETNE_DX10_impl()
+void evg_isa_SETNE_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	int32_t dst;
@@ -1115,7 +1163,7 @@ void evg_isa_SETNE_DX10_impl()
 #undef W1
 
 
-void evg_isa_FRACT_impl()
+void evg_isa_FRACT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src, dst;
 
@@ -1125,7 +1173,7 @@ void evg_isa_FRACT_impl()
 }
 
 
-void evg_isa_TRUNC_impl()
+void evg_isa_TRUNC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src, dst;
 
@@ -1135,19 +1183,19 @@ void evg_isa_TRUNC_impl()
 }
 
 
-void evg_isa_CEIL_impl()
+void evg_isa_CEIL_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_RNDNE_impl()
+void evg_isa_RNDNE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FLOOR_impl() 
+void evg_isa_FLOOR_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, dst;
 
@@ -1161,7 +1209,7 @@ void evg_isa_FLOOR_impl()
 }
 
 
-void evg_isa_ASHR_INT_impl()
+void evg_isa_ASHR_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0, dst;
 	uint32_t src1;
@@ -1176,7 +1224,7 @@ void evg_isa_ASHR_INT_impl()
 }
 
 
-void evg_isa_LSHR_INT_impl()
+void evg_isa_LSHR_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1, dst;
 
@@ -1187,7 +1235,7 @@ void evg_isa_LSHR_INT_impl()
 }
 
 
-void evg_isa_LSHL_INT_impl()
+void evg_isa_LSHL_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1, dst;
 
@@ -1198,7 +1246,7 @@ void evg_isa_LSHL_INT_impl()
 }
 
 
-void evg_isa_MOV_impl()
+void evg_isa_MOV_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t value;
 	value = evg_isa_read_op_src_int(0);
@@ -1206,36 +1254,36 @@ void evg_isa_MOV_impl()
 }
 
 
-void evg_isa_NOP_ALU_impl()
+void evg_isa_NOP_ALU_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 }
 
 
-void evg_isa_MUL_64_impl()
-{
-	NOT_IMPL();
-}
-
-
-void evg_isa_FLT64_TO_FLT32_impl()
+void evg_isa_MUL_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FLT32_TO_FLT64_impl()
+void evg_isa_FLT64_TO_FLT32_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETGT_UINT_impl()
+void evg_isa_FLT32_TO_FLT64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETGE_UINT_impl()
+void evg_isa_PRED_SETGT_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
+{
+	NOT_IMPL();
+}
+
+
+void evg_isa_PRED_SETGE_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
@@ -1243,7 +1291,7 @@ void evg_isa_PRED_SETGE_UINT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_PRED_SETE_impl()
+void evg_isa_PRED_SETE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	union evg_reg_t dst;
@@ -1270,7 +1318,7 @@ void evg_isa_PRED_SETE_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_PRED_SETGT_impl()
+void evg_isa_PRED_SETGT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	union evg_reg_t dst;
@@ -1297,7 +1345,7 @@ void evg_isa_PRED_SETGT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_PRED_SETGE_impl()
+void evg_isa_PRED_SETGE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	union evg_reg_t dst;
@@ -1324,7 +1372,7 @@ void evg_isa_PRED_SETGE_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_PRED_SETNE_impl()
+void evg_isa_PRED_SETNE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1;
 	union evg_reg_t dst;
@@ -1349,79 +1397,79 @@ void evg_isa_PRED_SETNE_impl()
 #undef W1
 
 
-void evg_isa_PRED_SET_INV_impl()
+void evg_isa_PRED_SET_INV_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SET_POP_impl()
+void evg_isa_PRED_SET_POP_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SET_CLR_impl()
+void evg_isa_PRED_SET_CLR_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SET_RESTORE_impl()
+void evg_isa_PRED_SET_RESTORE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETE_PUSH_impl()
+void evg_isa_PRED_SETE_PUSH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETGT_PUSH_impl()
+void evg_isa_PRED_SETGT_PUSH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETGE_PUSH_impl()
+void evg_isa_PRED_SETGE_PUSH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETNE_PUSH_impl()
+void evg_isa_PRED_SETNE_PUSH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_KILLE_impl()
+void evg_isa_KILLE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_KILLGT_impl()
+void evg_isa_KILLGT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_KILLGE_impl()
+void evg_isa_KILLGE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_KILLNE_impl()
+void evg_isa_KILLNE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_AND_INT_impl()
+void evg_isa_AND_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1, dst;
 
@@ -1432,7 +1480,7 @@ void evg_isa_AND_INT_impl()
 }
 
 
-void evg_isa_OR_INT_impl()
+void evg_isa_OR_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1, dst;
 
@@ -1443,7 +1491,7 @@ void evg_isa_OR_INT_impl()
 }
 
 
-void evg_isa_XOR_INT_impl()
+void evg_isa_XOR_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1, dst;
 
@@ -1454,13 +1502,13 @@ void evg_isa_XOR_INT_impl()
 }
 
 
-void evg_isa_NOT_INT_impl()
+void evg_isa_NOT_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_ADD_INT_impl()
+void evg_isa_ADD_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1, dst;
 
@@ -1471,7 +1519,7 @@ void evg_isa_ADD_INT_impl()
 }
 
 
-void evg_isa_SUB_INT_impl()
+void evg_isa_SUB_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1, dst;
 
@@ -1482,7 +1530,7 @@ void evg_isa_SUB_INT_impl()
 }
 
 
-void evg_isa_MAX_INT_impl()
+void evg_isa_MAX_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0, src1, dst;
 
@@ -1493,7 +1541,7 @@ void evg_isa_MAX_INT_impl()
 }
 
 
-void evg_isa_MIN_INT_impl()
+void evg_isa_MIN_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0, src1, dst;
 
@@ -1504,7 +1552,7 @@ void evg_isa_MIN_INT_impl()
 }
 
 
-void evg_isa_MAX_UINT_impl()
+void evg_isa_MAX_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1, dst;
 
@@ -1515,7 +1563,7 @@ void evg_isa_MAX_UINT_impl()
 }
 
 
-void evg_isa_MIN_UINT_impl()
+void evg_isa_MIN_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1, dst;
 
@@ -1528,7 +1576,7 @@ void evg_isa_MIN_UINT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETE_INT_impl()
+void evg_isa_SETE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1;
 	int32_t dst;
@@ -1549,7 +1597,7 @@ void evg_isa_SETE_INT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETGT_INT_impl()
+void evg_isa_SETGT_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0, src1;
 	int32_t dst;
@@ -1570,7 +1618,7 @@ void evg_isa_SETGT_INT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETGE_INT_impl()
+void evg_isa_SETGE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0, src1;
 	int32_t dst;
@@ -1591,7 +1639,7 @@ void evg_isa_SETGE_INT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETNE_INT_impl()
+void evg_isa_SETNE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0, src1;
 	int32_t dst;
@@ -1614,7 +1662,7 @@ void evg_isa_SETNE_INT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETGT_UINT_impl()
+void evg_isa_SETGT_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1;
 	int32_t dst;
@@ -1635,7 +1683,7 @@ void evg_isa_SETGT_UINT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_SETGE_UINT_impl()
+void evg_isa_SETGE_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1;
 	int32_t dst;
@@ -1654,13 +1702,13 @@ void evg_isa_SETGE_UINT_impl()
 #undef W1
 
 
-void evg_isa_KILLGT_UINT_impl()
+void evg_isa_KILLGT_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_KILLGE_UINT_impl()
+void evg_isa_KILLGE_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
@@ -1668,7 +1716,7 @@ void evg_isa_KILLGE_UINT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_PREDE_INT_impl()
+void evg_isa_PREDE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0, src1;
 	union evg_reg_t dst;
@@ -1695,7 +1743,7 @@ void evg_isa_PREDE_INT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_PRED_SETGE_INT_impl()
+void evg_isa_PRED_SETGE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0, src1;
 	union evg_reg_t dst;
@@ -1722,7 +1770,7 @@ void evg_isa_PRED_SETGE_INT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_PRED_SETGT_INT_impl()
+void evg_isa_PRED_SETGT_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0, src1;
 	union evg_reg_t dst;
@@ -1749,7 +1797,7 @@ void evg_isa_PRED_SETGT_INT_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_PRED_SETNE_INT_impl()
+void evg_isa_PRED_SETNE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0, src1;
 	union evg_reg_t dst;
@@ -1774,67 +1822,67 @@ void evg_isa_PRED_SETNE_INT_impl()
 #undef W1
 
 
-void evg_isa_KILLE_INT_impl()
+void evg_isa_KILLE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_KILLGT_INT_impl()
+void evg_isa_KILLGT_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_KILLGE_INT_impl()
+void evg_isa_KILLGE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_KILLNE_INT_impl()
+void evg_isa_KILLNE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETE_PUSH_INT_impl()
+void evg_isa_PRED_SETE_PUSH_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETGT_PUSH_INT_impl()
+void evg_isa_PRED_SETGT_PUSH_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETGE_PUSH_INT_impl()
+void evg_isa_PRED_SETGE_PUSH_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETNE_PUSH_INT_impl()
+void evg_isa_PRED_SETNE_PUSH_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETLT_PUSH_INT_impl()
+void evg_isa_PRED_SETLT_PUSH_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETLE_PUSH_INT_impl()
+void evg_isa_PRED_SETLE_PUSH_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FLT_TO_INT_impl()
+void evg_isa_FLT_TO_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src;
 	int32_t dst;
@@ -1852,36 +1900,38 @@ void evg_isa_FLT_TO_INT_impl()
 }
 
 
-void evg_isa_BFREV_INT_impl()
+void evg_isa_BFREV_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_ADDC_UINT_impl()
+void evg_isa_ADDC_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SUBB_UINT_impl()
+void evg_isa_SUBB_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GROUP_BARRIER_impl()
+void evg_isa_GROUP_BARRIER_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	/* Only the first work-item in a wavefront handles barriers */
 	if (evg_isa_work_item->id_in_wavefront)
 		return;
 	
 	/* Suspend current wavefront at the barrier */
-	assert(DOUBLE_LINKED_LIST_MEMBER(evg_isa_work_group, running, evg_isa_wavefront));
-	DOUBLE_LINKED_LIST_REMOVE(evg_isa_work_group, running, evg_isa_wavefront);
-	DOUBLE_LINKED_LIST_INSERT_TAIL(evg_isa_work_group, barrier, evg_isa_wavefront);
+	assert(DOUBLE_LINKED_LIST_MEMBER(evg_isa_work_group, running, wavefront));
+	DOUBLE_LINKED_LIST_REMOVE(evg_isa_work_group, running, wavefront);
+	DOUBLE_LINKED_LIST_INSERT_TAIL(evg_isa_work_group, barrier, wavefront);
 	evg_isa_debug("%s (gid=%d) reached barrier (%d reached, %d left)\n",
-		evg_isa_wavefront->name, evg_isa_work_group->id, evg_isa_work_group->barrier_list_count,
+		wavefront->name, evg_isa_work_group->id, evg_isa_work_group->barrier_list_count,
 		evg_isa_work_group->wavefront_count - evg_isa_work_group->barrier_list_count);
 	
 	/* If all wavefronts in work-group reached the barrier, wake them up */
@@ -1902,73 +1952,73 @@ void evg_isa_GROUP_BARRIER_impl()
 }
 
 
-void evg_isa_GROUP_SEQ_BEGIN_impl()
+void evg_isa_GROUP_SEQ_BEGIN_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GROUP_SEQ_END_impl()
+void evg_isa_GROUP_SEQ_END_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SET_MODE_impl()
+void evg_isa_SET_MODE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SET_CF_IDX0_impl()
+void evg_isa_SET_CF_IDX0_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SET_CF_IDX1_impl()
+void evg_isa_SET_CF_IDX1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SET_LDS_SIZE_impl()
+void evg_isa_SET_LDS_SIZE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_EXP_IEEE_impl()
+void evg_isa_EXP_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_LOG_CLAMPED_impl()
+void evg_isa_LOG_CLAMPED_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_LOG_IEEE_impl()
+void evg_isa_LOG_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_RECIP_CLAMPED_impl()
+void evg_isa_RECIP_CLAMPED_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_RECIP_FF_impl()
+void evg_isa_RECIP_FF_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_RECIP_IEEE_impl()
+void evg_isa_RECIP_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src, dst;
 
@@ -1978,25 +2028,25 @@ void evg_isa_RECIP_IEEE_impl()
 }
 
 
-void evg_isa_RECIPSQRT_CLAMPED_impl()
+void evg_isa_RECIPSQRT_CLAMPED_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_RECIPSQRT_FF_impl()
+void evg_isa_RECIPSQRT_FF_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_RECIPSQRT_IEEE_impl()
+void evg_isa_RECIPSQRT_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SQRT_IEEE_impl()
+void evg_isa_SQRT_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src, dst;
 
@@ -2006,7 +2056,7 @@ void evg_isa_SQRT_IEEE_impl()
 }
 
 
-void evg_isa_SIN_impl()
+void evg_isa_SIN_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src, dst;
 
@@ -2016,7 +2066,7 @@ void evg_isa_SIN_impl()
 }
 
 
-void evg_isa_COS_impl()
+void evg_isa_COS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src, dst;
 
@@ -2026,7 +2076,7 @@ void evg_isa_COS_impl()
 }
 
 
-void evg_isa_MULLO_INT_impl()
+void evg_isa_MULLO_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int src0, src1, dst;
 
@@ -2037,7 +2087,7 @@ void evg_isa_MULLO_INT_impl()
 }
 
 
-void evg_isa_MULHI_INT_impl()
+void evg_isa_MULHI_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int64_t src0, src1, dst;
 
@@ -2048,7 +2098,7 @@ void evg_isa_MULHI_INT_impl()
 }
 
 
-void evg_isa_MULLO_UINT_impl()
+void evg_isa_MULLO_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	unsigned int src0, src1, dst;
 
@@ -2059,7 +2109,7 @@ void evg_isa_MULLO_UINT_impl()
 }
 
 
-void evg_isa_MULHI_UINT_impl()
+void evg_isa_MULHI_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint64_t src0, src1, dst;
 
@@ -2070,13 +2120,13 @@ void evg_isa_MULHI_UINT_impl()
 }
 
 
-void evg_isa_RECIP_INT_impl()
+void evg_isa_RECIP_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_RECIP_UINT_impl()
+void evg_isa_RECIP_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src;
 	uint32_t dst;
@@ -2087,37 +2137,37 @@ void evg_isa_RECIP_UINT_impl()
 }
 
 
-void evg_isa_RECIP_64_impl()
+void evg_isa_RECIP_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_RECIP_CLAMPED_64_impl()
+void evg_isa_RECIP_CLAMPED_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_RECIPSQRT_64_impl()
+void evg_isa_RECIPSQRT_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_RECIPSQRT_CLAMPED_64_impl()
+void evg_isa_RECIPSQRT_CLAMPED_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SQRT_64_impl()
+void evg_isa_SQRT_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FLT_TO_UINT_impl()
+void evg_isa_FLT_TO_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src;
 	uint32_t dst;
@@ -2133,7 +2183,7 @@ void evg_isa_FLT_TO_UINT_impl()
 }
 
 
-void evg_isa_INT_TO_FLT_impl()
+void evg_isa_INT_TO_FLT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int32_t src0;
 	float dst;
@@ -2144,7 +2194,7 @@ void evg_isa_INT_TO_FLT_impl()
 }
 
 
-void evg_isa_UINT_TO_FLT_impl()
+void evg_isa_UINT_TO_FLT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0;
 	float dst;
@@ -2155,223 +2205,223 @@ void evg_isa_UINT_TO_FLT_impl()
 }
 
 
-void evg_isa_BFM_INT_impl()
+void evg_isa_BFM_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FLT32_TO_FLT16_impl()
+void evg_isa_FLT32_TO_FLT16_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FLT16_TO_FLT32_impl()
+void evg_isa_FLT16_TO_FLT32_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_UBYTE0_FLT_impl()
+void evg_isa_UBYTE0_FLT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_UBYTE1_FLT_impl()
+void evg_isa_UBYTE1_FLT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_UBYTE2_FLT_impl()
+void evg_isa_UBYTE2_FLT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_UBYTE3_FLT_impl()
+void evg_isa_UBYTE3_FLT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_BCNT_INT_impl()
+void evg_isa_BCNT_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FFBH_UINT_impl()
+void evg_isa_FFBH_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FFBL_INT_impl()
+void evg_isa_FFBL_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FFBH_INT_impl()
+void evg_isa_FFBH_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FLT_TO_UINT4_impl()
+void evg_isa_FLT_TO_UINT4_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_DOT_IEEE_impl()
+void evg_isa_DOT_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FLT_TO_INT_RPI_impl()
+void evg_isa_FLT_TO_INT_RPI_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FLT_TO_INT_FLOOR_impl()
+void evg_isa_FLT_TO_INT_FLOOR_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MULHI_UINT24_impl()
+void evg_isa_MULHI_UINT24_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MBCNT_32HI_INT_impl()
+void evg_isa_MBCNT_32HI_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_OFFSET_TO_FLT_impl()
+void evg_isa_OFFSET_TO_FLT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MUL_UINT24_impl()
+void evg_isa_MUL_UINT24_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_BCNT_ACCUM_PREV_INT_impl()
+void evg_isa_BCNT_ACCUM_PREV_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MBCNT_32LO_ACCUM_PREV_INT_impl()
+void evg_isa_MBCNT_32LO_ACCUM_PREV_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SETE_64_impl()
+void evg_isa_SETE_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SETNE_64_impl()
+void evg_isa_SETNE_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SETGT_64_impl()
+void evg_isa_SETGT_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SETGE_64_impl()
+void evg_isa_SETGE_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MIN_64_impl()
+void evg_isa_MIN_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MAX_64_impl()
+void evg_isa_MAX_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_DOT4_impl()
+void evg_isa_DOT4_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_DOT4_IEEE_impl()
+void evg_isa_DOT4_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_CUBE_impl()
+void evg_isa_CUBE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MAX4_impl()
+void evg_isa_MAX4_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FREXP_64_impl()
+void evg_isa_FREXP_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_LDEXP_64_impl()
+void evg_isa_LDEXP_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FRACT_64_impl()
+void evg_isa_FRACT_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETGT_64_impl()
+void evg_isa_PRED_SETGT_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETE_64_impl()
+void evg_isa_PRED_SETE_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_PRED_SETGE_64_impl()
+void evg_isa_PRED_SETGE_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
@@ -2379,7 +2429,7 @@ void evg_isa_PRED_SETGE_64_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_MUL_64_VEC_impl()
+void evg_isa_MUL_64_VEC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	struct evg_inst_t *inst_slot_original;
 	struct evg_inst_t *inst_slot[4];
@@ -2446,7 +2496,7 @@ void evg_isa_MUL_64_VEC_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0
 #define W1 evg_isa_inst->words[1].alu_word1_op2
-void evg_isa_ADD_64_impl()
+void evg_isa_ADD_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	struct evg_inst_t *inst_slot_original;
 	struct evg_inst_t *inst_slot[2];
@@ -2507,13 +2557,13 @@ void evg_isa_ADD_64_impl()
 #undef W1
 
 
-void evg_isa_MOVA_INT_impl()
+void evg_isa_MOVA_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FLT64_TO_FLT32_VEC_impl()
+void evg_isa_FLT64_TO_FLT32_VEC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	struct evg_inst_t *inst_slot_original;
 	struct evg_inst_t *inst_slot[2];
@@ -2572,7 +2622,7 @@ void evg_isa_FLT64_TO_FLT32_VEC_impl()
 }
 
 
-void evg_isa_FLT32_TO_FLT64_VEC_impl()
+void evg_isa_FLT32_TO_FLT64_VEC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	struct evg_inst_t *inst_slot_original;
 	struct evg_inst_t *inst_slot[2];
@@ -2627,121 +2677,121 @@ void evg_isa_FLT32_TO_FLT64_VEC_impl()
 }
 
 
-void evg_isa_SAD_ACCUM_PREV_UINT_impl()
+void evg_isa_SAD_ACCUM_PREV_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_DOT_impl()
+void evg_isa_DOT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MUL_PREV_impl()
+void evg_isa_MUL_PREV_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MUL_IEEE_PREV_impl()
+void evg_isa_MUL_IEEE_PREV_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_ADD_PREV_impl()
+void evg_isa_ADD_PREV_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MULADD_PREV_impl()
+void evg_isa_MULADD_PREV_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MULADD_IEEE_PREV_impl()
+void evg_isa_MULADD_IEEE_PREV_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_INTERP_XY_impl()
+void evg_isa_INTERP_XY_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_INTERP_ZW_impl()
+void evg_isa_INTERP_ZW_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_INTERP_X_impl()
+void evg_isa_INTERP_X_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_INTERP_Z_impl()
+void evg_isa_INTERP_Z_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_STORE_FLAGS_impl()
+void evg_isa_STORE_FLAGS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_LOAD_STORE_FLAGS_impl()
+void evg_isa_LOAD_STORE_FLAGS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_LDS_1A_impl()
+void evg_isa_LDS_1A_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_LDS_1A1D_impl()
+void evg_isa_LDS_1A1D_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_LDS_2A_impl()
+void evg_isa_LDS_2A_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_INTERP_LOAD_P0_impl()
+void evg_isa_INTERP_LOAD_P0_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_INTERP_LOAD_P10_impl()
+void evg_isa_INTERP_LOAD_P10_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_INTERP_LOAD_P20_impl()
+void evg_isa_INTERP_LOAD_P20_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_BFE_UINT_impl() 
+void evg_isa_BFE_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	unsigned int src0, src1, src2, dst;
 
@@ -2769,7 +2819,7 @@ void evg_isa_BFE_UINT_impl()
 }
 
 
-void evg_isa_BFE_INT_impl()
+void evg_isa_BFE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 
         int src0, src1, src2, dst;
@@ -2798,7 +2848,7 @@ void evg_isa_BFE_INT_impl()
 }
 
 
-void evg_isa_BFI_INT_impl()
+void evg_isa_BFI_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 
 	uint32_t src0, src1, src2, dst;
@@ -2813,55 +2863,55 @@ void evg_isa_BFI_INT_impl()
 }
 
 
-void evg_isa_FMA_impl()
+void evg_isa_FMA_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_CNDNE_64_impl()
+void evg_isa_CNDNE_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_FMA_64_impl()
+void evg_isa_FMA_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_LERP_UINT_impl()
+void evg_isa_LERP_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_BIT_ALIGN_INT_impl()
+void evg_isa_BIT_ALIGN_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_BYTE_ALIGN_INT_impl()
+void evg_isa_BYTE_ALIGN_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAD_ACCUM_UINT_impl()
+void evg_isa_SAD_ACCUM_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAD_ACCUM_HI_UINT_impl()
+void evg_isa_SAD_ACCUM_HI_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MULADD_UINT24_impl()
+void evg_isa_MULADD_UINT24_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
@@ -2869,10 +2919,9 @@ void evg_isa_MULADD_UINT24_impl()
 
 #define W0 evg_isa_inst->words[0].alu_word0_lds_idx_op
 #define W1 evg_isa_inst->words[1].alu_word1_lds_idx_op
-void evg_isa_LDS_IDX_OP_impl()
+void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
-	struct evg_wavefront_t *wavefront = evg_isa_wavefront;
-	struct evg_work_item_t *work_item = evg_isa_work_item;
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
 	struct mem_t *local_mem = evg_isa_work_group->local_mem;
 	unsigned int idx_offset;
 	uint32_t op0, op1, op2;
@@ -3135,7 +3184,7 @@ void evg_isa_LDS_IDX_OP_impl()
 #undef W1
 
 
-void evg_isa_MULADD_impl()
+void evg_isa_MULADD_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1, src2, dst;
 
@@ -3147,25 +3196,25 @@ void evg_isa_MULADD_impl()
 }
 
 
-void evg_isa_MULADD_M2_impl()
+void evg_isa_MULADD_M2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MULADD_M4_impl()
+void evg_isa_MULADD_M4_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MULADD_D2_impl()
+void evg_isa_MULADD_D2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_MULADD_IEEE_impl()
+void evg_isa_MULADD_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1, src2, dst;
 
@@ -3177,7 +3226,7 @@ void evg_isa_MULADD_IEEE_impl()
 }
 
 
-void evg_isa_CNDE_impl()
+void evg_isa_CNDE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1, src2, dst;
 
@@ -3189,7 +3238,7 @@ void evg_isa_CNDE_impl()
 }
 
 
-void evg_isa_CNDGT_impl()
+void evg_isa_CNDGT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1, src2, dst;
 
@@ -3201,7 +3250,7 @@ void evg_isa_CNDGT_impl()
 }
 
 
-void evg_isa_CNDGE_impl()
+void evg_isa_CNDGE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	float src0, src1, src2, dst;
 
@@ -3213,7 +3262,7 @@ void evg_isa_CNDGE_impl()
 }
 
 
-void evg_isa_CNDE_INT_impl()
+void evg_isa_CNDE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t src0, src1, src2, dst;
 
@@ -3225,7 +3274,7 @@ void evg_isa_CNDE_INT_impl()
 }
 
 
-void evg_isa_CNDGE_INT_impl()
+void evg_isa_CNDGE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int src0, src1, src2, dst;
 	
@@ -3237,7 +3286,7 @@ void evg_isa_CNDGE_INT_impl()
 }
 
 
-void evg_isa_CNDGT_INT_impl()
+void evg_isa_CNDGT_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	int src0, src1, src2, dst;
 	
@@ -3249,7 +3298,7 @@ void evg_isa_CNDGT_INT_impl()
 }
 
 
-void evg_isa_MUL_LIT_impl()
+void evg_isa_MUL_LIT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
@@ -3258,14 +3307,19 @@ void evg_isa_MUL_LIT_impl()
 #define W0  EVG_VTX_WORD0
 #define W1  EVG_VTX_WORD1_GPR
 #define W2  EVG_VTX_WORD2
-void evg_isa_FETCH_impl()
+void evg_isa_FETCH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
-	uint32_t addr;
-	uint32_t base_addr;
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
+	unsigned int addr;
+	unsigned int base_addr;
+
 	int data_format;
-	int dst_sel[4], dst_sel_elem;
+	int dst_sel[4];
+	int dst_sel_elem;
 	int i;
-	uint32_t value[4];
+
+	unsigned int value[4];
 
 	/* Related to data type */
 	struct evg_opencl_mem_t *mem;
@@ -3481,7 +3535,7 @@ void evg_isa_FETCH_impl()
 	mem_read(evg_emu->global_mem, addr + W2.offset, num_elem * elem_size, value);
 
 	/* Record global memory access */
-	evg_isa_wavefront->global_mem_read = 1;
+	wavefront->global_mem_read = 1;
 	evg_isa_work_item->global_mem_access_addr = addr;
 	evg_isa_work_item->global_mem_access_size = num_elem * elem_size;
 
@@ -3526,79 +3580,79 @@ void evg_isa_FETCH_impl()
 #undef W2
 
 
-void evg_isa_GET_BUFFER_RESINFO_impl()
+void evg_isa_GET_BUFFER_RESINFO_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SEMANTIC_impl()
+void evg_isa_SEMANTIC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GATHER4_impl()
+void evg_isa_GATHER4_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GATHER4_C_impl()
+void evg_isa_GATHER4_C_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GATHER4_C_O_impl()
+void evg_isa_GATHER4_C_O_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GATHER4_O_impl()
+void evg_isa_GATHER4_O_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GET_GRADIENTS_H_impl()
+void evg_isa_GET_GRADIENTS_H_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GET_GRADIENTS_V_impl()
+void evg_isa_GET_GRADIENTS_V_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GET_LOD_impl()
+void evg_isa_GET_LOD_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GET_NUMBER_OF_SAMPLES_impl()
+void evg_isa_GET_NUMBER_OF_SAMPLES_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_GET_TEXTURE_RESINFO_impl()
+void evg_isa_GET_TEXTURE_RESINFO_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_KEEP_GRADIENTS_impl()
+void evg_isa_KEEP_GRADIENTS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_LD_impl()
+void evg_isa_LD_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
@@ -3607,16 +3661,21 @@ void evg_isa_LD_impl()
 #define W0  EVG_TEX_WORD0
 #define W1  EVG_TEX_WORD1
 #define W2  EVG_TEX_WORD2
-void evg_isa_SAMPLE_impl()
+void evg_isa_SAMPLE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
-	int i;
-	uint32_t base_addr;
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
+	unsigned int base_addr;
+	unsigned int pixel_size;
+
 	union evg_reg_t addr;
 	union evg_reg_t value;
-	int dst_sel[4], dst_sel_elem;
-	struct evg_opencl_mem_t *image;
 
-	uint32_t pixel_size;
+	int dst_sel[4];
+	int dst_sel_elem;
+	int i;
+
+	struct evg_opencl_mem_t *image;
 
 	/* W0.tex_inst: <unknown> */
 	/* W0.inst_mod: instruction modifier */
@@ -3675,7 +3734,7 @@ void evg_isa_SAMPLE_impl()
 	dst_sel[3] = W1.dsw;
 	
 	/* Record global memory access */
-	evg_isa_wavefront->global_mem_read = 1;
+	wavefront->global_mem_read = 1;
 	evg_isa_work_item->global_mem_access_addr = addr.as_uint;
 	evg_isa_work_item->global_mem_access_size = pixel_size;
 
@@ -3716,90 +3775,90 @@ void evg_isa_SAMPLE_impl()
 #undef W2
 
 
-void evg_isa_SAMPLE_C_impl()
+void evg_isa_SAMPLE_C_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAMPLE_C_G_impl()
+void evg_isa_SAMPLE_C_G_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAMPLE_C_G_LB_impl()
+void evg_isa_SAMPLE_C_G_LB_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAMPLE_C_L_impl()
+void evg_isa_SAMPLE_C_L_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAMPLE_C_LB_impl()
+void evg_isa_SAMPLE_C_LB_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAMPLE_C_LZ_impl()
+void evg_isa_SAMPLE_C_LZ_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAMPLE_G_impl()
+void evg_isa_SAMPLE_G_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAMPLE_G_LB_impl()
+void evg_isa_SAMPLE_G_LB_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAMPLE_L_impl()
+void evg_isa_SAMPLE_L_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAMPLE_LB_impl()
+void evg_isa_SAMPLE_LB_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SAMPLE_LZ_impl()
+void evg_isa_SAMPLE_LZ_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SET_GRADIENTS_H_impl()
+void evg_isa_SET_GRADIENTS_H_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SET_GRADIENTS_V_impl()
+void evg_isa_SET_GRADIENTS_V_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
 
-void evg_isa_SET_TEXTURE_OFFSETS_impl()
+void evg_isa_SET_TEXTURE_OFFSETS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
 
-void evg_isa_MEM_impl()
+void evg_isa_MEM_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	NOT_IMPL();
 }
