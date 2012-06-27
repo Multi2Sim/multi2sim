@@ -417,67 +417,75 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 	int i;
 	int cb_index = 0;
 
-        /* Kernel arguments */
-        for (i = 0; i < list_count(kernel->arg_list); i++)
-        {
-                arg = list_get(kernel->arg_list, i);
-                assert(arg);
+	/* Kernel arguments */
+	for (i = 0; i < list_count(kernel->arg_list); i++)
+	{
+		arg = list_get(kernel->arg_list, i);
+		assert(arg);
 
-                /* Check that argument was set */
-                if (!arg->set)
-                        fatal("kernel '%s': argument '%s' has not been assigned with 'clKernelSetArg'.",
-                                kernel->name, arg->name);
+		/* Check that argument was set */
+		if (!arg->set)
+				fatal("kernel '%s': argument '%s' has not been assigned with 'clKernelSetArg'.",
+						kernel->name, arg->name);
 
-                /* Process argument depending on its type */
-                switch (arg->kind)
-                {
-
-
-                case SI_OPENCL_KERNEL_ARG_KIND_VALUE:
-                {
-                        /* Value copied directly into device constant memory */
-                	si_isa_const_mem_write(1, (cb_index*4)*4, &arg->value);
-                        si_opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i,
-                                        arg->value, cb_index);
-                        cb_index++;
-                        break;
-                }
-
-
-		case SI_OPENCL_KERNEL_ARG_KIND_POINTER:
+		/* Process argument depending on its type */
+		switch (arg->kind)
 		{
-                        switch (arg->mem_scope)
+			case SI_OPENCL_KERNEL_ARG_KIND_VALUE:
 			{
+					/* Value copied directly into device constant memory */
+				si_isa_const_mem_write(1, (cb_index*4)*4, &arg->value);
+					si_opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i,
+									arg->value, cb_index);
+					cb_index++;
+					break;
+			}
+			case SI_OPENCL_KERNEL_ARG_KIND_POINTER:
+			{
+				switch (arg->mem_scope)
+					{
 
-                        case SI_OPENCL_MEM_SCOPE_GLOBAL:
-                        {
-                                struct si_opencl_mem_t *mem;
-				/* Base address is address of CB1 */
+					case EVG_OPENCL_MEM_SCOPE_CONSTANT:
+					case EVG_OPENCL_MEM_SCOPE_GLOBAL:
+					{
+						struct evg_opencl_mem_t *mem;
 
-                                /* Pointer in __global scope.
-                                 * Argument value is a pointer to an 'opencl_mem' object.
-                                 * It is translated first into a device memory pointer. */
-                                mem = si_opencl_object_get(SI_OPENCL_OBJ_MEM, arg->value);
-                                si_isa_const_mem_write(1, (cb_index*4)*4, &mem->device_ptr);
-                                si_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d],"
-                                                " device_ptr=0x%x\n", i, arg->value, cb_index,
-                                                mem->device_ptr);
-                                cb_index++;
-                                break;
-                        }
+						/* Pointer in __global scope.
+						 * Argument value is a pointer to an 'opencl_mem' object.
+						 * It is translated first into a device memory pointer. */
+						mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
+							evg_opencl_object_mem, arg->value);
+						evg_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
+						evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d],"
+								" device_ptr=0x%x\n", i, arg->value, cb_index,
+								mem->device_ptr);
+						cb_index++;
+						break;
+					}
 
-                        default:
-                                fatal("%s: argument in memory scope %d not supported",
-                                        __FUNCTION__, arg->mem_scope);
-                        }
-                        break;
-                }
+					case EVG_OPENCL_MEM_SCOPE_LOCAL:
+					{
+						/* Pointer in __local scope.
+						 * Argument value is always NULL, just assign space for it. */
+						evg_isa_const_mem_write(1, cb_index, 0, &ndrange->local_mem_top);
+						evg_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
+							i, arg->size, ndrange->local_mem_top);
+						ndrange->local_mem_top += arg->size;
+						cb_index++;
+						break;
+					}
 
-		default:
-		{
-			fatal("%s: argument type not reconized", __FUNCTION__);
+					default:
+						fatal("%s: argument in memory scope %d not supported",
+							__FUNCTION__, arg->mem_scope);
+					}
+				break;
+			}
+			default:
+			{
+				fatal("%s: argument type not reconized", __FUNCTION__);
+			}
 		}
-		}	
 	}	
 }
 
@@ -567,4 +575,51 @@ void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f)
 		work_group = ndrange->work_groups[work_group_id];
 		si_work_group_dump(work_group, f);
 	}
+}
+
+int si_ndrange_get_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t status)
+{
+	return (ndrange->status & status) > 0;
+}
+
+
+void si_ndrange_set_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t status)
+{
+	/* Get only the new bits */
+	status &= ~ndrange->status;
+
+	/* Add ND-Range to lists */
+	if (status & si_ndrange_pending)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, pending_ndrange, ndrange);
+	if (status & si_ndrange_running)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, running_ndrange, ndrange);
+	if (status & si_ndrange_finished)
+		DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, finished_ndrange, ndrange);
+
+	/* Start/stop Evergreen timer depending on ND-Range states */
+	if (si_emu->running_ndrange_list_count)
+		m2s_timer_start(si_emu->timer);
+	else
+		m2s_timer_stop(si_emu->timer);
+
+	/* Update it */
+	ndrange->status |= status;
+}
+
+
+void si_ndrange_clear_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t status)
+{
+	/* Get only the bits that are set */
+	status &= ndrange->status;
+
+	/* Remove ND-Range from lists */
+	if (status & si_ndrange_pending)
+		DOUBLE_LINKED_LIST_REMOVE(si_emu, pending_ndrange, ndrange);
+	if (status & si_ndrange_running)
+		DOUBLE_LINKED_LIST_REMOVE(si_emu, running_ndrange, ndrange);
+	if (status & si_ndrange_finished)
+		DOUBLE_LINKED_LIST_REMOVE(si_emu, finished_ndrange, ndrange);
+
+	/* Update status */
+	ndrange->status &= ~status;
 }

@@ -21,24 +21,24 @@
 #include <debug.h>
 #include <stdlib.h>
 
-#include <evergreen-emu.h>
+#include <southern-islands-emu.h>
 #include <mem-system.h>
 #include <x86-emu.h>
 
 
-struct evg_opencl_program_t *evg_opencl_program_create()
+struct si_opencl_program_t *si_opencl_program_create()
 {
-	struct evg_opencl_program_t *program;
+	struct si_opencl_program_t *program;
 	int i;
 
 	/* Allocate */
-	program = calloc(1, sizeof(struct evg_opencl_program_t));
+	program = calloc(1, sizeof(struct si_opencl_program_t));
 	if (!program)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	program->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
-		evg_opencl_object_program);
+	program->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
+		si_opencl_object_program);
 	program->ref_count = 1;
 
 	/* Constant buffers encoded in ELF file */
@@ -47,37 +47,37 @@ struct evg_opencl_program_t *evg_opencl_program_create()
 		list_add(program->constant_buffer_list, NULL);
 
 	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, program);
+	si_opencl_repo_add_object(si_emu->opencl_repo, program);
 	return program;
 }
 
 
-void evg_opencl_program_free(struct evg_opencl_program_t *program)
+void si_opencl_program_free(struct si_opencl_program_t *program)
 {
 	/* Free lists */
 	list_free(program->constant_buffer_list);
 
 	if (program->elf_file)
 		elf_file_free(program->elf_file);
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, program);
+	si_opencl_repo_remove_object(si_emu->opencl_repo, program);
 	free(program);
 }
 
 
-static char *err_evg_opencl_evergreen_format =
+static char *err_si_opencl_southern_islands_format =
 	"\tYour application tried to load a pre-compiled OpenCL kernel binary which\n"
-	"\tdoes not contain code in the Evergreen ISA. Please, check that the off-line\n"
-	"\tcompilation of your kernel targets this GPU architecture supported by\n"
-	"\tMulti2Sim.\n";
+	"\tdoes not contain code in the Southern Islands ISA. Please, check that the\n"
+	"\toff-line compilation of your kernel targets this GPU architecture supported\n"
+	"\tby Multi2Sim.\n";
 
 
-void evg_opencl_program_build(struct evg_opencl_program_t *program)
+void si_opencl_program_build(struct si_opencl_program_t *program)
 {
-	/* Open ELF file and check that it corresponds to an Evergreen pre-compiled kernel */
+	/* Open ELF file and check that it corresponds to a Southern Islands pre-compiled kernel */
 	assert(program->elf_file);
-	if (program->elf_file->header->e_machine != 0x3f1)
+	if (program->elf_file->header->e_machine != 0x3fd)
 		fatal("%s: invalid binary file.\n%s", __FUNCTION__,
-			err_evg_opencl_evergreen_format);
+				err_si_opencl_southern_islands_format);
 }
 
 
@@ -86,7 +86,7 @@ void evg_opencl_program_build(struct evg_opencl_program_t *program)
  * No allocation happens here, the target buffer will just point to the contents of
  * an existing section. */
 
-static char *err_evg_opencl_elf_symbol =
+static char *err_si_opencl_elf_symbol =
 	"\tThe ELF file analyzer is trying to find a name in the ELF symbol table.\n"
 	"\tIf it is not found, it probably means that your application is requesting\n"
 	"\texecution of a kernel function that is not present in the encoded binary.\n"
@@ -98,7 +98,7 @@ static char *err_evg_opencl_elf_symbol =
 	"\tthe tool will still compile the kernel into LLVM, but the ISA section will\n"
 	"\tbe missing in the kernel binary.\n";
 
-void evg_opencl_program_read_symbol(struct evg_opencl_program_t *program, char *symbol_name,
+void si_opencl_program_read_symbol(struct si_opencl_program_t *program, char *symbol_name,
 	struct elf_buffer_t *buffer)
 {
 	struct elf_file_t *elf_file;
@@ -111,14 +111,14 @@ void evg_opencl_program_read_symbol(struct evg_opencl_program_t *program, char *
 	symbol = elf_symbol_get_by_name(elf_file, symbol_name);
 	if (!symbol)
 		fatal("%s: ELF symbol '%s' not found.\n%s", __FUNCTION__,
-			symbol_name, err_evg_opencl_elf_symbol);
+			symbol_name, err_si_opencl_elf_symbol);
 	
 	/* Get section where the symbol is pointing */
 	section = list_get(elf_file->section_list, symbol->section);
 	assert(section);
 	if (symbol->value + symbol->size > section->header->sh_size)
 		fatal("%s: ELF symbol '%s' exceeds section '%s' boundaries.\n%s",
-			__FUNCTION__, symbol->name, section->name, err_evg_opencl_elf_symbol);
+			__FUNCTION__, symbol->name, section->name, err_si_opencl_elf_symbol);
 
 	/* Update buffer */
 	buffer->ptr = section->buffer.ptr + symbol->value;
@@ -127,12 +127,12 @@ void evg_opencl_program_read_symbol(struct evg_opencl_program_t *program, char *
 }
 
 
-void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t *program)
+void si_opencl_program_initialize_constant_buffers(struct si_opencl_program_t *program)
 {
 	struct elf_file_t *elf_file;
 	struct elf_symbol_t *elf_symbol;
 	struct elf_buffer_t elf_buffer;
-	struct evg_opencl_mem_t *mem;
+	struct si_opencl_mem_t *mem;
 	char symbol_name[MAX_STRING_SIZE];
 	int i;
 
@@ -152,25 +152,25 @@ void evg_opencl_program_initialize_constant_buffers(struct evg_opencl_program_t 
 
 			break;
 		}
-		evg_opencl_debug("  constant buffer '%s' found with size %d\n",
+		si_opencl_debug("  constant buffer '%s' found with size %d\n",
 			elf_symbol->name, elf_symbol->size);
 
 		/* Read the elf symbol into a buffer */
-		evg_opencl_program_read_symbol(program, elf_symbol->name, &elf_buffer);
+		si_opencl_program_read_symbol(program, elf_symbol->name, &elf_buffer);
 
 		/* Create a memory object and copy the constant buffer data to it */
-		mem = evg_opencl_mem_create();
+		mem = si_opencl_mem_create();
 		mem->type = 0;  /* FIXME */
 		mem->size = elf_buffer.size;
 		mem->flags = 0; /* TODO Change to CL_MEM_READ_ONLY */
 		mem->host_ptr = 0;
 
 		/* Assign position in device global memory */
-		mem->device_ptr = evg_emu->global_mem_top;
-		evg_emu->global_mem_top += mem->size;
+		mem->device_ptr = si_emu->global_mem_top;
+		si_emu->global_mem_top += mem->size;
 
 		/* Copy constant buffer into device memory */
-		mem_write(evg_emu->global_mem, mem->device_ptr, mem->size, elf_buffer.ptr);
+		mem_write(si_emu->global_mem, mem->device_ptr, mem->size, elf_buffer.ptr);
 
 		/* Add the memory object to the constant buffer list */
 		list_set(program->constant_buffer_list, i, mem);

@@ -5057,45 +5057,13 @@ static int x86_sys_set_robust_list_impl(void)
 
 static int x86_sys_opencl_impl(void)
 {
-	unsigned int func_code;
-	unsigned int args_ptr;
-
-	int func_argc;
-	int i;
-
-	char *func_name;
-
 	if (x86_emu->gpu_emulator == gpu_emulator_evg)
 	{
 		return evg_opencl_api_run();
 	}
 	else if (x86_emu->gpu_emulator == gpu_emulator_si)
 	{
-		unsigned int si_args[SI_OPENCL_MAX_ARGS];
-
-		/* Get function code and arguments pointer */
-		func_code = x86_isa_regs->ebx;
-		args_ptr = x86_isa_regs->ecx;
-
-		/* Check 'func_code' range */
-		if (func_code < SI_OPENCL_FUNC_FIRST || func_code > SI_OPENCL_FUNC_LAST)
-			fatal("%s: invalid function code", __FUNCTION__);
-
-		/* Get function info */
-		func_name = si_opencl_func_names[func_code - SI_OPENCL_FUNC_FIRST];
-		func_argc = si_opencl_func_argc[func_code - SI_OPENCL_FUNC_FIRST];
-		x86_sys_debug("  func_code=%d (%s, %d arguments), pargs=0x%x\n",
-			func_code, func_name, func_argc, args_ptr);
-
-		/* Read function args */
-		assert(func_argc <= SI_OPENCL_MAX_ARGS);
-		mem_read(x86_isa_mem, args_ptr, func_argc * 4, si_args);
-		for (i = 0; i < func_argc; i++)
-			x86_sys_debug("    args[%d] = %d (0x%x)\n",
-				i, si_args[i], si_args[i]);
-
-		/* Run OpenCL function */
-		return si_opencl_func_run(func_code, si_args);
+		return si_opencl_api_run();
 	}
 
 	abort();
