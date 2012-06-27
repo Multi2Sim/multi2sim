@@ -154,6 +154,12 @@ struct evg_gpu_t *evg_gpu;
  * Private Functions
  */
 
+static char *evg_err_stall =
+	"\tThe Evergreen GPU has not completed execution of any in-flight\n"
+	"\tinstruction for 1M cycles. Most likely, this means that a\n"
+	"\tdeadlock condition occurred in the management of some modeled\n"
+	"\tstructure (network, memory system, pipeline queues, etc.).\n";
+
 /* Version of Evergreen trace producer.
  * See 'src/visual/evergreen/gpu.c' for Evergreen trace consumer. */
 
@@ -664,6 +670,14 @@ void evg_gpu_run(void)
 	/* Stop if maximum number of GPU instructions exceeded */
 	if (evg_emu_max_inst && evg_emu->inst_count >= evg_emu_max_inst)
 		x86_emu_finish = x86_emu_finish_max_gpu_inst;
+	
+	/* Stop if there was a simulation stall */
+	if (esim_cycle - evg_gpu->last_complete_cycle > 1000000)
+	{
+		warning("Evergreen GPU simulation stalled.\n%s",
+			evg_err_stall);
+		x86_emu_finish = x86_emu_finish_stall;
+	}
 
 	/* Stop if any reason met */
 	if (x86_emu_finish)

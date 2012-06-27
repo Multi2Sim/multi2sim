@@ -288,6 +288,9 @@ static void evg_cf_engine_complete(struct evg_compute_unit_t *compute_unit)
 		assert(work_group->compute_unit_finished_count <= work_group->wavefront_count);
 		if (work_group->compute_unit_finished_count == work_group->wavefront_count)
 			evg_compute_unit_unmap_work_group(compute_unit, work_group);
+
+		/* Statistics */
+		evg_gpu->last_complete_cycle = esim_cycle;
 	}
 }
 

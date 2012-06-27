@@ -204,6 +204,7 @@ void evg_compute_unit_map_work_group(struct evg_compute_unit_t *compute_unit, st
 
 	/* Stats */
 	compute_unit->mapped_work_groups++;
+	evg_gpu->last_complete_cycle = esim_cycle;
 }
 
 

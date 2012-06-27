@@ -392,6 +392,9 @@ static void evg_alu_engine_write(struct evg_compute_unit_t *compute_unit)
 				evg_gpu_uop_trash_add(uop);
 			else
 				evg_uop_free(uop);
+
+			/* Statistics */
+			evg_gpu->last_complete_cycle = esim_cycle;
 		}
 	}
 }
