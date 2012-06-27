@@ -249,14 +249,6 @@ void evg_wavefront_stack_pop(struct evg_wavefront_t *wavefront, int count)
 /* Execute one instruction in the wavefront */
 void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 {
-	extern struct evg_ndrange_t *evg_isa_ndrange;
-	extern struct evg_work_group_t *evg_isa_work_group;
-	extern struct evg_wavefront_t *evg_isa_wavefront;
-	extern struct evg_work_item_t *evg_isa_work_item;
-	extern struct evg_inst_t *evg_isa_cf_inst;
-	extern struct evg_inst_t *evg_isa_inst;
-	extern struct evg_alu_group_t *evg_isa_alu_group;
-
 	struct evg_ndrange_t *ndrange = wavefront->ndrange;
 	enum evg_inst_enum inst_opcode;
 

@@ -1118,8 +1118,11 @@ int main(int argc, char **argv)
 	signal(SIGABRT, SIG_DFL);
 	signal(SIGINT, SIG_DFL);
 
-	/* Flush event-driven simulation */
-	esim_process_all_events();
+	/* Flush event-driven simulation, only if the reason for simulation
+	 * completion was not a simulation stall. If it was, draining the
+	 * event-driven simulation could cause another stall! */
+	if (x86_emu_finish != x86_emu_finish_stall)
+		esim_process_all_events();
 
 	/* Dump statistics summary */
 	m2s_stats_summary();
