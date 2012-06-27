@@ -50,6 +50,13 @@
  * OpenCL API Implementation
  */
 
+/* Forward declaration */
+struct x86_ctx_t;
+
+/* Function tables */
+extern char *si_opencl_func_name[];
+extern int si_opencl_func_argc[];
+
 /* Debugging */
 #define si_opencl_debug(...) debug(si_opencl_debug_category, __VA_ARGS__)
 extern int si_opencl_debug_category;
@@ -57,51 +64,54 @@ extern int si_opencl_debug_category;
 /* Some constants */
 #define SI_OPENCL_FUNC_FIRST  1000
 #define SI_OPENCL_FUNC_LAST  1073
+#define SI_OPENCL_FUNC_COUNT  (si_OPENCL_FUNC_LAST - si_OPENCL_FUNC_FIRST + 1)
 #define SI_OPENCL_MAX_ARGS  14
 
-/* An enumeration of the OpenCL functions */
-enum si_opencl_func_t
+int si_opencl_api_run(void);
+
+int si_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
+		void *argv_ptr, int argv_size);
+void si_opencl_api_return(struct x86_ctx_t *ctx, int value);
+
+
+
+
+/*
+ * OpenCL objects
+ */
+
+enum si_opencl_object_type_t
 {
-#define DEF_OPENCL_FUNC(_name, _argc) SI_OPENCL_FUNC_##_name,
-#include "opencl.dat"
-#undef DEF_OPENCL_FUNC
-	SI_OPENCL_FUNC_COUNT
+	si_opencl_object_invalid,
+	si_opencl_object_platform,
+	si_opencl_object_device,
+	si_opencl_object_context,
+	si_opencl_object_command_queue,
+	si_opencl_object_program,
+	si_opencl_object_kernel,
+	si_opencl_object_mem,
+	si_opencl_object_event,
+	si_opencl_object_sampler
 };
 
-/* List of OpenCL functions and number of arguments */
-extern char *si_opencl_func_names[];
-extern int si_opencl_func_argc[];
+struct si_opencl_repo_t;
 
-/* Execute OpenCL call */
-int si_opencl_func_run(int code, unsigned int *args);
+struct si_opencl_repo_t *si_opencl_repo_create(void);
+void si_opencl_repo_free(struct si_opencl_repo_t *repo);
 
+void si_opencl_repo_add_object(struct si_opencl_repo_t *repo,
+	void *object);
+void si_opencl_repo_remove_object(struct si_opencl_repo_t *repo,
+	void *object);
+void *si_opencl_repo_get_object(struct si_opencl_repo_t *repo,
+	enum si_opencl_object_type_t type, unsigned int object_id);
 
+void *si_opencl_repo_get_object_of_type(struct si_opencl_repo_t *repo,
+	enum si_opencl_object_type_t type);
+unsigned int si_opencl_repo_new_object_id(struct si_opencl_repo_t *repo,
+	enum si_opencl_object_type_t type);
 
-/* OpenCL objects */
-
-enum si_opencl_obj_t
-{
-	SI_OPENCL_OBJ_PLATFORM = 1,
-	SI_OPENCL_OBJ_DEVICE,
-	SI_OPENCL_OBJ_CONTEXT,
-	SI_OPENCL_OBJ_COMMAND_QUEUE,
-	SI_OPENCL_OBJ_PROGRAM,
-	SI_OPENCL_OBJ_KERNEL,
-	SI_OPENCL_OBJ_MEM,
-	SI_OPENCL_OBJ_EVENT,
-	SI_OPENCL_OBJ_SAMPLER
-};
-
-extern struct linked_list_t *si_opencl_object_list;
-
-void si_opencl_object_add(void *object);
-void si_opencl_object_remove(void *object);
-void *si_opencl_object_get(enum si_opencl_obj_t type, uint32_t id);
-void *si_opencl_object_get_type(enum si_opencl_obj_t type);
-uint32_t si_opencl_object_new_id(enum si_opencl_obj_t type);
-void si_opencl_object_free_all(void);
-
-
+void si_opencl_repo_free_all_objects(struct si_opencl_repo_t *repo);
 
 
 /* OpenCL platform */
@@ -162,20 +172,62 @@ void si_opencl_context_set_properties(struct si_opencl_context_t *context,
 
 
 
-/* OpenCL command queue */
+/*
+ * OpenCL Command Queue
+ */
+
+/* Forward declaration of x86 context used below in callback function. This
+ * dependence would be removed if OpenCL API implementation was in 'arch/x86/emu'
+ * instead. Is this a better option? */
+struct x86_ctx_t;
+
+enum si_opencl_command_type_t
+{
+	si_opencl_command_queue_task_invalid,
+	si_opencl_command_queue_task_read_buffer,
+	si_opencl_command_queue_task_write_buffer,
+	si_opencl_command_queue_task_ndrange_kernel
+};
+
+struct si_opencl_command_t
+{
+	enum si_opencl_command_type_t type;
+	union
+	{
+		struct
+		{
+			struct si_ndrange_t *ndrange;
+		} ndrange_kernel;
+	} u;
+};
 
 struct si_opencl_command_queue_t
 {
-	uint32_t id;
+	unsigned int id;
 	int ref_count;
 
-	uint32_t device_id;
-	uint32_t context_id;
-	uint32_t properties;
+	unsigned int device_id;
+	unsigned int context_id;
+	unsigned int properties;
+
+	struct linked_list_t *command_list;
 };
 
 struct si_opencl_command_queue_t *si_opencl_command_queue_create(void);
 void si_opencl_command_queue_free(struct si_opencl_command_queue_t *command_queue);
+
+struct si_opencl_command_t *si_opencl_command_create(enum
+	si_opencl_command_type_t type);
+void si_opencl_command_free(struct si_opencl_command_t *command);
+
+void si_opencl_command_queue_submit(struct si_opencl_command_queue_t *command_queue,
+	struct si_opencl_command_t *command);
+void si_opencl_command_queue_complete(struct si_opencl_command_queue_t *command_queue,
+	struct si_opencl_command_t *command);
+
+/* Callback function of type 'x86_ctx_wakeup_callback_func_t'.
+ * Argument 'data' is type-casted to 'struct si_opencl_command_queue_t' */
+int si_opencl_command_queue_can_wakeup(struct x86_ctx_t *ctx, void *data);
 
 
 
@@ -203,6 +255,9 @@ void si_opencl_program_free(struct si_opencl_program_t *program);
 
 void si_opencl_program_build(struct si_opencl_program_t *program);
 void si_opencl_program_initialize_constant_buffers(struct si_opencl_program_t *program);
+
+void si_opencl_program_read_symbol(struct si_opencl_program_t *program, char *symbol_name,
+	struct elf_buffer_t *buffer);
 
 void si_isa_init(void);
 void si_isa_done(void);
@@ -480,14 +535,28 @@ void si_isa_write_task_commit(void);
  * GPU NDRange (State of running kernel, grid of work_groups)
  */
 
+enum si_ndrange_status_t
+{
+	si_ndrange_pending		= 0x0001,
+	si_ndrange_running		= 0x0002,
+	si_ndrange_finished		= 0x0004
+};
+
 struct si_ndrange_t
 {
 	/* ID */
 	char *name;
 	int id;  /* Sequential ndrange ID (given by si_emu->ndrange_count counter) */
 
+	/* Status */
+	enum si_ndrange_status_t status;
+
 	/* OpenCL kernel associated */
 	struct si_opencl_kernel_t *kernel;
+
+	/* Command queue and command queue task associated */
+	struct si_opencl_command_queue_t *command_queue;
+	struct si_opencl_command_t *command;
 
 	/* Pointers to work-groups, wavefronts, and work_items */
 	struct si_work_group_t **work_groups;
@@ -513,6 +582,16 @@ struct si_ndrange_t
 	/* Size of work-groups */
 	int wavefronts_per_work_group;  /* = ceil(local_size / si_emu_wavefront_size) */
 
+	/* List of ND-Ranges */
+	struct si_ndrange_t *ndrange_list_prev;
+	struct si_ndrange_t *ndrange_list_next;
+	struct si_ndrange_t *pending_ndrange_list_prev;
+	struct si_ndrange_t *pending_ndrange_list_next;
+	struct si_ndrange_t *running_ndrange_list_prev;
+	struct si_ndrange_t *running_ndrange_list_next;
+	struct si_ndrange_t *finished_ndrange_list_prev;
+	struct si_ndrange_t *finished_ndrange_list_next;
+
 	/* List of pending work-groups */
 	struct si_work_group_t *pending_list_head;
 	struct si_work_group_t *pending_list_tail;
@@ -534,11 +613,21 @@ struct si_ndrange_t
 	/* Local memory top to assign to local arguments.
 	 * Initially it is equal to the size of local variables in kernel function. */
 	uint32_t local_mem_top;
+
+	/* Statistics */
+
+	/* Histogram of executed instructions. Only allocated if the kernel report
+	 * option is active. */
+	unsigned int *inst_histogram;
 };
 
 struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel);
 void si_ndrange_free(struct si_ndrange_t *ndrange);
 void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f);
+
+int si_ndrange_get_status(struct si_ndrange_t *ndrange, enum si_ndrange_status_t status);
+void si_ndrange_set_status(struct si_ndrange_t *work_group, enum si_ndrange_status_t status);
+void si_ndrange_clear_status(struct si_ndrange_t *work_group, enum si_ndrange_status_t status);
 
 void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange);
@@ -605,10 +694,7 @@ struct si_work_group_t
 	int running_list_max;
 
 	/* List of wavefronts in barrier */
-	struct si_wavefront_t *barrier_list_head;
-	struct si_wavefront_t *barrier_list_tail;
-	int barrier_list_count;
-	int barrier_list_max;
+	struct list_t *barrier_list;
 
 	/* List of finished wavefronts */
 	struct si_wavefront_t *finished_list_head;
@@ -874,6 +960,7 @@ extern char *err_si_isa_note;
 #define SI_INST_VOPC		si_isa_inst->micro_inst.vopc
 #define SI_INST_VOP3b		si_isa_inst->micro_inst.vop3b
 #define SI_INST_VOP3a		si_isa_inst->micro_inst.vop3a
+#define SI_INST_DS			si_isa_inst->micro_inst.ds
 #define SI_INST_MTBUF		si_isa_inst->micro_inst.mtbuf
 /* FIXME Finish filling these in */
 
@@ -892,6 +979,35 @@ struct si_emu_t
 {
 	/* Timer */
 	struct m2s_timer_t *timer;
+
+	/* OpenCL objects */
+	struct si_opencl_repo_t *opencl_repo;
+	struct si_opencl_platform_t *opencl_platform;
+	struct si_opencl_device_t *opencl_device;
+
+	/* List of ND-Ranges */
+	struct si_ndrange_t *ndrange_list_head;
+	struct si_ndrange_t *ndrange_list_tail;
+	int ndrange_list_count;
+	int ndrange_list_max;
+
+	/* List of pending ND-Ranges */
+	struct si_ndrange_t *pending_ndrange_list_head;
+	struct si_ndrange_t *pending_ndrange_list_tail;
+	int pending_ndrange_list_count;
+	int pending_ndrange_list_max;
+
+	/* List of running ND-Ranges */
+	struct si_ndrange_t *running_ndrange_list_head;
+	struct si_ndrange_t *running_ndrange_list_tail;
+	int running_ndrange_list_count;
+	int running_ndrange_list_max;
+
+	/* List of finished ND-Ranges */
+	struct si_ndrange_t *finished_ndrange_list_head;
+	struct si_ndrange_t *finished_ndrange_list_tail;
+	int finished_ndrange_list_count;
+	int finished_ndrange_list_max;
 
 	/* Global memory */
 	struct mem_t *global_mem;
@@ -923,8 +1039,8 @@ extern FILE *si_emu_report_file;
 
 extern int si_emu_wavefront_size;
 
-extern char *err_si_opencl_note;
-extern char *err_si_opencl_param_note;
+extern char *si_err_opencl_note;
+extern char *si_err_opencl_param_note;
 
 
 extern struct si_emu_t *si_emu;
@@ -938,6 +1054,7 @@ union si_reg_t si_isa_read_vreg(int vreg);
 void si_isa_write_vreg(int vreg, union si_reg_t value);
 union si_reg_t si_isa_read_reg(int reg);
 void si_isa_bitmask_sreg(int sreg, union si_reg_t value);
+int si_isa_read_bitmask_sreg(int sreg);
 
 void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg);
 void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg);

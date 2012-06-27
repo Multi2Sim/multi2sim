@@ -83,10 +83,10 @@ void si_emu_init()
 	/* Initialize ISA (instruction execution tables...) */
 	si_isa_init();
 
-	/* Create platform and device */
-	si_opencl_object_list = linked_list_create();
-	si_opencl_platform = si_opencl_platform_create();
-	si_opencl_device_create();
+	/* Initialize OpenCL objects */
+	si_emu->opencl_repo = si_opencl_repo_create();
+	si_emu->opencl_platform = si_opencl_platform_create();
+	si_emu->opencl_device = si_opencl_device_create();
 }
 
 
@@ -98,8 +98,8 @@ void si_emu_done()
 		fclose(si_emu_report_file);
 
 	/* Free OpenCL objects */
-	si_opencl_object_free_all();
-	linked_list_free(si_opencl_object_list);
+	si_opencl_repo_free_all_objects(si_emu->opencl_repo);
+	si_opencl_repo_free(si_emu->opencl_repo);
 
 	/* Finalize disassembler */
 	si_disasm_done();

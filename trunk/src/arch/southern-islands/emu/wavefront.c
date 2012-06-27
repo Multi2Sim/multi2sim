@@ -473,7 +473,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 }
 
 int si_wavefront_work_item_active(struct si_wavefront_t *wavefront, int id_in_wavefront) {
-	unsigned long mask = 1;
+	int mask = 1;
 	if(id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;
