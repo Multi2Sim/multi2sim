@@ -822,6 +822,8 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		 * When the directory entry is released, locking port and directory entry will be retried. */
 		if (!dir_entry_lock(mod->dir, stack->set, stack->way, EV_MOD_NMOESI_FIND_AND_LOCK, stack))
 		{
+			mem_debug("    %lld 0x%x %s block locked at set=%d, way=%d\n",
+				stack->id, stack->tag, mod->name, stack->set, stack->way);
 			mod_unlock_port(mod, port, stack);
 			return;
 		}

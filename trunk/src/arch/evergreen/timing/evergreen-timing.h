@@ -423,6 +423,10 @@ struct evg_gpu_t
 
 	/* List of deleted instructions */
 	struct linked_list_t *trash_uop_list;
+
+	/* Last cycle when an instructions completed in any engine. This is used
+	 * to decide when to stop simulation if there was a simulation stall. */
+	long long last_complete_cycle;
 };
 
 extern struct evg_gpu_t *evg_gpu;
