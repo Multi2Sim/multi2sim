@@ -61,7 +61,6 @@ void evg_isa_init()
 
 	/* Initialize */
 #define DEFINST(_name, _fmt_str, _fmt0, _fmt1, _fmt2, _category, _opcode, _flags) \
-	extern void evg_isa_##_name##_impl(); \
 	evg_isa_inst_func[EVG_INST_##_name] = evg_isa_##_name##_impl;
 #include <evergreen-asm.dat>
 #undef DEFINST
