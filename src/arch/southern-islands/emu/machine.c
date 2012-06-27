@@ -150,10 +150,39 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl()
 }
 #undef INST
 
+#define INST SI_INST_SOP2
 void si_isa_S_ADD_I32_impl()
 {
-	NOT_IMPL();
+	/* D.u = S0.i + S1.i. scc = overflow. */
+
+	int s0 = 0;
+	int s1 = 0;
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (s0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_sreg(INST.ssrc0).as_int;
+	if (s1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_sreg(INST.ssrc1).as_int;
+
+	union si_reg_t sum;
+	union si_reg_t ovf;
+
+	sum.as_uint = s0 + s1;
+	ovf.as_uint = ((long)(s0) + (long)(s1)) > (long)sum.as_uint;
+
+	si_isa_write_sreg(INST.sdst, sum);
+	si_isa_write_sreg(SI_SCC, ovf);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%d) ", INST.sdst, sum.as_uint);
+		si_isa_debug("scc<=(%d) ", ovf.as_uint);
+	}
 }
+#undef INST
 
 #define INST SI_INST_SOP2
 void si_isa_S_MIN_U32_impl()
@@ -358,20 +387,74 @@ void si_isa_S_LSHR_B32_impl()
 }
 #undef INST
 
+#define INST SI_INST_SOP2
 void si_isa_S_ASHR_I32_impl()
 {
-	NOT_IMPL();
-}
+	/* D.i = signtext(S0.i) >> S1.i[4:0]. scc = 1 if result is non-zero. */
 
+	int s0 = 0;
+	int s1 = 0;
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (s0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_sreg(INST.ssrc0).as_int;
+	if (s1 == 0xFF)
+		s1 = INST.lit_cnst & 0x1F;
+	else
+		s1 = si_isa_read_sreg(INST.ssrc1).as_int & 0x1F;
+	long se_s0 = s0;
+
+	union si_reg_t result;
+	result.as_int = se_s0 >> s1;
+	union si_reg_t nonzero;
+	nonzero.as_uint = result.as_uint != 0;
+
+	si_isa_write_sreg(INST.sdst, result);
+	si_isa_write_sreg(SI_SCC, nonzero);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%d)= ", INST.sdst, result.as_int);
+		si_isa_debug("scc<=(%d)", nonzero.as_uint);
+	}
+}
+#undef INST
+
+#define INST SI_INST_SOP2
 void si_isa_S_MUL_I32_impl()
 {
-	NOT_IMPL();
+	/* D.i = S0.i * S1.i. */
+
+	int s0 = 0;
+	int s1 = 0;
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (s0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_sreg(INST.ssrc0).as_int;
+	if (s1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_sreg(INST.ssrc1).as_int;
+
+	union si_reg_t result;
+	result.as_int = s0 * s1;
+
+	si_isa_write_sreg(INST.sdst, result);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%d)= ", INST.sdst, result.as_int);
+	}
 }
+#undef INST
 
 #define INST SI_INST_SOPK
 void si_isa_S_MOVK_I32_impl()
 {
 	/* D.i = signext(simm16). */
+
 	short simm16 = INST.simm16;
 
 	union si_reg_t result;
@@ -386,15 +469,55 @@ void si_isa_S_MOVK_I32_impl()
 }
 #undef INST
 
+#define INST SI_INST_SOPK
 void si_isa_S_ADDK_I32_impl()
 {
-	NOT_IMPL();
-}
+	/* D.i = D.i + signext(SIMM16). scc = overflow. */
 
+	short simm16 = INST.simm16;
+	int se_simm16 = simm16;
+	int dest = si_isa_read_sreg(INST.sdst).as_int;
+
+	union si_reg_t sum;
+	sum.as_int = dest + se_simm16;
+	union si_reg_t ovf;
+	ovf.as_uint = ((long)dest + (long)se_simm16) > (long)sum.as_uint;
+
+	si_isa_write_sreg(INST.sdst, sum);
+	si_isa_write_sreg(SI_SCC, ovf);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%d)", INST.sdst, sum.as_int);
+		si_isa_debug("scc<=(%d)", ovf.as_uint);
+	}
+}
+#undef INST
+
+#define INST SI_INST_SOPK
 void si_isa_S_MULK_I32_impl()
 {
-	NOT_IMPL();
+	/* D.i = D.i * signext(SIMM16). scc = overflow. */
+
+	short simm16 = INST.simm16;
+	int se_simm16 = simm16;
+	int dest = si_isa_read_sreg(INST.sdst).as_int;
+
+	union si_reg_t product;
+	product.as_int = dest * se_simm16;
+	union si_reg_t ovf;
+	ovf.as_uint = ((long)dest * (long)se_simm16) > (long)product.as_uint;
+
+	si_isa_write_sreg(INST.sdst, product);
+	si_isa_write_sreg(SI_SCC, ovf);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%d)", INST.sdst, product.as_int);
+		si_isa_debug("scc<=(%d)", ovf.as_uint);
+	}
 }
+#undef INST
 
 #define INST SI_INST_SOP1
 void si_isa_S_MOV_B64_impl()
@@ -418,10 +541,23 @@ void si_isa_S_MOV_B64_impl()
 }
 #undef INST
 
+#define INST SI_INST_SOP1
 void si_isa_S_MOV_B32_impl()
 {
-	NOT_IMPL();
+	/* D.u = S0.u. */
+
+	assert(!(INST.ssrc0 == 0xFF));
+	union si_reg_t s0;
+	s0 = si_isa_read_sreg(INST.ssrc0);
+
+	si_isa_write_sreg(INST.sdst, s0);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%d) ", INST.sdst, s0.as_int);
+	}
 }
+#undef INST
 
 #define INST SI_INST_SOP1
 void si_isa_S_AND_SAVEEXEC_B64_impl()
@@ -469,11 +605,11 @@ void si_isa_S_CMP_EQ_I32_impl()
 	if (s0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
-		s0 = si_isa_read_sreg(INST.ssrc0).as_uint;
+		s0 = si_isa_read_sreg(INST.ssrc0).as_int;
 	if (s1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
-		s1 = si_isa_read_sreg(INST.ssrc1).as_uint;
+		s1 = si_isa_read_sreg(INST.ssrc1).as_int;
 
 	union si_reg_t equal;
 	equal.as_uint = s0 == s1;
@@ -482,30 +618,77 @@ void si_isa_S_CMP_EQ_I32_impl()
 
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("scc<=(%d)=(%d == %d)", equal.as_uint, s0, s1);
+		si_isa_debug("scc<=(%d) ", equal.as_uint);
 	}
 }
 #undef INST
 
+#define INST SI_INST_SOPC
 void si_isa_S_CMP_LE_U32_impl()
 {
-	NOT_IMPL();
+	/* scc = (S0.u <= S1.u). */
+
+	unsigned int s0 = 0;
+	unsigned int s1 = 0;
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (s0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_sreg(INST.ssrc0).as_uint;
+	if (s1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_sreg(INST.ssrc1).as_uint;
+
+	union si_reg_t le;
+	le.as_uint = s0 <= s1;
+
+	si_isa_write_sreg(SI_SCC, le);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("scc<=(%d) ", le.as_uint);
+	}
 }
+#undef INST
 
 void si_isa_S_ENDPGM_impl()
 {
 	si_isa_wavefront->finished = 1;
 }
 
+#define INST SI_INST_SOPP
 void si_isa_S_BRANCH_impl()
 {
-	NOT_IMPL();
-}
+	/* PC = PC + signext(SIMM16 * 4) + 4 */
 
+	long pc = si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start;
+	short simm16 = INST.simm16;
+	int se_simm16 = simm16;
+
+	pc = pc + (se_simm16 * 4) + 4;
+
+	si_isa_wavefront->inst_buf = si_isa_wavefront->inst_buf_start + pc;
+}
+#undef INST
+
+#define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_SCC0_impl()
 {
-	NOT_IMPL();
+	/* if(SCC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
+
+	if(!si_isa_read_sreg(SI_SCC).as_uint)
+	{
+		long pc = si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start;
+		short simm16 = INST.simm16;
+		int se_simm16 = simm16;
+
+		pc = pc + (se_simm16 * 4) + 4;
+
+		si_isa_wavefront->inst_buf = si_isa_wavefront->inst_buf_start + pc;
+	}
 }
+#undef INST
 
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_SCC1_impl()
@@ -525,10 +708,23 @@ void si_isa_S_CBRANCH_SCC1_impl()
 }
 #undef INST
 
+#define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_VCCZ_impl()
 {
-	NOT_IMPL();
+	/* if(VCC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
+
+	if(si_isa_read_sreg(SI_VCCZ).as_uint)
+	{
+		long pc = si_isa_wavefront->inst_buf - si_isa_wavefront->inst_buf_start;
+		short simm16 = INST.simm16;
+		int se_simm16 = simm16;
+
+		pc = pc + (se_simm16 * 4) + 4;
+
+		si_isa_wavefront->inst_buf = si_isa_wavefront->inst_buf_start + pc;
+	}
 }
+#undef INST
 
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_EXECZ_impl()
@@ -550,7 +746,9 @@ void si_isa_S_CBRANCH_EXECZ_impl()
 
 void si_isa_S_BARRIER_impl()
 {
-	NOT_IMPL();
+	list_add(si_isa_work_group->barrier_list, si_isa_wavefront);
+	if(si_isa_work_group->barrier_list->count == si_isa_work_group->wavefront_count)
+		list_clear(si_isa_work_group->barrier_list);
 }
 
 void si_isa_S_WAITCNT_impl()
@@ -598,15 +796,48 @@ void si_isa_V_CVT_F32_I32_impl()
 }
 #undef INST
 
+#define INST SI_INST_VOP1
 void si_isa_V_CVT_F32_U32_impl()
 {
-	NOT_IMPL();
-}
+	/* D.f = (float)S0.u. */
 
+	union si_reg_t value;
+
+	if (INST.src0 == 0xFF)
+		value.as_float = (float)INST.lit_cnst;
+	else
+		value.as_float = (float)si_isa_read_reg(INST.src0).as_uint;
+
+	si_isa_write_vreg(INST.vdst, value);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf) ", si_isa_work_item->id, INST.vdst, value.as_float);
+	}
+}
+#undef INST
+
+#define INST SI_INST_VOP1
 void si_isa_V_CVT_U32_F32_impl()
 {
 	NOT_IMPL();
+	/* D.i = (uint)S0.f. */
+
+	union si_reg_t value;
+
+	if (INST.src0 == 0xFF)
+		value.as_uint = (unsigned int)INST.lit_cnst;
+	else
+		value.as_uint = (unsigned int)si_isa_read_reg(INST.src0).as_float;
+
+	si_isa_write_vreg(INST.vdst, value);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", si_isa_work_item->id, INST.vdst, value.as_uint);
+	}
 }
+#undef INST
 
 #define INST SI_INST_VOP1
 void si_isa_V_CVT_I32_F32_impl()
@@ -629,15 +860,55 @@ void si_isa_V_CVT_I32_F32_impl()
 }
 #undef INST
 
+#define INST SI_INST_VOP1
 void si_isa_V_RCP_F32_impl()
 {
-	NOT_IMPL();
-}
+	/* D.f = 1.0 / S0.f. */
 
+	union si_reg_t rcp;
+
+	if (INST.src0 == 0xFF)
+		rcp.as_float = 1.0 / (float)INST.lit_cnst;
+	else
+		rcp.as_float = 1.0 / si_isa_read_reg(INST.src0).as_float;
+
+	si_isa_write_vreg(INST.vdst, rcp);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf) ", si_isa_work_item->id, INST.vdst, rcp.as_float);
+	}
+}
+#undef INST
+
+#define INST SI_INST_VOP2
 void si_isa_V_ADD_F32_impl()
 {
-	NOT_IMPL();
+	/* D.f = S0.f + S1.f. */
+
+	float s0 = 0;
+	float s1 = 0;
+	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
+	if (s0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_reg(INST.src0).as_float;
+	if (s1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_vreg(INST.vsrc1).as_float;
+
+	union si_reg_t sum;
+	sum.as_float = s0 + s1;
+
+	si_isa_write_vreg(INST.vdst, sum);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf) ", si_isa_work_item->id, INST.vdst, sum.as_float);
+	}
 }
+#undef INST
 
 #define INST SI_INST_VOP2
 void si_isa_V_MUL_F32_impl()
@@ -818,15 +1089,59 @@ void si_isa_V_ADD_I32_impl()
 }
 #undef INST
 
+#define INST SI_INST_VOP2
 void si_isa_V_SUB_I32_impl()
 {
-	NOT_IMPL();
-}
+	/* D.u = S0.u - S1.u; vcc = carry-out. */
 
+	unsigned int s0 = 0;
+	unsigned int s1 = 0;
+	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
+	if (s0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_reg(INST.src0).as_uint;
+	if (s1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_vreg(INST.vsrc1).as_uint;
+
+	union si_reg_t dif;
+	dif.as_uint = s0 - s1;
+	union si_reg_t carry;
+	carry.as_uint = (((long)s0 - (long)s1) != (long)dif.as_uint);
+
+	si_isa_write_vreg(INST.vdst, dif);
+	si_isa_bitmask_sreg(SI_VCC, carry);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", si_isa_work_item->id, INST.vdst, dif.as_uint);
+		si_isa_debug("wf_id%d: vcc<=(%d) ", si_isa_work_item->id_in_wavefront, carry.as_uint);
+	}
+}
+#undef INST
+
+#define INST SI_INST_VOP3a
 void si_isa_V_CNDMASK_B32_VOP3a_impl()
 {
-	NOT_IMPL();
+	/* D.u = VCC[i] ? S1.u : S0.u (i = threadID in wave); VOP3: specify VCC as a scalar GPR in S2. */
+
+	union si_reg_t s0 = si_isa_read_reg(INST.src0);
+	union si_reg_t s1 = si_isa_read_reg(INST.src1);
+	int vcci = si_isa_read_bitmask_sreg(INST.src2);
+	union si_reg_t result = (vcci) ? s1 : s0;
+
+	assert(!INST.neg);
+
+	si_isa_write_vreg(INST.vdst, result);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", si_isa_work_item->id, INST.vdst, result.as_uint);
+	}
 }
+#undef INST
 
 #define INST SI_INST_VOP3a
 void si_isa_V_MAD_F32_impl()
@@ -856,15 +1171,55 @@ void si_isa_V_MAD_F32_impl()
 }
 #undef INST
 
+#define INST SI_INST_VOP3a
 void si_isa_V_MUL_LO_U32_impl()
 {
-	NOT_IMPL();
-}
+	/* D.u = S0.u * S1.u. */
 
+	unsigned int s0 = si_isa_read_reg(INST.src0).as_uint;
+	unsigned int s1 = si_isa_read_reg(INST.src1).as_uint;
+
+	if(INST.neg & 1)
+		s0 = -s0;
+	if(INST.neg & 2)
+		s1 = -s1;
+
+	union si_reg_t result;
+	result.as_uint = s0 * s1;
+
+	si_isa_write_vreg(INST.vdst, result);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", si_isa_work_item->id, INST.vdst, result.as_uint);
+	}
+}
+#undef INST
+
+#define INST SI_INST_VOP3a
 void si_isa_V_MUL_HI_U32_impl()
 {
-	NOT_IMPL();
+	/* D.u = (S0.u * S1.u)>>32 */
+
+	unsigned int s0 = si_isa_read_reg(INST.src0).as_uint;
+	unsigned int s1 = si_isa_read_reg(INST.src1).as_uint;
+
+	if(INST.neg & 1)
+		s0 = -s0;
+	if(INST.neg & 2)
+		s1 = -s1;
+
+	union si_reg_t result;
+	result.as_uint = ((long)s0 * (long)s1) >> 32;
+
+	si_isa_write_vreg(INST.vdst, result);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", si_isa_work_item->id, INST.vdst, result.as_uint);
+	}
 }
+#undef INST
 
 #define INST SI_INST_VOP3a
 void si_isa_V_MUL_LO_I32_impl()
@@ -951,20 +1306,70 @@ void si_isa_V_CMP_GT_I32_impl()
 }
 #undef INST
 
+#define INST SI_INST_VOPC
 void si_isa_V_CMP_NE_I32_impl()
 {
-	NOT_IMPL();
-}
+	/* vcc = (S0.i <> S1.i). */
 
+	int s0 = 0;
+	int s1 = 0;
+	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
+	if (s0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_reg(INST.src0).as_int;
+	if (s1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_vreg(INST.vsrc1).as_int;
+
+	union si_reg_t result;
+	result.as_uint = (s0 != s1);
+
+	si_isa_bitmask_sreg(SI_VCC, result);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: vcc<=(%d) ", si_isa_work_item->id_in_wavefront,
+			result.as_uint);
+	}
+}
+#undef INST
+
+#define INST SI_INST_VOPC
 void si_isa_V_CMP_LE_U32_impl()
 {
-	NOT_IMPL();
+	/* vcc = (S0.u <= S1.u). */
+
+	unsigned int s0 = 0;
+	unsigned int s1 = 0;
+	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
+	if (s0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_reg(INST.src0).as_uint;
+	if (s1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_vreg(INST.vsrc1).as_uint;
+
+	union si_reg_t result;
+	result.as_uint = (s0 <= s1);
+
+	si_isa_bitmask_sreg(SI_VCC, result);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: vcc<=(%d) ", si_isa_work_item->id_in_wavefront,
+			result.as_uint);
+	}
 }
+#undef INST
 
 #define INST SI_INST_VOP3b
 void si_isa_V_CMP_GT_I32_VOP3b_impl()
 {
-	/* D.u = (S0 > S1). */
+	/* D.u = (S0.i > S1.i). */
 
 	int s0 = si_isa_read_reg(INST.src0).as_int;
 	int s1 = si_isa_read_reg(INST.src1).as_int;
@@ -987,30 +1392,139 @@ void si_isa_V_CMP_GT_I32_VOP3b_impl()
 }
 #undef INST
 
+#define INST SI_INST_VOP3b
 void si_isa_V_CMP_NE_I32_VOP3b_impl()
 {
-	NOT_IMPL();
-}
+	/* D.u = (S0.i <> S1.i). */
 
+	int s0 = si_isa_read_reg(INST.src0).as_int;
+	int s1 = si_isa_read_reg(INST.src1).as_int;
+
+	if(INST.neg & 1)
+		s0 = -s0;
+	if(INST.neg & 2)
+		s1 = -s1;
+
+	union si_reg_t result;
+	result.as_uint = (s0 != s1);
+
+	si_isa_bitmask_sreg(INST.vdst, result);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: S[%d:+1]<=(%d) ", si_isa_work_item->id_in_wavefront,
+			INST.vdst, result.as_uint);
+	}
+}
+#undef INST
+
+#define INST SI_INST_VOP3b
 void si_isa_V_CMP_GE_U32_VOP3b_impl()
 {
-	NOT_IMPL();
-}
+	/* D.u = (S0.u >= S1.u). */
 
+	unsigned int s0 = si_isa_read_reg(INST.src0).as_uint;
+	unsigned int s1 = si_isa_read_reg(INST.src1).as_uint;
+
+	if(INST.neg & 1)
+		s0 = -s0;
+	if(INST.neg & 2)
+		s1 = -s1;
+
+	union si_reg_t result;
+	result.as_uint = (s0 >= s1);
+
+	si_isa_bitmask_sreg(INST.vdst, result);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: S[%d:+1]<=(%d) ", si_isa_work_item->id_in_wavefront,
+			INST.vdst, result.as_uint);
+	}
+}
+#undef INST
+
+#define INST SI_INST_VOP3b
 void si_isa_V_ADDC_U32_VOP3b_impl()
 {
-	NOT_IMPL();
-}
+	/* D.u = S0.u + S1.u + VCC; VCC=carry-out (VOP3:sgpr=carry-out, S2.u=carry-in). */
 
+	unsigned int s0 = si_isa_read_reg(INST.src0).as_uint;
+	unsigned int s1 = si_isa_read_reg(INST.src1).as_uint;
+
+	if(INST.neg & 1)
+		s0 = -s0;
+	if(INST.neg & 2)
+		s1 = -s1;
+	assert(!(INST.neg & 4));
+
+	unsigned int carry_in = si_isa_read_bitmask_sreg(INST.src2);
+
+	union si_reg_t sum;
+	sum.as_uint = s0 + s1 + carry_in;
+	union si_reg_t carry_out;
+	carry_out.as_uint = (((long)s0 + (long)s1 + (long)carry_in) > 0xFFFFFFFF);
+
+	si_isa_write_vreg(INST.vdst, sum);
+	si_isa_bitmask_sreg(INST.sdst, carry_out);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", si_isa_work_item->id, INST.vdst, sum.as_uint);
+		si_isa_debug("wf_id%d: vcc<=(%d) ", si_isa_work_item->id_in_wavefront, carry_out.as_uint);
+	}
+}
+#undef INST
+
+#define INST SI_INST_DS
 void si_isa_DS_WRITE_B32_impl()
 {
-	NOT_IMPL();
-}
+	/* DS[A] = D0; write a Dword. */
 
+	unsigned int addr = si_isa_read_vreg(INST.addr).as_uint;
+	unsigned int data0 = si_isa_read_vreg(INST.data0).as_uint;
+
+	if(INST.gds)
+	{
+		mem_write(si_emu->global_mem, addr, 4, &data0);
+	}
+	else
+	{
+		mem_write(si_isa_work_group->local_mem, addr, 4, &data0);
+	}
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("GDS?:%d DS[%d]<=(%d) ", INST.gds, addr, data0);
+	}
+}
+#undef INST
+
+#define INST SI_INST_DS
 void si_isa_DS_READ_B32_impl()
 {
-	NOT_IMPL();
+	/* R = DS[A]; Dword read. */
+
+	unsigned int addr = si_isa_read_vreg(INST.addr).as_uint;
+	union si_reg_t data;
+
+	if(INST.gds)
+	{
+		mem_read(si_emu->global_mem, addr, 4, &data.as_uint);
+	}
+	else
+	{
+		mem_read(si_isa_work_group->local_mem, addr, 4, &data.as_uint);
+	}
+
+	si_isa_write_vreg(INST.vdst, data);
+
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", si_isa_work_item->id, INST.vdst, data.as_uint);
+	}
 }
+#undef INST
 
 #define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
@@ -1061,10 +1575,57 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl()
 }
 #undef INST
 
+#define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_LOAD_FORMAT_XYZW_impl()
 {
-	NOT_IMPL();
+	assert(!INST.addr64);
+	assert(!INST.index);
+
+	unsigned int offset;
+	int elem_size;
+	int num_elems;
+	int bytes_to_read;
+	struct si_buffer_resource_t buf_desc;
+	uint32_t buffer_addr;
+	union si_reg_t value;
+
+	if (INST.offen)
+	{
+		offset = si_isa_read_vreg(INST.vaddr).as_uint;
+	}
+	else
+	{
+		offset = INST.offset;
+	}
+
+	elem_size = si_isa_get_elem_size(INST.dfmt);
+	num_elems = si_isa_get_num_elems(INST.dfmt);
+
+	/* If num_elems is greater than 1, we need to see how
+	 * the destination register is handled */
+	assert(num_elems == 1);
+
+	bytes_to_read = elem_size * num_elems;
+
+	/* srsrc is in units of 4 registers */
+	si_isa_read_buf_res(&buf_desc, INST.srsrc*4);
+
+	for(int i = 0; i < 4; i++)
+	{
+		buffer_addr = offset + 4*i;
+
+		mem_read(si_emu->global_mem, buffer_addr, bytes_to_read, &value);
+
+		si_isa_write_vreg(INST.vdata + i, value);
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("t%d: V%u<=(%u)(%d,%gf) ", si_isa_work_item->id, INST.vdata + i,
+				buffer_addr, value.as_uint, value.as_float);
+		}
+	}
 }
+#undef INST
 
 #define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
@@ -1115,7 +1676,55 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl()
 }
 #undef INST
 
+#define INST SI_INST_MTBUF
 void si_isa_T_BUFFER_STORE_FORMAT_XYZW_impl()
 {
-	NOT_IMPL();
+	assert(!INST.addr64);
+	assert(!INST.index);
+
+	unsigned int offset;
+	int elem_size;
+	int num_elems;
+	int bytes_to_write;
+	struct si_buffer_resource_t buf_desc;
+	uint32_t buffer_addr;
+	union si_reg_t value;
+
+	if (INST.offen)
+	{
+		offset = si_isa_read_vreg(INST.vaddr).as_uint;
+	}
+	else
+	{
+		offset = INST.offset;
+	}
+
+	elem_size = si_isa_get_elem_size(INST.dfmt);
+	num_elems = si_isa_get_num_elems(INST.dfmt);
+
+	/* If num_elems is greater than 1, we need to see how
+	 * the destination register is handled */
+	assert(num_elems == 1);
+
+	bytes_to_write = elem_size * num_elems;
+
+	/* srsrc is in units of 4 registers */
+	si_isa_read_buf_res(&buf_desc, INST.srsrc*4);
+
+	for(int i = 0; i < 4; i++)
+	{
+
+		buffer_addr = offset + 4*i;
+
+		value = si_isa_read_vreg(INST.vdata + i);
+
+		mem_write(si_emu->global_mem, buffer_addr, bytes_to_write, &value);
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("t%d: (%u)<=V%u(%d,%gf) ", si_isa_work_item->id, buffer_addr,
+				INST.vdata + i, value.as_uint, value.as_float);
+		}
+	}
 }
+#undef INST

@@ -21,76 +21,65 @@
 #include <debug.h>
 #include <stdlib.h>
 
-#include <evergreen-emu.h>
+#include <southern-islands-emu.h>
 #include <mem-system.h>
 #include <x86-emu.h>
 
 
-struct evg_opencl_kernel_t *evg_opencl_kernel_create()
+struct si_opencl_kernel_t *si_opencl_kernel_create()
 {
-	struct evg_opencl_kernel_t *kernel;
-	int i;
+	struct si_opencl_kernel_t *kernel;
 
 	/* Allocate */
-	kernel = calloc(1, sizeof(struct evg_opencl_kernel_t));
+	kernel = calloc(1, sizeof(struct si_opencl_kernel_t));
 	if (!kernel)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	kernel->id = evg_opencl_repo_new_object_id(evg_emu->opencl_repo,
-		evg_opencl_object_kernel);
+	kernel->id = si_opencl_repo_new_object_id(si_emu->opencl_repo,
+		si_opencl_object_kernel);
 	kernel->ref_count = 1;
 	kernel->arg_list = list_create();
 
 	/* Create the UAV-to-physical-address lookup lists */
-	kernel->uav_read_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
-	kernel->uav_write_list = list_create_with_size(12); /* FIXME Repalce with MAX_UAVS? */
-	kernel->constant_buffer_list = list_create_with_size(25); /* For constant buffers (128 to 153) */
-	/* FIXME Replace with new list functionality */
-	for (i = 0; i < 12; i++) 
-	{
-		list_add(kernel->uav_read_list, NULL);
-		list_add(kernel->uav_write_list, NULL);
-	}
-	for (i = 0; i < 25; i++) 
-		list_add(kernel->constant_buffer_list, NULL);
+	kernel->uav_list = list_create();
+	kernel->constant_buffer_list = list_create();
 
 	/* Return */
-	evg_opencl_repo_add_object(evg_emu->opencl_repo, kernel);
+	si_opencl_repo_add_object(si_emu->opencl_repo, kernel);
 	return kernel;
 }
 
 
-void evg_opencl_kernel_free(struct evg_opencl_kernel_t *kernel)
+void si_opencl_kernel_free(struct si_opencl_kernel_t *kernel)
 {
 	int i;
 
 	/* Free arguments */
 	for (i = 0; i < list_count(kernel->arg_list); i++)
-		evg_opencl_kernel_arg_free((struct evg_opencl_kernel_arg_t *) list_get(kernel->arg_list, i));
+		si_opencl_kernel_arg_free((struct si_opencl_kernel_arg_t *) list_get(kernel->arg_list, i));
 	list_free(kernel->arg_list);
 
 	/* Free lists */
-	list_free(kernel->uav_read_list);
-	list_free(kernel->uav_write_list);
+	list_free(kernel->uav_list);
 	list_free(kernel->constant_buffer_list);
 
 	/* AMD Binary (internal ELF) */
 	if (kernel->bin_file)
-		evg_bin_file_free(kernel->bin_file);
+		si_bin_file_free(kernel->bin_file);
 
 	/* Free kernel */
-	evg_opencl_repo_remove_object(evg_emu->opencl_repo, kernel);
+	si_opencl_repo_remove_object(si_emu->opencl_repo, kernel);
 	free(kernel);
 }
 
 
-struct evg_opencl_kernel_arg_t *evg_opencl_kernel_arg_create(char *name)
+struct si_opencl_kernel_arg_t *si_opencl_kernel_arg_create(char *name)
 {
-	struct evg_opencl_kernel_arg_t *arg;
+	struct si_opencl_kernel_arg_t *arg;
 
 	/* Allocate */
-	arg = calloc(1, sizeof(struct evg_opencl_kernel_arg_t) + strlen(name) + 1);
+	arg = calloc(1, sizeof(struct si_opencl_kernel_arg_t) + strlen(name) + 1);
 	if (!arg)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -102,51 +91,77 @@ struct evg_opencl_kernel_arg_t *evg_opencl_kernel_arg_create(char *name)
 }
 
 
-void evg_opencl_kernel_arg_free(struct evg_opencl_kernel_arg_t *arg)
+void si_opencl_kernel_arg_free(struct si_opencl_kernel_arg_t *arg)
 {
 	free(arg);
 }
 
+void si_opencl_kernel_init_uav_table(struct si_opencl_kernel_t *kernel)
+{
+	int i;
+	uint32_t buffer_addr;
+	struct si_opencl_mem_t *mem_obj;
+	struct si_buffer_resource_t buf_desc;
+
+	/* Zero-out the buffer resource descriptor */
+	memset(&buf_desc, 0, 16);
+
+	for (i = 0; i < list_count(kernel->uav_list); i++)
+	{
+		   /* Get the memory object for the buffer */
+		   mem_obj = list_get(kernel->uav_list, i);
+
+		   /* Get the address of the buffer in global memory */
+		   buffer_addr = mem_obj->device_ptr;
+
+		   /* Initialize the buffer resource descriptor for this UAV */
+		   buf_desc.base_addr = buffer_addr;
+
+		   /* Write the buffer resource descriptor into the UAV table at offset 320
+			* with 32 bytes spacing */
+		   mem_write(si_emu->global_mem, UAV_TABLE_START + 320 + i*32, 16, &buf_desc);
+	}
+}
 
 /* Analyze 'metadata' associated with kernel */
 
-#define EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(_tc) \
+#define SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(_tc) \
 	if (token_count != (_tc)) \
 	fatal("%s: meta data entry '%s' expects %d tokens", \
 	__FUNCTION__, line_ptrs[0], (_tc));
-#define EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(_idx) \
+#define SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(_idx) \
 	fatal("%s: meta data entry '%s', token %d: value '%s' not supported.\n%s", \
 	__FUNCTION__, line_ptrs[0], (_idx), line_ptrs[(_idx)], \
-	evg_err_opencl_kernel_metadata_note);
-#define EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(_idx, _str) \
+	si_err_opencl_kernel_metadata_note);
+#define SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(_idx, _str) \
 	if (strcmp(line_ptrs[(_idx)], (_str))) \
-	EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(_idx);
+	SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(_idx);
 
-static char *evg_err_opencl_kernel_metadata_note =
+static char *si_err_opencl_kernel_metadata_note =
 	"\tThe kernel binary loaded by your application is a valid ELF file. In this\n"
 	"\tfile, a '.rodata' section contains specific information about the OpenCL\n"
 	"\tkernel. However, this information is only partially supported by Multi2Sim.\n"
 	"\tTo request support for this error, please email 'development@multi2sim.org'.\n";
 
-static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
+static void si_opencl_kernel_load_metadata(struct si_opencl_kernel_t *kernel)
 {
 	char line[MAX_STRING_SIZE];
 	char *line_ptrs[MAX_STRING_SIZE];
 	int token_count;
-	struct evg_opencl_kernel_arg_t *arg;
+	struct si_opencl_kernel_arg_t *arg;
 	struct elf_buffer_t *buffer;
 
 	/* Open as text file */
 	buffer = &kernel->metadata_buffer;
 	elf_buffer_seek(buffer, 0);
-	evg_opencl_debug("Kernel Metadata:\n"); 
+	si_opencl_debug("Kernel Metadata:\n");
 	for (;;)
 	{
 		/* Read line from buffer */
 		elf_buffer_read_line(buffer, line, MAX_STRING_SIZE);
 		if (!line[0])
 			break;
-		evg_opencl_debug("\t%s\n", line);
+		si_opencl_debug("\t%s\n", line);
 
 		/* Split line */
 		line_ptrs[0] = strtok(line, ":;\n");
@@ -159,6 +174,8 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 			!strcmp(line_ptrs[0], "device") ||
 			!strcmp(line_ptrs[0], "uniqueid") ||
 			!strcmp(line_ptrs[0], "uavid") ||
+			!strcmp(line_ptrs[0], "privateid") ||
+			!strcmp(line_ptrs[0], "reflection") ||
 			!strcmp(line_ptrs[0], "ARGEND"))
 			continue;
 
@@ -166,8 +183,8 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		if (!strcmp(line_ptrs[0], "image"))
 		{
 			/* Create input image argument */
-			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
-			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_IMAGE;
+			arg = si_opencl_kernel_arg_create(line_ptrs[1]);
+			arg->kind = SI_OPENCL_KERNEL_ARG_KIND_IMAGE;
 			if (!strcmp(line_ptrs[2], "2D"))
 			{
 				/* Ignore dimensions for now */
@@ -179,24 +196,24 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 			else
 			{
 				fatal("%s: Invalid number of dimensions for OpenCL Image (%s)\n%s",
-					__FUNCTION__, line_ptrs[2], evg_err_opencl_param_note);
+					__FUNCTION__, line_ptrs[2], si_err_opencl_param_note);
 			}
 			
 			if (!strcmp(line_ptrs[3], "RO"))
 			{
-				arg->access_type = EVG_OPENCL_KERNEL_ARG_READ_ONLY;
+				arg->access_type = SI_OPENCL_KERNEL_ARG_READ_ONLY;
 			}
 			else if (!strcmp(line_ptrs[3], "WO"))
 			{
-				arg->access_type = EVG_OPENCL_KERNEL_ARG_WRITE_ONLY;
+				arg->access_type = SI_OPENCL_KERNEL_ARG_WRITE_ONLY;
 			}
 			else
 			{
 				fatal("%s: Invalid memory access type for OpenCL Image (%s)\n%s",
-					__FUNCTION__, line_ptrs[3], evg_err_opencl_param_note);
+					__FUNCTION__, line_ptrs[3], si_err_opencl_param_note);
 			}
 			arg->uav = atoi(line_ptrs[4]);
-			arg->mem_scope = EVG_OPENCL_MEM_SCOPE_GLOBAL;
+			arg->mem_scope = SI_OPENCL_MEM_SCOPE_GLOBAL;
 
 			list_add(kernel->arg_list, arg);
 
@@ -209,24 +226,28 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		{
 			if (!strcmp(line_ptrs[1], "hwprivate"))
 			{
-				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
+				SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
 			}
 			else if (!strcmp(line_ptrs[1], "hwregion"))
 			{
-				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
-				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
+				SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
+				SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(2, "0");
 			}
 			else if (!strcmp(line_ptrs[1], "hwlocal"))
 			{
-				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
+				SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 				kernel->func_mem_local = atoi(line_ptrs[2]);
 			}
 			else if (!strcmp(line_ptrs[1], "datareqd"))
 			{
-				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(2); 
+				SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(2);
+			}
+			else if (!strcmp(line_ptrs[1], "uavprivate"))
+			{
+				SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 			}
 			else
-				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
+				SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(1);
 
 			continue;
 		}
@@ -234,11 +255,11 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		/* Entry 'value'. Format: value:<ArgName>:<DataType>:<Size>:<ConstNum>:<ConstOffset> */
 		if (!strcmp(line_ptrs[0], "value"))
 		{
-			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(6);
-			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
-			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
-			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
-			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_VALUE;
+			SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(6);
+			SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
+			SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
+			arg = si_opencl_kernel_arg_create(line_ptrs[1]);
+			arg->kind = SI_OPENCL_KERNEL_ARG_KIND_VALUE;
 			list_add(kernel->arg_list, arg);
 
 			continue;
@@ -251,40 +272,40 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 			/* Metadata version 3:1:104 (as specified in entry 'version') uses 12 items. */
 			if (token_count != 9 && token_count != 10 && token_count != 12)
 			{
-				EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(10);
+				SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(10);
 			}
-			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
-			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
+			SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
+			SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
 
 			/* We don't know what the two last entries are, so make sure that they are
 			 * set to 0. If they're not 0, it probably means something important. */
 			if (token_count == 12)
 			{
-				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(10, "0");
-				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(11, "0");
+				SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(10, "0");
+				SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(11, "0");
 			}
 
-			arg = evg_opencl_kernel_arg_create(line_ptrs[1]);
-			arg->kind = EVG_OPENCL_KERNEL_ARG_KIND_POINTER;
+			arg = si_opencl_kernel_arg_create(line_ptrs[1]);
+			arg->kind = SI_OPENCL_KERNEL_ARG_KIND_POINTER;
 
 			list_add(kernel->arg_list, arg);
 			if (!strcmp(line_ptrs[6], "uav"))
 			{
-				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_GLOBAL;
+				arg->mem_scope = SI_OPENCL_MEM_SCOPE_GLOBAL;
 				arg->uav = atoi(line_ptrs[7]);
 			}
 			else if (!strcmp(line_ptrs[6], "hl"))
 			{
-				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_LOCAL;
+				arg->mem_scope = SI_OPENCL_MEM_SCOPE_LOCAL;
 				arg->uav = atoi(line_ptrs[7]);
 			}
 			else if (!strcmp(line_ptrs[6], "hc"))
 			{
-				arg->mem_scope = EVG_OPENCL_MEM_SCOPE_CONSTANT;
+				arg->mem_scope = SI_OPENCL_MEM_SCOPE_CONSTANT;
 				arg->uav = atoi(line_ptrs[7]);
 			}
 			else
-				EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(6);
+				SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED(6);
 
 			continue;
 		}
@@ -292,8 +313,8 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		/* Entry 'function'. Format: function:?:<uniqueid> */
 		if (!strcmp(line_ptrs[0], "function"))
 		{
-			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
-			EVG_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(1, "1");
+			SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
+			SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(1, "1");
 			kernel->func_uniqueid = atoi(line_ptrs[2]);
 			continue;
 		}
@@ -316,7 +337,7 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		 */
 		if (!strcmp(line_ptrs[0], "reflection"))
 		{
-			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
+			SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 			continue;
 		}
 
@@ -325,7 +346,7 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		 */
 		if (!strcmp(line_ptrs[0], "privateid"))
 		{
-			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(2);
+			SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(2);
 			continue;
 		}
 
@@ -334,7 +355,7 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 		 * is declared as '__global const'. Entry ignored here. */
 		if (!strcmp(line_ptrs[0], "constarg"))
 		{
-			EVG_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
+			SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(3);
 			continue;
 		}
 
@@ -346,40 +367,40 @@ static void evg_opencl_kernel_load_metadata(struct evg_opencl_kernel_t *kernel)
 
 
 /* Extract and analyze information from the program binary associated with 'kernel_name' */
-void evg_opencl_kernel_load(struct evg_opencl_kernel_t *kernel, char *kernel_name)
+void si_opencl_kernel_load(struct si_opencl_kernel_t *kernel, char *kernel_name)
 {
-	struct evg_opencl_program_t *program;
+	struct si_opencl_program_t *program;
 	char symbol_name[MAX_STRING_SIZE];
 	char name[MAX_STRING_SIZE];
 
 	/* First */
 	strncpy(kernel->name, kernel_name, MAX_STRING_SIZE);
-	program = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-		evg_opencl_object_program, kernel->program_id);
+	program = si_opencl_repo_get_object(si_emu->opencl_repo,
+		si_opencl_object_program, kernel->program_id);
 
 	/* Read 'metadata' symbol */
 	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_metadata", kernel_name);
-	evg_opencl_program_read_symbol(program, symbol_name, &kernel->metadata_buffer);
+	si_opencl_program_read_symbol(program, symbol_name, &kernel->metadata_buffer);
 	
 	/* Read 'kernel' symbol */
 	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_kernel", kernel_name);
-	evg_opencl_program_read_symbol(program, symbol_name, &kernel->kernel_buffer);
+	si_opencl_program_read_symbol(program, symbol_name, &kernel->kernel_buffer);
 	
 	/* Read 'header' symbol */
 	snprintf(symbol_name, MAX_STRING_SIZE, "__OpenCL_%s_header", kernel_name);
-	evg_opencl_program_read_symbol(program, symbol_name, &kernel->header_buffer);
+	si_opencl_program_read_symbol(program, symbol_name, &kernel->header_buffer);
 
 	/* Create and parse kernel binary (internal ELF).
 	 * The internal ELF is contained in the buffer pointer to by the 'kernel' symbol. */
 	snprintf(name, sizeof(name), "clKernel<%s>.InternalELF", kernel_name);
-	kernel->bin_file = evg_bin_file_create(kernel->kernel_buffer.ptr, kernel->kernel_buffer.size, name);
+	kernel->bin_file = si_bin_file_create(kernel->kernel_buffer.ptr, kernel->kernel_buffer.size, name);
 	
 	/* Analyze 'metadata' file */
-	evg_opencl_kernel_load_metadata(kernel);
+	si_opencl_kernel_load_metadata(kernel);
 }
 
 
-uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kernel, uint32_t name,
+uint32_t si_opencl_kernel_get_work_group_info(struct si_opencl_kernel_t *kernel, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size)
 {
 	uint32_t size_ret = 0;
@@ -399,14 +420,14 @@ uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kerne
 	case 0x11b2:  /* CL_KERNEL_LOCAL_MEM_SIZE */
 	{
 		int i;
-		struct evg_opencl_kernel_arg_t *arg;
+		struct si_opencl_kernel_arg_t *arg;
 
 		/* Compute local memory usage */
 		local_mem_size = kernel->func_mem_local;
 		for (i = 0; i < list_count(kernel->arg_list); i++)
 		{
 			arg = list_get(kernel->arg_list, i);
-			if (arg->mem_scope == EVG_OPENCL_MEM_SCOPE_LOCAL)
+			if (arg->mem_scope == SI_OPENCL_MEM_SCOPE_LOCAL)
 				local_mem_size += arg->size;
 		}
 
@@ -421,7 +442,7 @@ uint32_t evg_opencl_kernel_get_work_group_info(struct evg_opencl_kernel_t *kerne
 	case 0x11b4:  /* CL_KERNEL_PRIVATE_MEM_SIZE */
 	default:
 		fatal("%s: invalid or not implemented value for 'name' (0x%x)\n%s",
-			__FUNCTION__, name, evg_err_opencl_param_note);
+			__FUNCTION__, name, si_err_opencl_param_note);
 	}
 	
 	/* Write to memory and return size */

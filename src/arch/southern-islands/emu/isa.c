@@ -140,6 +140,21 @@ void si_isa_bitmask_sreg(int sreg, union si_reg_t value)
 	}
 }
 
+int si_isa_read_bitmask_sreg(int sreg)
+{
+	unsigned int mask = 1;
+	if (si_isa_work_item->id_in_wavefront < 32)
+	{
+		mask <<= si_isa_work_item->id_in_wavefront;
+		return (si_isa_wavefront->sreg[sreg].as_uint & mask) >> si_isa_work_item->id_in_wavefront;
+	}
+	else
+	{
+		mask <<= (si_isa_work_item->id_in_wavefront - 32);
+		return (si_isa_wavefront->sreg[sreg + 1].as_uint & mask) >> (si_isa_work_item->id_in_wavefront - 32);
+	}
+}
+
 /* Initialize a buffer resource descriptor */
 void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg)
 {
