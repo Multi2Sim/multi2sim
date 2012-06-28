@@ -23,13 +23,6 @@
 #include <mem-system.h>
 #include <x86-emu.h>
 
-#define evg_isa_work_item __COMPILATION_ERROR__
-#define evg_isa_wavefront __COMPILATION_ERROR__
-#define evg_isa_work_group __COMPILATION_ERROR__
-#define evg_isa_ndrange __COMPILATION_ERROR__
-
-#define evg_isa_inst __COMPILATION_ERROR__
-
 
 char *evg_err_isa_note =
 	"\tThe AMD Evergreen instruction set is partially supported by Multi2Sim. If\n"
@@ -62,7 +55,7 @@ void evg_isa_ALU_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst
 	wavefront->clause_buf_end = wavefront->clause_buf_start + (W1.count + 1) * 8;
 	wavefront->clause_buf = wavefront->clause_buf_start;
 	wavefront->clause_kind = EVG_CLAUSE_ALU;
-	evg_isa_alu_clause_start();
+	evg_isa_alu_clause_start(wavefront);
 }
 #undef W0
 #undef W1
@@ -893,7 +886,7 @@ void evg_isa_TC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 	wavefront->clause_buf_end = wavefront->clause_buf_start + (W1.count + 1) * 16;
 	wavefront->clause_buf = wavefront->clause_buf_start;
 	wavefront->clause_kind = EVG_CLAUSE_TEX;
-	evg_isa_tc_clause_start();
+	evg_isa_tc_clause_start(wavefront);
 
 	/* If VPM is set, copy 'active' mask at the top of the stack to 'pred' mask.
 	 * This will make all fetches within the clause happen only for active pixels.
@@ -1320,8 +1313,8 @@ void evg_isa_PRED_SETE_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 	evg_isa_enqueue_write_dest(work_item, inst, dst.as_uint);
 
 	/* Active masks */
-	evg_isa_enqueue_push_before();
-	evg_isa_enqueue_pred_set(cond);
+	evg_isa_enqueue_push_before(work_item, inst);
+	evg_isa_enqueue_pred_set(work_item, inst, cond);
 }
 #undef W0
 #undef W1
@@ -1347,8 +1340,8 @@ void evg_isa_PRED_SETGT_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	evg_isa_enqueue_write_dest(work_item, inst, dst.as_uint);
 
 	/* Active masks */
-	evg_isa_enqueue_push_before();
-	evg_isa_enqueue_pred_set(cond);
+	evg_isa_enqueue_push_before(work_item, inst);
+	evg_isa_enqueue_pred_set(work_item, inst, cond);
 }
 #undef W0
 #undef W1
@@ -1374,8 +1367,8 @@ void evg_isa_PRED_SETGE_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	evg_isa_enqueue_write_dest(work_item, inst, dst.as_uint);
 
 	/* Active masks */
-	evg_isa_enqueue_push_before();
-	evg_isa_enqueue_pred_set(cond);
+	evg_isa_enqueue_push_before(work_item, inst);
+	evg_isa_enqueue_pred_set(work_item, inst, cond);
 }
 #undef W0
 #undef W1
@@ -1401,8 +1394,8 @@ void evg_isa_PRED_SETNE_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	evg_isa_enqueue_write_dest(work_item, inst, dst.as_uint);
 
 	/* Active masks */
-	evg_isa_enqueue_push_before();
-	evg_isa_enqueue_pred_set(cond);
+	evg_isa_enqueue_push_before(work_item, inst);
+	evg_isa_enqueue_pred_set(work_item, inst, cond);
 }
 #undef W0
 #undef W1
@@ -1745,8 +1738,8 @@ void evg_isa_PREDE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 	evg_isa_enqueue_write_dest(work_item, inst, dst.as_uint);
 
 	/* Active masks */
-	evg_isa_enqueue_push_before();
-	evg_isa_enqueue_pred_set(cond);
+	evg_isa_enqueue_push_before(work_item, inst);
+	evg_isa_enqueue_pred_set(work_item, inst, cond);
 }
 #undef W0
 #undef W1
@@ -1772,8 +1765,8 @@ void evg_isa_PRED_SETGE_INT_impl(struct evg_work_item_t *work_item, struct evg_i
 	evg_isa_enqueue_write_dest(work_item, inst, dst.as_uint);
 
 	/* Active masks */
-	evg_isa_enqueue_push_before();
-	evg_isa_enqueue_pred_set(cond);
+	evg_isa_enqueue_push_before(work_item, inst);
+	evg_isa_enqueue_pred_set(work_item, inst, cond);
 }
 #undef W0
 #undef W1
@@ -1799,8 +1792,8 @@ void evg_isa_PRED_SETGT_INT_impl(struct evg_work_item_t *work_item, struct evg_i
 	evg_isa_enqueue_write_dest(work_item, inst, dst.as_uint);
 
 	/* Active masks */
-	evg_isa_enqueue_push_before();
-	evg_isa_enqueue_pred_set(cond);
+	evg_isa_enqueue_push_before(work_item, inst);
+	evg_isa_enqueue_pred_set(work_item, inst, cond);
 }
 #undef W0
 #undef W1
@@ -1826,8 +1819,8 @@ void evg_isa_PRED_SETNE_INT_impl(struct evg_work_item_t *work_item, struct evg_i
 	evg_isa_enqueue_write_dest(work_item, inst, dst.as_uint);
 
 	/* Active masks */
-	evg_isa_enqueue_push_before();
-	evg_isa_enqueue_pred_set(cond);
+	evg_isa_enqueue_push_before(work_item, inst);
+	evg_isa_enqueue_pred_set(work_item, inst, cond);
 }
 #undef W0
 #undef W1
@@ -2443,6 +2436,7 @@ void evg_isa_PRED_SETGE_64_impl(struct evg_work_item_t *work_item, struct evg_in
 #define W1 EVG_ALU_WORD1_OP2
 void evg_isa_MUL_64_VEC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_alu_group_t *alu_group = inst->alu_group;
 	struct evg_inst_t *inst_slot[4];
 
 	enum evg_alu_enum alu;
@@ -2463,7 +2457,7 @@ void evg_isa_MUL_64_VEC_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	/* Get multi-slot instruction */
 	for (i = 0; i < 4; i++)
 	{
-		inst_slot[i] = evg_isa_get_alu_inst(i);
+		inst_slot[i] = evg_isa_get_alu_inst(alu_group, i);
 		if (!inst_slot[i])
 			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
 		if (inst_slot[i]->info->inst != inst->info->inst)
@@ -2497,6 +2491,7 @@ void evg_isa_MUL_64_VEC_impl(struct evg_work_item_t *work_item, struct evg_inst_
 #define W1 EVG_ALU_WORD1_OP2
 void evg_isa_ADD_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_alu_group_t *alu_group = inst->alu_group;
 	struct evg_inst_t *inst_slot[2];
 
 	enum evg_alu_enum alu;
@@ -2517,7 +2512,7 @@ void evg_isa_ADD_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *i
 	/* Get multi-slot instruction */
 	for (i = 0; i < 2; i++)
 	{
-		inst_slot[i] = evg_isa_get_alu_inst(alu / 2 * 2 + i);
+		inst_slot[i] = evg_isa_get_alu_inst(alu_group, alu / 2 * 2 + i);
 		if (!inst_slot[i])
 			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
 		if (inst_slot[i]->info->inst != inst->info->inst)
@@ -2551,6 +2546,7 @@ void evg_isa_MOVA_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 
 void evg_isa_FLT64_TO_FLT32_VEC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_alu_group_t *alu_group = inst->alu_group;
 	struct evg_inst_t *inst_slot[2];
 
 	enum evg_alu_enum alu;
@@ -2572,7 +2568,7 @@ void evg_isa_FLT64_TO_FLT32_VEC_impl(struct evg_work_item_t *work_item, struct e
 	/* Get multi-slot instruction */
 	for (i = 0; i < 2; i++)
 	{
-		inst_slot[i] = evg_isa_get_alu_inst(alu / 2 * 2 + i);
+		inst_slot[i] = evg_isa_get_alu_inst(alu_group, alu / 2 * 2 + i);
 		if (!inst_slot[i])
 			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
 		if (inst_slot[i]->info->inst != inst->info->inst)
@@ -2595,6 +2591,7 @@ void evg_isa_FLT64_TO_FLT32_VEC_impl(struct evg_work_item_t *work_item, struct e
 
 void evg_isa_FLT32_TO_FLT64_VEC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
+	struct evg_alu_group_t *alu_group = inst->alu_group;
 	struct evg_inst_t *inst_slot[2];
 
 	enum evg_alu_enum alu;
@@ -2616,7 +2613,7 @@ void evg_isa_FLT32_TO_FLT64_VEC_impl(struct evg_work_item_t *work_item, struct e
 	/* Get multi-slot instruction */
 	for (i = 0; i < 2; i++)
 	{
-		inst_slot[i] = evg_isa_get_alu_inst(alu / 2 * 2 + i);
+		inst_slot[i] = evg_isa_get_alu_inst(alu_group, alu / 2 * 2 + i);
 		if (!inst_slot[i])
 			fatal("%s: unexpected empty VLIW slots", __FUNCTION__);
 		if (inst_slot[i]->info->inst != inst->info->inst)
@@ -2913,7 +2910,7 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(idx_offset, 0);
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.dst_chan, 0);
 		/* FIXME: dst_chan? Does address need to be multiplied? */
-		evg_isa_enqueue_write_lds(op0, op1, 4);
+		evg_isa_enqueue_write_lds(work_item, inst, op0, op1, 4);
 
 		wavefront->local_mem_write = 1;
 		work_item->local_mem_access_count = 1;
@@ -2939,8 +2936,8 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W0.pred_sel, 0);
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.dst_chan, 0);
-		evg_isa_enqueue_write_lds(dst, src0, 4);
-		evg_isa_enqueue_write_lds(tmp, src1, 4);  /* FIXME: correct? */
+		evg_isa_enqueue_write_lds(work_item, inst, dst, src0, 4);
+		evg_isa_enqueue_write_lds(work_item, inst, tmp, src1, 4);  /* FIXME: correct? */
 
 		wavefront->local_mem_write = 1;
 		work_item->local_mem_access_count = 2;
@@ -2960,7 +2957,7 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 		src = op1;
 		dst = op0;
 
-		evg_isa_enqueue_write_lds(dst, src, 1);
+		evg_isa_enqueue_write_lds(work_item, inst, dst, src, 1);
 
 		wavefront->local_mem_write = 1; 
 		work_item->local_mem_access_count = 1;
@@ -2977,7 +2974,7 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 		src = op1;
 		dst = op0;
 
-		evg_isa_enqueue_write_lds(dst, src, 2);
+		evg_isa_enqueue_write_lds(work_item, inst, dst, src, 2);
 
 		wavefront->local_mem_write = 1;
 		work_item->local_mem_access_count = 1;

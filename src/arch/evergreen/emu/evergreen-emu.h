@@ -1073,6 +1073,9 @@ enum evg_isa_write_task_kind_t
 
 struct evg_isa_write_task_t
 {
+	/* Work-item affected */
+	struct evg_work_item_t *work_item;
+
 	/* All */
 	enum evg_isa_write_task_kind_t kind;
 	struct evg_inst_t *inst;
@@ -1096,13 +1099,18 @@ extern struct repos_t *evg_isa_write_task_repos;
 
 
 /* Functions to handle deferred tasks */
-void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, int value_size);
+void evg_isa_enqueue_write_lds(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, unsigned int addr, unsigned int value,
+	int value_size);
 void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
 	struct evg_inst_t *inst, unsigned int value);
 void evg_isa_enqueue_write_dest_float(struct evg_work_item_t *work_item,
 	struct evg_inst_t *inst, float value);
-void evg_isa_enqueue_push_before(void);
-void evg_isa_enqueue_pred_set(int cond);
+void evg_isa_enqueue_push_before(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst);
+void evg_isa_enqueue_pred_set(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, int cond);
+
 void evg_isa_write_task_commit(struct evg_work_item_t *work_item);
 
 
@@ -1216,12 +1224,12 @@ void evg_isa_const_mem_write(int bank, int vector, int elem, void *value_ptr);
 void evg_isa_const_mem_read(int bank, int vector, int elem, void *value_ptr);
 
 /* For ALU clauses */
-void evg_isa_alu_clause_start(void);
-void evg_isa_alu_clause_end(void);
+void evg_isa_alu_clause_start(struct evg_wavefront_t *wavefront);
+void evg_isa_alu_clause_end(struct evg_wavefront_t *wavefront);
 
 /* For TC clauses */
-void evg_isa_tc_clause_start(void);
-void evg_isa_tc_clause_end(void);
+void evg_isa_tc_clause_start(struct evg_wavefront_t *wavefront);
+void evg_isa_tc_clause_end(struct evg_wavefront_t *wavefront);
 
 /* Read from source register */
 unsigned int evg_isa_read_gpr(struct evg_work_item_t *work_item,
@@ -1241,7 +1249,8 @@ unsigned int evg_isa_read_op_src_int(struct evg_work_item_t *work_item,
 float evg_isa_read_op_src_float(struct evg_work_item_t *work_item,
 	struct evg_inst_t *inst, int src_idx);
 
-struct evg_inst_t *evg_isa_get_alu_inst(enum evg_alu_enum alu);
+struct evg_inst_t *evg_isa_get_alu_inst(struct evg_alu_group_t *alu_group,
+	enum evg_alu_enum alu);
 
 void evg_isa_init(void);
 void evg_isa_done(void);
