@@ -445,8 +445,8 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 				switch (arg->mem_scope)
 					{
 
-					case EVG_OPENCL_MEM_SCOPE_CONSTANT:
-					case EVG_OPENCL_MEM_SCOPE_GLOBAL:
+					case SI_OPENCL_MEM_SCOPE_CONSTANT:
+					case SI_OPENCL_MEM_SCOPE_GLOBAL:
 					{
 						struct evg_opencl_mem_t *mem;
 
@@ -463,12 +463,12 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 						break;
 					}
 
-					case EVG_OPENCL_MEM_SCOPE_LOCAL:
+					case SI_OPENCL_MEM_SCOPE_LOCAL:
 					{
 						/* Pointer in __local scope.
 						 * Argument value is always NULL, just assign space for it. */
-						evg_isa_const_mem_write(1, cb_index, 0, &ndrange->local_mem_top);
-						evg_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
+						si_isa_const_mem_write(1, (cb_index*4)*4, &ndrange->local_mem_top);
+						si_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
 							i, arg->size, ndrange->local_mem_top);
 						ndrange->local_mem_top += arg->size;
 						cb_index++;

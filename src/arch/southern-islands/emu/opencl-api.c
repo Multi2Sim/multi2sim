@@ -2208,7 +2208,8 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 		}
 
 		/* Add the uav to the UAV list. */
-		if(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER)
+		if(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER && 
+			arg->mem_scope != SI_OPENCL_MEM_SCOPE_LOCAL)
 		{	
 			mem = si_opencl_repo_get_object(si_emu->opencl_repo,
 					si_opencl_object_mem, arg->value);
