@@ -617,55 +617,6 @@ long long evg_opencl_event_timer(void);
 
 
 /*
- * GPU Write Tasks
- */
-
-enum evg_isa_write_task_kind_t
-{
-	EVG_ISA_WRITE_TASK_NONE = 0,
-	EVG_ISA_WRITE_TASK_WRITE_LDS,
-	EVG_ISA_WRITE_TASK_WRITE_DEST,
-	EVG_ISA_WRITE_TASK_PUSH_BEFORE,
-	EVG_ISA_WRITE_TASK_SET_PRED
-};
-
-
-struct evg_isa_write_task_t
-{
-	/* All */
-	enum evg_isa_write_task_kind_t kind;
-	struct evg_inst_t *inst;
-	
-	/* When 'kind' == EVG_ISA_WRITE_TASK_WRITE_DEST */
-	int gpr, rel, chan, index_mode, write_mask;
-	unsigned int value;
-
-	/* When 'kind' == EVG_ISA_WRITE_TASK_WRITE_LDS */
-	unsigned int lds_addr;
-	unsigned int lds_value;
-        int lds_value_size;
-
-	/* When 'kind' == GPU_ISA_WRITE_TASK_PRED_SET */
-	int cond;
-};
-
-
-/* Repository for 'struct evg_isa_write_task_t' objects */
-extern struct repos_t *evg_isa_write_task_repos;
-
-
-/* Functions to handle deferred tasks */
-void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, int value_size);
-void evg_isa_enqueue_write_dest(uint32_t value);
-void evg_isa_enqueue_write_dest_float(float value);
-void evg_isa_enqueue_push_before(void);
-void evg_isa_enqueue_pred_set(int cond);
-void evg_isa_write_task_commit(void);
-
-
-
-
-/*
  * ND-Range
  */
 
@@ -1107,6 +1058,57 @@ void evg_work_item_update_branch_digest(struct evg_work_item_t *work_item,
 
 
 /*
+ * GPU Write Tasks
+ */
+
+enum evg_isa_write_task_kind_t
+{
+	EVG_ISA_WRITE_TASK_NONE = 0,
+	EVG_ISA_WRITE_TASK_WRITE_LDS,
+	EVG_ISA_WRITE_TASK_WRITE_DEST,
+	EVG_ISA_WRITE_TASK_PUSH_BEFORE,
+	EVG_ISA_WRITE_TASK_SET_PRED
+};
+
+
+struct evg_isa_write_task_t
+{
+	/* All */
+	enum evg_isa_write_task_kind_t kind;
+	struct evg_inst_t *inst;
+	
+	/* When 'kind' == EVG_ISA_WRITE_TASK_WRITE_DEST */
+	int gpr, rel, chan, index_mode, write_mask;
+	unsigned int value;
+
+	/* When 'kind' == EVG_ISA_WRITE_TASK_WRITE_LDS */
+	unsigned int lds_addr;
+	unsigned int lds_value;
+        int lds_value_size;
+
+	/* When 'kind' == GPU_ISA_WRITE_TASK_PRED_SET */
+	int cond;
+};
+
+
+/* Repository for 'struct evg_isa_write_task_t' objects */
+extern struct repos_t *evg_isa_write_task_repos;
+
+
+/* Functions to handle deferred tasks */
+void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, int value_size);
+void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, unsigned int value);
+void evg_isa_enqueue_write_dest_float(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, float value);
+void evg_isa_enqueue_push_before(void);
+void evg_isa_enqueue_pred_set(int cond);
+void evg_isa_write_task_commit(struct evg_work_item_t *work_item);
+
+
+
+
+/*
  * Evergreen ISA
  */
 
@@ -1148,53 +1150,53 @@ extern char *evg_err_isa_note;
 
 #define EVG_ISA_ARG_NOT_SUPPORTED(p) \
 	fatal("%s: %s: not supported for '" #p "' = 0x%x\n%s", \
-	__FUNCTION__, evg_isa_inst->info->name, (p), evg_err_isa_note);
+	__FUNCTION__, inst->info->name, (p), evg_err_isa_note);
 #define EVG_ISA_ARG_NOT_SUPPORTED_NEQ(p, v) \
 	{ if ((p) != (v)) fatal("%s: %s: not supported for '" #p "' != 0x%x\n%s", \
-	__FUNCTION__, evg_isa_inst->info->name, (v), evg_err_isa_note); }
+	__FUNCTION__, inst->info->name, (v), evg_err_isa_note); }
 #define EVG_ISA_ARG_NOT_SUPPORTED_RANGE(p, min, max) \
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: %s: not supported for '" #p "' out of range [%d:%d]\n%s", \
-	__FUNCTION__, evg_isa_inst->info->name, (min), (max), evg_err_opencl_param_note); }
+	__FUNCTION__, inst->info->name, (min), (max), evg_err_opencl_param_note); }
 
 
 /* Macros for fast access of instruction words */
-#define EVG_CF_WORD0			evg_isa_inst->words[0].cf_word0
-#define EVG_CF_GWS_WORD0		evg_isa_inst->words[0].cf_gws_word0
-#define EVG_CF_WORD1			evg_isa_inst->words[1].cf_word1
+#define EVG_CF_WORD0			inst->words[0].cf_word0
+#define EVG_CF_GWS_WORD0		inst->words[0].cf_gws_word0
+#define EVG_CF_WORD1			inst->words[1].cf_word1
 
-#define EVG_CF_ALU_WORD0		evg_isa_inst->words[0].cf_alu_word0
-#define EVG_CF_ALU_WORD1		evg_isa_inst->words[1].cf_alu_word1
-#define EVG_CF_ALU_WORD0_EXT		evg_isa_inst->words[0].cf_alu_word0_ext
-#define EVG_CF_ALU_WORD1_EXT		evg_isa_inst->words[1].cf_alu_word1_ext
+#define EVG_CF_ALU_WORD0		inst->words[0].cf_alu_word0
+#define EVG_CF_ALU_WORD1		inst->words[1].cf_alu_word1
+#define EVG_CF_ALU_WORD0_EXT		inst->words[0].cf_alu_word0_ext
+#define EVG_CF_ALU_WORD1_EXT		inst->words[1].cf_alu_word1_ext
 
-#define EVG_CF_ALLOC_EXPORT_WORD0	evg_isa_inst->words[0].cf_alloc_export_word0
-#define EVG_CF_ALLOC_EXPORT_WORD0_RAT	evg_isa_inst->words[0].cf_alloc_export_word0_rat
-#define EVG_CF_ALLOC_EXPORT_WORD1_BUF	evg_isa_inst->words[1].cf_alloc_export_word1_buf
-#define EVG_CF_ALLOC_EXPORT_WORD1_SWIZ	evg_isa_inst->words[1].cf_alloc_export_word1_swiz
+#define EVG_CF_ALLOC_EXPORT_WORD0	inst->words[0].cf_alloc_export_word0
+#define EVG_CF_ALLOC_EXPORT_WORD0_RAT	inst->words[0].cf_alloc_export_word0_rat
+#define EVG_CF_ALLOC_EXPORT_WORD1_BUF	inst->words[1].cf_alloc_export_word1_buf
+#define EVG_CF_ALLOC_EXPORT_WORD1_SWIZ	inst->words[1].cf_alloc_export_word1_swiz
 
-#define EVG_ALU_WORD0			evg_isa_inst->words[0].alu_word0
-#define EVG_ALU_WORD1_OP2		evg_isa_inst->words[1].alu_word1_op2
-#define EVG_ALU_WORD1_OP3		evg_isa_inst->words[1].alu_word1_op3
+#define EVG_ALU_WORD0			inst->words[0].alu_word0
+#define EVG_ALU_WORD1_OP2		inst->words[1].alu_word1_op2
+#define EVG_ALU_WORD1_OP3		inst->words[1].alu_word1_op3
 
-#define EVG_ALU_WORD0_LDS_IDX_OP	evg_isa_inst->words[0].alu_word0_lds_idx_op
-#define EVG_ALU_WORD1_LDS_IDX_OP	evg_isa_inst->words[1].alu_word1_lds_idx_op
+#define EVG_ALU_WORD0_LDS_IDX_OP	inst->words[0].alu_word0_lds_idx_op
+#define EVG_ALU_WORD1_LDS_IDX_OP	inst->words[1].alu_word1_lds_idx_op
 
-#define EVG_VTX_WORD0			evg_isa_inst->words[0].vtx_word0
-#define EVG_VTX_WORD1_GPR		evg_isa_inst->words[1].vtx_word1_gpr
-#define EVG_VTX_WORD1_SEM		evg_isa_inst->words[1].vtx_word1_sem
-#define EVG_VTX_WORD2			evg_isa_inst->words[2].vtx_word2
+#define EVG_VTX_WORD0			inst->words[0].vtx_word0
+#define EVG_VTX_WORD1_GPR		inst->words[1].vtx_word1_gpr
+#define EVG_VTX_WORD1_SEM		inst->words[1].vtx_word1_sem
+#define EVG_VTX_WORD2			inst->words[2].vtx_word2
 
-#define EVG_TEX_WORD0			evg_isa_inst->words[0].tex_word0
-#define EVG_TEX_WORD1			evg_isa_inst->words[1].tex_word1
-#define EVG_TEX_WORD2			evg_isa_inst->words[2].tex_word2
+#define EVG_TEX_WORD0			inst->words[0].tex_word0
+#define EVG_TEX_WORD1			inst->words[1].tex_word1
+#define EVG_TEX_WORD2			inst->words[2].tex_word2
 
-#define EVG_MEM_RD_WORD0		evg_isa_inst->words[0].mem_rd_word0
-#define EVG_MEM_RD_WORD1		evg_isa_inst->words[1].mem_rd_word1
-#define EVG_MEM_RD_WORD2		evg_isa_inst->words[2].mem_rd_word2
+#define EVG_MEM_RD_WORD0		inst->words[0].mem_rd_word0
+#define EVG_MEM_RD_WORD1		inst->words[1].mem_rd_word1
+#define EVG_MEM_RD_WORD2		inst->words[2].mem_rd_word2
 
-#define EVG_MEM_GDS_WORD0		evg_isa_inst->words[0].mem_gds_word0
-#define EVG_MEM_GDS_WORD1		evg_isa_inst->words[1].mem_gds_word1
-#define EVG_MEM_GDS_WORD2		evg_isa_inst->words[2].mem_gds_word2
+#define EVG_MEM_GDS_WORD0		inst->words[0].mem_gds_word0
+#define EVG_MEM_GDS_WORD1		inst->words[1].mem_gds_word1
+#define EVG_MEM_GDS_WORD2		inst->words[2].mem_gds_word2
 
 
 /* Table of functions implementing implementing the Evergreen ISA */
@@ -1221,14 +1223,17 @@ void evg_isa_alu_clause_end(void);
 void evg_isa_tc_clause_start(void);
 void evg_isa_tc_clause_end(void);
 
-/* Read source register */
+/* Read from source register */
 unsigned int evg_isa_read_gpr(struct evg_work_item_t *work_item,
 	int gpr, int rel, int chan, int im);
 float evg_isa_read_gpr_float(struct evg_work_item_t *work_item,
 	int gpr, int rel, int chan, int im);
 
-void evg_isa_write_gpr(int gpr, int rel, int chan, uint32_t value);
-void evg_isa_write_gpr_float(int gpr, int rel, int chan, float value);
+/* Write into destination register */
+void evg_isa_write_gpr(struct evg_work_item_t *work_item,
+	int gpr, int rel, int chan, unsigned int value);
+void evg_isa_write_gpr_float(struct evg_work_item_t *work_item,
+	int gpr, int rel, int chan, float value);
 
 /* Read input operands */
 unsigned int evg_isa_read_op_src_int(struct evg_work_item_t *work_item,

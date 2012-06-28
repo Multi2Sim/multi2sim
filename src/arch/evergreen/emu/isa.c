@@ -201,10 +201,14 @@ unsigned int evg_isa_read_gpr(struct evg_work_item_t *work_item,
 	int gpr, int rel, int chan, int im)
 {
 	/* Check arguments */
-	EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 4);
-	EVG_ISA_ARG_NOT_SUPPORTED_RANGE(gpr, 0, 127);
-	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(rel, 0);
-	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(im, 0);
+	if (!IN_RANGE(chan, 0, 4))
+		fatal("%s: invalid value for 'chan'", __FUNCTION__);
+	if (!IN_RANGE(gpr, 0, 127))
+		fatal("%s: invalid value for 'gpr'", __FUNCTION__);
+	if (rel)
+		fatal("%s: not supported for 'rel' != 0", __FUNCTION__);
+	if (im)
+		fatal("%s: not supported for 'im' != 0", __FUNCTION__);
 
 	/* Return value */
 	return work_item->gpr[gpr].elem[chan];
@@ -222,21 +226,29 @@ float evg_isa_read_gpr_float(struct evg_work_item_t *work_item,
 }
 
 
-void evg_isa_write_gpr(int gpr, int rel, int chan, uint32_t value)
+void evg_isa_write_gpr(struct evg_work_item_t *work_item,
+	int gpr, int rel, int chan, unsigned int value)
 {
-	EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 4);
-	EVG_ISA_ARG_NOT_SUPPORTED_RANGE(gpr, 0, 127);
-	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(rel, 0);
-	EVG_GPR_ELEM(gpr, chan) = value;
+	/* Check arguments */
+	if (!IN_RANGE(chan, 0, 4))
+		fatal("%s: invalid value for 'chan'", __FUNCTION__);
+	if (!IN_RANGE(gpr, 0, 127))
+		fatal("%s: invalid value for 'gpr'", __FUNCTION__);
+	if (rel)
+		fatal("%s: not supported for 'rel' != 0", __FUNCTION__);
+
+	/* Write to register */
+	work_item->gpr[gpr].elem[chan] = value;
 }
 
 
-void evg_isa_write_gpr_float(int gpr, int rel, int chan, float value)
+void evg_isa_write_gpr_float(struct evg_work_item_t *work_item,
+	int gpr, int rel, int chan, float value)
 {
 	union evg_reg_t reg;
 
 	reg.as_float = value;
-	evg_isa_write_gpr(gpr, rel, chan, reg.as_uint);
+	evg_isa_write_gpr(work_item, gpr, rel, chan, reg.as_uint);
 }
 
 
@@ -495,7 +507,8 @@ void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, int value_size)
 
 
 /* Write to destination operand in ALU instruction */
-void evg_isa_enqueue_write_dest(uint32_t value)
+void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, unsigned int value)
 {
 	struct evg_isa_write_task_t *wt;
 
@@ -525,12 +538,13 @@ void evg_isa_enqueue_write_dest(uint32_t value)
 }
 
 
-void evg_isa_enqueue_write_dest_float(float value)
+void evg_isa_enqueue_write_dest_float(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, float value)
 {
 	union evg_reg_t reg;
 
 	reg.as_float = value;
-	evg_isa_enqueue_write_dest(reg.as_uint);
+	evg_isa_enqueue_write_dest(work_item, inst, reg.as_uint);
 }
 
 
@@ -569,10 +583,11 @@ void evg_isa_enqueue_pred_set(int cond)
 }
 
 
-void evg_isa_write_task_commit(void)
+void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 {
-	struct linked_list_t *task_list = evg_isa_work_item->write_task_list;
+	struct linked_list_t *task_list = work_item->write_task_list;
 	struct evg_isa_write_task_t *wt;
+	struct evg_inst_t *inst;
 
 	/* Process first tasks of type:
 	 *  - EVG_ISA_WRITE_TASK_WRITE_DEST
@@ -583,7 +598,7 @@ void evg_isa_write_task_commit(void)
 
 		/* Get task */
 		wt = linked_list_get(task_list);
-		evg_isa_inst = wt->inst;
+		inst = wt->inst;
 
 		switch (wt->kind)
 		{
@@ -591,7 +606,7 @@ void evg_isa_write_task_commit(void)
 		case EVG_ISA_WRITE_TASK_WRITE_DEST:
 		{
 			if (wt->write_mask)
-				evg_isa_write_gpr(wt->gpr, wt->rel, wt->chan, wt->value);
+				evg_isa_write_gpr(work_item, wt->gpr, wt->rel, wt->chan, wt->value);
 			evg_isa_work_item->pv.elem[wt->inst->alu] = wt->value;
 
 			/* Debug */
@@ -644,7 +659,7 @@ void evg_isa_write_task_commit(void)
 	{
 		/* Get task */
 		wt = linked_list_get(task_list);
-		evg_isa_inst = wt->inst;
+		inst = wt->inst;
 
 		/* Process */
 		switch (wt->kind)
@@ -663,7 +678,7 @@ void evg_isa_write_task_commit(void)
 			int update_pred = EVG_ALU_WORD1_OP2.update_pred;
 			int update_exec_mask = EVG_ALU_WORD1_OP2.update_exec_mask;
 
-			assert(evg_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
+			assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
 			if (update_pred)
 				evg_work_item_set_pred(evg_isa_work_item, wt->cond);
 			if (update_exec_mask)

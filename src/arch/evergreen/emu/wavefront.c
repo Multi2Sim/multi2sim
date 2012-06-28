@@ -361,7 +361,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 				(*evg_isa_inst_func[evg_isa_inst->info->inst])(evg_isa_work_item,
 					&evg_isa_alu_group->inst[i]);
 			}
-			evg_isa_write_task_commit();
+			evg_isa_write_task_commit(evg_isa_work_item);
 		}
 		
 		/* Statistics */
