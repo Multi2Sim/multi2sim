@@ -27,53 +27,53 @@ void arm_disasm_init()
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	switch (ARM_CAT_##_category) { \
 	case ARM_CAT_DPR_REG: \
-		arm_inst_info[_arg1 * 16 + 0].opcode = ARM_INST_##_name; \
-		arm_inst_info[_arg1 * 16 + 1].opcode = ARM_INST_##_name; \
-		arm_inst_info[_arg1 * 16 + 3].opcode = ARM_INST_##_name; \
-		arm_inst_info[_arg1 * 16 + 4].opcode = ARM_INST_##_name; \
-		arm_inst_info[_arg1 * 16 + 5].opcode = ARM_INST_##_name; \
-		arm_inst_info[_arg1 * 16 + 6].opcode = ARM_INST_##_name; \
-		arm_inst_info[_arg1 * 16 + 7].opcode = ARM_INST_##_name; \
-		arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name; \
-		arm_inst_info[_arg1 * 16 + 10].opcode = ARM_INST_##_name; \
-		arm_inst_info[_arg1 * 16 + 12].opcode = ARM_INST_##_name; \
-		arm_inst_info[_arg1 * 16 + 14].opcode = ARM_INST_##_name; \
-		break; \
+	arm_inst_info[_arg1 * 16 + 0].opcode = ARM_INST_##_name; \
+	arm_inst_info[_arg1 * 16 + 1].opcode = ARM_INST_##_name; \
+	arm_inst_info[_arg1 * 16 + 3].opcode = ARM_INST_##_name; \
+	arm_inst_info[_arg1 * 16 + 4].opcode = ARM_INST_##_name; \
+	arm_inst_info[_arg1 * 16 + 5].opcode = ARM_INST_##_name; \
+	arm_inst_info[_arg1 * 16 + 6].opcode = ARM_INST_##_name; \
+	arm_inst_info[_arg1 * 16 + 7].opcode = ARM_INST_##_name; \
+	arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name; \
+	arm_inst_info[_arg1 * 16 + 10].opcode = ARM_INST_##_name; \
+	arm_inst_info[_arg1 * 16 + 12].opcode = ARM_INST_##_name; \
+	arm_inst_info[_arg1 * 16 + 14].opcode = ARM_INST_##_name; \
+	break; \
 	case ARM_CAT_DPR_IMM: \
-		for (i = 0; i < 16; i++ )\
-		arm_inst_info[_arg1 * 16 + i].opcode = ARM_INST_##_name;\
-		break;\
+	for (i = 0; i < 16; i++ )\
+	arm_inst_info[_arg1 * 16 + i].opcode = ARM_INST_##_name;\
+	break;\
 	case ARM_CAT_DPR_SAT:\
-		arm_inst_info[_arg1 * 16 + 5].opcode = ARM_INST_##_name;\
-		break;\
+	arm_inst_info[_arg1 * 16 + 5].opcode = ARM_INST_##_name;\
+	break;\
 	case ARM_CAT_PSR:\
-		arm_inst_info[_arg1 * 16 + 0].opcode = ARM_INST_##_name;\
-		break;\
+	arm_inst_info[_arg1 * 16 + 0].opcode = ARM_INST_##_name;\
+	break;\
 	case ARM_CAT_MULT:\
-		arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
-		break;\
+	arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
+	break;\
 	case ARM_CAT_MULT_SIGN:\
-		arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name;\
-		arm_inst_info[_arg1 * 16 + 10].opcode = ARM_INST_##_name;\
-		arm_inst_info[_arg1 * 16 + 12].opcode = ARM_INST_##_name;\
-		arm_inst_info[_arg1 * 16 + 14].opcode = ARM_INST_##_name;\
-		break;\
+	arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name;\
+	arm_inst_info[_arg1 * 16 + 10].opcode = ARM_INST_##_name;\
+	arm_inst_info[_arg1 * 16 + 12].opcode = ARM_INST_##_name;\
+	arm_inst_info[_arg1 * 16 + 14].opcode = ARM_INST_##_name;\
+	break;\
 	case ARM_CAT_MULT_LN:\
-		arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
-		break;\
+	arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
+	break;\
 	case ARM_CAT_MULT_LN_SIGN:\
-		arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name;\
-		break;\
+	arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name;\
+	break;\
 	case ARM_CAT_SDSWP:\
-		arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
-		break;\
+	arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
+	break;\
 	case ARM_CAT_BAX:\
-		arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
-		break;\
+	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
+	break;\
 	case ARM_CAT_HFWRD_REG:\
-		arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
-		arm_inst_info[(_arg1 + 2) * 16 + _arg2].opcode = ARM_INST_##_name;\
-		break;\
+	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
+	arm_inst_info[(_arg1 + 2) * 16 + _arg2].opcode = ARM_INST_##_name;\
+	break;\
 	}
 #include "arm-asm.dat"
 #undef DEFINST
@@ -107,40 +107,17 @@ void arm_inst_decode(struct arm_inst_t *inst)
 
 	arg2 = ((inst->dword.bytes[0] & 0xf0) >> 4);
 
-	if(!(inst->info->fmt_str))
-	{
-		printf("%d: Instruction not supported\n", inst->addr);
-		inst = 0;
-	}
-	else
-	{
-		inst->info = &arm_inst_info[arg1 * 16 + arg2];
-	}
+	inst->info = &arm_inst_info[arg1 * 16 + arg2];
+
 }
 
-void arm_inst_hex_dump(FILE *f, unsigned char *section_buf, int section_buf_size)
+void arm_inst_hex_dump(FILE *f, void *inst_ptr, unsigned int inst_addr)
 {
-	int inst_index;
-	int byte_index;
-
-	for (inst_index = 0; inst_index < section_buf_size / 4; ++inst_index)
-	{
-		printf("Instruction Hex: ");
-		/* Print most significant byte first */
-		for (byte_index = 3; byte_index >= 0; --byte_index)
-		{
-			printf(
-			                "%02x",
-			                *(section_buf + 4 * inst_index
-			                                + byte_index));
-		}
-		printf("\n");
-	}
-	printf("\n\n");
+	printf("%08x:	%08x	", inst_addr, *(unsigned int *) inst_ptr);
 }
 
-void arm_inst_dump(FILE *f, char *str, int inst_str_size, unsigned char *buf,
-                int inst_index)
+void arm_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
+	unsigned int inst_index)
 {
 	struct arm_inst_t inst;
 	int byte_index;
@@ -149,10 +126,10 @@ void arm_inst_dump(FILE *f, char *str, int inst_str_size, unsigned char *buf,
 	char *fmt_str;
 	int token_len;
 
-	inst.addr = 4 * inst_index;
+	inst.addr = inst_index;
 	for (byte_index = 0; byte_index < 4; ++byte_index)
-		inst.dword.bytes[byte_index] = *(buf + 4 * inst_index
-		                + byte_index);
+		inst.dword.bytes[byte_index] = *(unsigned char *) (inst_ptr
+			+ byte_index);
 
 	arm_inst_decode(&inst);
 
@@ -197,20 +174,31 @@ void arm_inst_dump(FILE *f, char *str, int inst_str_size, unsigned char *buf,
 			else if (arm_token_comp(fmt_str, "rdhi", &token_len))
 				arm_inst_dump_RDHI(inst_str_ptr, &inst_str_size, &inst,
 					inst.info->category);
+			else if (arm_token_comp(fmt_str, "psr", &token_len))
+				arm_inst_dump_PSR(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "op2psr", &token_len))
+				arm_inst_dump_OP2_PSR(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
 
 			else
-				fatal("%c: token not recognized\n", *fmt_str);
+				fatal("%s: token not recognized\n", fmt_str);
 
 			fmt_str += token_len;
 		}
+		fprintf(f, "%s\n", inst_str);
 	}
-	fprintf(f, "%s\n", inst_str);
+	else
+	{
+		fprintf (f,"Instruction not supported\n");
+	}
+
 }
 
 unsigned int arm_rotl(unsigned int value, unsigned int shift)
 {
 	if ((shift &= sizeof(value) * 8 - 1) == 0)
-	return value;
+		return value;
 
 	return (value << shift) | (value >> (sizeof(value) * 8 - shift));
 }
@@ -218,13 +206,13 @@ unsigned int arm_rotl(unsigned int value, unsigned int shift)
 unsigned int arm_rotr(unsigned int value, unsigned int shift)
 {
 	if ((shift &= sizeof(value) * 8 - 1) == 0)
-	return value;
+		return value;
 
 	return (value >> shift) | (value << (sizeof(value) * 8 - shift));
 }
 
 void arm_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
-                struct arm_inst_t *inst, enum arm_cat_enum cat)
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
 {
 	unsigned int rd;
 
@@ -241,13 +229,15 @@ void arm_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
 	else if (cat == ARM_CAT_MULT_SIGN)
 		rd = inst->dword.mult_ins.dst_rd;
 	else if (cat == ARM_CAT_MULT_LN)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rd fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT_LN_SIGN)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rd fmt not recognized", cat);
 	else if (cat == ARM_CAT_HFWRD_REG)
 		rd = inst->dword.hfwrd_reg_ins.dst_rd;
 	else if (cat == ARM_CAT_HFWRD_IMM)
 		rd = inst->dword.hfwrd_imm_ins.dst_rd;
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: rd fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDTR)
 		rd = inst->dword.sdtr_ins.src_dst_rd;
 	else if (cat == ARM_CAT_SDSWP)
@@ -256,14 +246,32 @@ void arm_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
 		rd = inst->dword.cpr_rtr_ins.rd;
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rd fmt not recognized", cat);
 
-	str_printf(inst_str_ptr, inst_str_size, "r%d", rd);
+	switch (rd)
+	{
+	case (r13):
+		str_printf(inst_str_ptr, inst_str_size, "sp");
+	break;
+
+	case (r14):
+		str_printf(inst_str_ptr, inst_str_size, "lr");
+	break;
+	case (r15):
+
+		str_printf(inst_str_ptr, inst_str_size, "pc");
+	break;
+
+	default:
+		str_printf(inst_str_ptr, inst_str_size, "r%d", rd);
+		break;
+	}
+
 
 }
 
 void arm_inst_dump_RN(char **inst_str_ptr, int *inst_str_size,
-                struct arm_inst_t *inst, enum arm_cat_enum cat)
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
 {
 	unsigned int rn;
 
@@ -274,19 +282,21 @@ void arm_inst_dump_RN(char **inst_str_ptr, int *inst_str_size,
 	else if (cat == ARM_CAT_DPR_SAT)
 		rn = inst->dword.dpr_sat_ins.op1_reg;
 	else if (cat == ARM_CAT_PSR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rn  fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT)
 		rn = inst->dword.mult_ins.op2_rn;
 	else if (cat == ARM_CAT_MULT_SIGN)
 		rn = inst->dword.mult_ins.op2_rn;
 	else if (cat == ARM_CAT_MULT_LN)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rn  fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT_LN_SIGN)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rn fmt not recognized", cat);
 	else if (cat == ARM_CAT_HFWRD_REG)
 		rn = inst->dword.hfwrd_reg_ins.base_rn;
 	else if (cat == ARM_CAT_HFWRD_IMM)
 		rn = inst->dword.hfwrd_imm_ins.base_rn;
+	else if (cat == ARM_CAT_BAX)
+		rn = inst->dword.bax_ins.op0_rn;
 	else if (cat == ARM_CAT_SDTR)
 		rn = inst->dword.sdtr_ins.base_rn;
 	else if (cat == ARM_CAT_SDSWP)
@@ -295,26 +305,41 @@ void arm_inst_dump_RN(char **inst_str_ptr, int *inst_str_size,
 		rn = inst->dword.cpr_rtr_ins.cpr_rn;
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rn fmt not recognized", cat);
 
-	str_printf(inst_str_ptr, inst_str_size, "r%d", rn);
+	switch (rn)
+	{
+	case (r13):
+		str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+	case (r14):
+		str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+	case (r15):
+		str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+	default:
+		str_printf(inst_str_ptr, inst_str_size, "r%d", rn);
+		break;
+	}
+
 
 
 }
 
 void arm_inst_dump_RM(char **inst_str_ptr, int *inst_str_size,
-                struct arm_inst_t *inst, enum arm_cat_enum cat)
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
 {
 	unsigned int rm;
 
 	if (cat == ARM_CAT_DPR_REG)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rm fmt not recognized", cat);
 	else if (cat == ARM_CAT_DPR_IMM)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rm fmt not recognized", cat);
 	else if (cat == ARM_CAT_DPR_SAT)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rm fmt not recognized", cat);
 	else if (cat == ARM_CAT_PSR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rm fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT)
 		rm = inst->dword.mult_ins.op0_rm;
 	else if (cat == ARM_CAT_MULT_SIGN)
@@ -324,36 +349,53 @@ void arm_inst_dump_RM(char **inst_str_ptr, int *inst_str_size,
 	else if (cat == ARM_CAT_MULT_LN_SIGN)
 		rm = inst->dword.mul_ln_ins.op0_rm;
 	else if (cat == ARM_CAT_HFWRD_REG)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rm fmt not recognized", cat);
 	else if (cat == ARM_CAT_HFWRD_IMM)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rm fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: rm fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDTR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rm fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDSWP)
 		rm = inst->dword.sngl_dswp_ins.op0_rm;
 	else if (cat == ARM_CAT_CPR_RTR)
 		rm = inst->dword.cpr_rtr_ins.cpr_op_rm;
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rm fmt not recognized", cat);
 
-	str_printf(inst_str_ptr, inst_str_size, "r%d", rm);
+	switch (rm)
+	{
+	case (r13):
+		str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+	case (r14):
+		str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+	case (r15):
+		str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+	default:
+		str_printf(inst_str_ptr, inst_str_size, "r%d", rm);
+		break;
+	}
+
 
 }
 
 void arm_inst_dump_RS(char **inst_str_ptr, int *inst_str_size,
-                struct arm_inst_t *inst, enum arm_cat_enum cat)
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
 {
 	unsigned int rs;
 
 	if (cat == ARM_CAT_DPR_REG)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rs fmt not recognized", cat);
 	else if (cat == ARM_CAT_DPR_IMM)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rs fmt not recognized", cat);
 	else if (cat == ARM_CAT_DPR_SAT)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rs fmt not recognized", cat);
 	else if (cat == ARM_CAT_PSR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rs fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT)
 		rs = inst->dword.mult_ins.op1_rs;
 	else if (cat == ARM_CAT_MULT_SIGN)
@@ -363,24 +405,41 @@ void arm_inst_dump_RS(char **inst_str_ptr, int *inst_str_size,
 	else if (cat == ARM_CAT_MULT_LN_SIGN)
 		rs = inst->dword.mul_ln_ins.op1_rs;
 	else if (cat == ARM_CAT_HFWRD_REG)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rs fmt not recognized", cat);
 	else if (cat == ARM_CAT_HFWRD_IMM)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rs fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: rs fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDTR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rs fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDSWP)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rs fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rs fmt not recognized", cat);
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rs fmt not recognized", cat);
 
-	str_printf(inst_str_ptr, inst_str_size, "r%d", rs);
+	switch (rs)
+	{
+	case (r13):
+		str_printf(inst_str_ptr, inst_str_size, "sp");
+		break;
+	case (r14):
+		str_printf(inst_str_ptr, inst_str_size, "lr");
+		break;
+	case (r15):
+		str_printf(inst_str_ptr, inst_str_size, "pc");
+		break;
+	default:
+		str_printf(inst_str_ptr, inst_str_size, "r%d", rs);
+		break;
+	}
+
 }
 
 void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
-                struct arm_inst_t *inst, enum arm_cat_enum cat)
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
 {
 	unsigned int op2;
 	unsigned int rm;
@@ -399,26 +458,28 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 	else if (cat == ARM_CAT_PSR)
 		op2 = inst->dword.psr_ins.op2;
 	else if (cat == ARM_CAT_MULT)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: op2 fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT_SIGN)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: op2 fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT_LN)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: op2 fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT_LN_SIGN)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: op2 fmt not recognized", cat);
 	else if (cat == ARM_CAT_HFWRD_REG)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: op2 fmt not recognized", cat);
 	else if (cat == ARM_CAT_HFWRD_IMM)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: op2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: op2 fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDTR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: op2 fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDSWP)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: op2 fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: op2 fmt not recognized", cat);
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: op2 fmt not recognized", cat);
 
 	if (!inst->dword.dpr_ins.imm)
 	{
@@ -429,21 +490,25 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 		{
 			switch ((shift >> 1) & 0x00000003)
 			{
-				case (LSL):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , LSL #<%d>", rm, ((shift >> 4) & 0x0000000f));
-				break;
+			case (LSL):
+				str_printf(inst_str_ptr, inst_str_size, "r%d , LSL #%d   ;0x%x",
+					rm, ((shift >> 4) & 0x0000000f),((shift >> 4) & 0x0000000f));
+			break;
 
-				case (LSR):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , LSR #<%d>", rm, ((shift >> 4) & 0x0000000f));
-				break;
+			case (LSR):
+				str_printf(inst_str_ptr, inst_str_size, "r%d , LSR #%d   ;0x%x",
+					rm, ((shift >> 4) & 0x0000000f),((shift >> 4) & 0x0000000f));
+			break;
 
-				case (ASR):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , ASR #<%d>", rm, ((shift >> 4) & 0x0000000f));
-				break;
+			case (ASR):
+				str_printf(inst_str_ptr, inst_str_size, "r%d , ASR #%d   ;0x%x",
+					rm, ((shift >> 4) & 0x0000000f),((shift >> 4) & 0x0000000f));
+			break;
 
-				case (ROR):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , ROR #<%d>", rm, ((shift >> 4) & 0x0000000f));
-				break;
+			case (ROR):
+				str_printf(inst_str_ptr, inst_str_size, "r%d , ROR #%d   ;0x%x",
+					rm, ((shift >> 4) & 0x0000000f),((shift >> 4) & 0x0000000f));
+			break;
 			}
 
 		}
@@ -453,21 +518,21 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 			rs = (shift >> 4);
 			switch ((shift >> 1) & 0x00000003)
 			{
-				case (LSL):
+			case (LSL):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , LSL r%d", rm, rs);
-				break;
+			break;
 
-				case (LSR):
+			case (LSR):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , LSR r%d", rm, rs);
-				break;
+			break;
 
-				case (ASR):
+			case (ASR):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , ASR r%d", rm, rs);
-				break;
+			break;
 
-				case (ROR):
+			case (ROR):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , ROR r%d", rm, rs);
-				break;
+			break;
 			}
 		}
 	}
@@ -476,13 +541,13 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 		imm = (op2 & (0x000000ff));
 		rotate = ((op2 >> 8) & 0x0000000f);
 		imm_8r = arm_rotr( imm , rotate);
-		str_printf(inst_str_ptr, inst_str_size, "#<%d>", imm_8r);
+		str_printf(inst_str_ptr, inst_str_size, "#%d   ;0x%x", imm_8r, imm_8r);
 	}
 
 }
 
 void arm_inst_dump_COND(char **inst_str_ptr, int *inst_str_size,
-                struct arm_inst_t *inst, enum arm_cat_enum cat)
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
 {
 	unsigned int cond;
 
@@ -506,6 +571,8 @@ void arm_inst_dump_COND(char **inst_str_ptr, int *inst_str_size,
 		cond = inst->dword.hfwrd_reg_ins.cond;
 	else if (cat == ARM_CAT_HFWRD_IMM)
 		cond = inst->dword.hfwrd_imm_ins.cond;
+	else if (cat == ARM_CAT_BAX)
+		cond = inst->dword.bax_ins.cond;
 	else if (cat == ARM_CAT_SDTR)
 		cond = inst->dword.sdtr_ins.cond;
 	else if (cat == ARM_CAT_SDSWP)
@@ -514,148 +581,267 @@ void arm_inst_dump_COND(char **inst_str_ptr, int *inst_str_size,
 		cond = inst->dword.cpr_rtr_ins.cond;
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: cond fmt not recognized", cat);
 
 	switch (cond)
 	{
-		case (EQ):
-		str_printf(inst_str_ptr, inst_str_size, "EQ");
-		break;
+	case (EQ):
+	str_printf(inst_str_ptr, inst_str_size, "EQ");
+	break;
 
-		case (NE):
-		str_printf(inst_str_ptr, inst_str_size, "NE");
-		break;
+	case (NE):
+	str_printf(inst_str_ptr, inst_str_size, "NE");
+	break;
 
-		case (CS):
-		str_printf(inst_str_ptr, inst_str_size, "CS");
-		break;
+	case (CS):
+	str_printf(inst_str_ptr, inst_str_size, "CS");
+	break;
 
-		case (CC):
-		str_printf(inst_str_ptr, inst_str_size, "CC");
-		break;
+	case (CC):
+	str_printf(inst_str_ptr, inst_str_size, "CC");
+	break;
 
-		case (MI):
-		str_printf(inst_str_ptr, inst_str_size, "MI");
-		break;
+	case (MI):
+	str_printf(inst_str_ptr, inst_str_size, "MI");
+	break;
 
-		case (PL):
-		str_printf(inst_str_ptr, inst_str_size, "PL");
-		break;
+	case (PL):
+	str_printf(inst_str_ptr, inst_str_size, "PL");
+	break;
 
-		case (VS):
-		str_printf(inst_str_ptr, inst_str_size, "VS");
-		break;
+	case (VS):
+	str_printf(inst_str_ptr, inst_str_size, "VS");
+	break;
 
-		case (VC):
-		str_printf(inst_str_ptr, inst_str_size, "VC");
-		break;
+	case (VC):
+	str_printf(inst_str_ptr, inst_str_size, "VC");
+	break;
 
-		case (HI):
-		str_printf(inst_str_ptr, inst_str_size, "HI");
-		break;
+	case (HI):
+	str_printf(inst_str_ptr, inst_str_size, "HI");
+	break;
 
-		case (LS):
-		str_printf(inst_str_ptr, inst_str_size, "LS");
-		break;
+	case (LS):
+	str_printf(inst_str_ptr, inst_str_size, "LS");
+	break;
 
-		case (GE):
-		str_printf(inst_str_ptr, inst_str_size, "GE");
-		break;
+	case (GE):
+	str_printf(inst_str_ptr, inst_str_size, "GE");
+	break;
 
-		case (LT):
-		str_printf(inst_str_ptr, inst_str_size, "LT");
-		break;
+	case (LT):
+	str_printf(inst_str_ptr, inst_str_size, "LT");
+	break;
 
-		case (GT):
-		str_printf(inst_str_ptr, inst_str_size, "GT");
-		break;
+	case (GT):
+	str_printf(inst_str_ptr, inst_str_size, "GT");
+	break;
 
-		case (LE):
-		str_printf(inst_str_ptr, inst_str_size, "LE");
-		break;
+	case (LE):
+	str_printf(inst_str_ptr, inst_str_size, "LE");
+	break;
 
-		case (AL):
-		str_printf(inst_str_ptr, inst_str_size, " ");
-		break;
+	case (AL):
+	str_printf(inst_str_ptr, inst_str_size, " ");
+	break;
 
 	}
 }
 
 void arm_inst_dump_RDLO(char **inst_str_ptr, int *inst_str_size,
-                struct arm_inst_t *inst, enum arm_cat_enum cat)
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
 {
 	unsigned int rdlo;
 
 	if (cat == ARM_CAT_DPR_REG)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_DPR_IMM)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_DPR_SAT)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_PSR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT_SIGN)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT_LN)
 		rdlo = inst->dword.mul_ln_ins.dst_lo;
 	else if (cat == ARM_CAT_MULT_LN_SIGN)
 		rdlo = inst->dword.mul_ln_ins.dst_lo;
 	else if (cat == ARM_CAT_HFWRD_REG)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_HFWRD_IMM)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDTR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDSWP)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdlo fmt not recognized", cat);
 
 	str_printf(inst_str_ptr, inst_str_size, "r%d", rdlo);
 
 }
 
 void arm_inst_dump_RDHI(char **inst_str_ptr, int *inst_str_size,
-                struct arm_inst_t *inst, enum arm_cat_enum cat)
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
 {
 	unsigned int rdhi;
 
 	if (cat == ARM_CAT_DPR_REG)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_DPR_IMM)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_DPR_SAT)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_PSR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT_SIGN)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_MULT_LN)
 		rdhi = inst->dword.mul_ln_ins.dst_hi;
 	else if (cat == ARM_CAT_MULT_LN_SIGN)
 		rdhi = inst->dword.mul_ln_ins.dst_hi;
 	else if (cat == ARM_CAT_HFWRD_REG)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_HFWRD_IMM)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDTR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_SDSWP)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
-		fatal("%d: fmt not recognized", cat);
+		fatal("%d: rdhi fmt not recognized", cat);
 
 	str_printf(inst_str_ptr, inst_str_size, "r%d", rdhi);
 
 }
 
+void arm_inst_dump_PSR(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int psr;
+
+	if (cat == ARM_CAT_DPR_REG)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_IMM)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_SAT)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_PSR)
+		psr = inst->dword.psr_ins.psr_loc;
+	else if (cat == ARM_CAT_MULT)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_SIGN)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN_SIGN)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_REG)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_IMM)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDTR)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDSWP)
+		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_CPR_RTR)
+		fatal("%d: psr fmt not recognized", cat);
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: psr fmt not recognized", cat);
+
+	switch (psr)
+	{
+	case (CPSR):
+	str_printf(inst_str_ptr, inst_str_size, "CPSR");
+	break;
+
+	case (SPSR):
+	str_printf(inst_str_ptr, inst_str_size, "SPSR");
+	break;
+	}
+}
+
+void arm_inst_dump_OP2_PSR(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int op2_psr;
+	unsigned int rotate;
+	unsigned int immd_8r;
+	unsigned int rm;
+
+	if (cat == ARM_CAT_DPR_REG)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_IMM)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_SAT)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_PSR)
+		op2_psr = inst->dword.psr_ins.op2;
+	else if (cat == ARM_CAT_MULT)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_SIGN)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN_SIGN)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_REG)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_IMM)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDTR)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDSWP)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_CPR_RTR)
+		fatal("%d: op2 psr fmt not recognized", cat);
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: psr fmt not recognized", cat);
+
+	if (inst->dword.psr_ins.imm)
+	{
+		rotate = ((op2_psr & 0x00000f00) >> 8);
+		immd_8r = arm_rotr( op2_psr , rotate);
+		str_printf(inst_str_ptr, inst_str_size, "#%d   ;0x%x", immd_8r, immd_8r);
+	}
+	else
+	{
+		rm = (op2_psr & 0x0000000f);
+		switch (rm)
+		{
+		case (r13):
+			str_printf(inst_str_ptr, inst_str_size, "sp");
+			break;
+		case (r14):
+			str_printf(inst_str_ptr, inst_str_size, "lr");
+			break;
+		case (r15):
+			str_printf(inst_str_ptr, inst_str_size, "pc");
+			break;
+		default:
+			str_printf(inst_str_ptr, inst_str_size, "r%d", rm);
+			break;
+		}
+	}
+}

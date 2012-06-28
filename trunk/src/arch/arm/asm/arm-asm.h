@@ -60,6 +60,31 @@ enum arm_cond_codes_t
 	AL	/* Always */
 };
 
+enum arm_user_regs_t
+{
+	r0 = 0,
+	r1,
+	r2,
+	r3,
+	r4,
+	r5,
+	r6,
+	r7,
+	r8,
+	r9,
+	r10,
+	r11,
+	r12,
+	r13,	/* Stack Pointer sp */
+	r14,	/* Link register lr */
+	r15	/* Program Counter pc */
+};
+
+enum arm_psr_regs_t
+{
+	CPSR = 0,
+	SPSR
+};
 /*
  * Structure of Instruction Format
  */
@@ -356,11 +381,10 @@ void arm_disasm_init();
 
 void arm_inst_decode(struct arm_inst_t *inst);
 
-void arm_inst_hex_dump(FILE *f , unsigned char *section_buf ,
-	int section_buf_size);
+void arm_inst_hex_dump(FILE *f, void *inst_ptr, unsigned int inst_addr);
 
-void arm_inst_dump(FILE *f , char *str , int inst_str_size ,
-	unsigned char *buf , int inst_index);
+void arm_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
+	unsigned int inst_index);
 
 void arm_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
                 struct arm_inst_t *inst, enum arm_cat_enum cat);
@@ -386,5 +410,10 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 void arm_inst_dump_COND(char **inst_str_ptr, int *inst_str_size,
                 struct arm_inst_t *inst, enum arm_cat_enum cat);
 
-#endif
+void arm_inst_dump_OP2_PSR(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
 
+void arm_inst_dump_PSR(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+#endif
