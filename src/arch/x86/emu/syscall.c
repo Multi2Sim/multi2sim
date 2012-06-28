@@ -3473,9 +3473,9 @@ static int x86_sys_clock_gettime_impl(void)
 	unsigned int clk_id;
 	unsigned int ts_ptr;
 
-	char *clk_id_str;
+	long long now;
 
-	struct timespec ts;
+	char *clk_id_str;
 
 	struct {
 		unsigned int sec;
@@ -3496,10 +3496,10 @@ static int x86_sys_clock_gettime_impl(void)
 	case 1:  /* CLOCK_MONOTONIC */
 	case 4:  /* CLOCK_MONOTONIC_RAW */
 
-		/* Native call */
-		clock_gettime(clk_id, &ts);
-		sim_ts.sec = ts.tv_sec;
-		sim_ts.nsec = ts.tv_nsec;
+		/* Get count in micro-seconds */
+		now = esim_real_time();
+		sim_ts.sec = now / 1000000;
+		sim_ts.nsec = (now % 1000000) * 1000;
 
 		/* Debug */
 		x86_sys_debug("\tts.tv_sec = %u\n", sim_ts.sec);
