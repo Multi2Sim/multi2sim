@@ -27,9 +27,12 @@ void arm_emu_disasm(char *path)
 {
 	struct elf_file_t *elf_file;
 	struct elf_section_t *section;
-	int inst_index;
+
+
 	char inst_str[MAX_STRING_SIZE];
 	int i;
+	unsigned int inst_index;
+	void *inst_ptr;
 
 	/* Initialization */
 	arm_disasm_init();
@@ -47,13 +50,15 @@ void arm_emu_disasm(char *path)
 		fatal(".text section not found!\n");
 
 	/* Decode and dump instructions */
-	for (inst_index = 0; inst_index < section->buffer.size/4; ++inst_index)
+	for (inst_ptr = section->buffer.ptr; inst_ptr < section->buffer.ptr +
+			section->buffer.size; inst_ptr += 4)
 	{
-		arm_inst_hex_dump(stdout, (unsigned char*)(section->buffer.ptr), inst_index);
-		arm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, (unsigned char*)(section->buffer.ptr), inst_index);
+		arm_inst_hex_dump(stdout, inst_ptr, (section->header->sh_offset + inst_index));
+		arm_inst_dump(stdout, inst_str, MAX_STRING_SIZE,
+			inst_ptr , inst_index);
+		inst_index += 4;
 	}
 
 	/* Free external ELF */
 	elf_file_free(elf_file);
 }
-
