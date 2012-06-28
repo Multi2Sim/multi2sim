@@ -549,6 +549,16 @@ code) need to agree on it.
 Steps to Publish a New Version Release (Administrator):
 ===============================================================================
 
+	* Try to generate distribution version on both 32-bit and 64-bit
+	  machines. Compilation might cause different warnings. Compile in debug
+	  mode, and also generate distribution packages.
+
+	  	./configure --enable-debug
+		make
+
+		./configure
+		make distcheck
+
 	* svn commit all previous changes
 
 	* Run 'svn update' + 'svn2cl.sh'
