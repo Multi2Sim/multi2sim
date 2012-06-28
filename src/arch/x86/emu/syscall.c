@@ -3492,9 +3492,9 @@ static int x86_sys_clock_gettime_impl(void)
 	/* Clock type */
 	switch (clk_id)
 	{
-	case CLOCK_REALTIME:
-	case CLOCK_MONOTONIC:
-	case CLOCK_MONOTONIC_RAW:
+	case 0:  /* CLOCK_REALTIME */
+	case 1:  /* CLOCK_MONOTONIC */
+	case 4:  /* CLOCK_MONOTONIC_RAW */
 
 		/* Native call */
 		clock_gettime(clk_id, &ts);
@@ -3509,10 +3509,10 @@ static int x86_sys_clock_gettime_impl(void)
 		mem_write(x86_isa_mem, ts_ptr, sizeof sim_ts, &sim_ts);
 		break;
 
-	case CLOCK_PROCESS_CPUTIME_ID:
-	case CLOCK_THREAD_CPUTIME_ID:
-	case CLOCK_REALTIME_COARSE:
-	case CLOCK_MONOTONIC_COARSE:
+	case 2:  /* CLOCK_PROCESS_CPUTIME_ID */
+	case 3:  /* CLOCK_THREAD_CPUTIME_ID */
+	case 5:  /* CLOCK_REALTIME_COARSE */
+	case 6:  /* CLOCK_MONOTONIC_COARSE */
 
 		fatal("%s: not implemented for 'clk_id' = %d",
 			__FUNCTION__, clk_id);
