@@ -658,3 +658,4 @@ void arm_inst_dump_RDHI(char **inst_str_ptr, int *inst_str_size,
 	str_printf(inst_str_ptr, inst_str_size, "r%d", rdhi);
 
 }
+
