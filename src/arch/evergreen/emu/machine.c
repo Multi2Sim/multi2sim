@@ -190,11 +190,13 @@ void evg_isa_EXPORT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *i
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_EXPORT_DONE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Export Last Data */
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_GDS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
@@ -202,17 +204,20 @@ void evg_isa_GDS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_GWS_BARRIER_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Global Wavefront Barrier */
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_GWS_INIT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Global Wavefront Resource Initialization */
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_GWS_SEMA_P_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
@@ -480,17 +485,20 @@ void evg_isa_LOOP_BREAK_impl(struct evg_work_item_t *work_item, struct evg_inst_
 #undef W0
 #undef W1
 
+
 void evg_isa_MEM_EXPORT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Performs a memory read or write on the scatter buffer. */
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_EXPORT_COMBINED_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	/* Performs a memory read or write on the scatter buffer. */
 	__EVG_NOT_IMPL__
 }
+
 
 #define W0  EVG_CF_ALLOC_EXPORT_WORD0_RAT
 #define W1  EVG_CF_ALLOC_EXPORT_WORD1_BUF
@@ -606,6 +614,7 @@ void evg_isa_MEM_RAT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 #undef W0
 #undef W1
 
+
 #define W0  EVG_CF_ALLOC_EXPORT_WORD0_RAT
 #define W1  EVG_CF_ALLOC_EXPORT_WORD1_BUF
 void evg_isa_MEM_RAT_CACHELESS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
@@ -702,123 +711,142 @@ void evg_isa_MEM_RAT_CACHELESS_impl(struct evg_work_item_t *work_item, struct ev
 #undef W0
 #undef W1
 
+
 void evg_isa_MEM_RAT_COMBINED_CACHELESS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_RING_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_RING1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_RING2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_RING3_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_STREAM0_BUF0_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_STREAM0_BUF1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_STREAM0_BUF2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_STREAM0_BUF3_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_STREAM1_BUF0_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_STREAM1_BUF1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_STREAM1_BUF2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_STREAM1_BUF3_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_STREAM2_BUF0_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_STREAM2_BUF1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_STREAM2_BUF2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_STREAM2_BUF3_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_STREAM3_BUF0_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_STREAM3_BUF1_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_STREAM3_BUF2_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
+
 void evg_isa_MEM_STREAM3_BUF3_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
+
 
 void evg_isa_MEM_WR_SCRATCH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	__EVG_NOT_IMPL__
 }
 
-#define W0 evg_isa_inst->words[0].cf_word0
-#define W1 evg_isa_inst->words[1].cf_word1
+
 void evg_isa_NOP_CF_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 }
-#undef W0
-#undef W1
 
 
 #define W0  EVG_CF_WORD0

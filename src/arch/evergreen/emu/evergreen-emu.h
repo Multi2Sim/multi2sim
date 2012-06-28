@@ -1120,33 +1120,6 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item);
  * Evergreen ISA
  */
 
-/* Global variables referring to the instruction that is currently being emulated.
- * There variables are set before calling the instruction emulation function in
- * 'machine.c' to avoid passing pointers. */
-extern struct evg_ndrange_t *evg_isa_ndrange;
-extern struct evg_work_group_t *evg_isa_work_group;
-extern struct evg_wavefront_t *evg_isa_wavefront;
-extern struct evg_work_item_t *evg_isa_work_item;
-extern struct evg_inst_t *evg_isa_cf_inst;
-extern struct evg_inst_t *evg_isa_inst;
-extern struct evg_alu_group_t *evg_isa_alu_group;
-
-/* Macros for quick access */
-#define EVG_GPR_ELEM(_gpr, _elem)  (evg_isa_work_item->gpr[(_gpr)].elem[(_elem)])
-#define EVG_GPR_X(_gpr)  EVG_GPR_ELEM((_gpr), 0)
-#define EVG_GPR_Y(_gpr)  EVG_GPR_ELEM((_gpr), 1)
-#define EVG_GPR_Z(_gpr)  EVG_GPR_ELEM((_gpr), 2)
-#define EVG_GPR_W(_gpr)  EVG_GPR_ELEM((_gpr), 3)
-#define EVG_GPR_T(_gpr)  EVG_GPR_ELEM((_gpr), 4)
-
-#define EVG_GPR_FLOAT_ELEM(_gpr, _elem)  (* (float *) &evg_isa_work_item->gpr[(_gpr)].elem[(_elem)])
-#define EVG_GPR_FLOAT_X(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 0)
-#define EVG_GPR_FLOAT_Y(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 1)
-#define EVG_GPR_FLOAT_Z(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 2)
-#define EVG_GPR_FLOAT_W(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 3)
-#define EVG_GPR_FLOAT_T(_gpr)  EVG_GPR_FLOAT_ELEM((_gpr), 4)
-
-
 /* Debugging */
 #define evg_isa_debugging() debug_status(evg_isa_debug_category)
 #define evg_isa_debug(...) debug(evg_isa_debug_category, __VA_ARGS__)
