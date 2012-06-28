@@ -24,6 +24,7 @@
 #include <x86-emu.h>
 
 #define evg_isa_wavefront __COMPILATION_ERROR__
+#define evg_isa_work_item __COMPILATION_ERROR__
 
 
 char *evg_err_isa_note =
@@ -538,10 +539,10 @@ void evg_isa_MEM_RAT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
-			evg_isa_work_item = evg_isa_ndrange->work_items[work_item_id];
+			work_item = evg_isa_ndrange->work_items[work_item_id];
 
 			/* If VPM is set, do not export for inactive pixels. */
-			if (W1.valid_pixel_mode && !evg_work_item_get_active(evg_isa_work_item))
+			if (W1.valid_pixel_mode && !evg_work_item_get_active(work_item))
 				continue;
 
 			/* W0.rw_gpr: GPR register from which to read data */
@@ -556,30 +557,31 @@ void evg_isa_MEM_RAT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 			/* Otherwise, we have an image, and we need to provide a base address */
 			mem = list_get(evg_isa_ndrange->kernel->uav_write_list, uav);
 			base_addr = mem->device_ptr;
-			addr = base_addr + evg_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
-			evg_isa_debug("  t%d:write(0x%x)", evg_isa_work_item->id, addr);
+			addr = base_addr + evg_isa_read_gpr(work_item, W0.index_gpr,
+				0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
+			evg_isa_debug("  t%d:write(0x%x)", work_item->id, addr);
 
 			/* Record access */
-			evg_isa_work_item->global_mem_access_addr = addr;
-			evg_isa_work_item->global_mem_access_size = 0;
+			work_item->global_mem_access_addr = addr;
+			work_item->global_mem_access_size = 0;
 
-			for (i = 0; i < 4; i++) {
-				
+			for (i = 0; i < 4; i++)
+			{
 				/* If component is masked, skip */
 				if (!(W1.comp_mask & (1 << i)))
 					continue;
 
 				/* FIXME We only support single-channel images, and don't know
 				 * how the ISA knows which components to write */
-				if(i != 0) 
+				if (i) 
 					continue;
 
 				/* Record size for memory access (warning: this is done inaccurately by assuming a
 				 * baseline access and a contiguous set of accessed elements */
-				evg_isa_work_item->global_mem_access_size += 4;
+				work_item->global_mem_access_size += 4;
 
 				/* Access */
-				value.as_uint = evg_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
+				value.as_uint = evg_isa_read_gpr(work_item, W0.rw_gpr, W0.rr, i, 0);
 
 				/* FIXME: leave gaps when intermediate 'comp_mask' bits are not set? */
 				mem_write(evg_emu->global_mem, addr + i * 4, 4, &value);
@@ -642,10 +644,10 @@ void evg_isa_MEM_RAT_CACHELESS_impl(struct evg_work_item_t *work_item, struct ev
 
 		EVG_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
-			evg_isa_work_item = evg_isa_ndrange->work_items[work_item_id];
+			work_item = evg_isa_ndrange->work_items[work_item_id];
 
 			/* If VPM is set, do not export for inactive pixels. */
-			if (W1.valid_pixel_mode && !evg_work_item_get_active(evg_isa_work_item))
+			if (W1.valid_pixel_mode && !evg_work_item_get_active(work_item))
 				continue;
 
 			/* W0.rw_gpr: GPR register from which to read data */
@@ -655,13 +657,13 @@ void evg_isa_MEM_RAT_CACHELESS_impl(struct evg_work_item_t *work_item, struct ev
 			/* W1.array_size: array size (elem-size units) */
 
 			/* This is a write, so we need to get the correct address based on the UAV number */
-			addr = evg_isa_read_gpr(W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
-			evg_isa_debug("  t%d:write(0x%x)", evg_isa_work_item->id, addr);
+			addr = evg_isa_read_gpr(work_item, W0.index_gpr, 0, 0, 0) * 4;  /* FIXME: only 1D - X coordinate, FIXME: x4? */
+			evg_isa_debug("  t%d:write(0x%x)", work_item->id, addr);
 
 			/* Record access */
 			wavefront->global_mem_write = 1;
-			evg_isa_work_item->global_mem_access_addr = addr;
-			evg_isa_work_item->global_mem_access_size = 0;
+			work_item->global_mem_access_addr = addr;
+			work_item->global_mem_access_size = 0;
 
 			for (i = 0; i < 4; i++)
 			{
@@ -671,10 +673,10 @@ void evg_isa_MEM_RAT_CACHELESS_impl(struct evg_work_item_t *work_item, struct ev
 
 				/* Record size for memory access (warning: this is done inaccurately by assuming a
 				 * baseline access and a contiguous set of accessed elements */
-				evg_isa_work_item->global_mem_access_size += 4;
+				work_item->global_mem_access_size += 4;
 
 				/* Access */
-				value.as_uint = evg_isa_read_gpr(W0.rw_gpr, W0.rr, i, 0);
+				value.as_uint = evg_isa_read_gpr(work_item, W0.rw_gpr, W0.rr, i, 0);
 
 				/* FIXME: leave gaps when intermediate 'comp_mask' bits are not set? */
 				mem_write(evg_emu->global_mem, addr + i * 4, 4, &value);
@@ -928,8 +930,8 @@ void evg_isa_ADD_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst
 {
 	float src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	dst = src0 + src1;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -939,8 +941,8 @@ void evg_isa_MUL_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst
 {
 	float src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	dst = src0 * src1;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -950,8 +952,8 @@ void evg_isa_MUL_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 {
 	float src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	dst = src0 * src1;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -975,8 +977,8 @@ void evg_isa_MAX_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 
 	/* FIXME: This instruction uses the DirectX 10 method of handling of NaNs
 	 * How? */
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	dst = src0 > src1 ? src0 : src1;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -988,8 +990,8 @@ void evg_isa_MIN_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 
 	/* FIXME: This instruction uses the DirectX 10 method of handling of NaNs
 	 * How? */
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	dst = src0 < src1 ? src0 : src1;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -1006,8 +1008,8 @@ void evg_isa_SETE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *ins
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 == src1;
 	dst = cond ? 1.0f : 0.0f;
 	evg_isa_enqueue_write_dest_float(dst);
@@ -1027,8 +1029,8 @@ void evg_isa_SETGT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 > src1;
 	dst = cond ? 1.0f : 0.0f;
 	evg_isa_enqueue_write_dest_float(dst);
@@ -1048,8 +1050,8 @@ void evg_isa_SETGE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 >= src1;
 	dst = cond ? 1.0f : 0.0f;
 	evg_isa_enqueue_write_dest_float(dst);
@@ -1069,8 +1071,8 @@ void evg_isa_SETNE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 != src1;
 	dst = cond ? 1.0f : 0.0f;
 	evg_isa_enqueue_write_dest_float(dst);
@@ -1090,8 +1092,8 @@ void evg_isa_SETE_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 == src1;
 	dst = cond ? -1 : 0;
 	evg_isa_enqueue_write_dest(dst);
@@ -1111,8 +1113,8 @@ void evg_isa_SETGT_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 > src1;
 	dst = cond ? -1 : 0;
 	evg_isa_enqueue_write_dest(dst);
@@ -1132,8 +1134,8 @@ void evg_isa_SETGE_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 >= src1;
 	dst = cond ? -1 : 0;
 	evg_isa_enqueue_write_dest(dst);
@@ -1153,8 +1155,8 @@ void evg_isa_SETNE_DX10_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 != src1;
 	dst = cond ? -1 : 0;
 	evg_isa_enqueue_write_dest(dst);
@@ -1167,7 +1169,7 @@ void evg_isa_FRACT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 {
 	float src, dst;
 
-	src = evg_isa_read_op_src_float(0);
+	src = evg_isa_read_op_src_float(work_item, inst, 0);
 	dst = fmodf(src, 1.0f);
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -1177,7 +1179,7 @@ void evg_isa_TRUNC_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 {
 	float src, dst;
 
-	src = evg_isa_read_op_src_float(0);
+	src = evg_isa_read_op_src_float(work_item, inst, 0);
 	dst = truncf(src);
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -1199,7 +1201,7 @@ void evg_isa_FLOOR_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 {
 	float src0, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	
 	dst = trunc(src0);
 	if((src0 < 0.0f) && (src0 != dst))
@@ -1214,8 +1216,8 @@ void evg_isa_ASHR_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 	int32_t src0, dst;
 	uint32_t src1;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	if (src1 > 31)
 		dst = src0 < 0 ? -1 : 0;
 	else
@@ -1228,8 +1230,8 @@ void evg_isa_LSHR_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 {
 	uint32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 >> src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1239,8 +1241,8 @@ void evg_isa_LSHL_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 {
 	uint32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 << src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1249,7 +1251,7 @@ void evg_isa_LSHL_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 void evg_isa_MOV_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst)
 {
 	uint32_t value;
-	value = evg_isa_read_op_src_int(0);
+	value = evg_isa_read_op_src_int(work_item, inst, 0);
 	evg_isa_enqueue_write_dest(value);
 }
 
@@ -1302,8 +1304,8 @@ void evg_isa_PRED_SETE_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 == src1;
 	dst.as_float = cond ? 0.0f : 1.0f;
 	evg_isa_enqueue_write_dest(dst.as_uint);
@@ -1329,8 +1331,8 @@ void evg_isa_PRED_SETGT_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 > src1;
 	dst.as_float = cond ? 0.0f : 1.0f;
 	evg_isa_enqueue_write_dest(dst.as_uint);
@@ -1356,8 +1358,8 @@ void evg_isa_PRED_SETGE_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 >= src1;
 	dst.as_float = cond ? 0.0f : 1.0f;
 	evg_isa_enqueue_write_dest(dst.as_uint);
@@ -1383,8 +1385,8 @@ void evg_isa_PRED_SETNE_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
 	cond = src0 != src1;
 	dst.as_float = cond ? 0.0f : 1.0f;
 	evg_isa_enqueue_write_dest(dst.as_uint);
@@ -1473,8 +1475,8 @@ void evg_isa_AND_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 {
 	uint32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 & src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1484,8 +1486,8 @@ void evg_isa_OR_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *i
 {
 	uint32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 | src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1495,8 +1497,8 @@ void evg_isa_XOR_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 {
 	uint32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 ^ src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1512,8 +1514,8 @@ void evg_isa_ADD_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 {
 	uint32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 + src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1523,8 +1525,8 @@ void evg_isa_SUB_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 {
 	uint32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 - src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1534,8 +1536,8 @@ void evg_isa_MAX_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 {
 	int32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 > src1 ? src0 : src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1545,8 +1547,8 @@ void evg_isa_MIN_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 {
 	int32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 < src1 ? src0 : src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1556,8 +1558,8 @@ void evg_isa_MAX_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 {
 	uint32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 > src1 ? src0 : src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1567,8 +1569,8 @@ void evg_isa_MIN_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 {
 	uint32_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 < src1 ? src0 : src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -1585,8 +1587,8 @@ void evg_isa_SETE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	cond = src0 == src1;
 	dst = cond ? -1 : 0;
 	evg_isa_enqueue_write_dest(dst);
@@ -1606,8 +1608,8 @@ void evg_isa_SETGT_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	cond = src0 > src1;
 	dst = cond ? -1 : 0;
 	evg_isa_enqueue_write_dest(dst);
@@ -1627,8 +1629,8 @@ void evg_isa_SETGE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	cond = src0 >= src1;
 	dst = cond ? -1 : 0;
 	evg_isa_enqueue_write_dest(dst);
@@ -1648,8 +1650,8 @@ void evg_isa_SETNE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	cond = src0 != src1;
 	dst = cond ? -1 : 0;
 	evg_isa_enqueue_write_dest(dst);
@@ -1671,8 +1673,8 @@ void evg_isa_SETGT_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	cond = src0 > src1;
 	dst = cond ? -1 : 0;
 	evg_isa_enqueue_write_dest(dst);
@@ -1692,8 +1694,8 @@ void evg_isa_SETGE_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.omod, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	cond = src0 >= src1;
 	dst = cond ? -1 : 0;
 	evg_isa_enqueue_write_dest(dst);
@@ -1727,8 +1729,8 @@ void evg_isa_PREDE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	cond = src0 == src1;
 	dst.as_float = cond ? 0.0f : 1.0f;
 	evg_isa_enqueue_write_dest(dst.as_uint);
@@ -1754,8 +1756,8 @@ void evg_isa_PRED_SETGE_INT_impl(struct evg_work_item_t *work_item, struct evg_i
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	cond = src0 >= src1;
 	dst.as_float = cond ? 0.0f : 1.0f;
 	evg_isa_enqueue_write_dest(dst.as_uint);
@@ -1781,8 +1783,8 @@ void evg_isa_PRED_SETGT_INT_impl(struct evg_work_item_t *work_item, struct evg_i
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	cond = src0 > src1;
 	dst.as_float = cond ? 0.0f : 1.0f;
 	evg_isa_enqueue_write_dest(dst.as_uint);
@@ -1808,8 +1810,8 @@ void evg_isa_PRED_SETNE_INT_impl(struct evg_work_item_t *work_item, struct evg_i
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.bank_swizzle, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(W1.clamp, 0);
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	cond = src0 != src1;
 	dst.as_float = cond ? 0.0f : 1.0f;
 	evg_isa_enqueue_write_dest(dst.as_uint);
@@ -1887,7 +1889,7 @@ void evg_isa_FLT_TO_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	float src;
 	int32_t dst;
 	
-	src = evg_isa_read_op_src_float(0);
+	src = evg_isa_read_op_src_float(work_item, inst, 0);
 	if (isinf(src) == 1)
 		dst = INT32_MAX;
 	else if (isinf(src) == -1)
@@ -1923,7 +1925,7 @@ void evg_isa_GROUP_BARRIER_impl(struct evg_work_item_t *work_item, struct evg_in
 	struct evg_wavefront_t *wavefront = work_item->wavefront;
 
 	/* Only the first work-item in a wavefront handles barriers */
-	if (evg_isa_work_item->id_in_wavefront)
+	if (work_item->id_in_wavefront)
 		return;
 	
 	/* Suspend current wavefront at the barrier */
@@ -2022,7 +2024,7 @@ void evg_isa_RECIP_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_
 {
 	float src, dst;
 
-	src = evg_isa_read_op_src_float(0);
+	src = evg_isa_read_op_src_float(work_item, inst, 0);
 	dst = 1.0f / src;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -2050,7 +2052,7 @@ void evg_isa_SQRT_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 {
 	float src, dst;
 
-	src = evg_isa_read_op_src_float(0);
+	src = evg_isa_read_op_src_float(work_item, inst, 0);
 	dst = sqrtf(src);
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -2060,7 +2062,7 @@ void evg_isa_SIN_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst
 {
 	float src, dst;
 
-	src = evg_isa_read_op_src_float(0);
+	src = evg_isa_read_op_src_float(work_item, inst, 0);
 	dst = sinf(src);
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -2070,7 +2072,7 @@ void evg_isa_COS_impl(struct evg_work_item_t *work_item, struct evg_inst_t *inst
 {
 	float src, dst;
 
-	src = evg_isa_read_op_src_float(0);
+	src = evg_isa_read_op_src_float(work_item, inst, 0);
 	dst = cosf(src);
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -2080,8 +2082,8 @@ void evg_isa_MULLO_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 {
 	int src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 * src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -2091,8 +2093,8 @@ void evg_isa_MULHI_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 {
 	int64_t src0, src1, dst;
 
-	src0 = (int32_t) evg_isa_read_op_src_int(0);
-	src1 = (int32_t) evg_isa_read_op_src_int(1);
+	src0 = (int32_t) evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = (int32_t) evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 * src1;
 	evg_isa_enqueue_write_dest(dst >> 32);
 }
@@ -2102,8 +2104,8 @@ void evg_isa_MULLO_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_
 {
 	unsigned int src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 * src1;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -2113,8 +2115,8 @@ void evg_isa_MULHI_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_
 {
 	uint64_t src0, src1, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
 	dst = src0 * src1;
 	evg_isa_enqueue_write_dest(dst >> 32);
 }
@@ -2131,7 +2133,7 @@ void evg_isa_RECIP_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	uint32_t src;
 	uint32_t dst;
 
-	src = evg_isa_read_op_src_int(0);
+	src = evg_isa_read_op_src_int(work_item, inst, 0);
 	dst = 0xffffffff / src;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -2172,7 +2174,7 @@ void evg_isa_FLT_TO_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst
 	float src;
 	uint32_t dst;
 	
-	src = evg_isa_read_op_src_float(0);
+	src = evg_isa_read_op_src_float(work_item, inst, 0);
 	if (isinf(src) == 1)
 		dst = UINT32_MAX;
 	else if (isinf(src) == -1 || isnan(src))
@@ -2188,7 +2190,7 @@ void evg_isa_INT_TO_FLT_impl(struct evg_work_item_t *work_item, struct evg_inst_
 	int32_t src0;
 	float dst;
 
-	src0 = evg_isa_read_op_src_int(0);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	dst = (float) src0;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -2199,7 +2201,7 @@ void evg_isa_UINT_TO_FLT_impl(struct evg_work_item_t *work_item, struct evg_inst
 	uint32_t src0;
 	float dst;
 
-	src0 = evg_isa_read_op_src_int(0);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
 	dst = (float) src0;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -2464,13 +2466,13 @@ void evg_isa_MUL_64_VEC_impl(struct evg_work_item_t *work_item, struct evg_inst_
 
 	/* Get low-order operand from slot 2 */
 	evg_isa_inst = inst_slot[2];
-	src0.as_uint[0] = evg_isa_read_op_src_int(0);
-	src1.as_uint[0] = evg_isa_read_op_src_int(1);
+	src0.as_uint[0] = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1.as_uint[0] = evg_isa_read_op_src_int(work_item, inst, 1);
 
 	/* Get high-order operand from slot 3 */
 	evg_isa_inst = inst_slot[3];
-	src0.as_uint[1] = evg_isa_read_op_src_int(0);
-	src1.as_uint[1] = evg_isa_read_op_src_int(1);
+	src0.as_uint[1] = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1.as_uint[1] = evg_isa_read_op_src_int(work_item, inst, 1);
 
 	/* Operation */
 	dst.as_double = src0.as_double * src1.as_double;
@@ -2531,13 +2533,13 @@ void evg_isa_ADD_64_impl(struct evg_work_item_t *work_item, struct evg_inst_t *i
 	
 	/* Get low-order operands from slot 0 */
 	evg_isa_inst = inst_slot[0];
-	src0.as_uint[0] = evg_isa_read_op_src_int(0);
-	src1.as_uint[0] = evg_isa_read_op_src_int(1);
+	src0.as_uint[0] = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1.as_uint[0] = evg_isa_read_op_src_int(work_item, inst, 1);
 
 	/* Get high-order operands from slot 1 */
 	evg_isa_inst = inst_slot[1];
-	src0.as_uint[1] = evg_isa_read_op_src_int(0);
-	src1.as_uint[1] = evg_isa_read_op_src_int(1);
+	src0.as_uint[1] = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1.as_uint[1] = evg_isa_read_op_src_int(work_item, inst, 1);
 
 	/* Operation */
 	dst.as_double = src0.as_double + src1.as_double;
@@ -2599,11 +2601,11 @@ void evg_isa_FLT64_TO_FLT32_VEC_impl(struct evg_work_item_t *work_item, struct e
 	
 	/* Get low-order operand from slot 0 */
 	evg_isa_inst = inst_slot[0];
-	src.as_uint[0] = evg_isa_read_op_src_int(0);
+	src.as_uint[0] = evg_isa_read_op_src_int(work_item, inst, 0);
 
 	/* Get high-order operand from slot 1 */
 	evg_isa_inst = inst_slot[1];
-	src.as_uint[1] = evg_isa_read_op_src_int(0);
+	src.as_uint[1] = evg_isa_read_op_src_int(work_item, inst, 0);
 
 	/* Operation */
 	dst.as_float[0] = src.as_double;
@@ -2659,7 +2661,7 @@ void evg_isa_FLT32_TO_FLT64_VEC_impl(struct evg_work_item_t *work_item, struct e
 	/* Get low-order operand from slot 0.
 	 * There is no high-order operand in this case. */
 	evg_isa_inst = inst_slot[0];
-	src.as_uint[0] = evg_isa_read_op_src_int(0);
+	src.as_uint[0] = evg_isa_read_op_src_int(work_item, inst, 0);
 
 	/* Operation */
 	dst.as_double = src.as_float[0];
@@ -2795,9 +2797,9 @@ void evg_isa_BFE_UINT_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 {
 	unsigned int src0, src1, src2, dst;
 
-	src0 = evg_isa_read_op_src_int(0);  /* Input data */
-	src1 = evg_isa_read_op_src_int(1);  /* Offset */
-	src2 = evg_isa_read_op_src_int(2);  /* Width */
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);  /* Input data */
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);  /* Offset */
+	src2 = evg_isa_read_op_src_int(work_item, inst, 2);  /* Width */
 
 	src1 = (src1 & 0x1F);
 	src2 = (src2 & 0x1F);
@@ -2824,9 +2826,9 @@ void evg_isa_BFE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 
         int src0, src1, src2, dst;
 
-        src0 = evg_isa_read_op_src_int(0);
-        src1 = evg_isa_read_op_src_int(1);
-        src2 = evg_isa_read_op_src_int(2);
+        src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+        src1 = evg_isa_read_op_src_int(work_item, inst, 1);
+        src2 = evg_isa_read_op_src_int(work_item, inst, 2);
 
         src1 = (src1 & 0x1F);
         src2 = (src2 & 0x1F);
@@ -2853,9 +2855,9 @@ void evg_isa_BFI_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *
 
 	uint32_t src0, src1, src2, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
-	src2 = evg_isa_read_op_src_int(2);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
+	src2 = evg_isa_read_op_src_int(work_item, inst, 2);
 
 	/* Documentation says: dst = (src1 & src0) | (src2 & -src0) */
 	dst = (src1 & src0) | (src2 & ~src0);
@@ -2932,9 +2934,9 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 		(W1.idx_offset_1 << 1) | W1.idx_offset_0;
 	
 	/* Read operands */
-	op0 = evg_isa_read_op_src_int(0);
-	op1 = evg_isa_read_op_src_int(1);
-	op2 = evg_isa_read_op_src_int(2);
+	op0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	op1 = evg_isa_read_op_src_int(work_item, inst, 1);
+	op2 = evg_isa_read_op_src_int(work_item, inst, 2);
 
 	/* Process LDS instruction */
 	switch (W1.lds_op) {
@@ -3032,9 +3034,9 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 			fatal("%s: out of memory", __FUNCTION__);
 
 		mem_read(local_mem, op0, 4, value_ptr);
-		list_enqueue(evg_isa_work_item->lds_oqa, value_ptr);
+		list_enqueue(work_item->lds_oqa, value_ptr);
 		evg_isa_debug("  t%d:LDS[0x%x]=(%u,%gf)=>OQA",
-			evg_isa_work_item->id, op0, value_ptr->as_uint, value_ptr->as_float);
+			work_item->id, op0, value_ptr->as_uint, value_ptr->as_float);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -3057,14 +3059,14 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 			fatal("%s: out of memory", __FUNCTION__);
 
 		mem_read(local_mem, op0, 4, value_ptr);
-		list_enqueue(evg_isa_work_item->lds_oqa, value_ptr);
+		list_enqueue(work_item->lds_oqa, value_ptr);
 
 		value_ptr = malloc(4);
 		if (!value_ptr)
 			fatal("%s: out of memory", __FUNCTION__);
 
 		mem_read(local_mem, op1, 4, value_ptr);
-		list_enqueue(evg_isa_work_item->lds_oqb, value_ptr);
+		list_enqueue(work_item->lds_oqb, value_ptr);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 2;
@@ -3092,7 +3094,7 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 			fatal("%s: out of memory", __FUNCTION__);
 
 		*pvalue_se = value;
-		list_enqueue(evg_isa_work_item->lds_oqa, pvalue_se);
+		list_enqueue(work_item->lds_oqa, pvalue_se);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -3117,7 +3119,7 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 			fatal("%s: out of memory", __FUNCTION__);
 
 		*pvalue_24h0 = value;
-		list_enqueue(evg_isa_work_item->lds_oqa, pvalue_24h0);
+		list_enqueue(work_item->lds_oqa, pvalue_24h0);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -3141,8 +3143,8 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 			fatal("%s: out of memory", __FUNCTION__);
 
 		*pvalue_se = value;
-		evg_isa_debug("  t%d: %d (pvalue = %d)", evg_isa_work_item->id, value, *pvalue_se);
-		list_enqueue(evg_isa_work_item->lds_oqa, pvalue_se);
+		evg_isa_debug("  t%d: %d (pvalue = %d)", work_item->id, value, *pvalue_se);
+		list_enqueue(work_item->lds_oqa, pvalue_se);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -3166,7 +3168,7 @@ void evg_isa_LDS_IDX_OP_impl(struct evg_work_item_t *work_item, struct evg_inst_
 			fatal("%s: out of memory", __FUNCTION__);
 
 		*pvalue_16h0 = value;
-		list_enqueue(evg_isa_work_item->lds_oqa, pvalue_16h0);
+		list_enqueue(work_item->lds_oqa, pvalue_16h0);
 
 		wavefront->local_mem_read = 1;
 		work_item->local_mem_access_count = 1;
@@ -3188,9 +3190,9 @@ void evg_isa_MULADD_impl(struct evg_work_item_t *work_item, struct evg_inst_t *i
 {
 	float src0, src1, src2, dst;
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
-	src2 = evg_isa_read_op_src_float(2);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
+	src2 = evg_isa_read_op_src_float(work_item, inst, 2);
 	dst = src0 * src1 + src2;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -3218,9 +3220,9 @@ void evg_isa_MULADD_IEEE_impl(struct evg_work_item_t *work_item, struct evg_inst
 {
 	float src0, src1, src2, dst;
 
-	src0 = evg_isa_read_op_src_float(0);
-	src1 = evg_isa_read_op_src_float(1);
-	src2 = evg_isa_read_op_src_float(2);
+	src0 = evg_isa_read_op_src_float(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_float(work_item, inst, 1);
+	src2 = evg_isa_read_op_src_float(work_item, inst, 2);
 	dst = src0 * src1 + src2;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -3230,9 +3232,9 @@ void evg_isa_CNDE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *ins
 {
 	float src0, src1, src2, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
-	src2 = evg_isa_read_op_src_int(2);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
+	src2 = evg_isa_read_op_src_int(work_item, inst, 2);
 	dst = src0 == 0.0f ? src1 : src2;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -3242,9 +3244,9 @@ void evg_isa_CNDGT_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 {
 	float src0, src1, src2, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
-	src2 = evg_isa_read_op_src_int(2);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
+	src2 = evg_isa_read_op_src_int(work_item, inst, 2);
 	dst = src0 > 0.0f ? src1 : src2;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -3254,9 +3256,9 @@ void evg_isa_CNDGE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 {
 	float src0, src1, src2, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
-	src2 = evg_isa_read_op_src_int(2);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
+	src2 = evg_isa_read_op_src_int(work_item, inst, 2);
 	dst = src0 >= 0.0f ? src1 : src2;
 	evg_isa_enqueue_write_dest_float(dst);
 }
@@ -3266,9 +3268,9 @@ void evg_isa_CNDE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t 
 {
 	uint32_t src0, src1, src2, dst;
 
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
-	src2 = evg_isa_read_op_src_int(2);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
+	src2 = evg_isa_read_op_src_int(work_item, inst, 2);
 	dst = src0 == 0 ? src1 : src2;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -3278,9 +3280,9 @@ void evg_isa_CNDGE_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 {
 	int src0, src1, src2, dst;
 	
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
-	src2 = evg_isa_read_op_src_int(2);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
+	src2 = evg_isa_read_op_src_int(work_item, inst, 2);
 	dst = src0 >= 0 ? src1 : src2;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -3290,9 +3292,9 @@ void evg_isa_CNDGT_INT_impl(struct evg_work_item_t *work_item, struct evg_inst_t
 {
 	int src0, src1, src2, dst;
 	
-	src0 = evg_isa_read_op_src_int(0);
-	src1 = evg_isa_read_op_src_int(1);
-	src2 = evg_isa_read_op_src_int(2);
+	src0 = evg_isa_read_op_src_int(work_item, inst, 0);
+	src1 = evg_isa_read_op_src_int(work_item, inst, 1);
+	src2 = evg_isa_read_op_src_int(work_item, inst, 2);
 	dst = src0 > 0 ? src1 : src2;
 	evg_isa_enqueue_write_dest(dst);
 }
@@ -3353,7 +3355,7 @@ void evg_isa_FETCH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 	/* W2.mf (mega_fetch) */
 
 	/* Do not fetch for inactive work_items */
-	if (!evg_work_item_get_active(evg_isa_work_item))
+	if (!evg_work_item_get_active(work_item))
 		return;
 	
 	/* Store 'dst_sel_{x,y,z,w}' in array */
@@ -3527,8 +3529,9 @@ void evg_isa_FETCH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 	}
 
 	/* Address */
-	addr = base_addr + evg_isa_read_gpr(W0.src_gpr, W0.src_rel, W0.src_sel_x, 0) * (num_elem*elem_size);
-	evg_isa_debug("  t%d:read(%u)", evg_isa_work_item->id, addr);
+	addr = base_addr + evg_isa_read_gpr(work_item, W0.src_gpr, W0.src_rel,
+		W0.src_sel_x, 0) * (num_elem * elem_size);
+	evg_isa_debug("  t%d:read(%u)", work_item->id, addr);
 
 	/* FIXME The number of bytes to read is defined by mega_fetch, but we currently
 	 * cannot handle cases where num_elem*elem_size != mega_fetch */
@@ -3536,8 +3539,8 @@ void evg_isa_FETCH_impl(struct evg_work_item_t *work_item, struct evg_inst_t *in
 
 	/* Record global memory access */
 	wavefront->global_mem_read = 1;
-	evg_isa_work_item->global_mem_access_addr = addr;
-	evg_isa_work_item->global_mem_access_size = num_elem * elem_size;
+	work_item->global_mem_access_addr = addr;
+	work_item->global_mem_access_size = num_elem * elem_size;
 
 	/* Write to each component of the GPR */
 	for (i = 0; i < 4; i++)
@@ -3715,16 +3718,16 @@ void evg_isa_SAMPLE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *i
 
 	/* Calculate read address */
 	base_addr = image->device_ptr;
-	addr.as_uint = evg_isa_read_gpr(W0.src_gpr, 0, 0, 0);  /* FIXME Always reads from X */ 
+	addr.as_uint = evg_isa_read_gpr(work_item, W0.src_gpr, 0, 0, 0);  /* FIXME Always reads from X */ 
 	addr.as_uint = base_addr + (uint32_t) round(addr.as_float) * pixel_size;
 
 	mem_read(evg_emu->global_mem, addr.as_uint, pixel_size, &value);
 
-	evg_isa_debug("  t%d:read(%u)", evg_isa_work_item->id, addr.as_uint);
+	evg_isa_debug("  t%d:read(%u)", work_item->id, addr.as_uint);
 	evg_isa_debug("<=(%d,%gf) ", value.as_int, value.as_float);
 
 	/* Do not fetch for inactive work_items */
-	if (!evg_work_item_get_active(evg_isa_work_item))
+	if (!evg_work_item_get_active(work_item))
 		return;
 
 	/* Store 'dst_sel_{x,y,z,w}' in array */
@@ -3735,8 +3738,8 @@ void evg_isa_SAMPLE_impl(struct evg_work_item_t *work_item, struct evg_inst_t *i
 	
 	/* Record global memory access */
 	wavefront->global_mem_read = 1;
-	evg_isa_work_item->global_mem_access_addr = addr.as_uint;
-	evg_isa_work_item->global_mem_access_size = pixel_size;
+	work_item->global_mem_access_addr = addr.as_uint;
+	work_item->global_mem_access_size = pixel_size;
 
 	/* Write to each component of the GPR */
 	for (i = 0; i < 4; i++) {
