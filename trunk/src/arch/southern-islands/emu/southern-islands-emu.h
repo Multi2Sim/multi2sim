@@ -909,15 +909,6 @@ void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, int
  * Southern Islands ISA
  */
 
-/* Global variables referring to the instruction that is currently being emulated.
- * There variables are set before calling the instruction emulation function in
- * 'machine.c' to avoid passing pointers. */
-extern struct si_ndrange_t *si_isa_ndrange;
-extern struct si_work_group_t *si_isa_work_group;
-extern struct si_wavefront_t *si_isa_wavefront;
-extern struct si_work_item_t *si_isa_work_item;
-extern struct si_inst_t *si_isa_inst;
-
 
 /* Macros for special registers */
 #define SI_VCC 106
@@ -925,7 +916,6 @@ extern struct si_inst_t *si_isa_inst;
 #define SI_EXEC 126
 #define SI_EXECZ 252
 #define SI_SCC 253
-
 
 
 /* Debugging */
@@ -949,24 +939,24 @@ extern char *err_si_isa_note;
 
 
 /* Macros for fast access of instruction words */
-#define SI_INST_SMRD		si_isa_inst->micro_inst.smrd
-#define SI_INST_SOPP		si_isa_inst->micro_inst.sopp
-#define SI_INST_SOPK		si_isa_inst->micro_inst.sopk
-#define SI_INST_SOPC		si_isa_inst->micro_inst.sopc
-#define SI_INST_SOP1		si_isa_inst->micro_inst.sop1
-#define SI_INST_SOP2		si_isa_inst->micro_inst.sop2
-#define SI_INST_VOP1		si_isa_inst->micro_inst.vop1
-#define SI_INST_VOP2		si_isa_inst->micro_inst.vop2
-#define SI_INST_VOPC		si_isa_inst->micro_inst.vopc
-#define SI_INST_VOP3b		si_isa_inst->micro_inst.vop3b
-#define SI_INST_VOP3a		si_isa_inst->micro_inst.vop3a
-#define SI_INST_DS			si_isa_inst->micro_inst.ds
-#define SI_INST_MTBUF		si_isa_inst->micro_inst.mtbuf
+#define SI_INST_SMRD		inst->micro_inst.smrd
+#define SI_INST_SOPP		inst->micro_inst.sopp
+#define SI_INST_SOPK		inst->micro_inst.sopk
+#define SI_INST_SOPC		inst->micro_inst.sopc
+#define SI_INST_SOP1		inst->micro_inst.sop1
+#define SI_INST_SOP2		inst->micro_inst.sop2
+#define SI_INST_VOP1		inst->micro_inst.vop1
+#define SI_INST_VOP2		inst->micro_inst.vop2
+#define SI_INST_VOPC		inst->micro_inst.vopc
+#define SI_INST_VOP3b		inst->micro_inst.vop3b
+#define SI_INST_VOP3a		inst->micro_inst.vop3a
+#define SI_INST_DS			inst->micro_inst.ds
+#define SI_INST_MTBUF		inst->micro_inst.mtbuf
 /* FIXME Finish filling these in */
 
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-typedef void (*si_isa_inst_func_t)(void);
+typedef void (*si_isa_inst_func_t)(struct si_work_item_t *work_item, struct si_inst_t *inst);
 extern si_isa_inst_func_t *si_isa_inst_func;
 
 
@@ -1048,16 +1038,16 @@ extern struct si_emu_t *si_emu;
 void si_emu_init(void);
 void si_emu_done(void);
 
-union si_reg_t si_isa_read_sreg(int sreg);
-void si_isa_write_sreg(int sreg, union si_reg_t value);
-union si_reg_t si_isa_read_vreg(int vreg);
-void si_isa_write_vreg(int vreg, union si_reg_t value);
-union si_reg_t si_isa_read_reg(int reg);
-void si_isa_bitmask_sreg(int sreg, union si_reg_t value);
-int si_isa_read_bitmask_sreg(int sreg);
+union si_reg_t si_isa_read_sreg(struct si_work_item_t *work_item, int sreg);
+void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value);
+union si_reg_t si_isa_read_vreg(struct si_work_item_t *work_item, int vreg);
+void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, union si_reg_t value);
+union si_reg_t si_isa_read_reg(struct si_work_item_t *work_item, int reg);
+void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value);
+int si_isa_read_bitmask_sreg(struct si_work_item_t *work_item, int sreg);
 
-void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg);
-void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg);
+void si_isa_read_buf_res(struct si_work_item_t *work_item, struct si_buffer_resource_t *buf_desc, int sreg);
+void si_isa_read_mem_ptr(struct si_work_item_t *work_item, struct si_mem_ptr_t *mem_ptr, int sreg);
 int si_isa_get_num_elems(int data_format);
 int si_isa_get_elem_size(int data_format);
 
