@@ -196,23 +196,28 @@ void gpu_isa_dest_value_dump(void *value_ptr, FILE *f)
 }
 
 
-/* Read source GPR */
-unsigned int evg_isa_read_gpr(int gpr, int rel, int chan, int im)
+/* Read source GPR, checking for valid ranges. */
+unsigned int evg_isa_read_gpr(struct evg_work_item_t *work_item,
+	int gpr, int rel, int chan, int im)
 {
+	/* Check arguments */
 	EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 4);
 	EVG_ISA_ARG_NOT_SUPPORTED_RANGE(gpr, 0, 127);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(rel, 0);
 	EVG_ISA_ARG_NOT_SUPPORTED_NEQ(im, 0);
-	return EVG_GPR_ELEM(gpr, chan);
+
+	/* Return value */
+	return work_item->gpr[gpr].elem[chan];
 }
 
 
 /* Read source GPR in float format */
-float evg_isa_read_gpr_float(int gpr, int rel, int chan, int im)
+float evg_isa_read_gpr_float(struct evg_work_item_t *work_item,
+	int gpr, int rel, int chan, int im)
 {
 	union evg_reg_t reg;
 
-	reg.as_uint = evg_isa_read_gpr(gpr, rel, chan, im);
+	reg.as_uint = evg_isa_read_gpr(work_item, gpr, rel, chan, im);
 	return reg.as_float;
 }
 
@@ -237,30 +242,34 @@ void evg_isa_write_gpr_float(int gpr, int rel, int chan, float value)
 
 /* Read source operand in ALU instruction.
  * This is a common function for both integer and float formats. */
-static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_ptr)
+static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, int src_idx, int *neg_ptr, int *abs_ptr)
 {
 	int sel;
 	int rel;
 	int chan;
 
-	int32_t value = 0;  /* Signed, for negative constants and abs operations */
+	int value = 0;  /* Signed, for negative constants and abs operations */
 
 	/* Get the source operand parameters */
-	evg_inst_get_op_src(evg_isa_inst, src_idx, &sel, &rel, &chan, neg_ptr, abs_ptr);
+	evg_inst_get_op_src(inst, src_idx, &sel, &rel, &chan, neg_ptr, abs_ptr);
 
 	/* 0..127: Value in GPR */
 	if (IN_RANGE(sel, 0, 127))
 	{
 		int index_mode;
-		index_mode = evg_isa_inst->words[0].alu_word0.index_mode;
-		value = evg_isa_read_gpr(sel, rel, chan, index_mode);
+
+		index_mode = inst->words[0].alu_word0.index_mode;
+		value = evg_isa_read_gpr(work_item, sel, rel, chan, index_mode);
 		return value;
 	}
 
 	/* 128..159: Kcache 0 constant */
 	if (IN_RANGE(sel, 128, 159))
 	{
-		uint32_t kcache_bank, kcache_mode, kcache_addr;
+		unsigned int kcache_bank;
+		unsigned int kcache_mode;
+		unsigned int kcache_addr;
 
 		assert(evg_isa_cf_inst->info->fmt[0] == EVG_FMT_CF_ALU_WORD0 && evg_isa_cf_inst->info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
 		kcache_bank = evg_isa_cf_inst->words[0].cf_alu_word0.kcache_bank0;
@@ -270,6 +279,7 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
 		evg_isa_const_mem_read(kcache_bank, kcache_addr * 16 + sel - 128, chan, &value);
+
 		return value;
 	}
 
@@ -393,12 +403,15 @@ static uint32_t gpu_isa_read_op_src_common(int src_idx, int *neg_ptr, int *abs_p
 }
 
 
-unsigned int evg_isa_read_op_src_int(int src_idx)
+unsigned int evg_isa_read_op_src_int(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, int src_idx)
 {
 	int neg, abs;
-	int value; /* Signed */
+	int value;
 
-	value = gpu_isa_read_op_src_common(src_idx, &neg, &abs);
+	/* Get value */
+	value = evg_isa_read_op_src_common(work_item, inst,
+		src_idx, &neg, &abs);
 
 	/* Absolute value and negation */
 	if (abs && value < 0)
@@ -411,14 +424,16 @@ unsigned int evg_isa_read_op_src_int(int src_idx)
 }
 
 
-float evg_isa_read_op_src_float(int src_idx)
+float evg_isa_read_op_src_float(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, int src_idx)
 {
 	union evg_reg_t reg;
 	int neg;
 	int abs;
 
-	/* Read register */
-	reg.as_uint = gpu_isa_read_op_src_common(src_idx, &neg, &abs);
+	/* Get value */
+	reg.as_uint = evg_isa_read_op_src_common(work_item, inst,
+		src_idx, &neg, &abs);
 
 	/* Absolute value and negation */
 	if (abs && reg.as_float < 0.0)

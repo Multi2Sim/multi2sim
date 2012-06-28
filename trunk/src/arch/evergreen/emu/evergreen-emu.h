@@ -1221,14 +1221,20 @@ void evg_isa_alu_clause_end(void);
 void evg_isa_tc_clause_start(void);
 void evg_isa_tc_clause_end(void);
 
-/* For functional simulation */
-unsigned int evg_isa_read_gpr(int gpr, int rel, int chan, int im);
-float evg_isa_read_gpr_float(int gpr, int rel, int chan, int im);
+/* Read source register */
+unsigned int evg_isa_read_gpr(struct evg_work_item_t *work_item,
+	int gpr, int rel, int chan, int im);
+float evg_isa_read_gpr_float(struct evg_work_item_t *work_item,
+	int gpr, int rel, int chan, int im);
+
 void evg_isa_write_gpr(int gpr, int rel, int chan, uint32_t value);
 void evg_isa_write_gpr_float(int gpr, int rel, int chan, float value);
 
-unsigned int evg_isa_read_op_src_int(int src_idx);
-float evg_isa_read_op_src_float(int src_idx);
+/* Read input operands */
+unsigned int evg_isa_read_op_src_int(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, int src_idx);
+float evg_isa_read_op_src_float(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, int src_idx);
 
 struct evg_inst_t *evg_isa_get_alu_inst(enum evg_alu_enum alu);
 
