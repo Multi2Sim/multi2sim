@@ -24,16 +24,6 @@
 #include <x86-emu.h>
 
 
-/* Some globals */
-
-struct si_ndrange_t *si_isa_ndrange;  /* Current ND-Range */
-struct si_work_group_t *si_isa_work_group;  /* Current work-group */
-struct si_wavefront_t *si_isa_wavefront;  /* Current wavefront */
-struct si_work_item_t *si_isa_work_item;  /* Current work-item */
-struct si_inst_t *si_isa_cf_inst;  /* Current CF instruction */
-struct si_inst_t *si_isa_inst;  /* Current instruction */
-struct si_alu_group_t *si_isa_alu_group;  /* Current ALU group */
-
 /* Repository of deferred tasks */
 struct repos_t *si_isa_write_task_repos;
 
@@ -61,7 +51,7 @@ void si_isa_init()
 
 	/* Initialize */
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size) \
-	extern void si_isa_##_name##_impl(); \
+	extern void si_isa_##_name##_impl(struct si_work_item_t *work_item, struct si_inst_t *inst); \
 	si_isa_inst_func[SI_INST_##_name] = si_isa_##_name##_impl;
 #include <southern-islands-asm.dat>
 #undef DEFINST
@@ -83,92 +73,96 @@ void si_isa_done()
 
 /* Helper functions */
 
-union si_reg_t si_isa_read_sreg(int sreg)
+union si_reg_t si_isa_read_sreg(struct si_work_item_t *work_item, int sreg)
 {
-	return si_isa_wavefront->sreg[sreg];
+	return work_item->wavefront->sreg[sreg];
 }
 
-void si_isa_write_sreg(int sreg, union si_reg_t value)
+void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value)
 {
-	si_isa_wavefront->sreg[sreg] = value;
+	work_item->wavefront->sreg[sreg] = value;
 
 	/* Update VCCZ and EXECZ if necessary. */
 	if (sreg == SI_VCC || sreg == SI_VCC + 1)
-		si_isa_wavefront->sreg[SI_VCCZ].as_uint = !si_isa_wavefront->sreg[SI_VCC].as_uint & !si_isa_wavefront->sreg[SI_VCC + 1].as_uint;
+		work_item->wavefront->sreg[SI_VCCZ].as_uint = !work_item->wavefront->sreg[SI_VCC].as_uint &
+														!work_item->wavefront->sreg[SI_VCC + 1].as_uint;
 	if (sreg == SI_EXEC || sreg == SI_EXEC + 1)
-		si_isa_wavefront->sreg[SI_EXECZ].as_uint = !si_isa_wavefront->sreg[SI_EXEC].as_uint & !si_isa_wavefront->sreg[SI_EXEC + 1].as_uint;
+		work_item->wavefront->sreg[SI_EXECZ].as_uint = !work_item->wavefront->sreg[SI_EXEC].as_uint &
+														!work_item->wavefront->sreg[SI_EXEC + 1].as_uint;
 }
 
-union si_reg_t si_isa_read_vreg(int vreg)
+union si_reg_t si_isa_read_vreg(struct si_work_item_t *work_item, int vreg)
 {
-	return si_isa_work_item->vreg[vreg];
+	return work_item->vreg[vreg];
 }
 
-void si_isa_write_vreg(int vreg, union si_reg_t value)
+void si_isa_write_vreg(struct si_work_item_t *work_item, int vreg, union si_reg_t value)
 {
-	si_isa_work_item->vreg[vreg] = value;
+	work_item->vreg[vreg] = value;
 }
 
-union si_reg_t si_isa_read_reg(int reg)
+union si_reg_t si_isa_read_reg(struct si_work_item_t *work_item, int reg)
 {
 	if (reg < 256)
 	{
-		return si_isa_read_sreg(reg);
+		return si_isa_read_sreg(work_item, reg);
 	}
 	else
 	{
-		return si_isa_read_vreg(reg - 256);
+		return si_isa_read_vreg(work_item, reg - 256);
 	}
 }
 
-void si_isa_bitmask_sreg(int sreg, union si_reg_t value)
+void si_isa_bitmask_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value)
 {
 	unsigned int mask = 1;
-	if (si_isa_work_item->id_in_wavefront < 32)
+	unsigned int bitfield;
+	union si_reg_t new_field;
+	if (work_item->id_in_wavefront < 32)
 	{
-		mask <<= si_isa_work_item->id_in_wavefront;
-		si_isa_wavefront->sreg[sreg].as_uint = (value.as_uint) ?
-			si_isa_wavefront->sreg[sreg].as_uint | mask:
-			si_isa_wavefront->sreg[sreg].as_uint & ~mask;
+		mask <<= work_item->id_in_wavefront;
+		bitfield = si_isa_read_sreg(work_item, sreg).as_uint;
+		new_field.as_uint = (value.as_uint) ? bitfield | mask: bitfield & ~mask;
+		si_isa_write_sreg(work_item, sreg, new_field);
 	}
 	else
 	{
-		mask <<= (si_isa_work_item->id_in_wavefront - 32);
-		si_isa_wavefront->sreg[sreg + 1].as_uint = (value.as_uint) ?
-			si_isa_wavefront->sreg[sreg + 1].as_uint | mask:
-			si_isa_wavefront->sreg[sreg + 1].as_uint & ~mask;
+		mask <<= (work_item->id_in_wavefront - 32);
+		bitfield = si_isa_read_sreg(work_item, sreg + 1).as_uint;
+		new_field.as_uint = (value.as_uint) ? bitfield | mask: bitfield & ~mask;
+		si_isa_write_sreg(work_item, sreg + 1, new_field);
 	}
 }
 
-int si_isa_read_bitmask_sreg(int sreg)
+int si_isa_read_bitmask_sreg(struct si_work_item_t *work_item, int sreg)
 {
 	unsigned int mask = 1;
-	if (si_isa_work_item->id_in_wavefront < 32)
+	if (work_item->id_in_wavefront < 32)
 	{
-		mask <<= si_isa_work_item->id_in_wavefront;
-		return (si_isa_wavefront->sreg[sreg].as_uint & mask) >> si_isa_work_item->id_in_wavefront;
+		mask <<= work_item->id_in_wavefront;
+		return (si_isa_read_sreg(work_item, sreg).as_uint & mask) >> work_item->id_in_wavefront;
 	}
 	else
 	{
-		mask <<= (si_isa_work_item->id_in_wavefront - 32);
-		return (si_isa_wavefront->sreg[sreg + 1].as_uint & mask) >> (si_isa_work_item->id_in_wavefront - 32);
+		mask <<= (work_item->id_in_wavefront - 32);
+		return (si_isa_read_sreg(work_item, sreg + 1).as_uint & mask) >> (work_item->id_in_wavefront - 32);
 	}
 }
 
 /* Initialize a buffer resource descriptor */
-void si_isa_read_buf_res(struct si_buffer_resource_t *buf_desc, int sreg)
+void si_isa_read_buf_res(struct si_work_item_t *work_item, struct si_buffer_resource_t *buf_desc, int sreg)
 {
 	assert(buf_desc);
 
-	memcpy(buf_desc, &si_isa_wavefront->sreg[sreg], sizeof(unsigned int)*4);
+	memcpy(buf_desc, &work_item->wavefront->sreg[sreg], sizeof(unsigned int)*4);
 }
 
 /* Initialize a buffer resource descriptor */
-void si_isa_read_mem_ptr(struct si_mem_ptr_t *mem_ptr, int sreg)
+void si_isa_read_mem_ptr(struct si_work_item_t *work_item, struct si_mem_ptr_t *mem_ptr, int sreg)
 {
 	assert(mem_ptr);
 
-	memcpy(mem_ptr, &si_isa_wavefront->sreg[sreg], sizeof(unsigned int)*2);
+	memcpy(mem_ptr, &work_item->wavefront->sreg[sreg], sizeof(unsigned int)*2);
 }
 
 
