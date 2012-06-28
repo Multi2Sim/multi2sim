@@ -23,7 +23,6 @@
 #include <mem-system.h>
 #include <x86-emu.h>
 
-
 /* Some globals */
 
 struct evg_ndrange_t *evg_isa_ndrange;  /* Current ND-Range */
@@ -33,6 +32,7 @@ struct evg_work_item_t *evg_isa_work_item;  /* Current work-item */
 struct evg_inst_t *evg_isa_cf_inst;  /* Current CF instruction */
 struct evg_inst_t *evg_isa_inst;  /* Current instruction */
 struct evg_alu_group_t *evg_isa_alu_group;  /* Current ALU group */
+
 
 /* Repository of deferred tasks */
 struct repos_t *evg_isa_write_task_repos;
@@ -122,33 +122,33 @@ void evg_isa_const_mem_read(int bank, int vector, int elem, void *pvalue)
  * ALU Clauses
  */
 
-/* Called before and ALU clause starts in 'evg_isa_wavefront' */
-void evg_isa_alu_clause_start()
+/* Called before and ALU clause starts for a wavefront */
+void evg_isa_alu_clause_start(struct evg_wavefront_t *wavefront)
 {
 	/* Copy 'active' mask at the top of the stack to 'pred' mask */
-	bit_map_copy(evg_isa_wavefront->pred, 0, evg_isa_wavefront->active_stack,
-		evg_isa_wavefront->stack_top * evg_isa_wavefront->work_item_count, evg_isa_wavefront->work_item_count);
+	bit_map_copy(wavefront->pred, 0, wavefront->active_stack,
+		wavefront->stack_top * wavefront->work_item_count, wavefront->work_item_count);
 	if (debug_status(evg_isa_debug_category))
 	{
-		evg_isa_debug("  %s:pred=", evg_isa_wavefront->name);
-		bit_map_dump(evg_isa_wavefront->pred, 0, evg_isa_wavefront->work_item_count,
+		evg_isa_debug("  %s:pred=", wavefront->name);
+		bit_map_dump(wavefront->pred, 0, wavefront->work_item_count,
 			debug_file(evg_isa_debug_category));
 	}
 
 	/* Flag 'push_before_done' will be set by the first PRED_SET* inst */
-	evg_isa_wavefront->push_before_done = 0;
+	wavefront->push_before_done = 0;
 
 	/* Stats */
-	evg_isa_wavefront->alu_clause_count++;
+	wavefront->alu_clause_count++;
 }
 
 
 /* Called after an ALU clause completed in a wavefront */
-void evg_isa_alu_clause_end()
+void evg_isa_alu_clause_end(struct evg_wavefront_t *wavefront)
 {
 	/* If CF inst was ALU_POP_AFTER, pop the stack */
-	if (evg_isa_cf_inst->info->inst == EVG_INST_ALU_POP_AFTER)
-		evg_wavefront_stack_pop(evg_isa_wavefront, 1);
+	if (wavefront->cf_inst.info->inst == EVG_INST_ALU_POP_AFTER)
+		evg_wavefront_stack_pop(wavefront, 1);
 }
 
 
@@ -159,15 +159,15 @@ void evg_isa_alu_clause_end()
  */
 
 /* Called before and TEX clause starts in wavefront */
-void evg_isa_tc_clause_start()
+void evg_isa_tc_clause_start(struct evg_wavefront_t *wavefront)
 {
 	/* Stats */
-	evg_isa_wavefront->tc_clause_count++;
+	wavefront->tc_clause_count++;
 }
 
 
 /* Called after a TEX clause completed in a wavefront */
-void evg_isa_tc_clause_end()
+void evg_isa_tc_clause_end(struct evg_wavefront_t *wavefront)
 {
 }
 
@@ -180,15 +180,15 @@ void evg_isa_tc_clause_end()
 
 /* Dump a destination value depending on the format of the destination operand
  * in the current instruction, as specified by its flags. */
-void gpu_isa_dest_value_dump(void *value_ptr, FILE *f)
+void gpu_isa_dest_value_dump(struct evg_inst_t *inst, void *value_ptr, FILE *f)
 {
-	if (evg_isa_inst->info->flags & EVG_INST_FLAG_DST_INT)
+	if (inst->info->flags & EVG_INST_FLAG_DST_INT)
 		fprintf(f, "%d", * (int *) value_ptr);
 	
-	else if (evg_isa_inst->info->flags & EVG_INST_FLAG_DST_UINT)
+	else if (inst->info->flags & EVG_INST_FLAG_DST_UINT)
 		fprintf(f, "0x%x", * (unsigned int *) value_ptr);
 	
-	else if (evg_isa_inst->info->flags & EVG_INST_FLAG_DST_FLOAT)
+	else if (inst->info->flags & EVG_INST_FLAG_DST_FLOAT)
 		fprintf(f, "%gf", * (float *) value_ptr);
 	
 	else
@@ -257,6 +257,8 @@ void evg_isa_write_gpr_float(struct evg_work_item_t *work_item,
 static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item,
 	struct evg_inst_t *inst, int src_idx, int *neg_ptr, int *abs_ptr)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+
 	int sel;
 	int rel;
 	int chan;
@@ -283,10 +285,11 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 		unsigned int kcache_mode;
 		unsigned int kcache_addr;
 
-		assert(evg_isa_cf_inst->info->fmt[0] == EVG_FMT_CF_ALU_WORD0 && evg_isa_cf_inst->info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
-		kcache_bank = evg_isa_cf_inst->words[0].cf_alu_word0.kcache_bank0;
-		kcache_mode = evg_isa_cf_inst->words[0].cf_alu_word0.kcache_mode0;
-		kcache_addr = evg_isa_cf_inst->words[1].cf_alu_word1.kcache_addr0;
+		assert(wavefront->cf_inst.info->fmt[0] == EVG_FMT_CF_ALU_WORD0
+			&& wavefront->cf_inst.info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
+		kcache_bank = wavefront->cf_inst.words[0].cf_alu_word0.kcache_bank0;
+		kcache_mode = wavefront->cf_inst.words[0].cf_alu_word0.kcache_mode0;
+		kcache_addr = wavefront->cf_inst.words[1].cf_alu_word1.kcache_addr0;
 
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
@@ -301,10 +304,11 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 
 		uint32_t kcache_bank, kcache_mode, kcache_addr;
 
-		assert(evg_isa_cf_inst->info->fmt[0] == EVG_FMT_CF_ALU_WORD0 && evg_isa_cf_inst->info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
-		kcache_bank = evg_isa_cf_inst->words[0].cf_alu_word0.kcache_bank1;
-		kcache_mode = evg_isa_cf_inst->words[1].cf_alu_word1.kcache_mode1;
-		kcache_addr = evg_isa_cf_inst->words[1].cf_alu_word1.kcache_addr1;
+		assert(wavefront->cf_inst.info->fmt[0] == EVG_FMT_CF_ALU_WORD0
+			&& wavefront->cf_inst.info->fmt[1] == EVG_FMT_CF_ALU_WORD1);
+		kcache_bank = wavefront->cf_inst.words[0].cf_alu_word0.kcache_bank1;
+		kcache_mode = wavefront->cf_inst.words[1].cf_alu_word1.kcache_mode1;
+		kcache_addr = wavefront->cf_inst.words[1].cf_alu_word1.kcache_addr1;
 
 		EVG_ISA_ARG_NOT_SUPPORTED_NEQ(kcache_mode, 1);
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
@@ -316,12 +320,12 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 	if (sel == 219 || sel == 221)
 	{
 		uint32_t *pvalue;
-		pvalue = (uint32_t *) list_dequeue(evg_isa_work_item->lds_oqa);
+		pvalue = (uint32_t *) list_dequeue(work_item->lds_oqa);
 		if (!pvalue)
 			fatal("%s: LDS queue A is empty", __FUNCTION__);
 		value = *pvalue;
 		if (sel == 219)
-			list_enqueue(evg_isa_work_item->lds_oqa, pvalue);
+			list_enqueue(work_item->lds_oqa, pvalue);
 		else
 			free(pvalue);
 		return value;
@@ -331,12 +335,12 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 	if (sel == 220 || sel == 222)
 	{
 		uint32_t *pvalue;
-		pvalue = (uint32_t *) list_dequeue(evg_isa_work_item->lds_oqb);
+		pvalue = (uint32_t *) list_dequeue(work_item->lds_oqb);
 		if (!pvalue)
 			fatal("%s: LDS queue B is empty", __FUNCTION__);
 		value = *pvalue;
 		if (sel == 220)
-			list_enqueue(evg_isa_work_item->lds_oqb, pvalue);
+			list_enqueue(work_item->lds_oqb, pvalue);
 		else
 			free(pvalue);
 		return value;
@@ -388,9 +392,9 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 	/* ALU_SRC_LITERAL */
 	if (sel == 253)
 	{
-		assert(evg_isa_inst->alu_group);
+		assert(inst->alu_group);
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
-		value = evg_isa_inst->alu_group->literal[chan].as_uint;
+		value = inst->alu_group->literal[chan].as_uint;
 		return value;
 	}
 
@@ -398,14 +402,14 @@ static unsigned int evg_isa_read_op_src_common(struct evg_work_item_t *work_item
 	if (sel == 254)
 	{
 		EVG_ISA_ARG_NOT_SUPPORTED_RANGE(chan, 0, 3);
-		value = evg_isa_work_item->pv.elem[chan];
+		value = work_item->pv.elem[chan];
 		return value;
 	}
 
 	/* ALU_SRC_PS */
 	if (sel == 255)
 	{
-		value = evg_isa_work_item->pv.elem[4];
+		value = work_item->pv.elem[4];
 		return value;
 	}
 
@@ -461,18 +465,19 @@ float evg_isa_read_op_src_float(struct evg_work_item_t *work_item,
 /* Return the instruction in slot 'alu' of the VLIW bundle in 'evg_isa_alu_group'.
  * If 'evg_isa_alu_group' is NULL, or the VLIW slot requested is not present,
  * this function returns NULL. */
-struct evg_inst_t *evg_isa_get_alu_inst(enum evg_alu_enum alu)
+struct evg_inst_t *evg_isa_get_alu_inst(struct evg_alu_group_t *alu_group,
+	enum evg_alu_enum alu)
 {
 	int i;
 
 	/* Not a VLIW bundle */
-	if (!evg_isa_alu_group)
-		return NULL;
+	if (!alu_group)
+		panic("%s: not a VLIW bundle", __FUNCTION__);
 
 	/* Loop for slot 'alu' */
-	for (i = 0; i < evg_isa_alu_group->inst_count; i++)
-		if (evg_isa_alu_group->inst[i].alu == alu)
-			return &evg_isa_alu_group->inst[i];
+	for (i = 0; i < alu_group->inst_count; i++)
+		if (alu_group->inst[i].alu == alu)
+			return &alu_group->inst[i];
 
 	/* VLIW slot not present */
 	return NULL;
@@ -485,24 +490,27 @@ struct evg_inst_t *evg_isa_get_alu_inst(enum evg_alu_enum alu)
  * Deferred tasks for ALU group
  */
 
-void evg_isa_enqueue_write_lds(uint32_t addr, uint32_t value, int value_size)
+void evg_isa_enqueue_write_lds(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, unsigned int addr, unsigned int value,
+	int value_size)
 {
 	struct evg_isa_write_task_t *wt;
 
 	/* Inactive pixel not enqueued */
-	if (!evg_work_item_get_pred(evg_isa_work_item))
+	if (!evg_work_item_get_pred(work_item))
 		return;
 	
 	/* Create task */
 	wt = repos_create_object(evg_isa_write_task_repos);
+	wt->work_item = work_item;
 	wt->kind = EVG_ISA_WRITE_TASK_WRITE_LDS;
-	wt->inst = evg_isa_inst;
+	wt->inst = inst;
 	wt->lds_addr = addr;
 	wt->lds_value = value;
 	wt->lds_value_size = value_size;
 
 	/* Enqueue task */
-	linked_list_add(evg_isa_work_item->write_task_list, wt);
+	linked_list_add(work_item->write_task_list, wt);
 }
 
 
@@ -513,15 +521,16 @@ void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
 	struct evg_isa_write_task_t *wt;
 
 	/* If pixel is inactive, do not enqueue the task */
-	assert(evg_isa_inst->info->fmt[0] == EVG_FMT_ALU_WORD0);
-	if (!evg_work_item_get_pred(evg_isa_work_item))
+	assert(inst->info->fmt[0] == EVG_FMT_ALU_WORD0);
+	if (!evg_work_item_get_pred(work_item))
 		return;
 
 	/* Fields 'dst_gpr', 'dst_rel', and 'dst_chan' are at the same bit positions in both
 	 * EVG_ALU_WORD1_OP2 and EVG_ALU_WORD1_OP3 formats. */
 	wt = repos_create_object(evg_isa_write_task_repos);
+	wt->work_item = work_item;
 	wt->kind = EVG_ISA_WRITE_TASK_WRITE_DEST;
-	wt->inst = evg_isa_inst;
+	wt->inst = inst;
 	wt->gpr = EVG_ALU_WORD1_OP2.dst_gpr;
 	wt->rel = EVG_ALU_WORD1_OP2.dst_rel;
 	wt->chan = EVG_ALU_WORD1_OP2.dst_chan;
@@ -530,11 +539,11 @@ void evg_isa_enqueue_write_dest(struct evg_work_item_t *work_item,
 
 	/* For EVG_ALU_WORD1_OP2, check 'write_mask' field */
 	wt->write_mask = 1;
-	if (evg_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && !EVG_ALU_WORD1_OP2.write_mask)
+	if (inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2 && !EVG_ALU_WORD1_OP2.write_mask)
 		wt->write_mask = 0;
 
 	/* Enqueue task */
-	linked_list_add(evg_isa_work_item->write_task_list, wt);
+	linked_list_add(work_item->write_task_list, wt);
 }
 
 
@@ -548,44 +557,52 @@ void evg_isa_enqueue_write_dest_float(struct evg_work_item_t *work_item,
 }
 
 
-void evg_isa_enqueue_push_before(void)
+void evg_isa_enqueue_push_before(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst)
 {
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
 	struct evg_isa_write_task_t *wt;
 
 	/* Do only if instruction initiating ALU clause is ALU_PUSH_BEFORE */
-	if (evg_isa_cf_inst->info->inst != EVG_INST_ALU_PUSH_BEFORE)
+	if (wavefront->cf_inst.info->inst != EVG_INST_ALU_PUSH_BEFORE)
 		return;
 
 	/* Create and enqueue task */
 	wt = repos_create_object(evg_isa_write_task_repos);
+	wt->work_item = work_item;
 	wt->kind = EVG_ISA_WRITE_TASK_PUSH_BEFORE;
-	wt->inst = evg_isa_inst;
-	linked_list_add(evg_isa_work_item->write_task_list, wt);
+	wt->inst = inst;
+	linked_list_add(work_item->write_task_list, wt);
 }
 
 
-void evg_isa_enqueue_pred_set(int cond)
+void evg_isa_enqueue_pred_set(struct evg_work_item_t *work_item,
+	struct evg_inst_t *inst, int cond)
 {
 	struct evg_isa_write_task_t *wt;
 
 	/* If pixel is inactive, predicate is not changed */
-	assert(evg_isa_inst->info->fmt[0] == EVG_FMT_ALU_WORD0);
-	assert(evg_isa_inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
-	if (!evg_work_item_get_pred(evg_isa_work_item))
+	assert(inst->info->fmt[0] == EVG_FMT_ALU_WORD0);
+	assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
+	if (!evg_work_item_get_pred(work_item))
 		return;
 	
 	/* Create and enqueue task */
 	wt = repos_create_object(evg_isa_write_task_repos);
+	wt->work_item = work_item;
 	wt->kind = EVG_ISA_WRITE_TASK_SET_PRED;
-	wt->inst = evg_isa_inst;
+	wt->inst = inst;
 	wt->cond = cond;
-	linked_list_add(evg_isa_work_item->write_task_list, wt);
+	linked_list_add(work_item->write_task_list, wt);
 }
 
 
 void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 {
 	struct linked_list_t *task_list = work_item->write_task_list;
+	struct evg_wavefront_t *wavefront = work_item->wavefront;
+	struct evg_work_group_t *work_group = work_item->work_group;
+
 	struct evg_isa_write_task_t *wt;
 	struct evg_inst_t *inst;
 
@@ -598,6 +615,7 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 
 		/* Get task */
 		wt = linked_list_get(task_list);
+		assert(wt->work_item == work_item);
 		inst = wt->inst;
 
 		switch (wt->kind)
@@ -607,12 +625,12 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 		{
 			if (wt->write_mask)
 				evg_isa_write_gpr(work_item, wt->gpr, wt->rel, wt->chan, wt->value);
-			evg_isa_work_item->pv.elem[wt->inst->alu] = wt->value;
+			work_item->pv.elem[wt->inst->alu] = wt->value;
 
 			/* Debug */
 			if (evg_isa_debugging())
 			{
-				evg_isa_debug("  i%d:%s", evg_isa_work_item->id,
+				evg_isa_debug("  i%d:%s", work_item->id,
 					map_value(&evg_pv_map, wt->inst->alu));
 				if (wt->write_mask)
 				{
@@ -621,7 +639,8 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 						debug_file(evg_isa_debug_category));
 				}
 				evg_isa_debug("<=");
-				gpu_isa_dest_value_dump(&wt->value, debug_file(evg_isa_debug_category));
+				gpu_isa_dest_value_dump(inst, &wt->value,
+					debug_file(evg_isa_debug_category));
 			}
 
 			break;
@@ -632,14 +651,14 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 			struct mem_t *local_mem;
 			union evg_reg_t lds_value;
 
-			local_mem = evg_isa_work_group->local_mem;
+			local_mem = work_group->local_mem;
 			assert(local_mem);
 			assert(wt->lds_value_size);
 			mem_write(local_mem, wt->lds_addr, wt->lds_value_size, &wt->lds_value);
 
 			/* Debug */
 			lds_value.as_uint = wt->lds_value;
-			evg_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf) (%d bytes)", evg_isa_work_item->id, wt->lds_addr,
+			evg_isa_debug("  i%d:LDS[0x%x]<=(%u,%gf) (%d bytes)", work_item->id, wt->lds_addr,
 				lds_value.as_uint, lds_value.as_float, (int) wt->lds_value_size);
 			break;
 		}
@@ -667,9 +686,9 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 
 		case EVG_ISA_WRITE_TASK_PUSH_BEFORE:
 		{
-			if (!evg_isa_wavefront->push_before_done)
-				evg_wavefront_stack_push(evg_isa_wavefront);
-			evg_isa_wavefront->push_before_done = 1;
+			if (!wavefront->push_before_done)
+				evg_wavefront_stack_push(wavefront);
+			wavefront->push_before_done = 1;
 			break;
 		}
 
@@ -680,19 +699,19 @@ void evg_isa_write_task_commit(struct evg_work_item_t *work_item)
 
 			assert(inst->info->fmt[1] == EVG_FMT_ALU_WORD1_OP2);
 			if (update_pred)
-				evg_work_item_set_pred(evg_isa_work_item, wt->cond);
+				evg_work_item_set_pred(work_item, wt->cond);
 			if (update_exec_mask)
-				evg_work_item_set_active(evg_isa_work_item, wt->cond);
+				evg_work_item_set_active(work_item, wt->cond);
 
 			/* Debug */
 			if (debug_status(evg_isa_debug_category))
 			{
 				if (update_pred && update_exec_mask)
-					evg_isa_debug("  i%d:act/pred<=%d", evg_isa_work_item->id, wt->cond);
+					evg_isa_debug("  i%d:act/pred<=%d", work_item->id, wt->cond);
 				else if (update_pred)
-					evg_isa_debug("  i%d:pred=%d", evg_isa_work_item->id, wt->cond);
+					evg_isa_debug("  i%d:pred=%d", work_item->id, wt->cond);
 				else if (update_exec_mask)
-					evg_isa_debug("  i%d:pred=%d", evg_isa_work_item->id, wt->cond);
+					evg_isa_debug("  i%d:pred=%d", work_item->id, wt->cond);
 			}
 			break;
 		}

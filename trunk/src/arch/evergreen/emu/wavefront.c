@@ -391,7 +391,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		assert(evg_isa_wavefront->clause_buf <= evg_isa_wavefront->clause_buf_end);
 		if (evg_isa_wavefront->clause_buf >= evg_isa_wavefront->clause_buf_end)
 		{
-			evg_isa_alu_clause_end();
+			evg_isa_alu_clause_end(evg_isa_wavefront);
 			evg_isa_wavefront->clause_kind = EVG_CLAUSE_CF;
 		}
 
@@ -441,7 +441,7 @@ void evg_wavefront_execute(struct evg_wavefront_t *wavefront)
 		assert(evg_isa_wavefront->clause_buf <= evg_isa_wavefront->clause_buf_end);
 		if (evg_isa_wavefront->clause_buf == evg_isa_wavefront->clause_buf_end)
 		{
-			evg_isa_tc_clause_end();
+			evg_isa_tc_clause_end(evg_isa_wavefront);
 			evg_isa_wavefront->clause_kind = EVG_CLAUSE_CF;
 		}
 
