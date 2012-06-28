@@ -23,16 +23,10 @@
 #include <mem-system.h>
 #include <x86-emu.h>
 
-/* Some globals */
 
-struct evg_ndrange_t *evg_isa_ndrange;  /* Current ND-Range */
-struct evg_work_group_t *evg_isa_work_group;  /* Current work-group */
-struct evg_wavefront_t *evg_isa_wavefront;  /* Current wavefront */
-struct evg_work_item_t *evg_isa_work_item;  /* Current work-item */
-struct evg_inst_t *evg_isa_cf_inst;  /* Current CF instruction */
-struct evg_inst_t *evg_isa_inst;  /* Current instruction */
-struct evg_alu_group_t *evg_isa_alu_group;  /* Current ALU group */
-
+/*
+ * Global Variables
+ */
 
 /* Repository of deferred tasks */
 struct repos_t *evg_isa_write_task_repos;
@@ -462,9 +456,8 @@ float evg_isa_read_op_src_float(struct evg_work_item_t *work_item,
 }
 
 
-/* Return the instruction in slot 'alu' of the VLIW bundle in 'evg_isa_alu_group'.
- * If 'evg_isa_alu_group' is NULL, or the VLIW slot requested is not present,
- * this function returns NULL. */
+/* Return the instruction in slot 'alu' of the VLIW bundle in 'alu_group'.
+ * If the VLIW slot requested is not present, this function returns NULL. */
 struct evg_inst_t *evg_isa_get_alu_inst(struct evg_alu_group_t *alu_group,
 	enum evg_alu_enum alu)
 {
