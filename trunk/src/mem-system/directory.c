@@ -109,7 +109,7 @@ void dir_entry_dump_sharers(struct dir_t *dir, int x, int y, int z)
 	mem_debug("  %d sharers: { ", dir_entry->num_sharers);
 	for (i = 0; i < dir->num_nodes; i++)
 		if (dir_entry_is_sharer(dir, x, y, z, i))
-			printf("%d ", i);
+			mem_debug("%d ", i);
 	mem_debug("}\n");
 }
 
@@ -225,6 +225,7 @@ struct dir_lock_t *dir_lock_get(struct dir_t *dir, int x, int y)
 int dir_entry_lock(struct dir_t *dir, int x, int y, int event, struct mod_stack_t *stack)
 {
 	struct dir_lock_t *dir_lock;
+	struct mod_stack_t *lock_queue_iter;
 
 	/* Get lock */
 	assert(x < dir->xsize && y < dir->ysize);
@@ -234,9 +235,40 @@ int dir_entry_lock(struct dir_t *dir, int x, int y, int event, struct mod_stack_
 	 * return failure to lock. */
 	if (dir_lock->lock)
 	{
-		stack->dir_lock_next = dir_lock->lock_queue;
+		/* Enqueue the stack to the end of the lock queue */
+		stack->dir_lock_next = NULL;
 		stack->dir_lock_event = event;
-		dir_lock->lock_queue = stack;
+		stack->ret_stack->way = stack->way;
+
+		if (!dir_lock->lock_queue)
+		{
+			/* Special case: queue is empty */
+			dir_lock->lock_queue = stack;
+		}
+		else 
+		{
+			lock_queue_iter = dir_lock->lock_queue;
+
+			while (stack->id > lock_queue_iter->id)
+			{
+				if (!lock_queue_iter->dir_lock_next)
+					break;
+
+				lock_queue_iter = lock_queue_iter->dir_lock_next;
+			}
+
+			if (!lock_queue_iter->dir_lock_next) 
+			{
+				/* Stack goes at end of queue */
+				lock_queue_iter->dir_lock_next = stack;
+			}
+			else 
+			{
+				/* Stack goes in front or middle of queue */
+				stack->dir_lock_next = lock_queue_iter->dir_lock_next;
+				lock_queue_iter->dir_lock_next = stack;
+			}
+		}
 		mem_debug("    0x%x access suspended\n", stack->tag);
 		return 0;
 	}
@@ -260,8 +292,8 @@ void dir_entry_unlock(struct dir_t *dir, int x, int y)
 	assert(x < dir->xsize && y < dir->ysize);
 	dir_lock = &dir->dir_lock[x * dir->ysize + y];
 
-	/* Wake up all waiters */
-	while (dir_lock->lock_queue)
+	/* Wake up first waiter */
+	if (dir_lock->lock_queue)
 	{
 		esim_schedule_event(dir_lock->lock_queue->dir_lock_event, dir_lock->lock_queue, 1);
 		mem_debug("    0x%x access resumed\n", dir_lock->lock_queue->tag);

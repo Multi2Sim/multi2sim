@@ -204,9 +204,9 @@ struct cache_block_t
 	struct cache_block_t *way_next;
 	struct cache_block_t *way_prev;
 
-	unsigned int tag;
-	unsigned int transient_tag;
-	unsigned int way;
+	int tag;
+	int transient_tag;
+	int way;
 
 	enum cache_block_state_t state;
 };
@@ -238,17 +238,15 @@ struct cache_t *cache_create(char *name, unsigned int num_sets, unsigned int blo
 void cache_free(struct cache_t *cache);
 
 void cache_decode_address(struct cache_t *cache, unsigned int addr,
-	unsigned int *set_ptr, unsigned int *tag_ptr, unsigned int *offset_ptr);
-int cache_find_block(struct cache_t *cache, unsigned int addr,
-	unsigned int *set_ptr, unsigned int *pway, int *state_ptr);
-void cache_set_block(struct cache_t *cache, unsigned int set, unsigned int way,
-	unsigned int tag, int state);
-void cache_get_block(struct cache_t *cache, unsigned int set, unsigned int way,
-	unsigned int *tag_ptr, int *state_ptr);
+	int *set_ptr, int *tag_ptr, unsigned int *offset_ptr);
+int cache_find_block(struct cache_t *cache, unsigned int addr, int *set_ptr, int *pway, 
+	int *state_ptr);
+void cache_set_block(struct cache_t *cache, int set, int way, int tag, int state);
+void cache_get_block(struct cache_t *cache, int set, int way, int *tag_ptr, int *state_ptr);
 
-void cache_access_block(struct cache_t *cache, unsigned int set, unsigned int way);
-unsigned int cache_replace_block(struct cache_t *cache, unsigned int set);
-void cache_set_transient_tag(struct cache_t *cache, unsigned int set, unsigned int way, unsigned int tag);
+void cache_access_block(struct cache_t *cache, int set, int way);
+int cache_replace_block(struct cache_t *cache, int set);
+void cache_set_transient_tag(struct cache_t *cache, int set, int way, int tag);
 
 
 
@@ -546,8 +544,8 @@ long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind,
 	void *event_queue_item);
 int mod_can_access(struct mod_t *mod, unsigned int addr);
 
-int mod_find_block(struct mod_t *mod, unsigned int addr, unsigned int *set_ptr,
-	unsigned int *way_ptr, unsigned int *tag_ptr, int *state_ptr);
+int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr, int *way_ptr, 
+	int *tag_ptr, int *state_ptr);
 
 void mod_lock_port(struct mod_t *mod, struct mod_stack_t *stack, int event);
 void mod_unlock_port(struct mod_t *mod, struct mod_port_t *port,
@@ -709,14 +707,14 @@ struct mod_stack_t
 	struct mod_port_t *port;
 
 	unsigned int addr;
-	unsigned int tag;
-	unsigned int set;
-	unsigned int way;
+	int tag;
+	int set;
+	int way;
 	int state;
 
-	unsigned int src_set;
-	unsigned int src_way;
-	unsigned int src_tag;
+	int src_set;
+	int src_way;
+	int src_tag;
 
 	enum mod_request_dir_t request_dir;
 	int reply_size;
