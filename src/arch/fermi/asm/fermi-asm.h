@@ -1301,16 +1301,6 @@ struct frm_inst_info_t
 	int size;
 };
 
-union frm_reg_t
-{
-        signed int as_int;
-        unsigned int as_uint;
-
-        signed short int as_short[2];
-        unsigned short int as_ushort[2];
-        
-        float as_float;
-};      
 
 struct frm_inst_t
 {

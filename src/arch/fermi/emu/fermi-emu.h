@@ -55,7 +55,6 @@ extern struct linked_list_t *frm_cuda_object_list;
 void frm_cuda_object_add(void *object);
 void frm_cuda_object_remove(void *object);
 void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id);
-void *frm_cuda_object_get_type(enum frm_cuda_obj_t type);
 unsigned int frm_cuda_object_new_id(enum frm_cuda_obj_t type);
 void frm_cuda_object_free_all(void);
 
@@ -518,9 +517,15 @@ void frm_warp_execute(struct frm_warp_t *warp);
 
 #define FRM_MAX_LOCAL_MEM_ACCESSES_PER_INST  2
 
-struct frm_gpr_t
+union value_t
 {
-	unsigned int elem;
+	unsigned int i;
+	float f;
+};
+
+struct frm_reg_t
+{
+	union value_t v;
 };
 
 struct frm_mem_access_t
@@ -547,8 +552,9 @@ struct frm_thread_t
 	struct frm_grid_t *grid;
 
 	/* Thread state */
-	struct frm_gpr_t gpr[128];  /* General purpose registers */
-	struct frm_gpr_t pv;  /* Result of last computations */
+	struct frm_reg_t gpr[128];  /* General purpose registers */
+	struct frm_reg_t sr[FRM_SR_COUNT];  /* Special registers */
+	unsigned int pr[8];  /* Predicate registers */
 
 	/* Linked list of write tasks. They are enqueued by machine instructions
 	 * and executed as a burst at the end of an ALU group. */
@@ -646,39 +652,25 @@ extern char *err_frm_isa_note;
 	{ if ((p) < (min) || (p) > (max)) fatal("%s: %s: not supported for '" #p "' out of range [%d:%d]\n%s", \
 	__FUNCTION__, frm_isa_inst->info->name, (min), (max), err_frm_opencl_param_note); }
 
-/* Macros for fast access of instruction words */
-#define FRM_ALU_WORD0			frm_isa_inst->words[0].alu_word0
-#define FRM_ALU_WORD1_OP2		frm_isa_inst->words[1].alu_word1_op2
-#define FRM_ALU_WORD1_OP3		frm_isa_inst->words[1].alu_word1_op3
-
-#define FRM_ALU_WORD0_LDS_IDX_OP	frm_isa_inst->words[0].alu_word0_lds_idx_op
-#define FRM_ALU_WORD1_LDS_IDX_OP	frm_isa_inst->words[1].alu_word1_lds_idx_op
-
-#define FRM_VTX_WORD0			frm_isa_inst->words[0].vtx_word0
-#define FRM_VTX_WORD1_GPR		frm_isa_inst->words[1].vtx_word1_gpr
-#define FRM_VTX_WORD1_SEM		frm_isa_inst->words[1].vtx_word1_sem
-#define FRM_VTX_WORD2			frm_isa_inst->words[2].vtx_word2
-
-#define FRM_TEX_WORD0			frm_isa_inst->words[0].tex_word0
-#define FRM_TEX_WORD1			frm_isa_inst->words[1].tex_word1
-#define FRM_TEX_WORD2			frm_isa_inst->words[2].tex_word2
-
-#define FRM_MEM_RD_WORD0		frm_isa_inst->words[0].mem_rd_word0
-#define FRM_MEM_RD_WORD1		frm_isa_inst->words[1].mem_rd_word1
-#define FRM_MEM_RD_WORD2		frm_isa_inst->words[2].mem_rd_word2
-
-#define FRM_MEM_GDS_WORD0		frm_isa_inst->words[0].mem_gds_word0
-#define FRM_MEM_GDS_WORD1		frm_isa_inst->words[1].mem_gds_word1
-#define FRM_MEM_GDS_WORD2		frm_isa_inst->words[2].mem_gds_word2
-
 
 /* List of functions implementing GPU instructions 'amd_inst_XXX_impl' */
-typedef void (*frm_isa_inst_func_t)(void);
+typedef void (*frm_isa_inst_func_t)(struct frm_thread_t *thread, struct frm_inst_t *inst);
 extern frm_isa_inst_func_t *frm_isa_inst_func;
 
+/* Declarations of function prototypes implementing Fermi ISA */
+#define DEFINST(_name, _fmt_str, _fmt, _category, _opcode) \
+        extern void frm_isa_##_name##_impl(struct frm_thread_t *thread, \
+                        struct frm_inst_t *inst);
+#include <fermi-asm.dat>
+#undef DEFINST
+
+/* Access to global memory */
+void frm_isa_global_mem_write(unsigned int addr, void *pvalue);
+void frm_isa_global_mem_read(unsigned int addr, void *pvalue);
+
 /* Access to constant memory */
-void frm_isa_const_mem_write(int bank, int offset, void *pvalue);
-void frm_isa_const_mem_read(int bank, int offset, void *pvalue);
+void frm_isa_const_mem_write(unsigned int addr, void *pvalue);
+void frm_isa_const_mem_read(unsigned int addr, void *pvalue);
 
 /* For ALU clauses */
 void frm_isa_alu_clause_start(void);
@@ -689,13 +681,14 @@ void frm_isa_tc_clause_start(void);
 void frm_isa_tc_clause_end(void);
 
 /* For functional simulation */
-unsigned int frm_isa_read_gpr(int gpr, int rel, int chan, int im);
-float frm_isa_read_gpr_float(int gpr, int rel, int chan, int im);
-void frm_isa_write_gpr(int gpr, int rel, int chan, unsigned int value);
-void frm_isa_write_gpr_float(int gpr, int rel, int chan, float value);
+unsigned int frm_isa_read_gpr_int(int id);
+float frm_isa_read_gpr_float(int id);
+unsigned int frm_isa_read_sgpr(int id);
+void frm_isa_write_gpr_int(int id, unsigned int value);
+void frm_isa_write_gpr_float(int id, float value);
 
-unsigned int frm_isa_read_op_src_int(int src_idx);
-float frm_isa_read_op_src_float(int src_idx);
+unsigned int frm_isa_read_src_int(int src_idx);
+float frm_isa_read_src_float(int src_idx);
 
 void frm_isa_init(void);
 void frm_isa_done(void);
@@ -709,9 +702,6 @@ void frm_isa_done(void);
 
 struct frm_emu_t
 {
-        /* Repository of OpenCL objects */
-        struct frm_cuda_repo_t *cuda_repo;
-
         /* List of ND-Ranges */
         struct frm_grid_t *grid_list_head;
         struct frm_grid_t *grid_list_tail;
@@ -736,17 +726,13 @@ struct frm_emu_t
         int finished_grid_list_count;
         int finished_grid_list_max;
 
-	/* Constant memory (constant buffers)
-	 * There are 15 constant buffers, referenced as CB0 to CB14.
-	 * Each buffer can hold up to 1024 four-component vectors.
-	 * These buffers will be represented as a memory object indexed as
-	 * buffer_id * 1024 * 4 * 4 + vector_id * 4 * 4 + elem_id * 4 */
+	/* Constant memory, which is organized as 16 banks of 64KB each. */
 	struct mem_t *const_mem;
 
-	/* Flags indicating whether the first 9 vector positions of CB0
+	/* Flags indicating whether the first 32 bytes of constant memory
 	 * are initialized. A warning will be issued by the simulator
 	 * if an uninitialized element is used by the kernel. */
-	int const_mem_cb0_init[0x20];
+	int const_mem_init[32];
 
 	/* Global memory */
 	struct mem_t *global_mem;
