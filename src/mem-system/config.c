@@ -321,6 +321,10 @@ static void mem_config_gpu_default(struct config_t *config)
 	char str[MAX_STRING_SIZE];
 
 	int compute_unit_id;
+	int l2_id;
+	int mm_id;
+	const int num_L2s = 4;
+	const int num_MMs = 4;
 
 	/* Not if we doing GPU functional simulation */
 	if (evg_emu_kind == evg_emu_kind_functional)
@@ -328,19 +332,22 @@ static void mem_config_gpu_default(struct config_t *config)
 
 	/* Cache geometry for L1 */
 	strcpy(section, "CacheGeometry gpu-geo-l1");
-	config_write_int(config, section, "Sets", 16);
-	config_write_int(config, section, "Assoc", 2);
-	config_write_int(config, section, "BlockSize", 256);
+	config_write_int(config, section, "Sets", 32);
+	config_write_int(config, section, "Assoc", 4);
+	config_write_int(config, section, "BlockSize", 64);
 	config_write_int(config, section, "Latency", 1);
 	config_write_string(config, section, "Policy", "LRU");
 
 	/* Cache geometry for L2 */
 	strcpy(section, "CacheGeometry gpu-geo-l2");
-	config_write_int(config, section, "Sets", 64);
-	config_write_int(config, section, "Assoc", 4);
+	config_write_int(config, section, "Sets", 256);
+	config_write_int(config, section, "Assoc", 8);
 	config_write_int(config, section, "BlockSize", 256);
 	config_write_int(config, section, "Latency", 10);
 	config_write_string(config, section, "Policy", "LRU");
+
+	assert(num_L2s == 4);
+	assert(num_MMs == 4);
 
 	/* L1 caches and entries */
 	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
@@ -349,7 +356,8 @@ static void mem_config_gpu_default(struct config_t *config)
 		config_write_string(config, section, "Type", "Cache");
 		config_write_string(config, section, "Geometry", "gpu-geo-l1");
 		config_write_string(config, section, "LowNetwork", "gpu-net-l1-l2");
-		config_write_string(config, section, "LowModules", "gpu-l2");
+		/* TODO Make this dynamic */
+		config_write_string(config, section, "LowModules", "gpu-l2-0 gpu-l2-1 gpu-l2-2 gpu-l2-3");
 
 		snprintf(section, sizeof section, "Entry gpu-cu-%d", compute_unit_id);
 		snprintf(str, sizeof str, "gpu-l1-%d", compute_unit_id);
@@ -358,20 +366,33 @@ static void mem_config_gpu_default(struct config_t *config)
 		config_write_string(config, section, "Module", str);
 	}
 
-	/* L2 cache */
-	snprintf(section, sizeof section, "Module gpu-l2");
-	config_write_string(config, section, "Type", "Cache");
-	config_write_string(config, section, "Geometry", "gpu-geo-l2");
-	config_write_string(config, section, "HighNetwork", "gpu-net-l1-l2");
-	config_write_string(config, section, "LowNetwork", "gpu-net-l2-gm");
-	config_write_string(config, section, "LowModules", "gpu-gm");
+	/* L2 caches */
+	for (l2_id = 0; l2_id < num_L2s; l2_id++) 
+	{
+		snprintf(section, sizeof section, "Module gpu-l2-%d", l2_id);
+		config_write_string(config, section, "Type", "Cache");
+		config_write_string(config, section, "Geometry", "gpu-geo-l2");
+		config_write_string(config, section, "HighNetwork", "gpu-net-l1-l2");
+		config_write_string(config, section, "LowNetwork", "gpu-net-l2-gm");
+		/* TODO Make this dynamic */
+		config_write_string(config, section, "LowModules", "gpu-gm-0 gpu-gm-1 gpu-gm-2 gpu-gm-3");
+
+		snprintf(str, sizeof str, "ADDR DIV %d MOD %d EQ %d", 256, num_L2s, l2_id);
+		config_write_string(config, section, "AddressRange", str);
+	}
 
 	/* Global memory */
-	snprintf(section, sizeof section, "Module gpu-gm");
-	config_write_string(config, section, "Type", "MainMemory");
-	config_write_string(config, section, "HighNetwork", "gpu-net-l2-gm");
-	config_write_int(config, section, "BlockSize", 256);
-	config_write_int(config, section, "Latency", 100);
+	for (mm_id = 0; mm_id < num_MMs; mm_id++) 
+	{
+		snprintf(section, sizeof section, "Module gpu-gm-%d", mm_id);
+		config_write_string(config, section, "Type", "MainMemory");
+		config_write_string(config, section, "HighNetwork", "gpu-net-l2-gm");
+		config_write_int(config, section, "BlockSize", 256);
+		config_write_int(config, section, "Latency", 100);
+
+		snprintf(str, sizeof str, "ADDR DIV %d MOD %d EQ %d", 256, num_MMs, mm_id);
+		config_write_string(config, section, "AddressRange", str);
+	}
 
 	/* Network connecting L1 caches and L2 */
 	snprintf(section, sizeof section, "Network gpu-net-l1-l2");
