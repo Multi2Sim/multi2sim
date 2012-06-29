@@ -128,7 +128,6 @@ long long mod_access(struct mod_t *mod, enum mod_access_kind_t access_kind,
 		}
 		else if (access_kind == mod_access_nc_store)
 		{
-			// TODO Change this to EV_MOD_NMOESI_NC_STORE after updating the protocol
 			event = EV_MOD_NMOESI_NC_STORE;
 		}
 		else
@@ -188,16 +187,16 @@ int mod_can_access(struct mod_t *mod, unsigned int addr)
 
 /* Return {set, way, tag, state} for an address.
  * The function returns TRUE on hit, FALSE on miss. */
-int mod_find_block(struct mod_t *mod, unsigned int addr, unsigned int *set_ptr,
-	unsigned int *way_ptr, unsigned int *tag_ptr, int *state_ptr)
+int mod_find_block(struct mod_t *mod, unsigned int addr, int *set_ptr,
+	int *way_ptr, int *tag_ptr, int *state_ptr)
 {
 	struct cache_t *cache = mod->cache;
 	struct cache_block_t *blk;
 	struct dir_lock_t *dir_lock;
 
-	unsigned int set;
-	unsigned int way;
-	unsigned int tag;
+	int set;
+	int way;
+	int tag;
 
 	/* A transient tag is considered a hit if the block is
 	 * locked in the corresponding directory. */
@@ -229,20 +228,21 @@ int mod_find_block(struct mod_t *mod, unsigned int addr, unsigned int *set_ptr,
 		}
 	}
 
+	PTR_ASSIGN(set_ptr, set);
+	PTR_ASSIGN(tag_ptr, tag);
+
 	/* Miss */
 	if (way == cache->assoc)
 	{
-		PTR_ASSIGN(set_ptr, set);
-		PTR_ASSIGN(tag_ptr, tag);
+	/*
 		PTR_ASSIGN(way_ptr, 0);
 		PTR_ASSIGN(state_ptr, 0);
+	*/
 		return 0;
 	}
 
 	/* Hit */
-	PTR_ASSIGN(set_ptr, set);
 	PTR_ASSIGN(way_ptr, way);
-	PTR_ASSIGN(tag_ptr, tag);
 	PTR_ASSIGN(state_ptr, cache->sets[set].blocks[way].state);
 	return 1;
 }
@@ -281,8 +281,7 @@ void mod_lock_port(struct mod_t *mod, struct mod_stack_t *stack, int event)
 	mod->num_locked_ports++;
 
 	/* Debug */
-	mem_debug("  %lld %lld %s port %d locked\n", esim_cycle,
-		stack->id, mod->name, i);
+	mem_debug("  %lld stack %lld %s port %d locked\n", esim_cycle, stack->id, mod->name, i);
 
 	/* Schedule event */
 	esim_schedule_event(event, stack, 0);
@@ -656,6 +655,9 @@ struct mod_stack_t *mod_stack_create(long long id, struct mod_t *mod,
 	stack->ret_stack = ret_stack;
 	stack->reply = reply_NO_REPLY;
 	stack->retain_owner = 0;
+	stack->way = -1;
+	stack->set = -1;
+	stack->tag = -1;
 
 	/* Return */
 	return stack;

@@ -158,12 +158,11 @@ static struct mod_t *mem_system_command_get_mod(struct list_t *token_list,
 }
 
 
-static void mem_system_command_get_set_way(struct list_t *token_list,
-	char *command_line, struct mod_t *mod, unsigned int *set_ptr,
-	unsigned int *way_ptr)
+static void mem_system_command_get_set_way(struct list_t *token_list, char *command_line, 
+	struct mod_t *mod, int *set_ptr, int *way_ptr)
 {
-	unsigned int set;
-	unsigned int way;
+	int set;
+	int way;
 
 	/* Check valid module */
 	if (!mod)
@@ -195,8 +194,7 @@ static void mem_system_command_get_set_way(struct list_t *token_list,
 
 
 static int mem_system_command_get_sub_block(struct list_t *token_list,
-	char *command_line, struct mod_t *mod, unsigned int set,
-	unsigned int way)
+	char *command_line, struct mod_t *mod, int set, int way)
 {
 	int sub_block;
 
@@ -301,12 +299,12 @@ void mem_system_command_handler(int event, void *data)
 	{
 		struct mod_t *mod;
 
-		unsigned int set;
-		unsigned int way;
-		unsigned int tag;
+		int set;
+		int way;
+		int tag;
 
-		unsigned int set_check;
-		unsigned int tag_check;
+		int set_check;
+		int tag_check;
 
 		int state;
 
@@ -340,8 +338,8 @@ void mem_system_command_handler(int event, void *data)
 		struct mod_t *mod;
 		struct mod_t *owner;
 
-		unsigned int set;
-		unsigned int way;
+		int set;
+		int way;
 
 		int sub_block;
 		int owner_index;
@@ -372,8 +370,8 @@ void mem_system_command_handler(int event, void *data)
 		struct mod_t *mod;
 		struct mod_t *sharer;
 
-		unsigned int set;
-		unsigned int way;
+		int set;
+		int way;
 
 		int sub_block;
 
@@ -466,10 +464,10 @@ void mem_system_end_command_handler(int event, void *data)
 	{
 		struct mod_t *mod;
 
-		unsigned int set;
-		unsigned int way;
-		unsigned int tag;
-		unsigned int tag_check;
+		int set;
+		int way;
+		int tag;
+		int tag_check;
 
 		int state;
 		int state_check;
@@ -520,8 +518,8 @@ void mem_system_end_command_handler(int event, void *data)
 
 		struct dir_entry_t *dir_entry;
 
-		unsigned int set;
-		unsigned int way;
+		int set;
+		int way;
 
 		int sub_block;
 
@@ -569,8 +567,8 @@ void mem_system_end_command_handler(int event, void *data)
 
 		struct net_node_t *node;
 
-		unsigned int set;
-		unsigned int way;
+		int set;
+		int way;
 
 		int sub_block;
 		int node_index;
