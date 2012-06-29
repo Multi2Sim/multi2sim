@@ -806,7 +806,7 @@ void x86_cpu_writeback(void);
 void x86_cpu_commit(void);
 void x86_cpu_recover(int core, int thread);
 
-void x86_cpu_run(void);
+int x86_cpu_run(void);
 
 #endif
 
