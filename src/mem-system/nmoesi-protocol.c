@@ -709,10 +709,9 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 
 		/* Default return values */
 		ret->err = 0;
-		ret->set = 0;
-		ret->way = 0;
-		ret->state = 0;
-		ret->tag = 0;
+
+		/* If this stack has already been assigned a way, keep using it */
+		stack->way = ret->way;
 
 		/* Get a port */
 		mod_lock_port(mod, stack, EV_MOD_NMOESI_FIND_AND_LOCK_PORT);
@@ -792,18 +791,15 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			}
 		}
 
-		/* Miss */
 		if (!stack->hit)
 		{
 			/* Find victim */
-			stack->way = cache_replace_block(mod->cache, stack->set);
-			cache_get_block(mod->cache, stack->set, stack->way, NULL, &stack->state);
-			assert(stack->state || !dir_entry_group_shared_or_owned(mod->dir,
-				stack->set, stack->way));
-			mem_debug("    %lld 0x%x %s miss -> lru: set=%d, way=%d, state=%s\n",
-				stack->id, stack->tag, mod->name, stack->set, stack->way,
-				map_value(&cache_block_state_map, stack->state));
+			if (stack->way < 0) 
+			{
+				stack->way = cache_replace_block(mod->cache, stack->set);
+			}
 		}
+		assert(stack->way >= 0);
 
 		/* If directory entry is locked and the call to FIND_AND_LOCK is not
 		 * blocking, release port and return error. */
@@ -818,15 +814,30 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 			return;
 		}
 
-		/* Lock directory entry. If lock fails, port needs to be released to prevent deadlock.
-		 * When the directory entry is released, locking port and directory entry will be retried. */
-		if (!dir_entry_lock(mod->dir, stack->set, stack->way, EV_MOD_NMOESI_FIND_AND_LOCK, stack))
+		/* Lock directory entry. If lock fails, port needs to be released to prevent 
+		 * deadlock.  When the directory entry is released, locking port and 
+		 * directory entry will be retried. */
+		if (!dir_entry_lock(mod->dir, stack->set, stack->way, EV_MOD_NMOESI_FIND_AND_LOCK, 
+			stack))
 		{
 			mem_debug("    %lld 0x%x %s block locked at set=%d, way=%d\n",
 				stack->id, stack->tag, mod->name, stack->set, stack->way);
 			mod_unlock_port(mod, port, stack);
 			return;
 		}
+
+		/* Miss */
+		if (!stack->hit)
+		{
+			/* Find victim */
+			cache_get_block(mod->cache, stack->set, stack->way, NULL, &stack->state);
+			assert(stack->state || !dir_entry_group_shared_or_owned(mod->dir,
+				stack->set, stack->way));
+			mem_debug("    %lld 0x%x %s miss -> lru: set=%d, way=%d, state=%s\n",
+				stack->id, stack->tag, mod->name, stack->set, stack->way,
+				map_value(&cache_block_state_map, stack->state));
+		}
+
 
 		/* Entry is locked. Record the transient tag so that a subsequent lookup
 		 * detects that the block is being brought.
@@ -1153,6 +1164,7 @@ void mod_handler_nmoesi_evict(int event, void *data)
 			}
 		}
 
+		/* XXX WHY THE READ REQUEST?! */
 		/* Send a read request to any subblock with an owner */
 		stack->pending = 1;
 		dir = target_mod->dir;
