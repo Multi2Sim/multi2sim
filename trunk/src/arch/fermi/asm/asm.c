@@ -2722,5 +2722,44 @@ void frm_inst_dump_target(char **inst_str_ptr, int *inst_str_size, struct frm_in
 void frm_inst_get_op_src(struct frm_inst_t *inst, int src_idx,
         int *sel, int *rel, int *chan, int *neg, int *abs)
 {
+	printf("current inst: %s\n", inst->info->name);
+
+	if (src_idx == 0)
+	{
+		if (inst->info->fmt == FRM_FMT_MISC_S2R)
+		{
+			*sel = 257;
+			*rel = inst->dword.misc_s2r.dst;
+		}
+	}
+	else if (src_idx == 1)
+	{
+		if (inst->info->fmt == FRM_FMT_MISC_S2R)
+		{
+			*sel = 256;
+			*rel = inst->dword.misc_s2r.sreg;
+		}
+		if (inst->info->fmt == FRM_FMT_INT_IMAD)
+		{
+			*sel = 256;
+			*rel = inst->dword.int_imad.src1;
+		}
+	}
+	else if (src_idx == 2)
+	{
+		if (inst->info->fmt == FRM_FMT_INT_IMAD)
+		{
+			*sel = 258;
+			*rel = inst->dword.int_imad.src2;
+		}
+	}
+	else if (src_idx == 3)
+	{
+		if (inst->info->fmt == FRM_FMT_INT_IMAD)
+		{
+			*sel = 259;
+			*rel = inst->dword.int_imad.src3;
+		}
+	}
 }
 

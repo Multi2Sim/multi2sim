@@ -234,6 +234,16 @@ void frm_grid_setup_threads(struct frm_grid_t *grid)
 							warp->thread_id_last = tid;
 							bit_map_set(warp->active_stack, thread->id_in_warp, 1, 1);
 
+                                                        /* Save local IDs in register R0 */
+                                                        thread->sr[FRM_SR_Tid_X].v.i = lidx;  /* R0.x */
+                                                        thread->sr[FRM_SR_Tid_Y].v.i = lidy;  /* R0.y */
+                                                        thread->sr[FRM_SR_Tid_Z].v.i = lidz;  /* R0.z */
+
+                                                        /* Save threadblock IDs in register R1 */
+                                                        thread->sr[FRM_SR_CTAid_X].v.i = bidx;  /* R1.x */
+                                                        thread->sr[FRM_SR_CTAid_Y].v.i = bidy;  /* R1.y */
+                                                        thread->sr[FRM_SR_CTAid_Z].v.i = bidz;  /* R1.z */
+
 							/* Next thread */
 							tid++;
 							lid++;
@@ -295,7 +305,7 @@ void frm_grid_setup_const_mem(struct frm_grid_t *grid)
         struct frm_cuda_function_t *function = grid->function;
 
 	/* FIXME: built-in consts */
-        frm_isa_const_mem_write(0, 0x8, &function->local_size3[0]);
+        frm_isa_const_mem_write(0x8, &function->local_size3[0]);
 }
 
 
@@ -312,18 +322,13 @@ void frm_grid_setup_args(struct frm_grid_t *grid)
 		arg = list_get(function->arg_list, i);
 		assert(arg);
 
-		/* Check that argument was set */
-		//if (!arg->set)
-		//	fatal("function '%s': argument '%s' has not been assigned.",
-		//		function->name, arg->name);
-
 		/* Process argument depending on its type */
 		if (arg->kind == FRM_CUDA_FUNCTION_ARG_KIND_POINTER)
 		{
 			if (arg->mem_scope == FRM_CUDA_MEM_SCOPE_GLOBAL)
 			{
 				printf("arg->value = 0x%08x\n", arg->value);
-                                frm_isa_const_mem_write(0, offset, &arg->value);
+                                frm_isa_const_mem_write(offset, &arg->value);
 				offset += 0x4;
 				continue;
 			}
