@@ -612,8 +612,9 @@ void evg_gpu_uop_trash_add(struct evg_uop_t *uop)
 }
 
 
-/* Run one iteration of the Evergreen GPU timing simulation loop. */
-void evg_gpu_run(void)
+/* Run one iteration of the Evergreen GPU timing simulation loop.
+ * Return false if the Evergreen timing simulation is completely idle. */
+int evg_gpu_run(void)
 {
 	struct evg_ndrange_t *ndrange;
 
@@ -623,7 +624,7 @@ void evg_gpu_run(void)
 	/* For efficiency when no Evergreen emulation is selected, exit here
 	 * if the list of existing ND-Ranges is empty. */
 	if (!evg_emu->ndrange_list_count)
-		return;
+		return 0;
 
 	/* Start one ND-Range in state 'pending' */
 	while ((ndrange = evg_emu->pending_ndrange_list_head))
@@ -681,7 +682,7 @@ void evg_gpu_run(void)
 
 	/* Stop if any reason met */
 	if (x86_emu_finish)
-		return;
+		return 1;
 
 	/* Free instructions in trash */
 	evg_gpu_uop_trash_empty();
@@ -717,4 +718,7 @@ void evg_gpu_run(void)
 		evg_gpu_unmap_ndrange();
 		evg_ndrange_free(ndrange);
 	}
+
+	/* Return true */
+	return 1;
 }

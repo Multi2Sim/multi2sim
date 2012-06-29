@@ -1098,20 +1098,28 @@ int main(int argc, char **argv)
 	/* Simulation loop */
 	while (!x86_emu_finish)
 	{
+		int running;
+
+		/* Assume initially that no architecture has an active CPU context / GPU
+		 * ND-Range running on it. */
+		running = 0;
+
 		/* x86 CPU simulation */
 		if (x86_emu_kind == x86_emu_kind_detailed)
-			x86_cpu_run();
+			running |= x86_cpu_run();
 		else
 			x86_emu_run();
 
 		/* Evergreen GPU simulation */
 		if (evg_emu_kind == evg_emu_kind_detailed)
-			evg_gpu_run();
+			running |= evg_gpu_run();
 		else
 			evg_emu_run();
 
-		/* Event-driven simulation */
-		esim_process_events();
+		/* Event-driven simulation. Only process events and advance to next global
+		 * simulation cycle if any architecture performed a useful timing simulation. */
+		if (running)
+			esim_process_events();
 	}
 
 	/* Restore default signal handlers */
