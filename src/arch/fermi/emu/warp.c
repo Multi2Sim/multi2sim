@@ -212,19 +212,17 @@ void frm_warp_stack_pop(struct frm_warp_t *warp, int count)
 /* Execute one instruction in the warp */
 void frm_warp_execute(struct frm_warp_t *warp)
 {
-	extern struct frm_threadblock_t *frm_isa_threadblock;
-	extern struct frm_warp_t *frm_isa_warp;
-	extern struct frm_inst_t *frm_isa_inst;
-
-
+	struct frm_threadblock_t *threadblock;
+	struct frm_thread_t *thread;
+	struct frm_inst_t *inst;
 
 	/* Get current work-group */
 	struct frm_grid_t *grid = warp->grid;
-	frm_isa_warp = warp;
-	frm_isa_threadblock = warp->threadblock;
-//	frm_isa_thread = NULL;
-	frm_isa_inst = NULL;
-	assert(!DOUBLE_LINKED_LIST_MEMBER(frm_isa_threadblock, finished, frm_isa_warp));
+	warp = warp;
+	threadblock = warp->threadblock;
+	thread = NULL;
+	inst = NULL;
+	assert(!DOUBLE_LINKED_LIST_MEMBER(threadblock, finished, warp));
 
 	/* Reset instruction flags */
 	warp->global_mem_write = 0;
@@ -236,77 +234,63 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	warp->active_mask_push = 0;
 	warp->active_mask_pop = 0;
 
+	int thread_id;
 
 	/* Decode instruction */
 
 	int byte_index;
 
-	frm_isa_inst = &(warp->inst);
+	inst = &(warp->inst);
 	printf("Instruction Hex: ");
 	/* Print most significant byte first */
 	for (byte_index = 7; byte_index >= 0; --byte_index)
 	{
 		printf("%02x", *((unsigned char*)(warp->buf)+byte_index));
-		frm_isa_inst->dword.bytes[byte_index] = *((unsigned char*)(warp->buf)+byte_index);
+		inst->dword.bytes[byte_index] = *((unsigned char*)(warp->buf)+byte_index);
 	}
 	printf("\n");
 	for (byte_index = 7; byte_index >= 0; --byte_index)
 	{
-		printf("%02x", frm_isa_inst->dword.bytes[byte_index]);
+		printf("%02x", inst->dword.bytes[byte_index]);
 	}
 	printf("\n");
 
-	frm_inst_decode(frm_isa_inst);
+                FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
+                {
+                        thread = grid->threads[thread_id];
+	frm_inst_decode(inst);
+        (*frm_isa_inst_func[inst->info->inst])(thread, inst);
+                }
 
-        (*frm_isa_inst_func[frm_isa_inst->info->inst])();
+
 
 	warp->buf += 8;
 
 
-
-	//frm_isa_inst = &(frm_isa_warp->inst);
-
-
-	//int inst_index;
-	//char inst_str[MAX_STRING_SIZE];
-	//for (inst_index = 0; inst_index < warp->buf_size/8; ++inst_index)
-	//{
-	//}
-
-	/* Execute once in warp */
-	//int thread_id;
-        //        FRM_FOREACH_THREAD_IN_WARP(frm_isa_warp, thread_id)
-        //        {
-        //                (*frm_isa_inst_func[frm_isa_inst->info->inst])();
-        //                //frm_isa_write_task_commit();
-        //        }
-
-	/* If instruction updates the thread's active mask, update digests */
-
 	/* Stats */
-//	frm_emu->inst_count++;
-//	frm_isa_warp->emu_inst_count++;
-//	frm_isa_warp->inst_count++;
-//	{
-//		frm_isa_warp->global_mem_inst_count++;
-//	}
-//
-//
-	if (frm_isa_warp->finished)
+	frm_emu->inst_count++;
+	warp->emu_inst_count++;
+	warp->inst_count++;
+	{
+		warp->global_mem_inst_count++;
+	}
+
+
+	if (warp->finished)
 	{
 		/* Check if warp finished kernel execution */
-		assert(DOUBLE_LINKED_LIST_MEMBER(frm_isa_threadblock, running, frm_isa_warp));
-		assert(!DOUBLE_LINKED_LIST_MEMBER(frm_isa_threadblock, finished, frm_isa_warp));
-		DOUBLE_LINKED_LIST_REMOVE(frm_isa_threadblock, running, frm_isa_warp);
-		DOUBLE_LINKED_LIST_INSERT_TAIL(frm_isa_threadblock, finished, frm_isa_warp);
+		assert(DOUBLE_LINKED_LIST_MEMBER(threadblock, running, warp));
+		assert(!DOUBLE_LINKED_LIST_MEMBER(threadblock, finished, warp));
+		DOUBLE_LINKED_LIST_REMOVE(threadblock, running, warp);
+		DOUBLE_LINKED_LIST_INSERT_TAIL(threadblock, finished, warp);
 
 		/* Check if work-group finished kernel execution */
-		if (frm_isa_threadblock->finished_list_count == frm_isa_threadblock->warp_count)
+		if (threadblock->finished_list_count == threadblock->warp_count)
 		{
-			assert(DOUBLE_LINKED_LIST_MEMBER(grid, running, frm_isa_threadblock));
-			assert(!DOUBLE_LINKED_LIST_MEMBER(grid, finished, frm_isa_threadblock));
-			frm_threadblock_clear_status(frm_isa_threadblock, frm_threadblock_running);
-			frm_threadblock_set_status(frm_isa_threadblock, frm_threadblock_finished);
+			assert(DOUBLE_LINKED_LIST_MEMBER(grid, running, threadblock));
+			assert(!DOUBLE_LINKED_LIST_MEMBER(grid, finished, threadblock));
+			frm_threadblock_clear_status(threadblock, frm_threadblock_running);
+			frm_threadblock_set_status(threadblock, frm_threadblock_finished);
 		}
 	}
 }
