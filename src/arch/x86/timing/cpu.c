@@ -1140,7 +1140,7 @@ void x86_cpu_run_fast_forward(void)
 
 
 /* Run one iteration of the x86 timing simulation loop */
-void x86_cpu_run(void)
+int x86_cpu_run(void)
 {
 	/* Fast-forward simulation */
 	if (x86_cpu_fast_forward_count && x86_emu->inst_count < x86_cpu_fast_forward_count)
@@ -1165,7 +1165,7 @@ void x86_cpu_run(void)
 
 	/* Stop if any previous reason met */
 	if (x86_emu_finish)
-		return;
+		return 0;
 
 	/* One more cycle of x86 timing simulation */
 	x86_cpu->cycle++;
@@ -1179,4 +1179,7 @@ void x86_cpu_run(void)
 
 	/* Process host threads generating events */
 	x86_emu_process_events();
+
+	/* Return TRUE */
+	return 1;
 }
