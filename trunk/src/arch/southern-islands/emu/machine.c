@@ -1209,7 +1209,7 @@ void si_isa_V_MUL_HI_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 		s1 = -s1;
 
 	union si_reg_t result;
-	result.as_uint = ((long)s0 * (long)s1) >> 32;
+	result.as_uint = ((long long)s0 * (long long)s1) >> 32;
 
 	si_isa_write_vreg(work_item, INST.vdst, result);
 
