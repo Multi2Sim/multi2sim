@@ -29,6 +29,7 @@
 long long x86_emu_max_inst = 0;
 long long x86_emu_max_cycles = 0;
 long long x86_emu_max_time = 0;
+char * x86_emu_last_inst_bytes = 0;
 enum x86_emu_kind_t x86_emu_kind = x86_emu_kind_functional;
 
 
@@ -40,6 +41,7 @@ struct string_map_t x86_emu_finish_map =
 {
 	9, {
 		{ "ContextsFinished", x86_emu_finish_ctx },
+		{ "LastCPUInst", x86_emu_finish_last_cpu_inst_bytes },
 		{ "MaxCPUInst", x86_emu_finish_max_cpu_inst },
 		{ "MaxCPUCycles", x86_emu_finish_max_cpu_cycles },
 		{ "MaxGPUInst", x86_emu_finish_max_gpu_inst },
@@ -848,7 +850,16 @@ void x86_emu_run(void)
 
 	/* Run an instruction from every running process */
 	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
+	{
 		x86_ctx_execute_inst(ctx);
+
+		/* Stop if instruction matches last instruction bytes */
+		if (x86_emu_last_inst_bytes &&
+			!strncmp(x86_isa_inst_bytes,
+				x86_emu_last_inst_bytes,
+				strlen(x86_emu_last_inst_bytes)))
+			x86_emu_finish = x86_emu_finish_last_cpu_inst_bytes;
+	}
 
 	/* Free finished contexts */
 	while (x86_emu->finished_list_head)

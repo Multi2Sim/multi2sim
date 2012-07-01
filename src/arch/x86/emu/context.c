@@ -299,6 +299,7 @@ void x86_ctx_execute_inst(struct x86_ctx_t *ctx)
 		mem_access(x86_isa_mem, x86_isa_regs->eip, 20, buffer_ptr, mem_access_exec);
 	}
 	x86_isa_mem->safe = mem_safe_mode;
+	x86_isa_inst_bytes = (char *)buffer_ptr;
 
 	/* Disassemble */
 	x86_disasm(buffer_ptr, x86_isa_eip, &x86_isa_inst);

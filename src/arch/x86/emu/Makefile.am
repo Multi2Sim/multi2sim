@@ -5,6 +5,7 @@ libemu_a_SOURCES = \
 	x86-emu.h \
 	\
 	isa.c \
+	checkpoint.c \
 	clrt.c \
 	clrt.dat \
 	context.c \

@@ -161,9 +161,9 @@ void x86_loader_load_exe(struct x86_ctx_t *ctx, char *exe);
 void x86_loader_load_prog_from_ctxconfig(char *ctxconfig);
 void x86_loader_load_prog_from_cmdline(int argc, char **argv);
 
-
-
-
+/* Architectural state checkpoints */
+void x86_checkpoint_load(char *path);
+void x86_checkpoint_save(char *path);
 
 /*
  * Microinstructions
@@ -463,6 +463,7 @@ extern struct x86_regs_t *x86_isa_regs;
 extern struct mem_t *x86_isa_mem;
 extern int x86_isa_spec_mode;
 extern unsigned int x86_isa_eip;
+extern char * x86_isa_inst_bytes;
 extern unsigned int x86_isa_target;
 extern struct x86_inst_t x86_isa_inst;
 extern long long x86_isa_inst_count;
@@ -801,6 +802,8 @@ void file_desc_table_dump(struct file_desc_table_t *table, FILE *f);
 struct file_desc_t *file_desc_table_entry_get(struct file_desc_table_t *table, int index);
 struct file_desc_t *file_desc_table_entry_new(struct file_desc_table_t *table,
 	enum file_desc_kind_t kind, int host_fd, char *path, int flags);
+struct file_desc_t *file_desc_table_entry_new_guest_fd(struct file_desc_table_t *table,
+        enum file_desc_kind_t kind, int guest_fd, int host_fd, char *path, int flags);
 void file_desc_table_entry_free(struct file_desc_table_t *table, int index);
 void file_desc_table_entry_dump(struct file_desc_table_t *table, int index, FILE *f);
 
@@ -1084,6 +1087,7 @@ extern volatile enum x86_emu_finish_t
 {
 	x86_emu_finish_none,  /* Simulation not finished */
 	x86_emu_finish_ctx,  /* Contexts finished */
+	x86_emu_finish_last_cpu_inst_bytes, /* Last CPU instruction reached */
 	x86_emu_finish_max_cpu_inst,  /* Maximum instruction count reached in CPU */
 	x86_emu_finish_max_cpu_cycles,  /* Maximum cycle count reached in CPU */
 	x86_emu_finish_max_gpu_inst,  /* Maximum instruction count reached in GPU */
@@ -1102,6 +1106,7 @@ extern struct x86_emu_t *x86_emu;
 extern long long x86_emu_max_cycles;
 extern long long x86_emu_max_inst;
 extern long long x86_emu_max_time;
+extern char * x86_emu_last_inst_bytes;
 
 extern enum x86_emu_kind_t
 {
