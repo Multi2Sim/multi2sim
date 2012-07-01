@@ -607,7 +607,8 @@ void x86_loader_free(struct x86_loader_t *ld)
 	assert(!ld->num_links);
 
 	/* Free ELF file  */
-	elf_file_free(ld->elf_file);
+	if (ld->elf_file)
+		elf_file_free(ld->elf_file);
 
 	/* Free arguments */
 	LINKED_LIST_FOR_EACH(ld->args)

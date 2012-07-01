@@ -323,6 +323,7 @@ void m2s_dist_file(char *file_name, char *dist_path, char *non_dist_path,
  * Other
  */
 
+void hex_str_to_byte_array(char *dest, char *str, int num);
 void dump_bin(int x, int digits, FILE *f);
 void dump_ptr(void *ptr, int size, FILE *stream);
 int log_base2(int x);
