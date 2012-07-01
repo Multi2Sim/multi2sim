@@ -1,0 +1,513 @@
+/*
+ * DEFINST format
+ *      name: Instruction name
+ *      fmt_str: String representing the format for dissasembly
+ *      fmt: Instruction format
+ *      category: Instruction category
+ *		FP: Floating point instructions
+ *		INT: Integer instructions
+ *		CONV: Conversion instructions
+ *		MOV: Movement instructions
+ *		PRED: Predicate/CC instructions
+ *		TEX: Texture instructions
+ *		LDST: Compute load/store instructions
+ *		SURF: Surface memory instructions
+ *		CTRL: Control instructions
+ *		MISC: Miscellaneous instructions
+ *      opcode: Instruction opcode
+ */
+
+/* FP catogory instructions: 
+ * FFMA, FADD, FADD32I, FCMP, FMUL, FMUL32I, FMNMX, 
+ * FSWZ, FSET, FSETP, RRO, MUFU, DFMA, DADD, DMUL, 
+ * DMNMX, DSET, DSETP
+ */
+
+DEFINST(FFMA, 
+	"%p FFMA%e %d, %a, %b, %c", 
+	FP_FFMA, 
+	FP, 
+	0x0c0)
+
+DEFINST(FADD, 
+	"%p FADD%e %d, %a, %b", 
+	FP_FADD, 
+	FP, 
+	0x140)
+
+DEFINST(FADD32I, 
+	"%p FADD32I%e %d, %a, %i", 
+	FP_FADD32I, 
+	FP, 
+	0x0a2)
+
+DEFINST(FCMP, 
+	"%p FCMP%e %d, %a, %b, %c", 
+	FP_FCMP, 
+	FP, 
+	0x007)
+
+DEFINST(FMUL, 
+	"%p FMUL%e %d, %a, %b", 
+	FP_FMUL, 
+	FP, 
+	0x160)
+
+DEFINST(FMUL32I, 
+	"%p FMUL32I%e %d, %a, %i", 
+	FP_FMUL32I, 
+	FP, 
+	0x0c2)
+
+//FMNMX
+
+//FSWZ
+
+//FSET
+
+DEFINST(FSETP, 
+	"%p FSETP%e %P, %Q, %a, %b, %R", 
+	FP_FSETP, 
+	FP, 
+	0x040)
+
+//RRO
+
+DEFINST(MUFU, 
+	"%p MUFU%e %d, %a", 
+	FP_MUFU, 
+	FP, 
+	0x320)
+
+DEFINST(DFMA, 
+	"%p DFMA %d, %a, %b, %c", 
+	FP_DFMA, 
+	FP, 
+	0x081)
+
+DEFINST(DADD, 
+	"%p DADD%e %d, %a, %b", 
+	FP_DADD, 
+	FP, 
+	0x131)
+
+DEFINST(DMUL, 
+	"%p DMUL%e %d, %a, %b", 
+	FP_DMUL, 
+	FP, 
+	0x141)
+
+//DMNMX
+
+//DSET
+
+DEFINST(DSETP, 
+	"%p DSETP%e %P, %Q, %a, %b, %R", 
+	FP_DSETP, 
+	FP, 
+	0x031)
+
+/* INT catogory instructions: 
+ * IMAD, IMUL, IADD, IADD32I, ISCADD, ISAD, IMNMX, BFE, BFI, 
+ * SHR, SHL, LOP, LOP32I, FLO, ISET, ISETP, ICMP, 
+ * POPC
+ */
+
+DEFINST(IMAD, 
+	"%p IMAD%e %d, %a, %b, %c", 
+	INT_IMAD, 
+	INT, 
+	0x083)
+
+DEFINST(IMUL, 
+	"%p IMUL%e %d, %a, %b", 
+	INT_IMUL, 
+	INT, 
+	0x143)
+
+DEFINST(IADD, 
+	"%p IADD%e %d, %a, %b", 
+	INT_IADD, 
+	INT, 
+	0x123)
+
+DEFINST(IADD32I, 
+	"%p IADD32I%e %d, %a, %i", 
+	INT_IADD32I, 
+	INT, 
+	0x012)
+
+DEFINST(ISCADD, 
+	"%p ISCADD %d, %a, %b, %s", 
+	INT_ISCADD, 
+	INT, 
+	0x103)
+
+//DEFINST(ISAD
+
+//DEFINST(IMNMX
+
+DEFINST(BFE, 
+	"%p BFE%e %d, %a, %b", 
+	INT_BFE, 
+	INT, 
+	0x1c3)
+
+DEFINST(BFI, 
+	"%p BFI %d, %a, %b, %c", 
+	INT_BFI, 
+	INT, 
+	0x0a3)
+
+DEFINST(SHR, 
+	"%p SHR%e %d, %a, %b", 
+	INT_SHR, 
+	INT, 
+	0x163)
+
+DEFINST(SHL, 
+	"%p SHL%e %d, %a, %b", 
+	INT_SHL, 
+	INT, 
+	0x183)
+
+DEFINST(LOP, 
+	"%p LOP%e %d, %a, %b", 
+	INT_LOP, 
+	INT, 
+	0x1a3)
+
+DEFINST(LOP32I, 
+	"%p LOP32I%e %d, %a, %i", 
+	INT_LOP32I, 
+	INT, 
+	0x0e2)
+
+//DEFINST(FLO
+
+//DEFINST(ISET
+
+DEFINST(ISETP, 
+	"%p ISETP%e %P, %Q, %a, %b, %R", 
+	INT_ISETP, 
+	INT, 
+	0x033)
+
+DEFINST(ICMP, 
+	"%p ICMP%e %d, %a, %b, %c", 
+	INT_ICMP, 
+	INT, 
+	0x0c3)
+
+//DEFINST(POPC
+
+/* CONV catogory instructions: 
+ * F2F, F2I, I2F, I2I
+ */
+
+DEFINST(F2F, 
+	"%p F2F%e %d, %b", 
+	CONV_F2F, 
+	CONV, 
+	0x044)
+
+DEFINST(F2I, 
+	"%p F2I%e %d, %b", 
+	CONV_F2I, 
+	CONV, 
+	0x054)
+
+DEFINST(I2F, 
+	"%p I2F%e %d, %b", 
+	CONV_I2F, 
+	CONV, 
+	0x064)
+
+DEFINST(I2I, 
+	"%p I2I%e %d, %b", 
+	CONV_I2I, 
+	CONV, 
+	0x074)
+
+/* MOV catogory instructions: 
+ * MOV, MOV32I, SEL, PRMT
+ */
+
+DEFINST(MOV, 
+	"%p MOV%e %d, %b", 
+	MOV_MOV, 
+	MOV, 
+	0x0a4)
+
+DEFINST(MOV32I, 
+	"%p MOV32I%e %d, %i", 
+	MOV_MOV32I, 
+	MOV, 
+	0x062)
+
+DEFINST(SEL, 
+	"%p SEL %d, %a, %b, %R", 
+	MOV_SEL, 
+	MOV, 
+	0x084)
+
+//DEFINST(PRMT
+
+/* PRED catogory instructions: 
+ * P2R, R2P, CSET, CSETP, PSET, PSETP
+ */
+
+/* TEX catogory instructions: 
+ * TEX, TLD, TLD4, TXQ
+ */
+
+/* LDST catogory instructions: 
+ * LDC, LD, LDU, LDL, LDS, LDLK, LDSLK, LD_LDU, LDS_LDU, 
+ * ST, STL, STUL, STS, STSUL, ATOM, RED, CCTL, CCTLL, MEMBAR
+ */
+
+DEFINST(LDC, 
+	"%p LDC%e %d, %b", 
+	LDST_LDC, 
+	LDST, 
+	0x056)
+
+DEFINST(LD, 
+	"%p LD%e %d, [%a%o]", 
+	LDST_LD, 
+	LDST, 
+	0x105)
+
+DEFINST(LDU, 
+	"%p LDU%e %d, [%a%o]", 
+	LDST_LDU, 
+	LDST, 
+	0x115)
+
+DEFINST(LDL, 
+	"%p LDL%e %d, [%a%o]", 
+	LDST_LDL, 
+	LDST, 
+	0x305)
+
+DEFINST(LDS, 
+	"%p LDS%e %d, [%a%o]", 
+	LDST_LDS, 
+	LDST, 
+	0x305)
+
+DEFINST(LDLK, 
+	"%p LDLK%e %R, %d, [%a%o]", 
+	LDST_LDLK, 
+	LDST, 
+	0x145)
+
+DEFINST(LDSLK, 
+	"%p LDSLK%e %R, %d, [%a%o]", 
+	LDST_LDSLK, 
+	LDST, 
+	0x295)
+
+//DEFINST(LD_LDU
+
+//DEFINST(LDS_LDU
+
+DEFINST(ST, 
+	"%p ST%e [%a%o], %d", 
+	LDST_ST, 
+	LDST, 
+	0x125)
+
+DEFINST(STL, 
+	"%p STL%e [%a%o], %d", 
+	LDST_STL, 
+	LDST, 
+	0x325)
+
+DEFINST(STUL, 
+	"%p STUL%e [%a%o], %d", 
+	LDST_STUL, 
+	LDST, 
+	0x3a5)
+
+DEFINST(STS, 
+	"%p STS%e [%a%o], %d", 
+	LDST_STS, 
+	LDST, 
+	0x325)
+
+DEFINST(STSUL, 
+	"%p STSUL%e [%a%o], %d", 
+	LDST_STSUL, 
+	LDST, 
+	0x335)
+
+DEFINST(ATOM, 
+	"%p ATOM%e %c, [%a%o], %d", 
+	LDST_ATOM, 
+	LDST, 
+	0x015)
+
+DEFINST(RED, 
+	"%p RED%e [%a%o], %d", 
+	LDST_RED, 
+	LDST, 
+	0x005)
+
+DEFINST(CCTL, 
+	"%p CCTL%e %d, [%a%o]", 
+	LDST_CCTL, 
+	LDST, 
+	0x135)
+
+DEFINST(CCTLL, 
+	"%p CCTLL%e %d, [%a%o]", 
+	LDST_CCTLL, 
+	LDST, 
+	0x345)
+
+DEFINST(MEMBAR, 
+	"%p MEMBAR%e", 
+	LDST_MEMBAR, 
+	LDST, 
+	0x385)
+
+/* SURF catogory instructions: 
+ * SULD, SULEA, SUST, SURED, SUQ
+ */
+
+/* CTRL catogory instructions: 
+ * BRA, BRX, JMP, JMX, CAL, JCAL, RET, BRK, CONT, LONGJMP, 
+ * SSY, PBK, PCNT, PRET, PLONGJMP, BPT, EXIT
+ */
+
+DEFINST(BRA, 
+	"%p BRA%e %t", 
+	CTRL_BRA, 
+	CTRL, 
+	0x107)
+
+//DEFINST(BRX
+
+DEFINST(JMP, 
+	"%p JMP%e %t", 
+	CTRL_JMP, 
+	CTRL, 
+	0x007)
+
+//DEFINST(JMX
+
+DEFINST(CAL, 
+	"%p CAL%e %t", 
+	CTRL_CAL, 
+	CTRL, 
+	0x147)
+
+DEFINST(JCAL, 
+	"%p JCAL%e %t", 
+	CTRL_JCAL, 
+	CTRL, 
+	0x047)
+
+DEFINST(RET, 
+	"%p RET", 
+	CTRL_RET, 
+	CTRL, 
+	0x247)
+
+DEFINST(BRK, 
+	"%p BRK", 
+	CTRL_BRK, 
+	CTRL, 
+	0x2a7)
+
+DEFINST(CONT, 
+	"%p CONT", 
+	CTRL_CONT, 
+	CTRL, 
+	0x2c7)
+
+DEFINST(LONGJMP, 
+	"%p LONGJMP", 
+	CTRL_LONGJMP, 
+	CTRL, 
+	0x227)
+
+DEFINST(SSY, 
+	"%p SSY %t", 
+	CTRL_SSY, 
+	CTRL, 
+	0x187)
+
+DEFINST(PBK, 
+	"%p PBK %t", 
+	CTRL_PBK, 
+	CTRL, 
+	0x1a7)
+
+DEFINST(PCNT, 
+	"%p PCNT %t", 
+	CTRL_PCNT, 
+	CTRL, 
+	0x1c7)
+
+DEFINST(PRET, 
+	"%p PRET%e %t", 
+	CTRL_PRET, 
+	CTRL, 
+	0x1e7)
+
+DEFINST(PLONGJMP, 
+	"%p PLONGJMP %t", 
+	CTRL_PLONGJMP, 
+	CTRL, 
+	0x167)
+
+//DEFINST(BPT
+
+DEFINST(EXIT, 
+	"%p EXIT", 
+	CTRL_EXIT, 
+	CTRL, 
+	0x207)
+
+/* MISC catogory instructions: 
+ * NOP, S2R, B2R, LEPC, BAR, VOTE
+ */
+
+DEFINST(NOP, 
+	"%p NOP%e CC, %i", 
+	MISC_NOP, 
+	MISC, 
+	0x104)
+
+DEFINST(S2R, 
+	"%p S2R %d, %b", 
+	MISC_S2R, 
+	MISC, 
+	0x0b4)
+
+DEFINST(B2R, 
+	"%p B2R%e %d, %i", 
+	MISC_B2R, 
+	MISC, 
+	0x0e4)
+
+DEFINST(LEPC, 
+	"%p LEPC %d", 
+	MISC_LEPC, 
+	MISC, 
+	0x222)
+
+DEFINST(BAR, 
+	"%p BAR%e %d, %P, %a, %b, %Q", 
+	MISC_BAR, 
+	MISC, 
+	0x144)
+
+DEFINST(VOTE, 
+	"%p VOTE%e %d, %P, %Q", 
+	MISC_VOTE, 
+	MISC, 
+	0x124)
+

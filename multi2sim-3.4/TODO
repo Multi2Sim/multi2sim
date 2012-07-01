@@ -1,0 +1,19 @@
+********************************************************************************
+Reported - pending 01/01/10
+********************************************************************************
+
+-Non-blocking caches and cache ports:
+
+(2) As for non-blocking caches, I can't find any code on MSHRs(miss
+status handling registers, or miss bufferes) for accommodating
+concurrent in-flight misses. I cite  the following simple definition
+from http://www.cs.washington.edu/research/arch/latency-nb-pre.html
+for your quick reference, which is not equivalent to multi-port caches
+as you pointed out:
+
+"A non-blocking cache allows execution to proceed concurrently with
+cache misses as long as dependency constraints are observed, thus
+exploiting post-miss operations."
+
+
+

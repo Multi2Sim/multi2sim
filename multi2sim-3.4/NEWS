@@ -1,0 +1,143 @@
+*** Announcement on Dec 20th, 2011 ***
+
+Dear Multi2Sim users,
+
+A new version of Multi2Sim has been released with important new features. The main added feature is a graphical tool to navigate through timing and block diagrams generated during GPU simulations. Additional changes include:
+
+== GPU Simulation ==
+
+* Documentation for the new GPU Visualization Tool on Chapter 9 of the Multi2Sim Guide. Here are some screenshots of the tool: http://www.multi2sim.org/index.html?Page=gpu-visual
+
+* A tool called the "GPU Occupancy Calculator" has been introduced to measure GPU resources occupancy, documented in Section 8.3 of the Multi2Sim Guide. Check out some screenshots here: http://www.multi2sim.org/index.html?Page=gpu-calc
+
+* An Evergreen disassembly tool has been included to extract the plain-text ISA from OpenCL kernel binaries (option --gpu-disasm <file>).
+
+
+== CPU Simulation ==
+
+* A more accurate and realistic x86 instruction decoding mechanism has been implemented and documented in Section 2.3 of the Multi2Sim Guide. The new supported micro-instruction set is documented in Appendix IV.
+
+* Support for accurate simulation of micro-coded x86 string operations has been introduced.
+
+* Multi2Sim's x86 functional simulator has been extended with a partial implementation of the SSE2 instruction set (XMM instructions), increasing support for simulation of custom code.
+
+
+
+
+*** Announcement on Nov. 4th, 2011 ***
+
+Dear Multi2Sim users,
+
+A new version of Multi2Sim has been released, including the following features:
+
+
+== GPU Simulation ==
+
+* The work-group scheduler has been improved to allow for multiple
+work-group into single compute-unit mappings.
+
+* A GPU occupancy calculator has been included (--gpu-calc <file>).
+For a given GPU configuration, compute unit occupancy plots are
+generated depending on the register and local memory requirements of
+an OpenCL kernel.
+
+* Generation of plain-text traces for architectural GPU simulation
+(--debug-gpu-pipeline <file>). These traces will be consumed by a
+graphical tool, showing timing and block diagrams. This tool will be
+released shortly.
+
+
+== CPU Simulation ==
+
+* Configuration parameters are included as part of the statistics
+reports for an easier interpretation of results.
+
+* Bug fixed for highly associative caches simulation. A wrong
+assignment of LRU counters under specific circumstances caused a
+higher number of ways to provide worse performance results.
+
+* Bug fixed for floating-point x86 instructions emulation (fsin, fcos,
+fsincos, fptan, and others). The FPU status register was not updated
+properly, causing new implementations of "libmath" to hang in some
+cases.
+
+
+
+
+*** Announcement on Jul 7th, 2011 ***
+
+Dear Multi2Sim users,
+
+A new version of Multi2Sim has been released with important changes. As its main novel feature, the new package includes cycle-accurate architectural GPU simulation based on the AMD Evergreen family.
+
+  * A new chapter (Chapter 8) has been included in the Multi2Sim Guide (www.multi2sim.org/files/multi2sim.pdf), describing the Evergreen GPU architectural model, the command-line options for the simulator to configure this model, as well as the structure of the statistics reports.
+
+  * With Multi2Sim 3.1, the user can choose between functional and architectural simulations both for the x86 CPU and the Evergreen GPU models. This integration makes it the first free, open-source tool modeling an heterogeneous CPU-GPU processor at the ISA level as a whole.
+
+  * The Evergreen architectural model includes cycle by cycle simulation for the architecture of GPU stream cores and compute units (based on control-flow, ALU, and texture engines), private and local memories, a configurable global memory hierarchy using caches, and interconnection networks.
+
+  * A completely renewed command-line interface makes the use of Multi2Sim more user-friendly, integrating functional and architectural simulation in a single tool (m2s). Configuration files and statistic reports are all now based on INI files (http://en.wikipedia.org/wiki/INI_file).
+
+Please, visit www.multi2sim.org to download the latest package. If you want to stop receiving these emails, please use the 'Unsubscribe' link in the 'Mailing List' section.
+
+
+
+*** Announce on May 8th, 2011 ***
+
+Dear Multi2Sim users:
+
+Multi2Sim Version 3.0.3 has been released, together with an update of the OpenCL benchmarks package. The following features have been added:
+
+  * Some bug fixes and extensions in the emulation of the AMD Evergreen ISA provide support to a more extensive set of OpenCL benchmarks.
+
+  * Package with OpenCL benchmarks has been updated with the new set of supported benchmarks (see "Downloads" section on the website).
+
+  * The tool 'm2s-opencl-kc' to compile OpenCL kernels has been updated to work with the recent release of the AMD software kit (renamed as APP SDK 2.4). OpenCL kernel binaries can be generated with this tool to compile your own source files targeting any AMD-based ISA (see Multi2Sim Guide for details).
+
+Please, visit www.multi2sim.org for more information. If you want to stop receiving these emails, please use the 'Unsubscribe' link in the 'Mailing List' section.
+
+
+
+
+*** Announce on Apr. 4th, 2011 ***
+
+Dear Multi2Sim users:
+
+Version 3.0.2 of the simulator has been released, including the following additional features:
+
+GPU functional simulation:
+
+  * The Evergreen ISA functional simulator has been updated to extend the set of supported AMD OpenCL benchmarks. The package 'OpenCL benchmarks' package has been updated with 7 new benchmarks (see 'Downloads' section), including x86 binaries, Evergreen precompiled kernels, and data files.
+
+  * Option '-report:gpu' added to Multi2Sim to obtain statistics from the GPU kernel emulation.
+
+
+CPU simulation modules:
+
+  * The signal handling simulation has been updated in the x86 emulator.
+  * Minor bug fixed in the generation of the pipeline trace for a superscalar pipeline, used by the 'm2s-pipeline' graphical tool.
+
+Please, visit www.multi2sim.org for more information. If you want to stop receiving these emails, please use the 'Unsubscribe' link in the 'Mailing List' section.
+
+
+
+*** Announce on Feb. 4th, 2011 ***
+
+Dear Multi2Sim users:
+
+Four years after the Multi2Sim project started, the simulation framework has come to its third major version release, under the motto "The Multi2Sim Simulation Framework: A CPU-GPU Model for Heterogeneous Computing". The project, managed by Rafael Ubal, is being carried out in the NUCAR group at Northeastern University (Boston, MA), conducted by Prof. David Kaeli, and in collaboration with AMD.
+
+In the new versions, Multi2Sim includes a model for AMD Evergreen Graphics Processing Units (GPUs). It is initially based on the functional simulation of the Evergreen instruction set architecture, and will be progressively extended with a timing model for hardware components. All this combined with the x86 functional model and superscalar/multithreaded/multicore CPUs supported so far. The new distributed material includes:
+
+* Tar-ball for Multi2Sim 3.0.
+* Documentation: New Chapter 7 addressing GPUs. Detailed and simple guidelines given to get started + execution examples.
+* Downloads: New package with OpenCL benchmarks (first version includes just 1) to try it out.
+
+Also, current Multi2Sim users can enjoy the following updates:
+
+* Downloads: New packages of benchmarks, including the latest version of PARSEC-2.1 executables and data.
+* Documentation: Chapter 1 of the Multi2Sim Guide updated with detailed description of the simulation model, considerations for static/dynamic linking, and others.
+
+Please, visit www.multi2sim.org for more information. Click on the 'Mailing List' section to receive announcements on version updates (about 1 mail a month), or to unsubscribe if you are already a member and want to stop receiving these emails.
+
+
