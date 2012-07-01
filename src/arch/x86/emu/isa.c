@@ -28,6 +28,7 @@ struct mem_t *x86_isa_mem;
 struct x86_inst_t x86_isa_inst;
 int x86_isa_spec_mode;  /* If true, instructions will not modify memory */
 unsigned int x86_isa_eip;
+char * x86_isa_inst_bytes;
 unsigned int isa_addr;  /* Address of last memory access */
 unsigned int x86_isa_target;  /* Target address of branch/jmp/call/ret inst, even if it's not taken */
 long long x86_isa_inst_count;

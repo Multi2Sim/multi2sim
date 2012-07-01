@@ -50,6 +50,8 @@ static char *isa_call_debug_file_name = "";
 static char *isa_inst_debug_file_name = "";
 static char *error_debug_file_name = "";
 static char *ctxconfig_file_name = "";
+static char *cpu_load_checkpoint_file_name = "";
+static char *cpu_save_checkpoint_file_name = "";
 static char *elf_debug_file_name = "";
 static char *net_debug_file_name = "";
 static char *trace_file_name = "";
@@ -87,6 +89,16 @@ static char *sim_help =
 	"  --cpu-disasm <file>\n"
 	"      Disassemble the x86 ELF file provided in <file>, using the internal x86\n"
 	"      disassembler. This option is incompatible with any other option.\n"
+	"\n"
+	"  --cpu-load-checkpoint <file>\n"
+	"      Load a checkpoint of x86 architectural state.\n"
+	"\n"
+	"  --cpu-save-checkpoint <file>\n"
+	"      Save a checkpoint of x86 architectural state at the end of simulation.\n"
+	"\n"
+	"  --cpu-last-inst-bytes <inst bytes in hex>\n"
+	"      Stop simulation when the specified instruction is fetched.\n"
+	"      Can be used to trigger a checkpoint with --cpu-save-checkpoint.\n"
 	"\n"
 	"  --cpu-sim {functional|detailed}\n"
 	"      Choose a functional simulation (emulation) of an x86 program, versus\n"
@@ -293,6 +305,29 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* CPU last instruction bytes */
+		if (!strcmp(argv[argi], "--cpu-last-inst-bytes")) {
+			m2s_need_argument(argc, argv, argi);
+			x86_emu_last_inst_bytes = malloc(20);
+			if (!x86_emu_last_inst_bytes)
+				fatal("%s: out of memory", __FUNCTION__);
+			hex_str_to_byte_array(x86_emu_last_inst_bytes, argv[++argi], 20);
+			continue;
+		}
+
+		/* CPU load checkpoint file name */
+		if (!strcmp(argv[argi], "--cpu-load-checkpoint")) {
+			m2s_need_argument(argc, argv, argi);
+			cpu_load_checkpoint_file_name = argv[++argi];
+			continue;
+		}
+
+		/* CPU save checkpoint file name */
+		if (!strcmp(argv[argi], "--cpu-save-checkpoint")) {
+			m2s_need_argument(argc, argv, argi);
+			cpu_save_checkpoint_file_name = argv[++argi];
+			continue;
+		}
 
 		/* CPU simulation accuracy */
 		if (!strcmp(argv[argi], "--cpu-sim"))
@@ -1088,6 +1123,10 @@ int main(int argc, char **argv)
 	 * and GPU compute units. */
 	mem_system_init();
 
+	/* Load architectural state checkpoint */
+	if (cpu_load_checkpoint_file_name[0])
+		x86_checkpoint_load(cpu_load_checkpoint_file_name);
+
 	/* Load programs */
 	x86_cpu_load_progs(argc, argv, ctxconfig_file_name);
 
@@ -1121,6 +1160,12 @@ int main(int argc, char **argv)
 		if (running)
 			esim_process_events();
 	}
+
+	/* Save architectural state checkpoint */
+	if (cpu_save_checkpoint_file_name[0])
+		x86_checkpoint_save(cpu_save_checkpoint_file_name);
+
+	free(x86_emu_last_inst_bytes);
 
 	/* Restore default signal handlers */
 	signal(SIGABRT, SIG_DFL);

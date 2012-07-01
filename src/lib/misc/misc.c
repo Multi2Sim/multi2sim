@@ -791,6 +791,24 @@ void bit_map_dump(struct bit_map_t *bit_map, unsigned int where, unsigned int si
  * Other
  */
 
+void hex_str_to_byte_array(char *dest, char *str, int num)
+{
+	unsigned int byte;
+	char *end = dest + num - 1; /* extra byte for null terminator */
+
+	while (str[0])
+	{
+		if (!str[1]) fatal("%s: hex string ended mid-byte", __FUNCTION__);
+		if (dest >= end) fatal("%s: hex string too long", __FUNCTION__);
+		sscanf(str, "%2x", &byte);
+		dest[0] = (unsigned char)byte;
+		dest += 1;
+		str += 2;
+	}
+
+	dest[0] = 0;
+}
+
 
 /* Dump memory contents, printing a dot for unprintable chars */
 void dump_ptr(void *ptr, int size, FILE *stream)

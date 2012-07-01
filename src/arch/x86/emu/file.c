@@ -208,17 +208,20 @@ struct file_desc_t *file_desc_table_entry_get(struct file_desc_table_t *table, i
 	return list_get(table->file_desc_list, index);
 }
 
-
 struct file_desc_t *file_desc_table_entry_new(struct file_desc_table_t *table,
 	enum file_desc_kind_t kind, int host_fd, char *path, int flags)
+{
+	return file_desc_table_entry_new_guest_fd(table, kind, -1, host_fd, path, flags);
+}
+
+struct file_desc_t *file_desc_table_entry_new_guest_fd(struct file_desc_table_t *table,
+	enum file_desc_kind_t kind, int guest_fd, int host_fd, char *path, int flags)
 {
 	struct file_desc_t *desc;
 
 	int i;
-	int guest_fd;
 
 	/* Look for a free entry */
-	guest_fd = -1;
 	for (i = 0; i < list_count(table->file_desc_list) && guest_fd < 0; i++)
 		if (!list_get(table->file_desc_list, i))
 			guest_fd = i;
@@ -227,6 +230,11 @@ struct file_desc_t *file_desc_table_entry_new(struct file_desc_table_t *table,
 	if (guest_fd < 0)
 	{
 		guest_fd = list_count(table->file_desc_list);
+		list_add(table->file_desc_list, NULL);
+	}
+
+	/* Specified guest_fd may still be too large */
+	for (i = list_count(table->file_desc_list); i <= guest_fd; ++i) {
 		list_add(table->file_desc_list, NULL);
 	}
 
