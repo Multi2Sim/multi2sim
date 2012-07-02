@@ -993,7 +993,7 @@ void m2s_stats_summary(void)
 		fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	
 		/* Southern Islands detailed simulation */
-		if (si_emu_kind == si_emu_detailed)
+		if (si_emu_kind == si_emu_kind_detailed)
 		{
 			assert(0);
 			inst_per_cycle = evg_gpu->cycle ? (double) evg_emu->inst_count / evg_gpu->cycle : 0.0;
@@ -1154,6 +1154,12 @@ int main(int argc, char **argv)
 			running |= evg_gpu_run();
 		else
 			evg_emu_run();
+
+		/* Evergreen GPU simulation */
+		if (si_emu_kind == si_emu_kind_detailed)
+			fatal("Southern Islands detailed simulation not implemented.");
+		else
+			si_emu_run();
 
 		/* Event-driven simulation. Only process events and advance to next global
 		 * simulation cycle if any architecture performed a useful timing simulation. */

@@ -60,9 +60,7 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item, struct si
 	si_isa_write_sreg(work_item, INST.sdst, value);
 
 	if (debug_status(si_isa_debug_category))
-	{
 		si_isa_debug("S%u<=(%d,%gf)", INST.sdst, value.as_uint, value.as_float);
-	}
 }
 #undef INST
 
@@ -93,18 +91,14 @@ void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst
 
 	for (i = 0; i < 4; i++) 
 	{
-		mem_read(si_emu->global_mem, m_base+m_offset+i*4, 4, &value[i]);
+		mem_read(si_emu->global_mem, m_base + m_offset + i * 4, 4, &value[i]);
 		si_isa_write_sreg(work_item, INST.sdst+i, value[i]);
 	}	
 
 	if (debug_status(si_isa_debug_category))
-	{	
 		for (i = 0; i < 4; i++) 
-		{
 			si_isa_debug("S%u<=(%d,%gf) ", INST.sdst+i, value[i].as_uint, 
 				value[i].as_float);
-		}
-	}
 }
 #undef INST
 
@@ -112,14 +106,17 @@ void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst
 void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	union si_reg_t value[2];
+
 	uint32_t m_base;
 	uint32_t m_offset;
 	uint32_t m_addr;
+
 	struct si_mem_ptr_t mem_ptr;
+
 	int sbase;
 	int i;
 
-        assert(INST.imm);
+	assert(INST.imm);
 
 	sbase = INST.sbase << 1;
 
@@ -150,32 +147,37 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct 
 }
 #undef INST
 
+/* D.u = S0.i + S1.i. scc = overflow. */
 #define INST SI_INST_SOP2
 void si_isa_S_ADD_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.u = S0.i + S1.i. scc = overflow. */
-
 	int s0 = 0;
 	int s1 = 0;
-	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
-	if (s0 == 0xFF)
-		s0 = INST.lit_cnst;
-	else
-		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_int;
-	if (s1 == 0xFF)
-		s1 = INST.lit_cnst;
-	else
-		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
 
 	union si_reg_t sum;
 	union si_reg_t ovf;
 
-	sum.as_uint = s0 + s1;
-	ovf.as_uint = ((long)(s0) + (long)(s1)) > (long)sum.as_uint;
+	/* Load operands from registers or as a literal constant. */
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_int;
+	if (INST.ssrc1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
 
+	/* Calculate the sum and overflow. */
+	sum.as_uint = s0 + s1;
+	ovf.as_uint = s0 >> 31 != s1 >> 31 ? 0 : (s0 > 0 && sum.as_int < 0) ||
+			(s0 < 0 && sum.as_int > 0);
+
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, sum);
 	si_isa_write_sreg(work_item, SI_SCC, ovf);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d) ", INST.sdst, sum.as_uint);
@@ -184,26 +186,28 @@ void si_isa_S_ADD_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.u = (S0.u < S1.u) ? S0.u : S1.u, scc = 1 if S0 is min. */
 #define INST SI_INST_SOP2
 void si_isa_S_MIN_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.u = (S0.u < S1.u) ? S0.u : S1.u, scc = 1 if S0 is min. */
-
 	unsigned int s0 = 0;
 	unsigned int s1 = 0;
-	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
-	if (s0 == 0xFF)
-		s0 = INST.lit_cnst;
-	else
-		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
-	if (s1 == 0xFF)
-		s1 = INST.lit_cnst;
-	else
-		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
 
 	union si_reg_t min;
 	union si_reg_t s0_min;
 
+	/* Load operands from registers or as a literal constant. */
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0 = INST.lit_cnst;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
+	if (INST.ssrc1 == 0xFF)
+		s1 = INST.lit_cnst;
+	else
+		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
+
+	/* Calculate the minimum operand. */
 	if (INST.ssrc0 < INST.ssrc1)
 	{
 		min.as_uint = s0;
@@ -215,9 +219,11 @@ void si_isa_S_MIN_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 		s0_min.as_uint = 0;
 	}
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, min);
 	si_isa_write_sreg(work_item, SI_SCC, s0_min);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d) ", INST.sdst, min.as_uint);
@@ -226,31 +232,36 @@ void si_isa_S_MIN_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.u = S0.u & S1.u. scc = 1 if result is non-zero. */
 #define INST SI_INST_SOP2
 void si_isa_S_AND_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.u = S0.u & S1.u. scc = 1 if result is non-zero. */
-	
 	unsigned int s0 = 0;
 	unsigned int s1 = 0;
+
+	union si_reg_t result;
+	union si_reg_t nonzero;
+
+	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.ssrc0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
-	if (s1 == 0xFF)
+	if (INST.ssrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
 
-	union si_reg_t result;
+	/* Bitwise AND the two operands and determine if the result is non-zero. */
 	result.as_uint = s0 & s1;
-	union si_reg_t nonzero;
-	nonzero.as_uint = result.as_uint != 0;
+	nonzero.as_uint = !!result.as_uint;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, result);
 	si_isa_write_sreg(work_item, SI_SCC, nonzero);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d) ", INST.sdst, result.as_uint);
@@ -259,28 +270,39 @@ void si_isa_S_AND_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.u = S0.u & S1.u. scc = 1 if result is non-zero. */
 #define INST SI_INST_SOP2
 void si_isa_S_AND_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.u = S0.u & S1.u. scc = 1 if result is non-zero. */
-
+	/* Assert no literal constants for a 64 bit instruction. */
 	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
-	unsigned int s0_lo = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
-	unsigned int s0_hi = si_isa_read_sreg(work_item, INST.ssrc0 + 1).as_uint;
-	unsigned int s1_lo = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
-	unsigned int s1_hi = si_isa_read_sreg(work_item, INST.ssrc1 + 1).as_uint;
+
+	unsigned int s0_lo;
+	unsigned int s0_hi;
+	unsigned int s1_lo;
+	unsigned int s1_hi;
 
 	union si_reg_t result_lo;
-	result_lo.as_uint = s0_lo & s1_lo;
 	union si_reg_t result_hi;
-	result_hi.as_uint = s0_hi & s1_hi;
 	union si_reg_t nonzero;
+
+	/* Load operands from registers. */
+	s0_lo = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
+	s0_hi = si_isa_read_sreg(work_item, INST.ssrc0 + 1).as_uint;
+	s1_lo = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
+	s1_hi = si_isa_read_sreg(work_item, INST.ssrc1 + 1).as_uint;
+
+	/* Bitwise AND the two operands and determine if the result is non-zero. */
+	result_lo.as_uint = s0_lo & s1_lo;
+	result_hi.as_uint = s0_hi & s1_hi;
 	nonzero.as_uint = result_lo.as_uint && result_hi.as_uint;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, result_lo);
 	si_isa_write_sreg(work_item, INST.sdst + 1, result_hi);
 	si_isa_write_sreg(work_item, SI_SCC, nonzero);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d) ", INST.sdst, result_lo.as_uint);
@@ -290,28 +312,40 @@ void si_isa_S_AND_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.u = S0.u & ~S1.u. scc = 1 if result is non-zero. */
 #define INST SI_INST_SOP2
 void si_isa_S_ANDN2_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.u = S0.u & ~S1.u. scc = 1 if result is non-zero. */
-
+	/* Assert no literal constants for a 64 bit instruction. */
 	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
-	unsigned int s0_lo = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
-	unsigned int s0_hi = si_isa_read_sreg(work_item, INST.ssrc0 + 1).as_uint;
-	unsigned int s1_lo = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
-	unsigned int s1_hi = si_isa_read_sreg(work_item, INST.ssrc1 + 1).as_uint;
+
+	unsigned int s0_lo;
+	unsigned int s0_hi;
+	unsigned int s1_lo;
+	unsigned int s1_hi;
 
 	union si_reg_t result_lo;
-	result_lo.as_uint = s0_lo & ~s1_lo;
 	union si_reg_t result_hi;
-	result_hi.as_uint = s0_hi & ~s1_hi;
 	union si_reg_t nonzero;
+
+	/* Load operands from registers. */
+	s0_lo = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
+	s0_hi = si_isa_read_sreg(work_item, INST.ssrc0 + 1).as_uint;
+	s1_lo = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
+	s1_hi = si_isa_read_sreg(work_item, INST.ssrc1 + 1).as_uint;
+
+	/* Bitwise AND the first operand with the negation of the second
+	 * and determine if the result is non-zero. */
+	result_lo.as_uint = s0_lo & ~s1_lo;
+	result_hi.as_uint = s0_hi & ~s1_hi;
 	nonzero.as_uint = result_lo.as_uint && result_hi.as_uint;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, result_lo);
 	si_isa_write_sreg(work_item, INST.sdst + 1, result_hi);
 	si_isa_write_sreg(work_item, SI_SCC, nonzero);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d)= ", INST.sdst, result_lo.as_uint);
@@ -321,31 +355,37 @@ void si_isa_S_ANDN2_B64_impl(struct si_work_item_t *work_item, struct si_inst_t 
 }
 #undef INST
 
+/* D.u = S0.u << S1.u[4:0]. scc = 1 if result is non-zero. */
 #define INST SI_INST_SOP2
 void si_isa_S_LSHL_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.u = S0.u << S1.u[4:0]. scc = 1 if result is non-zero. */
-
 	unsigned int s0 = 0;
 	unsigned int s1 = 0;
+
+	union si_reg_t result;
+	union si_reg_t nonzero;
+
+	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.ssrc0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
-	if (s1 == 0xFF)
+	if (INST.ssrc1 == 0xFF)
 		s1 = INST.lit_cnst & 0x1F;
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint & 0x1F;
 
-	union si_reg_t result;
+	/* Left shift the first operand by the second and
+	 * determine if the result is non-zero. */
 	result.as_uint = s0 << s1;
-	union si_reg_t nonzero;
 	nonzero.as_uint = result.as_uint != 0;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, result);
 	si_isa_write_sreg(work_item, SI_SCC, nonzero);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d)= ", INST.sdst, result.as_uint);
@@ -354,31 +394,37 @@ void si_isa_S_LSHL_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 }
 #undef INST
 
+/* D.u = S0.u >> S1.u[4:0]. scc = 1 if result is non-zero. */
 #define INST SI_INST_SOP2
 void si_isa_S_LSHR_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.u = S0.u >> S1.u[4:0]. scc = 1 if result is non-zero. */
-
 	unsigned int s0 = 0;
 	unsigned int s1 = 0;
+
+	union si_reg_t result;
+	union si_reg_t nonzero;
+
+	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.ssrc0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
-	if (s1 == 0xFF)
+	if (INST.ssrc1 == 0xFF)
 		s1 = INST.lit_cnst & 0x1F;
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint & 0x1F;
 
-	union si_reg_t result;
+	/* Right shift the first operand by the second and
+	 * determine if the result is non-zero. */
 	result.as_uint = s0 >> s1;
-	union si_reg_t nonzero;
 	nonzero.as_uint = result.as_uint != 0;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, result);
 	si_isa_write_sreg(work_item, SI_SCC, nonzero);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d)= ", INST.sdst, result.as_uint);
@@ -387,32 +433,38 @@ void si_isa_S_LSHR_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 }
 #undef INST
 
+/* D.i = signext(S0.i) >> S1.i[4:0]. scc = 1 if result is non-zero. */
 #define INST SI_INST_SOP2
 void si_isa_S_ASHR_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.i = signtext(S0.i) >> S1.i[4:0]. scc = 1 if result is non-zero. */
-
 	int s0 = 0;
 	int s1 = 0;
+
+	union si_reg_t result;
+	union si_reg_t nonzero;
+
+	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.ssrc0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_int;
-	if (s1 == 0xFF)
+	if (INST.ssrc1 == 0xFF)
 		s1 = INST.lit_cnst & 0x1F;
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int & 0x1F;
 	long se_s0 = s0;
 
-	union si_reg_t result;
+	/* Right shift the first operand sign extended by the second and
+	 * determine if the result is non-zero. */
 	result.as_int = se_s0 >> s1;
-	union si_reg_t nonzero;
 	nonzero.as_uint = result.as_uint != 0;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, result);
 	si_isa_write_sreg(work_item, SI_SCC, nonzero);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d)= ", INST.sdst, result.as_int);
@@ -421,28 +473,33 @@ void si_isa_S_ASHR_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 }
 #undef INST
 
+/* D.i = S0.i * S1.i. */
 #define INST SI_INST_SOP2
 void si_isa_S_MUL_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.i = S0.i * S1.i. */
-
 	int s0 = 0;
 	int s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.ssrc0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_int;
-	if (s1 == 0xFF)
+	if (INST.ssrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
 
-	union si_reg_t result;
+	/* Multiply the two operands. */
 	result.as_int = s0 * s1;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, result);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d)= ", INST.sdst, result.as_int);
@@ -450,18 +507,24 @@ void si_isa_S_MUL_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.i = signext(simm16). */
 #define INST SI_INST_SOPK
 void si_isa_S_MOVK_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.i = signext(simm16). */
-
-	short simm16 = INST.simm16;
+	short simm16;
 
 	union si_reg_t result;
-	result.as_int = simm16;
 
+	/* Load constant operand from instruction. */
+	simm16 = INST.simm16;
+
+	/* Sign extend the short constant to an integer. */
+	result.as_int = (int)simm16;
+
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, result);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d)", INST.sdst, result.as_int);
@@ -469,23 +532,35 @@ void si_isa_S_MOVK_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 }
 #undef INST
 
+/* D.i = D.i + signext(SIMM16). scc = overflow. */
 #define INST SI_INST_SOPK
 void si_isa_S_ADDK_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.i = D.i + signext(SIMM16). scc = overflow. */
-
-	short simm16 = INST.simm16;
-	int se_simm16 = simm16;
-	int dest = si_isa_read_sreg(work_item, INST.sdst).as_int;
+	short simm16;
+	int se_simm16;
+	int dest;
 
 	union si_reg_t sum;
-	sum.as_int = dest + se_simm16;
 	union si_reg_t ovf;
-	ovf.as_uint = ((long)dest + (long)se_simm16) > (long)sum.as_uint;
 
+	/* Load short constant operand from instruction
+	 * and sign extend to an integer. */
+	simm16 = INST.simm16;
+	se_simm16 = simm16;
+
+	/* Load operand from destination register. */
+	dest = si_isa_read_sreg(work_item, INST.sdst).as_int;
+
+	/* Add the two operands and determine overflow. */
+	sum.as_int = dest + se_simm16;
+	ovf.as_uint = dest >> 31 != se_simm16 >> 31 ? 0 :
+			(dest > 0 && sum.as_int < 0) || (dest < 0 && sum.as_int > 0);
+
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, sum);
 	si_isa_write_sreg(work_item, SI_SCC, ovf);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d)", INST.sdst, sum.as_int);
@@ -494,23 +569,34 @@ void si_isa_S_ADDK_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 }
 #undef INST
 
+/* D.i = D.i * signext(SIMM16). scc = overflow. */
 #define INST SI_INST_SOPK
 void si_isa_S_MULK_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.i = D.i * signext(SIMM16). scc = overflow. */
-
-	short simm16 = INST.simm16;
-	int se_simm16 = simm16;
-	int dest = si_isa_read_sreg(work_item, INST.sdst).as_int;
+	short simm16;
+	int se_simm16;
+	int dest;
 
 	union si_reg_t product;
-	product.as_int = dest * se_simm16;
 	union si_reg_t ovf;
+
+	/* Load short constant operand from instruction
+	 * and sign extend to an integer. */
+	simm16 = INST.simm16;
+	se_simm16 = simm16;
+
+	/* Load operand from destination register. */
+	dest = si_isa_read_sreg(work_item, INST.sdst).as_int;
+
+	/* Multiply the two operands and determine overflow. */
+	product.as_int = dest * se_simm16;
 	ovf.as_uint = ((long)dest * (long)se_simm16) > (long)product.as_uint;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, product);
 	si_isa_write_sreg(work_item, SI_SCC, ovf);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d)", INST.sdst, product.as_int);
@@ -519,20 +605,25 @@ void si_isa_S_MULK_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *
 }
 #undef INST
 
+/* D.u = S0.u. */
 #define INST SI_INST_SOP1
 void si_isa_S_MOV_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.u = S0.u. */
-
+	/* Assert no literal constant with a 64 bit instruction. */
 	assert(!(INST.ssrc0 == 0xFF));
+
 	union si_reg_t s0_lo;
-	s0_lo = si_isa_read_sreg(work_item, INST.ssrc0);
 	union si_reg_t s0_hi;
+
+	/* Load operand from registers. */
+	s0_lo = si_isa_read_sreg(work_item, INST.ssrc0);
 	s0_hi = si_isa_read_sreg(work_item, INST.ssrc0 + 1);
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, s0_lo);
 	si_isa_write_sreg(work_item, INST.sdst + 1, s0_hi);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d) ", INST.sdst, s0_lo.as_int);
@@ -541,17 +632,22 @@ void si_isa_S_MOV_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.u = S0.u. */
 #define INST SI_INST_SOP1
 void si_isa_S_MOV_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.u = S0.u. */
-
-	assert(!(INST.ssrc0 == 0xFF));
 	union si_reg_t s0;
-	s0 = si_isa_read_sreg(work_item, INST.ssrc0);
 
+	/* Load operand from registers or as a literal constant. */
+	if (INST.ssrc0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0);
+
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, s0);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d) ", INST.sdst, s0.as_int);
@@ -559,30 +655,41 @@ void si_isa_S_MOV_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 }
 #undef INST
 
+/* D.u = EXEC, EXEC = S0.u & EXEC. scc = 1 if the new value of EXEC is non-zero. */
 #define INST SI_INST_SOP1
 void si_isa_S_AND_SAVEEXEC_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* D.u = EXEC, EXEC = S0.u & EXEC. scc = 1 if the new value of EXEC is non-zero. */
-
+	/* Assert no literal constant with a 64 bit instruction. */
 	assert(!(INST.ssrc0 == 0xFF));
-	union si_reg_t exec_lo = si_isa_read_sreg(work_item, SI_EXEC);
-	union si_reg_t exec_hi = si_isa_read_sreg(work_item, SI_EXEC + 1);
-	unsigned int s0_lo = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
-	unsigned int s0_hi = si_isa_read_sreg(work_item, INST.ssrc0 + 1).as_uint;
+
+	union si_reg_t exec_lo;
+	union si_reg_t exec_hi;
+	unsigned int s0_lo;
+	unsigned int s0_hi;
 
 	union si_reg_t exec_new_lo;
-	exec_new_lo.as_uint = s0_lo & exec_lo.as_uint;
 	union si_reg_t exec_new_hi;
-	exec_new_hi.as_uint = s0_hi & exec_hi.as_uint;
 	union si_reg_t nonzero;
+
+	/* Load operands from registers. */
+	exec_lo = si_isa_read_sreg(work_item, SI_EXEC);
+	exec_hi = si_isa_read_sreg(work_item, SI_EXEC + 1);
+	s0_lo = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
+	s0_hi = si_isa_read_sreg(work_item, INST.ssrc0 + 1).as_uint;
+
+	/* Bitwise AND exec and the first operand and determine if the result is non-zero. */
+	exec_new_lo.as_uint = s0_lo & exec_lo.as_uint;
+	exec_new_hi.as_uint = s0_hi & exec_hi.as_uint;
 	nonzero.as_uint = exec_new_lo.as_uint && exec_new_hi.as_uint;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, INST.sdst, exec_lo);
 	si_isa_write_sreg(work_item, INST.sdst + 1, exec_hi);
 	si_isa_write_sreg(work_item, SI_EXEC, exec_new_lo);
 	si_isa_write_sreg(work_item, SI_EXEC + 1, exec_new_hi);
 	si_isa_write_sreg(work_item, SI_SCC, nonzero);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("S%u<=(%d) ", INST.sdst, exec_lo.as_uint);
@@ -594,13 +701,16 @@ void si_isa_S_AND_SAVEEXEC_B64_impl(struct si_work_item_t *work_item, struct si_
 }
 #undef INST
 
+/* scc = (S0.i == S1.i). */
 #define INST SI_INST_SOPC
 void si_isa_S_CMP_EQ_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* scc = (S0.i == S1.i). */
-
 	int s0 = 0;
 	int s1 = 0;
+
+	union si_reg_t equal;
+
+	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
 	if (s0 == 0xFF)
 		s0 = INST.lit_cnst;
@@ -611,11 +721,13 @@ void si_isa_S_CMP_EQ_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
 
-	union si_reg_t equal;
+	/* Compare the operands. */
 	equal.as_uint = s0 == s1;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, SI_SCC, equal);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("scc<=(%d) ", equal.as_uint);
@@ -623,13 +735,16 @@ void si_isa_S_CMP_EQ_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* scc = (S0.u <= S1.u). */
 #define INST SI_INST_SOPC
 void si_isa_S_CMP_LE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* scc = (S0.u <= S1.u). */
-
 	unsigned int s0 = 0;
 	unsigned int s1 = 0;
+
+	union si_reg_t le;
+
+	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
 	if (s0 == 0xFF)
 		s0 = INST.lit_cnst;
@@ -640,11 +755,13 @@ void si_isa_S_CMP_LE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
 
-	union si_reg_t le;
+	/* Compare the operands. */
 	le.as_uint = s0 <= s1;
 
+	/* Write the results. */
 	si_isa_write_sreg(work_item, SI_SCC, le);
 
+	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("scc<=(%d) ", le.as_uint);
@@ -652,103 +769,169 @@ void si_isa_S_CMP_LE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* End the program. */
 void si_isa_S_ENDPGM_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	work_item->wavefront->finished = 1;
 }
 
+/* PC = PC + signext(SIMM16 * 4) + 4 */
 #define INST SI_INST_SOPP
 void si_isa_S_BRANCH_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* PC = PC + signext(SIMM16 * 4) + 4 */
+	unsigned int pc;
+	short simm16;
+	int se_simm16;
 
-	long pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
-	short simm16 = INST.simm16;
-	int se_simm16 = simm16;
+	/* Load the current program counter. */
+	pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
 
+	/* Load the short constant operand and sign extend into an integer. */
+	simm16 = INST.simm16;
+	se_simm16 = simm16;
+
+	/* Determine the program counter to branch to. */
 	pc = pc + (se_simm16 * 4) + 4;
 
+	/* Set the new program counter. */
 	work_item->wavefront->inst_buf = work_item->wavefront->inst_buf_start + pc;
 }
 #undef INST
 
+/* if(SCC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_SCC0_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* if(SCC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
+	unsigned int pc;
+	short simm16;
+	int se_simm16;
 
 	if(!si_isa_read_sreg(work_item, SI_SCC).as_uint)
 	{
-		long pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
-		short simm16 = INST.simm16;
-		int se_simm16 = simm16;
+		/* Load the current program counter. */
+		pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
 
+		/* Load the short constant operand and sign extend into an integer. */
+		simm16 = INST.simm16;
+		se_simm16 = simm16;
+
+		/* Determine the program counter to branch to. */
 		pc = pc + (se_simm16 * 4) + 4;
 
+		/* Set the new program counter. */
 		work_item->wavefront->inst_buf = work_item->wavefront->inst_buf_start + pc;
 	}
 }
 #undef INST
 
+/* if(SCC == 1) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_SCC1_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* if(SCC == 1) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
+	unsigned int pc;
+	short simm16;
+	int se_simm16;
 
 	if(si_isa_read_sreg(work_item, SI_SCC).as_uint)
 	{
-		long pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
-		short simm16 = INST.simm16;
-		int se_simm16 = simm16;
+		/* Load the current program counter. */
+		pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
 
+		/* Load the short constant operand and sign extend into an integer. */
+		simm16 = INST.simm16;
+		se_simm16 = simm16;
+
+		/* Determine the program counter to branch to. */
 		pc = pc + (se_simm16 * 4) + 4;
 
+		/* Set the new program counter. */
 		work_item->wavefront->inst_buf = work_item->wavefront->inst_buf_start + pc;
 	}
 }
 #undef INST
 
+/* if(VCC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_VCCZ_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* if(VCC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
+	unsigned int pc;
+	short simm16;
+	int se_simm16;
 
 	if(si_isa_read_sreg(work_item, SI_VCCZ).as_uint)
 	{
-		long pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
-		short simm16 = INST.simm16;
-		int se_simm16 = simm16;
+		/* Load the current program counter. */
+		pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
 
+		/* Load the short constant operand and sign extend into an integer. */
+		simm16 = INST.simm16;
+		se_simm16 = simm16;
+
+		/* Determine the program counter to branch to. */
 		pc = pc + (se_simm16 * 4) + 4;
 
+		/* Set the new program counter. */
 		work_item->wavefront->inst_buf = work_item->wavefront->inst_buf_start + pc;
 	}
 }
 #undef INST
 
+/* if(EXEC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
 #define INST SI_INST_SOPP
 void si_isa_S_CBRANCH_EXECZ_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	/* if(EXEC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop. */
+	unsigned int pc;
+	short simm16;
+	int se_simm16;
 
 	if(si_isa_read_sreg(work_item, SI_EXECZ).as_uint)
 	{
-		long pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
-		short simm16 = INST.simm16;
-		int se_simm16 = simm16;
+		/* Load the current program counter. */
+		pc = work_item->wavefront->inst_buf - work_item->wavefront->inst_buf_start;
 
+		/* Load the short constant operand and sign extend into an integer. */
+		simm16 = INST.simm16;
+		se_simm16 = simm16;
+
+		/* Determine the program counter to branch to. */
 		pc = pc + (se_simm16 * 4) + 4;
 
+		/* Set the new program counter. */
 		work_item->wavefront->inst_buf = work_item->wavefront->inst_buf_start + pc;
 	}
 }
 #undef INST
 
+/* Suspend current wavefront at the barrier.
+ * If all wavefronts in work-group reached the barrier, wake them up */
 void si_isa_S_BARRIER_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	list_add(work_item->work_group->barrier_list, work_item->wavefront);
-	if(work_item->work_group->barrier_list->count == work_item->work_group->wavefront_count)
-		list_clear(work_item->work_group->barrier_list);
+	struct si_wavefront_t *wavefront = work_item->wavefront;
+	struct si_work_group_t *work_group = work_item->work_group;
+
+	/* Suspend current wavefront at the barrier */
+	assert(DOUBLE_LINKED_LIST_MEMBER(work_group, running, wavefront));
+	DOUBLE_LINKED_LIST_REMOVE(work_group, running, wavefront);
+	DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, barrier, wavefront);
+	si_isa_debug("%s (gid=%d) reached barrier (%d reached, %d left)\n",
+		wavefront->name, work_group->id, work_group->barrier_list_count,
+		work_group->wavefront_count - work_group->barrier_list_count);
+
+	/* If all wavefronts in work-group reached the barrier, wake them up */
+	if (work_group->barrier_list_count == work_group->wavefront_count)
+	{
+		struct si_wavefront_t *wavefront;
+		while (work_group->barrier_list_head)
+		{
+			wavefront = work_group->barrier_list_head;
+			DOUBLE_LINKED_LIST_REMOVE(work_group, barrier, wavefront);
+			DOUBLE_LINKED_LIST_INSERT_TAIL(work_group, running, wavefront);
+		}
+		assert(work_group->running_list_count == work_group->wavefront_count);
+		assert(work_group->barrier_list_count == 0);
+		si_isa_debug("%s completed barrier, waking up wavefronts\n",
+			work_group->name);
+	}
 }
 
 void si_isa_S_WAITCNT_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -1062,6 +1245,10 @@ void si_isa_V_ADD_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	unsigned int s0 = 0;
 	unsigned int s1 = 0;
+
+	union si_reg_t sum;
+	union si_reg_t carry;
+
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
 	if (s0 == 0xFF)
 		s0 = INST.lit_cnst;
@@ -1072,10 +1259,8 @@ void si_isa_V_ADD_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
 
-	union si_reg_t sum;
 	sum.as_uint = s0 + s1;
-	union si_reg_t carry;
-	carry.as_uint = (((long)s0 + (long)s1) > 0xFFFFFFFF);
+	carry.as_uint = !!(((unsigned long long) s0 + (unsigned long long) s1) >> 32);
 
 	si_isa_write_vreg(work_item, INST.vdst, sum);
 	si_isa_bitmask_sreg(work_item, SI_VCC, carry);

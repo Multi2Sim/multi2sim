@@ -154,7 +154,7 @@ void si_isa_read_buf_res(struct si_work_item_t *work_item, struct si_buffer_reso
 {
 	assert(buf_desc);
 
-	memcpy(buf_desc, &work_item->wavefront->sreg[sreg], sizeof(unsigned int)*4);
+	memcpy(buf_desc, &work_item->wavefront->sreg[sreg].as_uint, sizeof(unsigned int)*4);
 }
 
 /* Initialize a buffer resource descriptor */
@@ -162,7 +162,7 @@ void si_isa_read_mem_ptr(struct si_work_item_t *work_item, struct si_mem_ptr_t *
 {
 	assert(mem_ptr);
 
-	memcpy(mem_ptr, &work_item->wavefront->sreg[sreg], sizeof(unsigned int)*2);
+	memcpy(mem_ptr, &work_item->wavefront->sreg[sreg].as_uint, sizeof(unsigned int)*2);
 }
 
 
