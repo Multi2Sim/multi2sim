@@ -231,6 +231,58 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		break;
 	}
 
+	case SI_FMT_SOPC:
+	{
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_sopc(inst, pc, wavefront->inst_buf, inst_dump,
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->scalar_alu_inst_count++;
+		wavefront->scalar_alu_inst_count++;
+
+		/* Only one work item executes the instruction */
+		work_item = wavefront->scalar_work_item;
+		(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+
+	case SI_FMT_SOPK:
+	{
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_sopk(inst, pc, wavefront->inst_buf, inst_dump,
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->scalar_alu_inst_count++;
+		wavefront->scalar_alu_inst_count++;
+
+		/* Only one work item executes the instruction */
+		work_item = wavefront->scalar_work_item;
+		(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+
 	/* Scalar Memory Instructions */
 	case SI_FMT_SMRD:
 	{
@@ -393,6 +445,36 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		si_emu->vector_alu_inst_count++;
 		wavefront->vector_alu_inst_count++;
 	
+		/* Execute the instruction */
+		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+		{
+			work_item = ndrange->work_items[work_item_id];
+			if(si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
+				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+		}
+
+		if (debug_status(si_isa_debug_category))
+		{
+			si_isa_debug("\n");
+		}
+
+		break;
+	}
+
+	case SI_FMT_DS:
+	{
+		/* Dump instruction string when debugging */
+		if (debug_status(si_isa_debug_category))
+		{
+			si_inst_dump_ds(inst, pc, wavefront->inst_buf, inst_dump,
+				MAX_INST_STR_SIZE);
+			si_isa_debug("\n%s", inst_dump);
+		}
+
+		/* Stats */
+		si_emu->vector_alu_inst_count++;
+		wavefront->vector_alu_inst_count++;
+
 		/* Execute the instruction */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
 		{
