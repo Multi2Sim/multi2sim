@@ -632,8 +632,6 @@ void si_ndrange_clear_status(struct si_ndrange_t *work_group, enum si_ndrange_st
 void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_args(struct si_ndrange_t *ndrange);
-void si_ndrange_run(struct si_ndrange_t *ndrange);
-
 
 /* Access to constant memory */
 void si_isa_const_mem_write(int buffer, int offset, void *pvalue);
@@ -694,7 +692,10 @@ struct si_work_group_t
 	int running_list_max;
 
 	/* List of wavefronts in barrier */
-	struct list_t *barrier_list;
+	struct si_wavefront_t *barrier_list_head;
+	struct si_wavefront_t *barrier_list_tail;
+	int barrier_list_count;
+	int barrier_list_max;
 
 	/* List of finished wavefronts */
 	struct si_wavefront_t *finished_list_head;
@@ -1015,8 +1016,8 @@ struct si_emu_t
 
 extern enum si_emu_kind_t
 {
-	si_emu_functional,
-	si_emu_detailed
+	si_emu_kind_functional,
+	si_emu_kind_detailed
 } si_emu_kind;
 
 extern long long si_emu_max_cycles;
@@ -1038,6 +1039,14 @@ extern struct si_emu_t *si_emu;
 void si_emu_init(void);
 void si_emu_done(void);
 
+void si_emu_run(void);
+
+void si_emu_libopencl_redirect(char *path, int size);
+void si_emu_libopencl_failed(int pid);
+
+void si_emu_disasm(char *path);
+void si_emu_opengl_disasm(char *path, int opengl_shader_index);
+
 union si_reg_t si_isa_read_sreg(struct si_work_item_t *work_item, int sreg);
 void si_isa_write_sreg(struct si_work_item_t *work_item, int sreg, union si_reg_t value);
 union si_reg_t si_isa_read_vreg(struct si_work_item_t *work_item, int vreg);
@@ -1050,12 +1059,6 @@ void si_isa_read_buf_res(struct si_work_item_t *work_item, struct si_buffer_reso
 void si_isa_read_mem_ptr(struct si_work_item_t *work_item, struct si_mem_ptr_t *mem_ptr, int sreg);
 int si_isa_get_num_elems(int data_format);
 int si_isa_get_elem_size(int data_format);
-
-void si_emu_libopencl_redirect(char *path, int size);
-void si_emu_libopencl_failed(int pid);
-
-void si_emu_disasm(char *path);
-void si_emu_opengl_disasm(char *path, int opengl_shader_index);
 
 #endif
 

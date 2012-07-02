@@ -34,7 +34,7 @@ long long si_emu_max_cycles = 0;
 long long si_emu_max_inst = 0;
 int si_emu_max_kernels = 0;
 
-enum si_emu_kind_t si_emu_kind = si_emu_functional;
+enum si_emu_kind_t si_emu_kind = si_emu_kind_functional;
 
 char *si_emu_opencl_binary_name = "";
 char *si_emu_report_file_name = "";
@@ -268,4 +268,77 @@ void si_emu_disasm(char *path)
 	/* End */
 	mhandle_done();
 	exit(0);
+}
+
+/* Run one iteration of the Southern Islands GPU emulation loop */
+void si_emu_run(void)
+{
+	struct si_ndrange_t *ndrange;
+	struct si_ndrange_t *ndrange_next;
+
+	struct si_work_group_t *work_group;
+	struct si_work_group_t *work_group_next;
+
+	struct si_wavefront_t *wavefront;
+	struct si_wavefront_t *wavefront_next;
+
+	/* For efficiency when no Southern Islands emulation is selected, exit here
+	 * if the list of existing ND-Ranges is empty. */
+	if (!si_emu->ndrange_list_count)
+		return;
+
+	/* Start any ND-Range in state 'pending' */
+	while ((ndrange = si_emu->pending_ndrange_list_head))
+	{
+		/* Set all ready work-groups to running */
+		while ((work_group = ndrange->pending_list_head))
+		{
+			si_work_group_clear_status(work_group, si_work_group_pending);
+			si_work_group_set_status(work_group, si_work_group_running);
+		}
+
+		/* Set is in state 'running' */
+		si_ndrange_clear_status(ndrange, si_ndrange_pending);
+		si_ndrange_set_status(ndrange, si_ndrange_running);
+	}
+
+	/* Run one instruction of each wavefront in each work-group of each
+	 * ND-Range that is in status 'running'. */
+	for (ndrange = si_emu->running_ndrange_list_head; ndrange; ndrange = ndrange_next)
+	{
+		/* Save next ND-Range in state 'running'. This is done because the state
+		 * might change during the execution of the ND-Range. */
+		ndrange_next = ndrange->running_ndrange_list_next;
+
+		/* Execute an instruction from each work-group */
+		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next)
+		{
+			/* Save next running work-group */
+			work_group_next = work_group->running_list_next;
+
+			/* Run an instruction from each wavefront */
+			for (wavefront = work_group->running_list_head; wavefront; wavefront = wavefront_next)
+			{
+				/* Save next running wavefront */
+				wavefront_next = wavefront->running_list_next;
+
+				/* Execute instruction in wavefront */
+				si_wavefront_execute(wavefront);
+			}
+		}
+	}
+
+	/* Free ND-Ranges that finished */
+	while ((ndrange = si_emu->finished_ndrange_list_head))
+	{
+		/* Dump ND-Range report */
+		si_ndrange_dump(ndrange, si_emu_report_file);
+
+		/* Stop if maximum number of kernels reached */
+		if (si_emu_max_kernels && si_emu->ndrange_count >= si_emu_max_kernels)
+			x86_emu_finish = x86_emu_finish_max_gpu_kernels;
+
+		/* Extract from list of finished ND-Ranges and free */
+		si_ndrange_free(ndrange);
+	}
 }
