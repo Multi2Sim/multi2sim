@@ -41,7 +41,6 @@ struct si_work_group_t *si_work_group_create(char *name)
 	/* Initialize */
 	work_group->local_mem = mem_create();
 	work_group->local_mem->safe = 0;
-	work_group->barrier_list = list_create();
 
 	/* Return */
 	return work_group;

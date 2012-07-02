@@ -34,6 +34,9 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 	if (!ndrange)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* Insert in ND-Range list of SouthernIslands emulator */
+	DOUBLE_LINKED_LIST_INSERT_TAIL(si_emu, ndrange, ndrange);
+
 	/* Name */
 	ndrange->name = strdup(kernel->name);
 	if (!ndrange->name)
@@ -44,6 +47,14 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 	ndrange->local_mem_top = kernel->func_mem_local;
 	ndrange->id = si_emu->ndrange_count++;
 
+	/* Instruction histogram */
+	if (evg_emu_report_file)
+	{
+		ndrange->inst_histogram = calloc(EVG_INST_COUNT, sizeof(unsigned int));
+		if (!ndrange->inst_histogram)
+			fatal("%s: out of memory", __FUNCTION__);
+	}
+
 	/* Return */
 	return ndrange;
 }
@@ -52,6 +63,22 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 void si_ndrange_free(struct si_ndrange_t *ndrange)
 {
 	int i;
+
+	/* Clear task from command queue */
+	if (ndrange->command_queue && ndrange->command)
+	{
+		si_opencl_command_queue_complete(ndrange->command_queue, ndrange->command);
+		si_opencl_command_free(ndrange->command);
+	}
+
+	/* Clear all states that affect lists. */
+	si_ndrange_clear_status(ndrange, si_ndrange_pending);
+	si_ndrange_clear_status(ndrange, si_ndrange_running);
+	si_ndrange_clear_status(ndrange, si_ndrange_finished);
+
+	/* Extract from ND-Range list in Evergreen emulator */
+	assert(DOUBLE_LINKED_LIST_MEMBER(si_emu, ndrange, ndrange));
+	DOUBLE_LINKED_LIST_REMOVE(si_emu, ndrange, ndrange);
 
 	/* Free work-groups */
 	for (i = 0; i < ndrange->work_group_count; i++)
@@ -71,6 +98,10 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 	for (i = 0; i < ndrange->work_item_count; i++)
 		si_work_item_free(ndrange->work_items[i]);
 	free(ndrange->work_items);
+
+	/* Free instruction histogram */
+	if (ndrange->inst_histogram)
+		free(ndrange->inst_histogram);
 
 	/* Free ndrange */
 	free(ndrange->name);
@@ -129,6 +160,9 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 		/* Initialize the scalar work item */
 		ndrange->scalar_work_items[wid] = si_work_item_create();
 		wavefront->scalar_work_item = ndrange->scalar_work_items[wid];
+		ndrange->scalar_work_items[wid]->wavefront = wavefront;
+		ndrange->scalar_work_items[wid]->work_group = work_group;
+		ndrange->scalar_work_items[wid]->ndrange = ndrange;
 	}
 
 	/* Array of work-items */
@@ -448,15 +482,15 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 					case SI_OPENCL_MEM_SCOPE_CONSTANT:
 					case SI_OPENCL_MEM_SCOPE_GLOBAL:
 					{
-						struct evg_opencl_mem_t *mem;
+						struct si_opencl_mem_t *mem;
 
 						/* Pointer in __global scope.
 						 * Argument value is a pointer to an 'opencl_mem' object.
 						 * It is translated first into a device memory pointer. */
-						mem = evg_opencl_repo_get_object(evg_emu->opencl_repo,
-							evg_opencl_object_mem, arg->value);
-						evg_isa_const_mem_write(1, cb_index, 0, &mem->device_ptr);
-						evg_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d],"
+						mem = si_opencl_repo_get_object(si_emu->opencl_repo,
+							si_opencl_object_mem, arg->value);
+						si_isa_const_mem_write(1, (cb_index*4)*4, &mem->device_ptr);
+						si_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d],"
 								" device_ptr=0x%x\n", i, arg->value, cb_index,
 								mem->device_ptr);
 						cb_index++;
@@ -488,66 +522,6 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 		}
 	}	
 }
-
-
-void si_ndrange_run(struct si_ndrange_t *ndrange)
-{
-	struct si_work_group_t *work_group, *work_group_next;
-	struct si_wavefront_t *wavefront, *wavefront_next;
-	uint64_t cycle = 0;
-
-	/* Set all ready work-groups to running */
-	while ((work_group = ndrange->pending_list_head))
-	{
-		si_work_group_clear_status(work_group, si_work_group_pending);
-		si_work_group_set_status(work_group, si_work_group_running);
-	}
-
-	/* Execution loop */
-	while (ndrange->running_list_head)
-	{
-		/* Stop if maximum number of GPU cycles exceeded */
-		if (si_emu_max_cycles && cycle >= si_emu_max_cycles)
-			x86_emu_finish = x86_emu_finish_max_gpu_cycles;
-
-		/* Stop if maximum number of GPU instructions exceeded */
-		if (si_emu_max_inst && si_emu->inst_count >= si_emu_max_inst)
-			x86_emu_finish = x86_emu_finish_max_gpu_inst;
-
-		/* Stop if any reason met */
-		if (x86_emu_finish)
-			break;
-
-		/* Next cycle */
-		cycle++;
-
-		/* Execute an instruction from each work-group */
-		for (work_group = ndrange->running_list_head; work_group; work_group = work_group_next)
-		{
-			/* Save next running work-group */
-			work_group_next = work_group->running_list_next;
-
-			/* Run an instruction from each wavefront */
-			for (wavefront = work_group->running_list_head; wavefront; 
-				wavefront = wavefront_next)
-			{
-				/* Save next running wavefront */
-				wavefront_next = wavefront->running_list_next;
-
-				/* Execute instruction in wavefront */
-				si_wavefront_execute(wavefront);
-			}
-		}
-	}
-
-	/* Dump stats */
-	si_ndrange_dump(ndrange, si_emu_report_file);
-
-	/* Stop if maximum number of kernels reached */
-	if (si_emu_max_kernels && si_emu->ndrange_count >= si_emu_max_kernels)
-		x86_emu_finish = x86_emu_finish_max_gpu_kernels;
-}
-
 
 void si_ndrange_dump(struct si_ndrange_t *ndrange, FILE *f)
 {

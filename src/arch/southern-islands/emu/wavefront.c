@@ -463,6 +463,15 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 			assert(!DOUBLE_LINKED_LIST_MEMBER(ndrange, finished, work_group));
 			si_work_group_clear_status(work_group, si_work_group_running);
 			si_work_group_set_status(work_group, si_work_group_finished);
+
+			/* Check if ND-Range finished kernel execution */
+			if (ndrange->finished_list_count == ndrange->work_group_count)
+			{
+				assert(DOUBLE_LINKED_LIST_MEMBER(si_emu, running_ndrange, ndrange));
+				assert(!DOUBLE_LINKED_LIST_MEMBER(si_emu, finished_ndrange, ndrange));
+				si_ndrange_clear_status(ndrange, si_ndrange_running);
+				si_ndrange_set_status(ndrange, si_ndrange_finished);
+			}
 		}
 	}
 
