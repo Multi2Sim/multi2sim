@@ -712,11 +712,11 @@ void si_isa_S_CMP_EQ_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.ssrc0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_int;
-	if (s1 == 0xFF)
+	if (INST.ssrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
@@ -746,11 +746,11 @@ void si_isa_S_CMP_LE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.ssrc0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
-	if (s1 == 0xFF)
+	if (INST.ssrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
@@ -1088,11 +1088,11 @@ void si_isa_V_ADD_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_float;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_float;
@@ -1122,11 +1122,11 @@ void si_isa_V_MUL_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_float;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_float;
@@ -1156,11 +1156,11 @@ void si_isa_V_MUL_I32_I24_impl(struct si_work_item_t *work_item, struct si_inst_
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst & 0xFFFFFF;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_int & 0xFFFFFF;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst & 0xFFFFFF;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_int & 0xFFFFFF;
@@ -1190,11 +1190,11 @@ void si_isa_V_LSHLREV_B32_impl(struct si_work_item_t *work_item, struct si_inst_
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst & 0x1F;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint & 0x1F;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
@@ -1224,11 +1224,11 @@ void si_isa_V_OR_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *in
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
@@ -1258,11 +1258,11 @@ void si_isa_V_MAC_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_float;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_float;
@@ -1294,11 +1294,11 @@ void si_isa_V_ADD_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
@@ -1332,18 +1332,18 @@ void si_isa_V_SUB_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
 
 	/* Calculate the difference and carry. */
 	dif.as_uint = s0 - s1;
-	carry.as_uint = (((unsigned long long)s0 - (unsigned long long)s1) != (unsigned long long)dif.as_uint);
+	carry.as_uint = (s1 > s0);
 
 	/* Write the results. */
 	si_isa_write_vreg(work_item, INST.vdst, dif);
@@ -1480,7 +1480,7 @@ void si_isa_V_MUL_HI_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 		s1 = -s1;
 
 	/* Calculate the product and shift right. */
-	result.as_uint = ((long long)s0 * (long long)s1) >> 32;
+	result.as_uint = ((unsigned long long)s0 * (unsigned long long)s1) >> 32;
 
 	/* Write the results. */
 	si_isa_write_vreg(work_item, INST.vdst, result);
@@ -1537,11 +1537,11 @@ void si_isa_V_CMP_LT_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_int;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_int;
@@ -1572,11 +1572,11 @@ void si_isa_V_CMP_GT_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_int;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_int;
@@ -1607,11 +1607,11 @@ void si_isa_V_CMP_NE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_int;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_int;
@@ -1642,11 +1642,11 @@ void si_isa_V_CMP_LE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.src0 == 0xFF && INST.vsrc1 == 0xFF));
-	if (s0 == 0xFF)
+	if (INST.src0 == 0xFF)
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
-	if (s1 == 0xFF)
+	if (INST.vsrc1 == 0xFF)
 		s1 = INST.lit_cnst;
 	else
 		s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
@@ -1793,7 +1793,7 @@ void si_isa_V_ADDC_U32_VOP3b_impl(struct si_work_item_t *work_item, struct si_in
 
 	/* Calculate sum and carry. */
 	sum.as_uint = s0 + s1 + carry_in;
-	carry_out.as_uint = (((long)s0 + (long)s1 + (long)carry_in) > 0xFFFFFFFF);
+	carry_out.as_uint = !!(((unsigned long long)s0 + (unsigned long long)s1 + (unsigned long long)carry_in) >> 32);
 
 	/* Write the results. */
 	si_isa_write_vreg(work_item, INST.vdst, sum);
@@ -1926,7 +1926,6 @@ void si_isa_T_BUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, str
 	unsigned int offset;
 	int elem_size;
 	int num_elems;
-	int bytes_to_read;
 	struct si_buffer_resource_t buf_desc;
 	uint32_t buffer_addr;
 	union si_reg_t value;
@@ -1945,18 +1944,17 @@ void si_isa_T_BUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, str
 
 	/* If num_elems is greater than 1, we need to see how
 	 * the destination register is handled */
-	assert(num_elems == 1);
-
-	bytes_to_read = elem_size * num_elems;
+	assert(num_elems == 4);
+	assert(elem_size == 4);
 
 	/* srsrc is in units of 4 registers */
 	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc*4);
 
-	for(int i = 0; i < 4; i++)
+	for(unsigned int i = 0; i < 4; i++)
 	{
 		buffer_addr = offset + 4*i;
 
-		mem_read(si_emu->global_mem, buffer_addr, bytes_to_read, &value);
+		mem_read(si_emu->global_mem, buffer_addr, 4, &value);
 
 		si_isa_write_vreg(work_item, INST.vdata + i, value);
 
@@ -2027,7 +2025,6 @@ void si_isa_T_BUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, st
 	unsigned int offset;
 	int elem_size;
 	int num_elems;
-	int bytes_to_write;
 	struct si_buffer_resource_t buf_desc;
 	uint32_t buffer_addr;
 	union si_reg_t value;
@@ -2046,21 +2043,20 @@ void si_isa_T_BUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, st
 
 	/* If num_elems is greater than 1, we need to see how
 	 * the destination register is handled */
-	assert(num_elems == 1);
-
-	bytes_to_write = elem_size * num_elems;
+	assert(num_elems == 4);
+	assert(elem_size == 4);
 
 	/* srsrc is in units of 4 registers */
 	si_isa_read_buf_res(work_item, &buf_desc, INST.srsrc*4);
 
-	for(int i = 0; i < 4; i++)
+	for(unsigned int i = 0; i < 4; i++)
 	{
 
 		buffer_addr = offset + 4*i;
 
 		value = si_isa_read_vreg(work_item, INST.vdata + i);
 
-		mem_write(si_emu->global_mem, buffer_addr, bytes_to_write, &value);
+		mem_write(si_emu->global_mem, buffer_addr, 4, &value);
 
 		if (debug_status(si_isa_debug_category))
 		{
