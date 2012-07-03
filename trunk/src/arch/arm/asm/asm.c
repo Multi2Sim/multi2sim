@@ -23,70 +23,217 @@ void arm_disasm_init()
 {
 	struct arm_inst_info_t *info;
 	int i;
-	/* Form the Instruction table */
+	/* Form the Instruction table and read Information from table*/
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	switch (ARM_CAT_##_category) { \
 	case ARM_CAT_DPR_REG: \
 	arm_inst_info[_arg1 * 16 + 0].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 0 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 1].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 1 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	arm_inst_info[_arg1 * 16 + 2].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 2 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 3].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 3 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 4].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 4 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 5].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 5 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 6].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 6 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 7].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 7 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 8 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 10].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 10 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 12].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 12 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 14].opcode = ARM_INST_##_name; \
+	info = &arm_inst_info[_arg1 * 16 + 14 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	break; \
 	case ARM_CAT_DPR_IMM: \
-	for (i = 0; i < 16; i++ )\
+	for (i = 0; i < 16; i++ ){\
 	arm_inst_info[_arg1 * 16 + i].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + i ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	}\
 	break;\
 	case ARM_CAT_DPR_SAT:\
 	arm_inst_info[_arg1 * 16 + 5].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + 5 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	break;\
 	case ARM_CAT_PSR:\
 	arm_inst_info[_arg1 * 16 + 0].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + 0 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	break;\
 	case ARM_CAT_MULT:\
 	arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + 9 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	break;\
 	case ARM_CAT_MULT_SIGN:\
 	arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + 8 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 10].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + 10 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 12].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + 12 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	arm_inst_info[_arg1 * 16 + 14].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + 14 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	break;\
 	case ARM_CAT_MULT_LN:\
 	arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + 9 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	break;\
 	case ARM_CAT_MULT_LN_SIGN:\
 	arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + 8 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	break;\
 	case ARM_CAT_SDSWP:\
 	arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + 9 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
 	break;\
 	case ARM_CAT_BAX:\
 	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
-	break;\
-	case ARM_CAT_HFWRD_REG:\
-	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
-	arm_inst_info[(_arg1 + 2) * 16 + _arg2].opcode = ARM_INST_##_name;\
-	break;\
-	}
-#include "arm-asm.dat"
-#undef DEFINST
-
-	/* Read information about all instructions */
-#define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	info = &arm_inst_info[_arg1 * 16 + _arg2 ]; \
 	info->inst = ARM_INST_##_name; \
 	info->category = ARM_CAT_##_category; \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
-	info->size = 32;
-	/*info->opcode = _opcode; \*/
+	info->size = 32;\
+	break;\
+	case ARM_CAT_HFWRD_REG:\
+	/* FIXME: Reorganize the HFWRD storage pattern when implemented */\
+	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + _arg2 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	arm_inst_info[(_arg1 + 2) * 16 + _arg2].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + _arg2 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	break;\
+	}
 #include "arm-asm.dat"
 #undef DEFINST
 }
@@ -111,9 +258,9 @@ void arm_inst_decode(struct arm_inst_t *inst)
 
 }
 
-void arm_inst_hex_dump(FILE *f, void *inst_ptr, unsigned int inst_addr)
+void arm_inst_hex_dump(FILE *f , void *inst_ptr , unsigned int inst_addr)
 {
-	printf("%08x:	%08x	", inst_addr, *(unsigned int *) inst_ptr);
+	printf("%8x:	%08x	", inst_addr, *(unsigned int *) inst_ptr);
 }
 
 void arm_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
@@ -138,65 +285,73 @@ void arm_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
 	fmt_str = inst.info->fmt_str;
 	if (fmt_str)
 	{
-		while (*fmt_str)
+		if((inst.dword.bytes[3]))
 		{
-			if (*fmt_str != '%')
+			while (*fmt_str)
 			{
-				if (!(*fmt_str == ' ' && *inst_str_ptr == inst_str))
-					str_printf(inst_str_ptr, &inst_str_size, "%c",
-						*fmt_str);
+				if (*fmt_str != '%')
+				{
+					if (!(*fmt_str == ' ' && *inst_str_ptr == inst_str))
+						str_printf(inst_str_ptr, &inst_str_size, "%c",
+							*fmt_str);
+					++fmt_str;
+					continue;
+				}
+
 				++fmt_str;
-				continue;
+				if (arm_token_comp(fmt_str, "rd", &token_len))
+					arm_inst_dump_RD(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "rn", &token_len))
+					arm_inst_dump_RN(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "rm", &token_len))
+					arm_inst_dump_RM(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "rs", &token_len))
+					arm_inst_dump_RS(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "op2", &token_len))
+					arm_inst_dump_OP2(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "cond", &token_len))
+					arm_inst_dump_COND(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "rdlo", &token_len))
+					arm_inst_dump_RDLO(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "rdhi", &token_len))
+					arm_inst_dump_RDHI(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "psr", &token_len))
+					arm_inst_dump_PSR(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "op2psr", &token_len))
+					arm_inst_dump_OP2_PSR(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+
+				else
+					fatal("%s: token not recognized\n", fmt_str);
+
+				fmt_str += token_len;
 			}
-
-			++fmt_str;
-			if (arm_token_comp(fmt_str, "rd", &token_len))
-				arm_inst_dump_RD(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->category);
-			else if (arm_token_comp(fmt_str, "rn", &token_len))
-				arm_inst_dump_RN(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->category);
-			else if (arm_token_comp(fmt_str, "rm", &token_len))
-				arm_inst_dump_RM(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->category);
-			else if (arm_token_comp(fmt_str, "rs", &token_len))
-				arm_inst_dump_RS(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->category);
-			else if (arm_token_comp(fmt_str, "op2", &token_len))
-				arm_inst_dump_OP2(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->category);
-			else if (arm_token_comp(fmt_str, "cond", &token_len))
-				arm_inst_dump_COND(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->category);
-			else if (arm_token_comp(fmt_str, "rdlo", &token_len))
-				arm_inst_dump_RDLO(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->category);
-			else if (arm_token_comp(fmt_str, "rdhi", &token_len))
-				arm_inst_dump_RDHI(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->category);
-			else if (arm_token_comp(fmt_str, "psr", &token_len))
-				arm_inst_dump_PSR(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->category);
-			else if (arm_token_comp(fmt_str, "op2psr", &token_len))
-				arm_inst_dump_OP2_PSR(inst_str_ptr, &inst_str_size, &inst,
-					inst.info->category);
-
-			else
-				fatal("%s: token not recognized\n", fmt_str);
-
-			fmt_str += token_len;
+			fprintf(f, "%s\n", inst_str);
 		}
-		fprintf(f, "%s\n", inst_str);
+		else
+		{
+			fprintf(f, ".word   0x%08x\n", *(unsigned int *)inst_ptr);
+		}
 	}
 	else
 	{
-		fprintf (f,"Instruction not supported\n");
+		fprintf (f,"???\n");
 	}
 
 }
 
 unsigned int arm_rotl(unsigned int value, unsigned int shift)
 {
+	shift = shift * 2;
 	if ((shift &= sizeof(value) * 8 - 1) == 0)
 		return value;
 
@@ -205,6 +360,7 @@ unsigned int arm_rotl(unsigned int value, unsigned int shift)
 
 unsigned int arm_rotr(unsigned int value, unsigned int shift)
 {
+	shift = shift * 2;
 	if ((shift &= sizeof(value) * 8 - 1) == 0)
 		return value;
 

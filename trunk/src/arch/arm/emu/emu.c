@@ -27,7 +27,7 @@ void arm_emu_disasm(char *path)
 {
 	struct elf_file_t *elf_file;
 	struct elf_section_t *section;
-
+	struct elf_symbol_t *symbol;
 
 	char inst_str[MAX_STRING_SIZE];
 	int i;
@@ -53,9 +53,14 @@ void arm_emu_disasm(char *path)
 	for (inst_ptr = section->buffer.ptr; inst_ptr < section->buffer.ptr +
 			section->buffer.size; inst_ptr += 4)
 	{
-		arm_inst_hex_dump(stdout, inst_ptr, (section->header->sh_offset + inst_index));
-		arm_inst_dump(stdout, inst_str, MAX_STRING_SIZE,
-			inst_ptr , inst_index);
+		symbol = elf_symbol_get_by_address(elf_file, (section->header->sh_addr + inst_index),
+			NULL);
+		if((section->header->sh_addr + inst_index) == (symbol->value))
+		{
+			printf ("\n%08x <%s>\n", symbol->value, symbol->name);
+		}
+		arm_inst_hex_dump(stdout, inst_ptr, (section->header->sh_addr + inst_index));
+		arm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, inst_ptr , inst_index);
 		inst_index += 4;
 	}
 
