@@ -29,7 +29,6 @@ struct x86_inst_t x86_isa_inst;
 int x86_isa_spec_mode;  /* If true, instructions will not modify memory */
 char * x86_isa_inst_bytes;
 unsigned int isa_addr;  /* Address of last memory access */
-unsigned int x86_isa_target;  /* Target address of branch/jmp/call/ret inst, even if it's not taken */
 long long x86_isa_inst_count;
 int x86_isa_function_level;
 
@@ -37,7 +36,6 @@ int x86_isa_function_level;
 #define x86_isa_ctx __COMPILATION_ERROR__
 #define x86_isa_regs __COMPILATION_ERROR__
 #define x86_isa_mem __COMPILATION_ERROR__
-//#define x86_isa_target __COMPILATION_ERROR__
 #define x86_isa_spec_mode __COMPILATION_ERROR__
 #define x86_isa_inst_bytes __COMPILATION_ERROR__
 #define x86_isa_eip __COMPILATION_ERROR__
@@ -876,10 +874,10 @@ void x86_isa_execute_inst(struct x86_ctx_t *ctx)
 	 * A new list will be generated for the next executed x86 instruction. */
 	x86_uinst_clear();
 
-	/* Save last and current instruction addresses */
+	/* Set last, current, and target instruction addresses */
 	ctx->last_eip = ctx->curr_eip;
 	ctx->curr_eip = regs->eip;
-	x86_isa_target = 0;
+	ctx->target_eip = 0;
 
 	/* Debug */
 	if (debug_status(x86_isa_inst_debug_category))
