@@ -522,10 +522,10 @@ void x86_isa_error(struct x86_ctx_t *ctx, char *fmt, ...);
 void x86_isa_mem_read(struct x86_ctx_t *ctx, unsigned int addr, int size, void *buf);
 void x86_isa_mem_write(struct x86_ctx_t *ctx, unsigned int addr, int size, void *buf);
 
-void x86_isa_dump_flags(FILE *f);
-void x86_isa_set_flag(enum x86_flag_t flag);
-void x86_isa_clear_flag(enum x86_flag_t flag);
-int x86_isa_get_flag(enum x86_flag_t flag);
+void x86_isa_dump_flags(struct x86_ctx_t *ctx, FILE *f);
+void x86_isa_set_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag);
+void x86_isa_clear_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag);
+int x86_isa_get_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag);
 
 unsigned int x86_isa_load_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg);
 void x86_isa_store_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg, unsigned int value);
