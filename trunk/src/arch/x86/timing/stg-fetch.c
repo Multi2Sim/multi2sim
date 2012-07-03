@@ -106,7 +106,7 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 		uop->eip = X86_THREAD.fetch_eip;
 		uop->in_fetch_queue = 1;
 		uop->fetch_trace_cache = fetch_trace_cache;
-		uop->specmode = x86_ctx_get_status(ctx, x86_ctx_specmode);
+		uop->specmode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
 		uop->fetch_address = X86_THREAD.fetch_address;
 		uop->fetch_access = X86_THREAD.fetch_access;
 		uop->neip = ctx->regs->eip;
