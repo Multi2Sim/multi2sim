@@ -609,7 +609,7 @@ void x86_sys_init(void);
 void x86_sys_done(void);
 void x86_sys_dump(FILE *f);
 
-void x86_sys_call(void);
+void x86_sys_call(struct x86_ctx_t *ctx);
  
 
 

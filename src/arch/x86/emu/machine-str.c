@@ -69,8 +69,8 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \
-			x86_isa_ctx->str_op_esi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir, \
-			x86_isa_ctx->str_op_edi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir); \
+			ctx->str_op_esi + ctx->str_op_count * (SIZE) * ctx->str_op_dir, \
+			ctx->str_op_edi + ctx->str_op_count * (SIZE) * ctx->str_op_dir); \
 		x86_uinst_new(ctx, x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
 		x86_uinst_new(ctx, x86_uinst_ibranch, x86_dep_ecx, 0, 0, 0, 0, 0, 0); \
 	}
@@ -90,8 +90,8 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \
-			x86_isa_ctx->str_op_esi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir, \
-			x86_isa_ctx->str_op_edi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir); \
+			ctx->str_op_esi + ctx->str_op_count * (SIZE) * ctx->str_op_dir, \
+			ctx->str_op_edi + ctx->str_op_count * (SIZE) * ctx->str_op_dir); \
 		x86_uinst_new(ctx, x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
 		x86_uinst_new(ctx, x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
 	}
@@ -111,8 +111,8 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \
-			x86_isa_ctx->str_op_esi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir, \
-			x86_isa_ctx->str_op_edi + x86_isa_ctx->str_op_count * (SIZE) * x86_isa_ctx->str_op_dir); \
+			ctx->str_op_esi + ctx->str_op_count * (SIZE) * ctx->str_op_dir, \
+			ctx->str_op_edi + ctx->str_op_count * (SIZE) * ctx->str_op_dir); \
 		x86_uinst_new(ctx, x86_uinst_sub, x86_dep_ecx, 0, 0, x86_dep_ecx, 0, 0, 0); \
 		x86_uinst_new(ctx, x86_uinst_ibranch, x86_dep_ecx, x86_dep_zps, 0, 0, 0, 0, 0); \
 	}

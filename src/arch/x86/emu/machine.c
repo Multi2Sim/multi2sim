@@ -946,7 +946,7 @@ void x86_isa_int_imm8_impl(struct x86_ctx_t *ctx)
 	/* Do system call if not in speculative mode */
 	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
 	if (!spec_mode)
-		x86_sys_call();
+		x86_sys_call(ctx);
 
 	x86_uinst_new(ctx, x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);
 }
