@@ -22,7 +22,8 @@
 #include <x86-timing.h>
 #include <fermi-timing.h>
 #include <visual-common.h>
-#include <southern-islands-asm.h>
+#include <southern-islands-emu.h>
+#include <southern-islands-timing.h>
 #include <arm-emu.h>
 
 
@@ -577,9 +578,9 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			m2s_need_argument(argc, argv, argi);
 			argi++;
 			if (!strcasecmp(argv[argi], "functional"))
-				si_emu_kind = evg_emu_kind_functional;
+				si_emu_kind = si_emu_kind_functional;
 			else if (!strcasecmp(argv[argi], "detailed"))
-				si_emu_kind = evg_emu_kind_detailed;
+				si_emu_kind = si_emu_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], err_help_note);
@@ -995,10 +996,10 @@ void m2s_stats_summary(void)
 		/* Southern Islands detailed simulation */
 		if (si_emu_kind == si_emu_kind_detailed)
 		{
-			assert(0);
-			inst_per_cycle = evg_gpu->cycle ? (double) evg_emu->inst_count / evg_gpu->cycle : 0.0;
-			cycles_per_sec = sec_count > 0.0 ? (double) evg_gpu->cycle / sec_count : 0.0;
-			fprintf(stderr, "Cycles = %lld\n", evg_gpu->cycle);
+			inst_per_cycle = si_gpu->cycle ? 
+				(double) si_emu->inst_count/si_gpu->cycle : 0.0;
+			cycles_per_sec = sec_count > 0.0 ? (double) si_gpu->cycle / sec_count : 0.0;
+			fprintf(stderr, "Cycles = %lld\n", si_gpu->cycle);
 			fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
 			fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
 		}
@@ -1118,6 +1119,8 @@ int main(int argc, char **argv)
 		x86_cpu_init();
 	if (evg_emu_kind == evg_emu_kind_detailed)
 		evg_gpu_init();
+	if (si_emu_kind == si_emu_kind_detailed)
+		si_gpu_init();
 
 	/* Memory hierarchy initialization, done after we initialized CPU cores
 	 * and GPU compute units. */
@@ -1157,7 +1160,7 @@ int main(int argc, char **argv)
 
 		/* Evergreen GPU simulation */
 		if (si_emu_kind == si_emu_kind_detailed)
-			fatal("Southern Islands detailed simulation not implemented.");
+			running |= si_gpu_run();
 		else
 			si_emu_run();
 
