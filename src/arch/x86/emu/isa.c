@@ -25,21 +25,14 @@
 struct x86_ctx_t *x86_isa_ctx;
 struct x86_regs_t *x86_isa_regs;
 struct mem_t *x86_isa_mem;
-char * x86_isa_inst_bytes;
-unsigned int isa_addr;  /* Address of last memory access */
-long long x86_isa_inst_count;
 
-////////////////
-#define x86_isa_ctx __COMPILATION_ERROR__
-#define x86_isa_regs __COMPILATION_ERROR__
-#define x86_isa_mem __COMPILATION_ERROR__
-#define x86_isa_spec_mode __COMPILATION_ERROR__
-#define x86_isa_inst_bytes __COMPILATION_ERROR__
-#define x86_isa_eip __COMPILATION_ERROR__
-////////////////
-
+/* Debug categories */
 int x86_isa_call_debug_category;
 int x86_isa_inst_debug_category;
+
+/* FIXME */
+char *x86_isa_inst_bytes;
+long long x86_isa_inst_count;
 
 /* Variables used to preserve host state before running assembly */
 long x86_isa_host_flags;
@@ -325,10 +318,7 @@ static unsigned int x86_isa_linear_address(struct x86_ctx_t *ctx, unsigned int o
 {
 	/* No segment override */
 	if (!ctx->inst.segment)
-	{
-		isa_addr = offset;
-		return isa_addr;
-	}
+		return offset;
 	
 	/* Segment override */
 	if (ctx->inst.segment != x86_reg_gs)
@@ -352,8 +342,7 @@ static unsigned int x86_isa_linear_address(struct x86_ctx_t *ctx, unsigned int o
 	}
 
 	/* Return address */
-	isa_addr = ctx->glibc_segment_base + offset;
-	return isa_addr;
+	return ctx->glibc_segment_base + offset;
 }
 
 

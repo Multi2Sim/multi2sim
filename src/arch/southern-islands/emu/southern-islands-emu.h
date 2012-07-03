@@ -1041,7 +1041,7 @@ void si_emu_done(void);
 
 void si_emu_run(void);
 
-void si_emu_libopencl_redirect(char *path, int size);
+void si_emu_libopencl_redirect(struct x86_ctx_t *ctx, char *path, int size);
 void si_emu_libopencl_failed(int pid);
 
 void si_emu_disasm(char *path);

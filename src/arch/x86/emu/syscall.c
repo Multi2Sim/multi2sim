@@ -79,13 +79,14 @@ enum
 
 
 /* Forward declarations of system calls */
-#define DEFSYSCALL(name, code) static int x86_sys_##name##_impl(void);
+#define DEFSYSCALL(name, code) \
+	static int x86_sys_##name##_impl(struct x86_ctx_t *ctx);
 #include "syscall.dat"
 #undef DEFSYSCALL
 
 
 /* System call functions */
-static int (*x86_sys_call_func[x86_sys_code_count + 1])(void) =
+static int (*x86_sys_call_func[x86_sys_code_count + 1])(struct x86_ctx_t *ctx) =
 {
 #define DEFSYSCALL(name, code) x86_sys_##name##_impl,
 #include "syscall.dat"
@@ -251,7 +252,7 @@ void x86_sys_dump(FILE *f)
 }
 
 
-void x86_sys_call(void)
+void x86_sys_call(struct x86_ctx_t *ctx)
 {
 	int code;
 	int err;
@@ -271,7 +272,7 @@ void x86_sys_call(void)
 		x86_sys_call_name[code], code, x86_isa_inst_count, x86_isa_ctx->pid);
 
 	/* Perform system call */
-	err = x86_sys_call_func[code]();
+	err = x86_sys_call_func[code](ctx);
 
 	/* Set return value in 'eax', except for 'sigreturn' system call. Also, if the
 	 * context got suspended, the wake up routine will set the return value. */
@@ -294,7 +295,7 @@ void x86_sys_call(void)
  * System call 'exit' (code 1)
  */
 
-static int x86_sys_exit_impl(void)
+static int x86_sys_exit_impl(struct x86_ctx_t *ctx)
 {
 	int status;
 
@@ -314,7 +315,7 @@ static int x86_sys_exit_impl(void)
  * System call 'close' (code 2)
  */
 
-static int x86_sys_close_impl(void)
+static int x86_sys_close_impl(struct x86_ctx_t *ctx)
 {
 	int guest_fd;
 	int host_fd;
@@ -350,7 +351,7 @@ static int x86_sys_close_impl(void)
  * System call 'read' (code 3)
  */
 
-static int x86_sys_read_impl(void)
+static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int buf_ptr;
 	unsigned int count;
@@ -433,7 +434,7 @@ static int x86_sys_read_impl(void)
  * System call 'write' (code 4)
  */
 
-static int x86_sys_write_impl(void)
+static int x86_sys_write_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int buf_ptr;
 	unsigned int count;
@@ -529,7 +530,7 @@ static struct string_map_t sys_open_flags_map =
 	}
 };
 
-static int x86_sys_open_impl(void)
+static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int file_name_ptr;
 
@@ -562,11 +563,11 @@ static int x86_sys_open_impl(void)
 	/* Intercept attempt to access OpenCL library and redirect to 'm2s-opencl.so' */
 	if (x86_emu->gpu_emulator == gpu_emulator_evg)
 	{
-		evg_emu_libopencl_redirect(full_path, sizeof full_path);
+		evg_emu_libopencl_redirect(x86_isa_ctx, full_path, sizeof full_path);
 	}
 	else if (x86_emu->gpu_emulator == gpu_emulator_si)
 	{
-		si_emu_libopencl_redirect(full_path, sizeof full_path);
+		si_emu_libopencl_redirect(x86_isa_ctx, full_path, sizeof full_path);
 	}
 	else 
 	{
@@ -632,7 +633,7 @@ static struct string_map_t sys_waitpid_options_map =
 	}
 };
 
-static int x86_sys_waitpid_impl()
+static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
 {
 	int pid;
 	int options;
@@ -689,7 +690,7 @@ static int x86_sys_waitpid_impl()
  * System call 'unlink' (code 10)
  */
 
-static int x86_sys_unlink_impl(void)
+static int x86_sys_unlink_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int file_name_ptr;
 
@@ -730,7 +731,7 @@ static char *err_sys_execve_note =
 	"\tthe guest application to run a shell command. Multi2Sim will execute this\n"
 	"\tcommand natively, and then finish the calling context.\n";
 
-static int x86_sys_execve_impl(void)
+static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int name_ptr;
 	unsigned int argv;
@@ -850,7 +851,7 @@ static int x86_sys_execve_impl(void)
  * System call 'time' (code 13)
  */
 
-static int x86_sys_time_impl(void)
+static int x86_sys_time_impl(struct x86_ctx_t *ctx)
 {
 
 	unsigned int time_ptr;
@@ -876,7 +877,7 @@ static int x86_sys_time_impl(void)
  * System call 'chmod' (code 15)
  */
 
-static int x86_sys_chmod_impl(void)
+static int x86_sys_chmod_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int file_name_ptr;
 	unsigned int mode;
@@ -913,7 +914,7 @@ static int x86_sys_chmod_impl(void)
  * System call 'lseek' (code 19)
  */
 
-static int x86_sys_lseek_impl(void)
+static int x86_sys_lseek_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int offset;
 
@@ -947,7 +948,7 @@ static int x86_sys_lseek_impl(void)
  * System call 'getpid' (code 20)
  */
 
-static int x86_sys_getpid_impl(void)
+static int x86_sys_getpid_impl(struct x86_ctx_t *ctx)
 {
 	return x86_isa_ctx->pid;
 }
@@ -971,7 +972,7 @@ static void sys_utime_guest_to_host(struct utimbuf *host, struct sim_utimbuf *gu
 	host->modtime = guest->modtime;
 }
 
-static int x86_sys_utime_impl(void)
+static int x86_sys_utime_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int file_name_ptr;
 	unsigned int utimbuf_ptr;
@@ -1031,7 +1032,7 @@ static struct string_map_t sys_access_mode_map =
 	}
 };
 
-static int x86_sys_access_impl(void)
+static int x86_sys_access_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int file_name_ptr;
 
@@ -1077,12 +1078,12 @@ static int x86_sys_access_impl(void)
  * System call 'kill' (code 37)
  */
 
-static int x86_sys_kill_impl(void)
+static int x86_sys_kill_impl(struct x86_ctx_t *ctx)
 {
 	int pid;
 	int sig;
 
-	struct x86_ctx_t *ctx;
+	struct x86_ctx_t *temp_ctx;
 
 	/* Arguments */
 	pid = x86_isa_regs->ebx;
@@ -1092,13 +1093,13 @@ static int x86_sys_kill_impl(void)
 
 	/* Find context. We assume program correctness, so fatal if context is
 	 * not found, rather than return error code. */
-	ctx = x86_ctx_get(pid);
-	if (!ctx)
+	temp_ctx = x86_ctx_get(pid);
+	if (!temp_ctx)
 		fatal("%s: invalid pid %d", __FUNCTION__, pid);
 
 	/* Send signal */
-	sim_sigset_add(&ctx->signal_mask_table->pending, sig);
-	x86_ctx_host_thread_suspend_cancel(ctx);
+	sim_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
+	x86_ctx_host_thread_suspend_cancel(temp_ctx);
 	x86_emu_process_events_schedule();
 	x86_emu_process_events();
 
@@ -1113,7 +1114,7 @@ static int x86_sys_kill_impl(void)
  * System call 'rename' (code 38)
  */
 
-static int x86_sys_rename_impl(void)
+static int x86_sys_rename_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int old_path_ptr;
 	unsigned int new_path_ptr;
@@ -1164,7 +1165,7 @@ static int x86_sys_rename_impl(void)
  * System call 'mkdir' (code 39)
  */
 
-static int x86_sys_mkdir_impl(void)
+static int x86_sys_mkdir_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int path_ptr;
 
@@ -1205,7 +1206,7 @@ static int x86_sys_mkdir_impl(void)
  * System call 'dup' (code 41)
  */
 
-static int x86_sys_dup_impl(void)
+static int x86_sys_dup_impl(struct x86_ctx_t *ctx)
 {
 	int guest_fd;
 	int dup_guest_fd;
@@ -1247,7 +1248,7 @@ static int x86_sys_dup_impl(void)
  * System call 'pipe' (code 42)
  */
 
-static int x86_sys_pipe_impl(void)
+static int x86_sys_pipe_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int fd_ptr;
 
@@ -1310,7 +1311,7 @@ static void sys_times_host_to_guest(struct sim_tms *guest, struct tms *host)
 	guest->cstime = host->tms_cstime;
 }
 
-static int x86_sys_times_impl(void)
+static int x86_sys_times_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int tms_ptr;
 
@@ -1344,7 +1345,7 @@ static int x86_sys_times_impl(void)
  * System call 'brk' (code 45)
  */
 
-static int x86_sys_brk_impl(void)
+static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int old_heap_break;
 	unsigned int new_heap_break;
@@ -1415,7 +1416,7 @@ static int x86_sys_brk_impl(void)
  *   -DIR [31..30]: direction (01=Write, 10=Read, 11=R/W).
  */
 
-static int x86_sys_ioctl_impl(void)
+static int x86_sys_ioctl_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int cmd;
 	unsigned int arg;
@@ -1473,7 +1474,7 @@ static int x86_sys_ioctl_impl(void)
  * System call 'getppid' (code 64)
  */
 
-static int x86_sys_getppid_impl(void)
+static int x86_sys_getppid_impl(struct x86_ctx_t *ctx)
 {
 	/* Return 1 if there is no parent */
 	if (!x86_isa_ctx->parent)
@@ -1519,7 +1520,7 @@ struct sim_rlimit
 	unsigned int max;
 };
 
-static int x86_sys_setrlimit_impl(void)
+static int x86_sys_setrlimit_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int res;
 	unsigned int rlim_ptr;
@@ -1616,7 +1617,7 @@ static void sys_rusage_host_to_guest(struct sim_rusage *guest, struct rusage *ho
 	guest->nivcsw = host->ru_nivcsw;
 }
 
-static int x86_sys_getrusage_impl(void)
+static int x86_sys_getrusage_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int who;
 	unsigned int u_ptr;
@@ -1660,7 +1661,7 @@ static int x86_sys_getrusage_impl(void)
  * System call 'gettimeofday' (code 78)
  */
 
-static int x86_sys_gettimeofday_impl(void)
+static int x86_sys_gettimeofday_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int tv_ptr;
 	unsigned int tz_ptr;
@@ -1701,7 +1702,7 @@ static int x86_sys_gettimeofday_impl(void)
  * System call 'readlink' (code 85)
  */
 
-static int x86_sys_readlink_impl(void)
+static int x86_sys_readlink_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int path_ptr;
 	unsigned int buf;
@@ -1902,7 +1903,7 @@ static int x86_sys_mmap(unsigned int addr, unsigned int len, int prot,
 	return addr;
 }
 
-static int x86_sys_mmap_impl(void)
+static int x86_sys_mmap_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int args_ptr;
 	unsigned int addr;
@@ -1945,7 +1946,7 @@ static int x86_sys_mmap_impl(void)
  * System call 'munmap' (code 91)
  */
 
-static int x86_sys_munmap_impl(void)
+static int x86_sys_munmap_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int addr;
 	unsigned int size;
@@ -1975,7 +1976,7 @@ static int x86_sys_munmap_impl(void)
  * System call 'fchmod' (code 94)
  */
 
-static int x86_sys_fchmod_impl(void)
+static int x86_sys_fchmod_impl(struct x86_ctx_t *ctx)
 {
 	int fd;
 	int host_fd;
@@ -2078,7 +2079,7 @@ static struct string_map_t sys_socket_type_map =
 	}
 };
 
-static int x86_sys_socketcall_impl(void)
+static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 {
 	int call;
 	unsigned int args;
@@ -2306,7 +2307,7 @@ static void sim_itimerval_dump(struct sim_itimerval *sim_itimerval)
 		sim_itimerval->it_value.tv_sec, sim_itimerval->it_value.tv_usec);
 }
 
-static int x86_sys_setitimer_impl(void)
+static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int which;
 	unsigned int value_ptr;
@@ -2360,7 +2361,7 @@ static int x86_sys_setitimer_impl(void)
  * System call 'getitimer' (code 105)
  */
 
-static int x86_sys_getitimer_impl(void)
+static int x86_sys_getitimer_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int which;
 	unsigned int value_ptr;
@@ -2402,7 +2403,7 @@ static int x86_sys_getitimer_impl(void)
  * System call 'sigreturn' (code 119)
  */
 
-static int x86_sys_sigreturn_impl(void)
+static int x86_sys_sigreturn_impl(struct x86_ctx_t *ctx)
 {
 	signal_handler_return(x86_isa_ctx);
 
@@ -2497,7 +2498,7 @@ struct sim_user_desc
 	unsigned int useable:1;
 };
 
-static int x86_sys_clone_impl(void)
+static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 {
 	/* Prototype: long sys_clone(unsigned long clone_flags, unsigned long newsp,
 	 * 	int __user *parent_tid, int unused, int __user *child_tid);
@@ -2662,7 +2663,7 @@ static struct sim_utsname sim_utsname =
 	""
 };
 
-static int x86_sys_newuname_impl(void)
+static int x86_sys_newuname_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int utsname_ptr;
 
@@ -2685,7 +2686,7 @@ static int x86_sys_newuname_impl(void)
  * System call 'mprotect' (code 125)
  */
 
-static int x86_sys_mprotect_impl(void)
+static int x86_sys_mprotect_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int start;
 	unsigned int len;
@@ -2717,7 +2718,7 @@ static int x86_sys_mprotect_impl(void)
  * System call 'llseek' (code 140)
  */
 
-static int x86_sys_llseek_impl(void)
+static int x86_sys_llseek_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int fd;
 	unsigned int result_ptr;
@@ -2782,7 +2783,7 @@ struct sys_guest_dirent_t
 	char d_name[];
 } __attribute__((packed));
 
-static int x86_sys_getdents_impl(void)
+static int x86_sys_getdents_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int pdirent;
 
@@ -2954,7 +2955,7 @@ static void sim_fd_set_write(unsigned int addr, fd_set *fds, int n)
 	}
 }
 
-static int x86_sys_select_impl(void)
+static int x86_sys_select_impl(struct x86_ctx_t *ctx)
 {
 	/* System call prototype:
 	 * int select(int n, fd_set *inp, fd_set *outp, fd_set *exp, struct timeval *tvp);
@@ -3039,7 +3040,7 @@ static struct string_map_t sys_msync_flags_map =
 	}
 };
 
-static int x86_sys_msync_impl(void)
+static int x86_sys_msync_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int start;
 	unsigned int len;
@@ -3067,7 +3068,7 @@ static int x86_sys_msync_impl(void)
  * System call 'writev' (code 146)
  */
 
-static int x86_sys_writev_impl(void)
+static int x86_sys_writev_impl(struct x86_ctx_t *ctx)
 {
 	int v;
 	int len;
@@ -3152,7 +3153,7 @@ struct sys_sysctl_args_t
 	unsigned int newlen;
 };
 
-static int x86_sys_sysctl_impl(void)
+static int x86_sys_sysctl_impl(struct x86_ctx_t *ctx)
 {
 	int i;
 
@@ -3201,7 +3202,7 @@ static int x86_sys_sysctl_impl(void)
  * System call 'sched_setparam' (code 154)
  */
 
-static int x86_sys_sched_setparam_impl(void)
+static int x86_sys_sched_setparam_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int param_ptr;
 
@@ -3226,7 +3227,7 @@ static int x86_sys_sched_setparam_impl(void)
  * System call 'sched_getparam' (code 155)
  */
 
-static int x86_sys_sched_getparam_impl(void)
+static int x86_sys_sched_getparam_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int param_ptr;
 	unsigned int zero = 0;
@@ -3251,7 +3252,7 @@ static int x86_sys_sched_getparam_impl(void)
  * System call 'sched_getscheduler' (code 157)
  */
 
-static int x86_sys_sched_getscheduler_impl(void)
+static int x86_sys_sched_getscheduler_impl(struct x86_ctx_t *ctx)
 {
 	int pid;
 
@@ -3270,7 +3271,7 @@ static int x86_sys_sched_getscheduler_impl(void)
  * System call 'sched_get_priority_max' (code 159)
  */
 
-static int x86_sys_sched_get_priority_max_impl(void)
+static int x86_sys_sched_get_priority_max_impl(struct x86_ctx_t *ctx)
 {
 	int policy;
 
@@ -3309,7 +3310,7 @@ static int x86_sys_sched_get_priority_max_impl(void)
  * System call 'sched_get_priority_min' (code 160)
  */
 
-static int x86_sys_sched_get_priority_min_impl(void)
+static int x86_sys_sched_get_priority_min_impl(struct x86_ctx_t *ctx)
 {
 	int policy;
 
@@ -3348,7 +3349,7 @@ static int x86_sys_sched_get_priority_min_impl(void)
  * System call 'nanosleep' (code 162)
  */
 
-static int x86_sys_nanosleep_impl(void)
+static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int rqtp;
 	unsigned int rmtp;
@@ -3386,7 +3387,7 @@ static int x86_sys_nanosleep_impl(void)
  * System call 'mremap' (code 163)
  */
 
-static int x86_sys_mremap_impl(void)
+static int x86_sys_mremap_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int addr;
 	unsigned int old_len;
@@ -3468,7 +3469,7 @@ static struct string_map_t x86_sys_clock_gettime_clk_id_map =
 	}
 };
 
-static int x86_sys_clock_gettime_impl(void)
+static int x86_sys_clock_gettime_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int clk_id;
 	unsigned int ts_ptr;
@@ -3553,7 +3554,7 @@ struct sim_pollfd_t
 	unsigned short revents;
 };
 
-static int x86_sys_poll_impl(void)
+static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int pfds;
 	unsigned int nfds;
@@ -3665,7 +3666,7 @@ static int x86_sys_poll_impl(void)
  * System call 'rt_sigaction' (code 174)
  */
 
-static int x86_sys_rt_sigaction_impl(void)
+static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
 {
 	int sig;
 	int sigsetsize;
@@ -3734,7 +3735,7 @@ static struct string_map_t sys_sigprocmask_how_map =
 	}
 };
 
-static int x86_sys_rt_sigprocmask_impl(void)
+static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int set_ptr;
 	unsigned int old_set_ptr;
@@ -3811,7 +3812,7 @@ static int x86_sys_rt_sigprocmask_impl(void)
  * System call 'rt_sigsuspend' (code 179)
  */
 
-static int x86_sys_rt_sigsuspend_impl(void)
+static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int new_set_ptr;
 
@@ -3856,7 +3857,7 @@ static int x86_sys_rt_sigsuspend_impl(void)
  * System call 'getcwd' (code 183)
  */
 
-static int x86_sys_getcwd_impl(void)
+static int x86_sys_getcwd_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int buf_ptr;
 
@@ -3890,7 +3891,7 @@ static int x86_sys_getcwd_impl(void)
  * System call 'getrlimit' (code 191)
  */
 
-static int x86_sys_getrlimit_impl(void)
+static int x86_sys_getrlimit_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int res;
 	unsigned int rlim_ptr;
@@ -3950,7 +3951,7 @@ static int x86_sys_getrlimit_impl(void)
  * System call 'mmap2' (code 192)
  */
 
-static int x86_sys_mmap2_impl(void)
+static int x86_sys_mmap2_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int addr;
 	unsigned int len;
@@ -3990,7 +3991,7 @@ static int x86_sys_mmap2_impl(void)
  * System call 'ftruncate64' (code 194)
  */
 
-static int x86_sys_ftruncate64_impl(void)
+static int x86_sys_ftruncate64_impl(struct x86_ctx_t *ctx)
 {
 	int fd;
 	int host_fd;
@@ -4074,7 +4075,7 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 		guest->size, guest->blksize, guest->blocks);
 }
 
-static int x86_sys_stat64_impl(void)
+static int x86_sys_stat64_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int file_name_ptr;
 	unsigned int statbuf_ptr;
@@ -4121,7 +4122,7 @@ static int x86_sys_stat64_impl(void)
  * System call 'lstat64' (code 196)
  */
 
-static int x86_sys_lstat64_impl(void)
+static int x86_sys_lstat64_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int file_name_ptr;
 	unsigned int statbuf_ptr;
@@ -4167,7 +4168,7 @@ static int x86_sys_lstat64_impl(void)
  * System call 'fstat64' (code 197)
  */
 
-static int x86_sys_fstat64_impl(void)
+static int x86_sys_fstat64_impl(struct x86_ctx_t *ctx)
 {
 	int fd;
 	int host_fd;
@@ -4205,7 +4206,7 @@ static int x86_sys_fstat64_impl(void)
  * System call 'getuid' (code 199)
  */
 
-static int x86_sys_getuid_impl(void)
+static int x86_sys_getuid_impl(struct x86_ctx_t *ctx)
 {
 	return getuid();
 }
@@ -4217,7 +4218,7 @@ static int x86_sys_getuid_impl(void)
  * System call 'getgid' (code 200)
  */
 
-static int x86_sys_getgid_impl(void)
+static int x86_sys_getgid_impl(struct x86_ctx_t *ctx)
 {
 	return getgid();
 }
@@ -4229,7 +4230,7 @@ static int x86_sys_getgid_impl(void)
  * System call 'geteuid' (code 201)
  */
 
-static int x86_sys_geteuid_impl(void)
+static int x86_sys_geteuid_impl(struct x86_ctx_t *ctx)
 {
 	return geteuid();
 }
@@ -4241,7 +4242,7 @@ static int x86_sys_geteuid_impl(void)
  * System call 'getegid' (code 202)
  */
 
-static int x86_sys_getegid_impl(void)
+static int x86_sys_getegid_impl(struct x86_ctx_t *ctx)
 {
 	return getegid();
 }
@@ -4253,7 +4254,7 @@ static int x86_sys_getegid_impl(void)
  * System call 'chown' (code 212)
  */
 
-static int x86_sys_chown_impl(void)
+static int x86_sys_chown_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int file_name_ptr;
 
@@ -4296,7 +4297,7 @@ static int x86_sys_chown_impl(void)
  * System call 'madvise' (219)
  */
 
-static int x86_sys_madvise_impl(void)
+static int x86_sys_madvise_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int start;
 	unsigned int len;
@@ -4337,7 +4338,7 @@ struct guest_dirent64_t
 	char d_name[];
 } __attribute__((packed));
 
-static int x86_sys_getdents64_impl(void)
+static int x86_sys_getdents64_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int pdirent;
 	unsigned int count;
@@ -4444,7 +4445,7 @@ static struct string_map_t sys_fcntl_cmp_map =
 	}
 };
 
-static int x86_sys_fcntl64_impl(void)
+static int x86_sys_fcntl64_impl(struct x86_ctx_t *ctx)
 {
 	int guest_fd;
 	int cmd;
@@ -4533,7 +4534,7 @@ static int x86_sys_fcntl64_impl(void)
  * System call 'gettid' (code 224)
  */
 
-static int x86_sys_gettid_impl(void)
+static int x86_sys_gettid_impl(struct x86_ctx_t *ctx)
 {
 	/* FIXME: return different 'tid' for threads, but the system call
 	 * 'getpid' should return the same 'pid' for threads from the same group
@@ -4567,7 +4568,7 @@ static struct string_map_t sys_futex_cmd_map =
 	}
 };
 
-static int x86_sys_futex_impl(void)
+static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 {
 	/* Prototype: sys_futex(void *addr1, int op, int val1, struct timespec *timeout,
 	 *   void *addr2, int val3); */
@@ -4775,7 +4776,7 @@ static int x86_sys_futex_impl(void)
  * System call 'sched_setaffinity' (code 241)
  */
 
-static int x86_sys_sched_setaffinity_impl(void)
+static int x86_sys_sched_setaffinity_impl(struct x86_ctx_t *ctx)
 {
 	int pid;
 	int len;
@@ -4805,7 +4806,7 @@ static int x86_sys_sched_setaffinity_impl(void)
  * System call 'sched_getaffinity' (code 242)
  */
 
-static int x86_sys_sched_getaffinity_impl(void)
+static int x86_sys_sched_getaffinity_impl(struct x86_ctx_t *ctx)
 {
 	int pid;
 	int len;
@@ -4834,7 +4835,7 @@ static int x86_sys_sched_getaffinity_impl(void)
  * System call 'set_thread_area' (code 243)
  */
 
-static int x86_sys_set_thread_area_impl(void)
+static int x86_sys_set_thread_area_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int uinfo_ptr;
 
@@ -4890,7 +4891,7 @@ static int x86_sys_set_thread_area_impl(void)
  * System call 'fadvise64' (code 250)
  */
 
-static int x86_sys_fadvise64_impl(void)
+static int x86_sys_fadvise64_impl(struct x86_ctx_t *ctx)
 {
 	int fd;
 	int advice;
@@ -4919,7 +4920,7 @@ static int x86_sys_fadvise64_impl(void)
  * System call 'exit_group' (code 252)
  */
 
-static int x86_sys_exit_group_impl(void)
+static int x86_sys_exit_group_impl(struct x86_ctx_t *ctx)
 {
 	int status;
 
@@ -4939,7 +4940,7 @@ static int x86_sys_exit_group_impl(void)
  * System call 'set_tid_address' (code 258)
  */
 
-static int x86_sys_set_tid_address_impl(void)
+static int x86_sys_set_tid_address_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int tidptr;
 
@@ -4958,7 +4959,7 @@ static int x86_sys_set_tid_address_impl(void)
  * System call 'clock_getres' (code 266)
  */
 
-static int x86_sys_clock_getres_impl(void)
+static int x86_sys_clock_getres_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int clk_id;
 	unsigned int pres;
@@ -4986,13 +4987,13 @@ static int x86_sys_clock_getres_impl(void)
  * System call 'tgkill' (code 270)
  */
 
-static int x86_sys_tgkill_impl(void)
+static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
 {
 	int tgid;
 	int pid;
 	int sig;
 
-	struct x86_ctx_t *ctx;
+	struct x86_ctx_t *temp_ctx;
 
 	/* Arguments */
 	tgid = x86_isa_regs->ebx;
@@ -5007,13 +5008,13 @@ static int x86_sys_tgkill_impl(void)
 			__FUNCTION__, err_x86_sys_note);
 
 	/* Find context referred by pid. */
-	ctx = x86_ctx_get(pid);
-	if (!ctx)
+	temp_ctx = x86_ctx_get(pid);
+	if (!temp_ctx)
 		fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
 
 	/* Send signal */
-	sim_sigset_add(&ctx->signal_mask_table->pending, sig);
-	x86_ctx_host_thread_suspend_cancel(ctx);
+	sim_sigset_add(&temp_ctx->signal_mask_table->pending, sig);
+	x86_ctx_host_thread_suspend_cancel(temp_ctx);
 	x86_emu_process_events_schedule();
 	x86_emu_process_events();
 	return 0;
@@ -5026,7 +5027,7 @@ static int x86_sys_tgkill_impl(void)
  * System call 'set_robust_list' (code 311)
  */
 
-static int x86_sys_set_robust_list_impl(void)
+static int x86_sys_set_robust_list_impl(struct x86_ctx_t *ctx)
 {
 	unsigned int head;
 
@@ -5055,7 +5056,7 @@ static int x86_sys_set_robust_list_impl(void)
  * Special system call code used by 'libm2s-opencl'
  */
 
-static int x86_sys_opencl_impl(void)
+static int x86_sys_opencl_impl(struct x86_ctx_t *ctx)
 {
 	if (x86_emu->gpu_emulator == gpu_emulator_evg)
 	{
@@ -5077,7 +5078,7 @@ static int x86_sys_opencl_impl(void)
  * Special system call code used by 'libm2s-glut'
  */
 
-static int x86_sys_glut_impl(void)
+static int x86_sys_glut_impl(struct x86_ctx_t *ctx)
 {
 	/* Run GLUT call */
 	return x86_glut_call();
@@ -5091,7 +5092,7 @@ static int x86_sys_glut_impl(void)
  * Special system call code used by 'libm2s-opengl'
  */
 
-static int x86_sys_opengl_impl(void)
+static int x86_sys_opengl_impl(struct x86_ctx_t *ctx)
 {
 	/* Run OPENGL call */
 	return x86_opengl_call();
@@ -5105,7 +5106,7 @@ static int x86_sys_opengl_impl(void)
  * Special system call code used by 'libm2s-cuda'
  */
 
-static int x86_sys_cuda_impl(void)
+static int x86_sys_cuda_impl(struct x86_ctx_t *ctx)
 {
 	/* Run CUDA call */
 	return frm_cuda_call();
@@ -5118,7 +5119,7 @@ static int x86_sys_cuda_impl(void)
  * Special system call code used by 'libm2s-clrt'
  */
 
-static int x86_sys_clrt_impl(void)
+static int x86_sys_clrt_impl(struct x86_ctx_t *ctx)
 {
 	/* Run OpenCL Runtime call */
 	return x86_clrt_call();
@@ -5132,7 +5133,7 @@ static int x86_sys_clrt_impl(void)
  */
 
 #define SYS_NOT_IMPL(NAME) \
-	static int x86_sys_##NAME##_impl(void) \
+	static int x86_sys_##NAME##_impl(struct x86_ctx_t *ctx) \
 	{ \
 		fatal("%s: system call not implemented (code %d, inst %lld, pid %d).\n%s", \
 			__FUNCTION__, x86_isa_regs->eax, x86_isa_inst_count, x86_isa_ctx->pid, \
