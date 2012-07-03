@@ -462,7 +462,6 @@ void x86_uinst_list_dump(FILE *f);
 extern struct x86_ctx_t *x86_isa_ctx;
 extern struct x86_regs_t *x86_isa_regs;
 extern struct mem_t *x86_isa_mem;
-extern int x86_isa_spec_mode;
 extern char * x86_isa_inst_bytes;
 extern struct x86_inst_t x86_isa_inst;
 extern long long x86_isa_inst_count;
