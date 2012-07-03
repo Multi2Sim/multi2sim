@@ -26,7 +26,6 @@ struct x86_ctx_t *x86_isa_ctx;
 struct x86_regs_t *x86_isa_regs;
 struct mem_t *x86_isa_mem;
 struct x86_inst_t x86_isa_inst;
-int x86_isa_spec_mode;  /* If true, instructions will not modify memory */
 char * x86_isa_inst_bytes;
 unsigned int isa_addr;  /* Address of last memory access */
 long long x86_isa_inst_count;
