@@ -39,9 +39,9 @@
 
 
 #define op_stdop_al_imm8(stdop, wb, uinst) \
-void x86_isa_##stdop##_al_imm8_impl() \
+void x86_isa_##stdop##_al_imm8_impl(struct x86_ctx_t *ctx) \
 { \
-	uint8_t al = x86_isa_load_reg(x86_reg_al); \
+	uint8_t al = x86_isa_load_reg(ctx, x86_reg_al); \
 	uint8_t imm8 = x86_isa_inst.imm.b; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -59,19 +59,19 @@ void x86_isa_##stdop##_al_imm8_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_reg(x86_reg_al, al); \
-		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_reg(ctx, x86_reg_al, al); \
+		x86_uinst_new(ctx, uinst, x86_dep_eax, 0, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_eax, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_ax_imm16(stdop, wb, uinst) \
-void x86_isa_##stdop##_ax_imm16_impl() \
+void x86_isa_##stdop##_ax_imm16_impl(struct x86_ctx_t *ctx) \
 { \
-	uint16_t ax = x86_isa_load_reg(x86_reg_ax); \
+	uint16_t ax = x86_isa_load_reg(ctx, x86_reg_ax); \
 	uint16_t imm16 = x86_isa_inst.imm.w; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -89,19 +89,19 @@ void x86_isa_##stdop##_ax_imm16_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_reg(x86_reg_ax, ax); \
-		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_reg(ctx, x86_reg_ax, ax); \
+		x86_uinst_new(ctx, uinst, x86_dep_eax, 0, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_eax, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_eax_imm32(stdop, wb, uinst) \
-void x86_isa_##stdop##_eax_imm32_impl() \
+void x86_isa_##stdop##_eax_imm32_impl(struct x86_ctx_t *ctx) \
 { \
-	uint32_t eax = x86_isa_load_reg(x86_reg_eax); \
+	uint32_t eax = x86_isa_load_reg(ctx, x86_reg_eax); \
 	uint32_t imm32 = x86_isa_inst.imm.d; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -119,19 +119,19 @@ void x86_isa_##stdop##_eax_imm32_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_reg(x86_reg_eax, eax); \
-		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_reg(ctx, x86_reg_eax, eax); \
+		x86_uinst_new(ctx, uinst, x86_dep_eax, 0, 0, x86_dep_eax, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_eax, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_eax, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_rm8_imm8(stdop, wb, uinst) \
-void x86_isa_##stdop##_rm8_imm8_impl() \
+void x86_isa_##stdop##_rm8_imm8_impl(struct x86_ctx_t *ctx) \
 { \
-	uint8_t rm8 = x86_isa_load_rm8(); \
+	uint8_t rm8 = x86_isa_load_rm8(ctx); \
 	uint8_t imm8 = x86_isa_inst.imm.b; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -149,19 +149,19 @@ void x86_isa_##stdop##_rm8_imm8_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_rm8(rm8); \
-		x86_uinst_new(uinst, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_rm8(ctx, rm8); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_rm8, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm8, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_rm16_imm16(stdop, wb, uinst) \
-void x86_isa_##stdop##_rm16_imm16_impl() \
+void x86_isa_##stdop##_rm16_imm16_impl(struct x86_ctx_t *ctx) \
 { \
-	uint16_t rm16 = x86_isa_load_rm16(); \
+	uint16_t rm16 = x86_isa_load_rm16(ctx); \
 	uint16_t imm16 = x86_isa_inst.imm.w; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -179,19 +179,19 @@ void x86_isa_##stdop##_rm16_imm16_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_rm16(rm16); \
-		x86_uinst_new(uinst, x86_dep_rm16, 0, 0, x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_rm16(ctx, rm16); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm16, 0, 0, x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_rm16, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm16, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_rm32_imm32(stdop, wb, uinst) \
-void x86_isa_##stdop##_rm32_imm32_impl() \
+void x86_isa_##stdop##_rm32_imm32_impl(struct x86_ctx_t *ctx) \
 { \
-	uint32_t rm32 = x86_isa_load_rm32(); \
+	uint32_t rm32 = x86_isa_load_rm32(ctx); \
 	uint32_t imm32 = x86_isa_inst.imm.d; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -209,19 +209,19 @@ void x86_isa_##stdop##_rm32_imm32_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_rm32(rm32); \
-		x86_uinst_new(uinst, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_rm32(ctx, rm32); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_rm32, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm32, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_rm16_imm8(stdop, wb, uinst) \
-void x86_isa_##stdop##_rm16_imm8_impl() \
+void x86_isa_##stdop##_rm16_imm8_impl(struct x86_ctx_t *ctx) \
 { \
-	uint16_t rm16 = x86_isa_load_rm16(); \
+	uint16_t rm16 = x86_isa_load_rm16(ctx); \
 	uint16_t imm8 = (int8_t) x86_isa_inst.imm.b; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -239,19 +239,19 @@ void x86_isa_##stdop##_rm16_imm8_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_rm16(rm16); \
-		x86_uinst_new(uinst, x86_dep_rm16, 0, 0, x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_rm16(ctx, rm16); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm16, 0, 0, x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_rm16, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm16, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_rm32_imm8(stdop, wb, uinst) \
-void x86_isa_##stdop##_rm32_imm8_impl() \
+void x86_isa_##stdop##_rm32_imm8_impl(struct x86_ctx_t *ctx) \
 { \
-	uint32_t rm32 = x86_isa_load_rm32(); \
+	uint32_t rm32 = x86_isa_load_rm32(ctx); \
 	uint32_t imm8 = (int8_t) x86_isa_inst.imm.b; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
@@ -269,20 +269,20 @@ void x86_isa_##stdop##_rm32_imm8_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_rm32(rm32); \
-		x86_uinst_new(uinst, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_rm32(ctx, rm32); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_rm32, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm32, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_rm8_r8(stdop, wb, uinst) \
-void x86_isa_##stdop##_rm8_r8_impl() \
+void x86_isa_##stdop##_rm8_r8_impl(struct x86_ctx_t *ctx) \
 { \
-	uint8_t rm8 = x86_isa_load_rm8(); \
-	uint8_t r8 = x86_isa_load_r8(); \
+	uint8_t rm8 = x86_isa_load_rm8(ctx); \
+	uint8_t r8 = x86_isa_load_r8(ctx); \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -299,20 +299,20 @@ void x86_isa_##stdop##_rm8_r8_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_rm8(rm8); \
-		x86_uinst_new(uinst, x86_dep_rm8, x86_dep_r8, 0, x86_dep_rm8, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_rm8(ctx, rm8); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm8, x86_dep_r8, 0, x86_dep_rm8, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_rm8, x86_dep_r8, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm8, x86_dep_r8, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_rm16_r16(stdop, wb, uinst) \
-void x86_isa_##stdop##_rm16_r16_impl() \
+void x86_isa_##stdop##_rm16_r16_impl(struct x86_ctx_t *ctx) \
 { \
-	uint16_t rm16 = x86_isa_load_rm16(); \
-	uint16_t r16 = x86_isa_load_r16(); \
+	uint16_t rm16 = x86_isa_load_rm16(ctx); \
+	uint16_t r16 = x86_isa_load_r16(ctx); \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -329,20 +329,20 @@ void x86_isa_##stdop##_rm16_r16_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_rm16(rm16); \
-		x86_uinst_new(uinst, x86_dep_rm16, x86_dep_r16, 0, x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_rm16(ctx, rm16); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm16, x86_dep_r16, 0, x86_dep_rm16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_rm16, x86_dep_r16, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm16, x86_dep_r16, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_rm32_r32(stdop, wb, uinst) \
-void x86_isa_##stdop##_rm32_r32_impl() \
+void x86_isa_##stdop##_rm32_r32_impl(struct x86_ctx_t *ctx) \
 { \
-	uint32_t rm32 = x86_isa_load_rm32(); \
-	uint32_t r32 = x86_isa_load_r32(); \
+	uint32_t rm32 = x86_isa_load_rm32(ctx); \
+	uint32_t r32 = x86_isa_load_r32(ctx); \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -359,20 +359,20 @@ void x86_isa_##stdop##_rm32_r32_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_rm32(rm32); \
-		x86_uinst_new(uinst, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_rm32(ctx, rm32); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else  { \
-		x86_uinst_new(uinst, x86_dep_rm32, x86_dep_r32, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_rm32, x86_dep_r32, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_r8_rm8(stdop, wb, uinst) \
-void x86_isa_##stdop##_r8_rm8_impl() \
+void x86_isa_##stdop##_r8_rm8_impl(struct x86_ctx_t *ctx) \
 { \
-	uint8_t r8 = x86_isa_load_r8(); \
-	uint8_t rm8 = x86_isa_load_rm8(); \
+	uint8_t r8 = x86_isa_load_r8(ctx); \
+	uint8_t rm8 = x86_isa_load_rm8(ctx); \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -389,20 +389,20 @@ void x86_isa_##stdop##_r8_rm8_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_r8(r8); \
-		x86_uinst_new(uinst, x86_dep_r8, x86_dep_rm8, 0, x86_dep_r8, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_r8(ctx, r8); \
+		x86_uinst_new(ctx, uinst, x86_dep_r8, x86_dep_rm8, 0, x86_dep_r8, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_r8, x86_dep_rm8, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_r8, x86_dep_rm8, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_r16_rm16(stdop, wb, uinst) \
-void x86_isa_##stdop##_r16_rm16_impl() \
+void x86_isa_##stdop##_r16_rm16_impl(struct x86_ctx_t *ctx) \
 { \
-	uint16_t r16 = x86_isa_load_r16(); \
-	uint16_t rm16 = x86_isa_load_rm16(); \
+	uint16_t r16 = x86_isa_load_r16(ctx); \
+	uint16_t rm16 = x86_isa_load_rm16(ctx); \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -419,20 +419,20 @@ void x86_isa_##stdop##_r16_rm16_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_r16(r16); \
-		x86_uinst_new(uinst, x86_dep_r16, x86_dep_rm16, 0, x86_dep_r16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_r16(ctx, r16); \
+		x86_uinst_new(ctx, uinst, x86_dep_r16, x86_dep_rm16, 0, x86_dep_r16, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_r16, x86_dep_rm16, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_r16, x86_dep_rm16, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }
 
 
 #define op_stdop_r32_rm32(stdop, wb, uinst) \
-void x86_isa_##stdop##_r32_rm32_impl() \
+void x86_isa_##stdop##_r32_rm32_impl(struct x86_ctx_t *ctx) \
 { \
-	uint32_t r32 = x86_isa_load_r32(); \
-	uint32_t rm32 = x86_isa_load_rm32(); \
+	uint32_t r32 = x86_isa_load_r32(ctx); \
+	uint32_t rm32 = x86_isa_load_rm32(ctx); \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -449,10 +449,10 @@ void x86_isa_##stdop##_r32_rm32_impl() \
 	); \
 	__X86_ISA_ASM_END__ \
 	if (wb) { \
-		x86_isa_store_r32(r32); \
-		x86_uinst_new(uinst, x86_dep_r32, x86_dep_rm32, 0, x86_dep_r32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
+		x86_isa_store_r32(ctx, r32); \
+		x86_uinst_new(ctx, uinst, x86_dep_r32, x86_dep_rm32, 0, x86_dep_r32, x86_dep_zps, x86_dep_cf, x86_dep_of); \
 	} else { \
-		x86_uinst_new(uinst, x86_dep_r32, x86_dep_rm32, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
+		x86_uinst_new(ctx, uinst, x86_dep_r32, x86_dep_rm32, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0); \
 	} \
 	x86_isa_regs->eflags = flags; \
 }

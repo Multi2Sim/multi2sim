@@ -54,7 +54,7 @@ static struct string_map_t x86_ctx_status_map =
 {
 	16, {
 		{ "running",      x86_ctx_running },
-		{ "specmode",     x86_ctx_specmode },
+		{ "specmode",     x86_ctx_spec_mode },
 		{ "suspended",    x86_ctx_suspended },
 		{ "finished",     x86_ctx_finished },
 		{ "exclusive",    x86_ctx_exclusive },
@@ -282,7 +282,7 @@ void x86_ctx_execute_inst(struct x86_ctx_t *ctx)
 	x86_isa_regs = ctx->regs;
 	x86_isa_mem = ctx->mem;
 	x86_isa_eip = x86_isa_regs->eip;
-	x86_isa_spec_mode = x86_ctx_get_status(x86_isa_ctx, x86_ctx_specmode);
+	x86_isa_spec_mode = x86_ctx_get_status(x86_isa_ctx, x86_ctx_spec_mode);
 	x86_isa_inst_count++;
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
@@ -309,7 +309,7 @@ void x86_ctx_execute_inst(struct x86_ctx_t *ctx)
 
 
 	/* Execute instruction */
-	x86_isa_execute_inst();
+	x86_isa_execute_inst(ctx);
 	
 	/* Stats */
 	x86_emu->inst_count++;
@@ -322,9 +322,9 @@ void x86_ctx_execute_inst(struct x86_ctx_t *ctx)
 void x86_ctx_set_eip(struct x86_ctx_t *ctx, uint32_t eip)
 {
 	/* Entering specmode */
-	if (ctx->regs->eip != eip && !x86_ctx_get_status(ctx, x86_ctx_specmode))
+	if (ctx->regs->eip != eip && !x86_ctx_get_status(ctx, x86_ctx_spec_mode))
 	{
-		x86_ctx_set_status(ctx, x86_ctx_specmode);
+		x86_ctx_set_status(ctx, x86_ctx_spec_mode);
 		x86_regs_copy(ctx->backup_regs, ctx->regs);
 		ctx->regs->fpu_ctrl |= 0x3f; /* mask all FP exceptions on wrong path */
 	}
@@ -336,8 +336,8 @@ void x86_ctx_set_eip(struct x86_ctx_t *ctx, uint32_t eip)
 
 void x86_ctx_recover(struct x86_ctx_t *ctx)
 {
-	assert(x86_ctx_get_status(ctx, x86_ctx_specmode));
-	x86_ctx_clear_status(ctx, x86_ctx_specmode);
+	assert(x86_ctx_get_status(ctx, x86_ctx_spec_mode));
+	x86_ctx_clear_status(ctx, x86_ctx_spec_mode);
 	x86_regs_copy(ctx->regs, ctx->backup_regs);
 	spec_mem_clear(ctx->spec_mem);
 }
@@ -369,7 +369,7 @@ static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t s
 	/* If the difference between the old and new status lies in other
 	 * states other than 'x86_ctx_specmode', a reschedule is marked. */
 	status_diff = ctx->status ^ status;
-	if (status_diff & ~x86_ctx_specmode)
+	if (status_diff & ~x86_ctx_spec_mode)
 		x86_emu->context_reschedule = 1;
 	
 	/* Update status */
@@ -399,7 +399,7 @@ static void x86_ctx_update_status(struct x86_ctx_t *ctx, enum x86_ctx_status_t s
 		x86_emu_list_insert_head(x86_emu_list_alloc, ctx);
 	
 	/* Dump new status (ignore 'x86_ctx_specmode' status, it's too frequent) */
-	if (debug_status(x86_ctx_debug_category) && (status_diff & ~x86_ctx_specmode))
+	if (debug_status(x86_ctx_debug_category) && (status_diff & ~x86_ctx_spec_mode))
 	{
 		char sstatus[200];
 		map_flags(&x86_ctx_status_map, ctx->status, sstatus, 200);
