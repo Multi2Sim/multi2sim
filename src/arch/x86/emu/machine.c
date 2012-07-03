@@ -561,7 +561,8 @@ void x86_isa_dec_ir32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_div_rm8_impl(struct x86_ctx_t *ctx)
 {
-	int skip_emulation = 0;
+	int skip_emulation;
+	int spec_mode;
 
 	uint16_t ax = x86_isa_load_reg(ctx, x86_reg_ax);
 	uint8_t rm8 = x86_isa_load_rm8(ctx);
@@ -573,8 +574,8 @@ void x86_isa_div_rm8_impl(struct x86_ctx_t *ctx)
 
 	/* A devide exception would occur in the host process if the 'div' instruction
 	 * in the assembly code below generates a result greater than 0xff. */
-	if (x86_isa_spec_mode && ax > 0xff)
-		skip_emulation = 1;
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	skip_emulation = spec_mode && ax > 0xff;
 
 	/* Emulate */
 	if (!skip_emulation)
@@ -600,7 +601,8 @@ void x86_isa_div_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_div_rm32_impl(struct x86_ctx_t *ctx)
 {
-	int skip_emulation = 0;
+	int spec_mode;
+	int skip_emulation;
 
 	uint32_t eax = x86_isa_regs->eax;
 	uint32_t edx = x86_isa_regs->edx;
@@ -613,8 +615,8 @@ void x86_isa_div_rm32_impl(struct x86_ctx_t *ctx)
 
 	/* A devide exception would occur in the host process if the 'div' instruction
 	 * in the assembly code below generates a result greater than 0xffffffff. */
-	if (x86_isa_spec_mode && edx)
-		skip_emulation = 1;
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	skip_emulation = spec_mode && edx;
 
 	/* Emulate */
 	if (!skip_emulation)
@@ -649,19 +651,24 @@ void x86_isa_hlt_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_idiv_rm32_impl(struct x86_ctx_t *ctx)
 {
-	int skip_emulation = 0;
+	int spec_mode;
+	int skip_emulation;
 
 	uint32_t eax = x86_isa_regs->eax;
 	uint32_t edx = x86_isa_regs->edx;
 	uint32_t rm32 = x86_isa_load_rm32(ctx);
 
-	if (!rm32) {
+	if (!rm32)
+	{
 		x86_isa_error(ctx, "%s: division by 0", __FUNCTION__);
 		return;
 	}
 
 	/* Avoid emulation in speculative mode if it could cause a divide exception */
-	if (x86_isa_spec_mode) {
+	skip_emulation = 0;
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (spec_mode)
+	{
 		int64_t edx_eax = ((uint64_t) edx << 32) | eax;
 		if (edx_eax > 0x7fffffffll || edx_eax < 0xffffffff80000000ll)
 			skip_emulation = 1;
@@ -928,7 +935,8 @@ void x86_isa_int_3_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_int_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t num;
+	int spec_mode;
+	unsigned int num;
 
 	/* Interrupt code */
 	num = (uint8_t) x86_isa_inst.imm.b;
@@ -936,7 +944,8 @@ void x86_isa_int_imm8_impl(struct x86_ctx_t *ctx)
 		x86_isa_error(ctx, "%s: not supported for num != 0x80", __FUNCTION__);
 
 	/* Do system call if not in speculative mode */
-	if (!x86_isa_spec_mode)
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
 		x86_sys_call();
 
 	x86_uinst_new(ctx, x86_uinst_syscall, 0, 0, 0, 0, 0, 0, 0);

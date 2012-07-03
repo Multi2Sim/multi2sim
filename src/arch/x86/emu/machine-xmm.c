@@ -42,12 +42,15 @@ void x86_isa_addss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 	union x86_xmm_reg_t dest;
 	union x86_xmm_reg_t src;
 
+	int spec_mode;
+
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm32(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	if (!x86_isa_spec_mode)
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
 		asm volatile (
@@ -73,12 +76,15 @@ void x86_isa_cvtsd2ss_xmm_xmmm64_impl(struct x86_ctx_t *ctx)
 	union x86_xmm_reg_t dest;
 	union x86_xmm_reg_t src;
 
+	int spec_mode;
+
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	if (!x86_isa_spec_mode)
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
 		asm volatile (
@@ -150,12 +156,15 @@ void x86_isa_divss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 	union x86_xmm_reg_t dest;
 	union x86_xmm_reg_t src;
 
+	int spec_mode;
+
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm32(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	if (!x86_isa_spec_mode)
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
 		asm volatile (
@@ -337,12 +346,15 @@ void x86_isa_mulss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 	union x86_xmm_reg_t dest;
 	union x86_xmm_reg_t src;
 
+	int spec_mode;
+
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm32(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	if (!x86_isa_spec_mode)
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
 		asm volatile (
@@ -697,12 +709,15 @@ void x86_isa_sqrtss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 	union x86_xmm_reg_t dest;
 	union x86_xmm_reg_t src;
 
+	int spec_mode;
+
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm32(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	if (!x86_isa_spec_mode)
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
 		asm volatile (
@@ -728,12 +743,15 @@ void x86_isa_subsd_xmm_xmmm64_impl(struct x86_ctx_t *ctx)
 	union x86_xmm_reg_t dest;
 	union x86_xmm_reg_t src;
 
+	int spec_mode;
+
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm64(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	if (!x86_isa_spec_mode)
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
 		asm volatile (
@@ -759,12 +777,15 @@ void x86_isa_subss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 	union x86_xmm_reg_t dest;
 	union x86_xmm_reg_t src;
 
+	int spec_mode;
+
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm32(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	if (!x86_isa_spec_mode)
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
 		asm volatile (
@@ -790,12 +811,15 @@ void x86_isa_unpcklps_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 	union x86_xmm_reg_t dest;
 	union x86_xmm_reg_t src;
 
+	int spec_mode;
+
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm128(ctx, src.as_uchar);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
-	if (!x86_isa_spec_mode)
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	if (!spec_mode)
 	{
 		__X86_ISA_ASM_START__
 		asm volatile (

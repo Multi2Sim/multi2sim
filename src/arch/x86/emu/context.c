@@ -278,17 +278,22 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 	unsigned char buffer[20];
 	unsigned char *buffer_ptr;
 
+	int spec_mode;
+
 	/* The isa_xxx functions work on these global
 	 * variables. */
 	x86_isa_ctx = ctx;
 	x86_isa_regs = ctx->regs;
 	x86_isa_mem = ctx->mem;
-	x86_isa_spec_mode = x86_ctx_get_status(x86_isa_ctx, x86_ctx_spec_mode);
 	x86_isa_inst_count++;
+
+	/* Memory permissions should not be checked if the context is executing in
+	 * speculative mode. This will prevent guest segmentation faults to occur. */
+	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
+	x86_isa_mem->safe = spec_mode ? 0 : mem_safe_mode;
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
-	x86_isa_mem->safe = x86_isa_spec_mode ? 0 : mem_safe_mode;
 	buffer_ptr = mem_get_buffer(x86_isa_mem, x86_isa_regs->eip, 20, mem_access_exec);
 	if (!buffer_ptr)
 	{
@@ -304,7 +309,7 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 
 	/* Disassemble */
 	x86_disasm(buffer_ptr, regs->eip, &x86_isa_inst);
-	if (x86_isa_inst.opcode == x86_op_none && !x86_isa_spec_mode)
+	if (x86_isa_inst.opcode == x86_op_none && !spec_mode)
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)",
 			regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 
