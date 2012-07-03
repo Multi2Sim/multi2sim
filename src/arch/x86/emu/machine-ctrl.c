@@ -76,9 +76,9 @@ void x86_isa_set##cc##_rm8_impl(struct x86_ctx_t *ctx) \
 #define op_jcc_rel8(cc, idep1, idep2) \
 void x86_isa_j##cc##_rel8_impl(struct x86_ctx_t *ctx) \
 { \
-	x86_isa_target = x86_isa_regs->eip + (int8_t) x86_isa_inst.imm.b; \
+	ctx->target_eip = x86_isa_regs->eip + (int8_t) x86_isa_inst.imm.b; \
 	if (cc_##cc) \
-		x86_isa_regs->eip = x86_isa_target; \
+		x86_isa_regs->eip = ctx->target_eip; \
 	x86_uinst_new(ctx, x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \
 }
 
@@ -86,9 +86,9 @@ void x86_isa_j##cc##_rel8_impl(struct x86_ctx_t *ctx) \
 #define op_jcc_rel32(cc, idep1, idep2) \
 void x86_isa_j##cc##_rel32_impl(struct x86_ctx_t *ctx) \
 { \
-	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.d; \
+	ctx->target_eip = x86_isa_regs->eip + x86_isa_inst.imm.d; \
 	if (cc_##cc) \
-		x86_isa_regs->eip = x86_isa_target; \
+		x86_isa_regs->eip = ctx->target_eip; \
 	x86_uinst_new(ctx, x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \
 }
 
@@ -139,18 +139,18 @@ op_cc_all(cmov_r32_rm32)
 
 void x86_isa_jecxz_rel8_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.b;
+	ctx->target_eip = x86_isa_regs->eip + x86_isa_inst.imm.b;
 	if (!x86_isa_load_reg(ctx, x86_reg_ecx))
-		x86_isa_regs->eip = x86_isa_target;
+		x86_isa_regs->eip = ctx->target_eip;
 	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
 
 
 void x86_isa_jcxz_rel8_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.b;
+	ctx->target_eip = x86_isa_regs->eip + x86_isa_inst.imm.b;
 	if (!x86_isa_load_reg(ctx, x86_reg_cx))
-		x86_isa_regs->eip = x86_isa_target;
+		x86_isa_regs->eip = ctx->target_eip;
 	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
 
