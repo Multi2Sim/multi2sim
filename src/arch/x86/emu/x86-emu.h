@@ -466,7 +466,6 @@ extern int x86_isa_spec_mode;
 extern char * x86_isa_inst_bytes;
 extern struct x86_inst_t x86_isa_inst;
 extern long long x86_isa_inst_count;
-extern int x86_isa_function_level;
 
 #define x86_isa_call_debug(...) debug(x86_isa_call_debug_category, __VA_ARGS__)
 #define x86_isa_inst_debug(...) debug(x86_isa_inst_debug_category, __VA_ARGS__)
@@ -868,6 +867,9 @@ struct x86_ctx_t
 
 	/* For the OpenCL library access */
 	int libopencl_open_attempt;
+
+	/* When debugging function calls with 'x86_isa_debug_call', function call level. */
+	int function_level;
 
 	/* Host thread that suspends and then schedules call to 'x86_emu_process_events'. */
 	/* The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread

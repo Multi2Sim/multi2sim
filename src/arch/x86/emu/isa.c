@@ -30,7 +30,6 @@ int x86_isa_spec_mode;  /* If true, instructions will not modify memory */
 char * x86_isa_inst_bytes;
 unsigned int isa_addr;  /* Address of last memory access */
 long long x86_isa_inst_count;
-int x86_isa_function_level;
 
 ////////////////
 #define x86_isa_ctx __COMPILATION_ERROR__
@@ -187,7 +186,7 @@ static void x86_isa_debug_call(struct x86_ctx_t *ctx)
 		return;
 
 	/* Debug it */
-	for (i = 0; i < x86_isa_function_level; i++)
+	for (i = 0; i < ctx->function_level; i++)
 		x86_isa_call_debug("| ");
 	from = elf_symbol_get_by_address(loader->elf_file, ctx->curr_eip, NULL);
 	to = elf_symbol_get_by_address(loader->elf_file, regs->eip, NULL);
@@ -203,7 +202,10 @@ static void x86_isa_debug_call(struct x86_ctx_t *ctx)
 	x86_isa_call_debug("\n");
 
 	/* Change current level */
-	strncmp(x86_isa_inst.format, "call", 4) ? x86_isa_function_level-- : x86_isa_function_level++;
+	if (strncmp(x86_isa_inst.format, "call", 4))
+		ctx->function_level--;
+	else
+		ctx->function_level++;
 }
 
 
