@@ -36,11 +36,19 @@ fi
 #
 
 have_glut=yes
+
+# Check if the user explicitly disabled GLUT
+AC_ARG_ENABLE(glut,
+	[  --enable-glut={yes|no}	Enable support for GLUT (default=yes)],
+	[], [])
+
+# Check if GLUT is present
 AC_CHECK_HEADER([GL/glut.h], [AC_DEFINE([HAVE_GLUT_H])], [have_glut=no])
 AC_CHECK_HEADER([GL/gl.h], [], [have_glut=no])
 AC_CHECK_LIB([glut], [glutInit], [], [have_glut=no])
 AC_CHECK_LIB([GL], [glBegin], [], [have_glut=no])
 AC_CHECK_LIB([GLU], [gluOrtho2D], [], [have_glut=no])
+
 if test x$have_glut == xno; then
 AC_MSG_WARN([
 	
@@ -50,8 +58,15 @@ AC_MSG_WARN([
 
 		sudo apt-get install freeglut3-dev
 ])
+elif test x$enable_glut == xno; then
+AC_MSG_WARN([
+
+	The 'freeglut' library development package is present in your system,
+	but you explicitly disabled support for it. Some features in Multi2Sim
+	will not be accessible.
+])
 fi
-AM_CONDITIONAL(HAVE_GLUT_H, test x$have_glut == xyes)
+AM_CONDITIONAL(HAVE_GLUT_H, test x$have_glut == xyes -a x$enable_glut == xyes)
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -80,7 +95,7 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([alarm bzero ftruncate getcwd gettimeofday memset mkdir munmap select socket strcasecmp strchr strdup strncasecmp strtol utime])
 
 AC_CHECK_LIB([m], [sin])
-AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
+AC_CHECK_LIB([pthread], [pthread_create])
 
 
 
@@ -92,9 +107,14 @@ AC_CHECK_LIB([pthread], [pthread_create], [LIBPTHREAD=true], [], [])
 have_gtk=no
 have_gtk_test=yes
 
-ifdef([AM_PATH_GTK_3_0], [AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, )], [have_gtk_test=no] )
+# Check if the user explicitly disabled GTK
+AC_ARG_ENABLE(gtk,
+	[  --enable-gtk={yes|no}	Enable support for GTK (default=yes)],
+	[], [])
 
-if test x$have_gtk_test == xno; then
+# Check if test for GTK is available
+ifdef([AM_PATH_GTK_3_0], [AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, )], [have_gtk_test=no] )
+if test x$have_gtk_test = xno; then
 AC_MSG_WARN([
 	
 	The 'autoconf' tool could not interpret the macro checking for the
@@ -106,7 +126,8 @@ AC_MSG_WARN([
 ])
 fi
 
-if test x$have_gtk == xno; then
+# Check if GTK is available
+if test x$have_gtk = xno; then
 AC_MSG_WARN([
 
 	Multi2Sim will be compiled without support for GTK graphical applications.
@@ -115,11 +136,19 @@ AC_MSG_WARN([
 	your system (e.g., package 'libgtk-3-dev' in Debian-based distributions),
 	and run './configure' again.
 ])
-else
-AC_DEFINE(HAVE_GTK, 1)
 fi
 
-AM_CONDITIONAL(HAVE_GTK, test x$have_gtk = xyes)
+# Check if GTK is enabled
+if test x$enable_gtk = xno; then
+AC_MSG_WARN([
+
+	GTK is present in your system, but you have explicitly disabled support
+	for it. The GTK-based subset of Multi2Sim will not be available in the
+	generated executable.
+])
+fi
+
+AM_CONDITIONAL(HAVE_GTK, test x$have_gtk = xyes -a x$enable_gtk = xyes)
 
 
 
