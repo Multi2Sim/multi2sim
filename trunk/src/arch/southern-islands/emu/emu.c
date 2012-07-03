@@ -116,7 +116,7 @@ void si_emu_done()
 
 /* If 'fullpath' points to the original OpenCL library, redirect it to 'm2s-opencl.so'
  * in the same path. */
-void si_emu_libopencl_redirect(char *fullpath, int size)
+void si_emu_libopencl_redirect(struct x86_ctx_t *ctx, char *full_path, int size)
 {
 	char fullpath_original[MAX_PATH_SIZE];
 	char buf[MAX_PATH_SIZE];
@@ -125,9 +125,9 @@ void si_emu_libopencl_redirect(char *fullpath, int size)
 	FILE *f;
 
 	/* Get path length */
-	snprintf(fullpath_original, sizeof fullpath_original, "%s", fullpath);
-	length = strlen(fullpath);
-	relpath = rindex(fullpath, '/');
+	snprintf(fullpath_original, sizeof fullpath_original, "%s", full_path);
+	length = strlen(full_path);
+	relpath = rindex(full_path, '/');
 	assert(relpath && *relpath == '/');
 	filename = relpath + 1;
 
@@ -135,7 +135,7 @@ void si_emu_libopencl_redirect(char *fullpath, int size)
 	if (!strcmp(filename, "libm2s-opencl.so"))
 	{
 		/* Attempt to open original location */
-		f = fopen(fullpath, "r");
+		f = fopen(full_path, "r");
 		if (f)
 		{
 			fclose(f);
@@ -146,8 +146,8 @@ void si_emu_libopencl_redirect(char *fullpath, int size)
 			/* Attempt to open 'libm2s-openc.so' in current directory */
 			if (!getcwd(buf, MAX_PATH_SIZE))
 				fatal("%s: cannot get current directory", __FUNCTION__);
-			sprintf(fullpath, "%s/libm2s-opencl.so", buf);
-			f = fopen(fullpath, "r");
+			sprintf(full_path, "%s/libm2s-opencl.so", buf);
+			f = fopen(full_path, "r");
 			if (f)
 			{
 				fclose(f);
@@ -156,7 +156,7 @@ void si_emu_libopencl_redirect(char *fullpath, int size)
 					"\tthis library has been found in the current working directory, and this copy\n"
 					"\twill be used in the linker. To avoid this message, please link your program\n"
 					"\tstatically. See the Multi2Sim Guide for further details (www.multi2sim.org).\n",
-					fullpath_original, fullpath);
+					fullpath_original, full_path);
 				x86_isa_ctx->libopencl_open_attempt = 0;
 			}
 			else
@@ -171,18 +171,18 @@ void si_emu_libopencl_redirect(char *fullpath, int size)
 	if (!strcmp(filename, "libOpenCL.so") || !strncmp(filename, "libOpenCL.so.", 13))
 	{
 		/* Translate name in same path */
-		fullpath[length - 13] = '\0';
-		snprintf(buf, MAX_STRING_SIZE, "%s/libm2s-opencl.so", fullpath);
-		strncpy(fullpath, buf, size);
-		f = fopen(fullpath, "r");
+		full_path[length - 13] = '\0';
+		snprintf(buf, MAX_STRING_SIZE, "%s/libm2s-opencl.so", full_path);
+		strncpy(full_path, buf, size);
+		f = fopen(full_path, "r");
 
 		/* If attempt failed, translate name into current working directory */
 		if (!f)
 		{
 			if (!getcwd(buf, MAX_PATH_SIZE))
 				fatal("%s: cannot get current directory", __FUNCTION__);
-			sprintf(fullpath, "%s/libm2s-opencl.so", buf);
-			f = fopen(fullpath, "r");
+			sprintf(full_path, "%s/libm2s-opencl.so", buf);
+			f = fopen(full_path, "r");
 		}
 
 		/* End of attempts */
@@ -194,7 +194,7 @@ void si_emu_libopencl_redirect(char *fullpath, int size)
 				"\tredirected by Multi2Sim to its own provided library. Though this should work,\n"
 				"\tthe safest way to simulate an OpenCL program is by linking it initially with\n"
 				"\t'libm2s-opencl.so'. See the Multi2Sim Guide for further details (www.multi2sim.org).\n",
-				fullpath_original, fullpath);
+				fullpath_original, full_path);
 			x86_isa_ctx->libopencl_open_attempt = 0;
 		}
 		else
