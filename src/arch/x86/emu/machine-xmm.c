@@ -404,8 +404,8 @@ void x86_isa_movq_xmmm64_xmm_impl(struct x86_ctx_t *ctx)
 	uint8_t value[16];
 
 	memset(value, 0, 16);
-	if (x86_isa_inst.modrm_mod == 3)
-		memcpy(&x86_isa_regs->xmm[x86_isa_inst.modrm_rm], value, 16);
+	if (ctx->inst.modrm_mod == 3)
+		memcpy(&x86_isa_regs->xmm[ctx->inst.modrm_rm], value, 16);
 	x86_isa_load_xmm(ctx, value);
 	x86_isa_store_xmmm64(ctx, value);
 
@@ -419,7 +419,7 @@ void x86_isa_movss_xmm_xmmm32_impl(struct x86_ctx_t *ctx)
 
 	/* xmm <= m32: bits 127-32 of xmm set to 0.
 	 * xmm <= xmm: bits 127-32 unmodified */
-	if (x86_isa_inst.modrm_mod == 3)
+	if (ctx->inst.modrm_mod == 3)
 		x86_isa_load_xmm(ctx, value);
 	else
 		memset(value, 0, 16);
@@ -438,8 +438,8 @@ void x86_isa_movss_xmmm32_xmm_impl(struct x86_ctx_t *ctx)
 	 * m32 <= xmm: copy 32 bits to memory */
 	x86_isa_load_xmm(ctx, value);
 	memset(value + 4, 0, 12);
-	if (x86_isa_inst.modrm_mod == 3)
-		memcpy(&x86_isa_regs->xmm[x86_isa_inst.modrm_rm], value, 16);
+	if (ctx->inst.modrm_mod == 3)
+		memcpy(&x86_isa_regs->xmm[ctx->inst.modrm_rm], value, 16);
 	else
 		x86_isa_store_xmmm32(ctx, value);
 
@@ -602,7 +602,7 @@ void x86_isa_pshufb_xmm_xmmm128_impl(struct x86_ctx_t *ctx)
 void x86_isa_pshufd_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 {
 	uint32_t src[4], dst[4];
-	uint8_t imm = x86_isa_inst.imm.b;
+	uint8_t imm = ctx->inst.imm.b;
 
 	x86_isa_load_xmmm128(ctx, (uint8_t *) src);
 	dst[0] = src[imm & 3];
@@ -691,7 +691,7 @@ void x86_isa_shufps_xmm_xmmm128_imm8_impl(struct x86_ctx_t *ctx)
 
 	x86_isa_load_xmm(ctx, dest.as_uchar);
 	x86_isa_load_xmmm128(ctx, src.as_uchar);
-	imm = x86_isa_inst.imm.b;
+	imm = ctx->inst.imm.b;
 
 	dest.as_int[0] = dest.as_int[imm & 3];
 	dest.as_int[1] = dest.as_int[(imm >> 2) & 3];

@@ -463,7 +463,6 @@ extern struct x86_ctx_t *x86_isa_ctx;
 extern struct x86_regs_t *x86_isa_regs;
 extern struct mem_t *x86_isa_mem;
 extern char * x86_isa_inst_bytes;
-extern struct x86_inst_t x86_isa_inst;
 extern long long x86_isa_inst_count;
 
 #define x86_isa_call_debug(...) debug(x86_isa_call_debug_category, __VA_ARGS__)
@@ -535,21 +534,21 @@ void x86_isa_store_rm16(struct x86_ctx_t *ctx, unsigned short value);
 void x86_isa_store_rm32(struct x86_ctx_t *ctx, unsigned int value);
 void x86_isa_store_m64(struct x86_ctx_t *ctx, unsigned long long value);
 
-#define x86_isa_load_r8(ctx) x86_isa_load_reg(ctx, x86_isa_inst.reg + x86_reg_al)
-#define x86_isa_load_r16(ctx) x86_isa_load_reg(ctx, x86_isa_inst.reg + x86_reg_ax)
-#define x86_isa_load_r32(ctx) x86_isa_load_reg(ctx, x86_isa_inst.reg + x86_reg_eax)
-#define x86_isa_load_sreg(ctx) x86_isa_load_reg(ctx, x86_isa_inst.reg + x86_reg_es)
-#define x86_isa_store_r8(ctx, value) x86_isa_store_reg(ctx, x86_isa_inst.reg + x86_reg_al, value)
-#define x86_isa_store_r16(ctx, value) x86_isa_store_reg(ctx, x86_isa_inst.reg + x86_reg_ax, value)
-#define x86_isa_store_r32(ctx, value) x86_isa_store_reg(ctx, x86_isa_inst.reg + x86_reg_eax, value)
-#define x86_isa_store_sreg(ctx, value) x86_isa_store_reg(ctx, x86_isa_inst.reg + x86_reg_es, value)
+#define x86_isa_load_r8(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_reg_al)
+#define x86_isa_load_r16(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_reg_ax)
+#define x86_isa_load_r32(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_reg_eax)
+#define x86_isa_load_sreg(ctx) x86_isa_load_reg(ctx, ctx->inst.reg + x86_reg_es)
+#define x86_isa_store_r8(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_reg_al, value)
+#define x86_isa_store_r16(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_reg_ax, value)
+#define x86_isa_store_r32(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_reg_eax, value)
+#define x86_isa_store_sreg(ctx, value) x86_isa_store_reg(ctx, ctx->inst.reg + x86_reg_es, value)
 
-#define x86_isa_load_ir8(ctx) x86_isa_load_reg(ctx, x86_isa_inst.opindex + x86_reg_al)
-#define x86_isa_load_ir16(ctx) x86_isa_load_reg(ctx, x86_isa_inst.opindex + x86_reg_ax)
-#define x86_isa_load_ir32(ctx) x86_isa_load_reg(ctx, x86_isa_inst.opindex + x86_reg_eax)
-#define x86_isa_store_ir8(ctx, value) x86_isa_store_reg(ctx, x86_isa_inst.opindex + x86_reg_al, value)
-#define x86_isa_store_ir16(ctx, value) x86_isa_store_reg(ctx, x86_isa_inst.opindex + x86_reg_ax, value)
-#define x86_isa_store_ir32(ctx, value) x86_isa_store_reg(ctx, x86_isa_inst.opindex + x86_reg_eax, value)
+#define x86_isa_load_ir8(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_reg_al)
+#define x86_isa_load_ir16(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_reg_ax)
+#define x86_isa_load_ir32(ctx) x86_isa_load_reg(ctx, ctx->inst.opindex + x86_reg_eax)
+#define x86_isa_store_ir8(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_reg_al, value)
+#define x86_isa_store_ir16(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_reg_ax, value)
+#define x86_isa_store_ir32(ctx, value) x86_isa_store_reg(ctx, ctx->inst.opindex + x86_reg_eax, value)
 
 void x86_isa_load_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value);
 void x86_isa_store_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value);
@@ -845,8 +844,11 @@ struct x86_ctx_t
 
 	/* Instruction pointers */
 	unsigned int last_eip;  /* Address of last emulated instruction */
-	unsigned int curr_eip;  /* Address of currently emulating instruction */
+	unsigned int curr_eip;  /* Address of currently emulated instruction */
 	unsigned int target_eip;  /* Target address for branch, even if not taken */
+
+	/* Currently emulated instruction */
+	struct x86_inst_t inst;
 
 	/* For emulation of string operations */
 	unsigned int str_op_esi;  /* Initial value for register 'esi' in string operation */

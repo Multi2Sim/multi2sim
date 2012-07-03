@@ -42,7 +42,7 @@
 void x86_isa_##stdop##_al_imm8_impl(struct x86_ctx_t *ctx) \
 { \
 	uint8_t al = x86_isa_load_reg(ctx, x86_reg_al); \
-	uint8_t imm8 = x86_isa_inst.imm.b; \
+	uint8_t imm8 = ctx->inst.imm.b; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -72,7 +72,7 @@ void x86_isa_##stdop##_al_imm8_impl(struct x86_ctx_t *ctx) \
 void x86_isa_##stdop##_ax_imm16_impl(struct x86_ctx_t *ctx) \
 { \
 	uint16_t ax = x86_isa_load_reg(ctx, x86_reg_ax); \
-	uint16_t imm16 = x86_isa_inst.imm.w; \
+	uint16_t imm16 = ctx->inst.imm.w; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -102,7 +102,7 @@ void x86_isa_##stdop##_ax_imm16_impl(struct x86_ctx_t *ctx) \
 void x86_isa_##stdop##_eax_imm32_impl(struct x86_ctx_t *ctx) \
 { \
 	uint32_t eax = x86_isa_load_reg(ctx, x86_reg_eax); \
-	uint32_t imm32 = x86_isa_inst.imm.d; \
+	uint32_t imm32 = ctx->inst.imm.d; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -132,7 +132,7 @@ void x86_isa_##stdop##_eax_imm32_impl(struct x86_ctx_t *ctx) \
 void x86_isa_##stdop##_rm8_imm8_impl(struct x86_ctx_t *ctx) \
 { \
 	uint8_t rm8 = x86_isa_load_rm8(ctx); \
-	uint8_t imm8 = x86_isa_inst.imm.b; \
+	uint8_t imm8 = ctx->inst.imm.b; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -162,7 +162,7 @@ void x86_isa_##stdop##_rm8_imm8_impl(struct x86_ctx_t *ctx) \
 void x86_isa_##stdop##_rm16_imm16_impl(struct x86_ctx_t *ctx) \
 { \
 	uint16_t rm16 = x86_isa_load_rm16(ctx); \
-	uint16_t imm16 = x86_isa_inst.imm.w; \
+	uint16_t imm16 = ctx->inst.imm.w; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -192,7 +192,7 @@ void x86_isa_##stdop##_rm16_imm16_impl(struct x86_ctx_t *ctx) \
 void x86_isa_##stdop##_rm32_imm32_impl(struct x86_ctx_t *ctx) \
 { \
 	uint32_t rm32 = x86_isa_load_rm32(ctx); \
-	uint32_t imm32 = x86_isa_inst.imm.d; \
+	uint32_t imm32 = ctx->inst.imm.d; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -222,7 +222,7 @@ void x86_isa_##stdop##_rm32_imm32_impl(struct x86_ctx_t *ctx) \
 void x86_isa_##stdop##_rm16_imm8_impl(struct x86_ctx_t *ctx) \
 { \
 	uint16_t rm16 = x86_isa_load_rm16(ctx); \
-	uint16_t imm8 = (int8_t) x86_isa_inst.imm.b; \
+	uint16_t imm8 = (int8_t) ctx->inst.imm.b; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \
@@ -252,7 +252,7 @@ void x86_isa_##stdop##_rm16_imm8_impl(struct x86_ctx_t *ctx) \
 void x86_isa_##stdop##_rm32_imm8_impl(struct x86_ctx_t *ctx) \
 { \
 	uint32_t rm32 = x86_isa_load_rm32(ctx); \
-	uint32_t imm8 = (int8_t) x86_isa_inst.imm.b; \
+	uint32_t imm8 = (int8_t) ctx->inst.imm.b; \
 	unsigned long flags = x86_isa_regs->eflags; \
 	__X86_ISA_ASM_START__ \
 	asm volatile ( \

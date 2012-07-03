@@ -157,7 +157,7 @@ void x86_isa_fadd_st0_sti_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -186,7 +186,7 @@ void x86_isa_fadd_sti_st0_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -202,7 +202,7 @@ void x86_isa_fadd_sti_st0_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
 	x86_isa_store_fpu_code(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_add, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
@@ -248,7 +248,7 @@ void x86_isa_fchs_impl(struct x86_ctx_t *ctx)
 void x86_isa_fcmovb_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	uint8_t sti[10];
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 	if (x86_isa_get_flag(ctx, x86_flag_cf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
@@ -259,7 +259,7 @@ void x86_isa_fcmovb_st0_sti_impl(struct x86_ctx_t *ctx)
 void x86_isa_fcmove_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	uint8_t sti[10];
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 	if (x86_isa_get_flag(ctx, x86_flag_zf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
@@ -270,7 +270,7 @@ void x86_isa_fcmove_st0_sti_impl(struct x86_ctx_t *ctx)
 void x86_isa_fcmovbe_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	uint8_t sti[10];
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 	if (x86_isa_get_flag(ctx, x86_flag_cf) || x86_isa_get_flag(ctx, x86_flag_zf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
@@ -281,7 +281,7 @@ void x86_isa_fcmovbe_st0_sti_impl(struct x86_ctx_t *ctx)
 void x86_isa_fcmovu_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	uint8_t sti[10];
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 	if (x86_isa_get_flag(ctx, x86_flag_pf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
@@ -292,7 +292,7 @@ void x86_isa_fcmovu_st0_sti_impl(struct x86_ctx_t *ctx)
 void x86_isa_fcmovnb_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	uint8_t sti[10];
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 	if (!x86_isa_get_flag(ctx, x86_flag_cf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
@@ -303,7 +303,7 @@ void x86_isa_fcmovnb_st0_sti_impl(struct x86_ctx_t *ctx)
 void x86_isa_fcmovne_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	uint8_t sti[10];
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 	if (!x86_isa_get_flag(ctx, x86_flag_zf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
@@ -314,7 +314,7 @@ void x86_isa_fcmovne_st0_sti_impl(struct x86_ctx_t *ctx)
 void x86_isa_fcmovnbe_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	uint8_t sti[10];
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 	if (!x86_isa_get_flag(ctx, x86_flag_cf) && !x86_isa_get_flag(ctx, x86_flag_zf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
@@ -325,7 +325,7 @@ void x86_isa_fcmovnbe_st0_sti_impl(struct x86_ctx_t *ctx)
 void x86_isa_fcmovnu_st0_sti_impl(struct x86_ctx_t *ctx)
 {
 	uint8_t sti[10];
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 	if (!x86_isa_get_flag(ctx, x86_flag_pf))
 		x86_isa_store_fpu(ctx, 0, sti);
 
@@ -393,7 +393,7 @@ void x86_isa_fcom_sti_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -478,7 +478,7 @@ void x86_isa_fcomi_st0_sti_impl(struct x86_ctx_t *ctx)
 	unsigned long flags = x86_isa_regs->eflags;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -516,7 +516,7 @@ void x86_isa_fucomi_st0_sti_impl(struct x86_ctx_t *ctx)
 	unsigned long flags = x86_isa_regs->eflags;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -641,7 +641,7 @@ void x86_isa_fdiv_st0_sti_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -670,7 +670,7 @@ void x86_isa_fdiv_sti_st0_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -686,7 +686,7 @@ void x86_isa_fdiv_sti_st0_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
 	x86_isa_store_fpu_code(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_div, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
@@ -768,7 +768,7 @@ void x86_isa_fdivr_st0_sti_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -797,7 +797,7 @@ void x86_isa_fdivr_sti_st0_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -813,7 +813,7 @@ void x86_isa_fdivr_sti_st0_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
 	x86_isa_store_fpu_code(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_div, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
@@ -1167,7 +1167,7 @@ void x86_isa_fld_m80_impl(struct x86_ctx_t *ctx)
 void x86_isa_fld_sti_impl(struct x86_ctx_t *ctx)
 {
 	uint8_t sti[10];
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 	x86_isa_push_fpu(ctx, sti);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_sti, 0, 0, x86_dep_fpaux, 0, 0, 0);
@@ -1270,7 +1270,7 @@ void x86_isa_fmul_st0_sti_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1299,7 +1299,7 @@ void x86_isa_fmul_sti_st0_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1315,7 +1315,7 @@ void x86_isa_fmul_sti_st0_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
 	x86_isa_store_fpu_code(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_mult, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
@@ -1641,7 +1641,7 @@ void x86_isa_fst_sti_impl(struct x86_ctx_t *ctx)
 	uint8_t st0[10];
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_store_fpu(ctx, x86_isa_inst.opindex, st0);
+	x86_isa_store_fpu(ctx, ctx->inst.opindex, st0);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_st0, 0, 0, x86_dep_sti, 0, 0, 0);
 }
@@ -1761,7 +1761,7 @@ void x86_isa_fsub_st0_sti_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1790,7 +1790,7 @@ void x86_isa_fsub_sti_st0_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1806,7 +1806,7 @@ void x86_isa_fsub_sti_st0_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
 	x86_isa_store_fpu_code(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sub, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
@@ -1888,7 +1888,7 @@ void x86_isa_fsubr_st0_sti_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1917,7 +1917,7 @@ void x86_isa_fsubr_sti_st0_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1933,7 +1933,7 @@ void x86_isa_fsubr_sti_st0_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_store_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_store_fpu(ctx, ctx->inst.opindex, sti);
 	x86_isa_store_fpu_code(ctx, status);
 
 	x86_uinst_new(ctx, x86_uinst_fp_sub, x86_dep_st0, x86_dep_sti, 0, x86_dep_sti, 0, 0, 0);
@@ -1999,7 +1999,7 @@ void x86_isa_fucom_sti_impl(struct x86_ctx_t *ctx)
 	uint16_t status;
 
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -2090,9 +2090,9 @@ void x86_isa_fxch_sti_impl(struct x86_ctx_t *ctx)
 {
 	uint8_t st0[10], sti[10];
 	x86_isa_load_fpu(ctx, 0, st0);
-	x86_isa_load_fpu(ctx, x86_isa_inst.opindex, sti);
+	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
 	x86_isa_store_fpu(ctx, 0, sti);
-	x86_isa_store_fpu(ctx, x86_isa_inst.opindex, st0);
+	x86_isa_store_fpu(ctx, ctx->inst.opindex, st0);
 
 	x86_uinst_new(ctx, x86_uinst_fp_move, x86_dep_st0, x86_dep_sti, 0, x86_dep_st0, x86_dep_sti, 0, 0);
 }
