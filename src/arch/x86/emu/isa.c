@@ -36,6 +36,8 @@ int x86_isa_function_level;
 
 ////////////////
 #define x86_isa_ctx __COMPILATION_ERROR__
+#define x86_isa_regs __COMPILATION_ERROR__
+#define x86_isa_mem __COMPILATION_ERROR__
 ////////////////
 
 int x86_isa_call_debug_category;
@@ -162,9 +164,14 @@ void x86_isa_inst_stat_reset(void)
 /* Trace call debugging */
 static void x86_isa_debug_call(struct x86_ctx_t *ctx)
 {
-	int i;
-	struct elf_symbol_t *from, *to;
+	struct elf_symbol_t *from;
+	struct elf_symbol_t *to;
+
+	struct x86_loader_t *loader = ctx->loader;
+	struct x86_regs_t *regs = ctx->regs;
+
 	char *action;
+	int i;
 
 	/* Do nothing on speculative mode */
 	if (x86_isa_spec_mode)
@@ -181,8 +188,8 @@ static void x86_isa_debug_call(struct x86_ctx_t *ctx)
 	/* Debug it */
 	for (i = 0; i < x86_isa_function_level; i++)
 		x86_isa_call_debug("| ");
-	from = elf_symbol_get_by_address(ctx->loader->elf_file, x86_isa_eip, NULL);
-	to = elf_symbol_get_by_address(ctx->loader->elf_file, x86_isa_regs->eip, NULL);
+	from = elf_symbol_get_by_address(loader->elf_file, x86_isa_eip, NULL);
+	to = elf_symbol_get_by_address(loader->elf_file, regs->eip, NULL);
 	if (from)
 		x86_isa_call_debug("%s", from->name);
 	else
@@ -191,7 +198,7 @@ static void x86_isa_debug_call(struct x86_ctx_t *ctx)
 	if (to)
 		x86_isa_call_debug("%s", to->name);
 	else
-		x86_isa_call_debug("0x%x", x86_isa_regs->eip);
+		x86_isa_call_debug("0x%x", regs->eip);
 	x86_isa_call_debug("\n");
 
 	/* Change current level */
@@ -248,23 +255,27 @@ static struct
 };
 
 
-void x86_isa_set_flag(enum x86_flag_t flag)
+void x86_isa_set_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag)
 {
-	x86_isa_regs->eflags = SETBIT32(x86_isa_regs->eflags, flag);
+	struct x86_regs_t *regs = ctx->regs;
+
+	regs->eflags = SETBIT32(regs->eflags, flag);
 }
 
 
-void x86_isa_clear_flag(enum x86_flag_t flag)
+void x86_isa_clear_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag)
 {
-	x86_isa_regs->eflags = CLEARBIT32(x86_isa_regs->eflags, flag);
+	struct x86_regs_t *regs = ctx->regs;
+
+	regs->eflags = CLEARBIT32(regs->eflags, flag);
 }
 
 
-int x86_isa_get_flag(enum x86_flag_t flag)
+int x86_isa_get_flag(struct x86_ctx_t *ctx, enum x86_flag_t flag)
 {
-	int ret;
-	ret = GETBIT32(x86_isa_regs->eflags, flag) > 0;
-	return ret;
+	struct x86_regs_t *regs = ctx->regs;
+
+	return GETBIT32(regs->eflags, flag) > 0;
 }
 
 
@@ -276,22 +287,26 @@ static unsigned int x86_isa_bit_mask[5] = { 0, 0xff, 0xffff, 0, 0xffffffff};
 
 unsigned int x86_isa_load_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int mask;
 	unsigned int *reg_ptr;
 
 	mask = x86_isa_bit_mask[x86_isa_reg_info[reg].size];
-	reg_ptr = (void *) x86_isa_regs + x86_isa_reg_info[reg].shift;
+	reg_ptr = (void *) regs + x86_isa_reg_info[reg].shift;
 	return *reg_ptr & mask;
 }
 
 
 void x86_isa_store_reg(struct x86_ctx_t *ctx, enum x86_reg_t reg, unsigned int value)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int mask;
 	unsigned int *reg_ptr;
 
 	mask = x86_isa_bit_mask[x86_isa_reg_info[reg].size];
-	reg_ptr = (void *) x86_isa_regs + x86_isa_reg_info[reg].shift;
+	reg_ptr = (void *) regs + x86_isa_reg_info[reg].shift;
 	*reg_ptr = (*reg_ptr & ~mask) | (value & mask);
 	x86_isa_inst_debug("  %s <- 0x%x", x86_reg_name[reg], value);
 }
@@ -489,6 +504,7 @@ void x86_isa_store_m64(struct x86_ctx_t *ctx, unsigned long long value)
 
 void x86_isa_load_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value)
 {
+	struct x86_regs_t *regs = ctx->regs;
 	int eff_index;
 
 	if (index < 0 || index >= 8)
@@ -497,14 +513,14 @@ void x86_isa_load_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value)
 		return;
 	}
 
-	eff_index = (x86_isa_regs->fpu_top + index) % 8;
-	if (!x86_isa_regs->fpu_stack[eff_index].valid)
+	eff_index = (regs->fpu_top + index) % 8;
+	if (!regs->fpu_stack[eff_index].valid)
 	{
 		x86_isa_error(ctx, "%s: invalid FPU stack entry", __FUNCTION__);
 		return;
 	}
 
-	memcpy(value, x86_isa_regs->fpu_stack[eff_index].value, 10);
+	memcpy(value, regs->fpu_stack[eff_index].value, 10);
 	if (debug_status(x86_isa_inst_debug_category))
 		x86_isa_inst_debug("  st(%d)=%g", index, x86_isa_extended_to_double(value));
 }
@@ -512,6 +528,9 @@ void x86_isa_load_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value)
 
 void x86_isa_store_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
+	/* Check valid index */
 	if (index < 0 || index >= 8)
 	{
 		x86_isa_error(ctx, "%s: invalid value for 'index'", __FUNCTION__);
@@ -519,15 +538,15 @@ void x86_isa_store_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value)
 	}
 
 	/* Get index */
-	index = (x86_isa_regs->fpu_top + index) % 8;
-	if (!x86_isa_regs->fpu_stack[index].valid)
+	index = (regs->fpu_top + index) % 8;
+	if (!regs->fpu_stack[index].valid)
 	{
 		x86_isa_error(ctx, "%s: invalid FPU stack entry", __FUNCTION__);
 		return;
 	}
 
 	/* Store value */
-	memcpy(x86_isa_regs->fpu_stack[index].value, value, 10);
+	memcpy(regs->fpu_stack[index].value, value, 10);
 	if (debug_status(x86_isa_inst_debug_category))
 		x86_isa_inst_debug("  st(%d) <- %g", index, x86_isa_extended_to_double(value));
 }
@@ -535,25 +554,31 @@ void x86_isa_store_fpu(struct x86_ctx_t *ctx, int index, unsigned char *value)
 
 void x86_isa_push_fpu(struct x86_ctx_t *ctx, unsigned char *value)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
+	/* Debug */
 	if (debug_status(x86_isa_inst_debug_category))
 		x86_isa_inst_debug("  st(0) <- %g (pushed)", x86_isa_extended_to_double(value));
 
 	/* Get stack top */
-	x86_isa_regs->fpu_top = (x86_isa_regs->fpu_top + 7) % 8;
-	if (x86_isa_regs->fpu_stack[x86_isa_regs->fpu_top].valid)
+	regs->fpu_top = (regs->fpu_top + 7) % 8;
+	if (regs->fpu_stack[regs->fpu_top].valid)
 	{
 		x86_isa_error(ctx, "%s: unexpected valid entry", __FUNCTION__);
 		return;
 	}
 
-	x86_isa_regs->fpu_stack[x86_isa_regs->fpu_top].valid = 1;
-	memcpy(x86_isa_regs->fpu_stack[x86_isa_regs->fpu_top].value, value, 10);
+	regs->fpu_stack[regs->fpu_top].valid = 1;
+	memcpy(regs->fpu_stack[regs->fpu_top].value, value, 10);
 }
 
 
 void x86_isa_pop_fpu(struct x86_ctx_t *ctx, unsigned char *value)
 {
-	if (!x86_isa_regs->fpu_stack[x86_isa_regs->fpu_top].valid)
+	struct x86_regs_t *regs = ctx->regs;
+
+	/* Check valid entry */
+	if (!regs->fpu_stack[regs->fpu_top].valid)
 	{
 		x86_isa_error(ctx, "%s: unexpected invalid entry", __FUNCTION__);
 		return;
@@ -561,12 +586,12 @@ void x86_isa_pop_fpu(struct x86_ctx_t *ctx, unsigned char *value)
 
 	if (value)
 	{
-		memcpy(value, x86_isa_regs->fpu_stack[x86_isa_regs->fpu_top].value, 10);
+		memcpy(value, regs->fpu_stack[regs->fpu_top].value, 10);
 		if (debug_status(x86_isa_inst_debug_category))
 			x86_isa_inst_debug("  st(0) -> %g (popped)", x86_isa_extended_to_double(value));
 	}
-	x86_isa_regs->fpu_stack[x86_isa_regs->fpu_top].valid = 0;
-	x86_isa_regs->fpu_top = (x86_isa_regs->fpu_top + 1) % 8;
+	regs->fpu_stack[regs->fpu_top].valid = 0;
+	regs->fpu_top = (regs->fpu_top + 1) % 8;
 }
 
 
@@ -653,11 +678,13 @@ void x86_isa_store_float(struct x86_ctx_t *ctx, float value)
  * the 'code' register. */
 void x86_isa_store_fpu_code(struct x86_ctx_t *ctx, unsigned short status)
 {
-	x86_isa_regs->fpu_code = 0;
-	if (GETBIT32(status, 14))
-		x86_isa_regs->fpu_code |= 0x8;
+	struct x86_regs_t *regs = ctx->regs;
 
-	x86_isa_regs->fpu_code |= (status >> 8) & 0x7;
+	regs->fpu_code = 0;
+	if (GETBIT32(status, 14))
+		regs->fpu_code |= 0x8;
+
+	regs->fpu_code |= (status >> 8) & 0x7;
 }
 
 
@@ -665,18 +692,19 @@ void x86_isa_store_fpu_code(struct x86_ctx_t *ctx, unsigned short status)
  * 'code' fields. */
 unsigned short x86_isa_load_fpu_status(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
 	unsigned short status = 0;
 
-	if (x86_isa_regs->fpu_top < 0 || x86_isa_regs->fpu_top >= 8)
+	if (regs->fpu_top < 0 || regs->fpu_top >= 8)
 	{
 		x86_isa_error(ctx, "%s: wrong FPU stack top", __FUNCTION__);
 		return 0;
 	}
 
-	status |= x86_isa_regs->fpu_top << 11;
-	if (GETBIT32(x86_isa_regs->fpu_code, 3))
+	status |= regs->fpu_top << 11;
+	if (GETBIT32(regs->fpu_code, 3))
 		status |= 0x4000;
-	status |= (x86_isa_regs->fpu_code & 0x7) << 8;
+	status |= (regs->fpu_code & 0x7) << 8;
 	return status;
 }
 
@@ -709,22 +737,28 @@ void x86_isa_dump_xmm(struct x86_ctx_t *ctx, unsigned char *value, FILE *f)
 
 void x86_isa_load_xmm(struct x86_ctx_t *ctx, unsigned char *value)
 {
-	memcpy(value, &x86_isa_regs->xmm[x86_isa_inst.modrm_reg], 16);
+	struct x86_regs_t *regs = ctx->regs;
+
+	memcpy(value, &regs->xmm[x86_isa_inst.modrm_reg], 16);
 }
 
 
 void x86_isa_store_xmm(struct x86_ctx_t *ctx, unsigned char *value)
 {
-	memcpy(&x86_isa_regs->xmm[x86_isa_inst.modrm_reg], value, 16);
+	struct x86_regs_t *regs = ctx->regs;
+
+	memcpy(&regs->xmm[x86_isa_inst.modrm_reg], value, 16);
 }
 
 
 /* Load a 32-bit value into the lower 32 bits of 'value' */
 void x86_isa_load_xmmm32(struct x86_ctx_t *ctx, unsigned char *value)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	if (x86_isa_inst.modrm_mod == 3)
 	{
-		memcpy(value, x86_isa_regs->xmm[x86_isa_inst.modrm_rm], 4);
+		memcpy(value, regs->xmm[x86_isa_inst.modrm_rm], 4);
 		return;
 	}
 	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 4, value);
@@ -734,9 +768,11 @@ void x86_isa_load_xmmm32(struct x86_ctx_t *ctx, unsigned char *value)
 /* Store the low 32 bits of 'value' into an XMM register or memory */
 void x86_isa_store_xmmm32(struct x86_ctx_t *ctx, unsigned char *value)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	if (x86_isa_inst.modrm_mod == 3)
 	{
-		memcpy(&x86_isa_regs->xmm[x86_isa_inst.modrm_rm], value, 4);
+		memcpy(&regs->xmm[x86_isa_inst.modrm_rm], value, 4);
 		return;
 	}
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 4, value);
@@ -747,9 +783,11 @@ void x86_isa_store_xmmm32(struct x86_ctx_t *ctx, unsigned char *value)
  * If 'value' is a 128-bit array, its upper 64 bits will not be initialized. */
 void x86_isa_load_xmmm64(struct x86_ctx_t *ctx, unsigned char *value)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	if (x86_isa_inst.modrm_mod == 0x03)
 	{
-		memcpy(value, &x86_isa_regs->xmm[x86_isa_inst.modrm_rm], 8);
+		memcpy(value, &regs->xmm[x86_isa_inst.modrm_rm], 8);
 		return;
 	}
 	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 8, value);
@@ -759,9 +797,11 @@ void x86_isa_load_xmmm64(struct x86_ctx_t *ctx, unsigned char *value)
 /* Store the low 64 bits of 'value' into an XMM register or memory */
 void x86_isa_store_xmmm64(struct x86_ctx_t *ctx, unsigned char *value)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	if (x86_isa_inst.modrm_mod == 0x03)
 	{
-		memcpy(&x86_isa_regs->xmm[x86_isa_inst.modrm_rm], value, 8);
+		memcpy(&regs->xmm[x86_isa_inst.modrm_rm], value, 8);
 		return;
 	}
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 8, value);
@@ -771,9 +811,11 @@ void x86_isa_store_xmmm64(struct x86_ctx_t *ctx, unsigned char *value)
 /* Load a 128-bit value into XMM register */
 void x86_isa_load_xmmm128(struct x86_ctx_t *ctx, unsigned char *value)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	if (x86_isa_inst.modrm_mod == 3)
 	{
-		memcpy(value, x86_isa_regs->xmm[x86_isa_inst.modrm_rm], 16);
+		memcpy(value, regs->xmm[x86_isa_inst.modrm_rm], 16);
 		return;
 	}
 	x86_isa_mem_read(ctx, x86_isa_effective_address(ctx), 16, value);
@@ -783,9 +825,11 @@ void x86_isa_load_xmmm128(struct x86_ctx_t *ctx, unsigned char *value)
 /* Store a 128-bit value into an XMM register of 128-bit memory location. */
 void x86_isa_store_xmmm128(struct x86_ctx_t *ctx, unsigned char *value)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	if (x86_isa_inst.modrm_mod == 3)
 	{
-		memcpy(&x86_isa_regs->xmm[x86_isa_inst.modrm_rm], value, 16);
+		memcpy(&regs->xmm[x86_isa_inst.modrm_rm], value, 16);
 		return;
 	}
 	x86_isa_mem_write(ctx, x86_isa_effective_address(ctx), 16, value);
@@ -822,6 +866,8 @@ void x86_isa_done(void)
 
 void x86_isa_execute_inst(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	/* Debug instruction */
 	if (debug_status(x86_isa_inst_debug_category))
 	{
@@ -838,7 +884,7 @@ void x86_isa_execute_inst(struct x86_ctx_t *ctx)
 
 	/* Execute */
 	x86_isa_target = 0;
-	x86_isa_regs->eip = x86_isa_regs->eip + x86_isa_inst.size;
+	regs->eip = regs->eip + x86_isa_inst.size;
 	if (x86_isa_inst.opcode)
 		x86_isa_inst_func[x86_isa_inst.opcode](ctx);
 	ctx->last_eip = x86_isa_eip;

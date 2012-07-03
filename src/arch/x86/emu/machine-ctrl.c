@@ -37,11 +37,11 @@
 #define assert __COMPILATION_ERROR__
 
 
-#define CF x86_isa_get_flag(x86_flag_cf)
-#define ZF x86_isa_get_flag(x86_flag_zf)
-#define SF x86_isa_get_flag(x86_flag_sf)
-#define OF x86_isa_get_flag(x86_flag_of)
-#define PF x86_isa_get_flag(x86_flag_pf)
+#define CF x86_isa_get_flag(ctx, x86_flag_cf)
+#define ZF x86_isa_get_flag(ctx, x86_flag_zf)
+#define SF x86_isa_get_flag(ctx, x86_flag_sf)
+#define OF x86_isa_get_flag(ctx, x86_flag_of)
+#define PF x86_isa_get_flag(ctx, x86_flag_pf)
 
 
 #define cc_a	(!CF && !ZF)
