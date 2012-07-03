@@ -387,7 +387,7 @@ static int x86_uinst_add_idep(struct x86_uinst_t *uinst, enum x86_dep_t dep)
 }
 
 
-static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
+static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
 {
 	struct x86_uinst_t *new_uinst;
 	int mem_dep_size;
@@ -411,7 +411,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
 			{
 				uinst->opcode = x86_uinst_store;
 				uinst->dep[index] = x86_dep_none;
-				uinst->address = x86_isa_effective_address();
+				uinst->address = x86_isa_effective_address(ctx);
 				uinst->size = mem_dep_size;
 				return;
 			}
@@ -422,7 +422,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
 		new_uinst->opcode = x86_uinst_store;
 		new_uinst->idep[0] = x86_dep_ea;
 		new_uinst->idep[1] = x86_dep_data;
-		new_uinst->address = x86_isa_effective_address();
+		new_uinst->address = x86_isa_effective_address(ctx);
 		new_uinst->size = mem_dep_size;
 		list_add(x86_uinst_list, new_uinst);
 
@@ -436,7 +436,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index)
 }
 
 
-static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index)
+static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
 {
 	struct x86_uinst_t *new_uinst;
 	int mem_dep_size;
@@ -458,7 +458,7 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index)
 		{
 			uinst->opcode = x86_uinst_load;
 			uinst->dep[index] = x86_dep_ea;
-			uinst->address = x86_isa_effective_address();
+			uinst->address = x86_isa_effective_address(ctx);
 			uinst->size = mem_dep_size;
 			return;
 		}
@@ -468,7 +468,7 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index)
 		new_uinst->opcode = x86_uinst_load;
 		new_uinst->idep[0] = x86_dep_ea;
 		new_uinst->odep[0] = x86_dep_data;
-		new_uinst->address = x86_isa_effective_address();
+		new_uinst->address = x86_isa_effective_address(ctx);
 		new_uinst->size = mem_dep_size;
 		list_add(x86_uinst_list, new_uinst);
 
@@ -530,7 +530,8 @@ void x86_uinst_free(struct x86_uinst_t *uinst)
 }
 
 
-void __x86_uinst_new_mem(enum x86_uinst_opcode_t opcode, uint32_t address, int size,
+void __x86_uinst_new_mem(struct x86_ctx_t *ctx,
+	enum x86_uinst_opcode_t opcode, uint32_t address, int size,
 	enum x86_dep_t idep0, enum x86_dep_t idep1, enum x86_dep_t idep2,
 	enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
 	enum x86_dep_t odep3)
@@ -561,22 +562,23 @@ void __x86_uinst_new_mem(enum x86_uinst_opcode_t opcode, uint32_t address, int s
 	
 	/* Parse input dependences */
 	for (i = 0; i < X86_UINST_MAX_IDEPS; i++)
-		x86_uinst_parse_idep(uinst, i);
+		x86_uinst_parse_idep(uinst, i, ctx);
 	
 	/* Add micro-instruction */
 	list_add(x86_uinst_list, uinst);
 	
 	/* Parse output dependences */
 	for (i = 0; i < X86_UINST_MAX_ODEPS; i++)
-		x86_uinst_parse_odep(uinst, i + X86_UINST_MAX_IDEPS);
+		x86_uinst_parse_odep(uinst, i + X86_UINST_MAX_IDEPS, ctx);
 }
 
 
-void __x86_uinst_new(enum x86_uinst_opcode_t opcode, enum x86_dep_t idep0, enum x86_dep_t idep1,
+void __x86_uinst_new(struct x86_ctx_t *ctx,
+	enum x86_uinst_opcode_t opcode, enum x86_dep_t idep0, enum x86_dep_t idep1,
 	enum x86_dep_t idep2, enum x86_dep_t odep0, enum x86_dep_t odep1, enum x86_dep_t odep2,
 	enum x86_dep_t odep3)
 {
-	__x86_uinst_new_mem(opcode, 0, 0, idep0, idep1, idep2,
+	__x86_uinst_new_mem(ctx, opcode, 0, 0, idep0, idep1, idep2,
 		odep0, odep1, odep2, odep3);
 }
 

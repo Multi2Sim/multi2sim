@@ -63,51 +63,51 @@
 
 
 #define op_setcc(cc, idep1, idep2) \
-void x86_isa_set##cc##_rm8_impl() \
+void x86_isa_set##cc##_rm8_impl(struct x86_ctx_t *ctx) \
 { \
 	if (cc_##cc) \
-		x86_isa_store_rm8(1); \
+		x86_isa_store_rm8(ctx, 1); \
 	else \
-		x86_isa_store_rm8(0); \
-	x86_uinst_new(x86_uinst_move, idep1, idep2, 0, x86_dep_rm8, 0, 0, 0); \
+		x86_isa_store_rm8(ctx, 0); \
+	x86_uinst_new(ctx, x86_uinst_move, idep1, idep2, 0, x86_dep_rm8, 0, 0, 0); \
 }
 
 
 #define op_jcc_rel8(cc, idep1, idep2) \
-void x86_isa_j##cc##_rel8_impl() \
+void x86_isa_j##cc##_rel8_impl(struct x86_ctx_t *ctx) \
 { \
 	x86_isa_target = x86_isa_regs->eip + (int8_t) x86_isa_inst.imm.b; \
 	if (cc_##cc) \
 		x86_isa_regs->eip = x86_isa_target; \
-	x86_uinst_new(x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \
+	x86_uinst_new(ctx, x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \
 }
 
 
 #define op_jcc_rel32(cc, idep1, idep2) \
-void x86_isa_j##cc##_rel32_impl() \
+void x86_isa_j##cc##_rel32_impl(struct x86_ctx_t *ctx) \
 { \
 	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.d; \
 	if (cc_##cc) \
 		x86_isa_regs->eip = x86_isa_target; \
-	x86_uinst_new(x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \
+	x86_uinst_new(ctx, x86_uinst_branch, idep1, idep2, 0, 0, 0, 0, 0); \
 }
 
 
 #define op_cmov_r16_rm16(cc, idep1, idep2) \
-void x86_isa_cmov##cc##_r16_rm16_impl() \
+void x86_isa_cmov##cc##_r16_rm16_impl(struct x86_ctx_t *ctx) \
 { \
 	if (cc_##cc) \
-		x86_isa_store_r16(x86_isa_load_rm16()); \
-	x86_uinst_new(x86_uinst_move, idep1, idep2, x86_dep_rm16, x86_dep_r16, 0, 0, 0); \
+		x86_isa_store_r16(ctx, x86_isa_load_rm16(ctx)); \
+	x86_uinst_new(ctx, x86_uinst_move, idep1, idep2, x86_dep_rm16, x86_dep_r16, 0, 0, 0); \
 }
 
 
 #define op_cmov_r32_rm32(cc, idep1, idep2) \
-void x86_isa_cmov##cc##_r32_rm32_impl() \
+void x86_isa_cmov##cc##_r32_rm32_impl(struct x86_ctx_t *ctx) \
 { \
 	if (cc_##cc) \
-		x86_isa_store_r32(x86_isa_load_rm32()); \
-	x86_uinst_new(x86_uinst_move, idep1, idep2, x86_dep_rm32, x86_dep_r32, 0, 0, 0); \
+		x86_isa_store_r32(ctx, x86_isa_load_rm32(ctx)); \
+	x86_uinst_new(ctx, x86_uinst_move, idep1, idep2, x86_dep_rm32, x86_dep_r32, 0, 0, 0); \
 }
 
 
@@ -137,20 +137,20 @@ op_cc_all(cmov_r16_rm16)
 op_cc_all(cmov_r32_rm32)
 
 
-void x86_isa_jecxz_rel8_impl()
+void x86_isa_jecxz_rel8_impl(struct x86_ctx_t *ctx)
 {
 	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.b;
-	if (!x86_isa_load_reg(x86_reg_ecx))
+	if (!x86_isa_load_reg(ctx, x86_reg_ecx))
 		x86_isa_regs->eip = x86_isa_target;
-	x86_uinst_new(x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
 
 
-void x86_isa_jcxz_rel8_impl()
+void x86_isa_jcxz_rel8_impl(struct x86_ctx_t *ctx)
 {
 	x86_isa_target = x86_isa_regs->eip + x86_isa_inst.imm.b;
-	if (!x86_isa_load_reg(x86_reg_cx))
+	if (!x86_isa_load_reg(ctx, x86_reg_cx))
 		x86_isa_regs->eip = x86_isa_target;
-	x86_uinst_new(x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new(ctx, x86_uinst_branch, x86_dep_ecx, 0, 0, 0, 0, 0, 0);
 }
 

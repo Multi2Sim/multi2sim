@@ -461,7 +461,7 @@ static void save_thread(struct x86_ctx_t *ctx)
 {
 	cfg_push_unique();
 
-	if (x86_ctx_get_status(ctx, x86_ctx_specmode)) {
+	if (x86_ctx_get_status(ctx, x86_ctx_spec_mode)) {
 		save_regs(ctx->backup_regs);
 	} else {
 		save_regs(ctx->regs);

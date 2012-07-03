@@ -101,7 +101,7 @@ void x86_cpu_unmap_context(int core, int thread)
 
 	assert(ctx);
 	assert(x86_ctx_get_status(ctx, x86_ctx_alloc));
-	assert(!x86_ctx_get_status(ctx, x86_ctx_specmode));
+	assert(!x86_ctx_get_status(ctx, x86_ctx_spec_mode));
 	assert(!X86_THREAD.rob_count);
 	assert(ctx->dealloc_signal);
 	assert(x86_cpu->ctx_dealloc_signals > 0);
