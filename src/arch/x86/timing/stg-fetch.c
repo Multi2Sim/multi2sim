@@ -74,7 +74,7 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 	X86_THREAD.fetch_eip = X86_THREAD.fetch_neip;
 	x86_ctx_set_eip(ctx, X86_THREAD.fetch_eip);
 	x86_ctx_execute(ctx);
-	X86_THREAD.fetch_neip = X86_THREAD.fetch_eip + x86_isa_inst.size;
+	X86_THREAD.fetch_neip = X86_THREAD.fetch_eip + ctx->inst.size;
 
 	/* Micro-instructions created by the x86 instructions can be found now
 	 * in 'x86_uinst_list'. */
@@ -99,7 +99,7 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 		uop->thread = thread;
 
 		uop->mop_count = uinst_count;
-		uop->mop_size = x86_isa_inst.size;
+		uop->mop_size = ctx->inst.size;
 		uop->mop_id = uop->id - uinst_index;
 		uop->mop_index = uinst_index;
 
@@ -147,7 +147,7 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 			/* Macro-instruction name */
 			if (!uinst_index)
 			{
-				x86_inst_dump_buf(&x86_isa_inst, inst_name, sizeof inst_name);
+				x86_inst_dump_buf(&ctx->inst, inst_name, sizeof inst_name);
 				str_printf(&str_ptr, &str_size, " asm=\"%s\"", inst_name);
 			}
 
@@ -292,7 +292,7 @@ static void x86_cpu_fetch_thread(int core, int thread)
 		 * instruction now and insert uops into the fetch queue. However, the
 		 * fetch queue occupancy is increased with the macro-instruction size. */
 		uop = x86_cpu_fetch_inst(core, thread, 0);
-		if (!x86_isa_inst.size)  /* x86_isa_inst invalid - no forward progress in loop */
+		if (!ctx->inst.size)  /* x86_isa_inst invalid - no forward progress in loop */
 			break;
 		if (!uop)  /* no uop was produced by this macro-instruction */
 			continue;

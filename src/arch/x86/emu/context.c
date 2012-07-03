@@ -305,11 +305,11 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 		mem_access(x86_isa_mem, x86_isa_regs->eip, 20, buffer_ptr, mem_access_exec);
 	}
 	x86_isa_mem->safe = mem_safe_mode;
-	x86_isa_inst_bytes = (char *)buffer_ptr;
+	x86_isa_inst_bytes = (char *) buffer_ptr;
 
 	/* Disassemble */
-	x86_disasm(buffer_ptr, regs->eip, &x86_isa_inst);
-	if (x86_isa_inst.opcode == x86_op_none && !spec_mode)
+	x86_disasm(buffer_ptr, regs->eip, &ctx->inst);
+	if (ctx->inst.opcode == x86_op_none && !spec_mode)
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)",
 			regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 
