@@ -156,7 +156,7 @@ void x86_isa_bt_rm32_r32_impl(struct x86_ctx_t *ctx)
 void x86_isa_bt_rm32_imm8_impl(struct x86_ctx_t *ctx)
 {
 	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t imm8 = x86_isa_inst.imm.b;
+	uint32_t imm8 = ctx->inst.imm.b;
 	unsigned long flags = x86_isa_regs->eflags;
 
 	__X86_ISA_ASM_START__
@@ -183,7 +183,7 @@ void x86_isa_bt_rm32_imm8_impl(struct x86_ctx_t *ctx)
 void x86_isa_bts_rm32_imm8_impl(struct x86_ctx_t *ctx)
 {
 	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t imm8 = x86_isa_inst.imm.b;
+	uint32_t imm8 = ctx->inst.imm.b;
 	unsigned long flags = x86_isa_regs->eflags;
 
 	__X86_ISA_ASM_START__
@@ -213,7 +213,7 @@ void x86_isa_call_rel32_impl(struct x86_ctx_t *ctx)
 {
 	x86_isa_regs->esp -= 4;
 	x86_isa_mem_write(ctx, x86_isa_regs->esp, 4, &x86_isa_regs->eip);
-	ctx->target_eip = x86_isa_regs->eip + x86_isa_inst.imm.d;
+	ctx->target_eip = x86_isa_regs->eip + ctx->inst.imm.d;
 	x86_isa_regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_call, 0, 0, 0, 0, 0, 0, 0);
@@ -763,7 +763,7 @@ void x86_isa_imul_r32_rm32_imm8_impl(struct x86_ctx_t *ctx)
 {
 	uint32_t r32;
 	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t imm8 = (int8_t) x86_isa_inst.imm.b;
+	uint32_t imm8 = (int8_t) ctx->inst.imm.b;
 	unsigned long flags = x86_isa_regs->eflags;
 
 	__X86_ISA_ASM_START__
@@ -793,7 +793,7 @@ void x86_isa_imul_r32_rm32_imm32_impl(struct x86_ctx_t *ctx)
 {
 	uint32_t r32;
 	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t imm32 = x86_isa_inst.imm.d;
+	uint32_t imm32 = ctx->inst.imm.d;
 	unsigned long flags = x86_isa_regs->eflags;
 
 	__X86_ISA_ASM_START__
@@ -939,7 +939,7 @@ void x86_isa_int_imm8_impl(struct x86_ctx_t *ctx)
 	unsigned int num;
 
 	/* Interrupt code */
-	num = (uint8_t) x86_isa_inst.imm.b;
+	num = (uint8_t) ctx->inst.imm.b;
 	if (num != 0x80)
 		x86_isa_error(ctx, "%s: not supported for num != 0x80", __FUNCTION__);
 
@@ -961,7 +961,7 @@ void x86_isa_into_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_jmp_rel8_impl(struct x86_ctx_t *ctx)
 {
-	ctx->target_eip = x86_isa_regs->eip + (int8_t) x86_isa_inst.imm.b;
+	ctx->target_eip = x86_isa_regs->eip + (int8_t) ctx->inst.imm.b;
 	x86_isa_regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
@@ -970,7 +970,7 @@ void x86_isa_jmp_rel8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_jmp_rel32_impl(struct x86_ctx_t *ctx)
 {
-	ctx->target_eip = x86_isa_regs->eip + x86_isa_inst.imm.d;
+	ctx->target_eip = x86_isa_regs->eip + ctx->inst.imm.d;
 	x86_isa_regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
@@ -990,7 +990,7 @@ void x86_isa_lea_r32_m_impl(struct x86_ctx_t *ctx)
 {
 	uint32_t value = x86_isa_effective_address(ctx);
 
-	if (x86_isa_inst.segment)
+	if (ctx->inst.segment)
 	{
 		x86_isa_error(ctx, "%s: not supported for this segment", __FUNCTION__);
 		return;
@@ -1007,7 +1007,7 @@ void x86_isa_leave_impl(struct x86_ctx_t *ctx)
 	uint32_t value;
 	x86_isa_regs->esp = x86_isa_regs->ebp;
 
-	if (x86_isa_inst.segment) {
+	if (ctx->inst.segment) {
 		x86_isa_error(ctx, "%s: not supported segment", __FUNCTION__);
 		return;
 	}
@@ -1042,7 +1042,7 @@ void x86_isa_lock_xadd_rm32_r32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_rm8_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value = x86_isa_inst.imm.b;
+	uint8_t value = ctx->inst.imm.b;
 	x86_isa_store_rm8(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_rm8, 0, 0, 0);
@@ -1171,7 +1171,7 @@ void x86_isa_mov_moffs32_eax_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_ir8_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value = x86_isa_inst.imm.b;
+	uint8_t value = ctx->inst.imm.b;
 	x86_isa_store_ir8(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_ir8, 0, 0, 0);
@@ -1180,7 +1180,7 @@ void x86_isa_mov_ir8_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_ir16_imm16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = x86_isa_inst.imm.w;
+	uint16_t value = ctx->inst.imm.w;
 	x86_isa_store_ir16(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_ir16, 0, 0, 0);
@@ -1189,7 +1189,7 @@ void x86_isa_mov_ir16_imm16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_ir32_imm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = x86_isa_inst.imm.d;
+	uint32_t value = ctx->inst.imm.d;
 	x86_isa_store_ir32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_ir32, 0, 0, 0);
@@ -1198,7 +1198,7 @@ void x86_isa_mov_ir32_imm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_rm16_imm16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = x86_isa_inst.imm.w;
+	uint16_t value = ctx->inst.imm.w;
 	x86_isa_store_rm16(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_rm16, 0, 0, 0);
@@ -1207,7 +1207,7 @@ void x86_isa_mov_rm16_imm16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_rm32_imm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = x86_isa_inst.imm.d;
+	uint32_t value = ctx->inst.imm.d;
 	x86_isa_store_rm32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_rm32, 0, 0, 0);
@@ -1217,7 +1217,7 @@ void x86_isa_mov_rm32_imm32_impl(struct x86_ctx_t *ctx)
 void x86_isa_mov_rm16_sreg_impl(struct x86_ctx_t *ctx)
 {
 	uint16_t value = x86_isa_load_sreg(ctx);
-	if (x86_isa_inst.reg != 5)
+	if (ctx->inst.reg != 5)
 		x86_isa_error(ctx, "%s: not supported for sreg != gs", __FUNCTION__);
 	x86_isa_store_rm16(ctx, value);
 
@@ -1234,7 +1234,7 @@ void x86_isa_mov_rm32_sreg_impl(struct x86_ctx_t *ctx)
 void x86_isa_mov_sreg_rm16_impl(struct x86_ctx_t *ctx)
 {
 	uint16_t value = x86_isa_load_rm16(ctx);
-	if (x86_isa_inst.reg != 5)
+	if (ctx->inst.reg != 5)
 		x86_isa_error(ctx, "%s: not supported for sreg != gs", __FUNCTION__);
 	x86_isa_store_sreg(ctx, value);
 
@@ -1493,7 +1493,7 @@ void x86_isa_pop_ir32_impl(struct x86_ctx_t *ctx)
 {
 	uint32_t value;
 
-	if (x86_isa_inst.segment)
+	if (ctx->inst.segment)
 	{
 		x86_isa_error(ctx, "%s: not supported segment", __FUNCTION__);
 		return;
@@ -1548,7 +1548,7 @@ void x86_isa_prefetchnta_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_push_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = (int8_t) x86_isa_inst.imm.b;
+	uint32_t value = (int8_t) ctx->inst.imm.b;
 	x86_isa_store_reg(ctx, x86_reg_esp, x86_isa_regs->esp - 4);
 	x86_isa_mem_write(ctx, x86_isa_regs->esp, 4, &value);
 
@@ -1560,7 +1560,7 @@ void x86_isa_push_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_push_imm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = x86_isa_inst.imm.d;
+	uint32_t value = ctx->inst.imm.d;
 	x86_isa_store_reg(ctx, x86_reg_esp, x86_isa_regs->esp - 4);
 	x86_isa_mem_write(ctx, x86_isa_regs->esp, 4, &value);
 
@@ -1630,7 +1630,7 @@ void x86_isa_rdtsc_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_ret_impl(struct x86_ctx_t *ctx)
 {
-	if (x86_isa_inst.segment) {
+	if (ctx->inst.segment) {
 		x86_isa_error(ctx, "%s: not supported segment", __FUNCTION__);
 		return;
 	}
@@ -1656,14 +1656,14 @@ void x86_isa_ret_imm16_impl(struct x86_ctx_t *ctx)
 {
 	uint16_t pop;
 
-	if (x86_isa_inst.segment)
+	if (ctx->inst.segment)
 	{
 		x86_isa_error(ctx, "%s: not supported segment", __FUNCTION__);
 		return;
 	}
 
 	x86_isa_mem_read(ctx, x86_isa_regs->esp, 4, &ctx->target_eip);
-	pop = x86_isa_inst.imm.w;
+	pop = ctx->inst.imm.w;
 	x86_isa_regs->esp += 4 + pop;
 	x86_isa_regs->eip = ctx->target_eip;
 
@@ -1694,7 +1694,7 @@ void x86_isa_shld_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 {
 	uint32_t rm32 = x86_isa_load_rm32(ctx);
 	uint32_t r32 = x86_isa_load_r32(ctx);
-	uint8_t imm8 = x86_isa_inst.imm.b;
+	uint8_t imm8 = ctx->inst.imm.b;
 	unsigned long flags = x86_isa_regs->eflags;
 
 	__X86_ISA_ASM_START__
@@ -1757,7 +1757,7 @@ void x86_isa_shrd_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 {
 	uint32_t rm32 = x86_isa_load_rm32(ctx);
 	uint32_t r32 = x86_isa_load_r32(ctx);
-	uint8_t imm8 = x86_isa_inst.imm.b;
+	uint8_t imm8 = ctx->inst.imm.b;
 	unsigned long flags = x86_isa_regs->eflags;
 
 	__X86_ISA_ASM_START__

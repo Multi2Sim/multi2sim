@@ -65,7 +65,7 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 		{ \
 			x86_isa_##X##_run(ctx); \
 			x86_isa_regs->ecx--; \
-			x86_isa_regs->eip -= x86_isa_inst.size; \
+			x86_isa_regs->eip -= ctx->inst.size; \
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \
@@ -86,7 +86,7 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 			x86_isa_##X##_run(ctx); \
 			x86_isa_regs->ecx--; \
 			if (x86_isa_get_flag(ctx, x86_flag_zf)) \
-				x86_isa_regs->eip -= x86_isa_inst.size; \
+				x86_isa_regs->eip -= ctx->inst.size; \
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \
@@ -107,7 +107,7 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 			x86_isa_##X##_run(ctx); \
 			x86_isa_regs->ecx--; \
 			if (!x86_isa_get_flag(ctx, x86_flag_zf)) \
-				x86_isa_regs->eip -= x86_isa_inst.size; \
+				x86_isa_regs->eip -= ctx->inst.size; \
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \

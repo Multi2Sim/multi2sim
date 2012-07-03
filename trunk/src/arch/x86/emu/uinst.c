@@ -202,7 +202,7 @@ static int x86_uinst_effaddr_emitted;
 
 /* If dependence 'index' in 'uinst' is a memory operand, return its size in bytes.
  * Otherwise, return 0. */
-static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index)
+static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
 {
 	int dep;
 
@@ -218,7 +218,7 @@ static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index)
 
 		/* The 'modrm_mod' field indicates whether it's actually a memory dependence
 		 * or a register. */
-		return x86_isa_inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_rm8);
+		return ctx->inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_rm8);
 
 	case x86_dep_mem8:
 	case x86_dep_mem16:
@@ -236,7 +236,7 @@ static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index)
 	case x86_dep_xmmm64:
 	case x86_dep_xmmm128:
 
-		return x86_isa_inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_xmmm32 + 2);
+		return ctx->inst.modrm_mod == 3 ? 0 : 1 << (dep - x86_dep_xmmm32 + 2);
 
 	default:
 		return 0;
@@ -244,12 +244,12 @@ static int x86_uinst_mem_dep_size(struct x86_uinst_t *uinst, int index)
 }
 
 
-static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index)
+static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
 {
 	struct x86_uinst_t *new_uinst;
 
 	/* Check if it is a memory dependence */
-	if (!x86_uinst_mem_dep_size(uinst, index))
+	if (!x86_uinst_mem_dep_size(uinst, index, ctx))
 		return;
 
 	/* Record occurrence */
@@ -258,15 +258,15 @@ static void x86_uinst_emit_effaddr(struct x86_uinst_t *uinst, int index)
 	/* Emit 'effaddr' */
 	new_uinst = x86_uinst_create();
 	new_uinst->opcode = x86_uinst_effaddr;
-	new_uinst->idep[0] = x86_isa_inst.segment ? x86_isa_inst.segment - x86_reg_es + x86_dep_es : x86_dep_none;
-	new_uinst->idep[1] = x86_isa_inst.ea_base ? x86_isa_inst.ea_base - x86_reg_eax + x86_dep_eax : x86_dep_none;
-	new_uinst->idep[2] = x86_isa_inst.ea_index ? x86_isa_inst.ea_index - x86_reg_eax + x86_dep_eax : x86_dep_none;
+	new_uinst->idep[0] = ctx->inst.segment ? ctx->inst.segment - x86_reg_es + x86_dep_es : x86_dep_none;
+	new_uinst->idep[1] = ctx->inst.ea_base ? ctx->inst.ea_base - x86_reg_eax + x86_dep_eax : x86_dep_none;
+	new_uinst->idep[2] = ctx->inst.ea_index ? ctx->inst.ea_index - x86_reg_eax + x86_dep_eax : x86_dep_none;
 	new_uinst->odep[0] = x86_dep_ea;
 	list_add(x86_uinst_list, new_uinst);
 }
 
 
-static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index)
+static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index, struct x86_ctx_t *ctx)
 {
 	int dep;
 
@@ -285,19 +285,19 @@ static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index)
 
 	case x86_dep_easeg:
 
-		uinst->dep[index] = x86_isa_inst.segment ? x86_isa_inst.segment
+		uinst->dep[index] = ctx->inst.segment ? ctx->inst.segment
 			- x86_reg_es + x86_dep_es : x86_dep_none;
 		break;
 
 	case x86_dep_eabas:
 
-		uinst->dep[index] = x86_isa_inst.ea_base ? x86_isa_inst.ea_base
+		uinst->dep[index] = ctx->inst.ea_base ? ctx->inst.ea_base
 			- x86_reg_eax + x86_dep_eax : x86_dep_none;
 		break;
 
 	case x86_dep_eaidx:
 
-		uinst->dep[index] = x86_isa_inst.ea_index ? x86_isa_inst.ea_index
+		uinst->dep[index] = ctx->inst.ea_index ? ctx->inst.ea_index
 			- x86_reg_eax + x86_dep_eax : x86_dep_none;
 		break;
 
@@ -305,63 +305,63 @@ static void x86_uinst_parse_dep(struct x86_uinst_t *uinst, int index)
 	 * Otherwise, they would have been handled by 'parse_idep'/'parse_odep' functions. */
 	case x86_dep_rm8:
 
-		assert(x86_isa_inst.modrm_mod == 3);
-		uinst->dep[index] = x86_isa_inst.modrm_rm < 4 ? x86_dep_eax + x86_isa_inst.modrm_rm
-			: x86_dep_eax + x86_isa_inst.modrm_rm - 4;
+		assert(ctx->inst.modrm_mod == 3);
+		uinst->dep[index] = ctx->inst.modrm_rm < 4 ? x86_dep_eax + ctx->inst.modrm_rm
+			: x86_dep_eax + ctx->inst.modrm_rm - 4;
 		break;
 
 	case x86_dep_rm16:
 	case x86_dep_rm32:
 
-		assert(x86_isa_inst.modrm_mod == 3);
-		uinst->dep[index] = x86_dep_eax + x86_isa_inst.modrm_rm;
+		assert(ctx->inst.modrm_mod == 3);
+		uinst->dep[index] = x86_dep_eax + ctx->inst.modrm_rm;
 		break;
 
 	case x86_dep_r8:
 
-		uinst->dep[index] = x86_isa_inst.reg < 4 ? x86_dep_eax + x86_isa_inst.reg
-			: x86_dep_eax + x86_isa_inst.reg - 4;
+		uinst->dep[index] = ctx->inst.reg < 4 ? x86_dep_eax + ctx->inst.reg
+			: x86_dep_eax + ctx->inst.reg - 4;
 		break;
 
 	case x86_dep_r16:
 	case x86_dep_r32:
 
-		uinst->dep[index] = x86_dep_eax + x86_isa_inst.reg;
+		uinst->dep[index] = x86_dep_eax + ctx->inst.reg;
 		break;
 
 	case x86_dep_ir8:
 
-		uinst->dep[index] = x86_isa_inst.opindex < 4 ? x86_dep_eax + x86_isa_inst.opindex
-			: x86_dep_eax + x86_isa_inst.opindex - 4;
+		uinst->dep[index] = ctx->inst.opindex < 4 ? x86_dep_eax + ctx->inst.opindex
+			: x86_dep_eax + ctx->inst.opindex - 4;
 		break;
 
 	case x86_dep_ir16:
 	case x86_dep_ir32:
 
-		uinst->dep[index] = x86_dep_eax + x86_isa_inst.opindex;
+		uinst->dep[index] = x86_dep_eax + ctx->inst.opindex;
 		break;
 
 	case x86_dep_sreg:
 
-		uinst->dep[index] = x86_dep_es + x86_isa_inst.reg;
+		uinst->dep[index] = x86_dep_es + ctx->inst.reg;
 		break;
 	
 	case x86_dep_sti:
 
-		uinst->dep[index] = x86_dep_st0 + x86_isa_inst.opindex;
+		uinst->dep[index] = x86_dep_st0 + ctx->inst.opindex;
 		break;
 	
 	case x86_dep_xmmm32:
 	case x86_dep_xmmm64:
 	case x86_dep_xmmm128:
 
-		assert(x86_isa_inst.modrm_mod == 3);
-		uinst->dep[index] = x86_dep_xmm0 + x86_isa_inst.modrm_rm;
+		assert(ctx->inst.modrm_mod == 3);
+		uinst->dep[index] = x86_dep_xmm0 + ctx->inst.modrm_rm;
 		break;
 
 	case x86_dep_xmm:
 
-		uinst->dep[index] = x86_dep_xmm0 + x86_isa_inst.reg;
+		uinst->dep[index] = x86_dep_xmm0 + ctx->inst.reg;
 		break;
 
 	default:
@@ -400,7 +400,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x8
 		return;
 
 	/* Memory dependence */
-	mem_dep_size = x86_uinst_mem_dep_size(uinst, index);
+	mem_dep_size = x86_uinst_mem_dep_size(uinst, index, ctx);
 	if (mem_dep_size)
 	{
 		/* If uinst is 'move', just convert it into a 'store' */
@@ -432,7 +432,7 @@ static void x86_uinst_parse_odep(struct x86_uinst_t *uinst, int index, struct x8
 	}
 
 	/* Regular dependence */
-	x86_uinst_parse_dep(uinst, index);
+	x86_uinst_parse_dep(uinst, index, ctx);
 }
 
 
@@ -449,7 +449,7 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index, struct x8
 		return;
 	
 	/* Memory dependence */
-	mem_dep_size = x86_uinst_mem_dep_size(uinst ,index);
+	mem_dep_size = x86_uinst_mem_dep_size(uinst, index, ctx);
 	if (mem_dep_size)
 	{
 		/* If uinst is 'move', just convert it into a 'load' */
@@ -478,7 +478,7 @@ static void x86_uinst_parse_idep(struct x86_uinst_t *uinst, int index, struct x8
 	}
 
 	/* Regular dependence */
-	x86_uinst_parse_dep(uinst, index);
+	x86_uinst_parse_dep(uinst, index, ctx);
 }
 
 
@@ -558,7 +558,7 @@ void __x86_uinst_new_mem(struct x86_ctx_t *ctx,
 
 	/* Emit effective address computation if needed. */
 	for (i = 0; !x86_uinst_effaddr_emitted && i < X86_UINST_MAX_DEPS; i++)
-		x86_uinst_emit_effaddr(uinst, i);
+		x86_uinst_emit_effaddr(uinst, i, ctx);
 	
 	/* Parse input dependences */
 	for (i = 0; i < X86_UINST_MAX_IDEPS; i++)
