@@ -27,7 +27,6 @@ struct x86_regs_t *x86_isa_regs;
 struct mem_t *x86_isa_mem;
 struct x86_inst_t x86_isa_inst;
 int x86_isa_spec_mode;  /* If true, instructions will not modify memory */
-unsigned int x86_isa_eip;
 char * x86_isa_inst_bytes;
 unsigned int isa_addr;  /* Address of last memory access */
 unsigned int x86_isa_target;  /* Target address of branch/jmp/call/ret inst, even if it's not taken */
@@ -38,6 +37,10 @@ int x86_isa_function_level;
 #define x86_isa_ctx __COMPILATION_ERROR__
 #define x86_isa_regs __COMPILATION_ERROR__
 #define x86_isa_mem __COMPILATION_ERROR__
+//#define x86_isa_target __COMPILATION_ERROR__
+#define x86_isa_spec_mode __COMPILATION_ERROR__
+#define x86_isa_inst_bytes __COMPILATION_ERROR__
+#define x86_isa_eip __COMPILATION_ERROR__
 ////////////////
 
 int x86_isa_call_debug_category;
@@ -107,7 +110,7 @@ void x86_isa_error(struct x86_ctx_t *ctx, char *fmt, ...)
 
 	/* Error */
 	fprintf(stderr, "fatal: x86 context %d at 0x%08x inst %lld: ",
-		ctx->pid, x86_isa_eip, x86_isa_inst_count);
+		ctx->pid, ctx->curr_eip, x86_isa_inst_count);
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n");
 	exit(1);
@@ -174,7 +177,7 @@ static void x86_isa_debug_call(struct x86_ctx_t *ctx)
 	int i;
 
 	/* Do nothing on speculative mode */
-	if (x86_isa_spec_mode)
+	if (ctx->status & x86_ctx_spec_mode)
 		return;
 
 	/* Call or return. Otherwise, exit */
@@ -188,12 +191,12 @@ static void x86_isa_debug_call(struct x86_ctx_t *ctx)
 	/* Debug it */
 	for (i = 0; i < x86_isa_function_level; i++)
 		x86_isa_call_debug("| ");
-	from = elf_symbol_get_by_address(loader->elf_file, x86_isa_eip, NULL);
+	from = elf_symbol_get_by_address(loader->elf_file, ctx->curr_eip, NULL);
 	to = elf_symbol_get_by_address(loader->elf_file, regs->eip, NULL);
 	if (from)
 		x86_isa_call_debug("%s", from->name);
 	else
-		x86_isa_call_debug("0x%x", x86_isa_eip);
+		x86_isa_call_debug("0x%x", ctx->curr_eip);
 	x86_isa_call_debug(" - %s to ", action);
 	if (to)
 		x86_isa_call_debug("%s", to->name);
@@ -868,28 +871,31 @@ void x86_isa_execute_inst(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 
-	/* Debug instruction */
-	if (debug_status(x86_isa_inst_debug_category))
-	{
-		x86_isa_inst_debug("%d %8lld %x: ", ctx->pid,
-			x86_isa_inst_count, x86_isa_eip);
-		x86_inst_dump(&x86_isa_inst, debug_file(x86_isa_inst_debug_category));
-		x86_isa_inst_debug("  (%d bytes)", x86_isa_inst.size);
-	}
-
 	/* Clear existing list of microinstructions, though the architectural
 	 * simulator might have cleared it already.
 	 * A new list will be generated for the next executed x86 instruction. */
 	x86_uinst_clear();
 
-	/* Execute */
+	/* Save last and current instruction addresses */
+	ctx->last_eip = ctx->curr_eip;
+	ctx->curr_eip = regs->eip;
 	x86_isa_target = 0;
+
+	/* Debug */
+	if (debug_status(x86_isa_inst_debug_category))
+	{
+		x86_isa_inst_debug("%d %8lld %x: ", ctx->pid,
+			x86_isa_inst_count, ctx->curr_eip);
+		x86_inst_dump(&x86_isa_inst, debug_file(x86_isa_inst_debug_category));
+		x86_isa_inst_debug("  (%d bytes)", x86_isa_inst.size);
+	}
+
+	/* Call instruction emulation function */
 	regs->eip = regs->eip + x86_isa_inst.size;
 	if (x86_isa_inst.opcode)
 		x86_isa_inst_func[x86_isa_inst.opcode](ctx);
-	ctx->last_eip = x86_isa_eip;
 	
-	/* Stats */
+	/* Statistics */
 	x86_inst_freq[x86_isa_inst.opcode]++;
 
 	/* Debug */

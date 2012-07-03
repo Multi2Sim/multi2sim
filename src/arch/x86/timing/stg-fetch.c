@@ -73,7 +73,7 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 	/* Functional simulation */
 	X86_THREAD.fetch_eip = X86_THREAD.fetch_neip;
 	x86_ctx_set_eip(ctx, X86_THREAD.fetch_eip);
-	x86_ctx_execute_inst(ctx);
+	x86_ctx_execute(ctx);
 	X86_THREAD.fetch_neip = X86_THREAD.fetch_eip + x86_isa_inst.size;
 
 	/* Micro-instructions created by the x86 instructions can be found now
