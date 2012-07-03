@@ -463,7 +463,6 @@ extern struct x86_ctx_t *x86_isa_ctx;
 extern struct x86_regs_t *x86_isa_regs;
 extern struct mem_t *x86_isa_mem;
 extern int x86_isa_spec_mode;
-extern unsigned int x86_isa_eip;
 extern char * x86_isa_inst_bytes;
 extern unsigned int x86_isa_target;
 extern struct x86_inst_t x86_isa_inst;
@@ -847,8 +846,10 @@ struct x86_ctx_t
 	unsigned int clear_child_tid;
 	unsigned int robust_list_head;  /* robust futex list */
 
+	unsigned int curr_eip;  /* Address of currently emulating instruction */
+	unsigned int last_eip;  /* Address of last emulated instruction */
+
 	/* For emulation of string operations */
-	unsigned int last_eip;  /* Eip of last emulated instruction */
 	unsigned int str_op_esi;  /* Initial value for register 'esi' in string operation */
 	unsigned int str_op_edi;  /* Initial value for register 'edi' in string operation */
 	int str_op_dir;  /* Direction: 1 = forward, -1 = backward */
@@ -969,7 +970,7 @@ void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_can_wakeup_callback_func_t c
 
 void x86_ctx_finish(struct x86_ctx_t *ctx, int status);
 void x86_ctx_finish_group(struct x86_ctx_t *ctx, int status);
-void x86_ctx_execute_inst(struct x86_ctx_t *ctx);
+void x86_ctx_execute(struct x86_ctx_t *ctx);
 
 void x86_ctx_set_eip(struct x86_ctx_t *ctx, uint32_t eip);
 void x86_ctx_recover(struct x86_ctx_t *ctx);
