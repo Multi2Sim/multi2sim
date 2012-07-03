@@ -17,6 +17,652 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <config.h>
+#include <debug.h>
+#include <repos.h>
+#include <esim.h>
+#include <heap.h>
+
 #include <southern-islands-timing.h>
+#include <x86-emu.h>
 
 
+
+/*
+ * Global variables
+ */
+
+char *si_gpu_config_help =
+	"The GPU configuration file is a plain text file in the IniFile format, defining\n"
+	"the parameters of the GPU model for a detailed (architectural) GPU configuration.\n"
+	"This file is passed to Multi2Sim with the '--gpu-config <file>' option, and\n"
+	"should always be used together with option '--gpu-sim detailed'.\n"
+	"\n"
+	"The following is a list of the sections allowed in the GPU configuration file,\n"
+	"along with the list of variables for each section.\n"
+	"\n"
+	"Section '[ Device ]': parameters for the GPU.\n"
+	"\n"
+	"  NumComputeUnits = <num> (Default = 20)\n"
+	"      Number of compute units in the GPU. A compute unit runs one or more\n"
+	"      work-groups at a time.\n"
+	"  NumStreamCores = <num> (Default = 16)\n"
+	"      Number of stream cores in the ALU engine of a compute unit. Each work-item\n"
+	"      is mapped to a stream core when a VLIW bundle is executed. Stream cores are\n"
+	"      time-multiplexed to cover all work-items in a wavefront.\n"
+	"  NumRegisters = <num> (Default = 16K)\n"
+	"      Number of registers in a compute unit. These registers are shared among all\n"
+	"      work-items running in a compute unit. This is one of the factors limiting the\n"
+	"      number of work-groups mapped to a compute unit.\n"
+	"  RegisterAllocSize = <num> (Default = 32)\n"
+	"  RegisterAllocGranularity = {Wavefront|WorkGroup} (Default = WorkGroup)\n"
+	"      Minimum amount of registers allocated as a chunk for each wavefront or\n"
+	"      work-group, depending on the granularity. These parameters have an impact\n"
+	"      in the allocation of work-groups to compute units.\n"
+	"  WavefrontSize = <size> (Default = 64)\n"
+	"      Number of work-items in a wavefront, executing AMD Southern Islands instructions in\n"
+	"      a SIMD fashion.\n"
+	"  MaxWorkGroupsPerComputeUnit = <num> (Default = 8)\n"
+	"  MaxWavefrontsPerComputeUnit = <num> (Default = 32)\n"
+	"      Maximum number of work-groups and wavefronts allocated at a time in a compute\n"
+	"      unit. These are some of the factors limiting the number of work-groups mapped\n"
+	"      to a compute unit.\n"
+	"  SchedulingPolicy = {RoundRobin|Greedy} (Default = RoundRobin)\n"
+	"      Wavefront scheduling algorithm.\n"
+	"      'RoundRobin' selects wavefronts in a cyclic fashion.\n"
+	"      'Greedy' selects the most recently used wavefront.\n"
+	"\n"
+	"Section '[ LocalMemory ]': defines the parameters of the local memory associated to\n"
+	"each compute unit.\n"
+	"\n"
+	"  Size = <bytes> (Default = 32 KB)\n"
+	"      Local memory capacity per compute unit. This value must be equal or larger\n"
+	"      than BlockSize * Banks. This is one of the factors limiting the number of\n"
+	"      work-groups mapped to a compute unit.\n"
+	"  AllocSize = <bytes> (Default = 1 KB)\n"
+	"      Minimum amount of local memory allocated at a time for each work-group.\n"
+	"      This parameter impact on the allocation of work-groups to compute units.\n"
+	"  BlockSize = <bytes> (Default = 256)\n"
+	"      Access block size, used for access coalescing purposes among work-items.\n"
+	"  Latency = <num_cycles> (Default = 2)\n"
+	"      Hit latency in number of cycles.\n"
+	"  Ports = <num> (Default = 4)\n"
+	"\n"
+	"Section '[ CFEngine ]': parameters for the CF Engine of the Compute Units.\n"
+	"\n"
+	"  InstructionMemoryLatency = <cycles> (Default = 2)\n"
+	"      Latency of an access to the instruction memory in number of cycles.\n"
+	"\n"
+	"Section '[ ALUEngine ]': parameters for the ALU Engine of the Compute Units.\n"
+	"\n"
+	"  InstructionMemoryLatency = <cycles> (Default = 2)\n"
+	"      Latency of an access to the instruction memory in number of cycles.\n"
+	"  FetchQueueSize = <size> (Default = 64)\n"
+	"      Size in bytes of the fetch queue.\n"
+	"  ProcessingElementLatency = <cycles> (Default = 4)\n"
+	"      Latency of each processing element (x, y, z, w, t) of a Stream Core\n"
+	"      in number of cycles. This is the time between an instruction is issued\n"
+	"      to a Stream Core and the result of the operation is available.\n"
+	"\n"
+	"Section '[ TEXEngine ]': parameters for the TEX Engine of the Compute Units.\n"
+	"\n"
+	"  InstructionMemoryLatency = <cycles> (Default = 2)\n"
+	"      Latency of an access to the instruction memory in number of cycles.\n"
+	"  FetchQueueSize = <size> (Default = 32)\n"
+	"      Size in bytes of the fetch queue.\n"
+	"  LoadQueueSize = <size> (Default = 8)\n"
+	"      Size of the load queue in number of uops. This size is equal to the\n"
+	"      maximum number of load uops in flight.\n"
+	"\n";
+
+char *si_gpu_config_file_name = "";
+char *si_gpu_report_file_name = "";
+
+int si_trace_category;
+
+/* Default parameters based on the AMD Radeon HD 7970 */
+int si_gpu_num_compute_units = 32;
+int si_gpu_num_wavefront_pools = 4; /* Per CU */
+int si_gpu_num_stream_cores = 16; /* Per SIMD */
+int si_gpu_num_registers = 65536; /* Per SIMD */
+int si_gpu_register_alloc_size = 32; 
+
+struct string_map_t si_gpu_register_alloc_granularity_map =
+{
+	2, {
+		{ "Wavefront", si_gpu_register_alloc_wavefront },
+		{ "WorkGroup", si_gpu_register_alloc_work_group }
+	}
+};
+enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
+
+int si_gpu_max_work_groups_per_wavefront_pool = 1;
+int si_gpu_max_wavefronts_per_wavefront_pool = 1;
+
+/* Local memory parameters */
+int si_gpu_local_mem_size = 65536;  /* 64 KB */
+int si_gpu_local_mem_alloc_size = 1024;  /* 1 KB */
+int si_gpu_local_mem_latency = 2;
+int si_gpu_local_mem_block_size = 64;
+int si_gpu_local_mem_num_ports = 2;
+
+struct si_gpu_t *si_gpu;
+
+
+
+
+/*
+ * Private Functions
+ */
+
+/* Version of Southern Islands trace producer.
+ * See 'src/visual/southern-islands/gpu.c' for Southern Islands trace consumer. */
+
+#define SI_TRACE_VERSION_MAJOR		1
+#define SI_TRACE_VERSION_MINOR		1
+
+
+static void si_gpu_device_init()
+{
+	struct si_compute_unit_t *compute_unit;
+	int compute_unit_id;
+
+	/* Create device */
+	si_gpu = calloc(1, sizeof(struct si_gpu_t));
+	if (!si_gpu)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize */
+	si_gpu->trash_uop_list = linked_list_create();
+
+	/* Create compute units */
+	si_gpu->compute_units = calloc(si_gpu_num_compute_units, sizeof(void *));
+	if (!si_gpu->compute_units)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize compute units */
+	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		si_gpu->compute_units[compute_unit_id] = si_compute_unit_create();
+		compute_unit = si_gpu->compute_units[compute_unit_id];
+		compute_unit->id = compute_unit_id;
+		DOUBLE_LINKED_LIST_INSERT_TAIL(si_gpu, compute_unit_ready, compute_unit);
+	}
+
+	/* Trace */
+	si_trace_header("si.init version=\"%d.%d\" num_compute_units=%d\n",
+		SI_TRACE_VERSION_MAJOR, SI_TRACE_VERSION_MINOR,
+		si_gpu_num_compute_units);
+}
+
+
+static void si_config_read(void)
+{
+	struct config_t *gpu_config;
+	char *section;
+	char *err_note =
+		"\tPlease run 'm2s --help-gpu-config' or consult the Multi2Sim Guide for a\n"
+		"\tdescription of the GPU configuration file format.";
+
+	char *gpu_register_alloc_granularity_str;
+	char *gpu_sched_policy_str;
+
+	/* Load GPU configuration file */
+	gpu_config = config_create(si_gpu_config_file_name);
+	if (*si_gpu_config_file_name && !config_load(gpu_config))
+		fatal("%s: cannot load GPU configuration file", si_gpu_config_file_name);
+	
+	/* Device */
+	section = "Device";
+	si_gpu_num_compute_units = config_read_int(gpu_config, section, "NumComputeUnits", 
+		si_gpu_num_compute_units);
+	si_gpu_num_wavefront_pools = config_read_int(gpu_config, section, "NumWavefrontPools", 
+		si_gpu_num_wavefront_pools);
+	si_gpu_num_stream_cores = config_read_int(gpu_config, section, "NumStreamCores", 
+		si_gpu_num_stream_cores);
+	si_gpu_num_registers = config_read_int(gpu_config, section, "NumRegisters", 
+		si_gpu_num_registers);
+	si_gpu_register_alloc_size = config_read_int(gpu_config, section, "RegisterAllocSize", 
+		si_gpu_register_alloc_size);
+	gpu_register_alloc_granularity_str = config_read_string(gpu_config, section, 
+		"RegisterAllocGranularity", "WorkGroup");
+	si_emu_wavefront_size = config_read_int(gpu_config, section, "WavefrontSize", 
+		si_emu_wavefront_size);
+	si_gpu_max_work_groups_per_wavefront_pool = config_read_int(gpu_config, section, 
+		"MaxWorkGroupsPerComputeUnit", si_gpu_max_work_groups_per_wavefront_pool);
+	si_gpu_max_wavefronts_per_wavefront_pool = config_read_int(gpu_config, section, 
+		"MaxWavefrontsPerComputeUnit", si_gpu_max_wavefronts_per_wavefront_pool);
+	si_gpu_simd_issue_rate = config_read_int(gpu_config, section, "SIMDIssueRate", 
+		si_gpu_simd_issue_rate);
+	si_gpu_simd_latency = config_read_int(gpu_config, section, "SIMDLatency", 
+		si_gpu_simd_latency);
+	si_gpu_scalar_unit_issue_rate = config_read_int(gpu_config, section, "ScalarUnitIssueRate", 
+		si_gpu_scalar_unit_issue_rate);
+	si_gpu_scalar_unit_latency = config_read_int(gpu_config, section, "ScalarUnitLatency", 
+		si_gpu_scalar_unit_latency);
+	si_gpu_branch_unit_issue_rate = config_read_int(gpu_config, section, "BranchUnitIssueRate", 
+		si_gpu_branch_unit_issue_rate);
+	si_gpu_branch_unit_latency = config_read_int(gpu_config, section, "BranchUnitLatency", 
+		si_gpu_branch_unit_latency);
+	gpu_sched_policy_str = config_read_string(gpu_config, section, "SchedulingPolicy", 
+		"RoundRobin");
+
+	if (si_gpu_num_compute_units < 1)
+		fatal("%s: invalid value for 'NumComputeUnits'.\n%s", si_gpu_config_file_name, 
+			err_note);
+	if (si_gpu_num_wavefront_pools < 1)
+		fatal("%s: invalid value for 'NumWavefrontPools'.\n%s", si_gpu_config_file_name, 
+			err_note);
+	if (si_gpu_num_stream_cores < 1)
+		fatal("%s: invalid value for 'NumStreamCores'.\n%s", si_gpu_config_file_name, 
+			err_note);
+	if (si_gpu_register_alloc_size < 1)
+		fatal("%s: invalid value for 'RegisterAllocSize'.\n%s", si_gpu_config_file_name, 
+			err_note);
+	if (si_gpu_num_registers < 1)
+		fatal("%s: invalid value for 'NumRegisters'.\n%s", si_gpu_config_file_name, 
+			err_note);
+	if (si_gpu_num_registers % si_gpu_register_alloc_size)
+		fatal("%s: 'NumRegisters' must be a multiple of 'RegisterAllocSize'.\n%s", 
+			si_gpu_config_file_name, err_note);
+	si_gpu_register_alloc_granularity = map_string_case(&si_gpu_register_alloc_granularity_map, 
+		gpu_register_alloc_granularity_str);
+	if (si_gpu_register_alloc_granularity == si_gpu_register_alloc_invalid)
+		fatal("%s: invalid value for 'RegisterAllocGranularity'.\n%s", 
+			si_gpu_config_file_name, err_note);
+	si_gpu_sched_policy = map_string_case(&si_gpu_sched_policy_map, 
+		gpu_sched_policy_str);
+	if (si_gpu_sched_policy == si_gpu_sched_invalid)
+		fatal("%s: invalid value for 'SchedulingPolicy'.\n%s", si_gpu_config_file_name, 
+			err_note);
+	if (si_emu_wavefront_size < 1)
+		fatal("%s: invalid value for 'WavefrontSize'.\n%s", si_gpu_config_file_name, 
+			err_note);
+	if (si_gpu_max_work_groups_per_wavefront_pool < 1)
+		fatal("%s: invalid value for 'MaxWorkGroupsPerComputeUnit'.\n%s", 
+			si_gpu_config_file_name, err_note);
+	if (si_gpu_max_wavefronts_per_wavefront_pool < 1)
+		fatal("%s: invalid value for 'MaxWavefrontsPerComputeUnit'.\n%s", 
+			si_gpu_config_file_name, err_note);
+	
+	/* Local memory */
+	section = "LocalMemory";
+	si_gpu_local_mem_size = config_read_int(gpu_config, section, "Size", si_gpu_local_mem_size);
+	si_gpu_local_mem_alloc_size = config_read_int(gpu_config, section, "AllocSize", 
+		si_gpu_local_mem_alloc_size);
+	si_gpu_local_mem_block_size = config_read_int(gpu_config, section, "BlockSize", 
+		si_gpu_local_mem_block_size);
+	si_gpu_local_mem_latency = config_read_int(gpu_config, section, "Latency", 
+		si_gpu_local_mem_latency);
+	si_gpu_local_mem_num_ports = config_read_int(gpu_config, section, "Ports", 
+		si_gpu_local_mem_num_ports);
+
+	if ((si_gpu_local_mem_size & (si_gpu_local_mem_size - 1)) || si_gpu_local_mem_size < 4)
+		fatal("%s: %s->Size must be a power of two and at least 4.\n%s",
+			si_gpu_config_file_name, section, err_note);
+	if (si_gpu_local_mem_alloc_size < 1)
+		fatal("%s: invalid value for %s->Allocsize.\n%s", si_gpu_config_file_name, section,
+			err_note);
+	if (si_gpu_local_mem_size % si_gpu_local_mem_alloc_size)
+		fatal("%s: %s->Size must be a multiple of %s->AllocSize.\n%s", 
+			si_gpu_config_file_name, section, section, err_note);
+	if ((si_gpu_local_mem_block_size & (si_gpu_local_mem_block_size - 1)) || 
+		si_gpu_local_mem_block_size < 4)
+		fatal("%s: %s->BlockSize must be a power of two and at least 4.\n%s",
+			si_gpu_config_file_name, section, err_note);
+	if (si_gpu_local_mem_alloc_size % si_gpu_local_mem_block_size)
+		fatal("%s: %s->AllocSize must be a multiple of %s->BlockSize.\n%s", 
+			si_gpu_config_file_name, section, section, err_note);
+	if (si_gpu_local_mem_latency < 1)
+		fatal("%s: invalid value for %s->Latency.\n%s", si_gpu_config_file_name, section, 
+			err_note);
+	if (si_gpu_local_mem_size < si_gpu_local_mem_block_size)
+		fatal("%s: %s->Size cannot be smaller than %s->BlockSize * %s->Banks.\n%s", 
+			si_gpu_config_file_name, section, section, section, err_note);
+	
+	
+	/* Close GPU configuration file */
+	config_check(gpu_config);
+	config_free(gpu_config);
+}
+
+
+static void si_config_dump(FILE *f)
+{
+	/* Device configuration */
+	fprintf(f, "[ Config.Device ]\n");
+	fprintf(f, "NumComputeUnits = %d\n", si_gpu_num_compute_units);
+	fprintf(f, "NumWavefrontPools = %d\n", si_gpu_num_wavefront_pools);
+	fprintf(f, "NumStreamCores = %d\n", si_gpu_num_stream_cores);
+	fprintf(f, "NumRegisters = %d\n", si_gpu_num_registers);
+	fprintf(f, "RegisterAllocSize = %d\n", si_gpu_register_alloc_size);
+	fprintf(f, "RegisterAllocGranularity = %s\n", 
+		map_value(&si_gpu_register_alloc_granularity_map, 
+		si_gpu_register_alloc_granularity));
+	fprintf(f, "WavefrontSize = %d\n", si_emu_wavefront_size);
+	fprintf(f, "MaxWorkGroupsPerWavefrontPool= %d\n", si_gpu_max_work_groups_per_wavefront_pool);
+	fprintf(f, "MaxWavefrontsPerWavefrontPool = %d\n", si_gpu_max_wavefronts_per_wavefront_pool);
+	fprintf(f, "SIMDLatency = %d\n", si_gpu_simd_latency);
+	fprintf(f, "SIMDIssueRate= %d\n", si_gpu_simd_latency);
+	fprintf(f, "ScalarUnitLatency = %d\n", si_gpu_scalar_unit_latency);
+	fprintf(f, "ScalarUnitIssueRate= %d\n", si_gpu_scalar_unit_latency);
+	fprintf(f, "BranchUnitLatency = %d\n", si_gpu_branch_unit_latency);
+	fprintf(f, "BranchUnitIssueRate= %d\n", si_gpu_branch_unit_latency);
+	fprintf(f, "SchedulingPolicy = %s\n", map_value(&si_gpu_sched_policy_map, 
+		si_gpu_sched_policy));
+	fprintf(f, "\n");
+
+	/* Local Memory */
+	fprintf(f, "[ Config.LocalMemory ]\n");
+	fprintf(f, "Size = %d\n", si_gpu_local_mem_size);
+	fprintf(f, "AllocSize = %d\n", si_gpu_local_mem_alloc_size);
+	fprintf(f, "BlockSize = %d\n", si_gpu_local_mem_block_size);
+	fprintf(f, "Latency = %d\n", si_gpu_local_mem_latency);
+	fprintf(f, "Ports = %d\n", si_gpu_local_mem_num_ports);
+	fprintf(f, "\n");
+
+	/* End of configuration */
+	fprintf(f, "\n");
+}
+
+
+static void si_gpu_map_ndrange(struct si_ndrange_t *ndrange)
+{
+	//struct si_compute_unit_t *compute_unit;
+	int compute_unit_id;
+
+	/* Assign current ND-Range */
+	assert(!si_gpu->ndrange);
+	si_gpu->ndrange = ndrange;
+
+	/* Check that at least one work-group can be allocated per Wavefront Pool */
+	si_gpu->work_groups_per_wavefront_pool = si_calc_get_work_groups_per_wavefront_pool(
+		ndrange->kernel->local_size, 
+		ndrange->kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used,
+		ndrange->local_mem_top);
+	if (!si_gpu->work_groups_per_wavefront_pool)
+		fatal("work-group resources cannot be allocated to a compute unit.\n"
+			"\tA compute unit in the GPU has a limit in number of wavefronts, number\n"
+			"\tof registers, and amount of local memory. If the work-group size\n"
+			"\texceeds any of these limits, the ND-Range cannot be executed.\n");
+
+	/* Calculate limit of wavefronts and work-items per Wavefront Pool */
+	si_gpu->wavefronts_per_wavefront_pool = si_gpu->work_groups_per_wavefront_pool * 
+		ndrange->wavefronts_per_work_group;
+	si_gpu->work_items_per_wavefront_pool = si_gpu->wavefronts_per_wavefront_pool * 
+		si_emu_wavefront_size;
+
+	/* Calculate limit of work groups, wavefronts and work-items per compute unit */
+	si_gpu->work_groups_per_compute_unit = si_gpu->work_groups_per_wavefront_pool * 
+		si_gpu_num_wavefront_pools;
+	si_gpu->wavefronts_per_compute_unit = si_gpu->wavefronts_per_wavefront_pool * 
+		si_gpu_num_wavefront_pools;
+	si_gpu->work_items_per_compute_unit = si_gpu->work_items_per_wavefront_pool * 
+		si_gpu_num_wavefront_pools;
+	assert(si_gpu->work_groups_per_wavefront_pool <= si_gpu_max_work_groups_per_wavefront_pool);
+	assert(si_gpu->wavefronts_per_wavefront_pool <= si_gpu_max_wavefronts_per_wavefront_pool);
+
+	/* Reset architectural state */
+	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		// FIXME
+		//compute_unit = si_gpu->compute_units[compute_unit_id];
+		//compute_unit->simd.decode_index = 0;
+		//compute_unit->simd.execute_index = 0;
+	}
+}
+
+
+static void si_gpu_unmap_ndrange(void)
+{
+	/* Dump stats */
+	si_ndrange_dump(si_gpu->ndrange, si_emu_report_file);
+
+	/* Unmap */
+	si_gpu->ndrange = NULL;
+}
+
+
+
+
+/*
+ * Public Functions
+ */
+
+void si_gpu_init(void)
+{
+	/* Try to open report file */
+	if (si_gpu_report_file_name[0] && !can_open_write(si_gpu_report_file_name))
+		fatal("%s: cannot open GPU pipeline report file",
+			si_gpu_report_file_name);
+
+	/* Read configuration file */
+	si_config_read();
+
+	/* Initializations */
+	si_gpu_device_init();
+	si_uop_init();
+}
+
+
+void si_gpu_done()
+{
+	struct si_compute_unit_t *compute_unit;
+	int compute_unit_id;
+
+	/* GPU pipeline report */
+	si_gpu_dump_report();
+
+	/* Free stream cores, compute units, and device */
+	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		compute_unit = si_gpu->compute_units[compute_unit_id];
+		si_compute_unit_free(compute_unit);
+	}
+	free(si_gpu->compute_units);
+
+	/* List of removed instructions */
+	si_gpu_uop_trash_empty();
+	linked_list_free(si_gpu->trash_uop_list);
+
+	/* Free GPU */
+	free(si_gpu);
+
+	/* Finalizations */
+	si_uop_done();
+}
+
+
+void si_gpu_dump_report(void)
+{
+	struct si_compute_unit_t *compute_unit;
+	struct mod_t *local_mod;
+	int compute_unit_id;
+
+	FILE *f;
+
+	double inst_per_cycle;
+
+	long long coalesced_reads;
+	long long coalesced_writes;
+
+	/* Open file */
+	f = open_write(si_gpu_report_file_name);
+	if (!f)
+		return;
+
+	/* Dump GPU configuration */
+	fprintf(f, ";\n; GPU Configuration\n;\n\n");
+	si_config_dump(f);
+
+	/* Report for device */
+	fprintf(f, ";\n; Simulation Statistics\n;\n\n");
+	inst_per_cycle = si_gpu->cycle ? (double) si_emu->inst_count / si_gpu->cycle : 0.0;
+	fprintf(f, "[ Device ]\n\n");
+	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
+	fprintf(f, "Instructions = %lld\n", si_emu->inst_count);
+	fprintf(f, "Scalar ALU Instructions = %lld\n", si_emu->scalar_alu_inst_count);
+	fprintf(f, "Scalar Mem Instructions = %lld\n", si_emu->scalar_mem_inst_count);
+	fprintf(f, "Vector ALU Instructions = %lld\n", si_emu->vector_alu_inst_count);
+	fprintf(f, "Vector Mem Instructions = %lld\n", si_emu->vector_mem_inst_count);
+	fprintf(f, "Cycles = %lld\n", si_gpu->cycle);
+	fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
+	fprintf(f, "\n\n");
+
+	/* Report for compute units */
+	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		compute_unit = si_gpu->compute_units[compute_unit_id];
+		local_mod = compute_unit->local_memory;
+
+		inst_per_cycle = compute_unit->cycle ? (double) compute_unit->inst_count
+			/ compute_unit->cycle : 0.0;
+		coalesced_reads = local_mod->reads - local_mod->effective_reads;
+		coalesced_writes = local_mod->writes - local_mod->effective_writes;
+
+		fprintf(f, "[ ComputeUnit %d ]\n\n", compute_unit_id);
+
+		fprintf(f, "WorkGroupCount = %lld\n", compute_unit->mapped_work_groups);
+		fprintf(f, "Instructions = %lld\n", compute_unit->inst_count);
+		fprintf(f, "Scalar ALU Instructions = %lld\n", compute_unit->scalar_alu_inst_count);
+		fprintf(f, "Scalar Mem Instructions = %lld\n", compute_unit->scalar_mem_inst_count);
+		fprintf(f, "Vector ALU Instructions = %lld\n", compute_unit->vector_alu_inst_count);
+		fprintf(f, "Vector Mem Instructions = %lld\n", compute_unit->vector_mem_inst_count);
+		fprintf(f, "Cycles = %lld\n", compute_unit->cycle);
+		fprintf(f, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
+		fprintf(f, "\n");
+
+		fprintf(f, "LocalMemory.Accesses = %lld\n", local_mod->reads + local_mod->writes);
+		fprintf(f, "LocalMemory.Reads = %lld\n", local_mod->reads);
+		fprintf(f, "LocalMemory.EffectiveReads = %lld\n", local_mod->effective_reads);
+		fprintf(f, "LocalMemory.CoalescedReads = %lld\n", coalesced_reads);
+		fprintf(f, "LocalMemory.Writes = %lld\n", local_mod->writes);
+		fprintf(f, "LocalMemory.EffectiveWrites = %lld\n", local_mod->effective_writes);
+		fprintf(f, "LocalMemory.CoalescedWrites = %lld\n", coalesced_writes);
+		fprintf(f, "\n\n");
+	}
+}
+
+
+void si_gpu_uop_trash_empty(void)
+{
+	struct si_uop_t *uop;
+
+	while (si_gpu->trash_uop_list->count)
+	{
+		linked_list_head(si_gpu->trash_uop_list);
+		uop = linked_list_get(si_gpu->trash_uop_list);
+		linked_list_remove(si_gpu->trash_uop_list);
+
+		si_trace("si.end_inst id=%lld cu=%d\n",
+			uop->id_in_compute_unit, uop->compute_unit->id);
+
+		si_uop_free(uop);
+	}
+}
+
+
+void si_gpu_uop_trash_add(struct si_uop_t *uop)
+{
+	linked_list_add(si_gpu->trash_uop_list, uop);
+}
+
+
+/* Run one iteration of the Southern Islands GPU timing simulation loop. */
+int si_gpu_run(void)
+{
+	struct si_ndrange_t *ndrange;
+
+	struct si_compute_unit_t *compute_unit;
+	struct si_compute_unit_t *compute_unit_next;
+
+	/* For efficiency when no Southern Islands emulation is selected, exit here
+	 * if the list of existing ND-Ranges is empty. */
+	if (!si_emu->ndrange_list_count)
+		return 0;
+
+	/* Start one ND-Range in state 'pending' */
+	while ((ndrange = si_emu->pending_ndrange_list_head))
+	{
+		/* Currently not supported for more than 1 ND-Range */
+		if (si_gpu->ndrange)
+			fatal("%s: Southern Islands GPU timing simulation not supported for multiple ND-Ranges",
+				__FUNCTION__);
+
+		/* Set ND-Range status to 'running' */
+		si_ndrange_clear_status(ndrange, si_ndrange_pending);
+		si_ndrange_set_status(ndrange, si_ndrange_running);
+
+		/* Trace */
+		si_trace("si.new_ndrange "
+			"id=%d "
+			"wg_first=%d "
+			"wg_count=%d\n",
+			ndrange->id,
+			ndrange->work_group_id_first,
+			ndrange->work_group_count);
+
+		/* Map ND-Range to GPU */
+		si_gpu_map_ndrange(ndrange);
+		si_calc_plot();
+	}
+
+	/* Mapped ND-Range */
+	ndrange = si_gpu->ndrange;
+	assert(ndrange);
+
+	/* Allocate work-groups to compute units */
+	while (si_gpu->compute_unit_ready_list_head && ndrange->pending_list_head)
+		si_compute_unit_map_work_group(si_gpu->compute_unit_ready_list_head,
+			ndrange->pending_list_head);
+
+	/* One more cycle */
+	si_gpu->cycle++;
+
+	/* Stop if maximum number of GPU cycles exceeded */
+	if (si_emu_max_cycles && si_gpu->cycle >= si_emu_max_cycles)
+		x86_emu_finish = x86_emu_finish_max_gpu_cycles;
+
+	/* Stop if maximum number of GPU instructions exceeded */
+	if (si_emu_max_inst && si_emu->inst_count >= si_emu_max_inst)
+		x86_emu_finish = x86_emu_finish_max_gpu_inst;
+
+	/* Stop if any reason met */
+	if (x86_emu_finish)
+		return 1;
+
+	/* Free instructions in trash */
+	si_gpu_uop_trash_empty();
+
+	/* Run one loop iteration on each busy compute unit */
+	for (compute_unit = si_gpu->compute_unit_busy_list_head; compute_unit;
+		compute_unit = compute_unit_next)
+	{
+		/* Store next busy compute unit, since this can change
+		 * during the compute unit simulation loop iteration. */
+		compute_unit_next = compute_unit->compute_unit_busy_list_next;
+
+		/* Run one cycle */
+		si_compute_unit_run(compute_unit);
+	}
+
+	/* If ND-Range finished execution in all compute units, free it. */
+	if (!si_gpu->compute_unit_busy_list_count)
+	{
+		/* Dump ND-Range report */
+		si_ndrange_dump(ndrange, si_emu_report_file);
+
+		/* Stop if maximum number of kernels reached */
+		if (si_emu_max_kernels && si_emu->ndrange_count >= si_emu_max_kernels)
+			x86_emu_finish = x86_emu_finish_max_gpu_kernels;
+
+		/* Finalize and free ND-Range */
+		assert(si_ndrange_get_status(ndrange, si_ndrange_finished));
+		si_gpu_uop_trash_empty();
+		si_gpu_unmap_ndrange();
+		si_ndrange_free(ndrange);
+	}
+
+	/* Return true */
+	return 1;
+}
