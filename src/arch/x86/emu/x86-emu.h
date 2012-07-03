@@ -464,7 +464,6 @@ extern struct x86_regs_t *x86_isa_regs;
 extern struct mem_t *x86_isa_mem;
 extern int x86_isa_spec_mode;
 extern char * x86_isa_inst_bytes;
-extern unsigned int x86_isa_target;
 extern struct x86_inst_t x86_isa_inst;
 extern long long x86_isa_inst_count;
 extern int x86_isa_function_level;
@@ -846,8 +845,10 @@ struct x86_ctx_t
 	unsigned int clear_child_tid;
 	unsigned int robust_list_head;  /* robust futex list */
 
-	unsigned int curr_eip;  /* Address of currently emulating instruction */
+	/* Instruction pointers */
 	unsigned int last_eip;  /* Address of last emulated instruction */
+	unsigned int curr_eip;  /* Address of currently emulating instruction */
+	unsigned int target_eip;  /* Target address for branch, even if not taken */
 
 	/* For emulation of string operations */
 	unsigned int str_op_esi;  /* Initial value for register 'esi' in string operation */

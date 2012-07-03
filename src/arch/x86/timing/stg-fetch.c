@@ -111,7 +111,7 @@ static struct x86_uop_t *x86_cpu_fetch_inst(int core, int thread, int fetch_trac
 		uop->fetch_access = X86_THREAD.fetch_access;
 		uop->neip = ctx->regs->eip;
 		uop->pred_neip = X86_THREAD.fetch_neip;
-		uop->target_neip = x86_isa_target;
+		uop->target_neip = ctx->target_eip;
 
 		/* Process uop dependences and classify them in integer, floating-point,
 		 * flags, etc. */
