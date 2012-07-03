@@ -38,18 +38,20 @@
 
 
 /* Reset or update iteration counters for string operations. */
-static void x86_isa_rep_init(void)
+static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 {
-	if (x86_isa_ctx->last_eip == x86_isa_eip)
+	struct x86_regs_t *regs = ctx->regs;
+
+	if (ctx->last_eip == ctx->curr_eip)
 	{
-		x86_isa_ctx->str_op_count++;
+		ctx->str_op_count++;
 	}
 	else
 	{
-		x86_isa_ctx->str_op_count = 0;
-		x86_isa_ctx->str_op_esi = x86_isa_regs->esi;
-		x86_isa_ctx->str_op_edi = x86_isa_regs->edi;
-		x86_isa_ctx->str_op_dir = x86_isa_regs->eflags & (1 << 10) ? -1 : 1;
+		ctx->str_op_count = 0;
+		ctx->str_op_esi = regs->esi;
+		ctx->str_op_edi = regs->edi;
+		ctx->str_op_dir = regs->eflags & (1 << 10) ? -1 : 1;
 	}
 }
 
@@ -57,7 +59,7 @@ static void x86_isa_rep_init(void)
 #define OP_REP_IMPL(X, SIZE) \
 	void x86_isa_rep_##X##_impl(struct x86_ctx_t *ctx) \
 	{ \
-		x86_isa_rep_init(); \
+		x86_isa_rep_init(ctx); \
 		\
 		if (x86_isa_regs->ecx) \
 		{ \
@@ -77,7 +79,7 @@ static void x86_isa_rep_init(void)
 #define OP_REPZ_IMPL(X, SIZE) \
 	void x86_isa_repz_##X##_impl(struct x86_ctx_t *ctx) \
 	{ \
-		x86_isa_rep_init(); \
+		x86_isa_rep_init(ctx); \
 		\
 		if (x86_isa_regs->ecx) \
 		{ \
@@ -98,7 +100,7 @@ static void x86_isa_rep_init(void)
 #define OP_REPNZ_IMPL(X, SIZE) \
 	void x86_isa_repnz_##X##_impl(struct x86_ctx_t *ctx) \
 	{ \
-		x86_isa_rep_init(); \
+		x86_isa_rep_init(ctx); \
 		\
 		if (x86_isa_regs->ecx) \
 		{ \

@@ -271,8 +271,10 @@ void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 }
 
 
-void x86_ctx_execute_inst(struct x86_ctx_t *ctx)
+void x86_ctx_execute(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned char buffer[20];
 	unsigned char *buffer_ptr;
 
@@ -281,7 +283,6 @@ void x86_ctx_execute_inst(struct x86_ctx_t *ctx)
 	x86_isa_ctx = ctx;
 	x86_isa_regs = ctx->regs;
 	x86_isa_mem = ctx->mem;
-	x86_isa_eip = x86_isa_regs->eip;
 	x86_isa_spec_mode = x86_ctx_get_status(x86_isa_ctx, x86_ctx_spec_mode);
 	x86_isa_inst_count++;
 
@@ -302,10 +303,10 @@ void x86_ctx_execute_inst(struct x86_ctx_t *ctx)
 	x86_isa_inst_bytes = (char *)buffer_ptr;
 
 	/* Disassemble */
-	x86_disasm(buffer_ptr, x86_isa_eip, &x86_isa_inst);
+	x86_disasm(buffer_ptr, regs->eip, &x86_isa_inst);
 	if (x86_isa_inst.opcode == x86_op_none && !x86_isa_spec_mode)
 		fatal("0x%x: not supported x86 instruction (%02x %02x %02x %02x...)",
-			x86_isa_eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
+			regs->eip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 
 
 	/* Execute instruction */

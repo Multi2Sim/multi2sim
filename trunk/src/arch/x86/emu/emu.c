@@ -851,7 +851,7 @@ void x86_emu_run(void)
 	/* Run an instruction from every running process */
 	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
 	{
-		x86_ctx_execute_inst(ctx);
+		x86_ctx_execute(ctx);
 
 		/* Stop if instruction matches last instruction bytes */
 		if (x86_emu_last_inst_bytes &&
