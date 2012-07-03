@@ -251,7 +251,7 @@ void x86_isa_cdq_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cld_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_clear_flag(x86_flag_df);
+	x86_isa_clear_flag(ctx, x86_flag_df);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, 0, x86_dep_df, 0, 0);
 }
@@ -306,13 +306,13 @@ void x86_isa_cmpxchg8b_m64_impl(struct x86_ctx_t *ctx)
 
 	if (edx_eax == m64)
 	{
-		x86_isa_set_flag(x86_flag_zf);
+		x86_isa_set_flag(ctx, x86_flag_zf);
 		m64 = ((uint64_t) ecx << 32) | ebx;
 		x86_isa_store_m64(ctx, m64);
 	}
 	else
 	{
-		x86_isa_clear_flag(x86_flag_zf);
+		x86_isa_clear_flag(ctx, x86_flag_zf);
 		x86_isa_regs->edx = m64 >> 32;
 		x86_isa_regs->eax = m64;
 	}
@@ -1809,7 +1809,7 @@ void x86_isa_shrd_rm32_r32_cl_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_std_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_set_flag(x86_flag_df);
+	x86_isa_set_flag(ctx, x86_flag_df);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, 0, x86_dep_df, 0, 0);
 }

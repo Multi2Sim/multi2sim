@@ -83,7 +83,7 @@ static void x86_isa_rep_init(void)
 		{ \
 			x86_isa_##X##_run(ctx); \
 			x86_isa_regs->ecx--; \
-			if (x86_isa_get_flag(x86_flag_zf)) \
+			if (x86_isa_get_flag(ctx, x86_flag_zf)) \
 				x86_isa_regs->eip -= x86_isa_inst.size; \
 		} \
 		\
@@ -104,7 +104,7 @@ static void x86_isa_rep_init(void)
 		{ \
 			x86_isa_##X##_run(ctx); \
 			x86_isa_regs->ecx--; \
-			if (!x86_isa_get_flag(x86_flag_zf)) \
+			if (!x86_isa_get_flag(ctx, x86_flag_zf)) \
 				x86_isa_regs->eip -= x86_isa_inst.size; \
 		} \
 		\
@@ -157,8 +157,8 @@ static void x86_isa_cmpsb_run(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_regs->eflags = flags;
-	x86_isa_regs->esi += x86_isa_get_flag(x86_flag_df) ? -1 : 1;
-	x86_isa_regs->edi += x86_isa_get_flag(x86_flag_df) ? -1 : 1;
+	x86_isa_regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
 }
 
 
@@ -210,8 +210,8 @@ static void x86_isa_cmpsd_run(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__ \
 
 	x86_isa_regs->eflags = flags;
-	x86_isa_regs->esi += x86_isa_get_flag(x86_flag_df) ? -4 : 4;
-	x86_isa_regs->edi += x86_isa_get_flag(x86_flag_df) ? -4 : 4;
+	x86_isa_regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
 }
 
 
@@ -339,8 +339,8 @@ static void x86_isa_movsb_run(struct x86_ctx_t *ctx)
 	x86_isa_mem_read(ctx, x86_isa_regs->esi, 1, &m8);
 	x86_isa_mem_write(ctx, x86_isa_regs->edi, 1, &m8);
 
-	x86_isa_regs->edi += x86_isa_get_flag(x86_flag_df) ? -1 : 1;
-	x86_isa_regs->esi += x86_isa_get_flag(x86_flag_df) ? -1 : 1;
+	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	x86_isa_regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
 }
 
 
@@ -374,8 +374,8 @@ static void x86_isa_movsw_run(struct x86_ctx_t *ctx)
 	x86_isa_mem_read(ctx, x86_isa_regs->esi, 2, &m16);
 	x86_isa_mem_write(ctx, x86_isa_regs->edi, 2, &m16);
 
-	x86_isa_regs->edi += x86_isa_get_flag(x86_flag_df) ? -2 : 2;
-	x86_isa_regs->esi += x86_isa_get_flag(x86_flag_df) ? -2 : 2;
+	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -2 : 2;
+	x86_isa_regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -2 : 2;
 
 }
 
@@ -409,8 +409,8 @@ static void x86_isa_movsd_run(struct x86_ctx_t *ctx)
 	x86_isa_mem_read(ctx, x86_isa_regs->esi, 4, &m32);
 	x86_isa_mem_write(ctx, x86_isa_regs->edi, 4, &m32);
 
-	x86_isa_regs->edi += x86_isa_get_flag(x86_flag_df) ? -4 : 4;
-	x86_isa_regs->esi += x86_isa_get_flag(x86_flag_df) ? -4 : 4;
+	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	x86_isa_regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
 
 }
 
@@ -513,7 +513,7 @@ static void x86_isa_scasb_run(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__ \
 
 	x86_isa_regs->eflags = flags;
-	x86_isa_regs->edi += x86_isa_get_flag(x86_flag_df) ? -1 : 1;
+	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
 
 }
 
@@ -561,7 +561,7 @@ static void x86_isa_scasd_run(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__ \
 
 	x86_isa_regs->eflags = flags;
-	x86_isa_regs->edi += x86_isa_get_flag(x86_flag_df) ? -4 : 4;
+	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
 
 }
 
@@ -592,7 +592,7 @@ static void x86_isa_stosb_run(struct x86_ctx_t *ctx)
 	uint32_t addr = x86_isa_load_reg(ctx, x86_reg_edi);
 	
 	x86_isa_mem_write(ctx, addr, 1, &m8);
-	x86_isa_regs->edi += x86_isa_get_flag(x86_flag_df) ? -1 : 1;
+	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
 }
 
 
@@ -622,7 +622,7 @@ static void x86_isa_stosd_run(struct x86_ctx_t *ctx)
 	uint32_t addr = x86_isa_load_reg(ctx, x86_reg_edi);
 	
 	x86_isa_mem_write(ctx, addr, 4, &m32);
-	x86_isa_regs->edi += x86_isa_get_flag(x86_flag_df) ? -4 : 4;
+	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
 }
 
 
