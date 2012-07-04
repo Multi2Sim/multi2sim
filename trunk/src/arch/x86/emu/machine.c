@@ -51,9 +51,11 @@ void x86_isa_bound_r32_rm64_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_bsf_r32_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t r32 = x86_isa_load_r32(ctx);
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int r32 = x86_isa_load_r32(ctx);
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -71,7 +73,7 @@ void x86_isa_bsf_r32_rm32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_r32(ctx, r32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_r32, x86_dep_zps, 0, 0);
 }
@@ -79,9 +81,11 @@ void x86_isa_bsf_r32_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_bsr_r32_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t r32 = x86_isa_load_r32(ctx);
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int r32 = x86_isa_load_r32(ctx);
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -99,7 +103,7 @@ void x86_isa_bsr_r32_rm32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_r32(ctx, r32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_r32, x86_dep_zps, 0, 0);
 }
@@ -107,7 +111,7 @@ void x86_isa_bsr_r32_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_bswap_ir32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t ir32 = x86_isa_load_ir32(ctx);
+	unsigned int ir32 = x86_isa_load_ir32(ctx);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -128,9 +132,11 @@ void x86_isa_bswap_ir32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_bt_rm32_r32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t r32 = x86_isa_load_r32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int r32 = x86_isa_load_r32(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -147,7 +153,7 @@ void x86_isa_bt_rm32_r32_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_cf, 0, 0, 0);
 }
@@ -155,9 +161,11 @@ void x86_isa_bt_rm32_r32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_bt_rm32_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t imm8 = ctx->inst.imm.b;
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int imm8 = ctx->inst.imm.b;
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -174,7 +182,7 @@ void x86_isa_bt_rm32_imm8_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_cf, 0, 0, 0);
 }
@@ -182,9 +190,11 @@ void x86_isa_bt_rm32_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_bts_rm32_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t imm8 = ctx->inst.imm.b;
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int imm8 = ctx->inst.imm.b;
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -203,7 +213,7 @@ void x86_isa_bts_rm32_imm8_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm32(ctx, rm32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_cf, 0, 0);
 }
@@ -211,10 +221,12 @@ void x86_isa_bts_rm32_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_call_rel32_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_regs->esp -= 4;
-	x86_isa_mem_write(ctx, x86_isa_regs->esp, 4, &x86_isa_regs->eip);
-	ctx->target_eip = x86_isa_regs->eip + ctx->inst.imm.d;
-	x86_isa_regs->eip = ctx->target_eip;
+	struct x86_regs_t *regs = ctx->regs;
+
+	regs->esp -= 4;
+	x86_isa_mem_write(ctx, regs->esp, 4, &regs->eip);
+	ctx->target_eip = regs->eip + ctx->inst.imm.d;
+	regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_call, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -222,10 +234,12 @@ void x86_isa_call_rel32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_call_rm32_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	ctx->target_eip = x86_isa_load_rm32(ctx);
-	x86_isa_regs->esp -= 4;
-	x86_isa_mem_write(ctx, x86_isa_regs->esp, 4, &x86_isa_regs->eip);
-	x86_isa_regs->eip = ctx->target_eip;
+	regs->esp -= 4;
+	x86_isa_mem_write(ctx, regs->esp, 4, &regs->eip);
+	regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_call, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
 }
@@ -233,7 +247,7 @@ void x86_isa_call_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cbw_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t ax = (int8_t) x86_isa_load_reg(ctx, x86_reg_al);
+	unsigned short ax = (char) x86_isa_load_reg(ctx, x86_reg_al);
 	x86_isa_store_reg(ctx, x86_reg_ax, ax);
 
 	x86_uinst_new(ctx, x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
@@ -242,8 +256,10 @@ void x86_isa_cbw_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cdq_impl(struct x86_ctx_t *ctx)
 {
-	int32_t signed_eax = x86_isa_regs->eax;
-	x86_isa_regs->edx = signed_eax < 0 ? (int32_t) -1 : 0;
+	struct x86_regs_t *regs = ctx->regs;
+	int signed_eax = regs->eax;
+
+	regs->edx = signed_eax < 0 ? -1 : 0;
 
 	x86_uinst_new(ctx, x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_edx, 0, 0, 0);
 }
@@ -259,10 +275,12 @@ void x86_isa_cld_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cmpxchg_rm32_r32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t eax = x86_isa_regs->eax;
-	unsigned long flags = x86_isa_regs->eflags;
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t r32 = x86_isa_load_r32(ctx);
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int eax = regs->eax;
+	unsigned long flags = regs->eflags;
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int r32 = x86_isa_load_r32(ctx);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -282,7 +300,7 @@ void x86_isa_cmpxchg_rm32_r32_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 	x86_isa_store_reg(ctx, x86_reg_eax, eax);
 	x86_isa_store_rm32(ctx, rm32);
 
@@ -294,27 +312,29 @@ void x86_isa_cmpxchg_rm32_r32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cmpxchg8b_m64_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t eax, ebx, ecx, edx;
-	uint64_t edx_eax, m64;
+	struct x86_regs_t *regs = ctx->regs;
 
-	eax = x86_isa_regs->eax;
-	ebx = x86_isa_regs->ebx;
-	ecx = x86_isa_regs->ecx;
-	edx = x86_isa_regs->edx;
-	edx_eax = ((uint64_t) edx << 32) | eax;
+	unsigned int eax, ebx, ecx, edx;
+	unsigned long long edx_eax, m64;
+
+	eax = regs->eax;
+	ebx = regs->ebx;
+	ecx = regs->ecx;
+	edx = regs->edx;
+	edx_eax = ((unsigned long long) edx << 32) | eax;
 	m64 = x86_isa_load_m64(ctx);
 
 	if (edx_eax == m64)
 	{
 		x86_isa_set_flag(ctx, x86_flag_zf);
-		m64 = ((uint64_t) ecx << 32) | ebx;
+		m64 = ((unsigned long long) ecx << 32) | ebx;
 		x86_isa_store_m64(ctx, m64);
 	}
 	else
 	{
 		x86_isa_clear_flag(ctx, x86_flag_zf);
-		x86_isa_regs->edx = m64 >> 32;
-		x86_isa_regs->eax = m64;
+		regs->edx = m64 >> 32;
+		regs->eax = m64;
 	}
 
 	x86_uinst_new_mem(ctx, x86_uinst_load, x86_isa_effective_address(ctx), 8, 0, 0, 0,
@@ -330,9 +350,11 @@ void x86_isa_cmpxchg8b_m64_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cpuid_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t info = 0;
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned int info = 0;
 
-	switch (x86_isa_regs->eax) {
+	switch (regs->eax)
+	{
 
 	case 0x0:
 
@@ -432,7 +454,7 @@ void x86_isa_cpuid_impl(struct x86_ctx_t *ctx)
 
 	default:
 
-		x86_isa_error(ctx, "inst 'cpuid' not implemented for eax=0x%x", x86_isa_regs->eax);
+		x86_isa_error(ctx, "inst 'cpuid' not implemented for eax=0x%x", regs->eax);
 	}
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_eax, 0, 0, 0);
@@ -444,7 +466,7 @@ void x86_isa_cpuid_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_cwde_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t eax = (int16_t) x86_isa_load_reg(ctx, x86_reg_ax);
+	unsigned int eax = (int16_t) x86_isa_load_reg(ctx, x86_reg_ax);
 	x86_isa_store_reg(ctx, x86_reg_eax, eax);
 
 	x86_uinst_new(ctx, x86_uinst_sign, x86_dep_eax, 0, 0, x86_dep_eax, 0, 0, 0);
@@ -453,8 +475,10 @@ void x86_isa_cwde_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_dec_rm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t rm8 = x86_isa_load_rm8(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned char rm8 = x86_isa_load_rm8(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -472,7 +496,7 @@ void x86_isa_dec_rm8_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm8(ctx, rm8);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_of, 0);
 }
@@ -480,8 +504,10 @@ void x86_isa_dec_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_dec_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -499,7 +525,7 @@ void x86_isa_dec_rm32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm32(ctx, rm32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_of, 0);
 }
@@ -507,8 +533,10 @@ void x86_isa_dec_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_dec_ir16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t ir16 = x86_isa_load_ir16(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned short ir16 = x86_isa_load_ir16(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -526,7 +554,7 @@ void x86_isa_dec_ir16_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_ir16(ctx, ir16);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_ir16, 0, 0, x86_dep_ir16, x86_dep_zps, x86_dep_of, 0);
 }
@@ -534,8 +562,10 @@ void x86_isa_dec_ir16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_dec_ir32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t ir32 = x86_isa_load_ir32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int ir32 = x86_isa_load_ir32(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -553,7 +583,7 @@ void x86_isa_dec_ir32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_ir32(ctx, ir32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_ir32, 0, 0, x86_dep_ir32, x86_dep_zps, x86_dep_of, 0);
 }
@@ -564,8 +594,8 @@ void x86_isa_div_rm8_impl(struct x86_ctx_t *ctx)
 	int skip_emulation;
 	int spec_mode;
 
-	uint16_t ax = x86_isa_load_reg(ctx, x86_reg_ax);
-	uint8_t rm8 = x86_isa_load_rm8(ctx);
+	unsigned short ax = x86_isa_load_reg(ctx, x86_reg_ax);
+	unsigned char rm8 = x86_isa_load_rm8(ctx);
 
 	if (!rm8) {
 		x86_isa_error(ctx, "%s: division by 0", __FUNCTION__);
@@ -601,12 +631,14 @@ void x86_isa_div_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_div_rm32_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int spec_mode;
 	int skip_emulation;
 
-	uint32_t eax = x86_isa_regs->eax;
-	uint32_t edx = x86_isa_regs->edx;
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
+	unsigned int eax = regs->eax;
+	unsigned int edx = regs->edx;
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
 
 	if (!rm32) {
 		x86_isa_error(ctx, "%s: division by 0", __FUNCTION__);
@@ -651,12 +683,14 @@ void x86_isa_hlt_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_idiv_rm32_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int spec_mode;
 	int skip_emulation;
 
-	uint32_t eax = x86_isa_regs->eax;
-	uint32_t edx = x86_isa_regs->edx;
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
+	unsigned int eax = regs->eax;
+	unsigned int edx = regs->edx;
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
 
 	if (!rm32)
 	{
@@ -669,7 +703,7 @@ void x86_isa_idiv_rm32_impl(struct x86_ctx_t *ctx)
 	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
 	if (spec_mode)
 	{
-		int64_t edx_eax = ((uint64_t) edx << 32) | eax;
+		long long edx_eax = ((unsigned long long) edx << 32) | eax;
 		if (edx_eax > 0x7fffffffll || edx_eax < 0xffffffff80000000ll)
 			skip_emulation = 1;
 	}
@@ -700,10 +734,12 @@ void x86_isa_idiv_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_imul_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t eax = x86_isa_load_reg(ctx, x86_reg_eax);
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
-	uint32_t edx;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int eax = x86_isa_load_reg(ctx, x86_reg_eax);
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned long flags = regs->eflags;
+	unsigned int edx;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -724,7 +760,7 @@ void x86_isa_imul_rm32_impl(struct x86_ctx_t *ctx)
 
 	x86_isa_store_reg(ctx, x86_reg_eax, eax);
 	x86_isa_store_reg(ctx, x86_reg_edx, edx);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_mult, x86_dep_rm32, x86_dep_eax, 0, x86_dep_eax, x86_dep_edx, x86_dep_cf, x86_dep_of);
 }
@@ -732,9 +768,11 @@ void x86_isa_imul_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_imul_r32_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t r32 = x86_isa_load_r32(ctx);
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int r32 = x86_isa_load_r32(ctx);
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -753,7 +791,7 @@ void x86_isa_imul_r32_rm32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_r32(ctx, r32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_mult, x86_dep_r32, x86_dep_rm32, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
 }
@@ -761,10 +799,12 @@ void x86_isa_imul_r32_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_imul_r32_rm32_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t r32;
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t imm8 = (int8_t) ctx->inst.imm.b;
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int r32;
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int imm8 = (char) ctx->inst.imm.b;
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -783,7 +823,7 @@ void x86_isa_imul_r32_rm32_imm8_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_r32(ctx, r32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_mult, x86_dep_rm32, 0, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
 }
@@ -791,10 +831,12 @@ void x86_isa_imul_r32_rm32_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_imul_r32_rm32_imm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t r32;
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t imm32 = ctx->inst.imm.d;
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int r32;
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int imm32 = ctx->inst.imm.d;
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -813,7 +855,7 @@ void x86_isa_imul_r32_rm32_imm32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_r32(ctx, r32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_mult, x86_dep_rm32, 0, 0, x86_dep_r32, 0, x86_dep_cf, x86_dep_of);
 }
@@ -821,8 +863,10 @@ void x86_isa_imul_r32_rm32_imm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_inc_rm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t rm8 = x86_isa_load_rm8(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned char rm8 = x86_isa_load_rm8(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -840,7 +884,7 @@ void x86_isa_inc_rm8_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm8(ctx, rm8);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_rm8, 0, 0, x86_dep_rm8, 0, x86_dep_zps, x86_dep_of);
 }
@@ -848,8 +892,10 @@ void x86_isa_inc_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_inc_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -867,7 +913,7 @@ void x86_isa_inc_rm32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm32(ctx, rm32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_rm32, 0, 0, x86_dep_rm32, 0, x86_dep_zps, x86_dep_of);
 }
@@ -875,8 +921,10 @@ void x86_isa_inc_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_inc_ir16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t ir16 = x86_isa_load_ir16(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned short ir16 = x86_isa_load_ir16(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -894,7 +942,7 @@ void x86_isa_inc_ir16_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_ir16(ctx, ir16);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_ir16, 0, 0, x86_dep_ir16, 0, x86_dep_zps, x86_dep_of);
 }
@@ -902,8 +950,10 @@ void x86_isa_inc_ir16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_inc_ir32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t ir32 = x86_isa_load_ir32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int ir32 = x86_isa_load_ir32(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -921,7 +971,7 @@ void x86_isa_inc_ir32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_ir32(ctx, ir32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_ir32, 0, 0, x86_dep_ir32, 0, x86_dep_zps, x86_dep_of);
 }
@@ -939,7 +989,7 @@ void x86_isa_int_imm8_impl(struct x86_ctx_t *ctx)
 	unsigned int num;
 
 	/* Interrupt code */
-	num = (uint8_t) ctx->inst.imm.b;
+	num = (unsigned char) ctx->inst.imm.b;
 	if (num != 0x80)
 		x86_isa_error(ctx, "%s: not supported for num != 0x80", __FUNCTION__);
 
@@ -961,8 +1011,10 @@ void x86_isa_into_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_jmp_rel8_impl(struct x86_ctx_t *ctx)
 {
-	ctx->target_eip = x86_isa_regs->eip + (int8_t) ctx->inst.imm.b;
-	x86_isa_regs->eip = ctx->target_eip;
+	struct x86_regs_t *regs = ctx->regs;
+
+	ctx->target_eip = regs->eip + (char) ctx->inst.imm.b;
+	regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -970,8 +1022,10 @@ void x86_isa_jmp_rel8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_jmp_rel32_impl(struct x86_ctx_t *ctx)
 {
-	ctx->target_eip = x86_isa_regs->eip + ctx->inst.imm.d;
-	x86_isa_regs->eip = ctx->target_eip;
+	struct x86_regs_t *regs = ctx->regs;
+
+	ctx->target_eip = regs->eip + ctx->inst.imm.d;
+	regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_jump, 0, 0, 0, 0, 0, 0, 0);
 }
@@ -979,8 +1033,10 @@ void x86_isa_jmp_rel32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_jmp_rm32_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	ctx->target_eip = x86_isa_load_rm32(ctx);
-	x86_isa_regs->eip = ctx->target_eip;
+	regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_jump, x86_dep_rm32, 0, 0, 0, 0, 0, 0);
 }
@@ -988,7 +1044,7 @@ void x86_isa_jmp_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_lea_r32_m_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = x86_isa_effective_address(ctx);
+	unsigned int value = x86_isa_effective_address(ctx);
 
 	if (ctx->inst.segment)
 	{
@@ -1004,21 +1060,24 @@ void x86_isa_lea_r32_m_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_leave_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value;
-	x86_isa_regs->esp = x86_isa_regs->ebp;
+	struct x86_regs_t *regs = ctx->regs;
 
-	if (ctx->inst.segment) {
+	unsigned int value;
+	regs->esp = regs->ebp;
+
+	if (ctx->inst.segment)
+	{
 		x86_isa_error(ctx, "%s: not supported segment", __FUNCTION__);
 		return;
 	}
 
-	x86_isa_mem_read(ctx, x86_isa_regs->esp, 4, &value);
-	x86_isa_regs->esp += 4;
+	x86_isa_mem_read(ctx, regs->esp, 4, &value);
+	regs->esp += 4;
 	x86_isa_store_reg(ctx, x86_reg_ebp, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_ebp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_load, x86_isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ebp, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ebp, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
@@ -1042,7 +1101,7 @@ void x86_isa_lock_xadd_rm32_r32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_rm8_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value = ctx->inst.imm.b;
+	unsigned char value = ctx->inst.imm.b;
 	x86_isa_store_rm8(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_rm8, 0, 0, 0);
@@ -1051,7 +1110,7 @@ void x86_isa_mov_rm8_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_r8_rm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value = x86_isa_load_rm8(ctx);
+	unsigned char value = x86_isa_load_rm8(ctx);
 	x86_isa_store_r8(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r8, 0, 0, 0);
@@ -1060,7 +1119,7 @@ void x86_isa_mov_r8_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_rm8_r8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value = x86_isa_load_r8(ctx);
+	unsigned char value = x86_isa_load_r8(ctx);
 	x86_isa_store_rm8(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_r8, 0, 0, x86_dep_rm8, 0, 0, 0);
@@ -1069,7 +1128,7 @@ void x86_isa_mov_rm8_r8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_rm16_r16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = x86_isa_load_r16(ctx);
+	unsigned short value = x86_isa_load_r16(ctx);
 	x86_isa_store_rm16(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_r16, 0, 0, x86_dep_rm16, 0, 0, 0);
@@ -1078,7 +1137,7 @@ void x86_isa_mov_rm16_r16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_rm32_r32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = x86_isa_load_r32(ctx);
+	unsigned int value = x86_isa_load_r32(ctx);
 	x86_isa_store_rm32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_r32, 0, 0, x86_dep_rm32, 0, 0, 0);
@@ -1087,7 +1146,7 @@ void x86_isa_mov_rm32_r32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_r16_rm16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = x86_isa_load_rm16(ctx);
+	unsigned short value = x86_isa_load_rm16(ctx);
 	x86_isa_store_r16(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_r16, 0, 0, 0);
@@ -1096,7 +1155,7 @@ void x86_isa_mov_r16_rm16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_r32_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = x86_isa_load_rm32(ctx);
+	unsigned int value = x86_isa_load_rm32(ctx);
 	x86_isa_store_r32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_rm32, 0, 0, x86_dep_r32, 0, 0, 0);
@@ -1105,7 +1164,7 @@ void x86_isa_mov_r32_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_al_moffs8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value;
+	unsigned char value;
 
 	x86_isa_mem_read(ctx, x86_isa_moffs_address(ctx), 1, &value);
 	x86_isa_store_reg(ctx, x86_reg_al, value);
@@ -1117,7 +1176,7 @@ void x86_isa_mov_al_moffs8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_ax_moffs16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value;
+	unsigned short value;
 
 	x86_isa_mem_read(ctx, x86_isa_moffs_address(ctx), 2, &value);
 	x86_isa_store_reg(ctx, x86_reg_ax, value);
@@ -1129,7 +1188,7 @@ void x86_isa_mov_ax_moffs16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_eax_moffs32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value;
+	unsigned int value;
 
 	x86_isa_mem_read(ctx, x86_isa_moffs_address(ctx), 4, &value);
 	x86_isa_store_reg(ctx, x86_reg_eax, value);
@@ -1141,7 +1200,7 @@ void x86_isa_mov_eax_moffs32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_moffs8_al_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value = x86_isa_load_reg(ctx, x86_reg_al);
+	unsigned char value = x86_isa_load_reg(ctx, x86_reg_al);
 	x86_isa_mem_write(ctx, x86_isa_moffs_address(ctx), 1, &value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1151,7 +1210,7 @@ void x86_isa_mov_moffs8_al_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_moffs16_ax_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = x86_isa_load_reg(ctx, x86_reg_ax);
+	unsigned short value = x86_isa_load_reg(ctx, x86_reg_ax);
 	x86_isa_mem_write(ctx, x86_isa_moffs_address(ctx), 2, &value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1161,7 +1220,7 @@ void x86_isa_mov_moffs16_ax_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_moffs32_eax_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = x86_isa_load_reg(ctx, x86_reg_eax);
+	unsigned int value = x86_isa_load_reg(ctx, x86_reg_eax);
 	x86_isa_mem_write(ctx, x86_isa_moffs_address(ctx), 4, &value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, 0, 0, 0, x86_dep_aux, 0, 0, 0);
@@ -1171,7 +1230,7 @@ void x86_isa_mov_moffs32_eax_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_ir8_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value = ctx->inst.imm.b;
+	unsigned char value = ctx->inst.imm.b;
 	x86_isa_store_ir8(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_ir8, 0, 0, 0);
@@ -1180,7 +1239,7 @@ void x86_isa_mov_ir8_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_ir16_imm16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = ctx->inst.imm.w;
+	unsigned short value = ctx->inst.imm.w;
 	x86_isa_store_ir16(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_ir16, 0, 0, 0);
@@ -1189,7 +1248,7 @@ void x86_isa_mov_ir16_imm16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_ir32_imm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = ctx->inst.imm.d;
+	unsigned int value = ctx->inst.imm.d;
 	x86_isa_store_ir32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_ir32, 0, 0, 0);
@@ -1198,7 +1257,7 @@ void x86_isa_mov_ir32_imm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_rm16_imm16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = ctx->inst.imm.w;
+	unsigned short value = ctx->inst.imm.w;
 	x86_isa_store_rm16(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_rm16, 0, 0, 0);
@@ -1207,7 +1266,7 @@ void x86_isa_mov_rm16_imm16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_rm32_imm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = ctx->inst.imm.d;
+	unsigned int value = ctx->inst.imm.d;
 	x86_isa_store_rm32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, 0, 0, 0, x86_dep_rm32, 0, 0, 0);
@@ -1216,7 +1275,7 @@ void x86_isa_mov_rm32_imm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_rm16_sreg_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = x86_isa_load_sreg(ctx);
+	unsigned short value = x86_isa_load_sreg(ctx);
 	if (ctx->inst.reg != 5)
 		x86_isa_error(ctx, "%s: not supported for sreg != gs", __FUNCTION__);
 	x86_isa_store_rm16(ctx, value);
@@ -1233,7 +1292,7 @@ void x86_isa_mov_rm32_sreg_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mov_sreg_rm16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = x86_isa_load_rm16(ctx);
+	unsigned short value = x86_isa_load_rm16(ctx);
 	if (ctx->inst.reg != 5)
 		x86_isa_error(ctx, "%s: not supported for sreg != gs", __FUNCTION__);
 	x86_isa_store_sreg(ctx, value);
@@ -1250,7 +1309,7 @@ void x86_isa_mov_sreg_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movsx_r16_rm8_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = (int8_t) x86_isa_load_rm8(ctx);
+	unsigned short value = (char) x86_isa_load_rm8(ctx);
 	x86_isa_store_r16(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_sign, x86_dep_rm8, 0, 0, x86_dep_r16, 0, 0, 0);
@@ -1259,7 +1318,7 @@ void x86_isa_movsx_r16_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movsx_r32_rm8_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = (int8_t) x86_isa_load_rm8(ctx);
+	unsigned int value = (char) x86_isa_load_rm8(ctx);
 	x86_isa_store_r32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_sign, x86_dep_rm8, 0, 0, x86_dep_r32, 0, 0, 0);
@@ -1268,7 +1327,7 @@ void x86_isa_movsx_r32_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movsx_r32_rm16_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = (int16_t) x86_isa_load_rm16(ctx);
+	unsigned int value = (int16_t) x86_isa_load_rm16(ctx);
 	x86_isa_store_r32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_sign, x86_dep_rm16, 0, 0, x86_dep_r32, 0, 0, 0);
@@ -1277,7 +1336,7 @@ void x86_isa_movsx_r32_rm16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movzx_r16_rm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value = x86_isa_load_rm8(ctx);
+	unsigned char value = x86_isa_load_rm8(ctx);
 	x86_isa_store_r16(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r16, 0, 0, 0);
@@ -1286,7 +1345,7 @@ void x86_isa_movzx_r16_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movzx_r32_rm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value = x86_isa_load_rm8(ctx);
+	unsigned char value = x86_isa_load_rm8(ctx);
 	x86_isa_store_r32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_rm8, 0, 0, x86_dep_r32, 0, 0, 0);
@@ -1295,7 +1354,7 @@ void x86_isa_movzx_r32_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_movzx_r32_rm16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = x86_isa_load_rm16(ctx);
+	unsigned short value = x86_isa_load_rm16(ctx);
 	x86_isa_store_r32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_rm16, 0, 0, x86_dep_r32, 0, 0, 0);
@@ -1304,10 +1363,12 @@ void x86_isa_movzx_r32_rm16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_mul_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t eax = x86_isa_load_reg(ctx, x86_reg_eax);
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
-	uint32_t edx;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int eax = x86_isa_load_reg(ctx, x86_reg_eax);
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned long flags = regs->eflags;
+	unsigned int edx;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1328,7 +1389,7 @@ void x86_isa_mul_rm32_impl(struct x86_ctx_t *ctx)
 
 	x86_isa_store_reg(ctx, x86_reg_eax, eax);
 	x86_isa_store_reg(ctx, x86_reg_edx, edx);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_mult, x86_dep_rm32, x86_dep_eax, 0, x86_dep_edx, x86_dep_eax, x86_dep_of, x86_dep_cf);
 }
@@ -1336,8 +1397,10 @@ void x86_isa_mul_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_neg_rm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t rm8 = x86_isa_load_rm8(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned char rm8 = x86_isa_load_rm8(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1355,7 +1418,7 @@ void x86_isa_neg_rm8_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm8(ctx, rm8);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_rm8, 0, 0, x86_dep_rm8, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
@@ -1363,8 +1426,10 @@ void x86_isa_neg_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_neg_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1382,7 +1447,7 @@ void x86_isa_neg_rm32_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm32(ctx, rm32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_rm32, 0, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
@@ -1405,7 +1470,7 @@ void x86_isa_nop_rm32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_not_rm8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t value = x86_isa_load_rm8(ctx);
+	unsigned char value = x86_isa_load_rm8(ctx);
 
 	value = ~value;
 	x86_isa_store_rm8(ctx, value);
@@ -1416,7 +1481,7 @@ void x86_isa_not_rm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_not_rm16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = x86_isa_load_rm16(ctx);
+	unsigned short value = x86_isa_load_rm16(ctx);
 	value = ~value;
 	x86_isa_store_rm16(ctx, value);
 
@@ -1426,7 +1491,7 @@ void x86_isa_not_rm16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_not_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = x86_isa_load_rm32(ctx);
+	unsigned int value = x86_isa_load_rm32(ctx);
 	value = ~value;
 	x86_isa_store_rm32(ctx, value);
 
@@ -1477,21 +1542,23 @@ void x86_isa_pause_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_pop_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value;
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned int value;
 
-	x86_isa_mem_read(ctx, x86_isa_regs->esp, 4, &value);
-	x86_isa_regs->esp += 4;
+	x86_isa_mem_read(ctx, regs->esp, 4, &value);
+	regs->esp += 4;
 	x86_isa_store_rm32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_load, x86_isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_rm32, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_rm32, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
 void x86_isa_pop_ir32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value;
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned int value;
 
 	if (ctx->inst.segment)
 	{
@@ -1499,29 +1566,31 @@ void x86_isa_pop_ir32_impl(struct x86_ctx_t *ctx)
 		return;
 	}
 
-	x86_isa_mem_read(ctx, x86_isa_regs->esp, 4, &value);
-	x86_isa_regs->esp += 4;
+	x86_isa_mem_read(ctx, regs->esp, 4, &value);
+	regs->esp += 4;
 	x86_isa_store_ir32(ctx, value);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_load, x86_isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ir32, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_ir32, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
 
 void x86_isa_popf_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_mem_read(ctx, x86_isa_regs->esp, 4, &x86_isa_regs->eflags);
-	x86_isa_regs->esp += 4;
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_mem_read(ctx, regs->esp, 4, &regs->eflags);
+	regs->esp += 4;
 
 	/* Prevent TF from being set. A program should never do this, but it could
 	 * happen during speculative execution (case reported by Multi2Sim user).
 	 * The next instruction that is emulated in speculative mode could cause the
 	 * host to push this value of 'eflags', causing a TRAP in the host code. */
-	x86_isa_regs->eflags &= ~(1 << 8);
+	regs->eflags &= ~(1 << 8);
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_load, x86_isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of, 0);
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 }
 
@@ -1548,67 +1617,77 @@ void x86_isa_prefetchnta_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_push_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = (int8_t) ctx->inst.imm.b;
-	x86_isa_store_reg(ctx, x86_reg_esp, x86_isa_regs->esp - 4);
-	x86_isa_mem_write(ctx, x86_isa_regs->esp, 4, &value);
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned int value = (char) ctx->inst.imm.b;
+
+	x86_isa_store_reg(ctx, x86_reg_esp, regs->esp - 4);
+	x86_isa_mem_write(ctx, regs->esp, 4, &value);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_store, x86_isa_regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_store, regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
 }
 
 
 void x86_isa_push_imm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = ctx->inst.imm.d;
-	x86_isa_store_reg(ctx, x86_reg_esp, x86_isa_regs->esp - 4);
-	x86_isa_mem_write(ctx, x86_isa_regs->esp, 4, &value);
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned int value = ctx->inst.imm.d;
+
+	x86_isa_store_reg(ctx, x86_reg_esp, regs->esp - 4);
+	x86_isa_mem_write(ctx, regs->esp, 4, &value);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_store, x86_isa_regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_store, regs->esp, 4, x86_dep_aux, 0, 0, 0, 0, 0, 0);
 }
 
 
 void x86_isa_push_rm32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = x86_isa_load_rm32(ctx);
-	x86_isa_store_reg(ctx, x86_reg_esp, x86_isa_regs->esp - 4);
-	x86_isa_mem_write(ctx, x86_isa_regs->esp, 4, &value);
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned int value = x86_isa_load_rm32(ctx);
+
+	x86_isa_store_reg(ctx, x86_reg_esp, regs->esp - 4);
+	x86_isa_mem_write(ctx, regs->esp, 4, &value);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_store, x86_isa_regs->esp, 4, x86_dep_aux, x86_dep_rm32, 0, 0, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_store, regs->esp, 4, x86_dep_aux, x86_dep_rm32, 0, 0, 0, 0, 0);
 }
 
 
 void x86_isa_push_ir32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t value = x86_isa_load_ir32(ctx);
-	x86_isa_store_reg(ctx, x86_reg_esp, x86_isa_regs->esp - 4);
-	x86_isa_mem_write(ctx, x86_isa_regs->esp, 4, &value);
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned int value = x86_isa_load_ir32(ctx);
+
+	x86_isa_store_reg(ctx, x86_reg_esp, regs->esp - 4);
+	x86_isa_mem_write(ctx, regs->esp, 4, &value);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_store, x86_isa_regs->esp, 4, x86_dep_aux, x86_dep_ir32, 0, 0, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_store, regs->esp, 4, x86_dep_aux, x86_dep_ir32, 0, 0, 0, 0, 0);
 }
 
 
 void x86_isa_pushf_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_store_reg(ctx, x86_reg_esp, x86_isa_regs->esp - 4);
-	x86_isa_mem_write(ctx, x86_isa_regs->esp, 4, &x86_isa_regs->eflags);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_store_reg(ctx, x86_reg_esp, regs->esp - 4);
+	x86_isa_mem_write(ctx, regs->esp, 4, &regs->eflags);
 
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_zps, x86_dep_cf, x86_dep_of, x86_dep_aux2, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_store, x86_isa_regs->esp, 4, x86_dep_aux, x86_dep_aux2, 0, 0, 0, 0, 0);
+	x86_uinst_new_mem(ctx, x86_uinst_store, regs->esp, 4, x86_dep_aux, x86_dep_aux2, 0, 0, 0, 0, 0);
 }
 
 
 void x86_isa_rdtsc_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t eax, edx;
+	unsigned int eax, edx;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1630,17 +1709,20 @@ void x86_isa_rdtsc_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_ret_impl(struct x86_ctx_t *ctx)
 {
-	if (ctx->inst.segment) {
+	struct x86_regs_t *regs = ctx->regs;
+
+	if (ctx->inst.segment)
+	{
 		x86_isa_error(ctx, "%s: not supported segment", __FUNCTION__);
 		return;
 	}
 
-	x86_isa_mem_read(ctx, x86_isa_regs->esp, 4, &ctx->target_eip);
-	x86_isa_regs->esp += 4;
-	x86_isa_regs->eip = ctx->target_eip;
+	x86_isa_mem_read(ctx, regs->esp, 4, &ctx->target_eip);
+	regs->esp += 4;
+	regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_load, x86_isa_regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
+	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);  /* add esp, 4 */
 	x86_uinst_new(ctx, x86_uinst_ret, x86_dep_aux, 0, 0, 0, 0, 0, 0);  /* jmp aux */
 }
@@ -1654,7 +1736,8 @@ void x86_isa_repz_ret_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_ret_imm16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t pop;
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned short pop;
 
 	if (ctx->inst.segment)
 	{
@@ -1662,13 +1745,13 @@ void x86_isa_ret_imm16_impl(struct x86_ctx_t *ctx)
 		return;
 	}
 
-	x86_isa_mem_read(ctx, x86_isa_regs->esp, 4, &ctx->target_eip);
+	x86_isa_mem_read(ctx, regs->esp, 4, &ctx->target_eip);
 	pop = ctx->inst.imm.w;
-	x86_isa_regs->esp += 4 + pop;
-	x86_isa_regs->eip = ctx->target_eip;
+	regs->esp += 4 + pop;
+	regs->eip = ctx->target_eip;
 
 	x86_uinst_new(ctx, x86_uinst_effaddr, x86_dep_esp, 0, 0, x86_dep_aux, 0, 0, 0);
-	x86_uinst_new_mem(ctx, x86_uinst_load, x86_isa_regs->esp - 4 - pop, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
+	x86_uinst_new_mem(ctx, x86_uinst_load, regs->esp - 4 - pop, 4, x86_dep_aux, 0, 0, x86_dep_aux, 0, 0, 0);  /* pop aux */
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_esp, 0, 0, x86_dep_esp, 0, 0, 0);  /* add esp, 4 */
 	x86_uinst_new(ctx, x86_uinst_ret, x86_dep_aux, 0, 0, 0, 0, 0, 0);  /* jmp aux */
 }
@@ -1676,10 +1759,12 @@ void x86_isa_ret_imm16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_sahf_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_regs->eflags &= ~0xff;
-	x86_isa_regs->eflags |= x86_isa_load_reg(ctx, x86_reg_ah);
-	x86_isa_regs->eflags &= ~0x28;
-	x86_isa_regs->eflags |= 0x2;
+	struct x86_regs_t *regs = ctx->regs;
+
+	regs->eflags &= ~0xff;
+	regs->eflags |= x86_isa_load_reg(ctx, x86_reg_ah);
+	regs->eflags &= ~0x28;
+	regs->eflags |= 0x2;
 
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_eax, 0, 0, 0, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
@@ -1692,10 +1777,12 @@ void x86_isa_sfence_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_shld_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t r32 = x86_isa_load_r32(ctx);
-	uint8_t imm8 = ctx->inst.imm.b;
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int r32 = x86_isa_load_r32(ctx);
+	unsigned char imm8 = ctx->inst.imm.b;
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1715,7 +1802,7 @@ void x86_isa_shld_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm32(ctx, rm32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
@@ -1723,10 +1810,12 @@ void x86_isa_shld_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_shld_rm32_r32_cl_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t r32 = x86_isa_load_r32(ctx);
-	uint8_t cl = x86_isa_load_reg(ctx, x86_reg_cl);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int r32 = x86_isa_load_r32(ctx);
+	unsigned char cl = x86_isa_load_reg(ctx, x86_reg_cl);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1746,7 +1835,7 @@ void x86_isa_shld_rm32_r32_cl_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm32(ctx, rm32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm32, x86_dep_r32, x86_dep_ecx,
 		x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
@@ -1755,10 +1844,12 @@ void x86_isa_shld_rm32_r32_cl_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_shrd_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t r32 = x86_isa_load_r32(ctx);
-	uint8_t imm8 = ctx->inst.imm.b;
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int r32 = x86_isa_load_r32(ctx);
+	unsigned char imm8 = ctx->inst.imm.b;
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1778,7 +1869,7 @@ void x86_isa_shrd_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm32(ctx, rm32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm32, x86_dep_r32, 0, x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
 }
@@ -1786,10 +1877,12 @@ void x86_isa_shrd_rm32_r32_imm8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_shrd_rm32_r32_cl_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t r32 = x86_isa_load_r32(ctx);
-	uint8_t cl = x86_isa_load_reg(ctx, x86_reg_cl);
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int r32 = x86_isa_load_r32(ctx);
+	unsigned char cl = x86_isa_load_reg(ctx, x86_reg_cl);
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1809,7 +1902,7 @@ void x86_isa_shrd_rm32_r32_cl_impl(struct x86_ctx_t *ctx)
 	__X86_ISA_ASM_END__
 
 	x86_isa_store_rm32(ctx, rm32);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm32, x86_dep_r32, x86_dep_ecx,
 		x86_dep_rm32, x86_dep_zps, x86_dep_cf, x86_dep_of);
@@ -1826,10 +1919,12 @@ void x86_isa_std_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_xadd_rm8_r8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t rm8 = x86_isa_load_rm8(ctx);
-	uint8_t r8 = x86_isa_load_r8(ctx);
-	uint8_t sum;
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned char rm8 = x86_isa_load_rm8(ctx);
+	unsigned char r8 = x86_isa_load_r8(ctx);
+	unsigned char sum;
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1848,7 +1943,7 @@ void x86_isa_xadd_rm8_r8_impl(struct x86_ctx_t *ctx)
 
 	x86_isa_store_r8(ctx, rm8);
 	x86_isa_store_rm8(ctx, sum);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_rm8, x86_dep_r8, 0, x86_dep_aux, x86_dep_zps, x86_dep_cf, x86_dep_of);
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_rm8, 0, 0, 0);
@@ -1858,10 +1953,12 @@ void x86_isa_xadd_rm8_r8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_xadd_rm32_r32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32 = x86_isa_load_rm32(ctx);
-	uint32_t r32 = x86_isa_load_r32(ctx);
-	uint32_t sum;
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int rm32 = x86_isa_load_rm32(ctx);
+	unsigned int r32 = x86_isa_load_r32(ctx);
+	unsigned int sum;
+	unsigned long flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1880,7 +1977,7 @@ void x86_isa_xadd_rm32_r32_impl(struct x86_ctx_t *ctx)
 
 	x86_isa_store_r32(ctx, rm32);
 	x86_isa_store_rm32(ctx, sum);
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_rm32, x86_dep_r32, 0, x86_dep_aux, x86_dep_zps, x86_dep_cf, x86_dep_of);
 	x86_uinst_new(ctx, x86_uinst_move, x86_dep_aux, 0, 0, x86_dep_rm32, 0, 0, 0);
@@ -1890,7 +1987,7 @@ void x86_isa_xadd_rm32_r32_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_xchg_ir16_ax_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t ax, ir16;
+	unsigned short ax, ir16;
 
 	ax = x86_isa_load_reg(ctx, x86_reg_ax);
 	ir16 = x86_isa_load_ir16(ctx);
@@ -1903,7 +2000,7 @@ void x86_isa_xchg_ir16_ax_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_xchg_ir32_eax_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t eax, ir32;
+	unsigned int eax, ir32;
 
 	eax = x86_isa_load_reg(ctx, x86_reg_eax);
 	ir32 = x86_isa_load_ir32(ctx);
@@ -1916,7 +2013,8 @@ void x86_isa_xchg_ir32_eax_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_xchg_rm8_r8_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t rm8, r8;
+	unsigned char rm8;
+	unsigned char r8;
 
 	rm8 = x86_isa_load_rm8(ctx);
 	r8 = x86_isa_load_r8(ctx);
@@ -1929,7 +2027,8 @@ void x86_isa_xchg_rm8_r8_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_xchg_rm16_r16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t rm16, r16;
+	unsigned short rm16;
+	unsigned short r16;
 
 	rm16 = x86_isa_load_rm16(ctx);
 	r16 = x86_isa_load_r16(ctx);
@@ -1942,7 +2041,8 @@ void x86_isa_xchg_rm16_r16_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_xchg_rm32_r32_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t rm32, r32;
+	unsigned int rm32;
+	unsigned int r32;
 
 	rm32 = x86_isa_load_rm32(ctx);
 	r32 = x86_isa_load_r32(ctx);

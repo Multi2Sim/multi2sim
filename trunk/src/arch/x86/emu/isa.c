@@ -854,6 +854,7 @@ void x86_isa_done(void)
 }
 
 
+/* FIXME - merge with ctx_execute */
 void x86_isa_execute_inst(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;

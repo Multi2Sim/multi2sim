@@ -274,6 +274,7 @@ void x86_ctx_dump(struct x86_ctx_t *ctx, FILE *f)
 void x86_ctx_execute(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned char buffer[20];
 	unsigned char *buffer_ptr;
@@ -290,21 +291,21 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 	/* Memory permissions should not be checked if the context is executing in
 	 * speculative mode. This will prevent guest segmentation faults to occur. */
 	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);
-	x86_isa_mem->safe = spec_mode ? 0 : mem_safe_mode;
+	mem->safe = spec_mode ? 0 : mem_safe_mode;
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
-	buffer_ptr = mem_get_buffer(x86_isa_mem, x86_isa_regs->eip, 20, mem_access_exec);
+	buffer_ptr = mem_get_buffer(mem, regs->eip, 20, mem_access_exec);
 	if (!buffer_ptr)
 	{
 		/* Disable safe mode. If a part of the 20 read bytes does not belong to the
 		 * actual instruction, and they lie on a page with no permissions, this would
 		 * generate an undesired protection fault. */
-		x86_isa_mem->safe = 0;
+		mem->safe = 0;
 		buffer_ptr = buffer;
-		mem_access(x86_isa_mem, x86_isa_regs->eip, 20, buffer_ptr, mem_access_exec);
+		mem_access(mem, regs->eip, 20, buffer_ptr, mem_access_exec);
 	}
-	x86_isa_mem->safe = mem_safe_mode;
+	mem->safe = mem_safe_mode;
 	x86_isa_inst_bytes = (char *) buffer_ptr;
 
 	/* Disassemble */
@@ -317,7 +318,7 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 	/* Execute instruction */
 	x86_isa_execute_inst(ctx);
 	
-	/* Stats */
+	/* Statistics */
 	x86_emu->inst_count++;
 }
 
