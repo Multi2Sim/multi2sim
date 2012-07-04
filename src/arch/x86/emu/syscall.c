@@ -5299,7 +5299,7 @@ static int x86_sys_glut_impl(struct x86_ctx_t *ctx)
 static int x86_sys_opengl_impl(struct x86_ctx_t *ctx)
 {
 	/* Run OPENGL call */
-	return x86_opengl_call();
+	return x86_opengl_call(ctx);
 }
 
 
