@@ -181,7 +181,7 @@ extern int evg_opencl_debug_category;
 #define EVG_OPENCL_FUNC_COUNT  (EVG_OPENCL_FUNC_LAST - EVG_OPENCL_FUNC_FIRST + 1)
 #define EVG_OPENCL_MAX_ARGS  14
 
-int evg_opencl_api_run(void);
+int evg_opencl_api_run(struct x86_ctx_t *ctx);
 
 int evg_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
 		void *argv_ptr, int argv_size);
