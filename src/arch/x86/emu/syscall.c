@@ -5266,13 +5266,10 @@ static int x86_sys_set_robust_list_impl(struct x86_ctx_t *ctx)
 static int x86_sys_opencl_impl(struct x86_ctx_t *ctx)
 {
 	if (x86_emu->gpu_emulator == gpu_emulator_evg)
-	{
-		return evg_opencl_api_run();
-	}
-	else if (x86_emu->gpu_emulator == gpu_emulator_si)
-	{
+		return evg_opencl_api_run(ctx);
+
+	if (x86_emu->gpu_emulator == gpu_emulator_si)
 		return si_opencl_api_run();
-	}
 
 	abort();
 }

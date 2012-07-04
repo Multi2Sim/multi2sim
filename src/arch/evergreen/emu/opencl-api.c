@@ -73,13 +73,13 @@ int evg_opencl_func_argc[] = {
 
 
 /* Forward declarations of OpenCL functions */
-#define DEF_OPENCL_FUNC(_name, _argc) int evg_opencl_##_name##_impl(int *argv);
+#define DEF_OPENCL_FUNC(_name, _argc) int evg_opencl_##_name##_impl(struct x86_ctx_t *ctx, int *argv);
 #include "opencl.dat"
 #undef DEF_OPENCL_FUNC
 
 
 /* Table of OpenCL function implementations */
-typedef int (*evg_opencl_func_impl_t)(int *argv);
+typedef int (*evg_opencl_func_impl_t)(struct x86_ctx_t *ctx, int *argv);
 evg_opencl_func_impl_t evg_opencl_func_impl[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) evg_opencl_##_name##_impl,
 #include "opencl.dat"
@@ -158,19 +158,19 @@ char *evg_err_opencl_version_note =
  * Entry point for OpenCL API
  */
 
-int evg_opencl_api_run(void)
+int evg_opencl_api_run(struct x86_ctx_t *ctx)
 {
 	int argv[EVG_OPENCL_MAX_ARGS];
 	int code;
 	int ret;
 
 	/* Get function code and arguments */
-	code = evg_opencl_api_read_args(x86_isa_ctx, NULL, argv, sizeof argv);
+	code = evg_opencl_api_read_args(ctx, NULL, argv, sizeof argv);
 	assert(IN_RANGE(code, EVG_OPENCL_FUNC_FIRST, EVG_OPENCL_FUNC_LAST));
 	
 	/* Call function */
 	evg_opencl_debug("%s\n", evg_opencl_func_name[code - EVG_OPENCL_FUNC_FIRST]);
-	ret = evg_opencl_func_impl[code - EVG_OPENCL_FUNC_FIRST](argv);
+	ret = evg_opencl_func_impl[code - EVG_OPENCL_FUNC_FIRST](ctx, argv);
 
 	/* Return OpencL result */
 	return ret;
@@ -227,7 +227,7 @@ void evg_opencl_api_return(struct x86_ctx_t *ctx, int value)
  * OpenCL call 'clGetPlatformIDs' (code 1000)
  */
 
-int evg_opencl_clGetPlatformIDs_impl(int *argv)
+int evg_opencl_clGetPlatformIDs_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	int num_entries = argv[0];  /* cl_uint num_entries */
 	unsigned int platforms = argv[1];  /* cl_platform_id *platforms */
@@ -267,7 +267,7 @@ int evg_opencl_clGetPlatformIDs_impl(int *argv)
  * OpenCL call 'clGetPlatformInfo' (code 1001)
  */
 
-int evg_opencl_clGetPlatformInfo_impl(int *argv)
+int evg_opencl_clGetPlatformInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int platform_id = argv[0];  /* cl_platform_id platform */
 	unsigned int param_name = argv[1];  /* cl_platform_info param_name */
@@ -301,7 +301,7 @@ int evg_opencl_clGetPlatformInfo_impl(int *argv)
  * OpenCL call 'clGetDeviceIDs' (code 1002)
  */
 
-int evg_opencl_clGetDeviceIDs_impl(int *argv)
+int evg_opencl_clGetDeviceIDs_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int platform = argv[0];  /* cl_platform_id platform */
 	int device_type = argv[1];  /* cl_device_type device_type */
@@ -344,7 +344,7 @@ int evg_opencl_clGetDeviceIDs_impl(int *argv)
  * OpenCL call 'clGetDeviceInfo' (code 1003)
  */
 
-int evg_opencl_clGetDeviceInfo_impl(int *argv)
+int evg_opencl_clGetDeviceInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int device_id = argv[0];  /* cl_device_id device */
 	unsigned int param_name = argv[1];  /* cl_device_info param_name */
@@ -378,7 +378,7 @@ int evg_opencl_clGetDeviceInfo_impl(int *argv)
  * OpenCL call 'clCreateContext' (code 1004)
  */
 
-int evg_opencl_clCreateContext_impl(int *argv)
+int evg_opencl_clCreateContext_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int properties = argv[0];  /* const cl_context_properties *properties */
 	unsigned int num_devices = argv[1];  /* cl_uint num_devices */
@@ -428,7 +428,7 @@ int evg_opencl_clCreateContext_impl(int *argv)
  * OpenCL call 'clCreateContextFromType' (code 1005)
  */
 
-int evg_opencl_clCreateContextFromType_impl(int *argv)
+int evg_opencl_clCreateContextFromType_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int properties = argv[0];  /* const cl_context_properties *properties */
 	unsigned int device_type = argv[1];  /* cl_device_type device_type */
@@ -471,7 +471,7 @@ int evg_opencl_clCreateContextFromType_impl(int *argv)
  * OpenCL call 'clReleaseContext' (code 1007)
  */
 
-int evg_opencl_clReleaseContext_impl(int *argv)
+int evg_opencl_clReleaseContext_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 
@@ -497,7 +497,7 @@ int evg_opencl_clReleaseContext_impl(int *argv)
  * OpenCL call 'clGetContextInfo' (code 1008)
  */
 
-int evg_opencl_clGetContextInfo_impl(int *argv)
+int evg_opencl_clGetContextInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int param_name = argv[1];  /* cl_context_info param_name */
@@ -530,7 +530,7 @@ int evg_opencl_clGetContextInfo_impl(int *argv)
  * OpenCL call 'clCreateCommandQueue' (code 1009)
  */
 
-int evg_opencl_clCreateCommandQueue_impl(int *argv)
+int evg_opencl_clCreateCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int device_id = argv[1];  /* cl_device_id device */
@@ -569,7 +569,7 @@ int evg_opencl_clCreateCommandQueue_impl(int *argv)
  * OpenCL call 'clReleaseCommandQueue' (code 1009)
  */
 
-int evg_opencl_clReleaseCommandQueue_impl(int *argv)
+int evg_opencl_clReleaseCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int command_queue_id = argv[0];  /* cl_command_queue command_queue */
 
@@ -608,7 +608,7 @@ static struct string_map_t create_buffer_flags_map =
 	}
 };
 
-int evg_opencl_clCreateBuffer_impl(int *argv)
+int evg_opencl_clCreateBuffer_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int flags = argv[1];  /* cl_mem_flags flags */
@@ -685,7 +685,7 @@ static struct string_map_t evg_opencl_create_image_flags_map =
 	}
 };
 
-int evg_opencl_clCreateImage2D_impl(int *argv)
+int evg_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int flags = argv[1];  /* cl_mem_flags flags */
@@ -832,7 +832,7 @@ int evg_opencl_clCreateImage2D_impl(int *argv)
  * OpenCL call 'clCreateImage3D' (code 1017)
  */
 
-int evg_opencl_clCreateImage3D_impl(int *argv)
+int evg_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int flags = argv[1];  /* cl_mem_flags flags */
@@ -984,7 +984,7 @@ int evg_opencl_clCreateImage3D_impl(int *argv)
  * OpenCL call 'clReleaseMemObject' (code 1019)
  */
 
-int evg_opencl_clReleaseMemObject_impl(int *argv)
+int evg_opencl_clReleaseMemObject_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int mem_id = argv[0];  /* cl_mem memobj */
 
@@ -1009,7 +1009,7 @@ int evg_opencl_clReleaseMemObject_impl(int *argv)
  * OpenCL call 'clCreateSampler' (code 1024)
  */
 
-int evg_opencl_clCreateSampler_impl(int *argv)
+int evg_opencl_clCreateSampler_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context = argv[0];  /* cl_context context */
 	unsigned int normalized_coords = argv[1];  /* cl_bool normalized_coords */
@@ -1059,7 +1059,7 @@ int evg_opencl_clCreateSampler_impl(int *argv)
  * OpenCL call 'clCreateProgramWithSource' (code 1028)
  */
 
-int evg_opencl_clCreateProgramWithSource_impl(int *argv)
+int evg_opencl_clCreateProgramWithSource_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int count = argv[1];  /* cl_uint count */
@@ -1097,7 +1097,7 @@ int evg_opencl_clCreateProgramWithSource_impl(int *argv)
  * OpenCL call 'clCreateProgramWithBinary' (code 1029)
  */
 
-int evg_opencl_clCreateProgramWithBinary_impl(int *argv)
+int evg_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int num_devices = argv[1];  /* cl_uint num_devices */
@@ -1169,7 +1169,7 @@ int evg_opencl_clCreateProgramWithBinary_impl(int *argv)
  * OpenCL call 'clReleaseProgram' (code 1031)
  */
 
-int evg_opencl_clReleaseProgram_impl(int *argv)
+int evg_opencl_clReleaseProgram_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int program_id = argv[0];  /* cl_program program */
 
@@ -1195,7 +1195,7 @@ int evg_opencl_clReleaseProgram_impl(int *argv)
  * OpenCL call 'clBuildProgram' (code 1032)
  */
 
-int evg_opencl_clBuildProgram_impl(int *argv)
+int evg_opencl_clBuildProgram_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int program_id = argv[0];  /* cl_program program */
 	unsigned int num_devices = argv[1];  /* cl_uint num_devices */
@@ -1244,7 +1244,7 @@ int evg_opencl_clBuildProgram_impl(int *argv)
  * OpenCL call 'clCreateKernel' (code 1036)
  */
 
-int evg_opencl_clCreateKernel_impl(int *argv)
+int evg_opencl_clCreateKernel_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int program_id = argv[0];  /* cl_program program */
 	unsigned int kernel_name = argv[1];  /* const char *kernel_name */
@@ -1305,7 +1305,7 @@ int evg_opencl_clCreateKernel_impl(int *argv)
  * OpenCL call 'clReleaseKernel' (code 1039)
  */
 
-int evg_opencl_clReleaseKernel_impl(int *argv)
+int evg_opencl_clReleaseKernel_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int kernel_id = argv[0];  /* cl_kernel kernel */
 
@@ -1331,7 +1331,7 @@ int evg_opencl_clReleaseKernel_impl(int *argv)
  * OpenCL call 'clSetKernelArg' (code 1040)
  */
 
-int evg_opencl_clSetKernelArg_impl(int *argv)
+int evg_opencl_clSetKernelArg_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int kernel_id = argv[0];  /* cl_kernel kernel */
 	unsigned int arg_index = argv[1];  /* cl_uint arg_index */
@@ -1377,7 +1377,7 @@ int evg_opencl_clSetKernelArg_impl(int *argv)
  * OpenCL call 'clGetKernelWorkGroupInfo' (code 1042)
  */
 
-int evg_opencl_clGetKernelWorkGroupInfo_impl(int *argv)
+int evg_opencl_clGetKernelWorkGroupInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int kernel_id = argv[0];  /* cl_kernel kernel */
 	unsigned int device_id = argv[1];  /* cl_device_id device */
@@ -1414,7 +1414,7 @@ int evg_opencl_clGetKernelWorkGroupInfo_impl(int *argv)
  * OpenCL call 'clWaitForEvents' (code 1043)
  */
 
-int evg_opencl_clWaitForEvents_impl(int *argv)
+int evg_opencl_clWaitForEvents_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int num_events = argv[0];  /* cl_uint num_events */
 	unsigned int event_list = argv[1];  /* const cl_event *event_list */
@@ -1435,7 +1435,7 @@ int evg_opencl_clWaitForEvents_impl(int *argv)
  * OpenCL call 'clGetEventInfo' (code 1044)
  */
 
-int evg_opencl_clGetEventInfo_impl(int *argv)
+int evg_opencl_clGetEventInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int param_name = argv[1]; /* cl_event_info param_name */
 	unsigned int param_value = argv[3]; /* void *param_value */
@@ -1484,7 +1484,7 @@ int evg_opencl_clGetEventInfo_impl(int *argv)
  * OpenCL call 'clReleaseEvent' (code 1047)
  */
 
-int evg_opencl_clReleaseEvent_impl(int *argv)
+int evg_opencl_clReleaseEvent_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int event_id = argv[0];  /* cl_event event */
 
@@ -1510,7 +1510,7 @@ int evg_opencl_clReleaseEvent_impl(int *argv)
  * OpenCL call 'clGetEventProfilingInfo' (code 1050)
  */
 
-int evg_opencl_clGetEventProfilingInfo_impl(int *argv)
+int evg_opencl_clGetEventProfilingInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int event_id = argv[0];  /* cl_event event */
 	unsigned int param_name = argv[1];  /* cl_profiling_info param_name */
@@ -1543,7 +1543,7 @@ int evg_opencl_clGetEventProfilingInfo_impl(int *argv)
  * OpenCL call 'clFlush' (code 1051)
  */
 
-int evg_opencl_clFlush_impl(int *argv)
+int evg_opencl_clFlush_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int command_queue = argv[0];  /* cl_command_queue command_queue */
 
@@ -1577,7 +1577,7 @@ void evg_opencl_clFinish_wakeup(struct x86_ctx_t *ctx, void *data)
 	evg_opencl_api_return(ctx, 0);
 }
 
-int evg_opencl_clFinish_impl(int *argv_ptr)
+int evg_opencl_clFinish_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct evg_opencl_clFinish_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
@@ -1591,7 +1591,7 @@ int evg_opencl_clFinish_impl(int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue_id);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clFinish_wakeup, NULL);
 
 	/* Return value ignored by caller, since context is getting suspended.
@@ -1673,7 +1673,7 @@ void evg_opencl_clEnqueueReadBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	evg_opencl_api_return(ctx, 0);
 }
 
-int evg_opencl_clEnqueueReadBuffer_impl(int *argv_ptr)
+int evg_opencl_clEnqueueReadBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct evg_opencl_clEnqueueReadBuffer_args_t *argv;
 
@@ -1697,7 +1697,7 @@ int evg_opencl_clEnqueueReadBuffer_impl(int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue);
 	
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueReadBuffer_wakeup, NULL);
 
 	/* Return value ignored by caller, since context is getting suspended.
@@ -1778,7 +1778,7 @@ void evg_opencl_clEnqueueWriteBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	evg_opencl_api_return(ctx, 0);
 }
 
-int evg_opencl_clEnqueueWriteBuffer_impl(int *argv_ptr)
+int evg_opencl_clEnqueueWriteBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct evg_opencl_clEnqueueWriteBuffer_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
@@ -1801,7 +1801,7 @@ int evg_opencl_clEnqueueWriteBuffer_impl(int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueWriteBuffer_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -1883,7 +1883,7 @@ void evg_opencl_clEnqueueCopyBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	evg_opencl_api_return(ctx, 0);
 }
 
-int evg_opencl_clEnqueueCopyBuffer_impl(int *argv_ptr)
+int evg_opencl_clEnqueueCopyBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct evg_opencl_clEnqueueCopyBuffer_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
@@ -1906,7 +1906,7 @@ int evg_opencl_clEnqueueCopyBuffer_impl(int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueCopyBuffer_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2015,7 +2015,7 @@ void evg_opencl_clEnqueueReadImage_wakeup(struct x86_ctx_t *ctx, void *data)
 	evg_opencl_api_return(ctx, 0);
 }
 
-int evg_opencl_clEnqueueReadImage_impl(int *argv_ptr)
+int evg_opencl_clEnqueueReadImage_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct evg_opencl_clEnqueueReadImage_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
@@ -2038,7 +2038,7 @@ int evg_opencl_clEnqueueReadImage_impl(int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueReadImage_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2106,7 +2106,7 @@ void evg_opencl_clEnqueueMapBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	evg_opencl_api_return(ctx, 0);
 }
 
-int evg_opencl_clEnqueueMapBuffer_impl(int *argv_ptr)
+int evg_opencl_clEnqueueMapBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct evg_opencl_clEnqueueMapBuffer_args_t *argv;
 	struct evg_command_queue_t *command_queue;
@@ -2130,7 +2130,7 @@ int evg_opencl_clEnqueueMapBuffer_impl(int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueMapBuffer_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2306,7 +2306,7 @@ void evg_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	evg_opencl_api_return(ctx, 0);
 }
 
-int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv_ptr)
+int evg_opencl_clEnqueueNDRangeKernel_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct evg_opencl_clEnqueueNDRangeKernel_args_t *argv;
 	struct evg_opencl_command_queue_t *command_queue;
@@ -2332,7 +2332,7 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv_ptr)
 			evg_opencl_object_command_queue, argv->command_queue_id);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, evg_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, evg_opencl_command_queue_can_wakeup, command_queue,
 			evg_opencl_clEnqueueNDRangeKernel_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2347,7 +2347,7 @@ int evg_opencl_clEnqueueNDRangeKernel_impl(int *argv_ptr)
  */
 
 #define __EVG_OPENCL_NOT_IMPL__(_name) \
-	int evg_opencl_##_name##_impl(int *argv) \
+	int evg_opencl_##_name##_impl(struct x86_ctx_t *ctx, int *argv) \
 	{ \
 		fatal("%s: OpenCL function not implemented.\n%s", __FUNCTION__, \
 			evg_err_opencl_note); \
