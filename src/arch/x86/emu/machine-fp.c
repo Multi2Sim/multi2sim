@@ -474,8 +474,9 @@ void x86_isa_fcompp_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_fcomi_st0_sti_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t st0[10], sti[10];
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned char st0[10], sti[10];
+	unsigned long flags = regs->eflags;
 
 	x86_isa_load_fpu(ctx, 0, st0);
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -495,7 +496,7 @@ void x86_isa_fcomi_st0_sti_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_zps, x86_dep_cf, 0, 0);
 }
@@ -512,8 +513,9 @@ void x86_isa_fcomip_st0_sti_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_fucomi_st0_sti_impl(struct x86_ctx_t *ctx)
 {
-	uint8_t st0[10], sti[10];
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned char st0[10], sti[10];
+	unsigned long flags = regs->eflags;
 
 	x86_isa_load_fpu(ctx, 0, st0);
 	x86_isa_load_fpu(ctx, ctx->inst.opindex, sti);
@@ -533,7 +535,7 @@ void x86_isa_fucomi_st0_sti_impl(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_FP_ASM_END__
 
-	x86_isa_regs->eflags = flags;
+	regs->eflags = flags;
 
 	x86_uinst_new(ctx, x86_uinst_fp_comp, x86_dep_st0, x86_dep_sti, 0, x86_dep_zps, x86_dep_cf, 0, 0);
 }
@@ -1178,10 +1180,13 @@ void x86_isa_fld_sti_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_fldcw_m16_impl(struct x86_ctx_t *ctx)
 {
-	uint32_t addr = x86_isa_effective_address(ctx);
-	uint16_t value;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int addr;
+	unsigned short value;
 	int spec_mode;
 
+	addr = x86_isa_effective_address(ctx);
 	x86_isa_mem_read(ctx, addr, 2, &value);
 
 	/* Mask all floating-point exception on wrong path */
@@ -1190,7 +1195,7 @@ void x86_isa_fldcw_m16_impl(struct x86_ctx_t *ctx)
 		value |= 0x3f;
 
 	/* Set value */
-	x86_isa_regs->fpu_ctrl = value;
+	regs->fpu_ctrl = value;
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
@@ -1951,7 +1956,8 @@ void x86_isa_fsubrp_sti_st0_impl(struct x86_ctx_t *ctx)
 
 void x86_isa_fstcw_m16_impl(struct x86_ctx_t *ctx)
 {
-	uint16_t value = x86_isa_regs->fpu_ctrl;
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned short value = regs->fpu_ctrl;
 
 	__X86_ISA_FP_ASM_START__
 	asm volatile (
