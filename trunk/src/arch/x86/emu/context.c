@@ -240,8 +240,6 @@ void x86_ctx_free(struct x86_ctx_t *ctx)
 
 	/* Remove context from contexts list and free */
 	x86_emu_list_remove(x86_emu_list_context, ctx);
-	if (x86_isa_ctx == ctx)
-		x86_isa_ctx = NULL;
 	x86_ctx_debug("context %d freed\n", ctx->pid);
 
 	/* Free context */
@@ -283,7 +281,6 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 
 	/* The isa_xxx functions work on these global
 	 * variables. */
-	x86_isa_ctx = ctx;
 	x86_isa_regs = ctx->regs;
 	x86_isa_mem = ctx->mem;
 	x86_isa_inst_count++;
@@ -529,7 +526,7 @@ void x86_ctx_suspend(struct x86_ctx_t *ctx, x86_ctx_can_wakeup_callback_func_t c
 	ctx->can_wakeup_callback_data = can_wakeup_callback_data;
 	ctx->wakeup_callback_func = wakeup_callback_func;
 	ctx->wakeup_callback_data = wakeup_callback_data;
-	x86_ctx_set_status(x86_isa_ctx, x86_ctx_suspended | x86_ctx_callback);
+	x86_ctx_set_status(ctx, x86_ctx_suspended | x86_ctx_callback);
 	x86_emu_process_events_schedule();
 }
 
