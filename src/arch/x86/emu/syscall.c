@@ -254,11 +254,13 @@ void x86_sys_dump(FILE *f)
 
 void x86_sys_call(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int code;
 	int err;
 
 	/* System call code */
-	code = x86_isa_regs->eax;
+	code = regs->eax;
 	if (code < 1 || code >= x86_sys_code_count)
 		fatal("%s: invalid system call code (%d)", __FUNCTION__, code);
 
@@ -277,7 +279,7 @@ void x86_sys_call(struct x86_ctx_t *ctx)
 	/* Set return value in 'eax', except for 'sigreturn' system call. Also, if the
 	 * context got suspended, the wake up routine will set the return value. */
 	if (code != x86_sys_code_sigreturn && !x86_ctx_get_status(ctx, x86_ctx_suspended))
-		x86_isa_regs->eax = err;
+		regs->eax = err;
 
 	/* Debug */
 	x86_sys_debug("  ret=(%d, 0x%x)", err, err);
@@ -297,10 +299,11 @@ void x86_sys_call(struct x86_ctx_t *ctx)
 
 static int x86_sys_exit_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
 	int status;
 
 	/* Arguments */
-	status = x86_isa_regs->ebx;
+	status = regs->ebx;
 	x86_sys_debug("  status=0x%x\n", status);
 
 	/* Finish context */
@@ -317,12 +320,14 @@ static int x86_sys_exit_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_close_impl(struct x86_ctx_t *ctx)
 {
-	int guest_fd;
-	int host_fd;
+	struct x86_regs_t *regs = ctx->regs;
 	struct file_desc_t *fd;
 
+	int guest_fd;
+	int host_fd;
+
 	/* Arguments */
-	guest_fd = x86_isa_regs->ebx;
+	guest_fd = regs->ebx;
 	x86_sys_debug("  guest_fd=%d\n", guest_fd);
 	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, guest_fd);
 	x86_sys_debug("  host_fd=%d\n", host_fd);
@@ -353,6 +358,8 @@ static int x86_sys_close_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int buf_ptr;
 	unsigned int count;
 
@@ -366,9 +373,9 @@ static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 	struct pollfd fds;
 
 	/* Arguments */
-	guest_fd = x86_isa_regs->ebx;
-	buf_ptr = x86_isa_regs->ecx;
-	count = x86_isa_regs->edx;
+	guest_fd = regs->ebx;
+	buf_ptr = regs->ecx;
+	count = regs->edx;
 	x86_sys_debug("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
 		guest_fd, buf_ptr, count);
 
@@ -436,6 +443,8 @@ static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_write_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int buf_ptr;
 	unsigned int count;
 
@@ -449,9 +458,9 @@ static int x86_sys_write_impl(struct x86_ctx_t *ctx)
 	struct pollfd fds;
 
 	/* Arguments */
-	guest_fd = x86_isa_regs->ebx;
-	buf_ptr = x86_isa_regs->ecx;
-	count = x86_isa_regs->edx;
+	guest_fd = regs->ebx;
+	buf_ptr = regs->ecx;
+	count = regs->edx;
 	x86_sys_debug("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
 		guest_fd, buf_ptr, count);
 
@@ -532,6 +541,9 @@ static struct string_map_t sys_open_flags_map =
 
 static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct file_desc_t *desc;
+
 	unsigned int file_name_ptr;
 
 	int flags;
@@ -544,12 +556,11 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 	char flags_str[MAX_STRING_SIZE];
 
 	int host_fd;
-	struct file_desc_t *desc;
 
 	/* Arguments */
-	file_name_ptr = x86_isa_regs->ebx;
-	flags = x86_isa_regs->ecx;
-	mode = x86_isa_regs->edx;
+	file_name_ptr = regs->ebx;
+	flags = regs->ecx;
+	mode = regs->edx;
 	length = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
 	if (length >= MAX_PATH_SIZE)
 		fatal("syscall open: maximum path length exceeded");
@@ -635,18 +646,19 @@ static struct string_map_t sys_waitpid_options_map =
 
 static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct x86_ctx_t *child;
+
 	int pid;
 	int options;
 	unsigned int status_ptr;
 
 	char options_str[MAX_STRING_SIZE];
 
-	struct x86_ctx_t *child;
-
 	/* Arguments */
-	pid = x86_isa_regs->ebx;
-	status_ptr = x86_isa_regs->ecx;
-	options = x86_isa_regs->edx;
+	pid = regs->ebx;
+	status_ptr = regs->ecx;
+	options = regs->edx;
 	x86_sys_debug("  pid=%d, pstatus=0x%x, options=0x%x\n",
 		pid, status_ptr, options);
 	map_flags(&sys_waitpid_options_map, options, options_str, sizeof options_str);
@@ -692,6 +704,8 @@ static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_unlink_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int file_name_ptr;
 
 	int length;
@@ -701,7 +715,7 @@ static int x86_sys_unlink_impl(struct x86_ctx_t *ctx)
 	char full_path[MAX_PATH_SIZE];
 
 	/* Arguments */
-	file_name_ptr = x86_isa_regs->ebx;
+	file_name_ptr = regs->ebx;
 	length = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
 	if (length >= MAX_PATH_SIZE)
 		fatal("%s: buffer too small", __FUNCTION__);
@@ -733,10 +747,12 @@ static char *err_sys_execve_note =
 
 static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int name_ptr;
 	unsigned int argv;
 	unsigned int envp;
-	unsigned int regs;
+	unsigned int regs_ptr;
 
 	char name[MAX_PATH_SIZE];
 	char full_path[MAX_PATH_SIZE];
@@ -750,12 +766,12 @@ static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 	int i;
 
 	/* Arguments */
-	name_ptr = x86_isa_regs->ebx;
-	argv = x86_isa_regs->ecx;
-	envp = x86_isa_regs->edx;
-	regs = x86_isa_regs->esi;
+	name_ptr = regs->ebx;
+	argv = regs->ecx;
+	envp = regs->edx;
+	regs_ptr = regs->esi;
 	x86_sys_debug("  name_ptr=0x%x, argv=0x%x, envp=0x%x, regs=0x%x\n",
-		name_ptr, argv, envp, regs);
+		name_ptr, argv, envp, regs_ptr);
 
 	/* Get command name */
 	length = mem_read_string(x86_isa_mem, name_ptr, sizeof name, name);
@@ -853,12 +869,13 @@ static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_time_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
 
 	unsigned int time_ptr;
 	int t;
 
 	/* Arguments */
-	time_ptr = x86_isa_regs->ebx;
+	time_ptr = regs->ebx;
 	x86_sys_debug("  ptime=0x%x\n", time_ptr);
 
 	/* Host call */
@@ -879,6 +896,8 @@ static int x86_sys_time_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_chmod_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int file_name_ptr;
 	unsigned int mode;
 
@@ -889,8 +908,8 @@ static int x86_sys_chmod_impl(struct x86_ctx_t *ctx)
 	char full_path[MAX_PATH_SIZE];
 
 	/* Arguments */
-	file_name_ptr = x86_isa_regs->ebx;
-	mode = x86_isa_regs->ecx;
+	file_name_ptr = regs->ebx;
+	mode = regs->ecx;
 	len = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
 	if (len >= sizeof file_name)
 		fatal("%s: buffer too small", __FUNCTION__);
@@ -916,6 +935,8 @@ static int x86_sys_chmod_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_lseek_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int offset;
 
 	int fd;
@@ -924,9 +945,9 @@ static int x86_sys_lseek_impl(struct x86_ctx_t *ctx)
 	int err;
 
 	/* Arguments */
-	fd = x86_isa_regs->ebx;
-	offset = x86_isa_regs->ecx;
-	origin = x86_isa_regs->edx;
+	fd = regs->ebx;
+	offset = regs->ecx;
+	origin = regs->edx;
 	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, fd);
 	x86_sys_debug("  fd=%d, offset=0x%x, origin=0x%x\n",
 		fd, offset, origin);
@@ -974,6 +995,8 @@ static void sys_utime_guest_to_host(struct utimbuf *host, struct sim_utimbuf *gu
 
 static int x86_sys_utime_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int file_name_ptr;
 	unsigned int utimbuf_ptr;
 
@@ -987,8 +1010,8 @@ static int x86_sys_utime_impl(struct x86_ctx_t *ctx)
 	char full_path[MAX_PATH_SIZE];
 
 	/* Arguments */
-	file_name_ptr = x86_isa_regs->ebx;
-	utimbuf_ptr = x86_isa_regs->ecx;
+	file_name_ptr = regs->ebx;
+	utimbuf_ptr = regs->ecx;
 	x86_sys_debug("  file_name_ptr=0x%x, utimbuf_ptr=0x%x\n",
 		file_name_ptr, utimbuf_ptr);
 
@@ -1034,6 +1057,8 @@ static struct string_map_t sys_access_mode_map =
 
 static int x86_sys_access_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int file_name_ptr;
 
 	int mode;
@@ -1045,8 +1070,8 @@ static int x86_sys_access_impl(struct x86_ctx_t *ctx)
 	char mode_str[MAX_STRING_SIZE];
 
 	/* Arguments */
-	file_name_ptr = x86_isa_regs->ebx;
-	mode = x86_isa_regs->ecx;
+	file_name_ptr = regs->ebx;
+	mode = regs->ecx;
 
 	/* Read file name */
 	len = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
@@ -1080,14 +1105,15 @@ static int x86_sys_access_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_kill_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct x86_ctx_t *temp_ctx;
+
 	int pid;
 	int sig;
 
-	struct x86_ctx_t *temp_ctx;
-
 	/* Arguments */
-	pid = x86_isa_regs->ebx;
-	sig = x86_isa_regs->ecx;
+	pid = regs->ebx;
+	sig = regs->ecx;
 	x86_sys_debug("  pid=%d, sig=%d (%s)\n", pid,
 		sig, sim_signal_name(sig));
 
@@ -1116,6 +1142,8 @@ static int x86_sys_kill_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_rename_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int old_path_ptr;
 	unsigned int new_path_ptr;
 
@@ -1128,8 +1156,8 @@ static int x86_sys_rename_impl(struct x86_ctx_t *ctx)
 	int err;
 
 	/* Arguments */
-	old_path_ptr = x86_isa_regs->ebx;
-	new_path_ptr = x86_isa_regs->ecx;
+	old_path_ptr = regs->ebx;
+	new_path_ptr = regs->ecx;
 	x86_sys_debug("  old_path_ptr=0x%x, new_path_ptr=0x%x\n",
 		old_path_ptr, new_path_ptr);
 
@@ -1167,6 +1195,8 @@ static int x86_sys_rename_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_mkdir_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int path_ptr;
 
 	int mode;
@@ -1177,8 +1207,8 @@ static int x86_sys_mkdir_impl(struct x86_ctx_t *ctx)
 	char full_path[MAX_PATH_SIZE];
 
 	/* Arguments */
-	path_ptr = x86_isa_regs->ebx;
-	mode = x86_isa_regs->ecx;
+	path_ptr = regs->ebx;
+	mode = regs->ecx;
 	x86_sys_debug("  path_ptr=0x%x, mode=0x%x\n", path_ptr, mode);
 
 	/* Read path */
@@ -1208,6 +1238,8 @@ static int x86_sys_mkdir_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_dup_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int guest_fd;
 	int dup_guest_fd;
 	int host_fd;
@@ -1217,7 +1249,7 @@ static int x86_sys_dup_impl(struct x86_ctx_t *ctx)
 	struct file_desc_t *dup_desc;
 
 	/* Arguments */
-	guest_fd = x86_isa_regs->ebx;
+	guest_fd = regs->ebx;
 	x86_sys_debug("  guest_fd=%d\n", guest_fd);
 
 	/* Check that file descriptor is valid. */
@@ -1250,10 +1282,12 @@ static int x86_sys_dup_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_pipe_impl(struct x86_ctx_t *ctx)
 {
-	unsigned int fd_ptr;
+	struct x86_regs_t *regs = ctx->regs;
 
 	struct file_desc_t *read_desc;
 	struct file_desc_t *write_desc;
+
+	unsigned int fd_ptr;
 
 	int guest_read_fd;
 	int guest_write_fd;
@@ -1262,7 +1296,7 @@ static int x86_sys_pipe_impl(struct x86_ctx_t *ctx)
 	int err;
 
 	/* Arguments */
-	fd_ptr = x86_isa_regs->ebx;
+	fd_ptr = regs->ebx;
 	x86_sys_debug("  fd_ptr=0x%x\n", fd_ptr);
 
 	/* Create host pipe */
@@ -1313,6 +1347,8 @@ static void sys_times_host_to_guest(struct sim_tms *guest, struct tms *host)
 
 static int x86_sys_times_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int tms_ptr;
 
 	struct tms tms;
@@ -1321,7 +1357,7 @@ static int x86_sys_times_impl(struct x86_ctx_t *ctx)
 	int err;
 
 	/* Arguments */
-	tms_ptr = x86_isa_regs->ebx;
+	tms_ptr = regs->ebx;
 	x86_sys_debug("  tms_ptr=0x%x\n", tms_ptr);
 
 	/* Host call */
@@ -1347,6 +1383,8 @@ static int x86_sys_times_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int old_heap_break;
 	unsigned int new_heap_break;
 	unsigned int size;
@@ -1355,7 +1393,7 @@ static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
 	unsigned int new_heap_break_aligned;
 
 	/* Arguments */
-	new_heap_break = x86_isa_regs->ebx;
+	new_heap_break = regs->ebx;
 	old_heap_break = x86_isa_mem->heap_break;
 	x86_sys_debug("  newbrk=0x%x (previous brk was 0x%x)\n",
 		new_heap_break, old_heap_break);
@@ -1418,6 +1456,8 @@ static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_ioctl_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int cmd;
 	unsigned int arg;
 
@@ -1427,9 +1467,9 @@ static int x86_sys_ioctl_impl(struct x86_ctx_t *ctx)
 	struct file_desc_t *desc;
 
 	/* Arguments */
-	guest_fd = x86_isa_regs->ebx;
-	cmd = x86_isa_regs->ecx;
-	arg = x86_isa_regs->edx;
+	guest_fd = regs->ebx;
+	cmd = regs->ecx;
+	arg = regs->edx;
 	x86_sys_debug("  guest_fd=%d, cmd=0x%x, arg=0x%x\n",
 		guest_fd, cmd, arg);
 
@@ -1522,6 +1562,8 @@ struct sim_rlimit
 
 static int x86_sys_setrlimit_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int res;
 	unsigned int rlim_ptr;
 
@@ -1530,8 +1572,8 @@ static int x86_sys_setrlimit_impl(struct x86_ctx_t *ctx)
 	struct sim_rlimit sim_rlimit;
 
 	/* Arguments */
-	res = x86_isa_regs->ebx;
-	rlim_ptr = x86_isa_regs->ecx;
+	res = regs->ebx;
+	rlim_ptr = regs->ecx;
 	res_str = map_value(&sys_rlimit_res_map, res);
 	x86_sys_debug("  res=0x%x, rlim_ptr=0x%x\n", res, rlim_ptr);
 	x86_sys_debug("  res=%s\n", res_str);
@@ -1619,6 +1661,8 @@ static void sys_rusage_host_to_guest(struct sim_rusage *guest, struct rusage *ho
 
 static int x86_sys_getrusage_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int who;
 	unsigned int u_ptr;
 
@@ -1628,8 +1672,8 @@ static int x86_sys_getrusage_impl(struct x86_ctx_t *ctx)
 	int err;
 
 	/* Arguments */
-	who = x86_isa_regs->ebx;
-	u_ptr = x86_isa_regs->ecx;
+	who = regs->ebx;
+	u_ptr = regs->ecx;
 	x86_sys_debug("  who=0x%x, pru=0x%x\n", who, u_ptr);
 
 	/* Supported values */
@@ -1663,6 +1707,8 @@ static int x86_sys_getrusage_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_gettimeofday_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int tv_ptr;
 	unsigned int tz_ptr;
 
@@ -1670,8 +1716,8 @@ static int x86_sys_gettimeofday_impl(struct x86_ctx_t *ctx)
 	struct timezone tz;
 
 	/* Arguments */
-	tv_ptr = x86_isa_regs->ebx;
-	tz_ptr = x86_isa_regs->ecx;
+	tv_ptr = regs->ebx;
+	tz_ptr = regs->ecx;
 	x86_sys_debug("  tv_ptr=0x%x, tz_ptr=0x%x\n", tv_ptr, tz_ptr);
 
 	/* Host call */
@@ -1704,6 +1750,8 @@ static int x86_sys_gettimeofday_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_readlink_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int path_ptr;
 	unsigned int buf;
 	unsigned int bufsz;
@@ -1717,9 +1765,9 @@ static int x86_sys_readlink_impl(struct x86_ctx_t *ctx)
 	int err;
 
 	/* Arguments */
-	path_ptr = x86_isa_regs->ebx;
-	buf = x86_isa_regs->ecx;
-	bufsz = x86_isa_regs->edx;
+	path_ptr = regs->ebx;
+	buf = regs->ecx;
+	bufsz = regs->edx;
 	x86_sys_debug("  path_ptr=0x%x, buf=0x%x, bufsz=%d\n", path_ptr, buf, bufsz);
 
 	/* Read path */
@@ -1905,6 +1953,8 @@ static int x86_sys_mmap(struct x86_ctx_t *ctx, unsigned int addr, unsigned int l
 
 static int x86_sys_mmap_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int args_ptr;
 	unsigned int addr;
 	unsigned int len;
@@ -1919,7 +1969,7 @@ static int x86_sys_mmap_impl(struct x86_ctx_t *ctx)
 
 	/* This system call takes the arguments from memory, at the address
 	 * pointed by 'ebx'. */
-	args_ptr = x86_isa_regs->ebx;
+	args_ptr = regs->ebx;
 	mem_read(x86_isa_mem, args_ptr, 4, &addr);
 	mem_read(x86_isa_mem, args_ptr + 4, 4, &len);
 	mem_read(x86_isa_mem, args_ptr + 8, 4, &prot);
@@ -1948,13 +1998,15 @@ static int x86_sys_mmap_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_munmap_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int addr;
 	unsigned int size;
 	unsigned int size_aligned;
 
 	/* Arguments */
-	addr = x86_isa_regs->ebx;
-	size = x86_isa_regs->ecx;
+	addr = regs->ebx;
+	size = regs->ecx;
 	x86_sys_debug("  addr=0x%x, size=0x%x\n", addr, size);
 
 	/* Restrictions */
@@ -1978,14 +2030,16 @@ static int x86_sys_munmap_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_fchmod_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int fd;
 	int host_fd;
 	int mode;
 	int err;
 
 	/* Arguments */
-	fd = x86_isa_regs->ebx;
-	mode = x86_isa_regs->ecx;
+	fd = regs->ebx;
+	mode = regs->ecx;
 	x86_sys_debug("  fd=%d, mode=%d\n", fd, mode);
 
 	/* Get host descriptor */
@@ -2081,13 +2135,15 @@ static struct string_map_t sys_socket_type_map =
 
 static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int call;
 	unsigned int args;
 	char *call_str;
 
 	/* Arguments */
-	call = x86_isa_regs->ebx;
-	args = x86_isa_regs->ecx;
+	call = regs->ebx;
+	args = regs->ecx;
 	call_str = map_value(&sys_socketcall_call_map, call);
 	x86_sys_debug("  call=%d (%s), args=0x%x\n", call, call_str, args);
 
@@ -2309,6 +2365,8 @@ static void sim_itimerval_dump(struct sim_itimerval *sim_itimerval)
 
 static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int which;
 	unsigned int value_ptr;
 	unsigned int old_value_ptr;
@@ -2318,9 +2376,9 @@ static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
 	long long now;
 
 	/* Arguments */
-	which = x86_isa_regs->ebx;
-	value_ptr = x86_isa_regs->ecx;
-	old_value_ptr = x86_isa_regs->edx;
+	which = regs->ebx;
+	value_ptr = regs->ecx;
+	old_value_ptr = regs->edx;
 	x86_sys_debug("  which=%d (%s), value_ptr=0x%x, old_value_ptr=0x%x\n",
 		which, map_value(&sys_itimer_which_map, which), value_ptr, old_value_ptr);
 
@@ -2363,6 +2421,8 @@ static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_getitimer_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int which;
 	unsigned int value_ptr;
 
@@ -2372,8 +2432,8 @@ static int x86_sys_getitimer_impl(struct x86_ctx_t *ctx)
 	long long rem;
 
 	/* Arguments */
-	which = x86_isa_regs->ebx;
-	value_ptr = x86_isa_regs->ecx;
+	which = regs->ebx;
+	value_ptr = regs->ecx;
 	x86_sys_debug("  which=%d (%s), value_ptr=0x%x\n",
 		which, map_value(&sys_itimer_which_map, which), value_ptr);
 
@@ -2505,6 +2565,8 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 	 * There is an unused parameter, that's why we read child_tidptr from edi
 	 * instead of esi. */
 
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int flags;
 	unsigned int new_esp;
 	unsigned int parent_tid_ptr;
@@ -2517,10 +2579,10 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 	struct x86_ctx_t *new_ctx;
 
 	/* Arguments */
-	flags = x86_isa_regs->ebx;
-	new_esp = x86_isa_regs->ecx;
-	parent_tid_ptr = x86_isa_regs->edx;
-	child_tid_ptr = x86_isa_regs->edi;
+	flags = regs->ebx;
+	new_esp = regs->ecx;
+	parent_tid_ptr = regs->edx;
+	child_tid_ptr = regs->edi;
 	x86_sys_debug("  flags=0x%x, newsp=0x%x, parent_tidptr=0x%x, child_tidptr=0x%x\n",
 		flags, new_esp, parent_tid_ptr, child_tid_ptr);
 
@@ -2535,7 +2597,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 
 	/* New stack pointer defaults to current */
 	if (!new_esp)
-		new_esp = x86_isa_regs->esp;
+		new_esp = regs->esp;
 
 	/* Check not supported flags */
 	if (flags & ~sys_clone_supported_flags)
@@ -2603,7 +2665,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 		struct sim_user_desc uinfo;
 		unsigned int uinfo_ptr;
 
-		uinfo_ptr = x86_isa_regs->esi;
+		uinfo_ptr = regs->esi;
 		x86_sys_debug("  puinfo=0x%x\n", uinfo_ptr);
 
 		mem_read(x86_isa_mem, uinfo_ptr, sizeof(struct sim_user_desc), &uinfo);
@@ -2665,10 +2727,12 @@ static struct sim_utsname sim_utsname =
 
 static int x86_sys_newuname_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int utsname_ptr;
 
 	/* Arguments */
-	utsname_ptr = x86_isa_regs->ebx;
+	utsname_ptr = regs->ebx;
 	x86_sys_debug("  putsname=0x%x\n", utsname_ptr);
 	x86_sys_debug("  sysname='%s', nodename='%s'\n", sim_utsname.sysname, sim_utsname.nodename);
 	x86_sys_debug("  relaese='%s', version='%s'\n", sim_utsname.release, sim_utsname.version);
@@ -2688,6 +2752,8 @@ static int x86_sys_newuname_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_mprotect_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int start;
 	unsigned int len;
 
@@ -2696,9 +2762,9 @@ static int x86_sys_mprotect_impl(struct x86_ctx_t *ctx)
 	enum mem_access_t perm = 0;
 
 	/* Arguments */
-	start = x86_isa_regs->ebx;
-	len = x86_isa_regs->ecx;
-	prot = x86_isa_regs->edx;
+	start = regs->ebx;
+	len = regs->ecx;
+	prot = regs->edx;
 	x86_sys_debug("  start=0x%x, len=0x%x, prot=0x%x\n", start, len, prot);
 
 	/* Permissions */
@@ -2720,6 +2786,8 @@ static int x86_sys_mprotect_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_llseek_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int fd;
 	unsigned int result_ptr;
 
@@ -2731,12 +2799,12 @@ static int x86_sys_llseek_impl(struct x86_ctx_t *ctx)
 	long long offset;
 
 	/* Arguments */
-	fd = x86_isa_regs->ebx;
-	offset_high = x86_isa_regs->ecx;
-	offset_low = x86_isa_regs->edx;
+	fd = regs->ebx;
+	offset_high = regs->ecx;
+	offset_low = regs->edx;
 	offset = ((long long) offset_high << 32) | offset_low;
-	result_ptr = x86_isa_regs->esi;
-	origin = x86_isa_regs->edi;
+	result_ptr = regs->esi;
+	origin = regs->edi;
 	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, fd);
 	x86_sys_debug("  fd=%d, offset_high=0x%x, offset_low=0x%x, result_ptr=0x%x, origin=0x%x\n",
 		fd, offset_high, offset_low, result_ptr, origin);
@@ -2785,6 +2853,8 @@ struct sys_guest_dirent_t
 
 static int x86_sys_getdents_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int pdirent;
 
 	int fd;
@@ -2803,9 +2873,9 @@ static int x86_sys_getdents_impl(struct x86_ctx_t *ctx)
 	struct sys_guest_dirent_t sim_dirent;
 
 	/* Read parameters */
-	fd = x86_isa_regs->ebx;
-	pdirent = x86_isa_regs->ecx;
-	count = x86_isa_regs->edx;
+	fd = regs->ebx;
+	pdirent = regs->ecx;
+	count = regs->edx;
 	host_fd = file_desc_table_get_host_fd(ctx->file_desc_table, fd);
 	x86_sys_debug("  fd=%d, pdirent=0x%x, count=%d\n",
 		fd, pdirent, count);
@@ -2963,6 +3033,8 @@ static int x86_sys_select_impl(struct x86_ctx_t *ctx)
 	 * int select(int n, fd_set *inp, fd_set *outp, fd_set *exp, struct timeval *tvp);
 	 */
 
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int n;
 	unsigned int inp;
 	unsigned int outp;
@@ -2979,11 +3051,11 @@ static int x86_sys_select_impl(struct x86_ctx_t *ctx)
 	int err;
 
 	/* Arguments */
-	n = x86_isa_regs->ebx;
-	inp = x86_isa_regs->ecx;
-	outp = x86_isa_regs->edx;
-	exp = x86_isa_regs->esi;
-	tvp = x86_isa_regs->edi;
+	n = regs->ebx;
+	inp = regs->ecx;
+	outp = regs->edx;
+	exp = regs->esi;
+	tvp = regs->edi;
 	x86_sys_debug("  n=%d, inp=0x%x, outp=0x%x, exp=0x%x, tvp=0x%x\n",
 		n, inp, outp, exp, tvp);
 
@@ -3044,6 +3116,8 @@ static struct string_map_t sys_msync_flags_map =
 
 static int x86_sys_msync_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int start;
 	unsigned int len;
 
@@ -3052,9 +3126,9 @@ static int x86_sys_msync_impl(struct x86_ctx_t *ctx)
 	char flags_str[MAX_STRING_SIZE];
 
 	/* Arguments */
-	start = x86_isa_regs->ebx;
-	len = x86_isa_regs->ecx;
-	flags = x86_isa_regs->edx;
+	start = regs->ebx;
+	len = regs->ecx;
+	flags = regs->edx;
 	map_flags(&sys_msync_flags_map, flags, flags_str, sizeof flags_str);
 	x86_sys_debug("  start=0x%x, len=0x%x, flags=0x%x\n", start, len, flags);
 	x86_sys_debug("  flags=%s\n", flags_str);
@@ -3072,6 +3146,8 @@ static int x86_sys_msync_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_writev_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int v;
 	int len;
 	int guest_fd;
@@ -3088,9 +3164,9 @@ static int x86_sys_writev_impl(struct x86_ctx_t *ctx)
 	void *buf;
 
 	/* Arguments */
-	guest_fd = x86_isa_regs->ebx;
-	iovec_ptr = x86_isa_regs->ecx;
-	vlen = x86_isa_regs->edx;
+	guest_fd = regs->ebx;
+	iovec_ptr = regs->ecx;
+	vlen = regs->edx;
 	x86_sys_debug("  guest_fd=%d, iovec_ptr = 0x%x, vlen=0x%x\n",
 		guest_fd, iovec_ptr, vlen);
 
@@ -3157,6 +3233,8 @@ struct sys_sysctl_args_t
 
 static int x86_sys_sysctl_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int i;
 
 	unsigned int args_ptr;
@@ -3166,7 +3244,7 @@ static int x86_sys_sysctl_impl(struct x86_ctx_t *ctx)
 	struct sys_sysctl_args_t args;
 
 	/* Arguments */
-	args_ptr = x86_isa_regs->ebx;
+	args_ptr = regs->ebx;
 	x86_sys_debug("  pargs=0x%x\n", args_ptr);
 
 	/* Access arguments in memory */
@@ -3206,13 +3284,15 @@ static int x86_sys_sysctl_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_sched_setparam_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int param_ptr;
 
 	int sched_priority;
 	int pid;
 
-	pid = x86_isa_regs->ebx;
-	param_ptr = x86_isa_regs->ecx;
+	pid = regs->ebx;
+	param_ptr = regs->ecx;
 	x86_sys_debug("  pid=%d\n", pid);
 	x86_sys_debug("  param_ptr=0x%x\n", param_ptr);
 	mem_read(x86_isa_mem, param_ptr, 4, &sched_priority);
@@ -3231,14 +3311,16 @@ static int x86_sys_sched_setparam_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_sched_getparam_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int param_ptr;
 	unsigned int zero = 0;
 
 	int pid;
 
 	/* Arguments */
-	pid = x86_isa_regs->ebx;
-	param_ptr = x86_isa_regs->ecx;
+	pid = regs->ebx;
+	param_ptr = regs->ecx;
 	x86_sys_debug("  pid=%d\n", pid);
 	x86_sys_debug("  param_ptr=0x%x\n", param_ptr);
 
@@ -3256,10 +3338,12 @@ static int x86_sys_sched_getparam_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_sched_getscheduler_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int pid;
 
 	/* Arguments */
-	pid = x86_isa_regs->ebx;
+	pid = regs->ebx;
 	x86_sys_debug("  pid=%d\n", pid);
 
 	/* System call ignored */
@@ -3275,10 +3359,12 @@ static int x86_sys_sched_getscheduler_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_sched_get_priority_max_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int policy;
 
 	/* Arguments */
-	policy = x86_isa_regs->ebx;
+	policy = regs->ebx;
 	x86_sys_debug("  policy=%d\n", policy);
 
 	switch (policy)
@@ -3314,10 +3400,12 @@ static int x86_sys_sched_get_priority_max_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_sched_get_priority_min_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int policy;
 
 	/* Arguments */
-	policy = x86_isa_regs->ebx;
+	policy = regs->ebx;
 	x86_sys_debug("  policy=%d\n", policy);
 
 	switch (policy)
@@ -3353,6 +3441,8 @@ static int x86_sys_sched_get_priority_min_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int rqtp;
 	unsigned int rmtp;
 	unsigned int sec;
@@ -3362,8 +3452,8 @@ static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
 	long long now;
 
 	/* Arguments */
-	rqtp = x86_isa_regs->ebx;
-	rmtp = x86_isa_regs->ecx;
+	rqtp = regs->ebx;
+	rmtp = regs->ecx;
 	x86_sys_debug("  rqtp=0x%x, rmtp=0x%x\n", rqtp, rmtp);
 
 	/* Get current time */
@@ -3391,6 +3481,8 @@ static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_mremap_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int addr;
 	unsigned int old_len;
 	unsigned int new_len;
@@ -3399,10 +3491,10 @@ static int x86_sys_mremap_impl(struct x86_ctx_t *ctx)
 	int flags;
 
 	/* Arguments */
-	addr = x86_isa_regs->ebx;
-	old_len = x86_isa_regs->ecx;
-	new_len = x86_isa_regs->edx;
-	flags = x86_isa_regs->esi;
+	addr = regs->ebx;
+	old_len = regs->ecx;
+	new_len = regs->edx;
+	flags = regs->esi;
 	x86_sys_debug("  addr=0x%x, old_len=0x%x, new_len=0x%x flags=0x%x\n",
 		addr, old_len, new_len, flags);
 
@@ -3473,6 +3565,8 @@ static struct string_map_t x86_sys_clock_gettime_clk_id_map =
 
 static int x86_sys_clock_gettime_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int clk_id;
 	unsigned int ts_ptr;
 
@@ -3486,8 +3580,8 @@ static int x86_sys_clock_gettime_impl(struct x86_ctx_t *ctx)
 	} sim_ts;
 
 	/* Arguments */
-	clk_id = x86_isa_regs->ebx;
-	ts_ptr = x86_isa_regs->ecx;
+	clk_id = regs->ebx;
+	ts_ptr = regs->ecx;
 	clk_id_str = map_value(&x86_sys_clock_gettime_clk_id_map, clk_id);
 	x86_sys_debug("  clk_id=0x%x (%s), ts_ptr=0x%x\n",
 		clk_id, clk_id_str, ts_ptr);
@@ -3558,6 +3652,8 @@ struct sim_pollfd_t
 
 static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int pfds;
 	unsigned int nfds;
 
@@ -3575,9 +3671,9 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 	long long now = esim_real_time();
 
 	/* Arguments */
-	pfds = x86_isa_regs->ebx;
-	nfds = x86_isa_regs->ecx;
-	timeout = x86_isa_regs->edx;
+	pfds = regs->ebx;
+	nfds = regs->ecx;
+	timeout = regs->edx;
 	x86_sys_debug("  pfds=0x%x, nfds=%d, timeout=%d\n",
 		pfds, nfds, timeout);
 
@@ -3670,6 +3766,8 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int sig;
 	int sigsetsize;
 
@@ -3679,10 +3777,10 @@ static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
 	struct sim_sigaction act;
 
 	/* Arguments */
-	sig = x86_isa_regs->ebx;
-	act_ptr = x86_isa_regs->ecx;
-	old_act_ptr = x86_isa_regs->edx;
-	sigsetsize = x86_isa_regs->esi;
+	sig = regs->ebx;
+	act_ptr = regs->ecx;
+	old_act_ptr = regs->edx;
+	sigsetsize = regs->esi;
 	x86_sys_debug("  sig=%d, act_ptr=0x%x, old_act_ptr=0x%x, sigsetsize=0x%x\n",
 		sig, act_ptr, old_act_ptr, sigsetsize);
 	x86_sys_debug("  signal=%s\n", sim_signal_name(sig));
@@ -3739,6 +3837,8 @@ static struct string_map_t sys_sigprocmask_how_map =
 
 static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int set_ptr;
 	unsigned int old_set_ptr;
 
@@ -3748,10 +3848,10 @@ static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 	unsigned long long set;
 	unsigned long long old_set;
 
-	how = x86_isa_regs->ebx;
-	set_ptr = x86_isa_regs->ecx;
-	old_set_ptr = x86_isa_regs->edx;
-	sigsetsize = x86_isa_regs->esi;
+	how = regs->ebx;
+	set_ptr = regs->ecx;
+	old_set_ptr = regs->edx;
+	sigsetsize = regs->esi;
 	x86_sys_debug("  how=0x%x, set_ptr=0x%x, old_set_ptr=0x%x, sigsetsize=0x%x\n",
 		how, set_ptr, old_set_ptr, sigsetsize);
 	x86_sys_debug("  how=%s\n", map_value(&sys_sigprocmask_how_map, how));
@@ -3816,14 +3916,14 @@ static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
 {
-	unsigned int new_set_ptr;
+	struct x86_regs_t *regs = ctx->regs;
 
+	unsigned int new_set_ptr;
+	unsigned long long new_set;
 	int sigsetsize;
 
-	unsigned long long new_set;
-
-	new_set_ptr = x86_isa_regs->ebx;
-	sigsetsize = x86_isa_regs->ecx;
+	new_set_ptr = regs->ebx;
+	sigsetsize = regs->ecx;
 	x86_sys_debug("  new_set_ptr=0x%x, sigsetsize=%d\n",
 		new_set_ptr, sigsetsize);
 
@@ -3861,6 +3961,8 @@ static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_getcwd_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int buf_ptr;
 
 	int size;
@@ -3869,8 +3971,8 @@ static int x86_sys_getcwd_impl(struct x86_ctx_t *ctx)
 	char *cwd;
 
 	/* Arguments */
-	buf_ptr = x86_isa_regs->ebx;
-	size = x86_isa_regs->ecx;
+	buf_ptr = regs->ebx;
+	size = regs->ecx;
 	x86_sys_debug("  buf_ptr=0x%x, size=0x%x\n", buf_ptr, size);
 
 	/* Get working directory */
@@ -3895,6 +3997,8 @@ static int x86_sys_getcwd_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_getrlimit_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int res;
 	unsigned int rlim_ptr;
 
@@ -3903,8 +4007,8 @@ static int x86_sys_getrlimit_impl(struct x86_ctx_t *ctx)
 	struct sim_rlimit sim_rlimit;
 
 	/* Arguments */
-	res = x86_isa_regs->ebx;
-	rlim_ptr = x86_isa_regs->ecx;
+	res = regs->ebx;
+	rlim_ptr = regs->ecx;
 	res_str = map_value(&sys_rlimit_res_map, res);
 	x86_sys_debug("  res=0x%x, rlim_ptr=0x%x\n", res, rlim_ptr);
 	x86_sys_debug("  res=%s\n", res_str);
@@ -3955,6 +4059,8 @@ static int x86_sys_getrlimit_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_mmap2_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int addr;
 	unsigned int len;
 
@@ -3967,12 +4073,12 @@ static int x86_sys_mmap2_impl(struct x86_ctx_t *ctx)
 	char flags_str[MAX_STRING_SIZE];
 
 	/* Arguments */
-	addr = x86_isa_regs->ebx;
-	len = x86_isa_regs->ecx;
-	prot = x86_isa_regs->edx;
-	flags = x86_isa_regs->esi;
-	guest_fd = x86_isa_regs->edi;
-	offset = x86_isa_regs->ebp;
+	addr = regs->ebx;
+	len = regs->ecx;
+	prot = regs->edx;
+	flags = regs->esi;
+	guest_fd = regs->edi;
+	offset = regs->ebp;
 
 	/* Debug */
 	x86_sys_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, guest_fd=%d, offset=0x%x\n",
@@ -3995,6 +4101,8 @@ static int x86_sys_mmap2_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_ftruncate64_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int fd;
 	int host_fd;
 	int err;
@@ -4002,8 +4110,8 @@ static int x86_sys_ftruncate64_impl(struct x86_ctx_t *ctx)
 	unsigned int length;
 
 	/* Arguments */
-	fd = x86_isa_regs->ebx;
-	length = x86_isa_regs->ecx;
+	fd = regs->ebx;
+	length = regs->ecx;
 	x86_sys_debug("  fd=%d, length=0x%x\n", fd, length);
 
 	/* Get host descriptor */
@@ -4079,6 +4187,8 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 
 static int x86_sys_stat64_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int file_name_ptr;
 	unsigned int statbuf_ptr;
 
@@ -4092,8 +4202,8 @@ static int x86_sys_stat64_impl(struct x86_ctx_t *ctx)
 	int err;
 
 	/* Arguments */
-	file_name_ptr = x86_isa_regs->ebx;
-	statbuf_ptr = x86_isa_regs->ecx;
+	file_name_ptr = regs->ebx;
+	statbuf_ptr = regs->ecx;
 	x86_sys_debug("  file_name_ptr=0x%x, statbuf_ptr=0x%x\n",
 			file_name_ptr, statbuf_ptr);
 
@@ -4126,6 +4236,8 @@ static int x86_sys_stat64_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_lstat64_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int file_name_ptr;
 	unsigned int statbuf_ptr;
 
@@ -4139,8 +4251,8 @@ static int x86_sys_lstat64_impl(struct x86_ctx_t *ctx)
 	struct sim_stat64_t sim_statbuf;
 
 	/* Arguments */
-	file_name_ptr = x86_isa_regs->ebx;
-	statbuf_ptr = x86_isa_regs->ecx;
+	file_name_ptr = regs->ebx;
+	statbuf_ptr = regs->ecx;
 	x86_sys_debug("  file_name_ptr=0x%x, statbuf_ptr=0x%x\n", file_name_ptr, statbuf_ptr);
 
 	/* Read file name */
@@ -4172,6 +4284,8 @@ static int x86_sys_lstat64_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_fstat64_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int fd;
 	int host_fd;
 	int err;
@@ -4182,8 +4296,8 @@ static int x86_sys_fstat64_impl(struct x86_ctx_t *ctx)
 	struct sim_stat64_t sim_statbuf;
 
 	/* Arguments */
-	fd = x86_isa_regs->ebx;
-	statbuf_ptr = x86_isa_regs->ecx;
+	fd = regs->ebx;
+	statbuf_ptr = regs->ecx;
 	x86_sys_debug("  fd=%d, statbuf_ptr=0x%x\n", fd, statbuf_ptr);
 
 	/* Get host descriptor */
@@ -4258,6 +4372,8 @@ static int x86_sys_getegid_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_chown_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int file_name_ptr;
 
 	int owner;
@@ -4269,9 +4385,9 @@ static int x86_sys_chown_impl(struct x86_ctx_t *ctx)
 	char full_path[MAX_PATH_SIZE];
 
 	/* Arguments */
-	file_name_ptr = x86_isa_regs->ebx;
-	owner = x86_isa_regs->ecx;
-	group = x86_isa_regs->edx;
+	file_name_ptr = regs->ebx;
+	owner = regs->ecx;
+	group = regs->edx;
 	x86_sys_debug("  file_name_ptr=0x%x, owner=%d, group=%d\n", file_name_ptr, owner, group);
 
 	/* Read file name */
@@ -4301,15 +4417,17 @@ static int x86_sys_chown_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_madvise_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int start;
 	unsigned int len;
 
 	int advice;
 
 	/* Arguments */
-	start = x86_isa_regs->ebx;
-	len = x86_isa_regs->ecx;
-	advice = x86_isa_regs->edx;
+	start = regs->ebx;
+	len = regs->ecx;
+	advice = regs->edx;
 	x86_sys_debug("  start=0x%x, len=%d, advice=%d\n", start, len, advice);
 
 	/* System call ignored */
@@ -4342,6 +4460,8 @@ struct guest_dirent64_t
 
 static int x86_sys_getdents64_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int pdirent;
 	unsigned int count;
 
@@ -4357,9 +4477,9 @@ static int x86_sys_getdents64_impl(struct x86_ctx_t *ctx)
 	struct guest_dirent64_t guest_dirent;
 
 	/* Arguments */
-	fd = x86_isa_regs->ebx;
-	pdirent = x86_isa_regs->ecx;
-	count = x86_isa_regs->edx;
+	fd = regs->ebx;
+	pdirent = regs->ecx;
+	count = regs->edx;
 	x86_sys_debug("  fd=%d, pdirent=0x%x, count=%d\n", fd, pdirent, count);
 
 	/* Get host descriptor */
@@ -4449,6 +4569,8 @@ static struct string_map_t sys_fcntl_cmp_map =
 
 static int x86_sys_fcntl64_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int guest_fd;
 	int cmd;
 	int err;
@@ -4461,9 +4583,9 @@ static int x86_sys_fcntl64_impl(struct x86_ctx_t *ctx)
 	struct file_desc_t *desc;
 
 	/* Arguments */
-	guest_fd = x86_isa_regs->ebx;
-	cmd = x86_isa_regs->ecx;
-	arg = x86_isa_regs->edx;
+	guest_fd = regs->ebx;
+	cmd = regs->ecx;
+	arg = regs->edx;
 	x86_sys_debug("  guest_fd=%d, cmd=%d, arg=0x%x\n",
 		guest_fd, cmd, arg);
 	cmd_name = map_value(&sys_fcntl_cmp_map, cmd);
@@ -4575,6 +4697,8 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 	/* Prototype: sys_futex(void *addr1, int op, int val1, struct timespec *timeout,
 	 *   void *addr2, int val3); */
 
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int addr1;
 	unsigned int timeout_ptr;
 	unsigned int addr2;
@@ -4591,12 +4715,12 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 	int ret;
 
 	/* Arguments */
-	addr1 = x86_isa_regs->ebx;
-	op = x86_isa_regs->ecx;
-	val1 = x86_isa_regs->edx;
-	timeout_ptr = x86_isa_regs->esi;
-	addr2 = x86_isa_regs->edi;
-	val3 = x86_isa_regs->ebp;
+	addr1 = regs->ebx;
+	op = regs->ecx;
+	val1 = regs->edx;
+	timeout_ptr = regs->esi;
+	addr2 = regs->edi;
+	val3 = regs->ebp;
 	x86_sys_debug("  addr1=0x%x, op=%d, val1=%d, ptimeout=0x%x, addr2=0x%x, val3=%d\n",
 		addr1, op, val1, timeout_ptr, addr2, val3);
 
@@ -4782,6 +4906,8 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_sched_setaffinity_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int pid;
 	int len;
 	int num_procs = 4;
@@ -4790,9 +4916,9 @@ static int x86_sys_sched_setaffinity_impl(struct x86_ctx_t *ctx)
 	unsigned int mask;
 
 	/* Arguments */
-	pid = x86_isa_regs->ebx;
-	len = x86_isa_regs->ecx;
-	mask_ptr = x86_isa_regs->edx;
+	pid = regs->ebx;
+	len = regs->ecx;
+	mask_ptr = regs->edx;
 	x86_sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
 
 	/* Read mask */
@@ -4812,6 +4938,8 @@ static int x86_sys_sched_setaffinity_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_sched_getaffinity_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int pid;
 	int len;
 	int num_procs = 4;
@@ -4820,9 +4948,9 @@ static int x86_sys_sched_getaffinity_impl(struct x86_ctx_t *ctx)
 	unsigned int mask = (1 << num_procs) - 1;
 
 	/* Arguments */
-	pid = x86_isa_regs->ebx;
-	len = x86_isa_regs->ecx;
-	mask_ptr = x86_isa_regs->edx;
+	pid = regs->ebx;
+	len = regs->ecx;
+	mask_ptr = regs->edx;
 	x86_sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
 
 	/* FIXME: the affinity is set to 1 for num_procs processors and only the 4 LSBytes are set.
@@ -4841,12 +4969,14 @@ static int x86_sys_sched_getaffinity_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_set_thread_area_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int uinfo_ptr;
 
 	struct sim_user_desc uinfo;
 
 	/* Arguments */
-	uinfo_ptr = x86_isa_regs->ebx;
+	uinfo_ptr = regs->ebx;
 	x86_sys_debug("  uinfo_ptr=0x%x\n", uinfo_ptr);
 
 	/* Read structure */
@@ -4897,6 +5027,8 @@ static int x86_sys_set_thread_area_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_fadvise64_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int fd;
 	int advice;
 
@@ -4905,11 +5037,11 @@ static int x86_sys_fadvise64_impl(struct x86_ctx_t *ctx)
 	unsigned int len;
 
 	/* Arguments */
-	fd = x86_isa_regs->ebx;
-	off_lo = x86_isa_regs->ecx;
-	off_hi = x86_isa_regs->edx;
-	len = x86_isa_regs->esi;
-	advice = x86_isa_regs->edi;
+	fd = regs->ebx;
+	off_lo = regs->ecx;
+	off_hi = regs->edx;
+	len = regs->esi;
+	advice = regs->edi;
 	x86_sys_debug("  fd=%d, off={0x%x, 0x%x}, len=%d, advice=%d\n",
 		fd, off_hi, off_lo, len, advice);
 
@@ -4926,10 +5058,12 @@ static int x86_sys_fadvise64_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_exit_group_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int status;
 
 	/* Arguments */
-	status = x86_isa_regs->ebx;
+	status = regs->ebx;
 	x86_sys_debug("  status=%d\n", status);
 
 	/* Finish */
@@ -4946,10 +5080,12 @@ static int x86_sys_exit_group_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_set_tid_address_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int tidptr;
 
 	/* Arguments */
-	tidptr = x86_isa_regs->ebx;
+	tidptr = regs->ebx;
 	x86_sys_debug("  tidptr=0x%x\n", tidptr);
 
 	ctx->clear_child_tid = tidptr;
@@ -4965,14 +5101,16 @@ static int x86_sys_set_tid_address_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_clock_getres_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	unsigned int clk_id;
 	unsigned int pres;
 	unsigned int tv_sec;
 	unsigned int tv_nsec;
 
 	/* Arguments */
-	clk_id = x86_isa_regs->ebx;
-	pres = x86_isa_regs->ecx;
+	clk_id = regs->ebx;
+	pres = regs->ecx;
 	x86_sys_debug("  clk_id=%d\n", clk_id);
 	x86_sys_debug("  pres=0x%x\n", pres);
 
@@ -4993,6 +5131,8 @@ static int x86_sys_clock_getres_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int tgid;
 	int pid;
 	int sig;
@@ -5000,9 +5140,9 @@ static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
 	struct x86_ctx_t *temp_ctx;
 
 	/* Arguments */
-	tgid = x86_isa_regs->ebx;
-	pid = x86_isa_regs->ecx;
-	sig = x86_isa_regs->edx;
+	tgid = regs->ebx;
+	pid = regs->ecx;
+	sig = regs->edx;
 	x86_sys_debug("  tgid=%d, pid=%d, sig=%d (%s)\n",
 		tgid, pid, sig, sim_signal_name(sig));
 
@@ -5033,13 +5173,14 @@ static int x86_sys_tgkill_impl(struct x86_ctx_t *ctx)
 
 static int x86_sys_set_robust_list_impl(struct x86_ctx_t *ctx)
 {
-	unsigned int head;
+	struct x86_regs_t *regs = ctx->regs;
 
+	unsigned int head;
 	int len;
 
 	/* Arguments */
-	head = x86_isa_regs->ebx;
-	len = x86_isa_regs->ecx;
+	head = regs->ebx;
+	len = regs->ecx;
 	x86_sys_debug("  head=0x%x, len=%d\n", head, len);
 
 	/* Support */
@@ -5139,8 +5280,9 @@ static int x86_sys_clrt_impl(struct x86_ctx_t *ctx)
 #define SYS_NOT_IMPL(NAME) \
 	static int x86_sys_##NAME##_impl(struct x86_ctx_t *ctx) \
 	{ \
+		struct x86_regs_t *regs = ctx->regs; \
 		fatal("%s: system call not implemented (code %d, inst %lld, pid %d).\n%s", \
-			__FUNCTION__, x86_isa_regs->eax, x86_isa_inst_count, ctx->pid, \
+			__FUNCTION__, regs->eax, x86_isa_inst_count, ctx->pid, \
 			err_x86_sys_note); \
 		return 0; \
 	}
