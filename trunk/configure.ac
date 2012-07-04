@@ -35,15 +35,14 @@ fi
 # Check for GLUT
 #
 
-have_glut=yes
-
 # Check if the user explicitly disabled GLUT
 AC_ARG_ENABLE(glut,
 	[  --enable-glut={yes|no}	Enable support for GLUT (default=yes)],
-	[], [])
+	[], [ enable_glut=yes ])
 
 # Check if GLUT is present
-AC_CHECK_HEADER([GL/glut.h], [AC_DEFINE([HAVE_GLUT_H])], [have_glut=no])
+have_glut=yes
+AC_CHECK_HEADER([GL/glut.h], [], [have_glut=no])
 AC_CHECK_HEADER([GL/gl.h], [], [have_glut=no])
 AC_CHECK_LIB([glut], [glutInit], [], [have_glut=no])
 AC_CHECK_LIB([GL], [glBegin], [], [have_glut=no])
@@ -66,7 +65,13 @@ AC_MSG_WARN([
 	will not be accessible.
 ])
 fi
+
+# Define macro for Automake and gcc
 AM_CONDITIONAL(HAVE_GLUT_H, test x$have_glut == xyes -a x$enable_glut == xyes)
+if test x$have_glut = xyes -a x$enable_glut = xyes; then
+	AC_DEFINE(HAVE_GLUT, [1])
+fi
+
 
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -110,7 +115,7 @@ have_gtk_test=yes
 # Check if the user explicitly disabled GTK
 AC_ARG_ENABLE(gtk,
 	[  --enable-gtk={yes|no}	Enable support for GTK (default=yes)],
-	[], [])
+	[], [ enable_gtk=yes ])
 
 # Check if test for GTK is available
 ifdef([AM_PATH_GTK_3_0], [AM_PATH_GTK_3_0([3.0.0], have_gtk=yes, )], [have_gtk_test=no] )
@@ -148,8 +153,11 @@ AC_MSG_WARN([
 ])
 fi
 
+# Define macro for Automake and gcc
 AM_CONDITIONAL(HAVE_GTK, test x$have_gtk = xyes -a x$enable_gtk = xyes)
-
+if test x$have_gtk = xyes -a x$enable_gtk = xyes; then
+	AC_DEFINE(HAVE_GTK, [1])
+fi
 
 
 

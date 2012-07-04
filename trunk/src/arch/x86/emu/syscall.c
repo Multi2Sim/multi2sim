@@ -5285,7 +5285,7 @@ static int x86_sys_opencl_impl(struct x86_ctx_t *ctx)
 static int x86_sys_glut_impl(struct x86_ctx_t *ctx)
 {
 	/* Run GLUT call */
-	return x86_glut_call();
+	return x86_glut_call(ctx);
 }
 
 
