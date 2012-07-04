@@ -359,6 +359,7 @@ static int x86_sys_close_impl(struct x86_ctx_t *ctx)
 static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int buf_ptr;
 	unsigned int count;
@@ -412,7 +413,7 @@ static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 		/* Write in guest memory */
 		if (err > 0)
 		{
-			mem_write(x86_isa_mem, buf_ptr, err, buf);
+			mem_write(mem, buf_ptr, err, buf);
 			x86_sys_debug_buffer("  buf", buf, err);
 		}
 
@@ -444,6 +445,7 @@ static int x86_sys_read_impl(struct x86_ctx_t *ctx)
 static int x86_sys_write_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int buf_ptr;
 	unsigned int count;
@@ -477,7 +479,7 @@ static int x86_sys_write_impl(struct x86_ctx_t *ctx)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Read buffer from memory */
-	mem_read(x86_isa_mem, buf_ptr, count, buf);
+	mem_read(mem, buf_ptr, count, buf);
 	x86_sys_debug_buffer("  buf", buf, count);
 
 	/* Poll the file descriptor to check if write is blocking */
@@ -542,6 +544,8 @@ static struct string_map_t sys_open_flags_map =
 static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	struct file_desc_t *desc;
 
 	unsigned int file_name_ptr;
@@ -561,7 +565,7 @@ static int x86_sys_open_impl(struct x86_ctx_t *ctx)
 	file_name_ptr = regs->ebx;
 	flags = regs->ecx;
 	mode = regs->edx;
-	length = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
+	length = mem_read_string(mem, file_name_ptr, sizeof file_name, file_name);
 	if (length >= MAX_PATH_SIZE)
 		fatal("syscall open: maximum path length exceeded");
 	x86_loader_get_full_path(ctx, file_name, full_path, sizeof full_path);
@@ -647,6 +651,8 @@ static struct string_map_t sys_waitpid_options_map =
 static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	struct x86_ctx_t *child;
 
 	int pid;
@@ -686,7 +692,7 @@ static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
 	if (child)
 	{
 		if (status_ptr)
-			mem_write(x86_isa_mem, status_ptr, 4, &child->exit_code);
+			mem_write(mem, status_ptr, 4, &child->exit_code);
 		x86_ctx_set_status(child, x86_ctx_finished);
 		return child->pid;
 	}
@@ -705,6 +711,7 @@ static int x86_sys_waitpid_impl(struct x86_ctx_t *ctx)
 static int x86_sys_unlink_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int file_name_ptr;
 
@@ -716,7 +723,7 @@ static int x86_sys_unlink_impl(struct x86_ctx_t *ctx)
 
 	/* Arguments */
 	file_name_ptr = regs->ebx;
-	length = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
+	length = mem_read_string(mem, file_name_ptr, sizeof file_name, file_name);
 	if (length >= MAX_PATH_SIZE)
 		fatal("%s: buffer too small", __FUNCTION__);
 	x86_loader_get_full_path(ctx, file_name, full_path, sizeof full_path);
@@ -748,6 +755,7 @@ static char *err_sys_execve_note =
 static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int name_ptr;
 	unsigned int argv;
@@ -774,7 +782,7 @@ static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 		name_ptr, argv, envp, regs_ptr);
 
 	/* Get command name */
-	length = mem_read_string(x86_isa_mem, name_ptr, sizeof name, name);
+	length = mem_read_string(mem, name_ptr, sizeof name, name);
 	if (length >= sizeof name)
 		fatal("%s: buffer too small", __FUNCTION__);
 	x86_loader_get_full_path(ctx, name, full_path, sizeof full_path);
@@ -787,12 +795,12 @@ static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 		unsigned int arg_ptr;
 
 		/* Argument pointer */
-		mem_read(x86_isa_mem, argv + arg_list->count * 4, 4, &arg_ptr);
+		mem_read(mem, argv + arg_list->count * 4, 4, &arg_ptr);
 		if (!arg_ptr)
 			break;
 
 		/* Argument */
-		length = mem_read_string(x86_isa_mem, arg_ptr, sizeof arg_str, arg_str);
+		length = mem_read_string(mem, arg_ptr, sizeof arg_str, arg_str);
 		if (length >= sizeof arg_str)
 			fatal("%s: buffer too small", __FUNCTION__);
 
@@ -813,12 +821,12 @@ static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 		unsigned int env_ptr;
 
 		/* Variable pointer */
-		mem_read(x86_isa_mem, envp + i * 4, 4, &env_ptr);
+		mem_read(mem, envp + i * 4, 4, &env_ptr);
 		if (!env_ptr)
 			break;
 
 		/* Variable */
-		length = mem_read_string(x86_isa_mem, env_ptr, sizeof env, env);
+		length = mem_read_string(mem, env_ptr, sizeof env, env);
 		if (length >= sizeof env)
 			fatal("%s: buffer too small", __FUNCTION__);
 
@@ -870,6 +878,7 @@ static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 static int x86_sys_time_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int time_ptr;
 	int t;
@@ -881,7 +890,7 @@ static int x86_sys_time_impl(struct x86_ctx_t *ctx)
 	/* Host call */
 	t = time(NULL);
 	if (time_ptr)
-		mem_write(x86_isa_mem, time_ptr, 4, &t);
+		mem_write(mem, time_ptr, 4, &t);
 
 	/* Return */
 	return t;
@@ -897,6 +906,7 @@ static int x86_sys_time_impl(struct x86_ctx_t *ctx)
 static int x86_sys_chmod_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int file_name_ptr;
 	unsigned int mode;
@@ -910,7 +920,7 @@ static int x86_sys_chmod_impl(struct x86_ctx_t *ctx)
 	/* Arguments */
 	file_name_ptr = regs->ebx;
 	mode = regs->ecx;
-	len = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
+	len = mem_read_string(mem, file_name_ptr, sizeof file_name, file_name);
 	if (len >= sizeof file_name)
 		fatal("%s: buffer too small", __FUNCTION__);
 	x86_loader_get_full_path(ctx, file_name, full_path, sizeof full_path);
@@ -996,6 +1006,7 @@ static void sys_utime_guest_to_host(struct utimbuf *host, struct sim_utimbuf *gu
 static int x86_sys_utime_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int file_name_ptr;
 	unsigned int utimbuf_ptr;
@@ -1016,7 +1027,7 @@ static int x86_sys_utime_impl(struct x86_ctx_t *ctx)
 		file_name_ptr, utimbuf_ptr);
 
 	/* Read file name */
-	len = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
+	len = mem_read_string(mem, file_name_ptr, sizeof file_name, file_name);
 	if (len >= MAX_PATH_SIZE)
 		fatal("%s: buffer too small", __FUNCTION__);
 
@@ -1025,7 +1036,7 @@ static int x86_sys_utime_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  file_name='%s', full_path='%s'\n", file_name, full_path);
 
 	/* Read time buffer */
-	mem_read(x86_isa_mem, utimbuf_ptr, sizeof(struct sim_utimbuf), &sim_utimbuf);
+	mem_read(mem, utimbuf_ptr, sizeof(struct sim_utimbuf), &sim_utimbuf);
 	sys_utime_guest_to_host(&utimbuf, &sim_utimbuf);
 	x86_sys_debug("  utimbuf.actime = %u, utimbuf.modtime = %u\n",
 		sim_utimbuf.actime, sim_utimbuf.modtime);
@@ -1058,6 +1069,7 @@ static struct string_map_t sys_access_mode_map =
 static int x86_sys_access_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int file_name_ptr;
 
@@ -1074,7 +1086,7 @@ static int x86_sys_access_impl(struct x86_ctx_t *ctx)
 	mode = regs->ecx;
 
 	/* Read file name */
-	len = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
+	len = mem_read_string(mem, file_name_ptr, sizeof file_name, file_name);
 	if (len >= sizeof file_name)
 		fatal("%s: buffer too small", __FUNCTION__);
 
@@ -1143,6 +1155,7 @@ static int x86_sys_kill_impl(struct x86_ctx_t *ctx)
 static int x86_sys_rename_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int old_path_ptr;
 	unsigned int new_path_ptr;
@@ -1162,12 +1175,12 @@ static int x86_sys_rename_impl(struct x86_ctx_t *ctx)
 		old_path_ptr, new_path_ptr);
 
 	/* Get old path */
-	len = mem_read_string(x86_isa_mem, old_path_ptr, sizeof old_path, old_path);
+	len = mem_read_string(mem, old_path_ptr, sizeof old_path, old_path);
 	if (len >= sizeof old_path)
 		fatal("%s: buffer too small", __FUNCTION__);
 
 	/* Get new path */
-	len = mem_read_string(x86_isa_mem, new_path_ptr, sizeof new_path, new_path);
+	len = mem_read_string(mem, new_path_ptr, sizeof new_path, new_path);
 	if (len >= sizeof new_path)
 		fatal("%s: buffer too small", __FUNCTION__);
 
@@ -1196,6 +1209,7 @@ static int x86_sys_rename_impl(struct x86_ctx_t *ctx)
 static int x86_sys_mkdir_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int path_ptr;
 
@@ -1212,7 +1226,7 @@ static int x86_sys_mkdir_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  path_ptr=0x%x, mode=0x%x\n", path_ptr, mode);
 
 	/* Read path */
-	len = mem_read_string(x86_isa_mem, path_ptr, sizeof path, path);
+	len = mem_read_string(mem, path_ptr, sizeof path, path);
 	if (len >= sizeof path)
 		fatal("%s: buffer too small", __FUNCTION__);
 
@@ -1283,6 +1297,7 @@ static int x86_sys_dup_impl(struct x86_ctx_t *ctx)
 static int x86_sys_pipe_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	struct file_desc_t *read_desc;
 	struct file_desc_t *write_desc;
@@ -1317,8 +1332,8 @@ static int x86_sys_pipe_impl(struct x86_ctx_t *ctx)
 	guest_write_fd = write_desc->guest_fd;
 
 	/* Return file descriptors. */
-	mem_write(x86_isa_mem, fd_ptr, 4, &guest_read_fd);
-	mem_write(x86_isa_mem, fd_ptr + 4, 4, &guest_write_fd);
+	mem_write(mem, fd_ptr, 4, &guest_read_fd);
+	mem_write(mem, fd_ptr + 4, 4, &guest_write_fd);
 	return 0;
 }
 
@@ -1348,6 +1363,7 @@ static void sys_times_host_to_guest(struct sim_tms *guest, struct tms *host)
 static int x86_sys_times_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int tms_ptr;
 
@@ -1367,7 +1383,7 @@ static int x86_sys_times_impl(struct x86_ctx_t *ctx)
 	if (tms_ptr)
 	{
 		sys_times_host_to_guest(&sim_tms, &tms);
-		mem_write(x86_isa_mem, tms_ptr, sizeof(sim_tms), &sim_tms);
+		mem_write(mem, tms_ptr, sizeof(sim_tms), &sim_tms);
 	}
 
 	/* Return */
@@ -1384,6 +1400,7 @@ static int x86_sys_times_impl(struct x86_ctx_t *ctx)
 static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int old_heap_break;
 	unsigned int new_heap_break;
@@ -1394,7 +1411,7 @@ static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
 
 	/* Arguments */
 	new_heap_break = regs->ebx;
-	old_heap_break = x86_isa_mem->heap_break;
+	old_heap_break = mem->heap_break;
 	x86_sys_debug("  newbrk=0x%x (previous brk was 0x%x)\n",
 		new_heap_break, old_heap_break);
 
@@ -1415,12 +1432,12 @@ static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
 		size = new_heap_break_aligned - old_heap_break_aligned;
 		if (size)
 		{
-			if (mem_map_space(x86_isa_mem, old_heap_break_aligned, size) != old_heap_break_aligned)
+			if (mem_map_space(mem, old_heap_break_aligned, size) != old_heap_break_aligned)
 				fatal("%s: out of memory", __FUNCTION__);
-			mem_map(x86_isa_mem, old_heap_break_aligned, size,
+			mem_map(mem, old_heap_break_aligned, size,
 				mem_access_read | mem_access_write);
 		}
-		x86_isa_mem->heap_break = new_heap_break;
+		mem->heap_break = new_heap_break;
 		x86_sys_debug("  heap grows %u bytes\n", new_heap_break - old_heap_break);
 		return new_heap_break;
 	}
@@ -1430,8 +1447,8 @@ static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
 	{
 		size = old_heap_break_aligned - new_heap_break_aligned;
 		if (size)
-			mem_unmap(x86_isa_mem, new_heap_break_aligned, size);
-		x86_isa_mem->heap_break = new_heap_break;
+			mem_unmap(mem, new_heap_break_aligned, size);
+		mem->heap_break = new_heap_break;
 		x86_sys_debug("  heap shrinks %u bytes\n", old_heap_break - new_heap_break);
 		return new_heap_break;
 	}
@@ -1457,6 +1474,7 @@ static int x86_sys_brk_impl(struct x86_ctx_t *ctx)
 static int x86_sys_ioctl_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int cmd;
 	unsigned int arg;
@@ -1488,13 +1506,13 @@ static int x86_sys_ioctl_impl(struct x86_ctx_t *ctx)
 		unsigned char buf[60];
 
 		/* Read buffer */
-		mem_read(x86_isa_mem, arg, sizeof buf, buf);
+		mem_read(mem, arg, sizeof buf, buf);
 		err = ioctl(desc->host_fd, cmd, &buf);
 		if (err == -1)
 			return -errno;
 
 		/* Return in memory */
-		mem_write(x86_isa_mem, arg, sizeof buf, buf);
+		mem_write(mem, arg, sizeof buf, buf);
 		return err;
 	}
 	else
@@ -1563,6 +1581,7 @@ struct sim_rlimit
 static int x86_sys_setrlimit_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int res;
 	unsigned int rlim_ptr;
@@ -1579,7 +1598,7 @@ static int x86_sys_setrlimit_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  res=%s\n", res_str);
 
 	/* Read structure */
-	mem_read(x86_isa_mem, rlim_ptr, sizeof(struct sim_rlimit), &sim_rlimit);
+	mem_read(mem, rlim_ptr, sizeof(struct sim_rlimit), &sim_rlimit);
 	x86_sys_debug("  rlim->cur=0x%x, rlim->max=0x%x\n",
 		sim_rlimit.cur, sim_rlimit.max);
 
@@ -1662,6 +1681,7 @@ static void sys_rusage_host_to_guest(struct sim_rusage *guest, struct rusage *ho
 static int x86_sys_getrusage_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int who;
 	unsigned int u_ptr;
@@ -1688,7 +1708,7 @@ static int x86_sys_getrusage_impl(struct x86_ctx_t *ctx)
 
 	/* Return structure */
 	sys_rusage_host_to_guest(&sim_rusage, &rusage);
-	mem_write(x86_isa_mem, u_ptr, sizeof sim_rusage, &sim_rusage);
+	mem_write(mem, u_ptr, sizeof sim_rusage, &sim_rusage);
 
 	/* Application expects this additional values updated:
 	 * ru_maxrss: maximum resident set size
@@ -1708,6 +1728,7 @@ static int x86_sys_getrusage_impl(struct x86_ctx_t *ctx)
 static int x86_sys_gettimeofday_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int tv_ptr;
 	unsigned int tz_ptr;
@@ -1726,15 +1747,15 @@ static int x86_sys_gettimeofday_impl(struct x86_ctx_t *ctx)
 	/* Write time value */
 	if (tv_ptr)
 	{
-		mem_write(x86_isa_mem, tv_ptr, 4, &tv.tv_sec);
-		mem_write(x86_isa_mem, tv_ptr + 4, 4, &tv.tv_usec);
+		mem_write(mem, tv_ptr, 4, &tv.tv_sec);
+		mem_write(mem, tv_ptr + 4, 4, &tv.tv_usec);
 	}
 
 	/* Write time zone */
 	if (tz_ptr)
 	{
-		mem_write(x86_isa_mem, tz_ptr, 4, &tz.tz_minuteswest);
-		mem_write(x86_isa_mem, tz_ptr + 4, 4, &tz.tz_dsttime);
+		mem_write(mem, tz_ptr, 4, &tz.tz_minuteswest);
+		mem_write(mem, tz_ptr + 4, 4, &tz.tz_dsttime);
 	}
 
 	/* Return */
@@ -1751,6 +1772,7 @@ static int x86_sys_gettimeofday_impl(struct x86_ctx_t *ctx)
 static int x86_sys_readlink_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int path_ptr;
 	unsigned int buf;
@@ -1771,7 +1793,7 @@ static int x86_sys_readlink_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  path_ptr=0x%x, buf=0x%x, bufsz=%d\n", path_ptr, buf, bufsz);
 
 	/* Read path */
-	len = mem_read_string(x86_isa_mem, path_ptr, sizeof path, path);
+	len = mem_read_string(mem, path_ptr, sizeof path, path);
 	if (len == sizeof path)
 		fatal("%s: buffer too small", __FUNCTION__);
 
@@ -1800,7 +1822,7 @@ static int x86_sys_readlink_impl(struct x86_ctx_t *ctx)
 
 	/* Copy name to guest memory. The string is not null-terminated. */
 	dest_size = MIN(strlen(dest_path), bufsz);
-	mem_write(x86_isa_mem, buf, dest_size, dest_path);
+	mem_write(mem, buf, dest_size, dest_path);
 	x86_sys_debug("  dest_path='%s'\n", dest_path);
 
 	/* Return number of bytes copied */
@@ -1848,6 +1870,8 @@ static struct string_map_t sys_mmap_flags_map =
 static int x86_sys_mmap(struct x86_ctx_t *ctx, unsigned int addr, unsigned int len,
 	int prot, int flags, int guest_fd, int offset)
 {
+	struct mem_t *mem = ctx->mem;
+
 	unsigned int len_aligned;
 
 	int perm;
@@ -1901,19 +1925,19 @@ static int x86_sys_mmap(struct x86_ctx_t *ctx, unsigned int addr, unsigned int l
 
 		/* Any allocated page in the range specified by 'addr' and 'len'
 		 * must be discarded. */
-		mem_unmap(x86_isa_mem, addr, len_aligned);
+		mem_unmap(mem, addr, len_aligned);
 	}
 	else
 	{
-		if (!addr || mem_map_space_down(x86_isa_mem, addr, len_aligned) != addr)
+		if (!addr || mem_map_space_down(mem, addr, len_aligned) != addr)
 			addr = SYS_MMAP_BASE_ADDRESS;
-		addr = mem_map_space_down(x86_isa_mem, addr, len_aligned);
+		addr = mem_map_space_down(mem, addr, len_aligned);
 		if (addr == -1)
 			fatal("%s: out of guest memory", __FUNCTION__);
 	}
 
 	/* Allocation of memory */
-	mem_map(x86_isa_mem, addr, len_aligned, perm);
+	mem_map(mem, addr, len_aligned, perm);
 
 	/* Host mapping */
 	if (host_fd >= 0)
@@ -1939,7 +1963,7 @@ static int x86_sys_mmap(struct x86_ctx_t *ctx, unsigned int addr, unsigned int l
 			memset(buf, 0, MEM_PAGE_SIZE);
 			count = read(host_fd, buf, MEM_PAGE_SIZE);
 			if (count)
-				mem_access(x86_isa_mem, curr_addr, MEM_PAGE_SIZE, buf, mem_access_init);
+				mem_access(mem, curr_addr, MEM_PAGE_SIZE, buf, mem_access_init);
 			curr_addr += MEM_PAGE_SIZE;
 		}
 
@@ -1954,6 +1978,7 @@ static int x86_sys_mmap(struct x86_ctx_t *ctx, unsigned int addr, unsigned int l
 static int x86_sys_mmap_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int args_ptr;
 	unsigned int addr;
@@ -1970,12 +1995,12 @@ static int x86_sys_mmap_impl(struct x86_ctx_t *ctx)
 	/* This system call takes the arguments from memory, at the address
 	 * pointed by 'ebx'. */
 	args_ptr = regs->ebx;
-	mem_read(x86_isa_mem, args_ptr, 4, &addr);
-	mem_read(x86_isa_mem, args_ptr + 4, 4, &len);
-	mem_read(x86_isa_mem, args_ptr + 8, 4, &prot);
-	mem_read(x86_isa_mem, args_ptr + 12, 4, &flags);
-	mem_read(x86_isa_mem, args_ptr + 16, 4, &guest_fd);
-	mem_read(x86_isa_mem, args_ptr + 20, 4, &offset);
+	mem_read(mem, args_ptr, 4, &addr);
+	mem_read(mem, args_ptr + 4, 4, &len);
+	mem_read(mem, args_ptr + 8, 4, &prot);
+	mem_read(mem, args_ptr + 12, 4, &flags);
+	mem_read(mem, args_ptr + 16, 4, &guest_fd);
+	mem_read(mem, args_ptr + 20, 4, &offset);
 
 	x86_sys_debug("  args_ptr=0x%x\n", args_ptr);
 	x86_sys_debug("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
@@ -1999,6 +2024,7 @@ static int x86_sys_mmap_impl(struct x86_ctx_t *ctx)
 static int x86_sys_munmap_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int addr;
 	unsigned int size;
@@ -2015,7 +2041,7 @@ static int x86_sys_munmap_impl(struct x86_ctx_t *ctx)
 
 	/* Unmap */
 	size_aligned = ROUND_UP(size, MEM_PAGE_SIZE);
-	mem_unmap(x86_isa_mem, addr, size_aligned);
+	mem_unmap(mem, addr, size_aligned);
 
 	/* Return */
 	return 0;
@@ -2136,6 +2162,7 @@ static struct string_map_t sys_socket_type_map =
 static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	int call;
 	unsigned int args;
@@ -2166,9 +2193,9 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 		struct file_desc_t *desc;
 
 		/* Read arguments */
-		mem_read(x86_isa_mem, args, 4, &family);
-		mem_read(x86_isa_mem, args + 4, 4, &type);
-		mem_read(x86_isa_mem, args + 8, 4, &protocol);
+		mem_read(mem, args, 4, &family);
+		mem_read(mem, args + 4, 4, &type);
+		mem_read(mem, args + 8, 4, &protocol);
 
 		/* Debug */
 		family_str = map_value(&sys_socket_family_map, family);
@@ -2216,9 +2243,9 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 		int err;
 
 		/* Read arguments */
-		mem_read(x86_isa_mem, args, 4, &guest_fd);
-		mem_read(x86_isa_mem, args + 4, 4, &addr_ptr);
-		mem_read(x86_isa_mem, args + 8, 4, &addr_len);
+		mem_read(mem, args, 4, &guest_fd);
+		mem_read(mem, args + 4, 4, &addr_ptr);
+		mem_read(mem, args + 8, 4, &addr_len);
 		x86_sys_debug("  guest_fd=%d, paddr=0x%x, addrlen=%d\n",
 			guest_fd, addr_ptr, addr_len);
 
@@ -2232,7 +2259,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 
 		/* Get 'sockaddr' structure, read family and data */
 		addr = (struct sockaddr *) &buf[0];
-		mem_read(x86_isa_mem, addr_ptr, addr_len, addr);
+		mem_read(mem, addr_ptr, addr_len, addr);
 		x86_sys_debug("    sockaddr.family=%s\n", map_value(&sys_socket_family_map, addr->sa_family));
 		x86_sys_debug_buffer("    sockaddr.data", addr->sa_data, addr_len - 2);
 
@@ -2269,9 +2296,9 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 		struct sockaddr *addr;
 		socklen_t host_addr_len;
 
-		mem_read(x86_isa_mem, args, 4, &guest_fd);
-		mem_read(x86_isa_mem, args + 4, 4, &addr_ptr);
-		mem_read(x86_isa_mem, args + 8, 4, &addr_len_ptr);
+		mem_read(mem, args, 4, &guest_fd);
+		mem_read(mem, args + 4, 4, &addr_ptr);
+		mem_read(mem, args + 8, 4, &addr_len_ptr);
 		x86_sys_debug("  guest_fd=%d, paddr=0x%x, paddrlen=0x%x\n",
 			guest_fd, addr_ptr, addr_len_ptr);
 
@@ -2281,7 +2308,7 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 			return -EBADF;
 
 		/* Read current buffer size and allocate buffer. */
-		mem_read(x86_isa_mem, addr_len_ptr, 4, &addr_len);
+		mem_read(mem, addr_len_ptr, 4, &addr_len);
 		x86_sys_debug("    addrlen=%d\n", addr_len);
 		host_addr_len = addr_len;
 		addr = malloc(addr_len);
@@ -2303,8 +2330,8 @@ static int x86_sys_socketcall_impl(struct x86_ctx_t *ctx)
 		x86_sys_debug_buffer("    sockaddr.data", addr->sa_data, addr_len - 2);
 
 		/* Copy result to guest memory */
-		mem_write(x86_isa_mem, addr_len_ptr, 4, &addr_len);
-		mem_write(x86_isa_mem, addr_ptr, addr_len, addr);
+		mem_write(mem, addr_len_ptr, 4, &addr_len);
+		mem_write(mem, addr_ptr, addr_len, addr);
 
 		/* Free and return */
 		free(addr);
@@ -2366,6 +2393,7 @@ static void sim_itimerval_dump(struct sim_itimerval *sim_itimerval)
 static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int which;
 	unsigned int value_ptr;
@@ -2388,7 +2416,7 @@ static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
 	/* Read value */
 	if (value_ptr)
 	{
-		mem_read(x86_isa_mem, value_ptr, sizeof itimerval, &itimerval);
+		mem_read(mem, value_ptr, sizeof itimerval, &itimerval);
 		x86_sys_debug("  itimerval at 'value_ptr':\n");
 		sim_itimerval_dump(&itimerval);
 	}
@@ -2422,6 +2450,7 @@ static int x86_sys_setitimer_impl(struct x86_ctx_t *ctx)
 static int x86_sys_getitimer_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int which;
 	unsigned int value_ptr;
@@ -2450,7 +2479,7 @@ static int x86_sys_getitimer_impl(struct x86_ctx_t *ctx)
 	itimerval.it_value.tv_usec = rem % 1000000;
 	itimerval.it_interval.tv_sec = ctx->itimer_interval[which] / 1000000;
 	itimerval.it_interval.tv_usec = ctx->itimer_interval[which] % 1000000;
-	mem_write(x86_isa_mem, value_ptr, sizeof itimerval, &itimerval);
+	mem_write(mem, value_ptr, sizeof itimerval, &itimerval);
 
 	/* Return */
 	return 0;
@@ -2566,6 +2595,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 	 * instead of esi. */
 
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int flags;
 	unsigned int new_esp;
@@ -2668,7 +2698,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 		uinfo_ptr = regs->esi;
 		x86_sys_debug("  puinfo=0x%x\n", uinfo_ptr);
 
-		mem_read(x86_isa_mem, uinfo_ptr, sizeof(struct sim_user_desc), &uinfo);
+		mem_read(mem, uinfo_ptr, sizeof(struct sim_user_desc), &uinfo);
 		x86_sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
 				uinfo.entry_number, uinfo.base_addr, uinfo.limit);
 		x86_sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
@@ -2683,7 +2713,7 @@ static int x86_sys_clone_impl(struct x86_ctx_t *ctx)
 			uinfo.limit <<= 12;
 
 		uinfo.entry_number = 6;
-		mem_write(x86_isa_mem, uinfo_ptr, 4, &uinfo.entry_number);
+		mem_write(mem, uinfo_ptr, 4, &uinfo.entry_number);
 
 		new_ctx->glibc_segment_base = uinfo.base_addr;
 		new_ctx->glibc_segment_limit = uinfo.limit;
@@ -2728,6 +2758,7 @@ static struct sim_utsname sim_utsname =
 static int x86_sys_newuname_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int utsname_ptr;
 
@@ -2739,7 +2770,7 @@ static int x86_sys_newuname_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  machine='%s', domainname='%s'\n", sim_utsname.machine, sim_utsname.domainname);
 
 	/* Return structure */
-	mem_write(x86_isa_mem, utsname_ptr, sizeof sim_utsname, &sim_utsname);
+	mem_write(mem, utsname_ptr, sizeof sim_utsname, &sim_utsname);
 	return 0;
 }
 
@@ -2753,6 +2784,7 @@ static int x86_sys_newuname_impl(struct x86_ctx_t *ctx)
 static int x86_sys_mprotect_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int start;
 	unsigned int len;
@@ -2771,7 +2803,7 @@ static int x86_sys_mprotect_impl(struct x86_ctx_t *ctx)
 	perm |= prot & 0x01 ? mem_access_read : 0;
 	perm |= prot & 0x02 ? mem_access_write : 0;
 	perm |= prot & 0x04 ? mem_access_exec : 0;
-	mem_protect(x86_isa_mem, start, len, perm);
+	mem_protect(mem, start, len, perm);
 
 	/* Return */
 	return 0;
@@ -2787,6 +2819,7 @@ static int x86_sys_mprotect_impl(struct x86_ctx_t *ctx)
 static int x86_sys_llseek_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int fd;
 	unsigned int result_ptr;
@@ -2822,7 +2855,7 @@ static int x86_sys_llseek_impl(struct x86_ctx_t *ctx)
 
 	/* Copy offset to memory */
 	if (result_ptr)
-		mem_write(x86_isa_mem, result_ptr, 8, &offset);
+		mem_write(mem, result_ptr, 8, &offset);
 
 	/* Return */
 	return 0;
@@ -2854,6 +2887,7 @@ struct sys_guest_dirent_t
 static int x86_sys_getdents_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int pdirent;
 
@@ -2911,11 +2945,11 @@ static int x86_sys_getdents_impl(struct x86_ctx_t *ctx)
 		x86_sys_debug("d_reclen=%u(host),%u(guest) ", dirent->d_reclen, sim_dirent.d_reclen);
 		x86_sys_debug("d_name='%s'\n", dirent->d_name);
 
-		mem_write(x86_isa_mem, pdirent + guest_offs, 4, &sim_dirent.d_ino);
-		mem_write(x86_isa_mem, pdirent + guest_offs + 4, 4, &sim_dirent.d_off);
-		mem_write(x86_isa_mem, pdirent + guest_offs + 8, 2, &sim_dirent.d_reclen);
-		mem_write_string(x86_isa_mem, pdirent + guest_offs + 10, dirent->d_name);
-		mem_write(x86_isa_mem, pdirent + guest_offs + sim_dirent.d_reclen - 1, 1, &d_type);
+		mem_write(mem, pdirent + guest_offs, 4, &sim_dirent.d_ino);
+		mem_write(mem, pdirent + guest_offs + 4, 4, &sim_dirent.d_off);
+		mem_write(mem, pdirent + guest_offs + 8, 2, &sim_dirent.d_reclen);
+		mem_write_string(mem, pdirent + guest_offs + 10, dirent->d_name);
+		mem_write(mem, pdirent + guest_offs + sim_dirent.d_reclen - 1, 1, &d_type);
 
 		host_offs += dirent->d_reclen;
 		guest_offs += sim_dirent.d_reclen;
@@ -2966,6 +3000,8 @@ static void sim_fd_set_dump(char *fd_set_name, fd_set *fds, int n)
 static int sim_fd_set_read(struct x86_ctx_t *ctx, uint32_t addr,
 	fd_set *fds, int n)
 {
+	struct mem_t *mem = ctx->mem;
+
 	int nbyte;
 	int nbit;
 	int host_fd;
@@ -2979,7 +3015,7 @@ static int sim_fd_set_read(struct x86_ctx_t *ctx, uint32_t addr,
 		/* Check if fd is set */
 		nbyte = i >> 3;
 		nbit = i & 7;
-		mem_read(x86_isa_mem, addr + nbyte, 1, &c);
+		mem_read(mem, addr + nbyte, 1, &c);
 		if (!(c & (1 << nbit)))
 			continue;
 
@@ -2997,6 +3033,8 @@ static int sim_fd_set_read(struct x86_ctx_t *ctx, uint32_t addr,
 static void sim_fd_set_write(struct x86_ctx_t *ctx, unsigned int addr,
 	fd_set *fds, int n)
 {
+	struct mem_t *mem = ctx->mem;
+
 	int nbyte;
 	int nbit;
 	int guest_fd;
@@ -3009,7 +3047,7 @@ static void sim_fd_set_write(struct x86_ctx_t *ctx, unsigned int addr,
 		return;
 
 	/* Write */
-	mem_zero(x86_isa_mem, addr, (n + 7) / 8);
+	mem_zero(mem, addr, (n + 7) / 8);
 	for (i = 0; i < n; i++)
 	{
 		/* Check if fd is set */
@@ -3021,9 +3059,9 @@ static void sim_fd_set_write(struct x86_ctx_t *ctx, unsigned int addr,
 		assert(guest_fd >= 0);
 		nbyte = guest_fd >> 3;
 		nbit = guest_fd & 7;
-		mem_read(x86_isa_mem, addr + nbyte, 1, &c);
+		mem_read(mem, addr + nbyte, 1, &c);
 		c |= 1 << nbit;
-		mem_write(x86_isa_mem, addr + nbyte, 1, &c);
+		mem_write(mem, addr + nbyte, 1, &c);
 	}
 }
 
@@ -3034,6 +3072,7 @@ static int x86_sys_select_impl(struct x86_ctx_t *ctx)
 	 */
 
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int n;
 	unsigned int inp;
@@ -3075,7 +3114,7 @@ static int x86_sys_select_impl(struct x86_ctx_t *ctx)
 	/* Read and dump 'sim_tv' */
 	memset(&sim_tv, 0, sizeof sim_tv);
 	if (tvp)
-		mem_read(x86_isa_mem, tvp, sizeof sim_tv, &sim_tv);
+		mem_read(mem, tvp, sizeof sim_tv, &sim_tv);
 	x86_sys_debug("  tv:\n");
 	sim_timeval_dump(&sim_tv);
 
@@ -3147,6 +3186,7 @@ static int x86_sys_msync_impl(struct x86_ctx_t *ctx)
 static int x86_sys_writev_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	int v;
 	int len;
@@ -3187,8 +3227,8 @@ static int x86_sys_writev_impl(struct x86_ctx_t *ctx)
 	for (v = 0; v < vlen; v++)
 	{
 		/* Read io vector element */
-		mem_read(x86_isa_mem, iovec_ptr, 4, &iov_base);
-		mem_read(x86_isa_mem, iovec_ptr + 4, 4, &iov_len);
+		mem_read(mem, iovec_ptr, 4, &iov_base);
+		mem_read(mem, iovec_ptr + 4, 4, &iov_len);
 		iovec_ptr += 8;
 
 		/* Allocate buffer */
@@ -3197,7 +3237,7 @@ static int x86_sys_writev_impl(struct x86_ctx_t *ctx)
 			fatal("%s: out of memory", __FUNCTION__);
 
 		/* Read buffer from memory and write it to file */
-		mem_read(x86_isa_mem, iov_base, iov_len, buf);
+		mem_read(mem, iov_base, iov_len, buf);
 		len = write(host_fd, buf, iov_len);
 		if (len == -1)
 		{
@@ -3234,6 +3274,7 @@ struct sys_sysctl_args_t
 static int x86_sys_sysctl_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	int i;
 
@@ -3248,12 +3289,12 @@ static int x86_sys_sysctl_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  pargs=0x%x\n", args_ptr);
 
 	/* Access arguments in memory */
-	mem_read(x86_isa_mem, args_ptr, sizeof args, &args);
+	mem_read(mem, args_ptr, sizeof args, &args);
 	x86_sys_debug("    pname=0x%x\n", args.pname);
 	x86_sys_debug("    nlen=%d\n      ", args.nlen);
 	for (i = 0; i < args.nlen; i++)
 	{
-		mem_read(x86_isa_mem, args.pname + i * 4, 4, &aux);
+		mem_read(mem, args.pname + i * 4, 4, &aux);
 		x86_sys_debug("name[%d]=%d ", i, aux);
 	}
 	x86_sys_debug("\n    poldval=0x%x\n", args.poldval);
@@ -3270,8 +3311,8 @@ static int x86_sys_sysctl_impl(struct x86_ctx_t *ctx)
 			__FUNCTION__, err_x86_sys_note);
 
 	/* Return */
-	mem_write(x86_isa_mem, args.oldlenp, 4, &zero);
-	mem_write(x86_isa_mem, args.poldval, 1, &zero);
+	mem_write(mem, args.oldlenp, 4, &zero);
+	mem_write(mem, args.poldval, 1, &zero);
 	return 0;
 }
 
@@ -3285,6 +3326,7 @@ static int x86_sys_sysctl_impl(struct x86_ctx_t *ctx)
 static int x86_sys_sched_setparam_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int param_ptr;
 
@@ -3295,7 +3337,7 @@ static int x86_sys_sched_setparam_impl(struct x86_ctx_t *ctx)
 	param_ptr = regs->ecx;
 	x86_sys_debug("  pid=%d\n", pid);
 	x86_sys_debug("  param_ptr=0x%x\n", param_ptr);
-	mem_read(x86_isa_mem, param_ptr, 4, &sched_priority);
+	mem_read(mem, param_ptr, 4, &sched_priority);
 	x86_sys_debug("    param.sched_priority=%d\n", sched_priority);
 
 	/* Ignore system call */
@@ -3312,6 +3354,7 @@ static int x86_sys_sched_setparam_impl(struct x86_ctx_t *ctx)
 static int x86_sys_sched_getparam_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int param_ptr;
 	unsigned int zero = 0;
@@ -3325,7 +3368,7 @@ static int x86_sys_sched_getparam_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  param_ptr=0x%x\n", param_ptr);
 
 	/* Return 0 in param_ptr->sched_priority */
-	mem_write(x86_isa_mem, param_ptr, 4, &zero);
+	mem_write(mem, param_ptr, 4, &zero);
 	return 0;
 }
 
@@ -3442,6 +3485,7 @@ static int x86_sys_sched_get_priority_min_impl(struct x86_ctx_t *ctx)
 static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int rqtp;
 	unsigned int rmtp;
@@ -3460,8 +3504,8 @@ static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
 	now = esim_real_time();
 
 	/* Read structure */
-	mem_read(x86_isa_mem, rqtp, 4, &sec);
-	mem_read(x86_isa_mem, rqtp + 4, 4, &nsec);
+	mem_read(mem, rqtp, 4, &sec);
+	mem_read(mem, rqtp + 4, 4, &nsec);
 	total = (long long) sec * 1000000 + (nsec / 1000);
 	x86_sys_debug("  sleep time (us): %llu\n", total);
 
@@ -3482,6 +3526,7 @@ static int x86_sys_nanosleep_impl(struct x86_ctx_t *ctx)
 static int x86_sys_mremap_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int addr;
 	unsigned int old_len;
@@ -3514,30 +3559,30 @@ static int x86_sys_mremap_impl(struct x86_ctx_t *ctx)
 	/* Shrink region. This is always possible. */
 	if (new_len < old_len)
 	{
-		mem_unmap(x86_isa_mem, addr + new_len, old_len - new_len);
+		mem_unmap(mem, addr + new_len, old_len - new_len);
 		return addr;
 	}
 
 	/* Increase region at the same address. This is only possible if
 	 * there is enough free space for the new region. */
-	if (new_len > old_len && mem_map_space(x86_isa_mem, addr + old_len,
+	if (new_len > old_len && mem_map_space(mem, addr + old_len,
 		new_len - old_len) == addr + old_len)
 	{
-		mem_map(x86_isa_mem, addr + old_len, new_len - old_len,
+		mem_map(mem, addr + old_len, new_len - old_len,
 			mem_access_read | mem_access_write);
 		return addr;
 	}
 
 	/* A new region must be found for the new size. */
-	new_addr = mem_map_space_down(x86_isa_mem, SYS_MMAP_BASE_ADDRESS, new_len);
+	new_addr = mem_map_space_down(mem, SYS_MMAP_BASE_ADDRESS, new_len);
 	if (new_addr == -1)
 		fatal("%s: out of guest memory", __FUNCTION__);
 
 	/* Map new region and copy old one */
-	mem_map(x86_isa_mem, new_addr, new_len,
+	mem_map(mem, new_addr, new_len,
 		mem_access_read | mem_access_write);
-	mem_copy(x86_isa_mem, new_addr, addr, MIN(old_len, new_len));
-	mem_unmap(x86_isa_mem, addr, old_len);
+	mem_copy(mem, new_addr, addr, MIN(old_len, new_len));
+	mem_unmap(mem, addr, old_len);
 
 	/* Return new address */
 	return new_addr;
@@ -3566,6 +3611,7 @@ static struct string_map_t x86_sys_clock_gettime_clk_id_map =
 static int x86_sys_clock_gettime_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int clk_id;
 	unsigned int ts_ptr;
@@ -3603,7 +3649,7 @@ static int x86_sys_clock_gettime_impl(struct x86_ctx_t *ctx)
 		x86_sys_debug("\tts.tv_nsec = %u\n", sim_ts.nsec);
 
 		/* Write to guest memory */
-		mem_write(x86_isa_mem, ts_ptr, sizeof sim_ts, &sim_ts);
+		mem_write(mem, ts_ptr, sizeof sim_ts, &sim_ts);
 		break;
 
 	case 2:  /* CLOCK_PROCESS_CPUTIME_ID */
@@ -3653,6 +3699,7 @@ struct sim_pollfd_t
 static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int pfds;
 	unsigned int nfds;
@@ -3688,7 +3735,7 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 		fatal("%s: not suported for nfds != 1\n%s", __FUNCTION__, err_x86_sys_note);
 
 	/* Read pollfd */
-	mem_read(x86_isa_mem, pfds, sizeof guest_fds, &guest_fds);
+	mem_read(mem, pfds, sizeof guest_fds, &guest_fds);
 	guest_fd = guest_fds.fd;
 	map_flags(&sys_poll_event_map, guest_fds.events, events_str, MAX_STRING_SIZE);
 	x86_sys_debug("  guest_fd=%d, events=%s\n", guest_fd, events_str);
@@ -3727,7 +3774,7 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 		{
 			x86_sys_debug("  non-blocking write to file guaranteed\n");
 			guest_fds.revents = POLLOUT;
-			mem_write(x86_isa_mem, pfds, sizeof guest_fds, &guest_fds);
+			mem_write(mem, pfds, sizeof guest_fds, &guest_fds);
 			return 1;
 		}
 
@@ -3736,7 +3783,7 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 		{
 			x86_sys_debug("  non-blocking read from file guaranteed\n");
 			guest_fds.revents = POLLIN;
-			mem_write(x86_isa_mem, pfds, sizeof guest_fds, &guest_fds);
+			mem_write(mem, pfds, sizeof guest_fds, &guest_fds);
 			return 1;
 		}
 
@@ -3767,6 +3814,7 @@ static int x86_sys_poll_impl(struct x86_ctx_t *ctx)
 static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	int sig;
 	int sigsetsize;
@@ -3792,7 +3840,7 @@ static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
 	/* Read new sigaction */
 	if (act_ptr)
 	{
-		mem_read(x86_isa_mem, act_ptr, sizeof act, &act);
+		mem_read(mem, act_ptr, sizeof act, &act);
 		if (debug_status(x86_sys_debug_category))
 		{
 			FILE *f = debug_file(x86_sys_debug_category);
@@ -3808,7 +3856,7 @@ static int x86_sys_rt_sigaction_impl(struct x86_ctx_t *ctx)
 
 	/* Store previous sigaction */
 	if (old_act_ptr)
-		mem_write(x86_isa_mem, old_act_ptr, sizeof(struct sim_sigaction),
+		mem_write(mem, old_act_ptr, sizeof(struct sim_sigaction),
 			&ctx->signal_handler_table->sigaction[sig - 1]);
 
 	/* Make new sigaction effective */
@@ -3838,6 +3886,7 @@ static struct string_map_t sys_sigprocmask_how_map =
 static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int set_ptr;
 	unsigned int old_set_ptr;
@@ -3863,7 +3912,7 @@ static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 	if (set_ptr)
 	{
 		/* Read it from memory */
-		mem_read(x86_isa_mem, set_ptr, 8, &set);
+		mem_read(mem, set_ptr, 8, &set);
 		if (debug_status(x86_sys_debug_category))
 		{
 			x86_sys_debug("  set=0x%llx ", set);
@@ -3897,7 +3946,7 @@ static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 
 	/* Return old set */
 	if (old_set_ptr)
-		mem_write(x86_isa_mem, old_set_ptr, 8, &old_set);
+		mem_write(mem, old_set_ptr, 8, &old_set);
 
 	/* A change in the signal mask can cause pending signals to be
 	 * able to execute, so check this. */
@@ -3917,6 +3966,7 @@ static int x86_sys_rt_sigprocmask_impl(struct x86_ctx_t *ctx)
 static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int new_set_ptr;
 	unsigned long long new_set;
@@ -3928,7 +3978,7 @@ static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
 		new_set_ptr, sigsetsize);
 
 	/* Read temporary signal mask */
-	mem_read(x86_isa_mem, new_set_ptr, 8, &new_set);
+	mem_read(mem, new_set_ptr, 8, &new_set);
 	if (debug_status(x86_sys_debug_category))
 	{
 		FILE *f = debug_file(x86_sys_debug_category);
@@ -3962,6 +4012,7 @@ static int x86_sys_rt_sigsuspend_impl(struct x86_ctx_t *ctx)
 static int x86_sys_getcwd_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int buf_ptr;
 
@@ -3984,7 +4035,7 @@ static int x86_sys_getcwd_impl(struct x86_ctx_t *ctx)
 		return -ERANGE;
 
 	/* Return */
-	mem_write_string(x86_isa_mem, buf_ptr, cwd);
+	mem_write_string(mem, buf_ptr, cwd);
 	return len + 1;
 }
 
@@ -3998,6 +4049,7 @@ static int x86_sys_getcwd_impl(struct x86_ctx_t *ctx)
 static int x86_sys_getrlimit_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int res;
 	unsigned int rlim_ptr;
@@ -4043,7 +4095,7 @@ static int x86_sys_getrlimit_impl(struct x86_ctx_t *ctx)
 	}
 
 	/* Return structure */
-	mem_write(x86_isa_mem, rlim_ptr, sizeof(struct sim_rlimit), &sim_rlimit);
+	mem_write(mem, rlim_ptr, sizeof(struct sim_rlimit), &sim_rlimit);
 	x86_sys_debug("  ret: cur=0x%x, max=0x%x\n", sim_rlimit.cur, sim_rlimit.max);
 
 	/* Return */
@@ -4188,6 +4240,7 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 static int x86_sys_stat64_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int file_name_ptr;
 	unsigned int statbuf_ptr;
@@ -4208,7 +4261,7 @@ static int x86_sys_stat64_impl(struct x86_ctx_t *ctx)
 			file_name_ptr, statbuf_ptr);
 
 	/* Read file name */
-	length = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
+	length = mem_read_string(mem, file_name_ptr, sizeof file_name, file_name);
 	if (length == sizeof file_name)
 		fatal("%s: buffer too small", __FUNCTION__);
 	
@@ -4223,7 +4276,7 @@ static int x86_sys_stat64_impl(struct x86_ctx_t *ctx)
 	
 	/* Copy guest structure */
 	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
-	mem_write(x86_isa_mem, statbuf_ptr, sizeof(sim_statbuf), &sim_statbuf);
+	mem_write(mem, statbuf_ptr, sizeof(sim_statbuf), &sim_statbuf);
 	return 0;
 }
 
@@ -4237,6 +4290,7 @@ static int x86_sys_stat64_impl(struct x86_ctx_t *ctx)
 static int x86_sys_lstat64_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int file_name_ptr;
 	unsigned int statbuf_ptr;
@@ -4256,7 +4310,7 @@ static int x86_sys_lstat64_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  file_name_ptr=0x%x, statbuf_ptr=0x%x\n", file_name_ptr, statbuf_ptr);
 
 	/* Read file name */
-	length = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
+	length = mem_read_string(mem, file_name_ptr, sizeof file_name, file_name);
 	if (length == sizeof file_name)
 		fatal("%s: buffer too small", __FUNCTION__);
 
@@ -4271,7 +4325,7 @@ static int x86_sys_lstat64_impl(struct x86_ctx_t *ctx)
 	
 	/* Return */
 	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
-	mem_write(x86_isa_mem, statbuf_ptr, sizeof sim_statbuf, &sim_statbuf);
+	mem_write(mem, statbuf_ptr, sizeof sim_statbuf, &sim_statbuf);
 	return 0;
 }
 
@@ -4285,6 +4339,7 @@ static int x86_sys_lstat64_impl(struct x86_ctx_t *ctx)
 static int x86_sys_fstat64_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	int fd;
 	int host_fd;
@@ -4311,7 +4366,7 @@ static int x86_sys_fstat64_impl(struct x86_ctx_t *ctx)
 
 	/* Return */
 	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
-	mem_write(x86_isa_mem, statbuf_ptr, sizeof sim_statbuf, &sim_statbuf);
+	mem_write(mem, statbuf_ptr, sizeof sim_statbuf, &sim_statbuf);
 	return 0;
 }
 
@@ -4373,6 +4428,7 @@ static int x86_sys_getegid_impl(struct x86_ctx_t *ctx)
 static int x86_sys_chown_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int file_name_ptr;
 
@@ -4391,7 +4447,7 @@ static int x86_sys_chown_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  file_name_ptr=0x%x, owner=%d, group=%d\n", file_name_ptr, owner, group);
 
 	/* Read file name */
-	len = mem_read_string(x86_isa_mem, file_name_ptr, sizeof file_name, file_name);
+	len = mem_read_string(mem, file_name_ptr, sizeof file_name, file_name);
 	if (len == sizeof file_name)
 		fatal("%s: buffer too small", __FUNCTION__);
 
@@ -4461,6 +4517,7 @@ struct guest_dirent64_t
 static int x86_sys_getdents64_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int pdirent;
 	unsigned int count;
@@ -4521,11 +4578,11 @@ static int x86_sys_getdents64_impl(struct x86_ctx_t *ctx)
 		x86_sys_debug("d_reclen=%u(host),%u(guest) ", host_dirent->d_reclen, guest_dirent.d_reclen);
 		x86_sys_debug("d_name='%s'\n", host_dirent->d_name);
 
-		mem_write(x86_isa_mem, pdirent + guest_offs, 8, &guest_dirent.d_ino);
-		mem_write(x86_isa_mem, pdirent + guest_offs + 8, 8, &guest_dirent.d_off);
-		mem_write(x86_isa_mem, pdirent + guest_offs + 16, 2, &guest_dirent.d_reclen);
-		mem_write(x86_isa_mem, pdirent + guest_offs + 18, 1, &guest_dirent.d_type);
-		mem_write_string(x86_isa_mem, pdirent + guest_offs + 19, host_dirent->d_name);
+		mem_write(mem, pdirent + guest_offs, 8, &guest_dirent.d_ino);
+		mem_write(mem, pdirent + guest_offs + 8, 8, &guest_dirent.d_off);
+		mem_write(mem, pdirent + guest_offs + 16, 2, &guest_dirent.d_reclen);
+		mem_write(mem, pdirent + guest_offs + 18, 1, &guest_dirent.d_type);
+		mem_write_string(mem, pdirent + guest_offs + 19, host_dirent->d_name);
 
 		host_offs += host_dirent->d_reclen;
 		guest_offs += guest_dirent.d_reclen;
@@ -4698,6 +4755,7 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 	 *   void *addr2, int val3); */
 
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int addr1;
 	unsigned int timeout_ptr;
@@ -4728,7 +4786,7 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 	/* Command - 'cmd' is obtained by removing 'FUTEX_PRIVATE_FLAG' (128) and
 	 * 'FUTEX_CLOCK_REALTIME' from 'op'. */
 	cmd = op & ~(256|128);
-	mem_read(x86_isa_mem, addr1, 4, &futex);
+	mem_read(mem, addr1, 4, &futex);
 	x86_sys_debug("  futex=%d, cmd=%d (%s)\n",
 		futex, cmd, map_value(&sys_futex_cmd_map, cmd));
 
@@ -4750,8 +4808,8 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 		if (timeout_ptr)
 		{
 			fatal("syscall futex: FUTEX_WAIT not supported with timeout");
-			mem_read(x86_isa_mem, timeout_ptr, 4, &timeout_sec);
-			mem_read(x86_isa_mem, timeout_ptr + 4, 4, &timeout_usec);
+			mem_read(mem, timeout_ptr, 4, &timeout_sec);
+			mem_read(mem, timeout_ptr + 4, 4, &timeout_usec);
 			x86_sys_debug("  timeout={sec %d, usec %d}\n",
 				timeout_sec, timeout_usec);
 		}
@@ -4832,7 +4890,7 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 		oparg = (val3 >> 12) & 0xfff;
 		cmparg = val3 & 0xfff;
 
-		mem_read(x86_isa_mem, addr2, 4, &oldval);
+		mem_read(mem, addr2, 4, &oldval);
 		switch (op)
 		{
 		case 0: /* FUTEX_OP_SET */
@@ -4853,7 +4911,7 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 		default:
 			fatal("%s: FUTEX_WAKE_OP: invalid operation", __FUNCTION__);
 		}
-		mem_write(x86_isa_mem, addr2, 4, &newval);
+		mem_write(mem, addr2, 4, &newval);
 
 		ret = x86_ctx_futex_wake(ctx, addr1, val1, 0xffffffff);
 
@@ -4907,6 +4965,7 @@ static int x86_sys_futex_impl(struct x86_ctx_t *ctx)
 static int x86_sys_sched_setaffinity_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	int pid;
 	int len;
@@ -4922,7 +4981,7 @@ static int x86_sys_sched_setaffinity_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  pid=%d, len=%d, mask_ptr=0x%x\n", pid, len, mask_ptr);
 
 	/* Read mask */
-	mem_read(x86_isa_mem, mask_ptr, 4, &mask);
+	mem_read(mem, mask_ptr, 4, &mask);
 	x86_sys_debug("  mask=0x%x\n", mask);
 
 	/* FIXME: system call ignored. Return the number of processors. */
@@ -4939,6 +4998,7 @@ static int x86_sys_sched_setaffinity_impl(struct x86_ctx_t *ctx)
 static int x86_sys_sched_getaffinity_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	int pid;
 	int len;
@@ -4956,7 +5016,7 @@ static int x86_sys_sched_getaffinity_impl(struct x86_ctx_t *ctx)
 	/* FIXME: the affinity is set to 1 for num_procs processors and only the 4 LSBytes are set.
 	 * The return value is set to num_procs. This is the behavior on a 4-core processor
 	 * in a real system. */
-	mem_write(x86_isa_mem, mask_ptr, 4, &mask);
+	mem_write(mem, mask_ptr, 4, &mask);
 	return num_procs;
 }
 
@@ -4970,6 +5030,7 @@ static int x86_sys_sched_getaffinity_impl(struct x86_ctx_t *ctx)
 static int x86_sys_set_thread_area_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int uinfo_ptr;
 
@@ -4980,7 +5041,7 @@ static int x86_sys_set_thread_area_impl(struct x86_ctx_t *ctx)
 	x86_sys_debug("  uinfo_ptr=0x%x\n", uinfo_ptr);
 
 	/* Read structure */
-	mem_read(x86_isa_mem, uinfo_ptr, sizeof uinfo, &uinfo);
+	mem_read(mem, uinfo_ptr, sizeof uinfo, &uinfo);
 	x86_sys_debug("  entry_number=0x%x, base_addr=0x%x, limit=0x%x\n",
 		uinfo.entry_number, uinfo.base_addr, uinfo.limit);
 	x86_sys_debug("  seg_32bit=0x%x, contents=0x%x, read_exec_only=0x%x\n",
@@ -5002,7 +5063,7 @@ static int x86_sys_set_thread_area_impl(struct x86_ctx_t *ctx)
 		ctx->glibc_segment_base = uinfo.base_addr;
 		ctx->glibc_segment_limit = uinfo.limit;
 		uinfo.entry_number = 6;
-		mem_write(x86_isa_mem, uinfo_ptr, 4, &uinfo.entry_number);
+		mem_write(mem, uinfo_ptr, 4, &uinfo.entry_number);
 	}
 	else
 	{
@@ -5102,6 +5163,7 @@ static int x86_sys_set_tid_address_impl(struct x86_ctx_t *ctx)
 static int x86_sys_clock_getres_impl(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
 	unsigned int clk_id;
 	unsigned int pres;
@@ -5117,8 +5179,8 @@ static int x86_sys_clock_getres_impl(struct x86_ctx_t *ctx)
 	/* Return */
 	tv_sec = 0;
 	tv_nsec = 1;
-	mem_write(x86_isa_mem, pres, 4, &tv_sec);
-	mem_write(x86_isa_mem, pres + 4, 4, &tv_nsec);
+	mem_write(mem, pres, 4, &tv_sec);
+	mem_write(mem, pres + 4, 4, &tv_nsec);
 	return 0;
 }
 
