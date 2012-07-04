@@ -48,15 +48,15 @@ char *x86_clrt_call_name[x86_clrt_call_count + 1] =
 	NULL
 };
 
-
 /* Forward declarations of OpenCL Runtime functions */
-#define X86_CLRT_DEFINE_CALL(name, code) static int x86_clrt_func_##name(void);
+#define X86_CLRT_DEFINE_CALL(name, code) \
+	static int x86_clrt_func_##name(struct x86_ctx_t *ctx);
 #include "clrt.dat"
 #undef X86_CLRT_DEFINE_CALL
 
 
 /* List of OpenCL Runtime functions */
-typedef int (*x86_clrt_func_t)(void);
+typedef int (*x86_clrt_func_t)(struct x86_ctx_t *ctx);
 static x86_clrt_func_t x86_clrt_func_table[x86_clrt_call_count + 1] =
 {
 	NULL,
@@ -72,14 +72,16 @@ int x86_clrt_debug_category;
 
 
 
-int x86_clrt_call(void)
+int x86_clrt_call(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	/* Variables */
 	int code;
 	int ret;
 
 	/* Function code */
-	code = x86_isa_regs->ebx;
+	code = regs->ebx;
 	if (code <= x86_clrt_call_invalid || code >= x86_clrt_call_count)
 		fatal("%s: invalid OpenCL Runtime call (code %d).\n%s",
 			__FUNCTION__, code, x86_clrt_err_call);
@@ -90,7 +92,7 @@ int x86_clrt_call(void)
 
 	/* Call OpenCL Runtime function */
 	assert(x86_clrt_func_table[code]);
-	ret = x86_clrt_func_table[code]();
+	ret = x86_clrt_func_table[code](ctx);
 
 	/* Return value */
 	return ret;
@@ -115,21 +117,23 @@ struct x86_clrt_version_t
 	int minor;
 };
 
-static int x86_clrt_func_init(void)
+static int x86_clrt_func_init(struct x86_ctx_t *ctx)
 {
-	unsigned int version_ptr;
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
+	unsigned int version_ptr;
 	struct x86_clrt_version_t version;
 
 	/* Arguments */
-	version_ptr = x86_isa_regs->ecx;
+	version_ptr = regs->ecx;
 	x86_clrt_debug("\tversion_ptr=0x%x\n", version_ptr);
 
 	/* Return version */
 	assert(sizeof(struct x86_clrt_version_t) == 8);
 	version.major = X86_CLRT_VERSION_MAJOR;
 	version.minor = X86_CLRT_VERSION_MINOR;
-	mem_write(x86_isa_mem, version_ptr, sizeof version, &version);
+	mem_write(mem, version_ptr, sizeof version, &version);
 	x86_clrt_debug("\tMulti2Sim OpenCL implementation in host: v. %d.%d.\n",
 		X86_CLRT_VERSION_MAJOR, X86_CLRT_VERSION_MINOR);
 	x86_clrt_debug("\tMulti2Sim OpenCL Runtime in guest: v. %d.%d.\n",

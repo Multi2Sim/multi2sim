@@ -5326,7 +5326,7 @@ static int x86_sys_cuda_impl(struct x86_ctx_t *ctx)
 static int x86_sys_clrt_impl(struct x86_ctx_t *ctx)
 {
 	/* Run OpenCL Runtime call */
-	return x86_clrt_call();
+	return x86_clrt_call(ctx);
 }
 
 
