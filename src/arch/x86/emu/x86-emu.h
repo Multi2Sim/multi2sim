@@ -662,7 +662,7 @@ extern int x86_opengl_debug_category;
 void x86_opengl_init(void);
 void x86_opengl_done(void);
 
-int x86_opengl_call(void);
+int x86_opengl_call(struct x86_ctx_t *ctx);
 
 
 
