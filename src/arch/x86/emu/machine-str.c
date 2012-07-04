@@ -59,13 +59,14 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 #define OP_REP_IMPL(X, SIZE) \
 	void x86_isa_rep_##X##_impl(struct x86_ctx_t *ctx) \
 	{ \
+		struct x86_regs_t *regs = ctx->regs; \
 		x86_isa_rep_init(ctx); \
 		\
-		if (x86_isa_regs->ecx) \
+		if (regs->ecx) \
 		{ \
 			x86_isa_##X##_run(ctx); \
-			x86_isa_regs->ecx--; \
-			x86_isa_regs->eip -= ctx->inst.size; \
+			regs->ecx--; \
+			regs->eip -= ctx->inst.size; \
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \
@@ -79,14 +80,15 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 #define OP_REPZ_IMPL(X, SIZE) \
 	void x86_isa_repz_##X##_impl(struct x86_ctx_t *ctx) \
 	{ \
+		struct x86_regs_t *regs = ctx->regs; \
 		x86_isa_rep_init(ctx); \
 		\
-		if (x86_isa_regs->ecx) \
+		if (regs->ecx) \
 		{ \
 			x86_isa_##X##_run(ctx); \
-			x86_isa_regs->ecx--; \
+			regs->ecx--; \
 			if (x86_isa_get_flag(ctx, x86_flag_zf)) \
-				x86_isa_regs->eip -= ctx->inst.size; \
+				regs->eip -= ctx->inst.size; \
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \
@@ -100,14 +102,15 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
 #define OP_REPNZ_IMPL(X, SIZE) \
 	void x86_isa_repnz_##X##_impl(struct x86_ctx_t *ctx) \
 	{ \
+		struct x86_regs_t *regs = ctx->regs; \
 		x86_isa_rep_init(ctx); \
 		\
-		if (x86_isa_regs->ecx) \
+		if (regs->ecx) \
 		{ \
 			x86_isa_##X##_run(ctx); \
-			x86_isa_regs->ecx--; \
+			regs->ecx--; \
 			if (!x86_isa_get_flag(ctx, x86_flag_zf)) \
-				x86_isa_regs->eip -= ctx->inst.size; \
+				regs->eip -= ctx->inst.size; \
 		} \
 		\
 		x86_isa_##X##_uinst(ctx, \
@@ -124,7 +127,7 @@ static void x86_isa_rep_init(struct x86_ctx_t *ctx)
  * CMPSB
  */
 
-static void x86_isa_cmpsb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_cmpsb_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	x86_uinst_new_mem(ctx, x86_uinst_load, esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, edi, 1, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
@@ -137,12 +140,15 @@ static void x86_isa_cmpsb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 static void x86_isa_cmpsb_run(struct x86_ctx_t *ctx)
 {
-	uint8_t op1, op2;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned char op1;
+	unsigned char op2;
 	unsigned long flags;
 
-	x86_isa_mem_read(ctx, x86_isa_regs->esi, 1, &op1);
-	x86_isa_mem_read(ctx, x86_isa_regs->edi, 1, &op2);
-	flags = x86_isa_regs->eflags;
+	x86_isa_mem_read(ctx, regs->esi, 1, &op1);
+	x86_isa_mem_read(ctx, regs->edi, 1, &op2);
+	flags = regs->eflags;
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -158,15 +164,17 @@ static void x86_isa_cmpsb_run(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_ASM_END__
 
-	x86_isa_regs->eflags = flags;
-	x86_isa_regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
-	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	regs->eflags = flags;
+	regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
 }
 
 
 void x86_isa_cmpsb_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_cmpsb_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_cmpsb_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_cmpsb_run(ctx);
 }
 
@@ -177,7 +185,7 @@ void x86_isa_cmpsb_impl(struct x86_ctx_t *ctx)
  * CMPSD
  */
 
-static void x86_isa_cmpsd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_cmpsd_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	x86_uinst_new_mem(ctx, x86_uinst_load, esi, 4, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_load, edi, 4, x86_dep_edi, 0, 0, x86_dep_aux2, 0, 0, 0);
@@ -190,12 +198,15 @@ static void x86_isa_cmpsd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 static void x86_isa_cmpsd_run(struct x86_ctx_t *ctx)
 {
-	uint32_t op1, op2;
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int op1;
+	unsigned int op2;
 	unsigned long flags;
 
-	x86_isa_mem_read(ctx, x86_isa_regs->edi, 4, &op1);
-	x86_isa_mem_read(ctx, x86_isa_regs->esi, 4, &op2);
-	flags = x86_isa_regs->eflags;
+	x86_isa_mem_read(ctx, regs->edi, 4, &op1);
+	x86_isa_mem_read(ctx, regs->esi, 4, &op2);
+	flags = regs->eflags;
 
 	__X86_ISA_ASM_START__ \
 	asm volatile (
@@ -211,15 +222,17 @@ static void x86_isa_cmpsd_run(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_ASM_END__ \
 
-	x86_isa_regs->eflags = flags;
-	x86_isa_regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
-	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	regs->eflags = flags;
+	regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
 }
 
 
 void x86_isa_cmpsd_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_cmpsd_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_cmpsd_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_cmpsd_run(ctx);
 }
 
@@ -236,7 +249,7 @@ static void x86_isa_insb_run(struct x86_ctx_t *ctx)
 }
 
 
-static void x86_isa_insb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_insb_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	/* Not implemented */
 }
@@ -244,7 +257,9 @@ static void x86_isa_insb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi
 
 void x86_isa_insb_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_insb_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_insb_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_insb_run(ctx);
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
@@ -262,7 +277,7 @@ static void x86_isa_insd_run(struct x86_ctx_t *ctx)
 }
 
 
-static void x86_isa_insd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_insd_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	/* Not implemented */
 }
@@ -270,7 +285,9 @@ static void x86_isa_insd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi
 
 void x86_isa_insd_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_insd_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_insd_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_insd_run(ctx);
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
@@ -288,7 +305,7 @@ static void x86_isa_lodsb_run(struct x86_ctx_t *ctx)
 }
 
 
-static void x86_isa_lodsb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_lodsb_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	/* Not implemented */
 }
@@ -296,7 +313,9 @@ static void x86_isa_lodsb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_lodsb_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_lodsb_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_lodsb_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_lodsb_run(ctx);
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
@@ -314,7 +333,7 @@ static void x86_isa_lodsd_run(struct x86_ctx_t *ctx)
 }
 
 
-static void x86_isa_lodsd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_lodsd_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	/* Not implemented */
 }
@@ -322,7 +341,9 @@ static void x86_isa_lodsd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_lodsd_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_lodsd_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_lodsd_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_lodsd_run(ctx);
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
@@ -336,17 +357,18 @@ void x86_isa_lodsd_impl(struct x86_ctx_t *ctx)
 
 static void x86_isa_movsb_run(struct x86_ctx_t *ctx)
 {
-	uint8_t m8;
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned char m8;
 
-	x86_isa_mem_read(ctx, x86_isa_regs->esi, 1, &m8);
-	x86_isa_mem_write(ctx, x86_isa_regs->edi, 1, &m8);
+	x86_isa_mem_read(ctx, regs->esi, 1, &m8);
+	x86_isa_mem_write(ctx, regs->edi, 1, &m8);
 
-	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
-	x86_isa_regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
 }
 
 
-static void x86_isa_movsb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_movsb_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	x86_uinst_new_mem(ctx, x86_uinst_load, esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_store, edi, 1, x86_dep_edi, x86_dep_aux, 0, 0, 0, 0, 0);
@@ -358,7 +380,9 @@ static void x86_isa_movsb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_movsb_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_movsb_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_movsb_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_movsb_run(ctx);
 }
 
@@ -371,18 +395,19 @@ void x86_isa_movsb_impl(struct x86_ctx_t *ctx)
 
 static void x86_isa_movsw_run(struct x86_ctx_t *ctx)
 {
-	uint16_t m16;
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned short m16;
 
-	x86_isa_mem_read(ctx, x86_isa_regs->esi, 2, &m16);
-	x86_isa_mem_write(ctx, x86_isa_regs->edi, 2, &m16);
+	x86_isa_mem_read(ctx, regs->esi, 2, &m16);
+	x86_isa_mem_write(ctx, regs->edi, 2, &m16);
 
-	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -2 : 2;
-	x86_isa_regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -2 : 2;
+	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -2 : 2;
+	regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -2 : 2;
 
 }
 
 
-static void x86_isa_movsw_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_movsw_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	x86_uinst_new_mem(ctx, x86_uinst_load, esi, 1, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_store, edi, 1, x86_dep_edi, x86_dep_aux, 0, 0, 0, 0, 0);
@@ -394,7 +419,9 @@ static void x86_isa_movsw_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_movsw_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_movsw_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_movsw_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_movsw_run(ctx);
 }
 
@@ -406,18 +433,19 @@ void x86_isa_movsw_impl(struct x86_ctx_t *ctx)
 
 static void x86_isa_movsd_run(struct x86_ctx_t *ctx)
 {
-	uint32_t m32;
+	struct x86_regs_t *regs = ctx->regs;
+	unsigned int m32;
 
-	x86_isa_mem_read(ctx, x86_isa_regs->esi, 4, &m32);
-	x86_isa_mem_write(ctx, x86_isa_regs->edi, 4, &m32);
+	x86_isa_mem_read(ctx, regs->esi, 4, &m32);
+	x86_isa_mem_write(ctx, regs->edi, 4, &m32);
 
-	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
-	x86_isa_regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	regs->esi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
 
 }
 
 
-static void x86_isa_movsd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_movsd_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	x86_uinst_new_mem(ctx, x86_uinst_load, esi, 4, x86_dep_esi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new_mem(ctx, x86_uinst_store, edi, 4, x86_dep_edi, x86_dep_aux, 0, 0, 0, 0, 0);
@@ -429,7 +457,9 @@ static void x86_isa_movsd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_movsd_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_movsd_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_movsd_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_movsd_run(ctx);
 }
 
@@ -446,7 +476,7 @@ static void x86_isa_outsb_run(struct x86_ctx_t *ctx)
 }
 
 
-static void x86_isa_outsb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_outsb_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	/* Not implemented */
 }
@@ -454,7 +484,9 @@ static void x86_isa_outsb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_outsb_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_outsb_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_outsb_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_outsb_run(ctx);
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
@@ -472,7 +504,7 @@ static void x86_isa_outsd_run(struct x86_ctx_t *ctx)
 }
 
 
-static void x86_isa_outsd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_outsd_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	/* Not implemented */
 }
@@ -480,7 +512,9 @@ static void x86_isa_outsd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_outsd_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_outsd_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_outsd_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_outsd_run(ctx);
 	x86_isa_error(ctx, "%s: not implemented", __FUNCTION__);
 }
@@ -494,11 +528,13 @@ void x86_isa_outsd_impl(struct x86_ctx_t *ctx)
 
 static void x86_isa_scasb_run(struct x86_ctx_t *ctx)
 {
-	uint8_t al = x86_isa_load_reg(ctx, x86_reg_al);
-	uint8_t m8;
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
 
-	x86_isa_mem_read(ctx, x86_isa_regs->edi, 1, &m8);
+	unsigned char al = x86_isa_load_reg(ctx, x86_reg_al);
+	unsigned char m8;
+	unsigned long flags = regs->eflags;
+
+	x86_isa_mem_read(ctx, regs->edi, 1, &m8);
 
 	__X86_ISA_ASM_START__ \
 	asm volatile (
@@ -514,13 +550,13 @@ static void x86_isa_scasb_run(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_ASM_END__ \
 
-	x86_isa_regs->eflags = flags;
-	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	regs->eflags = flags;
+	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
 
 }
 
 
-static void x86_isa_scasb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_scasb_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	x86_uinst_new_mem(ctx, x86_uinst_load, edi, 1, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_aux, x86_dep_eax, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
@@ -530,7 +566,9 @@ static void x86_isa_scasb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_scasb_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_scasb_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_scasb_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_scasb_run(ctx);
 }
 
@@ -542,11 +580,13 @@ void x86_isa_scasb_impl(struct x86_ctx_t *ctx)
 
 static void x86_isa_scasd_run(struct x86_ctx_t *ctx)
 {
-	uint32_t eax = x86_isa_load_reg(ctx, x86_reg_eax);
-	uint32_t m32;
-	unsigned long flags = x86_isa_regs->eflags;
+	struct x86_regs_t *regs = ctx->regs;
 
-	x86_isa_mem_read(ctx, x86_isa_regs->edi, 4, &m32);
+	unsigned int eax = x86_isa_load_reg(ctx, x86_reg_eax);
+	unsigned int m32;
+	unsigned long flags = regs->eflags;
+
+	x86_isa_mem_read(ctx, regs->edi, 4, &m32);
 
 	__X86_ISA_ASM_START__ \
 	asm volatile (
@@ -562,13 +602,13 @@ static void x86_isa_scasd_run(struct x86_ctx_t *ctx)
 	);
 	__X86_ISA_ASM_END__ \
 
-	x86_isa_regs->eflags = flags;
-	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	regs->eflags = flags;
+	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
 
 }
 
 
-static void x86_isa_scasd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_scasd_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	x86_uinst_new_mem(ctx, x86_uinst_load, edi, 4, x86_dep_edi, 0, 0, x86_dep_aux, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_sub, x86_dep_aux, x86_dep_eax, 0, x86_dep_zps, x86_dep_of, x86_dep_cf, 0);
@@ -578,7 +618,9 @@ static void x86_isa_scasd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_scasd_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_scasd_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_scasd_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_scasd_run(ctx);
 }
 
@@ -590,15 +632,17 @@ void x86_isa_scasd_impl(struct x86_ctx_t *ctx)
 
 static void x86_isa_stosb_run(struct x86_ctx_t *ctx)
 {
-	uint8_t m8 = x86_isa_load_reg(ctx, x86_reg_al);
-	uint32_t addr = x86_isa_load_reg(ctx, x86_reg_edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned char m8 = x86_isa_load_reg(ctx, x86_reg_al);
+	unsigned int addr = x86_isa_load_reg(ctx, x86_reg_edi);
 	
 	x86_isa_mem_write(ctx, addr, 1, &m8);
-	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
+	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -1 : 1;
 }
 
 
-static void x86_isa_stosb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_stosb_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	x86_uinst_new_mem(ctx, x86_uinst_store, edi, 1, x86_dep_edi, x86_dep_eax, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
@@ -607,7 +651,9 @@ static void x86_isa_stosb_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_stosb_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_stosb_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_stosb_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_stosb_run(ctx);
 }
 
@@ -620,15 +666,17 @@ void x86_isa_stosb_impl(struct x86_ctx_t *ctx)
 
 static void x86_isa_stosd_run(struct x86_ctx_t *ctx)
 {
-	uint32_t m32 = x86_isa_load_reg(ctx, x86_reg_eax);
-	uint32_t addr = x86_isa_load_reg(ctx, x86_reg_edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int m32 = x86_isa_load_reg(ctx, x86_reg_eax);
+	unsigned int addr = x86_isa_load_reg(ctx, x86_reg_edi);
 	
 	x86_isa_mem_write(ctx, addr, 4, &m32);
-	x86_isa_regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
+	regs->edi += x86_isa_get_flag(ctx, x86_flag_df) ? -4 : 4;
 }
 
 
-static void x86_isa_stosd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t edi)
+static void x86_isa_stosd_uinst(struct x86_ctx_t *ctx, unsigned int esi, unsigned int edi)
 {
 	x86_uinst_new_mem(ctx, x86_uinst_store, edi, 4, x86_dep_edi, x86_dep_eax, 0, 0, 0, 0, 0);
 	x86_uinst_new(ctx, x86_uinst_add, x86_dep_edi, x86_dep_df, 0, x86_dep_edi, 0, 0, 0);
@@ -637,7 +685,9 @@ static void x86_isa_stosd_uinst(struct x86_ctx_t *ctx, uint32_t esi, uint32_t ed
 
 void x86_isa_stosd_impl(struct x86_ctx_t *ctx)
 {
-	x86_isa_stosd_uinst(ctx, x86_isa_regs->esi, x86_isa_regs->edi);
+	struct x86_regs_t *regs = ctx->regs;
+
+	x86_isa_stosd_uinst(ctx, regs->esi, regs->edi);
 	x86_isa_stosd_run(ctx);
 }
 
