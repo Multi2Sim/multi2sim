@@ -73,13 +73,13 @@ int si_opencl_func_argc[] = {
 
 
 /* Forward declarations of OpenCL functions */
-#define DEF_OPENCL_FUNC(_name, _argc) int si_opencl_##_name##_impl(int *argv);
+#define DEF_OPENCL_FUNC(_name, _argc) int si_opencl_##_name##_impl(struct x86_ctx_t *ctx, int *argv);
 #include "opencl.dat"
 #undef DEF_OPENCL_FUNC
 
 
 /* Table of OpenCL function implementations */
-typedef int (*si_opencl_func_impl_t)(int *argv);
+typedef int (*si_opencl_func_impl_t)(struct x86_ctx_t *ctx, int *argv);
 si_opencl_func_impl_t si_opencl_func_impl[] = {
 #define DEF_OPENCL_FUNC(_name, _argc) si_opencl_##_name##_impl,
 #include "opencl.dat"
@@ -158,19 +158,19 @@ char *si_err_opencl_version_note =
  * Entry point for OpenCL API
  */
 
-int si_opencl_api_run(void)
+int si_opencl_api_run(struct x86_ctx_t *ctx)
 {
 	int argv[SI_OPENCL_MAX_ARGS];
 	int code;
 	int ret;
 
 	/* Get function code and arguments */
-	code = si_opencl_api_read_args(x86_isa_ctx, NULL, argv, sizeof argv);
+	code = si_opencl_api_read_args(ctx, NULL, argv, sizeof argv);
 	assert(IN_RANGE(code, SI_OPENCL_FUNC_FIRST, SI_OPENCL_FUNC_LAST));
 	
 	/* Call function */
 	si_opencl_debug("%s\n", si_opencl_func_name[code - SI_OPENCL_FUNC_FIRST]);
-	ret = si_opencl_func_impl[code - SI_OPENCL_FUNC_FIRST](argv);
+	ret = si_opencl_func_impl[code - SI_OPENCL_FUNC_FIRST](ctx, argv);
 
 	/* Return OpencL result */
 	return ret;
@@ -227,7 +227,7 @@ void si_opencl_api_return(struct x86_ctx_t *ctx, int value)
  * OpenCL call 'clGetPlatformIDs' (code 1000)
  */
 
-int si_opencl_clGetPlatformIDs_impl(int *argv)
+int si_opencl_clGetPlatformIDs_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	int num_entries = argv[0];  /* cl_uint num_entries */
 	unsigned int platforms = argv[1];  /* cl_platform_id *platforms */
@@ -267,7 +267,7 @@ int si_opencl_clGetPlatformIDs_impl(int *argv)
  * OpenCL call 'clGetPlatformInfo' (code 1001)
  */
 
-int si_opencl_clGetPlatformInfo_impl(int *argv)
+int si_opencl_clGetPlatformInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int platform_id = argv[0];  /* cl_platform_id platform */
 	unsigned int param_name = argv[1];  /* cl_platform_info param_name */
@@ -301,7 +301,7 @@ int si_opencl_clGetPlatformInfo_impl(int *argv)
  * OpenCL call 'clGetDeviceIDs' (code 1002)
  */
 
-int si_opencl_clGetDeviceIDs_impl(int *argv)
+int si_opencl_clGetDeviceIDs_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int platform = argv[0];  /* cl_platform_id platform */
 	int device_type = argv[1];  /* cl_device_type device_type */
@@ -344,7 +344,7 @@ int si_opencl_clGetDeviceIDs_impl(int *argv)
  * OpenCL call 'clGetDeviceInfo' (code 1003)
  */
 
-int si_opencl_clGetDeviceInfo_impl(int *argv)
+int si_opencl_clGetDeviceInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int device_id = argv[0];  /* cl_device_id device */
 	unsigned int param_name = argv[1];  /* cl_device_info param_name */
@@ -378,7 +378,7 @@ int si_opencl_clGetDeviceInfo_impl(int *argv)
  * OpenCL call 'clCreateContext' (code 1004)
  */
 
-int si_opencl_clCreateContext_impl(int *argv)
+int si_opencl_clCreateContext_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int properties = argv[0];  /* const cl_context_properties *properties */
 	unsigned int num_devices = argv[1];  /* cl_uint num_devices */
@@ -428,7 +428,7 @@ int si_opencl_clCreateContext_impl(int *argv)
  * OpenCL call 'clCreateContextFromType' (code 1005)
  */
 
-int si_opencl_clCreateContextFromType_impl(int *argv)
+int si_opencl_clCreateContextFromType_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int properties = argv[0];  /* const cl_context_properties *properties */
 	unsigned int device_type = argv[1];  /* cl_device_type device_type */
@@ -471,7 +471,7 @@ int si_opencl_clCreateContextFromType_impl(int *argv)
  * OpenCL call 'clReleaseContext' (code 1007)
  */
 
-int si_opencl_clReleaseContext_impl(int *argv)
+int si_opencl_clReleaseContext_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 
@@ -497,7 +497,7 @@ int si_opencl_clReleaseContext_impl(int *argv)
  * OpenCL call 'clGetContextInfo' (code 1008)
  */
 
-int si_opencl_clGetContextInfo_impl(int *argv)
+int si_opencl_clGetContextInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int param_name = argv[1];  /* cl_context_info param_name */
@@ -530,7 +530,7 @@ int si_opencl_clGetContextInfo_impl(int *argv)
  * OpenCL call 'clCreateCommandQueue' (code 1009)
  */
 
-int si_opencl_clCreateCommandQueue_impl(int *argv)
+int si_opencl_clCreateCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int device_id = argv[1];  /* cl_device_id device */
@@ -569,7 +569,7 @@ int si_opencl_clCreateCommandQueue_impl(int *argv)
  * OpenCL call 'clReleaseCommandQueue' (code 1009)
  */
 
-int si_opencl_clReleaseCommandQueue_impl(int *argv)
+int si_opencl_clReleaseCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int command_queue_id = argv[0];  /* cl_command_queue command_queue */
 
@@ -608,7 +608,7 @@ static struct string_map_t create_buffer_flags_map =
 	}
 };
 
-int si_opencl_clCreateBuffer_impl(int *argv)
+int si_opencl_clCreateBuffer_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int flags = argv[1];  /* cl_mem_flags flags */
@@ -649,7 +649,8 @@ int si_opencl_clCreateBuffer_impl(int *argv)
 	si_emu->global_mem_top += size;
 
 	/* If 'host_ptr' was specified, copy buffer into device memory */
-	if (host_ptr) {
+	if (host_ptr)
+	{
 		buf = malloc(size);
 		if (!buf)
 			fatal("%s: out of memory", __FUNCTION__);
@@ -685,7 +686,7 @@ static struct string_map_t si_opencl_create_image_flags_map =
 	}
 };
 
-int si_opencl_clCreateImage2D_impl(int *argv)
+int si_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int flags = argv[1];  /* cl_mem_flags flags */
@@ -832,7 +833,7 @@ int si_opencl_clCreateImage2D_impl(int *argv)
  * OpenCL call 'clCreateImage3D' (code 1017)
  */
 
-int si_opencl_clCreateImage3D_impl(int *argv)
+int si_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int flags = argv[1];  /* cl_mem_flags flags */
@@ -984,7 +985,7 @@ int si_opencl_clCreateImage3D_impl(int *argv)
  * OpenCL call 'clReleaseMemObject' (code 1019)
  */
 
-int si_opencl_clReleaseMemObject_impl(int *argv)
+int si_opencl_clReleaseMemObject_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int mem_id = argv[0];  /* cl_mem memobj */
 
@@ -1009,7 +1010,7 @@ int si_opencl_clReleaseMemObject_impl(int *argv)
  * OpenCL call 'clCreateSampler' (code 1024)
  */
 
-int si_opencl_clCreateSampler_impl(int *argv)
+int si_opencl_clCreateSampler_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context = argv[0];  /* cl_context context */
 	unsigned int normalized_coords = argv[1];  /* cl_bool normalized_coords */
@@ -1059,7 +1060,7 @@ int si_opencl_clCreateSampler_impl(int *argv)
  * OpenCL call 'clCreateProgramWithSource' (code 1028)
  */
 
-int si_opencl_clCreateProgramWithSource_impl(int *argv)
+int si_opencl_clCreateProgramWithSource_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int count = argv[1];  /* cl_uint count */
@@ -1097,7 +1098,7 @@ int si_opencl_clCreateProgramWithSource_impl(int *argv)
  * OpenCL call 'clCreateProgramWithBinary' (code 1029)
  */
 
-int si_opencl_clCreateProgramWithBinary_impl(int *argv)
+int si_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int context_id = argv[0];  /* cl_context context */
 	unsigned int num_devices = argv[1];  /* cl_uint num_devices */
@@ -1169,7 +1170,7 @@ int si_opencl_clCreateProgramWithBinary_impl(int *argv)
  * OpenCL call 'clReleaseProgram' (code 1031)
  */
 
-int si_opencl_clReleaseProgram_impl(int *argv)
+int si_opencl_clReleaseProgram_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int program_id = argv[0];  /* cl_program program */
 
@@ -1195,7 +1196,7 @@ int si_opencl_clReleaseProgram_impl(int *argv)
  * OpenCL call 'clBuildProgram' (code 1032)
  */
 
-int si_opencl_clBuildProgram_impl(int *argv)
+int si_opencl_clBuildProgram_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int program_id = argv[0];  /* cl_program program */
 	unsigned int num_devices = argv[1];  /* cl_uint num_devices */
@@ -1244,7 +1245,7 @@ int si_opencl_clBuildProgram_impl(int *argv)
  * OpenCL call 'clCreateKernel' (code 1036)
  */
 
-int si_opencl_clCreateKernel_impl(int *argv)
+int si_opencl_clCreateKernel_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int program_id = argv[0];  /* cl_program program */
 	unsigned int kernel_name = argv[1];  /* const char *kernel_name */
@@ -1305,7 +1306,7 @@ int si_opencl_clCreateKernel_impl(int *argv)
  * OpenCL call 'clReleaseKernel' (code 1039)
  */
 
-int si_opencl_clReleaseKernel_impl(int *argv)
+int si_opencl_clReleaseKernel_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int kernel_id = argv[0];  /* cl_kernel kernel */
 
@@ -1331,7 +1332,7 @@ int si_opencl_clReleaseKernel_impl(int *argv)
  * OpenCL call 'clSetKernelArg' (code 1040)
  */
 
-int si_opencl_clSetKernelArg_impl(int *argv)
+int si_opencl_clSetKernelArg_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int kernel_id = argv[0];  /* cl_kernel kernel */
 	unsigned int arg_index = argv[1];  /* cl_uint arg_index */
@@ -1377,7 +1378,7 @@ int si_opencl_clSetKernelArg_impl(int *argv)
  * OpenCL call 'clGetKernelWorkGroupInfo' (code 1042)
  */
 
-int si_opencl_clGetKernelWorkGroupInfo_impl(int *argv)
+int si_opencl_clGetKernelWorkGroupInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int kernel_id = argv[0];  /* cl_kernel kernel */
 	unsigned int device_id = argv[1];  /* cl_device_id device */
@@ -1414,7 +1415,7 @@ int si_opencl_clGetKernelWorkGroupInfo_impl(int *argv)
  * OpenCL call 'clWaitForEvents' (code 1043)
  */
 
-int si_opencl_clWaitForEvents_impl(int *argv)
+int si_opencl_clWaitForEvents_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int num_events = argv[0];  /* cl_uint num_events */
 	unsigned int event_list = argv[1];  /* const cl_event *event_list */
@@ -1435,7 +1436,7 @@ int si_opencl_clWaitForEvents_impl(int *argv)
  * OpenCL call 'clGetEventInfo' (code 1044)
  */
 
-int si_opencl_clGetEventInfo_impl(int *argv)
+int si_opencl_clGetEventInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int param_name = argv[1]; /* cl_event_info param_name */
 	unsigned int param_value = argv[3]; /* void *param_value */
@@ -1484,7 +1485,7 @@ int si_opencl_clGetEventInfo_impl(int *argv)
  * OpenCL call 'clReleaseEvent' (code 1047)
  */
 
-int si_opencl_clReleaseEvent_impl(int *argv)
+int si_opencl_clReleaseEvent_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int event_id = argv[0];  /* cl_event event */
 
@@ -1510,7 +1511,7 @@ int si_opencl_clReleaseEvent_impl(int *argv)
  * OpenCL call 'clGetEventProfilingInfo' (code 1050)
  */
 
-int si_opencl_clGetEventProfilingInfo_impl(int *argv)
+int si_opencl_clGetEventProfilingInfo_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int event_id = argv[0];  /* cl_event event */
 	unsigned int param_name = argv[1];  /* cl_profiling_info param_name */
@@ -1543,7 +1544,7 @@ int si_opencl_clGetEventProfilingInfo_impl(int *argv)
  * OpenCL call 'clFlush' (code 1051)
  */
 
-int si_opencl_clFlush_impl(int *argv)
+int si_opencl_clFlush_impl(struct x86_ctx_t *ctx, int *argv)
 {
 	unsigned int command_queue = argv[0];  /* cl_command_queue command_queue */
 
@@ -1577,7 +1578,7 @@ void si_opencl_clFinish_wakeup(struct x86_ctx_t *ctx, void *data)
 	si_opencl_api_return(ctx, 0);
 }
 
-int si_opencl_clFinish_impl(int *argv_ptr)
+int si_opencl_clFinish_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct si_opencl_clFinish_args_t *argv;
 	struct si_opencl_command_queue_t *command_queue;
@@ -1591,7 +1592,7 @@ int si_opencl_clFinish_impl(int *argv_ptr)
 			si_opencl_object_command_queue, argv->command_queue_id);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, si_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, si_opencl_command_queue_can_wakeup, command_queue,
 			si_opencl_clFinish_wakeup, NULL);
 
 	/* Return value ignored by caller, since context is getting suspended.
@@ -1673,7 +1674,7 @@ void si_opencl_clEnqueueReadBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	si_opencl_api_return(ctx, 0);
 }
 
-int si_opencl_clEnqueueReadBuffer_impl(int *argv_ptr)
+int si_opencl_clEnqueueReadBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct si_opencl_clEnqueueReadBuffer_args_t *argv;
 
@@ -1697,7 +1698,7 @@ int si_opencl_clEnqueueReadBuffer_impl(int *argv_ptr)
 			si_opencl_object_command_queue, argv->command_queue);
 	
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, si_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, si_opencl_command_queue_can_wakeup, command_queue,
 			si_opencl_clEnqueueReadBuffer_wakeup, NULL);
 
 	/* Return value ignored by caller, since context is getting suspended.
@@ -1778,7 +1779,7 @@ void si_opencl_clEnqueueWriteBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	si_opencl_api_return(ctx, 0);
 }
 
-int si_opencl_clEnqueueWriteBuffer_impl(int *argv_ptr)
+int si_opencl_clEnqueueWriteBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct si_opencl_clEnqueueWriteBuffer_args_t *argv;
 	struct si_opencl_command_queue_t *command_queue;
@@ -1801,7 +1802,7 @@ int si_opencl_clEnqueueWriteBuffer_impl(int *argv_ptr)
 			si_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, si_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, si_opencl_command_queue_can_wakeup, command_queue,
 			si_opencl_clEnqueueWriteBuffer_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -1883,7 +1884,7 @@ void si_opencl_clEnqueueCopyBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	si_opencl_api_return(ctx, 0);
 }
 
-int si_opencl_clEnqueueCopyBuffer_impl(int *argv_ptr)
+int si_opencl_clEnqueueCopyBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct si_opencl_clEnqueueCopyBuffer_args_t *argv;
 	struct si_opencl_command_queue_t *command_queue;
@@ -1906,7 +1907,7 @@ int si_opencl_clEnqueueCopyBuffer_impl(int *argv_ptr)
 			si_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, si_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, si_opencl_command_queue_can_wakeup, command_queue,
 			si_opencl_clEnqueueCopyBuffer_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2015,7 +2016,7 @@ void si_opencl_clEnqueueReadImage_wakeup(struct x86_ctx_t *ctx, void *data)
 	si_opencl_api_return(ctx, 0);
 }
 
-int si_opencl_clEnqueueReadImage_impl(int *argv_ptr)
+int si_opencl_clEnqueueReadImage_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct si_opencl_clEnqueueReadImage_args_t *argv;
 	struct si_opencl_command_queue_t *command_queue;
@@ -2038,7 +2039,7 @@ int si_opencl_clEnqueueReadImage_impl(int *argv_ptr)
 			si_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, si_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, si_opencl_command_queue_can_wakeup, command_queue,
 			si_opencl_clEnqueueReadImage_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2106,7 +2107,7 @@ void si_opencl_clEnqueueMapBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	si_opencl_api_return(ctx, 0);
 }
 
-int si_opencl_clEnqueueMapBuffer_impl(int *argv_ptr)
+int si_opencl_clEnqueueMapBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct si_opencl_clEnqueueMapBuffer_args_t *argv;
 	struct si_command_queue_t *command_queue;
@@ -2130,7 +2131,7 @@ int si_opencl_clEnqueueMapBuffer_impl(int *argv_ptr)
 			si_opencl_object_command_queue, argv->command_queue);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, si_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, si_opencl_command_queue_can_wakeup, command_queue,
 			si_opencl_clEnqueueMapBuffer_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2312,7 +2313,7 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	si_opencl_api_return(ctx, 0);
 }
 
-int si_opencl_clEnqueueNDRangeKernel_impl(int *argv_ptr)
+int si_opencl_clEnqueueNDRangeKernel_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
 	struct si_opencl_clEnqueueNDRangeKernel_args_t *argv;
 	struct si_opencl_command_queue_t *command_queue;
@@ -2338,7 +2339,7 @@ int si_opencl_clEnqueueNDRangeKernel_impl(int *argv_ptr)
 			si_opencl_object_command_queue, argv->command_queue_id);
 
 	/* Suspend context until command queue is empty */
-	x86_ctx_suspend(x86_isa_ctx, si_opencl_command_queue_can_wakeup, command_queue,
+	x86_ctx_suspend(ctx, si_opencl_command_queue_can_wakeup, command_queue,
 			si_opencl_clEnqueueNDRangeKernel_wakeup, NULL);
 
 	/* Return success, ignored for suspended context. */
@@ -2353,7 +2354,7 @@ int si_opencl_clEnqueueNDRangeKernel_impl(int *argv_ptr)
  */
 
 #define __SI_OPENCL_NOT_IMPL__(_name) \
-	int si_opencl_##_name##_impl(int *argv) \
+	int si_opencl_##_name##_impl(struct x86_ctx_t *ctx, int *argv) \
 	{ \
 		fatal("%s: OpenCL function not implemented.\n%s", __FUNCTION__, \
 			si_err_opencl_note); \

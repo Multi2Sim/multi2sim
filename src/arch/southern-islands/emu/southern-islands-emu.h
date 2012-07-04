@@ -67,7 +67,7 @@ extern int si_opencl_debug_category;
 #define SI_OPENCL_FUNC_COUNT  (si_OPENCL_FUNC_LAST - si_OPENCL_FUNC_FIRST + 1)
 #define SI_OPENCL_MAX_ARGS  14
 
-int si_opencl_api_run(void);
+int si_opencl_api_run(struct x86_ctx_t *ctx);
 
 int si_opencl_api_read_args(struct x86_ctx_t *ctx, int *argc_ptr,
 		void *argv_ptr, int argv_size);

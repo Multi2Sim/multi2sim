@@ -22,7 +22,6 @@
 
 
 /* Variables to perform instruction simulation */
-struct x86_ctx_t *x86_isa_ctx;
 struct x86_regs_t *x86_isa_regs;
 struct mem_t *x86_isa_mem;
 
