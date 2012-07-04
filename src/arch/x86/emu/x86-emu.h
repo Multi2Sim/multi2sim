@@ -630,7 +630,7 @@ extern pthread_mutex_t x86_glut_mutex;
 void x86_glut_init(void);
 void x86_glut_done(void);
 
-int x86_glut_call(void);
+int x86_glut_call(struct x86_ctx_t *ctx);
 
 
 void x86_glut_frame_buffer_init(void);

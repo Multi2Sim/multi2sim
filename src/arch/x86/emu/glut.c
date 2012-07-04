@@ -66,13 +66,13 @@ char *x86_glut_call_name[x86_glut_call_count + 1] =
 
 
 /* Forward declarations of GLUT runtime functions */
-#define X86_GLUT_DEFINE_CALL(name, code) static int x86_glut_func_##name(void);
+#define X86_GLUT_DEFINE_CALL(name, code) \
+	static int x86_glut_func_##name(struct x86_ctx_t *ctx);
 #include "glut.dat"
 #undef X86_GLUT_DEFINE_CALL
 
-
 /* List of GLUT runtime functions */
-typedef int (*x86_glut_func_t)(void);
+typedef int (*x86_glut_func_t)(struct x86_ctx_t *ctx);
 static x86_glut_func_t x86_glut_func_table[x86_glut_call_count + 1] =
 {
 	NULL,
@@ -649,8 +649,10 @@ void x86_glut_done(void)
 }
 
 
-int x86_glut_call(void)
+int x86_glut_call(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int code;
 	int ret;
 
@@ -671,7 +673,7 @@ int x86_glut_call(void)
 	}
 
 	/* Function code */
-	code = x86_isa_regs->ebx;
+	code = regs->ebx;
 	if (code <= x86_glut_call_invalid || code >= x86_glut_call_count)
 		fatal("%s: invalid GLUT function (code %d).\n%s",
 			__FUNCTION__, code, err_x86_glut_code);
@@ -682,7 +684,7 @@ int x86_glut_call(void)
 
 	/* Call GLUT function */
 	assert(x86_glut_func_table[code]);
-	ret = x86_glut_func_table[code]();
+	ret = x86_glut_func_table[code](ctx);
 
 	/* Return value */
 	return ret;
@@ -730,21 +732,23 @@ struct x86_glut_version_t
 	int minor;
 };
 
-static int x86_glut_func_init(void)
+static int x86_glut_func_init(struct x86_ctx_t *ctx)
 {
-	unsigned int version_ptr;
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
 
+	unsigned int version_ptr;
 	struct x86_glut_version_t version;
 
 	/* Arguments */
-	version_ptr = x86_isa_regs->ecx;
+	version_ptr = regs->ecx;
 	x86_glut_debug("\tversion_ptr=0x%x\n", version_ptr);
 
 	/* Return version */
 	assert(sizeof(struct x86_glut_version_t) == 8);
 	version.major = X86_GLUT_RUNTIME_VERSION_MAJOR;
 	version.minor = X86_GLUT_RUNTIME_VERSION_MINOR;
-	mem_write(x86_isa_mem, version_ptr, sizeof version, &version);
+	mem_write(mem, version_ptr, sizeof version, &version);
 	x86_glut_debug("\tGLUT Runtime host implementation v. %d.%d\n", version.major, version.minor);
 
 	/* Return success */
@@ -768,15 +772,18 @@ static int x86_glut_func_init(void)
  *	The return value is always 0.
  */
 
-static int x86_glut_func_get_event(void)
+static int x86_glut_func_get_event(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	struct x86_glut_event_t *event;
 	struct x86_glut_event_t idle_event;
 
 	unsigned int event_ptr;
 
 	/* Read arguments */
-	event_ptr = x86_isa_regs->ecx;
+	event_ptr = regs->ecx;
 	x86_glut_debug("\tevent_ptr=0x%x\n", event_ptr);
 
 	/* Get event at the head of the queue. If there is no event, create an
@@ -784,14 +791,14 @@ static int x86_glut_func_get_event(void)
 	event = x86_glut_event_dequeue();
 	if (event)
 	{
-		mem_write(x86_isa_mem, event_ptr, sizeof(struct x86_glut_event_t), event);
+		mem_write(mem, event_ptr, sizeof(struct x86_glut_event_t), event);
 		x86_glut_event_free(event);
 	}
 	else
 	{
 		memset(&idle_event, 0, sizeof(struct x86_glut_event_t));
 		idle_event.type = x86_glut_event_idle;
-		mem_write(x86_isa_mem, event_ptr, sizeof(struct x86_glut_event_t), &idle_event);
+		mem_write(mem, event_ptr, sizeof(struct x86_glut_event_t), &idle_event);
 	}
 
 	/* Return event */
@@ -878,8 +885,11 @@ static void *x86_glut_thread_func(void *arg)
 	return NULL;
 }
 
-static int x86_glut_func_new_window(void)
+static int x86_glut_func_new_window(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	unsigned int title_ptr;
 	unsigned int properties_ptr;
 
@@ -888,15 +898,15 @@ static int x86_glut_func_new_window(void)
 	struct x86_glut_window_properties_t *properties;
 
 	/* Read arguments */
-	title_ptr = x86_isa_regs->ecx;
-	properties_ptr = x86_isa_regs->edx;
-	mem_read_string(x86_isa_mem, title_ptr, sizeof title, title);
+	title_ptr = regs->ecx;
+	properties_ptr = regs->edx;
+	mem_read_string(mem, title_ptr, sizeof title, title);
 
 	/* Create window properties and read */
 	properties = calloc(1, sizeof(struct x86_glut_window_properties_t));
 	if (!properties)
 		fatal("%s: out of memory", __FUNCTION__);
-	mem_read(x86_isa_mem, properties_ptr, sizeof(struct x86_glut_window_properties_t),
+	mem_read(mem, properties_ptr, sizeof(struct x86_glut_window_properties_t),
 		properties);
 
 	/* Debug */
@@ -940,7 +950,7 @@ static int x86_glut_func_new_window(void)
  *	The function always returns 0
  */
 
-static int x86_glut_func_test_draw(void)
+static int x86_glut_func_test_draw(struct x86_ctx_t *ctx)
 {
 	int width;
 	int height;

@@ -61,7 +61,7 @@ void x86_glut_done(void)
 }
 
 
-int x86_glut_call(void)
+int x86_glut_call(struct x86_ctx_t *ctx)
 {
 	__X86_GLUT_MISSING__
 	return 0;
