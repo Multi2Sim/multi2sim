@@ -54,7 +54,7 @@ void x86_opengl_done(void)
 }
 
 
-int x86_opengl_call(void)
+int x86_opengl_call(struct x86_ctx_t *ctx)
 {
 	__X86_OPENGL_MISSING__
 	return 0;
