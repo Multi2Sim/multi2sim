@@ -677,7 +677,7 @@ extern int x86_clrt_debug_category;
 void x86_clrt_init(void);
 void x86_clrt_done(void);
 
-int x86_clrt_call(void);
+int x86_clrt_call(struct x86_ctx_t *ctx);
 
 
 
