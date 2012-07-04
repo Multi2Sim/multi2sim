@@ -139,7 +139,7 @@ void si_emu_libopencl_redirect(struct x86_ctx_t *ctx, char *full_path, int size)
 		if (f)
 		{
 			fclose(f);
-			x86_isa_ctx->libopencl_open_attempt = 0;
+			ctx->libopencl_open_attempt = 0;
 		}
 		else
 		{
@@ -157,12 +157,12 @@ void si_emu_libopencl_redirect(struct x86_ctx_t *ctx, char *full_path, int size)
 					"\twill be used in the linker. To avoid this message, please link your program\n"
 					"\tstatically. See the Multi2Sim Guide for further details (www.multi2sim.org).\n",
 					fullpath_original, full_path);
-				x86_isa_ctx->libopencl_open_attempt = 0;
+				ctx->libopencl_open_attempt = 0;
 			}
 			else
 			{
 				/* Attemps failed, record this. */
-				x86_isa_ctx->libopencl_open_attempt = 1;
+				ctx->libopencl_open_attempt = 1;
 			}
 		}
 	}
@@ -195,11 +195,11 @@ void si_emu_libopencl_redirect(struct x86_ctx_t *ctx, char *full_path, int size)
 				"\tthe safest way to simulate an OpenCL program is by linking it initially with\n"
 				"\t'libm2s-opencl.so'. See the Multi2Sim Guide for further details (www.multi2sim.org).\n",
 				fullpath_original, full_path);
-			x86_isa_ctx->libopencl_open_attempt = 0;
+			ctx->libopencl_open_attempt = 0;
 		}
 		else
 		{
-			x86_isa_ctx->libopencl_open_attempt = 1;
+			ctx->libopencl_open_attempt = 1;
 		}
 	}
 }
