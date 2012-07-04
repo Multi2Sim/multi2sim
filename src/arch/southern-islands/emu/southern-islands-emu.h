@@ -754,7 +754,7 @@ struct si_wavefront_t
 
 	/* Current instruction */
 	struct si_inst_t inst;
-	uint inst_size;
+	int inst_size;
 
 	/* Pointer to work_items */
 	struct si_work_item_t *scalar_work_item;  
