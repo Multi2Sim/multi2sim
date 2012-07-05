@@ -252,9 +252,9 @@ int si_opencl_clGetPlatformIDs_impl(struct x86_ctx_t *ctx, int *argv)
 	si_opencl_debug("  num_entries=%d, platforms=0x%x, num_platforms=0x%x, version=0x%x\n",
 		num_entries, platforms, num_platforms, opencl_impl_version);
 	if (num_platforms)
-		mem_write(x86_isa_mem, num_platforms, 4, &one);
+		mem_write(ctx->mem, num_platforms, 4, &one);
 	if (platforms && num_entries > 0)
-		mem_write(x86_isa_mem, platforms, 4, &si_emu->opencl_platform->id);
+		mem_write(ctx->mem, platforms, 4, &si_emu->opencl_platform->id);
 	
 	/* Return success */
 	return 0;
@@ -286,9 +286,9 @@ int si_opencl_clGetPlatformInfo_impl(struct x86_ctx_t *ctx, int *argv)
 	platform = si_opencl_repo_get_object(si_emu->opencl_repo,
 		si_opencl_object_platform, platform_id);
 	size_ret = si_opencl_platform_get_info(platform, param_name,
-		x86_isa_mem, param_value, param_value_size);
+		ctx->mem, param_value, param_value_size);
 	if (param_value_size_ret)
-		mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
+		mem_write(ctx->mem, param_value_size_ret, 4, &size_ret);
 	
 	/* Return success */
 	return 0;
@@ -321,7 +321,7 @@ int si_opencl_clGetDeviceIDs_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Return 1 in 'num_devices' */
 	if (num_devices)
-		mem_write(x86_isa_mem, num_devices, 4, &one);
+		mem_write(ctx->mem, num_devices, 4, &one);
 
 	/* Return 'id' of the only existing device */
 	if (devices && num_entries > 0)
@@ -330,7 +330,7 @@ int si_opencl_clGetDeviceIDs_impl(struct x86_ctx_t *ctx, int *argv)
 			si_opencl_object_device);
 		if (!device)
 			panic("%s: no device", __FUNCTION__);
-		mem_write(x86_isa_mem, devices, 4, &device->id);
+		mem_write(ctx->mem, devices, 4, &device->id);
 	}
 
 	/* Return success */
@@ -362,10 +362,10 @@ int si_opencl_clGetDeviceInfo_impl(struct x86_ctx_t *ctx, int *argv)
 
 	device = si_opencl_repo_get_object(si_emu->opencl_repo,
 		si_opencl_object_device, device_id);
-	size_ret = si_opencl_device_get_info(device, param_name, x86_isa_mem,
+	size_ret = si_opencl_device_get_info(device, param_name, ctx->mem,
 		param_value, param_value_size);
 	if (param_value_size_ret)
-		mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
+		mem_write(ctx->mem, param_value_size_ret, 4, &size_ret);
 	
 	/* Return success */
 	return 0;
@@ -402,7 +402,7 @@ int si_opencl_clCreateContext_impl(struct x86_ctx_t *ctx, int *argv)
 	SI_OPENCL_ARG_NOT_SUPPORTED_EQ(devices, 0);
 
 	/* Read device id */
-	mem_read(x86_isa_mem, devices, 4, &device_id);
+	mem_read(ctx->mem, devices, 4, &device_id);
 	device = si_opencl_repo_get_object(si_emu->opencl_repo,
 			si_opencl_object_device, device_id);
 	if (!device)
@@ -410,12 +410,12 @@ int si_opencl_clCreateContext_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Create context and return id */
 	context = si_opencl_context_create();
-	si_opencl_context_set_properties(context, x86_isa_mem, properties);
+	si_opencl_context_set_properties(context, ctx->mem, properties);
 	context->device_id = device_id;
 
 	/* Return success */
 	if (errcode_ret)
-		mem_write(x86_isa_mem, errcode_ret, 4, &zero);
+		mem_write(ctx->mem, errcode_ret, 4, &zero);
 	
 	/* Return context */
 	return context->id;
@@ -454,11 +454,11 @@ int si_opencl_clCreateContextFromType_impl(struct x86_ctx_t *ctx, int *argv)
 	/* Create context */
 	context = si_opencl_context_create();
 	context->device_id = device->id;
-	si_opencl_context_set_properties(context, x86_isa_mem, properties);
+	si_opencl_context_set_properties(context, ctx->mem, properties);
 
 	/* Return success */
 	if (errcode_ret)
-		mem_write(x86_isa_mem, errcode_ret, 4, &zero);
+		mem_write(ctx->mem, errcode_ret, 4, &zero);
 
 	/* Return context */
 	return context->id;
@@ -514,10 +514,10 @@ int si_opencl_clGetContextInfo_impl(struct x86_ctx_t *ctx, int *argv)
 
 	context = si_opencl_repo_get_object(si_emu->opencl_repo,
 		si_opencl_object_context, context_id);
-	size_ret = si_opencl_context_get_info(context, param_name, x86_isa_mem,
+	size_ret = si_opencl_context_get_info(context, param_name, ctx->mem,
 		param_value, param_value_size);
 	if (param_value_size_ret)
-		mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
+		mem_write(ctx->mem, param_value_size_ret, 4, &size_ret);
 	
 	/* Return success */
 	return 0;
@@ -556,7 +556,7 @@ int si_opencl_clCreateCommandQueue_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Return success */
 	if (errcode_ret)
-		mem_write(x86_isa_mem, errcode_ret, 4, &zero);
+		mem_write(ctx->mem, errcode_ret, 4, &zero);
 	
 	/* Return command queue */
 	return command_queue->id;
@@ -654,14 +654,14 @@ int si_opencl_clCreateBuffer_impl(struct x86_ctx_t *ctx, int *argv)
 		buf = malloc(size);
 		if (!buf)
 			fatal("%s: out of memory", __FUNCTION__);
-		mem_read(x86_isa_mem, host_ptr, size, buf);
+		mem_read(ctx->mem, host_ptr, size, buf);
 		mem_write(si_emu->global_mem, mem->device_ptr, size, buf);
 		free(buf);
 	}
 
 	/* Return success */
 	if (errcode_ret)
-		mem_write(x86_isa_mem, errcode_ret, 4, &zero);
+		mem_write(ctx->mem, errcode_ret, 4, &zero);
 	
 	/* Return memory object */
 	return mem->id;
@@ -711,7 +711,7 @@ int si_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 
 	struct si_opencl_mem_t *mem;
 
-	mem_read(x86_isa_mem, image_format_ptr, 8, &image_format);
+	mem_read(ctx->mem, image_format_ptr, 8, &image_format);
 	channel_order = image_format.image_channel_order;
 	channel_type = image_format.image_channel_data_type;
 
@@ -812,7 +812,7 @@ int si_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 		if (!image)
 			fatal("%s: out of memory", __FUNCTION__);
 
-		mem_read(x86_isa_mem, host_ptr, size, image);
+		mem_read(ctx->mem, host_ptr, size, image);
 		mem_write(si_emu->global_mem, mem->device_ptr, size, image);
 		free(image);
 	}
@@ -820,7 +820,7 @@ int si_opencl_clCreateImage2D_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Return success */
 	if (errcode_ret_ptr)
-		mem_write(x86_isa_mem, errcode_ret_ptr, 4, &zero);
+		mem_write(ctx->mem, errcode_ret_ptr, 4, &zero);
 
 	/* Return memory object */
 	return mem->id;
@@ -862,7 +862,7 @@ int si_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 
 	int zero = 0;
 
-	mem_read(x86_isa_mem, image_format_ptr, 8, &image_format);
+	mem_read(ctx->mem, image_format_ptr, 8, &image_format);
 	channel_order = image_format.image_channel_order;
 	channel_type = image_format.image_channel_data_type;
 
@@ -965,14 +965,14 @@ int si_opencl_clCreateImage3D_impl(struct x86_ctx_t *ctx, int *argv)
 		if (!image)
 			fatal("%s: out of memory", __FUNCTION__);
 
-		mem_read(x86_isa_mem, host_ptr, size, image);
+		mem_read(ctx->mem, host_ptr, size, image);
 		mem_write(si_emu->global_mem, mem->device_ptr, size, image);
 		free(image);
 	}
 
 	/* Return success */
 	if (errcode_ret_ptr)
-		mem_write(x86_isa_mem, errcode_ret_ptr, 4, &zero);
+		mem_write(ctx->mem, errcode_ret_ptr, 4, &zero);
 
 	/* Return memory object */
 	return mem->id;
@@ -1047,7 +1047,7 @@ int si_opencl_clCreateSampler_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Return success */
 	if (errcode_ret)
-		mem_write(x86_isa_mem, errcode_ret, 4, &zero);
+		mem_write(ctx->mem, errcode_ret, 4, &zero);
 	
 	/* Return sampler ID */
 	return sampler->id;
@@ -1125,7 +1125,7 @@ int si_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
 
 	/* Get device and context */
-	mem_read(x86_isa_mem, device_list, 4, &device_id);
+	mem_read(ctx->mem, device_list, 4, &device_id);
 	si_opencl_repo_get_object(si_emu->opencl_repo, si_opencl_object_device, device_id);
 	si_opencl_repo_get_object(si_emu->opencl_repo, si_opencl_object_context, context_id);
 
@@ -1133,8 +1133,8 @@ int si_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 	program = si_opencl_program_create();
 
 	/* Read binary length and pointer */
-	mem_read(x86_isa_mem, lengths, 4, &length);
-	mem_read(x86_isa_mem, binaries, 4, &binary);
+	mem_read(ctx->mem, lengths, 4, &length);
+	mem_read(ctx->mem, binaries, 4, &binary);
 	si_opencl_debug("    lengths[0] = %d\n", length);
 	si_opencl_debug("    binaries[0] = 0x%x\n", binary);
 
@@ -1142,7 +1142,7 @@ int si_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 	buf = malloc(length);
 	if (!buf)
 		fatal("out of memory");
-	mem_read(x86_isa_mem, binary, length, buf);
+	mem_read(ctx->mem, binary, length, buf);
 
 	/* Load ELF binary from guest memory */
 	snprintf(name, sizeof(name), "clProgram<%d>.externalELF", program->id);
@@ -1155,9 +1155,9 @@ int si_opencl_clCreateProgramWithBinary_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Return success */
 	if (binary_status)
-		mem_write(x86_isa_mem, binary_status, 4, &zero);
+		mem_write(ctx->mem, binary_status, 4, &zero);
 	if (errcode_ret)
-		mem_write(x86_isa_mem, errcode_ret, 4, &zero);
+		mem_write(ctx->mem, errcode_ret, 4, &zero);
 
 	/* Return program */
 	return program->id;
@@ -1211,7 +1211,7 @@ int si_opencl_clBuildProgram_impl(struct x86_ctx_t *ctx, int *argv)
 
 	options_str[0] = 0;
 	if (options)
-		mem_read_string(x86_isa_mem, options, MAX_STRING_SIZE, options_str);
+		mem_read_string(ctx->mem, options, MAX_STRING_SIZE, options_str);
 
 	si_opencl_debug("  program=0x%x, num_devices=%d, device_list=0x%x, options=0x%x\n"
 			"  pfn_notify=0x%x, user_data=0x%x, options='%s'\n",
@@ -1263,7 +1263,7 @@ int si_opencl_clCreateKernel_impl(struct x86_ctx_t *ctx, int *argv)
 
 	si_opencl_debug("  program=0x%x, kernel_name=0x%x, errcode_ret=0x%x\n",
 			program_id, kernel_name, errcode_ret);
-	if (mem_read_string(x86_isa_mem, kernel_name, MAX_STRING_SIZE, kernel_name_str) == MAX_STRING_SIZE)
+	if (mem_read_string(ctx->mem, kernel_name, MAX_STRING_SIZE, kernel_name_str) == MAX_STRING_SIZE)
 		fatal("%s: 'kernel_name' string is too long", __FUNCTION__);
 	si_opencl_debug("    kernel_name='%s'\n", kernel_name_str);
 
@@ -1293,7 +1293,7 @@ int si_opencl_clCreateKernel_impl(struct x86_ctx_t *ctx, int *argv)
 
 	/* Return success */
 	if (errcode_ret)
-		mem_write(x86_isa_mem, errcode_ret, 4, &zero);
+		mem_write(ctx->mem, errcode_ret, 4, &zero);
 	
 	/* Return kernel */
 	return kernel->id;
@@ -1360,7 +1360,7 @@ int si_opencl_clSetKernelArg_impl(struct x86_ctx_t *ctx, int *argv)
 	arg->set = 1;
 	arg->size = arg_size;
 	if (arg_value)
-		mem_read(x86_isa_mem, arg_value, 4, &arg->value);
+		mem_read(ctx->mem, arg_value, 4, &arg->value);
 
 	/* If OpenCL argument scope is __local, argument value must be NULL */
 	if (arg->mem_scope == SI_OPENCL_MEM_SCOPE_LOCAL && arg_value)
@@ -1399,10 +1399,10 @@ int si_opencl_clGetKernelWorkGroupInfo_impl(struct x86_ctx_t *ctx, int *argv)
 			si_opencl_object_kernel, kernel_id);
 	si_opencl_repo_get_object(si_emu->opencl_repo,
 			si_opencl_object_device, device_id);
-	size_ret = si_opencl_kernel_get_work_group_info(kernel, param_name, x86_isa_mem,
+	size_ret = si_opencl_kernel_get_work_group_info(kernel, param_name, ctx->mem,
 			param_value, param_value_size);
 	if (param_value_size_ret)
-		mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
+		mem_write(ctx->mem, param_value_size_ret, 4, &size_ret);
 	
 	/* Return success */
 	return 0;
@@ -1461,7 +1461,7 @@ int si_opencl_clGetEventInfo_impl(struct x86_ctx_t *ctx, int *argv)
 		int status = 0;  /* CL_COMPLETE */;
 
 		warning("clGetEventInfo always returns CL_COMPLETE");
-		mem_write(x86_isa_mem, param_value, 4, &status);
+		mem_write(ctx->mem, param_value, 4, &status);
 
 		break;
 	}
@@ -1528,10 +1528,10 @@ int si_opencl_clGetEventProfilingInfo_impl(struct x86_ctx_t *ctx, int *argv)
 			param_value_size_ret);
 	event = si_opencl_repo_get_object(si_emu->opencl_repo,
 			si_opencl_object_event, event_id);
-	size_ret = si_opencl_event_get_profiling_info(event, param_name, x86_isa_mem,
+	size_ret = si_opencl_event_get_profiling_info(event, param_name, ctx->mem,
 			param_value, param_value_size);
 	if (param_value_size_ret)
-		mem_write(x86_isa_mem, param_value_size_ret, 4, &size_ret);
+		mem_write(ctx->mem, param_value_size_ret, 4, &size_ret);
 	
 	/* Return success */
 	return 0;

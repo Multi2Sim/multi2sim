@@ -459,10 +459,7 @@ void x86_uinst_list_dump(FILE *f);
  * Machine & ISA
  */
 
-extern struct x86_regs_t *x86_isa_regs;
-extern struct mem_t *x86_isa_mem;
-extern char * x86_isa_inst_bytes;
-extern long long x86_isa_inst_count;
+extern char *x86_isa_inst_bytes;
 
 #define x86_isa_call_debug(...) debug(x86_isa_call_debug_category, __VA_ARGS__)
 #define x86_isa_inst_debug(...) debug(x86_isa_inst_debug_category, __VA_ARGS__)
