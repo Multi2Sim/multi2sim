@@ -279,12 +279,6 @@ void x86_ctx_execute(struct x86_ctx_t *ctx)
 
 	int spec_mode;
 
-	/* The isa_xxx functions work on these global
-	 * variables. */
-	x86_isa_regs = ctx->regs;
-	x86_isa_mem = ctx->mem;
-	x86_isa_inst_count++;
-
 	/* Memory permissions should not be checked if the context is executing in
 	 * speculative mode. This will prevent guest segmentation faults to occur. */
 	spec_mode = x86_ctx_get_status(ctx, x86_ctx_spec_mode);

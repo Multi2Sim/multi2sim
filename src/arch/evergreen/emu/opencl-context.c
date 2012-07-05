@@ -92,18 +92,19 @@ uint32_t evg_opencl_context_get_info(struct evg_opencl_context_t *context, uint3
 
 /* Read context properties from a null-terminated sequence of
  * 'cl_context_properties' elements in guest memory */
-void evg_opencl_context_set_properties(struct evg_opencl_context_t *context, struct mem_t *mem, uint32_t addr)
+void evg_opencl_context_set_properties(struct evg_opencl_context_t *context,
+		struct mem_t *mem, unsigned int addr)
 {
-	uint32_t property;
-	uint32_t value;
+	unsigned int property;
+	unsigned int value;
 
 	while (addr)
 	{
 		/* Read property */
-		mem_read(x86_isa_mem, addr, 4, &property);
+		mem_read(mem, addr, 4, &property);
 		if (!property)
 			break;
-		mem_read(x86_isa_mem, addr + 4, 4, &value);
+		mem_read(mem, addr + 4, 4, &value);
 		addr += 8;
 
 		/* Analyze property */
