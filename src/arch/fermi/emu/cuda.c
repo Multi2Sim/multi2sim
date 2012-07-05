@@ -24,7 +24,6 @@
 #include <time.h>
 
 
-
 /*
  * Macros
  */
@@ -77,13 +76,14 @@ char *frm_cuda_call_name[frm_cuda_call_count + 1] =
 
 /* Forward declarations of CUDA driver functions */
 
-#define FRM_CUDA_DEFINE_CALL(name, code) static int frm_cuda_func_##name(void);
+#define FRM_CUDA_DEFINE_CALL(name, code) \
+	static int frm_cuda_func_##name(struct x86_ctx_t *ctx);
 #include "cuda.dat"
 #undef FRM_CUDA_DEFINE_CALL
 
 /* List of CUDA driver functions */
 
-typedef int (*frm_cuda_func_t)(void);
+typedef int (*frm_cuda_func_t)(struct x86_ctx_t *ctx);
 static frm_cuda_func_t frm_cuda_func_table[frm_cuda_call_count + 1] =
 {
 	NULL,
@@ -100,13 +100,15 @@ static frm_cuda_func_t frm_cuda_func_table[frm_cuda_call_count + 1] =
  */
 
 
-int frm_cuda_call(void)
+int frm_cuda_call(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+
 	int code;
 	int ret;
 
 	/* Function code */
-	code = x86_isa_regs->ebx;
+	code = regs->ebx;
 	if (code <= frm_cuda_call_invalid || code >= frm_cuda_call_count)
 		fatal("%s: invalid CUDA function (code %d).\n%s",
 			__FUNCTION__, code, err_frm_cuda_code);
@@ -117,7 +119,7 @@ int frm_cuda_call(void)
 
 	/* Call CUDA function */
 	assert(frm_cuda_func_table[code]);
-	ret = frm_cuda_func_table[code]();
+	ret = frm_cuda_func_table[code](ctx);
 
 	/* Return value */
 	return ret;
@@ -165,8 +167,11 @@ struct frm_cuda_version_t
 	int minor;
 };
 
-static int frm_cuda_func_version(void)
+static int frm_cuda_func_version(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	struct frm_cuda_version_t version;
 
 	version.major = FRM_CUDA_VERSION_MAJOR;
@@ -175,7 +180,7 @@ static int frm_cuda_func_version(void)
 	cuda_debug(stdout, "\tversion.major=%d\n", version.major);
 	cuda_debug(stdout, "\tversion.minor=%d\n", version.minor);
 
-	mem_write(x86_isa_mem, x86_isa_regs->ecx, sizeof version, &version);
+	mem_write(mem, regs->ecx, sizeof version, &version);
 
 	return 0;
 }
@@ -196,21 +201,24 @@ static int frm_cuda_func_version(void)
  */
 
 
-static int frm_cuda_func_cuCtxCreate(void)
+static int frm_cuda_func_cuCtxCreate(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	unsigned int args[2];
 	unsigned int pctx;
 	unsigned int dev;
 	struct frm_cuda_context_t *context;
 
-        mem_read(x86_isa_mem, x86_isa_regs->ecx, 2*sizeof(unsigned int), args);
-        mem_read(x86_isa_mem, args[0], sizeof(unsigned int), &pctx);
+        mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
+        mem_read(mem, args[0], sizeof(unsigned int), &pctx);
 	dev = args[1];
 
 	/* Create context */
 	context = frm_cuda_context_create();
         context->device_id = dev;
-        mem_write(x86_isa_mem, pctx, sizeof(unsigned int), &context->id);
+        mem_write(mem, pctx, sizeof(unsigned int), &context->id);
 
 	return 0;
 }
@@ -231,23 +239,26 @@ static int frm_cuda_func_cuCtxCreate(void)
  */
 
 
-static int frm_cuda_func_cuModuleLoad(void)
+static int frm_cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	unsigned int args[2];
 	unsigned int pmod;
 	char fname[MAX_STRING_SIZE];
 	struct frm_cuda_module_t *module;
 
-        mem_read(x86_isa_mem, x86_isa_regs->ecx, 2*sizeof(unsigned int), args);
-        mem_read(x86_isa_mem, args[0], sizeof(unsigned int), &pmod);
+        mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
+        mem_read(mem, args[0], sizeof(unsigned int), &pmod);
 	cuda_debug(stdout, "\tpmod=%#8x\n", pmod);
-        mem_read(x86_isa_mem, args[1], sizeof(fname), fname);
+        mem_read(mem, args[1], sizeof(fname), fname);
 	cuda_debug(stdout, "\tfname=%s\n", fname);
 
         module = frm_cuda_module_create();
 	module->elf_file = elf_file_create_from_path(fname);
 	cuda_debug(stdout, "\tmodule_id=%#x\n", module->id);
-        mem_write(x86_isa_mem, pmod, sizeof(unsigned int), &module->id);
+        mem_write(mem, pmod, sizeof(unsigned int), &module->id);
 
 	return 0;
 }
@@ -271,8 +282,11 @@ static int frm_cuda_func_cuModuleLoad(void)
  */
 
 
-static int frm_cuda_func_cuModuleGetFunction(void)
+static int frm_cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	unsigned int args[3];
 	unsigned int pfunc;
 	unsigned int mod_id;
@@ -282,10 +296,10 @@ static int frm_cuda_func_cuModuleGetFunction(void)
 	int i;
 	struct elf_section_t *section;
 
-        mem_read(x86_isa_mem, x86_isa_regs->ecx, 3*sizeof(unsigned int), args);
-        mem_read(x86_isa_mem, args[0], sizeof(unsigned int), &pfunc);
-        mem_read(x86_isa_mem, args[1], sizeof(unsigned int), &mod_id);
-        mem_read(x86_isa_mem, args[2], sizeof(function_name), function_name);
+        mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
+        mem_read(mem, args[0], sizeof(unsigned int), &pfunc);
+        mem_read(mem, args[1], sizeof(unsigned int), &mod_id);
+        mem_read(mem, args[2], sizeof(function_name), function_name);
 
 	cuda_debug(stdout, "\tfunction_name=%s\n", function_name);
 
@@ -307,7 +321,7 @@ static int frm_cuda_func_cuModuleGetFunction(void)
 	if (i == list_count(module->elf_file->section_list))
 		fatal(".text section not found!\n");
 
-        mem_write(x86_isa_mem, pfunc, sizeof(unsigned int), &function->id);
+        mem_write(mem, pfunc, sizeof(unsigned int), &function->id);
 	function->function_buffer.ptr = section->buffer.ptr;
 	function->function_buffer.size = section->buffer.size;
 	function->function_buffer.pos = 0;
@@ -358,8 +372,11 @@ static int frm_cuda_func_cuModuleGetFunction(void)
  */
 
 
-static int frm_cuda_func_cuLaunchKernel(void)
+static int frm_cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	unsigned int args[11];
         unsigned int f;
         unsigned int gridDimX;
@@ -378,8 +395,8 @@ static int frm_cuda_func_cuLaunchKernel(void)
 	int i;
 	int pv, v;
 
-        mem_read(x86_isa_mem, x86_isa_regs->ecx, 11*sizeof(unsigned int), args);
-        mem_read(x86_isa_mem, args[0], sizeof(unsigned int), &f);
+        mem_read(mem, regs->ecx, 11 * sizeof(unsigned int), args);
+        mem_read(mem, args[0], sizeof(unsigned int), &f);
         gridDimX = args[1];
         gridDimY = args[2];
         gridDimZ = args[3];
@@ -423,8 +440,8 @@ static int frm_cuda_func_cuLaunchKernel(void)
 
 	for (i = 0; i < sizeof(kernelParams); ++i)
 	{
-        	mem_read(x86_isa_mem, kernelParams+i*4, sizeof(unsigned int), &pv);
-        	mem_read(x86_isa_mem, pv, sizeof(int), &v);
+        	mem_read(mem, kernelParams+i*4, sizeof(unsigned int), &pv);
+        	mem_read(mem, pv, sizeof(int), &v);
 
 		snprintf(arg_name, MAX_STRING_SIZE, "arg_%d", i);
 		arg = frm_cuda_function_arg_create(arg_name);
@@ -463,34 +480,37 @@ static int frm_cuda_func_cuLaunchKernel(void)
  */
 
 
-static int frm_cuda_func_cuMemAlloc(void)
+static int frm_cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	unsigned int args[2];
 	unsigned int pdptr;
 	unsigned int bytesize;
-	struct frm_cuda_memory_t *mem;
+	struct frm_cuda_memory_t *cuda_mem;
 
-	mem_read(x86_isa_mem, x86_isa_regs->ecx, 2*sizeof(unsigned int), args);
+	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
 	pdptr = args[0];
         bytesize = args[1];
 
 	cuda_debug(stdout, "\tbytesize= %u\n", bytesize);
 
         /* Create memory object */
-        mem = frm_cuda_memory_create();
-        mem->type = 0;  /* FIXME */
-        mem->size = bytesize;
+        cuda_mem = frm_cuda_memory_create();
+        cuda_mem->type = 0;  /* FIXME */
+        cuda_mem->size = bytesize;
 
         /* Assign position in device global memory */
-        mem->device_ptr = frm_emu->global_mem_top;
+        cuda_mem->device_ptr = frm_emu->global_mem_top;
         frm_emu->global_mem_top += bytesize;
 
         void *buf = malloc(bytesize);
-        mem_write(frm_emu->global_mem, mem->device_ptr, bytesize, buf);
-        mem_write(x86_isa_mem, pdptr, 4, &(mem->device_ptr));
+        mem_write(frm_emu->global_mem, cuda_mem->device_ptr, bytesize, buf);
+        mem_write(mem, pdptr, 4, &(cuda_mem->device_ptr));
         free(buf);
 
-	cuda_debug(stdout, "\tmem->device_ptr = %0#10x\n", mem->device_ptr);
+	cuda_debug(stdout, "\tmem->device_ptr = %0#10x\n", cuda_mem->device_ptr);
 
 	return 0;
 }
@@ -514,14 +534,20 @@ static int frm_cuda_func_cuMemAlloc(void)
  */
 
 
-static int frm_cuda_func_cuMemcpyHtoD(void)
+static int frm_cuda_func_cuMemcpyHtoD(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	unsigned int args[3];
 	unsigned int dstDevice;
 	unsigned int srcHost;
 	unsigned int ByteCount;
 
-	mem_read(x86_isa_mem, x86_isa_regs->ecx, 3*sizeof(unsigned int), args);
+	void *buf;
+	int i;
+
+	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
 	dstDevice = args[0];
         srcHost = args[1];
         ByteCount = args[2];
@@ -530,16 +556,18 @@ static int frm_cuda_func_cuMemcpyHtoD(void)
 	cuda_debug(stdout, "\tsrcHost=%0#10x\n", srcHost);
 	cuda_debug(stdout, "\tByteCount=%u\n", ByteCount);
 
-        void *buf = malloc(ByteCount);
-        mem_read(x86_isa_mem, srcHost, ByteCount, buf);
+        buf = malloc(ByteCount);
+        if (!buf)
+        	fatal("%s: out of memory", __FUNCTION__);
+
+        mem_read(mem, srcHost, ByteCount, buf);
         mem_write(frm_emu->global_mem, dstDevice, ByteCount, buf);
 
-	for (int i = 0; i < 4; ++i)
-		printf("%f\t", ((float*)buf)[i]);
+	for (i = 0; i < 4; ++i)
+		printf("%f\t", ((float*) buf)[i]);
 	printf("\n");
 
         free(buf);
-
 	return 0;
 }
 
@@ -562,14 +590,20 @@ static int frm_cuda_func_cuMemcpyHtoD(void)
  */
 
 
-static int frm_cuda_func_cuMemcpyDtoH(void)
+static int frm_cuda_func_cuMemcpyDtoH(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
 	unsigned int args[3];
 	unsigned int dstHost;
 	unsigned int srcDevice;
 	unsigned int ByteCount;
 
-	mem_read(x86_isa_mem, x86_isa_regs->ecx, 3*sizeof(unsigned int), args);
+	void *buf;
+	int i;
+
+	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
 	dstHost = args[0];
         srcDevice = args[1];
         ByteCount = args[2];
@@ -578,30 +612,31 @@ static int frm_cuda_func_cuMemcpyDtoH(void)
 	cuda_debug(stdout, "\tsrcDevice=%0#10x\n", srcDevice);
 	cuda_debug(stdout, "\tByteCount=%u\n", ByteCount);
 
-        void *buf = malloc(ByteCount);
-        mem_read(frm_emu->global_mem, srcDevice, ByteCount, buf);
-        mem_write(x86_isa_mem, dstHost, ByteCount, buf);
+        buf = malloc(ByteCount);
+        if (!buf)
+        	fatal("%s: out of memory", __FUNCTION__);
 
-	for (int i = 0; i < 4; ++i)
-		printf("%f\t", ((float*)buf)[i]);
+        mem_read(frm_emu->global_mem, srcDevice, ByteCount, buf);
+        mem_write(mem, dstHost, ByteCount, buf);
+
+	for (i = 0; i < 4; ++i)
+		printf("%f\t", ((float*) buf)[i]);
 	printf("\n");
 
         free(buf);
-
 	return 0;
 }
 
 
-static int frm_cuda_func_cuMemFree(void)
+static int frm_cuda_func_cuMemFree(struct x86_ctx_t *ctx)
 {
 
 	return 0;
 }
 
 
-static int frm_cuda_func_cuCtxDetach(void)
+static int frm_cuda_func_cuCtxDetach(struct x86_ctx_t *ctx)
 {
 
 	return 0;
 }
-
