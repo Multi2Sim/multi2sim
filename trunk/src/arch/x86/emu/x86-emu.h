@@ -686,7 +686,7 @@ int x86_clrt_call(struct x86_ctx_t *ctx);
  * CUDA system call interface
  */
 
-int frm_cuda_call(void);
+int frm_cuda_call(struct x86_ctx_t *ctx);
 
 
 
