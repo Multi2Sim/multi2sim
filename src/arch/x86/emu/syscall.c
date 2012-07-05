@@ -5313,7 +5313,7 @@ static int x86_sys_opengl_impl(struct x86_ctx_t *ctx)
 static int x86_sys_cuda_impl(struct x86_ctx_t *ctx)
 {
 	/* Run CUDA call */
-	return frm_cuda_call();
+	return frm_cuda_call(ctx);
 }
 
 
