@@ -27,46 +27,44 @@
 #include <arm-emu.h>
 
 
-/* Multi2Sim version */
-#ifndef VERSION
-#define VERSION ""
-#endif
-
 static char *ctx_debug_file_name = "";
-static char *syscall_debug_file_name = "";
-static char *opencl_debug_file_name = "";
-static char *cpu_disasm_file_name = "";
-static char *gpu_disasm_file_name = "";
-static char *si_disasm_file_name = "";
-static char *si_isa_debug_file_name = "";
-static char *opengl_disasm_file_name = "";
-static char *fermi_disasm_file_name = "";
-static char *arm_disasm_file_name = "";
-static char *gpu_stack_debug_file_name = "";
-static char *gpu_isa_debug_file_name = "";
 static char *visual_file_name = "";
-static char *mem_debug_file_name = "";
-static char *loader_debug_file_name = "";
-static char *isa_call_debug_file_name = "";
-static char *isa_inst_debug_file_name = "";
-static char *error_debug_file_name = "";
 static char *ctxconfig_file_name = "";
-static char *cpu_load_checkpoint_file_name = "";
-static char *cpu_save_checkpoint_file_name = "";
 static char *elf_debug_file_name = "";
-static char *net_debug_file_name = "";
 static char *trace_file_name = "";
+
+static char *x86_disasm_file_name = "";
+static char *x86_sys_debug_file_name = "";
+static char *x86_loader_debug_file_name = "";
+static char *x86_call_debug_file_name = "";
+static char *x86_isa_debug_file_name = "";
+static char *x86_load_checkpoint_file_name = "";
+static char *x86_save_checkpoint_file_name = "";
 static char *x86_glut_debug_file_name = "";
 static char *x86_opengl_debug_file_name = "";
 static char *x86_clrt_debug_file_name = "";
 
-static int opengl_disasm_shader_index = 1;
+static char *evg_disasm_file_name = "";
+static char *evg_isa_debug_file_name = "";
+static char *evg_opencl_debug_file_name = "";
+static char *evg_opengl_disasm_file_name = "";
+static int evg_opengl_disasm_shader_index = 1;
+static char *evg_stack_debug_file_name = "";
 
-/* FIXME We need to fix the initialization and selection of devices */
-static int si_emulator = 0;
+static char *si_disasm_file_name = "";
+static char *si_isa_debug_file_name = "";
+static int si_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
-/* Error debug */
-int x86_cpu_error_debug_category;
+static char *frm_disasm_file_name = "";
+
+static char *arm_disasm_file_name = "";
+
+static char *mem_debug_file_name = "";
+
+static char *net_debug_file_name = "";
+
+
+
 
 
 static char *sim_help =
@@ -131,7 +129,6 @@ static char *sim_help =
 	"        --debug-network: trace of interconnection networks activity.\n"
 	"        --debug-call: trace of function calls, based on emulated x86 instr.\n"
 	"        --debug-cpu-isa: trace of emulated x86 ISA instructions.\n"
-	"        --debug-error: on simulation crashes, dump of the modeled CPU state.\n"\
 	"\n"
 	"  --gpu-calc <file_prefix>\n"
 	"      If this option is set, a kernel execution will cause three GPU occupancy plots\n"
@@ -290,24 +287,159 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 
 	for (argi = 1; argi < argc; argi++)
 	{
+		/*
+		 * General Options
+		 */
+
+		/* Context configuration file */
+		if (!strcmp(argv[argi], "--ctx-config"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			ctxconfig_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Help for context configuration file format */
+		if (!strcmp(argv[argi], "--ctx-config-help"))
+		{
+			fprintf(stderr, "%s", x86_loader_help);
+			continue;
+		}
+
+		/* Context debug file */
+		if (!strcmp(argv[argi], "--ctx-debug"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			ctx_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* ELF debug file */
+		if (!strcmp(argv[argi], "--elf-debug"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			elf_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Show help */
+		if (!strcmp(argv[argi], "--help"))
+		{
+			fprintf(stderr, "%s", sim_help);
+			continue;
+		}
+
+		/* Simulation time limit */
+		if (!strcmp(argv[argi], "--max-time"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_emu_max_time = atoll(argv[++argi]);
+			continue;
+		}
+
+		/* Simulation trace */
+		if (!strcmp(argv[argi], "--trace"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			trace_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Visualization tool */
+		if (!strcmp(argv[argi], "--visual"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			visual_file_name = argv[++argi];
+			continue;
+		}
+
+
+		/*
+		 * x86 CPU Options
+		 */
+
 		/* CPU configuration file */
-		if (!strcmp(argv[argi], "--cpu-config"))
+		if (!strcmp(argv[argi], "--x86-config"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_cpu_config_file_name = argv[++argi];
+			x86_config_file_name = argv[++argi];
 			continue;
 		}
 
-		/* CPU disassembler */
-		if (!strcmp(argv[argi], "--cpu-disasm"))
+		/* Function calls debug file */
+		if (!strcmp(argv[argi], "--x86-debug-call"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			cpu_disasm_file_name = argv[++argi];
+			x86_call_debug_file_name = argv[++argi];
 			continue;
 		}
 
-		/* CPU last instruction bytes */
-		if (!strcmp(argv[argi], "--cpu-last-inst-bytes")) {
+		/* OpenCL runtime debug file */
+		if (!strcmp(argv[argi], "--debug-x86-clrt"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_clrt_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* GLUT debug file */
+		if (!strcmp(argv[argi], "--x86-debug-glut"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_glut_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* ISA debug file */
+		if (!strcmp(argv[argi], "--x86-debug-isa"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_isa_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Loader debug file */
+		if (!strcmp(argv[argi], "--x86-debug-loader"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_loader_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* OpenGL debug file */
+		if (!strcmp(argv[argi], "--x86-debug-opengl"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_opengl_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* System call debug file */
+		if (!strcmp(argv[argi], "--x86-debug-syscall"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_sys_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* x86 disassembler */
+		if (!strcmp(argv[argi], "--x86-disasm"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_disasm_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Help for x86 CPU configuration file */
+		if (!strcmp(argv[argi], "--x86-help"))
+		{
+			fprintf(stderr, "%s", x86_config_help);
+			continue;
+		}
+
+		/* Last x86 instruction */
+		if (!strcmp(argv[argi], "--x86-last-inst"))
+		{
 			m2s_need_argument(argc, argv, argi);
 			x86_emu_last_inst_bytes = malloc(20);
 			if (!x86_emu_last_inst_bytes)
@@ -317,21 +449,47 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* CPU load checkpoint file name */
-		if (!strcmp(argv[argi], "--cpu-load-checkpoint")) {
+		if (!strcmp(argv[argi], "--x86-load-checkpoint"))
+		{
 			m2s_need_argument(argc, argv, argi);
-			cpu_load_checkpoint_file_name = argv[++argi];
+			x86_load_checkpoint_file_name = argv[++argi];
 			continue;
 		}
 
-		/* CPU save checkpoint file name */
-		if (!strcmp(argv[argi], "--cpu-save-checkpoint")) {
+		/* Maximum number of cycles */
+		if (!strcmp(argv[argi], "--x86-max-cycles"))
+		{
 			m2s_need_argument(argc, argv, argi);
-			cpu_save_checkpoint_file_name = argv[++argi];
+			x86_emu_max_cycles = atoll(argv[++argi]);
 			continue;
 		}
 
-		/* CPU simulation accuracy */
-		if (!strcmp(argv[argi], "--cpu-sim"))
+		/* Maximum number of instructions */
+		if (!strcmp(argv[argi], "--x86-max-inst"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_emu_max_inst = atoll(argv[++argi]);
+			continue;
+		}
+
+		/* File name to save checkpoint */
+		if (!strcmp(argv[argi], "--x86-save-checkpoint"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_save_checkpoint_file_name = argv[++argi];
+			continue;
+		}
+
+		/* x86 CPU pipeline report */
+		if (!strcmp(argv[argi], "--x86-report"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			x86_cpu_report_file_name = argv[++argi];
+			continue;
+		}
+
+		/* x86 simulation accuracy */
+		if (!strcmp(argv[argi], "--x86-sim"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			argi++;
@@ -345,151 +503,13 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Context configuration file */
-		if (!strcmp(argv[argi], "--ctx-config") || !strcmp(argv[argi], "-c"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			ctxconfig_file_name = argv[++argi];
-			continue;
-		}
 
-		/* Function calls debug file */
-		if (!strcmp(argv[argi], "--debug-call"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			isa_call_debug_file_name = argv[++argi];
-			continue;
-		}
-		
-		/* CPU ISA debug file */
-		if (!strcmp(argv[argi], "--debug-cpu-isa"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			isa_inst_debug_file_name = argv[++argi];
-			continue;
-		}
+		/*
+		 * Evergreen GPU Options
+		 */
 
-		/* Context debug file */
-		if (!strcmp(argv[argi], "--debug-ctx"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			ctx_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* ELF debug file */
-		if (!strcmp(argv[argi], "--debug-elf"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			elf_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Error debug */
-		if (!strcmp(argv[argi], "--debug-error"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			error_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Evergreen ISA debug file */
-		if (!strcmp(argv[argi], "--debug-gpu-isa"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			gpu_isa_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Southern Islands ISA debug file */
-		if (!strcmp(argv[argi], "--debug-si-isa"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			si_isa_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* GPU-REL: debug file for stack pushes/pops */
-		if (!strcmp(argv[argi], "--debug-gpu-stack"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			gpu_stack_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* GPU-REL: debug file for faults */
-		if (!strcmp(argv[argi], "--debug-gpu-faults"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			evg_faults_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Loader debug file */
-		if (!strcmp(argv[argi], "--debug-loader"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			loader_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Memory hierarchy debug file */
-		if (!strcmp(argv[argi], "--debug-mem"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			mem_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Interconnect debug file */
-		if (!strcmp(argv[argi], "--debug-network"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			net_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* OpenCL debug file */
-		if (!strcmp(argv[argi], "--debug-opencl"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			opencl_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* System call debug file */
-		if (!strcmp(argv[argi], "--debug-syscall"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			syscall_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* GLUT debug file */
-		if (!strcmp(argv[argi], "--debug-x86-glut"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			x86_glut_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* OpenCL runtime debug file */
-		if (!strcmp(argv[argi], "--debug-x86-clrt"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			x86_clrt_debug_file_name = argv[++argi];
-			continue;
-		}
-
-		/* OpenGL debug file */
-		if (!strcmp(argv[argi], "--debug-x86-opengl"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			x86_opengl_debug_file_name = argv[++argi];
-			continue;
-		}
-		/* GPU occupancy calculation plots */
-		if (!strcmp(argv[argi], "--gpu-calc"))
+		/* Evergreen GPU occupancy calculation plots */
+		if (!strcmp(argv[argi], "--evg-calc"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			evg_gpu_calc_file_name = argv[++argi];
@@ -497,67 +517,129 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		}
 
 		/* GPU configuration file */
-		if (!strcmp(argv[argi], "--gpu-config"))
+		if (!strcmp(argv[argi], "--evg-config"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			evg_gpu_config_file_name = argv[++argi];
 			continue;
 		}
 
-		/* GPU disassembler */
-		if (!strcmp(argv[argi], "--gpu-disasm"))
+		/* Evergreen ISA debug file */
+		if (!strcmp(argv[argi], "--evg-debug-isa"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			gpu_disasm_file_name = argv[++argi];
+			evg_isa_debug_file_name = argv[++argi];
 			continue;
 		}
 
-		/* SI disassembler */
-		if (!strcmp(argv[argi], "--si-disasm"))
+		/* GPU-REL: debug file for stack pushes/pops */
+		if (!strcmp(argv[argi], "--evg-debug-stack"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			si_disasm_file_name = argv[++argi];
+			evg_stack_debug_file_name = argv[++argi];
 			continue;
 		}
 
-		/* OpenGL shader binary disassembler */
-		if (!strcmp(argv[argi], "--opengl-disasm"))
+		/* GPU-REL: debug file for faults */
+		if (!strcmp(argv[argi], "--evg-debug-faults"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			evg_faults_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* OpenCL debug file */
+		if (!strcmp(argv[argi], "--evg-debug-opencl"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			evg_opencl_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Evergreen disassembler */
+		if (!strcmp(argv[argi], "--evg-disasm"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			evg_disasm_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Evergreen OpenGL shader binary disassembler */
+		if (!strcmp(argv[argi], "--evg-disasm-opengl"))
 		{
 			if (argc != 4)
 				fatal("option '%s' requires two argument.\n%s",
-					argv[argi], err_help_note);			
-			opengl_disasm_file_name = argv[++argi];
-			opengl_disasm_shader_index = atoi(argv[++argi]);
+					argv[argi], err_help_note);
+			evg_opengl_disasm_file_name = argv[++argi];
+			evg_opengl_disasm_shader_index = atoi(argv[++argi]);
 			continue;
 		}
-
-		/* Fermi disassembler */
-		if (!strcmp(argv[argi], "--fermi-disasm"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			fermi_disasm_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Arm disassembler */
-		if (!strcmp(argv[argi], "--arm-disasm"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			arm_disasm_file_name = argv[++argi];
-			continue;
-		}
-
 
 		/* GPU-REL: file to introduce faults  */
-		if (!strcmp(argv[argi], "--gpu-faults"))
+		if (!strcmp(argv[argi], "--evg-faults"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			evg_faults_file_name = argv[++argi];
 			continue;
 		}
 
-		/* GPU simulation accuracy */
-		if (!strcmp(argv[argi], "--gpu-sim"))
+		/* Help for GPU configuration file */
+		if (!strcmp(argv[argi], "--evg-help"))
+		{
+			fprintf(stderr, "%s", evg_gpu_config_help);
+			continue;
+		}
+
+		/* Evergreen OpenCL kernel binary */
+		if (!strcmp(argv[argi], "--evg-kernel-binary"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			evg_emu_opencl_binary_name = argv[++argi];
+			continue;
+		}
+
+		/* Maximum number of cycles */
+		if (!strcmp(argv[argi], "--evg-max-cycles"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			evg_emu_max_cycles = atoll(argv[++argi]);
+			continue;
+		}
+
+		/* Maximum number of GPU instructions */
+		if (!strcmp(argv[argi], "--evg-max-inst"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			evg_emu_max_inst = atoll(argv[++argi]);
+			continue;
+		}
+
+		/* Maximum number of GPU kernels */
+		if (!strcmp(argv[argi], "--evg-max-kernels"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			evg_emu_max_kernels = atoi(argv[++argi]);
+			continue;
+		}
+
+		/* Evergreen GPU timing report */
+		if (!strcmp(argv[argi], "--evg-report"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			evg_gpu_report_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Evergreen GPU emulation report */
+		if (!strcmp(argv[argi], "--evg-report-kernel"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			evg_emu_report_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Evergreen simulation accuracy */
+		if (!strcmp(argv[argi], "--evg-sim"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			argi++;
@@ -568,6 +650,35 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
 					argv[argi - 1], argv[argi], err_help_note);
+			continue;
+		}
+
+
+		/*
+		 * Southern Islands GPU Options
+		 */
+
+		/* Southern Islands ISA debug file */
+		if (!strcmp(argv[argi], "--si-debug-isa"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_isa_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Souther Islands disassembler */
+		if (!strcmp(argv[argi], "--si-disasm"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_disasm_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Southern Islands OpenCL binary */
+		if (!strcmp(argv[argi], "--si-kernel-binary"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_emu_opencl_binary_name = argv[++argi];
 			continue;
 		}
 
@@ -587,96 +698,37 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Show help */
-		if (!strcmp(argv[argi], "--help") || !strcmp(argv[argi], "-h"))
-		{
-			fprintf(stderr, "%s", sim_help);
-			continue;
-		}
 
-		/* Help for CPU configuration file */
-		if (!strcmp(argv[argi], "--help-cpu-config"))
-		{
-			fprintf(stderr, "%s", x86_cpu_config_help);
-			continue;
-		}
+		/*
+		 * Fermi GPU Options
+		 */
 
-		/* Help for context configuration file format */
-		if (!strcmp(argv[argi], "--help-ctx-config"))
-		{
-			fprintf(stderr, "%s", x86_loader_help_ctxconfig);
-			continue;
-		}
-
-		/* Help for GPU configuration file */
-		if (!strcmp(argv[argi], "--help-gpu-config"))
-		{
-			fprintf(stderr, "%s", evg_gpu_config_help);
-			continue;
-		}
-
-		/* Help for memory hierarchy configuration file */
-		if (!strcmp(argv[argi], "--help-mem-config"))
-		{
-			fprintf(stderr, "%s", mem_config_help);
-			continue;
-		}
-
-		/* Help for network configuration file */
-		if (!strcmp(argv[argi], "--help-net-config"))
-		{
-			fprintf(stderr, "%s", net_config_help);
-			continue;
-		}
-
-		/* Maximum number of CPU cycles */
-		if (!strcmp(argv[argi], "--max-cpu-cycles"))
+		/* Fermi disassembler */
+		if (!strcmp(argv[argi], "--frm-disasm"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_emu_max_cycles = atoll(argv[++argi]);
+			frm_disasm_file_name = argv[++argi];
 			continue;
 		}
 
-		/* Maximum number of CPU instructions */
-		if (!strcmp(argv[argi], "--max-cpu-inst"))
+
+		/*
+		 * ARM CPU Options
+		 */
+
+		/* Arm disassembler */
+		if (!strcmp(argv[argi], "--arm-disasm"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_emu_max_inst = atoll(argv[++argi]);
+			arm_disasm_file_name = argv[++argi];
 			continue;
 		}
 
-		/* Maximum number of GPU cycles */
-		if (!strcmp(argv[argi], "--max-gpu-cycles"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			evg_emu_max_cycles = atoll(argv[++argi]);
-			continue;
-		}
 
-		/* Maximum number of GPU instructions */
-		if (!strcmp(argv[argi], "--max-gpu-inst"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			evg_emu_max_inst = atoll(argv[++argi]);
-			continue;
-		}
+		/*
+		 * Memory System Options
+		 */
 
-		/* Maximum number of GPU kernels */
-		if (!strcmp(argv[argi], "--max-gpu-kernels"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			evg_emu_max_kernels = atoi(argv[++argi]);
-			continue;
-		}
-
-		/* Simulation time limit */
-		if (!strcmp(argv[argi], "--max-time"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			x86_emu_max_time = atoll(argv[++argi]);
-			continue;
-		}
-		
 		/* Memory hierarchy configuration file */
 		if (!strcmp(argv[argi], "--mem-config"))
 		{
@@ -685,11 +737,62 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Memory hierarchy debug file */
+		if (!strcmp(argv[argi], "--mem-debug"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			mem_debug_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Help for memory hierarchy configuration file */
+		if (!strcmp(argv[argi], "--mem-help"))
+		{
+			fprintf(stderr, "%s", mem_config_help);
+			continue;
+		}
+
+		/* Memory hierarchy report */
+		if (!strcmp(argv[argi], "--mem-report"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			mem_report_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Memory accesses report */
+		if (!strcmp(argv[argi], "--mem-report-access"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			mmu_report_file_name = argv[++argi];
+			continue;
+		}
+
+
+		/*
+		 * Network Options
+		 */
+
+		/* Interconnect debug file */
+		if (!strcmp(argv[argi], "--net-debug"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			net_debug_file_name = argv[++argi];
+			continue;
+		}
+
 		/* Network configuration file */
 		if (!strcmp(argv[argi], "--net-config"))
 		{
 			m2s_need_argument(argc, argv, argi);
 			net_config_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Help for network configuration file */
+		if (!strcmp(argv[argi], "--net-help"))
+		{
+			fprintf(stderr, "%s", net_config_help);
 			continue;
 		}
 
@@ -723,6 +826,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Network report file */
+		if (!strcmp(argv[argi], "--net-report"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			net_report_file_name = argv[++argi];
+			continue;
+		}
+
 		/* Network simulation */
 		if (!strcmp(argv[argi], "--net-sim"))
 		{
@@ -731,85 +842,10 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* Evergreen OpenCL binary */
-		if (!strcmp(argv[argi], "--opencl-binary"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			evg_emu_opencl_binary_name = argv[++argi];
-			continue;
-		}
 
-		/* Southern Islands OpenCL binary */
-		if (!strcmp(argv[argi], "--si-opencl-binary"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			si_emu_opencl_binary_name = argv[++argi];
-			continue;
-		}
-
-		/* CPU pipeline report */
-		if (!strcmp(argv[argi], "--report-cpu-pipeline"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			x86_cpu_report_file_name = argv[++argi];
-			continue;
-		}
-
-		/* GPU emulation report */
-		if (!strcmp(argv[argi], "--report-gpu-kernel"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			evg_emu_report_file_name = argv[++argi];
-			continue;
-		}
-
-		/* GPU pipeline report */
-		if (!strcmp(argv[argi], "--report-gpu-pipeline"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			evg_gpu_report_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Memory hierarchy report */
-		if (!strcmp(argv[argi], "--report-mem"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			mem_report_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Memory accesses report */
-		if (!strcmp(argv[argi], "--report-mem-access"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			mmu_report_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Network report file */
-		if (!strcmp(argv[argi], "--report-net"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			net_report_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Simulation trace */
-		if (!strcmp(argv[argi], "--trace"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			trace_file_name = argv[++argi];
-			continue;
-		}
-
-		/* Visualization tool */
-		if (!strcmp(argv[argi], "--visual"))
-		{
-			m2s_need_argument(argc, argv, argi);
-			visual_file_name = argv[++argi];
-			continue;
-		}
+		/*
+		 * Rest
+		 */
 
 		/* Invalid option */
 		if (argv[argi][0] == '-')
@@ -828,7 +864,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		char *msg = "option '%s' not valid for functional CPU simulation.\n"
 			"\tPlease use option '--cpu-sim detailed' as well.\n";
 
-		if (*x86_cpu_config_file_name)
+		if (*x86_config_file_name)
 			fatal(msg, "--cpu-config");
 		if (*x86_cpu_report_file_name)
 			fatal(msg, "--report-cpu-pipeline");
@@ -840,7 +876,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
 			"\tPlease use option '--gpu-sim detailed' as well.\n";
 
-		if (*gpu_stack_debug_file_name)
+		if (*evg_stack_debug_file_name)
 			fatal(msg, "--debug-gpu-stack");
 		if (*evg_faults_debug_file_name)  /* GPU-REL */
 			fatal(msg, "--debug-gpu-faults");
@@ -866,15 +902,15 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	}
 
 	/* Other checks */
-	if (*gpu_disasm_file_name && argc > 3)
+	if (*evg_disasm_file_name && argc > 3)
 		fatal("option '--gpu-disasm' is incompatible with any other options.");
 	if (*si_disasm_file_name && argc > 3)
 		fatal("option '--si-disasm' is incompatible with any other options.");
-	if (*opengl_disasm_file_name && argc != 4)
+	if (*evg_opengl_disasm_file_name && argc != 4)
 		fatal("option '--opengl-disasm' is incompatible with any other options.");	
-	if (*fermi_disasm_file_name && argc > 3)
+	if (*frm_disasm_file_name && argc > 3)
 		fatal("option '--fermi-disasm' is incompatible with any other options.");
-	if (*cpu_disasm_file_name && argc > 3)
+	if (*x86_disasm_file_name && argc > 3)
 		fatal("option '--cpu-disasm' is incompatible with other options.");
 	if (!*net_sim_network_name && net_sim_last_option)
 		fatal("option '%s' requires '--net-sim'", net_sim_last_option);
@@ -1047,24 +1083,24 @@ int main(int argc, char **argv)
 	m2s_read_command_line(&argc, argv);
 
 	/* CPU disassembler tool */
-	if (*cpu_disasm_file_name)
-		x86_emu_disasm(cpu_disasm_file_name);
+	if (*x86_disasm_file_name)
+		x86_emu_disasm(x86_disasm_file_name);
 
 	/* Evergreen disassembler tool */
-	if (*gpu_disasm_file_name)
-		evg_emu_disasm(gpu_disasm_file_name);
+	if (*evg_disasm_file_name)
+		evg_emu_disasm(evg_disasm_file_name);
 
 	/* SI disassembler tool */
 	if (*si_disasm_file_name)
 		si_disasm(si_disasm_file_name);
 
 	/* OpenGL disassembler tool */
-	if (*opengl_disasm_file_name)
-		evg_emu_opengl_disasm(opengl_disasm_file_name, opengl_disasm_shader_index);	
+	if (*evg_opengl_disasm_file_name)
+		evg_emu_opengl_disasm(evg_opengl_disasm_file_name, evg_opengl_disasm_shader_index);
 
 	/* Fermi disassembler tool */
-	if (*fermi_disasm_file_name)
-		frm_emu_disasm(fermi_disasm_file_name);
+	if (*frm_disasm_file_name)
+		frm_emu_disasm(frm_disasm_file_name);
 
 	/* Arm disassembler tool */
 	if (*arm_disasm_file_name)
@@ -1080,21 +1116,20 @@ int main(int argc, char **argv)
 
 	/* Debug */
 	debug_init();
-	x86_isa_inst_debug_category = debug_new_category(isa_inst_debug_file_name);
-	x86_isa_call_debug_category = debug_new_category(isa_call_debug_file_name);
+	x86_isa_inst_debug_category = debug_new_category(x86_isa_debug_file_name);
+	x86_isa_call_debug_category = debug_new_category(x86_call_debug_file_name);
 	elf_debug_category = debug_new_category(elf_debug_file_name);
 	net_debug_category = debug_new_category(net_debug_file_name);
-	x86_loader_debug_category = debug_new_category(loader_debug_file_name);
-	x86_sys_debug_category = debug_new_category(syscall_debug_file_name);
+	x86_loader_debug_category = debug_new_category(x86_loader_debug_file_name);
+	x86_sys_debug_category = debug_new_category(x86_sys_debug_file_name);
 	x86_ctx_debug_category = debug_new_category(ctx_debug_file_name);
 	mem_debug_category = debug_new_category(mem_debug_file_name);
-	evg_opencl_debug_category = debug_new_category(opencl_debug_file_name);
-	evg_isa_debug_category = debug_new_category(gpu_isa_debug_file_name);
-	evg_stack_debug_category = debug_new_category(gpu_stack_debug_file_name);  /* GPU-REL */
+	evg_opencl_debug_category = debug_new_category(evg_opencl_debug_file_name);
+	evg_isa_debug_category = debug_new_category(evg_isa_debug_file_name);
+	evg_stack_debug_category = debug_new_category(evg_stack_debug_file_name);  /* GPU-REL */
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
-	si_opencl_debug_category = debug_new_category(opencl_debug_file_name);
+	si_opencl_debug_category = debug_new_category(evg_opencl_debug_file_name);
 	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
-	x86_cpu_error_debug_category = debug_new_category(error_debug_file_name);
 	x86_glut_debug_category = debug_new_category(x86_glut_debug_file_name);
 	x86_clrt_debug_category = debug_new_category(x86_clrt_debug_file_name);
 	x86_opengl_debug_category = debug_new_category(x86_opengl_debug_file_name);
@@ -1127,8 +1162,8 @@ int main(int argc, char **argv)
 	mem_system_init();
 
 	/* Load architectural state checkpoint */
-	if (cpu_load_checkpoint_file_name[0])
-		x86_checkpoint_load(cpu_load_checkpoint_file_name);
+	if (x86_load_checkpoint_file_name[0])
+		x86_checkpoint_load(x86_load_checkpoint_file_name);
 
 	/* Load programs */
 	x86_cpu_load_progs(argc, argv, ctxconfig_file_name);
@@ -1171,8 +1206,8 @@ int main(int argc, char **argv)
 	}
 
 	/* Save architectural state checkpoint */
-	if (cpu_save_checkpoint_file_name[0])
-		x86_checkpoint_save(cpu_save_checkpoint_file_name);
+	if (x86_save_checkpoint_file_name[0])
+		x86_checkpoint_save(x86_save_checkpoint_file_name);
 
 	free(x86_emu_last_inst_bytes);
 
