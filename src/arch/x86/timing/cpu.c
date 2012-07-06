@@ -28,7 +28,7 @@
 
 /* Help message */
 
-char *x86_cpu_config_help =
+char *x86_config_help =
 	"The CPU configuration file is a plain text file with the IniFile format, defining\n"
 	"the parameters of the CPU model used for a detailed (architectural) simulation.\n"
 	"This configuration file is passed to Multi2Sim with option '--cpu-config <file>,\n"
@@ -209,7 +209,7 @@ int x86_trace_category;
 
 /* Configuration file and parameters */
 
-char *x86_cpu_config_file_name = "";
+char *x86_config_file_name = "";
 char *x86_cpu_report_file_name = "";
 
 int x86_cpu_num_cores = 1;
@@ -268,10 +268,10 @@ static void x86_cpu_config_check(void)
 	char *section;
 
 	/* Open file */
-	config = config_create(x86_cpu_config_file_name);
+	config = config_create(x86_config_file_name);
 	err = config_load(config);
-	if (!err && x86_cpu_config_file_name[0])
-		fatal("%s: cannot load CPU configuration file", x86_cpu_config_file_name);
+	if (!err && x86_config_file_name[0])
+		fatal("%s: cannot load CPU configuration file", x86_config_file_name);
 
 	
 	/* General configuration */

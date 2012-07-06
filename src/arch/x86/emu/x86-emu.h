@@ -141,7 +141,7 @@ struct x86_loader_t
 #define x86_loader_debug(...) debug(x86_loader_debug_category, __VA_ARGS__)
 extern int x86_loader_debug_category;
 
-extern char *x86_loader_help_ctxconfig;
+extern char *x86_loader_help;
 
 struct x86_loader_t *x86_loader_create(void);
 void x86_loader_free(struct x86_loader_t *ld);

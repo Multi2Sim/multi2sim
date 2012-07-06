@@ -44,13 +44,13 @@ extern int x86_cpu_error_debug_category;
 /* CPU variable */
 extern struct x86_cpu_t *x86_cpu;
 
-extern char *x86_cpu_config_help;
+extern char *x86_config_help;
 
 
 
 /* Processor parameters */
 
-extern char *x86_cpu_config_file_name;
+extern char *x86_config_file_name;
 extern char *x86_cpu_report_file_name;
 
 extern int x86_cpu_num_cores;

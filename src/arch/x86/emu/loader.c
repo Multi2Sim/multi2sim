@@ -22,7 +22,7 @@
 
 int x86_loader_debug_category;
 
-char *x86_loader_help_ctxconfig =
+char *x86_loader_help =
 	"A context configuration file contains a list of executable programs and\n"
 	"their parameters that will be simulated by Multi2Sim. The context\n"
 	"configuration file is a plain text file in the IniFile format, containing\n"
