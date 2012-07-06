@@ -1,3 +1,10 @@
+DEFINST(S_ADD_U32,
+	" s_add_u32     %SDST, %SSRC0, %SSRC1",
+	SOP2,
+	0,
+	4
+)
+
 DEFINST(S_ADD_I32,
 	" s_add_i32     %SDST, %SSRC0, %SSRC1",
 	SOP2,
@@ -208,6 +215,13 @@ DEFINST(V_MAD_F32,
 	8
 )
 
+DEFINST(V_BFI_B32,
+	" v_bfi_b32     %VDST, %0NEG%SRC0, %1NEG%SRC1, %2NEG%SRC2",
+	VOP3a,
+	330,
+	8
+)
+
 DEFINST(V_MUL_LO_U32,
 	" v_mul_lo_u32  %VDST, %0NEG%SRC0, %1NEG%SRC1",
 	VOP3a,
@@ -229,6 +243,13 @@ DEFINST(V_MUL_LO_I32,
 	8
 )
 
+DEFINST(V_CMP_EQ_I32_VOP3b,
+	" v_cmp_eq_i32  %64_SVDST, %0NEG%SRC0, %1NEG%SRC1",
+	VOP3b,
+	130,
+	8
+)
+
 DEFINST(V_CMP_GT_I32_VOP3b,
 	" v_cmp_gt_i32  %64_SVDST, %0NEG%SRC0, %1NEG%SRC1",
 	VOP3b,
@@ -240,6 +261,20 @@ DEFINST(V_CMP_NE_I32_VOP3b,
 	" v_cmp_ne_i32  %64_SVDST, %0NEG%SRC0, %1NEG%SRC1",
 	VOP3b,
 	133,
+	8
+)
+
+DEFINST(V_CMP_LE_U32_VOP3b,
+	" v_cmp_le_u32  %64_SVDST, %0NEG%SRC0, %1NEG%SRC1",
+	VOP3b,
+	195,
+	8
+)
+
+DEFINST(V_CMP_GT_U32_VOP3b,
+	" v_cmp_gt_u32  %64_SVDST, %0NEG%SRC0, %1NEG%SRC1",
+	VOP3b,
+	196,
 	8
 )
 
@@ -285,6 +320,13 @@ DEFINST(V_CMP_LE_U32,
 	4
 )
 
+DEFINST(V_CMP_GT_U32,
+	" v_cmp_gt_u32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	196,
+	4
+)
+
 DEFINST(V_MOV_B32_VOP1,
 	" v_mov_b32     %VDST, %SRC0",
 	VOP1,
@@ -327,6 +369,13 @@ DEFINST(V_RCP_F32,
 	4
 )
 
+DEFINST(V_CNDMASK_B32,
+	" v_cndmask_b32  %VDST, %SRC0, %VSRC1, vcc",
+	VOP2,
+	0,
+	4
+)
+
 DEFINST(V_ADD_F32,
 	" v_add_f32     %VDST, %SRC0, %VSRC1",
 	VOP2,
@@ -345,6 +394,20 @@ DEFINST(V_MUL_I32_I24,
 	" v_mul_i32_i24  %VDST, %SRC0, %VSRC1",
 	VOP2,
 	9,
+	4
+)
+
+DEFINST(V_MAX_U32,
+	" v_max_u32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	20,
+	4
+)
+
+DEFINST(V_LSHRREV_B32,
+	" v_lshrrev_b32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	22,
 	4
 )
 
@@ -383,6 +446,13 @@ DEFINST(V_SUB_I32,
 	4
 )
 
+DEFINST(V_SUBREV_I32,
+	" v_subrev_i32  %VDST, vcc, %SRC0, %VSRC1",
+	VOP2,
+	39,
+	4
+)
+
 DEFINST(DS_WRITE_B32,
 	" ds_write_b32  %ADDR, %DATA0",
 	DS,
@@ -390,10 +460,31 @@ DEFINST(DS_WRITE_B32,
 	8
 )
 
+DEFINST(DS_WRITE_B16,
+	" ds_write_b16  %ADDR, %DATA0",
+	DS,
+	31,
+	8
+)
+
 DEFINST(DS_READ_B32,
 	" ds_read_b32   %VDST, %ADDR",
 	DS,
 	54,
+	8
+)
+
+DEFINST(DS_READ_I16,
+	" ds_read_i16   %VDST, %ADDR",
+	DS,
+	59,
+	8
+)
+
+DEFINST(DS_READ_U16,
+	" ds_read_u16   %VDST, %ADDR",
+	DS,
+	60,
 	8
 )
 
