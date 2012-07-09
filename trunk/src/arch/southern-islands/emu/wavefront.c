@@ -158,7 +158,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_sop1(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_sop1(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -184,7 +184,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_sop2(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_sop2(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -210,7 +210,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_sopp(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_sopp(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -236,7 +236,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_sopc(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_sopc(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -262,7 +262,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_sopk(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_sopk(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -289,7 +289,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_smrd(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_smrd(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -316,7 +316,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_vop2(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_vop2(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -346,7 +346,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_vop1(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_vop1(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -376,7 +376,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_vopc(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_vopc(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -406,7 +406,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_vop3(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_vop3(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -436,7 +436,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_vop3(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_vop3(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -466,7 +466,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_ds(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_ds(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}
@@ -497,7 +497,7 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Dump instruction string when debugging */
 		if (debug_status(si_isa_debug_category))
 		{
-			si_inst_dump_mtbuf(inst, pc, wavefront->inst_buf, inst_dump,
+			si_inst_dump_mtbuf(inst, wavefront->inst_size, pc, wavefront->inst_buf, inst_dump,
 				MAX_INST_STR_SIZE);
 			si_isa_debug("\n%s", inst_dump);
 		}

@@ -418,6 +418,13 @@ DEFINST(V_LSHLREV_B32,
 	4
 )
 
+DEFINST(V_AND_B32,
+	" v_and_b32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	27,
+	4
+)
+
 DEFINST(V_OR_B32,
 	" v_or_b32      %VDST, %SRC0, %VSRC1",
 	VOP2,
@@ -489,28 +496,28 @@ DEFINST(DS_READ_U16,
 )
 
 DEFINST(T_BUFFER_LOAD_FORMAT_X,
-	" t_buffer_load_format_x  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
+	" t_buffer_load_format_x  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET%INDEX%OFFEN%OFFSET format:[%DFMT, %NFMT]",
 	MTBUF,
 	0,
 	8
 )
 
 DEFINST(T_BUFFER_LOAD_FORMAT_XYZW,
-	" t_buffer_load_format_xyzw  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
+	" t_buffer_load_format_xyzw  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET%INDEX%OFFEN%OFFSET format:[%DFMT, %NFMT]",
 	MTBUF,
 	3,
 	8
 )
 
 DEFINST(T_BUFFER_STORE_FORMAT_X,
-	" t_buffer_store_format_x  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
+	" t_buffer_store_format_x  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET%INDEX%OFFEN%OFFSET format:[%DFMT, %NFMT]",
 	MTBUF,
 	4,
 	8
 )
 
 DEFINST(T_BUFFER_STORE_FORMAT_XYZW,
-	" t_buffer_store_format_xyzw  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET, %INDEX %OFFEN format:[%DFMT, %NFMT]",
+	" t_buffer_store_format_xyzw  %SERIES_VDATA, %VADDR, %SERIES_SRSRC, %SOFFSET%INDEX%OFFEN%OFFSET format:[%DFMT, %NFMT]",
 	MTBUF,
 	7,
 	8
