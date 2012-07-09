@@ -594,18 +594,18 @@ int si_inst_decode(void *buf, struct si_inst_t *inst);
 
 /* Functions to dump individual instruction lines for decoded instructions. */
 #define MAX_INST_STR_SIZE 200
-void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_sopk(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_ds(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
-void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_sopp(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_sopc(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_sop1(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_sopk(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_sop2(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_smrd(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_vop3(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_vopc(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_vop1(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_vop2(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_ds(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
+void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int inst_size, unsigned int rel_addr, void* buf, char* line, int line_size);
 
 
 /* Table 8.5 in SI documentation */
