@@ -182,9 +182,10 @@ struct arm_fmt_hfwrd_tns_reg_t
 	unsigned int base_rn 	: 4; /* [19:16] */
 	unsigned int ld_st 	: 1; /* [20] */
 	unsigned int wb 	: 1; /* [21] */
+	unsigned int __reserved2: 1; /* [22] */
 	unsigned int up_dn 	: 1; /* [23] */
 	unsigned int idx_typ 	: 1; /* [24] */
-	unsigned int __reserved2: 3; /* [27:25] */
+	unsigned int __reserved3: 3; /* [27:25] */
 	unsigned int cond 	: 4; /* [31:28] */
 };
 
@@ -416,5 +417,9 @@ void arm_inst_dump_OP2_PSR(char **inst_str_ptr, int *inst_str_size,
 
 void arm_inst_dump_PSR(char **inst_str_ptr, int *inst_str_size,
 	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_AMODE_3(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
 
 #endif
