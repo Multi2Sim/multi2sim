@@ -217,7 +217,6 @@ void arm_disasm_init()
 	info->size = 32;\
 	break;\
 	case ARM_CAT_HFWRD_REG:\
-	/* FIXME: Reorganize the HFWRD storage pattern when implemented */\
 	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
 	info = &arm_inst_info[_arg1 * 16 + _arg2 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -225,13 +224,44 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
-	arm_inst_info[(_arg1 + 2) * 16 + _arg2].opcode = ARM_INST_##_name;\
+	break;\
+	case ARM_CAT_HFWRD_IMM:\
+	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
 	info = &arm_inst_info[_arg1 * 16 + _arg2 ]; \
 	info->inst = ARM_INST_##_name; \
 	info->category = ARM_CAT_##_category; \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	break;\
+	case ARM_CAT_SDTR:\
+	if (_arg2 == 0xff){\
+	for (i = 0; i < 16; i++){\
+	arm_inst_info[_arg1 * 16 + i].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + _arg2 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	}\
+	}\
+	else{\
+	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + _arg2 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	arm_inst_info[_arg1 * 16 + (_arg2 + 8)].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + (_arg2 + 8)]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	}\
 	break;\
 	}
 #include "arm-asm.dat"
@@ -328,6 +358,9 @@ void arm_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
 						inst.info->category);
 				else if (arm_token_comp(fmt_str, "op2psr", &token_len))
 					arm_inst_dump_OP2_PSR(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "amode3", &token_len))
+					arm_inst_dump_AMODE_3(inst_str_ptr, &inst_str_size, &inst,
 						inst.info->category);
 
 				else
@@ -1000,4 +1033,70 @@ void arm_inst_dump_OP2_PSR(char **inst_str_ptr, int *inst_str_size,
 			break;
 		}
 	}
+}
+
+void arm_amode3_disasm(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int rn;
+	unsigned int rm;
+	unsigned int offset;
+	if ( cat == ARM_CAT_HFWRD_REG)
+	{
+		rn = inst->dword.hfwrd_reg_ins.base_rn;
+		rm = inst->dword.hfwrd_reg_ins.off_reg;
+		if (rm)
+			str_printf(inst_str_ptr, inst_str_size, "[r%d, #%d]", rn, rm);
+		else
+			str_printf(inst_str_ptr, inst_str_size, "[r%d]", rn);
+	}
+	else if (cat == ARM_CAT_HFWRD_IMM)
+	{
+		rn = inst->dword.hfwrd_imm_ins.base_rn;
+		offset = (inst->dword.hfwrd_imm_ins.imm_off_hi << 4)
+			| (inst->dword.hfwrd_imm_ins.imm_off_lo);
+		if(offset)
+			str_printf(inst_str_ptr, inst_str_size, "[r%d, #%d]", rn, offset);
+		else
+			str_printf(inst_str_ptr, inst_str_size, "[r%d]", rn);
+	}
+	else
+		fatal("%d: amode 3 disasm fmt not recognized", cat);
+}
+
+void arm_inst_dump_AMODE_3(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+
+	if (cat == ARM_CAT_DPR_REG)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_IMM)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_SAT)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_PSR)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_SIGN)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN_SIGN)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_REG)
+		arm_amode3_disasm(inst_str_ptr, inst_str_size, inst, cat);
+	else if (cat == ARM_CAT_HFWRD_IMM)
+		arm_amode3_disasm(inst_str_ptr, inst_str_size, inst, cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDTR)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDSWP)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_CPR_RTR)
+		fatal("%d: amode 3 fmt not recognized", cat);
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: amode 3 fmt not recognized", cat);
 }
