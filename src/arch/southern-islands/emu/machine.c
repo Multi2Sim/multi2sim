@@ -1127,7 +1127,7 @@ void si_isa_V_CNDMASK_B32_impl(struct si_work_item_t *work_item, struct si_inst_
 
 	/* Load operands from registers. */
 	s0 = si_isa_read_reg(work_item, INST.src0);
-	s1 = si_isa_read_reg(work_item, INST.vsrc1);
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1);
 	vcci = si_isa_read_bitmask_sreg(work_item, SI_VCC);
 
 	/* Calculate the result. */
@@ -1158,7 +1158,7 @@ void si_isa_V_ADD_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_float;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_float;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_float;
 
 	/* Calculate the sum. */
 	sum.as_float = s0 + s1;
@@ -1188,7 +1188,7 @@ void si_isa_V_MUL_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_float;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_float;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_float;
 
 	/* Calculate the product. */
 	product.as_float = s0 * s1;
@@ -1218,7 +1218,7 @@ void si_isa_V_MUL_I32_I24_impl(struct si_work_item_t *work_item, struct si_inst_
 		s0 = INST.lit_cnst & 0xFFFFFF;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_int & 0xFFFFFF;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_int & 0xFFFFFF;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_int & 0xFFFFFF;
 
 	/* Calculate the product. */
 	product.as_int = s0 * s1;
@@ -1248,7 +1248,7 @@ void si_isa_V_MAX_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 		s0 = INST.lit_cnst & 0xFFFFFF;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_uint;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
 
 	/* Calculate the minimum operand. */
 	if (s0 > s1)
@@ -1285,7 +1285,7 @@ void si_isa_V_LSHRREV_B32_impl(struct si_work_item_t *work_item, struct si_inst_
 		s0 = INST.lit_cnst & 0x1F;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint & 0x1F;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_uint;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
 
 	/* Right shift s1 by s0. */
 	result.as_uint = s1 >> s0;
@@ -1315,7 +1315,7 @@ void si_isa_V_LSHLREV_B32_impl(struct si_work_item_t *work_item, struct si_inst_
 		s0 = INST.lit_cnst & 0x1F;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint & 0x1F;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_uint;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
 
 	/* Left shift s1 by s0. */
 	result.as_uint = s1 << s0;
@@ -1345,7 +1345,7 @@ void si_isa_V_AND_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_uint;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
 
 	/* Bitwise OR the two operands. */
 	result.as_uint = s0 & s1;
@@ -1375,7 +1375,7 @@ void si_isa_V_OR_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *in
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_uint;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
 
 	/* Bitwise OR the two operands. */
 	result.as_uint = s0 | s1;
@@ -1406,7 +1406,7 @@ void si_isa_V_MAC_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_float;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_float;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_float;
 	d = si_isa_read_vreg(work_item, INST.vdst).as_float;
 
 	/* Calculate the result. */
@@ -1438,7 +1438,7 @@ void si_isa_V_ADD_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_uint;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
 
 	/* Calculate the sum and carry. */
 	sum.as_uint = s0 + s1;
@@ -1472,7 +1472,7 @@ void si_isa_V_SUB_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_uint;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
 
 	/* Calculate the difference and carry. */
 	dif.as_uint = s0 - s1;
@@ -1506,7 +1506,7 @@ void si_isa_V_SUBREV_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 		s0 = INST.lit_cnst;
 	else
 		s0 = si_isa_read_reg(work_item, INST.src0).as_uint;
-	s1 = si_isa_read_reg(work_item, INST.vsrc1).as_uint;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_uint;
 
 	/* Calculate the difference and carry. */
 	dif.as_uint = s1 - s0;
