@@ -60,7 +60,8 @@ void arm_emu_disasm(char *path)
 			printf ("\n%08x <%s>\n", symbol->value, symbol->name);
 		}
 		arm_inst_hex_dump(stdout, inst_ptr, (section->header->sh_addr + inst_index));
-		arm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, inst_ptr , inst_index);
+		arm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, inst_ptr , inst_index,
+			(section->header->sh_addr + inst_index));
 		inst_index += 4;
 	}
 

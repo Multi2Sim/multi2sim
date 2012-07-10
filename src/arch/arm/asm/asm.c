@@ -23,6 +23,7 @@ void arm_disasm_init()
 {
 	struct arm_inst_info_t *info;
 	int i;
+	int j;
 	/* Form the Instruction table and read Information from table*/
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	switch (ARM_CAT_##_category) { \
@@ -238,7 +239,7 @@ void arm_disasm_init()
 	if (_arg2 == 0xff){\
 	for (i = 0; i < 16; i++){\
 	arm_inst_info[_arg1 * 16 + i].opcode = ARM_INST_##_name;\
-	info = &arm_inst_info[_arg1 * 16 + _arg2 ]; \
+	info = &arm_inst_info[_arg1 * 16 + i ]; \
 	info->inst = ARM_INST_##_name; \
 	info->category = ARM_CAT_##_category; \
 	info->name = #_name; \
@@ -261,6 +262,19 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	}\
+	break;\
+	case ARM_CAT_BRNCH:\
+	for (i = 0 ; i < 16; i++){\
+	for (j = 0 ; j < 16; j++){\
+	arm_inst_info[(_arg1 + i ) * 16 + j].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[(_arg1 + i) * 16 + j ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	}\
 	}\
 	break;\
 	}
@@ -294,7 +308,7 @@ void arm_inst_hex_dump(FILE *f , void *inst_ptr , unsigned int inst_addr)
 }
 
 void arm_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
-	unsigned int inst_index)
+	unsigned int inst_index, unsigned int inst_addr)
 {
 	struct arm_inst_t inst;
 	int byte_index;
@@ -362,6 +376,15 @@ void arm_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
 				else if (arm_token_comp(fmt_str, "amode3", &token_len))
 					arm_inst_dump_AMODE_3(inst_str_ptr, &inst_str_size, &inst,
 						inst.info->category);
+				else if (arm_token_comp(fmt_str, "amode2", &token_len))
+					arm_inst_dump_AMODE_2(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "idx", &token_len))
+					arm_inst_dump_IDX(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category);
+				else if (arm_token_comp(fmt_str, "baddr", &token_len))
+					arm_inst_dump_BADDR(inst_str_ptr, &inst_str_size, &inst,
+						inst.info->category, inst_addr);
 
 				else
 					fatal("%s: token not recognized\n", fmt_str);
@@ -433,6 +456,9 @@ void arm_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
 		rd = inst->dword.sngl_dswp_ins.dst_rd;
 	else if (cat == ARM_CAT_CPR_RTR)
 		rd = inst->dword.cpr_rtr_ins.rd;
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: rd fmt not recognized", cat);
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: rd fmt not recognized", cat);
@@ -492,6 +518,9 @@ void arm_inst_dump_RN(char **inst_str_ptr, int *inst_str_size,
 		rn = inst->dword.sngl_dswp_ins.base_rn;
 	else if (cat == ARM_CAT_CPR_RTR)
 		rn = inst->dword.cpr_rtr_ins.cpr_rn;
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: rn fmt not recognized", cat);
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: rn fmt not recognized", cat);
@@ -549,6 +578,9 @@ void arm_inst_dump_RM(char **inst_str_ptr, int *inst_str_size,
 		rm = inst->dword.sngl_dswp_ins.op0_rm;
 	else if (cat == ARM_CAT_CPR_RTR)
 		rm = inst->dword.cpr_rtr_ins.cpr_op_rm;
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: rm fmt not recognized", cat);
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: rm fmt not recognized", cat);
@@ -605,6 +637,9 @@ void arm_inst_dump_RS(char **inst_str_ptr, int *inst_str_size,
 		fatal("%d: rs fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
 		fatal("%d: rs fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: rs fmt not recognized", cat);
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: rs fmt not recognized", cat);
@@ -666,6 +701,9 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 		fatal("%d: op2 fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
 		fatal("%d: op2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: op2 fmt not recognized", cat);
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: op2 fmt not recognized", cat);
@@ -676,33 +714,6 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 		shift = ((op2 >> 4) & (0x000000ff));
 
 		if (shift & 0x00000001)
-		{
-			switch ((shift >> 1) & 0x00000003)
-			{
-			case (LSL):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , LSL #%d   ;0x%x",
-					rm, ((shift >> 4) & 0x0000000f),((shift >> 4) & 0x0000000f));
-			break;
-
-			case (LSR):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , LSR #%d   ;0x%x",
-					rm, ((shift >> 4) & 0x0000000f),((shift >> 4) & 0x0000000f));
-			break;
-
-			case (ASR):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , ASR #%d   ;0x%x",
-					rm, ((shift >> 4) & 0x0000000f),((shift >> 4) & 0x0000000f));
-			break;
-
-			case (ROR):
-				str_printf(inst_str_ptr, inst_str_size, "r%d , ROR #%d   ;0x%x",
-					rm, ((shift >> 4) & 0x0000000f),((shift >> 4) & 0x0000000f));
-			break;
-			}
-
-		}
-
-		else
 		{
 			rs = (shift >> 4);
 			switch ((shift >> 1) & 0x00000003)
@@ -721,6 +732,32 @@ void arm_inst_dump_OP2(char **inst_str_ptr, int *inst_str_size,
 
 			case (ROR):
 				str_printf(inst_str_ptr, inst_str_size, "r%d , ROR r%d", rm, rs);
+			break;
+			}
+		}
+
+		else
+		{
+			switch ((shift >> 1) & 0x00000003)
+			{
+			case (LSL):
+				str_printf(inst_str_ptr, inst_str_size, "r%d , LSL #%d   ;0x%x",
+					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
+			break;
+
+			case (LSR):
+				str_printf(inst_str_ptr, inst_str_size, "r%d , LSR #%d   ;0x%x",
+					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
+			break;
+
+			case (ASR):
+				str_printf(inst_str_ptr, inst_str_size, "r%d , ASR #%d   ;0x%x",
+					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
+			break;
+
+			case (ROR):
+				str_printf(inst_str_ptr, inst_str_size, "r%d , ROR #%d   ;0x%x",
+					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
 			break;
 			}
 		}
@@ -768,6 +805,9 @@ void arm_inst_dump_COND(char **inst_str_ptr, int *inst_str_size,
 		cond = inst->dword.sngl_dswp_ins.cond;
 	else if (cat == ARM_CAT_CPR_RTR)
 		cond = inst->dword.cpr_rtr_ins.cond;
+	else if (cat == ARM_CAT_BRNCH)
+		cond = inst->dword.brnch_ins.cond;
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: cond fmt not recognized", cat);
@@ -870,6 +910,9 @@ void arm_inst_dump_RDLO(char **inst_str_ptr, int *inst_str_size,
 		fatal("%d: rdlo fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
 		fatal("%d: rdlo fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: rdlo fmt not recognized", cat);
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: rdlo fmt not recognized", cat);
@@ -911,6 +954,9 @@ void arm_inst_dump_RDHI(char **inst_str_ptr, int *inst_str_size,
 		fatal("%d: rdhi fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
 		fatal("%d: rdhi fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: rdhi fmt not recognized", cat);
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: rdhi fmt not recognized", cat);
@@ -952,6 +998,9 @@ void arm_inst_dump_PSR(char **inst_str_ptr, int *inst_str_size,
 		fatal("%d: psr fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
 		fatal("%d: psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: psr fmt not recognized", cat);
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: psr fmt not recognized", cat);
@@ -1004,6 +1053,9 @@ void arm_inst_dump_OP2_PSR(char **inst_str_ptr, int *inst_str_size,
 		fatal("%d: op2 psr fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
 		fatal("%d: op2 psr fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: op2 psr fmt not recognized", cat);
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: psr fmt not recognized", cat);
@@ -1033,6 +1085,96 @@ void arm_inst_dump_OP2_PSR(char **inst_str_ptr, int *inst_str_size,
 			break;
 		}
 	}
+}
+
+
+void arm_amode2_disasm(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int rn;
+	unsigned int rm;
+	unsigned int shift;
+	unsigned int offset;
+
+	offset = inst->dword.sdtr_ins.off;
+	rn = inst->dword.sdtr_ins.base_rn;
+
+	if(inst->dword.sdtr_ins.imm == 1)
+	{
+		rm = (offset & (0x0000000f));
+		shift = ((offset >> 4) & (0x000000ff));
+
+		if(inst->dword.sdtr_ins.up_dn)
+		{
+			switch ((shift >> 1) & 0x00000003)
+			{
+			case (LSL):
+				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, lsl #%d]",
+					rn, rm, ((shift >> 3) & 0x0000001f));
+			break;
+
+			case (LSR):
+				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, lsr #%d]",
+					rn, rm, ((shift >> 3) & 0x0000001f));
+			break;
+
+			case (ASR):
+				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, asr #%d]",
+					rn, rm, ((shift >> 3) & 0x0000001f));
+			break;
+
+			case (ROR):
+				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, ror #%d]",
+					rn, rm, ((shift >> 3) & 0x0000001f));
+			break;
+			}
+		}
+		else
+		{
+			switch ((shift >> 1) & 0x00000003)
+			{
+			case (LSL):
+				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, lsl #-%d]",
+					rn, rm, ((shift >> 3) & 0x0000001f));
+			break;
+
+			case (LSR):
+				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, lsr #-%d]",
+					rn, rm, ((shift >> 3) & 0x0000001f));
+			break;
+
+			case (ASR):
+				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, asr #-%d]",
+					rn, rm, ((shift >> 3) & 0x0000001f));
+			break;
+
+			case (ROR):
+				str_printf(inst_str_ptr, inst_str_size, "[r%d, r%d, ror #-%d]",
+					rn, rm, ((shift >> 3) & 0x0000001f));
+			break;
+			}
+		}
+	}
+	else if (inst->dword.sdtr_ins.imm == 0)
+	{
+		if(!offset)
+		{
+			str_printf(inst_str_ptr, inst_str_size, "[r%d]",
+				rn);
+		}
+		else
+		{
+			if(inst->dword.sdtr_ins.up_dn)
+				str_printf(inst_str_ptr, inst_str_size, "[r%d, #%d]",
+					rn, offset);
+			else
+				str_printf(inst_str_ptr, inst_str_size, "[r%d, #-%d]",
+					rn, offset);
+		}
+	}
+	else
+		fatal("%d: amode 2 fmt not recognized", cat);
+
 }
 
 void arm_amode3_disasm(char **inst_str_ptr, int *inst_str_size,
@@ -1096,7 +1238,143 @@ void arm_inst_dump_AMODE_3(char **inst_str_ptr, int *inst_str_size,
 		fatal("%d: amode 3 fmt not recognized", cat);
 	else if (cat == ARM_CAT_CPR_RTR)
 		fatal("%d: amode 3 fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: amode 3 fmt not recognized", cat);
+
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
 		fatal("%d: amode 3 fmt not recognized", cat);
 }
+
+void arm_inst_dump_AMODE_2(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+
+	if (cat == ARM_CAT_DPR_REG)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_IMM)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_SAT)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_PSR)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_SIGN)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN_SIGN)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_REG)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_IMM)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDTR)
+		arm_amode2_disasm(inst_str_ptr, inst_str_size, inst, cat);
+	else if (cat == ARM_CAT_SDSWP)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_CPR_RTR)
+		fatal("%d: amode 2 fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: amode 2 fmt not recognized", cat);
+
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: amode 2 fmt not recognized", cat);
+}
+
+void arm_inst_dump_IDX(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int idx;
+
+	if (cat == ARM_CAT_DPR_REG)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_IMM)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_SAT)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_PSR)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_SIGN)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN_SIGN)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_REG)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_IMM)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDTR)
+		idx = inst->dword.sdtr_ins.idx_typ;
+	else if (cat == ARM_CAT_SDSWP)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_CPR_RTR)
+		fatal("%d: idx fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: idx fmt not recognized", cat);
+
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: idx fmt not recognized", cat);
+
+	if (idx == 1)
+	{
+		if(inst->dword.sdtr_ins.off)
+		str_printf(inst_str_ptr, inst_str_size, "!");
+	}
+	else
+		str_printf(inst_str_ptr, inst_str_size, " ");
+}
+
+void arm_inst_dump_BADDR(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat,
+	unsigned int inst_addr)
+{
+	signed int offset;
+
+	if (cat == ARM_CAT_DPR_REG)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_IMM)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_SAT)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_PSR)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_SIGN)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN_SIGN)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_REG)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_IMM)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDTR)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDSWP)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_CPR_RTR)
+		fatal("%d: brnch fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		offset = (inst->dword.brnch_ins.off << 2);
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: brnch fmt not recognized", cat);
+
+	str_printf(inst_str_ptr, inst_str_size, "%x",(inst_addr + offset + 8));
+}
+
