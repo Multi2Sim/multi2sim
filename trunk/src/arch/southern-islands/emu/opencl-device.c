@@ -65,6 +65,8 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 	uint32_t max_clock_frequency = 850;
 	uint64_t global_mem_size = 1ull << 31;  /* 2GB of global memory reported */
 	uint32_t image_support = 1;
+	uint32_t device_type = 4; /* CL_DEVICE_TYPE_GPU */
+	uint32_t device_vendor_id = 1234;
 
 	char *device_name = "Multi2Sim Virtual GPU Device";
 	char *device_vendor = "www.multi2sim.org";
@@ -80,6 +82,16 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 
 	switch (name)
 	{
+
+	case 0x1000:  /* CL_DEVICE_TYPE */
+		size_ret = 4;
+		info = &device_type;
+		break;
+
+	case 0x1001:  /* CL_DEVICE_VENDOR_ID */
+		size_ret = 4;
+		info = &device_vendor_id;
+		break;
 
 	case 0x1002:  /* CL_DEVICE_MAX_COMPUTE_UNITS */
 		size_ret = 4;
