@@ -1359,8 +1359,20 @@ int si_opencl_clSetKernelArg_impl(struct x86_ctx_t *ctx, int *argv)
 	assert(arg);
 	arg->set = 1;
 	arg->size = arg_size;
-	if (arg_value)
-		mem_read(ctx->mem, arg_value, 4, &arg->value);
+	if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_VALUE)
+	{
+		assert(arg_value);
+		mem_read(ctx->mem, arg_value, arg_size, &arg->data.value[0]);
+	}
+	else 
+	{
+		/* Pointer type */
+		if (arg->mem_scope != SI_OPENCL_MEM_SCOPE_LOCAL)
+		{
+			assert(arg_size == 4);
+			mem_read(ctx->mem, arg_value, arg_size, &arg->data.ptr);
+		}
+	}
 
 	/* If OpenCL argument scope is __local, argument value must be NULL */
 	if (arg->mem_scope == SI_OPENCL_MEM_SCOPE_LOCAL && arg_value)
@@ -2213,7 +2225,7 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 			arg->mem_scope != SI_OPENCL_MEM_SCOPE_LOCAL)
 		{	
 			mem = si_opencl_repo_get_object(si_emu->opencl_repo,
-					si_opencl_object_mem, arg->value);
+					si_opencl_object_mem, arg->data.ptr);
 			list_add(kernel->uav_list, mem);
 		}
 	}

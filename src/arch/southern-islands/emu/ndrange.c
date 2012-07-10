@@ -449,6 +449,7 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 	struct si_opencl_kernel_t *kernel = ndrange->kernel;
 	struct si_opencl_kernel_arg_t *arg;
 	int i;
+	int j;
 	int cb_index = 0;
 
 	/* Kernel arguments */
@@ -459,66 +460,78 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 
 		/* Check that argument was set */
 		if (!arg->set)
-				fatal("kernel '%s': argument '%s' has not been assigned with 'clKernelSetArg'.",
-						kernel->name, arg->name);
+			fatal("kernel '%s': argument '%s' has not been assigned with 'clKernelSetArg'.",
+				kernel->name, arg->name);
 
 		/* Process argument depending on its type */
 		switch (arg->kind)
 		{
-			case SI_OPENCL_KERNEL_ARG_KIND_VALUE:
+
+		case SI_OPENCL_KERNEL_ARG_KIND_VALUE:
+		{
+			/* Value copied directly into device constant memory */
+			for (j = 0; j < arg->size/4; j++)
 			{
-					/* Value copied directly into device constant memory */
-				si_isa_const_mem_write(1, (cb_index*4)*4, &arg->value);
-					si_opencl_debug("    arg %d: value '0x%x' loaded into CB1[%d]\n", i,
-									arg->value, cb_index);
-					cb_index++;
-					break;
+				si_isa_const_mem_write(1, (cb_index*4)*4+j, &arg->data.value[j]);
+				si_opencl_debug("    arg %d: value '0x%x' loaded into "
+						"CB1[%d][%d]\n", i, j, arg->data.value[j], 
+						cb_index);
 			}
-			case SI_OPENCL_KERNEL_ARG_KIND_POINTER:
+			cb_index++;
+			break;
+		}
+
+		case SI_OPENCL_KERNEL_ARG_KIND_POINTER:
+		{
+			switch (arg->mem_scope)
 			{
-				switch (arg->mem_scope)
-					{
 
-					case SI_OPENCL_MEM_SCOPE_CONSTANT:
-					case SI_OPENCL_MEM_SCOPE_GLOBAL:
-					{
-						struct si_opencl_mem_t *mem;
+			case SI_OPENCL_MEM_SCOPE_CONSTANT:
+			case SI_OPENCL_MEM_SCOPE_GLOBAL:
+			{
+				struct si_opencl_mem_t *mem;
 
-						/* Pointer in __global scope.
-						 * Argument value is a pointer to an 'opencl_mem' object.
-						 * It is translated first into a device memory pointer. */
-						mem = si_opencl_repo_get_object(si_emu->opencl_repo,
-							si_opencl_object_mem, arg->value);
-						si_isa_const_mem_write(1, (cb_index*4)*4, &mem->device_ptr);
-						si_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d],"
-								" device_ptr=0x%x\n", i, arg->value, cb_index,
-								mem->device_ptr);
-						cb_index++;
-						break;
-					}
-
-					case SI_OPENCL_MEM_SCOPE_LOCAL:
-					{
-						/* Pointer in __local scope.
-						 * Argument value is always NULL, just assign space for it. */
-						si_isa_const_mem_write(1, (cb_index*4)*4, &ndrange->local_mem_top);
-						si_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
-							i, arg->size, ndrange->local_mem_top);
-						ndrange->local_mem_top += arg->size;
-						cb_index++;
-						break;
-					}
-
-					default:
-						fatal("%s: argument in memory scope %d not supported",
-							__FUNCTION__, arg->mem_scope);
-					}
+				/* Pointer in __global scope.
+				 * Argument value is a pointer to an 'opencl_mem' object.
+				 * It is translated first into a device memory pointer. */
+				mem = si_opencl_repo_get_object(si_emu->opencl_repo,
+					si_opencl_object_mem, arg->data.ptr);
+				si_isa_const_mem_write(1, (cb_index*4)*4, &mem->device_ptr);
+				si_opencl_debug("    arg %d: opencl_mem id 0x%x loaded into CB1[%d],"
+					" device_ptr=0x%x\n", i, arg->data.ptr, cb_index,
+					mem->device_ptr);
+				cb_index++;
 				break;
 			}
+
+			case SI_OPENCL_MEM_SCOPE_LOCAL:
+			{
+				/* Pointer in __local scope.
+				 * Argument value is always NULL, just assign space for it. */
+				si_isa_const_mem_write(1, (cb_index*4)*4, &ndrange->local_mem_top);
+				si_opencl_debug("    arg %d: %d bytes reserved in local memory at 0x%x\n",
+					i, arg->size, ndrange->local_mem_top);
+				ndrange->local_mem_top += arg->size;
+				cb_index++;
+				break;
+			}
+
 			default:
 			{
-				fatal("%s: argument type not reconized", __FUNCTION__);
+				fatal("%s: argument in memory scope %d not supported",
+					__FUNCTION__, arg->mem_scope);
 			}
+
+			}
+
+			break;
+		}
+
+		default:
+		{
+			fatal("%s: argument type not reconized", __FUNCTION__);
+		}
+
 		}
 	}	
 }
