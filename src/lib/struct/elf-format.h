@@ -64,6 +64,8 @@ struct elf_symbol_t
 	uint32_t value;
 	uint32_t size;
 	int section;
+	unsigned char info;
+	unsigned char visibility;
 };
 
 
