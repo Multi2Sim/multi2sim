@@ -180,6 +180,8 @@ static void elf_file_read_symbol_section(struct elf_file_t *elf_file, struct elf
 		symbol->size = sym->st_size;
 		symbol->section = sym->st_shndx;
 		symbol->name = symbol_names_section->buffer.ptr + sym->st_name;
+		symbol->info = sym->st_info;
+		symbol->visibility = sym->st_other;
 		assert(sym->st_name < symbol_names_section->buffer.size);
 
 		/* Add symbol to list */
