@@ -237,7 +237,7 @@ struct arm_fmt_bdtr_t
 
 struct arm_fmt_brnch_t
 {
-	unsigned int off 	: 24; /* [23:0] */
+	signed int off 		: 24; /* [23:0] */
 	unsigned int link 	: 1; /* [24] */
 	unsigned int __reserved0: 3; /* [27:25] */
 	unsigned int cond 	: 4; /* [31:28] */
@@ -386,7 +386,7 @@ void arm_inst_decode(struct arm_inst_t *inst);
 void arm_inst_hex_dump(FILE *f, void *inst_ptr, unsigned int inst_addr);
 
 void arm_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
-	unsigned int inst_index);
+	unsigned int inst_index, unsigned int inst_addr);
 
 void arm_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
                 struct arm_inst_t *inst, enum arm_cat_enum cat);
@@ -418,8 +418,17 @@ void arm_inst_dump_OP2_PSR(char **inst_str_ptr, int *inst_str_size,
 void arm_inst_dump_PSR(char **inst_str_ptr, int *inst_str_size,
 	struct arm_inst_t *inst, enum arm_cat_enum cat);
 
+void arm_inst_dump_AMODE_2(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
 void arm_inst_dump_AMODE_3(char **inst_str_ptr, int *inst_str_size,
 	struct arm_inst_t *inst, enum arm_cat_enum cat);
 
+void arm_inst_dump_IDX(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_BADDR(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat,
+	unsigned int inst_addr);
 
 #endif

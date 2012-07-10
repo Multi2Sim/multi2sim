@@ -26,7 +26,7 @@
  * CMP, CMN, ORR, MOV, BIC, MVN
  */
 
- DEFINST(AND_reg, 
+DEFINST(AND_reg, 
 	"AND%cond %rd, %rn, %op2", 
 	DPR_REG, 
 	0x00,
@@ -802,7 +802,6 @@ DEFINST(LDRD_prrp,
 	0x1a,
 	0xd)
 
-///STRD reg
 DEFINST(STRD_ptrm1, 
 	"STRD%cond %rd, %amode3", 
 	HFWRD_REG, 
@@ -1150,365 +1149,977 @@ DEFINST(STRD_prip,
  */
  
 DEFINST(LDR_ptim, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x41,
 	0xff)
 
 DEFINST(LDR_ptip, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x49,
 	0xff)
 
 DEFINST(LDR_ofim, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x51,
 	0xff)
 
 DEFINST(LDR_prim, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x53,
 	0xff)
 
 DEFINST(LDR_ofip, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x59,
 	0xff)
 
 DEFINST(LDR_prip, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x5b,
 	0xff)
 	
 DEFINST(LDR_ptrmll, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x61,
 	0x0)
 	
 DEFINST(LDR_ptrmlr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x61,
 	0x2)
 
 DEFINST(LDR_ptrmar, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx%idx", 
 	SDTR, 
 	0x61,
 	0x4)
 
 DEFINST(LDR_ptrmrr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx%idx", 
 	SDTR, 
 	0x61,
 	0x6)
 
 DEFINST(LDR_ptrpll, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x69,
 	0x0)
 
 DEFINST(LDR_ptrplr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x69,
 	0x2)
 
 DEFINST(LDR_ptrpar, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x69,
 	0x4)
 
 DEFINST(LDR_ptrprr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x69,
 	0x6)
 
 DEFINST(LDR_ofrmll, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x71,
 	0x0)
 	
 DEFINST(LDR_ofrmlr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x71,
 	0x2)
 
 DEFINST(LDR_ofrmar, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x71,
 	0x4)
 
 DEFINST(LDR_ofrmrr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x71,
 	0x6)
 
 DEFINST(LDR_prrmll, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x73,
 	0x0)
 	
 DEFINST(LDR_prrmlr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x73,
 	0x2)
 
 DEFINST(LDR_prrmar, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x73,
 	0x4)
 
 DEFINST(LDR_prrmrr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x73,
 	0x6)
 
 DEFINST(LDR_ofrpll, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x79,
 	0x0)
 	
 DEFINST(LDR_ofrplr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x79,
 	0x2)
 
 DEFINST(LDR_ofrpar, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x79,
 	0x4)
 
 DEFINST(LDR_ofrprr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x79,
 	0x6)
 
 DEFINST(LDR_prrpll, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x7b,
 	0x0)
 	
 DEFINST(LDR_prrplr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x7b,
 	0x2)
 
 DEFINST(LDR_prrpar, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x7b,
 	0x4)
 
 DEFINST(LDR_prrprr, 
-	"LDR%cond %rd, %amode2", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x7b,
 	0x6)
 
-/////	STR
 DEFINST(STR_ptim, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x40,
 	0xff)
 
 DEFINST(STR_ptip, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x48,
 	0xff)
 
 DEFINST(STR_ofim, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x50,
 	0xff)
 
 DEFINST(STR_prim, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x52,
 	0xff)
 
 DEFINST(STR_ofip, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x58,
 	0xff)
 
 DEFINST(STR_prip, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x5a,
 	0xff)
 	
 DEFINST(STR_ptrmll, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x60,
 	0x0)
 	
 DEFINST(STR_ptrmlr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x60,
 	0x2)
 
 DEFINST(STR_ptrmar, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x60,
 	0x4)
 
 DEFINST(STR_ptrmrr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x60,
 	0x6)
 
 DEFINST(STR_ptrpll, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x68,
 	0x0)
 
 DEFINST(STR_ptrplr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x68,
 	0x2)
 
 DEFINST(STR_ptrpar, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x68,
 	0x4)
 
 DEFINST(STR_ptrprr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x68,
 	0x6)
 
 DEFINST(STR_ofrmll, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x70,
 	0x0)
 	
 DEFINST(STR_ofrmlr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x70,
 	0x2)
 
 DEFINST(STR_ofrmar, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x70,
 	0x4)
 
 DEFINST(STR_ofrmrr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x70,
 	0x6)
 
 DEFINST(STR_prrmll, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x72,
 	0x0)
 	
 DEFINST(STR_prrmlr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x72,
 	0x2)
 
 DEFINST(STR_prrmar, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x72,
 	0x4)
 
 DEFINST(STR_prrmrr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x72,
 	0x6)
 
 DEFINST(STR_ofrpll, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x78,
 	0x0)
 	
 DEFINST(STR_ofrplr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x78,
 	0x2)
 
 DEFINST(STR_ofrpar, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x78,
 	0x4)
 
 DEFINST(STR_ofrprr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x78,
 	0x6)
 
 DEFINST(STR_prrpll, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x7a,
 	0x0)
 	
 DEFINST(STR_prrplr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x7a,
 	0x2)
 
 DEFINST(STR_prrpar, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x7a,
 	0x4)
 
 DEFINST(STR_prrprr, 
-	"STR%cond %rd, %amode2", 
+	"STR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x7a,
 	0x6)
 
- 
+DEFINST(LDRB_ptim, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x45,
+	0xff)
+
+DEFINST(LDRB_ptip, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x4d,
+	0xff)
+
+DEFINST(LDRB_ofim, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x55,
+	0xff)
+
+DEFINST(LDRB_prim, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x57,
+	0xff)
+
+DEFINST(LDRB_ofip, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x5d,
+	0xff)
+
+DEFINST(LDRB_prip, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x5f,
+	0xff)
 	
+DEFINST(LDRB_ptrmll, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x65,
+	0x0)
+	
+DEFINST(LDRB_ptrmlr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x65,
+	0x2)
+
+DEFINST(LDRB_ptrmar, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x65,
+	0x4)
+
+DEFINST(LDRB_ptrmrr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x65,
+	0x6)
+
+DEFINST(LDRB_ptrpll, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x6d,
+	0x0)
+
+DEFINST(LDRB_ptrplr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x6d,
+	0x2)
+
+DEFINST(LDRB_ptrpar, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x6d,
+	0x4)
+
+DEFINST(LDRB_ptrprr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x6d,
+	0x6)
+
+DEFINST(LDRB_ofrmll, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x75,
+	0x0)
+	
+DEFINST(LDRB_ofrmlr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x75,
+	0x2)
+
+DEFINST(LDRB_ofrmar, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x75,
+	0x4)
+
+DEFINST(LDRB_ofrmrr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x75,
+	0x6)
+
+DEFINST(LDRB_prrmll, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x77,
+	0x0)
+	
+DEFINST(LDRB_prrmlr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x77,
+	0x2)
+
+DEFINST(LDRB_prrmar, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x77,
+	0x4)
+
+DEFINST(LDRB_prrmrr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x77,
+	0x6)
+
+DEFINST(LDRB_ofrpll, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7d,
+	0x0)
+	
+DEFINST(LDRB_ofrplr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7d,
+	0x2)
+
+DEFINST(LDRB_ofrpar, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7d,
+	0x4)
+
+DEFINST(LDRB_ofrprr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7d,
+	0x6)
+
+DEFINST(LDRB_prrpll, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7f,
+	0x0)
+	
+DEFINST(LDRB_prrplr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7f,
+	0x2)
+
+DEFINST(LDRB_prrpar, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7f,
+	0x4)
+
+DEFINST(LDRB_prrprr, 
+	"LDRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7f,
+	0x6)
+
+DEFINST(STRB_ptim, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x44,
+	0xff)
+
+DEFINST(STRB_ptip, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x4c,
+	0xff)
+
+DEFINST(STRB_ofim, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x54,
+	0xff)
+
+DEFINST(STRB_prim, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x56,
+	0xff)
+
+DEFINST(STRB_ofip, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x5c,
+	0xff)
+
+DEFINST(STRB_prip, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x5e,
+	0xff)
+	
+DEFINST(STRB_ptrmll, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x64,
+	0x0)
+	
+DEFINST(STRB_ptrmlr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x64,
+	0x2)
+
+DEFINST(STRB_ptrmar, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x64,
+	0x4)
+
+DEFINST(STRB_ptrmrr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x64,
+	0x6)
+
+DEFINST(STRB_ptrpll, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x6c,
+	0x0)
+
+DEFINST(STRB_ptrplr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x6c,
+	0x2)
+
+DEFINST(STRB_ptrpar, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x6c,
+	0x4)
+
+DEFINST(STRB_ptrprr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x6c,
+	0x6)
+
+DEFINST(STRB_ofrmll, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x74,
+	0x0)
+	
+DEFINST(STRB_ofrmlr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x74,
+	0x2)
+
+DEFINST(STRB_ofrmar, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x74,
+	0x4)
+
+DEFINST(STRB_ofrmrr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x74,
+	0x6)
+
+DEFINST(STRB_prrmll, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x76,
+	0x0)
+	
+DEFINST(STRB_prrmlr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x76,
+	0x2)
+
+DEFINST(STRB_prrmar, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x76,
+	0x4)
+
+DEFINST(STRB_prrmrr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x76,
+	0x6)
+
+DEFINST(STRB_ofrpll, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7c,
+	0x0)
+	
+DEFINST(STRB_ofrplr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7c,
+	0x2)
+
+DEFINST(STRB_ofrpar, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7c,
+	0x4)
+
+DEFINST(STRB_ofrprr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7c,
+	0x6)
+
+DEFINST(STRB_prrpll, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7e,
+	0x0)
+	
+DEFINST(STRB_prrplr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7e,
+	0x2)
+
+DEFINST(STRB_prrpar, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7e,
+	0x4)
+
+DEFINST(STRB_prrprr, 
+	"STRB%cond %rd, %amode2%idx", 
+	SDTR, 
+	0x7e,
+	0x6)
+	
+DEFINST(LDRT_ptim, 
+	"LDRT%cond %rd, %amode2", 
+	SDTR, 
+	0x43,
+	0xff)
+
+DEFINST(LDRT_ptip, 
+	"LDRT%cond %rd, %amode2", 
+	SDTR, 
+	0x4b,
+	0xff)
+	
+DEFINST(LDRT_ptrmll, 
+	"LDRT%cond %rd, %amode2", 
+	SDTR, 
+	0x63,
+	0x0)
+	
+DEFINST(LDRT_ptrmlr, 
+	"LDRT%cond %rd, %amode2", 
+	SDTR, 
+	0x63,
+	0x2)
+
+DEFINST(LDRT_ptrmar, 
+	"LDRT%cond %rd, %amode2", 
+	SDTR, 
+	0x63,
+	0x4)
+
+DEFINST(LDRT_ptrmrr, 
+	"LDRT%cond %rd, %amode2", 
+	SDTR, 
+	0x63,
+	0x6)
+
+DEFINST(LDRT_ptrpll, 
+	"LDRT%cond %rd, %amode2", 
+	SDTR, 
+	0x6b,
+	0x0)
+
+DEFINST(LDRT_ptrplr, 
+	"LDRT%cond %rd, %amode2", 
+	SDTR, 
+	0x6b,
+	0x2)
+
+DEFINST(LDRT_ptrpar, 
+	"LDRT%cond %rd, %amode2", 
+	SDTR, 
+	0x6b,
+	0x4)
+
+DEFINST(LDRT_ptrprr, 
+	"LDRT%cond %rd, %amode2", 
+	SDTR, 
+	0x6b,
+	0x6)
+
+DEFINST(STRT_ptim, 
+	"STRT%cond %rd, %amode2", 
+	SDTR, 
+	0x42,
+	0xff)
+
+DEFINST(STRT_ptip, 
+	"STRT%cond %rd, %amode2", 
+	SDTR, 
+	0x4a,
+	0xff)
+	
+DEFINST(STRT_ptrmll, 
+	"STRT%cond %rd, %amode2", 
+	SDTR, 
+	0x62,
+	0x0)
+	
+DEFINST(STRT_ptrmlr, 
+	"STRT%cond %rd, %amode2", 
+	SDTR, 
+	0x62,
+	0x2)
+
+DEFINST(STRT_ptrmar, 
+	"STRT%cond %rd, %amode2", 
+	SDTR, 
+	0x62,
+	0x4)
+
+DEFINST(STRT_ptrmrr, 
+	"STRT%cond %rd, %amode2", 
+	SDTR, 
+	0x62,
+	0x6)
+
+DEFINST(STRT_ptrpll, 
+	"STRT%cond %rd, %amode2", 
+	SDTR, 
+	0x6a,
+	0x0)
+
+DEFINST(STRT_ptrplr, 
+	"STRT%cond %rd, %amode2", 
+	SDTR, 
+	0x6a,
+	0x2)
+
+DEFINST(STRT_ptrpar, 
+	"STRT%cond %rd, %amode2", 
+	SDTR, 
+	0x6a,
+	0x4)
+
+DEFINST(STRT_ptrprr, 
+	"STRT%cond %rd, %amode2", 
+	SDTR, 
+	0x6a,
+	0x6)
+
+DEFINST(LDRBT_ptim, 
+	"LDRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x47,
+	0xff)
+
+DEFINST(LDRBT_ptip, 
+	"LDRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x4f,
+	0xff)
+	
+DEFINST(LDRBT_ptrmll, 
+	"LDRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x67,
+	0x0)
+	
+DEFINST(LDRBT_ptrmlr, 
+	"LDRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x67,
+	0x2)
+
+DEFINST(LDRBT_ptrmar, 
+	"LDRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x67,
+	0x4)
+
+DEFINST(LDRBT_ptrmrr, 
+	"LDRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x67,
+	0x6)
+
+DEFINST(LDRBT_ptrpll, 
+	"LDRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x6f,
+	0x0)
+
+DEFINST(LDRBT_ptrplr, 
+	"LDRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x6f,
+	0x2)
+
+DEFINST(LDRBT_ptrpar, 
+	"LDRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x6f,
+	0x4)
+
+DEFINST(LDRBT_ptrprr, 
+	"LDRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x6f,
+	0x6)
+
+DEFINST(STRBT_ptim, 
+	"STRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x46,
+	0xff)
+
+DEFINST(STRBT_ptip, 
+	"STRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x4e,
+	0xff)
+	
+DEFINST(STRBT_ptrmll, 
+	"STRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x66,
+	0x0)
+	
+DEFINST(STRBT_ptrmlr, 
+	"STRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x66,
+	0x2)
+
+DEFINST(STRBT_ptrmar, 
+	"STRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x66,
+	0x4)
+
+DEFINST(STRBT_ptrmrr, 
+	"STRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x66,
+	0x6)
+
+DEFINST(STRBT_ptrpll, 
+	"STRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x6e,
+	0x0)
+
+DEFINST(STRBT_ptrplr, 
+	"STRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x6e,
+	0x2)
+
+DEFINST(STRBT_ptrpar, 
+	"STRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x6e,
+	0x4)
+
+DEFINST(STRBT_ptrprr, 
+	"STRBT%cond %rd, %amode2", 
+	SDTR, 
+	0x6e,
+	0x6)
+
+/* BRNCH category instructions:
+ * B , BL
+ */
+
+DEFINST(BRNCH,
+	"B%cond %baddr",
+	BRNCH,
+	0xa0,
+	0xff)
+
+DEFINST(BRNCH_LINK,
+	"BL%cond %baddr",
+	BRNCH,
+	0xb0,
+	0xff)
