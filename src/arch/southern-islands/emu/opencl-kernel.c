@@ -256,7 +256,7 @@ static void si_opencl_kernel_load_metadata(struct si_opencl_kernel_t *kernel)
 		if (!strcmp(line_ptrs[0], "value"))
 		{
 			SI_OPENCL_KERNEL_METADATA_TOKEN_COUNT(6);
-			SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
+			//SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(3, "1");
 			SI_OPENCL_KERNEL_METADATA_NOT_SUPPORTED_NEQ(4, "1");
 			arg = si_opencl_kernel_arg_create(line_ptrs[1]);
 			arg->kind = SI_OPENCL_KERNEL_ARG_KIND_VALUE;

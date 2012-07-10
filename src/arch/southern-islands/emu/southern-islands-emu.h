@@ -359,8 +359,13 @@ struct si_opencl_kernel_arg_t
 
 	/* Argument fields as set in clSetKernelArg */
 	int set;  /* Set to true when it is assigned */
-	uint32_t value;  /* 32-bit arguments supported */
 	uint32_t size;
+
+	union
+	{
+		uint32_t ptr;
+		uint32_t value[4];
+	} data;
 
 	/* Last field - memory assigned variably */
 	char name[0];
