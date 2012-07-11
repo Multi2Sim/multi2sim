@@ -30,8 +30,12 @@ struct si_wavefront_pool_t *si_wavefront_pool_create()
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Initialize */
-	wavefront_pool->wavefronts = linked_list_create();
-	wavefront_pool->wavefront_count = 0;
+	wavefront_pool->wavefronts = calloc(si_gpu_max_wavefronts_per_wavefront_pool, 
+		sizeof(struct si_wavefront_t));
+	if (!wavefront_pool->wavefronts)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	wavefront_pool->num_wavefronts = 0;
 
 	/* Return */
 	return wavefront_pool;
@@ -49,24 +53,34 @@ void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool
 	struct si_ndrange_t *ndrange = work_group->ndrange;
 	struct si_compute_unit_t *compute_unit = wavefront_pool->compute_unit;
 	struct si_wavefront_t *wavefront;
-	int i;
+	int i, j;
 
 	/* Insert wavefronts into a wavefront pool */
 	for (i = 0; i < ndrange->wavefronts_per_work_group; i++) 
 	{
-		assert(wavefront_pool->wavefront_count < si_gpu_max_wavefronts_per_wavefront_pool);
+		assert(wavefront_pool->num_wavefronts < si_gpu_max_wavefronts_per_wavefront_pool);
 		wavefront = work_group->wavefronts[i];
-		linked_list_add(wavefront_pool->wavefronts, wavefront);
-		wavefront_pool->wavefront_count++;
-		printf("  inserting wavefront %d from wg %d into cu %d, wavefront_pool %d\n", 
-			wavefront->id, work_group->id, compute_unit->id, wavefront_pool->id);
+		for (j = 0; j < si_gpu_max_wavefronts_per_wavefront_pool; j++)
+		{
+			if (!wavefront_pool->wavefronts[j])
+			{
+				wavefront_pool->wavefronts[j] = wavefront;
+				wavefront_pool->num_wavefronts++;
+				printf("  inserting wavefront %d from wg %d into cu %d, "
+					"wavefront_pool %d (%d)\n", wavefront->id, work_group->id, 
+					compute_unit->id, wavefront_pool->id, 
+					wavefront_pool->num_wavefronts);
+				break;
+			}
+		}
+		assert(j < si_gpu_max_wavefronts_per_wavefront_pool);
 	}
 
 	/* If wavefront pool reached its maximum load, remove it from 'wavefront_pool_ready' list.
 	 * Otherwise, move it to the end of the 'wavefront_pool_ready' list. */
 	assert(DOUBLE_LINKED_LIST_MEMBER(compute_unit, wavefront_pool_ready, wavefront_pool));
 	DOUBLE_LINKED_LIST_REMOVE(compute_unit, wavefront_pool_ready, wavefront_pool);
-	if (wavefront_pool->wavefront_count < si_gpu->wavefronts_per_wavefront_pool - 
+	if (wavefront_pool->num_wavefronts < si_gpu->wavefronts_per_wavefront_pool - 
 		ndrange->wavefronts_per_work_group);
 		DOUBLE_LINKED_LIST_INSERT_TAIL(compute_unit, wavefront_pool_ready, wavefront_pool);
 	

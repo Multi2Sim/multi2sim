@@ -48,22 +48,36 @@ struct si_compute_unit_t *si_compute_unit_create()
 	compute_unit->wavefront_pools = calloc(compute_unit->num_wavefront_pools, 
 		sizeof(struct si_wavefront_pool_t*));
 	compute_unit->fetch_buffers = calloc(compute_unit->num_wavefront_pools, 
-		sizeof(struct si_uop_t*));
+		sizeof(struct si_fetch_buffer_t*));
 	compute_unit->simds = calloc(compute_unit->num_wavefront_pools, sizeof(struct si_simd_t*));
+
 	for (i = 0; i < compute_unit->num_wavefront_pools; i++) 
 	{
+		/* Allocate and initialize wavefront pools */
 		compute_unit->wavefront_pools[i] = si_wavefront_pool_create();
 		compute_unit->wavefront_pools[i]->id = i;
 		compute_unit->wavefront_pools[i]->compute_unit = compute_unit;
 		DOUBLE_LINKED_LIST_INSERT_TAIL(compute_unit, wavefront_pool_ready, 
 			compute_unit->wavefront_pools[i]);
 
+		/* Allocate and initialize fetch buffers */
+		compute_unit->fetch_buffers[i] = calloc(si_gpu_max_wavefronts_per_wavefront_pool, 
+			sizeof(struct si_fetch_buffer_t));
+		if (!compute_unit->fetch_buffers[i])
+			fatal("%s: out of memory", __FUNCTION__);
+		compute_unit->fetch_buffers[i]->uops = calloc(
+			si_gpu_max_wavefronts_per_wavefront_pool, sizeof(struct si_uop_t *));
+		if (!compute_unit->fetch_buffers[i]->uops)
+			fatal("%s: out of memory", __FUNCTION__);
+		compute_unit->fetch_buffers[i]->cycle_fetched = calloc(
+			si_gpu_max_wavefronts_per_wavefront_pool, sizeof(long long int));
+		if (!compute_unit->fetch_buffers[i]->cycle_fetched)
+			fatal("%s: out of memory", __FUNCTION__);
+		compute_unit->fetch_buffers[i]->entries = si_gpu_max_wavefronts_per_wavefront_pool;
+
+		/* Allocate SIMD structures */
 		compute_unit->simds[i] = calloc(1, sizeof(struct si_simd_t));
 		if (!compute_unit->simds[i])
-			fatal("%s: out of memory", __FUNCTION__);
-		compute_unit->fetch_buffers[i] = calloc(si_gpu_max_wavefronts_per_wavefront_pool,
-			sizeof(struct si_uop_t));
-		if (!compute_unit->fetch_buffers[i])
 			fatal("%s: out of memory", __FUNCTION__);
 	}
 
@@ -101,7 +115,7 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	{
 		free(compute_unit->simds[i]);
 		si_wavefront_pool_free(compute_unit->wavefront_pools[i]);
-		si_uop_free(compute_unit->fetch_buffers[i]);
+		free(compute_unit->fetch_buffers[i]);
 	}
 	free(compute_unit->simds);
 	free(compute_unit->wavefront_pools);
@@ -194,14 +208,170 @@ void si_compute_unit_unmap_work_group(struct si_compute_unit_t *compute_unit, st
 		compute_unit->id, work_group->id);
 }
 
+#include <limits.h>
+int *si_fetch_buffer_get_oldest(struct si_fetch_buffer_t *fetch_buffer)
+{
+	int *id_list;
+	long long int *age_list;
+	unsigned int i;
+
+	id_list = calloc(fetch_buffer->entries, sizeof(int));
+	if (!id_list)
+		fatal("%s: out of memory", __FUNCTION__);
+	age_list = calloc(fetch_buffer->entries, sizeof(long long int));
+	if (!age_list)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Initialize lists */
+	for (i = 0; i < fetch_buffer->entries; i++)
+	{
+		id_list[i] = i;
+		if (!fetch_buffer->uops[i])
+			age_list[i] = LLONG_MAX;
+		else
+			age_list[i] = fetch_buffer->cycle_fetched[i];
+	}
+
+	/* Sort */
+	for (i = 1; i < fetch_buffer->entries; i++)
+	{
+		long long int cur_age = age_list[i];
+		int cur_idx = i;
+
+		while (cur_idx > 0 && cur_age < age_list[i-1])
+		{
+			long long int tmp_age = age_list[i-1];
+			age_list[i-1] = age_list[i];
+			age_list[i] = tmp_age;
+
+			int tmp_id = id_list[i-1];
+			id_list[i-1] = id_list[i];
+			id_list[i] = tmp_id;
+		}
+	}
+
+	free(age_list);
+
+	return id_list;
+}
+
+
+void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wfp)
+{
+	int i;
+	struct si_wavefront_t *wavefront;
+	struct si_uop_t *uop;
+
+	assert(active_wfp < compute_unit->num_wavefront_pools);
+
+	for (i = 0; i < compute_unit->wavefront_pools[active_wfp]->num_wavefronts; i++)
+	{
+		/* If the fetch buffer for a wavefront is empty, fetch another instruction */
+		if (compute_unit->fetch_buffers[active_wfp]->uops[i])
+			continue;
+
+		printf("fetching for cu %d fetch buffer %d slot %d\n", compute_unit->id, 
+			active_wfp, i);
+		wavefront = compute_unit->wavefront_pools[active_wfp]->wavefronts[i];
+
+		/* Emulate instruction and create uop */
+		si_wavefront_execute(wavefront);
+		uop = si_uop_create();
+		uop->wavefront = wavefront;
+		uop->work_group = wavefront->work_group;
+		uop->compute_unit = compute_unit;
+		uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
+		uop->subwavefront_count = (wavefront->work_item_count + si_gpu_num_stream_cores - 1)
+			/ si_gpu_num_stream_cores;
+		//uop->length = alu_group->inst_count * 8 + alu_group->literal_count * 4;
+		uop->local_mem_read = wavefront->local_mem_read;
+		uop->local_mem_write = wavefront->local_mem_write;
+		
+		/* Access instruction cache. Record the time when the instruction will have 
+		 * been fetched, as per the latency of the instruction memory. */
+		uop->fetch_ready = si_gpu->cycle + si_gpu_fetch_latency;
+
+		/* Insert uop to fetch buffer */
+		compute_unit->fetch_buffers[active_wfp]->uops[i] = uop;
+	}
+}
+
+
+void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_wfp)
+{
+	assert(active_wfp < compute_unit->num_wavefront_pools);
+
+	/* Decode one instruction per hardware unit */
+	struct si_fetch_buffer_t *fetch_buffer;
+	int *search_order;
+	int i;
+
+	fetch_buffer = compute_unit->fetch_buffers[active_wfp];
+
+	search_order = si_fetch_buffer_get_oldest(fetch_buffer);
+
+	for (i = 0; i < compute_unit->fetch_buffers[active_wfp]->entries; i++)
+	{
+		printf("search order %d = %d\n", i, search_order[i]);
+	}
+
+	free(search_order);
+#if 0
+	/* Search entry in fetch buffer to decode */
+	index = compute_unit->cf_engine.decode_index;
+	for (;;)
+	{
+		/* There must be a fetch buffer slot ready (instruction fetch finished),
+		 * and the corresponding slot in the instruction buffer must be free. */
+		uop = compute_unit->cf_engine.fetch_buffer[index];
+		if (uop && uop->inst_mem_ready && !compute_unit->cf_engine.inst_buffer[index])
+			break;
+
+		/* Current candidate is not valid - go to next.
+		 * If we went through the whole fetch buffer, no decode. */
+		index = (index + 1) % evg_gpu->wavefronts_per_compute_unit;
+		if (index == compute_unit->cf_engine.decode_index)
+			return;
+	}
+
+	/* Decode instruction */
+	compute_unit->cf_engine.fetch_buffer[index] = NULL;
+	compute_unit->cf_engine.inst_buffer[index] = uop;
+
+	/* Set next decode candidate */
+	compute_unit->cf_engine.decode_index = (index + 1)
+		% evg_gpu->wavefronts_per_compute_unit;
+
+	/* Trace */
+	evg_trace("evg.inst id=%lld cu=%d stg=\"cf-de\"\n",
+		uop->id_in_compute_unit, compute_unit->id);
+#endif
+}
+
 
 /* Advance one cycle in the compute unit by running every stage from last to first */
 void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 {
+	int i;
+	int num_simds;
+	int active_wfp;  /* Wavefront pool chosen to fetch this cycle */
+
+	active_wfp = si_gpu->cycle % compute_unit->num_wavefront_pools;
+
 	/* Run Engines */
-	//si_compute_unit_run_simd(compute_unit);
-	//si_compute_unit_run_scalar_unit(compute_unit);
-	//si_compute_unit_run_branch_unit(compute_unit);
+	num_simds = compute_unit->num_wavefront_pools;
+	for (i = 0; i < num_simds; i++)
+		si_simd_run(compute_unit->simds[i]);
+
+	//si_scalar_unit_run(compute_unit->scalar_unit);
+
+	//si_branch_unit_run(compute_unit->branch_unit);
+
+	/* Run Decode */
+	si_compute_unit_decode(compute_unit, active_wfp /* XXX + fetch_unit_latency */);
+
+	/* Run Fetch */
+	si_compute_unit_fetch(compute_unit, active_wfp);
 
 	/* Stats */
 	compute_unit->cycle++;
