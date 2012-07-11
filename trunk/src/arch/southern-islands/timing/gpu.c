@@ -126,18 +126,12 @@ int si_gpu_num_wavefront_pools = 4; /* Per CU */
 int si_gpu_num_stream_cores = 16; /* Per SIMD */
 int si_gpu_num_registers = 65536; /* Per SIMD */
 int si_gpu_register_alloc_size = 32; 
+int si_gpu_max_work_groups_per_wavefront_pool = 3; /* FIXME 10 */
+int si_gpu_max_wavefronts_per_wavefront_pool = 4; /* FIXME 10 */
 
-struct string_map_t si_gpu_register_alloc_granularity_map =
-{
-	2, {
-		{ "Wavefront", si_gpu_register_alloc_wavefront },
-		{ "WorkGroup", si_gpu_register_alloc_work_group }
-	}
-};
-enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
-
-int si_gpu_max_work_groups_per_wavefront_pool = 1;
-int si_gpu_max_wavefronts_per_wavefront_pool = 1;
+/* Front-end parameters */
+int si_gpu_fetch_latency = 1;
+int si_gpu_decode_latency = 1;
 
 /* Local memory parameters */
 int si_gpu_local_mem_size = 65536;  /* 64 KB */
@@ -148,6 +142,14 @@ int si_gpu_local_mem_num_ports = 2;
 
 struct si_gpu_t *si_gpu;
 
+struct string_map_t si_gpu_register_alloc_granularity_map =
+{
+	2, {
+		{ "Wavefront", si_gpu_register_alloc_wavefront },
+		{ "WorkGroup", si_gpu_register_alloc_work_group }
+	}
+};
+enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
 
 
 
@@ -232,6 +234,10 @@ static void si_config_read(void)
 		"MaxWorkGroupsPerComputeUnit", si_gpu_max_work_groups_per_wavefront_pool);
 	si_gpu_max_wavefronts_per_wavefront_pool = config_read_int(gpu_config, section, 
 		"MaxWavefrontsPerComputeUnit", si_gpu_max_wavefronts_per_wavefront_pool);
+	si_gpu_fetch_latency = config_read_int(gpu_config, section, "FetchLatency", 
+		si_gpu_fetch_latency);
+	si_gpu_decode_latency = config_read_int(gpu_config, section, "DecodeLatency", 
+		si_gpu_decode_latency);
 	si_gpu_simd_issue_rate = config_read_int(gpu_config, section, "SIMDIssueRate", 
 		si_gpu_simd_issue_rate);
 	si_gpu_simd_latency = config_read_int(gpu_config, section, "SIMDLatency", 
@@ -586,21 +592,16 @@ int si_gpu_run(void)
 	{
 		/* Currently not supported for more than 1 ND-Range */
 		if (si_gpu->ndrange)
-			fatal("%s: Southern Islands GPU timing simulation not supported for multiple ND-Ranges",
-				__FUNCTION__);
+			fatal("%s: Southern Islands GPU timing simulation not supported "
+				"for multiple ND-Ranges", __FUNCTION__);
 
 		/* Set ND-Range status to 'running' */
 		si_ndrange_clear_status(ndrange, si_ndrange_pending);
 		si_ndrange_set_status(ndrange, si_ndrange_running);
 
 		/* Trace */
-		si_trace("si.new_ndrange "
-			"id=%d "
-			"wg_first=%d "
-			"wg_count=%d\n",
-			ndrange->id,
-			ndrange->work_group_id_first,
-			ndrange->work_group_count);
+		si_trace("si.new_ndrange id=%d wg_first=%d wg_count=%d\n", ndrange->id,
+			ndrange->work_group_id_first, ndrange->work_group_count);
 
 		/* Map ND-Range to GPU */
 		si_gpu_map_ndrange(ndrange);
