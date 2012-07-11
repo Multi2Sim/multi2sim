@@ -199,7 +199,7 @@ static char *sim_help =
 	"      Useful options to use together with this are '--x86-max-inst' and\n"
 	"      '--x86-last-inst' to force the simulation to stop and create a checkpoint.\n"
 	"\n"
-	"  --cpu-sim {functional|detailed}\n"
+	"  --x86-sim {functional|detailed}\n"
 	"      Choose a functional simulation (emulation) of an x86 program, versus\n"
 	"      a detailed (architectural) simulation. Simulation is functional by default.\n"
 	"\n"
@@ -266,7 +266,7 @@ static char *sim_help =
 	"  --evg-report <file>\n"
 	"      File to dump a report of the GPU pipeline, such as active execution engines,\n"
 	"      compute units occupancy, stream cores utilization, etc. Use together with a\n"
-	"      detailed GPU simulation (option '--gpu-sim detailed').\n"
+	"      detailed GPU simulation (option '--evg-sim detailed').\n"
 	"\n"
 	"  --evg-sim {functional|detailed}\n"
 	"      Functional simulation (emulation) of the AMD Evergreen GPU kernel, versus\n"
@@ -981,7 +981,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	if (x86_emu_kind == x86_emu_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional x86 simulation.\n"
-			"\tPlease use option '--cpu-sim detailed' as well.\n";
+			"\tPlease use option '--x86-sim detailed' as well.\n";
 
 		if (*x86_config_file_name)
 			fatal(msg, "--x86-config");
@@ -995,7 +995,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	if (evg_emu_kind == evg_emu_kind_functional)
 	{
 		char *msg = "option '%s' not valid for functional GPU simulation.\n"
-			"\tPlease use option '--gpu-sim detailed' as well.\n";
+			"\tPlease use option '--evg-sim detailed' as well.\n";
 
 		if (*evg_gpu_config_file_name)
 			fatal(msg, "--evg-config");
@@ -1013,8 +1013,8 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 	 * using detailed simulation. */
 	if (evg_emu_kind == evg_emu_kind_functional && x86_emu_kind == x86_emu_kind_functional)
 	{
-		char *msg = "option '%s' needs architectural CPU or GPU simulation.\n"
-			"\tPlease use option '--cpu-sim detailed' or '--gpu-sim detailed' as well.\n";
+		char *msg = "option '%s' needs architectural CPU/GPU simulation.\n"
+			"\tPlease use option '--x86-sim detailed' or '--evg-sim detailed' as well.\n";
 
 		if (*mmu_report_file_name)
 			fatal(msg, "--mem-report");
@@ -1026,15 +1026,15 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 
 	/* Other checks */
 	if (*evg_disasm_file_name && argc > 3)
-		fatal("option '--gpu-disasm' is incompatible with any other options.");
+		fatal("option '--evg-disasm' is incompatible with any other options.");
 	if (*si_disasm_file_name && argc > 3)
 		fatal("option '--si-disasm' is incompatible with any other options.");
 	if (*evg_opengl_disasm_file_name && argc != 4)
-		fatal("option '--opengl-disasm' is incompatible with any other options.");	
+		fatal("option '--evg-disasm-opengl' is incompatible with any other options.");	
 	if (*frm_disasm_file_name && argc > 3)
-		fatal("option '--fermi-disasm' is incompatible with any other options.");
+		fatal("option '--frm-disasm' is incompatible with any other options.");
 	if (*x86_disasm_file_name && argc > 3)
-		fatal("option '--cpu-disasm' is incompatible with other options.");
+		fatal("option '--x86-disasm' is incompatible with other options.");
 	if (!*net_sim_network_name && net_sim_last_option)
 		fatal("option '%s' requires '--net-sim'", net_sim_last_option);
 	if (*net_sim_network_name && !*net_config_file_name)

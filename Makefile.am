@@ -75,9 +75,11 @@ EXTRA_DIST = \
 	samples/cpuconfig.args-sort \
 	samples/ctxconfig.args-sort \
 	samples/test-args.c \
-	samples/test-args.i386 \
+	samples/test-args.x86 \
 	samples/test-sort.c \
-	samples/test-sort.i386 \
+	samples/test-sort.x86 \
+	samples/test-threads.x86 \
+	samples/test-threads.c \
 	\
 	samples/memconfig-eg1/cpu-config \
 	samples/memconfig-eg1/mem-config \
