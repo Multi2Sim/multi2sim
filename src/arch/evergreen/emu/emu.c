@@ -53,7 +53,7 @@ int evg_emu_wavefront_size = 64;
 
 
 /* Initialize GPU kernel */
-void evg_emu_init(int fused_device)
+void evg_emu_init()
 {
 	/* Open report file */
 	if (*evg_emu_report_file_name)
@@ -73,16 +73,8 @@ void evg_emu_init(int fused_device)
 	evg_emu->timer = m2s_timer_create("Evergreen GPU timer");
 	evg_emu->const_mem = mem_create();
 	evg_emu->const_mem->safe = 0;
-
-	if (fused_device)
-	{
-		evg_emu->fused_device = 1;
-	}
-	else 
-	{
-		evg_emu->global_mem = mem_create();
-		evg_emu->global_mem->safe = 0;
-	}
+	evg_emu->global_mem = mem_create();
+	evg_emu->global_mem->safe = 0;
 
 	/* Initialize disassembler (decoding tables...) */
 	evg_disasm_init();
@@ -119,9 +111,8 @@ void evg_emu_done()
 	evg_isa_done();
 
 	/* Finalize GPU kernel */
-	if (!evg_emu->fused_device)
-		mem_free(evg_emu->global_mem);
 	mem_free(evg_emu->const_mem);
+	mem_free(evg_emu->global_mem);
 	m2s_timer_free(evg_emu->timer);
 	free(evg_emu);
 }
