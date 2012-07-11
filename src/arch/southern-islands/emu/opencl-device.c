@@ -22,6 +22,7 @@
 #include <stdlib.h>
 
 #include <southern-islands-emu.h>
+#include <southern-islands-timing.h>
 #include <mem-system.h>
 #include <x86-emu.h>
 
@@ -56,17 +57,36 @@ void si_opencl_device_free(struct si_opencl_device_t *device)
 
 uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
 {
-	uint32_t max_compute_units = 1;  /* FIXME */
-	uint32_t max_work_group_size = 256 * 256;  /* FIXME */
-	uint32_t max_work_item_dimensions = 3;  /* FIXME */
-	uint32_t max_work_item_sizes[3];  /* FIXME */
-	uint32_t local_mem_type = 1;  /* CL_LOCAL FIXME */
-	uint32_t local_mem_size = 32 * 1024;  /* FIXME */
-	uint32_t max_clock_frequency = 850;
-	uint64_t global_mem_size = 1ull << 31;  /* 2GB of global memory reported */
-	uint32_t image_support = 1;
+	uint32_t max_work_item_dimensions = si_gpu_work_item_dimensions;
+	uint32_t *max_work_item_sizes = si_gpu_work_item_sizes;
+	uint32_t max_work_group_size = si_gpu_work_group_size;
+
+	uint32_t max_read_image_args = si_gpu_max_read_image_args;
+	uint32_t max_write_image_args = si_gpu_max_write_image_args;
+
+	uint32_t image2d_max_width = si_gpu_image2d_max_width;
+	uint32_t image2d_max_height = si_gpu_image2d_max_height;
+	uint32_t image3d_max_width = si_gpu_image3d_max_width;
+	uint32_t image3d_max_height = si_gpu_image3d_max_height;
+	uint32_t image3d_max_depth = si_gpu_image3d_max_depth;
+
+	uint32_t max_compute_units = si_gpu_num_compute_units;
+	uint32_t simd_width = si_gpu_num_stream_cores;
+	uint32_t max_clock_frequency = si_gpu_max_clock_frequency;
+	uint32_t address_bits = si_gpu_address_bits;
+
+	uint32_t local_mem_type = 1;  /* CL_LOCAL */
+	uint32_t local_mem_size = si_gpu_local_mem_size;
+
+	uint64_t global_mem_size = si_gpu_global_mem_size;
+	uint64_t max_mem_alloc_size = si_gpu_max_mem_alloc_size;
+
+	uint32_t image_support = 1; /* CL_TRUE */
+
 	uint32_t device_type = 4; /* CL_DEVICE_TYPE_GPU */
-	uint32_t device_vendor_id = 1234;
+	uint32_t device_vendor_id = 1234; /* Completely arbitrary */
+
+	uint32_t vector_width_half = 0; /* No support for cl_khr_fp16 */
 
 	char *device_name = "Multi2Sim Virtual GPU Device";
 	char *device_vendor = "www.multi2sim.org";
@@ -109,16 +129,68 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 		break;
 
 	case 0x1005:  /* CL_DEVICE_MAX_WORK_ITEM_SIZES */
-		max_work_item_sizes[0] = 256;
-		max_work_item_sizes[1] = 256;
-		max_work_item_sizes[2] = 256;
 		size_ret = 12;
 		info = max_work_item_sizes;
+		break;
+
+	case 0x1006:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR */
+	case 0x1007:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT */
+	case 0x1008:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT */
+	case 0x1009:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG */
+	case 0x100a:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT */
+	case 0x100b:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE */
+		size_ret = 4;
+		info = &simd_width;
 		break;
 	
 	case 0x100c:  /* CL_DEVICE_MAX_CLOCK_FREQUENCY */
 		size_ret = 4;
 		info = &max_clock_frequency;
+		break;
+
+	case 0x100d:  /* CL_DEVICE_ADDRESS_BITS */
+		size_ret = 4;
+		info = &address_bits;
+		break;
+
+	case 0x100e:  /* CL_DEVICE_MAX_READ_IMAGE_ARGS */
+		size_ret = 4;
+		info = &max_read_image_args;
+		break;
+
+	case 0x100f:  /* CL_DEVICE_MAX_WRITE_IMAGE_ARGS */
+		size_ret = 4;
+		info = &max_write_image_args;
+		break;
+
+	case 0x1010:  /* CL_DEVICE_MAX_MEM_ALLOC_SIZE */
+		size_ret = 8;
+		info = &max_mem_alloc_size;
+		break;
+
+	case 0x1011:  /* CL_DEVICE_IMAGE2D_MAX_WIDTH */
+		size_ret = 4;
+		info = &image2d_max_width;
+		break;
+
+	case 0x1012:  /* CL_DEVICE_IMAGE2D_MAX_HEIGHT */
+		size_ret = 4;
+		info = &image2d_max_height;
+		break;
+
+	case 0x1013:  /* CL_DEVICE_IMAGE3D_MAX_WIDTH */
+		size_ret = 4;
+		info = &image3d_max_width;
+		break;
+
+	case 0x1014:  /* CL_DEVICE_IMAGE3D_MAX_HEIGHT */
+		size_ret = 4;
+		info = &image3d_max_height;
+		break;
+
+	case 0x1015:  /* CL_DEVICE_IMAGE3D_MAX_DEPTH */
+		size_ret = 4;
+		info = &image3d_max_depth;
 		break;
 
 	case 0x1016:  /* CL_DEVICE_IMAGE_SUPPORT */
@@ -164,6 +236,11 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 	case 0x1030:  /* CL_DEVICE_EXTENSIONS */
 		size_ret = strlen(device_extensions) + 1;
 		info = device_extensions;
+		break;
+
+	case 0x1034: /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF */
+		size_ret = 4;
+		info = &vector_width_half;
 		break;
 
 	default:

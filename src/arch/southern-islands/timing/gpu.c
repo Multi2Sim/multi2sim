@@ -121,26 +121,30 @@ char *si_gpu_report_file_name = "";
 int si_trace_category;
 
 /* Default parameters based on the AMD Radeon HD 7970 */
-int si_gpu_num_compute_units = 32;
-int si_gpu_num_wavefront_pools = 4; /* Per CU */
-int si_gpu_num_stream_cores = 16; /* Per SIMD */
-int si_gpu_num_registers = 65536; /* Per SIMD */
-int si_gpu_register_alloc_size = 32; 
-int si_gpu_max_work_groups_per_wavefront_pool = 3; /* FIXME 10 */
-int si_gpu_max_wavefronts_per_wavefront_pool = 4; /* FIXME 10 */
+unsigned int si_gpu_num_compute_units = 32;
+unsigned int si_gpu_num_wavefront_pools = 4; /* Per CU */
+unsigned int si_gpu_num_stream_cores = 16; /* Per SIMD */
+unsigned int si_gpu_num_registers = 65536; /* Per SIMD */
+unsigned int si_gpu_register_alloc_size = 32;
 
-/* Front-end parameters */
-int si_gpu_fetch_latency = 1;
-int si_gpu_decode_latency = 1;
+unsigned int si_gpu_work_item_dimensions = 3;  /* FIXME */
+unsigned int si_gpu_work_item_sizes[3] = {256, 256, 256};  /* FIXME */
+unsigned int si_gpu_work_group_size = 256 * 256 * 256;  /* FIXME */
 
-/* Local memory parameters */
-int si_gpu_local_mem_size = 65536;  /* 64 KB */
-int si_gpu_local_mem_alloc_size = 1024;  /* 1 KB */
-int si_gpu_local_mem_latency = 2;
-int si_gpu_local_mem_block_size = 64;
-int si_gpu_local_mem_num_ports = 2;
+unsigned int si_gpu_max_read_image_args = 128;  /* The minimum value acceptable */
+unsigned int si_gpu_max_write_image_args = 8;  /* The minimum value acceptable */
 
-struct si_gpu_t *si_gpu;
+unsigned int si_gpu_image2d_max_width = 8192;  /* The minimum value acceptable */
+unsigned int si_gpu_image2d_max_height = 8192;  /* The minimum value acceptable */
+unsigned int si_gpu_image3d_max_width = 2048;  /* The minimum value acceptable */
+unsigned int si_gpu_image3d_max_height = 2048;  /* The minimum value acceptable */
+unsigned int si_gpu_image3d_max_depth = 2048;  /* The minimum value acceptable */
+
+unsigned int si_gpu_max_clock_frequency = 850;  /* FIXME */
+unsigned int si_gpu_address_bits = 32;
+
+unsigned long long si_gpu_global_mem_size = 1ull << 32;  /* 4GB of global memory reported */
+unsigned long long si_gpu_max_mem_alloc_size = (1ull << 32) / 4; /* FIXME */
 
 struct string_map_t si_gpu_register_alloc_granularity_map =
 {
@@ -150,6 +154,22 @@ struct string_map_t si_gpu_register_alloc_granularity_map =
 	}
 };
 enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
+
+/* Front-end parameters */
+int si_gpu_fetch_latency = 1;
+int si_gpu_decode_latency = 1;
+
+int si_gpu_max_work_groups_per_wavefront_pool = 1;
+int si_gpu_max_wavefronts_per_wavefront_pool = 1;
+
+/* Local memory parameters */
+int si_gpu_local_mem_size = 65536;  /* 64 KB */
+int si_gpu_local_mem_alloc_size = 1024;  /* 1 KB */
+int si_gpu_local_mem_latency = 2;
+int si_gpu_local_mem_block_size = 64;
+int si_gpu_local_mem_num_ports = 2;
+
+struct si_gpu_t *si_gpu;
 
 
 
