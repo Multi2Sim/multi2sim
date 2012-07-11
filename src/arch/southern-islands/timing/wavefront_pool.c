@@ -66,10 +66,11 @@ void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool
 			{
 				wavefront_pool->wavefronts[j] = wavefront;
 				wavefront_pool->num_wavefronts++;
-				printf("  inserting wavefront %d from wg %d into cu %d, "
+				/*printf("  inserting wavefront %d from wg %d into cu %d, "
 					"wavefront_pool %d (%d)\n", wavefront->id, work_group->id, 
 					compute_unit->id, wavefront_pool->id, 
 					wavefront_pool->num_wavefronts);
+					*/
 				break;
 			}
 		}

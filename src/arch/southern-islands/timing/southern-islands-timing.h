@@ -50,17 +50,6 @@ struct si_work_item_uop_t
 	uint32_t local_mem_access_size[SI_MAX_LOCAL_MEM_ACCESSES_PER_INST];
 };
 
-#define SI_UOP_MAX_IDEP      (3 * 5)
-#define SI_UOP_MAX_ODEP      (3 * 5)
-
-#define SI_UOP_DEP_NONE         0
-#define SI_UOP_DEP_REG_FIRST    1
-#define SI_UOP_DEP_REG(X)       ((X) + 1)
-#define SI_UOP_DEP_REG_LAST     128
-#define SI_UOP_DEP_PV           129
-#define SI_UOP_DEP_PS           130
-#define SI_UOP_DEP_LDS          131
-#define SI_UOP_DEP_COUNT        132
 
 /* Structure representing a GPU instruction fetched in common for a wavefront.
  * This is the structure passed from stage to stage in the compute unit pipeline. */
@@ -72,11 +61,9 @@ struct si_uop_t
 	struct si_wavefront_t *wavefront;  /* Wavefront it belongs to */
 	struct si_work_group_t *work_group;  /* Work-group it belongs to */
 	struct si_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
-	/* FIXME */
-	int length;  /* Number of bytes occupied by ALU group */
 
 	/* FIXME */
-	/* ALU group flags */
+	/* Flags */
 	unsigned int ready : 1;
 	unsigned int last : 1;  /* Last instruction in the clause */
 	unsigned int wavefront_last : 1;  /* Last instruction in the wavefront */
@@ -86,30 +73,15 @@ struct si_uop_t
 	unsigned int local_mem_write : 1;
 	unsigned int exec_mask_update : 1;
 
-	/* Witness memory accesses */
+	/* Timing */
 	long long fetch_ready;  /* Cycle when fetch completes */
 	long long decode_ready;  /* Cycle when decode completes */
+	long long execute_ready;  /* Cycle when decode completes */
+	long long writeback_ready;  /* Cycle when decode completes */
+
+	/* Witness memory accesses */
 	int global_mem_witness;
 	int local_mem_witness;
-
-	/* ALU Engine - subwavefronts */
-	int subwavefront_count;
-	int exec_subwavefront_count;
-	int write_subwavefront_count;
-
-	/* ALU instructions - input/output dependencies */
-	int idep[SI_UOP_MAX_IDEP];
-	int odep[SI_UOP_MAX_ODEP];
-	int idep_count;
-	int odep_count;
-
-	/* Double linked lists of producer-consumers */
-	struct si_uop_t *dep_list_next;
-	struct si_uop_t *dep_list_prev;
-	struct si_uop_t *dep_list_head;
-	struct si_uop_t *dep_list_tail;
-	int dep_list_count;
-	int dep_list_max;
 
 	/* Per stream-core data. This space is dynamically allocated for an uop.
 	 * It should be always the last field of the structure. */
@@ -181,10 +153,6 @@ struct si_branch_unit_t
 	struct si_uop_t *inst_buffer;  /* Uop from decode to read stage */
 	struct si_uop_t *exec_buffer;  /* Uop from read to execute stage */
 
-	/* Table storing the in-flight uop that produced an output
-	 * dependence. If the producer is not in flight, the value is NULL. */
-	struct si_uop_t *producers[SI_UOP_DEP_COUNT];
-
 	/* Statistics */
 	long long wavefront_count;
 	long long cycle;
@@ -198,10 +166,6 @@ struct si_scalar_unit_t
 	/* Queues */
 	struct si_uop_t *inst_buffer;  /* Uop from decode to read stage */
 	struct si_uop_t *exec_buffer;  /* Uop from read to execute stage */
-
-	/* Table storing the in-flight uop that produced an output
-	 * dependence. If the producer is not in flight, the value is NULL. */
-	struct si_uop_t *producers[SI_UOP_DEP_COUNT];
 
 	/* Statistics */
 	long long wavefront_count;
@@ -217,10 +181,6 @@ struct si_simd_t
 	struct si_uop_t *inst_buffer;  /* Uop from decode to read stage */
 	struct si_uop_t *exec_buffer;  /* Uop from read to execute stage */
 	struct si_uop_t *wb_buffer;  /* Uop from execute to write back stage */
-
-	/* Table storing the in-flight uop that produced an output
-	 * dependence. If the producer is not in flight, the value is NULL. */
-	struct si_uop_t *producers[SI_UOP_DEP_COUNT];
 
 	/* Statistics */
 	long long wavefront_count;
@@ -290,15 +250,6 @@ struct si_compute_unit_t
 	/* List of currently mapped work-groups */
 	int work_group_count;
 	struct si_work_group_t **work_groups;
-
-	/* Wavefront selectors */
-	int decode_index;  /* Next uop in 'fetch_buffer' to decode */
-	int execute_index;  /* Next uop in 'inst_buffer' to execute */
-
-	/* Table storing the in-flight uop that produced an output
-	 * dependence. If the producer is not in flight, the value is NULL. */
-	struct si_uop_t *producers[SI_UOP_DEP_COUNT];
-
 };
 
 struct si_compute_unit_t *si_compute_unit_create(void);
@@ -462,5 +413,6 @@ void si_compute_unit_run_branch_unit(struct si_compute_unit_t *compute_unit);
 int si_gpu_run(void);
 
 void si_simd_run(struct si_simd_t *simd);
+void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit);
 
 #endif

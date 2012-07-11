@@ -159,8 +159,8 @@ enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
 int si_gpu_fetch_latency = 1;
 int si_gpu_decode_latency = 1;
 
-int si_gpu_max_work_groups_per_wavefront_pool = 1;
-int si_gpu_max_wavefronts_per_wavefront_pool = 1;
+int si_gpu_max_work_groups_per_wavefront_pool = 10;
+int si_gpu_max_wavefronts_per_wavefront_pool = 10;
 
 /* Local memory parameters */
 int si_gpu_local_mem_size = 65536;  /* 64 KB */
@@ -640,6 +640,7 @@ int si_gpu_run(void)
 	/* One more cycle */
 	si_gpu->cycle++;
 
+	//printf("\n=================\nCycle %lld\n==================\n\n", si_gpu->cycle);
 	/* Stop if maximum number of GPU cycles exceeded */
 	if (si_emu_max_cycles && si_gpu->cycle >= si_emu_max_cycles)
 		x86_emu_finish = x86_emu_finish_max_gpu_cycles;
