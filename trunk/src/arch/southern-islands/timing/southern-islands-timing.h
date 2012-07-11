@@ -340,11 +340,30 @@ extern char *si_gpu_config_help;
 extern char *si_gpu_config_file_name;
 extern char *si_gpu_report_file_name;
 
-extern int si_gpu_num_compute_units;
-extern int si_gpu_num_registers;
-extern int si_gpu_num_wavefront_pools;
-extern int si_gpu_num_stream_cores;
-extern int si_gpu_register_alloc_size;
+extern unsigned int si_gpu_work_group_size;
+extern unsigned int si_gpu_work_item_dimensions;
+extern unsigned int si_gpu_work_item_sizes[3];
+
+extern unsigned int si_gpu_max_read_image_args;
+extern unsigned int si_gpu_max_write_image_args;
+
+extern unsigned int si_gpu_image2d_max_width;
+extern unsigned int si_gpu_image2d_max_height;
+extern unsigned int si_gpu_image3d_max_width;
+extern unsigned int si_gpu_image3d_max_height;
+extern unsigned int si_gpu_image3d_max_depth;
+
+extern unsigned int si_gpu_max_clock_frequency;
+extern unsigned int si_gpu_address_bits;
+
+extern unsigned long long si_gpu_global_mem_size;
+extern unsigned long long si_gpu_max_mem_alloc_size;
+
+extern unsigned int si_gpu_num_compute_units;
+extern unsigned int si_gpu_num_registers;
+extern unsigned int si_gpu_num_wavefront_pools;
+extern unsigned int si_gpu_num_stream_cores;
+extern unsigned int si_gpu_register_alloc_size;
 
 extern struct string_map_t si_gpu_register_alloc_granularity_map;
 extern enum si_gpu_register_alloc_granularity_t
