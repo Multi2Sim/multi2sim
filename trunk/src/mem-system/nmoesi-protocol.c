@@ -18,7 +18,6 @@
 
 #include <mem-system.h>
 
-#define DIR_ACCESS_CYCLES 4
 
 /* Events */
 
@@ -847,7 +846,7 @@ void mod_handler_nmoesi_find_and_lock(int event, void *data)
 		cache_access_block(mod->cache, stack->set, stack->way);
 
 		/* Access latency */
-		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, DIR_ACCESS_CYCLES);
+		esim_schedule_event(EV_MOD_NMOESI_FIND_AND_LOCK_ACTION, stack, mod->latency);
 		return;
 	}
 
@@ -1598,7 +1597,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		}
 
 		dir_entry_unlock(dir, stack->set, stack->way);
-		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, target_mod->latency);
+		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, 0);
 		return;
 	}
 
@@ -1844,7 +1843,7 @@ void mod_handler_nmoesi_read_request(int event, void *data)
 		}
 
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
-		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, target_mod->latency);
+		esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST_REPLY, stack, 0);
 		return;
 	}
 
@@ -2109,6 +2108,9 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		cache_set_block(target_mod->cache, stack->set, stack->way,
 			stack->tag, cache_block_exclusive);
 
+		/* Unlock, reply_size is the data of the size of the requester's block. */
+		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
+
 		/* If blocks were sent directly to the peer, the reply size would
 		 * have been decreased.  Based on the final size, we can tell whether
 		 * to send more data up or simply ACK */
@@ -2125,9 +2127,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 			fatal("Invalid reply size: %d", stack->reply_size);
 		}
 
-
-		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
-		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, target_mod->latency);
+		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, 0);
 		return;
 	}
 
@@ -2207,7 +2207,7 @@ void mod_handler_nmoesi_write_request(int event, void *data)
 		cache_set_block(target_mod->cache, stack->set, stack->way, 0, cache_block_invalid);
 		dir_entry_unlock(target_mod->dir, stack->set, stack->way);
 		
-		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, target_mod->latency);
+		esim_schedule_event(EV_MOD_NMOESI_WRITE_REQUEST_REPLY, stack, 0);
 		return;
 	}
 

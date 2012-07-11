@@ -1290,8 +1290,6 @@ struct evg_emu_t
 	/* Stats */
 	int ndrange_count;  /* Number of OpenCL kernels executed */
 	long long inst_count;  /* Number of instructions executed by wavefronts */
-
-	unsigned int fused_device: 1;
 };
 
 
@@ -1317,7 +1315,7 @@ extern char *evg_err_opencl_param_note;
 
 extern struct evg_emu_t *evg_emu;
 
-void evg_emu_init(int fused_device);
+void evg_emu_init(void);
 void evg_emu_done(void);
 
 void evg_emu_run(void);
