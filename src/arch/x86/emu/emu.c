@@ -106,7 +106,7 @@ void x86_emu_init(void)
 
 	/* Initialize GPU emulators */
 	x86_emu->gpu_emulator = gpu_emulator_evg;
-	evg_emu_init(1);
+	evg_emu_init();
 	si_emu_init();
 
 #ifdef HAVE_GLUT_H
