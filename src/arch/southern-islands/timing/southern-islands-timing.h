@@ -87,7 +87,8 @@ struct si_uop_t
 	unsigned int exec_mask_update : 1;
 
 	/* Witness memory accesses */
-	long long inst_mem_ready;  /* Cycle when instruction memory access completes */
+	long long fetch_ready;  /* Cycle when fetch completes */
+	long long decode_ready;  /* Cycle when decode completes */
 	int global_mem_witness;
 	int local_mem_witness;
 
@@ -149,13 +150,20 @@ int si_reg_file_rename(struct si_compute_unit_t *compute_unit,
 void si_reg_file_inverse_rename(struct si_compute_unit_t *compute_unit,
 	int physical_register, struct si_work_item_t **work_item, int *logical_register);
 
+struct si_fetch_buffer_t
+{
+	unsigned int entries;
+	long long int *cycle_fetched;
+	struct si_uop_t **uops;
+};
+
 struct si_wavefront_pool_t
 {
 	int id;
 
 	/* List of currently mapped wavefronts */
-	int wavefront_count;
-	struct linked_list_t *wavefronts;
+	int num_wavefronts;
+	struct si_wavefront_t **wavefronts;
 
 	/* Double linked list of wavefront pools */
 	struct si_wavefront_pool_t *wavefront_pool_ready_list_prev;
@@ -208,6 +216,7 @@ struct si_simd_t
 	/* Queues */
 	struct si_uop_t *inst_buffer;  /* Uop from decode to read stage */
 	struct si_uop_t *exec_buffer;  /* Uop from read to execute stage */
+	struct si_uop_t *wb_buffer;  /* Uop from execute to write back stage */
 
 	/* Table storing the in-flight uop that produced an output
 	 * dependence. If the producer is not in flight, the value is NULL. */
@@ -262,7 +271,7 @@ struct si_compute_unit_t
 	struct si_scalar_unit_t scalar_unit;
 	struct si_branch_unit_t branch_unit;
 
-	struct si_uop_t **fetch_buffers;
+	struct si_fetch_buffer_t **fetch_buffers;
 
 	/* Statistics */
 	long long cycle;
@@ -358,6 +367,9 @@ extern enum si_gpu_sched_policy_t
 
 extern char *si_gpu_calc_file_name;
 
+extern int si_gpu_fetch_latency;
+extern int si_gpu_decode_latency;
+
 extern int si_gpu_local_mem_size;
 extern int si_gpu_local_mem_alloc_size;
 extern int si_gpu_local_mem_latency;
@@ -430,5 +442,6 @@ void si_compute_unit_run_scalar_unit(struct si_compute_unit_t *compute_unit);
 void si_compute_unit_run_branch_unit(struct si_compute_unit_t *compute_unit);
 int si_gpu_run(void);
 
+void si_simd_run(struct si_simd_t *simd);
 
 #endif
