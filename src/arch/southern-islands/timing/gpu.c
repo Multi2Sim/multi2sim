@@ -139,12 +139,40 @@ unsigned int si_gpu_image2d_max_height = 8192;  /* The minimum value acceptable 
 unsigned int si_gpu_image3d_max_width = 2048;  /* The minimum value acceptable */
 unsigned int si_gpu_image3d_max_height = 2048;  /* The minimum value acceptable */
 unsigned int si_gpu_image3d_max_depth = 2048;  /* The minimum value acceptable */
+unsigned int si_gpu_max_samplers = 16;  /* The minimum value acceptable */
+
+unsigned int si_gpu_max_parameter_size = 1024;  /* The minimum value acceptable */
+unsigned int si_gpu_mem_base_addr_align = 16 * 8;  /* size of long16 in bits */ /* FIXME */
+unsigned int si_gpu_min_data_type_align_size = 16;  /* size of long16 in bytes, deprecated in OpenCL 1.2 */ /* FIXME */
+
+unsigned int si_gpu_single_fp_config = 255;  /* bit field, all single floating point capabilities supported */ /* FIXME */
+unsigned int si_gpu_double_fp_config = 255;  /* bit field, all double floating point capabilities supported */ /* FIXME */
 
 unsigned int si_gpu_max_clock_frequency = 850;  /* FIXME */
 unsigned int si_gpu_address_bits = 32;
 
+unsigned int si_gpu_global_mem_cache_type = 2;  /* CL_READ_WRITE_CACHE */
+unsigned int si_gpu_global_mem_cacheline_size = 256; /* FIXME */
+unsigned long long si_gpu_global_mem_cache_size = 1ull << 23;  /* 8MB */ /* FIXME */
 unsigned long long si_gpu_global_mem_size = 1ull << 32;  /* 4GB of global memory reported */
 unsigned long long si_gpu_max_mem_alloc_size = (1ull << 32) / 4; /* FIXME */
+
+unsigned long long si_gpu_max_constant_buffer_size = 1ull << 16;  /* 64KB */ /* The minimum value acceptable */
+unsigned int si_gpu_max_constant_args = 8;  /* The minimum value acceptable */
+
+unsigned int si_gpu_error_correction_support = 1;  /* FIXME */
+unsigned int si_gpu_host_unified_memory = 0;  /* FIXME */
+unsigned int si_gpu_profiling_timer_resolution = 10;  /* ns */ /* FIXME */
+unsigned int si_gpu_endian_little = 1;  /* FIXME */
+
+unsigned int si_gpu_device_available = 1;  /* FIXME */
+unsigned int si_gpu_compiler_available = 1;  /* FIXME */
+unsigned int si_gpu_linker_available = 1;  /* FIXME */
+unsigned int si_gpu_execution_capabilities = 1;  /* bit field, CL_EXEC_KERNEL only */ /* FIXME */
+
+unsigned int si_gpu_queue_properties = 2;  /* bit field, profiling enabled, no out of order execution */
+
+unsigned int si_gpu_platform = 0;  /* FIXME */
 
 struct string_map_t si_gpu_register_alloc_granularity_map =
 {
