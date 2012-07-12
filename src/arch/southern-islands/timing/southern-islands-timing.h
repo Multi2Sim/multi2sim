@@ -163,9 +163,13 @@ struct si_branch_unit_t
 
 struct si_scalar_unit_t
 {
-	/* Queues */
-	struct si_uop_t *inst_buffer;  /* Uop from decode to read stage */
-	struct si_uop_t *exec_buffer;  /* Uop from read to execute stage */
+	struct si_uop_t *inst_buffer;     /* Uop from decode to read stage */
+	struct si_uop_t *exec_buffer;     /* Uop from read to execute stage */
+	struct si_uop_t *mem_buffer;      /* Uop from read to mem stage */
+	struct linked_list_t *mem_queue;  /* Queue for outstanding memory operations */
+	struct heap_t *event_queue;       /* Events for instruction execution */
+
+	struct si_compute_unit_t *compute_unit;
 
 	/* Statistics */
 	long long wavefront_count;
@@ -177,7 +181,6 @@ struct si_scalar_unit_t
 
 struct si_simd_t
 {
-	/* Queues */
 	struct si_uop_t *inst_buffer;  /* Uop from decode to read stage */
 	struct si_uop_t *exec_buffer;  /* Uop from read to execute stage */
 	struct si_uop_t *wb_buffer;  /* Uop from execute to write back stage */
@@ -375,13 +378,13 @@ extern int si_gpu_local_mem_latency;
 extern int si_gpu_local_mem_block_size;
 extern int si_gpu_local_mem_num_ports;
 
-extern int si_gpu_simd_issue_rate;
+//extern int si_gpu_simd_issue_rate;
 extern int si_gpu_simd_latency;
 
-extern int si_gpu_scalar_unit_issue_rate;
-extern int si_gpu_scalar_unit_latency;
+//extern int si_gpu_scalar_unit_issue_rate;
+extern int si_gpu_scalar_unit_exec_latency;
 
-extern int si_gpu_branch_unit_issue_rate;
+//extern int si_gpu_branch_unit_issue_rate;
 extern int si_gpu_branch_unit_latency;
 
 struct si_gpu_t
