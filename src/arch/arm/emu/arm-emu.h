@@ -28,8 +28,31 @@
 #include <debug.h>
 #include <misc.h>
 #include <elf-format.h>
+#include <mhandle.h>
+#include <debug.h>
+#include <config.h>
+#include <buffer.h>
+#include <list.h>
+#include <linked-list.h>
+#include <elf-format.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <assert.h>
+#include <signal.h>
+#include <time.h>
+#include <timer.h>
+#include <pthread.h>
+#include <poll.h>
+#include <errno.h>
+#include <esim.h>
+#include <sys/time.h>
 
 #include <arm-asm.h>
+
+
+/* Some forward declarations */
+struct arm_ctx_t;
+struct file_desc_t;
 
 
 /*
@@ -46,6 +69,65 @@ struct arm_regs_t
 struct arm_regs_t *arm_regs_create();
 void arm_regs_free(struct arm_regs_t *regs);
 void arm_regs_copy(struct arm_regs_t *dst, struct arm_regs_t *src);
+
+/*
+ * File management
+ */
+
+
+enum arm_file_desc_kind_t
+{
+	arm_file_desc_invalid = 0,
+	arm_file_desc_regular,  /* Regular arm_file */
+	arm_file_desc_std,  /* Standard input or output */
+	arm_file_desc_pipe,  /* A pipe */
+	arm_file_desc_virtual,  /* A virtual arm_file with artificial contents */
+	arm_file_desc_gpu,  /* GPU device */
+	arm_file_desc_socket  /* Network socket */
+};
+
+
+/* File descriptor */
+struct arm_file_desc_t
+{
+	enum arm_file_desc_kind_t kind;  /* File type */
+	int guest_fd;  /* Guest arm_file descriptor id */
+	int host_fd;  /* Equivalent open host arm_file */
+	int flags;  /* O_xxx flags */
+	char *path;  /* Associated path if applicable */
+};
+
+
+/* File descriptor table */
+struct arm_file_desc_table_t
+{
+	/* Number of extra contexts sharing table */
+	int num_links;
+
+	/* List of descriptors */
+	struct list_t *arm_file_desc_list;
+};
+
+
+struct arm_file_desc_table_t *arm_file_desc_table_create(void);
+void arm_file_desc_table_free(struct arm_file_desc_table_t *table);
+
+struct arm_file_desc_table_t *arm_file_desc_table_link(struct arm_file_desc_table_t *table);
+void arm_file_desc_table_unlink(struct arm_file_desc_table_t *table);
+
+void arm_file_desc_table_dump(struct arm_file_desc_table_t *table, FILE *f);
+
+struct arm_file_desc_t *arm_file_desc_table_entry_get(struct arm_file_desc_table_t *table, int index);
+struct arm_file_desc_t *arm_file_desc_table_entry_new(struct arm_file_desc_table_t *table,
+	enum arm_file_desc_kind_t kind, int host_fd, char *path, int flags);
+struct arm_file_desc_t *arm_file_desc_table_entry_new_guest_fd(struct arm_file_desc_table_t *table,
+        enum arm_file_desc_kind_t kind, int guest_fd, int host_fd, char *path, int flags);
+void arm_file_desc_table_entry_free(struct arm_file_desc_table_t *table, int index);
+void arm_file_desc_table_entry_dump(struct arm_file_desc_table_t *table, int index, FILE *f);
+
+int arm_file_desc_table_get_host_fd(struct arm_file_desc_table_t *table, int guest_fd);
+int arm_file_desc_table_get_guest_fd(struct arm_file_desc_table_t *table, int host_fd);
+
 
 /*
  * ARM Context
@@ -87,11 +169,18 @@ struct arm_ctx_t
 	unsigned int at_random_addr_holder;
 
 	/* Substructures */
-	struct mem_t *mem;
-	struct arm_regs_t *regs;
+	struct mem_t *mem; /* Virtual Memory image */
+	struct arm_regs_t *regs; /* Logical register file */
+	struct arm_file_desc_table_t *file_desc_table;  /* File descriptor table */
+
 };
 
 struct arm_ctx_t *arm_ctx_create();
+
+#define arm_loader_debug(...) debug(arm_loader_debug_category, __VA_ARGS__)
+extern int arm_loader_debug_category;
+
+void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *full_path, int size);
 
 /*
  * ARM disassembler
