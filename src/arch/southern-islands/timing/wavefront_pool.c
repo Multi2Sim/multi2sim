@@ -64,6 +64,7 @@ void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool
 		{
 			if (!wavefront_pool->wavefronts[j])
 			{
+				wavefront->ready = 1;
 				wavefront_pool->wavefronts[j] = wavefront;
 				wavefront_pool->num_wavefronts++;
 				/*printf("  inserting wavefront %d from wg %d into cu %d, "

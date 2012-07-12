@@ -50,6 +50,9 @@ struct si_compute_unit_t *si_compute_unit_create()
 	compute_unit->fetch_buffers = calloc(compute_unit->num_wavefront_pools, 
 		sizeof(struct si_fetch_buffer_t*));
 	compute_unit->simds = calloc(compute_unit->num_wavefront_pools, sizeof(struct si_simd_t*));
+	compute_unit->scalar_unit.mem_queue = linked_list_create();
+	compute_unit->scalar_unit.event_queue = heap_create(10);
+	compute_unit->scalar_unit.compute_unit = compute_unit;
 
 	for (i = 0; i < compute_unit->num_wavefront_pools; i++) 
 	{
@@ -276,18 +279,21 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wf
 
 	for (i = 0; i < compute_unit->wavefront_pools[active_wfp]->num_wavefronts; i++)
 	{
-		/* If the fetch buffer for a wavefront is empty, fetch another instruction */
-		if (compute_unit->fetch_buffers[active_wfp]->uops[i])
+		wavefront = compute_unit->wavefront_pools[active_wfp]->wavefronts[i];
+
+		if (compute_unit->fetch_buffers[active_wfp]->uops[i] || !wavefront->ready)
 		{
+			/* The fetch buffer is not empty, so don't fetch the next instruction */
 			//printf("uop %d already exists\n", i);
 			continue;
 		}
 
 		//printf("fetching for cu %d fetch buffer %d slot %d\n", compute_unit->id, active_wfp, i);
+		/* The fetch buffer is empty, so fetch another instruction */
 
 		/* Emulate instruction */
-		wavefront = compute_unit->wavefront_pools[active_wfp]->wavefronts[i];
 		si_wavefront_execute(wavefront);
+		wavefront->ready = 0;
 
 		/* Create uop */
 		uop = si_uop_create();

@@ -793,6 +793,9 @@ struct si_wavefront_t
 	int id_in_compute_unit;
 	long long sched_when;  /* GPU cycle when wavefront was last scheduled */
 
+	/* Ready to fetch next instruction (for timing simulation) */
+	unsigned int ready : 1;
+
 	/* Statistics */
 	long long inst_count;  /* Total number of instructions */
 	long long scalar_mem_inst_count;
