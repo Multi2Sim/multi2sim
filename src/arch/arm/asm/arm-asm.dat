@@ -361,6 +361,18 @@ DEFINST(MVNS_imm,
 	DPR_IMM, 
 	0x3f,
 	0x0)
+
+DEFINST(MOVT_imm, 
+	"MOVT%cond %rd %immd16", 
+	DPR_IMM, 
+	0x34,
+	0x0)
+
+DEFINST(MOVW_imm, 
+	"MOVW%cond %rd %immd16", 
+	DPR_IMM, 
+	0x30,
+	0x0)
 	
 /* DPR_SAT category instructions:
  * QADD, QDADD, QSUB, QDSUB
@@ -561,7 +573,6 @@ DEFINST(BLX,
 	BAX, 
 	0x12,
 	0x3)
-
 
 
 /* HFWRD_REG category instructions:
@@ -850,6 +861,16 @@ DEFINST(STRD_prrp,
 	0x1a,
 	0xf)
 
+/* Count Leading Zeros
+ * CLZ, Extension Instruction
+ */
+ 
+DEFINST(CLZ_reg, 
+	"CLZ%cond %rd, %rm", 
+	HFWRD_REG, 
+	0x16,
+	0x1)
+	
 /* HFWRD_IMM category instructions:
  * LDRH, LDRSB, STRH, LDRSH 
  */
@@ -2108,6 +2129,204 @@ DEFINST(STRBT_ptrprr,
 	0x6e,
 	0x6)
 
+/* BDTR category instructions:
+ * LDM, STM, 
+ */
+
+DEFINST(LDMDA, 
+	"LDMDA%cond %rn, %regs", 
+	BDTR, 
+	0x81,
+	0xff)
+
+DEFINST(LDMDA_w, 
+	"LDMDA%cond %rn, %regs", 
+	BDTR, 
+	0x83,
+	0xff)
+
+DEFINST(LDMDA_u, 
+	"LDMDA%cond %rn, %regs", 
+	BDTR, 
+	0x85,
+	0xff)
+
+DEFINST(LDMDA_uw, 
+	"LDMDA%cond %rn, %regs", 
+	BDTR, 
+	0x87,
+	0xff)
+
+DEFINST(LDMIA, 
+	"LDM%cond %rn %regs", 
+	BDTR, 
+	0x89,
+	0xff)
+
+DEFINST(LDMIA_w, 
+	"POP%cond %rn, %regs", 
+	BDTR, 
+	0x8b,
+	0xff)
+
+DEFINST(LDMIA_u, 
+	"LDM%cond %rn, %regs", 
+	BDTR, 
+	0x8d,
+	0xff)
+
+DEFINST(LDMIA_uw, 
+	"LDM%cond %rn, %regs", 
+	BDTR, 
+	0x8f,
+	0xff)
+
+DEFINST(LDMDB, 
+	"LDMDB%cond %rn, %regs", 
+	BDTR, 
+	0x91,
+	0xff)
+
+DEFINST(LDMDB_w, 
+	"LDMDB%cond %rn, %regs", 
+	BDTR, 
+	0x93,
+	0xff)
+
+DEFINST(LDMDB_u, 
+	"LDMDB%cond %rn, %regs", 
+	BDTR, 
+	0x95,
+	0xff)
+
+DEFINST(LDMDB_uw, 
+	"LDMDB%cond %rn, %regs", 
+	BDTR, 
+	0x97,
+	0xff)
+
+DEFINST(LDMIB, 
+	"LDMIB%cond %rn, %regs", 
+	BDTR, 
+	0x99,
+	0xff)
+
+DEFINST(LDMIB_w, 
+	"LDMIB%cond %rn, %regs", 
+	BDTR, 
+	0x9b,
+	0xff)
+
+DEFINST(LDMIB_u, 
+	"LDMIB%cond %rn, %regs", 
+	BDTR, 
+	0x9d,
+	0xff)
+
+DEFINST(LDMIB_uw, 
+	"LDMIB%cond %rn, %regs", 
+	BDTR, 
+	0x9f,
+	0xff)
+
+////STM
+
+DEFINST(STMDA, 
+	"STMDA%cond %rn, %regs", 
+	BDTR, 
+	0x80,
+	0xff)
+
+DEFINST(STMDA_w, 
+	"STMDA%cond %rn, %regs", 
+	BDTR, 
+	0x82,
+	0xff)
+
+DEFINST(STMDA_u, 
+	"STMDA%cond %rn, %regs", 
+	BDTR, 
+	0x84,
+	0xff)
+
+DEFINST(STMDA_uw, 
+	"STMDA%cond %rn, %regs", 
+	BDTR, 
+	0x86,
+	0xff)
+
+DEFINST(STMIA, 
+	"STM%cond %rn, %regs", 
+	BDTR, 
+	0x88,
+	0xff)
+
+DEFINST(STMIA_w, 
+	"STM%cond %rn, %regs", 
+	BDTR, 
+	0x8a,
+	0xff)
+
+DEFINST(STMIA_u, 
+	"STM%cond %rn, %regs", 
+	BDTR, 
+	0x8c,
+	0xff)
+
+DEFINST(STMIA_uw, 
+	"STM%cond %rn, %regs", 
+	BDTR, 
+	0x8e,
+	0xff)
+
+DEFINST(STMDB, 
+	"STMDB%cond %rn, %regs", 
+	BDTR, 
+	0x90,
+	0xff)
+
+DEFINST(STMDB_w, 
+	"PUSH%cond %rn %regs", 
+	BDTR, 
+	0x92,
+	0xff)
+
+DEFINST(STMDB_u, 
+	"STMDB%cond %rn, %regs", 
+	BDTR, 
+	0x94,
+	0xff)
+
+DEFINST(STMDB_uw, 
+	"STMDB%cond %rn, %regs", 
+	BDTR, 
+	0x96,
+	0xff)
+
+DEFINST(STMIB, 
+	"STMIB%cond %rn, %regs", 
+	BDTR, 
+	0x98,
+	0xff)
+
+DEFINST(STMIB_w, 
+	"STMIB%cond %rn, %regs", 
+	BDTR, 
+	0x9a,
+	0xff)
+
+DEFINST(STMIB_u, 
+	"STMIB%cond %rn, %regs", 
+	BDTR, 
+	0x9c,
+	0xff)
+
+DEFINST(STMIB_uw, 
+	"STMIB%cond %rn, %regs", 
+	BDTR, 
+	0x9e,
+	0xff)
+
 /* BRNCH category instructions:
  * B , BL
  */
@@ -2123,3 +2342,98 @@ DEFINST(BRNCH_LINK,
 	BRNCH,
 	0xb0,
 	0xff)
+
+/* SWI_SVC category instructions:
+ * SVC
+ */
+ 
+DEFINST(SWI_SVC,
+	"SVC%cond %immd24",
+	SWI_SVC,
+	0xf0,
+	0xff)
+
+/* CPR_DTR category instructions:
+ * LDC2, STC2
+ */
+
+DEFINST(LDC2,
+	"LDC2%cond %copr, c%rd, %amode5 ",
+	CPR_DTR,
+	0xcb,
+	0x0)
+
+DEFINST(STC2,
+	"STC2%cond %copr, c%rd, %amode5 ",
+	CPR_DTR,
+	0xca,
+	0x0)
+ 
+DEFINST(LDF,
+	"LDF%fp%cond %freg, %amode5 ",
+	CPR_DTR,
+	0xcf,
+	0x0)
+
+DEFINST(STF,
+	"STF%fp%cond %freg, %amode5 ",
+	CPR_DTR,
+	0xce,
+	0x0)	
+  
+ /* VFP Instructions
+  *	LDMIA, STMIA
+  */
+  
+DEFINST(VFP_LDMIA1,
+	"%vfp1LDMIA%cond %rn, %vfpregs ",
+	VFP,
+	0xc9,
+	0xff)
+
+DEFINST(VFP_LDMIA2,
+	"%vfp1LDMIA%cond %rn, %vfpregs ",
+	VFP,
+	0xcd,
+	0xff)
+
+DEFINST(VFP_LDMIA3,
+	"%vfp1LDMIA%cond %rn, %vfpregs ",
+	VFP,
+	0xcb,
+	0xff)
+ 
+DEFINST(VFP_STMIA1,
+	"%vfp1STMIA%cond %rn, %vfpregs ",
+	VFP,
+	0xc8,
+	0xff)
+
+DEFINST(VFP_STMIA2,
+	"%vfp1STMIA%cond %rn, %vfpregs ",
+	VFP,
+	0xcc,
+	0xff)
+
+DEFINST(VFP_STMIA3,
+	"%vfp1STMIA%cond %rn, %vfpregs ",
+	VFP,
+	0xca,
+	0xff)
+
+/* CPR_RTR category instructions:
+ * VMRS, VMSR
+ */
+
+DEFINST(VFP_MSR,
+	"VMSR%cond FPSCR, %rt",
+	VFP,
+	0xee,
+	0xff)
+
+DEFINST(VFP_MRS,
+	"VMRS%cond %rt, FPSCR",
+	VFP,
+	0xef,
+	0xff)
+
