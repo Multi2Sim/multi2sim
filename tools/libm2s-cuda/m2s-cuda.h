@@ -38,20 +38,29 @@ enum frm_cuda_call_t
 };
 
 
-/* CUDA Data Structures */
+/* CUDA context */
 struct CUctx_st
 {
 	unsigned int id;
 };
 
 
+/* CUDA module */
 struct CUmod_st
 {
 	unsigned int id;
 };
 
 
+/* CUDA function */
 struct CUfunc_st
+{
+	unsigned int id;
+};
+
+
+/* CUDA stream */
+struct CUstream_st
 {
 	unsigned int id;
 };
