@@ -291,6 +291,7 @@ extern char *si_gpu_config_help;
 extern char *si_gpu_config_file_name;
 extern char *si_gpu_report_file_name;
 
+/* OpenCL Device Info */
 extern unsigned int si_gpu_work_group_size;
 extern unsigned int si_gpu_work_item_dimensions;
 extern unsigned int si_gpu_work_item_sizes[3];
@@ -303,12 +304,40 @@ extern unsigned int si_gpu_image2d_max_height;
 extern unsigned int si_gpu_image3d_max_width;
 extern unsigned int si_gpu_image3d_max_height;
 extern unsigned int si_gpu_image3d_max_depth;
+extern unsigned int si_gpu_max_samplers;
+
+extern unsigned int si_gpu_max_parameter_size;
+extern unsigned int si_gpu_mem_base_addr_align;
+extern unsigned int si_gpu_min_data_type_align_size;
+
+extern unsigned int si_gpu_single_fp_config;
+extern unsigned int si_gpu_double_fp_config;
 
 extern unsigned int si_gpu_max_clock_frequency;
 extern unsigned int si_gpu_address_bits;
 
+extern unsigned int si_gpu_global_mem_cache_type;
+extern unsigned int si_gpu_global_mem_cacheline_size;
+extern unsigned long long si_gpu_global_mem_cache_size;
 extern unsigned long long si_gpu_global_mem_size;
 extern unsigned long long si_gpu_max_mem_alloc_size;
+
+extern unsigned long long si_gpu_max_constant_buffer_size;
+extern unsigned int si_gpu_max_constant_args;
+
+extern unsigned int si_gpu_error_correction_support;
+extern unsigned int si_gpu_host_unified_memory;
+extern unsigned int si_gpu_profiling_timer_resolution;
+extern unsigned int si_gpu_endian_little;
+
+extern unsigned int si_gpu_device_available;
+extern unsigned int si_gpu_compiler_available;
+extern unsigned int si_gpu_linker_available;
+extern unsigned int si_gpu_execution_capabilities;
+
+extern unsigned int si_gpu_queue_properties;
+
+extern unsigned int si_gpu_platform;
 
 extern unsigned int si_gpu_num_compute_units;
 extern unsigned int si_gpu_num_registers;

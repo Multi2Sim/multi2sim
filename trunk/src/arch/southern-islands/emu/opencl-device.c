@@ -57,29 +57,7 @@ void si_opencl_device_free(struct si_opencl_device_t *device)
 
 uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
 {
-	uint32_t max_work_item_dimensions = si_gpu_work_item_dimensions;
-	uint32_t *max_work_item_sizes = si_gpu_work_item_sizes;
-	uint32_t max_work_group_size = si_gpu_work_group_size;
-
-	uint32_t max_read_image_args = si_gpu_max_read_image_args;
-	uint32_t max_write_image_args = si_gpu_max_write_image_args;
-
-	uint32_t image2d_max_width = si_gpu_image2d_max_width;
-	uint32_t image2d_max_height = si_gpu_image2d_max_height;
-	uint32_t image3d_max_width = si_gpu_image3d_max_width;
-	uint32_t image3d_max_height = si_gpu_image3d_max_height;
-	uint32_t image3d_max_depth = si_gpu_image3d_max_depth;
-
-	uint32_t max_compute_units = si_gpu_num_compute_units;
-	uint32_t simd_width = si_gpu_num_stream_cores;
-	uint32_t max_clock_frequency = si_gpu_max_clock_frequency;
-	uint32_t address_bits = si_gpu_address_bits;
-
 	uint32_t local_mem_type = 1;  /* CL_LOCAL */
-	uint32_t local_mem_size = si_gpu_local_mem_size;
-
-	uint64_t global_mem_size = si_gpu_global_mem_size;
-	uint64_t max_mem_alloc_size = si_gpu_max_mem_alloc_size;
 
 	uint32_t image_support = 1; /* CL_TRUE */
 
@@ -115,22 +93,22 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 
 	case 0x1002:  /* CL_DEVICE_MAX_COMPUTE_UNITS */
 		size_ret = 4;
-		info = &max_compute_units;
+		info = &si_gpu_num_compute_units;
 		break;
 
 	case 0x1003:  /* CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS */
 		size_ret = 4;
-		info = &max_work_item_dimensions;
+		info = &si_gpu_work_item_dimensions;
 		break;
 
 	case 0x1004:  /* CL_DEVICE_MAX_WORK_GROUP_SIZE */
 		size_ret = 4;
-		info = &max_work_group_size;
+		info = &si_gpu_work_group_size;
 		break;
 
 	case 0x1005:  /* CL_DEVICE_MAX_WORK_ITEM_SIZES */
 		size_ret = 12;
-		info = max_work_item_sizes;
+		info = si_gpu_work_item_sizes;
 		break;
 
 	case 0x1006:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR */
@@ -140,57 +118,57 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 	case 0x100a:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT */
 	case 0x100b:  /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE */
 		size_ret = 4;
-		info = &simd_width;
+		info = &si_gpu_num_stream_cores;
 		break;
 	
 	case 0x100c:  /* CL_DEVICE_MAX_CLOCK_FREQUENCY */
 		size_ret = 4;
-		info = &max_clock_frequency;
+		info = &si_gpu_max_clock_frequency;
 		break;
 
 	case 0x100d:  /* CL_DEVICE_ADDRESS_BITS */
 		size_ret = 4;
-		info = &address_bits;
+		info = &si_gpu_address_bits;
 		break;
 
 	case 0x100e:  /* CL_DEVICE_MAX_READ_IMAGE_ARGS */
 		size_ret = 4;
-		info = &max_read_image_args;
+		info = &si_gpu_max_read_image_args;
 		break;
 
 	case 0x100f:  /* CL_DEVICE_MAX_WRITE_IMAGE_ARGS */
 		size_ret = 4;
-		info = &max_write_image_args;
+		info = &si_gpu_max_write_image_args;
 		break;
 
 	case 0x1010:  /* CL_DEVICE_MAX_MEM_ALLOC_SIZE */
 		size_ret = 8;
-		info = &max_mem_alloc_size;
+		info = &si_gpu_max_mem_alloc_size;
 		break;
 
 	case 0x1011:  /* CL_DEVICE_IMAGE2D_MAX_WIDTH */
 		size_ret = 4;
-		info = &image2d_max_width;
+		info = &si_gpu_image2d_max_width;
 		break;
 
 	case 0x1012:  /* CL_DEVICE_IMAGE2D_MAX_HEIGHT */
 		size_ret = 4;
-		info = &image2d_max_height;
+		info = &si_gpu_image2d_max_height;
 		break;
 
 	case 0x1013:  /* CL_DEVICE_IMAGE3D_MAX_WIDTH */
 		size_ret = 4;
-		info = &image3d_max_width;
+		info = &si_gpu_image3d_max_width;
 		break;
 
 	case 0x1014:  /* CL_DEVICE_IMAGE3D_MAX_HEIGHT */
 		size_ret = 4;
-		info = &image3d_max_height;
+		info = &si_gpu_image3d_max_height;
 		break;
 
 	case 0x1015:  /* CL_DEVICE_IMAGE3D_MAX_DEPTH */
 		size_ret = 4;
-		info = &image3d_max_depth;
+		info = &si_gpu_image3d_max_depth;
 		break;
 
 	case 0x1016:  /* CL_DEVICE_IMAGE_SUPPORT */
@@ -198,9 +176,59 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 		info = &image_support;
 		break;
 
-	case 0x101f:  /* CL_GLOBAL_MEM_SIZE */
+	case 0x1017:  /* CL_DEVICE_MAX_PARAMETER_SIZE */
+		size_ret = 4;
+		info = &si_gpu_max_parameter_size;
+		break;
+
+	case 0x1018:  /* CL_DEVICE_MAX_SAMPLERS */
+		size_ret = 4;
+		info = &si_gpu_max_samplers;
+		break;
+
+	case 0x1019:  /* CL_DEVICE_MEM_BASE_ADDR_ALIGN */
+		size_ret = 4;
+		info = &si_gpu_mem_base_addr_align;
+		break;
+
+	case 0x101a:  /* CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE */
+		size_ret = 4;
+		info = &si_gpu_min_data_type_align_size;
+		break;
+
+	case 0x101b:  /* CL_DEVICE_SINGLE_FP_CONFIG */
+		size_ret = 4;
+		info = &si_gpu_single_fp_config;
+		break;
+
+	case 0x101c:  /* CL_DEVICE_GLOBAL_MEM_CACHE_TYPE */
+		size_ret = 4;
+		info = &si_gpu_global_mem_cache_type;
+		break;
+
+	case 0x101d:  /* CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE */
+		size_ret = 4;
+		info = &si_gpu_global_mem_cacheline_size;
+		break;
+
+	case 0x101e:  /* CL_DEVICE_GLOBAL_MEM_CACHE_SIZE */
 		size_ret = 8;
-		info = &global_mem_size;
+		info = &si_gpu_global_mem_cache_size;
+		break;
+
+	case 0x101f:  /* CL_DEVICE_GLOBAL_MEM_SIZE */
+		size_ret = 8;
+		info = &si_gpu_global_mem_size;
+		break;
+
+	case 0x1020:  /* CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE */
+		size_ret = 8;
+		info = &si_gpu_max_constant_buffer_size;
+		break;
+
+	case 0x1021:  /* CL_DEVICE_MAX_CONSTANT_ARGS */
+		size_ret = 4;
+		info = &si_gpu_max_constant_args;
 		break;
 
 	case 0x1022:  /* CL_DEVICE_LOCAL_MEM_TYPE */
@@ -209,8 +237,43 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 		break;
 
 	case 0x1023:  /* CL_DEVICE_LOCAL_MEM_SIZE */
+		size_ret = 8;
+		info = &si_gpu_local_mem_size;
+		break;
+
+	case 0x1024:  /* CL_DEVICE_ERROR_CORRECTION_SUPPORT */
 		size_ret = 4;
-		info = &local_mem_size;
+		info = &si_gpu_error_correction_support;
+		break;
+
+	case 0x1025:  /* CL_DEVICE_PROFILING_TIMER_RESOLUTION */
+		size_ret = 4;
+		info = &si_gpu_profiling_timer_resolution;
+		break;
+
+	case 0x1026:  /* CL_DEVICE_ENDIAN_LITTLE */
+		size_ret = 4;
+		info = &si_gpu_endian_little;
+		break;
+
+	case 0x1027:  /* CL_DEVICE_AVAILABLE */
+		size_ret = 4;
+		info = &si_gpu_device_available;
+		break;
+
+	case 0x1028:  /* CL_DEVICE_COMPILER_AVAILABLE */
+		size_ret = 4;
+		info = &si_gpu_compiler_available;
+		break;
+
+	case 0x1029:  /* CL_DEVICE_EXECUTION_CAPABILITIES */
+		size_ret = 4;
+		info = &si_gpu_execution_capabilities;
+		break;
+
+	case 0x102a:  /* CL_DEVICE_QUEUE_PROPERTIES */
+		size_ret = 4;
+		info = &si_gpu_queue_properties;
 		break;
 
 	case 0x102b:  /* CL_DEVICE_NAME */
@@ -238,9 +301,29 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 		info = device_extensions;
 		break;
 
+	case 0x1031:  /* CL_DEVICE_PLATFORM */
+		size_ret = 4;
+		info = &si_gpu_platform;
+		break;
+
+	case 0x1032:  /* CL_DEVICE_DOUBLE_FP_CONFIG */
+		size_ret = 4;
+		info = &si_gpu_double_fp_config;
+		break;
+
 	case 0x1034: /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF */
 		size_ret = 4;
 		info = &vector_width_half;
+		break;
+
+	case 0x1035:  /* CL_DEVICE_HOST_UNIFIED_MEMORY */
+		size_ret = 4;
+		info = &si_gpu_host_unified_memory;
+		break;
+
+	case 0x103e:  /* CL_DEVICE_LINKER_AVAILABLE */
+		size_ret = 4;
+		info = &si_gpu_linker_available;
 		break;
 
 	default:
