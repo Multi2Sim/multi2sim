@@ -288,8 +288,32 @@ struct arm_fmt_cpr_rtr_t
 struct arm_fmt_swi_svc_t
 {
 	unsigned int cmnt 	: 24; /* [23:0] */
-	unsigned int __reserved0: 4; /* [27:24] */
-	unsigned int cond 	: 4; /* [31:28] */
+	unsigned int __reserved0: 4;  /* [27:24] */
+	unsigned int cond 	: 4;  /* [31:28] */
+};
+
+/* TODO: Change the VFP structure to support more instructions */
+struct arm_fmt_vfp_mv_t
+{
+	unsigned int immd8	: 8; /* [7:0] */
+	unsigned int __reserved0: 4; /* [11:8] */
+	unsigned int vd		: 4; /* [15:12] */
+	unsigned int vfp_rn	: 4; /* [19:16] */
+	unsigned int __reserved1: 1; /* [20] */
+	unsigned int w		: 1; /* [21] */
+	unsigned int d		: 1; /* [22] */
+	unsigned int u		: 1; /* [23] */
+	unsigned int p		: 1; /* [24] */
+	unsigned int __reserved2: 3; /* [27:25] */
+	unsigned int cond	: 4; /* [31:28] */
+};
+
+struct arm_fmt_vfp_streg_tr_t
+{
+	unsigned int __reserved0:12; /* [11:0] */
+	unsigned int vfp_rt	: 4; /* [15:12] */
+	unsigned int __reserved1:12; /* [27:16] */
+	unsigned int cond	: 4; /* [31:28] */
 };
 
 union arm_inst_dword_t
@@ -312,7 +336,8 @@ union arm_inst_dword_t
 	struct arm_fmt_cpr_dop_t cpr_dop_ins;
 	struct arm_fmt_cpr_rtr_t cpr_rtr_ins;
 	struct arm_fmt_swi_svc_t swi_svc_ins;
-
+	struct arm_fmt_vfp_mv_t vfp_mv_ins;
+	struct arm_fmt_vfp_streg_tr_t vfp_strreg_tr_ins;
 };
 
 
@@ -352,6 +377,7 @@ enum arm_cat_enum
 	ARM_CAT_CPR_DOP, 	/* Coprocessor Data Operation instructions */
 	ARM_CAT_CPR_RTR, 	/* Coprocessor Register Transfer instructions */
 	ARM_CAT_SWI_SVC, 	/* Software Interrupt / SVC Angel trap instructions */
+	ARM_CAT_VFP,		/* Vector Floating Point Instructions */
 
 	ARM_CAT_UNDEF,
 
@@ -386,7 +412,7 @@ void arm_inst_decode(struct arm_inst_t *inst);
 void arm_inst_hex_dump(FILE *f, void *inst_ptr, unsigned int inst_addr);
 
 void arm_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
-	unsigned int inst_index, unsigned int inst_addr);
+		unsigned int inst_index, unsigned int inst_addr);
 
 void arm_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
                 struct arm_inst_t *inst, enum arm_cat_enum cat);
@@ -430,5 +456,41 @@ void arm_inst_dump_IDX(char **inst_str_ptr, int *inst_str_size,
 void arm_inst_dump_BADDR(char **inst_str_ptr, int *inst_str_size,
 	struct arm_inst_t *inst, enum arm_cat_enum cat,
 	unsigned int inst_addr);
+
+void arm_inst_dump_REGS(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_IMMD24(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_IMMD16(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_COPR(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_AMODE_5(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_VFP_REGS(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_VFP2(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_VFP1STM(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_VFP1LDM(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_FREG(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_FP(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
+
+void arm_inst_dump_RT(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat);
 
 #endif

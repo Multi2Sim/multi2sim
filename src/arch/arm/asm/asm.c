@@ -277,6 +277,50 @@ void arm_disasm_init()
 	}\
 	}\
 	break;\
+	case ARM_CAT_BDTR:\
+	for (i = 0; i < 16; i++){\
+	arm_inst_info[_arg1 * 16 + i].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + i ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	}\
+	break;\
+	case ARM_CAT_SWI_SVC:\
+	for (i = 0 ; i < 16; i++){\
+	for (j = 0 ; j < 16; j++){\
+	arm_inst_info[(_arg1 + i ) * 16 + j].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[(_arg1 + i) * 16 + j ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	}\
+	}\
+	break;\
+	case ARM_CAT_CPR_DTR:\
+	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + _arg2 ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	break;\
+	case ARM_CAT_VFP:\
+	for (i = 0; i < 16; i++){\
+	arm_inst_info[_arg1 * 16 + i].opcode = ARM_INST_##_name;\
+	info = &arm_inst_info[_arg1 * 16 + i ]; \
+	info->inst = ARM_INST_##_name; \
+	info->category = ARM_CAT_##_category; \
+	info->name = #_name; \
+	info->fmt_str = _fmt_str; \
+	info->size = 32;\
+	}\
+	break;\
 	}
 #include "arm-asm.dat"
 #undef DEFINST
@@ -329,74 +373,100 @@ void arm_inst_dump(FILE *f , char *str , int inst_str_size , void *inst_ptr ,
 	fmt_str = inst.info->fmt_str;
 	if (fmt_str)
 	{
-		if((inst.dword.bytes[3]))
+		while (*fmt_str)
 		{
-			while (*fmt_str)
+			if (*fmt_str != '%')
 			{
-				if (*fmt_str != '%')
-				{
-					if (!(*fmt_str == ' ' && *inst_str_ptr == inst_str))
-						str_printf(inst_str_ptr, &inst_str_size, "%c",
-							*fmt_str);
-					++fmt_str;
-					continue;
-				}
-
+				if (!(*fmt_str == ' ' && *inst_str_ptr == inst_str))
+					str_printf(inst_str_ptr, &inst_str_size, "%c",
+						*fmt_str);
 				++fmt_str;
-				if (arm_token_comp(fmt_str, "rd", &token_len))
-					arm_inst_dump_RD(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "rn", &token_len))
-					arm_inst_dump_RN(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "rm", &token_len))
-					arm_inst_dump_RM(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "rs", &token_len))
-					arm_inst_dump_RS(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "op2", &token_len))
-					arm_inst_dump_OP2(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "cond", &token_len))
-					arm_inst_dump_COND(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "rdlo", &token_len))
-					arm_inst_dump_RDLO(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "rdhi", &token_len))
-					arm_inst_dump_RDHI(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "psr", &token_len))
-					arm_inst_dump_PSR(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "op2psr", &token_len))
-					arm_inst_dump_OP2_PSR(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "amode3", &token_len))
-					arm_inst_dump_AMODE_3(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "amode2", &token_len))
-					arm_inst_dump_AMODE_2(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "idx", &token_len))
-					arm_inst_dump_IDX(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category);
-				else if (arm_token_comp(fmt_str, "baddr", &token_len))
-					arm_inst_dump_BADDR(inst_str_ptr, &inst_str_size, &inst,
-						inst.info->category, inst_addr);
-
-				else
-					fatal("%s: token not recognized\n", fmt_str);
-
-				fmt_str += token_len;
+				continue;
 			}
-			fprintf(f, "%s\n", inst_str);
+
+			++fmt_str;
+			if (arm_token_comp(fmt_str, "rd", &token_len))
+				arm_inst_dump_RD(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "rn", &token_len))
+				arm_inst_dump_RN(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "rm", &token_len))
+				arm_inst_dump_RM(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "rs", &token_len))
+				arm_inst_dump_RS(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "rt", &token_len))
+				arm_inst_dump_RT(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "op2", &token_len))
+				arm_inst_dump_OP2(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "cond", &token_len))
+				arm_inst_dump_COND(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "rdlo", &token_len))
+				arm_inst_dump_RDLO(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "rdhi", &token_len))
+				arm_inst_dump_RDHI(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "psr", &token_len))
+				arm_inst_dump_PSR(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "op2psr", &token_len))
+				arm_inst_dump_OP2_PSR(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "amode3", &token_len))
+				arm_inst_dump_AMODE_3(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "amode2", &token_len))
+				arm_inst_dump_AMODE_2(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "idx", &token_len))
+				arm_inst_dump_IDX(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "baddr", &token_len))
+				arm_inst_dump_BADDR(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category, inst_addr);
+			else if (arm_token_comp(fmt_str, "regs", &token_len))
+				arm_inst_dump_REGS(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "immd24", &token_len))
+				arm_inst_dump_IMMD24(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "immd16", &token_len))
+				arm_inst_dump_IMMD16(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "copr", &token_len))
+				arm_inst_dump_COPR(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "amode5", &token_len))
+				arm_inst_dump_AMODE_5(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "vfp1STMIA", &token_len))
+				arm_inst_dump_VFP1STM(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "vfp1LDMIA", &token_len))
+				arm_inst_dump_VFP1LDM(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "vfpregs", &token_len))
+				arm_inst_dump_VFP_REGS(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "freg", &token_len))
+				arm_inst_dump_FREG(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+			else if (arm_token_comp(fmt_str, "fp", &token_len))
+				arm_inst_dump_FP(inst_str_ptr, &inst_str_size, &inst,
+					inst.info->category);
+
+			else
+				fatal("%s: token not recognized\n", fmt_str);
+
+			fmt_str += token_len;
 		}
-		else
-		{
-			fprintf(f, ".word   0x%08x\n", *(unsigned int *)inst_ptr);
-		}
+		fprintf(f, "%s\n", inst_str);
 	}
 	else
 	{
@@ -456,6 +526,8 @@ void arm_inst_dump_RD(char **inst_str_ptr, int *inst_str_size,
 		rd = inst->dword.sngl_dswp_ins.dst_rd;
 	else if (cat == ARM_CAT_CPR_RTR)
 		rd = inst->dword.cpr_rtr_ins.rd;
+	else if (cat == ARM_CAT_CPR_DTR)
+		rd = inst->dword.cpr_dtr_ins.cpr_sr_dst;
 	else if (cat == ARM_CAT_BRNCH)
 		fatal("%d: rd fmt not recognized", cat);
 
@@ -514,12 +586,16 @@ void arm_inst_dump_RN(char **inst_str_ptr, int *inst_str_size,
 		rn = inst->dword.bax_ins.op0_rn;
 	else if (cat == ARM_CAT_SDTR)
 		rn = inst->dword.sdtr_ins.base_rn;
+	else if (cat == ARM_CAT_BDTR)
+		rn = inst->dword.bdtr_ins.base_rn;
 	else if (cat == ARM_CAT_SDSWP)
 		rn = inst->dword.sngl_dswp_ins.base_rn;
 	else if (cat == ARM_CAT_CPR_RTR)
 		rn = inst->dword.cpr_rtr_ins.cpr_rn;
 	else if (cat == ARM_CAT_BRNCH)
 		fatal("%d: rn fmt not recognized", cat);
+	else if (cat == ARM_CAT_VFP)
+		rn = inst->dword.vfp_mv_ins.vfp_rn;
 
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
@@ -527,8 +603,26 @@ void arm_inst_dump_RN(char **inst_str_ptr, int *inst_str_size,
 
 	switch (rn)
 	{
+	case (r12):
+		if(cat == ARM_CAT_VFP)
+		{
+			if(inst->dword.vfp_mv_ins.w)
+				str_printf(inst_str_ptr, inst_str_size, "ip!");
+			else
+				str_printf(inst_str_ptr, inst_str_size, "ip");
+		}
+		else
+			str_printf(inst_str_ptr, inst_str_size, "ip");
+		break;
 	case (r13):
+		if(cat != ARM_CAT_BDTR)
+		{
 		str_printf(inst_str_ptr, inst_str_size, "sp");
+		}
+		else if (cat == ARM_CAT_BDTR)
+		{
+		str_printf(inst_str_ptr, inst_str_size, " ");
+		}
 		break;
 	case (r14):
 		str_printf(inst_str_ptr, inst_str_size, "lr");
@@ -567,7 +661,7 @@ void arm_inst_dump_RM(char **inst_str_ptr, int *inst_str_size,
 	else if (cat == ARM_CAT_MULT_LN_SIGN)
 		rm = inst->dword.mul_ln_ins.op0_rm;
 	else if (cat == ARM_CAT_HFWRD_REG)
-		fatal("%d: rm fmt not recognized", cat);
+		rm = inst->dword.hfwrd_reg_ins.off_reg;
 	else if (cat == ARM_CAT_HFWRD_IMM)
 		fatal("%d: rm fmt not recognized", cat);
 	else if (cat == ARM_CAT_BAX)
@@ -801,12 +895,20 @@ void arm_inst_dump_COND(char **inst_str_ptr, int *inst_str_size,
 		cond = inst->dword.bax_ins.cond;
 	else if (cat == ARM_CAT_SDTR)
 		cond = inst->dword.sdtr_ins.cond;
+	else if (cat == ARM_CAT_BDTR)
+		cond = inst->dword.bdtr_ins.cond;
 	else if (cat == ARM_CAT_SDSWP)
 		cond = inst->dword.sngl_dswp_ins.cond;
 	else if (cat == ARM_CAT_CPR_RTR)
 		cond = inst->dword.cpr_rtr_ins.cond;
+	else if (cat == ARM_CAT_CPR_DTR)
+		cond = inst->dword.cpr_dtr_ins.cond;
 	else if (cat == ARM_CAT_BRNCH)
 		cond = inst->dword.brnch_ins.cond;
+	else if (cat == ARM_CAT_SWI_SVC)
+		cond = inst->dword.swi_svc_ins.cond;
+	else if (cat == ARM_CAT_VFP)
+		cond = inst->dword.vfp_mv_ins.cond;
 
 	/* TODO: destinations for BDTR CDTR CDO*/
 	else
@@ -1378,3 +1480,302 @@ void arm_inst_dump_BADDR(char **inst_str_ptr, int *inst_str_size,
 	str_printf(inst_str_ptr, inst_str_size, "%x",(inst_addr + offset + 8));
 }
 
+void arm_inst_dump_REGS(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int reg_list;
+	int i;
+
+	if (cat == ARM_CAT_DPR_REG)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_IMM)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_SAT)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_PSR)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_SIGN)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN_SIGN)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_REG)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_IMM)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDTR)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_BDTR)
+		reg_list = inst->dword.bdtr_ins.reg_lst;
+	else if (cat == ARM_CAT_SDSWP)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_CPR_RTR)
+		fatal("%d: regs fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: regs fmt not recognized", cat);
+	/* TODO: destinations for CDTR CDO*/
+	else
+		fatal("%d: regs fmt not recognized", cat);
+
+	str_printf(inst_str_ptr, inst_str_size, "{");
+	for (i = 1; i < 65536; i *= 2)
+	{
+		if(reg_list & (i))
+		{
+			str_printf(inst_str_ptr, inst_str_size, "r%d ",log_base2(i));
+		}
+	}
+
+	str_printf(inst_str_ptr, inst_str_size, "}");
+}
+
+void arm_inst_dump_IMMD24(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int immd24;
+
+	if (cat == ARM_CAT_DPR_REG)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_IMM)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_SAT)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_PSR)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_SIGN)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN_SIGN)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_REG)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_IMM)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDTR)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDSWP)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_CPR_RTR)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: swi_svc fmt not recognized", cat);
+	else if (cat == ARM_CAT_SWI_SVC)
+		immd24 = inst->dword.swi_svc_ins.cmnt;
+	/* TODO: destinations for CDTR CDO*/
+	else
+		fatal("%d: swi_svc fmt not recognized", cat);
+
+	str_printf(inst_str_ptr, inst_str_size, "0x%x",immd24);
+}
+
+void arm_inst_dump_IMMD16(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int immd16;
+
+	if (cat == ARM_CAT_DPR_REG)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_DPR_IMM)
+		immd16 = ((inst->dword.dpr_ins.op1_reg << 12)
+			| inst->dword.dpr_ins.op2);
+	else if (cat == ARM_CAT_DPR_SAT)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_PSR)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_SIGN)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_MULT_LN_SIGN)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_REG)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_HFWRD_IMM)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_BAX)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDTR)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_SDSWP)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_CPR_RTR)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_BRNCH)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	else if (cat == ARM_CAT_SWI_SVC)
+		fatal("%d: movt_movw fmt not recognized", cat);
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: movt_movw fmt not recognized", cat);
+
+	str_printf(inst_str_ptr, inst_str_size, "#%d  ; 0x%x",immd16, immd16);
+}
+
+void arm_inst_dump_COPR(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int copr;
+
+	if (cat == ARM_CAT_CPR_RTR)
+		copr = inst->dword.cpr_rtr_ins.cpr_num;
+	else if (cat == ARM_CAT_CPR_DTR)
+		copr = inst->dword.cpr_dtr_ins.cpr_num;
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: copr num fmt not recognized", cat);
+
+	str_printf(inst_str_ptr, inst_str_size, "%d", copr);
+}
+
+void arm_inst_dump_AMODE_5(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int offset;
+	unsigned int rn;
+
+	if (cat == ARM_CAT_CPR_RTR)
+		fatal("%d: copr num fmt not recognized", cat);
+	else if (cat == ARM_CAT_CPR_DTR)
+		offset = inst->dword.cpr_dtr_ins.off;
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: amode5 fmt not recognized", cat);
+
+	rn = inst->dword.cpr_dtr_ins.base_rn;
+	if(offset)
+	{
+	str_printf(inst_str_ptr, inst_str_size, "[r%d], #%d", rn, offset*4);
+	}
+	else
+		str_printf(inst_str_ptr, inst_str_size, "[r%d]", rn);
+}
+
+void arm_inst_dump_VFP1STM(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int vfp1;
+
+	if (cat == ARM_CAT_VFP)
+		vfp1 = inst->dword.vfp_mv_ins.immd8;
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: vfp1 stm fmt not recognized", cat);
+
+	if(vfp1 % 2)
+		str_printf(inst_str_ptr, inst_str_size, "FSTMIAX");
+	else
+		str_printf(inst_str_ptr, inst_str_size, "VSTMIA");
+}
+
+void arm_inst_dump_VFP1LDM(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int vfp1;
+
+	if (cat == ARM_CAT_VFP)
+		vfp1 = inst->dword.vfp_mv_ins.immd8;
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: vfp1 ldm fmt not recognized", cat);
+
+	if(vfp1 % 2)
+		str_printf(inst_str_ptr, inst_str_size, "FLDMIAX");
+	else
+		str_printf(inst_str_ptr, inst_str_size, "VLDMIA");
+}
+
+void arm_inst_dump_VFP_REGS(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+
+	unsigned int immd8;
+	unsigned int reg_start;
+	if (cat == ARM_CAT_VFP)
+	{
+		immd8 = inst->dword.vfp_mv_ins.immd8;
+		reg_start = ((inst->dword.vfp_mv_ins.d << 4)
+			| (inst->dword.vfp_mv_ins.vd)) & (0x0000001f);
+	}
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: vfp regs fmt not recognized", cat);
+
+	str_printf(inst_str_ptr, inst_str_size, "{d%d-d%d}", reg_start,
+		(reg_start + immd8/2 - 1));
+}
+
+void arm_inst_dump_FREG(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int freg;
+
+
+	if (cat == ARM_CAT_CPR_DTR)
+		freg = inst->dword.cpr_dtr_ins.cpr_sr_dst;
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: freg fmt not recognized", cat);
+
+	if(freg > 7)
+		str_printf(inst_str_ptr, inst_str_size, "f%d", (freg-8));
+	else
+		str_printf(inst_str_ptr, inst_str_size, "f%d", freg);
+}
+
+void arm_inst_dump_FP(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int freg;
+
+
+	if (cat == ARM_CAT_CPR_DTR)
+		freg = inst->dword.cpr_dtr_ins.cpr_sr_dst;
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: FP fmt not recognized", cat);
+
+	if(freg > 7)
+		str_printf(inst_str_ptr, inst_str_size, "P");
+	else
+		str_printf(inst_str_ptr, inst_str_size, "E");
+}
+
+void arm_inst_dump_RT(char **inst_str_ptr, int *inst_str_size,
+	struct arm_inst_t *inst, enum arm_cat_enum cat)
+{
+	unsigned int rt;
+
+	if (cat == ARM_CAT_VFP)
+		rt = inst->dword.vfp_strreg_tr_ins.vfp_rt;
+	/* TODO: destinations for BDTR CDTR CDO*/
+	else
+		fatal("%d: vfp rt fmt not recognized", cat);
+
+	switch (rt)
+		{
+		case (r13):
+			str_printf(inst_str_ptr, inst_str_size, "sp");
+			break;
+		case (r14):
+			str_printf(inst_str_ptr, inst_str_size, "lr");
+			break;
+		case (r15):
+			str_printf(inst_str_ptr, inst_str_size, "pc");
+			break;
+		default:
+			str_printf(inst_str_ptr, inst_str_size, "r%d", rt);
+			break;
+		}
+}
