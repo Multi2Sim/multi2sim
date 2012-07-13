@@ -121,6 +121,20 @@ char *si_gpu_report_file_name = "";
 int si_trace_category;
 
 /* Default parameters based on the AMD Radeon HD 7970 */
+unsigned int si_gpu_device_type = 4; /* CL_DEVICE_TYPE_GPU */
+unsigned int si_gpu_device_vendor_id = 1234; /* Completely arbitrary */
+
+char *si_gpu_device_profile = "FULL_PROFILE";
+char *si_gpu_device_name = "Multi2Sim Virtual GPU Device";
+char *si_gpu_device_vendor = "www.multi2sim.org";
+char *si_gpu_device_extensions = "cl_amd_fp64 cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics "
+	"cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store "
+	"cl_khr_gl_sharing cl_ext_device_fission cl_amd_device_attribute_query cl_amd_media_ops cl_amd_popcnt "
+	"cl_amd_printf ";
+char *si_gpu_device_version = "OpenCL 1.1 ATI-Stream-v2.3 (451)";
+char *si_gpu_driver_version = VERSION;
+char *si_gpu_opencl_version = "OpenCL C 1.2";
+
 unsigned int si_gpu_num_compute_units = 32;
 unsigned int si_gpu_num_wavefront_pools = 4; /* Per CU */
 unsigned int si_gpu_num_stream_cores = 16; /* Per SIMD */
@@ -131,6 +145,7 @@ unsigned int si_gpu_work_item_dimensions = 3;  /* FIXME */
 unsigned int si_gpu_work_item_sizes[3] = {256, 256, 256};  /* FIXME */
 unsigned int si_gpu_work_group_size = 256 * 256 * 256;  /* FIXME */
 
+unsigned int si_gpu_image_support = 1; /* CL_TRUE */
 unsigned int si_gpu_max_read_image_args = 128;  /* The minimum value acceptable */
 unsigned int si_gpu_max_write_image_args = 8;  /* The minimum value acceptable */
 
@@ -157,8 +172,12 @@ unsigned long long si_gpu_global_mem_cache_size = 1ull << 23;  /* 8MB */ /* FIXM
 unsigned long long si_gpu_global_mem_size = 1ull << 32;  /* 4GB of global memory reported */
 unsigned long long si_gpu_max_mem_alloc_size = (1ull << 32) / 4; /* FIXME */
 
+unsigned int si_gpu_local_mem_type = 1;  /* CL_LOCAL */
+
 unsigned long long si_gpu_max_constant_buffer_size = 1ull << 16;  /* 64KB */ /* The minimum value acceptable */
 unsigned int si_gpu_max_constant_args = 8;  /* The minimum value acceptable */
+
+unsigned int si_gpu_vector_width_half = 0; /* No support for cl_khr_fp16 */
 
 unsigned int si_gpu_error_correction_support = 1;  /* FIXME */
 unsigned int si_gpu_host_unified_memory = 0;  /* FIXME */
