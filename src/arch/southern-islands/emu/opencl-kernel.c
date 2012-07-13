@@ -409,12 +409,22 @@ uint32_t si_opencl_kernel_get_work_group_info(struct si_opencl_kernel_t *kernel,
 	uint64_t local_mem_size = 0;
 	uint32_t max_work_group_size = 256;  /* FIXME */
 
+	uint32_t compile_work_group_size[3];
+	compile_work_group_size[0] = 1;  /* FIXME */
+	compile_work_group_size[1] = 1;  /* FIXME */
+	compile_work_group_size[2] = 1;  /* FIXME */
+
 	switch (name)
 	{
 
 	case 0x11b0:  /* CL_KERNEL_WORK_GROUP_SIZE */
 		info = &max_work_group_size;
 		size_ret = 4;
+		break;
+
+	case 0x11b1:  /* CL_KERNEL_COMPILE_WORK_GROUP_SIZE */
+		info = compile_work_group_size;
+		size_ret = 4 * 3;
 		break;
 
 	case 0x11b2:  /* CL_KERNEL_LOCAL_MEM_SIZE */
@@ -437,7 +447,6 @@ uint32_t si_opencl_kernel_get_work_group_info(struct si_opencl_kernel_t *kernel,
 		break;
 	}
 	
-	case 0x11b1:  /* CL_KERNEL_COMPILE_WORK_GROUP_SIZE */
 	case 0x11b3:  /* CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE */
 	case 0x11b4:  /* CL_KERNEL_PRIVATE_MEM_SIZE */
 	default:

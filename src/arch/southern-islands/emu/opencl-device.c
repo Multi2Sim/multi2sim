@@ -57,24 +57,6 @@ void si_opencl_device_free(struct si_opencl_device_t *device)
 
 uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t name, struct mem_t *mem, uint32_t addr, uint32_t size)
 {
-	uint32_t local_mem_type = 1;  /* CL_LOCAL */
-
-	uint32_t image_support = 1; /* CL_TRUE */
-
-	uint32_t device_type = 4; /* CL_DEVICE_TYPE_GPU */
-	uint32_t device_vendor_id = 1234; /* Completely arbitrary */
-
-	uint32_t vector_width_half = 0; /* No support for cl_khr_fp16 */
-
-	char *device_name = "Multi2Sim Virtual GPU Device";
-	char *device_vendor = "www.multi2sim.org";
-	char *device_extensions = "cl_amd_fp64 cl_khr_global_int32_base_atomics cl_khr_global_int32_extended_atomics "
-		"cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store "
-		"cl_khr_gl_sharing cl_ext_device_fission cl_amd_device_attribute_query cl_amd_media_ops cl_amd_popcnt "
-		"cl_amd_printf ";
-	char *device_version = "OpenCL 1.1 ATI-Stream-v2.3 (451)";
-	char *driver_version = VERSION;
-
 	uint32_t size_ret = 0;
 	void *info = NULL;
 
@@ -83,12 +65,12 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 
 	case 0x1000:  /* CL_DEVICE_TYPE */
 		size_ret = 4;
-		info = &device_type;
+		info = &si_gpu_device_type;
 		break;
 
 	case 0x1001:  /* CL_DEVICE_VENDOR_ID */
 		size_ret = 4;
-		info = &device_vendor_id;
+		info = &si_gpu_device_vendor_id;
 		break;
 
 	case 0x1002:  /* CL_DEVICE_MAX_COMPUTE_UNITS */
@@ -173,7 +155,7 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 
 	case 0x1016:  /* CL_DEVICE_IMAGE_SUPPORT */
 		size_ret = 4;
-		info = &image_support;
+		info = &si_gpu_image_support;
 		break;
 
 	case 0x1017:  /* CL_DEVICE_MAX_PARAMETER_SIZE */
@@ -233,7 +215,7 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 
 	case 0x1022:  /* CL_DEVICE_LOCAL_MEM_TYPE */
 		size_ret = 4;
-		info = &local_mem_type;
+		info = &si_gpu_local_mem_type;
 		break;
 
 	case 0x1023:  /* CL_DEVICE_LOCAL_MEM_SIZE */
@@ -277,28 +259,33 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 		break;
 
 	case 0x102b:  /* CL_DEVICE_NAME */
-		size_ret = strlen(device_name) + 1;
-		info = device_name;
+		size_ret = strlen(si_gpu_device_name) + 1;
+		info = si_gpu_device_name;
 		break;
 	
 	case 0x102c:  /* CL_DEVICE_VENDOR */
-		size_ret = strlen(device_vendor) + 1;
-		info = device_vendor;
+		size_ret = strlen(si_gpu_device_vendor) + 1;
+		info = si_gpu_device_vendor;
 		break;
 	
 	case 0x102d:  /* CL_DRIVER_VERSION */
-		size_ret = strlen(driver_version) + 1;
-		info = driver_version;
+		size_ret = strlen(si_gpu_driver_version) + 1;
+		info = si_gpu_driver_version;
+		break;
+
+	case 0x102e:  /* CL_DEVICE_PROFILE */
+		size_ret = strlen(si_gpu_device_profile) + 1;
+		info = si_gpu_device_profile;
 		break;
 	
 	case 0x102f:  /* CL_DEVICE_VERSION */
-		size_ret = strlen(device_version) + 1;
-		info = device_version;
+		size_ret = strlen(si_gpu_device_version) + 1;
+		info = si_gpu_device_version;
 		break;
 	
 	case 0x1030:  /* CL_DEVICE_EXTENSIONS */
-		size_ret = strlen(device_extensions) + 1;
-		info = device_extensions;
+		size_ret = strlen(si_gpu_device_extensions) + 1;
+		info = si_gpu_device_extensions;
 		break;
 
 	case 0x1031:  /* CL_DEVICE_PLATFORM */
@@ -313,12 +300,32 @@ uint32_t si_opencl_device_get_info(struct si_opencl_device_t *device, uint32_t n
 
 	case 0x1034: /* CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF */
 		size_ret = 4;
-		info = &vector_width_half;
+		info = &si_gpu_vector_width_half;
 		break;
 
 	case 0x1035:  /* CL_DEVICE_HOST_UNIFIED_MEMORY */
 		size_ret = 4;
 		info = &si_gpu_host_unified_memory;
+		break;
+
+	case 0x1036:  /* CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR */
+	case 0x1037:  /* CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT */
+	case 0x1038:  /* CL_DEVICE_NATIVE_VECTOR_WIDTH_INT */
+	case 0x1039:  /* CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG */
+	case 0x103a:  /* CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT */
+	case 0x103b:  /* CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE */
+		size_ret = 4;
+		info = &si_gpu_num_stream_cores;
+		break;
+
+	case 0x103c: /* CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF */
+		size_ret = 4;
+		info = &si_gpu_vector_width_half;
+		break;
+
+	case 0x103d:  /* CL_DEVICE_OPENCL_C_VERSION */
+		size_ret = strlen(si_gpu_opencl_version) + 1;
+		info = si_gpu_opencl_version;
 		break;
 
 	case 0x103e:  /* CL_DEVICE_LINKER_AVAILABLE */
