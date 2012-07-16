@@ -65,6 +65,5 @@ struct CUstream_st
 	unsigned int id;
 };
 
-
 #endif
 
