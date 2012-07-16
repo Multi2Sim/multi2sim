@@ -784,8 +784,6 @@ void x86_cpu_init(void);
 void x86_cpu_done(void);
 void x86_cpu_dump(FILE *f);
 
-void x86_cpu_load_progs(int argc, char **argv, char *ctxfile);
-
 void x86_cpu_update_occupancy_stats(void);
 
 int x86_cpu_pipeline_empty(int core, int thread);

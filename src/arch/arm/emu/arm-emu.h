@@ -70,6 +70,9 @@ struct arm_regs_t *arm_regs_create();
 void arm_regs_free(struct arm_regs_t *regs);
 void arm_regs_copy(struct arm_regs_t *dst, struct arm_regs_t *src);
 
+
+
+
 /*
  * File management
  */
@@ -129,6 +132,8 @@ int arm_file_desc_table_get_host_fd(struct arm_file_desc_table_t *table, int gue
 int arm_file_desc_table_get_guest_fd(struct arm_file_desc_table_t *table, int host_fd);
 
 
+
+
 /*
  * ARM Context
  */
@@ -175,16 +180,24 @@ struct arm_ctx_t
 
 };
 
-struct arm_ctx_t *arm_ctx_create();
-
 #define arm_loader_debug(...) debug(arm_loader_debug_category, __VA_ARGS__)
 extern int arm_loader_debug_category;
 
+struct arm_ctx_t *arm_ctx_create(void);
+void arm_ctx_free(struct arm_ctx_t *ctx);
+
+int arm_ctx_load_from_command_line(int argc, char **argv);
+int arm_ctx_load_from_ctx_file(struct config_t *config, int index);
+
 void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *full_path, int size);
+
+
 
 /*
  * ARM disassembler
  */
+
 void arm_emu_disasm(char *path);
+
 
 #endif
