@@ -191,7 +191,7 @@ void evg_periodic_report_wavefront_init(struct evg_wavefront_t *wavefront)
 	assert(evg_periodic_report_file_name);
 	snprintf(file_name, sizeof file_name, "%s-wg%d-wf%d", evg_periodic_report_file_name,
 		work_group->id, wavefront->id_in_work_group);
-	wavefront->periodic_report_file = open_write(file_name);
+	wavefront->periodic_report_file = file_open_for_write(file_name);
 	if (!wavefront->periodic_report_file)
 		fatal("%s: could not open periodic report file", file_name);
 

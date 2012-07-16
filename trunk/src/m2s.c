@@ -1060,25 +1060,20 @@ void m2s_load_programs(int argc, char **argv)
 {
 	struct config_t *config;
 
-	int id;
-
 	char section[MAX_STRING_SIZE];
+	char exe_full_path[MAX_STRING_SIZE];
+	char *exe_file_name;
+	char *cwd_path;
+
+	Elf32_Ehdr ehdr;
+
+	int id;
 
 	/* Load guest program specified in the command line */
 	if (argc > 1)
 	{
-		/* Get executable architecture */
-		// FIXME - temporary code
-		FILE *f;
-		Elf32_Ehdr ehdr;
-		int count;
-
-		f = fopen(argv[1], "rb");
-		if (!f)
-			fatal("%s: cannot open program", argv[1]);
-		count = fread(&ehdr, sizeof ehdr, 1, f);
-		if (count != 1)
-			fatal("%s: invalid ELF file", argv[1]);
+		/* Load program depending on architecture */
+		elf_file_read_header(argv[1], &ehdr);
 		switch (ehdr.e_machine)
 		{
 		case EM_386:
@@ -1090,7 +1085,7 @@ void m2s_load_programs(int argc, char **argv)
 			break;
 
 		default:
-			fatal("%s: unknown architecture in ELF binary", argv[1]);
+			fatal("%s: unsupported ELF architecture", argv[1]);
 		}
 	}
 
@@ -1112,9 +1107,26 @@ void m2s_load_programs(int argc, char **argv)
 		if (!config_section_exists(config, section))
 			break;
 
-		/* Try reading context for each architecture */
-		x86_loader_load_from_ctx_config(config, section);
-		// FIXME - temporary code
+		/* Read executable full path */
+		exe_file_name = config_read_string(config, section, "Exe", "");
+		cwd_path = config_read_string(config, section, "Cwd", "");
+		file_full_path(exe_file_name, cwd_path, exe_full_path, sizeof exe_full_path);
+
+		/* Load context depending on architecture */
+		elf_file_read_header(exe_full_path, &ehdr);
+		switch (ehdr.e_machine)
+		{
+		case EM_386:
+			x86_loader_load_from_ctx_config(config, section);
+			break;
+
+		case EM_ARM:
+			arm_ctx_load_from_ctx_config(config, section);
+			break;
+
+		default:
+			fatal("%s: unsupported ELF architecture", argv[1]);
+		}
 	}
 
 	/* Close file */

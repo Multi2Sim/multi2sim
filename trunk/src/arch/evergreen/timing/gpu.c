@@ -437,7 +437,7 @@ static void evg_gpu_unmap_ndrange(void)
 void evg_gpu_init(void)
 {
 	/* Try to open report file */
-	if (evg_gpu_report_file_name[0] && !can_open_write(evg_gpu_report_file_name))
+	if (evg_gpu_report_file_name[0] && !file_can_open_for_write(evg_gpu_report_file_name))
 		fatal("%s: cannot open GPU pipeline report file",
 			evg_gpu_report_file_name);
 
@@ -505,7 +505,7 @@ void evg_gpu_dump_report(void)
 	char vliw_occupancy[MAX_STRING_SIZE];
 
 	/* Open file */
-	f = open_write(evg_gpu_report_file_name);
+	f = file_open_for_write(evg_gpu_report_file_name);
 	if (!f)
 		return;
 

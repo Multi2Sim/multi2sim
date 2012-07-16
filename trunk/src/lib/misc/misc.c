@@ -27,6 +27,7 @@
 #include <debug.h>
 #include <mhandle.h>
 #include <misc.h>
+#include <assert.h>
 
 
 /*
@@ -57,7 +58,7 @@ int log_base2(int x)
 
 
 /* Open file, choosing from "stdout", "stderr" or <name> */
-FILE *open_read(char *fname)
+FILE *file_open_for_read(char *fname)
 {
 	if (!fname[0])
 		return NULL;
@@ -70,7 +71,7 @@ FILE *open_read(char *fname)
 }
 
 
-int can_open_read(char *fname)
+int file_can_open_for_read(char *fname)
 {
 	FILE *f;
 	if (!fname[0])
@@ -85,7 +86,7 @@ int can_open_read(char *fname)
 }
 
 
-FILE *open_write(char *fname)
+FILE *file_open_for_write(char *fname)
 {
 	if (!fname[0])
 		return NULL;
@@ -98,7 +99,7 @@ FILE *open_write(char *fname)
 }
 
 
-int can_open_write(char *fname)
+int file_can_open_for_write(char *fname)
 {
 	FILE *f;
 	if (!fname[0])
@@ -115,7 +116,7 @@ int can_open_write(char *fname)
 
 /* Read a line from a text file, deleting final '\n';
  * if eof, return -1; else return length of string */
-int read_line(FILE *f, char *line, int size)
+int file_read_line(FILE *f, char *line, int size)
 {
 	if (!f)
 		return -1;
@@ -129,14 +130,14 @@ int read_line(FILE *f, char *line, int size)
 }
 
 
-void close_file(FILE *f)
+void file_close(FILE *f)
 {
 	if (f && f != stdout && f != stderr)
 		fclose(f);
 }
 
 
-FILE *create_temp_file(char *ret_path, int ret_path_size)
+FILE *file_create_temp(char *ret_path, int ret_path_size)
 {
 	char path[MAX_STRING_SIZE];
 	FILE *f;
@@ -151,6 +152,53 @@ FILE *create_temp_file(char *ret_path, int ret_path_size)
 	if (ret_path)
 		snprintf(ret_path, ret_path_size, "%s", path);
 	return f;
+}
+
+
+/* Return the absolute path for 'file_name'. If 'file_name' is an absolute path, the
+ * same string is returned. If 'file_name' does not start with a slash '/', it is
+ * considered relative to 'default_path'. If 'default_path' is NULL or an empty string,
+ * 'default_path' defaults to the current working directory.
+ * The absolute path is placed in 'full_path', a buffer with 'size' bytes allocated.
+ * If the absolute path does not fit in 'full_path', the function fatals.
+ */
+void file_full_path(char *file_name, char *default_path, char *full_path, int size)
+{
+	char default_path_str[MAX_STRING_SIZE];
+
+	/* Remove './' prefix from 'file_name' */
+	while (file_name && !strncmp(file_name, "./", 2))
+		file_name += 2;
+
+	/* File name is NULL or empty */
+	assert(full_path);
+	if (!file_name || !*file_name)
+	{
+		snprintf(full_path, size, "%s", "");
+		return;
+	}
+
+	/* File name is given as an absolute path */
+	if (*file_name == '/')
+	{
+		if (size < strlen(file_name) + 1)
+			fatal("%s: buffer too small", __FUNCTION__);
+		snprintf(full_path, size, "%s", file_name);
+		return;
+	}
+
+	/* Get default path as current directory, if not given */
+	if (!default_path || !*default_path)
+	{
+		default_path = default_path_str;
+		if (!getcwd(default_path, sizeof default_path_str))
+			fatal("%s: buffer too small for 'getcwd'", __FUNCTION__);
+	}
+
+	/* Relative path */
+	if (strlen(default_path) + strlen(file_name) + 2 > size)
+		fatal("%s: buffer too small", __FUNCTION__);
+	snprintf(full_path, size, "%s/%s", default_path, file_name);
 }
 
 

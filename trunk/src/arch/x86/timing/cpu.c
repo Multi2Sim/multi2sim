@@ -640,7 +640,7 @@ static void x86_cpu_dump_report(void)
 	long long now;
 
 	/* Open file */
-	f = open_write(x86_cpu_report_file_name);
+	f = file_open_for_write(x86_cpu_report_file_name);
 	if (!f)
 		return;
 	

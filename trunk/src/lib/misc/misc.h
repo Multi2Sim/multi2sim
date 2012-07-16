@@ -280,15 +280,17 @@ void str_token_list_dump(struct list_t *token_list, FILE *f);
  */
 
 
-FILE *open_read(char *fname);
-FILE *open_write(char *fname);
-void close_file(FILE *f);
+FILE *file_open_for_read(char *file_name);
+FILE *file_open_for_write(char *file_name);
+void file_close(FILE *f);
 
-int can_open_read(char *fname);
-int can_open_write(char *fname);
+int file_can_open_for_read(char *file_name);
+int file_can_open_for_write(char *file_name);
 
-int read_line(FILE *f, char *line, int size);
-FILE *create_temp_file(char *ret_path, int ret_path_size);
+int file_read_line(FILE *f, char *line, int size);
+FILE *file_create_temp(char *ret_path, int ret_path_size);
+
+void file_full_path(char *file_name, char *default_path, char *full_path, int size);
 
 
 
