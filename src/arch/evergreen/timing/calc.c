@@ -102,11 +102,11 @@ static void evg_calc_plot_work_items_per_work_group(void)
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.work_items.eps",
 		evg_gpu_calc_file_name, evg_gpu->ndrange->id);
-	if (!can_open_write(plot_file_name))
+	if (!file_can_open_for_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
 	/* Generate data file */
-	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
+	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
 	local_mem_per_work_group = evg_gpu->ndrange->local_mem_top;
 	registers_per_work_item = evg_gpu->ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used;
 	for (work_items_per_work_group = evg_emu_wavefront_size;
@@ -132,7 +132,7 @@ static void evg_calc_plot_work_items_per_work_group(void)
 	wavefronts_per_compute_unit = work_groups_per_compute_unit * wavefronts_per_work_group;
 
 	/* Generate gnuplot script */
-	script_file = create_temp_file(script_file_name, MAX_PATH_SIZE);
+	script_file = file_create_temp(script_file_name, MAX_PATH_SIZE);
 	fprintf(script_file, "set term postscript eps color solid\n");
 	fprintf(script_file, "set nokey\n");
 	fprintf(script_file, "set xlabel 'Work-items per work-group'\n");
@@ -178,11 +178,11 @@ static void evg_calc_plot_registers_per_work_item(void)
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.registers.eps",
 		evg_gpu_calc_file_name, evg_gpu->ndrange->id);
-	if (!can_open_write(plot_file_name))
+	if (!file_can_open_for_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
 	/* Generate data file */
-	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
+	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
 	local_mem_per_work_group = evg_gpu->ndrange->local_mem_top;
 	work_items_per_work_group = evg_gpu->ndrange->kernel->local_size;
 	wavefronts_per_work_group = (work_items_per_work_group + evg_emu_wavefront_size - 1) / evg_emu_wavefront_size;
@@ -205,7 +205,7 @@ static void evg_calc_plot_registers_per_work_item(void)
 	wavefronts_per_compute_unit = work_groups_per_compute_unit * wavefronts_per_work_group;
 
 	/* Generate gnuplot script */
-	script_file = create_temp_file(script_file_name, MAX_PATH_SIZE);
+	script_file = file_create_temp(script_file_name, MAX_PATH_SIZE);
 	fprintf(script_file, "set term postscript eps color solid\n");
 	fprintf(script_file, "set nokey\n");
 	fprintf(script_file, "set xlabel 'Registers per work-item'\n");
@@ -255,11 +255,11 @@ static void evg_calc_plot_local_mem_per_work_group(void)
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.local_mem.eps",
 		evg_gpu_calc_file_name, evg_gpu->ndrange->id);
-	if (!can_open_write(plot_file_name))
+	if (!file_can_open_for_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
 	/* Generate data file */
-	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
+	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
 	registers_per_work_item = evg_gpu->ndrange->kernel->bin_file->enc_dict_entry_evergreen->num_gpr_used;
 	local_mem_step = MAX(1, evg_gpu_local_mem_size / 32);
 	work_items_per_work_group = evg_gpu->ndrange->kernel->local_size;
@@ -285,7 +285,7 @@ static void evg_calc_plot_local_mem_per_work_group(void)
 	wavefronts_per_compute_unit = work_groups_per_compute_unit * wavefronts_per_work_group;
 
 	/* Generate gnuplot script */
-	script_file = create_temp_file(script_file_name, MAX_PATH_SIZE);
+	script_file = file_create_temp(script_file_name, MAX_PATH_SIZE);
 	fprintf(script_file, "set term postscript eps color solid\n");
 	fprintf(script_file, "set nokey\n");
 	fprintf(script_file, "set xlabel 'Local memory used per work-group (KB)'\n");

@@ -58,7 +58,7 @@ void evg_emu_init()
 	/* Open report file */
 	if (*evg_emu_report_file_name)
 	{
-		evg_emu_report_file = open_write(evg_emu_report_file_name);
+		evg_emu_report_file = file_open_for_write(evg_emu_report_file_name);
 		if (!evg_emu_report_file)
 			fatal("%s: cannot open report for Evergreen emulator",
 				evg_emu_report_file_name);

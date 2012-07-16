@@ -102,11 +102,11 @@ static void si_calc_plot_work_items_per_work_group(void)
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.work_items.eps",
 		si_gpu_calc_file_name, si_gpu->ndrange->id);
-	if (!can_open_write(plot_file_name))
+	if (!file_can_open_for_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
 	/* Generate data file */
-	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
+	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
 	local_mem_per_work_group = si_gpu->ndrange->local_mem_top;
 	registers_per_work_item = 
 		si_gpu->ndrange->kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used;
@@ -140,7 +140,7 @@ static void si_calc_plot_work_items_per_work_group(void)
 	wavefronts_per_wavefront_pool = work_groups_per_wavefront_pool * wavefronts_per_work_group;
 
 	/* Generate gnuplot script */
-	script_file = create_temp_file(script_file_name, MAX_PATH_SIZE);
+	script_file = file_create_temp(script_file_name, MAX_PATH_SIZE);
 	fprintf(script_file, "set term postscript eps color solid\n");
 	fprintf(script_file, "set nokey\n");
 	fprintf(script_file, "set xlabel 'Work-items per work-group'\n");
@@ -186,11 +186,11 @@ static void si_calc_plot_registers_per_work_item(void)
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.registers.eps",
 		si_gpu_calc_file_name, si_gpu->ndrange->id);
-	if (!can_open_write(plot_file_name))
+	if (!file_can_open_for_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
 	/* Generate data file */
-	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
+	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
 	local_mem_per_work_group = si_gpu->ndrange->local_mem_top;
 	work_items_per_work_group = si_gpu->ndrange->kernel->local_size;
 	wavefronts_per_work_group = (work_items_per_work_group + si_emu_wavefront_size - 1) / 
@@ -218,7 +218,7 @@ static void si_calc_plot_registers_per_work_item(void)
 	wavefronts_per_wavefront_pool = work_groups_per_wavefront_pool * wavefronts_per_work_group;
 
 	/* Generate gnuplot script */
-	script_file = create_temp_file(script_file_name, MAX_PATH_SIZE);
+	script_file = file_create_temp(script_file_name, MAX_PATH_SIZE);
 	fprintf(script_file, "set term postscript eps color solid\n");
 	fprintf(script_file, "set nokey\n");
 	fprintf(script_file, "set xlabel 'Registers per work-item'\n");
@@ -268,11 +268,11 @@ static void si_calc_plot_local_mem_per_work_group(void)
 	/* Create plot file */
 	snprintf(plot_file_name, MAX_PATH_SIZE, "%s.%d.local_mem.eps",
 		si_gpu_calc_file_name, si_gpu->ndrange->id);
-	if (!can_open_write(plot_file_name))
+	if (!file_can_open_for_write(plot_file_name))
 		fatal("%s: cannot write GPU occupancy calculation plot", plot_file_name);
 
 	/* Generate data file */
-	data_file = create_temp_file(data_file_name, MAX_PATH_SIZE);
+	data_file = file_create_temp(data_file_name, MAX_PATH_SIZE);
 	registers_per_work_item = 
 		si_gpu->ndrange->kernel->bin_file->enc_dict_entry_southern_islands->num_gpr_used;
 	local_mem_step = MAX(1, si_gpu_local_mem_size / 32);
@@ -303,7 +303,7 @@ static void si_calc_plot_local_mem_per_work_group(void)
 	wavefronts_per_wavefront_pool = work_groups_per_wavefront_pool * wavefronts_per_work_group;
 
 	/* Generate gnuplot script */
-	script_file = create_temp_file(script_file_name, MAX_PATH_SIZE);
+	script_file = file_create_temp(script_file_name, MAX_PATH_SIZE);
 	fprintf(script_file, "set term postscript eps color solid\n");
 	fprintf(script_file, "set nokey\n");
 	fprintf(script_file, "set xlabel 'Local memory used per work-group (KB)'\n");

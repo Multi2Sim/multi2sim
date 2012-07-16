@@ -254,13 +254,13 @@ void vi_state_init(char *trace_file_name)
 		fatal("%s: out of memory", __FUNCTION__);
 	
 	/* Create uncompressed trace file */
-	vi_state->unzipped_trace_file = create_temp_file(buf, sizeof buf);
+	vi_state->unzipped_trace_file = file_create_temp(buf, sizeof buf);
 	vi_state->unzipped_trace_file_name = strdup(buf);
 	if (!vi_state->unzipped_trace_file_name)
 		fatal("%s: out of memory", __FUNCTION__);
 
 	/* Create checkpoint file */
-	vi_state->checkpoint_file = create_temp_file(buf, sizeof buf);
+	vi_state->checkpoint_file = file_create_temp(buf, sizeof buf);
 	vi_state->checkpoint_file_name = strdup(buf);
 	if (!vi_state->checkpoint_file_name)
 		fatal("%s: out of memory", __FUNCTION__);

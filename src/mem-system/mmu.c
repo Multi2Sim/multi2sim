@@ -178,7 +178,7 @@ void mmu_init()
 	/* Open report file */
 	if (*mmu_report_file_name)
 	{
-		mmu->report_file = open_write(mmu_report_file_name);
+		mmu->report_file = file_open_for_write(mmu_report_file_name);
 		if (!mmu->report_file)
 			fatal("%s: cannot open report file for MMU", mmu_report_file_name);
 	}
