@@ -2082,7 +2082,10 @@ struct si_opencl_clEnqueueMapBuffer_args_t
 void si_opencl_clEnqueueMapBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 {
 	struct si_opencl_clEnqueueMapBuffer_args_t argv;
+	struct si_opencl_mem_t *mem;
 	struct si_opencl_event_t *event;
+
+	void* buf;
 
 	int code;
 	int zero = 0;
@@ -2092,8 +2095,40 @@ void si_opencl_clEnqueueMapBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	assert(code == 1064);
 
 	/* Get memory object */
-	si_opencl_repo_get_object(si_emu->opencl_repo,
+	mem = si_opencl_repo_get_object(si_emu->opencl_repo,
 			si_opencl_object_mem, argv.buffer);
+
+	/* Set map info for use in clEnqueueUnmapMemObj */
+	mem->map_flags = argv.map_flags;
+	mem->map_offset = argv.offset;
+	mem->map_cb = argv.cb;
+
+	/* Check that device buffer storage is not exceeded */
+	if (argv.offset + argv.cb > mem->size)
+		fatal("%s: buffer storage exceeded.\n%s", __FUNCTION__,
+				si_err_opencl_param_note);
+
+	/* CL_MAP_READ, Copy buffer from device memory to host memory */
+	if ((argv.map_flags & 1) == 1)
+	{
+		buf = malloc(argv.cb);
+		if (!buf)
+			fatal("out of memory");
+		mem_read(si_emu->global_mem, mem->device_ptr + argv.offset, argv.cb, buf);
+		if (mem->flags & 0x8) /* CL_MEM_USE_HOST_PTR */
+		{
+			mem_write(ctx->mem, mem->host_ptr, argv.cb, buf);
+		}
+		else
+		{
+			//mem_write(ctx->mem, argv.new_buffer, argv.cb, buf);
+		}
+		free(buf);
+
+		/* Debug */
+		si_opencl_debug("\t%d bytes copied from device (0x%x) to host(0x%x)\n",
+				argv.cb, mem->device_ptr + argv.offset, mem->host_ptr);
+	}
 
 	/* Event */
 	if (argv.event_ptr)
@@ -2111,16 +2146,15 @@ void si_opencl_clEnqueueMapBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	/* Return success */
 	if (argv.errcode_ret)
 		mem_write(ctx->mem, argv.errcode_ret, 4, &zero);
-	
-	/* Not ready yet */
-	fatal("%s: not implemented", __FUNCTION__);
 
 	/* Return success */
-	si_opencl_api_return(ctx, 0);
+	//si_opencl_api_return(ctx, (mem->flags & 0x8) ? mem->host_ptr: argv.new_buffer);
 }
 
 int si_opencl_clEnqueueMapBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
+	fatal("clEnqueueMapBuffer not implemented.");
+
 	struct si_opencl_clEnqueueMapBuffer_args_t *argv;
 	struct si_command_queue_t *command_queue;
 
@@ -2136,7 +2170,7 @@ int si_opencl_clEnqueueMapBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 	/* Not supported arguments */
 	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->num_events_in_wait_list, 0);
 	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
-	SI_OPENCL_ARG_NOT_SUPPORTED_EQ(argv->blocking_map, 0);
+	SI_OPENCL_ARG_NOT_SUPPORTED_EQ(argv->map_flags & 4, 4);
 
 	/* Get command queue */
 	command_queue = si_opencl_repo_get_object(si_emu->opencl_repo,
@@ -2151,6 +2185,101 @@ int si_opencl_clEnqueueMapBuffer_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 }
 
 
+/*
+ * OpenCL call 'clEnqueueUnmapMemObject' (code 1066)
+ */
+
+struct si_opencl_clEnqueueUnmapMemObject_args_t
+{
+	unsigned int command_queue;  /* cl_command_queue command_queue */
+	unsigned int memobj;  /* cl_mem memobj */
+	unsigned int mapped_ptr; /* void *mapped_ptr */
+	unsigned int num_events_in_wait_list;  /* cl_uint num_events_in_wait_list */
+	unsigned int event_wait_list;  /* const cl_event *event_wait_list */
+	unsigned int event_ptr;  /* cl_event *event */
+};
+
+void si_opencl_clEnqueueUnmapMemObject_wakeup(struct x86_ctx_t *ctx, void *data)
+{
+	struct si_opencl_clEnqueueUnmapMemObject_args_t argv;
+	struct si_opencl_mem_t *mem;
+	struct si_opencl_event_t *event;
+
+	void* buf;
+
+	int code;
+
+	/* Read function arguments again */
+	code = si_opencl_api_read_args(ctx, NULL, &argv, sizeof argv);
+	assert(code == 1066);
+
+	/* Get memory object */
+	mem = si_opencl_repo_get_object(si_emu->opencl_repo,
+			si_opencl_object_mem, argv.memobj);
+
+	/* CL_MAP_WRITE, Copy buffer from host memory to device memory */
+	if ((mem->map_flags & 2) == 2)
+	{
+		buf = malloc(mem->map_cb);
+		if (!buf)
+			fatal("%s: out of memory", __FUNCTION__);
+		mem_read(ctx->mem, argv.mapped_ptr, mem->map_cb, buf);
+		mem_write(si_emu->global_mem, mem->device_ptr + mem->map_offset, mem->map_cb, buf);
+		free(buf);
+
+		/* Debug */
+		si_opencl_debug("\t%d bytes copied from host (0x%x) to device (0x%x)\n",
+				mem->map_cb, argv.mapped_ptr, mem->device_ptr + mem->map_offset);
+	}
+
+	/* Event */
+	if (argv.event_ptr)
+	{
+		event = si_opencl_event_create(SI_OPENCL_EVENT_MAP_BUFFER);
+		event->status = SI_OPENCL_EVENT_STATUS_COMPLETE;
+		event->time_queued = si_opencl_event_timer();
+		event->time_submit = si_opencl_event_timer();
+		event->time_start = si_opencl_event_timer();
+		event->time_end = si_opencl_event_timer();  /* FIXME: change for asynchronous exec */
+		mem_write(ctx->mem, argv.event_ptr, 4, &event->id);
+		si_opencl_debug("    event: 0x%x\n", event->id);
+	}
+
+	/* Return success */
+	si_opencl_api_return(ctx, 0);
+}
+
+int si_opencl_clEnqueueUnmapMemObject_impl(struct x86_ctx_t *ctx, int *argv_ptr)
+{
+	fatal("clEnqueueUnmapMemObject not implemented.");
+
+	struct si_opencl_clEnqueueUnmapMemObject_args_t *argv;
+	struct si_command_queue_t *command_queue;
+
+	/* Debug arguments */
+	argv = (struct si_opencl_clEnqueueUnmapMemObject_args_t *) argv_ptr;
+	si_opencl_debug("  command_queue=0x%x, memobj=0x%x, mapped_ptr=0x%x\n"
+			"  num_events_in_wait_list=0x%x, event_wait_list=0x%x,\n"
+			"  event=0x%x\n",
+			argv->command_queue, argv->memobj, argv->mapped_ptr,
+			argv->num_events_in_wait_list, argv->event_wait_list,
+			argv->event_ptr);
+
+	/* Not supported arguments */
+	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->num_events_in_wait_list, 0);
+	SI_OPENCL_ARG_NOT_SUPPORTED_NEQ(argv->event_wait_list, 0);
+
+	/* Get command queue */
+	command_queue = si_opencl_repo_get_object(si_emu->opencl_repo,
+			si_opencl_object_command_queue, argv->command_queue);
+
+	/* Suspend context until command queue is empty */
+	x86_ctx_suspend(ctx, si_opencl_command_queue_can_wakeup, command_queue,
+			si_opencl_clEnqueueMapBuffer_wakeup, NULL);
+
+	/* Return success, ignored for suspended context. */
+	return 0;
+}
 
 
 /*
@@ -2405,7 +2534,6 @@ __SI_OPENCL_NOT_IMPL__(clEnqueueCopyImage)
 __SI_OPENCL_NOT_IMPL__(clEnqueueCopyImageToBuffer)
 __SI_OPENCL_NOT_IMPL__(clEnqueueCopyBufferToImage)
 __SI_OPENCL_NOT_IMPL__(clEnqueueMapImage)
-__SI_OPENCL_NOT_IMPL__(clEnqueueUnmapMemObject)
 __SI_OPENCL_NOT_IMPL__(clEnqueueTask)
 __SI_OPENCL_NOT_IMPL__(clEnqueueNativeKernel)
 __SI_OPENCL_NOT_IMPL__(clEnqueueMarker)
