@@ -1058,17 +1058,69 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 
 void m2s_load_programs(int argc, char **argv)
 {
-	int err;
+	struct config_t *config;
+
+	int id;
+
+	char section[MAX_STRING_SIZE];
 
 	/* Load guest program specified in the command line */
 	if (argc > 1)
 	{
-		err = x86_loader_load_from_command_line(argc - 1, argv + 1);
-		if (err)
-			err = arm_ctx_load_from_command_line(argc - 1, argv + 1);
-		if (err)
-			fatal("%s: invalid ELF binary", argv[1]);
+		/* Get executable architecture */
+		// FIXME - temporary code
+		FILE *f;
+		Elf32_Ehdr ehdr;
+		int count;
+
+		f = fopen(argv[1], "rb");
+		if (!f)
+			fatal("%s: cannot open program", argv[1]);
+		count = fread(&ehdr, sizeof ehdr, 1, f);
+		if (count != 1)
+			fatal("%s: invalid ELF file", argv[1]);
+		switch (ehdr.e_machine)
+		{
+		case EM_386:
+			x86_loader_load_from_command_line(argc - 1, argv + 1);
+			break;
+
+		case EM_ARM:
+			arm_ctx_load_from_command_line(argc - 1, argv + 1);
+			break;
+
+		default:
+			fatal("%s: unknown architecture in ELF binary", argv[1]);
+		}
 	}
+
+	/* Continue processing the context configuration file, if specified. */
+	if (!*ctx_config_file_name)
+		return;
+
+	/* Open file */
+	config = config_create(ctx_config_file_name);
+	if (!config_load(config))
+		fatal("%s: cannot open context configuration file",
+			ctx_config_file_name);
+
+	/* Iterate through consecutive contexts */
+	for (id = 0; ; id++)
+	{
+		/* Read section */
+		snprintf(section, sizeof section, "Context %d", id);
+		if (!config_section_exists(config, section))
+			break;
+
+		/* Try reading context for each architecture */
+		x86_loader_load_from_ctx_config(config, section);
+		// FIXME - temporary code
+	}
+
+	/* Close file */
+	config_check(config);
+	config_free(config);
+
 }
 
 

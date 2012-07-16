@@ -23,8 +23,11 @@
 struct config_t;
 
 /* Creation and destruction */
-struct config_t *config_create(char *filename);
+struct config_t *config_create(char *file_name);
 void config_free(struct config_t *config);
+
+/* Get the file name */
+char *config_get_file_name(struct config_t *config);
 
 /* Load and save configuration;
  * Return value: non-0=ok, 0=file access failure */

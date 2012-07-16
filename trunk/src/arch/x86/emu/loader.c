@@ -683,17 +683,13 @@ void x86_loader_get_full_path(struct x86_ctx_t *ctx, char *file_name, char *full
 }
 
 
-int x86_loader_load_from_ctx_config(char *file_name)
+void x86_loader_load_from_ctx_config(struct config_t *config, char *section)
 {
-	struct config_t *config;
 	struct x86_ctx_t *ctx;
 	struct x86_loader_t *ld;
 
-	char section[MAX_STRING_SIZE];
 	char buf[MAX_STRING_SIZE];
 
-	int ctx_id;
-	
 	char *exe;
 	char *cwd;
 	char *args;
@@ -703,111 +699,95 @@ int x86_loader_load_from_ctx_config(char *file_name)
 	char *out;
 
 	char *ipc_report_file_name;
+	char *config_file_name;
 
+	/* Get configuration file name for errors */
+	config_file_name = config_get_file_name(config);
 
-	/* Open context configuration file */
-	config = config_create(file_name);
-	if (!config_load(config))
-		fatal("%s: cannot open context configuration file",
-			file_name);
-	
-	/* Create contexts */
-	for (ctx_id = 0; ; ctx_id++)
+	/* Create new context */
+	ctx = x86_ctx_create();
+	ld = ctx->loader;
+		
+	/* Executable */
+	exe = config_read_string(config, section, "Exe", "");
+	exe = strdup(exe);
+	if (!exe)
+		fatal("%s: out of memory", __FUNCTION__);
+	if (!*exe)
+		fatal("%s: [%s]: invalid executable", config_file_name,
+			section);
+
+	/* Arguments */
+	args = config_read_string(config, section, "Args", "");
+	linked_list_add(ld->args, exe);
+	x86_loader_add_args_string(ctx, args);
+
+	/* Environment variables */
+	env = config_read_string(config, section, "Env", "");
+	x86_loader_add_environ(ctx, env);
+
+	/* Current working directory */
+	cwd = config_read_string(config, section, "Cwd", "");
+	if (*cwd)
 	{
-		/* Create new context */
-		sprintf(section, "Context %d", ctx_id);
-		if (!config_section_exists(config, section))
-			break;
-		ctx = x86_ctx_create();
-		ld = ctx->loader;
-		
-		/* Executable */
-		exe = config_read_string(config, section, "Exe", "");
-		exe = strdup(exe);
-		if (!exe)
+		ld->cwd = strdup(cwd);
+		if (!ld->cwd)
 			fatal("%s: out of memory", __FUNCTION__);
-		if (!*exe)
-			fatal("%s: invalid executable", file_name);
+	}
+	else
+	{
+		/* Get current directory */
+		ld->cwd = getcwd(buf, sizeof buf);
+		if (!ld->cwd)
+			panic("%s: buffer too small", __FUNCTION__);
 
-		/* Arguments */
-		args = config_read_string(config, section, "Args", "");
-		linked_list_add(ld->args, exe);
-		x86_loader_add_args_string(ctx, args);
-
-		/* Environment variables */
-		env = config_read_string(config, section, "Env", "");
-		x86_loader_add_environ(ctx, env);
-			
-		/* Current working directory */
-		cwd = config_read_string(config, section, "Cwd", "");
-		if (*cwd)
-		{
-			ld->cwd = strdup(cwd);
-			if (!ld->cwd)
-				fatal("%s: out of memory", __FUNCTION__);
-		}
-		else
-		{
-			/* Get current directory */
-			ld->cwd = getcwd(buf, sizeof buf);
-			if (!ld->cwd)
-				panic("%s: buffer too small", __FUNCTION__);
-
-			/* Duplicate */
-			ld->cwd = strdup(ld->cwd);
-			if (!ld->cwd)
-				fatal("%s: out of memory", __FUNCTION__);
-		}
-		
-		/* Standard input */
-		in = config_read_string(config, section, "Stdin", "");
-		ld->stdin_file = strdup(in);
-		if (!ld->stdin_file)
+		/* Duplicate */
+		ld->cwd = strdup(ld->cwd);
+		if (!ld->cwd)
 			fatal("%s: out of memory", __FUNCTION__);
-
-		/* Standard output */
-		out = config_read_string(config, section, "Stdout", "");
-		ld->stdout_file = strdup(out);
-		if (!ld->stdout_file)
-			fatal("%s: out of memory", __FUNCTION__);
-
-		/* IPC report file */
-		ipc_report_file_name = config_read_string(config, section,
-			"IPCReport", "");
-		ld->ipc_report_interval = config_read_int(config, section,
-			"IPCReportInterval", 100000);
-		if (*ipc_report_file_name)
-		{
-			if (x86_emu_kind == x86_emu_kind_functional)
-				warning("%s: ctx-%d: value for 'IPCReport' ignored.\n%s",
-					file_name, ctx_id, err_x86_ctx_ipc_report);
-			else
-			{
-				ld->ipc_report_file = open_write(ipc_report_file_name);
-				if (!ld->ipc_report_file)
-					fatal("%s: cannot open IPC report file",
-						ipc_report_file_name);
-				if (ld->ipc_report_interval < 1)
-					fatal("%s: invalid value for 'IPCReportInterval'",
-						file_name);
-				x86_ctx_ipc_report_schedule(ctx);
-			}
-		}
-
-		/* Load executable */
-		x86_loader_load_exe(ctx, exe);
 	}
 
-	/* Check for not allowed entries, and free */
-	config_check(config);
-	config_free(config);
+	/* Standard input */
+	in = config_read_string(config, section, "Stdin", "");
+	ld->stdin_file = strdup(in);
+	if (!ld->stdin_file)
+		fatal("%s: out of memory", __FUNCTION__);
 
-	/* Return success */
-	return 0;
+	/* Standard output */
+	out = config_read_string(config, section, "Stdout", "");
+	ld->stdout_file = strdup(out);
+	if (!ld->stdout_file)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* IPC report file */
+	ipc_report_file_name = config_read_string(config, section,
+			"IPCReport", "");
+	ld->ipc_report_interval = config_read_int(config, section,
+			"IPCReportInterval", 100000);
+	if (*ipc_report_file_name)
+	{
+		if (x86_emu_kind == x86_emu_kind_functional)
+			warning("%s: [%s]: value for 'IPCReport' ignored.\n%s",
+				config_file_name, section, err_x86_ctx_ipc_report);
+		else
+		{
+			ld->ipc_report_file = open_write(ipc_report_file_name);
+			if (!ld->ipc_report_file)
+				fatal("%s: cannot open IPC report file",
+						ipc_report_file_name);
+			if (ld->ipc_report_interval < 1)
+				fatal("%s: invalid value for 'IPCReportInterval'",
+						config_file_name);
+			x86_ctx_ipc_report_schedule(ctx);
+		}
+	}
+
+	/* Load executable */
+	x86_loader_load_exe(ctx, exe);
 }
 
 
-int x86_loader_load_from_command_line(int argc, char **argv)
+void x86_loader_load_from_command_line(int argc, char **argv)
 {
 	struct x86_ctx_t *ctx;
 	struct x86_loader_t *ld;
@@ -821,7 +801,6 @@ int x86_loader_load_from_command_line(int argc, char **argv)
 	/* Arguments and environment */
 	x86_loader_add_args_vector(ctx, argc, argv);
 	x86_loader_add_environ(ctx, "");
-
 
 	/* Get current directory */
 	ld->cwd = getcwd(buf, sizeof buf);
@@ -841,8 +820,5 @@ int x86_loader_load_from_command_line(int argc, char **argv)
 
 	/* Load executable */
 	x86_loader_load_exe(ctx, argv[0]);
-
-	/* Return success */
-	return 0;
 }
 
