@@ -21,7 +21,9 @@
 #ifndef M2S_CUDART_H
 #define M2S_CUDART_H
 
+#include <cuda.h>
 #include <cuda_runtime_api.h>
+#include <crt/host_runtime.h>
 
 /* System call for CUDA runtime */
 #define FRM_CUDART_SYS_CODE  329
@@ -34,7 +36,7 @@ enum frm_cudart_call_t
 #define FRM_CUDART_DEFINE_CALL(name, code) frm_cudart_call_##name = code,
 #include "../../src/arch/fermi/emu/cudart.dat"
 #undef FRM_CUDA_DEFINE_CALL
-	frm_cuda_callrt_count
+	frm_cudart_call_count
 };
 
 #endif
