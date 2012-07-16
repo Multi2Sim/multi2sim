@@ -683,7 +683,7 @@ void x86_loader_get_full_path(struct x86_ctx_t *ctx, char *file_name, char *full
 }
 
 
-void x86_loader_load_prog_from_ctxconfig(char *file_name)
+int x86_loader_load_from_ctx_config(char *file_name)
 {
 	struct config_t *config;
 	struct x86_ctx_t *ctx;
@@ -801,10 +801,13 @@ void x86_loader_load_prog_from_ctxconfig(char *file_name)
 	/* Check for not allowed entries, and free */
 	config_check(config);
 	config_free(config);
+
+	/* Return success */
+	return 0;
 }
 
 
-void x86_loader_load_prog_from_cmdline(int argc, char **argv)
+int x86_loader_load_from_command_line(int argc, char **argv)
 {
 	struct x86_ctx_t *ctx;
 	struct x86_loader_t *ld;
@@ -838,5 +841,8 @@ void x86_loader_load_prog_from_cmdline(int argc, char **argv)
 
 	/* Load executable */
 	x86_loader_load_exe(ctx, argv[0]);
+
+	/* Return success */
+	return 0;
 }
 
