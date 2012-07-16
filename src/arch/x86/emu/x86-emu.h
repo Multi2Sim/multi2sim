@@ -158,8 +158,8 @@ void x86_loader_set_cwd(struct x86_ctx_t *ctx, char *cwd);
 void x86_loader_set_redir(struct x86_ctx_t *ctx, char *stdin, char *stdout);
 void x86_loader_load_exe(struct x86_ctx_t *ctx, char *exe);
 
-int x86_loader_load_from_ctx_config(char *ctxconfig);
-int x86_loader_load_from_command_line(int argc, char **argv);
+void x86_loader_load_from_ctx_config(struct config_t *config, char *section);
+void x86_loader_load_from_command_line(int argc, char **argv);
 
 /* Architectural state checkpoints */
 void x86_checkpoint_load(char *path);

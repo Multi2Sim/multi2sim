@@ -516,13 +516,11 @@ void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *
 }
 
 
-int arm_ctx_load_from_command_line(int argc, char **argv)
+void arm_ctx_load_from_command_line(int argc, char **argv)
 {
-	return 0;
 }
 
 
-int arm_ctx_load_from_ctx_file(struct config_t *config, int index)
+void arm_ctx_load_from_ctx_file(struct config_t *config, char *section)
 {
-	return 0;
 }
