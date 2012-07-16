@@ -224,7 +224,8 @@ void config_free(struct config_t *config)
 		item; item = hash_table_find_next(config->items, &value))
 	{
 		get_section_var_from_item(item, section, var);
-		if (var[0]) {
+		if (var[0])
+		{
 			free(value);
 			continue;
 		}
@@ -236,6 +237,13 @@ void config_free(struct config_t *config)
 	hash_table_free(config->items);
 	hash_table_free(config->allowed_items);
 	free(config);
+}
+
+
+/* Get the file name */
+char *config_get_file_name(struct config_t *config)
+{
+	return config->file_name ? config->file_name : "";
 }
 
 
