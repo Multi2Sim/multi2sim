@@ -939,17 +939,6 @@ void x86_cpu_done()
 }
 
 
-/* Load programs to different contexts from a configuration text file or
- * from arguments */
-void x86_cpu_load_progs(int argc, char **argv, char *ctxfile)
-{
-	if (argc > 1)
-		x86_loader_load_prog_from_cmdline(argc - 1, argv + 1);
-	if (*ctxfile)
-		x86_loader_load_prog_from_ctxconfig(ctxfile);
-}
-
-
 void x86_cpu_dump(FILE *f)
 {
 	int core, thread;
