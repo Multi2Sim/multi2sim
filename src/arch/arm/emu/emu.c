@@ -20,6 +20,43 @@
 #include <arm-emu.h>
 
 
+/*
+ * Global variables
+ */
+
+/* Configuration parameters */
+long long arm_emu_max_inst = 0;
+long long arm_emu_max_cycles = 0;
+long long arm_emu_max_time = 0;
+char * arm_emu_last_inst_bytes = 0;
+enum arm_emu_kind_t arm_emu_kind = arm_emu_kind_functional;
+
+
+/* Reason for simulation end. Declared as volatile, since it is modified by
+ * a signal handler. This makes sure the variable resides in a memory location. */
+volatile enum arm_emu_finish_t arm_emu_finish = arm_emu_finish_none;
+
+struct string_map_t arm_emu_finish_map =
+{
+	9, {
+		{ "ContextsFinished", arm_emu_finish_ctx },
+		{ "LastCPUInst", arm_emu_finish_last_cpu_inst_bytes },
+		{ "MaxCPUInst", arm_emu_finish_max_cpu_inst },
+		{ "MaxCPUCycles", arm_emu_finish_max_cpu_cycles },
+		{ "MaxGPUInst", arm_emu_finish_max_gpu_inst },
+		{ "MaxGPUCycles", arm_emu_finish_max_gpu_cycles },
+		{ "MaxGPUKernels", arm_emu_finish_max_gpu_kernels },
+		{ "MaxTime", arm_emu_finish_max_time },
+		{ "Signal", arm_emu_finish_signal },
+		{ "Stall", arm_emu_finish_stall },
+		{ "GPUNoFaults", arm_emu_finish_gpu_no_faults }  /* GPU-REL */
+	}
+};
+
+/*
+ * Arm disassembler
+ */
+
 void arm_elf_function_symbol(struct elf_file_t *elf_file, unsigned int inst_addr)
 {
 	unsigned int i;
@@ -61,9 +98,7 @@ unsigned int arm_dump_word_symbol(struct elf_file_t *elf_file, unsigned int inst
 	return (word_flag);
 }
 
-/*
- * Arm disassembler
- */
+
 void arm_emu_disasm(char *path)
 {
 	struct elf_file_t *elf_file;
