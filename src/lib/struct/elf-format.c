@@ -35,7 +35,7 @@
 
 int elf_debug_category;
 
-static char *err_elf_64bit =
+static char *elf_err_64bit =
 	"\tThe ELF file being loaded is a 64-bit file, currently not supported\n"
 	"\tby Multi2Sim. If you are compiling your own source code on a 64-bit\n"
 	"\tmachine, please use the '-m32' flag in the gcc command-line. If you\n"
@@ -316,7 +316,7 @@ static void elf_file_read_elf_header(struct elf_file_t *elf_file)
 	/* Check for 32-bit executable (field e_ident[EI_CLASS]) */
 	if (elf_header->e_ident[4] == 2)
 		fatal("%s: not supported architecture.\n%s",
-			elf_file->path, err_elf_64bit);
+			elf_file->path, elf_err_64bit);
 	
 	/* Check that header size is correct */
 	if (elf_header->e_ehsize != sizeof(Elf32_Ehdr))
@@ -568,6 +568,7 @@ struct elf_file_t *elf_file_create_from_path(char *path)
 	return elf_file;
 }
 
+
 void elf_file_free(struct elf_file_t *elf_file)
 {
 	/* Free symbol table */
@@ -589,4 +590,33 @@ void elf_file_free(struct elf_file_t *elf_file)
 	free(elf_file->buffer.ptr);
 	free(elf_file->path);
 	free(elf_file);
+}
+
+
+/* Read the ELF header from a file, without creating an entire ELF object.
+ * This function is useful to pre-process an ELF file before deciding a
+ * specific action for it that depends on a field of the header. */
+void elf_file_read_header(char *path, Elf32_Ehdr *ehdr)
+{
+	int count;
+
+	FILE *f;
+
+	/* Open file */
+	f = fopen(path, "rb");
+	if (!f)
+		fatal("%s: cannot open file", path);
+
+	/* Read header */
+	count = fread(ehdr, sizeof(Elf32_Ehdr), 1, f);
+	if (count != 1)
+		fatal("%s: invalid ELF file", path);
+
+	/* Check that ELF file is a 32-bit object */
+	if (ehdr->e_ident[EI_CLASS] == ELFCLASS64)
+		fatal("%s: 64-bit ELF not supported.\n%s",
+			path, elf_err_64bit);
+
+	/* Close file */
+	fclose(f);
 }

@@ -621,7 +621,7 @@ void x86_loader_free(struct x86_loader_t *ld)
 	linked_list_free(ld->env);
 
 	/* IPC report file */
-	close_file(ld->ipc_report_file);
+	file_close(ld->ipc_report_file);
 
 	/* Free loader */
 	if (ld->interp)
@@ -771,7 +771,7 @@ void x86_loader_load_from_ctx_config(struct config_t *config, char *section)
 				config_file_name, section, err_x86_ctx_ipc_report);
 		else
 		{
-			ld->ipc_report_file = open_write(ipc_report_file_name);
+			ld->ipc_report_file = file_open_for_write(ipc_report_file_name);
 			if (!ld->ipc_report_file)
 				fatal("%s: cannot open IPC report file",
 						ipc_report_file_name);

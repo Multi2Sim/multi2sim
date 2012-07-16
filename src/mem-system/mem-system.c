@@ -41,7 +41,7 @@ struct mem_system_t *mem_system;
 void mem_system_init(void)
 {
 	/* Try to open report file */
-	if (*mem_report_file_name && !can_open_write(mem_report_file_name))
+	if (*mem_report_file_name && !file_can_open_for_write(mem_report_file_name))
 		fatal("%s: cannot open GPU cache report file",
 			mem_report_file_name);
 
@@ -190,7 +190,7 @@ void mem_system_dump_report()
 	int i;
 
 	/* Open file */
-	f = open_write(mem_report_file_name);
+	f = file_open_for_write(mem_report_file_name);
 	if (!f)
 		return;
 	

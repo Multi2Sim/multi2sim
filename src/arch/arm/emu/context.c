@@ -521,6 +521,6 @@ void arm_ctx_load_from_command_line(int argc, char **argv)
 }
 
 
-void arm_ctx_load_from_ctx_file(struct config_t *config, char *section)
+void arm_ctx_load_from_ctx_config(struct config_t *config, char *section)
 {
 }

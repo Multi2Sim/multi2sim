@@ -58,7 +58,7 @@ void si_emu_init()
 	/* Open report file */
 	if (*si_emu_report_file_name)
 	{
-		si_emu_report_file = open_write(si_emu_report_file_name);
+		si_emu_report_file = file_open_for_write(si_emu_report_file_name);
 		if (!si_emu_report_file)
 			fatal("%s: cannot open report for Southern Islands emulator",
 				si_emu_report_file_name);

@@ -511,7 +511,7 @@ static void si_gpu_unmap_ndrange(void)
 void si_gpu_init(void)
 {
 	/* Try to open report file */
-	if (si_gpu_report_file_name[0] && !can_open_write(si_gpu_report_file_name))
+	if (si_gpu_report_file_name[0] && !file_can_open_for_write(si_gpu_report_file_name))
 		fatal("%s: cannot open GPU pipeline report file",
 			si_gpu_report_file_name);
 
@@ -566,7 +566,7 @@ void si_gpu_dump_report(void)
 	long long coalesced_writes;
 
 	/* Open file */
-	f = open_write(si_gpu_report_file_name);
+	f = file_open_for_write(si_gpu_report_file_name);
 	if (!f)
 		return;
 

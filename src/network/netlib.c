@@ -252,7 +252,7 @@ void net_init(void)
 	/* Report file */
 	if (*net_report_file_name)
 	{
-		net_report_file = open_write(net_report_file_name);
+		net_report_file = file_open_for_write(net_report_file_name);
 		if (!net_report_file)
 			fatal("%s: cannot write on network report file",
 				net_report_file_name);
@@ -281,7 +281,7 @@ void net_done(void)
 	}
 
 	/* Close report file */
-	close_file(net_report_file);
+	file_close(net_report_file);
 }
 
 
