@@ -21,16 +21,14 @@
 #include <mem-system.h>
 #include <x86-emu.h>
 
-#include <time.h>
 
 
 /*
- * Macros
+ * Debug
  */
 
 
-#define cuda_debug(stream, ...) ((!strcmp(getenv("LIBM2S_CUDA_DUMP"), "1")) ? \
-	fprintf((stream), __VA_ARGS__) : (void) 0)
+int frm_cuda_debug_category;
 
 
 
@@ -57,7 +55,7 @@ static char *err_frm_cuda_code =
 enum frm_cuda_call_t
 {
 	frm_cuda_call_invalid = 0,
-#define FRM_CUDA_DEFINE_CALL(name, code) frm_cuda_call_##name = code,
+#define FRM_CUDA_DEFINE_CALL(name) frm_cuda_call_##name,
 #include "cuda.dat"
 #undef FRM_CUDA_DEFINE_CALL
 	frm_cuda_call_count
@@ -68,7 +66,7 @@ enum frm_cuda_call_t
 char *frm_cuda_call_name[frm_cuda_call_count + 1] =
 {
 	NULL,
-#define FRM_CUDA_DEFINE_CALL(name, code) #name,
+#define FRM_CUDA_DEFINE_CALL(name) #name,
 #include "cuda.dat"
 #undef FRM_CUDA_DEFINE_CALL
 	NULL
@@ -76,7 +74,7 @@ char *frm_cuda_call_name[frm_cuda_call_count + 1] =
 
 /* Forward declarations of CUDA driver functions */
 
-#define FRM_CUDA_DEFINE_CALL(name, code) \
+#define FRM_CUDA_DEFINE_CALL(name) \
 	static int frm_cuda_func_##name(struct x86_ctx_t *ctx);
 #include "cuda.dat"
 #undef FRM_CUDA_DEFINE_CALL
@@ -87,7 +85,7 @@ typedef int (*frm_cuda_func_t)(struct x86_ctx_t *ctx);
 static frm_cuda_func_t frm_cuda_func_table[frm_cuda_call_count + 1] =
 {
 	NULL,
-#define FRM_CUDA_DEFINE_CALL(name, code) frm_cuda_func_##name,
+#define FRM_CUDA_DEFINE_CALL(name) frm_cuda_func_##name,
 #include "cuda.dat"
 #undef FRM_CUDA_DEFINE_CALL
 	NULL
@@ -114,7 +112,7 @@ int frm_cuda_call(struct x86_ctx_t *ctx)
 			__FUNCTION__, code, err_frm_cuda_code);
 
 	/* Debug */
-	cuda_debug(stdout, "CUDA call '%s' (code %d)\n",
+	frm_cuda_debug("CUDA call '%s' (code %d)\n",
 		frm_cuda_call_name[code], code);
 
 	/* Call CUDA function */
@@ -177,8 +175,8 @@ static int frm_cuda_func_version(struct x86_ctx_t *ctx)
 	version.major = FRM_CUDA_VERSION_MAJOR;
 	version.minor = FRM_CUDA_VERSION_MINOR;
 
-	cuda_debug(stdout, "\tversion.major=%d\n", version.major);
-	cuda_debug(stdout, "\tversion.minor=%d\n", version.minor);
+	frm_cuda_debug("\tversion.major=%d\n", version.major);
+	frm_cuda_debug("\tversion.minor=%d\n", version.minor);
 
 	mem_write(mem, regs->ecx, sizeof version, &version);
 
@@ -225,45 +223,10 @@ static int frm_cuda_func_cuCtxCreate(struct x86_ctx_t *ctx)
 
 
 
-/*
- * CUDA call #3 - cuModuleLoad
- *
- * @param CUmodule *pmod;
- *      Returned module.
- *
- * @param const char *fname;
- *      Filename of module to load.
- *
- * @return
- *	The return value is always 0 on success.
- */
-
-
-static int frm_cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
+static int frm_cuda_func_cuCtxDetach(struct x86_ctx_t *ctx)
 {
-	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
-
-	unsigned int args[2];
-	unsigned int pmod;
-	char fname[MAX_STRING_SIZE];
-	struct frm_cuda_module_t *module;
-
-        mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
-        mem_read(mem, args[0], sizeof(unsigned int), &pmod);
-	cuda_debug(stdout, "\tpmod=%#8x\n", pmod);
-        mem_read(mem, args[1], sizeof(fname), fname);
-	cuda_debug(stdout, "\tfname=%s\n", fname);
-
-        module = frm_cuda_module_create();
-	module->elf_file = elf_file_create_from_path(fname);
-	cuda_debug(stdout, "\tmodule_id=%#x\n", module->id);
-        mem_write(mem, pmod, sizeof(unsigned int), &module->id);
-
 	return 0;
 }
-
-
 
 /*
  * CUDA call #4 - cuModuleGetFunction
@@ -301,7 +264,7 @@ static int frm_cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
         mem_read(mem, args[1], sizeof(unsigned int), &mod_id);
         mem_read(mem, args[2], sizeof(function_name), function_name);
 
-	cuda_debug(stdout, "\tfunction_name=%s\n", function_name);
+	frm_cuda_debug("\tfunction_name=%s\n", function_name);
 
         /* Get module */
         module = frm_cuda_object_get(FRM_CUDA_OBJ_MODULE, mod_id);
@@ -328,6 +291,253 @@ static int frm_cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
 
 	return 0;
 }
+
+
+
+
+/*
+ * CUDA call #3 - cuModuleLoad
+ *
+ * @param CUmodule *pmod;
+ *      Returned module.
+ *
+ * @param const char *fname;
+ *      Filename of module to load.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+
+static int frm_cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[2];
+	unsigned int pmod;
+	char fname[MAX_STRING_SIZE];
+	struct frm_cuda_module_t *module;
+
+        mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
+        mem_read(mem, args[0], sizeof(unsigned int), &pmod);
+	frm_cuda_debug("\tpmod=%#8x\n", pmod);
+        mem_read(mem, args[1], sizeof(fname), fname);
+	frm_cuda_debug("\tfname=%s\n", fname);
+
+        module = frm_cuda_module_create();
+	module->elf_file = elf_file_create_from_path(fname);
+	frm_cuda_debug("\tmodule_id=%#x\n", module->id);
+        mem_write(mem, pmod, sizeof(unsigned int), &module->id);
+
+	return 0;
+}
+
+
+
+/*
+ * CUDA call #6 - cuMemAlloc
+ *
+ * @param CUdeviceptr *dptr;
+ *      Returned device pointer.
+ *
+ * @param size_t bytesize;
+ *      Requested allocation size in bytes.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+
+static int frm_cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[2];
+	unsigned int pdptr;
+	unsigned int bytesize;
+	struct frm_cuda_memory_t *cuda_mem;
+
+	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
+	pdptr = args[0];
+        bytesize = args[1];
+
+	frm_cuda_debug("\tbytesize= %u\n", bytesize);
+
+        /* Create memory object */
+        cuda_mem = frm_cuda_memory_create();
+        cuda_mem->type = 0;  /* FIXME */
+        cuda_mem->size = bytesize;
+
+        /* Assign position in device global memory */
+        cuda_mem->device_ptr = frm_emu->global_mem_top;
+        frm_emu->global_mem_top += bytesize;
+
+	/* Return */
+        mem_write(mem, pdptr, 4, &(cuda_mem->device_ptr));
+
+	frm_cuda_debug("\tmem->device_ptr = %0#10x\n", cuda_mem->device_ptr);
+
+	return 0;
+}
+
+
+
+
+
+/*
+ * CUDA call #9 - cuMemFree
+ *
+ * @param CUdeviceptr dptr;
+ *      Pointer to memory to free.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+
+static int frm_cuda_func_cuMemFree(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[1];
+	unsigned int dptr;
+	//struct frm_cuda_memory_t *cuda_mem;
+
+	mem_read(mem, regs->ecx, sizeof(unsigned int), args);
+	dptr = args[0];
+
+	frm_cuda_debug("\tdptr= 0x%08x\n", dptr);
+
+        /* Get memory object */
+        //frm_cuda_memory_free();
+        //cuda_mem->type = 0;  /* FIXME */
+
+        /* Assign position in device global memory */
+        //cuda_mem->device_ptr = frm_emu->global_mem_top;
+        //frm_emu->global_mem_top += bytesize;
+
+	//frm_cuda_debug("\tmem->device_ptr = %0#10x\n", cuda_mem->device_ptr);
+
+	return 0;
+}
+
+
+static int frm_cuda_func_cuMemGetInfo(struct x86_ctx_t *ctx)
+{
+	return 0;
+}
+
+/*
+ * CUDA call #8 - cuMemcpyDtoH
+ *
+ * @param void *dstHost;
+ *      Destination host pointer.
+ *
+ * @param CUdeviceptr srcDevice;
+ *      Source device pointer.
+ *
+ * @param size_t ByteCount;
+ *      Size of memory copy in bytes.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+
+static int frm_cuda_func_cuMemcpyDtoH(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[3];
+	unsigned int dstHost;
+	unsigned int srcDevice;
+	unsigned int ByteCount;
+
+	void *buf;
+	int i;
+
+	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
+	dstHost = args[0];
+        srcDevice = args[1];
+        ByteCount = args[2];
+
+	frm_cuda_debug("\tdstHost=%0#10x\n", dstHost);
+	frm_cuda_debug("\tsrcDevice=%0#10x\n", srcDevice);
+	frm_cuda_debug("\tByteCount=%u\n", ByteCount);
+
+        buf = malloc(ByteCount);
+        if (!buf)
+        	fatal("%s: out of memory", __FUNCTION__);
+
+        mem_read(frm_emu->global_mem, srcDevice, ByteCount, buf);
+        mem_write(mem, dstHost, ByteCount, buf);
+
+	for (i = 0; i < 4; ++i)
+		printf("%f\t", ((float*) buf)[i]);
+	printf("\n");
+
+        free(buf);
+	return 0;
+}
+/*
+ * CUDA call #7 - cuMemcpyHtoD
+ *
+ * @param CUdeviceptr dstDevice;
+ *      Destination device pointer.
+ *
+ * @param const void *srcHost;
+ *      Source host pointer.
+ *
+ * @param size_t ByteCount;
+ *      Size of memory copy in bytes.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+
+static int frm_cuda_func_cuMemcpyHtoD(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[3];
+	unsigned int dstDevice;
+	unsigned int srcHost;
+	unsigned int ByteCount;
+
+	void *buf;
+	int i;
+
+	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
+	dstDevice = args[0];
+        srcHost = args[1];
+        ByteCount = args[2];
+
+	frm_cuda_debug("\tdstDevice=%0#10x\n", dstDevice);
+	frm_cuda_debug("\tsrcHost=%0#10x\n", srcHost);
+	frm_cuda_debug("\tByteCount=%u\n", ByteCount);
+
+        buf = malloc(ByteCount);
+        if (!buf)
+        	fatal("%s: out of memory", __FUNCTION__);
+
+        mem_read(mem, srcHost, ByteCount, buf);
+        mem_write(frm_emu->global_mem, dstDevice, ByteCount, buf);
+
+	for (i = 0; i < 4; ++i)
+		printf("%f\t", ((float*) buf)[i]);
+	printf("\n");
+
+        free(buf);
+	return 0;
+}
+
+
 
 
 
@@ -408,21 +618,21 @@ static int frm_cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
         kernelParams = args[9];
         extra = args[10];
 
-	cuda_debug(stdout, "\tf=%#x\n", f);
-	cuda_debug(stdout, "\tgridDimX=%u\n", gridDimX);
-	cuda_debug(stdout, "\tgridDimY=%u\n", gridDimY);
-	cuda_debug(stdout, "\tgridDimZ=%u\n", gridDimZ);
-	cuda_debug(stdout, "\tblockDimX=%u\n", blockDimX);
-	cuda_debug(stdout, "\tblockDimY=%u\n", blockDimY);
-	cuda_debug(stdout, "\tblockDimZ=%u\n", blockDimZ);
-	cuda_debug(stdout, "\tsharedMemBytes=%u\n", sharedMemBytes);
-	cuda_debug(stdout, "\thStream=%u\n", hStream);
-	cuda_debug(stdout, "\tkernelParams=%0#10x\n", kernelParams);
-	cuda_debug(stdout, "\textra=%u\n", extra);
+	frm_cuda_debug("\tf=%#x\n", f);
+	frm_cuda_debug("\tgridDimX=%u\n", gridDimX);
+	frm_cuda_debug("\tgridDimY=%u\n", gridDimY);
+	frm_cuda_debug("\tgridDimZ=%u\n", gridDimZ);
+	frm_cuda_debug("\tblockDimX=%u\n", blockDimX);
+	frm_cuda_debug("\tblockDimY=%u\n", blockDimY);
+	frm_cuda_debug("\tblockDimZ=%u\n", blockDimZ);
+	frm_cuda_debug("\tsharedMemBytes=%u\n", sharedMemBytes);
+	frm_cuda_debug("\thStream=%u\n", hStream);
+	frm_cuda_debug("\tkernelParams=%0#10x\n", kernelParams);
+	frm_cuda_debug("\textra=%u\n", extra);
 
 	function = frm_cuda_object_get(FRM_CUDA_OBJ_FUNCTION, f);
-	cuda_debug(stdout, "\tfunction_id=%#x\n", function->id);
-	cuda_debug(stdout, "\tfunction_name=%s\n", function->name);
+	frm_cuda_debug("\tfunction_id=%#x\n", function->id);
+	frm_cuda_debug("\tfunction_name=%s\n", function->name);
 
 	function->grid = frm_grid_create(function);
 	function->global_size3[0] = gridDimX*blockDimX;
@@ -466,216 +676,4 @@ static int frm_cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 
 
-/*
- * CUDA call #6 - cuMemAlloc
- *
- * @param CUdeviceptr *dptr;
- *      Returned device pointer.
- *
- * @param size_t bytesize;
- *      Requested allocation size in bytes.
- *
- * @return
- *	The return value is always 0 on success.
- */
-
-
-static int frm_cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
-{
-	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
-
-	unsigned int args[2];
-	unsigned int pdptr;
-	unsigned int bytesize;
-	struct frm_cuda_memory_t *cuda_mem;
-
-	mem_read(mem, regs->ecx, 2 * sizeof(unsigned int), args);
-	pdptr = args[0];
-        bytesize = args[1];
-
-	cuda_debug(stdout, "\tbytesize= %u\n", bytesize);
-
-        /* Create memory object */
-        cuda_mem = frm_cuda_memory_create();
-        cuda_mem->type = 0;  /* FIXME */
-        cuda_mem->size = bytesize;
-
-        /* Assign position in device global memory */
-        cuda_mem->device_ptr = frm_emu->global_mem_top;
-        frm_emu->global_mem_top += bytesize;
-
-	/* Return */
-        mem_write(mem, pdptr, 4, &(cuda_mem->device_ptr));
-
-	cuda_debug(stdout, "\tmem->device_ptr = %0#10x\n", cuda_mem->device_ptr);
-
-	return 0;
-}
-
-
-
-/*
- * CUDA call #7 - cuMemcpyHtoD
- *
- * @param CUdeviceptr dstDevice;
- *      Destination device pointer.
- *
- * @param const void *srcHost;
- *      Source host pointer.
- *
- * @param size_t ByteCount;
- *      Size of memory copy in bytes.
- *
- * @return
- *	The return value is always 0 on success.
- */
-
-
-static int frm_cuda_func_cuMemcpyHtoD(struct x86_ctx_t *ctx)
-{
-	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
-
-	unsigned int args[3];
-	unsigned int dstDevice;
-	unsigned int srcHost;
-	unsigned int ByteCount;
-
-	void *buf;
-	int i;
-
-	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
-	dstDevice = args[0];
-        srcHost = args[1];
-        ByteCount = args[2];
-
-	cuda_debug(stdout, "\tdstDevice=%0#10x\n", dstDevice);
-	cuda_debug(stdout, "\tsrcHost=%0#10x\n", srcHost);
-	cuda_debug(stdout, "\tByteCount=%u\n", ByteCount);
-
-        buf = malloc(ByteCount);
-        if (!buf)
-        	fatal("%s: out of memory", __FUNCTION__);
-
-        mem_read(mem, srcHost, ByteCount, buf);
-        mem_write(frm_emu->global_mem, dstDevice, ByteCount, buf);
-
-	for (i = 0; i < 4; ++i)
-		printf("%f\t", ((float*) buf)[i]);
-	printf("\n");
-
-        free(buf);
-	return 0;
-}
-
-
-
-/*
- * CUDA call #8 - cuMemcpyDtoH
- *
- * @param void *dstHost;
- *      Destination host pointer.
- *
- * @param CUdeviceptr srcDevice;
- *      Source device pointer.
- *
- * @param size_t ByteCount;
- *      Size of memory copy in bytes.
- *
- * @return
- *	The return value is always 0 on success.
- */
-
-
-static int frm_cuda_func_cuMemcpyDtoH(struct x86_ctx_t *ctx)
-{
-	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
-
-	unsigned int args[3];
-	unsigned int dstHost;
-	unsigned int srcDevice;
-	unsigned int ByteCount;
-
-	void *buf;
-	int i;
-
-	mem_read(mem, regs->ecx, 3 * sizeof(unsigned int), args);
-	dstHost = args[0];
-        srcDevice = args[1];
-        ByteCount = args[2];
-
-	cuda_debug(stdout, "\tdstHost=%0#10x\n", dstHost);
-	cuda_debug(stdout, "\tsrcDevice=%0#10x\n", srcDevice);
-	cuda_debug(stdout, "\tByteCount=%u\n", ByteCount);
-
-        buf = malloc(ByteCount);
-        if (!buf)
-        	fatal("%s: out of memory", __FUNCTION__);
-
-        mem_read(frm_emu->global_mem, srcDevice, ByteCount, buf);
-        mem_write(mem, dstHost, ByteCount, buf);
-
-	for (i = 0; i < 4; ++i)
-		printf("%f\t", ((float*) buf)[i]);
-	printf("\n");
-
-        free(buf);
-	return 0;
-}
-
-
-
-/*
- * CUDA call #9 - cuMemFree
- *
- * @param CUdeviceptr dptr;
- *      Pointer to memory to free.
- *
- * @return
- *	The return value is always 0 on success.
- */
-
-
-static int frm_cuda_func_cuMemFree(struct x86_ctx_t *ctx)
-{
-	struct x86_regs_t *regs = ctx->regs;
-	struct mem_t *mem = ctx->mem;
-
-	unsigned int args[1];
-	unsigned int dptr;
-	//struct frm_cuda_memory_t *cuda_mem;
-
-	mem_read(mem, regs->ecx, sizeof(unsigned int), args);
-	dptr = args[0];
-
-	cuda_debug(stdout, "\tdptr= 0x%08x\n", dptr);
-
-        /* Get memory object */
-        //frm_cuda_memory_free();
-        //cuda_mem->type = 0;  /* FIXME */
-
-        /* Assign position in device global memory */
-        //cuda_mem->device_ptr = frm_emu->global_mem_top;
-        //frm_emu->global_mem_top += bytesize;
-
-	//cuda_debug(stdout, "\tmem->device_ptr = %0#10x\n", cuda_mem->device_ptr);
-
-	return 0;
-}
-
-
-static int frm_cuda_func_cuCtxDetach(struct x86_ctx_t *ctx)
-{
-
-	return 0;
-}
-
-
-static int frm_cuda_func_cuMemGetInfo(struct x86_ctx_t *ctx)
-{
-
-	return 0;
-}
 
