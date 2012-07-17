@@ -1104,6 +1104,7 @@ void x86_emu_done(void);
 void x86_emu_run(void);
 
 void x86_emu_dump(FILE *f);
+void x86_emu_dump_summary(FILE *f);
 
 void x86_emu_process_events(void);
 void x86_emu_process_events_schedule(void);

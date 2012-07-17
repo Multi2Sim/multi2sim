@@ -588,6 +588,24 @@ void evg_gpu_dump_report(void)
 }
 
 
+void evg_gpu_dump_summary(FILE *f)
+{
+	double time_in_sec;
+	double inst_per_cycle;
+	double cycles_per_sec;
+
+	/* Calculate statistics */
+	time_in_sec = (double) m2s_timer_get_value(evg_emu->timer) / 1.0e6;
+	inst_per_cycle = evg_gpu->cycle ? (double) evg_emu->inst_count / evg_gpu->cycle : 0.0;
+	cycles_per_sec = time_in_sec > 0.0 ? (double) evg_gpu->cycle / time_in_sec : 0.0;
+
+	/* Print statistics */
+	fprintf(f, "Cycles = %lld\n", evg_gpu->cycle);
+	fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
+	fprintf(f, "IPC = %.4g\n", inst_per_cycle);
+}
+
+
 void evg_gpu_uop_trash_empty(void)
 {
 	struct evg_uop_t *uop;
