@@ -1082,32 +1082,11 @@ void x86_emu_list_remove(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
 int x86_emu_list_member(enum x86_emu_list_kind_t list, struct x86_ctx_t *ctx);
 
 
-/* Reason for simulation end */
-extern struct string_map_t x86_emu_finish_map;
-
-extern volatile enum x86_emu_finish_t
-{
-	x86_emu_finish_none,  /* Simulation not finished */
-	x86_emu_finish_ctx,  /* Contexts finished */
-	x86_emu_finish_last_cpu_inst_bytes, /* Last CPU instruction reached */
-	x86_emu_finish_max_cpu_inst,  /* Maximum instruction count reached in CPU */
-	x86_emu_finish_max_cpu_cycles,  /* Maximum cycle count reached in CPU */
-	x86_emu_finish_max_gpu_inst,  /* Maximum instruction count reached in GPU */
-	x86_emu_finish_max_gpu_cycles,  /* Maximum cycle count reached in GPU */
-	x86_emu_finish_max_gpu_kernels,  /* Maximum number of GPU kernels */
-	x86_emu_finish_max_time,  /* Maximum simulation time reached */
-	x86_emu_finish_signal,  /* Signal received */
-	x86_emu_finish_stall,  /* Simulation stalled */
-	x86_emu_finish_gpu_no_faults  /* GPU-REL: no fault in '--evg_gpu-stack-faults' caused error */
-} x86_emu_finish;
-
-
 /* Global CPU emulator variable */
 extern struct x86_emu_t *x86_emu;
 
 extern long long x86_emu_max_cycles;
 extern long long x86_emu_max_inst;
-extern long long x86_emu_max_time;
 extern char * x86_emu_last_inst_bytes;
 
 extern enum x86_emu_kind_t

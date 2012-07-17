@@ -24,11 +24,43 @@
 #include <stdio.h>
 
 
-
 /*
  * Event-Driven Simulation
  */
 
+
+/* Reason for simulation end */
+extern struct string_map_t esim_finish_map;
+
+extern volatile enum esim_finish_t
+{
+	esim_finish_none,  /* Simulation not finished */
+	esim_finish_ctx,  /* Contexts finished */
+
+	esim_finish_x86_last_inst,  /* Last x86 instruction reached, as specified by user */
+	esim_finish_x86_max_inst,  /* Maximum instruction count reached in x86 CPU */
+	esim_finish_x86_max_cycles,  /* Maximum cycle count reached in x86 CPU */
+
+	esim_finish_arm_max_inst,
+	esim_finish_arm_max_cycles,
+
+	esim_finish_evg_max_inst,  /* Maximum instruction count reached in Evergreen GPU */
+	esim_finish_evg_max_cycles,  /* Maximum cycle count reached in Evergreen GPU */
+	esim_finish_evg_max_kernels,  /* Maximum number of GPU kernels */
+	esim_finish_evg_no_faults,  /* GPU-REL: no fault in '--evg-stack-faults' caused error */
+
+	esim_finish_frm_max_inst,
+	esim_finish_frm_max_cycles,
+	esim_finish_frm_max_kernels,
+
+	esim_finish_si_max_inst,
+	esim_finish_si_max_cycles,
+	esim_finish_si_max_kernels,
+
+	esim_finish_max_time,  /* Maximum simulation time reached */
+	esim_finish_signal,  /* Signal received */
+	esim_finish_stall  /* Simulation stalled */
+} esim_finish;
 
 /* Variable to indicate event simulation cycle */
 extern long long esim_cycle;

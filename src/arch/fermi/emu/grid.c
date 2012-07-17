@@ -369,14 +369,14 @@ void frm_grid_run(struct frm_grid_t *grid)
 	{
 		/* Stop if maximum number of GPU cycles exceeded */
 		if (frm_emu_max_cycles && cycle >= frm_emu_max_cycles)
-			x86_emu_finish = x86_emu_finish_max_gpu_cycles;
+			esim_finish = esim_finish_frm_max_cycles;
 
 		/* Stop if maximum number of GPU instructions exceeded */
 		if (frm_emu_max_inst && frm_emu->inst_count >= frm_emu_max_inst)
-			x86_emu_finish = x86_emu_finish_max_gpu_inst;
+			esim_finish = esim_finish_frm_max_inst;
 
 		/* Stop if any reason met */
-		if (x86_emu_finish)
+		if (esim_finish)
 			break;
 
 		/* Next cycle */

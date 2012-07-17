@@ -572,6 +572,6 @@ end_loop:
 
 		/* If all faults were inserted and no error was caused, end simulation */
 		if (!linked_list_count(evg_fault_list) && !evg_fault_errors)
-			x86_emu_finish = x86_emu_finish_gpu_no_faults;
+			esim_finish = esim_finish_evg_no_faults;
 	}
 }

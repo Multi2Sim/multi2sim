@@ -385,7 +385,7 @@ void evg_emu_run(void)
 
 		/* Stop if maximum number of kernels reached */
 		if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
-			x86_emu_finish = x86_emu_finish_max_gpu_kernels;
+			esim_finish = esim_finish_evg_max_kernels;
 
 		/* Extract from list of finished ND-Ranges and free */
 		evg_ndrange_free(ndrange);
