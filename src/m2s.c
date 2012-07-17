@@ -26,6 +26,7 @@
 #include <southern-islands-emu.h>
 #include <southern-islands-timing.h>
 #include <arm-emu.h>
+#include <esim.h>
 
 
 static char *ctx_debug_file_name = "";
@@ -66,11 +67,9 @@ static char *mem_debug_file_name = "";
 
 static char *net_debug_file_name = "";
 
+static long long m2s_max_time = 0;  /* Max. simulation time in seconds (0 = no limit) */
 
-
-
-
-static char *sim_help =
+static char *m2s_help =
 	"Syntax:\n"
 	"\n"
 	"        m2s [<options>] [<x86_binary> [<arg_list>]]\n"
@@ -387,7 +386,7 @@ static char *sim_help =
 	"\n";
 
 
-static char *err_help_note =
+static char *m2s_err_note =
 	"Please type 'm2s --help' for a list of valid Multi2Sim command-line options.\n";
 
 
@@ -395,7 +394,7 @@ static void m2s_need_argument(int argc, char **argv, int argi)
 {
 	if (argi == argc - 1)
 		fatal("option '%s' required one argument.\n%s",
-			argv[argi], err_help_note);
+			argv[argi], m2s_err_note);
 }
 
 
@@ -447,7 +446,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		/* Show help */
 		if (!strcmp(argv[argi], "--help"))
 		{
-			fprintf(stderr, "%s", sim_help);
+			fprintf(stderr, "%s", m2s_help);
 			continue;
 		}
 
@@ -455,7 +454,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (!strcmp(argv[argi], "--max-time"))
 		{
 			m2s_need_argument(argc, argv, argi);
-			x86_emu_max_time = atoll(argv[++argi]);
+			m2s_max_time = atoll(argv[++argi]);
 			continue;
 		}
 
@@ -621,7 +620,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 				x86_emu_kind = x86_emu_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
-					argv[argi - 1], argv[argi], err_help_note);
+					argv[argi - 1], argv[argi], m2s_err_note);
 			continue;
 		}
 
@@ -691,7 +690,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			if (argc != 4)
 				fatal("option '%s' requires two argument.\n%s",
-					argv[argi], err_help_note);
+					argv[argi], m2s_err_note);
 			evg_opengl_disasm_file_name = argv[++argi];
 			evg_opengl_disasm_shader_index = atoi(argv[++argi]);
 			continue;
@@ -771,7 +770,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 				evg_emu_kind = evg_emu_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
-					argv[argi - 1], argv[argi], err_help_note);
+					argv[argi - 1], argv[argi], m2s_err_note);
 			continue;
 		}
 
@@ -816,7 +815,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 				si_emu_kind = si_emu_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
-					argv[argi - 1], argv[argi], err_help_note);
+					argv[argi - 1], argv[argi], m2s_err_note);
 			continue;
 		}
 
@@ -845,7 +844,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 				frm_emu_kind = frm_emu_kind_detailed;
 			else
 				fatal("option '%s': invalid argument ('%s').\n%s",
-					argv[argi - 1], argv[argi], err_help_note);
+					argv[argi - 1], argv[argi], m2s_err_note);
 			continue;
 		}
 
@@ -996,7 +995,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		if (argv[argi][0] == '-')
 		{
 			fatal("'%s' is not a valid command-line option.\n%s",
-				argv[argi], err_help_note);
+				argv[argi], m2s_err_note);
 		}
 
 		/* End of options */
@@ -1203,7 +1202,7 @@ void m2s_stats_summary(void)
 	fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
 	fprintf(stderr, "Contexts = %d\n", x86_emu->running_list_max);
 	fprintf(stderr, "Memory = %lu\n", mem_max_mapped_space);
-	fprintf(stderr, "SimEnd = %s\n", map_value(&x86_emu_finish_map, x86_emu_finish));
+	fprintf(stderr, "SimEnd = %s\n", map_value(&esim_finish_map, esim_finish));
 
 	/* CPU detailed simulation */
 	if (x86_emu_kind == x86_emu_kind_detailed)
@@ -1282,11 +1281,11 @@ void m2s_signal_handler(int signum)
 	case SIGINT:
 
 		/* Second time signal was received, abort. */
-		if (x86_emu_finish)
+		if (esim_finish)
 			abort();
 
 		/* Try to normally finish simulation */
-		x86_emu_finish = x86_emu_finish_signal;
+		esim_finish = esim_finish_signal;
 		fprintf(stderr, "SIGINT received\n");
 		break;
 
@@ -1295,6 +1294,51 @@ void m2s_signal_handler(int signum)
 		fprintf(stderr, "Signal %d received\n", signum);
 		exit(1);
 	}
+}
+
+
+void m2s_sim_loop(void)
+{
+	int running;
+	long long iter = 0;
+
+	while (!esim_finish)
+	{
+		/* Assume initially that no architecture has an active CPU context / GPU
+		 * ND-Range running on it. */
+		running = 0;
+
+		/* x86 CPU simulation */
+		if (x86_emu_kind == x86_emu_kind_detailed)
+			running |= x86_cpu_run();
+		else
+			x86_emu_run();
+
+		/* Evergreen GPU simulation */
+		if (evg_emu_kind == evg_emu_kind_detailed)
+			running |= evg_gpu_run();
+		else
+			evg_emu_run();
+
+		/* Evergreen GPU simulation */
+		if (si_emu_kind == si_emu_kind_detailed)
+			running |= si_gpu_run();
+		else
+			si_emu_run();
+
+		/* Event-driven simulation. Only process events and advance to next global
+		 * simulation cycle if any architecture performed a useful timing simulation. */
+		if (running)
+			esim_process_events();
+
+		/* Count loop iterations, and check for limit in simulation time only every
+		 * 128k iterations. This avoids a constant overhead of system calls. */
+		iter++;
+		if (m2s_max_time && !(iter & ((1 << 17) - 1))
+			&& esim_real_time() > m2s_max_time * 1000000)
+			esim_finish = esim_finish_max_time;
+	}
+
 }
 
 
@@ -1402,38 +1446,8 @@ int main(int argc, char **argv)
 	signal(SIGINT, &m2s_signal_handler);
 	signal(SIGABRT, &m2s_signal_handler);
 
-	/* Simulation loop */
-	while (!x86_emu_finish)
-	{
-		int running;
-
-		/* Assume initially that no architecture has an active CPU context / GPU
-		 * ND-Range running on it. */
-		running = 0;
-
-		/* x86 CPU simulation */
-		if (x86_emu_kind == x86_emu_kind_detailed)
-			running |= x86_cpu_run();
-		else
-			x86_emu_run();
-
-		/* Evergreen GPU simulation */
-		if (evg_emu_kind == evg_emu_kind_detailed)
-			running |= evg_gpu_run();
-		else
-			evg_emu_run();
-
-		/* Evergreen GPU simulation */
-		if (si_emu_kind == si_emu_kind_detailed)
-			running |= si_gpu_run();
-		else
-			si_emu_run();
-
-		/* Event-driven simulation. Only process events and advance to next global
-		 * simulation cycle if any architecture performed a useful timing simulation. */
-		if (running)
-			esim_process_events();
-	}
+	/* Multi2Sim Central Simulation Loop */
+	m2s_sim_loop();
 
 	/* Save architectural state checkpoint */
 	if (x86_save_checkpoint_file_name[0])
@@ -1448,7 +1462,7 @@ int main(int argc, char **argv)
 	/* Flush event-driven simulation, only if the reason for simulation
 	 * completion was not a simulation stall. If it was, draining the
 	 * event-driven simulation could cause another stall! */
-	if (x86_emu_finish != x86_emu_finish_stall)
+	if (esim_finish != esim_finish_stall)
 		esim_process_all_events();
 
 	/* Dump statistics summary */

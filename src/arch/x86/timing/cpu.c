@@ -1115,14 +1115,14 @@ void x86_cpu_run_fast_forward(void)
 {
 	/* Fast-forward simulation. Run 'x86_cpu_fast_forward' iterations of the x86
 	 * emulation loop until any simulation end reason is detected. */
-	while (x86_emu->inst_count < x86_cpu_fast_forward_count && !x86_emu_finish)
+	while (x86_emu->inst_count < x86_cpu_fast_forward_count && !esim_finish)
 		x86_emu_run();
 
 	/* Record number of instructions in fast-forward execution. */
 	x86_cpu->fast_forward_inst_count = x86_emu->inst_count;
 
 	/* Output warning if simulation finished during fast-forward execution. */
-	if (x86_emu_finish)
+	if (esim_finish)
 		warning("x86 fast-forwarding finished simulation.\n%s",
 				x86_cpu_err_fast_forward);
 }
@@ -1136,24 +1136,20 @@ int x86_cpu_run(void)
 		x86_cpu_run_fast_forward();
 
 	/* Stop if all contexts finished */
+	/* FIXME - don't finish, just exit - what if other CPU contexts are still running? */
 	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-		x86_emu_finish = x86_emu_finish_ctx;
+		esim_finish = esim_finish_ctx;
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (x86_emu_max_inst && x86_cpu->inst >= x86_emu_max_inst)
-		x86_emu_finish = x86_emu_finish_max_cpu_inst;
+		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
 	if (x86_emu_max_cycles && x86_cpu->cycle >= x86_emu_max_cycles)
-		x86_emu_finish = x86_emu_finish_max_cpu_cycles;
-
-	/* Stop if maximum time exceeded (check only every 10k cycles) */
-	if (x86_emu_max_time && !(x86_cpu->cycle % 10000) &&
-			m2s_timer_get_value(x86_emu->timer) > x86_emu_max_time * 1000000)
-		x86_emu_finish = x86_emu_finish_max_time;
+		esim_finish = esim_finish_x86_max_cycles;
 
 	/* Stop if any previous reason met */
-	if (x86_emu_finish)
+	if (esim_finish)
 		return 0;
 
 	/* One more cycle of x86 timing simulation */

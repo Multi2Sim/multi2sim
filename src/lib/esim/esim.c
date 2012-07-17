@@ -29,6 +29,7 @@
 #include <linked-list.h>
 #include <list.h>
 #include <mhandle.h>
+#include <misc.h>
 #include <timer.h>
 
 
@@ -41,7 +42,7 @@
 #define ESIM_MAX_FINALIZATION_EVENTS  10000000
 
 
-static char *err_esim_finalization =
+static char *esim_err_finalization =
 	"\tThe finalization process of the event-driven simulation is trying to\n"
 	"\tempty the event heap by scheduling all pending events. If the number of\n"
 	"\tscheduled events during this process is too high, it could mean that\n"
@@ -49,7 +50,7 @@ static char *err_esim_finalization =
 	"\tfinalization of the simulation. Please contact development@multi2sim.org\n"
 	"\tto report this error.\n";
 
-static char *err_esim_overload =
+static char *esim_err_overload =
 	"\tAn excessive number of events are currently in-flight in the event-\n"
 	"\tdriven simulation library. This is probably the result of a timing\n"
 	"\tmodel uncontrollably issuing events (typically a processor pipeline\n"
@@ -60,6 +61,44 @@ static char *err_esim_overload =
 	"\tavoid this warning.\n";
 
 
+/* Reason for simulation end. Declared as volatile, since it is might be modified
+ * by signal handlers. This makes sure the variable resides in a memory location. */
+volatile enum esim_finish_t esim_finish = esim_finish_none;
+
+struct string_map_t esim_finish_map =
+{
+	19, {
+		{ "ContextsFinished", esim_finish_ctx },
+
+		{ "x86LastInst", esim_finish_x86_last_inst },
+		{ "x86MaxInst", esim_finish_x86_max_inst },
+		{ "x86MaxCycles", esim_finish_x86_max_cycles },
+
+		{ "ArmMaxInst", esim_finish_arm_max_inst },
+		{ "ArmMaxCycles", esim_finish_arm_max_cycles },
+
+		{ "EvergreenMaxInst", esim_finish_evg_max_inst },
+		{ "EvergreenMaxCycles", esim_finish_evg_max_cycles },
+		{ "EvergreenMaxKernels", esim_finish_evg_max_kernels },
+		{ "EvergreenNoFaults", esim_finish_evg_no_faults },  /* GPU-REL */
+
+		{ "FermiMaxInst", esim_finish_frm_max_inst },
+		{ "FermiMaxCycles", esim_finish_frm_max_cycles },
+		{ "FermiMaxKernels", esim_finish_frm_max_kernels },
+
+		{ "SouthernIslandsMaxInst", esim_finish_si_max_inst },
+		{ "SouthernIslandsMaxCycles", esim_finish_si_max_cycles },
+		{ "SouthernIslandsMaxKernels", esim_finish_si_max_kernels },
+
+		{ "MaxTime", esim_finish_max_time },
+		{ "Signal", esim_finish_signal },
+		{ "Stall", esim_finish_stall }
+	}
+};
+
+
+/* Events */
+
 static int ESIM_EV_INVALID;
 static int esim_lock_schedule = 0;
 
@@ -69,6 +108,7 @@ static int esim_overload_shown = 0;
 
 long long esim_cycle = 1;
 int ESIM_EV_NONE;
+
 
 
 /* List of registered events. Each element is of type 'struct
@@ -207,7 +247,7 @@ static void esim_drain_heap(void)
 			esim_dump(stderr, 20);
 			fatal("%s: number of finalization events exceeds %d.\n%s",
 				__FUNCTION__, ESIM_MAX_FINALIZATION_EVENTS,
-				err_esim_finalization);
+				esim_err_finalization);
 		}
 	}
 }
@@ -372,7 +412,7 @@ void esim_schedule_event(int id, void *data, int after)
 	{
 		esim_overload_shown = 1;
 		warning("%s: number of in-flight events exceeds %d.\n%s",
-			__FUNCTION__, ESIM_OVERLOAD_EVENTS, err_esim_overload);
+			__FUNCTION__, ESIM_OVERLOAD_EVENTS, esim_err_overload);
 	}
 }
 

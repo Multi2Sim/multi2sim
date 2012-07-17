@@ -693,17 +693,16 @@ int si_gpu_run(void)
 	/* One more cycle */
 	si_gpu->cycle++;
 
-	//printf("\n=================\nCycle %lld\n==================\n\n", si_gpu->cycle);
 	/* Stop if maximum number of GPU cycles exceeded */
 	if (si_emu_max_cycles && si_gpu->cycle >= si_emu_max_cycles)
-		x86_emu_finish = x86_emu_finish_max_gpu_cycles;
+		esim_finish = esim_finish_si_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
 	if (si_emu_max_inst && si_emu->inst_count >= si_emu_max_inst)
-		x86_emu_finish = x86_emu_finish_max_gpu_inst;
+		esim_finish = esim_finish_si_max_inst;
 
 	/* Stop if any reason met */
-	if (x86_emu_finish)
+	if (esim_finish)
 		return 1;
 
 	/* Free instructions in trash */
@@ -729,7 +728,7 @@ int si_gpu_run(void)
 
 		/* Stop if maximum number of kernels reached */
 		if (si_emu_max_kernels && si_emu->ndrange_count >= si_emu_max_kernels)
-			x86_emu_finish = x86_emu_finish_max_gpu_kernels;
+			esim_finish = esim_finish_si_max_kernels;
 
 		/* Finalize and free ND-Range */
 		assert(si_ndrange_get_status(ndrange, si_ndrange_finished));

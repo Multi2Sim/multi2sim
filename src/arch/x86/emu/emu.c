@@ -28,33 +28,11 @@
 /* Configuration parameters */
 long long x86_emu_max_inst = 0;
 long long x86_emu_max_cycles = 0;
-long long x86_emu_max_time = 0;
 char * x86_emu_last_inst_bytes = 0;
 enum x86_emu_kind_t x86_emu_kind = x86_emu_kind_functional;
 
 
-/* Reason for simulation end. Declared as volatile, since it is modified by
- * a signal handler. This makes sure the variable resides in a memory location. */
-volatile enum x86_emu_finish_t x86_emu_finish = x86_emu_finish_none;
-
-struct string_map_t x86_emu_finish_map =
-{
-	9, {
-		{ "ContextsFinished", x86_emu_finish_ctx },
-		{ "LastCPUInst", x86_emu_finish_last_cpu_inst_bytes },
-		{ "MaxCPUInst", x86_emu_finish_max_cpu_inst },
-		{ "MaxCPUCycles", x86_emu_finish_max_cpu_cycles },
-		{ "MaxGPUInst", x86_emu_finish_max_gpu_inst },
-		{ "MaxGPUCycles", x86_emu_finish_max_gpu_cycles },
-		{ "MaxGPUKernels", x86_emu_finish_max_gpu_kernels },
-		{ "MaxTime", x86_emu_finish_max_time },
-		{ "Signal", x86_emu_finish_signal },
-		{ "Stall", x86_emu_finish_stall },
-		{ "GPUNoFaults", x86_emu_finish_gpu_no_faults }  /* GPU-REL */
-	}
-};
-
-/* CPU kernel */
+/* x86 CPU Emulator */
 struct x86_emu_t *x86_emu;
 
 
@@ -828,24 +806,20 @@ void x86_emu_run(void)
 	struct x86_ctx_t *ctx;
 
 	/* Stop if all contexts finished */
+	/* FIXME - don't finish, just exit - what if other CPU contexts are still running? */
 	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-		x86_emu_finish = x86_emu_finish_ctx;
+		esim_finish = esim_finish_ctx;
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (x86_emu_max_inst && x86_emu->inst_count >= x86_emu_max_inst)
-		x86_emu_finish = x86_emu_finish_max_cpu_inst;
+		esim_finish = esim_finish_x86_max_inst;
 
 	/* Stop if maximum number of cycles exceeded */
 	if (x86_emu_max_cycles && esim_cycle >= x86_emu_max_cycles)
-		x86_emu_finish = x86_emu_finish_max_cpu_cycles;
-
-	/* Stop if maximum time exceeded (check only every 8k cycles) */
-	if (x86_emu_max_time && !(esim_cycle & ((1 << 13) - 1))
-		&& m2s_timer_get_value(x86_emu->timer) > x86_emu_max_time * 1000000)
-		x86_emu_finish = x86_emu_finish_max_time;
+		esim_finish = esim_finish_x86_max_cycles;
 
 	/* Stop if any previous reason met */
-	if (x86_emu_finish)
+	if (esim_finish)
 		return;
 
 	/* Run an instruction from every running process */
@@ -858,7 +832,7 @@ void x86_emu_run(void)
 			!strncmp(x86_isa_inst_bytes,
 				x86_emu_last_inst_bytes,
 				strlen(x86_emu_last_inst_bytes)))
-			x86_emu_finish = x86_emu_finish_last_cpu_inst_bytes;
+			esim_finish = esim_finish_x86_last_inst;
 	}
 
 	/* Free finished contexts */
