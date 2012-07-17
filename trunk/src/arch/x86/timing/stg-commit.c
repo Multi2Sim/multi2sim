@@ -41,7 +41,7 @@ static int x86_cpu_can_commit_thread(int core, int thread)
 	{
 		warning("core-thread %d-%d: simulation ended due to commit stall.\n%s",
 			core, thread, err_x86_cpu_commit_stall);
-		x86_emu_finish = x86_emu_finish_stall;
+		esim_finish = esim_finish_stall;
 	}
 
 	/* If there is no instruction in the ROB, or the instruction is not

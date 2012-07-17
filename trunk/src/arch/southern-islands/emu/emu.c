@@ -336,7 +336,7 @@ void si_emu_run(void)
 
 		/* Stop if maximum number of kernels reached */
 		if (si_emu_max_kernels && si_emu->ndrange_count >= si_emu_max_kernels)
-			x86_emu_finish = x86_emu_finish_max_gpu_kernels;
+			esim_finish = esim_finish_si_max_kernels;
 
 		/* Extract from list of finished ND-Ranges and free */
 		si_ndrange_free(ndrange);

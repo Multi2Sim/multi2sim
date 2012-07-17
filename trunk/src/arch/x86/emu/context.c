@@ -810,7 +810,7 @@ void x86_ctx_ipc_report_handler(int event, void *data)
 	/* Get context. If it does not exist anymore, no more
 	 * events to schedule. */
 	ctx = x86_ctx_get(stack->pid);
-	if (!ctx || x86_ctx_get_status(ctx, x86_ctx_finished) || x86_emu_finish)
+	if (!ctx || x86_ctx_get_status(ctx, x86_ctx_finished) || esim_finish)
 	{
 		free(stack);
 		return;

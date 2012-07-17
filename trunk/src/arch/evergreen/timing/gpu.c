@@ -666,22 +666,22 @@ int evg_gpu_run(void)
 
 	/* Stop if maximum number of GPU cycles exceeded */
 	if (evg_emu_max_cycles && evg_gpu->cycle >= evg_emu_max_cycles)
-		x86_emu_finish = x86_emu_finish_max_gpu_cycles;
+		esim_finish = esim_finish_evg_max_cycles;
 
 	/* Stop if maximum number of GPU instructions exceeded */
 	if (evg_emu_max_inst && evg_emu->inst_count >= evg_emu_max_inst)
-		x86_emu_finish = x86_emu_finish_max_gpu_inst;
+		esim_finish = esim_finish_evg_max_inst;
 	
 	/* Stop if there was a simulation stall */
 	if (esim_cycle - evg_gpu->last_complete_cycle > 1000000)
 	{
 		warning("Evergreen GPU simulation stalled.\n%s",
 			evg_err_stall);
-		x86_emu_finish = x86_emu_finish_stall;
+		esim_finish = esim_finish_stall;
 	}
 
 	/* Stop if any reason met */
-	if (x86_emu_finish)
+	if (esim_finish)
 		return 1;
 
 	/* Free instructions in trash */
@@ -710,7 +710,7 @@ int evg_gpu_run(void)
 
 		/* Stop if maximum number of kernels reached */
 		if (evg_emu_max_kernels && evg_emu->ndrange_count >= evg_emu_max_kernels)
-			x86_emu_finish = x86_emu_finish_max_gpu_kernels;
+			esim_finish = esim_finish_evg_max_kernels;
 
 		/* Finalize and free ND-Range */
 		assert(evg_ndrange_get_status(ndrange, evg_ndrange_finished));
