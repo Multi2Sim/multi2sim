@@ -33,7 +33,7 @@ long long frm_emu_max_cycles = 0;
 long long frm_emu_max_inst = 0;
 int frm_emu_max_functions = 0;
 
-enum frm_emu_kind_t frm_emu_kind = frm_emu_functional;
+enum frm_emu_kind_t frm_emu_kind = frm_emu_kind_functional;
 
 char *frm_emu_cuda_binary_name = "";
 char *frm_emu_report_file_name = "";

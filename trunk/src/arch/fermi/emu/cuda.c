@@ -505,10 +505,8 @@ static int frm_cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
         cuda_mem->device_ptr = frm_emu->global_mem_top;
         frm_emu->global_mem_top += bytesize;
 
-        void *buf = malloc(bytesize);
-        mem_write(frm_emu->global_mem, cuda_mem->device_ptr, bytesize, buf);
+	/* Return */
         mem_write(mem, pdptr, 4, &(cuda_mem->device_ptr));
-        free(buf);
 
 	cuda_debug(stdout, "\tmem->device_ptr = %0#10x\n", cuda_mem->device_ptr);
 
@@ -628,8 +626,41 @@ static int frm_cuda_func_cuMemcpyDtoH(struct x86_ctx_t *ctx)
 }
 
 
+
+/*
+ * CUDA call #9 - cuMemFree
+ *
+ * @param CUdeviceptr dptr;
+ *      Pointer to memory to free.
+ *
+ * @return
+ *	The return value is always 0 on success.
+ */
+
+
 static int frm_cuda_func_cuMemFree(struct x86_ctx_t *ctx)
 {
+	struct x86_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+	unsigned int args[1];
+	unsigned int dptr;
+	//struct frm_cuda_memory_t *cuda_mem;
+
+	mem_read(mem, regs->ecx, sizeof(unsigned int), args);
+	dptr = args[0];
+
+	cuda_debug(stdout, "\tdptr= 0x%08x\n", dptr);
+
+        /* Get memory object */
+        //frm_cuda_memory_free();
+        //cuda_mem->type = 0;  /* FIXME */
+
+        /* Assign position in device global memory */
+        //cuda_mem->device_ptr = frm_emu->global_mem_top;
+        //frm_emu->global_mem_top += bytesize;
+
+	//cuda_debug(stdout, "\tmem->device_ptr = %0#10x\n", cuda_mem->device_ptr);
 
 	return 0;
 }
@@ -640,3 +671,11 @@ static int frm_cuda_func_cuCtxDetach(struct x86_ctx_t *ctx)
 
 	return 0;
 }
+
+
+static int frm_cuda_func_cuMemGetInfo(struct x86_ctx_t *ctx)
+{
+
+	return 0;
+}
+

@@ -20,6 +20,7 @@
 #include <southern-islands-asm.h>
 #include <evergreen-timing.h>
 #include <x86-timing.h>
+#include <fermi-emu.h>
 #include <fermi-timing.h>
 #include <visual-common.h>
 #include <southern-islands-emu.h>
@@ -56,6 +57,7 @@ static char *si_isa_debug_file_name = "";
 static int si_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
 static char *frm_disasm_file_name = "";
+static int frm_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
 static char *arm_disasm_file_name = "";
 static char *arm_loader_debug_file_name = "";
@@ -828,6 +830,22 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		{
 			m2s_need_argument(argc, argv, argi);
 			frm_disasm_file_name = argv[++argi];
+			continue;
+		}
+
+		/* Fermi simulation accuracy */
+		if (!strcmp(argv[argi], "--frm-sim"))
+		{
+			frm_emulator = 1;
+			m2s_need_argument(argc, argv, argi);
+			argi++;
+			if (!strcasecmp(argv[argi], "functional"))
+				frm_emu_kind = frm_emu_kind_functional;
+			else if (!strcasecmp(argv[argi], "detailed"))
+				frm_emu_kind = frm_emu_kind_detailed;
+			else
+				fatal("option '%s': invalid argument ('%s').\n%s",
+					argv[argi - 1], argv[argi], err_help_note);
 			continue;
 		}
 
