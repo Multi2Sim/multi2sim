@@ -1320,7 +1320,7 @@ void m2s_sim_loop(void)
 		else
 			evg_emu_run();
 
-		/* Evergreen GPU simulation */
+		/* Southern Islands GPU simulation */
 		if (si_emu_kind == si_emu_kind_detailed)
 			running |= si_gpu_run();
 		else
@@ -1357,7 +1357,7 @@ int main(int argc, char **argv)
 
 	/* CPU disassembler tool */
 	if (*x86_disasm_file_name)
-		x86_emu_disasm(x86_disasm_file_name);
+		x86_disasm_file(x86_disasm_file_name);
 
 	/* Evergreen disassembler tool */
 	if (*evg_disasm_file_name)
