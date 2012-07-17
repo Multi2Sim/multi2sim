@@ -65,11 +65,6 @@ void __debug_tab_dec(int category, int space_count);
 #define debug(category, ...) ((category) ? __debug((category), __VA_ARGS__) : (void) 0)
 void __debug(int category, char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
-/* Dump a cuda library debugging message. */
-#define x86_cuda_debug(category, ...) (getenv("LIBM2S_CUDA_DEBUG") && (category)) ? \
-	__x86_cuda_debug((category), __VA_ARGS__) : (void) 0
-void __x86_cuda_debug(int category, char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
-
 /* Dump a buffer */
 #define debug_buffer(category, buffer_name, buffer, size) \
 	((category) ? __debug_buffer((category), (buffer_name), (buffer), (size)) : (void) 0)

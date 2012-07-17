@@ -28,15 +28,23 @@
 
 
 /*
+ * Debug
+ */
+
+
+static int frm_cuda_rt_debug = 0;
+
+#define cuda_debug(stream, ...) (frm_cuda_rt_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+
+
+
+/*
  * Error Messages
  */
 
 
 #define __CUDART_NOT_IMPL__  warning("%s: not implemented.\n%s", \
 	__FUNCTION__, err_frm_cudart_not_impl);
-
-#define cuda_debug(stream, ...) ((!strcmp(getenv("LIBM2S_CUDART_DUMP"), "1")) ? \
-	fprintf((stream), __VA_ARGS__) : (void) 0)
 
 static char *err_frm_cudart_not_impl =
 	"\tMulti2Sim provides partial support for CUDA runtime library.\n"
@@ -94,10 +102,18 @@ static int arg_index = 0;
  */
 
 
+void set_debug_flag(void)
+{
+	frm_cuda_rt_debug = !strcmp(getenv("LIBM2S_CUDART_DUMP"), "1");
+}
+
+
 void versionCheck(void)
 {
 	struct frm_cudart_version_t version;
 	int ret;
+
+	set_debug_flag();
 
 	cuda_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 

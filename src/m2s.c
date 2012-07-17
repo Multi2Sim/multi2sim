@@ -58,6 +58,7 @@ static char *si_isa_debug_file_name = "";
 static int si_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
 static char *frm_disasm_file_name = "";
+static char *frm_cuda_debug_file_name = "";
 static int frm_emulator = 0; /* FIXME We need to fix the initialization and selection of devices */
 
 static char *arm_disasm_file_name = "";
@@ -313,6 +314,10 @@ static char *m2s_help =
 	"  --frm-disasm <file>\n"
 	"      Disassemble a Fermi kernel binary (cubin format). This option is\n"
 	"      incompatible with any other command-line option.\n"
+	"\n"
+	"  --frm-sim {functional|detailed}\n"
+	"      Functional (default) or detailed simulation for the NVIDIA Fermi\n"
+	"      GPU model.\n"
 	"\n"
 	"\n"
 	"================================================================================\n"
@@ -825,6 +830,14 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 		 * Fermi GPU Options
 		 */
 
+		/* Fermi CUDA debug file */
+		if (!strcmp(argv[argi], "--frm-debug-cuda"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			frm_cuda_debug_file_name = argv[++argi];
+			continue;
+		}
+
 		/* Fermi disassembler */
 		if (!strcmp(argv[argi], "--frm-disasm"))
 		{
@@ -1324,6 +1337,7 @@ int main(int argc, char **argv)
 	evg_faults_debug_category = debug_new_category(evg_faults_debug_file_name);  /* GPU-REL */
 	si_opencl_debug_category = debug_new_category(evg_opencl_debug_file_name);
 	si_isa_debug_category = debug_new_category(si_isa_debug_file_name);
+	frm_cuda_debug_category = debug_new_category(frm_cuda_debug_file_name);
 	x86_glut_debug_category = debug_new_category(x86_glut_debug_file_name);
 	x86_clrt_debug_category = debug_new_category(x86_clrt_debug_file_name);
 	x86_opengl_debug_category = debug_new_category(x86_opengl_debug_file_name);

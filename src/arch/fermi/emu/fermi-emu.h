@@ -33,6 +33,10 @@
 
 
 
+#define frm_cuda_debug(...) debug(frm_cuda_debug_category, __VA_ARGS__)
+extern int frm_cuda_debug_category;
+
+
 /*
  * CUDA Data Structures
  */
