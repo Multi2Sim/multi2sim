@@ -255,17 +255,14 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	}
 	printf("\n");
 
-                FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
-                {
-                        thread = grid->threads[thread_id];
-	frm_inst_decode(inst);
-        (*frm_isa_inst_func[inst->info->inst])(thread, inst);
-                }
-
-
+        FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
+        {
+                thread = grid->threads[thread_id];
+		frm_inst_decode(inst);
+        	(*frm_isa_inst_func[inst->info->inst])(thread, inst);
+        }
 
 	warp->buf += 8;
-
 
 	/* Stats */
 	frm_emu->inst_count++;

@@ -127,6 +127,7 @@ void** CUDARTAPI __cudaRegisterFatBinary(void *fatCubin)
 	void **fatCubinHandle;
 
 	versionCheck();
+	cuInit(0);
 
 	cuda_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
@@ -640,7 +641,13 @@ cudaError_t CUDARTAPI cudaMallocArray(struct cudaArray **array, const struct cud
 
 cudaError_t CUDARTAPI cudaFree(void *devPtr)
 {
-	__CUDART_NOT_IMPL__
+	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cuda_debug(stdout, "\t(runtime) in: devPtr=%p\n", devPtr);
+
+	cuMemFree((CUdeviceptr)devPtr);
+
+	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+
 	return cudaSuccess;
 }
 

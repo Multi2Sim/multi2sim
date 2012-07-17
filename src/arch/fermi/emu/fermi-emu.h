@@ -745,9 +745,10 @@ struct frm_emu_t
 
 extern enum frm_emu_kind_t
 {
-	frm_emu_functional,
-	frm_emu_detailed
+	frm_emu_kind_functional,
+	frm_emu_kind_detailed
 } frm_emu_kind;
+
 extern long long frm_emu_max_cycles;
 extern long long frm_emu_max_inst;
 extern int frm_emu_max_kernels;
