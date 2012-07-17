@@ -68,6 +68,7 @@ static char *mem_debug_file_name = "";
 static char *net_debug_file_name = "";
 
 static long long m2s_max_time = 0;  /* Max. simulation time in seconds (0 = no limit) */
+static long long m2s_loop_iter = 0;  /* Number of iterations in main simulation loop */
 
 static char *m2s_help =
 	"Syntax:\n"
@@ -1153,122 +1154,43 @@ void m2s_load_programs(int argc, char **argv)
 }
 
 
-void m2s_stats_summary(void)
+void m2s_dump_summary(FILE *f)
 {
-	long long now = esim_real_time();
+	double time_in_sec;
 
-	long long evg_now;
-	long long si_now;
-
-	long long inst_count;
-	long long fast_forward_inst_count;
-
-	double sec_count;
-	double inst_per_sec;
-	double inst_per_cycle;
-	double branch_acc;
-	double cycles_per_sec;
-
-	/* Get x86 CPU instruction count */
-	if (x86_emu_kind == x86_emu_kind_functional)
-	{
-		inst_count = x86_emu->inst_count;
-		fast_forward_inst_count = 0;
-	}
-	else
-	{
-		inst_count = x86_cpu->inst;
-		fast_forward_inst_count = x86_cpu->fast_forward_inst_count;
-	}
-
-	/* No statistic dump if no x86 instruction was executed (i.e., no simulation) */
-	if (!inst_count && !fast_forward_inst_count)
+	/* No summary dumped if no simulation was run */
+	if (m2s_loop_iter < 2)
 		return;
 
-	/* Statistics */
-	fprintf(stderr, "\n");
-	fprintf(stderr, ";\n");
-	fprintf(stderr, "; Simulation Statistics Summary\n");
-	fprintf(stderr, ";\n");
-	fprintf(stderr, "\n");
+	/* Header */
+	fprintf(f, "\n");
+	fprintf(f, ";\n");
+	fprintf(f, "; Simulation Statistics Summary\n");
+	fprintf(f, ";\n");
+	fprintf(f, "\n");
 
-	/* CPU functional simulation */
-	sec_count = (double) now / 1e6;
-	inst_per_sec = sec_count > 0.0 ? (double) inst_count / sec_count : 0.0;
-	fprintf(stderr, "[ CPU ]\n");
-	fprintf(stderr, "Time = %.2f\n", sec_count);
-	fprintf(stderr, "Instructions = %lld\n", inst_count);
-	fprintf(stderr, "FastForwardInstructions = %lld\n", fast_forward_inst_count);
-	fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
-	fprintf(stderr, "Contexts = %d\n", x86_emu->running_list_max);
-	fprintf(stderr, "Memory = %lu\n", mem_max_mapped_space);
-	fprintf(stderr, "SimEnd = %s\n", map_value(&esim_finish_map, esim_finish));
+	/* Calculate statistics */
+	time_in_sec = (double) esim_real_time() / 1.0e6;
 
-	/* CPU detailed simulation */
-	if (x86_emu_kind == x86_emu_kind_detailed)
+	/* General statistics */
+	fprintf(f, "[ General ]\n");
+	fprintf(f, "Time = %.2f\n", time_in_sec);
+	fprintf(f, "SimEnd = %s\n", map_value(&esim_finish_map, esim_finish));
+
+	/* General detailed simulation statistics */
+	if (esim_cycle > 1)
 	{
-		inst_per_cycle = x86_cpu->cycle ? (double) x86_cpu->inst / x86_cpu->cycle : 0.0;
-		branch_acc = x86_cpu->branches ? (double) (x86_cpu->branches - x86_cpu->mispred) / x86_cpu->branches : 0.0;
-		cycles_per_sec = sec_count > 0.0 ? (double) x86_cpu->cycle / sec_count : 0.0;
-		fprintf(stderr, "Cycles = %lld\n", x86_cpu->cycle);
-		fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
-		fprintf(stderr, "BranchPredictionAccuracy = %.4g\n", branch_acc);
-		fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
-	}
-	fprintf(stderr, "\n");
-
-	/* Evergreen functional simulation */
-	if (evg_emu->ndrange_count)
-	{
-		evg_now = m2s_timer_get_value(evg_emu->timer);
-		sec_count = (double) evg_now / 1e6;
-		inst_per_sec = sec_count > 0.0 ? (double) evg_emu->inst_count / sec_count : 0.0;
-		fprintf(stderr, "[ GPU ]\n");
-		fprintf(stderr, "Time = %.2f\n", sec_count);
-		fprintf(stderr, "NDRangeCount = %d\n", evg_emu->ndrange_count);
-		fprintf(stderr, "Instructions = %lld\n", evg_emu->inst_count);
-		fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
-	
-		/* Evergreen detailed simulation */
-		if (evg_emu_kind == evg_emu_kind_detailed)
-		{
-			inst_per_cycle = evg_gpu->cycle ? (double) evg_emu->inst_count / evg_gpu->cycle : 0.0;
-			cycles_per_sec = sec_count > 0.0 ? (double) evg_gpu->cycle / sec_count : 0.0;
-			fprintf(stderr, "Cycles = %lld\n", evg_gpu->cycle);
-			fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
-			fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
-		}
-		fprintf(stderr, "\n");
+		fprintf(f, "Cycles = %lld\n", esim_cycle);
 	}
 
-	/* Southern Islands functional simulation */
-	if (si_emu->ndrange_count)
-	{
-		si_now = m2s_timer_get_value(si_emu->timer);
-		sec_count = (double) si_now / 1e6;
-		inst_per_sec = sec_count > 0.0 ? (double) si_emu->inst_count / sec_count : 0.0;
-		fprintf(stderr, "[ GPU ]\n");
-		fprintf(stderr, "Time = %.2f\n", sec_count);
-		fprintf(stderr, "NDRangeCount = %d\n", si_emu->ndrange_count);
-		fprintf(stderr, "Scalar ALU Instructions = %lld\n", si_emu->scalar_alu_inst_count);
-		fprintf(stderr, "Scalar Memory Instructions = %lld\n", si_emu->scalar_mem_inst_count);
-		fprintf(stderr, "Vector ALU Instructions = %lld\n", si_emu->vector_alu_inst_count);
-		fprintf(stderr, "Vector Memory Instructions = %lld\n", si_emu->vector_mem_inst_count);
-		fprintf(stderr, "Total Instructions = %lld\n", si_emu->inst_count);
-		fprintf(stderr, "InstructionsPerSecond = %.0f\n", inst_per_sec);
-	
-		/* Southern Islands detailed simulation */
-		if (si_emu_kind == si_emu_kind_detailed)
-		{
-			inst_per_cycle = si_gpu->cycle ? 
-				(double) si_emu->inst_count/si_gpu->cycle : 0.0;
-			cycles_per_sec = sec_count > 0.0 ? (double) si_gpu->cycle / sec_count : 0.0;
-			fprintf(stderr, "Cycles = %lld\n", si_gpu->cycle);
-			fprintf(stderr, "InstructionsPerCycle = %.4g\n", inst_per_cycle);
-			fprintf(stderr, "CyclesPerSecond = %.0f\n", cycles_per_sec);
-		}
-		fprintf(stderr, "\n");
-	}
+	/* End */
+	fprintf(f, "\n");
+
+	/* x86 */
+	x86_emu_dump_summary(f);
+
+	/* Evergreen */
+	evg_emu_dump_summary(f);
 }
 
 
@@ -1297,10 +1219,9 @@ void m2s_signal_handler(int signum)
 }
 
 
-void m2s_sim_loop(void)
+void m2s_loop(void)
 {
 	int running;
-	long long iter = 0;
 
 	while (!esim_finish)
 	{
@@ -1333,8 +1254,8 @@ void m2s_sim_loop(void)
 
 		/* Count loop iterations, and check for limit in simulation time only every
 		 * 128k iterations. This avoids a constant overhead of system calls. */
-		iter++;
-		if (m2s_max_time && !(iter & ((1 << 17) - 1))
+		m2s_loop_iter++;
+		if (m2s_max_time && !(m2s_loop_iter & ((1 << 17) - 1))
 			&& esim_real_time() > m2s_max_time * 1000000)
 			esim_finish = esim_finish_max_time;
 	}
@@ -1447,7 +1368,7 @@ int main(int argc, char **argv)
 	signal(SIGABRT, &m2s_signal_handler);
 
 	/* Multi2Sim Central Simulation Loop */
-	m2s_sim_loop();
+	m2s_loop();
 
 	/* Save architectural state checkpoint */
 	if (x86_save_checkpoint_file_name[0])
@@ -1466,7 +1387,7 @@ int main(int argc, char **argv)
 		esim_process_all_events();
 
 	/* Dump statistics summary */
-	m2s_stats_summary();
+	m2s_dump_summary(stderr);
 
 	/* Finalization of memory system */
 	mem_system_done();

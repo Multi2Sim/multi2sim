@@ -1318,6 +1318,8 @@ extern struct evg_emu_t *evg_emu;
 void evg_emu_init(void);
 void evg_emu_done(void);
 
+void evg_emu_dump_summary(FILE *f);
+
 void evg_emu_run(void);
 
 void evg_emu_libopencl_redirect(struct x86_ctx_t *ctx, char *path, int size);

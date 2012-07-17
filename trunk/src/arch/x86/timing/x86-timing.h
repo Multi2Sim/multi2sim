@@ -782,7 +782,9 @@ struct x86_cpu_t
 /* Procedures and functions */
 void x86_cpu_init(void);
 void x86_cpu_done(void);
+
 void x86_cpu_dump(FILE *f);
+void x86_cpu_dump_summary(FILE *f);
 
 void x86_cpu_update_occupancy_stats(void);
 

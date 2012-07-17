@@ -20,6 +20,7 @@
 #include <evergreen-emu.h>
 #include <mem-system.h>
 #include <x86-emu.h>
+#include <evergreen-timing.h>
 
 
 
@@ -115,6 +116,37 @@ void evg_emu_done()
 	mem_free(evg_emu->global_mem);
 	m2s_timer_free(evg_emu->timer);
 	free(evg_emu);
+}
+
+
+void evg_emu_dump_summary(FILE *f)
+{
+	double time_in_sec;
+	double inst_per_sec;
+
+	/* If there was no Evergreen simulation, no summary */
+	if (!evg_emu->ndrange_count)
+		return;
+
+	/* Calculate statistics */
+	time_in_sec = (double) m2s_timer_get_value(evg_emu->timer) / 1.0e6;
+	inst_per_sec = time_in_sec > 0.0 ? (double) evg_emu->inst_count / time_in_sec : 0.0;
+
+	/* Print statistics */
+	fprintf(f, "[ Evergreen ]\n");
+	fprintf(f, "SimType = %s\n", evg_emu_kind == evg_emu_kind_functional ?
+			"Functional" : "Detailed");
+	fprintf(f, "Time = %.2f\n", time_in_sec);
+	fprintf(f, "NDRangeCount = %d\n", evg_emu->ndrange_count);
+	fprintf(f, "Instructions = %lld\n", evg_emu->inst_count);
+	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
+
+	/* Detailed simulation */
+	if (evg_emu_kind == evg_emu_kind_detailed)
+		evg_gpu_dump_summary(f);
+
+	/* End */
+	fprintf(f, "\n");
 }
 
 

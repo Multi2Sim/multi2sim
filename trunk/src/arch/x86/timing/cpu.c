@@ -941,7 +941,8 @@ void x86_cpu_done()
 
 void x86_cpu_dump(FILE *f)
 {
-	int core, thread;
+	int core;
+	int thread;
 	
 	/* General information */
 	fprintf(f, "\n");
@@ -988,6 +989,29 @@ void x86_cpu_dump(FILE *f)
 	/* Register last dump */
 	x86_cpu->last_dump = x86_cpu->cycle;
 	x86_cpu->last_committed = x86_cpu->inst;
+}
+
+
+void x86_cpu_dump_summary(FILE *f)
+{
+	double time_in_sec;
+	double inst_per_cycle;
+	double branch_acc;
+	double cycles_per_sec;
+
+	/* Calculate statistics */
+	time_in_sec = (double) m2s_timer_get_value(x86_emu->timer) / 1.0e6;
+	inst_per_cycle = x86_cpu->cycle ? (double) x86_cpu->inst / x86_cpu->cycle : 0.0;
+	branch_acc = x86_cpu->branches ? (double) (x86_cpu->branches - x86_cpu->mispred) / x86_cpu->branches : 0.0;
+	cycles_per_sec = time_in_sec > 0.0 ? (double) x86_cpu->cycle / time_in_sec : 0.0;
+
+	/* Print statistics */
+	fprintf(f, "Cycles = %lld\n", x86_cpu->cycle);
+	fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
+	fprintf(f, "FastForwardInstructions = %lld\n", x86_cpu->fast_forward_inst_count);
+	fprintf(f, "CommittedInstructions = %lld\n", x86_cpu->inst);
+	fprintf(f, "IPC = %.4g\n", inst_per_cycle);
+	fprintf(f, "BranchPredictionAccuracy = %.4g\n", branch_acc);
 }
 
 
