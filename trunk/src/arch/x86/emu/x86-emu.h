@@ -165,6 +165,9 @@ void x86_loader_load_from_command_line(int argc, char **argv);
 void x86_checkpoint_load(char *path);
 void x86_checkpoint_save(char *path);
 
+
+
+
 /*
  * Microinstructions
  */
@@ -177,7 +180,7 @@ enum x86_dep_t
 {
 	x86_dep_none = 0,
 
-	/** Integer dependences **/
+	/* Integer dependences */
 
 	x86_dep_eax = 1,
 	x86_dep_ecx = 2,
@@ -214,7 +217,7 @@ enum x86_dep_t
 	x86_dep_flag_count = x86_dep_flag_last - x86_dep_flag_first + 1,
 
 
-	/** Floating-point dependences **/
+	/* Floating-point dependences */
 
 	x86_dep_st0 = 23,  /* FP registers */
 	x86_dep_st1 = 24,
@@ -237,7 +240,7 @@ enum x86_dep_t
 	x86_dep_fp_stack_count = x86_dep_fp_stack_last - x86_dep_fp_stack_first + 1,
 
 
-	/** XMM dependences */
+	/* XMM dependences */
 
 	x86_dep_xmm0 = 34,
 	x86_dep_xmm1 = 35,
@@ -253,7 +256,7 @@ enum x86_dep_t
 	x86_dep_xmm_count = x86_dep_xmm_last - x86_dep_xmm_first + 1,
 
 
-	/** Special dependences **/
+	/* Special dependences */
 
 	x86_dep_rm8 = 0x100,
 	x86_dep_rm16 = 0x101,
@@ -931,7 +934,7 @@ struct x86_ctx_t
 enum x86_ctx_status_t
 {
 	x86_ctx_running      = 0x00001,  /* it is able to run instructions */
-	x86_ctx_spec_mode     = 0x00002,  /* executing in speculative mode */
+	x86_ctx_spec_mode    = 0x00002,  /* executing in speculative mode */
 	x86_ctx_suspended    = 0x00004,  /* suspended in a system call */
 	x86_ctx_finished     = 0x00008,  /* no more inst to execute */
 	x86_ctx_exclusive    = 0x00010,  /* executing in excl mode */
@@ -1099,7 +1102,6 @@ extern enum x86_emu_kind_t
 void x86_emu_init(void);
 void x86_emu_done(void);
 void x86_emu_run(void);
-void x86_emu_disasm(char *file_name);
 
 void x86_emu_dump(FILE *f);
 

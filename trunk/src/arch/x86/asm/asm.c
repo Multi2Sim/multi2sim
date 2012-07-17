@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <misc.h>
 #include <debug.h>
+#include <elf-format.h>
 
 #include <x86-asm.h>
 
@@ -629,6 +630,83 @@ void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst)
 }
 
 
+/* Stand-alone disassembler */
+void x86_disasm_file(char *file_name)
+{
+	struct elf_file_t *elf_file;
+	struct elf_section_t *section;
+	struct elf_buffer_t *buffer;
+	struct elf_symbol_t *symbol;
+
+	struct x86_inst_t inst;
+	int curr_sym;
+	int i;
+
+	/* Open ELF file */
+	x86_disasm_init();
+	elf_file = elf_file_create_from_path(file_name);
+
+	/* Read sections */
+	for (i = 0; i < list_count(elf_file->section_list); i++)
+	{
+		/* Get section and skip if it does not contain code */
+		section = list_get(elf_file->section_list, i);
+		if (!(section->header->sh_flags & SHF_EXECINSTR))
+			continue;
+		buffer = &section->buffer;
+
+		/* Title */
+		printf("**\n** Disassembly for section '%s'\n**\n\n", section->name);
+
+		/* Disassemble */
+		curr_sym = 0;
+		symbol = list_get(elf_file->symbol_table, curr_sym);
+		while (buffer->pos < buffer->size)
+		{
+			uint32_t eip;
+			char str[MAX_STRING_SIZE];
+
+			/* Read instruction */
+			eip = section->header->sh_addr + buffer->pos;
+			x86_disasm(elf_buffer_tell(buffer), eip, &inst);
+			if (inst.size)
+			{
+				elf_buffer_read(buffer, NULL, inst.size);
+				x86_inst_dump_buf(&inst, str, MAX_STRING_SIZE);
+			}
+			else
+			{
+				elf_buffer_read(buffer, NULL, 1);
+				strcpy(str, "???");
+			}
+
+			/* Symbol */
+			while (symbol && symbol->value < eip)
+			{
+				curr_sym++;
+				symbol = list_get(elf_file->symbol_table, curr_sym);
+			}
+			if (symbol && symbol->value == eip)
+				printf("\n%08x <%s>:\n", eip, symbol->name);
+
+			/* Print */
+			printf("%8x:  %s\n", eip, str);
+		}
+
+		/* Pad */
+		printf("\n\n");
+	}
+
+	/* Free ELF */
+	elf_file_free(elf_file);
+	x86_disasm_done();
+
+	/* End */
+	mhandle_done();
+	exit(0);
+}
+
+
 void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 {
 	enum x86_opcode_t op = inst->opcode;
@@ -636,158 +714,236 @@ void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size)
 	char *fmt = info->fmt;
 	int word = 0;
 	
-	while (*fmt) {
-
-		if (is_next_word(fmt, "r8")) {
+	while (*fmt)
+	{
+		if (is_next_word(fmt, "r8"))
+		{
 			str_printf(&buf, &size, "%s", x86_reg_name_get(inst->modrm_reg + x86_reg_al));
 			fmt += 2;
-		} else if (is_next_word(fmt, "r16")) {
+		}
+		else if (is_next_word(fmt, "r16"))
+		{
 			str_printf(&buf, &size, "%s", x86_reg_name_get(inst->modrm_reg + x86_reg_ax));
 			fmt += 3;
-		} else if (is_next_word(fmt, "r32")) {
+		}
+		else if (is_next_word(fmt, "r32"))
+		{
 			str_printf(&buf, &size, "%s", x86_reg_name_get(inst->modrm_reg + x86_reg_eax));
 			fmt += 3;
-		} else if (is_next_word(fmt, "rm8")) {
+		}
+		else if (is_next_word(fmt, "rm8"))
+		{
 			if (inst->modrm_mod == 0x03)
 				str_printf(&buf, &size, "%s",
 					x86_reg_name_get(inst->modrm_rm + x86_reg_al));
-			else {
+			else
+			{
 				str_printf(&buf, &size, "BYTE PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 3;
-		} else if (is_next_word(fmt, "rm16")) {
+		}
+		else if (is_next_word(fmt, "rm16"))
+		{
 			if (inst->modrm_mod == 0x03)
 				str_printf(&buf, &size, "%s",
 					x86_reg_name_get(inst->modrm_rm + x86_reg_ax));
-			else {
+			else
+			{
 				str_printf(&buf, &size, "WORD PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 4;
-		} else if (is_next_word(fmt, "rm32")) {
+		}
+		else if (is_next_word(fmt, "rm32"))
+		{
 			if (inst->modrm_mod == 0x03)
 				str_printf(&buf, &size, "%s",
 					x86_reg_name_get(inst->modrm_rm + x86_reg_eax));
-			else {
+			else
+			{
 				str_printf(&buf, &size, "DWORD PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 4;
-		} else if (is_next_word(fmt, "r32m8")) {
+		}
+		else if (is_next_word(fmt, "r32m8"))
+		{
 			if (inst->modrm_mod == 3)
 				str_printf(&buf, &size, "%s", x86_reg_name_get(inst->modrm_rm + x86_reg_eax));
-			else {
+			else
+			{
 				str_printf(&buf, &size, "BYTE PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 5;
-		} else if (is_next_word(fmt, "m")) {
+		}
+		else if (is_next_word(fmt, "m"))
+		{
 			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt++;
-		} else if (is_next_word(fmt, "imm8")) {
+		}
+		else if (is_next_word(fmt, "imm8"))
+		{
 			str_printf(&buf, &size, "0x%x", inst->imm.b);
 			fmt += 4;
-		} else if (is_next_word(fmt, "imm16")) {
+		}
+		else if (is_next_word(fmt, "imm16"))
+		{
 			str_printf(&buf, &size, "0x%x", inst->imm.w);
 			fmt += 5;
-		} else if (is_next_word(fmt, "imm32")) {
+		}
+		else if (is_next_word(fmt, "imm32"))
+		{
 			str_printf(&buf, &size, "0x%x", inst->imm.d);
 			fmt += 5;
-		} else if (is_next_word(fmt, "rel8")) {
+		}
+		else if (is_next_word(fmt, "rel8"))
+		{
 			str_printf(&buf, &size, "%x", (int8_t) inst->imm.b + inst->eip + inst->size);
 			fmt += 4;
-		} else if (is_next_word(fmt, "rel16")) {
+		}
+		else if (is_next_word(fmt, "rel16"))
+		{
 			str_printf(&buf, &size, "%x", (int16_t) inst->imm.w + inst->eip + inst->size);
-		} else if (is_next_word(fmt, "rel32")) {
+		}
+		else if (is_next_word(fmt, "rel32"))
+		{
 			str_printf(&buf, &size, "%x", inst->imm.d + inst->eip + inst->size);
 			fmt += 5;
-		} else if (is_next_word(fmt, "moffs8")) {
+		}
+		else if (is_next_word(fmt, "moffs8"))
+		{
 			x86_moffs_address_dump_buf(inst, &buf, &size);
 			fmt += 6;
-		} else if (is_next_word(fmt, "moffs16")) {
+		}
+		else if (is_next_word(fmt, "moffs16"))
+		{
 			x86_moffs_address_dump_buf(inst, &buf, &size);
 			fmt += 7;
-		} else if (is_next_word(fmt, "moffs32")) {
+		}
+		else if (is_next_word(fmt, "moffs32"))
+		{
 			x86_moffs_address_dump_buf(inst, &buf, &size);
 			fmt += 7;
-		} else if (is_next_word(fmt, "m8")) {
+		}
+		else if (is_next_word(fmt, "m8"))
+		{
 			str_printf(&buf, &size, "BYTE PTR ");
 			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 2;
-		} else if (is_next_word(fmt, "m16")) {
+		}
+		else if (is_next_word(fmt, "m16"))
+		{
 			str_printf(&buf, &size, "WORD PTR ");
 			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 3;
-		} else if (is_next_word(fmt, "m32")) {
+		}
+		else if (is_next_word(fmt, "m32"))
+		{
 			str_printf(&buf, &size, "DWORD PTR ");
 			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 3;
-		} else if (is_next_word(fmt, "m64")) {
+		}
+		else if (is_next_word(fmt, "m64"))
+		{
 			str_printf(&buf, &size, "QWORD PTR ");
 			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 3;
-		} else if (is_next_word(fmt, "m80")) {
+		}
+		else if (is_next_word(fmt, "m80"))
+		{
 			str_printf(&buf, &size, "TBYTE PTR ");
 			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 3;
-		} else if (is_next_word(fmt, "m128")) {
+		}
+		else if (is_next_word(fmt, "m128"))
+		{
 			str_printf(&buf, &size, "XMMWORD PTR ");
 			x86_memory_address_dump_buf(inst, &buf, &size);
 			fmt += 4;
-		} else if (is_next_word(fmt, "st0")) {
+		}
+		else if (is_next_word(fmt, "st0"))
+		{
 			str_printf(&buf, &size, "st");
 			fmt += 3;
-		} else if (is_next_word(fmt, "sti")) {
+		}
+		else if (is_next_word(fmt, "sti"))
+		{
 			str_printf(&buf, &size, "st(%d)", inst->opindex);
 			fmt += 3;
-		} else if (is_next_word(fmt, "ir8")) {
+		}
+		else if (is_next_word(fmt, "ir8"))
+		{
 			str_printf(&buf, &size, "%s", x86_reg_name_get(inst->opindex + x86_reg_al));
 			fmt += 3;
-		} else if (is_next_word(fmt, "ir16")) {
+		}
+		else if (is_next_word(fmt, "ir16"))
+		{
 			str_printf(&buf, &size, "%s", x86_reg_name_get(inst->opindex + x86_reg_ax));
 			fmt += 4;
-		} else if (is_next_word(fmt, "ir32")) {
+		}
+		else if (is_next_word(fmt, "ir32"))
+		{
 			str_printf(&buf, &size, "%s", x86_reg_name_get(inst->opindex + x86_reg_eax));
 			fmt += 4;
-		} else if (is_next_word(fmt, "sreg")) {
+		}
+		else if (is_next_word(fmt, "sreg"))
+		{
 			str_printf(&buf, &size, "%s", x86_reg_name_get(inst->reg + x86_reg_es));
 			fmt += 4;
-		} else if (is_next_word(fmt, "xmmm32")) {
+		}
+		else if (is_next_word(fmt, "xmmm32"))
+		{
 			if (inst->modrm_mod == 3)
 				str_printf(&buf, &size, "xmm%d", inst->modrm_rm);
-			else {
+			else
+			{
 				str_printf(&buf, &size, "DWORD PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 6;
-		} else if (is_next_word(fmt, "xmmm64")) {
+		}
+		else if (is_next_word(fmt, "xmmm64"))
+		{
 			if (inst->modrm_mod == 0x03)
 				str_printf(&buf, &size, "xmm%d", inst->modrm_rm);
-			else {
+			else
+			{
 				str_printf(&buf, &size, "QWORD PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 6;
-		} else if (is_next_word(fmt, "xmmm128")) {
+		}
+		else if (is_next_word(fmt, "xmmm128"))
+		{
 			if (inst->modrm_mod == 0x03)
 				str_printf(&buf, &size, "xmm%d", inst->modrm_rm);
-			else {
+			else
+			{
 				str_printf(&buf, &size, "XMMWORD PTR ");
 				x86_memory_address_dump_buf(inst, &buf, &size);
 			}
 			fmt += 7;
-		} else if (is_next_word(fmt, "xmm")) {
+		}
+		else if (is_next_word(fmt, "xmm"))
+		{
 			str_printf(&buf, &size, "xmm%d", inst->modrm_reg);
 			fmt += 3;
-		} else {
+		}
+		else
+		{
 			while (*fmt && is_fmt_char(*fmt))
 				str_printf(&buf, &size, "%c", *fmt++);
-			while (*fmt && !is_fmt_char(*fmt)) {
-				if (*fmt == '_') {
+			while (*fmt && !is_fmt_char(*fmt))
+			{
+				if (*fmt == '_')
+				{
 					str_printf(&buf, &size, "%s", word ? ", " : " ");
 					word++;
-				} else {
+				}
+				else
+				{
 					str_printf(&buf, &size, "%c", *fmt);
 				}
 				fmt++;

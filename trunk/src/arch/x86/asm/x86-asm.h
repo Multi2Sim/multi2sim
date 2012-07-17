@@ -128,7 +128,7 @@ union x86_xmm_reg_t
 /* x86 Instruction */
 struct x86_inst_t
 {
-	uint32_t eip;  /* position inside the code */
+	unsigned int eip;  /* position inside the code */
 	int size;  /* number of instruction bytes */
 	enum x86_opcode_t opcode;
 	char *format;  /* format of the instruction */
@@ -164,22 +164,32 @@ struct x86_inst_t
 	unsigned char sib_base;  /* Base field of SIB */
 
 	/* Displacement and Immediate */
-	int32_t disp;
+	int disp;
 	union {
-		uint8_t b;
-		uint16_t w;
-		uint32_t d;
+		unsigned char b;
+		unsigned short w;
+		unsigned int d;
 	} imm;
 
 	/* Effective address */
 	enum x86_reg_t ea_base;
 	enum x86_reg_t ea_index;
-	uint32_t ea_scale;
+	unsigned int ea_scale;
 
 	/* Register */
 	int reg;  /* same as modrm_reg */
 };
 
+void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size);
+void x86_inst_dump(struct x86_inst_t *inst, FILE *f);
+char *x86_inst_name(enum x86_opcode_t opcode);
+
+
+
+
+/*
+ * X86 Disassembler
+ */
 
 /* Initialization and finalization routines */
 void x86_disasm_init(void);
@@ -187,10 +197,7 @@ void x86_disasm_done(void);
 
 /* Disassemble and dump */
 void x86_disasm(void *buf, uint32_t eip, volatile struct x86_inst_t *inst);
-void x86_inst_dump_buf(struct x86_inst_t *inst, char *buf, int size);
-void x86_inst_dump(struct x86_inst_t *inst, FILE *f);
-char *x86_inst_name(enum x86_opcode_t opcode);
+void x86_disasm_file(char *file_name);
 
 
 #endif
-
