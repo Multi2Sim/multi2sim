@@ -27,15 +27,23 @@
 
 
 /*
+ * Debug
+ */
+
+
+static int frm_cuda_driver_debug = 0;
+
+#define cuda_debug(stream, ...) (frm_cuda_driver_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+
+
+
+/*
  * Error Messages
  */
 
 
 #define __FRM_CUDA_NOT_IMPL__  warning("%s: not implemented.\n%s", \
 	__FUNCTION__, err_frm_cuda_not_impl);
-
-#define cuda_debug(stream, ...) ((!strcmp(getenv("LIBM2S_CUDA_DUMP"), "1")) ? \
-	fprintf((stream), __VA_ARGS__) : (void) 0)
 
 static char *err_frm_cuda_not_impl =
 	"\tMulti2Sim provides partial support for CUDA driver library.\n"
@@ -76,13 +84,6 @@ typedef enum CUsharedconfig_enum {
     CU_SHARED_MEM_CONFIG_EIGHT_BYTE_BANK_SIZE = 0x02  /**< set shared memory bank width to eight bytes */
 } CUsharedconfig;
 
-
-
-/*
- * Internal Functions
- */
-
-
 #define FRM_CUDA_VERSION_MAJOR	1
 #define FRM_CUDA_VERSION_MINOR	700
 
@@ -92,10 +93,25 @@ struct frm_cuda_version_t
 	int minor;
 };
 
+
+
+/*
+ * Internal Functions
+ */
+
+
+void set_debug_flag(void)
+{
+	frm_cuda_driver_debug = !strcmp(getenv("LIBM2S_CUDA_DUMP"), "1");
+}
+
+
 void versionCheck(void)
 {
 	struct frm_cuda_version_t version;
 	int ret;
+
+	set_debug_flag();
 
 	cuda_debug(stdout, "CUDA driver internal function '%s'\n", __FUNCTION__);
 

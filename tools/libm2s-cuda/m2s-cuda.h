@@ -31,7 +31,7 @@
 enum frm_cuda_call_t
 {
 	frm_cuda_call_invalid,
-#define FRM_CUDA_DEFINE_CALL(name, code) frm_cuda_call_##name = code,
+#define FRM_CUDA_DEFINE_CALL(name) frm_cuda_call_##name,
 #include "../../src/arch/fermi/emu/cuda.dat"
 #undef FRM_CUDA_DEFINE_CALL
 	frm_cuda_call_count

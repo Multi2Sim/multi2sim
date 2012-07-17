@@ -352,34 +352,3 @@ void warning(char *fmt, ...)
 	fprintf(stderr, "\n");
 }
 
-
-void __x86_cuda_debug(int category, char *fmt, ...)
-{
-	struct debug_category_t *c;
-	va_list va;
-	char spc[200];
-
-	/* Get category */
-	assert(category > 0);
-	c = list_get(debug_category_list, category);
-	assert(c);
-	if (c->status == debug_status_off)
-		return;
-	
-	/* Print spaces */
-	if (c->space_count >= sizeof(spc))
-		c->space_count = sizeof(spc) - 1;
-	memset(spc, ' ', c->space_count);
-	spc[c->space_count] = '\0';
-	fprintf(c->f, "%s", spc);
-	
-	/* Print message */
-	va_start(va, fmt);
-	vfprintf(c->f, fmt, va);
-
-	/* Flush */
-#ifndef NDEBUG
-	fflush(c->f);
-#endif
-}
-
