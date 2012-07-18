@@ -289,12 +289,16 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	/* Use the encoding field to determine the instruction type */
 	if (inst->micro_inst.sopp.enc == 0x17F)
 	{
-		assert(si_inst_info_sopp[inst->micro_inst.sopp.op]);
+		if (!si_inst_info_sopp[inst->micro_inst.sopp.op])
+			fatal("Unimplemented Instruction: SOPP:%d", inst->micro_inst.sopp.op);
+
 		inst->info = si_inst_info_sopp[inst->micro_inst.sopp.op];
 	}
 	else if (inst->micro_inst.sopc.enc == 0x17E)
 	{
-		assert(si_inst_info_sopc[inst->micro_inst.sopc.op]);
+		if (!si_inst_info_sopc[inst->micro_inst.sopc.op])
+			fatal("Unimplemented Instruction: SOPC:%d", inst->micro_inst.sopc.op);
+
 		inst->info = si_inst_info_sopc[inst->micro_inst.sopc.op];
 
 		/* Only one source field may use a literal constant, which is indicated by 0xFF. */
@@ -307,7 +311,9 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	}
 	else if (inst->micro_inst.sop1.enc == 0x17D)
 	{
-		assert(si_inst_info_sop1[inst->micro_inst.sop1.op]);
+		if (!si_inst_info_sop1[inst->micro_inst.sop1.op])
+			fatal("Unimplemented Instruction: SOP1:%d", inst->micro_inst.sop1.op);
+
 		inst->info = si_inst_info_sop1[inst->micro_inst.sop1.op];
 
 		/* 0xFF indicates the use of a literal constant as a source operand. */
@@ -319,12 +325,16 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	}
 	else if (inst->micro_inst.sopk.enc == 0xB)
 	{
-		assert(si_inst_info_sopk[inst->micro_inst.sopk.op]);
+		if (!si_inst_info_sopk[inst->micro_inst.sopk.op])
+			fatal("Unimplemented Instruction: SOPK:%d", inst->micro_inst.sopk.op);
+
 		inst->info = si_inst_info_sopk[inst->micro_inst.sopk.op];
 	}
 	else if (inst->micro_inst.sop2.enc == 0x2)
 	{
-		assert(si_inst_info_sop2[inst->micro_inst.sop2.op]);
+		if (!si_inst_info_sop2[inst->micro_inst.sop2.op])
+			fatal("Unimplemented Instruction: SOP2:%d", inst->micro_inst.sop2.op);
+
 		inst->info = si_inst_info_sop2[inst->micro_inst.sop2.op];
 
 		/* Only one source field may use a literal constant, which is indicated by 0xFF. */
@@ -337,7 +347,9 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	}
 	else if (inst->micro_inst.smrd.enc == 0x18) 
 	{
-		assert(si_inst_info_smrd[inst->micro_inst.smrd.op]);
+		if (!si_inst_info_smrd[inst->micro_inst.smrd.op])
+			fatal("Unimplemented Instruction: SMRD:%d", inst->micro_inst.smrd.op);
+
 		inst->info = si_inst_info_smrd[inst->micro_inst.smrd.op];
 	}
 	else if (inst->micro_inst.vop3a.enc == 0x34)
@@ -345,12 +357,17 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 		/* 64 bit instruction. */
 		inst_size = 8;
 		memcpy(&inst->micro_inst, buf, inst_size);
-		assert(si_inst_info_vop3[inst->micro_inst.vop3a.op]);
+
+		if (!si_inst_info_vop3[inst->micro_inst.vop3a.op])
+			fatal("Unimplemented Instruction: VOP3:%d", inst->micro_inst.vop3a.op);
+
 		inst->info = si_inst_info_vop3[inst->micro_inst.vop3a.op];
 	}
 	else if (inst->micro_inst.vopc.enc == 0x3E)
 	{
-		assert(si_inst_info_vopc[inst->micro_inst.vopc.op]);
+		if (!si_inst_info_vopc[inst->micro_inst.vopc.op])
+			fatal("Unimplemented Instruction: VOPC:%d", inst->micro_inst.vopc.op);
+
 		inst->info = si_inst_info_vopc[inst->micro_inst.vopc.op];
 
 		/* 0xFF indicates the use of a literal constant as a source operand. */
@@ -362,7 +379,9 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	}
 	else if (inst->micro_inst.vop1.enc == 0x3F)
 	{
-		assert(si_inst_info_vop1[inst->micro_inst.vop1.op]);
+		if (!si_inst_info_vop1[inst->micro_inst.vop1.op])
+			fatal("Unimplemented Instruction: VOP1:%d", inst->micro_inst.vop1.op);
+
 		inst->info = si_inst_info_vop1[inst->micro_inst.vop1.op];
 
 		/* 0xFF indicates the use of a literal constant as a source operand. */
@@ -374,7 +393,9 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 	}
 	else if (inst->micro_inst.vop2.enc == 0x0)
 	{
-		assert(si_inst_info_vop2[inst->micro_inst.vop2.op]);
+		if (!si_inst_info_vop2[inst->micro_inst.vop2.op])
+			fatal("Unimplemented Instruction: VOP2:%d", inst->micro_inst.vop2.op);
+
 		inst->info = si_inst_info_vop2[inst->micro_inst.vop2.op];
 
 		/* 0xFF indicates the use of a literal constant as a source operand. */
@@ -389,7 +410,10 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 		/* 64 bit instruction. */
 		inst_size = 8;
 		memcpy(&inst->micro_inst, buf, inst_size);
-		assert(si_inst_info_ds[inst->micro_inst.ds.op]);
+
+		if (!si_inst_info_ds[inst->micro_inst.ds.op])
+			fatal("Unimplemented Instruction: DS:%d", inst->micro_inst.ds.op);
+
 		inst->info = si_inst_info_ds[inst->micro_inst.ds.op];
 	}
 	else if (inst->micro_inst.mtbuf.enc == 0x3A)
@@ -397,7 +421,10 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 		/* 64 bit instruction. */
 		inst_size = 8;
 		memcpy(&inst->micro_inst, buf, inst_size);
-		assert(si_inst_info_mtbuf[inst->micro_inst.mtbuf.op]);
+
+		if (!si_inst_info_mtbuf[inst->micro_inst.mtbuf.op])
+			fatal("Unimplemented Instruction: MTBUF:%d", inst->micro_inst.mtbuf.op);
+
 		inst->info = si_inst_info_mtbuf[inst->micro_inst.mtbuf.op];
 	}
 	/* TODO FILL IN REMAINING FORMATS */
