@@ -249,6 +249,58 @@ static void arm_ctx_loader_load_sections(struct arm_ctx_t *ctx, struct elf_file_
 	}
 }
 
+/* Load auxiliary vector, and return its size in bytes. */
+
+#define ARM_LOADER_AV_ENTRY(t, v) \
+{ \
+	uint32_t a_type = t; \
+	uint32_t a_value = v; \
+	mem_write(mem, sp, 4, &a_type); \
+	mem_write(mem, sp + 4, 4, &a_value); \
+	sp += 8; \
+}
+
+static uint32_t arm_load_av(struct arm_ctx_t *ctx, uint32_t where)
+{
+
+	struct mem_t *mem = ctx->mem;
+	uint32_t sp = where;
+
+	arm_loader_debug("Loading auxiliary vector at 0x%x\n", where);
+
+	/* Program headers */
+	ARM_LOADER_AV_ENTRY(3, ctx->phdt_base);  /* AT_PHDR */
+	ARM_LOADER_AV_ENTRY(4, 32);  /* AT_PHENT -> program header size of 32 bytes */
+	ARM_LOADER_AV_ENTRY(5, ctx->phdr_count);  /* AT_PHNUM */
+
+	/* Other values */
+	ARM_LOADER_AV_ENTRY(6, MEM_PAGE_SIZE);  /* AT_PAGESZ */
+	ARM_LOADER_AV_ENTRY(7, 0);  /* AT_BASE */
+	ARM_LOADER_AV_ENTRY(8, 0);  /* AT_FLAGS */
+	ARM_LOADER_AV_ENTRY(9, ctx->prog_entry);  /* AT_ENTRY */
+	ARM_LOADER_AV_ENTRY(11, getuid());  /* AT_UID */
+	ARM_LOADER_AV_ENTRY(12, geteuid());  /* AT_EUID */
+	ARM_LOADER_AV_ENTRY(13, getgid());  /* AT_GID */
+	ARM_LOADER_AV_ENTRY(14, getegid());  /* AT_EGID */
+	ARM_LOADER_AV_ENTRY(17, 0x64);  /* AT_CLKTCK */
+	ARM_LOADER_AV_ENTRY(23, 0);  /* AT_SECURE */
+
+	/* Random bytes */
+	ctx->at_random_addr_holder = sp + 4;
+	ARM_LOADER_AV_ENTRY(25, 0);  /* AT_RANDOM */
+
+	/*ARM_LOADER_AV_ENTRY(32, 0xffffe400);
+	ARM_LOADER_AV_ENTRY(33, 0xffffe000);
+	ARM_LOADER_AV_ENTRY(16, 0xbfebfbff);*/
+
+	/* ??? AT_HWCAP, AT_PLATFORM, 32 and 33 ???*/
+
+	/* Finally, AT_NULL, and return size */
+	ARM_LOADER_AV_ENTRY(0, 0);
+	return sp - where;
+}
+#undef ARM_LOADER_AV_ENTRY
+
 static void arm_ctx_loader_load_stack(struct arm_ctx_t *ctx)
 {
 	/* FIXME: Implement the stack loading function for ARM and the stack
@@ -284,7 +336,8 @@ static void arm_ctx_loader_load_stack(struct arm_ctx_t *ctx)
 		envp = sp;
 		sp += linked_list_count(ctx->env) * 4 + 4;
 
-		/* FIXME: Load here the auxiliary vector ARM */
+		/* Load here the auxiliary vector ARM */
+		sp += arm_load_av(ctx, sp);
 
 
 		/* Write arguments into stack */
@@ -302,6 +355,8 @@ static void arm_ctx_loader_load_stack(struct arm_ctx_t *ctx)
 
 		/* Write environment variables */
 		arm_loader_debug("\nEnvironment variables:\n");
+		arm_loader_debug("\nMax Environment variables are %d\n",
+			linked_list_count(ctx->env)); /* FIXME: */
 		for (i = 0; i < linked_list_count(ctx->env); i++)
 		{
 			linked_list_goto(ctx->env, i);
@@ -321,8 +376,11 @@ static void arm_ctx_loader_load_stack(struct arm_ctx_t *ctx)
 			mem_write(mem, sp, 1, &c);
 			sp++;
 		}
+		arm_loader_debug("\nReached here 0\n"); /* FIXME: */
+		arm_loader_debug("\n at_random_addr_holder = %x , at_random_addr = %x \n",
+			ctx->at_random_addr_holder, ctx->at_random_addr); /* FIXME: */
 		mem_write(mem, ctx->at_random_addr_holder, 4, &ctx->at_random_addr);
-
+		arm_loader_debug("\nReached here 1\n"); /* FIXME: */
 		/* Check that we didn't overflow */
 		if (sp > LD_STACK_BASE)
 			fatal("%s: initial stack overflow, increment LD_MAX_ENVIRON",
@@ -452,7 +510,7 @@ void arm_ctx_free(struct arm_ctx_t *ctx)
 	free(ctx);
 }
 
-void arm_ctx_loader_load_prog_from_cmdline(int argc, char **argv)
+void arm_ctx_load_from_command_line(int argc, char **argv)
 {
 	struct arm_ctx_t *ctx;
 
@@ -514,12 +572,6 @@ void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *
 		fatal("%s: buffer too small", __FUNCTION__);
 	snprintf(full_path, size, "%s/%s", ctx->cwd, file_name);
 }
-
-
-void arm_ctx_load_from_command_line(int argc, char **argv)
-{
-}
-
 
 void arm_ctx_load_from_ctx_config(struct config_t *config, char *section)
 {

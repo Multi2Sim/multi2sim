@@ -493,4 +493,9 @@ void arm_inst_dump_FP(char **inst_str_ptr, int *inst_str_size,
 void arm_inst_dump_RT(char **inst_str_ptr, int *inst_str_size,
 	struct arm_inst_t *inst, enum arm_cat_enum cat);
 
+/*
+ * Arm Disassembler
+ */
+void arm_emu_disasm(char *path);
+
 #endif
