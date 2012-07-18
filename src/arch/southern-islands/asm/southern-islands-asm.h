@@ -511,9 +511,14 @@ typedef enum _E_SC_USER_DATA_CLASS
     IMM_LDS_ESGS_SIZE,          // immediate LDS ESGS size used in on-chip GS
     SUB_PTR_FETCH_SHADER,       // fetch shader subroutine pointer
     PTR_RESOURCE_TABLE,         // flat/chunked resource table pointer
+
+    /* PTR_CONST_BUFFER_TABLE Moved to position 20 */
+    PTR_CONST_BUFFER_TABLE,     // flat/chunked const buffer table pointer
+
     PTR_INTERNAL_RESOURCE_TABLE,// flat/chunked internal resource table pointer
     PTR_SAMPLER_TABLE,          // flat/chunked sampler table pointer
-    PTR_CONST_BUFFER_TABLE,     // flat/chunked const buffer table pointer
+
+    /* PTR_CONST_BUFFER_TABLE Was originally here at position 22 */
 
     /* PTR_UAV_TABLE Moved to position 23 */
     PTR_UAV_TABLE,              // flat/chunked UAV resource table pointer
