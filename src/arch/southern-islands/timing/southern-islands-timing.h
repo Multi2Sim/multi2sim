@@ -451,6 +451,7 @@ void si_gpu_init(void);
 void si_gpu_done(void);
 
 void si_gpu_dump_report(void);
+void si_gpu_dump_summary(FILE *f);
 
 void si_gpu_uop_trash_add(struct si_uop_t *uop);
 void si_gpu_uop_trash_empty(void);

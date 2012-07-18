@@ -622,6 +622,22 @@ void si_gpu_dump_report(void)
 	}
 }
 
+void si_gpu_dump_summary(FILE *f)
+{
+	double time_in_sec;
+	double inst_per_cycle;
+	double cycles_per_sec;
+
+	/* Calculate statistics */
+	time_in_sec = (double) m2s_timer_get_value(si_emu->timer) / 1.0e6;
+	inst_per_cycle = si_gpu->cycle ? (double) si_emu->inst_count / si_gpu->cycle : 0.0;
+	cycles_per_sec = time_in_sec > 0.0 ? (double) si_gpu->cycle / time_in_sec : 0.0;
+
+	/* Print statistics */
+	fprintf(f, "Cycles = %lld\n", si_gpu->cycle);
+	fprintf(f, "CyclesPerSecond = %.0f\n", cycles_per_sec);
+	fprintf(f, "IPC = %.4g\n", inst_per_cycle);
+}
 
 void si_gpu_uop_trash_empty(void)
 {
