@@ -265,6 +265,10 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 								{
 									si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
 								}
+								else if (userElements[i].dataClass == IMM_UAV)
+								{
+									si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
+								}
 								else if (userElements[i].dataClass == PTR_UAV_TABLE)
 								{
 									si_wavefront_init_sreg_with_uav_table(wavefront, userElements[i].startUserReg, userElements[i].userRegCount);
