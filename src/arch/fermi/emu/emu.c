@@ -101,37 +101,24 @@ void frm_emu_disasm(char *path)
 	/* Initialization */
 	frm_disasm_init();
 
-	/* Find .text section which saves instruction bits */
+	/* Load cubin file */
 	elf_file = elf_file_create_from_path(path);
 
 	for (i = 0; i < list_count(elf_file->section_list); ++i)
 	{
 		section = (struct elf_section_t *)list_get(elf_file->section_list, i);
-		//FILE *fp = fopen(section->name, "w");
-		fprintf(stdout, "sec: %s\n", section->name);
-		int j;
-		for (j = 0; j < section->buffer.size; ++j) {
-			if (j != 0 && j%8 == 0)
-				fprintf(stdout, "\n");
-			fprintf(stdout, "%02x", *((unsigned char *)(section->buffer.ptr)+j));
-		}
-		fprintf(stdout, "\n");
-		//fclose(fp);
-	}
-	for (i = 0; i < list_count(elf_file->section_list); ++i)
-	{
-		section = (struct elf_section_t *)list_get(elf_file->section_list, i);
-		if (!strncmp(section->name, ".text", 5))
-			break;
-	}
-	if (i == list_count(elf_file->section_list))
-		fatal(".text section not found!\n");
 
-	/* Decode and dump instructions */
-	for (inst_index = 0; inst_index < section->buffer.size/8; ++inst_index)
-	{
-		frm_inst_hex_dump(stdout, (unsigned char*)(section->buffer.ptr), inst_index);
-		frm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, (unsigned char*)(section->buffer.ptr), inst_index);
+		/* Determine if section is .text.kernel_name */
+		if (!strncmp(section->name, ".text", 5))
+		{
+			/* Decode and dump instructions */
+			fprintf(stdout, "%s\n", section->name+6);
+			for (inst_index = 0; inst_index < section->buffer.size/8; ++inst_index)
+			{
+				frm_inst_hex_dump(stdout, (unsigned char*)(section->buffer.ptr), inst_index);
+				frm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, (unsigned char*)(section->buffer.ptr), inst_index);
+			}
+		}
 	}
 
 	/* Free external ELF */
