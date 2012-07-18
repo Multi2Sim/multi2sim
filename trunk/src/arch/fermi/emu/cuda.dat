@@ -1,4 +1,4 @@
-FRM_CUDA_DEFINE_CALL(version)
+FRM_CUDA_DEFINE_CALL(versionCheck)
 FRM_CUDA_DEFINE_CALL(cuCtxCreate)
 FRM_CUDA_DEFINE_CALL(cuCtxDetach)
 FRM_CUDA_DEFINE_CALL(cuModuleGetFunction)

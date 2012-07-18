@@ -116,7 +116,7 @@ void versionCheck(void)
 	cuda_debug(stdout, "CUDA driver internal function '%s'\n", __FUNCTION__);
 
 	/* Version negotiation */
-	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_version, &version);
+	ret = syscall(FRM_CUDA_SYS_CODE, frm_cuda_call_versionCheck, &version);
 
 	cuda_debug(stdout, "\t(driver) out: version.major=%d version.minor=%d\n", version.major, version.minor);
 

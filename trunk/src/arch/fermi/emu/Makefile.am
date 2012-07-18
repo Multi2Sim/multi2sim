@@ -14,8 +14,7 @@ libemu_a_SOURCES = \
 	warp.c \
 	thread.c \
 	\
-	cuda.dat \
-	cudart.dat
+	cuda.dat
 
 INCLUDES = @M2S_INCLUDES@
 

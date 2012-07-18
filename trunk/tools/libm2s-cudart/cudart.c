@@ -32,9 +32,9 @@
  */
 
 
-static int frm_cuda_rt_debug = 0;
+static int frm_cudart_debug = 0;
 
-#define cuda_debug(stream, ...) (frm_cuda_rt_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+#define cudart_debug(stream, ...) (frm_cudart_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
 
 
 
@@ -102,31 +102,24 @@ static int arg_index = 0;
  */
 
 
-void set_debug_flag(void)
+void cudartSetDebugFlag(void)
 {
-	frm_cuda_rt_debug = !strcmp(getenv("LIBM2S_CUDART_DUMP"), "1");
+	frm_cudart_debug = !strcmp(getenv("LIBM2S_CUDART_DUMP"), "1");
 }
 
 
-void versionCheck(void)
+void cudartVersionCheck(void)
 {
 	struct frm_cudart_version_t version;
-	int ret;
 
-	set_debug_flag();
+	cudartSetDebugFlag();
 
-	cuda_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
+	cudart_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
 	/* Version negotiation */
-	ret = syscall(FRM_CUDART_SYS_CODE, frm_cudart_call_version, &version);
+	version.major = 1; version.minor = 700;
 
-	cuda_debug(stdout, "\t(runtime) out: version.major=%d version.minor=%d\n", version.major, version.minor);
-
-	/* Check that we are running on Multi2Sim. If a program linked with this library
-	 * is running natively, system call FRM_CUDART_SYS_CODE is not supported. */
-	if (ret)
-		fatal("native execution not supported.\n%s",
-			err_frm_cudart_native);
+	cudart_debug(stdout, "\t(runtime) out: version.major=%d version.minor=%d\n", version.major, version.minor);
 
 	/* Check that exact major version matches */
 	if (version.major != FRM_CUDART_VERSION_MAJOR
@@ -142,10 +135,10 @@ void** CUDARTAPI __cudaRegisterFatBinary(void *fatCubin)
 {
 	void **fatCubinHandle;
 
-	versionCheck();
+	cudartVersionCheck();
 	cuInit(0);
 
-	cuda_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
+	cudart_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
 	fatCubinHandle = malloc(sizeof (unsigned long long int *));
 	*fatCubinHandle = (unsigned long long int *)((struct __fatDeviceText *)fatCubin)->d;
@@ -156,7 +149,7 @@ void** CUDARTAPI __cudaRegisterFatBinary(void *fatCubin)
 
 void CUDARTAPI __cudaUnregisterFatBinary(void **fatCubinHandle)
 {
-	cuda_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
+	cudart_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
 	if (fatCubinHandle != NULL)
 		free(fatCubinHandle);
@@ -220,16 +213,16 @@ void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
 	int ret;
 	int i, j;
 
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: hostFun=%p\n", hostFun);
-	cuda_debug(stdout, "\t(runtime) in: deviceFun=%s\n", deviceFun);
-	cuda_debug(stdout, "\t(runtime) in: deviceName=%s\n", deviceName);
-	cuda_debug(stdout, "\t(runtime) in: thread_limit=%d\n", thread_limit);
-	cuda_debug(stdout, "\t(runtime) in: tid=%u %u %u\n", tid->x, tid->y, tid->z);
-	cuda_debug(stdout, "\t(runtime) in: bid=%u %u %u\n", bid->x, bid->y, bid->z);
-	cuda_debug(stdout, "\t(runtime) in: bDim=%u %u %u\n", bDim->x, bDim->y, bDim->z);
-	cuda_debug(stdout, "\t(runtime) in: gDim=%u %u %u\n", gDim->x, gDim->y, gDim->z);
-	cuda_debug(stdout, "\t(runtime) in: wSize=%d\n", *wSize);
+	cudart_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cudart_debug(stdout, "\t(runtime) in: hostFun=%p\n", hostFun);
+	cudart_debug(stdout, "\t(runtime) in: deviceFun=%s\n", deviceFun);
+	cudart_debug(stdout, "\t(runtime) in: deviceName=%s\n", deviceName);
+	cudart_debug(stdout, "\t(runtime) in: thread_limit=%d\n", thread_limit);
+	cudart_debug(stdout, "\t(runtime) in: tid=%u %u %u\n", tid->x, tid->y, tid->z);
+	cudart_debug(stdout, "\t(runtime) in: bid=%u %u %u\n", bid->x, bid->y, bid->z);
+	cudart_debug(stdout, "\t(runtime) in: bDim=%u %u %u\n", bDim->x, bDim->y, bDim->z);
+	cudart_debug(stdout, "\t(runtime) in: gDim=%u %u %u\n", gDim->x, gDim->y, gDim->z);
+	cudart_debug(stdout, "\t(runtime) in: wSize=%d\n", *wSize);
 
 	fatbinData = *((unsigned long long int **)fatCubinHandle);
 
@@ -527,9 +520,9 @@ cudaError_t CUDARTAPI cudaEventElapsedTime(float *ms, cudaEvent_t start, cudaEve
 
 cudaError_t CUDARTAPI cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem __dv(0), cudaStream_t stream __dv(0))
 {
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: gridDim=%u %u %u\n", gridDim.x, gridDim.y, gridDim.z);
-	cuda_debug(stdout, "\t(runtime) in: blockDim=%u %u %u\n", blockDim.x, blockDim.y, blockDim.z);
+	cudart_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cudart_debug(stdout, "\t(runtime) in: gridDim=%u %u %u\n", gridDim.x, gridDim.y, gridDim.z);
+	cudart_debug(stdout, "\t(runtime) in: blockDim=%u %u %u\n", blockDim.x, blockDim.y, blockDim.z);
 
 	grid_dim.x = gridDim.x;
 	grid_dim.y = gridDim.y;
@@ -538,7 +531,7 @@ cudaError_t CUDARTAPI cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t shar
 	threadblock_dim.y = blockDim.y;
 	threadblock_dim.z = blockDim.z;
 
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cudart_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
@@ -546,10 +539,10 @@ cudaError_t CUDARTAPI cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t shar
 
 cudaError_t CUDARTAPI cudaSetupArgument(const void *arg, size_t size, size_t offset)
 {
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: arg=%p\n", arg);
-	cuda_debug(stdout, "\t(runtime) in: size=%zd\n", size);
-	cuda_debug(stdout, "\t(runtime) in: offset=%zd\n", offset);
+	cudart_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cudart_debug(stdout, "\t(runtime) in: arg=%p\n", arg);
+	cudart_debug(stdout, "\t(runtime) in: size=%zd\n", size);
+	cudart_debug(stdout, "\t(runtime) in: offset=%zd\n", offset);
 
 	if (arg_index == 0)
 		args = linked_list_create();
@@ -557,7 +550,7 @@ cudaError_t CUDARTAPI cudaSetupArgument(const void *arg, size_t size, size_t off
 	linked_list_add(args, (void *)arg);
 	++arg_index;
 
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cudart_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
@@ -575,8 +568,8 @@ cudaError_t CUDARTAPI cudaLaunch(const char *entry)
 	CUdeviceptr **kernel_args;
 	int i;
 
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: entry=%p\n", entry);
+	cudart_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cudart_debug(stdout, "\t(runtime) in: entry=%p\n", entry);
 
 	/* Copy the data in args to kernel_args */
 	kernel_args = malloc(linked_list_count(args) * sizeof (CUdeviceptr *));
@@ -590,7 +583,7 @@ cudaError_t CUDARTAPI cudaLaunch(const char *entry)
 		threadblock_dim.x, threadblock_dim.y, threadblock_dim.z, 0, NULL, (void **)kernel_args, NULL);
 	free(kernel_args);
 
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cudart_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
@@ -621,14 +614,14 @@ cudaError_t CUDARTAPI cudaMalloc(void **devPtr, size_t size)
 {
 	CUdeviceptr dptr;
 
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: size=%zd\n", size);
+	cudart_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cudart_debug(stdout, "\t(runtime) in: size=%zd\n", size);
 
 	cuMemAlloc(&dptr, size);
 	*(CUdeviceptr *)devPtr = dptr;
 
-	cuda_debug(stdout, "\t(runtime) out: devPtr=0x%08x\n", *(CUdeviceptr *)devPtr);
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cudart_debug(stdout, "\t(runtime) out: devPtr=0x%08x\n", *(CUdeviceptr *)devPtr);
+	cudart_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
@@ -657,12 +650,12 @@ cudaError_t CUDARTAPI cudaMallocArray(struct cudaArray **array, const struct cud
 
 cudaError_t CUDARTAPI cudaFree(void *devPtr)
 {
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: devPtr=%p\n", devPtr);
+	cudart_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cudart_debug(stdout, "\t(runtime) in: devPtr=%p\n", devPtr);
 
 	cuMemFree((CUdeviceptr)devPtr);
 
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cudart_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
@@ -768,7 +761,7 @@ cudaError_t CUDARTAPI cudaMemGetInfo(size_t *free, size_t *total)
 
 cudaError_t CUDARTAPI cudaMemcpy(void *dst, const void *src, size_t count, enum cudaMemcpyKind kind)
 {
-	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
+	cudart_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 
 	/* FIXME: cudaMemcpyHostToHost, cudaMemcpyDeviceToDevice */
 	if (kind == cudaMemcpyHostToDevice)
@@ -776,7 +769,7 @@ cudaError_t CUDARTAPI cudaMemcpy(void *dst, const void *src, size_t count, enum 
 	else if (kind == cudaMemcpyDeviceToHost)
 		cuMemcpyDtoH(dst, (CUdeviceptr)src, count);
 
-	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
+	cudart_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
 
 	return cudaSuccess;
 }
