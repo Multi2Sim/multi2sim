@@ -126,7 +126,7 @@ int frm_cuda_call(struct x86_ctx_t *ctx)
 
 
 /*
- * CUDA call #1 - version
+ * CUDA call - version
  *
  * @param struct frm_cuda_version_t *version;
  *	Structure where the version of the CUDA runtime implementation will be
@@ -165,7 +165,7 @@ struct frm_cuda_version_t
 	int minor;
 };
 
-static int frm_cuda_func_version(struct x86_ctx_t *ctx)
+static int frm_cuda_func_versionCheck(struct x86_ctx_t *ctx)
 {
 	struct x86_regs_t *regs = ctx->regs;
 	struct mem_t *mem = ctx->mem;
@@ -186,7 +186,7 @@ static int frm_cuda_func_version(struct x86_ctx_t *ctx)
 
 
 /*
- * CUDA call #2 - cuCtxCreate
+ * CUDA call - cuCtxCreate
  *
  * @param CUcontext *pctx;
  *      Returned context handle of the new context.
@@ -228,8 +228,10 @@ static int frm_cuda_func_cuCtxDetach(struct x86_ctx_t *ctx)
 	return 0;
 }
 
+
+
 /*
- * CUDA call #4 - cuModuleGetFunction
+ * CUDA call - cuModuleGetFunction
  *
  * @param CUfunction *pfunc;
  *      Returned function handle.
@@ -294,9 +296,8 @@ static int frm_cuda_func_cuModuleGetFunction(struct x86_ctx_t *ctx)
 
 
 
-
 /*
- * CUDA call #3 - cuModuleLoad
+ * CUDA call - cuModuleLoad
  *
  * @param CUmodule *pmod;
  *      Returned module.
@@ -336,7 +337,7 @@ static int frm_cuda_func_cuModuleLoad(struct x86_ctx_t *ctx)
 
 
 /*
- * CUDA call #6 - cuMemAlloc
+ * CUDA call - cuMemAlloc
  *
  * @param CUdeviceptr *dptr;
  *      Returned device pointer.
@@ -384,10 +385,8 @@ static int frm_cuda_func_cuMemAlloc(struct x86_ctx_t *ctx)
 
 
 
-
-
 /*
- * CUDA call #9 - cuMemFree
+ * CUDA call - cuMemFree
  *
  * @param CUdeviceptr dptr;
  *      Pointer to memory to free.
@@ -425,13 +424,16 @@ static int frm_cuda_func_cuMemFree(struct x86_ctx_t *ctx)
 }
 
 
+
 static int frm_cuda_func_cuMemGetInfo(struct x86_ctx_t *ctx)
 {
 	return 0;
 }
 
+
+
 /*
- * CUDA call #8 - cuMemcpyDtoH
+ * CUDA call - cuMemcpyDtoH
  *
  * @param void *dstHost;
  *      Destination host pointer.
@@ -483,8 +485,11 @@ static int frm_cuda_func_cuMemcpyDtoH(struct x86_ctx_t *ctx)
         free(buf);
 	return 0;
 }
+
+
+
 /*
- * CUDA call #7 - cuMemcpyHtoD
+ * CUDA call - cuMemcpyHtoD
  *
  * @param CUdeviceptr dstDevice;
  *      Destination device pointer.
@@ -539,10 +544,8 @@ static int frm_cuda_func_cuMemcpyHtoD(struct x86_ctx_t *ctx)
 
 
 
-
-
 /*
- * CUDA call #5 - cuLaunchKernel
+ * CUDA call - cuLaunchKernel
  *
  * @param CUfunction f;
  *      Kernel to launch.
@@ -673,7 +676,4 @@ static int frm_cuda_func_cuLaunchKernel(struct x86_ctx_t *ctx)
 
 	return 0;
 }
-
-
-
 
