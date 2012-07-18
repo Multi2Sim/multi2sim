@@ -58,6 +58,7 @@ struct file_desc_t;
 /*
  * ARM Registers
  */
+
 struct arm_regs_t
 {
 	/* Integer registers */
@@ -69,6 +70,9 @@ struct arm_regs_t
 struct arm_regs_t *arm_regs_create();
 void arm_regs_free(struct arm_regs_t *regs);
 void arm_regs_copy(struct arm_regs_t *dst, struct arm_regs_t *src);
+
+
+
 
 /*
  * File management
@@ -127,6 +131,8 @@ void arm_file_desc_table_entry_dump(struct arm_file_desc_table_t *table, int ind
 
 int arm_file_desc_table_get_host_fd(struct arm_file_desc_table_t *table, int guest_fd);
 int arm_file_desc_table_get_guest_fd(struct arm_file_desc_table_t *table, int host_fd);
+
+
 
 
 /*
@@ -192,6 +198,8 @@ enum arm_gpu_emulator_kind_t
 	arm_gpu_emulator_evg = 0,
 	arm_gpu_emulator_si
 };
+
+
 
 
 /*
@@ -272,25 +280,6 @@ enum arm_emu_list_kind_t
 	arm_emu_list_alloc
 };
 
-/* Reason for simulation end */
-extern struct string_map_t arm_emu_finish_map;
-
-extern volatile enum arm_emu_finish_t
-{
-	arm_emu_finish_none,  /* Simulation not finished */
-	arm_emu_finish_ctx,  /* Contexts finished */
-	arm_emu_finish_last_cpu_inst_bytes, /* Last CPU instruction reached */
-	arm_emu_finish_max_cpu_inst,  /* Maximum instruction count reached in CPU */
-	arm_emu_finish_max_cpu_cycles,  /* Maximum cycle count reached in CPU */
-	arm_emu_finish_max_gpu_inst,  /* Maximum instruction count reached in GPU */
-	arm_emu_finish_max_gpu_cycles,  /* Maximum cycle count reached in GPU */
-	arm_emu_finish_max_gpu_kernels,  /* Maximum number of GPU kernels */
-	arm_emu_finish_max_time,  /* Maximum simulation time reached */
-	arm_emu_finish_signal,  /* Signal received */
-	arm_emu_finish_stall,  /* Simulation stalled */
-	arm_emu_finish_gpu_no_faults  /* GPU-REL: no fault in '--evg_gpu-stack-faults' caused error */
-} arm_emu_finish;
-
 
 /* Global CPU emulator variable */
 extern struct arm_emu_t *arm_emu;
@@ -305,12 +294,5 @@ extern enum arm_emu_kind_t
 	arm_emu_kind_functional,
 	arm_emu_kind_detailed
 } arm_emu_kind;
-
-
-
-/*
- * Arm Disassembler
- */
-void arm_emu_disasm(char *path);
 
 #endif
