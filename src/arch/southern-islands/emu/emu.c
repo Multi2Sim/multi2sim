@@ -18,6 +18,7 @@
  */
 
 #include <southern-islands-emu.h>
+#include <southern-islands-timing.h>
 #include <mem-system.h>
 #include <x86-emu.h>
 
@@ -113,6 +114,35 @@ void si_emu_done()
 	free(si_emu);
 }
 
+void si_emu_dump_summary(FILE *f)
+{
+	double time_in_sec;
+	double inst_per_sec;
+
+	/* If there was no Evergreen simulation, no summary */
+	if (!si_emu->ndrange_count)
+		return;
+
+	/* Calculate statistics */
+	time_in_sec = (double) m2s_timer_get_value(si_emu->timer) / 1.0e6;
+	inst_per_sec = time_in_sec > 0.0 ? (double) si_emu->inst_count / time_in_sec : 0.0;
+
+	/* Print statistics */
+	fprintf(f, "[ Southern Islands ]\n");
+	fprintf(f, "SimType = %s\n", si_emu_kind == si_emu_kind_functional ?
+			"Functional" : "Detailed");
+	fprintf(f, "Time = %.2f\n", time_in_sec);
+	fprintf(f, "NDRangeCount = %d\n", si_emu->ndrange_count);
+	fprintf(f, "Instructions = %lld\n", si_emu->inst_count);
+	fprintf(f, "InstructionsPerSecond = %.0f\n", inst_per_sec);
+
+	/* Detailed simulation */
+	if (si_emu_kind == si_emu_kind_detailed)
+		si_gpu_dump_summary(f);
+
+	/* End */
+	fprintf(f, "\n");
+}
 
 /* If 'fullpath' points to the original OpenCL library, redirect it to 'm2s-opencl.so'
  * in the same path. */
