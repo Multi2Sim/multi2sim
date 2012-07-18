@@ -243,6 +243,20 @@ DEFINST(V_MUL_LO_I32,
 	8
 )
 
+DEFINST(V_CMP_LT_F32_VOP3b,
+	" v_cmp_lt_f32  %64_SVDST, %0NEG%SRC0, %1NEG%SRC1",
+	VOP3b,
+	1,
+	8
+)
+
+DEFINST(V_CMP_GT_F32_VOP3b,
+	" v_cmp_gt_f32  %64_SVDST, %0NEG%SRC0, %1NEG%SRC1",
+	VOP3b,
+	4,
+	8
+)
+
 DEFINST(V_CMP_EQ_I32_VOP3b,
 	" v_cmp_eq_i32  %64_SVDST, %0NEG%SRC0, %1NEG%SRC1",
 	VOP3b,
@@ -290,6 +304,20 @@ DEFINST(V_ADDC_U32_VOP3b,
 	VOP3b,
 	296,
 	8
+)
+
+DEFINST(V_CMP_LT_F32,
+	" v_cmp_lt_f32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	1,
+	4
+)
+
+DEFINST(V_CMP_GT_F32,
+	" v_cmp_gt_f32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	4,
+	4
 )
 
 DEFINST(V_CMP_LT_I32,
@@ -369,6 +397,13 @@ DEFINST(V_RCP_F32,
 	4
 )
 
+DEFINST(V_SQRT_F32,
+	" v_sqrt_f32    %VDST, %SRC0",
+	VOP1,
+	51,
+	4
+)
+
 DEFINST(V_CNDMASK_B32,
 	" v_cndmask_b32  %VDST, %SRC0, %VSRC1, vcc",
 	VOP2,
@@ -380,6 +415,20 @@ DEFINST(V_ADD_F32,
 	" v_add_f32     %VDST, %SRC0, %VSRC1",
 	VOP2,
 	3,
+	4
+)
+
+DEFINST(V_SUB_F32,
+	" v_sub_f32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	4,
+	4
+)
+
+DEFINST(V_SUBREV_F32,
+	" v_subrev_f32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	5,
 	4
 )
 

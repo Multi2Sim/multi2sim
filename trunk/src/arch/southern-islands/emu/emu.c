@@ -128,7 +128,7 @@ void si_emu_dump_summary(FILE *f)
 	inst_per_sec = time_in_sec > 0.0 ? (double) si_emu->inst_count / time_in_sec : 0.0;
 
 	/* Print statistics */
-	fprintf(f, "[ Southern Islands ]\n");
+	fprintf(f, "[ SouthernIslands ]\n");
 	fprintf(f, "SimType = %s\n", si_emu_kind == si_emu_kind_functional ?
 			"Functional" : "Detailed");
 	fprintf(f, "Time = %.2f\n", time_in_sec);
