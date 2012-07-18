@@ -1204,6 +1204,9 @@ void m2s_dump_summary(FILE *f)
 
 	/* Evergreen */
 	evg_emu_dump_summary(f);
+
+	/* Southern Islands */
+	si_emu_dump_summary(f);
 }
 
 

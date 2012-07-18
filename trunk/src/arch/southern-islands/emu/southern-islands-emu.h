@@ -1052,6 +1052,8 @@ extern struct si_emu_t *si_emu;
 void si_emu_init(void);
 void si_emu_done(void);
 
+void si_emu_dump_summary(FILE *f);
+
 void si_emu_run(void);
 
 void si_emu_libopencl_redirect(struct x86_ctx_t *ctx, char *path, int size);
