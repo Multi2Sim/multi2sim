@@ -43,6 +43,7 @@ extern volatile enum esim_finish_t
 
 	esim_finish_arm_max_inst,
 	esim_finish_arm_max_cycles,
+	esim_finish_arm_last_inst,
 
 	esim_finish_evg_max_inst,  /* Maximum instruction count reached in Evergreen GPU */
 	esim_finish_evg_max_cycles,  /* Maximum cycle count reached in Evergreen GPU */
