@@ -23,11 +23,7 @@
 
 
 
-/*
- * Debug
- */
-
-
+/* Debug */
 int frm_cuda_debug_category;
 
 
