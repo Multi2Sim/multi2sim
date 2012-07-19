@@ -241,19 +241,14 @@ void frm_warp_execute(struct frm_warp_t *warp)
 	int byte_index;
 
 	inst = &(warp->inst);
-	printf("Instruction Hex: ");
+	//printf("Instruction Hex: ");
 	/* Print most significant byte first */
 	for (byte_index = 7; byte_index >= 0; --byte_index)
 	{
-		printf("%02x", *((unsigned char*)(warp->buf)+byte_index));
+		//printf("%02x", *((unsigned char*)(warp->buf)+byte_index));
 		inst->dword.bytes[byte_index] = *((unsigned char*)(warp->buf)+byte_index);
 	}
-	printf("\n");
-	for (byte_index = 7; byte_index >= 0; --byte_index)
-	{
-		printf("%02x", inst->dword.bytes[byte_index]);
-	}
-	printf("\n");
+	//printf("\n");
 
         FRM_FOREACH_THREAD_IN_WARP(warp, thread_id)
         {
