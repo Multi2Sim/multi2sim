@@ -109,7 +109,7 @@ void frm_emu_disasm(char *path)
 		section = (struct elf_section_t *)list_get(elf_file->section_list, i);
 
 		/* Determine if section is .text.kernel_name */
-		if (!strncmp(section->name, ".text", 5))
+		if (!strncmp(section->name, ".text.", 6))
 		{
 			/* Decode and dump instructions */
 			fprintf(stdout, "%s\n", section->name+6);
@@ -118,6 +118,15 @@ void frm_emu_disasm(char *path)
 				frm_inst_hex_dump(stdout, (unsigned char*)(section->buffer.ptr), inst_index);
 				frm_inst_dump(stdout, inst_str, MAX_STRING_SIZE, (unsigned char*)(section->buffer.ptr), inst_index);
 			}
+		}
+		if (!strncmp(section->name, ".rodata", 7))
+		{
+			printf("\n\nfound\n\n");
+			printf("\n\n%zd\n\n", section->buffer.size);
+			FILE *fp = fopen(".rodata", "wb");
+			fwrite(section->buffer.ptr, 1, section->buffer.size, fp);
+			fclose(fp);
+			printf("\n\nfound\n\n");
 		}
 	}
 
