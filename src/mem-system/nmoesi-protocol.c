@@ -55,7 +55,6 @@ int EV_MOD_NMOESI_EVICT_ACTION;
 int EV_MOD_NMOESI_EVICT_RECEIVE;
 int EV_MOD_NMOESI_EVICT_PROCESS;
 int EV_MOD_NMOESI_EVICT_PROCESS_NONCOHERENT;
-int EV_MOD_NMOESI_EVICT_WAIT_FOR_REQS;
 int EV_MOD_NMOESI_EVICT_REPLY;
 int EV_MOD_NMOESI_EVICT_REPLY_RECEIVE;
 int EV_MOD_NMOESI_EVICT_FINISH;
@@ -1106,6 +1105,8 @@ void mod_handler_nmoesi_evict(int event, void *data)
 			new_stack = mod_stack_create(stack->id, target_mod, stack->src_tag,
 				EV_MOD_NMOESI_EVICT_PROCESS, stack);
 		}
+
+		/* FIXME It's not guaranteed to be a write */
 		new_stack->blocking = 0;
 		new_stack->write = 1;
 		new_stack->retry = 0;
@@ -1124,17 +1125,36 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		if (stack->err)
 		{
 			ret->err = 1;
-			dir = target_mod->dir;
-			dir_entry_unlock(dir, stack->set, stack->way);
 			esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, 0);
 			return;
 		}
 
 		/* If data was received, set the block to modified */
-		if (stack->reply == reply_ack_data)
+		if (stack->reply == reply_ack)
 		{
-			cache_set_block(target_mod->cache, stack->set, stack->way, stack->tag,
-				cache_block_modified);
+			/* Nothing to do */
+		}
+		else if (stack->reply == reply_ack_data)
+		{
+			if (stack->state == cache_block_exclusive)
+			{
+				cache_set_block(target_mod->cache, stack->set, stack->way, 
+					stack->tag, cache_block_modified);
+			}
+			else if (stack->state == cache_block_modified)
+			{
+				/* Nothing to do */
+			}
+			else
+			{
+				fatal("%s: Invalid cache block state: %d\n", __FUNCTION__, 
+					stack->state);
+			}
+		}
+		else 
+		{
+			fatal("%s: Invalid cache block state: %d\n", __FUNCTION__, 
+				stack->state);
 		}
 
 		/* Remove sharer and owner */
@@ -1166,13 +1186,10 @@ void mod_handler_nmoesi_evict(int event, void *data)
 
 		esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, 0);
 		return;
-
 	}
 
 	if (event == EV_MOD_NMOESI_EVICT_PROCESS_NONCOHERENT)
 	{
-		struct mod_t *owner;
-
 		mem_debug("  %lld %lld 0x%x %s evict process noncoherent\n", esim_cycle, stack->id,
 			stack->tag, target_mod->name);
 		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_process_noncoherent\"\n",
@@ -1182,10 +1199,39 @@ void mod_handler_nmoesi_evict(int event, void *data)
 		if (stack->err)
 		{
 			ret->err = 1;
-			dir = target_mod->dir;
-			dir_entry_unlock(dir, stack->set, stack->way);
 			esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, 0);
 			return;
+		}
+
+		/* If data was received, set the block to modified */
+		if (stack->reply == reply_ack_data)
+		{
+			if (stack->state == cache_block_exclusive)
+			{
+				cache_set_block(target_mod->cache, stack->set, stack->way, 
+					stack->tag, cache_block_modified);
+			}
+			else if (stack->state == cache_block_owned || 
+				stack->state == cache_block_modified)
+			{
+				/* Nothing to do */
+			}
+			else if (stack->state == cache_block_shared ||
+				stack->state == cache_block_noncoherent)
+			{
+				cache_set_block(target_mod->cache, stack->set, stack->way, 
+					stack->tag, cache_block_noncoherent);
+			}
+			else
+			{
+				fatal("%s: Invalid cache block state: %d\n", __FUNCTION__, 
+					stack->state);
+			}
+		}
+		else 
+		{
+			fatal("%s: Invalid cache block state: %d\n", __FUNCTION__, 
+				stack->state);
 		}
 
 		/* Remove sharer and owner */
@@ -1209,86 +1255,6 @@ void mod_handler_nmoesi_evict(int event, void *data)
 				dir_entry_set_owner(dir, stack->set, stack->way, z, 
 					DIR_ENTRY_OWNER_NONE);
 			}
-		}
-
-		/* Send a read request to any subblock with an owner */
-		stack->pending = 1;
-		dir = target_mod->dir;
-		for (z = 0; z < dir->zsize; z++)
-		{
-			struct net_node_t *node;
-
-			dir_entry_tag = stack->tag + z * target_mod->sub_block_size;
-			assert(dir_entry_tag < stack->tag + target_mod->block_size);
-			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-
-			/* No owner, so skip */
-			if (!DIR_ENTRY_VALID_OWNER(dir_entry))
-				continue;
-
-			/* Get owner mod */
-			node = list_get(target_mod->high_net->node_list, 
-				dir_entry->owner);
-			assert(node && node->kind == net_node_end);
-			owner = node->user_data;
-
-			/* Not the first sub-block */
-			if (dir_entry_tag % owner->block_size)
-				continue;
-
-			stack->pending++;
-			new_stack = mod_stack_create(stack->id, target_mod, 
-				dir_entry_tag, EV_MOD_NMOESI_EVICT_WAIT_FOR_REQS, stack);
-			new_stack->target_mod = owner;
-			new_stack->request_dir = mod_request_down_up;
-			esim_schedule_event(EV_MOD_NMOESI_READ_REQUEST, new_stack, 0);
-		}
-
-		esim_schedule_event(EV_MOD_NMOESI_EVICT_WAIT_FOR_REQS, stack, 0);
-		return;
-
-	}
-
-	if (event == EV_MOD_NMOESI_EVICT_WAIT_FOR_REQS)
-	{
-		/* Ignore while pending requests */
-		assert(stack->pending > 0);
-		stack->pending--;
-		if (stack->pending)
-			return;
-
-		mem_debug("  %lld %lld 0x%x %s evict wait for reqs\n", esim_cycle, stack->id,
-			stack->tag, target_mod->name);
-		mem_trace("mem.access name=\"A-%lld\" state=\"%s:evict_wait_for_reqs\"\n",
-			stack->id, target_mod->name);
-
-		if (stack->err)
-		{
-			ret->err = 1;
-			dir = target_mod->dir;
-			dir_entry_unlock(dir, stack->set, stack->way);
-			esim_schedule_event(EV_MOD_NMOESI_EVICT_REPLY, stack, 0);
-			return;
-		}
-
-		/* Set owner to NONE for all directory entries */
-		dir = target_mod->dir;
-		for (z = 0; z < dir->zsize; z++)
-		{
-			dir_entry = dir_entry_get(dir, stack->set, stack->way, z);
-			dir_entry_set_owner(dir, stack->set, stack->way, z, DIR_ENTRY_OWNER_NONE);
-		}
-
-		/* If any data is received, set state to M.  Otherwise, set state to N */
-		if (stack->reply == reply_ack_data)
-		{
-			cache_set_block(target_mod->cache, stack->set, stack->way, 
-				stack->tag, cache_block_modified);
-		}
-		else 
-		{
-			cache_set_block(target_mod->cache, stack->set, stack->way, 
-				stack->tag, cache_block_noncoherent);
 		}
 
 		/* Unlock the directory entry */
