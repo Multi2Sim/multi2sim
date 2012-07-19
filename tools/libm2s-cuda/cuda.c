@@ -267,7 +267,7 @@ CUresult cuDeviceTotalMem(size_t *bytes, CUdevice dev)
 	/* FIXME: should be 6GB */
 	*bytes = 1024*1024*1024;
 
-	cuda_debug(stdout, "\t(driver) out: bytes=%zd\n", *bytes);
+	cuda_debug(stdout, "\t(driver) out: bytes=%d\n", *bytes);
 	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -734,8 +734,8 @@ CUresult cuMemGetInfo(size_t *free, size_t *total)
 		fatal("native execution not supported.\n%s",
 			err_frm_cuda_native);
 
-	cuda_debug(stdout, "\t(driver) out: free=%zd\n", *free);
-	cuda_debug(stdout, "\t(driver) out: total=%zd\n", *total);
+	cuda_debug(stdout, "\t(driver) out: free=%d\n", *free);
+	cuda_debug(stdout, "\t(driver) out: total=%d\n", *total);
 	cuda_debug(stdout, "\t(driver) out: return=%d\n", CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -748,7 +748,7 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 	int ret;
 
 	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(driver) in: bytesize=%zd\n", bytesize);
+	cuda_debug(stdout, "\t(driver) in: bytesize=%d\n", bytesize);
 
 	if (bytesize == 0)
 	{
@@ -932,7 +932,7 @@ CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCou
 	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug(stdout, "\t(driver) in: dstDevice=0x%08x\n", dstDevice);
 	cuda_debug(stdout, "\t(driver) in: srcHost=%p\n", srcHost);
-	cuda_debug(stdout, "\t(driver) in: ByteCount=%zd\n", ByteCount);
+	cuda_debug(stdout, "\t(driver) in: ByteCount=%d\n", ByteCount);
 
 	sys_args[0] = (unsigned int)dstDevice;
 	sys_args[1] = (unsigned int)srcHost;
@@ -960,7 +960,7 @@ CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount)
 	cuda_debug(stdout, "CUDA driver API '%s'\n", __FUNCTION__);
 	cuda_debug(stdout, "\t(driver) in: dstHost=%p\n", dstHost);
 	cuda_debug(stdout, "\t(driver) in: srcDevice=0x%08x\n", srcDevice);
-	cuda_debug(stdout, "\t(driver) in: ByteCount=%zd\n", ByteCount);
+	cuda_debug(stdout, "\t(driver) in: ByteCount=%d\n", ByteCount);
 
 	sys_args[0] = (unsigned int)dstHost;
 	sys_args[1] = (unsigned int)srcDevice;

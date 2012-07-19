@@ -491,8 +491,8 @@ cudaError_t CUDARTAPI cudaSetupArgument(const void *arg, size_t size, size_t off
 {
 	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 	cuda_debug(stdout, "\t(runtime) in: arg=%p\n", arg);
-	cuda_debug(stdout, "\t(runtime) in: size=%zd\n", size);
-	cuda_debug(stdout, "\t(runtime) in: offset=%zd\n", offset);
+	cuda_debug(stdout, "\t(runtime) in: size=%d\n", size);
+	cuda_debug(stdout, "\t(runtime) in: offset=%d\n", offset);
 
 	if (arg_index == 0)
 		args = linked_list_create();
@@ -565,7 +565,7 @@ cudaError_t CUDARTAPI cudaMalloc(void **devPtr, size_t size)
 	CUdeviceptr dptr;
 
 	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: size=%zd\n", size);
+	cuda_debug(stdout, "\t(runtime) in: size=%d\n", size);
 
 	cuMemAlloc(&dptr, size);
 	*(CUdeviceptr *)devPtr = dptr;
