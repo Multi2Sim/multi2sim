@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
+
 #include <m2s-cuda.h>
 #include <debug.h>
 #include <list.h>
@@ -26,14 +28,8 @@
 
 
 
-/*
- * Debug
- */
-
-
-static int frm_cuda_driver_debug = 0;
-
-#define cuda_debug(stream, ...) (frm_cuda_driver_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+/* Debug */
+int frm_cuda_debug = 0;
 
 
 
@@ -102,7 +98,7 @@ struct frm_cuda_version_t
 
 void set_debug_flag(void)
 {
-	frm_cuda_driver_debug = !strcmp(getenv("LIBM2S_CUDA_DUMP"), "1");
+	frm_cuda_debug = !strcmp(getenv("LIBM2S_CUDA_DUMP"), "1");
 }
 
 
