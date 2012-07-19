@@ -12,6 +12,13 @@ DEFINST(S_ADD_I32,
 	4
 )
 
+DEFINST(S_SUB_I32,
+	" s_sub_i32     %SDST, %SSRC0, %SSRC1",
+	SOP2,
+	3,
+	4
+)
+
 DEFINST(S_MIN_U32,
 	" s_min_u32     %SDST, %SSRC0, %SSRC1",
 	SOP2,
@@ -236,6 +243,13 @@ DEFINST(V_MAD_F32,
 	8
 )
 
+DEFINST(V_BFE_U32,
+	" v_bfe_u32     %VDST, %0NEG%SRC0, %1NEG%SRC1, %2NEG%SRC2",
+	VOP3a,
+	328,
+	8
+)
+
 DEFINST(V_BFI_B32,
 	" v_bfi_b32     %VDST, %0NEG%SRC0, %1NEG%SRC1, %2NEG%SRC2",
 	VOP3a,
@@ -369,6 +383,13 @@ DEFINST(V_CMP_LT_I32,
 	4
 )
 
+DEFINST(V_CMP_EQ_I32,
+	" v_cmp_eq_i32  vcc, %SRC0, %VSRC1",
+	VOPC,
+	130,
+	4
+)
+
 DEFINST(V_CMP_GT_I32,
 	" v_cmp_gt_i32  vcc, %SRC0, %VSRC1",
 	VOPC,
@@ -488,6 +509,13 @@ DEFINST(V_MUL_I32_I24,
 	4
 )
 
+DEFINST(V_MIN_U32,
+	" v_min_u32     %VDST, %SRC0, %VSRC1",
+	VOP2,
+	19,
+	4
+)
+
 DEFINST(V_MAX_U32,
 	" v_max_u32     %VDST, %SRC0, %VSRC1",
 	VOP2,
@@ -499,6 +527,13 @@ DEFINST(V_LSHRREV_B32,
 	" v_lshrrev_b32  %VDST, %SRC0, %VSRC1",
 	VOP2,
 	22,
+	4
+)
+
+DEFINST(V_ASHRREV_I32,
+	" v_ashrrev_i32  %VDST, %SRC0, %VSRC1",
+	VOP2,
+	24,
 	4
 )
 
