@@ -513,6 +513,9 @@ struct mod_t
 	long long writes;
 	long long effective_writes;
 	long long effective_write_hits;
+	long long nc_writes;
+	long long effective_nc_writes;
+	long long effective_nc_write_hits;
 	long long evictions;
 
 	long long blocking_reads;
@@ -521,9 +524,13 @@ struct mod_t
 	long long blocking_writes;
 	long long non_blocking_writes;
 	long long write_hits;
+	long long blocking_nc_writes;
+	long long non_blocking_nc_writes;
+	long long nc_write_hits;
 
 	long long read_retries;
 	long long write_retries;
+	long long nc_write_retries;
 
 	long long no_retry_accesses;
 	long long no_retry_hits;
@@ -531,6 +538,8 @@ struct mod_t
 	long long no_retry_read_hits;
 	long long no_retry_writes;
 	long long no_retry_write_hits;
+	long long no_retry_nc_writes;
+	long long no_retry_nc_write_hits;
 };
 
 struct mod_t *mod_create(char *name, enum mod_kind_t kind, int num_ports,
@@ -626,9 +635,6 @@ extern int EV_MOD_NMOESI_EVICT;
 extern int EV_MOD_NMOESI_EVICT_INVALID;
 extern int EV_MOD_NMOESI_EVICT_ACTION;
 extern int EV_MOD_NMOESI_EVICT_RECEIVE;
-extern int EV_MOD_NMOESI_EVICT_WRITEBACK;
-extern int EV_MOD_NMOESI_EVICT_WRITEBACK_EXCLUSIVE;
-extern int EV_MOD_NMOESI_EVICT_WRITEBACK_FINISH;
 extern int EV_MOD_NMOESI_EVICT_PROCESS;
 extern int EV_MOD_NMOESI_EVICT_PROCESS_NONCOHERENT;
 extern int EV_MOD_NMOESI_EVICT_WAIT_FOR_REQS;
@@ -664,9 +670,14 @@ extern int EV_MOD_NMOESI_INVALIDATE_FINISH;
 
 extern int EV_MOD_NMOESI_PEER_SEND;
 extern int EV_MOD_NMOESI_PEER_RECEIVE;
-extern int EV_MOD_NMOESI_PEER_REPLY_ACK;
+extern int EV_MOD_NMOESI_PEER_REPLY;
 extern int EV_MOD_NMOESI_PEER_FINISH;
 
+extern int EV_MOD_NMOESI_MESSAGE;
+extern int EV_MOD_NMOESI_MESSAGE_RECEIVE;
+extern int EV_MOD_NMOESI_MESSAGE_ACTION;
+extern int EV_MOD_NMOESI_MESSAGE_REPLY;
+extern int EV_MOD_NMOESI_MESSAGE_FINISH;
 
 /* Current identifier for stack */
 extern long long mod_stack_id;
@@ -680,13 +691,20 @@ enum mod_request_dir_t
 };
 
 /* ACK types */
-enum ack_types
+enum mod_reply_type_t
 {
-	reply_NO_REPLY = 0,
-	reply_ACK,
-	reply_ACK_DATA,
-	reply_ACK_DATA_SENT_TO_PEER,
-	reply_ACK_ERROR
+	reply_none = 0,
+	reply_ack ,
+	reply_ack_data,
+	reply_ack_data_sent_to_peer,
+	reply_ack_error
+};
+
+/* Message types */
+enum mod_message_type_t
+{
+	message_none = 0,
+	message_clear_owner
 };
 
 /* Stack */
@@ -717,8 +735,9 @@ struct mod_stack_t
 	int src_tag;
 
 	enum mod_request_dir_t request_dir;
+	enum mod_message_type_t message;
+	enum mod_reply_type_t reply;
 	int reply_size;
-	int reply;
 	int retain_owner;
 	int pending;
 
@@ -739,7 +758,8 @@ struct mod_stack_t
 	int err : 1;
 	int shared : 1;
 	int read : 1;
-	int nc_store : 1;
+	int write : 1;
+	int nc_write : 1;
 	int blocking : 1;
 	int writeback : 1;
 	int eviction : 1;
@@ -809,6 +829,7 @@ void mod_handler_nmoesi_write_request(int event, void *data);
 void mod_handler_nmoesi_read_request(int event, void *data);
 void mod_handler_nmoesi_invalidate(int event, void *data);
 void mod_handler_nmoesi_peer(int event, void *data);
+void mod_handler_nmoesi_message(int event, void *data);
 
 /* Local memory */
 void mod_handler_local_mem_load(int event, void *data);
