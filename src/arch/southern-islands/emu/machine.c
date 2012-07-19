@@ -746,7 +746,7 @@ void si_isa_S_CMP_EQ_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	int s0 = 0;
 	int s1 = 0;
 
-	union si_reg_t equal;
+	union si_reg_t result;
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -760,15 +760,83 @@ void si_isa_S_CMP_EQ_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
 
 	/* Compare the operands. */
-	equal.as_uint = s0 == s1;
+	result.as_uint = (s0 == s1);
 
 	/* Write the results. */
-	si_isa_write_sreg(work_item, SI_SCC, equal);
+	si_isa_write_sreg(work_item, SI_SCC, result);
 
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("scc<=(%d) ", equal.as_uint);
+		si_isa_debug("scc<=(%d) ", result.as_uint);
+	}
+}
+#undef INST
+
+/* scc = (S0.i >= S1.i). */
+#define INST SI_INST_SOPC
+void si_isa_S_CMP_GE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	int s0 = 0;
+	int s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_int;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_int;
+	if (INST.ssrc1 == 0xFF)
+		s1 = ((union si_reg_t)INST.lit_cnst).as_int;
+	else
+		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
+
+	/* Compare the operands. */
+	result.as_uint = (s0 >= s1);
+
+	/* Write the results. */
+	si_isa_write_sreg(work_item, SI_SCC, result);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("scc<=(%d) ", result.as_uint);
+	}
+}
+#undef INST
+
+/* scc = (S0.i <= S1.i). */
+#define INST SI_INST_SOPC
+void si_isa_S_CMP_LE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	int s0 = 0;
+	int s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_int;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_int;
+	if (INST.ssrc1 == 0xFF)
+		s1 = ((union si_reg_t)INST.lit_cnst).as_int;
+	else
+		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_int;
+
+	/* Compare the operands. */
+	result.as_uint = (s0 <= s1);
+
+	/* Write the results. */
+	si_isa_write_sreg(work_item, SI_SCC, result);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("scc<=(%d) ", result.as_uint);
 	}
 }
 #undef INST
@@ -780,7 +848,7 @@ void si_isa_S_CMP_LE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	unsigned int s0 = 0;
 	unsigned int s1 = 0;
 
-	union si_reg_t le;
+	union si_reg_t result;
 
 	/* Load operands from registers or as a literal constant. */
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -794,15 +862,15 @@ void si_isa_S_CMP_LE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
 
 	/* Compare the operands. */
-	le.as_uint = s0 <= s1;
+	result.as_uint = (s0 <= s1);
 
 	/* Write the results. */
-	si_isa_write_sreg(work_item, SI_SCC, le);
+	si_isa_write_sreg(work_item, SI_SCC, result);
 
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
-		si_isa_debug("scc<=(%d) ", le.as_uint);
+		si_isa_debug("scc<=(%d) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1640,6 +1708,39 @@ void si_isa_V_CNDMASK_B32_VOP3a_impl(struct si_work_item_t *work_item, struct si
 }
 #undef INST
 
+/* D.f = S0.f * S1.f. */
+#define INST SI_INST_VOP3a
+void si_isa_V_MUL_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	float s0;
+	float s1;
+
+	union si_reg_t result;
+
+	/* Load operands from registers. */
+	s0 = si_isa_read_reg(work_item, INST.src0).as_float;
+	s1 = si_isa_read_reg(work_item, INST.src1).as_float;
+
+	/* Apply negation modifiers. */
+	if(INST.neg & 1)
+		s0 = -s0;
+	if(INST.neg & 2)
+		s1 = -s1;
+
+	/* Calculate the result. */
+	result.as_float = s0 * s1;
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, result);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst, result.as_float);
+	}
+}
+#undef INST
+
 /* D.f = S0.f * S1.f + S2.f. */
 #define INST SI_INST_VOP3a
 void si_isa_V_MAD_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -1875,6 +1976,68 @@ void si_isa_V_CMP_GT_F32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* vcc = !(S0.f > S1.f). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_NGT_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	float s0 = 0;
+	float s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_float;
+	else
+		s0 = si_isa_read_reg(work_item, INST.src0).as_float;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_float;
+
+	/* Compare the operands. */
+	result.as_uint = !(s0 > s1);
+
+	/* Write the results. */
+	si_isa_bitmask_sreg(work_item, SI_VCC, result);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: vcc<=(%d) ", work_item->id_in_wavefront,
+			result.as_uint);
+	}
+}
+#undef INST
+
+/* vcc = !(S0.f == S1.f). */
+#define INST SI_INST_VOPC
+void si_isa_V_CMP_NEQ_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	float s0 = 0;
+	float s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	if (INST.src0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_float;
+	else
+		s0 = si_isa_read_reg(work_item, INST.src0).as_float;
+	s1 = si_isa_read_vreg(work_item, INST.vsrc1).as_float;
+
+	/* Compare the operands. */
+	result.as_uint = !(s0 == s1);
+
+	/* Write the results. */
+	si_isa_bitmask_sreg(work_item, SI_VCC, result);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: vcc<=(%d) ", work_item->id_in_wavefront,
+			result.as_uint);
+	}
+}
+#undef INST
+
 /* vcc = (S0.i < S1.i). */
 #define INST SI_INST_VOPC
 void si_isa_V_CMP_LT_I32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -2034,14 +2197,14 @@ void si_isa_V_CMP_GT_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 #define INST SI_INST_VOP3b
 void si_isa_V_CMP_LT_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	int s0;
-	int s1;
+	float s0;
+	float s1;
 
 	union si_reg_t result;
 
 	/* Load operands from registers. */
-	s0 = si_isa_read_reg(work_item, INST.src0).as_int;
-	s1 = si_isa_read_reg(work_item, INST.src1).as_int;
+	s0 = si_isa_read_reg(work_item, INST.src0).as_float;
+	s1 = si_isa_read_reg(work_item, INST.src1).as_float;
 
 	/* Apply negation modifiers. */
 	if(INST.neg & 1)
@@ -2068,14 +2231,14 @@ void si_isa_V_CMP_LT_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #define INST SI_INST_VOP3b
 void si_isa_V_CMP_GT_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
-	int s0;
-	int s1;
+	float s0;
+	float s1;
 
 	union si_reg_t result;
 
 	/* Load operands from registers. */
-	s0 = si_isa_read_reg(work_item, INST.src0).as_int;
-	s1 = si_isa_read_reg(work_item, INST.src1).as_int;
+	s0 = si_isa_read_reg(work_item, INST.src0).as_float;
+	s1 = si_isa_read_reg(work_item, INST.src1).as_float;
 
 	/* Apply negation modifiers. */
 	if(INST.neg & 1)
@@ -2085,6 +2248,40 @@ void si_isa_V_CMP_GT_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 
 	/* Compare the operands. */
 	result.as_uint = (s0 > s1);
+
+	/* Write the results. */
+	si_isa_bitmask_sreg(work_item, INST.vdst, result);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("wf_id%d: S[%d:+1]<=(%d) ", work_item->id_in_wavefront,
+			INST.vdst, result.as_uint);
+	}
+}
+#undef INST
+
+/* D.u = !(S0.f == S1.f). */
+#define INST SI_INST_VOP3b
+void si_isa_V_CMP_NEQ_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	float s0;
+	float s1;
+
+	union si_reg_t result;
+
+	/* Load operands from registers. */
+	s0 = si_isa_read_reg(work_item, INST.src0).as_float;
+	s1 = si_isa_read_reg(work_item, INST.src1).as_float;
+
+	/* Apply negation modifiers. */
+	if(INST.neg & 1)
+		s0 = -s0;
+	if(INST.neg & 2)
+		s1 = -s1;
+
+	/* Compare the operands. */
+	result.as_uint = !(s0 == s1);
 
 	/* Write the results. */
 	si_isa_bitmask_sreg(work_item, INST.vdst, result);
