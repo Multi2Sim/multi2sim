@@ -121,12 +121,9 @@ void frm_emu_disasm(char *path)
 		}
 		if (!strncmp(section->name, ".rodata", 7))
 		{
-			printf("\n\nfound\n\n");
-			printf("\n\n%zd\n\n", section->buffer.size);
 			FILE *fp = fopen(".rodata", "wb");
 			fwrite(section->buffer.ptr, 1, section->buffer.size, fp);
 			fclose(fp);
-			printf("\n\nfound\n\n");
 		}
 	}
 
