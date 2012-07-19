@@ -90,9 +90,6 @@ void mem_system_init(void)
 	EV_MOD_NMOESI_EVICT_INVALID = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_invalid");
 	EV_MOD_NMOESI_EVICT_ACTION = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_action");
 	EV_MOD_NMOESI_EVICT_RECEIVE = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_receive");
-	EV_MOD_NMOESI_EVICT_WRITEBACK = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_writeback");
-	EV_MOD_NMOESI_EVICT_WRITEBACK_EXCLUSIVE = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_writeback_exclusive");
-	EV_MOD_NMOESI_EVICT_WRITEBACK_FINISH = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_writeback_finish");
 	EV_MOD_NMOESI_EVICT_PROCESS = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_process");
 	EV_MOD_NMOESI_EVICT_PROCESS_NONCOHERENT = esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_process_noncoherent");
 	EV_MOD_NMOESI_EVICT_WAIT_FOR_REQS= esim_register_event_with_name(mod_handler_nmoesi_evict, "mod_nmoesi_evict_wait_for_reqs");
@@ -129,8 +126,14 @@ void mem_system_init(void)
 
 	EV_MOD_NMOESI_PEER_SEND = esim_register_event_with_name(mod_handler_nmoesi_peer, "mod_nmoesi_peer_send");
 	EV_MOD_NMOESI_PEER_RECEIVE = esim_register_event_with_name(mod_handler_nmoesi_peer, "mod_nmoesi_peer_receive");
-	EV_MOD_NMOESI_PEER_REPLY_ACK = esim_register_event_with_name(mod_handler_nmoesi_peer, "mod_nmoesi_peer_reply_ack");
+	EV_MOD_NMOESI_PEER_REPLY = esim_register_event_with_name(mod_handler_nmoesi_peer, "mod_nmoesi_peer_reply");
 	EV_MOD_NMOESI_PEER_FINISH = esim_register_event_with_name(mod_handler_nmoesi_peer, "mod_nmoesi_peer_finish");
+
+	EV_MOD_NMOESI_MESSAGE = esim_register_event_with_name(mod_handler_nmoesi_message, "mod_nmoesi_message");
+	EV_MOD_NMOESI_MESSAGE_RECEIVE = esim_register_event_with_name(mod_handler_nmoesi_message, "mod_nmoesi_message_receive");
+	EV_MOD_NMOESI_MESSAGE_ACTION = esim_register_event_with_name(mod_handler_nmoesi_message, "mod_nmoesi_message_action");
+	EV_MOD_NMOESI_MESSAGE_REPLY = esim_register_event_with_name(mod_handler_nmoesi_message, "mod_nmoesi_message_reply");
+	EV_MOD_NMOESI_MESSAGE_FINISH = esim_register_event_with_name(mod_handler_nmoesi_message, "mod_nmoesi_message_finish");
 
 	/* Local memory event driven simulation */
 
@@ -201,14 +204,14 @@ void mem_system_dump_report()
 	fprintf(f, ";    HitRatio - Hits divided by accesses\n");
 	fprintf(f, ";    Evictions - Invalidated or replaced cache blocks\n");
 	fprintf(f, ";    Retries - For L1 caches, accesses that were retried\n");
-	fprintf(f, ";    ReadRetries, WriteRetries - Read/Write retried accesses\n");
+	fprintf(f, ";    ReadRetries, WriteRetries, NCWriteRetries - Read/Write retried accesses\n");
 	fprintf(f, ";    NoRetryAccesses - Number of accesses that were not retried\n");
 	fprintf(f, ";    NoRetryHits, NoRetryMisses - Hits and misses for not retried accesses\n");
 	fprintf(f, ";    NoRetryHitRatio - NoRetryHits divided by NoRetryAccesses\n");
 	fprintf(f, ";    NoRetryReads, NoRetryWrites - Not retried reads and writes\n");
-	fprintf(f, ";    Reads, Writes - Total read/write accesses\n");
-	fprintf(f, ";    BlockingReads, BlockingWrites - Reads/writes coming from lower-level cache\n");
-	fprintf(f, ";    NonBlockingReads, NonBlockingWrites - Coming from upper-level cache\n");
+	fprintf(f, ";    Reads, Writes, NCWrites - Total read/write accesses\n");
+	fprintf(f, ";    BlockingReads, BlockingWrites, BlockingNCWrites - Reads/writes coming from lower-level cache\n");
+	fprintf(f, ";    NonBlockingReads, NonBlockingWrites, NonBlockingNCWrites - Coming from upper-level cache\n");
 	fprintf(f, "\n\n");
 	
 	/* Report for each cache */
@@ -237,9 +240,29 @@ void mem_system_dump_report()
 		fprintf(f, "HitRatio = %.4g\n", mod->accesses ?
 			(double) mod->hits / mod->accesses : 0.0);
 		fprintf(f, "Evictions = %lld\n", mod->evictions);
-		fprintf(f, "Retries = %lld\n", mod->read_retries + mod->write_retries);
+		fprintf(f, "Retries = %lld\n", mod->read_retries + mod->write_retries + 
+			mod->nc_write_retries);
+		fprintf(f, "\n");
+		fprintf(f, "Reads = %lld\n", mod->reads);
 		fprintf(f, "ReadRetries = %lld\n", mod->read_retries);
+		fprintf(f, "BlockingReads = %lld\n", mod->blocking_reads);
+		fprintf(f, "NonBlockingReads = %lld\n", mod->non_blocking_reads);
+		fprintf(f, "ReadHits = %lld\n", mod->read_hits);
+		fprintf(f, "ReadMisses = %lld\n", mod->reads - mod->read_hits);
+		fprintf(f, "\n");
+		fprintf(f, "Writes = %lld\n", mod->writes);
 		fprintf(f, "WriteRetries = %lld\n", mod->write_retries);
+		fprintf(f, "BlockingWrites = %lld\n", mod->blocking_writes);
+		fprintf(f, "NonBlockingWrites = %lld\n", mod->non_blocking_writes);
+		fprintf(f, "WriteHits = %lld\n", mod->write_hits);
+		fprintf(f, "WriteMisses = %lld\n", mod->writes - mod->write_hits);
+		fprintf(f, "\n");
+		fprintf(f, "NCWrites = %lld\n", mod->nc_writes);
+		fprintf(f, "NCWriteRetries = %lld\n", mod->nc_write_retries);
+		fprintf(f, "NCBlockingWrites = %lld\n", mod->blocking_nc_writes);
+		fprintf(f, "NCNonBlockingWrites = %lld\n", mod->non_blocking_nc_writes);
+		fprintf(f, "NCWriteHits = %lld\n", mod->nc_write_hits);
+		fprintf(f, "NCWriteMisses = %lld\n", mod->nc_writes - mod->nc_write_hits);
 		fprintf(f, "\n");
 		fprintf(f, "NoRetryAccesses = %lld\n", mod->no_retry_accesses);
 		fprintf(f, "NoRetryHits = %lld\n", mod->no_retry_hits);
@@ -254,18 +277,10 @@ void mem_system_dump_report()
 		fprintf(f, "NoRetryWriteHits = %lld\n", mod->no_retry_write_hits);
 		fprintf(f, "NoRetryWriteMisses = %lld\n", mod->no_retry_writes
 			- mod->no_retry_write_hits);
-		fprintf(f, "\n");
-		fprintf(f, "Reads = %lld\n", mod->reads);
-		fprintf(f, "BlockingReads = %lld\n", mod->blocking_reads);
-		fprintf(f, "NonBlockingReads = %lld\n", mod->non_blocking_reads);
-		fprintf(f, "ReadHits = %lld\n", mod->read_hits);
-		fprintf(f, "ReadMisses = %lld\n", mod->reads - mod->read_hits);
-		fprintf(f, "\n");
-		fprintf(f, "Writes = %lld\n", mod->writes);
-		fprintf(f, "BlockingWrites = %lld\n", mod->blocking_writes);
-		fprintf(f, "NonBlockingWrites = %lld\n", mod->non_blocking_writes);
-		fprintf(f, "WriteHits = %lld\n", mod->write_hits);
-		fprintf(f, "WriteMisses = %lld\n", mod->writes - mod->write_hits);
+		fprintf(f, "NoRetryNCWrites = %lld\n", mod->no_retry_nc_writes);
+		fprintf(f, "NoRetryNCWriteHits = %lld\n", mod->no_retry_nc_write_hits);
+		fprintf(f, "NoRetryNCWriteMisses = %lld\n", mod->no_retry_nc_writes
+			- mod->no_retry_write_hits);
 		fprintf(f, "\n\n");
 	}
 
