@@ -17,14 +17,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef M2S_CUDA_H
 #define M2S_CUDA_H
 
 #include <cuda.h>
+#include <cuda_runtime_api.h>
+#include <crt/host_runtime.h>
+
+
+
+/* Debug */
+extern int frm_cuda_debug;
+
+#define cuda_debug(stream, ...) (frm_cuda_debug ? fprintf((stream), __VA_ARGS__) : (void) 0)
+
+
 
 /* System call for CUDA driver */
 #define FRM_CUDA_SYS_CODE  328
+
 
 
 /* List of CUDA driver calls */
@@ -38,11 +49,13 @@ enum frm_cuda_call_t
 };
 
 
+
 /* CUDA context */
 struct CUctx_st
 {
 	unsigned int id;
 };
+
 
 
 /* CUDA module */
@@ -52,11 +65,13 @@ struct CUmod_st
 };
 
 
+
 /* CUDA function */
 struct CUfunc_st
 {
 	unsigned int id;
 };
+
 
 
 /* CUDA stream */
