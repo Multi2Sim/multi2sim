@@ -8,8 +8,10 @@ CFLAGS = -Wall -O3 -fPIC -m32 -I. -I$(M2S_ROOT)/src/lib/struct -I$(M2S_ROOT)/src
 CUDA_OBJECTS = \
 	debug.o \
 	misc.o \
+	linked-list.o \
 	list.o \
-	cuda.o
+	cuda.o \
+	cudart.o
 
 all: libm2s-cuda.so libm2s-cuda.a
 
@@ -39,6 +41,9 @@ debug.o: $(M2S_ROOT)/src/lib/struct/debug.c $(M2S_ROOT)/src/lib/struct/debug.h
 misc.o: $(M2S_ROOT)/src/lib/misc/misc.c $(M2S_ROOT)/src/lib/misc/misc.h
 	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/misc/misc.c -o misc.o
 
+linked-list.o: $(M2S_ROOT)/src/lib/struct/linked-list.c $(M2S_ROOT)/src/lib/struct/linked-list.h
+	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/linked-list.c -o linked-list.o
+
 list.o: $(M2S_ROOT)/src/lib/struct/list.c $(M2S_ROOT)/src/lib/struct/list.h
 	$(CC) $(CFLAGS) -c $(M2S_ROOT)/src/lib/struct/list.c -o list.o
 
@@ -50,4 +55,7 @@ list.o: $(M2S_ROOT)/src/lib/struct/list.c $(M2S_ROOT)/src/lib/struct/list.h
 
 cuda.o: cuda.c m2s-cuda.h
 	$(CC) $(CFLAGS) -c cuda.c -o cuda.o
+
+cudart.o: cudart.c m2s-cuda.h
+	$(CC) $(CFLAGS) -c cudart.c -o cudart.o
 
