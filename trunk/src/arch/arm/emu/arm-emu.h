@@ -21,7 +21,6 @@
 #define ARM_EMU_H
 
 
-
 #include <stdio.h>
 #include <string.h>
 #include <list.h>
@@ -55,6 +54,8 @@ struct arm_ctx_t;
 struct file_desc_t;
 
 
+
+
 /*
  * ARM Registers
  */
@@ -77,7 +78,6 @@ void arm_regs_copy(struct arm_regs_t *dst, struct arm_regs_t *src);
 /*
  * File management
  */
-
 
 enum arm_file_desc_kind_t
 {
@@ -136,6 +136,32 @@ int arm_file_desc_table_get_guest_fd(struct arm_file_desc_table_t *table, int ho
 
 
 /*
+ * Machine & ISA
+ */
+
+extern char *arm_isa_inst_bytes;
+
+#define arm_isa_call_debug(...) debug(arm_isa_call_debug_category, __VA_ARGS__)
+#define arm_isa_inst_debug(...) debug(arm_isa_inst_debug_category, __VA_ARGS__)
+
+extern int arm_isa_call_debug_category;
+extern int arm_isa_inst_debug_category;
+
+void arm_isa_execute_inst(struct arm_ctx_t *ctx);
+
+/* Table of functions implementing implementing the Evergreen ISA */
+typedef void (*arm_isa_inst_func_t)(struct arm_ctx_t *ctx);
+
+/* Declarations of function prototypes implementing Evergreen ISA */
+#define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
+	extern void arm_isa_##_name##_impl(struct arm_ctx_t *ctx);
+#include <arm-asm.dat>
+#undef DEFINST
+
+
+
+
+/*
  * ARM Context
  */
 
@@ -143,6 +169,11 @@ struct arm_ctx_t
 {
 	/* Number of extra contexts using this loader */
 	int num_links;
+
+	/* Context properties */
+	int status;
+	int pid;  /* Context ID */
+	int address_space_index;  /* Virtual memory address space index */
 
 	/* Program data */
 	struct elf_file_t *elf_file;
@@ -174,6 +205,22 @@ struct arm_ctx_t
 	unsigned int at_random_addr;
 	unsigned int at_random_addr_holder;
 
+	/* Instruction pointers */
+	unsigned int last_ip;  /* Address of last emulated instruction */
+	unsigned int curr_ip;  /* Address of currently emulated instruction */
+	unsigned int target_ip;  /* Target address for branch, even if not taken */
+
+	/* Currently emulated instruction */
+	struct arm_inst_t inst;
+
+	/* Links to contexts forming a linked list. */
+	struct arm_ctx_t *context_list_next, *context_list_prev;
+	struct arm_ctx_t *running_list_next, *running_list_prev;
+	struct arm_ctx_t *suspended_list_next, *suspended_list_prev;
+	struct arm_ctx_t *finished_list_next, *finished_list_prev;
+	struct arm_ctx_t *zombie_list_next, *zombie_list_prev;
+	struct arm_ctx_t *alloc_list_next, *alloc_list_prev;
+
 	/* Substructures */
 	struct mem_t *mem; /* Virtual Memory image */
 	struct arm_regs_t *regs; /* Logical register file */
@@ -181,11 +228,37 @@ struct arm_ctx_t
 
 };
 
+enum arm_ctx_status_t
+{
+	arm_ctx_running      = 0x00001,  /* it is able to run instructions */
+	arm_ctx_spec_mode    = 0x00002,  /* executing in speculative mode */
+	arm_ctx_suspended    = 0x00004,  /* suspended in a system call */
+	arm_ctx_finished     = 0x00008,  /* no more inst to execute */
+	arm_ctx_exclusive    = 0x00010,  /* executing in excl mode */
+	arm_ctx_locked       = 0x00020,  /* another context is running in excl mode */
+	arm_ctx_handler      = 0x00040,  /* executing a signal handler */
+	arm_ctx_sigsuspend   = 0x00080,  /* suspended after syscall 'sigsuspend' */
+	arm_ctx_nanosleep    = 0x00100,  /* suspended after syscall 'nanosleep' */
+	arm_ctx_poll         = 0x00200,  /* 'poll' system call */
+	arm_ctx_read         = 0x00400,  /* 'read' system call */
+	arm_ctx_write        = 0x00800,  /* 'write' system call */
+	arm_ctx_waitpid      = 0x01000,  /* 'waitpid' system call */
+	arm_ctx_zombie       = 0x02000,  /* zombie context */
+	arm_ctx_futex        = 0x04000,  /* suspended in a futex */
+	arm_ctx_alloc        = 0x08000,  /* allocated to a core/thread */
+	arm_ctx_callback     = 0x10000,  /* suspended after syscall with callback */
+	arm_ctx_none         = 0x00000
+};
+
 struct arm_ctx_t *arm_ctx_create();
 
 #define arm_loader_debug(...) debug(arm_loader_debug_category, __VA_ARGS__)
 extern int arm_loader_debug_category;
 
+int arm_ctx_get_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status);
+
+void arm_ctx_execute(struct arm_ctx_t *ctx);
+void arm_ctx_free(struct arm_ctx_t *ctx);
 void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *full_path, int size);
 
 void arm_ctx_load_from_command_line(int argc, char **argv);

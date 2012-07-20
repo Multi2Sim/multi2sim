@@ -63,6 +63,7 @@ static int frm_emulator = 0; /* FIXME We need to fix the initialization and sele
 
 static char *arm_disasm_file_name = "";
 static char *arm_loader_debug_file_name = "";
+static char *arm_isa_debug_file_name = "";
 
 static char *mem_debug_file_name = "";
 
@@ -883,6 +884,15 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
+		/* Arm isa debug file */
+		if (!strcmp(argv[argi], "--arm-debug-isa"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			arm_isa_debug_file_name = argv[++argi];
+			continue;
+		}
+
+
 		/*
 		 * Memory System Options
 		 */
@@ -1345,6 +1355,7 @@ int main(int argc, char **argv)
 	x86_clrt_debug_category = debug_new_category(x86_clrt_debug_file_name);
 	x86_opengl_debug_category = debug_new_category(x86_opengl_debug_file_name);
 	arm_loader_debug_category = debug_new_category(arm_loader_debug_file_name);
+	arm_isa_inst_debug_category = debug_new_category(arm_isa_debug_file_name);
 
 	/* Trace */
 	trace_init(trace_file_name);

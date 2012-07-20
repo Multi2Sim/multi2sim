@@ -6,7 +6,9 @@ libemu_a_SOURCES = \
 	emu.c \
 	context.c \
 	file.c \
-	regs.c
+	regs.c \
+	isa.c \
+	machine.c
 
 INCLUDES = @M2S_INCLUDES@
 

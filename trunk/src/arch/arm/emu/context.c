@@ -187,7 +187,6 @@ static void arm_ctx_loader_load_program_headers(struct arm_ctx_t *ctx)
 	ctx->phdr_count = phdr_count;
 }
 
-
 /* Load sections from an ELF file */
 static void arm_ctx_loader_load_sections(struct arm_ctx_t *ctx, struct elf_file_t *elf_file)
 {
@@ -301,6 +300,7 @@ static uint32_t arm_load_av(struct arm_ctx_t *ctx, uint32_t where)
 }
 #undef ARM_LOADER_AV_ENTRY
 
+/* Load stack for the Arm implementation */
 static void arm_ctx_loader_load_stack(struct arm_ctx_t *ctx)
 {
 	/* FIXME: Implement the stack loading function for ARM and the stack
@@ -508,6 +508,59 @@ void arm_ctx_free(struct arm_ctx_t *ctx)
 	mem_unlink(ctx->mem);
 
 	free(ctx);
+}
+
+void arm_ctx_execute(struct arm_ctx_t *ctx)
+{
+	struct arm_regs_t *regs = ctx->regs;
+	struct mem_t *mem = ctx->mem;
+
+
+	unsigned char *buffer_ptr;
+
+	int spec_mode;
+
+	/* Memory permissions should not be checked if the context is executing in
+	 * speculative mode. This will prevent guest segmentation faults to occur. */
+	spec_mode = arm_ctx_get_status(ctx, arm_ctx_spec_mode);
+	mem->safe = spec_mode ? 0 : mem_safe_mode;
+
+	/* Read instruction from memory. Memory should be accessed here in unsafe mode
+	 * (i.e., allowing segmentation faults) if executing speculatively. */
+	buffer_ptr = mem_get_buffer(mem, regs->ip, 4, mem_access_exec);
+
+	/* FIXME: Arm speculative mode execution to be added */
+	/*if (!buffer_ptr)
+	{
+		 Disable safe mode. If a part of the 20 read bytes does not belong to the
+		 * actual instruction, and they lie on a page with no permissions, this would
+		 * generate an undesired protection fault.
+		mem->safe = 0;
+		buffer_ptr = buffer;
+		mem_access(mem, regs->ip, 4, buffer_ptr, mem_access_exec);
+	}
+	*/
+
+	mem->safe = mem_safe_mode;
+	arm_isa_inst_bytes = (char *) buffer_ptr;
+
+	/* Disassemble */
+	arm_disasm(buffer_ptr, regs->ip, &ctx->inst);
+	if (ctx->inst.info->opcode == ARM_INST_NONE && !spec_mode)
+		fatal("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
+			regs->ip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
+
+
+	/* Execute instruction */
+	arm_isa_execute_inst(ctx);
+
+	/* Statistics */
+	arm_emu->inst_count++;
+}
+
+int arm_ctx_get_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
+{
+	return (ctx->status & status) > 0;
 }
 
 void arm_ctx_load_from_command_line(int argc, char **argv)

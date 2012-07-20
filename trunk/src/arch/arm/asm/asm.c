@@ -1872,3 +1872,31 @@ void arm_emu_disasm(char *path)
 	elf_file_free(elf_file);
 }
 
+/* Pointer to 'inst' is declared volatile to avoid optimizations when calling 'memset' */
+void arm_disasm(void *buf, uint32_t ip, volatile struct arm_inst_t *inst)
+{
+	unsigned int byte_index;
+	unsigned int arg1;
+	unsigned int arg2;
+
+	inst->addr = ip;
+	for (byte_index = 0; byte_index < 4; ++byte_index)
+		inst->dword.bytes[byte_index] = *(unsigned char *) (buf + byte_index);
+
+	arg1 = ((inst->dword.bytes[3] & 0x0f) << 4) | ((inst->dword.bytes[2] & 0xf0) >> 4);
+
+	arg2 = ((inst->dword.bytes[0] & 0xf0) >> 4);
+
+	inst->info = &arm_inst_info[arg1 * 16 + arg2];
+
+}
+
+void arm_inst_debug_dump(struct arm_inst_t *inst, FILE *f )
+{
+
+	char inst_str[MAX_STRING_SIZE];
+	void *inst_ptr;
+
+	inst_ptr = &inst->dword.bytes;
+	arm_inst_dump(f, inst_str, MAX_STRING_SIZE, inst_ptr, inst->addr, inst->addr);
+}
