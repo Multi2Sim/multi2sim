@@ -86,6 +86,10 @@ enum arm_psr_regs_t
 	CPSR = 0,
 	SPSR
 };
+
+
+
+
 /*
  * Structure of Instruction Format
  */
@@ -292,7 +296,6 @@ struct arm_fmt_swi_svc_t
 	unsigned int cond 	: 4;  /* [31:28] */
 };
 
-/* TODO: Change the VFP structure to support more instructions */
 struct arm_fmt_vfp_mv_t
 {
 	unsigned int immd8	: 8; /* [7:0] */
@@ -493,9 +496,17 @@ void arm_inst_dump_FP(char **inst_str_ptr, int *inst_str_size,
 void arm_inst_dump_RT(char **inst_str_ptr, int *inst_str_size,
 	struct arm_inst_t *inst, enum arm_cat_enum cat);
 
+
+
+
 /*
  * Arm Disassembler
  */
+
 void arm_emu_disasm(char *path);
+
+void arm_disasm(void *buf, uint32_t ip, volatile struct arm_inst_t *inst);
+
+void arm_inst_debug_dump(struct arm_inst_t *inst, FILE *f );
 
 #endif
