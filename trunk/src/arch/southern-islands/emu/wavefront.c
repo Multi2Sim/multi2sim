@@ -354,6 +354,29 @@ void si_wavefront_execute(struct si_wavefront_t *wavefront)
 		/* Stats */
 		si_emu->vector_alu_inst_count++;
 		wavefront->vector_alu_inst_count++;
+
+		if (inst->micro_inst.vop1.op == 2)
+		{
+			/* Instruction ignores execution mask and is only executed on one work item.
+			 * Execute on the first active work item from the least significant bit in EXEC.
+			 * (if exec is 0, execute work item 0) */
+			work_item = ndrange->work_items[wavefront->work_item_id_first];
+			if (si_isa_read_sreg(work_item, SI_EXEC).as_uint == 0 && si_isa_read_sreg(work_item, SI_EXEC + 1).as_uint == 0)
+			{
+				(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+			}
+			else {
+				SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)
+				{
+					work_item = ndrange->work_items[work_item_id];
+					if(si_wavefront_work_item_active(wavefront, work_item->id_in_wavefront))
+					{
+						(*si_isa_inst_func[inst->info->inst])(work_item, inst);
+						break;
+					}
+				}
+			}
+		}
 	
 		/* Execute the instruction */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(wavefront, work_item_id)

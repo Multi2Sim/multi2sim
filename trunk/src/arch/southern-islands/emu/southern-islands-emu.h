@@ -925,6 +925,7 @@ void si_wavefront_init_sreg_with_uav_table(struct si_wavefront_t *wavefront, int
 
 
 /* Macros for special registers */
+#define SI_M0 124
 #define SI_VCC 106
 #define SI_VCCZ 251
 #define SI_EXEC 126
