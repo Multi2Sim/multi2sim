@@ -59,6 +59,9 @@ void frm_emu_init(void)
         frm_emu->const_mem->safe = 0;
         frm_emu->global_mem = mem_create();
         frm_emu->global_mem->safe = 0;
+        frm_emu->total_global_mem_size = 1 << 31; /* 2GB */
+        frm_emu->free_global_mem_size = frm_emu->total_global_mem_size;
+        frm_emu->global_mem_top = 0;
 
 	frm_disasm_init();
 	frm_isa_init();
