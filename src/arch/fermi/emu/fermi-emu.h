@@ -139,7 +139,6 @@ struct frm_cuda_function_arg_t
 	enum frm_cuda_mem_scope_t mem_scope;
 	enum frm_cuda_function_arg_access_type_t access_type;
 
-	int set;  /* Set to true when it is assigned */
 	unsigned int value;
 };
 
@@ -191,11 +190,9 @@ struct frm_cuda_memory_t
         unsigned int id;
         int ref_count;
 
-        unsigned int type;  /* 0 buffer */
         unsigned int size;
-        unsigned int flags;
         unsigned int host_ptr;
-        unsigned int device_ptr;  /* Position assigned in device global memory */
+        unsigned int device_ptr;
 };
 
 struct frm_cuda_memory_t *frm_cuda_memory_create(void);
@@ -741,6 +738,8 @@ struct frm_emu_t
 	/* Global memory */
 	struct mem_t *global_mem;
 	unsigned int global_mem_top;
+	unsigned int free_global_mem_size;
+	unsigned int total_global_mem_size;
 
 	/* Stats */
 	int grid_count;  /* Number of CUDA functions executed */

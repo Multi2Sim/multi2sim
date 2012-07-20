@@ -17,8 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 #include <m2s-cuda.h>
 #include <debug.h>
 #include <linked-list.h>
@@ -27,13 +25,7 @@
 #include <string.h>
 #include <unistd.h>
 
-
-
-/*
- * Error Messages
- */
-
-
+/* Error messages */
 #define __CUDART_NOT_IMPL__  warning("%s: not implemented.\n%s", \
 	__FUNCTION__, err_frm_cudart_not_impl);
 
@@ -44,10 +36,10 @@ static char *err_frm_cudart_not_impl =
 
 
 
+
 /*
  * Data Structures and Macros
  */
-
 
 #define __dv(v)
 
@@ -77,25 +69,24 @@ static int arg_index = 0;
 
 
 
+
 /*
  * Internal Functions
  */
 
-
 void** CUDARTAPI __cudaRegisterFatBinary(void *fatCubin)
 {
-	void **fatCubinHandle;
+	unsigned long long int **fatCubinHandle;
 
 	cuInit(0);
 
 	cuda_debug(stdout, "CUDA runtime internal function '%s'\n", __FUNCTION__);
 
-	fatCubinHandle = malloc(sizeof (unsigned long long int *));
-	*fatCubinHandle = (unsigned long long int *)((struct __fatDeviceText *)fatCubin)->d;
+	fatCubinHandle = (unsigned long long int **)malloc(sizeof(unsigned long long int *));
+	*fatCubinHandle = (unsigned long long int *)(((struct __fatDeviceText *)fatCubin)->d);
 
-	return fatCubinHandle;
+	return (void **)fatCubinHandle;
 }
-
 
 void CUDARTAPI __cudaUnregisterFatBinary(void **fatCubinHandle)
 {
@@ -104,7 +95,6 @@ void CUDARTAPI __cudaUnregisterFatBinary(void **fatCubinHandle)
 	if (fatCubinHandle != NULL)
 		free(fatCubinHandle);
 }
-
 
 void CUDARTAPI __cudaRegisterVar(void **fatCubinHandle,
 	char *hostVar,
@@ -118,7 +108,6 @@ void CUDARTAPI __cudaRegisterVar(void **fatCubinHandle,
 	__CUDART_NOT_IMPL__
 }
 
-
 void CUDARTAPI __cudaRegisterTexture(void **fatCubinHandle,
 	const struct textureReference *hostVar,
 	const void **deviceAddress,
@@ -130,7 +119,6 @@ void CUDARTAPI __cudaRegisterTexture(void **fatCubinHandle,
 	__CUDART_NOT_IMPL__
 }
 
-
 void CUDARTAPI __cudaRegisterSurface(void **fatCubinHandle,
 	const struct surfaceReference *hostVar,
 	const void **deviceAddress,
@@ -140,7 +128,6 @@ void CUDARTAPI __cudaRegisterSurface(void **fatCubinHandle,
 {
 	__CUDART_NOT_IMPL__
 }
-
 
 void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
 	const char *hostFun,
@@ -176,9 +163,9 @@ void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
 
 	fatbinData = *((unsigned long long int **)fatCubinHandle);
 
+	/* FIXME: should extract cubin directly */
 	/* Search for string "\t.versio" */
-	/* FIXME: bound checking missing */
-	for (i = 0; ; ++i)
+	for (i = 0; i < 100; ++i)
 	{
 		if (fatbinData[i] == 0x6f69737265762e09)
 			break;
@@ -190,7 +177,6 @@ void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
 	if (ptx_file_ptr == NULL)
 		fatal("%s: cannot create ptx file", __FUNCTION__);
 	ptx_eof = 0;
-	/* FIXME: bound checking missing */
 	for (; ; ++i)
 	{
 		for (j = 0; j < 8; ++j)
@@ -225,10 +211,10 @@ void CUDARTAPI __cudaRegisterFunction(void **fatCubinHandle,
 
 
 
+
 /*
  * CUDA Runtime API
  */
-
 
 cudaError_t CUDARTAPI cudaDeviceReset(void)
 {
@@ -236,13 +222,11 @@ cudaError_t CUDARTAPI cudaDeviceReset(void)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaDeviceSynchronize(void)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaDeviceSetLimit(enum cudaLimit limit, size_t value)
 {
@@ -250,13 +234,11 @@ cudaError_t CUDARTAPI cudaDeviceSetLimit(enum cudaLimit limit, size_t value)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaDeviceGetLimit(size_t *pValue, enum cudaLimit limit)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaDeviceGetCacheConfig(enum cudaFuncCache *pCacheConfig)
 {
@@ -264,13 +246,11 @@ cudaError_t CUDARTAPI cudaDeviceGetCacheConfig(enum cudaFuncCache *pCacheConfig)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaDeviceSetCacheConfig(enum cudaFuncCache cacheConfig)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaThreadExit(void)
 {
@@ -278,13 +258,11 @@ cudaError_t CUDARTAPI cudaThreadExit(void)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaThreadSynchronize(void)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaThreadSetLimit(enum cudaLimit limit, size_t value)
 {
@@ -292,13 +270,11 @@ cudaError_t CUDARTAPI cudaThreadSetLimit(enum cudaLimit limit, size_t value)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaThreadGetLimit(size_t *pValue, enum cudaLimit limit)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaThreadGetCacheConfig(enum cudaFuncCache *pCacheConfig)
 {
@@ -306,20 +282,17 @@ cudaError_t CUDARTAPI cudaThreadGetCacheConfig(enum cudaFuncCache *pCacheConfig)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaThreadSetCacheConfig(enum cudaFuncCache cacheConfig)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaGetLastError(void)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaPeekAtLastError(void)
 {
@@ -334,13 +307,11 @@ const char* CUDARTAPI cudaGetErrorString(cudaError_t error)
 	return NULL;
 }
 
-
 cudaError_t CUDARTAPI cudaGetDeviceCount(int *count)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaGetDeviceProperties(struct cudaDeviceProp *prop, int device)
 {
@@ -348,13 +319,11 @@ cudaError_t CUDARTAPI cudaGetDeviceProperties(struct cudaDeviceProp *prop, int d
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaChooseDevice(int *device, const struct cudaDeviceProp *prop)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaSetDevice(int device)
 {
@@ -362,13 +331,11 @@ cudaError_t CUDARTAPI cudaSetDevice(int device)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaGetDevice(int *device)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaSetValidDevices(int *device_arr, int len)
 {
@@ -376,13 +343,11 @@ cudaError_t CUDARTAPI cudaSetValidDevices(int *device_arr, int len)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaSetDeviceFlags( unsigned int flags )
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaStreamCreate(cudaStream_t *pStream)
 {
@@ -390,13 +355,11 @@ cudaError_t CUDARTAPI cudaStreamCreate(cudaStream_t *pStream)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaStreamDestroy(cudaStream_t stream)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaStreamWaitEvent(cudaStream_t stream, cudaEvent_t event, unsigned int flags)
 {
@@ -404,13 +367,11 @@ cudaError_t CUDARTAPI cudaStreamWaitEvent(cudaStream_t stream, cudaEvent_t event
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaStreamSynchronize(cudaStream_t stream)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaStreamQuery(cudaStream_t stream)
 {
@@ -418,13 +379,11 @@ cudaError_t CUDARTAPI cudaStreamQuery(cudaStream_t stream)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaEventCreate(cudaEvent_t *event)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaEventCreateWithFlags(cudaEvent_t *event, unsigned int flags)
 {
@@ -432,13 +391,11 @@ cudaError_t CUDARTAPI cudaEventCreateWithFlags(cudaEvent_t *event, unsigned int 
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaEventRecord(cudaEvent_t event, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaEventQuery(cudaEvent_t event)
 {
@@ -446,13 +403,11 @@ cudaError_t CUDARTAPI cudaEventQuery(cudaEvent_t event)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaEventSynchronize(cudaEvent_t event)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaEventDestroy(cudaEvent_t event)
 {
@@ -460,19 +415,19 @@ cudaError_t CUDARTAPI cudaEventDestroy(cudaEvent_t event)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaEventElapsedTime(float *ms, cudaEvent_t start, cudaEvent_t end)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem __dv(0), cudaStream_t stream __dv(0))
 {
 	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
-	cuda_debug(stdout, "\t(runtime) in: gridDim=%u %u %u\n", gridDim.x, gridDim.y, gridDim.z);
-	cuda_debug(stdout, "\t(runtime) in: blockDim=%u %u %u\n", blockDim.x, blockDim.y, blockDim.z);
+	cuda_debug(stdout, "\t(runtime) in: gridDim=%u %u %u\n", 
+		gridDim.x, gridDim.y, gridDim.z);
+	cuda_debug(stdout, "\t(runtime) in: blockDim=%u %u %u\n", 
+		blockDim.x, blockDim.y, blockDim.z);
 
 	grid_dim.x = gridDim.x;
 	grid_dim.y = gridDim.y;
@@ -485,7 +440,6 @@ cudaError_t CUDARTAPI cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t shar
 
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaSetupArgument(const void *arg, size_t size, size_t offset)
 {
@@ -505,13 +459,11 @@ cudaError_t CUDARTAPI cudaSetupArgument(const void *arg, size_t size, size_t off
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaFuncSetCacheConfig(const char *func, enum cudaFuncCache cacheConfig)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaLaunch(const char *entry)
 {
@@ -521,16 +473,19 @@ cudaError_t CUDARTAPI cudaLaunch(const char *entry)
 	cuda_debug(stdout, "CUDA runtime API '%s'\n", __FUNCTION__);
 	cuda_debug(stdout, "\t(runtime) in: entry=%p\n", entry);
 
-	/* Copy the data in args to kernel_args */
-	kernel_args = malloc(linked_list_count(args) * sizeof (CUdeviceptr *));
+	/* Copy kernel arguments */
+	kernel_args = malloc(linked_list_count(args) * sizeof(CUdeviceptr *));
 	linked_list_head(args);
 	for (i = 0; i < linked_list_count(args); ++i)
 	{
 		kernel_args[i] = linked_list_get(args);
 		linked_list_next(args);
 	}
+
+	/* Launch kernel */
 	cuLaunchKernel(function, grid_dim.x, grid_dim.y, grid_dim.z, 
-		threadblock_dim.x, threadblock_dim.y, threadblock_dim.z, 0, NULL, (void **)kernel_args, NULL);
+		threadblock_dim.x, threadblock_dim.y, threadblock_dim.z, 
+		0, NULL, (void **)kernel_args, NULL);
 	free(kernel_args);
 
 	cuda_debug(stdout, "\t(runtime) out: return=%d\n", cudaSuccess);
@@ -538,13 +493,11 @@ cudaError_t CUDARTAPI cudaLaunch(const char *entry)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaFuncGetAttributes(struct cudaFuncAttributes *attr, const char *func)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaSetDoubleForDevice(double *d)
 {
@@ -552,13 +505,11 @@ cudaError_t CUDARTAPI cudaSetDoubleForDevice(double *d)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaSetDoubleForHost(double *d)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMalloc(void **devPtr, size_t size)
 {
@@ -576,13 +527,11 @@ cudaError_t CUDARTAPI cudaMalloc(void **devPtr, size_t size)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMallocHost(void **ptr, size_t size)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMallocPitch(void **devPtr, size_t *pitch, size_t width, size_t height)
 {
@@ -590,13 +539,11 @@ cudaError_t CUDARTAPI cudaMallocPitch(void **devPtr, size_t *pitch, size_t width
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMallocArray(struct cudaArray **array, const struct cudaChannelFormatDesc *desc, size_t width, size_t height __dv(0), unsigned int flags __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaFree(void *devPtr)
 {
@@ -610,13 +557,11 @@ cudaError_t CUDARTAPI cudaFree(void *devPtr)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaFreeHost(void *ptr)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaFreeArray(struct cudaArray *array)
 {
@@ -624,13 +569,11 @@ cudaError_t CUDARTAPI cudaFreeArray(struct cudaArray *array)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaHostAlloc(void **pHost, size_t size, unsigned int flags)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaHostRegister(void *ptr, size_t size, unsigned int flags)
 {
@@ -638,13 +581,11 @@ cudaError_t CUDARTAPI cudaHostRegister(void *ptr, size_t size, unsigned int flag
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaHostUnregister(void *ptr)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaHostGetDevicePointer(void **pDevice, void *pHost, unsigned int flags)
 {
@@ -652,13 +593,11 @@ cudaError_t CUDARTAPI cudaHostGetDevicePointer(void **pDevice, void *pHost, unsi
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaHostGetFlags(unsigned int *pFlags, void *pHost)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMalloc3D(struct cudaPitchedPtr* pitchedDevPtr, struct cudaExtent extent)
 {
@@ -666,13 +605,11 @@ cudaError_t CUDARTAPI cudaMalloc3D(struct cudaPitchedPtr* pitchedDevPtr, struct 
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMalloc3DArray(struct cudaArray** array, const struct cudaChannelFormatDesc* desc, struct cudaExtent extent, unsigned int flags __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpy3D(const struct cudaMemcpy3DParms *p)
 {
@@ -680,13 +617,11 @@ cudaError_t CUDARTAPI cudaMemcpy3D(const struct cudaMemcpy3DParms *p)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpy3DPeer(const struct cudaMemcpy3DPeerParms *p)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpy3DAsync(const struct cudaMemcpy3DParms *p, cudaStream_t stream __dv(0))
 {
@@ -694,20 +629,17 @@ cudaError_t CUDARTAPI cudaMemcpy3DAsync(const struct cudaMemcpy3DParms *p, cudaS
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpy3DPeerAsync(const struct cudaMemcpy3DPeerParms *p, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemGetInfo(size_t *free, size_t *total)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpy(void *dst, const void *src, size_t count, enum cudaMemcpyKind kind)
 {
@@ -724,13 +656,11 @@ cudaError_t CUDARTAPI cudaMemcpy(void *dst, const void *src, size_t count, enum 
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpyPeer(void *dst, int dstDevice, const void *src, int srcDevice, size_t count)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpyToArray(struct cudaArray *dst, size_t wOffset, size_t hOffset, const void *src, size_t count, enum cudaMemcpyKind kind)
 {
@@ -738,13 +668,11 @@ cudaError_t CUDARTAPI cudaMemcpyToArray(struct cudaArray *dst, size_t wOffset, s
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpyFromArray(void *dst, const struct cudaArray *src, size_t wOffset, size_t hOffset, size_t count, enum cudaMemcpyKind kind)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpyArrayToArray(struct cudaArray *dst, size_t wOffsetDst, size_t hOffsetDst, const struct cudaArray *src, size_t wOffsetSrc, size_t hOffsetSrc, size_t count, enum cudaMemcpyKind kind __dv(cudaMemcpyDeviceToDevice))
 {
@@ -752,13 +680,11 @@ cudaError_t CUDARTAPI cudaMemcpyArrayToArray(struct cudaArray *dst, size_t wOffs
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpy2D(void *dst, size_t dpitch, const void *src, size_t spitch, size_t width, size_t height, enum cudaMemcpyKind kind)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpy2DToArray(struct cudaArray *dst, size_t wOffset, size_t hOffset, const void *src, size_t spitch, size_t width, size_t height, enum cudaMemcpyKind kind)
 {
@@ -766,13 +692,11 @@ cudaError_t CUDARTAPI cudaMemcpy2DToArray(struct cudaArray *dst, size_t wOffset,
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpy2DFromArray(void *dst, size_t dpitch, const struct cudaArray *src, size_t wOffset, size_t hOffset, size_t width, size_t height, enum cudaMemcpyKind kind)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpy2DArrayToArray(struct cudaArray *dst, size_t wOffsetDst, size_t hOffsetDst, const struct cudaArray *src, size_t wOffsetSrc, size_t hOffsetSrc, size_t width, size_t height, enum cudaMemcpyKind kind __dv(cudaMemcpyDeviceToDevice))
 {
@@ -780,13 +704,11 @@ cudaError_t CUDARTAPI cudaMemcpy2DArrayToArray(struct cudaArray *dst, size_t wOf
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpyToSymbol(const char *symbol, const void *src, size_t count, size_t offset __dv(0), enum cudaMemcpyKind kind __dv(cudaMemcpyHostToDevice))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpyFromSymbol(void *dst, const char *symbol, size_t count, size_t offset __dv(0), enum cudaMemcpyKind kind __dv(cudaMemcpyDeviceToHost))
 {
@@ -794,13 +716,11 @@ cudaError_t CUDARTAPI cudaMemcpyFromSymbol(void *dst, const char *symbol, size_t
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpyAsync(void *dst, const void *src, size_t count, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpyPeerAsync(void *dst, int dstDevice, const void *src, int srcDevice, size_t count, cudaStream_t stream __dv(0))
 {
@@ -808,13 +728,11 @@ cudaError_t CUDARTAPI cudaMemcpyPeerAsync(void *dst, int dstDevice, const void *
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpyToArrayAsync(struct cudaArray *dst, size_t wOffset, size_t hOffset, const void *src, size_t count, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpyFromArrayAsync(void *dst, const struct cudaArray *src, size_t wOffset, size_t hOffset, size_t count, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
 {
@@ -822,13 +740,11 @@ cudaError_t CUDARTAPI cudaMemcpyFromArrayAsync(void *dst, const struct cudaArray
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpy2DAsync(void *dst, size_t dpitch, const void *src, size_t spitch, size_t width, size_t height, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpy2DToArrayAsync(struct cudaArray *dst, size_t wOffset, size_t hOffset, const void *src, size_t spitch, size_t width, size_t height, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
 {
@@ -836,13 +752,11 @@ cudaError_t CUDARTAPI cudaMemcpy2DToArrayAsync(struct cudaArray *dst, size_t wOf
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpy2DFromArrayAsync(void *dst, size_t dpitch, const struct cudaArray *src, size_t wOffset, size_t hOffset, size_t width, size_t height, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemcpyToSymbolAsync(const char *symbol, const void *src, size_t count, size_t offset, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
 {
@@ -850,13 +764,11 @@ cudaError_t CUDARTAPI cudaMemcpyToSymbolAsync(const char *symbol, const void *sr
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemcpyFromSymbolAsync(void *dst, const char *symbol, size_t count, size_t offset, enum cudaMemcpyKind kind, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemset(void *devPtr, int value, size_t count)
 {
@@ -864,13 +776,11 @@ cudaError_t CUDARTAPI cudaMemset(void *devPtr, int value, size_t count)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemset2D(void *devPtr, size_t pitch, int value, size_t width, size_t height)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemset3D(struct cudaPitchedPtr pitchedDevPtr, int value, struct cudaExtent extent)
 {
@@ -878,13 +788,11 @@ cudaError_t CUDARTAPI cudaMemset3D(struct cudaPitchedPtr pitchedDevPtr, int valu
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemsetAsync(void *devPtr, int value, size_t count, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaMemset2DAsync(void *devPtr, size_t pitch, int value, size_t width, size_t height, cudaStream_t stream __dv(0))
 {
@@ -892,13 +800,11 @@ cudaError_t CUDARTAPI cudaMemset2DAsync(void *devPtr, size_t pitch, int value, s
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaMemset3DAsync(struct cudaPitchedPtr pitchedDevPtr, int value, struct cudaExtent extent, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaGetSymbolAddress(void **devPtr, const char *symbol)
 {
@@ -906,13 +812,11 @@ cudaError_t CUDARTAPI cudaGetSymbolAddress(void **devPtr, const char *symbol)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaGetSymbolSize(size_t *size, const char *symbol)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaPointerGetAttributes(struct cudaPointerAttributes *attributes, void *ptr)
 {
@@ -920,13 +824,11 @@ cudaError_t CUDARTAPI cudaPointerGetAttributes(struct cudaPointerAttributes *att
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaDeviceCanAccessPeer(int *canAccessPeer, int device, int peerDevice)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaDeviceEnablePeerAccess(int peerDevice, unsigned int flags)
 {
@@ -934,13 +836,11 @@ cudaError_t CUDARTAPI cudaDeviceEnablePeerAccess(int peerDevice, unsigned int fl
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaDeviceDisablePeerAccess(int peerDevice)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaGraphicsUnregisterResource(cudaGraphicsResource_t resource)
 {
@@ -948,13 +848,11 @@ cudaError_t CUDARTAPI cudaGraphicsUnregisterResource(cudaGraphicsResource_t reso
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaGraphicsResourceSetMapFlags(cudaGraphicsResource_t resource, unsigned int flags)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaGraphicsMapResources(int count, cudaGraphicsResource_t *resources, cudaStream_t stream __dv(0))
 {
@@ -962,13 +860,11 @@ cudaError_t CUDARTAPI cudaGraphicsMapResources(int count, cudaGraphicsResource_t
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaGraphicsUnmapResources(int count, cudaGraphicsResource_t *resources, cudaStream_t stream __dv(0))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaGraphicsResourceGetMappedPointer(void **devPtr, size_t *size, cudaGraphicsResource_t resource)
 {
@@ -976,13 +872,11 @@ cudaError_t CUDARTAPI cudaGraphicsResourceGetMappedPointer(void **devPtr, size_t
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaGraphicsSubResourceGetMappedArray(struct cudaArray **array, cudaGraphicsResource_t resource, unsigned int arrayIndex, unsigned int mipLevel)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaGetChannelDesc(struct cudaChannelFormatDesc *desc, const struct cudaArray *array)
 {
@@ -998,13 +892,11 @@ struct cudaChannelFormatDesc CUDARTAPI cudaCreateChannelDesc(int x, int y, int z
 	return cfd;
 }
 
-
 cudaError_t CUDARTAPI cudaBindTexture(size_t *offset, const struct textureReference *texref, const void *devPtr, const struct cudaChannelFormatDesc *desc, size_t size __dv(UINT_MAX))
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaBindTexture2D(size_t *offset, const struct textureReference *texref, const void *devPtr, const struct cudaChannelFormatDesc *desc, size_t width, size_t height, size_t pitch)
 {
@@ -1012,13 +904,11 @@ cudaError_t CUDARTAPI cudaBindTexture2D(size_t *offset, const struct textureRefe
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaBindTextureToArray(const struct textureReference *texref, const struct cudaArray *array, const struct cudaChannelFormatDesc *desc)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaUnbindTexture(const struct textureReference *texref)
 {
@@ -1026,13 +916,11 @@ cudaError_t CUDARTAPI cudaUnbindTexture(const struct textureReference *texref)
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaGetTextureAlignmentOffset(size_t *offset, const struct textureReference *texref)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaGetTextureReference(const struct textureReference **texref, const char *symbol)
 {
@@ -1040,13 +928,11 @@ cudaError_t CUDARTAPI cudaGetTextureReference(const struct textureReference **te
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaBindSurfaceToArray(const struct surfaceReference *surfref, const struct cudaArray *array, const struct cudaChannelFormatDesc *desc)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaGetSurfaceReference(const struct surfaceReference **surfref, const char *symbol)
 {
@@ -1054,20 +940,17 @@ cudaError_t CUDARTAPI cudaGetSurfaceReference(const struct surfaceReference **su
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaDriverGetVersion(int *driverVersion)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
 
-
 cudaError_t CUDARTAPI cudaRuntimeGetVersion(int *runtimeVersion)
 {
 	__CUDART_NOT_IMPL__
 	return cudaSuccess;
 }
-
 
 cudaError_t CUDARTAPI cudaGetExportTable(const void **ppExportTable, const cudaUUID_t *pExportTableId)
 {
