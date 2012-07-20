@@ -327,8 +327,7 @@ void frm_grid_setup_args(struct frm_grid_t *grid)
 		{
 			if (arg->mem_scope == FRM_CUDA_MEM_SCOPE_GLOBAL)
 			{
-				printf("arg->value = 0x%08x\n", arg->value);
-                                frm_isa_const_mem_write(offset, &arg->value);
+                                frm_isa_const_mem_write(offset, &(arg->value));
 				offset += 0x4;
 				continue;
 			}

@@ -73,7 +73,7 @@ void *frm_cuda_object_get(enum frm_cuda_obj_t type, unsigned int id)
 		if (object_id == id)
 			return object;
 	}
-	fatal("%s: requested CUDA does not exist (id=0x%x)",
+	fatal("%s: requested CUDA object does not exist (id=0x%x)",
 		__FUNCTION__, id);
 	return NULL;
 }

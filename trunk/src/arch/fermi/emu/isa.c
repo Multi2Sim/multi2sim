@@ -63,13 +63,13 @@ void frm_isa_done()
 
 void frm_isa_global_mem_write(unsigned int addr, void *pvalue)
 {
-	mem_write(frm_emu->global_mem, addr, 4, pvalue);
+	mem_write(frm_emu->global_mem, addr, sizeof(unsigned int), pvalue);
 }
 
 
 void frm_isa_global_mem_read(unsigned int addr, void *pvalue)
 {
-	mem_read(frm_emu->global_mem, addr, 4, pvalue);
+	mem_read(frm_emu->global_mem, addr, sizeof(unsigned int), pvalue);
 }
 
 
@@ -85,7 +85,7 @@ void frm_isa_const_mem_write(unsigned int addr, void *pvalue)
 		frm_emu->const_mem_init[addr] = 1;
 
 	/* Write */
-	mem_write(frm_emu->const_mem, addr, 4, pvalue);
+	mem_write(frm_emu->const_mem, addr, sizeof(unsigned int), pvalue);
 }
 
 
@@ -96,7 +96,7 @@ void frm_isa_const_mem_read(unsigned int addr, void *pvalue)
 		warning("c [0] [0x%x] is used uninitialized", addr);
 	
 	/* Read */
-	mem_read(frm_emu->const_mem, addr, 4, pvalue);
+	mem_read(frm_emu->const_mem, addr, sizeof(unsigned int), pvalue);
 }
 
 
