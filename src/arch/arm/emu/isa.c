@@ -61,7 +61,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 {
 	struct arm_inst_t *inst;
 	unsigned int rn;
-	unsigned int rm;
+	/*unsigned int rm;*/
 	unsigned int shift;
 	unsigned int offset;
 	unsigned int rn_val;
@@ -75,7 +75,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 
 	if(inst->dword.sdtr_ins.imm == 1)
 	{
-		rm = (offset & (0x0000000f));
+		/*rm = (offset & (0x0000000f));*/
 		shift = ((offset >> 4) & (0x000000ff));
 
 		if(inst->dword.sdtr_ins.up_dn)
