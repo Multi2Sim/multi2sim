@@ -8,7 +8,8 @@ libemu_a_SOURCES = \
 	file.c \
 	regs.c \
 	isa.c \
-	machine.c
+	machine.c \
+	syscall.c
 
 INCLUDES = @M2S_INCLUDES@
 

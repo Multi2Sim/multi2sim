@@ -50,6 +50,73 @@ static arm_isa_inst_func_t arm_isa_inst_func[ARM_INST_COUNT] =
 
 static long long arm_inst_freq[ARM_INST_COUNT];
 
+
+
+
+/*
+ * Register Load/Store Operations
+ */
+
+void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no, unsigned int value)
+{
+	switch (reg_no)
+	{
+	case (r0):
+		ctx->regs->r0 = value;
+		break;
+	case (r1):
+		ctx->regs->r1 = value;
+		break;
+	case (r2):
+		ctx->regs->r2 = value;
+		break;
+	case (r3):
+		ctx->regs->r3 = value;
+		break;
+	case (r4):
+		ctx->regs->r4 = value;
+		break;
+	case (r5):
+		ctx->regs->r5 = value;
+		break;
+	case (r6):
+		ctx->regs->r6 = value;
+		break;
+	case (r7):
+		ctx->regs->r7 = value;
+		break;
+	case (r8):
+		ctx->regs->r8 = value;
+		break;
+	case (r9):
+		ctx->regs->r9 = value;
+		break;
+	case (r10):
+		ctx->regs->sl = value;
+		break;
+	case (r11):
+		ctx->regs->fp = value;
+		break;
+	case (r12):
+		ctx->regs->ip = value;
+		break;
+	case (r13):
+		ctx->regs->sp = value;
+		break;
+	case (r14):
+		ctx->regs->lr = value;
+		break;
+	case (r15):
+		ctx->regs->pc = value;
+		break;
+	}
+}
+
+
+/*
+ * Public Functions
+ */
+
 /* Trace call debugging */
 static void arm_isa_debug_call(struct arm_ctx_t *ctx)
 {
@@ -100,14 +167,6 @@ static void arm_isa_debug_call(struct arm_ctx_t *ctx)
 	*/
 }
 
-
-
-
-/*
- * Public Functions
- */
-
-
 /* FIXME - merge with ctx_execute */
 void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 {
@@ -141,3 +200,5 @@ void arm_isa_execute_inst(struct arm_ctx_t *ctx)
 	if (debug_status(arm_isa_call_debug_category))
 		arm_isa_debug_call(ctx);
 }
+
+

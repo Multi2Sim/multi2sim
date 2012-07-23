@@ -26,6 +26,7 @@
 #include <southern-islands-emu.h>
 #include <southern-islands-timing.h>
 #include <arm-emu.h>
+#include <arm-timing.h>
 #include <esim.h>
 
 
@@ -1276,6 +1277,13 @@ void m2s_loop(void)
 		else
 			si_emu_run();
 
+		/* arm CPU simulation */
+		if (arm_emu_kind == arm_emu_kind_detailed)
+			running |= arm_cpu_run();
+		else
+			arm_emu_run();
+
+
 		/* Event-driven simulation. Only process events and advance to next global
 		 * simulation cycle if any architecture performed a useful timing simulation. */
 		if (running)
@@ -1369,6 +1377,7 @@ int main(int argc, char **argv)
 	/* Initialization for functional simulation */
 	esim_init();
 	x86_emu_init();
+	arm_emu_init();
 	net_init();
 
 	/* Select the GPU emulator */
@@ -1436,6 +1445,7 @@ int main(int argc, char **argv)
 	esim_done();
 	trace_done();
 	x86_emu_done();
+	arm_emu_done();
 	debug_done();
 	mhandle_done();
 
