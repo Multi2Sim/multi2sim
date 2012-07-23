@@ -104,6 +104,7 @@ static struct string_map_t prog_info_entry_map = {
 		{ "mmSQ_THREAD_RESOURCE_MGMT_2__EG",	0x2307 },
 		{ "mmSPI_COMPUTE_INPUT_CNTL",		0xa1ba },
 		{ "mmSQ_LDS_ALLOC",			0xa23a },
+		{ "COMPUTE_PGM_RSRC2",		0x2e13},
 		{ "AMU_ABI_CS_MAX_SCRATCH_REGS",	0x80000002 },
 		{ "AMU_ABI_CS_NUM_SHARED_GPR_USER",	0x80000003 },
 		{ "AMU_ABI_CS_NUM_SHARED_GPR_TOTAL",	0x80000004 },
@@ -223,6 +224,10 @@ static void si_bin_file_read_note_header(struct si_bin_file_t *bin_file, struct 
 			/* Analyze entry */
 			switch (prog_info_entry->address)
 			{
+
+			case 0x00002e13:  /* COMPUTE_PGM_RSRC2 */
+				enc_dict_entry->compute_pgm_rsrc2 = (struct si_bin_compute_pgm_rsrc2_t*)&prog_info_entry->value;
+				break;
 
 			case 0x80000080:  /* AMU_ABI_NUM_GPR_USED */
 				enc_dict_entry->num_gpr_used = prog_info_entry->value;
