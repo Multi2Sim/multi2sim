@@ -1218,13 +1218,13 @@ DEFINST(LDR_ptrmlr,
 	0x2)
 
 DEFINST(LDR_ptrmar, 
-	"LDR%cond %rd, %amode2%idx%idx", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x61,
 	0x4)
 
 DEFINST(LDR_ptrmrr, 
-	"LDR%cond %rd, %amode2%idx%idx", 
+	"LDR%cond %rd, %amode2%idx", 
 	SDTR, 
 	0x61,
 	0x6)
