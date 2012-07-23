@@ -194,6 +194,13 @@ typedef void (*arm_isa_inst_func_t)(struct arm_ctx_t *ctx);
 #include <arm-asm.dat>
 #undef DEFINST
 
+enum arm_isa_op2_cat_t
+{
+	immd = 0,
+	reg
+};
+
+unsigned int arm_isa_op2_get(unsigned int op2 , enum arm_isa_op2_cat_t cat);
 void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no,
 	unsigned int value);
 
