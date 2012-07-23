@@ -17,11 +17,296 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#define _GNU_SOURCE
+
 #include <unistd.h>
 #include <stdio.h>
+#include <assert.h>
+#include <string.h>
+#include <pthread.h>
 
 #include <m2s-clrt.h>
 
+/* stack size and alignment of stack */
+#define STACK_SIZE 0x2000
+
+extern struct _cl_platform_id *m2s_platform;
+extern struct _cl_device_id *m2s_device;
+
+
+
+
+/*
+ * Private Functions
+ */
+
+void barrier(int data)
+{
+	struct clrt_workgroup_data_t *workgroup_data;
+	struct fiber_t *sleep;
+	struct fiber_t *resume;
+
+	/* printf("Barrier called with %d\n", data); */
+	workgroup_data = get_workgroup_data();
+
+	sleep = workgroup_data->workitems + workgroup_data->cur_item;
+	workgroup_data->cur_item = (workgroup_data->cur_item + 1) % workgroup_data->num_items;
+
+	resume = workgroup_data->workitems + workgroup_data->cur_item;
+	switch_fiber(sleep, resume);
+}
+
+static clrt_barrier_t barrier_addr = barrier;
+
+/* set the return address of a work item to point to this funciton. */
+void exit_work_item(void)
+{
+	struct clrt_workgroup_data_t *workgroup_data;
+
+	workgroup_data = get_workgroup_data();
+	workgroup_data->num_done++;
+	exit_fiber(&workgroup_data->main_ctx);
+}  
+
+
+/* Blocking call to exceute a work group.
+ * This code is function is run from within a core-assigned runtime thread */
+void launch_work_group(
+	struct _cl_kernel *kernel, 
+	int dims, 
+	const size_t *group_start, 
+	const size_t *global, 
+	const size_t *local, 
+	struct clrt_workgroup_data_t *workgroup_data)
+{
+	size_t i;
+	size_t j;
+	size_t k;
+	size_t local_size[3];
+	size_t group_global[3];
+
+	assert(workgroup_data->num_items > 0);
+	
+	/* we want to safely assume that we have all three dimensions.
+	 * but the arrays passed in may only have dims elements,
+	 * so we copy them and fill in the rest of the dimensions as having size 1. */
+	for (i = 0; i < 3; i++)
+	{
+		if (i < dims)
+		{
+			local_size[i] = local[i];
+			group_global[i] = group_start[i];
+		}
+		else
+		{
+			local_size[i] = 1;
+			group_global[i] = 0;
+		}
+	}
+
+	/* initialize stuff that changes per work group */
+	for (i = 0; i < local_size[2]; i++)
+		for (j = 0; j < local_size[1]; j++)
+			for (k = 0; k < local_size[0]; k++)
+			{
+				size_t id;
+				int x;
+				struct clrt_workitem_data_t *workitem_data;
+
+				id = i * local_size[1] * local_size[0] + j * local_size[0] + k;	
+				workitem_data = workgroup_data->workitem_data[id];
+				/* set the global id */
+				workitem_data->global_id[0] = (int32_t) (group_global[0] + k);
+				workitem_data->global_id[1] = (int32_t) (group_global[1] + j);
+				workitem_data->global_id[2] = (int32_t) (group_global[2] + i);
+
+				/* set group global start id and group id */
+				for (x = 0; x < 3; x++)
+				{
+					workitem_data->group_global[x] = (int32_t) group_global[x];
+					workitem_data->group_id[x] = (int32_t) (group_global[x] / local_size[x]);
+				}
+				
+			}
+
+	workgroup_data->num_done = 0;
+	/* make new contexts so that they start at the beginning of their functions again  */
+	for (i = 0; i < workgroup_data->num_items; i++)
+		make_fiber_ex(workgroup_data->workitems + i, kernel->function, exit_work_item, kernel->stack_param_words, workgroup_data->stack_params);
+
+	while (workgroup_data->num_items > workgroup_data->num_done)
+		for (workgroup_data->cur_item = 0; workgroup_data->cur_item < workgroup_data->num_items; workgroup_data->cur_item++)
+			switch_fiber_cl(&workgroup_data->main_ctx, workgroup_data->workitems + workgroup_data->cur_item, kernel->register_params);
+}
+
+
+/* Check to see whether the device has been assigned work
+ * Assume that the calling thread owns device->lock */
+struct clrt_execution_t *has_work(struct _cl_device_id *device, int *old_count)
+{
+	while (device->num_kernels == *old_count)
+		pthread_cond_wait(&device->ready, &device->lock);
+
+	(*old_count)++;
+	return device->exec;
+}
+
+
+/* Get the next workgroup in an NDRange */
+int get_next(struct clrt_execution_t *exec)
+{
+	int val;
+
+	pthread_mutex_lock(&exec->mutex);
+	val = exec->next_group++;
+	pthread_mutex_unlock(&exec->mutex);
+	return val;
+}
+
+
+void init_workitem(
+	struct clrt_workitem_data_t *workitem_data, 
+	int dims, 
+	const size_t *global, 
+	const size_t *local, 
+	struct clrt_workgroup_data_t *workgroup_data)
+{
+	int i;
+
+	memset(workitem_data, 0, sizeof (struct clrt_workitem_data_t));
+	for (i = 0; i < 4; i++)
+	{
+		workitem_data->global_size[i] = 1;
+		workitem_data->local_size[i] = 1;
+	}
+
+	workitem_data->workgroup_data = (int32_t) workgroup_data;
+	/* this probably won't work with 64-bit. */
+	workitem_data->barrier_func = (int32_t) &barrier_addr;
+	workitem_data->work_dim = dims;
+	assert(dims > 0);
+	
+	for (i = 0; i < dims; i++)
+	{
+		workitem_data->global_size[i] = global[i];
+		workitem_data->local_size[i] = local[i];
+	}
+} 
+
+
+void init_workgroup(
+	struct clrt_workgroup_data_t *workgroup, 
+	struct _cl_kernel *kernel, 
+	int dims, 
+	const size_t *global, 
+	const size_t *local)
+{
+	int i;
+
+	workgroup->num_items = 1;
+	for (i = 0; i < dims; i++)
+		workgroup->num_items *= local[i];
+
+	workgroup->num_done = 0;
+	workgroup->cur_ctx = NULL;
+	workgroup->workitems = (struct fiber_t *) malloc(sizeof (struct fiber_t) * workgroup->num_items);
+	if (workgroup->workitems == NULL)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	workgroup->workitem_data = (struct clrt_workitem_data_t **) malloc(sizeof (struct clrt_workitem_data_t *) * workgroup->num_items);
+	if (workgroup->workitem_data == NULL)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	workgroup->all_stacks = (char *) malloc(STACK_SIZE * (workgroup->num_items + 1));
+	if (workgroup->all_stacks == NULL)
+		fatal("%s: out of memory", __FUNCTION__);
+	workgroup->aligned_stacks = (char *) ((size_t) (workgroup->all_stacks + STACK_SIZE) & ~(STACK_SIZE - 1));
+
+	for (i = 0; i < workgroup->num_items; i++)
+	{
+		struct fiber_t *ctx;
+
+		/* properly initialize the stack and workgroup */
+		ctx = workgroup->workitems + i;
+		ctx->stack_bottom = workgroup->aligned_stacks + (i * STACK_SIZE);
+		ctx->stack_size = STACK_SIZE - sizeof (struct clrt_workitem_data_t);
+		workgroup->workitem_data[i] = (struct clrt_workitem_data_t *) ((char *) ctx->stack_bottom + ctx->stack_size);
+		init_workitem(workgroup->workitem_data[i], dims, global, local, workgroup);
+	}
+
+	/* set up params with local memory pointers sperate from those of other threads */
+	workgroup->stack_params = (size_t *) malloc(sizeof (size_t) * kernel->stack_param_words);
+	if (workgroup->stack_params == NULL)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	memcpy(workgroup->stack_params, kernel->stack_params, sizeof (size_t) * kernel->stack_param_words);
+	for (i = 0; i < kernel->num_params; i++)
+		if (kernel->param_info[i].mem_type == CLRT_MEM_LOCAL)
+		{
+			int offset = kernel->param_info[i].stack_offset;
+			workgroup->stack_params[offset] = (size_t) clrt_buffer_allocate(kernel->stack_params[offset]);
+		}
+} 
+
+
+void destroy_workgroup(struct clrt_workgroup_data_t *workgroup, struct _cl_kernel *kernel)
+{
+	int i;
+
+	free(workgroup->workitems);
+	free(workgroup->workitem_data);
+	free(workgroup->all_stacks);
+	for (i = 0; i < kernel->num_params; i++)
+		if (kernel->param_info[i].mem_type == CLRT_MEM_LOCAL)
+		{
+			int offset;
+
+			offset = kernel->param_info[i].stack_offset;
+			clrt_buffer_free((void *) workgroup->stack_params[offset]);
+		}
+	free(workgroup->stack_params);
+}
+
+
+/* Each core on every device has a thread that runs this procedure
+ * It polls for workgroups and launches them on its core */
+void *clrt_device_core_proc(void *ptr)
+{
+	int count = 0;
+	struct _cl_device_id *device = (struct _cl_device_id *) ptr;
+	struct clrt_execution_t *exec = NULL;
+
+	pthread_mutex_lock(&device->lock);
+	while ((exec = has_work(device, &count)) != NULL)
+	{
+		int num;
+		struct clrt_workgroup_data_t workgroup_data;
+
+		pthread_mutex_unlock(&device->lock);
+
+		init_workgroup(&workgroup_data, exec->kernel, exec->dims, exec->global, exec->local);
+
+		while ((num = get_next(exec)) < exec->num_groups)
+			launch_work_group(exec->kernel, exec->dims, exec->group_starts + 3 * num, exec->global, exec->local, &workgroup_data);
+
+		destroy_workgroup(&workgroup_data, exec->kernel);
+		pthread_mutex_lock(&device->lock);
+
+		device->num_done++;
+		if (device->num_done == device->num_cores);
+			pthread_cond_signal(&device->done);
+	}
+
+	pthread_mutex_unlock(&device->lock);
+	return NULL;
+}
+
+
+
+
+/*
+ * Public Functions
+ */
 
 cl_int clGetDeviceIDs(
 	cl_platform_id platform,
@@ -30,8 +315,73 @@ cl_int clGetDeviceIDs(
 	cl_device_id *devices,
 	cl_uint *num_devices)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tplatform = %p", platform);
+	m2s_clrt_debug("\tdevice_type = %x", device_type);
+	m2s_clrt_debug("\tnum_entries = %u", num_entries);
+	m2s_clrt_debug("\tdevices = %p", devices);
+	m2s_clrt_debug("\tnum_devices = %p", num_devices);
+
+	if (platform != m2s_platform)
+		return CL_INVALID_PLATFORM;
+	if (device_type == CL_DEVICE_TYPE_GPU || device_type == CL_DEVICE_TYPE_ACCELERATOR)
+		return CL_DEVICE_NOT_FOUND;
+	if (device_type != CL_DEVICE_TYPE_CPU && device_type != CL_DEVICE_TYPE_DEFAULT && device_type != CL_DEVICE_TYPE_ALL)
+		return CL_INVALID_DEVICE_TYPE;
+
+
+	if (m2s_device == NULL)
+	{
+		int i;
+		m2s_device = (struct _cl_device_id *) malloc(sizeof (struct _cl_device_id));
+		if (m2s_device == NULL)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		m2s_device->num_cores = 4; /*FIXME*/
+		m2s_device->num_kernels = 0;
+		m2s_device->num_done = 0;
+		m2s_device->exec = NULL;
+
+		pthread_mutex_init(&m2s_device->lock, NULL);
+		pthread_cond_init(&m2s_device->ready, NULL);
+		pthread_cond_init(&m2s_device->done, NULL);
+
+		m2s_device->threads = (pthread_t *) malloc(sizeof (pthread_t) * m2s_device->num_cores);
+		if(m2s_device->threads == NULL)
+			fatal("%s: out of memory", __FUNCTION__);
+
+		for (i = 0; i < m2s_device->num_cores; i++)
+		{
+			cpu_set_t cpuset;
+			CPU_ZERO(&cpuset);
+			CPU_SET(i, &cpuset);
+			assert(pthread_create(m2s_device->threads + i, NULL, clrt_device_core_proc, m2s_device) == 0);
+			pthread_setaffinity_np(m2s_device->threads[i], sizeof cpuset, &cpuset);
+		}
+	}
+
+	/* If a device array is passed in, it must have a corresponding length and vice-versa
+	 * The client must also want either a count of the number of devices or the devices themselves */
+	if ((num_entries == 0 && devices != NULL) || (num_entries != 0 && devices == NULL) || (num_devices == NULL && devices == NULL))
+		return CL_INVALID_VALUE;
+
+	/* Client wants to know device count */
+	else if (num_entries == 0 && num_devices != NULL)
+	{
+		*num_devices = 1;
+		return CL_SUCCESS;
+	}
+
+	/* Client wants list of devices populated */
+	else
+	{
+		if (num_devices != NULL)
+			*num_devices = 1;
+		devices[0] = m2s_device;
+
+		return CL_SUCCESS;
+	}
 }
 
 
