@@ -285,7 +285,12 @@ void arm_isa_ORRS_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_MOV_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int operand2;
+
+
+	operand2 = arm_isa_op2_get(ctx->inst.dword.dpr_ins.op2, immd);
+	arm_isa_reg_store(ctx, ctx->inst.dword.dpr_ins.dst_reg, operand2);
+
 }
 
 void arm_isa_MOVS_imm_impl(struct arm_ctx_t *ctx)
