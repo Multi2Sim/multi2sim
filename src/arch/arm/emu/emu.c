@@ -84,9 +84,9 @@ void arm_emu_init(void)
 
 	/* Initialize GPU emulators */
 	arm_emu->arm_gpu_emulator = arm_gpu_emulator_evg;
-	evg_emu_init();
+	/*evg_emu_init();
 	si_emu_init();
-
+*/
 #ifdef HAVE_GLUT_H
 	/* GLUT */
 	arm_glut_init();
@@ -127,8 +127,8 @@ void arm_emu_done(void)
 		arm_ctx_free(arm_emu->context_list_head);
 
 	/* Finalize GPU */
-	/*evg_emu_done();*/
-	/*si_emu_done();*/
+	/*evg_emu_done();
+	si_emu_done();*/
 	/*frm_emu_done();*/
 
 	/* Free */

@@ -955,7 +955,9 @@ void arm_isa_LDR_ptim_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDR_ptip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	addr = arm_isa_get_addr_amode2(ctx);
+	arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, addr);
 }
 
 void arm_isa_LDR_ofim_impl(struct arm_ctx_t *ctx)

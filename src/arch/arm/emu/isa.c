@@ -57,6 +57,88 @@ static long long arm_inst_freq[ARM_INST_COUNT];
  * Register Load/Store Operations
  */
 
+unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
+{
+	struct arm_inst_t *inst;
+	unsigned int rn;
+	unsigned int rm;
+	unsigned int shift;
+	unsigned int offset;
+	unsigned int rn_val;
+	unsigned int ret_addr;
+
+	inst = &ctx->inst;
+
+	offset = inst->dword.sdtr_ins.off;
+	rn = inst->dword.sdtr_ins.base_rn;
+	arm_isa_reg_load(ctx, rn, &rn_val);
+
+	if(inst->dword.sdtr_ins.imm == 1)
+	{
+		rm = (offset & (0x0000000f));
+		shift = ((offset >> 4) & (0x000000ff));
+
+		if(inst->dword.sdtr_ins.up_dn)
+		{
+			switch ((shift >> 1) & 0x00000003)
+			{
+			case (LSL):
+				break;
+
+			case (LSR):
+
+				break;
+
+			case (ASR):
+
+				break;
+
+			case (ROR):
+				break;
+			}
+		}
+		else
+		{
+			switch ((shift >> 1) & 0x00000003)
+			{
+			case (LSL):
+
+				break;
+
+			case (LSR):
+				break;
+
+			case (ASR):
+
+				break;
+
+			case (ROR):
+				break;
+			}
+		}
+	}
+	else
+	{
+		if(!offset)
+		{
+			ret_addr = rn_val + 0;
+		}
+		else
+		{
+			if(inst->dword.sdtr_ins.up_dn)
+			{
+				ret_addr = rn_val + offset;
+			}
+			else
+			{
+				ret_addr = rn_val - offset;
+			}
+		}
+
+	}
+	return (ret_addr);
+}
+
 unsigned int arm_isa_op2_get(unsigned int op2 , enum arm_isa_op2_cat_t cat)
 {
 	unsigned int imm;
@@ -128,6 +210,62 @@ void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no, unsigned int 
 		break;
 	case (r15):
 		ctx->regs->pc = value;
+		break;
+	}
+}
+
+void arm_isa_reg_load(struct arm_ctx_t *ctx, unsigned int reg_no, unsigned int *value)
+{
+	arm_isa_inst_debug("  r%d => value_holder", reg_no);
+	switch (reg_no)
+	{
+	case (r0):
+		(*value) = ctx->regs->r0;
+		break;
+	case (r1):
+		(*value) = ctx->regs->r1;
+		break;
+	case (r2):
+		(*value) = ctx->regs->r2;
+		break;
+	case (r3):
+		(*value) = ctx->regs->r3;
+		break;
+	case (r4):
+		(*value) = ctx->regs->r4;
+		break;
+	case (r5):
+		(*value) = ctx->regs->r5;
+		break;
+	case (r6):
+		(*value) = ctx->regs->r6;
+		break;
+	case (r7):
+		(*value) = ctx->regs->r7;
+		break;
+	case (r8):
+		(*value) = ctx->regs->r8;
+		break;
+	case (r9):
+		(*value) = ctx->regs->r9;
+		break;
+	case (r10):
+		(*value) = ctx->regs->sl;
+		break;
+	case (r11):
+		(*value) = ctx->regs->fp;
+		break;
+	case (r12):
+		(*value) = ctx->regs->ip;
+		break;
+	case (r13):
+		(*value) = ctx->regs->sp;
+		break;
+	case (r14):
+		(*value) = ctx->regs->lr;
+		break;
+	case (r15):
+		(*value) = ctx->regs->pc;
 		break;
 	}
 }

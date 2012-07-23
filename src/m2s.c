@@ -1422,6 +1422,7 @@ int main(int argc, char **argv)
 		x86_checkpoint_save(x86_save_checkpoint_file_name);
 
 	free(x86_emu_last_inst_bytes);
+	free(arm_emu_last_inst_bytes);
 
 	/* Restore default signal handlers */
 	signal(SIGABRT, SIG_DFL);

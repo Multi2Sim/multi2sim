@@ -201,9 +201,11 @@ enum arm_isa_op2_cat_t
 };
 
 unsigned int arm_isa_op2_get(unsigned int op2 , enum arm_isa_op2_cat_t cat);
+unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx);
 void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no,
 	unsigned int value);
-
+void arm_isa_reg_load(struct arm_ctx_t *ctx, unsigned int reg_no,
+	unsigned int *value);
 
 /*
  * System calls
