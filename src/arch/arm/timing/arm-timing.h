@@ -21,7 +21,7 @@
 #define ARM_TIMING_H
 
 
-
+int arm_cpu_run(void);
 
 #endif
 
