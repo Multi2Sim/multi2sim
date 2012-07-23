@@ -48,6 +48,9 @@
 
 #include <arm-asm.h>
 
+#include <southern-islands-emu.h>
+#include <evergreen-emu.h>
+
 
 /* Some forward declarations */
 struct arm_ctx_t;
@@ -71,6 +74,39 @@ struct arm_regs_t
 struct arm_regs_t *arm_regs_create();
 void arm_regs_free(struct arm_regs_t *regs);
 void arm_regs_copy(struct arm_regs_t *dst, struct arm_regs_t *src);
+
+
+
+
+/*
+ * System signals
+ */
+
+
+/* Every contexts (parent and children) has its own masks */
+struct arm_signal_mask_table_t
+{
+	unsigned long long pending;  /* Mask of pending signals */
+	unsigned long long blocked;  /* Mask of blocked signals */
+	unsigned long long backup;  /* Backup of blocked signals while suspended */
+	struct x86_regs_t *regs;  /* Backup of regs while executing handler */
+	unsigned int pretcode;  /* Base address of a memory page allocated for retcode execution */
+};
+
+struct arm_signal_handler_table_t
+{
+	/* Number of extra contexts sharing the table */
+	int num_links;
+
+	/* Signal handlers */
+	struct arm_sim_sigaction
+	{
+		unsigned int handler;
+		unsigned int flags;
+		unsigned int restorer;
+		unsigned long long mask;
+	} sigaction[64];
+};
 
 
 
@@ -158,6 +194,16 @@ typedef void (*arm_isa_inst_func_t)(struct arm_ctx_t *ctx);
 #include <arm-asm.dat>
 #undef DEFINST
 
+void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no,
+	unsigned int value);
+
+
+/*
+ * System calls
+ */
+void arm_sys_init(void);
+void arm_sys_done(void);
+
 
 
 
@@ -165,15 +211,31 @@ typedef void (*arm_isa_inst_func_t)(struct arm_ctx_t *ctx);
  * ARM Context
  */
 
+#define arm_ctx_debug(...) debug(arm_ctx_debug_category, __VA_ARGS__)
+extern int arm_ctx_debug_category;
+
+/* Event scheduled periodically to dump IPC statistics for a context */
+extern int EV_ARM_CTX_IPC_REPORT;
+
 struct arm_ctx_t
 {
 	/* Number of extra contexts using this loader */
 	int num_links;
 
+	/* Parent context */
+	struct arm_ctx_t *parent;
+
 	/* Context properties */
 	int status;
 	int pid;  /* Context ID */
 	int address_space_index;  /* Virtual memory address space index */
+
+	int exit_signal;  /* Signal to send parent when finished */
+	int exit_code;  /* For zombie contexts */
+
+	/* IPC report (for detailed simulation) */
+	FILE *ipc_report_file;
+	int ipc_report_interval;
 
 	/* Program data */
 	struct elf_file_t *elf_file;
@@ -225,7 +287,16 @@ struct arm_ctx_t
 	struct mem_t *mem; /* Virtual Memory image */
 	struct arm_regs_t *regs; /* Logical register file */
 	struct arm_file_desc_table_t *file_desc_table;  /* File descriptor table */
+	struct signal_mask_table_t *signal_mask_table;
+	struct signal_handler_table_t *signal_handler_table;
 
+
+
+	/* Statistics */
+
+	/* Number of non-speculate instructions.
+	 * Updated by the architectural simulator at the commit stage. */
+	long long inst_count;
 };
 
 enum arm_ctx_status_t
@@ -256,14 +327,17 @@ struct arm_ctx_t *arm_ctx_create();
 extern int arm_loader_debug_category;
 
 int arm_ctx_get_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status);
+void arm_ctx_set_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status);
 
 void arm_ctx_execute(struct arm_ctx_t *ctx);
 void arm_ctx_free(struct arm_ctx_t *ctx);
 void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *full_path, int size);
+void arm_ctx_finish(struct arm_ctx_t *ctx, int status);
 
 void arm_ctx_load_from_command_line(int argc, char **argv);
 void arm_ctx_load_from_ctx_config(struct config_t *config, char *section);
 
+void arm_ctx_ipc_report_handler(int event, void *data);
 
 
 enum arm_gpu_emulator_kind_t
@@ -353,6 +427,10 @@ enum arm_emu_list_kind_t
 	arm_emu_list_alloc
 };
 
+int arm_emu_list_member(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
+void arm_emu_list_remove(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
+void arm_emu_list_insert_tail(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
+void arm_emu_list_insert_head(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx);
 
 /* Global CPU emulator variable */
 extern struct arm_emu_t *arm_emu;
@@ -367,5 +445,11 @@ extern enum arm_emu_kind_t
 	arm_emu_kind_functional,
 	arm_emu_kind_detailed
 } arm_emu_kind;
+
+void arm_emu_init(void);
+void arm_emu_run(void);
+void arm_emu_done(void);
+
+void arm_emu_process_events_schedule();
 
 #endif

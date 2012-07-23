@@ -20,6 +20,31 @@
 #include <arm-emu.h>
 
 int arm_loader_debug_category;
+int arm_ctx_debug_category;
+
+int EV_ARM_CTX_IPC_REPORT;
+
+static struct string_map_t arm_ctx_status_map =
+{
+	16, {
+		{ "running",      arm_ctx_running },
+		{ "specmode",     arm_ctx_spec_mode },
+		{ "suspended",    arm_ctx_suspended },
+		{ "finished",     arm_ctx_finished },
+		{ "exclusive",    arm_ctx_exclusive },
+		{ "locked",       arm_ctx_locked },
+		{ "handler",      arm_ctx_handler },
+		{ "sigsuspend",   arm_ctx_sigsuspend },
+		{ "nanosleep",    arm_ctx_nanosleep },
+		{ "poll",         arm_ctx_poll },
+		{ "read",         arm_ctx_read },
+		{ "write",        arm_ctx_write },
+		{ "waitpid",      arm_ctx_waitpid },
+		{ "zombie",       arm_ctx_zombie },
+		{ "futex",        arm_ctx_futex },
+		{ "alloc",        arm_ctx_alloc }
+	}
+};
 
 /* Stack parameter definitions */
 #define LD_STACK_BASE  0xc0000000
@@ -57,8 +82,18 @@ static struct arm_ctx_t *arm_ctx_do_create()
 	if(!ctx)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	/* Initialize */
+	ctx->pid = arm_emu->current_pid++;
+
+	/* Update status so that the context is inserted in the
+	 * corresponding lists. The arm_ctx_running parameter has no
+	 * effect, since it will be updated later. */
+	arm_ctx_set_status(ctx, arm_ctx_running);
+	arm_emu_list_insert_head(arm_emu_list_context, ctx);
+
 	/* Structures */
 	ctx->regs = arm_regs_create();
+
 
 	/* Return context */
 	return ctx;
@@ -376,11 +411,11 @@ static void arm_ctx_loader_load_stack(struct arm_ctx_t *ctx)
 			mem_write(mem, sp, 1, &c);
 			sp++;
 		}
-		arm_loader_debug("\nReached here 0\n"); /* FIXME: */
+
 		arm_loader_debug("\n at_random_addr_holder = %x , at_random_addr = %x \n",
-			ctx->at_random_addr_holder, ctx->at_random_addr); /* FIXME: */
+			ctx->at_random_addr_holder, ctx->at_random_addr);
 		mem_write(mem, ctx->at_random_addr_holder, 4, &ctx->at_random_addr);
-		arm_loader_debug("\nReached here 1\n"); /* FIXME: */
+
 		/* Check that we didn't overflow */
 		if (sp > LD_STACK_BASE)
 			fatal("%s: initial stack overflow, increment LD_MAX_ENVIRON",
@@ -471,6 +506,7 @@ struct arm_ctx_t *arm_ctx_create(void)
 	ctx->args = linked_list_create();
 	ctx->env = linked_list_create();
 
+	ctx->file_desc_table = arm_file_desc_table_create();
 
 	return ctx;
 }
@@ -546,7 +582,7 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 
 	/* Disassemble */
 	arm_disasm(buffer_ptr, regs->ip, &ctx->inst);
-	if (ctx->inst.info->opcode == ARM_INST_NONE && !spec_mode)
+	if (ctx->inst.info->opcode == ARM_INST_NONE)/*&& !spec_mode)*/
 		fatal("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
 			regs->ip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 
@@ -558,9 +594,157 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 	arm_emu->inst_count++;
 }
 
+/* Finish a context. If the context has no parent, its status will be set
+ * to 'arm_ctx_finished'. If it has, its status is set to 'arm_ctx_zombie', waiting for
+ * a call to 'waitpid'.
+ * The children of the finished context will set their 'parent' attribute to NULL.
+ * The zombie children will be finished. */
+void arm_ctx_finish(struct arm_ctx_t *ctx, int status)
+{
+	/* TODO: Multi-thread support for Arm */
+	/*struct arm_ctx_t *aux;*/
+
+	/* Context already finished */
+	if (arm_ctx_get_status(ctx, arm_ctx_finished | arm_ctx_zombie))
+		return;
+
+	/* TODO: Multi-thread support for Arm */
+	/*
+	 If context is waiting for host events, cancel spawned host threads.
+	arm_ctx_host_thread_suspend_cancel(ctx);
+	arm_ctx_host_thread_timer_cancel(ctx);
+
+	 From now on, all children have lost their parent. If a child is
+	 * already zombie, finish it, since its parent won't be able to waitpid it
+	 * anymore.
+	DOUBLE_LINKED_LIST_FOR_EACH(arm_emu, context, aux)
+	{
+		if (aux->parent == ctx)
+		{
+			aux->parent = NULL;
+			if (arm_ctx_get_status(aux, arm_ctx_zombie))
+				arm_ctx_set_status(aux, arm_ctx_finished);
+		}
+	}
+
+	 Send finish signal to parent
+	if (ctx->exit_signal && ctx->parent)
+	{
+		arm_sys_debug("  sending signal %d to pid %d\n",
+			ctx->exit_signal, ctx->parent->pid);
+		sim_sigset_add(&ctx->parent->signal_mask_table->pending,
+			ctx->exit_signal);
+		arm_emu_process_events_schedule();
+	}
+
+	 If clear_child_tid was set, a futex() call must be performed on
+	 * that pointer. Also wake up futexes in the robust list.
+	if (ctx->clear_child_tid)
+	{
+		uint32_t zero = 0;
+		mem_write(ctx->mem, ctx->clear_child_tid, 4, &zero);
+		arm_ctx_futex_wake(ctx, ctx->clear_child_tid, 1, -1);
+	}
+	arm_ctx_exit_robust_list(ctx);
+
+	 If we are in a signal handler, stop it.
+	if (arm_ctx_get_status(ctx, arm_ctx_handler))
+		signal_handler_return(ctx);
+	*/
+
+	/* Finish context */
+	arm_ctx_set_status(ctx, ctx->parent ? arm_ctx_zombie : arm_ctx_finished);
+	ctx->exit_code = status;
+	arm_emu_process_events_schedule();
+}
+
+static void arm_ctx_update_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
+{
+	enum arm_ctx_status_t status_diff;
+
+	/* Remove contexts from the following lists:
+	 *   running, suspended, zombie */
+	if (arm_emu_list_member(arm_emu_list_running, ctx))
+		arm_emu_list_remove(arm_emu_list_running, ctx);
+	if (arm_emu_list_member(arm_emu_list_suspended, ctx))
+		arm_emu_list_remove(arm_emu_list_suspended, ctx);
+	if (arm_emu_list_member(arm_emu_list_zombie, ctx))
+		arm_emu_list_remove(arm_emu_list_zombie, ctx);
+	if (arm_emu_list_member(arm_emu_list_finished, ctx))
+		arm_emu_list_remove(arm_emu_list_finished, ctx);
+	if (arm_emu_list_member(arm_emu_list_alloc, ctx))
+		arm_emu_list_remove(arm_emu_list_alloc, ctx);
+
+	/* If the difference between the old and new status lies in other
+	 * states other than 'arm_ctx_specmode', a reschedule is marked. */
+	status_diff = ctx->status ^ status;
+	if (status_diff & ~arm_ctx_spec_mode)
+		arm_emu->context_reschedule = 1;
+
+	/* Update status */
+	ctx->status = status;
+	if (ctx->status & arm_ctx_finished)
+		ctx->status = arm_ctx_finished | (status & arm_ctx_alloc);
+	if (ctx->status & arm_ctx_zombie)
+		ctx->status = arm_ctx_zombie | (status & arm_ctx_alloc);
+	if (!(ctx->status & arm_ctx_suspended) &&
+		!(ctx->status & arm_ctx_finished) &&
+		!(ctx->status & arm_ctx_zombie) &&
+		!(ctx->status & arm_ctx_locked))
+		ctx->status |= arm_ctx_running;
+	else
+		ctx->status &= ~arm_ctx_running;
+
+	/* Insert context into the corresponding lists. */
+	if (ctx->status & arm_ctx_running)
+		arm_emu_list_insert_head(arm_emu_list_running, ctx);
+	if (ctx->status & arm_ctx_zombie)
+		arm_emu_list_insert_head(arm_emu_list_zombie, ctx);
+	if (ctx->status & arm_ctx_finished)
+		arm_emu_list_insert_head(arm_emu_list_finished, ctx);
+	if (ctx->status & arm_ctx_suspended)
+		arm_emu_list_insert_head(arm_emu_list_suspended, ctx);
+	if (ctx->status & arm_ctx_alloc)
+		arm_emu_list_insert_head(arm_emu_list_alloc, ctx);
+
+	/* Dump new status (ignore 'arm_ctx_specmode' status, it's too frequent) */
+	if (debug_status(arm_ctx_debug_category) && (status_diff & ~arm_ctx_spec_mode))
+	{
+		char sstatus[200];
+		map_flags(&arm_ctx_status_map, ctx->status, sstatus, 200);
+		arm_ctx_debug("ctx %d changed status to %s\n",
+			ctx->pid, sstatus);
+	}
+
+	/* Start/stop arm timer depending on whether there are any contexts
+	 * currently running. */
+	if (arm_emu->running_list_count)
+		m2s_timer_start(arm_emu->timer);
+	else
+		m2s_timer_stop(arm_emu->timer);
+}
+
+void arm_ctx_set_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
+{
+	arm_ctx_update_status(ctx, ctx->status | status);
+}
+
+
 int arm_ctx_get_status(struct arm_ctx_t *ctx, enum arm_ctx_status_t status)
 {
 	return (ctx->status & status) > 0;
+}
+
+/* Look for a context matching pid in the list of existing
+ * contexts of the kernel. */
+struct arm_ctx_t *arm_ctx_get(int pid)
+{
+	struct arm_ctx_t *ctx;
+
+	ctx = arm_emu->context_list_head;
+	while (ctx && ctx->pid != pid)
+		ctx = ctx->context_list_next;
+	return ctx;
 }
 
 void arm_ctx_load_from_command_line(int argc, char **argv)
@@ -628,4 +812,45 @@ void arm_ctx_loader_get_full_path(struct arm_ctx_t *ctx, char *file_name, char *
 
 void arm_ctx_load_from_ctx_config(struct config_t *config, char *section)
 {
+}
+
+/*
+ * IPC report
+ */
+
+struct arm_ctx_ipc_report_stack_t
+{
+	int pid;
+	long long inst_count;
+};
+
+void arm_ctx_ipc_report_handler(int event, void *data)
+{
+	struct arm_ctx_ipc_report_stack_t *stack = data;
+	struct arm_ctx_t *ctx;
+
+	long long inst_count;
+	double ipc_interval;
+	double ipc_global;
+
+	/* Get context. If it does not exist anymore, no more
+	 * events to schedule. */
+	ctx = arm_ctx_get(stack->pid);
+	if (!ctx || arm_ctx_get_status(ctx, arm_ctx_finished) || esim_finish)
+	{
+		free(stack);
+		return;
+	}
+
+	/* Dump new IPC */
+	assert(ctx->ipc_report_interval);
+	inst_count = ctx->inst_count - stack->inst_count;
+	ipc_global = esim_cycle ? (double) ctx->inst_count / esim_cycle : 0.0;
+	ipc_interval = (double) inst_count / ctx->ipc_report_interval;
+	fprintf(ctx->ipc_report_file, "%10lld %8lld %10.4f %10.4f\n",
+		esim_cycle, inst_count, ipc_global, ipc_interval);
+
+	/* Schedule new event */
+	stack->inst_count = ctx->inst_count;
+	esim_schedule_event(event, stack, ctx->ipc_report_interval);
 }

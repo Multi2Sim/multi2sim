@@ -37,14 +37,212 @@ struct arm_emu_t *arm_emu;
 
 
 
+
+/*
+ * Public functions
+ */
+
+
+/* Initialization */
+
+void arm_emu_init(void)
+{
+	union
+	{
+		unsigned int as_uint;
+		unsigned char as_uchar[4];
+	} endian;
+
+	/* Endian check */
+	endian.as_uint = 0x33221100;
+	if (endian.as_uchar[0])
+		fatal("%s: host machine is not little endian", __FUNCTION__);
+
+	/* Host types */
+	M2S_HOST_GUEST_MATCH(sizeof(long long), 8);
+	M2S_HOST_GUEST_MATCH(sizeof(int), 4);
+	M2S_HOST_GUEST_MATCH(sizeof(short), 2);
+
+	/* Initialization */
+	arm_sys_init();
+	arm_disasm_init();
+
+	/* Allocate */
+	arm_emu = calloc(1, sizeof(struct arm_emu_t));
+	if (!arm_emu)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	/* Event for context IPC reports */
+	EV_ARM_CTX_IPC_REPORT = esim_register_event_with_name(arm_ctx_ipc_report_handler, "arm_ctx_ipc_report");
+
+	/* Initialize */
+	arm_emu->current_pid = 1000;  /* Initial assigned pid */
+	arm_emu->timer = m2s_timer_create("arm emulation timer");
+
+	/* Initialize mutex for variables controlling calls to 'arm_emu_process_events()' */
+	pthread_mutex_init(&arm_emu->process_events_mutex, NULL);
+
+	/* Initialize GPU emulators */
+	arm_emu->arm_gpu_emulator = arm_gpu_emulator_evg;
+	evg_emu_init();
+	si_emu_init();
+
+#ifdef HAVE_GLUT_H
+	/* GLUT */
+	arm_glut_init();
+#endif
+
+	/* TODO: Provide OpenGL and Fermi support for Arm when available */
+	/*
+	OPENGL
+	arm_opengl_init();
+
+	 CUDA
+	frm_emu_init();
+	 */
+}
+
+/* Finalization */
+void arm_emu_done(void)
+{
+	struct arm_ctx_t *ctx;
+
+#ifdef HAVE_GLUT_H
+	arm_glut_done();
+#endif
+
+	/* TODO: Provide OpenGL and Fermi support for Arm when available */
+	/*
+	 Finalize Opengl
+	arm_opengl_done();
+	*/
+
+	/* Finish all contexts */
+	for (ctx = arm_emu->context_list_head; ctx; ctx = ctx->context_list_next)
+		if (!arm_ctx_get_status(ctx, arm_ctx_finished))
+			arm_ctx_finish(ctx, 0);
+
+	/* Free contexts */
+	while (arm_emu->context_list_head)
+		arm_ctx_free(arm_emu->context_list_head);
+
+	/* Finalize GPU */
+	/*evg_emu_done();*/
+	/*si_emu_done();*/
+	/*frm_emu_done();*/
+
+	/* Free */
+	m2s_timer_free(arm_emu->timer);
+	free(arm_emu);
+
+	/* End */
+	/*arm_isa_done();*/
+	arm_sys_done();
+}
+
+void arm_emu_list_insert_head(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx)
+{
+	assert(!arm_emu_list_member(list, ctx));
+	switch (list)
+	{
+	case arm_emu_list_context:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(arm_emu, context, ctx);
+		break;
+
+	case arm_emu_list_running:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(arm_emu, running, ctx);
+		break;
+
+	case arm_emu_list_finished:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(arm_emu, finished, ctx);
+		break;
+
+	case arm_emu_list_zombie:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(arm_emu, zombie, ctx);
+		break;
+
+	case arm_emu_list_suspended:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(arm_emu, suspended, ctx);
+		break;
+
+	case arm_emu_list_alloc:
+
+		DOUBLE_LINKED_LIST_INSERT_HEAD(arm_emu, alloc, ctx);
+		break;
+	}
+}
+
+
+void arm_emu_list_insert_tail(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx)
+{
+	assert(!arm_emu_list_member(list, ctx));
+	switch (list) {
+	case arm_emu_list_context: DOUBLE_LINKED_LIST_INSERT_TAIL(arm_emu, context, ctx); break;
+	case arm_emu_list_running: DOUBLE_LINKED_LIST_INSERT_TAIL(arm_emu, running, ctx); break;
+	case arm_emu_list_finished: DOUBLE_LINKED_LIST_INSERT_TAIL(arm_emu, finished, ctx); break;
+	case arm_emu_list_zombie: DOUBLE_LINKED_LIST_INSERT_TAIL(arm_emu, zombie, ctx); break;
+	case arm_emu_list_suspended: DOUBLE_LINKED_LIST_INSERT_TAIL(arm_emu, suspended, ctx); break;
+	case arm_emu_list_alloc: DOUBLE_LINKED_LIST_INSERT_TAIL(arm_emu, alloc, ctx); break;
+	}
+}
+
+
+void arm_emu_list_remove(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx)
+{
+	assert(arm_emu_list_member(list, ctx));
+	switch (list) {
+	case arm_emu_list_context: DOUBLE_LINKED_LIST_REMOVE(arm_emu, context, ctx); break;
+	case arm_emu_list_running: DOUBLE_LINKED_LIST_REMOVE(arm_emu, running, ctx); break;
+	case arm_emu_list_finished: DOUBLE_LINKED_LIST_REMOVE(arm_emu, finished, ctx); break;
+	case arm_emu_list_zombie: DOUBLE_LINKED_LIST_REMOVE(arm_emu, zombie, ctx); break;
+	case arm_emu_list_suspended: DOUBLE_LINKED_LIST_REMOVE(arm_emu, suspended, ctx); break;
+	case arm_emu_list_alloc: DOUBLE_LINKED_LIST_REMOVE(arm_emu, alloc, ctx); break;
+	}
+}
+
+
+int arm_emu_list_member(enum arm_emu_list_kind_t list, struct arm_ctx_t *ctx)
+{
+	switch (list) {
+	case arm_emu_list_context: return DOUBLE_LINKED_LIST_MEMBER(arm_emu, context, ctx);
+	case arm_emu_list_running: return DOUBLE_LINKED_LIST_MEMBER(arm_emu, running, ctx);
+	case arm_emu_list_finished: return DOUBLE_LINKED_LIST_MEMBER(arm_emu, finished, ctx);
+	case arm_emu_list_zombie: return DOUBLE_LINKED_LIST_MEMBER(arm_emu, zombie, ctx);
+	case arm_emu_list_suspended: return DOUBLE_LINKED_LIST_MEMBER(arm_emu, suspended, ctx);
+	case arm_emu_list_alloc: return DOUBLE_LINKED_LIST_MEMBER(arm_emu, alloc, ctx);
+	}
+	return 0;
+}
+
+
+/* Schedule a call to 'arm_emu_process_events' */
+void arm_emu_process_events_schedule()
+{
+	pthread_mutex_lock(&arm_emu->process_events_mutex);
+	arm_emu->process_events_force = 1;
+	pthread_mutex_unlock(&arm_emu->process_events_mutex);
+}
+
+
+
+
+
 /*
  * Functional simulation loop
  */
 
-/* Run one iteration of the x86 emulation loop */
+/* Run one iteration of the Arm emulation loop */
 void arm_emu_run(void)
 {
 	struct arm_ctx_t *ctx;
+
+	/* FIXME: Find the flag which sets esim */
+	esim_finish = esim_finish_none;
 
 	/* Stop if all contexts finished */
 	/* FIXME - don't finish, just exit - what if other CPU contexts are still running? */

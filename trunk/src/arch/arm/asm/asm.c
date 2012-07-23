@@ -35,6 +35,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 1].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 1 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -42,6 +43,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 2].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 2 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -49,6 +51,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 3].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 3 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -56,6 +59,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 4].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 4 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -63,6 +67,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 5].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 5 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -70,6 +75,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 6].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 6 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -77,6 +83,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 7].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 7 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -84,6 +91,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 8 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -91,6 +99,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 10].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 10 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -98,6 +107,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 12].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 12 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -105,6 +115,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 14].opcode = ARM_INST_##_name; \
 	info = &arm_inst_info[_arg1 * 16 + 14 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -112,6 +123,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break; \
 	case ARM_CAT_DPR_IMM: \
 	for (i = 0; i < 16; i++ ){\
@@ -122,6 +134,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	}\
 	break;\
 	case ARM_CAT_DPR_SAT:\
@@ -132,6 +145,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_PSR:\
 	arm_inst_info[_arg1 * 16 + 0].opcode = ARM_INST_##_name;\
@@ -141,6 +155,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_MULT:\
 	arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
@@ -150,6 +165,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_MULT_SIGN:\
 	arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name;\
@@ -159,6 +175,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 10].opcode = ARM_INST_##_name;\
 	info = &arm_inst_info[_arg1 * 16 + 10 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -166,6 +183,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 12].opcode = ARM_INST_##_name;\
 	info = &arm_inst_info[_arg1 * 16 + 12 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -173,6 +191,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + 14].opcode = ARM_INST_##_name;\
 	info = &arm_inst_info[_arg1 * 16 + 14 ]; \
 	info->inst = ARM_INST_##_name; \
@@ -180,6 +199,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_MULT_LN:\
 	arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
@@ -189,6 +209,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_MULT_LN_SIGN:\
 	arm_inst_info[_arg1 * 16 + 8].opcode = ARM_INST_##_name;\
@@ -198,6 +219,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_SDSWP:\
 	arm_inst_info[_arg1 * 16 + 9].opcode = ARM_INST_##_name;\
@@ -207,6 +229,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_BAX:\
 	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
@@ -216,6 +239,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_HFWRD_REG:\
 	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
@@ -225,6 +249,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_HFWRD_IMM:\
 	arm_inst_info[_arg1 * 16 + _arg2].opcode = ARM_INST_##_name;\
@@ -234,6 +259,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_SDTR:\
 	if (_arg2 == 0xff){\
@@ -245,6 +271,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	}\
 	}\
 	else{\
@@ -255,6 +282,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	arm_inst_info[_arg1 * 16 + (_arg2 + 8)].opcode = ARM_INST_##_name;\
 	info = &arm_inst_info[_arg1 * 16 + (_arg2 + 8)]; \
 	info->inst = ARM_INST_##_name; \
@@ -262,6 +290,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	}\
 	break;\
 	case ARM_CAT_BRNCH:\
@@ -274,6 +303,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	}\
 	}\
 	break;\
@@ -286,6 +316,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	}\
 	break;\
 	case ARM_CAT_SWI_SVC:\
@@ -298,6 +329,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	}\
 	}\
 	break;\
@@ -309,6 +341,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	break;\
 	case ARM_CAT_VFP:\
 	for (i = 0; i < 16; i++){\
@@ -319,6 +352,7 @@ void arm_disasm_init()
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
 	info->size = 32;\
+	info->opcode = ARM_INST_##_name; \
 	}\
 	break;\
 	}
