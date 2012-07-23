@@ -351,8 +351,9 @@ void evg_emu_opengl_disasm(char *path, int opengl_shader_index)
 }
 
 
-/* Run one iteration of the Evergreen GPU emulation loop */
-void evg_emu_run(void)
+/* Run one iteration of the Evergreen GPU emulation loop.
+ * Return FALSE if there is no more emulation to perform. */
+int evg_emu_run(void)
 {
 	struct evg_ndrange_t *ndrange;
 	struct evg_ndrange_t *ndrange_next;
@@ -363,10 +364,9 @@ void evg_emu_run(void)
 	struct evg_wavefront_t *wavefront;
 	struct evg_wavefront_t *wavefront_next;
 
-	/* For efficiency when no Evergreen emulation is selected, exit here
-	 * if the list of existing ND-Ranges is empty. */
+	/* Exit if there are no ND-Ranges to emulate */
 	if (!evg_emu->ndrange_list_count)
-		return;
+		return 0;
 
 	/* Start any ND-Range in state 'pending' */
 	while ((ndrange = evg_emu->pending_ndrange_list_head))
@@ -422,4 +422,7 @@ void evg_emu_run(void)
 		/* Extract from list of finished ND-Ranges and free */
 		evg_ndrange_free(ndrange);
 	}
+
+	/* Return TRUE */
+	return 1;
 }

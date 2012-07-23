@@ -1152,17 +1152,17 @@ void x86_cpu_run_fast_forward(void)
 }
 
 
-/* Run one iteration of the x86 timing simulation loop */
+/* Run one iteration of the x86 timing simulation loop.
+ * The function returns FALSE if there is no more simulation to perform. */
 int x86_cpu_run(void)
 {
+	/* Stop if no context is running */
+	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
+		return 0;
+
 	/* Fast-forward simulation */
 	if (x86_cpu_fast_forward_count && x86_emu->inst_count < x86_cpu_fast_forward_count)
 		x86_cpu_run_fast_forward();
-
-	/* Stop if all contexts finished */
-	/* FIXME - don't finish, just exit - what if other CPU contexts are still running? */
-	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-		esim_finish = esim_finish_ctx;
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (x86_emu_max_inst && x86_cpu->inst >= x86_emu_max_inst)

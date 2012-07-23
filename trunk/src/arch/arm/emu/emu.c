@@ -236,18 +236,15 @@ void arm_emu_process_events_schedule()
  * Functional simulation loop
  */
 
-/* Run one iteration of the Arm emulation loop */
-void arm_emu_run(void)
+/* Run one iteration of the Arm emulation loop.
+ * Return FALSE if there is no more simulation to perform. */
+int arm_emu_run(void)
 {
 	struct arm_ctx_t *ctx;
 
-	/* FIXME: Find the flag which sets esim */
-	esim_finish = esim_finish_none;
-
-	/* Stop if all contexts finished */
-	/* FIXME - don't finish, just exit - what if other CPU contexts are still running? */
+	/* Stop if there is no context running */
 	if (arm_emu->finished_list_count >= arm_emu->context_list_count)
-		esim_finish = esim_finish_ctx;
+		return 0;
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (arm_emu_max_inst && arm_emu->inst_count >= arm_emu_max_inst)
@@ -259,7 +256,7 @@ void arm_emu_run(void)
 
 	/* Stop if any previous reason met */
 	if (esim_finish)
-		return;
+		return 0;
 
 	/* Run an instruction from every running process */
 	for (ctx = arm_emu->running_list_head; ctx; ctx = ctx->running_list_next)
@@ -280,4 +277,7 @@ void arm_emu_run(void)
 
 	/* Process list of suspended contexts */
 	/*arm_emu_process_events();*/
+
+	/* Return TRUE */
+	return 1;
 }

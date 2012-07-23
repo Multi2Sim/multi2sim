@@ -300,8 +300,9 @@ void si_emu_disasm(char *path)
 	exit(0);
 }
 
-/* Run one iteration of the Southern Islands GPU emulation loop */
-void si_emu_run(void)
+/* Run one iteration of the Southern Islands GPU emulation loop.
+ * Return FALSE if there is no more emulation to perform. */
+int si_emu_run(void)
 {
 	struct si_ndrange_t *ndrange;
 	struct si_ndrange_t *ndrange_next;
@@ -315,7 +316,7 @@ void si_emu_run(void)
 	/* For efficiency when no Southern Islands emulation is selected, exit here
 	 * if the list of existing ND-Ranges is empty. */
 	if (!si_emu->ndrange_list_count)
-		return;
+		return 0;
 
 	/* Start any ND-Range in state 'pending' */
 	while ((ndrange = si_emu->pending_ndrange_list_head))
@@ -371,4 +372,7 @@ void si_emu_run(void)
 		/* Extract from list of finished ND-Ranges and free */
 		si_ndrange_free(ndrange);
 	}
+
+	/* Return TRUE */
+	return 1;
 }

@@ -1101,7 +1101,8 @@ extern enum x86_emu_kind_t
 
 void x86_emu_init(void);
 void x86_emu_done(void);
-void x86_emu_run(void);
+
+int x86_emu_run(void);
 
 void x86_emu_dump(FILE *f);
 void x86_emu_dump_summary(FILE *f);
