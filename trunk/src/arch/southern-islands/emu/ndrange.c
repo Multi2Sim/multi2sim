@@ -249,46 +249,6 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 							work_item->vreg[1].as_int = lidy;  /* V1 */
 							work_item->vreg[2].as_int = lidz;  /* V2 */
 
-							/* FIXME initialize wavefront registers in a separate loop to avoid redundant execution. */
-
-							/* Save work-group IDs in registers */
-							wavefront->sreg[12].as_int = gidx;  /* S12 */
-							wavefront->sreg[13].as_int = gidy;  /* S13 */
-							wavefront->sreg[14].as_int = gidz;  /* S14 */
-
-							/* Initialize Constant Buffers */
-							unsigned int userElementCount = kernel->bin_file->enc_dict_entry_southern_islands->userElementCount;
-							struct si_bin_enc_user_element_t* userElements = kernel->bin_file->enc_dict_entry_southern_islands->userElements;
-							for (int i = 0; i < userElementCount; i++)
-							{
-								if (userElements[i].dataClass == IMM_CONST_BUFFER)
-								{
-									si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
-								}
-								else if (userElements[i].dataClass == IMM_UAV)
-								{
-									si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
-								}
-								else if (userElements[i].dataClass == PTR_CONST_BUFFER_TABLE)
-								{
-									si_wavefront_init_sreg_with_uav_table(wavefront, userElements[i].startUserReg, userElements[i].userRegCount);
-								}
-								else if (userElements[i].dataClass == PTR_UAV_TABLE)
-								{
-									si_wavefront_init_sreg_with_uav_table(wavefront, userElements[i].startUserReg, userElements[i].userRegCount);
-								}
-								else
-								{
-									fatal("Unimplemented User Element: dataClass:%d", userElements[i].dataClass);
-								}
-							}
-
-							/* Initialize the execution mask */
-							wavefront->sreg[SI_EXEC].as_int = 0xFFFFFFFF;
-							wavefront->sreg[SI_EXEC + 1].as_int = 0xFFFFFFFF;
-							wavefront->sreg[SI_EXECZ].as_int = 0;
-
-
 							/* Next work-item */
 							tid++;
 							lid++;
@@ -315,6 +275,44 @@ void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange)
 			fatal("%s: cannot load kernel code", __FUNCTION__);
 		wavefront->inst_buf_start = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
 		wavefront->inst_buf = kernel->bin_file->enc_dict_entry_southern_islands->sec_text_buffer.ptr;
+
+		/* Save work-group IDs in registers */
+		unsigned int user_sgpr = kernel->bin_file->enc_dict_entry_southern_islands->compute_pgm_rsrc2->user_sgpr;
+		wavefront->sreg[user_sgpr].as_int = wavefront->work_group->id_3d[0];
+		wavefront->sreg[user_sgpr + 1].as_int = wavefront->work_group->id_3d[1];
+		wavefront->sreg[user_sgpr + 2].as_int = wavefront->work_group->id_3d[2];
+
+		/* Initialize Constant Buffers */
+		unsigned int userElementCount = kernel->bin_file->enc_dict_entry_southern_islands->userElementCount;
+		struct si_bin_enc_user_element_t* userElements = kernel->bin_file->enc_dict_entry_southern_islands->userElements;
+		for (int i = 0; i < userElementCount; i++)
+		{
+			if (userElements[i].dataClass == IMM_CONST_BUFFER)
+			{
+				si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
+			}
+			else if (userElements[i].dataClass == IMM_UAV)
+			{
+				si_wavefront_init_sreg_with_cb(wavefront, userElements[i].startUserReg, userElements[i].userRegCount, userElements[i].apiSlot);
+			}
+			else if (userElements[i].dataClass == PTR_CONST_BUFFER_TABLE)
+			{
+				si_wavefront_init_sreg_with_uav_table(wavefront, userElements[i].startUserReg, userElements[i].userRegCount);
+			}
+			else if (userElements[i].dataClass == PTR_UAV_TABLE)
+			{
+				si_wavefront_init_sreg_with_uav_table(wavefront, userElements[i].startUserReg, userElements[i].userRegCount);
+			}
+			else
+			{
+				fatal("Unimplemented User Element: dataClass:%d", userElements[i].dataClass);
+			}
+		}
+
+		/* Initialize the execution mask */
+		wavefront->sreg[SI_EXEC].as_int = 0xFFFFFFFF;
+		wavefront->sreg[SI_EXEC + 1].as_int = 0xFFFFFFFF;
+		wavefront->sreg[SI_EXECZ].as_int = 0;
 	}
 
 	/* Debug */
