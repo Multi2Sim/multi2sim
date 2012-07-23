@@ -1251,43 +1251,50 @@ void m2s_signal_handler(int signum)
 
 void m2s_loop(void)
 {
-	int running;
+	int timing_running;
+	int emu_running;
 
 	while (!esim_finish)
 	{
-		/* Assume initially that no architecture has an active CPU context / GPU
-		 * ND-Range running on it. */
-		running = 0;
+		/* Assume initially that no architecture is doing any useful emulation
+		 * or timing simulation. */
+		emu_running = 0;
+		timing_running = 0;
 
 		/* x86 CPU simulation */
-		if (x86_emu_kind == x86_emu_kind_detailed)
-			running |= x86_cpu_run();
+		if (x86_emu_kind == x86_emu_kind_functional)
+			emu_running |= x86_emu_run();
 		else
-			x86_emu_run();
+			timing_running |= x86_cpu_run();
 
 		/* Evergreen GPU simulation */
-		if (evg_emu_kind == evg_emu_kind_detailed)
-			running |= evg_gpu_run();
+		if (evg_emu_kind == evg_emu_kind_functional)
+			emu_running |= evg_emu_run();
 		else
-			evg_emu_run();
+			timing_running |= evg_gpu_run();
 
 		/* Southern Islands GPU simulation */
-		if (si_emu_kind == si_emu_kind_detailed)
-			running |= si_gpu_run();
+		if (si_emu_kind == si_emu_kind_functional)
+			emu_running |= si_emu_run();
 		else
-			si_emu_run();
+			timing_running |= si_gpu_run();
 
 		/* arm CPU simulation */
-		if (arm_emu_kind == arm_emu_kind_detailed)
-			running |= arm_cpu_run();
+		if (arm_emu_kind == arm_emu_kind_functional)
+			emu_running |= arm_emu_run();
 		else
-			arm_emu_run();
+			timing_running |= arm_cpu_run();
 
 
 		/* Event-driven simulation. Only process events and advance to next global
 		 * simulation cycle if any architecture performed a useful timing simulation. */
-		if (running)
+		if (timing_running)
 			esim_process_events();
+
+		/* If neither functional or timing simulation was performed for any architecture,
+		 * it means that all guest contexts finished execution - simulation can end. */
+		if (!emu_running && !timing_running)
+			esim_finish = esim_finish_ctx;
 
 		/* Count loop iterations, and check for limit in simulation time only every
 		 * 128k iterations. This avoids a constant overhead of system calls. */

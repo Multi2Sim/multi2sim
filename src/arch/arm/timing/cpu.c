@@ -20,8 +20,9 @@
 #include <arm-timing.h>
 
 
-/* Run one iteration of the arm timing simulation loop */
+/* Run one iteration of the arm timing simulation loop.
+ * Return FALSE if there is no more simulation to perform. */
 int arm_cpu_run(void)
 {
-	return 1;
+	return 0;
 }
