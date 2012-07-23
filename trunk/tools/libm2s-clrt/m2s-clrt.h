@@ -23,6 +23,9 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <elf.h>
+
 #include <debug.h>
 #include <CL/cl.h>
 
@@ -84,59 +87,325 @@ extern char *m2s_clrt_err_param_note;
 
 
 
+/* 
+ * Private Fiber definitions 
+ */
+typedef void (*fiber_proc_t)(void);
+typedef void (*return_address_t)(void);
+
+struct fiber_t
+{
+	void *esp;
+	void *eip;
+	void *stack_bottom;
+	size_t stack_size;
+};
+
+void make_fiber(struct fiber_t *fiber, fiber_proc_t fiber_proc, int num_args, ...);
+void make_fiber_ex(struct fiber_t *fiber, fiber_proc_t fiber_proc, return_address_t return_proc, int arg_size, void *args);
+void switch_fiber(struct fiber_t *current, struct fiber_t *dest);
+void switch_fiber_cl(struct fiber_t *current, struct fiber_t *dest, void *reg_values);
+void exit_fiber(struct fiber_t *dest);
+
+
+
+
+/*
+ * Private ELF-related definitions 
+ */
+
+Elf32_Shdr *get_section_header(void *elf, char *name);
+void *get_inner_elf_addr(void *outer_elf);
+void *get_function_info(void *elf, const char *name, size_t **metadata, int *meta_size);
+
+
+
+
+/*
+ * Private OpenCL implementation definitions
+ */
+
+
+
+typedef void (*clrt_function_t)(void);
+typedef void (*clrt_barrier_t)(int option);
+
+enum clrt_param_type_t
+{
+	CLRT_TYPE_CHAR = 1,
+	CLRT_TYPE_SHORT = 2,
+	CLRT_TYPE_INT = 3,
+	CLRT_TYPE_LONG = 4,
+	CLRT_TYPE_FLOAT = 5,
+	CLRT_TYPE_DOUBLE = 6,
+	CLRT_TYPE_POINTER = 7,
+	CLRT_TYPE_CHAR2 = 8,
+	CLRT_TYPE_CHAR3 = 9,
+	CLRT_TYPE_CHAR4 = 10,
+	CLRT_TYPE_CHAR8 = 11,
+	CLRT_TYPE_CHAR16 = 12,
+	CLRT_TYPE_SHORT2 = 13,
+	CLRT_TYPE_SHORT3 = 14,
+	CLRT_TYPE_SHORT4 = 15,
+	CLRT_TYPE_SHORT8 = 16,
+	CLRT_TYPE_SHORT16 = 17,
+	CLRT_TYPE_INT2 = 18,
+	CLRT_TYPE_INT3 = 19,
+	CLRT_TYPE_INT4 = 20,
+	CLRT_TYPE_INT8 = 21,
+	CLRT_TYPE_INT16 = 22,
+	CLRT_TYPE_LONG2 = 23,
+	CLRT_TYPE_LONG3 = 24,
+	CLRT_TYPE_LONG4 = 25,
+	CLRT_TYPE_LONG8 = 26,
+	CLRT_TYPE_LONG16 = 27,
+	CLRT_TYPE_FLOAT2 = 28,
+	CLRT_TYPE_FLOAT3 = 29,
+	CLRT_TYPE_FLOAT4 = 30,
+	CLRT_TYPE_FLOAT8 = 31,
+	CLRT_TYPE_FLOAT16 = 32,
+	CLRT_TYPE_DOUBLE2 = 33,
+	CLRT_TYPE_DOUBLE3 = 34,
+	CLRT_TYPE_DOUBLE4 = 35,
+	CLRT_TYPE_DOUBLE8 = 36,
+	CLRT_TYPE_DOUBLE16 = 37
+};
+
+enum clrt_memory_t
+{
+	CLRT_MEM_VALUE = 0,
+	CLRT_MEM_LOCAL = 1,
+	CLRT_MEM_CONSTANT = 2,
+	CLRT_MEM_GLOBAL = 3
+};
+
+struct clrt_parameter_t
+{
+	enum clrt_param_type_t param_type;
+	enum clrt_memory_t mem_type;
+	int is_set;
+	int stack_offset;
+	int is_stack;
+	int reg_offset;
+	int size;
+};
+
+struct clrt_reg_param_t
+{
+	int32_t reg[4];
+};
+
+struct clrt_workitem_data_t
+{
+	int32_t workgroup_data; /* 0x60 (Not actually part of AMD runtime, padding_0) */
+	int32_t barrier_func; /*0x5c (function *) */
+	int32_t padding_1; /*0x58 */
+	int32_t work_dim; /* 0x54 */
+	int32_t group_global[4]; /* [0x50, 0x44] */
+	int32_t global_size[4]; /* [0x40, 0x34] */
+	int32_t local_size[4]; /* [0x30, 0x24] */
+	int32_t group_id[4]; /* [0x20, 0x14] */
+	int32_t global_id[4]; /* [0x10, 0x04] */
+};
+
+struct clrt_workgroup_data_t
+{
+	int num_done;
+	int num_items;
+	int cur_item;
+	struct fiber_t main_ctx;
+	struct fiber_t *cur_ctx;
+	struct fiber_t *workitems;
+	struct clrt_workitem_data_t **workitem_data;
+	size_t *stack_params;
+	char *all_stacks;
+	char *aligned_stacks;
+};
+
+struct clrt_workgroup_data_t *get_workgroup_data(); 
+
+struct clrt_execution_t
+{
+	struct _cl_kernel *kernel;
+	int dims;
+	size_t *global;
+	size_t *local;
+
+	pthread_mutex_t mutex;
+	int num_groups;
+	volatile int next_group;
+	size_t *group_starts;
+};
+
+struct clrt_buffer_list_t
+{
+	struct clrt_buffer_list_t *next;
+	void *aligned;
+	void *raw;
+};
+
+void *clrt_buffer_allocate(size_t size);
+void clrt_buffer_free(void *buffer);
+
+
+
+
+/*
+ * OpenCL reference counting and object verification definitions
+ */
+
+typedef void (*clrt_destroy_t)(void *);
+
+enum clrt_object_type_t
+{
+	CLRT_CONTEXT,
+	CLRT_COMMAND_QUEUE,
+	CLRT_MEM,
+	CLRT_PROGRAM,
+	CLRT_KERNEL,
+	CLRT_EVENT,
+	CLRT_SAMPLER
+};
+
+struct clrt_object_t
+{
+	struct clrt_object_t *next;
+	enum clrt_object_type_t type;
+	clrt_destroy_t destroy;
+	int refcount;
+	pthread_mutex_t reflock;
+	void *object;
+};
+
+struct clrt_object_t *clrt_object_create(void *object, enum clrt_object_type_t type, clrt_destroy_t destroy);
+struct clrt_object_t *clrt_object_enumerate(struct clrt_object_t *prev, enum clrt_object_type_t type);
+int clrt_change_refcount(void *object, int change, enum clrt_object_type_t type);
+struct clrt_object_t *clrt_object_find(void *object, struct clrt_object_t **prev_item);
+
+int clrt_object_verify(void *object, enum clrt_object_type_t type);
+int clrt_retain(void *object, enum clrt_object_type_t type, int err_code);
+int clrt_release(void *object, enum clrt_object_type_t type, int err_code);
+
+
+
+
+/*
+ * Private Command Queue Items
+ */
+
+typedef void (*queue_action_t)(void *data);
+
+struct clrt_queue_item_t
+{
+	struct clrt_queue_item_t *next;
+	void *data;
+	queue_action_t action;
+	cl_event done_event;
+	int num_wait_events;
+	cl_event *wait_events;
+};
+
+struct clrt_queue_item_t *clrt_queue_item_create(
+	struct _cl_command_queue *queue, 
+	void *data, 
+	queue_action_t action, 
+	cl_event *done, 
+	int num_wait, 
+	cl_event *waits);
+void clrt_command_queue_enqueue(struct _cl_command_queue *queue, struct clrt_queue_item_t *item);
+
+
+
+
+/*
+ * Event function declrations
+ */
+
+void clrt_event_set_status(struct _cl_event *event, int status);
+struct _cl_event *clrt_event_create(struct _cl_command_queue *queue);
+int clrt_event_wait_list_check(unsigned int num_events, struct _cl_event * const *event_list);
+
+
+
+
 /*
  * OpenCL Types
  */
 
 struct _cl_platform_id
 {
-	unsigned int id;
+	unsigned int empty;
 };
 
 
 struct _cl_device_id
 {
-	unsigned int id;
+	volatile int num_kernels;
+	volatile int num_done;
 
-	cl_platform_id platform;
+	volatile int num_cores;
+	pthread_t *threads;
+
+	pthread_mutex_t lock;
+	pthread_cond_t ready;
+	pthread_cond_t done;
+
+	struct clrt_execution_t *exec;
 };
 
 
 struct _cl_context
 {
-	unsigned int id;
+	int num_devices;
+	struct _cl_device_id **devices;
 };
 
 
 struct _cl_command_queue
 {
-	unsigned int id;
+	struct _cl_device_id *device;
+	struct clrt_queue_item_t *head;
+	struct clrt_queue_item_t *tail;
+	pthread_t queue_thread;
+	pthread_mutex_t lock;
+	pthread_cond_t cond_process;
+	volatile int process;
 };
 
 
 struct _cl_mem
 {
-	unsigned int id;
+	void *buffer;
+	size_t size;
 };
 
 
 struct _cl_program
 {
-	unsigned int id;
-
-	cl_context context;
+	void *elf_data;
+	size_t size;
 };
 
 
 struct _cl_kernel
 {
-	unsigned int id;
+	clrt_function_t function;
+	size_t *metadata;
+	unsigned int num_params;
+	struct clrt_parameter_t *param_info;
+	int stack_param_words;
+	size_t *stack_params;
+	struct clrt_reg_param_t *register_params;
 };
 
 
 struct _cl_event
 {
-	unsigned int id;
+	int changed;
+	int status;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+	struct _cl_command_queue *queue;
 };
 
 
@@ -144,7 +413,6 @@ struct _cl_sampler
 {
 	unsigned int id;
 };
-
 
 #endif
 

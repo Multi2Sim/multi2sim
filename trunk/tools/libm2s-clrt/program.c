@@ -19,8 +19,30 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/mman.h>
+#include <string.h>
 
 #include <m2s-clrt.h>
+
+
+
+
+
+/*
+ * Private Functions
+ */
+
+void clrt_program_free(void *data)
+{
+	struct _cl_program *program;
+
+	program = (struct _cl_program *) data;
+	munmap(program->elf_data, program->size);
+	free(program);
+}
+
+
+
 
 
 /*
@@ -48,24 +70,97 @@ cl_program clCreateProgramWithBinary(
 	cl_int *binary_status,
 	cl_int *errcode_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	int i;
+	struct _cl_program *program;
+
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tcontext = %p", context);
+	m2s_clrt_debug("\tnum_devices = %u", num_devices);
+	m2s_clrt_debug("\tdevice_list = %p", device_list);
+	m2s_clrt_debug("\tlengths = %p", lengths);
+	m2s_clrt_debug("\tbinaries = %p", binaries);
+	m2s_clrt_debug("\tbinary_status = %p", binary_status);
+	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
+
+	if (context == NULL)
+	{
+		if (errcode_ret != NULL)
+			*errcode_ret = CL_INVALID_CONTEXT;
+		return NULL;
+	}
+
+	if (device_list == NULL || num_devices == 0 || lengths == NULL || binaries == NULL)
+	{
+		if (errcode_ret != NULL)
+			*errcode_ret = CL_INVALID_VALUE;
+		return NULL;
+	}
+
+	/* Even though we don't support more than one device, we will in the future */
+	for (i = 0; i < num_devices; i++)
+	{
+		if (lengths[i] == 0 || binaries[i] == NULL)
+		{
+			if (errcode_ret != NULL)
+				*errcode_ret = CL_INVALID_VALUE;
+			if (binary_status != NULL)
+				binary_status[i] = CL_INVALID_VALUE;
+
+			return NULL;
+		}
+		if (device_list[i] == NULL)
+		{
+			if (errcode_ret != NULL)
+				*errcode_ret = CL_INVALID_DEVICE;
+			return NULL;
+		}
+	}
+
+	program = (struct _cl_program *) malloc(sizeof (struct _cl_program));
+	if (program == NULL)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	clrt_object_create(program, CLRT_PROGRAM, clrt_program_free);
+
+	program->elf_data = mmap(NULL, lengths[0], PROT_EXEC | PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (program->elf_data == NULL)
+		fatal("%s: out of memory", __FUNCTION__);
+	
+	program->size = lengths[0];
+	memcpy(program->elf_data, binaries[0], program->size);	
+
+	if (errcode_ret != NULL)
+		*errcode_ret = CL_SUCCESS;
+
+	if (binary_status != NULL)
+		binary_status[0] = CL_SUCCESS;
+
+	return program;
 }
 
 
 cl_int clRetainProgram(
 	cl_program program)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tprogram = %p", program);
+	
+	return clrt_retain(program, CLRT_PROGRAM, CL_INVALID_PROGRAM);
 }
 
 
 cl_int clReleaseProgram(
 	cl_program program)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tprogram = %p", program);
+
+	return clrt_release(program, CLRT_PROGRAM, CL_INVALID_PROGRAM);
 }
 
 
@@ -77,8 +172,17 @@ cl_int clBuildProgram(
 	void (*pfn_notify)(cl_program program , void *user_data),
 	void *user_data)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tprogram = %p", program);
+	m2s_clrt_debug("\tnum_devices = %u", num_devices);
+	m2s_clrt_debug("\tdevice_list = %p", device_list);
+	m2s_clrt_debug("\toptions = %p", options);
+	m2s_clrt_debug("\tcall back = %p", pfn_notify);
+	m2s_clrt_debug("\tuser_data = %p", user_data);
+
+	/* We only support loading binaries, so this shouldn't ever fail. */
+	return CL_SUCCESS;
 }
 
 

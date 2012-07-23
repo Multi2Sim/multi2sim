@@ -22,6 +22,31 @@
 
 #include <m2s-clrt.h>
 
+extern struct _cl_pltaform_id *m2s_platform;
+extern struct _cl_device_id *m2s_device;
+
+
+
+
+/*
+ * Private Functions
+ */
+
+void clrt_context_free(void *data)
+{
+	struct _cl_context *context; 
+
+	context = (struct _cl_context *) data;
+	free(context->devices);
+	free(context);
+}
+
+
+
+
+/*
+ * Public Functions
+ */
 
 cl_context clCreateContext(
 	const cl_context_properties *properties,
@@ -31,8 +56,63 @@ cl_context clCreateContext(
 	void *user_data,
 	cl_int *errcode_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	int i;
+	struct _cl_context *context;
+
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tproperties = %x", properties);
+	m2s_clrt_debug("\tnum_devices = %u", num_devices);
+	m2s_clrt_debug("\tdevices = %p", devices);
+	m2s_clrt_debug("\tcallback = %p", pfn_notify);
+	m2s_clrt_debug("\tuser_data = %p", user_data);
+	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) properties, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ(num_devices, 1);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) pfn_notify, 0);
+	EVG_OPENCL_ARG_NOT_SUPPORTED_NEQ((int) user_data, 0);
+
+	if (m2s_platform == NULL)
+	{
+		if (errcode_ret != NULL)
+			*errcode_ret = CL_INVALID_PLATFORM;		
+		return NULL;
+	}
+
+	if (devices == NULL || num_devices == 0)
+	{
+		if (errcode_ret != NULL)
+			*errcode_ret = CL_INVALID_VALUE;
+		return NULL;
+	}
+
+	if (*devices != m2s_device)
+	{
+		if (errcode_ret != NULL)
+			*errcode_ret = CL_INVALID_DEVICE;
+		return NULL;
+	}
+	
+
+	context = (struct _cl_context *) malloc(sizeof (struct _cl_context));
+	if (context == NULL)
+		fatal("%s: out of memory", __FUNCTION__);
+	clrt_object_create(context, CLRT_CONTEXT, clrt_context_free);
+
+
+	context->num_devices = 1;
+	context->devices = (struct _cl_device_id **) malloc(sizeof (struct _cl_device_id *) * context->num_devices);
+	if (context->devices == NULL)
+		fatal("%s: out of memory", __FUNCTION__);
+
+	for (i = 0; i < context->num_devices; i++)
+		context->devices[i] = devices[i];
+
+	if (errcode_ret != NULL)
+		*errcode_ret = CL_SUCCESS;
+
+	return context;
 }
 
 
@@ -43,24 +123,50 @@ cl_context clCreateContextFromType(
 	void *user_data,
 	cl_int *errcode_ret)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tproperties = %x", properties);
+	m2s_clrt_debug("\tdevice_type = %x", device_type);
+	m2s_clrt_debug("\tcallback = %p", pfn_notify);
+	m2s_clrt_debug("\tuser_data = %p", user_data);
+	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
+
+	if (device_type == CL_DEVICE_TYPE_GPU || device_type == CL_DEVICE_TYPE_ACCELERATOR)
+	{
+		if (errcode_ret != NULL)
+			*errcode_ret = CL_DEVICE_NOT_FOUND;
+		return NULL;
+	}
+
+	if (device_type != CL_DEVICE_TYPE_CPU && device_type != CL_DEVICE_TYPE_DEFAULT && device_type != CL_DEVICE_TYPE_ALL)
+	{
+		if (errcode_ret != NULL)
+			*errcode_ret = CL_INVALID_DEVICE_TYPE;
+	}
+
+	return clCreateContext(properties, 1, &m2s_device, NULL, NULL, errcode_ret);
 }
 
 
 cl_int clRetainContext(
 	cl_context context)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tcontext = %p", context);
+
+	return clrt_retain(context, CLRT_CONTEXT, CL_INVALID_CONTEXT);
 }
 
 
 cl_int clReleaseContext(
 	cl_context context)
 {
-	__M2S_CLRT_NOT_IMPL__
-	return 0;
+	/* Debug */
+	m2s_clrt_debug("call '%s'", __FUNCTION__);
+	m2s_clrt_debug("\tcontext = %p", context);
+
+	return clrt_release(context, CLRT_CONTEXT, CL_INVALID_CONTEXT);
 }
 
 
