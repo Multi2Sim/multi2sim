@@ -447,8 +447,9 @@ extern enum arm_emu_kind_t
 } arm_emu_kind;
 
 void arm_emu_init(void);
-void arm_emu_run(void);
 void arm_emu_done(void);
+
+int arm_emu_run(void);
 
 void arm_emu_process_events_schedule();
 

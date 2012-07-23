@@ -1320,7 +1320,7 @@ void evg_emu_done(void);
 
 void evg_emu_dump_summary(FILE *f);
 
-void evg_emu_run(void);
+int evg_emu_run(void);
 
 void evg_emu_libopencl_redirect(struct x86_ctx_t *ctx, char *path, int size);
 void evg_emu_libopencl_failed(int pid);

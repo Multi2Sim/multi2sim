@@ -831,15 +831,15 @@ void x86_emu_process_events()
  */
 
 
-/* Run one iteration of the x86 emulation loop */
-void x86_emu_run(void)
+/* Run one iteration of the x86 emulation loop.
+ * Return FALSE if there is no more simulation to perform. */
+int x86_emu_run(void)
 {
 	struct x86_ctx_t *ctx;
 
-	/* Stop if all contexts finished */
-	/* FIXME - don't finish, just exit - what if other CPU contexts are still running? */
+	/* Stop if there is no context running */
 	if (x86_emu->finished_list_count >= x86_emu->context_list_count)
-		esim_finish = esim_finish_ctx;
+		return 0;
 
 	/* Stop if maximum number of CPU instructions exceeded */
 	if (x86_emu_max_inst && x86_emu->inst_count >= x86_emu_max_inst)
@@ -851,7 +851,7 @@ void x86_emu_run(void)
 
 	/* Stop if any previous reason met */
 	if (esim_finish)
-		return;
+		return 0;
 
 	/* Run an instruction from every running process */
 	for (ctx = x86_emu->running_list_head; ctx; ctx = ctx->running_list_next)
@@ -872,4 +872,7 @@ void x86_emu_run(void)
 
 	/* Process list of suspended contexts */
 	x86_emu_process_events();
+
+	/* Return TRUE */
+	return 1;
 }
