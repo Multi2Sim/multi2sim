@@ -546,6 +546,23 @@ struct si_bin_enc_user_element_t
 	unsigned int userRegCount;
 };
 
+/* COMPUTE_PGM_RSRC2 */
+struct si_bin_compute_pgm_rsrc2_t
+{
+	unsigned int scrach_en 		: 1;
+	unsigned int user_sgpr 		: 5;
+	unsigned int trap_present 	: 1;
+	unsigned int tgid_x_en 		: 1;
+	unsigned int tgid_y_en 		: 1;
+	unsigned int tgid_z_en 		: 1;
+	unsigned int tg_size_en 	: 1;
+	unsigned int tidig_comp_cnt : 2;
+	unsigned int excp_en_msb 	: 2;
+	unsigned int lds_size 		: 9;
+	unsigned int excp_en 		: 7;
+	unsigned int 				: 1;
+};
+
 /* Encoding dictionary entry */
 struct si_bin_enc_dict_entry_t
 {
@@ -572,6 +589,8 @@ struct si_bin_enc_dict_entry_t
 
 	unsigned int userElementCount;
 	struct si_bin_enc_user_element_t userElements[16];
+
+	struct si_bin_compute_pgm_rsrc2_t *compute_pgm_rsrc2;
 };
 
 
