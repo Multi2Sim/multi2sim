@@ -57,8 +57,28 @@ static long long arm_inst_freq[ARM_INST_COUNT];
  * Register Load/Store Operations
  */
 
+unsigned int arm_isa_op2_get(unsigned int op2 , enum arm_isa_op2_cat_t cat)
+{
+	unsigned int imm;
+	unsigned int rotate;
+	unsigned int op_val;
+	if (cat == immd)
+	{
+		imm = (op2 & (0x000000ff));
+		rotate = ((op2 >> 8) & 0x0000000f);
+		op_val = (arm_rotr(imm, rotate));
+	}
+
+	else if (cat == reg)
+	{
+	}
+
+	return (op_val);
+}
+
 void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no, unsigned int value)
 {
+	arm_isa_inst_debug("  r%d <= %d\n", reg_no, value);
 	switch (reg_no)
 	{
 	case (r0):

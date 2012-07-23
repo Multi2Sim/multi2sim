@@ -496,8 +496,8 @@ void arm_inst_dump_FP(char **inst_str_ptr, int *inst_str_size,
 void arm_inst_dump_RT(char **inst_str_ptr, int *inst_str_size,
 	struct arm_inst_t *inst, enum arm_cat_enum cat);
 
-
-
+unsigned int arm_rotl(unsigned int value, unsigned int shift);
+unsigned int arm_rotr(unsigned int value, unsigned int shift);
 
 /*
  * Arm Disassembler
