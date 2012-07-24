@@ -648,7 +648,7 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			continue;
 		}
 
-		/* GPU configuration file */
+		/* Evergreen GPU configuration file */
 		if (!strcmp(argv[argi], "--evg-config"))
 		{
 			m2s_need_argument(argc, argv, argi);
@@ -797,6 +797,15 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			si_isa_debug_file_name = argv[++argi];
 			continue;
 		}
+
+		/* Southern Islands GPU configuration file */
+		if (!strcmp(argv[argi], "--si-config"))
+		{
+			m2s_need_argument(argc, argv, argi);
+			si_gpu_config_file_name = argv[++argi];
+			continue;
+		}
+
 
 		/* Souther Islands disassembler */
 		if (!strcmp(argv[argi], "--si-disasm"))
@@ -1060,6 +1069,20 @@ static void m2s_read_command_line(int *argc_ptr, char **argv)
 			fatal(msg, "--evg-max-cycles");
 		if (*evg_gpu_report_file_name)
 			fatal(msg, "--evg-report");
+	}
+
+	/* Options that only make sense for GPU detailed simulation */
+	if (si_emu_kind == si_emu_kind_functional)
+	{
+		char *msg = "option '%s' not valid for functional GPU simulation.\n"
+			"\tPlease use option '--evg-sim detailed' as well.\n";
+
+		if (*si_gpu_config_file_name)
+			fatal(msg, "--si-config");
+		if (si_emu_max_cycles)
+			fatal(msg, "--si-max-cycles");
+		if (*si_gpu_report_file_name)
+			fatal(msg, "--si-report");
 	}
 
 	/* Options that only make sense when there is at least one architecture
@@ -1447,6 +1470,10 @@ int main(int argc, char **argv)
 	/* Finalization of detailed GPU simulation */
 	if (evg_emu_kind == evg_emu_kind_detailed)
 		evg_gpu_done();
+
+	/* Finalization of detailed GPU simulation */
+	if (si_emu_kind == si_emu_kind_detailed)
+		si_gpu_done();
 
 	/* Finalization */
 	net_done();

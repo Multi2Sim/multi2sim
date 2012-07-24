@@ -35,7 +35,7 @@ struct si_wavefront_pool_t *si_wavefront_pool_create()
 	if (!wavefront_pool->wavefronts)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	wavefront_pool->num_wavefronts = 0;
+	wavefront_pool->wavefront_count = 0;
 
 	/* Return */
 	return wavefront_pool;
@@ -51,42 +51,51 @@ void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool
 	struct si_work_group_t *work_group)
 {
 	struct si_ndrange_t *ndrange = work_group->ndrange;
-	struct si_compute_unit_t *compute_unit = wavefront_pool->compute_unit;
 	struct si_wavefront_t *wavefront;
-	int i, j;
+	int wg_id_in_wfp;
+	int first_wavefront;
+	int i;
 
-	/* Insert wavefronts into a wavefront pool */
+	/* Determine starting ID for wavefronts in the wavefront pool */
+	wg_id_in_wfp = work_group->id_in_compute_unit/si_gpu_num_wavefront_pools;
+	first_wavefront = wg_id_in_wfp * ndrange->wavefronts_per_work_group;
+
+	/* Insert wavefronts into the wavefront pool */
 	for (i = 0; i < ndrange->wavefronts_per_work_group; i++) 
 	{
-		assert(wavefront_pool->num_wavefronts < si_gpu_max_wavefronts_per_wavefront_pool);
 		wavefront = work_group->wavefronts[i];
-		for (j = 0; j < si_gpu_max_wavefronts_per_wavefront_pool; j++)
-		{
-			if (!wavefront_pool->wavefronts[j])
-			{
-				wavefront->ready = 1;
-				wavefront_pool->wavefronts[j] = wavefront;
-				wavefront_pool->num_wavefronts++;
-				/*printf("  inserting wavefront %d from wg %d into cu %d, "
-					"wavefront_pool %d (%d)\n", wavefront->id, work_group->id, 
-					compute_unit->id, wavefront_pool->id, 
-					wavefront_pool->num_wavefronts);
-					*/
-				break;
-			}
-		}
-		assert(j < si_gpu_max_wavefronts_per_wavefront_pool);
-	}
+		wavefront->id_in_wavefront_pool = first_wavefront + i;
+		assert(!wavefront_pool->wavefronts[wavefront->id_in_wavefront_pool]);
 
-	/* If wavefront pool reached its maximum load, remove it from 'wavefront_pool_ready' list.
-	 * Otherwise, move it to the end of the 'wavefront_pool_ready' list. */
-	assert(DOUBLE_LINKED_LIST_MEMBER(compute_unit, wavefront_pool_ready, wavefront_pool));
-	DOUBLE_LINKED_LIST_REMOVE(compute_unit, wavefront_pool_ready, wavefront_pool);
-	if (wavefront_pool->num_wavefronts < si_gpu->wavefronts_per_wavefront_pool - 
-		ndrange->wavefronts_per_work_group);
-		DOUBLE_LINKED_LIST_INSERT_TAIL(compute_unit, wavefront_pool_ready, wavefront_pool);
-	
-	/* If this is the first scheduled work-group, insert to 'wavefront_pool_busy' list. */
-	if (!DOUBLE_LINKED_LIST_MEMBER(compute_unit, wavefront_pool_busy, wavefront_pool))
-		DOUBLE_LINKED_LIST_INSERT_TAIL(compute_unit, wavefront_pool_busy, wavefront_pool);
+		wavefront->ready = 1;
+		wavefront->wavefront_pool = wavefront_pool;
+
+		wavefront_pool->wavefront_count++;
+		wavefront_pool->wavefronts[wavefront->id_in_wavefront_pool] = wavefront;
+	}
+}
+
+void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
+	struct si_work_group_t *work_group)
+{
+	struct si_ndrange_t *ndrange = work_group->ndrange;
+	struct si_wavefront_t *wavefront;
+	int wf_id_in_wfp;
+	int i;
+
+	/* Reset mapped wavefronts */
+	assert(wavefront_pool->wavefront_count >= ndrange->wavefronts_per_work_group);
+
+	for (i = 0; i < ndrange->wavefronts_per_work_group; i++) 
+	{
+		wavefront = work_group->wavefronts[i];
+		wf_id_in_wfp = wavefront->id_in_wavefront_pool;
+
+		/* TODO Add complete flag to slots in wavefront pool */
+		/* TODO Check that all slots are complete before setting to NULL */
+		assert(wavefront_pool->wavefronts[wf_id_in_wfp]);
+		assert(wavefront_pool->wavefronts[wf_id_in_wfp]->id == wavefront->id);
+		wavefront_pool->wavefronts[wf_id_in_wfp] = NULL;
+	}
+	wavefront_pool->wavefront_count -= ndrange->wavefronts_per_work_group;
 }

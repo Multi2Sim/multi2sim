@@ -23,6 +23,7 @@
 #include <mem-system.h>
 #include <x86-timing.h>
 #include <evergreen-timing.h>
+#include <southern-islands-timing.h>
 
 
 /*
@@ -327,8 +328,20 @@ static void mem_config_gpu_default(struct config_t *config)
 	const int num_MMs = 4;
 
 	/* Not if we doing GPU functional simulation */
-	if (evg_emu_kind == evg_emu_kind_functional)
-		return;
+	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	{
+		if (si_emu_kind == si_emu_kind_functional)
+			return;
+	}
+	else if (x86_emu->gpu_emulator == gpu_emulator_evg)
+	{
+		if (evg_emu_kind == evg_emu_kind_functional)
+			return;
+	}
+	else
+	{
+		fatal("%s: invalid emulator\n", __FUNCTION__);		
+	}
 
 	/* Cache geometry for L1 */
 	strcpy(section, "CacheGeometry gpu-geo-l1");
@@ -350,20 +363,41 @@ static void mem_config_gpu_default(struct config_t *config)
 	assert(num_MMs == 4);
 
 	/* L1 caches and entries */
-	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	if (x86_emu->gpu_emulator == gpu_emulator_si)
 	{
-		snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
-		config_write_string(config, section, "Type", "Cache");
-		config_write_string(config, section, "Geometry", "gpu-geo-l1");
-		config_write_string(config, section, "LowNetwork", "gpu-net-l1-l2");
-		/* TODO Make this dynamic */
-		config_write_string(config, section, "LowModules", "gpu-l2-0 gpu-l2-1 gpu-l2-2 gpu-l2-3");
+		SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+		{
+			snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
+			config_write_string(config, section, "Type", "Cache");
+			config_write_string(config, section, "Geometry", "gpu-geo-l1");
+			config_write_string(config, section, "LowNetwork", "gpu-net-l1-l2");
+			/* TODO Make this dynamic */
+			config_write_string(config, section, "LowModules", "gpu-l2-0 gpu-l2-1 gpu-l2-2 gpu-l2-3");
 
-		snprintf(section, sizeof section, "Entry gpu-cu-%d", compute_unit_id);
-		snprintf(str, sizeof str, "gpu-l1-%d", compute_unit_id);
-		config_write_string(config, section, "Type", "GPU");
-		config_write_int(config, section, "ComputeUnit", compute_unit_id);
-		config_write_string(config, section, "Module", str);
+			snprintf(section, sizeof section, "Entry gpu-cu-%d", compute_unit_id);
+			snprintf(str, sizeof str, "gpu-l1-%d", compute_unit_id);
+			config_write_string(config, section, "Type", "GPU");
+			config_write_int(config, section, "ComputeUnit", compute_unit_id);
+			config_write_string(config, section, "Module", str);
+		}
+	}
+	else
+	{
+		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+		{
+			snprintf(section, sizeof section, "Module gpu-l1-%d", compute_unit_id);
+			config_write_string(config, section, "Type", "Cache");
+			config_write_string(config, section, "Geometry", "gpu-geo-l1");
+			config_write_string(config, section, "LowNetwork", "gpu-net-l1-l2");
+			/* TODO Make this dynamic */
+			config_write_string(config, section, "LowModules", "gpu-l2-0 gpu-l2-1 gpu-l2-2 gpu-l2-3");
+
+			snprintf(section, sizeof section, "Entry gpu-cu-%d", compute_unit_id);
+			snprintf(str, sizeof str, "gpu-l1-%d", compute_unit_id);
+			config_write_string(config, section, "Type", "GPU");
+			config_write_int(config, section, "ComputeUnit", compute_unit_id);
+			config_write_string(config, section, "Module", str);
+		}
 	}
 
 	/* L2 caches */
@@ -1179,6 +1213,7 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	char *section;
 	char *value;
 	char *entry_name;
+	int num_compute_units;
 
 	char buf[MAX_STRING_SIZE];
 
@@ -1188,7 +1223,10 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	} *entry, *entry_list;
 
 	/* Allocate entry list */
-	entry_list = calloc(evg_gpu_num_compute_units, sizeof(struct entry_t));
+	if (x86_emu->gpu_emulator == gpu_emulator_si)
+		entry_list = calloc(si_gpu_num_compute_units, sizeof(struct entry_t));
+	else
+		entry_list = calloc(evg_gpu_num_compute_units, sizeof(struct entry_t));
 	if (!entry_list)
 		fatal("%s: out of memory", __FUNCTION__);
 
@@ -1216,7 +1254,12 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 				mem_config_file_name, entry_name);
 
 		/* Check bounds */
-		if (compute_unit_id >= evg_gpu_num_compute_units)
+		if (x86_emu->gpu_emulator == gpu_emulator_si)
+			num_compute_units = si_gpu_num_compute_units;
+		else
+			num_compute_units = evg_gpu_num_compute_units;
+
+		if (compute_unit_id >= num_compute_units)
 		{
 			config_var_allow(config, section, "Module");
 			warning("%s: entry %s ignored.\n%s",
@@ -1239,30 +1282,70 @@ static void mem_config_read_gpu_entries(struct config_t *config)
 	}
 
 	/* Do not continue if we are doing GPU functional simulation */
-	if (evg_emu_kind == evg_emu_kind_functional)
-		goto out;
+	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	{
+		if (si_emu_kind == si_emu_kind_functional)
+			goto out;
+	}
+	else
+	{
+		if (evg_emu_kind == evg_emu_kind_functional)
+			goto out;
+	}
 
 	/* Assign entry modules */
 	mem_debug("Assigning GPU entries to memory system:\n");
-	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	if (x86_emu->gpu_emulator == gpu_emulator_si)
 	{
-		/* Check that entry was set */
-		entry = &entry_list[compute_unit_id];
-		if (!*entry->mod_name)
-			fatal("%s: no entry given for GPU compute unit %d",
-				mem_config_file_name, compute_unit_id);
+		SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+		{
+			/* Check that entry was set */
+			entry = &entry_list[compute_unit_id];
+			if (!*entry->mod_name)
+				fatal("%s: no entry given for GPU compute unit %d",
+					mem_config_file_name, compute_unit_id);
 
-		/* Look for module */
-		snprintf(buf, sizeof buf, "Module %s", entry->mod_name);
-		if (!config_section_exists(config, buf))
-			fatal("%s: invalid entry for compute unit %d",
-				mem_config_file_name, compute_unit_id);
+			/* Look for module */
+			snprintf(buf, sizeof buf, "Module %s", entry->mod_name);
+			if (!config_section_exists(config, buf))
+				fatal("%s: invalid entry for compute unit %d",
+					mem_config_file_name, compute_unit_id);
 
-		/* Assign module */
-		mod = config_read_ptr(config, buf, "ptr", NULL);
-		assert(mod);
-		evg_gpu->compute_units[compute_unit_id]->global_memory = mod;
-		mem_debug("\tGPU compute unit %d -> %s\n", compute_unit_id, mod->name);
+			/* Assign module */
+			mod = config_read_ptr(config, buf, "ptr", NULL);
+			assert(mod);
+			if (x86_emu->gpu_emulator == gpu_emulator_si)
+				si_gpu->compute_units[compute_unit_id]->global_memory = mod;
+			else
+				evg_gpu->compute_units[compute_unit_id]->global_memory = mod;
+			mem_debug("\tGPU compute unit %d -> %s\n", compute_unit_id, mod->name);
+		}
+	}
+	else 
+	{
+		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+		{
+			/* Check that entry was set */
+			entry = &entry_list[compute_unit_id];
+			if (!*entry->mod_name)
+				fatal("%s: no entry given for GPU compute unit %d",
+					mem_config_file_name, compute_unit_id);
+
+			/* Look for module */
+			snprintf(buf, sizeof buf, "Module %s", entry->mod_name);
+			if (!config_section_exists(config, buf))
+				fatal("%s: invalid entry for compute unit %d",
+					mem_config_file_name, compute_unit_id);
+
+			/* Assign module */
+			mod = config_read_ptr(config, buf, "ptr", NULL);
+			assert(mod);
+			if (x86_emu->gpu_emulator == gpu_emulator_si)
+				si_gpu->compute_units[compute_unit_id]->global_memory = mod;
+			else
+				evg_gpu->compute_units[compute_unit_id]->global_memory = mod;
+			mem_debug("\tGPU compute unit %d -> %s\n", compute_unit_id, mod->name);
+		}
 	}
 
 	/* Debug */
@@ -1467,8 +1550,18 @@ static void mem_config_check_disjoint(void)
 	int thread;
 
 	/* No need if we do not have both CPU and GPU detailed simulation */
-	if (x86_emu_kind == x86_emu_kind_functional || evg_emu_kind == evg_emu_kind_functional)
+	if (x86_emu_kind == x86_emu_kind_functional) 
 		return;
+	if (x86_emu->gpu_emulator == gpu_emulator_si)
+	{
+		if (si_emu_kind == si_emu_kind_functional) 
+			return;
+	}
+	else
+	{
+		if (evg_emu_kind == evg_emu_kind_functional)
+			return;
+	}
 
 	/* Color CPU modules */
 	X86_CORE_FOR_EACH X86_THREAD_FOR_EACH
@@ -1478,11 +1571,25 @@ static void mem_config_check_disjoint(void)
 	}
 
 	/* Check color of GPU modules */
-	EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	if (x86_emu->gpu_emulator == gpu_emulator_si)
 	{
-		if (mem_config_check_mod_color(evg_gpu->compute_units[compute_unit_id]->global_memory, 1))
-			fatal("%s: non-disjoint CPU/GPU memory hierarchies",
-				mem_config_file_name);
+		SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+		{
+			if (mem_config_check_mod_color(
+				si_gpu->compute_units[compute_unit_id]->global_memory, 1))
+				fatal("%s: non-disjoint CPU/GPU memory hierarchies",
+					mem_config_file_name);
+		}
+	}
+	else
+	{
+		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+		{
+			if (mem_config_check_mod_color(
+				evg_gpu->compute_units[compute_unit_id]->global_memory, 1))
+				fatal("%s: non-disjoint CPU/GPU memory hierarchies",
+					mem_config_file_name);
+		}
 	}
 }
 
@@ -1568,10 +1675,23 @@ static void mem_config_calculate_mod_levels(void)
 	}
 
 	/* Check color of GPU modules */
-	if (evg_emu_kind == evg_emu_kind_detailed)
+	if (x86_emu->gpu_emulator == gpu_emulator_si)
 	{
-		EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-			mem_config_set_mod_level(evg_gpu->compute_units[compute_unit_id]->global_memory, 1);
+		if (si_emu_kind == si_emu_kind_detailed)
+		{
+			SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+				mem_config_set_mod_level(
+					si_gpu->compute_units[compute_unit_id]->global_memory, 1);
+		}
+	}
+	else
+	{
+		if (evg_emu_kind == evg_emu_kind_detailed)
+		{
+			EVG_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+				mem_config_set_mod_level(
+					evg_gpu->compute_units[compute_unit_id]->global_memory, 1);
+		}
 	}
 
 	/* Debug */
