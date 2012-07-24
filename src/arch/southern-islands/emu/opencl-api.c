@@ -1441,6 +1441,7 @@ void si_opencl_clWaitForEvents_wakeup(struct x86_ctx_t *ctx, void *data)
 	{
 		/* Return success */
 		si_opencl_api_return(ctx, 0);
+		si_opencl_debug("  All events completed.\n");
 		return;
 	}
 
@@ -1457,8 +1458,11 @@ void si_opencl_clWaitForEvents_wakeup(struct x86_ctx_t *ctx, void *data)
 				si_opencl_object_event, event_id);
 
 	/* Move to the next event in the list */
-	argv->event_list++;
-	argv->num_events--;
+	argv->event_list = argv->event_list + sizeof(struct si_opencl_event_t);
+	argv->num_events = argv->num_events - 1;
+
+	si_opencl_debug("  next num_events=0x%x, event_list=0x%x\n",
+				argv->num_events, argv->event_list);
 
 	/* Suspend context until event is complete */
 	x86_ctx_suspend(ctx, si_opencl_event_can_wakeup, event,
@@ -1537,13 +1541,17 @@ int si_opencl_clReleaseEvent_impl(struct x86_ctx_t *ctx, int *argv)
 	struct si_opencl_event_t *event;
 
 	si_opencl_debug("  event=0x%x\n", event_id);
+
 	event = si_opencl_repo_get_object(si_emu->opencl_repo,
 			si_opencl_object_event, event_id);
 
 	/* Release event */
 	assert(event->ref_count > 0);
-	if (!--event->ref_count)
+	if (!event->ref_count)
 		si_opencl_event_free(event);
+
+	/* Return success */
+	si_opencl_api_return(ctx, 0);
 
 	/* Return success */
 	return 0;

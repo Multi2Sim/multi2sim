@@ -65,8 +65,9 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 
 void si_ndrange_free(struct si_ndrange_t *ndrange)
 {
-	/* Set event status to complete */
-	ndrange->event->status = SI_OPENCL_EVENT_STATUS_COMPLETE;
+	/* Set event status to complete if an event was set. */
+	if(ndrange->event)
+		ndrange->event->status = SI_OPENCL_EVENT_STATUS_COMPLETE;
 
 	int i;
 
