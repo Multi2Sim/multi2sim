@@ -82,6 +82,10 @@ struct si_uop_t
 	/* Witness memory accesses */
 	int global_mem_witness;
 	int local_mem_witness;
+	
+	/* Last memory accesses */
+	uint32_t global_mem_access_addr;
+	uint32_t global_mem_access_size;
 
 	/* Per stream-core data. This space is dynamically allocated for an uop.
 	 * It should be always the last field of the structure. */
@@ -134,14 +138,8 @@ struct si_wavefront_pool_t
 	int id;
 
 	/* List of currently mapped wavefronts */
-	int num_wavefronts;
+	int wavefront_count;
 	struct si_wavefront_t **wavefronts;
-
-	/* Double linked list of wavefront pools */
-	struct si_wavefront_pool_t *wavefront_pool_ready_list_prev;
-	struct si_wavefront_pool_t *wavefront_pool_ready_list_next;
-	struct si_wavefront_pool_t *wavefront_pool_busy_list_prev;
-	struct si_wavefront_pool_t *wavefront_pool_busy_list_next;
 
 	/* Compute unit */
 	struct si_compute_unit_t *compute_unit;
@@ -157,8 +155,6 @@ struct si_branch_unit_t
 	long long wavefront_count;
 	long long cycle;
 	long long inst_count;
-	long long inst_slot_count;
-	long long local_mem_slot_count;
 };
 
 struct si_scalar_unit_t
@@ -167,7 +163,7 @@ struct si_scalar_unit_t
 	struct si_uop_t *exec_buffer;     /* Uop from read to execute stage */
 	struct si_uop_t *mem_buffer;      /* Uop from read to mem stage */
 	struct linked_list_t *mem_queue;  /* Queue for outstanding memory operations */
-	struct heap_t *event_queue;       /* Events for instruction execution */
+	struct heap_t *exec_queue;       /* Events for instruction execution */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -175,8 +171,22 @@ struct si_scalar_unit_t
 	long long wavefront_count;
 	long long cycle;
 	long long inst_count;
-	long long inst_slot_count;
-	long long local_mem_slot_count;
+};
+
+struct si_vector_mem_unit_t
+{
+	struct si_uop_t *inst_buffer;     /* Uop from decode to read stage */
+	struct si_uop_t *exec_buffer;     /* Uop from read to execute stage */
+	struct si_uop_t *mem_buffer;      /* Uop from read to mem stage */
+	struct linked_list_t *mem_queue;  /* Queue for outstanding memory operations */
+	struct heap_t *exec_queue;       /* Events for instruction execution */
+
+	struct si_compute_unit_t *compute_unit;
+
+	/* Statistics */
+	long long wavefront_count;
+	long long cycle;
+	long long inst_count;
 };
 
 struct si_simd_t
@@ -229,12 +239,12 @@ struct si_compute_unit_t
 	/* Hardware structures */
 	unsigned int num_wavefront_pools;
 	struct si_wavefront_pool_t **wavefront_pools;
+	struct si_fetch_buffer_t **fetch_buffers;
 	struct si_simd_t **simds;
 	/* TODO Make these into a configurable number of structures */
 	struct si_scalar_unit_t scalar_unit;
 	struct si_branch_unit_t branch_unit;
-
-	struct si_fetch_buffer_t **fetch_buffers;
+	struct si_vector_mem_unit_t vector_mem_unit;
 
 	/* Statistics */
 	long long cycle;
@@ -245,10 +255,8 @@ struct si_compute_unit_t
 	long long scalar_mem_inst_count;
 	long long vector_alu_inst_count;
 	long long vector_mem_inst_count;
-
-	long long inst_slot_count;
-	long long local_mem_slot_count;
-	long long global_mem_write_count;
+	long long local_mem_inst_count;
+	long long global_mem_inst_count;
 
 	/* List of currently mapped work-groups */
 	int work_group_count;
@@ -267,6 +275,8 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit);
 struct si_wavefront_pool_t *si_wavefront_pool_create();
 void si_wavefront_pool_free(struct si_wavefront_pool_t *wavefront_pool);
 void si_wavefront_pool_map_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
+	struct si_work_group_t *work_group);
+void si_wavefront_pool_unmap_wavefronts(struct si_wavefront_pool_t *wavefront_pool, 
 	struct si_work_group_t *work_group);
 
 
@@ -434,6 +444,8 @@ struct si_gpu_t
 
 	/* List of deleted instructions */
 	struct linked_list_t *trash_uop_list;
+
+	long long int last_complete_cycle;
 };
 
 extern struct si_gpu_t *si_gpu;
@@ -463,5 +475,6 @@ int si_gpu_run(void);
 
 void si_simd_run(struct si_simd_t *simd);
 void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit);
+void si_vector_mem_run(struct si_vector_mem_unit_t *vector_mem);
 
 #endif
