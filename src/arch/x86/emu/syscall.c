@@ -872,6 +872,64 @@ static int x86_sys_execve_impl(struct x86_ctx_t *ctx)
 
 
 /*
+ * System call 'chdir' (code 12)
+ */
+
+static int x86_sys_chdir_impl(struct x86_ctx_t *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+	struct x86_loader_t *loader = ctx->loader;
+	struct mem_t *mem = ctx->mem;
+
+	char path[MAX_STRING_SIZE];
+	char old_host_path[MAX_STRING_SIZE];
+
+	unsigned int path_ptr;
+
+	int length;
+	int err;
+
+	/* Arguments */
+	path_ptr = regs->ebx;
+	x86_sys_debug("  path_ptr=0x%x\n", path_ptr);
+
+	/* Read path */
+	length = mem_read_string(mem, path_ptr, sizeof path, path);
+	if (length >= sizeof path)
+		fatal("%s: buffer 'path' too small", __FUNCTION__);
+	x86_sys_debug("  path='%s'\n", path);
+
+	/* Save old host path */
+	if (!getcwd(old_host_path, sizeof old_host_path))
+		fatal("%s: buffer 'old_host_path' too small", __FUNCTION__);
+
+	/* Change host path to guest working directory */
+	if (chdir(loader->cwd))
+		fatal("%s: %s: cannot cd to guest working directory",
+			__FUNCTION__, loader->cwd);
+	
+	/* Change to specified directory */
+	err = chdir(path);
+	if (!err)
+	{
+		if (!getcwd(path, sizeof path))
+			fatal("%s: buffer 'path' too small", __FUNCTION__);
+		loader->cwd = str_set(loader->cwd, path);
+		x86_sys_debug("  New working directory is '%s'\n", loader->cwd);
+	}
+
+	/* Go back to old host path */
+	if (chdir(old_host_path))
+		fatal("%s: cannot cd back into old host path", __FUNCTION__);
+
+	/* Return error code received in host call */
+	return err;
+}
+
+
+
+
+/*
  * System call 'time' (code 13)
  */
 
@@ -5350,7 +5408,6 @@ SYS_NOT_IMPL(restart_syscall)
 SYS_NOT_IMPL(fork)
 SYS_NOT_IMPL(creat)
 SYS_NOT_IMPL(link)
-SYS_NOT_IMPL(chdir)
 SYS_NOT_IMPL(mknod)
 SYS_NOT_IMPL(lchown16)
 SYS_NOT_IMPL(ni_syscall_17)

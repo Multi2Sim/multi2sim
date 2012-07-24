@@ -90,12 +90,7 @@ static void x86_loader_add_args_vector(struct x86_ctx_t *ctx, int argc, char **a
 
 	for (i = 0; i < argc; i++)
 	{
-		/* Allocate */
-		arg = strdup(argv[i]);
-		if (!arg)
-			fatal("%s: out of memory", __FUNCTION__);
-
-		/* Add */
+		arg = str_set(NULL, argv[i]);
 		linked_list_add(ld->args, arg);
 	}
 }
@@ -109,24 +104,17 @@ static void x86_loader_add_args_string(struct x86_ctx_t *ctx, char *args)
 	char *arg;
 	
 	/* Duplicate argument string */
-	args = strdup(args);
-	if (!args)
-		fatal("%s: out of memory", __FUNCTION__);
+	args = str_set(NULL, args);
 
 	/* Tokens */
 	for (arg = strtok(args, delim); arg; arg = strtok(NULL, delim))
 	{
-		/* Duplicate */
-		arg = strdup(arg);
-		if (!arg)
-			fatal("%s: out of memory", __FUNCTION__);
-		
-		/* Add */
+		arg = str_set(NULL, arg);
 		linked_list_add(ld->args, arg);
 	}
 
 	/* Free argument string */
-	free(args);
+	str_free(args);
 }
 
 
@@ -136,12 +124,18 @@ static void x86_loader_add_environ(struct x86_ctx_t *ctx, char *env)
 {
 	struct x86_loader_t *ld = ctx->loader;
 	extern char **environ;
+
 	char *next;
+	char *str;
+
 	int i;
 
 	/* Add variables from actual environment */
 	for (i = 0; environ[i]; i++)
-		linked_list_add(ld->env, strdup(environ[i]));
+	{
+		str = str_set(NULL, environ[i]);
+		linked_list_add(ld->env, str);
+	}
 	
 	/* Add the environment vars provided in 'env' */
 	while (env)
@@ -161,12 +155,14 @@ static void x86_loader_add_environ(struct x86_ctx_t *ctx, char *env)
 			if (!(next = strchr(env + 1, *env)))
 				fatal("%s: wrong format", __FUNCTION__);
 			*next = 0;
-			linked_list_add(ld->env, strdup(env + 1));
+			str = str_set(NULL, env + 1);
+			linked_list_add(ld->env, str);
 			env = next + 1;
 			break;
 
 		default:
-			linked_list_add(ld->env, strdup(env));
+			str = str_set(NULL, env);
+			linked_list_add(ld->env, str);
 			env = NULL;
 		}
 	}
@@ -331,9 +327,7 @@ static void x86_loader_load_program_headers(struct x86_ctx_t *ctx)
 		if (program_header->header->p_type == 3)
 		{
 			mem_read_string(mem, program_header->header->p_vaddr, sizeof(str), str);
-			ld->interp = strdup(str);
-			if (!ld->interp)
-				fatal("%s: out of memory", __FUNCTION__);
+			ld->interp = str_set(NULL, str);
 		}
 	}
 
@@ -544,9 +538,7 @@ void x86_loader_load_exe(struct x86_ctx_t *ctx, char *exe)
 	/* Load program into memory */
 	x86_loader_get_full_path(ctx, exe, exe_full_path, MAX_STRING_SIZE);
 	ld->elf_file = elf_file_create_from_path(exe_full_path);
-	ld->exe = strdup(exe_full_path);
-	if (!ld->exe)
-		fatal("%s: out of memory", __FUNCTION__);
+	ld->exe = str_set(NULL, exe_full_path);
 
 	/* Read sections and program entry */
 	x86_loader_load_sections(ctx, ld->elf_file);
@@ -612,12 +604,12 @@ void x86_loader_free(struct x86_loader_t *ld)
 
 	/* Free arguments */
 	LINKED_LIST_FOR_EACH(ld->args)
-		free(linked_list_get(ld->args));
+		str_free(linked_list_get(ld->args));
 	linked_list_free(ld->args);
 
 	/* Free environment variables */
 	LINKED_LIST_FOR_EACH(ld->env)
-		free(linked_list_get(ld->env));
+		str_free(linked_list_get(ld->env));
 	linked_list_free(ld->env);
 
 	/* IPC report file */
@@ -626,10 +618,10 @@ void x86_loader_free(struct x86_loader_t *ld)
 	/* Free loader */
 	if (ld->interp)
 		free(ld->interp);
-	free(ld->exe);
-	free(ld->cwd);
-	free(ld->stdin_file);
-	free(ld->stdout_file);
+	str_free(ld->exe);
+	str_free(ld->cwd);
+	str_free(ld->stdin_file);
+	str_free(ld->stdout_file);
 	free(ld);
 }
 
@@ -710,9 +702,7 @@ void x86_loader_load_from_ctx_config(struct config_t *config, char *section)
 		
 	/* Executable */
 	exe = config_read_string(config, section, "Exe", "");
-	exe = strdup(exe);
-	if (!exe)
-		fatal("%s: out of memory", __FUNCTION__);
+	exe = str_set(NULL, exe);
 	if (!*exe)
 		fatal("%s: [%s]: invalid executable", config_file_name,
 			section);
@@ -729,11 +719,7 @@ void x86_loader_load_from_ctx_config(struct config_t *config, char *section)
 	/* Current working directory */
 	cwd = config_read_string(config, section, "Cwd", "");
 	if (*cwd)
-	{
-		ld->cwd = strdup(cwd);
-		if (!ld->cwd)
-			fatal("%s: out of memory", __FUNCTION__);
-	}
+		ld->cwd = str_set(NULL, cwd);
 	else
 	{
 		/* Get current directory */
@@ -741,23 +727,17 @@ void x86_loader_load_from_ctx_config(struct config_t *config, char *section)
 		if (!ld->cwd)
 			panic("%s: buffer too small", __FUNCTION__);
 
-		/* Duplicate */
-		ld->cwd = strdup(ld->cwd);
-		if (!ld->cwd)
-			fatal("%s: out of memory", __FUNCTION__);
+		/* Duplicate string */
+		ld->cwd = str_set(NULL, ld->cwd);
 	}
 
 	/* Standard input */
 	in = config_read_string(config, section, "Stdin", "");
-	ld->stdin_file = strdup(in);
-	if (!ld->stdin_file)
-		fatal("%s: out of memory", __FUNCTION__);
+	ld->stdin_file = str_set(NULL, in);
 
 	/* Standard output */
 	out = config_read_string(config, section, "Stdout", "");
-	ld->stdout_file = strdup(out);
-	if (!ld->stdout_file)
-		fatal("%s: out of memory", __FUNCTION__);
+	ld->stdout_file = str_set(NULL, out);
 
 	/* IPC report file */
 	ipc_report_file_name = config_read_string(config, section,
@@ -806,17 +786,11 @@ void x86_loader_load_from_command_line(int argc, char **argv)
 	ld->cwd = getcwd(buf, sizeof buf);
 	if (!ld->cwd)
 		panic("%s: buffer too small", __FUNCTION__);
-
-	/* Duplicate */
-	ld->cwd = strdup(ld->cwd);
-	if (!ld->cwd)
-		fatal("%s: out of memory", __FUNCTION__);
+	ld->cwd = str_set(NULL, ld->cwd);
 
 	/* Redirections */
-	ld->stdin_file = strdup("");
-	ld->stdout_file = strdup("");
-	if (!ld->stdin_file || !ld->stdout_file)
-		fatal("%s: out of memory", __FUNCTION__);
+	ld->stdin_file = str_set(NULL, "");
+	ld->stdout_file = str_set(NULL, "");
 
 	/* Load executable */
 	x86_loader_load_exe(ctx, argv[0]);
