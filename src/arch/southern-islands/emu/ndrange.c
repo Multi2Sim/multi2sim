@@ -47,6 +47,9 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 	ndrange->local_mem_top = kernel->func_mem_local;
 	ndrange->id = si_emu->ndrange_count++;
 
+	/* Create the UAV-to-physical-address lookup lists */
+	ndrange->uav_list = list_create();
+
 	/* Instruction histogram */
 	if (evg_emu_report_file)
 	{
@@ -62,6 +65,9 @@ struct si_ndrange_t *si_ndrange_create(struct si_opencl_kernel_t *kernel)
 
 void si_ndrange_free(struct si_ndrange_t *ndrange)
 {
+	/* Set event status to complete */
+	ndrange->event->status = SI_OPENCL_EVENT_STATUS_COMPLETE;
+
 	int i;
 
 	/* Clear task from command queue */
@@ -76,9 +82,12 @@ void si_ndrange_free(struct si_ndrange_t *ndrange)
 	si_ndrange_clear_status(ndrange, si_ndrange_running);
 	si_ndrange_clear_status(ndrange, si_ndrange_finished);
 
-	/* Extract from ND-Range list in Evergreen emulator */
+	/* Extract from ND-Range list in Southern Islands emulator */
 	assert(DOUBLE_LINKED_LIST_MEMBER(si_emu, ndrange, ndrange));
 	DOUBLE_LINKED_LIST_REMOVE(si_emu, ndrange, ndrange);
+
+	/* Free lists */
+	list_free(ndrange->uav_list);
 
 	/* Free work-groups */
 	for (i = 0; i < ndrange->work_group_count; i++)
@@ -449,6 +458,34 @@ void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange)
 	/* FIXME Size of the printf buffer */
 }
 
+void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange)
+{
+	int i;
+	uint32_t buffer_addr;
+	struct si_opencl_mem_t *mem_obj;
+	struct si_buffer_resource_t buf_desc;
+
+	/* Zero-out the buffer resource descriptor */
+	memset(&buf_desc, 0, 16);
+
+	for (i = 0; i < list_count(ndrange->uav_list); i++)
+	{
+		   /* Get the memory object for the buffer */
+		   mem_obj = list_get(ndrange->uav_list, i);
+
+		   /* Get the address of the buffer in global memory */
+		   buffer_addr = mem_obj->device_ptr;
+
+		   /* Initialize the buffer resource descriptor for this UAV */
+		   buf_desc.base_addr = buffer_addr;
+
+		   assert(UAV_TABLE_START + 320 + i*32 <= UAV_TABLE_START + UAV_TABLE_SIZE - 32);
+
+		   /* Write the buffer resource descriptor into the UAV table at offset 320
+			* with 32 bytes spacing */
+		   mem_write(si_emu->global_mem, UAV_TABLE_START + 320 + i*32, 16, &buf_desc);
+	}
+}
 
 void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 {
@@ -480,8 +517,8 @@ void si_ndrange_setup_args(struct si_ndrange_t *ndrange)
 			{
 				si_isa_const_mem_write(1, (cb_index*4)*4+j, &arg->data.value[j]);
 				si_opencl_debug("    arg %d: value '0x%x' loaded into "
-						"CB1[%d][%d]\n", i, j, arg->data.value[j], 
-						cb_index);
+						"CB1[%d][%d]\n", i, arg->data.value[j], 
+						cb_index, j);
 			}
 			cb_index++;
 			break;

@@ -2052,6 +2052,7 @@ void si_isa_V_BFE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
+		si_isa_debug("t%d: value:s0:%u, offset:s1:%u, width:s2:%u ", work_item->id, s0, s1, s2);
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, result.as_uint);
 	}
 }

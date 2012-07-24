@@ -42,7 +42,6 @@ struct si_opencl_kernel_t *si_opencl_kernel_create()
 	kernel->arg_list = list_create();
 
 	/* Create the UAV-to-physical-address lookup lists */
-	kernel->uav_list = list_create();
 	kernel->constant_buffer_list = list_create();
 
 	/* Return */
@@ -60,13 +59,12 @@ void si_opencl_kernel_free(struct si_opencl_kernel_t *kernel)
 		si_opencl_kernel_arg_free((struct si_opencl_kernel_arg_t *) list_get(kernel->arg_list, i));
 	list_free(kernel->arg_list);
 
-	/* Free lists */
-	list_free(kernel->uav_list);
-	list_free(kernel->constant_buffer_list);
-
 	/* AMD Binary (internal ELF) */
 	if (kernel->bin_file)
 		si_bin_file_free(kernel->bin_file);
+
+	/* Free lists */
+	list_free(kernel->constant_buffer_list);
 
 	/* Free kernel */
 	si_opencl_repo_remove_object(si_emu->opencl_repo, kernel);
@@ -94,33 +92,6 @@ struct si_opencl_kernel_arg_t *si_opencl_kernel_arg_create(char *name)
 void si_opencl_kernel_arg_free(struct si_opencl_kernel_arg_t *arg)
 {
 	free(arg);
-}
-
-void si_opencl_kernel_init_uav_table(struct si_opencl_kernel_t *kernel)
-{
-	int i;
-	uint32_t buffer_addr;
-	struct si_opencl_mem_t *mem_obj;
-	struct si_buffer_resource_t buf_desc;
-
-	/* Zero-out the buffer resource descriptor */
-	memset(&buf_desc, 0, 16);
-
-	for (i = 0; i < list_count(kernel->uav_list); i++)
-	{
-		   /* Get the memory object for the buffer */
-		   mem_obj = list_get(kernel->uav_list, i);
-
-		   /* Get the address of the buffer in global memory */
-		   buffer_addr = mem_obj->device_ptr;
-
-		   /* Initialize the buffer resource descriptor for this UAV */
-		   buf_desc.base_addr = buffer_addr;
-
-		   /* Write the buffer resource descriptor into the UAV table at offset 320
-			* with 32 bytes spacing */
-		   mem_write(si_emu->global_mem, UAV_TABLE_START + 320 + i*32, 16, &buf_desc);
-	}
 }
 
 /* Analyze 'metadata' associated with kernel */
