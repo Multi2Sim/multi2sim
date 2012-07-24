@@ -101,3 +101,10 @@ long long si_opencl_event_timer(void)
 	return esim_real_time() * 1000;
 }
 
+int si_opencl_event_can_wakeup(struct x86_ctx_t *ctx, void *data)
+{
+	struct si_opencl_event_t *event = data;
+
+	return event->status == SI_OPENCL_EVENT_STATUS_COMPLETE;
+}
+

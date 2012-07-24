@@ -175,11 +175,12 @@ void si_isa_const_mem_write(int buffer, int offset, void *pvalue)
 	uint32_t addr; 
 
 	assert(buffer < CONSTANT_BUFFERS);
+	assert(offset <= CONSTANT_BUFFER_SIZE - 4);
 
 	addr = CONSTANT_MEMORY_START + buffer*CONSTANT_BUFFER_SIZE + offset;
 
 	/* Write */
-        mem_write(si_emu->global_mem, addr, 4, pvalue);
+    mem_write(si_emu->global_mem, addr, 4, pvalue);
 }
 
 
