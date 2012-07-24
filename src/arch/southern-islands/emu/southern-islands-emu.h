@@ -413,7 +413,6 @@ struct si_opencl_kernel_t
 	int group_count;
 
 	/* UAV lists */
-	struct list_t *uav_list;
 	struct list_t *constant_buffer_list;
 
 	/* State of the running kernel */
@@ -429,8 +428,6 @@ void si_opencl_kernel_arg_free(struct si_opencl_kernel_arg_t *arg);
 void si_opencl_kernel_load(struct si_opencl_kernel_t *kernel, char *kernel_name);
 uint32_t si_opencl_kernel_get_work_group_info(struct si_opencl_kernel_t *kernel, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size);
-
-void si_opencl_kernel_init_uav_table(struct si_opencl_kernel_t *kernel);
 
 
 
@@ -489,6 +486,8 @@ void si_opencl_event_free(struct si_opencl_event_t *event);
 uint32_t si_opencl_event_get_profiling_info(struct si_opencl_event_t *event, uint32_t name,
 	struct mem_t *mem, uint32_t addr, uint32_t size);
 long long si_opencl_event_timer(void);
+
+int si_opencl_event_can_wakeup(struct x86_ctx_t *ctx, void *data);
 
 
 
@@ -561,6 +560,9 @@ struct si_ndrange_t
 	/* Status */
 	enum si_ndrange_status_t status;
 
+	/* Event */
+	struct si_opencl_event_t* event;
+
 	/* OpenCL kernel associated */
 	struct si_opencl_kernel_t *kernel;
 
@@ -624,6 +626,9 @@ struct si_ndrange_t
 	 * Initially it is equal to the size of local variables in kernel function. */
 	uint32_t local_mem_top;
 
+	/* UAV lists */
+	struct list_t *uav_list;
+
 	/* Statistics */
 
 	/* Histogram of executed instructions. Only allocated if the kernel report
@@ -641,6 +646,7 @@ void si_ndrange_clear_status(struct si_ndrange_t *work_group, enum si_ndrange_st
 
 void si_ndrange_setup_work_items(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_const_mem(struct si_ndrange_t *ndrange);
+void si_ndrange_init_uav_table(struct si_ndrange_t *ndrange);
 void si_ndrange_setup_args(struct si_ndrange_t *ndrange);
 
 /* Access to constant memory */

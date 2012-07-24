@@ -1427,17 +1427,50 @@ int si_opencl_clGetKernelWorkGroupInfo_impl(struct x86_ctx_t *ctx, int *argv)
  * OpenCL call 'clWaitForEvents' (code 1043)
  */
 
-int si_opencl_clWaitForEvents_impl(struct x86_ctx_t *ctx, int *argv)
+struct si_opencl_clWaitForEvents_args_t
 {
-	unsigned int num_events = argv[0];  /* cl_uint num_events */
-	unsigned int event_list = argv[1];  /* const cl_event *event_list */
+	unsigned int num_events;  /* cl_uint num_events */
+	unsigned int event_list;  /* const cl_event *event_list */
+};
+
+void si_opencl_clWaitForEvents_wakeup(struct x86_ctx_t *ctx, void *data)
+{
+	struct si_opencl_clWaitForEvents_args_t *argv = (struct si_opencl_clWaitForEvents_args_t *) data;
+
+	if (!argv->num_events)
+	{
+		/* Return success */
+		si_opencl_api_return(ctx, 0);
+		return;
+	}
 
 	si_opencl_debug("  num_events=0x%x, event_list=0x%x\n",
-			num_events, event_list);
-	
-	/* FIXME: block until events in list are completed */
+			argv->num_events, argv->event_list);
 
-	/* Return success */
+	/* Read first event in event list. */
+	int event_ptr = argv->event_list;
+	int event_id;
+	struct si_opencl_event_t *event;
+
+	mem_read(ctx->mem, event_ptr, 4, &event_id);
+	event = si_opencl_repo_get_object(si_emu->opencl_repo,
+				si_opencl_object_event, event_id);
+
+	/* Move to the next event in the list */
+	argv->event_list++;
+	argv->num_events--;
+
+	/* Suspend context until event is complete */
+	x86_ctx_suspend(ctx, si_opencl_event_can_wakeup, event,
+		si_opencl_clWaitForEvents_wakeup, argv);
+}
+
+int si_opencl_clWaitForEvents_impl(struct x86_ctx_t *ctx, int *argv_ptr)
+{
+	si_opencl_clWaitForEvents_wakeup(ctx, argv_ptr);
+
+	/* Return value ignored by caller, since context is getting suspended.
+	 * It will be explicitly set by the wake-up call-back routine. */
 	return 0;
 }
 
@@ -1669,7 +1702,7 @@ void si_opencl_clEnqueueReadBuffer_wakeup(struct x86_ctx_t *ctx, void *data)
 	if (argv.event_ptr)
 	{
 		event = si_opencl_event_create(SI_OPENCL_EVENT_NDRANGE_KERNEL);
-		event->status = SI_OPENCL_EVENT_STATUS_SUBMITTED;
+		event->status = SI_OPENCL_EVENT_STATUS_COMPLETE;
 		event->time_queued = si_opencl_event_timer();
 		event->time_submit = si_opencl_event_timer();
 		event->time_start = si_opencl_event_timer();
@@ -2325,42 +2358,6 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 			si_opencl_object_kernel, argv.kernel_id);
 	kernel->work_dim = argv.work_dim;
 
-	/* Build UAV lists */
-	for (i = 0; i < list_count(kernel->arg_list); i++) 
-	{
-		arg = list_get(kernel->arg_list, i);
-
-		/* If argument is an image, add it to the appropriate UAV list */
-		if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_IMAGE)
-		{
-			/*FIXME*/
-			assert(0);
-			/*
-			mem = si_opencl_repo_get_object(si_emu->opencl_repo,
-					si_opencl_object_mem, arg->value);
-
-			if (arg->access_type == SI_OPENCL_KERNEL_ARG_READ_ONLY)
-				list_set(kernel->uav_read_list, arg->uav, mem);
-			else if (arg->access_type == SI_OPENCL_KERNEL_ARG_WRITE_ONLY)
-				list_set(kernel->uav_write_list, arg->uav, mem);
-			else 
-				fatal("%s: unsupported image access type (%d)\n", __FUNCTION__, 
-						arg->access_type);
-			*/
-		}
-
-		/* Add the uav to the UAV list. */
-		if(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER && 
-			arg->mem_scope != SI_OPENCL_MEM_SCOPE_LOCAL)
-		{	
-			mem = si_opencl_repo_get_object(si_emu->opencl_repo,
-					si_opencl_object_mem, arg->data.ptr);
-			list_add(kernel->uav_list, mem);
-		}
-	}
-
-	si_opencl_kernel_init_uav_table(kernel);
-
 	/* Global work sizes */
 	kernel->global_size3[1] = 1;
 	kernel->global_size3[2] = 1;
@@ -2432,12 +2429,50 @@ void si_opencl_clEnqueueNDRangeKernel_wakeup(struct x86_ctx_t *ctx, void *data)
 	si_ndrange_setup_const_mem(ndrange);
 	si_ndrange_setup_args(ndrange);
 
+	/* Build UAV lists */
+	for (i = 0; i < list_count(kernel->arg_list); i++)
+	{
+		arg = list_get(kernel->arg_list, i);
+
+		/* If argument is an image, add it to the appropriate UAV list */
+		if (arg->kind == SI_OPENCL_KERNEL_ARG_KIND_IMAGE)
+		{
+			/*FIXME*/
+			assert(0);
+			/*
+			mem = si_opencl_repo_get_object(si_emu->opencl_repo,
+					si_opencl_object_mem, arg->value);
+
+			if (arg->access_type == SI_OPENCL_KERNEL_ARG_READ_ONLY)
+				list_set(kernel->uav_read_list, arg->uav, mem);
+			else if (arg->access_type == SI_OPENCL_KERNEL_ARG_WRITE_ONLY)
+				list_set(kernel->uav_write_list, arg->uav, mem);
+			else
+				fatal("%s: unsupported image access type (%d)\n", __FUNCTION__,
+						arg->access_type);
+			*/
+		}
+
+		/* Add the uav to the UAV list. */
+		if(arg->kind == SI_OPENCL_KERNEL_ARG_KIND_POINTER &&
+			arg->mem_scope != SI_OPENCL_MEM_SCOPE_LOCAL)
+		{
+			mem = si_opencl_repo_get_object(si_emu->opencl_repo,
+					si_opencl_object_mem, arg->data.ptr);
+			list_add(ndrange->uav_list, mem);
+		}
+	}
+	si_ndrange_init_uav_table(ndrange);
+
 	/* Save in kernel */
 	kernel->ndrange = ndrange;
 
 	/* Set ND-Range status to 'pending'. This makes it immediately a candidate for
 	 * execution, whether we have functional or detailed simulation. */
 	si_ndrange_set_status(ndrange, si_ndrange_pending);
+
+	/* Associate NDRange event */
+	ndrange->event = event;
 
 	/* Create command queue task */
 	task = si_opencl_command_create(si_opencl_command_queue_task_ndrange_kernel);
