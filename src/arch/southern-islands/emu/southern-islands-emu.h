@@ -692,6 +692,7 @@ struct si_work_group_t
 	/* Pointers to wavefronts and work-items */
 	struct si_work_item_t **work_items;  /* Pointer to first work_item in 'kernel->work_items' */
 	struct si_wavefront_t **wavefronts;  /* Pointer to first wavefront in 'kernel->wavefronts' */
+	struct si_wavefront_pool_t *wavefront_pool;
 
 	/* Double linked lists of work-groups */
 	struct si_work_group_t *pending_list_prev;
@@ -754,6 +755,7 @@ struct si_wavefront_t
 	char name[30];
 	int id;
 	int id_in_work_group;
+	int id_in_wavefront_pool;
 
 	/* IDs of work-items it contains */
 	int work_item_id_first;
@@ -803,6 +805,7 @@ struct si_wavefront_t
 	/* Fields introduced for architectural simulation */
 	int id_in_compute_unit;
 	long long sched_when;  /* GPU cycle when wavefront was last scheduled */
+	struct si_wavefront_pool_t *wavefront_pool;
 
 	/* Ready to fetch next instruction (for timing simulation) */
 	unsigned int ready : 1;

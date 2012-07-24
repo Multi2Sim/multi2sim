@@ -12,6 +12,7 @@ libtiming_a_SOURCES = \
 	sched.c \
 	simd.c \
 	uop.c \
+	vector_mem.c \
 	wavefront_pool.c
 
 INCLUDES = @M2S_INCLUDES@
