@@ -74,6 +74,7 @@ struct si_uop_t
 	/* Timing */
 	long long fetch_ready;      /* Cycle when fetch completes */
 	long long decode_ready;     /* Cycle when decode completes */
+	long long read_ready;       /* Cycle when register access completes */
 	long long execute_ready;    /* Cycle when execution completes */
 	long long writeback_ready;  /* Cycle when writeback completes */
 
@@ -146,7 +147,8 @@ struct si_wavefront_pool_t
 struct si_branch_unit_t
 {
 	/* Queues */
-	struct si_uop_t *exec_buffer;
+	struct linked_list_t *read_inst_buffer; 
+	struct linked_list_t *exec_inst_buffer;
 	struct linked_list_t *alu_queue; /* Queue for ALU operations */
 
 	struct si_compute_unit_t *compute_unit;
@@ -158,6 +160,7 @@ struct si_branch_unit_t
 
 struct si_scalar_unit_t
 {
+	struct linked_list_t *read_inst_buffer;  /* Register accesses */
 	struct linked_list_t *exec_inst_buffer;
 	struct linked_list_t *mem_queue;  /* Queue for outstanding memory operations */
 	struct linked_list_t *alu_queue;  /* Queue for ALU operations */
@@ -171,7 +174,8 @@ struct si_scalar_unit_t
 
 struct si_vector_mem_unit_t
 {
-	struct linked_list_t *exec_inst_buffer;     
+	struct linked_list_t *read_inst_buffer;  /* Register accesses */
+	struct linked_list_t *exec_inst_buffer;
 	struct linked_list_t *mem_queue;  /* Queue for outstanding memory operations */
 
 	struct si_compute_unit_t *compute_unit;
@@ -183,7 +187,8 @@ struct si_vector_mem_unit_t
 
 struct si_simd_t
 {
-	struct linked_list_t *exec_inst_buffer;  /* Uop from read to execute stage */
+	struct linked_list_t *read_inst_buffer;  /* Register accesses */
+	struct linked_list_t *exec_inst_buffer;
 	struct linked_list_t *alu_queue;  /* Queue for ALU operations */
 
 	struct si_compute_unit_t *compute_unit;
@@ -397,12 +402,14 @@ extern int si_gpu_local_mem_block_size;
 extern int si_gpu_local_mem_num_ports;
 
 extern int si_gpu_simd_issue_width;
-extern int si_gpu_simd_latency;
+extern int si_gpu_simd_alu_latency;
+extern int si_gpu_simd_reg_latency;
 
 extern int si_gpu_vector_mem_issue_width;
 
 extern int si_gpu_scalar_unit_issue_width;
 extern int si_gpu_scalar_unit_alu_latency;
+extern int si_gpu_scalar_unit_reg_latency;
 
 //extern int si_gpu_branch_unit_issue_width;
 extern int si_gpu_branch_unit_latency;

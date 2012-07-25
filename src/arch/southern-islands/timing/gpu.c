@@ -202,13 +202,6 @@ struct string_map_t si_gpu_register_alloc_granularity_map =
 };
 enum si_gpu_register_alloc_granularity_t si_gpu_register_alloc_granularity;
 
-/* Front-end parameters */
-int si_gpu_fetch_latency = 1;
-int si_gpu_decode_latency = 1;
-
-int si_gpu_max_work_groups_per_wavefront_pool = 10;
-int si_gpu_max_wavefronts_per_wavefront_pool = 10;
-
 /* Local memory parameters */
 int si_gpu_local_mem_size = 65536;  /* 64 KB */
 int si_gpu_local_mem_alloc_size = 1024;  /* 1 KB */
@@ -307,8 +300,8 @@ static void si_config_read(void)
 		si_gpu_decode_latency);
 	si_gpu_simd_issue_width = config_read_int(gpu_config, section, "SIMDIssueWidth", 
 		si_gpu_simd_issue_width);
-	si_gpu_simd_latency = config_read_int(gpu_config, section, "SIMDLatency", 
-		si_gpu_simd_latency);
+	si_gpu_simd_alu_latency = config_read_int(gpu_config, section, "SIMDALULatency", 
+		si_gpu_simd_alu_latency);
 	si_gpu_scalar_unit_issue_width= config_read_int(gpu_config, section, 
 		"ScalarUnitIssueWidth", si_gpu_scalar_unit_issue_width);
 	si_gpu_scalar_unit_alu_latency = config_read_int(gpu_config, section, 
@@ -417,7 +410,7 @@ static void si_config_dump(FILE *f)
 	fprintf(f, "WavefrontSize = %d\n", si_emu_wavefront_size);
 	fprintf(f, "MaxWorkGroupsPerWavefrontPool= %d\n", si_gpu_max_work_groups_per_wavefront_pool);
 	fprintf(f, "MaxWavefrontsPerWavefrontPool = %d\n", si_gpu_max_wavefronts_per_wavefront_pool);
-	fprintf(f, "SIMDLatency = %d\n", si_gpu_simd_latency);
+	fprintf(f, "SIMDALULatency = %d\n", si_gpu_simd_alu_latency);
 	fprintf(f, "SIMDIssueWidth = %d\n", si_gpu_simd_issue_width);
 	fprintf(f, "ScalarUnitALULatency = %d\n", si_gpu_scalar_unit_alu_latency);
 	fprintf(f, "ScalarUnitIssueWidth = %d\n", si_gpu_scalar_unit_issue_width);
