@@ -27,6 +27,7 @@ struct arm_regs_t *arm_regs_create()
 	if(!regs)
 		fatal("%s: out of memory", __FUNCTION__);
 
+	regs->cpsr.mode = ARM_MODE_USER;
 	return regs;
 }
 

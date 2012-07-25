@@ -1907,7 +1907,7 @@ void arm_emu_disasm(char *path)
 }
 
 /* Pointer to 'inst' is declared volatile to avoid optimizations when calling 'memset' */
-void arm_disasm(void *buf, uint32_t ip, volatile struct arm_inst_t *inst)
+void arm_disasm(void *buf, unsigned int ip, volatile struct arm_inst_t *inst)
 {
 	unsigned int byte_index;
 	unsigned int arg1;

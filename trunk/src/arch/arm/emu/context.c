@@ -485,10 +485,10 @@ void arm_ctx_loader_load_exe(struct arm_ctx_t *ctx, char *exe)
 	arm_ctx_loader_load_stack(ctx);
 
 	/* Register initialization */
-	ctx->regs->ip = ctx->prog_entry;
+	ctx->regs->pc = ctx->prog_entry + 4;
 	ctx->regs->sp = ctx->environ_base;
 
-	arm_loader_debug("Program entry is 0x%x\n", ctx->regs->ip);
+	arm_loader_debug("Program entry is 0x%x\n", ctx->regs->pc);
 	arm_loader_debug("Initial stack pointer is 0x%x\n", ctx->regs->sp);
 	arm_loader_debug("Heap start set to 0x%x\n", mem->heap_break);
 }
@@ -563,7 +563,7 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 
 	/* Read instruction from memory. Memory should be accessed here in unsafe mode
 	 * (i.e., allowing segmentation faults) if executing speculatively. */
-	buffer_ptr = mem_get_buffer(mem, regs->ip, 4, mem_access_exec);
+	buffer_ptr = mem_get_buffer(mem, (regs->pc - 4), 4, mem_access_exec);
 
 	/* FIXME: Arm speculative mode execution to be added */
 	/*if (!buffer_ptr)
@@ -581,10 +581,10 @@ void arm_ctx_execute(struct arm_ctx_t *ctx)
 	arm_isa_inst_bytes = (char *) buffer_ptr;
 
 	/* Disassemble */
-	arm_disasm(buffer_ptr, regs->ip, &ctx->inst);
+	arm_disasm(buffer_ptr, (regs->pc - 4), &ctx->inst);
 	if (ctx->inst.info->opcode == ARM_INST_NONE)/*&& !spec_mode)*/
 		fatal("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
-			regs->ip, buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
+			(regs->pc - 4), buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]);
 
 
 	/* Execute instruction */
