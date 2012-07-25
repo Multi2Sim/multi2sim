@@ -1435,43 +1435,52 @@ struct si_opencl_clWaitForEvents_args_t
 
 void si_opencl_clWaitForEvents_wakeup(struct x86_ctx_t *ctx, void *data)
 {
-	struct si_opencl_clWaitForEvents_args_t *argv = (struct si_opencl_clWaitForEvents_args_t *) data;
+	/* Pop the next event to wait for. */
+	struct list_t* events = (struct list_t *)data;
+	struct si_opencl_event_t* event = list_pop(events);
 
-	if (!argv->num_events)
+	/* If there are no more events to wait for, finish */
+	if (!event)
 	{
+		/* Free the list */
+		list_free(events);
+
 		/* Return success */
 		si_opencl_api_return(ctx, 0);
 		si_opencl_debug("  All events completed.\n");
 		return;
 	}
 
-	si_opencl_debug("  num_events=0x%x, event_list=0x%x\n",
-			argv->num_events, argv->event_list);
-
-	/* Read first event in event list. */
-	int event_ptr = argv->event_list;
-	int event_id;
-	struct si_opencl_event_t *event;
-
-	mem_read(ctx->mem, event_ptr, 4, &event_id);
-	event = si_opencl_repo_get_object(si_emu->opencl_repo,
-				si_opencl_object_event, event_id);
-
-	/* Move to the next event in the list */
-	argv->event_list = argv->event_list + sizeof(struct si_opencl_event_t);
-	argv->num_events = argv->num_events - 1;
-
-	si_opencl_debug("  next num_events=0x%x, event_list=0x%x\n",
-				argv->num_events, argv->event_list);
-
-	/* Suspend context until event is complete */
+	/* Suspend context until event is complete, and wake up to wait for the next event. */
+	si_opencl_debug("  waiting for event:0x%x\n", event->id);
 	x86_ctx_suspend(ctx, si_opencl_event_can_wakeup, event,
-		si_opencl_clWaitForEvents_wakeup, argv);
+		si_opencl_clWaitForEvents_wakeup, events);
 }
 
 int si_opencl_clWaitForEvents_impl(struct x86_ctx_t *ctx, int *argv_ptr)
 {
-	si_opencl_clWaitForEvents_wakeup(ctx, argv_ptr);
+	struct si_opencl_clWaitForEvents_args_t *argv = (struct si_opencl_clWaitForEvents_args_t *) argv_ptr;
+
+	si_opencl_debug("  waiting for event list:0x%x, length:0x%x\n", argv->event_list, argv->num_events);
+
+	/* Create list of events in guest memory. */
+	struct list_t* events = list_create();
+	struct si_opencl_event_t* event;
+	for(int i = 0; i < argv->num_events; i++)
+	{
+		/* Read the event from memory */
+		int event_ptr = argv->event_list + i * sizeof(struct si_opencl_event_t);
+		int event_id;
+		mem_read(ctx->mem, event_ptr, 4, &event_id);
+		event = si_opencl_repo_get_object(si_emu->opencl_repo,
+					si_opencl_object_event, event_id);
+
+		/* Add the event to the list */
+		list_add(events, event);
+	}
+
+	/* Wait for all events. */
+	si_opencl_clWaitForEvents_wakeup(ctx, events);
 
 	/* Return value ignored by caller, since context is getting suspended.
 	 * It will be explicitly set by the wake-up call-back routine. */
