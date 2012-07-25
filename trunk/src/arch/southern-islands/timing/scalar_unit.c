@@ -2,6 +2,7 @@
 
 int si_gpu_scalar_unit_inflight_mem_accesses = 32;
 int si_gpu_scalar_unit_alu_latency = 4;
+int si_gpu_scalar_unit_reg_latency = 1;
 int si_gpu_scalar_unit_issue_width = 2;
 
 
@@ -68,9 +69,6 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 				else 
 					work_group->compute_unit_finished_count++;
 
-				/* Remove the uop from the execute buffer */
-				linked_list_remove(scalar_unit->exec_inst_buffer);
-
 				/* Check if wavefront finishes a work-group */
 				assert(work_group->compute_unit_finished_count <= 
 					work_group->wavefront_count);
@@ -99,7 +97,7 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 {
 	struct si_uop_t *uop;
-	int issued_instructions = 0;
+	int instructions_issued = 0;
 	int list_count;
 	int i;
 
@@ -112,7 +110,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 	linked_list_head(scalar_unit->exec_inst_buffer);
 	for (i = 0; i < list_count; i++) 
 	{
-		if (issued_instructions == si_gpu_scalar_unit_issue_width)
+		if (instructions_issued == si_gpu_scalar_unit_issue_width)
 			break;
 
 		/* Process uop */
@@ -121,7 +119,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 
 		/* Decode has not completed.  Safe to assume that no other
 		 * decoded instructions are ready */
-		if (si_gpu->cycle < uop->decode_ready)
+		if (si_gpu->cycle < uop->read_ready)
 			break;
 		
 		/* Check if type is memory or ALU */
@@ -146,7 +144,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 				linked_list_remove(scalar_unit->exec_inst_buffer); 
 				linked_list_add(scalar_unit->mem_queue, uop);
 
-				issued_instructions++;
+				instructions_issued++;
 				scalar_unit->inst_count++;
 				scalar_unit->wavefront_count++;
 			}
@@ -169,7 +167,7 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 				linked_list_remove(scalar_unit->exec_inst_buffer); 
 				linked_list_add(scalar_unit->alu_queue, uop);
 
-				issued_instructions++;
+				instructions_issued++;
 				scalar_unit->inst_count++;
 				scalar_unit->wavefront_count++;
 			}
@@ -183,9 +181,46 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 	}
 }
 
+void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
+{
+	struct si_uop_t *uop;
+	int instructions_issued = 0;
+	int list_count;
+	int i;
+
+	list_count = linked_list_count(scalar_unit->read_inst_buffer);
+
+	/* No instruction to process */
+	if (!list_count)
+		return;
+
+	linked_list_head(scalar_unit->read_inst_buffer);
+	for (i = 0; i < list_count; i++) 
+	{
+		if (instructions_issued == si_gpu_scalar_unit_issue_width)
+			break;
+
+		/* Process uop */
+		uop = linked_list_get(scalar_unit->read_inst_buffer); 
+		assert(uop);
+
+		/* Read has not completed.  Safe to assume that no other
+		 * decoded instructions are ready */
+		if (si_gpu->cycle < uop->decode_ready)
+			break;
+
+		uop->read_ready = si_gpu->cycle + si_gpu_scalar_unit_reg_latency;
+		linked_list_remove(scalar_unit->read_inst_buffer);
+		linked_list_add(scalar_unit->exec_inst_buffer, uop);
+
+		instructions_issued++;
+	}
+}
+
 void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit)
 {
 	si_scalar_unit_writeback(scalar_unit);
 	si_scalar_unit_execute(scalar_unit);
+	si_scalar_unit_read(scalar_unit);
 }
 
