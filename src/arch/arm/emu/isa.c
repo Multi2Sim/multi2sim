@@ -362,26 +362,35 @@ void arm_isa_reg_load(struct arm_ctx_t *ctx, unsigned int reg_no, int *value)
 
 
 /*
- * Branching Funtions
+ * Branching Functions
  */
 
 void arm_isa_branch(struct arm_ctx_t *ctx)
 {
 	unsigned int offset;
 	unsigned int br_add;
+	int rm_val;
 
-	offset = (ctx->inst.dword.brnch_ins.off << 2);
-	br_add = offset + ctx->regs->pc;
-
-
-
-	if(ctx->inst.dword.brnch_ins.link)
+	if(ctx->inst.info->category == ARM_CAT_BRNCH)
 	{
-		arm_isa_reg_store(ctx, 14, ctx->regs->pc - 4);
+		offset = (ctx->inst.dword.brnch_ins.off << 2);
+		br_add = offset + ctx->regs->pc;
+
+		if(ctx->inst.dword.brnch_ins.link)
+		{
+			arm_isa_reg_store(ctx, 14, ctx->regs->pc - 4);
+		}
+
+		ctx->regs->pc = br_add + 4;
+		arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", ctx->regs->pc - 4, ctx->regs->pc);
 	}
 
-	ctx->regs->pc = br_add + 4;
-	arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", ctx->regs->pc - 4, ctx->regs->pc);
+	else if (ctx->inst.info->category == ARM_CAT_BAX)
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.bax_ins.op0_rn, &rm_val);
+		ctx->regs->pc = rm_val + 4;
+		arm_isa_inst_debug("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
+	}
 }
 
 int arm_isa_check_cond(struct arm_ctx_t *ctx)

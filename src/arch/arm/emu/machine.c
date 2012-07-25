@@ -502,7 +502,8 @@ void arm_isa_SWPB_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_BX_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if(arm_isa_check_cond(ctx))
+		arm_isa_branch(ctx);
 }
 
 void arm_isa_BLX_impl(struct arm_ctx_t *ctx)
@@ -1052,7 +1053,7 @@ void arm_isa_LDR_ofip_impl(struct arm_ctx_t *ctx)
 	{
 		buf = &value;
 		addr = arm_isa_get_addr_amode2(ctx);
-		mem_read(ctx->mem, addr, 4, &value);
+		mem_read(ctx->mem, addr, 4, buf);
 		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
 	}
 }
@@ -1879,7 +1880,8 @@ void arm_isa_LDMIA_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDMIA_w_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if(arm_isa_check_cond(ctx))
+		arm_isa_amode4s_ld(ctx);
 }
 
 void arm_isa_LDMIA_u_impl(struct arm_ctx_t *ctx)
@@ -1899,7 +1901,8 @@ void arm_isa_LDMDB_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDMDB_w_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if(arm_isa_check_cond(ctx))
+		arm_isa_amode4s_ld(ctx);
 }
 
 void arm_isa_LDMDB_u_impl(struct arm_ctx_t *ctx)
