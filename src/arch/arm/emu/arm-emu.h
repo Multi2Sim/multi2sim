@@ -45,7 +45,7 @@
 #include <errno.h>
 #include <esim.h>
 #include <sys/time.h>
-
+#include <math.h>
 #include <arm-asm.h>
 
 #include <southern-islands-emu.h>
@@ -55,6 +55,15 @@
 /* Some forward declarations */
 struct arm_ctx_t;
 struct file_desc_t;
+
+/* Arm Modes of Operation */
+#define ARM_MODE_USER 0x10
+#define ARM_MODE_UNDEF 0x1b
+#define ARM_MODE_SYS 0x1f
+#define ARM_MODE_SVC 0x13
+#define ARM_MODE_IRQ 0x12
+#define ARM_MODE_FIQ 0x11
+#define ARM_MODE_ABT 0x17
 
 
 
@@ -66,9 +75,24 @@ struct file_desc_t;
 struct arm_regs_t
 {
 	/* Integer registers */
-	uint32_t r0, r1, r2, r3;
-	uint32_t r4,r5, r6, r7, r8, r9;
-	uint32_t sl, fp, ip, sp, lr, pc;
+	unsigned int r0, r1, r2, r3;
+	unsigned int r4,r5, r6, r7, r8, r9;
+	unsigned int sl, fp, ip, sp, lr, pc;
+	struct arm_cpsr_reg_t
+	{
+		unsigned int mode	: 5; /* [4:0] */
+		unsigned int thumb	: 1; /* [5] */
+		unsigned int fiq  	: 1; /* [6] */
+		unsigned int irq	: 1; /* [7] */
+		unsigned int _reserved0	:16; /* [23:8] */
+		unsigned int jaz	: 1; /* [24] */
+		unsigned int _reserved1	: 2; /* [26:25] */
+		unsigned int q		: 1; /* [27] */
+		unsigned int v		: 1; /* [28] */
+		unsigned int C		: 1; /* [29] */
+		unsigned int z		: 1; /* [30] */
+		unsigned int n		: 1; /* [31] */
+	}cpsr;
 
 } __attribute__((packed));
 struct arm_regs_t *arm_regs_create();
@@ -200,12 +224,24 @@ enum arm_isa_op2_cat_t
 	reg
 };
 
-unsigned int arm_isa_op2_get(unsigned int op2 , enum arm_isa_op2_cat_t cat);
+int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_cat_t cat);
 unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx);
 void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no,
 	unsigned int value);
 void arm_isa_reg_load(struct arm_ctx_t *ctx, unsigned int reg_no,
-	unsigned int *value);
+	 int *value);
+void arm_isa_branch(struct arm_ctx_t *ctx);
+int arm_isa_check_cond(struct arm_ctx_t *ctx);
+void arm_isa_amode4s_str(struct arm_ctx_t *ctx);
+void arm_isa_amode4s_ld(struct arm_ctx_t *ctx);
+void arm_isa_cpsr_print(struct arm_ctx_t *ctx);
+void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
+	unsigned int op3);
+void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
+	unsigned int op3);
+
+
+
 
 /*
  * System calls

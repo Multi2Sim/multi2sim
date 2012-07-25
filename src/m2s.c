@@ -307,7 +307,7 @@ static char *m2s_help =
 	"  --arm-disasm <file>\n"
 	"      Disassemble an ARM binary using Multi2Sim's internal disassembler. This\n"
 	"      option is incompatible with any other command-line option.\n"
-	" \n"
+	"\n"
 	"\n"
 	"================================================================================\n"
 	"NVIDIA Fermi GPU Options\n"

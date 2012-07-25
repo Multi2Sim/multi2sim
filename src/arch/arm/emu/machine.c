@@ -75,7 +75,13 @@ void arm_isa_RSBS_reg_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_ADD_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+		arm_isa_add(ctx, ctx->inst.dword.dpr_ins.dst_reg, ctx->inst.dword.dpr_ins.op1_reg,
+			operand2, 0);
+	}
 }
 
 void arm_isa_ADDS_reg_impl(struct arm_ctx_t *ctx)
@@ -145,7 +151,12 @@ void arm_isa_ORRS_reg_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_MOV_reg_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, reg);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr_ins.dst_reg, operand2);
+	}
 }
 
 void arm_isa_MOVS_reg_impl(struct arm_ctx_t *ctx)
@@ -195,7 +206,13 @@ void arm_isa_EORS_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_SUB_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+		arm_isa_subtract(ctx, ctx->inst.dword.dpr_ins.dst_reg, ctx->inst.dword.dpr_ins.op1_reg,
+			operand2, 0);
+	}
 }
 
 void arm_isa_SUBS_imm_impl(struct arm_ctx_t *ctx)
@@ -215,7 +232,13 @@ void arm_isa_RSBS_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_ADD_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	int operand2;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+		arm_isa_add(ctx, ctx->inst.dword.dpr_ins.dst_reg, ctx->inst.dword.dpr_ins.op1_reg,
+			operand2, 0);
+	}
 }
 
 void arm_isa_ADDS_imm_impl(struct arm_ctx_t *ctx)
@@ -265,7 +288,24 @@ void arm_isa_TEQS_imm_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_CMPS_imm_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	struct arm_regs_t *regs;
+	int rn_val;
+	int operand2;
+
+	regs = ctx->regs;
+	if(arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
+
+		if(rn_val == operand2)
+			regs->cpsr.z = 1;
+		else if (rn_val < operand2)
+			regs->cpsr.n = 1;
+		else
+			regs->cpsr.n = 0;
+		arm_isa_cpsr_print(ctx);
+	}
 }
 
 void arm_isa_CMNS_imm_impl(struct arm_ctx_t *ctx)
@@ -287,9 +327,11 @@ void arm_isa_MOV_imm_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int operand2;
 
-
-	operand2 = arm_isa_op2_get(ctx->inst.dword.dpr_ins.op2, immd);
-	arm_isa_reg_store(ctx, ctx->inst.dword.dpr_ins.dst_reg, operand2);
+	if (arm_isa_check_cond(ctx))
+	{
+		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
+		arm_isa_reg_store(ctx, ctx->inst.dword.dpr_ins.dst_reg, operand2);
+	}
 
 }
 
@@ -950,14 +992,32 @@ void arm_isa_STRD_prip_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDR_ptim_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	unsigned int value;
+	void *buf;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		mem_read(ctx->mem, addr, 4, buf);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
+	}
 }
 
 void arm_isa_LDR_ptip_impl(struct arm_ctx_t *ctx)
 {
 	unsigned int addr;
-	addr = arm_isa_get_addr_amode2(ctx);
-	arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, addr);
+	void *buf = 0;
+	unsigned int value;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		mem_read(ctx->mem, addr, 4, buf);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
+	}
 }
 
 void arm_isa_LDR_ofim_impl(struct arm_ctx_t *ctx)
@@ -967,12 +1027,34 @@ void arm_isa_LDR_ofim_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDR_prim_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+
+	unsigned int addr;
+	void *buf = 0;
+	unsigned int value;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		mem_read(ctx->mem, addr, 4, buf);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
+	}
 }
 
 void arm_isa_LDR_ofip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+
+	unsigned int addr;
+	void *buf = 0;
+	unsigned int value;
+
+	if (arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		mem_read(ctx->mem, addr, 4, &value);
+		arm_isa_reg_store(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, value);
+	}
 }
 
 void arm_isa_LDR_prip_impl(struct arm_ctx_t *ctx)
@@ -1117,12 +1199,32 @@ void arm_isa_STR_ofim_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STR_prim_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+		mem_write(ctx->mem, addr, 4, buf);
+	}
 }
 
 void arm_isa_STR_ofip_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	unsigned int addr;
+	void *buf = 0;
+	int value;
+
+	if(arm_isa_check_cond(ctx))
+	{
+		buf = &value;
+		addr = arm_isa_get_addr_amode2(ctx);
+		arm_isa_reg_load(ctx, ctx->inst.dword.sdtr_ins.src_dst_rd, &value);
+		mem_write(ctx->mem, addr, 4, buf);
+	}
 }
 
 void arm_isa_STR_prip_impl(struct arm_ctx_t *ctx)
@@ -1812,7 +1914,9 @@ void arm_isa_LDMDB_uw_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_LDMIB_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+
+	if(arm_isa_check_cond(ctx))
+		arm_isa_amode4s_ld(ctx);
 }
 
 void arm_isa_LDMIB_w_impl(struct arm_ctx_t *ctx)
@@ -1877,7 +1981,8 @@ void arm_isa_STMDB_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STMDB_w_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if(arm_isa_check_cond(ctx))
+		arm_isa_amode4s_str(ctx);
 }
 
 void arm_isa_STMDB_u_impl(struct arm_ctx_t *ctx)
@@ -1892,7 +1997,8 @@ void arm_isa_STMDB_uw_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_STMIB_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if(arm_isa_check_cond(ctx))
+		arm_isa_amode4s_str(ctx);
 }
 
 void arm_isa_STMIB_w_impl(struct arm_ctx_t *ctx)
@@ -1912,12 +2018,14 @@ void arm_isa_STMIB_uw_impl(struct arm_ctx_t *ctx)
 
 void arm_isa_BRNCH_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if(arm_isa_check_cond(ctx))
+		arm_isa_branch(ctx);
 }
 
 void arm_isa_BRNCH_LINK_impl(struct arm_ctx_t *ctx)
 {
-	__ARM_NOT_IMPL__
+	if(arm_isa_check_cond(ctx))
+		arm_isa_branch(ctx);
 }
 
 void arm_isa_SWI_SVC_impl(struct arm_ctx_t *ctx)
