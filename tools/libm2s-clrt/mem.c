@@ -103,12 +103,12 @@ cl_mem clCreateBuffer(
 	/* Debug */
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tcontext = %p", context);
-	m2s_clrt_debug("\tflags = %x", flags);
+	m2s_clrt_debug("\tflags = 0x%x", (int) flags);
 	m2s_clrt_debug("\tsize = %u", size);
 	m2s_clrt_debug("\thost_ptr = %p", host_ptr);
 	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
 
-	if (!clrt_object_verify(context, CLRT_CONTEXT))
+	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
 	{
 		if (errcode_ret != NULL)
 			*errcode_ret = CL_INVALID_CONTEXT;
@@ -126,7 +126,7 @@ cl_mem clCreateBuffer(
 	if (mem == NULL)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	clrt_object_create(mem, CLRT_MEM, clrt_mem_free);
+	clrt_object_create(mem, CLRT_OBJECT_MEM, clrt_mem_free);
 
 	/* Because of alignment reasons, we are going to 'cache' buffers even when the user
          * specifies CL_MEM_UES_HOST_PTR */
@@ -188,14 +188,14 @@ cl_mem clCreateImage3D(
 cl_int clRetainMemObject(
 	cl_mem memobj)
 {
-	return clrt_retain(memobj, CLRT_MEM, CL_INVALID_MEM_OBJECT);
+	return clrt_object_retain(memobj, CLRT_OBJECT_MEM, CL_INVALID_MEM_OBJECT);
 }
 
 
 cl_int clReleaseMemObject(
 	cl_mem memobj)
 {
-	return clrt_release(memobj, CLRT_MEM, CL_INVALID_MEM_OBJECT);
+	return clrt_object_release(memobj, CLRT_OBJECT_MEM, CL_INVALID_MEM_OBJECT);
 }
 
 

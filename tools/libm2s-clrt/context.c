@@ -61,7 +61,7 @@ cl_context clCreateContext(
 
 	/* Debug */
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tproperties = %x", properties);
+	m2s_clrt_debug("\tproperties = %p", properties);
 	m2s_clrt_debug("\tnum_devices = %u", num_devices);
 	m2s_clrt_debug("\tdevices = %p", devices);
 	m2s_clrt_debug("\tcallback = %p", pfn_notify);
@@ -98,7 +98,7 @@ cl_context clCreateContext(
 	context = (struct _cl_context *) malloc(sizeof (struct _cl_context));
 	if (context == NULL)
 		fatal("%s: out of memory", __FUNCTION__);
-	clrt_object_create(context, CLRT_CONTEXT, clrt_context_free);
+	clrt_object_create(context, CLRT_OBJECT_CONTEXT, clrt_context_free);
 
 
 	context->num_devices = 1;
@@ -125,8 +125,8 @@ cl_context clCreateContextFromType(
 {
 	/* Debug */
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
-	m2s_clrt_debug("\tproperties = %x", properties);
-	m2s_clrt_debug("\tdevice_type = %x", device_type);
+	m2s_clrt_debug("\tproperties = %p", properties);
+	m2s_clrt_debug("\tdevice_type = 0x%x", (int) device_type);
 	m2s_clrt_debug("\tcallback = %p", pfn_notify);
 	m2s_clrt_debug("\tuser_data = %p", user_data);
 	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
@@ -155,7 +155,7 @@ cl_int clRetainContext(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tcontext = %p", context);
 
-	return clrt_retain(context, CLRT_CONTEXT, CL_INVALID_CONTEXT);
+	return clrt_object_retain(context, CLRT_OBJECT_CONTEXT, CL_INVALID_CONTEXT);
 }
 
 
@@ -166,7 +166,7 @@ cl_int clReleaseContext(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tcontext = %p", context);
 
-	return clrt_release(context, CLRT_CONTEXT, CL_INVALID_CONTEXT);
+	return clrt_object_release(context, CLRT_OBJECT_CONTEXT, CL_INVALID_CONTEXT);
 }
 
 

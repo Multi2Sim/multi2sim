@@ -176,7 +176,7 @@ cl_kernel clCreateKernel(
 	m2s_clrt_debug("\tkernel_name = %s", kernel_name);
 	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
 
-	if (!clrt_object_verify(program, CLRT_PROGRAM))
+	if (!clrt_object_verify(program, CLRT_OBJECT_PROGRAM))
 	{
 		if (errcode_ret != NULL)
 			*errcode_ret = CL_INVALID_PROGRAM;
@@ -187,7 +187,7 @@ cl_kernel clCreateKernel(
 	if (kernel == NULL)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	clrt_object_create(kernel, CLRT_KERNEL, clrt_kernel_free);
+	clrt_object_create(kernel, CLRT_OBJECT_KERNEL, clrt_kernel_free);
 
 	inner_elf = get_inner_elf_addr(program->elf_data);
 
@@ -293,7 +293,7 @@ cl_int clRetainKernel(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tkernel = %p", kernel);
 
-	return clrt_retain(kernel, CLRT_KERNEL, CL_INVALID_KERNEL);
+	return clrt_object_retain(kernel, CLRT_OBJECT_KERNEL, CL_INVALID_KERNEL);
 }
 
 
@@ -304,7 +304,7 @@ cl_int clReleaseKernel(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tkernel = %p", kernel);
 
-	return clrt_release(kernel, CLRT_KERNEL, CL_INVALID_KERNEL);
+	return clrt_object_release(kernel, CLRT_OBJECT_KERNEL, CL_INVALID_KERNEL);
 }
 
 
@@ -335,7 +335,7 @@ cl_int clSetKernelArg(
 	else if (param_info->mem_type == CLRT_MEM_GLOBAL || param_info->mem_type == CLRT_MEM_CONSTANT)
 	{
 		struct _cl_mem *mem = *(cl_mem *) arg_value;
-		if (!clrt_object_verify(mem, CLRT_MEM))
+		if (!clrt_object_verify(mem, CLRT_OBJECT_MEM))
 			return CL_INVALID_MEM_OBJECT;
 		memcpy(kernel->stack_params + param_info->stack_offset, &mem->buffer, sizeof mem->buffer);
 	}

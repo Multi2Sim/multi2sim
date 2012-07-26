@@ -318,7 +318,7 @@ cl_int clGetDeviceIDs(
 	/* Debug */
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tplatform = %p", platform);
-	m2s_clrt_debug("\tdevice_type = %x", device_type);
+	m2s_clrt_debug("\tdevice_type = 0x%x", (int) device_type);
 	m2s_clrt_debug("\tnum_entries = %u", num_entries);
 	m2s_clrt_debug("\tdevices = %p", devices);
 	m2s_clrt_debug("\tnum_devices = %p", num_devices);
