@@ -90,6 +90,7 @@ extern char *m2s_clrt_err_param_note;
 /* 
  * Private Fiber definitions 
  */
+
 typedef void (*fiber_proc_t)(void);
 typedef void (*return_address_t)(void);
 
@@ -124,8 +125,6 @@ void *get_function_info(void *elf, const char *name, size_t **metadata, int *met
 /*
  * Private OpenCL implementation definitions
  */
-
-
 
 typedef void (*clrt_function_t)(void);
 typedef void (*clrt_barrier_t)(int option);
@@ -192,20 +191,20 @@ struct clrt_parameter_t
 
 struct clrt_reg_param_t
 {
-	int32_t reg[4];
+	int reg[4];
 };
 
 struct clrt_workitem_data_t
 {
-	int32_t workgroup_data; /* 0x60 (Not actually part of AMD runtime, padding_0) */
-	int32_t barrier_func; /*0x5c (function *) */
-	int32_t padding_1; /*0x58 */
-	int32_t work_dim; /* 0x54 */
-	int32_t group_global[4]; /* [0x50, 0x44] */
-	int32_t global_size[4]; /* [0x40, 0x34] */
-	int32_t local_size[4]; /* [0x30, 0x24] */
-	int32_t group_id[4]; /* [0x20, 0x14] */
-	int32_t global_id[4]; /* [0x10, 0x04] */
+	int workgroup_data;  /* 0x60 (Not actually part of AMD runtime, padding_0) */
+	int barrier_func;  /* 0x5c (function *) */
+	int padding_1;  /* 0x58 */
+	int work_dim;  /* 0x54 */
+	int group_global[4];  /* [0x50, 0x44] */
+	int global_size[4];  /* [0x40, 0x34] */
+	int local_size[4];  /* [0x30, 0x24] */
+	int group_id[4];  /* [0x20, 0x14] */
+	int global_id[4];  /* [0x10, 0x04] */
 };
 
 struct clrt_workgroup_data_t
@@ -217,7 +216,7 @@ struct clrt_workgroup_data_t
 	struct fiber_t *cur_ctx;
 	struct fiber_t *workitems;
 	struct clrt_workitem_data_t **workitem_data;
-	size_t *stack_params;
+	unsigned int *stack_params;
 	char *all_stacks;
 	char *aligned_stacks;
 };
@@ -251,40 +250,52 @@ void clrt_buffer_free(void *buffer);
 
 
 /*
- * OpenCL reference counting and object verification definitions
+ * OpenCL Objects
  */
 
-typedef void (*clrt_destroy_t)(void *);
+typedef void (*clrt_object_destroy_func_t)(void *);
 
 enum clrt_object_type_t
 {
-	CLRT_CONTEXT,
-	CLRT_COMMAND_QUEUE,
-	CLRT_MEM,
-	CLRT_PROGRAM,
-	CLRT_KERNEL,
-	CLRT_EVENT,
-	CLRT_SAMPLER
+	CLRT_OBJECT_INVALID,
+	CLRT_OBJECT_CONTEXT,
+	CLRT_OBJECT_COMMAND_QUEUE,
+	CLRT_OBJECT_MEM,
+	CLRT_OBJECT_PROGRAM,
+	CLRT_OBJECT_KERNEL,
+	CLRT_OBJECT_EVENT,
+	CLRT_OBJECT_SAMPLER
 };
 
 struct clrt_object_t
 {
 	struct clrt_object_t *next;
 	enum clrt_object_type_t type;
-	clrt_destroy_t destroy;
-	int refcount;
-	pthread_mutex_t reflock;
-	void *object;
+
+	/* Callback function to destroy data */
+	clrt_object_destroy_func_t destroy_func;
+
+	/* Number of references to the data */
+	int ref_count;
+	pthread_mutex_t ref_mutex;
+
+	/* Object itself */
+	void *data;
 };
 
-struct clrt_object_t *clrt_object_create(void *object, enum clrt_object_type_t type, clrt_destroy_t destroy);
-struct clrt_object_t *clrt_object_enumerate(struct clrt_object_t *prev, enum clrt_object_type_t type);
-int clrt_change_refcount(void *object, int change, enum clrt_object_type_t type);
+struct clrt_object_t *clrt_object_create(void *data, enum clrt_object_type_t type,
+		clrt_object_destroy_func_t destroy);
+void clrt_object_free(struct clrt_object_t *object);
+
+struct clrt_object_t *clrt_object_enumerate(struct clrt_object_t *prev,
+		enum clrt_object_type_t type);
 struct clrt_object_t *clrt_object_find(void *object, struct clrt_object_t **prev_item);
 
 int clrt_object_verify(void *object, enum clrt_object_type_t type);
-int clrt_retain(void *object, enum clrt_object_type_t type, int err_code);
-int clrt_release(void *object, enum clrt_object_type_t type, int err_code);
+
+int clrt_object_ref_update(void *object, enum clrt_object_type_t type, int change);
+int clrt_object_retain(void *object, enum clrt_object_type_t type, int err_code);
+int clrt_object_release(void *object, enum clrt_object_type_t type, int err_code);
 
 
 
