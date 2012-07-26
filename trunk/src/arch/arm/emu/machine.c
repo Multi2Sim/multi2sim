@@ -149,7 +149,7 @@ void arm_isa_CMPS_reg_impl(struct arm_ctx_t *ctx)
 	int rn_val;
 	int operand2;
 	int result;
-	int carry_res;
+
 
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
@@ -163,7 +163,7 @@ void arm_isa_CMPS_reg_impl(struct arm_ctx_t *ctx)
 		regs->cpsr.n = 0;
 		regs->cpsr.C = 1;
 		regs->cpsr.v = 0;
-		carry_res = -1 * operand2;
+
 		if(result == 0)
 		{
 			regs->cpsr.z = 1;
@@ -402,7 +402,7 @@ void arm_isa_CMPS_imm_impl(struct arm_ctx_t *ctx)
 	int rn_val;
 	int operand2;
 	int result;
-	int carry_res;
+
 
 	regs = ctx->regs;
 	if(arm_isa_check_cond(ctx))
@@ -416,7 +416,7 @@ void arm_isa_CMPS_imm_impl(struct arm_ctx_t *ctx)
 		regs->cpsr.n = 0;
 		regs->cpsr.C = 1;
 		regs->cpsr.v = 0;
-		carry_res = -1 * operand2;
+
 		if(result == 0)
 		{
 			regs->cpsr.z = 1;
@@ -525,12 +525,12 @@ void arm_isa_BIC_imm_impl(struct arm_ctx_t *ctx)
 	int operand2;
 	int rd_val;
 	int rn_val;
-	struct arm_regs_t *regs;
+
 
 	if(arm_isa_check_cond(ctx))
 	{
 		operand2 = arm_isa_op2_get(ctx, ctx->inst.dword.dpr_ins.op2, immd);
-		regs = ctx->regs;
+
 		arm_isa_reg_load(ctx, ctx->inst.dword.dpr_ins.op1_reg, &rn_val);
 
 		if(!(ctx->inst.dword.dpr_ins.s_cond))
