@@ -28,7 +28,7 @@ struct clrt_mem_transfer_t
 {
 	void *dst;
 	void *src;
-	size_t size;
+	unsigned int size;
 };
 
 
@@ -224,11 +224,11 @@ cl_command_queue clCreateCommandQueue(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tcontext = %p", context);
 	m2s_clrt_debug("\tdevice = %p", device);
-	m2s_clrt_debug("\tproperties = %x", properties);
+	m2s_clrt_debug("\tproperties = 0x%llx", (long long) properties);
 	m2s_clrt_debug("\terrcode_ret = %p", errcode_ret);
 
 	/* check to see that context is valid */
-	if (!clrt_object_verify(context, CLRT_CONTEXT))
+	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
 	{
 		if (errcode_ret != NULL)
 			*errcode_ret = CL_INVALID_CONTEXT;
@@ -259,7 +259,7 @@ cl_command_queue clCreateCommandQueue(
 	pthread_mutex_init(&queue->lock, NULL);
 	pthread_cond_init(&queue->cond_process, NULL);
 	pthread_create(&queue->queue_thread, NULL, clrt_command_queue_thread_proc, queue);
-	clrt_object_create(queue, CLRT_COMMAND_QUEUE, clrt_command_queue_free);
+	clrt_object_create(queue, CLRT_OBJECT_COMMAND_QUEUE, clrt_command_queue_free);
 
 	if (errcode_ret != NULL)
 		*errcode_ret = CL_SUCCESS;
@@ -274,7 +274,7 @@ cl_int clRetainCommandQueue(
 	/* Debug */
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 
-	return clrt_retain(command_queue, CLRT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
+	return clrt_object_retain(command_queue, CLRT_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
 }
 
 
@@ -284,7 +284,7 @@ cl_int clReleaseCommandQueue(
 	/* Debug */
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 
-	return clrt_release(command_queue, CLRT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
+	return clrt_object_release(command_queue, CLRT_OBJECT_COMMAND_QUEUE, CL_INVALID_COMMAND_QUEUE);
 }
 
 
@@ -338,9 +338,9 @@ cl_int clEnqueueReadBuffer(
 	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
 	m2s_clrt_debug("\tevent = %p", event);
 
-	if (!clrt_object_verify(command_queue, CLRT_COMMAND_QUEUE))
+	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
-	if (!clrt_object_verify(buffer, CLRT_MEM))
+	if (!clrt_object_verify(buffer, CLRT_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
 	if (buffer->size < offset + cb)
 		return CL_INVALID_VALUE;
@@ -429,9 +429,9 @@ cl_int clEnqueueWriteBuffer(
 	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
 	m2s_clrt_debug("\tevent = %p", event);
 
-	if (!clrt_object_verify(command_queue, CLRT_COMMAND_QUEUE))
+	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
-	if (!clrt_object_verify(buffer, CLRT_MEM))
+	if (!clrt_object_verify(buffer, CLRT_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
 	if (buffer->size < offset + cb)
 		return CL_INVALID_VALUE;
@@ -518,11 +518,11 @@ cl_int clEnqueueCopyBuffer(
 	m2s_clrt_debug("\tevent_wait_list = %p", event_wait_list);
 	m2s_clrt_debug("\tevent = %p", event);
 
-	if (!clrt_object_verify(command_queue, CLRT_COMMAND_QUEUE))
+	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
-	if (!clrt_object_verify(src_buffer, CLRT_MEM))
+	if (!clrt_object_verify(src_buffer, CLRT_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
-	if (!clrt_object_verify(dst_buffer, CLRT_MEM))
+	if (!clrt_object_verify(dst_buffer, CLRT_OBJECT_MEM))
 		return CL_INVALID_MEM_OBJECT;
 	if ((src_buffer->size < src_offset + cb) || (dst_buffer->size < dst_offset + cb))
 		return CL_INVALID_VALUE;
@@ -750,10 +750,10 @@ cl_int clEnqueueNDRangeKernel(
 	if (run == NULL)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	if (!clrt_object_verify(command_queue, CLRT_COMMAND_QUEUE))
+	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
 
-	if (!clrt_object_verify(kernel, CLRT_KERNEL))
+	if (!clrt_object_verify(kernel, CLRT_OBJECT_KERNEL))
 		return CL_INVALID_KERNEL;
 
 	for (i = 0; i < ((struct _cl_kernel *) kernel)->num_params; i++)

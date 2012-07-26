@@ -123,7 +123,7 @@ cl_program clCreateProgramWithBinary(
 	if (program == NULL)
 		fatal("%s: out of memory", __FUNCTION__);
 
-	clrt_object_create(program, CLRT_PROGRAM, clrt_program_free);
+	clrt_object_create(program, CLRT_OBJECT_PROGRAM, clrt_program_free);
 
 	program->elf_data = mmap(NULL, lengths[0], PROT_EXEC | PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (program->elf_data == NULL)
@@ -149,7 +149,7 @@ cl_int clRetainProgram(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tprogram = %p", program);
 	
-	return clrt_retain(program, CLRT_PROGRAM, CL_INVALID_PROGRAM);
+	return clrt_object_retain(program, CLRT_OBJECT_PROGRAM, CL_INVALID_PROGRAM);
 }
 
 
@@ -160,7 +160,7 @@ cl_int clReleaseProgram(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tprogram = %p", program);
 
-	return clrt_release(program, CLRT_PROGRAM, CL_INVALID_PROGRAM);
+	return clrt_object_release(program, CLRT_OBJECT_PROGRAM, CL_INVALID_PROGRAM);
 }
 
 

@@ -87,7 +87,7 @@ struct _cl_event *clrt_event_create(struct _cl_command_queue *queue)
 	event = (struct _cl_event *) malloc(sizeof (struct _cl_event));
 	if (event == NULL)
 		fatal("%s: out of memory", __FUNCTION__);
-	clrt_object_create(event, CLRT_EVENT, clrt_event_free);
+	clrt_object_create(event, CLRT_OBJECT_EVENT, clrt_event_free);
 	
 
 	event->status = CL_QUEUED;
@@ -111,7 +111,7 @@ int clrt_event_wait_list_check(
 	/* Verify that the parameter list is valid up-front */
 	for (i = 0; i < num_events; i++)
 	{
-		if (!clrt_object_verify(event_list[i], CLRT_EVENT))
+		if (!clrt_object_verify(event_list[i], CLRT_OBJECT_EVENT))
 			return CL_INVALID_EVENT_WAIT_LIST;
 	}
 	return CL_SUCCESS;
@@ -141,7 +141,7 @@ cl_int clWaitForEvents(
 	/* Verify that the parameter list is valid up-front */
 	for (i = 0; i < num_events; i++)
 	{
-		if (!clrt_object_verify(event_list[i], CLRT_EVENT))
+		if (!clrt_object_verify(event_list[i], CLRT_OBJECT_EVENT))
 			return CL_INVALID_EVENT;
 	}
 
@@ -180,14 +180,14 @@ cl_event clCreateUserEvent(
 		fatal("%s: out of memory", __FUNCTION__);
 	
 	/* check to see that context is valid */
-	if (!clrt_object_verify(context, CLRT_CONTEXT))
+	if (!clrt_object_verify(context, CLRT_OBJECT_CONTEXT))
 	{
 		if (errcode_ret != NULL)
 			*errcode_ret = CL_INVALID_CONTEXT;
 		return NULL;
 	}
 
-	clrt_object_create(event, CLRT_EVENT, clrt_event_free);
+	clrt_object_create(event, CLRT_OBJECT_EVENT, clrt_event_free);
 	
 	event->status = CL_QUEUED;
 	event->changed = CL_FALSE;
@@ -204,7 +204,7 @@ cl_int clRetainEvent(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tevent = %p", event);
 	
-	return clrt_retain(event, CLRT_EVENT, CL_INVALID_EVENT);
+	return clrt_object_retain(event, CLRT_OBJECT_EVENT, CL_INVALID_EVENT);
 }
 
 
@@ -215,7 +215,7 @@ cl_int clReleaseEvent(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tevent = %p", event);
 
-	return clrt_release(event, CLRT_EVENT, CL_INVALID_EVENT);
+	return clrt_object_release(event, CLRT_OBJECT_EVENT, CL_INVALID_EVENT);
 }
 
 
@@ -228,7 +228,7 @@ cl_int clSetUserEventStatus(
 	m2s_clrt_debug("\tevent = %p", event);
 	m2s_clrt_debug("\texecution_status = %d", execution_status);
 
-	if (!clrt_object_verify(event, CLRT_EVENT) || event->queue)
+	if (!clrt_object_verify(event, CLRT_OBJECT_EVENT) || event->queue)
 		return CL_INVALID_EVENT;
 
 	if (event->status > CL_COMPLETE)
@@ -278,7 +278,7 @@ cl_int clFlush(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
 
-	if (!clrt_object_verify(command_queue, CLRT_COMMAND_QUEUE))
+	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
 
 	pthread_mutex_lock(&command_queue->lock);
@@ -304,7 +304,7 @@ cl_int clFinish(
 	m2s_clrt_debug("call '%s'", __FUNCTION__);
 	m2s_clrt_debug("\tcommand_queue = %p", command_queue);
 
-	if (!clrt_object_verify(command_queue, CLRT_COMMAND_QUEUE))
+	if (!clrt_object_verify(command_queue, CLRT_OBJECT_COMMAND_QUEUE))
 		return CL_INVALID_COMMAND_QUEUE;
 
 	cl_event event = clrt_event_create(command_queue);

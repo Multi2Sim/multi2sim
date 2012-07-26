@@ -2,7 +2,7 @@ M2S_ROOT = ../..
 
 AR = ar
 CC = gcc
-CFLAGS = -Wall -O3 -fPIC -m32 -I. \
+CFLAGS = -Wall -Werror -O3 -fPIC -m32 -I. \
 	-I$(M2S_ROOT)/src/lib/struct \
 	-I$(M2S_ROOT)/src/lib/mhandle \
 	-I$(M2S_ROOT)/src/lib/misc
@@ -23,6 +23,7 @@ OBJECTS = \
 	list.o \
 	m2s-clrt.o \
 	mem.o \
+	object.o \
 	platform.o \
 	program.o \
 	sampler.o
@@ -87,6 +88,9 @@ m2s-clrt.o: m2s-clrt.c $(HEADER_NAME)
 
 mem.o: mem.c $(HEADER_NAME)
 	$(CC) $(CFLAGS) -c mem.c -o mem.o
+
+object.o: object.c $(HEADER_NAME)
+	$(CC) $(CFLAGS) -c object.c -o object.o
 	
 platform.o: platform.c $(HEADER_NAME)
 	$(CC) $(CFLAGS) -c platform.c -o platform.o
