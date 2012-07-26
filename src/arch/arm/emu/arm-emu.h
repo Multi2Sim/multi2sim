@@ -94,6 +94,62 @@ struct arm_regs_t
 		unsigned int n		: 1; /* [31] */
 	}cpsr;
 
+	struct arm_cpsr_reg_t spsr;
+
+	/* TODO: Arrange all the coproc in structures */
+	/* System control coprocessor (cp15) */
+	struct arm_coproc_regs_t
+	{
+		unsigned int c0_cpuid;
+		unsigned int c0_cachetype;
+		unsigned int c0_ccsid[16]; /* Cache size.  */
+		unsigned int c0_clid; /* Cache level.  */
+		unsigned int c0_cssel; /* Cache size selection.  */
+		unsigned int c0_c1[8]; /* Feature registers.  */
+		unsigned int c0_c2[8]; /* Instruction set registers.  */
+		unsigned int c1_sys; /* System control register.  */
+		unsigned int c1_coproc; /* Coprocessor access register.  */
+		unsigned int c1_xscaleauxcr; /* XScale auxiliary control register.  */
+		unsigned int c1_scr; /* secure config register.  */
+		unsigned int c2_base0; /* MMU translation table base 0.  */
+		unsigned int c2_base1; /* MMU translation table base 1.  */
+		unsigned int c2_control; /* MMU translation table base control.  */
+		unsigned int c2_mask; /* MMU translation table base selection mask.  */
+		unsigned int c2_base_mask; /* MMU translation table base 0 mask. */
+		unsigned int c2_data; /* MPU data cachable bits.  */
+		unsigned int c2_insn; /* MPU instruction cachable bits.  */
+		unsigned int c3; /* MMU domain access control register MPU write buffer control.  */
+		unsigned int c5_insn; /* Fault status registers.  */
+		unsigned int c5_data;
+		unsigned int c6_region[8]; /* MPU base/size registers.  */
+		unsigned int c6_insn; /* Fault address registers.  */
+		unsigned int c6_data;
+		unsigned int c7_par; /* Translation result. */
+		unsigned int c9_insn; /* Cache lockdown registers.  */
+		unsigned int c9_data;
+		unsigned int c9_pmcr; /* performance monitor control register */
+		unsigned int c9_pmcnten; /* perf monitor counter enables */
+		unsigned int c9_pmovsr; /* perf monitor overflow status */
+		unsigned int c9_pmxevtyper; /* perf monitor event type */
+		unsigned int c9_pmuserenr; /* perf monitor user enable */
+		unsigned int c9_pminten; /* perf monitor interrupt enables */
+		unsigned int c13_fcse; /* FCSE PID.  */
+		unsigned int c13_context; /* Context ID.  */
+		unsigned int c13_tls1; /* User RW Thread register.  */
+		unsigned int c13_tls2; /* User RO Thread register.  */
+		unsigned int c13_tls3; /* Privileged Thread register.  */
+		unsigned int c15_cpar; /* XScale Coprocessor Access Register */
+		unsigned int c15_ticonfig; /* TI925T configuration byte.  */
+		unsigned int c15_i_max; /* Maximum D-cache dirty line index.  */
+		unsigned int c15_i_min; /* Minimum D-cache dirty line index.  */
+		unsigned int c15_threadid; /* TI debugger thread-ID.  */
+		unsigned int c15_config_base_address; /* SCU base address.  */
+		unsigned int c15_diagnostic; /* diagnostic register */
+		unsigned int c15_power_diagnostic;
+		unsigned int c15_power_control; /* power control */
+	}cp15;
+
+
 } __attribute__((packed));
 struct arm_regs_t *arm_regs_create();
 void arm_regs_free(struct arm_regs_t *regs);
@@ -227,6 +283,8 @@ enum arm_isa_op2_cat_t
 int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_cat_t cat);
 unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx);
 void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no,
+	int value);
+void arm_isa_reg_store_safe(struct arm_ctx_t *ctx, unsigned int reg_no,
 	unsigned int value);
 void arm_isa_reg_load(struct arm_ctx_t *ctx, unsigned int reg_no,
 	 int *value);
@@ -237,8 +295,14 @@ void arm_isa_amode4s_ld(struct arm_ctx_t *ctx);
 void arm_isa_cpsr_print(struct arm_ctx_t *ctx);
 void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
 	unsigned int op3);
+void arm_isa_subtract_rev(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
+	unsigned int op3);
 void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
 	unsigned int op3);
+void arm_isa_multiply(struct arm_ctx_t *ctx);
+int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op2_cat_t cat);
+
+void arm_isa_syscall(struct arm_ctx_t *ctx);
 
 
 
@@ -246,10 +310,17 @@ void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op
 /*
  * System calls
  */
+
+#define ARM_set_tls 0xF0005
+
+#define arm_sys_debug(...) debug(arm_sys_debug_category, __VA_ARGS__)
+#define arm_sys_debug_buffer(...) debug_buffer(arm_sys_debug_category, __VA_ARGS__)
+extern int arm_sys_debug_category;
+
 void arm_sys_init(void);
 void arm_sys_done(void);
 
-
+void arm_sys_call(struct arm_ctx_t *ctx);
 
 
 /*

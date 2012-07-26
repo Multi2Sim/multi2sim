@@ -152,7 +152,7 @@ unsigned int arm_isa_get_addr_amode2(struct arm_ctx_t *ctx)
 			arm_isa_reg_store(ctx, rn, ret_addr);
 	}
 
-
+	arm_isa_inst_debug("  ls/st addr = 0x%x\n", ret_addr);
 	return (ret_addr);
 }
 
@@ -230,7 +230,114 @@ int arm_isa_op2_get(struct arm_ctx_t *ctx, unsigned int op2 , enum arm_isa_op2_c
 	return (op_val);
 }
 
-void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no, unsigned int value)
+int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op2_cat_t cat)
+{
+	unsigned int imm;
+	unsigned int rotate;
+	unsigned int shift;
+	unsigned int rm;
+	unsigned int rs;
+	unsigned int shift_imm;
+	signed int rm_val;
+	unsigned int carry_ret;
+	unsigned int cry_bit;
+	unsigned int cry_mask;
+	unsigned int rot_val;
+	if (cat == immd)
+	{
+		imm = (op2 & (0x000000ff));
+		rotate = ((op2 >> 8) & 0x0000000f);
+
+		cry_bit = rotate;
+		cry_mask = (unsigned int)(pow(2,cry_bit));
+
+		if(cry_mask & imm)
+			carry_ret = 1;
+		else
+			carry_ret = 0;
+
+		arm_isa_inst_debug("  carry bit = %d, imm = 0x%x, rotate = %d\n",
+				carry_ret, imm, rotate);
+	}
+
+	else if (cat == reg)
+	{
+		rm = (op2 & (0x0000000f));
+		arm_isa_reg_load(ctx, rm, &rm_val);
+		shift = ((op2 >> 4) & (0x000000ff));
+		shift_imm = ((shift >> 3) & 0x0000001f);
+
+		if (shift & 0x00000001)
+		{
+			rs = (shift >> 4);
+			switch ((shift >> 1) & 0x00000003)
+			{
+			case (LSL):
+				cry_bit = (32 - rs);
+				cry_mask = (unsigned int)(pow(2,cry_bit));
+				break;
+
+			case (LSR):
+				cry_bit = (rs);
+				cry_mask = (unsigned int)(pow(2,cry_bit));
+				break;
+
+			case (ASR):
+				cry_bit = (rs);
+				cry_mask = (unsigned int)(pow(2,cry_bit));
+				break;
+
+			case (ROR):
+				cry_bit = (rs);
+				cry_mask = (unsigned int)(pow(2,cry_bit));
+				break;
+			}
+			rot_val = rs;
+		}
+
+		else
+		{
+			switch ((shift >> 1) & 0x00000003)
+			{
+			case (LSL):
+				cry_bit = (32 - shift_imm);
+				cry_mask = (unsigned int)(pow(2,cry_bit));
+				break;
+
+			case (LSR):
+				cry_bit = (shift_imm);
+				cry_mask = (unsigned int)(pow(2,cry_bit));
+				break;
+
+			case (ASR):
+				cry_bit = (shift_imm);
+				cry_mask = (unsigned int)(pow(2,cry_bit));
+				break;
+
+			case (ROR):
+				cry_bit = (shift_imm);
+				cry_mask = (unsigned int)(pow(2,cry_bit));
+				break;
+			}
+			rot_val = shift_imm;
+		}
+
+		if(cry_mask & rm_val)
+			carry_ret = 1;
+		else
+			carry_ret = 0;
+
+		arm_isa_inst_debug("  carry bit = %d, rm_val = 0x%x, rotate = %d\n",
+								carry_ret, rm_val, shift_imm);
+	}
+
+	return (carry_ret);
+}
+
+
+
+
+void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no, int value)
 {
 	arm_isa_inst_debug("  r%d <= %d; (0x%x)\n", reg_no, value, value);
 	switch (reg_no)
@@ -281,10 +388,67 @@ void arm_isa_reg_store(struct arm_ctx_t *ctx, unsigned int reg_no, unsigned int 
 		ctx->regs->lr = value;
 		break;
 	case (r15):
-		ctx->regs->pc = value;
+		ctx->regs->pc = value + 4;
 		break;
 	}
 }
+
+void arm_isa_reg_store_safe(struct arm_ctx_t *ctx, unsigned int reg_no, unsigned int value)
+{
+	arm_isa_inst_debug("  r%d <= %d; (0x%x); safe_store\n", reg_no, value, value);
+	switch (reg_no)
+	{
+	case (r0):
+		ctx->regs->r0 = value;
+		break;
+	case (r1):
+		ctx->regs->r1 = value;
+		break;
+	case (r2):
+		ctx->regs->r2 = value;
+		break;
+	case (r3):
+		ctx->regs->r3 = value;
+		break;
+	case (r4):
+		ctx->regs->r4 = value;
+		break;
+	case (r5):
+		ctx->regs->r5 = value;
+		break;
+	case (r6):
+		ctx->regs->r6 = value;
+		break;
+	case (r7):
+		ctx->regs->r7 = value;
+		break;
+	case (r8):
+		ctx->regs->r8 = value;
+		break;
+	case (r9):
+		ctx->regs->r9 = value;
+		break;
+	case (r10):
+		ctx->regs->sl = value;
+		break;
+	case (r11):
+		ctx->regs->fp = value;
+		break;
+	case (r12):
+		ctx->regs->ip = value;
+		break;
+	case (r13):
+		ctx->regs->sp = value;
+		break;
+	case (r14):
+		ctx->regs->lr = value;
+		break;
+	case (r15):
+		ctx->regs->pc = value + 4;
+		break;
+	}
+}
+
 
 void arm_isa_reg_load(struct arm_ctx_t *ctx, unsigned int reg_no, int *value)
 {
@@ -712,12 +876,41 @@ void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, i
 {
 	int rd_val;
 	int rn_val;
+	unsigned int rd_val_safe;
+	arm_isa_reg_load(ctx, rn, &rn_val);
+
+	if(!(ctx->inst.dword.dpr_ins.s_cond))
+	{
+		if(rd == 15)
+		{
+			rd_val_safe = rn_val - op2 - op3;
+			arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
+			arm_isa_reg_store_safe(ctx, rd, rd_val_safe);
+		}
+		else
+		{
+			rd_val = rn_val - op2 - op3;
+			arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
+			arm_isa_reg_store(ctx, rd, rd_val);
+		}
+	}
+	else
+	{
+
+	}
+}
+
+void arm_isa_subtract_rev(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
+	unsigned int op3)
+{
+	int rd_val;
+	int rn_val;
 
 	arm_isa_reg_load(ctx, rn, &rn_val);
 
 	if(!(ctx->inst.dword.dpr_ins.s_cond))
 	{
-		rd_val = rn_val - op2 - op3;
+		rd_val = op2 - rn_val - op3;
 		arm_isa_inst_debug("  r%d = r%d - %d\n", rd, rn, op2);
 		arm_isa_reg_store(ctx, rd, rd_val);
 	}
@@ -727,12 +920,16 @@ void arm_isa_subtract(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, i
 	}
 }
 
+
 void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op2,
 	unsigned int op3)
 {
 	int rd_val;
 	int rn_val;
+	struct arm_regs_t *regs;
+	unsigned int rd_val_safe;
 
+	regs = ctx->regs;
 	arm_isa_reg_load(ctx, rn, &rn_val);
 
 	if(!(ctx->inst.dword.dpr_ins.s_cond))
@@ -743,8 +940,83 @@ void arm_isa_add(struct arm_ctx_t *ctx, unsigned int rd, unsigned int rn, int op
 	}
 	else
 	{
+		rd_val = rn_val + op2 + op3;
+		rd_val_safe = (unsigned int)rn_val + (unsigned int)op2 + (unsigned int)op3;
+		arm_isa_inst_debug("  r%d = r%d + %d\n", rd, rn, op2);
+		arm_isa_reg_store(ctx, rd, rd_val);
 
+		regs->cpsr.z = 0;
+		regs->cpsr.n = 0;
+		regs->cpsr.C = 0;
+		regs->cpsr.v = 0;
+
+		if(rd_val == 0)
+		{
+			regs->cpsr.z = 1;
+			regs->cpsr.n = 0;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if(rd_val < 0)
+		{
+			regs->cpsr.n = 1;
+			regs->cpsr.C = 0;
+			regs->cpsr.v = 0;
+		}
+		if (rd_val_safe > (0xffffffff))
+		{
+			regs->cpsr.C = 1;
+			regs->cpsr.v = 0;
+		}
+
+		if (((rn_val >= 0 && rd_val < op2) || (rn_val < 0 && rd_val > op2)))
+		{
+			regs->cpsr.v = 1;
+		}
+		arm_isa_cpsr_print(ctx);
 	}
+}
+
+void arm_isa_multiply(struct arm_ctx_t *ctx)
+{
+	int rm_val;
+	int rs_val;
+	int rd_val;
+	int rn_val;
+
+	if (!(ctx->inst.dword.mult_ins.m_acc))
+	{
+		arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op1_rs, &rs_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op0_rm, &rm_val);
+
+		rd_val = rm_val * rs_val;
+
+		arm_isa_reg_store(ctx, ctx->inst.dword.mult_ins.dst_rd, rd_val);
+	}
+	else
+	{
+
+		arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op1_rs, &rs_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op0_rm, &rm_val);
+		arm_isa_reg_load(ctx, ctx->inst.dword.mult_ins.op2_rn, &rn_val);
+
+		rd_val = (rm_val * rs_val) + rn_val;
+
+		arm_isa_reg_store(ctx, ctx->inst.dword.mult_ins.dst_rd, rd_val);
+	}
+}
+
+void arm_isa_syscall(struct arm_ctx_t *ctx)
+{
+	if(ctx->regs->r7 == ARM_set_tls)
+	{
+		ctx->regs->r7 = 330;
+	}
+	arm_sys_call(ctx);
+	if(!ctx->regs->r0)
+		arm_isa_inst_debug("  System call code = %d\n", ctx->regs->r7);
+	else
+		arm_isa_inst_debug("  System call code = %d\n", ctx->regs->r7);
 }
 
 
