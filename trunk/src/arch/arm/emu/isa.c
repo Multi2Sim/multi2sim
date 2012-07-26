@@ -242,7 +242,6 @@ int arm_isa_op2_carry(struct arm_ctx_t *ctx,  unsigned int op2 , enum arm_isa_op
 	unsigned int carry_ret;
 	unsigned int cry_bit;
 	unsigned int cry_mask;
-	unsigned int rot_val;
 	if (cat == immd)
 	{
 		imm = (op2 & (0x000000ff));
