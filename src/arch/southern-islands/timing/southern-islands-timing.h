@@ -75,6 +75,7 @@ struct si_uop_t
 	long long fetch_ready;      /* Cycle when fetch completes */
 	long long decode_ready;     /* Cycle when decode completes */
 	long long read_ready;       /* Cycle when register access completes */
+	long long alu_ready;        /* Cycle when subwavefronts have entered the ALU pipeline */
 	long long execute_ready;    /* Cycle when execution completes */
 	long long writeback_ready;  /* Cycle when writeback completes */
 
@@ -160,10 +161,13 @@ struct si_branch_unit_t
 
 struct si_scalar_unit_t
 {
-	struct linked_list_t *read_inst_buffer;  /* Register accesses */
-	struct linked_list_t *exec_inst_buffer;
-	struct linked_list_t *mem_queue;  /* Queue for outstanding memory operations */
-	struct linked_list_t *alu_queue;  /* Queue for ALU operations */
+	struct linked_list_t *read_buffer;  /* Register accesses */
+
+	struct linked_list_t *alu_exec_buffer;  /* Wavefronts pending for ALU execution */
+	struct linked_list_t *alu_out_buffer;  /* Outstanding ALU operations */
+
+	struct linked_list_t *mem_exec_buffer; /* Wavefronts pending for memory access */
+	struct linked_list_t *mem_out_buffer;  /* Outstanding memory operations */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -187,9 +191,10 @@ struct si_vector_mem_unit_t
 
 struct si_simd_t
 {
-	struct linked_list_t *read_inst_buffer;  /* Register accesses */
-	struct linked_list_t *exec_inst_buffer;
-	struct linked_list_t *alu_queue;  /* Queue for ALU operations */
+	struct linked_list_t *read_buffer;  /* Register accesses */
+
+	struct linked_list_t *alu_exec_buffer;  /* Wavefronts pending for ALU execution */
+	struct linked_list_t *alu_out_buffer;  /* Outstanding ALU operations */
 
 	struct si_compute_unit_t *compute_unit;
 

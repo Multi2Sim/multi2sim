@@ -57,10 +57,11 @@ struct si_compute_unit_t *si_compute_unit_create()
 		sizeof(struct si_fetch_buffer_t*));
 	compute_unit->simds = calloc(compute_unit->num_wavefront_pools, sizeof(struct si_simd_t*));
 
-	compute_unit->scalar_unit.read_inst_buffer = linked_list_create();
-	compute_unit->scalar_unit.exec_inst_buffer = linked_list_create();
-	compute_unit->scalar_unit.mem_queue = linked_list_create();
-	compute_unit->scalar_unit.alu_queue = linked_list_create();
+	compute_unit->scalar_unit.read_buffer = linked_list_create();
+	compute_unit->scalar_unit.mem_exec_buffer = linked_list_create();
+	compute_unit->scalar_unit.mem_out_buffer = linked_list_create();
+	compute_unit->scalar_unit.alu_exec_buffer = linked_list_create();
+	compute_unit->scalar_unit.alu_out_buffer = linked_list_create();
 	compute_unit->scalar_unit.compute_unit = compute_unit;
 
 	compute_unit->vector_mem_unit.read_inst_buffer = linked_list_create();
@@ -94,9 +95,9 @@ struct si_compute_unit_t *si_compute_unit_create()
 		compute_unit->simds[i] = calloc(1, sizeof(struct si_simd_t));
 		if (!compute_unit->simds[i])
 			fatal("%s: out of memory", __FUNCTION__);
-		compute_unit->simds[i]->read_inst_buffer = linked_list_create();
-		compute_unit->simds[i]->exec_inst_buffer = linked_list_create();
-		compute_unit->simds[i]->alu_queue = linked_list_create();
+		compute_unit->simds[i]->read_buffer = linked_list_create();
+		compute_unit->simds[i]->alu_exec_buffer = linked_list_create();
+		compute_unit->simds[i]->alu_out_buffer = linked_list_create();
 		compute_unit->simds[i]->compute_unit = compute_unit;
 	}
 
@@ -115,10 +116,11 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	int i;
 
 	/* Scalar Unit */
-	linked_list_free(compute_unit->scalar_unit.read_inst_buffer);
-	linked_list_free(compute_unit->scalar_unit.exec_inst_buffer);
-	linked_list_free(compute_unit->scalar_unit.mem_queue);
-	linked_list_free(compute_unit->scalar_unit.alu_queue);
+	linked_list_free(compute_unit->scalar_unit.read_buffer);
+	linked_list_free(compute_unit->scalar_unit.mem_exec_buffer);
+	linked_list_free(compute_unit->scalar_unit.mem_out_buffer);
+	linked_list_free(compute_unit->scalar_unit.alu_exec_buffer);
+	linked_list_free(compute_unit->scalar_unit.alu_out_buffer);
 
 	/* Vector Memory Unit */
 	linked_list_free(compute_unit->vector_mem_unit.read_inst_buffer);
@@ -128,9 +130,9 @@ void si_compute_unit_free(struct si_compute_unit_t *compute_unit)
 	/* Compute unit */
 	for (i = 0; i < compute_unit->num_wavefront_pools; i++)
 	{
-		free(compute_unit->simds[i]->read_inst_buffer);
-		free(compute_unit->simds[i]->exec_inst_buffer);
-		free(compute_unit->simds[i]->alu_queue);
+		free(compute_unit->simds[i]->read_buffer);
+		free(compute_unit->simds[i]->alu_exec_buffer);
+		free(compute_unit->simds[i]->alu_out_buffer);
 		free(compute_unit->simds[i]);
 
 		si_wavefront_pool_free(compute_unit->wavefront_pools[i]);
@@ -387,13 +389,13 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 			/* FIXME consider branch unit */
 
 			/* Continue if scalar unit instruction buffer is not free */
-			if (linked_list_count(scalar_unit->read_inst_buffer) == 
+			if (linked_list_count(scalar_unit->read_buffer) ==
 				si_gpu_scalar_unit_issue_width)
 				continue;
 
 			/* Decode uop and place it in scalar unit instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			linked_list_add(scalar_unit->read_inst_buffer, uop);
+			linked_list_add(scalar_unit->read_buffer, uop);
 
 			/* Remove uop from fetch buffer */
 			compute_unit->fetch_buffers[active_wfp]->uops[next_oldest] = NULL;
@@ -408,13 +410,13 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 		case SI_FMT_SMRD:
 		{
 			/* Continue if scalar unit instruction buffer is not free */
-			if (linked_list_count(scalar_unit->read_inst_buffer) == 
+			if (linked_list_count(scalar_unit->read_buffer) ==
 				si_gpu_scalar_unit_issue_width)
 				continue;
 
 			/* Decode uop and place it in scalar unit instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			linked_list_add(scalar_unit->read_inst_buffer, uop);
+			linked_list_add(scalar_unit->read_buffer, uop);
 
 			/* Remove uop from fetch buffer */
 			compute_unit->fetch_buffers[active_wfp]->uops[next_oldest] = NULL;
@@ -433,13 +435,13 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 		case SI_FMT_VOP3b:
 		{
 			/* Continue if vector memory unit instruction buffer is not free */
-			if (linked_list_count(compute_unit->simds[active_wfp]->read_inst_buffer) ==
+			if (linked_list_count(compute_unit->simds[active_wfp]->read_buffer) ==
 				si_gpu_simd_issue_width)
 				continue;
 
 			/* Decode uop and place it in vector memory unit instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
-			linked_list_add(compute_unit->simds[active_wfp]->read_inst_buffer, uop);
+			linked_list_add(compute_unit->simds[active_wfp]->read_buffer, uop);
 
 			/* Remove uop from fetch buffer */
 			compute_unit->fetch_buffers[active_wfp]->uops[next_oldest] = NULL;

@@ -15,78 +15,72 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 	int list_count;
 
 	/* Process completed memory instructions */
-	list_count = linked_list_count(scalar_unit->mem_queue);
-	if (list_count)
+	list_count = linked_list_count(scalar_unit->mem_out_buffer);
+	linked_list_head(scalar_unit->mem_out_buffer);
+	for (i = 0; i < list_count; i++)
 	{
-		linked_list_head(scalar_unit->mem_queue);
-		for (i = 0; i < list_count; i++)
+		uop = linked_list_get(scalar_unit->mem_out_buffer);
+		assert(uop);
+
+		if (!uop->global_mem_witness)
 		{
-			uop = linked_list_get(scalar_unit->mem_queue);
-			assert(uop);
+			/* Access complete, remove the uop from the queue */
+			linked_list_remove(scalar_unit->mem_out_buffer);
 
-			if (!uop->global_mem_witness)
-			{
-				/* Access complete, remove the uop from the queue */
-				linked_list_remove(scalar_unit->mem_queue);
+			/* Make the wavefront active again */
+			wavefront = uop->wavefront;
+			wavefront->ready = 1;
 
-				/* Make the wavefront active again */
-				wavefront = uop->wavefront;
-				wavefront->ready = 1;
-
-				/* Free uop */
-				if (si_tracing())
-					si_gpu_uop_trash_add(uop);
-				else
-					si_uop_free(uop);
-			}
-			else 
-			{
-				linked_list_next(scalar_unit->mem_queue);
-			}
+			/* Free uop */
+			if (si_tracing())
+				si_gpu_uop_trash_add(uop);
+			else
+				si_uop_free(uop);
+		}
+		else
+		{
+			linked_list_next(scalar_unit->mem_out_buffer);
 		}
 	}
 
 	/* Process completed ALU instructions */
-	list_count = linked_list_count(scalar_unit->alu_queue);
-	if (list_count)
+	list_count = linked_list_count(scalar_unit->alu_out_buffer);
+	linked_list_head(scalar_unit->alu_out_buffer);
+	for (i = 0; i < list_count; i++)
 	{
-		linked_list_head(scalar_unit->alu_queue);
-		for (i = 0; i < list_count; i++)
+		uop = linked_list_get(scalar_unit->alu_out_buffer);
+		assert(uop);
+
+		if (uop->execute_ready <= si_gpu->cycle)
 		{
-			uop = linked_list_get(scalar_unit->alu_queue);
-			assert(uop);
+			/* Access complete, remove the uop from the queue */
+			linked_list_remove(scalar_unit->alu_out_buffer);
 
-			if (uop->execute_ready <= si_gpu->cycle)
-			{
-				/* Access complete, remove the uop from the queue */
-				linked_list_remove(scalar_unit->alu_queue);
+			/* Make the wavefront active again */
+			wavefront = uop->wavefront;
+			work_group = wavefront->work_group;
+			if (!wavefront->finished)
+				wavefront->ready = 1;
+			else
+				work_group->compute_unit_finished_count++;
 
-				/* Make the wavefront active again */
-				wavefront = uop->wavefront;
-				work_group = wavefront->work_group;
-				if (!wavefront->finished)
-					wavefront->ready = 1;
-				else 
-					work_group->compute_unit_finished_count++;
+			/* Check if wavefront finishes a work-group */
+			assert(work_group->compute_unit_finished_count <=
+				work_group->wavefront_count);
+			if (work_group->compute_unit_finished_count ==
+				work_group->wavefront_count)
+				si_compute_unit_unmap_work_group(scalar_unit->compute_unit,
+					work_group);
 
-				/* Check if wavefront finishes a work-group */
-				assert(work_group->compute_unit_finished_count <= 
-					work_group->wavefront_count);
-				if (work_group->compute_unit_finished_count == 
-					work_group->wavefront_count)
-					si_compute_unit_unmap_work_group(scalar_unit->compute_unit,
-						work_group);
-
-				/* Free uop */
-				if (si_tracing())
-					si_gpu_uop_trash_add(uop);
-				else
-					si_uop_free(uop);
-			}
-			else 
-			{
-				linked_list_next(scalar_unit->alu_queue);
-			}
+			/* Free uop */
+			if (si_tracing())
+				si_gpu_uop_trash_add(uop);
+			else
+				si_uop_free(uop);
+		}
+		else
+		{
+			linked_list_next(scalar_unit->alu_out_buffer);
 		}
 	}
 
@@ -101,83 +95,84 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 	int list_count;
 	int i;
 
-	list_count = linked_list_count(scalar_unit->exec_inst_buffer);
-
-	/* No instruction to process */
-	if (!list_count)
-		return;
-
-	linked_list_head(scalar_unit->exec_inst_buffer);
+	/* Look through the memory execution buffer looking for wavefronts ready to execute */
+	list_count = linked_list_count(scalar_unit->mem_exec_buffer);
+	linked_list_head(scalar_unit->mem_exec_buffer);
 	for (i = 0; i < list_count; i++) 
 	{
+		/* Stop if the issue width has been reached */
 		if (instructions_issued == si_gpu_scalar_unit_issue_width)
 			break;
 
-		/* Process uop */
-		uop = linked_list_get(scalar_unit->exec_inst_buffer); 
+		/* Peek at the first uop */
+		uop = linked_list_get(scalar_unit->mem_exec_buffer);
 		assert(uop);
 
-		/* Decode has not completed.  Safe to assume that no other
-		 * decoded instructions are ready */
+		/* Stop if the uop has not been fully read yet. It is safe
+		 * to assume that no other uop is ready either */
 		if (si_gpu->cycle < uop->read_ready)
 			break;
 		
-		/* Check if type is memory or ALU */
-		if (uop->wavefront->inst.info->fmt == SI_FMT_SMRD)
-		{	
-			/* Scalar memory read */
-			assert(linked_list_count(scalar_unit->mem_queue) <= 
-				si_gpu_scalar_unit_inflight_mem_accesses);
+		/* Scalar memory read */
+		assert(linked_list_count(scalar_unit->mem_out_buffer) <=
+			si_gpu_scalar_unit_inflight_mem_accesses);
 
-			if (linked_list_count(scalar_unit->mem_queue) <
-				si_gpu_scalar_unit_inflight_mem_accesses)
-			{
-				/* Access global memory */
-				uop->global_mem_witness--;
-				uop->global_mem_access_addr = 
-					uop->wavefront->scalar_work_item->global_mem_access_addr;
-				mod_access(scalar_unit->compute_unit->global_memory, 
-					mod_access_load, uop->global_mem_access_addr, 
-					&uop->global_mem_witness, NULL, NULL);
+		/* If there is room in the outstanding memory buffer, issue the access */
+		if (linked_list_count(scalar_unit->mem_out_buffer) <
+			si_gpu_scalar_unit_inflight_mem_accesses)
+		{
+			/* Access global memory */
+			uop->global_mem_witness--;
+			uop->global_mem_access_addr =
+				uop->wavefront->scalar_work_item->global_mem_access_addr;
+			mod_access(scalar_unit->compute_unit->global_memory,
+				mod_access_load, uop->global_mem_access_addr,
+				&uop->global_mem_witness, NULL, NULL);
 
-				/* Add the uop to the inflight memory access queue */
-				linked_list_remove(scalar_unit->exec_inst_buffer); 
-				linked_list_add(scalar_unit->mem_queue, uop);
+			/* Transfer the uop to the outstanding memory access buffer */
+			linked_list_remove(scalar_unit->mem_exec_buffer);
+			linked_list_add(scalar_unit->mem_out_buffer, uop);
 
-				instructions_issued++;
-				scalar_unit->inst_count++;
-				scalar_unit->wavefront_count++;
-			}
-			else 
-			{
-				/* Memory unit is busy, try the next instruction */
-				linked_list_next(scalar_unit->exec_inst_buffer);
-			}
-			continue;
+			instructions_issued++;
+			scalar_unit->inst_count++;
+			scalar_unit->wavefront_count++;
 		}
 		else
 		{
-			/* Scalar ALU */
-			if (linked_list_count(scalar_unit->alu_queue) <= 
-				si_gpu_scalar_unit_issue_width)
-			{
-				/* Execution unit is available */
-				uop->execute_ready = si_gpu->cycle + 
-					si_gpu_scalar_unit_alu_latency;
-				linked_list_remove(scalar_unit->exec_inst_buffer); 
-				linked_list_add(scalar_unit->alu_queue, uop);
-
-				instructions_issued++;
-				scalar_unit->inst_count++;
-				scalar_unit->wavefront_count++;
-			}
-			else 
-			{
-				/* Execution unit is busy, try the next instruction */
-				linked_list_next(scalar_unit->exec_inst_buffer);
-			}
-			continue;
+			/* Memory unit is busy, try later */
+			break;
 		}
+	}
+
+	/* Look through the ALU execution buffer looking for wavefronts ready to execute */
+	list_count = linked_list_count(scalar_unit->alu_exec_buffer);
+	linked_list_head(scalar_unit->alu_exec_buffer);
+	for (i = 0; i < list_count; i++)
+	{
+		/* Stop if the issue width has been reached */
+		if (instructions_issued == si_gpu_scalar_unit_issue_width)
+			break;
+
+		/* Peek at the first uop */
+		uop = linked_list_get(scalar_unit->alu_exec_buffer);
+		assert(uop);
+
+		/* Stop if the uop has not been fully read yet. It is safe
+		 * to assume that no other uop is ready either */
+		if (si_gpu->cycle < uop->read_ready)
+			break;
+
+		/* Scalar ALU */
+		uop->execute_ready = si_gpu->cycle +
+			si_gpu_scalar_unit_alu_latency;
+
+		/* Transfer the uop to the outstanding ALU execution buffer */
+		linked_list_remove(scalar_unit->alu_exec_buffer);
+		linked_list_add(scalar_unit->alu_out_buffer, uop);
+
+		instructions_issued++;
+		scalar_unit->inst_count++;
+		scalar_unit->wavefront_count++;
 	}
 }
 
@@ -188,30 +183,32 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 	int list_count;
 	int i;
 
-	list_count = linked_list_count(scalar_unit->read_inst_buffer);
-
-	/* No instruction to process */
-	if (!list_count)
-		return;
-
-	linked_list_head(scalar_unit->read_inst_buffer);
+	/* Look through the read buffer looking for wavefronts ready to issue */
+	list_count = linked_list_count(scalar_unit->read_buffer);
+	linked_list_head(scalar_unit->read_buffer);
 	for (i = 0; i < list_count; i++) 
 	{
+		/* Stop if the issue width has been reached */
 		if (instructions_issued == si_gpu_scalar_unit_issue_width)
 			break;
 
-		/* Process uop */
-		uop = linked_list_get(scalar_unit->read_inst_buffer); 
+		/* Peek at the first uop */
+		uop = linked_list_get(scalar_unit->read_buffer);
 		assert(uop);
 
-		/* Read has not completed.  Safe to assume that no other
-		 * decoded instructions are ready */
+		/* Stop if the uop has not been fully decoded yet. It is safe
+		 * to assume that no other uop is ready either */
 		if (si_gpu->cycle < uop->decode_ready)
 			break;
 
+		/* Issue the uop, no need to check if the exec_buffers are full */
 		uop->read_ready = si_gpu->cycle + si_gpu_scalar_unit_reg_latency;
-		linked_list_remove(scalar_unit->read_inst_buffer);
-		linked_list_add(scalar_unit->exec_inst_buffer, uop);
+		linked_list_remove(scalar_unit->read_buffer);
+
+		if (uop->wavefront->inst.info->fmt == SI_FMT_SMRD)
+			linked_list_add(scalar_unit->mem_exec_buffer, uop);
+		else
+			linked_list_add(scalar_unit->alu_exec_buffer, uop);
 
 		instructions_issued++;
 	}
