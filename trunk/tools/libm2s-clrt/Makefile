@@ -6,6 +6,9 @@ CFLAGS = -Wall -Werror -O3 -fPIC -m32 -I. \
 	-I$(M2S_ROOT)/src/lib/struct \
 	-I$(M2S_ROOT)/src/lib/mhandle \
 	-I$(M2S_ROOT)/src/lib/misc
+ASM = nasm
+ASMFLAGS = -f elf32
+
 
 LIB_NAME = libm2s-clrt
 HEADER_NAME = m2s-clrt.h
@@ -26,7 +29,11 @@ OBJECTS = \
 	object.o \
 	platform.o \
 	program.o \
-	sampler.o
+	sampler.o \
+	elf-loader.o \
+	fibers.o \
+	mkfibers.o \
+	workgroupdata.o
 
 all: $(LIB_NAME).so $(LIB_NAME).a
 
@@ -100,4 +107,16 @@ program.o: program.c $(HEADER_NAME)
 
 sampler.o: sampler.c $(HEADER_NAME)
 	$(CC) $(CFLAGS) -c sampler.c -o sampler.o
+
+elf-loader.o: elf-loader.c $(HEADER_NAME)
+	$(CC) $(CFLAGS) -c elf-loader.c -o elf-loader.o
+
+fibers.o: fibers.s
+	$(ASM) $(ASMFLAGS) fibers.s -o fibers.o
+
+mkfibers.o: mkfibers.c
+	$(CC) $(CFLAGS) -c mkfibers.c -o mkfibers.o
+
+workgroupdata.o: workgroupdata.s
+	$(ASM) $(ASMFLAGS) workgroupdata.s -o workgroupdata.o
 
