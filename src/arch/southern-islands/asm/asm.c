@@ -190,7 +190,7 @@ void si_disasm_init()
 			si_inst_info_sopp[info->opcode] = info;
 			continue;
 		}
-		if (info->fmt == SI_FMT_SOPC)
+		else if (info->fmt == SI_FMT_SOPC)
 		{
 			assert(IN_RANGE(info->opcode, 0, SI_INST_INFO_SOPC_OPCODE_SIZE - 1));
 			si_inst_info_sopc[info->opcode] = info;
@@ -256,7 +256,6 @@ void si_disasm_init()
 			si_inst_info_mtbuf[info->opcode] = info;
 			continue;
 		}
-		/* TODO FILL IN REMAINING FORMATS */
 		else 
 		{
 			fprintf(stderr, "warning: '%s' not indexed\n", info->name);
@@ -427,7 +426,6 @@ int si_inst_decode(void *buf, struct si_inst_t *inst)
 
 		inst->info = si_inst_info_mtbuf[inst->micro_inst.mtbuf.op];
 	}
-	/* TODO FILL IN REMAINING FORMATS */
 	else 
 	{
 		fatal("Unimplemented format. Instruction is: %08X\n", ((unsigned int*)buf)[0]);
@@ -502,7 +500,7 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		int inst_size;
 
 		/* Parse the instruction */
-	    inst_size = si_inst_decode(inst_buf, &inst);
+		inst_size = si_inst_decode(inst_buf, &inst);
 
 		inst_count++;
 
@@ -564,7 +562,6 @@ void si_disasm_buffer(struct elf_buffer_t *buffer, FILE *f)
 		{
 			si_inst_dump_mtbuf(&inst, inst_size, rel_addr, inst_buf, line, line_size);
 		}
-		/* TODO FILL IN REMAINING FORMATS */
 		else 
 		{
 			fatal("Unknown instruction: %08X\n", ((unsigned int*)inst_buf)[0]);
@@ -734,6 +731,78 @@ void line_dump(char *inst_str, unsigned int rel_addr, void* buf, char* line, int
 	else
 	{
 		str_printf(&line, &line_size, "%s %s\n", inst_str, inst_dat_str);
+	}
+}
+
+void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, uint32_t rel_addr, 
+	char *line, int line_size)
+{
+	switch (inst->info->fmt)
+	{
+
+	case SI_FMT_SOPC:
+
+		si_inst_dump_sopc(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
+	case SI_FMT_SOPK:
+
+		si_inst_dump_sopk(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
+	case SI_FMT_SOPP:
+
+		si_inst_dump_sopp(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
+	case SI_FMT_SOP1:
+
+		si_inst_dump_sop1(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+		
+	case SI_FMT_SOP2:
+
+		si_inst_dump_sop2(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
+	case SI_FMT_SMRD:
+
+		si_inst_dump_smrd(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
+	case SI_FMT_VOP1:
+
+		si_inst_dump_vop1(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
+	case SI_FMT_VOP2:
+
+		si_inst_dump_vop2(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
+	case SI_FMT_VOP3a:
+	case SI_FMT_VOP3b:
+
+		si_inst_dump_vop3(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
+	case SI_FMT_VOPC:
+
+		si_inst_dump_vopc(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
+	case SI_FMT_DS:
+
+		si_inst_dump_ds(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+
+	case SI_FMT_MTBUF:
+
+		si_inst_dump_mtbuf(inst, inst_size, rel_addr, inst_buf, line, line_size);
+		break;
+	default:	
+
+		fatal("Unknown instruction: %08X\n", ((unsigned int*)inst_buf)[0]);
 	}
 }
 

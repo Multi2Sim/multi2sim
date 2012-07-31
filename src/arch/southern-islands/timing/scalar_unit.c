@@ -27,6 +27,9 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 			/* Access complete, remove the uop from the queue */
 			linked_list_remove(scalar_unit->mem_out_buffer);
 
+			si_trace("si.inst id=%lld cu=%d stg=\"su-w\"\n", uop->id_in_compute_unit, 
+				scalar_unit->compute_unit->id);
+
 			/* Make the wavefront active again */
 			wavefront = uop->wavefront;
 			wavefront->ready = 1;
@@ -57,6 +60,9 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 		{
 			/* Access complete, remove the uop from the queue */
 			linked_list_remove(scalar_unit->alu_out_buffer);
+
+			si_trace("si.inst id=%lld cu=%d stg=\"su-w\"\n", uop->id_in_compute_unit, 
+				scalar_unit->compute_unit->id);
 
 			/* Make the wavefront active again */
 			wavefront = uop->wavefront;
@@ -106,7 +112,11 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 	{
 		/* Stop if the issue width has been reached */
 		if (instructions_issued == si_gpu_scalar_unit_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit, 
+				scalar_unit->compute_unit->id);
 			break;
+		}
 
 		/* Peek at the first uop */
 		uop = linked_list_get(scalar_unit->mem_exec_buffer);
@@ -141,11 +151,15 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 			scalar_unit->inst_count++;
 			scalar_unit->wavefront_count++;
 
+			si_trace("si.inst id=%lld cu=%d stg=\"su-m\"\n", uop->id_in_compute_unit, 
+				scalar_unit->compute_unit->id);
 			//printf("CYCLE[%lld]\t\tScalar Unit\t\tEXECUTE: UOP.ID[%lld]  [MEM]\n", si_gpu->cycle, uop->id);
 		}
 		else
 		{
 			/* Memory unit is busy, try later */
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit, 
+				scalar_unit->compute_unit->id);
 			break;
 		}
 	}
@@ -157,7 +171,11 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 	{
 		/* Stop if the issue width has been reached */
 		if (instructions_issued == si_gpu_scalar_unit_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit, 
+				scalar_unit->compute_unit->id);
 			break;
+		}
 
 		/* Peek at the first uop */
 		uop = linked_list_get(scalar_unit->alu_exec_buffer);
@@ -180,6 +198,8 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		scalar_unit->inst_count++;
 		scalar_unit->wavefront_count++;
 
+		si_trace("si.inst id=%lld cu=%d stg=\"su-a\"\n", uop->id_in_compute_unit, 
+			scalar_unit->compute_unit->id);
 		//printf("CYCLE[%lld]\t\tScalar Unit\t\tEXECUTE: UOP.ID[%lld]  [ALU]\n", si_gpu->cycle, uop->id);
 	}
 }
@@ -198,7 +218,11 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 	{
 		/* Stop if the issue width has been reached */
 		if (instructions_issued == si_gpu_scalar_unit_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit, 
+				scalar_unit->compute_unit->id);
 			break;
+		}
 
 		/* Peek at the first uop */
 		uop = linked_list_get(scalar_unit->read_buffer);
@@ -225,6 +249,9 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 		}
 
 		instructions_issued++;
+
+		si_trace("si.inst id=%lld cu=%d stg=\"su-r\"\n", uop->id_in_compute_unit, 
+			scalar_unit->compute_unit->id);
 	}
 }
 
