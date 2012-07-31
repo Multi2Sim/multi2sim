@@ -131,7 +131,7 @@ char *si_gpu_device_extensions = "cl_amd_fp64 cl_khr_global_int32_base_atomics c
 	"cl_khr_local_int32_base_atomics cl_khr_local_int32_extended_atomics cl_khr_byte_addressable_store "
 	"cl_khr_gl_sharing cl_ext_device_fission cl_amd_device_attribute_query cl_amd_media_ops cl_amd_popcnt "
 	"cl_amd_printf ";
-char *si_gpu_device_version = "OpenCL 1.1 ATI-Stream-v2.3 (451)";
+char *si_gpu_device_version = "OpenCL 1.1 AMD-APP-SDK-v2.6";
 char *si_gpu_driver_version = VERSION;
 char *si_gpu_opencl_version = "OpenCL C 1.2";
 

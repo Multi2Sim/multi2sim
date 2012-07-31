@@ -58,6 +58,7 @@ struct si_uop_t
 	/* Fields */
 	long long id;
 	long long id_in_compute_unit;
+	int wavefront_pool_id;
 	struct si_wavefront_t *wavefront;        /* Wavefront it belongs to */
 	struct si_work_group_t *work_group;      /* Work-group it belongs to */
 	struct si_compute_unit_t *compute_unit;  /* Compute unit it belongs to */
@@ -228,7 +229,7 @@ struct si_compute_unit_t
 {
 	/* IDs */
 	int id;
-	long long gpu_uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
+	long long uop_id_counter;  /* Counter to assign 'id_in_compute_unit' to uops */
 
 	/* Double linked list of compute units */
 	struct si_compute_unit_t *compute_unit_ready_list_prev;
