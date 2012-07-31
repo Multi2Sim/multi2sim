@@ -20,6 +20,7 @@
 #include <visual-common.h>
 #include <visual-memory.h>
 #include <visual-evergreen.h>
+#include <visual-southern-islands.h>
 #include <visual-x86.h>
 
 
@@ -31,6 +32,7 @@
 struct vi_cycle_bar_t *vi_cycle_bar;
 struct vi_mem_panel_t *vi_mem_panel;
 struct vi_evg_panel_t *vi_evg_panel;
+struct vi_si_panel_t  *vi_si_panel;
 struct vi_x86_panel_t *vi_x86_panel;
 
 
@@ -44,6 +46,7 @@ static void visual_cycle_bar_refresh(void *user_data, long long cycle)
 {
 	vi_mem_panel_refresh(vi_mem_panel);
 	vi_evg_panel_refresh(vi_evg_panel);
+	vi_si_panel_refresh(vi_si_panel);
 	vi_x86_panel_refresh(vi_x86_panel);
 }
 
@@ -67,6 +70,7 @@ void visual_run(char *file_name)
 	/* Initialize visual systems */
 	vi_mem_system_init();
 	vi_evg_gpu_init();
+	vi_si_gpu_init();
 	vi_x86_cpu_init();
 
 	/* Create checkpoints */
@@ -101,6 +105,11 @@ void visual_run(char *file_name)
 	gtk_box_pack_start(GTK_BOX(vbox), vi_evg_panel_get_widget(vi_evg_panel),
 		FALSE, FALSE, 0);
 
+	/* Southern Islands panel */
+	vi_si_panel = vi_si_panel_create();
+	gtk_box_pack_start(GTK_BOX(vbox), vi_si_panel_get_widget(vi_si_panel),
+		FALSE, FALSE, 0);
+
 	/* Memory system panel */
 	vi_mem_panel = vi_mem_panel_create();
 	gtk_box_pack_start(GTK_BOX(vbox), vi_mem_panel_get_widget(vi_mem_panel),
@@ -115,6 +124,7 @@ void visual_run(char *file_name)
 	/* Free */
 	vi_x86_cpu_done();
 	vi_evg_gpu_done();
+	vi_si_gpu_done();
 	vi_mem_system_done();
 	vi_cycle_bar_done();
 	vi_state_done();

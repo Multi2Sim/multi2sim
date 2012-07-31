@@ -321,6 +321,9 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wf
 	struct si_work_item_t *work_item;
 	struct si_uop_t *uop;
 	struct si_work_item_uop_t *work_item_uop;
+	unsigned int rel_addr;
+	char inst_str[MAX_INST_STR_SIZE];
+	char inst_str_trimmed[MAX_INST_STR_SIZE];
 
 	assert(active_wfp < compute_unit->num_wavefront_pools);
 
@@ -347,9 +350,23 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wf
 		uop->wavefront = wavefront;
 		uop->work_group = wavefront->work_group;
 		uop->compute_unit = compute_unit;
-		uop->id_in_compute_unit = compute_unit->gpu_uop_id_counter++;
+		uop->id_in_compute_unit = compute_unit->uop_id_counter++;
+		uop->wavefront_pool_id = active_wfp;
 		uop->local_mem_read = wavefront->local_mem_read;
 		uop->local_mem_write = wavefront->local_mem_write;
+
+		/* Trace */
+		if (si_tracing())
+		{
+			rel_addr = wavefront->inst_buf - wavefront->inst_buf_start;
+			si_inst_dump(&wavefront->inst, wavefront->inst_size, wavefront->inst_buf, 
+				rel_addr, inst_str, sizeof inst_str);
+			str_single_spaces(inst_str_trimmed, inst_str, sizeof inst_str_trimmed);
+			si_trace("si.new_inst id=%lld cu=%d wfp=%d wg=%d wf=%d "
+				"stg=\"f\" asm=\"%s\"\n", uop->id_in_compute_unit, compute_unit->id,
+				uop->wavefront_pool_id, uop->work_group->id, wavefront->id, 
+				inst_str_trimmed);
+		}
 		
 		/* Update last memory accesses */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
@@ -404,7 +421,11 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 	for (i = 0; i < compute_unit->fetch_buffers[active_wfp]->entries; i++)
 	{
 		if (instructions_issued == si_gpu_decode_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit, 
+			compute_unit->id);
 			break;
+		}
 
 		int next_oldest = search_order[i];
 
@@ -426,8 +447,6 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 		{
 
 		/* Scalar ALU */
-		case SI_FMT_SOP1:
-		case SI_FMT_SOP2:
 		case SI_FMT_SOPP:
 			/* Branch Unit */
 			if (wavefront->inst.micro_inst.sopp.op > 1 &&
@@ -436,7 +455,11 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 				/* Continue if branch unit instruction buffer is not free */
 				if (linked_list_count(compute_unit->branch_unit.read_buffer) ==
 					si_gpu_branch_unit_issue_width)
+				{
+					si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
+						uop->id_in_compute_unit, compute_unit->id);
 					continue;
+				}
 
 				/* Decode uop and place it in branch unit instruction buffer */
 				uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
@@ -452,13 +475,19 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 				//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> Branch Unit\n", si_gpu->cycle, uop->id);
 				break;
 			}
+		case SI_FMT_SOP1:
+		case SI_FMT_SOP2:
 		case SI_FMT_SOPC:
 		case SI_FMT_SOPK:
 		{
 			/* Continue if scalar unit instruction buffer is not free */
 			if (linked_list_count(scalar_unit->read_buffer) ==
 				si_gpu_scalar_unit_issue_width)
+			{
+				si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
+					uop->id_in_compute_unit, compute_unit->id);
 				continue;
+			}
 
 			/* Decode uop and place it in scalar unit instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
@@ -481,7 +510,11 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 			/* Continue if scalar unit instruction buffer is not free */
 			if (linked_list_count(scalar_unit->read_buffer) ==
 				si_gpu_scalar_unit_issue_width)
+			{
+				si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
+					uop->id_in_compute_unit, compute_unit->id);
 				continue;
+			}
 
 			/* Decode uop and place it in scalar unit instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
@@ -508,7 +541,11 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 			/* Continue if vector memory unit instruction buffer is not free */
 			if (linked_list_count(compute_unit->simds[active_wfp]->read_buffer) ==
 				si_gpu_simd_issue_width)
+			{
+				si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
+					uop->id_in_compute_unit, compute_unit->id);
 				continue;
+			}
 
 			/* Decode uop and place it in vector memory unit instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
@@ -531,7 +568,11 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 			/* Continue if vector memory unit instruction buffer is not free */
 			if (linked_list_count(compute_unit->vector_mem_unit.read_buffer) ==
 				si_gpu_vector_mem_issue_width)
+			{
+				si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
+					uop->id_in_compute_unit, compute_unit->id);
 				continue;
+			}
 
 			/* Decode uop and place it in vector memory unit instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
@@ -554,7 +595,11 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 			/* Continue if local data share instruction buffer is not free */
 			if (linked_list_count(compute_unit->lds.read_buffer) ==
 				si_gpu_lds_issue_width)
+			{
+				si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", 
+					uop->id_in_compute_unit, compute_unit->id);
 				continue;
+			}
 
 			/* Decode uop and place it in local data share instruction buffer */
 			uop->decode_ready = si_gpu->cycle + si_gpu_decode_latency;
@@ -576,14 +621,13 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 			fatal("%s: instruction type not implemented", __FUNCTION__);
 		}
 		}
+
+		/* Trace */
+		si_trace("si.inst id=%lld cu=%d stg=\"d\"\n", uop->id_in_compute_unit, 
+			compute_unit->id);
 	}
 
-
 	free(search_order);
-
-	/* Trace */
-	si_trace("si.inst id=%lld cu=%d stg=\"cf-de\"\n", uop->id_in_compute_unit, 
-		compute_unit->id);
 }
 
 

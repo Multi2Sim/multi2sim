@@ -260,6 +260,7 @@ M2S_INCLUDES=" \
 -I\$(top_srcdir)/src/visual/common \
 -I\$(top_srcdir)/src/visual/evergreen \
 -I\$(top_srcdir)/src/visual/memory \
+-I\$(top_srcdir)/src/visual/southern-islands \
 -I\$(top_srcdir)/src/visual/x86 \
 \
 -I\$(top_srcdir)/src/mem-system \
@@ -311,6 +312,7 @@ AC_CONFIG_FILES([Makefile
 		 src/visual/common/Makefile
 		 src/visual/evergreen/Makefile
 		 src/visual/memory/Makefile
+		 src/visual/southern-islands/Makefile
 		 src/visual/x86/Makefile
 
 		 src/lib/Makefile

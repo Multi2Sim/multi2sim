@@ -1419,7 +1419,6 @@ int main(int argc, char **argv)
 	/* Trace */
 	trace_init(trace_file_name);
 	mem_trace_category = trace_new_category();
-	evg_trace_category = trace_new_category();
 	x86_trace_category = trace_new_category();
 
 	/* Initialization for functional simulation */
@@ -1436,9 +1435,15 @@ int main(int argc, char **argv)
 	if (x86_emu_kind == x86_emu_kind_detailed)
 		x86_cpu_init();
 	if (evg_emu_kind == evg_emu_kind_detailed)
+	{
+		evg_trace_category = trace_new_category();
 		evg_gpu_init();
+	}
 	if (si_emu_kind == si_emu_kind_detailed)
+	{
+		si_trace_category = trace_new_category();
 		si_gpu_init();
+	}
 
 	/* Memory hierarchy initialization, done after we initialized CPU cores
 	 * and GPU compute units. */

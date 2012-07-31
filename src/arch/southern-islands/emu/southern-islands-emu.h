@@ -1056,6 +1056,8 @@ extern int si_emu_wavefront_size;
 extern char *si_err_opencl_note;
 extern char *si_err_opencl_param_note;
 
+void si_inst_dump(struct si_inst_t *inst, int inst_size, void *inst_buf, uint32_t rel_addr, 
+	char *line, int line_size);
 
 extern struct si_emu_t *si_emu;
 
