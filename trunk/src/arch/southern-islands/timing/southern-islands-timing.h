@@ -83,7 +83,7 @@ struct si_uop_t
 	int global_mem_witness;
 	int local_mem_witness;
 	
-	/* Last memory accesses */
+	/* Last scalar memory accesses */
 	uint32_t global_mem_access_addr;
 	uint32_t global_mem_access_size;
 
@@ -148,9 +148,10 @@ struct si_wavefront_pool_t
 struct si_branch_unit_t
 {
 	/* Queues */
-	struct linked_list_t *read_inst_buffer; 
-	struct linked_list_t *exec_inst_buffer;
-	struct linked_list_t *alu_queue; /* Queue for ALU operations */
+	struct linked_list_t *read_buffer; /* Register accesses */
+
+	struct linked_list_t *exec_buffer; /* Wavefronts pending for execution */
+	struct linked_list_t *out_buffer; /* Outstanding branch operations */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -178,9 +179,10 @@ struct si_scalar_unit_t
 
 struct si_vector_mem_unit_t
 {
-	struct linked_list_t *read_inst_buffer;  /* Register accesses */
-	struct linked_list_t *exec_inst_buffer;
-	struct linked_list_t *mem_queue;  /* Queue for outstanding memory operations */
+	struct linked_list_t *read_buffer;  /* Register accesses */
+
+	struct linked_list_t *mem_exec_buffer; /* Wavefronts pending for memory access */
+	struct linked_list_t *mem_out_buffer;  /* Outstanding memory operations */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -195,6 +197,20 @@ struct si_simd_t
 
 	struct linked_list_t *alu_exec_buffer;  /* Wavefronts pending for ALU execution */
 	struct linked_list_t *alu_out_buffer;  /* Outstanding ALU operations */
+
+	struct si_compute_unit_t *compute_unit;
+
+	/* Statistics */
+	long long wavefront_count;
+	long long inst_count;
+};
+
+struct si_lds_t
+{
+	struct linked_list_t *read_buffer;  /* Register accesses */
+
+	struct linked_list_t *mem_exec_buffer; /* Wavefronts pending for memory access */
+	struct linked_list_t *mem_out_buffer;  /* Outstanding memory operations */
 
 	struct si_compute_unit_t *compute_unit;
 
@@ -245,6 +261,7 @@ struct si_compute_unit_t
 	struct si_scalar_unit_t scalar_unit;
 	struct si_branch_unit_t branch_unit;
 	struct si_vector_mem_unit_t vector_mem_unit;
+	struct si_lds_t lds;
 
 	/* Statistics */
 	long long cycle;
@@ -406,15 +423,27 @@ extern int si_gpu_local_mem_latency;
 extern int si_gpu_local_mem_block_size;
 extern int si_gpu_local_mem_num_ports;
 
-extern int si_gpu_simd_issue_width;
 extern int si_gpu_simd_alu_latency;
 extern int si_gpu_simd_reg_latency;
+extern int si_gpu_simd_issue_width;
+extern int si_gpu_simd_num_subwavefronts;
 
+extern int si_gpu_vector_mem_inflight_mem_accesses;
 extern int si_gpu_vector_mem_issue_width;
+extern int si_gpu_vector_mem_reg_latency;
 
-extern int si_gpu_scalar_unit_issue_width;
+extern int si_gpu_lds_inflight_mem_accesses;
+extern int si_gpu_lds_issue_width;
+extern int si_gpu_lds_reg_latency;
+
+extern int si_gpu_scalar_unit_inflight_mem_accesses;
 extern int si_gpu_scalar_unit_alu_latency;
 extern int si_gpu_scalar_unit_reg_latency;
+extern int si_gpu_scalar_unit_issue_width;
+
+extern int si_gpu_branch_unit_reg_latency;
+extern int si_gpu_branch_unit_latency;
+extern int si_gpu_branch_unit_issue_width;
 
 //extern int si_gpu_branch_unit_issue_width;
 extern int si_gpu_branch_unit_latency;
@@ -481,6 +510,8 @@ int si_gpu_run(void);
 
 void si_simd_run(struct si_simd_t *simd);
 void si_scalar_unit_run(struct si_scalar_unit_t *scalar_unit);
+void si_branch_unit_run(struct si_branch_unit_t *branch_unit);
 void si_vector_mem_run(struct si_vector_mem_unit_t *vector_mem);
+void si_lds_run(struct si_lds_t *lds);
 
 #endif
