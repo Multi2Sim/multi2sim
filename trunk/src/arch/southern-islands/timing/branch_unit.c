@@ -27,6 +27,8 @@ void si_branch_unit_writeback(struct si_branch_unit_t *branch_unit)
 			wavefront = uop->wavefront;
 			wavefront->ready = 1;
 
+			//printf("CYCLE[%lld]\t\tBranch Unit\t\tWRITEBACK: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+
 			/* Free uop */
 			if (si_tracing())
 				si_gpu_uop_trash_add(uop);
@@ -78,6 +80,8 @@ void si_branch_unit_execute(struct si_branch_unit_t *branch_unit)
 		instructions_issued++;
 		branch_unit->inst_count++;
 		branch_unit->wavefront_count++;
+
+		//printf("CYCLE[%lld]\t\tBranch Unit\t\tEXECUTE: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 	}
 }
 
@@ -111,6 +115,8 @@ void si_branch_unit_read(struct si_branch_unit_t *branch_unit)
 		linked_list_add(branch_unit->exec_buffer, uop);
 
 		instructions_issued++;
+
+		//printf("CYCLE[%lld]\t\tBranch Unit\t\tREAD: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 	}
 }
 

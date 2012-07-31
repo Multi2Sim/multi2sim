@@ -27,6 +27,8 @@ void si_lds_writeback(struct si_lds_t *lds)
 			wavefront = uop->wavefront;
 			wavefront->ready = 1;
 
+			//printf("CYCLE[%lld]\t\tLDS\t\t\tWRITEBACK: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+
 			/* Free uop */
 			if (si_tracing())
 				si_gpu_uop_trash_add(uop);
@@ -99,6 +101,8 @@ void si_lds_execute(struct si_lds_t *lds)
 			instructions_issued++;
 			lds->inst_count++;
 			lds->wavefront_count++;
+
+			//printf("CYCLE[%lld]\t\tLDS\t\t\tEXECUTE: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 		}
 		else
 		{
@@ -138,6 +142,8 @@ void si_lds_read(struct si_lds_t *lds)
 		linked_list_add(lds->mem_exec_buffer, uop);
 
 		instructions_issued++;
+
+		//printf("CYCLE[%lld]\t\tLDS\t\t\tREAD: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 	}
 }
 
