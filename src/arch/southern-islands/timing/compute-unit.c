@@ -379,6 +379,8 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wf
 		/* Insert uop to fetch buffer */
 		compute_unit->fetch_buffers[active_wfp]->uops[i] = uop;
 		compute_unit->fetch_buffers[active_wfp]->cycle_fetched[i] = si_gpu->cycle;
+
+		//printf("CYCLE[%lld]\t\tCompute Unit\t\tFETCH: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 	}
 }
 
@@ -446,6 +448,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 					LLONG_MAX;
 
 				instructions_issued++;
+
+				//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> Branch Unit\n", si_gpu->cycle, uop->id);
 				break;
 			}
 		case SI_FMT_SOPC:
@@ -466,6 +470,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 				LLONG_MAX;
 
 			instructions_issued++;
+
+			//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> Scalar Unit[ALU]\n", si_gpu->cycle, uop->id);
 			break;
 		}
 
@@ -487,6 +493,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 				LLONG_MAX;
 
 			instructions_issued++;
+
+			//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> Scalar Unit[MEM]\n", si_gpu->cycle, uop->id);
 			break;
 		}
 
@@ -512,6 +520,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 				LLONG_MAX;
 
 			instructions_issued++;
+
+			//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> SIMD\n", si_gpu->cycle, uop->id);
 			break;
 		}
 
@@ -533,6 +543,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 				LLONG_MAX;
 
 			instructions_issued++;
+
+			//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> Vector Memory Unit\n", si_gpu->cycle, uop->id);
 			break;
 		}
 
@@ -554,6 +566,8 @@ void si_compute_unit_decode(struct si_compute_unit_t *compute_unit, int active_w
 				LLONG_MAX;
 
 			instructions_issued++;
+
+			//printf("CYCLE[%lld]\t\tCompute Unit\t\tDECODE: UOP.ID[%lld] --> LDS\n", si_gpu->cycle, uop->id);
 			break;
 		}
 
@@ -601,7 +615,7 @@ void si_compute_unit_run(struct si_compute_unit_t *compute_unit)
 
 	si_scalar_unit_run(&compute_unit->scalar_unit);
 
-	//si_branch_unit_run(compute_unit->branch_unit);
+	si_branch_unit_run(&compute_unit->branch_unit);
 
 	/* Run Decode */
 	si_compute_unit_decode(compute_unit, active_decode_wfp);

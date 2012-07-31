@@ -28,6 +28,8 @@ void si_simd_writeback(struct si_simd_t *simd)
 			wavefront = uop->wavefront;
 			wavefront->ready = 1;
 
+			//printf("CYCLE[%lld]\t\tSIMD\t\t\tWRITEBACK: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+
 			/* Free uop */
 			if (si_tracing())
 				si_gpu_uop_trash_add(uop);
@@ -77,6 +79,8 @@ void si_simd_execute(struct si_simd_t *simd)
 			uop->execute_ready = uop->alu_ready + si_gpu_simd_alu_latency - 1;
 
 			instructions_issued++;
+
+			//printf("CYCLE[%lld]\t\tSIMD\t\t\tEXECUTE: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 		}
 	}
 }
@@ -114,6 +118,8 @@ void si_simd_read(struct si_simd_t *simd)
 			linked_list_add(simd->alu_exec_buffer, uop);
 
 			instructions_issued++;
+
+			//printf("CYCLE[%lld]\t\tSIMD\t\t\tREAD: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 		}
 		else
 			break;

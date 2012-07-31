@@ -27,6 +27,8 @@ void si_vector_mem_writeback(struct si_vector_mem_unit_t *vector_mem)
 			wavefront = uop->wavefront;
 			wavefront->ready = 1;
 
+			//printf("CYCLE[%lld]\t\tVector Memory Unit\t\tWRITEBACK: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+
 			/* Free uop */
 			if (si_tracing())
 				si_gpu_uop_trash_add(uop);
@@ -96,6 +98,8 @@ void si_vector_mem_execute(struct si_vector_mem_unit_t *vector_mem)
 			instructions_issued++;
 			vector_mem->inst_count++;
 			vector_mem->wavefront_count++;
+
+			//printf("CYCLE[%lld]\t\tVector Memory Unit\t\tEXECUTE: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 		}
 		else
 		{
@@ -135,6 +139,8 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 		linked_list_add(vector_mem->mem_exec_buffer, uop);
 
 		instructions_issued++;
+
+		//printf("CYCLE[%lld]\t\tVector Memory Unit\t\tREAD: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 	}
 }
 

@@ -31,6 +31,8 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 			wavefront = uop->wavefront;
 			wavefront->ready = 1;
 
+			//printf("CYCLE[%lld]\t\tScalar Unit\t\tWRITEBACK: UOP.ID[%lld]  [MEM]\n", si_gpu->cycle, uop->id);
+
 			/* Free uop */
 			if (si_tracing())
 				si_gpu_uop_trash_add(uop);
@@ -71,6 +73,8 @@ void si_scalar_unit_writeback(struct si_scalar_unit_t *scalar_unit)
 				work_group->wavefront_count)
 				si_compute_unit_unmap_work_group(scalar_unit->compute_unit,
 					work_group);
+
+			//printf("CYCLE[%lld]\t\tScalar Unit\t\tWRITEBACK: UOP.ID[%lld]  [ALU]\n", si_gpu->cycle, uop->id);
 
 			/* Free uop */
 			if (si_tracing())
@@ -136,6 +140,8 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 			instructions_issued++;
 			scalar_unit->inst_count++;
 			scalar_unit->wavefront_count++;
+
+			//printf("CYCLE[%lld]\t\tScalar Unit\t\tEXECUTE: UOP.ID[%lld]  [MEM]\n", si_gpu->cycle, uop->id);
 		}
 		else
 		{
@@ -173,6 +179,8 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		instructions_issued++;
 		scalar_unit->inst_count++;
 		scalar_unit->wavefront_count++;
+
+		//printf("CYCLE[%lld]\t\tScalar Unit\t\tEXECUTE: UOP.ID[%lld]  [ALU]\n", si_gpu->cycle, uop->id);
 	}
 }
 
@@ -206,9 +214,15 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 		linked_list_remove(scalar_unit->read_buffer);
 
 		if (uop->wavefront->inst.info->fmt == SI_FMT_SMRD)
+		{
 			linked_list_add(scalar_unit->mem_exec_buffer, uop);
+			//printf("CYCLE[%lld]\t\tScalar Unit\t\tREAD: UOP.ID[%lld]  [MEM]\n", si_gpu->cycle, uop->id);
+		}
 		else
+		{
 			linked_list_add(scalar_unit->alu_exec_buffer, uop);
+			//printf("CYCLE[%lld]\t\tScalar Unit\t\tREAD: UOP.ID[%lld]  [ALU]\n", si_gpu->cycle, uop->id);
+		}
 
 		instructions_issued++;
 	}
