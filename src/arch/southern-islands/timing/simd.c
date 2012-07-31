@@ -7,7 +7,41 @@ int si_gpu_simd_num_subwavefronts = 4;
 
 void si_simd_writeback(struct si_simd_t *simd)
 {
+	struct si_uop_t *uop;
+	struct si_wavefront_t *wavefront;
+	int list_count;
 
+	/* Process completed ALU instructions */
+	list_count = linked_list_count(simd->alu_out_buffer);
+	linked_list_head(simd->alu_out_buffer);
+	for (int i = 0; i < list_count; i++)
+	{
+		uop = linked_list_get(simd->alu_out_buffer);
+		assert(uop);
+
+		if (uop->execute_ready <= si_gpu->cycle)
+		{
+			/* Access complete, remove the uop from the queue */
+			linked_list_remove(simd->alu_out_buffer);
+
+			/* Make the wavefront active again */
+			wavefront = uop->wavefront;
+			wavefront->ready = 1;
+
+			/* Free uop */
+			if (si_tracing())
+				si_gpu_uop_trash_add(uop);
+			else
+				si_uop_free(uop);
+		}
+		else
+		{
+			linked_list_next(simd->alu_out_buffer);
+		}
+	}
+
+	/* Statistics */
+	si_gpu->last_complete_cycle = esim_cycle;
 }
 
 void si_simd_execute(struct si_simd_t *simd)
@@ -29,13 +63,13 @@ void si_simd_execute(struct si_simd_t *simd)
 		uop = linked_list_get(simd->alu_exec_buffer);
 		assert(uop);
 
-		/* If the uop is in the ALU pipeline, move it to the outstanding ALU buffer */
+		/* If the uop is now in the ALU pipeline, move it to the outstanding ALU buffer */
 		if (si_gpu->cycle >= uop->read_ready && si_gpu->cycle == uop->alu_ready)
 		{
 			linked_list_remove(simd->alu_exec_buffer);
 			linked_list_add(simd->alu_out_buffer, uop);
 		}
-		/* If the uop is ready to be executed, set the ALU ready and execution
+		/* If the uop is ready to begin execution, set the ALU ready and execution
 		 * ready cycles */
 		else if (si_gpu->cycle == uop->read_ready)
 		{
