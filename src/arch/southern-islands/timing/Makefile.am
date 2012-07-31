@@ -8,6 +8,7 @@ libtiming_a_SOURCES = \
 	calc.c \
 	compute-unit.c \
 	gpu.c \
+	lds.c \
 	scalar_unit.c \
 	sched.c \
 	simd.c \
