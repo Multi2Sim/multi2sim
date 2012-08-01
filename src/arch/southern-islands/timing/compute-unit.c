@@ -315,7 +315,7 @@ int *si_fetch_buffer_get_oldest(struct si_fetch_buffer_t *fetch_buffer)
 
 void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wfp)
 {
-	int i;
+	int i, j;
 	int work_item_id;
 	struct si_wavefront_t *wavefront;
 	struct si_work_item_t *work_item;
@@ -381,7 +381,7 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wf
 			work_item = si_gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			work_item_uop->local_mem_access_count = work_item->local_mem_access_count;
-			for (i = 0; i < work_item->local_mem_access_count; i++)
+			for (j = 0; j < work_item->local_mem_access_count; j++)
 			{
 				work_item_uop->local_mem_access_kind[i] = work_item->local_mem_access_type[i];
 				work_item_uop->local_mem_access_addr[i] = work_item->local_mem_access_addr[i];
