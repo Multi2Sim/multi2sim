@@ -110,14 +110,6 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 	linked_list_head(scalar_unit->mem_exec_buffer);
 	for (i = 0; i < list_count; i++) 
 	{
-		/* Stop if the issue width has been reached */
-		if (instructions_issued == si_gpu_scalar_unit_issue_width)
-		{
-			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit, 
-				scalar_unit->compute_unit->id);
-			break;
-		}
-
 		/* Peek at the first uop */
 		uop = linked_list_get(scalar_unit->mem_exec_buffer);
 		assert(uop);
@@ -127,6 +119,14 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		if (si_gpu->cycle < uop->read_ready)
 			break;
 		
+		/* Stop if the issue width has been reached */
+		if (instructions_issued == si_gpu_scalar_unit_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				scalar_unit->compute_unit->id);
+			break;
+		}
+
 		/* Scalar memory read */
 		assert(linked_list_count(scalar_unit->mem_out_buffer) <=
 			si_gpu_scalar_unit_inflight_mem_accesses);
@@ -169,14 +169,6 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 	linked_list_head(scalar_unit->alu_exec_buffer);
 	for (i = 0; i < list_count; i++)
 	{
-		/* Stop if the issue width has been reached */
-		if (instructions_issued == si_gpu_scalar_unit_issue_width)
-		{
-			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit, 
-				scalar_unit->compute_unit->id);
-			break;
-		}
-
 		/* Peek at the first uop */
 		uop = linked_list_get(scalar_unit->alu_exec_buffer);
 		assert(uop);
@@ -185,6 +177,14 @@ void si_scalar_unit_execute(struct si_scalar_unit_t *scalar_unit)
 		 * to assume that no other uop is ready either */
 		if (si_gpu->cycle < uop->read_ready)
 			break;
+
+		/* Stop if the issue width has been reached */
+		if (instructions_issued == si_gpu_scalar_unit_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				scalar_unit->compute_unit->id);
+			break;
+		}
 
 		/* Scalar ALU */
 		uop->execute_ready = si_gpu->cycle +
@@ -216,14 +216,6 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 	linked_list_head(scalar_unit->read_buffer);
 	for (i = 0; i < list_count; i++) 
 	{
-		/* Stop if the issue width has been reached */
-		if (instructions_issued == si_gpu_scalar_unit_issue_width)
-		{
-			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit, 
-				scalar_unit->compute_unit->id);
-			break;
-		}
-
 		/* Peek at the first uop */
 		uop = linked_list_get(scalar_unit->read_buffer);
 		assert(uop);
@@ -233,19 +225,37 @@ void si_scalar_unit_read(struct si_scalar_unit_t *scalar_unit)
 		if (si_gpu->cycle < uop->decode_ready)
 			break;
 
-		/* Issue the uop, no need to check if the exec_buffers are full */
-		uop->read_ready = si_gpu->cycle + si_gpu_scalar_unit_reg_latency;
-		linked_list_remove(scalar_unit->read_buffer);
-
-		if (uop->wavefront->inst.info->fmt == SI_FMT_SMRD)
+		/* Stop if the issue width has been reached */
+		if (instructions_issued == si_gpu_scalar_unit_issue_width)
 		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				scalar_unit->compute_unit->id);
+			break;
+		}
+
+		/* Issue the uop, if the exec_buffer is not full */
+		if (uop->wavefront->inst.info->fmt == SI_FMT_SMRD &&
+				linked_list_count(scalar_unit->mem_exec_buffer) <=
+				si_gpu_simd_issue_width)
+		{
+			uop->read_ready = si_gpu->cycle + si_gpu_scalar_unit_reg_latency;
+			linked_list_remove(scalar_unit->read_buffer);
 			linked_list_add(scalar_unit->mem_exec_buffer, uop);
 			//printf("CYCLE[%lld]\t\tScalar Unit\t\tREAD: UOP.ID[%lld]  [MEM]\n", si_gpu->cycle, uop->id);
 		}
-		else
+		else if (linked_list_count(scalar_unit->alu_exec_buffer) <=
+				si_gpu_simd_issue_width)
 		{
+			uop->read_ready = si_gpu->cycle + si_gpu_scalar_unit_reg_latency;
+			linked_list_remove(scalar_unit->read_buffer);
 			linked_list_add(scalar_unit->alu_exec_buffer, uop);
 			//printf("CYCLE[%lld]\t\tScalar Unit\t\tREAD: UOP.ID[%lld]  [ALU]\n", si_gpu->cycle, uop->id);
+		}
+		else
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				scalar_unit->compute_unit->id);
+			break;
 		}
 
 		instructions_issued++;

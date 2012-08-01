@@ -23,11 +23,13 @@ void si_lds_writeback(struct si_lds_t *lds)
 			/* Access complete, remove the uop from the queue */
 			linked_list_remove(lds->mem_out_buffer);
 
+			//printf("CYCLE[%lld]\t\tLDS\t\t\tWRITEBACK: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			si_trace("si.inst id=%lld cu=%d stg=\"lds-w\"\n", uop->id_in_compute_unit,
+							lds->compute_unit->id);
+
 			/* Make the wavefront active again */
 			wavefront = uop->wavefront;
 			wavefront->ready = 1;
-
-			//printf("CYCLE[%lld]\t\tLDS\t\t\tWRITEBACK: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 
 			/* Free uop */
 			if (si_tracing())
@@ -59,10 +61,6 @@ void si_lds_execute(struct si_lds_t *lds)
 	linked_list_head(lds->mem_exec_buffer);
 	for (int i = 0; i < list_count; i++)
 	{
-		/* Stop if the issue width has been reached */
-		if (instructions_issued == si_gpu_lds_issue_width)
-			break;
-
 		/* Peek at the first uop */
 		uop = linked_list_get(lds->mem_exec_buffer);
 		assert(uop);
@@ -71,6 +69,14 @@ void si_lds_execute(struct si_lds_t *lds)
 		 * to assume that no other uop is ready either */
 		if (si_gpu->cycle < uop->read_ready)
 			break;
+
+		/* Stop if the issue width has been reached, stall */
+		if (instructions_issued == si_gpu_branch_unit_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				lds->compute_unit->id);
+			break;
+		}
 
 		/* Scalar memory read */
 		assert(linked_list_count(lds->mem_out_buffer) <=
@@ -103,10 +109,14 @@ void si_lds_execute(struct si_lds_t *lds)
 			lds->wavefront_count++;
 
 			//printf("CYCLE[%lld]\t\tLDS\t\t\tEXECUTE: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			si_trace("si.inst id=%lld cu=%d stg=\"lds-e\"\n", uop->id_in_compute_unit,
+							lds->compute_unit->id);
 		}
 		else
 		{
 			/* Memory unit is busy, try later */
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				lds->compute_unit->id);
 			break;
 		}
 	}
@@ -123,10 +133,6 @@ void si_lds_read(struct si_lds_t *lds)
 	linked_list_head(lds->read_buffer);
 	for (int i = 0; i < list_count; i++)
 	{
-		/* Stop if the issue width has been reached */
-		if (instructions_issued == si_gpu_lds_issue_width)
-			break;
-
 		/* Peek at the first uop */
 		uop = linked_list_get(lds->read_buffer);
 		assert(uop);
@@ -136,14 +142,34 @@ void si_lds_read(struct si_lds_t *lds)
 		if (si_gpu->cycle < uop->decode_ready)
 			break;
 
-		/* Issue the uop, no need to check if the exec_buffer is full */
-		uop->read_ready = si_gpu->cycle + si_gpu_lds_reg_latency;
-		linked_list_remove(lds->read_buffer);
-		linked_list_add(lds->mem_exec_buffer, uop);
+		/* Stop if the issue width has been reached, stall */
+		if (instructions_issued == si_gpu_branch_unit_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				lds->compute_unit->id);
+			break;
+		}
 
-		instructions_issued++;
+		/* Issue the uop if the exec_buffer is not full */
+		if (linked_list_count(lds->mem_exec_buffer) <=
+				si_gpu_simd_issue_width)
+		{
+			uop->read_ready = si_gpu->cycle + si_gpu_lds_reg_latency;
+			linked_list_remove(lds->read_buffer);
+			linked_list_add(lds->mem_exec_buffer, uop);
 
-		//printf("CYCLE[%lld]\t\tLDS\t\t\tREAD: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			instructions_issued++;
+
+			//printf("CYCLE[%lld]\t\tLDS\t\t\tREAD: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			si_trace("si.inst id=%lld cu=%d stg=\"lds-r\"\n", uop->id_in_compute_unit,
+					lds->compute_unit->id);
+		}
+		else
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				lds->compute_unit->id);
+			break;
+		}
 	}
 }
 
