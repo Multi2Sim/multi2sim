@@ -57,31 +57,38 @@ struct string_map_t vi_si_inst_stage_color_map =
 {
 	vi_si_inst_stage_count - 1,
 	{
-		{ "#ffffff", vi_si_inst_stage_stalled },
+		/* White */
+		{ "#FFFFFF", vi_si_inst_stage_stalled },
 
-		{ "#88ff88", vi_si_inst_stage_fetch },
-		{ "#44ff44", vi_si_inst_stage_decode },
+		/* Green */
+		{ "#88FF88", vi_si_inst_stage_fetch },
+		{ "#44FF44", vi_si_inst_stage_decode },
 
-		{ "#ff8888", vi_si_inst_stage_branch_read },
-		{ "#ff6666", vi_si_inst_stage_branch_execute },
-		{ "#ff2222", vi_si_inst_stage_branch_writeback },
+		/* Orange */
+		{ "#FFBE00", vi_si_inst_stage_branch_read },
+		{ "#FFA500", vi_si_inst_stage_branch_execute },
+		{ "#FF8C00", vi_si_inst_stage_branch_writeback },
 
-		{ "#ff8888", vi_si_inst_stage_scalar_read },
-		{ "#ff6666", vi_si_inst_stage_scalar_alu },
-		{ "#ff4444", vi_si_inst_stage_scalar_memory },
-		{ "#ff2222", vi_si_inst_stage_scalar_writeback },
+		/* Red */
+		{ "#FF8888", vi_si_inst_stage_scalar_read },
+		{ "#FF6666", vi_si_inst_stage_scalar_alu },
+		{ "#FF4444", vi_si_inst_stage_scalar_memory },
+		{ "#FF2222", vi_si_inst_stage_scalar_writeback },
 
-		{ "#ff8888", vi_si_inst_stage_mem_read },
-		{ "#ff6666", vi_si_inst_stage_mem_execute },
-		{ "#ff2222", vi_si_inst_stage_mem_writeback },
+		/* Turquoise */
+		{ "#AFEEEE", vi_si_inst_stage_mem_read },
+		{ "#40E0D0", vi_si_inst_stage_mem_execute },
+		{ "#00CED1", vi_si_inst_stage_mem_writeback },
 
-		{ "#ff8888", vi_si_inst_stage_simd_read },
-		{ "#ff6666", vi_si_inst_stage_simd_execute },
-		{ "#ff2222", vi_si_inst_stage_simd_writeback },
+		/* Purple */
+		{ "#DDA0DD", vi_si_inst_stage_simd_read },
+		{ "#DA70D6", vi_si_inst_stage_simd_execute },
+		{ "#BA55D3", vi_si_inst_stage_simd_writeback },
 
-		{ "#ff8888", vi_si_inst_stage_lds_read },
-		{ "#ff6666", vi_si_inst_stage_lds_execute },
-		{ "#ff2222", vi_si_inst_stage_lds_writeback },
+		/* Blue */
+		{ "#97DEFB", vi_si_inst_stage_lds_read },
+		{ "#87CEFA", vi_si_inst_stage_lds_execute },
+		{ "#00BFFF", vi_si_inst_stage_lds_writeback },
 	}
 };
 
