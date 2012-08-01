@@ -59,6 +59,10 @@ void si_isa_S_BUFFER_LOAD_DWORD_impl(struct si_work_item_t *work_item, struct si
 
 	if (debug_status(si_isa_debug_category))
 		si_isa_debug("S%u<=(%d,%gf)", INST.sdst, value.as_uint, value.as_float);
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = m_base+m_offset;
+	work_item->global_mem_access_size = 4;
 }
 #undef INST
 
@@ -97,6 +101,10 @@ void si_isa_S_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct si_inst
 		for (i = 0; i < 4; i++) 
 			si_isa_debug("S%u<=(%d,%gf) ", INST.sdst+i, value[i].as_uint, 
 				value[i].as_float);
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = m_base+m_offset;
+	work_item->global_mem_access_size = 4 * 4;
 }
 #undef INST
 
@@ -140,6 +148,10 @@ void si_isa_S_BUFFER_LOAD_DWORDX2_impl(struct si_work_item_t *work_item, struct 
 				value[i].as_float);
 		}
 	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = m_base+m_offset;
+	work_item->global_mem_access_size = 4 * 2;
 }
 #undef INST
 
@@ -183,6 +195,10 @@ void si_isa_S_BUFFER_LOAD_DWORDX4_impl(struct si_work_item_t *work_item, struct 
 				value[i].as_float);
 		}
 	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = m_base+m_offset;
+	work_item->global_mem_access_size = 4 * 4;
 }
 #undef INST
 
@@ -3117,6 +3133,20 @@ void si_isa_DS_WRITE_B32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	{
 		si_isa_debug("GDS?:%d DS[%d]<=(%d) ", INST.gds, addr, data0);
 	}
+
+	/* Record last memory access for the detailed simulator. */
+	if(INST.gds)
+	{
+		work_item->global_mem_access_addr = addr;
+		work_item->global_mem_access_size = 4;
+	}
+	else
+	{
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 2;
+		work_item->local_mem_access_addr[0] = addr;
+		work_item->local_mem_access_size[0] = 4;
+	}
 }
 #undef INST
 
@@ -3134,17 +3164,31 @@ void si_isa_DS_WRITE_B16_impl(struct si_work_item_t *work_item, struct si_inst_t
 	/* Write Dword. */
 	if(INST.gds)
 	{
-		mem_write(si_emu->global_mem, addr, 4, &data0);
+		mem_write(si_emu->global_mem, addr, 2, &data0);
 	}
 	else
 	{
-		mem_write(work_item->work_group->local_mem, addr, 4, &data0);
+		mem_write(work_item->work_group->local_mem, addr, 2, &data0);
 	}
 
 	/* Print isa debug information. */
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("GDS?:%d DS[%d]<=(%d) ", INST.gds, addr, data0);
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	if(INST.gds)
+	{
+		work_item->global_mem_access_addr = addr;
+		work_item->global_mem_access_size = 2;
+	}
+	else
+	{
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 2;
+		work_item->local_mem_access_addr[0] = addr;
+		work_item->local_mem_access_size[0] = 2;
 	}
 }
 #undef INST
@@ -3177,6 +3221,20 @@ void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	{
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, data.as_uint);
 	}
+
+	/* Record last memory access for the detailed simulator. */
+	if(INST.gds)
+	{
+		work_item->global_mem_access_addr = addr;
+		work_item->global_mem_access_size = 4;
+	}
+	else
+	{
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 1;
+		work_item->local_mem_access_addr[0] = addr;
+		work_item->local_mem_access_size[0] = 4;
+	}
 }
 #undef INST
 
@@ -3193,11 +3251,11 @@ void si_isa_DS_READ_I16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	/* Read Dword. */
 	if(INST.gds)
 	{
-		mem_read(si_emu->global_mem, addr, 4, &data.as_uint);
+		mem_read(si_emu->global_mem, addr, 2, &data.as_short[0]);
 	}
 	else
 	{
-		mem_read(work_item->work_group->local_mem, addr, 4, &data.as_uint);
+		mem_read(work_item->work_group->local_mem, addr, 2, &data.as_short[0]);
 	}
 
 	/* Extend the sign. */
@@ -3210,6 +3268,20 @@ void si_isa_DS_READ_I16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, data.as_int);
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	if(INST.gds)
+	{
+		work_item->global_mem_access_addr = addr;
+		work_item->global_mem_access_size = 2;
+	}
+	else
+	{
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 1;
+		work_item->local_mem_access_addr[0] = addr;
+		work_item->local_mem_access_size[0] = 2;
 	}
 }
 #undef INST
@@ -3244,6 +3316,20 @@ void si_isa_DS_READ_U16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	if (debug_status(si_isa_debug_category))
 	{
 		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, data.as_uint);
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	if(INST.gds)
+	{
+		work_item->global_mem_access_addr = addr;
+		work_item->global_mem_access_size = 2;
+	}
+	else
+	{
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 1;
+		work_item->local_mem_access_addr[0] = addr;
+		work_item->local_mem_access_size[0] = 2;
 	}
 }
 #undef INST
@@ -3294,6 +3380,10 @@ void si_isa_T_BUFFER_LOAD_FORMAT_X_impl(struct si_work_item_t *work_item, struct
 		si_isa_debug("t%d: V%u<=(%u)(%d,%gf) ", work_item->id, INST.vdata,
 			buffer_addr, value.as_uint, value.as_float);
 	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = buffer_addr;
+	work_item->global_mem_access_size = elem_size * num_elems;
 }
 #undef INST
 
@@ -3343,6 +3433,10 @@ void si_isa_T_BUFFER_LOAD_FORMAT_XYZW_impl(struct si_work_item_t *work_item, str
 				buffer_addr, value.as_uint, value.as_float);
 		}
 	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = buffer_addr;
+	work_item->global_mem_access_size = elem_size * num_elems;
 }
 #undef INST
 
@@ -3392,6 +3486,10 @@ void si_isa_T_BUFFER_STORE_FORMAT_X_impl(struct si_work_item_t *work_item, struc
 		si_isa_debug("t%d: (%u)<=V%u(%d,%gf) ", work_item->id, buffer_addr,
 			INST.vdata, value.as_uint, value.as_float);
 	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = buffer_addr;
+	work_item->global_mem_access_size = elem_size * num_elems;
 }
 #undef INST
 
@@ -3442,5 +3540,9 @@ void si_isa_T_BUFFER_STORE_FORMAT_XYZW_impl(struct si_work_item_t *work_item, st
 				INST.vdata + i, value.as_uint, value.as_float);
 		}
 	}
+
+	/* Record last memory access for the detailed simulator. */
+	work_item->global_mem_access_addr = buffer_addr;
+	work_item->global_mem_access_size = elem_size * num_elems;
 }
 #undef INST
