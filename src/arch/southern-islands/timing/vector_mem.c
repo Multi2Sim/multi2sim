@@ -23,11 +23,13 @@ void si_vector_mem_writeback(struct si_vector_mem_unit_t *vector_mem)
 			/* Access complete, remove the uop from the queue */
 			linked_list_remove(vector_mem->mem_out_buffer);
 
+			//printf("CYCLE[%lld]\t\tVector Memory Unit\t\tWRITEBACK: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			si_trace("si.inst id=%lld cu=%d stg=\"mem-w\"\n", uop->id_in_compute_unit,
+				vector_mem->compute_unit->id);
+
 			/* Make the wavefront active again */
 			wavefront = uop->wavefront;
 			wavefront->ready = 1;
-
-			//printf("CYCLE[%lld]\t\tVector Memory Unit\t\tWRITEBACK: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 
 			/* Free uop */
 			if (si_tracing())
@@ -59,10 +61,6 @@ void si_vector_mem_execute(struct si_vector_mem_unit_t *vector_mem)
 	linked_list_head(vector_mem->mem_exec_buffer);
 	for (int i = 0; i < list_count; i++)
 	{
-		/* Stop if the issue width has been reached */
-		if (instructions_issued == si_gpu_vector_mem_issue_width)
-			break;
-
 		/* Peek at the first uop */
 		uop = linked_list_get(vector_mem->mem_exec_buffer);
 		assert(uop);
@@ -71,6 +69,14 @@ void si_vector_mem_execute(struct si_vector_mem_unit_t *vector_mem)
 		 * to assume that no other uop is ready either */
 		if (si_gpu->cycle < uop->read_ready)
 			break;
+
+		/* Stop if the issue width has been reached, stall */
+		if (instructions_issued == si_gpu_branch_unit_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				vector_mem->compute_unit->id);
+			break;
+		}
 
 		/* Vector memory read */
 		assert(linked_list_count(vector_mem->mem_out_buffer) <=
@@ -100,10 +106,14 @@ void si_vector_mem_execute(struct si_vector_mem_unit_t *vector_mem)
 			vector_mem->wavefront_count++;
 
 			//printf("CYCLE[%lld]\t\tVector Memory Unit\t\tEXECUTE: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			si_trace("si.inst id=%lld cu=%d stg=\"mem-e\"\n", uop->id_in_compute_unit,
+				vector_mem->compute_unit->id);
 		}
 		else
 		{
 			/* Memory unit is busy, try later */
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				vector_mem->compute_unit->id);
 			break;
 		}
 	}
@@ -120,10 +130,6 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 	linked_list_head(vector_mem->read_buffer);
 	for (int i = 0; i < list_count; i++)
 	{
-		/* Stop if the issue width has been reached */
-		if (instructions_issued == si_gpu_vector_mem_issue_width)
-			break;
-
 		/* Peek at the first uop */
 		uop = linked_list_get(vector_mem->read_buffer);
 		assert(uop);
@@ -133,14 +139,34 @@ void si_vector_mem_read(struct si_vector_mem_unit_t *vector_mem)
 		if (si_gpu->cycle < uop->decode_ready)
 			break;
 
-		/* Issue the uop, no need to check if the exec_buffer is full */
-		uop->read_ready = si_gpu->cycle + si_gpu_vector_mem_reg_latency;
-		linked_list_remove(vector_mem->read_buffer);
-		linked_list_add(vector_mem->mem_exec_buffer, uop);
+		/* Stop if the issue width has been reached, stall */
+		if (instructions_issued == si_gpu_branch_unit_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				vector_mem->compute_unit->id);
+			break;
+		}
 
-		instructions_issued++;
+		/* Issue the uop if the exec_buffer is not full */
+		if (linked_list_count(vector_mem->mem_exec_buffer) <=
+				si_gpu_simd_issue_width)
+		{
+			uop->read_ready = si_gpu->cycle + si_gpu_vector_mem_reg_latency;
+			linked_list_remove(vector_mem->read_buffer);
+			linked_list_add(vector_mem->mem_exec_buffer, uop);
 
-		//printf("CYCLE[%lld]\t\tVector Memory Unit\t\tREAD: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			instructions_issued++;
+
+			//printf("CYCLE[%lld]\t\tVector Memory Unit\t\tREAD: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			si_trace("si.inst id=%lld cu=%d stg=\"mem-r\"\n", uop->id_in_compute_unit,
+				vector_mem->compute_unit->id);
+		}
+		else
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				vector_mem->compute_unit->id);
+			break;
+		}
 	}
 }
 

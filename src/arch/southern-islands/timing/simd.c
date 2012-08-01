@@ -24,11 +24,13 @@ void si_simd_writeback(struct si_simd_t *simd)
 			/* Access complete, remove the uop from the queue */
 			linked_list_remove(simd->alu_out_buffer);
 
+			//printf("CYCLE[%lld]\t\tSIMD\t\t\tWRITEBACK: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			si_trace("si.inst id=%lld cu=%d stg=\"simd-w\"\n", uop->id_in_compute_unit,
+				simd->compute_unit->id);
+
 			/* Make the wavefront active again */
 			wavefront = uop->wavefront;
 			wavefront->ready = 1;
-
-			//printf("CYCLE[%lld]\t\tSIMD\t\t\tWRITEBACK: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
 
 			/* Free uop */
 			if (si_tracing())
@@ -57,23 +59,26 @@ void si_simd_execute(struct si_simd_t *simd)
 	linked_list_head(simd->alu_exec_buffer);
 	for (int i = 0; i < list_count; i++)
 	{
-		/* Stop if the issue width has been reached */
-		if (instructions_issued == si_gpu_simd_issue_width)
-			break;
-
 		/* Peek at the first uop */
 		uop = linked_list_get(simd->alu_exec_buffer);
 		assert(uop);
 
-		/* If the uop is now in the ALU pipeline, move it to the outstanding ALU buffer */
-		if (si_gpu->cycle >= uop->read_ready && si_gpu->cycle == uop->alu_ready)
+		/* Stop if the uop has not been fully read yet. It is safe
+		 * to assume that no other uop is ready either */
+		if (si_gpu->cycle < uop->read_ready)
+			break;
+
+		/* Stop if the issue width has been reached, stall */
+		if (instructions_issued == si_gpu_branch_unit_issue_width)
 		{
-			linked_list_remove(simd->alu_exec_buffer);
-			linked_list_add(simd->alu_out_buffer, uop);
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				simd->compute_unit->id);
+			break;
 		}
+
 		/* If the uop is ready to begin execution, set the ALU ready and execution
 		 * ready cycles */
-		else if (si_gpu->cycle == uop->read_ready)
+		if (si_gpu->cycle == uop->read_ready)
 		{
 			uop->alu_ready = si_gpu->cycle + si_gpu_simd_num_subwavefronts;
 			uop->execute_ready = uop->alu_ready + si_gpu_simd_alu_latency - 1;
@@ -81,7 +86,16 @@ void si_simd_execute(struct si_simd_t *simd)
 			instructions_issued++;
 
 			//printf("CYCLE[%lld]\t\tSIMD\t\t\tEXECUTE: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			si_trace("si.inst id=%lld cu=%d stg=\"simd-e\"\n", uop->id_in_compute_unit,
+					simd->compute_unit->id);
 		}
+		/* If the uop is now in the ALU pipeline, move it to the outstanding ALU buffer */
+		else if (si_gpu->cycle >= uop->alu_ready)
+		{
+			linked_list_remove(simd->alu_exec_buffer);
+			linked_list_add(simd->alu_out_buffer, uop);
+		}
+
 	}
 }
 
@@ -96,10 +110,6 @@ void si_simd_read(struct si_simd_t *simd)
 	linked_list_head(simd->read_buffer);
 	for (int i = 0; i < list_count; i++)
 	{
-		/* Stop if the issue width has been reached */
-		if (instructions_issued == si_gpu_simd_issue_width)
-			break;
-
 		/* Peek at the first uop */
 		uop = linked_list_get(simd->read_buffer);
 		assert(uop);
@@ -108,6 +118,14 @@ void si_simd_read(struct si_simd_t *simd)
 		 * to assume that no other uop is ready either */
 		if (si_gpu->cycle < uop->decode_ready)
 			break;
+
+		/* Stop if the issue width has been reached, stall */
+		if (instructions_issued == si_gpu_branch_unit_issue_width)
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				simd->compute_unit->id);
+			break;
+		}
 
 		/* Issue the uop if the exec_buffer is not full */
 		if (linked_list_count(simd->alu_exec_buffer) <=
@@ -120,9 +138,15 @@ void si_simd_read(struct si_simd_t *simd)
 			instructions_issued++;
 
 			//printf("CYCLE[%lld]\t\tSIMD\t\t\tREAD: UOP.ID[%lld]\n", si_gpu->cycle, uop->id);
+			si_trace("si.inst id=%lld cu=%d stg=\"simd-r\"\n", uop->id_in_compute_unit,
+				simd->compute_unit->id);
 		}
 		else
+		{
+			si_trace("si.inst id=%lld cu=%d stg=\"s\"\n", uop->id_in_compute_unit,
+				simd->compute_unit->id);
 			break;
+		}
 	}
 }
 

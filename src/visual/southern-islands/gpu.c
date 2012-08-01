@@ -156,7 +156,7 @@ static void vi_si_gpu_new_inst(struct vi_si_gpu_t *gpu, struct vi_trace_line_t *
 }
 
 
-/* Command 'si.end_inst'
+/* Command 'si.inst'
  * 	id=<inst-id>	(e.g., 23)
  * 	cu=<cu-id>	(e.g., 4)
  * 	stg=<stage>	(e.g., "cf-fe")
