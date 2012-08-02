@@ -2596,8 +2596,8 @@ void si_isa_V_CMP_GT_U32_impl(struct si_work_item_t *work_item, struct si_inst_t
 #undef INST
 
 /* D.u = (S0.f < S1.f). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_LT_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_LT_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	float s0;
 	float s1;
@@ -2630,8 +2630,8 @@ void si_isa_V_CMP_LT_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.f == S1.f). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_EQ_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_EQ_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	float s0;
 	float s1;
@@ -2664,8 +2664,8 @@ void si_isa_V_CMP_EQ_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.f > S1.f). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_GT_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_GT_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	float s0;
 	float s1;
@@ -2698,8 +2698,8 @@ void si_isa_V_CMP_GT_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = !(S0.f == S1.f). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_NEQ_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_NEQ_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	float s0;
 	float s1;
@@ -2732,8 +2732,8 @@ void si_isa_V_CMP_NEQ_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si
 #undef INST
 
 /* D.u = !(S0.f < S1.f). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_NLT_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_NLT_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	float s0;
 	float s1;
@@ -2766,8 +2766,8 @@ void si_isa_V_CMP_NLT_F32_VOP3b_impl(struct si_work_item_t *work_item, struct si
 #undef INST
 
 /* D.u = (S0.i < S1.i). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_LT_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_LT_I32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	int s0;
 	int s1;
@@ -2800,8 +2800,8 @@ void si_isa_V_CMP_LT_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.i == S1.i). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_EQ_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_EQ_I32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	int s0;
 	int s1;
@@ -2834,8 +2834,8 @@ void si_isa_V_CMP_EQ_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.i <= S1.i). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_LE_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_LE_I32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	int s0;
 	int s1;
@@ -2868,8 +2868,8 @@ void si_isa_V_CMP_LE_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.i > S1.i). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_GT_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_GT_I32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	int s0;
 	int s1;
@@ -2902,8 +2902,8 @@ void si_isa_V_CMP_GT_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.i <> S1.i). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_NE_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_NE_I32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	int s0;
 	int s1;
@@ -2936,8 +2936,8 @@ void si_isa_V_CMP_NE_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.i >= S1.i). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_GE_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_GE_I32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	int s0;
 	int s1;
@@ -2970,8 +2970,8 @@ void si_isa_V_CMP_GE_I32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.u < S1.u). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_LT_U32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_LT_U32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	unsigned int s0;
 	unsigned int s1;
@@ -3004,8 +3004,8 @@ void si_isa_V_CMP_LT_U32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.u <= S1.u). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_LE_U32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_LE_U32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	unsigned int s0;
 	unsigned int s1;
@@ -3038,8 +3038,8 @@ void si_isa_V_CMP_LE_U32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.u > S1.u). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_GT_U32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_GT_U32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	unsigned int s0;
 	unsigned int s1;
@@ -3072,8 +3072,8 @@ void si_isa_V_CMP_GT_U32_VOP3b_impl(struct si_work_item_t *work_item, struct si_
 #undef INST
 
 /* D.u = (S0.u >= S1.u). */
-#define INST SI_INST_VOP3b
-void si_isa_V_CMP_GE_U32_VOP3b_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+#define INST SI_INST_VOP3a
+void si_isa_V_CMP_GE_U32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	unsigned int s0;
 	unsigned int s1;
