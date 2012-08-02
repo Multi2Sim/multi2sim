@@ -18,6 +18,7 @@
  */
 
 #include <math.h>
+#include <limits.h>
 
 #include <southern-islands-emu.h>
 #include <mem-system.h>
@@ -1275,13 +1276,35 @@ void si_isa_V_CVT_F32_U32_impl(struct si_work_item_t *work_item, struct si_inst_
 #define INST SI_INST_VOP1
 void si_isa_V_CVT_U32_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
+	float fvalue;
 	union si_reg_t value;
 
 	/* Load operand from register or as a literal constant. */
 	if (INST.src0 == 0xFF)
-		value.as_uint = (unsigned int)((union si_reg_t)INST.lit_cnst).as_float;
+		fvalue = ((union si_reg_t)INST.lit_cnst).as_float;
 	else
-		value.as_uint = (unsigned int)si_isa_read_reg(work_item, INST.src0).as_float;
+		fvalue = si_isa_read_reg(work_item, INST.src0).as_float;
+
+	/*
+	union si_reg_t test_value;
+	test_value.as_float = fvalue;
+	printf("fvalue: (%0x, %u, %ff), max_uint: (%u, %ff) -1(%ff), fvalue >= max_uint: %u\n",
+			test_value.as_uint, test_value.as_uint, test_value.as_float,
+			UINT_MAX, (float)UINT_MAX, (float)(UINT_MAX -1),
+			test_value.as_float >= UINT_MAX);
+	printf("int_max (%i, %ff), int_min(%i, %ff)\n", INT_MAX, (float)INT_MAX, INT_MIN, (float)INT_MIN);
+	*/
+
+	/* Handle special number cases and cast to an unsigned int */
+
+	/* -inf, NaN, 0, -0 --> 0 */
+	if( (isinf(fvalue) && fvalue < 0.0f) || isnan(fvalue) || fvalue == 0.0f || fvalue == -0.0f)
+		value.as_uint = 0;
+	/* inf, > max_uint --> max_uint */
+	else if (isinf(fvalue) || fvalue >= UINT_MAX)
+		value.as_uint = UINT_MAX;
+	else
+		value.as_uint = (unsigned int)fvalue;
 
 	/* Write the results. */
 	si_isa_write_vreg(work_item, INST.vdst, value);
@@ -1298,13 +1321,28 @@ void si_isa_V_CVT_U32_F32_impl(struct si_work_item_t *work_item, struct si_inst_
 #define INST SI_INST_VOP1
 void si_isa_V_CVT_I32_F32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
+	float fvalue;
 	union si_reg_t value;
 
 	/* Load operand from register or as a literal constant. */
 	if (INST.src0 == 0xFF)
-		value.as_int = (int)((union si_reg_t)INST.lit_cnst).as_float;
+		fvalue = ((union si_reg_t)INST.lit_cnst).as_float;
 	else
-		value.as_int = (int)si_isa_read_reg(work_item, INST.src0).as_float;
+		fvalue = si_isa_read_reg(work_item, INST.src0).as_float;
+
+	/* Handle special number cases and cast to an int */
+
+	/* inf, > max_int --> max_int */
+	if( (isinf(fvalue) && fvalue > 0.0f) || fvalue >= INT_MAX)
+		value.as_uint = INT_MAX;
+	/* -inf, < -max_int --> -max_int */
+	else if (isinf(fvalue) || fvalue < INT_MIN)
+		value.as_uint = INT_MIN;
+	/* NaN, 0, -0 --> 0 */
+	else if (isnan(fvalue) || fvalue == 0.0f || fvalue == -0.0f)
+		value.as_uint = 0;
+	else
+		value.as_uint = (int)fvalue;
 
 	/* Write the results. */
 	si_isa_write_vreg(work_item, INST.vdst, value);
