@@ -3118,6 +3118,9 @@ void si_isa_DS_WRITE_B32_impl(struct si_work_item_t *work_item, struct si_inst_t
 	addr = si_isa_read_vreg(work_item, INST.addr).as_uint;
 	data0 = si_isa_read_vreg(work_item, INST.data0).as_uint;
 
+	/* Global data store not supported */
+	assert(!INST.gds);
+
 	/* Write Dword. */
 	if(INST.gds)
 	{
@@ -3161,6 +3164,9 @@ void si_isa_DS_WRITE_B16_impl(struct si_work_item_t *work_item, struct si_inst_t
 	addr = si_isa_read_vreg(work_item, INST.addr).as_uint;
 	data0 = si_isa_read_vreg(work_item, INST.data0).as_short[0];
 
+	/* Global data store not supported */
+	assert(!INST.gds);
+
 	/* Write Dword. */
 	if(INST.gds)
 	{
@@ -3202,6 +3208,9 @@ void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item, struct si_inst_t 
 
 	/* Load address from register. */
 	addr = si_isa_read_vreg(work_item, INST.addr).as_uint;
+
+	/* Global data store not supported */
+	assert(!INST.gds);
 
 	/* Read Dword. */
 	if(INST.gds)
@@ -3247,6 +3256,9 @@ void si_isa_DS_READ_I16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 
 	/* Load address from register. */
 	addr = si_isa_read_vreg(work_item, INST.addr).as_uint;
+
+	/* Global data store not supported */
+	assert(!INST.gds);
 
 	/* Read Dword. */
 	if(INST.gds)
@@ -3295,6 +3307,9 @@ void si_isa_DS_READ_U16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 
 	/* Load address from register. */
 	addr = si_isa_read_vreg(work_item, INST.addr).as_uint;
+
+	/* Global data store not supported */
+	assert(!INST.gds);
 
 	/* Read Dword. */
 	if(INST.gds)

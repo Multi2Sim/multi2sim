@@ -371,21 +371,20 @@ void si_compute_unit_fetch(struct si_compute_unit_t *compute_unit, int active_wf
 		/* Update last memory accesses */
 		SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 		{
-			/* global */
 			work_item = si_gpu->ndrange->work_items[work_item_id];
 			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
+
+			/* global */
 			work_item_uop->global_mem_access_addr = work_item->global_mem_access_addr;
 			work_item_uop->global_mem_access_size = work_item->global_mem_access_size;
 
 			/* local */
-			work_item = si_gpu->ndrange->work_items[work_item_id];
-			work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
 			work_item_uop->local_mem_access_count = work_item->local_mem_access_count;
 			for (j = 0; j < work_item->local_mem_access_count; j++)
 			{
-				work_item_uop->local_mem_access_kind[i] = work_item->local_mem_access_type[i];
-				work_item_uop->local_mem_access_addr[i] = work_item->local_mem_access_addr[i];
-				work_item_uop->local_mem_access_size[i] = work_item->local_mem_access_size[i];
+				work_item_uop->local_mem_access_kind[j] = work_item->local_mem_access_type[j];
+				work_item_uop->local_mem_access_addr[j] = work_item->local_mem_access_addr[j];
+				work_item_uop->local_mem_access_size[j] = work_item->local_mem_access_size[j];
 			}
 		}
 
