@@ -55,11 +55,13 @@ void si_lds_execute(struct si_lds_t *lds)
 	int work_item_id;
 	int instructions_issued = 0;
 	int list_count;
+	int i, j;
+	enum mod_access_kind_t access_type;
 
 	/* Look through the memory execution buffer looking for wavefronts ready to execute */
 	list_count = linked_list_count(lds->mem_exec_buffer);
 	linked_list_head(lds->mem_exec_buffer);
-	for (int i = 0; i < list_count; i++)
+	for (i = 0; i < list_count; i++)
 	{
 		/* Peek at the first uop */
 		uop = linked_list_get(lds->mem_exec_buffer);
@@ -78,23 +80,28 @@ void si_lds_execute(struct si_lds_t *lds)
 			break;
 		}
 
-		/* Scalar memory read */
 		assert(linked_list_count(lds->mem_out_buffer) <=
 			si_gpu_lds_inflight_mem_accesses);
 
 		/* If there is room in the outstanding memory buffer, issue the access */
-		if (linked_list_count(lds->mem_out_buffer) <
-			si_gpu_lds_inflight_mem_accesses)
+		if (linked_list_count(lds->mem_out_buffer) < si_gpu_lds_inflight_mem_accesses)
 		{
 			/* Access local memory */
 			SI_FOREACH_WORK_ITEM_IN_WAVEFRONT(uop->wavefront, work_item_id)
 			{
 				work_item = si_gpu->ndrange->work_items[work_item_id];
 				work_item_uop = &uop->work_item_uop[work_item->id_in_wavefront];
-				for (i = 0; i < work_item_uop->local_mem_access_count; i++)
+				for (j = 0; j < work_item_uop->local_mem_access_count; j++)
 				{
-					mod_access(lds->compute_unit->local_memory, mod_access_load,
-						work_item_uop->local_mem_access_addr[i],
+					if (work_item->local_mem_access_type[j] == 1)
+						access_type = mod_access_load;
+					else if (work_item->local_mem_access_type[j] == 2)
+						access_type = mod_access_store;
+					else
+						fatal("%s: invalid lds access type", __FUNCTION__);
+
+					mod_access(lds->compute_unit->local_memory, access_type,
+						work_item_uop->local_mem_access_addr[j],
 						&uop->local_mem_witness, NULL, NULL);
 					uop->local_mem_witness--;
 				}
