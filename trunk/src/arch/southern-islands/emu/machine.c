@@ -447,6 +447,44 @@ void si_isa_S_AND_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *i
 
 /* D.u = S0.u | S1.u. scc = 1 if result is non-zero. */
 #define INST SI_INST_SOP2
+void si_isa_S_OR_B32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	unsigned int s0 = 0;
+	unsigned int s1 = 0;
+
+	union si_reg_t result;
+	union si_reg_t nonzero;
+
+	/* Load operands from registers or as a literal constant. */
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_uint;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
+	if (INST.ssrc1 == 0xFF)
+		s1 = ((union si_reg_t)INST.lit_cnst).as_uint;
+	else
+		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
+
+	/* Bitwise AND the two operands and determine if the result is non-zero. */
+	result.as_uint = s0 | s1;
+	nonzero.as_uint = !!result.as_uint;
+
+	/* Write the results. */
+	si_isa_write_sreg(work_item, INST.sdst, result);
+	si_isa_write_sreg(work_item, SI_SCC, nonzero);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("S%u<=(%d) ", INST.sdst, result.as_uint);
+		si_isa_debug("scc<=(%d) ", nonzero.as_uint);
+	}
+}
+#undef INST
+
+/* D.u = S0.u | S1.u. scc = 1 if result is non-zero. */
+#define INST SI_INST_SOP2
 void si_isa_S_OR_B64_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	/* Assert no literal constants for a 64 bit instruction. */
@@ -3191,12 +3229,58 @@ void si_isa_DS_WRITE_B32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* DS[A] = D0[7:0]; byte write.  */
+#define INST SI_INST_DS
+void si_isa_DS_WRITE_B8_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	unsigned int addr;
+	unsigned char data0;
+
+	/* Load address and data from registers. */
+	addr = si_isa_read_vreg(work_item, INST.addr).as_uint;
+	data0 = si_isa_read_vreg(work_item, INST.data0).as_ubyte[0];
+
+	/* Global data store not supported */
+	assert(!INST.gds);
+
+	/* Write Dword. */
+	if(INST.gds)
+	{
+		mem_write(si_emu->global_mem, addr, 1, &data0);
+	}
+	else
+	{
+		mem_write(work_item->work_group->local_mem, addr, 1, &data0);
+	}
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("GDS?:%d DS[%d]<=(%d) ", INST.gds, addr, data0);
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	if(INST.gds)
+	{
+		work_item->global_mem_access_addr = addr;
+		work_item->global_mem_access_size = 1;
+	}
+	else
+	{
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 2;
+		work_item->local_mem_access_addr[0] = addr;
+		work_item->local_mem_access_size[0] = 1;
+	}
+}
+#undef INST
+
 /* DS[A] = D0[15:0]; short write.  */
 #define INST SI_INST_DS
 void si_isa_DS_WRITE_B16_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
 {
 	unsigned int addr;
-	unsigned int data0;
+	unsigned short data0;
 
 	/* Load address and data from registers. */
 	addr = si_isa_read_vreg(work_item, INST.addr).as_uint;
@@ -3285,6 +3369,108 @@ void si_isa_DS_READ_B32_impl(struct si_work_item_t *work_item, struct si_inst_t 
 }
 #undef INST
 
+/* R = signext(DS[A][7:0]}; signed byte read. */
+#define INST SI_INST_DS
+void si_isa_DS_READ_I8_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	unsigned int addr;
+	union si_reg_t data;
+
+	/* Load address from register. */
+	addr = si_isa_read_vreg(work_item, INST.addr).as_uint;
+
+	/* Global data store not supported */
+	assert(!INST.gds);
+
+	/* Read Dword. */
+	if(INST.gds)
+	{
+		mem_read(si_emu->global_mem, addr, 1, &data.as_byte[0]);
+	}
+	else
+	{
+		mem_read(work_item->work_group->local_mem, addr, 1, &data.as_byte[0]);
+	}
+
+	/* Extend the sign. */
+	data.as_int = (int)data.as_byte[0];
+
+	/* Write results. */
+	si_isa_write_vreg(work_item, INST.vdst, data);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, data.as_int);
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	if(INST.gds)
+	{
+		work_item->global_mem_access_addr = addr;
+		work_item->global_mem_access_size = 1;
+	}
+	else
+	{
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 1;
+		work_item->local_mem_access_addr[0] = addr;
+		work_item->local_mem_access_size[0] = 1;
+	}
+}
+#undef INST
+
+/* R = {24’h0,DS[A][7:0]}; unsigned byte read. */
+#define INST SI_INST_DS
+void si_isa_DS_READ_U8_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	unsigned int addr;
+	union si_reg_t data;
+
+	/* Load address from register. */
+	addr = si_isa_read_vreg(work_item, INST.addr).as_uint;
+
+	/* Global data store not supported */
+	assert(!INST.gds);
+
+	/* Read Dword. */
+	if(INST.gds)
+	{
+		mem_read(si_emu->global_mem, addr, 1, &data.as_ubyte[0]);
+	}
+	else
+	{
+		mem_read(work_item->work_group->local_mem, addr, 1, &data.as_ubyte[0]);
+	}
+
+	/* Make sure to use only bits [7:0]. */
+	data.as_uint = (unsigned int)data.as_ubyte[0];
+
+	/* Write results. */
+	si_isa_write_vreg(work_item, INST.vdst, data);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%d) ", work_item->id, INST.vdst, data.as_uint);
+	}
+
+	/* Record last memory access for the detailed simulator. */
+	if(INST.gds)
+	{
+		work_item->global_mem_access_addr = addr;
+		work_item->global_mem_access_size = 1;
+	}
+	else
+	{
+		work_item->local_mem_access_count = 1;
+		work_item->local_mem_access_type[0] = 1;
+		work_item->local_mem_access_addr[0] = addr;
+		work_item->local_mem_access_size[0] = 1;
+	}
+}
+#undef INST
+
 /* R = signext(DS[A][15:0]}; signed short read. */
 #define INST SI_INST_DS
 void si_isa_DS_READ_I16_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -3352,15 +3538,15 @@ void si_isa_DS_READ_U16_impl(struct si_work_item_t *work_item, struct si_inst_t 
 	/* Read Dword. */
 	if(INST.gds)
 	{
-		mem_read(si_emu->global_mem, addr, 4, &data.as_uint);
+		mem_read(si_emu->global_mem, addr, 2, &data.as_ushort[0]);
 	}
 	else
 	{
-		mem_read(work_item->work_group->local_mem, addr, 4, &data.as_uint);
+		mem_read(work_item->work_group->local_mem, addr, 2, &data.as_ushort[0]);
 	}
 
 	/* Make sure to use only bits [15:0]. */
-	data.as_uint = (unsigned int)data.as_short[0];
+	data.as_uint = (unsigned int)data.as_ushort[0];
 
 	/* Write results. */
 	si_isa_write_vreg(work_item, INST.vdst, data);

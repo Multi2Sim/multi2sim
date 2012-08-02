@@ -427,6 +427,9 @@ union si_reg_t
 	signed short int as_short[2];
 	unsigned short int as_ushort[2];
 
+	signed char as_byte[4];
+	unsigned char as_ubyte[4];
+
 	float as_float;
 };
 
