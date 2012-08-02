@@ -40,6 +40,13 @@ DEFINST(S_AND_B64,
 	4
 )
 
+DEFINST(S_OR_B32,
+	" s_or_b32      %SDST, %SSRC0, %SSRC1",
+	SOP2,
+	16,
+	4
+)
+
 DEFINST(S_OR_B64,
 	" s_or_b64      %64_SDST, %64_SSRC0, %64_SSRC1",
 	SOP2,
@@ -670,6 +677,13 @@ DEFINST(DS_WRITE_B32,
 	8
 )
 
+DEFINST(DS_WRITE_B8,
+	" ds_write_b8   %ADDR, %DATA0",
+	DS,
+	30,
+	8
+)
+
 DEFINST(DS_WRITE_B16,
 	" ds_write_b16  %ADDR, %DATA0",
 	DS,
@@ -681,6 +695,20 @@ DEFINST(DS_READ_B32,
 	" ds_read_b32   %VDST, %ADDR",
 	DS,
 	54,
+	8
+)
+
+DEFINST(DS_READ_I8,
+	" ds_read_i8    %VDST, %ADDR",
+	DS,
+	57,
+	8
+)
+
+DEFINST(DS_READ_U8,
+	" ds_read_u8    %VDST, %ADDR",
+	DS,
+	58,
 	8
 )
 
