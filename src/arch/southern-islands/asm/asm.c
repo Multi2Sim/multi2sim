@@ -1636,7 +1636,7 @@ void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int inst_size, unsigned
 		{
 			if(mtbuf->index)
 			{
-				str_printf(&inst_str, &str_size, " index");
+				str_printf(&inst_str, &str_size, " idxen");
 			}
 		}
 		else if (is_token(fmt_str, "OFFEN", &token_len))

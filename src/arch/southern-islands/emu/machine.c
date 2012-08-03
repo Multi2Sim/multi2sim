@@ -1016,6 +1016,40 @@ void si_isa_S_CMP_LE_I32_impl(struct si_work_item_t *work_item, struct si_inst_t
 }
 #undef INST
 
+/* scc = (S0.u >= S1.u). */
+#define INST SI_INST_SOPC
+void si_isa_S_CMP_GE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	unsigned int s0 = 0;
+	unsigned int s1 = 0;
+
+	union si_reg_t result;
+
+	/* Load operands from registers or as a literal constant. */
+	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
+	if (INST.ssrc0 == 0xFF)
+		s0 = ((union si_reg_t)INST.lit_cnst).as_uint;
+	else
+		s0 = si_isa_read_sreg(work_item, INST.ssrc0).as_uint;
+	if (INST.ssrc1 == 0xFF)
+		s1 = ((union si_reg_t)INST.lit_cnst).as_uint;
+	else
+		s1 = si_isa_read_sreg(work_item, INST.ssrc1).as_uint;
+
+	/* Compare the operands. */
+	result.as_uint = (s0 >= s1);
+
+	/* Write the results. */
+	si_isa_write_sreg(work_item, SI_SCC, result);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("scc<=(%d) ", result.as_uint);
+	}
+}
+#undef INST
+
 /* scc = (S0.u <= S1.u). */
 #define INST SI_INST_SOPC
 void si_isa_S_CMP_LE_U32_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
@@ -2063,6 +2097,39 @@ void si_isa_V_MUL_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_ins
 
 	/* Calculate the result. */
 	result.as_float = s0 * s1;
+
+	/* Write the results. */
+	si_isa_write_vreg(work_item, INST.vdst, result);
+
+	/* Print isa debug information. */
+	if (debug_status(si_isa_debug_category))
+	{
+		si_isa_debug("t%d: V%u<=(%gf) ", work_item->id, INST.vdst, result.as_float);
+	}
+}
+#undef INST
+
+/* D.f = max(S0.f, S1.f). */
+#define INST SI_INST_VOP3a
+void si_isa_V_MAX_F32_VOP3a_impl(struct si_work_item_t *work_item, struct si_inst_t *inst)
+{
+	float s0;
+	float s1;
+
+	union si_reg_t result;
+
+	/* Load operands from registers. */
+	s0 = si_isa_read_reg(work_item, INST.src0).as_float;
+	s1 = si_isa_read_reg(work_item, INST.src1).as_float;
+
+	/* Apply negation modifiers. */
+	if(INST.neg & 1)
+		s0 = -s0;
+	if(INST.neg & 2)
+		s1 = -s1;
+
+	/* Calculate the result. */
+	result.as_float = (s0 >= s1) ? s0 : s1;
 
 	/* Write the results. */
 	si_isa_write_vreg(work_item, INST.vdst, result);
