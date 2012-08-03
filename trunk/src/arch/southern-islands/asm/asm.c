@@ -1615,8 +1615,16 @@ void si_inst_dump_mtbuf(struct si_inst_t* inst, unsigned int inst_size, unsigned
 		}
 		else if (is_token(fmt_str, "VADDR", &token_len))
 		{
-			operand_dump_vector(operand_str, mtbuf->vaddr);
-			str_printf(&inst_str, &str_size, "%s", operand_str);
+			if (mtbuf->offen && mtbuf->index)
+			{
+				operand_dump_series_vector(operand_str, mtbuf->vaddr, mtbuf->vaddr + 1);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
+			else
+			{
+				operand_dump_vector(operand_str, mtbuf->vaddr);
+				str_printf(&inst_str, &str_size, "%s", operand_str);
+			}
 		}
 		else if (is_token(fmt_str, "SERIES_SRSRC", &token_len))
 		{
