@@ -26,6 +26,13 @@ DEFINST(S_MIN_U32,
 	4
 )
 
+DEFINST(S_MAX_U32,
+	" s_max_u32     %SDST, %SSRC0, %SSRC1",
+	SOP2,
+	9,
+	4
+)
+
 DEFINST(S_AND_B32,
 	" s_and_b32     %SDST, %SSRC0, %SSRC1",
 	SOP2,
@@ -121,6 +128,13 @@ DEFINST(S_MOV_B64,
 	" s_mov_b64     %64_SDST, %64_SSRC0",
 	SOP1,
 	4,
+	4
+)
+
+DEFINST(S_NOT_B32,
+	" s_not_b32     %SDST, %SSRC0",
+	SOP1,
+	7,
 	4
 )
 
