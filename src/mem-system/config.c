@@ -1408,7 +1408,7 @@ static void mem_config_create_switches(struct config_t *config)
 			if (net_node != net_switch)
 			{
 				net_add_bidirectional_link(net, net_node, net_switch,
-					def_bandwidth);
+					def_bandwidth, 1);
 				mem_debug(" %s", net_node->name);
 			}
 		}
