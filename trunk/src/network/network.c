@@ -203,6 +203,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		char *link_name;
 		char *link_type;
 		int bandwidth;
+		int v_channel_count ;
 
 		char *src_node_name;
 		char *dst_node_name;
@@ -237,6 +238,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		bandwidth = config_read_int(config, section, "Bandwidth", def_bandwidth);
 		src_node_name = config_read_string(config, section, "Source", "");
 		dst_node_name = config_read_string(config, section, "Dest", "");
+		v_channel_count = config_read_int(config, section, "VC", 1);
 
 		/* Nodes */
 		src_node = net_get_node_by_name(net, src_node_name);
@@ -248,14 +250,21 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		if (!dst_node)
 			fatal("%s: %s: %s: destination node does not exist.\n%s",
 				name, section, dst_node_name, err_net_config);
-		if (!strcasecmp(link_type, "Unidirectional"))
+
+		if (v_channel_count >= 1)
 		{
-			net_add_link(net, src_node, dst_node, bandwidth);
+
+			if (!strcasecmp(link_type, "Unidirectional"))
+			{
+				net_add_link(net, src_node, dst_node, bandwidth, v_channel_count);
+			}
+			else if (!strcasecmp(link_type, "Bidirectional"))
+			{
+				net_add_bidirectional_link(net, src_node, dst_node, bandwidth,v_channel_count);
+			}
 		}
-		else if (!strcasecmp(link_type, "Bidirectional"))
-		{
-			net_add_bidirectional_link(net, src_node, dst_node, bandwidth);
-		}
+		else fatal("%s: %s: Unacceptable number of virtual channels \n %s",
+				name, section,err_net_config);
 	}
 
 	/* initializing the routing table */
@@ -265,6 +274,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 	for (section = config_section_first(config); section; section = config_section_next(config))
 	{
 		char *delim = ".";
+		char *delim_sep = ":";
 		char *token;
 		char *token_endl;
 
@@ -297,6 +307,7 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 
 			for (int j = 0; j < net->node_count; j++)
 			{
+				int vc_used = 0;
 				char spr_result_size [MAX_STRING_SIZE] ;
 				char *nxt_node_name;
 				struct net_node_t *src_node_r;
@@ -308,20 +319,47 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 
 				if (dst_node_r->kind == net_node_end)
 				{
-					snprintf(spr_result_size, sizeof spr_result_size, "%s.to.%s", src_node_r->name,dst_node_r->name);
+					snprintf(spr_result_size, sizeof spr_result_size, "%s.to.%s",
+							src_node_r->name,dst_node_r->name);
 					nxt_node_name = config_read_string(config, section, spr_result_size , "---" );
+					/* Token Separates the next node and VC */
+					snprintf(section_str, sizeof section_str, "%s", nxt_node_name);
+					token = strtok(section_str, delim_sep);
+					nxt_node_name = token;
+					token = strtok(NULL, delim_sep);
+
+
+					if (token)
+					{
+						vc_used = atoi(token);
+						if (vc_used < 0)
+							fatal("Network %s:%s: Unacceptable virtual channel format is chosen\n %s",
+									net->name, section, err_net_config);
+					}
+
 					int name_check = strcmp(nxt_node_name, "---");
 					nxt_node_r = net_get_node_by_name(net, nxt_node_name);
 
 					if (!nxt_node_r && name_check != 0)
 					{
-							fatal("Network %s:%s: Invalid node Name.\n %s", net->name, section,err_net_config);
+							fatal("Network %s:%s: Invalid node Name.\n %s",
+									net->name, section,err_net_config);
 					}
 					if (nxt_node_r)
 					{
 						if (src_node_r == dst_node_r)
-							fatal("Network %s:%s: Invalid Routing format.\n %s", net->name, section,err_net_config);
-						else net_routing_table_route_update(net->routing_table, src_node_r, dst_node_r, nxt_node_r);
+							fatal("Network %s:%s: Invalid Routing format.\n %s",
+									net->name, section,err_net_config);
+						else
+							if (vc_used > 0)
+								net_routing_table_route_update(net->routing_table,
+										src_node_r, dst_node_r, nxt_node_r, vc_used);
+							else
+							{
+								vc_used = 0;
+								net_routing_table_route_update(net->routing_table,
+										src_node_r, dst_node_r, nxt_node_r, vc_used);
+							}
 					}
 				}
 			}
@@ -329,7 +367,8 @@ struct net_t *net_create_from_config(struct config_t *config, char *name)
 		config_check(config);
 	}
 
-	/* If there is no route section, Floyd-Warshall calculates the shortest path for all the nodes in the network */
+	/* If there is no route section, Floyd-Warshall calculates
+	 * the shortest path for all the nodes in the network */
 	if (routing_type == 0) 
 		net_routing_table_floyd_warshall(net->routing_table);
 
@@ -534,15 +573,12 @@ struct net_node_t *net_get_node_by_user_data(struct net_t *net, void *user_data)
 	return NULL;
 }
 
-
-/* Create a new unidirectional link */
+/* Create link with virtual channel */
 struct net_link_t *net_add_link(struct net_t *net,
 	struct net_node_t *src_node, struct net_node_t *dst_node,
-	int bandwidth)
+	int bandwidth, int vc_count)
 {
 	struct net_link_t *link;
-	struct net_buffer_t *src_buffer;
-	struct net_buffer_t *dst_buffer;
 
 	/* Checks */
 	assert(src_node->net == net);
@@ -550,13 +586,8 @@ struct net_link_t *net_add_link(struct net_t *net,
 	if (src_node->kind == net_node_end && dst_node->kind == net_node_end)
 		fatal("network \"%s\": link cannot connect two end nodes\n", net->name);
 
-	/* Create output buffer in source node and input buffer in destination node */
-	src_buffer = net_node_add_output_buffer(src_node);
-	dst_buffer = net_node_add_input_buffer(dst_node);
-
 	/* Create link connecting buffers */
-	link = net_link_create(net, src_node, src_buffer,
-		dst_node, dst_buffer, bandwidth);
+	link = net_link_create(net, src_node, dst_node, bandwidth, vc_count);
 
 	/* Add to link list */
 	list_add(net->link_list, link);
@@ -566,15 +597,15 @@ struct net_link_t *net_add_link(struct net_t *net,
 }
 
 
-/* Create bidirectional link */
+/* Create bidirectional link with VC */
 void net_add_bidirectional_link(struct net_t *net,
 	struct net_node_t *src_node, struct net_node_t *dst_node,
-	int bandwidth)
+	int bandwidth, int vc_count)
 {
-	net_add_link(net, src_node, dst_node, bandwidth);
-	net_add_link(net, dst_node, src_node, bandwidth);
-}
+	net_add_link(net, src_node, dst_node, bandwidth, vc_count);
+	net_add_link(net, dst_node, src_node, bandwidth, vc_count);
 
+}
 
 /* Return TRUE if a message can be sent through the network. Return FALSE
  * otherwise, whether the reason is temporary of permanent. */

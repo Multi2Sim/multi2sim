@@ -173,7 +173,7 @@ void net_event_handler(int event, void *data)
 			return;
 		}
 
-		/* If source input buffer is busy, wait */
+		/* If source output buffer is busy, wait */
 		if (buffer->read_busy >= esim_cycle)
 		{
 			esim_schedule_event(event, stack, buffer->read_busy - esim_cycle + 1);
@@ -186,6 +186,25 @@ void net_event_handler(int event, void *data)
 		{
 			esim_schedule_event(event, stack, link->busy - esim_cycle + 1);
 			return;
+		}
+
+		/* If buffer contain the message but doesn't have the shared link in control, wait*/
+		if (link->virtual_channel > 1)
+		{
+			struct net_buffer_t *temp_buffer;
+			temp_buffer = net_link_arbitrator_vc(link, node);
+			if (temp_buffer != buffer)
+			{
+				net_debug("msg "
+					"a=\"arbitrator stall\" "
+					"net=\"%s\" "
+					"msg=%lld "
+					"why=\"sched\"\n",
+					net->name,
+					msg->id);
+				esim_schedule_event(event, stack, 1);
+				return;
+			}
 		}
 
 		/* If destination input buffer is busy, wait */

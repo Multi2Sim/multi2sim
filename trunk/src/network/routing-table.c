@@ -446,7 +446,7 @@ struct net_routing_table_entry_t *net_routing_table_lookup(struct net_routing_ta
 
 /* Updating the entries in the routing table based on the routes existing in configuration file*/
 void net_routing_table_route_update(struct net_routing_table_t *routing_table, struct net_node_t *src_node,
-	struct net_node_t *dst_node, struct net_node_t *next_node)
+	struct net_node_t *dst_node, struct net_node_t *next_node, int vc_num)
 {
 
 	int k;
@@ -464,7 +464,7 @@ void net_routing_table_route_update(struct net_routing_table_t *routing_table, s
 	buffer = NULL;
 	assert(list_count(src_node->output_buffer_list));
 
-	for (k = 0; k < list_count(src_node->output_buffer_list); k++)
+	for (k = 0; (k < list_count(src_node->output_buffer_list) && route_check != 1); k++)
 	{
 		buffer = list_get(src_node->output_buffer_list, k);
 		link = buffer->link;
@@ -472,11 +472,24 @@ void net_routing_table_route_update(struct net_routing_table_t *routing_table, s
 
 		if ((link->dst_node == next_node))
 		{
-			entry->output_buffer = buffer;
-			route_check = 1;					
+			if (vc_num == 0)
+			{
+				entry->output_buffer = buffer;
+				route_check = 1;
+			}
+			else
+			{
+				if (link->virtual_channel <= vc_num)
+						fatal("Network %s: %s.to.%s: wrong virtual channel number is used in route \n %s",
+								routing_table->net->name, src_node->name, dst_node->name, err_net_config);
+				struct net_buffer_t *vc_buffer;
+				vc_buffer = list_get(src_node->output_buffer_list, (buffer->index)+vc_num);
+				assert(vc_buffer->link == buffer->link);
+				entry->output_buffer = vc_buffer;
+				route_check = 1;
+			}
 		}						
 	}
-
 	/*If there is not a route between the source node and next node , error */
 	if (route_check == 0) fatal("Network %s : route %s.to.%s = %s : Missing Link \n%s ",
 		routing_table->net->name, src_node->name, dst_node->name, next_node->name, err_net_routing);

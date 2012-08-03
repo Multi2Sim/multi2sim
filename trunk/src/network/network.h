@@ -140,14 +140,21 @@ struct net_link_t
 
 	/* Source node-buffer */
 	struct net_node_t *src_node;
-	struct net_buffer_t *src_buffer;
 
 	/* Destination node-buffer */
 	struct net_node_t *dst_node;
+
+	/* Buffers that have the control of the link */
 	struct net_buffer_t *dst_buffer;
+	struct net_buffer_t *src_buffer;
 
 	int bandwidth;
 	long long busy;  /* Busy until this cycle inclusive */
+
+	/* Scheduling for link */
+	int virtual_channel; /* Number of Virtual Channels on a Link*/
+	long long sched_when; /* The last time a buffer was assigned to the Link */
+	struct net_buffer_t *sched_buffer; /* The output buffer to fetch data from*/
 
 	/* Stats */
 	long long busy_cycles;
@@ -157,11 +164,12 @@ struct net_link_t
 
 
 /* Functions */
-struct net_link_t *net_link_create(struct net_t *net,
-	struct net_node_t *src_node, struct net_buffer_t *src_buffer,
-	struct net_node_t *dst_node, struct net_buffer_t *dst_buffer,
-	int bandwidth);
 void net_link_free(struct net_link_t *link);
+struct net_link_t *net_link_create(struct net_t *net,
+	struct net_node_t *src_node, struct net_node_t *dst_node,
+	int bandwidth, int vc);
+struct net_buffer_t *net_link_arbitrator_vc( struct net_link_t *link,
+		struct net_node_t *node);
 
 void net_link_dump_report(struct net_link_t *link, FILE *f);
 
@@ -329,7 +337,7 @@ void net_routing_table_initiate(struct net_routing_table_t *routing_table);
 void net_routing_table_floyd_warshall(struct net_routing_table_t *routing_table);
 void net_routing_table_dump(struct net_routing_table_t *routing_table, FILE *f);
 void net_routing_table_route_update(struct net_routing_table_t *routing_table, struct net_node_t *src_node,
-	struct net_node_t *dst_node, struct net_node_t *nxt_node);
+	struct net_node_t *dst_node, struct net_node_t *nxt_node, int vc_used);
 struct net_routing_table_entry_t *net_routing_table_lookup(struct net_routing_table_t *routing_table,
 	struct net_node_t *src_node, struct net_node_t *dst_node);
 
@@ -391,12 +399,14 @@ struct net_node_t *net_get_node_by_name(struct net_t *net, char *name);
 struct net_node_t *net_get_node_by_user_data(struct net_t *net,
 	void *user_data);
 
+
 struct net_link_t *net_add_link(struct net_t *net,
 	struct net_node_t *src_node, struct net_node_t *dst_node,
-	int bandwidth);
+	int bandwidth, int vc_count);
 void net_add_bidirectional_link(struct net_t *net,
 	struct net_node_t *src_node, struct net_node_t *dst_node,
-	int bandwidth);
+	int bandwidth, int vc_count);
+
 
 int net_can_send(struct net_t *net, struct net_node_t *src_node,
 	struct net_node_t *dst_node, int size);
